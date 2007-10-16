@@ -138,6 +138,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 		Model, EntryArcs, Includes, ExtLibs),
 		(reclose(Stream), raise_exception(Puke))),
 	     close(Stream),
+	     dialogue:reassure_user("Compiling the program generated for the model"),
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
 	     compile_c_program(CheckDir, ExtLibs, Tgt),
@@ -280,14 +281,14 @@ important...(or was, back when the A stood for Agroforestry)... */
 		      init_time, parentId, channelId, version,
 		      on_reset, on_reload, externs_done, /* dummy conditions */
 		      use_param_state, /* indicates file parameter */
-		      id, dims, /* arguments to extractor proc */
-		      build0, build1, build2, build3 | _], /* makearray indices
-	*/
+		      id, dims | _], /* arguments to extractor proc */
 
 /* we cannot change names of external procedures, so add them to the used */
 
         (setof(ExtProc, uses_ext_proc(Top, ExtProc), ExtProcs), !;
             ExtProcs = []),
+        (setof(GraphSpec, get_graph_spec(GraphSpec), AllGraphs), !;
+	    AllGraphs = []),
 	append(Keywords, ExtProcs, BuiltIn),
         append(BuiltIn, LocalNames, Used),
 
@@ -298,21 +299,40 @@ bits and pieces */
 	reassure_user("Choosing names for program variables"),
 	declare_structure(Language, FullModel, Used),
 
+	(
+% File writing starts here
+	send_to_dest(Stream, ['#include <support1.cpp>']),
+	reassure_user("Generating metadata declarations"),
+	extract_instances(FullModel, RealDecls),
+	generate_metadata(Language, RealDecls, [], 1,
+			    Used, AllGraphs, [], NodeData, Stream),
+	make_constant_list(Language, NodeData, StructText),
+	length(NodeData, NodeCount), /* only used in tcl */
+	excrete(Language, variable_declaration,
+		   [int, nodecount, [], NodeCount], 0, Stream),
+	excrete(Language, variable_declaration,
+		   [node_data_line, nodedata, void, StructText], 0, Stream),
+
+	fail;
+
+	dialogue:reassure_user("Creating submodel value expressions"),
+	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_,_),
+				     _,_), [], TopStep, Phases, [], Used,
+			    ExtIncs, ExtLibs, Collects, Inters, ReevaluateForm),
+	merge_inters(Inters, FullModel, AugmentedModel, Constants),
+	
 /*	extract_submodel_updates(Instances, [], 1, Phases, Deltas),
 	set_free_phases(Deltas, Phases), */
-	dialogue:reassure_user("Creating submodel value expressions"),
-	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_,_), _,_), [],
-			    TopStep, Phases, [], Used,
-			    ExtIncs, ExtLibs, Inters, ReevaluateForm),
+
 	/* EnumTypeSpecs will eventually go in a procedure outside
 the model class which will be called from getcount to initialize a
 list of them as soon as the model is loaded, thus allowing them to be
 used when entering file parameters */
-	(Phases > 0, !;
-	    raise_exception(no_phases)),
+	(Phases = 0,
+	    raise_exception(no_phases);
+	true),
 	set_free_phases(ReevaluateForm, Phases, NewForm),
 	pick_state_vars(NewForm, EvaluateForm, StateForm, UpdateForm),
-	merge_inters(Inters, FullModel, AugmentedModel, Constants),
 	all(utility, all, % just showing off here
 	    [unify(compile), unify(put_in_phase),
 	     build([[build(StateForm)], [build(UpdateForm)]])]),
@@ -329,63 +349,33 @@ used when entering file parameters */
 	library:count_functions(Top, FnCount),
 	sicstus_format_to_chars("\"program='AME',version=~s,edition=~a,date=unused,size=~d,\"", [VStr, Edition, FnCount], IdentStr),
 	sicstus_atom_chars(IdentAtom, IdentStr),
-	render(Language, variable_declaration,
-	       [char, simile_identifier, void, IdentAtom], 0, IdentDec),
 %	name(V, VStr),
 %	render(Language, variable_declaration,
 %	       [real, simile_version, [], V], 0, VersionDec),
-	render(Language, variable_declaration,
-	       [int, phasecount, [], Phases], 0, PhaseDec),
-        BoostPhases is Phases+1,
-	render(Language, variable_declaration,
-	       [real, ts, [BoostPhases]], 0, [Times]),
-	render(Language, variable_declaration,
-	       [real, dts, [BoostPhases]], 0, [DTs]),
-
 /* eval/update procedures are built here because they provide graph info
 	for later declaration builder
 	
 	update_submodel_compartments( Language, Phases, Used, Deltas, Comps),
 */
-	render_all(Language, global_declaration,
-		   [[void, this, []] | Constants], 0, GlobalDeclText),
-	(setof(GraphSpec, get_graph_spec(GraphSpec), AllGraphs), !;
-	    AllGraphs = []),
-	build_submodel_functions(Language, Phases,
-				 StateForm, UpdateForm, EvaluateForm, Used,
-				 ExtSets, AllGraphs, Collects, FnList),
- 	length(Collects, ParamCount),
- 	render(Language, variable_declaration,
- 	       [int, paramcount, [], ParamCount], 0, ParamDec),
-
-	(Language=c, !,
-	    append(EntryArcs, [end], EntryList), /* because msvc++ barfs
-	                                        at empty lists */
-	all(render, make_constant_string,
-	    [unify(Language), build(EntryList), build(ArcChars)]),
-	    render(Language, variable_declaration,
-		   ['char*', inputArcs, void, ArcChars], 0,
-		   ArcDeclText);
-	    ArcDeclText = []),
-
 /* This generates the declarations in languages such as C and Tcl8.0
 wot need them */
-	reassure_user("Generating structure declarations"),
-	RootInstance = instance(submodel, root, xrefs(AugmentedModel, _,[],_),
-				'AME_model', 'AME_model'-[]),
-	generate_main_decls(Language, RootInstance, [], 1,
-			    ExtSets, Used, AllGraphs, Collects,
-			    TypeDecls, PointerDecls, EnumBits, NodeData),
-	append(InitTypes, [EndTopType], TypeDecls),
-	render( Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0,
-							StructTypeComment),
-	append([ArcDeclText, StructTypeComment, InitTypes], TypeSection),
 
-	render( Language, comment, 'GLOBAL DECLARATIONS', 0,
-		[GlobalDeclComment]),
-	append([['#include <support1.cpp>',GlobalDeclComment | GlobalDeclText],
-		IdentDec, PhaseDec, ParamDec, [Times, DTs]], Headers),
-	send_to_dest(Stream, Headers),
+	excrete(Language, comment, 'GLOBAL DECLARATIONS', 0, Stream),
+	all(compile, excrete,
+	    [unify(Language), unify(global_declaration),
+	     build([[void, this, []] | Constants]), unify(0), unify(Stream)]),
+	excrete(Language, variable_declaration,
+	       [char, simile_identifier, void, IdentAtom], 0, Stream),
+	excrete(Language, variable_declaration,
+	       [int, phasecount, [], Phases], 0, Stream),
+ 	length(Collects, ParamCount),
+ 	excrete(Language, variable_declaration,
+ 	       [int, paramcount, [], ParamCount], 0, Stream),
+        BoostPhases is Phases+1,
+	excrete(Language, variable_declaration,
+	       [real, ts, [BoostPhases]], 0, Stream),
+	excrete(Language, variable_declaration,
+	       [real, dts, [BoostPhases]], 0, Stream),
 
 	list_matching_files('../Functions/*.cpp', FnIncs),
 	/* the /* in the above line does not start a comment */
@@ -400,43 +390,30 @@ wot need them */
 	send_to_dest(Stream, FullIncs),
 	
 	reassure_user("Generating constant declarations"),
-	render_all(Language, variable_declaration, 
-			Constants, 0, ConstDeclText),
-	render( Language, comment, 'CONSTANT DECLARATIONS', 0,
-							ConstDeclComment),
-	append(ConstDeclComment, ConstDeclText, ConstDecls),
-	send_to_dest(Stream, ConstDecls),
+	excrete(Language, comment, 'CONSTANT DECLARATIONS', 0, Stream),
+	all(compile, excrete,
+	    [unify(Language), unify(variable_declaration), build(Constants),
+	     unify(0), unify(Stream)]),
+	
+	reassure_user("Generating structure declarations"),
+	excrete(Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0, Stream),
+	
+	RootInstance = instance(submodel, root, xrefs(AugmentedModel, _,[],_),
+				'AME_model', 'AME_model'-[]),
+	generate_main_decls(Language, RootInstance, EndTopType, Stream),
 
-	send_to_dest(Stream, TypeSection),
-
-	render( Language, comment, 'STRUCTURE POINTER DECLARATIONS', 0,
-							[StructPtrComment]),
-	append([GlobalDeclComment | GlobalDeclText],
-	       [StructPtrComment | PointerDecls], PointerSection),
-	all(compile, put_in_proc,
-	    [unify(PointerSection), build(FnList),
-	     append(Fns, [])]),
-
-/*	send_to_dest(Stream, Comps), */
-	send_to_dest(Stream, Fns),
+	build_submodel_functions(Language, Phases, Constants,
+				 StateForm, UpdateForm, EvaluateForm, Used,
+				 AllGraphs, Collects, Stream),
 	make_exit_proc(Language, [RootInstance], Stream),
+	send_to_dest(Stream, EndTopType),
+	send_to_dest(Stream, ['#include <support2.cpp>'])
 
-	make_constant_list(Language, NodeData, StructText),
-/*	(Language = c, */
-	    StructText = StructList,
-	    length(NodeData, NodeCount), /* only used in tcl */
-	    render(Language, variable_declaration,
-		   [int, nodecount, [], NodeCount], 0, CDecls),
-	    render(Language, variable_declaration,
-		   [node_data_line, nodedata, void, StructList], 0, DDecls) /*;
-	Language = tcl,
-	    make_procedure_call_chars(Language, [list | StructText],
-				      StructListStr),
-	    name(StructList, StructListStr),
-	    render(Language, assignment, nodedata=StructList, 0, Decls)) */,
-	append([EnumBits, CDecls, DDecls], Decls),
-	send_to_dest(Stream, [EndTopType | Decls]),
-	send_to_dest(Stream, ['#include <support2.cpp>']).
+	/* OK at this point we need to free all the memory we possibly can;
+	fail through everything, and trust that I can ignore what was 'used'
+	cos we are back in the top namespace... */
+	
+	).
 
 uses_ext_proc(Model, Proc) :-
         contains(Model, Submodel),
@@ -444,9 +421,6 @@ uses_ext_proc(Model, Proc) :-
 	member(include=Inc, ExtCode),
 	\+ Inc = none,
 	member(procedure=Proc, ExtCode).
-
-put_in_proc(Decls, [H1,H2,H3,H4 | Proc], ProcWDecls) :-
-	append([H1,H2,H3,H4 | Decls], Proc, ProcWDecls).
 
 get_graph_spec(GraphSpec) :-
 	NodeId has_class_refinement table_data of
@@ -476,7 +450,7 @@ declare_submodel_structures(Language, [Instance | Instances], Used) :-
 	caption_for(Node, Capt),
 	generate_name(Language, Capt, Name, Used, [type]),
 	append_atoms(Name, type, Type),
-	make_assoc_loop_names(Language, Instance, Used, Bases),
+%	make_assoc_loop_names(Language, Instance, Used, Bases),
 	declare_structure(Language, Model, Used),
 	declare_submodel_structures(Language, Instances, Used).
 
@@ -539,7 +513,7 @@ check_functions(Functions, Phases, VMSPs) :-
 		\+ suffix(PurePath, PureAPath),
 		raise_exception(condition_outside_loop(LoopEnd, Xefct));
 	    raise_exception(mixed_phase_loop(LoopEnd, Xefct, Phase, APhase)));
-	true).
+	!).
 /*
 reachable(P, Trail) :-
 	append(Rolled, [P | _], Trail),
@@ -557,14 +531,9 @@ temporary variables used when expanding expressions.
 * New version, for 2.34: Does all the recursing itself, and also generates
 the model node data table and the extractor case statements */
 
-generate_main_decls(L, Instance, Tree, Level, ExtSets,
-		    Used, Graphs, Collects, TypeDecls, PointerDecls,
-		    EnumBits, NodeData) :-
+generate_main_decls(L, Instance, Finish, Stream) :-
 	Instance = instance(submodel, SymbolicName, 
 			xrefs(Model, _, Bases, _), _, ModelType-_),
-	length(Tree, Depth),
-	Indent is 4*Depth,
-
 	(variable_size(SymbolicName), !,
 	    /* Declare the type with 'compartment' to hold instance numbers */
 	    list_local_index_meanings(SymbolicName, Bounds),
@@ -582,42 +551,43 @@ generate_main_decls(L, Instance, Tree, Level, ExtSets,
 		    MoreExtras = [instance(internal, baseptrs,_,
 					baseptrs, 'void*'-[PtrCount])];
 			MoreExtras = [])),
-	    Extras = [instance(internal, next, _, next, PtrType-[]),
-		      instance(internal, ids,_, instanceid, int-DummyCompDims),
-		      instance(internal, isnew, _, new_instance,
-			       'BOOLEAN'-[])
-		     | MoreExtras];
-	Extras = []),
+	    Extras = [instance(system, next, _, next, PtrType-[]),
+		      instance(system, ids,_, instanceid, int-DummyCompDims),
+		      instance(system, isnew, _, new_instance,
+			       'BOOLEAN'-[])];
+	Extras = [],
+	    MoreExtras = []),
 	extract_instances(Model, RealDecls),
 	append(Extras, RealDecls, SubInstances),
-	render(L, class_declaration, Instance, Indent, ThisDecl),
+	append(MoreExtras, SubInstances, KitchenSink),
+	render(L, class_declaration, Instance, 0, ThisDecl),
 
-	render(L, pointer_declaration, Instance, 0, LocalPtrs),
-	render(L, procedure_start, call('void*', get_pointer,
-					[int, id], ['int**', dims]), 0, Ext1),
 	refer_value(L, id, IdRef),
-	render(L, switch_start, IdRef, 4, Ext2),
-	render(L, end(switch), IdRef, 4, ExtM),
-	render(L, procedure_call, return('NULL'), 4, ExtParanoia),
-	render(L, end(procedure), get_pointer, 0, ExtN),
 % Dims in next line replaced by [] for local dims only
-	generate_local_decls(L, SubInstances, Tree, Level, ExtSets, Used,
-			     Graphs, Collects, Publics, SubTypeDecls,
-			     SubPointerDecls, Exts, EnumBits, NodeData),
-
 	append(MainClass, [proc_decls | EndClass], ThisDecl),
 	append(ClassStart, [submodel_decls | ClassEnd], MainClass),
-	append([ClassStart, SubTypeDecls, ClassEnd, Publics, Ext1, Ext2, Exts,
-		ExtM, ExtParanoia, ExtN, EndClass], TypeDecls),
-	append(LocalPtrs, SubPointerDecls, PointerDecls).
+	send_to_dest(Stream, ClassStart),
+	Model = model(_, Submodels),
+	all(compile, generate_main_decls,
+	    [unify(L), build(Submodels), unify(1), unify(Stream)]),
+	send_to_dest(Stream, ClassEnd),
+	all(compile, excrete,
+	    [unify(L), unify(data_declaration), build(KitchenSink),
+	     unify(4), unify(Stream)]),
+	excrete(L, procedure_start, call('void*', get_pointer, [int, id],
+					 ['int**', dims]), 0, Stream),
+	excrete(L, switch_start, IdRef, 4, Stream),
+	generate_all_case_entries(L, 1, SubInstances, Stream),
+	excrete(L, end(switch), IdRef, 4, Stream),
+	excrete(L, procedure_call, return('NULL'), 4, Stream),
+	excrete(L, end(procedure), get_pointer, 0, Stream),
+	(var(Finish), !,
+	    Finish = EndClass;
+	 send_to_dest(Stream, EndClass)).
 
-	
-
-generate_local_decls(_, [], _,_,_,_,_,_, [], [], [], [], [], []).
-generate_local_decls(L, [Instance | Instances], Tree, Level,
-		     ExtSets, Used, Graphs, Collects,
-		     PublicDecls, TypeDecls, PointerDecls, Exts,
-		     EnumBits, NodeData) :-
+generate_metadata(_, [], _,_,_,_,_, [], _).
+generate_metadata(L, [Instance | Instances], Tree, Level,
+		     Used, Graphs, Collects, NodeData, Stream) :-
 	Instance = instance(Type, Node, Loc, _, _-CSizes),
 	(Type = submodel, !,
 	    list_local_index_meanings(Node, SmIndSpecs),
@@ -630,9 +600,8 @@ generate_local_decls(L, [Instance | Instances], Tree, Level,
 		/* In the past, SmDims was replaced by Posn, which is
 		a number from -10 down indicating the data structure in the
 	        executable corresponding to the actual enumerated type. */
-	(Type = submodel, variable_size(Node),
-	(\+ Node has_class_refinement separate of 1;
-	    Loc = xrefs(_, instance(_,_,_, 'AME_model', _), _,_)), !,
+	(Type = submodel, variable_size(Node), !,
+	    StartCases = 4,
 	    append(Tree, [Level, -1], DeepTree),
 	    (by_record(Node), !,
 		['RECORDS'] =  NewDims;
@@ -641,29 +610,37 @@ generate_local_decls(L, [Instance | Instances], Tree, Level,
 	    substitute(0, Posn, 'MEMBERS', VmBounds),
 		append(['START_VM' | VmBounds], ['END_VM'], NewDims));
 	append(Tree, [Level], DeepTree),
+	    StartCases = 1,
 	    Posn = NewDims),
-	generate_data_decls(L, Level, NewDims, DeepTree, Instance, ExtSets,
-			    Used, Graphs, Collects, LocalPublicDecls,
-			    LocalExts, LocalEnumBits, LocalNodeData),
-	(generate_main_decls(L, Instance, DeepTree, 1,
-			     ExtSets, Used, Graphs, Collects,
-			     DeepTypeDecls, DeepPointerDecls,
-			     DeepEnumBits, DeepNodeData), !;
+	(Loc = xrefs(Model, _,_,_),
+	extract_instances(Model, RealDecls), !,
+	generate_metadata(L, RealDecls, DeepTree, StartCases,
+			     Used, Graphs, Collects, DeepNodeData, Stream);
 	 /* Not a submodel */
-	    [DeepTypeDecls, DeepPointerDecls, DeepEnumBits, DeepNodeData] =
-	    [[],            [],               [],           []]),
+	    DeepNodeData = []),
+	generate_data_decls(L, NewDims, DeepTree, Instance,
+			    Used, Graphs, Collects,
+			     LocalNodeData, Stream),
 	NewLevel is Level + 1,
-	generate_local_decls(L, Instances, Tree, NewLevel,
-			     ExtSets, Used, Graphs, Collects,
-			     MorePublicDecls, MoreTypeDecls, MorePointerDecls,
-			     MoreExts, MoreEnumBits, MoreNodeData),
-	append(LocalPublicDecls, MorePublicDecls, PublicDecls), 
-	append(DeepTypeDecls, MoreTypeDecls, TypeDecls),
-	append(DeepPointerDecls, MorePointerDecls, PointerDecls),
-	append(LocalExts, MoreExts, Exts), 
-	append([LocalEnumBits, DeepEnumBits, MoreEnumBits], EnumBits), 
+	generate_metadata(L, Instances, Tree, NewLevel,
+			     Used, Graphs, Collects, MoreNodeData, Stream),
 	append([LocalNodeData, DeepNodeData, MoreNodeData], NodeData).
 	    
+extract_instances(model(Funx, Subz), Instances) :-
+	pick_types(Funx, [function, init_function, id_function, fp_compartment,
+			  internal, external],
+		   ValFunx),
+	append(Subz, ValFunx, Instances).
+
+pick_types(All, Types, Picked) :-
+	All = [], Picked = [];
+	All = [This | More],
+	This = instance(Type, _,_,_,_),
+	(member(Type, Types), !,
+	    Picked = [This | Rest];
+	Picked = Rest),
+	pick_types(More, Types, Rest).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % go through lists of things and extract assignments
 
@@ -699,41 +676,44 @@ update_submodel_compartments(Language, Phases, Used, DeltaForm, Decls) :-
 		 Proc_ending,Blank], Decls).
 */
 
-build_eval_proc(Language, ProcName, OrderedForm, Used, AllGraphs, Collects,
-		Decls) :-
+build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
+		AllGraphs, Collects, Stream) :-
 	all(compile, extract_action,
 	    [build(OrderedForm), append(ActionForm, [])]),
-	do_assign_list( Language, ActionForm, AllGraphs, RCollects, [], [[]], 
-			Used, Temp1, FuncStatements),
-	reverse(RCollects, Collects),
-	render(Language, procedure_start,
-	       call(void, ProcName, [int, phase]), 0,
-	       EvalProcDeclText),
-	render(Language, end(procedure), ProcName, 0, Proc_ending),
+	excrete(Language, comment, 'EVALUATION PROCEDURE DECLARATION', 0,
+				Stream),
+	nl(Stream),
+	excrete(Language, procedure_start,
+	       call(void, ProcName, [int, phase]), 0, Stream),
+	nl(Stream),
+	excrete(Language, comment, 'CONSTANT DECLARATIONS', 0, Stream),
+	nl(Stream),
+	all(render, excrete,
+	    [unify(Language), unify(global_declaration),
+	     build([[void, this, []] | Consts]), unify(0), unify(Stream)]),
+	nl(Stream),
+	excrete(Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0, Stream),
+	nl(Stream),
 /* following section used to be c only */
 	generate_graph_handlers(0, AllGraphs, GraphSetups),
-	(ProcName = int_evalmodel, \+ GraphSetups = [], !,
-	    render_all(Language, procedure_call, GraphSetups,
-		       8, GraphSetupPass),
+	(ProcName = evalmodel, \+ GraphSetups = [], !,
 	    refer_value(Language, phase, PhRef),
 	    combine(Language, ==, [PhRef, -2], InitExpr),
-	    render(Language, if_start, InitExpr, 4, [GraphSetupCond]),
-	    render(Language, end(cond), initializing, 4, GraphSetupEnd),
-	    append([GraphSetupCond | GraphSetupPass], GraphSetupEnd,
-		   GraphSetupText);
-	        
-	GraphSetupText = []),
-	render_all(Language, variable_declaration, Temp1, 4, TempDeclText1),
-	render( Language, comment, 'EVALUATION PROCEDURE DECLARATION', 0,
-				EvalProcDeclComment),
-	render( Language, comment, 'UPDATE FUNCTION VALUES', 4,
-				FuncComment),
-	Blank = [''],
-
-	append([EvalProcDeclComment,Blank,EvalProcDeclText,Blank,
-	TempDeclText1, Blank,GraphSetupText,Blank,
-	FuncComment,Blank,FuncStatements,Blank,
-	Proc_ending,Blank], Decls).
+	    excrete(Language, if_start, InitExpr, 4, Stream),
+	    all(render, excrete,
+		[unify(Language), unify(procedure_call), build(GraphSetups),
+		       unify(8), unify(Stream)]),
+	    excrete(Language, end(cond), initializing, 4, Stream);
+	 true),
+	nl(Stream),
+	excrete(Language, comment, 'UPDATE FUNCTION VALUES', 4, Stream),
+	nl(Stream),
+	retractall(indent_is(_)), asserta(indent_is(0)),
+	do_assign_list( Language, ActionForm, AllGraphs, Collects,
+			Used, Stream),
+	nl(Stream),
+	excrete(Language, end(procedure), ProcName, 0, Stream),
+	nl(Stream).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % build_functions goes throught the functions and calculates their values. The
@@ -741,16 +721,14 @@ build_eval_proc(Language, ProcName, OrderedForm, Used, AllGraphs, Collects,
 % the relevant language. Ratio is the multiplier to scale values in the inner
 % loop to the standard preferred unit
 
-build_submodel_functions( Language, Phases, StateForm, UpdateForm, SortedForm,
-			  Used, ExtOrdered, AllGraphs, Ccts, Decls) :-
+build_submodel_functions( Language, Phases, Constants, StateForm, UpdateForm,
+			  SortedForm, Used, AllGraphs, Ccts, Stream) :-
 	reassure_user("Ordering model execution assignments"),
 
 	/* rough and ready -- phase NotDone means it never gets scheduled */
 	order_all_assignments(Phases, StateForm, [], OrdStates, _),
 	order_all_assignments(Phases, UpdateForm, [], OrdUpdates, _),
-	order_all_assignments(Phases, SortedForm, [externs_done], IntOrdered,
-			      ExtUsers),
-	order_all_assignments(Phases, ExtUsers, [], ExtOrdered, Lost),
+	order_all_assignments(Phases, SortedForm, [], Ordered, Lost),
 	(member(Awkward, Lost),
 	    \+ (order(Holdup, Awkward), not_yet_ordered(Holdup)),
 	    raise_exception(ordering_failure(Awkward));
@@ -765,11 +743,11 @@ build_submodel_functions( Language, Phases, StateForm, UpdateForm, SortedForm,
 
 	reassure_user("Generating code for model execution"),
 	all(compile, build_eval_proc,
-	    [unify(Language),
-	     build([updatemodel, advancemodel, int_evalmodel, ext_evalmodel]),
-	     build([OrdUpdates, OrdStates, IntOrdered, ExtOrdered]),
-	     unify(Used), unify(AllGraphs),  build([[], [], Ccts, []]),
-	     build(Decls)]).
+	    [unify(Language), unify(Constants),
+	     build([updatemodel, advancemodel, evalmodel]),
+	     build([OrdUpdates, OrdStates, Ordered]),
+	     unify(Used), unify(AllGraphs),  build([[], [], Ccts]),
+	     unify(Stream)]).
 
 find_circle([Head | Chain], Loop) :-
 	order(NewHead, Head),
@@ -850,14 +828,18 @@ merge_inters([Function | Rest], Model, NewModel, Constants) :-
 	Model = model(Functions, Submodels),
 	(Function = instance(internal, inter(Path, _,_), _, Name, Type-Dims),
 	    (append(LowPath, [sm(Top, _,_,_) | _], Path),
-		select(instance(submodel, P2, xrefs(NextModel, X2,X3,X4),
-				Top, P5), Submodels, OtherSubs), !,
+		append(BeforeSubs,
+		       [instance(submodel, P2, xrefs(NextModel, X2,X3,X4),
+				 Top, P5) | AfterSubs], Submodels), !,
 		merge_inters([instance(internal, inter(LowPath, _,_), _, Name, 
 				       Type-Dims)], NextModel, NewNext, []),
-		InterModel = model(Functions, [instance(submodel, P2,
-						      xrefs(NewNext, X2,X3,X4),
-				Top, P5) | OtherSubs]);
-		InterModel = model([Function | Functions], Submodels)),
+		append(BeforeSubs,
+		       [instance(submodel, P2, xrefs(NewNext, X2,X3,X4),
+				 Top, P5) | AfterSubs], NewSubs),
+		InterModel = model(Functions, NewSubs);
+		append(Functions, [Function], NewFunctions),
+		% put new ones at end so others keep same serial numbers
+		InterModel = model(NewFunctions, Submodels)),
 	    Constants = MoreConstants;
 	Function = instance(constant, _, Value, Name, Type-Dims),
 	    Constants = [[Type, Name, Dims, Value] | MoreConstants],
@@ -876,7 +858,7 @@ and functions within a submodel. It also creates the instructions that determine
 many individuals in each population submodel within it are created each round. */
 
 extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
-		    ExtIncs, ExtLibs, Inters, AssignList) :-
+		    ExtIncs, ExtLibs, Ccts, Inters, AssignList) :-
 	Instance = instance(submodel, Id, xrefs(model(Functions, Submodels),
                                               _,_,_), _,_),
 	(member(instance(alarm,_,_,elt(_, Al,_),_),
@@ -893,13 +875,14 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 	all(compile, get_assignment,
 	    [build(Functions),
 	     unify(Path), unify(Step), unify(Swaps),
-	     unify(Used), append(Inters0, []),
+	     unify(Used), append(Ccts0, []), append(Inters0, []),
 	     append(AssignList0, [])]),
 	all(compile, extract_submodel_assignment,
 	    [build(Submodels),
 	     unify(Functions), unify(Path),
 	     unify(Swaps), unify(Step), biggest(MaxStep, Step), unify(Used),
 	     merge_lists(ExtIncs, []), merge_lists(ExtLibs, []),
+	     append(Ccts, Ccts0),
 	     append(Inters, Inters0),
 	     append(AssignList, AssignList0)]).
 
@@ -920,7 +903,7 @@ of the full model augmented with the extra nodes. */
 
 extract_submodel_assignment(Instance, ParentFns,
 			    Path, Swaps, TopStep, MaxStep, Used,
-			    ExtIncludes, ExtLibs, Inters, AssignList) :-
+			    ExtIncludes, ExtLibs, Ccts, Inters, AssignList) :-
 
 	Instance = instance(submodel, SmName, xrefs(Model, _, Bases, Assocs), 
 			    Name, _-Dims),
@@ -962,6 +945,7 @@ instruction because they will not require individual initialization routines. */
 		get_dims_from_loops(Path, _, UseInds),
 		length(UseInds, IdxN),
 		CFn =.. [collect, arr(Ptr, NMade, []), SmName, IdxN | UseInds],
+		Connects = [SmName],
 		CreateRules = [make(culled(Name), [on_reset], Path, 0, [CFn]),
 			       make(created(Name), [culled(Name)], Path, Step,
 				    [init_mems(Ptr, Name, create([NMade]))])],
@@ -971,6 +955,7 @@ instruction because they will not require individual initialization routines. */
 			instance(internal, inter(LocalPath, _,_), _, channelId,
 				 int-[]),
 			instance(internal, inter(Path, _,_),_, Count, int-[])],
+		Connects = [],
 	    /* generate instructions for each immigration, reproduction  etc.
 	    node...*/
 	    /* little botch-ette: all the population adjustments have to be
@@ -1049,6 +1034,7 @@ nodes.
 
 	variable_size(SmName), !,
 	    SmInters = [],
+	    Connects = [],
 	    all(compile, get_base_side,
 		[unify(LocalPath), build(InSwaps), build(BaseSides)]),
 	    /* reverse(RevBaseSides, BaseSides),
@@ -1083,11 +1069,12 @@ nodes.
 			make(startable(Name), [init_list(Name) | BasesCleared],
 			     Path, Step, [reset_list(Ptr, Name)])];
 	Level = [sm(_,_,_, fm_loop(Globs, _)) | _Loops],
-	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
-	    [BaseSides, SmInters, Specials] = [[], [], []]),
-	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps,
-			    Used, SubIncludes, SubLibs, FnInters, AssignList0),
+%	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
+	    [BaseSides, SmInters, Specials, Connects] = [[], [], [], []]),
+	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps, Used,
+			    SubIncludes, SubLibs, Mcts, FnInters, AssignList0),
 /* Now add an extra instruction if this needs an external proc */
+	append(Connects, Mcts, Ccts),
 	(SmName has_class_refinement external_code of ExtCode,
 	member(include=Inc, ExtCode),
 	\+ Inc = none, !,
@@ -1217,7 +1204,7 @@ list of 'make' functions which include information about how to order
 the actions corresponding to them.*/
 
 get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
-	       DestPath, SmStep, Swaps, Used, Inters, Assignments) :-
+	       DestPath, SmStep, Swaps, Used, Ccts, Inters, Assignments) :-
 /*	Type = external, !,
 	    (Inters = [],
 	    Source = for_extern(CondElts, Tops),
@@ -1261,10 +1248,12 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    append(SmInds, LocalInds, Inds),
 	    vars_only(Inds, VarInds, Is_P),
 	    length(VarInds, Count),
-	    CollectFn =.. [collect, arr(DestPtr, Dest, LocalInds), Node, Count
+	    CollectFn =.. [collect, arr(DestPtr, Dest, LocalInds), Dest, Count
 			  | VarInds],
-	    Collects = [make(Tgt, Wait, Path, Step, [CollectFn])];
-	Collects = []),
+	    Collects = [make(Tgt, Wait, Path, Step, [CollectFn])],
+	    Ccts = [Node];
+	Collects = [],
+	    Ccts = []),
 	((Is_P < 1,
 	    (Type = init_function, !,
 		UseList = [on_reset | RefList],
@@ -1693,7 +1682,7 @@ ptr_to_last_vm(Path, Ptrs) :-
 	    Ptrs = [new_context(Ptr, Phase)];
 	Ptrs = [].
 
-get_base_ptrs([], [], []).
+get_base_ptrs([], [], []) :- !.
 get_base_ptrs([Level | AlsoExited], Names, Ptrs) :-
 	(Level = sm(Model, _, Ptr, _),
 	    Names = [Model | NOthers],
@@ -2046,7 +2035,5 @@ name_components(Language, [instance(Type, Node, _, elt(_, Var, _), _)
 	name_components( Language, Compartments, Used).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-send_to_dest(_, []).
-
 send_to_dest(Stream, Stuff) :-
 	do_writing(Stuff, Stream).

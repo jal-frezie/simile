@@ -57,7 +57,9 @@ main :-
 	or not as the case may be */
 	database:clear_database,
 	database:empty_tree,
+	state:retractall(model_file(_,_)),
 	state:retractall(model_in(_,_)),
+	state:retractall(edition_is(_)),
 	prolog_flag(version, FullVnum),
 	name(FullVnum, FullVnumStr),
 	append(VnumStr, [32, 40 | _], FullVnumStr),

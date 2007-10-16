@@ -26,9 +26,15 @@ sicstus_writeq_to_chars(Term, Result) :-
 sicstus_format_to_chars(Template, [V1 | Vars], Result) :-
 	format_to_chars(Template, [V1 | Vars], Result).
 
-sicstus_write_chars(Chars) :-
-	atom_chars(Atom, Chars),
-	write(Atom).
+sicstus_write_chars([]).
+sicstus_write_chars([Char | Rest]) :-
+	put_code(Char),
+	sicstus_write_chars(Rest).
+
+sicstus_write_chars(_Stream, []).
+sicstus_write_chars(Stream, [Char | Rest]) :-
+	put_code(Stream, Char),
+	sicstus_write_chars(Stream, Rest).
 
 sicstus_atom_chars(Atom, Chars) :-
 	atom_chars(Atom, Chars).

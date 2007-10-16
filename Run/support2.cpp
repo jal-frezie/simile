@@ -29,7 +29,7 @@ static void exit_sighandler(int x){
 }
 
 FINDABLE EXPORT evalmodel_type do_evalmodel;
-FINDABLE EXPORT int do_evalmodel(void* handle, int phase, BOOLEAN exo) {
+FINDABLE EXPORT int do_evalmodel(void* handle, int phase) {
   int error;
 
   /* Dont want a crash while running model to terminate Simile, so add 
@@ -45,11 +45,7 @@ FINDABLE EXPORT int do_evalmodel(void* handle, int phase, BOOLEAN exo) {
     return -error;
   } else {
     try {
-      if (exo) {
-	((AME_model *)handle)->ext_evalmodel(phase);
-      } else {
-	((AME_model *)handle)->int_evalmodel(phase);
-      }
+      ((AME_model *)handle)->evalmodel(phase);
     }
     catch (int error) {
       return error;

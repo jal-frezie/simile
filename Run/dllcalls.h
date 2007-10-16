@@ -179,7 +179,7 @@ typedef void* createmodel_type(void);
 typedef int setstep_type(double, int);
 typedef void updatemodel_type(void*, int);
 typedef void advancemodel_type(void*, int);
-typedef int evalmodel_type(void*, int, BOOLEAN);
+typedef int evalmodel_type(void*, int);
 typedef void* getpointer_type(void*, int**, int**);
 typedef void exitmodel_type(void*);
 

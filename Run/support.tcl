@@ -229,7 +229,7 @@ proc do_model {what mstep} {
 }
 
 proc RaiseTclExecError {mproc mstep} {
-    global myNode errorInfo model_prog ts
+    global myNode errorInfo model_prog ts phasecount
 
     set errorList [split $errorInfo \n]
     set whoopsie [lindex $errorList 0]
@@ -251,7 +251,7 @@ proc RaiseTclExecError {mproc mstep} {
     } else {
 	set dest none
     }
-    error [list tcl_model_err $mproc $dest $ts($mstep) $mstep $whoopsie] \
+    error [list tcl_model_err $mproc $dest $ts($phasecount) $mstep $whoopsie] \
 	$errorInfo
 }
 
@@ -306,7 +306,7 @@ proc TclResetModel {topPhase} {
             set dts($tweakPhase) [expr $steps($tweakPhase)]
         }
     }
-    do_model int_evalmodel $topPhase
+    do_model evalmodel $topPhase
     return 1
 }
 
@@ -358,7 +358,7 @@ proc TclExecuteModel {node howInt start end errLim} {
                 set madeStep 1
             } else {
                 # get the model to generate its error estimate
-                do_model int_evalmodel $bigPhase
+                do_model evalmodel $bigPhase
                 set adapt(maxErr) 0
                 set dts(0) 10
                 do_model updatemodel $bigPhase
@@ -387,7 +387,7 @@ proc TclExecuteModel {node howInt start end errLim} {
                 } ;# timestep too short or not
             } ;# error limit exists
         } ;# made progress
-	do_model int_evalmodel $bigPhase
+	do_model evalmodel $bigPhase
     }
     if {[CheckGUI $node $end ext]} {
 	return 0
@@ -420,14 +420,14 @@ proc RKUpdate {node phase} {
     global dts
     AdvanceTime $node $phase 0.5
     set dts(0) 2
-    do_model int_evalmodel $phase
+    do_model evalmodel $phase
     do_model updatemodel $phase
     set dts(0) 3
-    do_model int_evalmodel $phase
+    do_model evalmodel $phase
     do_model updatemodel $phase
     AdvanceTime $node $phase 0.5
     set dts(0) 4
-    do_model int_evalmodel $phase
+    do_model evalmodel $phase
     do_model updatemodel $phase
     set dts(0) 1
 }

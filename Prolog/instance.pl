@@ -524,9 +524,9 @@ valid_tap(Flow, Controller) :-
 path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
 	variable_size(SmName), !,
 	    (by_record(SmName), !,
-		SmSpec = vm_loop(rec, _,_,_);
+		SmSpec = vm_loop(rec, _,[],_);
 	    is_population(SmName), !,
-		SmSpec = vm_loop(pop, _,_,_);
+		SmSpec = vm_loop(pop, _,[],_);
 	    m_update:list_local_index_meanings(SmName, Bounds),
 		length(Bounds, NumInds),
 		SmSpec = vm_loop(NumInds, _Bounds, _Loops, _)),

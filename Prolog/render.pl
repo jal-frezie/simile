@@ -4,19 +4,20 @@
 **** being the starting point.                                              ****
 *******************************************************************************/
 
-sicstus_module( render, [render/5, make_assignment/4, render_all/5, 
-		get_empty_list/2, make_array_assignment/9,
+sicstus_module( render, [render/5, excrete/5, make_assignment/4, render_all/5, 
+		get_empty_list/2,
 		refer_value/3, refer/3, make_expr/3, make_increment_expr/4,
 		make_struct_reference/4, make_indexed_reference/4,
-		put_in_context/6, ptr_compare/4, extract_instances/2,
+		put_in_context/6, ptr_compare/4,
 		combine/4, make_arg_string/3, 
 		make_pointer/3, resolve_pointer/3, 
 		make_constant_list/3, get_element_ref/4,
 		make_integer/3, command_substitute/3,
-		generate_data_decls/13, make_procedure_call_chars/3] ).
+			 generate_all_case_entries/4,
+		generate_data_decls/9, make_procedure_call_chars/3] ).
 
-sicstus_use_module( [sp_only, m_class, utility, ame_gen, units, text, utility,
-		library(lists)] ).
+sicstus_use_module( [sp_only, m_class, utility, ame_gen, units, text,
+utility, library(lists)] ).
 
 /* make_assignment uses print_to_codes so the expression gets 
 portrayed -- we need to do this here so numbers can be formatted
@@ -76,20 +77,23 @@ ptr_compare(L, Ptr1, Ptr2, Expr) :-
 				      ExprStr),
 	    name(Expr, ExprStr).
 
-make_cons_dest(instance(Type, Sym, _, Nm, _), ConLine, DeLine) :-
+make_cons_dest(instance(Type, Sym, _, Nm, _), ConLines, DeLines) :-
 	Type = submodel,
 	variable_size(Sym), !,
 	    Nm = Name,
-	    render(c, assignment, Name=0, 8, ConLine),
-	    render(c, procedure_call, delete_list(Name), 8, DeLine);
-	Type = external, !,
+	    make_assignment(c, Name, 0, SubConLine),
+	    append(["        ", SubConLine, ";"], ConLineStr),
+	    name(ConLine, ConLineStr),
+	    ConLines = [ConLine],
+	    render(c, procedure_call, delete_list(Name), 8, DeLines);
+/*	Type = external, !,
 	    Nm = elt(_, Name, _),
 	    make_constant_string(c, Sym, SymC),
 	    make_procedure_call_chars(c, [fetch_instance, SymC], FetchStr),
 	    name(Fetch, FetchStr),
 	    render(c, assignment, Name=Fetch, 8, ConLine),
 	    render(c, procedure_call, discard_instance(Name), 8, DeLine);
-	[ConLine, DeLine] = [[], []].
+*/	[ConLines, DeLines] = [[], []].
 
 count_base_ptrs([], 0).
 count_base_ptrs([base(_,_, Ptrs) | More], N) :-
@@ -103,72 +107,18 @@ count_base_ptrs([base(_,_, Ptrs) | More], N) :-
 
 /* c and tcl rendition functions are organized by their purpose */
 
-/* assignment */
-render(L, assignment, Dest=Source, Indent, Atom) :-
-	make_assignment(L, Dest, Source, Assign),
-	render(L, function, Assign, Indent, Atom).
-
-render(L, open_context, Pointer=[_, _, MPTargetRef], Indent1, Result1) :-
-	render(L, assignment, Pointer=MPTargetRef, Indent1, Result1).
-
-render(L, enter_context, NewPointer=[CurrentPointer, Struct, Indices],
-		Indent, Result) :-
-	(CurrentPointer = '', !,
-	    Base = Struct;
-	make_struct_reference(L, CurrentPointer, Struct, Base)),
-	all(language, aim_at_array, [unify(L), build(Indices), build(Offs)]),
-	make_indexed_namespace(L, Base, Offs, Target),
-	render(L, make_reference, NewPointer=Target, Indent, Result).
-
-/* this creates a reference to a value in a deep context. */
-
-render( L, make_reference, Dest=Source, Indent, [Atom]) :-
-	refer(L, Source, SourceRef),
-	render( L, assignment, Dest=SourceRef, Indent, [Atom]).
-
-render(c, assign_space, Dest=[_, Name, _], Indent, [Result]) :-
-	append_atoms(Name, type, Type),
-	sicstus_format_to_chars( "~*s~a = new ~a;",
-			[Indent," ", Dest, Type], ResultStr),
-	name(Result, ResultStr).
-
-render(tcl, assign_space, Dest=[Top, Struct, Indices], Indent, Result) :-
-	append_atoms(Struct, maker, ProcName),
-	make_struct_reference(tcl, Top, ProcName, CurrentName),
-	make_indexed_namespace(tcl, Struct, Indices, Target),
-	make_procedure_call_chars(tcl, [CurrentName, Target], MakerStr),
-	name(Maker, MakerStr),
-	render(tcl, assignment, Dest = Maker, Indent, Result).
-/*	Call =.. [CurrentName, Target],
-	render(tcl, procedure_call, Call, Indent, Line1),
-	render(tcl, enter_context, Dest = [Top, Struct, Indices],
-			Indent, Line2),
-	append(Line1, Line2, Result),
-*/
+/* free memory; nothing need be done in c because the structures are permanent
+rather than malloced...not any more! I'll have to add this later. */
 
 /* comment */
 render( c, comment, Comment, Indent, [Atom]) :-
-	 sicstus_format_to_chars( "~*s/* ~w */", [Indent," ",Comment], CharList ),
-	 name( Atom, CharList ).
+         sicstus_format_to_chars("~*s/* ~w */", [Indent," ",Comment], CharList),
+         name( Atom, CharList ).
 /* tcl comment starts with a ; in case goes after a command */
 render( tcl, comment, Comment, Indent, [Atom]) :-
-	 sicstus_format_to_chars( "~*s;# ~w", [Indent," ",Comment], CharList ),
-	 name( Atom, CharList ).
+         sicstus_format_to_chars( "~*s;# ~w", [Indent," ",Comment], CharList ),
+         name( Atom, CharList ).
 
-/* Things that do not appear at all in certain languages; generate for one in
-which they do, and add as comments. */
-
-render( Target, NotNeeded, Variable, Indent, Comment) :-
-	member([NotNeeded, Target, Translation],
-			[[duplicate_context, c, tcl],
-			 [global_declaration, c, tcl],
-			 [public_cons_dest, tcl, c],
-			 [end(class), tcl, c]]),
-	render(Translation, NotNeeded, Variable, Indent, Foreign),
-	render_all(Target, comment, Foreign, 0, Comment).
-
-/* free memory; nothing need be done in c because the structures are permanent
-rather than malloced...not any more! I'll have to add this later. */
 render(c, clear_memory, Object, Indent, Clearance) :-
 	render(tcl, clear_memory, Object, Indent, TCLClearance),
 	render_all(c, comment, TCLClearance, 0, Clearance).
@@ -225,27 +175,13 @@ render(L, switch_start, Condition, Indent, [Line]) :-
 	sicstus_format_to_chars(Template, [Indent, " ", ConditionExpr], LineStr),
 	name(Line, LineStr).
 
-render(L, case_start, Match, Indent, [Line]) :-
-	(L = c, Template = "~*scase ~w:";
-	L = tcl, Template = "~*s~w { "),
-	sicstus_format_to_chars(Template, [Indent, " ", Match], LineStr),
-	name(Line, LineStr).
-
-render(c, case_end, Match, Indent, [Line]) :-
-	render(c, comment, Match, 0, [Comment]),
-	sicstus_format_to_chars("~*sbreak; ~w", [Indent, " ", Comment], LineStr),
-	name(Line, LineStr).
-
-render(tcl, case_end, Match, Indent, Result) :-
-	render(tcl, end(case), Match, Indent, Result).
-
 /* start of a for loop */
 render( L, for_start, [Name,Start,End,Step], Indent, [For_Start]) :- 
-	render(L, assignment, Name=Start,0,[Init]),
+	make_assignment(L, Name, Start, Init),
 	refer_value(L, Name, NameRef),
 	make_increment_expr(L, Name, Step, Incr),
-	(L = c, Template = "~*sfor ( ~w ~w; ~s ) {";
-	L = tcl, Template = "~*sfor {~w} {~w} {~s} {"),
+	(L = c, Template = "~*sfor ( ~s; ~w; ~s ) {";
+	L = tcl, Template = "~*sfor {~s} {~w} {~s} {"),
 	(Step > 0, !, Test = (End >= NameRef);
 	    Test = (NameRef >= End)),
 	sicstus_format_to_chars( Template,
@@ -277,15 +213,14 @@ render( L, procedure_start, Call, Indent, [Proc_Start]) :-
 
 /* Bits common to all model classes: public-access con- and destructor. */
 render(c, public_cons_dest,
-       instance(submodel, _, xrefs(model(Prims, Subs), _,_,_), _,
+       instance(submodel, _, xrefs(model(_, Subs), _,_,_), _,
 		ClassName-_), Indent, PubConDe) :-
 	InIndent is Indent+4,
 	sicstus_format_to_chars( "~*spublic:", [Indent," "], PubStr),
 	sicstus_format_to_chars( "~*s~w () {", [InIndent," ",ClassName], ConsHd),
 	sicstus_format_to_chars( "~*s~~~w () {", [InIndent," ",ClassName], DestHd),
-	append(Prims, Subs, Comps),
 	all(render, make_cons_dest,
-	    [build(Comps), append(ConLines, []), append(DeLines, [])]),
+	    [build(Subs), append(ConLines, []), append(DeLines, [])]),
 	render(c, end(procedure), structor, InIndent, [EndStr]),
 	name(Pub, PubStr),
 	name(Cons, ConsHd),
@@ -333,32 +268,12 @@ render(c, class_declaration, Instance, Indent, ClassDecl) :-
 	append([submodel_decls, '', Line1 | PublicHeads],
 	       [proc_decls, End], ClassDecl).
 	
-/* pointer declaration for a given type */
+/* pointer declaration for a given type
 render(L, pointer_declaration, instance(submodel, SmName, _, Name, Type-_),
        Indent, Rest) :-
 	do_loop_pointers(L, SmName, Type, Name, Temps),
 	render_all(L, variable_declaration, Temps, Indent, Rest).
-
-render(L, data_declaration,
-		instance(NodeType, SymbolicName, _, NameIn,
-		Type-Dims),
-		Indent, Decl) :-
-	(NodeType = submodel, !,
-	    NameIn = NameBase,
-	    (variable_size(SymbolicName), !,
-			/* variable length submodel - declare a pointer */
-		declare_pointer(L, NameBase, Name),
-		UseDims = [];
-	    Name = NameBase,
-		/* get_node_size(SymbolicName, UseDims) */ UseDims = Dims);
-	    (NameIn = elt(_, Name, _), !;
-		Name = NameIn),
-	    UseDims = Dims),
-	all(ame_gen, enum_type_ref, [build(UseDims), unify(SymbolicName),
-				     build(Nums), build(_), build(_)]),
-	render(L, variable_declaration, [Type, Name, Nums],
-			Indent, Decl).
-
+*/
 /* next clause generates nested namespace declarations for tcl. They look as
 if the nested loops use the same counter variable, but this is OK because each
 loop is in a different namespace... */
@@ -387,68 +302,6 @@ render(tcl, class_declaration,
 	    append([Opens, FillNS, Closes], Decl);
 	Decl = [].
 
-render(tcl, global_declaration, [_, Name | _], _Indent, [Result]) :-
-	append_atoms('global ', Name, Result).
-
-render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
-	(nonvar(Dims), !,
-	    FgResult = Result;
-	Dims = [],
-	    render(L, comment, 'Next field had undefined dims', 0, Fg),
-	    append(Fg, Result, FgResult)),
-	type_for_unit(Unit, Type),
-	(member(-1, Dims), !, /* no null arrays please */
-	    Result = [];
-	Init = [], !,
-	    (L = c,
-		(Dims = void, Counts = [''];
-%		all(render, boost, [build(Dims), build(Counts)])),
-                Counts = Dims),
-		make_indexed_reference(L, Name, Counts, ArrayName),
-		sicstus_format_to_chars( "~*s~a ~a;", [Indent, " ", Type, 
-					       ArrayName], Chars);
-	    L = tcl,
-		sicstus_format_to_chars( "~*svariable ~a",
-				       [Indent, " ", Name], Chars)),
-	    name(Decl, Chars),
-	    Result = [Decl];
-
-	Init = [InitialValues],
-	    (L = c,
-/* if var is a char string, it will not be nested so no curlies will be added,
-and the rules for breaking lines are like tcl's (need a \ at end) so... */
-	        (Unit = char, !,
-		    PrepStyle = tcl,
-		    DeepIndent = 0;
-		PrepStyle = L,
-		    DeepIndent is Indent + 4),    
-		swap_squares_for_curlies(PrepStyle, InitialValues, InitString),
-		InitString = [FirstLine | LateLines],
-		(Dims = void, Counts = [''];
-%		all(render, boost, [build(Dims), build(Counts)])),
-                Counts = Dims),
-		make_indexed_reference(L, Name, Counts, ArrayName),
-		sicstus_format_to_chars("~*s~a ~a = ",
-				[Indent, " ", Type, ArrayName], Chars0),
-		append(Chars0, FirstLine, Chars1),
-		name(NewFirstLine, Chars1),
-		list_of(32, DeepIndent, TabIn),
-		prepend_spaces(LateLines, TabIn, NewLateLines),
-		append(EarlyLines, [LastLine], [NewFirstLine | NewLateLines]),
-		sicstus_format_to_chars("~a;", [LastLine], Chars2),
-		name(NewLastLine, Chars2), /* one is forgivable, but... */
-		append(EarlyLines, [NewLastLine], Result);
-	    L = tcl,
-		sicstus_format_to_chars( "~*svariable ~a",
-				       [Indent, " ", Name], Chars),
-		name(Decl, Chars),
-		(Dims = void,
-		    length(InitialValues, InitDim),
-		    InitDims = [InitDim];
-		    InitDims = Dims),
-		assign_initial_values(Name, InitialValues, Indent, Assignment),
-		Result = [Decl | Assignment])).
-
 render(L, break, _, I, [Result]) :-
 	list_of(32, I, Spacing),
 	member([L, Inst], [[c, "break;"], [tcl, "break"]]),
@@ -464,6 +317,185 @@ render(tcl, release_memory, Pointer, Indent, [Result]) :-
 	sicstus_format_to_chars("~*snamespace delete ~a",
 			[Indent, " ", Zap], ResultStr),
 	name(Result, ResultStr).
+
+% excrete: replacement for render which writes directly to pipe and
+% does not clutter the atom table
+
+start_comment(c, Stream) :- write(Stream, '/* ').
+start_comment(tcl, Stream) :- write(Stream, ';# ').
+end_comment(c, Stream) :- write(Stream, ' */'), nl(Stream).
+end_comment(tcl, Stream) :- nl(Stream).
+
+strings_direct(L, comment, Comment, Indent, Stream) :-
+	format(Stream, "~*s", [Indent, " "]),
+	start_comment(L, Stream),
+	write(Stream, Comment),
+	end_comment(L, Stream).
+
+/* Things that do not appear at all in certain languages; generate for one in
+which they do, and add as comments. */
+
+strings_direct( Target, NotNeeded, Variable, Indent, Stream) :-
+	member([NotNeeded, Target, Translation],
+			[[duplicate_context, c, tcl],
+			 [global_declaration, c, tcl],
+			 [public_cons_dest, tcl, c],
+			 [end(class), tcl, c]]),
+	start_comment(Target, Stream),
+	strings_direct(Translation, NotNeeded, Variable, Indent, Stream),
+	end_comment(Target, Stream).
+
+/* assignment */
+strings_direct(L, assignment, Dest=Source, Indent, Stream) :-
+	(L = c, Fmt = "~*s~a = ~w;\n";
+	    L = tcl, Fmt = "~*sset ~a ~w\n"),
+	format(Stream, Fmt, [Indent, " ", Dest, Source]).
+
+strings_direct(L, open_context, Pointer=[_, _, MPTargetRef], Indent1, Stream) :-
+	strings_direct(L, assignment, Pointer=MPTargetRef, Indent1, Stream).
+
+strings_direct(L, enter_context, NewPointer=[CurrentPointer, Struct, Indices],
+		Indent, Stream) :-
+	(CurrentPointer = '', !,
+	    Base = Struct;
+	make_struct_reference(L, CurrentPointer, Struct, Base)),
+	all(language, aim_at_array, [unify(L), build(Indices), build(Offs)]),
+	make_indexed_namespace(L, Base, Offs, Target),
+	strings_direct(L, make_reference, NewPointer=Target, Indent, Stream).
+
+/* this creates a reference to a value in a deep context. */
+
+strings_direct( L, make_reference, Dest=Source, Indent, Stream) :-
+	refer(L, Source, SourceRef),
+	strings_direct( L, assignment, Dest=SourceRef, Indent, Stream).
+
+strings_direct(c, assign_space, Dest=[_, Name, _], Indent, Stream) :-
+	format(Stream, "~*s~a = new ~atype;", [Indent," ", Dest, Name]).
+
+strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices], Indent,
+	       Stream) :-
+	append_atoms(Struct, maker, ProcName),
+	make_struct_reference(tcl, Top, ProcName, CurrentName),
+	make_indexed_namespace(tcl, Struct, Indices, Target),
+	make_procedure_call_chars(tcl, [CurrentName, Target], MakerStr),
+	name(Maker, MakerStr),
+	strings_direct(tcl, assignment, Dest = Maker, Indent, Stream).
+/*	Call =.. [CurrentName, Target],
+	render(tcl, procedure_call, Call, Indent, Line1),
+	render(tcl, enter_context, Dest = [Top, Struct, Indices],
+			Indent, Line2),
+	append(Line1, Line2, Result),
+*/
+
+strings_direct(tcl, global_declaration, [_, Name | _], _Indent, Stream) :-
+	format(Stream, "global ~a\n", [Name]).
+
+strings_direct(L, variable_declaration, [Unit, Name, Dims | Init],
+	       Indent, Stream) :-
+	(nonvar(Dims), !;
+	Dims = [],
+	    strings_direct(L, comment, 'Next field had undefined dims',
+			   0, Stream)),
+	type_for_unit(Unit, Type),
+	(member(-1, Dims), !; /* no null arrays please */
+	Init = [], !,
+	    (L = c,
+		(Dims = void, Counts = [''];
+                Counts = Dims),
+		make_indexed_reference(L, Name, Counts, ArrayName),
+		format(Stream, "~*s~a ~a;\n", [Indent, " ", Type, ArrayName]);
+	    L = tcl,
+		format(Stream, "~*svariable ~a\n", [Indent, " ", Name]));
+	Init = [InitialValues],
+	    (L = c,
+/* if var is a char string, it will not be nested so no curlies will be added,
+and the rules for breaking lines are like tcl's (need a \ at end) so... */
+	        (Unit = char, !,
+		    PrepStyle = tcl,
+		    DeepIndent = 0;
+		PrepStyle = L,
+		    DeepIndent is Indent + 4),    
+		(Dims = void, Counts = [''];
+%		all(render, boost, [build(Dims), build(Counts)]),
+                Counts = Dims),
+		make_indexed_reference(L, Name, Counts, ArrayName),
+		format(Stream, "~*s~a ~a = ", [Indent, " ", Type, ArrayName]),
+		swap_squares_for_curlies(PrepStyle, InitialValues, Stream),
+		format(Stream, ";\n", []);
+	    L = tcl,
+		format(Stream, "~*svariable ~a\n", [Indent, " ", Name]),
+		assign_initial_values(Name, InitialValues, Indent, Stream))).
+
+strings_direct(L, data_declaration,
+		instance(NodeType, SymbolicName, _, NameIn, Type-Dims),
+		Indent, Stream) :-
+	(NodeType = submodel, !,
+	    NameIn = NameBase,
+	    (variable_size(SymbolicName), !,
+			/* variable length submodel - declare a pointer */
+		declare_pointer(L, NameBase, Name),
+		UseDims = [];
+	    Name = NameBase,
+		/* get_node_size(SymbolicName, UseDims) */ UseDims = Dims);
+	    (NameIn = elt(_, Name, _), !;
+		Name = NameIn),
+	    UseDims = Dims),
+	all(ame_gen, enum_type_ref, [build(UseDims), unify(SymbolicName),
+				     build(Nums), build(_), build(_)]),
+	strings_direct(L, variable_declaration, [Type, Name, Nums],
+			Indent, Stream).
+
+/* start of a for loop */
+strings_direct( L, for_start, [Name,Start,End,Step], Indent, Stream) :- 
+	make_assignment(L, Name, Start, Init),
+	refer_value(L, Name, NameRef),
+	make_increment_expr(L, Name, Step, Incr),
+	(L = c, Template = "~*sfor ( ~s; ~w; ~s ) {\n";
+	L = tcl, Template = "~*sfor {~s} {~w} {~s} {\n"),
+	(Step > 0, !, Test = (End >= NameRef);
+	    Test = (NameRef >= End)),
+	format(Stream, Template, [Indent," ",Init, Test, Incr]).
+
+/* start of a while loop */
+strings_direct( L, while_start, Expr, Indent, Stream) :-
+	(L = c, Fmt = "~*swhile ( ~w ) {\n";
+	    L = tcl, Fmt =  "~*swhile {~w} {\n"),
+	format(Stream, Fmt, [Indent," ", Expr]),
+	ContDent is Indent+4,
+	refer_value(L, this, ThisRef),
+	strings_direct(L, procedure_call, abort_check(ThisRef), ContDent,
+		       Stream).
+
+strings_direct(L, case_start, Match, Indent, Stream) :-
+	(L = c, Template = "~*scase ~w:\n";
+	L = tcl, Template = "~*s~w {\n"),
+	format(Stream, Template, [Indent, " ", Match]).
+
+strings_direct(L, case_end, Match, Indent, Stream) :-
+	(L = c, Template = "~*sbreak; // end(case,~w)\n";
+	L = tcl, Template = "~*s} ;# end(case,~w)\n"),
+	format(Stream, Template, [Indent, " ", Match]).
+
+strings_direct(L, function, Act, Indent, Stream) :-
+	list_of(32, Indent, Leader),
+	(L = tcl, append(Leader, Act, CharList);
+	L = c, append([Leader, Act, ";"], CharList)),
+	sicstus_write_chars(Stream, CharList), nl(Stream).
+
+strings_direct(L, procedure_call, DataFunc, Indent, Stream) :-
+	DataFunc =.. Data,
+	make_procedure_call(L, Data, CallString),
+	strings_direct(L, function, CallString, Indent, Stream).
+
+excrete(L, Stat, Args, Indent, Stream) :-
+	strings_direct(L, Stat, Args, Indent, Stream), !;
+	do_obsolete_thing(L, Stat, Args, Indent, Stream), fail; true.
+
+do_obsolete_thing(L, Stat, Args, Indent, Stream) :-
+	render(L, Stat, Args, Indent, Stuff), !,
+	do_writing(Stuff, Stream);
+	raise_exception("Tried to do obsolete thing").
+
 /*
 do_base_pointers(_, base(_,_, []), []).
 do_base_pointers(L, base(instance(submodel,_, xrefs(_, Parent, _,_),_, Type-_),
@@ -483,11 +515,16 @@ do_loop_pointers(L, SmName, Type, Name, Late) :-
 	    Late = [[int, Cond, []], [Type, MetaPtdPtd, []]];
 	Late = []).
 
-generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
-		    Collects, Decl, Exts, StringDecls, NodeData) :-
-	render(L, data_declaration, Inst, 4, Decl),
-	Inst = instance(InstType, BaseName, _, NameIn, Unit-LocalDims),
-	render(L, case_start, Match, 8, [Ext1]),
+generate_all_case_entries(_,_, [], _).
+generate_all_case_entries(L, Match, [Inst | Insts], String) :-
+	generate_case_entry(L, Match, Inst, String),
+	NewMatch is Match+1,
+	generate_all_case_entries(L, NewMatch, Insts, String).
+
+generate_case_entry(L, Match, Inst, String) :-
+	Inst = instance(InstType, BaseName, _, NameIn, _-LocalDims),
+%	\+ InstType = internal, no metadata for internals
+	excrete(L, case_start, Match, 8, String),
 
 	(NameIn = elt(_, Name, _), !;
 	    Name = NameIn),
@@ -504,12 +541,15 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 	make_indexed_reference(L, Name, Subs, Item))),
 	
 	refer(L, Item, ItemRef),
-	render(L, procedure_call, return(ItemRef), 8, [Ext2]),
-	render(L, case_end, Match, 8, [Ext3]),
-	Exts = [Ext1, Ext2, Ext3],
-	/* no break required */
+	excrete(L, procedure_call, return(ItemRef), 8, String),
+	excrete(L, case_end, Match, 8, String).
 
-	(InstType = external, !, Type = 'EXTERNAL',
+generate_data_decls(L, Dims, Path, Inst, Used, GraphOwners,
+		    Collects, NodeData, Stream) :-
+	Inst = instance(InstType, BaseName, _, NameIn, Unit-_),
+	(NameIn = elt(_, Name, _), !;
+	    Name = NameIn),
+	( /* InstType = external, !, Type = 'EXTERNAL',
 	        [Wee, Muckle] = [0, 0],
 	    (member(make(_,_,_,_, [int_eval_submodel(_, arr(_, Name, _), _)]),
 		    ExtSets), !,
@@ -517,7 +557,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 	     member(make(_,_,_,_, [ext_eval_submodel(_, arr(_, Name, _), _)]),
 		    ExtSets), !,
 		DefEval = 'SPLIT';
-		DefEval = 'DERIVED');
+		DefEval = 'DERIVED'); */
 	    InstType = submodel, !, Type = 'VALUELESS',
 	        [Wee, Muckle] = [0, 0],
 	        (by_record(BaseName), !,
@@ -537,8 +577,8 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 	    Type = 'REAL',
 	        [Wee, Muckle] = [-1.0e100, 1.0e100]),
 
-	    (member(make(_,_,_,_, [assign(arr(_, Name, _), _)]), ExtSets), !,
-		DefEval = 'EXOGENOUS';
+	    ( /*member(make(_,_,_,_, [assign(arr(_, Name, _), _)]), ExtSets), !,
+		DefEval = 'EXOGENOUS'; */
 		DefEval = 'DERIVED')),
 	is_parameter(BaseName, PType),
 	(PType = -1, Eval = DefEval;
@@ -547,13 +587,13 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 	append(Path, [0], NewPath),
 	append(Dims, [0], CappedDims), 
 
-	(/* Try not doing internals -- but will we need to for save/restore
+	/* Try not doing internals -- but will we need to for save/restore
 	 state? init functions confuse sketch graph editing. */
-	\+ InstType = internal,
+	(\+ InstType = internal,
 	get_host(BaseName, VisName),
 	find_type(VisName, VisType),
 	\+ (InstType = init_function,
-	       member(VisType, [immigration, reproduction])),
+	       member(VisType, [immigration, reproduction])), !,
 /*	    caption_for(VisName, CaptionTail),
 	    (VisName is_of_sort value_outside, !,
 		Pop has_part VisName,
@@ -574,7 +614,8 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 				   immigration-'IMMIGRATION',
 				   loss-'LOSS']),
 	    (nth(GraphPointer, GraphOwners, [BaseName | _]), !;
-	    nth(GraphPointer, Collects, BaseName), !;
+	    PType > 0,
+		nth(GraphPointer, Used, Name), !;
 	    GraphPointer = 0),
 
 	    (BaseName has_class_refinement min_val of Min, 
@@ -590,23 +631,21 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 		TypeList = []),
 	    length(TypeList, ETCount),
 	    (ETCount = 0, !,
-		EnumBits = [],
 		MetaPtr = 'NULL';
 	    all(render, make_runtime_enum_data,
 		[unify(L), build(TypeList), unify(Used),
-		 append(EnumBits, MetaDecl), build(ETPtrs)]),
+		 build(ETPtrs), unify(Stream)]),
 		append_atoms(Name, '_ets', ETPtrName),
 		generate_name(L, ETPtrName, MetaPtr, Used),
-		render(L, variable_declaration, ['enum_type_data', MetaPtr,
-					     [ETCount], ETPtrs], 0, MetaDecl)),
+		excrete(L, variable_declaration, ['enum_type_data', MetaPtr,
+					     [ETCount], ETPtrs], 0, Stream)),
 	    /* do something similar for any strings that need including */
 	    make_runtime_strings([L, VisName, Name, Used], name,
-				 SpecStrId, SpecDecl),
+				 SpecStrId, Stream),
 	    all(render, make_runtime_strings,
 		[unify([L, BaseName, Name, Used]),
 		 build([spec, description, comment]),
-		 build(StringIds), append(CommentDecls, EnumBits)]),
-	    append(SpecDecl, CommentDecls, StringDecls),
+		 build(StringIds), unify(Stream)]),
 		/* make a value lookup entry for each node with this value */
 	    setof([NodeName, Type, ETCount, MetaPtr, PutEval,
 		   CappedDims, NewPath, GraphPointer,
@@ -618,11 +657,10 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 			 PutEval = 'GHOST'),
 		      NodeData);
 	/* No need to handle ghosts and link terminators */
-	    StringDecls = [],
-	        NodeData = []).
+	NodeData = []).
 
-make_runtime_enum_data(L, Name-Mems, Used, ItemDecls,
-		       [ETCount, NamePtr, ETPtr]) :-
+make_runtime_enum_data(L, Name-Mems, Used, [ETCount, NamePtr, ETPtr],
+		       Stream) :-
 	EltPtrs = [NamePtr | MemPtrs],
 	append_atoms(Name, '_mems', ETTag),
 	generate_name(L, ETTag, ETPtr, Used),
@@ -634,9 +672,11 @@ make_runtime_enum_data(L, Name-Mems, Used, ItemDecls,
 	    [build([Name | Mems]), build(EltPtrs), build(VTemplates)]),
 	length(Mems, ETCount),
 	append(VTemplates, [['char*', ETPtr, [ETCount], MemPtrs]], Templates),
-	render_all(L, variable_declaration, Templates, 0, ItemDecls).
+	all(render, excrete,
+	    [unify(L), unify(variable_declaration), build(Templates),
+	     unify(0), unify(Stream)]).
 
-make_runtime_strings([L, Node, Name, Used], Field, Ptr, Decl) :-
+make_runtime_strings([L, Node, Name, Used], Field, Ptr, Stream) :-
 	(Field = name, !,
 	    caption_for(Node, LocalStr),
 	    (Node is_of_sort value_outside, !,
@@ -652,9 +692,9 @@ make_runtime_strings([L, Node, Name, Used], Field, Ptr, Decl) :-
 	    make_constant_string(L, Utf8Atom, StrV),
 	    append_atoms([Name, '_', Field], PtrTag),
 	    generate_name(L, PtrTag, Ptr, Used),
-	    render(L, variable_declaration, [char, Ptr, void, StrV], 0, Decl);
-	Ptr = 'NULL',
-	    Decl = [].
+	    excrete(L, variable_declaration, [char, Ptr, void, StrV], 0,
+		    Stream);
+	Ptr = 'NULL'.
 
 templatify(Elt, Ptr, [char, Ptr, void, QElt]) :-
 	append_atoms(['"', Elt, '"'], QElt).
@@ -698,21 +738,6 @@ declare_namespace(Target, Indent, [Line2, submodel_decls,
 	name(Line2, Line2string),
 	render(tcl, end(namespace), Target, Indent, [LastButOne]).
 
-extract_instances(model(Funx, Subz), Instances) :-
-	pick_types(Funx, [function, init_function, id_function, fp_compartment,
-			  internal, external],
-		   ValFunx),
-	append(ValFunx, Subz, Instances).
-
-pick_types(All, Types, Picked) :-
-	All = [], Picked = [];
-	All = [This | More],
-	This = instance(Type, _,_,_,_),
-	(member(Type, Types), !,
-	    Picked = [This | Rest];
-	Picked = Rest),
-	pick_types(More, Types, Rest).
-
 %boost(P, Q) :- Q is P+1.
 
 /* prepend_spaces puts indent blanks on strings and turns them to atoms */
@@ -740,14 +765,14 @@ and returns a set of assignments to initialize the variables (6).
 The list of init vals is in list-of-lists format to match the way initialization
 works in c, though this is untested for multidimensionals. */
 
-assign_initial_values(Var, Val, Indent, Result) :-
+assign_initial_values(Var, Val, Indent, Stream) :-
 	atomic(Val), !,
-	    render(tcl, assignment, Var=Val, Indent, Result);
+	    excrete(tcl, assignment, Var=Val, Indent, Stream);
 	make_tcl_array_set([], Val, List),
 	    name(Var, VarStr),
-	    swap_squares_for_curlies(tcl, List, [ConstStr1 | ConstStrs]),
-	    append(["array set ", VarStr, " ", ConstStr1], ResultStr),
-	    all(user, name, [build(Result), build([ResultStr | ConstStrs])]).
+	    format(Stream, "array set ~s ", [VarStr]),
+	    swap_squares_for_curlies(tcl, List, Stream),
+	    nl(Stream).
 	
 make_tcl_array_set(Inds, Val, Done) :-
 	atomic(Val), !,
@@ -764,9 +789,9 @@ make_tcl_array_elts(Inds, N, [Val | Rest], Done) :-
 	make_tcl_array_elts(Inds, M, Rest, SetRest),
 	append(SetVal, SetRest, Done).
 
-swap_squares_for_curlies(L, ListList, Strings) :-
+swap_squares_for_curlies(L, ListList, Stream) :-
 	make_arg_string(L, [ListList], NestStr),
-	split_lines(L, NestStr, Strings).
+	split_lines(L, NestStr, Stream).
 
 /* split_lines(NestStr, [String | Strings]) :-
 	[Br, C] = "},",
@@ -777,7 +802,7 @@ swap_squares_for_curlies(L, ListList, Strings) :-
 		Strings = [].
 */
 
-split_lines(L, NestStr, [String | Strings]) :-
+split_lines(L, NestStr, Stream) :-
 	(L = c, [Br, C] = "},";
 	    L = tcl, [Br, C] = "} "),
 	append(Start, Rest, NestStr),
@@ -788,10 +813,10 @@ split_lines(L, NestStr, [String | Strings]) :-
 	  Len > 300,
 	     suffix([C], Start)),
 	 (L = c, String = Start;
-	     L = tcl, append(Start, "\\", String))), !,
-		 split_lines(L, Rest, Strings);
-	String = NestStr,
-	    Strings = [].
+	  L = tcl, append(Start, "\\", String))), !,
+		    format(Stream, "~s\n", [String]),
+		    split_lines(L, Rest, Stream);
+	format(Stream, "~s", [NestStr]).
 
 /*
 This was wrong on two counts; first, it was inefficient, secondly it picked the
@@ -988,7 +1013,7 @@ msr_with_ptrs(L, Struct, Var, Result) :-
 term, and makes a reference to an array element. This is the same as the last one
 in Tcl */
 
-make_indexed_reference(_, Base, [], Base).
+make_indexed_reference(_, Base, [], Base) :- !.
 
 make_indexed_reference(L, Struct, Indices, Result) :-
 	L = c,
@@ -1044,9 +1069,9 @@ cannot_be_dollared(Str) :-
 type_for_unit(Unit, Type) :-
 	(Unit = real; get_conversion(_, Unit, Unit, _)), !,
 	    Type = double;
-	member(Unit, [boolean, cond_spec]),
+	member(Unit, [boolean, cond_spec]), !,
 	    Type = 'BOOLEAN';
-	member(Unit, [const_int, a(_ET), n(_ET)]),
+	member(Unit, [const_int, a(_ET), n(_ET)]), !,
 	    Type = int;
 	Type = Unit.
 

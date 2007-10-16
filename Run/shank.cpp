@@ -934,7 +934,7 @@ showMess(globMess); */
       reset_time_series(this);
       adapt_doublings = 0;
     }
-    return evalmodel(modelHandle, top_phase, FALSE);
+    return evalmodel(modelHandle, top_phase);
   }
 
   int executemodel(void* id, int how_int, 
@@ -993,7 +993,7 @@ showMess(globMess); */
 	  made_step = 1;
 	} else {
 	  // get the model to generate its error estimate
-	  if (err=(*evalmodel)(id, big_phase, FALSE)) {
+	  if (err=(*evalmodel)(id, big_phase)) {
 	    *end=xtime;
 	    return err;
 	  }
@@ -1023,7 +1023,7 @@ showMess(globMess); */
 	  } // timestep too short or not
 	} // error limit exists
       } // made progress
-      if (err=(*evalmodel)(id, big_phase, FALSE)) {
+      if (err=(*evalmodel)(id, big_phase)) {
 	*end=xtime;
 	return err;
       }
@@ -1059,14 +1059,14 @@ showMess(globMess); */
 
     advance_time(this, big_phase, 0.5);
     setdt(2, 0);
-    if (err=(*evalmodel)(id, big_phase, FALSE)) return err;
+    if (err=(*evalmodel)(id, big_phase)) return err;
     (*updatemodel)(id, big_phase);
     setdt(3, 0);
-    if (err=(*evalmodel)(id, big_phase, FALSE)) return err;
+    if (err=(*evalmodel)(id, big_phase)) return err;
     (*updatemodel)(id, big_phase);
     advance_time(this, big_phase, 0.5);
     setdt(4, 0);
-    if (err=(*evalmodel)(id, big_phase, FALSE)) return err;
+    if (err=(*evalmodel)(id, big_phase)) return err;
     (*updatemodel)(id, big_phase);
     setdt(1, 0);
     return 0;
@@ -1804,22 +1804,22 @@ int rdBound(long int old, int idx) {
 void* rdLocateElement(long int old, int* indices) {
   return ((regularData*)old)->locate_element(indices);
 }
-
+/*
 void update(long int modelType, long int modelHandle, int phase) {
   ((Model*)modelType)->updatemodel((void*)modelHandle, phase);
 }
 
-/* model execution */
+// model execution
 
 void advance(long int modelType, long int modelHandle, int phase) {
   ((Model*)modelType)->advancemodel((void*)modelHandle, phase);
 }
 
-int eval(long int modelType, long int modelHandle, int phase, BOOLEAN exo) {
-  return ((Model*)modelType)->evalmodel((void*)modelHandle, phase, exo);
+int eval(long int modelType, long int modelHandle, int phase) {
+  return ((Model*)modelType)->evalmodel((void*)modelHandle, phase);
 }
 
-/* Above ones should now only be called by the do_submodel routines,
+Above ones should now only be called by the do_submodel routines,
 so we will simplify them eventually. These next two allow the client
 to drive the model...
 */
@@ -1887,7 +1887,7 @@ void search_from(void* typeRef, int nodeIndx, void* instPtr) {
   recordNo = ((Model*)typeRef)->connLines[nodeIndx];
   ((Model*)topType)->channelData[recordNo].SearchBase = instPtr;
 }
-*/
+
 void update_submodel(char* nodeId, void* instanceId, int phase) {
   update((long int)nodeModelList->nodeModel(nodeId), (long int)instanceId, 
 	 phase);
@@ -1905,7 +1905,7 @@ int eval_submodel(char* nodeId, void* instanceId, int phase, BOOLEAN exo) {
 	      phase, exo);
 }
 
-/* procedure that is called by shim when it is loaded to supply pointers
+procedure that is called by shim when it is loaded to supply pointers
    to its callback procedures */
 
 void proc_pointers_for_shank(interact_gui_type* interact_gui_ptr,
