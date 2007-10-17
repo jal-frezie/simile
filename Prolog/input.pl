@@ -18,7 +18,7 @@ sicstus_module(input, [tk_make_desktop_node/0,
 		       tk_kill_everything/1, tk_set_new_size/3,
 		       tk_change_size/3, tk_do_colours/2]).
 
-sicstus_use_module([library(lists), backup, event, menu]).
+sicstus_use_module([library(lists), backup, event, menu, utility]).
 
 
 tk_make_desktop_node :-
@@ -37,7 +37,11 @@ tk_redo(Cur, Wids) :-
 
 tk_get_info(Wid, Comp, What) :-
 	get_info(Wid, Comp, What, Answer),
-	draw:callback(br(write(Answer))).
+	(Answer = [_|_], !, % list -- convert to tcl one
+	    all(draw, append_callback, [build(Answer)]);
+	Answer = [], !,
+	    draw:callback('');
+	draw:callback(br(write(Answer)))).
 
 tk_get_params(Wid, Comp) :-
 	get_params(Wid, Comp).
@@ -130,7 +134,7 @@ tk_context_find(Wid, Query, Target) :-
 	context_find(Wid, Query, Target).
 
 check_use(TestFile) :-
-	utility:open_native(TestFile, write, St),
+	open_native(TestFile, write, St),
 	write(St, 'Testing'), nl(St),
 	close(St).
 

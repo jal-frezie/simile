@@ -827,7 +827,7 @@ represents(Function, Source, Pairs, Var) :-
     member(use(_,_, Ref, SoughtUnit), UseList),
     (Ref = Var; Ref = usr(Var)),
     member(var_pair(Var, _), Pairs),
-    get_link_source_data(Source, Function, _, FoundUnit, _,_,_,_,_),
+    get_link_source_data(Source, Function, _, FoundUnit, _,_,_),
     check_unit(FoundUnit, SoughtUnit, 2, []).
     
 line_dir_change_radius_is(8).

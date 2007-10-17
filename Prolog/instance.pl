@@ -268,24 +268,6 @@ So leave it out. */
 instance_of(function, _, _, [], []).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-/* If a submodel comes up here, it is one that is built separately. The code
-has to call stub functions to create an instance of it when its parent model
-is created, and run it when its inputs have been set. */
-
-instance_of(submodel, Node, Path,
-	    [instance(external, Node, for_extern(Conds, Tops),
-		      elt(Path, _, DSpec), DSpec)],
-	    Refs) :-
-	(setof(InputPair,
-	       generate_input_pair(Node, InputPair),
-	       InputPairs ), !;
-	    InputPairs = []),
-	all(instance, get_cond_and_ref,
-	    [build(InputPairs), build(Conds),
-	     append(Tops, []), append(Refs, [])]),
-	DSpec = 'void*'-[].
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* flows have the value of the node connected to the bowtie if there is one, and 
 that of the continuation flow in the direction of this node if not. 
 
@@ -326,71 +308,26 @@ flows(Dir, Comp, Flow) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* generate_input_pair is used in setof so should be cut free */
-generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
-				     Ref, ExprRef)) :-
-	m_update:get_all_links(Node, ids(SourceID, Relation, Home, Entry),
+generate_input_pair(Node, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
+	m_update:get_all_links(Node, ids(SourceID, Relation),
 			       input_link(id(Link,_, SourceLocation), _,
 					  ArcName, SourceUnits, ArcUnits)),
 	/* just in case we have extra inputs... */
 	(nonvar(ArcName); ArcName = '/unused/'),
-        (var(Entry),
-	    NodeID = SourceID,
-	    RefExp = Ref;
-	nonvar(Entry),
-	    (member(SourceLocation, [in_base, in_assoc]),
-		all(draw, caption_for,
-		    [build([Node, SourceID, Relation]),
-		     build([NodeCap, SrcCap, RelCap])]),
-		raise_exception(role_between_execs(NodeCap, SrcCap, RelCap));
-	    SourceLocation = in_hierarchy),
-	    ref_for_arc(Entry, ArcIndex),
-	    (var(Home),
-		Var = externs_done,
-		PhaseSet = 1; /* Comes in from outside */
-	    nonvar(Home),
-		Entry is_connector from NodeID to _,
-		contains(TopNode, Node),
-		backup:is_toplevel(TopNode),
-		output:find_phase(TopNode, SourceID, NodeID, PhaseSet),
-		Ref = elt(Path, Var, _)), /* match var to submodel */
-	    RefExp = elt(Path, import(ImpType, Away, _L, _P0, _P, PhaseSet,
-				    Var, ArcIndex), FarUnits-UseDims)),
+        NodeID = SourceID,
+	RefExp = Ref,
 
 	m_update:analyze_array(SourceUnits, FarUnits, FarDims),
-	get_actual_sizes(Node, FarDims, _, UseDims, _),
+	get_actual_sizes(Node, FarDims, _,_,_),
 	m_update:analyze_array(ArcUnits, BaseUnits, _),
 	RelatedRef = input(SourceLocation, RefExp, Relation, ArcUnits),
-	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, ImpType),
+	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, _),
 	find_name_host(Link, ControlLink),
 	(m_update:get_av_pair(ControlLink, 2, use_sofar, 1),
 	    ExprRef = sofar(ConvertedRef);
 	\+ m_update:get_av_pair(ControlLink, 2, use_sofar, 1),
 	    ExprRef = ConvertedRef).
 
-get_cond_and_ref(input_pair(_, Node, _, Home, OutVar, UseRef),
-		 Cond, Top, Refs) :-
-	is_instance(_, Node, _, OutVar, _, Ref),
-	(nonvar(Home), !,
-	    /* A top level link in this submodel. Add it to the link reference
-	    table and make an instruction to refer its parent by its index */
-	
-	    ref_for_arc(Home, HomeRef),
-	    find_all_comps(HomeSm, Home),
-	    is_instance(_, HomeSm, _, TopVar, _, TopRef),
-	    Cond = UseRef,
-	    Refs = [TopRef, Ref],
-	    Top = [search_from(HomeRef, TopVar, _)];
-	Top = [],
-	    Cond = input(in_hierarchy, elt(_, externs_done, _), none,_),
-	    Refs = [Ref]).
-
-ref_for_arc(Entry, ArcIndex) :-
-	compile:entry_arcs_are(ArcList),
-	(suffix([Entry | ArcsAfter], ArcList), !;
-	    compile:retract(entry_arcs_are(ArcsAfter)),
-	    compile:assert(entry_arcs_are([Entry | ArcsAfter]))),
-	length(ArcsAfter, ArcIndex).
-	
 try_conversion(RelatedRef, Units, BaseUnits, ConvertedRef, ImpType) :-
 	get_conversion(RelatedRef, Units, BaseUnits, ConvertedRef), !,
 	    ImpType = real;    
@@ -490,17 +427,13 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 
 process_expr(sub(InputPairs, Refs), Var, NewVar, Recurse) :-
 	m_update:get_solo_list_depth(Var, _),
-	(member(input_pair(Var, Node, Away, Home, OutVar, NewVar),
-		   InputPairs),
+	(member(input_pair(Var, Node, OutVar, NewVar), InputPairs),
 	    is_instance(_, Node, _, OutVar, _, Ref),
-	    member(Ref, Refs),
-	    (var(Home), !;
-		find_all_comps(HomeSm, Home),
-		is_instance(_, HomeSm, _, Away, _, TopRef),
-		member(TopRef, Refs)), !;
+	    member(Ref, Refs), !;
 	NewVar = Var),
 	    Recurse = 0;
-	build_table_ref(table_const(1), Var, NewVar), Recurse = 1.
+	build_table_ref(table_const(1), Var, NewVar),
+	    Recurse = 1.
 
 build_table_ref(Table, table, Table).
 

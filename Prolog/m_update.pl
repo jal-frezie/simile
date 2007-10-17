@@ -10,7 +10,7 @@ itself is only addressed from within the database module.
 sicstus_module(m_update,
 	       [get_av_pair/4, add_parameter/4, get_desc_and_comment/4,
 		list_index_meanings/2, list_local_index_meanings/2,
-		get_input_info/2,get_link_source_data/9, find_node_with_data/3,
+		get_input_info/2,get_link_source_data/7, find_node_with_data/3,
 		valid_input/2, check_unit/4,
 		need_same_dims/2, check_flow_ends/3,
 		get_submodel_interface/5, load_submodel_interface/4,
@@ -123,7 +123,7 @@ get_input_info(Function, Input_list) :-
 	retractall(input_links_were(_)),
 	assert(input_links_were(Input_list)).
 
-get_all_links(Function, ids(RemoteNode, Relation, Home, Entry),
+get_all_links(Function, ids(RemoteNode, Relation),
               input_link(id(Link, Index, SourceLocation),
 			RemoteName, LocalName, 
 			RemoteUnit, Local_unit)) :- 
@@ -133,7 +133,7 @@ get_all_links(Function, ids(RemoteNode, Relation, Home, Entry),
 	    Link is_connector from _ to Function),
 	Link has_type influence,
 	get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
-		Relation, Home, Entry, Index, SourceLocation),
+		Relation, Index, SourceLocation),
 	check_ET_consistency(RemoteUnit, RemoteNode, Function),
 	use_destination(Link, RemoteUnit, 
 			Index, LocalName, Local_unit),
@@ -142,8 +142,8 @@ get_all_links(Function, ids(RemoteNode, Relation, Home, Entry),
 		      RemoteName).
 
 get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
-		Relation, Home, Entry, Index, SourceLocation) :-
-	origin_and_entrypoint(Link, InitNode, Home, Entry),
+		Relation, Index, SourceLocation) :-
+	initiates(Link, InitNode),
 	find_node_with_data(InitNode, RemoteNode, ValueSource),
 	get_spec_units(ValueSource, ActualUnits),
 	get_unit_conversion(ValueSource, Function, Subs, 
@@ -166,32 +166,6 @@ check_ET_consistency(RemoteUnit, RemoteNode, Function) :-
         do_dialogue("Inconsistent type definitions", warning, ErrStr, ok, not);
 	true).
 
-/* origin_and_entrypoint/4: For any Link, this works out the Origin
-(Id of node where it starts), Home (id of top level link section if in
-same dll) and Entry (id of influence bringing node's value into
-current dll). Last two are var if not found.
-
-This has now been altered to continue back from a ghost node all the
-way to its base. As we come out of the recursion, following the links
-forward from the origin, we may cross the same dll boundary twice, in
-which case we forget about the bit between them and go straight on from the
-link going in. */
-
-origin_and_entrypoint(Link, Origin, Home, Entry) :-
-	Link is_connector from Start to _,
-	((Node = Start; Node has_part Start),
-	Node has_link_equivalences Links,
-	member(Link0-Link, Links), !,
-	    origin_and_entrypoint(Link0, Origin, Home0, Entry0),
-	    (Node has_class_refinement separate of 1, !,
-		Entry = Link; /* Home = var */
-	    Entry = Entry0,
-		Home1 = Home0);
-	Origin = Start),
-	(appears(Start), !,
-	    Home = Link;
-	Home = Home1).
-	
 find_node_with_data(Edit_thing, Real_edit_thing, 
 		Control_thing) :-
 	find_base(Edit_thing, Real_edit_thing),
@@ -930,7 +904,7 @@ get_submodel_interface(Model, influence, Dir, Link,
 get_param_entry(LastLink, Dest,
 		entry(RemoteUnit, RelationCapt, SourceLocation)) :-
 	get_link_source_data(LastLink, Dest, _, RemoteUnit,
-			     Relation, _,_,_, SourceLocation),
+			     Relation, _, SourceLocation),
 	(var(Relation), RelationCapt = none;
 	nonvar(Relation),
 	    caption_for(Relation, RelationCapt)).
@@ -1366,7 +1340,7 @@ sever_links(Kill_obj, End) :-
 	    continues_from(Kill_obj, End), NewEnd = finish),
 	caption_for(Start, NewCapt),
 	min_def_and_max_for(Start, SMinVal, SDefVal, SMaxVal),
-	get_link_source_data(Kill_obj, End, _, SUnit, none, _,_,_,_),
+	get_link_source_data(Kill_obj, End, _, SUnit, none, _,_),
 	(make_new_end_node(End, Kill_obj, NewEnd,
 			   NewCapt, SUnit, SMinVal, SDefVal, SMaxVal);
 	    remove_equivs(Kill_obj-_));

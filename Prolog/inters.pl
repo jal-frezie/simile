@@ -944,7 +944,7 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 
 dissociate(made_at(Arg, _), later(Arg)).
 	
-refer_inter(instance(internal, inter(Context, _, ParamLoops), Source, Name,
+refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 		     Units-Dims),
 	    DestPath, BuildLoops, Units, SourceContext, Args, SourceRef) :-
 	    (Source = last(_), !,

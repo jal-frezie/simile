@@ -181,7 +181,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	    excrete(L, while_start, PtrNonNull, Indent, Stream),
 	    all(language, declare_ptrs,
 		[build(Names), build(Types), build(BasePtrs),
-		 unify([L, Indent, Used, Stream])]),
+		 unify([L, Indent1, Used, Stream])]),
 	    move_base_ptrs(L, Pointer, restore, Indent1,
 			   Names, BasePtrs, Types, Stream),
 	    asserta(indent_is(Indent1)),
@@ -745,18 +745,23 @@ make_new_base_cond(L, new_context(Ptr, Phase), LocCond) :-
 	make_new_check(L, Ptr, FlagTest),
 	combine(L, '&&', [PhaseTest, FlagTest], LocCond).
 
+/* This gets a bit sophisticated now. If the name is free, it
+generates one from namebase and inserts a declaration, also adding a
+decl(Name) to Used so it doesn't get declared again in the same
+context. If the name is ground, it checks for this, and declares it
+and adds it if it isn't there.  */
 
 declare(L, Name, NameBase, Type, Used, Indent, Stream) :-
 	(var(Name),
 	    generate_name(L, NameBase, Name, Used);
-	 \+ utility:something_used_in([Name], Used),
-	    member(Name, Used)), !,
+	 \+ utility:something_used_in([decl(Name)], Used)),
+	    member(decl(Name), Used), !,
 	    excrete(L, variable_declaration, [Type, Name, []], Indent, Stream);
 	true.
-	
-declare_ptrs(Name, Type, BasePtr, [L, Indent, Used, Stream]) :-
+
+declare_ptrs(Name, Type, BasePtr, [L, Indent, _Used, Stream]) :-
 	append_atoms(Name, 'type*', Type),
-	append_atoms(Name, 'pointer', PtrForm),
+	append_atoms(Name, 'pointer', PtrForm), % should not be used
 	declare(L, BasePtr, PtrForm, Type, Used, Indent, Stream).
 
 get_term_refs(_,_, Test, Test) :-

@@ -1483,7 +1483,7 @@ proc NextCaption {canvas} {
 #                $looks(variable,text)
 #    }
     if {[info exists find(now,$canvas)]} {
-	prolog event:do_colours($find(now,$canvas),off)
+	prolog tk_do_colours($find(now,$canvas),off)
     } else {
 	MenuSelect $canvas edit unselall
     }
@@ -1509,7 +1509,7 @@ proc NextCaption {canvas} {
 	    $canvas scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
 	    $canvas scan dragto [expr int(-0.1*$tgtX)] [expr int(-0.1*$tgtY)]
 	} else {
-	    puts "Scored with $this coords [$canvas coords $this]"
+	    puts "Missed with $this coords [$canvas coords $this]"
 	}
         set find(now,$canvas) $this
 	prolog tk_do_colours($find(now,$canvas),on)

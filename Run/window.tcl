@@ -93,6 +93,7 @@ proc canvasTLDistance {winId x y} {
 
 proc GetFromProlog {prologCmd} {
     global fromProlog
+    set fromProlog {}
     prolog $prologCmd
     return $fromProlog
 }

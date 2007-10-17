@@ -34,12 +34,10 @@ move_components(Migrants, California) :-
 			fail);
 		Flow is_connector from Source to Dest,
 		(\+ member(Source, Migrants),
-			add_section(California, cloud, source, in, Flow, 
-					Dest, Source),
+			add_section(California, source, in, Flow, Dest, Source),
 			fail;
 		\+ member(Dest, Migrants),
-			add_section(California, cloud, sink, in, Flow, 
-					Source, Dest),
+			add_section(California, sink, in, Flow, Source, Dest),
 			fail);
 		((Arc is_connector from Flow to End,
 			Fix = sink;
@@ -47,15 +45,9 @@ move_components(Migrants, California) :-
 			Fix = source),
 		\+ member(End, Migrants),
 		\+ member(Arc, Migrants),
-			(Arc has_type influence,
-			    \+ make_branch(Arc, California),
-			    NewNodeType = variable;
-			Arc is_of_sort has_bowtie,
-			    NewNodeType = cloud;
-			Arc has_type relation,
-			    NewNodeType = submodel),
-			add_section(California, NewNodeType, Fix, out,
-						Arc, Flow, End),
+			\+ (Arc has_type influence,
+			    make_branch(Arc, California)),
+			add_section(California, Fix, out, Arc, Flow, End),
 			fail));
 	true.
 
@@ -82,7 +74,7 @@ add_null_value_if_needed(Arc) :-
 	(BaseFn has_class_refinement value of _Val, !;
 	    BaseFn has_new_class_refinement value of '').
 	
-add_section(California, NewClass, Direction, Keep, Flow, NearEnd, FarEnd) :-
+add_section(California, Direction, Keep, Flow, NearEnd, FarEnd) :-
 	/* If a flow has multiple sections the bowtie is drawn on the one
 	whose implicit function has a value, except if none have in which case
 	it goes on the section at the source end. If dividing a flow with no

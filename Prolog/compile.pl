@@ -123,19 +123,15 @@ build_instances(Language, DestDir, Parent, TopNode,
 	      \+ (Stat = 0,
 		     load_executable(Language, CheckDir, OldTgt, Parent,
 				     TopNode, Includes))),
-	     retractall(entry_arcs_are(_)),
-	     assert(entry_arcs_are([])),
 	     dialogue:reassure_user("Instantiating expressions from node values"),
 	     instantiate_all(Parent, Model),
-	     entry_arcs_are(BackwardArcs),
-	     reverse(BackwardArcs, EntryArcs),
 	     (Language = c, Extn = '.cpp';
 	     Language = tcl, Extn = '.tcl'),
 	     append_atoms([WCheckDir, '/', model, Extn], WProgName),
 	     open_native(WProgName, write, Stream),
 	     on_exception(Puke,
 		protected_build(Language, Stream, MyStep, 
-		Model, EntryArcs, Includes, ExtLibs),
+		Model, Includes, ExtLibs),
 		(reclose(Stream), raise_exception(Puke))),
 	     close(Stream),
 	     dialogue:reassure_user("Compiling the program generated for the model"),
@@ -234,9 +230,7 @@ defines_membership(SmByRec, Fp) :-
 % The code works by first giving names to the mathematical entities in the
 % model, and then working out bit by bit what the program has to be.
 
-:- dynamic(entry_arcs_are/1).
-protected_build(Language, Stream, TopStep, FullModel, EntryArcs, LocalIncs,
-		ExtLibs) :-
+protected_build(Language, Stream, TopStep, FullModel, LocalIncs, ExtLibs) :-
 	FullModel = model(_Channels, [instance(submodel, Top, xrefs(_,
 	    instance(submodel, _, xrefs(FullModel, top, [], []),
 		     'AME_model', top-[]), _,_), _,_)]), 
@@ -447,7 +441,7 @@ declare_submodel_structures(Language, [Instance | Instances], Used) :-
 	caption_for(Node, Capt),
 	generate_name(Language, Capt, Name, Used, [type]),
 	append_atoms(Name, type, Type),
-%	make_assoc_loop_names(Language, Instance, Used, Bases),
+	make_assoc_loop_names(Language, Instance, Used, Bases),
 	declare_structure(Language, Model, Used),
 	declare_submodel_structures(Language, Instances, Used).
 
@@ -461,7 +455,7 @@ make_assoc_loop_names(L, Instance, Used,
 
 invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs) :-
 	ancestor(Instance, BaseInstance, _), !,
-	    Ptrs = []; /* 19/12/02: does this ever happen...? */
+	    Ptrs = []; % 19/12/02: does this ever happen...?
 	BaseInstance = instance(submodel, BaseSm, xrefs(_, Parent, _,_), _,_),
 	    caption_for(BaseSm, BaseCapt),
 	    append_atoms(LinkName, BaseCapt, Context),
@@ -1056,9 +1050,7 @@ nodes.
 			     [assign(arr(Ptr, Name, []), 0)]),
 			make(startable(Name), [init_list(Name) | BasesCleared],
 			     Path, Step, [reset_list(Ptr, Name)])];
-	Level = [sm(_,_,_, fm_loop(Globs, _)) | _Loops],
-%	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
-	    [BaseSides, SmInters, Specials] = [[], [], []]),
+	[BaseSides, SmInters, Specials] = [[], [], []]),
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps, Used,
 			    SubIncludes, SubLibs, FnInters, AssignList0),
 /* Now add an extra instruction if this needs an external proc */
@@ -1103,9 +1095,6 @@ delay_params_out_made(PEfx, [Out | Mo], A, [make(Out, PEfx, R2, R3, []),
 	(R2  = [sm(_,_,_,_) | _], !,
 	   ScPtrOut = ptr(Out); % scalar output -- pass pointer for it
 	ScPtrOut = Out).
-
-name_loop_vars(glob(LVar, _), Used) :-
-	generate_name(c, fill, LVar, Used).
 
 get_base_side(Locale, path_substitution(Exited, Entered, _), Exited) :-
 	prefix(Entered, Locale), !;
@@ -1437,7 +1426,7 @@ sort_assignments(Instructions, Phase, VMSpecPairs) :-
 	    sort_assignments(Instructions, LongerPhase, VMSpecPairs)).
 
 goes_this_step(NextInst, Phase, VMSpecPairs) :-
-	NextInst = make(Efx, Conds-_, Path, [DefP, NewP | _], _),
+	NextInst = make(Efx, Conds-_, _, [DefP, NewP | _], _),
 	var(NewP),
 	DefP >= Phase,
 	(Phase = -2;
