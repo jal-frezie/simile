@@ -1475,7 +1475,11 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   }
   resultPtr = Tcl_NewObj();
   if (!clientData) {
-    Tcl_SetByteArrayLength(resultPtr, size);
+    if (valspan) {
+      Tcl_SetByteArrayLength(resultPtr, size);
+    } else { // no span: get values as floats
+      Tcl_SetByteArrayLength(resultPtr, size*sizeof(double));
+    }
     tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
   } else {
     dDiscList = new double[16];
@@ -1498,8 +1502,12 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
       }
     } else {
       dval=(*scaleProc)(valAccessed);
-      tgt[count] = (unsigned char)(dval<valfor0?0:(dval>=valfor255?255:
-					   (255*(dval-valfor0)/valspan)));
+      if (valspan) {
+	tgt[count] = (unsigned char)(dval<valfor0?0:(dval>=valfor255?255:
+					 (255*(dval-valfor0)/valspan)));
+      } else { // no span: get values as doubles
+	((double*)tgt)[count]=dval;
+      }
     }
   }
   // if doing discrete, make tcl array of results and free space

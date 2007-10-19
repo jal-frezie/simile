@@ -82,7 +82,7 @@ namespace eval ::ModelDiagram20060804 {
 
 	set context [CaptPathFromPoint $winId $x $y]
 
-	set topNode $helperTable([winfo parent $winId],whichModel)
+	set topNode [$helperTable([winfo parent $winId],whichInstance GetNode])
 	if {$runState($topNode,modelRunning)>2} {
 	    PostPopup $winId $X $Y
 #	    set trans [GetTransTable $plName]

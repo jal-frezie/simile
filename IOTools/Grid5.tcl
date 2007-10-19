@@ -204,7 +204,8 @@ namespace eval grid005 {
 	if {![catch {ListDiscreteModelValues $testNode} vList]} {
 	    set useNodes($winId,ncol) [llength $vList]
 	    set useNodes($winId,nrow) \
-		[expr [string length [GetBinaryModelValue $testNode 0 255]]/$useNodes($winId,ncol)]
+		[expr {[string length [GetBinaryModelValue $testNode 0 255]] \
+			   /$useNodes($winId,ncol)}]
 	} else {
 	    set columns [Flatten [lindex [GetModelValue $testNode] 0]]
 	    foreach col $columns {
@@ -251,6 +252,11 @@ namespace eval grid005 {
             DrawGrid6 $winId $useNodes($winId,color)
             FillCanvas $winId
 #            UpdateCaption useNodes $winId
+	    if {[info exists useNodes($winId,regSave)]} {
+		if {$useNodes($winId,regSave)} {
+		    WriteImage $winId $time
+		}
+	    }
         }
     }
     
@@ -364,7 +370,9 @@ namespace eval grid005 {
         set max($winId) $useNodes($winId,max)
         
         #create widgets
-        set coloursF [labelframe [$dlg getframe].colours -text "Colour scale"]
+	pack [set t [::ttk::notebook $dlg.notebook]] -fill both -expand true
+	$t add [set fd [frame $t.disp]] -text "Display"
+        set coloursF [labelframe $fd.colours -text "Colour scale"]
         pack [LabelFrame $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
 	if {$useNodes($winId,colourMapTweaked)} {
 	    DefaultColours $winId
@@ -388,7 +396,7 @@ namespace eval grid005 {
         
         pack $coloursF -padx 10 -pady 10 -fill x
         
-        set rangeF [labelframe [$dlg getframe].range -text "Scale range"]
+        set rangeF [labelframe $fd.range -text "Scale range"]
         pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,dataMin)"] -fill x  -padx 10
         pack [label $rangeF.datamaxL -text "Data max. so far: $useNodes($winId,dataMax)"] -fill x  -padx 10
         pack [LabelFrame $rangeF.minF -text "Min"] -fill x  -padx 10 -pady 5
@@ -397,11 +405,37 @@ namespace eval grid005 {
         pack [entry $rangeF.maxF.entry -textvar [namespace current]::max($winId) -width 20] -side right -padx 10
         pack $rangeF -padx 10 -pady 10
         
-        set oriF [labelframe [$dlg getframe].orient -text "Orientation"]
+        set oriF [labelframe $fd.orient -text "Orientation"]
 	pack [radiobutton $oriF.h -text Horizontal -var [namespace current]::useNodes($winId,orient) -value h] -side left
 	pack [radiobutton $oriF.v -text Vertical -var [namespace current]::useNodes($winId,orient) -value v] -side right
         pack $oriF -padx 10 -pady 10 -fill x
         
+	$t add [set fr [frame $t.rec]] -text "Record"
+        set targetF [labelframe $fr.target -text "Target:"]
+	pack [entry $targetF.e \
+		  -textvar [namespace current]::useNodes($winId,target)] \
+	    -padx 10 -pady 10 -fill x -expand true
+	pack [button $targetF.b -text Browse -command \
+		  [namespace code [list GetImg $winId]]] -padx 10 -pady 10 
+        pack $targetF -padx 10 -pady 10 -fill x -expand true
+        set templateF [labelframe $fr.template -text "Template:"]
+	pack [entry $templateF.e -textvar \
+		  [namespace current]::useNodes($winId,template)] \
+	    -padx 10 -pady 10 -fill x -expand true
+	bind $templateF.e <Return> \
+	    [namespace code [list SetGDALTemplateHandle $winId]]
+	pack [button $templateF.b -text Browse -command \
+		  [namespace code [list SetImg $winId]]] -padx 10 -pady 10 
+        pack $templateF -padx 10 -pady 10 -fill x -expand true
+        set actionF [labelframe $fr.action -text "Actions:"]
+	pack [button $actionF.b -text "Save current" \
+		  -command [namespace code [list WriteImage $winId now]]] \
+	    -padx 10 -pady 10 
+	pack [checkbutton $actionF.cb -text "Save at display update" \
+		  -variable [namespace current]::useNodes($winId,regSave)] \
+	    -padx 10 -pady 10 
+        pack $actionF -padx 10 -pady 10 -fill x -expand true
+
         $dlg add -name ok \
                 -command [namespace code "OnClickSettingOkBtn $winId $coloursF $rangeF $dlg"]; # buttons 0
         $dlg add -name cancel -command "$dlg enddialog 1"
@@ -409,6 +443,78 @@ namespace eval grid005 {
         destroy $dlg
     }
     
+    proc GetImg {winId} {
+	global helperTable
+	variable useNodes
+
+	set useNodes($winId,target) [ChooseFile image.tif "File to save:" 1 \
+				[$helperTable($winId,whichInstance) GetNode]]
+    }
+
+    proc SetImg {winId} {
+	global helperTable
+	variable useNodes
+
+	set useNodes($winId,template) \
+	    [ChooseFile image.tif "Copy metadata from:" 0 \
+		 [$helperTable($winId,whichInstance) GetNode]]
+	SetGDALTemplateHandle $winId
+    }
+
+    proc SetGDALTemplateHandle {winId} {
+	variable useNodes
+
+	package require gdal
+
+	set useNodes($winId,GDALTemplate) \
+	    [gdal_open_read_only $useNodes($winId,template)]
+    }
+
+    proc WriteImage {winId time} {
+	variable useNodes
+	
+	if {![info exists useNodes($winId,GDALTemplate)]} {
+            ShowMessage Error error "No template file specified" ok
+	}
+	set dest $useNodes($winId,target)
+	if {![string equal now $time]} {
+	    set extn [file extension $dest]
+	    set dest [file rootname $dest]
+	    append dest $time $extn
+	}
+	
+	set newTemplate [gdal_create_copy $dest GTiff \
+			     $useNodes($winId,GDALTemplate)]
+	set targetArea [gdal_get_raster_band $newTemplate 1]
+	
+	set ncol $useNodes($winId,ncol)
+	set nrow $useNodes($winId,nrow)
+	if {[catch {GetBinaryModelValue $useNodes($winId,color) 0 0} fltData]} {
+	    if {[info exists useNodes($winId,values)]} {
+		set values $useNodes($winId,values)
+	    } else {
+		set values [Flatten [lindex [GetModelValue \
+					     $useNodes($winId,color)] 0]]
+	    }
+
+	    for {set row 1} {$row<=$nrow} {incr row} {
+		set rowData {}
+		for {set col 1} {$col<=$ncol} {incr col} {
+		    set cell [expr ($row-1)*$ncol+$col-1]
+		    set celval [lindex [lindex $values $cell] 1]
+		    
+		    lappend rowData $celval
+		}
+		lappend allData $rowData
+	    }
+	    gdal_set_raster_values $targetArea 0 0 $ncol $nrow $allData
+	} else {
+	    gdal_set_raster_data $targetArea 0 0 $ncol $nrow GDT_Float64 \
+		$ncol $nrow $fltData
+	}
+	gdal_close $newTemplate
+    }
+
     proc OnClickSettingOkBtn {winId coloursF rangeF dlg} {
         
         variable useNodes

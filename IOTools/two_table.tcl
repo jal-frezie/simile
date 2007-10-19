@@ -340,11 +340,13 @@ namespace eval $keyValue {
     
     # save table contents as CSV file
     proc Save {winId} {
+	global helperTable
         set types {
             {{Comma seperated values}       {.csv}        }
             {{All Files}        *             }
         }
-        set filename [ChooseFile table.csv "Save table contents as.." 1]
+        set filename [ChooseFile table.csv "Save table contents as.." 1 \
+			  [$helperTable($winId,whichInstance) GetNode]]
         
         SaveToNamedFile $winId $filename
     }
