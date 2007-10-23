@@ -1168,18 +1168,17 @@ proc IsRunnableModel {fileName} {
 		       [file extension $fileName]]!=-1}]
 }
 
-proc SaveFile {topNode tree tgt} {
+proc SaveFile {topNode tree tgt {noPkg 0}} {
     #ShowMessage debug info "SaveFile $tree $tgt" ok
-    global errorInfo runState
-
-    global SimileProjectDo projectInfo
+    global errorInfo runState projectInfo
     
-    set projectInfo {}
-    if {[info exists SimileProjectDo]} {
-        SaveProjectFile $topNode $tree $tgt
-        # shfs to $tree
-        # spfs to $tree
+    if {!$noPkg} {
+	set projectInfo {}
+	SaveProjectFile $topNode $tree $tgt
+	# shfs to $tree
+	# spfs to $tree
     }
+
     if {[catch {
 	set parts [GetParts $tree $tree]
 	#ShowMessage debug info "SaveFile GetParts $tree" ok
@@ -1190,14 +1189,13 @@ proc SaveFile {topNode tree tgt} {
 			   -string $runState($topNode,runParams)]
 	    lappend projectInfo "Model execution parameters"
 	}
-	if {[info exists SimileProjectDo]} {
+	if {[PrefValue custom(hackBreak) hackBreak] && !$noPkg} {
 	    set resp [ShowMessage "Saving project file" info \
-		 "This project file will contain the following information:\n[join $projectInfo \n]" okcancel $SimileProjectDo]
-	    unset SimileProjectDo
-            if {![string equal ok $resp]} {
-                set cancelled 1
-            }
-        }
+			  "This project file will contain the following information:\n[join $projectInfo \n]" okcancel]
+	    if {![string equal ok $resp]} {
+		set cancelled 1
+	    }
+	}
         if {![info exists cancelled]} {
 	    set multiT [mime::initialize -canonical multipart/mixed \
 			    -parts $parts]
@@ -1370,9 +1368,14 @@ proc GetParts {top tree} {
                         ![string match junk $Description]} {
                 set relPath [string range $subtree [string length $top] end]
 		if {[string equal Data $Description]} {
-		    set OS [lindex {Linux MacOS Windows Tcl} \
-			[lsearch {.so .dylib .dll .tcl} [file extension $ext]]]
-		    set Description "$OS executable"
+		    set extExt [file extension $ext]
+		    if {[string equal .cpp $extExt]} {
+			set Description "C++ source code"
+		    } else {
+			set OS [lindex {Linux MacOS Windows Tcl} \
+				    [lsearch {.so .dylib .dll .tcl} $extExt]]
+			set Description "$OS executable"
+		    }
 		}
 		if {[llength $relPath]>1} {
 		    set smTree [join / [lrange $relPath 0 end-1]]
@@ -1573,13 +1576,6 @@ proc OpenProjectFile {path} {
     }
 }
 
-proc SaveAll {win} {
-    global SimileProjectDo
-    #ShowMessage debug info "SaveAll win $win" ok
-    set SimileProjectDo $win
-    MenuSelect $win file save_as
-}
-
 proc SaveProjectFile {topNode path tgt} {
     global custom runState nameOfHelperStateFile projectInfo
 #puts [array get nameOfHelperStateFile]
@@ -1591,7 +1587,7 @@ proc SaveProjectFile {topNode path tgt} {
     array unset SimileProject
     
     # is it builtC|builtTcl|notbuilt
-    if {[HaveValues $topNode]} {
+    if {[HaveValues $topNode] && !$runState($topNode,updated)} {
         set SimileProject(modelRunning) 1
 	set SimileProject(running_c) [string equal c $runState($topNode,lang)]
     }
@@ -1841,8 +1837,7 @@ proc Rerun {winId go} {
     global runState window_info
     
     set node $window_info($winId,top_node)
-    if {![HaveValues $node] || \
-                $runState($node,updated) == 1} {
+    if {![HaveValues $node] || $runState($node,updated)} {
         if {[info exists runState($node,lang)]} {
             set runType run_$runState($node,lang)
         } else {

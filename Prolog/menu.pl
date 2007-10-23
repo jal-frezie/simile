@@ -1469,7 +1469,7 @@ do_save(Win, Model, New_name) :-
 
 	/* Now build the multi-part MIME format save file */
         reassure_user("Creating MIME-format saved file"),
-	output:save_file(Model, SaveDir, Name, Oops),
+	output:save_file(Model, SaveDir, Name, Select, Oops),
 
         (   Oops = [];
 	    \+ Oops = [],

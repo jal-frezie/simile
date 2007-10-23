@@ -550,10 +550,10 @@ my_delete_file(DelFile) :-
 	windowize(DelFile, WDelFile),
 	safe_tcl_eval([file, delete, '-force', br(WDelFile)], _).
 
-save_file(Node, From, To, Oops) :-
+save_file(Node, From, To, NoPkg, Oops) :-
 	windowize(From, WFrom),
 	windowize(To, WTo),
-	safe_tcl_eval(['SaveFile', Node, br(WFrom), br(WTo)], Oops).
+	safe_tcl_eval(['SaveFile', Node, br(WFrom), br(WTo), NoPkg], Oops).
 
 load_file(Node, From, To, Oops) :-
 	windowize(From, WFrom),
