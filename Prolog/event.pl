@@ -2191,9 +2191,9 @@ are because undo/redo graphics cannot cope */
 adjust_posn(Thing, Trans) :-
 	get_shape(Thing, Whatever, Wherever),
 	\+ Whatever = internal_extent,
-	(Whatever = caption_offset,
+	(relative_coord_attribute(Whatever),
 	    rel_translate(Wherever, Trans, New_wherever);
-	\+ Whatever = caption_offset,
+	\+ relative_coord_attribute(Whatever),
 	    translate(Wherever, Trans, New_wherever)),
 /*	(member(Trans, [[_,_,1,1], [_,_,1.0,1.0]]), !,
 	    NewOnGrid = New_wherever;
@@ -2202,6 +2202,9 @@ adjust_posn(Thing, Trans) :-
 	change_shape(Thing, Whatever, New_wherever),
 	fail; true.
 
+relative_coord_attribute(Whatever) :-
+	member(Whatever, [caption_offset, curve]).
+	      
 dissolve_component(Node) :-
 	find_all_comps(Parent, Node),
 	subtract_from_translation([0,0,1,1], Node, Node_trans),
