@@ -8,74 +8,6 @@
 # things to pass information to and from the executing model. These are the definitions 
 # that are required for this purpose.
 #
-proc old_do_model {node what args} {
-    global errorInfo model_id instance_id model_prog
-    
-    if {![info exists model_id($node)]} {
-	WarnNoProgram $node
-    }
-    set mtime [lindex $args 0]
-    set mstep [lindex $args 1]
-
-    if {$model_id($node)} {
-	set head [list c_${what}model $model_id($node) $instance_id($node)]
-    } else {
-	if {[string match eval $what]}  {
-	    set mproc int_evalmodel
-	} else {
-	    set mproc ${what}model
-	}
-	set head ::AME_model<>::$mproc
-    }
-
-    if {[catch {eval $head $args}]} {
-	set errorList [split $errorInfo \n]
-	set whoopsie [lindex $errorList 0]
-#	ShowMessage "$whoopsie doing model $what" error \
-#	    "$what during $action of the model at time $mtime caused this: \
-#	    $errorInfo" ok
-#	set mess "The $what step during $action of the model at time $mtime caused this problem:\n$errorInfo"
-#tk_messageBox -message "Urrr!! Urrr!! Urrr!! $errorInfo"
-	switch $what {
-	    eval {set operation "calculate the value of"}
-	    update {set operation "update the state"}
-	    advance {set operation "advance the time point for"}
-	}
-
-	if {$model_id($node)} {
-	    set target "a value"
-	} else {
-	    set modelLine [lindex $errorList end-5]
-	    regexp { (\d+)\)$} $modelLine spare lineNo
-	    set mStream [open $model_prog($node) r]
-	    set mLine {}
-	    while {![string match "proc $mproc *" $mLine]} {
-		gets $mStream mLine
-	    }
-#puts "found proc $mLine"
-	    for {set procLine 1} {$procLine < $lineNo} {incr procLine} {
-		gets $mStream mLine
-	    }
-#puts "picked line $mLine"
-	    close $mStream
-	    if {[regexp {set ([^ ]*) .*} $mLine spare targetName]} {
-		set dest [namespace eval AME_model<> \
-			      "set spare $targetName"]
-		set targetList [DescribeComponent $dest]
-		if {[catch {GetNodeIdFromRef $dest \
-				[lindex $targetList 1]} TargetId]} {
-		    set target [lindex $targetList 0]
-		    set whoopsie dest_missing
-		} else {
-		    set target "[lindex $targetList 0] (node $TargetId)"
-		}
-            } else {
-                set whoopsie unknown
-            }
-	}
-    }
-}
-
 proc RunningInC {myNode} {
     global model_id
 #    return 0
@@ -94,7 +26,7 @@ proc ExplainError {errList} {
     set mstep [lindex $errList 4]
     set whoopsie [lindex $errList 5]
     switch $what {
-	int_evalmodel {set operation "calculate the value of"}
+	evalmodel {set operation "calculate the value of"}
 	updatemodel {set operation "update the state"}
 	advancemodel {set operation "advance the time point for"}
     }

@@ -881,7 +881,7 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
   get_string_for_error(spare, error);
 
   if (error) {
-    Tcl_SetObjResult(interp, make_exec_error(interp, "int_evalmodel", "none", 
+    Tcl_SetObjResult(interp, make_exec_error(interp, "evalmodel", "none", 
 					     0, phase, spare));
     return TCL_ERROR;
   } else {
@@ -942,7 +942,7 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
   }
   get_string_for_error(spare, error);
   if (error) {
-    Tcl_SetObjResult(interp, make_exec_error(interp, "int_evalmodel", "none", 
+    Tcl_SetObjResult(interp, make_exec_error(interp, "evalmodel", "none", 
 					     endtime, 1, spare));
     return TCL_ERROR;
   }
