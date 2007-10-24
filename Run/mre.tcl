@@ -992,7 +992,11 @@ namespace eval RunEnv {
         while {[gets $stream line] >= 0} {
             switch [scan $line %s] {
                 container {
-                    LoadContainer $currentNode $stream $line $origVersion
+                    scan $line "%s %s" widget tail
+                    if {$origVersion<4.0} {
+                        set tail [LoseTLRef $tail]
+                    }
+                    LoadContainer $currentNode $stream $tail $origVersion
                 }
                 panedwindow {
                     #%puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
@@ -1086,16 +1090,13 @@ namespace eval RunEnv {
         }
     }
     
-    proc LoadContainer {node stream line origVersion} {
+    proc LoadContainer {node stream containerId origVersion} {
         global helperTable
         variable dp0
 	variable CurrentContainer
 
         #ShowMessage debug info "LoadContainer: stream $stream, line $line" ok
-        scan $line "%s %s" item containerId
-        if {$origVersion<4.0} {
-	    set CurrentContainer $containerId
-	} elseif {[info exists containerId]} {
+        if {[info exists containerId]} {
 	    set CurrentContainer $dp0.$containerId
         } else {
 	    set CurrentContainer $dp0
