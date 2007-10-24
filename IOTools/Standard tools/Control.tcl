@@ -179,6 +179,18 @@ namespace eval runcontrol33857 {
 	    -side right -expand on -fill x
 	bind $rsf.stepsize.maxerr <Key> "set runState($node,tweaked) 1"
         pack [label $rsf.stepsize.caption -text "Error limit:"] -side right
+
+	pack [frame $rsf.speedlim] -pady 2 -expand on -fill both
+	pack [checkbutton $rsf.speedlim.use -variable runState($node,splimit) \
+		  -text "Limit updates/sec to:" \
+		  -command "set runState($node,tweaked) 1"] -side left
+	if {![info exists runState($node,speedLimit)]} {
+	    set runState($node,speedLimit) 0
+	}
+	pack [::ttk::entry $rsf.speedlim.val \
+		  -textvariable runState($node,speedLimit) -width 8] \
+	    -side right -expand on -fill x
+
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
         #        set sendvars($node,timeUnit) unit
@@ -275,6 +287,7 @@ namespace eval runcontrol33857 {
 	}
 	SendData $node
 	set sendvars($node,currentMode) $action
+	StoreTime $node
 	RollSimulation $node
     }
     
@@ -364,6 +377,11 @@ namespace eval runcontrol33857 {
 	    return 1
 	}
 	return 0
+    }
+
+    proc StoreTime {node} {
+	variable sendvars
+	set sendvars($node,kickTime) [clock clicks]
     }
 
 # This is similar but is called if a model step is taking a long time, to check
@@ -508,6 +526,14 @@ namespace eval runcontrol33857 {
 		UpdateBar $node $current blue ;# so GetModelTime does right
 		if {![TellAllHelpers $node Display $current $display 1]} {
 		    set sendvars($node,currentMode) stop
+		}
+		if {$runState($node,splimit) && ![catch {set minStep \
+				 [expr {1000/$runState($node,speedLimit)}]}]} {
+		    set extraDelay [expr {$minStep-([clock clicks]-$sendvars($node,kickTime))/1000}]
+		    after $extraDelay [namespace code [list StoreTime $node]]
+		    set sendvars($node,busy) 0
+		    vwait [namespace current]::sendvars($node,kickTime)
+		    set sendvars($node,busy) 1
 		}
 	    }
 	    set scaled_current $scaled_next
