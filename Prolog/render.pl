@@ -14,7 +14,7 @@ sicstus_module( render, [render/5, excrete/5, make_assignment/4, render_all/5,
 		make_constant_list/3, get_element_ref/4,
 		make_integer/3, command_substitute/3,
 			 generate_all_case_entries/4,
-		generate_data_decls/9, make_procedure_call_chars/3] ).
+		generate_data_decls/8, make_procedure_call_chars/3] ).
 
 sicstus_use_module( [sp_only, m_class, utility, ame_gen, units, text,
 utility, library(lists)] ).

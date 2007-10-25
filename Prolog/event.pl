@@ -2046,23 +2046,31 @@ embrace(Wid, Obj) :-
 	highlight(Obj, 0) */).
 
 set_selection_abilities(Comp) :-
-	(contains(Comp, Lit), \+ Lit = Comp,
-	    get_highlit_obj(0, Lit), !,
+	(setof(Lit, 
+	       (contains(Comp, Lit), \+ Lit = Comp,
+		   get_highlit_obj(0, Lit)), AllLit), !,
 	    Cuttable = 1,
 	    Dellable = 1;
-	contains(Comp, Lit), \+ Lit = Comp,
-	    get_highlit_obj(1, Lit), !,
+	setof(Lit, 
+	      (contains(Comp, Lit), \+ Lit = Comp,
+		  get_highlit_obj(1, Lit)), AllLit), !,
 	    Cuttable = 0,
 	    Dellable = 1;
-	Cuttable = 0,
+	AllLit = [Comp], % do submodel clicked in if nothing selected
+	    Cuttable = 0,
 	    Dellable = 0),
+	(AllLit = [Choice],
+	    \+ Choice is_of_sort no_properties, !,
+	    Peekable = 1;
+	Peekable = 0),
 	update_ability(Comp, none, file, '{Save selection as...}', Cuttable),
 	update_ability(Comp, none, edit, 'Cut', Cuttable),
 	update_ability(Comp, none, edit, 'Copy', Cuttable),
 	update_ability(Comp, none, edit, 'Delete', Dellable),
 	update_ability(Comp, none, edit, '{Reroute links}', Dellable),
-	update_ability(Comp, none, edit, '{Align to grid}', Dellable).
-	
+	update_ability(Comp, none, edit, '{Align to grid}', Dellable),
+	update_ability(Comp, none, edit, 'Properties...', Peekable).
+
 abandon :-
 	finish_old_edit(none).
 
@@ -2160,8 +2168,8 @@ move_boxes(Node_name, Node_trans) :-
 resnap(Node, SelOnly) :-
 	find_all_comps(Node, Bit),
 	(SelOnly = 0; SelOnly = 1, doomed(Bit)),
-	get_shape(Bit, bounding_box, BB),
-	(add_to_translation([0,0,1,1], Bit, Trans), % bit is submodel
+	(get_shape(Bit, bounding_box, BB),
+	    add_to_translation([0,0,1,1], Bit, Trans), % bit is submodel
 	    snap_to_grid(BB, NBB),
 	    translate(NBB, Trans, [L, T, R, B]),
 	    change_shape(Bit, bounding_box, NBB),
@@ -2178,13 +2186,10 @@ are because undo/redo graphics cannot cope */
 	    redisplay_border(Bit);
 	 find_type(Bit, New_obj),
 	 \+ New_obj = submodel,
-	    middle(BB, [XMid, YMid]),
+	    get_shape(Bit, centre, [XMid, YMid]),
 	    snap_to_grid([XMid, YMid], [Xpt, Ypt]),
-	    use_style_for(New_obj, NewObjStyle),
-	    get_box_size(Node, NewObjStyle, Cur_size),
-	    make_bounding_box(New_obj, Xpt, Ypt, Cur_size, NBB),
 	    XOff is Xpt-XMid, YOff is Ypt-YMid,
-	    change_shape(Bit, bounding_box, NBB),
+	    change_shape(Bit, centre, [Xpt, Ypt]),
 	    move_display(Bit, [XOff,YOff])),
 	fail; true.
 

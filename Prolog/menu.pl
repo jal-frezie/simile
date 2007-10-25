@@ -559,9 +559,11 @@ menu_handle(Win, edit, reroute) :-
 
 menu_handle(Win, edit, snap) :-
 	get_edit_model(Win, Model, _),
+	event:retract(grid_pitch_is(Old)),
 	event:assert(grid_pitch_is(15)),
 	event:resnap(Model, 1),
-	event:retractall(grid_pitch_is(_)),
+	event:retract(grid_pitch_is(15)),
+	event:assert(grid_pitch_is(Old)),
 	menu_handle(Win, edit, reroute).
 
 menu_handle(Win, edit, delete) :-
