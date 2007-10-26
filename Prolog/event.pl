@@ -917,7 +917,8 @@ drag(Xpt, Ypt) :-
 	    remove_highlights,
 	    fail; */
 	update_context(Wid, [Xpt, Ypt], RelPt, Comp)),
-	(get_phase(moving_text), !,
+	(get_phase(Phase),
+	    member(Phase, [moving_spline, moving_text]), !,
 	    RelPt = [NewXpt, NewYpt];
 	snap_to_grid(RelPt, [NewXpt, NewYpt])),
 	drag_to(NewXpt, NewYpt, Comp).
@@ -1028,8 +1029,8 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	    highlight(Moving_obj, 2) */;
 	get_phase(moving_spline),
 	    adjust_spline(Moving_obj, [Xoffset, Yoffset]), !,
-	    reroute_display(Moving_obj),
-	    move_text(Moving_obj, [Xoffset, Yoffset]);
+	    update_link_route(Moving_obj);
+%	    move_text(Moving_obj, [Xoffset, Yoffset]);
 	get_phase(moving),
 	    find_all_comps(Parent, Moving_obj),
 	    get_shape(Parent, internal_extent, ParentShape),
@@ -1107,7 +1108,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	\+ inside_shape([Xout, Yout], EType, ParentBox),
 	/* Snap to border */
 	crossing_point([Xc, Yc], [Xout, Yout], EType, ParentBox,
-			NewEndPt),
+			0, NewEndPt),
 	
 	(Phase = moving_start,
 	    change_shape(Start, centre, NewEndPt),

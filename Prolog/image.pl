@@ -18,7 +18,7 @@ sicstus_module(image,
        get_closest_edge/3, map/6, get_inner_bound/3, get_outer_bound/4,
        change_shape/3, get_shape/3, set_shape/3, clear_shape/2,
        targets/5, inside_shape/3, near/2, get_middle/2, middle/2,
-       crossing_point/5, make_bounding_box/5,
+       crossing_point/6, make_bounding_box/5,
        density_for/2, draw_style_for/2, use_style_for/2,
        get_drawing_form/3, get_boundary_end/2,
        has_outer_equiv/3, connected_at/2, fits_inside/2,
@@ -273,12 +273,16 @@ connected_at(Link, End) :-
         has_outer_equiv(Link, Parent, _);
     true), !. /* regular links don't need equivalents */
 
-/* crossing_point/5 returns the point at which a line from arg1 (inside Comp) to 
-arg2 (outside Comp) crosses its boundary, it used by successive approximation 
-(Inefficient? Who said that?) calling iterate_to_crossing, but no longer. */
+/* crossing_point/6 returns the point at which a line from arg1 (inside Comp)
+    to arg2 (outside Comp) crosses its boundary, it used to work by successive
+    approximation (Inefficient? Who said that?) calling iterate_to_crossing,
+    but no longer.
+*/
 
-crossing_point([X1, Y1], [X2, Y2], Class, [L, T, R, B], Exit) :-
+crossing_point([X1, Y1], [RX2, RY2], Class, [L, T, R, B], Warp, Exit) :-
     L = R, T = B, !, Exit = [L, T]; /* do not faff with null areas */
+    X2 is RX2 - Warp*(RY2-Y1),
+    Y2 is RY2 + Warp*(RX2-X1),
     get_box_crossing([X1, Y1], [X2, Y2], [L, T, R, B], [Xx, Yx]),
     Xoff is X2-X1,
     Yoff is Y2-Y1,
@@ -583,13 +587,12 @@ slice(Posn, LowSide, HiSide, N) :-
 
 get_end_pt(Link, End, Type, Pt, Box) :-
 	Link is_connector from Start to Fn,
-	get_host(Fn, Finish),
 	(End = start,
 	    Node = Start,
 	    Check = (Link follows Other),
 	    PrevPt = PrevEnd;
 	 End = finish,
-	    Node = Finish,
+	    get_host(Fn, Node),
 	    Check = (Other follows Link),
 	    PrevPt = PrevStart),
 	(call(Check),
@@ -601,34 +604,47 @@ get_end_pt(Link, End, Type, Pt, Box) :-
 	    append(Pt, Pt, Box);
 	get_drawing_form(Node, Type, Box),
 	    middle(Box, Pt)).
-	
+
+warp_factor_for(Link, WarpFactor) :-
+	Link is_connector from A to B,
+	setof(GenLink, GenLink is_connector from A to B, Links),
+	nth(Seq, Links, Link),
+	WarpFactor is (Seq - 1.7 - 3.4*floor(Seq/3.4))/1.7.
+
 get_link_route(Link, Route) :-
 	get_end_pt(Link, start, SType, [SX, SY], SBox),
 	get_end_pt(Link, finish, FType, [FX, FY], FBox),
+	warp_factor_for(Link, WarpFactor), % clockwise round start
 
 	(Link is_of_sort curved, !,
 	    get_shape(Link, curve, [CX, CY]),
 	    MX is CX + (SX+FX)/2,
 	    MY is CY + (SY+FY)/2,
-	    crossing_point([SX, SY], [MX, MY], SType, SBox, P0),
-	    crossing_point([FX, FY], [MX, MY], FType, FBox, Pn),
+	    crossing_point([SX, SY], [MX, MY], SType, SBox, WarpFactor, P0),
+	    crossing_point([FX, FY], [MX, MY], FType, FBox, -WarpFactor, Pn),
 	    Route = [Pn, [MX, MY], P0];
 	SBox = [SL, ST, SR, SB],
 	    FBox = [FL, FT, FR, FB],
 	    (draw:tk_get_pref(flowRouting, 0),
+		RWarp = WarpFactor,
 		SPt = [SX, SY],
 		FPt = [FX, FY];
-	    parallel(ST, SB, FT, FB, PY),
+	    VWarp is WarpFactor*sign(FX-SX),
+		RWarp = 0,
+		parallel(ST, SB, FT, FB, VWarp, PY),
 		SPt = [SX, PY],
 		FPt = [FX, PY];
-	    parallel(SL, SR, FL, FR, PX),
+	    HWarp is WarpFactor*sign(SY-FY),
+		RWarp = 0,
+		parallel(SL, SR, FL, FR, HWarp, PX),
 		SPt = [PX, SY],
 		FPt = [PX, FY]), !,
-	    crossing_point(SPt, FPt, SType, SBox, P0),
-	    crossing_point(FPt, SPt, FType, FBox, Pn),
+	    crossing_point(SPt, FPt, SType, SBox, RWarp, P0),
+	    crossing_point(FPt, SPt, FType, FBox, -RWarp, Pn),
 	    Route = [Pn, P0];
-	crossing_point([SX, SY], [FX, FY], SType, SBox, [X0, Y0]),
-	crossing_point([FX, FY], [SX, SY], FType, FBox, [Xn, Yn]),
+	% kinked flow route    
+	crossing_point([SX, SY], [FX, FY], SType, SBox, WarpFactor, [X0, Y0]),
+	crossing_point([FX, FY], [SX, SY], FType, FBox, -WarpFactor, [Xn, Yn]),
 	    get_shape(Link, curve, [Kink, _Bowtie]),
 	    (abs(Yn-Y0)>abs(Xn-X0), !, % kink is horizontal
 		Yk is Y0+Kink*(Yn-Y0)/1000,
@@ -636,9 +652,18 @@ get_link_route(Link, Route) :-
 	    Xk is X0+Kink*(Xn-X0)/1000,
 	    		Route = [[Xn, Yn], [Xk, Yn], [Xk, Y0], [X0, Y0]])).
 
-parallel(S1, F1, S2, F2, M) :-
-	S1<F2, S2<F1,
-	M is (max(S1, S2)+min(F1, F2))/2.
+parallel(S1, F1, S2, F2, Warp, M) :-
+	(Warp > 0, !,
+	    NS1 is S1+Warp*(F1-S1),
+	    NS2 is S2+Warp*(F2-S2);
+	 NS1 = S1, NS2 = S2),
+	(Warp < 0, !,
+	    NF1 is F1+Warp*(F1-S1),
+	    NF2 is F2+Warp*(F2-S2);
+	 NF1 = F1, NF2 = F2),
+	
+	NS1<NF2, NS2<NF1,
+	M is (max(NS1, NS2)+min(NF1, NF2))/2.
 
 update_bowtie(_Link, _Route).
 
@@ -881,8 +906,8 @@ get_termination_zone([Obj | Rest], Dir, Area, CompType, Centre) :-
         add_to_translation([0, 0, 1, 1], Obj, InnerTrans),
         untranslate(InnerCentre, InnerTrans, PrevCentre),
             constrain_inside(PrevCentre, Area, Centre);
-/* end of bit that implements new system */
-    middle(Area, Centre)), !;
+    middle(Area, Centre)), ! /* ;
+end of bit that implements new system
     (Dir = in, Link is_connector from Obj to _;
     Dir = out, Link is_connector from _ to Obj),
         find_all_comps(Parent, Obj),
@@ -896,7 +921,7 @@ get_termination_zone([Obj | Rest], Dir, Area, CompType, Centre) :-
         blobify(InnerCentre, InnerArea),
         translate(InnerArea, End_trans, Area),
         translate(InnerCentre, End_trans, Centre),
-        Link has_type CompType.
+        Link has_type CompType */ .
 
 constrain_inside([X1, Y1], [L, T, R, B], [X2, Y2]) :-
     X2 is min(max(X1, L), R),
@@ -917,12 +942,12 @@ route_part_link(Type, Dir, Start, [X, Y], Route) :-
     (L < X, X < R,
         Y1 is (T + B)/2,
         crossing_point([X, Y1], [X, Y], NodeType, [L, T, R, B],
-                   [_X, Y2]),
+                   0, [_X, Y2]),
         X2 = X;
     T < Y, Y < B,
         X1 is (L + R)/2,
         crossing_point([X1, Y], [X, Y], NodeType, [L, T, R, B],
-                   [X2, _Y]),
+                   0, [X2, _Y]),
         Y2 = Y),
     (Dir = out, !,
         Route = [[X, Y], [X2, Y2]];
@@ -932,7 +957,7 @@ route_part_link(Type, Dir, Start, [X, Y], Route) :-
 /* general one */
 route_part_link(Type, Dir, Start, Point, Route) :-
     get_termination_zone(Start, Dir, Box, NodeType, Centre),
-    crossing_point(Centre, Point, NodeType, Box, Exit),
+    crossing_point(Centre, Point, NodeType, Box, 0, Exit),
     (Dir = out, !,
         Exit = Begin, Point = End;
     /* in */ Point = Begin, Exit = End),
@@ -956,16 +981,16 @@ route_parent_child_link(Type, Direction, Parent, Child, Route) :-
             Yext = Yint,
         (GL < GR, !, Xext = L2; Xext = R2),
         crossing_point([Xint, Yext], [Xext, Yext], 
-                NodeType, [L1, T1, R1, B1], InPt),
+                NodeType, [L1, T1, R1, B1], 0, InPt),
         crossing_point([Xint, Yext], [Xext, Yext], 
-                submodel, [L2, T2, R2, B2], OutPt);
+                submodel, [L2, T2, R2, B2], 0, OutPt);
     /* otherwise */
         Xext = Xint,
         (GT < GB, !, Yext = T2; Yext = B2),
         crossing_point([Xext, Yint], [Xext, Yext], 
-                NodeType, [L1, T1, R1, B1], InPt),
+                NodeType, [L1, T1, R1, B1], 0, InPt),
         crossing_point([Xext, Yint], [Xext, Yext], 
-                submodel, [L2, T2, R2, B2], OutPt)),
+                submodel, [L2, T2, R2, B2], 0, OutPt)),
     (Direction = in, !,
         Start = OutPt, Finish = InPt;
     /* it's out */
@@ -987,17 +1012,17 @@ route_link(Type, Start, Finish, [End, Beginning]) :-
             CX2 >= L1, CX2 =< R1, X = CX2),
         Y2 is (T2 + B2)/2,
         Y1 is (T1 + B1)/2,
-        crossing_point([X, Y1], [X, Y2], NodeType1, 
+        crossing_point([X, Y1], [X, Y2], 0, NodeType1, 
                 [L1, T1, R1, B1], Beginning),
-        crossing_point([X, Y2], Beginning, NodeType2, 
+        crossing_point([X, Y2], Beginning, 0, NodeType2, 
                 [L2, T2, R2, B2], End);
     (CY1 >= T2, CY1 =< B2, Y = CY1;
             CY2 >= T1, CY2 =< B1, Y = CY2),
         X2 is (L2 + R2)/2,
         X1 is (L1 + R1)/2,
-        crossing_point([X1, Y], [X2, Y], NodeType1, 
+        crossing_point([X1, Y], [X2, Y], 0, NodeType1, 
                 [L1, T1, R1, B1], Beginning),
-        crossing_point([X2, Y], Beginning, NodeType2, 
+        crossing_point([X2, Y], Beginning, 0, NodeType2, 
                 [L2, T2, R2, B2], End)), !.
 
 /* Slight mod to the one below to start flows in the centre of the appropriate
@@ -1015,7 +1040,7 @@ route_link(Type, Start, Finish, Route) :-
         (SX-FX>FY-SY, !, /* left */
             BX = SL, BY = SY;
         BX = SX, BY = SB)),
-    crossing_point([FX, FY], [BX, BY], NodeType2, FBox, End),
+    crossing_point([FX, FY], [BX, BY], NodeType2, FBox, 0, End),
     shape_route(Type, [BX, BY], End, Route), !.
 
 /* General one for other whole routes between graphically displayed objects */
@@ -1023,8 +1048,8 @@ route_link(Type, Start, Finish, Route) :-
 route_link(Type, Start, Finish, Route) :-
     get_termination_zone(Start, in, SBox, NodeType1, Centre1),
     get_termination_zone(Finish, out, FBox, NodeType2, Centre2),
-    crossing_point(Centre1, Centre2, NodeType1, SBox, Beginning),
-    crossing_point(Centre2, Centre1, NodeType2, FBox, End),
+    crossing_point(Centre1, Centre2, NodeType1, SBox, 0, Beginning),
+    crossing_point(Centre2, Centre1, NodeType2, FBox, 0, End),
     shape_route(Type, Beginning, End, Route), !.
 
 /* This clause will be resorted to if I cannot get the coordinates for one end of
