@@ -200,7 +200,13 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	    /* highlight(Name, 2), */
 	    find_type(Name, submodel), !,
 	    get_closest_edge(Name, [NewXpt, NewYpt], Edge, [EfX, EfY]),
-	    set_start_coords(EfX, EfY),
+	    % now adjust start point so dragged edges align to grid
+	    XToGrid is EfX-NewXpt,
+	    YToGrid is EfY-NewYpt,
+	    snap_to_grid([XToGrid, YToGrid], [XOnGrid, YOnGrid]),
+	    XForGrid is EfX-XOnGrid,
+	    YForGrid is EfY-YOnGrid,
+	    set_start_coords(XForGrid, YForGrid),
 	    advance_phase_to(moving_border(Edge)) /* ,
 	    retractall(min_size_is(_)),
 	    (get_inner_bound(Name, Edge, CompBound), !,
