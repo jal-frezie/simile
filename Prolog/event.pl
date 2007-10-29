@@ -182,8 +182,8 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	assert(clicked_obj_is(Name)),
 	find_current(Wid),
 	find_relevant_windows(Name, Wid, Depth, Trans),
-	translate([Xpt, Ypt], Trans, ActNewPt),
-	snap_to_grid(ActNewPt, [NewXpt, NewYpt]),
+	translate([Xpt, Ypt], Trans, [NewXpt, NewYpt]),
+%	snap_to_grid(ActNewPt, [NewXpt, NewYpt]),
 	set_original_click(Xpt, Ypt),
 	find_all_comps(Parent, Name),
 	save_params(Trans, Depth, Parent),
@@ -199,7 +199,8 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	(get_phase(moving),
 	    /* highlight(Name, 2), */
 	    find_type(Name, submodel), !,
-	    get_closest_edge(Name, [NewXpt, NewYpt], Edge),
+	    get_closest_edge(Name, [NewXpt, NewYpt], Edge, [EfX, EfY]),
+	    set_start_coords(EfX, EfY),
 	    advance_phase_to(moving_border(Edge)) /* ,
 	    retractall(min_size_is(_)),
 	    (get_inner_bound(Name, Edge, CompBound), !,
@@ -223,6 +224,10 @@ click_text(Xpt, Ypt, Name, CD) :-
 		get_phase(Phase),
 		member(Phase, [moving, moving_kink,
 			       moving_bowtie, moving_spline]),
+		% click_on will have set start to centre of component! So...
+		get_translation(Trans),
+		translate([Xpt, Ypt], Trans, [StX, StY]),
+		set_start_coords(StX, StY),
 		advance_phase_to(moving_text)).
 /*
 click: Handles mouse clicks in a model window.
@@ -461,6 +466,9 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    do_colours(Moving_obj, on))),
 	
 	(get_highlit_obj(0, Moving_obj),
+	    (get_shape(Moving_obj, centre, [CX, CY]), !,
+		set_start_coords(CX, CY);
+	    true), % clicked on link
 	    (tk_get_pref(quickDrag, 0);
 		retractall(ghostly_move(_,_)),
 		assert(ghostly_move(Xpt, Ypt))), !,
@@ -1604,7 +1612,7 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	    get_shape(Submodel, caption_offset, [XT, YT, _Anchor])), !,
 	OldCapX is OldL + XT,
 	OldCapY is OldT + YT,
-	get_closest_edge(Submodel, [OldCapX, OldCapY], CapEdge),
+	get_closest_edge(Submodel, [OldCapX, OldCapY], CapEdge, _EfPt),
 	(member(Edge, [nw, w, sw, c]), !, NewL is OldL+XOff; NewL = OldL),
 	(member(Edge, [nw, n, ne, c]), !, NewT is OldT+YOff; NewT = OldT),
 	(member(Edge, [ne, e, se, c]), !, NewR is OldR+XOff; NewR = OldR),

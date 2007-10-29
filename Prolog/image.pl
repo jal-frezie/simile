@@ -15,7 +15,7 @@ in response to successful editing operations.
 
 sicstus_module(image,
       [get_colour/4, get_window_colour/3,
-       get_closest_edge/3, map/6, get_inner_bound/3, get_outer_bound/4,
+       get_closest_edge/4, map/6, get_inner_bound/3, get_outer_bound/4,
        change_shape/3, get_shape/3, set_shape/3, clear_shape/2,
        targets/5, inside_shape/3, near/2, get_middle/2, middle/2,
        crossing_point/6, make_bounding_box/5,
@@ -197,11 +197,11 @@ exclude_boxes([[BL,BT,BR,BB] | Rest], [NL,NT,NR,NB], Edge, PBound, Bound) :-
     NBound = PBound),
     exclude_boxes(Rest, [NL, NT, NR, NB], Edge, NBound, Bound).
 
-get_closest_edge(Node, [X,Y], Edge) :-
+get_closest_edge(Node, [X,Y], Edge, [EfX, EfY]) :-
     get_shape(Node, bounding_box, [L,T,R,B]),
     slice(Y, T, B, Row),
     slice(X, L, R, Col),
-    map([L,T,R,B], Edge, Row, Col, _,_).
+    map([L,T,R,B], Edge, Row, Col, EfX, EfY).
 
 /*  LM is L-X, TM is T-Y, RM is X-R, BM is Y-B,
     MM is max(max(LM, TM), max(RM, BM)),
