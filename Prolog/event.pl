@@ -908,7 +908,7 @@ the info from Tk, only resorting to Prolog should this fail. Note GUI should onl
 be consulted if in multi-object mode. */
 
 drag(Xpt, Ypt) :-
-	sift_and_set(Xpt, Ypt),
+%	sift_and_set(Xpt, Ypt),
 	find_current(Wid),
 	(multi_object_mode,
 	    remove_old_incomplete,
@@ -1016,10 +1016,12 @@ drag_to(Xpt, Ypt, _Comp) :-
 
 drag_to(Xpt, Ypt, Comp) :-
 	doing_add(Ltype),
-	get_phase(dragging),
+%	get_phase(dragging),
 	(Ltype is_class_of_sort line,
 	    sort_for_finish(Comp, Ltype, Xpt, Ypt);
 	Ltype is_class_of_sort rounded_rect,
+	    (get_phase(dragging), !;
+		advance_phase_to(dragging)),
 	    get_start_coords(OldX, OldY),
 	    clear_incomplete,
 	    add_incomplete([OldX, OldY, Xpt, Ypt]),
@@ -1495,10 +1497,15 @@ Alteration to allow drags of links into space to produce new components; always
 hunt if on a submodel. Further alteration: only make this alteration for flows */
 
 sort_for_finish(Target, Ltype, Xpt, Ypt) :-
-	(get_highlit_obj(_, Old_target),
-		normalize(Old_target), fail; true),
+	get_highlit_obj(_, Old_target),
+		normalize(Old_target), fail;
 
 	get_line_start_obj(OrigStart),
+	(OrigStart = Target,
+	    % two-click despite short drag at start point
+	    get_phase(action_choice), !;
+	(get_phase(dragging), !;
+	    advance_phase_to(dragging)),
         get_nearest_equivalent_link(Ltype, OrigStart, Target, Start),
 	(find_type(Target, submodel),
 	/* This requirement dropped for flows, see above */
@@ -1517,7 +1524,7 @@ sort_for_finish(Target, Ltype, Xpt, Ypt) :-
 	    (Drawn = true, !;
 	    draw_line_to(Start, Ltype, Target));
 	set_line_finish_obj(none),
-	    highlight(Target, 0)).
+	    highlight(Target, 0))).
 
 /* get_nearest_equivalent_link: Original version tried to minimize all
 link lengths. This one is much simplified, so a link will always be
@@ -2099,9 +2106,10 @@ but now uses get_component_from_gui because it is quicker. */
 
 attempt_addition(Type, Parent, Posn, Node_name, CanBag, Verbal) :-
 	/* check it is inside its parent */
-	(Type = submodel, !,
+	(Type = submodel,
 	    Box = Posn;
-	 use_style_for(Type, NewObjStyle),
+	 \+ Type = submodel,
+	    use_style_for(Type, NewObjStyle),
 	    get_box_size(Parent, NewObjStyle, Cur_size),
 	    Posn = [Xpt, Ypt],
 	    make_bounding_box(Type, Xpt, Ypt, Cur_size, Box)),
@@ -2112,7 +2120,7 @@ attempt_addition(Type, Parent, Posn, Node_name, CanBag, Verbal) :-
 	/* If CanBag is 'yes' the new box can be put around existing ones */
 	\+ (get_overlaps(Parent, [Box], Other),
 	       (CanBag = no;
-		   get_shape(Other, bounding_box, WeeBox),
+		   get_drawing_form(Other, _Style, WeeBox),
 		   \+ fits_inside(WeeBox, Box))),
 	
 /* check it is not inside a submodel (GUI only checks border interference)
