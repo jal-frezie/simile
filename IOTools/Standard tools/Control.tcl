@@ -185,7 +185,7 @@ namespace eval runcontrol33857 {
 		  -text "Limit updates/sec to:" \
 		  -command "set runState($node,tweaked) 1"] -side left
 	if {![info exists runState($node,speedLimit)]} {
-	    set runState($node,speedLimit) 0
+	    set runState($node,speedLimit) 50
 	}
 	pack [::ttk::entry $rsf.speedlim.val \
 		  -textvariable runState($node,speedLimit) -width 8] \

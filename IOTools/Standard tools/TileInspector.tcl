@@ -46,7 +46,8 @@ namespace eval ::$keyValue {
 #        Tree $tableframe.table -showlines yes
 	scrollbar $tableframe.bar -command "$tableframe.table yview"
 	pack $tableframe.bar -side right -fill y -expand true
-	::ttk::treeview $tableframe.table -yscrollcommand "$tableframe.bar set"
+	::ttk::treeview $tableframe.table -show tree \
+	    -yscrollcommand "$tableframe.bar set"
         pack $tableframe.table -expand true -fill both
 #        $tableframe setwidget [::ttk::treeview $tableframe.table]
         pack $tableframe -expand true -fill both
