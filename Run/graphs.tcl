@@ -14,6 +14,13 @@
 # graph function is graph(param, xlow, xhigh, xspan,
 #	ylow, yhigh, yspan, [pt1, pt2 ... ptn])
 
+# BWidget should be removed in favour of native Tk commands and the
+# Tile widget set, which look better. For the time it is still needed
+# for the ScrolledWindow/ScrollableFrame pair in MakeFrames in params.tcl, and
+# the drag'n'drop column headings below, as well as in a few
+# other places round the app.
+package require BWidget
+
 proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
             {target {}}} {
     global tcl_platform graph looks

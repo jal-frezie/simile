@@ -11,7 +11,7 @@ if [string match "Darwin" $tcl_platform(os)] {
     set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
     lappend auto_path $SIMILE_PATH/System/lib
 }
-package require BWidget
+#package require BWidget
 package require tile
 
 source ../Run/graphs.tcl

@@ -29,7 +29,7 @@ namespace eval RunEnv {
     # pop-up message
     # command.
     # A separator is placed between the
-    package require BWidget
+#    package require BWidget
     
     set toolbars [list \
             [list \

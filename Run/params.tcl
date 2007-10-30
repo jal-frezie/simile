@@ -5,6 +5,7 @@
 #
 # This file contains procedures for reading and editing tables of data at run-time.
 #
+
 proc FileParamDialogue {topWin mustShow} {
     global paramData widgetNames myNode
 
@@ -78,6 +79,9 @@ proc FileParamDialogue {topWin mustShow} {
     return $paramData(done)
 }
 
+# ScrolledWindow and ScrollableFrame allow any widget to be scrolled, but need
+# the bwidget package. Need to revive our own version based on a frame in a 
+# canvas.
 proc MakeFrames {windowId} {
     ScrolledWindow $windowId.c
     set canId $windowId.c.canvas

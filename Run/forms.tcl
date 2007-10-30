@@ -1291,7 +1291,7 @@ proc ShowAbout {winId} {
 }
 
 # images must be global because if building a c++ program we may be in a different directory
-set bwVers [package require BWidget]
+#set bwVers [package require BWidget]
 
 proc ShowExpiryImminent {expTime left} {
     global iconImages

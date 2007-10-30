@@ -1181,7 +1181,7 @@ if {[string match "Darwin" $tcl_platform(os)]} {
 }
 
 proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
-    global custom pushedbutton tcl_platform runState iconImages
+    global custom pushedbutton tcl_platform runState iconImages userinfo
     
     set c $winid.canvas
     set topm ${winid}top
@@ -1238,13 +1238,18 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     #set fm1 [menu $fm.sub0 -tearoff 0]
 #    $fm1 add command -label "Spreadsheet..." \
 #            -command "MenuSelect $c file import_ss"
+    if {[string equal enterprise $userinfo(edn)]} {
+	set sourceExps normal
+    } else {
+	set sourceExps disabled
+    }  
     $fm add cascade -label "Export" -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
     $fm2 add command -label "Model declarations" \
             -command "MenuSelect $c file export_prolog"
-    $fm2 add command -label "C++ code" \
+    $fm2 add command -label "C++ code" -state $sourceExps \
             -command "MenuSelect $c file build_c"
-            $fm2 add command -label "Compiled binary" \
+            $fm2 add command -label "Compiled binary" -state $sourceExps \
             -command "MenuSelect $c file compile_c"
     $fm2 add command -label "PostScript graphics" \
             -command "ExportPostscript $c"
@@ -1523,7 +1528,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
         $fm add command -label About... -command [list ShowAbout $winid]
     }
     set nb [::ttk::frame $winid.toolSlot.navbar -class Toolbar]
-    pack [Separator $nb.afterSeparator -orient horizontal] -fill x -side bottom
+    pack [ttk::separator $nb.afterSeparator -orient horizontal] \
+	-fill x -side bottom
     if {[PrefValue custom(bigButtons) bigButtons]} {
         set buttonImages ../Images/Toolbar/Large
     } else {
@@ -1538,7 +1544,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
                 {separator5}   } {
         set handle [lindex $navCmd 0]
         if {[string match separator* $handle]} {
-            pack [Separator $nb.$handle -orient vertical] -fill y -side left
+            pack [ttk::separator $nb.$handle -orient vertical] \
+		-fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${handle}.gif]
             pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton \
@@ -1559,7 +1566,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
                 {find {local find}} {findmore {local findnext}} {separator7}} {
         set handle [lindex $navCmd 0]
         if {[string match separator* $handle]} {
-            pack [Separator $nb.$handle -orient vertical] -fill y -side left
+            pack [ttk::separator $nb.$handle -orient vertical] \
+		-fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${handle}.gif]
             pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton \
@@ -1573,7 +1581,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     foreach navCmd {{runenv {local raiseMRE}}} {
         set handle [lindex $navCmd 0]
         if {[string match separator* $handle]} {
-            pack [Separator $nb.$handle -orient vertical] -fill y -side left
+            pack [ttk::separator $nb.$handle -orient vertical] \
+		-fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${handle}.gif]
             pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton \
@@ -1585,7 +1594,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $nb.runenv configure -state disabled
     
     set tb [::ttk::frame $winid.toolSlot.toolbar -class Toolbar]
-    pack [Separator $tb.afterSeparator -orient horizontal] -fill x -side bottom
+    pack [ttk::separator $tb.afterSeparator -orient horizontal] \
+	-fill x -side bottom
 # add state event squirt separator3 before creation for v5
     foreach mode {compartment variable flow influence separator1 \
 		      submodel relation separator2 \
@@ -1593,7 +1603,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 		      separator4 text} {
         if {[string match separator* $mode]} {
             
-            pack [Separator $tb.$mode -orient vertical] -fill y -side left
+            pack [ttk::separator $tb.$mode -orient vertical] -fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${mode}.gif]
             set bt [::ttk::radiobutton $tb.$mode -command "ItemSelect $mode"  \
@@ -1603,7 +1613,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             bind $bt <ButtonRelease-1> "DragComponentIn $c $bt %X %Y"
         }
     }
-    pack [Separator $tb.spacer -orient vertical] -fill y -side left
+    pack [ttk::separator $tb.spacer -orient vertical] -fill y -side left
     
     foreach mode {select move ghost snap} {
         set testImg [image create photo -file $buttonImages/${mode}.gif]
@@ -1623,7 +1633,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     ### Robert Muetzelfeldt
     ### Started 4/3/02
     set eb [::ttk::frame $winid.toolSlot.eqnbar -class Toolbar]
-    pack [Separator $eb.afterSeparator -orient horizontal] -fill x -side bottom
+    pack [ttk::separator $eb.afterSeparator -orient horizontal] \
+	-fill x -side bottom
     pack [frame $eb.gap1 -class Toolbar -height 2] -fill x -side bottom
     
     ::ttk::label $eb.label -anchor e
@@ -1711,7 +1722,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set custom(showeqnbar,$winid) [expr $initWidth>=$navWidth && \
             [PrefValue custom(initEqnbar) initEqnbar]]
     
-    pack [Separator $winid.toolSlot.topseparator -orient horizontal] -fill x -side top
+    pack [ttk::separator $winid.toolSlot.topseparator -orient horizontal] \
+	-fill x -side top
     if {$custom(shownavbar,$winid)} {
         pack $nb -fill x
     }
