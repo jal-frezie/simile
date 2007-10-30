@@ -51,24 +51,36 @@ proc create_equation {parent boxtitle indices} {
     set middleF [frame $mainF.middle]
     TitleFrame $middleF.functions -text "Functions: "
     set fnFrame [$middleF.functions getframe].fnFrame
-    ScrolledWindow $fnFrame
-    set lbf [Tree $fnFrame.table -showlines yes]
-    $fnFrame setwidget $lbf
+#    ScrolledWindow $fnFrame
+    frame $fnFrame
+#    set lbf [Tree $fnFrame.table -showlines yes]
+    scrollbar $fnFrame.bar -command "$fnFrame.table yview"
+    pack $fnFrame.bar -side right -fill y -expand true
+    set lbf [::ttk::treeview $fnFrame.table -show tree \
+		 -yscrollcommand "$fnFrame.bar set"]
+    $fnFrame.table column \#0 -width 150
+    pack $fnFrame.table -expand true -fill both
+#    $fnFrame setwidget $lbf
     pack $fnFrame -expand yes -fill both
 
     foreach funk $equation(fnDefs) {
-        set box root
+        set box {} ;# was root for bwidget
         foreach level [split [join [lindex $funk 0] /] /] {
             set lname $box.[join $level _]
             if {![$lbf exists $lname]} {
-                $lbf insert end $box $lname -image $iconImages(open) \
-                        -text $level -open [string equal Built-in $level]
+#                $lbf insert end $box $lname -image $iconImages(open) \
+#                        -text $level -open [string equal Built-in $level]
+		$lbf insert $box end -id $lname \
+			-text $level -image $iconImages(open)
+		if {[string equal {} [$lbf parent $box]]} {
+		    $lbf item $box -open 1
+		}
             }
             set box $lname
         }
         set component $box.[lindex $funk 1]
         if {![$lbf exists $component]} {
-            $lbf insert end $box $component \
+            $lbf insert $box end -id $component \
                     -image $iconImages(function) -text [lrange $funk 1 end]
         }
     }
@@ -78,7 +90,7 @@ proc create_equation {parent boxtitle indices} {
     set indicesf [$middleF.indices getframe]
     frame $indicesf.list
     set lbx [listbox $indicesf.list.ilist \
-            -height 8 -width 12 \
+            -height 8 -width 16 \
             -yscrollcommand [list $indicesf.list.scrolli set]]
     foreach indx $indices {
         $lbx insert end $indx
@@ -561,9 +573,13 @@ proc equationBindings { t en eu lbp lbi lbd lbf lbx gr ta ok can} {
     # can - Cancel button
     
     
-    $lbf bindText <Enter> [list QueuePopup AddFnPopup %X %Y]
-    $lbf bindText <Leave> RemovePopup
-    $lbf bindText <Double-1> [list functionClick %W $en]
+#    $lbf bindText <Enter> [list QueuePopup AddFnPopup %X %Y]
+#    $lbf bindText <Leave> RemovePopup
+#    $lbf bindText <Double-1> [list functionClick %W $en]
+    bind $lbf <Enter> [list QueuePopup AddFnPopup %W %X %Y %x %y]
+    bind $lbf <Motion> [list MoveInFns %W %X %Y %x %y]
+    bind $lbf <Leave> RemovePopup
+    bind $lbf <Double-1> [list functionClick %W %x %y $en]
 
     set PopCmd [list QueuePopup AddIndexPopup %W %y %X %Y]
     bind $lbx <Enter> $PopCmd
@@ -580,6 +596,16 @@ proc equationBindings { t en eu lbp lbi lbd lbf lbx gr ta ok can} {
     
     # Set up for type in
     focus $en
+}
+
+proc MoveInFns {w X Y x y} {
+    global equation
+    catch {if {![string equal $equation(whatPopped) \
+		     [$w identify row $x $y]]} {
+	# changed row; renew popup
+	RemovePopup
+	AddFnPopup $w $X $Y $x $y
+    }}
 }
 
 proc equationDoGraph {parent box} {
@@ -711,19 +737,29 @@ proc HitKey { winId char } {
     }
 }
 
-proc functionClick {tree boxname fn} {
+proc functionClick {tree x y boxname} {
     # work around smelly BWidget bug
-    set tree [winfo parent $tree]
+    set fn [$tree identify row $x $y]
+    # set tree [winfo parent $tree]
     # Take the item the user clicked on
-    if {[llength [$tree nodes $fn]]} {
-	$tree toggle $fn
+    if {[llength [$tree children $fn]]} {
+	$tree item $fn -open [expr {![$tree item $fn -open]}]
     } else {
 	InsertFunction $boxname [lindex [split $fn .] end]
     }
 }
 
-proc AddFnPopup {X Y fnName} {
-    AddWidgetPopup [lindex [split $fnName .] end] $X $Y
+#proc AddFnPopup {X Y fnName} {
+#    AddWidgetPopup [lindex [split $fnName .] end] $X $Y
+#}
+#
+proc AddFnPopup {w X Y x y} {
+    global equation
+    set equation(whatPopped) [$w identify row $x $y]
+    set popTxt [lindex [split $equation(whatPopped) .] end]
+    if {![string equal {} $popTxt]} {
+	AddWidgetPopup $popTxt $X $Y
+    }
 }
 
 proc AddIndexPopup {lb y X Y} {
