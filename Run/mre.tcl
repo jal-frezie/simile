@@ -774,6 +774,7 @@ namespace eval RunEnv {
         
 	EmptyDisplays
         SetCurrentContainer $dp0
+	AddNotebookToCurrentContainer
     }
     
     proc ChildrenFocusParent {parent} {
