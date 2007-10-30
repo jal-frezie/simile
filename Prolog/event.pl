@@ -228,7 +228,7 @@ click_text(Xpt, Ypt, Name, CD) :-
 	anchor so do not allow a caption move, just move the whole thing */
 	    (find_type(Name, text);
 		get_phase(Phase),
-		member(Phase, [moving, moving_kink,
+		member(Phase, [moving, moving_kink, moving_border(_Pt),
 			       moving_bowtie, moving_spline]),
 		% click_on will have set start to centre of component! So...
 		get_translation(Trans),
