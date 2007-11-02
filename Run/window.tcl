@@ -2091,34 +2091,23 @@ proc KillTransients {winId} {
 }
 
 proc byebye {winId} {
-    global window_info classTable
-    set node $window_info($winId,top_node)
-    if {$window_info($winId,is_top_level)} {
-	itcl::delete object $classTable(model,$node)
-	unset classTable(model,$node)
-    } else { ;# non-toplevels do not need class deletion, so DIY
-	ByeByeNode $winId
-    }
-}
-#...if above calls destructor, that calls this...
-proc ByeByeNode {winId} {
     KillTransients $winId
     set runOnEmpty [string equal aqua [tk windowingsystem]]
     prolog [list tk_off_window( '$winId' , $runOnEmpty)]
 }
 
-proc exit_simile {} {
-    global custom tcl_platform
-    
-    set cacheStream [NetOpen $custom(prefDir)/.recent w]
-    foreach oldFile $custom(hotlist) {
-        puts $cacheStream $oldFile
-    }
-    close $cacheStream
-    if {[string equal windows $tcl_platform(platform)]} {
-	file attributes $custom(prefDir)/.recent -hidden true
-    }
-    StartComms -1
+proc CertainDeathNode {winId} {
+    global window_info classTable
+
+    set node $window_info($winId,top_node)
+    itcl::delete object $classTable(model,$node)
+    unset classTable(model,$node)
+}
+
+proc KillNodeInProlog {winId} {
+    # Prolog proc for when desktop is definitely going; called by destructor,
+    # causes Prolog to call next proc
+    prolog tk_certain_death_node('$winId')
 }
 
 proc ZapWindow { fullName } {
@@ -2153,3 +2142,16 @@ proc ClearWindow {winId} {
     ResetEqnBar [winfo parent $winId]
 }
 
+proc exit_simile {} {
+    global custom tcl_platform
+    
+    set cacheStream [NetOpen $custom(prefDir)/.recent w]
+    foreach oldFile $custom(hotlist) {
+        puts $cacheStream $oldFile
+    }
+    close $cacheStream
+    if {[string equal windows $tcl_platform(platform)]} {
+	file attributes $custom(prefDir)/.recent -hidden true
+    }
+    StartComms -1
+}

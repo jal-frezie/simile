@@ -40,7 +40,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_get_pref/2, load_tcl_program/2,
 	check_directory/1, windowize/2,
 	compile_c_program/3, check_exec_fns_fresh/5, load_executable/6,
-			find_phase/4, tk_kill_window/1, exit_AME/0]).
+	find_phase/4, tk_kill_window/1, tk_certain_death/1, exit_AME/0]).
 
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
 
@@ -625,6 +625,9 @@ separate_with_crs([L | Lrest], [L, chars("\n") | Drest]) :-
 
 get_tcl_shpiel(ErrChars) :-
 	safe_tcl_eval([set, errorInfo], ErrChars).
+
+tk_certain_death(Win) :-
+	safe_tcl_eval(['CertainDeathNode', Win], _).
 
 tk_kill_window(Win) :-
 	safe_tcl_eval(['ZapWindow', Win], _).

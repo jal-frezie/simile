@@ -32,7 +32,7 @@ itcl::class similescript::ModelWindow {
         #Exit
 #        MenuClose [GetModelWindow].canvas
 # following replaces above...
-	ByeByeNode $modelCanvas
+	KillNodeInProlog $modelCanvas
     }
     
     public method Hide {} {

@@ -971,8 +971,9 @@ make_connection(Model, Type, Dir, ExternalSection,
 	((Dir = in,
 	    find_all_comps(Parent, InputSection),
 	    ExternalSection = InputSection;  
-	Dir = out,
-	    find_all_comps(Model, InputSection)),
+	  Dir = out,
+	    find_all_comps(Model, InputSection),
+	    ExternalSection = OutputSection),
 	check_input(Type, Dir, Model, SourceCapt, Properties,
 		     InputSection), !,
 	    /* We want to tie all possible continuation sections */
@@ -983,11 +984,10 @@ make_connection(Model, Type, Dir, ExternalSection,
 		     find_all_comps(Model, OutputSection)),
 		    check_output(Type, Dir, Model, DestCapt, Properties,
 				 InputSection, OutputSection)),
-		  AllOutputs),
-	    (Dir = in; AllOutputs = [ExternalSection | _]),
+		  [OutputSection | MoreOutputs]),
 	    all(m_update, link_ends,
 		[unify(Type), unify(InputSection),
-		 build(AllOutputs), build(_TopArcs)]),
+		 build([OutputSection | MoreOutputs]), build(_TopArcs)]),
 	    menu:reroute_sections([InputSection, OutputSection]),
 		menu:remove_old_incomplete;
 	    sicstus_format_to_chars("Could not find a free ~a going ~a the model with destination caption ~a",
@@ -1013,7 +1013,7 @@ check_input(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 		caption_for(BorderSection, Properties));
 	Dir = out,
 	    (Type = influence,
-		Dest has_class variable,
+		Dest has_class border,
 		\+ appears(Dest);
 	    Type = relation,
 		\+ appears(Dest))).
@@ -1034,8 +1034,8 @@ check_output(Type, Dir, Model, SourceCapt, Properties, InputSection,
 	    Dest is_of_sort cloud,
 	    appears(Dest);
 	Type = influence,
-	    Dest has_class variable,
-	    (is_parameter(Dest, 1);
+	    (Dest has_class variable,
+		is_parameter(Dest, 1);
 	    AlreadyDone is_connector from Dest to _,
 		sequence(InputSection, AlreadyDone));
 	Type = relation,

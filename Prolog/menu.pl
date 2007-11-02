@@ -9,7 +9,8 @@ interface of the application. It responds by:
 */
 sicstus_module(menu, [undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
 	menu_handle/3, context_find/3, set_box_size/5, change_size/2,
-	not_last_toplevel/1, off_window/2, kill_everything/1]).
+	not_last_toplevel/1, off_window/2, certain_death_node/1,
+	kill_everything/1]).
 	
 sicstus_use_module([sp_only, compile, dialogue, m_update, image, draw, 
 	state, backup, library, ame_gen, utility, ss_import, m_class,
@@ -1392,18 +1393,23 @@ off_window(Win, ExitIfKilled) :-
 	Win shows_model Model,
 	(is_toplevel(Model), !,
 	    check_deletable(Win, Model),
-	    /* do not bother to delete model if closing down afterwards --
-	    just do the minimum to exit cleanly */
 	    (ExitIfKilled = 1, !,
+		/* do not bother to delete model if closing down afterwards --
+		just do the minimum to exit cleanly */
 		close_exec(Model),
 		delete_window(Win);
-	     start_progress_dialogue(Win),
-		remove_model(Win, Model),
-		fast_delete(Model),
-		scrap_move,
-		finish_progress_dialogue);
+	    output:tk_certain_death(Win));
+/* ...which calls the class destructor, which calls rule below. */
 	delete_window(Win)).
 
+certain_death_node(Win) :-
+	Win shows_model Model,
+	start_progress_dialogue(Win),
+	remove_model(Win, Model),
+	fast_delete(Model),
+	scrap_move,
+	finish_progress_dialogue.
+	
 not_last_toplevel(Win) :-
 	OtherWin shows_model Model,
 	\+ Win = OtherWin,
