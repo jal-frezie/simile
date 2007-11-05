@@ -55,13 +55,13 @@ proc create_equation {parent boxtitle indices} {
     frame $fnFrame
 #    set lbf [Tree $fnFrame.table -showlines yes]
     scrollbar $fnFrame.bar -command "$fnFrame.table yview"
-    pack $fnFrame.bar -side right -fill y -expand true
+    pack $fnFrame.bar -side right -fill y
     set lbf [::ttk::treeview $fnFrame.table -show tree \
 		 -yscrollcommand "$fnFrame.bar set"]
-    $fnFrame.table column \#0 -width 150
+    $fnFrame.table column \#0 -width 100
     pack $fnFrame.table -expand true -fill both
 #    $fnFrame setwidget $lbf
-    pack $fnFrame -expand yes -fill both
+    pack $fnFrame -expand true -fill both
 
     foreach funk $equation(fnDefs) {
         set box {} ;# was root for bwidget
@@ -108,6 +108,11 @@ proc create_equation {parent boxtitle indices} {
     set keys {< > ( ) \[ \] custom AC = ^ , / and dummy if dummy 7 8 9 * or dummy then dummy \
                 4 5 6 - not dummy elseif dummy 1 2 3 + xor dummy else dummy 0 .  <- -> DEL \
                 dummy SPACE dummy}
+    if {[string equal windows $tcl_platform(platform)]} {
+	set buttWidth 4
+    } else {
+	set buttWidth 1
+    }
     for {set row 0} {$row < 6} {incr row} {
         pack [frame $keypadf.keys.row$row] -fill x
         for {set col 0} {$col < 8} {incr col} {
@@ -115,7 +120,7 @@ proc create_equation {parent boxtitle indices} {
 	    if {[string match custom $act]} {
 		set act [PrefValue custom(myButton) myButton]
 	    }
-	    set bid [button $keypadf.keys.row$row.col$col -width 2 \
+	    set bid [button $keypadf.keys.row$row.col$col -width $buttWidth \
 		      -text $act -command [list HitKey $t $act]]
 	    pack $bid -side left -fill x -expand false
 	    if {[string first $act .0123456789]>-1} {
@@ -191,10 +196,12 @@ proc create_equation {parent boxtitle indices} {
     regsub { for } $boxtitle {: } eqnRBtext
     radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
     
-    set en [text $mainf.equation.textbox.text -height 4 -width 80 -relief sunken -bd 2 -highlightthickness 0 \
-            -yscrollcommand "$mainf.equation.textbox.scroll set"]
+    set en [text $mainf.equation.textbox.text -height 4 -width 64 \
+		-relief sunken -bd 2 -highlightthickness 0 \
+		-yscrollcommand "$mainf.equation.textbox.scroll set" \
+		-font {Courier -15}]
 
-   scrollbar $mainf.equation.textbox.scroll -orient vert -command "$en yview"
+    scrollbar $mainf.equation.textbox.scroll -orient vert -command "$en yview"
     pack $mainf.equation.textbox.scroll -side right -fill y
     pack $en -side right -expand true -fill both
     pack $mainf.equation.textbox.radio0 -anchor nw

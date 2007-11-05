@@ -89,7 +89,6 @@ if {[string match Darwin $tcl_platform(os)]} {
     }
     tclAE::installEventHandler aevt rapp handleReopenApp
     tk scaling 1.0
-    set graph(font) [list helvetica 12]
 } else {
 
 # If Simile is already running, make a new window there and exit. Note that
@@ -164,7 +163,6 @@ if {[string match Darwin $tcl_platform(os)]} {
 # Scaling affects some metrics but not all, so squash it FTTB
 # to ensure consistency (do now cos about to put up dialogues)
     tk scaling 1.5
-    set graph(font) [list helvetica 8]
 
 # ok, is anybody out there?
 
@@ -326,6 +324,7 @@ if {[string equal Linux $tcl_platform(os)]} {
 image create photo splash
 splash read $SIMILE_PATH/Images/splash.gif
 
+set graph(font) [list helvetica -12]
 toplevel .splash
 pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
 .splash.c create image 200 158 -image splash

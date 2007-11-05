@@ -1642,7 +1642,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     global equation msgs
 #    ComboBox $eb.equation -editable 1 -state disabled -width 40
-    ::ttk::entry $eb.equation -state disabled -width 40
+    ::ttk::entry $eb.equation -state disabled -width 32 \
+	-font {Courier -15}
     pack $eb.equation -side left -expand 1 -fill x
     bind $eb.equation <Return> [list accept_equation $winid $eb.equation]
     bind $eb.equation <FocusIn> "EmbraceEqn $winid"
