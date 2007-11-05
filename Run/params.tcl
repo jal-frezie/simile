@@ -852,7 +852,6 @@ namespace eval fileparams {
 	if {[lsearch $suppliedData(needed) $smPath*]!=-1} {
 	    return
 	}
-
         set metaFile [ChooseFile $defFile "Save parameters as:" 1 $topNode]
         set SimileProject(fileparam,$smPath) $metaFile
 #puts "setting SimileProject(fileparam,$smPath) to $SimileProject(fileparam,$smPath)"
@@ -914,17 +913,17 @@ namespace eval fileparams {
 	    set compTail [string range $compName [string length $smPath] end]
 	    if {[set slashPosn [string first / $compTail 1]]>-1} {
 		set inners([string range $compTail 1 [incr slashPosn -1]]) 1
-		break
+		continue
 	    }
-	    set subbedComp [StripCrs [string range $compTail 1 end]]
+	    set subbedComp [Entitize [StripCrs [string range $compTail 1 end]]]
 	    set newPopup  "Specified by $metaFile"
 	    if {[DataInScenario $compName]} {
 		set nodeId [IdFromTail $topNode $compName 0]
 		set type [GetCompProperty $topNode Type $nodeId]
 		puts -nonewline $pStr \
-		    "$indent<byte_array label=\"$subbedComp\" type=\"$type\""
+		    "$indent<byte_array label=$subbedComp type=[Entitize $type]"
 		if {[set wrapTime [c_setwraparoundtime $nodeId]]} {
-		    puts -nonewline $pStr " wrap_time=\"$wrapTime\""
+		    puts -nonewline $pStr " wrap_time=[Entitize $wrapTime]"
 		}
 		if {[set fillMtd [c_setfillmethod $nodeId]]} {
 		    puts -nonewline $pStr " fill_method=\"[lindex {USE_LAST USE_CLOSEST INTERPOLATE} $fillMtd]\""
@@ -933,7 +932,7 @@ namespace eval fileparams {
 		set dimCount 0
 		foreach dim $paramDims($compName) {
 		    if {[string equal 0 $dim]} break
-		    puts $pStr "  $indent<value index=[incr dimCount] val=\"$dim\"/>"
+		    puts $pStr "  $indent<value index=\"[incr dimCount]\" val=[Entitize $dim]/>"
 		}
 		puts $pStr "  $indent<!\[CDATA\["
 		if {[string equal TIME [lindex $paramDims($compName) 0]]} {
@@ -949,28 +948,28 @@ namespace eval fileparams {
 				 [lindex $paramState($compName) 0]]
 		switch -exact [lindex $paramState($compName) 1] {
 		    ,image {
-			puts -nonewline $pStr "$indent<image label=\"$subbedComp\" filename=\"$relName\""
+			puts -nonewline $pStr "$indent<image label=$subbedComp filename=[Entitize $relName]"
 			foreach att {rowmin rowmax colmin colmax blackval whiteval transpval use} val [lrange $paramState($compName) 2 9] {
-			    puts -nonewline $pStr " $att=\"$val\""
+			    puts -nonewline $pStr " $att=[Entitize $val]"
 			}
 			puts $pStr />
 		    } ,gdal {
-			puts -nonewline $pStr "$indent<geotiff label=\"$subbedComp\" filename=\"$relName\""
+			puts -nonewline $pStr "$indent<geotiff label=$subbedComp filename=[Entitize $relName]"
 			foreach att {rowmin rowmax colmin colmax} val [lrange $paramState($compName) 2 5] {
-			    puts -nonewline $pStr " $att=\"$val\""
+			    puts -nonewline $pStr " $att=[Entitize $val]"
 			}
 			puts $pStr />
 		    } ,grid {
-			puts -nonewline $pStr "$indent<csv_grid label=\"$subbedComp\" filename=\"$relName\""
+			puts -nonewline $pStr "$indent<csv_grid label=$subbedComp filename=[Entitize $relName]"
 			foreach att {rowmin rowmax colmin colmax} val [lrange $paramState($compName) 2 5] {
-			    puts -nonewline $pStr " $att=\"$val\""
+			    puts -nonewline $pStr " $att=[Entitize $val]"
 			}
 			puts $pStr />
 		    } default {
-			puts $pStr "$indent<csv_columns label=\"$subbedComp\" filename=\"$relName\" data_column=\"[lindex $paramState($compName) 1]\">"
+			puts $pStr "$indent<csv_columns label=$subbedComp filename=[Entitize $relName] data_column=[Entitize [lindex $paramState($compName) 1]]>"
 			set dimCount 0
 			foreach dim [lrange $paramState($compName) 2 end] {
-			    puts $pStr "$indent<value index=[incr dimCount] val=\"$dim\"/>"
+			    puts $pStr "$indent<value index=\"[incr dimCount]\" val=[Entitize $dim]/>"
 			}
 			puts $pStr $indent</csv_columns>
 		    }
@@ -978,9 +977,9 @@ namespace eval fileparams {
 		set msgs(param_source_$compName) \
 		    [concat $newPopup (reference to $relName)]
 	    } elseif {[llength $outData($compName)]==1} {
-		puts $pStr "$indent<single_value label=\"$subbedComp\" val=$outData($compName)/>"
+		puts $pStr "$indent<single_value label=$subbedComp val=[Entitize $outData($compName)]/>"
 	    } else {
-		puts $pStr "$indent<multi_value label=\"$subbedComp\">"
+		puts $pStr "$indent<multi_value label=$subbedComp>"
 		WriteLiteralParam $pStr $outData($compName) "  $indent"
 		#		    puts $pStr "<literal label=\"$SubbedComp\" \
 		    #				    spec=\"$outData($compName)\"/>"
@@ -991,7 +990,7 @@ namespace eval fileparams {
 	puts $pStr $indent</variables>
  	puts $pStr $indent<submodels>
 	foreach sm [array names inners] {
-	    puts $pStr "$indent<submodel label=\"[StripCrs $sm]\">"
+	    puts $pStr "$indent<submodel label=[Entitize [StripCrs $sm]]>"
 	    WriteSubmodelParams outData $topNode $metaFile $pStr $smPath/$sm \
 		"  $indent"
 	    puts $pStr $indent</submodel>
@@ -1002,15 +1001,22 @@ namespace eval fileparams {
     proc WriteLiteralParam {pStr data indent} {
 	foreach {idx val} $data {
 	    if {[llength $val]==1} {
-# get rid of any stuff added to make val a single element, then enquote for XML
-		set val \"[lindex $val 0]\"
-		puts $pStr "$indent<value index=\"$idx\" value=$val/>"
+		puts $pStr "$indent<value index=[Entitize $idx] value=[Entitize [lindex $val 0]]/>"
 	    } else {
-		puts $pStr "$indent<values index=\"$idx\">"
+		puts $pStr "$indent<values index=[Entitize $idx]>"
 		WriteLiteralParam $pStr $val "  $indent"
 		puts $pStr "$indent</values>"
 	    }
 	}
+    }
+
+    proc Entitize {str} {
+	regsub -all & $str {\&amp;} str ;# do first because subs add them
+	regsub -all \" $str {\&quot;} str
+	regsub -all ' $str {\&apos;} str
+	regsub -all < $str {\&lt;} str
+	regsub -all > $str {\&gt;} str
+	return \"$str\"
     }
 
     # merge a parameter metafile. These are saved with the pathnames of the .csv files
@@ -1046,6 +1052,7 @@ set parseStatus(spfParser) [::xml::parser -ignorewhitespace true \
 proc RevertXMLParams {oldPath newPath topNode smPath} {
     global parseStatus
 
+    array unset parseStatus simV
     array set parseStatus [list oldPath $oldPath topNode $topNode \
 			       smPath $smPath submodel {} valNesting 0]
     set parseStatus(outStr) [open $newPath w]
@@ -1174,7 +1181,7 @@ proc LoadBase64CharData {encoded} {
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
     global paramDims paramState mimeSquirter simtmpdir whichParamsAffected msgs
-    global SimileProject
+    global SimileProject parseStatus errorInfo
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -1190,10 +1197,12 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     #do_in_editor puts "MergeParams $topNode $smPath $oldPath $interactive"
     set oldDir [pwd]
     set metaFile [file join $simtmpdir temp_in.spf]
-    if {[catch {set origVersion [RevertXMLParams \
-				     $oldPath $metaFile $topNode $smPath]}]} {
-	puts $::errorInfo
-	if {[catch {
+    if {[catch {set origVersion [RevertXMLParams $oldPath $metaFile $topNode \
+				     $smPath]} bletch]} {
+	if {[info exists parseStatus(simV)]} {
+	    # a bad XML file
+	    error $bletch $errorInfo
+	} elseif {[catch {
 	    set multiT [mime::initialize -file $oldPath]
 	    set origVersion [mime::getheader $multiT Simile-Version]
 	    set mimeSquirter [NetOpen $metaFile w]
