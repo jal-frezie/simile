@@ -1532,7 +1532,7 @@ proc RunIfPackage {} {
 }
 
 proc OpenProjectFile {path} {
-    global SimileProject loadingProject
+    global SimileProject loadingProject runState
     set pFile [file join $path model.spj]
     set projectF [NetOpen $pFile r]
     gets $projectF SimileProjectData
@@ -1566,7 +1566,8 @@ proc OpenProjectFile {path} {
             MenuSelect $win file run_tcl
         }
 	update
-        if {[info exists SimileProject(nameOfHelperStateFile)]} {
+        if {$runState($topNode,modelRunning)>=3 && \
+		[info exists SimileProject(nameOfHelperStateFile)]} {
             set command [ChooseText \
 			     [PrefValue custom(helperManager) helperManager] \
 			     ::RunEnv::LoadSHF CreateView]
