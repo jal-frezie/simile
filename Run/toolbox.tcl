@@ -1,6 +1,6 @@
 # Simile source code file: Run/toolbox.tcl
 #
-# (c) Simulistics Ltd. 2001-2006
+# (c) Simulistics Ltd. 2001-2007
 # (c) University of Edinburgh 1995-2001
 #
 # This file loads all procedures, and sets up the model building environment.

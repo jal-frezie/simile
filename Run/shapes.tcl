@@ -1372,8 +1372,10 @@ proc DisplayAll { winId } {
         set bb [expr $bb + $clearBorder]
         set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]
         # zoom to correct size
-        set xscale [expr ($window_info($winId,width) - $allowScrollBar)/double($br - $bl)]
-        set yscale [expr ($window_info($winId,height) - $allowScrollBar)/double($bb - $bt)]
+	set w $window_info($winId,width)
+	set h $window_info($winId,height)
+        set xscale [expr ($w - $allowScrollBar)/double($br - $bl)]
+        set yscale [expr ($h - $allowScrollBar)/double($bb - $bt)]
         set scale [expr $xscale>$yscale?$yscale:$xscale]
 
         # ShowMessage debug info "xscale $xscale yscale $yscale scale $scale" ok
@@ -1384,7 +1386,23 @@ proc DisplayAll { winId } {
         set bt [expr $bt*$scale]
         set br [expr $br*$scale]
         set bb [expr $bb*$scale]
-
+	if {$window_info($winId,is_top_level)} {
+# resize desktop to a larger shape that matches the window so it all shows...
+# (not if a submodel because that will shrink it in parent diagram)
+	    set bw [expr {$br-$bl}]
+	    set bh [expr {$bb-$bt}]
+	    set overSquare [expr {$bw*$h/$bh/$w}]
+puts "overSquare $overSquare"
+	    if {$overSquare<1} {
+		set bm [expr {($bl+$br)/2}]
+		set bl [expr {$bm-$bw/$overSquare/2}]
+		set br [expr {$bm+$bw/$overSquare/2}]
+	    } else {
+		set bm [expr {($bt+$bb)/2}]
+		set bt [expr {$bm-$bh*$overSquare/2}]
+		set bb [expr {$bm+$bh*$overSquare/2}]
+	    }
+	}
         ResizeDesktop $winId $bl $bt $br $bb
     }
 }
