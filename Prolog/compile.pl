@@ -1050,7 +1050,9 @@ nodes.
 			     [assign(arr(Ptr, Name, []), 0)]),
 			make(startable(Name), [init_list(Name) | BasesCleared],
 			     Path, Step, [reset_list(Ptr, Name)])];
-	[BaseSides, SmInters, Specials] = [[], [], []]),
+	Level = [sm(_,_,_, fm_loop(Globs, _)) | _Loops],
+	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
+	    [BaseSides, SmInters, Specials] = [[], [], []]),
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps, Used,
 			    SubIncludes, SubLibs, FnInters, AssignList0),
 /* Now add an extra instruction if this needs an external proc */
@@ -1095,6 +1097,9 @@ delay_params_out_made(PEfx, [Out | Mo], A, [make(Out, PEfx, R2, R3, []),
 	(R2  = [sm(_,_,_,_) | _], !,
 	   ScPtrOut = ptr(Out); % scalar output -- pass pointer for it
 	ScPtrOut = Out).
+
+name_loop_vars(glob(LVar, _), Used) :-
+	generate_name(c, fill, LVar, Used).
 
 get_base_side(Locale, path_substitution(Exited, Entered, _), Exited) :-
 	prefix(Entered, Locale), !;
