@@ -302,9 +302,13 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		append(UnitMatchError, UnitFormError, UnitError))),
 
 	    (UnitError = [], !,
-		(get_actual_sizes(Function, EqnDims, MultInts, _V, _U),
+		(on_exception(Hiccup,
+			      get_actual_sizes(Function, EqnDims, MultInts,
+					       _V, _U),
+			      name(Hiccup, Complaint6)),
 		    member(Dim, MultInts),
-		    (Dim = var, !,
+		    (nonvar(Complaint6);
+		    Dim = var, !,
 			Complaint6 = "This equation evaluates to a list or an array of lists. Model components are not allowed to have list values.";
 		    \+ (integer(Dim), Dim > 1), !,
 		    % should never happen, parser now checks subexps for this
