@@ -214,12 +214,11 @@ itcl::class similescript::Helper {
     destructor {
 	# ShowMessage debug info "Killing $winId" ok
 	global helperTable runState
-	set modelNode [GetNode]
-	if {[info exists helperTable($modelNode,current)]} {
-	    if {[string equal $winId  $helperTable($modelNode,current)]} {
-		unset helperTable($modelNode,current)
-	    }
+
+	if {[string equal $this [$modelInst HasClicks]]} {
+	    $modelInst ReleaseClicks
 	}
+	set modelNode [GetNode]
 	if {[info exists runState($modelNode,helperId)]} {
 	    if {[string equal $winId $runState($modelNode,helperId)]} {
 		unset runState($modelNode,cnvs)
@@ -427,6 +426,16 @@ redo with snap object
 	global helperTable
 
 	set helperTable($modelNode,current) $helperInst
+    }
+
+    public method HasClicks {} {
+	global helperTable
+
+	if {[info exists helperTable($modelNode,current)]} {
+	    return $helperTable($modelNode,current)
+	} else {
+	    return {}
+	}
     }
 
     public method ReleaseClicks {} {
