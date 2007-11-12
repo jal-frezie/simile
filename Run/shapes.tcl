@@ -1392,7 +1392,7 @@ proc DisplayAll { winId } {
 	    set bw [expr {$br-$bl}]
 	    set bh [expr {$bb-$bt}]
 	    set overSquare [expr {$bw*$h/$bh/$w}]
-puts "overSquare $overSquare"
+#puts "overSquare $overSquare"
 	    if {$overSquare<1} {
 		set bm [expr {($bl+$br)/2}]
 		set bl [expr {$bm-$bw/$overSquare/2}]
@@ -1507,7 +1507,7 @@ proc NextCaption {canvas} {
     }
     if {![llength $find(List,$canvas)]} {
         ShowMessage "Caption finder" info \
-                "No more matching $find(where)s in this window" ok
+                "No more matching $find(where)s in this submodel context" ok
         array unset find *,$canvas
     } else {
         set this [lindex $find(List,$canvas) 0]

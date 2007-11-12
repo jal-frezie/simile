@@ -1140,7 +1140,7 @@ proc DoLocalCmd {win item} {
         tosel {DisplayArea $win}
         tofit {DisplayAll $win}
         zoomout {DoZoom $win .707107 1}
-        find {FindCaption $win}
+        find {prolog tk_bar_edit_menu('$win'); FindCaption $win}
         findnext {NextCaption $win}
         raiseMRE {RaiseWinMRE $win}
         open_all {OpenAll $win}
