@@ -536,10 +536,9 @@ click_on(_,_,_) :-
 
 cloud_to_comp(Poss_start) :-
 	find_all_comps(Parent, Poss_start),
-	get_shape(Poss_start, bounding_box, OldBox),
-	middle(OldBox, [Xpt, Ypt]),
+	get_shape(Poss_start, centre, [Xpt, Ypt]),
 	off(Poss_start),
-	clear_shape(Poss_start, bounding_box),
+	clear_shape(Poss_start, centre),
 	change_class(Poss_start, _, compartment),
 	add_implicit_function(Poss_start, _),
 	/* use insert_variable to make sure it goes in */

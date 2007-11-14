@@ -185,7 +185,7 @@ namespace eval RunEnv {
             
             pack $mainframe -fill both -expand yes
             pack $mainpw -fill both -expand yes
-            update idletasks ;# needed for sash place to work
+            update ;# needed for sash place to work
 	    $mainpw sash place 0 270 0; # must be wide enough (270ish) for the sliders
             
             pack $hiercontrolpw -fill both -expand yes
