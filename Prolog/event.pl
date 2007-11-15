@@ -472,10 +472,11 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    do_colours(Moving_obj, on))),
 	
 	(get_highlit_obj(0, Moving_obj),
-	    (get_shape(Moving_obj, centre, [CX, CY]), !,
-		set_start_coords(CX, CY);
+	    (align(Moving_obj),
+		snap_to_grid([Xpt, Ypt], [GX, GY]),
+		set_start_coords(GX, GY);
 	    true), % clicked on link
-	    (tk_get_pref(quickDrag, 0);
+ 	    (tk_get_pref(quickDrag, 0);
 		retractall(ghostly_move(_,_)),
 		assert(ghostly_move(Xpt, Ypt))), !,
 	    advance_phase_to(moving);
@@ -2208,12 +2209,15 @@ are because undo/redo graphics cannot cope */
 	    redisplay_border(Bit);
 	 find_type(Bit, New_obj),
 	 \+ New_obj = submodel,
-	    get_shape(Bit, centre, [XMid, YMid]),
-	    snap_to_grid([XMid, YMid], [Xpt, Ypt]),
-	    XOff is Xpt-XMid, YOff is Ypt-YMid,
-	    change_shape(Bit, centre, [Xpt, Ypt]),
-	    move_display(Bit, [XOff,YOff])),
+	    align(Bit)),
 	fail; true.
+
+align(Bit) :-
+	get_shape(Bit, centre, [XMid, YMid]),
+	snap_to_grid([XMid, YMid], [Xpt, Ypt]),
+	XOff is Xpt-XMid, YOff is Ypt-YMid,
+	change_shape(Bit, centre, [Xpt, Ypt]),
+	move_display(Bit, [XOff,YOff]).
 
 adjust_posn(Thing, Trans) :-
 	get_shape(Thing, Whatever, Wherever),

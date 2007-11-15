@@ -1430,7 +1430,7 @@ kill_everything(Model) :-
 ok_to_delete(Win, Target) :-
 	get_default_export_name(Target, ".sml", Handle),
 	caption_for(Target, Title),
-	sicstus_format_to_chars("Component ~a (in ~w) has not been saved since it was last modified. Save it now?", [Handle, Title], Query),
+	sicstus_format_to_chars("The current version of ~a (in ~w) has not been saved. Save it now?", [Handle, Title], Query),
 	do_dialogue("Save changes", question, Query, yesnocancel, Reply),
 	(Reply = yes, do_save(Win, Target, false);
 	Reply = no).
