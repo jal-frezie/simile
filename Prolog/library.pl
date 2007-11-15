@@ -25,7 +25,9 @@ ame_save( File, Model, Date, SelOnly ) :-
 	(backup:is_toplevel(Model),
 	    SelOnly = no,
 	    setof(A-V, Model has_class_refinement A of V, Props);
-	 Props = []),
+	 setof(Enum, ancestor_has_enum_type(Model, Enum), AllEnums),
+	    Props = [enum_types-AllEnums];	       
+	Props = []),
 	\+ ( member( Node, Models ),
 	     \+ Node is_model_class ),
 	output:windowize(File, WFile),

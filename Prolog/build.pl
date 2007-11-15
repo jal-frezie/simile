@@ -11,7 +11,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 sicstus_module(build, [source/5,roots/4,properties/4,
-	node/8,node/9,arc/9,ghosts/5] ).
+	node/8,node/9,arc/9,ghosts/5, ancestor_has_enum_type/2] ).
 
 sicstus_use_module( [library( lists),m_class,utility] ).
 
@@ -42,9 +42,29 @@ properties([],_,B,B).
 
 properties([A-V | Rest], Root, B, B) :-
 	(A=name, !; /* do not set submodel name from saved model */
+	A = enum_types, !,
+	    merge_enum_types(V, Root);
 	Root has_changed_class_refinement A of V, !;
 	Root has_new_class_refinement A of V),
 	properties(Rest, Root, B, B).
+
+merge_enum_types(Types, Parent) :-
+	Types = [];
+	Types = [Class-Mems | Rest],
+	(ancestor_has_enum_type(Parent, Class-OldMems),
+	    (Mems = OldMems;
+	    sicstus_format_to_chars("The components being merged include a definition for the enumerated type \"~a\", which will be replaced by the definition already in the model.", [Class], Annoy),
+		do_dialogue("Model incompatibility", error, Annoy, ok, _)), !;
+	 Parent has_class_refinement enum_types of OldTypes,
+	     Parent has_changed_class_refinement enum_types of
+	         [Class-Mems | OldTypes];
+	    Parent has_new_class_refinement enum_types of [Class-Mems]),
+	merge_enum_types(Rest, Parent).
+
+ancestor_has_enum_type(Model, Enum) :-
+	ame_gen:contains(Outer, Model),
+	Outer has_class_refinement enum_types of Types,
+	member(Enum, Types).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % add_node inserts new information about a node, and updates bindings
