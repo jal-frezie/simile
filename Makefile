@@ -7,6 +7,8 @@ ABS_EXP = ""
 REL_EXP = 0
 # License code required to verify name/corp/edition: 0 for no
 LICENSED = 1
+# Prolog implementation to use -- SICSTUS for Windows releases, GNU otherwise
+PROLOG = GNU
 
 ifeq ($(ABS_EXP),"")
 	EXP_TICKS = 0
@@ -44,14 +46,9 @@ ifeq ($(UNAME),MINGW32_NT-5.0)
 	UNAME = MINGW32_NT
 endif 
 
-ARCH = $(shell uname -m)
-ifeq ($(ARCH),Power Macintosh)
-	ARCH = ppc
-endif
-
 # Default case: any Windows, any toolchain
-	PROLOGSTATE = System/bin/main.sav
 	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
+	ARCH =
 	SLDIR = bin
 	SHAREDLIBPREFX = 
 	VERS = 84
@@ -60,17 +57,19 @@ endif
 	INSTLIB = Run/install.dll
 	MAIN = System/bin/Simile.exe
 ifeq ($(UNAME),Darwin)
-	PROLOGSTATE = Run/xgsimile_$(ARCH)
+	ARCH = _$(shell uname -m)
+	ifeq ($(ARCH),_Power Macintosh)
+		ARCH = _ppc
+	endif
 	SLDIR = lib
 	SHAREDLIBPREFX = lib
 	VERS = 8.4
-	SHAREDLIBEXTN = _$(ARCH).dylib
-	EXECEXTN = _$(ARCH)
+	SHAREDLIBEXTN = $(ARCH).dylib
+	EXECEXTN = $(ARCH)
 	INSTLIB = 
 	MAIN = 
 endif 
 ifeq ($(UNAME),Linux)
-	PROLOGSTATE = Run/xgsimile
 	SLDIR = lib
 	SHAREDLIBPREFX = lib
 	VERS = 8.4
@@ -81,12 +80,18 @@ ifeq ($(UNAME),Linux)
 	INSTLIB = 
 	MAIN = 
 endif
+
+PROLOGSTATE = Run/xgsimile$(ARCH)$(EXECEXTN)
+ifeq ($(PROLOG),SICSTUS)
+	PROLOGSTATE = System/bin/main.sav
+endif
+
 SHIM = System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN)
 
 simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) $(SHIM) \
 	System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) $(INSTLIB) $(MAIN)
 
-ifeq ($(ARCH),i386)
+ifeq ($(ARCH),_i386)
 # this saves going on the ppc mac to make the stub for each edition
 PPCSHIM = System/lib/Stubs/libame_dll$(VERS)_ppc.dylib
 ppcshim: $(PPCSHIM)
@@ -110,14 +115,14 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl compile.pl database.pl \
 		output.pl render.pl ss_import.pl state.pl \
 		submodel.pl tcltk.pl text.pl units.pl utility.pl
 
-# Windows release, Prolog is Sicstus
+# Prolog is Sicstus
 System/bin/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl System/bin/struct_db.dll
 	cd Prolog; sicstus -l buildmainsav.pl; cd ..
 
 System/bin/struct_db.dll: struct_db.pl Prolog/struct_db.c
 	cd Prolog; splfr struct_db.pl struct_db.c; mv struct_db.dll ../System/bin; cd ..
 
-Run/xgsimile$(EXECEXTN): Prolog/gmain$(EXECEXTN).o Prolog/struct_db.c
+Run/xgsimile$(ARCH)$(EXECEXTN): Prolog/gmain$(EXECEXTN).o Prolog/struct_db.c
 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C -D_GNU_PROLOG gmain$(EXECEXTN).o struct_db.c; cd ..
 Prolog/gmain$(EXECEXTN).o: $(PROLOG_FILES) gmain.pl
 	cd Prolog; gplc -o gmain$(EXECEXTN).o -c gmain.pl; cd ..
@@ -138,12 +143,12 @@ System/lib/Stubs/libame_dll8.4.so: ame_cmx.cpp dllcalls.h System/lib/lib5d.so
 
 # 'before' arg of install_name_tool should be some gung-ho sed regexp on output
 # of otool but it did not work (why was this not needed for ppc?)
-System/lib/Stubs/libame_dll8.4_$(ARCH).dylib: \
-		ame_cmx.cpp dllcalls.h System/lib/lib5d_$(ARCH).dylib
+System/lib/Stubs/libame_dll8.4$(ARCH).dylib: \
+		ame_cmx.cpp dllcalls.h System/lib/lib5d$(ARCH).dylib
 	cd Run; \
 	$(GPPCMD) -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers \
 		-dynamiclib -o ../$(SHIM) ame_cmx.cpp -F../../Frameworks \
-		-framework Tcl -L../System/lib -l5d_$(ARCH); cd ..; \
+		-framework Tcl -L../System/lib -l5d$(ARCH); cd ..; \
 	install_name_tool -change \
 		/Library/Frameworks/Tcl.framework/Versions/8.4/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl $(SHIM)
@@ -158,7 +163,7 @@ System/lib/lib5d.so: shank.cpp dllcalls.h Makefile
 # gcc cannot build universal binary libraries for loading via ld
 # directly; build separately and lipo them together
 
-System/lib/lib5d_$(ARCH).dylib: shank.cpp dllcalls.h Makefile
+System/lib/lib5d$(ARCH).dylib: shank.cpp dllcalls.h Makefile
 	cd Run; $(GPPCMD) -O -fPIC -I. -dynamiclib -o ../System/lib/lib5d$(SHAREDLIBEXTN) shank.cpp; cd ..
 
 Run/install.dll: install.cpp Makefile
