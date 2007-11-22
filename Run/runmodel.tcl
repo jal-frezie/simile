@@ -1112,7 +1112,7 @@ proc StartRun {node} {
 	update ;# so reqheight works next
 #	tkwait visibility $runState($node,helperId)
 	$ctrlPane sash place 0 10 [expr [winfo reqheight $ctrlPane.runcontrolPane]+10]
-    }
+	::RunEnv::InMreFor $node ;# in case it has been focussed since creation    }
 # Now list all the inputs in the model, so we can avoid running it until
 # all have tools attached to provide their values
 #    if {[info exists inputHelper]} {
@@ -1134,6 +1134,7 @@ proc StartRun {node} {
 #	TellHelperItsGone $oldInputHelper($removedInput) $removedInput
 #    }
 #    CheckFixedParamState
+
     StartNow $node reset
     return 1
 }
