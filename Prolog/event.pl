@@ -656,7 +656,7 @@ because this is speed-critical. */
 cannot_call_in(Prev_highlight, Parent, Name) :-
 	find_all_comps(Parent, InSameModel),
 	appears(InSameModel),
-	(\+ InSameModel is_of_sort captionless; find_type(InSameModel, cloud)),
+	\+ InSameModel is_of_sort captionless,
 	\+ InSameModel = Prev_highlight,
 	(m_class:InSameModel has_class_refinement name of Name;
 	caption_for(InSameModel, Name)).
