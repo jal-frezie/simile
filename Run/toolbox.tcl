@@ -1575,6 +1575,7 @@ proc OpenProjectFile {path} {
 		${path}/$SimileProject(nameOfHelperStateFile)
         }
     }
+    array unset SimileProject
 }
 
 proc SaveProjectFile {topNode path tgt} {
@@ -1585,7 +1586,6 @@ proc SaveProjectFile {topNode path tgt} {
     # save any shf files names
     
     set ProjectFile $path/model.spj
-    array unset SimileProject
     
     # is it builtC|builtTcl|notbuilt
     if {[HaveValues $topNode] && !$runState($topNode,updated)} {

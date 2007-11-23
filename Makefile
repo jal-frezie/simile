@@ -101,7 +101,7 @@ $(PPCSHIM): ame_cmx.cpp dllcalls.h System/lib/lib5d_ppc.dylib Makefile
 		-dynamiclib -o ../$(PPCSHIM) ame_cmx.cpp -F../../Frameworks \
 		-framework Tcl -L../System/lib -l5d_ppc; cd ..; \
 	install_name_tool -change \
-		/Library/Frameworks/Tcl.framework/Versions/8.4/Tcl \
+		/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl $(PPCSHIM)
 
 endif
@@ -138,19 +138,19 @@ vpath 	%.tcl 	Run
 System/lib/Stubs/ame_dll84.dll: ame_cmx.cpp dllcalls.h System/bin/5d.dll
 	cd Run; $(GPPCMD) -c $(DEFNS) -I. -I../System/include/tcl ame_cmx.cpp; $(GPPCMD) -shared -o ../$(SHIM) ame_cmx.o ../System/lib/tclstub84.lib -L../System/lib -l5ddll; cd ..
 
-System/lib/Stubs/libame_dll8.4.so: ame_cmx.cpp dllcalls.h System/lib/lib5d.so
-	cd Run; $(GCCCMD) -c -fPIC $(DEFNS) -I. -I../System/include/tcl ./ame_cmx.cpp; $(GCCCMD) -shared -o ../$(SHIM) ame_cmx.o -L../System/lib -ltclstub8.4 -l5d; cd ..
+System/lib/Stubs/libame_dll$(VERS).so: ame_cmx.cpp dllcalls.h System/lib/lib5d.so
+	cd Run; $(GCCCMD) -c -fPIC $(DEFNS) -I. -I../System/include/tcl ./ame_cmx.cpp; $(GCCCMD) -shared -o ../$(SHIM) ame_cmx.o -L../System/lib -ltclstub$(VERS) -l5d; cd ..
 
 # 'before' arg of install_name_tool should be some gung-ho sed regexp on output
 # of otool but it did not work (why was this not needed for ppc?)
-System/lib/Stubs/libame_dll8.4$(ARCH).dylib: \
+System/lib/Stubs/libame_dll$(VERS)$(ARCH).dylib: \
 		ame_cmx.cpp dllcalls.h System/lib/lib5d$(ARCH).dylib
 	cd Run; \
 	$(GPPCMD) -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers \
 		-dynamiclib -o ../$(SHIM) ame_cmx.cpp -F../../Frameworks \
 		-framework Tcl -L../System/lib -l5d$(ARCH); cd ..; \
 	install_name_tool -change \
-		/Library/Frameworks/Tcl.framework/Versions/8.4/Tcl \
+		/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl $(SHIM)
 
 System/bin/5d.dll: shank.cpp dllcalls.h Makefile
