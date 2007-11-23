@@ -1520,7 +1520,6 @@ unique_name_for_new(Parent, Type, Name) :-
 	   Type is_class_of_sort box,
 	       Part has_class_refinement name of Name,
 	       Parent has_part Part), !.
-.
 
 get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 			    Desc, Comment, EnumSpecs, Proc, Inc, Libs,
