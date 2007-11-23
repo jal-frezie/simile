@@ -141,6 +141,7 @@ context_find(Wid, Query, Target) :-
 	    get_info(Wid, Comp, eqn, Field),
 	    \+ Field = '<none>';
 	 Target = caption,
+	    \+ Comp is_of_sort captionless,
 	    caption_for(Comp, Field)),
 	name(Query, QueryStr),
 	name(Field, FieldStr),
