@@ -650,9 +650,7 @@ new_line(Type, Attributes, Start, Finish, Arc) :-
 	Arc is_new_connector from Start to Finish,
 	Arc has_new_type Type,
 	Arc draws_inside Parent,
-	unique_name_for_new(Type, Name),
-	\+ (Part has_attribute name of Name,
-	     Part draws_inside Parent), !,
+	unique_name_for_new(Parent, Type, Name),
 	add_line_attributes(Arc, [[name, Name] | Attributes]),
 	add_implicit_function(Arc, _).
 
@@ -668,9 +666,7 @@ asserted as part of the system initialization. Windows created later will have
 their own display parameter. */
 
 make_node(Parent, Type, Node) :-
-	unique_name_for_new(Type, Name),
-	\+ (Part has_class_refinement name of Name,
-	     Parent has_part Part), !,
+	unique_name_for_new(Parent, Type, Name),
 	Node is_new_part_of Parent,
 	Node has_new_class Type,
 	Node has_new_class_refinement name of Name.
@@ -1515,9 +1511,16 @@ oldd_new_line_between(Line_type, Start, Finish, Top_link) :-
 	Top_link = Forward_link,
 		Top_link = Backward_link).
 
-unique_name_for_new(Type, Name) :-
+unique_name_for_new(Parent, Type, Name) :-
 	(get_abbrev(Type, Abbrev), !; Type = Abbrev),
-	utility:unique_name(Abbrev, Name, _).
+	utility:unique_name(Abbrev, Name, _),
+	\+ (Type is_class_of_sort line,
+	       Part has_attribute name of Name,
+	       Part draws_inside Parent;
+	   Type is_class_of_sort box,
+	       Part has_class_refinement name of Name,
+	       Parent has_part Part), !.
+.
 
 get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 			    Desc, Comment, EnumSpecs, Proc, Inc, Libs,

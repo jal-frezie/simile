@@ -542,7 +542,13 @@ cloud_to_comp(Poss_start) :-
 	change_class(Poss_start, _, compartment),
 	add_implicit_function(Poss_start, _),
 	/* use insert_variable to make sure it goes in */
-	insert_variable(Parent, Xpt, Ypt, compartment, Poss_start).
+	m_update:unique_name_for_new(Parent, compartment, Name),
+	add_parameter(Poss_start, 0, name, Name),
+	insert_variable(Parent, Xpt, Ypt, compartment, Poss_start),
+	give_focus(Poss_start),
+	do_colours(Poss_start, on),
+	find_current(Wid),
+	select_text(Wid, Poss_start).
 
 /* add_at_point: places a new 'box' type component in the model, fails if new_obj
 is not a box type, or if there is no room at the given position to put the object.
