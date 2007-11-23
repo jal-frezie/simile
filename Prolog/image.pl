@@ -338,8 +338,8 @@ get_circle_crossings([Xj, Yj], Rad, [X0, Y0], F, G, Tp, [X, Y]) :-
         Tp is FxGy/FGsq;
     Root >= 0.0001,
         SqRoot is sqrt(Root),
-        (Tp is (FxGy - SqRoot)/FGsq; Tp is (FxGy + SqRoot)/FGsq)),
-    Tp > 0,
+        (Tp is (FxGy + SqRoot)/FGsq)),
+%    Tp > -0.0001,
     X is X0 + F*Tp,
     Y is Y0 + G*Tp.
 
@@ -609,7 +609,7 @@ warp_factor_for(Link, WarpFactor) :-
 	Link is_connector from A to B,
 	setof(GenLink, GenLink is_connector from A to B, Links),
 	nth(Seq, Links, Link),
-	WarpFactor is (Seq - 1.7 - 3.4*floor(Seq/3.4))/1.7.
+	WarpFactor is (Seq - 1.3 - 2.6*floor(Seq/2.6))/1.3.
 
 get_link_route(Link, Route) :-
 	get_end_pt(Link, start, SType, [SX, SY], SBox),
