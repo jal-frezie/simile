@@ -62,12 +62,8 @@ insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
 	PathExp = elt(RealPathForm, Ref, SourceType-DimTypes), !,
 	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm),
 					 build(Dims), build(_), build(_)]),
-	    (Ref = import(_,_, LvlN, Ptr0, PtrN, _, _, ArcI),
-		import_path_for(Dims, RealPathForm, ArcI, 0, Ptr0, LvlN, PtrN,
-				LocalLoops, Inds),
-		RealPath = [];
 	    make_inds_for(Dims, LocalLoops, Inds),
-		copy_term(RealPathForm, RealPath)),
+	    copy_term(RealPathForm, RealPath),
 
 	    pointer_from(RealPath, SmPtr),
 	    (Location = in_hierarchy,
@@ -356,18 +352,8 @@ make_intermediates(
 	    /* get_actual_sizes(SubId, Dims, _,_,_), just a check */
 	    get_dims_from_loops(SourceLoops, Dims, _),
 			    
-	    (SourceRef = arr(_, import(_, Away, _, Ptr, _, Ph, Var, _), _), !, 
-		(var(Away), !, /* external toplink, stub will find from arc */
-		    CommonContext = [],
-		    Ptr = 'NULL';
-		    /* Model to start source search is in this dll --
-		    get its pointer */
-		suffix(CommonContext, DestPath),
-		    CommonContext = [sm(Away, _, Ptr, _) | _]),
-		append(SourceLoops, CommonContext, SourceContext);
 	    SourceRef = arr(_, Var, _),
-		Ph = -1,
-		SourceLoops = SourceContext),
+	    SourceLoops = SourceContext,
 	    (var(Wait), !,
 		/* we are in the argument of last(...) so no need to wait for
 		this before using it, just dont do it at init time */
@@ -375,13 +361,7 @@ make_intermediates(
 	    swap_back(SourceContext, TermSwap, ParamContext, _),
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
-	        (Ph = 0, !,      /* Var made locally by contained dll */
-		    Args = [time]; /* or import from ancestor dll */
-		Var = externs_done, !, /* Made from imports by contained dll */
-		    Args = [externs_done, time]; 
-		Ph = 1, !,
-		    Args = [exts(Var)];
-		Var = Target, !,
+	        (Var = Target, !,
 		    Args = []; % it cannot be a condition of itself
 		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
 	        /* note that for the time being the made_at condition is thrown
@@ -972,15 +952,17 @@ prevent_inappropriate_reuse(Explicit, instance(Type, I, Replaces, Name, Dims),
 swap_vars(switch(Take, Add), Tgt, Add, 0) :-
 	nonvar(Tgt), Tgt = Take.
 
+/* Adjusted 24/11/07 so it succeeds with unchanged context if the swap cannot
+be matched */
 swap_back(BaseContext, BackSwap, Context, MadeDim) :-
-	(var(BackSwap), !; BackSwap = values_from_base),
-	    Context = BaseContext;
-	BackSwap = path_substitution(Base, Assoc, Link),
+	nonvar(BackSwap),
+	    BackSwap = path_substitution(Base, Assoc, Link),
 	    append(Base, Top, BasePath),
 	    append(Tail, BasePath, BaseContext),
 	    append([Tail, Assoc, Top], Context),
-	    (m_update:is_exclusive_role(Link), !;
-		MadeDim = new_dim).
+	    (m_update:is_exclusive_role(Link);
+		MadeDim = new_dim), !;
+	Context = BaseContext.
 
 propagate_units(Source, Lowest, Want, Get, Result) :-
 	promote_unit(Lowest, In),
