@@ -286,12 +286,14 @@ proc SetState {winId newState} {
 proc ProdObj {topNode nodeId caption} {
     global helperTable
     if {[info exists helperTable($topNode,current)]} {
+# Supplied caption is submodel hierarchy from diagram (unless I get rid of that)
+# -- however we need hierarchy of base component if this is a ghost, so...
+	set useCapt [GetCompProperty $topNode Caption $nodeId]
 # allow all components to be clicked as helpers might want other info
 # than just values
 #	switch -regexp [GetCompProperty $topNode Type $nodeId] {
 #	    REAL|INTEGER|FLAG|ENUMERATED {
-		set target $helperTable($topNode,current)
-		SystemHelperCall $target $topNode Click $caption
+	SystemHelperCall $helperTable($topNode,current) $topNode Click $useCapt
 #	    } default {
 #		ShowMessage "Clicked on $caption" error \
 #                    "This component cannot be selected for an I/O tool because it has no associated value." ok
