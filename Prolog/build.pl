@@ -150,7 +150,9 @@ links( Node, Links, _, Bindings, Bindings ) :-
 	retractall(missing(_)),
 	member(MissingIn-MissingOut, Links),
 	member(Missing, [MissingIn, MissingOut]),
-	\+ member(Missing-_, Bindings),
+	\+ (Bindings = copy,
+	       Missing is_connector _;
+	    member(Missing-_, Bindings)),
 	assert(missing(Missing)),
 	fail.
 
