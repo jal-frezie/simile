@@ -1067,9 +1067,8 @@ proc InjectGraphics {c canvasFile} {
     # be displayed.
     $c delete withtag /base/ ;# these will be re-created
     update idletasks
-    $c xview moveto 0
-    $c yview moveto 0
     SetSpace $c $w $h
+    CanvasSee $c [lindex [$c find all] end] ;# view topmost item
     return DoneInjectGraphics
 }
 
@@ -1490,7 +1489,7 @@ proc FindCaption {canvas} {
 #}
 #
 proc NextCaption {canvas} {
-    global find window_info
+    global find
     if {![info exists find(List,$canvas)]} {
         ShowMessage "Operation failed" error "No search in progress!" ok
         return
@@ -1515,25 +1514,31 @@ proc NextCaption {canvas} {
         #	$canvas itemconfigure $this -fill blue
         # left in in case the thing fails to highlight, or is exec_only
 
-        # Now to pervert the 'scan' command to make an ad-hoc 'see'...
-        # note this could also be done using canvas x/yview moveto, but only
-        # if the values they return are updated by resizing the window (which
-        # the reported width and height aren't).
-
-        set middleX [$canvas canvasx [expr $window_info($canvas,width)/2]]
-        set middleY [$canvas canvasy [expr $window_info($canvas,height)/2]]
-        scan [$canvas coords $this] {%f %f} tgtX tgtY
-	if {[info exists tgtX]} {
-	    $canvas scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
-	    $canvas scan dragto [expr int(-0.1*$tgtX)] [expr int(-0.1*$tgtY)]
-	} else {
-	    puts "Missed with $this coords [$canvas coords $this]"
-	}
+	CanvasSee $canvas $this
         set find(now,$canvas) $this
 	prolog tk_do_colours($find(now,$canvas),on)
 #        FlashSymbol $canvas $find(now,$canvas) orange orange
         #	HandleObjClick $canvas $this clicktext $tgtX $tgtY
         #	ReleaseObj $canvas $tgtX $tgtY
+    }
+}
+
+proc CanvasSee {canvas this} {
+    global window_info
+
+    # Now to pervert the 'scan' command to make an ad-hoc 'see'...
+    # note this could also be done using canvas x/yview moveto, but only
+    # if the values they return are updated by resizing the window (which
+    # the reported width and height aren't).
+    
+    set middleX [$canvas canvasx [expr $window_info($canvas,width)/2]]
+    set middleY [$canvas canvasy [expr $window_info($canvas,height)/2]]
+    scan [$canvas coords $this] {%f %f} tgtX tgtY
+    if {[info exists tgtX]} {
+	$canvas scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
+	$canvas scan dragto [expr int(-0.1*$tgtX)] [expr int(-0.1*$tgtY)]
+    } else {
+	puts "Missed with $this coords [$canvas coords $this]"
     }
 }
 
