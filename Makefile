@@ -48,24 +48,22 @@ endif
 
 # Default case: any Windows, any toolchain
 	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
-	ARCH =
 	SLDIR = bin
 	SHAREDLIBPREFX = 
 	VERS = 84
 	SHAREDLIBEXTN = .dll
-	EXECEXTN = .exe
+	ARCHEXTN = .exe
 	INSTLIB = Run/install.dll
 	MAIN = System/bin/Simile.exe
 ifeq ($(UNAME),Darwin)
-	ARCH = _$(shell uname -m)
-	ifeq ($(ARCH),_Power Macintosh)
-		ARCH = _ppc
+	ARCHEXTN = _$(shell uname -m)
+	ifeq ($(ARCHEXTN),_Power Macintosh)
+		ARCHEXTN = _ppc
 	endif
 	SLDIR = lib
 	SHAREDLIBPREFX = lib
 	VERS = 8.4
-	SHAREDLIBEXTN = $(ARCH).dylib
-	EXECEXTN = $(ARCH)
+	SHAREDLIBEXTN = $(ARCHEXTN).dylib
 	INSTLIB = 
 	MAIN = 
 endif 
@@ -74,24 +72,24 @@ ifeq ($(UNAME),Linux)
 	SHAREDLIBPREFX = lib
 	VERS = 8.4
 	SHAREDLIBEXTN = .so
-	EXECEXTN =
+	ARCHEXTN =
 	GCCCMD = gcc -O3 -m32
 	GPPCMD = g++ -O3 -m32
 	INSTLIB = 
 	MAIN = 
 endif
 
-PROLOGSTATE = Run/xgsimile$(ARCH)$(EXECEXTN)
+PROLOGSTATE = Run/xgsimile$(ARCHEXTN)
 ifeq ($(PROLOG),SICSTUS)
 	PROLOGSTATE = System/bin/main.sav
 endif
 
 SHIM = System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN)
 
-simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) $(SHIM) \
+simile: $(PROLOGSTATE) System/bin/relay$(ARCHEXTN) $(SHIM) \
 	System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) $(INSTLIB) $(MAIN)
 
-ifeq ($(ARCH),_i386)
+ifeq ($(ARCHEXTN),_i386)
 # this saves going on the ppc mac to make the stub for each edition
 PPCSHIM = System/lib/Stubs/libame_dll$(VERS)_ppc.dylib
 ppcshim: $(PPCSHIM)
@@ -122,10 +120,10 @@ System/bin/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl System/bin/struct_db.dl
 System/bin/struct_db.dll: struct_db.pl Prolog/struct_db.c
 	cd Prolog; splfr struct_db.pl struct_db.c; mv struct_db.dll ../System/bin; cd ..
 
-Run/xgsimile$(ARCH)$(EXECEXTN): Prolog/gmain$(EXECEXTN).o Prolog/struct_db.c
-	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C -D_GNU_PROLOG gmain$(EXECEXTN).o struct_db.c; cd ..
-Prolog/gmain$(EXECEXTN).o: $(PROLOG_FILES) gmain.pl
-	cd Prolog; gplc -o gmain$(EXECEXTN).o -c gmain.pl; cd ..
+Run/xgsimile$(ARCHEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
+	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C -D_GNU_PROLOG gmain$(ARCHEXTN).o struct_db.c; cd ..
+Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) gmain.pl
+	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c gmain.pl; cd ..
 
 vpath 	%.cpp 	Run
 vpath 	%.c 	Run
@@ -143,12 +141,12 @@ System/lib/Stubs/libame_dll$(VERS).so: ame_cmx.cpp dllcalls.h System/lib/lib5d.s
 
 # 'before' arg of install_name_tool should be some gung-ho sed regexp on output
 # of otool but it did not work (why was this not needed for ppc?)
-System/lib/Stubs/libame_dll$(VERS)$(ARCH).dylib: \
-		ame_cmx.cpp dllcalls.h System/lib/lib5d$(ARCH).dylib
+System/lib/Stubs/libame_dll$(VERS).dylib: \
+		ame_cmx.cpp dllcalls.h System/lib/lib5d$(ARCHEXTN).dylib
 	cd Run; \
 	$(GPPCMD) -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers \
 		-dynamiclib -o ../$(SHIM) ame_cmx.cpp -F../../Frameworks \
-		-framework Tcl -L../System/lib -l5d$(ARCH); cd ..; \
+		-framework Tcl -L../System/lib -l5d$(ARCHEXTN); cd ..; \
 	install_name_tool -change \
 		/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl $(SHIM)
@@ -163,7 +161,7 @@ System/lib/lib5d.so: shank.cpp dllcalls.h Makefile
 # gcc cannot build universal binary libraries for loading via ld
 # directly; build separately and lipo them together
 
-System/lib/lib5d$(ARCH).dylib: shank.cpp dllcalls.h Makefile
+System/lib/lib5d$(ARCHEXTN).dylib: shank.cpp dllcalls.h Makefile
 	cd Run; $(GPPCMD) -O -fPIC -I. -dynamiclib -o ../System/lib/lib5d$(SHAREDLIBEXTN) shank.cpp; cd ..
 
 Run/install.dll: install.cpp Makefile
@@ -186,8 +184,8 @@ System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc Makefile
 #	cd Run; $(WISHCMD) makedlls.tcl; cd ..
 #endif
 
-System/bin/relay$(EXECEXTN): Run/relay.c
-	cd Run; $(GCCCMD) -o ../System/bin/relay$(EXECEXTN) relay.c; cd ..
+System/bin/relay$(ARCHEXTN): Run/relay.c
+	cd Run; $(GCCCMD) -o ../System/bin/relay$(ARCHEXTN) relay.c; cd ..
 
 # call clean after changing license info in this file
 clean:

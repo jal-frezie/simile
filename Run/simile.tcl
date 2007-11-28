@@ -281,7 +281,7 @@ if {[info exists prolog_in_console]} {
 }
 
 set env(SIMILE_VERSION) 5.0
-set sendvars(simP) {b1}
+set sendvars(simP) {}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is
@@ -346,8 +346,8 @@ if {[info exists SimileAutoObjLoaded]} {
 wm withdraw . ;# already withdrawn if not Linux
 
 # This is the folder that AME should start looking for model
-# files in -- must be a subfolder of the installation folder
-cd $SIMILE_PATH/Prolog
+# files in -- must be an existing subfolder of the installation folder
+cd $SIMILE_PATH/Examples
 
 # tk_messageBox -title debug -icon info \
 #   -message "TCL library is [info library]\n \

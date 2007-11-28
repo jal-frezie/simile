@@ -70,23 +70,24 @@ double max(double a, double b) {
   return a>b?a:b;
 }
 /* Special functions for getting values from lists according to contents of
-   other lists */
+   other lists -- because Simile uses implicit casts but this takes pointers,
+   it has to cast explicitly */
 
-template <class ResultClass, class CompareClass>
-void assign_if_max(CompareClass sample, ResultClass payload,
+template <class ResultClass, class PayloadClass, class CompareClass>
+void assign_if_max(CompareClass sample, PayloadClass payload,
 		   CompareClass* runner, ResultClass* pick) {
   if (sample>*runner) {
     *runner = sample;
-    *pick = payload;
+    *pick = (ResultClass)payload;
   }
 }
 
-template <class ResultClass, class CompareClass>
-void assign_if_min(CompareClass sample, ResultClass payload,
+template <class ResultClass, class PayloadClass, class CompareClass>
+void assign_if_min(CompareClass sample, PayloadClass payload,
 		   CompareClass* runner, ResultClass* pick) {
   if (sample<*runner) {
     *runner = sample;
-    *pick = payload;
+    *pick = (ResultClass)payload;
   }
 }
 
