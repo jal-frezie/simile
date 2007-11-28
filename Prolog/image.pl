@@ -620,8 +620,8 @@ get_link_route(Link, Route) :-
 	    get_shape(Link, curve, [CX, CY]),
 	    MX is CX + (SX+FX)/2,
 	    MY is CY + (SY+FY)/2,
-	    crossing_point([SX, SY], [MX, MY], SType, SBox, WarpFactor, P0),
-	    crossing_point([FX, FY], [MX, MY], FType, FBox, -WarpFactor, Pn),
+	    crossing_point([SX, SY], [MX, MY], SType, SBox, WarpFactor/4, P0),
+	    crossing_point([FX, FY], [MX, MY], FType, FBox, -WarpFactor/4, Pn),
 	    Route = [Pn, [MX, MY], P0];
 	SBox = [SL, ST, SR, SB],
 	    FBox = [FL, FT, FR, FB],
