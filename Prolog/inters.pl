@@ -26,7 +26,9 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 
 	/* now check for assignment from an idler. This will be eleminated. */
 	get_dims_from_loops(SourceLoops, _, SourceInds),
-	(get_conversion(Formula, Units, XUnits, ScaledF), !; ScaledF=Formula),
+	(m_update:use_units_in(Sm, 'Yes'),
+	    get_conversion(Formula, Units, XUnits, ScaledF), !;
+	ScaledF=Formula),
 	(ScaledF = Formula,
 	    Formula = arr(_, Idle, SourceInds),
 	    Args = [made_at(Idle, _)],

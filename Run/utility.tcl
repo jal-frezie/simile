@@ -71,7 +71,8 @@ proc ChooseFile { preferred title canbenew context} {
 		      -filetypes $typeList \
 		      -initialdir $currentDir]
     set active [focus]
-    if {[llength $active]} {
+    if {[llength $active] && ![string equal aqua [tk windowingsystem]]} {
+	# Problems on Aqua if parent is itself modal
 	lappend switches -parent [winfo toplevel $active]
     }
     if {$canbenew} {
