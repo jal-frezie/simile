@@ -24,11 +24,15 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	(swap_back(BaseContext, BackSwap, FContext, no_dim), !;
 	raise_exception(cannot_make_context(Target, BaseContext, BackSwap))),
 
-	/* now check for assignment from an idler. This will be eleminated. */
+	/* If managing units, apply conversion; error message not brilliant but
+	only occurs if unit management turned on since entering equation */
 	get_dims_from_loops(SourceLoops, _, SourceInds),
 	(m_update:use_units_in(Sm, 'Yes'),
-	    get_conversion(Formula, Units, XUnits, ScaledF), !;
+	    \+ promote_unit(Units, real),
+	    (get_conversion(Formula, Units, XUnits, ScaledF);
+		raise_exception(conversion_failure(Sm, wrong_derived_units(Units)))), !;
 	ScaledF=Formula),
+	/* now check for assignment from an idler. This will be eleminated. */
 	(ScaledF = Formula,
 	    Formula = arr(_, Idle, SourceInds),
 	    Args = [made_at(Idle, _)],
