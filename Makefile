@@ -141,7 +141,7 @@ System/lib/Stubs/libame_dll$(VERS).so: ame_cmx.cpp dllcalls.h System/lib/lib5d.s
 
 # 'before' arg of install_name_tool should be some gung-ho sed regexp on output
 # of otool but it did not work (why was this not needed for ppc?)
-System/lib/Stubs/libame_dll$(VERS).dylib: \
+System/lib/Stubs/libame_dll$(VERS)$(ARCHEXTN).dylib: \
 		ame_cmx.cpp dllcalls.h System/lib/lib5d$(ARCHEXTN).dylib
 	cd Run; \
 	$(GPPCMD) -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers \
