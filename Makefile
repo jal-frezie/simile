@@ -1,12 +1,12 @@
 # These are the settings for the particular version we want to make
 # edition: evaluation, teaching, standard or enterprise
-EDN = EVALUATION
+EDN = STANDARD
 # date of final expiry: "hh:mm D M Y" or "" for permanent
 ABS_EXP = ""
 # days after install: 0 for no installation expiry
 REL_EXP = 0
 # License code required to verify name/corp/edition: 0 for no
-LICENSED = 0
+LICENSED = 1
 # Prolog implementation to use -- SICSTUS for Windows releases, GNU otherwise
 PROLOG = GNU
 
