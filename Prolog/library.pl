@@ -260,10 +260,14 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	count_functions(Parent, Fns),
 	Fns > StopAt, !,
 	    m_update:superfast_delete(Parent),
+	    % abort loading project file
+	    output:safe_tcl_eval(['catch {unset ::loadingProject}'], _),
 	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, and it was not created by the enterprise edition, so it cannot be loaded in the ~a edition.", [Fns, StopAt, Edn], Annoy),
 	    do_dialogue("Error loading model", error, Annoy, ok, _),
 	    dialogue:finish_progress_dialogue,
-	    !, fail;
+	    % prevent executable from running
+	    Parent has_new_model_refinement c_new of 0,
+	    fail;
 
 	(SimileV >= 0.0, !;
 	dialogue:reassure_user("Updating pre-AME 4.0 model representation"),
