@@ -114,7 +114,7 @@ proc GetTransTable {node} {
 # (actually "$canvas find withtag current" does this, but no point changing now)
 
 proc ClickObj { x y winId X Y action} {
-    global clicktime equationbar pushedbutton window_info looks
+    global debounce equationbar pushedbutton window_info looks
     global tcl_platform
     
     #puts "$action it!"
@@ -141,7 +141,7 @@ proc ClickObj { x y winId X Y action} {
         }
     }
     
-    set clicktime [clock clicks -milliseconds]
+    set debounce(clicktime) [clock clicks -milliseconds]
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
     set xco [Unscale $winId $canx]
@@ -200,8 +200,8 @@ proc ClickObj { x y winId X Y action} {
                 }
             }
         }
-        prolog [list tk_click_obj('$winId',  $action , $xco , $yco , $node \
-                , $CD)]
+        prolog [list tk_click_obj('$winId',  $action , $xco , $yco , \
+					   $node , $CD)]
 	update
         # Right button puts up context menu.
         if {$RB && [string equal select $pushedbutton]} {
@@ -219,16 +219,16 @@ proc ClickObj { x y winId X Y action} {
         ### Added by Jasper: ignore all eqnbar stuff if none in current window or
         ### not in pointer mode
         
-    set winid [winfo parent $winId]
+	set winid [winfo parent $winId]
         set bar $winid.toolSlot.eqnbar
         if {[info exists equationbar(special)]} {
-        unset equationbar(special)
+	    unset equationbar(special)
             set equationbar(current_action) null
-    } elseif {[catch {pack info $bar}] || \
-              [string compare $pushedbutton select]} {
+	} elseif {[catch {pack info $bar}] || \
+		      [string compare $pushedbutton select]} {
             set equationbar(current_action) null
         } else {
-        set equationbar(current_action) $action
+	    set equationbar(current_action) $action
             #   ModeSelect move
             #   ModeSelect select
         }
@@ -315,7 +315,7 @@ proc ResizeDesktop {winId cl ct cr cb} {
 
 proc DragObj {winId xco yco} {
     global window_info looks pushedbutton
-    global clicktime
+    global debounce
 
     if {[string equal move $pushedbutton]} {
 	$winId xview scroll [expr ($window_info($winId,lastx)-$xco/$looks(scrollIncr))] units
@@ -326,10 +326,11 @@ proc DragObj {winId xco yco} {
     }
 
     set dragtime [clock clicks -milliseconds]
-    if {$dragtime>$clicktime && $dragtime-$clicktime<100} {
+    if {$dragtime>$debounce(clicktime) && $dragtime-$debounce(clicktime)<100} {
         return
     }
-    
+    set debounce(realdrag) 1
+
     set canx [$winId canvasx $xco]
     set cany [$winId canvasy $yco]
     set virtx [Unscale $winId $canx]
@@ -370,12 +371,15 @@ proc DragObj {winId xco yco} {
 }
 
 proc ReleaseObj {winId xco yco} {
-    global tcl_platform
+    global tcl_platform debounce
 
 # this is here because Windows can sometimes generate a drag at a point 
 # after the unclick, so it makes it drag back to the actual unclick position
-    if {[string equal windows $tcl_platform(platform)]} {
-	DragObj $winId $xco $yco
+    if {[info exists debounce(realdrag)]} {
+	if {[string equal windows $tcl_platform(platform)]} {
+	    DragObj $winId $xco $yco
+	}
+	unset debounce(realdrag)
     }
 
     set canx [Unscale $winId [$winId canvasx $xco]]

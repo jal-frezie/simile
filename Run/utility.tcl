@@ -370,15 +370,15 @@ proc PostPopup {X Y} {
 	set Y $latestmouse(Y)
 	array unset latestmouse
     }
-    if {$X>[winfo screenwidth .popup]/2} {
-        set xpoint -[expr [winfo screenwidth .popup]+10-$X]
-    } else {
-        set xpoint +[expr $X+10]
-    }
-    if {$Y>[winfo screenheight .popup]/2} {
-        set ypoint -[expr [winfo screenheight .popup]+10-$Y]
-    } else {
-        set ypoint +[expr $Y+10]
+    set xpoint +[expr $X+10]
+    set ypoint +[expr $Y+10]
+    if {![string match Darwin $tcl_platform(os)]} {
+	if {$X>[winfo screenwidth .popup]/2} {
+	    set xpoint -[expr [winfo screenwidth .popup]+10-$X]
+	}
+	if {$Y>[winfo screenheight .popup]/2} {
+	    set ypoint -[expr [winfo screenheight .popup]+10-$Y]
+	}
     }
     wm geometry .popup ${xpoint}${ypoint}
     raise .popup

@@ -1532,7 +1532,7 @@ proc RunIfPackage {} {
 }
 
 proc OpenProjectFile {path} {
-    global SimileProject loadingProject runState
+    global loadingProject runState
     set pFile [file join $path model.spj]
     set projectF [NetOpen $pFile r]
     gets $projectF SimileProjectData
@@ -1575,7 +1575,6 @@ proc OpenProjectFile {path} {
 		${path}/$SimileProject(nameOfHelperStateFile)
         }
     }
-    array unset SimileProject
 }
 
 proc SaveProjectFile {topNode path tgt} {
