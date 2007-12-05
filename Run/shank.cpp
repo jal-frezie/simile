@@ -1546,6 +1546,8 @@ node_data_line* search_intnl(char* node, long int* tgtModel, char* caption,
 	*tgtModel = (long int)tryModel;
       }
 
+      /* Case for a separate submodel below toplevel: no longer used as of v5
+	 (also breaks 64bit build)
       if (*tgtModel!=(long int)tryModel) {
 	// correct higher ET references for those added at this level
 	dimCount = 0;
@@ -1559,12 +1561,13 @@ node_data_line* search_intnl(char* node, long int* tgtModel, char* caption,
 	append_ints_to_null(dims, localDims, SEPARATE, 0);
 	append_ints_to_null(path, bottomLine->path, SEPARATE, 
 			    (int)searchPoint->model);
-      } else {
+			    } else { */
 	*dims = *path = 0;
 	append_ints_to_null(dims, localDims, 0, 0);
 	append_ints_to_null(path, bottomLine->path, 0, 0);
 	*caption = 0;
-      }
+	/*      } 
+End removed separate submodel case */
       strcpy(caption + strlen(caption), localCapt);
 
       /* Old version with only one model hierarchy...
