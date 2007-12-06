@@ -367,7 +367,7 @@ proc DragObj {winId xco yco} {
     }
     
     innerProlog [list tk_drag( $virtx , $virty )] ;# no cursor change
-    update
+#    update
 }
 
 proc ReleaseObj {winId xco yco} {
