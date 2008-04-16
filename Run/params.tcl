@@ -1222,13 +1222,16 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
             continue
         }
         set IdAndValue [split $savedValue =]
-        set restoredComp [RestoreCrs [lindex $IdAndValue 0]]
         if {$origVersion<4.0} {
+	    set restoredComp [RestoreCrs [lindex $IdAndValue 0]]
             # pre-multiple desktop -- trim outermost model
             if {[string equal /Desktop/ [string range $restoredComp 0 8]]} {
                 set restoredComp [string range $restoredComp 8 end]
             }
-        }
+        } else {
+	    set restoredComp [RestoreCrs [join [lrange $IdAndValue 0 end-2] =]]
+	    # allows parameter names to contain the = sign
+	}
         #ShowMessage debug info "Component is $restoredComp" ok
         set node [ExistCheck $topNode $restoredComp $smPath $notInput file]
         switch $node {
@@ -1242,8 +1245,8 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	    cd $oldDir
 	    set restoredComp $smPath$restoredComp
             if {$origVersion>=4.0} {
-                set suppliedData($restoredComp) [lindex $IdAndValue 2]
-                set reference [string equal reference [lindex $IdAndValue 1]]
+                set suppliedData($restoredComp) [lindex $IdAndValue end]
+                set reference [string eq reference [lindex $IdAndValue end-1]]
                 if {$reference} {
                     set VFile [lindex $suppliedData($restoredComp) 0]
                 }
