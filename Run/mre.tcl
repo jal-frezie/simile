@@ -585,7 +585,7 @@ namespace eval RunEnv {
         destroy .helpPopup
         KillHelpers $node
         foreach winData [array names window_info *,parent] {
-            upvar 0 window_info([string range $winData 0 end-7],whichModel) model
+            upvar 0 window_info([string range $winData 0 end-7],top_node) model
             if {[info exists model]} {
                 if {[string equal $node $model]} {
                     set navBar $window_info($winData).toolSlot.navbar
