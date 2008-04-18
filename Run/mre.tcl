@@ -741,11 +741,11 @@ namespace eval RunEnv {
     proc CreateDisplayPageContextMenu {} {
         if  {![winfo exists .pageContextMenu]} {
             set m [menu .pageContextMenu -tearoff 0]
-            .helpers.sub2 clone .pageContextMenu.sub2
+#           .helpers.sub2 clone .pageContextMenu.sub2
             $m add command -label "Create plotter" -command "CreateHelperWindow plotter1_dot_25 {}"
             $m add command -label "Create table" -command "CreateHelperWindow tabular11510 {}"
             $m add command -label "Create input sliders" -command "CreateHelperWindow slide139 {}"
-            $m add cascade -label "Choose display to create ..." -menu .pageContextMenu.sub2
+            $m add cascade -label "Choose display to create ..." -menu .helpers.sub2
             $m add separator
             $m add command -label "Copy display" -command ::RunEnv::CopyHelper
             $m add command -label "Cut display" -command ::RunEnv::CutHelper
