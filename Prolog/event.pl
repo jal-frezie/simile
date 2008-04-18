@@ -895,20 +895,20 @@ drag_obj(Xpt, Ypt, Name) :-
 	drag_to(RelXpt, RelYpt, Name).
 
 The easy bit: ignore initial drags of one unit or less, and for larger ones
-register the user's choice of a drag rather than a click-start click-end. */
+register the user's choice of a drag rather than a click-start click-end.
 
 sift_and_set(_Xpt, _Ypt) :-
-	/* Next few lines stopped drag from starting until a certain
+	Next few lines stopped drag from starting until a certain
 	distance had been covered. Latest versions have faster graphics
 	so this should not be necessary...much...but with v5 they are MUCH
-	faster, and showed up problems with this */
+	faster, and showed up problems with this
 %	get_original_click(OrigX, OrigY),
 %	abs(Xpt-OrigX) + abs(Ypt-OrigY) > 2,
 	(get_phase(action_choice), !,
 	    advance_phase_to(dragging);
 	true).
 
-/* rather than just using Prolog
+rather than just using Prolog
 to find what component I've dragged into I'll precede this with an attempt to get
 the info from Tk, only resorting to Prolog should this fail. Note GUI should only
 be consulted if in multi-object mode. */
@@ -1159,9 +1159,12 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	tweak_endpoint(Moving_obj, Inner_move, NewEndPt)),*/
 	move_something.
 
+% Ghosting drag: should perhaps reuse sort_for_finish for some of this work...
 drag_to(Xpt, Ypt, Target) :-
-	get_phase(dragging),
-	get_mode(ghost),
+	(get_phase(action_choice),
+	    advance_phase_to(dragging);
+	get_phase(dragging)),
+	get_mode(ghost), !,
 	clear_incomplete,
 	find_type(Target, Type),
 	(get_highlit_obj(2, OldTarget),
@@ -1829,7 +1832,8 @@ unclick_obj :-
 	(\+ retract(moved_something), !;
 	finish_move(Submodel, 0)).
 
-/* Unclick in ghost mode. If unclicking in space, a new ghost node is created. If
+/*
+Unclick in ghost mode. If unclicking in space, a new ghost node is created. If
 unclicking on an existing node this node is made into a ghost of the source node
 if it is of a suitable type. The target node's own equation information remains,
 but is not usable or editable until it becomes de-ghosted. */
