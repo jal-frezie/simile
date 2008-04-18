@@ -322,12 +322,12 @@ redo with snap object
     }
     public method Hide {} {
 	global runState
-	wm withdraw $runState($modelNode,helperId)
+	wm withdraw [winfo toplevel $runState($modelNode,helperId)]
     }
 	
     public method Show {} {
 	global runState
-	wm deiconify $runState($modelNode,helperId)
+	wm deiconify [winfo toplevel $runState($modelNode,helperId)]
     }
 	
     public method Start {} {
