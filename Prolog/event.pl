@@ -243,7 +243,6 @@ click(Xpt, Ypt, CD) :-
 	check_snap,
 	find_current(Wid),
 	Wid shows_model Parent,
-	save_params([0,0,1,1], 0, Parent),
 	(get_phase(targetting),
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
@@ -251,6 +250,7 @@ click(Xpt, Ypt, CD) :-
 	    menu:set_cursor_for(Mode),
 	    drag(Xpt, Ypt);
 	get_phase(peruse),
+	    save_params([0,0,1,1], 0, Parent),
 	    set_original_click(Xpt, Ypt),
 	    click_in(Wid, [Xpt, Ypt], [0, 0, 1, 1], 0, Parent, CD)).
 
