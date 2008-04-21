@@ -1526,7 +1526,7 @@ check_save_canvas(SaveDir, Model, Date) :-
 	/* might still be useful if not, but would have to do something
 	about border nodes which have graphical attributes but aren't on
 	the canvas... */
-	 reassure_user("Saving canvas description"),
+	reassure_user("Saving canvas description"),
 	    Win shows_model Model,
 	    all(state, get_display_depth, [unify(Win),
 		 build([ghost_link, influence, variable, flow, compartment,

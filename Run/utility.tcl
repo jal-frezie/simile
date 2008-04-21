@@ -726,6 +726,8 @@ proc PackItUp {t} {
     if {[winfo exists $parent] && [string match Darwin $tcl_platform(os)]} {
 	focus -force [winfo toplevel $parent]
 	AbleAllEntries $parent normal
+# Make menu updates happen before something else does same thing
+	update idletasks
     }
 }
 
