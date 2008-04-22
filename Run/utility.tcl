@@ -300,9 +300,10 @@ proc QueuePopup {args} {
     }
     set popper(cmd) [after 500 $args]
     bind all <Motion> "set latestmouse(X) %X; set latestmouse(Y) %Y"
-    if {![winfo exists .popup]} {
-	set popper(foc) [focus]
-    }
+# seems not needed in recent Mac TclTks
+#    if {![winfo exists .popup]} {
+#	set popper(foc) [focus]
+#    }
 }
 
 proc AddWidgetPopup {key X Y} {
@@ -389,9 +390,9 @@ proc RemovePopup {args} {
     #puts "Removing popup"
     if {[winfo exists .popup]} {
         destroy .popup
-	if {[string match aqua [tk windowingsystem]]} {
-	    focus -force $popper(foc)
-	}
+#	if {[string match aqua [tk windowingsystem]]} {
+#	    focus -force $popper(foc)
+#	}
     }
     if {[info exists popper(cmd)]} {
         after cancel $popper(cmd)
