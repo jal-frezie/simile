@@ -1252,6 +1252,8 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
       if (nVs) {
 	Tcl_GetDoubleFromObj(NULL, nVs, (double *)model_val_ptr);
       }
+      // following needs Tcl >= 8.5, replace %g with new arg
+      //      localObj = Tcl_Format(NULL, "%g", 1, &localObj);
       break;
     case FLAG:
       localObj = Tcl_NewBooleanObj(*(int *)model_val_ptr);

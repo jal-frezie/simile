@@ -173,8 +173,10 @@ proc Pref_Dialog {} {
         $notebook add $rf -text Run
             set oneWinTF [labelframe $rf.oneWinTF -text "Run time environment:"]
             set oneWinF $oneWinTF
+            set precisTF [labelframe $rf.precisTF -text "Numeric display precision (0 for default):"]
+            set precisF $precisTF
        # $notebook select View
-        pack $initWinTF $displayTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $compTF \
+        pack $initWinTF $displayTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $precisTF $manyWinTF $compTF \
                 $canvasTF $recentTF $notebook -fill x -padx 4 -pady 4
         set bbox [frame $dlg.bbox] 
         pack [::ttk::button $bbox.bok -text OK -underline 0 -width 8  \
@@ -216,6 +218,8 @@ proc Pref_Dialog {} {
                 saveExtras {set frame $canvasF}
                 recentCount {set frame $recentF}
                 helperManager {set frame $oneWinF}
+                popupPrecision {set frame $precisF}
+                snapPrecision {set frame $precisF}
                 runControlPosition {set frame $manyWinF}
                 slidersPosition {set frame $manyWinF}
                 default {set frame $displayTF}

@@ -639,10 +639,29 @@ proc ExScrubRun {node times} {
 proc GetShortVals {topNode plName limit} {
     set text [lindex [GetCompProperty $topNode Value $plName] 0]
     set count [ShrinkValueList text $limit]
+    catch {GetCompProperty $topNode Type $plName} iType
+    if {[string equal REAL $iType]} {
+	set precis [PrefValue custom(popupPrecision) popupPrecision]
+	if {$precis} {
+	    set text [FormatVals %.${precis}g $text]
+	}
+    }
     if {![string equal novalue $text]} {
 	set text [PrettifyValList [TransEnums [GetTransTable $plName] $text]]
     }
     return [list $count $text]
+}
+
+proc FormatVals {fmt list} {
+    if {[llength $list]==1} {
+	return [format $fmt $list]
+    } else {
+	set res {}
+	foreach {ind elt} $list {
+	    lappend res $ind [FormatVals $fmt $elt]
+	}
+	return $res
+    }
 }
     
 ############################## snap: start ###################################
@@ -702,6 +721,13 @@ proc UpdateSnap {w label submodels topNode node} {
 
     set v1 [set runState(val$w) [TransEnums [GetTransTable $node] \
 		     [lindex [GetCompProperty $topNode Value $node] 0]]]
+    catch {GetCompProperty $topNode Type $node} iType
+    if {[string equal REAL $iType]} {
+	set precis [PrefValue custom(snapPrecision) snapPrecision]
+	if {$precis} {
+	    set runState(val$w) [FormatVals %.${precis}g $v1]
+	}
+    }
     set runState(nst$w) 0
     while {[llength $v1]>1} {
 	incr runState(nst$w)

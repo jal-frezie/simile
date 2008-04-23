@@ -992,6 +992,8 @@ proc ControlDraw {prologVersion} {
                 {custom(flowRouting) flowRouting ON "Rectilinear flow routing"} \
                 {custom(deleteEndToEnd) deleteEndToEnd ON "Select links end-to-end"} \
                 {custom(helperManager) helperManager ON "Use single window manager"} \
+                {custom(popupPrecision) popupPrecision 0 "Value popups"} \
+                {custom(snapPrecision) snapPrecision 0 "Snapshots"} \
                 {custom(runControlPosition) runControlPosition "+0-20" "Position of run control"} \
                 {custom(slidersPosition) slidersPosition "+0+0" "Position of sliders"} \
                 {custom(hackBreak) hackBreak OFF "Pause to edit C++ code?"} \
