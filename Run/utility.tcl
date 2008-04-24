@@ -18,6 +18,12 @@ proc ShowMessage { title icon string resps {parent {}}} {
     if {[winfo exists .popup]} {
 	destroy .popup ;# avoid weird hang under Aqua, or at least try
     }
+    set progressUp [winfo exists .progress]
+    if {$progressUp} { ;# avoid yet another potential MacOS stuffup
+	set progBag [wm transient .progress]
+	set progMess [.progress.message cget -text]
+	CloseProgressBox
+    }
     set active [focus]
     if {[string length $parent]>0} {
 	lappend mBoxCmd -parent $parent
@@ -25,6 +31,10 @@ proc ShowMessage { title icon string resps {parent {}}} {
 	lappend mBoxCmd -parent [winfo toplevel $active]
     }
     set act [eval $mBoxCmd]
+    if {$progressUp} {
+	OpenProgressBox $progBag
+	FillProgressBox $progMess
+    }
     update idletasks
     return $act
 }
