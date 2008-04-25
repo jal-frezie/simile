@@ -304,6 +304,7 @@ advance_phase_to(New_phase) :-
 		 [moving_spline, [moving_text]],
 		 [moving_bowtie, [moving_text]],
 		 [moving_border(D), [moving_text]],
+		 [rubberband, [moving_text]],
 		 [find_equivalent, [barge]]],
 	phase_is(Old_phase),
 	member([Old_phase, Allowables], State_machine),

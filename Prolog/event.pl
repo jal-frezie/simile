@@ -230,7 +230,7 @@ click_text(Xpt, Ypt, Name, CD) :-
 	    (find_type(Name, text);
 		get_phase(Phase),
 		member(Phase, [moving, moving_kink, moving_border(_Pt),
-			       moving_bowtie, moving_spline]),
+			       moving_bowtie, moving_spline, rubberband]),
 		% click_on will have set start to centre of component! So...
 		get_translation(Trans),
 		translate([Xpt, Ypt], Trans, [StX, StY]),
@@ -500,8 +500,10 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    length(Point_list, 4),
 		abs(Posn-500)<167, !,
 		advance_phase_to(moving_kink));
-	    Moving_obj is_of_sort curved,
-		advance_phase_to(moving_spline)).
+	    Moving_obj is_of_sort curved, !,
+		advance_phase_to(moving_spline);
+	    % cannot move a feature so keep selecting
+	    advance_phase_to(rubberband)).
 	
 click_on([Xpt, Ypt], Moving_obj, _CD) :-
 	find_type(Moving_obj,TargetSort),
