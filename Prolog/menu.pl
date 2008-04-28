@@ -212,17 +212,15 @@ check_if_already_open(Name) :-
 
 
 resize_canvas_for(Parent) :-
-	find_all_comps(Parent, Lump),
-		get_shape(Lump, bounding_box, [Lb, Tb, Rb, Bb]),
-		get_shape(Parent, internal_extent, [Lo, To, Ro, Bo]),
-		Ln is min(Lo, Lb-10),
-		Tn is min(To, Tb-10),
-		Rn is max(Ro, Rb+10),
-		Bn is max(Bo, Bb+10),
-		change_shape(Parent, internal_extent, [Ln, Tn, Rn, Bn]),
-		fail;
-	get_shape(Parent, internal_extent, Rect),
-		expand_canvas(Parent, Rect).
+%	(setof(Box, contains_box(Parent, Box), Boxes), !, Boxes = []),
+	all(image, get_inner_bound,
+	    [unify(Parent), build([l,t,r,b]), build([LB, TB, RB, BB])]),
+	Ln is LB-10,
+	Tn is TB-10,
+	Rn is RB+10,
+	Bn is BB+10,
+	change_shape(Parent, internal_extent, [Ln, Tn, Rn, Bn]),
+	expand_canvas(Parent, [Ln, Tn, Rn, Bn]).
 
 /* menu_handle. First arg is title of menu, second is item selected. */
 
