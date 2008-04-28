@@ -116,7 +116,8 @@ proc ShiftDll {Point Top Loc Rep} {
         if {$Rep && [file exists ${prefx}${Rep}[info sharedlibextension]]} {
             file copy -force ${prefx}${Rep}[info sharedlibextension] $tgt
         } else {
-            file delete -force $tgt
+#            file delete -force $tgt
+# Do not delete this, it is out-of-date but might still be in use
             file delete -force ${prefx}.tcl
         }
         #   foreach file [glob -nocomplain ${prefx}*] {
