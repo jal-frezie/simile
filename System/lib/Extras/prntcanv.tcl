@@ -374,7 +374,10 @@ namespace eval printer {
     set splnstp [$cw itemcget $id -splinesteps]
     set dash    [$cw itemcget $id -dash]
     
-    set cmmd  "gdi line $hdc $coords -fill $color -smooth $smth -splinesteps $splnstp -arrow $arrow -arrowshape [list $arwshp]"
+# printer package only accepts positive integers as arrow shape params
+      foreach float $arwshp {lappend arwints [expr {int($float)}]}
+      if {[lsearch $arwints 0]>-1} {set arrow none}
+    set cmmd  "gdi line $hdc $coords -fill $color -smooth $smth -splinesteps $splnstp -arrow $arrow -arrowshape [list $arwints]"
     
     if { $wdth > 0 } {
         set cmmd "$cmmd -width $wdth"
@@ -410,7 +413,8 @@ namespace eval printer {
     set start   [ $cw itemcget $id -start ]
     set extent  [ $cw itemcget $id -extent ]
     set fill    [ $cw itemcget $id -fill ]
-    
+      if {$wdth>0 && $wdth<1} {set wdth 1}
+
       set cmmd  [concat [list gdi arc $hdc] $coords [list -outline $color -style $style -start $start -extent $extent]]
     if { $wdth > 0 } {
         set cmmd "$cmmd -width $wdth"
@@ -483,6 +487,7 @@ namespace eval printer {
     if {![string length $ocolor]} {set ocolor $vtgPrint(printer.bg)}
     set coords  [$cw coords $id]
     set wdth [$cw itemcget $id -width]
+      if {$wdth>0 && $wdth<1} {set wdth 1}
 
     set cmmd "gdi oval $hdc $coords -width $wdth \
 		-fill $fcolor -outline $ocolor"
