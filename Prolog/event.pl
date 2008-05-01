@@ -188,7 +188,13 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	set_original_click(Xpt, Ypt),
 	find_all_comps(Parent, Name),
 	save_params(Trans, Depth, Parent),
-	(get_phase(targetting),
+	(doing_add(submodel), !,
+	     set_start_coords(Xpt, Ypt),
+	     set_current_coords(Xpt, Ypt), 
+% could offset them to actually include component clicked on
+	     set_line_start_obj(Parent),
+	     advance_phase_to(action_choice);
+	 get_phase(targetting),
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
 	    get_mode(Mode),

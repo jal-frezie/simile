@@ -59,11 +59,11 @@ proc DebugMess {Mess} {
     }
 }
 
-proc prolog {args} {
-    ShowWatchWhileDoing [concat innerProlog $args]
-}
+#proc prolog {args} {
+#    ShowWatchWhileDoing [concat innerProlog $args]
+#}
 
-proc innerProlog {plCmd} {
+proc prolog {plCmd} {
     global plPipe window_info
     set oldStack $plPipe(stack)
     set plPipe(stack) [AddCurrentToPipe $oldStack]

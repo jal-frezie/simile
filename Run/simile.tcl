@@ -401,10 +401,10 @@ switch $env(interfaceId) {
     } console {
 	set ::argv0 {} ;# stops error message loading tclmath
 	source ../Run/toolbox.tcl
-	rename prolog innerProlog
-	proc prolog {args} {
-	    ShowWatchWhileDoing [concat innerProlog $args]
-	}
+#	rename prolog innerProlog
+#	proc prolog {args} {
+#	    ShowWatchWhileDoing [concat innerProlog $args]
+#	}
     } none {
 	source ../Run/toolbox.tcl
 # now we must replace some procedure definitions that don't work without Prolog

@@ -366,7 +366,7 @@ proc DragObj {winId xco yco} {
                 [expr int($yco-$window_info($winId,height))/$sloth] units
     }
     
-    innerProlog [list tk_drag( $virtx , $virty )] ;# no cursor change
+    prolog [list tk_drag( $virtx , $virty )] ;# no cursor change
 #    update
 }
 
