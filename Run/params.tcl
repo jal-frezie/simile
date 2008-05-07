@@ -24,7 +24,7 @@ proc FileParamDialogue {topWin mustShow} {
     foreach node $allNodes {
         set notInput [FirstIndexCheck $topNode $node]
         if {$notInput != -1} {
-            AddEntry $t $topNode $node $mustShow $notInput $topCapt
+            AddEntry $t $topNode $node $mustShow $notInput Top
         }
     }
     # now check for any parameter values that are no longer needed
@@ -301,7 +301,7 @@ proc ZapParams {topNode smPath metaFile} {
     global whichParamsAffected
     
     array unset whichParamsAffected
-    MergeParams $topNode /[GetExecTitle $topNode]$smPath $metaFile 0 0
+    MergeParams $topNode /Top$smPath $metaFile 0 0
     AcceptAll $topNode [array names whichParamsAffected] 1 -1
 }
 

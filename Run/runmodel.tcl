@@ -1023,7 +1023,7 @@ proc StartRun {node} {
     set runState($node,modelRunning) 1
     foreach {smPath spFile} [array get projectParams] {
 	if {[file exists $spFile]} {
-	    MergeParams $node /[GetExecTitle $node]$smPath $spFile 0 0
+	    MergeParams $node /Top$smPath $spFile 0 0
 	} else {
 	    BuildProblem "Problem loading project" warning "Parameter metafile $spFile could not be found." execution
 	}
