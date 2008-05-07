@@ -542,7 +542,7 @@ any_distance([X, Y], Line, approach(D, [XC, YC], P)) :-
 	Fract is (YC-SY)/(FY-SY);
     YL*YL<XL*XL,
 	Fract is (XC-SX)/(FX-SX)),
-    1>=Fract, Fract>=0,
+    1>Fract, Fract>=0,
     length(Line, PtCount),
     length(Tail, EarlySegs),
     P is 1000*(EarlySegs + Fract)/(PtCount - 1).
