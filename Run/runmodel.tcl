@@ -383,6 +383,8 @@ proc SaveView {} {
         }
         close $stream
 	MimifySHF $tempFile $nameOfHelperStateFile($topNode) many_windows
+    } else {
+	unset nameOfHelperStateFile($topNode)
     }
 }
 

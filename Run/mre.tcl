@@ -814,7 +814,9 @@ namespace eval RunEnv {
             
             close $stream
             MimifySHF $tempFile $nameOfHelperStateFile($currentNode) mre
-        }
+        } else {
+	    unset nameOfHelperStateFile($currentNode)
+	}
     }
     
     proc SaveChildrenConfig {page loss stream} {
