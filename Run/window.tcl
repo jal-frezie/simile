@@ -152,7 +152,6 @@ proc ClickObj { x y winId X Y action} {
 #   set looks(lastXnode) $xco
 #   set looks(lastYnode) $yco
 #    }
-    
     focus $winId
     set target [GetClickedObj $winId $canx $cany 6]
     if {!$target} {

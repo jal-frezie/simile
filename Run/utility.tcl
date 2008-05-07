@@ -617,9 +617,10 @@ proc SquirtMime {args} {
     global mimeSquirter
 
 
-
     if {[string match end [lindex $args 0]]} {
         close $mimeSquirter
+    } elseif {[string match error [lindex $args 0]]} {
+        error [lindex $args 1]
     } else {
         puts -nonewline $mimeSquirter [lindex $args 1]
     }

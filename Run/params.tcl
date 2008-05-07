@@ -1058,10 +1058,18 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     set parseStatus(outStr) [open $newPath w]
     $parseStatus(spfParser) reset
     set pStr [open $oldPath r]
-    $parseStatus(spfParser) parse [read $pStr]
+    set broke [catch {$parseStatus(spfParser) parse [read $pStr]} feedback]
     close $pStr
     close $parseStatus(outStr)
-    return $parseStatus(simV)
+    if {$broke} {
+	if {[info exists parseStatus(simV)]} { ;# a bad XML file
+	    error $feedback
+	} else { ;# an earlier style of param file
+	    return 0
+	}
+    } else {
+	return $parseStatus(simV)
+    }
 }
 
 proc StartElement {name attList args} {
@@ -1181,7 +1189,7 @@ proc LoadBase64CharData {encoded} {
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
     global paramDims paramState mimeSquirter simtmpdir whichParamsAffected msgs
-    global SimileProject parseStatus errorInfo
+    global SimileProject
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -1197,21 +1205,18 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     #do_in_editor puts "MergeParams $topNode $smPath $oldPath $interactive"
     set oldDir [pwd]
     set metaFile [file join $simtmpdir temp_in.spf]
-    if {[catch {set origVersion [RevertXMLParams $oldPath $metaFile $topNode \
-				     $smPath]} bletch]} {
-	if {[info exists parseStatus(simV)]} {
-	    # a bad XML file
-	    error $bletch $errorInfo
-	} elseif {[catch {
-	    set multiT [mime::initialize -file $oldPath]
-	    set origVersion [mime::getheader $multiT Simile-Version]
-	    set mimeSquirter [NetOpen $metaFile w]
-	    fconfigure $mimeSquirter -translation binary
-	    mime::getbody $multiT -command SquirtMime -blocksize 256}]
-	} {
-	    set metaFile $oldPath
-	    set origVersion 0.0
-	}
+    set origVersion [RevertXMLParams $oldPath $metaFile $topNode $smPath]
+    if {$origVersion} {
+	# XML file successfully converted
+    } elseif {[catch {
+	set multiT [mime::initialize -file $oldPath]
+	set origVersion [mime::getheader $multiT Simile-Version]
+	set mimeSquirter [NetOpen $metaFile w]
+	fconfigure $mimeSquirter -translation binary
+	mime::getbody $multiT -command SquirtMime -blocksize 256}]
+	  } {
+	set metaFile $oldPath
+	set origVersion 0.0
     }
     set ::bermudaTriangle {}
     set pStr [NetOpen $metaFile r]
