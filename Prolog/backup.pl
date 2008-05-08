@@ -358,7 +358,8 @@ mentions_graphics(Action, Comp) :-
 	(Action = remove(Term);
 	    Action = add(Term)),
 	(Term = graphical_info(Comp, _Attr, _Val);
-	    Term = node_refinement(Comp, _Attr, _Val);
+	    Term = node_refinement(Fn, _Attr, _Val),
+	    image:implicit_function(Comp, Fn);
 	    Term = arc_info(Comp, complete, _Val)).
 
 internal_extent_jiggered(Model, Slot, ExtChgs) :-
