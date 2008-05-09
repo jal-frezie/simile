@@ -1156,7 +1156,7 @@ proc DoLocalCmd {win item} {
         redo {UnOrReDo $win 1}
         print {PrintNow $win}
         rerun {Rerun $win 1}
-    tog_grid {ToggleGrid $win}
+	tog_grid {ToggleGrid $win}
         zoomin {DoZoom $win 1.414214 1}
         tosel {DisplayArea $win}
         tofit {DisplayAll $win}
@@ -1582,6 +1582,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     if {[PrefValue custom(initGrid) initGrid]} {
       $nb.tog_grid state selected
     }
+    BindPopup $nb.tog_grid tog_grid
     
     foreach navCmd {{rerun {local rerun}} {separator6} \
                 {find {local find}} {findmore {local findnext}} {separator7}} {
