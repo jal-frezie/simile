@@ -650,22 +650,22 @@ set looks(scrollIncr) 10
 proc AddGrid {c onCol wl wt wr wb} {
     global looks window_info custom
     if {$custom(showgrids,$c)} {
-    set col $onCol
+	set stat normal
     } else {
-    set col {}
+	set stat hidden
     }
     set interval [expr $looks(gridPitch)*$window_info($c,scale)]
     for {set x [expr $interval*ceil($wl/$interval)]} {$x<$wr} \
     {set x [expr $x+$interval]} {
     set nearx [expr int($x)]
-    $c create line $nearx $wt $nearx $wb -fill $col \
-        -tag "realcolour($onCol) /background/ /base/ /grid/"
+    $c create line $nearx $wt $nearx $wb -state $stat -fill $onCol \
+        -tag "/background/ /base/ /grid/"
     }
     for {set y [expr $interval*ceil($wt/$interval)]} {$y<$wb} \
     {set y [expr $y+$interval]} {
     set neary [expr int($y)]
-    $c create line $wl $neary $wr $neary -fill $col \
-        -tag "realcolour($onCol) /background/ /base/ /grid/"
+    $c create line $wl $neary $wr $neary -state $stat -fill $onCol \
+        -tag "/background/ /base/ /grid/"
     }
 }
 
@@ -2013,14 +2013,10 @@ proc UpdateGrid {winId} {
         $toolBar.tog_grid state !selected
     }
     
-    foreach gridLine [$winId find withtag /grid/] {
     if {$custom(showgrids,$winId)} {
-        regexp {realcolour\(([^\)]+)\)} [$winId gettags $gridLine] \
-                tag oldColour
+	$winId itemconfigure /grid/ -state normal
     } else {
-        set oldColour {}
-    }
-    $winId itemconfigure $gridLine -fill $oldColour
+	$winId itemconfigure /grid/ -state hidden
     }
 }
 

@@ -413,13 +413,14 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	set plRad [expr $cornerRad/$window_info($w,scale)]
 	set interval [expr $looks(gridPitch)*$inFat/100.0]
 	set nCol [Gradient $bgColour -0.1 $w]
-	set gTagSet "$tagSet realcolour($nCol) /background/ /grid/"
+	set gTagSet "$tagSet /background/ /grid/"
 	if {$custom(showgrids,$w)} {
-	    set gCol $nCol
+	    set gStat normal
 	} else {
-	    set gCol {}
+	    set gStat hidden
 	}
 
+	set flags {-state $gStat -width 0 -fill $nCol -tag $gTagSet}
 	for {set x [expr $origX+$interval*ceil(($l+1-$origX)/$interval)]} \
 	    {$x<$r} {set x [expr $x+$interval]} {
 		set fromEdge [max [expr $l+$plRad-$x] [expr $x+$plRad-$r]]
@@ -429,8 +430,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		    set inStep 0
 		}
 		set linePts [ScaleRect $w $x ($t+$inStep) $x ($b-$inStep)]
-		set line [eval {$w create line} $linePts \
-			      {-width 0 -fill $gCol -tag $gTagSet}]
+		set line [eval {$w create line} $linePts $flags]
 		# Now to stick it behind anything that might be drawn inside
 		$w raise $line $stackOn
 		set stackOn $line
@@ -444,8 +444,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		    set inStep 0
 		}
 		set linePts [ScaleRect $w ($l+$inStep) $y ($r-$inStep) $y]
-		set line [eval {$w create line} $linePts \
-			      {-width 0 -fill $gCol -tag $gTagSet}]
+		set line [eval {$w create line} $linePts $flags]
 		# Now to stick it behind anything that might be drawn inside
 		$w raise $line $stackOn
 		set stackOn $line
