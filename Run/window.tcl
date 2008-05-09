@@ -108,6 +108,16 @@ proc GetTransTable {node} {
     return $fromProlog
 }
 
+# Non-Linux platforms supply extra clicks instead of doubleclicks if
+# processing the initial click or release takes too long, so we keep
+# track with this variable in order to convert it back into a
+# doubleclick if necessary. Values are:
+# quiet: nothing happening
+# down: clicked at this posn
+# stabbed: clicked and released at this posn
+
+set clicky quiet
+
 # Procedure for when Tcl recognizes what object is clicked but being a
 # maleficent pile of junk refuses to pass on this information so we have
 # to interrogate it to find what is closest to the click point
@@ -136,6 +146,11 @@ proc ClickObj { x y winId X Y action} {
             set RB 1
             set CD 1
         } default {
+	    if {[string equal stabbed $::clicky] && \
+		    ![string equal Linux $tcl_platform(os)]} {
+		set action doubleclick
+	    }
+	    set ::clicky down
             set RB 0
             set CD 0
         }
@@ -316,6 +331,7 @@ proc DragObj {winId xco yco} {
     global window_info looks pushedbutton
     global debounce
 
+    set ::clicky free
     if {[string equal move $pushedbutton]} {
 	$winId xview scroll [expr ($window_info($winId,lastx)-$xco/$looks(scrollIncr))] units
 	$winId yview scroll [expr ($window_info($winId,lasty)-$yco/$looks(scrollIncr))] units
@@ -371,6 +387,11 @@ proc DragObj {winId xco yco} {
 
 proc ReleaseObj {winId xco yco} {
     global tcl_platform debounce
+
+    if {[string equal down $::clicky]} {
+	set ::clicky stabbed
+	after idle {set clicky free}
+    }
 
 # this is here because Windows can sometimes generate a drag at a point 
 # after the unclick, so it makes it drag back to the actual unclick position
