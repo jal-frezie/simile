@@ -113,10 +113,9 @@ proc GetTransTable {node} {
 # track with this variable in order to convert it back into a
 # doubleclick if necessary. Values are:
 # quiet: nothing happening
-# down: clicked at this posn
 # stabbed: clicked and released at this posn
 
-set clicky quiet
+set debounce(down) quiet
 
 # Procedure for when Tcl recognizes what object is clicked but being a
 # maleficent pile of junk refuses to pass on this information so we have
@@ -146,12 +145,16 @@ proc ClickObj { x y winId X Y action} {
             set RB 1
             set CD 1
         } default {
-	    if {[string equal stabbed $::clicky] && \
-		    ![string equal Linux $tcl_platform(os)]} {
-		set action doubleclick
-	    }
-	    set ::clicky down
-            set RB 0
+	    if {[string equal busy $debounce(down)]} {
+		if {![string equal Linux $tcl_platform(os)]} {
+		    set action doubleclick
+		}
+	    } 
+	    set debounce(down) busy
+	    # Nothing works perfectly to restore Windows doubleclicks;
+	    # this works a fair amount of the time
+	    after idle {after idle {set debounce(down) quiet}}
+	    set RB 0
             set CD 0
         }
     }
@@ -216,9 +219,9 @@ proc ClickObj { x y winId X Y action} {
         }
         prolog [list tk_click_obj('$winId',  $action , $xco , $yco , \
 					   $node , $CD)]
-	update
         # Right button puts up context menu.
         if {$RB && [string equal select $pushedbutton]} {
+	    update
 # work round bug in windows menu posning
 	    if {[string equal windows $tcl_platform(platform)] && \
 		    $Y>[winfo screenheight $winId]/2} {
@@ -331,7 +334,6 @@ proc DragObj {winId xco yco} {
     global window_info looks pushedbutton
     global debounce
 
-    set ::clicky free
     if {[string equal move $pushedbutton]} {
 	$winId xview scroll [expr ($window_info($winId,lastx)-$xco/$looks(scrollIncr))] units
 	$winId yview scroll [expr ($window_info($winId,lasty)-$yco/$looks(scrollIncr))] units
@@ -341,7 +343,8 @@ proc DragObj {winId xco yco} {
     }
 
     set dragtime [clock clicks -milliseconds]
-    if {$dragtime>$debounce(clicktime) && $dragtime-$debounce(clicktime)<100} {
+#    if {$dragtime>$debounce(clicktime) && $dragtime-$debounce(clicktime)<100}
+    if {[string equal busy $debounce(down)]} {
         return
     }
     set debounce(realdrag) 1
@@ -388,11 +391,6 @@ proc DragObj {winId xco yco} {
 proc ReleaseObj {winId xco yco} {
     global tcl_platform debounce
 
-    if {[string equal down $::clicky]} {
-	set ::clicky stabbed
-	after idle {set clicky free}
-    }
-
 # this is here because Windows can sometimes generate a drag at a point 
 # after the unclick, so it makes it drag back to the actual unclick position
     if {[info exists debounce(realdrag)]} {
@@ -401,7 +399,6 @@ proc ReleaseObj {winId xco yco} {
 	}
 	unset debounce(realdrag)
     }
-
     set canx [Unscale $winId [$winId canvasx $xco]]
     set cany [Unscale $winId [$winId canvasy $yco]]
     prolog [list tk_unclick( $canx , $cany )]
