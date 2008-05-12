@@ -1706,7 +1706,9 @@ int my_md5(Tcl_Interp *interp, Tcl_Obj* text) {
 int my_hash(Tcl_Interp *interp, Tcl_Obj *textObj) {
   Tcl_Obj* md5Target;
 
-  my_md5(interp, textObj);
+  if (my_md5(interp, textObj) == TCL_ERROR) {
+    return TCL_ERROR;
+  }
   md5Target = Tcl_NewStringObj("::hex -mode encode -- ", -1);
   Tcl_ListObjAppendElement(interp, md5Target, Tcl_GetObjResult(interp));
   if (Tcl_EvalObjEx(interp, md5Target, 0) == TCL_ERROR) {
@@ -1891,7 +1893,7 @@ int licenseRight (Tcl_Interp *interp) {
   offered = Tcl_GetVar2(interp, "userinfo", "license_code", 0);
   if (!offered || strncmp(offered, Tcl_GetStringResult(interp), 10)) {
 //    Tcl_AppendResult(interp, " is license code", (char *)NULL);
-//    return TCL_ERROR;
+//    return -1;
     return 0;
   }
 #endif
