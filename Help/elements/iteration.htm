@@ -349,9 +349,7 @@ ul
 src="iteration_files/image002.gif" v:shapes="_x0000_i1025"><![endif]><span
 style='mso-spacerun:yes'>  </span>Iteration</span></h1>
 
-<p class=MsoNormal><span lang=EN-GB>A condition model element is used to
-specify whether a submodel, or a potential instance of a multiple-instance
-submodel, actually exists.<span style='mso-spacerun:yes'>   </span></span></p>
+<p class=MsoNormal><span lang=EN-GB>An iteration model element makes its parent submodel an <a href="../submodels/iterative.htm">iterative submodel,</a> whose contents should be evaluated repeatedly until a finishing condition is met.<span style='mso-spacerun:yes'>   </span></span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
@@ -376,8 +374,7 @@ made so far. This function can be used to set the initial value (also called the
 guess) for the loop, i.e. when the number of iterations so far is equal to
 zero. If the number of iterations so far is one or more, then the result of the
 last calculation should be used. Since the last calculation depends on the
-result calculated from the guess, a circular loop of influences is present. In
-the past, Simile would reject this loop at build time, but setting a new property
+result calculated from the guess, a circular loop of influences is present. Normally, Simile would reject this loop at build time, but setting a property
 of the influence arrow: “Use values made in same time step” to true, allows the
 loop to be processed. Influence arrows with this property set are drawn with a
 dashed line. <span style='mso-spacerun:yes'> </span>To set this property for an

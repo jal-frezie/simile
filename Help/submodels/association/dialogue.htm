@@ -213,6 +213,16 @@ your model.<span style='mso-spacerun:yes'>  </span></span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
+<h2><span lang=EN-GB>Allow base instance lookup</span></h2>
+
+<p class=MsoNormal><span lang=EN-GB>If you want to use <a href="../association/onesided.htm">one-sided relation enumeration,</a> then the base model whose index you are looking up (as you loop over the instances of the other base model) has to be the one whose index is referred to as index(1) in the relation model. By default this would be the one with the role arrow that you added most recently, but it can be set using this property on its role arrow.</span></p>
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span
+style='mso-spacerun:yes'>Since only one base model index can correspond to index(1) in the association submodel, setting this property on one role arrow clears it from other role arrows going to the same association submodel.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
 <h2><span lang=EN-GB>Comments</span></h2>
 
 <p class=MsoNormal><span lang=EN-GB>Free-form comments can be entered in this
