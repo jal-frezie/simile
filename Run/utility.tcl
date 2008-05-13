@@ -436,7 +436,10 @@ proc AddPopupMessage {text colour args} {
 
 proc EndsOnly {outerText count leave} {
     upvar 1 $outerText text
-
+    
+    if {!$count} { ;# not a real value; tell caller to grey it out
+	return 1
+    }
     set verbosity [string length $text] 
     if {$verbosity>$leave} {
 	set size [expr ($leave-20)/2]
@@ -488,7 +491,11 @@ proc ShrinkValueList {outerList limit} {
 	set allVals [expr $rowCount*$colCount]
 	set rowEnds [expr int($range/$rowCount)]
 	lset list 3 [expr $topRow+$rowEnds]
-	set startRange [ReadGdalRefToList $list]
+# first use of Gdal lib for this param -- fail gracefully if not there
+	if {[catch {set startRange [ReadGdalRefToList $list]}]} {
+	    set list failed_gdal_reference
+	    return 0 ;# indicates not a real value
+	}
 	lset list 2 [expr $bottomRow-$rowEnds]
 	lset list 3 $bottomRow
 	set endRange [ReadGdalRefToList $list]
@@ -548,8 +555,12 @@ proc ShrinkValueList {outerList limit} {
 proc DoByteArrayToList {fieldChar fieldSize bounds rawData} {
     upvar 1 offset offset
     if {[llength $bounds]==1} {
-#puts "field spec @${offset}${fieldChar}${bounds}"
-	binary scan $rawData @${offset}${fieldChar}${bounds} spit
+	set fieldSpec @${offset}${fieldChar}${bounds}
+#puts $fieldSpec
+	if {![binary scan $rawData $fieldSpec spit]} {
+	    set spit {<scan failed>}
+	    puts "Failed to scan $rawData for $fieldSpec"
+	}
 	incr offset [expr $fieldSize*$bounds]
     } else {
 	set subBounds [lrange $bounds 1 end]

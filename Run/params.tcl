@@ -792,6 +792,7 @@ proc RevertData {winId compName notInput} {
 }
 
 proc FillIfSmall {entry text} {
+#ShowMessage debug info "Shrinking $text" ok
     $entry configure -state normal
     $entry delete 0 end
     set limit 500
@@ -1169,7 +1170,7 @@ proc LoadBase64CharData {encoded} {
 #puts "got node $nodeId from $compName"
     set decoded [base64 -mode decode -- $encoded]
     set paramData($compName) [concat {scenario ,bytes} \
-				  $parseStatus(translateExtras)]
+				  $parseStatus(translateExtras) [list $decoded]]
     if {[string equal TIME [lindex $parseStatus(translateExtras) 1]]} {
 	c_settimepointall $nodeId $decoded
 	c_setwraparoundtime $nodeId $parseStatus(wrapTime)
@@ -1181,7 +1182,7 @@ proc LoadBase64CharData {encoded} {
 	"Specified by $parseStatus(oldPath) (literal) -- keep data in scenario file"
     if {[winfo exists $widgetNames($compName)]} {
 	FillIfSmall $widgetNames($compName).e \
-	    [concat $paramData($compName) [list $decoded]]
+	    [concat $paramData($compName)]
 	$widgetNames($compName).e configure -state disabled
     }
 #    set whichParamsAffected($compName) 1
