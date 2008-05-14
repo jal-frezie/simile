@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE>Working with external data: Raw data in scenario file</TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 2.4  (Win32)">
+	<META NAME="CREATED" CONTENT="0;0">
+	<META NAME="CHANGEDBY" CONTENT="Jasper Taylor">
+	<META NAME="CHANGED" CONTENT="20080514;14550335">
+	<META NAME="ProgId" CONTENT="Word.Document">
+	<META NAME="Originator" CONTENT="Microsoft Word 10">
+	<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>Alastair Davies</o:Author>
+  <o:Template>Help Page.dot</o:Template>
+  <o:LastAuthor>Alastair Davies</o:LastAuthor>
+  <o:Revision>9</o:Revision>
+  <o:TotalTime>14</o:TotalTime>
+  <o:Created>2002-11-12T14:12:00Z</o:Created>
+  <o:LastSaved>2004-09-03T15:55:00Z</o:LastSaved>
+  <o:Pages>1</o:Pages>
+  <o:Words>399</o:Words>
+  <o:Characters>2278</o:Characters>
+  <o:Company>Simulistics Ltd</o:Company>
+  <o:Lines>18</o:Lines>
+  <o:Paragraphs>5</o:Paragraphs>
+  <o:CharactersWithSpaces>2672</o:CharactersWithSpaces>
+  <o:Version>10.6626</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]-->
+	<!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:Zoom>BestFit</w:Zoom>
+  <w:AttachedTemplate HRef="Help Page.dot"></w:AttachedTemplate>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+  </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+ </w:WordDocument>
+</xml><![endif]-->
+	<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-parent:"";
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";}
+</style>
+<![endif]-->
+	<STYLE TYPE="text/css">
+	<!--
+		H1 { color: #000000 }
+		P { color: #000000 }
+		A:link { color: #0000ff }
+		A:visited { color: #800080 }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" TEXT="#000000" LINK="#0000ff" VLINK="#800080" DIR="LTR">
+<H1 LANG="en-GB">Saving raw data in scenario files</H1>
+<P LANG="en-GB">Normally, when dealing with scenarios containing
+large numbers of data values, a modeller would create a scenario file
+with individual values saved literally, and array values saved by
+reference to whatever files they were originally loaded from.
+Sometimes, though, this is not the easiest approach, having two main
+problems:</P>
+<OL>
+	<LI><P LANG="en-GB">When publishing a model with a scenario file
+	like this, the file itself must be included along with all the other
+	files referenced by it, and these must be installed in the same
+	place in the directory tree relative to the scenario file as they
+	were when the scenario was created</P>
+	<LI><P LANG="en-GB">The process of loading values from a .csv file
+	is quite time consuming, as the file has to be parsed and checked
+	for syntax errors before the ASCII numerals can be converted into
+	their actual values, and this has to be done every time the data is
+	loaded.</P>
+</OL>
+<P><SPAN LANG="en-GB">So as an alternative, it is possible to have
+all the data saved in the scenario file, in a format that converts
+easily to the internal representation of numbers. For this to happen,
+when you load an array using any tab in the Table Data dialogue, you
+check the box labelled 'Include values in scenario file' before
+hitting OK. When the scenario file is subsequently saved (see <A HREF="scenario.htm">Using
+the scenario file mechanism</A></SPAN>), the values will be saved
+along with it, and the files from which they were originally loaded
+will not be required again when the scenario file is reloaded. It
+will also reload very quickly.</P>
+<P CLASS="msonormal">&nbsp;</P>
+<P CLASS="msonormal"><SPAN LANG="en-GB">In: </SPAN><A HREF="../index.htm" TARGET="_top"><SPAN LANG="en-GB"><U>Contents</U></SPAN></A><SPAN LANG="en-GB">
+&gt;&gt; </SPAN><A HREF="index.htm"><SPAN LANG="en-GB"><U>Working
+with external data</U></SPAN></A></P>
+<P CLASS="msonormal">&nbsp;</P>
+</BODY>
+</HTML>

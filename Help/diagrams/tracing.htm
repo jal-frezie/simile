@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE>Working with model diagrams : Following influences around</TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 2.4  (Win32)">
+	<META NAME="CREATED" CONTENT="0;0">
+	<META NAME="CHANGEDBY" CONTENT="Jasper Taylor">
+	<META NAME="CHANGED" CONTENT="20080514;17042385">
+	<META NAME="ProgId" CONTENT="Word.Document">
+	<META NAME="Originator" CONTENT="Microsoft Word 10">
+	<!--[if !mso]>
+<style>
+v\:* {behavior:url(#default#VML);}
+o\:* {behavior:url(#default#VML);}
+w\:* {behavior:url(#default#VML);}
+.shape {behavior:url(#default#VML);}
+</style>
+<![endif]-->
+	<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>Alastair Davies</o:Author>
+  <o:Template>Help Page.dot</o:Template>
+  <o:LastAuthor>Alastair Davies</o:LastAuthor>
+  <o:Revision>6</o:Revision>
+  <o:TotalTime>20</o:TotalTime>
+  <o:Created>2002-07-17T14:33:00Z</o:Created>
+  <o:LastSaved>2004-09-01T15:09:00Z</o:LastSaved>
+  <o:Pages>1</o:Pages>
+  <o:Words>224</o:Words>
+  <o:Characters>1281</o:Characters>
+  <o:Company>Simulistics Ltd</o:Company>
+  <o:Lines>10</o:Lines>
+  <o:Paragraphs>3</o:Paragraphs>
+  <o:CharactersWithSpaces>1502</o:CharactersWithSpaces>
+  <o:Version>10.6626</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]-->
+	<!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:Zoom>BestFit</w:Zoom>
+  <w:SpellingState>Clean</w:SpellingState>
+  <w:AttachedTemplate HRef="Help Page.dot"></w:AttachedTemplate>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+  </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+ </w:WordDocument>
+</xml><![endif]-->
+	<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-parent:"";
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";}
+table.MsoTableGrid
+	{mso-style-name:"Table Grid";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	border:solid windowtext 1.0pt;
+	mso-border-alt:solid windowtext .5pt;
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-border-insideh:.5pt solid windowtext;
+	mso-border-insidev:.5pt solid windowtext;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";}
+</style>
+<![endif]-->
+	<!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext="edit" spidmax="6146"/>
+</xml><![endif]-->
+	<!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="1"/>
+ </o:shapelayout></xml><![endif]-->
+	<STYLE TYPE="text/css">
+	<!--
+		H1 { color: #000000 }
+		P { color: #000000 }
+		A:link { color: #0000ff }
+		A:visited { color: #800080 }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" TEXT="#000000" LINK="#0000ff" VLINK="#800080" DIR="LTR">
+<H1 LANG="en-GB"><A NAME="Controllingtheamountofdetailshowninthemo"></A>
+Following influences around the diagram</H1>
+<P CLASS="msonormal">When creating a complex model, it can be very
+useful to see at a glance which components are influencing, and which
+are influenced by, the component you are looking at. This is
+particularly useful if you have a model spread over a very large
+diagram with <A HREF="ghosts.htm">ghosts</A> used extensively to
+reduce the clutter of influence arrows. It is also very useful for
+debugging a running model &ndash; if you are looking at a component
+which seems to have the wrong value, it is useful to be able to jump
+to the values that are influencing that component to see where the
+error is creeping in.</P>
+<P CLASS="msonormal">Simile provides two mechanisms for following
+influences, one focused on the diagram and the other on the search
+mechanism.</P>
+<P STYLE="margin-top: 0.42cm; page-break-after: avoid"><FONT FACE="Albany, sans-serif"><FONT SIZE=4>Highlighting
+upstream/downstream</FONT></FONT></P>
+<P>Normally, the selection is shown in blue, and the links to and
+from the selected area in dark green. There is also a set of highlit
+components, normally shown in light green (though all these colours
+are customizable, see &ldquo;customizing desktop appearance&rdquo;).
+The highlit components include the ghosts of components in the
+selection, and components whose ghosts are in the selection. But it
+can be modified to also include components influencing or influenced
+by those in the selection, at up to two steps away in either
+direction.</P>
+<P>To enable highlighting of more components, select one of the last
+two entries of the desktop's View menu, 'Highlight Back' or
+'Highlight Forwards'. Each of these has entries for One or Two
+functions, as well as the default setting of bases or ghosts only.
+Once this is done, components in the specified relation to the
+selection will be highlit immediately whenever a selection is made.</P>
+<P STYLE="margin-top: 0.42cm; page-break-after: avoid"><FONT FACE="Albany, sans-serif"><FONT SIZE=4>Searching
+for related components</FONT></FONT></P>
+<P CLASS="msonormal">This method causes the model diagram to scroll
+to show the relevant components, which is convenient for very large
+models. Make your selection in the normal way, then hit the 'Find'
+button as described in the <A HREF="search.htm">Searching</A><SPAN LANG="en-GB">
+section. At the top of the dialogue that appears are two buttons,
+'Components influencing selection' and 'components influenced by
+selection'. Hitting either of these buttons will start the search
+immediately; other fields in the search dialogue are ignored. One
+result is selected at a time, as for other searches, and the diagram
+scrolls if necessary to place the selected result at the centre.
+Since each result becomes a new selection, when you reach the one
+that is along the path you are following, you can immediately open a
+new search dialogue to continue searching from that point.</SPAN></P>
+<P CLASS="msonormal"><SPAN LANG="en-GB">In: </SPAN><A HREF="../index.htm" TARGET="_top"><SPAN LANG="en-GB"><U>Contents</U></SPAN></A><SPAN LANG="en-GB">
+&gt;&gt; </SPAN><A HREF="index.htm"><SPAN LANG="en-GB"><U>Working
+with model diagrams</U></SPAN></A></P>
+<P CLASS="msonormal">&nbsp;</P>
+</BODY>
+</HTML>

@@ -30,7 +30,9 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method LoadAcros {} {
-	set acroFile [open [tk_getOpenFile] r]
+	set acroTable [ChooseFile acronyms.txt "Acronym definition file:" 0 \
+			   $winId]
+	set acroFile [open $acroTable r]
 	while {![eof $acroFile]} {
 	    set acros [read $acroFile]
 	}
@@ -88,7 +90,7 @@ itcl::class similescript::$newHelperClass {
 	}
 	$winId.t set $tabLen,1 [join $expn { }]
 	$winId.t see $tabLen,1
-#	$modelInst ReleaseClicks
+	$modelInst ReleaseClicks
 	Display 0 0 0
     }
 
@@ -123,10 +125,16 @@ itcl::class similescript::$newHelperClass {
         $winId.t tag config title -relief raised
         $winId.t tag config OddRow -bg \#ffffe0
         $winId.t tag config OddCol -bg \#ffffc0
+	bind $winId.t <Configure> [namespace code {SplitWidth %W}]
     }
     
     proc rowProc row { if {$row>0 && $row%2} { return OddRow } }
     proc colProc col { if {$col>0 && $col%2} { return OddCol } }
+
+    proc SplitWidth {t} {
+	set fullW [winfo width $t]
+	$t width 0 [expr {-$fullW/4}] 1 [expr {-3*$fullW/4}]
+    }
 
     proc variant {posn plate} {
 	set res {}

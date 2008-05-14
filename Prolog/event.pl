@@ -60,7 +60,7 @@ multi_prop(Dir, From, To, Count) :-
 	   multi_prop(Dir, Mid, To, On)).
 
 get_info(_Wid, selection, Dir, Ends) :-
-	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = []).
+	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = '').
 	
 get_info(_Wid, Comp, eqn, Eqn) :-
 	(Comp is_of_sort has_function,

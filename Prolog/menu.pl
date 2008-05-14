@@ -1197,7 +1197,7 @@ flip_innards(Node_name, Action) :-
 				New_wherever = [R, T, L, B];
 			Action = flip_v,
 				New_wherever = [L, B, R, T]);
-		Whatever = course,
+		(Whatever = course; Whatever = centre),
 			translate(Wherever, Trans, New_wherever)),
 		change_shape(Thing, Whatever, New_wherever),
 		fail).
