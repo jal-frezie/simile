@@ -1,11 +1,12 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
 <HEAD>
-	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
 	<TITLE>Running models</TITLE>
-	<META NAME="GENERATOR" CONTENT="OpenOffice.org 1.1.3  (Linux)">
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 2.4  (Win32)">
 	<META NAME="CREATED" CONTENT="20060104;11102900">
-	<META NAME="CHANGED" CONTENT="20060104;11191800">
+	<META NAME="CHANGEDBY" CONTENT="Jasper Taylor">
+	<META NAME="CHANGED" CONTENT="20080515;10230859">
 	<META NAME="ProgId" CONTENT="Word.Document">
 	<META NAME="Originator" CONTENT="Microsoft Word 10">
 	<!--[if gte mso 9]><xml>
@@ -77,7 +78,7 @@ table.MsoTableGrid
  <o:shapelayout v:ext="edit">
   <o:idmap v:ext="edit" data="1"/>
  </o:shapelayout></xml><![endif]-->
-	<STYLE>
+	<STYLE TYPE="text/css">
 	<!--
 		@page { size: 21cm 29.7cm }
 		H1 { color: #000000 }
@@ -90,40 +91,40 @@ table.MsoTableGrid
 </HEAD>
 <BODY LANG="en-US" TEXT="#000000" LINK="#0000ff" VLINK="#800080" DIR="LTR">
 <H1 LANG="en-GB"><A NAME="Runningmodels"></A>Running models</H1>
-<P LANG="en-GB" CLASS="msonormal">Once you have drawn the model
-diagram and specified how to calculate the value of each element, you
-are ready to perform a simulation.&nbsp; During the simulation, the
-model is run for a specified number of time steps, and the changing
-values of any of the elements can be plotted, recorded in tables, or
-displayed using a variety of other visual tools.&nbsp; You can
-develop your own displays specific to the needs of your models.</P>
-<P CLASS="msonormal">&nbsp;</P>
+<P LANG="en-GB">Once you have drawn the model diagram and specified
+how to calculate the value of each element, you are ready to perform
+a simulation.&nbsp; During the simulation, the model is run for a
+specified number of time steps, and the changing values of any of the
+elements can be plotted, recorded in tables, or displayed using a
+variety of other visual tools.&nbsp; You can develop your own
+displays specific to the needs of your models.</P>
+<P>&nbsp;</P>
 <H2 LANG="en-GB">Preparing models to run</H2>
-<P LANG="en-GB" CLASS="msonormal">Before it runs a model, Simile
-generates an executable program from the model diagram.&nbsp; It does
-this in response to the Model…Run command.&nbsp; 
+<P LANG="en-GB">Before it runs a model, Simile generates an
+executable program from the model diagram.&nbsp; It does this in
+response to the Model&hellip;Run command.&nbsp; 
 </P>
-<P CLASS="msonormal">&nbsp;</P>
+<P>&nbsp;</P>
 <UL TYPE=DISC>
 	<LI><P><A HREF="build.htm"><SPAN LANG="en-GB">Running models</SPAN></A>
 		</P>
 </UL>
-<P CLASS="msonormal">&nbsp;</P>
+<P>&nbsp;</P>
 <H2 LANG="en-GB">Run time environment</H2>
-<P LANG="en-GB" CLASS="msonormal">Simile provides two alternative
-environments for running models and seeing the results of the
-simulation.&nbsp; The standard one uses a single window containing a
-number of panels: one for controlling the simulation, another for any
-input sliders, and others that can contain graphs or other ways of
-visualising model behaviour.&nbsp; The alternative, multiple-window
-environment has a separate window for each of these.&nbsp;&nbsp; 
+<P LANG="en-GB">Simile provides two alternative environments for
+running models and seeing the results of the simulation.&nbsp; The
+standard one uses a single window containing a number of panels: one
+for controlling the simulation, another for any input sliders, and
+others that can contain graphs or other ways of visualising model
+behaviour.&nbsp; The alternative, multiple-window environment has a
+separate window for each of these.&nbsp;&nbsp; 
 </P>
-<P CLASS="msonormal">&nbsp;</P>
-<P LANG="en-GB" CLASS="msonormal">You decide which of the two
-run-time environments you want by ticking or un-ticking the option
-“Single-window Model Run Environment” in the Preferences dialogue
-window, obtained by selecting the Preferences item in the Edit menu.</P>
-<P CLASS="msonormal">&nbsp;</P>
+<P>&nbsp;</P>
+<P LANG="en-GB">You decide which of the two run-time environments you
+want by ticking or un-ticking the option &ldquo;Single-window Model
+Run Environment&rdquo; in the Preferences dialogue window, obtained
+by selecting the Preferences item in the Edit menu.</P>
+<P>&nbsp;</P>
 <UL TYPE=DISC>
 	<LI><P><A HREF="single.htm"><SPAN LANG="en-GB">Single-window Model
 	Run Environment</SPAN></A> 
@@ -132,64 +133,77 @@ window, obtained by selecting the Preferences item in the Edit menu.</P>
 	Model Run Environment</SPAN></A> 
 	</P>
 </UL>
-<P CLASS="msonormal">&nbsp;</P>
+<P>&nbsp;</P>
+<H2>Controlling model execution</H2>
+<P>Whichever execution environment you choose, you control the
+model's execution via the <A HREF="control.htm">run control</A>
+panel. This is either a special box within the single execution
+window, or a whole window itself, but looks the same in either case.
+It allows you to:</P>
+<UL>
+	<LI><P>start, pause and reset the model's execution, 
+	</P>
+	<LI><P>set the time for which it will execute and the frequency of
+	display updates, and 
+	</P>
+	<LI><P>adjust other execution variables such as the step size and
+	integration method.</P>
+</UL>
 <H2 LANG="en-GB">Visualising model behaviour</H2>
-<P CLASS="msonormal">&nbsp;</P>
-<P LANG="en-GB" CLASS="msonormal">The term “helper” is the
-generic term in Simile for any tool for displaying model behaviour
-(i.e. the values for variables), or for entering values into a
-running model.&nbsp; 
+<P>&nbsp;</P>
+<P LANG="en-GB">The term &ldquo;helper&rdquo; is the generic term in
+Simile for any tool for displaying model behaviour (i.e. the values
+for variables), or for entering values into a running model.&nbsp; 
 </P>
-<P CLASS="msonormal">&nbsp;</P>
+<P>&nbsp;</P>
 <UL TYPE=DISC>
 	<LI><P><A HREF="tools/index.htm"><SPAN LANG="en-GB">Working with
 	helpers</SPAN></A> 
 	</P>
 </UL>
-<P CLASS="msonormal">&nbsp;</P>
+<P>&nbsp;</P>
 <H2 LANG="en-GB">Parameter estimation and predictive analysis</H2>
-<P CLASS="msonormal">&nbsp;</P>
-<P CLASS="msonormal"><SPAN LANG="en-GB">Simile incorporates an
-interface to the <A HREF="http://www.sspa.com/pest">PEST</A></SPAN>
+<P>&nbsp;</P>
+<P><SPAN LANG="en-GB">Simile incorporates an interface to the <A HREF="http://www.sspa.com/pest">PEST</A></SPAN>
 parameter estimation tool. This carries out parameter estimation by
 varying model parameters in order to match model behaviour with
 measured data from the system being modelled. It can generate
 prediction ranges for model outputs based on combinations of
 parameter values found in this way.</P>
-<P CLASS="msonormal">&nbsp;</P>
+<P>&nbsp;</P>
 <UL TYPE=DISC>
-	<LI><P><A HREF="PEST/index.htm"><SPAN LANG="en-GB">Working with PEST</SPAN></A>
+	<LI><P><A HREF="pest/index.htm"><SPAN LANG="en-GB">Working with PEST</SPAN></A>
 		</P>
 </UL>
-<P CLASS="msonormal">&nbsp;</P>
+<P>&nbsp;</P>
 <H2 LANG="en-GB">Working with external data</H2>
-<P LANG="en-GB" CLASS="msonormal">If your model has variables whose
-data source is chosen as being from file, i.e. so-called “file
-parameters”, then it requires data to be provided before the
-simulation can proceed.&nbsp; A file parameter dialogue window will
-appear to enable you to provide the required information.&nbsp;&nbsp;
+<P LANG="en-GB">If your model has variables whose data source is
+chosen as being from file, i.e. so-called &ldquo;file parameters&rdquo;,
+then it requires data to be provided before the simulation can
+proceed.&nbsp; A file parameter dialogue window will appear to enable
+you to provide the required information.&nbsp;&nbsp; 
 </P>
-<P CLASS="msonormal">&nbsp;</P>
+<P>&nbsp;</P>
 <UL TYPE=DISC>
 	<LI><P><SPAN LANG="en-GB"><A HREF="../data/index.htm">Working with
 	external data</A> </SPAN>
 	</P>
 </UL>
-<P CLASS="msonormal">&nbsp;</P>
+<P>&nbsp;</P>
 <H2 LANG="en-GB">Scripting model execution</H2>
-<P CLASS="msonormal">In addition to the interactive run-time
-environments, a scripting interface is provided to enable simulations
-to be run without user interaction. This is often useful for
-simulation experiments, e.g. running the same model for a set of
-scenarios (probably defined by parameters in a <A HREF="../data/index.htm">scenario
-file</A>), for sensitivity analysis or parameter estimation.</P>
-<P CLASS="msonormal">&nbsp;</P>
+<P>In addition to the interactive run-time environments, a scripting
+interface is provided to enable simulations to be run without user
+interaction. This is often useful for simulation experiments, e.g.
+running the same model for a set of scenarios (probably defined by
+parameters in a <A HREF="../data/index.htm">scenario file</A>), for
+sensitivity analysis or parameter estimation.</P>
+<P>&nbsp;</P>
 <UL TYPE=DISC>
 	<LI><P><A HREF="../scripting/index.htm"><FONT COLOR="#0000ff">Scripting</FONT></A>
 		</P>
 </UL>
-<P CLASS="msonormal">&nbsp;</P>
-<P CLASS="msonormal">&nbsp;</P>
-<P CLASS="msonormal"><SPAN LANG="en-GB">In: <A HREF="../index.htm" TARGET="_top"><U>Contents</U></A></SPAN></P>
+<P>&nbsp;</P>
+<P>&nbsp;</P>
+<P><SPAN LANG="en-GB">In: </SPAN><A HREF="../index.htm" TARGET="_top"><SPAN LANG="en-GB"><U>Contents</U></SPAN></A></P>
 </BODY>
 </HTML>

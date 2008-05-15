@@ -1,5 +1,5 @@
 [OPTIONS]
-Binary Index=No
+Auto Index=Yes
 Compatibility=1.1 or later
 Compiled file=simile.chm
 Contents file=contents.hhc
@@ -8,6 +8,7 @@ Default topic=index.htm
 Display compile progress=No
 Enhanced decompilation=Yes
 Full-text search=Yes
+Index file=simile.hhk
 Language=0x809 English (United Kingdom)
 Title=Simile help file
 
@@ -143,7 +144,6 @@ submodels\satellite.htm
 submodels\timestep.htm
 submodels\import.htm
 submodels\load.htm
-submodels\movegroups.htm
 submodels\save.htm
 submodels\window.htm
 submodels\multiple\fixed.htm
@@ -201,21 +201,7 @@ files\program.htm
 files\problem.htm
 files\format.htm
 files\limit.htm
-new\index.htm
-new\onesided.htm
-new\halt.htm
-new\data.htm
-new\iteration.htm
-new\multiple.htm
-new\other.htm
-new\timeseries.htm
-new\selecting.htm
-new\enumerated.htm
-new\units.htm
-new\rungekutta.htm
-new\emit.htm
-new\packages.htm
-run\tools\polygon.htm
+new\v5.htm
 
 [INFOTYPES]
 
