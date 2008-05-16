@@ -1598,7 +1598,7 @@ End removed separate submodel case */
   return(NULL);
 }
 
-char* trueTxt = (char*)"true";
+char *trueTxt = (char*)"true";
 enum_type_data noType = {0, NULL, NULL}, boolType = {1, "false", &trueTxt};
 
 node_data_line* searchinfo(char* node, long int* tgtModel, char* caption, 
