@@ -139,7 +139,7 @@ public:
 /* above to be phased out -- we now have... */
 typedef struct enum_type_data_t {
   int count;
-  char* name;
+  const char* name;
   char** members;
 } enum_type_data; /* end of enum type data type decl */
 

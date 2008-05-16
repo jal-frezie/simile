@@ -256,11 +256,11 @@ void append_ints_to_null(int* dest, int* src, int sep, int sep2) {
   
 class DllLossage {
  public:
-  char* action;
+  const char* action;
   char* fileName;
   char* wibble;
   
-  DllLossage(char* Action, char* FileName, char* Wibble) {
+  DllLossage(const char* Action, char* FileName, char* Wibble) {
     action=Action;
     fileName=FileName;
     wibble=Wibble;
@@ -877,7 +877,7 @@ showMess(globMess); */
 
   ~Model() {
     if (!UNLOAD_DLL(handle)) {
-      throw DllLossage("unload", "", WHAT_WENT_WRONG());
+      throw DllLossage("unload", (char*)"", WHAT_WENT_WRONG());
     }
     // if (channelData) delete channelData;
   }
@@ -1598,7 +1598,7 @@ End removed separate submodel case */
   return(NULL);
 }
 
-char* trueTxt = "true";
+char* trueTxt = (char*)"true";
 enum_type_data noType = {0, NULL, NULL}, boolType = {1, "false", &trueTxt};
 
 node_data_line* searchinfo(char* node, long int* tgtModel, char* caption, 
