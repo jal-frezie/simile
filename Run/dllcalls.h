@@ -57,7 +57,7 @@
 #define USE_CLOSEST     1
 #define INTERPOLATE     2
 
-#define SIMILE_VERSION	"5.0"
+#define SIMILE_VERSION	"5.1"
 
 #ifdef WIN32
     #ifdef SHARELIB

@@ -1,7 +1,7 @@
 #!/home/jaspert/Simile/System/bin/wish
 # Simile source code file: Run/simile.tcl
 #
-# (c) Simulistics Ltd. 2001-2007
+# (c) Simulistics Ltd. 2001-2008
 # (c) University of Edinburgh 1995-2001
 #
 # This file contains the code initially sourced into the Tcl interpreter and
@@ -280,7 +280,7 @@ if {[info exists prolog_in_console]} {
 # so control goes back to Prolog
 }
 
-set env(SIMILE_VERSION) 5.0
+set env(SIMILE_VERSION) 5.1
 set sendvars(simP) {}
 
 # KDE launch feedback will fail unless root window is displayed
@@ -329,7 +329,7 @@ toplevel .splash
 pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
 .splash.c create image 200 158 -image splash
 .splash.c create text 245.0 50.0 -font $graph(font) -fill \#99cc99 -anchor w \
-    -text "Simulistics Ltd. 2001-2007"
+    -text "Simulistics Ltd. 2001-2008"
 .splash.c create text 270.0 275.0 -font $graph(font) -fill #660066 -text "Version $env(SIMILE_VERSION)$sendvars(simP)"
 set regInfo $env(licensee_name)
 catch {append regInfo ", $env(licensee_corp)"}
