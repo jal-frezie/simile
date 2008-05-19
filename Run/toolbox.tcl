@@ -7,7 +7,7 @@
 #
 #package require BWidget
 #catch {namespace import BWidget::*}
-package require tile 0.7.8
+package require -exact tile 0.7.8
 
 source ../Run/window.tcl
 source ../Run/shapes.tcl

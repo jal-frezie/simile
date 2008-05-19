@@ -173,7 +173,7 @@ proc load_c_stub_1 {} {
     }
 }
 
-package require MyTrf ;# loads right version of Trf
+package require Trf ;# loads right version of Trf (fingers crossed)
 
 proc load_c_stub_2 {} {
     global env userinfo ;# last needed in stub
