@@ -8,7 +8,7 @@ REL_EXP = 0
 # License code required to verify name/corp/edition: 0 for no
 LICENSED = 0
 # Prolog implementation to use -- SICSTUS for Windows releases, GNU otherwise
-PROLOG = SICSTUS
+PROLOG = GNU
 
 ifeq ($(ABS_EXP),"")
 	EXP_TICKS = 1230768000
