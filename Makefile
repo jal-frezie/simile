@@ -1,17 +1,17 @@
 # These are the settings for the particular version we want to make
 # edition: evaluation, teaching, standard or enterprise
-EDN = STANDARD
+EDN = EVALUATION
 # date of final expiry: "hh:mm D M Y" or "" for permanent
 ABS_EXP = ""
 # days after install: 0 for no installation expiry
 REL_EXP = 0
 # License code required to verify name/corp/edition: 0 for no
-LICENSED = 1
+LICENSED = 0
 # Prolog implementation to use -- SICSTUS for Windows releases, GNU otherwise
-PROLOG = GNU
+PROLOG = SICSTUS
 
 ifeq ($(ABS_EXP),"")
-	EXP_TICKS = 0
+	EXP_TICKS = 1230768000
 else
 	EXP_TICKS = $(shell date +%s -d $(ABS_EXP))
 endif
@@ -29,8 +29,9 @@ endif
 # customisation - though conflicts may, of course, occur.
 # could require execs to be in PATH, sicstus, gplc, gcc/g++
 # default *nix variables overwritten in special cases
-GCCCMD = gcc -O3
-GPPCMD = g++ -O3
+GCCCMD = gcc
+GPPCMD = g++
+FLAGS =  -O3
 
 UNAME = $(shell uname)
 ifeq ($(UNAME),CYGWIN_NT-5.1)
@@ -56,6 +57,7 @@ endif
 	INSTLIB = Run/install.dll
 	MAIN = System/bin/Simile.exe
 ifeq ($(UNAME),Darwin)
+	FLAGS = -O3 -mmacosx-version-min=10.3
 	ARCHEXTN = _$(shell uname -m)
 	ifeq ($(ARCHEXTN),_Power Macintosh)
 		ARCHEXTN = _ppc
@@ -68,13 +70,12 @@ ifeq ($(UNAME),Darwin)
 	MAIN = 
 endif 
 ifeq ($(UNAME),Linux)
+	FLAGS = -O3 -m32
 	SLDIR = lib
 	SHAREDLIBPREFX = lib
 	VERS = 8.4
 	SHAREDLIBEXTN = .so
 	ARCHEXTN =
-	GCCCMD = gcc -O3 -m32
-	GPPCMD = g++ -O3 -m32
 	INSTLIB = 
 	MAIN = 
 endif
@@ -92,16 +93,20 @@ simile: $(PROLOGSTATE) System/bin/relay$(ARCHEXTN) $(SHIM) \
 ifeq ($(ARCHEXTN),_i386)
 # this saves going on the ppc mac to make the stub for each edition
 PPCSHIM = System/lib/Stubs/libame_dll$(VERS)_ppc.dylib
-ppcshim: $(PPCSHIM)
+PPCSHANK = System/lib/lib5d_ppc.dylib
+ppcbits: $(PPCSHIM) $(PPCSHANK)
 $(PPCSHIM): ame_cmx.cpp dllcalls.h System/lib/lib5d_ppc.dylib Makefile
 	cd Run; \
-	$(GPPCMD) -arch ppc -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers \
+	$(GPPCMD) -arch ppc -fPIC $(FLAGS) $(DEFNS) \
+		-I. -I../../Frameworks/Tcl.framework/Headers \
 		-dynamiclib -o ../$(PPCSHIM) ame_cmx.cpp -F../../Frameworks \
 		-framework Tcl -L../System/lib -l5d_ppc; cd ..; \
 	install_name_tool -change \
 		/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl $(PPCSHIM)
-
+$(PPCSHANK): shank.cpp dllcalls.h Makefile
+	cd Run; $(GPPCMD) -arch ppc -O -fPIC $(FLAGS) -I. -dynamiclib \
+		-o ../$(PPCSHANK) shank.cpp; cd ..
 endif
 
 vpath %.pl Prolog
@@ -134,17 +139,23 @@ vpath 	%.tcl 	Run
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
 System/lib/Stubs/ame_dll84.dll: ame_cmx.cpp dllcalls.h System/bin/5d.dll
-	cd Run; $(GPPCMD) -c $(DEFNS) -I. -I../System/include/tcl ame_cmx.cpp; $(GPPCMD) -shared -o ../$(SHIM) ame_cmx.o ../System/lib/tclstub84.lib -L../System/lib -l5ddll; cd ..
+	cd Run; $(GPPCMD) $(FLAGS) $(DEFNS) -I. -I../System/include/tcl \
+		-o ../$(SHIM) ../System/lib/tclstub84.lib -L../System/lib \
+		-l5ddll ame_cmx.cpp; cd ..
 
-System/lib/Stubs/libame_dll$(VERS).so: ame_cmx.cpp dllcalls.h System/lib/lib5d.so
-	cd Run; $(GCCCMD) -c -fPIC $(DEFNS) -I. -I../System/include/tcl ./ame_cmx.cpp; $(GCCCMD) -shared -o ../$(SHIM) ame_cmx.o -L../System/lib -ltclstub$(VERS) -l5d; cd ..
+System/lib/Stubs/libame_dll$(VERS).so: \
+		ame_cmx.cpp dllcalls.h System/lib/lib5d.so
+	cd Run; $(GCCCMD) -fPIC $(FLAGS) $(DEFNS) -I. -I../System/include/tcl \
+		-o ../$(SHIM) -L../System/lib -ltclstub$(VERS) -l5d \
+		./ame_cmx.cpp; cd ..
 
 # 'before' arg of install_name_tool should be some gung-ho sed regexp on output
 # of otool but it did not work (why was this not needed for ppc?)
 System/lib/Stubs/libame_dll$(VERS)$(ARCHEXTN).dylib: \
 		ame_cmx.cpp dllcalls.h System/lib/lib5d$(ARCHEXTN).dylib
 	cd Run; \
-	$(GPPCMD) -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers \
+	$(GPPCMD) -fPIC $(FLAGS) $(DEFNS) -I. \
+		-I../../Frameworks/Tcl.framework/Headers \
 		-dynamiclib -o ../$(SHIM) ame_cmx.cpp -F../../Frameworks \
 		-framework Tcl -L../System/lib -l5d$(ARCHEXTN); cd ..; \
 	install_name_tool -change \
@@ -152,23 +163,32 @@ System/lib/Stubs/libame_dll$(VERS)$(ARCHEXTN).dylib: \
 		@executable_path/../Frameworks/Tcl.framework/Tcl $(SHIM)
 
 System/bin/5d.dll: shank.cpp dllcalls.h Makefile
-	cd Run; $(GPPCMD) -c -DSHARELIB -I. shank.cpp; $(GPPCMD) -shared -o 5d.dll -Wl,--out-implib,lib5ddll.a shank.o; mv 5d.dll ../System/bin; mv lib5ddll.a ../System/lib; cd ..
+	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. -shared -o 5d.dll \
+		-Wl,--out-implib,lib5ddll.a; mv 5d.dll ../System/bin; \
+		mv lib5ddll.a ../System/lib shank.cpp; cd ..
 
 # not needed for Linux; Simile builds it when first run
 System/lib/lib5d.so: shank.cpp dllcalls.h Makefile
-	cd Run; $(GPPCMD) -c -fPIC -I. shank.cpp; $(GPPCMD) -shared -o ../System/lib/lib5d.so shank.o; cd ..
+	cd Run; $(GPPCMD) -fPIC $(FLAGS) -I. -shared \
+		-o ../System/lib/lib5d.so shank.cpp; cd ..
 
 # gcc cannot build universal binary libraries for loading via ld
-# directly; build separately and lipo them together
+# directly; build separately and load appropriate one at run time
 
 System/lib/lib5d$(ARCHEXTN).dylib: shank.cpp dllcalls.h Makefile
-	cd Run; $(GPPCMD) -O -fPIC -I. -dynamiclib -o ../System/lib/lib5d$(SHAREDLIBEXTN) shank.cpp; cd ..
+	cd Run; $(GPPCMD) -O -fPIC $(FLAGS) -I. -dynamiclib \
+	-o ../System/lib/lib5d$(SHAREDLIBEXTN) shank.cpp; cd ..
 
 Run/install.dll: install.cpp Makefile
-	cd Run; $(GPPCMD) -c $(DEFNS) -I. -I../System/include install.cpp; $(GPPCMD) -shared -o install.dll install.o -L../System/lib -lcrypto -lssl; cd ..
+	cd Run; $(GPPCMD) $(FLAGS) $(DEFNS) -I. -I../System/include -shared \
+		-o install.dll install.cpp -L../System/lib -lcrypto -lssl; \
+		cd ..
 
 System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc Makefile
-	cd Interp; windres -I../System/include/tcl -o rc.o Simile.rc; $(GCCCMD) -c -I../System/include/tcl Simile.c; $(GCCCMD) -o ../System/bin/Simile.exe Simile.o rc.o ../System/lib/tcl84.lib ../System/lib/tk84.lib -mwindows; cd ..
+	cd Interp; windres -I../System/include/tcl -o rc.o Simile.rc; 
+	$(GCCCMD) $(FLAGS) -I../System/include/tcl \
+		-o ../System/bin/Simile.exe Simile.c rc.o \
+		../System/lib/tcl84.lib ../System/lib/tk84.lib -mwindows; cd ..
 
 #else
 
@@ -185,7 +205,8 @@ System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc Makefile
 #endif
 
 System/bin/relay$(ARCHEXTN): Run/relay.c
-	cd Run; $(GCCCMD) -o ../System/bin/relay$(ARCHEXTN) relay.c; cd ..
+	cd Run; $(GCCCMD) $(FLAGS) -o ../System/bin/relay$(ARCHEXTN) relay.c; \
+		cd ..
 
 # call clean after changing license info in this file
 clean:
