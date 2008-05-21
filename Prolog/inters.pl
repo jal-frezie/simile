@@ -491,7 +491,7 @@ make_intermediates(
 	    ReadyContext = ClearContext;
 	member(Functor, [with_least, with_greatest]), !,
 	    append(NowBuilding, DestPath, ReadyContext),
-	    propagate_units(Source, any, [int,any], [TXUnits, ArgUnits], Units);
+	    propagate_units(Source, any, [1,any], [TXUnits, ArgUnits], Units);
 	IncrExpr =.. [IncrOp, IncrementRef, FillRef],
 	    (Functor = any, ArgUnits = cond_spec, !,
 		[RUnits | ArgTemplate] = [cond_spec, cond_spec];
