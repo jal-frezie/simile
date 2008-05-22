@@ -11,7 +11,7 @@ LICENSED = 1
 PROLOG = GNU
 
 ifeq ($(ABS_EXP),"")
-	EXP_TICKS = 1230768000
+	EXP_TICKS = 0
 else
 	EXP_TICKS = $(shell date +%s -d $(ABS_EXP))
 endif
@@ -140,8 +140,8 @@ vpath 	%.tcl 	Run
 
 System/lib/Stubs/ame_dll84.dll: ame_cmx.cpp dllcalls.h System/bin/5d.dll
 	cd Run; $(GPPCMD) $(FLAGS) $(DEFNS) -I. -I../System/include/tcl \
-		-o ../$(SHIM) ../System/lib/tclstub84.lib -L../System/lib \
-		-l5ddll ame_cmx.cpp; cd ..
+		-shared -o ../$(SHIM) ame_cmx.cpp \
+		../System/lib/tclstub84.lib -L../System/lib -l5ddll; cd ..
 
 System/lib/Stubs/libame_dll$(VERS).so: \
 		ame_cmx.cpp dllcalls.h System/lib/lib5d.so
@@ -164,8 +164,8 @@ System/lib/Stubs/libame_dll$(VERS)$(ARCHEXTN).dylib: \
 
 System/bin/5d.dll: shank.cpp dllcalls.h Makefile
 	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. -shared -o 5d.dll \
-		-Wl,--out-implib,lib5ddll.a; mv 5d.dll ../System/bin; \
-		mv lib5ddll.a ../System/lib shank.cpp; cd ..
+		-Wl,--out-implib,lib5ddll.a shank.cpp; \
+		mv 5d.dll ../System/bin; mv lib5ddll.a ../System/lib; cd ..
 
 # not needed for Linux; Simile builds it when first run
 System/lib/lib5d.so: shank.cpp dllcalls.h Makefile
@@ -185,7 +185,7 @@ Run/install.dll: install.cpp Makefile
 		cd ..
 
 System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc Makefile
-	cd Interp; windres -I../System/include/tcl -o rc.o Simile.rc; 
+	cd Interp; windres -I../System/include/tcl -o rc.o Simile.rc; \
 	$(GCCCMD) $(FLAGS) -I../System/include/tcl \
 		-o ../System/bin/Simile.exe Simile.c rc.o \
 		../System/lib/tcl84.lib ../System/lib/tk84.lib -mwindows; cd ..
