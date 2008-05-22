@@ -448,7 +448,7 @@ namespace eval grid005 {
 	variable useNodes
 
 	set useNodes($winId,target) [ChooseFile image.tif "File to save:" 1 \
-				[$helperTable($winId,whichInstance) GetNode]]
+		 [$helperTable($winId,whichInstance) GetNode]]
     }
 
     proc SetImg {winId} {
@@ -813,9 +813,10 @@ namespace eval grid005 {
     
     
     proc SaveAsFile {winId} {
-        variable useNodes
+        variable useNodes helperTable
         # should have dialog to set for options
-        set filename [ChooseFile image.gif "Save image as:" 1]
+        set filename [ChooseFile image.gif "Save image as:" 1 $winId \
+		 [$helperTable($winId,whichInstance) GetNode]]
         if {[string length $filename]} {
 	    $useNodes($winId,visibleMap) write $filename \
 		-format [string range [file extension $filename] 1 end]
