@@ -146,7 +146,7 @@ System/lib/Stubs/ame_dll84.dll: ame_cmx.cpp dllcalls.h System/bin/5d.dll
 System/lib/Stubs/libame_dll$(VERS).so: \
 		ame_cmx.cpp dllcalls.h System/lib/lib5d.so
 	cd Run; $(GCCCMD) -fPIC $(FLAGS) $(DEFNS) -I. -I../System/include/tcl \
-		-o ../$(SHIM) -L../System/lib -ltclstub$(VERS) -l5d \
+		-shared -o ../$(SHIM) -L../System/lib -ltclstub$(VERS) -l5d \
 		./ame_cmx.cpp; cd ..
 
 # 'before' arg of install_name_tool should be some gung-ho sed regexp on output
