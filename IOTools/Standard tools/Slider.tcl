@@ -386,22 +386,24 @@ namespace eval slide139 {
     
     proc Open {winId smPath} {
         global helperTable whichParamsAffected
-        set metaFile [ChooseFile params.spf "Load parameters from:" 0]
+
+	set topNode [$helperTable($winId,whichInstance) GetNode]
+        set metaFile [ChooseFile params.spf "Load parameters from:" 0 $topNode]
         if {[llength $metaFile]} {
-            set topNode [$helperTable($winId,whichInstance) GetNode]
             ZapParams $topNode $smPath $metaFile
         }
     }
     
     proc Save {winId smPath} {
         global helperTable simtmpdir env
+
         #puts "Saving submodel $smPath inputs"
-        set metaFile [ChooseFile inputs.spf "Save input values as:" 1]
+	set topNode [$helperTable($winId,whichInstance) GetNode]
+        set metaFile [ChooseFile inputs.spf "Save input values as:" 1 $topNode]
         if {[llength $metaFile]} {
             set part [file join $simtmpdir temp_out.spf]
             set iStr [open $part w]
             
-            set topNode [$helperTable($winId,whichInstance) GetNode]
             set snip [string length $smPath]
             foreach node [GetObjectList] {
                 set title [GetCaptionPathFromId $node]
