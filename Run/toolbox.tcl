@@ -542,7 +542,7 @@ proc load_dll {topNode lang progDir id node incs} {
 }
 
 proc compile_c {workingDir extLibs} {
-    global tcl_platform env
+    global sendvars tcl_platform env
 
     CheckCompilerLocation
     if {[PrefValue custom(hackBreak) hackBreak]} {
@@ -576,12 +576,12 @@ proc compile_c {workingDir extLibs} {
     #ShowMessage debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
     if {[catch {switch $tcl_platform(platform) {
         unix {
+	    exec g++ $sendvars(arflags) -fPIC -c -O3 -I$TOOLDIR -o objtmp.o \
+		model.cpp
             if {[string match Darwin $tcl_platform(os)]} {
-                exec g++ -fPIC -c -O3 -I$TOOLDIR -o objtmp.o model.cpp
                 set linkCmd [list exec g++ -bundle -o $TARGET objtmp.o]
             } else {
-                exec g++ -m32 -fPIC -c -O3 -I$TOOLDIR -o objtmp.o model.cpp
-                set linkCmd [list exec g++ -m32 -shared -o $TARGET objtmp.o]
+                set linkCmd [list exec g++ -shared -o $TARGET objtmp.o]
             }
 	    eval $linkCmd $lDirs $lFiles
         }
@@ -623,18 +623,19 @@ proc compile_c {workingDir extLibs} {
 		}
 	    }
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
-		puts $batSt "g++ -c -o objtmp.o -I$TOOLDIR -I. \
-                        -I[file nativename [file join \
+		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o -I$TOOLDIR \
+                        -I. -I[file nativename [file join \
                         [file dirname $TOOLDIR] System include]] \
                         -I[file nativename [file join \
                         $LIBDIR gcc mingw32 3.4.2 include]] model.cpp"
 		set libOpt1 -L[file nativename $LIBDIR]
 		set libOpt2 -L[file nativename [file join $LIBDIR gcc \
 						    mingw32 3.4.2]]
-		puts $batSt "g++ -shared -o $TARGET $libOpt1 $libOpt2 \
-                        objtmp.o [concat $lDirs $lFiles]"
+		puts $batSt "g++ -shared -o $TARGET \
+                        $libOpt1 $libOpt2 objtmp.o [concat $lDirs $lFiles]"
 	    } else {
-		puts $batSt "g++ -c -o objtmp.o -I$TOOLDIR -I. model.cpp"
+		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o -I$TOOLDIR \
+                        -I. model.cpp"
 #        puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtmp.o"
 		puts $batSt [concat [list g++ -shared -o $TARGET objtmp.o] \
 				 $lDirs $lFiles]
@@ -824,6 +825,13 @@ proc ControlDraw {prologVersion} {
     set sendvars(simV) $env(SIMILE_VERSION)
     set sendvars(proV) $prologVersion
     
+    # set up to compile stub and models with same bitness as tcltk
+    if {$tcl_platform(wordSize)==4} {
+	set sendvars(arflags) {-m32}
+    } else {
+	set sendvars(arflags) {-m64}
+    }
+
     # no longer have a separate floating toolbar
     
     if {![info exists custom(prefDir)]} {
@@ -873,7 +881,8 @@ proc ControlDraw {prologVersion} {
     if {[string match Linux $tcl_platform(os)]} {
 	set shank ../System/lib/lib5d.so
 	if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
-	    exec g++ -m32 -O -fPIC -I../Run -shared -o $shank ../Run/shank.cpp
+	    exec g++ $sendvars(arflags) -O -fPIC -I../Run -shared \
+		-o $shank ../Run/shank.cpp
 	}
     }
     load_c_stub_1
