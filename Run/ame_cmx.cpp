@@ -337,7 +337,7 @@ void get_tcl_value_pointer(void* modelPtr, void* tgt, int paramId,
 			   int count, int* inds) {
   node_data_line* data_line;
   char caption[255];
-  char* varName;
+  const char* varName;
   int dims[32], path[32];
   Tcl_Obj* valPtr;
   int stepIndex, rv;
@@ -388,8 +388,9 @@ void get_tcl_value_pointer(void* modelPtr, void* tgt, int paramId,
   }
 }
       
-Tcl_Obj* make_exec_error(Tcl_Interp* interp, char* phase, char* tgt, 
-			 double time, int step, char* complaint) {
+Tcl_Obj* make_exec_error(Tcl_Interp* interp, const char* phase, 
+			 const char* tgt,  double time, int step, 
+			 char* complaint) {
   Tcl_Obj* errList;
 
   errList=Tcl_NewListObj(0, NULL);
@@ -1660,7 +1661,7 @@ char edition[]="standard";
 char edition[]="enterprise";
 #endif
 
-void crash (Tcl_Interp *interp, char *cause) {
+void crash (Tcl_Interp *interp, const char *cause) {
  /* oh dear. */
  /* oh dear, oh dear. */
   Tcl_VarEval(interp, "ShowMessage {Authorization failure} error {Bad ", cause, " authorization. Simile will now exit.} ok", NULL);
@@ -2072,15 +2073,15 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
 
   globInterp = interp;
   proc_pointers_for_shank(interact_gui, showMess, simileVersion);
+  sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
   /* Use the Tcl Stubs mechanism */
-  Tcl_InitStubs(interp, "8.4", 0);
+  Tcl_InitStubs(interp, pkgName, 0);
   Tcl_SetVar2(interp, "userinfo", "edn", edition, 0);
   Tcl_CreateObjCommand(interp, "c_testlicense", testlicenseCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   Tcl_CreateObjCommand(interp, "loadcommands", loadcmdsCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  sprintf(pkgName, "%d.%d.%s.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION, 
-	  simileVersion, FORUNIX);
+  sprintf(pkgName, "%s.%s.%d", pkgName, simileVersion, FORUNIX);
   return Tcl_PkgProvide(interp, "Ame_dll", pkgName);
 }
