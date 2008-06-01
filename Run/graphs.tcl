@@ -1326,7 +1326,7 @@ proc ArrayGetSorted {arrayPtr} {
     set result {}
     upvar 1 $arrayPtr arrayName
     set nameList [array names arrayName ?*]
-    # puts "About to sort $nameList"
+    puts "About to sort $nameList"
     foreach name [lsort -real -index end $nameList] {
 	lappend result $name $arrayName($name)
     }

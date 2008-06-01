@@ -511,7 +511,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
 }
 
 proc ModelWindow {winName} {
-    global tcl_platform looks SimileAutoObjLoaded
+    global tcl_platform looks SimileAutoObjLoaded SIMILE_PATH
     menu ${winName}top
     toplevel $winName -menu ${winName}top
     if {[info exists SimileAutoObjLoaded]} {
@@ -519,8 +519,9 @@ proc ModelWindow {winName} {
     }
 
     switch $tcl_platform(platform) {
-        windows { wm iconbitmap $winName -default ../Run/simile16.ico }
-        unix { wm iconbitmap $winName @../Images/dribble.xbm}
+        windows { wm iconbitmap $winName \
+		      -default ${SIMILE_PATH}/Run/simile16.ico }
+        unix { wm iconbitmap $winName @${SIMILE_PATH}/Images/dribble.xbm}
     }
     # Create a scrollable canvas
     set c [canvas $winName.canvas -bg white -confine 1 \

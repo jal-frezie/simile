@@ -5,10 +5,8 @@
 #
 # This file loads all procedures, and sets up the model execution environment.
 #
-global tcl_platform
 if [string match "Darwin" $tcl_platform(os)] {
     regsub -all /\\./ [info script] / scriptCmd
-    set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
     lappend auto_path $SIMILE_PATH/System/lib
 }
 #package require BWidget

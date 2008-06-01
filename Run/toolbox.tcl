@@ -542,7 +542,7 @@ proc load_dll {topNode lang progDir id node incs} {
 }
 
 proc compile_c {workingDir extLibs} {
-    global sendvars tcl_platform env
+    global sendvars tcl_platform env SIMILE_PATH
 
     CheckCompilerLocation
     if {[PrefValue custom(hackBreak) hackBreak]} {
@@ -562,7 +562,6 @@ proc compile_c {workingDir extLibs} {
 				  3 end] ;# trim off "lib..."
 	}
     }
-    set oldDir [pwd]
     cd $workingDir
 # get a so far unused file name
     set serial [newInt]
@@ -571,7 +570,7 @@ proc compile_c {workingDir extLibs} {
 	set serial [newInt]
 	set TARGET model${serial}$shLibExt
     }
-    set TOOLDIR $oldDir/../Run
+    set TOOLDIR [file join $SIMILE_PATH Run]
     set TCL [file dirname [file dirname [info library]]]
     #ShowMessage debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
     if {[catch {switch $tcl_platform(platform) {
@@ -679,7 +678,7 @@ proc compile_c {workingDir extLibs} {
     }} chuckup]} {
       set badCompile "The compiler raised a problem with the code generated for this model. This might be due to a bad compiler setup, or it could be due to mathematical problems in the model. The error was: $chuckup. It may help to try the 'Debug' option."
 puts $badCompile
-      cd $oldDir; #Change back to Run directory in order to access Help file for subsequent dialogue
+      cd $TOOLDIR; #Change back to Run directory in order to access Help file for subsequent dialogue
       BuildProblem "Problem during compilation" warning $badCompile execution
       cd $workingDir
       set serial -1
@@ -689,7 +688,7 @@ puts $badCompile
 	file delete objtmp.o
     }
     # do not allow an old dcf to be saved with a new model
-    cd $oldDir
+    cd $TOOLDIR
     return $serial
 }
 
@@ -779,14 +778,14 @@ proc Respond {relayProc} {
 }
     
 proc StartComms {firstTime} {
-    global custom checkFor tcl_platform env
+    global custom checkFor tcl_platform env SIMILE_PATH
 
     if {[string equal Darwin $tcl_platform(os)] || \
 	    [info exists env(OPEN_MODEL)] && \
 	    [string equal -stealth [file tail $env(OPEN_MODEL)]]} {
 	return ;# MacOS takes care of this stuff -- well?
     }
-    set relay [file join [file dirname [pwd]] System bin relay]
+    set relay [file join $SIMILE_PATH System bin relay]
     switch -- $firstTime {
         1 {
 # initializing -- set old proc to 0
@@ -1443,7 +1442,7 @@ proc GetParts {top tree} {
 }
 
 proc ConvertSSxml {node} {
-    global simtmpdir
+    global simtmpdir SIMILE_PATH
     package require xslt
     package require mime
 
@@ -1454,7 +1453,7 @@ proc ConvertSSxml {node} {
     set XML [mime::getbody $mm1]
     set source_doc [::dom::libxml2::parse $XML]
     set mm2 [mime::initialize -canonical application/x-xml \
-         -encoding base64 -file ../Run/xml2pl01.xsl]
+		 -encoding base64 -file ${SIMILE_PATH}/Run/xml2pl01.xsl]
     set XSLstylesheet [mime::getbody $mm2]
     set ssheet_doc [::dom::libxml2::parse $XSLstylesheet]
     set ssheet [::xslt::compile $ssheet_doc]

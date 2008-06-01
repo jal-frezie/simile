@@ -310,6 +310,8 @@ set sendvars(simP) {}
 
 # of course, none of these apply if using the scripting interface.
 
+encoding system utf-8
+
 entry .hidden_e
 pack .hidden_e
 
