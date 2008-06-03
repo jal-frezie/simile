@@ -747,7 +747,7 @@ proc ResizeBackgnd {wc l t r b} {
         }
         }
     }
-    AddGrid $wc [Gradient $baseColor -0.1 $wc] $l $t $r $b
+    AddGrid $wc [Gradient $baseColor -0.02 $wc] $l $t $r $b
     $wc lower /base/ ;# should keep them in order
     global window_info
     if {$window_info($wc,is_top_level)} {

@@ -1051,7 +1051,7 @@ set parseStatus(spfParser) [::xml::parser -ignorewhitespace true \
 				-characterdatacommand LoadBase64CharData]
 
 proc RevertXMLParams {oldPath newPath topNode smPath} {
-    global parseStatus
+    global parseStatus widgetNames errorInfo
 
     array unset parseStatus simV
     array set parseStatus [list oldPath $oldPath topNode $topNode \
@@ -1064,7 +1064,11 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     close $parseStatus(outStr)
     if {$broke} {
 	if {[info exists parseStatus(simV)]} { ;# a bad XML file
-	    error $feedback
+	    if {[string equal aborted $feedback]} {
+		return -1
+	    } else {
+		error [array get parseStatus] $errorInfo
+	    }
 	} else { ;# an earlier style of param file
 	    return 0
 	}
@@ -1166,7 +1170,15 @@ proc LoadBase64CharData {encoded} {
     if {![info exists parseStatus(loadByteArray)]} return
     set relPath [RestoreCrs $parseStatus(submodel)/$parseStatus(loadByteArray)]
     set compName $parseStatus(smPath)$relPath
-    set nodeId [IdFromTail $parseStatus(topNode) $compName 0]
+
+    set nodeId [ExistCheck $parseStatus(topNode) $relPath \
+		    $parseStatus(smPath) 0 metafile]
+    switch $nodeId {
+	break {error aborted}
+	continue {return}
+    }
+
+#    set nodeId [IdFromTail $parseStatus(topNode) $compName 0]
 #puts "got node $nodeId from $compName"
     set decoded [base64 -mode decode -- $encoded]
     set paramData($compName) [concat {scenario ,bytes} \
@@ -1207,18 +1219,23 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     set oldDir [pwd]
     set metaFile [file join $simtmpdir temp_in.spf]
     set origVersion [RevertXMLParams $oldPath $metaFile $topNode $smPath]
-    if {$origVersion} {
-	# XML file successfully converted
-    } elseif {[catch {
-	set multiT [mime::initialize -file $oldPath]
-	set origVersion [mime::getheader $multiT Simile-Version]
-	set mimeSquirter [NetOpen $metaFile w]
-	fconfigure $mimeSquirter -translation binary
-	mime::getbody $multiT -command SquirtMime -blocksize 256}]
-	  } {
-	set metaFile $oldPath
-	set origVersion 0.0
+    switch -- $origVersion {
+	-1 { ;# User aborted because XML full of unusable bytearrays
+	    return
+	} 0 { ;# File failed to parse as XML, try older formats
+	    if {[catch {
+		set multiT [mime::initialize -file $oldPath]
+		set origVersion [mime::getheader $multiT Simile-Version]
+		set mimeSquirter [NetOpen $metaFile w]
+		fconfigure $mimeSquirter -translation binary
+		mime::getbody $multiT -command SquirtMime -blocksize 256}]
+	    } {
+		set metaFile $oldPath
+		set origVersion 0.0
+	    }
+	}
     }
+    # If neither of the above, XML file successfully converted
     set ::bermudaTriangle {}
     set pStr [NetOpen $metaFile r]
     while {[gets $pStr savedValue] != -1} {

@@ -412,7 +412,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     } else {
 	set plRad [expr $cornerRad/$window_info($w,scale)]
 	set interval [expr $looks(gridPitch)*$inFat/100.0]
-	set nCol [Gradient $bgColour -0.1 $w]
+	set nCol [Gradient $bgColour -0.02 $w]
 	set gTagSet "$tagSet /background/ /grid/"
 	if {$custom(showgrids,$w)} {
 	    set gStat normal
@@ -1572,7 +1572,7 @@ proc Customize {winId mode} {
     set window_info($t.canvas,top_node) $n
     set custom(showgrids,$t.canvas) 1
     pack $t.canvas
-    AddGrid $t.canvas [Gradient white -0.1 $t.canvas]  0 0 \
+    AddGrid $t.canvas [Gradient white -0.02 $t.canvas]  0 0 \
 	[expr $looks(width)+120] [expr $looks(width)+60]
 
     if {[string compare $object influence]} {

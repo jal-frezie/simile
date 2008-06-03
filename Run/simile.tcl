@@ -272,6 +272,7 @@ if {[string equal windows $tcl_platform(platform)]} {
 }
 
 if {[info exists prolog_in_console]} {
+    set SIMILE_PATH [file dirname [pwd]] ;# otherwise it is relative
     lappend auto_path $SIMILE_PATH/System/lib
 # temporary to get wkng with local tcltk
 
