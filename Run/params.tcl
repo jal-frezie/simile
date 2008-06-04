@@ -1192,7 +1192,7 @@ proc LoadBase64CharData {encoded} {
     }
     set msgs(param_source_$compName) \
 	"Specified by $parseStatus(oldPath) (literal) -- keep data in scenario file"
-    if {[winfo exists $widgetNames($compName)]} {
+    if {[info exists widgetNames($compName)]} { ;# should imply widget exists
 	FillIfSmall $widgetNames($compName).e \
 	    [concat $paramData($compName)]
 	$widgetNames($compName).e configure -state disabled
@@ -1218,6 +1218,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     #do_in_editor puts "MergeParams $topNode $smPath $oldPath $interactive"
     set oldDir [pwd]
     set metaFile [file join $simtmpdir temp_in.spf]
+    set ::bermudaTriangle {}
     set origVersion [RevertXMLParams $oldPath $metaFile $topNode $smPath]
     switch -- $origVersion {
 	-1 { ;# User aborted because XML full of unusable bytearrays
@@ -1236,7 +1237,6 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	}
     }
     # If neither of the above, XML file successfully converted
-    set ::bermudaTriangle {}
     set pStr [NetOpen $metaFile r]
     while {[gets $pStr savedValue] != -1} {
         #ShowMessage debug info "Restoring $savedValue" ok
