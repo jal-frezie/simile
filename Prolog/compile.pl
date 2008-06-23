@@ -727,7 +727,9 @@ build_submodel_functions( Language, Phases, Constants, StateForm, UpdateForm,
 	    /* lost instructions can be caused by circularity elsewhere,
 	    so check for that first */
 	    \+ (order(Holdup, Awkward), not_yet_ordered(Holdup)),
-	    raise_exception(ordering_failure(Awkward));
+	    Awkward = make(Tail, _,_,_,_),
+	    % pick act because raising exception with self-ref term crashes GNU
+	    raise_exception(ordering_failure(Tail));
 	true),
 	/* note state variables implemented by 'last' might refer to
 	compartment values, hence must go before them */

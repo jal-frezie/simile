@@ -1269,8 +1269,8 @@ show_error(Model, Lossage) :-
 	Lossage = condition_outside_loop(LoopStart, Xefct), !,
 	    sicstus_format_to_chars("This model contains the target ~w which depends on its own values from previous iterations of a program loop. However the cycle of evaluations includes target ~w, which is calculated outside the innermost program loop containing target ~w", [LoopStart, Xefct, LoopStart], Text),
 	    Fault = user;
-	Lossage = ordering_failure(make(Awkward, _,_,_,_)), !,
-	    sicstus_format_to_chars("Failed to put this instruction into ordered sequence, despite it not seeming to depend on anything: ~w", [Awkward], Text),
+	Lossage = ordering_failure(Tail), !,
+	    sicstus_format_to_chars("Failed to put this instruction into ordered sequence, despite it not seeming to depend on anything: ~w", [Tail], Text),
 	    Fault = system;
 	Lossage = bad_role(Lost), !,
 	    sicstus_format_to_chars("This model cannot be built because submodel ~a has a role arrow connecting it to a submodel in a separate executable module.", [Lost], Text),
