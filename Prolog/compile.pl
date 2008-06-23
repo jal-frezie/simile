@@ -718,14 +718,16 @@ build_submodel_functions( Language, Phases, Constants, StateForm, UpdateForm,
 	order_all_assignments(Phases, StateForm, [], OrdStates, _),
 	order_all_assignments(Phases, UpdateForm, [], OrdUpdates, _),
 	order_all_assignments(Phases, SortedForm, [], Ordered, Lost),
-	(member(Awkward, Lost),
-	    \+ (order(Holdup, Awkward), not_yet_ordered(Holdup)),
-	    raise_exception(ordering_failure(Awkward));
-	member(Forgotten, SortedForm),
+	(member(Forgotten, SortedForm),
 	    not_yet_ordered(Forgotten), !,
 	    find_circle([Forgotten], Loop),
 	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
+	member(Awkward, Lost),
+	    /* lost instructions can be caused by circularity elsewhere,
+	    so check for that first */
+	    \+ (order(Holdup, Awkward), not_yet_ordered(Holdup)),
+	    raise_exception(ordering_failure(Awkward));
 	true),
 	/* note state variables implemented by 'last' might refer to
 	compartment values, hence must go before them */
