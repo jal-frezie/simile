@@ -909,7 +909,7 @@ namespace eval fileparams {
 
 	puts $pStr $indent<variables>
 	upvar 1 $outerData outData
-	foreach compName [array names outData $smPath*] {
+	foreach compName [array names outData $smPath/*] {
 	    if {[IsRecordCount $compName]} continue
 	    set compTail [string range $compName [string length $smPath] end]
 	    if {[set slashPosn [string first / $compTail 1]]>-1} {
