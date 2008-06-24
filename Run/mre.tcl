@@ -922,7 +922,7 @@ namespace eval RunEnv {
         }
         
         set nameOfHelperStateFile($currentNode) $oldPath
-        do_in_editor AttackGlobalVariable nameOfHelperStateFile($currentNode) \
+        do_in_editor AttackGlobalVariable nameOfHelperStateFile \
 	    ($currentNode) $oldPath
         set stream [NetOpen $metaFile r]
         
