@@ -541,7 +541,7 @@ namespace eval RunEnv {
     proc FindParentNotebook {containerId} {
 	variable dp0
 
-	if {[string equal $dp0 $containerId]} {
+	if {![string first $containerId $dp0]} {
 	    return {}
 	} elseif {[string equal TNotebook [winfo class $containerId]]} {
 	    return $containerId
