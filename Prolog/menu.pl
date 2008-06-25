@@ -1332,6 +1332,7 @@ not_runnable(Model) :-
 check_deletable(Win, Parent) :-
 	(\+ find_all_comps(Parent, _), !;
 	    get_save_status(Win, safe), !;
+	    backup:autosave_suspended(Parent), !;
 	    ok_to_delete(Win, Parent)).
 
 close_exec(Parent) :-

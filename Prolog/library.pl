@@ -259,10 +259,10 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	\+ HasCode = 'fuck it',
 	count_functions(Parent, Fns),
 	Fns > StopAt, !,
-	    m_update:superfast_delete(Parent),
+	    backup:restart_move,
 	    % abort loading project file
 	    output:safe_tcl_eval(['catch {unset ::loadingProject}'], _),
-	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, and it was not created by the enterprise edition, so it cannot be loaded in the ~a edition.", [Fns, StopAt, Edn], Annoy),
+	    sicstus_format_to_chars("Loading this model makes ~d equations. This is greater than ~d, and it was not created by the enterprise edition, so it cannot be loaded in the ~a edition.", [Fns, StopAt, Edn], Annoy),
 	    do_dialogue("Error loading model", error, Annoy, ok, _),
 	    dialogue:finish_progress_dialogue,
 	    % prevent executable from running

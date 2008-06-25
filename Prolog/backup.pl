@@ -18,6 +18,8 @@ sicstus_use_module([library(lists), sp_only, ame_gen, database,
 
 :- dynamic(autosave_file_is/2).
 
+:- dynamic(autosave_suspended/1).
+
 :- dynamic(save_status_of/2).
 
 set_save_status(Model, Stat) :-
@@ -147,10 +149,11 @@ save_allowed(Model, OK) :-
 	    (OldTot > Limit;
 		/* canny buggers can get round save limit by killing the app
 		and restoring from logfile, so stop keeping logfile */
-	    retractall(autosave_file_is(Model, _F)),
+	    assert(autosave_suspended(Model)),
 		output:safe_tcl_eval(['NotifyOverLimit', Edn, Limit], _)), !,
 	    OK = 0;
-	OK = 1);
+	retractall(autosave_suspended(Model)),
+	    OK = 1);
 	OK = 1.
 
 	
@@ -172,7 +175,8 @@ update_autosave(Model, Slot) :-
 	into_save_file(Model, ActList).
 
 into_save_file(Model, ActList) :-
-	autosave_file_is(Model, File), !,
+	autosave_file_is(Model, File),
+	\+ autosave_suspended(Model), !,
 	(retract(translation_info(Model, TransInfo)), !,	    
 	    append(TransInfo, ActList, FullList);
 	FullList = ActList),
