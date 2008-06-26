@@ -113,8 +113,21 @@ full_chop_list([Here | More], NewDepth, NewDone, Args) :-
 	    NewDone = [Here | Done],
 	    Args = MoreArgs).
 	 
-chop_list(String, Args) :-
+pl_chop_list(String, Args) :-
 	full_chop_list([32 | String], 0, [], Args).
+
+chop_list(String, Args) :-
+	safe_tcl_eval([llength, br(chars(String))], LStr),
+	name(L, LStr),
+	get_elts_from_tcl(String, 0, L, Args), !.
+
+get_elts_from_tcl(String, P, L, Args) :-
+	L = P,
+	    Args = [];
+	safe_tcl_eval([lindex, br(chars(String)), P], Top),
+	    Q is P+1,
+	    get_elts_from_tcl(String, Q, L, Rest),
+	    Args = [Top | Rest].
 
 /* curly(P, Text) :-
 	append([123 | Text], [125], P),
@@ -409,14 +422,19 @@ fill_equation(Cur_eqn, Cur_units, MultList, IsParam, List, TableData,
 			  br(write(Desc)), br(write(Comment)),
 			  br(write(Min)), br(write(Max))], _).
 */
-fill_equation(BadCurEqn, Cur_units, MultList, IsParam, Desc, Cmt, Min, Max) :-
-%	sicstus_write_to_chars(BadCurEqn, BadCurEqnStr),
+fill_equation(BadCurEqn, Cur_units, MultList, IsParam, BadDesc, BadCmt,
+	      Min, Max) :-
+	sicstus_write_to_chars(BadCurEqn, BadCurEqnStr),
 %	escape_curlies(BadCurEqnStr, CurEqnStr),
+	name(BadDesc, BadDescStr),
+	name(BadCmt, BadCmtStr),
+	argify(BadCurEqnStr, CurEqnStr),
+	argify(BadDescStr, DescStr),
+	argify(BadCmtStr, CmtStr),
 	all(utility, wrap, [build(MultList), unify(write), build(Mult)]),
 	safe_tcl_eval(['fill_equation',
-%		       br(chars(CurEqnStr)),
-		       br(write(BadCurEqn)), br(write(Cur_units)), br(Mult),
-		       br(write(IsParam)), br(write(Desc)), br(write(Cmt)),
+		       chars(CurEqnStr), br(write(Cur_units)), br(Mult),
+		       br(write(IsParam)), chars(DescStr), chars(CmtStr),
 		       br(write(Min)), br(write(Max))], _).
 
 fill_inputs(List) :-

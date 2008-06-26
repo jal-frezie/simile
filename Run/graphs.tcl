@@ -1311,7 +1311,7 @@ proc ArrayToList {topArray} {
         # Now copy array values into lists with one less index
         # Any with fewer indices than rest will get ignoredddd
     upvar 1 $topArray values
-    while {![info exists values(top)]} {
+    while {![info exists values()]} {
 	set vlist [ArrayGetSorted values]
 	unset values
 	foreach {indcol val} $vlist {
@@ -1320,7 +1320,7 @@ proc ArrayToList {topArray} {
 		[lindex $indcol end] $val
 	}
     }
-    return $values(top)
+    return [lindex $values() 1]
 }
     
 proc ArrayGetSorted {arrayPtr} {

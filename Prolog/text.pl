@@ -3,7 +3,7 @@
 *******************************************************************************/
 
 sicstus_module(text, [split_path_chars/4, replace_char/4, alphanumeric_only/3,
-		      escape_curlies/2, starter_only/3, continuer_only/3]).
+		      starter_only/3, continuer_only/3, argify/2]).
 
 sicstus_use_module( [library( lists ), utility, sp_only] ).
 
@@ -80,19 +80,30 @@ lowercase(L, H) :-
 	"a" =< H, H =< "z";
 	\+ L = c, (H = 181; 223 =< H, H =< 246; 248=<H, H=<255).
 
-escape_curlies(Risky, Safe) :-
-	[BS] = "\\",
-	append(Go, [CB | Stop], Risky),
-	member(CB, "{}"),
-	/* curly is already escaped if preceded by an even number of BSs */
-	\+ (append(Normal, BSes, Go),
-	       \+ (member(NotNotBS, BSes),
-		      \+ NotNotBS = BS),
-		suffix(NotBS, Normal),
-		\+ NotBS = BS,
-		length(BSes, Odd),
-		Odd is 2*(Odd//2)+1), !,
-	    append(Go, [BS, CB | Stop], Better),
-	    escape_curlies(Better, Safe);	  
-	Safe = Risky.
-	
+/* This one is a real sledgehammer -- turn the chars into something
+that will form a single argument when put on the Tcl command line, by
+using backslashes to escape everything that might stop it. Note that
+escaping a line break just turns it into whitespace -- need to replace
+it with \n. */
+
+argify(Chars, ArgChars) :-
+	[OB, CB] = "{}",
+	(member(B, Chars),
+	    member(B, [OB, CB]), !,
+	    escape_nasties(Chars, ArgChars);
+	append([OB | Chars], [CB], ArgChars)).
+
+escape_nasties(Chars, ArgChars) :-
+	append(Go, [CB | Stop], Chars),
+	([CB] = "\n",		% line break
+	    BS = "\\n",
+	    append(Go, BS, Mid),
+	    append(Mid, Rest, ArgChars);
+	member(CB, "\"{}[] \\"),
+	   % doublequote, curly bracket, square bracket, backslash or space
+	   [BS] = "\\",
+	   append(Go, [BS, CB | Rest], ArgChars)),
+	!,
+	escape_nasties(Stop, Rest);
+	ArgChars = Chars.
+	      

@@ -40,8 +40,10 @@ tk_get_info(Wid, Comp, What) :-
 	(Answer = [_|_], !, % list -- convert to tcl one
 	    all(draw, append_callback, [build(Answer)]);
 	Answer = [], !,
-	    draw:callback('');
-	draw:callback(br(write(Answer)))).
+	    draw:callback(br(''));
+ 	name(Answer, AnsStr),
+ 	    text:argify(AnsStr, ArgStr),
+ 	    draw:callback(chars(ArgStr))).
 
 tk_get_params(Wid, Comp) :-
 	get_params(Wid, Comp).

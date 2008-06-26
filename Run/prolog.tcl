@@ -24,7 +24,7 @@ proc KeepLooking {} {
 	    ClosePipe
 	    set prologExit 1
 	} elseif {[gets $plPipe(stream) noCrs] >= 0} {
-	    regsub -all \\\\n $noCrs \n line
+	    regsub -all \\\\u000a $noCrs \n line
 #	    puts [concat < $line]
 	    if {$plPipe(debug)} {
 		puts $plPipe(debug_stream) [concat < $line]
@@ -90,9 +90,8 @@ proc ShowStack {} {
 
 proc do_tail {header args} {
     global errorInfo
-    regsub -all \\\\n $args \n withCrs
     set oldDir [pwd]
-    if {[catch $withCrs retVal]} {
+    if {[catch $args retVal]} {
         set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
         if {[string match yes $ans]} {
             BuildProblem "User interface problem" error $errorInfo execution \

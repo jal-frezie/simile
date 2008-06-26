@@ -22,12 +22,15 @@ read_codes(Result) :-
 
 remove_crs([], []).
 
-remove_crs([Cr | R1], New) :-
-	([Cr] = "\n", !,
-	    New = [Esc, N | R2],
-	    [Esc, N] = "\\n";
-	New = [Cr | R2]),
-	remove_crs(R1, R2).
+/* Convert line breaks to \u00a, but string might actually include a \u so also
+convert \ to \u05c (add last bit later) */
+
+remove_crs([H | T], New) :-
+	[Cr, Esc, U, O, A] = "\n\\u0a",
+	(H = Cr, !,
+	    New = [Esc, U, O, O, O, A | T2];
+	New = [H | T2]),
+	remove_crs(T, T2).
 
 restore_crs([], []).
 

@@ -1304,9 +1304,9 @@ show_error(Model, Lossage) :-
 	    Fault = user;
 	sicstus_format_to_chars("An exception occurred while building this model. It generated this message: ~w.", [Lossage], Text),
 	    Fault = system),
-	text:escape_curlies(Text, SafeText),
+	text:argify(Text, SafeText),
 	ProbDesc = ['BuildProblem', br('Problem with model'),
-		    warning, br(chars(SafeText)), execution],
+		    warning, chars(SafeText), execution],
 	(Fault = user, !, FullProb = ProbDesc;
 	(get_model_file(Model, Name), !; Name = unsaved),
 	    (backup:autosave_file_is(Model, AutoName), !; AutoName = none),
