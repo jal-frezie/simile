@@ -24,7 +24,7 @@ proc FileParamDialogue {topWin mustShow} {
     foreach node $allNodes {
         set notInput [FirstIndexCheck $topNode $node]
         if {$notInput != -1} {
-            AddEntry $t $topNode $node $mustShow $notInput Top
+            AddEntry $t $topNode $node $mustShow $notInput $topCapt
         }
     }
     # now check for any parameter values that are no longer needed
@@ -278,9 +278,9 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
                         -command [list ${ns}::Clear $clientId $path]] -side right
                 BindPopup $nextLevel.head.clear "Clear values in this submodel"
             }
-            if {!$pt} {
-                set level "TOP LEVEL"
-            }
+#            if {!$pt} {
+#                set level "TOP LEVEL"
+#            }
             pack [label $nextLevel.head.label -text $level:]
         }
         return [MakeSubFrames $clientId $nextLevel $hierarchy $ns $nextPt]
@@ -301,7 +301,7 @@ proc ZapParams {topNode smPath metaFile} {
     global whichParamsAffected
     
     array unset whichParamsAffected
-    MergeParams $topNode /Top$smPath $metaFile 0 0
+    MergeParams $topNode /[GetExecTitle $topNode]$smPath $metaFile 0 0
     AcceptAll $topNode [array names whichParamsAffected] 1 -1
 }
 
@@ -806,6 +806,13 @@ proc FillIfSmall {entry text} {
     }
 }
 
+proc ClearSubParamRefs {smPath} {
+    global SimileProject
+    foreach spfName [array names SimileProject fileparam,$smPath/*] {
+	unset SimileProject($spfName)
+    }
+}
+
 proc CancelParams {} {
     global paramData
     set paramData(done) $paramData(complete)
@@ -814,10 +821,8 @@ proc CancelParams {} {
 namespace eval fileparams {
     
     proc Clear {spare smPath} {
-        global widgetNames SimileProject msgs
-        foreach spfName [array names SimileProject fileparam,$smPath*] {
-            unset SimileProject($spfName)
-        }
+        global widgetNames msgs
+	ClearSubParamRefs $smPath
         foreach compName [array names widgetNames $smPath*] {
             $widgetNames($compName).e configure -state normal
             $widgetNames($compName).e delete 0 end
@@ -854,7 +859,8 @@ namespace eval fileparams {
 	    return
 	}
         set metaFile [ChooseFile $defFile "Save parameters as:" 1 $topNode]
-        set SimileProject(fileparam,$smPath) $metaFile
+	ClearSubParamRefs $smPath ;# old spfs below this are superseded
+        set SimileProject(fileparam,$smPath/) $metaFile
 #puts "setting SimileProject(fileparam,$smPath) to $SimileProject(fileparam,$smPath)"
         if {[llength $metaFile]} {
 #            set part [file join $simtmpdir temp_out.spf]
@@ -1210,7 +1216,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     } else {
 	set dataLocn paramData
 	set widgetLocn widgetNames
-        set SimileProject(fileparam,$smPath) $oldPath
+        set SimileProject(fileparam,$smPath/) $oldPath
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames

@@ -1019,9 +1019,10 @@ proc StartRun {node} {
 #	set fpParent {}
     }
     set runState($node,modelRunning) 1
+    set topCapt [GetExecTitle $node]
     foreach {smPath spFile} [array get projectParams] {
 	if {[file exists $spFile]} {
-	    MergeParams $node /Top$smPath $spFile 0 0
+	    MergeParams $node /${topCapt}$smPath $spFile 0 0
 	} else {
 	    BuildProblem "Problem loading project" warning "Parameter metafile $spFile could not be found." execution
 	}
@@ -1102,8 +1103,7 @@ proc StartRun {node} {
 	    set ::RunEnv::CurrentContainer $RunEnv::runControlFrame($node)
 	}
 	set hlp [UniqueId helper]
-	similescript::$defHelper $hlp $runClass \
-			  "Run control for [GetExecTitle $node]"
+	similescript::$defHelper $hlp $runClass "Run control for $topCapt"
 	set runState($node,helperId) [$hlp cget -winId]
     }
 # Do not put up mre, sliders, etc if model has failed to start
