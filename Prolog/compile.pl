@@ -1056,7 +1056,7 @@ nodes.
 			     Path, Step, [reset_list(Ptr, Name)])];
 	Level = [sm(_,_,_, fm_loop(Globs, _)) | _Loops],
 	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
-	    [BaseSides, SmInters, Specials] = [[], [], []]),
+            [BaseSides, SmInters, Specials] = [[], [], []]),
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps, Used,
 			    SubIncludes, SubLibs, FnInters, AssignList0),
 /* Now add an extra instruction if this needs an external proc */

@@ -78,6 +78,7 @@ do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
         NewIndent is Indent+4,
 	asserta(indent_is(NewIndent)),
 	declare(L, Loop, loop, int, Used, Indent, Stream),
+	declare(L, _Feature, bound, int, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
         (make_indexed_reference(L, Loop, Inds, Count),
 	    excrete(L, for_start, [Count, 1, Bound, 1], Indent, Stream),
@@ -297,9 +298,10 @@ do_assignment(L, [bound_gen_loop(Top, Name) | Clauses], Graphs, Used, Stream) :-
 	
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
 	(make_struct_reference(L, Top, Name, SubPointer),
+/* what is (was) this for
 	    append_atoms(Name, cond, IdRef),
 	    excrete(L, variable_declaration, [int, IdRef, []], Indent, Stream),
-	    append_atoms(Name, 'type**', MType),
+*/	    append_atoms(Name, 'type**', MType),
 	    append_atoms(Name, meta, Meta),
 	    excrete(L, variable_declaration, [MType, Meta, []], Indent, Stream),
 

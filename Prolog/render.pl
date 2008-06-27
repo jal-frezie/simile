@@ -370,7 +370,7 @@ strings_direct( L, make_reference, Dest=Source, Indent, Stream) :-
 	strings_direct( L, assignment, Dest=SourceRef, Indent, Stream).
 
 strings_direct(c, assign_space, Dest=[_, Name, _], Indent, Stream) :-
-	format(Stream, "~*s~a = new ~atype;", [Indent," ", Dest, Name]).
+	format(Stream, "~*s~a = new ~atype;\n", [Indent," ", Dest, Name]).
 
 strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices], Indent,
 	       Stream) :-
