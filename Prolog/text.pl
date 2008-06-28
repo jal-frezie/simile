@@ -87,11 +87,9 @@ escaping a line break just turns it into whitespace -- need to replace
 it with \n. */
 
 argify(Chars, ArgChars) :-
-	[OB, CB] = "{}",
-	(member(B, Chars),
-	    member(B, [OB, CB]), !,
-	    escape_nasties(Chars, ArgChars);
-	append([OB | Chars], [CB], ArgChars)).
+	Chars = "",
+	ArgChars = "{}";
+	escape_nasties(Chars, ArgChars).
 
 escape_nasties(Chars, ArgChars) :-
 	append(Go, [CB | Stop], Chars),

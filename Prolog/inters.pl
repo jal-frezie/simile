@@ -448,9 +448,10 @@ make_intermediates(
 				   TotalPath, SubSwap, PrevInters, NowBuilding,
 				   Step, Used, [TXUnits, ArgUnits], OldInters,
 				   PLPartResults),
-	    combine_subexp_results(DestPath, PLPartResults, [],
+	    (combine_subexp_results(DestPath, PLPartResults, [],
 				   SubContext, OldSetups, OldArgs,
-				   [IncrementRef, PayloadRef])),
+				   [IncrementRef, PayloadRef]), !;
+	    raise_exception(cannot_combine_argument_dimensions(Source)))),
 	get_model_and_loops(SubContext, TotalPath, _, SubLoops, _),
 
 	/* choose a location for Total where it will be visible in the
@@ -491,7 +492,8 @@ make_intermediates(
 	    ReadyContext = ClearContext;
 	member(Functor, [with_least, with_greatest]), !,
 	    append(NowBuilding, DestPath, ReadyContext),
-	    propagate_units(Source, any, [1,any], [TXUnits, ArgUnits], Units);
+	    IncrExpr =.. [Functor, Epsilon, Payload], % either arg can vary
+	    Units = ArgUnits;
 	IncrExpr =.. [IncrOp, IncrementRef, FillRef],
 	    (Functor = any, ArgUnits = cond_spec, !,
 		[RUnits | ArgTemplate] = [cond_spec, cond_spec];
@@ -509,7 +511,7 @@ make_intermediates(
 	arithmetic can push it over the edge, so these two ints are midrange
 	for their signs */
 	(\+ member(Functor, [least, greatest, with_least, with_greatest]), !;
-	TXUnits = int, !,
+	promote_unit(TXUnits, int), !,
 	    [Wee, Muckle] = [-268435455, 268435455];
 	[Wee, Muckle] = [-1.0e100, 1.0e100]), 
 
@@ -991,6 +993,7 @@ promote_unit(Lo, Hi) :-
 	Lo = Hi;
 	uses_as(Lo, Med),
 	promote_unit(Med, Hi).
+
 
 uses_as(any, Type) :-
 	member(Type, [boolean, a(_ET), n(_ET)]).

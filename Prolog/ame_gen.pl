@@ -349,7 +349,7 @@ do_dialogue(Header, Icon, RiskyBlurb, Buttons, Response) :-
 	argify(RiskyBlurb, Blurb),
 	(Buttons = ok, !,
 	    output:safe_tcl_eval(['BuildProblem', br(chars(Header)), Icon,
-				  br(chars(Blurb)), top], _),
+				  chars(Blurb), top], _),
 	    Response = Buttons;
 	output:safe_tcl_eval(['ShowMessage', br(chars(Header)), Icon,
 			      chars(Blurb), Buttons], Feedback),

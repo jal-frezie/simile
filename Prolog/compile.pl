@@ -1055,6 +1055,7 @@ nodes.
 			make(startable(Name), [init_list(Name) | BasesCleared],
 			     Path, Step, [reset_list(Ptr, Name)])];
 	Level = [sm(_,_,_, fm_loop(Globs, _)) | _Loops],
+	% its the _Loops that have the bounds!
 	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
             [BaseSides, SmInters, Specials] = [[], [], []]),
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps, Used,
