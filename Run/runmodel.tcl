@@ -169,9 +169,9 @@ proc AddHelperSublist {fm title ct} {
 			PrintRandomCanvas [GetCanvas]
 		    }
 		    public method CopyToClipboard {} {
-			if {[string match windows $tcl_platform(platform)]} {
+#			if {[string match windows $tcl_platform(platform)]} {
 			    CopyCanvasToWindowsClipboard [GetCanvas]
-			}
+#			}
 		    }
 		} ;# else use inherited warning message
 		if {[llength [namespace which ${gKeyValue}::Print]]} {

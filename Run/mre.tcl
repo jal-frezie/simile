@@ -331,7 +331,8 @@ namespace eval RunEnv {
         variable CurrentContainer
 
 	set inst $helperTable($CurrentContainer.container,whichInstance)
-	if {[lsearch [$inst info functions] CopyToClipboard]>-1} {
+# need to test, still called from cut if not available
+	if {![catch {$inst info function CopyToClipboard}]} {
 	    $inst CopyToClipboard
 	}
 
@@ -662,7 +663,7 @@ namespace eval RunEnv {
 	    set copyAbility normal
 
 	    set inst $helperTable($win.container,whichInstance)
-	    if {[catch {$inst info function GetCanvas}]} {
+	    if {[catch {$inst info function CopyToClipboard}]} {
 		set exportAbility disabled
 	    } else {
 		set exportAbility normal

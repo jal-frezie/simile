@@ -237,6 +237,23 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
 	}
         set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle
         wmf copy $wmfdc; # Copy to the clipboard
+    } else { ;# unix: own clipboard and set up request handler
+	selection own -selection CLIPBOARD $canvas
+
+	selection handle -selection CLIPBOARD -type image/png $canvas \
+		 Regurgitate
+	proc Regurgitate {offset blksize} {
+	    global selnImages
+	    if {![info exists selnImages($canvas)]} {
+		set img [image create photo -format window -data $canvas]
+		set selnImages($canvas) [$img data -format png]
+	    }
+	    set sought [string range $selnImages($canvas) $offset \
+			    [expr {$offset+$blksize-1}]]
+	    if {[string length $sought]<$blksize} {
+		unset selnImages($canvas)
+	    }
+	}
     }
 }
 
