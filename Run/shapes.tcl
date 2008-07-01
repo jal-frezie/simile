@@ -734,7 +734,7 @@ proc PositionBowtie {w ptz items} {
 }
 
 proc DrawBlob {w startX startY size tags} {
-     $w create line $startX $startY $startX $startY -width $size \
+    $w create line $startX $startY $startX $startY -width $size \
             -capstyle round -tag "$tags realwidth($size)"
 }
 

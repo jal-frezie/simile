@@ -170,7 +170,7 @@ proc AddHelperSublist {fm title ct} {
 		    }
 		    public method CopyToClipboard {} {
 #			if {[string match windows $tcl_platform(platform)]} {
-			    CopyCanvasToWindowsClipboard [GetCanvas]
+			    CopyCanvasToWindowsClipboard [GetCanvas] 0
 #			}
 		    }
 		} ;# else use inherited warning message

@@ -359,7 +359,7 @@ namespace eval printer {
   ##   id                 The id of the canvas item.
   ################################################################
 
-  proc print_canvas.line {hdc cw id} {
+  proc print_canvas.oldline {hdc cw id} {
     variable vtgPrint
 
     set color [print_canvas.TransColor [$cw itemcget $id -fill]]
@@ -391,7 +391,69 @@ namespace eval printer {
     eval $cmmd
   }
 
+  # Jasper thinks listing all the properties explicitly is lame, so
+  proc print_canvas.line {hdc cw id} {
+      set cmmd "gdi line $hdc [$cw coords $id]"
+      foreach conf [$cw itemconfig $id] {
+	  set field [lindex $conf 0]
+	  set default [lindex $conf 3]
+	  set value [lindex $conf 4]
+	  
+	  # wmf ignores capstyles, so add them separately
+	  if {[string equal -capstyle $field] && [string equal round $value]} {
+	      AddRoundCaps $hdc $cw $id
+	  }
+	  # printer package only accepts positive integers as arrow shape params
+	  if {[string equal -arrowshape $field]} {
+	      foreach float $value {
+		  lappend intval [expr {int($float)}]
+	      }
+	      set value $intval
+	  }
+	  if {[string match $default $value.0]} {
+	      set value $default
+	  }
+	  # Don't bother writing tags or default values (except width, which is
+	  # required so clipboard zooms properly, and caanot be from 0 to 1)
 
+	  if {[string equal -width $field] && $value > 0 && $value <= 1} {
+	      set value 1 ;# default is 1.0
+	  }
+	  if {[string compare $default $value] && ![string equal -tags $field]} {
+	      lappend cmmd $field $value
+	  }
+      }
+    debug_puts "$cmmd"
+    eval $cmmd
+  }
+
+  proc AddRoundCaps {hdc cw id} {
+      variable vtgPrint
+
+      set col [$cw itemcget $id -fill]
+      set rad [expr {[$cw itemcget $id -width]/2}]
+
+      foreach {x y} [$cw coords $id] {
+#	  set box [list [expr {$x-$rad}] [expr {$y-$rad}] \
+#		       [expr {$x+$rad}] [expr {$y+$rad}]]
+#	  set cmmd "gdi oval $hdc $box -width 1 -outline $vtgPrint(printer.bg) -fill $col"
+#	  set cmmd "gdi oval $hdc [list $x $y $x $y] -outline $col -width [$cw itemcget $id -width]"
+# Sledgehammer method borrowed from Simile: oval and arc are broken, so approximate 
+# with polygon
+	  set ol [expr $x-$rad]
+	  set ot [expr $y-$rad]
+	  set or [expr $x+$rad]
+	  set ob [expr $y+$rad]
+	  scan [GetPoints $ol $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
+	  scan [GetPoints $ot $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
+	  scan [GetPoints $or (-$rad)] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
+	  scan [GetPoints $ob (-$rad)] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
+	  set cmmd "gdi polygon $hdc [list $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3] -outline $col -fill $col"
+	
+	  debug_puts "$cmmd"
+	  eval $cmmd
+      }
+  }
   ################################################################
   ## print_canvas.arc
   ## Description:
