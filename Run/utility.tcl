@@ -221,7 +221,7 @@ proc AdjustCanvas {winId pt dir args} {
 }
 
 proc CopyCanvasToWindowsClipboard {canvas seln_only} {
-    global tcl_platform
+    global tcl_platform selnImages simtmpdir
     
     if {[string match windows $tcl_platform(platform)]} {
         package require gdi
@@ -238,23 +238,37 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
         set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle
         wmf copy $wmfdc; # Copy to the clipboard
     } else { ;# unix: own clipboard and set up request handler
-	selection handle -selection CLIPBOARD -type image/png $canvas \
-		 Regurgitate
-	selection own -selection CLIPBOARD $canvas
+	# Easy, teenage, New York version
+	#clipboard clear
+	#set img [image create photo -format window -data $canvas]
+	#clipboard append -type "image/png" [$img data -format png]
+	
+	set img [image create photo -format window -data $canvas]
+	# now if I just get it to yack up the data like this...
+	#set selnImages [$img data -format png]
+	# it converts it to base64 which other apps go derrr over
+	# so put in file and reread for all gory 8bit details
+	set hi8dump [file join $simtmpdir temp_out.png]
+	$img write $hi8dump -format png
 
-	proc Regurgitate {offset blksize} {
-	    global selnImages
-	    if {![info exists selnImages($canvas)]} {
-		set img [image create photo -format window -data $canvas]
-		set selnImages($canvas) [$img data -format png]
-	    }
-	    set sought [string range $selnImages($canvas) $offset \
-			    [expr {$offset+$blksize-1}]]
-	    if {[string length $sought]<$blksize} {
-		unset selnImages($canvas)
-	    }
-	}
+	set feed [open $hi8dump r]
+	fconfigure $feed -translation binary
+	set selnImages [read $feed]
+	close $feed
+	file delete $hi8dump
+
+	selection handle -selection CLIPBOARD -type image/png . Regurgitate
+	selection own -selection CLIPBOARD .
+
     }
+}
+
+proc Regurgitate {{offset 0} {blksize 100}} {
+    global selnImages
+#    puts "Off $offset, size $blksize."
+    set sought [string range $selnImages $offset [expr {$offset+$blksize-1}]]
+#    puts "Sending $sought"
+    return $sought
 }
 
 # Easy, teenage, New York version that works for any canvas rather than

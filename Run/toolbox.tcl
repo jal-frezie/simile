@@ -1596,7 +1596,7 @@ proc SaveProjectFile {topNode path tgt} {
     # save any shf files names
     
     set ProjectFile $path/model.spj
-    set topCapt [GetExecTitle $topNode]
+#    set topCapt [GetExecTitle $topNode]
     
     # is it builtC|builtTcl|notbuilt
     if {[HaveValues $topNode] && !$runState($topNode,updated)} {
@@ -1614,7 +1614,7 @@ proc SaveProjectFile {topNode path tgt} {
     # shf file name loaded
     
     set spfList [do_in_node $topNode array get ::SimileProject \
-		     fileparam,/${topCapt}/*]
+		     fileparam,/${topNode}/*]
     foreach {varName spfPath} $spfList {
 	set smPart [Submodelize $varName]
 	set relPath [Relativize $tgt $spfPath]

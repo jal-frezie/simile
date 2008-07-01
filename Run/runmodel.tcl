@@ -1022,7 +1022,7 @@ proc StartRun {node} {
     set topCapt [GetExecTitle $node]
     foreach {smPath spFile} [array get projectParams] {
 	if {[file exists $spFile]} {
-	    MergeParams $node /${topCapt}$smPath $spFile 0 0
+	    MergeParams $node /$node$smPath $spFile 0 0
 	} else {
 	    BuildProblem "Problem loading project" warning "Parameter metafile $spFile could not be found." execution
 	}

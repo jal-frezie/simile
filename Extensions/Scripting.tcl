@@ -472,7 +472,7 @@ redo with snap object
 		if {[RunningInC $modelNode]} {
 		    c_setparamelement $nodeId {} $value
 		}
-		do_for_node $modelNode set ::paramData(/[GetExecTitle $modelNode]$path) $value
+		do_for_node $modelNode set ::paramData(/$modelNode$path) $value
                 do_for_node $modelNode set ::runState($modelNode,reloadParams) -1 ;# this makes sure the value is propagated in the model
                 Reset
             }

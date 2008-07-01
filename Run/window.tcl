@@ -1320,10 +1320,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add command -label Redo -command "UnOrReDo $c 1" \
             -state disabled
     # no need for this as cut/copy now does it -- keep so we can have non blue
-    if {[string match windows $tcl_platform(platform)]} {
+#    if {[string match windows $tcl_platform(platform)]} {
         $fm add separator
         $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $c 0"
-    }
+#    }
     $fm add separator
     
     $fm add command -label Cut -command "CopyCanvasToWindowsClipboard $c 1; \

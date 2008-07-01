@@ -24,15 +24,15 @@ proc FileParamDialogue {topWin mustShow} {
     foreach node $allNodes {
         set notInput [FirstIndexCheck $topNode $node]
         if {$notInput != -1} {
-            AddEntry $t $topNode $node $mustShow $notInput $topCapt
+            AddEntry $t $topNode $node $mustShow $notInput $topNode
         }
     }
     # now check for any parameter values that are no longer needed
     set ::bermudaTriangle {}
-    foreach curVal [array names paramData /$topCapt/*] {
+    foreach curVal [array names paramData /$topNode/*] {
         if {[llength $paramData($curVal)]} {
 	    set shortVal [TrimDTFromPath $curVal]
-            switch [ExistCheck $topNode $shortVal /$topCapt 0 database] {
+            switch [ExistCheck $topNode $shortVal /$topNode 0 database] {
                 break {
                     CancelParams
                     break
@@ -278,9 +278,9 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
                         -command [list ${ns}::Clear $clientId $path]] -side right
                 BindPopup $nextLevel.head.clear "Clear values in this submodel"
             }
-#            if {!$pt} {
-#                set level "TOP LEVEL"
-#            }
+            if {!$pt} {
+                set level "TOP LEVEL"
+            }
             pack [label $nextLevel.head.label -text $level:]
         }
         return [MakeSubFrames $clientId $nextLevel $hierarchy $ns $nextPt]
@@ -301,7 +301,7 @@ proc ZapParams {topNode smPath metaFile} {
     global whichParamsAffected
     
     array unset whichParamsAffected
-    MergeParams $topNode /[GetExecTitle $topNode]$smPath $metaFile 0 0
+    MergeParams $topNode /$topNode$smPath $metaFile 0 0
     AcceptAll $topNode [array names whichParamsAffected] 1 -1
 }
 
