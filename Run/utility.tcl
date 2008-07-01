@@ -173,6 +173,8 @@ proc load_c_stub_1 {} {
     }
 }
 
+lappend auto_path [file join [file dirname [pwd]] System lib Stubs] \
+    /usr/local/lib
 package require Trf ;# loads right version of Trf (fingers crossed)
 
 proc load_c_stub_2 {} {
@@ -238,6 +240,7 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
         set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle
         wmf copy $wmfdc; # Copy to the clipboard
     } else { ;# unix: own clipboard and set up request handler
+	update ;# get canvas displayed again
 	# Easy, teenage, New York version
 	#clipboard clear
 	#set img [image create photo -format window -data $canvas]
@@ -249,7 +252,7 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
 	# it converts it to base64 which other apps go derrr over
 	# so put in file and reread for all gory 8bit details
 	set hi8dump [file join $simtmpdir temp_out.png]
-	$img write $hi8dump -format png
+	$img write $hi8dump -format tiff
 
 	set feed [open $hi8dump r]
 	fconfigure $feed -translation binary
@@ -257,7 +260,7 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
 	close $feed
 	file delete $hi8dump
 
-	selection handle -selection CLIPBOARD -type image/png . Regurgitate
+	selection handle -selection CLIPBOARD -type image/tiff . Regurgitate
 	selection own -selection CLIPBOARD .
 
     }
