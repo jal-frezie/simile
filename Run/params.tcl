@@ -630,10 +630,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
     }
     if {[llength $nextDim]==2 && \
                 [string match RECORDS [lindex $nextDim 0]]} {
-        # by-record submodel; check up to biggest. If new data here, only a reset
-        # needed to set it
-        
-        # OK hows this for branez...use
+        # by-record submodel; check up to biggest. OK hows this for branez...use
         # the number of elements, because if there is an element larger than the
         # number of elements, one the same or smaller will be missing!
         set last [array size sub]
@@ -658,10 +655,8 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         EnumTypeToNumber paramData [lindex $nextDim 1]$subs $last \
                 {} $useCppArray
         # probably won't work anyway for time series
-        set requireStep 0
     } else {
         set last $nextDim
-        set requireStep -1
     }
     set redoStep 1
     for {set arrayPt 1} {$arrayPt <= $last} {incr arrayPt} {
@@ -675,7 +670,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
                         $sub($indx) $useCppArray} mis]} {
             PassFPError $mis [list $indx]
         } elseif {$mis<1} {
-            set redoStep $requireStep
+            set redoStep -1
         }
     }
     return $redoStep
