@@ -924,25 +924,24 @@ instruction because they will not require individual initialization routines. */
 	    BaseSides = [],
 	    append_atoms(Name, count, Count),
 	    Level = [sm(_,_,_, vm_loop(_,_,_, Step))],
-	    (by_record(SmName), !,
-		append_atoms(Name, made, NMade),
-		SmInters =
+	    GenInters = 
 	    [instance(internal, inter(LocalPath, _,_), _, parentId, int-[]),
 	     instance(internal, inter(LocalPath, _,_), _, channelId, int-[]),
-	     instance(internal, inter(Path, _,_),_, NMade, int-[]),
 	     instance(internal, inter(Path, _,_),_, Count, int-[])],
+	    (by_record(SmName), !,
+		append_atoms(Name, made, NMade),
+		SmInters =[instance(internal, inter(Path, _,_),_, NMade,
+				     int-[]) | GenInters],
 		get_dims_from_loops(Path, _, UseInds),
 		length(UseInds, IdxN),
 		CFn =.. [collect, arr(Ptr, NMade, []), Name, IdxN | UseInds],
-		CreateRules = [make(culled(Name), [on_reset], Path, 0, [CFn]),
-			       make(created(Name), [culled(Name)], Path, Step,
+		CreateRules = [make(culled(Name), [time], Path, Step,
+				    [lose(Step, Ptr, Name, []), CFn]),
+			       make(created(Name), [culled(Name)], Path, -1,
 				    [init_mems(Ptr, Name, create([NMade]))])],
+		% create in step -1 as membership only changes with file param
 		Losses = [], ReproRules = [], ImmigRules = [];
-	    SmInters = [instance(internal, inter(LocalPath, _,_), _, parentId,
-				 int-[]),
-			instance(internal, inter(LocalPath, _,_), _, channelId,
-				 int-[]),
-			instance(internal, inter(Path, _,_),_, Count, int-[])],
+		
 	    /* generate instructions for each immigration, reproduction  etc.
 	    node...*/
 	    /* little botch-ette: all the population adjustments have to be
@@ -965,41 +964,42 @@ nodes.
 		   CreateRules), !; 
 	    CreateRules = []),
 */
-	    (setof(CreateBox, InitName^X^U^(SmName has_part InitName,
-			member(instance(creation, InitName, X,
+	    SmInters = GenInters,
+	        (setof(CreateBox, InitName^X^U^(SmName has_part InitName,
+					member(instance(creation, InitName, X,
 					elt(_, CreateBox, _), U),
-				   ParentFns)), Creators), !;
-	    Creators = []),
+					       ParentFns)), Creators), !;
+		    Creators = []),
 
-	    (setof(LossBox, S^X^U^member(instance(loss, S,X,
-						  elt(_, LossBox, _), U),
-				   Functions), Losses), !;
-	    Losses = []),
+		(setof(LossBox, S^X^U^member(instance(loss, S,X,
+						      elt(_, LossBox, _), U),
+					     Functions), Losses), !;
+		    Losses = []),
 
-	    CreateRules = [make(culled(Name), [init_list(Name),
+		CreateRules = [make(culled(Name), [init_list(Name),
 				 time | BasesEnumerated], Path, Step,
 				[lose(Step, Ptr, Name, Losses)]),
 			   make(created(Name),
 				[culled(Name), on_reset | Creators], Path, 0,
 				[init_mems(Ptr, Name, create(Creators))])],
-
-	    (setof(make(bred(Name,InitSpec), [culled(Name), time], Path, Step,
-			[reproduce(Ptr, Name, InitSpec)]),
+		% create in step 0 as membership may have changed during run
+		(setof(make(bred(Name,InitSpec), [culled(Name), time], Path,
+			    Step, [reproduce(Ptr, Name, InitSpec)]),
 		   S^X^U^member(instance(reproduction, S,X,
 					 elt(_, InitSpec, _), U),
 			  Functions),
-		   ReproRules), !; 
-	    ReproRules = []),
+		       ReproRules), !; 
+		    ReproRules = []),
 
-	    (setof(make(settled(Name,InitSpec), [culled(Name), time, InitSpec],
-			Path, Step,
-		[new_member(Ptr, Name, immigrate(InitSpec))]),
-		   InitName^X^U^(SmName has_part InitName,
-		   member(instance(immigration, InitName, X,
-				   elt(_, InitSpec, _), U),
-			  ParentFns)),
-		   ImmigRules), !; 
-	    ImmigRules = [])),
+		(setof(make(settled(Name,InitSpec),
+			    [culled(Name), time, InitSpec], Path, Step,
+			    [new_member(Ptr, Name, immigrate(InitSpec))]),
+		       InitName^X^U^(SmName has_part InitName,
+				     member(instance(immigration, InitName, X,
+						     elt(_, InitSpec, _), U),
+					    ParentFns)),
+		       ImmigRules), !; 
+		    ImmigRules = [])),
 	    all(compile, unfinished_in,
 		[build(ReproRules), build(ReproConds)]),
 	    all(compile, unfinished_in,

@@ -251,18 +251,17 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
 	#set selnImages [$img data -format png]
 	# it converts it to base64 which other apps go derrr over
 	# so put in file and reread for all gory 8bit details
-	set hi8dump [file join $simtmpdir temp_out.png]
-	$img write $hi8dump -format tiff
+	set hi8dump [file join $simtmpdir temp_out.bmp]
+	$img write $hi8dump -format bmp
 
 	set feed [open $hi8dump r]
 	fconfigure $feed -translation binary
 	set selnImages [read $feed]
 	close $feed
-	file delete $hi8dump
 
-	selection handle -selection CLIPBOARD -type image/tiff . Regurgitate
+	selection handle -selection CLIPBOARD -type image/bmp . Regurgitate
+	selection handle -selection CLIPBOARD -type text/uri-list . SpitURI
 	selection own -selection CLIPBOARD .
-
     }
 }
 
@@ -272,6 +271,13 @@ proc Regurgitate {{offset 0} {blksize 100}} {
     set sought [string range $selnImages $offset [expr {$offset+$blksize-1}]]
 #    puts "Sending $sought"
     return $sought
+}
+
+proc SpitURI {{offset 0} {blksize 100}} {
+    global simtmpdir
+
+    set hi8dump [file join $simtmpdir temp_out.bmp]
+    return file://$hi8dump
 }
 
 # Easy, teenage, New York version that works for any canvas rather than
