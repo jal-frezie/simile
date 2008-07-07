@@ -57,7 +57,7 @@
 #define USE_CLOSEST     1
 #define INTERPOLATE     2
 
-#define SIMILE_VERSION	"5.1"
+#define SIMILE_VERSION	"5.2"
 
 #ifdef WIN32
     #ifdef SHARELIB
@@ -244,7 +244,8 @@ EXTDEC char* myexit(long int, long int);
 EXTDEC void* get_ptr(long int, long int, int**, int**);
 EXTDEC char* getNodeId(long int, char*);
 
-EXTDEC void proc_pointers_for_shank(interact_gui_type*, showMess_type*, char*);
+EXTDEC void proc_pointers_for_shank(get_value_pointer_type*, interact_gui_type*,
+				    showMess_type*, char*);
 // use of regularData class
 EXTDEC long int createRegularData (void);
 EXTDEC void deleteRegularData (long int);

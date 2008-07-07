@@ -865,14 +865,25 @@ proc FlashSymbol {w name outlineColor textColor} {
 
 proc StippleSymbol {w name density selected} {
     foreach object [$w find withtag $name] {
-        switch -regexp [$w type $object] {
-            line {
-                $w itemconfigure $object -stipple $density
-            }
-            rectangle|arc|polygon {
-                $w itemconfigure $object -outlinestipple $density \
-		    -stipple $density
-            }
+	if {[string equal aqua [tk windowingsystem]]} {
+# stippling doesn't work, and crashes PostScript generation, so dash instead
+	    if {[lsearch {line rectangle arc polygon} [$w type $object]]>-1} {
+		if {[llength $density]} {
+		    $w itemconfigure $object -dash {1 3}
+		} else {
+		    $w itemconfigure $object -dash {}
+		}
+	    }
+	} else {
+	    switch -regexp [$w type $object] {
+		line {
+		    $w itemconfigure $object -stipple $density
+		}
+		rectangle|arc|polygon {
+		    $w itemconfigure $object -outlinestipple $density \
+			-stipple $density
+		}
+	    }
         }
 	switch -regexp $selected {
 	    highlight {

@@ -1578,6 +1578,11 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
+void respond_to_param_req(void* modelId, void* modelSlot, int paramId, 
+			  int indCount, int* indices) {
+  Tcl_BackgroundError(globInterp);
+}
+
 BOOLEAN interact_gui(void* id, BOOLEAN stop_chk, double now) {
   BOOLEAN response;
 
@@ -2072,7 +2077,8 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   char pkgName[16];
 
   globInterp = interp;
-  proc_pointers_for_shank(interact_gui, showMess, simileVersion);
+  proc_pointers_for_shank(respond_to_param_req, interact_gui, showMess, 
+			  simileVersion);
   sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
   /* Use the Tcl Stubs mechanism */
   Tcl_InitStubs(interp, pkgName, 0);

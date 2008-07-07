@@ -1755,9 +1755,9 @@ proc SpitPS {winId psfile} {
     set useHeight [winfo height $winId]
     
     $winId postscript -file $psfile -rotate true -pageanchor nw \
-            -pagex 0 -pagey 0 -x [expr $detail*$xbase] -y [expr $detail*$ybase] \
-            -width [expr $detail*$useWidth] -height [expr $detail*$useHeight] \
-            -pagewidth [expr $useWidth/100.0]i -pageheight [expr $useHeight/100.0]i
+	-pagex 0 -pagey 0 -x [expr $detail*$xbase] -y [expr $detail*$ybase] \
+	-width [expr $detail*$useWidth] -height [expr $detail*$useHeight] \
+	-pagewidth [expr $useWidth/100.0]i -pageheight [expr $useHeight/100.0]i
     PrepForExport $winId back
 }
 

@@ -922,7 +922,7 @@ showMess(globMess); */
   int adapt_doublings;
 
   int resetmodel(void* modelHandle, int top_phase) {
-    int tweak_phase;
+    int tweak_phase, err;
     
     if (top_phase<=0) {
       for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
@@ -934,7 +934,10 @@ showMess(globMess); */
       reset_time_series(this);
       adapt_doublings = 0;
     }
-    return evalmodel(modelHandle, top_phase);
+    err=(*evalmodel)(modelHandle, top_phase);
+    if (!err)
+      (*advancemodel)(modelHandle, top_phase);
+    return err;
   }
 
   int executemodel(void* id, int how_int, 
@@ -964,7 +967,6 @@ showMess(globMess); */
 	}
 	set_dts(big_phase, xtime);
 
-	(*advancemodel)(id, big_phase);
 	switch (how_int) {
 	case EULER:
 	  if (first_pass) {
@@ -1027,6 +1029,7 @@ showMess(globMess); */
 	*end=xtime;
 	return err;
       }
+      (*advancemodel)(id, big_phase);
     }
     if (check_gui(id, *end, 0)) {
       return -100; // should not conflict with os signal numbers
@@ -1911,7 +1914,8 @@ int eval_submodel(char* nodeId, void* instanceId, int phase, BOOLEAN exo) {
 procedure that is called by shim when it is loaded to supply pointers
    to its callback procedures */
 
-void proc_pointers_for_shank(interact_gui_type* interact_gui_ptr,
+void proc_pointers_for_shank(get_value_pointer_type* get_client_value_pointer,
+			     interact_gui_type* interact_gui_ptr,
 			     showMess_type* showMess_ptr,
 			     char* simileVersionPtr) {
   //  get_client_value_pointer = get_value_pointer_ptr;
