@@ -56,7 +56,8 @@ safe_tcl_eval(Cmd, Result) :-
 
 tk_cursor_is(Cursor) :-
 	safe_tcl_eval(['AttackGlobalVariable window_info (defCurs)', Cursor],
-		      _).
+		      _),
+	safe_tcl_eval(['UpdateCursors', Cursor], _).
 
 tk_callback(Data) :-
 	safe_tcl_eval(['AttackGlobalVariable fromProlog {}', Data], _).
