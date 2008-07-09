@@ -397,6 +397,7 @@ proc AcceptData {topNode compName notInput complain} {
                                 ![string equal $recordId $compName]} {
                         set recordNode [IdFromTail $topNode $recordId $notInput]
                         if {$useCppArray} {
+puts "c_setparamarray $recordNode"
                             c_setparamarray $recordNode
                         } else {
 			    set paramIdx [getinfo $recordNode 6]
@@ -428,6 +429,7 @@ proc AcceptData {topNode compName notInput complain} {
 	} else {
 	    set whatMaking parameter
 	    if {$useCppArray} {
+puts "c_setparamarray $node"
 		c_setparamarray $node
 	    } else {
 		set paramIdx [getinfo $node 6]
@@ -641,6 +643,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         #do_in_editor puts "Setting [lindex $nextDim 1]$subs to $last"
         if {$useCppArray} {
             set outers [lrange [split $subs ,] 1 end]
+puts "c_setrecordlist $tgt $outers $last"
             if {[catch {c_setrecordlist $tgt $outers $last} \
                         err]} {
                 FPError $err {}
@@ -648,6 +651,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
             foreach nested [lrange $dims 1 end] {
                 if {[llength $nested]==2 && \
                             [string match RECORDS [lindex $nested 0]]} {
+puts "c_setrecordlist [lindex $nested 1] $outers $last"
                     c_setrecordlist [lindex $nested 1] $outers $last
                 }
             }
@@ -713,6 +717,7 @@ proc PlaceInArray {where what varData inC} {
     switch $inC {
         1 {
             set map [split $where ,]
+puts "c_setparamelement [lindex $map 0] [lrange $map 1 end] $what"
             if {[catch {c_setparamelement [lindex $map 0] \
                             [lrange $map 1 end] $what} urr]} {
                 FPError $urr {}

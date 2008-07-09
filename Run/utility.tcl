@@ -477,7 +477,7 @@ proc AddPopupMessage {text colour args} {
 proc EndsOnly {outerText count leave} {
     upvar 1 $outerText text
     
-    if {!$count} { ;# not a real value; tell caller to grey it out
+    if {$count==-1} { ;# not a real value; tell caller to grey it out
 	return 1
     }
     set verbosity [string length $text] 
@@ -534,7 +534,7 @@ proc ShrinkValueList {outerList limit} {
 # first use of Gdal lib for this param -- fail gracefully if not there
 	if {[catch {set startRange [ReadGdalRefToList $list]}]} {
 	    set list failed_gdal_reference
-	    return 0 ;# indicates not a real value
+	    return -1 ;# indicates not a real value
 	}
 	lset list 2 [expr $bottomRow-$rowEnds]
 	lset list 3 $bottomRow
