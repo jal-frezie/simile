@@ -397,7 +397,7 @@ proc AcceptData {topNode compName notInput complain} {
                                 ![string equal $recordId $compName]} {
                         set recordNode [IdFromTail $topNode $recordId $notInput]
                         if {$useCppArray} {
-puts "c_setparamarray a $recordNode"
+#puts "c_setparamarray a $recordNode"
                             c_setparamarray $recordNode
                         } else {
 			    set paramIdx [getinfo $recordNode 6]
@@ -429,7 +429,7 @@ puts "c_setparamarray a $recordNode"
 	} else {
 	    set whatMaking parameter
 	    if {$useCppArray} {
-puts "c_setparamarray b $node"
+#puts "c_setparamarray b $node"
 		c_setparamarray $node
 	    } else {
 		set paramIdx [getinfo $node 6]
@@ -486,7 +486,7 @@ proc rsearch {list tgt} {
 }
 
 proc ListToArray {topNode tgt subs trans dims list useCppArray} {
-    ShowMessage debug info  "Go! tgt $tgt trans $trans dims $dims list $list" ok
+    # ShowMessage debug info  "Go! tgt $tgt trans $trans dims $dims list $list" ok
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
     # ... string match stops cleanly at end of list
@@ -504,7 +504,23 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 	    }
 	    return -1 ;# do nothing more, the data has now been loaded to c
 	} else {
-	    # DO THE fallback thing
+	    # DO THE fallback thing (inefficient placeholder version)
+	    if {[string equal REAL [lindex $list 2]]} {
+		set fieldChar d
+		set fieldSize 8
+	    } else {
+		set fieldChar i
+		set fieldSize 4
+	    }
+	    set offset 0
+	    set newList [NumberElements \
+			     [DoByteArrayToList $fieldChar $fieldSize \
+				  [lrange $list 3 end-3] [lindex $list end]]]
+	    if {!$startIdx} {
+		lappend newList [lindex $list end-2] restart \
+		    others [lindex $list end-1]
+	    }
+	    set list $newList
 	}
     } elseif {[string equal ,gdal [lindex $list 1]]} {
 	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1 && $startIdx} {
@@ -650,7 +666,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         #do_in_editor puts "Setting [lindex $nextDim 1]$subs to $last"
         if {$useCppArray} {
             set outers [lrange [split $subs ,] 1 end]
-puts "c_setrecordlist $tgt $outers $last"
+#puts "c_setrecordlist $tgt $outers $last"
             if {[catch {c_setrecordlist $tgt $outers $last} \
                         err]} {
                 FPError $err {}
@@ -658,7 +674,7 @@ puts "c_setrecordlist $tgt $outers $last"
             foreach nested [lrange $dims 1 end] {
                 if {[llength $nested]==2 && \
                             [string match RECORDS [lindex $nested 0]]} {
-puts "c_setrecordlist [lindex $nested 1] $outers $last"
+#puts "c_setrecordlist [lindex $nested 1] $outers $last"
                     c_setrecordlist [lindex $nested 1] $outers $last
                 }
             }
@@ -724,7 +740,7 @@ proc PlaceInArray {where what varData inC} {
     switch $inC {
         1 {
             set map [split $where ,]
-puts "c_setparamelement [lindex $map 0] [lrange $map 1 end] $what"
+#puts "c_setparamelement [lindex $map 0] [lrange $map 1 end] $what"
             if {[catch {c_setparamelement [lindex $map 0] \
                             [lrange $map 1 end] $what} urr]} {
                 FPError $urr {}
