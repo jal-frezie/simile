@@ -575,32 +575,34 @@ FINDABLE int settimepointarrayCmd(ClientData clientData, Tcl_Interp *interp,
   }
 }
 
+// converts a Tcl list of integers into a 0-teminated c array of them
+int  ints_from_list(Tcl_Interp *interp, Tcl_Obj *CONST obList, int indxs[]) {
+  int i, count, error;
+  Tcl_Obj* elt;
+
+  if ((error = Tcl_ListObjLength(interp, obList, &count)) != TCL_OK)
+    return error;
+  for (i=0;i<count;i++) {
+    if ((error = Tcl_ListObjIndex(interp, obList, i, &elt)) != TCL_OK)
+      return error;
+    if ((error = Tcl_GetIntFromObj(interp, elt, indxs + i)) != TCL_OK)
+      return error;
+  }
+  indxs[i]=0; // terminate array with zero
+  return TCL_OK;
+}
+
 FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-  int i, count, error, indxs[32];
-  Tcl_Obj* elt;
+  int count, error, indxs[32];
 
   if (argc != 4) {
     Tcl_WrongNumArgs(interp, 1, argv, "node_id index_list value");
     return TCL_ERROR;
   }
   
-  error = Tcl_ListObjLength(interp, argv[2], &count);
-  if (error != TCL_OK) {
+  if ((error = ints_from_list(interp, argv[2], indxs)) != TCL_OK)
     return error;
-  }
-
-  for (i=0;i<count;i++) {
-    error = Tcl_ListObjIndex(interp, argv[2], i, &elt);
-    if (error != TCL_OK) {
-      return error;
-    }
-    error = Tcl_GetIntFromObj(interp, elt, indxs + i);
-    if (error != TCL_OK) {
-      return error;
-    }
-  }
-  *(indxs+i)=0;
 
   error = Tcl_GetIntFromObj(interp, argv[3], &count);
   if (error != TCL_OK) {
@@ -629,9 +631,8 @@ FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-  int i, count, error, indxs[32];
+  int i, error, indxs[32];
   double val;
-  Tcl_Obj* elt;
 
   if (argc != 4) {
     Tcl_WrongNumArgs(interp, 1, argv, "node_id index_list value");
@@ -643,22 +644,8 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
 
-  error = Tcl_ListObjLength(interp, argv[2], &count);
-  if (error != TCL_OK) {
+  if ((error = ints_from_list(interp, argv[2], indxs)) != TCL_OK)
     return error;
-  }
-
-  for (i=0;i<count;i++) {
-    error = Tcl_ListObjIndex(interp, argv[2], i, &elt);
-    if (error != TCL_OK) {
-      return error;
-    }
-    error = Tcl_GetIntFromObj(interp, elt, indxs + i);
-    if (error != TCL_OK) {
-      return error;
-    }
-  }
-  indxs[count] = 0; /* mark end of indices */
 
   switch (set_param_array_elt(Tcl_GetStringFromObj(argv[1], NULL), val, indxs))
     {
@@ -675,20 +662,25 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-  int count, error;
+  int count, error, indxs[32];
   void *sourcePtr, *destPtr;
 
-  if (argc != 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id data");
+  if (argc != 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id data indices");
     return TCL_ERROR;
   }
   
+  if ((error = ints_from_list(interp, argv[3], indxs)) != TCL_OK)
+    return error;
+
   sourcePtr = Tcl_GetByteArrayFromObj(argv[2], &count);
+  
   destPtr=use_array_for_params(Tcl_GetStringFromObj(argv[1], NULL), NULL);
   if (!destPtr) {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("c_setparamall: no array can be created for this node", -1));
     return TCL_ERROR;
   }
+  // OK, clever stuff (probably in shank) to go here...
   memcpy(destPtr, sourcePtr, count);
   return TCL_OK;
 }
@@ -717,9 +709,8 @@ FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-  int i, count, error, indxs[32];
+  int error, indxs[32];
   double time, val;
-  Tcl_Obj* elt;
 
   if (argc != 5) {
     Tcl_WrongNumArgs(interp, 1, argv, "node_id index_list time value");
@@ -736,21 +727,8 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
 
-  error = Tcl_ListObjLength(interp, argv[2], &count);
-  if (error != TCL_OK) {
+  if ((error = ints_from_list(interp, argv[2], indxs)) != TCL_OK)
     return error;
-  }
-
-  for (i=0;i<count;i++) {
-    error = Tcl_ListObjIndex(interp, argv[2], i, &elt);
-    if (error != TCL_OK) {
-      return error;
-    }
-    error = Tcl_GetIntFromObj(interp, elt, indxs + i);
-    if (error != TCL_OK) {
-      return error;
-    }
-  }
 
   switch (set_time_point_elt(Tcl_GetStringFromObj(argv[1], NULL), time, 
 			     val, indxs)) {

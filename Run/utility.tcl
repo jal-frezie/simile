@@ -561,7 +561,7 @@ proc ShrinkValueList {outerList limit} {
 	set offset 0
 	if {$allVals<$manage} {
 	    set fullRange [DoByteArrayToList $fieldChar $fieldSize \
-			       [lrange $list 3 end-1] [lindex $list end]]
+			       [lrange $list 3 end-3] [lindex $list end]]
 	    set list [NumberElements $fullRange]
 	    return $allVals
 	}
@@ -572,7 +572,7 @@ proc ShrinkValueList {outerList limit} {
 	    set availAtLevel [expr $availAtLevel*$splitBound]
 	}
 	set fatLines [expr int(1+$splitBound*$range/$availAtLevel)]
-	set bounds [concat $fatLines [lrange list [expr $splitLevel+1] end-1]]
+	set bounds [concat $fatLines [lrange list [expr $splitLevel+1] end-3]]
 	set startRange [DoByteArrayToList $fieldChar $fieldSize $bounds \
 			    [lindex $list end]]
 	set offset [expr $fieldSize*($allVals - \

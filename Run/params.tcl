@@ -397,7 +397,7 @@ proc AcceptData {topNode compName notInput complain} {
                                 ![string equal $recordId $compName]} {
                         set recordNode [IdFromTail $topNode $recordId $notInput]
                         if {$useCppArray} {
-puts "c_setparamarray $recordNode"
+puts "c_setparamarray a $recordNode"
                             c_setparamarray $recordNode
                         } else {
 			    set paramIdx [getinfo $recordNode 6]
@@ -418,7 +418,7 @@ puts "c_setparamarray $recordNode"
                 }
             }
         }
-        #puts "About to ListToArray $node {} $trans $recordDims $paramData($compName)"
+        #puts "About to ListToArray $node {} $trans $recordDims $suppliedData($compName)"
         if {[string equal targetData $dataLocn]} {
 	    if {![llength $suppliedData($compName)]} {
 		ShowMessage "No target values given" warning "You must supply at least one target value for each selected output"  ok
@@ -429,7 +429,7 @@ puts "c_setparamarray $recordNode"
 	} else {
 	    set whatMaking parameter
 	    if {$useCppArray} {
-puts "c_setparamarray $node"
+puts "c_setparamarray b $node"
 		c_setparamarray $node
 	    } else {
 		set paramIdx [getinfo $node 6]
@@ -486,20 +486,27 @@ proc rsearch {list tgt} {
 }
 
 proc ListToArray {topNode tgt subs trans dims list useCppArray} {
-    # ShowMessage debug info  "Go! tgt $tgt trans $trans dims $dims list $list" ok
+    ShowMessage debug info  "Go! tgt $tgt trans $trans dims $dims list $list" ok
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
     # ... string match stops cleanly at end of list
     global comboTypes
     
+    set startIdx [expr {![string equal TIME [lindex $dims 0]]}]
     if {[string equal ,bytes [lindex $list 1]]} {
-	if {$useCppArray} {
-	    return -1 ;# do nothing, the data has already been loaded to c
+	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1} {
+	    if {!$startIdx} {
+		c_settimepointall $tgt [lindex $list end]
+		c_setwraparoundtime $tgt [lindex $list end-2]
+		c_setfillmethod $tgt [lindex $list end-1]
+	    } else {
+		c_setparamall $tgt [lindex $list end] [lrange $list 3 end-3]
+	    }
+	    return -1 ;# do nothing more, the data has now been loaded to c
 	} else {
 	    # DO THE fallback thing
 	}
     } elseif {[string equal ,gdal [lindex $list 1]]} {
-	set startIdx [expr {![string equal TIME [lindex $dims 0]]}]
 	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1 && $startIdx} {
 	    DoNotPassTcl $topNode $tgt $dims $list
 	    return -1 ;# typical fixed parameter
@@ -1069,17 +1076,22 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     close $pStr
     close $parseStatus(outStr)
     if {$broke} {
-	if {[info exists parseStatus(simV)]} { ;# a bad XML file
-	    if {[string equal aborted $feedback]} {
-		return -1
-	    } else {
-		error [array get parseStatus] $errorInfo
-	    }
+	if {[info exists parseStatus(simV)]} { ;# parsing at least started
+	    if {![string equal aborted $feedback]} { ;# a bad XML file
+		BuildProblem "Failed to parse XML parameter metafile" error \
+		    "Error was $errorInfo. Parse status as follows:\n[array get parseStatus]" spf
+	    } ;# otherwise user aborted parsing at mismatched component name
+	    return -1
 	} else { ;# an earlier style of param file
 	    return 0
 	}
     } else {
-	return $parseStatus(simV)
+	if {[info exists parseStatus(simV)]} {
+	    return $parseStatus(simV)
+	} else { ;# no simile version in file
+	    BuildProblem "Wrong kind of XML" warning "$oldPath is not a Simile parameter metafile" spf
+	    return -1;
+	}
     }
 }
 
@@ -1130,6 +1142,7 @@ proc StartElement {name attList args} {
 		set parseStatus(fillMtd) \
 		    [lsearch {X USE_CLOSEST INTERPOLATE} $attVals(fill_method)]
 	    }
+	    # No need to put anything in the old-style file
 	} submodels - variables {
 	} spf {
 	    set parseStatus(simV) $attVals(simile_version)
@@ -1187,15 +1200,10 @@ proc LoadBase64CharData {encoded} {
 #    set nodeId [IdFromTail $parseStatus(topNode) $compName 0]
 #puts "got node $nodeId from $compName"
     set decoded [base64 -mode decode -- $encoded]
-    set paramData($compName) [concat {scenario ,bytes} \
-				  $parseStatus(translateExtras) [list $decoded]]
-    if {[string equal TIME [lindex $parseStatus(translateExtras) 1]]} {
-	c_settimepointall $nodeId $decoded
-	c_setwraparoundtime $nodeId $parseStatus(wrapTime)
-	c_setfillmethod $nodeId $parseStatus(fillMtd)
-    } else {
-	c_setparamall $nodeId $decoded
-    }
+    set paramData($compName) \
+	[concat {scenario ,bytes} $parseStatus(translateExtras) \
+	 [list  $parseStatus(wrapTime)  $parseStatus(fillMtd) $decoded]]
+# will now load when loading other data, or not if Tcl
     set msgs(param_source_$compName) \
 	"Specified by $parseStatus(oldPath) (literal) -- keep data in scenario file"
     if {[info exists widgetNames($compName)]} { ;# should imply widget exists
@@ -1245,7 +1253,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     # If neither of the above, XML file successfully converted
     set pStr [NetOpen $metaFile r]
     while {[gets $pStr savedValue] != -1} {
-        #ShowMessage debug info "Restoring $savedValue" ok
+        # ShowMessage debug info "Restoring $savedValue" ok
         # ignore blank lines
         if {![llength $savedValue]} {
             continue
@@ -1274,11 +1282,13 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	    cd $oldDir
 	    set restoredComp $smPath$restoredComp
             if {$origVersion>=4.0} {
-                set suppliedData($restoredComp) [lindex $IdAndValue end]
+		set dataFinder [lindex $IdAndValue end]
                 set reference [string eq reference [lindex $IdAndValue end-1]]
                 if {$reference} {
-                    set VFile [lindex $suppliedData($restoredComp) 0]
+                    set VFile [lindex $dataFinder 0]
+		    if {[string equal scenario $VFile]} continue
                 }
+                set suppliedData($restoredComp) $dataFinder
             } else {
                 set suppliedData($restoredComp) [TrimFields \
                         [lindex $IdAndValue 1]]
@@ -1569,5 +1579,5 @@ proc DoNotPassTcl {topNode node dims tableSpec} {
 		     $dataCols $dataRows $gdalType $fillCols $fillRows]
     gdal_close $hg
     
-    c_setparamall $node $bytesFromGdal
+    c_setparamall $node $bytesFromGdal [list $fillRows $fillCols]
 }
