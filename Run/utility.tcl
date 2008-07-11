@@ -565,7 +565,7 @@ proc ShrinkValueList {outerList limit} {
 	    set list [NumberElements $fullRange]
 	    return $allVals
 	}
-	set splitLevel [expr [llength $list]-1]
+	set splitLevel [expr {[llength $list]-3}]
 	set availAtLevel 1
 	while {$availAtLevel<$range} {
 	    set splitBound [lindex $list [incr splitLevel -1]]

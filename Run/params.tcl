@@ -859,24 +859,22 @@ namespace eval fileparams {
 	set notInput [expr -[llength $args]]
 	if {$notInput} {
 	    set dataLocn targetData
-#	    set widgetLocn targetNames
+	    set widgetLocn targetNames
 	    set smPath [string range $smPath 1 end]
 	    set defFile measures.spf
 	} else {
 	    set dataLocn paramData
-#	    set widgetLocn widgetNames
+	    set widgetLocn widgetNames
 	    set defFile params.spf
 	}
 	upvar \#0 $dataLocn suppliedData
-#	upvar \#0 $widgetLocn outNames
+	upvar \#0 $widgetLocn outNames
 
 #ShowMessage debug info "Save $smPath" ok
 #puts "Need outNames cos have suppliedData for [array names suppliedData]"
 # first, make sure all values to be saved are up-to-date and well-formed
-	foreach smItem [array names suppliedData $smPath/*] {
-	    if {![IsRecordCount $smItem]} {
-		AcceptData $topNode $smItem $notInput 1
-	    }
+	foreach smItem [array names outNames $smPath/*] {
+	    AcceptData $topNode $smItem $notInput 1
 	}
 	if {[lsearch $suppliedData(needed) $smPath*]!=-1} {
 	    return
@@ -947,7 +945,11 @@ namespace eval fileparams {
 	    }
 	    set subbedComp [Entitize [StripCrs [string range $compTail 1 end]]]
 	    set newPopup  "Specified by $metaFile"
-	    if {[DataInScenario $compName]} {
+	    # if parameter is per-record, only write CDATA if we already have it
+	    set haveBytes [string equal scenario [lindex $outData($compName) 0]]
+	    set recordLevel [lsearch $paramDims($compName) RECORDS]
+	    if {[DataInScenario $compName] && \
+		    ($haveBytes || $recordLevel==-1)} {
 		set nodeId [IdFromTail $topNode $compName 0]
 		set type [GetCompProperty $topNode Type $nodeId]
 		puts -nonewline $pStr \
@@ -960,12 +962,19 @@ namespace eval fileparams {
 		}
 		puts $pStr ">"
 		set dimCount 0
-		foreach dim $paramDims($compName) {
+		if {$recordLevel==-1} {
+		    set dimList $paramDims($compName)
+		} else {
+		    set dimList [lrange $outData($compName) 3 end-3]
+		}
+		foreach dim $dimList {
 		    if {[string equal 0 $dim]} break
 		    puts $pStr "  $indent<value index=\"[incr dimCount]\" val=[Entitize $dim]/>"
 		}
 		puts $pStr "  $indent<!\[CDATA\["
-		if {[string equal TIME [lindex $paramDims($compName) 0]]} {
+		if {$haveBytes} { ;# do not bother c++, we already have it
+		    set raw [lindex $outData($compName) end]
+		} elseif {[lsearch $paramDims($compName) TIME]==0} {
 		    set raw [c_gettimepointall $nodeId]
 		} else {
 		    set raw [c_getparamall $nodeId]
