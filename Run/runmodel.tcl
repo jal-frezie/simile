@@ -1141,7 +1141,8 @@ proc StartRun {node} {
 	set ctrlPane [winfo parent [winfo parent $::RunEnv::runControlFrame($node)]]
 	update ;# so reqheight works next
 #	tkwait visibility $runState($node,helperId)
-	$ctrlPane sash place 0 10 [expr [winfo reqheight $ctrlPane.runcontrolPane]+10]
+#puts "split $ctrlPane at [winfo reqheight $ctrlPane.runcontrolPane]"
+	$ctrlPane sash place 0 0 [expr [winfo reqheight $ctrlPane.runcontrolPane]+10]
 	::RunEnv::InMreFor $node ;# in case it has been focussed since creation    }
 # Now list all the inputs in the model, so we can avoid running it until
 # all have tools attached to provide their values
