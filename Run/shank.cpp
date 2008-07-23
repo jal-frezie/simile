@@ -334,6 +334,19 @@ public:
   }
 };
 
+int size_for_data_type(int dtype) {
+  switch (dtype) {
+  case REAL:
+    return sizeof(double);
+  case FLAG:
+    return sizeof(BOOLEAN);
+  case VALUELESS:
+    return 0;
+  default: // submodel, INTEGER or enumerated type
+    return sizeof(int);
+  }
+}
+
 /* listable class for keeping track of arrays associated with parameters */
 
 class listParamArray {
@@ -383,6 +396,12 @@ public:
 	}
       }
     } while (*(src++));
+  }
+
+  int size_for_type() {
+    if (nodeLine->compclass == SUBMODEL)
+      return sizeof(int); // keeps count of per-record type
+    return size_for_data_type(nodeLine->datatype);
   }
 
   listParamArray(char* newNodeId) {
@@ -439,17 +458,6 @@ public:
       return current;
     } else {
       return this;
-    }
-  }
-
-  int size_for_type() {
-    switch (nodeLine->datatype) {
-    case REAL:
-      return sizeof(double);
-    case FLAG:
-      return sizeof(BOOLEAN);
-    default: // submodel, INTEGER or enumerated type
-      return sizeof(int);
     }
   }
 
@@ -664,9 +672,9 @@ public:
     if (nodeLine->eval==INPUT && resetting && !(time_point_exists(0.0))) {
       memcpy(insertionPt, tgt, size_for_type());
     } else {
-      //      sprintf(globMess, "Gonna copy %d from %ld to %ld", size_for_type(),
-      //	      insertionPt, tgt);
-      //      showMess(globMess);
+      // sprintf(globMess, "Gonna copy %d from %ld to %ld", size_for_type(),
+      //   insertionPt, tgt);
+      // showMess(globMess);
       memcpy(tgt, insertionPt, size_for_type());
     }
   }
@@ -1214,12 +1222,12 @@ public:
       next = next->strip_out(oldModelId);
     }
     if (model == oldModelId) { // node belongs to model being removed
-      // delete any separate submodels in here
+      /* delete any separate submodels in here (old)
       for (count=0; count<model->nodecount;count++) {
 	if ((model->nodedata[count]).datatype==EXTERNAL) {
 	  strip_out(nodeModel((model->nodedata[count]).name));
 	}
-      }
+	} */
       current = next;
       delete(this);
       return current;
@@ -1494,16 +1502,16 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
     if (!strcmp(seeknode, test)) {
       *tgtModel = seekType;
       return(count);
-    }
+    } /* separate submodels no longer in use
     if (seekType->nodedata[count].datatype == EXTERNAL) {
       if (!strncmp(seeknode, test, strlen(test))) {
 	return(nodeModelAndId(nodeModelList->nodeModel(seekType->
 						       nodedata[count].name),
-			      seeknode + strlen(test), /* was (strrchr(test, '/') - test), */
+			      seeknode + strlen(test), // was (strrchr(test, '/') - test),
 			      tgtModel));
       }
       
-    }
+    } */
   }
   /* Node with given caption not found... */
   return -1;
@@ -1718,6 +1726,164 @@ void* get_ptr(long int modelType, long int level, int** id_meta,
   return ((Model*)modelType)->getpointer((void*)level, id_meta, dim_list);
 }
 
+long int step_ptr(long int type, long int ptr) {
+  int next_handle[] = {1,0}, *idler;
+
+  idler = next_handle;
+  return *(long int*)(get_ptr(type, ptr, &idler, NULL));
+}
+
+int count_members(long int type, long int ptr) {
+  // do not recurse, there may be too many of them
+  int count = 0;
+  while(ptr) {
+    ptr = step_ptr(type, ptr);
+    ++count;
+  }
+  return count;
+}
+
+// put indices of current instance onto data blk
+void fill_indices(long int localType, long int smHandle,
+		  int indxCount, char** insertionPt) {
+  int idHandle[] = {2,0}, idIdx[1], *idler1, *idler2;
+
+  for (idIdx[0] = 0; idIdx[0]<indxCount; ++idIdx[0]) {
+    idler1 = idHandle;
+    idler2 = idIdx;
+    memcpy(*insertionPt, get_ptr(localType, smHandle, &idler1, &idler2),
+	   sizeof(int));
+    *insertionPt += sizeof(int);
+  }
+}
+
+int skip_vm_bounds(int** modelDimList) {
+  int count = 0;
+  while (*(++(*modelDimList)) != END_VM)
+    ++count;
+  return count;
+}
+
+// forward declaration for co-recursing procedures
+void fill_raw_values(long int, long int, int[], int*, int[], int*, char**);
+
+// dims is the array of counts that are being incremented in the instances of
+// this procedure from which the current one is being called
+void fill_raw_values(long int localType, long int smHandle, int tree[],
+		     int* use_dims, int dims[], int* dim_place,
+		     char** insertionPt) {
+  int count, dimty = 0; // value for RECORDS
+  void* model_val_ptr;
+  char *newBlk;
+  
+  switch (*use_dims) {
+  case START_VM:
+    dimty = skip_vm_bounds(&use_dims); // and drop through, keeping this value
+  case RECORDS: // dimty will end up as 0
+    --dimty; // and drop through
+  case MEMBERS: // dimty will end up as 1
+    ++dimty; 
+    /* Count the number of instances in the submodel, multiply by size
+       needed for each instance and its indices, alloc this plus an
+       integer, put count at start and recurse to fill rest, and place
+       pointer to new space in insertionPt. */
+    smHandle = *(long int*)get_ptr(localType, smHandle, &tree, &dims);
+    count = count_members(localType, smHandle);
+    newBlk = new char[sizeof(int) + count*(dimty*sizeof(int) + dim_place[1])];
+     memcpy(*insertionPt, &newBlk, *dim_place);
+    *insertionPt += *dim_place;
+    *(int*)newBlk = count;
+    newBlk += sizeof(int);
+    while (*tree++ != -1) {} // make relevant to current submodel
+    while (smHandle) {
+      fill_indices(localType, smHandle, dimty, &newBlk);
+      fill_raw_values(localType, smHandle, tree,
+		      use_dims+1, dim_place+1, dim_place+1, &newBlk);
+      smHandle = step_ptr(localType, smHandle);
+    }
+    break;
+  case 0:
+    model_val_ptr = get_ptr(localType, smHandle, &tree, &dims);
+    memcpy(*insertionPt, model_val_ptr, *dim_place);
+    *insertionPt += *dim_place;
+    break;
+  default: /* value is a dimension of the array we are accessing */
+    for (*dim_place = 0; *use_dims > *dim_place; ++*dim_place) {
+      fill_raw_values(localType, smHandle, tree,
+		      use_dims+1, dims, dim_place+1, insertionPt);
+    }
+    break;
+  }
+}
+
+/* translate_dims: this takes the dimensions of the node's data as
+   returned by the model, and converts them to those used in the data
+   structure. The main difference is that in the data structure, a
+   variable-membership model identifier is followed by its
+   dimensionality (1 for population models) while per-record submodels
+   do not have this extra value.
+
+A parallel array is also passed which gets the size of the data block
+needed at each level, making it quicker to fill the actual structure.
+*/
+void translate_dims(int fromModel[], int blockSizes[], int structDims[],
+		    int dataType) {
+  switch (fromModel[0]) {
+  case RECORDS:
+    structDims[0] = OWNSIZED;
+    blockSizes[0] = sizeof(void*);
+    break;
+  case MEMBERS:
+    structDims[0] = SPARSEARRAY;
+    structDims[1] = 1;
+    structDims += 1;
+    blockSizes[0] = sizeof(void*);
+    break;
+  case START_VM: // count dims to FINISH_VM and insert SPARSEARRAY of them
+    structDims[0] = SPARSEARRAY;
+    structDims[1] = skip_vm_bounds(&fromModel);
+    structDims += 1;
+    blockSizes[0] = sizeof(void*);
+    break;
+  case 0: // dimensions finished, insert type and its size (could alloc dims!)
+    structDims[0]  = dataType;
+    blockSizes[0] = size_for_data_type(dataType);
+    return;
+  default: // an array dimension
+    structDims[0] = fromModel[0];
+  }
+  translate_dims(fromModel+1, blockSizes+1, structDims+1, dataType);
+  // now set size if a multiple of the next one...
+  if (fromModel[0]>0) 
+    blockSizes[0] = blockSizes[1]*fromModel[0];
+}
+
+/* filling a structure of this type is going to be a straight copy of the Tcl
+   list builder in the shim, cos it's the easiest way to think through it */
+nodeValues* get_raw_values(char* nodeId, long int instance_id) {
+  long int spareModel;
+  int sparePath[32], fullDims[32], indices[32];
+  char spareCapt[255], *insertionPt;
+  enum_type_data *spareTypes[32]; // might need for reading files
+  node_data_line *nodeLine;
+  nodeValues* newBlk;
+
+  if (!(nodeLine = searchinfo(nodeId, &spareModel, spareCapt, 
+			      fullDims, sparePath, spareTypes)))
+    return NULL;
+  newBlk = new nodeValues;
+  // find first dimension not a positive integer
+  translate_dims(fullDims, indices, newBlk->dimSpecs, nodeLine->datatype);
+
+  if (indices[0]) {
+    insertionPt = newBlk->contents = new char[indices[0]];
+    fill_raw_values(spareModel, instance_id, sparePath, 
+		    fullDims, indices, indices, &insertionPt);
+  } else
+    newBlk->contents = NULL;
+  return newBlk;
+}
+
 /* definitions for regularData class -- note we may later want
 to use regularData items to describe simple c++ arrays, which is why we 
 create them and then set them to a model item */
@@ -1843,7 +2009,7 @@ int execute(long int modelType, long int modelHandle, int how_int,
   return ((Model*)topType)->executemodel((void*)modelHandle, 
 					how_int, starttime, endtime, errlim);
 }
-
+/*
 void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
   level = get_ptr((long int)type, (long int)level, id_meta, dims);
   //  sprintf(globMess, "got ptr %ld", level);
@@ -1855,7 +2021,7 @@ void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
     return level;
   }
 }
-/*
+
 void* get_remote_value(void* typeRef, void* topInstRef, int level,
 			    int arcIndx, int* subList) {
   channelRecord* currentData;
@@ -1881,13 +2047,13 @@ void* get_remote_value(void* typeRef, void* topInstRef, int level,
   //  showMess(globMess);
   return(search_ptr((Model*)typeRef, useInstRef, &tree, &subList));
 }
-*/
+
 void* advance_ptr(void* typeRef, void* topInstRef) {
   int next_handle[] = {1,0}, *tree = next_handle;
   return *(void**)get_ptr((long int)typeRef, (long int)topInstRef, &tree, 
 			  NULL);
 }
-/*
+
 void search_from(void* typeRef, int nodeIndx, void* instPtr) {
   int recordNo;
   recordNo = ((Model*)typeRef)->connLines[nodeIndx];

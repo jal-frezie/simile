@@ -91,12 +91,12 @@ int list(long int listType, Tcl_Interp *interp) {
   nodecount = get_node_count(listType);
   for (line=0; line<nodecount; line++) {
     node_data = get_data_line(listType, line);
-    if (node_data->datatype == EXTERNAL) {
+/*    if (node_data->datatype == EXTERNAL) {
       list(get_node_model_id(node_data->name), interp);
-    } else {
+      } else { */
       Tcl_ListObjAppendElement(interp, resultPtr, 
 			       Tcl_NewStringObj(node_data->name, -1));
-    }
+      //    }
   }
   return TCL_OK;
 }
@@ -257,8 +257,8 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
     resultPtr = Tcl_NewIntObj(data_line->compclass);
     break;
 
-  case GETTYPE:
-    resultPtr = Tcl_NewIntObj(data_line->datatype);
+  case GETTYPE: // return old version
+    resultPtr = Tcl_NewIntObj(-1-data_line->datatype);
     break;
 
   case GETEVAL:
@@ -1240,10 +1240,11 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
 	Tcl_GetBooleanFromObj(NULL, nVs, (int *)model_val_ptr);
       }
       break;
-    case EXTERNAL:
+      /*    case EXTERNAL:
       localObj = Tcl_NewStringObj("ex", -1);
       break;
-    default: /* INTEGER or ENUM(*) */
+      */
+    default: // INTEGER or ENUM(*)
       localObj = Tcl_NewIntObj(*(int *)model_val_ptr);
       if (nVs) {
 	Tcl_GetIntFromObj(NULL, nVs, (int *)model_val_ptr);
@@ -1277,6 +1278,127 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
   return(localObj);
 }
 
+void make_sub_block_sizes(int *dims, int *sizes) {
+  switch (dims[0]) {
+  case OWNSIZED:
+    make_sub_block_sizes(dims+1, sizes+1);
+    sizes[0] = sizeof(void*);
+    break;
+  case SPARSEARRAY:
+    make_sub_block_sizes(dims+2, sizes+1);
+    sizes[0] = sizeof(void*);
+    break;
+  case REAL:
+    sizes[0] = sizeof(double);
+    break;
+  case FLAG:
+    sizes[0] = sizeof(BOOLEAN);
+    break;
+  case VALUELESS:
+    sizes[0] = 0;
+    break;
+  default: // dimension, INTEGER or enumerated type
+    if (dims[0]>0) {
+      make_sub_block_sizes(dims+1, sizes+1);
+      sizes[0]=sizes[1]*dims[0];
+    } else
+      sizes[0] = sizeof(int);
+  }
+}
+
+/* next two call convert_to_tcl, which calls them, so declare in advance */
+Tcl_Obj* convert_to_tcl(int*, int*, char*);
+
+Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices, 
+			     int* subBlocks, char** block, char* blockEnd) {
+  Tcl_Obj *localObj, *localSubObj;
+  int count;
+  if (depth==dimty) {
+    *block += dimty*sizeof(int);
+    localObj = convert_to_tcl(dims, subBlocks, *block);
+    *block += subBlocks[0];
+  } else {
+    localObj = Tcl_NewListObj(0, NULL);
+    while (*block<blockEnd) {
+      for (count=0; count<depth; ++count) {
+	if (((int*)*block)[count]!=indices[count]) return(localObj);
+      }
+      indices[depth] = ((int*)*block)[depth];
+      localSubObj = append_list_members(dimty, depth+1, dims, indices,
+					subBlocks, block, blockEnd);
+      Tcl_ListObjLength(NULL, localSubObj, &count); // re-use count variable
+      if (count) {
+	Tcl_ListObjAppendElement(NULL, localObj, Tcl_NewIntObj(indices[depth]));
+	Tcl_ListObjAppendElement(NULL, localObj, localSubObj);
+      }
+    }
+  }
+  return(localObj);
+}
+
+Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks, 
+			      char* block) {
+  Tcl_Obj *localObj, *indObj, *localSubObj;
+  int offset, arrayOut;
+  
+  localObj = Tcl_NewListObj(0, NULL);
+  for (offset = 0; membership > offset; ++offset) {
+    indObj = Tcl_NewIntObj(offset+1);
+    localSubObj = convert_to_tcl(dims, subBlocks, block+offset*subBlocks[0]);
+    Tcl_ListObjLength(NULL, localSubObj, &arrayOut);
+    if (arrayOut) {
+      Tcl_ListObjAppendElement(NULL, localObj, indObj);
+      Tcl_ListObjAppendElement(NULL, localObj, localSubObj);
+    }
+  }
+  return localObj;
+}
+  
+Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block) {
+  Tcl_Obj *localObj;
+  int membership, *indices;
+  char *newBlock, *blockEnd;
+
+  if (dims[0] > 0) { // it's an array bound
+    localObj = append_array_members(dims[0], dims+1, subBlocks+1, block);
+  } else {
+    switch (dims[0]) {
+    case OWNSIZED:
+      newBlock = *(char**)block;
+      membership = *(int *)newBlock;
+      localObj = append_array_members(membership, dims+1, subBlocks+1, 
+				      newBlock+sizeof(int));
+      delete newBlock;
+      break;
+    case SPARSEARRAY: 
+      // need clevers to nest indices; see old stuff
+      newBlock = *(char**)block;
+      block = newBlock;
+      membership = *(int *)block;
+      block += sizeof(int);
+      indices = new int[dims[1]];
+      blockEnd = block+membership*(dims[1]*sizeof(int)+subBlocks[1]);
+      localObj = append_list_members(dims[1], 0, dims+2, indices, subBlocks+1,
+				     &block, blockEnd);
+      delete indices;
+      delete newBlock;
+      break;
+    case VALUELESS:
+      localObj = Tcl_NewStringObj("sm", -1);
+      break;
+    case REAL:
+      localObj = Tcl_NewDoubleObj(*(double *)block);
+      break;
+    case FLAG:
+      localObj = Tcl_NewBooleanObj(*(int *)block);
+      break;
+    default: /* INTEGER or ENUM(*) */
+      localObj = Tcl_NewIntObj(*(int *)block);
+    }
+  }
+  return localObj;
+}
+
 FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   Tcl_Obj *resultPtr, *newData;
@@ -1286,6 +1408,7 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
   int dims[32], path[32];
   long int mSpare;
   enum_type_data* usedTypes[32];
+  nodeValues* c_result;
 
   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
   if (error != TCL_OK) {
@@ -1311,7 +1434,7 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
   for (count=0;count+iPosn<argc;count++) {
 	Tcl_GetIntFromObj(interp, argv[count+iPosn], current_dims + count);
   }
-  resultPtr = Tcl_NewObj();
+  /*  resultPtr = Tcl_NewObj();
 
   if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[3], NULL), 
 			     &mSpare, spare, dims, path, usedTypes))) {
@@ -1320,12 +1443,17 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
     resultPtr = fill_value(modelType, modelHandle, path, data_line->datatype, 
 			   dims+count, current_dims, current_dims+count,
 			   newData);
-    /*
-    for (count=0; 4>count; ++count) {
-      Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewIntObj(dims[count]));
-    }
-    */
   }
+  */
+  c_result = get_raw_values(Tcl_GetStringFromObj(argv[3], NULL), modelHandle);
+  if (c_result) {
+    int subBlocks[32];
+    make_sub_block_sizes(c_result->dimSpecs, subBlocks);
+    resultPtr = convert_to_tcl(c_result->dimSpecs, subBlocks, c_result->contents);
+    delete c_result->contents;
+    delete c_result;
+  } else
+    resultPtr = Tcl_NewStringObj("novalue", -1);
   Tcl_SetObjResult(interp, resultPtr);
   return TCL_OK;
 }

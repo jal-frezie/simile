@@ -24,13 +24,13 @@
 #define LOSS            8
 #define ALARM           9
 
-/* data types */
-#define	VALUELESS	0
-#define REAL            1
-#define INTEGER         2
-#define FLAG            3
-#define EXTERNAL        4
-
+/* data types -- negative as they will end lists of dimensions */
+#define	VALUELESS	-1
+#define REAL            -2
+#define INTEGER         -3
+#define FLAG            -4
+#define OWNSIZED        -5
+#define SPARSEARRAY     -6
 #define ENUM_BASE       -10
 
 /* source of value */
@@ -246,6 +246,18 @@ EXTDEC char* getNodeId(long int, char*);
 
 EXTDEC void proc_pointers_for_shank(get_value_pointer_type*, interact_gui_type*,
 				    showMess_type*, char*);
+
+/* new class that will hold any set of values for a model component, hopefully
+   replacing the regularData class. */
+
+typedef struct nodeValues_t {
+  int dimSpecs[32];
+  char* contents;
+} nodeValues;
+
+// use of nodeValues class
+EXTDEC nodeValues* get_raw_values(char*, long int);
+
 // use of regularData class
 EXTDEC long int createRegularData (void);
 EXTDEC void deleteRegularData (long int);

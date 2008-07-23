@@ -91,10 +91,12 @@ simile: $(PROLOGSTATE) System/bin/relay$(ARCHEXTN) $(SHIM) \
 	System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) $(INSTLIB) $(MAIN)
 
 ifeq ($(ARCHEXTN),_i386)
-# this saves going on the ppc mac to make the stub for each edition
+# this saves going on the ppc mac to make the object files for each edition --
+# still need it to make Gnu Prolog executable though
 PPCSHIM = System/lib/Stubs/libame_dll$(VERS)_ppc.dylib
 PPCSHANK = System/lib/lib5d_ppc.dylib
-ppcbits: $(PPCSHIM) $(PPCSHANK)
+PPCRELAY = System/bin/relay_ppc
+ppcbits: $(PPCSHIM) $(PPCSHANK) $(PPCRELAY)
 $(PPCSHIM): ame_cmx.cpp dllcalls.h System/lib/lib5d_ppc.dylib Makefile
 	cd Run; \
 	$(GPPCMD) -arch ppc -fPIC $(FLAGS) $(DEFNS) \
@@ -107,6 +109,9 @@ $(PPCSHIM): ame_cmx.cpp dllcalls.h System/lib/lib5d_ppc.dylib Makefile
 $(PPCSHANK): shank.cpp dllcalls.h Makefile
 	cd Run; $(GPPCMD) -arch ppc -O -fPIC $(FLAGS) -I. -dynamiclib \
 		-o ../$(PPCSHANK) shank.cpp; cd ..
+$(PPCRELAY): Run/relay.c
+	cd Run; $(GCCCMD) -arch ppc $(FLAGS) -o ../$(PPCRELAY) relay.c; cd ..
+
 endif
 
 vpath %.pl Prolog

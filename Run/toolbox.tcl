@@ -575,8 +575,8 @@ proc compile_c {workingDir extLibs} {
     #ShowMessage debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
     if {[catch {switch $tcl_platform(platform) {
         unix {
-	    exec g++ $sendvars(arflags) -fPIC -c -O3 -I$TOOLDIR -o objtmp.o \
-		model.cpp
+	    eval {exec g++} $sendvars(arflags) [list -fPIC -c -I$TOOLDIR \
+						    -o objtmp.o model.cpp]
             if {[string match Darwin $tcl_platform(os)]} {
                 set linkCmd [list exec g++ -bundle -o $TARGET objtmp.o]
             } else {
@@ -825,10 +825,17 @@ proc ControlDraw {prologVersion} {
     set sendvars(proV) $prologVersion
     
     # set up to compile stub and models with same bitness as tcltk
-    if {$tcl_platform(wordSize)==4} {
-	set sendvars(arflags) {-m32}
+    set gccBitness 32
+    catch {exec g++ -v} gppInfo
+    set relevant [string first arget $gppInfo]
+    if {$relevant>-1 && [string first 64 $gppInfo $relevant]<$relevant+16} {
+	set gccBitness 64
+    } ;# assume any 64-bit gcc will be proud enough to proclaim itself
+    set tclBitness [expr {8*$tcl_platform(wordSize)}]
+    if {$tclBitness != $gccBitness} {
+	set sendvars(arflags) [list -m$tclBitness -O3]
     } else {
-	set sendvars(arflags) {-m64}
+	set sendvars(arflags) -O3
     }
 
     # no longer have a separate floating toolbar
@@ -880,8 +887,8 @@ proc ControlDraw {prologVersion} {
     if {[string match Linux $tcl_platform(os)]} {
 	set shank ../System/lib/lib5d.so
 	if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
-	    exec g++ $sendvars(arflags) -O -fPIC -I../Run -shared \
-		-o $shank ../Run/shank.cpp
+	    eval {exec g++} $sendvars(arflags) \
+		[list -fPIC -I../Run -shared -o $shank ../Run/shank.cpp]
 	}
     }
     load_c_stub_1
