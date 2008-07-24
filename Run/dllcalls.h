@@ -24,13 +24,13 @@
 #define LOSS            8
 #define ALARM           9
 
-/* data types -- negative as they will end lists of dimensions */
-#define	VALUELESS	-1
-#define REAL            -2
-#define INTEGER         -3
-#define FLAG            -4
-#define OWNSIZED        -5
-#define SPARSEARRAY     -6
+/* data types -- zero or negative as they will end lists of dimensions */
+#define	VALUELESS	0
+#define REAL            -1
+#define INTEGER         -2
+#define FLAG            -3
+#define OWNSIZED        -4
+#define SPARSEARRAY     -5
 #define ENUM_BASE       -10
 
 /* source of value */

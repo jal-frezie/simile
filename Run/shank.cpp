@@ -1784,16 +1784,16 @@ void fill_raw_values(long int localType, long int smHandle, int tree[],
   case MEMBERS: // dimty will end up as 1
     ++dimty; 
     /* Count the number of instances in the submodel, multiply by size
-       needed for each instance and its indices, alloc this plus an
-       integer, put count at start and recurse to fill rest, and place
-       pointer to new space in insertionPt. */
+       needed for each instance and its indices, alloc this and
+       recurse to fill it up, and place count and pointer to new space
+       in insertionPt. */
     smHandle = *(long int*)get_ptr(localType, smHandle, &tree, &dims);
     count = count_members(localType, smHandle);
-    newBlk = new char[sizeof(int) + count*(dimty*sizeof(int) + dim_place[1])];
+    *(int*)(*insertionPt) = count;
+    *insertionPt += sizeof(int);
+    newBlk = new char[count*(dimty*sizeof(int) + dim_place[1])];
      memcpy(*insertionPt, &newBlk, *dim_place);
     *insertionPt += *dim_place;
-    *(int*)newBlk = count;
-    newBlk += sizeof(int);
     while (*tree++ != -1) {} // make relevant to current submodel
     while (smHandle) {
       fill_indices(localType, smHandle, dimty, &newBlk);
@@ -1828,22 +1828,18 @@ needed at each level, making it quicker to fill the actual structure.
 */
 void translate_dims(int fromModel[], int blockSizes[], int structDims[],
 		    int dataType) {
+  int defDimty = 1; // will be used unchanged if case MEMBERS
+  structDims[0] = OWNSIZED; // will not be set if case RECORDS
   switch (fromModel[0]) {
-  case RECORDS:
-    structDims[0] = OWNSIZED;
-    blockSizes[0] = sizeof(void*);
-    break;
-  case MEMBERS:
-    structDims[0] = SPARSEARRAY;
-    structDims[1] = 1;
-    structDims += 1;
-    blockSizes[0] = sizeof(void*);
-    break;
   case START_VM: // count dims to FINISH_VM and insert SPARSEARRAY of them
+    defDimty = skip_vm_bounds(&fromModel);
+  case MEMBERS: // or START_VM
     structDims[0] = SPARSEARRAY;
-    structDims[1] = skip_vm_bounds(&fromModel);
+    structDims[1] = defDimty;
     structDims += 1;
-    blockSizes[0] = sizeof(void*);
+    // and drop through
+  case RECORDS: // or  MEMBERS or START_VM
+    blockSizes[0] = sizeof(int)+sizeof(void*);
     break;
   case 0: // dimensions finished, insert type and its size (could alloc dims!)
     structDims[0]  = dataType;
