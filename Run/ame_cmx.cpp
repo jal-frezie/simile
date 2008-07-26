@@ -609,6 +609,9 @@ FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
   switch (set_record_list(Tcl_GetStringFromObj(argv[1], NULL), indxs, count)) {
+  case 2:
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("set_record_list: number of indices does not correspond to a per-record submodel level", -1));
+    return TCL_ERROR;
   case 1:
     Tcl_SetObjResult(interp, Tcl_NewStringObj("set_record_list: no array has been created for this node", -1));
     return TCL_ERROR;

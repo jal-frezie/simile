@@ -398,7 +398,8 @@ proc AcceptData {topNode compName notInput complain} {
                         set recordNode [IdFromTail $topNode $recordId $notInput]
                         if {$useCppArray} {
 #puts "c_setparamarray a $recordNode"
-                            c_setparamarray $recordNode
+#                            c_setparamarray $recordNode
+# not needed with universal structure
                         } else {
 			    set paramIdx [getinfo $recordNode 6]
 			    set paramLocns($paramIdx,nod) $recordNode
@@ -671,17 +672,22 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
                         err]} {
                 FPError $err {}
             }
-            foreach nested [lrange $dims 1 end] {
-                if {[llength $nested]==2 && \
-                            [string match RECORDS [lindex $nested 0]]} {
-#puts "c_setrecordlist [lindex $nested 1] $outers $last"
-                    c_setrecordlist [lindex $nested 1] $outers $last
-                }
-            }
+# Hopefully, with the universal data structure, once we have set the
+# record count for the outer submodel level, we will be able to access
+# its contents as if they were a fixed membership array, so this
+# should be redundant
+#            foreach nested [lrange $dims 1 end] {
+#                if {[llength $nested]==2 && \
+#                            [string match RECORDS [lindex $nested 0]]} {
+##puts "c_setrecordlist [lindex $nested 1] $outers $last"
+#                    c_setrecordlist [lindex $nested 1] $outers $last
+#                }
+#            }
         }
-        EnumTypeToNumber paramData [lindex $nextDim 1]$subs $last \
-                {} $useCppArray
-        # probably won't work anyway for time series
+# So should this
+#        EnumTypeToNumber paramData [lindex $nextDim 1]$subs $last \
+#                {} $useCppArray
+        # probably wouldn't have worked anyway for time series
     } else {
         set last $nextDim
     }

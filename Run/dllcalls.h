@@ -255,8 +255,15 @@ typedef struct nodeValues_t {
   char* contents;
 } nodeValues;
 
+// convenience class for accessing levels consisting of size and pointer
+typedef struct sizeAndPtr_t {
+  int size;
+  char* ptr;
+} sizeAndPtr;
+
 // use of nodeValues class
 EXTDEC nodeValues* get_raw_values(char*, long int);
+EXTDEC void translate_dims(int[], int[], int[], int, BOOLEAN);
 
 // use of regularData class
 EXTDEC long int createRegularData (void);
