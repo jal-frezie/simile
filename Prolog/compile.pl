@@ -703,8 +703,7 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 	do_assign_list( Language, ActionForm, AllGraphs, Used, Stream),
 	nl(Stream),
 	excrete(Language, end(procedure), ProcName, 0, Stream),
-	nl(Stream),
-	fail; true.
+	nl(Stream).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % build_functions goes throught the functions and calculates their values. The
@@ -1237,7 +1236,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    make_inds_for(Dims, LocalPath, LocalInds),
 	    append(LocalPath, DestPath, Path),
 	    append(SmInds, LocalInds, Inds),
-	    vars_only(Inds, VarInds, Is_P),
+	    vars_only(Inds, VarInds),
 	    length(VarInds, Count),
 	    CollectFn =.. [collect, arr(DestPtr, Dest, LocalInds), Dest, Count
 			  | VarInds],
@@ -1410,12 +1409,13 @@ input_params_in(Vars, SmPath, SmStep,
 		      | VarInds].
 
 vars_only: remove indices of vm models from those passed by 'collect'. Per-
-record models are treated as vm if the parameter is variable. */
+record models were treated as vm if the parameter is variable, but are no longer as of v5.3. */
 
-vars_only(List, AllVar, ParamType) :-
+vars_only(List, AllVar) :-
 	select(NonVar, List, Rest), \+ var(NonVar),
-	(NonVar = none; ParamType = 1, NonVar = ind(_, pop)), !,
-	vars_only(Rest, AllVar, ParamType);
+%	(NonVar = none; ParamType = 1, NonVar = ind(_, pop)), !,
+	NonVar = none, !,
+	vars_only(Rest, AllVar);
 	List = AllVar.
 
 /* sort_assignments: if a value makes no reference to time, and all
