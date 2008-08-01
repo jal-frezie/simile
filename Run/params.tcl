@@ -99,7 +99,7 @@ proc MakeFrames {windowId} {
 }
 
 proc AddEntry {winId topNode node mustShow notInput args} {
-    global paramDims iconImages msgs
+    global iconImages msgs readMany
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -122,25 +122,28 @@ proc AddEntry {winId topNode node mustShow notInput args} {
         return
     }
     set nodeDims [GetCompProperty $topNode Dims $node]
+    if {$notInput>-1} {
+	set readMany($compName) [expr {$notInput==0}]
+    } ;# otherwise it has been set by the PEST interface GUI
 #ShowMessage debug info "Creating compname $compName" ok
     # bit of voodoo...get table relating numerical indices of node to enumerated
     # types (from model) and use to translate array bounds. Do this first because
     # there will be null entries in the table for vm model levels.
     set trans [GetTransTable $node]
-    if {!$notInput} {
+    if {$readMany($compName)} {
         set nodeDims [linsert $nodeDims 0 TIME]
         set trans [linsert $trans 0 {}]
     }
-    set paramDims($compName) $nodeDims
+	
+    set origDims [llength $nodeDims]
+    set nodeDims [RemoveVMLevels $nodeDims]
+    if {$notInput==-1 && [llength $nodeDims]<$origDims} {
+	return "This value has variable dimensions, and therefore cannot be optimized by parameter estimation."
+    }
     
     #ShowMessage debug info "$node $trans $nodeDims" ok
     set nodeDims [TransBounds $trans $nodeDims]
     
-    set origDims [llength $nodeDims]
-    set nodeDims [RemoveVMLevels $nodeDims $notInput]
-    if {$notInput==-1 && [llength $nodeDims]<$origDims} {
-	return "This value has variable dimensions, and therefore cannot be optimized by parameter estimation."
-    }
     set dimList [MakeDimsLegible $nodeDims \
 		     [GetCompProperty $topNode Type $node]]
     pack [set slot [frame [MakeSubFrames $topNode $winId.sliderframe $levels \
@@ -199,11 +202,12 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     }
 }
 
-proc RemoveVMLevels {nodeDims notInput} {
+proc RemoveVMLevels {nodeDims} {
     set nodeDims [purge $nodeDims MEMBERS]
-    if {!$notInput} {
-        set nodeDims [purge $nodeDims RECORDS]
-    }
+# Time series can now have different values for different records
+#    if {!$notInput} {
+#        set nodeDims [purge $nodeDims RECORDS]
+#    }
     while {[set hackOpen [lsearch $nodeDims START_VM]]!=-1} {
         set nodeDims [lreplace $nodeDims $hackOpen [lsearch $nodeDims END_VM]]
     }
@@ -324,7 +328,7 @@ proc AcceptAll {topNode compNames notInput complain} {
 
 proc AcceptData {topNode compName notInput complain} {
 #puts "AcceptData $topNode $compName $notInput $complain"
-    global paramDims runState msgs paramLocns whichParamsAffected
+    global runState msgs paramLocns whichParamsAffected readMany
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -377,48 +381,53 @@ proc AcceptData {topNode compName notInput complain} {
     if {$dataChanged} {
         #   set msgs(param_source_$compName) Unsaved
         # only if the actual entry field has been edited
+	set recordDims [lrange [GetCompProperty $topNode Dims $node] 0 end-1]
         set trans [GetTransTable $node]
-        
-        # Now replace each -1 in the dims with the id of the by-record
-        # submodel it represents
-        set recordDims [lrange $paramDims($compName) 0 end-1]
-        set afterTIME [string equal TIME [lindex $recordDims 0]]
-        set useCppArray [expr ([RunningInC $topNode]!=0)*($afterTIME+1)]
+        if {$readMany($compName)} {
+	    set recordDims [linsert $recordDims 0 TIME]
+	}
+#        # Now replace each -1 in the dims with the id of the by-record
+#        # submodel it represents...no longer needed
+
+        set useCppArray [expr {([RunningInC $topNode]!=0) * \
+				   ($readMany($compName)+1)}]
         # 0 = no arrays, 1 = array for current only, 2 = arrays for time points
-        #puts "node $compName has dims $recordDims"
-        while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
-            if {$afterTIME} {
-                set recordDims [lset recordDims $recordDepth MEMBERS]
-            } else {
-                #do_in_editor puts "recordDims $recordDims recordDepth $recordDepth"
-                foreach recordId [array names suppliedData] {
-                    #puts "recordId is $recordId"
-                    if {[string first $recordId $compName]==0 && \
-                                ![string equal $recordId $compName]} {
-                        set recordNode [IdFromTail $topNode $recordId $notInput]
-                        if {$useCppArray} {
-#puts "c_setparamarray a $recordNode"
-#                            c_setparamarray $recordNode
-# not needed with universal structure
-                        } else {
-			    set paramIdx [getinfo $recordNode 6]
-			    set paramLocns($paramIdx,nod) $recordNode
-			    set paramLocns($paramIdx,arr) \
-				[InputVarFor $topNode $recordNode]
-			}
-                        set outerDims [lrange [GetCompProperty $topNode Dims \
-                                $recordNode] 0 end-1]
-                        #puts "node $recordNode outer dims $outerDims"
-                        if {[string match $outerDims \
-                                    [lrange $recordDims $afterTIME $recordDepth]]} {
-                            set recordDims [lset recordDims $recordDepth \
-                                    [list RECORDS $recordNode]]
-                            break
-                        }
-                    }
-                }
-            }
-        }
+
+#        #puts "node $compName has dims $recordDims"
+#        while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
+##            if {$afterTIME} {
+##                set recordDims [lset recordDims $recordDepth MEMBERS]
+##            } else {
+#                #do_in_editor puts "recordDims $recordDims recordDepth $recordDepth"
+#	    foreach recordId [array names suppliedData] {
+#		#puts "recordId is $recordId"
+#		if {[string first $recordId $compName]==0 && \
+#			![string equal $recordId $compName]} {
+#		    set recordNode [IdFromTail $topNode $recordId $notInput]
+#		    if {$useCppArray} {
+##puts "c_setparamarray a $recordNode"
+##                            c_setparamarray $recordNode
+## not needed with universal structure
+#		    } else {
+#			set paramIdx [getinfo $recordNode 6]
+#			set paramLocns($paramIdx,nod) $recordNode
+#			set paramLocns($paramIdx,arr) \
+#			    [InputVarFor $topNode $recordNode]
+#		    }
+#		    set outerDims [lrange [GetCompProperty $topNode Dims \
+#					       $recordNode] 0 end-1]
+#		    #puts "node $recordNode outer dims $outerDims"
+#		    if {[string match $outerDims \
+#			     [lrange $recordDims $afterTIME $recordDepth]]} {
+## note afterTime will always be 0 here as RECORDS levels removed otherwise
+#			set recordDims [lset recordDims $recordDepth \
+#					    [list RECORDS $recordNode]]
+#			break
+#		    }
+#		}
+#	    }
+##            }
+#        }
         #puts "About to ListToArray $node {} $trans $recordDims $suppliedData($compName)"
         if {[string equal targetData $dataLocn]} {
 	    if {![llength $suppliedData($compName)]} {
@@ -487,16 +496,16 @@ proc rsearch {list tgt} {
 }
 
 proc ListToArray {topNode tgt subs trans dims list useCppArray} {
-    # ShowMessage debug info  "Go! tgt $tgt trans $trans dims $dims list $list" ok
+#ShowMessage debug info  "Go! tgt $tgt trans $trans dims $dims list $list cpp $useCppArray" ok
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
     # ... string match stops cleanly at end of list
     global comboTypes
     
-    set startIdx [expr {![string equal TIME [lindex $dims 0]]}]
+    set startIdx [string equal TIME [lindex $dims 0]]
     if {[string equal ,bytes [lindex $list 1]]} {
-	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1} {
-	    if {!$startIdx} {
+	if {$useCppArray} {
+	    if {$startIdx} {
 		c_settimepointall $tgt [lindex $list end]
 		c_setwraparoundtime $tgt [lindex $list end-2]
 		c_setfillmethod $tgt [lindex $list end-1]
@@ -517,14 +526,14 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 	    set newList [NumberElements \
 			     [DoByteArrayToList $fieldChar $fieldSize \
 				  [lrange $list 3 end-3] [lindex $list end]]]
-	    if {!$startIdx} {
+	    if {$startIdx} {
 		lappend newList [lindex $list end-2] restart \
 		    others [lindex $list end-1]
 	    }
 	    set list $newList
 	}
     } elseif {[string equal ,gdal [lindex $list 1]]} {
-	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1 && $startIdx} {
+	if {$useCppArray && !$startIdx} {
 	    DoNotPassTcl $topNode $tgt $dims $list
 	    return -1 ;# typical fixed parameter
 	} else {
@@ -534,6 +543,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 				  $startIdx] [lrange $list 6 end]]
 	}
     }
+# do not do this, ve no longer allow params in VM submodels...
     while {[set specialId [lsearch {START_VM MEMBERS} [lindex $dims 0]]]!=-1} {
         if {$specialId} {
             set dims [lrange $dims 1 end]
@@ -553,6 +563,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
                 FPError "Missing value" {}
             } 1 {
                 if {![string last ,now [string tolower $subs] 3]} {
+		    # setting current value for var param
                     set idAndSubs $tgt[string range $subs 4 end]
 		    set tgtVar [InputVarFor $topNode $tgt]
 		    if {[string match comboChoices $tgtVar]} {
@@ -562,6 +573,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
                             $list $thisTrans [expr $useCppArray/2]
                     return 1
 		} else {
+		    # setting value for fixed param or time point
                     EnumTypeToNumber paramData $tgt$subs \
 			$list $thisTrans $useCppArray
                     return -1 ;# should be 0 if a comp
@@ -648,14 +660,16 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 	    if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
                             [lrange $dims 1 end] $sub($arrayPt) $useCppArray} step]} {
                 PassFPError $step [list $arrayPt]
-            } elseif {$step<1} {
-                set redoStep 0
+            } else {
+		if {$step<1} {
+		    set redoStep 0
+		}
             }
+	    
         }
         return $redoStep
     }
-    if {[llength $nextDim]==2 && \
-                [string match RECORDS [lindex $nextDim 0]]} {
+    if {[string match RECORDS $nextDim]} {
         # by-record submodel; check up to biggest. OK hows this for branez...use
         # the number of elements, because if there is an element larger than the
         # number of elements, one the same or smaller will be missing!
@@ -664,14 +678,22 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
             FPError "Per-record submodel must have values for at least one member." {}
         }
         
-        #do_in_editor puts "Setting [lindex $nextDim 1]$subs to $last"
-        if {$useCppArray} {
-            set outers [lrange [split $subs ,] 1 end]
-#puts "c_setrecordlist $tgt $outers $last"
-            if {[catch {c_setrecordlist $tgt $outers $last} \
-                        err]} {
-                FPError $err {}
-            }
+	# Record counts do not need to be set in Tcl
+        switch $useCppArray {
+	    1 {
+		if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
+						      1 end] $last} err]} {
+		    FPError $err {}
+		} 
+	    } 2 {
+		set map [split $subs ,]
+		if {[catch {c_settimepointrecords $tgt [lrange $map 2 end] \
+				[lindex $map 1] $last} err]} {
+		    FPError $err {}
+		} 
+	    }
+	}
+		
 # Hopefully, with the universal data structure, once we have set the
 # record count for the outer submodel level, we will be able to access
 # its contents as if they were a fixed membership array, so this
@@ -683,12 +705,11 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 #                    c_setrecordlist [lindex $nested 1] $outers $last
 #                }
 #            }
-        }
 # So should this
 #        EnumTypeToNumber paramData [lindex $nextDim 1]$subs $last \
 #                {} $useCppArray
         # probably wouldn't have worked anyway for time series
-    } else {
+} else {
         set last $nextDim
     }
     set redoStep 1
@@ -746,7 +767,6 @@ proc PlaceInArray {where what varData inC} {
     switch $inC {
         1 {
             set map [split $where ,]
-#puts "c_setparamelement [lindex $map 0] [lrange $map 1 end] $what"
             if {[catch {c_setparamelement [lindex $map 0] \
                             [lrange $map 1 end] $what} urr]} {
                 FPError $urr {}
@@ -766,7 +786,7 @@ proc PlaceInArray {where what varData inC} {
 
 proc SetWrapTime {where when inC} {
     global paramData
-    if {$inC>1} {
+    if {$inC} {
 	c_setwraparoundtime $where $when
     } else {
 	set paramData(wrapAroundPoint,$where) $when
@@ -775,7 +795,7 @@ proc SetWrapTime {where when inC} {
 
 proc SetFillMethod {where which what inC} {
     global paramData
-    if {$inC>1} {
+    if {$inC} {
 	c_setfillmethod $where $which
     } else {
 	set paramData(fillMethod,$where) [string tolower $what]
@@ -938,7 +958,7 @@ namespace eval fileparams {
     }
     
     proc WriteSubmodelParams {outerData topNode metaFile pStr smPath indent} {
-	global paramState paramDims msgs
+	global paramState msgs readMany
 
 	puts $pStr $indent<variables>
 	upvar 1 $outerData outData
@@ -953,10 +973,12 @@ namespace eval fileparams {
 	    set newPopup  "Specified by $metaFile"
 	    # if parameter is per-record, only write CDATA if we already have it
 	    set haveBytes [string equal scenario [lindex $outData($compName) 0]]
-	    set recordLevel [lsearch $paramDims($compName) RECORDS]
+	    set nodeId [IdFromTail $topNode $compName 0]
+	    set nodeDims [lrange [GetCompProperty $topNode Dims $nodeId] \
+			      0 end-1]
+	    set recordLevel [lsearch $nodeDims RECORDS]
 	    if {[DataInScenario $compName] && \
 		    ($haveBytes || $recordLevel==-1)} {
-		set nodeId [IdFromTail $topNode $compName 0]
 		set type [GetCompProperty $topNode Type $nodeId]
 		puts -nonewline $pStr \
 		    "$indent<byte_array label=$subbedComp type=[Entitize $type]"
@@ -969,7 +991,7 @@ namespace eval fileparams {
 		puts $pStr ">"
 		set dimCount 0
 		if {$recordLevel==-1} {
-		    set dimList $paramDims($compName)
+		    set dimList $nodeDims ;# remove vm ones or bug
 		} else {
 		    set dimList [lrange $outData($compName) 3 end-3]
 		}
@@ -980,7 +1002,7 @@ namespace eval fileparams {
 		puts $pStr "  $indent<!\[CDATA\["
 		if {$haveBytes} { ;# do not bother c++, we already have it
 		    set raw [lindex $outData($compName) end]
-		} elseif {[lsearch $paramDims($compName) TIME]==0} {
+		} elseif {$readMany($compName)} {
 		    set raw [c_gettimepointall $nodeId]
 		} else {
 		    set raw [c_getparamall $nodeId]
@@ -1246,7 +1268,7 @@ proc LoadBase64CharData {encoded} {
 }
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
-    global paramDims paramState mimeSquirter simtmpdir whichParamsAffected msgs
+    global readMany paramState mimeSquirter simtmpdir whichParamsAffected msgs
     global SimileProject
     if {$notInput==-1} {
 	set dataLocn targetData
@@ -1370,7 +1392,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
             } else {
                 set trans [GetTransTable $node]
                 if {!$startLine || ($startLine==-1 && 
-				    $paramDims($restoredComp,readMany))} {
+				    $readMany($restoredComp))} {
 		    set trans [lreplace $trans 0 0 time \
 				   [linsert [lindex $trans 0] 0 timePt]]
 		    # allow special time points and values to be recognized
@@ -1539,16 +1561,14 @@ proc VarType {testVar types} {
 }
 
 proc GetFromTable {parent topNode compName startLine} {
-    global paramState paramDims table_entry msgs widgetNames whichParamsAffected
+    global paramState readMany table_entry msgs widgetNames whichParamsAffected
 
     if {$startLine==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
-	set notSeries [string is double [lindex $paramDims($compName) 0]]
     } else {
 	set dataLocn paramData
 	set widgetLocn widgetNames
-	set notSeries $startLine
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
@@ -1565,7 +1585,9 @@ proc GetFromTable {parent topNode compName startLine} {
     }
     set table_entry(bytes) [DataInScenario $compName]
     set newSource [equationDoTable [winfo toplevel $parent] $topNode $compName \
-		       [$outNames($compName).l2 cget -text] $notSeries]
+		       [$outNames($compName).l2 cget -text] \
+		       [expr {!$readMany($compName)}]]
+
 # If loading data for PEST there is no parent dialogue so do not keep grab
     if {$startLine==-1} {
 	grab release [winfo toplevel $parent]

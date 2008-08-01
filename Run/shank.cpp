@@ -113,12 +113,13 @@ unsigned long int last_exit = 0, last_update = 0, last_check = 0;
 unsigned long int flash=CLOCKS_PER_SEC/50; // 20ms
 unsigned long int took[]={0,0,0,0,0,0,0,0};
 long int topType;
-BOOLEAN resetting;
+int resetting;
 
 BOOLEAN check_gui(void* id, double model_time, int this_op) {
   unsigned long int this_update;
   long int while_running;
-  BOOLEAN result = FALSE, while_resetting;
+  BOOLEAN result = FALSE;
+  int while_resetting;
   
   // first record how much time the last op took
   this_update=clock();
@@ -275,7 +276,9 @@ class DllLossage {
   }
 };
 
-/* listable class for data to be loaded at a time point */
+/* listable class for data to be loaded at a time point This contains
+   data in a char*, rather than a nodeValue structure, because the
+   dimSpecs are the same for all the time points of a parameter. */
 
 class listTimePoint {
 public:
@@ -321,19 +324,6 @@ public:
   }
 };
   
-class recordSet {
-public:
-  //  int count;
-  char* space;
-
-  recordSet() {
-    space = NULL;
-  }
-
-  ~recordSet() {
-  }
-};
-
 void empty_node_data(nodeValues *nodeData) {
   // placeholder version, leaky with pointers
   delete nodeData->contents;
@@ -343,7 +333,7 @@ BOOLEAN is_base_type(int dim) {
   return dim==VALUELESS||dim==REAL||dim==INTEGER||dim==FLAG||dim<=ENUM_BASE;
 }
 
-int size_for_data_type(int dtype) {
+int size_for_data_type(int dtype) { // only works if is_base_type
   switch (dtype) {
   case REAL:
     return sizeof(double);
@@ -351,9 +341,57 @@ int size_for_data_type(int dtype) {
     return sizeof(BOOLEAN);
   case VALUELESS:
     return 0;
-  default: // submodel, INTEGER or enumerated type
+  default: // INTEGER or enumerated type
     return sizeof(int);
   }
+}
+
+int array_count(int* startDim, int* unit) {
+  /* sprintf(globMess, "doing array size, dim %d", *startDim);
+     showMess(globMess); */
+  if (*startDim>0)
+    return (*startDim*array_count(startDim + 1, unit));
+  else {
+    *unit = *startDim;
+    return 1;
+  }
+}
+
+// Creates space and initializes record counts to 0
+char* init_space(int dimList[]) {
+  int reps, count, unit;
+  sizeAndPtr* bloc;
+  
+  reps = array_count(dimList, &unit);
+  if (unit == OWNSIZED) {
+    bloc = new sizeAndPtr[reps];
+    for (count=0; count<reps; ++count)
+      bloc[count].size = 0;
+    return (char*)bloc;
+  } else  // no more per-record levels
+    return new char[reps*size_for_data_type(unit)];
+}
+
+void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
+  sizeAndPtr* newRecord;
+
+  // sprintf(globMess, "locate_elt array %lx off %d d0 %d d1 %d d2 %d indx %d", 
+  // 	    startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
+  // showMess(globMess);
+  if (*dimPtr==OWNSIZED) {
+    newRecord = (sizeAndPtr*)startPtr + off;
+    if  (*indxs) // more indices, use to get value from a record submodel
+      // bounds check, added in case getting variable params before setting
+      if (indxs[0]>newRecord->size)
+	return NULL;
+      else
+	return locate_elt(newRecord->ptr, (*indxs)-1, dimPtr+1, indxs+1);
+    else // no more indices, we are looking for recordSet struct
+      return newRecord;
+  } else if (is_base_type(*dimPtr))
+    return startPtr + off*size_for_data_type(*dimPtr);
+  else
+    return locate_elt(startPtr, *dimPtr*off+(*indxs)-1, dimPtr+1, indxs+1);
 }
 
 /* listable class for keeping track of arrays associated with parameters */
@@ -373,25 +411,9 @@ public:
   listParamArray* next;
 
   int size_for_type() {
-    if (nodeLine->compclass == SUBMODEL)
+    /*    if (nodeLine->compclass == SUBMODEL)
       return sizeof(int); // keeps count of per-record type
-    return size_for_data_type(nodeLine->datatype);
-  }
-
-  // Creates space and initializes record counts to 0
-  char* init_space(int dimList[]) {
-    int reps, count;
-    sizeAndPtr* bloc;
-
-    reps = array_count(dimList);
-    if (reps<0) {
-      reps = -reps;
-      bloc = new sizeAndPtr[reps];
-      for (count=0; count<reps; ++count)
-	bloc[count].size = 0;
-      return (char*)bloc;
-    } else  // no more per-record levels
-      return new char[reps*size_for_type()];
+    */ return size_for_data_type(nodeLine->datatype);
   }
 
   listParamArray(char* newNodeId) {
@@ -437,42 +459,13 @@ public:
     }
   }
 
-  int array_count(int* startDim) {
-    /* sprintf(globMess, "doing array size, dim %d", *startDim);
-    showMess(globMess); */
-    switch (*startDim) {
-    case OWNSIZED:
-      return -1; // -ve result means count is of records
-    default:
-      if (*startDim>0)
-	return (*startDim*array_count(startDim + 1));
-      else 
-	return 1;
-    }
-  }
-
-  char* generate_local_space(int size_code) {
-    char** ptrToNew;
-    int count;
-
-    if (size_code>0) {
-      ptrToNew = (char**)(new char[size_for_type()*size_code]);
-    } else {
-      ptrToNew = new char*[-size_code];
-      for (count=0; count<-size_code; ++count) {
-	ptrToNew[count] = NULL;
-      }
-    }
-    /* sprintf(globMess, "g_l_s created %lx size %d", ptrToNew, size_code);
-       showMess(globMess); */
-    return (char*)ptrToNew;
-  }	
-
   int space_used() {
-    return array_count(dataPtr.dimSpecs)*size_for_type();
+    int base;
+    // hope it evaluates left to right
+    return array_count(dataPtr.dimSpecs, &base)*size_for_data_type(base);
   }
-  
-  char* create_time_point(double time, void* newDataPtr) {
+
+  char* create_time_point(double time) {
     listTimePoint *lastTimePt, *thisTimePt, *nextTimePt;
     if (timePoints && timePoints->when<=time) {
       lastTimePt = timePoints->find_last_pt(time);
@@ -502,170 +495,17 @@ public:
       timePoints = thisTimePt;
     }
     thisTimePt->when = time;
-    return thisTimePt->create_space(newDataPtr, 
-				    array_count(dataPtr.dimSpecs)*size_for_type());
+    thisTimePt->dataPtr = init_space(dataPtr.dimSpecs);
   }
 
-  void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
-    sizeAndPtr* newRecord;
-
-    // sprintf(globMess, "locate_elt array %lx off %d d0 %d d1 %d d2 %d indx %d", 
-    // 	    startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
-    // showMess(globMess);
-    if (*dimPtr==OWNSIZED) {
-      newRecord = (sizeAndPtr*)startPtr + off;
-      if  (*indxs) { // more indices, use to get value from a record submodel
-	return locate_elt(newRecord->ptr, (*indxs)-1, dimPtr+1, indxs+1);
-      } else { // no more indices, we are looking for recordSet struct
-	return newRecord;
-      }
-    } else if (is_base_type(*dimPtr)) {
-      return startPtr + off*size_for_type();
-    } else {
-      return locate_elt(startPtr, *dimPtr*off+(*indxs)-1, dimPtr+1, indxs+1);
-    }
-  }
-    
-  /* indxs should be only those of models containing the per-record submodel
-     followed by a 0 */
-  int create_record_list(int* indxs, int records) {
-    sizeAndPtr* newRecord;
-    int* subDims;
-
-    //sprintf(globMess, "creating %d records at indices %d %d", records, indxs[0], indxs[1]);
-    //showMess(globMess);
-    newRecord = (sizeAndPtr*)locate_elt(dataPtr.contents, 0, dataPtr.dimSpecs, 
-				   indxs);
-    //sprintf(globMess, "elt loc offset is %d", (char*)newRecord-dataPtr.contents);
-    //showMess(globMess);
-    // before going any further, check we are actually at a record list level
-    subDims = dataPtr.dimSpecs;
-    while (*indxs) {
-      subDims += 1;
-      indxs += 1;
-    }
-    if (*subDims != OWNSIZED)
-      return 2; // we are not
-
-    if (newRecord->size) {
-      sprintf(globMess, "c_r_l freeing %lx", *newRecord);
-      showMess(globMess);
-      delete newRecord->ptr;
-    }
-    //substitute OWNSIZED to create right size block then put back
-    *subDims = newRecord->size = records;
-    //sprintf(globMess, "creating space with dims %d %d %d", subDims[0], subDims[1], subDims[2]);
-    //showMess(globMess);
-    newRecord->ptr = init_space(subDims);
-    *subDims = OWNSIZED;
-    return 0;
-  }
-
-  int insert_to_array(nodeValues useDataPtr, double val, int* indxs) {
-    void* insertionPt;
-    
-    insertionPt = locate_elt(useDataPtr.contents, 0, useDataPtr.dimSpecs, 
-			     indxs);
-    switch (nodeLine->datatype) {
-    case REAL:
-      *(double*)insertionPt = val;
-      break;
-    case FLAG:
-      *(BOOLEAN*)insertionPt = (BOOLEAN)val;
-      break;
-    default: // INTEGER or enumerated type
-      *(int*)insertionPt = (int)val;
-      break;
-    }
-    //sprintf(globMess, "inserted %lf to space at %d %d", val, indxs[0], indxs[1]);
-    //showMess(globMess);
-    return 0;
-  }
-
-  int insert_elt(double val, int* indxs) {
-    // Because Simile input tools may not supply all the dimensions of the 
-    // parameter array, this has to work out how many dimensions are supplied
-    // and fill all the elements for which these are the innermost indices.
-    int count, haveDims, needDims, makeDims, useDims[32], done = 0;
-    for (count=31; count>=0; count--) {
-      if (!indxs[count]) {
-	haveDims = count;
-      }
-      if (is_base_type(dataPtr.dimSpecs[count])) {
-	needDims = count;
-	haveDims = count; // avoid having too many
-      }
-    }
-    makeDims = needDims-haveDims;
-    //sprintf(globMess, "have %d need %d", haveDims,needDims);
-    //showMess(globMess);
-    for (count = 0; count<needDims; count++) {
-      if (count<makeDims) {
-	useDims[count] = 1;
-      } else {
-	useDims[count] = indxs[count-makeDims];
-      }
-    }
-
-    while (!done) {
-      insert_to_array(dataPtr, val, useDims);
-      for (count = 0; count<makeDims; count++) {
-	if (++useDims[count]<=dataPtr.dimSpecs[count]) break;
-	useDims[count] = 1;
-      }
-      done = count==makeDims;
-    }
-    return 0;
-  }
-
-  int insert_time_point_elt(double time, double val, int* indxs) {
+  char* time_point_exists (double time) {
     listTimePoint* timePt;
 
     if (timePoints) {
-      timePt = timePoints->find_last_pt(time);
-      if (timePt->when == time) {
-	//	return insert_to_array(timePt->dataPtr, val, indxs);
-      }
+      if ((timePt = timePoints->find_last_pt(time))->when==time)
+	return timePt->dataPtr;
     }
-    return 1;
-  }
-  
-  BOOLEAN time_point_exists (double time) {
-    if (timePoints) {
-      return (timePoints->find_last_pt(time)->when==time);
-    }
-    return FALSE;
-  }
-
-  void extract_elt(void* tgt, int* indxs) {
-    // do not do it if this is a variable parameter and we are initializing --
-    // array not yet set so let model keep default value...in fact, save it in
-    // the array for later
-    void* insertionPt;
-    
-    insertionPt = locate_elt(dataPtr.contents, 0, dataPtr.dimSpecs, indxs);
-    if (nodeLine->eval==INPUT && resetting && !(time_point_exists(0.0))) {
-      memcpy(insertionPt, tgt, size_for_type());
-    } else {
-      // sprintf(globMess, "Gonna copy %d from %ld to %ld", size_for_type(),
-      //   insertionPt, tgt);
-      // showMess(globMess);
-      memcpy(tgt, insertionPt, size_for_type());
-    }
-  }
-
-  void extract_record_count(void* tgt, int ic, int* indxs) {
-    sizeAndPtr* insertionPt;
-    int count, indxsWith0[32];
-
-    // need zero at appropriate point in indxs to stop at record pointer
-    for (count=0; count<ic; ++count) {
-      indxsWith0[count] = indxs[count];
-    }
-    indxsWith0[count] = 0;
-    insertionPt = (sizeAndPtr*)locate_elt(dataPtr.contents, 0, 
-					  dataPtr.dimSpecs, indxsWith0);
-    *(int*)tgt = insertionPt->size;
+    return NULL;
   }
 
   listTimePoint *roll_forward(listTimePoint *bound, int *newWraps) {
@@ -725,25 +565,71 @@ public:
     }
     if (loBound && loBound!=curTimePoint) {
       curTimePoint = loBound;
-      memcpy(dataPtr.contents, loBound->dataPtr, 
-	     size_for_type()*array_count(dataPtr.dimSpecs));
+      memcpy(dataPtr.contents, loBound->dataPtr, space_used());
     }
   }
 
   void load_interpolated(listTimePoint *loBound, listTimePoint *hiBound,
 			 double interFract) {
-    int off;
+    int off, base;
 
     if (nodeLine->datatype == REAL)
-      for (off=0; off<array_count(dataPtr.dimSpecs); ++off)
+      for (off=0; off<array_count(dataPtr.dimSpecs, &base); ++off)
 	*((double*)dataPtr.contents+off) = 
 	  *((double*)hiBound->dataPtr+off)*interFract
 	  + *((double*)loBound->dataPtr+off)*(1-interFract);
     else
-      for (off=0; off<array_count(dataPtr.dimSpecs); ++off)
+      for (off=0; off<array_count(dataPtr.dimSpecs, &base); ++off)
 	*((int*)dataPtr.contents+off) = (int)round(*((int*)hiBound->dataPtr+off)
 					  *interFract
 	  + *((int*)loBound->dataPtr+off)*(1-interFract));
+  }
+
+  /* These last three are actually called by the model code to get data */
+
+  void back_copy_vars(long int modelClass, long int modelInstance) {
+    nodeValues* fromModel;
+
+    if (spareModel==modelClass && nodeLine->eval == INPUT &&
+	!time_point_exists(0.0)) {
+      delete dataPtr.contents;
+      fromModel = get_raw_values(nodeId, modelInstance);
+      dataPtr.contents = fromModel->contents;
+      delete fromModel;
+    }
+  }
+
+  void extract_elt(void* tgt, int* indxs) {
+    // do not do it if this is a variable parameter and we are initializing --
+    // array not yet set so let model keep default value...in fact, save it in
+    // the array for later
+    void* insertionPt;
+    
+    insertionPt = locate_elt(dataPtr.contents, 0, dataPtr.dimSpecs, indxs);
+    if (!insertionPt) return; // record pointers not yet made
+    if (nodeLine->eval==INPUT && resetting<0 && !(time_point_exists(0.0))) {
+      // back copy now done in blocks afterwards to make record spaces
+      // memcpy(insertionPt, tgt, size_for_type());
+    } else {
+      // sprintf(globMess, "Gonna copy %d from %ld to %ld", size_for_type(),
+      //   insertionPt, tgt);
+      // showMess(globMess);
+      memcpy(tgt, insertionPt, size_for_type());
+    }
+  }
+
+  void extract_record_count(void* tgt, int ic, int* indxs) {
+    sizeAndPtr* insertionPt;
+    int count, indxsWith0[32];
+
+    // need zero at appropriate point in indxs to stop at record pointer
+    for (count=0; count<ic; ++count) {
+      indxsWith0[count] = indxs[count];
+    }
+    indxsWith0[count] = 0;
+    insertionPt = (sizeAndPtr*)locate_elt(dataPtr.contents, 0, 
+					  dataPtr.dimSpecs, indxsWith0);
+    *(int*)tgt = insertionPt->size;
   }
 };   // end of listParamArray class
 
@@ -843,35 +729,6 @@ showMess(globMess); */
 			    (void*)showMess,
 			    (void*)&c_graphdata,
 			    &phases, &nodedata, &adapt_maxerr);
-    /*	sprintf(erreur, "finding %d (%s) of %d connections, first has top %s and %d dests.", 
-	inArcCount, inArcList[0], connCount, connectData[0].TopArc, connectData[0].DestCount);
-  	throw DllLossage("initialize", fileName, strdup(erreur)); */
-
-
-    /*
-    channelData = NULL;
-    connLines = new int[inArcCount];
-    // Create a local reference for each component to the global table
-    for (count=0; inArcCount>count; count++) {
-      connLines[count] = -1;
-      for (count2=0; connCount>count2; count2++) {
-	if (!strcmp(inArcList[count], connectData[count2].TopArc)) {
-	  connLines[count] = count2;
-	} else {
-	  for (count3=0; connectData[count2].DestCount>count3; count3++) {
-	    if (!strcmp(inArcList[count], connectData[count2].Dests[count3])) {
-
-	      connLines[count] = count2;
-	    }
-	  }
-	}
-      }
-      if (connLines[count] == -1) {
-	sprintf(erreur, "Found no connection data for %s", inArcList[count]);
-	throw DllLossage("initialize", fileName, strdup(erreur));
-      }
-    }
-    */
   }
 
   ~Model() {
@@ -1288,44 +1145,7 @@ listParamArray* param_array_item(listParamArray* start, char* seekNodeId) {
   }
 }
 
-int member_param_item(listParamArray** start, void* modelId, int* parentPath) {
-  if (!*start)
-    return 0; // no children found
-  else if ((*start)->spareModel==(long int)modelId) { // in right model, is child?
-    int count = -1;
-    while (parentPath[++count])
-      if (((*start)->nodeLine)->path[count] != parentPath[count])
-	break; // found difference
-    if (!parentPath[count]) // got to end without difference, result!
-      return 2;
-  }
-  *start = (*start)->next;
-  return  member_param_item(start, modelId, parentPath); // keep looking
-}
-
-int param_item_from_id(listParamArray** start, Model* modelId,
-				   int paramId) {
-  if (!*start) {
-    // couldn't find id, try to find a member parameter
-    // first get its nodeline
-    int count;
-    node_data_line *nodeLine;
-    for (count=0; count<modelId->nodecount; ++count) {
-      nodeLine = modelId->nodedata + count;
-      if (nodeLine->graph==paramId) break;
-    }
-    *start = param_array_base;
-    return member_param_item(start, modelId, nodeLine->path);
-  } else if ((*start)->spareModel==(long int)modelId && 
-	     ((*start)->nodeLine)->graph==paramId) {
-    return 1;
-  } else {
-    *start = (*start)->next;
-    return param_item_from_id(start, modelId, paramId);
-  }
-}
- 
-void* use_array_for_params(char* nodeId, void* dataSpace) {
+void* use_array_for_params(char* nodeId) {
   listParamArray* arrSlot;
 
   /* sprintf(globMess, "use_array_for_params node %s",
@@ -1381,13 +1201,14 @@ int* get_fill_ptr(char* nodeId) {
   return &arrSlot->fillMethod;
 }
 
-void* create_time_point(char* nodeId, double time, void* dataSpace) {
+int create_time_point(char* nodeId, double time) {
   listParamArray* arrSlot;
 
   if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    return NULL; // no data structure for this elt
+    return 1; // no data structure for this elt
   }
-  return arrSlot->create_time_point(time, dataSpace);
+  arrSlot->create_time_point(time);
+  return 0;
 }
 
 void* find_next_timept_space(char* nodeId, double* last_time) {
@@ -1411,52 +1232,161 @@ void* find_next_timept_space(char* nodeId, double* last_time) {
     return NULL;
 }
 
-int set_record_list(char* nodeId, int* indxs, int length) {
-  listParamArray* arrLocn;
+char* get_param_ptr_and_dims(char* nodeId, int** dimSlot) {
+  listParamArray* arrSlot;
+  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
+    return NULL; // no data structure for this elt
+  }
 
-  /* sprintf(globMess, "set_record_list node %s indx0 %d length %d",
-	  nodeId, *indxs, length);
-	  showMess(globMess); */
-  arrLocn = param_array_item(param_array_base, nodeId);
-  if (!arrLocn) {
-    return(1);
-  } else {
-    return(arrLocn->create_record_list(indxs, length));
+  *dimSlot = arrSlot->dataPtr.dimSpecs;
+  return arrSlot->dataPtr.contents;
+}
+
+int get_timepoint_ptr_and_dims(char* nodeId, double time, 
+				 char** ptDataSlot, int** dimSlot) {
+  listParamArray* arrSlot;
+  char* ptData;
+
+  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
+    return 2; // no data structure for this elt
+  }
+  ptData = arrSlot->time_point_exists(time);
+  if (!ptData) return 1; // no matching time point
+
+  *ptDataSlot = ptData;
+  *dimSlot = arrSlot->dataPtr.dimSpecs;
+  return 0; // success
+}
+
+void free_bloc_records(char* ptData, int* ptDims) {
+  // placeholder
+}
+
+int set_bloc_record_count(char* ptData, int* ptDims, int* indxs, int length) {
+  sizeAndPtr* newRecord;
+  int* subDims;
+
+  newRecord = (sizeAndPtr*)locate_elt(ptData, 0, ptDims, indxs);
+    // before going any further, check we are actually at a record list level
+  subDims = ptDims;
+  while (*indxs) {
+    subDims += 1;
+    indxs += 1;
+  }
+  if (*subDims != OWNSIZED) return 1; // we are not
+  
+  if (newRecord->size) {
+    delete newRecord->ptr;
+  }
+  //substitute OWNSIZED to create right size block then put back
+  *subDims = newRecord->size = length;
+  newRecord->ptr = init_space(subDims);
+  *subDims = OWNSIZED;
+  return 0;
+}
+
+int insert_to_array(char* contents, double val, int* dimSpecs, int* indxs,
+		    int base) {
+  void* insertionPt;
+  
+  insertionPt = locate_elt(contents, 0, dimSpecs, indxs);
+  switch (base) {
+  case REAL:
+    *(double*)insertionPt = val;
+    break;
+  case FLAG:
+    *(BOOLEAN*)insertionPt = (BOOLEAN)val;
+    break;
+  default: // INTEGER or enumerated type
+    *(int*)insertionPt = (int)val;
+    break;
+  }
+  //sprintf(globMess, "inserted %lf to space at %d %d", val, indxs[0], indxs[1]);
+  //showMess(globMess);
+  return 0;
+}
+
+void set_bloc_element(char* ptData, int* ptDims, int* indxs, double value) {
+  // Because Simile input tools may not supply all the dimensions of the 
+  // parameter array, this has to work out how many dimensions are supplied
+  // and fill all the elements for which these are the innermost indices.
+  int count, haveDims, needDims, makeDims, useDims[32], done = 0;
+  for (count=31; count>=0; count--) {
+    if (!indxs[count]) {
+      haveDims = count;
+    }
+    if (is_base_type(ptDims[count])) {
+      needDims = count;
+      haveDims = count; // avoid having too many
+    }
+  }
+  makeDims = needDims-haveDims;
+  //sprintf(globMess, "have %d need %d", haveDims,needDims);
+  //showMess(globMess);
+  for (count = 0; count<needDims; count++) {
+    if (count<makeDims) {
+      useDims[count] = 1;
+    } else {
+      useDims[count] = indxs[count-makeDims];
+    }
+  }
+  // next bit iterates over all combinations of outer dimensions
+  while (!done) {
+    insert_to_array(ptData, value, ptDims, useDims, ptDims[needDims]);
+    for (count = 0; count<makeDims; count++) {
+      if (++useDims[count]<=ptDims[count]) break;
+      useDims[count] = 1;
+    }
+    done = count==makeDims;
   }
 }
 
-int set_param_array_elt(char* nodeId, double val, int* indxs) {
-  listParamArray* arrLocn;
-
-  //sprintf(globMess, "set_param_array_elt node %s indx0 %d val %lf", nodeId, *indxs, val);
-  //showMess(globMess);
-  arrLocn = param_array_item(param_array_base, nodeId);
-  if (!arrLocn) {
-    return(1);
-  } else {
-    return(arrLocn->insert_elt(val, indxs));
+int member_param_item(listParamArray** start, void* modelId, int* parentPath) {
+  if (!*start)
+    return 0; // no children found
+  else if ((*start)->spareModel==(long int)modelId && // in right model
+	   (*start)->nodeLine->eval == TABLE) { // and fixed, is child?
+    int count = -1;
+    while (parentPath[++count])
+      if (((*start)->nodeLine)->path[count] != parentPath[count])
+	break; // found difference
+    if (!parentPath[count]) // got to end without difference, result!
+      return 2;
   }
-}  
+  *start = (*start)->next;
+  return  member_param_item(start, modelId, parentPath); // keep looking
+}
 
-int set_time_point_elt(char* nodeId, double time, double val, int* indxs) {
-  listParamArray* arrLocn;
-  arrLocn = param_array_item(param_array_base, nodeId);
-  if (!arrLocn) {
-    return(2);
+int param_item_from_id(listParamArray** start, Model* modelId,
+				   int paramId) {
+  if (!*start) {
+    // couldn't find id, try to find a member parameter
+    // first get its nodeline
+    int count;
+    node_data_line *nodeLine;
+    for (count=0; count<modelId->nodecount; ++count) {
+      nodeLine = modelId->nodedata + count;
+      if (nodeLine->graph==paramId) break;
+    }
+    *start = param_array_base;
+    return member_param_item(start, modelId, nodeLine->path);
+  } else if ((*start)->spareModel==(long int)modelId && 
+	     ((*start)->nodeLine)->graph==paramId) {
+    return 1;
   } else {
-    return(arrLocn->insert_time_point_elt(time, val, indxs));
+    *start = (*start)->next;
+    return param_item_from_id(start, modelId, paramId);
   }
-}  
-
+}
+ 
 void get_value_pointer(void* modelId, void* modelSlot, int paramId,
 		       int ic, int* indxs) {
   listParamArray* paramArrayItem;
 
+  //sprintf(globMess, "get_value_pointer for %ld node %d count %d indx0 %d indx1 %d", modelSlot, paramId, ic, indxs[0], indxs[0]);
+  //showMess(globMess);
   paramArrayItem = param_array_base;
   switch (param_item_from_id(&paramArrayItem, (Model*)modelId, paramId)) {
-  //  sprintf(globMess, "get_value_pointer for %ld node %s indx0 %d item %ld",
-  //	  modelSlot, nodeId, *indxs, paramArrayItem);
-  //  showMess(globMess);
   case 1:
     paramArrayItem->extract_elt(modelSlot, indxs);
     break;
@@ -1466,8 +1396,8 @@ void get_value_pointer(void* modelId, void* modelSlot, int paramId,
   default:
     get_client_value_pointer(modelId, modelSlot, paramId, ic, indxs);
   }
-  //  sprintf(globMess, "Think we got %lf", *(double*)modelSlot);
-  //  showMess(globMess);
+  //sprintf(globMess, "Think we got %d (%lf)", *(int*)modelSlot, *(double*)modelSlot);
+  //showMess(globMess);
 
 }
 
@@ -1679,65 +1609,7 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
   return bottomLine;
 }
 
-void* fetch_instance(char* nodeId) {
-  return(nodeModelList->nodeModel(nodeId)->create());
-}
-
-long int fetch_top_instance(long int modelType, char* spare) {
-/*   int count, count2;
-   int dims[32], path[32];
-   int* tree;
-   connectRecord* currConnect;
-   channelRecord* currChannel;
-   long int mSpare;
-   enum_type_data* spareTypes[32];
-*/
-   /* this section sets up the connection database -- done here because all
-
-      model types must be loaded first */
-
-   /*   ((Model*)modelType)->channelData = new channelRecord[connCount];
-   for (count=0; connCount>count; count++) {
-     currConnect = connectData + count;
-     currChannel = ((Model*)modelType)->channelData + count;
-
-     //     currConnect->TopModel = nodeModelList->nodeModel(currConnect->TopNode);
-     if (searchinfo(currConnect->TopNode, &mSpare, spare, 
-		    dims, path, spareTypes)) {
-       tree = new int[32];
-       if (searchinfo(currConnect->SourceNode, &mSpare, spare, 
-		      dims, tree, spareTypes)) {
-	 count2=0;
-	 while (path[count2]) {
-	   ++count2;
-	 }
-	 // Botch to cope with the fact that we start from the
-	 // submodel instance not its structure in the parent when
-	 // importing a value from a separate submodel
-	 if (tree[count2] == SEPARATE) {
-	   count2 += 3;
-	 }
-	 if (tree[count2] == -1) {
-	   count2++;
-	 }
-
-	 currChannel->UpTree = &(tree[count2]);
-
-       } else {
-	 sprintf(spare, "Found no path for source node %s",
-		 currConnect->SourceNode);
-	 return 0;
-       }
-
-     } else {
-       sprintf(spare, "Found no path for top node %s",
-		 currConnect->TopNode);
-       return 0;
-     }
-     // now hopefully we won't be using the reference strings anymore, so...
-   }     
-   delete connectData;
-   */
+long int fetch_top_instance(long int modelType) {
    return (long int)((Model*)modelType)->create();
 }
 
@@ -2023,87 +1895,35 @@ to drive the model...
 */
 
 int reset(long int modelType, long int modelHandle, int top_phase) {
+  int result;
+
   topType = modelType;
-  resetting=(top_phase==-2);
-  return ((Model*)topType)->resetmodel((void*)modelHandle, top_phase);
+  resetting=top_phase;
+  result = ((Model*)topType)->resetmodel((void*)modelHandle, top_phase);
+
+  if (!result && top_phase<0) {
+    listParamArray* paramArrayItem;
+
+    paramArrayItem = param_array_base;
+    while (paramArrayItem) {
+      paramArrayItem->back_copy_vars(modelType, modelHandle);
+      paramArrayItem = paramArrayItem->next;
+    }
+  }
+  return result;
 }
 
 int execute(long int modelType, long int modelHandle, int how_int,
 	 double starttime, double* endtime, double errlim) {
+  int result;
+
   topType = modelType;
-  resetting=FALSE;
+  resetting=0;
   return ((Model*)topType)->executemodel((void*)modelHandle, 
-					how_int, starttime, endtime, errlim);
-}
-/*
-void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
-  level = get_ptr((long int)type, (long int)level, id_meta, dims);
-  //  sprintf(globMess, "got ptr %ld", level);
-  //  showMess(globMess);
-  if (*(*id_meta)++ == SEPARATE) {
-    type = (Model*)*(*id_meta)++;
-    return search_ptr(type, *(void**)level, id_meta, dims);
-  } else {
-    return level;
-  }
+					 how_int, starttime, endtime, errlim);
 }
 
-void* get_remote_value(void* typeRef, void* topInstRef, int level,
-			    int arcIndx, int* subList) {
-  channelRecord* currentData;
-  int* tree;
-  int recordNo;
-  void* useInstRef;
-
-  recordNo = ((Model*)typeRef)->connLines[arcIndx];
-  currentData = ((Model*)topType)->channelData + recordNo;
-  tree = currentData->UpTree;
-
-  while (level-->0) {
-    while (*tree++ != -1) {}
-  }
-  if (topInstRef) {
-    useInstRef = topInstRef;
-  } else {
-    useInstRef = currentData->SearchBase;
-  }
-  //  sprintf(globMess, "get_remote: type %ld base %ld tree %d,%d,%d,%d,%d,%d",
-  //	  typeRef, currentData->SearchBase, 
-  //	  tree[0], tree[1], tree[2], tree[3], tree[4], tree[5]);
-  //  showMess(globMess);
-  return(search_ptr((Model*)typeRef, useInstRef, &tree, &subList));
-}
-
-void* advance_ptr(void* typeRef, void* topInstRef) {
-  int next_handle[] = {1,0}, *tree = next_handle;
-  return *(void**)get_ptr((long int)typeRef, (long int)topInstRef, &tree, 
-			  NULL);
-}
-
-void search_from(void* typeRef, int nodeIndx, void* instPtr) {
-  int recordNo;
-  recordNo = ((Model*)typeRef)->connLines[nodeIndx];
-  ((Model*)topType)->channelData[recordNo].SearchBase = instPtr;
-}
-
-void update_submodel(char* nodeId, void* instanceId, int phase) {
-  update((long int)nodeModelList->nodeModel(nodeId), (long int)instanceId, 
-	 phase);
-}
-
-void advance_submodel(char* nodeId, void* instanceId, int phase) {
-  advance((long int)nodeModelList->nodeModel(nodeId), (long int)instanceId, 
-	  phase);
-}
-
-int eval_submodel(char* nodeId, void* instanceId, int phase, BOOLEAN exo) {
-  //  sprintf(globMess, "Entering submodel ph.%d ex.%d", phase, exo);
-  //  showMess(globMess);
-  return eval((long int)nodeModelList->nodeModel(nodeId), (long int)instanceId,
-	      phase, exo);
-}
-
-procedure that is called by shim when it is loaded to supply pointers
+/* procedure that is called by shim when it is loaded to supply pointers
    to its callback procedures */
 
 void proc_pointers_for_shank(get_value_pointer_type* get_client_value_pointer,

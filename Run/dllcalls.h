@@ -57,7 +57,7 @@
 #define USE_CLOSEST     1
 #define INTERPOLATE     2
 
-#define SIMILE_VERSION	"5.2"
+#define SIMILE_VERSION	"5.3"
 
 #ifdef WIN32
     #ifdef SHARELIB
@@ -214,16 +214,23 @@ typedef void showMess_type(char*);
 
 /* Defined in the shank, used by the shim */
 EXTDEC char* load_model(char*, char*, long int*);
-EXTDEC void* use_array_for_params(char*, void*);
+EXTDEC void* use_array_for_params(char*);
 EXTDEC int param_array_size(char*);
 EXTDEC int clear_time_point_elts(char*);
 EXTDEC double* get_wrap_ptr(char*);
 EXTDEC int* get_fill_ptr(char*);
-EXTDEC void* create_time_point(char*, double, void*);
+EXTDEC int create_time_point(char*, double);
 EXTDEC void* find_next_timept_space(char*, double*);
-EXTDEC int set_record_list(char*, int*, int);
-EXTDEC int set_param_array_elt(char*, double, int*);
-EXTDEC int set_time_point_elt(char*, double, double, int*);
+//EXTDEC int set_record_list(char*, int*, int);
+//EXTDEC int set_tp_records(char*, int*, double, int);
+//EXTDEC int set_param_array_elt(char*, double, int*);
+//EXTDEC int set_time_point_elt(char*, double, double, int*);
+EXTDEC char* get_param_ptr_and_dims(char*, int**);
+EXTDEC int get_timepoint_ptr_and_dims(char*, double, char**, int**);
+EXTDEC void free_bloc_records(char*, int*);
+EXTDEC int set_bloc_record_count(char*, int*, int*, int);
+EXTDEC void set_bloc_element(char*, int*, int*, double);
+
 EXTDEC get_value_pointer_type get_value_pointer;
 EXTDEC int get_node_count(long int);
 EXTDEC node_data_line* get_data_line(long int, int);
@@ -234,7 +241,7 @@ EXTDEC double rand_fract();
 EXTDEC graph_data_type** get_graph_base(long int);
 EXTDEC node_data_line* searchinfo(char*, long int*, char*, 
 				  int*, int*, enum_type_data**);
-EXTDEC long int fetch_top_instance(long int, char*);
+EXTDEC long int fetch_top_instance(long int);
 
 EXTDEC int reset(long int, long int, int);
 EXTDEC int execute(long int, long int, int, double, double*, double);

@@ -1418,7 +1418,7 @@ proc DisplayAll { winId } {
 
 proc DisplayArea {winId} {
     global window_info looks
-    if {[scan [$winId bbox selected] "%d %d %d %d" bl bt br bb] < 4} {
+    if {[scan [$winId bbox tocopy] "%d %d %d %d" bl bt br bb] < 4} {
         return
     }
     set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]

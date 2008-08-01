@@ -321,7 +321,7 @@ namespace eval $keyValue {
     }
     
     proc Restore {winId} {
-        global paramDims
+        global readMany
         variable inGrpData
         variable outGrpData
         variable useNodes
@@ -372,7 +372,7 @@ namespace eval $keyValue {
                             weight {
 				set outGrpData($node,weight) $val
 			    } sampled {
-                                set paramDims($title,readMany) $val
+                                set readMany($title) $val
                             }
                         }
                     }
@@ -680,9 +680,9 @@ namespace eval $keyValue {
             AddEntry $outId $myNode $node 1 -1
 	    lappend useNodes($winId,drivers) $title
             
-            pack [checkbutton $f.end -variable paramDims($title,readMany) \
+            pack [checkbutton $f.end -variable ::readMany($title) \
                     -command [namespace code \
-                    [list AbleTimeSampling $node $title $f]]] \
+                    [list AbleTimeSampling $myNode $node $title $f]]] \
                     -side left
             BindPopup $f.end "Set values at time points"
 # do command now in case it was selected last time
@@ -707,17 +707,16 @@ namespace eval $keyValue {
         $f.int config -state $st
     }
     
-    proc AbleTimeSampling {node title f} {
-        global paramDims
+    proc AbleTimeSampling {topNode node title f} {
+        global readMany
         
+	set nodeDims [GetCompProperty $topNode Dims $node]
         set trans [GetTransTable $node]
-        if {$paramDims($title,readMany)} {
-            set paramDims($title) [linsert $paramDims($title) 0 TIME]
+        if {$readMany($title)} {
+            set $nodeDims [linsert $nodeDims 0 TIME]
             set trans [linsert $trans 0 {}]
-        } elseif {[string equal TIME [lindex $paramDims($title) 0]]} {
-            set paramDims($title) [lrange $paramDims($title) 1 end]
         }
-        set nodeDims [TransBounds $trans $paramDims($title)]
+        set nodeDims [TransBounds $trans $nodeDims]
         set dimList [MakeDimsLegible $nodeDims REAL]
         $f.l2 config -text ($dimList)
         ColourCaptions $f red
@@ -859,7 +858,7 @@ namespace eval $keyValue {
         # a .spf file is MIME-encoded and contains references to other files,
         # but neither of these need be done here.
         
-        global simtmpdir initialEstimate minForOpt maxForOpt paramDims
+        global simtmpdir initialEstimate minForOpt maxForOpt readMany
         global tcl_platform sender paramData myNode execExtn
         variable useNodes
         variable clevers
@@ -893,7 +892,7 @@ namespace eval $keyValue {
             set outId $useNodes($winId,output)
             set f [MakeSubFrames {} $outId.sliderframe \
                     $levels [namespace current] 0]
-            if {$paramDims($eTitle,readMany)} {
+            if {$readMany($eTitle)} {
                 foreach {time defSet} $targetData($eTitle) {
                     lappend spitLists($time) $node=$defSet
                 }
@@ -1539,7 +1538,7 @@ $numOutputs"
 	foreach eTitle $useNodes($winId,drivers) {
             set node [GetIdFromCaptionPath $eTitle]
             lappend state [list output $eTitle weight 1 \
-                    sampled $::paramDims($eTitle,readMany)]
+                    sampled $::readMany($eTitle)]
         }
         lappend state [list outDest $useNodes($winId,scrogging)]
         set line clevers

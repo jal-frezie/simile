@@ -305,7 +305,8 @@ namespace eval slide139 {
             if {[string equal START_VM $latestDim]} {
                 set outerDims [lsearch -start $outerDims $nodeDims END_VM]
             }
-            if {[string is integer $latestDim] && $latestDim>0} {
+            if {[string is integer $latestDim] && $latestDim>0 || \
+		    [string equal RECORDS $latestDim]} {
                 #		if {[info exists useDim]} {
                 # Cannot display sliders, too many dimensions
                 # even if too many dims, innermost array is copied over others
