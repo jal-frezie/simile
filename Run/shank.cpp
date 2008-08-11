@@ -460,12 +460,9 @@ public:
   }
 
   int space_used() {
-    int count, base;
-    count = array_count(dataPtr.dimSpecs, &base);
-    if (base == OWNSIZED)
-      return count*sizeof(sizeAndPtr);
-    else
-      return count*size_for_data_type(base);
+    int base;
+    // hope it evaluates left to right
+    return array_count(dataPtr.dimSpecs, &base)*size_for_data_type(base);
   }
 
   char* create_time_point(double time) {
@@ -568,7 +565,9 @@ public:
     }
     if (loBound && loBound!=curTimePoint) {
       curTimePoint = loBound;
-      memcpy(dataPtr.contents, loBound->dataPtr, space_used());
+      // temporary botch; need to free old data and duplicate for compatibility
+      // with NOW and interpolation
+      dataPtr.contents = loBound->dataPtr;
     }
   }
 

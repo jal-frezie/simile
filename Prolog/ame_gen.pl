@@ -365,7 +365,7 @@ make_button_strings([B1 | B], [S1 | S]) :-
 /* the following functions can be included in AME expressions but are not
 recognized by Prolog unless we tell it about them...
 */
-:- op(300, yfx, ['**', '^']).
+:- op(300, xfy, ['**', '^']).
 
 /* :- op(500, fx, ['!']).
 Works but buggers up GNU prolog (do after loading?) */
