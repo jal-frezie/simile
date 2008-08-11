@@ -460,9 +460,12 @@ public:
   }
 
   int space_used() {
-    int base;
-    // hope it evaluates left to right
-    return array_count(dataPtr.dimSpecs, &base)*size_for_data_type(base);
+    int count, base;
+    count = array_count(dataPtr.dimSpecs, &base);
+    if (base == OWNSIZED)
+      return count*sizeof(sizeAndPtr);
+    else
+      return count*size_for_data_type(base);
   }
 
   char* create_time_point(double time) {
