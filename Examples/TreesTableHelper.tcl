@@ -31,8 +31,8 @@ runControl SetValue "/r" 15
 runControl Show
 
 # create a Table to to save a CSV file of variable values
-# similescript::TableHelper <object/command name> <model window to get values from> <window title (not very useful usually)>
-similescript::TableHelper th modelWin Table
+# similescript::TableHelper <object/command name> <execution window to get values from> <window title (not very useful usually)>
+similescript::TableHelper th runControl Table
 
 # Make the table visible for this demonstration
 th Show
