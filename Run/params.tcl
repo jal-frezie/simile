@@ -393,41 +393,42 @@ proc AcceptData {topNode compName notInput complain} {
 				   ($readMany($compName)+1)}]
         # 0 = no arrays, 1 = array for current only, 2 = arrays for time points
 
-#        #puts "node $compName has dims $recordDims"
-#        while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
-##            if {$afterTIME} {
-##                set recordDims [lset recordDims $recordDepth MEMBERS]
-##            } else {
-#                #do_in_editor puts "recordDims $recordDims recordDepth $recordDepth"
-#	    foreach recordId [array names suppliedData] {
-#		#puts "recordId is $recordId"
-#		if {[string first $recordId $compName]==0 && \
-#			![string equal $recordId $compName]} {
-#		    set recordNode [IdFromTail $topNode $recordId $notInput]
-#		    if {$useCppArray} {
-##puts "c_setparamarray a $recordNode"
-##                            c_setparamarray $recordNode
-## not needed with universal structure
-#		    } else {
-#			set paramIdx [getinfo $recordNode 6]
-#			set paramLocns($paramIdx,nod) $recordNode
-#			set paramLocns($paramIdx,arr) \
-#			    [InputVarFor $topNode $recordNode]
-#		    }
+        #puts "node $compName has dims $recordDims"
+        while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
+#            if {$afterTIME} {
+#                set recordDims [lset recordDims $recordDepth MEMBERS]
+#            } else {
+                #do_in_editor puts "recordDims $recordDims recordDepth $recordDepth"
+	    foreach recordId [array names suppliedData] {
+		#puts "recordId is $recordId"
+		if {[string first $recordId $compName]==0 && \
+			![string equal $recordId $compName]} {
+		    set recordNode [IdFromTail $topNode $recordId $notInput]
+		    if {$useCppArray} {
+#puts "c_setparamarray a $recordNode"
+#                            c_setparamarray $recordNode
+# not needed with universal structure, but might help -- later
+		    } else {
+			set paramIdx [getinfo $recordNode 6]
+			set paramLocns($paramIdx,nod) $recordNode
+			set paramLocns($paramIdx,arr) \
+			    [InputVarFor $topNode $recordNode]
+		    }
+# Not sure how this condition would ever fail...
 #		    set outerDims [lrange [GetCompProperty $topNode Dims \
 #					       $recordNode] 0 end-1]
 #		    #puts "node $recordNode outer dims $outerDims"
 #		    if {[string match $outerDims \
 #			     [lrange $recordDims $afterTIME $recordDepth]]} {
-## note afterTime will always be 0 here as RECORDS levels removed otherwise
-#			set recordDims [lset recordDims $recordDepth \
-#					    [list RECORDS $recordNode]]
-#			break
+## note afterTime will always be 0 here as RECORDS levels removed otherwise NOT
+			set recordDims [lset recordDims $recordDepth \
+					    [list RECORDS $recordNode]]
+			break
 #		    }
-#		}
-#	    }
-##            }
-#        }
+		}
+	    }
+#            }
+        }
         #puts "About to ListToArray $node {} $trans $recordDims $suppliedData($compName)"
         if {[string equal targetData $dataLocn]} {
 	    if {![llength $suppliedData($compName)]} {
@@ -669,7 +670,8 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         }
         return $redoStep
     }
-    if {[string match RECORDS $nextDim]} {
+    if {[llength $nextDim]==2 && \
+                [string match RECORDS [lindex $nextDim 0]]} {
         # by-record submodel; check up to biggest. OK hows this for branez...use
         # the number of elements, because if there is an element larger than the
         # number of elements, one the same or smaller will be missing!
@@ -680,7 +682,11 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         
 	# Record counts do not need to be set in Tcl
         switch $useCppArray {
-	    1 {
+	    0 { ;# use old system for Tcl
+		set recordNode [lindex $nextDim 1]
+		EnumTypeToNumber [InputVarFor $topNode $recordNode] \
+		    $recordNode$subs $last {} $useCppArray
+	    } 1 {
 		if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
 						      1 end] $last} err]} {
 		    FPError $err {}

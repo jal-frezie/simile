@@ -1925,6 +1925,7 @@ int rdBound(long int old, int idx) {
 void* rdLocateElement(long int old, int* indices) {
   return ((regularData*)old)->locate_element(indices);
 }
+
 /*
 void update(long int modelType, long int modelHandle, int phase) {
   ((Model*)modelType)->updatemodel((void*)modelHandle, phase);
