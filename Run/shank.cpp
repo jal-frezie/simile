@@ -293,24 +293,9 @@ public:
     last = next = NULL;
   }      
 
+  // delete contents when deleting parent class cos it has access to dims
   ~listTimePoint() {
-    if (dataPtr && myArraySpace) delete(dataPtr);
-    if (next) delete(next);
   }
-
-  char* create_space(void* newDataPtr, int sizeIfNeeded) {
-    if (newDataPtr) {
-      if (myArraySpace) {
-	delete dataPtr;
-      }
-      myArraySpace = FALSE;
-      dataPtr = (char*)newDataPtr;
-    } else if (!myArraySpace) {
-      dataPtr = new char[sizeIfNeeded];
-      myArraySpace = TRUE;
-    }
-    return dataPtr;
-  }  
 
   listTimePoint* find_last_pt(double time) {
     if (next) {
@@ -324,11 +309,6 @@ public:
   }
 };
   
-void empty_node_data(nodeValues *nodeData) {
-  // placeholder version, leaky with pointers
-  delete nodeData->contents;
-}
-
 BOOLEAN is_base_type(int dim) {
   return dim==VALUELESS||dim==REAL||dim==INTEGER||dim==FLAG||dim<=ENUM_BASE;
 }
@@ -346,37 +326,113 @@ int size_for_data_type(int dtype) { // only works if is_base_type
   }
 }
 
-int array_count(int* startDim, int* unit) {
+/* This takes a pointer into a dimension list, and returns the number
+   of items rrepresented by that list, setting its second arg to point
+   to the position in the dim list that specifies one data item in the
+   bloc. */
+
+int array_count(int* startDim, int** tgtDim) {
   /* sprintf(globMess, "doing array size, dim %d", *startDim);
      showMess(globMess); */
   if (*startDim>0)
-    return (*startDim*array_count(startDim + 1, unit));
+    return (*startDim*array_count(startDim + 1, tgtDim));
   else {
-    *unit = *startDim;
+    *tgtDim = startDim;
     return 1;
   }
 }
 
 // Creates space and initializes record counts to 0
 char* init_space(int dimList[]) {
-  int reps, count, unit;
+  int reps, count, *unit;
   sizeAndPtr* bloc;
   
   reps = array_count(dimList, &unit);
-  if (unit == OWNSIZED) {
+  if (*unit == OWNSIZED) {
     bloc = new sizeAndPtr[reps];
     for (count=0; count<reps; ++count)
       bloc[count].size = 0;
     return (char*)bloc;
   } else  // no more per-record levels
-    return new char[reps*size_for_data_type(unit)];
+    return new char[reps*size_for_data_type(*unit)];
+}
+
+// This and next could be bundled into a class for the bloc data
+void free_bloc_data(char* ptData, int* ptDims) {
+  int reps, count, *subDims;
+  char* subData;
+  
+  reps = array_count(ptDims, &subDims);
+  if (!is_base_type(*subDims)) { // assume its OWNSIZED
+    for (count=0; count<reps; ++count) {
+      //substitute OWNSIZED to create right size block then put back
+      *subDims = ((sizeAndPtr*)ptData)[count].size;
+      free_bloc_data(((sizeAndPtr*)ptData)[count].ptr, subDims);
+    }
+    *subDims = OWNSIZED;
+  } else if (*subDims) // do not delete if empty
+    delete ptData; // nothing else to do
+}
+
+char* copy_bloc_data(char* source, int* ptDims) {
+  int reps, count, *subDims;
+  char* newData;
+  
+  reps = array_count(ptDims, &subDims);
+  if (!is_base_type(*subDims)) { // assume its OWNSIZED
+    newData = new char[reps*sizeof(sizeAndPtr)];
+    for (count=0; count<reps; ++count) {
+      //substitute OWNSIZED to create right size block then put back
+      *subDims = ((sizeAndPtr*)source)[count].size;
+      ((sizeAndPtr*)newData)[count].ptr = 
+	copy_bloc_data(((sizeAndPtr*)source)[count].ptr, subDims);
+    }
+    *subDims = OWNSIZED;
+  } else {
+    count = reps*size_for_data_type(*subDims);
+    newData = new char[count];
+    memcpy(newData, source, count);
+  }
+  return newData;
+}
+
+char* interpolate_bloc_data(char* loSource, char* hiSource, int* ptDims,
+			    double interFract) {
+  int reps, count, *subDims;
+  char* newData;
+  
+  reps = array_count(ptDims, &subDims);
+  if (!is_base_type(*subDims)) { // assume its OWNSIZED
+    newData = new char[reps*sizeof(sizeAndPtr)];
+    for (count=0; count<reps; ++count) {
+      //substitute OWNSIZED to create right size block then put back
+      *subDims = ((sizeAndPtr*)loSource)[count].size;
+      ((sizeAndPtr*)newData)[count].ptr = 
+	interpolate_bloc_data(((sizeAndPtr*)loSource)[count].ptr, 
+			      ((sizeAndPtr*)hiSource)[count].ptr, 
+			      subDims, interFract);
+    }
+    *subDims = OWNSIZED;
+  } else {
+    count = reps*size_for_data_type(*subDims);
+    newData = new char[count];
+    if (*subDims == REAL)
+      for (count=0; count<reps; ++count)
+	*((double*)newData+count) = *((double*)hiSource+count)*interFract
+	  + *((double*)loSource+count)*(1-interFract);
+    else
+      for (count=0; count<reps; ++count)
+	*((int*)newData+count) = (int)round(*((int*)hiSource+count)*interFract
+				    + *((int*)loSource+count)*(1-interFract));
+  }
+  return newData;
 }
 
 void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
   sizeAndPtr* newRecord;
 
   // sprintf(globMess, "locate_elt array %lx off %d d0 %d d1 %d d2 %d indx %d", 
-  // 	    startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
+  	    // startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
   // showMess(globMess);
   if (*dimPtr==OWNSIZED) {
     newRecord = (sizeAndPtr*)startPtr + off;
@@ -440,8 +496,13 @@ public:
     char* innerSp;
     
     delete(nodeId);
-    if(timePoints) delete(timePoints);
-    empty_node_data(&dataPtr);
+    while (timePoints) {
+      curTimePoint = timePoints;
+      timePoints = curTimePoint->next;
+      free_bloc_data(curTimePoint->dataPtr, dataPtr.dimSpecs);
+      delete(curTimePoint);
+    }
+    free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
   }
   
   listParamArray* strip_out(long int oldModelId) {
@@ -460,9 +521,9 @@ public:
   }
 
   int space_used() {
-    int base;
+    int *base;
     // hope it evaluates left to right
-    return array_count(dataPtr.dimSpecs, &base)*size_for_data_type(base);
+    return array_count(dataPtr.dimSpecs, &base)*size_for_data_type(*base);
   }
 
   char* create_time_point(double time) {
@@ -495,6 +556,7 @@ public:
       timePoints = thisTimePt;
     }
     thisTimePt->when = time;
+
     thisTimePt->dataPtr = init_space(dataPtr.dimSpecs);
   }
 
@@ -555,7 +617,11 @@ public:
       //      showMess(globMess);
       if (fillMethod==INTERPOLATE && nodeLine->datatype != FLAG) {
 	curTimePoint = loBound; // cos that's what wraps refers to
-	load_interpolated(loBound, hiBound, interFract);
+	free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+	dataPtr.contents = interpolate_bloc_data(loBound->dataPtr, 
+						 hiBound->dataPtr, 
+						 dataPtr.dimSpecs, 
+						 interFract);
 	return;
       }
       if (interFract>0.5) { // fillMethod is USE_CLOSEST
@@ -565,26 +631,9 @@ public:
     }
     if (loBound && loBound!=curTimePoint) {
       curTimePoint = loBound;
-      // temporary botch; need to free old data and duplicate for compatibility
-      // with NOW and interpolation
-      dataPtr.contents = loBound->dataPtr;
+      free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+      dataPtr.contents = copy_bloc_data(loBound->dataPtr, dataPtr.dimSpecs);
     }
-  }
-
-  void load_interpolated(listTimePoint *loBound, listTimePoint *hiBound,
-			 double interFract) {
-    int off, base;
-
-    if (nodeLine->datatype == REAL)
-      for (off=0; off<array_count(dataPtr.dimSpecs, &base); ++off)
-	*((double*)dataPtr.contents+off) = 
-	  *((double*)hiBound->dataPtr+off)*interFract
-	  + *((double*)loBound->dataPtr+off)*(1-interFract);
-    else
-      for (off=0; off<array_count(dataPtr.dimSpecs, &base); ++off)
-	*((int*)dataPtr.contents+off) = (int)round(*((int*)hiBound->dataPtr+off)
-					  *interFract
-	  + *((int*)loBound->dataPtr+off)*(1-interFract));
   }
 
   /* These last three are actually called by the model code to get data */
@@ -594,9 +643,13 @@ public:
 
     if (spareModel==modelClass && nodeLine->eval == INPUT &&
 	!time_point_exists(0.0)) {
-      delete dataPtr.contents;
+      free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
       fromModel = get_raw_values(nodeId, modelInstance);
       dataPtr.contents = fromModel->contents;
+      // sprintf(globMess, "dims %d %d backcopied %d records 1st %lf", 
+	      // dataPtr.dimSpecs[0], dataPtr.dimSpecs[1], ((sizeAndPtr*)dataPtr.contents)->size,
+	      // *(double*)(((sizeAndPtr*)dataPtr.contents)->ptr));
+      // showMess(globMess);
       delete fromModel;
     }
   }
@@ -1258,10 +1311,6 @@ int get_timepoint_ptr_and_dims(char* nodeId, double time,
   *ptDataSlot = ptData;
   *dimSlot = arrSlot->dataPtr.dimSpecs;
   return 0; // success
-}
-
-void free_bloc_records(char* ptData, int* ptDims) {
-  // placeholder
 }
 
 int set_bloc_record_count(char* ptData, int* ptDims, int* indxs, int length) {

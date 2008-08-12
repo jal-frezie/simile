@@ -31,7 +31,7 @@ endif
 # default *nix variables overwritten in special cases
 GCCCMD = gcc
 GPPCMD = g++
-FLAGS =  -O3
+OPT = -O3
 
 UNAME = $(shell uname)
 ifeq ($(UNAME),CYGWIN_NT-5.1)
@@ -49,6 +49,7 @@ endif
 
 # Default case: any Windows, any toolchain
 	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
+	FLAGS = $(OPT)
 	SLDIR = bin
 	SHAREDLIBPREFX = 
 	VERS = 84
@@ -57,7 +58,7 @@ endif
 	INSTLIB = Run/install.dll
 	MAIN = System/bin/Simile.exe
 ifeq ($(UNAME),Darwin)
-	FLAGS = -O3 -mmacosx-version-min=10.3
+	FLAGS = $(OPT) -mmacosx-version-min=10.3
 	ARCHEXTN = _$(shell uname -m)
 	ifeq ($(ARCHEXTN),_Power Macintosh)
 		ARCHEXTN = _ppc
@@ -70,7 +71,7 @@ ifeq ($(UNAME),Darwin)
 	MAIN = 
 endif 
 ifeq ($(UNAME),Linux)
-	FLAGS = -O3 -m32
+	FLAGS = $(OPT) -m32
 	SLDIR = lib
 	SHAREDLIBPREFX = lib
 	VERS = 8.4
