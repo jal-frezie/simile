@@ -687,7 +687,7 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 	nl(Stream),
 /* following section used to be c only */
 	generate_graph_handlers(0, AllGraphs, GraphSetups),
-	(ProcName = evalmodel, \+ GraphSetups = [], !,
+	(ProcName = evalmodel, \+ GraphSetups = [],
 	    refer_value(Language, phase, PhRef),
 	    combine(Language, ==, [PhRef, -2], InitExpr),
 	    excrete(Language, if_start, InitExpr, 4, Stream),
@@ -695,7 +695,7 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 		[unify(Language), unify(procedure_call), build(GraphSetups),
 		       unify(8), unify(Stream)]),
 	    excrete(Language, end(cond), initializing, 4, Stream);
-	 true),
+	 \+ (ProcName = evalmodel, \+ GraphSetups = [])),
 	nl(Stream),
 	excrete(Language, comment, 'UPDATE FUNCTION VALUES', 4, Stream),
 	nl(Stream),
@@ -703,7 +703,8 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 	do_assign_list( Language, ActionForm, AllGraphs, Used, Stream),
 	nl(Stream),
 	excrete(Language, end(procedure), ProcName, 0, Stream),
-	nl(Stream).
+	nl(Stream),
+        fail; true. % need to backtrack to forget variable declarations
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % build_functions goes throught the functions and calculates their values. The
