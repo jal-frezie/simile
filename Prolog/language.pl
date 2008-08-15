@@ -4,12 +4,11 @@
 **** being the starting point.                                              ****
 *******************************************************************************/
 
-sicstus_module( language, [do_assign_list/5, indent_is/1] ).
+sicstus_module( language, [do_assign_list/6] ).
 
 sicstus_use_module( [sp_only, render,m_class,utility,
 		ame_gen,units,text,library(lists)] ).
 
-:- dynamic([indent_is/1]).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 make_new_check(L, Pointer, NewTest) :-
@@ -61,42 +60,37 @@ Results: The generated code.
 The actual procedures have been renamed do_assignment, so I can put in
 an exception if one of them fails, to assist debugging. */
 
-do_assign_list(L, [Clause | Clauses], Graphs, Used, Stream) :-
+do_assign_list(L, [Clause | Clauses], Indent, Graphs, Used, Stream) :-
 	/* write_to_chars(Clause, ClauseMess),
 	dialogue:reassure_user(ClauseMess), test only */
-	do_assignment(L, [Clause | Clauses], Graphs, Used, Stream), !;
+	do_assignment(L, [Clause | Clauses], Indent, Graphs, Used, Stream), !;
 	raise_exception(cannot_convert_to_code(Clause)).
 
-do_assign_list(_, [], _, _, _).
+do_assign_list(_, [], _, _, _, _).
 
 /* This makes a loop for a fixed membership submodel.
 Should really be done with make_array_assignment. */
 
 do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
-                GraphCount, Used, Stream) :-
-        retract(indent_is(Indent)),
+                Indent, GraphCount, Used, Stream) :-
         NewIndent is Indent+4,
-	asserta(indent_is(NewIndent)),
 	declare(L, Loop, loop, int, Used, Indent, Stream),
 	declare(L, _Feature, bound, int, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
         (make_indexed_reference(L, Loop, Inds, Count),
 	    excrete(L, for_start, [Count, 1, Bound, 1], Indent, Stream),
-	    do_assign_list(L, MyLoop, GraphCount, Used, Stream),
-	    retract(indent_is(_)),
-	    asserta(indent_is(Indent)),
+	    do_assign_list(L, MyLoop, NewIndent, GraphCount, Used, Stream),
 	    excrete(L, end(for), Count, Indent, Stream),
 	    fail;
-	do_assign_list(L, Later, GraphCount, Used, Stream)).
+	do_assign_list(L, Later, Indent, GraphCount, Used, Stream)).
 
 /* Start fixed membership submodel. Note that we may have selected an index
 explicitly (using element(...)), so it can contain any expression, even a
 graph. */
 
 do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
-		 | Clauses], Graphs, Used, Stream) :-
+		 | Clauses], Indent, Graphs, Used, Stream) :-
 
-        indent_is(Indent),
 	/* some of this belongs in the next disjunction */
 
 	append_atoms(Name, 'type*', Type),
@@ -112,10 +106,8 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
 	    make_struct_reference(L, Pointer, Alarm, AlarmVar),
 	    excrete(L, assignment, AlarmVar=1, Indent, Stream),
 	    excrete(L, while_start, 1, Indent, Stream),
-	    retract(indent_is(_)),
 	    Indent1 is Indent + 4,
-	    asserta(indent_is(Indent1)),
-	    (do_assign_list(L, MyLoop, Graphs, Used, Stream),
+	    (do_assign_list(L, MyLoop, Indent1, Graphs, Used, Stream),
 		refer_value(L, AlarmVar, AlarmRef),
 		excrete(L, if_start, AlarmRef, Indent1, Stream),
 		Indent2 is Indent1 + 4,
@@ -123,13 +115,11 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
 		excrete(L, end(cond), AlarmRef, Indent1, Stream),
 		excrete(L, end(while), alarm, Indent, Stream),
 		fail;
-	    retract(indent_is(_)),
-		asserta(indent_is(Indent)),
-		do_assign_list(L, Later, Graphs, Used, Stream));
+	    do_assign_list(L, Later, Indent, Graphs, Used, Stream));
 	var(Alarm),
 	    % if no alarm loop this does not start new context
-	    do_assign_list(L, MyLoop, Graphs, Used, Stream),
-	    do_assign_list(L, Later, Graphs, Used, Stream)).
+	    do_assign_list(L, MyLoop, Indent, Graphs, Used, Stream),
+	    do_assign_list(L, Later, Indent, Graphs, Used, Stream)).
 
 /* start non-generating vm  submodel loop;	still need to
 add context for associated submodels if it is
@@ -137,9 +127,7 @@ variable length, otherwise add the loops to explicitly
 hunt through them */
 
 do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
-	      Graphs, Used, Stream) :-
-        retract(indent_is(Indent)),
-        Indent1 is Indent+4,
+	      Indent, Graphs, Used, Stream) :-
 	/* some of this belongs in the next disjunction */
 
 	/* LoopSpec = rm_loop(ArcIndex, Level, IExprs), !,
@@ -180,26 +168,24 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	    excrete(L, assignment, Pointer=StartPtrRef, Indent, Stream),
 	    ptr_compare(L, PointerRef, 0, PtrNonNull),
 	    excrete(L, while_start, PtrNonNull, Indent, Stream),
+	    Indent1 is Indent+4,
 	    all(language, declare_ptrs,
 		[build(Names), build(Types), build(BasePtrs),
 		 unify([L, Indent1, Used, Stream])]),
 	    move_base_ptrs(L, Pointer, restore, Indent1,
 			   Names, BasePtrs, Types, Stream),
-	    asserta(indent_is(Indent1)),
-	    do_assign_list(L, MyLoop, Graphs, Used, Stream),
-	    retract(indent_is(_)),
-	    assert(indent_is(Indent)),
+	    do_assign_list(L, MyLoop, Indent1, Graphs, Used, Stream),
 	    excrete(L, assignment, Pointer=OnPointerRef, Indent1, Stream),
 	    excrete(L, end(while), Pointer, Indent, Stream),
 	    fail;
-	do_assign_list(L, Later, Graphs, Used, Stream)).
+	do_assign_list(L, Later, Indent, Graphs, Used, Stream)).
 
 /* Start a submodel loop with a generate/test pair inside. This happens once per time step for variable membership models apart from populations. Each possible instance of the model is either generated or pulled out of the list, for testing later. If the phase is 'new' then previously existing instances are skipped over. */
 
 do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
-			   BasePtrs) | Clauses], Graphs, Used, Stream) :-
+			   BasePtrs) | Clauses],
+	      Indent, Graphs, Used, Stream) :-
 
-        retract(indent_is(Indent)),
         Indent1 is Indent+4,
 
 	append_atoms(Name, 'type*', Type),
@@ -252,10 +238,8 @@ failed through to make sure all later temporary variables get declared. */
 	/* IfChecking */
 	(number(Phase), !,
 	    excrete(L, if_start, MemberCheckRef, Indent1, Stream),
-	    asserta(indent_is(Indent1)),
 	    Indent2 is Indent1+4;
 	 \+ number(Phase),
-	    asserta(indent_is(Indent)),
 	    Indent2 = Indent1),
 	excrete(L, assignment, MPTarget=OnPointerRef, Indent2, Stream),
 	/* CheckElse, StepOver, CheckEnd */
@@ -287,15 +271,14 @@ failed through to make sure all later temporary variables get declared. */
 	(number(Phase), !,
 	    excrete(L, if_start, MemberCheckRef, Indent, Stream);
 	 \+ number(Phase)),
-	do_assign_list(L, MyLoop, Graphs, Used, Stream),
+	do_assign_list(L, MyLoop, Indent1, Graphs, Used, Stream),
 	do_writing(CheckEnd, Stream),
 	/* That should make some good code */
 
-	do_assign_list(L, Later, Graphs, Used, Stream).
+	do_assign_list(L, Later, Indent, Graphs, Used, Stream).
 
-do_assignment(L, [bound_gen_loop(Top, Name) | Clauses], Graphs, Used, Stream) :-
-        indent_is(Indent),
-	
+do_assignment(L, [bound_gen_loop(Top, Name) | Clauses],
+	      Indent, Graphs, Used, Stream) :-
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
 	(make_struct_reference(L, Top, Name, SubPointer),
 /* what is (was) this for
@@ -307,26 +290,26 @@ do_assignment(L, [bound_gen_loop(Top, Name) | Clauses], Graphs, Used, Stream) :-
 
 	    excrete(L, make_reference, Meta=SubPointer, Indent, Stream),
 
-	    do_assign_list(L, MyLoop, Graphs, Used, Stream),
+	    do_assign_list(L, MyLoop, Indent, Graphs, Used, Stream),
 	/* And here's the stuff that goes at the end of the loop... */
 	    resolve_pointer(L, Meta, MPTarget),
 	    refer_value(L, MPTarget, MPTargetRef),
 	    excrete(L, procedure_call, delete_list(MPTargetRef),Indent, Stream),
 	    excrete(L, assignment, MPTarget=0, Indent, Stream),
 %	    fail;
-	do_assign_list(L, Later, Graphs, Used, Stream)).
+	do_assign_list(L, Later, Indent, Graphs, Used, Stream)).
 
 /* Nowadays we may want to stick the emptying of a list at any point in the
 program. So it needs its own clause... */
 
-do_assignment(L, [reset_list(Ptr, Name) | Clauses], Graphs, Used, Stream) :-
-	indent_is(Indent),
+do_assignment(L, [reset_list(Ptr, Name) | Clauses],
+	      Indent, Graphs, Used, Stream) :-
 	make_struct_reference(L, Ptr, Name, Ref),
 	(L = c,
 	    excrete(L, procedure_call, delete_list(Ref), Indent, Stream);
 	L = tcl),
 	excrete(L, assignment, Ref=0, Indent, Stream),
-	do_assign_list(L, Clauses, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
 
 /* Clause to handle end of a submodel loop does not actually generate any code (this
 is all done at start submodel time) but rearranges the preambles and postambles so
@@ -345,9 +328,10 @@ initialization of the instance, then slip in the close after it. All this would 
 unnecessary if the thing were designed so it could call itself on parts of the
 program. I blame Geraint....*/
 
-do_assignment(L, [verbatim(CodeLine) | Clauses], Graphs, Used, Stream) :-
+do_assignment(L, [verbatim(CodeLine) | Clauses],
+	      Indent, Graphs, Used, Stream) :-
 	do_writing(CodeLine, Stream),
-	do_assign_list(L, Clauses, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
 /* cannot use cos we only assign when condition is right
 do_assignment(L, [cond_assign(Dest, Tested, Payload, Op, SoFar) | Clauses],
 		Graphs, Collects, 
@@ -372,8 +356,7 @@ do_assignment(L, [cond_assign(Dest, Tested, Payload, Op, SoFar) | Clauses],
 		       Preambles, [NewCurrent | Postambles],
 			Used, Temps, Results).
 */
-do_assignment(L, [SpecialOp | Clauses], Graphs, Used, Stream) :-
-	indent_is(Indent),
+do_assignment(L, [SpecialOp | Clauses], Indent, Graphs, Used, Stream) :-
 	(SpecialOp =.. [collect, DestSpec, TgtRef | Args],
 	    nth(CollectId, Used, TgtRef), !,
 	    make_scalar(L, DestSpec, [], Dest),
@@ -407,27 +390,23 @@ do_assignment(L, [SpecialOp | Clauses], Graphs, Used, Stream) :-
 	    append_atoms(assign_if_, Op, Functor),
 	    CallSpec =.. [Functor, TestedExpr, PayloadExpr, SoFarPtr, DestPtr]),
 	excrete(L, procedure_call, CallSpec, Indent, Stream),
-	do_assign_list(L, Clauses, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
 % have to render after instantiating CollectId
 
 /* This one starts a conditional execution sequence dependent on the
 given submodel */
 
-do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Graphs,
+do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Indent, Graphs,
 	      Used, Stream) :-
-	retract(indent_is(Indent)),
 	InnerIndent is Indent+4,
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
 	(make_section_cond(L, VMPtrs, PassTest),
 	    combine(L, >=, [Phase, PassTest], PhaseTest),
 	    excrete(L, if_start, PhaseTest, Indent, Stream),
-	    asserta(indent_is(InnerIndent)),
-	    do_assign_list(L, MyLoop, Graphs, Used, Stream),
-	    retract(indent_is(_)),
-	    asserta(indent_is(Indent)),
+	    do_assign_list(L, MyLoop, InnerIndent, Graphs, Used, Stream),
 	    excrete(L, end(cond), PhaseTest, Indent, Stream),
 	    fail;
-	do_assign_list(L, Later, Graphs, Used, Stream)).
+	do_assign_list(L, Later, Indent, Graphs, Used, Stream)).
 
 /* Initial membership of populations was handled by the new_member
 clause up until Simile 4.5, but now it is done like initializing a VM
@@ -436,8 +415,7 @@ associations can too, and makes resetting faster. */
 
 
 do_assignment(L, [init_mems(ParentPtr, Name, create(InitVars)) | Clauses],
-	      Graphs, Used, Stream) :-
-	indent_is(Indent),
+	      Indent, Graphs, Used, Stream) :-
 	append_atoms(Name, count, Count),
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, Pointer),
@@ -464,7 +442,7 @@ do_assignment(L, [init_mems(ParentPtr, Name, create(InitVars)) | Clauses],
 	excrete(L, procedure_call, delete_list(MPTargetRef), Indent, Stream),
 	excrete(L, assignment, MPTarget=0, Indent, Stream),
 
-	do_assign_list(L, Clauses, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
 
 /* This one should be easy too. When I extract the procedures for initializing
 submodel instances where these can't always be done at init time, I leave an
@@ -473,8 +451,7 @@ initialized when their parents are, this causes the tests to be done and the
 inits to be included. */
 
 do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
-	      Graphs, Used, Stream) :-
-	indent_is(Indent),
+	      Indent, Graphs, Used, Stream) :-
 	Indent1 is Indent + 4,
 
 	append_atoms(Name, count, Count),
@@ -508,7 +485,7 @@ do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream),
 	excrete(L, end(while), 'New instances', Indent, Stream),
 
-	do_assign_list(L, Clauses, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
 
 /* This is similar to the last one, but handles reproduction. Owing to the
 limitations of Tcl it switches context between current instance and new instances.
@@ -517,8 +494,7 @@ it in a local variable, but this way is conceptually simpler, which is everythin
 */
 
 do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
-	      Graphs, Used, Stream) :-
-	indent_is(Indent),
+	      Indent, Graphs, Used, Stream) :-
 	Indent1 is Indent + 4,
 	Indent2 is Indent1 + 4,
 
@@ -576,14 +552,13 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 	excrete(L, assignment, Pointer=OnPointerRef, Indent1, Stream),
 	excrete(L, end(while), PointerRef, Indent, Stream),
 
-	do_assign_list(L, Clauses, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
 
 /* OK, now for mortality. This will have to be called before immigration or reproduction because any new individuals might not yet have values for their loss nodes. It used to be done as part of the reproduction loop but had to be separated now there can be many reproduction channels. However, all loss channels are equivalent, so there only needs to
 be one of these loops; the instruction has a list of the appropriate nodes. */
 
 do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
-	      Graphs, Used, Stream) :-
-	indent_is(Indent),
+	      Indent, Graphs, Used, Stream) :-
 	Indent1 is Indent + 4,
 	Indent2 is Indent1 + 4,
 
@@ -632,7 +607,7 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 	    excrete(L, end(cond), IsDead, Indent1, Stream);
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent2, Stream)),    
 	excrete(L, end(while), MPTargetRef, Indent, Stream),
-	do_assign_list(L, Clauses, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
 
 /* This is a fairly horrrible clause that puts in what is done when a new submodel
 instance is generated; if the instance fails to exist, it terminates building it,
@@ -640,22 +615,19 @@ so the end of the last if clause is left on the postambles. Should be less
 horrible now it no longer includes the evaluation of the test! */
 
 do_assignment(L, [test(Name, Pointer, Source) | Clauses],
-		Graphs, Used, Stream) :-
+		Indent, Graphs, Used, Stream) :-
 	
 /* Some variable membership models will contain 'dummy' generator clauses to
 make sure they get set up and kept in correspondence with their uncles before
 any of their values are calculated. The source is 1 on these; in this case
 we only make the three lines that insert the submodel instance into its linked list. 
 */
-        indent_is(Indent),
 	(\+ Source == 1, !,
 	    (setof(GenVal, get_term_refs(L, Pointer, Source, GenVal), GenVals),
 		build_disjunction(L, GenVals, TestVal), !;
 	    TestVal = 0),
 	    excrete(L, if_start, TestVal, Indent, Stream),
-	    Indent1 is Indent+4,
-	    retract(indent_is(_Indent)),
-	    asserta(indent_is(Indent1));
+	    Indent1 is Indent+4;
 	/* clause for dummy generator */
 	Indent1 = Indent),
 
@@ -668,14 +640,12 @@ we only make the three lines that insert the submodel instance into its linked l
 	excrete(L, assignment, MPTarget=PointerRef, Indent1, Stream),
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream),
 	
-	do_assign_list(L, Clauses, Graphs, Used, Stream),
+	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream),
 
 	/* Any further assignments in model generation also go inside this 'if'
 	clause, so as not to do them is the submodel instance does not exist. Thus
 	the 'else' clause and other condition go in the postamble. */
 	(Source == 1, !;
-	    retract(indent_is(_Indent1)),
-	    asserta(indent_is(Indent)),
 	    excrete(L, else_clause, TestVal, Indent, Stream),
 	    excrete(L, release_memory, Pointer, Indent1, Stream),
 	    excrete(L, end(cond), TestVal, Indent, Stream)).
@@ -683,16 +653,14 @@ we only make the three lines that insert the submodel instance into its linked l
 /* Right, this is the one with the meat in it; the actual integration of new code
 that evaluates an expression in the model */
 
-do_assignment(L, [assign(arr(P, Val, Is), Source) | Clauses], Graphs,
+do_assignment(L, [assign(arr(P, Val, Is), Source) | Clauses], Indent, Graphs,
 		Used, Stream) :-
-
-	indent_is(Indent),
 	make_scalar(L, arr(P, Val, Is), Graphs, ScalarDest),
 	make_evaluation_routine(L, Source, Graphs, Term),
 	make_expr(L, Term, Expr),
 	excrete(L, assignment, ScalarDest=Expr, Indent, Stream),
 
-	do_assign_list(L, Clauses, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
 
 starts_a_level(Inst) :-
 	member(Inst, [open_index(_,_), start_submodel(_,_,_,_),
