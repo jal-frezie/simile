@@ -7,7 +7,7 @@
 #
 #package require BWidget
 #catch {namespace import BWidget::*}
-package require -exact tile 0.7.8
+package require tile
 
 source ../Run/window.tcl
 source ../Run/shapes.tcl
@@ -578,11 +578,12 @@ proc compile_c {workingDir extLibs} {
 	    eval {exec g++} $sendvars(arflags) [list -fPIC -c -I$TOOLDIR \
 						    -o objtmp.o model.cpp]
             if {[string match Darwin $tcl_platform(os)]} {
-                set linkCmd [list exec g++ -bundle -o $TARGET objtmp.o]
-            } else {
-                set linkCmd [list exec g++ -shared -o $TARGET objtmp.o]
-            }
-	    eval $linkCmd $lDirs $lFiles
+		set switchForLib -bundle 
+	    } else {
+		set switchForLib -shared
+	    }
+	    eval {exec g++} $sendvars(arflags) \
+		[list $switchForLib -o $TARGET objtmp.o] $lDirs $lFiles
         }
         windows {
             set TOOLDIR [file attributes $TOOLDIR -shortname]
