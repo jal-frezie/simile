@@ -281,10 +281,11 @@ do_assignment(L, [bound_gen_loop(Top, Name) | Clauses],
 	      Indent, Graphs, Used, Stream) :-
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
 	(make_struct_reference(L, Top, Name, SubPointer),
-/* what is (was) this for
+% what is this for? Matches dummy index for base-instance-lookup
 	    append_atoms(Name, cond, IdRef),
 	    excrete(L, variable_declaration, [int, IdRef, []], Indent, Stream),
-*/	    append_atoms(Name, 'type**', MType),
+
+	    append_atoms(Name, 'type**', MType),
 	    append_atoms(Name, meta, Meta),
 	    excrete(L, variable_declaration, [MType, Meta, []], Indent, Stream),
 
