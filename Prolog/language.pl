@@ -152,8 +152,8 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	all(compile, get_base_ptrs,
 	    [build(BaseLoops), append(Names, []), append(BasePtrs, [])]), !,
 	append_atoms(Name, 'type*', Type),
-	append_atoms(Name, pointer, Pointer),
-	declare(L, Pointer, _, Type, Used, Indent, Stream),
+	append_atoms(Name, pointer, PointerForm),
+	declare(L, Pointer, PointerForm, Type, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
 	refer_value(L, Pointer, PointerRef),
 %	all(language, declare,
@@ -605,7 +605,7 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 	    excrete(L, else_clause, IsDead, Indent1, Stream),
 	    excrete(L, make_reference, MetaPointer=OnPointer, Indent2, Stream),
 	    excrete(L, end(cond), IsDead, Indent1, Stream);
-	excrete(L, make_reference, MetaPointer=OnPointer, Indent2, Stream)),    
+	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream)),    
 	excrete(L, end(while), MPTargetRef, Indent, Stream),
 	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
 
@@ -729,6 +729,7 @@ declare(L, Name, NameBase, Type, Used, Indent, Stream) :-
 	(var(Name),
 	    generate_name(L, NameBase, Name, Used);
 	 \+ utility:something_used_in([decl(Name)], Used)),
+	    member(Name, Used),
 	    member(decl(Name), Used), !,
 	    excrete(L, variable_declaration, [Type, Name, []], Indent, Stream);
 	true.
