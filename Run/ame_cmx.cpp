@@ -1542,7 +1542,7 @@ void addDSorted(int* discCount, double** dPtrDiscList, double newVal) {
   ++(*discCount);
   if (*dPtrDiscList!=spareArr) delete(spareArr);
 }
-      
+  
 void addISorted(int* discCount, int** dPtrDiscList, int newVal) {
   int *spareArr;
   int count, exp, bigexp;
@@ -1566,7 +1566,7 @@ void addISorted(int* discCount, int** dPtrDiscList, int newVal) {
   ++(*discCount);
   if (*dPtrDiscList!=spareArr) delete(spareArr);
 }
-      
+/* Old versio using regularData */
 FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   int error;
@@ -1583,7 +1583,7 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   int discCount, *iDiscList;
 
   if (clientData) {
-    // listing discrete vals
+    // listing distinct vals
     if (argc != 4) {
       Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id caption");
       return TCL_ERROR;
@@ -1648,7 +1648,7 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     iDiscList = new int[16];
   }
 
-  progress[cursor-1]=-1; /* carefully avoid overrun at end */
+  progress[cursor-1]=-1; // carefully avoid overrun at end
   discCount=0;
   for (count=0; count<size;++count) {
     cursor=rdDimensionality(accessTool)-1;
@@ -1687,10 +1687,210 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   }
   Tcl_SetObjResult(interp, resultPtr);
   deleteRegularData(accessTool);
-  /* might want to keep some of these if doing this every time step */
+  // might want to keep some of these if doing this every time step
   return TCL_OK;
 }
 
+/* New version using nodeValues structure -- first its callback procs
+
+void add_to_size(void* spareValue, int spareOffset, void* sizePtr) {
+  // sizePtr is actually an integer pointer
+  ++(*(int*)sizePtr);
+}
+
+// structures to treat last arg of callback as 
+typedef struct addSorted_pt {
+  int *discCount;
+  double **dPtrDiscList;
+} addSortedParms;
+
+// only doubles work for now, add ints to this later
+void addSorted(double* values, int offset, addSortedParms* cbData) {
+  //void addDSorted(int* discCount, double** dPtrDiscList, double newVal) {
+  double *spareArr, **dPtrDiscList, newVal;
+  int count, exp, bigexp, *discCount;
+
+  newVal = values[offset];
+  discCount = cbData->discCount;
+  dPtrDiscList = cbData->dPtrDiscList;
+
+  spareArr = *dPtrDiscList;
+  // straight search could be replaced by binary if more speed needed
+  for (count=0; count<*discCount; ++count) {
+    if (newVal==spareArr[count]) {
+      return;
+    } else if (newVal<spareArr[count]) {
+      break;
+    }
+  }
+  if (*discCount>=16 && frexp(*discCount,&bigexp)<frexp((*discCount)-1,&exp)) {
+    *dPtrDiscList = new double[(int)(ldexp(1,bigexp))];
+    memmove(*dPtrDiscList, spareArr, count*sizeof(double));
+  }
+  memmove(*dPtrDiscList+count+1, spareArr+count, 
+	  (*discCount-count)*sizeof(double));
+  (*dPtrDiscList)[count] = newVal;
+  ++(*discCount);
+  if (*dPtrDiscList!=spareArr) delete(spareArr);
+}
+
+// structures to treat last arg of callback as 
+typedef struct convert_pt {
+  unsigned char** tgtPtr;
+  double *valfor0, *valfor255;
+} convertParms;
+
+void convert_to_byte(double* values, int offset, convertParms* cbData) {
+  unsigned char** tgtPtr;
+  double valfor0, valfor255, span;
+
+  valfor0 = *cbData->valfor0;
+  valfor255 = *cbData->valfor255;
+
+  *((*cbData->tgtPtr)++) = (unsigned char)(values[offset]<valfor0?0:
+				   (values[offset]>=valfor255?255:
+				    (255*(values[offset]-valfor0)/
+				     (valfor255-valfor0))));
+}
+
+void move_to_double(double* values, int offset, double** tgtPtr) {
+  *((*tgtPtr)++) = values[offset];
+}
+
+FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
+		 int argc, Tcl_Obj *CONST argv[]) {
+  int error;
+  double (*scaleProc) (void*);
+  double valfor0, valfor255, valspan, dval;
+  nodeValues* accessTool;
+  unsigned char* tgt;
+  int* progress;
+  int baseType, count, size;
+  Tcl_Obj *resultPtr, *spareObjPtr;
+  void* valAccessed;
+  char* nodeId;
+  char* myClientData[32];
+
+  double *dDiscList;
+  int discCount, *iDiscList;
+
+  if (clientData) {
+    // listing distinct vals
+    if (argc != 4) {
+      Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id caption");
+      return TCL_ERROR;
+    }
+  } else {
+    if (argc != 6) {
+      Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id caption lower_limit upper_limit");
+      return TCL_ERROR;
+    }
+
+    error = Tcl_GetDoubleFromObj(interp, argv[4], &valfor0);
+    if (error != TCL_OK) {
+      return error;
+    }
+    
+    error = Tcl_GetDoubleFromObj(interp, argv[5], &valfor255);
+    if (error != TCL_OK) {
+      return error;
+    }
+  }
+
+  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[2], &modelHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  nodeId = getNodeId(modelType, Tcl_GetStringFromObj(argv[3], NULL));
+  if (!nodeId) {
+    Tcl_AppendResult(interp, "No node with caption string ",
+		     Tcl_GetStringFromObj(argv[2], NULL), " found.",
+		     (char*)NULL);
+    return TCL_ERROR;
+  }
+  accessTool = get_raw_values(nodeId, modelHandle); 
+  // just got nodeId so assume it works!
+
+  valspan=valfor255-valfor0; // set to span
+
+  count = 0;
+  while (accessTool->dimSpecs[count]<0) ++count; //stop at base data type
+  if ((baseType=accessTool->dimSpecs[count])==REAL) {
+    scaleProc = scaleDoubleProc;
+  } else {
+    scaleProc = scaleIntProc;
+  }
+
+  size = 0;
+  call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
+		    add_to_size, (void*)&size);
+  // this increments size once for each value
+  resultPtr = Tcl_NewObj();
+  if (!clientData) {
+    if (valspan) {
+      Tcl_SetByteArrayLength(resultPtr, size);
+    } else { // no span: get values as floats
+      Tcl_SetByteArrayLength(resultPtr, size*sizeof(double));
+    }
+    tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
+  } else {
+    dDiscList = new double[16];
+    iDiscList = new int[16];
+  }
+
+  discCount=0;
+  if (clientData) {
+    ((addSortedParms*)myClientData)->discCount = &discCount; 
+    //    if (baseType==REAL) {
+    // replace this disjunction by adding basetype to clientdata
+    ((addSortedParms*)myClientData)->dPtrDiscList = &dDiscList;
+    call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
+		      (valCallback*)addSorted, myClientData);
+    // } else {
+    //   myClientData[1] = &iDiscList;
+    //   call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0, 
+// 			addSorted, myClientData);
+    // }
+  } else {
+    ((convertParms*)*myClientData)->tgtPtr = &tgt; 
+    // not sure why I must cast a pointer rather than the structure itself
+    // must be passed every call so increment it
+    if (valspan) {
+      ((convertParms*)*myClientData)->valfor0 = &valfor0;
+      ((convertParms*)*myClientData)->valfor255 = &valfor255;
+	call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0, 
+			  (valCallback*)convert_to_byte, myClientData);
+    } else { // no span: get values as doubles
+	call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
+			  (valCallback*)move_to_double, &tgt);
+    }
+  }
+
+  // if doing discrete, make tcl array of results and free space
+  if (clientData) {
+    for (count=0; count<discCount; ++count) {
+      if (baseType==REAL) {
+	spareObjPtr = Tcl_NewDoubleObj(dDiscList[count]);
+      } else {
+	spareObjPtr = Tcl_NewIntObj(iDiscList[count]);
+      }
+      Tcl_ListObjAppendElement(interp, resultPtr, spareObjPtr);
+    }
+    delete dDiscList;
+    delete iDiscList;
+  }
+  Tcl_SetObjResult(interp, resultPtr);
+  free_bloc_data(accessTool->contents, accessTool->dimSpecs);
+  free(accessTool);
+  return TCL_OK;
+}
+*/
 FINDABLE int listobjCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
    int error;

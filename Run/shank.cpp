@@ -357,7 +357,7 @@ char* init_space(int dimList[]) {
     return new char[reps*size_for_data_type(*unit)];
 }
 
-// This and next could be bundled into a class for the bloc data
+// This and next few could be bundled into a class for the bloc data
 void free_bloc_data(char* ptData, int* ptDims) {
   int reps, count, *subDims;
   char* subData;
@@ -426,6 +426,31 @@ char* interpolate_bloc_data(char* loSource, char* hiSource, int* ptDims,
 				    + *((int*)loSource+count)*(1-interFract));
   }
   return newData;
+}
+
+void call_for_each_val(int* ptDims, char* ptData, int offset,
+		       valCallback callback_proc, void* cbData) {
+  int count;
+  sizeAndPtr* convenience;
+  switch (ptDims[0]) {
+  case OWNSIZED:
+    convenience = (sizeAndPtr*)ptData + offset;
+    for (count=0; count<convenience->size; ++count) {
+      call_for_each_val(ptDims+1, convenience->ptr, count,
+			callback_proc, cbData);
+    }
+    break;
+  case SPARSEARRAY: // or any other kind this doesn't handle yet
+    //do the necessary
+    break;
+  default:
+    if (ptDims[0]>0)
+      for (count=0; count<ptDims[0]; ++count)
+	call_for_each_val(ptDims+1, ((sizeAndPtr*)ptData)->ptr,
+			  ptDims[0]*offset+count, callback_proc, cbData);
+    else // a base value, callback proc should know what sort
+      (*callback_proc)(ptData, offset, cbData);
+  }
 }
 
 void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {

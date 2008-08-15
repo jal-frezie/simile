@@ -268,9 +268,14 @@ typedef struct sizeAndPtr_t {
   char* ptr;
 } sizeAndPtr;
 
+// procedure called for each value in a nodeValues
+typedef void valCallback(void*, int, void*);
+
 // use of nodeValues class
 EXTDEC nodeValues* get_raw_values(char*, long int);
 EXTDEC void translate_dims(int[], int[], int[], int, BOOLEAN);
+EXTDEC void call_for_each_val(int*, char*, int, valCallback, void*);
+EXTDEC void free_bloc_data(char*, int*);
 
 // use of regularData class
 EXTDEC long int createRegularData (void);
