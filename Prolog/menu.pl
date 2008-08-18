@@ -8,7 +8,7 @@ interface of the application. It responds by:
 * Making calls to the screen drawing module (new image, or redraw)
 */
 sicstus_module(menu, [undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
-	menu_handle/3, context_find/3, set_box_size/5, change_size/2,
+	menu_handle/3, set_box_size/5, change_size/2,
 	not_last_toplevel/1, off_window/2, certain_death_node/1,
 	kill_everything/1]).
 	

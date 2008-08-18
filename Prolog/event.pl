@@ -134,7 +134,7 @@ context_find(Wid, Query, Target) :-
 	contains(Model, Sub),
 	find_all_comps(Sub, Comp),
 	appears(Comp), %     check draws_at as well
-	(Target = comment,
+	(Target = description,
 	    get_info(Wid, Comp, comment, Field),
 	    \+ Field = 'no comment';
 	 Target = equation,
