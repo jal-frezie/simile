@@ -1733,7 +1733,7 @@ int skip_vm_bounds(int** modelDimList) {
 }
 
 // forward declaration for co-recursing procedures
-void fill_raw_values(long int, long int, int[], int*, int[], int*, char**);
+// void fill_raw_values(long int, long int, int[], int*, int[], int*, char**);
 
 // dims is the array of counts that are being incremented in the instances of
 // this procedure from which the current one is being called
@@ -1744,6 +1744,11 @@ void fill_raw_values(long int localType, long int smHandle, int tree[],
   void* model_val_ptr;
   char *newBlk;
   
+//    sprintf(globMess, "fill_raw: case %d %d, dims %d %d %d %d, off %d",
+//  	  use_dims[0], use_dims[1], dims[0], dims[1], dims[2], dims[3], 
+//  	  dim_place - dims);
+//    showMess(globMess);
+
   switch (*use_dims) {
   case START_VM:
     dimty = skip_vm_bounds(&use_dims); // and drop through, keeping this value
@@ -1776,10 +1781,12 @@ void fill_raw_values(long int localType, long int smHandle, int tree[],
     *insertionPt += *dim_place;
     break;
   default: /* value is a dimension of the array we are accessing */
+    count = *dim_place; // save block size in case we need it again
     for (*dim_place = 0; *use_dims > *dim_place; ++*dim_place) {
       fill_raw_values(localType, smHandle, tree,
 		      use_dims+1, dims, dim_place+1, insertionPt);
     }
+    *dim_place = count;
     break;
   }
 }
@@ -1816,7 +1823,7 @@ void translate_dims(int fromModel[], int blockSizes[], int structDims[],
     structDims += 1;
     // and drop through
   case RECORDS: // or  MEMBERS or START_VM
-    blockSizes[0] = sizeof(int)+sizeof(void*);
+    blockSizes[0] = sizeof(sizeAndPtr);
     break;
   case 0: // dimensions finished, insert type and its size (could alloc dims!)
     structDims[0]  = dataType;

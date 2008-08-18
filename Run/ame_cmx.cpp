@@ -1365,22 +1365,27 @@ void make_sub_block_sizes(int *dims, int *sizes) {
 Tcl_Obj* convert_to_tcl(int*, int*, char*);
 
 Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices, 
-			     int* subBlocks, char** block, char* blockEnd) {
+			     int* subBlocks, int *members, char** block) {
   Tcl_Obj *localObj, *localSubObj;
   int count;
   if (depth==dimty) {
-    *block += dimty*sizeof(int);
-    localObj = convert_to_tcl(dims, subBlocks, *block);
-    *block += subBlocks[0];
+    if (*members) {
+      *block += dimty*sizeof(int);
+      localObj = convert_to_tcl(dims, subBlocks, *block);
+      *block += subBlocks[0];
+      --*members;
+    } else {
+      localObj = Tcl_NewListObj(0, NULL);
+    }
   } else {
     localObj = Tcl_NewListObj(0, NULL);
-    while (*block<blockEnd) {
+    while (*members) {
       for (count=0; count<depth; ++count) {
 	if (((int*)*block)[count]!=indices[count]) return(localObj);
       }
       indices[depth] = ((int*)*block)[depth];
       localSubObj = append_list_members(dimty, depth+1, dims, indices,
-					subBlocks, block, blockEnd);
+					subBlocks, members, block);
       Tcl_ListObjLength(NULL, localSubObj, &count); // re-use count variable
       if (count) {
 	Tcl_ListObjAppendElement(NULL, localObj, Tcl_NewIntObj(indices[depth]));
@@ -1432,7 +1437,7 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block) {
       indices = new int[dims[1]];
       blockEnd = block+membership*(dims[1]*sizeof(int)+subBlocks[1]);
       localObj = append_list_members(dims[1], 0, dims+2, indices, subBlocks+1,
-				     &block, blockEnd);
+				     &membership, &block);
       delete indices;
       delete newBlock;
       break;
