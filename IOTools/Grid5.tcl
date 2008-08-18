@@ -201,11 +201,10 @@ namespace eval grid005 {
     proc NumDistinct {winId testNode} {
 	variable useNodes
 
-	if {![catch {ListDiscreteModelValues $testNode} vList]} {
-	    set useNodes($winId,ncol) [llength $vList]
+	if {![catch {ListDistinctModelValues $testNode} vList]} {
+	    set useNodes($winId,ncol) [llength [lrange $vList 1 end]]
 	    set useNodes($winId,nrow) \
-		[expr {[string length [GetBinaryModelValue $testNode 0 255]] \
-			   /$useNodes($winId,ncol)}]
+		[expr {[lindex $vList 0]/$useNodes($winId,ncol)}]
 	} else {
 	    set columns [Flatten [lindex [GetModelValue $testNode] 0]]
 	    foreach col $columns {

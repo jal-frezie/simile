@@ -279,9 +279,9 @@ proc GetBinaryModelValue { node args } {
     return [eval GetCompProperty $myNode Binary $node $args]
 }
 
-proc ListDiscreteModelValues { node } {
+proc ListDistinctModelValues { node } {
     global myNode
-    return [eval GetCompProperty $myNode Discrete $node]
+    return [eval GetCompProperty $myNode Distinct $node]
 }
 
 proc GetModelGraph {node} {
@@ -477,8 +477,8 @@ proc GetCCompProperty {topNode prop args} {
 	} Binary {
 	    return [eval extract_binary [list $model_id($topNode) \
 		$instance_id($topNode) [c_getvalue $topNode $node 5]] $set]
-	} Discrete {
-	    return [discrete_values $model_id($topNode) \
+	} Distinct {
+	    return [distinct_values $model_id($topNode) \
 		$instance_id($topNode) [c_getvalue $topNode $node 5]]
 	} default {
 #puts "GetCCompProperty $topNode $prop $args"

@@ -1515,7 +1515,7 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_SetObjResult(interp, resultPtr);
   return TCL_OK;
 }
-
+/* Old versio using regularData
 double scaleIntProc(void* access) {
   return (double)(*(int*)access);
 }
@@ -1571,7 +1571,7 @@ void addISorted(int* discCount, int** dPtrDiscList, int newVal) {
   ++(*discCount);
   if (*dPtrDiscList!=spareArr) delete(spareArr);
 }
-/* Old versio using regularData */
+
 FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   int error;
@@ -1696,7 +1696,7 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
-/* New version using nodeValues structure -- first its callback procs
+New version using nodeValues structure -- first its callback procs */
 
 void add_to_size(void* spareValue, int spareOffset, void* sizePtr) {
   // sizePtr is actually an integer pointer
@@ -1705,17 +1705,21 @@ void add_to_size(void* spareValue, int spareOffset, void* sizePtr) {
 
 // structures to treat last arg of callback as 
 typedef struct addSorted_pt {
+  int baseType;
   int *discCount;
   double **dPtrDiscList;
 } addSortedParms;
 
 // only doubles work for now, add ints to this later
-void addSorted(double* values, int offset, addSortedParms* cbData) {
+void addSorted(void* values, int offset, addSortedParms* cbData) {
   //void addDSorted(int* discCount, double** dPtrDiscList, double newVal) {
   double *spareArr, **dPtrDiscList, newVal;
   int count, exp, bigexp, *discCount;
 
-  newVal = values[offset];
+  if (cbData->baseType == REAL) 
+    newVal = ((double*)values)[offset];
+  else 
+    newVal = ((int*)values)[offset];
   discCount = cbData->discCount;
   dPtrDiscList = cbData->dPtrDiscList;
 
@@ -1741,21 +1745,29 @@ void addSorted(double* values, int offset, addSortedParms* cbData) {
 
 // structures to treat last arg of callback as 
 typedef struct convert_pt {
+  int baseType;
   unsigned char** tgtPtr;
   double *valfor0, *valfor255;
 } convertParms;
 
-void convert_to_byte(double* values, int offset, convertParms* cbData) {
+void convert_to_byte(void* values, int offset, convertParms* cbData) {
   unsigned char** tgtPtr;
-  double valfor0, valfor255, span;
+  double valfor0, valfor255, thisVal;
 
   valfor0 = *cbData->valfor0;
   valfor255 = *cbData->valfor255;
+  if (cbData->baseType == REAL) 
+    thisVal = ((double*)values)[offset];
+  else 
+    thisVal = ((int*)values)[offset];
 
-  *((*cbData->tgtPtr)++) = (unsigned char)(values[offset]<valfor0?0:
-				   (values[offset]>=valfor255?255:
-				    (255*(values[offset]-valfor0)/
-				     (valfor255-valfor0))));
+//  sprintf(globMess, "Span is %lf to %lf; off %d, val %lf", valfor0, valfor255,
+//	  offset, values[offset]);
+//  showMess(globMess);
+  *((*cbData->tgtPtr)++) =
+    (unsigned char)(thisVal<valfor0?0:(thisVal>=valfor255?255:
+				       (255*(thisVal-valfor0)/
+					(valfor255-valfor0))));
 }
 
 void move_to_double(double* values, int offset, double** tgtPtr) {
@@ -1765,7 +1777,6 @@ void move_to_double(double* values, int offset, double** tgtPtr) {
 FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   int error;
-  double (*scaleProc) (void*);
   double valfor0, valfor255, valspan, dval;
   nodeValues* accessTool;
   unsigned char* tgt;
@@ -1825,17 +1836,14 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   valspan=valfor255-valfor0; // set to span
 
   count = 0;
-  while (accessTool->dimSpecs[count]<0) ++count; //stop at base data type
-  if ((baseType=accessTool->dimSpecs[count])==REAL) {
-    scaleProc = scaleDoubleProc;
-  } else {
-    scaleProc = scaleIntProc;
-  }
+  while (accessTool->dimSpecs[count]>=0) ++count; //stop at base data type
+  baseType=accessTool->dimSpecs[count];
 
   size = 0;
   call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
 		    add_to_size, (void*)&size);
   // this increments size once for each value
+
   resultPtr = Tcl_NewObj();
   if (!clientData) {
     if (valspan) {
@@ -1851,24 +1859,18 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 
   discCount=0;
   if (clientData) {
+    ((addSortedParms*)myClientData)->baseType = baseType; 
     ((addSortedParms*)myClientData)->discCount = &discCount; 
-    //    if (baseType==REAL) {
-    // replace this disjunction by adding basetype to clientdata
     ((addSortedParms*)myClientData)->dPtrDiscList = &dDiscList;
     call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
 		      (valCallback*)addSorted, myClientData);
-    // } else {
-    //   myClientData[1] = &iDiscList;
-    //   call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0, 
-// 			addSorted, myClientData);
-    // }
   } else {
-    ((convertParms*)*myClientData)->tgtPtr = &tgt; 
+    ((convertParms*)myClientData)->tgtPtr = &tgt; 
     // not sure why I must cast a pointer rather than the structure itself
     // must be passed every call so increment it
     if (valspan) {
-      ((convertParms*)*myClientData)->valfor0 = &valfor0;
-      ((convertParms*)*myClientData)->valfor255 = &valfor255;
+      ((convertParms*)myClientData)->valfor0 = &valfor0;
+      ((convertParms*)myClientData)->valfor255 = &valfor255;
 	call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0, 
 			  (valCallback*)convert_to_byte, myClientData);
     } else { // no span: get values as doubles
@@ -1877,8 +1879,10 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     }
   }
 
-  // if doing discrete, make tcl array of results and free space
+  // if doing distinct vals, make tcl array of results and free space
+  // (new for 5.3; first val is total member count)
   if (clientData) {
+    Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewIntObj(size));
     for (count=0; count<discCount; ++count) {
       if (baseType==REAL) {
 	spareObjPtr = Tcl_NewDoubleObj(dDiscList[count]);
@@ -1895,7 +1899,7 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   free(accessTool);
   return TCL_OK;
 }
-*/
+
 FINDABLE int listobjCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
    int error;
@@ -2366,7 +2370,7 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_CreateObjCommand(interp, "extract_binary", extractBinCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "discrete_values", extractBinCmd, 
+  Tcl_CreateObjCommand(interp, "distinct_values", extractBinCmd, 
 		       (ClientData)1, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "getnodeid", getnodeidCmd, (ClientData)NULL,

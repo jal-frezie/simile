@@ -277,7 +277,7 @@ EXTDEC void translate_dims(int[], int[], int[], int, BOOLEAN);
 EXTDEC void call_for_each_val(int*, char*, int, valCallback, void*);
 EXTDEC void free_bloc_data(char*, int*);
 
-// use of regularData class
+/* use of regularData class (replaced by above)
 EXTDEC long int createRegularData (void);
 EXTDEC void deleteRegularData (long int);
 EXTDEC int rdSetToNodeValue(long int, long int, long int, char*);
@@ -285,3 +285,4 @@ EXTDEC int rdDimensionality(long int);
 EXTDEC int rdDatatype(long int);
 EXTDEC int rdBound(long int, int);
 EXTDEC void* rdLocateElement(long int old, int* indices);
+*/

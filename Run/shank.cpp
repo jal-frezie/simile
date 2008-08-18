@@ -446,7 +446,7 @@ void call_for_each_val(int* ptDims, char* ptData, int offset,
   default:
     if (ptDims[0]>0)
       for (count=0; count<ptDims[0]; ++count)
-	call_for_each_val(ptDims+1, ((sizeAndPtr*)ptData)->ptr,
+	call_for_each_val(ptDims+1, ptData,
 			  ptDims[0]*offset+count, callback_proc, cbData);
     else // a base value, callback proc should know what sort
       (*callback_proc)(ptData, offset, cbData);
@@ -1867,7 +1867,9 @@ nodeValues* get_raw_values(char* nodeId, long int instance_id) {
 
 /* definitions for regularData class -- note we may later want
 to use regularData items to describe simple c++ arrays, which is why we 
-create them and then set them to a model item */
+create them and then set them to a model item
+
+these now obsolete, replaced by the more general nodeValues data type
 
 class regularData {
   int spacings[32];
@@ -1958,12 +1960,12 @@ void* rdLocateElement(long int old, int* indices) {
   return ((regularData*)old)->locate_element(indices);
 }
 
-/*
+// Procedures to carry out individual phases of model execution; no longer
+// needed as part of the interface cos the whole loop is on this side
+
 void update(long int modelType, long int modelHandle, int phase) {
   ((Model*)modelType)->updatemodel((void*)modelHandle, phase);
 }
-
-// model execution
 
 void advance(long int modelType, long int modelHandle, int phase) {
   ((Model*)modelType)->advancemodel((void*)modelHandle, phase);
