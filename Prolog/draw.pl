@@ -427,7 +427,9 @@ to apply that transform to the submodel graphics...simple */
 	untranslate(CoordsInSubmodel, InTrans, [L, T, R, _B]),
 	FatChange is R-L,
 	zoom_bits_in(Win, Model, FatChange, [L, T], InList),
-	fail; redisplay_border(Model).
+	fail; % now do simple stuff
+	redisplay_border(Model),
+	event:make_links_follow(Model).
 	
 get_flash(Comp, Colour_scheme) :-
 	get_highlit_obj(Comp, Index), !,

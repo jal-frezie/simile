@@ -60,7 +60,14 @@ exit_two_click_op :-
 	get_line_start_obj(New),
 	New is_of_sort cloud,
 	draw:off(New).
-	
+
+synchronize_graphics(LostExtents, Redrawn) :-
+	all(draw, off, [build(Redrawn)]), /* safe if they don't exist yet */
+	all(draw, adjust_submodel_internals, [build(LostExtents)]),
+	all(draw, redisplay_border, [build(Redrawn)]),
+	all(event, make_links_follow, [build(Redrawn)]).
+	    % needed because link database entries do not change when ends moved
+
 go_back(Model) :-
 	(exit_two_click_op, !;
 	    /* If removing floater, end operation as user did not intend
@@ -70,10 +77,8 @@ go_back(Model) :-
 	wrap(Prev, Current),
 	internal_extent_jiggered(Model, Prev, LostExtents),
 	appearance_changes(Model, Prev, LostExtents, Redrawn),
-	all(draw, off, [build(Redrawn)]), /* safe if they don't exist yet */
 	enact_changes(Model, Prev, reverse),
-	all(draw, adjust_submodel_internals, [build(LostExtents)]),
-	all(draw, redisplay_border, [build(Redrawn)]),
+	synchronize_graphics(LostExtents, Redrawn),
 	into_save_file(Model, undo),
 	assert(saved_state(Model, current, Prev))),
 	set_edit_abilities(Model).
@@ -85,10 +90,8 @@ go_forward(Model) :-
 	wrap(Current, Next),
 	internal_extent_jiggered(Model, Current, LostExtents),
 	appearance_changes(Model, Current, LostExtents, Redrawn),
-	all(draw, off, [build(Redrawn)]),
 	enact_changes(Model, Current, forward),
-	all(draw, adjust_submodel_internals, [build(LostExtents)]),
-	all(draw, redisplay_border, [build(Redrawn)]),
+	synchronize_graphics(LostExtents, Redrawn),
 	into_save_file(Model, redo),
 	assert(saved_state(Model, current, Next)),
 	set_edit_abilities(Model).
