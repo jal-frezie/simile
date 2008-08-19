@@ -228,7 +228,7 @@ convert_ttfn([C1 | Rest], Val) :-
 	    Val is N+32*TailVal).
 
 unicode_to_ttfn(Val, Chars) :-
-	Val >= 32, Val < 192, \+ [Val] = "X", !,
+	(Val > 6, Val < 14; Val >= 32, Val < 192, \+ [Val] = "X"), !,
 	    Chars = [Val];
 	spinout_ttfn(Val, Spun),
 	    append("X", Spun, Chars).

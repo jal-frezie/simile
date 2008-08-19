@@ -93,8 +93,7 @@ argify(Chars, ArgChars) :-
 
 escape_nasties(Chars, ArgChars) :-
 	append(Go, [CB | Stop], Chars),
-	([CB] = "\n",		% line break
-	    BS = "\\n",
+	(member([CB]-BS, ["\n"-"\\n", "\t"-"\\t"]), % char with own escape seq
 	    append(Go, BS, Mid),
 	    append(Mid, Rest, ArgChars);
 	member(CB, "\"{}[] \\;"),

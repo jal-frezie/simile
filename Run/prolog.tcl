@@ -107,7 +107,7 @@ proc do_tail {header args} {
 
 proc send_pl_cmd {withCrs} {
     global plPipe
-    regsub -all \n $withCrs \\n plCmd
+    set plCmd [string map [list \n \\n \r \\r] $withCrs]
 #    puts [concat > $plCmd]
     if {$plPipe(debug)} {
 	puts $plPipe(debug_stream) [concat > $plCmd]
