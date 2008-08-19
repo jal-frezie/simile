@@ -329,7 +329,7 @@ menu_handle(Win, file, CompOrBuild) :-
 	abs_path_name(Base, root, Path),
 	    append_atoms([Temp, '/', Path], CompDir)),
 	(\+ rebuild_code(c, Model, CompDir), !;
-	(get_av_pair(Model, 1, c_new, Serial), !; Serial = ''),
+	(get_av_pair(Model, 1, c_new, Serial), !; Serial = 1),
 	    caption_for(Model, Capt),
 	    append_atoms([CompDir, '/', Capt, '/model', Vers, Ident], Top),
 	    output:safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _));
@@ -1542,7 +1542,7 @@ save_dlls(Point, LocalDir, Top, Model, SaveParent) :-
 	    member(0, Subs),
 	LocalNew = 0;
 	get_av_pair(Model, 1, c_new, LocalNew);
-	LocalNew = ''), !,
+	LocalNew = 1), !,
 
 	((get_av_pair(Model, 0, separate, 1); Model = Top), !,
 	    (Top = Model, !,

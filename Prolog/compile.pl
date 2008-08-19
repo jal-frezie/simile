@@ -108,8 +108,8 @@ build_instances(Language, DestDir, Parent, TopNode,
 	    /* we need an executable for this level */
 	    (Language = c,
 	        (Parent has_model_refinement c_new of OldTgt;
-		    OldTgt = '{}'), !;
-	    /* if no c_new look for dll with default name from save file */
+		    OldTgt = 1), !;
+	    /* if no c_new look for dll from save file with 1 in name */
 	    OldTgt = 0),
 	    check_exec_fns_fresh(Language, CheckDir, OldTgt, FnsUsed, RStrs),
 	    all(user, name, [build([Stat | Includes]), build(RStrs)]),

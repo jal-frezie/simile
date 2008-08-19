@@ -101,6 +101,7 @@ proc AttackGlobalVariable {array elt val} {
 # image create photo open -file "../Images/mailbox.gif"
 # Actually I think not, it seems to prevent the window menu appearing as well
 
+# Copy any current executables to names where they will be saved
 proc ShiftDll {Point Top Loc Rep} {
     if {[llength $Loc]} {
         set AddLoc /$Loc
@@ -112,19 +113,12 @@ proc ShiftDll {Point Top Loc Rep} {
     file mkdir $base
     if {[llength $Rep]} {
         set prefx $base/model
-	set tgt ${prefx}[info sharedlibextension]
-        if {$Rep && [file exists ${prefx}${Rep}[info sharedlibextension]]} {
-            file copy -force ${prefx}${Rep}[info sharedlibextension] $tgt
-        } else {
-#            file delete -force $tgt
-# Do not delete this, it is out-of-date but might still be in use
-            file delete -force ${prefx}.tcl
-        }
-        #   foreach file [glob -nocomplain ${prefx}*] {
-        #       if {![string match ${prefx}.* $file]} {
-        #       file delete $file
-        #       }
-        #   }
+	foreach runnableExtn {.tcl .dll .so .dylib} {
+	    set tgt ${prefx}$runnableExtn
+	    if {$Rep && [file exists ${prefx}${Rep}$runnableExtn]} {
+		file copy -force ${prefx}${Rep}$runnableExtn $tgt
+	    }
+	}
     }
 }
 
@@ -1291,6 +1285,8 @@ proc LoadFile {topNode tree tgt} {
 				continue
 			    } else {
 				check_auth_code $bit
+# now insert 1 in its name so we are not forced to save it next time
+				set oldPath [file rootname $oldPath]1[file extension $oldPath]
 			    }
 			}
 			SaveMimeBit $bit $tree$oldPath
