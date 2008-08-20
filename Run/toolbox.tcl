@@ -823,6 +823,9 @@ proc ControlDraw {prologVersion} {
     set gccBitness 32
     catch {exec g++ -v} gppInfo
     set relevant [string first arget $gppInfo]
+    if {$relevant==-1} {
+	set relevant [string first host= $gppInfo]
+    }
     if {$relevant>-1 && [string first 64 $gppInfo $relevant]<$relevant+16} {
 	set gccBitness 64
     } ;# assume any 64-bit gcc will be proud enough to proclaim itself
