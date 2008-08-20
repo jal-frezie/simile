@@ -188,7 +188,7 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	set_original_click(Xpt, Ypt),
 	find_all_comps(Parent, Name),
 	save_params(Trans, Depth, Parent),
-	(doing_add(submodel), !,
+	(CD < 2, doing_add(submodel), !,
 	     set_start_coords(Xpt, Ypt),
 	     set_current_coords(Xpt, Ypt), 
 % could offset them to actually include component clicked on
@@ -1886,9 +1886,10 @@ unclick_obj :-
 	initialize_phase.
 
 doing_add(Comp) :-
-	instant_link(Comp);
+	instant_link(AddingNow), !,
+	    Comp = AddingNow; % not adding mode choice if doing instant link
 	get_mode(add),
-	get_adding_object(Comp).
+	    get_adding_object(Comp).
 
 tie_ends(New_obj, Start_thing, Terminator) :-
 	link_ends(New_obj, Start_thing, Terminator, LastArc),
