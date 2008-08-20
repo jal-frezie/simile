@@ -75,7 +75,8 @@ do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
                 Indent, GraphCount, Used, Stream) :-
         NewIndent is Indent+4,
 	declare(L, Loop, loop, int, Used, Indent, Stream),
-	declare(L, _Feature, bound, int, Used, Indent, Stream),
+% fatal question -- what does this do
+%	declare(L, _Feature, bound, int, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
         (make_indexed_reference(L, Loop, Inds, Count),
 	    excrete(L, for_start, [Count, 1, Bound, 1], Indent, Stream),
@@ -269,9 +270,10 @@ failed through to make sure all later temporary variables get declared. */
 	excrete(L, end(cond), 'Instance exists', Indent, Stream),
 	/* IfChecking */
 	(number(Phase), !,
-	    excrete(L, if_start, MemberCheckRef, Indent, Stream);
-	 \+ number(Phase)),
-	do_assign_list(L, MyLoop, Indent1, Graphs, Used, Stream),
+	    excrete(L, if_start, MemberCheckRef, Indent, Stream),
+	    SubIndent = Indent1;
+	 SubIndent = Indent),
+	do_assign_list(L, MyLoop, SubIndent, Graphs, Used, Stream),
 	do_writing(CheckEnd, Stream),
 	/* That should make some good code */
 
@@ -623,14 +625,14 @@ make sure they get set up and kept in correspondence with their uncles before
 any of their values are calculated. The source is 1 on these; in this case
 we only make the three lines that insert the submodel instance into its linked list. 
 */
-	(\+ Source == 1, !,
-	    (setof(GenVal, get_term_refs(L, Pointer, Source, GenVal), GenVals),
-		build_disjunction(L, GenVals, TestVal), !;
-	    TestVal = 0),
+	(Source == 1, !,
+	    % clause for dummy generator
+	    Indent1 = Indent;
+	 (setof(GenVal, get_term_refs(L, Pointer, Source, GenVal), GenVals),
+	     build_disjunction(L, GenVals, TestVal), !;
+	  TestVal = 0),
 	    excrete(L, if_start, TestVal, Indent, Stream),
-	    Indent1 is Indent+4;
-	/* clause for dummy generator */
-	Indent1 = Indent),
+	    Indent1 is Indent+4),
 
 	make_struct_reference(L, Pointer, next, OnPointer),
 	append_atoms(Name, meta, MetaPointer),
@@ -641,7 +643,7 @@ we only make the three lines that insert the submodel instance into its linked l
 	excrete(L, assignment, MPTarget=PointerRef, Indent1, Stream),
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream),
 	
-	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream),
+	(do_assign_list(L, Clauses, Indent1, Graphs, Used, Stream),
 
 	/* Any further assignments in model generation also go inside this 'if'
 	clause, so as not to do them is the submodel instance does not exist. Thus
@@ -649,7 +651,10 @@ we only make the three lines that insert the submodel instance into its linked l
 	(Source == 1, !;
 	    excrete(L, else_clause, TestVal, Indent, Stream),
 	    excrete(L, release_memory, Pointer, Indent1, Stream),
-	    excrete(L, end(cond), TestVal, Indent, Stream)).
+	    excrete(L, end(cond), TestVal, Indent, Stream),
+	    fail);
+	true). % all remaining clauses are inside condition group
+
 
 /* Right, this is the one with the meat in it; the actual integration of new code
 that evaluates an expression in the model */
