@@ -62,7 +62,6 @@ exit_two_click_op :-
 	draw:off(New).
 
 synchronize_graphics(LostExtents, Redrawn) :-
-	all(draw, off, [build(Redrawn)]), /* safe if they don't exist yet */
 	all(draw, adjust_submodel_internals, [build(LostExtents)]),
 	all(draw, redisplay_border, [build(Redrawn)]),
 	all(event, make_links_follow, [build(Redrawn)]).
@@ -77,6 +76,7 @@ go_back(Model) :-
 	wrap(Prev, Current),
 	internal_extent_jiggered(Model, Prev, LostExtents),
 	appearance_changes(Model, Prev, LostExtents, Redrawn),
+	all(draw, off, [build(Redrawn)]), /* safe if they don't exist yet */
 	enact_changes(Model, Prev, reverse),
 	synchronize_graphics(LostExtents, Redrawn),
 	into_save_file(Model, undo),
@@ -90,6 +90,7 @@ go_forward(Model) :-
 	wrap(Current, Next),
 	internal_extent_jiggered(Model, Current, LostExtents),
 	appearance_changes(Model, Current, LostExtents, Redrawn),
+	all(draw, off, [build(Redrawn)]), /* safe if they don't exist yet */
 	enact_changes(Model, Current, forward),
 	synchronize_graphics(LostExtents, Redrawn),
 	into_save_file(Model, redo),
