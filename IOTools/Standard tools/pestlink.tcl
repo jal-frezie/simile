@@ -676,6 +676,7 @@ namespace eval $keyValue {
         if {[winfo exists $f]} {
             $outId.c.canvas see $f
         } else {
+	    set ::readMany($title) 0
             lappend targetData(needed) $title
             AddEntry $outId $myNode $node 1 -1
 	    lappend useNodes($winId,drivers) $title
@@ -686,7 +687,7 @@ namespace eval $keyValue {
                     -side left
             BindPopup $f.end "Set values at time points"
 # do command now in case it was selected last time
-            AbleTimeSampling $node $title $f
+            AbleTimeSampling $myNode $node $title $f
 	    foreach widjo [concat [list $f] [winfo children $f]] {
                 bind $widjo <Double-1> [namespace code \
                         [list DoOutDlg $node $f $title]]

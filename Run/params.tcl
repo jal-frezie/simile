@@ -563,7 +563,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
             0 {
                 FPError "Missing value" {}
             } 1 {
-                if {![string last ,now [string tolower $subs] 3]} {
+                if {![string last ,NOW [string toupper $subs] 3]} {
 		    # setting current value for var param
                     set idAndSubs $tgt[string range $subs 4 end]
 		    set tgtVar [InputVarFor $topNode $tgt]
@@ -600,7 +600,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         if {[string match TIME $nextDim]} {
             set role "Time point"
             if {!([Numeric $indx] || \
-		      [lsearch {now others} [string tolower $indx]]>-1)} {
+		      [lsearch {NOW OTHERS} [string toupper $indx]]>-1)} {
                 FPError "$role $indx must be NOW, OTHERS or a number." {}
             }
         } elseif {[string compare {} $thisTrans]} {
@@ -632,22 +632,22 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 	SetWrapTime $tgt 0 $useCppArray ;# clear old wraparound point
 	SetFillMethod $tgt 0 use_last $useCppArray ;# and fill method
         foreach arrayPt [array names sub] {
-            if {[set pt [lsearch {now others} [string tolower $arrayPt]]]>-1} {
+            if {[set pt [lsearch {NOW OTHERS} [string toupper $arrayPt]]]>-1} {
 		if {[llength $subs]} {
 		    FPError "NOW or OTHERS must be outermost index." {}
 		}
             } elseif {![Numeric $arrayPt]} {
                 FPError "Time point must be NOW, OTHERS or a number." \
 		    [list $arrayPt] 
-            } elseif {[string equal restart [string tolower $sub($arrayPt)]]} {
+            } elseif {[string equal RESTART [string toupper $sub($arrayPt)]]} {
 		SetWrapTime $tgt $arrayPt $useCppArray
 		continue
 	    } elseif {$useCppArray>1} {
                 c_settimepointarray $tgt $arrayPt
             }
 
-	    if {[set mtd [lsearch {use_last use_closest interpolate} \
-			      [string tolower $sub($arrayPt)]]]>-1} {
+	    if {[set mtd [lsearch {USE_LAST USE_CLOSEST INTERPOLATE} \
+			      [string toupper $sub($arrayPt)]]]>-1} {
 		if {$pt==1} {
 		    SetFillMethod $tgt $mtd $arrayPt $useCppArray
 		    continue
@@ -804,7 +804,7 @@ proc SetFillMethod {where which what inC} {
     if {$inC} {
 	c_setfillmethod $where $which
     } else {
-	set paramData(fillMethod,$where) [string tolower $what]
+	set paramData(fillMethod,$where) [string toupper $what]
     }
 }
 
@@ -1542,14 +1542,14 @@ proc SensibleValue {trans list} {
 
 proc VarType {testVar types} {
     if {[string equal time $types]} {
-	if {[lsearch {now others} [string tolower $testVar]]!=-1} {
+	if {[lsearch {NOW OTHERS} [string toupper $testVar]]!=-1} {
 	    return 1
 	} elseif {[Numeric $testVar]} {
 	    return 2
 	}
     } elseif {[string equal timePt [lindex $types 0]]} {
-	if {[lsearch {restart use_last use_closest interpolate} \
-		 [string tolower $testVar]]!=-1} {
+	if {[lsearch {RESTART USE_LAST USE_CLOSEST INTERPOLATE} \
+		 [string toupper $testVar]]!=-1} {
 	    return 2
 	} else {
 	    return [VarType $testVar [lrange types 1 end]]

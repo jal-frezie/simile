@@ -687,7 +687,7 @@ public:
     
     insertionPt = locate_elt(dataPtr.contents, 0, dataPtr.dimSpecs, indxs);
     if (!insertionPt) return; // record pointers not yet made
-    if (nodeLine->eval==INPUT && resetting<0 && !(time_point_exists(0.0))) {
+    if (nodeLine->eval==INPUT && resetting<-1 && !(time_point_exists(0.0))) {
       // back copy now done in blocks afterwards to make record spaces
       // memcpy(insertionPt, tgt, size_for_type());
     } else {
@@ -1987,7 +1987,7 @@ int reset(long int modelType, long int modelHandle, int top_phase) {
   resetting=top_phase;
   result = ((Model*)topType)->resetmodel((void*)modelHandle, top_phase);
 
-  if (!result && top_phase<0) {
+  if (!result && top_phase<-1) {
     listParamArray* paramArrayItem;
 
     paramArrayItem = param_array_base;
