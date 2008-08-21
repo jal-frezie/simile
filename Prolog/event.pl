@@ -1483,7 +1483,7 @@ move_link(Obj) :-
 
 make_links_follow(Obj) :-
 	find_all_links(Obj, Link),
-	reroute_display(Link),
+	move_link(Link),
 	fail; true.
 
 /* adjust_link(Link, Recurse) :-
