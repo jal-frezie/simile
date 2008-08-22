@@ -1563,6 +1563,7 @@ proc Customize {winId mode} {
     set looks(width) 180
     
     set t [PutItThere .customize $winId]
+    wm protocol $t WM_DELETE_WINDOW "set done 0"
     
     switch -regexp $mode {
         condition|creation|immigration|reproduction|loss {
