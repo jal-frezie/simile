@@ -1869,6 +1869,7 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     // not sure why I must cast a pointer rather than the structure itself
     // must be passed every call so increment it
     if (valspan) {
+      ((convertParms*)myClientData)->baseType = baseType; 
       ((convertParms*)myClientData)->valfor0 = &valfor0;
       ((convertParms*)myClientData)->valfor255 = &valfor255;
 	call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0, 
