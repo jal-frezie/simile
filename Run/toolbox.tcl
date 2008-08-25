@@ -101,7 +101,8 @@ proc AttackGlobalVariable {array elt val} {
 # image create photo open -file "../Images/mailbox.gif"
 # Actually I think not, it seems to prevent the window menu appearing as well
 
-# Copy any current executables to names where they will be saved
+# Copy any current executables to names where they will be saved; delete 
+# previous files in these posns as they are obsolete, and only copies
 proc ShiftDll {Point Top Loc Rep} {
     if {[llength $Loc]} {
         set AddLoc /$Loc
@@ -113,8 +114,11 @@ proc ShiftDll {Point Top Loc Rep} {
     file mkdir $base
     if {[llength $Rep]} {
         set prefx $base/model
-	foreach runnableExtn {.tcl .dll .so .dylib} {
+	foreach runnableExtn {.cpp .tcl .dll .so .dylib} {
 	    set tgt ${prefx}$runnableExtn
+	    if {[file exists $tgt]} {
+		file delete -force $tgt
+	    }
 	    if {$Rep && [file exists ${prefx}${Rep}$runnableExtn]} {
 		file copy -force ${prefx}${Rep}$runnableExtn $tgt
 	    }
@@ -680,6 +684,7 @@ puts $badCompile
     } else {
 	# file delete model.cpp
 	# (no, we might be copying)
+	file rename model.cpp model$serial.cpp
 	file delete objtmp.o
     }
     # do not allow an old dcf to be saved with a new model
@@ -1179,8 +1184,9 @@ proc PathFromDispo {bit} {
     return $oldPath
 }
 
+# treat .cpp files as runnables to make sure obsoletes are removed
 proc IsRunnableModel {fileName} {
-    return [expr {[lsearch {.tcl .dll .so .dylib} \
+    return [expr {[lsearch {.cpp .tcl .dll .so .dylib} \
 		       [file extension $fileName]]!=-1}]
 }
 
@@ -1380,7 +1386,7 @@ proc GetParts {top tree} {
                 }
             }
             # when saving, save all relevant files from current level but only
-            # program files for submodels -- everything else is included in top level
+            # parameter files for submodels -- everything else is included in top level
             if {[string equal Data $Description] || \
                         [string equal $top $tree] && \
                         ![string match junk $Description]} {
