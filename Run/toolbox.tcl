@@ -539,6 +539,19 @@ proc load_dll {topNode lang progDir id node incs} {
 		ex_load_dll $topNode $lang $progDir $id $node $incs]
 }
 
+proc ReuseSourceCode {workingDir currentKey} {
+    set oldDir [pwd]
+    cd $workingDir
+    if {[file exists model$currentKey.cpp]} {
+	file rename -force model$currentKey.cpp model.cpp
+	set result 1
+    } else {
+	set result 0
+    }
+    cd $oldDir
+    return $result
+}
+
 proc compile_c {workingDir extLibs} {
     global sendvars tcl_platform env SIMILE_PATH
 
