@@ -505,7 +505,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
     
     set startIdx [string equal TIME [lindex $dims 0]]
     if {[string equal ,bytes [lindex $list 1]]} {
-	if {$useCppArray} {
+	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1} {
 	    if {$startIdx} {
 		c_settimepointall $tgt [lindex $list end]
 		c_setwraparoundtime $tgt [lindex $list end-2]
@@ -534,7 +534,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 	    set list $newList
 	}
     } elseif {[string equal ,gdal [lindex $list 1]]} {
-	if {$useCppArray && !$startIdx} {
+	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1 && !$startIdx} {
 	    DoNotPassTcl $topNode $tgt $dims $list
 	    return -1 ;# typical fixed parameter
 	} else {
