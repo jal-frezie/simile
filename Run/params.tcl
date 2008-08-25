@@ -1001,6 +1001,9 @@ namespace eval fileparams {
 		} else {
 		    set dimList [lrange $outData($compName) 3 end-3]
 		}
+		if {$readMany($compName)} { ;# add TIME as outermost dimension
+		    puts $pStr "  $indent<value index=\"[incr dimCount]\" val=\"TIME\"/>"
+		}
 		foreach dim $dimList {
 		    if {[string equal 0 $dim]} break
 		    puts $pStr "  $indent<value index=\"[incr dimCount]\" val=[Entitize $dim]/>"

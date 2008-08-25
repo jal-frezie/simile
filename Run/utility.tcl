@@ -555,8 +555,8 @@ proc ShrinkValueList {outerList limit} {
 	set allVals [expr [string length [lindex $list end]]/$fieldSize]
 # fix this up later
 	if {[string equal TIME [lindex $list 3]]} {
-	    set list "Time series"
-	    return $allVals
+	    set list "Time series specified by byte array"
+	    return -1
 	}
 	set offset 0
 	if {$allVals<$manage} {

@@ -801,10 +801,9 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-  int count, error, squirtPtr = 0, num_bytes;
-  char *nodeId;
+  int count, error, squirtPtr = 0, num_bytes, *dims;
+  char *nodeId, *ptBytes;
   unsigned char *holder;
-  void *ptBytes;
   double seekTime;
   Tcl_Obj* resultPtr;
 
@@ -816,15 +815,17 @@ FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
   nodeId = Tcl_GetStringFromObj(argv[1], NULL);
   if (count=param_array_size(nodeId)) {
     holder = Tcl_GetByteArrayFromObj(argv[2], &num_bytes);
-    //sprintf(globMess, "Array has %d bytes, time points %d", num_bytes, count);
-    //showMess(globMess);
+//    sprintf(globMess, "Array has %d bytes, time points %d", num_bytes, count);
+//    showMess(globMess);
     while (squirtPtr<num_bytes) {
-// Needs new system 
-//      if (!(ptBytes = create_time_point(nodeId, 
-//					*(double*)(holder+squirtPtr), NULL))) {
-//	Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
-//	return TCL_ERROR;
-//      }
+// Needs new system
+      seekTime = *(double*)(holder+squirtPtr);
+      if (create_time_point(nodeId, seekTime)) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
+	return TCL_ERROR;
+      }
+      get_timepoint_ptr_and_dims(nodeId, seekTime, &ptBytes, &dims);
+      // assume above works as we have just created it
       squirtPtr += sizeof(double);
       memcpy(ptBytes, holder+squirtPtr, count);
       squirtPtr += count;
