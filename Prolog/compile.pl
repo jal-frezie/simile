@@ -125,7 +125,10 @@ build_instances(Language, DestDir, Parent, TopNode,
 				     TopNode, Includes))),
 	     (Language = c, Extn = '.cpp';
 	     Language = tcl, Extn = '.tcl'),
-	     (Language = c,
+	     (fail, /* Do not attempt to re-use source code just yet; need to
+	     * get external libraries for linker
+	     * not try if bad executable already found (too many messages) */
+		 Language = c,
 		 \+ ChangeTop == 1,
 		 safe_tcl_eval(['ReuseSourceCode', br(WCheckDir), OldTgt], "1"),
 		 !;
