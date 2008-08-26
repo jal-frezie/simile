@@ -126,6 +126,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 	     (Language = c, Extn = '.cpp';
 	     Language = tcl, Extn = '.tcl'),
 	     (Language = c,
+		 \+ ChangeTop == 1,
 		 safe_tcl_eval(['ReuseSourceCode', br(WCheckDir), OldTgt], "1"),
 		 !;
 	     dialogue:reassure_user("Instantiating expressions from node values"),
