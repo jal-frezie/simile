@@ -697,7 +697,7 @@ puts $badCompile
     } else {
 	# file delete model.cpp
 	# (no, we might be copying)
-	file rename model.cpp model$serial.cpp
+	file rename -force model.cpp model$serial.cpp
 	file delete objtmp.o
     }
     # do not allow an old dcf to be saved with a new model

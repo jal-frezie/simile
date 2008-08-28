@@ -31,7 +31,7 @@ compile( Language, Parent, DestDir) :-
 	/* This is a stopgap, we should really update a property of the
 	submodel containing the destination whenever a link is added or
 	deleted so only to do these checks when needed */
-	build_instances(Language, DestDir, Parent, Parent, 1, _,_,_).
+	build_instances(Language, DestDir, Parent, Parent, 1, _,_,_,_).
 /*	(Language = tcl, !,
 	    all(m_class, has_new_class_refinement,
 		[build(SeparateNodes), unify(separate of 1)]);  
@@ -71,16 +71,22 @@ is_entry(Entry) :-
 	\+ appears(End), \+ find_type(End, function),
 	    DLLSpec has_part End),
 	DLLSpec has_class_refinement separate of 1.
-*/	
+
+What follows still contains extensive support for building models as a
+series of shared libraries corresponding to some chosen levels in the
+heirarchy of submodels, although this is no longer used as of v5.0. It
+may return one day... */
+
 build_instances(Language, DestDir, Parent, TopNode,
-		Step, ChangeNext, LocalFnsUsed, KeepParents) :-
+		Step, ChangeNext, LocalFnsUsed, LocalExtLibs, KeepParents) :-
 	caption_for(Parent, Name),
 	append_atoms([DestDir, '/', Name], CheckDir),
 	check_directory(CheckDir),
 	windowize(CheckDir, WCheckDir),
 	time_step_for(Parent, Step, MyStep),
-	on_exception(Ur, build_sub_instances(Language, CheckDir, Parent, TopNode, MyStep,
-			    ChangeTop, SubFnsUsed, KeepDir),
+	on_exception(Ur, build_sub_instances(Language, CheckDir, Parent,
+					     TopNode, MyStep, ChangeTop,
+					     SubFnsUsed, SubExtLibs, KeepDir),
 	    (sicstus_format_to_chars("{Relaying exception ~w at level ~w}",
 		[Ur, CheckDir], ExcStr),
 	     name(Exc, ExcStr),
@@ -91,6 +97,10 @@ build_instances(Language, DestDir, Parent, TopNode,
 	(setof(Fn, list_user_fns(Parent, Fn), LevelFnsUsed), !,
 	    merge_lists(LevelFnsUsed, SubFnsUsed, FnsUsed);
 	FnsUsed = SubFnsUsed),
+	(Parent has_class_refinement external_code of ExtCodSpec,
+	    member(libraries=LevelExtLibs, ExtCodSpec), !,
+	    merge_lists(LevelExtLibs, SubExtLibs, ExtLibs);
+	ExtLibs = SubExtLibs),
 	/* model can go incomplete then complete again without change
 	 so check all */
 	(check_level_for_reds(TopNode, Parent, Wrinkle), !,
@@ -100,8 +110,10 @@ build_instances(Language, DestDir, Parent, TopNode,
 	Parent has_model_refinement c_new of 0, !,
 	    Parent has_changed_model_refinement c_new of 1,
 	    ChangeTop = 1,
-	    LocalFnsUsed = [];
-	LocalFnsUsed = FnsUsed),
+	    LocalFnsUsed = [],
+	    LocalExtLibs = [];
+	LocalFnsUsed = FnsUsed,
+	    LocalExtLibs = ExtLibs),
 
 	(( %Parent has_class_refinement separate of 1;
 	  backup:is_toplevel(Parent)), !,
@@ -116,32 +128,28 @@ build_instances(Language, DestDir, Parent, TopNode,
 	    (Stat < 3, !;
 		Includes = [LostFn, WhereSought],
 	        raise_exception(missing_function(LostFn, WhereSought))),
-	    ((ChangeTop == 1,
-	        all(compile, delete_prog,
-		    [unify(CheckDir),
-		     build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]);
-	      \+ (Stat = 0,
-		     load_executable(Language, CheckDir, OldTgt, Parent,
-				     TopNode, Includes))),
-	     (Language = c, Extn = '.cpp';
-	     Language = tcl, Extn = '.tcl'),
-	     (fail, /* Do not attempt to re-use source code just yet; need to
-	     * get external libraries for linker
-	     * not try if bad executable already found (too many messages) */
-		 Language = c,
-		 \+ ChangeTop == 1,
-		 safe_tcl_eval(['ReuseSourceCode', br(WCheckDir), OldTgt], "1"),
-		 !;
-	     dialogue:reassure_user("Instantiating expressions from node values"),
-		 instantiate_all(Parent, Model),
-		 append_atoms([WCheckDir, '/', model, Extn], WProgName),
-		 open_native(WProgName, write, Stream),
-		 on_exception(Puke,
-			      protected_build(Language, Stream, MyStep, 
-					      Model, Includes, ExtLibs),
-			      (reclose(Stream), raise_exception(Puke))),
-		 close(Stream)),
-	     dialogue:reassure_user("Compiling the program generated for the model"),
+
+	    (\+ ChangeTop == 1, % no change to model; reuse executable?
+		Stat = 0,
+		Tgt = OldTgt;
+	    
+		(Language = c,
+		    safe_tcl_eval(['ReuseSourceCode', br(WCheckDir), OldTgt],
+				  "1"); % succeeds if old source code found
+		 all(compile, delete_prog, [unify(CheckDir),
+		      build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]),
+		    (Language = c, Extn = '.cpp';
+		     Language = tcl, Extn = '.tcl'),
+		    dialogue:reassure_user("Instantiating expressions from node values"),
+		    instantiate_all(Parent, Model),
+		    append_atoms([WCheckDir, '/', model, Extn], WProgName),
+		    open_native(WProgName, write, Stream),
+		    on_exception(Puke,
+				 protected_build(Language, Stream, MyStep, 
+						 Model, Includes),
+				 (reclose(Stream), raise_exception(Puke))),
+		    close(Stream)),
+	    dialogue:reassure_user("Compiling the program generated for the model"),
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
 	     compile_c_program(CheckDir, ExtLibs, Tgt),
@@ -149,11 +157,9 @@ build_instances(Language, DestDir, Parent, TopNode,
 		     raise_exception(compilation_failed);
 		  (Parent has_changed_model_refinement c_new of Tgt;
 		      Parent has_new_model_refinement c_new of Tgt)),
-		 assert(new_exec_for(Parent))),
-		load_executable(Language, CheckDir, Tgt, Parent, TopNode,
-			       Includes);
-	 true),
-	KeepDir = 1;
+		 assert(new_exec_for(Parent)))),
+	    load_executable(Language, CheckDir, Tgt, Parent, TopNode, Includes),
+	    KeepDir = 1;
 	ChangeNext = ChangeTop),
 	/* delete dir if empty...*/
 	(KeepDir == 1, !,
@@ -181,7 +187,7 @@ delete_prog(Base, Extn) :-
 	my_delete_file(FullName).
 	
 build_sub_instances(Language, DestDir, Parent, Node,
-		    Step, ChangeTop, LocalFnsUsed, KeepDir) :-
+		    Step, ChangeTop, LocalFnsUsed, LocalExtLibs, KeepDir) :-
 	(setof( Submodel, (Parent has_part Submodel,
 			      Submodel has_class submodel,
 			      appears(Submodel)), Submodels), !; 
@@ -189,7 +195,8 @@ build_sub_instances(Language, DestDir, Parent, Node,
 	all(compile, build_instances, 
 	    [unify(Language), unify(DestDir), build(Submodels),
 	     unify(Node), unify(Step), unify(ChangeTop),
-	     merge_lists(LocalFnsUsed, []), unify(KeepDir)]).
+	     merge_lists(LocalFnsUsed, []), merge_lists(LocalExtLibs,[]),
+	     unify(KeepDir)]).
 
 check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	find_all_comps(Submodel, VisEntity),
@@ -237,7 +244,7 @@ defines_membership(SmByRec, Fp) :-
 % The code works by first giving names to the mathematical entities in the
 % model, and then working out bit by bit what the program has to be.
 
-protected_build(Language, Stream, TopStep, FullModel, LocalIncs, ExtLibs) :-
+protected_build(Language, Stream, TopStep, FullModel, LocalIncs) :-
 	FullModel = model(_Channels, [instance(submodel, Top, xrefs(_,
 	    instance(submodel, _, xrefs(FullModel, top, [], []),
 		     'AME_model', top-[]), _,_), _,_)]), 
@@ -306,7 +313,7 @@ bits and pieces */
 	dialogue:reassure_user("Creating submodel value expressions"),
 	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_,_),
 				     _,_), [], TopStep, Phases, [], Used,
-			    ExtIncs, ExtLibs, Inters, ReevaluateForm),
+			    ExtIncs, Inters, ReevaluateForm),
 	merge_inters(Inters, FullModel, AugmentedModel, Constants),
 	
 /*	extract_submodel_updates(Instances, [], 1, Phases, Deltas),
@@ -858,7 +865,7 @@ and functions within a submodel. It also creates the instructions that determine
 many individuals in each population submodel within it are created each round. */
 
 extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
-		    ExtIncs, ExtLibs, Inters, AssignList) :-
+		    ExtIncs, Inters, AssignList) :-
 	Instance = instance(submodel, Id, xrefs(model(Functions, Submodels),
                                               _,_,_), _,_),
 	(member(instance(alarm,_,_,elt(_, Al,_),_),
@@ -880,7 +887,7 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 	    [build(Submodels),
 	     unify(Functions), unify(Path),
 	     unify(Swaps), unify(Step), biggest(MaxStep, Step), unify(Used),
-	     merge_lists(ExtIncs, []), merge_lists(ExtLibs, []),
+	     merge_lists(ExtIncs, []),
 	     append(Inters, Inters0), append(AssignList, AssignList0)]).
 
 biggest(B1, B2, Big) :-
@@ -900,7 +907,7 @@ of the full model augmented with the extra nodes. */
 
 extract_submodel_assignment(Instance, ParentFns,
 			    Path, Swaps, TopStep, MaxStep, Used,
-			    ExtIncludes, ExtLibs, Inters, AssignList) :-
+			    ExtIncludes, Inters, AssignList) :-
 
 	Instance = instance(submodel, SmName, xrefs(Model, _, Bases, Assocs), 
 			    Name, _-Dims),
@@ -1070,14 +1077,12 @@ nodes.
 	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
             [BaseSides, SmInters, Specials] = [[], [], []]),
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps, Used,
-			    SubIncludes, SubLibs, FnInters, AssignList0),
+			    SubIncludes, FnInters, AssignList0),
 /* Now add an extra instruction if this needs an external proc */
 	(SmName has_class_refinement external_code of ExtCode,
 	member(include=Inc, ExtCode),
 	\+ Inc = none, !,
 	    merge_lists([Inc], SubIncludes, ExtIncludes),
-	    member(libraries=Libs, ExtCode),
-	    merge_lists(Libs, SubLibs, ExtLibs),
 	    member(procedure=Proc, ExtCode),
 	    list_params_from("input", 1, AssignList0, ParamsIn),
 	    list_params_from("output", 1, AssignList0, DirParamsOut),
@@ -1088,7 +1093,7 @@ nodes.
 	    ExtInst = make(ext_done_for(Name), AllConds, LocalPath, Step,
 	                  [call_ext_code(Proc, NewPtr, ArgCodes)]),
 	    append(Specials, [ExtInst | AssignList1], AssignList);
-	[ExtIncludes, ExtLibs] = [SubIncludes, SubLibs],
+	ExtIncludes = SubIncludes,
 	    append(Specials, AssignList0, AssignList)),
 	append(FnInters, SmInters, Inters).
 
