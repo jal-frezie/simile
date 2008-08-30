@@ -133,11 +133,13 @@ build_instances(Language, DestDir, Parent, TopNode,
 		Stat = 0,
 		Tgt = OldTgt;
 	    
-		(Language = c,
+		(\+ ChangeTop == 1, % no change to model; reuse source?
+		    Language = c,
 		    safe_tcl_eval(['ReuseSourceCode', br(WCheckDir), OldTgt],
 				  "1"); % succeeds if old source code found
-		 all(compile, delete_prog, [unify(CheckDir),
-		      build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]),
+		 % neither worked, or model changed: rebuild source
+		    all(compile, delete_prog, [unify(CheckDir),
+			build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]),
 		    (Language = c, Extn = '.cpp';
 		     Language = tcl, Extn = '.tcl'),
 		    dialogue:reassure_user("Instantiating expressions from node values"),
@@ -149,7 +151,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 						 Model, Includes),
 				 (reclose(Stream), raise_exception(Puke))),
 		    close(Stream)),
-	    dialogue:reassure_user("Compiling the program generated for the model"),
+		dialogue:reassure_user("Compiling the program generated for the model"),
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
 	     compile_c_program(CheckDir, ExtLibs, Tgt),
