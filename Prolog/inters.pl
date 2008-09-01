@@ -679,7 +679,7 @@ make_intermediates(
 	        make_intermediates(Dim, SubId, dum, DestPath,_, PrevInters,
 				   BuildingArrays, Step, Used, Dun, MidInters,
 				   part_result([], [], _, DimVal)),
-	        (promote_unit(Dun, const_int))), !; % will be integer later
+	        promote_unit(Dun, const_int)), !; % will be integer later
 		  raise_exception(bad_index_number(Dim, makearray))), !,
 	        NowBuilding = [LocalLoop | BuildingArrays],
 	        length(BuildingArrays, BDept),

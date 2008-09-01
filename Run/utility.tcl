@@ -246,22 +246,25 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
 	#set img [image create photo -format window -data $canvas]
 	#clipboard append -type "image/png" [$img data -format png]
 	
-	set img [image create photo -format window -data $canvas]
-	# now if I just get it to yack up the data like this...
-	#set selnImages [$img data -format png]
-	# it converts it to base64 which other apps go derrr over
-	# so put in file and reread for all gory 8bit details
-	set hi8dump [file join $simtmpdir temp_out.bmp]
-	$img write $hi8dump -format bmp
+	if {[catch {image create photo -format window -data $canvas} img]} {
+	    ShowMessage "Could not get graphics" warning "Simile failed to get graphics from the canvas to put on the clipboard, so it will not be possible to paste them into another application. The canvas must all be visible (i.e., on screen and not hidden) for this to work." ok
+	} else {
+	    # now if I just get it to yack up the data like this...
+	    #set selnImages [$img data -format png]
+	    # it converts it to base64 which other apps go derrr over
+	    # so put in file and reread for all gory 8bit details
+	    set hi8dump [file join $simtmpdir temp_out.bmp]
+	    $img write $hi8dump -format bmp
 
-	set feed [open $hi8dump r]
-	fconfigure $feed -translation binary
-	set selnImages [read $feed]
-	close $feed
+	    set feed [open $hi8dump r]
+	    fconfigure $feed -translation binary
+	    set selnImages [read $feed]
+	    close $feed
 
-	selection handle -selection CLIPBOARD -type image/bmp . Regurgitate
-	selection handle -selection CLIPBOARD -type text/uri-list . SpitURI
-	selection own -selection CLIPBOARD .
+	    selection handle -selection CLIPBOARD -type image/bmp . Regurgitate
+	    selection handle -selection CLIPBOARD -type text/uri-list . SpitURI
+	    selection own -selection CLIPBOARD .
+	}
     }
 }
 

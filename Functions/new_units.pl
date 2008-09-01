@@ -47,7 +47,7 @@ longhand(foot, ft).
 unit_definition(yard,	ft*3).
 unit_definition(mile,   yard*1760).
 
-unit_definition(a, 10000*m*m).
+unit_definition(a, 100*m*m).
 longhand(are, a).
 longhand(hectare, ha).
 
