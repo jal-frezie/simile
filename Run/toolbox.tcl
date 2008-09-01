@@ -1788,11 +1788,7 @@ proc SpitPS {winId psfile} {
 }
 
 proc InsertModel {winId} {
-    set insertion [ChooseFile model.sml "Model file to insert" 0 {}]
-    if {![string match */ $insertion]} {
-
-        Reopen $winId $insertion insert
-    }
+    MenuSelect $winId model insert
 }
 
 proc UniqueId {base {used {}}} {
@@ -1838,16 +1834,13 @@ proc MakeDesktopNode {} {
 }
 
 proc Reopen {canvas oldFile op} {
-    global custom userinfo welcomeDone
+    global custom userinfo welcomeDone preSelect
     
     if [winfo exists .register] {
         set userinfo(done) $welcomeDone
     }
-    
-    RecordPathChoice .sml $oldFile {}
-    set custom(hotlist) [linsert $custom(hotlist) 0 $oldFile]
-    MenuSelect $canvas $op $oldFile
-    RunIfPackage
+    set preSelect $oldFile
+    OpenAll $canvas
 }
 
 menu .openrecent -tearoff 0

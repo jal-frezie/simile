@@ -247,9 +247,6 @@ menu_handle(_Win, open_toplevel, Name) :-
 menu_handle(Win, file, open) :-
 	get_load_file(Name),
 	(Name = '', !;
-	menu_handle(Win, reopen, Name)).
-
-menu_handle(Win, reopen, Name) :-
 	Win = '.hi.canvas', !,
 	    menu_handle(Win, open_toplevel, Name);
 	Win shows_model Parent,
@@ -261,12 +258,14 @@ menu_handle(Win, reopen, Name) :-
 	    scrub_autosave(Parent);   
 	 check_deletable(Win, Parent),
 	    remove_model(Win, Parent)),
-	    stick_model_in(Win, Parent, Name, reopen)).
+	    stick_model_in(Win, Parent, Name, reopen))).
 
-menu_handle(Win, insert, Name) :-
+menu_handle(Win, model, insert) :-
+	get_load_file(Name),
+	(Name = '', !;
 	Win shows_model Parent,
 	select_all_in(Parent, base),
-	stick_model_in(Win, Parent, Name, insert([0,0])).
+	stick_model_in(Win, Parent, Name, insert([0,0]))).
 
 menu_handle(Win, file, save) :-
 	Win shows_model Model,

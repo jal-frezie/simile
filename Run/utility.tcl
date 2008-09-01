@@ -45,7 +45,7 @@ proc ShowMessage { title icon string resps {parent {}}} {
 # filename has spaces in it.
 
 proc ChooseFile { preferred title canbenew context} {
-    global __tk_filedialog chosenPaths
+    global __tk_filedialog chosenPaths preSelect
 
     set fileType [file extension $preferred]
 #    set __tk_filedialog(selectPath) [do_in_editor GetPathChoice $fileType]
@@ -92,7 +92,12 @@ proc ChooseFile { preferred title canbenew context} {
         set cmd tk_getOpenFile
     }
 #ShowMessage debug info "will eval $cmd $switches" ok
-    set chosenFile [eval $cmd $switches]
+    if {[info exists preSelect]} {
+	set chosenFile $preSelect
+	unset preSelect
+    } else {
+	set chosenFile [eval $cmd $switches]
+    }
 #    cd $prevDir
 #puts "Recording path for $context"
     if {[string compare $chosenFile {}]} {
