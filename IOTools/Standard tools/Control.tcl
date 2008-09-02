@@ -207,7 +207,7 @@ namespace eval runcontrol33857 {
 				  [SecondsInA $newUnit]}]
 	set runState($node,timeUnit) $newUnit
 	foreach var {currentTime execTime expected_end} {
-	    set runState($node,$var) [expr {$runState($node,$var)*$timeFactor}]
+	    set runState($node,$var) [format %.8g [expr {$runState($node,$var)*$timeFactor}]]
 	}
     }
 
@@ -345,9 +345,10 @@ namespace eval runcontrol33857 {
 
     proc UpdateBar {node now col} {
 	global runState
-        set runState($node,currentTime) $now
-        set runState($node,timeReached) $now ;# so I can check if entry edited
-	set runState($node,execTime) [expr $runState($node,expected_end)-$now]
+        set runState($node,currentTime) [format %.8g $now]
+        set runState($node,timeReached) [format %.8g $now]
+	# so I can check if entry edited
+	set runState($node,execTime) [format %.8g [expr {$runState($node,expected_end)-$now}]]
 	if {$runState($node,run_length)} {
 	    $runState($node,progressBar) configure -value \
 		[expr 100*($now-$runState($node,remembered_start))/ \
