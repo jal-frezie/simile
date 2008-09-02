@@ -1385,7 +1385,8 @@ proc DisplayAll { winId } {
 	set h $window_info($winId,height)
         set xscale [expr ($w - $allowScrollBar)/double($br - $bl)]
         set yscale [expr ($h - $allowScrollBar)/double($bb - $bt)]
-        set scale [expr $xscale>$yscale?$yscale:$xscale]
+	set keepAspect [expr {!$window_info($winId,is_top_level)}]
+        set scale [expr {$xscale>$yscale==$keepAspect ? $xscale : $yscale}]
 
         # ShowMessage debug info "xscale $xscale yscale $yscale scale $scale" ok
 
@@ -1395,7 +1396,7 @@ proc DisplayAll { winId } {
         set bt [expr $bt*$scale]
         set br [expr $br*$scale]
         set bb [expr $bb*$scale]
-	if {$window_info($winId,is_top_level)} {
+	if {!$keepAspect} {
 # resize desktop to a larger shape that matches the window so it all shows...
 # (not if a submodel because that will shrink it in parent diagram)
 	    set bw [expr {$br-$bl}]

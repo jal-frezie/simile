@@ -814,7 +814,14 @@ find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 	HDispMax is max(MinXTrim,MaxXTrim),
 	VDispMax is max(MinYTrim,MaxYTrim),
 	MaxDist is max(HDispMax, VDispMax),
-	
+
+	% now list all boxes we want to avoid...
+	(setof(Box,
+	       Obstacle^Any^(find_all_comps(Model, Obstacle),
+			     appears(Obstacle),
+			     \+ member(Obstacle, Including),
+			     get_drawing_form(Obstacle, Any, Box)), ToAvoid), !;
+	    ToAvoid = []),
 	(event:grid_pitch_is(Spcs), !; Spcs = 10),
 	count_to(0, MaxDist, Spcs, Distance),
 	count_to(0, Distance, Spcs, Range),
@@ -831,8 +838,8 @@ find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 	to check for interference */
 	NewL is L+TargetX, NewT is T+TargetY,
 	NewR is R+TargetX, NewB is B+TargetY,
-	\+ (get_overlaps(Model, [[NewL, NewT, NewR, NewB]], Obstacle),
-	       \+ member(Obstacle, Including)).
+	\+ (member(Snag, ToAvoid),
+	       image:interferes([NewL, NewT, NewR, NewB], Snag)).
 	
 reroute_sections(Rerouters) :-
 	Rerouters = [];
