@@ -59,6 +59,13 @@ multi_prop(Dir, From, To, Count) :-
 	   (To = Link;
 	   multi_prop(Dir, Mid, To, On)).
 
+build_suffix([], "").
+build_suffix([H | T], Suffix) :-
+	build_suffix(T, Tail),
+	((H = []; Tail = ""), !,
+	    append(H, Tail, Suffix);
+	append([H, " ", Tail], Suffix)).
+	
 get_info(_Wid, selection, Dir, Ends) :-
 	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = '').
 	
@@ -84,31 +91,28 @@ get_info(Wid, Comp, desc, DescAtm) :-
 	    Middle = "ghost link";
 	name(LType, Middle)), !,
 
-	(Wid shows_model Context,
-	    setof(Dest, m_update:connects(Comp, Source, Dest), DestList),
-	    (member(RealDest, DestList),
-		\+ find_type(RealDest, cloud),
-		all(event, abs_path_name,
-		    [build(DestList), unify(Context), build(LocList)]),
-		(LocList = [DestLocs]; DestLocs = LocList), !;
-	     true),
+	(units_for(Comp, Suffix1), !;
+	Suffix1 = ""),
+	Wid shows_model Context,
+	setof(Dest, m_update:connects(Comp, Source, Dest), DestList),
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
-	    (\+ find_type(Source, cloud), !,
-	        abs_path_name(Source, Context, SourceLoc), !;
-	     true),
-	    (nonvar(SourceLoc), nonvar(DestLocs), !,
-	        sicstus_format_to_chars(" (from ~a to ~w)",
-					[SourceLoc, DestLocs], Suffix);
-	     nonvar(SourceLoc), !,
-	        sicstus_format_to_chars(" (from ~a)", [SourceLoc], Suffix);
-	     nonvar(DestLocs), !,
-	        sicstus_format_to_chars(" (to ~w)", [DestLocs], Suffix));
-	units_for(Comp, Units), !,
-	    append([" (", Units, ")"], Suffix);
-	Suffix = ""),
+	(\+ find_type(Source, cloud), !,
+	    abs_path_name(Source, Context, SourceLoc), !,
+	    sicstus_format_to_chars("from ~a", [SourceLoc], Suffix2);
+	Suffix2 = []),
+	(member(RealDest, DestList),
+	    \+ find_type(RealDest, cloud),
+	    all(event, abs_path_name,
+		[build(DestList), unify(Context), build(LocList)]),
+	    (LocList = [DestLocs]; DestLocs = LocList), !,
+	    sicstus_format_to_chars("to ~w", [DestLocs], Suffix3);
+	Suffix3 = []),
 
-	append([Part1, Middle, Suffix], Desc),
+	build_suffix([Suffix1, Suffix2, Suffix3], Suffix),
+	(Suffix = "", !,
+	    append(Part1, Middle, Desc);
+	append([Part1, Middle, " (", Suffix, ")"], Desc)),
 	name(DescAtm, Desc).
 
 get_info(_, Comp, comment, Pop) :-
