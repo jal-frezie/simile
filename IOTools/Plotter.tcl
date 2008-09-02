@@ -629,9 +629,10 @@ namespace eval ::$keyValue {
             set old_height $plot($w,ylength)
             
             set new_width [expr $width-$plot($w,xborder_left)- \
-                    $plot($w,xborder_right)]
-            set new_height [expr $height-$plot($w,yborder_top)- \
-                    $plot($w,yborder_bottom)]
+			       $plot($w,xborder_right)]
+            set new_height [expr 2*round(($height-$plot($w,yborder_top)- \
+					      $plot($w,yborder_bottom))/2)]
+	    # ensure even to avoid jitter
             
             set width_diff [expr $new_width-$old_width]
             set height_diff [expr $new_height-$old_height]
@@ -643,7 +644,6 @@ namespace eval ::$keyValue {
             
             set plot($w,xlength) [expr $plot($w,xlength)+$width_diff]
             set plot($w,ylength) [expr $plot($w,ylength)+$height_diff]
-            
             set xlabel [expr $plot($w,xborder_left)+$plot($w,xlength)/2.0]
             set ylabel [expr $plot($w,yborder_top)+$plot($w,ylength) \
                     +$plot($w,yborder_bottom)-5]
