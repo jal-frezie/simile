@@ -119,8 +119,10 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    transfer_images(Parent, TargetDir, in)),
 
 	    append_atoms(TargetDir, '/model.cnv', GraphFileName),
-	/* If this exists, call tcl to skee-WIRT it into each parent window */
-	    (output:my_file_exists(GraphFileName),
+	/* If this exists, call tcl to skee-WIRT it into each parent window
+	(obviously stupid if window not empty!) */
+	    (Mode = reopen,
+		output:my_file_exists(GraphFileName),
 		FileV > 4.05, !,
 		/* reject canvas files older than v4.1 because clear submodels
 		need backgrounds to get paths graphically */
@@ -161,9 +163,9 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    redisplay(Parent),
 	    output:run_if_package;
 	Mode = insert(Pt),
-	    (Translated = copy, !, /* paste into empty sole toplevel */
-	    /* reset window title in case graphics injection changed it
-	    (also makes sure there is a base canvas item */
+	    (Translated = copy, !, /* paste into empty sole toplevel
+	    reset window title in case graphics injection changed it
+	    (also makes sure there is a base canvas item) */
 	        reset_titles(Parent),
 	        setof(Mover, (contains(Parent, Mover),
 				 appears(Mover), \+ Mover = Parent), Lighters);
