@@ -464,7 +464,7 @@ matched_so_far(Unit, Err) :-
 		    Next = Prev;
 
 		  sicstus_format_to_chars("No units can be given to this connection, because those of the end points, ~w and ~w, are incompatible.", [Prev, Unit], Mesg),
-		    (Err = Mesg;
+		    (Err = Mesg, !;
 		    do_dialogue("Linking incompatible units", warning, Mesg,
 				ok, _)),
 		    Next = conflict));
