@@ -94,21 +94,23 @@ get_info(Wid, Comp, desc, DescAtm) :-
 	(units_for(Comp, Suffix1), !;
 	Suffix1 = ""),
 	Wid shows_model Context,
-	setof(Dest, m_update:connects(Comp, Source, Dest), DestList),
+	(setof(Dest, m_update:connects(Comp, Source, Dest), DestList), !,
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
-	(\+ find_type(Source, cloud), !,
-	    abs_path_name(Source, Context, SourceLoc), !,
-	    sicstus_format_to_chars("from ~a", [SourceLoc], Suffix2);
-	Suffix2 = []),
-	(member(RealDest, DestList),
-	    \+ find_type(RealDest, cloud),
-	    all(event, abs_path_name,
-		[build(DestList), unify(Context), build(LocList)]),
-	    (LocList = [DestLocs]; DestLocs = LocList), !,
-	    sicstus_format_to_chars("to ~w", [DestLocs], Suffix3);
-	Suffix3 = []),
-
+	    (\+ find_type(Source, cloud), !,
+		abs_path_name(Source, Context, SourceLoc), !,
+		sicstus_format_to_chars("from ~a", [SourceLoc], Suffix2);
+	      Suffix2 = []),
+	    (member(RealDest, DestList),
+		\+ find_type(RealDest, cloud),
+		all(event, abs_path_name,
+		    [build(DestList), unify(Context), build(LocList)]),
+		(LocList = [DestLocs]; DestLocs = LocList), !,
+		sicstus_format_to_chars("to ~w", [DestLocs], Suffix3);
+	      Suffix3 = []);
+	  Suffix2 = [],
+	    Suffix3 = []),
+	
 	build_suffix([Suffix1, Suffix2, Suffix3], Suffix),
 	(Suffix = "", !,
 	    append(Part1, Middle, Desc);
