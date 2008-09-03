@@ -137,7 +137,7 @@ BoxHeaderStr),
 	interact_equation(Result_list),
 	(Result_list = [], !, destroy_equation, fail; 
 	on_exception(_, update_equation(Part, IndxCount, Updated_list,
-			TypeBase-TypeDims, Result_list), fail)),
+			ITypeBase-TypeDims, Result_list), fail)),
 		/* fails if action does not complete edit */
 	!, destroy_equation.
 	/* last cut necessary because otherwise a retry will cause 
@@ -270,24 +270,55 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	on_exception(_PropError, propagate_units(min(Max, max(Min, Result)),
 						any, [any, any, any],
 			[EqnBase, MinBase, MaxBase], ComboBase),
-		     sicstus_format_to_chars("Equation has non-numeric units ~w, so minimum or maximum values cannot be used.", [EqnBase], UnitError)), 
-	(var(UnitError),
+		     sicstus_format_to_chars("Equation has non-numeric units ~w, so minimum or maximum values cannot be used.", [EqnBase], UnitError)),
+	    
+	(nonvar(UnitError);
+	    /* First, check that the equation can have the units
+	       given, or set given units to the default units for the
+	       equation if there are none. */
+	  \+ UnitFormError = [],
+	    UnitError = UnitFormError;
+	  (\+ member(Units, ['', any]), !,
+	      (Units = int, ComboBase = 1,
+		  NewUnits = 1;
+		% num constant changed from int to float -- allow
+	      NewUnits = Units); % otherwise if units were given, use them
+	    nonvar(TypeBase), (\+ TypeBase = 1; ComboBase = int), !,
+	      NewUnits = TypeBase; % interesting default units, use them
+	    NewUnits = ComboBase), % last resort, use units from eqn
+	    ((InterInputs = [], % If there are no incoming influences...
+	      (EqnBase = 1; % ...and the equation evaluates to a dimensionless
+		  promote_unit(EqnBase, real)); % quantity,
+	      use_units_in(Function, 'No')), % or else if math checking is off,
+		CheckLevel = 1; % allow it to have any given physical units
+	      CheckLevel = 2), % otherwise dimensions must match
+	    check_unit(ComboBase, NewUnits, CheckLevel, EqnToUnitError)),
+	    (\+ EqnToUnitError == [],
+		UnitError = EqnToUnitError;
+
+	    /* Next check that the value's units,however they were
+	       specified, are appropriate for this component */
+	
+	      (TypeBase = 1; 
+		  check_unit(NewUnits, TypeBase, 2, UnitError)))),
+
+/* Pre-5.4 version which conflated these tasks together
             ((nonvar(TypeBase);
 	      var(TypeBase),
 	          (\+ (member(Units, ['', any]), ComboBase = any, Is_P = 2),
 			  member(TypeBase, [any, a(_), int, boolean]);
 		      TypeBase = real)),
 		promote_arg(ComboBase, TypeBase, ComboUnits), !,
-		/* fix this if boolean to cond_spec promotion removed */
+		% fix this if boolean to cond_spec promotion removed
 		(nonvar(ComboUnits); ComboUnits = TypeBase);
            sicstus_format_to_chars("The equation for a component of this type must have units which can be used as ~w. The values entered have units of ~w, which cannot be converted.", [TypeBase,ComboBase], UnitError));
 	    true),
 	    (nonvar(UnitError),
 		NewUnits = Units;
 	     (member(Units, ['', any]);
-		 /* Units field left empty or had no value */
-	     Units = int, ComboUnits = 1), /* num constant changed from int
-	                                      to float -- allow */
+		 % Units field left empty or had no value
+	     Units = int, ComboUnits = 1),
+		% num constant changed from int to float -- allow
 		 
 		NewUnits = ComboUnits,
 		UnitError = [];
@@ -296,12 +327,12 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	      use_units_in(Function, 'No')),
 		CheckLevel = 1;
 	    CheckLevel = 2),
-	    /* Allow numerical or empty entries to have any physical units */
+	    % Allow numerical or empty entries to have any physical units
 	    check_unit(ComboUnits, Units, CheckLevel, UnitMatchError),
-		/* Result can be promoted/converted to given units -- ok */
+		% Result can be promoted/converted to given units -- ok
 		NewUnits = Units,
 		append(UnitMatchError, UnitFormError, UnitError))),
-
+*/
 	    (UnitError = [], !,
 		(on_exception(Hiccup,
 			      get_actual_sizes(Function, EqnDims, MultInts,
@@ -317,8 +348,9 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 				   [Dim], Complaint6);
 		    \+ TypeDims = MultInts, !,
 		    Complaint6 = "This type of component cannot be an array.");
-		build_array(NewUnits, EqnDims, NewArraySpec),
-		    check_flow_ends(Function, NewArraySpec, Complaint6));
+		build_array(NewUnits, EqnDims, NewArraySpec) /* ,
+		    this check now done by generating default units for flows
+		    check_flow_ends(Function, NewArraySpec, Complaint6) */ );
 	    Complaint6 = UnitError);
 	get_term(Unit_st, NewUnits, _),
 	    Complaint6 = Complaint5),
@@ -533,7 +565,10 @@ check_exp(Eqn_st, FieldName, Function, InterInputs, Base, Dims, Needed,
 	get_term(Eqn_st, Equation, ParseError),
 	    (ParseError = [], !,
 		test_eqn(Equation, Function, IndxCount, InterInputs, 
-			 Base, Dims, ParamList, TestError),
+			 RawBase, Dims, ParamList, TestError),
+		promote_unit(RawBase, Base),
+		\+ member(Base, [const_int, const_ratio]),
+		% variables cannot have constant units even if constant
 		(TestError = [],
 		    ((member(var, Dims), !,
 		            append(["The expression for field ", FieldName, " evaluates to a list, or array of lists. A model variable cannot represent a list."], Error);

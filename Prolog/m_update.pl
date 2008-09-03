@@ -395,7 +395,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
         */
 	(DimExprs = TargetExprs, !,
 	    ((member(Target_base, [any, n(_ET), a(_ET),
-				      boolean, cond_spec, int, const_int]), !,
+				      boolean, cond_spec, int]), !,
 	          Target_type = Target_base;	 
 	      check_and_report_units(Target_base, TargetDims),
 	          Target_type = real),
@@ -412,7 +412,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 			sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which requires a conversion factor to map onto the quantity it represents, specified as ~w.", [Target_name, Target_base, Unit_base], Complaint));
 		    (check_and_report_units(Unit_base, UnitDims), !;
 			UnitDims = Unit_base),
-			sicstus_format_to_chars("The specified unit expression ~w has physical dimensions ~w, which are incompatible with the quantity it represents, whose units ~w have dimensions ~w. Please do one of the following:\n* specify units with the same dimensions as the value\n* change the source of the value to have the units you wish, or\n* clear the units specification entry to get the default units for this value.", [Target_name, TargetDims, Unit_base, UnitDims], Complaint));
+			sicstus_format_to_chars("The units of the required quantity are ~w which have physical dimensions ~w. These are incompatible with the supplied value, whose units ~w have dimensions ~w. Please do one of the following:\n* specify units with the same dimensions as the value\n* change the source of the value to have the units you wish, or\n* clear the units specification entry to get the default units for this value.", [Target_name, TargetDims, Unit_base, UnitDims], Complaint));
 
 		sicstus_format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Unit_base, Target_type], Complaint));
 		
@@ -436,7 +436,7 @@ end_with_units(Flow, EndUnits) :-
 
 /* How do compartments constrain their flows' units? They must be
 convertible, except if math checking is off and both are
-dimensionless. Array dimensions must always match. */
+dimensionless. Array dimensions must always match.
 
 check_flow_ends(Function, Units, Error) :-
 	analyze_array(Units, FBase, _FDims),
@@ -454,7 +454,47 @@ check_flow_ends(Function, Units, Error) :-
 	    check_unit(CUnits, Units, 2, AnError),
 	    \+ AnError = [], !, Error = AnError;
 	 Error = []).
+*/
+matched_so_far(Unit, Err) :-
+	(retract(end_units_all_match(Prev)), !,
+	    (Prev = conflict, !,
+		Next = conflict;
+	      check_unit(Unit, Prev, 2, CErr),
+		(CErr = [], !,
+		    Next = Prev;
 
+		  sicstus_format_to_chars("No units can be given to this connection, because those of the end points, ~w and ~w, are incompatible.", [Prev, Unit], Mesg),
+		    (Err = Mesg;
+		    do_dialogue("Linking incompatible units", warning, Mesg,
+				ok, _)),
+		    Next = conflict));
+	  Next = Unit),
+	assert(end_units_all_match(Next)).
+
+flow_unit_default(Flow, Units, Err) :-
+	end_with_units(Flow, UConstraint),
+	matched_so_far(UConstraint, Err),
+	fail;
+	(retract(end_units_all_match(EndUnits)), !,
+	    (EndUnits = conflict, !, fail;
+		analyze_array(EndUnits, EndBase, _),
+		(EndBase = 1,
+		    find_all_comps(Sm, Flow),
+		    use_units_in(Sm, 'No'), !,
+		    Units = 1;
+		  standard_name(EndBase, ForExpr),
+		    default_tick_is(Tick),
+		    Units = ForExpr/Tick));
+	  Units = 1).
+
+check_flow_ends(Func, Units, Err) :-
+	get_host(Func, Flow),
+	flow_unit_default(Flow, CUnits, CkErr),
+	(\+ CkErr = [], !,
+	    Err = CkErr;
+	  CUnits = 1, !, Err = [];
+	  check_unit(CUnits, Units, 2, Err)).
+	    
 decide_param_names(InputList) :-
 	already_used_in(InputList, Used),
 	generate_new_names(InputList, Used).
@@ -609,8 +649,10 @@ add_implicit_function(Exp_node, Node_name) :-
 	true.
 
 default_units(Node, Units) :-
-	member(Sort-Units, [level-1, rate-1, cond_value-cond_spec,
-			    boolean_value-boolean]),
+	(Sort = rate,
+	    flow_unit_default(Node, Units, []);
+	member(Sort-Units, [level-1, cond_value-cond_spec,
+			    boolean_value-boolean])),
 	Node is_of_sort Sort, !.
 
 convert_refs([], _, []).
