@@ -92,11 +92,12 @@ namespace eval canvasnotes20070919 {
     proc Properties {} {
 	variable whatNotes
 
-	::ttk::dialog .annotationprop -title "Annotation properties" \
-	    -detail "Set the content and properties of the text" \
-	    -type okcancel -command [namespace code TweakText] \
-	    -parent [winfo toplevel $whatNotes(canvas)]
-	set dlg [::ttk::dialog::clientframe .annotationprop]
+	Dialog .annotationprop -title "Annotation properties" \
+	    -parent [winfo parent $whatNotes(canvas)] -modal local \
+	    -default 0 -cancel 1
+        .annotationprop add -name ok ;# buttons 0
+        .annotationprop add -name cancel
+	set dlg [.annotationprop getframe]
 	pack [set txtFrame [labelframe $dlg.txtframe -text Text]]
 	pack [text $txtFrame.text -width 40 -height 4] -fill both -expand 1
 	$txtFrame.text insert 1.0 \
@@ -105,13 +106,15 @@ namespace eval canvasnotes20070919 {
 	    [$whatNotes(canvas) itemcget $whatNotes(text) -fill]
 	pack [button $txtFrame.colour -text "Set colour" \
 		  -command [namespace code ChangeColour]] -padx 10 -pady 10
+	TweakText [.annotationprop draw]
+	destroy .annotationprop
     }
 
     proc TweakText {btn} {
 	variable whatNotes
 
-	if {[string equal ok $btn]} {
-	    set dlg [::ttk::dialog::clientframe .annotationprop]
+	if {!$btn} {
+	    set dlg [.annotationprop getframe]
 	    $whatNotes(canvas) itemconfigure $whatNotes(text) -text \
 		[$dlg.txtframe.text get 1.0 end] -fill $whatNotes(col)
 	}
