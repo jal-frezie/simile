@@ -459,24 +459,25 @@ numbers of submodel instances, and translates those that can be translated,
 stripping out those which cannot, or which correspond to non-disaggregated
 submodels. */
 
-get_actual_size(Node, Sub, Nums, Sizes, Units) :-
-	(Sub = none, !, Nums = [], Sizes = [], Units = [any];
+get_actual_size(Node, Sub, Nums, Sizes, [Units]) :-
+	(Sub = none, !, Nums = [], Sizes = [], Units = any;
 	enum_type_ref(Sub, Node, Num, Unit, _),
 	    Nums = [Num],
 	    Sizes = [Sub],
-	    Units = [Unit];
+	    Units = Unit;
 	(Sub = size(ModName); Sub = size(ModName, Ind)),
 	    contains(Top, Node),
 	    backup:is_toplevel(Top),
 	    (setof(SizeSource, name_matches(SizeSource, Top, ModName),
 		   Sources), !,
 		(Sources = [Source], !,
-		    get_node_size(Source, RealN, RealSize, Units),
+		    get_node_size(Source, RealN, RealSize, AllUnits),
 		    (var(Ind), !,
 			Nums = RealN,
 			Sizes = RealSize;
 		    nth(Ind, RealN, UseN),
 		    nth(Ind, RealSize, UseSize),
+		    nth(Ind, AllUnits, Units),
 			Nums = [UseN],
 			Sizes = [UseSize]);
 		    sicstus_format_to_chars("Cannot resolve reference to size of ~a. There are multiple submodels of this name.", [ModName], Err));
