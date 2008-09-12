@@ -89,6 +89,19 @@ namespace eval canvasnotes20070919 {
 	tk_popup .annotationMenu $X $Y
     }
 
+    proc DialogInMiddle {w} {
+	global helperTable
+	variable whatNotes
+
+	set c [$helperTable($w,whichInstance) GetCanvas]
+	set node [$helperTable($w,whichInstance) GetNode]
+	set whatNotes(canvas) $c
+	set whatNotes(clkx) 100
+	set whatNotes(clky) 100
+
+	StickTextHere $node
+    }
+
     proc Properties {} {
 	variable whatNotes
 
@@ -161,5 +174,6 @@ namespace eval canvasnotes20070919 {
 	} 
     }
 
-    namespace export MakeCanvasAnnotatable ListNotes RestoreNotesFromList
+    namespace export MakeCanvasAnnotatable DialogInMiddle \
+	ListNotes RestoreNotesFromList
 }

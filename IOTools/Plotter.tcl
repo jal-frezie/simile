@@ -278,7 +278,8 @@ namespace eval ::$keyValue {
                 [list clear.gif "Clear" [namespace code "clear $w"] ] \
                 [list add.gif "Add a variable"   [namespace code "AddVariable $w"]]\
                 [list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]\
-                [list property.gif " Properties " [namespace code "Settings $w"]]]
+                [list property.gif " Properties " [namespace code "Settings $w"]]\
+			      [list text.gif " Add text " [namespace code "DialogInMiddle $w"]]]
         #    [list " redraw " [namespace code "resetGraph $w"]]
         ::graphtools::MakeToolBar $w $toolbarItems
         
