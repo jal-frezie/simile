@@ -260,7 +260,9 @@ proc constructControlPanel {w} {
     
     set toolbarItems [list \
             [list new.gif "Clear" [namespace code "clear $w"] ] \
-            [list add.gif "Add a variable"   [namespace code "AddVariable $w"]]]
+            [list add.gif "Add a variable"   [namespace code "AddVariable $w"]]\
+			  [list text.gif " Add text " \
+			       [namespace code "DialogInMiddle $w"]]]
 #            [list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]]
             #    [list " settings " [namespace code "settings $w"]] \
             #    [list " redraw " [namespace code "resetGraph $w"]] \

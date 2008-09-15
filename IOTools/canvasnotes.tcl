@@ -76,7 +76,7 @@ namespace eval canvasnotes20070919 {
 				 [$whatNotes(canvas) canvasy $whatNotes(clky)] \
 				 -fill $looks($node,text,text) \
 				 -font $looks($node,text,font) \
-				 -text "New text" -tags annotation]
+				 -tags annotation]
 	Properties
     }
 
@@ -113,24 +113,44 @@ namespace eval canvasnotes20070919 {
 	set dlg [.annotationprop getframe]
 	pack [set txtFrame [labelframe $dlg.txtframe -text Text]]
 	pack [text $txtFrame.text -width 40 -height 4] -fill both -expand 1
-	$txtFrame.text insert 1.0 \
-	    [$whatNotes(canvas) itemcget $whatNotes(text) -text]
+	set oldText [$whatNotes(canvas) itemcget $whatNotes(text) -text]
+	if {![string length $oldText]} {
+	    set oldText "New text"
+	}
+	$txtFrame.text insert 1.0 $oldText	    
 	set whatNotes(col) \
 	    [$whatNotes(canvas) itemcget $whatNotes(text) -fill]
+	pack [scale $txtFrame.scale -orient h -from 1 -to 36 -showvalue 0 \
+		  -variable whatNotes(size) -label Size: -resolution 1] \
+	    -fill x -expand 1
+	set font [$whatNotes(canvas) itemcget $whatNotes(text) -font]
+	$txtFrame.scale set [font actual $font -size]
 	pack [button $txtFrame.colour -text "Set colour" \
 		  -command [namespace code ChangeColour]] -padx 10 -pady 10
 	TweakText [.annotationprop draw]
 	destroy .annotationprop
     }
 
+    proc BumpSize {bigs} {
+# not used because the entry window changes size and looks messy
+	[.annotationprop getframe].txtframe.text config -font "-size $bigs"
+    }
+
     proc TweakText {btn} {
 	variable whatNotes
 
-	if {!$btn} {
+	if {!$btn} { ;# ok
 	    set dlg [.annotationprop getframe]
 	    $whatNotes(canvas) itemconfigure $whatNotes(text) -text \
-		[$dlg.txtframe.text get 1.0 end] -fill $whatNotes(col)
+		[$dlg.txtframe.text get 1.0 end] -fill $whatNotes(col) \
+			 -font "-size [$dlg.txtframe.scale get]"
 	}
+# in any case do not leave null strings around
+	if {![string length [$whatNotes(canvas) itemcget \
+				 $whatNotes(text) -text]]} {
+	    $whatNotes(canvas) delete $whatNotes(text)
+	}
+
     }
 
     proc ChangeColour {} {

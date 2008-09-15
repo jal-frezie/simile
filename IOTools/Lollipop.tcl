@@ -18,7 +18,9 @@ proc initialize {winId} {
 			  [list new.gif "Clear" \
 			       [namespace code "detach $winId"]] \
 			  [list add.gif "Add a variable" \
-			       [namespace code "AddVariable $winId"]]]
+			       [namespace code "AddVariable $winId"]]\
+			  [list text.gif " Add text " \
+			       [namespace code "DialogInMiddle $winId"]]]
     
     ::graphtools::MakeToolBar $winId $toolbarItems
     pack [message $winId.intro -aspect 800] -fill x

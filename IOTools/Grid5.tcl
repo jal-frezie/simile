@@ -67,7 +67,9 @@ namespace eval grid005 {
                 [list zoomin.gif "Zoom in" [namespace code "zoomio $winId 1.25"] ]\
                 [list zoomout.gif "Zoom out" [namespace code "zoomio $winId 0.8"] ]\
                 [list property.gif " Properties " [namespace code "Settings $winId"]]\
-			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [namespace current] $winId"]] \
+			      [list text.gif " Add text " \
+				   [namespace code "DialogInMiddle $winId"]]\
+Mont			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [namespace current] $winId"]] \
                 [list less.gif "Decrease range" [namespace code "DecreaseRange $winId"] ]\
                 [list greater.gif "Increase range" [namespace code "IncreaseRange $winId"] ]\
                 [list pause.gif " Freeze " [namespace code "ToggleFreeze $winId"]]]

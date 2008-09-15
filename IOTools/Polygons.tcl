@@ -59,7 +59,9 @@ namespace eval ::polygon375 {
                 [list zoomfit.gif "Zoom to fit" [namespace code "Fit $winId"] ]\
 	            [list property.gif " Properties " [namespace code "Settings $winId"] ]\
 			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [namespace current] $winId"]] \
-                [list refresh.gif Update [namespace code "Update $winId"]]]
+                [list refresh.gif Update [namespace code "Update $winId"]]\
+			  [list text.gif " Add text " \
+			       [namespace code "DialogInMiddle $winId"]]]
 
         ::graphtools::MakeToolBar $winId $toolbarItems
     }
