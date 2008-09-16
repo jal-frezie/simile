@@ -516,7 +516,7 @@ proc TellAllHelpers {node fun args} {
     set nodeForFocus $myNode
     set myNode $node
     set success 1
-    set doScrog [expr [string equal display $fun] && \
+    set doScrog [expr [string equal Display $fun] && \
 		     [info exists helperTable(pestInterface)]]
     if {$doScrog} {
 	$helperTable(pestInterface)::ScrogOutputs [lindex $args 0]

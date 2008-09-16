@@ -1385,6 +1385,8 @@ $numOutputs"
     }
     
     proc ScrogOutputs {subTime} {
+	global subbedPlots
+
         variable useNodes
         variable ptList
         variable spitLists
@@ -1396,7 +1398,6 @@ $numOutputs"
 		foreach eTitle $useNodes($winId,drivers) {
                     set node [GetIdFromCaptionPath $eTitle]
                     
-                    set useNodes($node,modelVal) [lindex [GetModelValue $node] 0]
                     foreach time $ptList {
                         set pt [lsearch $spitLists($time) $node=*]
                         if {$pt>-1} {
@@ -1427,7 +1428,7 @@ $numOutputs"
                     } else {
                         set mid [lindex $hi 1]
                     }
-                    SetModelValue $node $mid
+                    set subbedPlots($node) $mid
                     unset hi
                 }
                 
@@ -1447,14 +1448,10 @@ $numOutputs"
     }
     
     proc RestoreOutputs {} {
-        variable useNodes
-        
-        foreach storedVal [array names useNodes *,modelVal] {
-            set node [string range $storedVal 0 end-9]
-            SetModelValue $node $useNodes($storedVal)
-            unset useNodes($storedVal)
-            # avoid 'array unset' where possible, it hides bugs!
-        }
+	global subbedPlots
+
+# might need to be cleverer if multiple PESTs running simultaneously
+	array unset subbedPlots
     }
     
     proc AddChoppers {node str data} {

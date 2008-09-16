@@ -266,7 +266,13 @@ proc GetObjectList {} {
 # cloud or submodel.
 
 proc GetModelValue { node } {
-    SetModelValue $node {}
+    global subbedPlots
+
+    if {[info exists subbedPlots($node)]} {
+        set subbedPlots($node)
+    } else {
+	SetModelValue $node {}
+    }
 }
 
 proc SetModelValue { node newVals } {

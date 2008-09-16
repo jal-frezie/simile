@@ -269,7 +269,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 
 	on_exception(_PropError, propagate_units(min(Max, max(Min, Result)),
 						any, [any, any, any],
-			[EqnBase, MinBase, MaxBase], ComboBase),
+			[EqnBase, MinBase, MaxBase], RawBase),
 		     sicstus_format_to_chars("Equation has non-numeric units ~w, so minimum or maximum values cannot be used.", [EqnBase], UnitError)),
 	    
 	(nonvar(UnitError);
@@ -278,7 +278,10 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	       equation if there are none. */
 	  \+ UnitFormError = [],
 	    UnitError = UnitFormError;
-	  (\+ member(Units, ['', any]), !,
+	  promote_unit(RawBase, ComboBase),
+	    \+ member(ComboBase, [const_int, const_ratio]),
+		% variables cannot have constant units even if constant
+	    (\+ member(Units, ['', any]), !,
 	      (Units = int, ComboBase = 1,
 		  NewUnits = 1;
 		% num constant changed from int to float -- allow
@@ -565,10 +568,7 @@ check_exp(Eqn_st, FieldName, Function, InterInputs, Base, Dims, Needed,
 	get_term(Eqn_st, Equation, ParseError),
 	    (ParseError = [], !,
 		test_eqn(Equation, Function, IndxCount, InterInputs, 
-			 RawBase, Dims, ParamList, TestError),
-		promote_unit(RawBase, Base),
-		\+ member(Base, [const_int, const_ratio]),
-		% variables cannot have constant units even if constant
+			 Base, Dims, ParamList, TestError),
 		(TestError = [],
 		    ((member(var, Dims), !,
 		            append(["The expression for field ", FieldName, " evaluates to a list, or array of lists. A model variable cannot represent a list."], Error);
