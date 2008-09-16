@@ -481,6 +481,11 @@ proc ReinstateHelper {origVersion oldStatus helperId helperTitle} {
     if {$origVersion<5.0} {
 	set helperId [ClassFromKey $helperId]
     }
+    if {![llength [info procs similescript::$helperId]]} {
+	ShowMessage "Problem restoring helper" warning \
+	    "No I/O tool with keyword \"$helperId\" is installed" ok
+	return
+    }
     if {[catch {CreateHelperWindow $helperId \
 		    [RestoreCrs $helperTitle] [RestoreCrs $oldStatus]} inst]} {
 	ShowMessage "Problem restoring helper" warning $::errorInfo ok
