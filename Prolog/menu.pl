@@ -1267,6 +1267,9 @@ show_error(Model, Lossage) :-
 	Lossage = no_defining_param(Capt), !,
 	    sicstus_format_to_chars("Model ~w cannot be executed because its instance count must be set to the number of data records provided for its fixed parameters -- and it has no fixed parameters.", [Capt], Text),
 	    Fault = user;
+	Lossage = param_in_vm_model(OuterText, InnerText), !,
+	    sicstus_format_to_chars("There is an external parameter, ~w, inside a variable-membership submodel, ~w. This is not allowed except in the case of a submodel whose membership is set by the number of data records.", [InnerText, OuterText], Text),
+	    Fault = user;
 	Lossage = circular_evaluation(CircSet), !,
 	    sicstus_format_to_chars("This model cannot be executed because it contains the following circular set(s) of function evaluations: ~w",
 				   [CircSet], Text),

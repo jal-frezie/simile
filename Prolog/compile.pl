@@ -224,7 +224,14 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	by_record(Submodel),
 	\+ defines_membership(Submodel, _Param),
 	caption_for(Submodel, OuterText),
-	Wrinkle = no_defining_param(OuterText).
+	Wrinkle = no_defining_param(OuterText);
+	variable_size(Submodel),
+	\+ by_record(Submodel),
+	contains(Submodel, Param),
+	is_parameter(Param, N), N>0,
+	caption_for(Submodel, OuterText),
+	caption_for(Param, InnerText),
+	Wrinkle = param_in_vm_model(OuterText, InnerText).
 
 remove_redundant_equivs(Submodel, Equivs) :-
 	Submodel has_link_equivalences OldEquivs,

@@ -11,18 +11,17 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	DestRef = elt(DestPathForm, Target, XUnits-Dims),
 	copy_term(DestPathForm, DestPath),
 	
-	on_exception(Prob,
-		     (replace_subexps(Expr, inters, insert_paths,
+	catch((replace_subexps(Expr, inters, insert_paths,
 		sub(Sm, DestRef, Swaps), top_down, _, FullExp),
 		     make_intermediates(FullExp, Sm, Target, DestPath,
 		BackSwap, [], [], Step, Used, Units, AllInters,
-		part_result(SourceContext, AllSetups, Args, Formula))),
-		      raise_exception(conversion_failure(Sm, Prob))),
+		part_result(SourceContext, AllSetups, Args, Formula))), Prob,
+		     throw(conversion_failure(Sm, Prob))),
 
 	get_model_and_loops(SourceContext, DestPath, _, SourceLoops, _),
 	append(SourceLoops, DestPath, BaseContext),
 	(swap_back(BaseContext, BackSwap, FContext, no_dim), !;
-	raise_exception(cannot_make_context(Target, BaseContext, BackSwap))),
+	throw(cannot_make_context(Target, BaseContext, BackSwap))),
 
 	/* If managing units, apply conversion; error message not brilliant but
 	only occurs if unit management turned on since entering equation */
@@ -31,7 +30,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	    \+ Units = 1,
 	    \+ promote_unit(Units, real),
 	    (get_conversion(Formula, Units, XUnits, ScaledF);
-		raise_exception(conversion_failure(Sm, wrong_derived_units(Units)))), !;
+		throw(conversion_failure(Sm, wrong_derived_units(Units)))), !;
 	ScaledF=Formula),
 	/* now check for assignment from an idler. This will be eleminated. */
 	(ScaledF = Formula,
@@ -134,13 +133,13 @@ expand_library(DestRef, Var, NewVar) :-
 	 UseVar =.. [Op | BadArgs],
 	    (MacroMatch = bad_format,
 		length(BadArgs, Arity),
-		raise_exception(wrong_format_of_args(Var, Op, Args, BadArgs));
+		throw(wrong_format_of_args(Var, Op, Args, BadArgs));
 	    MacroMatch = bad_arity,
 		length(BadArgs, FnArity),
-		raise_exception(wrong_no_of_args(Var, Op, Arity, FnArity))));
+		throw(wrong_no_of_args(Var, Op, Arity, FnArity))));
 	Var = prev(N),
 	    ((\+ integer(N); N < 0),
-		raise_exception(bad_index_number(N, prev));
+		throw(bad_index_number(N, prev));
 	    N < 1,
 		NewVar = DestRef;
 	    M is N-1,
@@ -195,7 +194,7 @@ read_func_file(File, Context, IsBuiltIn, Done) :-
 
 read_funcs(File, Stream, IsBuiltIn, Done) :-
 	sicstus_format_to_chars("Parsing definitions in ~a", [File], ProbAct),
-	on_exception(WrongUDF, read_term(Stream, Line, [variable_names(VPrs)]),
+	catch(read_term(Stream, Line, [variable_names(VPrs)]), WrongUDF,
 		     (make_nice_error_message(WrongUDF, Bug),
 			 do_dialogue(ProbAct, warning, Bug, ok, _))),
 	(nonvar(Bug), !,
@@ -353,7 +352,7 @@ make_intermediates(
 	    (\+ var(OrigUnits),
 	    member(OrigUnits, [n(Type), a(Type)]),
 	    \+ ame_gen:resolve_enum_type(_, SubId, _, OrigUnits, _), !,
-		raise_exception(no_local_defn_for_type(Type, SubId));
+		throw(no_local_defn_for_type(Type, SubId));
 		
 	    get_dims_from_loops(OrigLoops, Dims, _)),
 	    /* get_actual_sizes(SubId, Dims, _,_,_), just a check */
@@ -452,7 +451,7 @@ make_intermediates(
 	    (combine_subexp_results(DestPath, PLPartResults, [],
 				   SubContext, OldSetups, OldArgs,
 				   [IncrementRef, PayloadRef]), !;
-	    raise_exception(cannot_combine_argument_dimensions(Source)))),
+	    throw(cannot_combine_argument_dimensions(Source)))),
 	get_model_and_loops(SubContext, TotalPath, _, SubLoops, _),
 
 	/* choose a location for Total where it will be visible in the
@@ -468,7 +467,7 @@ make_intermediates(
 	    (append(TailLoops, [SumLoop | ItemLoops], SubLoops),
 	    loops(SumLoop),
 	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
-		raise_exception(needs_array_or_list(Source)));
+		throw(needs_array_or_list(Source)));
 	TailLoops = SubLoops),
 	(setof(Sm, has_extras(WriteContext, DestPath, Sm), Exited), !;
 	 Exited = []),
@@ -517,7 +516,7 @@ make_intermediates(
 	[Wee, Muckle] = [-1.0e100, 1.0e100]), 
 
 	(\+ (member(VarDim, TotalDims), VarDim == var), !;
-	    raise_exception(avoid_var_size_inter(Epsilon, TotalDims))),
+	    throw(avoid_var_size_inter(Epsilon, TotalDims))),
 	get_dims_from_loops(NowBuilding, BuildDims, BuildInds),
 	append(BuildDims, TotalDims, InterDims),
 	append(BuildInds, LoopInds, FillInds),
@@ -595,7 +594,7 @@ make_intermediates(
 	(Source = table_const(1),
 	    \+ Step = dummy,
 	    (m_class:SubId has_class_refinement table_data of TableData;
-		raise_exception(missing_graph_or_table_data(Source))),
+		throw(missing_graph_or_table_data(Source))),
 	    member(dims=ConstBounds, TableData),
 	    member(current=BoundArray, TableData),
 	    member(units=OrigUnits, TableData),
@@ -621,7 +620,7 @@ make_intermediates(
 	    Units = int;
 	Source = channel_is(ChannelName), !,
 	    (ChannelName = param(arr(_, ChannelVar,_),_, ChanPath,_,_);
-	    raise_exception(needs_channel_parameter(ChannelName))),
+	    throw(needs_channel_parameter(ChannelName))),
 	    nth(ChannelNum, Used, ChannelVar), !,
 	    suffix(ChanPath, DestPath),
 	    pointer_from(ChanPath, ChannelPtr),
@@ -637,7 +636,7 @@ make_intermediates(
 	    member(TRef, [time, dt]), % ind_time removed
 	    ((N=0; N = ''), TArg = Step;
 		integer(N), N>=0, TArg = N;
-		raise_exception(bad_index_number(N, Op))),
+		throw(bad_index_number(N, Op))),
 	    SourceRef =.. [TRef, TArg],
 	    default_tick_is(OrigUnits),
 	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !;
@@ -652,14 +651,14 @@ make_intermediates(
 	        all(inters, indices_for,
 		    [build(BackDP), append(DestInds, [])])),
 	    (integer(IndN), !;
-	    raise_exception(bad_index_number(N, index))),
+	    throw(bad_index_number(N, index))),
 	    length(DestInds, AvailInds),
 	    IndPosn is AvailInds-IndN,
 	    (nth0(IndPosn, DestInds, SourceRef),
 		(Step = dummy,
 		    type_ind(SourceRef, Units);
 		Units = int), !;
-		raise_exception(index_number_out_of_range(IndN, AvailInds))),
+		throw(index_number_out_of_range(IndN, AvailInds))),
 	    (nonvar(SourceRef), !;
 		/* generate_name(c, loop, LoopName, Used), */
 		SourceRef = glob(_LoopName, _))),
@@ -675,13 +674,13 @@ make_intermediates(
 	context. */
 
 	((Source = makearray(Element, Dim); Source = soloarr(Element), Dim=1),
-	    ((on_exception(_, DimVal is Dim, fail),
-		integer(DimVal); % it is integer now
+	    ((catch(DimVal is Dim, _, fail),
+	          integer(DimVal);	% it is integer now
 	        make_intermediates(Dim, SubId, dum, DestPath,_, PrevInters,
 				   BuildingArrays, Step, Used, Dun, MidInters,
 				   part_result([], [], _, DimVal)),
 	        promote_unit(Dun, const_int)), !; % will be integer later
-		  raise_exception(bad_index_number(Dim, makearray))), !,
+		  throw(bad_index_number(Dim, makearray))), !,
 	        NowBuilding = [LocalLoop | BuildingArrays],
 	        length(BuildingArrays, BDept),
 	        append_atoms(arraybuild, BDept, BuildName),
@@ -693,7 +692,7 @@ make_intermediates(
 %	        MidInters = PrevInters,
 	        NowBuilding = BuildingArrays), !,
 	    ((\+ number(DimVal); DimVal > 1; Source = soloarr(_)), !;
-		raise_exception(bad_array_size(Source, DimVal))),
+		throw(bad_array_size(Source, DimVal))),
 	    LocalLoop = set(LocalInd, loop(DimVal)),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
 			PrevInters, NowBuilding, Step, Used, Units, NewInters,
@@ -714,7 +713,7 @@ make_intermediates(
 	    (append(TailLoops, [set(IntIndxRef, loop(Limit)) | ItemLoops],
 		    ALoops),
 	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
-		raise_exception(only_works_on_array(Source))),
+		throw(only_works_on_array(Source))),
 	    (Step = dummy,
 		type_ind(Limit, NeedType);
 	     \+ Step = dummy,
@@ -726,9 +725,9 @@ make_intermediates(
 	    promote_arg(Int, real, _),
 		promote_arg(NeedType, real, _), !, /* for legacy cases */
 	        TryIndxRef = simile_int(IndxRef);
-	    raise_exception(needs_index_of_type(Source, NeedType, Int))),
+	    throw(needs_index_of_type(Source, NeedType, Int))),
 	    (IntIndxRef = TryIndxRef, !;
-	    raise_exception(redundant_array(Source))),
+	    throw(redundant_array(Source))),
 	    
 	    append(ASetups, ISetups, Setups),
 	    merge_lists(AArgs, IArgs, Args),
@@ -766,7 +765,7 @@ make_intermediates(
 		[unify(Param), build(MixedInters), build(NewInters)]),
 				% in case they use param
 	    (promote_arg(DefUnit, UseUnit,_FType);
-		raise_exception(wrong_param_units(Param, UseUnit, DefUnit))),!,
+		throw(wrong_param_units(Param, UseUnit, DefUnit))),!,
 	    append(SubSetups, ExSetups, Setups);	  
 
 	\+ atom(Source),
@@ -797,7 +796,7 @@ make_intermediates(
 	    Source = graph(Param), \+ Param = '',
 		(\+ Step = dummy;
 		dialogue:table_data_is(_);
-		    raise_exception(missing_graph_or_table_data(Source))),
+		    throw(missing_graph_or_table_data(Source))),
 		SourceList = [Param],
 		RUnits = real,
 		Arg_template = [real],
@@ -807,9 +806,9 @@ make_intermediates(
 	    Step = dummy,
 		\+ SourceList = [''], /* let checker handle empty args */
 	        (SourceList = [_|_], !;
-		raise_exception(only_works_on_array(Source))),
+		throw(only_works_on_array(Source))),
 		(dialogue:table_data_is(TableData);
-		 raise_exception(missing_graph_or_table_data(Source))),
+		 throw(missing_graph_or_table_data(Source))),
 		member(units=RUnits, TableData),
 		member(bounds=Arg_template, TableData),
 		ValRef = table(ResultList);
@@ -836,7 +835,7 @@ make_intermediates(
 	evaluated, return results based on them. */
 	    (combine_subexp_results(DestPath, PartResultList, FunctionContext,
 				SourceContext, Setups, SubArgs, ResultList), !;
-	    raise_exception(cannot_combine_argument_dimensions(Source))),
+	    throw(cannot_combine_argument_dimensions(Source))),
 		(ValRef =.. [Lop, _, _],
 		 member(Lop, [*, /]),
 		    select(One, UnitList, [Other]),
@@ -880,20 +879,20 @@ make_intermediates(
 		    /* first, check my units are right... */
 		    try_units(RUnits, Arg_template, UnitList, Units);
 		 fn_or_op(Lop, _, RUnits, Arg_template),
-		    raise_exception(mismatched_units(Source,
+		    throw(mismatched_units(Source,
 						     UnitList, Arg_template));
 		 fn_or_op(Lop, _, RUnits, WrongLen),
 		    length(WrongLen, FnArity),
-		    raise_exception(wrong_no_of_args(Source, Op,
+		    throw(wrong_no_of_args(Source, Op,
 						     Arity, FnArity));
 		 m_class:SubId has_class_refinement uses_local_fns of UserFns,
 		    member(Op/Arity, UserFns),
-		    raise_exception(lost_user_defined_fn(Source, Op, Arity));
-		 raise_exception(no_such_function(Source, Op))),
+		    throw(lost_user_defined_fn(Source, Op, Arity));
+		 throw(no_such_function(Source, Op))),
 	    (Source = sofar(_), !,
 		all(inters, dissociate, [build(SubArgs), build(UseArgs)]);
 	    UseArgs = SubArgs);
-	raise_exception(undecipherable_operand(Source, SubId)).
+	throw(undecipherable_operand(Source, SubId)).
 
 decode_number(Source, SubId, Step, SourceRef, Units) :-
 	get_actual_size(SubId, Source, [SrcNum], [SrcType], [SrcUnits]),
@@ -980,7 +979,7 @@ propagate_units(Source, Lowest, Want, Get, Result) :-
 	promote_unit(Lowest, In),
 	substitute(Lowest, Want, In, SettleFor),
 	try_units(In, SettleFor, Get, Result), !;
-	raise_exception(mismatched_units(Source, Get, Want)).
+	throw(mismatched_units(Source, Get, Want)).
 	
 
 try_units(Result, Want, Get, Out) :-	
@@ -1138,7 +1137,7 @@ operator(+, int, [int, int]).
 operator(+, real, [real, real]).
 operator(-, int, [int, int]).
 operator(-, real, [real, real]).
-operator(*, int, [int, int]).
+operator(*, const_int, [const_int, const_int]).
 operator(*, 1, [1,1]).
 operator(//, int, [int, int]).
 operator(/, const_ratio, [const_int, const_int]).
@@ -1205,7 +1204,7 @@ Simile's code, so they want arrays starting at 0. */
 add_zeros(L, SubId, Step, NL, [Outer | Dims], U) :-
 	add_zeros_all(L, SubId, Step, NL, [Outer | Dims], U),
 	(Outer > 1, !; % others already checked
-	    raise_exception(bad_array_size(L, Outer))).
+	    throw(bad_array_size(L, Outer))).
 
 add_zeros(N, SubId, Step, RN, [], U) :-
 	decode_number(N, SubId, Step, RN, U).
@@ -1216,7 +1215,7 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 	add_zeros(H, SubId, Step, NH, R, U1),
 	add_zeros_all(T, SubId, Step, NT, [M | RR], UN),
 	(R = RR, !;
-	    raise_exception(cannot_combine_argument_dimensions([H | T]))),
+	    throw(cannot_combine_argument_dimensions([H | T]))),
 	propagate_units(list_parts(H,T), any, [any, any], [U1, UN], U),
 	N is M+1.
 
