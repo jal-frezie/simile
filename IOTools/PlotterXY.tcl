@@ -54,6 +54,7 @@ namespace eval ::$keyValue {
         SetState $w {}
         
         ShowHelper $w
+	AddVariable $w
     }
     
     proc InitPlotVars {w} {
@@ -224,7 +225,7 @@ namespace eval ::$keyValue {
                     $w.mess config -text {}; # clear prompt
                     display $w [GetModelTime] 0 0
                     display $w [GetModelTime] 0 0
-                    $w.bbframe.buttonBox itemconfigure 1 -state disable; #disable the add var button
+#                    $w.bbframe.buttonBox itemconfigure 1 -state disable; #disable the add var button
                 }
             }
             
@@ -312,7 +313,6 @@ namespace eval ::$keyValue {
         
         set toolbarItems [list \
                 [list clear.gif "Clear" [namespace code "clear $w"] ] \
-                [list add.gif "Add a variable"   [namespace code "AddVariable $w"]] \
                 [list property.gif " Properties " [namespace code "Settings $w"]]\
 			  [list text.gif " Add text " \
 			       [namespace code "DialogInMiddle $w"]]]

@@ -40,14 +40,14 @@ namespace eval grid005 {
         SetState $winId {}
 	message	$winId.msg -aspect 1000
         AddToolbar $winId
-        set NToolButtons [$winId.bbframe.buttonBox index last]
-        for {set i 1} {$i<=$NToolButtons} {incr i} {
-            $winId.bbframe.buttonBox itemconfigure $i -state disable
-        }
+#        set NToolButtons [$winId.bbframe.buttonBox index last]
+#        for {set i 0} {$i<=$NToolButtons} {incr i} {
+#            $winId.bbframe.buttonBox itemconfigure $i -state disable
+#        }
         if {[string match $winId [winfo toplevel $winId]]} {
             wm geometry $winId 500x500
         }
-        
+        AddVariable $winId
     }
 
     proc reset {winId} {
@@ -61,18 +61,18 @@ namespace eval grid005 {
     }
 
     proc AddToolbar {winId} {
-        set toolbarItems [list \
-                [list add.gif "Add a variable"   [namespace code "AddVariable $winId"]]\
-                [list save.gif "Save as GIF"   [namespace code "SaveAsFile $winId"]]\
-                [list zoomin.gif "Zoom in" [namespace code "zoomio $winId 1.25"] ]\
-                [list zoomout.gif "Zoom out" [namespace code "zoomio $winId 0.8"] ]\
-                [list property.gif " Properties " [namespace code "Settings $winId"]]\
-			      [list text.gif " Add text " \
-				   [namespace code "DialogInMiddle $winId"]]\
-Mont			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [namespace current] $winId"]] \
-                [list less.gif "Decrease range" [namespace code "DecreaseRange $winId"] ]\
-                [list greater.gif "Increase range" [namespace code "IncreaseRange $winId"] ]\
-                [list pause.gif " Freeze " [namespace code "ToggleFreeze $winId"]]]
+        set toolbarItems \
+	    [list \
+		 [list save.gif "Save as GIF" [namespace code "SaveAsFile $winId"]]\
+		 [list zoomin.gif "Zoom in" [namespace code "zoomio $winId 1.25"] ]\
+		 [list zoomout.gif "Zoom out" [namespace code "zoomio $winId 0.8"] ]\
+		 [list property.gif " Properties " [namespace code "Settings $winId"]]\
+		 [list text.gif " Add text " \
+		      [namespace code "DialogInMiddle $winId"]]\
+		 [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [namespace current] $winId"]] \
+		 [list less.gif "Decrease range" [namespace code "DecreaseRange $winId"] ]\
+		 [list greater.gif "Increase range" [namespace code "IncreaseRange $winId"] ]\
+		 [list pause.gif " Freeze " [namespace code "ToggleFreeze $winId"]]]
         ::graphtools::MakeToolBar $winId $toolbarItems
     }
     
@@ -82,7 +82,7 @@ Mont			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [
     "Click on the variable containing the positions or IDs of the columns."
         GrabClicks $winId
         pack $ms
-        $winId.bbframe.buttonBox itemconfigure 0 -state disable; #disable the add var button
+#        $winId.bbframe.buttonBox itemconfigure 0 -state disable; #disable the add var button
         SetState $winId display0
     }
     
@@ -141,7 +141,7 @@ Mont			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [
         set useNodes($winId,caption) [lindex $state 1]
         
         AddToolbar $winId
-        $winId.bbframe.buttonBox itemconfigure 0 -state disable
+#        $winId.bbframe.buttonBox itemconfigure 0 -state disable
 	NumDistinct $winId $useNodes($winId,colvals)
         set useNodes($winId,dataMin) 1e100
         set useNodes($winId,dataMax) -1e100
@@ -179,12 +179,21 @@ Mont			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [
                     InitialiseGrid $winId $node
                     PrepareSaveString $winId
 #                    destroy $winId.intro
-                    set NToolButtons [$winId.bbframe.buttonBox index last]
-                    for {set i 1} {$i<=$NToolButtons} {incr i} {
-			if {!$useNodes($winId,ETCount) || \
-				[lsearch {4 6 7} $i]==-1} {
-			    $winId.bbframe.buttonBox itemconfigure $i \
-				-state normal
+#                    set NToolButtons [$winId.bbframe.buttonBox index last]
+#                    for {set i 1} {$i<=$NToolButtons} {incr i} {
+#			if {!$useNodes($winId,ETCount) || \
+#				[lsearch {4 6 7} $i]==-1} {
+#			    $winId.bbframe.buttonBox itemconfigure $i \
+#				-state normal
+#			}
+#		    }
+
+# above enabled all toolbar buttons except, in case of enum type, scaling
+# now disable these instead
+		    if {$useNodes($winId,ETCount)} {
+			foreach notForET {less greater} {
+			    $winId.bbframe.buttonBox itemconfigure $notForET \
+				-state disable
 			}
 		    }
 #		    if {![info exists useNodes($winId,values)]} {
@@ -303,7 +312,7 @@ Mont			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [
 	}
 	if {$mult<2} {
 	    set mult 1
-	    $winId.bbframe.buttonBox itemconfigure 3 -state disable
+	    $winId.bbframe.buttonBox itemconfigure zoomout -state disable
 	}
         set useNodes($winId,mult) $mult
         set xwidth [expr {$mult*$useNodes($winId,ncol)}]
@@ -685,10 +694,10 @@ Mont			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [
             set useNodes($winId,mult) $next
         }
         if {$useNodes($winId,mult)==1} {
-            $winId.bbframe.buttonBox itemconfigure 3 -state disable
+            $winId.bbframe.buttonBox itemconfigure zoomout -state disable
             # disable zoom out button
         } else {
-            $winId.bbframe.buttonBox itemconfigure 3 -state normal
+            $winId.bbframe.buttonBox itemconfigure zoomout -state normal
         }
         
         $winId.c configure -scroll "0 0 \

@@ -52,9 +52,11 @@ proc ::graphtools::MakeToolBar {w toolbarItems} {
         set gif [lindex $item 0 ]
         set helptext [lindex $item 1]
         set command [lindex $item 2]
-        set newButton [$bbox add -image [image create photo  -file "../Images/Toolbar/$gif"] \
-                -highlightthickness 0 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
-                -command $command]
+        set newButton \
+	    [$bbox add -name [file rootname $gif] -highlightthickness 0 \
+		 -image [image create photo  -file "../Images/Toolbar/$gif"] \
+		 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
+		 -command $command]
         BindPopup $newButton $helptext
     }
     pack $f -side top -fill x

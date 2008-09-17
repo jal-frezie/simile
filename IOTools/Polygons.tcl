@@ -43,17 +43,17 @@ namespace eval ::polygon375 {
 	set useNodes($winId,scaley) 1.0
 
 	AddToolBar $winId
-        set NToolButtons [$winId.bbframe.buttonBox index last]
-        for {set i 1} {$i<=$NToolButtons} {incr i} {
-            $winId.bbframe.buttonBox itemconfigure $i -state disable
-        }
+#        set NToolButtons [$winId.bbframe.buttonBox index last]
+#        for {set i 1} {$i<=$NToolButtons} {incr i} {
+#            $winId.bbframe.buttonBox itemconfigure $i -state disable
+#        }
+	AddVariable $winId
     }
     
     proc AddToolBar {winId} {
         variable displayUpdate
 	set displayUpdate($winId) 1
         set toolbarItems [list \
-                [list add.gif "Add a variable"   [namespace code "AddVariable $winId"]]\
                 [list zoomin.gif "Zoom in" [namespace code "Zoom $winId 2 2"] ]\
                 [list zoomout.gif "Zoom out" [namespace code "Zoom $winId 0.5 0.5"] ]\
                 [list zoomfit.gif "Zoom to fit" [namespace code "Fit $winId"] ]\
@@ -418,11 +418,11 @@ $useNodes($winId,scaley)"
         }
         ########## end polyfile changes
 
-	set NToolButtons [$winId.bbframe.buttonBox index last]
-        $winId.bbframe.buttonBox itemconfigure 0 -state disable; #disable the add var button
-	for {set i 1} {$i<=$NToolButtons} {incr i} {
-	    $winId.bbframe.buttonBox itemconfigure $i -state normal
-	}
+#	set NToolButtons [$winId.bbframe.buttonBox index last]
+#        $winId.bbframe.buttonBox itemconfigure 0 -state disable; #disable the add var button
+#	for {set i 1} {$i<=$NToolButtons} {incr i} {
+#	    $winId.bbframe.buttonBox itemconfigure $i -state normal
+#	}
         Repaint $winId $hs
     }
     
