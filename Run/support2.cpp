@@ -171,7 +171,7 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
 		       void* showMess_ptr,
 		       void* graph_ptr, 
 		       int* phases, node_data_line** data_ptr, 
-		       double** adapt_maxerr) {
+			      double** adapt_maxerr, int** userDefStop) {
 
   /* Stub is telling us... */
   myClassPtr = useClassPtr;
@@ -201,6 +201,7 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
 /*  *arc_count = (sizeof inputArcs)/sizeof(char*)-1; // don't include filler
   *arc_id_list = inputArcs;
 */  *adapt_maxerr = &maxerr;
+  *userDefStop = &userStop;
   return((sizeof nodedata)/sizeof(node_data_line));
 }
 

@@ -762,6 +762,7 @@ public:
   int *connLines;
   // channelRecord* channelData; only used in top model
   double* adapt_maxerr;
+  int* userDefStop; // set by stop function in model
   char erreur[256];
 
   Model(char* fileName) {
@@ -808,7 +809,7 @@ showMess(globMess); */
 */			    (void*)stat_check,
 			    (void*)showMess,
 			    (void*)&c_graphdata,
-			    &phases, &nodedata, &adapt_maxerr);
+			    &phases, &nodedata, &adapt_maxerr, &userDefStop);
   }
 
   ~Model() {
@@ -860,6 +861,7 @@ showMess(globMess); */
   int resetmodel(void* modelHandle, int top_phase) {
     int tweak_phase, err;
     
+    *userDefStop = 0;
     if (top_phase<=0) {
       for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
 	lts[tweak_phase]=0;
@@ -871,9 +873,10 @@ showMess(globMess); */
       adapt_doublings = 0;
     }
     err=(*evalmodel)(modelHandle, top_phase);
-    if (!err)
-      (*advancemodel)(modelHandle, top_phase);
-    return err;
+    if (err)
+      return err;
+    (*advancemodel)(modelHandle, top_phase);
+    return *userDefStop;
   }
 
   int executemodel(void* id, int how_int, 
@@ -883,6 +886,7 @@ showMess(globMess); */
     BOOLEAN made_step, first_pass;
     //    sprintf(globMess, "xm %lf-%lf at %lf", start, *end, errlim);
     //    showMess(globMess);
+    *userDefStop = 0;
     freq = steps[phases]*pow(2,-adapt_doublings);
     xtime = start;
     while (freq*(*end-xtime)>0) { // freq only affects sign
@@ -966,6 +970,10 @@ showMess(globMess); */
 	return err;
       }
       (*advancemodel)(id, big_phase);
+      if (*userDefStop) {
+	*end=xtime;
+	return *userDefStop;
+      }
     }
     if (check_gui(id, *end, 0)) {
       return -100; // should not conflict with os signal numbers

@@ -25,11 +25,14 @@ search_from_type* search_from_ref;
 advance_ptr_type* advance_ptr_ref;
 get_remote_value_type* get_remote_value;
 */
+
 stat_check_type* stat_check;
 showMess_type* showMess;
 
+int userStop;
+
 int stop(int code) {
-  throw code;
+  return (userStop = code);
 }
 
 int lazy = 1024;

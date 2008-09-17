@@ -173,7 +173,7 @@ typedef struct connectRecord_t {
 // Declaration for procedure types found in the model dll by the shank
 typedef int getcount_type(void*, void*, void*, void* ,void*,
 			  void*, void*, void*, void*,
-			  int*, node_data_line**, double**);
+			  int*, node_data_line**, double**, int**);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
 typedef int setstep_type(double, int);
