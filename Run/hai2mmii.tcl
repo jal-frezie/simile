@@ -20,15 +20,16 @@ proc ExplainError {errList} {
     if {![string match tcl_model_err* $errList]} {
 	error "Unexpected problem in Tcl model execution" $origError
     }
+    set severity -1
     set what [lindex $errList 1]
     set dest [lindex $errList 2]
     set mtime [lindex $errList 3]
     set mstep [lindex $errList 4]
     set whoopsie [lindex $errList 5]
     switch $what {
-	evalmodel {set operation "calculate the value of"}
-	updatemodel {set operation "update the state"}
-	advancemodel {set operation "advance the time point for"}
+	evalmodel {set operation "calculating the value of"}
+	updatemodel {set operation "updating the state"}
+	advancemodel {set operation "advancing the time point for"}
     }
     if {![string equal none $dest]} {
 	set targetList [DescribeComponent $dest]
@@ -59,6 +60,7 @@ proc ExplainError {errList} {
 	} "User-defined interruption code *" {
 	    set code [lindex $whoopsie end]
 	    set problem "there was a user-defined interruption: $code"
+	    set severity 0
 	} "Illegal operation signal *" {
 	    set code [lindex $whoopsie end]
 	    set which [lindex {SIGEOF SIGHUP SIGINT SIGQUIT SIGILL SIGTRAP 
@@ -90,11 +92,22 @@ proc ExplainError {errList} {
 	    set timing " at time $mtime"
 	}
     }
-    set mess "Simile ran into a problem trying to run this model. 
-While it was trying to $operation $target during $action of the model$timing, $problem. Original error message follows:\n$origError"
+    switch $severity {
+	-1 {
+	    set graphic warning
+	    set header "Problem with model"
+	    set mess "Simile ran into a problem trying to run this model. 
+While $operation $target during $action of the model$timing, $problem. Original error message follows:\n$origError"
+	} 0 {
+	    set graphic info
+	    set header "Model execution paused"
+	    set mess "While $operation $target during $action of the model$timing, $problem."
+	}
+    }
     # do it after idle so this process is not hung till user responds
-    start_in_editor BuildProblem "Problem with model" warning $mess execution
+    start_in_editor BuildProblem $header $graphic $mess execution
     do_in_editor RaiseModelWindow $myNode
+    return $severity
 }
 
 proc DescribeComponent {ref} {
@@ -734,8 +747,7 @@ proc ExecuteModel {myNode howInt start finish errLim} {
 	}
     } errList]} {
 	InteractGUI $instance_id($myNode) [lindex $errList 3] 2
-	ExplainError $errList
-	return -1
+	return [ExplainError $errList]
     } elseif {$errList==-1} {
         start_in_editor BuildProblem "Execution notice" info "Model execution has been paused at a discontinuity which could not be dealt with by adaptive step size control." execution
         do_in_editor RaiseModelWindow $myNode

@@ -1711,11 +1711,11 @@ proc BuildProblem {Title errLevel msg key args} {
 
     set labf1 [frame $ProbWin.labf1]
     pack [label $labf1.img -image $iconImages($errLevel)] -side left 
-    pack [label $labf1.lab1 -text "Warning:" \
-            -font {-weight bold -family helvetica -size 10}] -side left
+#    pack [label $labf1.lab1 -text "Warning:" \
+#            -font {-weight bold -family helvetica -size 10}] -side left
     pack [scrollbar $labf1.yscroll -orient v \
             -command [list $labf1.lab2 yview]] -side right -fill y
-    pack [text $labf1.lab2 -width 48 -height 10 -relief sunken -bd 2 -highlightthickness 0 -wrap word -yscrollcommand [list AdjustCanvas $labf1 lab1 y]] -fill both -expand on
+    pack [text $labf1.lab2 -width 48 -height 10 -relief sunken -bd 2 -highlightthickness 0 -wrap word -yscrollcommand [list AdjustCanvas $labf1 img y]] -fill both -expand on
     $labf1.lab2 insert 1.0 $msg
     $labf1.lab2 config -state disabled
     #    pack [label $labf1.lab2 -text $msg -wraplength 320 \
