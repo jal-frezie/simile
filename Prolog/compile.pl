@@ -304,8 +304,6 @@ important...(or was, back when the A stood for Agroforestry)... */
 
         (setof(ExtProc, uses_ext_proc(Top, ExtProc), ExtProcs), !;
             ExtProcs = []),
-        (setof(GraphSpec, get_graph_spec(GraphSpec), AllGraphs), !;
-	    AllGraphs = []),
 	append(Keywords, ExtProcs, BuiltIn),
         append(BuiltIn, LocalNames, Used),
 
@@ -314,7 +312,7 @@ structures corresponding to submodels, structure types, pointers and other
 bits and pieces */
 
 	reassure_user("Choosing names for program variables"),
-	declare_structure(Language, FullModel, Used),
+	declare_structure(Language, FullModel, Used, AllGraphs),
 
 	(
 % File writing starts here
@@ -410,17 +408,7 @@ wot need them */
 	send_to_dest(Stream, EndTopType),
 	fail;
 
-	reassure_user("Generating metadata declarations"),
-	extract_instances(FullModel, RealDecls),
-	generate_metadata(Language, RealDecls, [], 1,
-			    Used, AllGraphs, NodeData, Stream),
-	make_constant_list(Language, NodeData, StructText),
-	length(NodeData, NodeCount), /* only used in tcl */
-	excrete(Language, variable_declaration,
-		   [int, nodecount, [], NodeCount], 0, Stream),
-	excrete(Language, variable_declaration,
-		   [node_data_line, nodedata, void, StructText], 0, Stream),
-
+	insert_metadata(Language, FullModel, Used, Stream),
 	send_to_dest(Stream, ['#include <support2.cpp>'])
 
 	/* OK at this point we need to free all the memory we possibly can;
@@ -429,44 +417,57 @@ wot need them */
 	
 	).
 
+insert_metadata(Language, FullModel, Used, Stream) :-
+	reassure_user("Generating metadata declarations"),
+	extract_instances(FullModel, RealDecls),
+	generate_metadata(Language, RealDecls, [], 1, Used, NodeData, Stream),
+	make_constant_list(Language, NodeData, StructText),
+	length(NodeData, NodeCount), /* only used in tcl */
+	excrete(Language, variable_declaration,
+		   [int, nodecount, [], NodeCount], 0, Stream),
+	excrete(Language, variable_declaration,
+		   [node_data_line, nodedata, void, StructText], 0, Stream).
+		  
 uses_ext_proc(Model, Proc) :-
         contains(Model, Submodel),
 	Submodel has_class_refinement external_code of ExtCode,
 	member(include=Inc, ExtCode),
 	\+ Inc = none,
 	member(procedure=Proc, ExtCode).
-
+/*
 get_graph_spec(GraphSpec) :-
 	NodeId has_class_refinement table_data of
 	[file='/graph/', data=[YLow, YHigh, YSpan],
 	 indices=[XLow, XHigh, XSpan, Range], current=PointList,
 	 units=_, _, dims=NumPts | _],
-	/* Keep tcl working till it uses c++ graph access */
+	% Keep tcl working till it uses c++ graph access
 	GraphSpec = [NodeId, XLow, XHigh, XSpan,
 		  YLow, YHigh, YSpan, Range, NumPts | PointList].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-/* declare_structure/3: goes through submodels and starting with most deeply 
+declare_structure/3: goes through submodels and starting with most deeply 
 nested, provides a name for each variable, and a name, type, tag and pointer
 name for each structure. Note we don't generate names for variables; they are
 all named after the nodes from which they take their values. */
 
-declare_structure(Language, model(Vars, Submodels), Used) :-
+declare_structure(Language, model(Vars, Submodels), Used, AllGraphs) :-
 
-	declare_submodel_structures(Language, Submodels, Used),
-	name_components( Language, Vars, Used).
+	declare_submodel_structures(Language, Submodels, Used, SmGraphs),
+	name_components( Language, Vars, Used, Graphs),
+	append(SmGraphs, Graphs, AllGraphs).
 
-declare_submodel_structures(_, [], _).
+declare_submodel_structures(_, [], _, []).
 
-declare_submodel_structures(Language, [Instance | Instances], Used) :-
+declare_submodel_structures(Language, [Instance | Instances], Used, Graphs) :-
 	Instance = instance(submodel, Node, xrefs(Model, _, Bases, _), 
 		Name, Type-_),
 	caption_for(Node, Capt),
 	generate_name(Language, Capt, Name, Used, [type]),
 	append_atoms(Name, type, Type),
 	make_assoc_loop_names(Language, Instance, Used, Bases),
-	declare_structure(Language, Model, Used),
-	declare_submodel_structures(Language, Instances, Used).
+	declare_structure(Language, Model, Used, HeadGraphs),
+	declare_submodel_structures(Language, Instances, Used, TailGraphs),
+	append(HeadGraphs, TailGraphs, Graphs).
 
 make_assoc_loop_names(_,_,_, []).
 
@@ -600,9 +601,9 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 	    Finish = EndClass;
 	 send_to_dest(Stream, EndClass)).
 
-generate_metadata(_, [], _,_,_,_, [], _).
+generate_metadata(_, [], _,_,_, [], _).
 generate_metadata(L, [Instance | Instances], Tree, Level,
-		     Used, Graphs, NodeData, Stream) :-
+		     Used, NodeData, Stream) :-
 	Instance = instance(Type, Node, Loc, _, _-CSizes),
 	(Type = submodel, !,
 	    list_local_index_meanings(Node, SmIndSpecs),
@@ -630,14 +631,14 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 	(Loc = xrefs(Model, _,_,_),
 	extract_instances(Model, RealDecls), !,
 	generate_metadata(L, RealDecls, DeepTree, StartCases,
-			     Used, Graphs, DeepNodeData, Stream);
+			     Used, DeepNodeData, Stream);
 	 /* Not a submodel */
 	    DeepNodeData = []),
 	generate_data_decls(L, NewDims, DeepTree, Instance,
-			    Used, Graphs, LocalNodeData, Stream),
+			    Used, LocalNodeData, Stream),
 	NewLevel is Level + 1,
 	generate_metadata(L, Instances, Tree, NewLevel,
-			     Used, Graphs, MoreNodeData, Stream),
+			     Used, MoreNodeData, Stream),
 	append([LocalNodeData, DeepNodeData, MoreNodeData], NodeData).
 	    
 extract_instances(model(Funx, Subz), Instances) :-
@@ -709,7 +710,7 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 	excrete(Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0, Stream),
 	nl(Stream),
 /* following section used to be c only */
-	generate_graph_handlers(0, AllGraphs, GraphSetups),
+	generate_graph_handlers(AllGraphs, GraphSetups),
 	(ProcName = evalmodel, \+ GraphSetups = [],
 	    refer_value(Language, phase, PhRef),
 	    combine(Language, ==, [PhRef, -2], InitExpr),
@@ -722,7 +723,7 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 	nl(Stream),
 	excrete(Language, comment, 'UPDATE FUNCTION VALUES', 4, Stream),
 	nl(Stream),
-	do_assign_list( Language, ActionForm, 4, AllGraphs, Used, Stream),
+	do_assign_list( Language, ActionForm, 4, Used, Stream),
 	nl(Stream),
 	excrete(Language, end(procedure), ProcName, 0, Stream),
 	nl(Stream),
@@ -823,13 +824,13 @@ make_exit_proc(Language, Instances, Dest) :-
 /* correct_graph_headers: building the code for the functions produces graph info
 related to the variable being calculated, including intermediate variables, but when
 editing the graphs at run time we want to refer to them by the final result, so
-here we swap them round... */
+here we swap them round... 
 
 correct_graph_header([Inter | G1], Inters, Dest) :-
 	member(instance(internal, inter(_,_, Next), _, Inter, _), Inters), !,
 	    correct_graph_header([Next | G1], Inters, Dest);
 	Dest = [Inter | G1].
-	
+*/
 
 unfinished_in(make(L, _,_,_,_), L).
 
@@ -2017,29 +2018,36 @@ open_separately(Level) :-
 	\+ I = glob(_,_);
 	    nonvar(Alarm)).
 
-generate_graph_handlers(_, [], []).
+generate_graph_handlers([], []).
 
-generate_graph_handlers(N, [[_ | NumericalData] | AllGraphs],
-			[Setup | AllSetups]) :-
-	PointerData is N+1,
-	Setup =.. [setup_graph_data, PointerData | NumericalData],
-	generate_graph_handlers(PointerData, AllGraphs, AllSetups).
+generate_graph_handlers([GraphData | AllGraphs], [Setup | AllSetups]) :-
+	Setup =.. [setup_graph_data | GraphData],
+	generate_graph_handlers(AllGraphs, AllSetups).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % name_components instantiates the unground parts of InstanceList which correspond
 % with components, using names specified in the KR or generated ones if no 
 % specified names exist.
 
-name_components( _, [], _).
+name_components( _, [], _, []).
 
 name_components(Language, [instance(Type, Node, _, elt(_, Var, _), _)
-			  | Compartments], Used) :-
+			  | Compartments], Used, Graphs) :-
 	(\+ member(Type, [function, init_function,
-			  id_function, internal, external]),
-	    !;
+			  id_function, internal, external]), !,
+	    Graphs = TGraphs;
 	caption_for(Node, Name),
-	    generate_name( Language, Name, Var, Used)),
-	name_components( Language, Compartments, Used).
+	    generate_name( Language, Name, Var, Used),
+	    (Node has_class_refinement table_data of
+	    [file='/graph/', data=[YLow, YHigh, YSpan],
+	     indices=[XLow, XHigh, XSpan, Range], current=PointList,
+	     units=_, _, dims=NumPts | _], !,
+		nth(GraphNo, Used, Var),
+		/* Keep tcl working till it uses c++ graph access */
+		Graphs = [[GraphNo, XLow, XHigh, XSpan, YLow, YHigh, YSpan,
+			   Range, NumPts | PointList] | TGraphs];
+	      Graphs = TGraphs)),
+	name_components( Language, Compartments, Used, TGraphs).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 send_to_dest(Stream, Stuff) :-

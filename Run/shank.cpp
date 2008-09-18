@@ -824,6 +824,7 @@ showMess(globMess); */
      trying to refer to procedure variables in the model class directly */
 
   void* create() {
+    c_graphdata = NULL; // this will be filled when initializing new instance
     return (*createmodel)();
   }
 

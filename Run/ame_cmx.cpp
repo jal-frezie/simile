@@ -113,6 +113,11 @@ int do_graph(graph_data_type** graphdata, Tcl_Interp *interp,
   switch (action) {
   case READGRAPH:
     graphptr = find_graph(index, *graphdata);
+    if (!graphptr) {
+      Tcl_SetStringObj(resultPtr, 
+		       "There is no graph associated with this component", -1);
+      return TCL_ERROR;
+    }
     sprintf(current, "%f %f %d %f %f %d %d %d",
             graphptr->xlow,
             graphptr->xhigh,
@@ -275,12 +280,6 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 
   case GETGRAPH:
   case SETGRAPH:
-    if (!data_line->graph) {
-      sprintf(current, "No graph associated with node %s.", data_line->name);
-      resultPtr = Tcl_NewStringObj(current, -1);
-      Tcl_SetObjResult(interp, resultPtr);
-      return TCL_ERROR;
-    }
     action = action + READGRAPH - GETGRAPH; // SETGRAPH becomes WRITEGRAPH
     return do_graph(get_graph_base(tgtModel), interp, action, data_line->graph,
 		    argc, argv);

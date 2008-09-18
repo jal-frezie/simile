@@ -622,7 +622,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	
 	DummyDest = [sm(_,_,_, fm_loop(IndxSzs, _))],
 	    on_exception(ParseException,
-			 (make_intermediates(FullExpr, Fn, '/dest/',
+			 (make_intermediates(FullExpr, Fn, ['/dest/'],
 					     DummyDest, _, [],
 					     [], dummy, _, Type, _I,
 					     part_result(Context, _,_,_)),

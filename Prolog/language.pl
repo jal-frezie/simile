@@ -4,7 +4,7 @@
 **** being the starting point.                                              ****
 *******************************************************************************/
 
-sicstus_module( language, [do_assign_list/6] ).
+sicstus_module( language, [do_assign_list/5] ).
 
 sicstus_use_module( [sp_only, render,m_class,utility,
 		ame_gen,units,text,library(lists)] ).
@@ -42,8 +42,6 @@ Sent:
 -----
 L: The target language eg. c, tcl
 Clauses: The list of assignments etc to be processed
-Graphs: Info for graph data structures, separate from code so they can be
-	edited in the exported model
 Collects: list of ids of parameters in order of their references
 Preambles: Code to go before currently open loops (list of lists)
 Postambles: Code to go in currently open loops (likewise)
@@ -60,19 +58,19 @@ Results: The generated code.
 The actual procedures have been renamed do_assignment, so I can put in
 an exception if one of them fails, to assist debugging. */
 
-do_assign_list(L, [Clause | Clauses], Indent, Graphs, Used, Stream) :-
+do_assign_list(L, [Clause | Clauses], Indent, Used, Stream) :-
 	/* write_to_chars(Clause, ClauseMess),
 	dialogue:reassure_user(ClauseMess), test only */
-	do_assignment(L, [Clause | Clauses], Indent, Graphs, Used, Stream), !;
+	do_assignment(L, [Clause | Clauses], Indent, Used, Stream), !;
 	raise_exception(cannot_convert_to_code(Clause)).
 
-do_assign_list(_, [], _, _, _, _).
+do_assign_list(_, [], _, _, _).
 
 /* This makes a loop for a fixed membership submodel.
 Should really be done with make_array_assignment. */
 
 do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
-                Indent, GraphCount, Used, Stream) :-
+                Indent, Used, Stream) :-
         NewIndent is Indent+4,
 	declare(L, Loop, loop, int, Used, Indent, Stream),
 % fatal question -- what does this do
@@ -80,17 +78,17 @@ do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
         (make_indexed_reference(L, Loop, Inds, Count),
 	    excrete(L, for_start, [Count, 1, Bound, 1], Indent, Stream),
-	    do_assign_list(L, MyLoop, NewIndent, GraphCount, Used, Stream),
+	    do_assign_list(L, MyLoop, NewIndent, Used, Stream),
 	    excrete(L, end(for), Count, Indent, Stream),
 	    fail;
-	do_assign_list(L, Later, Indent, GraphCount, Used, Stream)).
+	do_assign_list(L, Later, Indent, Used, Stream)).
 
 /* Start fixed membership submodel. Note that we may have selected an index
 explicitly (using element(...)), so it can contain any expression, even a
 graph. */
 
 do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
-		 | Clauses], Indent, Graphs, Used, Stream) :-
+		 | Clauses], Indent, Used, Stream) :-
 
 	/* some of this belongs in the next disjunction */
 
@@ -98,7 +96,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
 	append_atoms(Name, pointer, PointerForm),
 	declare(L, Pointer, PointerForm, Type, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
-	make_evaluation_routine_all(L, IndExprs, Graphs, RefIndices),
+	make_evaluation_routine_all(L, IndExprs, RefIndices),
 	all(render, make_expr,
 	    [unify(L), build(RefIndices), build(RefExprs)]),
 	excrete(L, enter_context, Pointer=[Top, Name, RefExprs], 
@@ -108,7 +106,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
 	    excrete(L, assignment, AlarmVar=1, Indent, Stream),
 	    excrete(L, while_start, 1, Indent, Stream),
 	    Indent1 is Indent + 4,
-	    (do_assign_list(L, MyLoop, Indent1, Graphs, Used, Stream),
+	    (do_assign_list(L, MyLoop, Indent1, Used, Stream),
 		refer_value(L, AlarmVar, AlarmRef),
 		excrete(L, if_start, AlarmRef, Indent1, Stream),
 		Indent2 is Indent1 + 4,
@@ -116,11 +114,11 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
 		excrete(L, end(cond), AlarmRef, Indent1, Stream),
 		excrete(L, end(while), alarm, Indent, Stream),
 		fail;
-	    do_assign_list(L, Later, Indent, Graphs, Used, Stream));
+	    do_assign_list(L, Later, Indent, Used, Stream));
 	var(Alarm),
 	    % if no alarm loop this does not start new context
-	    do_assign_list(L, MyLoop, Indent, Graphs, Used, Stream),
-	    do_assign_list(L, Later, Indent, Graphs, Used, Stream)).
+	    do_assign_list(L, MyLoop, Indent, Used, Stream),
+	    do_assign_list(L, Later, Indent, Used, Stream)).
 
 /* start non-generating vm  submodel loop;	still need to
 add context for associated submodels if it is
@@ -128,7 +126,7 @@ variable length, otherwise add the loops to explicitly
 hunt through them */
 
 do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
-	      Indent, Graphs, Used, Stream) :-
+	      Indent, Used, Stream) :-
 	/* some of this belongs in the next disjunction */
 
 	/* LoopSpec = rm_loop(ArcIndex, Level, IExprs), !,
@@ -175,17 +173,17 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 		 unify([L, Indent1, Used, Stream])]),
 	    move_base_ptrs(L, Pointer, restore, Indent1,
 			   Names, BasePtrs, Types, Stream),
-	    do_assign_list(L, MyLoop, Indent1, Graphs, Used, Stream),
+	    do_assign_list(L, MyLoop, Indent1, Used, Stream),
 	    excrete(L, assignment, Pointer=OnPointerRef, Indent1, Stream),
 	    excrete(L, end(while), Pointer, Indent, Stream),
 	    fail;
-	do_assign_list(L, Later, Indent, Graphs, Used, Stream)).
+	do_assign_list(L, Later, Indent, Used, Stream)).
 
 /* Start a submodel loop with a generate/test pair inside. This happens once per time step for variable membership models apart from populations. Each possible instance of the model is either generated or pulled out of the list, for testing later. If the phase is 'new' then previously existing instances are skipped over. */
 
 do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 			   BasePtrs) | Clauses],
-	      Indent, Graphs, Used, Stream) :-
+	      Indent, Used, Stream) :-
 
         Indent1 is Indent+4,
 
@@ -193,7 +191,7 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 	append_atoms(Name, pointer, PointerForm),
 	declare(L, Pointer, PointerForm, Type, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
-	make_evaluation_routine_all(L, LocalIndices, [], RefIndices),
+	make_evaluation_routine_all(L, LocalIndices, RefIndices),
 	make_struct_reference(L, Pointer, next, OnPointer),
 	refer_value(L, OnPointer, OnPointerRef),
 
@@ -273,14 +271,14 @@ failed through to make sure all later temporary variables get declared. */
 	    excrete(L, if_start, MemberCheckRef, Indent, Stream),
 	    SubIndent = Indent1;
 	 SubIndent = Indent),
-	do_assign_list(L, MyLoop, SubIndent, Graphs, Used, Stream),
+	do_assign_list(L, MyLoop, SubIndent, Used, Stream),
 	do_writing(CheckEnd, Stream),
 	/* That should make some good code */
 
-	do_assign_list(L, Later, Indent, Graphs, Used, Stream).
+	do_assign_list(L, Later, Indent, Used, Stream).
 
 do_assignment(L, [bound_gen_loop(Top, Name) | Clauses],
-	      Indent, Graphs, Used, Stream) :-
+	      Indent, Used, Stream) :-
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
 	(make_struct_reference(L, Top, Name, SubPointer),
 % what is this for? Matches dummy index for base-instance-lookup
@@ -293,36 +291,36 @@ do_assignment(L, [bound_gen_loop(Top, Name) | Clauses],
 
 	    excrete(L, make_reference, Meta=SubPointer, Indent, Stream),
 
-	    do_assign_list(L, MyLoop, Indent, Graphs, Used, Stream),
+	    do_assign_list(L, MyLoop, Indent, Used, Stream),
 	/* And here's the stuff that goes at the end of the loop... */
 	    resolve_pointer(L, Meta, MPTarget),
 	    refer_value(L, MPTarget, MPTargetRef),
 	    excrete(L, procedure_call, delete_list(MPTargetRef),Indent, Stream),
 	    excrete(L, assignment, MPTarget=0, Indent, Stream),
 %	    fail;
-	do_assign_list(L, Later, Indent, Graphs, Used, Stream)).
+	do_assign_list(L, Later, Indent, Used, Stream)).
 
 /* Nowadays we may want to stick the emptying of a list at any point in the
 program. So it needs its own clause... */
 
 do_assignment(L, [reset_list(Ptr, Name) | Clauses],
-	      Indent, Graphs, Used, Stream) :-
+	      Indent, Used, Stream) :-
 	make_struct_reference(L, Ptr, Name, Ref),
 	(L = c,
 	    excrete(L, procedure_call, delete_list(Ref), Indent, Stream);
 	L = tcl),
 	excrete(L, assignment, Ref=0, Indent, Stream),
-	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Used, Stream).
 
 /* Clause to handle end of a submodel loop does not actually generate any code (this
 is all done at start submodel time) but rearranges the preambles and postambles so
 subsequent stuff is put outside the loop.
 
 
-do_assignment(L, [finish_level | Clauses], Graphs, Collects,
+do_assignment(L, [finish_level | Clauses], Collects,
 	      [Exit | Postambles], Used, Stream) :-
 	do_writing(Exit, Stream),
-	do_assign_list(L, Clauses, Graphs, Collects, Postambles, Used, Stream).
+	do_assign_list(L, Clauses, Collects, Postambles, Used, Stream).
 
 Here's a really easy clause that enables program statements in the right language
 to be stuck directly into the instruction queue. The reason for doing this is so that
@@ -332,22 +330,22 @@ unnecessary if the thing were designed so it could call itself on parts of the
 program. I blame Geraint....*/
 
 do_assignment(L, [verbatim(CodeLine) | Clauses],
-	      Indent, Graphs, Used, Stream) :-
+	      Indent, Used, Stream) :-
 	do_writing(CodeLine, Stream),
-	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Used, Stream).
 /* cannot use cos we only assign when condition is right
 do_assignment(L, [cond_assign(Dest, Tested, Payload, Op, SoFar) | Clauses],
-		Graphs, Collects, 
+		Collects, 
 		Preambles, [Current | Postambles],
 		Used, Temps, Results) :-
 	length(Postambles, Nesting),
 	Indent is Nesting*4,
-	make_scalar(L, Dest, Graphs, ScalarDest),
-	make_evaluation_routine(L, Tested, Graphs, TestedTerm),
+	make_scalar(L, Dest, ScalarDest),
+	make_evaluation_routine(L, Tested, TestedTerm),
 	make_expr(L, TestedTerm, TestedExpr),
-	make_evaluation_routine(L, Payload, Graphs, PayloadTerm),
+	make_evaluation_routine(L, Payload, PayloadTerm),
 	make_expr(L, PayloadTerm, PayloadExpr),
-	make_scalar(L, SoFar, Graphs, ScalarSoFar),
+	make_scalar(L, SoFar, ScalarSoFar),
 	make_pointer(L, ScalarSoFar, SoFarPtr),
 	append_atoms(return_if_, Op, Functor),
 	make_procedure_call_chars(L, [Functor, TestedExpr, PayloadExpr,
@@ -355,16 +353,16 @@ do_assignment(L, [cond_assign(Dest, Tested, Payload, Op, SoFar) | Clauses],
 	name(CondAssign, CondAssignStr),
 	render(L, assignment, ScalarDest=CondAssign, Indent, [CodeLine]), 
 	append(Current, [CodeLine], NewCurrent),
-	do_assign_list(L, Clauses, Graphs, Collects,
+	do_assign_list(L, Clauses, Collects,
 		       Preambles, [NewCurrent | Postambles],
 			Used, Temps, Results).
 */
-do_assignment(L, [SpecialOp | Clauses], Indent, Graphs, Used, Stream) :-
+do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	(SpecialOp =.. [collect, DestSpec, TgtRef | Args],
 	    nth(CollectId, Used, TgtRef), !,
-	    make_scalar(L, DestSpec, [], Dest),
+	    make_scalar(L, DestSpec, Dest),
 	    refer(L, Dest, DestRef),
- 	    make_evaluation_routine_all(L, Args, [], Inds),
+ 	    make_evaluation_routine_all(L, Args, Inds),
  	    CallSpec =.. [collect, DestRef, CollectId | Inds];
 	SpecialOp =.. [call_ext_code, ProcName, CurSmPtr, ArgCodes],
 	    all(render, msr_with_ptrs,
@@ -376,40 +374,40 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Graphs, Used, Stream) :-
 		    int_eval_submodel, ext_eval_submodel]),
 	    make_section_cond(L, NewCond, PassTest),
 	    render:make_constant_string(L, NodeId, Node),
-	    make_scalar(L, InstHandle, [], InstPtr),
+	    make_scalar(L, InstHandle, InstPtr),
 	    refer_value(L, InstPtr, InstHandleRef),
 	    CallSpec =.. [SubCall, Node, InstHandleRef, PassTest];
 /*	SpecialOp = search_from(ArcInd, _, TopRef),
 	    CallSpec = search_from(myClassPtr, ArcInd, TopRef);
 */	SpecialOp = cond_assign(Dest, Tested, Payload, Op, SoFar),
-	    make_scalar(L, Dest, Graphs, ScalarDest),
+	    make_scalar(L, Dest, ScalarDest),
 	    make_pointer(L, ScalarDest, DestPtr),
-	    make_evaluation_routine(L, Tested, Graphs, TestedTerm),
+	    make_evaluation_routine(L, Tested, TestedTerm),
 	    make_expr(L, TestedTerm, TestedExpr),
-	    make_evaluation_routine(L, Payload, Graphs, PayloadTerm),
+	    make_evaluation_routine(L, Payload, PayloadTerm),
 	    make_expr(L, PayloadTerm, PayloadExpr),
-	    make_scalar(L, SoFar, Graphs, ScalarSoFar),
+	    make_scalar(L, SoFar, ScalarSoFar),
 	    make_pointer(L, ScalarSoFar, SoFarPtr),
 	    append_atoms(assign_if_, Op, Functor),
 	    CallSpec =.. [Functor, TestedExpr, PayloadExpr, SoFarPtr, DestPtr]),
 	excrete(L, procedure_call, CallSpec, Indent, Stream),
-	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Used, Stream).
 % have to render after instantiating CollectId
 
 /* This one starts a conditional execution sequence dependent on the
 given submodel */
 
-do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Indent, Graphs,
+do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Indent,
 	      Used, Stream) :-
 	InnerIndent is Indent+4,
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
 	(make_section_cond(L, VMPtrs, PassTest),
 	    combine(L, >=, [Phase, PassTest], PhaseTest),
 	    excrete(L, if_start, PhaseTest, Indent, Stream),
-	    do_assign_list(L, MyLoop, InnerIndent, Graphs, Used, Stream),
+	    do_assign_list(L, MyLoop, InnerIndent, Used, Stream),
 	    excrete(L, end(cond), PhaseTest, Indent, Stream),
 	    fail;
-	do_assign_list(L, Later, Indent, Graphs, Used, Stream)).
+	do_assign_list(L, Later, Indent, Used, Stream)).
 
 /* Initial membership of populations was handled by the new_member
 clause up until Simile 4.5, but now it is done like initializing a VM
@@ -418,7 +416,7 @@ associations can too, and makes resetting faster. */
 
 
 do_assignment(L, [init_mems(ParentPtr, Name, create(InitVars)) | Clauses],
-	      Indent, Graphs, Used, Stream) :-
+	      Indent, Used, Stream) :-
 	append_atoms(Name, count, Count),
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, Pointer),
@@ -445,7 +443,7 @@ do_assignment(L, [init_mems(ParentPtr, Name, create(InitVars)) | Clauses],
 	excrete(L, procedure_call, delete_list(MPTargetRef), Indent, Stream),
 	excrete(L, assignment, MPTarget=0, Indent, Stream),
 
-	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Used, Stream).
 
 /* This one should be easy too. When I extract the procedures for initializing
 submodel instances where these can't always be done at init time, I leave an
@@ -454,7 +452,7 @@ initialized when their parents are, this causes the tests to be done and the
 inits to be included. */
 
 do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
-	      Indent, Graphs, Used, Stream) :-
+	      Indent, Used, Stream) :-
 	Indent1 is Indent + 4,
 
 	append_atoms(Name, count, Count),
@@ -488,7 +486,7 @@ do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream),
 	excrete(L, end(while), 'New instances', Indent, Stream),
 
-	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Used, Stream).
 
 /* This is similar to the last one, but handles reproduction. Owing to the
 limitations of Tcl it switches context between current instance and new instances.
@@ -497,7 +495,7 @@ it in a local variable, but this way is conceptually simpler, which is everythin
 */
 
 do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
-	      Indent, Graphs, Used, Stream) :-
+	      Indent, Used, Stream) :-
 	Indent1 is Indent + 4,
 	Indent2 is Indent1 + 4,
 
@@ -555,13 +553,13 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 	excrete(L, assignment, Pointer=OnPointerRef, Indent1, Stream),
 	excrete(L, end(while), PointerRef, Indent, Stream),
 
-	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Used, Stream).
 
 /* OK, now for mortality. This will have to be called before immigration or reproduction because any new individuals might not yet have values for their loss nodes. It used to be done as part of the reproduction loop but had to be separated now there can be many reproduction channels. However, all loss channels are equivalent, so there only needs to
 be one of these loops; the instruction has a list of the appropriate nodes. */
 
 do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
-	      Indent, Graphs, Used, Stream) :-
+	      Indent, Used, Stream) :-
 	Indent1 is Indent + 4,
 	Indent2 is Indent1 + 4,
 
@@ -610,7 +608,7 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 	    excrete(L, end(cond), IsDead, Indent1, Stream);
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream)),    
 	excrete(L, end(while), MPTargetRef, Indent, Stream),
-	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Used, Stream).
 
 /* This is a fairly horrrible clause that puts in what is done when a new submodel
 instance is generated; if the instance fails to exist, it terminates building it,
@@ -618,7 +616,7 @@ so the end of the last if clause is left on the postambles. Should be less
 horrible now it no longer includes the evaluation of the test! */
 
 do_assignment(L, [test(Name, Pointer, Source) | Clauses],
-		Indent, Graphs, Used, Stream) :-
+		Indent, Used, Stream) :-
 	
 /* Some variable membership models will contain 'dummy' generator clauses to
 make sure they get set up and kept in correspondence with their uncles before
@@ -643,7 +641,7 @@ we only make the three lines that insert the submodel instance into its linked l
 	excrete(L, assignment, MPTarget=PointerRef, Indent1, Stream),
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream),
 	
-	(do_assign_list(L, Clauses, Indent1, Graphs, Used, Stream),
+	(do_assign_list(L, Clauses, Indent1, Used, Stream),
 
 	/* Any further assignments in model generation also go inside this 'if'
 	clause, so as not to do them is the submodel instance does not exist. Thus
@@ -659,14 +657,14 @@ we only make the three lines that insert the submodel instance into its linked l
 /* Right, this is the one with the meat in it; the actual integration of new code
 that evaluates an expression in the model */
 
-do_assignment(L, [assign(arr(P, Val, Is), Source) | Clauses], Indent, Graphs,
+do_assignment(L, [assign(arr(P, Val, Is), Source) | Clauses], Indent,
 		Used, Stream) :-
-	make_scalar(L, arr(P, Val, Is), Graphs, ScalarDest),
-	make_evaluation_routine(L, Source, Graphs, Term),
+	make_scalar(L, arr(P, Val, Is), ScalarDest),
+	make_evaluation_routine(L, Source, Term),
 	make_expr(L, Term, Expr),
 	excrete(L, assignment, ScalarDest=Expr, Indent, Stream),
 
-	do_assign_list(L, Clauses, Indent, Graphs, Used, Stream).
+	do_assign_list(L, Clauses, Indent, Used, Stream).
 
 starts_a_level(Inst) :-
 	member(Inst, [open_index(_,_), start_submodel(_,_,_,_),
@@ -807,13 +805,12 @@ make_evaluation_routine(
 	/* Externally defined arguments */
 	Language, /* programming language to generate */
 	Expr, /* What we are trying to evaluate */
-	Graphs, /* Data set for any graph found evaluating this expression */
 	/* Results, i.e., arguments defined here */
 	Term /* the expression that evaluates to the destination
 		in current state; -ve = in preambles, +ve = in postambles, 
 		0 = inside deepest loop */
 	) :-
-	(make_scalar(Language, Expr, Graphs, LocalExpr), !,
+	(make_scalar(Language, Expr, LocalExpr), !,
 	    refer_value(Language, LocalExpr, Term);
 	Expr = ind(Ptr, Count), !,
 	    make_struct_reference(Language, Ptr, instanceid, IndSet),
@@ -834,8 +831,8 @@ make_evaluation_routine(
 	    name(Term, TimeElmtStr);
 
 	Expr = assign(Tgt, SubExpr), !,
-	    make_scalar(Language, Tgt, Graphs, Dest),
-	    make_evaluation_routine(Language, SubExpr, Graphs, Source),
+	    make_scalar(Language, Tgt, Dest),
+	    make_evaluation_routine(Language, SubExpr, Source),
 	    make_expr(Language, Source, SourceExp),
 	    make_assignment(Language, Dest, SourceExp, AssignStr),
 	    command_substitute(Language, AssignStr, TermStr),
@@ -844,34 +841,32 @@ make_evaluation_routine(
 	    (Language = c, Functor = '(int)';
 	     Language = tcl, Functor = int),
 	    IntExpr =.. [Functor, SubExpr],
-	    make_evaluation_routine(Language, IntExpr, Graphs, Term);
-	Expr = graph(NodeId, XAxis), !,
-	    make_evaluation_routine(Language, XAxis, [], GraphTerm),
+	    make_evaluation_routine(Language, IntExpr, Term);
+	Expr = graph(GraphId, XAxis), !,
+	    make_evaluation_routine(Language, XAxis, GraphTerm),
 	    make_expr(Language, GraphTerm, GraphExpr),
 	    /* Keep tcl working till it uses c++ graph access */
-	    nth(GraphN, Graphs, [NodeId | _]),
 	    make_procedure_call_chars(Language,
-				      [graphpoint, GraphExpr, GraphN],
+				      [graphpoint, GraphExpr, GraphId],
 				      Content_chars),
 /* End of graph clause */
 	    name(Term, Content_chars);
 	Expr = stop(Ident), !, 
-	    make_evaluation_routine(Language, Ident,
-					Graphs, XIdent),
+	    make_evaluation_routine(Language, Ident, XIdent),
 	    make_expr(Language, XIdent, VIdent),
 	    make_procedure_call_chars(Language, [stop, VIdent], Content_chars),
 	    name(Term, Content_chars);
 	Expr = stage_incr(Struct, Step, Delta), !, 
-	    make_scalar(Language, Struct, Graphs, SStruct),
+	    make_scalar(Language, Struct, SStruct),
 	    make_pointer(Language, SStruct, VStruct),
 	    make_evaluation_routine_all(Language, [Step, Delta],
-					Graphs, [VStep, XDelta]),
+					[VStep, XDelta]),
 	    make_expr(Language, XDelta, VDelta),
 	    make_procedure_call_chars(Language, [stage_incr, VStruct, VStep,
 						 VDelta], Content_chars),
 	    name(Term, Content_chars);
 	Expr =.. [Op | Args],
-	    make_evaluation_routine_all(Language, Args, Graphs, VArgs),
+	    make_evaluation_routine_all(Language, Args, VArgs),
 	    combine(Language, Op, VArgs, Term)).
 
 /* make_evaluation_routine_all/many: Same as above, but takes a list of terms rather
@@ -880,25 +875,20 @@ which are rendered usable by the stuff in the preamble. Eventually this will hav
 to be upgraded to behave properly when the arguments have incompatible source
 contexts. */
 
-make_evaluation_routine_all(_, [], _, []).
+make_evaluation_routine_all(_, [], []).
 
-/* For the following we just unify GraphD because no node can have
-more than one graph associated with it */
+make_evaluation_routine_all(Language, [Expr | Args], [VArg | VArgs]) :-
+	make_evaluation_routine(Language, Expr, VArg),
+	make_evaluation_routine_all(Language, Args, VArgs).
 
-make_evaluation_routine_all(Language, [Expr | Args],
-		Graphs, [VArg | VArgs]) :-
-	make_evaluation_routine(Language, Expr, Graphs, VArg),
-	make_evaluation_routine_all(Language, Args, Graphs, VArgs).
-
-make_scalar(L, Param, Graphs, FullLocalExpr) :-
+make_scalar(L, Param, FullLocalExpr) :-
 	(Param = arr(Ptr, Var, Inds),
 	    make_struct_reference(L, Ptr, Var, LocalExpr);
 	Param = glob(LocalExpr, Inds),
 	    Var = ''), !,
-	make_evaluation_routine_all(L, Inds, Graphs, ITerms),
+	make_evaluation_routine_all(L, Inds, ITerms),
 	all(language, aim_at_array, [unify(L), build(ITerms), build(ATerms)]),
-	all(render, make_expr, [unify(L), build(ATerms),
-				build(IExprs)]),
+	all(render, make_expr, [unify(L), build(ATerms), build(IExprs)]),
 	( /* Var = import(Type, _, Level, _, TopPtr, _,_, ArcIndex),
 	    (Type = a(_ET),
 		ImportCmd = import_int;

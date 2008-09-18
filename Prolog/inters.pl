@@ -13,7 +13,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	
 	catch((replace_subexps(Expr, inters, insert_paths,
 		sub(Sm, DestRef, Swaps), top_down, _, FullExp),
-		     make_intermediates(FullExp, Sm, Target, DestPath,
+		     make_intermediates(FullExp, Sm, [Target], DestPath,
 		BackSwap, [], [], Step, Used, Units, AllInters,
 		part_result(SourceContext, AllSetups, Args, Formula))), Prob,
 		     throw(conversion_failure(Sm, Prob))),
@@ -286,7 +286,7 @@ make_intermediates(
     Source, /* representation of the formula we are trying to evaluate */
     SubId, /* Id of submodel containing expression, needed for evaluating
 		  enumerated types */
-    Target, /* The variable we are making, we may have to wait for it before
+    Target, /* The variables we are making, we may have to wait for them before
 		  saving something for next step */
     DestPath, /* a list giving the context in which we are attempting to
 		  assign the result */
@@ -367,7 +367,7 @@ make_intermediates(
 	    swap_back(SourceContext, TermSwap, ParamContext, _),
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
-	        (Var = Target, !,
+	        ([Var | _] = Target, !,
 		    Args = []; % it cannot be a condition of itself
 		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
 	        /* note that for the time being the made_at condition is thrown
@@ -425,26 +425,29 @@ make_intermediates(
 	NowBuilding = []),
 	
 	Source =.. [Functor | _],
+	Target = [InnerTgt | _],
 	(Functor = make_inter, !,
 	    UseSource = Ref,
-	    sicstus_format_to_chars("~w_for_~a", [Ref, Target], TotalNameStr);
+	    sicstus_format_to_chars("~w_for_~a", [Ref, InnerTgt], TotalNameStr);
 	UseSource = Source,
-	    sicstus_format_to_chars("~a_~a", [Target, Functor], TotalNameStr)),
+	    sicstus_format_to_chars("~a_~a", [InnerTgt, Functor], TotalNameStr)),
 	name(TotalNameBase, TotalNameStr),
 	generate_name(c, TotalNameBase, TotalName, Used),
 	copy_term(DestPath, TotalPath),
 	(var(Payload), !,
 	    IncrAct = assign(FillRef, IncrExpr),
 	    TXUnits = Units,
-	    make_intermediates(Epsilon, SubId, TotalName, TotalPath, SubSwap,
-			   PrevInters, NowBuilding, Step, Used, ArgUnits,
-			   OldInters, part_result(SubContext, OldSetups,
-						  OldArgs, IncrementRef));
-	 append_atoms(Target, '_payload', PayloadNameBase),
+	    make_intermediates(Epsilon, SubId, [TotalName | Target], TotalPath,
+			       SubSwap, PrevInters, NowBuilding, Step, Used,
+			       ArgUnits, OldInters,
+			       part_result(SubContext, OldSetups,
+					   OldArgs, IncrementRef));
+	 append_atoms(InnerTgt, '_payload', PayloadNameBase),
 	    generate_name(c, PayloadNameBase, PayloadName, Used),
 	    IncrAct = cond_assign(arr(TotalPtr, PayloadName, FillInds),
 				  IncrementRef, PayloadRef, IncrOp, FillRef),
-	    make_all_intermediates([Epsilon, Payload], SubId, TotalName,
+	    make_all_intermediates([Epsilon, Payload], SubId,
+				   [TotalName | Target],
 				   TotalPath, SubSwap, PrevInters, NowBuilding,
 				   Step, Used, [TXUnits, ArgUnits], OldInters,
 				   PLPartResults),
@@ -550,7 +553,7 @@ make_intermediates(
 			    [Target, increment(Target) | Depends])],
 	    but now goes in update phase before compartments so only needs to
 	    check if another last(...) has been copied from it */
-	    Setting = [make(lastvalue(TotalName), [lastvalue(Target)],
+	    Setting = [make(lastvalue(TotalName), [lastvalue(InnerTgt)],
 			    WriteContext, Step, [IncrAct]),
 		       make(TotalName, [cleared(TotalName), time],
 			    ClearContext, Step, [])];
@@ -605,6 +608,7 @@ make_intermediates(
 	    make_inds_for(ConstBounds, SourceContext, Inds),
 	    generate_name(c, array, ArrayName, Used),
 	    SourceRef = arr('', ArrayName, Inds),
+	    Target = [InnerTgt | _],
 	    NewInters = [instance(constant, Target, BoundArray, ArrayName,
 				  Units-ConstBounds) | PrevInters], !,
 	    Setups = [],
@@ -676,7 +680,7 @@ make_intermediates(
 	((Source = makearray(Element, Dim); Source = soloarr(Element), Dim=1),
 	    ((catch(DimVal is Dim, _, fail),
 	          integer(DimVal);	% it is integer now
-	        make_intermediates(Dim, SubId, dum, DestPath,_, PrevInters,
+	        make_intermediates(Dim, SubId, [dum], DestPath,_, PrevInters,
 				   BuildingArrays, Step, Used, Dun, MidInters,
 				   part_result([], [], _, DimVal)),
 	        promote_unit(Dun, const_int)), !; % will be integer later
@@ -801,7 +805,9 @@ make_intermediates(
 		RUnits = real,
 		Arg_template = [real],
 		ResultList = [RVal],
-		ValRef = graph(SubId, RVal);
+		append(_, [TopTgt], Target),
+		nth(GraphId, Used, TopTgt),
+		ValRef = graph(GraphId, RVal);
 	    Source =.. [table | SourceList],
 	    Step = dummy,
 		\+ SourceList = [''], /* let checker handle empty args */

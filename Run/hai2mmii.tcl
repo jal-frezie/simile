@@ -30,6 +30,8 @@ proc ExplainError {errList} {
 	evalmodel {set operation "calculating the value of"}
 	updatemodel {set operation "updating the state"}
 	advancemodel {set operation "advancing the time point for"}
+	resetmodel {set operation "resetting"}
+	default {set operation "doing $what for"}
     }
     if {![string equal none $dest]} {
 	set targetList [DescribeComponent $dest]
@@ -92,7 +94,7 @@ proc ExplainError {errList} {
 	    set timing " at time $mtime"
 	}
     }
-    switch $severity {
+    switch -- $severity {
 	-1 {
 	    set graphic warning
 	    set header "Problem with model"
@@ -566,9 +568,6 @@ proc GetTclCompProperty {topNode prop args} {
 	    }
 	} Graph {
 	    set index [getinfo $node 6]
-	    if {!$index} {
-		error "No graph associated with node [getinfo $node 10]."
-	    }
 	    if {[llength $set]} {
 		eval {setup_graph_data $index} $set
 	    } else {
