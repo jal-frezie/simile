@@ -1427,16 +1427,16 @@ proc GetParts {top tree} {
 		set headers [list "Content-Disposition" $Disposition \
 				 "Content-Description" $Description \
 				 "Date-Modified" $Date]
-                if {[string match "Simile model" $Description]} {
-		    # this for versions up to 4.6 that need separate code
-                    set HmacCode [get_auth_code $newM]
-                    set codeT [mime::initialize -canonical text/plain \
-                            -header [list "Content-Description" \
-                            "Authentication Code"] \
-                            -string $HmacCode]
-                    lappend mimes $codeT
-		    lappend headers "Authentication-Code" $HmacCode
-                }
+#                if {[string match "Simile model" $Description]} {
+# this was for versions up to 4.6 that need separate code
+#                    set HmacCode [get_auth_code $newM]
+#                    set codeT [mime::initialize -canonical text/plain \
+#                            -header [list "Content-Description" \
+#                            "Authentication Code"] \
+#                            -string $HmacCode]
+#                    lappend mimes $codeT
+#		    lappend headers "Authentication-Code" $HmacCode
+#                }
 		if {[IsRunnableModel $ext]} {
 		    if {![OurEdition [mime::getbody $newM]]} {
 			continue
