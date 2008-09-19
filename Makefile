@@ -133,7 +133,7 @@ System/bin/struct_db.dll: struct_db.pl Prolog/struct_db.c
 
 Run/xgsimile$(ARCHEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C -D_GNU_PROLOG gmain$(ARCHEXTN).o struct_db.c; cd ..
-Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) gmain.pl
+Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl
 	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c gmain.pl; cd ..
 
 vpath 	%.cpp 	Run

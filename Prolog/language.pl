@@ -851,10 +851,11 @@ make_evaluation_routine(
 				      Content_chars),
 /* End of graph clause */
 	    name(Term, Content_chars);
-	Expr = stop(Ident), !, 
+	Expr = stop_on_id(GraphId, Ident), !, 
 	    make_evaluation_routine(Language, Ident, XIdent),
 	    make_expr(Language, XIdent, VIdent),
-	    make_procedure_call_chars(Language, [stop, VIdent], Content_chars),
+	    make_procedure_call_chars(Language, [stop_on_id, GraphId, VIdent],
+				      Content_chars),
 	    name(Term, Content_chars);
 	Expr = stage_incr(Struct, Step, Delta), !, 
 	    make_scalar(Language, Struct, SStruct),

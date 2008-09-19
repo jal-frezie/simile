@@ -70,12 +70,13 @@ proc tcl_insert {node newVs} {
 # right now to get the node id
 proc GetNodeIdFromRef {dest indices} {
     global nodedata
-        foreach record [array names nodedata] {
+    foreach record [array names nodedata] {
 	if {[string equal $dest [burrow_to ::AME_model<> \
-				    [lindex $nodedata($record) 6] $indices]]} {
+				     [lindex $nodedata($record) 6] $indices]]} {
 	    return [lindex $nodedata($record) 0]
 	}
     }
+    return unavailable
 }
 
 proc collect {tgt index count args} {
@@ -832,8 +833,12 @@ proc ame_rand {lowBound highBound} {
 }
 
 
-proc stop {code} {
+proc stop_on_id {compId code} {
     error "User-defined interruption code $code"
+}
+
+proc stop {code} {
+    stop_on_id 0 $code
 }
 
 proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {

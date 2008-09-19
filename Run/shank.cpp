@@ -762,7 +762,7 @@ public:
   int *connLines;
   // channelRecord* channelData; only used in top model
   double* adapt_maxerr;
-  int* userDefStop; // set by stop function in model
+  excpData* userDefStop; // set by stop function in model
   char erreur[256];
 
   Model(char* fileName) {
@@ -859,10 +859,10 @@ showMess(globMess); */
 */
   int adapt_doublings;
 
-  int resetmodel(void* modelHandle, int top_phase) {
+  excpData* resetmodel(void* modelHandle, int top_phase) {
     int tweak_phase, err;
     
-    *userDefStop = 0;
+    userDefStop->excpNo = 0;
     if (top_phase<=0) {
       for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
 	lts[tweak_phase]=0;
@@ -875,19 +875,22 @@ showMess(globMess); */
     }
     err=(*evalmodel)(modelHandle, top_phase);
     if (err)
-      return err;
-    (*advancemodel)(modelHandle, top_phase);
-    return *userDefStop;
+      userDefStop->excpNo = err;
+    else
+      (*advancemodel)(modelHandle, top_phase);
+    if (userDefStop->excpNo)
+      return userDefStop;
+    return NULL;
   }
 
-  int executemodel(void* id, int how_int, 
+  excpData* executemodel(void* id, int how_int, 
 		   double start, double* end, double errlim) {
     double freq, xtime;
     int big_phase, err;
     BOOLEAN made_step, first_pass;
     //    sprintf(globMess, "xm %lf-%lf at %lf", start, *end, errlim);
     //    showMess(globMess);
-    *userDefStop = 0;
+    userDefStop->excpNo = 0;
     freq = steps[phases]*pow(2,-adapt_doublings);
     xtime = start;
     while (freq*(*end-xtime)>0) { // freq only affects sign
@@ -896,7 +899,8 @@ showMess(globMess); */
       big_phase = phase_for(xtime, freq, phases);
       // that is the biggest phase we will try to run, we may not succeed
       if (check_gui(id, xtime, big_phase)) {
-	return -100; // should not conflict with os signal numbers
+	userDefStop->excpNo = -100; // should not conflict with os signal numbers
+	return userDefStop;
       }
       while(!made_step) {
 	// stretch interval to hit end if necssary
@@ -925,9 +929,9 @@ showMess(globMess); */
 	    setdt(-2,0);
 	  }
 	  (*updatemodel)(id, big_phase);
-	  if (err=rk_update(id, big_phase)) {
+	  if (userDefStop->excpNo=rk_update(id, big_phase)) {
 	    *end=xtime;
-	    return err;
+	    return userDefStop;
 	  }
 	  break;
 	}
@@ -937,8 +941,9 @@ showMess(globMess); */
 	} else {
 	  // get the model to generate its error estimate
 	  if (err=(*evalmodel)(id, big_phase)) {
+	    userDefStop->excpNo=err;
 	    *end=xtime;
-	    return err;
+	    return userDefStop;
 	  }
 	  *adapt_maxerr = 0;
 	  setdt(10, 0);
@@ -954,7 +959,8 @@ showMess(globMess); */
 	    } else {
 	      // signal problem
 	      check_gui(id, xtime, 0);
-	      return -99;
+	      userDefStop->excpNo = -99;
+	      return userDefStop;
 	    }
 	  } else {
 	    made_step = 1;
@@ -967,19 +973,20 @@ showMess(globMess); */
 	} // error limit exists
       } // made progress
       if (err=(*evalmodel)(id, big_phase)) {
+	userDefStop->excpNo=err;
 	*end=xtime;
-	return err;
-      }
-      (*advancemodel)(id, big_phase);
-      if (*userDefStop) {
+      } else
+	(*advancemodel)(id, big_phase);
+      if (userDefStop->excpNo) {
 	*end=xtime;
-	return *userDefStop;
+	return userDefStop;
       }
     }
     if (check_gui(id, *end, 0)) {
-      return -100; // should not conflict with os signal numbers
+      userDefStop->excpNo = -100;
+      return userDefStop; // should not conflict with os signal numbers
     }
-    return 0;
+    return NULL;
   }
   
   int phase_for(double current, double step, int so_far) {
@@ -1442,17 +1449,27 @@ int member_param_item(listParamArray** start, void* modelId, int* parentPath) {
   return  member_param_item(start, modelId, parentPath); // keep looking
 }
 
+node_data_line* md_nodlin_from_id(Model* modelId, int paramId) {
+    int count;
+    node_data_line *nodeLine;
+    for (count=0; count<modelId->nodecount; ++count) {
+      nodeLine = modelId->nodedata + count;
+      if (nodeLine->graph==paramId) return nodeLine;
+    }
+    return NULL;
+}
+
+node_data_line* nodlin_from_id(long int modelId, int paramId) {
+  return md_nodlin_from_id((Model*)modelId, paramId);
+}
+
 int param_item_from_id(listParamArray** start, Model* modelId,
 				   int paramId) {
   if (!*start) {
     // couldn't find id, try to find a member parameter
     // first get its nodeline
-    int count;
     node_data_line *nodeLine;
-    for (count=0; count<modelId->nodecount; ++count) {
-      nodeLine = modelId->nodedata + count;
-      if (nodeLine->graph==paramId) break;
-    }
+    nodeLine = md_nodlin_from_id(modelId, paramId);
     *start = param_array_base;
     return member_param_item(start, modelId, nodeLine->path);
   } else if ((*start)->spareModel==(long int)modelId && 
@@ -1989,8 +2006,8 @@ so we will simplify them eventually. These next two allow the client
 to drive the model...
 */
 
-int reset(long int modelType, long int modelHandle, int top_phase) {
-  int result;
+excpData* reset(long int modelType, long int modelHandle, int top_phase) {
+  excpData* result;
 
   topType = modelType;
   resetting=top_phase;
@@ -2008,9 +2025,8 @@ int reset(long int modelType, long int modelHandle, int top_phase) {
   return result;
 }
 
-int execute(long int modelType, long int modelHandle, int how_int,
+excpData* execute(long int modelType, long int modelHandle, int how_int,
 	 double starttime, double* endtime, double errlim) {
-  int result;
 
   topType = modelType;
   resetting=0;

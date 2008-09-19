@@ -886,10 +886,20 @@ void get_string_for_error(char* spare, int error) {
   }
 }
 
+const char* name_in_line(long int modelType, int lineId) {
+    node_data_line *nodeLine;
+
+    if (lineId) {
+      nodeLine = nodlin_from_id(modelType, lineId);
+      return nodeLine->strings[0];
+    } else return "external procedure";
+}
+
 FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
   int phase, error;
+  excpData* errorBlk;
 
   if (argc != 4) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id phase");
@@ -912,11 +922,13 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
   
-  error = reset(modelType, modelHandle, phase);
-  get_string_for_error(spare, error);
+  errorBlk = reset(modelType, modelHandle, phase);
 
-  if (error) {
-    Tcl_SetObjResult(interp, make_exec_error(interp, "resetmodel", "none", 
+  if (errorBlk) {
+    get_string_for_error(spare, errorBlk->excpNo);
+    Tcl_SetObjResult(interp, make_exec_error(interp, "resetmodel", 
+					     name_in_line(modelType, 
+							  errorBlk->targetId), 
 					     0, phase, spare));
     return TCL_ERROR;
   } else {
@@ -929,6 +941,7 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
   char spare[256];
   double starttime, endtime, errlim;
   int phase, error;
+  excpData* errorBlk;
 
   if (argc != 7) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id phase start_time end_time error_limit");
@@ -967,17 +980,20 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
   
-  error = execute(modelType, modelHandle, phase, starttime, &endtime, errlim);
-  if (error == -100) {
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-    return TCL_OK;
-  } else if (error == -99) {
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
-    return TCL_OK;
-  }
-  get_string_for_error(spare, error);
-  if (error) {
-    Tcl_SetObjResult(interp, make_exec_error(interp, "evalmodel", "none", 
+  errorBlk = execute(modelType, modelHandle, phase, starttime, &endtime, 
+		     errlim);
+  if (errorBlk) {
+    if (errorBlk->excpNo == -100) {
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+      return TCL_OK;
+    } else if (errorBlk->excpNo == -99) {
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+      return TCL_OK;
+    }
+    get_string_for_error(spare, errorBlk->excpNo);
+    Tcl_SetObjResult(interp, make_exec_error(interp, "evalmodel", 
+					     name_in_line(modelType, 
+							  errorBlk->targetId), 
 					     endtime, 1, spare));
     return TCL_ERROR;
   }

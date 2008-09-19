@@ -171,7 +171,7 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
 		       void* showMess_ptr,
 		       void* graph_ptr, 
 		       int* phases, node_data_line** data_ptr, 
-			      double** adapt_maxerr, int** userDefStop) {
+			      double** adapt_maxerr, excpData** userDefStop) {
 
   /* Stub is telling us... */
   myClassPtr = useClassPtr;

@@ -784,6 +784,8 @@ make_intermediates(
 /*	    replace_subexps(Source, inters, change_constituent,
 			    switch(Source, none, none),
 			    top_down, Components, SourceRef), */
+            append(_, [TopTgt], Target),
+	    nth(GraphId, Used, TopTgt),
 	    (Source = [_ | _], !,
 		length(Source, Enums),
 		RUnits = any,
@@ -805,9 +807,13 @@ make_intermediates(
 		RUnits = real,
 		Arg_template = [real],
 		ResultList = [RVal],
-		append(_, [TopTgt], Target),
-		nth(GraphId, Used, TopTgt),
 		ValRef = graph(GraphId, RVal);
+	    Source = stop(ExcpCode), % need to insert line ID
+		SourceList = [ExcpCode],
+		Arg_template = [int],
+		ResultList = [RVal],
+		RUnits = int,
+		ValRef = stop_on_id(GraphId, RVal);
 	    Source =.. [table | SourceList],
 	    Step = dummy,
 		\+ SourceList = [''], /* let checker handle empty args */

@@ -170,10 +170,17 @@ typedef struct connectRecord_t {
   char** Dests;
 } connectRecord;
 */
+
+// class for storing data about exceptions while model is running
+typedef struct excpData_t {
+  int excpNo;
+  int targetId;
+} excpData;
+
 // Declaration for procedure types found in the model dll by the shank
 typedef int getcount_type(void*, void*, void*, void* ,void*,
 			  void*, void*, void*, void*,
-			  int*, node_data_line**, double**, int**);
+			  int*, node_data_line**, double**, excpData**);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
 typedef int setstep_type(double, int);
@@ -241,10 +248,11 @@ EXTDEC double rand_fract();
 EXTDEC graph_data_type** get_graph_base(long int);
 EXTDEC node_data_line* searchinfo(char*, long int*, char*, 
 				  int*, int*, enum_type_data**);
+EXTDEC node_data_line* nodlin_from_id(long int, int);
 EXTDEC long int fetch_top_instance(long int);
 
-EXTDEC int reset(long int, long int, int);
-EXTDEC int execute(long int, long int, int, double, double*, double);
+EXTDEC excpData* reset(long int, long int, int);
+EXTDEC excpData* execute(long int, long int, int, double, double*, double);
 EXTDEC int setstep(long int, double, int);
 EXTDEC char* myexit(long int, long int);
 

@@ -29,10 +29,16 @@ get_remote_value_type* get_remote_value;
 stat_check_type* stat_check;
 showMess_type* showMess;
 
-int userStop;
+excpData userStop;
 
-int stop(int code) {
-  return (userStop = code);
+int stop_on_id(int lineId, int code) {
+  userStop.targetId = lineId;
+  return (userStop.excpNo = code);
+}
+
+int stop(int code) { 
+// this one for use in procedurally user-defined functions
+  stop_on_id(0, code);
 }
 
 int lazy = 1024;
