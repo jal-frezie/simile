@@ -927,9 +927,11 @@ proc EditTableData {startLine dims} {
 proc DoneTableData {startLine} {
     global table_entry
     AcquireTableData 0 $startLine
-    if {!$table_entry(source) && \
-	    [info exists table_entry(wrapPt)] && \
-	    ![string equal $table_entry(wrapPt) $table_entry(oldWrapPt)]} {
+    if {([info exists table_entry(wrapPt)] && \
+	     ![string equal $table_entry(wrapPt) $table_entry(oldWrapPt)] || \
+	     [info exists table_entry(others)] && \
+	     ![string equal $table_entry(others) $table_entry(oldOthers)]) && \
+	!$table_entry(source)} {
 	set table_entry(source) 0.5
     }
     set table_entry(done) $table_entry(source)
