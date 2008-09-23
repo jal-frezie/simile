@@ -481,7 +481,7 @@ proc ReinstateHelper {origVersion oldStatus helperId helperTitle} {
     if {$origVersion<5.0} {
 	set helperId [ClassFromKey $helperId]
     }
-    if {![llength [info procs similescript::$helperId]]} {
+    if {![llength [itcl::find class ::similescript::$helperId]]} {
 	ShowMessage "Problem restoring helper" warning \
 	    "No I/O tool with keyword \"$helperId\" is installed" ok
 	return
