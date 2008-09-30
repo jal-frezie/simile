@@ -58,20 +58,24 @@
 #define INTERPOLATE     2
 
 #define SIMILE_VERSION	"5.3"
+#define NEST 32
 
+#ifdef __cplusplus
+    #define FINDABLE extern "C"
+#else
+    #define FINDABLE
+#endif
 #ifdef WIN32
     #ifdef SHARELIB
-	#define EXTDEC __declspec( dllexport )
+	#define EXTDEC FINDABLE __declspec( dllexport )
     #else
-	#define EXTDEC __declspec( dllimport )
+	#define EXTDEC FINDABLE __declspec( dllimport )
     #endif
-    #define EXPORT __declspec( dllexport )
+    #define EXPORT FINDABLE __declspec( dllexport )
 #else
-    #define EXTDEC
-    #define EXPORT
+    #define EXTDEC FINDABLE
+    #define EXPORT FINDABLE
 #endif
-#define FINDABLE extern "C"
-
 /* type declaration for structure representing a graph */
 
 typedef struct graph_data_type_t {
@@ -243,7 +247,7 @@ EXTDEC int get_node_count(long int);
 EXTDEC node_data_line* get_data_line(long int, int);
 EXTDEC long int get_node_model_id(char*);
 EXTDEC void release_graph_data(graph_data_type*);
-EXTDEC double graphpoint(double, graph_data_type*, int);
+EXTDEC graphpoint_type graphpoint;
 EXTDEC double rand_fract();
 EXTDEC graph_data_type** get_graph_base(long int);
 EXTDEC node_data_line* searchinfo(char*, long int*, char*, 

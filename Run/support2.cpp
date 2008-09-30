@@ -172,7 +172,6 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
 		       void* graph_ptr, 
 		       int* phases, node_data_line** data_ptr, 
 			      double** adapt_maxerr, excpData** userDefStop) {
-
   /* Stub is telling us... */
   myClassPtr = useClassPtr;
 
@@ -191,7 +190,7 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
   get_remote_value = (get_remote_value_type*)get_remote_value_ptr;
   */
   stat_check = (stat_check_type*)stat_check_ptr;
-  showMess = (showMess_type*)showMess_ptr;
+  suppShowMess = (showMess_type*)showMess_ptr;
   
   graph_data_pointer = (graph_data_type**)graph_ptr;
 

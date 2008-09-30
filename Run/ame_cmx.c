@@ -143,7 +143,7 @@ int do_graph(graph_data_type** graphdata, Tcl_Interp *interp,
 
     graphptr = find_graph(index, *graphdata);
     if (!graphptr) { /* add a new graph */
-      graphptr = new graph_data_type;
+      graphptr = (graph_data_type*)malloc(sizeof(graph_data_type));
       graphptr->index = index;
       graphptr->next = *graphdata;
       *graphdata = graphptr;
@@ -192,7 +192,7 @@ int do_graph(graph_data_type** graphdata, Tcl_Interp *interp,
       return TCL_ERROR;
     } /* if(error) */
 
-    graphptr->points = new int[graphptr->xsize];
+    graphptr->points = (int*)malloc(sizeof(int)*graphptr->xsize);
     for(count=0;count<graphptr->xsize;count++) {
       Tcl_GetIntFromObj(interp, argv[count+11], &(graphptr->points[count]));
     }
@@ -380,7 +380,7 @@ void get_tcl_value_pointer(void* modelPtr, void* tgt, int paramId,
 	 an integer input, we want the nearest int value... */
       serviceError = Tcl_GetDoubleFromObj(globInterp, valPtr, &makeInt);
       if (serviceError == TCL_OK) {
-	*(int*)tgt = int(makeInt);
+	*(int*)tgt = (int)(makeInt);
       }
       return;
     }
@@ -417,7 +417,7 @@ long int modelHandle;
 //connectRecord** connectDataPtr;
 //int* connCountPtr;
 
-FINDABLE extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp, 
+FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp, 
 			    int argc, Tcl_Obj *CONST argv[]) {
   char* fileName;
   char* nodeName;
@@ -430,7 +430,7 @@ FINDABLE extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
     dllProblem = load_model(fileName, nodeName, &modelType);
     if (dllProblem) {
       Tcl_SetObjResult(interp, Tcl_NewStringObj(dllProblem, -1));
-      delete dllProblem;
+      free(dllProblem);
       return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewLongObj(modelType));
@@ -1059,7 +1059,7 @@ FINDABLE int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
   dllProblem = myexit(modelType, modelHandle);
   if (dllProblem) {
     Tcl_SetObjResult(interp, Tcl_NewStringObj(dllProblem, -1));
-    delete dllProblem;
+    free(dllProblem);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -1443,19 +1443,19 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block) {
       membership = *(int *)block;
       newBlock = *(char**)(block + sizeof(int));
       localObj = append_array_members(membership, dims+1, subBlocks+1, newBlock);
-      delete newBlock;
+      free(newBlock);
       break;
     case SPARSEARRAY: 
       // need clevers to nest indices; see old stuff
       membership = *(int *)block;
       newBlock = *(char**)(block + sizeof(int));
       block = newBlock;
-      indices = new int[dims[1]];
+      indices = (int*)malloc(sizeof(int)*dims[1]);
       blockEnd = block+membership*(dims[1]*sizeof(int)+subBlocks[1]);
       localObj = append_list_members(dims[1], 0, dims+2, indices, subBlocks+1,
 				     &membership, &block);
-      delete indices;
-      delete newBlock;
+      free(indices);
+      free(newBlock);
       break;
     case VALUELESS:
       localObj = Tcl_NewStringObj("sm", -1);
@@ -1524,8 +1524,8 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
     int subBlocks[32];
     make_sub_block_sizes(c_result->dimSpecs, subBlocks);
     resultPtr = convert_to_tcl(c_result->dimSpecs, subBlocks, c_result->contents);
-    delete c_result->contents;
-    delete c_result;
+    free(c_result->contents);
+    free(c_result);
   } else
     resultPtr = Tcl_NewStringObj("novalue", -1);
   Tcl_SetObjResult(interp, resultPtr);
@@ -1749,14 +1749,14 @@ void addSorted(void* values, int offset, addSortedParms* cbData) {
     }
   }
   if (*discCount>=16 && frexp(*discCount,&bigexp)<frexp((*discCount)-1,&exp)) {
-    *dPtrDiscList = new double[(int)(ldexp(1,bigexp))];
+    *dPtrDiscList = (double*)malloc(sizeof(double)*(int)(ldexp(1,bigexp)));
     memmove(*dPtrDiscList, spareArr, count*sizeof(double));
   }
   memmove(*dPtrDiscList+count+1, spareArr+count, 
 	  (*discCount-count)*sizeof(double));
   (*dPtrDiscList)[count] = newVal;
   ++(*discCount);
-  if (*dPtrDiscList!=spareArr) delete(spareArr);
+  if (*dPtrDiscList!=spareArr) free(spareArr);
 }
 
 // structures to treat last arg of callback as 
@@ -1869,8 +1869,8 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     }
     tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
   } else {
-    dDiscList = new double[16];
-    iDiscList = new int[16];
+    dDiscList = (double*)malloc(sizeof(double)*16);
+    iDiscList = (int*)malloc(sizeof(int)*16);
   }
 
   discCount=0;
@@ -1908,8 +1908,8 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
       }
       Tcl_ListObjAppendElement(interp, resultPtr, spareObjPtr);
     }
-    delete dDiscList;
-    delete iDiscList;
+    free(dDiscList);
+    free(iDiscList);
   }
   Tcl_SetObjResult(interp, resultPtr);
   free_bloc_data(accessTool->contents, accessTool->dimSpecs);
@@ -1968,7 +1968,7 @@ void respond_to_param_req(void* modelId, void* modelSlot, int paramId,
   Tcl_BackgroundError(globInterp);
 }
 
-BOOLEAN interact_gui(void* id, BOOLEAN stop_chk, double now) {
+BOOLEAN outeract_gui(void* id, BOOLEAN stop_chk, double now) {
   BOOLEAN response;
 
   Tcl_Obj* feedbackCmd;
@@ -2114,7 +2114,7 @@ int my_hmac(Tcl_Interp *interp, const char* key, const char* text) {
   char k_opad[96];
   Tcl_Obj* md5Target;
 
-  k_ipad = new char[strlen(text)+80];
+  k_ipad = (char*)malloc(strlen(text)+80);
   int count;
   for (count=strlen(key)-1; count>=0; count--) {
     k_ipad[count]=key[count]^0x36;
@@ -2128,7 +2128,7 @@ int my_hmac(Tcl_Interp *interp, const char* key, const char* text) {
   strcpy(k_ipad+64, text);
   my_md5(interp, Tcl_NewStringObj(k_ipad, strlen(text)+64));
   
-  delete k_ipad;
+  free(k_ipad);
 
   md5Target = Tcl_NewStringObj(k_opad, 64);
   Tcl_AppendObjToObj(md5Target, Tcl_GetObjResult(interp));
@@ -2468,7 +2468,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   char pkgName[16];
 
   globInterp = interp;
-  proc_pointers_for_shank(respond_to_param_req, interact_gui, showMess, 
+  proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess, 
 			  simileVersion);
   sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
   /* Use the Tcl Stubs mechanism */

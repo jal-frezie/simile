@@ -851,7 +851,7 @@ proc ControlDraw {prologVersion} {
     if {$tclBitness != $gccBitness} {
 	set sendvars(arflags) [list -m$tclBitness -O3]
     } else {
-	set sendvars(arflags) -O3
+	set sendvars(arflags) [list -O3]
     }
 
     # no longer have a separate floating toolbar

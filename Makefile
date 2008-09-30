@@ -98,11 +98,11 @@ PPCSHIM = System/lib/Stubs/libame_dll$(VERS)_ppc.dylib
 PPCSHANK = System/lib/lib5d_ppc.dylib
 PPCRELAY = System/bin/relay_ppc
 ppcbits: $(PPCSHIM) $(PPCSHANK) $(PPCRELAY)
-$(PPCSHIM): ame_cmx.cpp dllcalls.h System/lib/lib5d_ppc.dylib Makefile
+$(PPCSHIM): ame_cmx.c dllcalls.h System/lib/lib5d_ppc.dylib Makefile
 	cd Run; \
-	$(GPPCMD) -arch ppc -fPIC $(FLAGS) $(DEFNS) \
+	$(GCCCMD) -arch ppc -fPIC $(FLAGS) $(DEFNS) \
 		-I. -I../../Frameworks/Tcl.framework/Headers \
-		-dynamiclib -o ../$(PPCSHIM) ame_cmx.cpp -F../../Frameworks \
+		-dynamiclib -o ../$(PPCSHIM) ame_cmx.c -F../../Frameworks \
 		-framework Tcl -L../System/lib -l5d_ppc; cd ..; \
 	install_name_tool -change \
 		/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
@@ -132,9 +132,9 @@ System/bin/struct_db.dll: struct_db.pl Prolog/struct_db.c
 	cd Prolog; splfr struct_db.pl struct_db.c; mv struct_db.dll ../System/bin; cd ..
 
 Run/xgsimile$(ARCHEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
-	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C -D_GNU_PROLOG gmain$(ARCHEXTN).o struct_db.c; cd ..
+	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C '$(FLAGS) -D_GNU_PROLOG' gmain$(ARCHEXTN).o struct_db.c; cd ..
 Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl
-	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c gmain.pl; cd ..
+	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c -C '$(FLAGS)' gmain.pl; cd ..
 
 vpath 	%.cpp 	Run
 vpath 	%.c 	Run
@@ -144,25 +144,25 @@ vpath 	%.tcl 	Run
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
-System/lib/Stubs/ame_dll84.dll: ame_cmx.cpp dllcalls.h System/bin/5d.dll
-	cd Run; $(GPPCMD) $(FLAGS) $(DEFNS) -I. -I../System/include/tcl \
-		-shared -o ../$(SHIM) ame_cmx.cpp \
+System/lib/Stubs/ame_dll84.dll: ame_cmx.c dllcalls.h System/bin/5d.dll
+	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include/tcl \
+		-shared -o ../$(SHIM) ame_cmx.c \
 		../System/lib/tclstub84.lib -L../System/lib -l5ddll; cd ..
 
 System/lib/Stubs/libame_dll$(VERS).so: \
-		ame_cmx.cpp dllcalls.h System/lib/lib5d.so
+		ame_cmx.c dllcalls.h System/lib/lib5d.so
 	cd Run; $(GCCCMD) -fPIC $(FLAGS) $(DEFNS) -I. -I../System/include/tcl \
 		-shared -o ../$(SHIM) -L../System/lib -ltclstub$(VERS) -l5d \
-		./ame_cmx.cpp; cd ..
+		./ame_cmx.c; cd ..
 
 # 'before' arg of install_name_tool should be some gung-ho sed regexp on output
 # of otool but it did not work (why was this not needed for ppc?)
 System/lib/Stubs/libame_dll$(VERS)$(ARCHEXTN).dylib: \
-		ame_cmx.cpp dllcalls.h System/lib/lib5d$(ARCHEXTN).dylib
+		ame_cmx.c dllcalls.h System/lib/lib5d$(ARCHEXTN).dylib
 	cd Run; \
-	$(GPPCMD) -fPIC $(FLAGS) $(DEFNS) -I. \
+	$(GCCCMD) -fPIC $(FLAGS) $(DEFNS) -I. \
 		-I../../Frameworks/Tcl.framework/Headers \
-		-dynamiclib -o ../$(SHIM) ame_cmx.cpp -F../../Frameworks \
+		-dynamiclib -o ../$(SHIM) ame_cmx.c -F../../Frameworks \
 		-framework Tcl -L../System/lib -l5d$(ARCHEXTN); cd ..; \
 	install_name_tool -change \
 		/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \

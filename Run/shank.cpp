@@ -770,7 +770,6 @@ public:
     if (handle == NULL) {
       throw DllLossage("load", fileName, WHAT_WENT_WRONG());
     }
-
     getversion = (getversion_type *)FIND_FUNCTION(handle, "get_version");
     if (getversion == NULL) {
       UNLOAD_DLL(handle);
@@ -792,7 +791,7 @@ showMess(globMess); */
     setstepmodel = (setstep_type *)FIND_FUNCTION(handle, "do_setstep");
     getpointer = (getpointer_type *)FIND_FUNCTION(handle, "burrow_to");
     exitmodel = (exitmodel_type *)FIND_FUNCTION(handle, "do_exitmodel");
-      
+
     nodecount = (*getcount)(this, 
 			    (void*)ame_rand, 
 			    (void*)graphpoint,
@@ -2012,7 +2011,6 @@ excpData* reset(long int modelType, long int modelHandle, int top_phase) {
   topType = modelType;
   resetting=top_phase;
   result = ((Model*)topType)->resetmodel((void*)modelHandle, top_phase);
-
   if (!result && top_phase<-1) {
     listParamArray* paramArrayItem;
 
@@ -2037,11 +2035,11 @@ excpData* execute(long int modelType, long int modelHandle, int how_int,
 /* procedure that is called by shim when it is loaded to supply pointers
    to its callback procedures */
 
-void proc_pointers_for_shank(get_value_pointer_type* get_client_value_pointer,
+void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
 			     interact_gui_type* interact_gui_ptr,
 			     showMess_type* showMess_ptr,
 			     char* simileVersionPtr) {
-  //  get_client_value_pointer = get_value_pointer_ptr;
+  get_client_value_pointer = get_value_pointer_ptr;
   interact_gui = interact_gui_ptr;
   showMessLocal = showMess_ptr;
   xsimileVersion = simileVersionPtr;
