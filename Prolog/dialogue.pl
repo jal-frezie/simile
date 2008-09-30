@@ -251,8 +251,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	append(EqnError, MinMaxError, Complaint5),
 	
 	(Complaint5 = [], !,
-	(fail, Unit_st = "", Eqn_st = "",
-	    /* If no eqn or units supplied, assume real */
+	(Unit_st = "", Eqn_st = "", Min_st = "", Max_st = "",
+	    /* If no eqn, bounds or units supplied, assume real */
 	    (Is_P > 0, NewUnits = 1; NewUnits = ''), UnitError = [], !;
 	/* If units but no eqn or limits supplied, accept any */
 /*	MinBase = any, EqnBase = any, MaxBase = any, var(TypeBase), !,
