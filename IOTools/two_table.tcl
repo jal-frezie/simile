@@ -988,11 +988,9 @@ namespace eval $keyValue {
 	    } else {
 		# only do if table is editable
 		if {[info exists editMode($winId)]} {
-		    puts "Datastore was [array get dataStore $winId,*]"
 		    unset dataStore
 		    # need tweaking if time/var in use
 		    set dataStore($winId,0,0.0) [ExtractEdits $winId]
-		    puts "Now is [array get dataStore $winId,*]"
 		}
 		set orientList($winId) $newOrients
 		Reconbobulate $winId
