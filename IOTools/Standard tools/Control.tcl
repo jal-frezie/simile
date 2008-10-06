@@ -443,7 +443,6 @@ namespace eval runcontrol33857 {
 		set redoPhase($node) 0
 	    }
 	}
-	set scaled_current [expr {$current*$sendvars($node,unitLength)}]
 	set finish [expr {$current+$exec}]
 
 	if {[info exists redoPhase($node)]} {
@@ -472,9 +471,6 @@ namespace eval runcontrol33857 {
 	    }
 	    unset redoPhase($node)
 	}
-	if {$display} {
-	    set lastDisp [expr int($current/$display)]
-	}
 	set pause $finish
 	if {[info exists runState($node,pause)]} {
 	    if {($runState($node,pause)<$finish) == $forward} {
@@ -482,77 +478,19 @@ namespace eval runcontrol33857 {
 	    }
 	    unset runState($node,pause)
 	}
-	set adapt(doublings) 0
-	while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
-	    if {$display} {
-		set nextDisp [expr 1.0*$display*[incr lastDisp \
-						     [expr $forward*2-1]]]
-	    } else {
-		set nextDisp [expr 2*$pause-$current]
-	    }
-#	    if {[RunningInC $node]} {
-		set current $nextDisp
-#	    } else {
-#		set timeCheck [UpdateTimeSeries $node $current $nextDisp]
-#		if {$nextDisp>$timeCheck} {
-#		    set current $timeCheck
-#		} else {
-#		    set current $nextDisp
-#		}
-#	    }
-	    if {($current>$pause) == $forward} {
-		set current $pause
-	    }
-	    set scaled_next [expr {$current*$sendvars($node,unitLength)}]
-	    if {$runState($node,adapt)} {
-		set limit $runState($node,errLimit)
-	    } else {
-		set limit 0
-	    }
-	    switch -- [ExecuteModel $node $runState($node,intMethod) \
-			 $scaled_current $scaled_next $limit] {
-			     -1 {
-				 set current $runState($node,currentTime)
-				 set sendvars($node,currentMode) exit
-			     } 0 {
-				 set current $runState($node,currentTime)
-				 set sendvars($node,currentMode) stop
-			     }
-			 } ;# default: keep going
-	    if {![info exists runState($node,cnvs)]} {
-		return
-	    }
-            if {$current==$nextDisp && \
-		    [string match start $sendvars($node,currentMode)]} {
-		UpdateBar $node $current blue ;# so GetModelTime does right
-		if {![TellAllHelpers $node Display $current $display 1]} {
-		    set sendvars($node,currentMode) stop
-		}
-		if {$runState($node,splimit) && ![catch {set minStep \
-				 [expr {1000/$runState($node,speedLimit)}]}]} {
-		    set extraDelay [expr {$minStep-([clock clicks]-$sendvars($node,kickTime))/1000}]
-		    after $extraDelay [namespace code [list StoreTime $node]]
-		    set sendvars($node,busy) 0
-		    vwait [namespace current]::sendvars($node,kickTime)
-		    set sendvars($node,busy) 1
-		}
-	    }
-	    set scaled_current $scaled_next
-	    if {$current==$pause} {
-		set sendvars($node,currentMode) stop
-		if {$current>=$finish} {
-		    set exec $runState($node,run_length)
-		    SetupBar $node $finish [expr $finish+$exec]
-		} else {
-		    UpdateBar $node $current green
-		}
-	    }
-	}
+	set current [ExecuteTo $node $current $pause $display $forward]
 	if {[string equal exit $sendvars($node,currentMode)]} {
 	    if {$runState($node,modelRunning)==2} {
 		set runState($node,modelRunning) 0
 	    } else {
 		set runState($node,modelRunning) 2
+	    }
+	} else {
+	    if {$current>=$finish} {
+		set exec $runState($node,run_length)
+		SetupBar $node $finish [expr $finish+$exec]
+	    } else {
+		UpdateBar $node $current green
 	    }
 	}
 	$widget.upper.topbuttons.start configure -image $playImg
@@ -566,6 +504,73 @@ namespace eval runcontrol33857 {
 	set sendvars($node,busy) 0
     }
 	    
+    proc ExecuteTo {node current pause display forward} {
+        global runState
+	variable sendvars
+
+	set scaled_current [expr {$current*$sendvars($node,unitLength)}]
+	set adapt(doublings) 0 ;# only relevant for tcl
+	if {$display} {
+	    set lastDisp [expr int($current/$display)]
+	}
+	while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
+	    if {$display} {
+		set nextDisp [expr 1.0*$display*[incr lastDisp \
+						     [expr $forward*2-1]]]
+	    } else {
+		set nextDisp [expr 2*$pause-$current]
+	    }
+	    set current $nextDisp ;# INCREMENT IS HERE
+	    if {($current>$pause) == $forward} {
+		set current $pause
+	    }
+	    set scaled_next [expr {$current*$sendvars($node,unitLength)}]
+	    if {$runState($node,adapt)} {
+		set maxErr $runState($node,errLimit)
+	    } else {
+		set maxErr 0
+	    }
+	    if {$runState($node,splimit)} {
+		set minStep [expr {1000/$runState($node,speedLimit)}]
+	    } else {
+		set minStep 0
+	    }
+	    switch -- [ExecuteModel $node $runState($node,intMethod) \
+			 $scaled_current $scaled_next $maxErr] {
+			     -1 {
+				 set current $runState($node,currentTime)
+				 set sendvars($node,currentMode) exit
+			     } 0 {
+				 set current $runState($node,currentTime)
+				 set sendvars($node,currentMode) stop
+			     }
+			 } ;# default: keep going
+	    if {![info exists runState($node,cnvs)]} {
+		return $current ;# run control window killed?
+	    }
+            if {$current==$nextDisp && \
+		    [string match start $sendvars($node,currentMode)]} {
+		UpdateBar $node $current blue ;# so GetModelTime does right
+		if {![TellAllHelpers $node Display $current $display 1]} {
+		    set sendvars($node,currentMode) stop
+		}
+
+		if {$minStep} {
+		    set extraDelay [expr {$minStep-([clock clicks]-$sendvars($node,kickTime))/1000}]
+		    after $extraDelay [namespace code [list StoreTime $node]]
+		    set sendvars($node,busy) 0
+		    vwait [namespace current]::sendvars($node,kickTime)
+		    set sendvars($node,busy) 1
+		}
+	    }
+	    set scaled_current $scaled_next
+	    if {$current==$pause} {
+		set sendvars($node,currentMode) stop
+	    }
+	}
+	return $current
+    }
+
 # This now only used in debug mode; c++ has its own interaction regulator
     proc CondUpdate {node thisOp} {
         global runState

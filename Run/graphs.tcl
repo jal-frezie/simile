@@ -1018,6 +1018,7 @@ proc EditListAsTable {parent valueArray} {
     LetItShow .table_edit
     grab .table_edit
     tkwait variable table_viewer(done)
+    ${viewerId}::EditCellIs $t.t 0 0 ;# get final edit
     grab release .table_edit
     PackItUp .table_edit
 # extract step at end so window still gone if it fails

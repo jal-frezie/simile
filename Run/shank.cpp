@@ -120,7 +120,7 @@ BOOLEAN check_gui(void* id, double model_time, int this_op) {
   long int while_running;
   BOOLEAN result = FALSE;
   int while_resetting;
-  
+
   // first record how much time the last op took
   this_update=clock();
   took[last_op]=this_update-last_exit;
@@ -222,16 +222,25 @@ void release_graph_data(graph_data_type *graph_data_pointer) {
    free(graph_data_pointer->points);
 }
 
-/* some built-in random generators are not very accurate. In this
-case we may use several random numbers to get a random double. */
+drand48_data* rand_states;
+void setup_randoms() {
+  int tnum = 0;
+#pragma omp parallel
+  ++tnum;
+
+  rand_states = new drand48_data[tnum];
+  for (int coo=0; coo<tnum; ++coo)
+    srand48_r(coo, rand_states+coo);
+}
 
 double rand_fract() {
-    double fraction = 0, precise = 1;
-    while (precise > 1e-16) {
-	precise = precise/(RAND_MAX+1.0);
-	fraction = fraction+precise*rand();
-    }
-    return fraction;
+  double result;
+  drand48_r(rand_states
+#ifdef __OPENMP
+	    +omp_get_thread_num()
+#endif
+	    , &result);
+  return result;
 }
 
 double ame_rand(double lo, double hi) {
@@ -2029,7 +2038,7 @@ excpData* execute(long int modelType, long int modelHandle, int how_int,
   topType = modelType;
   resetting=0;
   return ((Model*)topType)->executemodel((void*)modelHandle, 
-					 how_int, starttime, endtime, errlim);
+				  how_int, starttime, endtime, errlim);
 }
 
 /* procedure that is called by shim when it is loaded to supply pointers
@@ -2043,6 +2052,7 @@ void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
   interact_gui = interact_gui_ptr;
   showMessLocal = showMess_ptr;
   xsimileVersion = simileVersionPtr;
+  setup_randoms();
 }
 
 int setstep(long int modelId, double starttime, int phase) {

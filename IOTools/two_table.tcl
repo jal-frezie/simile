@@ -95,13 +95,14 @@ namespace eval $keyValue {
     
     proc CreateTable {winId} {
         table $winId.t -rows 1 -cols 1 -variable data$winId -bg \#a0ffa0 \
-                -selectmode extended -sparsearray 0 \
-                -rowtagcommand [namespace code rowProc] \
-                -coltagcommand [namespace code colProc] \
-                -rowseparator \n -colseparator \t \
-                -yscrollcommand [list AdjustCanvas $winId t y] \
-                -xscrollcommand [list AdjustCanvas $winId f x] \
-                -selecttitle true
+	    -selectmode extended -sparsearray 0 \
+	    -rowtagcommand [namespace code rowProc] \
+	    -coltagcommand [namespace code colProc] \
+	    -rowseparator \n -colseparator \t \
+	    -yscrollcommand [list AdjustCanvas $winId t y] \
+	    -xscrollcommand [list AdjustCanvas $winId f x] \
+	    -browsecommand [namespace code [list EditCellIs %W %r %c]] \
+	-selecttitle true
         
         pack $winId.t -fill both -expand true
         $winId.t tag configure red -fg red
@@ -191,6 +192,36 @@ namespace eval $keyValue {
                         -command [namespace code [list Remove $winId $var]]
             }
         }
+    }
+
+# we keep the values array and update it when a cell is edited. This means
+# we do not lose precision when loading the edited array.
+    proc EditCellIs {t row col} {
+	variable editCell
+	variable rowIds
+	variable colIds
+	variable values
+
+	set winId [winfo parent $t]
+	if {[info exists editCell($winId,lastVal)]} {
+	    set newVal [set ::data${winId}($editCell($winId,lastRow),$editCell($winId,lastCol))]
+	    if {![string equal $editCell($winId,lastVal) $newVal]} {
+		foreach rowEntry [array names rowIds $winId,*] {
+		    if {$rowIds($rowEntry)==$editCell($winId,lastRow)} {
+			set rowsHeaders [lindex [split $rowEntry ,] 1]
+			foreach colEntry [array names colIds $winId,*] {
+			    if {$colIds($colEntry)==$editCell($winId,lastCol)} {
+				set colsHeaders [lindex [split $colEntry ,] 1]
+				set values($rowsHeaders,$colsHeaders) $newVal
+			    }
+			}
+		    }
+		}
+	    }
+	}
+	set editCell($winId,lastRow) $row
+	set editCell($winId,lastCol) $col
+	set editCell($winId,lastVal) [set ::data${winId}($row,$col)]
     }
     
     proc Remove {winId var} {
@@ -416,7 +447,6 @@ namespace eval $keyValue {
         variable displayList
         variable lastDisplay
         variable varNamePosns
-        variable cellFormat
         variable editMode
         
         variable values
@@ -650,20 +680,8 @@ namespace eval $keyValue {
         }
         #puts "vnps $varNamePosns($winId)"
         #puts "row headers inserted"
-        foreach value [array names values] {
-            set headers [split $value ,]
-            set rowHead $rowIds($winId,[lindex $headers 0])
-            set colHead $colIds($winId,[lindex $headers 1])
-            $winId.t set $rowHead,$colHead \
-                    [FormatValue $winId $values($value) [lindex $cellFormat($value) 0] \
-                    [lindex $cellFormat($value) 1]]
-            if {[lindex $cellFormat($value) 2]==1 & $values($value)<0} {
-                $winId.t tag cell red $rowHead,$colHead
-            } else {
-                $winId.t tag cell {} $rowHead,$colHead
-	    }
-        }
-        #puts "Table values inserted"
+	
+	RestoreFromMirror $winId
         switch $timeSide {
             rows {
                 $winId.t see $lineToShow,0
@@ -676,6 +694,30 @@ namespace eval $keyValue {
         }
     }
     
+    proc RestoreFromMirror {winId} {
+	variable values
+	variable rowIds
+	variable colIds
+        variable cellFormatKey
+	variable displayFormat
+
+        foreach value [array names values] {
+            set headers [split $value ,]
+            set rowHead $rowIds($winId,[lindex $headers 0])
+            set colHead $colIds($winId,[lindex $headers 1])
+	    set cellFormat $displayFormat($winId,$cellFormatKey($winId,$value))
+            $winId.t set $rowHead,$colHead \
+		[FormatValue $winId $values($value) [lindex $cellFormat 0] \
+		     [lindex $cellFormat 1]]
+            if {[lindex $cellFormat 2]==1 & $values($value)<0} {
+                $winId.t tag cell red $rowHead,$colHead
+            } else {
+                $winId.t tag cell {} $rowHead,$colHead
+	    }
+        }
+        #puts "Table values inserted"
+    }
+
     # OK you thought that was tricky, now we need one to go the other way and
     # get the nested list format back from the table if it has been edited. What
     # are we working with? RowIds and ColIds list the table line for each set of
@@ -687,11 +729,11 @@ namespace eval $keyValue {
         variable colIds
         variable orientList
         variable indices
-        
+        variable values
+
         set rowsPt 0
         set colsPt 0
         set nonePt 0
-        
         # First, make a command that will convert ids into array subscripts
         foreach level $orientList($winId) {
             if {![string match none $level]} {
@@ -708,20 +750,28 @@ namespace eval $keyValue {
         #puts "subscript template: $subscriptTemplate"
         #puts "rowIds [array get rowIds] colIds [array get colIds]"
         # next copy the 2-d table to an n-d array using these
-        foreach rowEntry [array names rowIds $winId,*] {
-            set rowsHeaders [lindex [split $rowEntry ,] 1]
-            foreach colEntry [array names colIds $winId,*] {
-                set colsHeaders [lindex [split $colEntry ,] 1]
-                set subscript [eval {concat} $subscriptTemplate]
-# puts "$subscriptTemplate evalled to $subscript"
-                set src ::data${winId}($rowIds($rowEntry),$colIds($colEntry))
-                if {[info exists $src]} {
-                    set values($subscript) [EnquoteIfNonNumeric [set $src]]
-                }
-            }
-        }
+        foreach value [array names values] {
+	    set headers [split $value ,]
+	    set rowsHeaders [lindex $headers 0]
+	    set colsHeaders [lindex $headers 1]
+	    set subscript [eval {concat} $subscriptTemplate]
+	    set newValues($subscript) [EnquoteIfNonNumeric $values($value)]
+	}
+# Old version that actually got the values out the table widget
+#        foreach rowEntry [array names rowIds $winId,*] {
+#            set rowsHeaders [lindex [split $rowEntry ,] 1]
+#            foreach colEntry [array names colIds $winId,*] {
+#                set colsHeaders [lindex [split $colEntry ,] 1]
+#                set subscript [eval {concat} $subscriptTemplate]
+## puts "$subscriptTemplate evalled to $subscript"
+#                set src ::data${winId}($rowIds($rowEntry),$colIds($colEntry))
+#                if {[info exists $src]} {
+#                    set newValues($subscript) [EnquoteIfNonNumeric [set $src]]
+#                }
+#            }
+#        }
 # puts "values: [array get values]"
-        return [ArrayToList values]
+        return [ArrayToList newValues]
     }
     
     proc ReComp {l1 l2} {
@@ -753,8 +803,7 @@ namespace eval $keyValue {
         variable values
         variable rowNames
         variable colNames
-        variable cellFormat
-        variable displayFormat
+        variable cellFormatKey
         
         if {[llength $index]} {
             set nextAxis [lindex $orientList($winId) [min $depth 3]]
@@ -764,7 +813,7 @@ namespace eval $keyValue {
         
         if {[llength $struct] == 1} {
             set values($rowsList,$colsList) [lindex $struct 0]
-            set cellFormat($rowsList,$colsList) $displayFormat($winId,$varId)
+            set cellFormatKey($winId,$rowsList,$colsList) $varId
             
             set rowNames($rowsList) {}
             set colNames($colsList) {}
@@ -930,16 +979,24 @@ namespace eval $keyValue {
         tkwait variable ${t}done
         
         if {[set ::${t}done]} {
-            # only do if table is editable
-            if {[info exists editMode($winId)]} {
-                unset dataStore
-                # need tweaking if time/var in use
-                set dataStore($winId,0,0.0) [ExtractEdits $winId]
-            }
-            set orientList($winId) [list [set ::${t}l1] [set ::${t}l2] \
+	    set newOrients [list [set ::${t}l1] [set ::${t}l2] \
                     [set ::${t}l3] [set ::${t}l4]]
             set displayUpdate($winId) [set ::${t}l5]
-            Reconbobulate $winId
+	    EditCellIs $winId.t 0 0 ;# get final edit
+            if {[string equal $newOrients $orientList($winId)]} {
+		RestoreFromMirror $winId
+	    } else {
+		# only do if table is editable
+		if {[info exists editMode($winId)]} {
+		    puts "Datastore was [array get dataStore $winId,*]"
+		    unset dataStore
+		    # need tweaking if time/var in use
+		    set dataStore($winId,0,0.0) [ExtractEdits $winId]
+		    puts "Now is [array get dataStore $winId,*]"
+		}
+		set orientList($winId) $newOrients
+		Reconbobulate $winId
+	    }
             SaveState $winId
         }
         destroy $t

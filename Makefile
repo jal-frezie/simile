@@ -9,6 +9,8 @@ REL_EXP = 0
 LICENSED = 1
 # Prolog implementation to use -- SICSTUS for Windows releases, GNU otherwise
 PROLOG = GNU
+# Set this to '-fopenmp' to include v6 parallelism
+PARALLEL =
 
 ifeq ($(ABS_EXP),"")
 	EXP_TICKS = 0
@@ -108,8 +110,8 @@ $(PPCSHIM): ame_cmx.c dllcalls.h System/lib/lib5d_ppc.dylib Makefile
 		/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl $(PPCSHIM)
 $(PPCSHANK): shank.cpp dllcalls.h Makefile
-	cd Run; $(GPPCMD) -arch ppc -O -fPIC $(FLAGS) -I. -dynamiclib \
-		-o ../$(PPCSHANK) shank.cpp; cd ..
+	cd Run; $(GPPCMD) -arch ppc -O -fPIC $(FLAGS) -I. \
+		-dynamiclib $(PARALLEL) -o ../$(PPCSHANK) shank.cpp; cd ..
 $(PPCRELAY): Run/relay.c
 	cd Run; $(GCCCMD) -arch ppc $(FLAGS) -o ../$(PPCRELAY) relay.c; cd ..
 
@@ -169,20 +171,20 @@ System/lib/Stubs/libame_dll$(VERS)$(ARCHEXTN).dylib: \
 		@executable_path/../Frameworks/Tcl.framework/Tcl $(SHIM)
 
 System/bin/5d.dll: shank.cpp dllcalls.h Makefile
-	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. -shared -o 5d.dll \
+	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. -shared $(PARALLEL) -o 5d.dll \
 		-Wl,--out-implib,lib5ddll.a shank.cpp; \
 		mv 5d.dll ../System/bin; mv lib5ddll.a ../System/lib; cd ..
 
 # not needed for Linux; Simile builds it when first run
 System/lib/lib5d.so: shank.cpp dllcalls.h Makefile
-	cd Run; $(GPPCMD) -fPIC $(FLAGS) -I. -shared \
+	cd Run; $(GPPCMD) -fPIC $(FLAGS) -I. -shared $(PARALLEL) \
 		-o ../System/lib/lib5d.so shank.cpp; cd ..
 
 # gcc cannot build universal binary libraries for loading via ld
 # directly; build separately and load appropriate one at run time
 
 System/lib/lib5d$(ARCHEXTN).dylib: shank.cpp dllcalls.h Makefile
-	cd Run; $(GPPCMD) -O -fPIC $(FLAGS) -I. -dynamiclib \
+	cd Run; $(GPPCMD) -O -fPIC $(FLAGS) -I. -dynamiclib $(PARALLEL) \
 	-o ../System/lib/lib5d$(SHAREDLIBEXTN) shank.cpp; cd ..
 
 Run/install.dll: install.cpp Makefile
