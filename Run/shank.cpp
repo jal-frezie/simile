@@ -222,6 +222,7 @@ void release_graph_data(graph_data_type *graph_data_pointer) {
    free(graph_data_pointer->points);
 }
 
+#ifdef __OPENMP
 drand48_data* rand_states;
 void setup_randoms() {
   int tnum = 0;
@@ -236,12 +237,18 @@ void setup_randoms() {
 double rand_fract() {
   double result;
   drand48_r(rand_states
-#ifdef __OPENMP
 	    +omp_get_thread_num()
-#endif
 	    , &result);
   return result;
 }
+#else
+void setup_randoms() {
+}
+
+double rand_fract() {
+  return drand48();
+}
+#endif
 
 double ame_rand(double lo, double hi) {
     return  lo + (hi-lo)*rand_fract();
