@@ -246,7 +246,16 @@ void setup_randoms() {
 }
 
 double rand_fract() {
-  return drand48();
+/* some built-in random generators are not very accurate. In this
+case we may use several random numbers to get a random double. */
+
+double rand_fract() {
+    double fraction = 0, precise = 1;
+    while (precise > 1e-16) {
+	precise = precise/(RAND_MAX+1.0);
+	fraction = fraction+precise*rand();
+    }
+    return fraction;
 }
 #endif
 
