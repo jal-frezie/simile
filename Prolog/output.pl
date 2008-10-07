@@ -118,16 +118,18 @@ pl_chop_list(String, Args) :-
 	full_chop_list([32 | String], 0, [], Args).
 
 chop_list(String, Args) :-
-	safe_tcl_eval([llength, br(chars(String))], LStr),
+	safe_tcl_eval(['AttackGlobalVariable choppingForProlog {}',
+		       br(chars(String))], _),
+	safe_tcl_eval([llength, '$::choppingForProlog'], LStr),
 	name(L, LStr),
-	get_elts_from_tcl(String, 0, L, Args), !.
+	get_elts_from_tcl(0, L, Args), !.
 
-get_elts_from_tcl(String, P, L, Args) :-
+get_elts_from_tcl(P, L, Args) :-
 	L = P,
 	    Args = [];
-	safe_tcl_eval([lindex, br(chars(String)), P], Top),
+	safe_tcl_eval([lindex, '$::choppingForProlog', P], Top),
 	    Q is P+1,
-	    get_elts_from_tcl(String, Q, L, Rest),
+	    get_elts_from_tcl(Q, L, Rest),
 	    Args = [Top | Rest].
 
 /* curly(P, Text) :-
