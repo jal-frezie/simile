@@ -83,7 +83,7 @@ namespace eval RunEnv {
             toplevel $mreId -width 200m -height 150m
 # following is the answer to all those pesky bgerrors on stdout
 #	    pack [button $mreId.reveal -text "Reveal all" -command {puts $errorInfo}]
-            wm title $mreId "[GetExecTitle $node] execution - Simile"
+            wm title $mreId "Execution of [GetExecTitle $node] - Simile"
             set currentNode $node
             bind $mreId <FocusIn> [namespace code "InMreFor $node"]
             set descmenu {

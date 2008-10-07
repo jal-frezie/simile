@@ -1206,7 +1206,7 @@ proc TellHelperItsGone {helperWin captionPath} {
 }
 
 proc GetExecTitle {node} {
-	set mDesc [do_in_editor GetFromProlog tk_get_info({},$node,desc)]
+	set mDesc [do_in_editor GetFromProlog tk_get_info(_,$node,desc)]
 	set modelCapt [string range $mDesc 0 \
 			   [expr [string first { : } $mDesc]-1]]
 	return [BlankCrs $modelCapt]

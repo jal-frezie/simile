@@ -1593,7 +1593,9 @@ proc GetFromTable {parent topNode compName startLine} {
         set table_entry(values) $suppliedData($compName)
     }
     set table_entry(bytes) [DataInScenario $compName]
-    set newSource [equationDoTable [winfo toplevel $parent] $topNode $compName \
+# trim off model name from caption cos it is ugly
+    set tablCapt [string range $compName [string first / $compName 1] end]
+    set newSource [equationDoTable [winfo toplevel $parent] $topNode $tablCapt \
 		       [$outNames($compName).l2 cget -text] \
 		       [expr {!$readMany($compName)}]]
 
