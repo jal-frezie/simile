@@ -1185,8 +1185,9 @@ proc StartElement {name attList args} {
 	    }
 	} csv_columns {
 	    puts -nonewline $parseStatus(outStr) \
-		"$parseStatus(submodel)/$attVals(label)=reference=$attVals(filename) "
-	    set parseStatus(translateExtras) [list $attVals(data_column)]
+		"$parseStatus(submodel)/$attVals(label)=reference="
+	    set parseStatus(translateExtras) \
+		[list $attVals(filename) $attVals(data_column)]
 	} csv_grid {
 	    puts $parseStatus(outStr) "$parseStatus(submodel)/$attVals(label)=reference=$attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax)"
 	} image {
