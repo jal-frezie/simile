@@ -478,7 +478,17 @@ namespace eval runcontrol33857 {
 	    }
 	    unset runState($node,pause)
 	}
-	set current [ExecuteTo $node $current $pause $display $forward]
+	if {$runState($node,adapt)} {
+	    set maxErr $runState($node,errLimit)
+	} else {
+	    set maxErr 0
+	}
+	if {[string equal start $sendvars($node,currentMode)]} {
+	    set sendvars($node,currentMode) \
+		[ExecuteTo $node $current $pause $sendvars($node,unitLength) \
+		     $display $maxErr]
+	}
+	set current $runState($node,currentTime)
 	if {[string equal exit $sendvars($node,currentMode)]} {
 	    if {$runState($node,modelRunning)==2} {
 		set runState($node,modelRunning) 0
@@ -504,16 +514,17 @@ namespace eval runcontrol33857 {
 	set sendvars($node,busy) 0
     }
 	    
-    proc ExecuteTo {node current pause display forward} {
+    proc ExecuteTo {node current pause unitLength display maxErr} {
         global runState
-	variable sendvars
 
-	set scaled_current [expr {$current*$sendvars($node,unitLength)}]
+	set forward [expr {$pause>$current}]
+	set scaled_current [expr {$current*$unitLength}]
 	set adapt(doublings) 0 ;# only relevant for tcl
 	if {$display} {
 	    set lastDisp [expr int($current/$display)]
 	}
-	while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
+	set currentMode start
+	while {[lsearch {exit stop} $currentMode]==-1} {
 	    if {$display} {
 		set nextDisp [expr 1.0*$display*[incr lastDisp \
 						     [expr $forward*2-1]]]
@@ -524,25 +535,15 @@ namespace eval runcontrol33857 {
 	    if {($current>$pause) == $forward} {
 		set current $pause
 	    }
-	    set scaled_next [expr {$current*$sendvars($node,unitLength)}]
-	    if {$runState($node,adapt)} {
-		set maxErr $runState($node,errLimit)
-	    } else {
-		set maxErr 0
-	    }
-	    if {$runState($node,splimit)} {
-		set minStep [expr {1000/$runState($node,speedLimit)}]
-	    } else {
-		set minStep 0
-	    }
+	    set scaled_next [expr {$current*$unitLength}]
 	    switch -- [ExecuteModel $node $runState($node,intMethod) \
 			 $scaled_current $scaled_next $maxErr] {
 			     -1 {
 				 set current $runState($node,currentTime)
-				 set sendvars($node,currentMode) exit
+				 set currentMode exit
 			     } 0 {
 				 set current $runState($node,currentTime)
-				 set sendvars($node,currentMode) stop
+				 set currentMode stop
 			     }
 			 } ;# default: keep going
 	    if {![info exists runState($node,cnvs)]} {
@@ -550,25 +551,34 @@ namespace eval runcontrol33857 {
 	    }
             if {$current==$nextDisp} {
 # && [string match start $sendvars($node,currentMode)]
-		UpdateBar $node $current blue ;# so GetModelTime does right
-		if {![TellAllHelpers $node Display $current $display 1]} {
-		    set sendvars($node,currentMode) stop
-		}
-
-		if {$minStep} {
-		    set extraDelay [expr {$minStep-([clock clicks]-$sendvars($node,kickTime))/1000}]
-		    after $extraDelay [namespace code [list StoreTime $node]]
-		    set sendvars($node,busy) 0
-		    vwait [namespace current]::sendvars($node,kickTime)
-		    set sendvars($node,busy) 1
+		if {![ResultsToGUI $node $current $display]} {
+		    set currentMode stop
 		}
 	    }
 	    set scaled_current $scaled_next
 	    if {$current==$pause} {
-		set sendvars($node,currentMode) stop
+		set currentMode stop
 	    }
 	}
-	return $current
+	return $currentMode
+    }
+
+    proc ResultsToGUI {node current display} {
+	variable sendvars
+	global runState
+
+	UpdateBar $node $current blue ;# so GetModelTime does right
+	set success [TellAllHelpers $node Display $current $display 1]
+	
+	if {$runState($node,splimit)} {
+	    set minStep [expr {1000/$runState($node,speedLimit)}]
+	    set extraDelay [expr {$minStep-([clock clicks]-$sendvars($node,kickTime))/1000}]
+	    after $extraDelay [namespace code [list StoreTime $node]]
+	    set sendvars($node,busy) 0
+	    vwait [namespace current]::sendvars($node,kickTime)
+	    set sendvars($node,busy) 1
+	}
+	return $success
     }
 
 # This now only used in debug mode; c++ has its own interaction regulator
