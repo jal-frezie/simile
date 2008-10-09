@@ -548,8 +548,8 @@ namespace eval runcontrol33857 {
 	    if {![info exists runState($node,cnvs)]} {
 		return $current ;# run control window killed?
 	    }
-            if {$current==$nextDisp && \
-		    [string match start $sendvars($node,currentMode)]} {
+            if {$current==$nextDisp} {
+# && [string match start $sendvars($node,currentMode)]
 		UpdateBar $node $current blue ;# so GetModelTime does right
 		if {![TellAllHelpers $node Display $current $display 1]} {
 		    set sendvars($node,currentMode) stop
