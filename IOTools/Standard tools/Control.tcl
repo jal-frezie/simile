@@ -547,7 +547,7 @@ namespace eval runcontrol33857 {
 			     }
 			 } ;# default: keep going
 	    if {![info exists runState($node,cnvs)]} {
-		return $current ;# run control window killed?
+		return $currentMode ;# run control window killed?
 	    }
             if {$current==$nextDisp && ![string equal exit $currentMode]} {
 		if {![ResultsToGUI $node $current $display]} {
