@@ -1368,7 +1368,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 		set seekDir [file join [file dirname $oldPath] \
 				 [file dirname $VFile]]
 		if {[catch {cd $seekDir}]} {
-		    set act [ShowMessage "Missing data directory" warning "The parameterization file contains a reference to data file \"[file tail $VFile]\" for the parameter values for the component $restoredComp. This reference specifies the file path \"[file dirname $VFile]\" relative to the location of the parameterization file itself, so the file is being sought in the directory \"[file normalize $seekDir]\", which does not exist on this computer. Do you want to skip the values for this component and continue loading the parameterization file?" okcancel]
+		    set act [ShowMessage "Missing data directory" warning "The parameterization file contains a reference to data file \"[file tail $VFile]\" for the parameter values for the component $restoredComp. This reference specifies the file path \"[file dirname $VFile]\" relative to the location of the parameterization file itself, so the file is being sought in the directory \"[file normalize $seekDir]\", which does not exist on this computer. Do you want to cancel the operation, or skip the values for this component and continue loading the parameterization file?" okcancel]
 		    switch $act {
 			cancel {break}
 			ok {continue}
@@ -1377,7 +1377,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
                 cd [file join [file dirname $oldPath] [file dirname $VFile]]
                 # ...and stick the new absolute pathname into the spec! Easy!!
 		if {![file exists [file tail $VFile]]} {
-		    set act [ShowMessage "Missing data file" warning "The parameterization file contains a reference to data file \"[file tail $VFile]\" for the parameter values for the component $restoredComp, which does not exist in this folder. Do you want to skip the values for this component and continue loading the parameterization file?" okcancel]
+		    set act [ShowMessage "Missing data file" warning "The parameterization file contains a reference to data file \"[file tail $VFile]\" for the parameter values for the component $restoredComp, which does not exist in this folder. Do you want to cancel the operation, or skip the values for this component and continue loading the parameterization file?" okcancel]
 		    switch $act {
 			cancel {break}
 			ok {continue}
@@ -1414,8 +1414,12 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 		    if {![llength $trans]} {
 			set trans numerical
 		    }
-                    ShowMessage "Error merging parameters" error "Parameterization file contained the entry $suppliedData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it an allowed value for this component, which are $trans." ok
                     set suppliedData($restoredComp) {}
+                    set act [ShowMessage "Error merging parameters" error "Parameterization file contained the entry $suppliedData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it an allowed value for this component, which are $trans. Do you want to cancel the operation, or skip the values for this component and continue loading the parameterization file?" okcancel]
+		    switch $act {
+			cancel {break}
+			ok {continue}
+		    }
                 }
             }
             if {$interactive} {
