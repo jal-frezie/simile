@@ -68,6 +68,7 @@ namespace eval $keyValue {
             foreach surplus {0 1 2 5} {
                 $winId.bbframe.buttonBox itemconfigure $surplus -state disabled
             }
+	    set editMode($winId,tweaked) 0
         }
         
         scrollbar $winId.yscroll -command [list $winId.t yview]
@@ -197,31 +198,32 @@ namespace eval $keyValue {
 # we keep the values array and update it when a cell is edited. This means
 # we do not lose precision when loading the edited array.
     proc EditCellIs {t row col} {
-	variable editCell
+	variable editMode
 	variable rowIds
 	variable colIds
 	variable values
 
 	set winId [winfo parent $t]
-	if {[info exists editCell($winId,lastVal)]} {
-	    set newVal [set ::data${winId}($editCell($winId,lastRow),$editCell($winId,lastCol))]
-	    if {![string equal $editCell($winId,lastVal) $newVal]} {
+	if {[info exists editMode($winId,lastVal)]} {
+	    set newVal [set ::data${winId}($editMode($winId,lastRow),$editMode($winId,lastCol))]
+	    if {![string equal $editMode($winId,lastVal) $newVal]} {
 		foreach rowEntry [array names rowIds $winId,*] {
-		    if {$rowIds($rowEntry)==$editCell($winId,lastRow)} {
+		    if {$rowIds($rowEntry)==$editMode($winId,lastRow)} {
 			set rowsHeaders [lindex [split $rowEntry ,] 1]
 			foreach colEntry [array names colIds $winId,*] {
-			    if {$colIds($colEntry)==$editCell($winId,lastCol)} {
+			    if {$colIds($colEntry)==$editMode($winId,lastCol)} {
 				set colsHeaders [lindex [split $colEntry ,] 1]
 				set values($rowsHeaders,$colsHeaders) $newVal
+				set editMode($winId,tweaked) 1
 			    }
 			}
 		    }
 		}
 	    }
 	}
-	set editCell($winId,lastRow) $row
-	set editCell($winId,lastCol) $col
-	set editCell($winId,lastVal) [set ::data${winId}($row,$col)]
+	set editMode($winId,lastRow) $row
+	set editMode($winId,lastCol) $col
+	set editMode($winId,lastVal) [set ::data${winId}($row,$col)]
     }
     
     proc Remove {winId var} {
