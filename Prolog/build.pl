@@ -99,11 +99,13 @@ node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
 	foreach( GAttribute=GValue, GraphicalInfo,    
 		RealNode has_new_graphical_attribute GAttribute of GValue ).
 	
+/* If a node with the same id as that being added does not already exist, the
+new Id is kept, because (a) it makes canvas translation more efficient, and (b)
+it makes it not crash, by avoiding circles. */
 gen_equiv_nodes(Node, Parent, Node-NewN) :-
-	/* Node is_part_of _, */!,
-	    NewN is_new_part_of Parent;
-	NewN = Node,
-	    NewN is_new_part_of Parent.
+    (Node is_part_of _, !; 
+	NewN = Node),
+    NewN is_new_part_of Parent.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % arc inserts a new arc and any info known about it. 
