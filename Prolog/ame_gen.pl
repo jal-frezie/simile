@@ -292,7 +292,7 @@ find_ghosts(Base, Ghost) :-
 	input link. Result is 1 if yes, 0 if no, -1 if type cannot be one. */
 
 is_parameter(Node, Val) :-
-	\+ Node is_of_sort can_be_input, !,
+	(\+ Node is_of_sort can_be_input; is_ghost(Node)), !,
 	    Val = -1;
 	appears(Node),
 	    Node is_of_sort has_function,
