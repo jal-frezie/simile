@@ -1002,7 +1002,7 @@ showMess(globMess); */
 	return userDefStop;
       }
     }
-    if (check_gui(id, *end, 0)) {
+    if (interact_gui(id, 2, *end)) { // always go to make sure time is right
       userDefStop->excpNo = -100;
       return userDefStop; // should not conflict with os signal numbers
     }

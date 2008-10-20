@@ -15,20 +15,14 @@ namespace eval canvasnotes20070919 {
     $am add command -label Delete -command [namespace code Delete]
 
     proc MakeCanvasAnnotatable {c {props {}}} {
-	global helperTable
-
 	set cm [menu $c.contextMenu -tearoff 0]
 	bind $c <Button-3> [namespace code {StickMenuHere %W %X %Y %x %y}]
 	$c bind annotation <Button-1> [namespace code {StartDrag %W %x %y}]
 	$c bind annotation <B1-Motion> [namespace code {StepDrag %W %x %y}]
 	$c bind annotation <Button-3> \
 	    [namespace code {MessTextHere %W %X %Y %x %y}]
-	while {![info exists helperTable($c,whichInstance)]} {
-	    set c [winfo parent $c]
-	}
-	set node [$helperTable($c,whichInstance) GetNode]
 	$cm add command -label "Add text here" \
-	    -command [namespace code "StickTextHere $node"]
+	    -command [namespace code StickTextHere]
 	if {[string length $props]} {
 	    $cm add command -label "Properties..." -command $props
 	}
@@ -67,15 +61,13 @@ namespace eval canvasnotes20070919 {
 	set whatNotes(clky) $y
     }
 
-    proc StickTextHere {node} {
+    proc StickTextHere {} {
 	global looks
 	variable whatNotes
 
 	set whatNotes(text) [$whatNotes(canvas) create text \
 				 [$whatNotes(canvas) canvasx $whatNotes(clkx)] \
 				 [$whatNotes(canvas) canvasy $whatNotes(clky)] \
-				 -fill $looks($node,text,text) \
-				 -font $looks($node,text,font) \
 				 -tags annotation]
 	Properties
     }
@@ -89,17 +81,14 @@ namespace eval canvasnotes20070919 {
 	tk_popup .annotationMenu $X $Y
     }
 
-    proc DialogInMiddle {w} {
-	global helperTable
+    proc DialogInMiddle {c} {
 	variable whatNotes
 
-	set c [$helperTable($w,whichInstance) GetCanvas]
-	set node [$helperTable($w,whichInstance) GetNode]
 	set whatNotes(canvas) $c
 	set whatNotes(clkx) 100
 	set whatNotes(clky) 100
 
-	StickTextHere $node
+	StickTextHere
     }
 
     proc Properties {} {

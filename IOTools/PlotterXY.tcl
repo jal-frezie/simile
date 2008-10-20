@@ -303,7 +303,8 @@ namespace eval ::$keyValue {
         
         Menu $w
         
-        if {[string match [winfo toplevel $w] $w] } {
+        if {[string match [winfo toplevel $w] $w] && \
+		![string length [$w cget -use]]} {
             menu $w.menubar -tearoff 0
             $w.menubar add cascade -label Menu -menu $w.menu
             $w configure -menu $w.menubar

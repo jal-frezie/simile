@@ -58,7 +58,7 @@ namespace eval runcontrol33857 {
 	upvar 1 this inst
 	set node [lindex [$inst GetNode] 0]
 # if cannot do above because trying to live without RunControl instance
-#	upvar 4 node node
+#	upvar 2 node node
 	if {![info exists runState($node,intMethod)]} {
 	    set runState($node,intMethod) Euler
 	}

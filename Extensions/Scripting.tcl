@@ -332,10 +332,11 @@ redo with snap object
 	
     public method Start {} {
         # returns the time to complete (to run the simulation)
-	global runState
+	global runState helperTable
 
-	set rcf $runState($modelNode,helperId).nb.rcf
-        set timestr [time [list $rcf.upper.topbuttons.start invoke]]
+#	set rcf $runState($modelNode,helperId).nb.rcf
+#        set timestr [time [list $rcf.upper.topbuttons.start invoke]]
+        set timestr [time [list $helperTable(RunControl)::SetMode $modelNode start]]
         set musec [lindex $timestr 0]
         return "[expr {$musec/1e6}] sec"
     }
