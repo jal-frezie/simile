@@ -1167,7 +1167,19 @@ proc DoLocalCmd {win item} {
         raiseMRE {RaiseWinMRE $win}
         open_all {OpenAll $win}
         insert {InsertModel $win}
+	empty {EmptyWindow $win}
     }
+}
+
+# This one added to remove file parameters when clearing model
+proc EmptyWindow {c} {
+    global window_info paramData
+
+    if {$window_info($c,is_top_level)} {
+	set nodeId $window_info($c,top_node)
+	array unset paramData /$nodeId/*
+    }
+    prolog tk_menu('$c',file,new)
 }
 
 #
@@ -1227,7 +1239,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     if {$isTopLevel} {
     set newCmd NewTopLevel
     } else {
-    set newCmd "MenuSelect $c file new"
+    set newCmd "MenuSelect $c local empty"
     }
     $fm add command -label New -command $newCmd -accelerator "$accKey+N"
     AddAccelerator $winid file New "<$accSym-n>"
@@ -1557,7 +1569,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     } else {
         set buttonImages ../Images/Toolbar
     }
-    foreach navCmd {{new {file new}} {open {file open}} \
+    foreach navCmd {{new {local empty}} {open {file open}} \
                 {save {file save}}  {print {local print}} {separator1}\
                 {undo {local undo}} {redo {local redo}} {separator2}\
                 {flip_h {edit flip_h}} {flip_v {edit flip_v}} {separator3}\
