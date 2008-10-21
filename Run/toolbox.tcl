@@ -1526,7 +1526,7 @@ proc GetSystemChars {string} {
 	    lappend ulist $char
 	}
     }
-    return $ulist
+    return \[[join $ulist ,]\].
 }
 
 # Path names derived from Windows environment variables must be

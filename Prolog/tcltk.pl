@@ -128,13 +128,13 @@ tk_main_loop :-
 wait_for_tcl(Except, Result) :-
         repeat,
 	read_codes(JoinedTclStr),
-	all_utf8_to_ttfn(JoinedTclStr, Joined),
-	restore_crs(TclStr, Joined),
+	all_utf8_to_ttfn(JoinedTclStr, TclStr),
 	(append("call:", CmdStr, TclStr),
 	    append(CmdStr, ".", TermStr),
 	    do_cmd(TermStr),
 	    fail;
-	append("result:", Result, TclStr);
+	append("result:", Joined, TclStr),
+	    restore_crs(Result, Joined);
 	append("error:", ResultBase, TclStr),
 	    name(ResultAtom, ResultBase),
 	    (Except = 1, !,

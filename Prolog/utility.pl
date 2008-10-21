@@ -266,9 +266,8 @@ open_native(FileTtfn, Mode, Stream) :-
 
 get_native(FileTtfn, FileNative) :-
 	output:safe_tcl_eval(['GetSystemChars', br(FileTtfn)], Bag),
-	output:chop_list(Bag, String),
-	all(user, name, [build(Chars), build(String)]),
-	name(FileNative, Chars).
+	sicstus_read_from_chars(Bag, String),
+	name(FileNative, String).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % delall deletes all occurrances of an element from a list 
