@@ -71,10 +71,10 @@
     #else
 	#define EXTDEC FINDABLE __declspec( dllimport )
     #endif
-    #define EXPORT FINDABLE __declspec( dllexport )
+    #define EXPORT __declspec( dllexport )
 #else
     #define EXTDEC FINDABLE
-    #define EXPORT FINDABLE
+    #define EXPORT 
 #endif
 /* type declaration for structure representing a graph */
 
