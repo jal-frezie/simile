@@ -169,12 +169,12 @@ proc IdentField {text field} {
 # itself loads dlls for the actual models as they are built.
 
 proc load_c_stub_1 {} {
-    global env tcl_platform userinfo
+    global env tcl_platform
     scan [info tclversion] {%d.%d} MAJ MIN
     set onUnix [string match unix $tcl_platform(platform)]
     set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
     if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-	error "Could not find a stub for Simile $userinfo(Version) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform) -- $dummy"
+	error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform) -- $dummy"
     }
 }
 
