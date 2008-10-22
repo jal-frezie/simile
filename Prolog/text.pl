@@ -96,7 +96,7 @@ escape_nasties(Chars, ArgChars) :-
 	(member([CB]-BS, ["\n"-"\\n", "\t"-"\\t"]), % char with own escape seq
 	    append(Go, BS, Mid),
 	    append(Mid, Rest, ArgChars);
-	member(CB, "\"{}[] \\;"),
+	member(CB, "\"{}[] \\;$"),
 		% doublequote, curly bracket, square bracket, backslash or space
 		% semicolon added cos it ends command
 	   [BS] = "\\",
