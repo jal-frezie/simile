@@ -316,7 +316,6 @@ proc TclExecuteModel {node howInt start end errLim} {
 #    if {[string equal cancel [ShowMessage debug info "XM from $start to $end" okcancel]]} {
 #	error cancelled
 #    }
-    set adapt(doublings) 0
     set freq [expr $steps($phasecount)*pow(2,-$adapt(doublings))]
     set xtime $start
     while {($end-$xtime)*$freq>0} { ;# freq only affects sign

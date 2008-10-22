@@ -410,7 +410,7 @@ namespace eval runcontrol33857 {
 
     proc RollSimulation { node } {
         variable sendvars
-        global errorInfo redoPhase runState adapt
+        global errorInfo redoPhase runState
 	global pauseImg playImg
         variable frames
 
@@ -515,7 +515,7 @@ namespace eval runcontrol33857 {
     }
 	    
     proc ExecuteTo {node current pause unitLength display maxErr} {
-        global runState
+        global runState adapt
 
 	set forward [expr {$pause>$current}]
 	set scaled_current [expr {$current*$unitLength}]
