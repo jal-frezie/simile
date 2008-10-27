@@ -282,12 +282,12 @@ proc GetObjectList {} {
 
 proc GetModelValue { node } {
     global subbedPlots
-
     if {[info exists subbedPlots($node)]} {
-        set subbedPlots($node)
+        set result [list [extract_list $subbedPlots($node)]]
     } else {
-	SetModelValue $node {}
+	set result [SetModelValue $node {}]
     }
+    return $result
 }
 
 proc SetModelValue { node newVals } {
@@ -479,6 +479,7 @@ proc GetCCompProperty {topNode prop args} {
 			      [lsearch [split $numberWangs |] $prop]]
 	    return [c_getvalue $topNode $node $dataWang]
 	} IdFromCapt {
+	    # node is actually caption in this case
 	    if {[catch {getnodeid $model_id($topNode) $node} id]} {
 		set id nomatch
 	    }
@@ -490,9 +491,9 @@ proc GetCCompProperty {topNode prop args} {
 		return [list [insert $model_id($topNode) \
 				  $instance_id($topNode) $node $newVs]]
 	    } else {
-		set res [list [extract \
+		set res [list [extract_list [handle_data\
 				  $model_id($topNode) $instance_id($topNode) \
-				  $node]]
+						 $node]]]
 		return $res
 	    }
 	} Binary {
@@ -692,6 +693,7 @@ proc GetPhaseCount {topNode} {
 # these two are called from the model and handled by the client
 proc InteractGUI {handle modelTime flCol} {
     global helperTable
+
     return [$helperTable(RunControl)::RCInteractGUI [DecodeInstance $handle] \
 		$modelTime [lindex {{} green blue} $flCol]]
 }
@@ -732,28 +734,6 @@ proc ResetModel {myNode redo} {
     }
     InteractGUI $instance_id($myNode) 0 2
     return $done
-}
-
-proc ExecuteModel {myNode howInt start finish errLim} {
-    global model_id instance_id
-    if {[catch {
-	if {$model_id($myNode)} {
-	    set model_id(running) $myNode
-	    c_executemodel $model_id($myNode) $instance_id($myNode) \
-		[expr ![string equal Euler $howInt]] $start $finish $errLim
-	} else {
-	    TclExecuteModel $myNode $howInt $start $finish $errLim
-	}
-    } errList]} {
-	InteractGUI $instance_id($myNode) [lindex $errList 3] 2
-	return [ExplainError $errList]
-    } elseif {$errList==-1} {
-        start_in_editor BuildProblem "Execution notice" info "Model execution has been paused at a discontinuity which could not be dealt with by adaptive step size control." execution
-        do_in_editor RaiseModelWindow $myNode
-        return 0
-    } else {
-	return $errList
-    }
 }
 
 proc WarnNoProgram {node} {

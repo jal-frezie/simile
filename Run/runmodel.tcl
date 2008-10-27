@@ -283,7 +283,7 @@ proc SetState {winId newState} {
 
 proc ProdObj {topNode nodeId caption} {
     global helperTable
-    if {[info exists helperTable($topNode,current)]} {
+    if {![catch {set inst $helperTable($topNode,current)}]} {
 # Supplied caption is submodel hierarchy from diagram (unless I get rid of that)
 # -- however we need hierarchy of base component if this is a ghost, so...
 	set useCapt [GetCompProperty $topNode Caption $nodeId]
@@ -291,12 +291,14 @@ proc ProdObj {topNode nodeId caption} {
 # than just values
 #	switch -regexp [GetCompProperty $topNode Type $nodeId] {
 #	    REAL|INTEGER|FLAG|ENUMERATED {
-	SystemHelperCall $helperTable($topNode,current) $topNode Click $useCapt
+	SystemHelperCall $inst $topNode Click $useCapt
 #	    } default {
 #		ShowMessage "Clicked on $caption" error \
 #                    "This component cannot be selected for an I/O tool because it has no associated value." ok
 #	    }
 #	}
+# Now record helper's interest so values can be saved from execution thread
+	lappend helperTable($inst,foci) $nodeId
 	return 1
     } else {
 	return 0
@@ -515,12 +517,31 @@ proc LoseDTRef {statusLine} {
     return $result
 }
 
-proc TellAllHelpers {node fun args} {
-    global helperTable myNode
+set updateLastDone 0
+proc UpdateIfFreezy {} {
+    global updateLastDone
+    if {$updateLastDone < [clock clicks -milliseconds]-20} {
+	update
+	set updateLastDone [clock clicks -milliseconds]
+    }
+}
+
+proc ShiftDisplays {node payload current display} {
+    global helperTable
+
+    set endRun [$helperTable(RunControl)::UpdateBar $node $current blue]
+    UpdateIfFreezy
+    TellAllHelpers $node $payload Display $current $display 1
+    return $endRun
+}
+
+proc TellAllHelpers {node payload fun args} {
+    global helperTable myNode subbedPlots
 
     set nodeForFocus $myNode
     set myNode $node
     set success 1
+    array set subbedPlots $payload
     set doScrog [expr [string equal Display $fun] && \
 		     [info exists helperTable(pestInterface)]]
     if {$doScrog} {
@@ -555,10 +576,10 @@ proc TellAllHelpers {node fun args} {
 #    }
 #    set helperTable(beingCalled) {}
     if {$doScrog} {
-	$helperTable(pestInterface)::RestoreOutputs
 	eval WriteLogs $node $args
     }
     set myNode $nodeForFocus
+    array unset subbedPlots
     return $success
 }
 
@@ -1017,6 +1038,7 @@ proc StartRun {node} {
     global runState window_info helperTable classTable projectParams sendvars
     # ShowMessage debug info enter(start_run) ok
 #    set runState($node,currentWin) $winId ;# enables rebuild from run control
+
     if {[info exists helperTable($node,whichRunEnv)]} {
 	set fpParent $helperTable($node,whichRunEnv)
     } else {

@@ -207,8 +207,9 @@ itcl::class similescript::Helper {
 	    }
 	    wm protocol $winId WM_DELETE_WINDOW "itcl::delete object $this"
 	}
+	set helperTable($this,foci) {}
 	set helperTable($winId,whichInstance) $this
-        #puts "Helper constr winId $winId"
+        # puts "Helper constr $this winId $winId"
     }
     
     destructor {
@@ -226,6 +227,7 @@ itcl::class similescript::Helper {
 	    }
 	}
 	unset helperTable($winId,whichInstance)
+	unset helperTable($this,foci)
 	bind $winId <Destroy> {} ;# prevent destructor calling itself when...
 	# (done by base destructor)	    destroy $winId
     }

@@ -822,7 +822,7 @@ proc StartComms {firstTime} {
 
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo openModel simtmpdir runHow
-    global regularActs
+    global regularActs SIMILE_PATH execThread
 
     LoadIconImages
     # Defaults to use if debugging
@@ -907,7 +907,38 @@ proc ControlDraw {prologVersion} {
 		[list -fPIC -I../Run -shared -o $shank ../Run/shank.cpp]
 	}
     }
+    if {[catch {package require Unpacker} dummy]} {
+	error "Could not find an unpacker for Simile -- $dummy"
+    }
+# comment out next two lines for thread free operation
+    package require Thread
+    set execThread(id) [thread::create]
+
+    if {[info exists execThread]} {
+	foreach stubCmd {load_c_stub_1 load_c_stub_2 get_auth_code check_auth_code loadmodel c_createmodel listobjects c_setstepmodel c_setparamarray c_cleartimeseries c_setwraparoundtime c_setfillmethod c_resetmodel getnodeid getvalue handle_data c_exitmodel} {
+	    proc $stubCmd {args} {
+		global execThread
+		#puts "exec bother [lindex [info level 0] 0]"
+		return [thread::send $execThread(id) [info level 0]]
+	    }
+	}
+
+	proc ExecuteTo {args} {
+	    global execThread
+	    thread::send -async $execThread(id) \
+		[concat ExecuteTo $args [thread::id]] execThread(reply)
+	    vwait execThread(reply) ;# can process events and incoming messages
+	    return $execThread(reply)
+	}
+
+
+	thread::send $execThread(id) [list source [file join $SIMILE_PATH Run \
+						       exec.tcl]]
+    } else {
+	source [file join $SIMILE_PATH Run exec.tcl]
+    }
     load_c_stub_1
+
     if {![string match windows $tcl_platform(platform)]} {
 # Windows installers can ask the user for a license code and stick it in the
 # registry. On other platforms we have to DIY and put in userinfo.txt.
@@ -937,6 +968,9 @@ proc ControlDraw {prologVersion} {
     # loading stub sets license entries
     load_c_stub_2
     
+    set userinfo(final_expiry) $env(user,final_expiry)
+    set userinfo(days_after_install)  $env(user,days_after_install)
+    set userinfo(edn)  $env(user,edn)
     # substitutes for license entries if we want to avoid loading stub
     #set userinfo(final_expiry) 0
     #set userinfo(days_after_install) 0
@@ -1248,13 +1282,14 @@ proc SaveFile {topNode tree tgt {noPkg 0}} {
     }
 }
 
-proc SaveMimeBit {bit newPath} {
-    global mimeSquirter 
-
+proc SaveMimeBit {body newPath} {
     file mkdir [file dirname $newPath]
     set mimeSquirter [NetOpen $newPath w]
     fconfigure $mimeSquirter -translation binary
-    mime::getbody $bit -command SquirtMime -blocksize 256
+# little point as it has to be unpacked in memory to process the auth code
+#    mime::getbody $bit -command SquirtMime -blocksize 256
+    puts -nonewline $mimeSquirter $body
+    close $mimeSquirter
     if {![catch {mime::getheader $bit Date-Modified} Date]} {
 	file mtime $newPath [clock scan [lindex $Date 0]]
     }
@@ -1282,22 +1317,23 @@ proc LoadFile {topNode tree tgt} {
 		if {[catch {PathFromDispo $bit} oldPath]} {
 		    set oldPath /none/
 		}
+		set boddledy [mime::getbody $bit]
                 switch [lindex $Desc 0] {
                     "Run Status" {
-                        set runState($topNode,runParams) [mime::getbody $bit]
+                        set runState($topNode,runParams) $boddledy
 # do next bit when starting exec proc
 #                        do_for_node $topNode SetRunParams $topNode $runParams
                     } "Authentication Code" { ;# old method: separate part
-                        set codes [mime::getbody $bit]
+                        set codes $boddledy
 		    } "Simile model" {
 			catch {set codes [mime::getheader $bit \
-					      Authentication-Code]}
+					      Authentication-Code]} foo
+#puts "Code result $foo"
 			if {[info exists codes]} {
-			    set AuthCode [string trimright $codes]
-			    check_auth_code $bit
+			    check_auth_code $boddledy [string trimright $codes]
 			    set CodeChecked yes
                         }
-			SaveMimeBit $bit $tree$oldPath
+			SaveMimeBit $boddledy $tree$oldPath
                     } default {
 			# If no auth code, do not keep executable, but
 			# dont crash either -- could be innocent
@@ -1306,12 +1342,12 @@ proc LoadFile {topNode tree tgt} {
 				    $bit Authentication-Code]} AuthCode]} {
 				continue
 			    } else {
-				check_auth_code $bit
+				check_auth_code $boddledy $AuthCode
 # now insert 1 in its name so we are not forced to save it next time
 				set oldPath [file rootname $oldPath]1[file extension $oldPath]
 			    }
 			}
-			SaveMimeBit $bit $tree$oldPath
+			SaveMimeBit $boddledy $tree$oldPath
 		    }
                 }
             }
@@ -1422,13 +1458,19 @@ proc GetParts {top tree} {
                 set Disposition "${style}; filename=\"$relPath\""
                 set Date [clock format [file mtime $subtree] \
                   -format "%Y-%m-%d %T %Z" -gmt true]
+# we need the body for authorization checks, so save effort by creating mime
+# from it too
+		set flStream [open $subtree r]
+		fconfigure $flStream -translation binary
+		set boddledy [read $flStream]
+		close $flStream
 		set newM [mime::initialize -canonical $PartType \
-			      -encoding base64 -file $subtree]
+			      -encoding base64 -string $boddledy]
 		set headers [list "Content-Disposition" $Disposition \
 				 "Content-Description" $Description \
 				 "Date-Modified" $Date]
                 if {[string match "Simile model" $Description]} {
-                    set HmacCode [get_auth_code $newM]
+                    set HmacCode [get_auth_code $boddledy]
 # this was for versions up to 4.6 that need separate code
 #                    set codeT [mime::initialize -canonical text/plain \
 #                            -header [list "Content-Description" \
@@ -1438,10 +1480,11 @@ proc GetParts {top tree} {
 		    lappend headers "Authentication-Code" $HmacCode
                 }
 		if {[IsRunnableModel $ext]} {
-		    if {![OurEdition [mime::getbody $newM]]} {
+		    if {![OurEdition $boddledy]} {
 			continue
 		    }
-		    lappend headers "Authentication-Code" [get_auth_code $newM]
+		    lappend headers "Authentication-Code" \
+			[get_auth_code $boddledy]
 		}
 		foreach {key val} $headers {
 		    ::mime::setheader $newM $key $val

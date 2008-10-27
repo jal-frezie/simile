@@ -1447,13 +1447,6 @@ $numOutputs"
         }
     }
     
-    proc RestoreOutputs {} {
-	global subbedPlots
-
-# might need to be cleverer if multiple PESTs running simultaneously
-	array unset subbedPlots
-    }
-    
     proc AddChoppers {node str data} {
         variable usedHangers
         variable outGrpData

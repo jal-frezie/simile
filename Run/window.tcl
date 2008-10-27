@@ -1237,9 +1237,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -postcommand "FillReopen $winid"]
     $topm add cascade -label File -underline 0 -menu $topm.file
     if {$isTopLevel} {
-    set newCmd NewTopLevel
+	set newCmd NewTopLevel
     } else {
-    set newCmd "MenuSelect $c local empty"
+	set newCmd "MenuSelect $c local empty"
     }
     $fm add command -label New -command $newCmd -accelerator "$accKey+N"
     AddAccelerator $winid file New "<$accSym-n>"

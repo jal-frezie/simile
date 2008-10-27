@@ -942,6 +942,7 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
   double starttime, endtime, errlim;
   int phase, error;
   excpData* errorBlk;
+  Tcl_Obj* working;
 
   if (argc != 7) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id phase start_time end_time error_limit");
@@ -982,22 +983,26 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
   
   errorBlk = execute(modelType, modelHandle, phase, starttime, &endtime, 
 		     errlim);
+  error = 1; //i.e., no error
   if (errorBlk) {
-    if (errorBlk->excpNo == -100) {
-      Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-      return TCL_OK;
-    } else if (errorBlk->excpNo == -99) {
-      Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
-      return TCL_OK;
+    switch (errorBlk->excpNo) {
+    case -100:
+      error = 0;
+      break;
+    case -99:
+      error = -1;
+      break;
+    default:
+      Tcl_SetObjResult(interp, make_exec_error(interp, "evalmodel", 
+					       name_in_line(modelType, 
+							    errorBlk->targetId),
+					       endtime, 1, spare));
+      return TCL_ERROR;
     }
-    get_string_for_error(spare, errorBlk->excpNo);
-    Tcl_SetObjResult(interp, make_exec_error(interp, "evalmodel", 
-					     name_in_line(modelType, 
-							  errorBlk->targetId), 
-					     endtime, 1, spare));
-    return TCL_ERROR;
   }
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+  working = Tcl_NewIntObj(error);
+  Tcl_ListObjAppendElement(interp, working, Tcl_NewDoubleObj(endtime)); 
+  Tcl_SetObjResult(interp, working);
   return TCL_OK;
 }
 
@@ -1350,130 +1355,27 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
   return(localObj);
 }
 
-void make_sub_block_sizes(int *dims, int *sizes) {
-  int usedDims = 1;
-  switch (dims[0]) {
-  case SPARSEARRAY:
-    usedDims = 2;
-  case OWNSIZED:
-    make_sub_block_sizes(dims+usedDims, sizes+1);
-    sizes[0] = sizeof(int) + sizeof(void*);
-    break;
-  case REAL:
-    sizes[0] = sizeof(double);
-    break;
-  case FLAG:
-    sizes[0] = sizeof(BOOLEAN);
-    break;
-  case VALUELESS:
-    sizes[0] = 0;
-    break;
-  default: // dimension, INTEGER or enumerated type
-    if (dims[0]>0) {
-      make_sub_block_sizes(dims+1, sizes+1);
-      sizes[0]=sizes[1]*dims[0];
-    } else
-      sizes[0] = sizeof(int);
+FINDABLE int freeDataHandleCmd(ClientData clientData, Tcl_Interp *interp,
+		 int argc, Tcl_Obj *CONST argv[]) {
+  int error;
+  nodeValues* toFree;
+
+  if (argc != 2) {
+    Tcl_WrongNumArgs(interp, 1, argv, "data_handle");
+    return TCL_ERROR;
   }
-}
-
-/* next two call convert_to_tcl, which calls them, so declare in advance */
-Tcl_Obj* convert_to_tcl(int*, int*, char*);
-
-Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices, 
-			     int* subBlocks, int *members, char** block) {
-  Tcl_Obj *localObj, *localSubObj;
-  int count;
-  if (depth==dimty) {
-    if (*members) {
-      *block += dimty*sizeof(int);
-      localObj = convert_to_tcl(dims, subBlocks, *block);
-      *block += subBlocks[0];
-      --*members;
-    } else {
-      localObj = Tcl_NewListObj(0, NULL);
-    }
-  } else {
-    localObj = Tcl_NewListObj(0, NULL);
-    while (*members) {
-      for (count=0; count<depth; ++count) {
-	if (((int*)*block)[count]!=indices[count]) return(localObj);
-      }
-      indices[depth] = ((int*)*block)[depth];
-      localSubObj = append_list_members(dimty, depth+1, dims, indices,
-					subBlocks, members, block);
-      Tcl_ListObjLength(NULL, localSubObj, &count); // re-use count variable
-      if (count) {
-	Tcl_ListObjAppendElement(NULL, localObj, Tcl_NewIntObj(indices[depth]));
-	Tcl_ListObjAppendElement(NULL, localObj, localSubObj);
-      }
-    }
-  }
-  return(localObj);
-}
-
-Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks, 
-			      char* block) {
-  Tcl_Obj *localObj, *indObj, *localSubObj;
-  int offset, arrayOut;
   
-  localObj = Tcl_NewListObj(0, NULL);
-  for (offset = 0; membership > offset; ++offset) {
-    indObj = Tcl_NewIntObj(offset+1);
-    localSubObj = convert_to_tcl(dims, subBlocks, block+offset*subBlocks[0]);
-    Tcl_ListObjLength(NULL, localSubObj, &arrayOut);
-    if (arrayOut) {
-      Tcl_ListObjAppendElement(NULL, localObj, indObj);
-      Tcl_ListObjAppendElement(NULL, localObj, localSubObj);
-    }
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int*)&toFree);
+  if (error != TCL_OK) {
+    return error;
   }
-  return localObj;
-}
   
-Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block) {
-  Tcl_Obj *localObj;
-  int membership, *indices;
-  char *newBlock, *blockEnd;
-
-  if (dims[0] > 0) { // it's an array bound
-    localObj = append_array_members(dims[0], dims+1, subBlocks+1, block);
-  } else {
-    switch (dims[0]) {
-    case OWNSIZED:
-      membership = *(int *)block;
-      newBlock = *(char**)(block + sizeof(int));
-      localObj = append_array_members(membership, dims+1, subBlocks+1, newBlock);
-      free(newBlock);
-      break;
-    case SPARSEARRAY: 
-      // need clevers to nest indices; see old stuff
-      membership = *(int *)block;
-      newBlock = *(char**)(block + sizeof(int));
-      block = newBlock;
-      indices = (int*)malloc(sizeof(int)*dims[1]);
-      blockEnd = block+membership*(dims[1]*sizeof(int)+subBlocks[1]);
-      localObj = append_list_members(dims[1], 0, dims+2, indices, subBlocks+1,
-				     &membership, &block);
-      free(indices);
-      free(newBlock);
-      break;
-    case VALUELESS:
-      localObj = Tcl_NewStringObj("sm", -1);
-      break;
-    case REAL:
-      localObj = Tcl_NewDoubleObj(*(double *)block);
-      break;
-    case FLAG:
-      localObj = Tcl_NewBooleanObj(*(int *)block);
-      break;
-    default: /* INTEGER or ENUM(*) */
-      localObj = Tcl_NewIntObj(*(int *)block);
-    }
-  }
-  return localObj;
+  free_bloc_data(toFree->contents, toFree->dimSpecs);
+  free(toFree);
+  return TCL_OK;
 }
 
-FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
+FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   Tcl_Obj *resultPtr, *newData;
   int iPosn, error;
@@ -1484,6 +1386,11 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
   enum_type_data* usedTypes[32];
   nodeValues* c_result;
 
+  if (argc != 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id caption");
+    return TCL_ERROR;
+  }
+  
   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
   if (error != TCL_OK) {
     return error;
@@ -1521,400 +1428,12 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
   */
   c_result = get_raw_values(Tcl_GetStringFromObj(argv[3], NULL), modelHandle);
   if (c_result) {
-    int subBlocks[32];
-    make_sub_block_sizes(c_result->dimSpecs, subBlocks);
-    resultPtr = convert_to_tcl(c_result->dimSpecs, subBlocks, c_result->contents);
-    free(c_result->contents);
-    free(c_result);
-  } else
-    resultPtr = Tcl_NewStringObj("novalue", -1);
-  Tcl_SetObjResult(interp, resultPtr);
-  return TCL_OK;
-}
-/* Old versio using regularData
-double scaleIntProc(void* access) {
-  return (double)(*(int*)access);
-}
-
-double scaleDoubleProc(void* access) {
-  return (*(double*)access);
-}
-
-void addDSorted(int* discCount, double** dPtrDiscList, double newVal) {
-  double *spareArr;
-  int count, exp, bigexp;
-
-  spareArr = *dPtrDiscList;
-  // straight search could be replaced by binary if more speed needed
-  for (count=0; count<*discCount; ++count) {
-    if (newVal==spareArr[count]) {
-      return;
-    } else if (newVal<spareArr[count]) {
-      break;
-    }
-  }
-  if (*discCount>=16 && frexp(*discCount,&bigexp)<frexp((*discCount)-1,&exp)) {
-    *dPtrDiscList = new double[(int)(ldexp(1,bigexp))];
-    memmove(*dPtrDiscList, spareArr, count*sizeof(double));
-  }
-  memmove(*dPtrDiscList+count+1, spareArr+count, 
-	  (*discCount-count)*sizeof(double));
-  (*dPtrDiscList)[count] = newVal;
-  ++(*discCount);
-  if (*dPtrDiscList!=spareArr) delete(spareArr);
-}
-  
-void addISorted(int* discCount, int** dPtrDiscList, int newVal) {
-  int *spareArr;
-  int count, exp, bigexp;
-
-  spareArr = *dPtrDiscList;
-  // straight search could be replaced by binary if more speed needed
-  for (count=0; count<*discCount; ++count) {
-    if (newVal==spareArr[count]) {
-      return;
-    } else if (newVal<spareArr[count]) {
-      break;
-    }
-  }
-  if (*discCount>=16 && frexp(*discCount,&bigexp)<frexp((*discCount)-1,&exp)) {
-    *dPtrDiscList = new int[(int)(ldexp(1,bigexp))];
-    memmove(*dPtrDiscList, spareArr, count*sizeof(int));
-  }
-  memmove(*dPtrDiscList+count+1, spareArr+count, 
-	  (*discCount-count)*sizeof(int));
-  (*dPtrDiscList)[count] = newVal;
-  ++(*discCount);
-  if (*dPtrDiscList!=spareArr) delete(spareArr);
-}
-
-FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
-		 int argc, Tcl_Obj *CONST argv[]) {
-  int error;
-  double (*scaleProc) (void*);
-  double valfor0, valfor255, valspan, dval;
-  long int accessTool;
-  unsigned char* tgt;
-  int* progress;
-  int cursor, count, size;
-  Tcl_Obj *resultPtr, *spareObjPtr;
-  void* valAccessed;
-
-  double *dDiscList;
-  int discCount, *iDiscList;
-
-  if (clientData) {
-    // listing distinct vals
-    if (argc != 4) {
-      Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id caption");
-      return TCL_ERROR;
-    }
+    Tcl_SetObjResult(interp, Tcl_NewLongObj((long int)c_result));
+    return TCL_OK;
   } else {
-    if (argc != 6) {
-      Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id caption lower_limit upper_limit");
-      return TCL_ERROR;
-    }
-
-    error = Tcl_GetDoubleFromObj(interp, argv[4], &valfor0);
-    if (error != TCL_OK) {
-      return error;
-    }
-    
-    error = Tcl_GetDoubleFromObj(interp, argv[5], &valfor255);
-    if (error != TCL_OK) {
-      return error;
-    }
-  }
-
-  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  error = Tcl_GetLongFromObj(interp, argv[2], &modelHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
-
-  accessTool = createRegularData();
-  if (rdSetToNodeValue(accessTool, modelType, modelHandle,
-				     Tcl_GetStringFromObj(argv[3], NULL))) {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to attach access tool to this component.", -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("component has no data", -1));
     return TCL_ERROR;
   }
-
-  valspan=valfor255-valfor0; // set to span
-  cursor = rdDimensionality(accessTool);
-  if (rdDatatype(accessTool)==REAL) {
-    scaleProc = scaleDoubleProc;
-  } else {
-    scaleProc = scaleIntProc;
-  }
-  progress = new int[cursor];
-  size = 1;
-  for (count=cursor-1;count>=0;--count) {
-    size=size*rdBound(accessTool,count);
-    progress[count]=0;
-  }
-  resultPtr = Tcl_NewObj();
-  if (!clientData) {
-    if (valspan) {
-      Tcl_SetByteArrayLength(resultPtr, size);
-    } else { // no span: get values as floats
-      Tcl_SetByteArrayLength(resultPtr, size*sizeof(double));
-    }
-    tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
-  } else {
-    dDiscList = new double[16];
-    iDiscList = new int[16];
-  }
-
-  progress[cursor-1]=-1; // carefully avoid overrun at end
-  discCount=0;
-  for (count=0; count<size;++count) {
-    cursor=rdDimensionality(accessTool)-1;
-    while (++progress[cursor]==rdBound(accessTool,cursor)) {
-      progress[cursor--]=0;
-    }
-    valAccessed = rdLocateElement(accessTool,progress);
-    if (clientData) {
-      if (rdDatatype(accessTool)==REAL) {
-	addDSorted(&discCount, &dDiscList, *(double *)valAccessed);
-      } else {
-	addISorted(&discCount, &iDiscList, *(int*)valAccessed);
-      }
-    } else {
-      dval=(*scaleProc)(valAccessed);
-      if (valspan) {
-	tgt[count] = (unsigned char)(dval<valfor0?0:(dval>=valfor255?255:
-					 (255*(dval-valfor0)/valspan)));
-      } else { // no span: get values as doubles
-	((double*)tgt)[count]=dval;
-      }
-    }
-  }
-  // if doing discrete, make tcl array of results and free space
-  if (clientData) {
-    for (count=0; count<discCount; ++count) {
-      if (rdDatatype(accessTool)==REAL) {
-	spareObjPtr = Tcl_NewDoubleObj(dDiscList[count]);
-      } else {
-	spareObjPtr = Tcl_NewIntObj(iDiscList[count]);
-      }
-      Tcl_ListObjAppendElement(interp, resultPtr, spareObjPtr);
-    }
-    delete dDiscList;
-    delete iDiscList;
-  }
-  Tcl_SetObjResult(interp, resultPtr);
-  deleteRegularData(accessTool);
-  // might want to keep some of these if doing this every time step
-  return TCL_OK;
-}
-
-New version using nodeValues structure -- first its callback procs */
-
-void add_to_size(void* spareValue, int spareOffset, void* sizePtr) {
-  // sizePtr is actually an integer pointer
-  ++(*(int*)sizePtr);
-}
-
-// structures to treat last arg of callback as 
-typedef struct addSorted_pt {
-  int baseType;
-  int *discCount;
-  double **dPtrDiscList;
-} addSortedParms;
-
-// only doubles work for now, add ints to this later
-void addSorted(void* values, int offset, addSortedParms* cbData) {
-  //void addDSorted(int* discCount, double** dPtrDiscList, double newVal) {
-  double *spareArr, **dPtrDiscList, newVal;
-  int count, exp, bigexp, *discCount;
-
-  if (cbData->baseType == REAL) 
-    newVal = ((double*)values)[offset];
-  else 
-    newVal = ((int*)values)[offset];
-  discCount = cbData->discCount;
-  dPtrDiscList = cbData->dPtrDiscList;
-
-  spareArr = *dPtrDiscList;
-  // straight search could be replaced by binary if more speed needed
-  for (count=0; count<*discCount; ++count) {
-    if (newVal==spareArr[count]) {
-      return;
-    } else if (newVal<spareArr[count]) {
-      break;
-    }
-  }
-  if (*discCount>=16 && frexp(*discCount,&bigexp)<frexp((*discCount)-1,&exp)) {
-    *dPtrDiscList = (double*)malloc(sizeof(double)*(int)(ldexp(1,bigexp)));
-    memmove(*dPtrDiscList, spareArr, count*sizeof(double));
-  }
-  memmove(*dPtrDiscList+count+1, spareArr+count, 
-	  (*discCount-count)*sizeof(double));
-  (*dPtrDiscList)[count] = newVal;
-  ++(*discCount);
-  if (*dPtrDiscList!=spareArr) free(spareArr);
-}
-
-// structures to treat last arg of callback as 
-typedef struct convert_pt {
-  int baseType;
-  unsigned char** tgtPtr;
-  double *valfor0, *valfor255;
-} convertParms;
-
-void convert_to_byte(void* values, int offset, convertParms* cbData) {
-  unsigned char** tgtPtr;
-  double valfor0, valfor255, thisVal;
-
-  valfor0 = *cbData->valfor0;
-  valfor255 = *cbData->valfor255;
-  if (cbData->baseType == REAL) 
-    thisVal = ((double*)values)[offset];
-  else 
-    thisVal = ((int*)values)[offset];
-
-//  sprintf(globMess, "Span is %lf to %lf; off %d, val %lf", valfor0, valfor255,
-//	  offset, values[offset]);
-//  showMess(globMess);
-  *((*cbData->tgtPtr)++) =
-    (unsigned char)(thisVal<valfor0?0:(thisVal>=valfor255?255:
-				       (255*(thisVal-valfor0)/
-					(valfor255-valfor0))));
-}
-
-void move_to_double(double* values, int offset, double** tgtPtr) {
-  *((*tgtPtr)++) = values[offset];
-}
-
-FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
-		 int argc, Tcl_Obj *CONST argv[]) {
-  int error;
-  double valfor0, valfor255, valspan, dval;
-  nodeValues* accessTool;
-  unsigned char* tgt;
-  int* progress;
-  int baseType, count, size;
-  Tcl_Obj *resultPtr, *spareObjPtr;
-  void* valAccessed;
-  char* nodeId;
-  char* myClientData[32];
-
-  double *dDiscList;
-  int discCount, *iDiscList;
-
-  if (clientData) {
-    // listing distinct vals
-    if (argc != 4) {
-      Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id caption");
-      return TCL_ERROR;
-    }
-  } else {
-    if (argc != 6) {
-      Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id caption lower_limit upper_limit");
-      return TCL_ERROR;
-    }
-
-    error = Tcl_GetDoubleFromObj(interp, argv[4], &valfor0);
-    if (error != TCL_OK) {
-      return error;
-    }
-    
-    error = Tcl_GetDoubleFromObj(interp, argv[5], &valfor255);
-    if (error != TCL_OK) {
-      return error;
-    }
-  }
-
-  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  error = Tcl_GetLongFromObj(interp, argv[2], &modelHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
-
-  nodeId = getNodeId(modelType, Tcl_GetStringFromObj(argv[3], NULL));
-  if (!nodeId) {
-    Tcl_AppendResult(interp, "No node with caption string ",
-		     Tcl_GetStringFromObj(argv[2], NULL), " found.",
-		     (char*)NULL);
-    return TCL_ERROR;
-  }
-  accessTool = get_raw_values(nodeId, modelHandle); 
-  // just got nodeId so assume it works!
-
-  valspan=valfor255-valfor0; // set to span
-
-  count = 0;
-  while (accessTool->dimSpecs[count]>=0) ++count; //stop at base data type
-  baseType=accessTool->dimSpecs[count];
-
-  size = 0;
-  call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
-		    add_to_size, (void*)&size);
-  // this increments size once for each value
-
-  resultPtr = Tcl_NewObj();
-  if (!clientData) {
-    if (valspan) {
-      Tcl_SetByteArrayLength(resultPtr, size);
-    } else { // no span: get values as floats
-      Tcl_SetByteArrayLength(resultPtr, size*sizeof(double));
-    }
-    tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
-  } else {
-    dDiscList = (double*)malloc(sizeof(double)*16);
-    iDiscList = (int*)malloc(sizeof(int)*16);
-  }
-
-  discCount=0;
-  if (clientData) {
-    ((addSortedParms*)myClientData)->baseType = baseType; 
-    ((addSortedParms*)myClientData)->discCount = &discCount; 
-    ((addSortedParms*)myClientData)->dPtrDiscList = &dDiscList;
-    call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
-		      (valCallback*)addSorted, myClientData);
-  } else {
-    ((convertParms*)myClientData)->tgtPtr = &tgt; 
-    // not sure why I must cast a pointer rather than the structure itself
-    // must be passed every call so increment it
-    if (valspan) {
-      ((convertParms*)myClientData)->baseType = baseType; 
-      ((convertParms*)myClientData)->valfor0 = &valfor0;
-      ((convertParms*)myClientData)->valfor255 = &valfor255;
-	call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0, 
-			  (valCallback*)convert_to_byte, myClientData);
-    } else { // no span: get values as doubles
-	call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
-			  (valCallback*)move_to_double, &tgt);
-    }
-  }
-
-  // if doing distinct vals, make tcl array of results and free space
-  // (new for 5.3; first val is total member count)
-  if (clientData) {
-    Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewIntObj(size));
-    for (count=0; count<discCount; ++count) {
-      if (baseType==REAL) {
-	spareObjPtr = Tcl_NewDoubleObj(dDiscList[count]);
-      } else {
-	spareObjPtr = Tcl_NewIntObj(iDiscList[count]);
-      }
-      Tcl_ListObjAppendElement(interp, resultPtr, spareObjPtr);
-    }
-    free(dDiscList);
-    free(iDiscList);
-  }
-  Tcl_SetObjResult(interp, resultPtr);
-  free_bloc_data(accessTool->contents, accessTool->dimSpecs);
-  free(accessTool);
-  return TCL_OK;
 }
 
 FINDABLE int listobjCmd(ClientData clientData, Tcl_Interp *interp, 
@@ -1972,6 +1491,9 @@ BOOLEAN outeract_gui(void* id, BOOLEAN stop_chk, double now) {
   BOOLEAN response;
 
   Tcl_Obj* feedbackCmd;
+  Tcl_VarEval(globInterp, "update", NULL); // allow display to tell us if idle
+  if (!Tcl_GetVar(globInterp, "dispDone", 0))
+    return 0; // do not wait for GUI if busy
   if (stop_chk) {
     feedbackCmd = Tcl_NewStringObj("InteractGUI", -1);
     Tcl_ListObjAppendElement(globInterp, feedbackCmd,
@@ -1984,6 +1506,8 @@ BOOLEAN outeract_gui(void* id, BOOLEAN stop_chk, double now) {
 			     Tcl_NewLongObj((long int)id));
   }
   Tcl_EvalObjEx(globInterp, feedbackCmd, 0);
+
+  /* if anything like this at all is done, it will communicate with tsv's */
   Tcl_GetIntFromObj(globInterp, Tcl_GetObjResult(globInterp), &response);
   return response;
 }
@@ -2054,8 +1578,10 @@ char edition[]="enterprise";
 void crash (Tcl_Interp *interp, const char *cause) {
  /* oh dear. */
  /* oh dear, oh dear. */
-  Tcl_VarEval(interp, "ShowMessage {Authorization failure} error {Bad ", cause, " authorization. Simile will now exit.} ok", NULL);
-  Tcl_Exit(-1);
+  // fat chance, we have no Tk in the exec interpreter
+  //  Tcl_VarEval(interp, "ShowMessage {Authorization failure} error {Bad ", cause, " authorization. Simile will now exit.} ok", NULL);
+  // Tcl_Exit(-1);
+  strcpy(NULL, secret); // that should screw it up nicely
 }	 
 #ifdef USE_MY_HMAC
 int my_md5(Tcl_Interp *interp, Tcl_Obj* text) {
@@ -2144,13 +1670,13 @@ FINDABLE int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
      Tcl_WrongNumArgs(interp, 1, argv, "source_string");
      return TCL_ERROR;
    }
-   /* set ModelText [mime::getbody $Part($Model)] */
-   if (Tcl_VarEval(interp, "set hvfe587gw938 [mime::getbody ", 
-
-	       Tcl_GetStringFromObj(argv[1], NULL), "]", NULL) != TCL_OK) {
+   /* set ModelText [mime::getbody $Part($Model)]
+   if (Tcl_VarEval(interp, "set hvfe587gw938 ", 
+		   Tcl_GetStringFromObj(argv[1], NULL), NULL) != TCL_OK) {
      return TCL_ERROR;
    }
-   /* regexp {edition=([^,]*),} $ModelText all putativeEdition */
+   regexp {edition=([^,]*),} $ModelText all putativeEdition */
+   Tcl_SetVar2Ex(interp, "hvfe587gw938", NULL, argv[1], 0);
    if (Tcl_VarEval(interp, 
 		   "regexp {edition=([^,]*),} $hvfe587gw938 all h76rt4g7",
 		   NULL) != TCL_OK) {
@@ -2173,27 +1699,28 @@ from our little secret -- after checking that the edition specified is right */
 
 FINDABLE int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
-  if (argc != 2) {
-    Tcl_WrongNumArgs(interp, 1, argv, "source_string");
+  if (argc != 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "source_string code");
     return TCL_ERROR;
   }
-  /* set ModelText [mime::getbody $Part($Model)] */
+  /* set ModelText [mime::getbody $Part($Model)]
   if (Tcl_VarEval(interp, "set hvfe587gw938 [mime::getbody ", 
 		  Tcl_GetStringFromObj(argv[1], NULL), "]", NULL) != TCL_OK) {
     return TCL_ERROR;
-  }
+    } */
 #ifdef USE_MY_HMAC
-  if (my_hmac(interp, secret, Tcl_GetVar(interp, "hvfe587gw938", 0)) != TCL_OK) {
+  if (my_hmac(interp, secret, Tcl_GetStringFromObj(argv[1], NULL)) != TCL_OK) {
     return TCL_ERROR;
   }
 #else
+  Tcl_SetVar2Ex(interp, "hvfe587gw938", NULL, argv[1], 0);
   if (Tcl_VarEval(interp, "::md5::hmac ", secret, " $hvfe587gw938", NULL) != TCL_OK) {
     return TCL_ERROR;
   }
 #endif
 
   /* check it matches what we got before */
-  if (strcmp(Tcl_GetVar(interp, "AuthCode", 0), Tcl_GetStringResult(interp))) {
+  if (strcmp(Tcl_GetStringFromObj(argv[2],NULL), Tcl_GetStringResult(interp))) {
     crash(interp, "model");
   }
   
@@ -2260,7 +1787,7 @@ int licenseRight (Tcl_Interp *interp) {
   Tcl_Obj* dataCombo;
   const char* offered;
 
-  dataCombo = Tcl_GetVar2Ex(interp, "userinfo", "name", TCL_LEAVE_ERR_MSG);
+  dataCombo = Tcl_GetVar2Ex(interp, "env", "licensee_name", TCL_LEAVE_ERR_MSG);
   if (dataCombo) {
     dataCombo = Tcl_DuplicateObj(dataCombo);
   } else {
@@ -2271,17 +1798,16 @@ int licenseRight (Tcl_Interp *interp) {
     return -1;
   }
 #else
-  if (Tcl_VarEval(interp, "::md5::md5 $userinfo(name)%$userinfo(edn)^", 
-		  secret, NULL) != TCL_OK) {
+  char md5cmd[] = "::md5::md5 $env(licensee_name)%$env(user,edn)^";
+  if (Tcl_VarEval(interp, md5cmd, secret, NULL) != TCL_OK) {
     /* raise another error so user doesnt see secret in trace */
-    Tcl_VarEval(interp, "::md5::md5 $userinfo(name)%$userinfo(edn)^<secret>", 
-		NULL);
+    Tcl_VarEval(interp, md5cmd, "<secret>", NULL);
     return -1;
   }
 #endif
 
   /* check it matches what we got before */
-  offered = Tcl_GetVar2(interp, "userinfo", "license_code", 0);
+  offered = Tcl_GetVar2(interp, "env", "license_code", 0);
   if (!offered || strncmp(offered, Tcl_GetStringResult(interp), 10)) {
 //    Tcl_AppendResult(interp, " is license code", (char *)NULL);
 //    return -1;
@@ -2301,9 +1827,9 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   /* Data about version etc held in dll for safety and convenience:
      these will become globals because we are not in the scope of a
      procedure */
-  Tcl_SetVar2Ex(interp, "userinfo", "final_expiry", 
+  Tcl_SetVar2Ex(interp, "env", "user,final_expiry", 
 		Tcl_NewLongObj(SIM_FINAL_EXPIRY), 0);
-  Tcl_SetVar2Ex(interp, "userinfo", "days_after_install", 
+  Tcl_SetVar2Ex(interp, "env", "user,days_after_install", 
 		Tcl_NewIntObj(SIM_DAYS_AFTER_INSTALL), 0);
   switch (licenseRight(interp)) {
   case -1:
@@ -2378,17 +1904,11 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_CreateObjCommand(interp, "graph_table", graphCmd, (ClientData)NULL,
 		       (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "extract", extractCmd, (ClientData)NULL,
+  Tcl_CreateObjCommand(interp, "handle_data", handleDataCmd, (ClientData)NULL,
 		       (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "insert", extractCmd, (ClientData)1,
-		       (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "extract_binary", extractBinCmd, 
+  Tcl_CreateObjCommand(interp, "free_data_handle", freeDataHandleCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "distinct_values", extractBinCmd, 
-		       (ClientData)1, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "getnodeid", getnodeidCmd, (ClientData)NULL,
 		       (Tcl_CmdDeleteProc *)NULL);
@@ -2473,7 +1993,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
   /* Use the Tcl Stubs mechanism */
   Tcl_InitStubs(interp, pkgName, 0);
-  Tcl_SetVar2(interp, "userinfo", "edn", edition, 0);
+  Tcl_SetVar2(interp, "env", "user,edn", edition, 0);
   Tcl_CreateObjCommand(interp, "c_testlicense", testlicenseCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   Tcl_CreateObjCommand(interp, "loadcommands", loadcmdsCmd, 

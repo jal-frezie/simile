@@ -649,7 +649,7 @@ finish_old_edit(NextEdit) :-
 		    name(Name, NameStr),
 			member(Dodgy, "\\./"),
 			member(Dodgy, NameStr),
-			sicstus_format_to_chars("Cannot rename ~a. The name ~a contains potentially confusing symbols ~s.",
+			sicstus_format_to_chars("Cannot rename ~a. The name ~a contains potentially confusing symbols \"~s\".",
 				[OldName, Name, [Dodgy]], Blurb)), !,
 		    sicstus_format_to_chars("Error renaming node ~a.",
 					    [OldName], Head),

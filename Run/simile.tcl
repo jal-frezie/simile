@@ -370,23 +370,26 @@ switch $env(prologId) {
 
 switch $tcl_platform(platform) {
     windows {
+	set archExtn {}
 	set execExtn .exe
     } unix {
 	if {[string equal Darwin $tcl_platform(os)]} {
-	    set execExtn _$tcl_platform(machine)
-	    if {[string equal "_Power Macintosh" $execExtn]} { ;# too long
-		set execExtn _ppc
+	    set archExtn _$tcl_platform(machine)
+	    if {[string equal "_Power Macintosh" archExtn]} { ;# too long
+		set env(archExtn) _ppc
 	    }
 	} else {
-	    set execExtn {}
+	    set archExtn {}
 	}
+	set execExtn {}
     }
 }
+set env(slTail) $archExtn[info sharedlibextension]
 
 switch $env(interfaceId) {
     pipe {
 #	set whatCalled [file rootname [file tail [info nameofexecutable]]]
-	set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
+	set PROLOG_CMD $SIMILE_PATH/$tgt$archExtn$execExtn
 	source ../Run/toolbox.tcl
 	source ../Run/prolog.tcl
 # next bit was to enable same file as simile.exe to use as script launcher
@@ -400,7 +403,7 @@ switch $env(interfaceId) {
 #	console show
 #    }
     } dll {
-	exec $SIMILE_PATH/$tgt$execExtn &
+	exec $SIMILE_PATH/$tgt$archExtn$execExtn &
     } console {
 	set ::argv0 {} ;# stops error message loading tclmath
 	source ../Run/toolbox.tcl

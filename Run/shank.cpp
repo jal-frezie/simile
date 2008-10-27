@@ -125,19 +125,10 @@ BOOLEAN check_gui(void* id, double model_time, int this_op) {
   this_update=clock();
   took[last_op]=this_update-last_exit;
   
-  if ((this_update-last_update)>flash) {
+  if ((this_update-last_update)+took[this_op]>flash) {
     while_running = topType;
     while_resetting = resetting;
-    result=interact_gui(id, 1+!last_op, model_time);
-    topType = while_running;
-    resetting = while_resetting;
-    this_update=clock(); // GUI may have taken time
-    last_update=last_check=this_update;
-  }
-  if (took[this_op]>flash) {
-    while_running = topType;
-    while_resetting = resetting;
-    result=result||interact_gui(id, 1+!this_op, model_time);
+    result=interact_gui(id, 1+!this_op, model_time);
     topType = while_running;
     resetting = while_resetting;
     this_update=clock(); // GUI may have taken time
@@ -223,23 +214,11 @@ void release_graph_data(graph_data_type *graph_data_pointer) {
 }
 
 #ifdef __OPENMP
-drand48_data* rand_states;
-void setup_randoms() {
-  int tnum = 0;
-#pragma omp parallel
-  ++tnum;
-
-  rand_states = new drand48_data[tnum];
-  for (int coo=0; coo<tnum; ++coo)
-    srand48_r(coo, rand_states+coo);
-}
-
-double rand_fract() {
-  double result;
-  drand48_r(rand_states+omp_get_thread_num(), &result);
-  return result;
-}
+#define PLUS_THREAD_NUM +omp_get_thread_num()
 #else
+#define PLUS_THREAD_NUM
+#endif
+#ifdef WIN32
 void setup_randoms() {
 }
 
@@ -252,6 +231,24 @@ case we may use several random numbers to get a random double. */
 	fraction = fraction+precise*rand();
     }
     return fraction;
+}
+#else
+unsigned short (*rand_states)[3];
+void setup_randoms() {
+  int coo, tnum = 0;
+#pragma omp parallel
+  ++tnum;
+
+  rand_states = new unsigned short[tnum][3];
+  for (coo=0; coo<tnum; ++coo) {
+    rand_states[coo][0] = 12345;
+    rand_states[coo][1] = 6789;
+    rand_states[coo][2] = 10000+coo;
+  }
+}
+
+double rand_fract() {
+  return erand48(rand_states[0 PLUS_THREAD_NUM]);
 }
 #endif
 
@@ -447,31 +444,6 @@ char* interpolate_bloc_data(char* loSource, char* hiSource, int* ptDims,
 				    + *((int*)loSource+count)*(1-interFract));
   }
   return newData;
-}
-
-void call_for_each_val(int* ptDims, char* ptData, int offset,
-		       valCallback callback_proc, void* cbData) {
-  int count;
-  sizeAndPtr* convenience;
-  switch (ptDims[0]) {
-  case OWNSIZED:
-    convenience = (sizeAndPtr*)ptData + offset;
-    for (count=0; count<convenience->size; ++count) {
-      call_for_each_val(ptDims+1, convenience->ptr, count,
-			callback_proc, cbData);
-    }
-    break;
-  case SPARSEARRAY: // or any other kind this doesn't handle yet
-    //do the necessary
-    break;
-  default:
-    if (ptDims[0]>0)
-      for (count=0; count<ptDims[0]; ++count)
-	call_for_each_val(ptDims+1, ptData,
-			  ptDims[0]*offset+count, callback_proc, cbData);
-    else // a base value, callback proc should know what sort
-      (*callback_proc)(ptData, offset, cbData);
-  }
 }
 
 void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
@@ -919,7 +891,8 @@ showMess(globMess); */
       big_phase = phase_for(xtime, freq, phases);
       // that is the biggest phase we will try to run, we may not succeed
       if (check_gui(id, xtime, big_phase)) {
-	userDefStop->excpNo = -100; // should not conflict with os signal numbers
+	userDefStop->excpNo = -100; // should not conflict with os signals
+	*end = xtime;
 	return userDefStop;
       }
       while(!made_step) {
@@ -949,22 +922,18 @@ showMess(globMess); */
 	    setdt(-2,0);
 	  }
 	  (*updatemodel)(id, big_phase);
-	  if (userDefStop->excpNo=rk_update(id, big_phase)) {
-	    *end=xtime;
-	    return userDefStop;
-	  }
+	  userDefStop->excpNo=rk_update(id, big_phase);
 	  break;
 	}
+	if (userDefStop->excpNo) break; // from inner loop
 	first_pass = 0;
 	if (!errlim) {
 	  made_step = 1;
 	} else {
+	  if (userDefStop->excpNo=(*evalmodel)(id, big_phase)) break;
+	  // from inner loop
+
 	  // get the model to generate its error estimate
-	  if (err=(*evalmodel)(id, big_phase)) {
-	    userDefStop->excpNo=err;
-	    *end=xtime;
-	    return userDefStop;
-	  }
 	  *adapt_maxerr = 0;
 	  setdt(10, 0);
 	  (*updatemodel)(id, big_phase);
@@ -978,9 +947,8 @@ showMess(globMess); */
 	      big_phase = phase_for(xtime, freq, phases);
 	    } else {
 	      // signal problem
-	      check_gui(id, xtime, 0);
 	      userDefStop->excpNo = -99;
-	      return userDefStop;
+	      break;
 	    }
 	  } else {
 	    made_step = 1;
@@ -992,20 +960,16 @@ showMess(globMess); */
 	  } // timestep too short or not
 	} // error limit exists
       } // made progress
-      if (err=(*evalmodel)(id, big_phase)) {
-	userDefStop->excpNo=err;
-	*end=xtime;
-      } else
-	(*advancemodel)(id, big_phase);
-      if (userDefStop->excpNo) {
-	*end=xtime;
-	return userDefStop;
-      }
+      if (userDefStop->excpNo) break; // from outer loop
+      if (userDefStop->excpNo=(*evalmodel)(id, big_phase)) break;
+      (*advancemodel)(id, big_phase);
     }
-    if (interact_gui(id, 2, *end)) { // always go to make sure time is right
+    if (check_gui(id, *end, 0) && !userDefStop->excpNo)
+      // always go to make sure time is right
       userDefStop->excpNo = -100;
-      return userDefStop; // should not conflict with os signal numbers
-    }
+    *end=xtime;
+    if (userDefStop->excpNo)
+      return userDefStop;
     return NULL;
   }
   

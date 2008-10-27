@@ -54,7 +54,9 @@ endif
 	FLAGS = $(OPT)
 	SLDIR = bin
 	SHAREDLIBPREFX = 
+	MAKESL = -shared
 	VERS = 84
+	USETCL = -I../System/include/tcl -L../System/lib ../System/lib/tclstub$(VERS).lib
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = .exe
 	INSTLIB = Run/install.dll
@@ -67,7 +69,9 @@ ifeq ($(UNAME),Darwin)
 	endif
 	SLDIR = lib
 	SHAREDLIBPREFX = lib
+	MAKESL = -fPIC -dynamiclib
 	VERS = 8.4
+	USETCL =  -F../../Frameworks -framework Tcl
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
 	INSTLIB = 
 	MAIN = 
@@ -76,7 +80,9 @@ ifeq ($(UNAME),Linux)
 	FLAGS = $(OPT) -m32
 	SLDIR = lib
 	SHAREDLIBPREFX = lib
+	MAKESL = -fPIC -shared
 	VERS = 8.4
+	USETCL = -I../System/include/tcl -L../System/lib -ltclstub$(VERS)
 	SHAREDLIBEXTN = .so
 	ARCHEXTN =
 	INSTLIB = 
@@ -89,8 +95,9 @@ ifeq ($(PROLOG),SICSTUS)
 endif
 
 SHIM = System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN)
+UNPK = System/lib/Stubs/$(SHAREDLIBPREFX)unpacker$(VERS)$(SHAREDLIBEXTN)
 
-simile: $(PROLOGSTATE) System/bin/relay$(ARCHEXTN) $(SHIM) \
+simile: $(PROLOGSTATE) System/bin/relay$(ARCHEXTN) $(SHIM) $(UNPK) \
 	System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) $(INSTLIB) $(MAIN)
 
 ifeq ($(ARCHEXTN),_i386)
@@ -146,10 +153,13 @@ vpath 	%.tcl 	Run
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
-System/lib/Stubs/ame_dll84.dll: ame_cmx.c dllcalls.h System/bin/5d.dll
-	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include/tcl \
-		-shared -o ../$(SHIM) ame_cmx.c \
-		../System/lib/tclstub84.lib -L../System/lib -l5ddll; cd ..
+System/lib/Stubs/ame_dll$(VERS).dll: ame_cmx.c dllcalls.h
+	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. \
+		$(MAKESL) -o ../$(SHIM) ame_cmx.c $(USETCL) -l5ddll; cd ..
+
+$(UNPK): unpacker.c dllcalls.h
+	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. \
+		$(MAKESL) -o ../$(UNPK) ./unpacker.c $(USETCL); cd ..
 
 System/lib/Stubs/libame_dll$(VERS).so: \
 		ame_cmx.c dllcalls.h System/lib/lib5d.so
@@ -163,7 +173,6 @@ System/lib/Stubs/libame_dll$(VERS)$(ARCHEXTN).dylib: \
 		ame_cmx.c dllcalls.h System/lib/lib5d$(ARCHEXTN).dylib
 	cd Run; \
 	$(GCCCMD) -fPIC $(FLAGS) $(DEFNS) -I. \
-		-I../../Frameworks/Tcl.framework/Headers \
 		-dynamiclib -o ../$(SHIM) ame_cmx.c -F../../Frameworks \
 		-framework Tcl -L../System/lib -l5d$(ARCHEXTN); cd ..; \
 	install_name_tool -change \

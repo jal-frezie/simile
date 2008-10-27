@@ -11,16 +11,22 @@
 # JAT: this is very old, Windows vs Linux are decided by separate version
 # numbers rather than checking [info sharedlibextension]
 
-global env execExtn
+global env
 if {![catch {set vers $env(SIMILE_VERSION)}]} {
     package ifneeded Ame_dll 8.4.$vers.0 \
 	[list load [file join $dir ame_dll84.dll]]
     package ifneeded Ame_dll 8.5.$vers.0 \
 	[list load [file join $dir ame_dll85.dll]]
     package ifneeded Ame_dll 8.4.$vers.1 \
-	[list load [file join $dir \
-			libame_dll8.4$execExtn[info sharedlibextension]]]
+	[list load [file join $dir libame_dll8.4$env(slTail)]]
     package ifneeded Ame_dll 8.5.$vers.1 \
-	[list load [file join $dir \
-			libame_dll8.5$execExtn[info sharedlibextension]]]
+	[list load [file join $dir libame_dll8.5$env(slTail)]]
+
+    if {[string equal .dll $env(slTail)]} {
+	package ifneeded Unpacker 1.0 \
+	    [list load [file join $dir unpacker84$env(slTail)]]
+    } else {
+	package ifneeded Unpacker $vers \
+	    [list load [file join $dir libunpacker8.4$env(slTail)]]
+    }
 }

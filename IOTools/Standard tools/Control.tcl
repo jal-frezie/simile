@@ -212,35 +212,19 @@ namespace eval runcontrol33857 {
     }
 
     proc SetMode { node action } {
-	global runState
         variable sendvars
-        
-# Do not allow button actions if merely checking for abort
-#	while {$sendvars($node,busy)} {
-#	    tkwait variable sendvars($node,busy)
-#	}
 
-	if {[info exists sendvars($node,waitFrom)]} {
-	    set sendvars($node,checkOn) 1
-	} else {
-	    if {[string match stop $sendvars($node,currentMode)]} {
-		switchMode $node $action
-	    } else {
-		if {[string match reset $sendvars($node,currentMode)]} {
-		    set sendvars($node,currentMode) stop
-		} else {
-		    set sendvars($node,currentMode) $action
-		}
-		set sendvars($node,waitFrom) [clock clicks -milliseconds]
-		set sendvars($node,checkOn) 0
-	    } 
+        set sendvars($node,currentMode) $action
+	if {!$sendvars($node,busy)} { ;# do action now
+	    switchMode $node
 	}
     }
 
-    proc switchMode {node action} {
+    proc switchMode {node} {
 	global runState
         variable sendvars
 
+	set action $sendvars($node,currentMode)
 	if {[do_in_editor set runState($node,updated)]} {
 	    set updateChoice [ShowMessage "Model out of date" warning \
 				  "The model has been altered since the curent runnable version was built. Rebuild it now?" yesnocancel]
@@ -345,6 +329,7 @@ namespace eval runcontrol33857 {
 
     proc UpdateBar {node now col} {
 	global runState
+	variable sendvars
         set runState($node,currentTime) [format %.8g $now]
         set runState($node,timeReached) [format %.8g $now]
 	# so I can check if entry edited
@@ -355,6 +340,7 @@ namespace eval runcontrol33857 {
 		     $runState($node,run_length)]
 	}
 	$runState($node,cnvs) itemconfigure 1 -fill $col
+	return [string compare start $sendvars($node,currentMode)]
     }
 
 # This is called back from the model execution process whenever
@@ -365,19 +351,14 @@ namespace eval runcontrol33857 {
 # or reset execution
 
     proc RCInteractGUI {myNode current col} {
+	global updateLastDone 
 	variable sendvars
-	UpdateBar $myNode [expr $current/$sendvars($myNode,unitLength)] $col
-	set sendvars($myNode,busy) 0
+
+	set endRun [UpdateBar $myNode \
+			[expr $current/$sendvars($myNode,unitLength)] $col]
 	update
-	set sendvars($myNode,busy) 1
-	if {[info exists sendvars($myNode,waitFrom)]} {
-	    unset sendvars($myNode,waitFrom)
-	    if {[string compare stop $sendvars($myNode,currentMode)]} {
-		switchMode $myNode $sendvars($myNode,currentMode)
-	    }
-	    return 1
-	}
-	return 0
+	set updateLastDone [clock clicks -milliseconds]
+	return $endRun
     }
 
     proc StoreTime {node} {
@@ -459,12 +440,12 @@ namespace eval runcontrol33857 {
 		}
                 if {$redoPhase($node) < 1} {
 		    if {$display} {
-			TellAllHelpers $node Reset
+			TellAllHelpers $node {} Reset
 		    }
 		    set sendvars($node,currentMode) stop
                 }
                 if {$display} {
-		    TellAllHelpers $node Display $current $display $update
+		    TellAllHelpers $node {} Display $current $display $update
 		}
 	    } else {
 		set sendvars($node,currentMode) exit
@@ -484,9 +465,15 @@ namespace eval runcontrol33857 {
 	    set maxErr 0
 	}
 	if {[string equal start $sendvars($node,currentMode)]} {
-	    set sendvars($node,currentMode) \
-		[ExecuteTo $node $current $pause $sendvars($node,unitLength) \
-		     $display $maxErr]
+
+	    set modelAct \
+		[ExecuteTo $node $::model_id($node) $::instance_id($node) \
+		     $current $pause $sendvars($node,unitLength) $display \
+		     [ListFoci $node] $runState($node,intMethod) $maxErr]
+	    if {[string equal start $sendvars($node,currentMode)]} {
+		set sendvars($node,currentMode) $modelAct
+	    }
+	    switchMode $node
 	}
 	set current $runState($node,currentTime)
 	if {[string equal exit $sendvars($node,currentMode)]} {
@@ -507,77 +494,41 @@ namespace eval runcontrol33857 {
 	$widget.upper.topbuttons.start configure -command \
 	    "[namespace current]::SetMode $node start"
 	UpdateBar $node $current [RestingColour $node]
-	set sendvars($node,currentMode) stop
 	if {[info exists sendvars($node,waitFrom)]} {
 	    unset sendvars($node,waitFrom)
 	}
 	set sendvars($node,busy) 0
     }
 	    
-    proc ExecuteTo {node current pause unitLength display maxErr} {
-        global runState adapt
-
-	set forward [expr {$pause>$current}]
-	set scaled_current [expr {$current*$unitLength}]
-	set adapt(doublings) 0 ;# only relevant for tcl
-	if {$display} {
-	    set lastDisp [expr int($current/$display)]
-	}
-	set currentMode start
-	while {[lsearch {exit stop} $currentMode]==-1} {
-	    if {$display} {
-		set nextDisp [expr 1.0*$display*[incr lastDisp \
-						     [expr $forward*2-1]]]
-	    } else {
-		set nextDisp [expr 2*$pause-$current]
-	    }
-	    set current $nextDisp ;# INCREMENT IS HERE
-	    if {($current>$pause) == $forward} {
-		set current $pause
-	    }
-	    set scaled_next [expr {$current*$unitLength}]
-	    switch -- [ExecuteModel $node $runState($node,intMethod) \
-			 $scaled_current $scaled_next $maxErr] {
-			     -1 {
-				 set current $runState($node,currentTime)
-				 set currentMode exit
-			     } 0 {
-				 set current $runState($node,currentTime)
-				 set currentMode stop
-			     }
-			 } ;# default: keep going
-	    if {![info exists runState($node,cnvs)]} {
-		return $currentMode ;# run control window killed?
-	    }
-            if {$current==$nextDisp && ![string equal exit $currentMode]} {
-		if {![ResultsToGUI $node $current $display]} {
-		    set currentMode stop
+#    proc ResultsToGUI {node current display} {
+#	variable sendvars
+#	global runState
+#
+#	UpdateBar $node $current blue ;# so GetModelTime does right
+#	set success [TellAllHelpers $node Display $current $display 1]
+#	
+#	if {$runState($node,splimit)} {
+#	    set minStep [expr {1000/$runState($node,speedLimit)}]
+#	    set extraDelay [expr {$minStep-([clock clicks]-$sendvars($node,kickTime))/1000}]
+#	    after $extraDelay [namespace code [list StoreTime $node]]
+#	    set sendvars($node,busy) 0
+#	    vwait [namespace current]::sendvars($node,kickTime)
+#	    set sendvars($node,busy) 1
+#	}
+#	return $success
+#    }
+#
+    proc ListFoci {node} {
+	global helperTable
+	set allFoci {}
+	foreach {name inst} [array get helperTable *,whichInstance] {
+	    foreach focus $helperTable($inst,foci) {
+		if {[lsearch $allFoci $focus]==-1} {
+		    lappend allFoci $focus
 		}
 	    }
-	    set scaled_current $scaled_next
-	    if {$current==$pause} {
-		set currentMode stop
-	    }
 	}
-	return $currentMode
-    }
-
-    proc ResultsToGUI {node current display} {
-	variable sendvars
-	global runState
-
-	UpdateBar $node $current blue ;# so GetModelTime does right
-	set success [TellAllHelpers $node Display $current $display 1]
-	
-	if {$runState($node,splimit)} {
-	    set minStep [expr {1000/$runState($node,speedLimit)}]
-	    set extraDelay [expr {$minStep-([clock clicks]-$sendvars($node,kickTime))/1000}]
-	    after $extraDelay [namespace code [list StoreTime $node]]
-	    set sendvars($node,busy) 0
-	    vwait [namespace current]::sendvars($node,kickTime)
-	    set sendvars($node,busy) 1
-	}
-	return $success
+	return $allFoci
     }
 
 # This now only used in debug mode; c++ has its own interaction regulator
