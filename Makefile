@@ -50,15 +50,17 @@ ifeq ($(UNAME),MINGW32_NT-5.0)
 endif 
 
 # Default case: any Windows, any toolchain
-	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
+        # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	FLAGS = $(OPT)
 	SLDIR = bin
 	SHAREDLIBPREFX = 
 	MAKESL = -shared
 	VERS = 84
 	USETCL = -I../System/include/tcl -L../System/lib ../System/lib/tclstub$(VERS).lib
+	LOCALIZE_TCL_REFS =  ls # placebo command
 	SHAREDLIBEXTN = .dll
-	ARCHEXTN = .exe
+	ARCHEXTN =
+	EXECEXTN = .exe
 	INSTLIB = Run/install.dll
 	MAIN = System/bin/Simile.exe
 ifeq ($(UNAME),Darwin)
@@ -67,11 +69,15 @@ ifeq ($(UNAME),Darwin)
 	ifeq ($(ARCHEXTN),_Power Macintosh)
 		ARCHEXTN = _ppc
 	endif
+	EXECEXTN = $(ARCHEXTN)
 	SLDIR = lib
 	SHAREDLIBPREFX = lib
 	MAKESL = -fPIC -dynamiclib
 	VERS = 8.4
-	USETCL =  -F../../Frameworks -framework Tcl
+	USETCL =  -F../../Frameworks -framework Tcl -L../System/lib
+	LOCALIZE_TCL_REFS = install_name_tool -change \
+		/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
+		@executable_path/../Frameworks/Tcl.framework/Tcl
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
 	INSTLIB = 
 	MAIN = 
@@ -83,42 +89,51 @@ ifeq ($(UNAME),Linux)
 	MAKESL = -fPIC -shared
 	VERS = 8.4
 	USETCL = -I../System/include/tcl -L../System/lib -ltclstub$(VERS)
+	LOCALIZE_TCL_REFS = ls # placebo command
 	SHAREDLIBEXTN = .so
 	ARCHEXTN =
+	EXECEXTN =
 	INSTLIB = 
 	MAIN = 
 endif
 
-PROLOGSTATE = Run/xgsimile$(ARCHEXTN)
+PROLOGSTATE = Run/xgsimile$(EXECEXTN)
 ifeq ($(PROLOG),SICSTUS)
 	PROLOGSTATE = System/bin/main.sav
 endif
 
 SHIM = System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN)
 UNPK = System/lib/Stubs/$(SHAREDLIBPREFX)unpacker$(VERS)$(SHAREDLIBEXTN)
+SHANK = System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 
-simile: $(PROLOGSTATE) System/bin/relay$(ARCHEXTN) $(SHIM) $(UNPK) \
-	System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) $(INSTLIB) $(MAIN)
+simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) $(SHIM) $(UNPK) \
+	 $(INSTLIB) $(MAIN)
 
 ifeq ($(ARCHEXTN),_i386)
 # this saves going on the ppc mac to make the object files for each edition --
 # still need it to make Gnu Prolog executable though
 PPCSHIM = System/lib/Stubs/libame_dll$(VERS)_ppc.dylib
+PPCUNPK = System/lib/Stubs/libunpacker$(VERS)_ppc.dylib
 PPCSHANK = System/lib/lib5d_ppc.dylib
 PPCRELAY = System/bin/relay_ppc
-ppcbits: $(PPCSHIM) $(PPCSHANK) $(PPCRELAY)
-$(PPCSHIM): ame_cmx.c dllcalls.h System/lib/lib5d_ppc.dylib Makefile
+ppcbits: $(PPCSHIM) $(PPCUNPK) $(PPCRELAY)
+$(PPCSHIM): ame_cmx.c dllcalls.h $(PPCSHANK) Makefile
 	cd Run; \
 	$(GCCCMD) -arch ppc -fPIC $(FLAGS) $(DEFNS) \
 		-I. -I../../Frameworks/Tcl.framework/Headers \
 		-dynamiclib -o ../$(PPCSHIM) ame_cmx.c -F../../Frameworks \
 		-framework Tcl -L../System/lib -l5d_ppc; cd ..; \
-	install_name_tool -change \
-		/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
-		@executable_path/../Frameworks/Tcl.framework/Tcl $(PPCSHIM)
-$(PPCSHANK): shank.cpp dllcalls.h Makefile
+	 $(LOCALIZE_TCL_REFS) $(PPCSHIM)
+
+$(PPCUNPK): unpacker.c dllcalls.h
+	cd Run; $(GCCCMD) -arch ppc $(FLAGS) $(DEFNS) -I. \
+		$(MAKESL) -o ../$(PPCUNPK) unpacker.c $(USETCL); cd ..; \
+	$(LOCALIZE_TCL_REFS) $(UNPK)
+
+$(PPCSHANK): shank.cpp dllcalls.h
 	cd Run; $(GPPCMD) -arch ppc -O -fPIC $(FLAGS) -I. \
 		-dynamiclib $(PARALLEL) -o ../$(PPCSHANK) shank.cpp; cd ..
+
 $(PPCRELAY): Run/relay.c
 	cd Run; $(GCCCMD) -arch ppc $(FLAGS) -o ../$(PPCRELAY) relay.c; cd ..
 
@@ -140,7 +155,7 @@ System/bin/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl System/bin/struct_db.dl
 System/bin/struct_db.dll: struct_db.pl Prolog/struct_db.c
 	cd Prolog; splfr struct_db.pl struct_db.c; mv struct_db.dll ../System/bin; cd ..
 
-Run/xgsimile$(ARCHEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
+Run/xgsimile$(EXECEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C '$(FLAGS) -D_GNU_PROLOG' gmain$(ARCHEXTN).o struct_db.c; cd ..
 Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl
 	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c -C '$(FLAGS)' gmain.pl; cd ..
@@ -153,55 +168,39 @@ vpath 	%.tcl 	Run
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
-System/lib/Stubs/ame_dll$(VERS).dll: ame_cmx.c dllcalls.h
-	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. \
-		$(MAKESL) -o ../$(SHIM) ame_cmx.c $(USETCL) -l5ddll; cd ..
+$(SHIM): ame_cmx.c dllcalls.h $(SHANK) Makefile
+	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. $(MAKESL) \
+		-o ../$(SHIM) ame_cmx.c $(USETCL) -l5d$(ARCHEXTN); cd ..; \
+	$(LOCALIZE_TCL_REFS) $(SHIM)
 
 $(UNPK): unpacker.c dllcalls.h
 	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. \
-		$(MAKESL) -o ../$(UNPK) ./unpacker.c $(USETCL); cd ..
+		$(MAKESL) -o ../$(UNPK) unpacker.c $(USETCL); cd ..; \
+	$(LOCALIZE_TCL_REFS) $(UNPK)
 
-System/lib/Stubs/libame_dll$(VERS).so: \
-		ame_cmx.c dllcalls.h System/lib/lib5d.so
-	cd Run; $(GCCCMD) -fPIC $(FLAGS) $(DEFNS) -I. -I../System/include/tcl \
-		-shared -o ../$(SHIM) -L../System/lib -ltclstub$(VERS) -l5d \
-		./ame_cmx.c; cd ..
-
-# 'before' arg of install_name_tool should be some gung-ho sed regexp on output
-# of otool but it did not work (why was this not needed for ppc?)
-System/lib/Stubs/libame_dll$(VERS)$(ARCHEXTN).dylib: \
-		ame_cmx.c dllcalls.h System/lib/lib5d$(ARCHEXTN).dylib
-	cd Run; \
-	$(GCCCMD) -fPIC $(FLAGS) $(DEFNS) -I. \
-		-dynamiclib -o ../$(SHIM) ame_cmx.c -F../../Frameworks \
-		-framework Tcl -L../System/lib -l5d$(ARCHEXTN); cd ..; \
-	install_name_tool -change \
-		/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
-		@executable_path/../Frameworks/Tcl.framework/Tcl $(SHIM)
-
-System/bin/5d.dll: shank.cpp dllcalls.h Makefile
-	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. -shared $(PARALLEL) -o 5d.dll \
-		-Wl,--out-implib,lib5ddll.a shank.cpp; \
-		mv 5d.dll ../System/bin; mv lib5ddll.a ../System/lib; cd ..
+System/bin/5d.dll: shank.cpp dllcalls.h
+	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. -shared $(PARALLEL) \
+		-o 5d.dll -Wl,--out-implib,lib5d.a shank.cpp; \
+		mv 5d.dll ../System/bin; mv lib5d.a ../System/lib; cd ..
 
 # not needed for Linux; Simile builds it when first run
-System/lib/lib5d.so: shank.cpp dllcalls.h Makefile
+System/lib/lib5d.so: shank.cpp dllcalls.h
 	cd Run; $(GPPCMD) -fPIC $(FLAGS) -I. -shared $(PARALLEL) \
-		-o ../System/lib/lib5d.so shank.cpp; cd ..
+		-o ../$(SHANK) shank.cpp; cd ..
 
 # gcc cannot build universal binary libraries for loading via ld
 # directly; build separately and load appropriate one at run time
 
-System/lib/lib5d$(ARCHEXTN).dylib: shank.cpp dllcalls.h Makefile
+System/lib/lib5d$(ARCHEXTN).dylib: shank.cpp dllcalls.h
 	cd Run; $(GPPCMD) -O -fPIC $(FLAGS) -I. -dynamiclib $(PARALLEL) \
-	-o ../System/lib/lib5d$(SHAREDLIBEXTN) shank.cpp; cd ..
+	-o ../$(SHANK) shank.cpp; cd ..
 
 Run/install.dll: install.cpp Makefile
 	cd Run; $(GPPCMD) $(FLAGS) $(DEFNS) -I. -I../System/include -shared \
 		-o install.dll install.cpp -L../System/lib -lcrypto -lssl; \
 		cd ..
 
-System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc Makefile
+System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc
 	cd Interp; windres -I../System/include/tcl -o rc.o Simile.rc; \
 	$(GCCCMD) $(FLAGS) -I../System/include/tcl \
 		-o ../System/bin/Simile.exe Simile.c rc.o \
@@ -221,8 +220,8 @@ System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc Makefile
 #	cd Run; $(WISHCMD) makedlls.tcl; cd ..
 #endif
 
-System/bin/relay$(ARCHEXTN): Run/relay.c
-	cd Run; $(GCCCMD) $(FLAGS) -o ../System/bin/relay$(ARCHEXTN) relay.c; \
+System/bin/relay$(EXECEXTN): Run/relay.c
+	cd Run; $(GCCCMD) $(FLAGS) -o ../System/bin/relay$(EXECEXTN) relay.c; \
 		cd ..
 
 # call clean after changing license info in this file

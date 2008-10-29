@@ -211,12 +211,22 @@ namespace eval runcontrol33857 {
 	}
     }
 
+    proc ShareAction {node} {
+	global execThread runState
+
+	if {[info exists execThread]} {
+	    tsv::set action $node 1
+	}
+    }
+
     proc SetMode { node action } {
         variable sendvars
 
         set sendvars($node,currentMode) $action
 	if {!$sendvars($node,busy)} { ;# do action now
 	    switchMode $node
+	} else {
+	    ShareAction $node
 	}
     }
 
@@ -466,8 +476,7 @@ namespace eval runcontrol33857 {
 	}
 	if {[string equal start $sendvars($node,currentMode)]} {
 
-	    set modelAct \
-		[ExecuteTo $node $::model_id($node) $::instance_id($node) \
+	    set modelAct [ExecuteTo $node \
 		     $current $pause $sendvars($node,unitLength) $display \
 		     [ListFoci $node] $runState($node,intMethod) $maxErr]
 	    if {[string equal start $sendvars($node,currentMode)]} {

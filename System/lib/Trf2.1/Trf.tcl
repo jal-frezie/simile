@@ -5,4 +5,3 @@ switch [info sharedlibextension] {
 }
 set dir [file dirname [info script]]
 load [file join $dir $trfPkg]
-package provide Trf 2.1

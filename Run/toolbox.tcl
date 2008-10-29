@@ -300,7 +300,6 @@ proc do_for_node {node args} {
 	if {[string equal interp $runHow(call)]} {
 	    set runState($node,interp) [interp create]
 	    $runState($node,interp) eval set runHow $runHow(return)
-	    $runState($node,interp) eval source ../Run/support.tcl
 	} else {
 #	    scan [info tclversion] {%d.%d} MAJ MIN
 	    if {[string equal windows $tcl_platform(platform)]} {
@@ -535,8 +534,14 @@ proc DestroyHelpers {node} {
 }
 
 proc load_dll {topNode lang progDir id node incs} {
-    return [do_for_node $topNode \
-		ex_load_dll $topNode $lang $progDir $id $node $incs]
+    if {[catch {ex_load_dll $topNode $lang $progDir $id $node $incs} \
+	     new_model_id]} {
+	if {[PrefValue custom(hackBreak) hackBreak]} {
+	    ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $new_model_id -- the program will attempt to build another one." ok
+	}
+	return 0
+    }
+    return $new_model_id
 }
 
 proc ReuseSourceCode {workingDir currentKey} {
@@ -713,7 +718,8 @@ proc LoadProgram {node lang} {
 	    ![info exists runState($node,currentTime)]} {
 	do_for_node $node SetRunParams $node $runState($node,runParams)
     }
-    if {[do_for_node $node update_executable $node $lang]} {
+    update_executable $node $lang
+    if {[do_for_node $node StartRun $node]} {
         ToggleIOToolMenu $node
 	if {[string equal home $runHow(where)]} {
 	    set myNode $node ;# cos new MRE will have focus
@@ -915,7 +921,7 @@ proc ControlDraw {prologVersion} {
     set execThread(id) [thread::create]
 
     if {[info exists execThread]} {
-	foreach stubCmd {load_c_stub_1 load_c_stub_2 get_auth_code check_auth_code loadmodel c_createmodel listobjects c_setstepmodel c_setparamarray c_cleartimeseries c_setwraparoundtime c_setfillmethod c_resetmodel getnodeid getvalue handle_data c_exitmodel} {
+	foreach stubCmd {load_c_stub_1 load_c_stub_2 get_auth_code check_auth_code c_setparamarray c_cleartimeseries c_setwraparoundtime c_setfillmethod ex_load_dll update_executable free_data_handle GetHandle ResetModel RunningInC GetTclCompProperty GetCCompProperty ExScrubRun} {
 	    proc $stubCmd {args} {
 		global execThread
 		#puts "exec bother [lindex [info level 0] 0]"
@@ -925,8 +931,7 @@ proc ControlDraw {prologVersion} {
 
 	proc ExecuteTo {args} {
 	    global execThread
-	    thread::send -async $execThread(id) \
-		[concat ExecuteTo $args [thread::id]] execThread(reply)
+	    thread::send -async $execThread(id) [info level 0] execThread(reply)
 	    vwait execThread(reply) ;# can process events and incoming messages
 	    return $execThread(reply)
 	}
@@ -934,10 +939,11 @@ proc ControlDraw {prologVersion} {
 
 	thread::send $execThread(id) [list source [file join $SIMILE_PATH Run \
 						       exec.tcl]]
+	load_c_stub_1 [thread::id]
     } else {
 	source [file join $SIMILE_PATH Run exec.tcl]
+	load_c_stub_1
     }
-    load_c_stub_1
 
     if {![string match windows $tcl_platform(platform)]} {
 # Windows installers can ask the user for a license code and stick it in the
@@ -1946,7 +1952,7 @@ proc UpdateAbility {c what where which whether} {
 }
 
 proc ToggleIOToolMenu {node} {
-    global window_info custom model_id tcl_platform
+    global window_info custom tcl_platform
     
     foreach win [array names window_info *,top_node] {
         if {[string equal $node $window_info($win)]} {

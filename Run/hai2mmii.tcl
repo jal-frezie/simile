@@ -8,12 +8,6 @@
 # things to pass information to and from the executing model. These are the definitions 
 # that are required for this purpose.
 #
-proc RunningInC {myNode} {
-    global model_id
-#    return 0
-    return $model_id($myNode) ;# it is ready
-} 
-    
 proc ExplainError {errList} {
     global myNode
     set origError $::errorInfo
@@ -148,19 +142,7 @@ proc MakeContext {levels} {
 }
 
 proc SetStep {node time phase} {
-    global model_id steps ts
-    if {![info exists model_id($node)]} {
-	WarnNoProgram $node
-    }
-    
-    if {$model_id($node)} {
-#puts "setstep $time $phase"
-	c_setstepmodel $model_id($node) $time $phase
-    } elseif {$phase>=0} { ;# lazy
-	set steps($phase) $time
-#    } else {
-#	set ts([expr {-$phase}]) $time
-    }
+    GetCompProperty $node SetStep $time $phase
 }
 
 proc TransEnums {transList vals} {
@@ -283,11 +265,13 @@ proc GetObjectList {} {
 proc GetModelValue { node } {
     global subbedPlots
     if {[info exists subbedPlots($node)]} {
-        set result [list [extract_list $subbedPlots($node)]]
-    } else {
-	set result [SetModelValue $node {}]
-    }
-    return $result
+	if {[llength $subbedPlots($node)]==3} { # is pointer to univ struct
+	    return [list [extract_list [lindex $subbedPlots($node) 2]]]
+	} else { # from tcl model or measured value from pest interface
+	    return [list $subbedPlots($node)]
+	}
+    } 
+    return [SetModelValue $node {}]
 }
 
 proc SetModelValue { node newVals } {
@@ -296,12 +280,26 @@ proc SetModelValue { node newVals } {
 }
 
 proc GetBinaryModelValue { node args } {
-    global myNode
+    global myNode subbedPlots
+    if {[info exists subbedPlots($node)]} {
+	if {[llength $subbedPlots($node)]==3} { # is pointer to univ struct
+	    return [list [extract_binary [lindex $subbedPlots($node) 2]]]
+	} else { # from tcl model or measured value from pest interface
+	    error "binary values not available"
+	}
+    }
     return [eval GetCompProperty $myNode Binary $node $args]
 }
 
 proc ListDistinctModelValues { node } {
-    global myNode
+    global myNode subbedPlots
+    if {[info exists subbedPlots($node)]} {
+	if {[llength $subbedPlots($node)]==3} { # is pointer to univ struct
+	    return [list [distinct_values [lindex $subbedPlots($node) 2]]]
+	} else { # from tcl model or measured value from pest interface
+	    error "binary values not available"
+	}
+    }
     return [eval GetCompProperty $myNode Distinct $node]
 }
 
@@ -401,11 +399,7 @@ proc ProdFromHelper {winId node caption} {
 }
 
 proc GetCompProperty {topNode prop args} {
-    global runState model_id
-#    puts "Getting top $topNode prop $prop arg0 [lindex $args 0] rest [lrange $args 1 end] interps [interp slaves]"	
-    if {![info exists model_id($topNode)]} {
-	WarnNoProgram $topNode
-    }
+    global runState
     switch -regexp $prop {
 	CurrentTime {
 	    return $runState($topNode,currentTime)
@@ -416,10 +410,17 @@ proc GetCompProperty {topNode prop args} {
 	    if {$runState($topNode,modelRunning)<=2} {
 		WarnNoData $topNode
 	    }
+	    if {[RunningInC $topNode]} { # do not go exec cos need unpacker
+		set hdl [GetHandle $topNode [lindex $args 0]]
+		set res [extract_list $hdl]
+		free_data_handle $hdl
+		return [list $res]
+	    }
+	    
 	}
     }
        
-    if {$model_id($topNode)} {
+    if {[RunningInC $topNode]} {
 	set result [eval GetCCompProperty $topNode $prop $args]
     } else {
 	set result [eval GetTclCompProperty $topNode $prop $args]
@@ -428,312 +429,22 @@ proc GetCompProperty {topNode prop args} {
 return $result
 }
 
-proc GetCCompProperty {topNode prop args} {
-    global model_id instance_id
-    set node [lindex $args 0]
-    set set [lrange $args 1 end]
-    # first do cases that don't need any other data
-    set numberWangs Caption|MinVal|MaxVal|Trans|Spec|Desc|Comment
-    switch -regexp $prop [list \
-	Objects {
-	    return [lrange [listobjects \
-				$model_id($topNode)] 1 end]
-	} Class|Type|Eval {
-	    array set propData [list Class,cIdx 11 Class,names \
-			    {SUBMODEL VARIABLE COMPARTMENT FLOW CONDITION \
-			       CREATION REPRODUCTION IMMIGRATION LOSS ALARM} \
-			    Type,cIdx 1 Type,names \
-			    {VALUELESS REAL INTEGER FLAG EXTERNAL} \
-			    Eval,cIdx 2 Eval,names \
-			    {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST}]
-	    set numericVal [c_getvalue $topNode $node $propData($prop,cIdx)]
-	    if {$numericVal<=-10} {
-		return ENUM([expr -10-$numericVal])
-	    } else {
-		return [lindex $propData($prop,names) $numericVal]
-	    }
-	} Dims {
-	    set specials {RECORDS MEMBERS SEPARATE START_VM END_VM}
-	    set fullList [c_getvalue $topNode $node 0]
-	    
-	    set idx 0
-	    foreach elt $fullList {
-		if {$elt<0} {
-		    lset fullList $idx [lindex $specials [expr -$elt-1]]
-		}
-		incr idx
-	    }
-	    # helper apps don't need to know about separate submodels so...
-	    while {[set sep [lsearch $fullList SEPARATE]]>-1} {
-		set fullList [lreplace $fullList $sep $sep]
-	    }
-	    return $fullList
-	} Graph {
-	    if {[llength $set]} {
-		eval {getvalue $model_id($topNode) $node 4} $set
-	    } else {
-		return [c_getvalue $topNode $node 3]
-	    }
-	} $numberWangs {
-	    set dataWang [lindex {5 6 8 12 13 14 15} \
-			      [lsearch [split $numberWangs |] $prop]]
-	    return [c_getvalue $topNode $node $dataWang]
-	} IdFromCapt {
-	    # node is actually caption in this case
-	    if {[catch {getnodeid $model_id($topNode) $node} id]} {
-		set id nomatch
-	    }
-	    return $id
-	} Value {
-	    set newVs [lindex $set 0]
-	    # new version -- remove list wrapping sometime
-	    if {[string length $newVs]} {
-		return [list [insert $model_id($topNode) \
-				  $instance_id($topNode) $node $newVs]]
-	    } else {
-		set res [list [extract_list [handle_data\
-				  $model_id($topNode) $instance_id($topNode) \
-						 $node]]]
-		return $res
-	    }
-	} Binary {
-	    return [eval extract_binary [list $model_id($topNode) \
-		$instance_id($topNode) [c_getvalue $topNode $node 5]] $set]
-	} Distinct {
-	    return [distinct_values $model_id($topNode) \
-		$instance_id($topNode) [c_getvalue $topNode $node 5]]
-	} default {
-#puts "GetCCompProperty $topNode $prop $args"
-	}
-			  ]
-}
-
-# wraps c++ defined version in different interp
-proc c_getvalue {topNode node action} {
-    global model_id
-    set res [getvalue $model_id($topNode) $node $action]
-    return $res
-}
-	    
-proc GetTclCompProperty {topNode prop args} {
-    global nodecount nodedata
-    set node [lindex $args 0]
-    set set [lrange $args 1 end]
-#    set nodecount [set nodecount]
-    # first do cases that don't need any other data
-    switch -regexp $prop {
-	Objects {
-	    set result {}
-# objects must be in order for ModelInspector to work
-	    for {set record 2} {$record<=$nodecount} {incr record} {
-		lappend result [lindex $nodedata($record) 0]
-	    }
-	    return $result
-	} Class|Type|Eval {
-	    array set propData [list Class 9 Type 0 Eval 3]
-	    set extracted [getinfo $node $propData($prop)]
-	    if {[string is integer $extracted]} {
-		return ENUM([expr -10-$extracted])
-	    } else {
-		return $extracted
-	    }
-	} Dims|Trans {
-	    set dimRefs [GetFullDims [findRecord $node] typeList]
-	    set count 0
-	    set transList {}
-	    while {$count<[llength $dimRefs]-1} {
-		set aDim [lindex $dimRefs $count]
-		if {[lsearch {START_VM END_VM} $aDim]>-1} {
-		} elseif {$aDim<=-10} {
-		    set usedET [lindex $typeList \
-				    [expr [llength $typeList]+$aDim+9]]
-		    lset dimRefs $count [lindex $usedET 0]
-		    lappend transList [lrange $usedET 1 end]
-		} else {
-		    lappend transList {}
-		}
-		incr count
-	    }
-	    if {[string equal Dims $prop]} {
-		return $dimRefs
-	    } else {
-		set vType [getinfo $node 0]
-		if {[string is integer $vType]} {
-		    set usedET [lindex $typeList \
-				    [expr [llength $typeList]+$vType+9]]
-		    lappend transList [lrange $usedET 1 end]
-		} elseif {[string equal FLAG $vType]} {
-		    lappend transList [list false true]
-		}
-		return $transList
-	    }
-	} Graph {
-	    set index [getinfo $node 6]
-	    if {[llength $set]} {
-		eval {setup_graph_data $index} $set
-	    } else {
-		return [graph_table 21 $index]
-	    }
-	} Caption {
-	    return [GetFullCaption [findRecord $node]]
-#ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
-	} IdFromCapt {
-	    foreach record [array names nodedata] {
-		if {![string equal GHOST [lindex $nodedata($record) 4]]} {
-		    if {[string equal $node \
-			     [GetFullCaption $nodedata($record)]]} {
-			return [lindex $nodedata($record) 0]
-		    }
-		}
-	    }
-	    return nomatch
-	} MinVal {
-	    getinfo $node 7
-	} MaxVal {
-	    getinfo $node 8
-	} Spec|Desc|Comment {
-	    set which [lsearch {Name Spec Desc Comment} $prop]
-	    set targetVar [lindex [getinfo $node 10] $which]
-	    if {![string equal NULL $targetVar]} {
-		return [set ::$targetVar]
-	    }
-	} Value {
-	    return [tcl_insert $node [lindex $set 0]]
-	} default {
-	    error "Property $prop not available in debug mode"
-	}
-    }
-}
-
-proc ParentLine {line} {
-    global nodedata
-    set handle [lindex $line 6]
-    if {[lindex $handle end-1]<0} {
-	set ptHand [lreplace $handle end-2 end 0]
-    } else {
-	set ptHand [lreplace $handle end-1 end 0]
-    }
-    foreach record [array names nodedata] {
-	if {[ListSameNumbers [lindex $nodedata($record) 6] $ptHand]} {
-	    return $nodedata($record)
-	}
-    }
-}    
-
-proc GetFullCaption {line} {
-    if {[llength [lindex $line 6]] < 3} {
-	return {}
-    } else {
-	set parentCapt [GetFullCaption [ParentLine $line]]
-	append parentCapt / [set ::[lindex [lindex $line 11] 0]]
-	return $parentCapt
-    }
-}				      
-
-proc TypeAsList {arrName count} {
-    upvar \#0 $arrName arrVal
-    upvar \#0 $arrVal($count,2) tName
-    set result [list $arrVal($count,1) $tName]
-    upvar \#0 $arrVal($count,3) arrTypes
-    for {set elt 1} {$elt<=$arrVal($count,1)} {incr elt} {
-	upvar \#0 $arrTypes($elt) arrTxt
-	lappend result $arrTxt
-    }
-    return $result
-}
-
-proc GetFullDims {line ETptrs} {
-#do_in_editor puts $handle
-    upvar 1 $ETptrs localETs
-    if {[llength [lindex $line 6]] < 3} {
-	set parentDims 0
-	set localETs {}
-    } else {
-	set ptLine [ParentLine $line]
-	set parentDims [GetFullDims $ptLine localETs]
-    }
-# add this levels type data -- reverse order cos outer models start list
-    set count [lindex $line 2]
-    while {$count} {
-	lappend localETs [TypeAsList [lindex $line 3] $count]
-	incr count -1
-    }
-# correct earlier enum type references to take account of this level
-    set count [llength $parentDims]
-    while {$count} {
-	incr count -1
-	set oVal [lindex $parentDims $count]
-	if {$oVal<=-10} {
-	    lset parentDims $count [expr $oVal-[lindex $line 2]]
-	}
-    }
-    set parentDims [concat [lrange $parentDims 0 end-1] [lindex $line 5]]
-    return $parentDims
-}				      
-	    
-#proc getinfo {topNode node field} {
-#    getinfo $node $field
-#}
-
-# this could be more efficient
-
 proc GetPhaseCount {topNode} {
-    global model_id phasecount
-    if {![info exists model_id($topNode)]} {
-	WarnNoProgram $topNode
-	return nomatch
-    }	
-    if {$model_id($topNode)} {
-	return [c_setstepmodel $model_id($topNode) 0 0]
-    } else {
-	return $phasecount
-    }
+    GetCompProperty $topNode SetStep 0 0
 }
 
 # these two are called from the model and handled by the client
-proc InteractGUI {handle modelTime flCol} {
+proc InteractGUI {node modelTime flCol} {
     global helperTable
 
-    return [$helperTable(RunControl)::RCInteractGUI [DecodeInstance $handle] \
+    set key [$helperTable(RunControl)::RCInteractGUI $node \
 		$modelTime [lindex {{} green blue} $flCol]]
+    return $key
 }
 
 proc AbortCheck {handle} {
     global helperTable model_id
     return [$helperTable(RunControl)::RCAbortCheck $model_id(running)]
-}
-
-proc DecodeInstance {handle} {
-    global instance_id
-    foreach {model h_id} [array get instance_id] {
-	if {$h_id==$handle} {
-	    return $model
-	}
-    }
-    return $handle
-}
-
-proc ResetModel {myNode redo} {
-    global model_id instance_id
-    if {![info exists model_id($myNode)]} {
-	WarnNoProgram $myNode
-	return 0
-    }	
-    if {[catch {
-	if {$model_id($myNode)} {
-	    set model_id(running) $myNode
-	    c_resetmodel $model_id($myNode) $instance_id($myNode) $redo
-	} else {
-	    TclResetModel $redo
-	}
-    } errList]} {
-	ExplainError $errList
-	set done 0
-    } else {
-	set done 1
-    }
-    InteractGUI $instance_id($myNode) 0 2
-    return $done
 }
 
 proc WarnNoProgram {node} {

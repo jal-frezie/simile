@@ -529,10 +529,10 @@ proc UpdateIfFreezy {} {
 proc ShiftDisplays {node payload current display} {
     global helperTable
 
-    set endRun [$helperTable(RunControl)::UpdateBar $node $current blue]
+    $helperTable(RunControl)::UpdateBar $node $current blue
     UpdateIfFreezy
-    TellAllHelpers $node $payload Display $current $display 1
-    return $endRun
+    return [expr {![TellAllHelpers $node $payload Display \
+			$current $display 1]}]
 }
 
 proc TellAllHelpers {node payload fun args} {
@@ -624,42 +624,6 @@ proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
 proc EatInput {} {
     gets stdin blether
     eval [join $blether \n]
-}
-
-proc ExScrubRun {node times} {
-    global runState model_id instance_id
-    #    if {![string match ok [ShowMessage debug info Scrubbing okcancel]]} {
-    #	error Bombed
-    #    }
-    set runState($node,modelRunning) 0
-    if {$times && [info exists runState($node,currentTime)]} {
-        unset runState($node,currentTime)
-    }
-    if {[info exists runState($node,cnvs)]} {
-	$runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
-    }
-    if {[info exists model_id($node)]} {
-        if {$model_id($node)} {
-            if {[info exists instance_id($node)]} {
-                #ShowMessage debug info "Exiting $model_id($node) $instance_id($node)" ok
-                c_exitmodel $model_id($node) \
-		    $instance_id($node)
-                unset instance_id($node)
-            } else {
-                #ShowMessage debug info "Exiting $model_id 0" ok
-                c_exitmodel $model_id($node) 0
-            }
-        } else {
-            if {[info exists instance_id($node)]} {
-                #ShowMessage debug info "Exiting $model_id $instance_id" ok
-		namespace delete ::AME_model<>
-		array unset nodedata
-                unset instance_id($node)
-	    }
-        }
-        unset model_id($node)
-    }
-
 }
 
 proc GetShortVals {topNode plName limit} {
@@ -1283,68 +1247,6 @@ proc remove_c_model {} {
     #    }
 }
 
-proc update_executable {node lang} {
-    #    ShowMessage debug info "References are $finderList" ok
-    global model_id instance_id
-
-    # For the toplevel model, make an instance. This will also make
-    # instances of any fixed-membership submodels immediately, so they had
-    # better already be loaded
-    switch $lang {
-	c {
-	    set instance_id($node) [c_createmodel \
-					$model_id($node)]
-	} tcl {
-    #    ShowMessage debug info "model instance $instance_id created" ok
-	    set model_id($node) 0
-	    set instance_id($node) 0
-	}
-    }
-    return [StartRun $node]
-}
-
-# load_dll adds a dll to the system. Trees are added bottom up, so model_id
-# is always that most recently added (even if not recompiled)
-
-proc ex_load_dll {topNode lang progDir id node incs} {
-    #   phasecount and nodedata are set in generated code
-    global model_id model_ids model_prog env
-    if {[string match tcl $lang]} {
-	if {![file exists $progDir/model.tcl]} {
-	    return 0
-	}
-	# This won't catch defns in subdirectories
-        foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
-            source $fnFile
-        }
-        foreach fnFile $incs {
-            source $fnFile
-        }
-        set model_prog($topNode) $progDir/model.tcl
-	source $model_prog($topNode)
-	if {![catch {IdentField $simile_identifier version} buildV]} {
-	    return [expr $buildV==$env(SIMILE_VERSION)]
-        } else {
-            return 0
-        }
-    } else {
-	set progFile $progDir/model${id}[info sharedlibextension]
-	if {![file exists $progFile]} {
-	    return 0
-	}
-        if {[catch {loadmodel $progFile $node} new_model_id]} {
-	    if {[PrefValue custom(hackBreak) hackBreak]} {
-		ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $new_model_id -- the program will attempt to build another one." ok
-	    }
-            return 0
-        }
-	set model_id($topNode) $new_model_id
-        #        set model_id [loadmodel $nameBase[info sharedlibextension] $node]
-        set model_ids($node) $new_model_id
-        return $new_model_id
-    }
-}
-
 # FindPhase tells us when a node in a separate submodel will be
 # available. The submodel indicates this by its eval phase. If DERIVED, INPUT
 # or TABLE it can be used any time; if EXOGENOUS we must wait till that
@@ -1356,52 +1258,44 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 # to set model_id to the model we are searching in (model_ids keeps track of
 # dlls loaded so far)
 
-proc FindPhase {node submodel} {
-    global model_id myNode model_ids
-
-    set model_id($myNode) $model_ids($submodel)
-    foreach subnode [listobjects $model_id($myNode)] {
-	if {[string equal $subnode $submodel]} continue
-        set subtype [lindex {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST} \
-			 [getvalue $model_id($myNode) $subnode 2]]
-        if {[string match $node $subnode]} {
-            if {[string match EXOGENOUS $subtype]} {
-                return 1
-            } else {
-                return 0
-            }
-        }
-        if {[getvalue $model_id($myNode) $subnode 1]==4} { ;# EXTERNAL
-            lappend subs [list $subnode $subtype]
-        }
-    }
-    foreach nodeTypePair $subs {
-        set subFind [FindPhase $node [lindex $subs 0]]
-
-        if {$subFind != -1} {
-            switch [lindex $subs 1] {
-                EXOGENOUS {
-                    return 1
-                } DERIVED {
-                    return 0
-                } SPLIT {
-                    return $subFind
-                }
-            }
-        }
-    }
-    return -1
-}
-
-proc ListSameNumbers {list1 list2} {
-    set target [llength $list1]
-    if {$target != [llength $list2]} {return 0}
-    for {set count 0} {$count < $target} {incr count} {
-        if {[lindex $list1 $count] != [lindex $list2 $count]} {return 0}
-    }
-    return 1
-}
-
+# Out of use because v5 does not need separate submodels
+# proc FindPhase {node submodel} {
+#     global model_id myNode model_ids
+# 
+#     set model_id($myNode) $model_ids($submodel)
+#     foreach subnode [listobjects $model_id($myNode)] {
+# 	if {[string equal $subnode $submodel]} continue
+#         set subtype [lindex {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST} \
+# 			 [getvalue $model_id($myNode) $subnode 2]]
+#         if {[string match $node $subnode]} {
+#             if {[string match EXOGENOUS $subtype]} {
+#                 return 1
+#             } else {
+#                 return 0
+#             }
+#         }
+#         if {[getvalue $model_id($myNode) $subnode 1]==4} { ;# EXTERNAL
+#             lappend subs [list $subnode $subtype]
+#         }
+#     }
+#     foreach nodeTypePair $subs {
+#         set subFind [FindPhase $node [lindex $subs 0]]
+# 
+#         if {$subFind != -1} {
+#             switch [lindex $subs 1] {
+#                 EXOGENOUS {
+#                     return 1
+#                 } DERIVED {
+#                     return 0
+#                 } SPLIT {
+#                     return $subFind
+#                 }
+#             }
+#         }
+#     }
+#     return -1
+# }
+# 
 # procedures to handle graph data
 
 #proc insert_graph_data {graph_data_pointer xlow xhigh xspan ylow yhigh yspan \

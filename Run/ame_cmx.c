@@ -1492,10 +1492,10 @@ BOOLEAN outeract_gui(void* id, BOOLEAN stop_chk, double now) {
 
   Tcl_Obj* feedbackCmd;
   Tcl_VarEval(globInterp, "update", NULL); // allow display to tell us if idle
-  if (!Tcl_GetVar(globInterp, "dispDone", 0))
+  if (!Tcl_GetVar(globInterp, "::dispDone", 0))
     return 0; // do not wait for GUI if busy
   if (stop_chk) {
-    feedbackCmd = Tcl_NewStringObj("InteractGUI", -1);
+    feedbackCmd = Tcl_NewStringObj("OuteractGUI", -1);
     Tcl_ListObjAppendElement(globInterp, feedbackCmd,
 			     Tcl_NewLongObj((long int)id));
     Tcl_ListObjAppendElement(globInterp, feedbackCmd, Tcl_NewDoubleObj(now));

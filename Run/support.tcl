@@ -257,7 +257,7 @@ proc RaiseTclExecError {mproc mstep} {
 }
 
 proc CheckGUI {node modelTime thisOp} {
-    global GUILog
+    global GUILog dispDone
     
     set flash 20
     # first record how much time the last op took
@@ -276,7 +276,7 @@ proc CheckGUI {node modelTime thisOp} {
 	set startingLong 1
     }
     
-    if {$currentOld || $startingLong} {
+    if {$currentOld || $startingLong} { 
 	if {[string equal ext $thisOp]} {
 	    set col 2
 	} else {
@@ -324,7 +324,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 	set bigPhase [PhaseFor $xtime $freq $phasecount]
 # that is the biggest phase we will try to run, we may not succeed
 	if {[CheckGUI $node $xtime ph$bigPhase]} {
-	    return 0
+	    return [list 0 $xtime]
 	}
         while {!$madeStep} {
             # stretch interval to hit end if necssary
@@ -375,7 +375,7 @@ proc TclExecuteModel {node howInt start end errLim} {
                         set bigPhase [PhaseFor $xtime $freq $phasecount]
                     } else {
                         # signal problem
-                        return -1
+                        return [list -1 $xtime]
                     }
                 } else {
                     set madeStep 1
@@ -391,9 +391,9 @@ proc TclExecuteModel {node howInt start end errLim} {
 	do_model evalmodel $bigPhase
     }
     if {[CheckGUI $node $end ext]} {
-	return 0
+	return [list 0 $xtime]
     }
-    return 1
+    return [list 1 $xtime]
 }
 	    
 proc PhaseFor {current step soFar} {
@@ -841,6 +841,174 @@ proc stop {code} {
     stop_on_id 0 $code
 }
 
+proc GetTclCompProperty {topNode prop args} {
+    global nodecount nodedata phasecount steps
+    set node [lindex $args 0]
+    set set [lrange $args 1 end]
+#    set nodecount [set nodecount]
+    # first do cases that don't need any other data
+    switch -regexp $prop {
+	Objects {
+	    set result {}
+# objects must be in order for ModelInspector to work
+	    for {set record 2} {$record<=$nodecount} {incr record} {
+		lappend result [lindex $nodedata($record) 0]
+	    }
+	    return $result
+	} SetStep { ;# node is actually time
+	    set steps($set) $node
+	    return $phasecount
+	} Class|Type|Eval {
+	    array set propData [list Class 9 Type 0 Eval 3]
+	    set extracted [getinfo $node $propData($prop)]
+	    if {[string is integer $extracted]} {
+		return ENUM([expr -10-$extracted])
+	    } else {
+		return $extracted
+	    }
+	} Dims|Trans {
+	    set dimRefs [GetFullDims [findRecord $node] typeList]
+	    set count 0
+	    set transList {}
+	    while {$count<[llength $dimRefs]-1} {
+		set aDim [lindex $dimRefs $count]
+		if {[lsearch {START_VM END_VM} $aDim]>-1} {
+		} elseif {$aDim<=-10} {
+		    set usedET [lindex $typeList \
+				    [expr [llength $typeList]+$aDim+9]]
+		    lset dimRefs $count [lindex $usedET 0]
+		    lappend transList [lrange $usedET 1 end]
+		} else {
+		    lappend transList {}
+		}
+		incr count
+	    }
+	    if {[string equal Dims $prop]} {
+		return $dimRefs
+	    } else {
+		set vType [getinfo $node 0]
+		if {[string is integer $vType]} {
+		    set usedET [lindex $typeList \
+				    [expr [llength $typeList]+$vType+9]]
+		    lappend transList [lrange $usedET 1 end]
+		} elseif {[string equal FLAG $vType]} {
+		    lappend transList [list false true]
+		}
+		return $transList
+	    }
+	} Graph {
+	    set index [getinfo $node 6]
+	    if {[llength $set]} {
+		eval {setup_graph_data $index} $set
+	    } else {
+		return [graph_table 21 $index]
+	    }
+	} Caption {
+	    return [GetFullCaption [findRecord $node]]
+#ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
+	} IdFromCapt {
+	    foreach record [array names nodedata] {
+		if {![string equal GHOST [lindex $nodedata($record) 4]]} {
+		    if {[string equal $node \
+			     [GetFullCaption $nodedata($record)]]} {
+			return [lindex $nodedata($record) 0]
+		    }
+		}
+	    }
+	    return nomatch
+	} MinVal {
+	    getinfo $node 7
+	} MaxVal {
+	    getinfo $node 8
+	} Spec|Desc|Comment {
+	    set which [lsearch {Name Spec Desc Comment} $prop]
+	    set targetVar [lindex [getinfo $node 10] $which]
+	    if {![string equal NULL $targetVar]} {
+		return [set ::$targetVar]
+	    }
+	} Value {
+	    return [tcl_insert $node [lindex $set 0]]
+	} default {
+	    error "Property $prop not available in debug mode"
+	}
+    }
+}
+
+proc ParentLine {line} {
+    global nodedata
+    set handle [lindex $line 6]
+    if {[lindex $handle end-1]<0} {
+	set ptHand [lreplace $handle end-2 end 0]
+    } else {
+	set ptHand [lreplace $handle end-1 end 0]
+    }
+    foreach record [array names nodedata] {
+	if {[ListSameNumbers [lindex $nodedata($record) 6] $ptHand]} {
+	    return $nodedata($record)
+	}
+    }
+}    
+
+proc ListSameNumbers {list1 list2} {
+    set target [llength $list1]
+    if {$target != [llength $list2]} {return 0}
+    for {set count 0} {$count < $target} {incr count} {
+        if {[lindex $list1 $count] != [lindex $list2 $count]} {return 0}
+    }
+    return 1
+}
+
+proc GetFullCaption {line} {
+    if {[llength [lindex $line 6]] < 3} {
+	return {}
+    } else {
+	set parentCapt [GetFullCaption [ParentLine $line]]
+	append parentCapt / [set ::[lindex [lindex $line 11] 0]]
+	return $parentCapt
+    }
+}				      
+
+proc TypeAsList {arrName count} {
+    upvar \#0 $arrName arrVal
+    upvar \#0 $arrVal($count,2) tName
+    set result [list $arrVal($count,1) $tName]
+    upvar \#0 $arrVal($count,3) arrTypes
+    for {set elt 1} {$elt<=$arrVal($count,1)} {incr elt} {
+	upvar \#0 $arrTypes($elt) arrTxt
+	lappend result $arrTxt
+    }
+    return $result
+}
+
+proc GetFullDims {line ETptrs} {
+#do_in_editor puts $handle
+    upvar 1 $ETptrs localETs
+    if {[llength [lindex $line 6]] < 3} {
+	set parentDims 0
+	set localETs {}
+    } else {
+	set ptLine [ParentLine $line]
+	set parentDims [GetFullDims $ptLine localETs]
+    }
+# add this levels type data -- reverse order cos outer models start list
+    set count [lindex $line 2]
+    while {$count} {
+	lappend localETs [TypeAsList [lindex $line 3] $count]
+	incr count -1
+    }
+# correct earlier enum type references to take account of this level
+    set count [llength $parentDims]
+    while {$count} {
+	incr count -1
+	set oVal [lindex $parentDims $count]
+	if {$oVal<=-10} {
+	    lset parentDims $count [expr $oVal-[lindex $line 2]]
+	}
+    }
+    set parentDims [concat [lrange $parentDims 0 end-1] [lindex $line 5]]
+    return $parentDims
+}				      
+	    
 proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
     upvar 1 $nextRefPtr nextRef
 #puts "FLV $nextRef $listDims $dimPlace"
