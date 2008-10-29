@@ -913,9 +913,7 @@ proc ControlDraw {prologVersion} {
 		[list -fPIC -I../Run -shared -o $shank ../Run/shank.cpp]
 	}
     }
-    if {[catch {package require Unpacker} dummy]} {
-	error "Could not find an unpacker for Simile -- $dummy"
-    }
+
 # comment out next two lines for thread free operation
     package require Thread
     set execThread(id) [thread::create]
@@ -943,6 +941,10 @@ proc ControlDraw {prologVersion} {
     } else {
 	source [file join $SIMILE_PATH Run exec.tcl]
 	load_c_stub_1
+    }
+
+    if {[catch {package require Unpacker} dummy]} {
+	error "Could not find an unpacker for Simile -- $dummy"
     }
 
     if {![string match windows $tcl_platform(platform)]} {

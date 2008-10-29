@@ -335,12 +335,6 @@ proc GetCCompProperty {topNode prop args} {
 		set id nomatch
 	    }
 	    return $id
-	} Binary {
-	    return [eval extract_binary [list $model_id($topNode) \
-		$instance_id($topNode) [c_getvalue $topNode $node 5]] $set]
-	} Distinct {
-	    return [distinct_values $model_id($topNode) \
-		$instance_id($topNode) [c_getvalue $topNode $node 5]]
 	} default {
 #puts "GetCCompProperty $topNode $prop $args"
 	}

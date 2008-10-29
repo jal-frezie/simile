@@ -283,7 +283,8 @@ proc GetBinaryModelValue { node args } {
     global myNode subbedPlots
     if {[info exists subbedPlots($node)]} {
 	if {[llength $subbedPlots($node)]==3} { # is pointer to univ struct
-	    return [list [extract_binary [lindex $subbedPlots($node) 2]]]
+	    return [eval extract_binary [lrange $subbedPlots($node) 2 2] \
+		       $args]
 	} else { # from tcl model or measured value from pest interface
 	    error "binary values not available"
 	}
@@ -295,7 +296,7 @@ proc ListDistinctModelValues { node } {
     global myNode subbedPlots
     if {[info exists subbedPlots($node)]} {
 	if {[llength $subbedPlots($node)]==3} { # is pointer to univ struct
-	    return [list [distinct_values [lindex $subbedPlots($node) 2]]]
+	    return [distinct_values [lindex $subbedPlots($node) 2]]
 	} else { # from tcl model or measured value from pest interface
 	    error "binary values not available"
 	}
@@ -406,27 +407,35 @@ proc GetCompProperty {topNode prop args} {
 	} EndTime {
 	    return [expr $runState($topNode,currentTime) + \
 			$runState($topNode,execTime)]
-	} Value {
-	    if {$runState($topNode,modelRunning)<=2} {
-		WarnNoData $topNode
-	    }
-	    if {[RunningInC $topNode]} { # do not go exec cos need unpacker
-		set hdl [GetHandle $topNode [lindex $args 0]]
-		set res [extract_list $hdl]
-		free_data_handle $hdl
-		return [list $res]
-	    }
-	    
 	}
     }
        
     if {[RunningInC $topNode]} {
-	set result [eval GetCCompProperty $topNode $prop $args]
+	if {[lsearch {Value Binary Distinct} $prop]>-1} {
+	    if {$runState($topNode,modelRunning)<=2} {
+		WarnNoData $topNode
+		return nodata
+	    }
+	    set hdl [GetHandle $topNode [lindex $args 0]]
+	    switch -regexp $prop {
+		Value {
+		    set result [list [extract_list $hdl]]
+		} Binary {
+		    set result [eval extract_binary [list $hdl] \
+				    [lrange $args 1 end]]
+		} Distinct {
+		    set result [distinct_values $hdl]
+		}
+	    }
+	    free_data_handle $hdl
+	} else {
+	    set result [eval GetCCompProperty $topNode $prop $args]
+	}
     } else {
 	set result [eval GetTclCompProperty $topNode $prop $args]
     }
 #puts "result $result"
-return $result
+    return $result
 }
 
 proc GetPhaseCount {topNode} {
