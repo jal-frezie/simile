@@ -460,9 +460,9 @@ proc InteractGUI {node modelTime flCol} {
     return $key
 }
 
-proc AbortCheck {handle} {
-    global helperTable model_id
-    return [$helperTable(RunControl)::RCAbortCheck $model_id(running)]
+proc AbortCheck {node} {
+    global helperTable
+    return [$helperTable(RunControl)::RCAbortCheck $node]
 }
 
 proc WarnNoProgram {node} {

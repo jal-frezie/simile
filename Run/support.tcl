@@ -293,14 +293,16 @@ proc CheckGUI {node modelTime thisOp} {
 }
     
 proc abort_check {args} {
-    global helperTable myNode
-    if {[$helperTable(RunControl)::RCAbortCheck $myNode]} {
+    global myNode
+    if {[AbortCheck $myNode]} {
 	error "abort request from the user"
     }
 }
 
-proc TclResetModel {topPhase} {
-    global ts dts steps phasecount
+proc TclResetModel {node topPhase} {
+    global myNode ts dts steps phasecount
+
+    set myNode $node
     if {$topPhase <= 0} {
         for {set tweakPhase 1} {$tweakPhase <= $phasecount} {incr tweakPhase} {
             set ts($tweakPhase) 0

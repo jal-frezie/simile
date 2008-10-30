@@ -518,7 +518,6 @@ proc LoseDTRef {statusLine} {
     return $result
 }
 
-set updateLastDone 0
 proc UpdateIfFreezy {} {
     global updateLastDone
     if {$updateLastDone < [clock clicks -milliseconds]-20} {

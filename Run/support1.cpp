@@ -41,10 +41,10 @@ int stop(int code) {
   stop_on_id(0, code);
 }
 
-int lazy = 1024;
+int lazy = 16384;
 void abort_check (void* instId) {
   if (!lazy--) {
-    lazy=1024;
+    lazy=16384;
     if (stat_check(instId)) {
       throw -101;
     }

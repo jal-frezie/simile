@@ -181,7 +181,7 @@ proc ResetModel {myNode redo} {
 #	    set model_id(running) $myNode
 	    c_resetmodel $model_id($myNode) $instance_id($myNode) $redo
 	} else {
-	    TclResetModel $redo
+	    TclResetModel $myNode $redo
 	}
     } errList]} {
 	ExplainError $errList
@@ -224,6 +224,10 @@ proc waitForDisps {} {
     }
 }
 
+proc OuterCheck {id} {
+    return [AbortCheck [DecodeInstance $id]]
+}
+
 proc OuteractGUI {id time mode} {
     return [InteractGUI [DecodeInstance $id] $time $mode]
 }
@@ -240,13 +244,15 @@ proc DecodeInstance {handle} {
 
 if {![info exists runHow]} { ;# we are in separate interp
     proc PullAction {inst} {
-	if {[tsv::exists action $inst]} {
-	    tsv::unset action $inst
-	    return 1
-	} 
-	return 0
+	return [tsv::get action $inst]
     }
 
+    proc AbortCheck {nodeId args} {
+	global masterId
+	thread::send -async $masterId [info level 0]
+	return [expr {[PullAction $nodeId]>=10}]
+    }
+ 
     proc InteractGUI {nodeId args} {
 	global masterId
 	thread::send -async $masterId [info level 0]

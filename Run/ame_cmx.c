@@ -993,6 +993,7 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
       error = -1;
       break;
     default:
+      get_string_for_error(spare, errorBlk->excpNo);
       Tcl_SetObjResult(interp, make_exec_error(interp, "evalmodel", 
 					       name_in_line(modelType, 
 							    errorBlk->targetId),
@@ -1501,7 +1502,7 @@ BOOLEAN outeract_gui(void* id, BOOLEAN stop_chk, double now) {
     Tcl_ListObjAppendElement(globInterp, feedbackCmd, Tcl_NewDoubleObj(now));
     Tcl_ListObjAppendElement(globInterp, feedbackCmd, Tcl_NewIntObj(stop_chk));
   } else {
-    feedbackCmd = Tcl_NewStringObj("AbortCheck", -1);
+    feedbackCmd = Tcl_NewStringObj("OuterCheck", -1);
     Tcl_ListObjAppendElement(globInterp, feedbackCmd,
 			     Tcl_NewLongObj((long int)id));
   }

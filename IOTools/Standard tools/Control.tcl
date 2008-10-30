@@ -211,11 +211,11 @@ namespace eval runcontrol33857 {
 	}
     }
 
-    proc ShareAction {node} {
-	global execThread runState
+    proc ShareAction {node defcon} {
+	global execThread
 
 	if {[info exists execThread]} {
-	    tsv::set action $node 1
+	    tsv::set action $node $defcon
 	}
     }
 
@@ -226,7 +226,7 @@ namespace eval runcontrol33857 {
 	if {!$sendvars($node,busy)} { ;# do action now
 	    switchMode $node
 	} else {
-	    ShareAction $node
+	    ShareAction $node 1
 	}
     }
 
@@ -281,7 +281,6 @@ namespace eval runcontrol33857 {
 	}
 	SendData $node
 	set sendvars($node,currentMode) $action
-	StoreTime $node
 	RollSimulation $node
     }
     
@@ -361,39 +360,30 @@ namespace eval runcontrol33857 {
 # or reset execution
 
     proc RCInteractGUI {myNode current col} {
-	global updateLastDone 
 	variable sendvars
 
 	set endRun [UpdateBar $myNode \
 			[expr $current/$sendvars($myNode,unitLength)] $col]
-	update
-	set updateLastDone [clock clicks -milliseconds]
+	UpdateIfFreezy
 	return $endRun
-    }
-
-    proc StoreTime {node} {
-	variable sendvars
-	set sendvars($node,kickTime) [clock clicks]
     }
 
 # This is similar but is called if a model step is taking a long time, to check
 # if the run has been aborted.
 
-    proc RCAbortCheck {myNode} {
+    proc RCAbortCheck {node} {
+	global updateLastDone
 	variable sendvars
-	update
-	if {[info exists sendvars($myNode,waitFrom)] && \
-		[info exists sendvars($myNode,checkOn)]} {
-	    set now [clock clicks -milliseconds]
-	    if {$sendvars($myNode,checkOn) || \
-		    $now-$sendvars($myNode,waitFrom)>3000} {
-		set scrog [string equal yes [ShowMessage "Model stuck" info \
-			 "This model appears to have got stuck with an endless or very long operation. Do you want to exit it now?" yesno]]
-		if {$scrog} {
-		    unset sendvars($myNode,waitFrom)
-		}
-		unset sendvars($myNode,checkOn)
-		return $scrog
+	if {![string equal start $sendvars($node,currentMode)] && \
+		[clock clicks -milliseconds]-$updateLastDone>3000} {
+	    # pretend button never pushed
+	    ShareAction $node 0
+	    set sendvars($node,currentMode) start
+	    set scrog [string equal yes [ShowMessage "Model stuck" info \
+					     "This model appears to have got stuck with an endless or very long operation. Do you want to exit it now?" yesno]]
+	    if {$scrog} {
+		ShareAction $node 10
+		return 1
 	    }
 	}
 	return 0
@@ -401,7 +391,7 @@ namespace eval runcontrol33857 {
 
     proc RollSimulation { node } {
         variable sendvars
-        global errorInfo redoPhase runState
+        global errorInfo redoPhase runState updateLastDone
 	global pauseImg playImg
         variable frames
 
@@ -436,6 +426,8 @@ namespace eval runcontrol33857 {
 	}
 	set finish [expr {$current+$exec}]
 
+	ShareAction $node 0
+	set updateLastDone [clock clicks -milliseconds]
 	if {[info exists redoPhase($node)]} {
 	    UpdateBar $node $current yellow
 	    if {![RunningInC $node]} {
@@ -475,7 +467,6 @@ namespace eval runcontrol33857 {
 	    set maxErr 0
 	}
 	if {[string equal start $sendvars($node,currentMode)]} {
-
 	    set modelAct [ExecuteTo $node \
 		     $current $pause $sendvars($node,unitLength) $display \
 		     [ListFoci $node] $runState($node,intMethod) $maxErr]
@@ -503,9 +494,6 @@ namespace eval runcontrol33857 {
 	$widget.upper.topbuttons.start configure -command \
 	    "[namespace current]::SetMode $node start"
 	UpdateBar $node $current [RestingColour $node]
-	if {[info exists sendvars($node,waitFrom)]} {
-	    unset sendvars($node,waitFrom)
-	}
 	set sendvars($node,busy) 0
     }
 	    
