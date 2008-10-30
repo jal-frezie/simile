@@ -147,6 +147,7 @@ int stat_check(void* id) {
   unsigned long int this_update;
   BOOLEAN result;
 
+  return FALSE;
   this_update=clock();
   if (this_update-last_check>flash && this_update-last_update>2*flash) {
     result=interact_gui(id, 0, 0);

@@ -257,6 +257,12 @@ proc GetObjectList {} {
     return [GetCompProperty $myNode Objects]
 }
 
+proc AddToWatched {node} {
+    global helperTable
+
+    lappend helperTable($helperTable(beingCalled),foci) $node
+}
+
 # GetModelValue returns the current value of a node. This is numerical if the
 # node is scalar, a (possibly empty) list of alternating indices and values if
 # the node is an array or list, and 'novalue' if it does not have one, e.g., a
@@ -271,6 +277,7 @@ proc GetModelValue { node } {
 	    return [list $subbedPlots($node)]
 	}
     } 
+    AddToWatched $node
     return [SetModelValue $node {}]
 }
 
@@ -289,6 +296,7 @@ proc GetBinaryModelValue { node args } {
 	    error "binary values not available"
 	}
     }
+    AddToWatched $node
     return [eval GetCompProperty $myNode Binary $node $args]
 }
 
@@ -301,6 +309,7 @@ proc ListDistinctModelValues { node } {
 	    error "binary values not available"
 	}
     }
+# do not add to watched list, this is only needed during setup
     return [eval GetCompProperty $myNode Distinct $node]
 }
 

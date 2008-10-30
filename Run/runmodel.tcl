@@ -240,17 +240,19 @@ proc SystemHelperCall {inst node act args} {
 }
 
 proc CreateHelperWindow {helperId helperTitle {state {}}} {
-    global classTable
+    global classTable helperTable
 
     set modelObj $classTable(run,[GetNodeFromFocus])
-    set hlp [UniqueId helper]
-    similescript::$helperId $hlp $modelObj $helperTitle $state
+    set inst [UniqueId helper]
+    set helperTable(beingCalled) $inst
+    similescript::$helperId $inst $modelObj $helperTitle $state
+    set helperTable(beingCalled) {}
     if {[PrefValue custom(helperManager) helperManager]} {
-	set winId [$hlp cget -winId]
+	set winId [$inst cget -winId]
 	::RunEnv::SetCurrentContainer [winfo parent $winId]
 	::RunEnv::ChildrenFocusParent $winId
     }
-    return $hlp
+    return $inst
 #rest should be done by constructor
 }
 
@@ -298,7 +300,6 @@ proc ProdObj {topNode nodeId caption} {
 #	    }
 #	}
 # Now record helper's interest so values can be saved from execution thread
-	lappend helperTable($inst,foci) $nodeId
 	return 1
     } else {
 	return 0
