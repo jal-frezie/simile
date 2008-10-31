@@ -50,7 +50,7 @@ FINDABLE EXPORT int do_evalmodel(void* handle, int phase) {
     catch (int error) {
       return error;
     }
-    return 0;
+    return userStop.excpNo;
   }
 }
 
