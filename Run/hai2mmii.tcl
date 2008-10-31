@@ -8,9 +8,9 @@
 # things to pass information to and from the executing model. These are the definitions 
 # that are required for this purpose.
 #
-proc ExplainError {errList} {
+proc ExplainError {errList origError} {
     global myNode
-    set origError $::errorInfo
+
     if {![string match tcl_model_err* $errList]} {
 	error "Unexpected problem in Tcl model execution" $origError
     }
@@ -425,7 +425,9 @@ proc GetCompProperty {topNode prop args} {
 		WarnNoData $topNode
 		return nodata
 	    }
-	    set hdl [GetHandle $topNode [lindex $args 0]]
+	    if {[catch {GetHandle $topNode [lindex $args 0]} hdl]} {
+		return novalue
+	    }
 	    switch -regexp $prop {
 		Value {
 		    set result [list [extract_list $hdl]]
