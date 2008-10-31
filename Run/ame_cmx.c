@@ -880,6 +880,8 @@ FINDABLE int gettimepointallCmd(ClientData clientData, Tcl_Interp *interp,
 void get_string_for_error(char* spare, int error) {
   if (error == -101) {
     sprintf(spare, "abort request from the user");
+  } else if (error == -99) {
+    sprintf(spare, "discontinuity");
   } else if (error < 0) {
     sprintf(spare, "Illegal operation signal %d", -error);
   } else {
@@ -989,9 +991,9 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
     case -100:
       error = 0;
       break;
-    case -99:
-      error = -1;
-      break;
+      //    case -99:
+      //error = -1;
+      //break;
     default:
       get_string_for_error(spare, errorBlk->excpNo);
       Tcl_SetObjResult(interp, make_exec_error(interp, "evalmodel", 

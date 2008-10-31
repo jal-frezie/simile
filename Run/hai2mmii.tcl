@@ -57,6 +57,9 @@ proc ExplainError {errList origError} {
 	    set code [lindex $whoopsie end]
 	    set problem "there was a user-defined interruption: $code"
 	    set severity 0
+	} discontinuity {
+	    set problem "there was a discontinuity which could not be dealt with by adaptive step size control"
+	    set severity 0
 	} "Illegal operation signal *" {
 	    set code [lindex $whoopsie end]
 	    set which [lindex {SIGEOF SIGHUP SIGINT SIGQUIT SIGILL SIGTRAP 

@@ -377,7 +377,8 @@ proc TclExecuteModel {node howInt start end errLim} {
                         set bigPhase [PhaseFor $xtime $freq $phasecount]
                     } else {
                         # signal problem
-                        return [list -1 $xtime]
+                        error [list tcl_model_err evalmodel unknown $xtime $bigPhase \
+				  discontinuity]
                     }
                 } else {
                     set madeStep 1
