@@ -281,7 +281,7 @@ if {[info exists prolog_in_console]} {
 # so control goes back to Prolog
 }
 
-set env(SIMILE_VERSION) 5.3
+set env(SIMILE_VERSION) 5.4
 set sendvars(simP) {p2}
 
 # KDE launch feedback will fail unless root window is displayed

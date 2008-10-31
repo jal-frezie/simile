@@ -57,7 +57,7 @@
 #define USE_CLOSEST     1
 #define INTERPOLATE     2
 
-#define SIMILE_VERSION	"5.3"
+#define SIMILE_VERSION	"5.4"
 #define NEST 32
 
 #ifdef __cplusplus
