@@ -72,9 +72,10 @@ int serviceError;
 graph_data_type* tcl_graphdata;
 char globMess[255];
 
-void showMess (char* mess) {
-  Tcl_VarEval(globInterp, "tk_messageBox -title {c++ debug} -icon info -message {", mess, "} -type ok",
-	      NULL);
+void showMess (const char* mess) {
+  // Tcl_VarEval(globInterp, "tk_messageBox -title {c++ debug} -icon info -message {", mess, "} -type ok",
+  // NULL);
+  printf("%s\n", mess);
 }
 
 /* this simply makes up a tcl list of all the objects that
@@ -921,7 +922,6 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
   if (error != TCL_OK) {
     return error;
   }
-  
   errorBlk = reset(modelType, modelHandle, phase);
 
   if (errorBlk) {

@@ -216,7 +216,7 @@ typedef void* get_remote_value_type(void*, void*, int, int, int*);
 */
 typedef int stat_check_type(void*);
 
-typedef void showMess_type(char*);
+typedef void showMess_type(const char*);
 
 /* These are for passing procedure addresses in the shim to the shank */
 

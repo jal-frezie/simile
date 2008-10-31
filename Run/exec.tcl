@@ -175,7 +175,9 @@ proc FreeAll {load} {
 }
 
 proc ResetModel {myNode redo} {
-    global model_id instance_id
+    global model_id instance_id dispDone
+
+    set dispDone 0 ;# allow execution to call back
     if {[catch {
 	if {$model_id($myNode)} {
 #	    set model_id(running) $myNode
@@ -271,13 +273,12 @@ if {![info exists runHow]} { ;# we are in separate interp
 	    return [PullAction $nodeId]
 	}
     }
-}
 # placeholder
-proc ExplainError {errList} {
-    global errorInfo
-    error $errList $errorInfo
+    proc ExplainError {args} {
+	global masterId
+	thread::send $masterId [info level 0]
+    }
 }
-
 proc RunningInC {myNode} {
     global model_id
     return $model_id($myNode) ;# it is ready
