@@ -110,7 +110,7 @@ char globMess[256];
 /* values for keeping track of GUI interaction and execution times */
 int last_op = 0;
 unsigned long int last_exit = 0, last_update = 0, last_check = 0;
-unsigned long int flash=CLOCKS_PER_SEC/50; // 20ms
+unsigned long int flash=CLOCKS_PER_SEC/25; // 40ms
 unsigned long int took[]={0,0,0,0,0,0,0,0};
 long int topType;
 int resetting;

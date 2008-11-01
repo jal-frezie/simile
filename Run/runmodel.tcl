@@ -520,7 +520,7 @@ proc LoseDTRef {statusLine} {
 
 proc UpdateIfFreezy {} {
     global updateLastDone
-    if {$updateLastDone < [clock clicks -milliseconds]-20} {
+    if {$updateLastDone < [clock clicks -milliseconds]-40} {
 	update
 	set updateLastDone [clock clicks -milliseconds]
     }
