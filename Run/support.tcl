@@ -81,12 +81,22 @@ proc GetNodeIdFromRef {dest indices} {
 
 proc collect {tgt index count args} {
     global paramLocns
-    puts "minimg in [array get paramLocns]"
     set val [BringParameter $paramLocns($index,arr) $paramLocns($index,nod) \
 		  $args]
     if {[llength $val]} {
 # Check that input source exists, it will not if model is being initialized
 	set $tgt $val
+    }
+}
+
+proc BringParameter {array node inds} {
+#puts "looking for $array\($sub\)"
+    upvar \#0 $array inputSrc
+    for {set ind1 0} {$ind1<=[llength $inds]} {incr ind1} {
+	set sub [join [concat $node [lrange $inds $ind1 end]] ,]
+	if {[info exists inputSrc($sub)]} {
+	    return $inputSrc($sub)
+	}
     }
 }
 
@@ -103,7 +113,7 @@ proc tcl_cleartimeseries {node} {
 
     set paramIdx [getinfo $node 6]
     upvar #0 $paramLocns($paramIdx,arr) varData
-    foreach oldEntry [array names $varData $tgt*] {
+    foreach oldEntry [array names varData $node*] {
 	unset ${varData}($oldEntry)
     }
 }
@@ -111,7 +121,6 @@ proc tcl_cleartimeseries {node} {
 proc tcl_setparamelement {node inds val} {
     global paramLocns
 
-    puts "thread [thread::id] tcl_setparamelement $node $inds $val"
     set paramIdx [getinfo $node 6]
     upvar #0 $paramLocns($paramIdx,arr) varData
     set varData([join [concat [list $node] $inds] ,]) $val
@@ -125,7 +134,7 @@ proc InputVarFor {topNode node} {
 	} ENUM(*) {
 	    return comboChoices
 	} default {
-	    if {[string equal TABLE [GetCompProperty $topNode Eval $node]]} {
+	    if {[string equal TABLE [GetTclCompProperty $topNode Eval $node]]} {
 		return paramData
 	    } else {
 		return sliderVals

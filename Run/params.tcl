@@ -773,7 +773,6 @@ proc PlaceInArray {where what inC} {
                 FPError $urr {}
             }
         } 0 {
-    puts "thread [thread::id]"
 	    tcl_setparamelement [lindex $map 0] [lrange $map 1 end] $what
         }
     }

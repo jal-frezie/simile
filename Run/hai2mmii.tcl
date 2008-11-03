@@ -478,15 +478,3 @@ proc WarnNoProgram {node} {
 proc WarnNoData {node} {
     error "This operation cannot be done as there is no model program running for node $node."
 }
-
-proc BringParameter {array node inds} {
-#puts "looking for $array\($sub\)"
-    upvar \#0 $array inputSrc
-    for {set ind1 0} {$ind1<=[llength $inds]} {incr ind1} {
-	set sub [join [concat $node [lrange $inds $ind1 end]] ,]
-	if {[info exists inputSrc($sub)]} {
-	    return $inputSrc($sub)
-	}
-    }
-}
-
