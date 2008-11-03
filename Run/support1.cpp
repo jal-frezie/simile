@@ -209,8 +209,7 @@ double glob_element (double* arrptr, int phase) {
   return arrptr[phase];
 }
 
-template <class DestClass>
-void collect (DestClass* dest, int record_id, int id_count, ...) {
+void collect (void* dest, int record_id, int id_count, ...) {
   va_list argptr;
   int curIndices[32];
   int length;
