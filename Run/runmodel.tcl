@@ -16,7 +16,6 @@ source ../Run/graphs.tcl
 source ../Run/utility.tcl
 source ../Run/params.tcl
 source ../Run/hai2mmii.tcl
-source ../Run/support.tcl
 
 # mre.tcl has to be loaded after the other Tcl procedures are defined
 
@@ -36,8 +35,8 @@ if {[string match "Darwin" $tcl_platform(os)] & ![info exists runHow(where)]} {
     proc exit {} {
 	global myNode
 #	do_in_editor tclAE::send -s misc actv
-	do_in_editor RaiseModelWindow $myNode
-	start_in_editor prolog tk_kill_everything([GetNodeFromFocus])
+	RaiseModelWindow $myNode
+	prolog tk_kill_everything([GetNodeFromFocus])
     }
     bind all <Command-q> exit
     package require tclAE
@@ -138,7 +137,7 @@ proc AddHelperSublist {fm title ct} {
             # done at startup -- make sure dialog is not concealed
             wm withdraw .
 # do it after idle so this process is not hung till user responds
-            start_in_editor BuildProblem "Error loading I/O tool" warning \
+            BuildProblem "Error loading I/O tool" warning \
                     "I/O tool [pwd]/$helperApp had a $::errorInfo" \
 		    helpers none none
 	    continue
@@ -552,7 +551,7 @@ proc TellAllHelpers {node payload fun args} {
 	if {[string equal $node [$inst GetNode]]} {
 	    set helperTable(beingCalled) $inst
 	    if {[catch {eval $inst $fun $args} HelpErr]} {
-		start_in_editor BuildProblem "Error running I/O tool" warning \
+		BuildProblem "Error running I/O tool" warning \
                     "I/O tool \"[[$inst info class]::Identify]\" raised a problem during model execution. This occurred while doing the $fun operation. The model has been paused. To continue running it you may have to kill this helper's display.\nHere is the error log for debugging:\n$::errorInfo" \
 		    helpers none none
 		set success 0

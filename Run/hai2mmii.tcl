@@ -104,8 +104,8 @@ While $operation $target during $action of the model$timing, $problem. Original 
 	}
     }
     # do it after idle so this process is not hung till user responds
-    start_in_editor BuildProblem $header $graphic $mess execution
-    do_in_editor RaiseModelWindow $myNode
+    BuildProblem $header $graphic $mess execution
+    RaiseModelWindow $myNode
     return $severity
 }
 
@@ -477,22 +477,6 @@ proc WarnNoProgram {node} {
 
 proc WarnNoData {node} {
     error "This operation cannot be done as there is no model program running for node $node."
-}
-
-proc InputVarFor {topNode node} {
-    switch -glob [GetCompProperty $topNode Type $node] {
-	FLAG {
-	    return checkStates
-	} ENUM(*) {
-	    return comboChoices
-	} default {
-	    if {[string equal TABLE [GetCompProperty $topNode Eval $node]]} {
-		return paramData
-	    } else {
-		return sliderVals
-	    }
-	}
-    }
 }
 
 proc BringParameter {array node inds} {

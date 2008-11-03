@@ -81,6 +81,7 @@ proc GetNodeIdFromRef {dest indices} {
 
 proc collect {tgt index count args} {
     global paramLocns
+    puts "minimg in [array get paramLocns]"
     set val [BringParameter $paramLocns($index,arr) $paramLocns($index,nod) \
 		  $args]
     if {[llength $val]} {
@@ -88,7 +89,51 @@ proc collect {tgt index count args} {
 	set $tgt $val
     }
 }
-    
+
+proc tcl_setparamarray {model node} {
+    global paramLocns
+
+    set paramIdx [getinfo $node 6]
+    set paramLocns($paramIdx,nod) $node
+    set paramLocns($paramIdx,arr) [InputVarFor $model $node]
+}
+
+proc tcl_cleartimeseries {node} {
+    global paramLocns
+
+    set paramIdx [getinfo $node 6]
+    upvar #0 $paramLocns($paramIdx,arr) varData
+    foreach oldEntry [array names $varData $tgt*] {
+	unset ${varData}($oldEntry)
+    }
+}
+
+proc tcl_setparamelement {node inds val} {
+    global paramLocns
+
+    puts "thread [thread::id] tcl_setparamelement $node $inds $val"
+    set paramIdx [getinfo $node 6]
+    upvar #0 $paramLocns($paramIdx,arr) varData
+    set varData([join [concat [list $node] $inds] ,]) $val
+} 
+ 
+
+proc InputVarFor {topNode node} {
+    switch -glob [GetTclCompProperty $topNode Type $node] {
+	FLAG {
+	    return checkStates
+	} ENUM(*) {
+	    return comboChoices
+	} default {
+	    if {[string equal TABLE [GetCompProperty $topNode Eval $node]]} {
+		return paramData
+	    } else {
+		return sliderVals
+	    }
+	}
+    }
+}
+   
 proc oldcollect {tgt node count args} {
     global myNode
 # ShowMessage debug info "Collecting...$tgt...$node...$count...$args" ok
@@ -457,8 +502,8 @@ proc AdvanceTime {node phase fraction} {
 proc InitTimeSeries {topNode} {
     global setFromSeries paramData
     array unset setFromSeries
-    foreach node [GetCompProperty $topNode Objects] {
-	if {[string match INPUT [GetCompProperty $topNode Eval $node]]} {
+    foreach node [GetTclCompProperty $topNode Objects] {
+	if {[string match INPUT [GetTclCompProperty $topNode Eval $node]]} {
 #puts "node $node timePts [array names paramData $node,*]"
 	    foreach timePt [array names paramData $node,*] {
 		set ${node}([lindex [split $timePt ,] 1]) 1

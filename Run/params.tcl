@@ -409,10 +409,7 @@ proc AcceptData {topNode compName notInput complain} {
 #                            c_setparamarray $recordNode
 # not needed with universal structure, but might help -- later
 		    } else {
-			set paramIdx [getinfo $recordNode 6]
-			set paramLocns($paramIdx,nod) $recordNode
-			set paramLocns($paramIdx,arr) \
-			    [InputVarFor $topNode $recordNode]
+			tcl_setparamarray $topNode $recordNode
 		    }
 # Not sure how this condition would ever fail...
 #		    set outerDims [lrange [GetCompProperty $topNode Dims \
@@ -443,9 +440,7 @@ proc AcceptData {topNode compName notInput complain} {
 #puts "c_setparamarray b $node"
 		c_setparamarray $node
 	    } else {
-		set paramIdx [getinfo $node 6]
-		set paramLocns($paramIdx,nod) $node
-		set paramLocns($paramIdx,arr) [InputVarFor $topNode $node]
+		tcl_setparamarray $topNode $node
 	    }
         }
         if {[catch {ListToArray $topNode $node {} $trans $recordDims \
@@ -566,16 +561,16 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
                 if {![string last ,NOW [string toupper $subs] 3]} {
 		    # setting current value for var param
                     set idAndSubs $tgt[string range $subs 4 end]
-		    set tgtVar [InputVarFor $topNode $tgt]
-		    if {[string match comboChoices $tgtVar]} {
+		    if {[string match ENUM(*) \
+			     [GetCompProperty $topNode Type $tgt]]} {
 			set comboTypes($idAndSubs) $list
 		    }
-                    EnumTypeToNumber $tgtVar $idAndSubs \
+                    EnumTypeToNumber $idAndSubs \
                             $list $thisTrans [expr $useCppArray/2]
                     return 1
 		} else {
 		    # setting value for fixed param or time point
-                    EnumTypeToNumber paramData $tgt$subs \
+                    EnumTypeToNumber $tgt$subs \
 			$list $thisTrans $useCppArray
                     return -1 ;# should be 0 if a comp
                 }
@@ -628,7 +623,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         # just like other dimensions, i.e., all must be set
         set redoStep 1
         # Next call removes old time series data from the system
-        EnumTypeToNumber paramData $tgt {} {} $useCppArray
+        EnumTypeToNumber $tgt {} {} $useCppArray
 	SetWrapTime $tgt 0 $useCppArray ;# clear old wraparound point
 	SetFillMethod $tgt 0 use_last $useCppArray ;# and fill method
         foreach arrayPt [array names sub] {
@@ -684,8 +679,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         switch $useCppArray {
 	    0 { ;# use old system for Tcl
 		set recordNode [lindex $nextDim 1]
-		EnumTypeToNumber [InputVarFor $topNode $recordNode] \
-		    $recordNode$subs $last {} $useCppArray
+		EnumTypeToNumber $recordNode$subs $last {} $useCppArray
 	    } 1 {
 		if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
 						      1 end] $last} err]} {
@@ -736,17 +730,13 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
     return $redoStep
 }
 
-proc EnumTypeToNumber {varData tgt head trans useCppArray} {
-    global $varData
-    
+proc EnumTypeToNumber {tgt head trans useCppArray} {
     if {![llength $head]} {
         # empty head, signal to clear out old values
         if {$useCppArray} {
             c_cleartimeseries $tgt
         } else {
-            foreach oldEntry [array names $varData $tgt*] {
-                unset ${varData}($oldEntry)
-            }
+	    tcl_cleartimeseries $tgt
         }
     } elseif {[string compare {} $trans]} {
         set poss [lsearch $trans [lindex $head 0]]
@@ -757,35 +747,34 @@ proc EnumTypeToNumber {varData tgt head trans useCppArray} {
                 FPError "Data value $head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]." {}
             }
         } else {
-            PlaceInArray $tgt $poss $varData $useCppArray
+            PlaceInArray $tgt $poss $useCppArray
         }
     } elseif {![Numeric $head]} {
         FPError "Data value $head is not a number." {}
     } else {
-        PlaceInArray $tgt $head $varData $useCppArray
+        PlaceInArray $tgt $head $useCppArray
         #   set ${varData}($tgt) $head
     }
     #puts "just went set paramData($tgt) $paramData($tgt)"
 }
 
-proc PlaceInArray {where what varData inC} {
-    #puts "PlaceInArray $where $what $varData $inC"
+proc PlaceInArray {where what inC} {
+    #puts "PlaceInArray $where $what $inC"
+    set map [split $where ,]
     switch $inC {
         1 {
-            set map [split $where ,]
             if {[catch {c_setparamelement [lindex $map 0] \
                             [lrange $map 1 end] $what} urr]} {
                 FPError $urr {}
             }
         } 2 {
-            set map [split $where ,]
             if {[catch {c_settimepointelement [lindex $map 0] \
                             [lrange $map 2 end] [lindex $map 1] $what} urr]} {
                 FPError $urr {}
             }
         } 0 {
-            global $varData
-            set ${varData}($where) $what
+    puts "thread [thread::id]"
+	    tcl_setparamelement [lindex $map 0] [lrange $map 1 end] $what
         }
     }
 }

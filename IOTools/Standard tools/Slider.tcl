@@ -513,10 +513,13 @@ namespace eval slide139 {
         foreach currentCaption [GetState $winId] {
             set title [RestoreCrs $currentCaption]
             set node [GetIdFromCaptionPath $title]
-            set valGroup [InputVarFor [$helperTable($winId,whichInstance) \
-					   GetNode] $node]
-            upvar \#0 $valGroup valArray
-            if {[string equal comboChoices $valGroup]} {
+	    
+#            set valGroup [InputVarFor [$helperTable($winId,whichInstance) \
+#					   GetNode] $node]
+#            upvar \#0 $valGroup valArray
+#            if {[string equal comboChoices $valGroup]} {}
+	    set model [$helperTable($winId,whichInstance) GetNode]
+	    if {[string match ENUM(*) [GetCompProperty $model Type $node]]} {
                 # will need widget address to update it!
                 set f [MakeSubFrames $winId $winId.sliderframe \
                         [split $title /] [namespace current] 0]

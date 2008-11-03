@@ -596,7 +596,7 @@ namespace eval RunEnv {
         }
         destroy $mreId
         unset helperTable($node,whichRunEnv)
-	start_in_editor TryToKill $node
+	TryToKill $node
     }
     
     proc Addpanedwindow {containerId orientation} {
