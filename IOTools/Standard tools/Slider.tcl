@@ -359,11 +359,8 @@ namespace eval slide139 {
     
     proc SetArrayIfUsed {node fixed indices value} {
         global paramData runState myNode
-        if {[RunningInC $myNode]} {
-            c_setparamelement $node $indices $value
-        } else {
-	    tcl_setparamelement $node $indices $value
-        }
+	PlaceInArray [join [concat $node $indices] ,] $value 0 \
+	    [RunningInC $myNode]
         if {$fixed} {
             if {![RunningInC $myNode]} {
                 set paramData([join [concat $node $indices] ,]) $value
@@ -376,12 +373,8 @@ namespace eval slide139 {
         global comboTypes comboChoices
         set sub [join [concat $node $args] ,]
         set comboTypes($sub) $choice
-        if {[RunningInC $::myNode]} {
-            c_setparamelement $node $args [expr [$cbox.menu index $choice]+1]
-        } else {
-	    tcl_setparamelement $node $args [expr [$cbox.menu index $choice]+1]
-#            set comboChoices($sub) [expr [$cbox.menu index $choice]+1]
-        }
+	PlaceInArray $sub [expr [$cbox.menu index $choice]+1] 0 \
+	    [RunningInC $::myNode]
     }
     
     # If we load a file containing slider values, we only want to set the sliders
