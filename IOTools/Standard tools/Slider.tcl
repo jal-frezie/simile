@@ -361,6 +361,8 @@ namespace eval slide139 {
         global paramData runState myNode
         if {[RunningInC $myNode]} {
             c_setparamelement $node $indices $value
+        } else {
+	    tcl_setparamelement $node $indices $value
         }
         if {$fixed} {
             if {![RunningInC $myNode]} {
@@ -375,10 +377,10 @@ namespace eval slide139 {
         set sub [join [concat $node $args] ,]
         set comboTypes($sub) $choice
         if {[RunningInC $::myNode]} {
-            c_setparamelement $node $args \
-                    [expr [$cbox.menu index $choice]+1]
+            c_setparamelement $node $args [expr [$cbox.menu index $choice]+1]
         } else {
-            set comboChoices($sub) [expr [$cbox.menu index $choice]+1]
+	    tcl_setparamelement $node $args [expr [$cbox.menu index $choice]+1]
+#            set comboChoices($sub) [expr [$cbox.menu index $choice]+1]
         }
     }
     
