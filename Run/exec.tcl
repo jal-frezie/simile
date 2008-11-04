@@ -305,8 +305,8 @@ proc GetCCompProperty {topNode prop args} {
 			    Eval,cIdx 2 Eval,names \
 			    {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST}]
 	    set numericVal [c_getvalue $topNode $node $propData($prop,cIdx)]
-	    if {$numericVal<=-10} {
-		return ENUM([expr -10-$numericVal])
+	    if {$numericVal>=10} {
+		return ENUM([expr $numericVal-10])
 	    } else {
 		return [lindex $propData($prop,names) $numericVal]
 	    }
