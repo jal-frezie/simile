@@ -125,6 +125,13 @@ proc tcl_setparamelement {node inds val} {
 } 
  
 
+proc tcl_settimepointelement {node inds val} {
+    global paramData
+
+    set paramData([join [concat [list $node] $inds] ,]) $val
+} 
+ 
+
 proc InputVarFor {topNode node} {
     switch -glob [GetTclCompProperty $topNode Type $node] {
 	FLAG {

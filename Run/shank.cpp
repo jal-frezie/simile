@@ -449,9 +449,9 @@ char* interpolate_bloc_data(char* loSource, char* hiSource, int* ptDims,
 void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
   sizeAndPtr* newRecord;
 
-  // sprintf(globMess, "locate_elt array %lx off %d d0 %d d1 %d d2 %d indx %d", 
-  	    // startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
-  // showMess(globMess);
+//   sprintf(globMess, "locate_elt array %lx off %d d0 %d d1 %d d2 %d indx %d", 
+// 	  startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
+  showMess(globMess);
   if (*dimPtr==OWNSIZED) {
     newRecord = (sizeAndPtr*)startPtr + off;
     if  (*indxs) // more indices, use to get value from a record submodel
@@ -685,7 +685,7 @@ public:
       // memcpy(insertionPt, tgt, size_for_type());
     } else {
       // sprintf(globMess, "Gonna copy %d from %ld to %ld", size_for_type(),
-      //   insertionPt, tgt);
+// 	      (long int)insertionPt, (long int)tgt);
       // showMess(globMess);
       memcpy(tgt, insertionPt, size_for_type());
     }
@@ -1397,7 +1397,7 @@ void set_bloc_element(char* ptData, int* ptDims, int* indxs, double value) {
     }
   }
   makeDims = needDims-haveDims;
-  //sprintf(globMess, "have %d need %d", haveDims,needDims);
+  //sprintf(globMess, "have %d need %d (val %lf)", haveDims,needDims,value);
   //showMess(globMess);
   for (count = 0; count<needDims; count++) {
     if (count<makeDims) {
@@ -1469,8 +1469,8 @@ void get_value_pointer(void* modelId, void* modelSlot, int paramId,
 		       int ic, int* indxs) {
   listParamArray* paramArrayItem;
 
-  //sprintf(globMess, "get_value_pointer for %ld node %d count %d indx0 %d indx1 %d", modelSlot, paramId, ic, indxs[0], indxs[0]);
-  //showMess(globMess);
+  // sprintf(globMess, "get_value_pointer for %ld node %d count %d indx0 %d indx1 %d", (long int)modelSlot, paramId, ic, indxs[0], indxs[1]);
+  // showMessLocal(globMess);
   paramArrayItem = param_array_base;
   switch (param_item_from_id(&paramArrayItem, (Model*)modelId, paramId)) {
   case 1:
@@ -1482,8 +1482,8 @@ void get_value_pointer(void* modelId, void* modelSlot, int paramId,
   default:
     get_client_value_pointer(modelId, modelSlot, paramId, ic, indxs);
   }
-  //sprintf(globMess, "Think we got %d (%lf)", *(int*)modelSlot, *(double*)modelSlot);
-  //showMess(globMess);
+  // sprintf(globMess, "Think we got %d (%lf)", *(int*)modelSlot, *(double*)modelSlot);
+  // showMessLocal(globMess);
 
 }
 

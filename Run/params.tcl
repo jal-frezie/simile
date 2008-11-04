@@ -444,7 +444,8 @@ proc AcceptData {topNode compName notInput complain} {
 	    }
         }
         if {[catch {ListToArray $topNode $node {} $trans $recordDims \
-                        $suppliedData($compName) $useCppArray} result]} {
+                        $suppliedData($compName) $readMany($compName) \
+			$useCppArray} result]} {
             # new bit for using it as an input tool: notify that we have values
             lappend suppliedData(needed) $compName
 	    if {[string match BadFP* $result]} {
@@ -491,14 +492,13 @@ proc rsearch {list tgt} {
     }
 }
 
-proc ListToArray {topNode tgt subs trans dims list useCppArray} {
+proc ListToArray {topNode tgt subs trans dims list startIdx useCppArray} {
 #ShowMessage debug info  "Go! tgt $tgt trans $trans dims $dims list $list cpp $useCppArray" ok
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
     # ... string match stops cleanly at end of list
     global comboTypes
     
-    set startIdx [string equal TIME [lindex $dims 0]]
     if {[string equal ,bytes [lindex $list 1]]} {
 	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1} {
 	    if {$startIdx} {
@@ -566,12 +566,12 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 			set comboTypes($idAndSubs) $list
 		    }
                     EnumTypeToNumber $idAndSubs \
-                            $list $thisTrans [expr $useCppArray/2]
+                            $list $thisTrans 0 $useCppArray
                     return 1
 		} else {
 		    # setting value for fixed param or time point
                     EnumTypeToNumber $tgt$subs \
-			$list $thisTrans $useCppArray
+			$list $thisTrans $startIdx $useCppArray
                     return -1 ;# should be 0 if a comp
                 }
             } default {
@@ -623,7 +623,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         # just like other dimensions, i.e., all must be set
         set redoStep 1
         # Next call removes old time series data from the system
-        EnumTypeToNumber $tgt {} {} $useCppArray
+        EnumTypeToNumber $tgt {} {} 1 $useCppArray
 	SetWrapTime $tgt 0 $useCppArray ;# clear old wraparound point
 	SetFillMethod $tgt 0 use_last $useCppArray ;# and fill method
         foreach arrayPt [array names sub] {
@@ -637,7 +637,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
             } elseif {[string equal RESTART [string toupper $sub($arrayPt)]]} {
 		SetWrapTime $tgt $arrayPt $useCppArray
 		continue
-	    } elseif {$useCppArray>1} {
+	    } elseif {$useCppArray && [Numeric $arrayPt]} {
                 c_settimepointarray $tgt $arrayPt
             }
 
@@ -654,7 +654,8 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 	    }
 
 	    if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
-                            [lrange $dims 1 end] $sub($arrayPt) $useCppArray} step]} {
+                            [lrange $dims 1 end] $sub($arrayPt) $startIdx \
+			    $useCppArray} step]} {
                 PassFPError $step [list $arrayPt]
             } else {
 		if {$step<1} {
@@ -676,24 +677,24 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         }
         
 	# Record counts do not need to be set in Tcl
-        switch $useCppArray {
-	    0 { ;# use old system for Tcl
-		set recordNode [lindex $nextDim 1]
-		EnumTypeToNumber $recordNode$subs $last {} $useCppArray
-	    } 1 {
-		if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
-						      1 end] $last} err]} {
-		    FPError $err {}
-		} 
-	    } 2 {
+        if {$useCppArray} {
+	    if {$startIdx} {
 		set map [split $subs ,]
 		if {[catch {c_settimepointrecords $tgt [lrange $map 2 end] \
 				[lindex $map 1] $last} err]} {
 		    FPError $err {}
 		} 
+	    } else {
+		if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
+						      1 end] $last} err]} {
+		    FPError $err {}
+		} 
 	    }
+	} else { ;# use old system for Tcl
+	    set recordNode [lindex $nextDim 1]
+	    EnumTypeToNumber $recordNode$subs $last {} $startIdx $useCppArray
 	}
-		
+
 # Hopefully, with the universal data structure, once we have set the
 # record count for the outer submodel level, we will be able to access
 # its contents as if they were a fixed membership array, so this
@@ -709,7 +710,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 #        EnumTypeToNumber paramData [lindex $nextDim 1]$subs $last \
 #                {} $useCppArray
         # probably wouldn't have worked anyway for time series
-} else {
+    } else {
         set last $nextDim
     }
     set redoStep 1
@@ -721,7 +722,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         }
         if {[catch {ListToArray $topNode $tgt $subs,$arrayPt \
                         [lrange $trans 1 end] [lrange $dims 1 end] \
-                        $sub($indx) $useCppArray} mis]} {
+                        $sub($indx) $startIdx $useCppArray} mis]} {
             PassFPError $mis [list $indx]
         } elseif {$mis<1} {
             set redoStep -1
@@ -730,7 +731,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
     return $redoStep
 }
 
-proc EnumTypeToNumber {tgt head trans useCppArray} {
+proc EnumTypeToNumber {tgt head trans when useCppArray} {
     if {![llength $head]} {
         # empty head, signal to clear out old values
         if {$useCppArray} {
@@ -747,34 +748,38 @@ proc EnumTypeToNumber {tgt head trans useCppArray} {
                 FPError "Data value $head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]." {}
             }
         } else {
-            PlaceInArray $tgt $poss $useCppArray
+            PlaceInArray $tgt $poss $when $useCppArray
         }
     } elseif {![Numeric $head]} {
         FPError "Data value $head is not a number." {}
     } else {
-        PlaceInArray $tgt $head $useCppArray
+        PlaceInArray $tgt $head $when $useCppArray
         #   set ${varData}($tgt) $head
     }
     #puts "just went set paramData($tgt) $paramData($tgt)"
 }
 
-proc PlaceInArray {where what inC} {
+proc PlaceInArray {where what when inC} {
     #puts "PlaceInArray $where $what $inC"
     set map [split $where ,]
-    switch $inC {
-        1 {
-            if {[catch {c_setparamelement [lindex $map 0] \
-                            [lrange $map 1 end] $what} urr]} {
-                FPError $urr {}
-            }
-        } 2 {
-            if {[catch {c_settimepointelement [lindex $map 0] \
-                            [lrange $map 2 end] [lindex $map 1] $what} urr]} {
-                FPError $urr {}
-            }
-        } 0 {
+    if {$inC} {
+	if {[catch {
+	    if {$when} {
+		c_settimepointelement [lindex $map 0] \
+		    [lrange $map 2 end] [lindex $map 1] $what
+	    } else {
+		c_setparamelement [lindex $map 0] \
+		    [lrange $map 1 end] $what
+	    }
+	} urr]} {
+	    FPError $urr {}
+	}
+    } else {
+	if {$when} {
+	    tcl_settimepointelement [lindex $map 0] [lrange $map 1 end] $what
+	} else {
 	    tcl_setparamelement [lindex $map 0] [lrange $map 1 end] $what
-        }
+	}
     }
 }
 
