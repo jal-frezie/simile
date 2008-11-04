@@ -113,9 +113,7 @@ proc tcl_cleartimeseries {node} {
 
     set paramIdx [getinfo $node 6]
     upvar #0 $paramLocns($paramIdx,arr) varData
-    foreach oldEntry [array names varData $node*] {
-	unset ${varData}($oldEntry)
-    }
+    array unset varData $node*
 }
 
 proc tcl_setparamelement {node inds val} {
