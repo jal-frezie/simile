@@ -919,7 +919,7 @@ proc ControlDraw {prologVersion} {
     set execThread(id) [thread::create]
 
     if {[info exists execThread]} {
-	foreach stubCmd {load_c_stub_1 load_c_stub_2 get_auth_code check_auth_code c_setparamarray c_setparamelement c_cleartimeseries c_settimepointarray c_settimepointelement c_setwraparoundtime c_setfillmethod ex_load_dll update_executable free_data_handle c_killmodel GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_setparamelement tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
+	foreach stubCmd {load_c_stub_1 load_c_stub_2 get_auth_code check_auth_code c_setparamarray c_cleartimeseries c_settimepointarray PlaceInArray SetWrapTime SetFillMethod ex_load_dll update_executable free_data_handle c_killmodel GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
 	    proc $stubCmd {args} {
 		global execThread
 		#puts "exec bother [lindex [info level 0] 0]"

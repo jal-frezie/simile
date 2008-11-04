@@ -644,7 +644,7 @@ proc ListToArray {topNode tgt subs trans dims list startIdx useCppArray} {
 	    if {[set mtd [lsearch {USE_LAST USE_CLOSEST INTERPOLATE} \
 			      [string toupper $sub($arrayPt)]]]>-1} {
 		if {$pt==1} {
-		    SetFillMethod $tgt $mtd $arrayPt $useCppArray
+		    SetFillMethod $tgt $mtd $sub($arrayPt) $useCppArray
 		    continue
 		}
 		FPError "Fill method must be preceded by OTHERS." \
@@ -757,48 +757,6 @@ proc EnumTypeToNumber {tgt head trans when useCppArray} {
         #   set ${varData}($tgt) $head
     }
     #puts "just went set paramData($tgt) $paramData($tgt)"
-}
-
-proc PlaceInArray {where what when inC} {
-    #puts "PlaceInArray $where $what $inC"
-    set map [split $where ,]
-    if {$inC} {
-	if {[catch {
-	    if {$when} {
-		c_settimepointelement [lindex $map 0] \
-		    [lrange $map 2 end] [lindex $map 1] $what
-	    } else {
-		c_setparamelement [lindex $map 0] \
-		    [lrange $map 1 end] $what
-	    }
-	} urr]} {
-	    FPError $urr {}
-	}
-    } else {
-	if {$when} {
-	    tcl_settimepointelement [lindex $map 0] [lrange $map 1 end] $what
-	} else {
-	    tcl_setparamelement [lindex $map 0] [lrange $map 1 end] $what
-	}
-    }
-}
-
-proc SetWrapTime {where when inC} {
-    global paramData
-    if {$inC} {
-	c_setwraparoundtime $where $when
-    } else {
-	set paramData(wrapAroundPoint,$where) $when
-    }
-}
-
-proc SetFillMethod {where which what inC} {
-    global paramData
-    if {$inC} {
-	c_setfillmethod $where $which
-    } else {
-	set paramData(fillMethod,$where) [string toupper $what]
-    }
 }
 
 proc FPError {occurrence inds} {

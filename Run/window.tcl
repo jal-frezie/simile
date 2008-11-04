@@ -100,14 +100,14 @@ proc GetFromProlog {prologCmd} {
 
 # This does similar to the above but gets the translation table, specially
 # for aliasing into the execution interpreters. It's a stopgap, as the
-# translation table should really be in the model code.
-
-proc GetTransTable {node} {
-    global fromProlog
-    prolog tk_get_info({},$node,types)
-    return $fromProlog
-}
-
+# translation table should really be in the model code (it is now).
+#
+#proc GetTransTable {node} {
+#    global fromProlog
+#    prolog tk_get_info({},$node,types)
+#    return $fromProlog
+#}
+#
 # Non-Linux platforms supply extra clicks instead of doubleclicks if
 # processing the initial click or release takes too long, so we keep
 # track with this variable in order to convert it back into a

@@ -601,16 +601,16 @@ proc UpdateTimeSeries {topNode newTime} {
 	}
 
 	if {$loBound>-1 && $hiBound>-1 && \
-		![string equal use_last $paramData(fillMethod,$node)]} {
+		![string equal use_last \
+		      [string tolower $paramData(fillMethod,$node)]]} {
 	    set interFract [expr ($newTime-$setFromSeries($topNode,$node,wraps)*$paramData(wrapAroundPoint,$node)-[lindex $setFromSeries($list) $loBound])/([lindex $setFromSeries($list) $hiBound]+($hiWraps-$setFromSeries($topNode,$node,wraps))*$paramData(wrapAroundPoint,$node)-[lindex $setFromSeries($list) $loBound])]
-	    if {[string equal interpolate $paramData(fillMethod,$node)]} {
+	    if {[string equal interpolate \
+		     [string tolower $paramData(fillMethod,$node)]]} {
 		set setFromSeries($topNode,$node,next) $loBound
 		# cos that's what wraps refers to...now do interpolation
 		set loTime [lindex $setFromSeries($list) $loBound]
 		set hiTime [lindex $setFromSeries($list) $hiBound]
 		set inC [RunningInC $topNode]
-		set tgtVar [InputVarFor $topNode $node]
-		set trans [lindex [GetTransTable $node] end]
 		foreach loValue [concat [array names paramData $node,$loTime] \
 				     [array names paramData $node,$loTime,*]] \
 			hiValue	[concat [array names paramData $node,$hiTime] \
@@ -618,11 +618,7 @@ proc UpdateTimeSeries {topNode newTime} {
 		    set midValue [expr $paramData($hiValue)*$interFract + \
 				      $paramData($loValue)*(1-$interFract)]
 		    set tgtIndex [join [lreplace [split $loValue ,] 1 1] ,]
-		    if {[string equal comboChoices $tgtVar]} {
-			set midValue [expr round($midValue)]
-			set comboTypes($tgtIndex) [TransValue $trans $midValue]
-		    }
-		    PlaceInArray $tgtIndex $midValue $tgtVar $inC
+		    PlaceInArray $tgtIndex $midValue 0 $inC
 		}
 		return
 	    }
@@ -635,16 +631,10 @@ proc UpdateTimeSeries {topNode newTime} {
 	    set useTime [lindex $setFromSeries($list) $loBound]
 	    set setFromSeries($topNode,$node,next) $loBound
             set inC [RunningInC $topNode]
-            set tgtVar [InputVarFor $topNode $node]
-            set trans [lindex [GetTransTable $node] end]
             foreach tsValue [concat [array names paramData $node,$useTime] \
                                  [array names paramData $node,$useTime,*]] {
                 set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
-                PlaceInArray $tgtIndex $paramData($tsValue) $tgtVar $inC
-                if {[string match comboChoices $tgtVar]} {
-                    set comboTypes($tgtIndex) \
-                        [TransValue $trans $paramData($tsValue)]
-                }
+                PlaceInArray $tgtIndex $paramData($tsValue) 0 $inC
             }
 	}
     }
@@ -710,7 +700,6 @@ proc OldUpdateTimeSeries {topNode newTime} {
 	    
         if {[info exists useTime]} {
             set inC [RunningInC $topNode]
-            set tgtVar [InputVarFor $topNode $node]
             #            upvar \#0 $tgtVar inputSrc
             #puts "inputSrc stands for [do_for_node $topNode InputVarFor $node]"
             # do it the easy way if a scalar
@@ -729,11 +718,7 @@ proc OldUpdateTimeSeries {topNode newTime} {
 # time point, series the index of the higher one (but may be off end)
                 set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
                 #                set inputSrc($tgtIndex) $paramData($tsValue)
-                PlaceInArray $tgtIndex $paramData($tsValue) $tgtVar $inC
-                if {[string match comboChoices $tgtVar]} {
-                    set comboTypes($tgtIndex) \
-                        [TransValue $trans $paramData($tsValue)]
-                }
+                PlaceInArray $tgtIndex $paramData($tsValue) 0 $inC
             }
         }
     }
@@ -1354,5 +1339,49 @@ proc remote {result} {
 	}
     }
     return done
+}
+
+########################### stuff for both languages below ###############
+proc PlaceInArray {where what when inC} {
+    #puts "PlaceInArray $where $what $inC"
+    set map [split $where ,]
+    if {$inC} {
+	if {[catch {
+	    if {$when} {
+		c_settimepointelement [lindex $map 0] \
+		    [lrange $map 2 end] [lindex $map 1] $what
+	    } else {
+		c_setparamelement [lindex $map 0] \
+		    [lrange $map 1 end] $what
+	    }
+	} urr]} {
+	    FPError $urr {}
+	}
+    } else {
+	if {$when} {
+	    tcl_settimepointelement [lindex $map 0] [lrange $map 1 end] $what
+	} else {
+	    tcl_setparamelement [lindex $map 0] [lrange $map 1 end] $what
+	}
+    }
+}
+
+proc SetWrapTime {where when inC} {
+    global paramData
+    if {$inC} {
+	c_setwraparoundtime $where $when
+    } else {
+	set paramData(wrapAroundPoint,$where) $when
+    }
+}
+
+# this one takes numerical for c and textual for tcl
+proc SetFillMethod {where which what inC} {
+    global paramData
+    if {$inC} {
+	c_setfillmethod $where $which
+    } else {
+	set paramData(fillMethod,$where) [string toupper $what]
+    }
 }
 

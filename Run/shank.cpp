@@ -451,7 +451,7 @@ void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
 
 //   sprintf(globMess, "locate_elt array %lx off %d d0 %d d1 %d d2 %d indx %d", 
 // 	  startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
-  showMess(globMess);
+//   showMess(globMess);
   if (*dimPtr==OWNSIZED) {
     newRecord = (sizeAndPtr*)startPtr + off;
     if  (*indxs) // more indices, use to get value from a record submodel
