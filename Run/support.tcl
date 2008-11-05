@@ -1366,22 +1366,31 @@ proc PlaceInArray {where what when inC} {
     }
 }
 
-proc SetWrapTime {where when inC} {
+proc SetWrapTime {inC where args} {
     global paramData
     if {$inC} {
-	c_setwraparoundtime $where $when
+	eval c_setwraparoundtime $where $args
     } else {
-	set paramData(wrapAroundPoint,$where) $when
+	eval set paramData(wrapAroundPoint,$where) $args
     }
 }
 
 # this one takes numerical for c and textual for tcl
-proc SetFillMethod {where which what inC} {
+proc SetFillMethod {inC where {what {}}} {
     global paramData
-    if {$inC} {
-	c_setfillmethod $where $which
+
+    set fillMtds {use_last use_closest interpolate}
+    if {[string length $what]} {
+	if {[set which [lsearch $fillMtds [string tolower $what]]]<0} {
+	    error "bad fill method: $what"
+	}
     } else {
-	set paramData(fillMethod,$where) [string toupper $what]
+	set which {}
+    }
+    if {$inC} {
+	lindex $fillMtds [eval c_setfillmethod $where $which]
+    } else {
+	eval set paramData(fillMethod,$where) [string toupper $what]
     }
 }
 

@@ -503,8 +503,8 @@ proc ListToArray {topNode tgt subs trans dims list startIdx useCppArray} {
 	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1} {
 	    if {$startIdx} {
 		c_settimepointall $tgt [lindex $list end]
-		c_setwraparoundtime $tgt [lindex $list end-2]
-		c_setfillmethod $tgt [lindex $list end-1]
+		SetWrapTime $useCppArray $tgt [lindex $list end-2]
+		SetFillMethod $useCppArray $tgt [lindex $list end-1]
 	    } else {
 		c_setparamall $tgt [lindex $list end] [lrange $list 3 end-3]
 	    }
@@ -624,8 +624,8 @@ proc ListToArray {topNode tgt subs trans dims list startIdx useCppArray} {
         set redoStep 1
         # Next call removes old time series data from the system
         EnumTypeToNumber $tgt {} {} 1 $useCppArray
-	SetWrapTime $tgt 0 $useCppArray ;# clear old wraparound point
-	SetFillMethod $tgt 0 use_last $useCppArray ;# and fill method
+	SetWrapTime $useCppArray $tgt 0 ;# clear old wraparound point
+	SetFillMethod $useCppArray $tgt use_last ;# and fill method
         foreach arrayPt [array names sub] {
             if {[set pt [lsearch {NOW OTHERS} [string toupper $arrayPt]]]>-1} {
 		if {[llength $subs]} {
@@ -635,22 +635,21 @@ proc ListToArray {topNode tgt subs trans dims list startIdx useCppArray} {
                 FPError "Time point must be NOW, OTHERS or a number." \
 		    [list $arrayPt] 
             } elseif {[string equal RESTART [string toupper $sub($arrayPt)]]} {
-		SetWrapTime $tgt $arrayPt $useCppArray
+		SetWrapTime $useCppArray $tgt $arrayPt
 		continue
 	    } elseif {$useCppArray && [Numeric $arrayPt]} {
                 c_settimepointarray $tgt $arrayPt
             }
-
-	    if {[set mtd [lsearch {USE_LAST USE_CLOSEST INTERPOLATE} \
-			      [string toupper $sub($arrayPt)]]]>-1} {
-		if {$pt==1} {
-		    SetFillMethod $tgt $mtd $sub($arrayPt) $useCppArray
-		    continue
+	    set noMtd [catch {SetFillMethod $useCppArray $tgt $sub($arrayPt)} \
+			   badFill]
+	    if {$pt==1} {
+		if {$noMtd} {
+		    FPError $badFill [list $arrayPt]
 		}
+		continue
+	    } elseif {!$noMtd} {
 		FPError "Fill method must be preceded by OTHERS." \
 		    [list $arrayPt] 
-	    } elseif {$pt==1} {
-		FPError "Action $sub($arrayPt) is not USE_LAST, USE_CLOSEST or INTERPOLATE" {}
 	    }
 
 	    if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
@@ -939,10 +938,11 @@ namespace eval fileparams {
 		set type [GetCompProperty $topNode Type $nodeId]
 		puts -nonewline $pStr \
 		    "$indent<byte_array label=$subbedComp type=[Entitize $type]"
-		if {[set wrapTime [c_setwraparoundtime $nodeId]]} {
+		set inC [RunningInC $topNode]
+		if {[set wrapTime [SetWrapTime $inC $nodeId]]} {
 		    puts -nonewline $pStr " wrap_time=[Entitize $wrapTime]"
 		}
-		if {[set fillMtd [c_setfillmethod $nodeId]]} {
+		if {[set fillMtd [SetFillMethod $inC $nodeId]]} {
 		    puts -nonewline $pStr " fill_method=\"[lindex {USE_LAST USE_CLOSEST INTERPOLATE} $fillMtd]\""
 		}
 		puts $pStr ">"
@@ -1354,6 +1354,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
                 set trans [GetTransTable $node]
                 if {!$startLine || ($startLine==-1 && 
 				    $readMany($restoredComp))} {
+puts "trans was $trans"
 		    set trans [lreplace $trans 0 0 time \
 				   [linsert [lindex $trans 0] 0 timePt]]
 		    # allow special time points and values to be recognized
@@ -1365,8 +1366,8 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 		    if {![llength $trans]} {
 			set trans numerical
 		    }
-                    set suppliedData($restoredComp) {}
                     set act [ShowMessage "Error merging parameters" error "Parameterization file contained the entry $suppliedData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it an allowed value for this component, which are $trans. Do you want to cancel the operation, or skip the values for this component and continue loading the parameterization file?" okcancel]
+                    set suppliedData($restoredComp) {}
 		    switch $act {
 			cancel {break}
 			ok {continue}
@@ -1500,6 +1501,7 @@ proc SensibleValue {trans list} {
 # numerical index, 3 for a numerical entry and 0 for all else
 
 proc VarType {testVar types} {
+puts "checking $testVar is of $types"
     if {[string equal time $types]} {
 	if {[lsearch {NOW OTHERS} [string toupper $testVar]]!=-1} {
 	    return 1
@@ -1511,7 +1513,7 @@ proc VarType {testVar types} {
 		 [string toupper $testVar]]!=-1} {
 	    return 2
 	} else {
-	    return [VarType $testVar [lrange types 1 end]]
+	    return [VarType $testVar [lrange $types 1 end]]
 	}
     } elseif {[llength $types]} {
 	if {[lsearch $types $testVar]!=-1} {
