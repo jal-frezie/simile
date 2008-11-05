@@ -684,6 +684,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
 	      -values {"Use luminosity" "Use red level" "Use green level" \
 			   "Use blue level" "Use 8-bit colourmap"} \
 	      -width 16 -state readonly]
+    set table_entry(othval) "Use luminosity"
     pack $fcols
     pack $fi.interp -fill x -expand true
 
@@ -1164,6 +1165,10 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 			    lappend colList $xInd
 			}
 			if {[tableImage transparency get $colInd $rowInd]} {
+			    if {![string length [lindex $tableSpec 8]]} {
+				ShowMessage "No value for clear" warning "The image file \"[lindex $tableSpec 0]\" contains transparent pixels, but no value to use for these pixels has been given." ok
+				return
+			    }
 			    set paramArray([list top $yInd $xInd]) \
 				[lindex $tableSpec 8]
 			    continue

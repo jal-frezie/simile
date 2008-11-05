@@ -537,19 +537,23 @@ proc ShrinkValueList {outerList limit} {
 	set rowCount [expr 1+$bottomRow-$topRow]
 	set colCount [expr 1+[lindex $list 5]-[lindex $list 4]]
 	set allVals [expr $rowCount*$colCount]
-	set rowEnds [expr int($range/$rowCount)]
-	lset list 3 [expr $topRow+$rowEnds]
+	if {$allVals<=$range} {
+	    set list [NumberElements [ReadGdalRefToList $list]]
+	} else {
+	    set rowEnds [expr int($range/$colCount)]
+	    lset list 3 [expr $topRow+$rowEnds]
 # first use of Gdal lib for this param -- fail gracefully if not there
-	if {[catch {set startRange [ReadGdalRefToList $list]}]} {
-	    set list failed_gdal_reference
-	    return -1 ;# indicates not a real value
+	    if {[catch {set startRange [ReadGdalRefToList $list]}]} {
+		set list failed_gdal_reference
+		return -1 ;# indicates not a real value
+	    }
+	    lset list 2 [expr $bottomRow-$rowEnds]
+	    lset list 3 $bottomRow
+	    set endRange [ReadGdalRefToList $list]
+	    set list [concat [NumberElements $startRange] \
+			  [NumberElements $endRange [lindex $list 2]]\
+			  [lrange $list 6 end]]
 	}
-	lset list 2 [expr $bottomRow-$rowEnds]
-	lset list 3 $bottomRow
-	set endRange [ReadGdalRefToList $list]
-	set list [concat [NumberElements $startRange] \
-		      [NumberElements $endRange [lindex $list 4]]\
-		      [lrange $list 6 end]]
     } elseif {[string equal ,bytes [lindex $list 1]]} {
 # in this case the list format is:
 # scenario ,bytes type idx1 ... idxn raw_data

@@ -603,10 +603,11 @@ proc ListToArray {topNode tgt subs trans dims list startIdx useCppArray} {
             if {$poss == -1} {
                 FPError "$role $indx is not a member of type [lindex $thisTrans 0], pick one of [lrange $thisTrans 1 end]." {}
             }
-        } elseif {![string is integer $indx]} {
+        } elseif {![string is integer -strict $indx]} {
             FPError "$role $indx is not an integer." {}
         } elseif {$indx<=0} {
-            FPError "$role is zero or negative." {}
+puts $list
+            FPError "$role $indx is zero or negative." {}
         }
         if {[info exists sub($indx)]} {
             FPError "$role $indx appears more than once." {}
@@ -1501,7 +1502,7 @@ proc SensibleValue {trans list} {
 # numerical index, 3 for a numerical entry and 0 for all else
 
 proc VarType {testVar types} {
-puts "checking $testVar is of $types"
+#puts "checking $testVar is of $types"
     if {[string equal time $types]} {
 	if {[lsearch {NOW OTHERS} [string toupper $testVar]]!=-1} {
 	    return 1
