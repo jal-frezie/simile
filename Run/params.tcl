@@ -389,9 +389,7 @@ proc AcceptData {topNode compName notInput complain} {
 #        # Now replace each -1 in the dims with the id of the by-record
 #        # submodel it represents...no longer needed
 
-        set useCppArray [expr {([RunningInC $topNode]!=0) * \
-				   ($readMany($compName)+1)}]
-        # 0 = no arrays, 1 = array for current only, 2 = arrays for time points
+        set useCppArray [RunningInC $topNode]
 
         #puts "node $compName has dims $recordDims"
         while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
@@ -492,7 +490,7 @@ proc rsearch {list tgt} {
     }
 }
 
-proc ListToArray {topNode tgt subs trans dims list startIdx useCppArray} {
+proc ListToArray {topNode tgt subs trans dims list when useCppArray} {
 #ShowMessage debug info  "Go! tgt $tgt trans $trans dims $dims list $list cpp $useCppArray" ok
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
@@ -501,7 +499,7 @@ proc ListToArray {topNode tgt subs trans dims list startIdx useCppArray} {
     
     if {[string equal ,bytes [lindex $list 1]]} {
 	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1} {
-	    if {$startIdx} {
+	    if {$when} {
 		c_settimepointall $tgt [lindex $list end]
 		SetWrapTime $useCppArray $tgt [lindex $list end-2]
 		SetFillMethod $useCppArray $tgt [lindex $list end-1]
@@ -522,21 +520,21 @@ proc ListToArray {topNode tgt subs trans dims list startIdx useCppArray} {
 	    set newList [NumberElements \
 			     [DoByteArrayToList $fieldChar $fieldSize \
 				  [lrange $list 3 end-3] [lindex $list end]]]
-	    if {$startIdx} {
+	    if {$when} {
 		lappend newList [lindex $list end-2] restart \
 		    others [lindex $list end-1]
 	    }
 	    set list $newList
 	}
     } elseif {[string equal ,gdal [lindex $list 1]]} {
-	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1 && !$startIdx} {
+	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1 && !$when} {
 	    DoNotPassTcl $topNode $tgt $dims $list
 	    return -1 ;# typical fixed parameter
 	} else {
 	    set list [concat [NumberElements [ReadGdalRefToList $list \
 						  [lindex $dims 0] \
 						  [lindex $dims 1]] \
-				  $startIdx] [lrange $list 6 end]]
+				  [expr {!$when}]] [lrange $list 6 end]]
 	}
     }
 # do not do this, ve no longer allow params in VM submodels...
@@ -570,8 +568,8 @@ proc ListToArray {topNode tgt subs trans dims list startIdx useCppArray} {
                     return 1
 		} else {
 		    # setting value for fixed param or time point
-                    EnumTypeToNumber $tgt$subs \
-			$list $thisTrans $startIdx $useCppArray
+                    EnumTypeToNumber $tgt$subs $list $thisTrans $when \
+			$useCppArray
                     return -1 ;# should be 0 if a comp
                 }
             } default {
@@ -606,7 +604,6 @@ proc ListToArray {topNode tgt subs trans dims list startIdx useCppArray} {
         } elseif {![string is integer -strict $indx]} {
             FPError "$role $indx is not an integer." {}
         } elseif {$indx<=0} {
-puts $list
             FPError "$role $indx is zero or negative." {}
         }
         if {[info exists sub($indx)]} {
@@ -654,7 +651,7 @@ puts $list
 	    }
 
 	    if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
-                            [lrange $dims 1 end] $sub($arrayPt) $startIdx \
+                            [lrange $dims 1 end] $sub($arrayPt) $when \
 			    $useCppArray} step]} {
                 PassFPError $step [list $arrayPt]
             } else {
@@ -678,7 +675,7 @@ puts $list
         
 	# Record counts do not need to be set in Tcl
         if {$useCppArray} {
-	    if {$startIdx} {
+	    if {$when} {
 		set map [split $subs ,]
 		if {[catch {c_settimepointrecords $tgt [lrange $map 2 end] \
 				[lindex $map 1] $last} err]} {
@@ -692,7 +689,7 @@ puts $list
 	    }
 	} else { ;# use old system for Tcl
 	    set recordNode [lindex $nextDim 1]
-	    EnumTypeToNumber $recordNode$subs $last {} $startIdx $useCppArray
+	    EnumTypeToNumber $recordNode$subs $last {} $when $useCppArray
 	}
 
 # Hopefully, with the universal data structure, once we have set the
@@ -722,7 +719,7 @@ puts $list
         }
         if {[catch {ListToArray $topNode $tgt $subs,$arrayPt \
                         [lrange $trans 1 end] [lrange $dims 1 end] \
-                        $sub($indx) $startIdx $useCppArray} mis]} {
+                        $sub($indx) $when $useCppArray} mis]} {
             PassFPError $mis [list $indx]
         } elseif {$mis<1} {
             set redoStep -1

@@ -1281,27 +1281,6 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
     return $result
 }
 
-proc ReadGdalRefToArray {arrayName tableSpec} {
-    upvar 1 $arrayName paramArray
-    set rowList {}
-    set colList {}
-    set nValues [ReadGdalRefToList $tableSpec]
-    set yInd 1
-    foreach nLine $nValues {
-	lappend rowList $yInd
-	set xInd 1
-	foreach nPt $nLine {
-	    if {$yInd==1} {
-		lappend colList $xInd
-	    }
-	    set paramArray(top,$yInd,$xInd) $nPt
-	    incr xInd
-	}
-	incr yInd
-    }
-    return [list $rowList $colList]
-}
-
 proc TrimFields {dataLine} {
     set entryList {}
     foreach entry $dataLine {
