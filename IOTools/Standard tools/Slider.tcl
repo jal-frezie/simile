@@ -111,7 +111,6 @@ namespace eval slide139 {
         set levels [split $title /]
         set trans [GetTransTable $node]
         set type [GetModelType $node]
-puts "node $node has type $type"
         switch -glob $type {
             FLAG {
             } ENUM(*) {

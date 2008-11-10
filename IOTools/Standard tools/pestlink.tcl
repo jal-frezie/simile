@@ -45,8 +45,10 @@ namespace eval $keyValue {
         ::graphtools::MakeToolBar $inpId $toolbarItems
         set toolbarItems \
                 [list [list new.gif "Clear" [namespace code "ClearOut $winId"]] \
-                [list add.gif "Add variables" \
+                [list add.gif "Add end-of-run measurement" \
                 [namespace code "AddVariableOut $winId"]] \
+                [list graph.gif "Add time series of measurements" \
+                [namespace code "AddTimeSeries $winId"]] \
                 [list remove.gif "Remove a variable" \
                 [namespace code "RemoveVariableOut $winId"]]]
         ::graphtools::MakeToolBar $outId $toolbarItems
@@ -376,7 +378,7 @@ namespace eval $keyValue {
                             }
                         }
                     }
-                    set f [InsertDriver $winId $node $title 1]
+                    set f [InsertDriver $winId $node $title]
                 } outDest {
                     set useNodes($winId,scrogging) [lindex $action 1]
                 } predict {
@@ -414,8 +416,15 @@ namespace eval $keyValue {
     
     proc AddVariableOut {winId} {
         variable useNodes
-        $useNodes($winId,output).intro configure -text "Click on a model value to allow PEST to read it."
+        $useNodes($winId,output).intro configure -text "Click on a model value to allow PEST to read it at the end of each model run for comparison with measured data."
         SetState $winId adding_outputs
+        GrabClicks $winId
+    }
+    
+    proc AddTimeSeries {winId} {
+        variable useNodes
+        $useNodes($winId,output).intro configure -text "Click on a model value to allow PEST to read it for comparison with a time series of measured data."
+        SetState $winId adding_series
         GrabClicks $winId
     }
     
@@ -430,10 +439,10 @@ namespace eval $keyValue {
     }
     
     proc click {winId node caption} {
+	global readMany
         variable useNodes
         
         set fullCapt [GetCaptionPathFromId $node]
-        
         switch [GetState $winId] {
             adding_inputs {
                 if {[string equal SUBMODEL [GetModelClass $node]]} {
@@ -446,12 +455,20 @@ namespace eval $keyValue {
                     ReleaseClicks $winId
                 }
             } adding_outputs {
-                set success [InsertDriver $winId $node $fullCapt 1]
+		set readMany($fullCapt) 0
+                set success [InsertDriver $winId $node $fullCapt]
                 if {[llength $success]} {
                     $useNodes($winId,output).intro configure -text {}
                     ReleaseClicks $winId
                 }
-            } adding_pred {
+            } adding_series {
+		set readMany($fullCapt) 1
+                set success [InsertDriver $winId $node $fullCapt]
+                if {[llength $success]} {
+                    $useNodes($winId,output).intro configure -text {}
+                    ReleaseClicks $winId
+                }
+             } adding_pred {
                 set useNodes($winId,npred) $node
                 set useNodes($winId,pred) $caption
                 #		set success [SetPred $winId $node $fullCapt 1]
@@ -653,7 +670,7 @@ namespace eval $keyValue {
         set [namespace current]::inGrpData(done) 1
     }
     
-    proc InsertDriver {winId node title nest} {
+    proc InsertDriver {winId node title} {
         global targetData myNode
         variable useNodes
         variable outGrpData
@@ -676,18 +693,17 @@ namespace eval $keyValue {
         if {[winfo exists $f]} {
             $outId.c.canvas see $f
         } else {
-	    set ::readMany($title) 0
             lappend targetData(needed) $title
             AddEntry $outId $myNode $node 1 -1
 	    lappend useNodes($winId,drivers) $title
             
-            pack [checkbutton $f.end -variable ::readMany($title) \
-                    -command [namespace code \
-                    [list AbleTimeSampling $myNode $node $title $f]]] \
-                    -side left
-            BindPopup $f.end "Set values at time points"
+#            pack [checkbutton $f.end -variable ::readMany($title) \
+#                    -command [namespace code \
+#                    [list AbleTimeSampling $myNode $node $title $f]]] \
+#                    -side left
+#            BindPopup $f.end "Set values at time points"
 # do command now in case it was selected last time
-            AbleTimeSampling $myNode $node $title $f
+#            AbleTimeSampling $myNode $node $title $f
 	    foreach widjo [concat [list $f] [winfo children $f]] {
                 bind $widjo <Double-1> [namespace code \
                         [list DoOutDlg $node $f $title]]
@@ -708,6 +724,7 @@ namespace eval $keyValue {
         $f.int config -state $st
     }
     
+# No longer used -- now have two buttons, one for each time setting
     proc AbleTimeSampling {topNode node title f} {
         global readMany
         

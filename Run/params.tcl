@@ -328,7 +328,7 @@ proc AcceptAll {topNode compNames notInput complain} {
 
 proc AcceptData {topNode compName notInput complain} {
 #puts "AcceptData $topNode $compName $notInput $complain"
-    global runState msgs paramLocns whichParamsAffected readMany
+    global runState msgs whichParamsAffected readMany
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -434,13 +434,13 @@ proc AcceptData {topNode compName notInput complain} {
 	    set useCppArray 0
 	} else {
 	    set whatMaking parameter
-	    if {$useCppArray} {
-#puts "c_setparamarray b $node"
-		c_setparamarray $node
-	    } else {
-		tcl_setparamarray $topNode $node
-	    }
         }
+	if {$useCppArray} {
+	    #puts "c_setparamarray b $node"
+	    c_setparamarray $node
+	} else {
+	    tcl_setparamarray $topNode $node
+	}
         if {[catch {ListToArray $topNode $node {} $trans $recordDims \
                         $suppliedData($compName) $readMany($compName) \
 			$useCppArray} result]} {
@@ -1352,7 +1352,6 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
                 set trans [GetTransTable $node]
                 if {!$startLine || ($startLine==-1 && 
 				    $readMany($restoredComp))} {
-puts "trans was $trans"
 		    set trans [lreplace $trans 0 0 time \
 				   [linsert [lindex $trans 0] 0 timePt]]
 		    # allow special time points and values to be recognized

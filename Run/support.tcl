@@ -105,7 +105,7 @@ proc tcl_setparamarray {model node} {
 
     set paramIdx [getinfo $node 6]
     set paramLocns($paramIdx,nod) $node
-    set paramLocns($paramIdx,arr) [InputVarFor $model $node]
+    set paramLocns($paramIdx,arr) tclParmData ;# was [InputVarFor $model $node]
 }
 
 proc tcl_cleartimeseries {node} {
