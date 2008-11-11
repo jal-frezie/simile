@@ -1755,6 +1755,17 @@ proc ExportPostscript { winId } {
     }
 }
 
+proc GetPrintZone {winId} {
+    foreach cmd [list "$winId bbox size_on_this" "$winId bbox all" \
+		     "$winId cget -scrollregion"] {
+	set result [eval $cmd]
+	if {[string length $result]} {
+	    return $result
+	}
+    }
+    return [list 0 0 [winfo width $winId] [winfo height $winId]]
+}
+	
 proc PrepForExport {winId way} {
     global jiggles tcl_platform
     
@@ -1768,14 +1779,10 @@ proc PrepForExport {winId way} {
     }
     set textscale [expr $detail*$textBoost]
     if {[string match there $way]} {
-        if {[scan [$winId cget -scrollregion] "%g %g %g %g" sl st sr sb]<4} {
-            set sl 0; set st 0
-            set sr [winfo width $winId]; set sb [winfo height $winId]
-        }
+	set jiggles(oldScroll) [$winId cget -scrollregion]
+        scan [GetPrintZone $winId] "%g %g %g %g" sl st sr sb
         set jiggles(bl) $sl
         set jiggles(bt) $st
-        set jiggles(br) $sr
-        set jiggles(bb) $sb
         
         set jiggles(sl) [lindex [$winId xview] 0]
         set jiggles(st) [lindex [$winId yview] 0]
@@ -1791,8 +1798,7 @@ proc PrepForExport {winId way} {
 
     } else {
         ZoomImage $winId all [expr 1/$detail] [expr 1/$textscale]
-        $winId configure -scrollregion [list $jiggles(bl) $jiggles(bt) \
-                $jiggles(br) $jiggles(bb)]
+        $winId configure -scrollregion $jiggles(oldScroll)
         $winId xview moveto $jiggles(sl)
         $winId yview moveto $jiggles(st)
         $winId move all $jiggles(bl) $jiggles(bt)
