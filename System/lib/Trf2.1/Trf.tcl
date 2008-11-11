@@ -1,5 +1,5 @@
 switch [info sharedlibextension] {
-    .so {set trfPkg libTrf2.1.2.so}
+    .so {set trfPkg libTrf2.1.so}
     .dylib {set trfPkg libTrf2.1.dylib}
     .dll {set trfPkg Trf21.dll}
 }
