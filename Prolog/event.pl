@@ -300,20 +300,25 @@ This starts addition. Last clause creates a new cloud when starting a flow in th
 middle of nowhere; i could also do variables for influences. */
 :- dynamic(menu_submodel_is/2).
 :- dynamic(menu_submodel_will_be/3).
-:- dynamic(grid_pitch_is/1).
+:- dynamic(grid_pitch_is/2).
+
+set_snap :-
+        output:tk_get_pref(gridH, HGR),
+        output:tk_get_pref(gridV, VGR),
+        assert(grid_pitch_is(HGR, VGR)).
 
 check_snap :-
-	retractall(grid_pitch_is(_)),
+	retractall(grid_pitch_is(_,_)),
 	(tk_get_pref(gridSnap, 0), !,
-	    assert(grid_pitch_is(1));
-	    assert(grid_pitch_is(15))).
+	    assert(grid_pitch_is(1,1));
+        set_snap).
 	
 snap_to_grid([], []).
 
 snap_to_grid([X, Y | Rest], [GX, GY | GRest]) :-
-	grid_pitch_is(Pitch), !,
-	    GX is Pitch*round(X/Pitch),
-	    GY is Pitch*round(Y/Pitch),
+	grid_pitch_is(HPitch, VPitch), !,
+	    GX is HPitch*round(X/HPitch),
+	    GY is VPitch*round(Y/VPitch),
 	    snap_to_grid(Rest, GRest);
 	 [GX, GY | GRest] = [X, Y | Rest].
 

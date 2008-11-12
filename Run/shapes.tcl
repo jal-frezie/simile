@@ -411,7 +411,6 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	set window_info($w,temporary) $i
     } else {
 	set plRad [expr $cornerRad/$window_info($w,scale)]
-	set interval [expr $looks(gridPitch)*$inFat/100.0]
 	set nCol [Gradient $bgColour -0.02 $w]
 	set gTagSet "$tagSet /background/ /grid/"
 	if {$custom(showgrids,$w)} {
@@ -421,6 +420,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	}
 
 	set flags {-state $gStat -width 0 -fill $nCol -tag $gTagSet}
+	set interval [expr [PrefValue custom(gridH) gridH]*$inFat/100.0]
 	for {set x [expr $origX+$interval*ceil(($l+1-$origX)/$interval)]} \
 	    {$x<$r} {set x [expr $x+$interval]} {
 		set fromEdge [max [expr $l+$plRad-$x] [expr $x+$plRad-$r]]
@@ -435,6 +435,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		$w raise $line $stackOn
 		set stackOn $line
 	    }			    
+	set interval [expr [PrefValue custom(gridV) gridV]*$inFat/100.0]
 	for {set y [expr $origY+$interval*ceil(($t+1-$origY)/$interval)]} \
 	    {$y<$b} {set y [expr $y+$interval]} {
 		set fromEdge [max [expr $t+$plRad-$y] [expr $y+$plRad-$b]]

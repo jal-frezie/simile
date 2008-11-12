@@ -645,7 +645,6 @@ proc ChangeParentTitle {wc title bg} {
     ResizeBackgnd $wc $bl $bt $br $bb
 }
 
-set looks(gridPitch) 15.0
 set looks(scrollIncr) 10
 
 proc AddGrid {c onCol wl wt wr wb} {
@@ -655,13 +654,14 @@ proc AddGrid {c onCol wl wt wr wb} {
     } else {
 	set stat hidden
     }
-    set interval [expr $looks(gridPitch)*$window_info($c,scale)]
+    set interval [expr {[PrefValue custom(gridH) gridH]*$window_info($c,scale)}]
     for {set x [expr $interval*ceil($wl/$interval)]} {$x<$wr} \
     {set x [expr $x+$interval]} {
     set nearx [expr int($x)]
     $c create line $nearx $wt $nearx $wb -state $stat -fill $onCol \
         -tag "/background/ /base/ /grid/"
     }
+    set interval [expr {[PrefValue custom(gridV) gridV]*$window_info($c,scale)}]
     for {set y [expr $interval*ceil($wt/$interval)]} {$y<$wb} \
     {set y [expr $y+$interval]} {
     set neary [expr int($y)]
@@ -688,6 +688,7 @@ proc AddGrid {c onCol wl wt wr wb} {
         ### Compute new red value by incrementing the existing
         ### value by a value that gets it closer to either 0 (black)
         ### or $max (white)
+	set factor [expr {-[PrefValue custom(gridD) gridD]/100.0}]
         set range [expr {$factor >= 0.0 ? $max - $r : $r}]
         set increment [expr {int($range * $factor)}]
         incr r $increment

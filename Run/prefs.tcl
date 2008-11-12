@@ -145,6 +145,8 @@ proc Pref_Dialog {} {
             set displayF $displayTF
             set barTF [labelframe $vf.barTF -text "Tool bars:"]
             set barF $barTF
+            set gridTF [labelframe $vf.gridTF -text "Placement grid:"]
+            set gridF $gridTF
             set popupTF [labelframe $vf.popuptTF -text "Popups over model components:"]
             set popupF $popupTF
         set ef [frame $notebook.edit]
@@ -176,7 +178,7 @@ proc Pref_Dialog {} {
             set precisTF [labelframe $rf.precisTF -text "Numeric display precision (0 for default):"]
             set precisF $precisTF
        # $notebook select View
-        pack $initWinTF $displayTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $precisTF $manyWinTF $compTF \
+        pack $initWinTF $displayTF $gridTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $precisTF $manyWinTF $compTF \
                 $canvasTF $recentTF $notebook -fill x -padx 4 -pady 4
         set bbox [frame $dlg.bbox] 
         pack [::ttk::button $bbox.bok -text OK -underline 0 -width 8  \
@@ -206,10 +208,11 @@ proc Pref_Dialog {} {
                 init* {set frame $displayF}
                 hackBreak {set frame $compF}
                 compChoice {set frame $compF}
+                gridSnap {set frame $genericF}
+                grid* {set frame $gridF}
                 comp* {set frame $popupF}
                 bigButtons {set frame $barF}
                 popupHelp {set frame $barF}
-                gridSnap {set frame $genericF}
                 quickDrag {set frame $genericF}
                 myButton {set frame $genericF}
                 deleteEndToEnd {set frame $linkF}

@@ -755,7 +755,10 @@ proc PutItThere {t parent} {
     } else {
 	wm transient $t
     }
-    wm geometry $t +0+[winfo screenheight $t]
+    if {![string eq x11 [tk windowingsystem]]} {
+	wm geometry $t +0+[winfo screenheight $t]
+    }
+# supposed to reduce flicker but stuffs placement under Gnome
     return $t
 }
 

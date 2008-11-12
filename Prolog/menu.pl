@@ -559,11 +559,11 @@ menu_handle(Win, edit, reroute) :-
 
 menu_handle(Win, edit, snap) :-
 	get_edit_model(Win, Model, _),
-	event:retract(grid_pitch_is(Old)),
-	event:assert(grid_pitch_is(15)),
+	event:retract(grid_pitch_is(OldX, OldY)),
+	event:set_snap,
 	event:resnap(Model, 1),
-	event:retract(grid_pitch_is(15)),
-	event:assert(grid_pitch_is(Old)),
+	event:retract(grid_pitch_is(_,_)),
+	event:assert(grid_pitch_is(OldX, OldY)),
 	menu_handle(Win, edit, reroute).
 
 menu_handle(Win, edit, delete) :-
@@ -793,7 +793,7 @@ find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 
 	/* These two are the offset to get it to nearest feasible posn...
 	cant believe this has to be so complicated */
-	(event:grid_pitch_is(Spcs), !,
+	(Spcs = 10, !,
 	    MinGridX is ceiling(MinOffX/Spcs),
 	    MaxGridX is floor(MaxOffX/Spcs),
 	    MaxGridX >= MinGridX,
@@ -822,7 +822,7 @@ find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 			     \+ member(Obstacle, Including),
 			     get_drawing_form(Obstacle, Any, Box)), ToAvoid), !;
 	    ToAvoid = []),
-	(event:grid_pitch_is(Spcs), !; Spcs = 10),
+
 	count_to(0, MaxDist, Spcs, Distance),
 	count_to(0, Distance, Spcs, Range),
 	((Distance<MinXTrim, TargetX is BestX-Distance;
