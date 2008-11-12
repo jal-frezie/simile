@@ -294,6 +294,7 @@ proc create_equation {parent boxtitle indices} {
     $notebook select 0
     pack $notebook -fill both -expand true
     set equation(newGraphs) ""
+    set equation(showing) 0
     set equation(done) 0
     equationBindings $t $en $eu $lbp $lbi $lbd $lbf $lbx $graph $table $ok $can
 }
@@ -375,10 +376,11 @@ proc interact_equation {} {
     set t $equation(top)
     set descFrame [$equation(doc).descf.description getframe]
     set eqnFrame [$equation(main).main.main getframe]
-    set listFrame [$equation(main).bottom.influences getframe]
     
-    
-    LetItShow $t
+    if {!$equation(showing)} {
+	set equation(showing) 1
+	LetItShow $t
+    }
     grab $t
     tkwait variable equation(done)
     grab release $t
