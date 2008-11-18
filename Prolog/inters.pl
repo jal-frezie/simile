@@ -7,7 +7,7 @@ sicstus_module(inters, [final_assignment/11, make_intermediates/12,
 sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
 final_assignment(Expr, Sm, DestRef, Swaps, Step, Used, 
-                 NewFormula, Setups, Context, Prerequisites, NewInters) :-
+                 NewFormula, Setups, Context, Prereqs, NewInters) :-
 	DestRef = elt(DestPathForm, Target, XUnits-Dims),
 	copy_term(DestPathForm, DestPath),
 	
@@ -41,17 +41,14 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 		   AllInters, NewInters), !,
 	    replace_subexps(AllSetups, inters, swap_vars,
 			    switch(Idle, Target), top_down, _, SubbedSetups),
-	    select(make(Target, Prerequisites, Context, _, NewFormula),
+	    select(make(Target, Prereqs, Context, _, NewFormula),
 		   SubbedSetups, Setups);
 	[Setups, NewInters, Context] =
 	[AllSetups, AllInters, FContext],
 	    pointer_from(DestPath, DestPtr),
 	    get_dims_from_loops(SourceLoops, _, Inds),
 	 NewFormula = [assign(arr(DestPtr, Target, Inds), ScaledF)],
-	    
-	(setof(Model, has_extras(Context, DestPath, Model), Exited), !;
-	    Exited = []),
-	add_extra_dependencies(Exited, Formula, Args, Prerequisites)).
+	add_extra_dependencies(Context, DestPath, Formula, Args, Prereqs)).
 
 assigned_in_vm_subloop(Formula, FContext, AllSetups) :-
 	member(make(_,_, MoreLoops, _, Acts), AllSetups),
@@ -472,8 +469,6 @@ make_intermediates(
 	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
 		throw(needs_array_or_list(Source)));
 	TailLoops = SubLoops),
-	(setof(Sm, has_extras(WriteContext, DestPath, Sm), Exited), !;
-	 Exited = []),
 
 	/* Total must have same dims as one element of its arg,
 	so lets work that out... */
@@ -528,7 +523,8 @@ make_intermediates(
 	append(BuildInds, NewInds, SrcInds),
 	ClearRef = arr(SourcePtr, TotalName, SrcInds),
 
-	add_extra_dependencies(Exited, IncrExpr, OldArgs, Depends),
+	add_extra_dependencies(WriteContext, DestPath, IncrExpr, OldArgs,
+			       Depends),
 	append(SourceLoops, DestPath, InterContext),
 	append([SourceLoops, NowBuilding, DestPath], ClearContext),
 
@@ -734,7 +730,8 @@ make_intermediates(
 	    throw(redundant_array(Source))),
 	    
 	    append(ASetups, ISetups, Setups),
-	    merge_lists(AArgs, IArgs, Args),
+	    add_extra_dependencies(IContext, AContext, IndxRef, IArgs, IWaits),
+	    merge_lists(AArgs, IWaits, Args),
 	    longest_path([ABase, IBase], EltBase),
 	    append([TailLoops, ItemLoops, ILoops, EltBase], SourceContext);
 	    /* 'catch' is in case we use an element that doesn't exist in the
@@ -1359,10 +1356,11 @@ change_constituent(switch(All, Bit, NewBit), Old, New, 0) :-
 	    New = NewBit;
 	\+ Old = All.
 
-add_extra_dependencies(Exited, Source, VarList, FullList) :-
+add_extra_dependencies(OldCon, NewCon, Source, VarList, FullList) :-
 /* Now if I come out of any generated submodels, add a dependency on the generator
 function...similarly a dependemcy on time for any population submodels */
 
+        (setof(Sm, has_extras(OldCon, NewCon, Sm), Exited); Exited = []),
 	wait_for_submodels(Exited, WaitList),
 
 /* Also, if the expression contains reference to the current time or time interval
