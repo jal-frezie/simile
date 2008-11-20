@@ -57,13 +57,18 @@ namespace eval ::$keyValue {
 #        tk_messageBox -message [GetObjectList] -type ok
         #get submodel nodeIds for parents
         foreach component [GetObjectList] {
+	    lappend universe [list $component [GetCaptionPathFromId $component]]
+	    set sorted [lsort -dictionary -index 1 $universe]
+	}
+	foreach pair $sorted {
+	    set component [lindex $pair 0]
+	    set SubbedComp [lindex $pair 1]
             if {[llength [info commands GetModelClass]] >0} {
                 set type [GetModelClass $component]; # Simile 2.7+
             } else  {
                 set type [GetModelType $component]; # Simile < 2.7 - not very good
             }
             if {[string match SUBMODEL $type ]} then {
-                set SubbedComp [GetCaptionPathFromId $component]
                 set SubbedCompList [split $SubbedComp /]
                 set path [lrange $SubbedCompList 1 end]
                 set pathLength [llength $path]
@@ -79,9 +84,10 @@ namespace eval ::$keyValue {
 		    -image $im(submodel)
             }
         }
-        foreach component [GetObjectList] {
+	foreach pair $sorted {
+	    set component [lindex $pair 0]
+	    set SubbedComp [lindex $pair 1]
             # substitute " " for <cr>s so entry goes on one line # no - need the crs
-            set SubbedComp [GetCaptionPathFromId $component]
             set SubbedCompList [split $SubbedComp /]
             set path [lrange $SubbedCompList 1 end]
             #        ShowMessage debug info "GetModelValue $component = [GetModelValue $component]" ok
