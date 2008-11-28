@@ -655,6 +655,7 @@ namespace eval grid005 {
 	    DrawGrid5 $winId $node
 	    return
 	}
+#puts "Binary is of size [string bytelength $useNodes($winId,rawBinary)]"
 	set rows $useNodes($winId,nrow)
 	set cols $useNodes($winId,ncol)
 	set bitCols [expr 4*int(($cols+3)/4)]

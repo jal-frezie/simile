@@ -303,8 +303,8 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   valspan=valfor255-valfor0; // set to span
 
   count = 0;
-  while (accessTool->dimSpecs[count]>=0) ++count; //stop at base data type
-  baseType=accessTool->dimSpecs[count];
+  while (!is_base_type(baseType=accessTool->dimSpecs[count])) 
+    ++count; //stop at base data type
 
   size = 0;
   call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
