@@ -21,6 +21,7 @@ sicstus_use_module( [library(ordsets),library(lists),
 % that, the current version does simple block-style indenting.
 
 :- dynamic(new_exec_for/1).
+:- dynamic(error_free/1).
 
 compile( Language, Parent, DestDir) :-
 	tk_scrub_run(Parent, 0),
@@ -31,7 +32,14 @@ compile( Language, Parent, DestDir) :-
 	/* This is a stopgap, we should really update a property of the
 	submodel containing the destination whenever a link is added or
 	deleted so only to do these checks when needed */
-	build_instances(Language, DestDir, Parent, Parent, 1, _,_,_,_).
+	asserta(error_free(build)),
+	catch(build_instances(Language, DestDir, Parent, Parent, 1, _,_,_,_),
+	      Err, 
+	      (Err = aborted, !; % no further message needed
+		  retractall(error_free(build)),
+		  query(Err, error, execution, [ok], _))),
+	finish_progress_dialogue,
+	retract(error_free(build)). % only possible if nothing went wrong
 /*	(Language = tcl, !,
 	    all(m_class, has_new_class_refinement,
 		[build(SeparateNodes), unify(separate of 1)]);  
@@ -84,15 +92,9 @@ build_instances(Language, DestDir, Parent, TopNode,
 	check_directory(CheckDir),
 	windowize(CheckDir, WCheckDir),
 	time_step_for(Parent, Step, MyStep),
-	on_exception(Ur, build_sub_instances(Language, CheckDir, Parent,
-					     TopNode, MyStep, ChangeTop,
-					     SubFnsUsed, SubExtLibs, KeepDir),
-	    (sicstus_format_to_chars("{Relaying exception ~w at level ~w}",
-		[Ur, CheckDir], ExcStr),
-	     name(Exc, ExcStr),
-	     safe_tcl_eval([set, log, Exc], _),
-	     safe_tcl_eval([file, delete, '-force', br(WCheckDir)], _),
-	     raise_exception(Ur))),
+	build_sub_instances(Language, CheckDir, Parent,
+			    TopNode, MyStep, ChangeTop,
+			    SubFnsUsed, SubExtLibs, KeepDir),
 
 	(setof(Fn, list_user_fns(Parent, Fn), LevelFnsUsed), !,
 	    merge_lists(LevelFnsUsed, SubFnsUsed, FnsUsed);
@@ -103,10 +105,10 @@ build_instances(Language, DestDir, Parent, TopNode,
 	ExtLibs = SubExtLibs),
 	/* model can go incomplete then complete again without change
 	 so check all */
-	(check_level_for_reds(TopNode, Parent, Wrinkle), !,
-	    safe_tcl_eval([file, delete, '-force', br(WCheckDir)], _),
-	    raise_exception(Wrinkle),
-	    fail;
+	(check_level_for_reds(TopNode, Parent, Wrinkle),
+	    retractall(error_free(build)),
+	    query(Wrinkle, warning, top, [abort], abort),
+	    throw(aborted);
 	Parent has_model_refinement c_new of 0, !,
 	    Parent has_changed_model_refinement c_new of 1,
 	    ChangeTop = 1,
@@ -116,7 +118,8 @@ build_instances(Language, DestDir, Parent, TopNode,
 	    LocalExtLibs = ExtLibs),
 
 	(( %Parent has_class_refinement separate of 1;
-	  backup:is_toplevel(Parent)), !,
+	  error_free(build),
+	   backup:is_toplevel(Parent)), !,
 	    /* we need an executable for this level */
 	    (Language = c,
 	        (Parent has_model_refinement c_new of OldTgt;
@@ -155,8 +158,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
 	     compile_c_program(CheckDir, ExtLibs, Tgt),
-		 (Tgt = -1, !,
-		     raise_exception(compilation_failed);
+		 (Tgt = -1, !, fail;
 		  (Parent has_changed_model_refinement c_new of Tgt;
 		      Parent has_new_model_refinement c_new of Tgt)),
 		 assert(new_exec_for(Parent)))),
@@ -164,9 +166,8 @@ build_instances(Language, DestDir, Parent, TopNode,
 	    KeepDir = 1;
 	ChangeNext = ChangeTop),
 	/* delete dir if empty...*/
-	(KeepDir == 1, !,
-	    KeepParents = 1;
-	safe_tcl_eval([file, delete, '-force', br(WCheckDir)], _)).
+	(\+ KeepDir == 1, !;
+	    KeepParents = 1).
 
 list_user_fns(Parent, Fn) :-
 	find_all_comps(Parent, Comp),
@@ -212,7 +213,9 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	safe_tcl_eval([set, log, entered_exception], _),
 	Wrinkle = unspecified(OuterText, RedText);
 	Parent has_part Submodel,
-	remove_redundant_equivs(Submodel, Equivs),
+%	remove_redundant_equivs(Submodel, Equivs),
+% never happens as refs to unlinks cannot be loaded
+	Submodel has_link_equivalences Equivs,
 	member(Before-After, Equivs),
 	Before is_connector from S1 to F1,
 	After is_connector from S2 to F2,
@@ -233,18 +236,17 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	caption_for(Param, InnerText),
 	Wrinkle = param_in_vm_model(OuterText, InnerText).
 
+/*
 remove_redundant_equivs(Submodel, Equivs) :-
 	Submodel has_link_equivalences OldEquivs,
 	(select(Before-After, OldEquivs, MoreEquivs),
 	\+ (Before is_connector from _ to _,
 	    After is_connector from _ to _), !,
 	caption_for(Submodel, Capt),
-	sicstus_format_to_chars("Removing redundant link equivalence ~w from submodel ~w.", [Before-After, Capt], Shpiel),
-	do_dialogue("Correcting model inconsistency", warning, Shpiel, ok, _),
 	Submodel has_changed_link_equivalences MoreEquivs,
 	remove_redundant_equivs(Submodel, Equivs);
 	Equivs = OldEquivs).
-	
+*/	
 defines_membership(SmByRec, Fp) :-
 	find_all_comps(SmByRec, Comp),
 	(is_parameter(Comp, 2), Fp = Comp;
@@ -556,7 +558,7 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 	    append_atoms(ModelType, '*', PtrType),
 	    (is_population(SymbolicName), !,
 		DummyCompDims = [1],
-		MoreExtras = [];
+		DeclsOnly = [];
 	    length(Bounds, IdCount),
 		DummyCompDims = [IdCount],
 		(render:count_base_ptrs(Bases, PtrCount),
@@ -564,18 +566,17 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 		    /* model have an array of assoc pointers
 		    for multiple associations.
 		    ..good job I can get away with making them void... */
-		    MoreExtras = [instance(internal, baseptrs,_,
+		    DeclsOnly = [instance(internal, baseptrs,_,
 					baseptrs, 'void*'-[PtrCount])];
-			MoreExtras = [])),
+			DeclsOnly = [])),
 	    Extras = [instance(system, next, _, next, PtrType-[]),
 		      instance(system, ids,_, instanceid, int-DummyCompDims),
-		      instance(system, isnew, _, new_instance,
-			       'BOOLEAN'-[])];
+		      instance(system, isnew, _, new_instance, 'BOOLEAN'-[])];
 	Extras = [],
-	    MoreExtras = []),
+	    DeclsOnly = []),
 	extract_instances(Model, RealDecls),
 	append(Extras, RealDecls, SubInstances),
-	append(MoreExtras, SubInstances, KitchenSink),
+	append(DeclsOnly, SubInstances, KitchenSink),
 	render(L, class_declaration, Instance, 0, ThisDecl),
 
 	refer_value(L, id, IdRef),
@@ -949,9 +950,9 @@ instruction because they will not require individual initialization routines. */
 	    BaseSides = [],
 	    append_atoms(Name, count, Count),
 	    Level = [sm(_,_,_, vm_loop(_,_,_, SetMems))],
-	    GenInters = 
-	    [instance(internal, inter(LocalPath, _,_), _, parentId, int-[]),
-	     instance(internal, inter(LocalPath, _,_), _, channelId, int-[]),
+	    GenInters = % some now in special population class
+	    [ %instance(internal, inter(LocalPath, _,_), _, parentId, int-[]),
+	      %instance(internal, inter(LocalPath, _,_), _, channelId, int-[]),
 	     instance(internal, inter(Path, _,_),_, Count, int-[])],
 	    (by_record(SmName), !,
 		SetMems = -1,

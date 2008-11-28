@@ -312,7 +312,7 @@ proc CheckFloaty {args} {
     if {![llength $args]} {
         return 1
     } elseif {[catch {format %g [lindex $args 0]}]} {
-        ShowMessage "Numeric value required" warning "This operation could not be completed because a numeric value must be placed in the entry field that currently contains this text: [lindex $args 0]" ok
+        Query [list number_needed [lindex $args 0]] warning top {} ok
         return 0
     } else {
         return [eval CheckFloaty [lrange $args 1 end]]
@@ -1166,7 +1166,8 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 			}
 			if {[tableImage transparency get $colInd $rowInd]} {
 			    if {![string length [lindex $tableSpec 8]]} {
-				ShowMessage "No value for clear" warning "The image file \"[lindex $tableSpec 0]\" contains transparent pixels, but no value to use for these pixels has been given." ok
+				Query [list no_clear_val [lindex $tableSpec 0]]\
+				    warning top {} ok
 				return
 			    }
 			    set paramArray([list top $yInd $xInd]) \
@@ -1198,10 +1199,10 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 #	set indexList [ReadGdalRefToArray paramArray $tableSpec]
 	return $tableSpec
     } else {
-#ShowMessage debug info "Loading table with data $tableSpec" ok
+#ShowMess debug info "Loading table with data $tableSpec" ok
 	gets $tStr headerLine
 	set headerList [TrimFields [split $headerLine ,]]
-#ShowMessage debug info "Headers are $headerList" ok
+#ShowMess debug info "Headers are $headerList" ok
     
 	set headerCount 0
 	set indexStart 2
@@ -1223,14 +1224,15 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    set headerCount 1
 	}
 	set headerColumn [lsearch -exact $headerList [lindex $tableSpec 1]]
-#ShowMessage debug info "Columns: header $headerColumn indxs $indexColumns" ok
+#ShowMess debug info "Columns: header $headerColumn indxs $indexColumns" ok
 	if {$headerColumn==-1} {
-	    ShowMessage "Data column not found" warning "The file \"[lindex $tableSpec 0]\" does not contain a column with \"[lindex $tableSpec 1]\" as a heading. Please supply a heading to identify the data column from this list: $headerList." ok
+	    Query [concat no_data_col [lrange $tableSpec 0 1] \
+		       [list $headerList]] warning data_in_cols {} ok
 	    return
 	}
 	while {[gets $tStr entryLine] != -1} {
 	    set entryList [TrimFields [split $entryLine ,]]
-#ShowMessage debug info "Data line is $entryList" ok
+#ShowMess debug info "Data line is $entryList" ok
 	    if {![llength $entryList]} {
 		continue ;# ignore blank lines anywhere
 	    }
@@ -1267,7 +1269,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	}
     }
     
-#ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
+#ShowMess debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
     set result [ArrayToList paramArray]
     if {$addSpecials} {

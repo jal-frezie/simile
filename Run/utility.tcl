@@ -9,7 +9,7 @@
 # Thanks to tk_abandon, I sometimes put several dialogues up at once, which,
 # thanks to a bug in tcltk, gets the wrong results for the lower ones...
 
-proc ShowMessage { title icon string resps {parent {}}} {
+proc ShowMess { title icon string resps {parent {}}} {
     set mBoxCmd [list tk_messageBox -title $title -icon $icon \
 		     -message $string -type $resps]
     if {[winfo exists .splash]} {
@@ -91,7 +91,7 @@ proc ChooseFile { preferred title canbenew context} {
     } else {
         set cmd tk_getOpenFile
     }
-#ShowMessage debug info "will eval $cmd $switches" ok
+#ShowMess debug info "will eval $cmd $switches" ok
     if {[info exists preSelect]} {
 	set chosenFile $preSelect
 	unset preSelect
@@ -125,7 +125,7 @@ proc ChooseText {choice ifTrue ifFalse} {
 
 # takes two file names and returns the second relative to the first
 proc Relativize {current remote} {
-    #	ShowMessage debug info "relativizing $current $remote" ok
+    #	ShowMess debug info "relativizing $current $remote" ok
     set currentList [file split $current]
     set remoteList [file split $remote]
     set parted 0
@@ -252,7 +252,7 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
 	#clipboard append -type "image/png" [$img data -format png]
 	
 	if {[catch {image create photo -format window -data $canvas} img]} {
-	    ShowMessage "Could not get graphics" warning "Simile failed to get graphics from the canvas to put on the clipboard, so it will not be possible to paste them into another application. The canvas must all be visible (i.e., on screen and not hidden) for this to work." ok
+	    Query get_graphics_failed warning top {} ok
 	} else {
 	    # now if I just get it to yack up the data like this...
 	    #set selnImages [$img data -format png]
@@ -699,7 +699,7 @@ proc LoadIconImages {} {
         set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
-    foreach fn {info warning error} {
+    foreach fn {info question warning error} {
         set iconImages($fn) \
 	    [image create photo -file "${::BWIDGET::LIBRARY}/images/${fn}.gif"]
     }

@@ -53,8 +53,8 @@ merge_enum_types(Types, Parent) :-
 	Types = [Class-Mems | Rest],
 	(ancestor_has_enum_type(Parent, Class-OldMems),
 	    (Mems = OldMems;
-	    sicstus_format_to_chars("The components being merged include a definition for the enumerated type \"~a\", which will be replaced by the definition already in the model.", [Class], Annoy),
-		do_dialogue("Model incompatibility", error, Annoy, ok, _)), !;
+	     query(lose_enum_type(Class, Mems, OldMems), warning, enumtype, 
+		   [ok], _)), !;
 	 Parent has_class_refinement enum_types of OldTypes,
 	     Parent has_changed_class_refinement enum_types of
 	         [Class-Mems | OldTypes];

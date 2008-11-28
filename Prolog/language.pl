@@ -364,11 +364,11 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	    refer(L, Dest, DestRef),
  	    make_evaluation_routine_all(L, Args, Inds),
  	    CallSpec =.. [collect, DestRef, CollectId | Inds];
-	SpecialOp =.. [call_ext_code, ProcName, CurSmPtr, ArgCodes],
+	SpecialOp = call_ext_code(ProcName, CurSmPtr, ArgCodes),
 	    all(render, msr_with_ptrs,
 		[unify(L), unify(CurSmPtr), build(ArgCodes), build(XArgs)]),
 	    CallSpec =.. [ProcName | XArgs];
-	SpecialOp =.. [SubCall, NodeId, InstHandle, NewCond],
+/*	SpecialOp =.. [SubCall, NodeId, InstHandle, NewCond],
 	    member(SubCall,
 		   [update_submodel, advance_submodel,
 		    int_eval_submodel, ext_eval_submodel]),
@@ -377,9 +377,15 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	    make_scalar(L, InstHandle, InstPtr),
 	    refer_value(L, InstPtr, InstHandleRef),
 	    CallSpec =.. [SubCall, Node, InstHandleRef, PassTest];
-/*	SpecialOp = search_from(ArcInd, _, TopRef),
+	SpecialOp = search_from(ArcInd, _, TopRef),
 	    CallSpec = search_from(myClassPtr, ArcInd, TopRef);
-*/	SpecialOp = cond_assign(Dest, Tested, Payload, Op, SoFar),
+*/      SpecialOp = set_rate_of(Dest, Source), 
+	    make_scalar(L, Dest, ScalarDest),
+	    refer(L, ScalarDest, DestRef),
+	    make_evaluation_routine(L, Source, Term),
+	    make_expr(L, Term, Expr),
+	    CallSpec = set_rate_of(DestRef, Expr);
+	SpecialOp = cond_assign(Dest, Tested, Payload, Op, SoFar),
 	    make_scalar(L, Dest, ScalarDest),
 	    make_pointer(L, ScalarDest, DestPtr),
 	    make_evaluation_routine(L, Tested, TestedTerm),
@@ -657,9 +663,8 @@ we only make the three lines that insert the submodel instance into its linked l
 /* Right, this is the one with the meat in it; the actual integration of new code
 that evaluates an expression in the model */
 
-do_assignment(L, [assign(arr(P, Val, Is), Source) | Clauses], Indent,
-		Used, Stream) :-
-	make_scalar(L, arr(P, Val, Is), ScalarDest),
+do_assignment(L, [assign(Dest, Source) | Clauses], Indent, Used, Stream) :-
+	make_scalar(L, Dest, ScalarDest),
 	make_evaluation_routine(L, Source, Term),
 	make_expr(L, Term, Expr),
 	excrete(L, assignment, ScalarDest=Expr, Indent, Stream),

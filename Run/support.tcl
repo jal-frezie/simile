@@ -104,6 +104,7 @@ proc tcl_setparamarray {model node} {
     global paramLocns
 
     set paramIdx [getinfo $node 6]
+puts "tcl_setparamarray $model $node $paramIdx"
     set paramLocns($paramIdx,nod) $node
     set paramLocns($paramIdx,arr) tclParmData ;# was [InputVarFor $model $node]
 }
@@ -150,7 +151,7 @@ proc InputVarFor {topNode node} {
    
 proc oldcollect {tgt node count args} {
     global myNode
-# ShowMessage debug info "Collecting...$tgt...$node...$count...$args" ok
+# ShowMess debug info "Collecting...$tgt...$node...$count...$args" ok
     if {[string match TABLE [getinfo $node 3]]} {
 	set inputSrc paramData
     } else {
@@ -374,7 +375,7 @@ proc TclResetModel {node topPhase} {
 
 proc TclExecuteModel {node howInt start end errLim} {
     global dts steps phasecount adapt
-#    if {[string equal cancel [ShowMessage debug info "XM from $start to $end" okcancel]]} {
+#    if {[string equal cancel [ShowMess debug info "XM from $start to $end" okcancel]]} {
 #	error cancelled
 #    }
     set freq [expr $steps($phasecount)*pow(2,-$adapt(doublings))]
@@ -461,7 +462,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 proc PhaseFor {current step soFar} {
     global steps
 
-#ShowMessage debug info "PhaseFor $current $step $soFar" ok
+#ShowMess debug info "PhaseFor $current $step $soFar" ok
     if {$soFar == 1} {
 	return 1
     }
@@ -800,7 +801,7 @@ proc init_pop {metaTxt crNode ptCount channelId maker} {
 
 proc compare_instance_status {testInstName refInst num} {
     upvar 1 $testInstName testInst
-    #    ShowMessage debug info "testInst $testInst refInst $refInst" ok
+    #    ShowMess debug info "testInst $testInst refInst $refInst" ok
     if {[string match 0 $testInst]} {return 1}
     for {set ptr 0} {$ptr < $num} {incr ptr} {
         if {[lindex $testInst $ptr]<[lindex $refInst $ptr]} {return -1}
@@ -810,7 +811,7 @@ proc compare_instance_status {testInstName refInst num} {
 }
 
 proc compare_values {v1 indexTxt v2 length step} {
-    # ShowMessage debug info "compare_values\n$v1\n$indexTxt\n$v2\n$length\n$step" ok
+    # ShowMess debug info "compare_values\n$v1\n$indexTxt\n$v2\n$length\n$step" ok
     upvar 1 $indexTxt index
     compare_lists 1 $v1 index $v2 $length $step
 }
@@ -952,7 +953,7 @@ proc GetTclCompProperty {topNode prop args} {
 	    }
 	} Caption {
 	    return [GetFullCaption [findRecord $node]]
-#ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
+#ShowMess debug info "node $node data [array get nodedata] npath $numericPath" ok
 	} IdFromCapt {
 	    foreach record [array names nodedata] {
 		if {![string equal GHOST [lindex $nodedata($record) 4]]} {
@@ -1255,6 +1256,11 @@ proc start_in_editor {args} {
 
 if {![info exists runHow(where)]} { ;# we are not at home, so call
 proc do_in_editor {args} {
+    global masterId
+    return [thread::send $masterId [lrange [info level 0] 1 end]]
+}
+
+proc old_do_in_editor {args} {
     global runHow sender fromEditor
 #    tk_messageBox -message "callback $args"
     if {[string equal send_sync $runHow(return)]} {
@@ -1283,20 +1289,6 @@ proc do_in_editor {args} {
 	}
     }
 }
-
-# procedures that just call their namesakes in the editor -- not needed if we
-# have not left
-
-proc PrefValue {arrVal val} {
-    return [do_in_editor PrefValue $arrVal $val]
-}
-
-proc ContextSensitiveHelp {xcontext page} {
-    global myNode
-    set context [do_in_editor FindNodeTopWin $myNode]
-    return [do_in_editor ContextSensitiveHelp $context $page]
-}
-
 }
 
 proc res {value} {

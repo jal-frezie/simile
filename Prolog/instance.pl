@@ -205,15 +205,23 @@ into the function and copy that's expression into the compartment.
 
 Oh well, why don't I just mega-ly botch it and have each primitive
 return a variable number of instances..."virtual" symbolic name means
-not in the original model. */
+not in the original model.
+
+Update for Simile 5.4: For any of these nodes, the modeller may want
+the equation value, the number actually made, or the remainder carried
+over. The first is the value you see or get, the others are returned
+by functions that work like 'channel_is'. So an extra program variable
+must be made for number of instances actually made, which would
+otherwise be lost. */
 
 instance_of(Type, Node, Path,
 	    [instance(Type, Node,
-		      incr(Step, Home+stage_incr(Diffs, Step, Value)),
+		      incr(Step, Home+stage_incr(Diffs, Step,
+						 value_of(Struct))),
 		      Home, real-[]),
 	     instance(init_function, Node, rand_var(0,1), Home, real-[]),
 	     DiffStruct],
-	    [instance(function, Function, _, Value, _)]) :-
+	    [instance(function, Function, _, Struct, _)]) :-
 	member(Type, [immigration, reproduction]),
 	Home = elt(Path, _, 1-[]),
 	Diffs = elt(Path, _, diffs-[]),
@@ -257,7 +265,10 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	    m_update:get_solo_list_depth(Sub, _),
 	    raise_exception(bad_parameter(Node, Sub));
 	length(Refs, _Fix)),
-	get_units(Node, Base, Units),
+	get_units(Node, VType, Units),
+	(member(RType, [immigration, reproduction]), !,
+	    Base = channel_stats;
+	Base = VType),
 	is_instance(FType, Node, FinalExpr, elt(Path, _, Base-Units),
 		    Base-Units, Instance).
 	     
@@ -290,13 +301,13 @@ instance_of(Type, Node, _, Inst, Ref) :-
 	    initiates(Arc, F),
 	    Inst = [instance(Type, Node, FnType, Value, Dims)],
 	    Ref = [instance(FnType, F, _, Value, Dims)];
-	/* Could not generate code for part with no connections, so kill it */
+	% Could not generate code for part with no connections, so kill it
+	% (buggy legacy models only)
 	caption_for(Node, Capt),
 	    Node is_part_of Parent,
 	    m_update:oblitterfry(Node),
 	    caption_for(Parent, PCapt),
-	    sicstus_format_to_chars("Removing node ~w from submodel ~w.", [Capt, PCapt], Shpiel),
-	    do_dialogue("Correcting model inconsistency", warning, Shpiel, ok, _)).
+	    query(remove_orphan(Capt, PCapt), info, top, [ok], _)).
 	    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -427,9 +438,14 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 
 process_expr(sub(InputPairs, Refs), Var, NewVar, Recurse) :-
 	m_update:get_solo_list_depth(Var, _),
-	(member(input_pair(Var, Node, OutVar, NewVar), InputPairs),
+	(member(input_pair(Var, Node, OutVar, Struct), InputPairs),
 	    is_instance(_, Node, _, OutVar, _, Ref),
-	    member(Ref, Refs), !;
+	    member(Ref, Refs),
+	    (get_host(Node, VisNode),
+		find_type(VisNode, PType),
+		member(PType, [immigration, reproduction]),
+		NewVar = value_of(Struct);
+		NewVar = Struct), !;
 	NewVar = Var),
 	    Recurse = 0;
 	build_table_ref(table_const(1), Var, NewVar),

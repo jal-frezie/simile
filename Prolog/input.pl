@@ -18,7 +18,7 @@ sicstus_module(input, [tk_make_desktop_node/0,
 		       tk_certain_death_node/1, tk_kill_everything/1,
 		       tk_set_new_size/3, tk_change_size/3, tk_do_colours/2]).
 
-sicstus_use_module([library(lists), backup, event, menu, utility]).
+sicstus_use_module([library(lists), backup, event, menu, sp_only, utility]).
 
 
 tk_make_desktop_node :-
@@ -41,7 +41,7 @@ tk_get_info(Wid, Comp, What) :-
 	    all(draw, append_callback, [build(Answer)]);
 	Answer = [], !,
 	    draw:callback(br(''));
- 	name(Answer, AnsStr),
+ 	sicstus_write_to_chars(Answer, AnsStr),
  	    text:argify(AnsStr, ArgStr),
  	    draw:callback(chars(ArgStr))).
 

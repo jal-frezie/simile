@@ -262,8 +262,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	    backup:restart_move,
 	    % abort loading project file
 	    output:safe_tcl_eval(['catch {unset ::loadingProject}'], _),
-	    sicstus_format_to_chars("Loading this model makes ~d equations. This is greater than ~d, and it was not created by the enterprise edition, so it cannot be loaded in the ~a edition.", [Fns, StopAt, Edn], Annoy),
-	    do_dialogue("Error loading model", error, Annoy, ok, _),
+	    query(bust_edition_limit(Fns, StopAt, Edn), error, top, [ok], _),
 	    dialogue:finish_progress_dialogue,
 	    % prevent executable from running
 	    Parent has_new_model_refinement c_new of 0,
@@ -291,8 +290,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	state:version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
-	sicstus_format_to_chars("This file was created with a later version of Simile than the one you are currently running. To avoid potential problems, please update your copy to version ~f or later.", [SimileV], FutureShock),
-	    do_dialogue("Future shock!", warning, FutureShock, ok, _))).
+	query(future_shock(SimileV), warning, top, [ok], _))).
 
 count_functions(Model, N) :-
 	setof(Node, (contains(Model, Node), find_type(Node, function)), Nodes),
@@ -576,9 +574,8 @@ deal_with_rest( [], PreviousLength, Parent, Bindings, AllBindings, Terms ) :-
 	(NewLength < PreviousLength, !,
 	    deal_with_rest(Terms, NewLength, Parent, Bindings, AllBindings,[]);
 	(build:missing(Comp),
-	    sicstus_format_to_chars("Component ~w missing. The following lines in the file contained references to model components that were not found: ~w", [Comp, Terms], MessStr);
-	sicstus_format_to_chars("Simile had some sort of problem incorporating the following lines from the file into the model: ~w", [Terms], MessStr)),
-		do_dialogue("Problem reading file", warning, MessStr, ok, _)).
+	    query(lost_component(Comp, Terms), warning, top, [ok], _);
+	query(bad_model_format(Terms), warning, top, [ok], _))).
 
 deal_with_rest( [Term|Terms], Length, Parent, Bindings, AllBindings, Rest ) :-
 	Term =.. TermList,

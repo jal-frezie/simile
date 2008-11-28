@@ -172,10 +172,38 @@ double step_incr (int, double);
 //int at_time_step ();
 int loses (double, int);
 
+// class for channels allowing access to all data
+class channel_stats {
+public:
+  double value;
+  double carry;
+  int traffic;
+};
+
+double value_of(channel_stats ch) {
+  return ch.value;
+}
+
+void set_rate_of(channel_stats* ch, double rate) {
+  ch->value = rate;
+}
+
 /* abstract base class for submodels, with extractor virtual function */
 class submodeltype {
 public:
   virtual void* get_pointer(int id, int** dims) = 0;
+};
+
+// Refinement of above for population submodels
+class member_list_type: public submodeltype {
+public:
+};
+
+// Refinement of above for population submodels
+class populationtype: public member_list_type {
+public:
+  int parentId;
+  int channelId;
 };
 
 /* Fn template for deleting a linked list of models -- if non-null, 

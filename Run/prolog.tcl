@@ -85,18 +85,14 @@ proc AddCurrentToPipe {stack} {
 proc ShowStack {} {
 
     global plPipe
-    ShowMessage "Stack is..." info [AddCurrentToPipe $plPipe(stack)] ok
+    ShowMess "Stack is..." info [AddCurrentToPipe $plPipe(stack)] ok
 }
 
 proc do_tail {header args} {
     global errorInfo
     set oldDir [pwd]
     if {[catch $args retVal]} {
-        set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
-        if {[string match yes $ans]} {
-            BuildProblem "User interface problem" error $errorInfo execution \
-		unsaved none
-        }
+	Query [list unhandled_tcl_error $retVal $errorInfo] error top {} ok
         cd $oldDir
 	set response error:$retVal
     } else {
@@ -122,10 +118,10 @@ proc ClosePipe {} {
     global plPipe simtmpdir
     if {[catch {close $plPipe(stream)} spew]} {
         destroy .splash ;# banner will hide error mesg if not yet withdrawn
-	ShowMessage "Prolog process exited" error $spew ok
+	ShowMess "Prolog process exited" error $spew ok
     }
     if {[catch {file delete -force $simtmpdir}]} {
-	ShowMessage debug warning "Simile could not delete its temporary directory $simtmpdir. This probably means that it failed to unload a model executable. Any saved models will not be affected, and you can delete the temporary directory after Simile has exited." ok
+	Query [list cannot_delete_temp_folder $simtmpdir] warning top {} ok
     }
     if {$plPipe(debug)} {
 	close $plPipe(debug_stream)

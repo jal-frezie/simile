@@ -58,12 +58,7 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 	if {![file exists $progFile]} {
 	    return 0
 	}
-        if {[catch {loadmodel $progFile $node} new_model_id]} {
-	    if {[PrefValue custom(hackBreak) hackBreak]} {
-		ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $new_model_id -- the program will attempt to build another one." ok
-	    }
-            return 0
-        }
+	set new_model_id [loadmodel $progFile $node]
 	set model_id($topNode) $new_model_id
         #        set model_id [loadmodel $nameBase[info sharedlibextension] $node]
         set model_ids($node) $new_model_id
@@ -72,7 +67,7 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 }
 
 proc update_executable {node lang} {
-    #    ShowMessage debug info "References are $finderList" ok
+    #    ShowMess debug info "References are $finderList" ok
     global model_id instance_id
 
     # For the toplevel model, make an instance. This will also make
@@ -83,7 +78,7 @@ proc update_executable {node lang} {
 	    set instance_id($node) [c_createmodel \
 					$model_id($node)]
 	} tcl {
-    #    ShowMessage debug info "model instance $instance_id created" ok
+    #    ShowMess debug info "model instance $instance_id created" ok
 	    set model_id($node) 0
 	    set instance_id($node) 0
 	}
@@ -273,12 +268,14 @@ if {![info exists runHow]} { ;# we are in separate interp
 	    return [PullAction $nodeId]
 	}
     }
-# placeholder
+# these are straight copies
     proc ExplainError {args} {
 	global masterId
-	thread::send $masterId [info level 0]
+
+	return [thread::send $masterId [info level 0]]
     }
 }
+
 proc RunningInC {myNode} {
     global model_id
     return $model_id($myNode) ;# it is ready
@@ -305,6 +302,9 @@ proc GetCCompProperty {topNode prop args} {
 			    Eval,cIdx 2 Eval,names \
 			    {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST}]
 	    set numericVal [c_getvalue $topNode $node $propData($prop,cIdx)]
+	    if {![string is integer -strict $numericVal]} {
+		return $numericVal
+	    }
 	    if {$numericVal>=10} {
 		return ENUM([expr $numericVal-10])
 	    } else {
@@ -363,7 +363,7 @@ proc c_getvalue {topNode node action} {
 
 proc ExScrubRun {node times} {
     global runState model_id instance_id
-    #    if {![string match ok [ShowMessage debug info Scrubbing okcancel]]} {
+    #    if {![string match ok [ShowMess debug info Scrubbing okcancel]]} {
     #	error Bombed
     #    }
     set runState($node,modelRunning) 0
@@ -376,17 +376,17 @@ proc ExScrubRun {node times} {
     if {[info exists model_id($node)]} {
         if {$model_id($node)} {
             if {[info exists instance_id($node)]} {
-                #ShowMessage debug info "Exiting $model_id($node) $instance_id($node)" ok
+                #ShowMess debug info "Exiting $model_id($node) $instance_id($node)" ok
                 c_exitmodel $model_id($node) \
 		    $instance_id($node)
                 unset instance_id($node)
             } else {
-                #ShowMessage debug info "Exiting $model_id 0" ok
+                #ShowMess debug info "Exiting $model_id 0" ok
                 c_exitmodel $model_id($node) 0
             }
         } else {
             if {[info exists instance_id($node)]} {
-                #ShowMessage debug info "Exiting $model_id $instance_id" ok
+                #ShowMess debug info "Exiting $model_id $instance_id" ok
 		namespace delete ::AME_model<>
 		array unset nodedata
                 unset instance_id($node)

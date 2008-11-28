@@ -23,7 +23,7 @@ proc create_equation {parent boxtitle indices} {
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
     
     set notebook [::ttk::notebook $t.notebook]
-    $notebook add [frame $notebook.main] -text Main
+    $notebook add [panedwindow $notebook.main -orient vertical] -text Main
     set mainF $notebook.main
     $notebook add [frame $notebook.documentation] -text Documentation
     set docF $notebook.documentation
@@ -48,8 +48,8 @@ proc create_equation {parent boxtitle indices} {
     # Middle frame has the functions, indices and keypad
     # created variable middleF to point to the Middle frame makes moving the frame in
     # the widget hierrachy easier Jonathan 22 Aug 2002
-    set middleF [frame $mainF.middle]
-    TitleFrame $middleF.functions -text "Functions: "
+    $mainF add [set middleF [panedwindow $mainF.middle -orient horizontal]]
+    $middleF add [TitleFrame $middleF.functions -text "Functions: "]
     set fnFrame [$middleF.functions getframe].fnFrame
 #    ScrolledWindow $fnFrame
     frame $fnFrame
@@ -85,8 +85,8 @@ proc create_equation {parent boxtitle indices} {
         }
     }
     
-    pack $middleF.functions -side left -anchor nw -padx 2 -pady 2 -expand true -fill both
-    TitleFrame $middleF.indices -text "Indices: "
+#    pack $middleF.functions -side left -anchor nw -padx 2 -pady 2 -expand true -fill both
+    $middleF add [TitleFrame $middleF.indices -text "Indices: "]
     set indicesf [$middleF.indices getframe]
     frame $indicesf.list
     set lbx [listbox $indicesf.list.ilist \
@@ -99,10 +99,10 @@ proc create_equation {parent boxtitle indices} {
     pack $indicesf.list.ilist -side left -fill both -expand true
     pack $indicesf.list.scrolli -side left -fill y
     pack $indicesf.list -anchor nw -expand true -fill both
-    pack $middleF.indices -side left -anchor nw  -padx 2 -pady 2 -expand true -fill both
+#    pack $middleF.indices -side left -anchor nw  -padx 2 -pady 2 -expand true -fill both
     
     # Stella special: a keypad frame to prevent users having to touch their kbd
-    TitleFrame $middleF.keypad -text "Keypad: "
+    $middleF add [TitleFrame $middleF.keypad -text "Keypad: "]
     set keypadf [$middleF.keypad getframe]
     frame $keypadf.keys
     set keys {< > ( ) \[ \] custom AC = ^ , / and dummy if dummy 7 8 9 * or dummy then dummy \
@@ -164,12 +164,13 @@ proc create_equation {parent boxtitle indices} {
     pack $keypadf.keys.row5.col4 -padx [list 4 0]
     
     pack $keypadf.keys -side left -anchor nw
-    pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
-    pack $middleF -expand off -fill x
+#    No need to pack if they are panes
+#    pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
+#    pack $middleF -expand off -fill x
     
     
     # Now for the main frame: the equation and its commentary
-    frame $mainF.main
+    $mainF add [frame $mainF.main]
     TitleFrame $mainF.main.main -text "Data source: "
     set mainf [$mainF.main.main getframe]
     frame $mainf.slider
@@ -235,11 +236,11 @@ proc create_equation {parent boxtitle indices} {
     pack $mainf.equation -expand true -fill both -anchor nw
     pack $mainF.main.main -anchor nw -expand true -fill both -padx 2 -pady 2 -side left
     
-    pack $mainF.main -anchor nw -expand true -fill both -anchor nw
+#    pack $mainF.main -anchor nw -expand true -fill both -anchor nw
     
     # Miscellaneous other stuff below
     # Bottom frame has the influences and parameters list boxes
-    set bottomF [frame $mainF.bottom]
+    $mainF add [set bottomF [frame $mainF.bottom]]
     TitleFrame $bottomF.influences -text "Influences: "
     set influencesf [$bottomF.influences getframe]
     frame $influencesf.captions
@@ -266,7 +267,7 @@ proc create_equation {parent boxtitle indices} {
     set lbd [frame $canId.dlist -bd 2 -relief sunken]
     pack $canId.plist $canId.ilist $canId.dlist -side left -fill x -expand true
     pack $bottomF.influences -fill x -anchor nw -padx 2 -pady 2
-    pack $bottomF -fill x
+#    pack $bottomF -fill x
     
     # comments in the Documentation page
     
@@ -491,7 +492,7 @@ proc fill_inputs { triples } {
         return
     }
     ### End formula bar section
-    
+
     set t [$equation(main).main.main getframe]
     set en $t.equation.textbox.text
     set widget [$equation(main).bottom.influences getframe]
@@ -540,7 +541,8 @@ proc fill_inputs { triples } {
     }
     # Make box mode compact if not used
     if {!$line} {
-        pack forget $equation(main).bottom
+#        pack forget $equation(main).bottom
+	 $equation(main) forget $equation(main).bottom
     } else {
         set showLines [max 3 [min 8 $line]]
         $widget.lists.f configure -height \
@@ -550,6 +552,9 @@ proc fill_inputs { triples } {
 # seems superfluous now it is placed on desktop window, and caused nasty bug by
 # allowing two doubleclicks to be processed at once
     }
+    tkwait visibility $equation(main).middle
+    $equation(main).middle sash place 0 200 0
+    $equation(main).middle sash place 1 400 0
 }
 
 proc fill_table {table_data table_values} {

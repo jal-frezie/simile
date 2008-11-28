@@ -282,7 +282,7 @@ if {[info exists prolog_in_console]} {
 }
 
 set env(SIMILE_VERSION) 5.4
-set sendvars(simP) {a1}
+set sendvars(simP) {a2}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is
@@ -316,7 +316,7 @@ encoding system utf-8
 entry .hidden_e
 pack .hidden_e
 
-set startGeom +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-158]
+set startGeom +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/4-158]
 if {[string equal Linux $tcl_platform(os)]} {
     wm geometry . $startGeom
 } else {

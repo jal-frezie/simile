@@ -125,7 +125,7 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     if {$notInput>-1} {
 	set readMany($compName) [expr {$notInput==0}]
     } ;# otherwise it has been set by the PEST interface GUI
-#ShowMessage debug info "Creating compname $compName" ok
+#ShowMess debug info "Creating compname $compName" ok
     # bit of voodoo...get table relating numerical indices of node to enumerated
     # types (from model) and use to translate array bounds. Do this first because
     # there will be null entries in the table for vm model levels.
@@ -141,7 +141,7 @@ proc AddEntry {winId topNode node mustShow notInput args} {
 	return "This value has variable dimensions, and therefore cannot be optimized by parameter estimation."
     }
     
-    #ShowMessage debug info "$node $trans $nodeDims" ok
+    #ShowMess debug info "$node $trans $nodeDims" ok
     set nodeDims [TransBounds $trans $nodeDims]
     
     set dimList [MakeDimsLegible $nodeDims \
@@ -391,14 +391,14 @@ proc AcceptData {topNode compName notInput complain} {
 
         set useCppArray [RunningInC $topNode]
 
-        #puts "node $compName has dims $recordDims"
+#puts "node $compName has dims $recordDims"
         while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
 #            if {$afterTIME} {
 #                set recordDims [lset recordDims $recordDepth MEMBERS]
 #            } else {
-                #do_in_editor puts "recordDims $recordDims recordDepth $recordDepth"
+#puts "recordDims $recordDims recordDepth $recordDepth"
 	    foreach recordId [array names suppliedData] {
-		#puts "recordId is $recordId"
+#puts "recordId is $recordId"
 		if {[string first $recordId $compName]==0 && \
 			![string equal $recordId $compName]} {
 		    set recordNode [IdFromTail $topNode $recordId $notInput]
@@ -410,16 +410,16 @@ proc AcceptData {topNode compName notInput complain} {
 			tcl_setparamarray $topNode $recordNode
 		    }
 # Not sure how this condition would ever fail...
-#		    set outerDims [lrange [GetCompProperty $topNode Dims \
-#					       $recordNode] 0 end-1]
-#		    #puts "node $recordNode outer dims $outerDims"
-#		    if {[string match $outerDims \
-#			     [lrange $recordDims $afterTIME $recordDepth]]} {
-## note afterTime will always be 0 here as RECORDS levels removed otherwise NOT
+		    set outerDims [lrange [GetCompProperty $topNode Dims \
+					       $recordNode] 0 end-1]
+#puts "node $recordNode outer dims $outerDims"
+		    if {[string match $outerDims \
+			     [lrange $recordDims 0 $recordDepth]]} {
+# note afterTime will always be 0 here as RECORDS levels removed otherwise NOT
 			set recordDims [lset recordDims $recordDepth \
 					    [list RECORDS $recordNode]]
 			break
-#		    }
+		    }
 		}
 	    }
 #            }
@@ -427,7 +427,7 @@ proc AcceptData {topNode compName notInput complain} {
         #puts "About to ListToArray $node {} $trans $recordDims $suppliedData($compName)"
         if {[string equal targetData $dataLocn]} {
 	    if {![llength $suppliedData($compName)]} {
-		ShowMessage "No target values given" warning "You must supply at least one target value for each selected output"  ok
+		Query pest_measurements_missing warning pest_setup {} ok
 		return
 	    }
 	    set whatMaking target
@@ -441,25 +441,26 @@ proc AcceptData {topNode compName notInput complain} {
 	} else {
 	    tcl_setparamarray $topNode $node
 	}
+	if {$complain>0} {
+	    set errorData [list $whatMaking $compName]
+	} else {
+	    set errorData {}
+	}
         if {[catch {ListToArray $topNode $node {} $trans $recordDims \
                         $suppliedData($compName) $readMany($compName) \
-			$useCppArray} result]} {
-            # new bit for using it as an input tool: notify that we have values
-            lappend suppliedData(needed) $compName
-	    if {[string match BadFP* $result]} {
-		if {$complain>-1} {
-		    ColourCaptions $outNames($compName) red
-		    if {$complain>0} {
-			if {[llength [lindex $result 2]]} {
-			    set where " at indices [lindex $result 2]"
-			} else {
-			    set where {}
-			}
-			ShowMessage "Problem setting $whatMaking value" warning "While attempting to load the $whatMaking value \"$compName\"$where the following problem occurred: [lindex $result 1]" ok
-		    }
-                }
+			$useCppArray $errorData} result]} {
+	    if {[string equal aborted $result]} {
+		set result {}
             } else { ;# a bug rather than a bad user entry
 		error $result $::errorInfo
+	    }
+	}
+
+	if {![string length $result]} { ;# there were errors
+            # new bit for using it as an input tool: notify that we have values
+            lappend suppliedData(needed) $compName
+	    if {$complain>-1} {
+		ColourCaptions $outNames($compName) red
 	    }
         } else {
             if {$complain>-1} {
@@ -490,8 +491,8 @@ proc rsearch {list tgt} {
     }
 }
 
-proc ListToArray {topNode tgt subs trans dims list when useCppArray} {
-#ShowMessage debug info  "Go! tgt $tgt trans $trans dims $dims list $list cpp $useCppArray" ok
+proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
+#ShowMess debug info  "Go! tgt $tgt trans $trans dims $dims list $list cpp $useCppArray" ok
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
     # ... string match stops cleanly at end of list
@@ -554,7 +555,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray} {
     if {![llength $dims]} {
         switch [llength $list] {
             0 {
-                FPError "Missing value" {}
+                FPError "Missing value" $subs $errorData
             } 1 {
                 if {![string last ,NOW [string toupper $subs] 3]} {
 		    # setting current value for var param
@@ -564,26 +565,28 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray} {
 			set comboTypes($idAndSubs) $list
 		    }
                     EnumTypeToNumber $idAndSubs \
-                            $list $thisTrans 0 $useCppArray
+                            $list $thisTrans 0 $useCppArray $subs $errorData
                     return 1
 		} else {
 		    # setting value for fixed param or time point
                     EnumTypeToNumber $tgt$subs $list $thisTrans $when \
-			$useCppArray
+			$useCppArray $subs $errorData
                     return -1 ;# should be 0 if a comp
                 }
             } default {
-                FPError "Array $list supplied instead of scalar" {}
+                FPError "Array $list supplied instead of scalar" \
+		    $subs $errorData
             }
         }
     }
     if {[llength $list]==1} {
         #puts "setting paramData($tgt) to $headNum"
         set userDims [join $dims { x }]
-        FPError "scalar $list supplied instead of array of $userDims" {}
+        FPError "scalar $list supplied instead of array of $userDims" \
+	    $subs $errorData
     }
     if {[llength $list]%2} {
-        FPError "Missing value" [list [lindex $list end]]
+        FPError "Missing value" $subs,[list [lindex $list end]] $errorData
     }
     
     foreach {indx sublist} $list {
@@ -594,20 +597,21 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray} {
             set role "Time point"
             if {!([Numeric $indx] || \
 		      [lsearch {NOW OTHERS} [string toupper $indx]]>-1)} {
-                FPError "$role $indx must be NOW, OTHERS or a number." {}
+                FPError "$role $indx must be NOW, OTHERS or a number." \
+		     $subs $errorData
             }
         } elseif {[string compare {} $thisTrans]} {
             set poss [lsearch $thisTrans $indx]
             if {$poss == -1} {
-                FPError "$role $indx is not a member of type [lindex $thisTrans 0], pick one of [lrange $thisTrans 1 end]." {}
+                FPError "$role $indx is not a member of type [lindex $thisTrans 0], pick one of [lrange $thisTrans 1 end]." $subs $errorData
             }
         } elseif {![string is integer -strict $indx]} {
-            FPError "$role $indx is not an integer." {}
+            FPError "$role $indx is not an integer." $subs $errorData
         } elseif {$indx<=0} {
-            FPError "$role $indx is zero or negative." {}
+            FPError "$role $indx is zero or negative." $subs $errorData
         }
         if {[info exists sub($indx)]} {
-            FPError "$role $indx appears more than once." {}
+            FPError "$role $indx appears more than once." $subs $errorData
         }
         set sub($indx) $sublist
     }
@@ -621,17 +625,18 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray} {
         # just like other dimensions, i.e., all must be set
         set redoStep 1
         # Next call removes old time series data from the system
-        EnumTypeToNumber $tgt {} {} 1 $useCppArray
+        EnumTypeToNumber $tgt {} {} 1 $useCppArray $subs $errorData
 	SetWrapTime $useCppArray $tgt 0 ;# clear old wraparound point
 	SetFillMethod $useCppArray $tgt use_last ;# and fill method
         foreach arrayPt [array names sub] {
             if {[set pt [lsearch {NOW OTHERS} [string toupper $arrayPt]]]>-1} {
 		if {[llength $subs]} {
-		    FPError "NOW or OTHERS must be outermost index." {}
+		    FPError "NOW or OTHERS must be outermost index." \
+			 $subs $errorData
 		}
             } elseif {![Numeric $arrayPt]} {
                 FPError "Time point must be NOW, OTHERS or a number." \
-		    [list $arrayPt] 
+		     $subs,[list $arrayPt] $errorData
             } elseif {[string equal RESTART [string toupper $sub($arrayPt)]]} {
 		SetWrapTime $useCppArray $tgt $arrayPt
 		continue
@@ -642,24 +647,18 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray} {
 			   badFill]
 	    if {$pt==1} {
 		if {$noMtd} {
-		    FPError $badFill [list $arrayPt]
+		    FPError $badFill  $subs,[list $arrayPt] $errorData
 		}
 		continue
 	    } elseif {!$noMtd} {
 		FPError "Fill method must be preceded by OTHERS." \
-		    [list $arrayPt] 
+		     $subs,[list $arrayPt] $errorData
 	    }
 
-	    if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
-                            [lrange $dims 1 end] $sub($arrayPt) $when \
-			    $useCppArray} step]} {
-                PassFPError $step [list $arrayPt]
-            } else {
-		if {$step<1} {
-		    set redoStep 0
-		}
-            }
-	    
+	    set redoStep [JoinSteps $redoStep \
+			      [ListToArray $topNode $tgt $subs,$arrayPt $trans \
+				   [lrange $dims 1 end] $sub($arrayPt) $when \
+				   $useCppArray $errorData]]
         }
         return $redoStep
     }
@@ -670,7 +669,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray} {
         # number of elements, one the same or smaller will be missing!
         set last [array size sub]
         if {!$last} {
-            FPError "Per-record submodel must have values for at least one member." {}
+            FPError "Per-record submodel must have values for at least one member." $subs $errorData
         }
         
 	# Record counts do not need to be set in Tcl
@@ -679,17 +678,18 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray} {
 		set map [split $subs ,]
 		if {[catch {c_settimepointrecords $tgt [lrange $map 2 end] \
 				[lindex $map 1] $last} err]} {
-		    FPError $err {}
+		    FPError $err $subs $errorData
 		} 
 	    } else {
 		if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
 						      1 end] $last} err]} {
-		    FPError $err {}
+		    FPError $err $subs $errorData
 		} 
 	    }
 	} else { ;# use old system for Tcl
 	    set recordNode [lindex $nextDim 1]
-	    EnumTypeToNumber $recordNode$subs $last {} $when $useCppArray
+	    EnumTypeToNumber $recordNode$subs $last {} $when $useCppArray \
+		     $subs $errorData
 	}
 
 # Hopefully, with the universal data structure, once we have set the
@@ -715,20 +715,27 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray} {
         set indx [NumberToEnumType $arrayPt $thisTrans]
         if {![info exists sub($indx)]} {
             #puts "No $indx in [array names sub]"
-            FPError "Missing value" [list $indx]
-        }
-        if {[catch {ListToArray $topNode $tgt $subs,$arrayPt \
-                        [lrange $trans 1 end] [lrange $dims 1 end] \
-                        $sub($indx) $when $useCppArray} mis]} {
-            PassFPError $mis [list $indx]
-        } elseif {$mis<1} {
-            set redoStep -1
-        }
+            FPError "Missing value"  $subs,[list $indx] $errorData
+	    set redoStep {}
+        } else {
+	    set redoStep [JoinSteps $redoStep \
+			      [ListToArray $topNode $tgt $subs,$arrayPt \
+				   [lrange $trans 1 end] [lrange $dims 1 end] \
+				   $sub($indx) $when $useCppArray $errorData]]
+	}
     }
     return $redoStep
 }
 
-proc EnumTypeToNumber {tgt head trans when useCppArray} {
+proc JoinSteps {stepA stepB} {
+    if {![llength [concat $stepA $stepB]]} {
+	return {}
+    } else {
+	return [expr {$stepA<$stepB?$stepA:$stepB}]
+    }
+}
+
+proc EnumTypeToNumber {tgt head trans when useCppArray subs errorData} {
     if {![llength $head]} {
         # empty head, signal to clear out old values
         if {$useCppArray} {
@@ -740,15 +747,15 @@ proc EnumTypeToNumber {tgt head trans when useCppArray} {
         set poss [lsearch $trans [lindex $head 0]]
         if {$poss == -1} {
             if {[string equal false [lindex $trans 0]]} {
-                FPError "Data value $head is not a member of type boolean, pick one of $trans." {}
+                FPError "Data value $head is not a member of type boolean, pick one of $trans." $subs $errorData
             } else {
-                FPError "Data value $head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]." {}
+                FPError "Data value $head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]." $subs $errorData
             }
         } else {
             PlaceInArray $tgt $poss $when $useCppArray
         }
     } elseif {![Numeric $head]} {
-        FPError "Data value $head is not a number." {}
+        FPError "Data value $head is not a number." $subs $errorData
     } else {
         PlaceInArray $tgt $head $when $useCppArray
         #   set ${varData}($tgt) $head
@@ -756,15 +763,20 @@ proc EnumTypeToNumber {tgt head trans when useCppArray} {
     #puts "just went set paramData($tgt) $paramData($tgt)"
 }
 
-proc FPError {occurrence inds} {
-    error [list BadFP $occurrence $inds]
-}
-
-proc PassFPError {oldError newInds} {
-    if {[string match BadFP* $oldError]} { ;# one of ours
-	FPError [lindex $oldError 1] [concat $newInds [lindex $oldError 2]]
+proc FPError {occurrence inds errorData} {
+    if {![llength $errorData]} {
+	error aborted ;# quick way out
+    }
+    if {[llength $inds]} {
+	set where " at indices [string range $inds 1 end]" ;# exclude leading ,
     } else {
-	error $oldError $::errorInfo
+	set where {}
+    }
+    set query [concat param_load_fail $errorData [list $where $occurrence]]
+    if {[string equal abort [Query $query warning spf {} abort]]} {
+	error aborted
+    } else {
+	return {} ;# in hope ListParamArray will return same
     }
 }
 
@@ -795,7 +807,7 @@ proc RevertData {winId compName notInput} {
 }
 
 proc FillIfSmall {entry text} {
-#ShowMessage debug info "Shrinking $text" ok
+#ShowMess debug info "Shrinking $text" ok
     $entry configure -state normal
     $entry delete 0 end
     set limit 500
@@ -850,7 +862,7 @@ namespace eval fileparams {
 	upvar \#0 $dataLocn suppliedData
 	upvar \#0 $widgetLocn outNames
 
-#ShowMessage debug info "Save $smPath" ok
+#ShowMess debug info "Save $smPath" ok
 #puts "Need outNames cos have suppliedData for [array names suppliedData]"
 # first, make sure all values to be saved are up-to-date and well-formed
 	foreach smItem [array names outNames $smPath/*] {
@@ -1089,8 +1101,8 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     if {$broke} {
 	if {[info exists parseStatus(simV)]} { ;# parsing at least started
 	    if {![string equal aborted $feedback]} { ;# a bad XML file
-		BuildProblem "Failed to parse XML parameter metafile" error \
-		    "Error was $errorInfo. Parse status as follows:\n[array get parseStatus]" spf
+		Query [list xml_parse_fail $errorInfo [array get parseStatus]] \
+							 error spf {} ok
 	    } ;# otherwise user aborted parsing at mismatched component name
 	    return -1
 	} else { ;# an earlier style of param file
@@ -1100,7 +1112,7 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
 	if {[info exists parseStatus(simV)]} {
 	    return $parseStatus(simV)
 	} else { ;# no simile version in file
-	    BuildProblem "Wrong kind of XML" warning "$oldPath is not a Simile parameter metafile" spf
+	    Query [list bad_xml_spf oldPath] error spf {} ok
 	    return -1;
 	}
     }
@@ -1265,7 +1277,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     # If neither of the above, XML file successfully converted
     set pStr [NetOpen $metaFile r]
     while {[gets $pStr savedValue] != -1} {
-        # ShowMessage debug info "Restoring $savedValue" ok
+        # ShowMess debug info "Restoring $savedValue" ok
         # ignore blank lines
         if {![llength $savedValue]} {
             continue
@@ -1281,7 +1293,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	    set restoredComp [RestoreCrs [join [lrange $IdAndValue 0 end-2] =]]
 	    # allows parameter names to contain the = sign
 	}
-        #ShowMessage debug info "Component is $restoredComp" ok
+        #ShowMess debug info "Component is $restoredComp" ok
         set node [ExistCheck $topNode $restoredComp $smPath $notInput file]
         switch $node {
             break {break}
@@ -1308,7 +1320,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
                 set reference [file exists [file join [file dirname $oldPath] \
                         $VFile]]
             }
-            #ShowMessage debug info "Param data is $paramData($restoredComp)" ok
+            #ShowMess debug info "Param data is $paramData($restoredComp)" ok
             
             set newPopup "Specified by $oldPath"
             # OK here we go...try and follow this...first go to the starting point..
@@ -1317,26 +1329,30 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 		set seekDir [file join [file dirname $oldPath] \
 				 [file dirname $VFile]]
 		if {[catch {cd $seekDir}]} {
-		    set act [ShowMessage "Missing data directory" warning "The parameterization file contains a reference to data file \"[file tail $VFile]\" for the parameter values for the component $restoredComp. This reference specifies the file path \"[file dirname $VFile]\" relative to the location of the parameterization file itself, so the file is being sought in the directory \"[file normalize $seekDir]\", which does not exist on this computer. Do you want to cancel the operation, or skip the values for this component and continue loading the parameterization file?" okcancel]
-		    switch $act {
-			cancel {break}
-			ok {continue}
+		    set act [list failed_dir_reference [file tail $VFile] \
+				 $restoredComp [file dirname $VFile] \
+				 [file normalize $seekDir]]
+		    switch [Query $act warning spf {} abort] {
+			abort {break}
+			more {continue}
 		    }
 		}
                 cd [file join [file dirname $oldPath] [file dirname $VFile]]
                 # ...and stick the new absolute pathname into the spec! Easy!!
 		if {![file exists [file tail $VFile]]} {
-		    set act [ShowMessage "Missing data file" warning "The parameterization file contains a reference to data file \"[file tail $VFile]\" for the parameter values for the component $restoredComp, which does not exist in this folder. Do you want to cancel the operation, or skip the values for this component and continue loading the parameterization file?" okcancel]
-		    switch $act {
-			cancel {break}
-			ok {continue}
+		    set act [list failed_param_reference [file tail $VFile] \
+				 $restoredComp [file dirname $VFile] \
+				 [file normalize $seekDir]]
+		    switch [Query $act warning spf {} abort] {
+			abort {break}
+			more {continue}
 		    }
 		}
                 set paramState($restoredComp) \
                         [concat [list [pwd]/[file tail $VFile]] \
                         [lrange $suppliedData($restoredComp) 1 end]]
                 # now just load up the data
-                #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
+                #ShowMess debug info "Field spec set to $paramState($restoredComp)" ok
 		if {[string equal ,image \
 			 [lindex $suppliedData($restoredComp) 1]]} {
 		    catch {image delete tableImage}
@@ -1363,11 +1379,12 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 		    if {![llength $trans]} {
 			set trans numerical
 		    }
-                    set act [ShowMessage "Error merging parameters" error "Parameterization file contained the entry $suppliedData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it an allowed value for this component, which are $trans. Do you want to cancel the operation, or skip the values for this component and continue loading the parameterization file?" okcancel]
+                    set act [list bad_v3x_param $suppliedData($restoredComp) \
+				 $restoredComp $trans]
                     set suppliedData($restoredComp) {}
-		    switch $act {
-			cancel {break}
-			ok {continue}
+		    switch [Query $act warning spf {} abort] {
+			abort {break}
+			more {continue}
 		    }
                 }
             }
@@ -1427,8 +1444,9 @@ proc ExistCheck {topNode restoredComp tgtCap notInput source} {
         if {![string equal $lostBit $restoredComp]} {
             set lostType submodel
         }
-        set act [ShowMessage "Unused parameters" warning "The $source contains parameter values for the $lostType $lostBit, which does not exist in the target model $tgtCap. Do you want to ignore these values and continue loading the $source?" okcancel]
-        if {[string equal cancel $act]} {
+        set act [Query [list unused_param $source $lostType $lostBit $tgtCap] \
+		     warning spf {} {abort}]
+        if {[string equal abort $act]} {
             return break
         }
         if {[string equal submodel $lostType]} {

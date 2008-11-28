@@ -58,8 +58,8 @@ namespace eval ::$keyValue {
         #get submodel nodeIds for parents
         foreach component [GetObjectList] {
 	    lappend universe [list $component [GetCaptionPathFromId $component]]
-	    set sorted [lsort -dictionary -index 1 $universe]
 	}
+	set sorted [lsort -dictionary -index 1 $universe]
 	foreach pair $sorted {
 	    set component [lindex $pair 0]
 	    set SubbedComp [lindex $pair 1]

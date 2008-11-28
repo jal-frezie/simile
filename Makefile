@@ -56,10 +56,10 @@ endif
 	SHAREDLIBPREFX = 
 	MAKESL = -shared
 	VERS = 84
-	USETCL = -I../System/include/tcl -L../System/lib ../System/lib/tclstub$(VERS).lib
+	USETCL = -I../System/include -L../System/lib ../System/lib/tclstub$(VERS).lib
 	LOCALIZE_TCL_REFS =  ls # placebo command
 	SHAREDLIBEXTN = .dll
-	ARCHEXTN =
+	ARCHEXTN = _win
 	EXECEXTN = .exe
 	INSTLIB = Run/install.dll
 	MAIN = System/bin/Simile.exe
@@ -88,7 +88,7 @@ ifeq ($(UNAME),Linux)
 	SHAREDLIBPREFX = lib
 	MAKESL = -fPIC -shared
 	VERS = 8.4
-	USETCL = -I../System/include/tcl -L../System/lib -ltclstub$(VERS)
+	USETCL = -I../System/include -L../System/lib -ltclstub$(VERS)
 	LOCALIZE_TCL_REFS = ls # placebo command
 	SHAREDLIBEXTN = .so
 	ARCHEXTN =
@@ -180,8 +180,8 @@ $(UNPK): unpacker.c dllcalls.h
 
 System/bin/5d.dll: shank.cpp dllcalls.h
 	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. -shared $(PARALLEL) \
-		-o 5d.dll -Wl,--out-implib,lib5d.a shank.cpp; \
-		mv 5d.dll ../System/bin; mv lib5d.a ../System/lib; cd ..
+		-o 5d.dll -Wl,--out-implib,lib5d_win.a shank.cpp; \
+		mv 5d.dll ../$(SHANK); mv lib5d_win.a ../System/lib; cd ..
 
 # not needed for Linux; Simile builds it when first run
 System/lib/lib5d.so: shank.cpp dllcalls.h

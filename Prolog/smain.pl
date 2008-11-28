@@ -28,7 +28,7 @@ main :-
         nl, write(ready), nl,
 	on_exception(ErrorFunction, state:kickoff(Vnum), true),
         (nonvar(ErrorFunction),
-	    ame_gen:do_dialogue("Failed startup", error, "Simile has been unable to start up due to problems with this system.", ok, _);
+	    query(start_fail(ErrorFunction), error, top, [ok], _);
 	tk_main_loop).
 
 /* Uncomment following to make standalone executable

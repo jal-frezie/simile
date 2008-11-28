@@ -257,7 +257,7 @@ namespace eval RunEnv {
 	variable currentNode
         set TabEditText [$notebook tab current -text]
         #based on equationRight
-        #ShowMessage debug info "TabRight tabId $tabId; label [$notebook itemcget $tabId -text]" ok
+        #ShowMess debug info "TabRight tabId $tabId; label [$notebook itemcget $tabId -text]" ok
         catch {destroy .notebookTabTextEdit}
         Dialog .notebookTabTextEdit -parent [winfo toplevel $notebook] \
 		-cancel 1 -title {Edit tab label} -transient true
@@ -367,12 +367,12 @@ namespace eval RunEnv {
         global helperTable
         # container is the frame a helper would be displayed in
         # a parent is the notebook or panedwindow the container belongs to
-        #ShowMessage debug info "container $containerId; page $page; \
+        #ShowMess debug info "container $containerId; page $page; \
         #            parent [::RunEnv::FindParentpanedwindowOrNotebook $containerId]" ok
         if {![winfo exists $containerId]} {
             return
         }
-        #ShowMessage debug info "DeleteHelperContainer: $containerId\n \
+        #ShowMess debug info "DeleteHelperContainer: $containerId\n \
         #        children $children\n \
         #        parentType $parentType" ok; ##################
 	set children [winfo children $containerId]
@@ -405,17 +405,17 @@ namespace eval RunEnv {
 	update
         set pages [$notebook tabs]
         set n [llength $pages]
-        #ShowMessage debug info "DeleteNotebookPage after delete page pages $n" ok; #########
+        #ShowMess debug info "DeleteNotebookPage after delete page pages $n" ok; #########
         if {$n==0} {
             set containerId [winfo parent $notebook]
-            #ShowMessage debug info "DeleteNotebookPage n==0; new container $containerId" ok; ########
+            #ShowMess debug info "DeleteNotebookPage n==0; new container $containerId" ok; ########
             destroy $notebook
             SetCurrentContainer $containerId
-            #ShowMessage debug info \
+            #ShowMess debug info \
             "DeleteNotebookPage  destroy notebook\n \
                     new container $containerId" ok; ########
         } else  {
-            #ShowMessage debug info "DeleteNotebookPage default" ok
+            #ShowMess debug info "DeleteNotebookPage default" ok
 	    set pages [$notebook tabs]
 	    set n [llength $pages]
             if {$page >= $n} {
@@ -443,7 +443,7 @@ namespace eval RunEnv {
     }
     
     proc DeletePane {parentPath containerId} {
-        #ShowMessage debug info "DeletePane\n parentPath $parentPath\n \
+        #ShowMess debug info "DeletePane\n parentPath $parentPath\n \
         #        containerId $containerId\n \
         #        panes [$parentPath panes]" ok;
         $parentPath forget $containerId
@@ -454,7 +454,7 @@ namespace eval RunEnv {
         } else {
             # all remaining panedwindows are in a notebook parent
             set parentNoteBook [winfo parent $parentPage]
-            #ShowMessage debug info "DeletePane page\n parentPath $parentPath\n \
+            #ShowMess debug info "DeletePane page\n parentPath $parentPath\n \
             #                parentPage $parentPage; parentNoteBook $parentNoteBook\n \
             #                pages [$parentNoteBook tabs]\n \
             #                current page [$parentNoteBook tab current]" ok;
@@ -474,7 +474,7 @@ namespace eval RunEnv {
 #puts "old pane ${pwidth}x$pheight"
         if {![string match $orientation [$parentPath cget -orient]] || \
 		[string equal $dp0 $containerId]} {
-#ShowMessage debug info "SplitPage diff orientn container $containerId $orientation\n\
+#ShowMess debug info "SplitPage diff orientn container $containerId $orientation\n\
 #parentPath $parentPath" ok;
 	    $containerId configure -highlightthickness 0 ;# no longer a leaf
 	    set parentPath [Addpanedwindow $containerId $orientation]
@@ -600,14 +600,14 @@ namespace eval RunEnv {
     }
     
     proc Addpanedwindow {containerId orientation} {
-#ShowMessage debug info "RunEnv::Addpanedwindow $containerId $orientation\n \
+#ShowMess debug info "RunEnv::Addpanedwindow $containerId $orientation\n \
         #        pwidth $pwidth; pheight $pheight" ok; ################
 	set pwId $containerId.panedwindow
 	panedwindow $pwId  -orient $orientation
         pack $pwId -expand yes -fill both
 	AddPane [UniqueId $pwId.pane [$pwId panes]]
 
-#ShowMessage debug info "RunEnv::Addpanedwindow width $width; height $height" ok
+#ShowMess debug info "RunEnv::Addpanedwindow width $width; height $height" ok
         return $pwId
     }
 
@@ -644,18 +644,18 @@ namespace eval RunEnv {
         set mainframe $helperTable($currentNode,whichRunEnv).mainframe
         set mreMenu [winfo parent [$mainframe getmenu help]]
         set pw [winfo parent $win]
-        #ShowMessage debug info "RunEnv::SetCurrentContainer pw $pw" ok
+        #ShowMess debug info "RunEnv::SetCurrentContainer pw $pw" ok
 	set tb1 [$mainframe getframe].tbar
         if {[winfo exists $win.container]} {
             if {[string equal $dp0 $win]} {
                 $tb1.b20 configure -state disabled
                 $tb1.b21 configure -state disabled
 	    } elseif {[string match vertical [$pw cget -orient]]} {
-                #ShowMessage debug info "vert $tb1.bbox2" ok
+                #ShowMess debug info "vert $tb1.bbox2" ok
                 $tb1.b20 configure -state normal
                 $tb1.b21 configure -state disabled
             } else  {
-                #ShowMessage debug info "horiz $tb1.bbox2" ok
+                #ShowMess debug info "horiz $tb1.bbox2" ok
                 $tb1.b20 configure -state disabled
                 $tb1.b21 configure -state normal
             }
@@ -726,12 +726,12 @@ namespace eval RunEnv {
         focus $win
         set CurrentContainers($currentNode) $win
         set CurrentContainer $win
-#        ShowMessage debug info "done SetCurrentContainer $win" ok
+#        ShowMess debug info "done SetCurrentContainer $win" ok
     }
     
     # Return a list of all children, found recursively, of a widget
     proc GetChildren { widget } {
-        #ShowMessage debug info "GetChildren" ok
+        #ShowMess debug info "GetChildren" ok
         set allChildren [winfo children $widget]
         foreach child $allChildren {
             set allChildren [concat $allChildren [GetChildren $child]]
@@ -782,7 +782,7 @@ namespace eval RunEnv {
         # despite the inner frame being called the container its the pane
         # could clean up the naming sometime
         set Container [winfo parent $parent]
-        #ShowMessage debug info "ChildrenFocusParent:\n\
+        #ShowMess debug info "ChildrenFocusParent:\n\
         #        parent : $parent; container $Container\n\
         #        children [winfo children $parent]" ok
         foreach child [winfo children $parent] {
@@ -926,11 +926,15 @@ namespace eval RunEnv {
         do_in_editor AttackGlobalVariable nameOfHelperStateFile \
 	    ($currentNode) $oldPath
         set stream [NetOpen $metaFile r]
-        
+       
         if {[string equal mre $origin]} {
             LoadViewFile $currentNode $stream $origVersion
         } elseif {[string equal many_windows $origin]}  {
+
             # assume that it is an shf made by the multiple window run env
+	    # and just open each helper in a toplevel notebook page
+	    # THIS PROBABLY DOES NOT WORK
+
             EmptyDisplays; #what if there is an error in the file delete MRE, rebuild
             AddNotebook $dp0
             while {[gets $stream helperId] >= 0} {
@@ -940,7 +944,7 @@ namespace eval RunEnv {
                 } else  {
                     set containerId [AddNotebookPage $dp0.notebook]
                 }
-                #ShowMessage debug info "LoadView winId $containerId" ok
+                #ShowMess debug info "LoadView winId $containerId" ok
                 gets $stream helperTitle
                 set winId [NewHelperInWindow $containerId $helperId [RestoreCrs $helperTitle]]
                 gets $stream geometry
@@ -951,10 +955,16 @@ namespace eval RunEnv {
                 }
                 set helperTable($winId,status) [RestoreCrs $oldStatus]
                 if {[catch {SystemHelperCall $winId $currentNode \
-				Restore $winId}]} {
+				Restore $winId} prang]} {
+		    if {[string equal aborted $prang]} {
+			break
+		    }
                     DeleteHelperCurrentContainer
-                    ShowMessage "Problem restoring helper" warning $errorInfo \
-                            ok
+		    if {[string equal abort \
+			     [Query [list iotool_restore_fail $helperTitle \
+				     $errorInfo] warning helpers {} abort]]} {
+			break
+		    }
                 } else {
                     ChildrenFocusParent $winId
                 }
@@ -962,7 +972,7 @@ namespace eval RunEnv {
             $dp0.notebook raise [lindex [$dp0.notebook pages] 0]
             
         } else  {
-            ShowMessage Error error "Unknown display configuration file format $origin" ok
+	    Query not_an_shf error execution {} ok
         }
         close $stream
     }
@@ -1000,7 +1010,10 @@ namespace eval RunEnv {
                     if {$origVersion<4.0} {
                         set tail [LoseTLRef $tail]
                     }
-                    LoadContainer $currentNode $stream $tail $origVersion
+                    if {[string equal abort [LoadContainer $currentNode \
+						 $stream $tail $origVersion]]} {
+			break
+		    }
                 }
                 panedwindow {
                     #%puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
@@ -1034,7 +1047,7 @@ namespace eval RunEnv {
 			[winfo parent $pageId] select $pageId
 		    }
 		    update idletasks
-                    #ShowMessage debug info "$panedwindow sash place $index $sashx $sashy \n\
+                    #ShowMess debug info "$panedwindow sash place $index $sashx $sashy \n\
                     #        page [$notebook pages]\n\
                     #        FindParentNotebook $notebook \n\
                     #        FindParentNotebookPage $pageId" ok
@@ -1053,7 +1066,7 @@ namespace eval RunEnv {
 			[list ::RunEnv::PageRaiseCmd $path]
         
                     set containerId [winfo parent $path]
-                    #ShowMessage debug info "containerId $containerId" ok
+                    #ShowMess debug info "containerId $containerId" ok
                     bind $path <Double-1> "::RunEnv::EditTabLabel %W"
                     bind $path <Button-3> "::RunEnv::EditTabLabel %W"
                     pack $path -fill both -expand yes
@@ -1067,7 +1080,7 @@ namespace eval RunEnv {
                     set notebook $dp0.$nbtail
                     regsub -all _ $noSpcpagecaption " " pagecaption
                     
-                    #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
+                    #ShowMess debug info "$widget $notebook $pageId $pagecaption" ok
 		    set newFr [frame $notebook.f$pageId]
                     $notebook add $newFr -text $pagecaption \
 			;#-raisecmd [list ::RunEnv::PageRaiseCmd $containerId.notebook $pageId]
@@ -1099,7 +1112,7 @@ namespace eval RunEnv {
         variable dp0
 	variable CurrentContainer
 
-        #ShowMessage debug info "LoadContainer: stream $stream, line $line" ok
+        #ShowMess debug info "LoadContainer: stream $stream, line $line" ok
         if {[info exists containerId]} {
 	    set CurrentContainer $dp0.$containerId
         } else {
@@ -1107,9 +1120,9 @@ namespace eval RunEnv {
 	}
         
         gets $stream helperId
-        #ShowMessage debug info "LoadContainer: $item $containerId; helperId $helperId" ok
+        #ShowMess debug info "LoadContainer: $item $containerId; helperId $helperId" ok
         gets $stream oldStatus
-	ReinstateHelper $origVersion $oldStatus $helperId {}
+	return [ReinstateHelper $origVersion $oldStatus $helperId {}]
     }
     
     proc MainNotebookEmptyPage {} {

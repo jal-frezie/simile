@@ -388,10 +388,10 @@ proc AddLibF {LibListFr mdl} {
     set newFile [ChooseFile library[linkableExt [info sharedlibextension]] \
 		     "External library file:" 0 $mdl]
     if {[string length $newFile]} {
-	if {![string match lib* $newFile]} {
+	if {[string match lib* [file tail $newFile]]} {
 	    ${LibListFr}.box insert end $newFile
 	} else {
-	    ShowMessage "Dodgy filename" warning "The compiler will only recognize shared library names that begin with \"lib...\"" ok
+	    Query dodgy_lib warning ext_code {} ok
 	}
     }
 }
@@ -510,34 +510,35 @@ proc AddEnumTypePopup {lb y X Y} {
 
 proc CheckForETDuplicates {new} {
     global disaggregate enumTypeMPEntry
+
     if {![info exists enumTypeMPEntry] || ![llength $enumTypeMPEntry]} {
-        ShowMessage "No $new name" error \
-                "You must enter a name for the new $new in the box." ok
-        return 0
+	Query [list no_et_member $new] warning enumtype {} ok
+	return 0
     }
     if {[string equal NULL $enumTypeMPEntry]} {
-        ShowMessage "Bad $new name" error \
-                "NULL is reserved for the value of a variable when it is not equal to any member of its type." ok
-        return 0
+	lappend queries [list bad_et_member $new]
     }
     set def [GetFromProlog tk_get_info({},'$enumTypeMPEntry',is_unit)]
     if {![string equal none $def]} {
-        ShowMessage "Bad $new name" error \
-                "This name corresponds to a physical unit (defined as $def)." ok
-        return 0
+	lappend queries [list member_is_unit $new $enumTypeMPEntry $def]
     }
     foreach {type members} [array get disaggregate enumtype,*] {
         set oldType [string range $type 9 end]
         if {[string equal $enumTypeMPEntry $oldType]} {
-            ShowMessage "Bad $new name" error \
-                    "This submodel already has an enumerated type of this name." ok
-            return 0
+	    lappend queries [list duplicate_et $new $oldType]
         }
         if {[lsearch $members $enumTypeMPEntry] != -1} {
-            ShowMessage "Bad $new name" error \
-                    "The enumerated type $oldType in this submodel already contains a member of this name." ok
-            return 0
+	    lappend queries [list duplicate_et_mem $new $oldType \
+				 $enumTypeMPEntry]
         }
+    }
+    if {[info exists queries]} {
+	foreach query $queries {
+	    if {[string equal abort [Query $query warning enumtype {} abort]]} {
+		break
+	    }
+	}
+	return 0
     }
     return 1
 }
@@ -548,7 +549,7 @@ proc RemoveEnumMem {fr} {
     
     if {[$fr.listpair.memf.mem curselection] ne {} } {
         set togo [$fr.listpair.typef.scrf get [$fr.listpair.typef.scrf curselection]]
-        #ShowMessage debug info "togo $togo $disaggregate(enumtype,$togo)" ok
+        #ShowMess debug info "togo $togo $disaggregate(enumtype,$togo)" ok
         set index [lsearch $disaggregate(enumtype,$togo) \
                 [$fr.listpair.memf.mem get [$fr.listpair.memf.mem curselection] ] ]
         set disaggregate(enumtype,$togo) \
@@ -646,7 +647,7 @@ proc ChooseImage {posRBs mdl} {
                     set disaggregate(imgpos) Tiled
                 }
             } else {
-                ShowMessage {Problem loading file} error $::errorInfo ok
+		Query [list read_image_failed $readFlop] warning top {} ok
                 # prevent crasho if reading fails
                 #       $newImage config -width 100 -height 100
             }
@@ -887,7 +888,7 @@ proc DoUserDialogue {} {
 	tkwait variable userinfo(entrydone)
 	if {$userinfo(entrydone)} {
 	    if {![c_testlicense]} {
-		BuildProblem "Wrong license code" warning "You have entered the wrong license code for your name, organization and Simile version. Please try again, ensuring you have the correct license code." license
+		Query bad_license_code error license {} ok
 		unset userinfo(entrydone)
 	    }
 	}
@@ -1050,7 +1051,7 @@ proc DoRegDialog {dtId} {
     # now put it in the middle of the desktop
     scan [ wm geometry $dtId] {%dx%d+%d+%d} a s d f
     scan [ wm geometry .register] {%dx%d} g h
-    #ShowMessage debug info "Desktop $a x $s + $d + $f Welcome $g x $h" ok
+    #ShowMess debug info "Desktop $a x $s + $d + $f Welcome $g x $h" ok
     # if window is fullsize, offset info is garbage
     if {[string match zoomed [wm state $dtId]]} {
         set d 0
@@ -1128,11 +1129,11 @@ proc CheckHyper {ywhat} {
 }
 
 proc GoHyper {ywhat} {
-    ShowMessage debug info $ywhat ok
+    ShowMess debug info $ywhat ok
 }
 
 proc ResolveHyper {args} {
-    ShowMessage debug info "Resolving $args" ok
+    ShowMess debug info "Resolving $args" ok
     return {}
 }
 
@@ -1546,7 +1547,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     #puts "inflows $inflows outflows $outflows"
     # tabs (\t) used as well as margins to provide some formatting to text copied and pasted to other apps
     global equationlist
-    #ShowMessage debug info "$comments" ok
+    #ShowMess debug info "$comments" ok
     
     set widget $equationlist(textbox)
     $equationlist(textbox) configure  -state normal
@@ -1682,114 +1683,6 @@ proc add_text {text font across down colour} {
 # general error handling -- note that only user errors will be raised from
 # execution interps, so the reporting stuff can be kept in the editor interp
 
-proc BuildProblem {Title errLevel msg key args} {
-    global iconImages help tcl_platform
-
-    set ProbWin .bprob[clock clicks]
-    PutItThere $ProbWin [focus]
-
-#    switch $fault {
-#        user {
-#            set Title "Problem with model"
-#            set errLevel warning
-#            set buttonCmd {ContextSensitiveHelp $ProbWin run/index.htm}
-#        } system {
-#            set Title "Build failure"
-#            set errLevel error
-#            set buttonCmd {ContextSensitiveHelp $ProbWin files/problem.htm}
-#        } tcl {
-#            set Title "User interface problem"
-#            set errLevel error
-#            set buttonCmd {ContextSensitiveHelp $ProbWin files/problem.htm}
-#        }
-#    }
-    wm title $ProbWin $Title
-    wm protocol $ProbWin WM_DELETE_WINDOW {set ack 1}
-    switch [tk windowingsystem] {
-        win32 {wm attributes $ProbWin -toolwindow true}
-    }
-
-    set labf1 [frame $ProbWin.labf1]
-    pack [label $labf1.img -image $iconImages($errLevel)] -side left 
-#    pack [label $labf1.lab1 -text "Warning:" \
-#            -font {-weight bold -family helvetica -size 10}] -side left
-    pack [scrollbar $labf1.yscroll -orient v \
-            -command [list $labf1.lab2 yview]] -side right -fill y
-    pack [text $labf1.lab2 -width 48 -height 10 -relief sunken -bd 2 -highlightthickness 0 -wrap word -yscrollcommand [list AdjustCanvas $labf1 img y]] -fill both -expand on
-    $labf1.lab2 insert 1.0 $msg
-    $labf1.lab2 config -state disabled
-    #    pack [label $labf1.lab2 -text $msg -wraplength 320 \
-    #            -font {-family helvetica -size 10} -justify left] -side left
-    pack $labf1 -padx 8 -pady 2 -fill both -expand on
-    
-    set buttons [frame $ProbWin.buttons]
-    pack [button $buttons.ok -text OK -width 10 \
-            -command {set ack 1}] \
-            -side left -padx 4 -pady 4
-    if {[llength $args]==2} {
-        pack [button $buttons.report -text {Send bug report} -width 20 \
-          -command [concat ReportProblem $args [list $msg]]] \
-                -side left -padx 4 -pady 4
-    }
-    pack [button $buttons.help -text Help -width 10 \
-           -command "set ack 1; ContextSensitiveHelp $ProbWin $help($key)"] \
-           -side left -padx 4 -pady 8
-    pack $buttons
-    
-#    set height [winfo reqheight $ProbWin]
-#    set width [winfo reqwidth $ProbWin]
-#    set sheight [winfo screenheight $ProbWin]
-#    set swidth [winfo screenwidth $ProbWin]
-#    wm geometry $ProbWin +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
-    LetItShow $ProbWin
-#    update
-    focus $ProbWin.labf1.lab2
-    grab $ProbWin
-    tkwait variable ack
-    grab release $ProbWin
-    PackItUp $ProbWin
-}
-
-proc ReportProblem {name autoName fault} {
-    
-    set mimes {}
-    #    set unique [clock seconds].[pid]
-    #    set bound "-----NEXT_PART_$unique"
-    if {![string match unsaved $name]} {
-        set Disposition "inline; filename=\"[file tail $name]\""
-        lappend mimes [mime::initialize -canonical application/x-simile \
-                -header [list Content-Disposition $Disposition] \
-                -header [list Content-Description "Simile model"] \
-                -file $name]
-        #        set fid [open $name r]
-        #        fconfigure $fid -translation binary
-        #        if {[catch {read $fid [file size $name]} data]} {
-        #            return -code error $data
-        #        }
-        #        close $fid
-        #        append outputData "$bound\nContent-Disposition: form-data;\
-        #            name=\"imagefile\"; filename=\"[file tail $name]\"\nContent-Type: text/plain\n\n$data\n"
-    }
-    if {![string match none $autoName]} {
-        set Disposition "inline; filename=\"[file tail $autoName]\""
-        lappend mimes [mime::initialize -canonical application/x-simile \
-                -header [list Content-Disposition $Disposition] \
-                -header [list Content-Description "Change log"] \
-                -file $autoName]
-    }
-    lappend mimes [mime::initialize -canonical text/plain \
-            -header [list Content-Disposition inline] \
-            -header [list Content-Description "Error message"] \
-            -string $fault]
-    set multiT [mime::initialize -canonical multipart/mixed -parts $mimes]
-    set data [mime::buildmessage $multiT]
-    
-    package require http
-    upvar 0 [::http::geturl http://www.simulistics.com/cgi-bin/saveit.cgi \
-            -type application/x-zip -query [zip -mode compress $data]] reply
-    ShowMessage {Simile phone home!} info $reply(body) ok
-}
-
 proc NotifyOverLimit {edn limit} {
     global iconImages
     
@@ -1837,4 +1730,199 @@ proc NotifyOverLimit {edn limit} {
     
     tkwait variable ack
     destroy .notify
+}
+
+# New unified issue handler; use for any unexpected occurrence
+proc Query {specifics icon helpRef parent opts} {
+    global dialogues
+
+    set defButton [lindex $opts 0]
+    set defCapt $::msgs(${defButton}_button)
+    switch $defButton {
+	ok {set moreCapt "More info..."}
+	abort {set moreCapt "See all..."}
+	default {set moreCapt "More options..."}
+    }
+    set key [lindex $specifics 0]
+    set mBoxCmd [list ttk::dialog .shortDlg -icon $icon -command SetDlgRes \
+		     -buttons [list $defButton more] \
+		     -labels [list $defButton $defCapt more $moreCapt]]
+    foreach txtBit {title message detail} {
+	upvar #0 msgs(${key}_$txtBit) trans
+	if {[info exists trans]} {
+	    set $txtBit [eval format [list $trans] [lrange $specifics 1 end]]
+	    lappend mBoxCmd -$txtBit [set $txtBit]
+	}
+    }
+
+    if {[info exists dialogues(logStream)]} { ;# scripting
+	puts $dialogues(logStream) $message
+	return $defButton
+    } elseif {[info exists dialogues(logText)] || \
+		  [winfo exists .shortDlg]} { ;# messages skipped
+	lappend dialogues(logText) $message
+	if {[string equal abort $defButton]} {
+	    return continue
+	} else {
+	    return $defButton
+	}
+    }
+
+    if {[winfo exists .splash]} {
+	destroy .splash ;# ensure mess is not obscured by splash screen
+    }
+    if {[winfo exists .popup]} {
+	destroy .popup ;# avoid weird hang under Aqua, or at least try
+    }
+    HideProgressBox
+    set active [set oldFocus [focus]]
+    if {[llength $active]} {set active [winfo toplevel $active]}
+    if {![string length $parent] && [string length $active]>1} {
+	set parent $active ;# window . is hidden so must not
+    }
+    lappend mBoxCmd -parent $parent
+
+    set dialogues(done) [eval $mBoxCmd]
+    tkwait visibility .shortDlg
+    grab .shortDlg
+    tkwait variable dialogues(done)
+    grab release .shortDlg
+
+    if {[string equal more $dialogues(done)]} {
+	if {![string equal abort $defButton]} { ;# add more detail now
+	    set result [ExpandQuery $specifics $title $icon \
+			    $message $helpRef $parent $opts]
+	} else { ;# "see all": display remaining messages together
+	    set dialogues(logText) [list $message]
+	    set result $dialogues(done)
+	    after idle [list StopMsgLogging $specifics $title $icon \
+			    $helpRef $parent ok]
+	}
+    } else {
+	set result $dialogues(done)
+    }
+    ReplaceProgressBox
+    unset dialogues(done)
+
+    focus -force $oldFocus
+#    update idletasks
+    return $result
+}
+
+proc SetDlgRes {val} {
+    global dialogues
+
+    set dialogues(done) $val
+}
+
+proc HideProgressBox {} {
+    global dialogues
+
+    set dialogues(progressUp) [winfo exists .progress]
+    if {$dialogues(progressUp)} { ;# avoid yet another potential MacOS stuffup
+	grab release .progress
+#	set dialogues(progBag) [wm transient .progress]
+#	set dialogues(progMess) [.progress.message cget -text]
+#	CloseProgressBox
+    }
+}
+
+proc ReplaceProgressBox {} {
+    global dialogues
+
+    if {$dialogues(progressUp)} {
+	grab .progress
+#	OpenProgressBox $dialogues(progBag)
+#	FillProgressBox $dialogues(progMess)
+    }
+}
+
+proc ExpandQuery {specifics Title errLevel msg context parent opts} {
+    global iconImages help tcl_platform dialogues
+
+    set ProbWin .bprob[clock clicks]
+    PutItThere $ProbWin $parent
+
+#    switch $fault {
+#        user {
+#            set Title "Problem with model"
+#            set errLevel warning
+#            set buttonCmd {ContextSensitiveHelp $ProbWin run/index.htm}
+#        } system {
+#            set Title "Build failure"
+#            set errLevel error
+#            set buttonCmd {ContextSensitiveHelp $ProbWin files/problem.htm}
+#        } tcl {
+#            set Title "User interface problem"
+#            set errLevel error
+#            set buttonCmd {ContextSensitiveHelp $ProbWin files/problem.htm}
+#        }
+#    }
+    wm title $ProbWin $Title
+    wm protocol $ProbWin WM_DELETE_WINDOW {set dialogues(ack) 1}
+    switch [tk windowingsystem] {
+        win32 {wm attributes $ProbWin -toolwindow true}
+    }
+
+    set labf1 [frame $ProbWin.labf1]
+    pack [label $labf1.img -image $iconImages($errLevel)] -side left 
+#    pack [label $labf1.lab1 -text "Warning:" \
+#            -font {-weight bold -family helvetica -size 10}] -side left
+    pack [scrollbar $labf1.yscroll -orient v \
+            -command [list $labf1.lab2 yview]] -side right -fill y
+    pack [text $labf1.lab2 -width 80 -height 24 -relief sunken -bd 2 -highlightthickness 0 -wrap word -yscrollcommand [list AdjustCanvas $labf1 img y]] -fill both -expand on
+
+    set key [lindex $specifics 0]
+    upvar #0 msgs(${key}_full) trans
+    if {[info exists trans]} {
+	$labf1.lab2 insert 1.0 \n\n[eval format [list $trans] \
+					[lrange $specifics 1 end]]
+    }
+
+    $labf1.lab2 insert 1.0 $msg
+    $labf1.lab2 config -state disabled
+    #    pack [label $labf1.lab2 -text $msg -wraplength 320 \
+    #            -font {-family helvetica -size 10} -justify left] -side left
+    pack $labf1 -padx 8 -pady 2 -fill both -expand on
+    
+    set buttons [frame $ProbWin.buttons]
+    set ack1 -1
+    set defButton [lindex $opts 0]
+    set defCapt $::msgs(${defButton}_button)
+    pack [button $buttons.bn$defButton -text $defCapt -width 10 \
+	      -command [list set dialogues(ack) [incr ack1]]] \
+            -side left -padx 4 -pady 4
+    foreach extra [lrange $opts 1 end] {
+        pack [button $buttons.bn$extra -text $::msgs(${extra}_button) \
+	      -width 20 -command [list set dialogues(ack) [incr ack1]]] \
+	    -side left -padx 4 -pady 4
+    }
+    pack [button $buttons.help -text Help -width 10 \
+           -command "ContextSensitiveHelp $ProbWin $help($context)"] \
+           -side right -padx 4 -pady 8
+    pack $buttons -fill x
+    
+#    set height [winfo reqheight $ProbWin]
+#    set width [winfo reqwidth $ProbWin]
+#    set sheight [winfo screenheight $ProbWin]
+#    set swidth [winfo screenwidth $ProbWin]
+#    wm geometry $ProbWin +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
+    LetItShow $ProbWin
+#    update
+    focus $ProbWin.labf1.lab2
+    grab $ProbWin
+    tkwait variable dialogues(ack)
+    grab release $ProbWin
+    PackItUp $ProbWin
+    return [lindex $opts $dialogues(ack)]
+}
+
+proc StopMsgLogging {specifics title icon helpRef parent opts} {
+    global dialogues
+
+    HideProgressBox
+    ExpandQuery $specifics "$title -- showing all" $icon \
+		    [join $dialogues(logText) \n\n] $helpRef $parent $opts
+    unset dialogues(logText)
+    ReplaceProgressBox
 }

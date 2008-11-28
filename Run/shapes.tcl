@@ -1012,7 +1012,7 @@ proc MakeImage {c base inst w h args} {
 
 proc ShiftImages {topDir way args} {
     foreach image $args {
-        #ShowMessage debug info "Moving $image $way" ok
+        #ShowMess debug info "Moving $image $way" ok
         if {[string compare image none]} {
             set imgFile $topDir/${image}
             switch $way {
@@ -1197,7 +1197,7 @@ proc ZoomImage {args} {
 }
 
 proc InnerZoomImage {winId which factor {optFontor none}} {
-    #ShowMessage debug info "ZoomImage $winId $which $factor $fontor" ok
+    #ShowMess debug info "ZoomImage $winId $which $factor $fontor" ok
     global window_info looks
     switch [tk windowingsystem] {
 	x11 {
@@ -1345,14 +1345,14 @@ proc AdjustArrow {winId object factor} {
 
 proc ZoomBitsIn {winId node factor invx invy args} {
 # Contents now passed from prolog, no need to look in region
-#    ShowMessage debug info "ZBI $winId $node $factor $invx $invy" ok
+#    ShowMess debug info "ZBI $winId $node $factor $invx $invy" ok
 #    foreach target [$winId find withtag $node] {
 #	if {[string equal polygon [$winId type $target]] && \
 #		[string match "*/background/*" [$winId gettags $target]]} {
 #	    set reejun [$winId bbox $target]
 #	}
 #    }
-#ShowMessage debug info "Picked region $reejun" ok
+#ShowMess debug info "Picked region $reejun" ok
 #    eval {$winId addtag /squeeze/ enclosed} $reejun
 #    $winId dtag $node /squeeze/
     foreach bit $args {
@@ -1373,7 +1373,7 @@ proc DisplayAll { winId } {
 
     # get desired display area
     if {[scan [$winId bbox size_on_this] "%d %d %d %d" bl bt br bb] == 4} {
-        # ShowMessage debug info "Bounds are $bl $bt $br $bb" ok
+        # ShowMess debug info "Bounds are $bl $bt $br $bb" ok
         set clearBorder [expr 15*$window_info($winId,scale)]
 
         set bl [expr $bl - $clearBorder]
@@ -1389,7 +1389,7 @@ proc DisplayAll { winId } {
 	set keepAspect [expr {!$window_info($winId,is_top_level)}]
         set scale [expr {$xscale>$yscale==$keepAspect ? $xscale : $yscale}]
 
-        # ShowMessage debug info "xscale $xscale yscale $yscale scale $scale" ok
+        # ShowMess debug info "xscale $xscale yscale $yscale scale $scale" ok
 
         ZoomImage $winId all $scale
 
@@ -1483,7 +1483,13 @@ proc FindCaption {canvas} {
     if {[info exists find(now,$canvas)]} {
 	unset find(now,$canvas)
     }
+    AbleFindNext [winfo parent $canvas] normal
     NextCaption $canvas
+}
+
+proc AbleFindNext {win state} {
+    ${win}.toolSlot.navbar.findmore configure -state $state
+    ${win}top.edit entryconfigure "Find next" -state $state
 }
 
 #proc ForSearchType {winId item} {
@@ -1502,10 +1508,6 @@ proc FindCaption {canvas} {
 #
 proc NextCaption {canvas} {
     global find
-    if {![info exists find(List,$canvas)]} {
-        ShowMessage "Operation failed" error "No search in progress!" ok
-        return
-    }
 #    if {[info exists find(now,$canvas)]} {
 #	prolog event:do_colours($find(now,$canvas),off)
 #        FlashSymbol $canvas $find(now,$canvas) $looks(variable,outline) \
@@ -1517,9 +1519,9 @@ proc NextCaption {canvas} {
 	MenuSelect $canvas edit unselall
     }
     if {![llength $find(List,$canvas)]} {
-        ShowMessage "Caption finder" info \
-                "No more matching $find(where)s in this submodel context" ok
+	Query [list finished_matches $find(where)] info top {} ok
         array unset find *,$canvas
+	AbleFindNext [winfo parent $canvas] disabled
     } else {
         set this [lindex $find(List,$canvas) 0]
         set find(List,$canvas) [lrange $find(List,$canvas) 1 end]
@@ -1721,7 +1723,7 @@ proc LoadLooks {t n target object} {
     global looks
     
     if {[string compare $target influence]} {
-        #ShowMessage debug info "ExtractFontData looks($object,font) [ExtractFontData $looks($object,font)]" ok
+        #ShowMess debug info "ExtractFontData looks($object,font) [ExtractFontData $looks($object,font)]" ok
         scan [ExtractFontData $looks($n,$object,font)] "%s %s %s %d" \
                 looks($n,$target,family) looks($n,$target,weight) \
                 looks($n,$target,style) textsize
@@ -1772,7 +1774,7 @@ proc ExtractFontData {font} {
     set weight [font actual $font -weight]
     set style [font actual $font -slant]
     set textsize [expr [font actual $font -size]*12.0]
-    #ShowMessage debug info "ExtractFontData [list $family $weight $style $textsize]" ok
+    #ShowMess debug info "ExtractFontData [list $family $weight $style $textsize]" ok
     return [list $family $weight $style $textsize]
 }
 

@@ -405,8 +405,7 @@ check_drawing_at_depth(Wid, Levels, New_obj, Depth) :-
 		get_shape(Hider, hide_contents, 1)),
 	    use_style_for(New_obj, NewStyle),
 	    draws_at(Wid, NewStyle, Depth), !;
-	    do_dialogue("Failed to add component", warning,
-			"Cowardly refusing to add a component where it will not currently be displayed!", ok, not)).
+	    query(blind_add(New_obj, Depth), warning, top, [ok], not)).
 	    
 adjust_edit_menu(Wid, Comp, Point) :-
 	retractall(menu_submodel_will_be(Wid, _,_)),
@@ -489,7 +488,10 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    do_colours(Moving_obj, on))),
 	
 	(get_highlit_obj(0, Moving_obj),
-	    (align(Moving_obj),
+	    (% align(Moving_obj),
+% this was to make a snapping drag always snap to nodes...below does trick!
+		find_all_comps(Context, Moving_obj),
+		resnap(Context, 1),
 		snap_to_grid([Xpt, Ypt], [GX, GY]),
 		set_start_coords(GX, GY);
 	    true), % clicked on link
@@ -650,17 +652,16 @@ finish_old_edit(NextEdit) :-
 		    /* If name exists in submodel or contains dir chars,
 		    block the update show message and highlight the node again */
 		    (cannot_call_in(RenamedNode, Parent, Name),
-			sicstus_format_to_chars("Cannot rename ~a. Its parent model already contains a component called ~a.", [OldName, Name], Blurb);
+			query(caption_clash(OldName, Name), warning, top,
+			      [ok], _);
 		    name(Name, NameStr),
-			member(Dodgy, "\\./"),
-			member(Dodgy, NameStr),
-			sicstus_format_to_chars("Cannot rename ~a. The name ~a contains potentially confusing symbols \"~s\".",
-				[OldName, Name, [Dodgy]], Blurb)), !,
-		    sicstus_format_to_chars("Error renaming node ~a.",
-					    [OldName], Head),
+			member(DodgyChr, "\\./"),
+			member(DodgyChr, NameStr),
+			name(Dodgy, [DodgyChr]),
+			query(dodgy_chars(OldName, Name, Dodgy), warning, top,
+			      [ok], _)), !,
 		    /* Put old caption back; this is turned on for now */
 		    update_captions(Prev_highlight),
-		    do_dialogue(Head, warning, Blurb, ok, _),
 %	            highlight(Prev_highlight, 0),
 %		    give_focus(Prev_highlight),
 		    fail;
@@ -1840,8 +1841,7 @@ unclick_obj :-
 	    retract(ghostly_move(_,_)),
 	    ([Xpt, Ypt]=[OldX, OldY];
 	      drag_to(Xpt, Ypt, Submodel); % do it for real
-		do_dialogue("Failed to drag selection", warning,
-		    "Cannot drag selection here due to overlaps", ok, _)), !;
+		query(overlap(drag, selection), warning, top, [ok], _)), !;
 	true),
 	(get_phase(moving_border(_)), !,
 	    get_shape(Submodel, internal_extent, NewSize),
@@ -1873,8 +1873,7 @@ unclick_obj :-
 	    get_nearest_equivalent_link(ghost_link, Base,
 					Component_name, OutLink),
 	    reghost(Component_name, OutLink);
-	do_dialogue("Ghosting error", error, "Unable to make ghost here",
-		ok, _)),
+	query(bad_ghost, error, top, [ok], _)),
 	update_runnable(Parent).
 
 /* this clause handles deletion. If it is a submodel, the links that
@@ -2167,9 +2166,7 @@ attempt_addition(Type, Parent, Posn, Node_name, CanBag, Verbal) :-
 	set_shape(Node_name, centre, Posn)),
 	make_links_follow(Node_name);
 	Verbal = yes,
-	sicstus_format_to_chars("Cannot add a ~a here due to overlaps.",
-				[Type], Wibble),
-	do_dialogue("Failed to add component", warning, Wibble, ok, _),
+        query(overlap(add, Type), warning, top, [ok], _),
 	fail.
 
 attempt_new_component(Parent, Box) :-
@@ -2247,6 +2244,7 @@ align(Bit) :-
 	snap_to_grid([XMid, YMid], [Xpt, Ypt]),
 	XOff is Xpt-XMid, YOff is Ypt-YMid,
 	change_shape(Bit, centre, [Xpt, Ypt]),
+	%announce("Shunting by ~w, ~w", [XOff, YOff]),
 	move_display(Bit, [XOff,YOff]).
 
 adjust_posn(Thing, Trans) :-

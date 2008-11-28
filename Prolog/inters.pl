@@ -16,7 +16,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 		     make_intermediates(FullExp, Sm, [Target], DestPath,
 		BackSwap, [], [], Step, Used, Units, AllInters,
 		part_result(SourceContext, AllSetups, Args, Formula))), Prob,
-		     throw(conversion_failure(Sm, Prob))),
+		     report(Sm, Prob)),
 
 	get_model_and_loops(SourceContext, DestPath, _, SourceLoops, _),
 	append(SourceLoops, DestPath, BaseContext),
@@ -30,7 +30,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	    \+ Units = 1,
 	    \+ promote_unit(Units, real),
 	    (get_conversion(Formula, Units, XUnits, ScaledF);
-		throw(conversion_failure(Sm, wrong_derived_units(Units)))), !;
+		report(Sm, wrong_derived_units(Units))), !;
 	ScaledF=Formula),
 	/* now check for assignment from an idler. This will be eleminated. */
 	(ScaledF = Formula,
@@ -47,8 +47,25 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	[AllSetups, AllInters, FContext],
 	    pointer_from(DestPath, DestPtr),
 	    get_dims_from_loops(SourceLoops, _, Inds),
-	 NewFormula = [assign(arr(DestPtr, Target, Inds), ScaledF)],
+	 (get_host(Sm, VisSm),
+	     \+ VisSm = Sm,
+	     find_type(VisSm, VisType),
+	     member(VisType, [immigration, reproduction]), !,
+	     NewFormula = [set_rate_of(arr(DestPtr, Target, Inds), ScaledF)];
+	     NewFormula = [assign(arr(DestPtr, Target, Inds), ScaledF)]),
 	add_extra_dependencies(Context, DestPath, Formula, Args, Prereqs)).
+
+report(Comp, Prob) :-
+	find_all_comps(Parent, Comp),
+	caption_for(Comp, In),
+	caption_for(Parent, Out),
+	retractall(error_free(build)),
+	(query(conversion_failure(In, Out, Prob), warning, execution,
+	      [ok, show_full], ok);
+	 replace_subexps(Prob, dialogue, collapse_params,
+			 _, top_down, _, TidyProb),
+	    query(TidyProb, info, execution, [ok], _)),
+	throw(aborted).
 
 assigned_in_vm_subloop(Formula, FContext, AllSetups) :-
 	member(make(_,_, MoreLoops, _, Acts), AllSetups),
@@ -58,11 +75,11 @@ assigned_in_vm_subloop(Formula, FContext, AllSetups) :-
 
 insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
 	(Var = input(Location, PathExp, Link, Units),
-	    m_update:analyze_array(Units, Type, _);
+	    m_update:analyze_array(Units, LinkType, _);
 	Var = PathExp,
 	    /* from compartment expressions -- used? -- and dest ref */
-	    [Location, Link, Type]=[in_hierarchy, none, SourceType]),
-	PathExp = elt(RealPathForm, Ref, SourceType-DimTypes), !,
+	    [Location, Link]=[in_hierarchy, none]),
+	PathExp = elt(RealPathForm, Ref, Type-DimTypes), !,
 	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm),
 					 build(Dims), build(_), build(_)]),
 	    make_inds_for(Dims, LocalLoops, Inds),
@@ -130,6 +147,7 @@ expand_library(DestRef, Var, NewVar) :-
 	 UseVar =.. [Op | BadArgs],
 	    (MacroMatch = bad_format,
 		length(BadArgs, Arity),
+		% not sure if this ever happens
 		throw(wrong_format_of_args(Var, Op, Args, BadArgs));
 	    MacroMatch = bad_arity,
 		length(BadArgs, FnArity),
@@ -190,12 +208,10 @@ read_func_file(File, Context, IsBuiltIn, Done) :-
 	read_funcs(Name, Stream, IsBuiltIn, Done).
 
 read_funcs(File, Stream, IsBuiltIn, Done) :-
-	sicstus_format_to_chars("Parsing definitions in ~a", [File], ProbAct),
 	catch(read_term(Stream, Line, [variable_names(VPrs)]), WrongUDF,
-		     (make_nice_error_message(WrongUDF, Bug),
-			 do_dialogue(ProbAct, warning, Bug, ok, _))),
+		     make_nice_error_message(WrongUDF, Bug)),
 	(nonvar(Bug), !,
-	    do_dialogue(ProbAct, warning, Bug, ok, _),
+	    query(user_fn_misparse(File, Bug), warning, user_defns, [ok], _),
 	    read_funcs(File, Stream, IsBuiltIn, Done);
 	 Line == end_of_file, !,
 	    close(Stream),
@@ -219,8 +235,8 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 		replace_subexps(Line, inters, free_params,
 				switch(Args, _), top_down, Pairs, NewLine)),
 	    (member(var_pair(Param, NewParam), Pairs), NewParam == Param, !,
-		sicstus_format_to_chars("Failed to parse macro definition:\n~w\nThe macro function contains the parameter ~w, which does not appear in the arguments of the macro template", [Line, Param], Bug),
-		do_dialogue(ProbAct, warning, Bug, ok, _);
+		query(unused_macro_param(Line, Param), warning, user_defns,
+		      [ok], _);
 	    assert(macro_expansion(Category, NewLine))),
 	    append_atoms(['{', Category, ' {', File, '}} ', Op], FnEntry);
 	(Line = sample(Functor, ReturnType, ArgTypes),
@@ -240,9 +256,7 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 	    % use asserta so user-supplied definitions override system ones
 	    units:asserta(Line),
 	    read_funcs(File, Stream, IsBuiltIn, Done);
-	sicstus_format_to_chars("The file ~a contained the line ~w which is in the wrong format for a macro, function or unit definition -- please refer to the documentation.", 
-	               [File, Line], Bug),
-	    do_dialogue("Parsing user-defined functions", warning, Bug, ok, _),
+	query(bad_user_fn_format(File, Line), warning, user_defns, [ok], _),
 	    read_funcs(File, Stream, IsBuiltIn, Done)).
 
 shed_dummy_args(Op, NewOp) :-
@@ -364,8 +378,9 @@ make_intermediates(
 	    swap_back(SourceContext, TermSwap, ParamContext, _),
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
-	        ([Var | _] = Target, !,
-		    Args = []; % it cannot be a condition of itself
+	        (([Var | _] = Target; % it cannot be a condition of itself
+		  SrcUnits = diffs), !, % or of a compartment structure
+		    Args = [];
 		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
 	        /* note that for the time being the made_at condition is thrown
 	           away */
@@ -467,7 +482,8 @@ make_intermediates(
 	    (append(TailLoops, [SumLoop | ItemLoops], SubLoops),
 	    loops(SumLoop),
 	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
-		throw(needs_array_or_list(Source)));
+		Source =.. [Fn, Arg],
+		throw(needs_array_or_list(Fn, Arg)));
 	TailLoops = SubLoops),
 
 	/* Total must have same dims as one element of its arg,
@@ -713,7 +729,7 @@ make_intermediates(
 	    (append(TailLoops, [set(IntIndxRef, loop(Limit)) | ItemLoops],
 		    ALoops),
 	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
-		throw(only_works_on_array(Source))),
+		throw(only_works_on_array(element, Array))),
 	    (Step = dummy,
 		type_ind(Limit, NeedType);
 	     \+ Step = dummy,
@@ -725,7 +741,7 @@ make_intermediates(
 	    promote_arg(Int, real, _),
 		promote_arg(NeedType, real, _), !, /* for legacy cases */
 	        TryIndxRef = simile_int(IndxRef);
-	    throw(needs_index_of_type(Source, NeedType, Int))),
+	    throw(needs_index_of_type(element, Array, NeedType, Indx, Int))),
 	    (IntIndxRef = TryIndxRef, !;
 	    throw(redundant_array(Source))),
 	    
@@ -766,6 +782,7 @@ make_intermediates(
 		[unify(Param), build(MixedInters), build(NewInters)]),
 				% in case they use param
 	    (promote_arg(DefUnit, UseUnit,_FType);
+		% not sure how to make this happen
 		throw(wrong_param_units(Param, UseUnit, DefUnit))),!,
 	    append(SubSetups, ExSetups, Setups);	  
 
@@ -888,8 +905,8 @@ make_intermediates(
 		    /* first, check my units are right... */
 		    try_units(RUnits, Arg_template, UnitList, Units);
 		 fn_or_op(Lop, _, RUnits, Arg_template),
-		    throw(mismatched_units(Source,
-						     UnitList, Arg_template));
+		    throw(mismatched_units(Lop, Source,
+					   UnitList, Arg_template));
 		 fn_or_op(Lop, _, RUnits, WrongLen),
 		    length(WrongLen, FnArity),
 		    throw(wrong_no_of_args(Source, Op,
@@ -988,7 +1005,8 @@ propagate_units(Source, Lowest, Want, Get, Result) :-
 	promote_unit(Lowest, In),
 	substitute(Lowest, Want, In, SettleFor),
 	try_units(In, SettleFor, Get, Result), !;
-	throw(mismatched_units(Source, Get, Want)).
+	Source =.. [Lop | _],
+	throw(mismatched_units(Lop, Source, Get, Want)).
 	
 
 try_units(Result, Want, Get, Out) :-	
@@ -1124,6 +1142,7 @@ language -- they and the operators are hidden */
 
 %operator(ind_time, real, [const_int]).
 operator(stage_incr, real, [diffs, int, real]).
+operator(value_of, real, [channel_stats]).
 operator(choose, int, [boolean, int, int]).
 operator(choose, a(T), [boolean, a(T), a(T)]).
 operator(choose, real, [boolean, real, real]).

@@ -273,7 +273,7 @@ proc SafeEqnBarEdit {winId} {
     if {[string equal normal [$bar.equation cget -state]]} {
 #puts [list [$bar.equation get] is $equationbar($winId,initText)]
         if {![string eq [$bar.equation get] $equationbar($winId,initText)]} {
-            set choix [ShowMessage "Save text edits" question "Do you want to save the changes you have made in the equation bar?" yesno]
+	    set choix [Query save_eqn_bar question top {} {yes no}]
             if {[string equal yes $choix]} {
                 accept_equation $winId $bar.equation
             }
@@ -442,7 +442,7 @@ proc ChangeRegion {w l t r b} {
     set newReg [list [Scale $w $l] [Scale $w $t] [Scale $w $r] [Scale $w $b]]
     $w configure -scrollregion $newReg
     eval {ResizeBackgnd $w} $newReg
-    #ShowMessage debug info "Just done [$w coords 1]" ok
+    #ShowMess debug info "Just done [$w coords 1]" ok
     #    puts $comp
     if {$comp>1.01} {
         DoZoom $w $comp 0
@@ -487,13 +487,13 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
 
     ####### Model window extensions
     set modelWindowExtensions [itcl::find classes ::ModelWindowExtn::*]
-    #ShowMessage debug info "ModelWindow $winName\n\
+    #ShowMess debug info "ModelWindow $winName\n\
     #        $modelWindowExtensions" ok
     foreach extClass $modelWindowExtensions {
-        #ShowMessage debug info "$extClass " ok
+        #ShowMess debug info "$extClass " ok
         set extn [$extClass $winName.\#auto $winName]; # create an extension object for the new model window
         if {[catch {$extn MergeMenu} wibble] } {
-            ShowMessage debug info "Extension $extn failed to merge its menu items.\n\
+            ShowMess debug info "Extension $extn failed to merge its menu items.\n\
                    Details: $wibble" ok
         }
     }
@@ -505,7 +505,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     ToggleIOToolMenu $topNode ;# insert IO tool menu if needed
 
     InterpMenu $c off
-    #    ShowMessage debug info "Messing with [wm frame $winName]" ok
+    #    ShowMess debug info "Messing with [wm frame $winName]" ok
     #    maximize_fg_win
     return $c
 }
@@ -571,7 +571,7 @@ proc SetSpace {c w h} {
     set cy $window_info($c,height)
     set window_info($c,width) [expr $w - 4]
     set window_info($c,height) [expr $h - 4]
-    #    ShowMessage debug info "New size is $w $h" ok
+    #    ShowMess debug info "New size is $w $h" ok
     RollBack $c 1 [expr ($cx - $w)/2 + 2] [expr ($cy - $h)/2 + 2] \
             [expr ($cx + $w)/2 - 2] [expr ($cy + $h)/2 - 2]
 }
@@ -588,7 +588,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     #    wm geometry $winName +0+84
     
     # set the display depths to those we recorded
-    #ShowMessage debug info "TweakWindow $c $winTitle $scale $wl $wt $wr $wb $bg $args" ok
+    #ShowMess debug info "TweakWindow $c $winTitle $scale $wl $wt $wr $wb $bg $args" ok
     set cats {ghost_link influence variable flow \
                 compartment submodel caption sections}
     for {set depthParam 0} {$depthParam < [llength $args]} {incr depthParam} {
@@ -609,12 +609,12 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     
     set topWin [winfo parent $c]
     scan [wm maxsize $topWin] "%d %d" mw mh
-    #ShowMessage debug info "$wl $wt $wr $wb <> $mw $mh" ok
+    #ShowMess debug info "$wl $wt $wr $wb <> $mw $mh" ok
     if {[pack propagate $topWin] &&
         ($wr-$wl >= $mw-8 || $wb-$wt >= $mh-8)} {
         catch {winfo state $topWin zoomed}
     }
-    #ShowMessage debug info "Just done [$c coords 1]" ok
+    #ShowMess debug info "Just done [$c coords 1]" ok
 }
 
 proc ChangeParentTitle {wc title bg} {
@@ -1558,7 +1558,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
         $fm add command -label Contents -command "ContextSensitiveHelp $winid index.htm" \
                 -accelerator "F1"
         AddAccelerator $winid help Contents "<F1>"
-#        $fm add command -label Huh? -command {ShowMessage debug info $errorInfo ok}
+#        $fm add command -label Huh? -command {ShowMess debug info $errorInfo ok}
     if ![string match aqua [tk windowingsystem]] {
         $fm add command -label About... -command [list ShowAbout $winid]
     }
@@ -1612,6 +1612,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             BindPopup $nb.$handle $handle
         }
     }
+    $nb.findmore configure -state disabled
     
     # button to raise single-window run env (ready for more tools in this section)
     foreach navCmd {{runenv {local raiseMRE}}} {
@@ -1751,7 +1752,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     update idletasks ;# to allow reqwidth to be calculated
     set navWidth [winfo reqwidth $tb] ;# tool bar is widest
-    #ShowMessage debug info "Toolbar needs $navWidth" ok
+    #ShowMess debug info "Toolbar needs $navWidth" ok
     set custom(showtoolbar,$winid) [expr $initWidth>=$navWidth && \
             [PrefValue custom(initToolbar) initToolbar]]
     set custom(shownavbar,$winid) [expr $initWidth>=$navWidth && \
@@ -1789,7 +1790,7 @@ proc AddFindMenu {winid canvas menu} {
             -accelerator "$accKey+F"
     AddAccelerator $winid edit "Find..." "<$accSym-f>"
     $menu add command -label "Find next" -command "NextCaption $canvas" \
-            -accelerator "F3"
+            -accelerator "F3" -state disabled
     AddAccelerator $winid edit "Find next" "<F3>"
 }
 
@@ -2147,7 +2148,7 @@ proc ZapWindow { fullName } {
     global custom window_info tcl_platform
     
     upvar 0 window_info($fullName,parent) target
-    #ShowMessage debug info "$winId $custom(first_up)" ok
+    #ShowMess debug info "$winId $custom(first_up)" ok
     if {$window_info($fullName,is_top_level)} {
         focus $target.canvas
         update

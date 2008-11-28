@@ -137,9 +137,11 @@ proc AddHelperSublist {fm title ct} {
             # done at startup -- make sure dialog is not concealed
             wm withdraw .
 # do it after idle so this process is not hung till user responds
-            BuildProblem "Error loading I/O tool" warning \
-                    "I/O tool [pwd]/$helperApp had a $::errorInfo" \
-		    helpers none none
+	    if {[string equal abort \
+		 [Query [list iotool_load_fail [pwd]/$helperApp $::errorInfo] \
+		      warning helpers {} abort]]} {
+		return abort
+	    }
 	    continue
         }
 	if {[info exists keyValue]} {
@@ -211,7 +213,9 @@ proc AddHelperSublist {fm title ct} {
     foreach subDir [glob -nocomplain *] {
         if [file isdirectory $subDir] {
             cd $subDir
-            AddHelperSublist $m $subDir $nct
+            if {[string equal abort [AddHelperSublist $m $subDir $nct]]} {
+		return abort
+	    }
             cd ..
             incr nct
         }
@@ -294,7 +298,7 @@ proc ProdObj {topNode nodeId caption} {
 #	    REAL|INTEGER|FLAG|ENUMERATED {
 	SystemHelperCall $inst $topNode Click $useCapt
 #	    } default {
-#		ShowMessage "Clicked on $caption" error \
+#		ShowMess "Clicked on $caption" error \
 #                    "This component cannot be selected for an I/O tool because it has no associated value." ok
 #	    }
 #	}
@@ -447,10 +451,7 @@ proc CreateView {node oldPath} {
     set nameOfHelperStateFile $oldPath
     set stream [NetOpen $metaFile r]
     if {[string equal mre $origin]} {
-	set response [ShowMessage {Inappropriate view specification} warning \
-			  "This view specification file was created within the integrated Model Run \
-                        Environment. Do you wish to launch a view-only version of MRE to view it?" \
-			  yesnocancel]
+	set response [Query wrong_layout question helpers {} {yes no cancel}]
 	switch $response {
 	    yes {
 		raise [Makemre $node]
@@ -471,7 +472,11 @@ proc CreateView {node oldPath} {
 
 	set inst [ReinstateHelper $origVersion $oldStatus \
 		      $helperId $helperTitle]
-	wm geometry [$inst cget -winId] $geometry
+	if {[string equal abort $inst]} {
+	    break
+	} elseif {![string equal more $inst]} {
+	    wm geometry [$inst cget -winId] $geometry
+	}
     }
     close $stream
 }
@@ -483,14 +488,18 @@ proc ReinstateHelper {origVersion oldStatus helperId helperTitle} {
     if {$origVersion<5.0} {
 	set helperId [ClassFromKey $helperId]
     }
-    if {![llength [itcl::find class ::similescript::$helperId]]} {
-	ShowMessage "Problem restoring helper" warning \
-	    "No I/O tool with keyword \"$helperId\" is installed" ok
-	return
+    set addClass [itcl::find class ::similescript::$helperId]
+    if {![llength $addClass]} {
+	return [Query [list missing_iotool_type $helperId] \
+		    warning helpers {} abort]
     }
-    if {[catch {CreateHelperWindow $helperId \
-		    [RestoreCrs $helperTitle] [RestoreCrs $oldStatus]} inst]} {
-	ShowMessage "Problem restoring helper" warning $::errorInfo ok
+    if {[catch {CreateHelperWindow $helperId [RestoreCrs $helperTitle] \
+		    [RestoreCrs $oldStatus]} inst]} {
+	if {[string equal aborted $inst]} {
+	    return abort
+	}
+	return [Query [list iotool_restore_fail [${addClass}::Identify] \
+			   $::errorInfo] warning helpers {} abort]
     } else {
 	return $inst
     }
@@ -500,7 +509,10 @@ proc LoadMREFormatView {node stream origVersion} {
     global helperTable
     while {[gets $stream helperId] >= 0} {
         gets $stream oldStatus
-	ReinstateHelper $origVersion $oldStatus $helperId {}
+	set inst [ReinstateHelper $origVersion $oldStatus $helperId {}]
+	if {[string equal abort $inst]} {
+	    break
+	}
     }
 }
 
@@ -551,9 +563,8 @@ proc TellAllHelpers {node payload fun args} {
 	if {[string equal $node [$inst GetNode]]} {
 	    set helperTable(beingCalled) $inst
 	    if {[catch {eval $inst $fun $args} HelpErr]} {
-		BuildProblem "Error running I/O tool" warning \
-                    "I/O tool \"[[$inst info class]::Identify]\" raised a problem during model execution. This occurred while doing the $fun operation. The model has been paused. To continue running it you may have to kill this helper's display.\nHere is the error log for debugging:\n$::errorInfo" \
-		    helpers none none
+		Query [list iotool_run_fail [[$inst info class]::Identify] \
+			   $fun $::errorInfo] warning helpers {} ok
 		set success 0
 	    }
 	    set helperTable(beingCalled) {}
@@ -603,7 +614,7 @@ proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
     }
     set custom(prefDir) [file dirname $nSimtmpdir]
 #    set env(LD_LIBRARY_PATH) [file dirname [info library]]
-#    ShowMessage debug info $env(LD_LIBRARY_PATH) ok
+#    ShowMess debug info $env(LD_LIBRARY_PATH) ok
     load_c_stub_1
     load_c_stub_2
 
@@ -962,7 +973,7 @@ proc SetRunParams {node runParams} {
     global runState
     
     set runState($node,currentTime) 0.0
-    #ShowMessage debug info set ok
+    #ShowMess debug info set ok
     if {[string match execTime [lindex $runParams 0]]} {
 	# some old ones omitted timeUnit so set default
 	set runState($node,timeUnit) unit
@@ -999,7 +1010,7 @@ proc SetRunParams {node runParams} {
 
 proc StartRun {node} {
     global runState window_info helperTable classTable projectParams sendvars
-    # ShowMessage debug info enter(start_run) ok
+    # ShowMess debug info enter(start_run) ok
 #    set runState($node,currentWin) $winId ;# enables rebuild from run control
 
     if {[info exists helperTable($node,whichRunEnv)]} {
@@ -1011,12 +1022,15 @@ proc StartRun {node} {
     set runState($node,modelRunning) 1
     set topCapt [GetExecTitle $node]
     foreach {smPath spFile} [array get projectParams] {
+	unset projectParams($smPath)
 	if {[file exists $spFile]} {
 	    MergeParams $node /$node$smPath $spFile 0 0
 	} else {
-	    BuildProblem "Problem loading project" warning "Parameter metafile $spFile could not be found." execution
+	    if {[string equal abort [Query [list no_spf_for_project $spFile] \
+					 warning top {} abort]]} {
+		break
+	    }
 	}
-	unset projectParams($smPath)
     }
     if {[FileParamDialogue $fpParent 0]<1} {
 	if {[info exists runState($node,cnvs)]} {
@@ -1058,7 +1072,7 @@ proc StartRun {node} {
     set runState($node,timeAtEval) 0.0
 
     if {[PrefValue custom(helperManager) helperManager]} {
-        #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
+        #    ShowMess debug info "About to make MRE [array name window_info *,parent]" ok
         raise [set topWin [Makemre $node]]
     }
 #    Now have to do this in Prolog so only running windows change
@@ -1352,11 +1366,5 @@ proc SetNodeForHelper {node} {
 # guess I would only need this for old-style PEST interface and it breaks
 # dll interface for debugging
 #	set sender $runHow(sendCmd)
-    }
-}
-
-if {![info exists runHow(where)]} { ;# we are not at home, so call
-    if {[catch {eval KickOff $argv} err]} {
-	ShowMessage {Simile obliterfried!} error $errorInfo ok
     }
 }

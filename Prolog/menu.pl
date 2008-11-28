@@ -141,7 +141,8 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    no canvas, images or runnables */
 	on_exception(ProLoss, ame_merge(Parent, Name, _FileV, no, Translated),
 		     (make_nice_error_message(ProLoss, ProLite),
-		     show_error(Parent, open_model_failed(Checked, ProLite)))),
+		     query(open_model_failed(Checked, ProLite), error, top,
+			   [ok], _))),
 	    NeedsRedraw = 1;
 	/* insert failed because it took model over comp limit */
 	restart_move,
@@ -192,7 +193,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		    redisplay(Mover),
 		    fail;
 		 finish_move(Parent, 1));
-	    do_dialogue("Insertion error", error, "Unable to insert components here -- not enough free space", ok, _),
+	    query(overlap(insert, components), warning, top, [ok], _),
 		restart_move)).
 
 :- dynamic(combined_box_is/1).
@@ -317,8 +318,6 @@ menu_handle(Win, file, CompOrBuild) :-
 	    IdentStr = ".cpp",
 	    Vers = ''),
 	Win shows_model Model,
-	((is_toplevel(Model);
-	    get_av_pair(Model, 0, separate, 1)), !,
 	name(Ident, IdentStr),
 	get_default_export_name(Model, IdentStr, DefN),
 	get_program_file(DefN, Model, Tgt),
@@ -333,8 +332,7 @@ menu_handle(Win, file, CompOrBuild) :-
 	(get_av_pair(Model, 1, c_new, Serial), !; Serial = 1),
 	    caption_for(Model, Capt),
 	    append_atoms([CompDir, '/', Capt, '/model', Vers, Ident], Top),
-	    output:safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _));
-	do_dialogue("Error exporting code", error, "This submodel does not have its own code.", ok, _)).
+	    output:safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)).
 
 menu_handle(Win, file, RunCmd) :-
 	member([RunCmd, Lang], [[run_c, c], [run_tcl, tcl]]),
@@ -343,13 +341,11 @@ menu_handle(Win, file, RunCmd) :-
 	/* Compile the thing into whatever, load it */
 	use_temp_dir(Dir),
 	(rebuild_code(Lang, Node, Dir), !,
-	    /* no much point going for run */
-	    on_exception(Whoops,
+	    % if exceps happen here, catch in Tcl and return failure
+	    % on_exception(Whoops,
 			 output:prepare_execution(Node, Lang),
-		     (sicstus_write_to_chars(Whoops, Squeak),
-		     do_dialogue("Compilation or startup error", error,
-				  Squeak, ok, _),
-			 scrub_run(Node, 0))),
+% 		     (sicstus_write_to_chars(Whoops, Squeak),
+% 			 scrub_run(Node, 0))),
 	    set_running_model(Node);
 	    true),
 	(retract(new_exec_for(_Any)), !,
@@ -487,7 +483,6 @@ menu_handle(Win, file, prolog_eqns) :-
 	fail;
 	close(Stream),
 	finish_progress_dialogue).
-*/
 
 menu_handle(_Win, file, import_ss) :-
 	output:safe_tcl_eval(['ConvertSSxml'], _),
@@ -496,6 +491,7 @@ menu_handle(_Win, file, import_ss) :-
 	append_atoms(Dir, '/ss_decls.pl', SSFile),
 	convert_ss(SSFile, Parent),
 	finish_move(Parent, 0).
+*/
 
 menu_handle(Win, file, export_prolog) :-
 	Win shows_model Model,
@@ -697,13 +693,12 @@ menu_handle(Win, edit, set_interface) :-
 	read(Stream, interface_spec_for(SubmodelName, _)),
 	caption_for(Submodel, OldName),
 	(OldName = SubmodelName, !;
-	sicstus_format_to_chars("The interface specification you have chosen is for a submodel named ~a, whereas the current submodel is named ~a. Do you want the submodel renamed?", [SubmodelName, OldName], WrongNameStr),
-	    do_dialogue("Submodel name mismatch", warning, WrongNameStr,
-			yesnocancel, Choice),
-	    (Choice = yes,
+	    query(no_caption_match(SubmodelName, OldName), warning, top,
+		  [cancel, rename, keep_name], Choice),
+	    (Choice = rename,
 		add_parameter(Submodel, 0, name, SubmodelName),
 		update_captions(Submodel);
-	    Choice = no)),
+	    Choice = keep_name)),
 	read(Stream, ReferenceLine),
 	(ReferenceLine = references(References),
 	    load_references(Submodel, References);
@@ -1120,22 +1115,20 @@ set_properties(Wid, Model) :-
 		append([91 | CountStr], [93], ListStr),
 		get_term(ListStr, UseCount, Error),
 		(\+ Error = [],
-		    append("Invalid dimension string -- ", Error, Wibble);
-/*		get_actual_sizes(UseCount, Sizes), */
-		on_exception(WibbleAtom,
+		    query(bad_syntax(dimensions, Error), error, model_dims,
+			  [ok], _);
+		on_exception(Gax,
 			     get_actual_sizes(Model, UseCount, Sizes, _,_),
-			     name(WibbleAtom, Wibble)),
-		    (nonvar(Wibble);
+			     query(Gax, error, model_dims, [ok], _)),
+		    (nonvar(Gax);
 		    member(Dodgy, Sizes),
 			\+ (integer(Dodgy), Dodgy > 1),
-			sicstus_format_to_chars("~w is not a valid dimension -- for a simple submodel, leave dimension field empty", [Dodgy], Wibble);
-		    Spec = [count=UseCount]);
-		Wibble = "Could not convert dimensions to numbers");
+			query(bad_sm_dim(Dodgy), error, model_dims, [ok], _);
+		    Spec = [count=UseCount]));
 	    member(NewNature, [population, records]),
 		Spec = [type=NewNature]),
-	    (nonvar(Spec),
-		add_parameter(Model, 0, multiplication_spec, Spec);
-	    do_dialogue("Problem with dimensions", error, Wibble, ok, _)),
+	    (var(Spec);
+		add_parameter(Model, 0, multiplication_spec, Spec)),
 	    
 	    ((abs(NewFatness - Fatness) =< 0.005;
 	      Fatness > 1, NewFatness > 0.995), !;
@@ -1211,16 +1204,11 @@ flip_innards(Node_name, Action) :-
 		fail).
 
 rebuild_code(Lang, Node, ProgFileDir) :-
-	(on_exception(Whoops, compile(Lang, Node, ProgFileDir), true), !;
-	    Whoops = compilation_failed),
-	finish_progress_dialogue,
-	output:safe_tcl_eval([set, log, exited_exception], _),
-	(Whoops = yes;
-            scrub_run(Node, 0),
-	    show_error(Node, Whoops),
-	    fail).
+	compile(Lang, Node, ProgFileDir);
+	scrub_run(Node, 0),
+	fail.
 
-show_error(Model, Lossage) :-
+old_show_error(Model, Lossage) :-
 	Lossage = compilation_failed, !;
 	/* if this happens the user will have seen the error already */
 	(Lossage = open_model_failed(MimeFail, PrologFail), !,
@@ -1324,22 +1312,6 @@ show_error(Model, Lossage) :-
 	    append(ProbDesc, [br(Name), br(AutoName)], FullProb)),
 	output:safe_tcl_eval(FullProb, _).
 
-/*
-Unused because only desktop is runnable anyway
-not_runnable(Model) :-
-	reassure_user("Checking model is self-contained"), 
-	get_exogenous_node(Model, Target),
-		caption_for(Model, OuterText),
-		get_host(Target, VisTarget),
-		caption_for(VisTarget, InnerText),
-		sicstus_format_to_chars("Cannot run model ~w because one of the inputs \c
-				for ~w comes from ouside this model, therefore its value \c
-				cannot be calculated.", [OuterText, InnerText], Message),
-
-		do_dialogue("Cannot run model", error, Message, ok, _);
-		fail.
-*/
-
 check_deletable(Win, Parent) :-
 	(\+ find_all_comps(Parent, _), !;
 	    get_save_status(Win, safe), !;
@@ -1440,10 +1412,10 @@ kill_everything(Model) :-
 ok_to_delete(Win, Target) :-
 	get_default_export_name(Target, ".sml", Handle),
 	caption_for(Target, Title),
-	sicstus_format_to_chars("The current version of ~a (in ~w) has not been saved. Save it now?", [Handle, Title], Query),
-	do_dialogue("Save changes", question, Query, yesnocancel, Reply),
-	(Reply = yes, do_save(Win, Target, false);
-	Reply = no).
+        query(abandon(Handle, Title), question, top, [forget, cancel, save],
+	      Reply),
+	(Reply = save, do_save(Win, Target, false);
+	Reply = forget).
 
 do_save(Win, Model, New_name) :-
 	\+ too_big_for_edn(Model),
@@ -1489,12 +1461,7 @@ do_save(Win, Model, New_name) :-
         reassure_user("Creating MIME-format saved file"),
 	output:save_file(Model, SaveDir, Name, Select, Oops),
 
-        (   Oops = [];
-	    \+ Oops = [],
-            do_dialogue("Problem building output file", error, Oops, ok, _),
-	    fail),
-
-	/* If that succeeded, mark model as saved */
+        Oops = [], %If that succeeded, mark model as saved, else choose new name
 	(New_name = seln_only;
 	set_model_file(Model, Name),
 	(is_toplevel(Model), !,
@@ -1517,8 +1484,7 @@ too_big_for_edn(Model) :-
 	state:get_edition_and_limit(Edn, Limit),
 	count_functions(Model, N),
 	N > Limit,
-	sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, so it cannot be saved in the ~a edition.", [N, Limit, Edn], Annoy),
-	do_dialogue("Error saving model", error, Annoy, ok, _).
+	query(save_edition_limit(N, Limit, Edn), error, top, [ok], _).
 
 transfer_images(Model, TopDir, Way) :-
 	setof(ImageSpec,

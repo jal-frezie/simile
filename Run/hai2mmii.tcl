@@ -93,18 +93,14 @@ proc ExplainError {errList origError} {
     }
     switch -- $severity {
 	-1 {
-	    set graphic warning
-	    set header "Problem with model"
-	    set mess "Simile ran into a problem trying to run this model. 
-While $operation $target during $action of the model$timing, $problem. Original error message follows:\n$origError"
+	    Query [list model_crash $operation $target $action $timing \
+		       $problem $origError] warning top {} ok
 	} 0 {
-	    set graphic info
-	    set header "Model execution paused"
-	    set mess "While $operation $target during $action of the model$timing, $problem."
+	    Query [list model_pause $operation $target $action $timing \
+		       $problem] info top {} ok
 	}
     }
     # do it after idle so this process is not hung till user responds
-    BuildProblem $header $graphic $mess execution
     RaiseModelWindow $myNode
     return $severity
 }
@@ -383,9 +379,14 @@ proc GetIdFromCaptionPath { caption } {
     } else {
 	set lostType submodel
     }
-    set helperType [[$inst info class]::Identify]
-    BuildProblem "Missing values for helper" warning "An instance of the I/O tool \"$helperType\" has requested information about the $lostType $lostBit, but there is no $lostType of this name in the current model. If the model has changed since the I/O tools were set up, you should adjust the settings of the I/O tools to reflect these changes, otherwise more warnings may appear and the model may stop running." helpers
     lappend helperTable($inst,lost) $lostBit
+    set helperType [[$inst info class]::Identify]
+
+    if {[string equal abort [Query [list missing_var_requested $helperType \
+					$lostType $lostBit $lostType] \
+				 warning helpers {} abort]]} {
+	error aborted
+    }
     return nomatch
 }
 

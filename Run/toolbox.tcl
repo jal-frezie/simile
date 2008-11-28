@@ -84,7 +84,7 @@ proc AttackGlobalVariable {array elt val} {
 #     global errorInfo
 #     set oldDir [pwd]
 #     if {[catch $args retVal]} {
-#         set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
+#         set ans [ShowMess "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
 #         if {[string match yes $ans]} {
 #             BuildProblem "User interface problem" error $errorInfo execution \
 #          unsaved none
@@ -537,7 +537,7 @@ proc load_dll {topNode lang progDir id node incs} {
     if {[catch {ex_load_dll $topNode $lang $progDir $id $node $incs} \
 	     new_model_id]} {
 	if {[PrefValue custom(hackBreak) hackBreak]} {
-	    ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $new_model_id -- the program will attempt to build another one." ok
+	    Query [list new_exec_needed $new_model_id] info top {} {ok}
 	}
 	return 0
     }
@@ -562,8 +562,7 @@ proc compile_c {workingDir extLibs} {
 
     CheckCompilerLocation
     if {[PrefValue custom(hackBreak) hackBreak]} {
-        ShowMessage {Code editing opportunity} info \
-                "About to compile model.cpp in $workingDir" ok
+	Query [list hack_break $workingDir] question top {} ok
     }
     set shLibExt [info sharedlibextension]
     set lDirs {}
@@ -588,7 +587,7 @@ proc compile_c {workingDir extLibs} {
     }
     set TOOLDIR [file join $SIMILE_PATH Run]
     set TCL [file dirname [file dirname [info library]]]
-    #ShowMessage debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
+    #ShowMess debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
     if {[catch {switch $tcl_platform(platform) {
         unix {
 	    eval {exec g++} $sendvars(arflags) [list -fPIC -c -I$TOOLDIR \
@@ -693,12 +692,10 @@ proc compile_c {workingDir extLibs} {
 
         }
     }} chuckup]} {
-      set badCompile "The compiler raised a problem with the code generated for this model. This might be due to a bad compiler setup, or it could be due to mathematical problems in the model. The error was: $chuckup. It may help to try the 'Debug' option."
-puts $badCompile
-      cd $TOOLDIR; #Change back to Run directory in order to access Help file for subsequent dialogue
-      BuildProblem "Problem during compilation" warning $badCompile execution
-      cd $workingDir
-      set serial -1
+	cd $TOOLDIR; #Change back to Run directory in order to access Help file for subsequent dialogue
+	Query [list compile_failed $chuckup] warning execution {} ok
+	cd $workingDir
+	set serial -1
     } else {
 	# file delete model.cpp
 	# (no, we might be copying)
@@ -757,8 +754,7 @@ proc LoadModelWindowExtensions {} {
     set extensionList [glob -nocomplain *.tcl]
     foreach extension [lsort $extensionList] {
         if [catch {source $extension} wibble] {
-            ShowMessage "Error loading Extension" warning \
-                    "Extension [pwd]/$extension had a $wibble" ok
+	    Query [list extn_bug [pwd]/$extension $wibble] warning top {} abort
         }
     }
     cd $origDir
@@ -863,21 +859,21 @@ proc ControlDraw {prologVersion} {
     # no longer have a separate floating toolbar
     
     if {![info exists custom(prefDir)]} {
-	set foldErr "No HOME directory specified"
+	set foldErr home_not_set
     } else {
 	set clipSpc [file join $custom(prefDir) clipboard.pl]
 	if {[catch {file mkdir $custom(prefDir); \
 			prolog check_use('$clipSpc'); \
 			file delete $clipSpc} pWibble]} {
-	    set foldErr $pWibble
+	    set foldErr [list cannot_use_home $pWibble]
 	}
     }
     if {[info exists foldErr]} {
 	catch {wm withdraw .splash}
-	BuildProblem {File system problem} warning "HOME directory unusable -- $foldErr -- trying installation folder instead" top
+	Query $foldErr warning top {} ok
         set custom(prefDir) [pwd]/../Prefs
     }
-#   ShowMessage debug info "prefdir is $custom(prefDir)" ok
+#   ShowMess debug info "prefdir is $custom(prefDir)" ok
 
 # load function help messages
     set oldDir [pwd]
@@ -905,7 +901,7 @@ proc ControlDraw {prologVersion} {
         set userinfo(oldVersion) 0
         set userinfo(done) 0
     }
-#   ShowMessage debug info "Got old version $userinfo(oldVersion)" ok
+#   ShowMess debug info "Got old version $userinfo(oldVersion)" ok
     if {[string match Linux $tcl_platform(os)]} {
 	set shank ../System/lib/lib5d.so
 	if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
@@ -919,7 +915,7 @@ proc ControlDraw {prologVersion} {
     set execThread(id) [thread::create]
 
     if {[info exists execThread]} {
-	foreach stubCmd {load_c_stub_1 load_c_stub_2 get_auth_code check_auth_code c_setparamarray c_setparamall c_cleartimeseries c_settimepointarray c_settimepointall c_getparamall c_gettimepointall PlaceInArray SetWrapTime SetFillMethod ex_load_dll update_executable free_data_handle c_killmodel GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
+	foreach stubCmd {load_c_stub_1 load_c_stub_2 get_auth_code check_auth_code c_setparamarray c_setparamall c_cleartimeseries c_settimepointarray c_settimepointall c_setrecordlist c_getparamall c_gettimepointall PlaceInArray SetWrapTime SetFillMethod ex_load_dll update_executable free_data_handle c_killmodel GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
 	    proc $stubCmd {args} {
 		global execThread
 		#puts "exec bother [lindex [info level 0] 0]"
@@ -1009,7 +1005,7 @@ proc ControlDraw {prologVersion} {
         set toGo [expr $expTime-[clock seconds]]
 
 	if {$toGo<7*$day} {
-            #       ShowMessage "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
+            #       ShowMess "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
             ShowExpiryImminent $expTime $toGo
         }
 	if {$toGo<0} {
@@ -1173,10 +1169,9 @@ proc CheckCompilerLocation {} {
             if {[llength $possDir]} {
                 set env(MSVCDIR) $possDir
             } else {
-                ShowMessage "C++ compiler setup problem" warning \
-                        "c++ compiler preference set to [PrefValue \
-                        custom(compChoice) compChoice] but no executable $compiler found in command \
-                        path or any of $possDirs" ok
+		set compChoice [PrefValue custom(compChoice) compChoice]
+		Query [list no_compiler $compChoice $compiler $possDirs] \
+		    warning top g++ {} ok
                 set custom(compChoice) none
             }
         }
@@ -1207,7 +1202,7 @@ proc FixSize {c} {
 		 [PrefValue custom(winPosn) winPosn]]} {
         set stream [NetOpen $custom(prefDir)/.layout r]
         gets $stream whetherMaxed
-        #ShowMessage debug info $whetherMaxed ok
+        #ShowMess debug info $whetherMaxed ok
         catch {
             if {$whetherMaxed} {
                 wm state $win zoomed
@@ -1253,7 +1248,7 @@ proc IsRunnableModel {fileName} {
 }
 
 proc SaveFile {topNode tree tgt {noPkg 0}} {
-    #ShowMessage debug info "SaveFile $tree $tgt" ok
+    #ShowMess debug info "SaveFile $tree $tgt" ok
     global errorInfo runState projectInfo
     
     if {!$noPkg} {
@@ -1265,7 +1260,7 @@ proc SaveFile {topNode tree tgt {noPkg 0}} {
 
     if {[catch {
 	set parts [GetParts $tree $tree]
-	#ShowMessage debug info "SaveFile GetParts $tree" ok
+	#ShowMess debug info "SaveFile GetParts $tree" ok
 	if {[info exists runState($topNode,runParams)]} {
 	    lappend parts [mime::initialize -canonical application/x-simile \
 			   -header [list "Content-Description" "Run Status"] \
@@ -1274,8 +1269,8 @@ proc SaveFile {topNode tree tgt {noPkg 0}} {
 	    lappend projectInfo "Model execution parameters"
 	}
 	if {[PrefValue custom(hackBreak) hackBreak] && !$noPkg} {
-	    set resp [ShowMessage "Saving project file" info \
-			  "This project file will contain the following information:\n[join $projectInfo \n]" okcancel]
+	    set resp [Query [list pkg_contents [join $projectInfo \n]] info \
+			  top {} {ok cancel}]
 	    if {![string equal ok $resp]} {
 		set cancelled 1
 	    }
@@ -1319,7 +1314,7 @@ proc OurEdition {text} {
 proc LoadFile {topNode tree tgt} {
     global errorInfo runState
     global loadingProject mimedir
-    #ShowMessage debug info "LoadFile $tree $tgt" ok
+    #ShowMess debug info "LoadFile $tree $tgt" ok
     set CodeChecked no
     if {[catch {
             set multiT [mime::initialize -file $tgt]
@@ -1328,7 +1323,7 @@ proc LoadFile {topNode tree tgt} {
             }
             foreach bit [mime::getproperty $multiT parts] {
                 set Desc [mime::getheader $bit Content-Description]
-                #ShowMessage debug info $Desc ok
+                #ShowMess debug info $Desc ok
 		if {[catch {PathFromDispo $bit} oldPath]} {
 		    set oldPath /none/
 		}
@@ -1366,10 +1361,10 @@ proc LoadFile {topNode tree tgt} {
 		    }
                 }
             }
-            #ShowMessage debug info "LoadFile after unpack\n[glob $tree/*]" ok
+            #ShowMess debug info "LoadFile after unpack\n[glob $tree/*]" ok
             # if there is a project file
             if {[file exists $tree/model.spj]} {
-                #ShowMessage debug info "LoadFile file is package" ok
+                #ShowMess debug info "LoadFile file is package" ok
                 set loadingProject [list $topNode $tgt]
                 set mimedir $tree
                 #OpenProjectFile $tree
@@ -1393,7 +1388,7 @@ proc GetParts {top tree} {
 
     set mimes {}
     foreach subtree [glob -nocomplain ${tree}/*] {
-        #ShowMessage debug info "GetParts subtree $subtree" ok
+        #ShowMess debug info "GetParts subtree $subtree" ok
         if {[file isdirectory $subtree]} {
             set mimes [concat $mimes [GetParts $top $subtree]]
         } else {
@@ -1576,7 +1571,7 @@ proc EatNumber {str} {
 proc GetSystemChars {string} {
     set sysbag [encoding convertto [encoding system] $string]
     binary scan $sysbag c[string length $sysbag] list
-#ShowMessage debug info "Getting codes for $string got $list" ok
+#ShowMess debug info "Getting codes for $string got $list" ok
     foreach char $list {
 	if {$char<0} {
 	    lappend ulist [expr $char+256]
@@ -1633,9 +1628,9 @@ proc OpenProjectFile {path} {
     gets $projectF SimileProjectData
     close $projectF
     file delete $pFile
-    #ShowMessage debug info "open_all win $win; $SimileProjectData" ok
+    #ShowMess debug info "open_all win $win; $SimileProjectData" ok
     array set SimileProject $SimileProjectData
-    #ShowMessage debug info "open_all SimileProject(ModelFile) $SimileProject(ModelFile)" ok
+    #ShowMess debug info "open_all SimileProject(ModelFile) $SimileProject(ModelFile)" ok
     
     # if params it should load the spfs
     # MergeParams {smPath metaFile interactive}
@@ -1675,7 +1670,7 @@ proc OpenProjectFile {path} {
 proc SaveProjectFile {topNode path tgt} {
     global custom runState nameOfHelperStateFile projectInfo
 #puts [array get nameOfHelperStateFile]
-    #ShowMessage debug info "SaveProjectFile $path" ok
+    #ShowMess debug info "SaveProjectFile $path" ok
     # save any current spf names to the spj file
     # save any shf files names
     
@@ -1825,15 +1820,9 @@ proc PrintNow {winId} {
     } else {
         set tempPSFile $simtmpdir/temp.ps
         SpitPS $winId $tempPSFile
-        if {[catch "exec $env(PRINTCMD) {[file nativename $tempPSFile]}" result]} {
-            ShowMessage "Print command result" warning \
-                    "Printing seems to have failed. \
-
-                    The result returned by the print command was:
-            
-            $result
-            
-            Please see the online help to find out more about setting up printing from Simile. Alternatively you can export the model diagram as a PostScript file (use the File...Export menu command) and then print that using another package." ok
+        if {[catch "exec $env(PRINTCMD) {[file nativename $tempPSFile]}" \
+		 result]} {
+	    Query [list linuxPrintFail $result] warning top $winId {ok}
         }
         file delete $tempPSFile
     }

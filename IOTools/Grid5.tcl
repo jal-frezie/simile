@@ -445,6 +445,11 @@ namespace eval grid005 {
 		  -variable [namespace current]::useNodes($winId,regSave)] \
 	    -padx 10 -pady 10 
         pack $actionF -padx 10 -pady 10 -fill x -expand true
+	set useNodes($winId,actions) $actionF
+	if {![info exists useNodes($winId,GDALTemplate)]} {
+	    $actionF.b configure -state disabled
+	    $actionF.cb configure -state disabled
+	}
 
         $dlg add -name ok \
                 -command [namespace code "OnClickSettingOkBtn $winId $coloursF $rangeF $dlg"]; # buttons 0
@@ -478,14 +483,13 @@ namespace eval grid005 {
 
 	set useNodes($winId,GDALTemplate) \
 	    [gdal_open_read_only $useNodes($winId,template)]
+	${useNodes($winId,actions)}.b configure -state normal
+	${useNodes($winId,actions)}.cb configure -state normal
     }
 
     proc WriteImage {winId time} {
 	variable useNodes
 	
-	if {![info exists useNodes($winId,GDALTemplate)]} {
-            ShowMessage Error error "No template file specified" ok
-	}
 	set dest $useNodes($winId,target)
 	if {![string equal now $time]} {
 	    set extn [file extension $dest]
@@ -538,7 +542,7 @@ namespace eval grid005 {
         if {[IsNumber $min($winId)]} {
             set useNodes($winId,min) $min($winId)
         } else  {
-            ShowMessage Error error "Value must be a number." ok
+	    Query [list not_number Min] error top {} ok
             $rangeF.minF.entry selection range 0 end
             focus $rangeF.minF.entry
             return
@@ -546,7 +550,7 @@ namespace eval grid005 {
         if {[IsNumber $max($winId)]} {
             set useNodes($winId,max) $max($winId)
         } else  {
-            ShowMessage Error error "Value must be a number." ok
+	    Query [list not_number Max] error top {} ok
             $rangeF.maxF.entry selection range 0 end
             focus $rangeF.maxF.entry
             return

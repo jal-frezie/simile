@@ -9,8 +9,8 @@ sicstus_module(ame_gen,
 	       [get_term/3, make_nice_error_message/2, get_host/2, appears/1, 
 		implicit_function/2, border_node/1, is_parameter/2,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
-		bowtie_section/2, find_reference/3,
-		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
+		bowtie_section/2, find_reference/3, query/5, announce/2,
+		substitute_in_expr/4, replace_subexps/7,
 		get_actual_size/5, get_actual_sizes/5, enum_type_ref/5,
 		get_node_size/2, get_node_size/4,
 		is_population/1, by_record/1, is_conditional/1, get_all_dims/2,
@@ -56,19 +56,20 @@ but this always raises an exception, otherwise I could just call it using
 with_output_to_chars. It's not perfect anyway, so I have consulted perror/1
 (which actually does the work) to inspire what follows... */
 
-make_nice_error_message(ThrowUp, Error) :-
-	ThrowUp = syntax_error(_,_, Problem, Bits, Where), /* sicstus */
+make_nice_error_message(ThrowUp, ErrorAtom) :-
+	(ThrowUp = syntax_error(_,_, Problem, Bits, Where), /* sicstus */
 	space_elts(Problem, Desc),
 	append(BitsBefore, BitsAfter, Bits),
 	length(BitsAfter, Where),
 	connect_bits(BitsBefore, RunUp, _),
 	connect_bits(BitsAfter, WindDown, _), !,
-	sicstus_format_to_chars("Attempting to decipher this entry failed, generating this diagnostic message: \"~a\". This is what was read in, with an indication of where the problem was found:\n ~w <HERE> ~w", [Desc, RunUp, WindDown], Error);
+	sicstus_format_to_chars("Attempting to decipher this item failed, generating this diagnostic message: \"~a\". This is what was read in, with an indication of where the problem was found:\n ~w <HERE> ~w", [Desc, RunUp, WindDown], Error);
 	ThrowUp = existence_error(_,_, Type, WhereLooked, _), !,
 	sicstus_format_to_chars("This operation cannot proceed because the program failed to find a ~a called ~a", [Type, WhereLooked], Error);    
 	ThrowUp = error(Info, _FailedOp), !, /* gnu */
 	    sicstus_write_to_chars(Info, Error);
-	sicstus_format_to_chars("Unexpected Prolog error message: ~w", [ThrowUp], Error).
+	sicstus_format_to_chars("Unexpected Prolog error message: ~w", [ThrowUp], Error)),
+        name(ErrorAtom, Error).
 
 space_elts([Elt], Elt).
 space_elts([Elt | Rest], Desc) :-
@@ -342,7 +343,7 @@ find_reference(Object, Index, Remote) :-
 		Object has_new_model_refinement references of [Label]).
 
 
-/* do_dialogue: Takes a string to display and a list of button identifiers, and puts up a modal dialogue box containing them. The last value is the identifier of the button that was hit to end the dialogue. */
+/* do_dialogue: Takes a string to display and a list of button identifiers, and puts up a modal dialogue box containing them. The last value is the identifier of the button that was hit to end the dialogue.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 do_dialogue(Header, Icon, RiskyBlurb, Buttons, Response) :-
@@ -354,6 +355,25 @@ do_dialogue(Header, Icon, RiskyBlurb, Buttons, Response) :-
 	output:safe_tcl_eval(['ShowMessage', br(chars(Header)), Icon,
 			      chars(Blurb), Buttons], Feedback),
 	    name(Response, Feedback)).
+*/
+% hi-tech new version of above
+query(Specifics, Icon, HelpRef, Opts, Act) :-
+	Specifics =.. ListForm,
+	all(ame_gen, write_nice, [build(ListForm), build(SafeForm)]),
+%        output:bracketize(ListForm, SpecList),
+        output:safe_tcl_eval(['Query', br(SafeForm), Icon, HelpRef, '{}',
+			      br(Opts)], ActStr),
+        name(Act, ActStr).
+
+% for debugging by print statement
+announce(Format, Specifics) :-
+	sicstus_format_to_chars(Format, Specifics, String),
+	argify(String, WontBreakIt),
+	output:safe_tcl_eval(['tk_messageBox -title "Debugging message" -icon info -message', chars(WontBreakIt), '-type ok'], _).
+
+write_nice(Term, chars(Nice)) :-
+	sicstus_write_to_chars(Term, Str),
+	argify(Str, Nice).
 
 make_button_strings([], []).
 
@@ -474,21 +494,21 @@ get_actual_size(Node, Sub, Nums, Sizes, [Units]) :-
 		    get_node_size(Source, RealN, RealSize, AllUnits),
 		    (var(Ind), !,
 			Nums = RealN,
-			Sizes = RealSize;
+			Sizes = RealSize,
+		        [Units] = AllUnits;
 		    nth(Ind, RealN, UseN),
 		    nth(Ind, RealSize, UseSize),
 		    nth(Ind, AllUnits, Units),
 			Nums = [UseN],
 			Sizes = [UseSize]);
-		    sicstus_format_to_chars("Cannot resolve reference to size of ~a. There are multiple submodels of this name.", [ModName], Err));
-		sicstus_format_to_chars("Cannot resolve reference to size of ~w. There is no submodel of this name.", [ModName], Err));
+		    Err = submodel_name_recurs(ModName));
+		Err = absent_submodel(ModName));
        dequote(Sub, BareSub), % enquoted: syntax error if not unit or e_t
            \+ BareSub = Sub,
 	    caption_for(Node, Capt),
-	    sicstus_format_to_chars("Cannot resolve reference to size of ~a at node ~a. There is no local enumerated type of this name.", [Sub, Capt], Err)),
+	    Err = absent_enum_type(Sub, Capt)),
 	(var(Err), !;
-	name(ErrName, Err),
-	   raise_exception(ErrName)).
+	raise_exception(Err)).
 
 get_actual_sizes(Node, Subs, Nums, Sizes, Units) :-
 	all(ame_gen, get_actual_size,
@@ -552,9 +572,7 @@ get_node_size(Source, SizeN, Size, Units) :-
 	get_actual_sizes(Source, Dim, SizeN, Size, Units),
 	(\+ member(var, Size), !;
 	caption_for(Source, Capt),
-	    sicstus_format_to_chars("~a has a reference to a variable membership model in its dimensions.", [Capt], Wibble),
-	    name(Wobble, Wibble),
-	    raise_exception(Wobble));
+	    raise_exception(submodel_size_variable(Capt)));
 	Size = [].
 
 /* This returns all the array bounds associated with a submodel in the

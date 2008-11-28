@@ -187,9 +187,8 @@ into_save_file(Model, ActList) :-
 	on_exception(Lossage, (open_native(File, append, Save),
 				  write_with_breaks(Save, FullList),
 				  close(Save)),
-		(sicstus_format_to_chars("Could not create an autosave file called ~w for this model. The following message was produced: ~w. This may mean that the model was loaded from a read-only file system. No autosave data will be stored until the model is saved somewhere else.", [File, Lossage], Wibble),
-	do_dialogue("Autosave warning!", warning, Wibble, ok, _),
-	retract(autosave_file_is(Model, _)))); true.
+		      (query(no_autosave(File, Lossage), warning, top, [ok], _),
+		       retract(autosave_file_is(Model, _)))); true.
 
 restore_save_file(Model, Load, IdSwaps) :-
 	read(Load, ActSpec),
@@ -280,8 +279,7 @@ enact_from_file(Model, Slot, IdSwaps, NewIdSwaps, [Act | Rest]) :-
 	Act = remove(OldP), 
 	    swap_ids(OldP, IdSwaps, MidIdSwaps, P),
 		(my_retract(P), !;
-		sicstus_format_to_chars("The log file specified the removal from the database of the term ~w at a point where this term was not in the database. This is probably non-fatal, but it might be a good idea to save the restored file and reload it in a new program run.", [P], Mess), 
-		do_dialogue("Problem restoring state", warning, Mess, ok, _))),
+                query([odd_log, P], warning, top, [ok], _))),
 	assert(saved_state(Model, Slot, Act));
 	Act = top_level_is(OldModel),
 	    append(SW1, [_-Model | SW2], IdSwaps),
@@ -412,9 +410,7 @@ check_autosave(Model, Name, IdSwaps, Tweaked) :-
 	    make_auto_name(Name, ".smx", AutoName),
 	    assert(autosave_file_is(Model, AutoName)),
 	    (output:my_file_exists(AutoName),
-	     do_dialogue("Restore option", question,
-			 "Simile left a log file of unsaved changes when this model was last edited. Do you want to apply these changes now?",
-			 yesno, yes), !,
+               query(offer_restore, question, top, [ignore, apply], apply), !,
 		open_native(AutoName, read, Load),
 		(IdSwaps = copy, !,
 		    setof(Comp-Comp, contains(Model, Comp), UseIdSwaps);

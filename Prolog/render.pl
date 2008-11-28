@@ -256,8 +256,13 @@ render(c, class_declaration, Instance, Indent, ClassDecl) :-
 	Instance = instance(submodel, SymbolicName, _,_, Name-_),
 
 	(nonvar(SymbolicName), !,
-	    sicstus_format_to_chars( "~*sclass ~w : public submodeltype {",
-			 [Indent, " ", Name], HeaderStr),
+	    (variable_size(SymbolicName), !,
+		(is_population(SymbolicName), !,
+		    Inherits = population;
+		 Inherits = member_list_);
+	    Inherits = submodel),
+	    sicstus_format_to_chars( "~*sclass ~w : public ~atype {",
+			 [Indent, " ", Name, Inherits], HeaderStr),
 	    render(c, public_cons_dest, Instance, Indent, PublicHeads);
 	sicstus_format_to_chars( "~*sclass ~w {", [Indent, " ", Name], HeaderStr),
 	    PublicHeads = ['public:']),

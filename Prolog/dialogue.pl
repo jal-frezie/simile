@@ -130,8 +130,7 @@ BoxHeaderStr),
 	assert(input_list_is(Input_list)),
 	repeat,
 	( \+ input_list_is(_), /* failed to assert list -- something broke */
-	    do_dialogue("Problem with equation parser", error,
-			"Simile was unable to make sense of the contents of the equation dialogue box. Please report this problem to your supplier.", ok, _),
+	    query(eqn_parse_fail, warning, fill_equation, [ok], _),
 	    Updated_list = Input_list;
 	retract(input_list_is(Updated_list))),
 	interact_equation(Result_list),
@@ -180,11 +179,10 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	    Units = 1,
 	    Bounds = 1;
 	get_table_data(Function, Data_st, DataTable,
-		       Units, Bounds, Dims, Complaint),
-	    (\+ Complaint = [], !,
-		do_dialogue("Problem with input data", warning, Complaint, ok,
-			    _),
-		fail;
+		       Units, Bounds, Dims, ComplaintStr),
+	    (\+ ComplaintStr = [], !,
+		name(Complaint, ComplaintStr),
+		query(bad_table_data(Complaint), warning, top, [ok], not);
 	    DataSpec = [DataField | Indices])),
 	retractall(table_data_is(_)),
 	assert(table_data_is([file = FileName, data = DataField,
@@ -193,63 +191,64 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	fail.
 
 update_equation(_,_, Input_list, _, [Node_st, Parm_st, New_unit_st]) :-
-	(name(New_var, Node_st),
-	    append(EarlyInputs,
-		   [input_link(Link, New_var, _, Current_unit, _) | 
-LateInputs],
-		   Input_list), !,
-		get_term(Parm_st, New_param, Complaint0),
-		get_term(New_unit_st, NewUnits, Complaint1),
-		append(Complaint0, Complaint1, Complaint2),
-		(Complaint2 = [], !,
-		    sicstus_format_to_chars("local name for ~w", [New_var],
-					    ShowParam),
-		    (check_param_brackets(ShowParam, New_param, Current_unit,
-					 Complaint), !;
-			(NewUnits = '', !,
-			    NewInputUnit = Current_unit;
-			analyze_array(Current_unit, CurrentBase, CurrentDims),
-			    build_array(NewUnits, CurrentDims, NewInputUnit),
-			    check_unit(CurrentBase, NewUnits, 2, Complaint)));
-		Complaint = Complaint2);
-	    Complaint = "Select an input before supplying its new parameter name and/or local units"),
-			
+	name(New_var, Node_st),
+	sicstus_format_to_chars("local name for ~w", [New_var], ShowParam),
+	name(ShowParamAtom, ShowParam),
+	sicstus_format_to_chars("local units for ~w", [New_var], ShowUnits),
+	append(EarlyInputs,
+	       [input_link(Link, New_var, _, Current_unit, _) | LateInputs],
+	       Input_list), !,
+	get_term(Parm_st, New_param, Complaint0),
+	(\+ Complaint0 = [], !,
+	    Complaint2 = bad_syntax(ShowParamAtom, Complaint0);
+	    get_term(New_unit_st, NewUnits, Complaint1),
+	    (Complaint1 = [], !;
+		name(ShowUnitsAtom, ShowUnits),
+		Complaint2 = bad_syntax(ShowUnitsAtom, Complaint1))),
+	
+	(Complaint2 = [], !,
+	    (check_param_brackets(ShowParamAtom, New_param, Current_unit,
+				  Complaint), !;
+		(NewUnits = '', !,
+		    NewInputUnit = Current_unit;
+		    analyze_array(Current_unit, CurrentBase, CurrentDims),
+		    build_array(NewUnits, CurrentDims, NewInputUnit),
+		    check_unit(CurrentBase, NewUnits, 2, Complaint)));
+	    Complaint = Complaint2),
+	
 	(Complaint = [], !,
 	    append(EarlyInputs, [input_link(Link, New_var, New_param,
 		    Current_unit, NewInputUnit) | LateInputs], NewInputs),
 	    fill_inputs(NewInputs),
 	    assert(input_list_is(NewInputs));
-	do_dialogue("Problem with input data", warning, Complaint,
-		    ok, _),
+	    query(Complaint, warning, fill_equation, [ok], _),
 	    assert(input_list_is(Input_list))),
 	fail.
 
 update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		[Eqn_st, Unit_st, Is_P_st, Desc_st, Cmt_st, Min_st, Max_st]) :-
 	name(Is_P, Is_P_st),
-	member([Is_P, ParamsAllowed, EqnNeeded],
-	       [[-1,1,0], [0,1,0], [1,0,0], [2,0,0]]),
-	(ParamsAllowed = 0, !,
-	    ParamWibble = "but parameter default values are not allowed to have input variables themselves.";
-	ParamWibble = "which is not referred to by any of its parameter names in the equation."),
+	member([Is_P, ParamsAllowed], [[-1,1], [0,1], [1,0], [2,0]]),
 	get_term(Unit_st, Units, UnitFormError),
-	check_exp(Eqn_st, "Equation", Function, InterInputs, EqnBase, EqnDims,
-		  EqnNeeded, IndxCount, ParamList, Result, ParseError),
-	(ParamsAllowed = 0, \+ InterInputs = [], !,
-	    EqnError = "You cannot have influences going to a component representing a file or input parameter.";
+	check_exp(Eqn_st, Function, InterInputs, EqnBase, EqnDims,
+		  IndxCount, ParamList, Result, ParseError),
+	(ParamsAllowed = 0,
+	    member(input_link(_, SourceCapt, _,_,_), InterInputs), !,
+	    EqnError = unwanted_links(SourceCapt);
 	 EqnError = ParseError),
 	(Is_P = 1, \+ member(Units, [boolean, a(_)]), \+ member(EqnBase, [boolean, a(_)]), !,
 	    MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
 
-	check_limit(Min_st, "Min. value", Function,
+	(\+ EqnError = [], !,
+	    Complaint5 = EqnError;
+	check_limit(Min_st, 'Min. value', Function,
 		    MinMaxNeeded, Min, MinVal, MinBase, MinErr),
-	check_limit(Max_st, "Max. value", Function,
-		    MinMaxNeeded, Max, MaxVal, MaxBase, MaxErr),
+	    \+ MinErr = [], !,
+	    Complaint5 = MinErr;
+	check_limit(Max_st, 'Max. value', Function,
+		    MinMaxNeeded, Max, MaxVal, MaxBase, Complaint5)),
 
-	append(MinErr, MaxErr, MinMaxError),
-	append(EqnError, MinMaxError, Complaint5),
-	
 	(Complaint5 = [], !,
 	(Unit_st = "", Eqn_st = "", Min_st = "", Max_st = "",
 	    /* If no eqn, bounds or units supplied, assume real */
@@ -270,7 +269,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	on_exception(_PropError, propagate_units(min(Max, max(Min, Result)),
 						any, [any, any, any],
 			[EqnBase, MinBase, MaxBase], RawBase),
-		     sicstus_format_to_chars("Equation has non-numeric units ~w, so minimum or maximum values cannot be used.", [EqnBase], UnitError)),
+		     UnitError = minmax_wrong(EqnBase)),
 	    
 	(nonvar(UnitError);
 	    /* First, check that the equation can have the units
@@ -344,13 +343,12 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		    member(Dim, MultInts),
 		    (nonvar(Complaint6);
 		    Dim = var, !,
-			Complaint6 = "This equation evaluates to a list or an array of lists. Model components are not allowed to have list values.";
+			Complaint6 = expr_denotes_list;
 		    \+ (integer(Dim), Dim > 1), !,
 		    % should never happen, parser now checks subexps for this
-		    sicstus_format_to_chars("This equation evaluates to a data structure which includes an array of size ~w, which is not a valid dimension for a model component -- they must be integers greater than 1.",
-				   [Dim], Complaint6);
+		    Complaint6 = bad_array_size(Dim);
 		    \+ TypeDims = MultInts, !,
-		    Complaint6 = "This type of component cannot be an array.");
+		    Complaint6 = must_be_scalar);
 		build_array(NewUnits, EqnDims, NewArraySpec) /* ,
 		    this check now done by generating default units for flows
 		    check_flow_ends(Function, NewArraySpec, Complaint6) */ );
@@ -374,7 +372,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	Missing table will already have been picked up by parser */
 
 	(Complaint6 = [], \+ Eqn_st = [], !,
-	    check_param_usage(InterInputs, ParamWibble,
+	    check_param_usage(InterInputs, ParamsAllowed,
 			      ParamList, New_inputs, FinalComplaint);
 	New_inputs = InterInputs,
 	    FinalComplaint = Complaint6),
@@ -402,8 +400,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	    fill_inputs(New_inputs),
 	    assert(input_list_is(New_inputs)),
 	    (FinalComplaint = continue, !;
-		do_dialogue("Problem with equation", warning, FinalComplaint,
-			    ok, _)),
+		query(FinalComplaint, warning, fill_equation, [ok], _)),
 	    !, /* green */ fail).
 
 /* This fails if the brackets are right */
@@ -412,9 +409,9 @@ check_param_brackets(ShowParam, New_param, Current_unit, Complaint) :-
 	explain_brackets(Current_unit, Desc2, no, SP, OKN),
 	(OKN = New_param, atom(SP), !, fail;
 	    explain_brackets(Depth, Desc1, no, SP, New_param),
-	    sicstus_format_to_chars("Your ~s, ~w, has brackets round it that would indicate ~s. However it actually stands for ~s so should appear as follows: ~w. ", [ShowParam, New_param, Desc1, Desc2, OKN], Complaint));
-	    sicstus_format_to_chars("Your ~s, ~w, contains characters that might cause the interpreter to mistake it for an expression, or vice versa. ",
-				    [ShowParam, New_param], Complaint).
+	    Complaint = wrong_bracket_count(ShowParam, New_param, Desc1,
+					     Desc2, OKN));
+	    Complaint = unwanted_syntax(ShowParam, New_param).
 
 explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
 	(nonvar(Dims), Dims =.. [Type, Middle | _],
@@ -428,9 +425,8 @@ explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
 	    TypeStr = "single value",
 	    SubType = "",
 	    RightBrs = BaseName),
-	(Many = yes, Pref = " of ", Plural = "s";
-	    Many = no, PL1 = Pref, Plural = ""),
-	append([Pref, TypeStr, Plural, SubType], Desc).
+	(Many = yes, append([" of ", TypeStr, "s", SubType], Desc);
+	    Many = no, append([PL1, TypeStr, SubType], Str), name(Desc, Str)).
 	    
 	
 table_ref(got(Datta, Tabs), Ref, DumFn, Recurse) :-
@@ -537,53 +533,41 @@ check_limit(Eqn_st, FieldName, Function, Needed, Eqn, Value, Base, Error) :-
 	    Eqn = '',
 	    Value = '',
 	    (Needed = 1, !,
-		append("You must supply a value for field ", FieldName, Error);
+		Error = field_needs_value(FieldName);
 	    Error = []);
 	get_term(Eqn_st, Eqn, ParseError),
 	(ParseError = [], !,
 	    (on_exception(Error,
 			 get_actual_size(Function, Eqn, Values, S, [Base]),
 			 true), !;
-	    sicstus_format_to_chars("Entry for ~s must be a numeric constant.",
-			[FieldName], Error)),	    
+	    Error = field_not_const(FieldName)),	    
 	    (var(Error), !,
 		(\+ S = Values, !,
-		    sicstus_format_to_chars("Entry for ~s must have a numerical value", [FieldName], Error);
+		    Error = field_not_number(FieldName);
 		Values = [Value], !,
 		    Error = [];
-		 sicstus_format_to_chars("Entry for ~s must have a single value.", [FieldName], Error));
+		 Error = field_not_scalar(FieldName));
 		true);
-	    Error = ParseError).
+	    Error = bad_syntax(FieldName, ParseError)).
 	
-check_exp(Eqn_st, FieldName, Function, InterInputs, Base, Dims, Needed,
+check_exp(Eqn_st, Function, InterInputs, Base, Dims,
 	  IndxCount, ParamList, Equation, Error) :-
 	Eqn_st = [], !,
 	    Base = any,
 	    Dims = [],
 	    ParamList = [],
 	    Equation = '',
-	    (Needed = 1, !,
-		append("You must supply a value for field ", FieldName, Error);
-	    Error = []);
+	    Error = [];
 	get_term(Eqn_st, Equation, ParseError),
 	    (ParseError = [], !,
 		test_eqn(Equation, Function, IndxCount, InterInputs, 
 			 Base, Dims, ParamList, TestError),
 		(TestError = [],
 		    ((member(var, Dims), !,
-		            append(["The expression for field ", FieldName, " evaluates to a list, or array of lists. A model variable cannot represent a list."], Error);
-			\+ FieldName = "Equation",
-			    (Base = a(_); \+ Dims = []), !,
-		            append(["The expression for field ", FieldName,
-				    " must evaluate to a scalar quantity."],
-				   Error));
-			    Error = []);
-			append(["Testing ", FieldName, 
-				" field produced the following error: ",
-				TestError], Error));
-		append(["Parsing ", FieldName, 
-				" field produced the following error: ",
-				ParseError], Error)).
+		      Error = expr_denotes_list);
+		    Error = []);
+		Error = TestError);
+	    Error = bad_syntax('Equation', ParseError)).
 
 /* test_eqn: replaces the old parse_eqn. Because make_intermediates 
 now
@@ -603,9 +587,10 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	
 	on_exception(ParseException,
 		     replace_subexps(Equation, dialogue, expand_params,
-			     dim_data(DimL, ParamList, AllInputs, ExpInters),
+			dim_data(DimL, ParamList, AllInputs, ExpInters),
 				     top_down, _ParamSubs, FullExpr),
-		     decode_error(ParseException, ParseError)),
+		     ParseError = ParseException),
+	
 	(nonvar(ParseError), !;
 	length(ParamList, _LenP),
 	    get_ground_part(DimL, DimDG),
@@ -621,19 +606,22 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 		this by setting it to 'dummy'. */
 	
 	DummyDest = [sm(_,_,_, fm_loop(IndxSzs, _))],
-	    on_exception(ParseException,
+	    on_exception(ParseExcp,
 			 (make_intermediates(FullExpr, Fn, ['/dest/'],
 					     DummyDest, _, [],
 					     [], dummy, _, Type, _I,
 					     part_result(Context, _,_,_)),
 			     inters:get_model_and_loops(Context, DummyDest, _,
 							Loops, _)),
-	    decode_error(ParseException, ParseError))),
+			 (replace_subexps(ParseExcp, dialogue, collapse_params,
+					  _, top_down, _, ParseError);
+			     ParseError = ParseExcp))),
 	(nonvar(ParseError), !;
 	(member(input_link(_,_, Param, _-PLoops, _), ExpInters),
 	    nth(N, PLoops, set(_, loop(Bound))),
 	    var(Bound),
-	    sicstus_format_to_chars("Dimension ~d of explicit intermediate variable ~w cannot be determined from its definition", [N, Param], ParseError);
+	    ParseError = cannot_set_dims(N, Param);
+	    %sicstus_format_to_chars("Dimension ~d of explicit intermediate variable ~w cannot be determined from its definition", [N, Param], ParseError);
 	    get_dims_from_loops(Loops, Dims, _))).
 	/* real_dims_only(XDims, Dims).
 	Hack alert. The term representing the dest context has indices
@@ -691,9 +679,9 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    top_down, _,  UseExpr),
 	    (get_ground_part(SubL, DimG),
 		build_array(1, DimG, Array),
-		check_param_brackets("explicit intermediate result",
+		check_param_brackets('explicit intermediate result',
 				     ExpInt, Array, ParseError), !,
-		raise_exception(ready_made(spare, ParseError));
+		raise_exception(ParseError);
 	    member(input_link(_,_, FPar, param_history(FDef, _)), DefnInputs),
 		var(FDef), !,
 		raise_exception(undefined_parameter(FPar));
@@ -737,94 +725,9 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	expand_library('/dest/', Param, DoneExpr),
 	    Recurse = 1.
 
-decode_error(ParseError, TestError) :-
-	ParseError =.. [Type | Causes],
-	(Causes = [Cause | More], !,
-	    replace_subexps(Cause, dialogue, collapse_params, _, top_down,
-			    _, SimpleError);
-	SimpleError = 'consistency check'),
-	(Type = ready_made, !,
-	    More = [TestError];
-	Type = undefined_parameter, !,
-	    sicstus_format_to_chars("This expression contains the term ~w, which appears to be used as a parameter, but it does not appear as a parameter name.", [SimpleError], TestError);
-	Type = needs_array_or_list, !,
-	    SimpleError =.. [Functor, SoleArg],
-	    sicstus_format_to_chars("The function \"~a\" performs an operation over a list or array of values represented by its argument. The argument \"~w\" however represents only one value.", [Functor, SoleArg], TestError);
-	Type = avoid_var_size_inter, !,
-	    More = [TotalDims],
-	    sicstus_format_to_chars("This formula can only run by making an intermediate variable for the subexpression \"~w\".\n This subexpression has dimensions ~w, where \"var\" represents a list. Since this has a changing membership, it cannot be represented by a variable -- you need to do some more work inside the variable-membership submodel it comes from.", [SimpleError, TotalDims], TestError);
-	Type = needs_channel_parameter, !,
-	    sicstus_format_to_chars("The argument of \"channel_is\" must be a value from a channel (creation, immigration, reproduction) for the population submodel containing its node. \"~w\" does not fit.",
-			   [SimpleError], TestError);
-	Type = bad_index_number, !,
-	    More = [Functor],
-	    sicstus_format_to_chars("The function \"~a\" sets or accesses some property of the model, and needs a non-negative scalar integer constant as an argument to allow the right code to be built into the model to do this. \"~w\" does not fit.", [Functor, SimpleError], TestError);
-	Type = index_number_out_of_range, !,
-	    More = [Avail],
-	    sicstus_format_to_chars("You have used the index number ~d, but it must be between 1 and the number of available indices, which is ~d.", [SimpleError, Avail], TestError);
-	Type = needs_index_of_type, !,
-	    SimpleError =.. [Functor, Arr, Ind],
-	    More = [TypeNeeded, TypeGiven],
-	    sicstus_format_to_chars("The function \"~a\", when applied to the array \"~w\", needs a value of type ~w for its second argument. \"~w\" does not fit -- it has a value of type ~w, which cannot be converted to a value of the required type.",
-		[Functor, Arr, TypeNeeded, Ind, TypeGiven], TestError);
-	Type = got_list_for_array, !,
-	    SimpleError =.. [Functor, Arr | _],
-	    sicstus_format_to_chars("The function \"~a\" needs a fixed membership array (of anything) for its first argument. \"~w\" does not fit -- it represents a variable membership list.", [Functor, Arr], TestError);
-	Type = bad_array_size, !,
-	    More = [BadSize],
-	    sicstus_format_to_chars("Your equation includes the expression \"~w\", which evaluates to an array of size ~d. Only arrays of size greater than 1 are allowed.", [SimpleError, BadSize], TestError);
-	Type = got_scalar_for_array, !,
-	    SimpleError =.. [Functor, Arr | _],
-	    sicstus_format_to_chars("The function \"~a\" needs a fixed membership array (of anything) for its first argument. \"~w\" does not fit -- it represents a single value.", [Functor, Arr], TestError);
-	Type = only_works_on_array, !,
-	    SimpleError =.. [Functor, Arr | _],
-	    sicstus_format_to_chars("The function \"~a\" needs a fixed membership array (of anything) for its first argument. \"~w\" does not fit -- it represents either a single value or a variable membership list.", [Functor, Arr], TestError);
-	Type = lost_user_defined_fn, !,
-	    More = [Op, Arity],
-	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": When this was entered, \"~a\" was a user-defined function (a procedure or macro) with ~d arguments, but currently there is no definition for it.",
-			   [SimpleError, Op, Arity], TestError);
-	Type = no_such_function, !,
-	    More = [Op],
-	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": Simile does not include \"~a\" as a function.",
-			   [SimpleError, Op], TestError);
-	Type = wrong_format_of_args, !,
-	    More = [Op, Args, MacroArgs],
-	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": You have tried to use the macro \"~a\" with arguments ~w, but it must take arguments of the form ~w",
-			   [SimpleError, Op, Args, MacroArgs], TestError);
-	Type = wrong_no_of_args, !,
-	    More = [Op, Arity, FnArity],
-	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": You have tried to use the macro or function \"~a\" with ~d arguments, but it must take ~d",
-			   [SimpleError, Op, Arity, FnArity], TestError);
-	Type = missing_graph_or_table_data, !,
-	    sicstus_format_to_chars("Subexpression \"~w\" is a reference to a data table or sketch graph, but no data has been entered for it.",
-			   [SimpleError], TestError);
-	Type = cannot_combine_argument_dimensions, !,
-	    sicstus_format_to_chars("Simile cannot work out what dimensions the result of \"~w\" should have -- the dimensions of the arguments are incompatible.",
-			   [SimpleError], TestError);
-	Type = mismatched_units, !,
-	    More = [Get, Want],
-	    SimpleError =.. [Fn | _],
-	    sicstus_format_to_chars("The arguments of the function \"~a\" in the term \"~w\" have the following types: ~w. These cannot be matched to the expected argument types for this function, which are ~w.", [Fn, SimpleError, Get, Want], TestError);
-	Type = wrong_param_units, !,
-	    More = [UseType, DefType],
-	    sicstus_format_to_chars("The equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have type ~w. However the definition of this value produces a result with type ~w, which cannot be used in this context.", [SimpleError, UseType, DefType], TestError);
-	Type = unused_parameter, !,
-	    sicstus_format_to_chars("The equation is badly formed because it creates the explicit intermediate result ~w, which is not subsequently used.", [SimpleError], TestError);
-	Type = parameter_name_reused, !,
-	    sicstus_format_to_chars("The equation is badly formed because it creates the explicit intermediate result ~w, which is also the name of an input parameter.", [SimpleError], TestError);
-	Type = parameter_name_recurs, !,
-	    sicstus_format_to_chars("The equation is badly formed because it creates the explicit intermediate result ~w in the scope of an earlier explicit intermediate result with the same name.", [SimpleError], TestError);
-	Type = undecipherable_operand, !,
-	    More = [Var],
-	    find_all_comps(Sm, Var),
-	    caption_for(Sm, SmCapt),
-	    sicstus_format_to_chars("There is no definition for ~w in submodel ~a", [SimpleError, SmCapt], TestError);
-	/* default case */
-	    sicstus_format_to_chars("~w : ~a", [SimpleError, Type], TestError)).
-
 collapse_params(_, param(arr(_, Param, _), _,_,_,_), Param, 0).
 
-check_param_usage(Current, WhyNoLinks, Used, Left, Challenge) :-
+check_param_usage(Current, AllowLinks, Used, Left, Challenge) :-
 	member(input_link(id(LinkName, _,_), 
 			SourceCaption,_,_,_), Current),
 	/* Really we only need one reference to each link, but since Bob
@@ -833,15 +736,13 @@ check_param_usage(Current, WhyNoLinks, Used, Left, Challenge) :-
 	sort_for_link(Current, LinkName, FromThat, FromOthers),
 	\+ (member(SpareParam, Used), 
 	       member(input_link(_,_, SpareParam, _,_), FromThat)), !,
-	    \+ WhyNoLinks = [], /* do not try removing them, just fail */
-	    sicstus_format_to_chars("This node has a link from ~w, ~s Remove this link?",
-				    [SourceCaption, WhyNoLinks], Wibble),
-	    do_dialogue("Too many inputs", question, Wibble,
-			okcancel, Choice),
+	    \+ AllowLinks = [], % just fail if checking on propagation
+	    query(extra_links(SourceCaption), question, fill_equation,
+		 [ok, cancel], Choice),
 	    (Choice = ok,
 		event:off(LinkName),
 		event:delete_by_dlg(LinkName),
-		check_param_usage(FromOthers, WhyNoLinks, Used, Left, Challenge);
+		check_param_usage(FromOthers, AllowLinks, Used, Left, Challenge);
 	     Choice = cancel,
 		Left = Current,
 		Challenge = continue);

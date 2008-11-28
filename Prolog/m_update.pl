@@ -161,16 +161,20 @@ check_ET_consistency(RemoteUnit, RemoteNode, Function) :-
 	event:insert_mem_list(Checking, Function, DestEnumSpec),
 	\+ DestEnumSpec = SourceEnumSpec, !,
 	caption_for(RemoteNode, RemoteCapt),
-	sicstus_format_to_chars("You cannot refer to the value of ~a at this point because it depends on the enumerated type ~a, which at that point has the definition ~w but here has the definition ~w",
-	    [RemoteCapt, Checking, SourceEnumSpec, DestEnumSpec], ErrStr),
-        do_dialogue("Inconsistent type definitions", warning, ErrStr, ok, not);
+	query(enum_type_mix(RemoteCapt, Checking, SourceEnumSpec, DestEnumSpec),
+	      warning, top, [ok], not);
 	true).
 
 find_node_with_data(Edit_thing, Real_edit_thing, 
 		Control_thing) :-
-	find_base(Edit_thing, Real_edit_thing),
-	(implicit_function(Real_edit_thing, Control_thing), !;
-		Real_edit_thing = Control_thing).
+	find_base(Edit_thing, Base),
+	(implicit_function(Base, Control_thing), !;
+		Control_thing = Base),
+	(find_type(Base, Type),
+	    member(Type, [immigration, creation, reproduction]), !,
+	    Real_edit_thing = Control_thing;
+% use implicit node if a channel, as vis node has remainder rather than eqn val
+	Real_edit_thing = Base).
 
 abs_path_name(RemoteNode, DestBox, RemoteName) :-
 	get_host(RemoteNode, VisibleNode),
@@ -400,25 +404,24 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	      check_and_report_units(Target_base, TargetDims),
 	          Target_type = real),
 		(Severity = 0, !;
-		/* Unit_base = Target_base, !; */
-		inters:promote_arg(Unit_base, Target_type, Unit_type), !,
+		    /* Unit_base = Target_base, !; */
+		    inters:promote_arg(Unit_base, Target_type, Unit_type), !,
 		    (Target_unit = 1, Target_name = real;
 			Target_name = Target_unit),
 		    (Severity = 1, !;
-		    \+ Target_type = real, !;
+			\+ Target_type = real, !;
 		    get_conversion(1, Unit_type, Target_base, Scale),
 			(Severity = 2, !;
 			1 is Scale, !;
-			sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which requires a conversion factor to map onto the quantity it represents, specified as ~w.", [Target_name, Target_base, Unit_base], Complaint));
+			Complaint = needs_conversion(Target_name, Target_base,
+						     Unit_base));
 		    (check_and_report_units(Unit_base, UnitDims), !;
-			UnitDims = Unit_base),
-			sicstus_format_to_chars("The units of the required quantity are ~w which have physical dimensions ~w. These are incompatible with the supplied value, whose units ~w have dimensions ~w. Please do one of the following:\n* specify units with the same dimensions as the value\n* change the source of the value to have the units you wish, or\n* clear the units specification entry to get the default units for this value.", [Target_name, TargetDims, Unit_base, UnitDims], Complaint));
-
-		sicstus_format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Unit_base, Target_type], Complaint));
-		
-	    sicstus_format_to_chars("Unit expression ~w is not recognized as a valid unit. ", [Target_base], Complaint));
-	    
-	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Target_unit, TargetExprs, DimExprs], Complaint)),
+		     UnitDims = Unit_base),
+		    Complaint = mismatched_dimensions(Target_name, TargetDims,
+						      Unit_base, UnitDims));
+		Complaint = bad_type_conversion(Unit_base, Target_type));
+	    Complaint = unknown_unit(Target_base));
+	Complaint = mismatched_arrays(Target_unit, TargetExprs, DimExprs)),
 	(nonvar(Complaint); Complaint = []).
 
 /* decide_param_names fills in the 'local name' slot in these data structures; first
@@ -434,66 +437,17 @@ end_with_units(Flow, EndUnits) :-
 	implicit_function(Comp, Fn),
 	Fn has_class_refinement units of EndUnits.
 
-/* How do compartments constrain their flows' units? They must be
-convertible, except if math checking is off and both are
-dimensionless. Array dimensions must always match.
-
-check_flow_ends(Function, Units, Error) :-
-	analyze_array(Units, FBase, _FDims),
-	(use_units_in(Function, 'No'),
-	    FBase = 1, !,
-	    FlowTgt = SubBase;
-	 default_tick_is(Tick),
-	    FlowTgt = SubBase/Tick),
-	
-	get_host(Function, Flow),
-	(end_with_units(Flow, EndUnits),
-	    analyze_array(EndUnits, CBase, CDims),
-	    standard_name(CBase, SubBase),
-	    build_array(FlowTgt, CDims, CUnits),
-	    check_unit(CUnits, Units, 2, AnError),
-	    \+ AnError = [], !, Error = AnError;
-	 Error = []).
-*/
-matched_so_far(Unit, Err) :-
-	(retract(end_units_all_match(Prev)), !,
-	    (Prev = conflict, !,
-		Next = conflict;
-	      check_unit(Unit, Prev, 2, CErr),
-		(CErr = [], !,
-		    Next = Prev;
-
-		  sicstus_format_to_chars("No units can be given to this connection, because those of the end points, ~w and ~w, are incompatible.", [Prev, Unit], Mesg),
-		    (Err = Mesg, !;
-		    do_dialogue("Linking incompatible units", warning, Mesg,
-				ok, _)),
-		    Next = conflict));
-	  Next = Unit),
-	assert(end_units_all_match(Next)).
-
-flow_unit_default(Flow, Units, Err) :-
-	end_with_units(Flow, UConstraint),
-	matched_so_far(UConstraint, Err),
-	fail;
-	(retract(end_units_all_match(EndUnits)), !,
-	    (EndUnits = conflict, !, fail;
-		analyze_array(EndUnits, EndBase, _),
-		(EndBase = 1,
-		    find_all_comps(Sm, Flow),
-		    use_units_in(Sm, 'No'), !,
-		    Units = 1;
-		  standard_name(EndBase, ForExpr),
-		    default_tick_is(Tick),
-		    Units = ForExpr/Tick));
-	  Units = 1).
-
-check_flow_ends(Func, Units, Err) :-
+check_flow_ends(Func, EndUnits, AnyErr) :-
 	get_host(Func, Flow),
-	flow_unit_default(Flow, CUnits, CkErr),
-	(\+ CkErr = [], !,
-	    Err = CkErr;
-	  CUnits = 1, !, Err = [];
-	  check_unit(CUnits, Units, 2, Err)).
+	setof(UConstraint, end_with_units(Flow, UConstraint), AllUnits),
+	(AllUnits = [EndUnits | ToMatch], !; % if EndUnits not set
+	    ToMatch = AllUnits),
+	member(Next, ToMatch),
+	check_unit(Next, EndUnits, 2, Err),
+	\+ Err = [], !,
+	    AnyErr = Err;
+	AnyErr = [],
+	(EndUnits = 1; true), !.
 	    
 decide_param_names(InputList) :-
 	already_used_in(InputList, Used),
@@ -650,7 +604,7 @@ add_implicit_function(Exp_node, Node_name) :-
 
 default_units(Node, Units) :-
 	(Sort = rate,
-	    flow_unit_default(Node, Units, []);
+	    check_flow_ends(Node, Units, []);
 	member(Sort-Units, [level-1, cond_value-cond_spec,
 			    boolean_value-boolean])),
 	Node is_of_sort Sort, !.
@@ -993,14 +947,10 @@ load_submodel_interface(Stream, Model, Type, Dir) :-
 	    get_submodel_interface(Model, Type, Dir, ExternalSection,
 			    link(SourceCapt, NewDestCapt, NewData)), !,
 	        (NewData = Properties, !;
-		sicstus_format_to_chars("~a link type ~a from ~a to ~a, but it has properties ~w whereas in the specification it is ~w",
-				[Method, Type, SourceCapt, DestCapt,
-				 NewData, Properties],
-				Hassle))),
+		 Hassle = interface_mismatch(Method, Type, SourceCapt,
+					     DestCapt, NewData, Properties))),
 	    (var(Hassle), !;
-	    do_dialogue("Problem setting interface", warning, Hassle,
-			okcancel, ok)),
-
+		query(Hassle, warning, top, [abort], more)),
 	    load_submodel_interface(Stream, Model, Type, Dir)).
 
 make_connection(Model, Type, Dir, ExternalSection,
@@ -1028,9 +978,8 @@ make_connection(Model, Type, Dir, ExternalSection,
 		 build([OutputSection | MoreOutputs]), build(_TopArcs)]),
 	    menu:reroute_sections([InputSection, OutputSection]),
 		menu:remove_old_incomplete;
-	    sicstus_format_to_chars("Could not find a free ~a going ~a the model with destination caption ~a",
-			    [Type, Dir, DestCapt], Hassle));
-	sicstus_format_to_chars("Could not find a free ~a going ~a the model with source caption ~a", [Type, Dir, SourceCapt], Hassle)).
+	    Hassle = spare_interface_spec(Type, Dir, destination, DestCapt));
+	Hassle = spare_interface_spec(Type, Dir, source, SourceCapt)).
 
 check_input(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 	BorderSection has_type Type,
@@ -1157,9 +1106,7 @@ pair_with_captions(Model, [Do | Later], [Done | DoneLater]) :-
 	Done = '/disused/', (nonvar(Do) ; Do = obsolete), !;
 	/* Or we might be loading a model into a context that does not have
 	the right association links */
-	sicstus_format_to_chars("Interface to submodel requires relation ~a but this does not occur in the parent.", [Done], ProbStr),
-	do_dialogue("Problem setting interface", error, ProbStr, ok, _),
-	fail),
+	query(missing_relation(Done), warning, top, [abort], more)),
 	pair_with_captions(Model, Later, DoneLater).
 	
 match_caption(Model, Do, Done) :-

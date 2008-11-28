@@ -7,7 +7,7 @@
 #
 
 proc Status {burble} {
-    ShowMessage "Error with preferences" error $burble ok
+    ShowMess "Error with preferences" error $burble ok
 }
     
 proc Pref_Init { userDefaults } {
@@ -191,7 +191,7 @@ proc Pref_Dialog {} {
                 -command "::Pref_HelpCommand $notebook"]  -padx 2 -pady 2 -side left -anchor e
         pack $dlg.bbox -side bottom -padx 4 -pady 8 -fill x
         
-#        ShowMessage debug info "$pref(items)" ok
+#        ShowMess debug info "$pref(items)" ok
         
        set maxWidth 0
        foreach item $pref(items) {
@@ -202,7 +202,7 @@ proc Pref_Dialog {} {
        }
        set pref(uid) 0
        foreach item $pref(items) {
-            #ShowMessage debug info "$item; [PrefRes $item]" ok
+            #ShowMess debug info "$item; [PrefRes $item]" ok
             switch -glob -- [PrefRes $item] {
                 winPosn {set frame $initWinF}
                 init* {set frame $displayF}
@@ -350,7 +350,7 @@ proc PrefSave {} {
     # join makes a string from the list. jmm  15/03/02
     set new [join [glob $pref(userDefaults).new]] 
     set old [file root $new]
-#    ShowMessage debug info "new: $new; old $old" ok
+#    ShowMess debug info "new: $new; old $old" ok
     if [catch {file rename -force $new $old} err] {
 		Status "Cannot install $new: $err"
 		return

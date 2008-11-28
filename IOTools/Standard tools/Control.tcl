@@ -236,9 +236,7 @@ namespace eval runcontrol33857 {
 
 	set action $sendvars($node,currentMode)
 	if {[do_in_editor set runState($node,updated)]} {
-	    set updateChoice [ShowMessage "Model out of date" warning \
-				  "The model has been altered since the curent runnable version was built. Rebuild it now?" yesnocancel]
-	    switch $updateChoice {
+	    switch [Query model_out_of_date warning top {} {yes no cancel}] {
 		yes {
 		    start_in_editor UpdateExecution $node $action
 		    return
@@ -254,17 +252,14 @@ namespace eval runcontrol33857 {
 	}
 	switch $runState($node,modelRunning) {
 	    0 {
-		ShowMessage "Cannot run model" warning \
-		    "The current model could not be built, or it failed to initialize, or it has been aborted." ok
+		Query not_runnable warning top {} ok
 		return
 	    } 1 {
-		ShowMessage "Fixed parameters not loaded" warning \
-		    "The model cannot be run because it contains fixed input parameters for which no source is defined." ok
+		Query params_not_loaded warning top {} ok
 		return
 	    } 2 {
 		if {[string match start $action]} {
-		    ShowMessage "Model has exited" warning \
-			"The model has run into a problem during execution and needs to be reset before it can run again." ok
+		    Query model_has_exited warning top {} ok
 		    return
 		}
 	    }
@@ -272,8 +267,7 @@ namespace eval runcontrol33857 {
 	SendData $node
 	if {[string match start $action] && \
 		[info exists runState($node,reloadParams)]} {
-	    set paramChoice [ShowMessage "Parameters out of date" warning \
-				 "New file parameters will not take effect until the model is reset. Do you want to reset the model now before running it?" yesno]
+	    set paramChoice [Query params_out_of_date warning top {} {yes no}]
 	    if {[string equal yes $paramChoice]} {
 		# reset the model
 		set sendvars($node,currentMode) reset
@@ -290,14 +284,15 @@ namespace eval runcontrol33857 {
         
 	if {$runState($node,currentTime)==0 && \
 		$runState($node,timeReached)!=0} {
-	    ShowMessage "Model not reset" warning "You have manually edited the value for Current Time, setting it to zero. This action will not reset the model's state variables. Editing the current time causes to model to jump to the new time in a single execution step, which can lead to poor accuracy and zigzag traces on time plots. To reset the model and create new plot traces, click on the 'Reset simulation' button in the run control." ok
+	    Query manual_zero warning execution {} ok
 	}
         set phases [GetPhaseCount $node]
 	set sendvars($node,newData) {}
 	foreach entered [list displayInt update$phases currentTime execTime] {
 # for some reason tcl thinks an empty string is a number
 	    if {![string is double -strict $runState($node,$entered)]} {
-		ShowMessage "Bad run parameter" warning "Non-numeric value \"$runState($node,$entered)\" entered for run parameter $entered -- replacing with 1" ok
+		Query [list run_param_not_number $runState($node,$entered) \
+			   $entered] warning execution {} ok
 		set runState($node,$entered) 1
 	    }
 	    lappend sendvars($node,newData) $runState($node,$entered)
@@ -322,7 +317,7 @@ namespace eval runcontrol33857 {
                 SetStep $node [expr $tick*$sendvars($node,unitLength)] \
 		    $setPhase
                 set redoPhase($node) $setPhase
-                #	    ShowMessage debug info "Twiddling $redoPhase($node)" ok
+                #	    ShowMess debug info "Twiddling $redoPhase($node)" ok
             }
         }
         SetStep $node 0 0
@@ -379,8 +374,9 @@ namespace eval runcontrol33857 {
 	    # pretend button never pushed
 	    ShareAction $node 0
 	    set sendvars($node,currentMode) start
-	    set scrog [string equal yes [ShowMessage "Model stuck" info \
-					     "This model appears to have got stuck with an endless or very long operation. Do you want to exit it now?" yesno]]
+	    
+	    set scrog [string equal yes [Query model_stuck info execution {} \
+					     {yes no}]]
 	    if {$scrog} {
 		ShareAction $node 10
 		return 1
