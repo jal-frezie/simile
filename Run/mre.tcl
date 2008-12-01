@@ -80,7 +80,7 @@ namespace eval RunEnv {
             CreateDisplayPageContextMenu
             
             #tk_messageBox -message MakeMRE -type ok
-            toplevel $mreId -width 200m -height 150m
+            toplevel $mreId -width 200m -height 150m -menu ${mreId}top
 # following is the answer to all those pesky bgerrors on stdout
 #	    pack [button $mreId.reveal -text "Reveal all" -command {puts $errorInfo}]
             wm title $mreId "Execution of [GetExecTitle $node] - Simile"
@@ -122,12 +122,29 @@ namespace eval RunEnv {
                 }
             }
             
-            set mainframe [MainFrame $mreId.mainframe -width 200m -height 150m \
-			       -menu         $descmenu \
-			       -textvariable RunEnv::status \
-			       -progressvar  RunEnv::prgindic]
-            $mainframe showstatusbar none
-            
+#            set mainframe [MainFrame $mreId.mainframe -width 200m -height 150m \
+#			       -menu         $descmenu \
+#			       -textvariable RunEnv::status \
+#			       -progressvar  RunEnv::prgindic]
+#...err, what for?
+#            $mainframe showstatusbar none
+	    menu ${mreId}top
+	    foreach {header tags id tear spec} $descmenu {
+		set sub [menu ${mreId}top.$id -tearoff $tear]
+		foreach item $spec {
+		    if {[llength $item]>1} {
+			eval [list $sub add [lindex $item 0]] \
+			    [Underlined [lindex $item 1]] [lrange $item 5 end]
+		    } else {
+			$sub add $item
+		    }
+		}
+		eval [list ${mreId}top add cascade] [Underlined $header] \
+		    [list -menu $sub]
+	    }
+
+            set mainframe $mreId
+
             if [string match "Darwin" $tcl_platform(os)] {
 		set dummy [$mreId cget -menu]
 		set fm [menu $dummy.apple -tearoff 0]
@@ -136,7 +153,7 @@ namespace eval RunEnv {
 		$dummy add cascade -menu $fm
 	    }
 	    
-            set tb1  [::ttk::frame [$mainframe getframe].tbar -class Toolbar]
+            set tb1  [::ttk::frame [GetFrame $mainframe].tbar -class Toolbar]
             # build the toolbar  from the toolbarItems list
             set tbnum 0
             foreach toolbar $toolbars {
@@ -153,18 +170,19 @@ namespace eval RunEnv {
                 }
                 pack $tb1 -side top -anchor w -fill x
                 incr tbnum
-                pack [Separator $tb1.sep$tbnum -orient vertical] -side left -fill y -padx 4
+                pack [ttk::separator $tb1.sep$tbnum -orient vertical] -side left -fill y -padx 4
             }
             
             #from runmodel.tcl AddHelperSublist
-            set mreMenu [winfo parent [$mainframe getmenu help]]
+#            set mreMenu [winfo parent [$mainframe getmenu help]]
+	    set mreMenu [$mainframe cget -menu]
             $mreMenu insert 2 cascade -label "Add" -underline 0 -menu .helpers.sub2
 	    if {[info exists runHow(where)]} {
 		$mreMenu insert 3 cascade -label "Window" -underline 0 \
 		    -menu .windowchoice
 	    }
             # Add a PanedWindow for the hierrachical/run control view and main display window
-            set mainpw [panedwindow [$mainframe getframe].mainpw  -orient horizontal]
+            set mainpw [panedwindow [GetFrame $mainframe].mainpw  -orient horizontal]
             set controlPane [AddPane $mainpw.controlPane]; # made by runmodel.tcl AddHelperSublist
             set dp0 [AddPane $mainpw.mainDisplayPane]
             set dp0s($node) $dp0
@@ -183,7 +201,7 @@ namespace eval RunEnv {
             
 	    InitializeDisplays
             
-            pack $mainframe -fill both -expand yes
+#            pack $mainframe -fill both -expand yes
             pack $mainpw -fill both -expand yes
             update ;# needed for sash place to work
 	    $mainpw sash place 0 270 0; # must be wide enough (270ish) for the sliders
@@ -201,6 +219,15 @@ namespace eval RunEnv {
             wm protocol $mreId WM_DELETE_WINDOW ::RunEnv::Destroy
             return $mreId
         } ; # if .mre exists
+    }
+
+    proc Underlined {hdr} {
+	set amp [string first & $hdr]
+	if {$amp==-1} {
+	    return [list -label $hdr]
+	} else {
+	    return [list -label [string replace $hdr $amp $amp] -underline $amp]
+	}
     }
 
     proc InMreFor {node} {
@@ -641,11 +668,11 @@ namespace eval RunEnv {
 	variable dp0
 
 #puts "SetCurrentContainer $win"
-        set mainframe $helperTable($currentNode,whichRunEnv).mainframe
-        set mreMenu [winfo parent [$mainframe getmenu help]]
+        set mainframe $helperTable($currentNode,whichRunEnv)
+        set mreMenu [$mainframe cget -menu]
         set pw [winfo parent $win]
         #ShowMess debug info "RunEnv::SetCurrentContainer pw $pw" ok
-	set tb1 [$mainframe getframe].tbar
+	set tb1 [GetFrame $mainframe].tbar
         if {[winfo exists $win.container]} {
             if {[string equal $dp0 $win]} {
                 $tb1.b20 configure -state disabled
@@ -682,12 +709,14 @@ namespace eval RunEnv {
 	    set printAbility disabled
 	}
 	$mreMenu entryconfigure Add -state $useSpaceAbility
-	[$mainframe getmenu file] entryconfigure Print... -state $printAbility
-	[$mainframe getmenu file] entryconfigure {Export PostScript...} \
-	    -state $exportAbility
-	[$mainframe getmenu edit] entryconfigure Copy -state $copyAbility
-	[$mainframe getmenu edit] entryconfigure Cut -state $copyAbility
-	[$mainframe getmenu edit] entryconfigure Paste -state $useSpaceAbility
+	set mreMenu [$mainframe cget -menu]
+	set fileMenu [$mreMenu entrycget File -menu]
+	$fileMenu entryconfigure Print... -state $printAbility
+	$fileMenu entryconfigure {Export PostScript...} -state $exportAbility
+	set editMenu [$mreMenu entrycget Edit -menu]
+	$editMenu entryconfigure Copy -state $copyAbility
+	$editMenu entryconfigure Cut -state $copyAbility
+	$editMenu entryconfigure Paste -state $useSpaceAbility
 
 	$tb1.b10 configure -state $copyAbility ;# copy button
 	$tb1.b11 configure -state $copyAbility ;# cut button
@@ -801,7 +830,7 @@ namespace eval RunEnv {
         if {[llength $nameOfHelperStateFile($currentNode)]} {
 	    do_in_editor AttackGlobalVariable nameOfHelperStateFile \
 		($currentNode) $nameOfHelperStateFile($currentNode)
-            set mainframe $helperTable($currentNode,whichRunEnv).mainframe
+            set mainframe $helperTable($currentNode,whichRunEnv)
             set tempFile [file join $simtmpdir temp_out.shf]
             set stream [NetOpen $tempFile w]
             
@@ -809,8 +838,8 @@ namespace eval RunEnv {
             # save skeleton mre config
             puts $stream "[winfo x $mreId] [winfo y $mreId] \
                     [winfo width $mreId] [winfo height $mreId]"
-            puts $stream "[[$mainframe getframe].mainpw sash coord 0]"
-            puts $stream "[[$mainframe getframe].mainpw.controlPane.panedwindow sash coord 0]"
+            puts $stream "[[GetFrame $mainframe].mainpw sash coord 0]"
+            puts $stream "[[GetFrame $mainframe].mainpw.controlPane.panedwindow sash coord 0]"
             SaveChildrenConfig $dp0 [string length $dp0.] $stream
             
             close $stream
@@ -983,7 +1012,7 @@ namespace eval RunEnv {
         
         EmptyDisplays
         set win $helperTable($currentNode,whichRunEnv)
-	set mainframe $win.mainframe
+	set mainframe $win
         # read and set .mre position and size
         gets $stream line
         scan $line "%i %i %i %i" x y width height
@@ -996,11 +1025,11 @@ namespace eval RunEnv {
 
         gets $stream line
         scan $line "%i %i" x y;
-        [$mainframe getframe].mainpw sash place  0 $x $y
+        [GetFrame $mainframe].mainpw sash place  0 $x $y
         
         gets $stream line
         scan $line "%i %i" x y
-        [$mainframe getframe].mainpw.controlPane.panedwindow sash place  0 $x $y
+        [GetFrame $mainframe].mainpw.controlPane.panedwindow sash place  0 $x $y
 
         set newNotebooks {}
         while {[gets $stream line] >= 0} {

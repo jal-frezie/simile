@@ -319,7 +319,7 @@ namespace eval ::$keyValue {
         
         # Create entry boxes
 ################################################################################
-#         set entryF [frame [$dlg getframe].entries]
+#         set entryF [frame [GetFrame $dlg].entries]
 #         #[list xinterval "X interval" 1]
 #         #[list yinterval "Y interval" 1]]
 #         foreach item [list \
@@ -340,7 +340,7 @@ namespace eval ::$keyValue {
 #         pack $entryF -side top
 ################################################################################
         
-        set chkF [frame [$dlg getframe].checkbuttons -relief groove -width 300]
+        set chkF [frame [GetFrame $dlg].checkbuttons -relief groove -width 300]
         #pack [LabelFrame $chkF.automaticScalingF -text "Automatic scaling"] -fill x
         #pack [checkbutton $chkF.automaticScalingF.cbutton -variable [namespace current]::AutoAxisScaling] -side right
         pack [LabelFrame $chkF.fewXAxisTicksF -text "Few x-axis ticks"] -fill x

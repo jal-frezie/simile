@@ -375,7 +375,7 @@ namespace eval ::$keyValue {
         $dlg add -name ok; # buttons 0
         $dlg add -name cancel
         
-        set chkF [frame [$dlg getframe].checkbuttons -relief groove]
+        set chkF [frame [GetFrame $dlg].checkbuttons -relief groove]
         
         pack [LabelFrame $chkF.drawlinesF -text "Draw lines between points"] -fill x
         pack [checkbutton $chkF.drawlinesF.cbutton -variable [namespace current]::DrawLines] -side right

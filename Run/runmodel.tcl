@@ -1228,7 +1228,7 @@ proc AllTitles {} {
 #	# fixed param with no src
 #	set runState($node,modelRunning) 2
 #	# this initializes the model
-#        set widget [$runState($node,helperId).rcf getframe]
+#        set widget [GetFrame $runState($node,helperId).rcf]
 #        $widget.topbuttons.reset invoke
 #	EnableTools IO
 #    }

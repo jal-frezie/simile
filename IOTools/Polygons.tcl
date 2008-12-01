@@ -456,7 +456,7 @@ $useNodes($winId,scaley)"
         set max($winId) $useNodes($winId,max)
         
         #create widgets
-        set coloursF [labelframe [$dlg getframe].colours -text "Colour scale"]
+        set coloursF [labelframe [GetFrame $dlg].colours -text "Colour scale"]
         pack [LabelFrame $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
         frame $coloursF.lowcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cbot)
         pack [button $coloursF.lowcolourF.cbutton -text "..." \
@@ -477,7 +477,7 @@ $useNodes($winId,scaley)"
         
         pack $coloursF -padx 10 -pady 10 -fill x
         
-        set rangeF [labelframe [$dlg getframe].range -text "Scale range"]
+        set rangeF [labelframe [GetFrame $dlg].range -text "Scale range"]
         pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,datamin)"] -fill x  -padx 10
         pack [label $rangeF.datamaxL -text "Data max. so far: $useNodes($winId,datamax)"] -fill x  -padx 10
         pack [LabelFrame $rangeF.minF -text "Min"] -fill x  -padx 10 -pady 5
@@ -485,10 +485,10 @@ $useNodes($winId,scaley)"
         pack [LabelFrame $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
         pack [entry $rangeF.maxF.entry -textvar [namespace current]::max($winId) -width 20] -side right -padx 10
         pack $rangeF -padx 10 -pady 10
-        pack [checkbutton [$dlg getframe].update -variable ${winId}l5 \
+        pack [checkbutton [GetFrame $dlg].update -variable ${winId}l5 \
 		  -text "Update at display intervals"]
         
-        set oriF [labelframe [$dlg getframe].orient -text "Orientation"]
+        set oriF [labelframe [GetFrame $dlg].orient -text "Orientation"]
 	pack [radiobutton $oriF.h -text Horizontal -var [namespace current]::useNodes($winId,orient) -value h] -side left
 	pack [radiobutton $oriF.v -text Vertical -var [namespace current]::useNodes($winId,orient) -value v] -side right
         pack $oriF -padx 10 -pady 10 -fill x

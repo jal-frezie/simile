@@ -128,7 +128,7 @@ $(PPCSHIM): ame_cmx.c dllcalls.h $(PPCSHANK) Makefile
 $(PPCUNPK): unpacker.c dllcalls.h
 	cd Run; $(GCCCMD) -arch ppc $(FLAGS) $(DEFNS) -I. \
 		$(MAKESL) -o ../$(PPCUNPK) unpacker.c $(USETCL); cd ..; \
-	$(LOCALIZE_TCL_REFS) $(UNPK)
+	$(LOCALIZE_TCL_REFS) $(PPCUNPK)
 
 $(PPCSHANK): shank.cpp dllcalls.h
 	cd Run; $(GPPCMD) -arch ppc -O -fPIC $(FLAGS) -I. \
@@ -174,8 +174,8 @@ $(SHIM): ame_cmx.c dllcalls.h $(SHANK) Makefile
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 
 $(UNPK): unpacker.c dllcalls.h
-	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. \
-		$(MAKESL) -o ../$(UNPK) unpacker.c $(USETCL); cd ..; \
+	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. $(MAKESL) \
+		-o ../$(UNPK) unpacker.c $(USETCL) -l5d$(ARCHEXTN); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
 System/bin/5d.dll: shank.cpp dllcalls.h

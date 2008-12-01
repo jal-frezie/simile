@@ -1593,7 +1593,7 @@ proc Customize {winId mode} {
 
     if {[string compare $object influence]} {
 	TitleFrame $t.text -text "Text: "
-	set text [$t.text getframe]
+	set text [GetFrame $t.text]
 	label $text.tell \
 	    -text "Drag text by chosen anchor to set default position"
 	pack $text.tell
@@ -1645,7 +1645,7 @@ proc Customize {winId mode} {
     
     if {[string compare $object text]} {
 	TitleFrame $t.graphics -text "Graphics: "
-	set graphics [$t.graphics getframe]
+	set graphics [GetFrame $t.graphics]
 	frame $graphics.setcolours
 	foreach flashType {outline fill incomplete} {
 	    button $graphics.setcolours.$flashType -text "Set $flashType" \
@@ -1727,8 +1727,8 @@ proc LoadLooks {t n target object} {
         scan [ExtractFontData $looks($n,$object,font)] "%s %s %s %d" \
                 looks($n,$target,family) looks($n,$target,weight) \
                 looks($n,$target,style) textsize
-        [$t.text getframe].size.scale set $textsize
-	[$t.text getframe].backbox.col configure \
+        [GetFrame $t.text].size.scale set $textsize
+	[GetFrame $t.text].backbox.col configure \
 	    -activebackground $looks($n,$object,text)
     }
     
@@ -1736,7 +1736,7 @@ proc LoadLooks {t n target object} {
     set middley [expr $looks(width)/2 + 30]
     
     if {[string compare $object text]} {
-	set g [$t.graphics getframe]
+	set g [GetFrame $t.graphics]
 	foreach flash {outline fill incomplete} {
 	    set attack $looks($n,$object,$flash)
 	    if {![llength $attack]} {
@@ -1781,7 +1781,7 @@ proc ExtractFontData {font} {
 proc CopyLooks {t n object} {
     global looks
     if {[string compare $object text]} {
-	set g [$t.graphics getframe]
+	set g [GetFrame $t.graphics]
 	foreach colour {outline fill incomplete} {
 	    set looks($n,$object,$colour) \
                 [$g.setcolours.$colour cget -activebackground]
@@ -1806,7 +1806,7 @@ proc CopyLooks {t n object} {
 	    UpdateOffsets $t $n $object
 	}
 	set looks($n,$object,text) \
-	    [[$t.text getframe].backbox.col cget -activebackground]
+	    [[GetFrame $t.text].backbox.col cget -activebackground]
 	set looks($n,$object,txtbd) $looks(txtbd)
 	set looks($n,$object,txtbg) $looks(txtbg)
 	if {[string equal flow $object]} {set object vflow}
@@ -1946,7 +1946,7 @@ proc SampleMove {x y w} {
 }
 
 proc ResetFont { top } {
-    set t [$top.text getframe]
+    set t [GetFrame $top.text]
     return [AssembleFont [$t.font.family cget -text] \
             [$t.font.weight cget -text] \
             [$t.font.style cget -text] \
@@ -1997,7 +1997,7 @@ proc ZotObjectSize {t n type size} {
     CopyLooks $t $n $useLooks
     if {[string compare text $type]} {
 	DoGraphics $t $useLooks $middlex $middley \
-	    [[$t.graphics getframe].objectsize.scale get]
+	    [[GetFrame $t.graphics].objectsize.scale get]
     } else {
 	$t.canvas delete sample
         PutText $t.canvas [list $middlex $middley] \

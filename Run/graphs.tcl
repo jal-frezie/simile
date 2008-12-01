@@ -14,13 +14,6 @@
 # graph function is graph(param, xlow, xhigh, xspan,
 #	ylow, yhigh, yspan, [pt1, pt2 ... ptn])
 
-# BWidget should be removed in favour of native Tk commands and the
-# Tile widget set, which look better. For the time it is still needed
-# for the ScrolledWindow/ScrollableFrame pair in MakeFrames in params.tcl, and
-# the drag'n'drop column headings below, as well as in a few
-# other places round the app.
-package require BWidget
-
 proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
             {target {}}} {
     global tcl_platform graph looks
@@ -47,7 +40,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     catch {wm title $t "Sketch graph"}
     
     TitleFrame $t.gph -text "Graph pad"
-    set gph [$t.gph getframe]
+    set gph [GetFrame $t.gph]
     frame $gph.yentry
     ::ttk::entry $gph.yentry.topentry -textvar graph($t,lowy) -width 8
     pack $gph.yentry.topentry -side top -pady 2
@@ -110,7 +103,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     }
 
     TitleFrame $t.right.current -text "Current Position: "
-    set current [$t.right.current getframe]
+    set current [GetFrame $t.right.current]
     
     frame $current.y
     label $current.y.yvalue -text "Y:"
@@ -130,7 +123,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $t.right -side right -fill y
     
     TitleFrame $t.right.options -text "Options: "
-    set right [$t.right.options getframe]
+    set right [GetFrame $t.right.options]
     
     set between [frame $right.between]
     label $between.outrange -text "Between points:"
@@ -257,13 +250,13 @@ proc RestoreSketch {t node} {
     set graph($t,increment) \
 	[expr $graph($t,width)/([llength $graph($t,points)] - 1.0)]
 # above must be set so AttackShape gets current one right
-    set grid [$t.gph getframe].gridf.canvas
+    set grid [GetFrame $t.gph].gridf.canvas
     AttackShape $grid [winfo width $grid] [winfo height $grid]
 }
 
 proc SetCombos {t args} {
     global graph
-    set right [$t.right.options getframe]
+    set right [GetFrame $t.right.options]
     set bCombo $right.between.rangeopts
     set rCombo $right.out.rangeopts
     if {[llength $args]} {
@@ -452,7 +445,7 @@ proc RedrawGrid {c w h inc} {
 }
 
 proc Reshape {t} {
-    set gph [$t.gph getframe]
+    set gph [GetFrame $t.gph]
     set grid $gph.gridf.canvas
 
     SetCombos $t
@@ -541,7 +534,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     label $fc.instructions -wrap 400 -text "Choose a data file, then create table from file by dragging column headings to act as either indices or as data."
     pack $fc.instructions -side top -anchor w -padx 2 -pady 2
     TitleFrame $fc.fdata -text "Data file "
-    set fdata [$fc.fdata getframe]
+    set fdata [GetFrame $fc.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     bind $dfile <Return> "LoadDataFile columns 0 $mdl"
     bind $dfile <Double-1> "LoadDataFile columns 0 $mdl"
@@ -552,7 +545,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack $fdata -fill x
     pack $fc.fdata -fill x
     TitleFrame $fc.fheads -text "Table column headings"
-    set fheads [$fc.fheads getframe]
+    set fheads [GetFrame $fc.fheads]
     set lheads [ListBox $fheads.lheads -dragenabled true -dropenabled true \
             -selectmode single -dropcmd DeleteIndex \
             -yscrollcommand [list AdjustCanvas $fheads lheads y]]
@@ -561,7 +554,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     
     frame $fc.select
     TitleFrame $fc.select.idxs -text "Use as indices"
-    set fidx [$fc.select.idxs getframe]
+    set fidx [GetFrame $fc.select.idxs]
     set lidx [ListBox $fidx.lidx -dragenabled true -dropenabled true \
             -selectmode single \
             -dropcmd AddIndex]
@@ -572,7 +565,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
 	-padx 2 -pady 2
 
     TitleFrame $fc.select.data -text "Use as data"
-    set didx [$fc.select.data getframe]
+    set didx [GetFrame $fc.select.data]
     set dhead [Entry $didx.dhead \
             -textvariable table_entry(dataField) \
             -dropenabled true -droptypes LISTBOX_ITEM \
@@ -586,7 +579,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     label $fg.instructions -wrap 400 -text "Choose a data file, then select row and column at which to start and finish loading data."
     pack $fg.instructions -side top -anchor w -padx 2 -pady 2
     TitleFrame $fg.fdata -text "Data file "
-    set fdata [$fg.fdata getframe]
+    set fdata [GetFrame $fg.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     bind $dfile <Return> "LoadDataFile grid 0 $mdl"
     pack $dfile -side left -expand true -fill x
@@ -596,7 +589,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack $fdata -fill x
     pack $fg.fdata -fill x
     TitleFrame $fg.limits -text "Boundaries of area to load "
-    set flim [$fg.limits getframe]
+    set flim [GetFrame $fg.limits]
     pack [frame $flim.ycapt] -side left -fill both -expand true
     pack [frame $flim.yval] -side left -fill both -expand true
     pack [frame $flim.xcapt] -side left -fill both -expand true
@@ -625,7 +618,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     label $fi.instructions -wrap 400 -text "Choose an image file, then select row and column at which to start and finish loading data, and method for interpreting colours."
     pack $fi.instructions -side top -anchor w -padx 2 -pady 2
     TitleFrame $fi.fdata -text "Image file "
-    set fdata [$fi.fdata getframe]
+    set fdata [GetFrame $fi.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     bind $dfile <Return> "LoadDataFile image 0 $mdl"
     pack $dfile -side left -expand true -fill x
@@ -635,7 +628,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack $fdata -fill x
     pack $fi.fdata -fill x
     TitleFrame $fi.limits -text "Boundaries of area to load "
-    set flim [$fi.limits getframe]
+    set flim [GetFrame $fi.limits]
     pack [frame $flim.ycapt] -side left -fill both -expand true
     pack [frame $flim.yval] -side left -fill both -expand true
     pack [frame $flim.xcapt] -side left -fill both -expand true
@@ -661,7 +654,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack $fi.limits -fill both -expand true
 
     TitleFrame $fi.interp -text "Values for colours: "
-    set fterp [$fi.interp getframe]
+    set fterp [GetFrame $fi.interp]
     set fbounds [frame $fterp.bounds]
     pack [label $fbounds.bklabel -text "Value for black:"] \
 	-side left -expand true -fill x
@@ -692,7 +685,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     label $ft.instructions -wrap 400 -text "Choose a georeferenced data file, then select row and column at which to start and finish loading data."
     pack $ft.instructions -side top -anchor w -padx 2 -pady 2
     TitleFrame $ft.fdata -text "Data file "
-    set fdata [$ft.fdata getframe]
+    set fdata [GetFrame $ft.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     bind $dfile <Return> "LoadDataFile gdal 0 $mdl"
     pack $dfile -side left -expand true -fill x
@@ -702,7 +695,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack $fdata -fill x
     pack $ft.fdata -fill x
     TitleFrame $ft.limits -text "Boundaries of area to load "
-    set flim [$ft.limits getframe]
+    set flim [GetFrame $ft.limits]
     pack [frame $flim.ycapt] -side left -fill both -expand true
     pack [frame $flim.yval] -side left -fill both -expand true
     pack [frame $flim.xcapt] -side left -fill both -expand true
@@ -771,7 +764,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     if {!$startLine} {
 	pack [TitleFrame .table.fbuttons.wrapf -text "Other times: "] \
 	    -padx 4 -pady 4 -expand true -fill x
-	set wrapf [.table.fbuttons.wrapf getframe]
+	set wrapf [GetFrame .table.fbuttons.wrapf]
 	pack [label $wrapf.bm -text "Between points:"]
 	pack [::ttk::combobox $wrapf.bc -textvariable table_entry(others) \
 		  -width 10 -values {"Use last" "Use closest" Interpolate} \
@@ -946,7 +939,7 @@ proc AcquireTableData {redo startLine} {
 	    if {![llength $table_entry(dataField)]} {
 		return
 	    }
-	    set lidx [$pane.select.idxs getframe].lidx
+	    set lidx [GetFrame $pane.select.idxs].lidx
 	    set idcs {}
 	    foreach itm [$lidx items] {
 		lappend idcs [$lidx itemcget $itm -text]
@@ -1037,7 +1030,7 @@ proc LoadDataFile {mode query mdl} {
     
 #    wm title .table "Create table from file $table_entry(fileName)"
     set fc .table.notebook.columns
-    set fheads [$fc.fheads getframe]
+    set fheads [GetFrame $fc.fheads]
     $fheads.lheads delete [$fheads.lheads items]
     
     if {[string equal image $mode]} {
@@ -1101,7 +1094,7 @@ proc LoadDataFile {mode query mdl} {
 	}
 	close $stream
     }
-    set fidx [$fc.select.idxs getframe]
+    set fidx [GetFrame $fc.select.idxs]
     $fidx.lidx delete [$fidx.lidx items]
     return 1
 }

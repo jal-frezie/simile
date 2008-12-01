@@ -99,7 +99,7 @@ namespace eval canvasnotes20070919 {
 	    -default 0 -cancel 1
         .annotationprop add -name ok ;# buttons 0
         .annotationprop add -name cancel
-	set dlg [.annotationprop getframe]
+	set dlg [GetFrame .annotationprop]
 	pack [set txtFrame [labelframe $dlg.txtframe -text Text]]
 	pack [text $txtFrame.text -width 40 -height 4] -fill both -expand 1
 	set oldText [$whatNotes(canvas) itemcget $whatNotes(text) -text]
@@ -122,14 +122,14 @@ namespace eval canvasnotes20070919 {
 
     proc BumpSize {bigs} {
 # not used because the entry window changes size and looks messy
-	[.annotationprop getframe].txtframe.text config -font "-size $bigs"
+	[GetFrame .annotationprop].txtframe.text config -font "-size $bigs"
     }
 
     proc TweakText {btn} {
 	variable whatNotes
 
 	if {!$btn} { ;# ok
-	    set dlg [.annotationprop getframe]
+	    set dlg [GetFrame .annotationprop]
 	    $whatNotes(canvas) itemconfigure $whatNotes(text) -text \
 		[$dlg.txtframe.text get 1.0 end] -fill $whatNotes(col) \
 			 -font "-size [$dlg.txtframe.scale get]"

@@ -37,7 +37,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     
     $t add [frame $t.simple] -text Basic
     TitleFrame $t.simple.notes -text "Notes:"
-    set notesf [$t.simple.notes getframe]
+    set notesf [GetFrame $t.simple.notes]
     set descf [frame $notesf.desc]
     label $descf.desclabel -text "Description:"
     entry $descf.text -width 20 -relief sunken -bd 2 -highlightthickness 0
@@ -59,7 +59,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     frame $t.simple.left
     
     TitleFrame $t.simple.left.count -text "Control of number of instances:"
-    set countf [$t.simple.left.count getframe]
+    set countf [GetFrame $t.simple.left.count]
     
     frame $countf.radio
     foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
@@ -76,7 +76,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $t.simple.left.count -anchor w -pady 4 -fill both -expand true
     
     TitleFrame $t.simple.left.colour -text "Background shade:"
-    set colourf [$t.simple.left.colour getframe]
+    set colourf [GetFrame $t.simple.left.colour]
     set posRBs [frame $colourf.imageposns]
     pack [button $colourf.clear -text "Clear" -width 7 \
             -command "ClearBG $posRBs"] -padx 2 -pady 4 -side left
@@ -100,7 +100,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     
     $t add [frame $t.complex] -text Advanced
     TitleFrame $t.complex.enumtypes -text "Enumerated types"
-    set enumtypef [$t.complex.enumtypes getframe]
+    set enumtypef [GetFrame $t.complex.enumtypes]
     pack [set canId [frame $enumtypef.listpair]] -side left -fill both \
             -expand true
     #    pack [frame $windowId.buttonframe] -side bottom
@@ -170,7 +170,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
 	-fill both -expand true
     
     TitleFrame $t.complex.appearance -text Appearance
-    set appearancef [$t.complex.appearance getframe]
+    set appearancef [GetFrame $t.complex.appearance]
     checkbutton $appearancef.hide -text "Hide contents" \
             -variable disaggregate(hide)
     pack $appearancef.hide -anchor w
@@ -184,7 +184,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $t.complex.appearance -anchor nw -side left -padx 4 -pady 4 -fill both -expand true
     
     TitleFrame $t.complex.math -text Calculation
-    set mathf [$t.complex.math getframe]
+    set mathf [GetFrame $t.complex.math]
 #    checkbutton $mathf.separate -text "Build submodel in separate dll" \
 #            -variable disaggregate(separate)
 #    pack $mathf.separate -anchor w
@@ -331,22 +331,22 @@ proc ExtCodeSetup {mdl} {
     wm title $t "External code interaction"
     pack [TitleFrame $t.procnamfr -text "Procedure name:"] \
 	-padx 4 -pady 4 -fill x
-    pack [entry [$t.procnamfr getframe].ent] -fill x
-    [$t.procnamfr getframe].ent insert 0 $disaggregate(xproc)
+    pack [entry [GetFrame $t.procnamfr].ent] -fill x
+    [GetFrame $t.procnamfr].ent insert 0 $disaggregate(xproc)
 
     pack [TitleFrame $t.incfilefr -text "Include file:"] \
 	-padx 4 -pady 4 -fill x
-    set incFileTxt [$t.incfilefr getframe].txt
+    set incFileTxt [GetFrame $t.incfilefr].txt
     pack [text $incFileTxt -width 32 -height 1] \
 	-side left -fill x
     $incFileTxt insert 1.0 $disaggregate(xinc)
     $incFileTxt configure -state disabled
-    pack [button [$t.incfilefr getframe].btn -text "Browse" \
+    pack [button [GetFrame $t.incfilefr].btn -text "Browse" \
 	      -command "ChangeIncFile $incFileTxt $mdl"] -anchor e -side right
 
     pack [TitleFrame $t.liblistfr -text "Library files:"] \
 	-padx 4 -pady 4 -fill x
-    set LibListFr [$t.liblistfr getframe]
+    set LibListFr [GetFrame $t.liblistfr]
     pack [listbox ${LibListFr}.box] -side left -fill x -expand true
     foreach libFile $disaggregate(xlibs) {
 	${LibListFr}.box insert end $libFile
@@ -367,7 +367,7 @@ proc ExtCodeSetup {mdl} {
     grab release $t
     if {$disaggregate(xdone)} {
 # transfer data back to variables
-	set disaggregate(xproc) [[$t.procnamfr getframe].ent get]
+	set disaggregate(xproc) [[GetFrame $t.procnamfr].ent get]
 	set disaggregate(xinc) [string trimright [$incFileTxt get 1.0 end]]
 	set disaggregate(xlibs) [${LibListFr}.box get 0 end]
     }
@@ -739,7 +739,7 @@ proc RelationCheck {parent title type state init_comment} {
     wm title $t "Properties of [BlankCrs $title]"
     frame .relcheck.top
     TitleFrame .relcheck.top.left -text "[string toupper $type 0 0] options:"
-    set f [.relcheck.top.left getframe]
+    set f [GetFrame .relcheck.top.left]
     
     switch $type {
         influence {
@@ -771,7 +771,7 @@ proc RelationCheck {parent title type state init_comment} {
     pack .relcheck.top.right -side left
     pack .relcheck.top -expand on -fill both
     TitleFrame .relcheck.bottom -text "Comments:"
-    set f [.relcheck.bottom getframe]
+    set f [GetFrame .relcheck.bottom]
     pack [text $f.comment -width 40 -height 4 -relief sunken -bd 2 -highlightthickness 0 -wrap word] \
             -anchor w -expand on -fill both -padx 2 -pady 2
     $f.comment delete 1.0 end
@@ -800,7 +800,7 @@ proc GetFindText {parent} {
     wm title $t "Find"
     wm resizable $t 0 0
     TitleFrame .findentry.follow -text "Follow influences "
-    set follow [.findentry.follow getframe]
+    set follow [GetFrame .findentry.follow]
     pack [button $follow.back -text "Components influencing\nselection" \
 	      -command "set find(done) 10"] -padx 2 -pady 4 -side left
     pack [button $follow.forward -text "Components influenced\nby selection" \
@@ -816,7 +816,7 @@ proc GetFindText {parent} {
     bind $ft.e <Return> "set find(done) 1"
     pack .findentry.ft -anchor nw -fill both
     TitleFrame .findentry.rbs -text "Search for text in "
-    set rbs [.findentry.rbs getframe]
+    set rbs [GetFrame .findentry.rbs]
     set find(where) caption
     radiobutton $rbs.r1 -text "Captions" -variable find(where) -value caption
     radiobutton $rbs.r2 -text "Equations" -variable find(where) -value equation
@@ -939,7 +939,7 @@ proc DoRegDialog {dtId} {
     pack [label .register.welcome -image welcome] -anchor w
     
     TitleFrame .register.create -text "Creating a model: "
-    set create [.register.create getframe]
+    set create [GetFrame .register.create]
     set msgtxt "Select compartments and flows from the toolbar\
                 to add to the diagram. Use the select (pointer) tool to edit captions\
                 and values. Run your model using the Run command of the Model menu."
@@ -958,7 +958,7 @@ proc DoRegDialog {dtId} {
     pack .register.create -expand on -fill x -padx 4 -pady 2
     
     TitleFrame .register.tasks -text "Choose a model: "
-    set tasks [.register.tasks getframe]
+    set tasks [GetFrame .register.tasks]
     
     frame $tasks.b
     # MacVersion does not display compound (image + text) buttons at all well.
@@ -990,7 +990,7 @@ proc DoRegDialog {dtId} {
     pack .register.tasks -fill x -padx 4 -pady 2
     
     TitleFrame .register.links -text "Useful links: "
-    set links [.register.links getframe]
+    set links [GetFrame .register.links]
     
     frame $links.m1
     switch [tk windowingsystem] {
@@ -1312,7 +1312,7 @@ proc ShowExpiryImminent {expTime left} {
     }
     
     set labf1 [frame .expiry.labf1]
-    pack [label $labf1.img -image $iconImages(warning)] -side left
+    pack [label $labf1.img -image [ttk::stockIcon dialog/warning]] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     if {$left<0} {
@@ -1695,7 +1695,7 @@ proc NotifyOverLimit {edn limit} {
     }
     
     set labf1 [frame .notify.labf1]
-    pack [label $labf1.img -image $iconImages(warning)] -side left
+    pack [label $labf1.img -image [ttk::stockIcon dialog/warning]] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [label $labf1.lab2 -text "The $edn edition is limited to $limit functions. \n\
@@ -1838,7 +1838,7 @@ proc ReplaceProgressBox {} {
 }
 
 proc ExpandQuery {specifics Title errLevel msg context parent opts} {
-    global iconImages help tcl_platform dialogues
+    global help tcl_platform dialogues
 
     set ProbWin .bprob[clock clicks]
     PutItThere $ProbWin $parent
@@ -1865,7 +1865,13 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
     }
 
     set labf1 [frame $ProbWin.labf1]
-    pack [label $labf1.img -image $iconImages($errLevel)] -side left 
+    if {[package vcompare 0.8 [package provide tile]]>0} {
+	set iconSpc tile
+    } else {
+	set iconSpc ttk
+    }
+    pack [label $labf1.img -image [${iconSpc}::stockIcon dialog/$errLevel]] \
+	-side left 
 #    pack [label $labf1.lab1 -text "Warning:" \
 #            -font {-weight bold -family helvetica -size 10}] -side left
     pack [scrollbar $labf1.yscroll -orient v \

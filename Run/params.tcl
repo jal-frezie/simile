@@ -80,22 +80,39 @@ proc FileParamDialogue {topWin mustShow} {
 }
 
 # ScrolledWindow and ScrollableFrame allow any widget to be scrolled, but need
-# the bwidget package. Need to revive our own version based on a frame in a 
+# the bwidget package. So have revived our own version based on a frame in a 
 # canvas.
-proc MakeFrames {windowId} {
+proc BWMakeFrames {windowId} {
     ScrolledWindow $windowId.c
     set canId $windowId.c.canvas
     ScrollableFrame $canId -yscrollincrement 1 -constrainedwidth true ;# \
             -yscrollcommand [list AdjustCanvas $windowId.c canvas y]
     $windowId.c setwidget $canId
+
     pack $windowId.c -side top -fill both -expand true
     
-    pack [frame $windowId.checkframe] -in [$canId getframe] -side top -expand true -fill x -padx 2 -pady 2
-    pack [frame $windowId.sliderframe] -in [$canId getframe] -side top \
+    pack [frame $windowId.checkframe] -in [GetFrame $canId] -side top -expand true -fill x -padx 2 -pady 2
+    pack [frame $windowId.sliderframe] -in [GetFrame $canId] -side top \
             -fill x -expand true -padx 2 -pady 2
     
     #    $canId create window 0 0 -anchor ne -window [frame $windowId.checkframe]
     #    $canId create window 0 0 -anchor nw -window [frame $windowId.sliderframe]
+}
+
+proc MakeFrames {windowId} {
+    frame $windowId.c
+    set canId [canvas $windowId.c.canvas \
+		   -yscrollcommand [list $windowId.c.yscroll set]]
+    pack [scrollbar $windowId.c.yscroll -orient vertical \
+	      -command [list $canId yview]] -side right -fill y
+    pack $canId -fill both -expand 1
+    pack $windowId.c -side top -fill both -expand 1
+    $canId create window 0 0 -anchor ne -window [frame $windowId.checkframe]
+    set sf [$canId create window 0 0 -anchor nw \
+		-window [frame $windowId.sliderframe]]
+    bind $canId <Configure> [list $canId itemconfigure $sf -width %w]
+    bind $windowId.sliderframe <Configure> \
+	[list $canId configure -scrollregion {0 0 %w %h}]
 }
 
 proc AddEntry {winId topNode node mustShow notInput args} {
@@ -261,7 +278,8 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
     } else {
         set nextLevel $parent.frame$level
         if {![winfo exists $nextLevel]} {
-            pack [frame $nextLevel -bd 2 -relief sunken] -fill x -expand true -padx 2 -pady 2 -side bottom
+            pack [ttk::labelframe $nextLevel -borderwidth 2 -relief sunken] \
+		-fill x -expand true -padx 2 -pady 2 -side bottom
             pack [frame $nextLevel.head] -fill x -expand true
             set path /[join [lrange $hierarchy 0 $pt] /]
             # added setting of SimileProject element to store spf path
@@ -285,7 +303,8 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
             if {!$pt} {
                 set level "TOP LEVEL"
             }
-            pack [label $nextLevel.head.label -text $level:]
+#            pack [label $nextLevel.head.label -text $level:]
+	    $nextLevel configure -text $level: -labelanchor n
         }
         return [MakeSubFrames $clientId $nextLevel $hierarchy $ns $nextPt]
     }
@@ -322,7 +341,9 @@ proc DoneParams {topNode} {
 
 proc AcceptAll {topNode compNames notInput complain} {
     foreach compName $compNames {
-	AcceptData $topNode $compName $notInput $complain
+	if {![AcceptData $topNode $compName $notInput $complain]} {
+	    break
+	}
     }
 }
 
@@ -450,6 +471,7 @@ proc AcceptData {topNode compName notInput complain} {
                         $suppliedData($compName) $readMany($compName) \
 			$useCppArray $errorData} result]} {
 	    if {[string equal aborted $result]} {
+		set abort 1
 		set result {}
             } else { ;# a bug rather than a bad user entry
 		error $result $::errorInfo
@@ -461,6 +483,9 @@ proc AcceptData {topNode compName notInput complain} {
             lappend suppliedData(needed) $compName
 	    if {$complain>-1} {
 		ColourCaptions $outNames($compName) red
+	    }
+	    if {[info exists abort]} {
+		return 0
 	    }
         } else {
             if {$complain>-1} {
@@ -479,6 +504,7 @@ proc AcceptData {topNode compName notInput complain} {
         }
     }
     #puts "paramData now [array get paramData]"
+    return 1 ;# means no abort
 }
 
 # rsearch gives index of last value
@@ -556,6 +582,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         switch [llength $list] {
             0 {
                 FPError "Missing value" $subs $errorData
+		return {}
             } 1 {
                 if {![string last ,NOW [string toupper $subs] 3]} {
 		    # setting current value for var param
@@ -576,6 +603,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
             } default {
                 FPError "Array $list supplied instead of scalar" \
 		    $subs $errorData
+		return {}
             }
         }
     }
@@ -584,9 +612,12 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         set userDims [join $dims { x }]
         FPError "scalar $list supplied instead of array of $userDims" \
 	    $subs $errorData
+	return {}
     }
+    set redoStep 1
     if {[llength $list]%2} {
         FPError "Missing value" $subs,[list [lindex $list end]] $errorData
+	set redoStep {}
     }
     
     foreach {indx sublist} $list {
@@ -599,19 +630,24 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 		      [lsearch {NOW OTHERS} [string toupper $indx]]>-1)} {
                 FPError "$role $indx must be NOW, OTHERS or a number." \
 		     $subs $errorData
+		set redoStep {}
             }
         } elseif {[string compare {} $thisTrans]} {
             set poss [lsearch $thisTrans $indx]
             if {$poss == -1} {
                 FPError "$role $indx is not a member of type [lindex $thisTrans 0], pick one of [lrange $thisTrans 1 end]." $subs $errorData
+		set redoStep {}
             }
         } elseif {![string is integer -strict $indx]} {
             FPError "$role $indx is not an integer." $subs $errorData
+	    set redoStep {}
         } elseif {$indx<=0} {
             FPError "$role $indx is zero or negative." $subs $errorData
+	    set redoStep {}
         }
         if {[info exists sub($indx)]} {
             FPError "$role $indx appears more than once." $subs $errorData
+	    set redoStep {}
         }
         set sub($indx) $sublist
     }
@@ -623,7 +659,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         
         # not quite working, note that later dimensions for a time point are treated
         # just like other dimensions, i.e., all must be set
-        set redoStep 1
+
         # Next call removes old time series data from the system
         EnumTypeToNumber $tgt {} {} 1 $useCppArray $subs $errorData
 	SetWrapTime $useCppArray $tgt 0 ;# clear old wraparound point
@@ -637,6 +673,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
             } elseif {![Numeric $arrayPt]} {
                 FPError "Time point must be NOW, OTHERS or a number." \
 		     $subs,[list $arrayPt] $errorData
+		set redoStep {}
             } elseif {[string equal RESTART [string toupper $sub($arrayPt)]]} {
 		SetWrapTime $useCppArray $tgt $arrayPt
 		continue
@@ -653,6 +690,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 	    } elseif {!$noMtd} {
 		FPError "Fill method must be preceded by OTHERS." \
 		     $subs,[list $arrayPt] $errorData
+		set redoStep {}
 	    }
 
 	    set redoStep [JoinSteps $redoStep \
@@ -670,6 +708,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         set last [array size sub]
         if {!$last} {
             FPError "Per-record submodel must have values for at least one member." $subs $errorData
+	    set redoStep {}
         }
         
 	# Record counts do not need to be set in Tcl
@@ -679,11 +718,13 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 		if {[catch {c_settimepointrecords $tgt [lrange $map 2 end] \
 				[lindex $map 1] $last} err]} {
 		    FPError $err $subs $errorData
+		    set redoStep {}
 		} 
 	    } else {
 		if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
 						      1 end] $last} err]} {
 		    FPError $err $subs $errorData
+		    set redoStep {}
 		} 
 	    }
 	} else { ;# use old system for Tcl
@@ -710,7 +751,6 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
     } else {
         set last $nextDim
     }
-    set redoStep 1
     for {set arrayPt 1} {$arrayPt <= $last} {incr arrayPt} {
         set indx [NumberToEnumType $arrayPt $thisTrans]
         if {![info exists sub($indx)]} {
@@ -866,7 +906,9 @@ namespace eval fileparams {
 #puts "Need outNames cos have suppliedData for [array names suppliedData]"
 # first, make sure all values to be saved are up-to-date and well-formed
 	foreach smItem [array names outNames $smPath/*] {
-	    AcceptData $topNode $smItem $notInput 1
+	    if {![AcceptData $topNode $smItem $notInput 1]} {
+		break
+	    }
 	}
 	if {[lsearch $suppliedData(needed) $smPath*]!=-1} {
 	    return

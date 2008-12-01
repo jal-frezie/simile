@@ -50,7 +50,7 @@ proc create_equation {parent boxtitle indices} {
     # the widget hierrachy easier Jonathan 22 Aug 2002
     $mainF add [set middleF [panedwindow $mainF.middle -orient horizontal]]
     $middleF add [TitleFrame $middleF.functions -text "Functions: "]
-    set fnFrame [$middleF.functions getframe].fnFrame
+    set fnFrame [GetFrame $middleF.functions].fnFrame
 #    ScrolledWindow $fnFrame
     frame $fnFrame
 #    set lbf [Tree $fnFrame.table -showlines yes]
@@ -87,7 +87,7 @@ proc create_equation {parent boxtitle indices} {
     
 #    pack $middleF.functions -side left -anchor nw -padx 2 -pady 2 -expand true -fill both
     $middleF add [TitleFrame $middleF.indices -text "Indices: "]
-    set indicesf [$middleF.indices getframe]
+    set indicesf [GetFrame $middleF.indices]
     frame $indicesf.list
     set lbx [listbox $indicesf.list.ilist \
             -height 8 -width 16 \
@@ -103,7 +103,7 @@ proc create_equation {parent boxtitle indices} {
     
     # Stella special: a keypad frame to prevent users having to touch their kbd
     $middleF add [TitleFrame $middleF.keypad -text "Keypad: "]
-    set keypadf [$middleF.keypad getframe]
+    set keypadf [GetFrame $middleF.keypad]
     frame $keypadf.keys
     set keys {< > ( ) \[ \] custom AC = ^ , / and dummy if dummy 7 8 9 * or dummy then dummy \
                 4 5 6 - not dummy elseif dummy 1 2 3 + xor dummy else dummy 0 .  <- -> DEL \
@@ -172,7 +172,7 @@ proc create_equation {parent boxtitle indices} {
     # Now for the main frame: the equation and its commentary
     $mainF add [frame $mainF.main]
     TitleFrame $mainF.main.main -text "Data source: "
-    set mainf [$mainF.main.main getframe]
+    set mainf [GetFrame $mainF.main.main]
     frame $mainf.slider
     radiobutton $mainf.slider.radio1 -text "Variable parameter: " -variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
@@ -242,7 +242,7 @@ proc create_equation {parent boxtitle indices} {
     # Bottom frame has the influences and parameters list boxes
     $mainF add [set bottomF [frame $mainF.bottom]]
     TitleFrame $bottomF.influences -text "Influences: "
-    set influencesf [$bottomF.influences getframe]
+    set influencesf [GetFrame $bottomF.influences]
     frame $influencesf.captions
     label $influencesf.captions.p -text "Parameter:"
     label $influencesf.captions.i -text "In units:"
@@ -261,7 +261,7 @@ proc create_equation {parent boxtitle indices} {
     pack $influencesf.lists.f -fill x -expand true
     pack $influencesf.lists -side top -fill x -expand true
     
-    set canId [$influencesf.lists.f getframe]
+    set canId [GetFrame $influencesf.lists.f]
     set lbp [frame $canId.plist -bd 2 -relief sunken]
     set lbi [frame $canId.ilist -bd 2 -relief sunken]
     set lbd [frame $canId.dlist -bd 2 -relief sunken]
@@ -273,7 +273,7 @@ proc create_equation {parent boxtitle indices} {
     
     set descF [frame $docF.descf]
     TitleFrame $descF.description -text "Title: "
-    set descf [$descF.description getframe]
+    set descf [GetFrame $descF.description]
     label $descf.desclabel -text "Description:"
     text $descf.text -height 1 -width 20 -relief sunken -bd 2 -highlightthickness 0
     pack $descf.desclabel -side left -padx 2 -pady 2
@@ -322,12 +322,12 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     }
     ### End formula bar section
     
-    set widget [$equation(doc).descf.description getframe]
+    set widget [GetFrame $equation(doc).descf.description]
     $widget.text delete 1.0 end
     $widget.text insert 1.0 $desc
     $equation(doc).cmtFrame.text delete 1.0 end
     $equation(doc).cmtFrame.text insert 1.0 $comment
-    set widget [$equation(main).main.main getframe]
+    set widget [GetFrame $equation(main).main.main]
     $widget.equation.textbox.text delete 1.0 end
     $widget.equation.textbox.text insert 1.0 $current_equation
     set equation(units) [RealForUnity $units]
@@ -375,8 +375,8 @@ proc interact_equation {} {
     ### End formula bar section
 
     set t $equation(top)
-    set descFrame [$equation(doc).descf.description getframe]
-    set eqnFrame [$equation(main).main.main getframe]
+    set descFrame [GetFrame $equation(doc).descf.description]
+    set eqnFrame [GetFrame $equation(main).main.main]
     
     if {!$equation(showing)} {
 	set equation(showing) 1
@@ -493,10 +493,10 @@ proc fill_inputs { triples } {
     }
     ### End formula bar section
 
-    set t [$equation(main).main.main getframe]
+    set t [GetFrame $equation(main).main.main]
     set en $t.equation.textbox.text
-    set widget [$equation(main).bottom.influences getframe]
-    set scroller [$widget.lists.f getframe]
+    set widget [GetFrame $equation(main).bottom.influences]
+    set scroller [GetFrame $widget.lists.f]
     # Initialize variables and display  list
     foreach ipFrame {plist ilist dlist} {
         foreach ipEntry [winfo children $scroller.$ipFrame] {
@@ -687,7 +687,7 @@ proc equationRight { lb y } {
         # because Prolog has to use the value entered for the old one first
         return
     }
-    set widget [$equation(main).bottom.influences getframe]
+    set widget [GetFrame $equation(main).bottom.influences]
     set ebox $widget.lists.e
     set equation(lbid) $lb
     set equation(ckLine) [$lb nearest $y]
@@ -705,8 +705,8 @@ proc equationRight { lb y } {
 
 proc ListEditDone {line} {
     global equation
-    set widget [$equation(main).bottom.influences getframe]
-    set scroller [$widget.lists.f getframe]
+    set widget [GetFrame $equation(main).bottom.influences]
+    set scroller [GetFrame $widget.lists.f]
     
     if {![string equal $equation(entry$line) $equation(oldentry,$line)] || \
                 ![string equal $equation(unit$line) $equation(oldunit,$line)]} {
@@ -740,7 +740,7 @@ proc HitKey { winId char } {
 	    if {[string match *Entry [winfo class [focus]]]} {
 		set begin 0
 	    } else {
-		focus [$equation(main).main.main getframe].equation.textbox.text
+		focus [GetFrame $equation(main).main.main].equation.textbox.text
 	    }
 	    if {[string match AC $char]} {	    
 		[focus] delete $begin end

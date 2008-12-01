@@ -699,10 +699,6 @@ proc LoadIconImages {} {
         set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
-    foreach fn {info question warning error} {
-        set iconImages($fn) \
-	    [image create photo -file "${::BWIDGET::LIBRARY}/images/${fn}.gif"]
-    }
 }
 
 proc BlankCrs {withCrs} {
@@ -824,4 +820,23 @@ proc AbleAllEntries {parent newState} {
 	    $menu entryconfigure $id -state $newState
 	}
     }
+}
+
+# BWidget should be removed in favour of native Tk commands and the
+# Tile widget set, which look better. For the time it is still needed
+# for the ScrolledWindow/ScrollableFrame pair in MakeFrames in params.tcl, and
+# the drag'n'drop column headings in graphs.tcl, as well as in a few
+# other places round the app.
+
+package require BWidget
+
+# not good enough, must respond to getframe too
+proc TitleFrame {args} {
+    eval ttk::labelframe $args
+}
+
+# this should fix it
+proc GetFrame {special} {
+#    return [$special getframe] ;# bwidget TitleFrame version
+    return $special
 }
