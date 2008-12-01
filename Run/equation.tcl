@@ -512,7 +512,7 @@ proc fill_inputs { triples } {
         set p [entry $scroller.plist.p$line -bd 0 -relief flat \
                 -textvariable "equation(entry$line)"]
         bind $p <Enter> [list QueuePopup AddWidgetPopup \
-                "Value(s) of [lindex $vpiTriple 0]" %X %Y]
+			     %X %Y "Value(s) of [lindex $vpiTriple 0]"]
         bind $p <Double-1> "equationDouble %W $en; focus $en"
         bind $p <FocusOut> "ListEditDone $line"
         bind $p <Return> "ListEditDone $line"
@@ -772,7 +772,7 @@ proc AddFnPopup {w X Y x y} {
     set equation(whatPopped) [$w identify row $x $y]
     set popTxt [lindex [split $equation(whatPopped) .] end]
     if {![string equal {} $popTxt]} {
-	AddWidgetPopup $popTxt $X $Y
+	AddWidgetPopup $X $Y $popTxt
     }
 }
 
@@ -780,7 +780,7 @@ proc AddIndexPopup {lb y X Y} {
     global equation
     set line [$lb nearest $y]
     if {$line>-1} {
-	AddWidgetPopup "Index [expr $line+1] is [$lb get $line]" $X $Y
+	AddWidgetPopup $X $Y "Index [expr $line+1] is [$lb get $line]"
     }
 }
 

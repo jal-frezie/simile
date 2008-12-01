@@ -333,10 +333,9 @@ proc PostScrog { winId node } {
 
 # popup stuff -- here because both model windows and helpers use them
 
-proc BindPopup {widget keywd} {
+proc BindPopup {widget args} {
 # any % will be subbed by binding process unless we double it
-    regsub -all % $keywd %% keywd
-    bind $widget <Enter> [list QueuePopup AddWidgetPopup $keywd %X %Y]
+    bind $widget <Enter> [concat QueuePopup AddWidgetPopup %X %Y $args]
     bind $widget <Leave> RemovePopup
 }
 
@@ -364,20 +363,26 @@ proc QueuePopup {args} {
 #    }
 }
 
-proc AddWidgetPopup {key X Y} {
+proc AddWidgetPopup {X Y args} {
     global msgs
     if {![PrefValue custom(popupHelp) popupHelp]} {
 	return
 
     }
     PostPopup $X $Y
-    if {[info exists msgs($key)]} {
-        set message $msgs($key)
-    } else {
-        set message $key
+    
+    foreach key $args colour {#ffffc0 #c0ffc0 #ffe0c0} {
+	if {![string length $key]} break ;# no more args
+	if {[info exists msgs($key)]} {
+	    set message $msgs($key)
+	} else {
+	    regsub -all % $key %% message
+	}
+    
+	AddPopupMessage $message $colour
+#    pack [message .popup.message -aspect 400 \
+#            -text $message -bg \#ffffc0] -fill x -expand true
     }
-    pack [message .popup.message -aspect 400 \
-            -text $message -bg \#ffffc0] -fill x -expand true
 }
 
 proc AddMenuPopup {widget list y X Y new} {

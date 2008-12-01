@@ -165,8 +165,9 @@ proc AddEntry {winId topNode node mustShow notInput args} {
 		     [GetCompProperty $topNode Type $node]]
     pack [set slot [frame [MakeSubFrames $topNode $winId.sliderframe $levels \
             fileparams 0]]] -fill x -expand on
-    pack [label $slot.l1 -text [lindex $levels end] -fg red] -side left
-    pack [label $slot.l2 -text ($dimList) -fg red] -side left
+    pack [label $slot.l1 -text [lindex $levels end] -fg red -width 12] \
+	-side left
+#    pack [label $slot.l2 -text ($dimList) -fg red] -side left
     if {![info exists msgs(param_source_$compName)]} {
         set msgs(param_source_$compName) Unsaved
     }
@@ -176,8 +177,8 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     # look for the calls to Prolog proc tk_get_info
     #set desc [do_in_editor GetFromProlog tk_get_info('$winId',$node,desc)]
     set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
-    BindPopup $slot.l1 "$comment"
-    BindPopup $slot.l2 "$comment"
+    BindPopup $slot.l1 "[lindex $levels end] ($dimList)" $comment
+#    BindPopup $slot.l2 "$comment"
             
     ::ttk::button $slot.b -style Toolbutton -image $iconImages(edit) \
        -command [namespace code [list GetFromTable $winId $topNode \
@@ -233,7 +234,7 @@ proc RemoveVMLevels {nodeDims} {
 
 proc ColourCaptions {slot colour} {
     $slot.l1 configure -fg $colour
-    $slot.l2 configure -fg $colour
+#    $slot.l2 configure -fg $colour
 }
 
 proc EnquoteIfNotElement {item} {
@@ -278,7 +279,8 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
     } else {
         set nextLevel $parent.frame$level
         if {![winfo exists $nextLevel]} {
-            pack [ttk::labelframe $nextLevel -borderwidth 2 -relief sunken] \
+#            pack [ttk::labelframe $nextLevel -borderwidth 2 -relief sunken]
+            pack [frame $nextLevel -bd 2 -relief sunken] \
 		-fill x -expand true -padx 2 -pady 2 -side bottom
             pack [frame $nextLevel.head] -fill x -expand true
             set path /[join [lrange $hierarchy 0 $pt] /]
