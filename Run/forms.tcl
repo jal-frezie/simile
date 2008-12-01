@@ -1737,6 +1737,10 @@ proc Query {specifics icon helpRef parent opts} {
     global dialogues
 
     set defButton [lindex $opts 0]
+    if {[info exists ::SimileAutoObjLoaded]} { ;# Scripted execution! So...
+	puts $specifics
+	return $defButton
+    }
     set defCapt $::msgs(${defButton}_button)
     switch $defButton {
 	ok {set moreCapt "More info..."}

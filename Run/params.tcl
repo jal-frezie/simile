@@ -303,8 +303,8 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
             if {!$pt} {
                 set level "TOP LEVEL"
             }
-#            pack [label $nextLevel.head.label -text $level:]
-	    $nextLevel configure -text $level: -labelanchor n
+            pack [label $nextLevel.head.label -text $level:]
+#	    $nextLevel configure -text $level: -labelanchor n
         }
         return [MakeSubFrames $clientId $nextLevel $hierarchy $ns $nextPt]
     }
