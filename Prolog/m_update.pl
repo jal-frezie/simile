@@ -440,7 +440,9 @@ end_with_units(Flow, EndUnits) :-
 check_flow_ends(Func, EndUnits, AnyErr) :-
 	get_host(Func, Flow),
 	setof(UConstraint, end_with_units(Flow, UConstraint), AllUnits),
-	(AllUnits = [EndUnits | ToMatch], !; % if EndUnits not set
+	(var(EndUnits),
+	    AllUnits = [EndUnits | ToMatch];
+	 nonvar(EndUnits),
 	    ToMatch = AllUnits),
 	member(Next, ToMatch),
 	check_unit(Next, EndUnits, 2, Err),
