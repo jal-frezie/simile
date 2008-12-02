@@ -168,6 +168,7 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     pack [label $slot.l1 -text [lindex $levels end] -fg red -width 12] \
 	-side left
 #    pack [label $slot.l2 -text ($dimList) -fg red] -side left
+    set msgs(dim_list_$compName) $dimList
     if {![info exists msgs(param_source_$compName)]} {
         set msgs(param_source_$compName) Unsaved
     }
@@ -1613,7 +1614,7 @@ proc GetFromTable {parent topNode compName startLine} {
 # trim off model name from caption cos it is ugly
     set tablCapt [string range $compName [string first / $compName 1] end]
     set newSource [equationDoTable [winfo toplevel $parent] $topNode $tablCapt \
-		       [$outNames($compName).l2 cget -text] \
+		       ($msgs(dim_list_$compName)) \
 		       [expr {!$readMany($compName)}]]
 
 # If loading data for PEST there is no parent dialogue so do not keep grab
