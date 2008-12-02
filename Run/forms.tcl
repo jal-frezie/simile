@@ -53,8 +53,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     text $notesf.commentsSW.comment -height 4 -width 40 -relief sunken -bd 2 -highlightthickness 0 -wrap word
     $notesf.commentsSW setwidget $notesf.commentsSW.comment
     $notesf.commentsSW.comment insert 1.0 $comment
-    pack $notesf.commentsSW -anchor nw -fill both -expand true
-    pack $t.simple.notes -side bottom -anchor s -pady 4 -fill both -expand true
+    pack $notesf.commentsSW -padx 2 -pady 2 -fill both -expand true
+    pack $t.simple.notes -side bottom -padx 4 -pady 4 -fill both -expand true
 
     frame $t.simple.left
     
@@ -73,7 +73,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     
     ::ttk::entry $countf.value -textvariable disaggregate(icount) -width 10
     pack $countf.value -side left -anchor s -pady 4
-    pack $t.simple.left.count -anchor w -pady 4 -fill both -expand true
+    pack $t.simple.left.count -padx 4 -pady 4 -fill both -expand true
     
     TitleFrame $t.simple.left.colour -text "Background shade:"
     set colourf [GetFrame $t.simple.left.colour]
@@ -95,8 +95,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
         pack [radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
                 -value $rbutton -variable disaggregate(imgpos)] -anchor w
     }
-    pack $t.simple.left.colour -anchor w -pady 4 -fill both -expand true
-    pack $t.simple.left -side left; # -expand 1 -fill both
+    pack $t.simple.left.colour -padx 4 -pady 4 -fill both -expand true
+    pack $t.simple.left -side left -fill both -expand 1
     
     $t add [frame $t.complex] -text Advanced
     TitleFrame $t.complex.enumtypes -text "Enumerated types"
@@ -504,7 +504,7 @@ proc AddEnumTypePopup {lb y X Y} {
     set popLine [$lb get [$lb nearest $y]]
     set memList disaggregate(enumtype,$popLine)
     if {[info exists $memList]} {
-        AddWidgetPopup "members: [set $memList]" $X $Y
+        AddWidgetPopup $X $Y "members: [set $memList]"
     }
 }
 
@@ -1737,7 +1737,8 @@ proc Query {specifics icon helpRef parent opts} {
     global dialogues
 
     set defButton [lindex $opts 0]
-    if {[info exists ::SimileAutoObjLoaded]} { ;# Scripted execution! So...
+    if {[info exists ::SimileAutoObjLoaded] || [winfo exists .shortDlg]} {
+# Scripted execution or dialogue already displayed: return with no fuss
 	puts $specifics
 	return $defButton
     }
@@ -1759,11 +1760,7 @@ proc Query {specifics icon helpRef parent opts} {
 	}
     }
 
-    if {[info exists dialogues(logStream)]} { ;# scripting
-	puts $dialogues(logStream) $message
-	return $defButton
-    } elseif {[info exists dialogues(logText)] || \
-		  [winfo exists .shortDlg]} { ;# messages skipped
+    if {[info exists dialogues(logText)]} { ;# messages skipped
 	lappend dialogues(logText) $message
 	if {[string equal abort $defButton]} {
 	    return continue
