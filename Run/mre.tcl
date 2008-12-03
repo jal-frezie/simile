@@ -850,23 +850,25 @@ namespace eval RunEnv {
     }
     
     proc SaveChildrenConfig {page loss stream} {
-           foreach child [winfo children $page]  {
-                 switch [winfo name $child] {
-                    container {
-                        SaveContainer $child $loss $stream
-                    }
-                    panedwindow {
-                        SavePanedwindowConfig $child $loss $stream
-                    }
-                    notebook {
-                        SaveNotebookConfig $child $loss $stream
-                    }
-                    default {
-                        #puts $stream "Unhandled Notebook page child: $child"
+	switch [winfo class $page] {
+	    Panedwindow {
+		SavePanedwindowConfig $page $loss $stream
+	    }
+	    TNotebook {
+		SaveNotebookConfig $page $loss $stream
+	    }
+	    default {
+		#puts $stream "Unhandled Notebook page child: $child"
+		if {[string equal container [winfo name $page]]} {
+		    SaveContainer $page $loss $stream
+		} else {
+		    foreach child [winfo children $page]  {
+			SaveChildrenConfig $child $loss $stream
                     }
                 }
-	   }
-     }
+	    }
+	}
+    }
 
     proc SaveNotebookConfig {notebook loss stream} {
         set nb [string range $notebook $loss end]

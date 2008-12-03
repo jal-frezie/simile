@@ -1715,8 +1715,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     ::ttk::menubutton $eb.function -state disabled -menu $eb.function.menu -image $iconImages(function)
     pack $eb.function -side left
     set m [menu $eb.function.menu -tearoff 0]
-    foreach funk [concat {{{{Built-in} {Model properties}} index}} \
-            $equation(fnDefs)] {
+    foreach funk $equation(fnDefs) {
                 set box $m
                 #puts "Adding $funk to $box"
                 foreach level [split [join [lindex $funk 0] /] /] {
@@ -2155,6 +2154,7 @@ proc ZapWindow { fullName } {
         set cacheStream [NetOpen $custom(prefDir)/.layout w]
         puts $cacheStream [string match zoomed [wm state $target]]
         puts $cacheStream [wm geometry $target]
+# under Linux this will be the geom of the client window not the frame -- fix
         close $cacheStream
     if {[string equal windows $tcl_platform(platform)]} {
         file attributes $custom(prefDir)/.layout -hidden true
@@ -2179,13 +2179,19 @@ proc ClearWindow {winId} {
 proc exit_simile {} {
     global custom tcl_platform
     
-    set cacheStream [NetOpen $custom(prefDir)/.recent w]
+    set cache [file join $custom(prefDir) .recent]
+    set cacheStream [NetOpen $cache w]
     foreach oldFile $custom(hotlist) {
         puts $cacheStream $oldFile
     }
     close $cacheStream
+# remove eqn dialogue layout, it might be wrong when we restart
+    set eqnLayout [file join $custom(prefDir) .layouts equation]
+    if {[file exists $eqnLayout]} {
+	file delete $eqnLayout
+    }
     if {[string equal windows $tcl_platform(platform)]} {
-	file attributes $custom(prefDir)/.recent -hidden true
+	file attributes $cache -hidden true
     }
     StartComms -1
 }

@@ -1068,6 +1068,7 @@ builtin('List handling', product, numeric, [array_or_list_of_numerics]).
 builtin('List handling', count, int, [array_or_list_of_any]).
 builtin('List handling', any, boolean, [array_or_list_of_boolean]).
 builtin('List handling', all, boolean, [array_or_list_of_boolean]).
+builtin('Model properties', index, boolean, [int_or_enum_type_const]).
 builtin('Model properties', channel_is, boolean, [channel]).
 builtin('Model properties', dt, real, [const_int_or_none]).
 builtin('Model properties', time, real, [const_int_or_none]).

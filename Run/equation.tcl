@@ -6,7 +6,7 @@
 # This file contains procedures for the equation dialogue.
 #
 proc create_equation {parent boxtitle indices} {
-    global equation equationbar tcl_platform iconImages window_info
+    global equation equationbar tcl_platform iconImages window_info custom
     ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
         return
@@ -23,12 +23,15 @@ proc create_equation {parent boxtitle indices} {
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
     
     set notebook [::ttk::notebook $t.notebook]
-    $notebook add [panedwindow $notebook.main -orient vertical] -text Main
     set mainF $notebook.main
-    $notebook add [frame $notebook.documentation] -text Documentation
+    $notebook add [panedwindow $mainF -orient vertical] -text Main
+    set paramF $notebook.params
+    $notebook add [panedwindow $paramF -orient vertical] -text "Parameters etc."
     set docF $notebook.documentation
+    $notebook add [frame $docF] -text Documentation
     set equation(notebook) $notebook
     set equation(main) $mainF
+    set equation(params) $paramF
     set equation(doc) $docF
     
     # frame for buttons
@@ -86,20 +89,16 @@ proc create_equation {parent boxtitle indices} {
     }
     
 #    pack $middleF.functions -side left -anchor nw -padx 2 -pady 2 -expand true -fill both
-    $middleF add [TitleFrame $middleF.indices -text "Indices: "]
-    set indicesf [GetFrame $middleF.indices]
-    frame $indicesf.list
-    set lbx [listbox $indicesf.list.ilist \
+    $middleF add [TitleFrame $middleF.params -text "Parameters: "]
+    set paramsf [GetFrame $middleF.params]
+    frame $paramsf.list
+    set lbp [listbox $paramsf.list.ilist \
             -height 8 -width 16 \
-            -yscrollcommand [list $indicesf.list.scrolli set]]
-    foreach indx $indices {
-        $lbx insert end $indx
-    }
-    scrollbar $indicesf.list.scrolli -command [list $lbx yview]
-    pack $indicesf.list.ilist -side left -fill both -expand true
-    pack $indicesf.list.scrolli -side left -fill y
-    pack $indicesf.list -anchor nw -expand true -fill both
-#    pack $middleF.indices -side left -anchor nw  -padx 2 -pady 2 -expand true -fill both
+            -yscrollcommand [list $paramsf.list.scrolli set]]
+    scrollbar $paramsf.list.scrolli -command [list $lbp yview]
+    pack $paramsf.list.ilist -side left -fill both -expand true
+    pack $paramsf.list.scrolli -side left -fill y
+    pack $paramsf.list -anchor nw -expand true -fill both
     
     # Stella special: a keypad frame to prevent users having to touch their kbd
     $middleF add [TitleFrame $middleF.keypad -text "Keypad: "]
@@ -239,8 +238,23 @@ proc create_equation {parent boxtitle indices} {
 #    pack $mainF.main -anchor nw -expand true -fill both -anchor nw
     
     # Miscellaneous other stuff below
+    $paramF add [TitleFrame $paramF.indices -text "Indices: "]
+    set indicesf [GetFrame $paramF.indices]
+    frame $indicesf.list
+    set lbx [listbox $indicesf.list.ilist \
+            -height 8 -width 16 \
+            -yscrollcommand [list $indicesf.list.scrolli set]]
+    foreach indx $indices {
+        $lbx insert end $indx
+    }
+    scrollbar $indicesf.list.scrolli -command [list $lbx yview]
+    pack $indicesf.list.ilist -side left -fill both -expand true
+    pack $indicesf.list.scrolli -side left -fill y
+    pack $indicesf.list -anchor nw -expand true -fill both
+#    pack $middleF.indices -side left -anchor nw  -padx 2 -pady 2 -expand true -fill both
+
     # Bottom frame has the influences and parameters list boxes
-    $mainF add [set bottomF [frame $mainF.bottom]]
+    $paramF add [set bottomF [frame $paramF.bottom]]
     TitleFrame $bottomF.influences -text "Influences: "
     set influencesf [GetFrame $bottomF.influences]
     frame $influencesf.captions
@@ -262,9 +276,9 @@ proc create_equation {parent boxtitle indices} {
     pack $influencesf.lists -side top -fill x -expand true
     
     set canId [GetFrame $influencesf.lists.f]
-    set lbp [frame $canId.plist -bd 2 -relief sunken]
-    set lbi [frame $canId.ilist -bd 2 -relief sunken]
-    set lbd [frame $canId.dlist -bd 2 -relief sunken]
+    frame $canId.plist -bd 2 -relief sunken
+    frame $canId.ilist -bd 2 -relief sunken
+    frame $canId.dlist -bd 2 -relief sunken
     pack $canId.plist $canId.ilist $canId.dlist -side left -fill x -expand true
     pack $bottomF.influences -fill x -anchor nw -padx 2 -pady 2
 #    pack $bottomF -fill x
@@ -297,7 +311,34 @@ proc create_equation {parent boxtitle indices} {
     set equation(newGraphs) ""
     set equation(showing) 0
     set equation(done) 0
-    equationBindings $t $en $eu $lbp $lbi $lbd $lbf $lbx $graph $table $ok $can
+    equationBindings $t $en $eu $lbf $lbx $lbp $graph $table $ok $can
+    if {![llength $indices]} {
+	destroy $paramF.indices
+    }
+    tkwait visibility $middleF
+    set eqnLayout [file join $custom(prefDir) .layouts equation]
+    if {[file exists $eqnLayout]} {
+        set stream [NetOpen $eqnLayout r]
+        gets $stream whetherMaxed
+	gets $stream oldGeom
+	if {$whetherMaxed} {
+	    wm state $t zoomed
+	} else {
+	    wm geometry $t $oldGeom ;# delete on exit, or may be off screen
+	}
+
+	while {[gets $stream posnData] >= 0} {
+	    set widget [lindex $posnData 1]
+	    if {[string equal sash [lindex $posnData 0]] && \
+		    ![string first .equation.notebook.main. $widget]} {
+		eval [list $widget sash place] [lrange $posnData 2 end]
+	    }
+	}
+	close $stream
+    } else {
+	$middleF sash place 0 200 0
+	$middleF sash place 1 400 0
+    }
 }
 
 proc fill_equation {current_equation units mult isParam desc comment min max} {
@@ -406,9 +447,7 @@ proc interact_equation {} {
 }
 
 proc destroy_equation {} {
-    global equation
-    global equationbar
-    global tcl_platform
+    global equation equationbar custom tcl_platform
     
     ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
@@ -419,6 +458,19 @@ proc destroy_equation {} {
     }
     ### End formula bar section
     
+    set layoutDir [file join $custom(prefDir) .layouts]
+    if {![file exists $layoutDir]} {
+	file mkdir $layoutDir
+	if {[string equal windows $tcl_platform(platform)]} {
+	    file attributes $layoutDir -hidden true
+	}
+    }
+    set layoutStream [NetOpen [file join $layoutDir equation] w]
+    puts $layoutStream [string equal zoomed [wm state $equation(top)]]
+    puts $layoutStream [wm geometry $equation(top)]
+
+    RunEnv::SaveChildrenConfig $equation(top).notebook 0 $layoutStream
+    close $layoutStream
     PackItUp $equation(top)
 }
 
@@ -495,7 +547,9 @@ proc fill_inputs { triples } {
 
     set t [GetFrame $equation(main).main.main]
     set en $t.equation.textbox.text
-    set widget [GetFrame $equation(main).bottom.influences]
+    set paramList [GetFrame $equation(main).middle.params]
+    set lbp $paramList.list.ilist
+    set widget [GetFrame $equation(params).bottom.influences]
     set scroller [GetFrame $widget.lists.f]
     # Initialize variables and display  list
     foreach ipFrame {plist ilist dlist} {
@@ -504,9 +558,11 @@ proc fill_inputs { triples } {
         }
     }
     set line 0
+    $lbp delete 0 end
     foreach vpiTriple $triples {
         set equation(paths,$line) [lindex $vpiTriple 0]
         set equation(oldentry,$line) [lindex $vpiTriple 1]
+        $lbp insert end [lindex $vpiTriple 1]
         set equation(oldunit,$line) [RealForUnity [lindex $vpiTriple 2]]
         
         set p [entry $scroller.plist.p$line -bd 0 -relief flat \
@@ -542,7 +598,10 @@ proc fill_inputs { triples } {
     # Make box mode compact if not used
     if {!$line} {
 #        pack forget $equation(main).bottom
-	 $equation(main) forget $equation(main).bottom
+	 $equation(params) forget $equation(params).bottom
+	 if {![winfo exists $equation(params).indices]} {
+	     .equation.notebook hide $equation(params)
+	 }
     } else {
         set showLines [max 3 [min 8 $line]]
         $widget.lists.f configure -height \
@@ -552,9 +611,6 @@ proc fill_inputs { triples } {
 # seems superfluous now it is placed on desktop window, and caused nasty bug by
 # allowing two doubleclicks to be processed at once
     }
-    tkwait visibility $equation(main).middle
-    $equation(main).middle sash place 0 200 0
-    $equation(main).middle sash place 1 400 0
 }
 
 proc fill_table {table_data table_values} {
@@ -572,7 +628,7 @@ proc fill_table {table_data table_values} {
     set equation(table_values) $table_values
 }
 
-proc equationBindings { t en eu lbp lbi lbd lbf lbx gr ta ok can} {
+proc equationBindings { t en eu lbf lbx lbp gr ta ok can} {
     # t - toplevel
     # en - equation entry
     # eu - units entry
@@ -580,7 +636,6 @@ proc equationBindings { t en eu lbp lbi lbd lbf lbx gr ta ok can} {
     # lbf - treebox for available functions
     # lbx - listbox for available indices
     # lbp - parameter listbox
-    # lbi - input units listbox
     # gr - graph button
     # ta - table button
     # ok - OK button
@@ -602,6 +657,8 @@ proc equationBindings { t en eu lbp lbi lbd lbf lbx gr ta ok can} {
     
     bind $lbx <Double-1> \
             "indexClick %W %y $en; focus $en"
+    bind $lbp <Double-1> \
+            "paramClick %W %y $en; focus $en"
     
     bind $gr <Tab> "focus $ta"
     bind $ta <Tab> "focus $ok"
@@ -787,6 +844,11 @@ proc AddIndexPopup {lb y X Y} {
 proc indexClick { lb y boxname} {
     # insert an index call using the line number clicked on
     $boxname insert insert index([expr [$lb nearest $y]+1])
+}
+
+proc paramClick { lb y boxname} {
+    # insert a param ref using the line number clicked on
+    $boxname insert insert [$lb get [$lb nearest $y]]
 }
 
 proc InsertFunction {boxname functor} {

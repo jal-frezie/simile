@@ -1187,14 +1187,9 @@ proc CheckCompilerLocation {} {
 # may well sit it exactly on top of the previous one
 
 proc FixSize {c} {
-    global custom openModel SimileAutoObjLoaded
+    global custom openModel
     update idletasks
     set win [winfo parent $c]
-    if {[info exists SimileAutoObjLoaded]} {
-	wm state $win withdrawn
-    } else {
-	wm state $win normal
-    }
     # seems necessary for console to hide
     #    catch {console hide}
     if {[file exists $custom(prefDir)/.layout] && \
@@ -1211,6 +1206,7 @@ proc FixSize {c} {
 		scan $oldGeom "%dx%d+%d+%d" w h l t
 		if {$l>=0 && $l+$w<[winfo screenwidth $win] && \
 			$t>=0 && $t+$h<[winfo screenheight $win]} {
+# these give wrong values on multi-screen Windows setup
 		    wm geometry $win $oldGeom
 		}
             }
