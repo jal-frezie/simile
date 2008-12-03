@@ -144,7 +144,12 @@ get_all_links(Function, ids(RemoteNode, Relation),
 get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
 		Relation, Index, SourceLocation) :-
 	initiates(Link, InitNode),
-	find_node_with_data(InitNode, RemoteNode, ValueSource),
+	find_node_with_data(InitNode, InitFn, ValueSource),
+	(find_type(InitNode, Type),
+	    member(Type, [immigration, creation, reproduction]), !,
+	    RemoteNode = ValueSource;
+% use implicit node if a channel, as vis node has remainder rather than eqn val
+	RemoteNode = InitFn),
 	get_spec_units(ValueSource, ActualUnits),
 	get_unit_conversion(ValueSource, Function, Subs, 
 		Relation, Index, SourceLocation),
@@ -165,16 +170,10 @@ check_ET_consistency(RemoteUnit, RemoteNode, Function) :-
 	      warning, top, [ok], not);
 	true).
 
-find_node_with_data(Edit_thing, Real_edit_thing, 
-		Control_thing) :-
+find_node_with_data(Edit_thing, Base, Control_thing) :-
 	find_base(Edit_thing, Base),
 	(implicit_function(Base, Control_thing), !;
-		Control_thing = Base),
-	(find_type(Base, Type),
-	    member(Type, [immigration, creation, reproduction]), !,
-	    Real_edit_thing = Control_thing;
-% use implicit node if a channel, as vis node has remainder rather than eqn val
-	Real_edit_thing = Base).
+	    Control_thing = Base).
 
 abs_path_name(RemoteNode, DestBox, RemoteName) :-
 	get_host(RemoteNode, VisibleNode),
