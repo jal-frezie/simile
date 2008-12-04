@@ -46,21 +46,27 @@ namespace eval ::graphtools {
 proc ::graphtools::MakeToolBar {w toolbarItems} {
     pack [ttk::separator $w.abovebbox -orient horizontal] -fill x -side top
     set f [frame $w.bbframe  -relief raised]
-    set bbox [ButtonBox $f.buttonBox -spacing 0 -padx 1 -pady 1]
+#    set bbox [ButtonBox $f.buttonBox -spacing 0 -padx 1 -pady 1]
     # build the toolbar  from the toolbarItems list
     foreach item $toolbarItems {
         set gif [lindex $item 0 ]
         set helptext [lindex $item 1]
         set command [lindex $item 2]
-        set newButton \
-	    [$bbox add -name [file rootname $gif] -highlightthickness 0 \
+#        set newButton \
+#	    [$bbox add -name [file rootname $gif] -highlightthickness 0 \
+#		 -image [image create photo  -file "../Images/Toolbar/$gif"] \
+#		 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
+#		 -command $command]
+	set newButton \
+	    [button $f.$[file rootname $gif] -highlightthickness 0 \
 		 -image [image create photo  -file "../Images/Toolbar/$gif"] \
-		 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
+		 -takefocus 0 -relief flat -borderwidth 1 -padx 1 -pady 1 \
 		 -command $command]
-        BindPopup $newButton $helptext
+	pack $newButton -side left
+	BindPopup $newButton $helptext
     }
     pack $f -side top -fill x
-    pack $bbox -side left -anchor w
+#    pack $bbox -side left -anchor w
     pack [Separator $w.belowbbox -orient horizontal] -fill x -side top
     
 }

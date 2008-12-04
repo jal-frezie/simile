@@ -379,13 +379,7 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	    CallSpec =.. [SubCall, Node, InstHandleRef, PassTest];
 	SpecialOp = search_from(ArcInd, _, TopRef),
 	    CallSpec = search_from(myClassPtr, ArcInd, TopRef);
-*/      SpecialOp = set_rate_of(Dest, Source), 
-	    make_scalar(L, Dest, ScalarDest),
-	    refer(L, ScalarDest, DestRef),
-	    make_evaluation_routine(L, Source, Term),
-	    make_expr(L, Term, Expr),
-	    CallSpec = set_rate_of(DestRef, Expr);
-	SpecialOp = cond_assign(Dest, Tested, Payload, Op, SoFar),
+*/      SpecialOp = cond_assign(Dest, Tested, Payload, Op, SoFar),
 	    make_scalar(L, Dest, ScalarDest),
 	    make_pointer(L, ScalarDest, DestPtr),
 	    make_evaluation_routine(L, Tested, TestedTerm),

@@ -833,7 +833,7 @@ proc AbleAllEntries {parent newState} {
 # the drag'n'drop column headings in graphs.tcl, as well as in a few
 # other places round the app.
 
-package require BWidget
+#package require BWidget
 
 # not good enough, must respond to getframe too
 proc TitleFrame {args} {

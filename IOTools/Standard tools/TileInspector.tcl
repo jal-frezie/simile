@@ -56,6 +56,7 @@ namespace eval ::$keyValue {
         
 #        tk_messageBox -message [GetObjectList] -type ok
         #get submodel nodeIds for parents
+	set universe {}
         foreach component [GetObjectList] {
 	    lappend universe [list $component [GetCaptionPathFromId $component]]
 	}

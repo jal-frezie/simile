@@ -47,12 +47,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	[AllSetups, AllInters, FContext],
 	    pointer_from(DestPath, DestPtr),
 	    get_dims_from_loops(SourceLoops, _, Inds),
-	 (get_host(Sm, VisSm),
-	     \+ VisSm = Sm,
-	     find_type(VisSm, VisType),
-	     member(VisType, [immigration, reproduction]), !,
-	     NewFormula = [set_rate_of(arr(DestPtr, Target, Inds), ScaledF)];
-	     NewFormula = [assign(arr(DestPtr, Target, Inds), ScaledF)]),
+	 NewFormula = [assign(arr(DestPtr, Target, Inds), ScaledF)],
 	add_extra_dependencies(Context, DestPath, Formula, Args, Prereqs)).
 
 report(Comp, Prob) :-
@@ -1143,7 +1138,6 @@ language -- they and the operators are hidden */
 
 %operator(ind_time, real, [const_int]).
 operator(stage_incr, real, [diffs, int, real]).
-operator(value_of, real, [channel_stats]).
 operator(choose, int, [boolean, int, int]).
 operator(choose, a(T), [boolean, a(T), a(T)]).
 operator(choose, real, [boolean, real, real]).

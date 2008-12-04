@@ -55,6 +55,7 @@ namespace eval ::ModelInspector63654 {
         
 #        tk_messageBox -message [GetObjectList] -type ok
         #get submodel nodeIds for parents
+	set universe {}
         foreach component [GetObjectList] {
 	    lappend universe [list $component [GetCaptionPathFromId $component]]
 	}

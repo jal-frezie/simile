@@ -216,8 +216,7 @@ otherwise be lost. */
 
 instance_of(Type, Node, Path,
 	    [instance(Type, Node,
-		      incr(Step, Home+stage_incr(Diffs, Step,
-						 value_of(Struct))),
+		      incr(Step, Home+stage_incr(Diffs, Step, Struct)),
 		      Home, real-[]),
 	     instance(init_function, Node, rand_var(0,1), Home, real-[]),
 	     DiffStruct],
@@ -265,10 +264,7 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	    m_update:get_solo_list_depth(Sub, _),
 	    raise_exception(bad_parameter(Node, Sub));
 	length(Refs, _Fix)),
-	get_units(Node, VType, Units),
-	(member(RType, [immigration, reproduction]), !,
-	    Base = channel_stats;
-	Base = VType),
+	get_units(Node, Base, Units),
 	is_instance(FType, Node, FinalExpr, elt(Path, _, Base-Units),
 		    Base-Units, Instance).
 	     
@@ -438,14 +434,9 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 
 process_expr(sub(InputPairs, Refs), Var, NewVar, Recurse) :-
 	m_update:get_solo_list_depth(Var, _),
-	(member(input_pair(Var, Node, OutVar, Struct), InputPairs),
+	(member(input_pair(Var, Node, OutVar, NewVar), InputPairs),
 	    is_instance(_, Node, _, OutVar, _, Ref),
-	    member(Ref, Refs),
-	    (get_host(Node, VisNode),
-		find_type(VisNode, PType),
-		member(PType, [immigration, reproduction]),
-		NewVar = value_of(Struct);
-		NewVar = Struct), !;
+	    member(Ref, Refs), !;
 	NewVar = Var),
 	    Recurse = 0;
 	build_table_ref(table_const(1), Var, NewVar),
