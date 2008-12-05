@@ -144,12 +144,12 @@ get_all_links(Function, ids(RemoteNode, Relation),
 get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
 		Relation, Index, SourceLocation) :-
 	initiates(Link, InitNode),
-	find_node_with_data(InitNode, InitFn, ValueSource),
+	find_node_with_data(InitNode, InitBase, ValueSource),
 	(find_type(InitNode, Type),
-	    member(Type, [immigration, creation, reproduction]), !,
+	    member(Type, [immigration, creation, reproduction, loss]), !,
 	    RemoteNode = ValueSource;
 % use implicit node if a channel, as vis node has remainder rather than eqn val
-	RemoteNode = InitFn),
+	RemoteNode = InitBase),
 	get_spec_units(ValueSource, ActualUnits),
 	get_unit_conversion(ValueSource, Function, Subs, 
 		Relation, Index, SourceLocation),

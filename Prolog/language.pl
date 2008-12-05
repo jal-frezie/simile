@@ -170,7 +170,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	    Indent1 is Indent+4,
 	    all(language, declare_ptrs,
 		[build(Names), build(Types), build(BasePtrs),
-		 unify([L, Indent1, Used, Stream])]),
+		 unify([L, Indent1, Stream])]),
 	    move_base_ptrs(L, Pointer, restore, Indent1,
 			   Names, BasePtrs, Types, Stream),
 	    do_assign_list(L, MyLoop, Indent1, Used, Stream),
@@ -595,8 +595,8 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 
 	make_struct_reference(L, Pointer, 'next', OnPointer),
 	excrete(L, assignment, NewInstance=0, Indent1, Stream),
-	(setof(LossTerm, LossVal^(get_term_refs(L, Pointer, LossNodes, LossVal),
-			test_probs(L, LossVal, Step, LossTerm)), LossTerms), !,
+	(setof(LossVal, get_term_refs(L, Pointer, LossNodes, LossVal),
+	       LossTerms), !,
 	    build_disjunction(L, LossTerms, IsDead),
 
 	    excrete(L, if_start, IsDead, Indent1, Stream),
@@ -737,10 +737,10 @@ declare(L, Name, NameBase, Type, Used, Indent, Stream) :-
 	    excrete(L, variable_declaration, [Type, Name, []], Indent, Stream);
 	true.
 
-declare_ptrs(Name, Type, BasePtr, [L, Indent, _Used, Stream]) :-
+declare_ptrs(Name, Type, BasePtr, [L, Indent, Stream]) :-
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, 'pointer', PtrForm), % should not be used
-	declare(L, BasePtr, PtrForm, Type, Used, Indent, Stream).
+	declare(L, BasePtr, PtrForm, Type, _Used, Indent, Stream).
 
 get_term_refs(_,_, Test, Test) :-
 	atom(Test), \+ Test=[].
@@ -793,13 +793,13 @@ test_probs(L, Val, Step, Result) :-
 Waste of time building this expr for every loss node every run: it is now
 in the support code where it can also check the integration method (above
 comment left in in case we ever want to build the support code for a new
-target language) */
+target language)
 
 test_probs(L, Val, Step, Result) :-
 	make_procedure_call_chars(L, [loses, Val, Step], ResultStr),
 	name(Result, ResultStr).
 
-/* Another group of rules with lots of arguments... */
+Another group of rules with lots of arguments... */
 make_evaluation_routine(
 	/* Externally defined arguments */
 	Language, /* programming language to generate */

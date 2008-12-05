@@ -851,7 +851,7 @@ showMess(globMess); */
 */
   int adapt_doublings;
 
-  excpData* resetmodel(void* modelHandle, int top_phase) {
+  excpData* resetmodel(void* modelHandle, int how_int, int top_phase) {
     int tweak_phase, err;
     
     userDefStop->excpNo = 0;
@@ -861,7 +861,13 @@ showMess(globMess); */
 	setdt(0, -tweak_phase);
 	setdt(steps[tweak_phase], tweak_phase);
       }
-      setdt(-1, 0);
+      switch (how_int) {
+      case EULER:
+	setdt(0,0);
+	break;
+      case RUNGE_KUTTA:
+	setdt(1,0);
+      } // was -1,0 to stop loss, but now we want it cos it happens next step
       reset_time_series(this);
       adapt_doublings = 0;
     }
@@ -1990,12 +1996,14 @@ so we will simplify them eventually. These next two allow the client
 to drive the model...
 */
 
-excpData* reset(long int modelType, long int modelHandle, int top_phase) {
+excpData* reset(long int modelType, long int modelHandle, int how_int,
+		int top_phase) {
   excpData* result;
 
   topType = modelType;
   resetting=top_phase;
-  result = ((Model*)topType)->resetmodel((void*)modelHandle, top_phase);
+  result = ((Model*)topType)->resetmodel((void*)modelHandle, how_int, 
+					 top_phase);
   if (!result && top_phase<-1) {
     listParamArray* paramArrayItem;
 

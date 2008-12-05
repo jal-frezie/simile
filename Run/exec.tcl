@@ -169,14 +169,15 @@ proc FreeAll {load} {
     }
 }
 
-proc ResetModel {myNode redo} {
+proc ResetModel {myNode howInt redo} {
     global model_id instance_id dispDone
 
     set dispDone 0 ;# allow execution to call back
     if {[catch {
 	if {$model_id($myNode)} {
 #	    set model_id(running) $myNode
-	    c_resetmodel $model_id($myNode) $instance_id($myNode) $redo
+	    c_resetmodel $model_id($myNode) $instance_id($myNode) \
+		[expr ![string equal Euler $howInt]] $redo
 	} else {
 	    TclResetModel $myNode $redo
 	}

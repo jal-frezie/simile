@@ -901,11 +901,11 @@ const char* name_in_line(long int modelType, int lineId) {
 FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
-  int phase, error;
+  int how_int, phase, error;
   excpData* errorBlk;
 
-  if (argc != 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id phase");
+  if (argc != 5) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id integration_method phase");
     return TCL_ERROR;
   }
   
@@ -920,11 +920,16 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
     
   }
   
-  error = Tcl_GetIntFromObj(interp, argv[3], &phase);
+  error = Tcl_GetIntFromObj(interp, argv[3], &how_int);
   if (error != TCL_OK) {
     return error;
   }
-  errorBlk = reset(modelType, modelHandle, phase);
+  
+  error = Tcl_GetIntFromObj(interp, argv[4], &phase);
+  if (error != TCL_OK) {
+    return error;
+  }
+  errorBlk = reset(modelType, modelHandle, how_int, phase);
 
   if (errorBlk) {
     get_string_for_error(spare, errorBlk->excpNo);
@@ -942,12 +947,12 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
   double starttime, endtime, errlim;
-  int phase, error;
+  int how_int, error;
   excpData* errorBlk;
   Tcl_Obj* working;
 
   if (argc != 7) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id phase start_time end_time error_limit");
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id integration_method start_time end_time error_limit");
     return TCL_ERROR;
   }
   
@@ -962,7 +967,7 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
     
   }
   
-  error = Tcl_GetIntFromObj(interp, argv[3], &phase);
+  error = Tcl_GetIntFromObj(interp, argv[3], &how_int);
   if (error != TCL_OK) {
     return error;
     
@@ -983,7 +988,7 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
   
-  errorBlk = execute(modelType, modelHandle, phase, starttime, &endtime, 
+  errorBlk = execute(modelType, modelHandle, how_int, starttime, &endtime, 
 		     errlim);
   error = 1; //i.e., no error
   if (errorBlk) {

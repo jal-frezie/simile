@@ -69,8 +69,7 @@ assigned_in_vm_subloop(Formula, FContext, AllSetups) :-
 	member(sm(_,_,_, vm_loop(_,_,_,_)), ExtraLoops).
 
 insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
-	(Var = input(Location, PathExp, Link, Units),
-	    m_update:analyze_array(Units, LinkType, _);
+	(Var = input(Location, PathExp, Link);
 	Var = PathExp,
 	    /* from compartment expressions -- used? -- and dest ref */
 	    [Location, Link]=[in_hierarchy, none]),
@@ -115,7 +114,7 @@ insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
 %	    member(instance(internal, inter(_,_, Loops), NewVar,_, _),
 %		   InterInputs),
 %	    Recurse = 0;
-	Var = channel_is(input(Location, elt(RealPathForm, Ref, _), Link, _)),
+	Var = channel_is(input(Location, elt(RealPathForm, Ref, _), Link)),
 	/* Outrageous hack -- for channel nodes of an ancestor
 submodel, the link parameter is set to 'outside' if they count as
 outside, so in this case we add the submodel level for their submodel,
@@ -1065,6 +1064,8 @@ builtin('List handling', any, boolean, [array_or_list_of_boolean]).
 builtin('List handling', all, boolean, [array_or_list_of_boolean]).
 builtin('Model properties', index, boolean, [int_or_enum_type_const]).
 builtin('Model properties', channel_is, boolean, [channel]).
+builtin('Model properties', dies_of, boolean, [real]).
+builtin('Model properties', remainder, real, [real]).
 builtin('Model properties', dt, real, [const_int_or_none]).
 builtin('Model properties', time, real, [const_int_or_none]).
 builtin('Model properties', at_init, any, [any]).
@@ -1138,6 +1139,7 @@ language -- they and the operators are hidden */
 
 %operator(ind_time, real, [const_int]).
 operator(stage_incr, real, [diffs, int, real]).
+operator(loses, boolean, [real, const_int]).
 operator(choose, int, [boolean, int, int]).
 operator(choose, a(T), [boolean, a(T), a(T)]).
 operator(choose, real, [boolean, real, real]).
@@ -1396,7 +1398,7 @@ thereafter. */
 changeable(_, Subexp, _, 0) :-
 	nonvar(Subexp),
 	Subexp =.. [Functor | _],
-	(member(Functor, [time, dt, rand_var, last]);
+	(member(Functor, [time, dt, rand_var, last, loses]);
 		sample(Functor)).
 
 /* do_once is the opposite: value must stay the same even if the args change,

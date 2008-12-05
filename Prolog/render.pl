@@ -593,7 +593,7 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 
 	/* Try not doing internals -- but will we need to for save/restore
 	 state? init functions confuse sketch graph editing. */
-	(\+ InstType = internal,
+	(\+ member(InstType, [internal, loss]),
 	get_host(BaseName, VisName),
 	find_type(VisName, VisType),
 	\+ (InstType = init_function,

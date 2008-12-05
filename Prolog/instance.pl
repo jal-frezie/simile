@@ -186,7 +186,7 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	Home+Step*last(In-Out) */
 	
 	is_instance(internal, st(Node), none, Diffs, diffs-Units, DiffStruct),
-	    Expr = incr(Step,Home++stage_incr(Diffs, Step, Change)),
+	    Expr = with_phase(Step,Home++stage_incr(Diffs, Step, Change)),
 	    Local = [DiffStruct, Instance];
 	[Refs, Local, Expr] = [[], [Instance], none]),
 	    is_instance(compartment, Node, Expr, Home, Base-Units, Instance).
@@ -216,7 +216,7 @@ otherwise be lost. */
 
 instance_of(Type, Node, Path,
 	    [instance(Type, Node,
-		      incr(Step, Home+stage_incr(Diffs, Step, Struct)),
+		      with_phase(Step, Home+stage_incr(Diffs, Step, Struct)),
 		      Home, real-[]),
 	     instance(init_function, Node, rand_var(0,1), Home, real-[]),
 	     DiffStruct],
@@ -286,12 +286,24 @@ instance_of(flow, Arc, _, [instance(flow, Arc, _, Value, Units)],
 	initiates(FuncLink, Function).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Loss object needs a boolean reflecting whether it actually happens
+
+instance_of(loss, Node, Path,
+	    [instance(loss, Node,
+		      with_phase(Step, loses(Home, Step)),
+		      elt(Path, _, boolean-[]), boolean-[])],
+	    [instance(function, Function, _, Home, _)]) :-
+	Home = elt(Path, _, 1-[]),
+	Arc is_connector from _ to Node,
+	initiates(Arc, Function).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* variables don't have any expressions of their own, they just have values which
 are the same as the functions from which they are generated. This also goes for
 condition, creation and loss nodes. Type is as function. */
 
 instance_of(Type, Node, _, Inst, Ref) :-
-	member(Type, [variable, condition, creation, loss, alarm]),
+	member(Type, [variable, condition, creation, alarm]),
 	(member(Node, [B, A]),
 	    Arc is_connector from A to B, !,
 	    initiates(Arc, F),
@@ -327,7 +339,7 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
 	m_update:analyze_array(SourceUnits, FarUnits, FarDims),
 	get_actual_sizes(Node, FarDims, _,_,_),
 	m_update:analyze_array(ArcUnits, BaseUnits, _),
-	RelatedRef = input(SourceLocation, RefExp, Relation, ArcUnits),
+	RelatedRef = input(SourceLocation, RefExp, Relation),
 	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, _),
 	find_name_host(Link, ControlLink),
 	(m_update:get_av_pair(ControlLink, 2, use_sofar, 1),
@@ -432,14 +444,17 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % list of name-node pairs, and reconstructs the resulting expression. Only they
 % are little lists not atoms now.
 
-process_expr(sub(InputPairs, Refs), Var, NewVar, Recurse) :-
+process_expr(sub(InputPairs, Refs), OldVar, NewVar, Recurse) :-
+	member(OldVar-RefNode, [dies_of(Var)-VisNode, remainder(Var)-VisNode,
+			       Var-Node]), 
 	m_update:get_solo_list_depth(Var, _),
 	(member(input_pair(Var, Node, OutVar, NewVar), InputPairs),
-	    is_instance(_, Node, _, OutVar, _, Ref),
+	    get_host(Node, VisNode),
+	    is_instance(_, RefNode, _, OutVar, _, Ref),
 	    member(Ref, Refs), !;
 	NewVar = Var),
 	    Recurse = 0;
-	build_table_ref(table_const(1), Var, NewVar),
+	build_table_ref(table_const(1), OldVar, NewVar),
 	    Recurse = 1.
 
 build_table_ref(Table, table, Table).

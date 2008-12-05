@@ -455,7 +455,9 @@ all named after the nodes from which they take their values. */
 declare_structure(Language, model(Vars, Submodels), Used, AllGraphs) :-
 
 	declare_submodel_structures(Language, Submodels, Used, SmGraphs),
-	name_components( Language, Vars, Used, Graphs),
+	pick_types(Vars, [function, init_function, id_function,
+			  loss, internal, external], NamedVars),
+	name_components( Language, NamedVars, Used, Graphs),
 	append(SmGraphs, Graphs, AllGraphs).
 
 declare_submodel_structures(_, [], _, []).
@@ -644,7 +646,7 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 	    
 extract_instances(model(Funx, Subz), Instances) :-
 	pick_types(Funx, [function, init_function, id_function, fp_compartment,
-			  internal, external],
+			  loss, internal, external],
 		   ValFunx),
 	append(Subz, ValFunx, Instances).
 
@@ -1199,7 +1201,7 @@ levels_to_path([instance(submodel, SmName, _, Name, _-SmDims) | MoreLevels],
 name_from_elt(FullRef, Cond) :-
 
 	(FullRef = IName*_Scale, !; FullRef = IName),
-	IName = input(in_hierarchy, elt(Path, Name, _), none, _),
+	IName = input(in_hierarchy, elt(Path, Name, _), none),
 	wait_for_submodels(Path, Waits),
 	(Name = import(_,_,_,_,_, PhaseSet, Src, _), !,
 	(PhaseSet = 0, !,
@@ -1272,7 +1274,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 		UseStep = 0;
 	    (Type = id_function,
 		UseList = [can_find_id(Node) | RefList];
-	    Type = function,
+	    member(Type, [function, loss]),
 		UseList = RefList), !,
 		Made = Dest,
 		UseStep = SmStep),
@@ -1284,11 +1286,15 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    UseStep = -2,
 	    apply_minmax(Node, Source, SourceEqn);
 	member(Type, [compartment, immigration, reproduction]),
+	  \+ Source = none,
 	    UseList = RefList, 
 	    Made = update(Dest),
 	    UseStep = SmStep,
-	    Source = incr(SmStep, SourceEqn)), !,
-	final_assignment(SourceEqn, Node, elt(DestPath, Dest, X), Swaps,
+	    SourceEqn = Source),
+	    
+	(SourceEqn = with_phase(SmStep, GroundEqn);
+	    GroundEqn = SourceEqn), !,
+	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
 			 UseStep, Used, Expr, Setups, Path, RefList,
 			 AllInters),
 	connect_params([make(Made, UseList, Path, UseStep, Expr) | Setups],
@@ -1836,9 +1842,7 @@ order_all(Phase, Undone, All, Done, Left) :-
 	(NowLeft = Undone, !, /* couldnt do any */
 	    Done = [],
 	    Left = NowLeft;
-	append(NowDone, [[]], NowDonePlusDummy),
-	    /* dummy makes sure all time steps get condition */
-	    add_phase_conditions(NowDone, -2, [], NowDoneForm),
+	add_phase_conditions(NowDone, -2, [], NowDoneForm),
 	    order_all(Phase, NowLeft, All, ThenDone, Left),
 	    append(NowDoneForm, ThenDone, Done)).
 
@@ -2032,22 +2036,19 @@ generate_graph_handlers([GraphData | AllGraphs], [Setup | AllSetups]) :-
 
 name_components( _, [], _, []).
 
-name_components(Language, [instance(Type, Node, _, elt(_, Var, _), _)
+name_components(Language, [instance(_Type, Node, _, elt(_, Var, _), _)
 			  | Compartments], Used, Graphs) :-
-	(\+ member(Type, [function, init_function,
-			  id_function, internal, external]), !,
-	    Graphs = TGraphs;
 	caption_for(Node, Name),
-	    generate_name( Language, Name, Var, Used),
-	    (Node has_class_refinement table_data of
-	    [file='/graph/', data=[YLow, YHigh, YSpan],
-	     indices=[XLow, XHigh, XSpan, Range], current=PointList,
-	     units=_, _, dims=NumPts | _], !,
-		nth(GraphNo, Used, Var),
-		/* Keep tcl working till it uses c++ graph access */
-		Graphs = [[GraphNo, XLow, XHigh, XSpan, YLow, YHigh, YSpan,
-			   Range, NumPts | PointList] | TGraphs];
-	      Graphs = TGraphs)),
+	generate_name( Language, Name, Var, Used),
+	(Node has_class_refinement table_data of
+	[file='/graph/', data=[YLow, YHigh, YSpan],
+	 indices=[XLow, XHigh, XSpan, Range], current=PointList,
+	 units=_, _, dims=NumPts | _], !,
+	    nth(GraphNo, Used, Var),
+	    /* Keep tcl working till it uses c++ graph access */
+	    Graphs = [[GraphNo, XLow, XHigh, XSpan, YLow, YHigh, YSpan,
+		       Range, NumPts | PointList] | TGraphs];
+	    Graphs = TGraphs),
 	name_components( Language, Compartments, Used, TGraphs).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
