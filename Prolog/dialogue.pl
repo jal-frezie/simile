@@ -244,10 +244,10 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	    Complaint5 = EqnError;
 	check_limit(Min_st, 'Min. value', Function,
 		    MinMaxNeeded, Min, MinVal, MinBase, MinErr),
-	    \+ MinErr = [], !,
-	    Complaint5 = MinErr;
-	check_limit(Max_st, 'Max. value', Function,
-		    MinMaxNeeded, Max, MaxVal, MaxBase, Complaint5)),
+	    (\+ MinErr = [], !,
+		Complaint5 = MinErr;
+	    check_limit(Max_st, 'Max. value', Function,
+			MinMaxNeeded, Max, MaxVal, MaxBase, Complaint5))),
 
 	(Complaint5 = [], !,
 	(Unit_st = "", Eqn_st = "", Min_st = "", Max_st = "",
