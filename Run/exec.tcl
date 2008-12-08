@@ -367,7 +367,6 @@ proc ExScrubRun {node times} {
     #    if {![string match ok [ShowMess debug info Scrubbing okcancel]]} {
     #	error Bombed
     #    }
-    set runState($node,modelRunning) 0
     if {$times && [info exists runState($node,currentTime)]} {
         unset runState($node,currentTime)
     }

@@ -302,7 +302,7 @@ set msgs(bad_eqn_message) "%s"
 set msgs(unwanted_links_title) "Unwanted inputs"
 set msgs(unwanted_links_message) "This node has a link from %s, but parameter default values are not allowed to have input variables themselves. Remove this link?"
 
-set msgs(undefined_parameter_title) "Undefined_parameter"
+set msgs(undefined_parameter_title) "Undefined parameter"
 set msgs(undefined_parameter_message) "This expression contains the term %s, which appears to be used as a parameter, but it does not appear as a parameter name."
 set msgs(undefined_parameter_detail) "The list of available parameters appears at the bottom of the equation dialogue or in the pull-down menu to the right of the equation bar."
 
@@ -471,8 +471,8 @@ set msgs(get_graphics_failed_title) "Problem copying graphics"
 set msgs(get_graphics_failed_message) "Simile failed to get graphics from the canvas to put on the clipboard, so it will not be possible to paste them into another application."
 set msgs(get_graphics_failed_detail) "The canvas must all be visible (i.e., on screen and not hidden) for this to work."
 
-set msgs(save_eqn_bar_title) "Save text edits"
-set msgs(save_eqn_bar_message) "Do you want to save the changes you have made in the equation bar?"
+set msgs(save_eqn_bar_title) "Save text edits for %s"
+set msgs(save_eqn_bar_message) "The equation bar is currently editing the equation for %s. Do you want to save the changes you have made?"
 
 set msgs(finished_matches_title) "No more matches"
 set msgs(finished_matches_message) "No more matching %ss in this submodel context"

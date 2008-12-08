@@ -253,7 +253,7 @@ proc ClickObj { x y winId X Y action} {
             set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
             if {![string match <none> $oldEqn]} {
 		SafeEqnBarEdit $winid
-                set label [file tail [BlankCrs $context]]\ =
+                set label "[file tail [BlankCrs $context]] = "
                 $bar.label configure -text $label
                 set equationbar($winid,node) $node
                 set equationbar($winid,initText) [BlankCrs $oldEqn]
@@ -273,7 +273,8 @@ proc SafeEqnBarEdit {winId} {
     if {[string equal normal [$bar.equation cget -state]]} {
 #puts [list [$bar.equation get] is $equationbar($winId,initText)]
         if {![string eq [$bar.equation get] $equationbar($winId,initText)]} {
-	    set choix [Query save_eqn_bar question top {} {yes no}]
+	    set capt [string range [$bar.label cget -text] 0 end-3]
+	    set choix [Query [list save_eqn_bar $capt] question top {} {yes no}]
             if {[string equal yes $choix]} {
                 accept_equation $winId $bar.equation
             }

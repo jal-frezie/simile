@@ -523,6 +523,9 @@ proc TryToKill {node} {
 
 # Pass on Prolog calls meant for model
 proc ScrubRun {node times} {
+    global runState
+
+    set runState($node,modelRunning) 0
     set optKill [after 3000 TryToKill $node]
     do_if_running $node ExScrubRun $node $times
     after cancel $optKill
