@@ -29,34 +29,37 @@ namespace eval RunEnv {
     # pop-up message
     # command.
     # A separator is placed between the
-#    package require BWidget
-    
-    set toolbars [list \
-            [list \
-            [list new.gif "New display configuration" RunEnv::InitializeDisplays] \
-            [list open.gif "Load a configuration of displays" RunEnv::LoadView] \
-            [list save.gif "Save the display configuration" RunEnv::SaveView] ]\
-            [list \
-            [list copyc.gif "Copy display" ::RunEnv::CopyHelper] \
-            [list cut.gif "Cut display" ::RunEnv::CutHelper] \
-            [list paste.gif "Paste display" ::RunEnv::PasteHelper] \
-            [list delete.gif "Remove display or container" "::RunEnv::DeleteHelperCurrentContainer" ] \
-            [list print.gif "Print display" ::RunEnv::PrintCurrentContainer]] \
-            [list \
-            [list splithoriz.gif "Split page horizontally" "::RunEnv::SplitCurrentContainer vertical" ] \
-            [list splitvert.gif "Split page vertically" "::RunEnv::SplitCurrentContainer horizontal"]] \
-            [list \
-            [list notebookpage.gif "Add notebook page" "RunEnv::AddNotebookPageToCurrentContainer"] \
-            [list notebook.gif "Add notebook" "RunEnv::AddNotebookToCurrentContainer"]] \
-            [list \
-		 [list graph.gif "Create plotter" "CreateHelperWindow plotter1_dot_25 {}"] \
-            [list table.gif "Create table" "CreateHelperWindow tabular11510 {}"] \
-            [list slider.gif "Create input sliders" "CreateHelperWindow slide139 {}"] \
-            [list display.gif "Choose display to create" "::RunEnv::AllDisplaysPopupCurrentContainer"]] \
-            [list \
-            [list clear.gif "Clear all displays" "ClearView"]]\
-            [list \
-            [list mainwin.gif "Go to Model Window" "::RunEnv::RaiseModelWindow"]]]
+    #    package require BWidget
+
+set toolbars [list \
+        [list \
+        [list new.gif "New display configuration" RunEnv::InitializeDisplays] \
+        [list open.gif "Load a configuration of displays" RunEnv::LoadView] \
+        [list save.gif "Save the display configuration" RunEnv::SaveView] ]\
+        [list \
+        [list copyc.gif "Copy display" ::RunEnv::CopyHelper] \
+        [list cut.gif "Cut display" ::RunEnv::CutHelper] \
+        [list paste.gif "Paste display" ::RunEnv::PasteHelper] \
+        [list delete.gif "Remove display or container" "::RunEnv::DeleteHelperCurrentContainer" ] \
+        [list print.gif "Print display" ::RunEnv::PrintCurrentContainer]] \
+        [list \
+        [list splithoriz.gif "Split page horizontally" "::RunEnv::SplitCurrentContainer vertical" ] \
+        [list splitvert.gif "Split page vertically" "::RunEnv::SplitCurrentContainer horizontal"]] \
+        [list \
+        [list notebookpage.gif "Add notebook page" "RunEnv::AddNotebookPageToCurrentContainer"] \
+        [list notebook.gif "Add notebook" "RunEnv::AddNotebookToCurrentContainer"]] \
+        [list \
+        [list graph.gif "Create plotter" "CreateHelperWindow plotter1_dot_25 {}"] \
+        [list table.gif "Create table" "CreateHelperWindow tabular11510 {}"] \
+        [list slider.gif "Create input sliders" "CreateHelperWindow slide139 {}"] \
+        [list display.gif "Choose display to create" "::RunEnv::AllDisplaysPopupCurrentContainer"]] \
+        [list \
+        [list clear.gif "Clear all displays" "ClearView"]]\
+        [list \
+        [list property.gif "Modify file parameters" ::RunEnv::InvokeFPDialogue]] \
+        [list \
+        [list mainwin.gif "Go to Model Window" "::RunEnv::RaiseModelWindow"]] \
+        ]
     
     # A top level window to contain the helpers
     proc Create { node } {
@@ -718,17 +721,33 @@ namespace eval RunEnv {
 	$editMenu entryconfigure Cut -state $copyAbility
 	$editMenu entryconfigure Paste -state $useSpaceAbility
 
-	$tb1.b10 configure -state $copyAbility ;# copy button
-	$tb1.b11 configure -state $copyAbility ;# cut button
-	$tb1.b12 configure -state $useSpaceAbility; # paste button
-	$tb1.b14 configure -state $printAbility; # print button
-	$tb1.b31 configure -state $useSpaceAbility; # Add Notebook button
-	$tb1.b40 configure -state $useSpaceAbility; # add helper buttons
-	$tb1.b41 configure -state $useSpaceAbility
-	$tb1.b42 configure -state $useSpaceAbility
-	$tb1.b43 configure -state $useSpaceAbility
+###############################################################################
+$tb1.b10 configure -state $copyAbility ;# copy button
+$tb1.b11 configure -state $copyAbility ;# cut button
+$tb1.b12 configure -state $useSpaceAbility; # paste button
+$tb1.b14 configure -state $printAbility; # print button
+$tb1.b31 configure -state $useSpaceAbility; # Add Notebook button
+$tb1.b40 configure -state $useSpaceAbility; # add helper buttons
+$tb1.b41 configure -state $useSpaceAbility
+$tb1.b42 configure -state $useSpaceAbility
+$tb1.b43 configure -state $useSpaceAbility
 
-	set win2 [winfo parent $pw]
+###############################################################################
+################################################################################
+# jmm added a modify params button and this stuff above broke
+# ShowMessage debug info "RunEnv::SetCurrentContainer pw $pw" ok
+#     $tb1.b12 configure -state $copyAbility ;# copy button
+#     $tb1.b12 configure -state $copyAbility ;# cut button
+#     $tb1.b13 configure -state $useSpaceAbility; # paste button
+#     $tb1.b15 configure -state $printAbility; # print button
+#     $tb1.b32 configure -state $useSpaceAbility; # Add Notebook button
+#     $tb1.b41 configure -state $useSpaceAbility; # add helper buttons
+#     $tb1.b42 configure -state $useSpaceAbility
+#     $tb1.b43 configure -state $useSpaceAbility
+#     $tb1.b44 configure -state $useSpaceAbility
+################################################################################
+
+    set win2 [winfo parent $pw]
 	set pw2 [winfo parent $win2]
 	if {[string equal $dp0 $win] && ![winfo exists $win.container]} {
 	    set killability disabled ;# it's the last pane
