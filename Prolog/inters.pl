@@ -372,8 +372,7 @@ make_intermediates(
 	    swap_back(SourceContext, TermSwap, ParamContext, _),
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
-	        (([Var | _] = Target; % it cannot be a condition of itself
-		  SrcUnits = diffs), !, % or of a compartment structure
+	        ([Var | _] = Target, !, % or of a compartment structure
 		    Args = [];
 		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
 	        /* note that for the time being the made_at condition is thrown
