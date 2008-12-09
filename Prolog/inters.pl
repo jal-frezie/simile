@@ -372,7 +372,7 @@ make_intermediates(
 	    swap_back(SourceContext, TermSwap, ParamContext, _),
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
-	        ([Var | _] = Target, !, % or of a compartment structure
+	        ([Var | _] = Target, !, % it cannot be a condition of itself
 		    Args = [];
 		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
 	        /* note that for the time being the made_at condition is thrown
@@ -682,6 +682,12 @@ make_intermediates(
 	results of all subexpressions not accessible in the destination
 	context. */
 
+	Source =.. [makearray | WrongLen],
+	    length(WrongLen, WrongNum),
+	    \+ WrongNum = 2,
+	    throw(wrong_no_of_args(Source, makearray, WrongNum, 2));
+	    % do not leave this to general handler because it will complain
+	    % if arguments contain place_in(...)
 	((Source = makearray(Element, Dim); Source = soloarr(Element), Dim=1),
 	    ((catch(DimVal is Dim, _, fail),
 	          integer(DimVal);	% it is integer now

@@ -79,10 +79,15 @@ proc FileParamDialogue {topWin mustShow} {
     return $paramData(done)
 }
 
-# ScrolledWindow and ScrollableFrame allow any widget to be scrolled, but need
-# the bwidget package. So have revived our own version based on a frame in a 
-# canvas.
-proc BWMakeFrames {windowId} {
+# ScrolledWindow and ScrollableFrame allow any widget to be scrolled,
+# but need the bwidget package. So have revived our own version based
+# on a frame in a canvas (see below). However, the ScrollableFrame
+# supports the 'see' command which allows it to be automatically
+# scrolled to show a particular sub-widget, while the canvas version
+# would need a lot of pi^H^Hmessing about with yview to achieve
+# this. So hang on to bwidget for the time being.
+
+proc MakeFrames {windowId} {
     ScrolledWindow $windowId.c
     set canId $windowId.c.canvas
     ScrollableFrame $canId -yscrollincrement 1 -constrainedwidth true ;# \
@@ -91,15 +96,11 @@ proc BWMakeFrames {windowId} {
 
     pack $windowId.c -side top -fill both -expand true
     
-    pack [frame $windowId.checkframe] -in [GetFrame $canId] -side top -expand true -fill x -padx 2 -pady 2
-    pack [frame $windowId.sliderframe] -in [GetFrame $canId] -side top \
-            -fill x -expand true -padx 2 -pady 2
-    
-    #    $canId create window 0 0 -anchor ne -window [frame $windowId.checkframe]
-    #    $canId create window 0 0 -anchor nw -window [frame $windowId.sliderframe]
+    pack [frame $windowId.sliderframe] -in [$canId getframe] \
+	-side top -fill x -expand true -padx 2 -pady 2
 }
 
-proc MakeFrames {windowId} {
+proc DIYMakeFrames {windowId} {
     frame $windowId.c
     set canId [canvas $windowId.c.canvas \
 		   -yscrollcommand [list $windowId.c.yscroll set]]
@@ -107,7 +108,6 @@ proc MakeFrames {windowId} {
 	      -command [list $canId yview]] -side right -fill y
     pack $canId -fill both -expand 1
     pack $windowId.c -side top -fill both -expand 1
-    $canId create window 0 0 -anchor ne -window [frame $windowId.checkframe]
     set sf [$canId create window 0 0 -anchor nw \
 		-window [frame $windowId.sliderframe]]
     bind $canId <Configure> [list $canId itemconfigure $sf -width %w]

@@ -127,12 +127,10 @@ proc ExecuteTo {node current pause unitLength display foci intMethod maxErr} {
 	    set oldPayload $payload
 	    set payload {}
 	    foreach point $foci {
-		lappend payload $point
-		if {[RunningInC $node]} {
-		    # redundant fields make list of unique length
-		    lappend payload [list ptr 0 [GetHandle $node $point]]
+		if {[catch {GetPayload $node $point} dataHand]} {
+# data has gone, so hope it is no longer needed
 		} else {
-		    lappend payload [lindex [tcl_insert $point {}] 0]
+		    lappend payload $point $dataHand
 		}
 	    }
 	    if {[ShiftDisplays $node $payload $current $display]} {
@@ -156,11 +154,21 @@ proc ExecuteTo {node current pause unitLength display foci intMethod maxErr} {
     return $currentMode
 }
 
+proc GetPayload {node point} {
+    if {[RunningInC $node]} {
+	set hndl [handle_data $model_id($node) $instance_id($node) $point]
+	return [list ptr 0 [GetHandle $node $point]]
+# redundant fields make list of unique length
+    } else {
+	return [lindex [tcl_insert $point {}] 0]
+    }
+}
+
 proc GetHandle {node point} {
     global model_id instance_id
     return [handle_data $model_id($node) $instance_id($node) $point]
 }
-
+  
 proc FreeAll {load} {
     foreach {id hdl} $load {
 	if {[llength $hdl]==3} {

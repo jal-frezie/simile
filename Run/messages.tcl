@@ -63,6 +63,8 @@ set msgs(const_delay) "Returns the first argument delayed by the time given in t
 set msgs(var_delay) "Returns the first argument delayed by the time given in the second argument, which can be an expression. Resolution is 0.1 day and max delay is 100 days."
 set msgs(least) "Returns the smallest value from an array/list of values"
 set msgs(greatest) "Returns the largest value from an array/list of values"
+set msgs(with_least) "Takes two arrays or lists with equal size, and returns the element of the second that corresponds to the element of the first with the smallest value."
+set msgs(with_greatest) "Takes two arrays or lists with equal size, and returns the element of the second that corresponds to the element of the first with the largest value."
 set msgs(abs) "Returns absolute difference between argument and zero"
 set msgs(ceil) "Rounds argument up to a whole number"
 set msgs(floor) "Rounds argument down to a whole number"
@@ -202,6 +204,9 @@ set msgs(parameter_name_reused_message) "The equation is badly formed because it
 
 set msgs(parameter_name_recurs_title) "Problem with intermediate result name"
 set msgs(parameter_name_recurs_message) "The equation is badly formed because it creates the explicit intermediate result %s in the scope of an earlier explicit intermediate result with the same name."
+
+set msgs(circular_evaluation_title) "Problem with model design"
+set msgs(circular_evaluation_message) "This model cannot be executed because it contains the following circular set(s) of function evaluations: %s"
 
 set msgs(undecipherable_operand_title) "Problem getting number"
 set msgs(undecipherable_operand_message) "%s does not stand for a number in the context of %s"
@@ -424,7 +429,8 @@ set msgs(iotool_load_fail_detail) "The error message was:\n%2\$s"
 set msgs(iotool_load_fail_full) $msgs(iotool_load_fail_detail)
 set msgs(iotool_restore_fail_title) "Problem restoring helper"
 set msgs(iotool_restore_fail_message) "A software error occurred while attempting to restore the I/O tool \"%s\" from the saved setup."
-set msgs(iotool_restore_fail_detail) "The error message was:\n%2\$s"
+set msgs(iotool_restore_fail_detail) "Click \"See all...\" to see all error messages in full."
+set msgs(iotool_restore_fail_full) "The error message was:\n%2\$s"
 set msgs(iotool_run_fail_title) "Error running I/O tool"
 set msgs(iotool_run_fail_message) "I/O tool \"%s\" raised a problem during model execution. This occurred while doing the %s operation."
 set msgs(iotool_run_fail_detail) "The model has been paused. To continue running it you may have to kill this helper's display."

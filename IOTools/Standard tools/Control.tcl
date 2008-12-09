@@ -238,7 +238,7 @@ namespace eval runcontrol33857 {
 	if {[do_in_editor set runState($node,updated)]} {
 	    switch [Query model_out_of_date warning top {} {yes no cancel}] {
 		yes {
-		    start_in_editor UpdateExecution $node $action
+		    UpdateExecution $node $action
 		    return
 		} no {
 		    if {$runState($node,modelRunning)==3} {
