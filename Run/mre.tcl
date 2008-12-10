@@ -32,34 +32,34 @@ namespace eval RunEnv {
     #    package require BWidget
 
 set toolbars [list \
-        [list \
-        [list new.gif "New display configuration" RunEnv::InitializeDisplays] \
-        [list open.gif "Load a configuration of displays" RunEnv::LoadView] \
-        [list save.gif "Save the display configuration" RunEnv::SaveView] ]\
-        [list \
-        [list copyc.gif "Copy display" ::RunEnv::CopyHelper] \
+   [list \
+	[list new.gif "New display configuration" RunEnv::InitializeDisplays] \
+	[list open.gif "Load a configuration of displays" RunEnv::LoadView] \
+	[list save.gif "Save the display configuration" {RunEnv::SaveView 0}] ]\
+   [list \
+	[list copyc.gif "Copy display" ::RunEnv::CopyHelper] \
         [list cut.gif "Cut display" ::RunEnv::CutHelper] \
         [list paste.gif "Paste display" ::RunEnv::PasteHelper] \
         [list delete.gif "Remove display or container" "::RunEnv::DeleteHelperCurrentContainer" ] \
         [list print.gif "Print display" ::RunEnv::PrintCurrentContainer]] \
-        [list \
+   [list \
         [list splithoriz.gif "Split page horizontally" "::RunEnv::SplitCurrentContainer vertical" ] \
         [list splitvert.gif "Split page vertically" "::RunEnv::SplitCurrentContainer horizontal"]] \
-        [list \
+   [list \
         [list notebookpage.gif "Add notebook page" "RunEnv::AddNotebookPageToCurrentContainer"] \
         [list notebook.gif "Add notebook" "RunEnv::AddNotebookToCurrentContainer"]] \
-        [list \
-        [list graph.gif "Create plotter" "CreateHelperWindow plotter1_dot_25 {}"] \
-        [list table.gif "Create table" "CreateHelperWindow tabular11510 {}"] \
-        [list slider.gif "Create input sliders" "CreateHelperWindow slide139 {}"] \
+   [list \
+        [list graph.gif "Create plotter" "::RunEnv::InsertHelperWindow plotter1_dot_25 {}"] \
+        [list table.gif "Create table" "::RunEnv::InsertHelperWindow tabular11510 {}"] \
+        [list slider.gif "Create input sliders" "::RunEnv::InsertHelperWindow slide139 {}"] \
         [list display.gif "Choose display to create" "::RunEnv::AllDisplaysPopupCurrentContainer"]] \
-        [list \
+   [list \
         [list clear.gif "Clear all displays" "ClearView"]]\
-        [list \
-        [list property.gif "Modify file parameters" ::RunEnv::InvokeFPDialogue]] \
-        [list \
+   [list \
+	[list property.gif "Modify file parameters" ::RunEnv::InvokeFPDialogue]] \
+   [list \
         [list mainwin.gif "Go to Model Window" "::RunEnv::RaiseModelWindow"]] \
-        ]
+		 ]
     
     # A top level window to contain the helpers
     proc Create { node } {
@@ -94,8 +94,10 @@ set toolbars [list \
                     {command "&New configuration"    {} "Remove all display configuration" {} -command {::RunEnv::InitializeDisplays} }
                     {command "&Load configuration..." {} "Load a configuration of displays" \
                                 {} -command {::RunEnv::LoadView} }
-                    {command "&Save configuration..." {} "Save a configuration of displays" \
-                                {} -command {::RunEnv::SaveView} }
+                    {command "&Save configuration" {} "Save configuration of displays" \
+                                {} -command {::RunEnv::SaveView 0} }
+                    {command "Save configuration &as..." {} "Save a configuration of displays" \
+                                {} -command {::RunEnv::SaveView 1} }
                     
                     {separator}
                     {command "&Print..." {} "Print display"  \
@@ -388,10 +390,15 @@ set toolbars [list \
             set stream [NetOpen $copyfile r]
 	    gets $stream oldClass
             gets $stream oldStatus
-	    CreateHelperWindow $oldClass {} $oldStatus
+	    InsertHelperWindow $oldClass $oldStatus
             close $stream
         }
     }
+
+proc InsertHelperWindow {class status} {
+    CreateHelperWindow $class {} $status
+    PreserveSetup 1
+}
     
     proc DeleteHelperContainer {containerId page} {
         global helperTable
@@ -417,6 +424,7 @@ set toolbars [list \
                 Panedwindow {DeletePane $parentPath $containerId}
             }
         }
+	PreserveSetup 1
         if {[winfo exists $containerId]} {SetCurrentContainer $containerId }
     }
     
@@ -469,6 +477,7 @@ set toolbars [list \
 	} else {
 	    $parentPath add $paneId ;# at end
 	}
+	PreserveSetup 1
 	return $paneId
     }
     
@@ -747,7 +756,7 @@ $tb1.b43 configure -state $useSpaceAbility
 #     $tb1.b44 configure -state $useSpaceAbility
 ################################################################################
 
-    set win2 [winfo parent $pw]
+	set win2 [winfo parent $pw]
 	set pw2 [winfo parent $win2]
 	if {[string equal $dp0 $win] && ![winfo exists $win.container]} {
 	    set killability disabled ;# it's the last pane
@@ -791,9 +800,9 @@ $tb1.b43 configure -state $useSpaceAbility
         if  {![winfo exists .pageContextMenu]} {
             set m [menu .pageContextMenu -tearoff 0]
 #           .helpers.sub2 clone .pageContextMenu.sub2
-            $m add command -label "Create plotter" -command "CreateHelperWindow plotter1_dot_25 {}"
-            $m add command -label "Create table" -command "CreateHelperWindow tabular11510 {}"
-            $m add command -label "Create input sliders" -command "CreateHelperWindow slide139 {}"
+            $m add command -label "Create plotter" -command "::RunEnv::InsertHelperWindow plotter1_dot_25 {}"
+            $m add command -label "Create table" -command "::RunEnv::InsertHelperWindow tabular11510 {}"
+            $m add command -label "Create input sliders" -command "::RunEnv::InsertHelperWindow slide139 {}"
             $m add cascade -label "Choose display to create ..." -menu .helpers.sub2
             $m add separator
             $m add command -label "Copy display" -command ::RunEnv::CopyHelper
@@ -810,6 +819,26 @@ $tb1.b43 configure -state $useSpaceAbility
         }
     }
     
+proc PreserveSetup {needSaving} {
+    global helperTable
+    variable currentNode
+    variable keepSetup
+
+    if {$needSaving} {
+	set saveAbility normal
+    } else {
+	set saveAbility disabled
+    }
+    set mainframe $helperTable($currentNode,whichRunEnv)
+    set mreMenu [$mainframe cget -menu]
+    set fileMenu [$mreMenu entrycget File -menu]
+    $fileMenu entryconfigure {Save configuration} -state $saveAbility
+    set tb1 [GetFrame $mainframe].tbar
+    $tb1.b02 configure -state $saveAbility
+
+    set keepSetup($currentNode) $needSaving
+}
+
     proc EmptyDisplays {} {
         variable dp0
         
@@ -824,6 +853,7 @@ $tb1.b43 configure -state $useSpaceAbility
 	EmptyDisplays
         SetCurrentContainer $dp0
 	AddNotebookToCurrentContainer
+	PreserveSetup 0
     }
     
     proc ChildrenFocusParent {parent} {
@@ -838,17 +868,24 @@ $tb1.b43 configure -state $useSpaceAbility
         }
     }
     
-    proc SaveView {} {
+    proc SaveView {newName} {
         global helperTable nameOfHelperStateFile simtmpdir
         variable dp0
         variable currentNode
         
-        set nameOfHelperStateFile($currentNode) \
-                [ChooseFile Displays.shf "Save display configuration" 1 \
-		    $currentNode]
-        if {[llength $nameOfHelperStateFile($currentNode)]} {
-	    do_in_editor AttackGlobalVariable nameOfHelperStateFile \
-		($currentNode) $nameOfHelperStateFile($currentNode)
+	if {[info exists nameOfHelperStateFile($currentNode)]} {
+	    set saveName $nameOfHelperStateFile($currentNode)
+	} else {
+	    set saveName [GetExecTitle $currentNode].shf
+	    set newName 1
+	}
+	if {$newName} {
+	    set saveName [ChooseFile [file tail $saveName] \
+			      "Save display configuration" 1 $currentNode]
+	}
+        if {![llength $saveName]} { ;# operation cancelled
+	    return
+	} else {
             set mainframe $helperTable($currentNode,whichRunEnv)
             set tempFile [file join $simtmpdir temp_out.shf]
             set stream [NetOpen $tempFile w]
@@ -862,9 +899,10 @@ $tb1.b43 configure -state $useSpaceAbility
             SaveChildrenConfig $dp0 [string length $dp0.] $stream
             
             close $stream
-            MimifySHF $tempFile $nameOfHelperStateFile($currentNode) mre
-        } else {
-	    unset nameOfHelperStateFile($currentNode)
+            MimifySHF $tempFile $saveName mre
+	    do_in_editor AttackGlobalVariable nameOfHelperStateFile \
+		($currentNode) $saveName
+	    PreserveSetup 0
 	}
     }
     
@@ -1025,6 +1063,7 @@ $tb1.b43 configure -state $useSpaceAbility
 	    Query not_an_shf error execution {} ok
         }
         close $stream
+	PreserveSetup 0
     }
     
     proc LoadViewFile {currentNode stream origVersion} {
