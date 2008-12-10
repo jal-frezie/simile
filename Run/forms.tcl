@@ -460,7 +460,7 @@ proc AddEnumType {fr} {
         $fr.typef.scrf insert end $enumTypeMPEntry
         $fr.typef.scrf selection clear 0 end
         $fr.typef.scrf selection set end
-        EnableTypeOps [[winfo parent [winfo parent $fr]]  getframe]
+        EnableTypeOps [winfo parent $fr]
         set disaggregate(enumtype,$enumTypeMPEntry) {}
         [winfo parent $fr].btns.e delete 0 end
     }

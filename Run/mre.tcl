@@ -95,7 +95,7 @@ set toolbars [list \
                     {command "&Load configuration..." {} "Load a configuration of displays" \
                                 {} -command {::RunEnv::LoadView} }
                     {command "&Save configuration" {} "Save configuration of displays" \
-                                {} -command {::RunEnv::SaveView 0} }
+			 {} -command {::RunEnv::SaveView 0} }
                     {command "Save configuration &as..." {} "Save a configuration of displays" \
                                 {} -command {::RunEnv::SaveView 1} }
                     
@@ -147,9 +147,9 @@ set toolbars [list \
 		eval [list ${mreId}top add cascade] [Underlined $header] \
 		    [list -menu $sub]
 	    }
-
+	    
             set mainframe $mreId
-
+	    
             if [string match "Darwin" $tcl_platform(os)] {
 		set dummy [$mreId cget -menu]
 		set fm [menu $dummy.apple -tearoff 0]
@@ -168,7 +168,7 @@ set toolbars [list \
                     set helptext [lindex $item 1]
                     set command [lindex $item 2]
                     set newButton [::ttk::button $tb1.b$tbnum$i -style Toolbutton -image [image create photo  -file "../Images/Toolbar/$gif"] \
-                            -command $command]
+				       -command $command]
                     pack $newButton -padx 1 -pady 1  -side left -anchor w
                     BindPopup $newButton $helptext
                     incr i
@@ -179,7 +179,7 @@ set toolbars [list \
             }
             
             #from runmodel.tcl AddHelperSublist
-#            set mreMenu [winfo parent [$mainframe getmenu help]]
+	    #            set mreMenu [winfo parent [$mainframe getmenu help]]
 	    set mreMenu [$mainframe cget -menu]
             $mreMenu insert 2 cascade -label "Add" -underline 0 -menu .helpers.sub2
 	    if {[info exists runHow(where)]} {
@@ -395,10 +395,10 @@ set toolbars [list \
         }
     }
 
-proc InsertHelperWindow {class status} {
-    CreateHelperWindow $class {} $status
-    PreserveSetup 1
-}
+    proc InsertHelperWindow {class status} {
+	CreateHelperWindow $class {} $status
+	PreserveSetup 1
+    }
     
     proc DeleteHelperContainer {containerId page} {
         global helperTable
@@ -609,6 +609,13 @@ proc InsertHelperWindow {class status} {
         ContextSensitiveHelp $helperTable($currentNode,whichRunEnv) run/single.htm
     }
     
+    proc ForgetHelperState {} {
+	global nameOfHelperStateFile
+        variable currentNode
+	
+	array unset nameOfHelperStateFile $currentNode
+    }
+
     proc Destroy {args} {
         global helperTable window_info model_id
         variable runControlWindId
@@ -624,6 +631,7 @@ proc InsertHelperWindow {class status} {
 	KillTransients $mreId
         destroy .helpPopup
         KillHelpers $node
+	ForgetHelperState
         foreach winData [array names window_info *,parent] {
             upvar 0 window_info([string range $winData 0 end-7],top_node) model
             if {[info exists model]} {
@@ -819,25 +827,25 @@ $tb1.b43 configure -state $useSpaceAbility
         }
     }
     
-proc PreserveSetup {needSaving} {
-    global helperTable
-    variable currentNode
-    variable keepSetup
-
-    if {$needSaving} {
-	set saveAbility normal
-    } else {
-	set saveAbility disabled
+    proc PreserveSetup {needSaving} {
+	global helperTable
+	variable currentNode
+	variable keepSetup
+	
+	if {$needSaving} {
+	    set saveAbility normal
+	} else {
+	    set saveAbility disabled
+	}
+	set mainframe $helperTable($currentNode,whichRunEnv)
+	set mreMenu [$mainframe cget -menu]
+	set fileMenu [$mreMenu entrycget File -menu]
+	$fileMenu entryconfigure {Save configuration} -state $saveAbility
+	set tb1 [GetFrame $mainframe].tbar
+	$tb1.b02 configure -state $saveAbility
+	
+	set keepSetup($currentNode) $needSaving
     }
-    set mainframe $helperTable($currentNode,whichRunEnv)
-    set mreMenu [$mainframe cget -menu]
-    set fileMenu [$mreMenu entrycget File -menu]
-    $fileMenu entryconfigure {Save configuration} -state $saveAbility
-    set tb1 [GetFrame $mainframe].tbar
-    $tb1.b02 configure -state $saveAbility
-
-    set keepSetup($currentNode) $needSaving
-}
 
     proc EmptyDisplays {} {
         variable dp0
@@ -853,6 +861,7 @@ proc PreserveSetup {needSaving} {
 	EmptyDisplays
         SetCurrentContainer $dp0
 	AddNotebookToCurrentContainer
+	ForgetHelperState
 	PreserveSetup 0
     }
     

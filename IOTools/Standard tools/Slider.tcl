@@ -121,7 +121,7 @@ namespace eval slide139 {
                 #		set magnitude [expr $max - $min]
                 ::graphtools::AxisRound [GetMinValue $node] \
                         [GetMaxValue $node] 0 min max gap s1 s2 s3 s4
-                if {[string match INTEGER [GetModelType $node]]} {
+                if {[string match INTEGER $type]} {
                     set spacing 1
                 } else {
                     set spacing [expr $gap/100.0]
@@ -135,7 +135,7 @@ namespace eval slide139 {
                     $levels [namespace current] 0]
             if {[winfo exists $f]} {
                 $winId.c.canvas see $f
-                return
+                return already_up
             } else {
                 pack [frame $f] -fill x -expand true
                 SetState $winId [concat [GetState $winId] \
@@ -173,9 +173,7 @@ namespace eval slide139 {
                             -textvariable comboTypes($node)
                     $bxMenu invoke [expr $defVal-1]
                     pack $f.combo -side right -fill x -expand true
-                    pack [label $f.caption -text [lindex $levels end]]
-                    set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
-                    BindPopup $f.caption "$comment"
+                    pack [label $f.caption -text [lindex $levels end] -width 12]
                     set comboChoices($node) $defVal
                 } default {
                     scale $f.scale -length 120 -orient h -showvalue false \
@@ -188,9 +186,7 @@ namespace eval slide139 {
                         $f.scale set $defVal
                     }
                     pack $f.scale -side right -fill x -expand true
-                    pack [label $f.caption -text [lindex $levels end]]
-                    set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
-                    BindPopup $f.caption "$comment"
+                    pack [label $f.caption -text [lindex $levels end] -width 12]
                         
                     pack [entry $f.entry -textvariable sliderVals($node) -width 8]\
                             -padx 1 -pady 1
@@ -198,12 +194,10 @@ namespace eval slide139 {
                             [namespace code [list SliderValsToC $node $fixed]]
                 }
             }
-            return $defVal
+            set allVals $defVal
         } else {
             #	    set useTrans [lindex $trans $useDim]
             pack [label $f.caption -text [lindex $levels end]]
-            set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
-            BindPopup $f.caption "$comment"
             set count [lindex $nodeDims $useDim]
             # bodge it to work with record submodels
             if {[string equal RECORDS $count]} {
@@ -293,8 +287,15 @@ namespace eval slide139 {
                 }
                 lappend allVals $index $defVal
             }
-            return $allVals
         }
+	if {[winfo exists $f.caption]} {
+	    set nodeDims [TransBounds $trans $nodeDims]
+	    set dimList [MakeDimsLegible $nodeDims $type]
+            set comment [do_in_editor GetFromProlog \
+			     tk_get_info('$winId',$node,comment)]
+            BindPopup $f.caption "[lindex $levels end] ($dimList)" $comment
+	}
+	return $allVals
     }
     
     proc FindUseDim {nodeDims} {
