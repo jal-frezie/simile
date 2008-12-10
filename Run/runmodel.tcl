@@ -360,16 +360,13 @@ proc ClearView {} {
     }
 }
 
-#  nameOfHelperStateFile is global because helpers might want to save names of
-# other files they need relative to it, e.g., file param helper
-
 proc SaveView {} {
-    global helperTable nameOfHelperStateFile simtmpdir runState
+    global helperTable simtmpdir runState
 
     set topNode [GetNodeFromFocus]
-    set nameOfHelperStateFile($topNode) \
+    set helperTable($topNode,stateName) \
 	[ChooseFile iotools.shf "Save view specification file" 1 $topNode]
-    if {[llength $nameOfHelperStateFile($topNode)]} {
+    if {[llength $helperTable($topNode,stateName)]} {
 	set tempFile [file join $simtmpdir temp_out.shf]
         set stream [NetOpen $tempFile w]
         foreach displayBox [array name helperTable *,whichInstance] {
@@ -386,9 +383,9 @@ proc SaveView {} {
             }
         }
         close $stream
-	MimifySHF $tempFile $nameOfHelperStateFile($topNode) many_windows
+	MimifySHF $tempFile $helperTable($topNode,stateName) many_windows
     } else {
-	unset nameOfHelperStateFile($topNode)
+	unset helperTable($topNode,stateName)
     }
 }
 
@@ -415,12 +412,12 @@ proc MimifySHF {inFile outFile origin} {
 }
 
 proc LoadView {} {
-    global helperTable nameOfHelperStateFile errorInfo
+    global helperTable errorInfo
     set topNode [GetNodeFromFocus]
-    set nameOfHelperStateFile($topNode) \
+    set helperTable($topNode,stateName) \
 	[ChooseFile iotools.shf "Open view specification file" 0 $topNode]
-    if {[llength $nameOfHelperStateFile($topNode)]} {
-	CreateView $topNode $nameOfHelperStateFile($topNode)
+    if {[llength $helperTable($topNode,stateName)]} {
+	CreateView $topNode $helperTable($topNode,stateName)
     }
 }
 
@@ -448,7 +445,6 @@ proc CreateView {node oldPath} {
 	close $stream
     }
 
-    set nameOfHelperStateFile $oldPath
     set stream [NetOpen $metaFile r]
     if {[string equal mre $origin]} {
 	set response [Query wrong_layout question helpers {} {yes no cancel}]

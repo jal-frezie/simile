@@ -686,7 +686,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 		var(FDef), !,
 		raise_exception(undefined_parameter(FPar));
 	    var(Used), !,
-		raise_exception(unused_parameter(ExpInt));
+		raise_exception(unused_inter(ExpInt));
 	    DoneExpr = (param(arr(_,ExpInt,_), Type, Loops,_,_)=DefnExpr,
 			   UseExpr));
 	Param =.. [Cumulative, Item],

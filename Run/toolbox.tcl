@@ -1667,8 +1667,7 @@ proc OpenProjectFile {path} {
 }
 
 proc SaveProjectFile {topNode path tgt} {
-    global custom runState nameOfHelperStateFile projectInfo
-#puts [array get nameOfHelperStateFile]
+    global runState helperTable projectInfo
     #ShowMess debug info "SaveProjectFile $path" ok
     # save any current spf names to the spj file
     # save any shf files names
@@ -1681,13 +1680,25 @@ proc SaveProjectFile {topNode path tgt} {
         set SimileProject(modelRunning) 1
 	set SimileProject(running_c) [string equal c $runState($topNode,lang)]
     }
-    if {[info exists nameOfHelperStateFile($topNode)]} {
+    if {[info exists helperTable($topNode,keepSetup)] && \
+	    $helperTable($topNode,keepSetup)} {
+	set helperAction [Query save_helper_setup question top {} \
+			      {update_shf keep_shf lose_shf}]
+	switch $helperAction {
+	    update_shf {
+		::RunEnv::SaveView 0
+	    } lose_shf {
+		array unset helperTable $topNode,stateName
+	    }
+	}
+    }
+    if {[info exists helperTable($topNode,stateName)]} {
 	if {![string equal $path \
-		  [file dirname $nameOfHelperStateFile($topNode)]]} {
-	    file copy -force $nameOfHelperStateFile($topNode) $path
+		  [file dirname $helperTable($topNode,stateName)]]} {
+	    file copy -force $helperTable($topNode,stateName) $path
 	}
         set SimileProject(nameOfHelperStateFile) \
-	    [file tail $nameOfHelperStateFile($topNode)]
+	    [file tail $helperTable($topNode,stateName)]
     }
     # shf file name loaded
     

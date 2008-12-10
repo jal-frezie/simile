@@ -1293,7 +1293,6 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     } else {
 	set dataLocn paramData
 	set widgetLocn widgetNames
-        set SimileProject(fileparam,$smPath/) $oldPath
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
@@ -1305,7 +1304,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     set origVersion [RevertXMLParams $oldPath $metaFile $topNode $smPath]
     switch -- $origVersion {
 	-1 { ;# User aborted because XML full of unusable bytearrays
-	    return
+	    return 0
 	} 0 { ;# File failed to parse as XML, try older formats
 	    if {[catch {
 		set multiT [mime::initialize -file $oldPath]
@@ -1320,6 +1319,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	}
     }
     # If neither of the above, XML file successfully converted
+    set anyGood 1
     set pStr [NetOpen $metaFile r]
     while {[gets $pStr savedValue] != -1} {
         # ShowMess debug info "Restoring $savedValue" ok
@@ -1341,7 +1341,10 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
         #ShowMess debug info "Component is $restoredComp" ok
         set node [ExistCheck $topNode $restoredComp $smPath $notInput file]
         switch $node {
-            break {break}
+            break {
+		set anyGood 0
+		break
+	    }
             continue {continue}
         }
         set startLine [FirstIndexCheck $topNode $node]
@@ -1428,7 +1431,10 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 				 $restoredComp $trans]
                     set suppliedData($restoredComp) {}
 		    switch [Query $act warning spf {} abort] {
-			abort {break}
+			abort {
+			    set anyGood 0
+			    break
+			}
 			more {continue}
 		    }
                 }
@@ -1444,6 +1450,9 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     cd $oldDir
     if {$origVersion>=4.0} {
         file delete $metaFile
+    }
+    if {$anyGood} {
+        set SimileProject(fileparam,$smPath/) $oldPath
     }
 }
 

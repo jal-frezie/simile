@@ -196,8 +196,8 @@ set msgs(cannot_combine_argument_dimensions_message) "Simile cannot work out wha
 set msgs(mismatched_units_title) "Argument types incompatible"
 set msgs(mismatched_units_message) "The arguments of the function \"%s\" in the term \"%s\" have the following types: %s. These cannot be matched to the expected argument types for this function, which are %s."
 
-set msgs(unused_parameter_title) "Unused intermediate result"
-set msgs(unused_parameter_message) "The equation is badly formed because it creates the explicit intermediate result %s, which is not subsequently used."
+set msgs(unused_inter_title) "Unused intermediate result"
+set msgs(unused_inter_message) "The equation is badly formed because it creates the explicit intermediate result %s, which is not subsequently used."
 
 set msgs(parameter_name_reused_title) "Problem with intermediate result name"
 set msgs(parameter_name_reused_message) "The equation is badly formed because it creates the explicit intermediate result %s, which is also the name of an input parameter."
@@ -513,6 +513,9 @@ set msgs(model_stuck_title) "Model step taking too long"
 set msgs(model_stuck_message) "This model appears to have got stuck with an endless or very long operation. Do you want to exit it now?"
 set msgs(not_number_title) "This must be a number"
 set msgs(not_number_message) "You need to enter a number in the %s field"
+set msgs(save_helper_setup_title) "Helper setup changed"
+set msgs(save_helper_setup_message) "The helper setup has been altered since it was last loaded or saved. Do you want to save it?"
+
 
 set msgs(ok_button) OK
 set msgs(yes_button) Yes
@@ -525,6 +528,9 @@ set msgs(ignore_button) "Ignore log"
 set msgs(apply_button) "Apply log"
 set msgs(rename_button) "Rename"
 set msgs(keep_name_button) "Keep name"
+set msgs(update_shf_button) "Save current setup"
+set msgs(keep_shf_button) "Keep old setup"
+set msgs(lose_shf_button) "Save without helper setup"
 
 set geometryXYexplanation "Set position of the run control window, in the form xy, where x and y specify the desired location of window on the screen, in pixels."
 set msgs(runControlPosition) $geometryXYexplanation

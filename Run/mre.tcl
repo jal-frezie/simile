@@ -610,10 +610,10 @@ set toolbars [list \
     }
     
     proc ForgetHelperState {} {
-	global nameOfHelperStateFile
+	global helperTable
         variable currentNode
 	
-	array unset nameOfHelperStateFile $currentNode
+	array unset helperTable $currentNode,stateName
     }
 
     proc Destroy {args} {
@@ -830,7 +830,6 @@ $tb1.b43 configure -state $useSpaceAbility
     proc PreserveSetup {needSaving} {
 	global helperTable
 	variable currentNode
-	variable keepSetup
 	
 	if {$needSaving} {
 	    set saveAbility normal
@@ -844,7 +843,7 @@ $tb1.b43 configure -state $useSpaceAbility
 	set tb1 [GetFrame $mainframe].tbar
 	$tb1.b02 configure -state $saveAbility
 	
-	set keepSetup($currentNode) $needSaving
+	set helperTable($currentNode,keepSetup) $needSaving
     }
 
     proc EmptyDisplays {} {
@@ -878,12 +877,12 @@ $tb1.b43 configure -state $useSpaceAbility
     }
     
     proc SaveView {newName} {
-        global helperTable nameOfHelperStateFile simtmpdir
+        global helperTable simtmpdir
         variable dp0
         variable currentNode
         
-	if {[info exists nameOfHelperStateFile($currentNode)]} {
-	    set saveName $nameOfHelperStateFile($currentNode)
+	if {[info exists helperTable($currentNode,stateName)]} {
+	    set saveName $helperTable($currentNode,stateName)
 	} else {
 	    set saveName [GetExecTitle $currentNode].shf
 	    set newName 1
@@ -909,8 +908,8 @@ $tb1.b43 configure -state $useSpaceAbility
             
             close $stream
             MimifySHF $tempFile $saveName mre
-	    do_in_editor AttackGlobalVariable nameOfHelperStateFile \
-		($currentNode) $saveName
+	    do_in_editor AttackGlobalVariable helperTable \
+		($currentNode,stateName) $saveName
 	    PreserveSetup 0
 	}
     }
@@ -994,7 +993,7 @@ $tb1.b43 configure -state $useSpaceAbility
     
     proc LoadSHF {currentNode oldPath} {
         global mimeSquirter simtmpdir
-        global helperTable nameOfHelperStateFile errorInfo
+        global helperTable errorInfo
         variable dp0 
         if {[catch {
                 set multiT [mime::initialize -file $oldPath]
@@ -1019,9 +1018,7 @@ $tb1.b43 configure -state $useSpaceAbility
             close $stream
         }
         
-        set nameOfHelperStateFile($currentNode) $oldPath
-        do_in_editor AttackGlobalVariable nameOfHelperStateFile \
-	    ($currentNode) $oldPath
+        set helperTable($currentNode,stateName) $oldPath
         set stream [NetOpen $metaFile r]
        
         if {[string equal mre $origin]} {
