@@ -282,8 +282,12 @@ proc GetState {winId} {
 }
 
 proc SetState {winId newState} {
-    global helperTable
+    global helperTable custom
+
     $helperTable($winId,whichInstance) configure -State $newState
+    if {[PrefValue custom(helperManager) helperManager]} {
+	::RunEnv::PreserveSetup 1
+    }
 }
 
 proc ProdObj {topNode nodeId caption} {
