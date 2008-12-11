@@ -204,6 +204,8 @@ set toolbars [list \
             set runControlFrame($node) [frame $runcontrolpane.variables]
             pack $runControlFrame($node) -fill both -expand yes
             
+	    array unset helperTable $currentNode,keepSetup
+# it was set by adding explorer etc panes but we do not want save dialogue here
 	    InitializeDisplays
             
 #            pack $mainframe -fill both -expand yes
@@ -847,17 +849,34 @@ $tb1.b43 configure -state $useSpaceAbility
     }
 
     proc EmptyDisplays {} {
-        variable dp0
+        global helperTable
+	variable currentNode
+	variable dp0
         
+	if {[info exists helperTable($currentNode,keepSetup)] && \
+		$helperTable($currentNode,keepSetup)} {
+	    set helperAction [Query save_helper_setup question top {} \
+				  {forget update_shf cancel}]
+	    switch $helperAction {
+		update_shf {
+		    SaveView 0
+		} cancel {
+		    return 0
+		}
+	    }
+	}
 	foreach child [winfo children $dp0] {
 	    destroy $child
 	}
+	return 1
     }
     
     proc InitializeDisplays {} {
         variable dp0
         
-	EmptyDisplays
+	if {![EmptyDisplays]} {
+	    return
+	}
         SetCurrentContainer $dp0
 	AddNotebookToCurrentContainer
 	ForgetHelperState
@@ -1029,7 +1048,9 @@ $tb1.b43 configure -state $useSpaceAbility
 	    # and just open each helper in a toplevel notebook page
 	    # THIS PROBABLY DOES NOT WORK
 
-            EmptyDisplays; #what if there is an error in the file delete MRE, rebuild
+            if {![EmptyDisplays]} {
+		return
+	    }; #what if there is an error in the file delete MRE, rebuild
             AddNotebook $dp0
             while {[gets $stream helperId] >= 0} {
                 set emptyPage [MainNotebookEmptyPage]
@@ -1076,7 +1097,10 @@ $tb1.b43 configure -state $useSpaceAbility
         global helperTable
         variable dp0
         
-        EmptyDisplays
+
+	if {![EmptyDisplays]} {
+	    return
+	}
         set win $helperTable($currentNode,whichRunEnv)
 	set mainframe $win
         # read and set .mre position and size
