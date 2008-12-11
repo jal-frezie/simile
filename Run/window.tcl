@@ -761,7 +761,6 @@ proc AcceleratorState {winName menu item state} {
     global accelerator
 #puts "$item going $state"
     if {[info exists accelerator($menu,$item)]} {
-#puts "AcceleratorState {winName menu item state cmd} $winName $menu $item $state $accelerator($menu,$item)"
         if {[string match normal $state]} {
 	    set action [${winName}top.$menu entrycget $item -command]
             bind $winName $accelerator($menu,$item) \
@@ -790,6 +789,7 @@ proc DoIfApplicable {winName item action} {
 # if action is applicable to text, check text edit not in progress before
 # applying it to diagram -- not strictly true of Select All but emacsers may
 # use ctrl-A to go to beginning of line
+#puts $action
     if {[lsearch {Cut Copy Paste Delete "Select all"} $item]==-1 || \
 	    [NotEditingText $winName]} {
 	eval $action
@@ -938,6 +938,7 @@ proc BindMouseWheel { widget } {
 
 # Canvas chapter (of Welch)
 
+event add <<Del>> <Delete> <BackSpace>
 # Bindings for canvas Text items
 
 proc CanvasEditBind { c } {
@@ -1362,7 +1363,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c edit snap"
     $fm add command -label Delete -command "MenuSelect $c edit delete" \
             -accelerator "Del"
-    AddAccelerator $winid edit Delete "<Delete>"
+    AddAccelerator $winid edit Delete "<<Del>>"
     $fm add separator
     
     $fm add command -label "Select all" -command "MenuSelect $c edit selall" \
