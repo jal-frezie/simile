@@ -1896,7 +1896,7 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
     set ack1 -1
     set defButton [lindex $opts 0]
     set defCapt $::msgs(${defButton}_button)
-    pack [button $buttons.bn$defButton -text $defCapt -width 10 \
+    pack [button $buttons.bn$defButton -text $defCapt -width 20 \
 	      -command [list set dialogues(ack) [incr ack1]]] \
             -side left -padx 4 -pady 4
     foreach extra [lrange $opts 1 end] {
