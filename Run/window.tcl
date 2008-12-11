@@ -759,17 +759,13 @@ proc ResizeBackgnd {wc l t r b} {
 
 proc AcceleratorState {winName menu item state} {
     global accelerator
+#puts "$item going $state"
     if {[info exists accelerator($menu,$item)]} {
 #puts "AcceleratorState {winName menu item state cmd} $winName $menu $item $state $accelerator($menu,$item)"
         if {[string match normal $state]} {
 	    set action [${winName}top.$menu entrycget $item -command]
-	    if {[lsearch {Cut Copy Paste Delete "Select all"} $item]>-1} {
-# if action is applicable to text, check text edit not in progress before
-# applying it to diagram -- not strictly true of Select All but emacsers may
-# use ctrl-A to go to beginning of line
-		set action [list if "\[NotEditingText $winName\]" $action]
-	    }
-            bind $winName $accelerator($menu,$item) $action
+            bind $winName $accelerator($menu,$item) \
+		[list DoIfApplicable $winName $item $action]
         } else  {
             bind $winName $accelerator($menu,$item) {}
         }
@@ -788,6 +784,16 @@ proc NotEditingText {winName} {
             && [string match [focus] $winName.canvas]]
     set editingEqn [string match [focus] $winName.toolSlot.eqnbar.equation]
     return [expr !$editingCapt && !$editingEqn]
+}
+
+proc DoIfApplicable {winName item action} {
+# if action is applicable to text, check text edit not in progress before
+# applying it to diagram -- not strictly true of Select All but emacsers may
+# use ctrl-A to go to beginning of line
+    if {[lsearch {Cut Copy Paste Delete "Select all"} $item]==-1 || \
+	    [NotEditingText $winName]} {
+	eval $action
+    }
 }
 
 proc AddCanvasBindings { c topNode } {
@@ -1349,6 +1355,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add command -label Paste -command "MenuSelect $c edit paste" \
             -accelerator "$accKey+V"
     AddAccelerator $winid edit Paste "<$accSym-v>"
+    unset ::accelerator(edit,Paste) ;# do not disable it later
     $fm add command -label {Reroute links} \
             -command "MenuSelect $c edit reroute"
     $fm add command -label {Align to grid} \
@@ -1968,6 +1975,8 @@ proc AbleComp {winid} {
     global custom
     # Not done now because compiler choice not given in Unix, and we need to load
     # pre-built executables even if we have no compiler ourselves
+
+    # (also it should use UpdateAbility)
     
     #    if {[string match $winid $custom(first_up)]} {
     #   if {[string match None [PrefValue custom(compChoice) compChoice]]} {

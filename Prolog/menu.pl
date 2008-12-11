@@ -624,11 +624,13 @@ menu_handle(Win, edit, CutOrCopy) :-
 	finish_progress_dialogue.
 
 menu_handle(Win, edit, paste) :-
+% Check file exists as accelerator is always enabled
 	get_edit_model(Win, Model, Pt),
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
+	(\+ output:my_file_exists(CopyFile), !;
 	stick_model_in(Win, Model, CopyFile, insert(Pt)),
-	event:set_selection_abilities(Model).
+	event:set_selection_abilities(Model)).
 	
 menu_handle(Win, edit, selall) :-
         start_progress_dialogue(Win),
