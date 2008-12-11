@@ -632,7 +632,9 @@ set toolbars [list \
 	set mreId $helperTable($node,whichRunEnv)
 	KillTransients $mreId
         destroy .helpPopup
-        KillHelpers $node
+	if {![EmptyDisplays]} {
+	    return
+	}
 	ForgetHelperState
         foreach winData [array names window_info *,parent] {
             upvar 0 window_info([string range $winData 0 end-7],top_node) model
