@@ -252,7 +252,7 @@ proc ClickObj { x y winId X Y action} {
         if {[string match $equationbar(current_action) click]} {
             set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
             if {![string match <none> $oldEqn]} {
-		SafeEqnBarEdit $winid
+#		SafeEqnBarEdit $winid
                 set label "[file tail [BlankCrs $context]] = "
                 $bar.label configure -text $label
                 set equationbar($winid,node) $node
@@ -277,7 +277,9 @@ proc SafeEqnBarEdit {winId} {
 	    set choix [Query [list save_eqn_bar $capt] question top {} {yes no}]
             if {[string equal yes $choix]} {
                 accept_equation $winId $bar.equation
-            }
+            } else {
+		restore_equation $winId $bar ;# avoids asking again
+	    }
         }
     }
 }
@@ -1693,7 +1695,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     pack $eb.equation -side left -expand 1 -fill x
     bind $eb.equation <Return> [list accept_equation $winid $eb.equation]
     bind $eb.equation <FocusIn> "EmbraceEqn $winid"
-    bind $eb.equation <FocusOut> AbandonEqn
+    bind $eb.equation <FocusOut> "AbandonEqn $winid"
     frame $eb.padding1 -width 3
     pack $eb.padding1 -side left
     switch [tk windowingsystem] {
@@ -1998,7 +2000,8 @@ proc EmbraceEqn {winId} {
     }
 }
 
-proc AbandonEqn {} {
+proc AbandonEqn {winId} {
+    SafeEqnBarEdit $winId
     prolog tk_abandon_eqn
 }
 
