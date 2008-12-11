@@ -1483,36 +1483,12 @@ proc FindCaption {canvas} {
     if {[info exists find(now,$canvas)]} {
 	unset find(now,$canvas)
     }
-    AbleFindNext [winfo parent $canvas] normal
+    UpdateAbility $canvas findmore edit "Find next" 1
     NextCaption $canvas
 }
 
-proc AbleFindNext {win state} {
-    ${win}.toolSlot.navbar.findmore configure -state $state
-    ${win}top.edit entryconfigure "Find next" -state $state
-}
-
-#proc ForSearchType {winId item} {
-#    global find
-#    set plName [ExtractPrologName $winId $item]
-#    switch $find(where) {
-#        caption {
-#            return [$winId itemcget $item -text]
-#        } equation {
-#            return [GetFromProlog tk_get_info('$winId',$plName,eqn)]
-#        } description {
-#            return [GetFromProlog tk_get_info('$winId',$plName,comment)]
-#        }
-#    }
-#}
-#
 proc NextCaption {canvas} {
     global find
-#    if {[info exists find(now,$canvas)]} {
-#	prolog event:do_colours($find(now,$canvas),off)
-#        FlashSymbol $canvas $find(now,$canvas) $looks(variable,outline) \
-#                $looks(variable,text)
-#    }
     if {[info exists find(now,$canvas)]} {
 	prolog tk_do_colours($find(now,$canvas),off)
     } else {
@@ -1521,7 +1497,7 @@ proc NextCaption {canvas} {
     if {![llength $find(List,$canvas)]} {
 	Query [list finished_matches $find(where)] info top {} ok
         array unset find *,$canvas
-	AbleFindNext [winfo parent $canvas] disabled
+	UpdateAbility $canvas findmore edit "Find next" 0
     } else {
         set this [lindex $find(List,$canvas) 0]
         set find(List,$canvas) [lrange $find(List,$canvas) 1 end]
