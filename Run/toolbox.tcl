@@ -643,7 +643,7 @@ proc compile_c {workingDir extLibs} {
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
 		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o -I$TOOLDIR \
                         -I. -I[file nativename [file join \
-                        [file dirname $TOOLDIR] System include]] \
+                        [file dirname $TOOLDIR] System include mingw]] \
                         -I[file nativename [file join \
                         $LIBDIR gcc mingw32 3.4.2 include]] model.cpp"
 		set libOpt1 -L[file nativename $LIBDIR]

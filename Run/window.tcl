@@ -2001,8 +2001,13 @@ proc EmbraceEqn {winId} {
 }
 
 proc AbandonEqn {winId} {
-    SafeEqnBarEdit $winId
-    prolog tk_abandon_eqn
+# Only query save if new focus is a 'rival', otherwise no bother as the eqnbar
+# will get it back anyway
+    if {[string length [focus]] && \
+	    [string first $winId.toolSlot.eqnbar [focus]]} { ;# i.e. not prefix
+	SafeEqnBarEdit $winId
+	prolog tk_abandon_eqn
+    }
 }
 
 
