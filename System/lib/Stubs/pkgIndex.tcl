@@ -12,6 +12,7 @@
 # numbers rather than checking [info sharedlibextension]
 
 global env
+scan [info tclversion] "%d.%d" MAJ MIN
 if {![catch {set vers $env(SIMILE_VERSION)}]} {
     package ifneeded Ame_dll 8.4.$vers.0 \
 	[list load [file join $dir ame_dll84.dll]]
@@ -24,9 +25,9 @@ if {![catch {set vers $env(SIMILE_VERSION)}]} {
 
     if {[string equal .dll $env(slTail)]} {
 	package ifneeded Unpacker 1.0 \
-	    [list load [file join $dir unpacker84$env(slTail)]]
+	    [list load [file join $dir unpacker$MAJ$MIN$env(slTail)]]
     } else {
 	package ifneeded Unpacker $vers \
-	    [list load [file join $dir libunpacker8.4$env(slTail)]]
+	    [list load [file join $dir libunpacker$MAJ.$MIN$env(slTail)]]
     }
 }
