@@ -274,7 +274,9 @@ typedef struct nodeValues_t {
   char* contents;
 } nodeValues;
 
-// convenience class for accessing levels consisting of size and pointer
+// convenience class for accessing levels consisting of size and pointer...
+// could it be that this fails bogusly on 64bit because the 2nd member is
+// 8-byte-aligned? I'd have to use it always, or never...
 typedef struct sizeAndPtr_t {
   int size;
   char* ptr;

@@ -377,17 +377,19 @@ char* init_space(int dimList[]) {
 
 // This and next few could be bundled into a class for the bloc data
 void free_bloc_data(char* ptData, int* ptDims) {
-  int reps, count, *subDims;
+  int reps, count, *subDims, saved;
   char* subData;
   
   reps = array_count(ptDims, &subDims);
-  if (!is_base_type(*subDims)) { // assume its OWNSIZED
+  if (!is_base_type(*subDims)) { // assume its OWNSIZED or SPARSEARRAY
+    if (*subDims==SPARSEARRAY) ++subDims; // advance to dim count slot
+    saved = *subDims;
     for (count=0; count<reps; ++count) {
-      //substitute OWNSIZED to create right size block then put back
+      // prepend size to remaining dims to create right size block
       *subDims = ((sizeAndPtr*)ptData)[count].size;
       free_bloc_data(((sizeAndPtr*)ptData)[count].ptr, subDims);
     }
-    *subDims = OWNSIZED;
+    *subDims = saved; // restore original contents in case reusing dim list
   } else if (*subDims) // do not delete if empty
     delete ptData; // nothing else to do
 }
@@ -1778,11 +1780,10 @@ void fill_raw_values(long int localType, long int smHandle, int tree[],
        in insertionPt. */
     smHandle = *(long int*)get_ptr(localType, smHandle, &tree, &dims);
     count = count_members(localType, smHandle);
-    *(int*)(*insertionPt) = count;
-    *insertionPt += sizeof(int);
+    ((sizeAndPtr*)(*insertionPt))->size = count;
     newBlk = new char[count*(dimty*sizeof(int) + dim_place[1])];
-    *(char**)(*insertionPt) = newBlk;
-    *insertionPt += sizeof(char*);
+    ((sizeAndPtr*)(*insertionPt))->ptr = newBlk;
+    *insertionPt += sizeof(sizeAndPtr);
     while (*tree++ != -1) {} // make relevant to current submodel
     while (smHandle) {
       fill_indices(localType, smHandle, dimty, &newBlk);

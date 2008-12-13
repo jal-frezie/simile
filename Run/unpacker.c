@@ -67,14 +67,14 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block) {
   } else {
     switch (dims[0]) {
     case OWNSIZED:
-      membership = *(int *)block;
-      newBlock = *(char**)(block + sizeof(int));
+      membership = ((sizeAndPtr*)block)->size;
+      newBlock = ((sizeAndPtr*)block)->ptr;
       localObj = append_array_members(membership, dims+1, subBlocks+1, newBlock);
       break;
     case SPARSEARRAY: 
       // need clevers to nest indices; see old stuff
-      membership = *(int *)block;
-      newBlock = *(char**)(block + sizeof(int));
+      membership = ((sizeAndPtr*)block)->size;
+      newBlock = ((sizeAndPtr*)block)->ptr;
       block = newBlock;
       indices = (int*)malloc(sizeof(int)*dims[1]);
       blockEnd = block+membership*(dims[1]*sizeof(int)+subBlocks[1]);
@@ -105,7 +105,7 @@ void make_sub_block_sizes(int *dims, int *sizes) {
     usedDims = 2;
   case OWNSIZED:
     make_sub_block_sizes(dims+usedDims, sizes+1);
-    sizes[0] = sizeof(int) + sizeof(void*);
+    sizes[0] = sizeof(sizeAndPtr);
     break;
   case REAL:
     sizes[0] = sizeof(double);
