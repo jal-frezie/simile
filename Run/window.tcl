@@ -252,7 +252,7 @@ proc ClickObj { x y winId X Y action} {
         if {[string match $equationbar(current_action) click]} {
             set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
             if {![string match <none> $oldEqn]} {
-#		SafeEqnBarEdit $winid
+		SafeEqnBarEdit $winid ;# abandon event will be too late
                 set label "[file tail [BlankCrs $context]] = "
                 $bar.label configure -text $label
                 set equationbar($winid,node) $node
@@ -480,7 +480,8 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     set window_info($c,topCapt) $window_info(lastClickCapt)
     }
     
-    TweakWindow $c $winTitle $initialScale $wl $wt $wr $wb $colour
+    TweakWindow $c $winTitle [expr {[tk scaling]*$initialScale/1.5}] \
+	$wl $wt $wr $wb $colour
     #    wm maxsize $winName [winfo screenwidth $winName] \
     #   [winfo screenheight $winName]
     
@@ -1690,8 +1691,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     global equation msgs
 #    ComboBox $eb.equation -editable 1 -state disabled -width 40
-    ::ttk::entry $eb.equation -state disabled -width 32 \
-	-font {Courier -15}
+    ::ttk::entry $eb.equation -state disabled -width 32 -font EquationFont
     pack $eb.equation -side left -expand 1 -fill x
     bind $eb.equation <Return> [list accept_equation $winid $eb.equation]
     bind $eb.equation <FocusIn> "EmbraceEqn $winid"
@@ -2003,8 +2003,10 @@ proc EmbraceEqn {winId} {
 proc AbandonEqn {winId} {
 # Only query save if new focus is a 'rival', otherwise no bother as the eqnbar
 # will get it back anyway
-    if {[string length [focus]] && \
-	    [string first $winId.toolSlot.eqnbar [focus]]} { ;# i.e. not prefix
+    set newFocus [focus]
+    set eb $winId.toolSlot.eqnbar
+    if {[string length $newFocus] && \
+	    [string first $eb $newFocus]} { ;# i.e. not prefix
 	SafeEqnBarEdit $winId
 	prolog tk_abandon_eqn
     }

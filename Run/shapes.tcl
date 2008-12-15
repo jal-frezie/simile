@@ -1936,9 +1936,12 @@ proc ResetFont { top } {
 # }
 ################################################################################
 
+# use -ve (pixel) numbers for font sizes because the tk scaling is already
+# built into the canvas scaling?
+
 proc AssembleFont {family weight style textsize} {
     return [list -family $family -weight $weight -slant $style \
-            -size [expr round($textsize/12.0)]]
+		-size [expr {-round($textsize/6.0)}]]
 }
 
 proc ZotFont { t param } {

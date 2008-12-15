@@ -139,43 +139,43 @@ proc Pref_Dialog {} {
         set notebook [::ttk::notebook $dlg.notebook]
         set vf [frame $notebook.view]
         $notebook add $vf -text View
-            set initWinTF [labelframe $vf.initWinTF -text "Initial window position:"]
+            set initWinTF [TitleFrame $vf.initWinTF -text "Initial window position:"]
             set initWinF $initWinTF
-            set displayTF [labelframe $vf.displayTF -text "In new windows, display:"]
+            set displayTF [TitleFrame $vf.displayTF -text "In new windows, display:"]
             set displayF $displayTF
-            set barTF [labelframe $vf.barTF -text "Tool bars:"]
+            set barTF [TitleFrame $vf.barTF -text "Tool bars:"]
             set barF $barTF
-            set gridTF [labelframe $vf.gridTF -text "Placement grid:"]
+            set gridTF [TitleFrame $vf.gridTF -text "Placement grid:"]
             set gridF $gridTF
-            set popupTF [labelframe $vf.popuptTF -text "Popups over model components:"]
+            set popupTF [TitleFrame $vf.popuptTF -text "Popups over model components:"]
             set popupF $popupTF
         set ef [frame $notebook.edit]
         $notebook add $ef -text Edit
-            set genericTF [labelframe $ef.genericTF -text "All components:"]
+            set genericTF [TitleFrame $ef.genericTF -text "All components:"]
             set genericF $genericTF
-            set linkTF [labelframe $ef.linkTF -text "All links:"]
+            set linkTF [TitleFrame $ef.linkTF -text "All links:"]
             set linkF $linkTF
-            set flowTF [labelframe $ef.flowTF -text "Flows:"]
+            set flowTF [TitleFrame $ef.flowTF -text "Flows:"]
             set flowF $flowTF
-            set submodelTF [labelframe $ef.submodelTF -text "Submodels:"]
+            set submodelTF [TitleFrame $ef.submodelTF -text "Submodels:"]
             set submodelF $submodelTF
         set bf [frame $notebook.build]
         $notebook add $bf -text Build
-            set manyWinTF [labelframe $bf.manyWinTF -text "Window positions:"]
+            set manyWinTF [TitleFrame $bf.manyWinTF -text "Window positions:"]
             set manyWinF $manyWinTF
-            set compTF [labelframe $bf.compTF -text "C++ compiler:"]
+            set compTF [TitleFrame $bf.compTF -text "C++ compiler:"]
             set compF $compTF
         set sf [frame $notebook.save]
         $notebook add $sf -text Save
-            set canvasTF [labelframe $sf.canvasTF -text "Save optimised canvas data:"]
+            set canvasTF [TitleFrame $sf.canvasTF -text "Save optimised canvas data:"]
             set canvasF $canvasTF
-            set recentTF [labelframe $sf.recentTF -text "Recently used files:"]
+            set recentTF [TitleFrame $sf.recentTF -text "Recently used files:"]
             set recentF $recentTF
         set rf [frame $notebook.run]
         $notebook add $rf -text Run
-            set oneWinTF [labelframe $rf.oneWinTF -text "Run time environment:"]
+            set oneWinTF [TitleFrame $rf.oneWinTF -text "Run time environment:"]
             set oneWinF $oneWinTF
-            set precisTF [labelframe $rf.precisTF -text "Numeric display precision (0 for default):"]
+            set precisTF [TitleFrame $rf.precisTF -text "Numeric display precision (0 for default):"]
             set precisF $precisTF
        # $notebook select View
         pack $initWinTF $displayTF $gridTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $precisTF $manyWinTF $compTF \

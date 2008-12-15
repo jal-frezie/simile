@@ -162,7 +162,18 @@ if {[string match Darwin $tcl_platform(os)]} {
 
 # Scaling affects some metrics but not all, so squash it FTTB
 # to ensure consistency (do now cos about to put up dialogues)
-    tk scaling 1.5
+
+# Fixed in 5.4 by explicitly making it apply to everything.
+# Silly val for testing:
+#  tk scaling 3.0
+
+# These are needed for platforms where they would other wise be a fixed number
+# of pixels (i.e., -ve size), e.g., X
+#    button .b
+#    eval font create TkDefaultFont [font actual [.b cget -font]]
+#    font configure TkDefaultFont -size 30
+#    destroy .b
+#    option add *Button.font TkDefaultFont
 
 # ok, is anybody out there?
 

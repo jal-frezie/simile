@@ -71,7 +71,7 @@ proc create_equation {parent boxtitle indices} {
         foreach level [split [join [lindex $funk 0] /] /] {
             set lname $box.[join $level _]
             if {![$lbf exists $lname]} {
-#                $lbf insert end $box $lname -image $iconImages(open) \
+#                $lbf insert end $box $lname -image $iconImages(find) \
 #                        -text $level -open [string equal Built-in $level]
 		$lbf insert $box end -id $lname \
 			-text $level -image $iconImages(open)
@@ -197,9 +197,8 @@ proc create_equation {parent boxtitle indices} {
     radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
     
     set en [text $mainf.equation.textbox.text -height 4 -width 64 \
-		-relief sunken -bd 2 -highlightthickness 0 \
-		-yscrollcommand "$mainf.equation.textbox.scroll set" \
-		-font {Courier -15}]
+		-relief sunken -bd 2 -highlightthickness 0 -font EquationFont \
+		-yscrollcommand "$mainf.equation.textbox.scroll set"]
 
     scrollbar $mainf.equation.textbox.scroll -orient vert -command "$en yview"
     pack $mainf.equation.textbox.scroll -side right -fill y
