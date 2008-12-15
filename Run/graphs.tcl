@@ -313,7 +313,7 @@ proc CheckFloaty {args} {
 }
 
 proc GetWidFromCanvas {c} {
-    return [winfo parent [winfo parent [winfo parent [winfo parent $c]]]]
+    return [winfo parent [GetFrame [winfo parent [winfo parent $c]]]]
 }
 
 proc AddLine {c section} {
