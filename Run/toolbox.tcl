@@ -15,9 +15,11 @@ package require tile
 # TkDefaultFont
 # ...so...
 if {[string equal aqua [tk windowingsystem]]} {
-        set menuFont TkDefaultFont
+    set menuFont TkDefaultFont
+    set niceSize 12
 } else {
     set menuFont TkMenuFont
+    set niceSize 8
 }
 # This normalizes fonts of older widgets to look like Tile widgets
 option add *Button.font TkDefaultFont widgetDefault
@@ -32,10 +34,10 @@ option add *Entry.font TkTextFont widgetDefault
 option add *Text.font TkTextFont widgetDefault
 option add *TLabel.font TkCaptionFont widgetDefault
 # ...and this makes sure they all scale when the screen metrics change
-font configure TkDefaultFont -size 8 -weight bold
-font configure $menuFont -size 8 -weight bold
-font configure TkTextFont -size 8
-font configure TkCaptionFont -size 8
+font configure TkDefaultFont -size $niceSize -weight bold
+font configure $menuFont -size $niceSize -weight bold
+font configure TkTextFont -size $niceSize
+font configure TkCaptionFont -size $niceSize
 # Now here's one of my own...
 eval font create EquationFont [font actual TkTextFont]
 font configure EquationFont -size [expr {[font configure EquationFont -size]+2}]

@@ -1941,7 +1941,7 @@ proc ResetFont { top } {
 
 proc AssembleFont {family weight style textsize} {
     return [list -family $family -weight $weight -slant $style \
-		-size [expr {-round($textsize/6.0)}]]
+		-size [expr {-round($textsize/8.0)}]]
 }
 
 proc ZotFont { t param } {

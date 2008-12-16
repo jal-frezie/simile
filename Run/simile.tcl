@@ -88,7 +88,7 @@ if {[string match Darwin $tcl_platform(os)]} {
 	}
     }
     tclAE::installEventHandler aevt rapp handleReopenApp
-    tk scaling 1.0
+#    tk scaling 1.0
 } else {
 
 # If Simile is already running, make a new window there and exit. Note that

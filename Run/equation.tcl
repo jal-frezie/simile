@@ -314,7 +314,9 @@ proc create_equation {parent boxtitle indices} {
     if {![llength $indices]} {
 	destroy $paramF.indices
     }
-    tkwait visibility $middleF
+#    tkwait visibility $middleF
+# above is insufficient to get Mac version to work proper, so...
+    update
     set eqnLayout [file join $custom(prefDir) .layouts equation]
     if {[file exists $eqnLayout]} {
         set stream [NetOpen $eqnLayout r]
@@ -598,8 +600,10 @@ proc fill_inputs { triples } {
     if {!$line} {
 #        pack forget $equation(main).bottom
 	 $equation(params) forget $equation(params).bottom
-	 if {![winfo exists $equation(params).indices]} {
-	     .equation.notebook hide $equation(params)
+	 if {![winfo exists $equation(params).indices] && \
+		 [winfo exists $equation(params)]} {
+	     catch {.equation.notebook forget $equation(params)}
+# 'hide' does not work on the Mac and 'forget' errors if already forgotten
 	 }
     } else {
         set showLines [max 3 [min 8 $line]]

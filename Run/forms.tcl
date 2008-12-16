@@ -1782,8 +1782,9 @@ proc Query {specifics icon helpRef parent opts} {
 	set parent $active ;# window . is hidden so must not
     }
     lappend mBoxCmd -parent $parent
-
-    set dialogues(done) [eval $mBoxCmd]
+    eval $mBoxCmd
+#    after 10000 set dialogues(done) more
+# (in case Mac version siezes)
     tkwait visibility .shortDlg
     grab .shortDlg
     tkwait variable dialogues(done)
