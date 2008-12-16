@@ -293,7 +293,7 @@ if {[info exists prolog_in_console]} {
 }
 
 set env(SIMILE_VERSION) 5.4
-set sendvars(simP) {a3}
+set sendvars(simP) {a4}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is
@@ -327,7 +327,54 @@ encoding system utf-8
 entry .hidden_e
 pack .hidden_e
 
-set startGeom +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/4-158]
+# Here because needed for splash screen
+proc GrowImage {fCol mw mh} {
+    set srcWidth [$fCol cget -width]
+    set srcHeight [$fCol cget -height]
+    # Resize X and Y axes separately to avoid making too large an
+    # intermediate image
+    set xrat [ChooseIntegerRatio [expr 1.0*$mw/$srcWidth]]
+    image create photo spare1
+    spare1 copy $fCol -zoom [lindex $xrat 0] 1 -shrink
+    image create photo spare2
+    spare2 copy spare1 -subsample [lindex $xrat 1] 1 -shrink
+    
+    set yrat [ChooseIntegerRatio [expr 1.0*$mh/$srcHeight]]
+    spare1 blank
+    spare1 copy spare2 -zoom 1 [lindex $yrat 0] -shrink
+    spare2 blank
+    spare2 copy spare1 -subsample 1 [lindex $yrat 1] -shrink
+    
+    image delete spare1
+    # copying does not update image's size parameter -- do it by hand
+    set srcWidth [expr $srcWidth*[lindex $xrat 0]/[lindex $xrat 1]]
+    set srcHeight [expr $srcHeight*[lindex $yrat 0]/[lindex $yrat 1]]
+    spare2 config -width $srcWidth
+    spare2 config -height $srcHeight
+    return spare2
+}
+
+proc ChooseIntegerRatio {fraction} {
+    set m 1
+    while {1} {
+	if {$m<$fraction} {
+	    set d 1
+	} else {
+	    set d [expr {round($m/$fraction)}]
+	}
+	# set d [max round($m/$fraction) 1]
+	set close [expr $m/($fraction*$d)]
+	if {$close > 0.95 && $close < 1.05} {
+	    return [list $m $d]
+	}
+	incr m
+    }
+}
+	
+set sphXdiam [expr {int(400*[tk scaling])}]
+set sphYdiam [expr {int(316*[tk scaling])}]
+
+set startGeom +[expr ([winfo screenwidth .]-$sphXdiam)/2]+[expr ([winfo screenheight .]-$sphYdiam)/2]
 if {[string equal Linux $tcl_platform(os)]} {
     wm geometry . $startGeom
 } else {
@@ -335,19 +382,29 @@ if {[string equal Linux $tcl_platform(os)]} {
 }
 
 # first put up the splash screen
-image create photo splash
-splash read $SIMILE_PATH/Images/splash.gif
+image create photo splash -width 1200 -height 948
 
-set graph(font) [list helvetica -12]
+splash read $SIMILE_PATH/Images/bigsplash.gif -shrink
+set splash [GrowImage splash $sphXdiam $sphYdiam]
+set sphXdiam [$splash cget -width]
+set sphYdiam [$splash cget -height]
+
+set graph(font) [list helvetica 12]
+set graph(megafont) [list helvetica 24]
 toplevel .splash
-pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
-.splash.c create image 200 158 -image splash
-.splash.c create text 245.0 50.0 -font $graph(font) -fill \#99cc99 -anchor w \
-    -text "Simulistics Ltd. 2001-2008"
-.splash.c create text 270.0 275.0 -font $graph(font) -fill #660066 -text "Version $env(SIMILE_VERSION)$sendvars(simP)"
+pack [canvas .splash.c -width $sphXdiam -height $sphYdiam -bd -$graph(origin)] -padx 0 -pady 0
+.splash.c create image 0 0 -image $splash -anchor nw
+set circle_c {Â©}
+if {[string equal windows $tcl_platform(platform)]} {
+    set circle_c {©}
+}
+.splash.c create text 225.0p 50.0p -font $graph(font) -fill \#99cc99 -anchor w \
+    -text "$circle_c Simulistics Ltd. 2001-2008"
+.splash.c create text 250.0p 215.0p -font $graph(megafont) -fill #660066 -text "Simile"
+.splash.c create text 250.0p 265.0p -font $graph(font) -fill #660066 -text "Version $env(SIMILE_VERSION)$sendvars(simP)"
 set regInfo $env(licensee_name)
 catch {append regInfo ", $env(licensee_corp)"}
-.splash.c create text 270.0 295.0 -font $graph(font) -fill #660066 -text "Registered to $regInfo"
+.splash.c create text 250.0p 285.0p -font $graph(font) -fill #660066 -text "Registered to $regInfo"
     
 wm geometry .splash $startGeom
 wm overrideredirect .splash 1
