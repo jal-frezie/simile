@@ -373,8 +373,9 @@ proc ChooseIntegerRatio {fraction} {
 	
 set sphXdiam [expr {int(400*[tk scaling])}]
 set sphYdiam [expr {int(316*[tk scaling])}]
+set iconDiam [expr {int(30*[tk scaling])}]
 
-set startGeom +[expr ([winfo screenwidth .]-$sphXdiam)/2]+[expr ([winfo screenheight .]-$sphYdiam)/2]
+set startGeom +[expr ([winfo screenwidth .]-$sphXdiam)/2]+[expr ([winfo screenheight .]-$sphYdiam)/2-200]
 if {[string equal Linux $tcl_platform(os)]} {
     wm geometry . $startGeom
 } else {
@@ -382,29 +383,43 @@ if {[string equal Linux $tcl_platform(os)]} {
 }
 
 # first put up the splash screen
-image create photo splash -width 1200 -height 948
+image create photo splash -width 90 -height 90
 
-splash read $SIMILE_PATH/Images/bigsplash.gif -shrink
-set splash [GrowImage splash $sphXdiam $sphYdiam]
-set sphXdiam [$splash cget -width]
-set sphYdiam [$splash cget -height]
+splash read $SIMILE_PATH/Images/bigsimile.gif -shrink
+set splash [GrowImage splash $iconDiam $iconDiam]
 
 set graph(font) [list helvetica 12]
-set graph(megafont) [list helvetica 24]
+set graph(megafont) [list helvetica 30]
 toplevel .splash
-pack [canvas .splash.c -width $sphXdiam -height $sphYdiam -bd -$graph(origin)] -padx 0 -pady 0
-.splash.c create image 0 0 -image $splash -anchor nw
+pack [canvas .splash.c -width $sphXdiam -height $sphYdiam -bd -$graph(origin) \
+	 -bg white] -padx 0 -pady 0
+
+for {set y 0} {$y < 316} {incr y 2} {
+    if {$y>=56 && $y<84} {
+	set r 400
+	set shade \#ccffcc
+    } else {
+	set r 84
+	set shade \#339933
+    }
+    .splash.c create rectangle 0p ${y}p ${r}p [expr {$y+1}]p \
+	-outline {} -fill $shade
+}
+.splash.c create image 36p 28p -image $splash
 set circle_c {Â©}
 if {[string equal windows $tcl_platform(platform)]} {
     set circle_c {©}
 }
-.splash.c create text 225.0p 50.0p -font $graph(font) -fill \#99cc99 -anchor w \
+.splash.c create text 395.0p 50.0p -font $graph(font) -fill \#99cc99 -anchor e \
     -text "$circle_c Simulistics Ltd. 2001-2008"
-.splash.c create text 250.0p 215.0p -font $graph(megafont) -fill #660066 -text "Simile"
-.splash.c create text 250.0p 265.0p -font $graph(font) -fill #660066 -text "Version $env(SIMILE_VERSION)$sendvars(simP)"
+.splash.c create text 250.0p 225.0p -font $graph(megafont) -fill #660066 \
+    -text "Simile"
+.splash.c create text 250.0p 290.0p -font $graph(font) -fill #660066 -anchor s \
+    -text "Version $env(SIMILE_VERSION)$sendvars(simP)"
 set regInfo $env(licensee_name)
 catch {append regInfo ", $env(licensee_corp)"}
-.splash.c create text 250.0p 285.0p -font $graph(font) -fill #660066 -text "Registered to $regInfo"
+.splash.c create text 250.0p 310.0p -font $graph(font) -fill #660066 -anchor s \
+    -text "Registered to $regInfo"
     
 wm geometry .splash $startGeom
 wm overrideredirect .splash 1
