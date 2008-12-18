@@ -68,7 +68,10 @@ proc ChooseFile { preferred title canbenew context} {
 	    set desc "Source or header files"
 	} .txt {
 	    set typeList [list .txt]
-	    set desc "Text files"
+        set desc "Text files"
+    } .csv {
+       set typeList [list .csv .xls .mdb .dbf *.db]
+       set desc "Data files" 
 	} default {
 	    set typeList [list $fileType]
 	    set desc "$fileType files"
