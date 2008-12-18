@@ -90,7 +90,6 @@ if {[string match Darwin $tcl_platform(os)]} {
     tclAE::installEventHandler aevt rapp handleReopenApp
 #    tk scaling 1.0
 } else {
-
 # If Simile is already running, make a new window there and exit. Note that
 # on Macs the OpenDocument takes care of this and we don't even get this far
 # OTOH, if Simile is not running already, need to skip the following on Macs.

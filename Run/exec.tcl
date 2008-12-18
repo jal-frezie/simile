@@ -156,7 +156,6 @@ proc ExecuteTo {node current pause unitLength display foci intMethod maxErr} {
 
 proc GetPayload {node point} {
     if {[RunningInC $node]} {
-	set hndl [handle_data $model_id($node) $instance_id($node) $point]
 	return [list ptr 0 [GetHandle $node $point]]
 # redundant fields make list of unique length
     } else {

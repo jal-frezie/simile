@@ -1,6 +1,7 @@
 # Tcl package index file, version 1.1
 #
-if {[string equal .dll [info sharedlibextension]]} {
+switch [info sharedlibextension] {
+    .dll {
 if {[package vsatisfies [package provide Tcl] 8.4]} {
     package ifneeded Thread 2.6.5 [list thread_load $dir]
     package ifneeded Ttrace 2.6.5 [list thread_source $dir]
@@ -23,7 +24,7 @@ if {[package vsatisfies [package provide Tcl] 8.4]} {
         rename thread_source {}
     }
 }
-} else {
+} .dylib {
 if {![package vsatisfies [package provide Tcl] 8.3]} {
     return
 }
@@ -36,4 +37,27 @@ if {[string equal 8.3 [package provide Tcl]]} {
 }
 package ifneeded Ttrace 1.0 \
     [list source [file join $dir ttrace.tcl]]
+} .so {
+if {[package vsatisfies [package provide Tcl] 8.4]} {
+    package ifneeded Thread 2.6.5 [list thread_load $dir]
+    package ifneeded Ttrace 2.6.5 [list thread_source $dir]
+    proc thread_load {dir} {
+        load [file join $dir libthread2.6.5.so]
+        rename thread_load {}
+    }
+    proc thread_source {dir} {
+        if {[info exists ::env(TCL_THREAD_LIBRARY)] &&
+            [file readable $::env(TCL_THREAD_LIBRARY)/ttrace.tcl]} {
+            source $::env(TCL_THREAD_LIBRARY)/ttrace.tcl
+        } elseif {[file readable [file join $dir .. lib ttrace.tcl]]} {
+            source [file join $dir .. lib ttrace.tcl]
+        } elseif {[file readable [file join $dir ttrace.tcl]]} {
+            source [file join $dir ttrace.tcl]
+        }
+        if {[info commands ttrace::update] ne ""} {
+            ttrace::update
+        }
+        rename thread_source {}
+    }
 }
+}}

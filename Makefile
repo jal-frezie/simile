@@ -195,9 +195,9 @@ System/lib/lib5d$(ARCHEXTN).dylib: shank.cpp dllcalls.h
 	cd Run; $(GPPCMD) -O -fPIC $(FLAGS) -I. -dynamiclib $(PARALLEL) \
 	-o ../$(SHANK) shank.cpp; cd ..
 
-Run/install.dll: install.cpp Makefile
-	cd Run; $(GPPCMD) $(FLAGS) $(DEFNS) -I. -I../System/include -shared \
-		-o install.dll install.cpp -L../System/lib -lcrypto -lssl; \
+Run/install.dll: install.c Makefile
+	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include -shared \
+		-o install.dll install.c -L../System/lib -lcrypto -lssl; \
 		cd ..
 
 System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc
