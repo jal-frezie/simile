@@ -67,6 +67,23 @@ set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 set env(SP_PATH) $SIMILE_PATH/System
 # Above seems unnecessary for sicstus 3.10
 
+proc ChooseIntegerRatio {fraction accu} {
+    set m 1
+    while {1} {
+	if {$m<$fraction} {
+	    set d 1
+	} else {
+	    set d [expr {round($m/$fraction)}]
+	}
+	# set d [max round($m/$fraction) 1]
+	set close [expr $m/($fraction*$d)]
+	if {$close > $accu && $close < 1/$accu} {
+	    return [list $m $d]
+	}
+	incr m
+    }
+}
+	
 if {[string match Darwin $tcl_platform(os)]} {
     set auto_path [list $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts $SIMILE_PATH/System/lib]
     package require tclAE
@@ -163,8 +180,10 @@ if {[string match Darwin $tcl_platform(os)]} {
 # to ensure consistency (do now cos about to put up dialogues)
 
 # Fixed in 5.4 by explicitly making it apply to everything.
-# Silly val for testing:
-#  tk scaling 3.0
+# Silly val for testing: 3.0
+# Make conversion easier: pick nice ratio
+    set scalRat [ChooseIntegerRatio [tk scaling] 0.8]
+    tk scaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
 
 # These are needed for platforms where they would other wise be a fixed number
 # of pixels (i.e., -ve size), e.g., X
@@ -332,13 +351,13 @@ proc GrowImage {fCol mw mh} {
     set srcHeight [$fCol cget -height]
     # Resize X and Y axes separately to avoid making too large an
     # intermediate image
-    set xrat [ChooseIntegerRatio [expr 1.0*$mw/$srcWidth]]
+    set xrat [ChooseIntegerRatio [expr 1.0*$mw/$srcWidth] 0.9]
     image create photo spare1
     spare1 copy $fCol -zoom [lindex $xrat 0] 1 -shrink
     image create photo spare2
     spare2 copy spare1 -subsample [lindex $xrat 1] 1 -shrink
     
-    set yrat [ChooseIntegerRatio [expr 1.0*$mh/$srcHeight]]
+    set yrat [ChooseIntegerRatio [expr 1.0*$mh/$srcHeight] 0.9]
     spare1 blank
     spare1 copy spare2 -zoom 1 [lindex $yrat 0] -shrink
     spare2 blank
@@ -353,23 +372,6 @@ proc GrowImage {fCol mw mh} {
     return spare2
 }
 
-proc ChooseIntegerRatio {fraction} {
-    set m 1
-    while {1} {
-	if {$m<$fraction} {
-	    set d 1
-	} else {
-	    set d [expr {round($m/$fraction)}]
-	}
-	# set d [max round($m/$fraction) 1]
-	set close [expr $m/($fraction*$d)]
-	if {$close > 0.95 && $close < 1.05} {
-	    return [list $m $d]
-	}
-	incr m
-    }
-}
-	
 set sphXdiam [expr {int(400*[tk scaling])}]
 set sphYdiam [expr {int(316*[tk scaling])}]
 set iconDiam [expr {int(30*[tk scaling])}]
@@ -388,7 +390,7 @@ splash read $SIMILE_PATH/Images/bigsimile.gif -shrink
 set splash [GrowImage splash $iconDiam $iconDiam]
 
 set graph(font) [list helvetica 12]
-set graph(megafont) [list helvetica 30]
+set graph(megafont) [list helvetica 36]
 toplevel .splash
 pack [canvas .splash.c -width $sphXdiam -height $sphYdiam -bd -$graph(origin) \
 	 -bg white] -padx 0 -pady 0
