@@ -516,9 +516,11 @@ namespace eval runcontrol33857 {
 	global helperTable
 	set allFoci {}
 	foreach {name inst} [array get helperTable *,whichInstance] {
-	    foreach focus $helperTable($inst,foci) {
-		if {[lsearch $allFoci $focus]==-1} {
-		    lappend allFoci $focus
+	    if {[string equal $node [$inst GetNode]]} {
+		foreach focus $helperTable($inst,foci) {
+		    if {[lsearch $allFoci $focus]==-1} {
+			lappend allFoci $focus
+		    }
 		}
 	    }
 	}
