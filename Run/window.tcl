@@ -2198,7 +2198,7 @@ proc ClearWindow {winId} {
 }
 
 proc exit_simile {} {
-    global custom tcl_platform
+    global custom tcl_platform execThread
     
     set cache [file join $custom(prefDir) .recent]
     set cacheStream [NetOpen $cache w]
@@ -2213,6 +2213,9 @@ proc exit_simile {} {
     }
     if {[string equal windows $tcl_platform(platform)]} {
 	file attributes $cache -hidden true
+    }
+    if {[info exists execThread]} {
+	thread::release $execThread(id)
     }
     StartComms -1
 }

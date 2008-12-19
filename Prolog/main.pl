@@ -76,7 +76,7 @@ main :-
 			 fail)),
 	on_exception(ErrorFunction, state:kickoff(Vnum), true),
         (nonvar(ErrorFunction),
-	    query(start_fail(ErrorFunction), error, top, [ok], _);
+	    ame_gen:query(start_fail(ErrorFunction), error, top, [ok], _);
 	tk_main_loop),
         tcl_delete(Interp),
 	unset_interpreter,

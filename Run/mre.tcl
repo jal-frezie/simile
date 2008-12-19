@@ -625,10 +625,10 @@ set toolbars [list \
         
 
         if {[llength $args]} {
-            set node $args
-        } else {
-            set node $currentNode
+            InMreFor [lindex $args 0]
         }
+	set node $currentNode
+
 	set mreId $helperTable($node,whichRunEnv)
 	KillTransients $mreId
         destroy .helpPopup
@@ -840,6 +840,7 @@ $tb1.b43 configure -state $useSpaceAbility
 	} else {
 	    set saveAbility disabled
 	}
+
 	set mainframe $helperTable($currentNode,whichRunEnv)
 	set mreMenu [$mainframe cget -menu]
 	set fileMenu [$mreMenu entrycget File -menu]
@@ -1092,6 +1093,8 @@ $tb1.b43 configure -state $useSpaceAbility
 	    Query not_an_shf error execution {} ok
         }
         close $stream
+# allow helper windows to configure themselves
+	update
 	PreserveSetup 0
     }
     
