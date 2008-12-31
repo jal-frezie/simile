@@ -97,7 +97,7 @@ set msgs(initEqnbar) "Display equation bar in the desktop window when Simile sta
 set msgs(bigButtons) "Use alternative (larger) buttons for the tool bar and component bar."
 set msgs(desktopDetail) "Sets the initial number of submodel levels to display. This can be changed later with the Window -> Display detail -> Submodels and Relations menu item."
 set msgs(maxWinWidth) "Maximum width of a window, prevents new windows for complex submodels coming up huge. Maximum height is 3/4 of this."
-set msgs(compChoice) "Models can be compiled and linked using either Microsoft Visual C++ or GNU GCC."
+set msgs(compChoice) "Default is gcc/g++ included in Simile distribution. Others must be installed on your system before you can use them."
 set msgs(compDescPop) "Enable popups for component's equation when pointer hovers on component."
 set msgs(compValPop) "Enable popups for component's current value(s) or instance indices when pointer hovers on component."
 set msgs(compCmtPop) "Enable popups for component's description and comment text when pointer hovers on component."

@@ -626,15 +626,22 @@ proc compile_c {workingDir extLibs} {
     #ShowMess debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
     if {[catch {switch $tcl_platform(platform) {
         unix {
-	    eval {exec g++} $sendvars(arflags) [list -fPIC -c -I$TOOLDIR \
-						    -o objtmp.o model.cpp]
-            if {[string match Darwin $tcl_platform(os)]} {
+	    if {[string equal Darwin $tcl_platform(os)]} {
+# try doing it all in a special shell so I can bundle the compiler
+		set spout [open "|bash 2> ~/returns" r+]
+		puts $spout "export PATH=\"[file nativename [file join $SIMILE_PATH System bin]]\""
+		puts $spout "g++ $sendvars(arflags) -fPIC -c -I\"$TOOLDIR\" -I\"[file nativename [file join $SIMILE_PATH System include MacOS]]\" -o objtmp.o model.cpp" 
 		set switchForLib -bundle 
+		puts $spout "g++ $sendvars(arflags) $switchForLib -o $TARGET objtmp.o $lDirs $lFiles"
+		flush $spout
+		close $spout
 	    } else {
+		eval {exec g++} $sendvars(arflags) [list -fPIC -c -I$TOOLDIR \
+							-o objtmp.o model.cpp]
 		set switchForLib -shared
+		eval {exec g++} $sendvars(arflags) \
+		    [list $switchForLib -o $TARGET objtmp.o] $lDirs $lFiles
 	    }
-	    eval {exec g++} $sendvars(arflags) \
-		[list $switchForLib -o $TARGET objtmp.o] $lDirs $lFiles
         }
         windows {
             set TOOLDIR [file attributes $TOOLDIR -shortname]
@@ -1126,15 +1133,23 @@ proc ControlDraw {prologVersion} {
         }
 #    }
     if {[string match windows $tcl_platform(platform)]} {
-        Pref_Add {  {custom(compChoice) compChoice {CHOICE Default Microsoft GNU} \
-                        "Use which C++ compiler?"} \
-                {custom(myButton) myButton � "Custom keypad button"} \
-        }
+        Pref_Add {  
+	    {custom(compChoice) compChoice \
+		 {CHOICE Default Microsoft GNU} "Use which C++ compiler?"} \
+		{custom(myButton) myButton � "Custom keypad button"} \
+	    }
 	file attributes $simtmpdir -hidden true
 	file attributes $custom(prefDir)/.version -hidden true
     } else {
-        Pref_Add {  {custom(myButton) myButton Î¼ "Custom keypad button"} \
+	if {[string equal Darwin $tcl_platform(os)]} {
+	    Pref_Add {
+		{custom(compChoice) compChoice {CHOICE Default GNU} \
+		     "Use which C++ compiler?"} \
+		}
 	}
+        Pref_Add {  
+	    {custom(myButton) myButton Î¼ "Custom keypad button"}
+	    }
     }
     CheckCompilerLocation
     LoadModelWindowExtensions
@@ -1172,7 +1187,7 @@ proc ControlDraw {prologVersion} {
 
 proc CheckCompilerLocation {} {
     global tcl_platform custom env
-    if {[string match windows $tcl_platform(platform)]} {
+    if {![string match Linux $tcl_platform(os)]} {
         if {[string mat Microsoft [PrefValue custom(compChoice) compChoice]]} {
             set compiler cl.exe
             set possDirs {}
@@ -1207,7 +1222,7 @@ proc CheckCompilerLocation {} {
             } else {
 		set compChoice [PrefValue custom(compChoice) compChoice]
 		Query [list no_compiler $compChoice $compiler $possDirs] \
-		    warning top g++ {} ok
+		    warning top {} ok
                 set custom(compChoice) none
             }
         }

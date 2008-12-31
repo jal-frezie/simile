@@ -65,7 +65,7 @@ namespace eval $keyValue {
             ::graphtools::MakeToolBar $winId $toolbarItems
         }
         if {[info exists editMode($winId)]} {
-            foreach surplus {0 1 2 5} {
+            foreach surplus {clear add remove refresh} {
                 $winId.bbframe.buttonBox itemconfigure $surplus -state disabled
             }
 	    set editMode($winId,tweaked) 0

@@ -1212,13 +1212,13 @@ proc VisitUrl {x} {
 }
 
 proc ShowAbout {winId} {
-    global sendvars userinfo interface tcl_platform
+    global sendvars userinfo interface tcl_platform graph
     PutItThere .about $winId
     wm title .about About\ Simile
     image create photo dripu
-    image create photo dripl
+#    image create photo dripl
     dripu read "../Images/HelpAboutUpper.gif"
-    dripl read "../Images/HelpAboutLower.gif"
+#    dripl read "../Images/HelpAboutLower.gif"
     label .about.upper -image dripu
     pack .about.upper -pady 4
     frame .about.fr -relief sunken -borderwidth 2
@@ -1277,9 +1277,11 @@ proc ShowAbout {winId} {
     pack $gen -padx 4 -pady 2
     pack .about.fr -expand on -fill x -padx 8 -pady 2
     
-    label .about.lower -image dripl
-    pack .about.lower
+#    label .about.lower -image dripl
+#    pack .about.lower
     
+    pack [label .about.low1 -text Simile -font $graph(megafont)]
+    pack [label .about.low2 -text $graph(anality) -font $graph(font)]
     pack [button .about.b -text OK -width 10 -default active \
             -command "set sendvars(doneAbout) 1"] -pady 2
     pack [label .about.l16]

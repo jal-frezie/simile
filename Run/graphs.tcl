@@ -1057,7 +1057,7 @@ proc EditListAsTable {parent valueArray} {
 
 proc LoadDataFile {mode query mdl} {
     global table_entry
-    #ShowMessage debug info "LoadDataFile $mode $query $mdl" ok
+    #ShowMess debug info "LoadDataFile $mode $query $mdl" ok
     #    wm title .table "Create table from file $table_entry(fileName)"
     set fc .table.notebook.columns
     set fheads [GetFrame $fc.fheads]
@@ -1091,7 +1091,7 @@ proc LoadDataFile {mode query mdl} {
     # mode columns read non-csv files using ODBC
     set ext [file extension $table_entry(fileName)]
     
-    #ShowMessage debug info "LoadDataFile mode $mode data$type $table_entry(fileName) \
+    #ShowMess debug info "LoadDataFile mode $mode data$type $table_entry(fileName) \
     $ext" ok ; # jmm
     
     while {[catch {open $table_entry(fileName) r} stream]} {
@@ -1130,9 +1130,9 @@ proc LoadDataFile {mode query mdl} {
                         set driver [odbcdriverFromExt $ext]
                         set dbfile $table_entry(fileName)
                         set connectString "DRIVER=$driver;DBQ=$dbfile"
-                        #ShowMessage debug info $connectString ok
+                        #ShowMess debug info $connectString ok
                         database db $connectString
-                        #ShowMessage debug info "tables [db tables]" ok
+                        #ShowMess debug info "tables [db tables]" ok
                         set dbtables [db tables]
                         set tablenames {}
                         foreach table $dbtables {
@@ -1142,7 +1142,7 @@ proc LoadDataFile {mode query mdl} {
                         set fc .table.notebook.columns
                          $tablecb set [lindex $tablenames 0]
                         $tablecb configure -values $tablenames
-                        #ShowMessage debug info "DoOnDataBaseColumnsLoaded $connectString $tablecb $fheads" ok
+                        #ShowMess debug info "DoOnDataBaseColumnsLoaded $connectString $tablecb $fheads" ok
                         DoOnDataBaseColumnsLoaded $connectString $tablecb $fheads
                         bind $tablecb <<ComboboxSelected>> "DoOnDataBaseColumnsLoaded \{$connectString\} $tablecb $fheads"
                     }
@@ -1183,7 +1183,7 @@ proc DoOnDataBaseColumnsLoaded { connectString tablecb fheads } {
     
     #each column {TABLE_QUALIFIER TABLE_OWNER TABLE_NAME COLUMN_NAME DATA_TYPE TYPE_NAME PRECISION LENGTH SCALE RADIX NULLABLE REMARKS}
     set i 1
-    #ShowMessage debug info "fields $fields" ok
+    #ShowMess debug info "fields $fields" ok
     foreach field $fields {
         # just the column name
         $fheads.lheads insert end hd$i -text [lindex $field 3]
@@ -1214,7 +1214,7 @@ proc ChooseDataHeader {eb pth where op dtype data} {
 }
 
 proc LoadTableData {tableSpec lineCount addSpecials} {
-    #ShowMessage debug info "LoadTableData $tableSpec $lineCount $addSpecials" ok; # jmm remove
+    #ShowMess debug info "LoadTableData $tableSpec $lineCount $addSpecials" ok; # jmm remove
     # if its an ODBC database file  (database server later!)
     # need the connection string, if have file name with extension can work out driver
     # what about Linux and Mac - file extensions! - have csv files
@@ -1294,7 +1294,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
         return $tableSpec
     } else {
         # csv handled by existing code other extensions handled with ODBC
-        #ShowMessage debug info "Loading table with data $tableSpec; ext $ext" ok
+        #ShowMess debug info "Loading table with data $tableSpec; ext $ext" ok
         if { $ext == {.csv} } {
                 gets $tStr headerLine
                 set headerList [TrimFields [split $headerLine ,]]
@@ -1368,21 +1368,21 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
                 #set driver "Microsoft Excel Driver (*.xls)"
                 set driver [odbcdriverFromExt $ext]
                 set connectString "DRIVER=$driver;DBQ=$filename"
-                #ShowMessage debug info $connectString ok
+                #ShowMess debug info $connectString ok
                 database db $connectString
                 if {[string match ,dbtable:* [lindex $tableSpec 2]]} {
                     regexp ,dbtable:(.*) [lindex $tableSpec 2] match dbtable
                     set field [lindex $tableSpec 1]
-                    #ShowMessage debug info "$connectString dbtable $dbtable field $field"  ok
-                    set datalist [db "select $field from `$dbtable`"]
-                    #ShowMessage debug info "datalist $datalist" ok
+                    #ShowMess debug info "$connectString dbtable $dbtable field $field"  ok
+                    set datalist [db "select `$field` from `$dbtable`"]
+                    #ShowMess debug info "datalist $datalist" ok
                     # todo add error messages!!!
                     # make sure have some data
                 }
             }
     };  # csv file, so now add ODBC handling here
     
-    #ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
+    #ShowMess debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
     if {[string match ,dbtable:* [lindex $tableSpec 2]]} {
         # ODBC data list to Simile data list
@@ -1393,10 +1393,10 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
             lappend datalistindex $i $item
             incr i
         }
-        #ShowMessage debug info "datalist $datalistindex" ok
+        #ShowMess debug info "datalist $datalistindex" ok
         set result $datalistindex
     } else  {
-        #ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
+        #ShowMess debug info "Converting [array get paramArray] with $indexList" ok
         set result [ArrayToList paramArray]
     }
     if {$addSpecials} {
@@ -1407,7 +1407,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
             lappend result $wrapPt restart
         }
     }
-    #ShowMessage debug info "result $result" ok
+    #ShowMess debug info "result $result" ok
     return $result
 }
 
@@ -1428,7 +1428,7 @@ proc EnquoteIfNonNumeric {item} {
 }
 
 proc ArrayToList {topArray} {
-    #ShowMessage debug info "ArrayToList $topArray" ok
+    #ShowMess debug info "ArrayToList $topArray" ok
     # Now copy array values into lists with one less index
     # Any with fewer indices than rest will get ignoredddd
     upvar 1 $topArray values
