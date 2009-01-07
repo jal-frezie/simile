@@ -871,7 +871,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
                 set table_entry(indices) [lrange $table_entry(data) 2 end]
                 set i 1
                 foreach idx $table_entry(indices) {
-                    if {![string match ,* $idx]} { ;# this is wrap info
+                    if {![string match ,* $idx]} { ;# this is wrap or db info
                         $lidx insert end id$i -text $idx
                     }
                     incr i
@@ -972,11 +972,6 @@ proc AcquireTableData {redo startLine} {
             # handle as table_entry(others) and table_entry(indices) inserted
             set tableSpec [concat [list $table_entry(fileName) \
                     $table_entry(dataField)] $table_entry(indices)]
-            if {[info exists table_entry(dbtable)] && \
-                        [llength $table_entry(dbtable)]} {
-                set tableSpec [linsert $tableSpec 2 \
-                        ,dbtable:$table_entry(dbtable)]
-            }
             if {[info exists table_entry(others)] && \
                         [llength $table_entry(others)]} {
                 set tableSpec [linsert $tableSpec 2 \
@@ -985,6 +980,12 @@ proc AcquireTableData {redo startLine} {
             if {[info exists table_entry(wrapPt)] && \
                         [Numeric $table_entry(wrapPt)]} {
                 set tableSpec [linsert $tableSpec 2 ,wrap:$table_entry(wrapPt)]
+            }
+# JAT: If there is a dbtable it must be item 2 so insert it last
+            if {[info exists table_entry(dbtable)] && \
+                        [llength $table_entry(dbtable)]} {
+                set tableSpec [linsert $tableSpec 2 \
+                        ,dbtable:$table_entry(dbtable)]
             }
         } .table.notebook.grid {
             set tableSpec [list $table_entry(fileName) ,grid \
@@ -1092,7 +1093,7 @@ proc LoadDataFile {mode query mdl} {
     set ext [file extension $table_entry(fileName)]
     
     #ShowMess debug info "LoadDataFile mode $mode data$type $table_entry(fileName) \
-    $ext" ok ; # jmm
+    #$ext" ok ; # jmm
     
     while {[catch {open $table_entry(fileName) r} stream]} {
         set info "Cannot read $mode file $table_entry(fileName)"
@@ -1293,112 +1294,113 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
         #	set indexList [ReadGdalRefToArray paramArray $tableSpec]
         return $tableSpec
     } else {
+# tableSpec should be:
+# fileName dataHeader ?dbtableId? ?wrapTime? ?fillMethod? indHeaders...
+	set indexStart 2
+	if {[string match ,dbtable:* [lindex $tableSpec 2]]} {
+	    regexp ,dbtable:(.*) [lindex $tableSpec 2] match dbtable
+	    incr indexStart
+	}
+	if {[string match ,wrap:* [lindex $tableSpec 2]]} {
+	    # its a special point
+	    set wrapPt [string range [lindex $tableSpec 2] 6 end]
+	    incr indexStart
+	}
+	if {[string match ,others:* [lindex $tableSpec $indexStart]]} {
+	    set fillMtd [string range [lindex $tableSpec $indexStart] 8 end]
+	    incr indexStart
+	}
         # csv handled by existing code other extensions handled with ODBC
         #ShowMess debug info "Loading table with data $tableSpec; ext $ext" ok
         if { $ext == {.csv} } {
-                gets $tStr headerLine
-                set headerList [TrimFields [split $headerLine ,]]
-                #ShowMess debug info "Headers are $headerList" ok
-                
-                set headerCount 0
-                set indexStart 2
-                if {[string match ,wrap:* [lindex $tableSpec 2]]} {
-                    # its a special point
-                    set wrapPt [string range [lindex $tableSpec 2] 6 end]
-                    incr indexStart
-                }
-                if {[string match ,others:* [lindex $tableSpec $indexStart]]} {
-                    set fillMtd [string range [lindex $tableSpec $indexStart] 8 end]
-                    incr indexStart
-                }
-                foreach headerIndex [lrange $tableSpec $indexStart end] {
-                    lappend indexColumns [lsearch -exact $headerList $headerIndex]
-                    incr headerCount
-                }
-                if {!$headerCount} {
-                    # use line number as index
-                    set headerCount 1
-                }
-                set headerColumn [lsearch -exact $headerList [lindex $tableSpec 1]]
-                #ShowMess debug info "Columns: header $headerColumn indxs $indexColumns" ok
-                if {$headerColumn==-1} {
-                    Query [concat no_data_col [lrange $tableSpec 0 1] \
-                            [list $headerList]] warning data_in_cols {} ok
-                    return
-                }
-                while {[gets $tStr entryLine] != -1} {
-                    set entryList [TrimFields [split $entryLine ,]]
-                    #ShowMess debug info "Data line is $entryList" ok
-                    if {![llength $entryList]} {
-                        continue ;# ignore blank lines anywhere
-                    }
-                    if {[info exists indexColumns]} {
-                        set arrayIndex {}
-                        set indexCount 0
-                        foreach column $indexColumns {
-                            set newIndex [lindex $entryList $column]
-                            # enquote the above if indices of llength 1 are needed
-                            if {[llength $newIndex]} {
-                                lappend arrayIndex $newIndex
-                                incr indexCount
-                            } else {
-                                # if there is an empty index field ignore the line
-                                set badIndex 1
-                                break
-                            }
-                        }                       
-                    } else {
-                        set arrayIndex $lineCount
-                        incr lineCount
-                    }
-                    
-                    # ignore empty entries
-                    if {[info exists badIndex]} {
-                        unset badIndex
-                    } else {
-                        set potEntry [lindex $entryList $headerColumn]
-                        if {[llength $potEntry]} {
-                            set paramArray([concat [list top] $arrayIndex]) \
-                                    [EnquoteIfNonNumeric $potEntry]
-                        }
-                    }
-                }
-            } else {
-                # need to handle indeces
-                #set driver "Microsoft Excel Driver (*.xls)"
-                set driver [odbcdriverFromExt $ext]
-                set connectString "DRIVER=$driver;DBQ=$filename"
-                #ShowMess debug info $connectString ok
-                database db $connectString
-                if {[string match ,dbtable:* [lindex $tableSpec 2]]} {
-                    regexp ,dbtable:(.*) [lindex $tableSpec 2] match dbtable
-                    set field [lindex $tableSpec 1]
-                    #ShowMess debug info "$connectString dbtable $dbtable field $field"  ok
-                    set datalist [db "select `$field` from `$dbtable`"]
-                    #ShowMess debug info "datalist $datalist" ok
-                    # todo add error messages!!!
-                    # make sure have some data
-                }
-            }
-    };  # csv file, so now add ODBC handling here
+	    gets $tStr headerLine
+	    set headerList [TrimFields [split $headerLine ,]]
+	    #ShowMess debug info "Headers are $headerList" ok
+	    
+	    foreach headerIndex [lrange $tableSpec $indexStart end] {
+		lappend indexColumns [lsearch -exact $headerList $headerIndex]
+	    }
+	    set headerColumn [lsearch -exact $headerList [lindex $tableSpec 1]]
+	    #ShowMess debug info "Columns: header $headerColumn indxs $indexColumns" ok
+	    if {$headerColumn==-1} {
+		Query [concat no_data_col [lrange $tableSpec 0 1] \
+			   [list $headerList]] warning data_in_cols {} ok
+		return
+	    }
+	    while {[gets $tStr entryLine] != -1} {
+		set entryList [TrimFields [split $entryLine ,]]
+		#ShowMess debug info "Data line is $entryList" ok
+		if {![llength $entryList]} {
+		    continue ;# ignore blank lines anywhere
+		}
+		if {[info exists indexColumns]} {
+		    set arrayIndex {}
+		    set indexCount 0
+		    foreach column $indexColumns {
+			set newIndex [lindex $entryList $column]
+			# enquote the above if indices of llength 1 are needed
+			if {[llength $newIndex]} {
+			    lappend arrayIndex [Sink $newIndex]
+			    incr indexCount
+			} else {
+			    # if there is an empty index field ignore the line
+			    set badIndex 1
+			    break
+			}
+		    }                       
+		} else {
+		    set arrayIndex $lineCount
+		    incr lineCount
+		}
+		
+		# ignore empty entries
+		if {[info exists badIndex]} {
+		    unset badIndex
+		} else {
+		    set potEntry [lindex $entryList $headerColumn]
+		    if {[llength $potEntry]} {
+			set paramArray([concat [list top] $arrayIndex]) \
+			    [EnquoteIfNonNumeric $potEntry]
+		    }
+		}
+	    }
+	} else { ;# data is from a tclodbc-connected database
+	    #set driver "Microsoft Excel Driver (*.xls)"
+	    set driver [odbcdriverFromExt $ext]
+	    set connectString "DRIVER=$driver;DBQ=$filename"
+	    #ShowMess debug info $connectString ok
+	    database db $connectString
+
+	    set field [lindex $tableSpec 1]
+	    #ShowMess debug info "$connectString dbtable $dbtable field $field"  ok
+	    set datalist [db "select `$field` from `$dbtable`"]
+	    set indexArgs {}
+	    foreach headerIndex [lrange $tableSpec $indexStart end] {
+		lappend indexArgs ${headerIndex}elt \
+		    [db "select `$headerIndex` from `$dbtable`"]
+	    }
+	    eval [list foreach datum $datalist] $indexArgs [list {
+		set arrayIndex {}
+		if {[llength $indexArgs]} {
+		    foreach {item list} $indexArgs {
+			lappend arrayIndex [Sink [set $item]]
+		    }
+		} else {
+		    set arrayIndex $lineCount
+		}
+		set paramArray([concat [list top] $arrayIndex]) \
+		    [EnquoteIfNonNumeric $datum]
+		incr lineCount
+	    }]
+	    #ShowMess debug info "datalist $datalist" ok
+	    # todo add error messages!!!
+	    # make sure have some data
+	}
+    }
     
     #ShowMess debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
-    if {[string match ,dbtable:* [lindex $tableSpec 2]]} {
-        # ODBC data list to Simile data list
-        set datalistindex {}
-        set i 1
-        # foreach SAFE?? !! with indeces
-        foreach item $datalist {
-            lappend datalistindex $i $item
-            incr i
-        }
-        #ShowMess debug info "datalist $datalistindex" ok
-        set result $datalistindex
-    } else  {
-        #ShowMess debug info "Converting [array get paramArray] with $indexList" ok
-        set result [ArrayToList paramArray]
-    }
+    set result [ArrayToList paramArray]
     if {$addSpecials} {
         if {[info exists fillMtd]} {
             lappend result others $fillMtd
@@ -1427,6 +1429,15 @@ proc EnquoteIfNonNumeric {item} {
     }
 }
 
+proc Sink {val} {
+# stop it being a float if it equals an integer
+    if {[string is double -strict $val] && floor($val)==ceil($val)} {
+	return [expr {round($val)}]
+    } else {
+	return $val
+    }
+}
+  
 proc ArrayToList {topArray} {
     #ShowMess debug info "ArrayToList $topArray" ok
     # Now copy array values into lists with one less index
