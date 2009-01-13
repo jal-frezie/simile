@@ -282,21 +282,19 @@ switch $tcl_platform(platform) {
     }
 }
 
+set savedCredentials [list prologId interfaceId install_time license_code \
+			  licensee_name licensee_corp]
 if {[string equal windows $tcl_platform(platform)]} {
     package require registry
-    foreach regEntry {prologId interfaceId install_time license_code \
-			licensee_name licensee_corp} {
-	set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
+    set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
+    foreach regEntry $savedCredentials {
 	catch {set env($regEntry) [registry get $regKey $regEntry]}
     }
 } else {
     set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
-    gets $UserStream env(prologId)
-    gets $UserStream env(interfaceId)
-    gets $UserStream env(install_time)
-    gets $UserStream env(license_code)
-    gets $UserStream env(licensee_name)
-    gets $UserStream env(licensee_corp)
+    foreach regEntry $savedCredentials {
+	gets $UserStream env($regEntry)
+    }
     close $UserStream
 }
 

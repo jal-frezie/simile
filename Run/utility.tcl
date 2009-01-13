@@ -166,39 +166,9 @@ proc IdentField {text field} {
     string range $text $field0 $fieldEnd
 }
 
-# This makes the extra bit that goes onto Tcl to run C programs. We don't
-# really need to build it every time we run the program, that's just while
-# it's being debugged, once it's right we'll just load it. This component
-# itself loads dlls for the actual models as they are built.
-
-proc load_c_stub_1 {} {
-    global env tcl_platform
-    scan [info tclversion] {%d.%d} MAJ MIN
-    set onUnix [string match unix $tcl_platform(platform)]
-    set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
-    if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-	error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform) -- $dummy"
-    }
-}
-
 lappend auto_path [file join [file dirname [pwd]] System lib Stubs] \
     /usr/local/lib
 package require Trf ;# loads right version of Trf (fingers crossed)
-
-proc load_c_stub_2 {} {
-    global env userinfo ;# last needed in stub
-    # On startup, check run count and offer registration if 0
-    if [catch {set userinfo(name) $env(licensee_name)}] {
-        set userinfo(name) " "
-    }
-    if [catch {set userinfo(corp) $env(licensee_corp)}] {
-        set userinfo(corp) " "
-    }
-    
-    catch {set userinfo(license_code) $env(license_code)}
-    loadcommands
-    randseed [clock scan now]
-}
 
 proc AdjustCanvas {winId pt dir args} {
 #    global noScroll

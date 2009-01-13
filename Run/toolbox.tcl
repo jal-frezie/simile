@@ -1015,13 +1015,12 @@ proc ControlDraw {prologVersion} {
 	    close $UserStream
 	}
     }
-
-    # loading stub sets license entries
     load_c_stub_2
     
-    set userinfo(final_expiry) $env(user,final_expiry)
-    set userinfo(days_after_install)  $env(user,days_after_install)
-    set userinfo(edn)  $env(user,edn)
+    array set userinfo [list name $env(licensee_name) corp $env(licensee_corp) \
+			    final_expiry $env(user,final_expiry) \
+			    days_after_install $env(user,days_after_install) \
+			    edn $env(user,edn)]
     # substitutes for license entries if we want to avoid loading stub
     #set userinfo(final_expiry) 0
     #set userinfo(days_after_install) 0
