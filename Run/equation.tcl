@@ -560,16 +560,18 @@ proc fill_inputs { triples } {
     }
     set line 0
     $lbp delete 0 end
+    set equation(origins) {}
     foreach vpiTriple $triples {
         set equation(paths,$line) [lindex $vpiTriple 0]
         set equation(oldentry,$line) [lindex $vpiTriple 1]
         $lbp insert end [lindex $vpiTriple 1]
+	set paramPopMsg "Value(s) of [lindex $vpiTriple 0]"
+	lappend equation(origins) $paramPopMsg
         set equation(oldunit,$line) [RealForUnity [lindex $vpiTriple 2]]
         
         set p [entry $scroller.plist.p$line -bd 0 -relief flat \
-                -textvariable "equation(entry$line)"]
-        bind $p <Enter> [list QueuePopup AddWidgetPopup \
-			     %X %Y "Value(s) of [lindex $vpiTriple 0]"]
+                -font TkDefaultFont -textvariable "equation(entry$line)"]
+        bind $p <Enter> [list QueuePopup AddWidgetPopup %X %Y $paramPopMsg]
         bind $p <Double-1> "equationDouble %W $en; focus $en"
         bind $p <FocusOut> "ListEditDone $line"
         bind $p <Return> "ListEditDone $line"
@@ -580,14 +582,15 @@ proc fill_inputs { triples } {
         pack $p -fill x -expand true
         
         set u [entry $scroller.ilist.u$line -bd 0 -relief flat \
-                -textvariable "equation(unit$line)"]
+                -font TkDefaultFont -textvariable "equation(unit$line)"]
         bind $u <FocusOut> "ListEditDone $line"
         bind $u <Return> "ListEditDone $line"
         $u config -highlightbackground [$u cget -background]
         $u delete 0 end
         $u insert end $equation(oldunit,$line)
         pack $u -fill x -expand true
-        set d [entry $scroller.dlist.d$line -bd 0 -relief flat]
+        set d [entry $scroller.dlist.d$line -bd 0 -relief flat \
+		   -font TkDefaultFont]
         $d delete 0 end
         $d insert end [lindex $vpiTriple 3]
         $d config -highlightbackground [$d cget -background] \
@@ -657,11 +660,13 @@ proc equationBindings { t en eu lbf lbx lbp gr ta ok can} {
     bind $lbx <Enter> $PopCmd
     bind $lbx <Motion> "RemovePopup;$PopCmd"
     bind $lbx <Leave> RemovePopup
-    
-    bind $lbx <Double-1> \
-            "indexClick %W %y $en; focus $en"
-    bind $lbp <Double-1> \
-            "paramClick %W %y $en; focus $en"
+    bind $lbx <Double-1> "indexClick %W %y $en; focus $en"
+
+    set PopCmd [list QueuePopup AddParamPopup %W %y %X %Y]
+    bind $lbp <Enter> $PopCmd
+    bind $lbp <Motion> "RemovePopup;$PopCmd"
+    bind $lbp <Leave> RemovePopup    
+    bind $lbp <Double-1> "paramClick %W %y $en; focus $en"
     
     bind $gr <Tab> "focus $ta"
     bind $ta <Tab> "focus $ok"
@@ -837,10 +842,17 @@ proc AddFnPopup {w X Y x y} {
 }
 
 proc AddIndexPopup {lb y X Y} {
-    global equation
     set line [$lb nearest $y]
     if {$line>-1} {
 	AddWidgetPopup $X $Y "Index [expr $line+1] is [$lb get $line]"
+    }
+}
+
+proc AddParamPopup {lb y X Y} {
+    global equation
+    set line [$lb nearest $y]
+    if {$line>-1} {
+	AddWidgetPopup $X $Y [lindex $equation(origins) $line]
     }
 }
 
