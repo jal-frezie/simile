@@ -309,17 +309,19 @@ proc PrefEntrySet { entry varName } {
 # end of the per-user resource file,
 proc PrefSave {} {
 	global pref tcl_platform
-    global tcl_platform
+
+    set old $pref(userDefaults)
+    set new ${old}.new
     if [catch {
-		set old [NetOpen $pref(userDefaults) r]
-		set oldValues [split [read $old] \n]
-		close $old
+	        set in [NetOpen $old r]
+		set oldValues [split [read $in] \n]
+		close $in
 	}] {
 		set oldValues {}
 	}
-	if [catch {open $pref(userDefaults).new w} out] {
+	if [catch {NetOpen $new w} out] {
 		.pref.but.label configure -text \
-		"Cannot save in $pref(userDefaults).new: $out"
+		"Cannot save in $new: $out"
 		return
 	}
 	foreach line $oldValues {
@@ -346,11 +348,6 @@ proc PrefSave {} {
 	}
     close $out
 
-    # On Windows paths with spaces glob returns a list
-    # join makes a string from the list. jmm  15/03/02
-    set new [join [glob $pref(userDefaults).new]] 
-    set old [file root $new]
-#    ShowMess debug info "new: $new; old $old" ok
     if [catch {file rename -force $new $old} err] {
 		Status "Cannot install $new: $err"
 		return
