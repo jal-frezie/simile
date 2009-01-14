@@ -458,8 +458,8 @@ switch $tcl_platform(platform) {
     } unix {
 	if {[string equal Darwin $tcl_platform(os)]} {
 	    set archExtn _$tcl_platform(machine)
-	    if {[string equal "_Power Macintosh" archExtn]} { ;# too long
-		set env(archExtn) _ppc
+	    if {[string equal "_Power Macintosh" $archExtn]} { ;# too long
+		set archExtn _ppc
 	    }
 	} else {
 	    set archExtn {}
