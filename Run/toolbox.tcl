@@ -624,12 +624,15 @@ proc compile_c {workingDir extLibs} {
     set TOOLDIR [file join $SIMILE_PATH Run]
     set TCL [file dirname [file dirname [info library]]]
     #ShowMess debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
+    set useComp [PrefValue custom(compChoice) compChoice]
     if {[catch {switch $tcl_platform(platform) {
         unix {
 	    if {[string equal Darwin $tcl_platform(os)]} {
 # try doing it all in a special shell so I can bundle the compiler
 		set spout [open "|bash 2> ~/returns" r+]
-		puts $spout "export PATH=\"[file nativename [file join $SIMILE_PATH System bin]]\""
+		if {[string equal Default $useComp]} {
+		    puts $spout "export PATH=\"[file nativename [file join $SIMILE_PATH System bin]]\""
+		}
 		puts $spout "g++ $sendvars(arflags) -fPIC -c -I\"$TOOLDIR\" -I\"[file nativename [file join $SIMILE_PATH System include MacOS]]\" -o objtmp.o model.cpp" 
 		set switchForLib -bundle 
 		puts $spout "g++ $sendvars(arflags) $switchForLib -o $TARGET objtmp.o $lDirs $lFiles"
@@ -645,7 +648,6 @@ proc compile_c {workingDir extLibs} {
         }
         windows {
             set TOOLDIR [file attributes $TOOLDIR -shortname]
-        set useComp [PrefValue custom(compChoice) compChoice]
 # use a script even when starting a properly installed GNU just in case
 # an error results
 #            GNU {
