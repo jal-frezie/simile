@@ -118,21 +118,20 @@ PPCSHANK = System/lib/lib5d_ppc.dylib
 PPCRELAY = System/bin/relay_ppc
 ppcbits: $(PPCSHIM) $(PPCUNPK) $(PPCRELAY)
 $(PPCSHIM): ame_cmx.c dllcalls.h $(PPCSHANK) Makefile
-	cd Run; \
-	$(GCCCMD) -arch ppc -fPIC $(FLAGS) $(DEFNS) \
-		-I. -I../../Frameworks/Tcl.framework/Headers \
-		-dynamiclib -o ../$(PPCSHIM) ame_cmx.c -F../../Frameworks \
-		-framework Tcl -L../System/lib -l5d_ppc; cd ..; \
-	 $(LOCALIZE_TCL_REFS) $(PPCSHIM)
+	cd Run; $(GCCCMD) -arch ppc -fPIC $(FLAGS) $(DEFNS) -I. $(MAKESL) \
+		-o ../$(PPCSHIM) ame_cmx.c $(USETCL) \
+		-L../System/lib -l5d_ppc; cd ..; \
+	$(LOCALIZE_TCL_REFS) $(PPCSHIM)
 
 $(PPCUNPK): unpacker.c dllcalls.h
-	cd Run; $(GCCCMD) -arch ppc $(FLAGS) $(DEFNS) -I. \
-		$(MAKESL) -o ../$(PPCUNPK) unpacker.c $(USETCL); cd ..; \
+	cd Run; $(GCCCMD) -arch ppc $(FLAGS) $(DEFNS) -I. $(MAKESL) \
+		-o ../$(PPCUNPK) unpacker.c $(USETCL) \
+		-L../System/lib -l5d_ppc; cd ..; \
 	$(LOCALIZE_TCL_REFS) $(PPCUNPK)
 
 $(PPCSHANK): shank.cpp dllcalls.h
-	cd Run; $(GPPCMD) -arch ppc -O -fPIC $(FLAGS) -I. \
-		-dynamiclib $(PARALLEL) -o ../$(PPCSHANK) shank.cpp; cd ..
+	cd Run; $(GPPCMD) -arch ppc -O -fPIC $(FLAGS) -I. $(MAKESL) \
+		$(PARALLEL) -o ../$(PPCSHANK) shank.cpp; cd ..
 
 $(PPCRELAY): Run/relay.c
 	cd Run; $(GCCCMD) -arch ppc $(FLAGS) -o ../$(PPCRELAY) relay.c; cd ..

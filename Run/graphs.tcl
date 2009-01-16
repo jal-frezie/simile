@@ -15,10 +15,11 @@
 #	ylow, yhigh, yspan, [pt1, pt2 ... ptn])
 
 package require BWidget
-package require tclodbc; #jmm ODBC
 
 proc odbcdriverFromExt { ext } {
     # e.g. [odbcdriverFromExt .xls] -> Microsoft Excel Driver (*.xls)
+    package require tclodbc; #jmm ODBC
+
     set odbcdrivers [database drivers]
     set index [lsearch  -regexp $odbcdrivers ".*FileExtns=.*$ext.*"]
     return [lindex [lindex $odbcdrivers $index] 0]

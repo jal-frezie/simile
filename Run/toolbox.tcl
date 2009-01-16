@@ -632,8 +632,9 @@ proc compile_c {workingDir extLibs} {
 		set spout [open "|bash 2> ~/returns" r+]
 		if {[string equal Default $useComp]} {
 		    puts $spout "export PATH=\"[file nativename [file join $SIMILE_PATH System bin]]\""
+		    puts $spout "export CPLUS_INCLUDE_PATH=\"[file nativename [file join $SIMILE_PATH System include MacOS]]\""
 		}
-		puts $spout "g++ $sendvars(arflags) -fPIC -c -I\"$TOOLDIR\" -I\"[file nativename [file join $SIMILE_PATH System include MacOS]]\" -o objtmp.o model.cpp" 
+		puts $spout "g++ $sendvars(arflags) -fPIC -c -I\"$TOOLDIR\" -o objtmp.o model.cpp" 
 		set switchForLib -bundle 
 		puts $spout "g++ $sendvars(arflags) $switchForLib -o $TARGET objtmp.o $lDirs $lFiles"
 		flush $spout
@@ -885,20 +886,21 @@ proc ControlDraw {prologVersion} {
     set sendvars(proV) $prologVersion
     
     # set up to compile stub and models with same bitness as tcltk
-    set gccBitness 32
-    catch {exec g++ -v} gppInfo
-    set relevant [string first arget $gppInfo]
-    if {$relevant==-1} {
-	set relevant [string first host= $gppInfo]
-    }
-    if {$relevant>-1 && [string first 64 $gppInfo $relevant]<$relevant+16} {
-	set gccBitness 64
-    } ;# assume any 64-bit gcc will be proud enough to proclaim itself
-    set tclBitness [expr {8*$tcl_platform(wordSize)}]
-    if {$tclBitness != $gccBitness} {
-	set sendvars(arflags) [list -m$tclBitness -O3]
-    } else {
-	set sendvars(arflags) [list -O3]
+    set sendvars(arflags) [list -O3]
+    if {[string equal GNU [PrefValue custom(compChoice) compChoice]]} {
+	set gccBitness 32
+	catch {exec g++ -v} gppInfo
+	set relevant [string first arget $gppInfo]
+	if {$relevant==-1} {
+	    set relevant [string first host= $gppInfo]
+	}
+	if {$relevant>-1 && [string first 64 $gppInfo $relevant]<$relevant+16} {
+	    set gccBitness 64
+	} ;# assume any 64-bit gcc will be proud enough to proclaim itself
+	set tclBitness [expr {8*$tcl_platform(wordSize)}]
+	if {$tclBitness != $gccBitness} {
+	    lappend sendvars(arflags) -m$tclBitness
+	}
     }
 
     # no longer have a separate floating toolbar
