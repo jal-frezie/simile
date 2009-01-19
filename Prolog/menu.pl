@@ -509,6 +509,8 @@ menu_handle(Win, edit, Component) :-
 	(Component is_class_of_sort box; Component is_class_of_sort line),
 	get_edit_model(Win, _Model, Node),
 	event:assert(instant_link(Component)),
+	% this takes the last model diagram click as the position for addition.
+	% Barring adjusted so it cannot be called from toolbar edit menu.
 	(Node = [_,_], !,
 	    get_original_click(Xpt, Ypt),
 	    event:click(Xpt, Ypt, 0);

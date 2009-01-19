@@ -414,14 +414,13 @@ adjust_edit_menu(Wid, Comp, Point) :-
 bar_edit_menu(Wid) :-
 	(retract(menu_submodel_will_be(Wid, Comp, Point)), !;
 	Wid shows_model Comp,
-	    get_shape(Comp, internal_extent, [L,T,R,B]),
-	    X is (L+R)/2,
-	    Y is (T+B)/2,
-	    Point = [X,Y]),
+%	    get_shape(Comp, internal_extent, Box),
+%	    middle(Box, Point)
+% point was never used, menu addition chose posn of last mouse click
+	    Point = Comp),
 	retractall(menu_submodel_is(_, _)),
 	assert(menu_submodel_is(Comp, Point)),
 	(Comp = Point, !,
-% never true for now; titlebar menu uses centre point of window
 	    CanCreate = 0;
 	CanCreate = 1),
 	(Point = [_,_], !,
