@@ -1248,7 +1248,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
                                 lappend colList $xInd
                             }
                             set paramArray([list top $yInd $xInd]) \
-                            [EnquoteIfNonNumeric [lindex $usePts $colInd]]
+				[EnquoteIfNonNumeric [lindex $usePts $colInd]]
                         }
             }
         }
@@ -1431,7 +1431,8 @@ proc TrimFields {dataLine} {
 }
 
 proc EnquoteIfNonNumeric {item} {
-    if {[Numeric $item]} {
+# ...and not already enquoted...
+    if {[Numeric $item] || ![string first \" $item]} {
         return $item
     } else {
         return \"[string trim $item]\"
