@@ -22,6 +22,10 @@ proc odbcdriverFromExt { ext } {
 
     set odbcdrivers [database drivers]
     set index [lsearch  -regexp $odbcdrivers ".*FileExtns=.*$ext.*"]
+    if {$index == -1} {
+	Query [list no_odbc_driver $ext] warning data_via_odbc {} ok
+	return {}
+    }
     return [lindex [lindex $odbcdrivers $index] 0]
 }
 
@@ -1129,7 +1133,9 @@ proc LoadDataFile {mode query mdl} {
                         close $stream
                         
                         #set driver "Microsoft Excel Driver (*.xls)"
-                        set driver [odbcdriverFromExt $ext]
+                        if {![llength [set driver [odbcdriverFromExt $ext]]]} {
+			    return 0
+			}
                         set dbfile $table_entry(fileName)
                         set connectString "DRIVER=$driver;DBQ=$dbfile"
                         #ShowMess debug info $connectString ok
@@ -1367,7 +1373,9 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    }
 	} else { ;# data is from a tclodbc-connected database
 	    #set driver "Microsoft Excel Driver (*.xls)"
-	    set driver [odbcdriverFromExt $ext]
+	    if {![llength [set driver [odbcdriverFromExt $ext]]]} {
+		return
+	    }
 	    set connectString "DRIVER=$driver;DBQ=$filename"
 	    #ShowMess debug info $connectString ok
 	    database db $connectString
