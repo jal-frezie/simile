@@ -558,6 +558,9 @@ proc TryToKill {node} {
 proc ScrubRun {node times} {
     global runState
 
+    if {![llength [info procs ExScrubRun]]} {
+	InitExecThread
+    }
     set runState($node,modelRunning) 0
     set optKill [after 3000 TryToKill $node]
     do_if_running $node ExScrubRun $node $times
@@ -870,7 +873,7 @@ proc StartComms {firstTime} {
 
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo openModel simtmpdir runHow
-    global regularActs SIMILE_PATH execThread
+    global regularActs
 
     LoadIconImages
     # Defaults to use if debugging
@@ -957,39 +960,6 @@ proc ControlDraw {prologVersion} {
 	}
     }
 
-# comment out next two lines for thread free operation
-    package require Thread
-    set execThread(id) [thread::create]
-
-    if {[info exists execThread]} {
-	foreach stubCmd {load_c_stub_1 load_c_stub_2 get_auth_code check_auth_code c_setparamarray c_setparamall c_cleartimeseries c_settimepointarray c_settimepointall c_setrecordlist c_getparamall c_gettimepointall PlaceInArray SetWrapTime SetFillMethod ex_load_dll update_executable free_data_handle c_killmodel GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
-	    proc $stubCmd {args} {
-		global execThread
-		#puts "exec bother [lindex [info level 0] 0]"
-		return [thread::send $execThread(id) [info level 0]]
-	    }
-	}
-
-	foreach stubSgst {ResetModel ExecuteTo} {
-	    proc $stubSgst {args} {
-		global execThread
-		thread::send -async $execThread(id) [info level 0] \
-		    execThread(reply)
-		vwait execThread(reply)
-		# can process events and incoming messages
-		return $execThread(reply)
-	    }
-	}
-
-
-	thread::send $execThread(id) [list source [file join $SIMILE_PATH Run \
-						       exec.tcl]]
-	load_c_stub_1 [thread::id]
-    } else {
-	source [file join $SIMILE_PATH Run exec.tcl]
-	load_c_stub_1
-    }
-
     if {[catch {package require Unpacker} dummy]} {
 	error "Could not find an unpacker for Simile -- $dummy"
     }
@@ -1019,8 +989,7 @@ proc ControlDraw {prologVersion} {
 	    close $UserStream
 	}
     }
-    load_c_stub_2
-    
+    loadcommands
     array set userinfo [list name $env(licensee_name) corp $env(licensee_corp) \
 			    final_expiry $env(user,final_expiry) \
 			    days_after_install $env(user,days_after_install) \
@@ -1186,6 +1155,43 @@ proc ControlDraw {prologVersion} {
     # Take the opportunity to pass the temp directory name etc to Prolog
     return [list $sendvars(simV) [brainwash $simtmpdir] \
             $openModel $userinfo(edn)]
+}
+
+proc InitExecThread {} {
+    global execThread SIMILE_PATH
+
+# comment out next two lines for thread free operation
+    package require Thread
+    set execThread(id) [thread::create]
+
+    if {[info exists execThread]} {
+	foreach stubCmd {load_c_stub_1 c_setparamarray c_setparamall c_cleartimeseries c_settimepointarray c_settimepointall c_setrecordlist c_getparamall c_gettimepointall PlaceInArray SetWrapTime SetFillMethod ex_load_dll update_executable free_data_handle c_killmodel GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
+	    proc $stubCmd {args} {
+		global execThread
+		#puts "exec bother [lindex [info level 0] 0]"
+		return [thread::send $execThread(id) [info level 0]]
+	    }
+	}
+
+	foreach stubSgst {ResetModel ExecuteTo} {
+	    proc $stubSgst {args} {
+		global execThread
+		thread::send -async $execThread(id) [info level 0] \
+		    execThread(reply)
+		vwait execThread(reply)
+		# can process events and incoming messages
+		return $execThread(reply)
+	    }
+	}
+
+
+	thread::send $execThread(id) [list source [file join $SIMILE_PATH Run \
+						       exec.tcl]]
+	load_c_stub_1 [thread::id]
+    } else {
+	source [file join $SIMILE_PATH Run exec.tcl]
+	load_c_stub_1
+    }
 }
 
 proc CheckCompilerLocation {} {

@@ -858,7 +858,7 @@ proc DoUserDialogue {} {
     pack [label $t.corp.mess -text Organization:] -side left
     pack [entry $t.corp.entry -width 40 -text userinfo(corp)] -side right
     pack [frame $t.code] -fill x
-    if {![string equal evaluation $userinfo(edn)]} {
+    if {![string equal evaluation $env(user,edn)]} {
 	pack [label $t.code.mess -text "License code:"] -side left
 	pack [entry $t.code.entry -width 40 -text userinfo(license_code)] \
 	    -side right
@@ -887,6 +887,9 @@ proc DoUserDialogue {} {
     while {![info exists userinfo(entrydone)]} {
 	tkwait variable userinfo(entrydone)
 	if {$userinfo(entrydone)} {
+	    set env(licensee_name) [$t.name.entry get]
+	    set env(licensee_corp) [$t.corp.entry get]
+	    set env(license_code) [$t.code.entry get]
 	    if {![c_testlicense]} {
 		Query bad_license_code error license {} ok
 		unset userinfo(entrydone)
@@ -1772,7 +1775,7 @@ proc Query {specifics icon helpRef parent opts} {
     }
 
     if {[winfo exists .splash]} {
-	destroy .splash ;# ensure mess is not obscured by splash screen
+	wm withdraw .splash ;# ensure mess is not obscured by splash screen
     }
     if {[winfo exists .popup]} {
 	destroy .popup ;# avoid weird hang under Aqua, or at least try

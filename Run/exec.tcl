@@ -19,12 +19,6 @@ proc load_c_stub_1 {{callerId {}}} {
     if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
 	error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform) -- $dummy"
     }
-}
-
-proc load_c_stub_2 {} {
-    global env
-
-    loadcommands
     randseed [clock scan now]
 }
 

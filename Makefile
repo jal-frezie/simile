@@ -167,12 +167,12 @@ vpath 	%.tcl 	Run
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
-$(SHIM): ame_cmx.c dllcalls.h $(SHANK) Makefile
+$(SHIM): ame_cmx.c dllcalls.h $(SHANK)
 	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. $(MAKESL) \
 		-o ../$(SHIM) ame_cmx.c $(USETCL) -l5d$(ARCHEXTN); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 
-$(UNPK): unpacker.c dllcalls.h
+$(UNPK): unpacker.c dllcalls.h Makefile
 	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. $(MAKESL) \
 		-o ../$(UNPK) unpacker.c $(USETCL) -l5d$(ARCHEXTN); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(UNPK)

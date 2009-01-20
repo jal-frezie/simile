@@ -166,10 +166,6 @@ proc IdentField {text field} {
     string range $text $field0 $fieldEnd
 }
 
-lappend auto_path [file join [file dirname [pwd]] System lib Stubs] \
-    /usr/local/lib
-package require Trf ;# loads right version of Trf (fingers crossed)
-
 proc AdjustCanvas {winId pt dir args} {
 #    global noScroll
     set tgt $winId.${dir}scroll

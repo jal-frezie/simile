@@ -27,8 +27,6 @@ them to be executed etc by Tcl commands. */
 #define WRITEGRAPH     22
 #define USEGRAPH       23
 
-#define USE_MY_HMAC
-
 #ifdef WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
@@ -1568,200 +1566,6 @@ FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 */
-/* String to use as secret */
-char secret[] = "R^6tf*Y}@?>H(U(ddJ(::{><Lu8H*G";
-#ifdef SIM_EVALUATION
-char edition[]="evaluation";
-#endif
-#ifdef SIM_TEACHING
-char edition[]="teaching";
-#endif
-#ifdef SIM_STANDARD
-char edition[]="standard";
-#endif
-#ifdef SIM_ENTERPRISE
-char edition[]="enterprise";
-#endif
-
-void crash (Tcl_Interp *interp, const char *cause) {
- /* oh dear. */
- /* oh dear, oh dear. */
-  // fat chance, we have no Tk in the exec interpreter
-  //  Tcl_VarEval(interp, "ShowMessage {Authorization failure} error {Bad ", cause, " authorization. Simile will now exit.} ok", NULL);
-  // Tcl_Exit(-1);
-  strcpy(NULL, secret); // that should screw it up nicely
-}	 
-#ifdef USE_MY_HMAC
-int my_md5(Tcl_Interp *interp, Tcl_Obj* text) {
-  Tcl_Obj* argv[3];
-  int result;
-
-  /* First we must make up our command for doing MD5. This will involve direct 
-     invocation of the Trf library routine with Tcl objects. */
-  Tcl_CmdInfo info;
-  Tcl_ObjCmdProc* md5ObjProc;
-  ClientData md5ObjClientData;
-
-  if (! Tcl_GetCommandInfo(interp, "::md5", &info)) {
-    Tcl_AppendResult(interp, "unknown command \"", "::md5", "\"", NULL);
-    return TCL_ERROR;
-  }
-  md5ObjProc = info.objProc;
-  md5ObjClientData = info.objClientData;
-
-  argv[0] = Tcl_NewStringObj("::md5", -1);
-  Tcl_IncrRefCount(argv[0]);  
-  argv[1] = Tcl_NewStringObj("--", -1);
-  Tcl_IncrRefCount(argv[1]);  
-
-
-
-  argv[2] = text;
-  Tcl_IncrRefCount(argv[2]);  
-
-  result = (*md5ObjProc)(md5ObjClientData, interp, 3, argv);
-
-  Tcl_DecrRefCount(argv[2]);  
-  Tcl_DecrRefCount(argv[1]);  
-  Tcl_DecrRefCount(argv[0]);  
-
-  return result;
-}
-
-int my_hash(Tcl_Interp *interp, Tcl_Obj *textObj) {
-  Tcl_Obj* md5Target;
-
-  if (my_md5(interp, textObj) == TCL_ERROR) {
-    return TCL_ERROR;
-  }
-  md5Target = Tcl_NewStringObj("::hex -mode encode -- ", -1);
-  Tcl_ListObjAppendElement(interp, md5Target, Tcl_GetObjResult(interp));
-  if (Tcl_EvalObjEx(interp, md5Target, 0) == TCL_ERROR) {
-    return TCL_ERROR;
-  }
-  return Tcl_VarEval(interp, "string tolower ",
-	      Tcl_GetStringResult(interp), NULL);
-}
-      
-int my_hmac(Tcl_Interp *interp, const char* key, const char* text) {
-  char* k_ipad;
-  char k_opad[96];
-  Tcl_Obj* md5Target;
-
-  k_ipad = (char*)malloc(strlen(text)+80);
-  int count;
-  for (count=strlen(key)-1; count>=0; count--) {
-    k_ipad[count]=key[count]^0x36;
-    k_opad[count]=key[count]^0x5c;
-  }
-  for (count=strlen(key); count<64; count++) {
-    k_ipad[count]=0x36;
-    k_opad[count]=0x5c;
-  }
-
-  strcpy(k_ipad+64, text);
-  my_md5(interp, Tcl_NewStringObj(k_ipad, strlen(text)+64));
-  
-  free(k_ipad);
-
-  md5Target = Tcl_NewStringObj(k_opad, 64);
-  Tcl_AppendObjToObj(md5Target, Tcl_GetObjResult(interp));
-  return my_hash(interp, md5Target);
-}
-#endif    
-/* This gets the authorisation code that is needed for a particular combination
-   of original simile edition and Prolog model specification */
-
-FINDABLE int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
-			      int argc, Tcl_Obj *CONST argv[]) {
-   if (argc != 2) {
-     Tcl_WrongNumArgs(interp, 1, argv, "source_string");
-     return TCL_ERROR;
-   }
-   /* set ModelText [mime::getbody $Part($Model)]
-   if (Tcl_VarEval(interp, "set hvfe587gw938 ", 
-		   Tcl_GetStringFromObj(argv[1], NULL), NULL) != TCL_OK) {
-     return TCL_ERROR;
-   }
-   regexp {edition=([^,]*),} $ModelText all putativeEdition */
-   Tcl_SetVar2Ex(interp, "hvfe587gw938", NULL, argv[1], 0);
-   if (Tcl_VarEval(interp, 
-		   "regexp {edition=([^,]*),} $hvfe587gw938 all h76rt4g7",
-		   NULL) != TCL_OK) {
-     return TCL_ERROR;
-   }
-   if (strcmp(edition, Tcl_GetVar(interp, "h76rt4g7", 0))) {
-     crash(interp, "edition");
-   }
-#ifdef USE_MY_HMAC
-   return my_hmac(interp, secret, Tcl_GetVar(interp, "hvfe587gw938", 0));
-#else
-   /*    ::sha1::hmac "Expensive" $ModelText */
-   return Tcl_VarEval(interp, "::md5::hmac ", secret, " $hvfe587gw938", NULL);
-#endif
-}   
-
-/* This bit exists solely to make our lives difficult, especially if we are
-thinking of ripping off Simulistics, Inc. A special security code is generated
-from our little secret -- after checking that the edition specified is right */
-
-FINDABLE int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
-  if (argc != 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "source_string code");
-    return TCL_ERROR;
-  }
-  /* set ModelText [mime::getbody $Part($Model)]
-  if (Tcl_VarEval(interp, "set hvfe587gw938 [mime::getbody ", 
-		  Tcl_GetStringFromObj(argv[1], NULL), "]", NULL) != TCL_OK) {
-    return TCL_ERROR;
-    } */
-#ifdef USE_MY_HMAC
-  if (my_hmac(interp, secret, Tcl_GetStringFromObj(argv[1], NULL)) != TCL_OK) {
-    return TCL_ERROR;
-  }
-#else
-  Tcl_SetVar2Ex(interp, "hvfe587gw938", NULL, argv[1], 0);
-  if (Tcl_VarEval(interp, "::md5::hmac ", secret, " $hvfe587gw938", NULL) != TCL_OK) {
-    return TCL_ERROR;
-  }
-#endif
-
-  /* check it matches what we got before */
-  if (strcmp(Tcl_GetStringFromObj(argv[2],NULL), Tcl_GetStringResult(interp))) {
-    crash(interp, "model");
-  }
-  
-  /* Also if we are evaluation, it was not written by enterprise and it has 
-     more than 30 lines beginning 'node...' there are grounds to suspect foul
-     play...actually it might not be their fault so don't do this...
-  if (strcmp("evaluation", edition)) {
-    return TCL_OK;
-  }
-  if (strcmp("enterprise", Tcl_GetVar(interp, "h76rt4g7", 0))) {
-    return TCL_OK;
-  }
-  if (Tcl_VarEval(interp, "regexp -all {node\(node} $hvfe587gw938",
-		  NULL) != TCL_OK) {
-    return TCL_ERROR;
-  }
-  Tcl_GetIntFromObj(interp, Tcl_GetObjResult(interp), &trouble);
-  if (trouble > 30) {
-    crash();
-    } */
-  return TCL_OK;
-}
-
-FINDABLE int GetVersionCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
-  if (argc != 1) {
-    Tcl_WrongNumArgs(interp, 1, argv, "");
-    return TCL_ERROR;
-  }
-  Tcl_SetObjResult(interp, Tcl_NewStringObj(simileVersion, -1));
-  return TCL_OK;
-}
-
 FINDABLE int killmodelCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   int error, pid;
@@ -1780,72 +1584,48 @@ FINDABLE int killmodelCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
-int licenseRight (Tcl_Interp *interp) {
-  /* If this version requires a license then check we have the right
-     one...
+/*
+ * The following declarations refer to internal Tk routines.  These
+ * interfaces are available for use, but are not supported.
+ */
 
-     if (Tcl_VarEval(interp, "::md5::hmac ", secret, 
-      " $userinfo(name)@$userinfo(corp)%$userinfo(edn)", NULL) != TCL_OK) {
+//EXTERN void		TkConsoleCreate _ANSI_ARGS_((void));
+//EXTERN int		TkConsoleInit _ANSI_ARGS_((Tcl_Interp *interp));
 
-      Above used hmac but now we just append the secret and hash because
-      it needs to be generated by PHP 
-      ...so for a while it looked like this: */
-#ifdef SIM_LICENSED
-#ifdef USE_MY_HMAC
-  Tcl_Obj* dataCombo;
-  const char* offered;
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_AppInit --
+ *
 
-  dataCombo = Tcl_GetVar2Ex(interp, "env", "licensee_name", TCL_LEAVE_ERR_MSG);
-  if (dataCombo) {
-    dataCombo = Tcl_DuplicateObj(dataCombo);
-  } else {
-    return -1;
-  }
-  Tcl_AppendStringsToObj(dataCombo, "%", edition, "^", secret, NULL);
-  if (my_hash(interp, dataCombo) == TCL_ERROR) {
-    return -1;
-  }
-#else
-  char md5cmd[] = "::md5::md5 $env(licensee_name)%$env(user,edn)^";
-  if (Tcl_VarEval(interp, md5cmd, secret, NULL) != TCL_OK) {
-    /* raise another error so user doesnt see secret in trace */
-    Tcl_VarEval(interp, md5cmd, "<secret>", NULL);
-    return -1;
-  }
-#endif
+ *	This procedure performs application-specific initialization.
+ *	Most applications, especially those that incorporate additional
+ *	packages, will have their own version of this procedure.
 
-  /* check it matches what we got before */
-  offered = Tcl_GetVar2(interp, "env", "license_code", 0);
-  if (!offered || strncmp(offered, Tcl_GetStringResult(interp), 10)) {
-//    Tcl_AppendResult(interp, " is license code", (char *)NULL);
-//    return -1;
-    return 0;
-  }
-#endif
-  return 1;
-}
+ *
+ * Results:
+ *	Returns a standard Tcl completion code, and leaves an error
+ *	message in interp->result if an error occurs.
+ *
+ * Side effects:
+ *	Depends on the startup script.
+ *
+ * Note: 'version' is a global variable defined in the model,
+ * and incremented for each new model program created -- this
+ * should allow successive models to be built and executed in
+ * c.
+ *----------------------------------------------------------------------
+ */
 
-FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
-  if (argc != 1) {
-    Tcl_WrongNumArgs(interp, 1, argv, "");
-    return TCL_ERROR;
-  }
+FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
+  char pkgName[16];
 
-  /* Data about version etc held in dll for safety and convenience:
-     these will become globals because we are not in the scope of a
-     procedure */
-  Tcl_SetVar2Ex(interp, "env", "user,final_expiry", 
-		Tcl_NewLongObj(SIM_FINAL_EXPIRY), 0);
-  Tcl_SetVar2Ex(interp, "env", "user,days_after_install", 
-		Tcl_NewIntObj(SIM_DAYS_AFTER_INSTALL), 0);
-  switch (licenseRight(interp)) {
-  case -1:
-    return TCL_ERROR;
-  case 0:
-    crash(interp, "program");
-  }
-
+  globInterp = interp;
+  proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess, 
+			  simileVersion);
+  sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
+  /* Use the Tcl Stubs mechanism */
+  Tcl_InitStubs(interp, pkgName, 0);
   Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
@@ -1933,80 +1713,8 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   /*  Tcl_CreateObjCommand(interp, "c_set_connection_database", SetConnDBCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   */
-  Tcl_CreateObjCommand(interp, "get_auth_code", GetAuthCodeCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "check_auth_code", CheckAuthCodeCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "get_simile_verson", GetVersionCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
   Tcl_CreateObjCommand(interp, "c_killmodel", killmodelCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  return TCL_OK;
-}
- 
-FINDABLE int testlicenseCmd(ClientData clientData, Tcl_Interp *interp, 
-			    int argc, Tcl_Obj *CONST argv[]) {
-  int answer;
-  answer = licenseRight(interp);
-  if (answer == -1) {
-    return TCL_ERROR;
-  } else {
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(answer));
-    return TCL_OK;
-  }
-}
-
-/*
- * The following declarations refer to internal Tk routines.  These
- * interfaces are available for use, but are not supported.
- */
-
-//EXTERN void		TkConsoleCreate _ANSI_ARGS_((void));
-//EXTERN int		TkConsoleInit _ANSI_ARGS_((Tcl_Interp *interp));
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_AppInit --
- *
-
- *	This procedure performs application-specific initialization.
- *	Most applications, especially those that incorporate additional
- *	packages, will have their own version of this procedure.
-
- *
- * Results:
- *	Returns a standard Tcl completion code, and leaves an error
- *	message in interp->result if an error occurs.
- *
- * Side effects:
- *	Depends on the startup script.
- *
- * Note: 'version' is a global variable defined in the model,
- * and incremented for each new model program created -- this
- * should allow successive models to be built and executed in
- * c.
- *----------------------------------------------------------------------
- */
-
-FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
-  char pkgName[16];
-
-  globInterp = interp;
-  proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess, 
-			  simileVersion);
-  sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
-  /* Use the Tcl Stubs mechanism */
-  Tcl_InitStubs(interp, pkgName, 0);
-  Tcl_SetVar2(interp, "env", "user,edn", edition, 0);
-  Tcl_CreateObjCommand(interp, "c_testlicense", testlicenseCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  Tcl_CreateObjCommand(interp, "loadcommands", loadcmdsCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
   sprintf(pkgName + strlen(pkgName), ".%s.%d", simileVersion, FORUNIX);
   return Tcl_PkgProvide(interp, "Ame_dll", pkgName);
 }
