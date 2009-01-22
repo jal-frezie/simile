@@ -568,7 +568,16 @@ proc ScrubRun {node times} {
     ToggleIOToolMenu $node
 }
 
+# Called from Prolog when losing a model: no point keeping helper setup
+# so don't ask
 proc DestroyHelpers {node} {
+    global helperTable
+    
+    set helperTable($node,keepSetup) 0
+    LeaveHelpers $node
+}
+
+proc LeaveHelpers {node} {
     do_if_running $node ExDestroyHelpers $node
 }
 
@@ -1055,8 +1064,9 @@ proc ControlDraw {prologVersion} {
     StartComms 1
 
     set custom(hotlist) {}
-    if {[file exists $custom(prefDir)/.recent]} {
-        set cacheStream [NetOpen $custom(prefDir)/.recent r]
+    set cache [file join $custom(prefDir) .recent]
+    if {[file exists $cache]} {
+        set cacheStream [NetOpen $cache r]
         while {[gets $cacheStream oldFile]>0} {
             if {[file exists $oldFile] && \
                         [lsearch $custom(hotlist) $oldFile]==-1} {
@@ -1661,7 +1671,7 @@ proc FinishExec {win} {
     $win config -cursor watch
     set node $window_info($win,top_node)
     ScrubRun $node 1
-    DestroyHelpers $node
+    LeaveHelpers $node
     $win config -cursor $oldCursor
 }
 
@@ -2233,10 +2243,10 @@ proc restore_equation {winId bar} {
 
 proc RecordPathChoice {fileType chosenFile context} {
     global chosenPaths custom
-    if {[llength $context]} {
-	set chosenPaths($fileType,$context) \
-	    [set chosenPaths(latest,$context) [file dirname $chosenFile]]
-    } else { ;# it's a model file
+    
+    set chosenPaths($fileType,$context) \
+	[set chosenPaths(latest,$context) [file dirname $chosenFile]]
+    if {[string equal .sml $fileType]} { ;# we are opening a model file
 	set custom(hotlist) [linsert $custom(hotlist) 0 $chosenFile]
     }
 }

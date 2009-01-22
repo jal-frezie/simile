@@ -1,7 +1,7 @@
 #!/home/jaspert/Simile/System/bin/wish
 # Simile source code file: Run/simile.tcl
 #
-# (c) Simulistics Ltd. 2001-2008
+# (c) Simulistics Ltd. 2001-2009
 # (c) University of Edinburgh 1995-2001
 #
 # This file contains the code initially sourced into the Tcl interpreter and
@@ -409,7 +409,7 @@ set circle_c {Â©}
 if {[string equal windows $tcl_platform(platform)]} {
     set circle_c {©}
 }
-set graph(anality) "$circle_c Copyright Simulistics Ltd. 2001-2008"
+set graph(anality) "$circle_c Copyright Simulistics Ltd. 2001-2009"
 .splash.c create text 395.0p 50.0p -font $graph(font) -fill \#99cc99 -anchor e \
     -text $graph(anality)
 .splash.c create text 250.0p 225.0p -font $graph(megafont) -fill #660066 \

@@ -248,11 +248,11 @@ menu_handle(_Win, open_toplevel, Name) :-
 	stick_model_in(Win, Parent, Name, reopen).
 
 menu_handle(Win, file, open) :-
-	get_load_file(Name),
+	Win shows_model Parent,
+	get_load_file(Parent, Name),
 	(Name = '', !;
 	Win = '.hi.canvas', !,
 	    menu_handle(Win, open_toplevel, Name);
-	Win shows_model Parent,
 	(is_toplevel(Parent),
 	    find_all_comps(Parent, _), !,
 	    menu_handle(Win, open_toplevel, Name);
@@ -264,9 +264,9 @@ menu_handle(Win, file, open) :-
 	    stick_model_in(Win, Parent, Name, reopen))).
 
 menu_handle(Win, model, insert) :-
-	get_load_file(Name),
-	(Name = '', !;
 	Win shows_model Parent,
+	get_load_file(Parent, Name),
+	(Name = '', !;
 	select_all_in(Parent, base),
 	stick_model_in(Win, Parent, Name, insert([0,0]))).
 
@@ -1350,7 +1350,7 @@ do_save(Win, Model, New_name) :-
         finish_progress_dialogue, /* Allow file selector to take focus */
 	(New_name = false,
 	    get_model_file(Model, Name);
-	try_save_files(Name)),
+	try_save_files(Model, Name)),
 
 	/* Starts dialogue, but if backtracking, finishes again before
 	retrying dialogue */
@@ -1432,11 +1432,11 @@ save_dlls(Point, LocalDir, Top, Model, SaveParent) :-
 /* try_save_files will keep prompting the user for save files each time it is
 retried, but fail when the user cancels the request */
 
-try_save_files(Name) :-
-	get_save_file(TestName),
+try_save_files(Model, Name) :-
+	get_save_file(Model, TestName),
 	\+ TestName = '',
 	(Name = TestName;
-	try_save_files(Name)).
+	try_save_files(Model, Name)).
 
 save_isolated(Name, Part, Date, SelnOnly) :-
 /*	(SelnOnly = yes, !,

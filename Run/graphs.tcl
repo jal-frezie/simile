@@ -548,8 +548,8 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     set t [::ttk::notebook .table.notebook]
     $t add [set fc [frame $t.columns]] -text "Data in column"
     # Data file and data column heading
-    label $fc.instructions -wrap 400 -text "Choose a data file, then create table from file by dragging \
-            column headings to act as either indices or as data."
+    label $fc.instructions -wrap 400 -text "Choose a data file, select a worksheet if mecessary, then create table from file by dragging \
+            column headings to act either as indices or as data."
     pack $fc.instructions -side top -anchor w -padx 2 -pady 2
     TitleFrame $fc.fdata -text "Data file "
     set fdata [GetFrame $fc.fdata]

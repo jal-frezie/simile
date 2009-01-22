@@ -45,7 +45,7 @@ proc ShowMess { title icon string resps {parent {}}} {
 # filename has spaces in it.
 
 proc ChooseFile { preferred title canbenew context} {
-    global __tk_filedialog chosenPaths preSelect
+    global __tk_filedialog preSelect
 
     set fileType [file extension $preferred]
 #    set __tk_filedialog(selectPath) [do_in_editor GetPathChoice $fileType]
