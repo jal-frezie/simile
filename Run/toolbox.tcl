@@ -34,8 +34,12 @@ option add *Entry.font TkTextFont widgetDefault
 option add *Text.font TkTextFont widgetDefault
 option add *TLabel.font TkCaptionFont widgetDefault
 # ...and this makes sure they all scale when the screen metrics change
-font configure TkDefaultFont -size $niceSize ;# -weight bold
-font configure $menuFont -size $niceSize ;# -weight bold
+font configure TkDefaultFont -size $niceSize
+font configure $menuFont -size $niceSize
+if {[string equal x11 [tk windowingsystem]]} {
+    font configure TkDefaultFont -weight bold
+    font configure $menuFont -weight bold
+}
 font configure TkTextFont -size $niceSize
 font configure TkCaptionFont -size $niceSize
 # Now here's one of my own...
