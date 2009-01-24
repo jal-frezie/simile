@@ -831,12 +831,13 @@ Obj is_class_of_sort Class :-
 		condition-[regular_box, box, rectangle, channel, has_function,
 			   cond_value],
 		creation-[regular_box, box, rectangle, channel, has_function,
-			  init_eval, level, value_outside],
+			  init_eval, level, value_outside, pop_only],
 		immigration-[regular_box, box, rectangle, channel, 
-				has_function, level, value_outside],
+				has_function, level, value_outside, pop_only],
 		reproduction-[regular_box, box, rectangle, channel, 
-				has_function, level],
-		loss-[regular_box, box, rectangle, channel, has_function]]),
+				has_function, level, pop_only],
+		loss-[regular_box, box, rectangle, channel, has_function,
+		      pop_only]]),
 	member(Class, SortList).
 
 Obj is_of_sort Sort :-

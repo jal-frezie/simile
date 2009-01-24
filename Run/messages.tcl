@@ -69,6 +69,7 @@ set msgs(abs) "Returns absolute difference between argument and zero"
 set msgs(ceil) "Rounds argument up to a whole number"
 set msgs(floor) "Rounds argument down to a whole number"
 set msgs(channel_is) "Argument is an immigration, reproduction or creation channel. Returns true if this individual appeared through that channel."
+set msgs(dies_of) "Argument is a mortality channel. Returns true if this channel will cause the individual to disappear at the end of the current time step."
 set msgs(choose) "choose(a,b,c) is shorthand for 'if a then b else c'"
 set msgs(exp) "Returns e to the power of a number"
 set msgs(fmod) "Returns remainder after dividing first argument by second"
@@ -171,10 +172,23 @@ set msgs(compile_failed_message) "The compiler raised a problem with the code ge
 set msgs(compile_failed_detail) "It may help to try the 'Debug' option."
 set msgs(compile_failed_full) "The error was: %s."
 
+set msgs(link_inconsistency_title) "Problem with model"
+set msgs(link_inconsistency_message) "This model cannot be built because ot contains an inconsistent link equivalence: %s."
+set msgs(link_inconsistency_detail) "Please report this problem to your software supplier."
+
 set msgs(unspecified_title) "Model is incomplete"
-set msgs(unspecified_message) "Submodel %s contains incomplete component: %s"
+set msgs(unspecified_message) "Submodel \"%s\" contains incomplete component: \"%s\""
 set msgs(unspecified_detail) "This component is shown in red, which means it has not been fully specified."
 set msgs(unspecified_full) "Edit the equation of this component, or make it a file parameter."
+
+set msgs(no_defining_param_title) "Required component missing"
+set msgs(no_defining_param_message) "The membership of submodel \"%s\" is set by the number of values supplied for its fixed parameters, but it has no fixed parameters."
+
+set msgs(no_seed_param_title) "Required component missing"
+set msgs(no_seed_param_message) "The membership of submodel \"%s\" is set by the population channel symbols it contains. In order that the population have some members, it must contain at least one creation or immigration symbol, and it does not contain any."
+
+set msgs(misplaced_channel_title) "Component in wrong place"
+set msgs(misplaced_channel_message) "The component \"%s\" is a channel, which only has meaning if its parent is a population submodel, which submodel \"%s\" is not."
 
 set msgs(missing_function_title) "User-defined function missing"
 set msgs(missing_function_message) "This model cannot be built because it contains the user-defined function %s"

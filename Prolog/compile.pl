@@ -228,6 +228,17 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	\+ defines_membership(Submodel, _Param),
 	caption_for(Submodel, OuterText),
 	Wrinkle = no_defining_param(OuterText);
+	uses_channels(Submodel),
+	\+ (find_all_comps(Submodel, SmChannel),
+	       SmChannel is_of_sort value_outside),
+	caption_for(Submodel, OuterText),
+	Wrinkle = no_seed_param(OuterText);
+	\+ uses_channels(Submodel),
+	find_all_comps(Submodel, SmChannel),
+	SmChannel is_of_sort pop_only,
+	caption_for(Submodel, OuterText),
+	caption_for(SmChannel, InnerText),
+	Wrinkle = misplaced_channel(InnerText, OuterText);
 	variable_size(Submodel),
 	\+ by_record(Submodel),
 	contains(Submodel, Param),
@@ -236,6 +247,9 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	caption_for(Param, InnerText),
 	Wrinkle = param_in_vm_model(OuterText, InnerText).
 
+uses_channels(Submodel) :-
+	is_population(Submodel),
+	\+ by_record(Submodel).
 /*
 remove_redundant_equivs(Submodel, Equivs) :-
 	Submodel has_link_equivalences OldEquivs,

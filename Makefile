@@ -33,7 +33,7 @@ endif
 # default *nix variables overwritten in special cases
 GCCCMD = gcc
 GPPCMD = g++
-OPT = -O3
+OPT = 
 
 UNAME = $(shell uname)
 ifeq ($(UNAME),CYGWIN_NT-5.1)
@@ -155,9 +155,9 @@ System/bin/struct_db.dll: struct_db.pl Prolog/struct_db.c
 	cd Prolog; splfr struct_db.pl struct_db.c; mv struct_db.dll ../System/bin; cd ..
 
 Run/xgsimile$(EXECEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
-	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C '-D_GNU_PROLOG' gmain$(ARCHEXTN).o struct_db.c; cd ..
+	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C '$(FLAGS) -D_GNU_PROLOG' gmain$(ARCHEXTN).o struct_db.c; cd ..
 Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl
-	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c gmain.pl; cd ..
+	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c -C '$(FLAGS)' gmain.pl; cd ..
 
 vpath 	%.cpp 	Run
 vpath 	%.c 	Run
