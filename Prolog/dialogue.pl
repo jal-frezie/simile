@@ -12,7 +12,7 @@ the rest of the program are handled through gui_input. */
 sicstus_module(dialogue, [pick_equation/2, do_equation_dialog/2, 
 	do_disag_dialog/4, do_relation_dialog/8, test_eqn/8,
 			  check_param_usage/5,
-	get_load_file/1, get_save_file/2,
+	get_load_file/2, get_save_file/2,
 	get_program_file/3, get_import_file/3, 
         start_progress_dialogue/1,
 	finish_progress_dialogue/0, reassure_user/1]).

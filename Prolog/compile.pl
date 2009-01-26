@@ -759,7 +759,7 @@ build_submodel_functions( Language, Phases, Constants, StateForm, UpdateForm,
 	/* rough and ready -- phase NotDone means it never gets scheduled */
 	order_all_assignments(Phases, StateForm, OrdStates, _),
 	order_all_assignments(Phases, UpdateForm, OrdUpdates, _),
-	order_all_assignments(Phases, SortedForm, Ordered, Lost),
+	order_all_assignments(Phases, SortedForm, Ordered, Lost), !,
 	(member(Forgotten, SortedForm),
 	    not_yet_ordered(Forgotten), !,
 	    find_circle([Forgotten], Loop),

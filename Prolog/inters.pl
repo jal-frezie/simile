@@ -959,6 +959,7 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	lower(MxOpStr, OpStr).
 
 dissociate(made_at(Arg, _), later(Arg)).
+dissociate(later(Arg), later(Arg)). % in case sofars/samesteps are nested
 	
 refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 		     Units-Dims),
