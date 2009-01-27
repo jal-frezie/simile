@@ -447,6 +447,7 @@ bar_edit_menu(Wid) :-
 	CanAddComp = CanAddNode),
 	update_ability(Model, none, 'edit.add', 'Compartment', CanAddComp),
 	update_ability(Model, none, 'edit.add', 'Variable', CanAddNode),
+	update_ability(Model, none, 'edit.add', 'Submodel', CanAddNode),
 	/* update_ability(Model, none, 'edit.add', 'Event', CanAddNode), */
 	update_ability(Model, none, 'edit.add', '{Membership control}',
 		       CanAddNode),

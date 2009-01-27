@@ -1318,7 +1318,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add cascade -label "Create new" -menu $fm.add
     set em1 [menu $fm.add -tearoff 0]
 # add state, event and squirt
-    foreach type {Compartment Variable Flow Influence} {
+    foreach type {Compartment Variable Flow Influence Submodel} {
         $em1 add command -label $type -command \
                 "MenuSelect $c edit [string tolower $type]"
     }
