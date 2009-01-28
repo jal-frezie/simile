@@ -410,9 +410,6 @@ as Tcl commands so the dialog box can call them as if it were a Tcl simulation.
 unloads the model. Since the model dll now merely defines the model class, this
 also causes an instance of it to be created. */
 
-long int modelType;
-long int modelHandle;
-
 //connectRecord** connectDataPtr;
 //int* connCountPtr;
 
@@ -421,6 +418,7 @@ FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
   char* fileName;
   char* nodeName;
   char* dllProblem;
+  long int modelType;
 
   switch (argc) {
   case 3:
@@ -447,26 +445,28 @@ FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-   int error;
+  int error;
+  long int modelType;
+  long int modelHandle;
 
-   if (argc != 2) {
-     Tcl_WrongNumArgs(interp, 1, argv, "model_id");
-     return TCL_ERROR;
-   }
-
-   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
-   if (error != TCL_OK) {
-	return error;
-   }
-   modelHandle = fetch_top_instance(modelType);
-   if (modelHandle) {
-     Tcl_SetLongObj(Tcl_GetObjResult(interp), modelHandle);
-     return TCL_OK;
-   } else {
-     Tcl_SetStringObj(Tcl_GetObjResult(interp), 
-		      "Failed to create model instance", -1);
-     return TCL_ERROR;
-   }
+  if (argc != 2) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id");
+    return TCL_ERROR;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  modelHandle = fetch_top_instance(modelType);
+  if (modelHandle) {
+    Tcl_SetLongObj(Tcl_GetObjResult(interp), modelHandle);
+    return TCL_OK;
+  } else {
+    Tcl_SetStringObj(Tcl_GetObjResult(interp), 
+		     "Failed to create model instance", -1);
+    return TCL_ERROR;
+  }
 }
 
 /* This one creates an array to hold values for a model parameter and
@@ -901,6 +901,8 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
   char spare[256];
   int how_int, phase, error;
   excpData* errorBlk;
+  long int modelType;
+  long int modelHandle;
 
   if (argc != 5) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id integration_method phase");
@@ -948,6 +950,8 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
   int how_int, error;
   excpData* errorBlk;
   Tcl_Obj* working;
+  long int modelType;
+  long int modelHandle;
 
   if (argc != 7) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id integration_method start_time end_time error_limit");
@@ -1014,33 +1018,34 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int setstepCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-   double starttime;
-   int phase;
-   int error;
+  double starttime;
+  int phase;
+  int error;
+  long int modelType;
 
-   if (argc != 4) {
-     Tcl_WrongNumArgs(interp, 1, argv, "model_id interval/phase step_id");
-     return TCL_ERROR;
-   }
-
-   error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-   if (error != TCL_OK) {
-	return error;
-   }
-
-   error = Tcl_GetDoubleFromObj(interp, argv[2], &starttime);
-   if (error != TCL_OK) {
-	return error;
-   }
-
-   error = Tcl_GetIntFromObj(interp, argv[3], &phase);
-   if (error != TCL_OK) {
-	return error;
-   }
-
-   Tcl_SetIntObj(Tcl_GetObjResult(interp), 
-		 setstep(modelType, starttime, phase));
-   return TCL_OK;
+  if (argc != 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id interval/phase step_id");
+    return TCL_ERROR;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetDoubleFromObj(interp, argv[2], &starttime);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetIntFromObj(interp, argv[3], &phase);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  Tcl_SetIntObj(Tcl_GetObjResult(interp), 
+		setstep(modelType, starttime, phase));
+  return TCL_OK;
 }
 
 /* exit model: unload all dlls. If the handle is nonzero, free its data
@@ -1051,6 +1056,8 @@ FINDABLE int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
   char* dllProblem;
+  long int modelType;
+  long int modelHandle;
 
   if (argc != 3) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id");
@@ -1080,6 +1087,7 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
   char* nodeId;
+  long int modelType;
   
   if (argc != 3) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id caption");
@@ -1105,17 +1113,19 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
-   int error;
+  int error;
+  long int modelType;
+
   if (argc < 4) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id node_id action ?parameters?");
     return TCL_ERROR;
   }
 
-   error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-   if (error != TCL_OK) {
-	return error;
-   }
-
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
   return do_interface(interp, argc-1, argv+1);
 }
 
@@ -1391,6 +1401,8 @@ FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
   long int mSpare;
   enum_type_data* usedTypes[32];
   nodeValues* c_result;
+  long int modelType;
+  long int modelHandle;
 
   if (argc != 4) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id caption");

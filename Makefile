@@ -178,24 +178,24 @@ $(UNPK): unpacker.c dllcalls.h Makefile
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
 System/bin/5d.dll: shank.cpp dllcalls.h
-	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. -shared $(PARALLEL) \
+	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
 		-o 5d.dll -Wl,--out-implib,lib5d_win.a shank.cpp; \
 		mv 5d.dll ../$(SHANK); mv lib5d_win.a ../System/lib; cd ..
 
 # not needed for Linux; Simile builds it when first run
 System/lib/lib5d.so: shank.cpp dllcalls.h
-	cd Run; $(GPPCMD) -fPIC $(FLAGS) -I. -shared $(PARALLEL) \
+	cd Run; $(GPPCMD) -fPIC $(FLAGS) -I. $(MAKESEL) $(PARALLEL) \
 		-o ../$(SHANK) shank.cpp; cd ..
 
 # gcc cannot build universal binary libraries for loading via ld
 # directly; build separately and load appropriate one at run time
 
 System/lib/lib5d$(ARCHEXTN).dylib: shank.cpp dllcalls.h
-	cd Run; $(GPPCMD) -O -fPIC $(FLAGS) -I. -dynamiclib $(PARALLEL) \
+	cd Run; $(GPPCMD) -O $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
 	-o ../$(SHANK) shank.cpp; cd ..
 
 Run/install.dll: install.c Makefile
-	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include -shared \
+	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include $(MAKESL) \
 		-o install.dll install.c -L../System/lib -lcrypto -lssl; \
 		cd ..
 
