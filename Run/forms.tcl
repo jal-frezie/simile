@@ -793,18 +793,28 @@ proc RelationCheck {parent title type state init_comment} {
 
 set find(prevs) {}
 
-proc GetFindText {parent} {
+proc GetFindText {canvas} {
     global find tcl_platform
-    set t [PutItThere .findentry $parent]
+    set t [PutItThere .findentry $canvas]
     wm protocol $t WM_DELETE_WINDOW {set find(done) 0}
     wm title $t "Find"
     wm resizable $t 0 0
     TitleFrame .findentry.follow -text "Follow influences "
     set follow [GetFrame .findentry.follow]
-    pack [button $follow.back -text "Components influencing\nselection" \
-	      -command "set find(done) 10"] -padx 2 -pady 4 -side left
-    pack [button $follow.forward -text "Components influenced\nby selection" \
-	      -command "set find(done) 11"] -padx 2 -pady 4 -side left
+    if {[llength [GetFromProlog tk_get_info('$canvas',selection,any)]]} {
+	set traceFns normal
+    } else {
+	set traceFns disabled
+    }
+    pack [button $follow.back -text "Components\ninfluencing\nselection" \
+	      -command "set find(done) 10" -state $traceFns] \
+	-padx 2 -pady 4 -side left
+    pack [button $follow.here -text "Components\nequivalent\nto selection" \
+	      -command "set find(done) 11" -state $traceFns] \
+	-padx 2 -pady 4 -side left
+    pack [button $follow.forward -text "Components\ninfluenced\nby selection" \
+	      -command "set find(done) 12" -state $traceFns] \
+	-padx 2 -pady 4 -side left
     pack .findentry.follow -anchor nw -fill both
 
     set ft [frame .findentry.ft]

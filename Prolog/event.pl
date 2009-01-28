@@ -36,20 +36,24 @@ units_for(Comp, UnitStr) :-
 follow_seln_infs(Dir, End) :-
 	doomed(Comp),
 	Comp is_of_sort has_function,
-	value_propagates(Dir, Comp, End, _Link),
-	\+ doomed(End).
+	(Dir = any,
+	    End = Comp;
+	 value_propagates(Dir, Comp, End, _Link),
+	    \+ doomed(End)).
 
 value_propagates(Dir, From, To, Link) :-
 	find_base(From, Base),
 	(UseComp = Base; find_ghosts(Base, UseComp)),
-	(Dir = out,
-	    m_class:connects(Link, UseComp, Next),
-	    find_type(Next, function),
-	    get_host(Next, To);
-	 Dir = in,
-	    implicit_function(UseComp, Fn),
-	    m_class:connects(Link, To, Fn)),
-	find_type(Link, influence).
+	(Dir = none,
+	    To = UseComp;
+	  (Dir = out,
+	      m_class:connects(Link, UseComp, Next),
+	      find_type(Next, function),
+	      get_host(Next, To);
+	   Dir = in,
+	      implicit_function(UseComp, Fn),
+	      m_class:connects(Link, To, Fn)),
+	    find_type(Link, influence)).
 
 multi_prop(Dir, From, To, Count) :-
 	To = From;

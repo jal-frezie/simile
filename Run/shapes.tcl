@@ -1402,6 +1402,10 @@ proc FindCaption {canvas} {
     } elseif {$find(done)==11} {
 	#follow infs on
 	set find(List,$canvas) \
+	    [GetFromProlog tk_get_info('$canvas',selection,none)]
+    } elseif {$find(done)==12} {
+	#follow infs on
+	set find(List,$canvas) \
 	    [GetFromProlog tk_get_info('$canvas',selection,out)]
     } elseif {[string compare $findable {}]} {
 	set find(List,$canvas) \
@@ -1634,9 +1638,11 @@ proc LoadLooks {t n target object} {
     
     if {[string compare $target influence]} {
         #ShowMess debug info "ExtractFontData looks($object,font) [ExtractFontData $looks($object,font)]" ok
-        scan [ExtractFontData $looks($n,$object,font)] "%s %s %s %d" \
-                looks($n,$target,family) looks($n,$target,weight) \
-                looks($n,$target,style) textsize
+	set fontData [ExtractFontData $looks($n,$object,font)]
+	set looks($n,$target,family) [lindex $fontData 0]
+	set looks($n,$target,weight) [lindex $fontData 1]
+	set looks($n,$target,style) [lindex $fontData 2]
+	set textsize [lindex $fontData 3]
         [GetFrame $t.text].size.scale set $textsize
 	[GetFrame $t.text].backbox.col configure \
 	    -activebackground $looks($n,$object,text)
