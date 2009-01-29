@@ -431,7 +431,8 @@ need_same_dims(Item, Affected) :-
 	(initiates(Affected, Item); terminates(Affected, Item)),
 	    find_type(Affected, flow).
 
-end_with_units(Flow, EndUnits) :-
+end_with_units(Flow, EndUnits/day) :-
+	% returns units for matching to adjoining flows
 	need_same_dims(Comp, Flow),
 	implicit_function(Comp, Fn),
 	Fn has_class_refinement units of EndUnits.

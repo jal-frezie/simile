@@ -161,8 +161,6 @@ proc Pref_Dialog {} {
             set submodelF $submodelTF
         set bf [frame $notebook.build]
         $notebook add $bf -text Build
-            set manyWinTF [TitleFrame $bf.manyWinTF -text "Window positions:"]
-            set manyWinF $manyWinTF
             set compTF [TitleFrame $bf.compTF -text "C++ compiler:"]
             set compF $compTF
         set sf [frame $notebook.save]
@@ -175,10 +173,12 @@ proc Pref_Dialog {} {
         $notebook add $rf -text Run
             set oneWinTF [TitleFrame $rf.oneWinTF -text "Run time environment:"]
             set oneWinF $oneWinTF
+            set manyWinTF [TitleFrame $rf.manyWinTF -text "Window positions:"]
+            set manyWinF $manyWinTF
             set precisTF [TitleFrame $rf.precisTF -text "Numeric display precision (0 for default):"]
             set precisF $precisTF
        # $notebook select View
-        pack $initWinTF $displayTF $gridTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $precisTF $manyWinTF $compTF \
+        pack $initWinTF $displayTF $gridTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $precisTF $compTF \
                 $canvasTF $recentTF $notebook -fill x -padx 4 -pady 4
         set bbox [frame $dlg.bbox] 
         pack [::ttk::button $bbox.bok -text OK -underline 0 -width 8  \

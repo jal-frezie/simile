@@ -461,6 +461,13 @@ switch $tcl_platform(platform) {
 	    if {[string equal "_Power Macintosh" $archExtn]} { ;# too long
 		set archExtn _ppc
 	    }
+	    scan $tcl_platform(osVersion) %d.%d.%d dMed dMin dNone
+	    if {$dMed<9} {
+		# I am building with 10.5 so cannot make i386 prolog
+		# for earlier versions, so if I have one use ppc (for
+		# 10.3) version under Rosetta
+		set plExtn _ppc
+	    }
 	} else {
 	    set archExtn {}
 	}
@@ -468,11 +475,14 @@ switch $tcl_platform(platform) {
     }
 }
 set env(slTail) $archExtn[info sharedlibextension]
+if {![info exists plExtn]} {
+    set plExtn $archExtn
+}
 
 switch $env(interfaceId) {
     pipe {
 #	set whatCalled [file rootname [file tail [info nameofexecutable]]]
-	set PROLOG_CMD $SIMILE_PATH/$tgt$archExtn$execExtn
+	set PROLOG_CMD $SIMILE_PATH/$tgt$plExtn$execExtn
 	source ../Run/toolbox.tcl
 	source ../Run/prolog.tcl
 # next bit was to enable same file as simile.exe to use as script launcher
@@ -486,7 +496,7 @@ switch $env(interfaceId) {
 #	console show
 #    }
     } dll {
-	exec $SIMILE_PATH/$tgt$archExtn$execExtn &
+	exec $SIMILE_PATH/$tgt$plExtn$execExtn &
     } console {
 	set ::argv0 {} ;# stops error message loading tclmath
 	source ../Run/toolbox.tcl

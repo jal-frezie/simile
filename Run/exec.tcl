@@ -99,6 +99,7 @@ proc ExecuteTo {node current pause unitLength display foci intMethod maxErr} {
 	} else {
 	    set nextDisp [expr 2*$pause-$current]
 	}
+#puts "current $current nextDisp $nextDisp pause $pause"
 	set current $nextDisp ;# INCREMENT IS HERE
 	if {($current>$pause) == $forward} {
 	    set current $pause
@@ -106,11 +107,11 @@ proc ExecuteTo {node current pause unitLength display foci intMethod maxErr} {
 	set scaled_next [expr {$current*$unitLength}]
 	set howAndWhen [ExecuteModel $node $intMethod \
 			    $scaled_current $scaled_next $maxErr]
-	set current [lindex $howAndWhen 1]
 	switch -- [lindex $howAndWhen 0] {
 	    -1 {
 		set currentMode exit
 	    } 0 {
+		set current [expr {[lindex $howAndWhen 1]/$unitLength}]
 		set currentMode stop
 	    }
 	} ;# default: keep going
