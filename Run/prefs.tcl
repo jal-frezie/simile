@@ -66,17 +66,17 @@ proc Pref_Add { prefs } {
 			switch -regexp -- $default {
 				^CHOICE {
 				    if {[lsearch $default $value]<1} {
-					PrefValueSet $varName [lindex $default 1]
+					PrefValueSet $resName [lindex $default 1]
 				    }
 				}
 				^OFF {
 				    if {$value!=1} {
-					PrefValueSet $varName 0
+					PrefValueSet $resName 0
 				    }
 				}
 				^ON {
 				    if {$value!=0} {
-					PrefValueSet $varName 1
+					PrefValueSet $resName 1
 				    }
 				}
 				default {
@@ -84,7 +84,7 @@ proc Pref_Add { prefs } {
 					    ([string is double -strict $default] && \
 						 ![string is double $value])} {
 					# This is a string or numeric
-					PrefValueSet $varName $default
+					PrefValueSet $resName $default
 				    }
 				}
 			}
@@ -100,17 +100,18 @@ proc Pref_Add { prefs } {
 
 # PrefValue returns the value of the variable if it exists,
 # otherwise it returns the resource database value
-proc PrefValue { varName res } {
-	upvar #0 $varName var
-	if [info exists var] {
-		return $var
-	}
-	set var [option get . $res {}]
+proc PrefValue { varName resName } {
+#	upvar #0 $varName var
+#	if [info exists var] {
+#		return $var
+#	}
+	set var [option get . $resName {}]
 }
 # PrefValueSet defines a variable in the global scope.
-proc PrefValueSet { varName value } {
-	upvar #0 $varName var
-	set var $value
+proc PrefValueSet { resName value } {
+    option add *$resName $value user
+#	upvar #0 $varName var
+#	set var $value
 }
 
 
@@ -184,7 +185,7 @@ proc Pref_Dialog {} {
         pack [::ttk::button $bbox.bok -text OK -underline 0 -width 8  \
                 -command {PrefSave}] -padx 2 -pady 2 -side left -anchor e
         pack [::ttk::button $bbox.bccl -text Cancel -underline 0 -width 8 \
-                -command {PrefDismiss}] -padx 2 -pady 2 -side left -anchor e
+                -command {PrefCancel}] -padx 2 -pady 2 -side left -anchor e
         pack [::ttk::button $bbox.bdef -text Default -underline 0 -width 8 \
                 -command {PrefReset}]  -padx 2 -pady 2 -side left -anchor e
         pack [::ttk::button $bbox.bhlp -text Help -underline 0 -width 8 \
@@ -245,53 +246,42 @@ proc PrefDialogItem { frame item width } {
     pack $f -fill x -anchor w -side left -expand on
 # No longer use consistent width -- each label is allowed its own
 #    label $f.label -text [PrefComment $item] -width $width
-    label $f.label -text [PrefComment $item] -anchor w
+    ttk::label $f.label -text [PrefComment $item] -anchor w
     bind $f.label <Enter> [list QueuePopup AddWidgetPopup %X %Y [PrefRes $item]]
     bind $f.label <Leave> RemovePopup
 # Delay packing label until we know whether it goes to the left or right of the item
 #    pack $f.label -side left -anchor w
     set default [PrefDefault $item]
+    set varName [PrefVar $item]
+    set resName [PrefRes $item]
+    upvar #0 $varName var
+    set var [PrefValue $varName $resName]
     if {[regexp "^CHOICE " $default]} {
         foreach choice [lreplace $default 0 0] {
             incr pref(uid)
-            radiobutton $f.c$pref(uid) -text $choice \
-                    -variable [PrefVar $item] -value $choice
+            ttk::radiobutton $f.c$pref(uid) -text $choice -variable $varName \
+		-command "PrefEntrySet $varName $resName" -value $choice
             pack $f.label -side left -anchor w -padx 2 -pady 2
             pack $f.c$pref(uid) -side left -padx 2 -pady 2
         }
+    } elseif {$default == "OFF" || $default == "ON"} {
+	# This is a boolean
+	ttk::checkbutton $f.check -variable $varName \
+	    -command "PrefEntrySet $varName $resName"
+	pack $f.check -side left -padx 2 -pady 2
+	pack $f.label -side left -anchor w -fill x -expand on -padx 2 -pady 2
     } else {
-        if {$default == "OFF" || $default == "ON"} {
-            # This is a boolean
-            set varName [PrefVar $item]
-# Don't display on or off labels next to checkboxes
-#            checkbutton $f.check -variable $varName -command [list PrefFixupBoolean $f.check $varName]
-            checkbutton $f.check -variable $varName 
-            pack $f.check -side left -padx 2 -pady 2
-            pack $f.label -side left -anchor w -fill x -expand on -padx 2 -pady 2
-        } else {
-            # This is a string or numeric
-            ::ttk::entry $f.entry -width 10
-            pack $f.label -side left -anchor w -padx 2 -pady 2
-            pack $f.entry -side left -fill x -padx 2 -pady 2
-			set pref(entry,[PrefVar $item]) $f.entry
-			set varName [PrefVar $item]
-			$f.entry insert 0 [uplevel #0 [list set $varName]]
-			bind $f.entry <Return> "PrefEntrySet %W $varName"
-		}
-	}
-}
-proc PrefFixupBoolean {check varname} {
-    upvar #0 $varname var
-    # This routine is not called
-	# Update the checkbutton text each time it changes
-	if {$var} {
-        $check config -text "On"
-    } else {
-        $check config -text "Off"
+	# This is a string or numeric
+	::ttk::entry $f.entry -width 10 -textvariable $varName
+	pack $f.label -side left -anchor w -padx 2 -pady 2
+	pack $f.entry -side left -fill x -padx 2 -pady 2
+	set pref(entry,$varName) $f.entry
+	bind $f.entry <Return> "PrefEntrySet $varName $resName"
     }
 }
-proc PrefEntrySet { entry varName } {
-	PrefValueSet $varName [$entry get]
+proc PrefEntrySet { varName resName } {
+    upvar #0 $varName var
+    PrefValueSet $resName $var
 }
 
 
@@ -340,8 +330,9 @@ proc PrefSave {} {
 	foreach item $pref(items) {
 		set varName [PrefVar $item]
 		set resName [PrefRes $item]
+# now apply any text that has been typed in but not entered
 		if [info exists pref(entry,$varName)] {
-			PrefEntrySet $pref(entry,$varName) $varName
+			PrefEntrySet $varName $resName
 		}
 		set value [PrefValue $varName $resName]
 		puts $out [format "%s\t%s" *${resName}: $value]
@@ -365,21 +356,26 @@ proc PrefSave {} {
 #
 
 proc PrefReset {} {
-	global pref
-    # Re-read user defaults
-    # This isn't quite right...
-	option clear
-#	PrefReadFile $pref(appDefaults) startup
-#	PrefReadFile $pref(userDefaults) user
-	# Clear variables
-	set items $pref(items)
-	set pref(items) {}
-	foreach item $items {
-		uplevel #0 [list unset [PrefVar $item]]
-	}
-	# Restore values
-	Pref_Add $items
+    global pref
+    
+    option clear
+    PrefReadFile $pref(userDefaults) user
+    # Reset variables
+    foreach item $pref(items) {
+	upvar #0 [PrefVar $item] var
+	set var [PrefValue [PrefVar $item] [PrefRes $item]]
+    }
 }
+
+# Cancel operation: load settings from file again, then dismiss
+proc PrefCancel {} {
+    global pref
+
+    option clear
+    PrefReadFile $pref(userDefaults) user
+    PrefDismiss
+}
+
 proc PrefDismiss {} {
 	destroy .pref
 	catch {destroy .prefitemhelp}
