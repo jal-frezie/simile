@@ -2216,6 +2216,7 @@ relate_graphics(Node_name, Node_trans) :-
 
 move_boxes(Node_name, Node_trans) :-
 	find_all_comps(Node_name, Thing),
+	\+ border_node(Thing),
 	adjust_posn(Thing, Node_trans),
 	fail; true.
 
@@ -2232,15 +2233,19 @@ internal grid with external; if reparenting leave internals as they
 are because undo/redo graphics cannot cope */
 	    (SelOnly = 1,
 		IW is R-L, IH is B-T,
+		get_shape(Bit, internal_extent, OldIntern),
 		change_shape(Bit, internal_extent, [0, 0, IW, IH]),
 		move_boxes(Bit, [L, T, 1,1]),
+		tweak_link_connections(Bit, OldIntern),
 		resnap(Bit, 1);
 	    SelOnly = 0,
 		change_shape(Bit, internal_extent, [L, T, R, B])),
 	    redisplay_border(Bit);
 	 find_type(Bit, New_obj),
 	 \+ New_obj = submodel,
-	    align(Bit)),
+	    align(Bit),
+	    SelOnly = 1, % if everything, they will anyway
+	    make_links_follow(Bit)),
 	fail; true.
 
 align(Bit) :-
