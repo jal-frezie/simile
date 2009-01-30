@@ -828,9 +828,7 @@ checks_out_locally(Func) :-
               section 
     instance:apply_minmax(Func, Expr, FullExpr), */
     Func has_class_refinement units of Units,
-    default_units(Func, DefUnits),
-    (DefUnits = 1, !;
-	check_unit(DefUnits, Units, 2, [])),
+    units_match_context(Func, Units, []),
     replace_subexps(Expr, image, pick_var, Func, top_down, Pairs, _),
     (setof(Source, valid_input(Func, Source), Sources), !; Sources = []),
     pair_off(Func, Sources, Pairs).

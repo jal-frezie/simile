@@ -250,7 +250,9 @@ proc ClickObj { x y winId X Y action} {
             #   ModeSelect select
         }
         if {[string match $equationbar(current_action) click]} {
-	    update ;# allow abandon to trigger save query if needed
+	    SafeEqnBarEdit $winid
+#	    update ;# allow abandon to trigger save query if needed
+# do explicitly cos this lets doubleclick through
             set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
             if {![string match <none> $oldEqn]} {
                 set label "[file tail [BlankCrs $context]] = "
@@ -271,6 +273,7 @@ proc SafeEqnBarEdit {winId} {
     global equationbar
     set bar $winId.toolSlot.eqnbar
     if {[string equal normal [$bar.equation cget -state]]} {
+	$bar.equation configure -state disabled ;# do not do twice
 #puts [list [$bar.equation get] is $equationbar($winId,initText)]
         if {![string eq [$bar.equation get] $equationbar($winId,initText)]} {
 	    set capt [string range [$bar.label cget -text] 0 end-3]

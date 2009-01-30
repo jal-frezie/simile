@@ -19,7 +19,7 @@ sicstus_module(m_update,
 		sort_for_link/4, abs_path_name/3, rel_path_name/5,
 		build_array/3, analyze_array/3, 
 		get_solo_list_depth/2, delete_implicit_node/1, 
-		add_implicit_function/2, default_units/2,
+		add_implicit_function/2, default_units/2, units_match_context/3,
 		get_exogenous_node/2, find_all_links/2, find_all_links/3,
 		make_node/3, one_end_in/2, new_line/5,
 		presence_affects/2, status_affects/2,
@@ -619,14 +619,25 @@ add_implicit_function(Exp_node, Node_name) :-
 default_units(Node, Units) :-
 	get_host(Node, Form),
 	(Sort = rate,
-	    endpoint_units(Form, EndUnits, []),
-	    \+ EndUnits = 1,
-	    default_tick_is(Tick),
-	    Units = EndUnits/Tick;
+	    units_match_context(Node, Units, []);
 	member(Sort-Units, [rate-1, level-1, cond_value-cond_spec,
 			    boolean_value-boolean])),
 	Form is_of_sort Sort, !.
 
+units_match_context(Node, Units, Whinge) :-
+	get_host(Node, Form),
+	(Form is_of_sort rate,
+	    endpoint_units(Form, EndUnits, ConsistencyWhinge), !,
+	    (ConsistencyWhinge = [], !,
+		default_tick_is(Tick),
+		((var(EndUnits); % no compartments to match
+		  Units = 1, EndUnits = 1;	   % plead igronance
+		  Units = EndUnits/Tick), !,	   % pass back default
+		    Whinge = [];
+		    check_unit(EndUnits/Tick, Units, 2, Whinge));
+		Whinge = ConsistencyWhinge);
+	    Whinge = []). % not a flow so no constraint.
+	
 convert_refs([], _, []).
 
 convert_refs([OldRef | R1], SoFar, [NewRef | R2]) :-
