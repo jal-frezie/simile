@@ -431,12 +431,24 @@ need_same_dims(Item, Affected) :-
 	(initiates(Affected, Item); terminates(Affected, Item)),
 	    find_type(Affected, flow).
 
-end_with_units(Flow, EndUnits/day) :-
+end_with_units(Flow, EndUnits) :-
 	% returns units for matching to adjoining flows
 	need_same_dims(Comp, Flow),
 	implicit_function(Comp, Fn),
 	Fn has_class_refinement units of EndUnits.
 
+match_all_units([_Unit], []).
+match_all_units([U1, U2 | Rest], Whinge) :-
+	match_all_units([U2 | Rest], SubWhinge),
+	(SubWhinge = [], !,
+	    check_unit(U1, U2, 2, Whinge);
+	 Whinge = SubWhinge).
+
+endpoint_units(Flow, EndUnits, Whinge) :-
+	setof(EndUnit, end_with_units(Flow, EndUnit), [EndUnits | More]), !,
+	match_all_units([EndUnits | More], Whinge);
+	Whinge = [].
+/*
 check_flow_ends(Func, EndUnits, AnyErr) :-
 	get_host(Func, Flow),
 	setof(UConstraint, end_with_units(Flow, UConstraint), AllUnits),
@@ -450,7 +462,7 @@ check_flow_ends(Func, EndUnits, AnyErr) :-
 	    AnyErr = Err;
 	AnyErr = [],
 	(EndUnits = 1; true), !.
-	    
+*/	    
 decide_param_names(InputList) :-
 	already_used_in(InputList, Used),
 	generate_new_names(InputList, Used).
@@ -605,11 +617,15 @@ add_implicit_function(Exp_node, Node_name) :-
 	true.
 
 default_units(Node, Units) :-
+	get_host(Node, Form),
 	(Sort = rate,
-	    check_flow_ends(Node, Units, []);
-	member(Sort-Units, [level-1, cond_value-cond_spec,
+	    endpoint_units(Form, EndUnits, []),
+	    \+ EndUnits = 1,
+	    default_tick_is(Tick),
+	    Units = EndUnits/Tick;
+	member(Sort-Units, [rate-1, level-1, cond_value-cond_spec,
 			    boolean_value-boolean])),
-	Node is_of_sort Sort, !.
+	Form is_of_sort Sort, !.
 
 convert_refs([], _, []).
 
