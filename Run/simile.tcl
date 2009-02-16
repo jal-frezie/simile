@@ -297,7 +297,7 @@ if {[string equal windows $tcl_platform(platform)]} {
     }
     close $UserStream
 }
-
+set env(prologId) gnu ;# goodbye forever Sicstus
 if {[info exists prolog_in_console]} {
     set SIMILE_PATH [file dirname [pwd]] ;# otherwise it is relative
     lappend auto_path $SIMILE_PATH/System/lib

@@ -1109,7 +1109,7 @@ proc ContextSensitiveHelp {context page} {
     switch [tk windowingsystem] {
         win32 {
             package require winhelp
-            winhelp $context ../Help/simile.chm $page
+            winhelp $context ../Help/simile_book.chm $page
         } aqua {
             exec open -a "Help Viewer.app" ../Help/$page
         } x11 {
