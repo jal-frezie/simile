@@ -1146,6 +1146,7 @@ language -- they and the operators are hidden */
 %operator(ind_time, real, [const_int]).
 operator(stage_incr, real, [diffs, int, real]).
 operator(loses, boolean, [real, const_int]).
+operator(loses, boolean, [boolean, const_int]).
 operator(choose, int, [boolean, int, int]).
 operator(choose, a(T), [boolean, a(T), a(T)]).
 operator(choose, real, [boolean, real, real]).

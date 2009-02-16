@@ -293,7 +293,7 @@ instance_of(loss, Node, Path,
 		      with_phase(Step, loses(Home, Step)),
 		      elt(Path, _, boolean-[]), boolean-[])],
 	    [instance(function, Function, _, Home, _)]) :-
-	Home = elt(Path, _, 1-[]),
+	Home = elt(Path, _, _-[]),
 	Arc is_connector from _ to Node,
 	initiates(Arc, Function).
 
