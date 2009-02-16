@@ -1221,6 +1221,7 @@ use_tcl_proc_for(max).
 use_tcl_proc_for(following).
 use_tcl_proc_for(preceding).
 use_tcl_proc_for(first).
+use_tcl_proc_for(loses). % internal function decides loss from probability
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* add_zeros has the mind-numbingly monotonous task of shifting
