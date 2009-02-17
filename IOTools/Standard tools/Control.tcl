@@ -369,7 +369,7 @@ namespace eval runcontrol33857 {
     proc RCAbortCheck {node} {
 	global updateLastDone
 	variable sendvars
-	if {![string equal start $sendvars($node,currentMode)] && \
+	if {[string equal stop $sendvars($node,currentMode)] && \
 		[clock clicks -milliseconds]-$updateLastDone>3000} {
 	    # pretend button never pushed
 	    ShareAction $node 0
