@@ -392,7 +392,7 @@ set toolbars [list \
             set stream [NetOpen $copyfile r]
 	    gets $stream oldClass
             gets $stream oldStatus
-	    InsertHelperWindow $oldClass $oldStatus
+	    InsertHelperWindow $oldClass [RestoreCrs $oldStatus]
             close $stream
         }
     }
