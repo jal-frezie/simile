@@ -302,9 +302,10 @@ proc PostScrog { winId node } {
 
 # popup stuff -- here because both model windows and helpers use them
 
-proc BindPopup {widget args} {
+proc BindPopup {widget keyWd} {
 # any % will be subbed by binding process unless we double it
-    bind $widget <Enter> [concat QueuePopup AddWidgetPopup %X %Y $args]
+    regsub -all % $keyWd %% keyWd
+    bind $widget <Enter> [list QueuePopup AddWidgetPopup %X %Y $keyWd]
     bind $widget <Leave> RemovePopup
 }
 
@@ -345,7 +346,8 @@ proc AddWidgetPopup {X Y args} {
 	if {[info exists msgs($key)]} {
 	    set message $msgs($key)
 	} else {
-	    regsub -all % $key %% message
+	    #	    regsub -all % $key %% message ;# err, too late now
+	    set message $key
 	}
     
 	AddPopupMessage $message $colour
