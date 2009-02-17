@@ -513,6 +513,8 @@ set msgs(model_out_of_date_message) "The model has been altered since the curent
 
 set msgs(not_runnable_title) "Cannot run model"
 set msgs(not_runnable_message) "The current model cannot run because it could not be built, or it failed to initialize, or it has been aborted."
+set msgs(not_runnable_detail) "You could try selecting \"Run\" again, or \"Debug\" to get more information."
+
 set msgs(params_not_loaded_title) "Fixed parameters not loaded"
 set msgs(params_not_loaded_message) "The model cannot run because it contains fixed input parameters for which no source is defined."
 set msgs(model_has_exited_title) "Model has exited"

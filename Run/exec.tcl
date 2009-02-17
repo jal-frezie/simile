@@ -185,7 +185,7 @@ proc ResetModel {myNode howInt redo} {
 	    TclResetModel $myNode $readyForRK $redo
 	}
     } errList]} {
-	ExplainError $errList $::errorInfo
+	ExplainError $myNode $errList $::errorInfo
 	set done 0
     } else {
 	set done 1
@@ -207,7 +207,7 @@ proc ExecuteModel {myNode howInt start finish errLim} {
 	}
     } errList]} {
 	InteractGUI $myNode [lindex $errList 3] 2
-	return [ExplainError $errList $::errorInfo]
+	return [ExplainError $myNode $errList $::errorInfo]
 # This will also need to raise an exception so we can retrieve stop time etc
 #    } elseif {$errList==-1} {
 #        start_in_editor BuildProblem "Execution notice" info "Model execution has been paused at a discontinuity which could not be dealt with by adaptive step size control." execution
@@ -273,7 +273,7 @@ if {![info exists runHow]} { ;# we are in separate interp
 	}
     }
 # these are straight copies
-    proc ExplainError {args} {
+    proc Query {args} {
 	global masterId
 
 	return [thread::send $masterId [info level 0]]
