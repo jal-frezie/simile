@@ -38,11 +38,14 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	    Args = [made_at(Idle, _)],
 	    \+ assigned_in_vm_subloop(Formula, FContext, AllSetups),
 	    select(instance(internal, _,_, Idle, _-Dims),
-		   AllInters, NewInters), !,
+		   AllInters, NewInters),
 	    replace_subexps(AllSetups, inters, swap_vars,
 			    switch(Idle, Target), top_down, _, SubbedSetups),
-	    select(make(Target, Prereqs, Context, _, NewFormula),
-		   SubbedSetups, Setups);
+	    select(make(Target, Prereqs, Context, RealStep, NewFormula),
+		   SubbedSetups, Setups),
+	    % do not de-idle if 1st assign done less often;
+	    % could do if step were passed back from here
+	    RealStep >= Step, !;
 	[Setups, NewInters, Context] =
 	[AllSetups, AllInters, FContext],
 	    pointer_from(DestPath, DestPtr),

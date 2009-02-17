@@ -184,7 +184,7 @@ System/bin/5d.dll: shank.cpp dllcalls.h
 
 # not needed for Linux; Simile builds it when first run
 System/lib/lib5d.so: shank.cpp dllcalls.h
-	cd Run; $(GPPCMD) -fPIC $(FLAGS) -I. $(MAKESEL) $(PARALLEL) \
+	cd Run; $(GPPCMD) -fPIC $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
 		-o ../$(SHANK) shank.cpp; cd ..
 
 # gcc cannot build universal binary libraries for loading via ld

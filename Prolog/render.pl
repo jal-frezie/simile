@@ -1107,14 +1107,24 @@ combine( L, Op, VArgs, Atom) :-
 	    
 Yes, horrible, nasty, ugly, repugnant, grotesque Tcl has the a?b:c format but,
 mindbogglingly stupidly, evaluates the non-chosen half, and, worse, complains
-about undefined array elements in it. Blooaaargh!! 
-*/
+about undefined array elements in it. Blooaaargh!!
+
 	Op = choose, !,
 		(L = c,
 			sicstus_format_to_chars("(~w?~w:~w)", VArgs, CharList);
 		L = tcl,
 			sicstus_format_to_chars("[if {~w} {expr ~w} else {expr ~w}]",
 					VArgs, CharList));
+	  
+Or so I thought. As it happens, if the programmer isn't a complete
+moron, he writes 'expr {a?b:c}' rather than 'expr a?b:c', thus
+ensuring only the true half is evaluated. */
+	
+	Op = choose, !,
+	  (L = c,
+	      sicstus_format_to_chars("(~w?~w:~w)", VArgs, CharList);
+	   L = tcl,
+	      sicstus_format_to_chars("[expr {~w?~w:~w}]", VArgs, CharList));
 /*
 What follows is even worse; it allows conditionals to be entered in the 
 if-then-elseif-else format, though I can't see why anyone would want to.

@@ -104,7 +104,7 @@ proc tcl_setparamarray {model node} {
     global paramLocns
 
     set paramIdx [getinfo $node 6]
-puts "tcl_setparamarray $model $node $paramIdx"
+#puts "tcl_setparamarray $model $node $paramIdx"
     set paramLocns($paramIdx,nod) $node
     set paramLocns($paramIdx,arr) tclParmData ;# was [InputVarFor $model $node]
 }
