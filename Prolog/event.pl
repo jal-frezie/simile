@@ -962,7 +962,8 @@ drag(Xpt, Ypt) :-
 	    fail; */
 	update_context(Wid, [Xpt, Ypt], RelPt, Comp)),
 	(get_phase(Phase),
-	    member(Phase, [moving_spline, moving_text]), !,
+	    member(Phase, [moving_spline, moving_text,
+			   moving_bowtie, moving_kink]), !,
 	    RelPt = [NewXpt, NewYpt];
 	snap_to_grid(RelPt, [NewXpt, NewYpt])),
 	drag_to(NewXpt, NewYpt, Comp).
