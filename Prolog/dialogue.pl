@@ -371,7 +371,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	/* table data is auto-generated so should be well formed.
 	Missing table will already have been picked up by parser */
 
-	(Complaint6 = [], \+ Eqn_st = [], !,
+	(Complaint6 = [], \+ (Eqn_st = [], ParamsAllowed = 1) , !,
 	    check_param_usage(InterInputs, ParamsAllowed,
 			      ParamList, New_inputs, FinalComplaint);
 	New_inputs = InterInputs,
