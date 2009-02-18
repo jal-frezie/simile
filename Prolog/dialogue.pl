@@ -231,11 +231,11 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	member([Is_P, ParamsAllowed], [[-1,1], [0,1], [1,0], [2,0]]),
 	get_term(Unit_st, Units, UnitFormError),
 	check_exp(Eqn_st, Function, InterInputs, EqnBase, EqnDims,
-		  IndxCount, ParamList, Result, ParseError),
-	(ParamsAllowed = 0,
+		  IndxCount, ParamList, Result, EqnError),
+/*	(ParamsAllowed = 0,
 	    member(input_link(_, SourceCapt, _,_,_), InterInputs), !,
 	    EqnError = unwanted_links(SourceCapt);
-	 EqnError = ParseError),
+	 EqnError = ParseError), */
 	(Is_P = 1, \+ member(Units, [boolean, a(_)]), \+ member(EqnBase, [boolean, a(_)]), !,
 	    MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
@@ -737,8 +737,9 @@ check_param_usage(Current, AllowLinks, Used, Left, Challenge) :-
 	\+ (member(SpareParam, Used), 
 	       member(input_link(_,_, SpareParam, _,_), FromThat)), !,
 	    \+ AllowLinks = [], % just fail if checking on propagation
-	    query(extra_links(SourceCaption), question, fill_equation,
-		 [ok, cancel], Choice),
+	    (AllowLinks = 0, Prob = unwanted_links(SourceCaption);
+		AllowLinks = 1, Prob = extra_links(SourceCaption)),
+	    query(Prob, question, fill_equation, [ok, cancel], Choice),
 	    (Choice = ok,
 		event:off(LinkName),
 		event:delete_by_dlg(LinkName),
