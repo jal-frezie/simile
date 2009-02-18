@@ -337,8 +337,9 @@ proc create_equation {parent boxtitle indices} {
 	}
 	close $stream
     } else {
-	$middleF sash place 0 200 0
-	$middleF sash place 1 400 0
+# they do not place themselves properly ont' Mac
+	$middleF sash place 0 170 0
+	$middleF sash place 1 340 0
     }
 }
 
