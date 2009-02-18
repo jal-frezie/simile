@@ -607,6 +607,7 @@ add_implicit_function(Exp_node, Node_name) :-
 		make_node(Parent, function, Node_name),
 		new_line(influence, [], Node_name, Exp_node, _),
 		(default_units(Exp_node, Units),
+		    nonvar(Units),
 		    Node_name has_new_class_refinement units of Units;
 		 true);
 	Exp_node has_class submodel,
@@ -630,9 +631,9 @@ units_match_context(Node, Units, Whinge) :-
 	    endpoint_units(Form, EndUnits, ConsistencyWhinge), !,
 	    (ConsistencyWhinge = [], !,
 		default_tick_is(Tick),
-		((var(EndUnits); % no compartments to match
-		  Units = 1, EndUnits = 1;	   % plead igronance
-		  Units = EndUnits/Tick), !,	   % pass back default
+		((var(EndUnits);        	   % no compartments to match
+		  Units = 1, EndUnits = 1;         % plead igronance
+		  Units = EndUnits/Tick), !,       % pass back default
 		    Whinge = [];
 		    check_unit(EndUnits/Tick, Units, 2, Whinge));
 		Whinge = ConsistencyWhinge);
