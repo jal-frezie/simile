@@ -248,7 +248,8 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 		[Category, File, Functor, String, ReturnType], FnChars),
 	    name(FnEntry, FnChars)),
 	    read_funcs(File, Stream, IsBuiltIn, More),
-	    Done = [FnEntry | More];
+	    (File = 'Hidden', Done = More;
+		\+ File = 'Hidden', Done = [FnEntry | More]);
 	member(Line, [baseline(_,_), unit_definition(_,_), longhand(_,_)]), !,
 	    % use asserta so user-supplied definitions override system ones
 	    units:asserta(Line),
