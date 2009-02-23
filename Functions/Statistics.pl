@@ -9,9 +9,6 @@ sample(poidev, int, [real]).
 sample(binome, int, [real, int]).
 sample(hypergeom, int, [int, int, int]).
 
-%Legacy
-gaussian(Trig, Mean, SD) --> gaussian_var(Mean, SD).
-
 colin(List) --> 
 	[st0]=makearray(if first(place_in(1)) then 0 else
 		       element(sofar([st0])+List,preceding(place_in(1))),
@@ -21,15 +18,3 @@ colin(List) -->
 		      else element(sofar([st]),preceding(place_in(1))),
 		       count(List)),
     element([st],count(List)).
-
-/* Use these definitions for DETERMINISTIC:
-binome_equiv(Prob, Num) --> Prob*Num.
-
-hypergeom_equiv(Pop, Seln1, Seln2) -->
-	if Pop==0 then 0 else Seln1*Seln2/Pop. */
-
-/* Use these definitions for STOCHASTIC: */
-binome_equiv(Prob, Num) --> binome(Prob, int(Num)).
-
-hypergeom_equiv(Pop, Seln1, Seln2) -->
-	hypergeom(int(Pop), int(Seln1), int(Seln2)).

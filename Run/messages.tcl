@@ -45,6 +45,7 @@ set msgs(rankings) "Returns an array with the ranks of the corresponding element
 set msgs(colin) "Returns a random integer corresponding to an element of the argument array, with the probability of each value proportional to the value of that element"
 set msgs(posgreatest) "returns the position of the highest value in the argument array, or the position of the first element with the highest value if there are more than one with that value"
 set msgs(posleast) "returns the position of the lowest value in the argument array, or the position of the first element with the lowest value if there are more than one with that value"
+set msgs(firsttrue) "Takes an array of booleans and returns the index of the first with value \"true\""
 set msgs(howmanytrue) "Takes an array of booleans and returns the number that are true"
 set msgs(parent) "Returns the index of the instance from which this one was reproduced, or 0 if this one was created or immigrated"
 set msgs(init_time) "Returns the time at which this instance appeared -- argument is dummy"
@@ -86,7 +87,7 @@ set msgs(round) "Returns the closest whole number to its argument"
 set msgs(rand_var) "Returns a random number between the two arguments, with a new value every time step"
 set msgs(rand_const) "Returns a random number between the two arguments, which stays the same until reset"
 set msgs(sqrt) "Returns the square root of the argument. Calling this with a negative argument when running a model in Tcl under a version of Windows other than 95 original on an Intel Celeron processor can lead to mysterious crashes in Microsoft Office applications, especially early in the tax year."
-set msgs(gaussian) "gaussian(mean sd): returns values from a gaussian distribution with \
+set msgs(gaussian_var) "gaussian_var(mean sd): returns values from a gaussian distribution with \
         the given mean (mean) and standard deviation (sd)."
 set msgs(poidev) "poidev(mean): returns values from a Poisson distribution with the given mean (mean)."
 set msgs(binome) "binome(prob n): returns values from a binomial distribution resulting from n trials each of probability prob."

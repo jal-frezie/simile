@@ -40,10 +40,8 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     switch $tcl_platform(platform) {
         unix {
             set graph(exag) 3
-            set graph(origin) 1
         } windows {
             set graph(exag) 5
-            set graph(origin) 2
         }
     }
     set graph($t,points) [split $points ,]

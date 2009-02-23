@@ -1075,7 +1075,6 @@ builtin('List handling', all, boolean, [array_or_list_of_boolean]).
 builtin('Model properties', index, boolean, [int_or_enum_type_const]).
 builtin('Model properties', channel_is, boolean, [channel]).
 builtin('Model properties', dies_of, boolean, [real]).
-builtin('Model properties', remainder, real, [real]).
 builtin('Model properties', dt, real, [const_int_or_none]).
 builtin('Model properties', time, real, [const_int_or_none]).
 builtin('Model properties', at_init, any, [any]).
@@ -1137,12 +1136,12 @@ builtin('Arithmetic', max, real, [real, real]).
 builtin('Arithmetic', min, int, [int, int]).
 builtin('Arithmetic', min, real, [real, real]).
 
-builtin('List handling', following, a(T), [a(T)]).
-builtin('List handling', following, int, [int]).
-builtin('List handling', preceding, a(T), [a(T)]).
-builtin('List handling', preceding, int, [int]).
-builtin('List handling', first, boolean, [a(_T)]).
-builtin('List handling', first, boolean, [int]).
+builtin('Model properties', following, a(T), [a(T)]).
+builtin('Model properties', following, int, [int]).
+builtin('Model properties', preceding, a(T), [a(T)]).
+builtin('Model properties', preceding, int, [int]).
+builtin('Model properties', first, boolean, [a(_T)]).
+builtin('Model properties', first, boolean, [int]).
 
 /* These are recognized by the parser but is not part of the equation
 language -- they and the operators are hidden */
@@ -1155,6 +1154,7 @@ operator(choose, int, [boolean, int, int]).
 operator(choose, a(T), [boolean, a(T), a(T)]).
 operator(choose, real, [boolean, real, real]).
 operator(choose, boolean, [boolean, boolean, boolean]).
+operator(remainder, real, [real]).
 
 /* These are handled by the parser but have special buttons to include them so
 we do not want them in the function list -- they only appear here so the right

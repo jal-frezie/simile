@@ -1,21 +1,5 @@
-/* Next line shows how to write 0-ary macros (leave parentheses out) and
-macros calling 0-ary functions or macros (put empty atom in parentheses). */
-init_time --> at_init(time('')).
-/* same macro for unary case */
-init_time(Level) --> at_init(time(Level)).
-
 iterations(Alarm) --> st=sofar(if Alarm then 0 else st+1),st.
 
-delay(val,steps) -->
-	ptw = (if last(ptw)==1000 then 1 else last(ptw)+1),
-	ptr = ptw-steps-1000*floor((ptw-steps-1)/1000),
-	[array] = makearray(if place_in(1)==ptw then
-			   val
-		  else
-			   last(element([array],place_in(1))),
-			1000),
-	element([array],ptr).
-	
 const_delay(val,time) -->
 	count_through = int(10*time(0)),
 	shift = count_through - last(count_through),
