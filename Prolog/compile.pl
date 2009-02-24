@@ -1215,7 +1215,7 @@ levels_to_path([instance(submodel, SmName, _, Name, _-SmDims) | MoreLevels],
 name_from_elt(FullRef, Cond) :-
 
 	(FullRef = IName*_Scale, !; FullRef = IName),
-	IName = input(in_hierarchy, elt(Path, Name, _), none),
+	IName = input(in_hierarchy, elt(Path, Name, _), none, _),
 	wait_for_submodels(Path, Waits),
 	(Name = import(_,_,_,_,_, PhaseSet, Src, _), !,
 	(PhaseSet = 0, !,

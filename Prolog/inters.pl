@@ -72,11 +72,12 @@ assigned_in_vm_subloop(Formula, FContext, AllSetups) :-
 	member(sm(_,_,_, vm_loop(_,_,_,_)), ExtraLoops).
 
 insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
-	(Var = input(Location, PathExp, Link);
+	(Var = input(Location, PathExp, Link, Units),
+	    m_update:analyze_array(Units, Type, _);
 	Var = PathExp,
 	    /* from compartment expressions -- used? -- and dest ref */
-	    [Location, Link]=[in_hierarchy, none]),
-	PathExp = elt(RealPathForm, Ref, Type-DimTypes), !,
+	    [Location, Link, Type]=[in_hierarchy, none, SourceType]),
+	PathExp = elt(RealPathForm, Ref, SourceType-DimTypes), !,
 	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm),
 					 build(Dims), build(_), build(_)]),
 	    make_inds_for(Dims, LocalLoops, Inds),
@@ -117,7 +118,7 @@ insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
 %	    member(instance(internal, inter(_,_, Loops), NewVar,_, _),
 %		   InterInputs),
 %	    Recurse = 0;
-	Var = channel_is(input(Location, elt(RealPathForm, Ref, _), Link)),
+	Var = channel_is(input(Location, elt(RealPathForm, Ref, _), Link, _)),
 	/* Outrageous hack -- for channel nodes of an ancestor
 submodel, the link parameter is set to 'outside' if they count as
 outside, so in this case we add the submodel level for their submodel,

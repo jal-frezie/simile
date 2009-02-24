@@ -339,7 +339,7 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
 	m_update:analyze_array(SourceUnits, FarUnits, FarDims),
 	get_actual_sizes(Node, FarDims, _,_,_),
 	m_update:analyze_array(ArcUnits, BaseUnits, _),
-	RelatedRef = input(SourceLocation, RefExp, Relation),
+	RelatedRef = input(SourceLocation, RefExp, Relation, ArcUnits),
 	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, _),
 	find_name_host(Link, ControlLink),
 	(m_update:get_av_pair(ControlLink, 2, use_sofar, 1),
