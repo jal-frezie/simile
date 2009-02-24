@@ -572,14 +572,23 @@ proc GetEnumMems {fr mdl} {
 	     "(defined by values)" 1]} {
         set fileState [list $table_entry(fileName) $table_entry(dataField)]
         set fileData $table_entry(values)
-        foreach {pos mem} $fileData {
-            set mem [lindex $mem 0]
-            if {[lsearch $memList $mem]==-1} {
-                lappend memList $mem
-            }
-        }
+	ListDiscrete memList $fileData
     }
     EnableTypeOps $fr
+}
+
+proc ListDiscrete {memList fileData} {
+    upvar 1 $memList inList
+    if {[llength $fileData]!=1} {
+	foreach {pos mem} $fileData {
+	    ListDiscrete inList $mem
+	}
+    } else {
+	set fileData [lindex $fileData 0]
+	if {[lsearch $inList $fileData]==-1} {
+	    lappend inList $fileData
+	}
+    }
 }
 
 proc snipET {enumEntry mem} {
