@@ -707,7 +707,9 @@ menu_handle(Win, edit, set_interface) :-
 	(ReferenceLine = references(References),
 	    load_references(Submodel, References);
 	ReferenceLine = no_references),
-	(load_submodel_interface(Stream, Submodel, _, _),
+	(TopWin shows_model Model,
+	    make_current(TopWin), % allows reroute to work outside submodel
+	    event:load_submodel_interface(Stream, Submodel, _, _),
 	    event:make_links_follow(Submodel),
 %	    event:tweak_link_connections(Submodel, [0,0], l, [0,0,1,1]),
 	    finish_move(Submodel, 1);
