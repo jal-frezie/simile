@@ -1066,7 +1066,8 @@ add_new_line_between(Type, Start, Finish, TopLink) :-
 	contains(Top, Start, Out),
 	contains(Top, Finish, In),
 	append(Up, [StartBox], Out),
-	append(Down, [FinishBox], In),
+	(append(Down, [FinishBox], In);
+	    In = [], Down = [], make_border_node(Type, Top, FinishBox)),
 	(StartBox has_type Type, !,
 	    TopLink = StartBox,
 	    TopLink has_changed_termination finish from Old to FinishBox,
