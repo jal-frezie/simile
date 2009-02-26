@@ -340,7 +340,6 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		append(UnitMatchError, UnitFormError, UnitError))),
 */
 	    (UnitError = [], !,
-		wake,
 		(on_exception(Hiccup,
 			      get_actual_sizes(Function, EqnDims, MultInts,
 					       _V, _U),
