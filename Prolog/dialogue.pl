@@ -74,15 +74,12 @@ values. */
 do_equation_dialog(Win, Part) :-
 	caption_for(Part, Caption),
 	get_host(Part, ClickedObj),
-	(default_units(ClickedObj, ITypeBase),
+	(default_units(ClickedObj, ITypeBase, TypeDims),
 	    (ITypeBase = 1, TypeBase = real; TypeBase = ITypeBase), !;
 	true),
 	(ClickedObj is_of_sort init_eval, !,
 	    TitleForm = 'Initial value';
 	TitleForm = 'Equation'),
-	(ClickedObj is_of_sort channel, !,
-	    TypeDims = [];
-	true),
 	sicstus_format_to_chars("~a for ~a", [TitleForm, Caption], 
 BoxHeaderStr),
 	name(BoxHeader, BoxHeaderStr),
@@ -301,8 +298,15 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	    /* Next check that the value's units,however they were
 	       specified, are appropriate for this component */
 	
-	      (TypeBase = 1; 
-		  check_unit(NewUnits, TypeBase, 2, UnitError)))),
+	      build_array(NewUnits, EqnDims, NewArraySpec),
+		(var(TypeDims), !,
+		    [Test, Target] = [NewUnits, TypeBase];
+		 Test = NewArraySpec,
+		    build_array(TypeBase, TypeDims, Target)),
+		(TypeBase = 1, !,
+		    Strict = 1; % allow original physical units
+		 Strict = 2),
+		check_unit(Test, Target, Strict, UnitError))),
 
 /* Pre-5.4 version which conflated these tasks together
             ((nonvar(TypeBase);
@@ -336,6 +340,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		append(UnitMatchError, UnitFormError, UnitError))),
 */
 	    (UnitError = [], !,
+		wake,
 		(on_exception(Hiccup,
 			      get_actual_sizes(Function, EqnDims, MultInts,
 					       _V, _U),
@@ -346,10 +351,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 			Complaint6 = expr_denotes_list;
 		    \+ (integer(Dim), Dim > 1), !,
 		    % should never happen, parser now checks subexps for this
-		    Complaint6 = bad_array_size(Dim);
-		    \+ TypeDims = MultInts, !,
-		    Complaint6 = must_be_scalar);
-		build_array(NewUnits, EqnDims, NewArraySpec) /* ,
+		    Complaint6 = bad_array_size(Dim));
+		true /* ,
 		    this check now done by generating default units for flows
 		    check_flow_ends(Function, NewArraySpec, Complaint6) */ );
 	    Complaint6 = UnitError);

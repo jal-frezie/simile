@@ -295,29 +295,39 @@ set msgs(mismatched_dimensions_title) "Problem converting units"
 set msgs(mismatched_dimensions_message) "The units of the required quantity are %s which have physical dimensions %s. These are incompatible with the supplied value, whose units %s have dimensions %s."
 set msgs(mismatched_dimensions_detail) "Please do one of the following:\n* specify units with the same dimensions as the value\n* change the source of the value to have the units you wish, or\n* clear the units specification entry to get the default units for this value."
 
+set msgs(mismatched_arrays_title) "Problem converting units"
+set msgs(mismatched_arrays_message) "The units of the required quantity are %s which have array dimensions %s. These are incompatible with the dimensions of the supplied value, which are %s."
+set msgs(mismatched_arrays_detail) $msgs(mismatched_dimensions_detail)
+
 set msgs(unwanted_syntax_title) "Parameter contains confusing characters"
 set msgs(unwanted_syntax_message) "Your %s, %s, contains characters that might cause the interpreter to confuse it with a compound expression."
 
 set msgs(bad_table_data_title) "Problem with input data"
 set msgs(bad_table_data_message) "The data you specified is not suitable for a lookup table. %s"
 
-set msgs(field_needs_value_message) "You must supply a value in the \"%s\" field."
-set msgs(field_not_const_message) "Entry for %s must be a numeric constant."
-
-set msgs(field_not_number_message) "Entry for %s must have a numerical value"
-
-set msgs(field_not_scalar_message) "Entry for %s must have a single value."
-
-set msgs(expr_denotes_list_message) "The expression evaluates to a list, or array of lists. A model variable cannot represent a list."
-
-set msgs(minmax_wrong_message) "Equation has non-numeric units %s, so minimum or maximum values cannot be used."
-
-set msgs(bad_array_size_message) "This equation evaluates to a data structure which includes an array of size %s."
-set msgs(bad_array_size_detail) "%s is not a valid dimension for a model component -- they must be integers greater than 1."
-
-set msgs(must_be_scalar_message) "This type of component cannot be an array."
 set msgs(bad_eqn_title) "Problem with equation"
 set msgs(bad_eqn_message) "%s"
+
+set msgs(field_needs_value_title) $msgs(bad_eqn_title)
+set msgs(field_needs_value_message) "You must supply a value in the \"%s\" field."
+set msgs(field_not_const_title) $msgs(bad_eqn_title)
+set msgs(field_not_const_message) "Entry for %s must be a numeric constant."
+
+set msgs(field_not_number_title) $msgs(bad_eqn_title)
+set msgs(field_not_number_message) "Entry for %s must have a numerical value"
+
+set msgs(field_not_scalar_title) $msgs(bad_eqn_title)
+set msgs(field_not_scalar_message) "Entry for %s must have a single value."
+
+set msgs(expr_denotes_list_title) $msgs(bad_eqn_title)
+set msgs(expr_denotes_list_message) "The expression evaluates to a list, or array of lists. A model variable cannot represent a list."
+
+set msgs(minmax_wrong_title) $msgs(bad_eqn_title)
+set msgs(minmax_wrong_message) "Equation has non-numeric units %s, so minimum or maximum values cannot be used."
+
+set msgs(bad_array_size_title) $msgs(bad_eqn_title)
+set msgs(bad_array_size_message) "This equation evaluates to a data structure which includes an array of size %s."
+set msgs(bad_array_size_detail) "%s is not a valid dimension for a model component -- they must be integers greater than 1."
 
 set msgs(unwanted_links_title) "Unwanted inputs"
 set msgs(unwanted_links_message) "This node has a link from %s, but parameter default values are not allowed to have input variables themselves. Remove this link?"
@@ -468,6 +478,12 @@ set msgs(no_spf_for_project_message) "Parameter metafile %s could not be found."
 set msgs(unhandled_tcl_error_title) "Simile error"
 set msgs(unhandled_tcl_error_message) "Simile encountered an unexpected problem:\n%s"
 set msgs(unhandled_tcl_error_full) %2\$s
+
+set msgs(type_error_title) "Simile error"
+set msgs(type_error_message) "An unhandled error occurred in the Prolog engine."
+set msgs(type_error_detail) "Please contact your software supplier."
+set msgs(type_error_full) "The error was:\n%s"
+
 set msgs(cannot_delete_temp_folder_title) "Problem deleting temporary folder"
 set msgs(cannot_delete_temp_folder_message) "Simile could not delete its temporary folder %s. This probably means that it failed to unload a model executable."
 set msgs(cannot_delete_temp_folder_detail) "Any saved models will not be affected, and you can delete the temporary folder after Simile has exited."

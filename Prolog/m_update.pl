@@ -19,7 +19,7 @@ sicstus_module(m_update,
 		sort_for_link/4, abs_path_name/3, rel_path_name/5,
 		build_array/3, analyze_array/3, 
 		get_solo_list_depth/2, delete_implicit_node/1, 
-		add_implicit_function/2, default_units/2, units_match_context/3,
+		add_implicit_function/2, default_units/3, units_match_context/4,
 		get_exogenous_node/2, find_all_links/2, find_all_links/3,
 		make_node/3, one_end_in/2, new_line/5,
 		presence_affects/2, status_affects/2,
@@ -606,9 +606,10 @@ add_implicit_function(Exp_node, Node_name) :-
 		find_all_comps(Parent, Exp_node),
 		make_node(Parent, function, Node_name),
 		new_line(influence, [], Node_name, Exp_node, _),
-		(default_units(Exp_node, Units),
-		    nonvar(Units),
-		    Node_name has_new_class_refinement units of Units;
+		(default_units(Exp_node, Base, Dims),
+		    nonvar(Base),
+		    build_array(Base, Dims, Units),
+		    Node_name has_new_class_refinement units of Units, !;
 		 true);
 	Exp_node has_class submodel,
 	Parent has_part Exp_node,
@@ -617,25 +618,37 @@ add_implicit_function(Exp_node, Node_name) :-
 	    Exp_node has_new_model_refinement references of ChildRefs;
 	true.
 
-default_units(Node, Units) :-
+default_units(Node, Base, Dims) :-
 	get_host(Node, Form),
 	(Sort = rate,
-	    units_match_context(Node, Units, []);
-	member(Sort-Units, [rate-1, level-1, cond_value-cond_spec,
+	    units_match_context(Node, Base, Dims, []);
+	member(Sort-Base, [rate-1, level-1, cond_value-cond_spec,
 			    boolean_value-boolean])),
-	Form is_of_sort Sort, !.
+	Form is_of_sort Sort,
+	(\+ Form is_of_sort channel;
+	    Dims = []), !.
 
-units_match_context(Node, Units, Whinge) :-
+/* This could probably be a lot simpler, especially as the returned
+error message (Whinge) is currently never used, except to make the
+predicate fail if it is not []... */
+
+units_match_context(Node, Base, Dims, Whinge) :-
 	get_host(Node, Form),
 	(Form is_of_sort rate,
 	    endpoint_units(Form, EndUnits, ConsistencyWhinge), !,
 	    (ConsistencyWhinge = [], !,
-		default_tick_is(Tick),
-		((var(EndUnits);        	   % no compartments to match
-		  Units = 1, EndUnits = 1;         % plead igronance
-		  Units = EndUnits/Tick), !,       % pass back default
-		    Whinge = [];
-		    check_unit(EndUnits/Tick, Units, 2, Whinge));
+		(var(EndUnits), !, % no compartments to match
+		    Whinge = [];		   % pass back default
+		 analyze_array(EndUnits, EndType, EndWraps),
+		    (EndType = 1, !,
+			Units = EndType, % plead igronance
+			Dims = EndWraps,
+			Whinge = [];
+		     default_tick_is(Tick),
+			build_array(EndType/Tick, EndWraps, DefUnits),
+			(Base = EndType/Tick, Dims = EndWraps, !;
+			    build_array(Base, Dims, Units),
+			    check_unit(DefUnits, Units, 2, Whinge))));
 		Whinge = ConsistencyWhinge);
 	    Whinge = []). % not a flow so no constraint.
 	
