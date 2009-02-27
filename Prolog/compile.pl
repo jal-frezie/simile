@@ -783,6 +783,8 @@ build_submodel_functions( Language, Phases, Constants, StateForm, UpdateForm,
 	     build([OrdUpdates, OrdStates, Ordered]),
 	     unify(Used), unify(AllGraphs), unify(Stream)]).
 
+/* This looks combinatorial but I have tested it with some pretty extreme
+examples, and it's fast enough */
 find_circle([Head | Chain], Loop) :-
 	order(NewHead, Head),
 	not_yet_ordered(NewHead),
