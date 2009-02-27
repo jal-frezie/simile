@@ -303,7 +303,9 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		    [Test, Target] = [NewUnits, TypeBase];
 		 Test = NewArraySpec,
 		    build_array(TypeBase, TypeDims, Target)),
-		(TypeBase = 1, !,
+		(TypeBase = any, !,
+		    Strict = 0;
+		 TypeBase = 1, !,
 		    Strict = 1; % allow original physical units
 		 Strict = 2),
 		check_unit(Test, Target, Strict, UnitError))),
