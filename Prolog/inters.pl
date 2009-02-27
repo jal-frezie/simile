@@ -750,7 +750,7 @@ make_intermediates(
 	    throw(redundant_array(Source))),
 	    
 	    append(ASetups, ISetups, Setups),
-	    add_extra_dependencies(IContext, AContext, IndxRef, IArgs, IWaits),
+	    add_extra_dependencies(IContext, DestPath, IndxRef, IArgs, IWaits),
 	    merge_lists(AArgs, IWaits, Args),
 	    longest_path([ABase, IBase], EltBase),
 	    append([TailLoops, ItemLoops, ILoops, EltBase], SourceContext);
