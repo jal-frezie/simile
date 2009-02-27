@@ -783,14 +783,26 @@ build_submodel_functions( Language, Phases, Constants, StateForm, UpdateForm,
 	     build([OrdUpdates, OrdStates, Ordered]),
 	     unify(Used), unify(AllGraphs), unify(Stream)]).
 
-/* This looks combinatorial but I have tested it with some pretty extreme
-examples, and it's fast enough */
-find_circle([Head | Chain], Loop) :-
+/* find_circle([Head | Chain], Loop) :-
 	order(NewHead, Head),
 	not_yet_ordered(NewHead),
 	(append(Circle, [NewHead | _], [Head | Chain]),
 	    Loop = [NewHead | Circle];
 	 find_circle([NewHead, Head | Chain], Loop)).
+This looks combinatorial but I have tested it with some pretty extreme
+examples, and it's fast enough. Still, if a thing's worth doing... */
+
+find_circle([Head | Chain], Loop) :-
+	order(NewHead, Head),
+	not_yet_ordered(NewHead), !,
+	(append(Circle, [NewHead | _], [Head | Chain]), % this completes it
+	    Loop = [NewHead | Circle];
+	 find_circle([NewHead, Head | Chain], SubLoop),
+	    (SubLoop = [], !, %this was fruitless, tag it and try another
+		NewHead = make(_,_,_, [_,_,x | _], _),
+		find_circle([Head | Chain], Loop);
+	     Loop = SubLoop)); % found one further down
+	Loop = []. % No leads from here, go back
 
 match_levels([], []).
 match_levels([make(_,_, Path, _,_) | Insts], Levels) :-
