@@ -785,7 +785,7 @@ build_submodel_functions( Language, Phases, Constants, StateForm, UpdateForm,
 
 find_circle([Head | Chain], Loop) :-
 	order(NewHead, Head),
-	not_yet_ordered(NewHead), !,
+	not_yet_ordered(NewHead),
 	(append(Circle, [NewHead | _], [Head | Chain]),
 	    Loop = [NewHead | Circle];
 	 find_circle([NewHead, Head | Chain], Loop)).
