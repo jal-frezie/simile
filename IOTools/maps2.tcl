@@ -377,27 +377,33 @@ namespace eval ::maptools2 {
 	}
     }
 
+#    proc PokeValue {node index newVal} {
+#	if {[RunningInC $::myNode]} {
+#	    if {[string equal INPUT [GetModelEval $node]]} {
+## No need, indices in helper are already hippyfied
+##		foreach level $index {
+##		    lappend hippyIndex [incr level]
+##		}
+##puts "poking $node at $hippyIndex with $newVal"
+#		c_setparamelement $node $index $newVal
+#	    } else {
+#		# attack using regularData, or better, something that exists
+#	    }
+#        } elseif {[llength $index]>0} {
+#            set vals [lindex [GetModelValue $node] 0]
+#	    set oddList {}
+#	    foreach idx $index {
+#		lappend oddList [expr 2*$idx-1]
+#	    }
+#	    lset vals $oddList $newVal
+#	    SetModelValue $node $vals
+#	}
+#    }
+#
+# New version using only functions exported by execution thread process
     proc PokeValue {node index newVal} {
-	if {[RunningInC $::myNode]} {
-	    if {[string equal INPUT [GetModelEval $node]]} {
-# No need, indices in helper are already hippyfied
-#		foreach level $index {
-#		    lappend hippyIndex [incr level]
-#		}
-#puts "poking $node at $hippyIndex with $newVal"
-		c_setparamelement $node $index $newVal
-	    } else {
-		# attack using regularData, or better, something that exists
-	    }
-        } elseif {[llength $index]>0} {
-            set vals [lindex [GetModelValue $node] 0]
-	    set oddList {}
-	    foreach idx $index {
-		lappend oddList [expr 2*$idx-1]
-	    }
-	    lset vals $oddList $newVal
-	    SetModelValue $node $vals
-	}
+	PlaceInArray [join [concat [list $node] $index] ,] $newVal 0 \
+	    [RunningInC $::myNode]
     }
 
     proc IsNumber {str} {

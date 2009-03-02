@@ -1472,16 +1472,12 @@ proc PlaceInArray {where what when inC} {
     #puts "PlaceInArray $where $what $inC"
     set map [split $where ,]
     if {$inC} {
-	if {[catch {
-	    if {$when} {
-		c_settimepointelement [lindex $map 0] \
-		    [lrange $map 2 end] [lindex $map 1] $what
-	    } else {
-		c_setparamelement [lindex $map 0] \
-		    [lrange $map 1 end] $what
-	    }
-	} urr]} {
-	    FPError $urr {}
+	if {$when} {
+	    c_settimepointelement [lindex $map 0] \
+		[lrange $map 2 end] [lindex $map 1] $what
+	} else {
+	    c_setparamelement [lindex $map 0] \
+		[lrange $map 1 end] $what
 	}
     } else {
 	if {$when} {
