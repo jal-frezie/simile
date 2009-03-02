@@ -801,6 +801,7 @@ namespace eval grid005 {
 	    $useNodes($winId,hiddenMap) put $useNodes($winId,paintColour) \
 		-to [expr $col-1] [expr $nrow-$row]
 	    FillCanvas $winId
+#puts "row,col $row,$col cell $cell idx $idx"
 	}
     }
     
@@ -811,7 +812,7 @@ namespace eval grid005 {
 	    set thisCount [lindex $subs 0]
 	    set innerInds [lindex $subs 1]
 	    return [list [expr $thisCount/$thisBound] \
-			[concat [expr $thisCount%$thisBound] $innerInds]]
+			[concat [expr 1+$thisCount%$thisBound] $innerInds]]
 	} else {
 	    return [list $count {}]
 	}

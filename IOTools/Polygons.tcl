@@ -118,6 +118,10 @@ $useNodes($winId,scaley)"
 	    }
 	    Repaint $winId $useNodes($winId,color)
 	}
+	if {$useNodes($winId,editMode)} {
+	    set useNodes($winId,editMode) 0
+	    ChangeEditMode [namespace current] $winId
+	}
 	if {![info exists useNodes($winId,stringInfo)]} return
 	RestoreNotesFromList [GetCanvas $winId] $useNodes($winId,stringInfo)
     }
