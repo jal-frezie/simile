@@ -829,9 +829,11 @@ namespace eval grid005 {
     
     
     proc SaveAsFile {winId} {
-        variable useNodes helperTable
+        global helperTable
+        variable useNodes 
+
         # should have dialog to set for options
-        set filename [ChooseFile image.gif "Save image as:" 1 $winId \
+        set filename [ChooseFile image.gif "Save image as:" 1 \
 		 [$helperTable($winId,whichInstance) GetNode]]
         if {[string length $filename]} {
 	    $useNodes($winId,visibleMap) write $filename \
