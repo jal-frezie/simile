@@ -402,8 +402,13 @@ namespace eval ::maptools2 {
 #
 # New version using only functions exported by execution thread process
     proc PokeValue {node index newVal} {
+	global myNode
+
 	PlaceInArray [join [concat [list $node] $index] ,] $newVal 0 \
-	    [RunningInC $::myNode]
+	    [RunningInC $myNode]
+	if {[string equal TABLE [GetModelEval $node]]} {
+	    set ::runState($myNode,reloadParams) -1
+	}
     }
 
     proc IsNumber {str} {
