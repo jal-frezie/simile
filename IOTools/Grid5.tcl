@@ -271,7 +271,7 @@ namespace eval grid005 {
     }
     
     proc InitialiseGrid {winId display1} {
-        variable useNodes
+	variable useNodes
         
 	set useNodes($winId,tgtDims) [GetModelDims $display1]
         set useNodes($winId,hiddenMap) [image create photo]
@@ -728,6 +728,7 @@ namespace eval grid005 {
     }
     
     proc FillCanvas {winId} {
+	global graph
         variable useNodes
         
         set visible [concat [$winId.c xview] [$winId.c yview]]
@@ -735,9 +736,10 @@ namespace eval grid005 {
         set dataR [expr int(ceil([lindex $visible 1]*$useNodes($winId,ncol)))]
         set dataT [expr [lindex $visible 2]*$useNodes($winId,nrow)]
         set dataB [expr int(ceil([lindex $visible 3]*$useNodes($winId,nrow)))]
-        $winId.c coords 1 \
-	    [$winId.c canvasx [expr -fmod($dataL,1)*$useNodes($winId,mult)]] \
-	    [$winId.c canvasy [expr -fmod($dataT,1)*$useNodes($winId,mult)]]
+	set miss [expr {$graph(origin)+2}] ;# 2 is border width
+	set atLeft [expr {-fmod($dataL,1)*$useNodes($winId,mult)+$miss}]
+	set atTop [expr {-fmod($dataT,1)*$useNodes($winId,mult)+$miss}]
+        $winId.c coords 1 [$winId.c canvasx $atLeft] [$winId.c canvasy $atTop]
 #puts "Displaying $dataL $dataT $dataR $dataB"
         $useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
 	    -from [expr int($dataL)] [expr int($dataT)] $dataR $dataB -to 0 0 \

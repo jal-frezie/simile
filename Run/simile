@@ -2,10 +2,10 @@
 # script that finds its own arse, using both hands and a map if necessary,
 # and launches Simile from surrounding directories
 
-if expr $0 : '.*/'; then
+if expr "$0" : '.*/'; then
     # program invoked by filename
     OLDDIR=`pwd`
-    cd `dirname "$0"`
+    cd "`dirname "$0"`"
     LOC=`pwd`/`basename "$0"`
     cd "$OLDDIR"
 else
