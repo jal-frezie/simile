@@ -1175,6 +1175,7 @@ operator(+, real, [real, real]).
 operator(-, int, [int, int]).
 operator(-, real, [real, real]).
 operator(*, const_int, [const_int, const_int]).
+operator(*, int, [int, int]).
 operator(*, 1, [1,1]).
 operator(//, int, [int, int]).
 operator(/, const_ratio, [const_int, const_int]).
