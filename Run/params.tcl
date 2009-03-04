@@ -1191,15 +1191,15 @@ proc StartElement {name attList args} {
 	    }
 	} csv_columns {
 	    puts -nonewline $parseStatus(outStr) \
-		"$parseStatus(submodel)/$attVals(label)=reference="
+		$parseStatus(submodel)/$attVals(label)=reference=
 	    set parseStatus(translateExtras) \
 		[list $attVals(filename) $attVals(data_column)]
 	} csv_grid {
-	    puts $parseStatus(outStr) "$parseStatus(submodel)/$attVals(label)=reference=$attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax)"
+	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax)]
 	} image {
-	    puts $parseStatus(outStr) "$parseStatus(submodel)/$attVals(label)=reference=$attVals(filename) ,image $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(blackval) $attVals(whiteval) $attVals(transpval) $attVals(use)"
+	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,image $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(blackval) $attVals(whiteval) $attVals(transpval) $attVals(use)]
 	} geotiff {
-	    puts $parseStatus(outStr) "$parseStatus(submodel)/$attVals(label)=reference=$attVals(filename) ,gdal $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax)"
+	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,gdal $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax)]
 	} byte_array {
 	    set parseStatus(loadByteArray) $attVals(label) 
 	    set parseStatus(translateExtras) $attVals(type)

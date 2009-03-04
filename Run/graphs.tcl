@@ -1271,7 +1271,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
                                 return
                             }
                             set paramArray([list top $yInd $xInd]) \
-                            [lindex $tableSpec 8]
+				[lindex $tableSpec 8]
                             continue
                         }
                         set ptColours [tableImage get $colInd $rowInd]
@@ -1288,7 +1288,9 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
                                 [lindex $ptColours 2])/3]
                             } use_8-bit_colourmap {
                                 set fract [expr 35*[lindex $ptColours 0]*7/256+5*[lindex $ptColours 1]*7/256+[lindex $ptColours 2]*5/256]
-                            }
+                            } default {
+				error "Unrecognized conversion [lindex $tableSpec 9]"
+			    }
                         }
                         set paramArray([list top $yInd $xInd]) \
                         [expr [lindex $tableSpec 6]+$fract*([lindex $tableSpec 7]-[lindex $tableSpec 6])/255.0]
