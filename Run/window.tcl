@@ -1696,7 +1696,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 #    ComboBox $eb.equation -editable 1 -state disabled -width 40
     ::ttk::entry $eb.equation -state disabled -width 32 -font EquationFont
     pack $eb.equation -side left -expand 1 -fill x
-    bind $eb.equation <Return> [list accept_equation $winid $eb.equation]
+    bind $eb.equation <Return> [list EnterEqn $winid $eb.equation]
     bind $eb.equation <FocusIn> "EmbraceEqn $winid"
     bind $eb.equation <FocusOut> "AbandonEqn $winid"
     frame $eb.padding1 -width 3
@@ -1787,6 +1787,12 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     $nb.undo configure -state disabled
     $nb.redo configure -state disabled
+}
+
+proc EnterEqn {winid eb} {
+    focus [winfo parent $eb].tick
+# remove from eqnbar without save dialogue
+    accept_equation $winid $eb
 }
 
 proc AddFindMenu {winid canvas menu} {
