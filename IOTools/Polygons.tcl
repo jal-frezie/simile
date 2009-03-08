@@ -234,7 +234,8 @@ $useNodes($winId,scaley)"
     proc display {winId time step remainder} {
         variable useNodes
 	variable displayUpdate
-	if {$displayUpdate($winId)} {
+	if {[string equal displaying $useNodes($winId,state)] && \
+		$displayUpdate($winId)} {
 	    Repaint $winId $useNodes($winId,color)
 	}
     }

@@ -74,7 +74,7 @@ ifeq ($(UNAME),Darwin)
 	SHAREDLIBPREFX = lib
 	MAKESL = -fPIC -dynamiclib
 	VERS = 8.4
-	USETCL =  -F../../Frameworks -framework Tcl -L../System/lib
+	USETCL =  -F~/Desktop/CVS\ Simile\ v5.x/Contents/Frameworks -framework Tcl -L../System/lib
 	LOCALIZE_TCL_REFS = install_name_tool -change \
 		/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl

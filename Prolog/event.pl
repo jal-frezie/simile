@@ -526,6 +526,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    Moving_obj is_of_sort curved, !,
 		advance_phase_to(moving_spline);
 	    % cannot move a feature so keep selecting
+	    add_incomplete([Xpt, Ypt, Xpt, Ypt]),
 	    advance_phase_to(rubberband)).
 	
 click_on([Xpt, Ypt], Moving_obj, _CD) :-
