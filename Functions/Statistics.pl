@@ -1,6 +1,10 @@
 rand_const(Lo, Hi) --> at_init(rand_var(Lo, Hi)).
 
 %function( name_of_function, return type, list_of_parameter_types).
+function(factorial, real, [real]).
+
+ways_to_pick(chosen,all) -->
+	factorial(all)/(factorial(chosen)*factorial(all-chosen)).
 %sample/3 same syntax but declares func that gives different result each call
 
 sample(gaussian_var, real, [real, real]).

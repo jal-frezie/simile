@@ -19,7 +19,7 @@ if {[string equal aqua [tk windowingsystem]]} {
     set niceSize 12
 } else {
     set menuFont TkMenuFont
-    set niceSize 8
+    set niceSize 9
 }
 # This normalizes fonts of older widgets to look like Tile widgets
 option add *Button.font TkDefaultFont widgetDefault

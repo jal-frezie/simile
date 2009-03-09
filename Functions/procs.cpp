@@ -1,3 +1,10 @@
+double factorial(int n) {
+  if (n>1) 
+    return n*factorial(n-1);
+  else
+    return 1;
+}
+
 double spare;
 BOOLEAN have_spare = 0;
 double gaussian_var(double mean, double sd) {

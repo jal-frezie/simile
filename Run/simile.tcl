@@ -182,7 +182,7 @@ if {[string match Darwin $tcl_platform(os)]} {
 # Fixed in 5.4 by explicitly making it apply to everything.
 # Silly val for testing: 3.0
 # Make conversion easier: pick nice ratio
-    set scalRat [ChooseIntegerRatio [tk scaling] 0.8]
+    set scalRat [ChooseIntegerRatio [tk scaling] 0.9]
     tk scaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
 
 # These are needed for platforms where they would other wise be a fixed number
@@ -393,15 +393,15 @@ toplevel .splash
 pack [canvas .splash.c -width $sphXdiam -height $sphYdiam -bd -$graph(origin) \
 	 -bg white] -padx 0 -pady 0
 
-for {set y 0} {$y < 316} {incr y 2} {
-    if {$y>=56 && $y<84} {
+for {set y 0} {$y < $sphYdiam} {incr y 4} {
+    if {$y>=$sphYdiam*0.18 && $y<$sphYdiam*0.27} {
 	set r 400
 	set shade \#ccffcc
     } else {
 	set r 84
 	set shade \#339933
     }
-    .splash.c create rectangle 0p ${y}p ${r}p [expr {$y+1}]p \
+    .splash.c create rectangle 0p $y ${r}p [expr {$y+2}] \
 	-outline {} -fill $shade
 }
 .splash.c create image 36p 28p -image $splash
@@ -410,7 +410,7 @@ if {[string equal windows $tcl_platform(platform)]} {
     set circle_c {©}
 }
 set graph(anality) "$circle_c Copyright Simulistics Ltd. 2001-2009"
-.splash.c create text 395.0p 50.0p -font $graph(font) -fill \#99cc99 -anchor e \
+.splash.c create text 395.0p 45.0p -font $graph(font) -fill \#99cc99 -anchor e \
     -text $graph(anality)
 .splash.c create text 250.0p 225.0p -font $graph(megafont) -fill #660066 \
     -text "Simile"
@@ -423,6 +423,7 @@ catch {append regInfo ", $env(licensee_corp)"}
     
 wm geometry .splash $startGeom
 wm overrideredirect .splash 1
+
 if {[info exists SimileAutoObjLoaded]} {
     wm withdraw .splash
 } else {
