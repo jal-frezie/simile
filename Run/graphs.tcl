@@ -1245,8 +1245,11 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
                             if {$yInd==1} {
                                 lappend colList $xInd
                             }
-                            set paramArray([list top $yInd $xInd]) \
-				[EnquoteIfNonNumeric [lindex $usePts $colInd]]
+			    set cell [lindex $usePts $colInd]
+			    if {[string length $cell]} {
+				set paramArray([list top $yInd $xInd]) \
+				    [EnquoteIfNonNumeric $cell]
+			    }
                         }
             }
         }

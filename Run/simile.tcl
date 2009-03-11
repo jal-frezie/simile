@@ -387,8 +387,8 @@ image create photo splash -width 90 -height 90
 splash read $SIMILE_PATH/Images/bigsimile.gif -shrink
 set splash [GrowImage splash $iconDiam $iconDiam]
 
-set graph(font) [list helvetica 12]
-set graph(megafont) [list helvetica 36]
+set graph(font) [list helvetica 12 bold]
+set graph(megafont) [list helvetica 36 bold]
 toplevel .splash
 pack [canvas .splash.c -width $sphXdiam -height $sphYdiam -bd -$graph(origin) \
 	 -bg white] -padx 0 -pady 0
