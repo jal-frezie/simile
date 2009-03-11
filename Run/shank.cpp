@@ -375,7 +375,7 @@ char* init_space(int dimList[]) {
     return new char[reps*size_for_data_type(*unit)];
 }
 
-// This and next few could be bundled into a class for the bloc data
+/* This and next few could be bundled into a class for the bloc data
 void free_bloc_data(char* ptData, int* ptDims) {
   int reps, count, *subDims, saved;
   char* subData;
@@ -392,6 +392,44 @@ void free_bloc_data(char* ptData, int* ptDims) {
     *subDims = saved; // restore original contents in case reusing dim list
   } else if (*subDims) // do not delete if empty
     delete ptData; // nothing else to do
+}
+*/
+int free_bloc_level(char* ptData, int* ptDims, int offset) {
+  // done by looking at call_for_each_val, which looked elsewhere
+  int count;
+  sizeAndPtr* convenience;
+  int anyData;
+
+  convenience = (sizeAndPtr*)ptData + offset;
+  switch (ptDims[0]) {
+  case OWNSIZED:
+    for (count=0; count<convenience->size; ++count) {
+      free_bloc_level(convenience->ptr, ptDims+1, count);
+    }
+    if (convenience->size) 
+      delete convenience->ptr;
+    return 1;
+  case SPARSEARRAY:
+    for (count=0; count<convenience->size; ++count) {
+      free_bloc_level(convenience->ptr+sizeof(int)*ptDims[1]*(1+count),
+		      ptDims+2, count);
+    }
+    if (convenience->size) 
+      delete convenience->ptr;
+    return 1;
+  default:
+    if (ptDims[0]>0) {
+      for (count=0; count<ptDims[0]; ++count)
+	anyData = free_bloc_level(ptData, ptDims+1, ptDims[0]*offset+count);
+      return anyData;
+    } else 
+      return 0; 
+  }
+}
+
+void free_bloc_data(char* ptData, int* ptDims) {
+  if (free_bloc_level(ptData, ptDims, 0))
+    delete ptData;
 }
 
 char* copy_bloc_data(char* source, int* ptDims) {
@@ -1781,7 +1819,8 @@ void fill_raw_values(long int localType, long int smHandle, int tree[],
     smHandle = *(long int*)get_ptr(localType, smHandle, &tree, &dims);
     count = count_members(localType, smHandle);
     ((sizeAndPtr*)(*insertionPt))->size = count;
-    newBlk = new char[count*(dimty*sizeof(int) + dim_place[1])];
+    if (count) // do not waste energy creating zero-length blox
+      newBlk = new char[count*(dimty*sizeof(int) + dim_place[1])];
     ((sizeAndPtr*)(*insertionPt))->ptr = newBlk;
     *insertionPt += sizeof(sizeAndPtr);
     while (*tree++ != -1) {} // make relevant to current submodel

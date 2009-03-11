@@ -497,7 +497,7 @@ void call_for_each_val(int* ptDims, char* ptData, int offset,
     }
     break;
   case SPARSEARRAY: // or any other kind this doesn't handle yet
-    //do the necessary
+    //do the necessary (see free_bloc_level)
     break;
   default:
     if (ptDims[0]>0)
