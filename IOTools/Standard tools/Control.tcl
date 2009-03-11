@@ -230,6 +230,19 @@ namespace eval runcontrol33857 {
 	}
     }
 
+    proc AbortFromMenu {node} {
+	global hideQuery
+        variable sendvars
+
+	if {$sendvars($node,busy)} {
+	    set hideQuery 1
+	    ShareAction $node 10 ;# rest done on exit
+	} else {
+	    ScrubRun $node 1
+	    ExDestroyHelpers $node
+	}
+    }
+
     proc switchMode {node} {
 	global runState
         variable sendvars
@@ -388,7 +401,7 @@ namespace eval runcontrol33857 {
     proc RollSimulation { node } {
         variable sendvars
         global errorInfo redoPhase runState updateLastDone
-	global pauseImg playImg
+	global pauseImg playImg hideQuery
         variable frames
 
 	set widget $frames($node,rcf)
@@ -492,7 +505,13 @@ namespace eval runcontrol33857 {
 	    "[namespace current]::SetMode $node start"
 	UpdateBar $node $current [RestingColour $node]
 	set sendvars($node,busy) 0
+	if {[info exists hideQuery]} { ;# finish aborting execution
+	    ScrubRun $node 1
+	    ExDestroyHelpers $node
+	    unset hideQuery
+	}
     }
+
 	    
 #    proc ResultsToGUI {node current display} {
 #	variable sendvars

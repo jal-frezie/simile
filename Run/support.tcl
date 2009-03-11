@@ -150,10 +150,10 @@ proc ExplainError {myNode errList origError} {
     }
     switch -- $severity {
 	-1 {
-	    Query [list model_crash $operation $target $action $timing \
+	    ExecQuery [list model_crash $operation $target $action $timing \
 		       $problem $origError] warning top {} ok
 	} 0 {
-	    Query [list model_pause $operation $target $action $timing \
+	    ExecQuery [list model_pause $operation $target $action $timing \
 		       $problem] info top {} ok
 	}
     }

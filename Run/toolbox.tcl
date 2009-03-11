@@ -1669,16 +1669,18 @@ proc RaiseWinMRE {win} {
 }
 
 proc FinishExec {win} {
-    global window_info
+    global window_info helperTable hideQuery
 
-    set oldCursor [$win cget -cursor]
-    $win config -cursor watch
     set node $window_info($win,top_node)
-    ScrubRun $node 1
-    LeaveHelpers $node
-    $win config -cursor $oldCursor
+    set hideQuery 1
+    $helperTable(RunControl)::AbortFromMenu $node
 }
 
+proc ExecQuery {args} {
+    if {![info exists ::hideQuery]} {
+	eval Query $args
+    }
+}
 proc OpenAll {win} {
     MenuSelect $win file open
     RunIfPackage

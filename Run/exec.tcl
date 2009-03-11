@@ -226,7 +226,9 @@ proc waitForDisps {} {
 }
 
 proc OuterCheck {id} {
-    return [AbortCheck [DecodeInstance $id]]
+    set nodeId [DecodeInstance $id]
+    set abortLevel [AbortCheck $nodeId]
+    return [expr {$abortLevel>=10}]
 }
 
 proc OuteractGUI {id time mode} {
@@ -251,7 +253,7 @@ if {![info exists runHow]} { ;# we are in separate interp
     proc AbortCheck {nodeId args} {
 	global masterId
 	thread::send -async $masterId [info level 0]
-	return [expr {[PullAction $nodeId]>=10}]
+	return [PullAction $nodeId]
     }
  
     proc InteractGUI {nodeId args} {
@@ -273,7 +275,7 @@ if {![info exists runHow]} { ;# we are in separate interp
 	}
     }
 # these are straight copies
-    proc Query {args} {
+    proc ExecQuery {args} {
 	global masterId
 
 	return [thread::send $masterId [info level 0]]
