@@ -249,7 +249,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	(Complaint5 = [], !,
 	(Unit_st = "", Eqn_st = "", Min_st = "", Max_st = "",
 	    /* If no eqn, bounds or units supplied, assume real */
-	    (Is_P > 0, NewUnits = 1; NewUnits = ''), UnitError = [], !;
+	    (Is_P > 0, NewArraySpec = 1; NewArraySpec = ''), UnitError = [], !;
 	/* If units but no eqn or limits supplied, accept any */
 /*	MinBase = any, EqnBase = any, MaxBase = any, var(TypeBase), !,
 	    NewUnits = Units,
