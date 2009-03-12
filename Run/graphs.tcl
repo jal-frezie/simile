@@ -1246,29 +1246,52 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
         set rowList {}
         set colList {}
 	set transpose [expr {[string equal 1 [lindex $tableSpec 6]]}]
-        for {set rowInd 1} {$rowInd <= [lindex $tableSpec 3]} {incr rowInd} {
+	set yflip [expr {[lindex $tableSpec 2]>[lindex $tableSpec 3]}]
+	set xflip [expr {[lindex $tableSpec 4]>[lindex $tableSpec 5]}]
+	if {$yflip} {
+	    set yfirst [lindex $tableSpec 3]
+	    set ylast [lindex $tableSpec 2]
+	} else {
+	    set yfirst [lindex $tableSpec 2]
+	    set ylast [lindex $tableSpec 3]
+	}
+	if {$xflip} {
+	    set xfirst [lindex $tableSpec 5]
+	    set xlast [lindex $tableSpec 4]
+	} else {
+	    set xfirst [lindex $tableSpec 4]
+	    set xlast [lindex $tableSpec 5]
+	}
+        for {set rowInd 1} {$rowInd <= $ylast} {incr rowInd} {
             gets $tStr entryLine
-            if {$rowInd >= [lindex $tableSpec 2]} {
-                set yInd [expr $lineCount+$rowInd-[lindex $tableSpec 2]]
+            if {$rowInd >= $yfirst} {
+		if {$yflip} {
+		    set yInd [expr {$lineCount+$ylast-$rowInd}]
+		} else {
+		    set yInd [expr {$lineCount+$rowInd-$yfirst}]
+		}
                 lappend rowList $yInd
                 set usePts [TrimFields [split ,$entryLine ,]]
-                for {set colInd [lindex $tableSpec 4]} \
-                        {$colInd<=[lindex $tableSpec 5]} {incr colInd} {
-                            set xInd [expr 1+$colInd-[lindex $tableSpec 4]]
-                            if {$yInd==1} {
-                                lappend colList $xInd
-                            }
-			    set cell [lindex $usePts $colInd]
-			    if {[string length $cell]} {
-				if {$transpose} {
-				    set paramArray([list top $xInd $yInd]) \
-					[EnquoteIfNonNumeric $cell]
-				} else {
-				    set paramArray([list top $yInd $xInd]) \
-					[EnquoteIfNonNumeric $cell]
-				}
-			    }
-                        }
+                for {set colInd $xfirst} {$colInd<=$xlast} {incr colInd} {
+		    if {$xflip} {
+			set xInd [expr 1+$xlast-$colInd]
+		    } else {
+			set xInd [expr 1+$colInd-$xfirst]
+		    }
+		    if {$yInd==1} {
+			lappend colList $xInd
+		    }
+		    set cell [lindex $usePts $colInd]
+		    if {[string length $cell]} {
+			if {$transpose} {
+			    set paramArray([list top $xInd $yInd]) \
+				[EnquoteIfNonNumeric $cell]
+			} else {
+			    set paramArray([list top $yInd $xInd]) \
+				[EnquoteIfNonNumeric $cell]
+			}
+		    }
+		}
             }
         }
         set indexList [list $rowList $colList]
@@ -1276,13 +1299,35 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
         set rowList {}
         set colList {}
 	set transpose [expr {[string equal 1 [lindex $tableSpec 10]]}]
-        for {set rowInd [expr [lindex $tableSpec 3]-1]} \
-	{$rowInd>=[lindex $tableSpec 2]-1} {incr rowInd -1} {
-	    set yInd [expr $lineCount+[lindex $tableSpec 3]-$rowInd-1]
+	set yflip [expr {[lindex $tableSpec 2]>[lindex $tableSpec 3]}]
+	set xflip [expr {[lindex $tableSpec 4]>[lindex $tableSpec 5]}]
+	if {$yflip} {
+	    set yfirst [lindex $tableSpec 3]
+	    set ylast [lindex $tableSpec 2]
+	} else {
+	    set yfirst [lindex $tableSpec 2]
+	    set ylast [lindex $tableSpec 3]
+	}
+	if {$xflip} {
+	    set xfirst [lindex $tableSpec 5]
+	    set xlast [lindex $tableSpec 4]
+	} else {
+	    set xfirst [lindex $tableSpec 4]
+	    set xlast [lindex $tableSpec 5]
+	}
+        for {set rowInd [expr $yfirst-1]} {$rowInd<=$ylast-1} {incr rowInd} {
+	    if {$yflip} {
+		set yInd [expr $lineCount+$rowInd-$yfirst+1]
+	    } else {
+		set yInd [expr $lineCount+$ylast-$rowInd-1]
+	    }
 	    lappend rowList $yInd
-	    for {set colInd [expr [lindex $tableSpec 4]-1]} \
-	    {$colInd<[lindex $tableSpec 5]} {incr colInd} {
-		set xInd [expr 2+$colInd-[lindex $tableSpec 4]]
+	    for {set colInd [expr $xfirst-1]} {$colInd<$xlast} {incr colInd} {
+		if {$xflip} {
+		    set xInd [expr $xlast-$colInd]
+		} else {
+		    set xInd [expr 2+$colInd-$xfirst]
+		}
 		if {$transpose} {
 		    set subscriptList [list top $xInd $yInd]
 		} else {
