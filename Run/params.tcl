@@ -1031,19 +1031,19 @@ namespace eval fileparams {
 		switch -exact [lindex $paramState($compName) 1] {
 		    ,image {
 			puts -nonewline $pStr "$indent<image label=$subbedComp filename=[Entitize $relName]"
-			foreach att {rowmin rowmax colmin colmax blackval whiteval transpval use} val [lrange $paramState($compName) 2 9] {
+			foreach att {rowmin rowmax colmin colmax blackval whiteval transpval use xpose} val [lrange $paramState($compName) 2 10] {
 			    puts -nonewline $pStr " $att=[Entitize $val]"
 			}
 			puts $pStr />
 		    } ,gdal {
 			puts -nonewline $pStr "$indent<geotiff label=$subbedComp filename=[Entitize $relName]"
-			foreach att {rowmin rowmax colmin colmax} val [lrange $paramState($compName) 2 5] {
+			foreach att {rowmin rowmax colmin colmax xpose} val [lrange $paramState($compName) 2 6] {
 			    puts -nonewline $pStr " $att=[Entitize $val]"
 			}
 			puts $pStr />
 		    } ,grid {
 			puts -nonewline $pStr "$indent<csv_grid label=$subbedComp filename=[Entitize $relName]"
-			foreach att {rowmin rowmax colmin colmax} val [lrange $paramState($compName) 2 5] {
+			foreach att {rowmin rowmax colmin colmax xpose} val [lrange $paramState($compName) 2 6] {
 			    puts -nonewline $pStr " $att=[Entitize $val]"
 			}
 			puts $pStr />
@@ -1195,11 +1195,11 @@ proc StartElement {name attList args} {
 	    set parseStatus(translateExtras) \
 		[list $attVals(filename) $attVals(data_column)]
 	} csv_grid {
-	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax)]
+	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose)]
 	} image {
-	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,image $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(blackval) $attVals(whiteval) $attVals(transpval) $attVals(use)]
+	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,image $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(blackval) $attVals(whiteval) $attVals(transpval) $attVals(use) $attVals(xpose)]
 	} geotiff {
-	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,gdal $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax)]
+	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,gdal $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose)]
 	} byte_array {
 	    set parseStatus(loadByteArray) $attVals(label) 
 	    set parseStatus(translateExtras) $attVals(type)

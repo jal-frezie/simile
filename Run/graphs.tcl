@@ -615,6 +615,8 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack $fg.fdata -fill x
     TitleFrame $fg.limits -text "Boundaries of area to load "
     set flim [GetFrame $fg.limits]
+    pack [ttk::checkbutton $flim.transpose -variable table_entry(xpose) \
+	      -text "Transpose (so columns are outer dimension)"] -side bottom
     pack [frame $flim.ycapt] -side left -fill both -expand true
     pack [frame $flim.yval] -side left -fill both -expand true
     pack [frame $flim.xcapt] -side left -fill both -expand true
@@ -654,6 +656,9 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack $fi.fdata -fill x
     TitleFrame $fi.limits -text "Boundaries of area to load "
     set flim [GetFrame $fi.limits]
+    pack [ttk::checkbutton $flim.transpose -variable table_entry(xpose) \
+	      -text "Transpose (so X positions are outer dimension)"] \
+	-side bottom
     pack [frame $flim.ycapt] -side left -fill both -expand true
     pack [frame $flim.yval] -side left -fill both -expand true
     pack [frame $flim.xcapt] -side left -fill both -expand true
@@ -704,7 +709,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
             -width 16 -state readonly]
     set table_entry(othval) "Use luminosity"
     pack $fcols
-    pack $fi.interp -fill x -expand true
+    pack $fi.interp -fill both -expand true
     
     $t add [set ft [frame $t.gdal]] -text "Data from GeoTIFF etc."
     label $ft.instructions -wrap 400 -text "Choose a georeferenced data file, then select row and column at which to start and finish loading data."
@@ -721,6 +726,9 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack $ft.fdata -fill x
     TitleFrame $ft.limits -text "Boundaries of area to load "
     set flim [GetFrame $ft.limits]
+    pack [ttk::checkbutton $flim.transpose -variable table_entry(xpose) \
+	      -text "Transpose (so columns are outer dimension)" \
+	      -state disabled] -side bottom ;# not working yet
     pack [frame $flim.ycapt] -side left -fill both -expand true
     pack [frame $flim.yval] -side left -fill both -expand true
     pack [frame $flim.xcapt] -side left -fill both -expand true
@@ -851,6 +859,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
                 set table_entry(rown) [lindex $table_entry(data) 3]
                 set table_entry(col1) [lindex $table_entry(data) 4]
                 set table_entry(coln) [lindex $table_entry(data) 5]
+		set table_entry(xpose) [lindex $table_entry(data) 6]
             } ,image {
                 .table.notebook select .table.notebook.image
                 set table_entry(row1) [lindex $table_entry(data) 2]
@@ -862,12 +871,14 @@ proc equationDoTable {parent mdl tgt dims startLine} {
                 set table_entry(trnval) [lindex $table_entry(data) 8]
                 set table_entry(othval) \
                         [TagToName [lindex $table_entry(data) 9]]
+		set table_entry(xpose) [lindex $table_entry(data) 10]
             } ,gdal {
                 .table.notebook select .table.notebook.gdal
                 set table_entry(row1) [lindex $table_entry(data) 2]
                 set table_entry(rown) [lindex $table_entry(data) 3]
                 set table_entry(col1) [lindex $table_entry(data) 4]
                 set table_entry(coln) [lindex $table_entry(data) 5]
+		set table_entry(xpose) [lindex $table_entry(data) 6]
             } default {
                 .table.notebook select .table.notebook.columns
                 set table_entry(dataField) [lindex $table_entry(data) 1]
@@ -890,6 +901,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
         #                    [GetDataFile "No data file yet specified"] {}]} {
         #            return 0
         #        }
+	set table_entry(xpose) 0 ;# ttk checkbutton doesnt set this unless hit
         set table_entry(indices) {}
     }
     
@@ -993,18 +1005,18 @@ proc AcquireTableData {redo startLine} {
         } .table.notebook.grid {
             set tableSpec [list $table_entry(fileName) ,grid \
                     $table_entry(row1) $table_entry(rown) \
-                    $table_entry(col1) $table_entry(coln)]
+                    $table_entry(col1) $table_entry(coln) $table_entry(xpose)]
         } .table.notebook.image {
             set tableSpec [list $table_entry(fileName) ,image \
                     $table_entry(row1) $table_entry(rown) \
                     $table_entry(col1) $table_entry(coln) \
                     $table_entry(blkval) $table_entry(whtval) \
                     $table_entry(trnval) \
-                    [NameToTag $table_entry(othval)]]
+                    [NameToTag $table_entry(othval)] $table_entry(xpose)]
         } .table.notebook.gdal {
             set tableSpec [list $table_entry(fileName) ,gdal \
                     $table_entry(row1) $table_entry(rown) \
-                    $table_entry(col1) $table_entry(coln)]
+                    $table_entry(col1) $table_entry(coln) $table_entry(xpose)]
         }
     }
     if {$redo || ![string equal $tableSpec $table_entry(data)]} {
@@ -1233,6 +1245,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
     if {[string equal ,grid [lindex $tableSpec 1]]} {
         set rowList {}
         set colList {}
+	set transpose [expr {[string equal 1 [lindex $tableSpec 6]]}]
         for {set rowInd 1} {$rowInd <= [lindex $tableSpec 3]} {incr rowInd} {
             gets $tStr entryLine
             if {$rowInd >= [lindex $tableSpec 2]} {
@@ -1247,8 +1260,13 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
                             }
 			    set cell [lindex $usePts $colInd]
 			    if {[string length $cell]} {
-				set paramArray([list top $yInd $xInd]) \
-				    [EnquoteIfNonNumeric $cell]
+				if {$transpose} {
+				    set paramArray([list top $xInd $yInd]) \
+					[EnquoteIfNonNumeric $cell]
+				} else {
+				    set paramArray([list top $yInd $xInd]) \
+					[EnquoteIfNonNumeric $cell]
+				}
 			    }
                         }
             }
@@ -1257,48 +1275,53 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
     } elseif {[string equal ,image [lindex $tableSpec 1]]} {
         set rowList {}
         set colList {}
+	set transpose [expr {[string equal 1 [lindex $tableSpec 10]]}]
         for {set rowInd [expr [lindex $tableSpec 3]-1]} \
-                {$rowInd>=[lindex $tableSpec 2]-1} {incr rowInd -1} {
-                    set yInd [expr $lineCount+[lindex $tableSpec 3]-$rowInd-1]
-                    lappend rowList $yInd
-                    for {set colInd [expr [lindex $tableSpec 4]-1]} \
-                    {$colInd<[lindex $tableSpec 5]} {incr colInd} {
-                        set xInd [expr 2+$colInd-[lindex $tableSpec 4]]
-                        if {$yInd==1} {
-                            lappend colList $xInd
-                        }
-                        if {[tableImage transparency get $colInd $rowInd]} {
-                            if {![string length [lindex $tableSpec 8]]} {
-                                Query [list no_clear_val [lindex $tableSpec 0]]\
-                                warning top {} ok
-                                return
-                            }
-                            set paramArray([list top $yInd $xInd]) \
-				[lindex $tableSpec 8]
-                            continue
-                        }
-                        set ptColours [tableImage get $colInd $rowInd]
-                        switch [lindex $tableSpec 9] {
-                            use_red_level {
-                                set fract [lindex $ptColours 0]
-                            } use_green_level {
-                                set fract [lindex $ptColours 1]
-                            } use_blue_level {
-                                set fract [lindex $ptColours 2]
-                            } use_luminosity {
-                                set fract [expr ([lindex $ptColours 0]+\
-                                [lindex $ptColours 1]+\
-                                [lindex $ptColours 2])/3]
-                            } use_8-bit_colourmap {
-                                set fract [expr 35*[lindex $ptColours 0]*7/256+5*[lindex $ptColours 1]*7/256+[lindex $ptColours 2]*5/256]
-                            } default {
-				error "Unrecognized conversion [lindex $tableSpec 9]"
-			    }
-                        }
-                        set paramArray([list top $yInd $xInd]) \
-                        [expr [lindex $tableSpec 6]+$fract*([lindex $tableSpec 7]-[lindex $tableSpec 6])/255.0]
-                    }
-                }
+	{$rowInd>=[lindex $tableSpec 2]-1} {incr rowInd -1} {
+	    set yInd [expr $lineCount+[lindex $tableSpec 3]-$rowInd-1]
+	    lappend rowList $yInd
+	    for {set colInd [expr [lindex $tableSpec 4]-1]} \
+	    {$colInd<[lindex $tableSpec 5]} {incr colInd} {
+		set xInd [expr 2+$colInd-[lindex $tableSpec 4]]
+		if {$transpose} {
+		    set subscriptList [list top $xInd $yInd]
+		} else {
+		    set subscriptList [list top $yInd $xInd]
+		}
+		if {$yInd==1} {
+		    lappend colList $xInd
+		}
+		if {[tableImage transparency get $colInd $rowInd]} {
+		    if {![string length [lindex $tableSpec 8]]} {
+			Query [list no_clear_val [lindex $tableSpec 0]]\
+			    warning top {} ok
+			return
+		    }
+		    set paramArray($subscriptList) [lindex $tableSpec 8]
+		    continue
+		}
+		set ptColours [tableImage get $colInd $rowInd]
+		switch [lindex $tableSpec 9] {
+		    use_red_level {
+			set fract [lindex $ptColours 0]
+		    } use_green_level {
+			set fract [lindex $ptColours 1]
+		    } use_blue_level {
+			set fract [lindex $ptColours 2]
+		    } use_luminosity {
+			set fract [expr ([lindex $ptColours 0]+\
+					     [lindex $ptColours 1]+\
+					     [lindex $ptColours 2])/3]
+		    } use_8-bit_colourmap {
+			set fract [expr 35*[lindex $ptColours 0]*7/256+5*[lindex $ptColours 1]*7/256+[lindex $ptColours 2]*5/256]
+		    } default {
+			error "Unrecognized conversion [lindex $tableSpec 9]"
+		    }
+		}
+		set level [expr {[lindex $tableSpec 6]+$fract*([lindex $tableSpec 7]-[lindex $tableSpec 6])/255.0}]
+		set paramArray($subscriptList) $level
+	    }
+	}
         set indexList [list $rowList $colList]
     } elseif {[string equal ,gdal [lindex $tableSpec 1]]} {
         #	set indexList [ReadGdalRefToArray paramArray $tableSpec]
