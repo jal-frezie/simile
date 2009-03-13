@@ -293,7 +293,7 @@ namespace eval slide139 {
 	    set dimList [MakeDimsLegible $nodeDims $type]
             set comment [do_in_editor GetFromProlog \
 			     tk_get_info('$winId',$node,comment)]
-            BindPopup $f.caption "[lindex $levels end] ($dimList) $comment"
+            BindPopup $f.caption "[lindex $levels end] ($dimList)" $comment
 	}
 	return $allVals
     }

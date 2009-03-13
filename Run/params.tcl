@@ -178,7 +178,7 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     # look for the calls to Prolog proc tk_get_info
     #set desc [do_in_editor GetFromProlog tk_get_info('$winId',$node,desc)]
     set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
-    BindPopup $slot.l1 "[lindex $levels end] ($dimList) $comment"
+    BindPopup $slot.l1 "[lindex $levels end] ($dimList)" $comment
 #    BindPopup $slot.l2 "$comment"
             
     ::ttk::button $slot.b -style Toolbutton -image $iconImages(edit) \
