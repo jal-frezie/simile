@@ -311,11 +311,12 @@ important...(or was, back when the A stood for Agroforestry)... */
 	LocalNames = [tree, type, set, newvalue, finished, current, context,
 		      dtarget, btarget, instance, time_step,
 		      time, times, ts, dts,
-		      init_time, parentId, channelId, version,
+		      parentId, channelId, version,
 		      on_reset, on_reload, externs_done, /* dummy conditions */
 		      use_param_state, /* indicates file parameter */
-		      id, dims | _], /* arguments to extractor proc */
-
+		      id, dims, /* arguments to extractor proc */
+		      next, instanceid, new_instance | _],
+	/* system vars in submodel */
 /* we cannot change names of external procedures, so add them to the used */
 
         (setof(ExtProc, uses_ext_proc(Top, ExtProc), ExtProcs), !;
