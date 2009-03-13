@@ -645,8 +645,9 @@ units_match_context(Node, Base, Dims, Whinge) :-
 			Dims = EndWraps,
 			Whinge = [];
 		     default_tick_is(Tick),
-			build_array(EndType/Tick, EndWraps, DefUnits),
-			(Base = EndType/Tick, Dims = EndWraps, !;
+			standard_name(EndType, EndTypeStd),
+			build_array(EndTypeStd/Tick, EndWraps, DefUnits),
+			(Base = EndTypeStd/Tick, Dims = EndWraps, !;
 			    build_array(Base, Dims, Units),
 			    check_unit(DefUnits, Units, 2, Whinge))));
 		Whinge = ConsistencyWhinge);
