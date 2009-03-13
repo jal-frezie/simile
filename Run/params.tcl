@@ -1166,6 +1166,7 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
 proc StartElement {name attList args} {
     global parseStatus
 #    puts "Started a $name, atts -$attList-, args -$args-"
+    set attVals(xpose) 0 ;# in case older spf does not include it
     array set attVals $attList
     switch $name {
 	submodel {
