@@ -348,20 +348,20 @@ namespace eval ::maptools2 {
         }
     }
     
-    proc Flatten {nested flat} {
-        for {set i 1} {$i < [llength $nested]} {incr i 2} {
-            set subi [lindex $nested $i]
-            if {[string match {} $subi]} {
-                lappend flat {}
-            } elseif {[llength $subi] == 1} {
-                lappend flat $subi
-            } else {
-                set flat [Flatten $subi $flat]
-            }
-        }
-        return $flat
-    }
-
+#    proc Flatten {nested flat} {
+#        for {set i 1} {$i < [llength $nested]} {incr i 2} {
+#            set subi [lindex $nested $i]
+#            if {[string match {} $subi]} {
+#                lappend flat {}
+#            } elseif {[llength $subi] == 1} {
+#                lappend flat $subi
+#            } else {
+#                set flat [Flatten $subi $flat]
+#            }
+#        }
+#        return $flat
+#    }
+#
     proc Flatten {nested} {
 	if {[llength $nested]==1} {
 	    return [list [list {} $nested]]
