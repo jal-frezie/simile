@@ -277,16 +277,17 @@ namespace eval runcontrol33857 {
 		}
 	    }
 	}
-	SendData $node
 	if {[string match start $action] && \
 		[info exists runState($node,reloadParams)]} {
 	    set paramChoice [Query params_out_of_date warning top {} {yes no}]
 	    if {[string equal yes $paramChoice]} {
 		# reset the model
+		SendData $node
 		set sendvars($node,currentMode) reset
 		RollSimulation $node
 	    }
 	}
+	SendData $node
 	set sendvars($node,currentMode) $action
 	RollSimulation $node
     }
