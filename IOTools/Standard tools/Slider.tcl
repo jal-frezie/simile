@@ -151,23 +151,23 @@ namespace eval slide139 {
             switch -glob $type {
                 FLAG {
                     pack [checkbutton $f.check -text [lindex $levels end] \
-                            -variable checkStates($node) \
-                            -command [namespace code [list CheckStateToC $node]] \
-                            -offvalue 0 -onvalue 1 -relief ridge]
+			      -offvalue 0 -onvalue 1 -relief ridge \
+			      -variable checkStates($node) -command \
+			      [namespace code [list CheckStateToC $node $fixed]]
                     set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
                     BindPopup $f.check "$comment"
                     set checkStates($node) $defVal
                 } ENUM(*) {
-                    #		ComboBox $f.combo -values $possVals -editable 0 \
-                    -text [lindex $possVals [expr $defVal-1]] \
-                            -textvariable comboTypes($node) \
-                            -modifycmd [namespace code [list SetChoiceNumber $f.combo $node]]
+#		    ComboBox $f.combo -values $possVals -editable 0 \
+#			-text [lindex $possVals [expr $defVal-1]] \
+#			-textvariable comboTypes($node) \
+#			-modifycmd [namespace code [list SetChoiceNumber $f.combo $node $fixed]]
                     ::ttk::menubutton $f.combo
                     set bxMenu [menu $f.combo.menu -tearoff 0]
                     foreach choice $possVals {
                         $bxMenu add command -label $choice -command \
                                 [namespace code [list SetChoiceNumber $f.combo \
-                                $node $choice]]
+                                $node $fixed $choice]]
                     }
                     $f.combo configure -menu $bxMenu \
                             -textvariable comboTypes($node)
@@ -221,9 +221,9 @@ namespace eval slide139 {
                                     -side right
                         }
                         pack [checkbutton $row.elt$index -borderwidth 1 \
-                                -variable checkStates($node,$index) \
-                                -command [namespace code [list CheckStateToC \
-                                $node $index]] \
+                                -variable checkStates($node,$index) -command \
+				  [namespace code [list CheckStateToC \
+						       $node $fixed $index]] \
                                 -padx 0 -offvalue 0 -onvalue 1] -side left
                         set checkStates($node,$index) $defVal
                         BindPopup $row.elt$index "For $slTitle"
@@ -237,18 +237,17 @@ namespace eval slide139 {
                         $row.elt$index configure -bg $newbg
                     } ENUM(*) {
                         pack [frame $f.elt$index] -fill x -expand true
-                        #		    ComboBox $f.elt$index.c -values $possVals -editable 0 \
-                        -text [lindex $possVals [expr $defVal-1]] \
-                                -textvariable comboTypes($node,$index) \
-                                -modifycmd [namespace code [list SetChoiceNumber \
-                                $f.elt$index.c $node $index]]
+#			ComboBox $f.elt$index.c -values $possVals -editable 0 \
+#			    -text [lindex $possVals [expr $defVal-1]] \
+#			    -textvariable comboTypes($node,$index) \
+#			    -modifycmd [namespace code [list SetChoiceNumber \
+#							    $f.elt$index.c $node $fixed $index]]
                         ::ttk::menubutton $f.elt$index.c
                         set bxMenu [menu $f.elt$index.c.menu -tearoff 0]
                         foreach choice $possVals {
                             $bxMenu add command -label $choice -command \
                                     [namespace code [list SetChoiceNumber \
-                                    $f.elt$index.c $node \
-                                    $choice $index]]
+                                    $f.elt$index.c $node $fixed $choice $index]]
                             
                         }
                         $f.elt$index.c configure -menu $bxMenu \
@@ -352,30 +351,29 @@ namespace eval slide139 {
         SetArrayIfUsed $node $fixed $args $sliderVals($sub)
     }
     
-    proc CheckStateToC {node args} {
+    proc CheckStateToC {node fixed args} {
         global checkStates
         set sub [join [concat [list $node] $args] ,]
-        SetArrayIfUsed $node 0 $args $checkStates($sub)
+        SetArrayIfUsed $node $fixed $args $checkStates($sub)
     }
     
     proc SetArrayIfUsed {node fixed indices value} {
         global paramData runState myNode
-	PlaceInArray [join [concat $node $indices] ,] $value 0 \
-	    [RunningInC $myNode]
+	set sub [join [concat $node $indices] ,]
+	PlaceInArray $sub $value 0 [RunningInC $myNode]
         if {$fixed} {
             if {![RunningInC $myNode]} {
-                set paramData([join [concat $node $indices] ,]) $value
+                set paramData($sub) $value
             }
             set runState($myNode,reloadParams) -1
         }
     }
     
-    proc SetChoiceNumber {cbox node choice args} {
+    proc SetChoiceNumber {cbox node fixed choice args} {
         global comboTypes comboChoices
-        set sub [join [concat $node $args] ,]
+	set sub [join [concat $node $indices] ,]
         set comboTypes($sub) $choice
-	PlaceInArray $sub [expr [$cbox.menu index $choice]+1] 0 \
-	    [RunningInC $::myNode]
+	SetArrayIfUsed $node $fixed $args [expr {[$cbox.menu index $choice]+1}]
     }
     
     # If we load a file containing slider values, we only want to set the sliders
@@ -493,7 +491,8 @@ namespace eval slide139 {
     }
     
     proc ShowNthChoice {combi numbi} {
-        $combi.menu invoke [expr {$numbi-1}]
+	set newTxt [$combi.menu entrycget [expr {$numbi-1}] -label]
+	set ::[$combi cget -textvariable] $newTxt
     }
     
     # purpose of display proc here is only to stop compartment sliders
@@ -505,7 +504,7 @@ namespace eval slide139 {
     # this might be tidied by saving some data in a namespace variable
     
     proc display {winId time display remainder} {
-        global helperTable
+        global helperTable comboTypes
         foreach currentCaption [GetState $winId] {
             set title [RestoreCrs $currentCaption]
             set node [GetIdFromCaptionPath $title]
