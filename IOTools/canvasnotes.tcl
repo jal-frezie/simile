@@ -84,7 +84,7 @@ namespace eval canvasnotes20070919 {
     proc DialogInMiddle {c} {
 	variable whatNotes
 
-	set whatNotes(canvas) $c
+	set whatNotes(canvas) $c.canvas
 	set whatNotes(clkx) 100
 	set whatNotes(clky) 100
 
