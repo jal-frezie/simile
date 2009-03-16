@@ -366,7 +366,7 @@ namespace eval slide139 {
             if {![RunningInC $myNode]} {
                 set paramData([join [concat $node $indices] ,]) $value
             }
-            set runState($myNode,reloadParams) 0
+            set runState($myNode,reloadParams) -1
         }
     }
     
