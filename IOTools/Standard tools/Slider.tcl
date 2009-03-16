@@ -371,7 +371,7 @@ namespace eval slide139 {
     
     proc SetChoiceNumber {cbox node fixed choice args} {
         global comboTypes comboChoices
-	set sub [join [concat $node $indices] ,]
+	set sub [join [concat [list $node] $args] ,]
         set comboTypes($sub) $choice
 	SetArrayIfUsed $node $fixed $args [expr {[$cbox.menu index $choice]+1}]
     }
