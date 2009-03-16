@@ -74,6 +74,8 @@ namespace eval grid005 {
 		 [list greater.gif "Increase range" [namespace code "IncreaseRange $winId"] ]\
 		 [list pause.gif " Freeze " [namespace code "ToggleFreeze $winId"]]]
         ::graphtools::MakeToolBar $winId $toolbarItems
+	$winId.bbframe.buttonBox itemconfigure zoomin -state disabled
+	$winId.bbframe.buttonBox itemconfigure zoomout -state disabled
     }
     
     proc AddVariable {winId} {
@@ -310,10 +312,13 @@ namespace eval grid005 {
 	} else {
 	    set mult [expr {int(380/$n)}]
 	}
+	$winId.bbframe.buttonBox itemconfigure zoomin -state normal
 	if {$mult<2} {
 	    set mult 1
 	    $winId.bbframe.buttonBox itemconfigure zoomout -state disable
-	}
+	} else {
+	    $winId.bbframe.buttonBox itemconfigure zoomout -state normal
+	} 
         set useNodes($winId,mult) $mult
         set xwidth [expr {$mult*$useNodes($winId,ncol)}]
         set yheight [expr {$mult*$useNodes($winId,nrow)+20}]
