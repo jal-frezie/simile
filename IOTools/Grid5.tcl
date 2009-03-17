@@ -321,10 +321,10 @@ namespace eval grid005 {
 	} 
         set useNodes($winId,mult) $mult
         set xwidth [expr {$mult*$useNodes($winId,ncol)}]
-        set yheight [expr {$mult*$useNodes($winId,nrow)+20}]
+        set yheight [expr {$mult*$useNodes($winId,nrow)}]
         set useNodes($winId,xwidth) $xwidth
         set useNodes($winId,yheight) $yheight
-        $winId.c configure -width $xwidth -height $yheight
+#        $winId.c configure -width $xwidth -height $yheight
 
 #        $winId.c bind all <Button-3> [namespace code "Settings $winId"]
 # this is passed to the annotator which handles context menu and text additon
@@ -339,6 +339,7 @@ namespace eval grid005 {
 	bind $winId.c <Configure> \
 	    [namespace code "recolour_scale [namespace current] $winId"]
 #        $winId.c configure -scrollregion [$winId.c bbox all]
+        $winId.c configure -scroll "0 0 $xwidth $yheight"
     }
     
     proc ToggleFreeze {winId} {
@@ -712,7 +713,7 @@ namespace eval grid005 {
         
         $winId.c configure -scroll "0 0 \
                 [expr $useNodes($winId,ncol)*$useNodes($winId,mult)] \
-                [expr $useNodes($winId,nrow)*$useNodes($winId,mult)+40]"
+                [expr $useNodes($winId,nrow)*$useNodes($winId,mult)]"
         set view [$winId.c xview]
         $winId.c xview moveto [expr $xmiddle-([lindex $view 1]-[lindex $view 0])/2]
         set view [$winId.c yview]
