@@ -479,7 +479,9 @@ namespace eval grid005 {
 	set useNodes($winId,template) \
 	    [ChooseFile image.tif "Copy metadata from:" 0 \
 		 [$helperTable($winId,whichInstance) GetNode]]
-	SetGDALTemplateHandle $winId
+	if {[string length $useNodes($winId,template)]} { ;# no cancel
+	    SetGDALTemplateHandle $winId
+	}
     }
 
     proc SetGDALTemplateHandle {winId} {
@@ -737,6 +739,7 @@ namespace eval grid005 {
 	global graph
         variable useNodes
         
+	if {![winfo viewable $winId.c]} return
         set visible [concat [$winId.c xview] [$winId.c yview]]
         set dataL [expr [lindex $visible 0]*$useNodes($winId,ncol)]
         set dataR [expr int(ceil([lindex $visible 1]*$useNodes($winId,ncol)))]
