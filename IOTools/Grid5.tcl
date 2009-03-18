@@ -76,6 +76,7 @@ namespace eval grid005 {
         ::graphtools::MakeToolBar $winId $toolbarItems
 	$winId.bbframe.buttonBox itemconfigure zoomin -state disabled
 	$winId.bbframe.buttonBox itemconfigure zoomout -state disabled
+	$winId.bbframe.buttonBox itemconfigure edit -state disabled
     }
     
     proc AddVariable {winId} {
@@ -340,6 +341,9 @@ namespace eval grid005 {
 	    [namespace code "recolour_scale [namespace current] $winId"]
 #        $winId.c configure -scrollregion [$winId.c bbox all]
         $winId.c configure -scroll "0 0 $xwidth $yheight"
+	if {[lsearch {INPUT TABLE} [GetModelEval $display1]]>-1} {
+	    $winId.bbframe.buttonBox itemconfigure edit -state normal
+	}
     }
     
     proc ToggleFreeze {winId} {
@@ -780,7 +784,8 @@ namespace eval grid005 {
 				     [lindex $vLine 0]] ,]
 		.popup.message config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
 	    } else { # get approx value from raw data
-		binary scan $useNodes($winId,rawBinary) x${cell}H2 hexo
+		if {![binary scan $useNodes($winId,rawBinary) \
+			  x${cell}H2 hexo]} return
 		set numValue [expr $useNodes($winId,min)+0x$hexo*(1+$useNodes($winId,range))/256]
 		set value [TransValue $useNodes($winId,dataETs) $numValue]
 #puts "dot $hexo min $useNodes($winId,min) range $useNodes($winId,range)"
