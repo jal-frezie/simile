@@ -1483,7 +1483,7 @@ FINDABLE int randseedCmd(ClientData clientData, Tcl_Interp *interp,
    if (error != TCL_OK) {
 	return error;
    }
-   srand(seed);
+   setup_randoms(seed);
    return TCL_OK;
 }
 

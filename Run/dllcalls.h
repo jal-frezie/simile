@@ -248,6 +248,7 @@ EXTDEC node_data_line* get_data_line(long int, int);
 EXTDEC long int get_node_model_id(char*);
 EXTDEC void release_graph_data(graph_data_type*);
 EXTDEC graphpoint_type graphpoint;
+EXTDEC void setup_randoms(unsigned int);
 EXTDEC double rand_fract();
 EXTDEC graph_data_type** get_graph_base(long int);
 EXTDEC node_data_line* searchinfo(char*, long int*, char*, 

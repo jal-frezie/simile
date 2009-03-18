@@ -219,7 +219,8 @@ void release_graph_data(graph_data_type *graph_data_pointer) {
 #define PLUS_THREAD_NUM
 #endif
 #ifdef WIN32
-void setup_randoms() {
+void setup_randoms(unsigned int seed) {
+   srand(seed);
 }
 
 double rand_fract() {
@@ -234,15 +235,15 @@ case we may use several random numbers to get a random double. */
 }
 #else
 unsigned short (*rand_states)[3];
-void setup_randoms() {
+void setup_randoms(unsigned int seed) {
   int coo, tnum = 0;
 #pragma omp parallel
   ++tnum;
 
   rand_states = new unsigned short[tnum][3];
   for (coo=0; coo<tnum; ++coo) {
-    rand_states[coo][0] = 12345;
-    rand_states[coo][1] = 6789;
+    rand_states[coo][0] = seed/65536;
+    rand_states[coo][1] = (unsigned short)fmod(seed,65536);
     rand_states[coo][2] = 10000+coo;
   }
 }
@@ -2076,7 +2077,6 @@ void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
   interact_gui = interact_gui_ptr;
   showMessLocal = showMess_ptr;
   xsimileVersion = simileVersionPtr;
-  setup_randoms();
 }
 
 int setstep(long int modelId, double starttime, int phase) {
