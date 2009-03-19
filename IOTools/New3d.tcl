@@ -698,7 +698,7 @@ namespace eval data {
     variable myDebug
 
     upvar 1 quadlist quadlist
-
+puts $colours
 # Do not do anything if this list is for an empty submodel --Jasper
        if {![llength $heights]} {
 	   return
@@ -2304,8 +2304,9 @@ namespace eval window {
    # proc window::createMenuBar
    # This function from Foster-Johnson p206. Thanks Eric!
    proc createMenuBar { window menubar } {
-      menu $menubar -type menubar
-      $window configure -menu $menubar
+#      menu $menubar -type menubar
+#      $window configure -menu $menubar
+       pack [frame $menubar] -fill x
    }
    # END proc window::createMenuBar
    #########################
@@ -2314,12 +2315,15 @@ namespace eval window {
    # proc window::createMenu
    # This function from Foster-Johnson p207. Thanks Eric!
    proc createMenu { menubar basename menutext mnemonic tearoff } {
-      set menu_name "$menubar.$basename"
+       set button_name $menubar.$basename
+       set menu_name $button_name.menu
       # Next line creates a 'slot' on the $menubar
-      $menubar add cascade -label $menutext -menu $menu_name -underline $mnemonic
+#      $menubar add cascade -label $menutext -menu $menu_name -underline $mnemonic
       # Nextline creates menu at 'slot' above
-      menu $menu_name -tearoff $tearoff
-      return $menu_name
+       menubutton $button_name -text $menutext -menu $menu_name
+       menu $menu_name -tearoff $tearoff
+       pack $button_name -side left
+       return $menu_name
    }
    # END proc window::createMenu
    #########################
