@@ -7,8 +7,10 @@ set keyValue "threeDoodle98"
 namespace eval ::$keyValue {
 
  variable helperNamespace [ namespace current ]
- variable thdVersion "v1.0 1600 27th August 1998"
+ variable thdVersion "v1.1 1730 19th March 2009"
  
+# Version 1.1 restores from its saved state when told to do so, and works in a
+# non-toplevel window. See CVS for further version info.
 
 # Versions: 0.1.* and newer will interact with AME via the Helper
 # interface. (Actually, that worked from 0.0.9)
@@ -282,6 +284,15 @@ proc initialize {winId} {
 proc reset {winId} {
 }
 
+proc Restore {winId} {
+    set state [GetState $winId]
+    initialize $winId
+    click $winId [GetIdFromCaptionPath [lindex $state 2]] fee
+    click $winId [GetIdFromCaptionPath [lindex $state 4]] fi
+    click $winId [GetIdFromCaptionPath [lindex $state 6]] fo
+    click $winId [GetIdFromCaptionPath [lindex $state 8]] fum
+}
+
 ##################################################
 # proc click {winId node caption}
 proc click {winId node caption} {
@@ -289,7 +300,8 @@ proc click {winId node caption} {
    set testResult [GetModelValue $node]
    if {[string compare $testResult novalue]} {
       set state [GetState $winId]
-      switch [lindex $state 0] {
+      set oldState [lindex $state 0]
+      switch $oldState {
          xcoord {
             $ms configure -text \
                "CHOOSE tree::yposn PLEASE."
@@ -308,7 +320,7 @@ proc click {winId node caption} {
          sizeval {
             pack forget $ms
             # Now, call my init fn.
-            Initialise3Doodle $winId [lindex $state 1] [lindex $state 3] [lindex $state 5] $node
+            Initialise3Doodle $winId $state [GetCaptionPathFromId $node]
             # And update the state
             set newState displaying
 	     ReleaseClicks $winId
@@ -320,7 +332,7 @@ proc click {winId node caption} {
          }
       }
       # END switch
-      SetState $winId [lreplace [lappend state $node $caption] 0 0 $newState]
+       SetState $winId [lreplace [lappend state $oldState [GetCaptionPathFromId $node]] 0 0 $newState]
    } else {
       $ms configure -text \
          "This component, $caption, does not have a value; please choose a compartment, variable or flow."
@@ -334,7 +346,8 @@ proc click {winId node caption} {
 proc display {winId time step remainder} {
    set status [GetState $winId]
    if {[string compare [lindex $status 0] displaying] == 0} {
-      data::ReadData $winId [lindex $status 1] [lindex $status 3] [lindex $status 5] [lindex $status 7]
+      data::ReadData $winId [lindex $status 2] [lindex $status 4] \
+	  [lindex $status 6] [lindex $status 8]
       graphics::calcViewParams
       graphics::draw $winId
    }
@@ -352,7 +365,7 @@ proc display {winId time step remainder} {
 
 #########################
 # proc Initialise3Doodle { winId xs ys hs }
-proc Initialise3Doodle { winId xs ys cs hs } {
+proc Initialise3Doodle { winId state size} {
  set DEBUG 0
 
 # TODO:
@@ -372,7 +385,8 @@ proc Initialise3Doodle { winId xs ys cs hs } {
    window::InitialiseWidgets $winId
 
    # Draw the stuff.
-   data::ReadData $winId $xs $ys $cs $hs
+    data::ReadData $winId [lindex $state 2] [lindex $state 4] \
+     [lindex $state 6] $size
    graphics::calcViewParams
    graphics::draw $winId
 }
@@ -523,7 +537,7 @@ namespace eval data {
    
    #########################
    # proc data::ReadData {winId xs ys cs hs}
-   proc ReadData {winId xs ys cs hs} {
+   proc ReadData {winId xc yc cc hc} {
     # These are needed outside this namespace
     # Used in graphics::
     variable utilityNS
@@ -560,8 +574,12 @@ namespace eval data {
 
     variable quadList
     
-      if [info exists myDebug ] {
-         $myDebug insert 1.0 "proc ReadData: winId $winId xs $xs ys $ys cs $cs hs $hs\n"
+    set xs [GetIdFromCaptionPath $xc]
+    set ys [GetIdFromCaptionPath $yc]
+    set cs [GetIdFromCaptionPath $cc]
+    set hs [GetIdFromCaptionPath $hc]
+    if [info exists myDebug ] {
+	$myDebug insert 1.0 "proc ReadData: winId $winId xs $xs ys $ys cs $cs hs $hs\n"
       }
       # GetQuadList fetches the data and pops it into a list, quadlist.
       # The order is { x y colour height }
@@ -698,7 +716,7 @@ namespace eval data {
     variable myDebug
 
     upvar 1 quadlist quadlist
-puts $colours
+
 # Do not do anything if this list is for an empty submodel --Jasper
        if {![llength $heights]} {
 	   return
@@ -1870,7 +1888,7 @@ namespace eval graphics {
       ${dataNS}::calcXYStep
 
       set status [GetState $winId]
-      ${dataNS}::ReadData $winId [lindex $status 1] [lindex $status 3] [lindex $status 5] [lindex $status 7]
+      ${dataNS}::ReadData $winId [lindex $status 2] [lindex $status 4] [lindex $status 6] [lindex $status 8]
       
       calcViewParams 
       draw $winId
