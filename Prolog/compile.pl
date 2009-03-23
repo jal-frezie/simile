@@ -575,7 +575,8 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 	    append_atoms(ModelType, '*', PtrType),
 	    (is_population(SymbolicName), !,
 		DummyCompDims = [1],
-		DeclsOnly = [];
+		DeclsOnly = [instance(system, _,_, parentId, int-[]),
+			     instance(system, _,_, channelId, int-[])];
 	    length(Bounds, IdCount),
 		DummyCompDims = [IdCount],
 		(render:count_base_ptrs(Bases, PtrCount),

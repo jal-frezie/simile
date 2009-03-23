@@ -178,18 +178,6 @@ public:
   virtual void* get_pointer(int id, int** dims) = 0;
 };
 
-// Refinement of above for population submodels
-class member_list_type: public submodeltype {
-public:
-};
-
-// Refinement of above for population submodels
-class populationtype: public member_list_type {
-public:
-  int parentId;
-  int channelId;
-};
-
 /* Fn template for deleting a linked list of models -- if non-null, 
 calls itself for the on pointer before deleting instance
 

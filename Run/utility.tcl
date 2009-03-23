@@ -753,10 +753,13 @@ proc LetItShow {t} {
     set wotParent [wm transient $t]
 #puts "Parent of $t is $wotParent"
     if {[llength $wotParent]} {
-	scan [wm geometry [winfo toplevel $wotParent]] {%dx%d+%d+%d} \
-	    tgtw tgth tgtx tgty
+# OK note special geometry scanning to cope with -ve geom offsets! It should
+# be done like this everywhere else too.
+	scan [wm geometry [winfo toplevel $wotParent]] {%dx%d%1s%d%1s%d} \
+	    tgtw tgth sgnx tgtx sgny tgty
     } else {
 	set tgtx 0; set tgty 0
+	set sgnx +; set sgny +
 	set tgtw $scw
 	set tgth $sch
     }
@@ -764,7 +767,7 @@ proc LetItShow {t} {
     set fillh [winfo reqheight $t]
     set left [max 0 [min [expr $scw-$fillw] [expr $tgtx+($tgtw-$fillw)/2]]]
     set top [max 0 [min [expr $sch-$fillh] [expr $tgty+($tgth-$fillh)/2]]]
-    wm geometry $t +$left+$top
+    wm geometry $t $sgnx$left$sgny$top
     return [winfo viewable $t]
 }
 
