@@ -223,7 +223,8 @@ namespace eval $keyValue {
 	}
 	set editMode($winId,lastRow) $row
 	set editMode($winId,lastCol) $col
-	set editMode($winId,lastVal) [set ::data${winId}($row,$col)]
+	catch {set editMode($winId,lastVal) [set ::data${winId}($row,$col)]}
+# catch is in case field is empty -- val will not exist
     }
     
     proc Remove {winId var} {
