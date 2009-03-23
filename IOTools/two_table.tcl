@@ -754,11 +754,13 @@ namespace eval $keyValue {
         #puts "rowIds [array get rowIds] colIds [array get colIds]"
         # next copy the 2-d table to an n-d array using these
         foreach value [array names values] {
-	    set headers [split $value ,]
-	    set rowsHeaders [lindex $headers 0]
-	    set colsHeaders [lindex $headers 1]
-	    set subscript [eval {concat} $subscriptTemplate]
-	    set newValues($subscript) [EnquoteIfNonNumeric $values($value)]
+	    if {[string length $values($value)]} {
+		set headers [split $value ,]
+		set rowsHeaders [lindex $headers 0]
+		set colsHeaders [lindex $headers 1]
+		set subscript [eval {concat} $subscriptTemplate]
+		set newValues($subscript) [EnquoteIfNonNumeric $values($value)]
+	    }
 	}
 # Old version that actually got the values out the table widget
 #        foreach rowEntry [array names rowIds $winId,*] {
