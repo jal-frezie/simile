@@ -104,7 +104,7 @@ namespace eval ::polygon375 {
         if {[string compare $useNodes($winId,sourcefile) model]==0} then {
 	    DrawPolys $winId $useNodes($winId,xcoord) \
 		$useNodes($winId,ycoord) \
-		$useNodes($winId,color)
+		$useNodes($winId,color) 0
 	    set ZoomCmd "Zoom $winId $useNodes($winId,scalex) \
 $useNodes($winId,scaley)"
 	    set useNodes($winId,scalex) 1.0
@@ -165,7 +165,7 @@ $useNodes($winId,scaley)"
                         SetColours useNodes $winId
                         DrawPolys $winId $useNodes($winId,xcoord) \
                                 $useNodes($winId,ycoord) \
-                                $node
+                                $node 1
                         set useNodes($winId,state) displaying
 			PrepareSaveString $winId
                     }
@@ -180,7 +180,7 @@ $useNodes($winId,scaley)"
                         catch {wm title $winId "$caption (polygon diagram)"}; # if not a toplevel, ie MRE
                         SetColourMap useNodes $winId $node
                         SetColours useNodes $winId
-                        DrawPolys $winId {} {} $node
+                        DrawPolys $winId {} {} $node 1
                         set useNodes($winId,state) displaying
 			PrepareSaveString $winId
                     }
@@ -312,7 +312,7 @@ $useNodes($winId,scaley)"
     }
 
 	
-    proc DrawPolys {winId xs ys hs} {
+    proc DrawPolys {winId xs ys hs fit} {
         variable viewpoint
         variable useNodes
         
@@ -429,8 +429,26 @@ $useNodes($winId,scaley)"
 #	    $winId.bbframe.buttonBox itemconfigure $i -state normal
 #	}
         Repaint $winId $hs
+	if {$fit} {
+	    if {![GoodFit $useNodes($winId,min) $useNodes($winId,max) \
+		      $useNodes($winId,datamin) $useNodes($winId,datamax)]} {
+		::graphtools::AxisRound \
+		    $useNodes($winId,datamin) $useNodes($winId,datamax) 0 \
+		    useNodes($winId,min) useNodes($winId,max) s1 s2 s3 s4 s5
+		set useNodes($winId,range) \
+		    [expr {$useNodes($winId,max)-$useNodes($winId,min)}]
+		recolour_scale [namespace current] $winId
+		Repaint $winId $hs
+	    }
+	    update
+	    Fit $winId
+	}
     }
     
+    proc GoodFit {smin smax dmin dmax} {
+	return 0
+    }
+
     proc ColourFor {winId value} {
         variable useNodes
         if {[string match nil $value]} {
@@ -598,6 +616,7 @@ $useNodes($winId,scaley)"
     proc Fit {winId} {
         scan [winfo geometry $winId.viewport.c] {%dx%d+} boxw boxh
         scan [$winId.viewport.c bbox map] {%d %d %d %d} cl ct cr cb
+#puts "fitting $cl $ct $cr $cb to $boxw $boxh"
         Zoom $winId [expr ($boxw-2.0)/($cr-$cl)] [expr ($boxh-42.0)/($cb-$ct)]
     }
     
