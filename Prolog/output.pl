@@ -39,7 +39,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_do_disag_dialog/4, tk_do_relation_dialog/8, get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2,
 	check_directory/1, windowize/2,
-	compile_c_program/3, check_exec_fns_fresh/5, load_executable/6,
+	compile_c_program/4, check_exec_fns_fresh/5, load_executable/6,
 	find_phase/4, tk_kill_window/1, tk_certain_death/1, exit_AME/0]).
 
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
@@ -610,11 +610,11 @@ build_interconnects(TopNode, FinderList) :-
 	safe_tcl_eval([do_for_node, TopNode, set_connection_database,
 		       FinderTclList], _).
 */
-compile_c_program(ModelPath, ExtLibs, Err) :-
+compile_c_program(ModelPath, ExtLibs, Fuss, Err) :-
 	windowize(ModelPath, WModelPath),
 	all(output, windowize, [build(ExtLibs), build(WExtLibs)]),
 	bracketize(WExtLibs, WExtList),
-	safe_tcl_eval([compile_c, br(WModelPath), WExtList], ErrStr),
+	safe_tcl_eval([compile_c, br(WModelPath), WExtList, Fuss], ErrStr),
 	name(Err, ErrStr).
 
 check_exec_fns_fresh(L, ModelPath, Id, Fns, Stat) :-

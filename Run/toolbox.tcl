@@ -609,7 +609,7 @@ proc ReuseSourceCode {workingDir currentKey} {
     return $result
 }
 
-proc compile_c {workingDir extLibs} {
+proc compile_c {workingDir extLibs complain} {
     global sendvars tcl_platform env SIMILE_PATH
 
     CheckCompilerLocation
@@ -754,10 +754,14 @@ proc compile_c {workingDir extLibs} {
 
         }
     }} chuckup]} {
-	cd $TOOLDIR; #Change back to Run directory in order to access Help file for subsequent dialogue
-	Query [list compile_failed $chuckup] warning execution {} ok
-	cd $workingDir
-	set serial -1
+	if {$complain} {
+	    cd $TOOLDIR; #Change back to Run directory in order to access Help file for subsequent dialogue
+	    Query [list compile_failed $chuckup] warning execution {} ok
+	    cd $workingDir
+	    set serial -1
+	} else {
+	    set serial 0
+	}
     } else {
 	# file delete model.cpp
 	# (no, we might be copying)

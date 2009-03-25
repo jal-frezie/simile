@@ -139,7 +139,8 @@ build_instances(Language, DestDir, Parent, TopNode,
 		(\+ ChangeTop == 1, % no change to model; reuse source?
 		    Language = c,
 		    safe_tcl_eval(['ReuseSourceCode', br(WCheckDir), OldTgt],
-				  "1"); % succeeds if old source code found
+				  "1"), % succeeds if old source code found
+		    Fuss = 0; % rebuild quietly if it fails to compile
 		 % neither worked, or model changed: rebuild source
 		    all(compile, delete_prog, [unify(CheckDir),
 			build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]),
@@ -153,12 +154,14 @@ build_instances(Language, DestDir, Parent, TopNode,
 				 protected_build(Language, Stream, MyStep, 
 						 Model, Includes),
 				 (reclose(Stream), raise_exception(Puke))),
-		    close(Stream)),
+		    close(Stream),
+		    Fuss = 1),
 		dialogue:reassure_user("Compiling the program generated for the model"),
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
-	     compile_c_program(CheckDir, ExtLibs, Tgt),
+	     compile_c_program(CheckDir, ExtLibs, Fuss, Tgt),
 		 (Tgt = -1, !, fail;
+		  Tgt > 0,
 		  (Parent has_changed_model_refinement c_new of Tgt;
 		      Parent has_new_model_refinement c_new of Tgt)),
 		 assert(new_exec_for(Parent)))),
