@@ -453,10 +453,14 @@ $useNodes($winId,scaley)"
         variable useNodes
         if {[string match nil $value]} {
             set newColour gray
-        } else {
-	    set colNum [max 0 [min $useNodes($winId,nswatches) [expr \
-		        int(($value-$useNodes($winId,min))* \
-			$useNodes($winId,nswatches)/$useNodes($winId,range))]]]
+        } elseif {$value<=$useNodes($winId,min)} {
+	    set newColour $useNodes($winId,c0)
+        } elseif {$value>=$useNodes($winId,max)} {
+	    set newColour $useNodes($winId,c$useNodes($winId,nswatches))
+	} else {
+	    set colNum [expr int(($value-$useNodes($winId,min))* \
+				     $useNodes($winId,nswatches) / \
+				     $useNodes($winId,range))]
             set newColour $useNodes($winId,c$colNum)
         }
 #puts "Colour for $value is $colNum (range $useNodes($winId,range))"

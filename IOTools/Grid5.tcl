@@ -611,7 +611,8 @@ namespace eval grid005 {
         
         set allData {}
         set min $useNodes($winId,min)
-        set range [expr $useNodes($winId,max)-$useNodes($winId,min)]
+	set max $useNodes($winId,max)
+        set range [expr {$max-$min}]
         
         set ncol $useNodes($winId,ncol)
         set nrow $useNodes($winId,nrow)
@@ -632,15 +633,14 @@ namespace eval grid005 {
 		    if {$celval>$useNodes($winId,dataMax)} {
 			set useNodes($winId,dataMax) $celval
 		    }
-                    if [catch {set icolour [expr {int($nswatches*($celval-$min)/$range)}]}] {
-                        return
-                    }
-                    
-                    if {$icolour < 0} {
-                        set icolour 0
-                    } elseif {$icolour > $nswatches} {
-                        set icolour $nswatches
-                    }
+		    if {$celval<=$min} {
+			set icolour 0
+		    } elseif {$celval>=$max} {
+			set icolour $nswatches
+		    } else {
+			set icolour \
+			    [expr {int($nswatches*($celval-$min)/$range)}]
+		    }
                     lappend rowData($row) $useNodes($winId,c$icolour)
                 } else {
                     lappend rowData($row) grey
