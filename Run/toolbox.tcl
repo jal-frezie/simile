@@ -1281,7 +1281,7 @@ proc FixSize {c} {
                 wm state $win zoomed
             } else {
                 gets $stream oldGeom
-		scan $oldGeom "%dx%d+%d+%d" w h l t
+		scan $oldGeom "%dx%d%1s%d%1s%d" w h lr l tb t
 		if {$l>=0 && $l+$w<[winfo screenwidth $win] && \
 			$t>=0 && $t+$h<[winfo screenheight $win]} {
 # these give wrong values on multi-screen Windows setup

@@ -483,8 +483,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     set window_info($c,topCapt) $window_info(lastClickCapt)
     }
     
-    TweakWindow $c $winTitle [expr {[tk scaling]*$initialScale/1.5}] \
-	$wl $wt $wr $wb $colour
+    TweakWindow $c $winTitle $initialScale $wl $wt $wr $wb $colour
     #    wm maxsize $winName [winfo screenwidth $winName] \
     #   [winfo screenheight $winName]
     
@@ -574,6 +573,7 @@ proc AdjustScroll {canvas dir args} {
 
 proc SetSpace {c w h} {
     global window_info
+
     set cx $window_info($c,width)
     set cy $window_info($c,height)
     set window_info($c,width) [expr $w - 4]
@@ -656,6 +656,7 @@ set looks(scrollIncr) 10
 
 proc AddGrid {c onCol wl wt wr wb} {
     global looks window_info custom
+
     if {$custom(showgrids,$c)} {
 	set stat normal
     } else {
