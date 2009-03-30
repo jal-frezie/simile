@@ -595,6 +595,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
             -textvariable table_entry(dataField) \
             -dropenabled true -droptypes LISTBOX_ITEM \
             -dropcmd ChooseDataHeader]
+    bind $lheads <Double-1> [list PutInDataField $lheads $dhead]
     pack $dhead -side top -expand true -fill x
     pack $fc.select.data -expand true -fill x -anchor w \
             -padx 2 -pady 2
@@ -607,6 +608,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     set fdata [GetFrame $fg.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     bind $dfile <Return> "LoadDataFile grid 0 $mdl"
+    bind $dfile <Double-1> "LoadDataFile grid 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
             -command "LoadDataFile grid 1 $mdl"
@@ -648,6 +650,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     set fdata [GetFrame $fi.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     bind $dfile <Return> "LoadDataFile image 0 $mdl"
+    bind $dfile <Double-1> "LoadDataFile image 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
             -command "LoadDataFile image 1 $mdl"
@@ -718,6 +721,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     set fdata [GetFrame $ft.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     bind $dfile <Return> "LoadDataFile gdal 0 $mdl"
+    bind $dfile <Double-1> "LoadDataFile gdal 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
             -command "LoadDataFile gdal 1 $mdl"
@@ -924,6 +928,11 @@ proc equationDoTable {parent mdl tgt dims startLine} {
         lappend table_entry(values) $table_entry(wrapPt) restart
     }
     return $table_entry(done)
+}
+
+proc PutInDataField {source dest} {
+    $dest delete 0 end
+    $dest insert 0 [$source itemcget [$source selection get] -text]
 }
 
 proc TagToName {tag} {
@@ -1171,6 +1180,10 @@ proc LoadDataFile {mode query mdl} {
                 set table_entry(row1) 1
                 set table_entry(rown) 1
                 while {[gets $stream firstLine]!=-1} {
+		    set coln [llength [split $firstLine ,]]
+		    if {$coln>$table_entry(coln)} {
+			set table_entry(coln) $coln
+		    }
                     incr table_entry(rown)
                 }
             } image {
