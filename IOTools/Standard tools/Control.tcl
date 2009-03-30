@@ -441,7 +441,7 @@ namespace eval runcontrol33857 {
 	if {[info exists redoPhase($node)]} {
 	    UpdateBar $node $current yellow
 	    if {![RunningInC $node]} {
-		if {$redoPhase($node) == 0} {
+		if {$redoPhase($node) <= 0} {
 		    ResetTimeSeries $node
 		    UpdateTimeSeries $node 0
 		}
