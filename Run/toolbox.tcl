@@ -1333,7 +1333,7 @@ proc SaveFile {topNode tree tgt {noPkg 0}} {
     }
 
     if {[catch {
-	set parts [GetParts $tree $tree]
+	set parts [GetParts $tree $tree $noPkg]
 	#ShowMess debug info "SaveFile GetParts $tree" ok
 	if {[info exists runState($topNode,runParams)]} {
 	    lappend parts [mime::initialize -canonical application/x-simile \
@@ -1457,14 +1457,14 @@ proc LoadFile {topNode tree tgt} {
 #                    set style attachment
 #               }
 
-proc GetParts {top tree} {
+proc GetParts {top tree noPkg} {
     global projectInfo
 
     set mimes {}
     foreach subtree [glob -nocomplain ${tree}/*] {
         #ShowMess debug info "GetParts subtree $subtree" ok
         if {[file isdirectory $subtree]} {
-            set mimes [concat $mimes [GetParts $top $subtree]]
+            set mimes [concat $mimes [GetParts $top $subtree $noPkg]]
         } else {
             set ext [file tail $subtree]
 
@@ -1512,7 +1512,11 @@ proc GetParts {top tree} {
                 }
                 model.* {
                     set PartType "application/x-simile"
-                    set Description "Data"
+                    if {$noPkg} {
+			set Description junk
+		    } else {
+			set Description Data
+		    }
                     set style attachment
                 } default {
                     set Description junk
