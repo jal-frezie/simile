@@ -1107,7 +1107,8 @@ builtin('Arithmetic', sqrt, 1, [1]).
 builtin('Arithmetic', log, 1, [1]).
 builtin('Arithmetic', log10, 1, [1]).
 builtin('Arithmetic', exp, 1, [1]).
-builtin('Arithmetic', abs, 1, [1]).
+builtin('Arithmetic', abs, int, [int]).
+builtin('Arithmetic', abs, real, [real]).
 builtin('Arithmetic', int, int, [1]).
 builtin('Arithmetic', round, int, [1]).
 builtin('Arithmetic', ceil, int, [1]).
