@@ -916,7 +916,8 @@ namespace eval fileparams {
 	if {[lsearch $suppliedData(needed) $smPath*]!=-1} {
 	    return
 	}
-        set metaFile [ChooseFile $defFile "Save parameters as:" 1 $topNode]
+	set title "Save [LevelForTitle $smPath] parameters as:"
+        set metaFile [ChooseFile $defFile $title 1 $topNode]
 	ClearSubParamRefs $smPath ;# old spfs below this are superseded
         set SimileProject(fileparam,$smPath/) $metaFile
 #puts "setting SimileProject(fileparam,$smPath) to $SimileProject(fileparam,$smPath)"
@@ -1109,9 +1110,8 @@ namespace eval fileparams {
     
     proc Open {topNode smPath args} {
 	set notInput [expr -[llength $args]]
-        set smName [file tail $smPath]
-        set metaFile [ChooseFile params.spf "Load $smName parameters from:" \
-			  0 $topNode]
+        set title "Load [LevelForTitle $smPath] parameters from:"
+        set metaFile [ChooseFile params.spf $title 0 $topNode]
         if {[llength $metaFile]} {
             MergeParams $topNode $smPath $metaFile $notInput 1
             
@@ -1123,6 +1123,12 @@ proc IsRecordCount {compName} {
     global msgs
 
     return [expr {![info exists msgs(param_source_$compName)]}]
+}
+
+proc LevelForTitle {path} {
+    set levels [split $path /]
+    catch {set levels [lreplace $levels 1 1 [GetExecTitle [lindex $levels 1]]]}
+    return \"[lindex $levels end]\"
 }
 
 package require xml
