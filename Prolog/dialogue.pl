@@ -693,13 +693,13 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 		raise_exception(unused_inter(ExpInt));
 	    DoneExpr = (param(arr(_,ExpInt,_), Type, Loops,_,_)=DefnExpr,
 			   UseExpr));
-	Param =.. [Cumulative, Item],
+	Param =.. [Cumulative | Items],
 	    member(Cumulative, [sum, product, least, greatest,
-				any, all, count]), !,
-	    replace_subexps(Item, dialogue, expand_params,
+				any, all, count, with_least, with_greatest]), !,
+	    replace_all_subexps(Items, dialogue, expand_params,
 			    dim_data(SubL, PsUsed, AllInputs, ExpInters),
-			    top_down, _, DDone),
-	    DoneExpr =.. [Cumulative, DDone],
+			    top_down, _, DsDone),
+	    DoneExpr =.. [Cumulative | DsDone],
 	    SubL = [x | DimL];
 	(length(Param, N), 
 	    DParam =.. [do | Param],

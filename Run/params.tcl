@@ -879,12 +879,13 @@ proc CancelParams {} {
 namespace eval fileparams {
     
     proc Clear {spare smPath} {
-        global widgetNames msgs
+        global widgetNames msgs paramState
 	ClearSubParamRefs $smPath
         foreach compName [array names widgetNames $smPath*] {
             $widgetNames($compName).e configure -state normal
             $widgetNames($compName).e delete 0 end
             set msgs(param_source_$compName) Unsaved
+	    array unset paramState $compName
         }
     }
     

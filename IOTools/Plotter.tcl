@@ -947,14 +947,17 @@ namespace eval ::$keyValue {
         set scaleChange [expr {$OldRange/$Trange}]
         set plot($w,Tscale) [expr $Trange/$plot($w,xlength)]
         set x0 $plot($w,xborder_left)
-        set y0 $plot($w,yborder_top)
-        $w.canvas scale xaxis_item $x0 $y0 $scaleChange 1
+#        set y0 $plot($w,yborder_top)
+#        $w.canvas scale xaxis_item $x0 $y0 $scaleChange 1
         
         set xmove [expr {\
             [get_x $w $OldXmin_axis $plot($w,Tscale)] \
                     -[get_x $w $plot($w,Xmin_axis) $plot($w,Tscale)] }]
-        $w.canvas move xaxis_item $xmove 0
+#        $w.canvas move xaxis_item $xmove 0
         
+# single move for greater speed?
+        set baseLine [expr {$x0+$xmove/(1-$scaleChange)}]
+        $w.canvas scale xaxis_item $baseLine 0 $scaleChange 1
         draw_Xaxis $w
     }
     
@@ -965,16 +968,18 @@ namespace eval ::$keyValue {
         set scaleChange [expr {$OldYrange/$Yrange}]
         
         set plot($w,Yscale) [expr {$Yrange/$plot($w,ylength)}]
-        set x0 $plot($w,xborder_left)
+#        set x0 $plot($w,xborder_left)
         
         set y0 $plot($w,yborder_top)
-        $w.canvas scale yaxis_item $x0 $y0 1 $scaleChange
+#        $w.canvas scale yaxis_item $x0 $y0 1 $scaleChange
         
         set ymove [expr {\
             -[get_y $w $plot($w,Ymax_axis) $plot($w,Yscale)]\
                     +[get_y $w $OldYmax_axis $plot($w,Yscale)] }]
-        $w.canvas move yaxis_item 0 $ymove
-        
+#        $w.canvas move yaxis_item 0 $ymove
+# single move for greater speed?
+        set baseLine [expr {$y0+$ymove/(1-$scaleChange)}]
+        $w.canvas scale yaxis_item 0 $baseLine 1 $scaleChange
         draw_Yaxis $w
     }
     

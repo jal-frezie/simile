@@ -635,6 +635,7 @@ set toolbars [list \
 	if {![EmptyDisplays]} {
 	    return
 	}
+	PreserveSetup 0
 	ForgetHelperState
         foreach winData [array names window_info *,parent] {
             upvar 0 window_info([string range $winData 0 end-7],top_node) model
