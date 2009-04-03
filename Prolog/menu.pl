@@ -248,7 +248,8 @@ menu_handle(_Win, open_toplevel, Name) :-
 	stick_model_in(Win, Parent, Name, reopen).
 
 menu_handle(Win, file, open) :-
-	Win shows_model Parent,
+        (Win shows_model Parent; Parent = node00000),
+% latter case only if win is .hi and no models open
 	get_load_file(Parent, Name),
 	(Name = '', !;
 	Win = '.hi.canvas', !,
