@@ -693,6 +693,14 @@ make_intermediates(
 	    throw(wrong_no_of_args(Source, makearray, WrongNum, 2));
 	    % do not leave this to general handler because it will complain
 	    % if arguments contain place_in(...)
+	(Source = makearray(Element,count(Reps)),
+	    fail, % not yet tested enough for release
+	    make_intermediates(Reps, SubId, [dum], DestPath,_, PrevInters,
+			       BuildingArrays, Step, Used, Dun, MidInters,
+			       part_result(Counted, [], _, DimVal)),
+	    get_model_and_loops(Counted, DestPath, _, SzLoops, _),
+	    suffix([LocalLoop], SzLoops), !,
+	    NowBuilding = [LocalLoop | BuildingArrays];
 	((Source = makearray(Element, Dim); Source = soloarr(Element), Dim=1),
 	    ((catch(DimVal is Dim, _, fail),
 	          integer(DimVal);	% it is integer now
@@ -713,7 +721,7 @@ make_intermediates(
 	        NowBuilding = BuildingArrays), !,
 	    ((\+ number(DimVal); DimVal > 1; Source = soloarr(_)), !;
 		throw(bad_array_size(Source, DimVal))),
-	    LocalLoop = set(LocalInd, loop(DimVal)),
+	    LocalLoop = set(LocalInd, loop(DimVal))),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
 			PrevInters, NowBuilding, Step, Used, Units, NewInters,
 			part_result(EltContext, Setups, Args, SourceRef)),
@@ -1437,7 +1445,7 @@ I don't think we've done anything in contexts higher than dest for a while */
 individuates(_, Subexp, _, 0) :-
 	random(_, Subexp, _,_);
 	nonvar(Subexp),
-	member(Subexp, [channel_is(_), %ind_time(_),
+	member(Subexp, [channel_is(_), at_init(_),
 			index(_), place_in(_), use_inter(_)]).
 
 random(_, Subexp, _, 0) :-
