@@ -1131,7 +1131,9 @@ $tb1.b43 configure -state $useSpaceAbility
         while {[gets $stream line] >= 0} {
             switch [scan $line %s] {
                 container {
-                    scan $line "%s %s" widget tail
+                    if {[scan $line "%s %s" widget tail]==1} {
+			set tail {}
+		    }
                     if {$origVersion<4.0} {
                         set tail [LoseTLRef $tail]
                     }
@@ -1238,7 +1240,7 @@ $tb1.b43 configure -state $useSpaceAbility
 	variable CurrentContainer
 
         #ShowMess debug info "LoadContainer: stream $stream, line $line" ok
-        if {[info exists containerId]} {
+        if {[string length $containerId]} {
 	    set CurrentContainer $dp0.$containerId
         } else {
 	    set CurrentContainer $dp0
