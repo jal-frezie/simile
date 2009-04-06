@@ -412,19 +412,26 @@ int free_bloc_level(char* ptData, int* ptDims, int offset) {
     return 1;
   case SPARSEARRAY:
     for (count=0; count<convenience->size; ++count) {
-      free_bloc_level(convenience->ptr+sizeof(int)*ptDims[1]*(1+count),
+      free_bloc_level(convenience->ptr + sizeof(int)*ptDims[1]*(1+count),
+		      // corrects for space taken up by indices
 		      ptDims+2, count);
     }
     if (convenience->size) 
       delete convenience->ptr;
     return 1;
   default:
-    if (ptDims[0]>0) {
-      for (count=0; count<ptDims[0]; ++count)
-	anyData = free_bloc_level(ptData, ptDims+1, ptDims[0]*offset+count);
+    int reps, *subDims;
+    reps = array_count(ptDims, &subDims);
+    if (!is_base_type(*subDims)) { // assume its OWNSIZED or SPARSEARRAY
+      for (count=0; count<reps; ++count)
+	anyData = free_bloc_level(ptData, subDims, reps*offset+count);
+// this version was same but looped unnecessarily over numerical arrays
+//    if (ptDims[0]>0) { // an array dimension
+//      for (count=0; count<ptDims[0]; ++count)
+//	anyData = free_bloc_level(ptData, ptDims+1, ptDims[0]*offset+count);
       return anyData;
-    } else 
-      return 0; 
+    } else // a base data type (0 = dataless submodel)
+      return *subDims; 
   }
 }
 
