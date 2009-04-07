@@ -425,7 +425,7 @@ namespace eval grid005 {
         pack [entry $rangeF.maxF.entry -textvar [namespace current]::max($winId) -width 20] -side right -padx 10
         pack $rangeF -padx 10 -pady 10
         
-        set oriF [labelframe $fd.orient -text "Orientation"]
+        set oriF [labelframe $fd.orient -text "Legend orientation"]
 	pack [radiobutton $oriF.h -text Horizontal -var [namespace current]::useNodes($winId,orient) -value h] -side left
 	pack [radiobutton $oriF.v -text Vertical -var [namespace current]::useNodes($winId,orient) -value v] -side right
         pack $oriF -padx 10 -pady 10 -fill x

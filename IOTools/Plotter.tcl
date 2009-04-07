@@ -953,11 +953,13 @@ namespace eval ::$keyValue {
         set xmove [expr {\
             [get_x $w $OldXmin_axis $plot($w,Tscale)] \
                     -[get_x $w $plot($w,Xmin_axis) $plot($w,Tscale)] }]
-#        $w.canvas move xaxis_item $xmove 0
-        
+	if {$scaleChange==1} {
+	    $w.canvas move xaxis_item $xmove 0
+        } else {
 # single move for greater speed?
-        set baseLine [expr {$x0+$xmove/(1-$scaleChange)}]
-        $w.canvas scale xaxis_item $baseLine 0 $scaleChange 1
+	    set baseLine [expr {$x0+$xmove/(1-$scaleChange)}]
+	    $w.canvas scale xaxis_item $baseLine 0 $scaleChange 1
+	}
         draw_Xaxis $w
     }
     
@@ -976,10 +978,13 @@ namespace eval ::$keyValue {
         set ymove [expr {\
             -[get_y $w $plot($w,Ymax_axis) $plot($w,Yscale)]\
                     +[get_y $w $OldYmax_axis $plot($w,Yscale)] }]
-#        $w.canvas move yaxis_item 0 $ymove
+	if {$scaleChange==1} {
+	    $w.canvas move yaxis_item 0 $ymove
+	} else {
 # single move for greater speed?
-        set baseLine [expr {$y0+$ymove/(1-$scaleChange)}]
-        $w.canvas scale yaxis_item 0 $baseLine 1 $scaleChange
+	    set baseLine [expr {$y0+$ymove/(1-$scaleChange)}]
+	    $w.canvas scale yaxis_item 0 $baseLine 1 $scaleChange
+	}
         draw_Yaxis $w
     }
     

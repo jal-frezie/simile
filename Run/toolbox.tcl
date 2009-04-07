@@ -1305,7 +1305,7 @@ proc AlterModel {topNode} {
     set runState($topNode,updated) 1
 }
 
-package require mime
+package require mime ;# will load Trf also
 
 proc PathFromDispo {bit} {
     set Disposition [mime::getheader $bit Content-Disposition]

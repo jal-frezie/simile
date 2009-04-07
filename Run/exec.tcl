@@ -5,7 +5,7 @@
 
 set auto_path [list [file join $env(SP_PATH) lib] \
 		   [file join $env(SP_PATH) lib tcl[info tclversion]]]
-package require Trf ;# loads right version of Trf (fingers crossed)
+# package require Trf ;# loads right version of Trf, only needed in UI thread
 
 source [file join [file dirname $env(SP_PATH)] Run support.tcl]
 

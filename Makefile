@@ -117,14 +117,14 @@ PPCUNPK = System/lib/Stubs/libunpacker$(VERS)_ppc.dylib
 PPCSHANK = System/lib/lib5d_ppc.dylib
 PPCRELAY = System/bin/relay_ppc
 ppcbits: $(PPCSHIM) $(PPCUNPK) $(PPCRELAY)
-$(PPCSHIM): ame_cmx.c dllcalls.h $(PPCSHANK) Makefile
+$(PPCSHIM): ame_cmx.c dllcalls.h $(PPCSHANK)
 	cd Run; $(GCCCMD) -arch ppc -fPIC $(FLAGS) $(DEFNS) -I. $(MAKESL) \
 		-o ../$(PPCSHIM) ame_cmx.c $(USETCL) \
 		-L../System/lib -l5d_ppc; cd ..; \
 	$(LOCALIZE_TCL_REFS) $(PPCSHIM)
 
-$(PPCUNPK): unpacker.c dllcalls.h
-	cd Run; $(GCCCMD) -arch ppc $(FLAGS) $(DEFNS) -I. $(MAKESL) \
+$(PPCUNPK): unpacker.c dllcalls.h Makefile
+	cd Run; $(GCCCMD) -arch ppc -fPIC $(FLAGS) $(DEFNS) -I. $(MAKESL) \
 		-o ../$(PPCUNPK) unpacker.c $(USETCL) \
 		-L../System/lib -l5d_ppc; cd ..; \
 	$(LOCALIZE_TCL_REFS) $(PPCUNPK)
