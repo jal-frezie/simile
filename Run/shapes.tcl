@@ -726,7 +726,7 @@ proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
     }
     set textItem [$w create text $textX $textY -text $capt -fill $textColor \
 	-font $useFont -anchor $ankh -justify $tjust \
-	-tag "$tagSet is_caption size_on_this realwidth($realFont) has_info"]
+		      -tag "$tagSet is_caption size_on_this realwidth([expr {$realFont*12.0}]) has_info"]
     FixBackBox $w $textItem
 }
 
@@ -1132,7 +1132,7 @@ proc ZoomImage {args} {
 
 proc InnerZoomImage {winId which factor {optFontor none}} {
     #ShowMess debug info "ZoomImage $winId $which $factor $fontor" ok
-    global window_info looks
+    global window_info looks niceSize
     switch [tk windowingsystem] {
 	x11 {
 	    set hideTinies 40
@@ -1155,11 +1155,6 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
         set objList [$winId find all]
     }
     if {[string match none $optFontor]} {
-	set fontor $factor
-    } else {
-	set fontor $optFontor
-    }
-    if {[string match none $optFontor]} {
         set fontor $factor
     } else {
         set fontor $optFontor
@@ -1175,7 +1170,8 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 	    } else {
 		$winId itemconfigure $object -font \
 		    [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
-			 [lindex $fontData 2] $newTextSize]
+			 [lindex $fontData 2] \
+			 [expr {round($newTextSize/12.0)}]]
 		$winId itemconfigure $object -state normal
 	    }
 	    FixBackBox $winId $object
@@ -1257,7 +1253,7 @@ proc AdjustWidth {winId object factor} {
                 tag oldWidth]<1} {
         if {[string match text [$winId type $object]]} {
             set currentFont [$winId itemcget $object -font]
-            set oldWidth [expr [font actual $currentFont -size]*12.0]
+            set oldWidth [expr {[font actual $currentFont -size]*12.0}]
         } else {
             set oldWidth [$winId itemcget $object -width]
         }
@@ -1514,7 +1510,7 @@ proc Customize {winId mode} {
         set ts [frame $text.size]
         label $ts.what -text "Text size: "
         pack $ts.what -side left
-        scale $ts.scale -from 10 -to 250 -length $looks(width) \
+        scale $ts.scale -from 1 -to 25 -length $looks(width) \
                 -orient horizontal -showvalue false -resolution 1 \
                 -command "ZotFont $t"
         pack $ts.scale -side left
@@ -1637,7 +1633,7 @@ proc LoadLooks {t n target object} {
     global looks
     
     if {[string compare $target influence]} {
-        #ShowMess debug info "ExtractFontData looks($object,font) [ExtractFontData $looks($object,font)]" ok
+#        puts "ExtractFontData looks($n,$object,font) [ExtractFontData $looks($n,$object,font)]"
 	set fontData [ExtractFontData $looks($n,$object,font)]
 	set looks($n,$target,family) [lindex $fontData 0]
 	set looks($n,$target,weight) [lindex $fontData 1]
@@ -1689,7 +1685,7 @@ proc ExtractFontData {font} {
     set family [font actual $font -family]
     set weight [font actual $font -weight]
     set style [font actual $font -slant]
-    set textsize [expr [font actual $font -size]*12.0]
+    set textsize [font actual $font -size]
     #ShowMess debug info "ExtractFontData [list $family $weight $style $textsize]" ok
     return [list $family $weight $style $textsize]
 }
@@ -1880,14 +1876,15 @@ proc ResetFont { top } {
 # built into the canvas scaling?
 
 proc AssembleFont {family weight style textsize} {
-    return [list -family $family -weight $weight -slant $style \
-		-size [expr {-round($textsize/8.0)}]]
+    set newFont [list -family $family -weight $weight -slant $style \
+		-size [expr {round($textsize)}]]
+
+    return $newFont
 }
 
 proc ZotFont { t param } {
     set txt [GetCaptionItem $t.canvas sample]
-    $t.canvas itemconfigure $txt \
-	-font [ResetFont $t]
+    $t.canvas itemconfigure $txt -font [ResetFont $t]
     FixBackBox $t.canvas $txt
 }
 
@@ -1940,9 +1937,9 @@ proc GetTextAnchor {t} {
 }
 
 proc ResetLooks {c type} {
-    global looks
+    global looks niceSize
     
-    set looks($c,$type,font) [AssembleFont Helvetica bold roman 120]
+    set looks($c,$type,font) [AssembleFont Helvetica bold roman $niceSize]
     set looks($c,$type,txtbd) 0
     set looks($c,$type,txtbg) 0
     set looks($c,$type,outline) black
