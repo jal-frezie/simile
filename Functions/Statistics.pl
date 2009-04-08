@@ -22,3 +22,8 @@ colin(List) -->
 		      else element(sofar([st]),preceding(place_in(1))),
 		       count(List)),
     element([st],count(List)).
+
+with_colin({Distribution},{Payload}) -->
+	with_greatest(if {Distribution}>0
+		     then pow(rand_var(0,1),1/{Distribution})
+		     else 0, {Payload}).

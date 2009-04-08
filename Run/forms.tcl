@@ -1774,7 +1774,8 @@ proc Query {specifics icon helpRef parent opts} {
     }
     set key [lindex $specifics 0]
     set mBoxCmd [list ttk::dialog .shortDlg -icon $icon -command SetDlgRes \
-		     -buttons [list $defButton more] -cancel $defButton \
+		     -buttons [list $defButton more] \
+		     -default $defButton -cancel $defButton \
 		     -labels [list $defButton $defCapt more $moreCapt]]
     foreach txtBit {title message detail} {
 	upvar #0 msgs(${key}_$txtBit) trans
