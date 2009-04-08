@@ -64,7 +64,10 @@ endif
 	INSTLIB = Run/install.dll
 	MAIN = System/bin/Simile.exe
 ifeq ($(UNAME),Darwin)
-	FLAGS = $(OPT) -mmacosx-version-min=10.3
+	OSNUMBER = $(shell uname -r)
+	ifneq ($(OSNUMBER),7.9.0)
+		FLAGS = $(OPT) -mmacosx-version-min=10.3
+	endif
 	ARCHEXTN = _$(shell uname -m)
 	ifeq ($(ARCHEXTN),_Power Macintosh)
 		ARCHEXTN = _ppc
