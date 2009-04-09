@@ -907,7 +907,8 @@ proc ControlDraw {prologVersion} {
     
     # set up to compile stub and models with same bitness as tcltk
     set sendvars(arflags) [list -O3]
-    if {[string equal GNU [PrefValue custom(compChoice) compChoice]]} {
+    if {![string equal Default [PrefValue custom(compChoice) compChoice]]} {
+# using local compiler, check if we have to tell it our bitnesss
 	set gccBitness 32
 	catch {exec g++ -v} gppInfo
 	set relevant [string first arget $gppInfo]
