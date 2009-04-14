@@ -124,7 +124,7 @@ set msgs(bad_user_fn_format_title) "Parsing definitions in %s"
 set msgs(bad_user_fn_format_message) "The file %s contained the line %s which is in the wrong format for a macro, function or unit definition -- please refer to the documentation."
 
 set msgs(bust_edition_limit_title) "Problem loading model"
-set msgs(bust_edition_limit_message) "Loading this model makes ~d equations. This is greater than ~d, and it was not created by the enterprise edition, so it cannot be loaded in the ~a edition."
+set msgs(bust_edition_limit_message) "Loading this model makes %d equations. This is greater than %d, and it was not created by the enterprise edition, so it cannot be loaded in the %s edition."
 set msgs(bust_edition_limit_detail) "To upgrade, go to simulistics.com"
 
 set msgs(save_edition_limit_title) "Problem saving model"

@@ -29,9 +29,17 @@ eqn_for(Comp, Eqn) :-
 units_for(Comp, UnitStr) :-
 	find_node_with_data(Comp, _, Func),
 	get_av_pair(Func, 0, units, Units),
-	analyze_array(Units, Base, _D),
-	(Base = 1, !, UnitStr = "real";
-	sicstus_write_to_chars(Base, UnitStr)).
+	analyze_array(Units, Base, Dims),
+	to_text_prefix(Dims, Pref),
+	(Base = 1, !, append(Pref, "real", UnitStr);
+	sicstus_format_to_chars("~s~w", [Pref, Base], UnitStr)).
+
+to_text_prefix([], "").
+to_text_prefix([Solo], Text) :-
+	sicstus_format_to_chars("~w of ", [Solo], Text), !.
+to_text_prefix([First | Rest], Text) :-
+	to_text_prefix(Rest, Tail),
+	sicstus_format_to_chars("~wx~s", [First, Tail], Text).
 
 follow_seln_infs(Dir, End) :-
 	doomed(Comp),

@@ -701,10 +701,10 @@ proc compile_c {workingDir extLibs complain} {
 	    }
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
 		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o -I$TOOLDIR \
-                        -I. -I[file nativename [file join \
-                        [file dirname $TOOLDIR] System include mingw]] \
+                        -I[file nativename [file join [file dirname $TOOLDIR] \
+                            System include mingw]] \
                         -I[file nativename [file join \
-                        $LIBDIR gcc mingw32 3.4.2 include]] model.cpp"
+                            $LIBDIR gcc mingw32 3.4.2 include]] model.cpp"
 		set libOpt1 -L[file nativename $LIBDIR]
 		set libOpt2 -L[file nativename [file join $LIBDIR gcc \
 						    mingw32 3.4.2]]
@@ -712,7 +712,8 @@ proc compile_c {workingDir extLibs complain} {
                         $libOpt1 $libOpt2 objtmp.o [concat $lDirs $lFiles]"
 	    } else {
 		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o -I$TOOLDIR \
-                        -I. model.cpp"
+                        -I[file nativename [file join [file dirname $TOOLDIR] \
+                            System include mingw]] model.cpp"
 #        puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtmp.o"
 		puts $batSt [concat [list g++ -shared -o $TARGET objtmp.o] \
 				 $lDirs $lFiles]
