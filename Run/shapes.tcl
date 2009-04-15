@@ -138,7 +138,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set style [expr $extras/100]
     set extras [expr $extras-100*$style]
     set generic [list -width $width \
-		     -tag "$tagSet realwidth($width) has_info"]
+		     -tag "$tagSet size_on_this realwidth($width) has_info"]
     # second approximation to fill
     scan [GetPoints $ml $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
     scan [GetPoints $mt $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
@@ -993,8 +993,8 @@ proc GetGhostCursor {} {
 
 proc InjectGraphics {c canvasFile} {
     global window_info looks
-    set w [expr $window_info($c,width)+4]
-    set h [expr $window_info($c,height)+4]
+#    set w [expr $window_info($c,width)+4]
+#    set h [expr $window_info($c,height)+4]
     source $canvasFile
 # following does same thing but allows encoding to happen
 # not needed now cos we set system encoding, which source uses
@@ -1012,8 +1012,8 @@ proc InjectGraphics {c canvasFile} {
     # be displayed.
     $c delete withtag /base/ ;# these will be re-created
     update idletasks
-    SetSpace $c $w $h
     CanvasSee $c [lindex [$c find all] end] ;# view topmost item
+    RollBack $c 1 0 0 $window_info($c,width) $window_info($c,height)
     return DoneInjectGraphics
 }
 
