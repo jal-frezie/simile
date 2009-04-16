@@ -411,7 +411,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	set window_info($w,temporary) $i
     } else {
 	set plRad [expr $cornerRad/$window_info($w,scale)]
-	set nCol [Gradient $bgColour -0.02 $w]
+	set nCol [Gradient $bgColour $w]
 	set gTagSet "$tagSet /background/ /grid/"
 	if {$custom(showgrids,$w)} {
 	    set gStat normal
@@ -1013,6 +1013,7 @@ proc InjectGraphics {c canvasFile} {
     $c delete withtag /base/ ;# these will be re-created
     update idletasks
     CanvasSee $c [lindex [$c find all] end] ;# view topmost item
+#puts "Rolling back to 0 0 $window_info($c,width) $window_info($c,height)"
     RollBack $c 1 0 0 $window_info($c,width) $window_info($c,height)
     return DoneInjectGraphics
 }
@@ -1097,7 +1098,11 @@ proc DoZoom { winId factor toProlog} {
     # Next, scale all the window objects (centre must be 0 because all canvas/desktop
     # translation is done relative to 0)
 
-    ZoomImage $winId all $factor
+    if {$toProlog} {
+	ZoomImage $winId all $factor
+    } else {
+	InnerZoomImage $winId all $factor
+    }
 
     # Change the canvas area in accordance with the change in scale
 
@@ -1291,7 +1296,7 @@ proc ZoomBitsIn {winId node factor invx invy args} {
     set invx [Scale $winId $invx]
     set invy [Scale $winId $invy]
     if {$factor != 1.0} {
-	ZoomImage $winId /squeeze/ $factor
+	InnerZoomImage $winId /squeeze/ $factor
     }
     $winId move /squeeze/ $invx $invy
     $winId dtag /squeeze/
@@ -1498,7 +1503,7 @@ proc Customize {winId mode} {
     set window_info($t.canvas,top_node) $n
     set custom(showgrids,$t.canvas) 1
     pack $t.canvas
-    AddGrid $t.canvas [Gradient white -0.02 $t.canvas]  0 0 \
+    AddGrid $t.canvas [Gradient white $t.canvas]  0 0 \
 	[expr $looks(width)+120] [expr $looks(width)+60]
 
     if {[string compare $object influence]} {

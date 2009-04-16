@@ -294,7 +294,7 @@ proc SafeEqnBarEdit {winId} {
 proc RollBack { winId toProlog l t r b } {
     set newSpace 0
     scan [$winId cget -scrollregion] "%g %g %g %g" cl ct cr cb
-    #    puts "debug info Rolling from $cl $ct $cr $cb to $l $t $r $b ok"
+        #puts "debug info Rolling from $cl $ct $cr $cb to [$winId canvasx $l] [$winId canvasy $t] [$winId canvasx $r] [$winId canvasy $b]  ok"
     set pt [$winId canvasx $l]
     if {$pt < $cl-2} {
         set cl $pt
@@ -442,8 +442,10 @@ proc ChangeRegion {w l t r b} {
     global window_info
     
     set allowScrollBar [winfo reqwidth [winfo parent $w].yscroll]
-    set hcomp [expr [Unscale $w [expr $window_info($w,width)-$allowScrollBar]]/($r - $l)]
-    set vcomp [expr [Unscale $w [expr $window_info($w,height)-$allowScrollBar]]/($b - $t)]
+    set vw [expr {0.0+$window_info($w,width)-$allowScrollBar}]
+    set vh [expr {0.0+$window_info($w,height)-$allowScrollBar}]
+    set hcomp [expr {[Unscale $w $vw]/($r - $l)}]
+    set vcomp [expr {[Unscale $w $vh]/($b - $t)}]
     set comp [expr $hcomp>$vcomp?$hcomp:$vcomp]
     set newReg [list [Scale $w $l] [Scale $w $t] [Scale $w $r] [Scale $w $b]]
     $w configure -scrollregion $newReg
@@ -469,18 +471,20 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     
     wm protocol $winName WM_DELETE_WINDOW [list byebye $c]
     set window_info($c,top_node) $topNode
+    set window_info($c,width) [expr $wr - $wl]
+    set window_info($c,height) [expr $wb - $wt]
     if {[set window_info($c,is_top_level) $isTopLevel]} {
-    set window_info($c,topCapt) {}
+	set window_info($c,topCapt) {}
 
-    foreach nodeType {normal generic compartment channel text \
-                  variable function submodel flow influence \
-                  ghost_link relation} {
-# add event squirt state to above
-        ResetLooks $topNode $nodeType
-    }
-    CustomizeLooks $topNode
+	foreach nodeType {normal generic compartment channel text \
+			      variable function submodel flow influence \
+			      ghost_link relation} {
+	    # add event squirt state to above
+	    ResetLooks $topNode $nodeType
+	}
+	CustomizeLooks $topNode
     } else {
-    set window_info($c,topCapt) $window_info(lastClickCapt)
+	set window_info($c,topCapt) $window_info(lastClickCapt)
     }
     
     TweakWindow $c $winTitle $initialScale $wl $wt $wr $wb $colour
@@ -573,7 +577,7 @@ proc AdjustScroll {canvas dir args} {
 
 proc SetSpace {c w h} {
     global window_info
-
+#puts "SetSpace $c $w $h"
     set cx $window_info($c,width)
     set cy $window_info($c,height)
     set window_info($c,width) [expr $w - 4]
@@ -595,7 +599,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     #    wm geometry $winName +0+84
     
     # set the display depths to those we recorded
-    #ShowMess debug info "TweakWindow $c $winTitle $scale $wl $wt $wr $wb $bg $args" ok
+    # ShowMess debug info "TweakWindow $c $winTitle $scale $wl $wt $wr $wb $bg $args" ok
     set cats {ghost_link influence variable flow \
                 compartment submodel caption sections}
     for {set depthParam 0} {$depthParam < [llength $args]} {incr depthParam} {
@@ -604,11 +608,8 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
                 [lindex $args $depthParam] 0
     }
     
-    $c configure -width 1 -height 1
     $c configure -scrollregion "$wl $wt $wr $wb" \
-            -width [expr $wr-$wl] -height [expr $wb-$wt]
-    set window_info($c,width) [expr $wr - $wl]
-    set window_info($c,height) [expr $wb - $wt]
+	-width [expr $wr-$wl] -height [expr $wb-$wt]
     set window_info($c,scale) $scale
     # last will be overwritten if drawing from Prolog
     
@@ -679,7 +680,7 @@ proc AddGrid {c onCol wl wt wr wb} {
 }
 
 # following is pulled from tclers wiki
-    proc Gradient {rgb factor {window .}} {
+    proc Gradient {rgb {window .}} {
 
         foreach {r g b} [winfo rgb $window $rgb] {break}
 
@@ -756,7 +757,7 @@ proc ResizeBackgnd {wc l t r b} {
         }
         }
     }
-    AddGrid $wc [Gradient $baseColor -0.02 $wc] $l $t $r $b
+    AddGrid $wc [Gradient $baseColor $wc] $l $t $r $b
     $wc lower /base/ ;# should keep them in order
     global window_info
     if {$window_info($wc,is_top_level)} {

@@ -1268,7 +1268,6 @@ proc CheckCompilerLocation {} {
 
 proc FixSize {c} {
     global custom openModel
-    update idletasks
     set win [winfo parent $c]
     # seems necessary for console to hide
     #    catch {console hide}
@@ -1278,22 +1277,19 @@ proc FixSize {c} {
         set stream [NetOpen $custom(prefDir)/.layout r]
         gets $stream whetherMaxed
         #ShowMess debug info $whetherMaxed ok
-        catch {
-            if {$whetherMaxed} {
-                wm state $win zoomed
-            } else {
-                gets $stream oldGeom
-		scan $oldGeom "%dx%d%1s%d%1s%d" w h lr l tb t
-		if {$l>=0 && $l+$w<[winfo screenwidth $win] && \
-			$t>=0 && $t+$h<[winfo screenheight $win]} {
+	if {$whetherMaxed} {
+	    wm state $win zoomed
+	} else {
+	    gets $stream oldGeom
+	    scan $oldGeom "%dx%d%1s%d%1s%d" w h lr l tb t
+	    if {$l>=0 && $l+$w<[winfo screenwidth $win] && \
+		    $t>=0 && $t+$h<[winfo screenheight $win]} {
 # these give wrong values on multi-screen Windows setup
-		    wm geometry $win $oldGeom
-		}
-            }
+		wm geometry $win $oldGeom
+	    }
 	}
         close $stream
     }
-    pack propagate $win 0
     update
 
     destroy .splash
