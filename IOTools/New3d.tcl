@@ -883,7 +883,7 @@ namespace eval graphics {
     variable d_gridMidY 
     set x $grid_x 
     set y $grid_y 
-    set z $grid_z 
+    set z $grid_z
     upvar $screen_x d_xCoord
     upvar $screen_y d_yCoord
       set x [expr $x - $d_gridMidX ]
@@ -903,6 +903,14 @@ namespace eval graphics {
    } 
    # END proc setUpVertex { winId grid_x grid_y grid_z screen_x screen_y }
    #########################
+
+    proc SumList {l} {
+	if {[llength $l]} {
+	    expr {[lindex $l 0]+[SumList [lrange $l 1 end]]}
+	} else {
+	    return 0
+	}
+    }
 
    #########################
    # graphics::drawPoly 
@@ -1107,23 +1115,23 @@ namespace eval graphics {
       ############################################################
       # For each of the 4 vertices of the quad, call setUpVertex
       # Extract the currently interesting z value
-      set first "$x,$y"
-      setUpVertex $winId $x_count $y_count $a_ZValues($first) d_x1 d_y1
+       set first [SumList $a_ZValues($x,$y)]
+      setUpVertex $winId $x_count $y_count $first d_x1 d_y1
       setUpVertex $winId $x_count $y_count 0  d_x1z0 d_y1z0
       #
       incr x $lx_incr;incr x_count
-      set second "$x,$y"
-      setUpVertex $winId $x_count $y_count $a_ZValues($second) d_x2 d_y2
+      set second [SumList $a_ZValues($x,$y)]
+      setUpVertex $winId $x_count $y_count $second d_x2 d_y2
       setUpVertex $winId $x_count $y_count 0  d_x2z0 d_y2z0
       #
       incr y $ly_incr; incr y_count
-      set third "$x,$y"
-      setUpVertex $winId $x_count $y_count $a_ZValues($third) d_x3 d_y3
+      set third [SumList $a_ZValues($x,$y)]
+      setUpVertex $winId $x_count $y_count $third d_x3 d_y3
       setUpVertex $winId $x_count $y_count 0  d_x3z0 d_y3z0
       #
       incr x [expr -1 * $lx_incr]; incr x_count -1
-      set fourth "$x,$y"
-      setUpVertex $winId $x_count $y_count $a_ZValues($fourth) d_x4 d_y4
+      set fourth [SumList $a_ZValues($x,$y)]
+      setUpVertex $winId $x_count $y_count $fourth d_x4 d_y4
       setUpVertex $winId $x_count $y_count 0  d_x4z0 d_y4z0
 
       # OK, some bollocks to guess a reasonable colour.
@@ -1134,21 +1142,21 @@ namespace eval graphics {
       # colour. This is a real cheap effect.
       # Works OK, I'd like to improve the colours though.
       if { $lx_incr == $ly_incr } then {
-         if { [expr $a_ZValues($first) * $lx_incr] < \
-            [expr $a_ZValues($third) * $lx_incr] } then {
+         if { $first * $lx_incr < \
+            $third * $lx_incr } then {
             set quadColour green
-         } elseif { [expr $a_ZValues($first) * $lx_incr] > \
-            [expr $a_ZValues($third) * $lx_incr] } then {
+         } elseif { $first * $lx_incr > \
+            $third * $lx_incr } then {
             set quadColour "\#00a000"
          } else {
             set quadColour limegreen
          }
       } else {
-         if { [expr $a_ZValues($second) * $ly_incr] < \
-            [expr $a_ZValues($fourth) * $ly_incr] } then {
+         if { $second * $ly_incr < \
+            $fourth * $ly_incr } then {
             set quadColour green
-         } elseif { [expr $a_ZValues($second) * $ly_incr] > \
-            [expr $a_ZValues($fourth) * $ly_incr] } then {
+         } elseif { $second * $ly_incr > \
+            $fourth * $ly_incr } then {
             set quadColour "\#00a000"
          } else {
             set quadColour limegreen
