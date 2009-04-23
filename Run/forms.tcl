@@ -908,10 +908,12 @@ proc DoUserDialogue {} {
 	if {$userinfo(entrydone)} {
 	    set env(licensee_name) [$t.name.entry get]
 	    set env(licensee_corp) [$t.corp.entry get]
-	    set env(license_code) [$t.code.entry get]
-	    if {![c_testlicense]} {
-		Query bad_license_code error license {} ok
-		unset userinfo(entrydone)
+	    if {![string equal evaluation $env(user,edn)]} {
+		set env(license_code) [$t.code.entry get]
+		if {![c_testlicense]} {
+		    Query bad_license_code error license {} ok
+		    unset userinfo(entrydone)
+		}
 	    }
 	}
     }

@@ -584,15 +584,22 @@ make_intermediates(
 	created because of its different dimensions...be sure to try */
 	Inter = instance(internal, inter(InterContext, _, SourceLoops),
 			      UseSource, TotalName, TXUnits-InterDims),
-	merge_lists([Inter], OldInters, MidInters),
 	(var(Payload), !,
+	    (Functor = make_inter, !,
+		select(instance(internal, inter(InterContext, _, SourceLoops),
+			      UseSource, TotalName, UseContextUnits-InterDims),
+		       OldInters, OtherInters),
+		(TXUnits = UseContextUnits, !,
+		    NewInters = [Inter | OtherInters];
+		    throw(inconsistent_expinter_units(TotalName, TXUnits,
+						      UseContextUnits)));
+	     NewInters = [Inter | OldInters]),
 	    WhatMade = TotalName,
-	    NewInters = MidInters,
 	    FinalInter = Inter;
 	Outer = instance(internal, inter(InterContext, _, SourceLoops),
 			      UseSource, PayloadName, Units-InterDims),
 	    WhatMade = PayloadName,
-	    merge_lists([Outer], MidInters, NewInters),
+	    merge_lists([Inter, Outer], OldInters, NewInters),
 	    FinalInter = Outer),
 	refer_inter(FinalInter, DestPath, BuildingArrays,
 		    Units, SourceContext, Args, SourceRef));	  

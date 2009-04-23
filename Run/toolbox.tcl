@@ -983,7 +983,14 @@ proc ControlDraw {prologVersion} {
 	error "Could not find an unpacker for Simile -- $dummy"
     }
 
-    if {![string match windows $tcl_platform(platform)]} {
+    if {[string match windows $tcl_platform(platform)]} {
+	if {[catch {set userinfo(name) $env(licensee_name)}]} {
+	    set userinfo(name) {}
+	}
+	if {[catch {set userinfo(corp) $env(licensee_corp)}]} {
+	    set userinfo(corp) {}
+	}
+    } else {
 # Windows installers can ask the user for a license code and stick it in the
 # registry. On other platforms we have to DIY and put in userinfo.txt.
 	if {[string equal {<insert license code here>} \
@@ -1009,7 +1016,7 @@ proc ControlDraw {prologVersion} {
 	}
     }
     loadcommands
-    array set userinfo [list name $env(licensee_name) corp $env(licensee_corp) \
+    array set userinfo [list name $userinfo(name) corp $userinfo(corp) \
 			    final_expiry $env(user,final_expiry) \
 			    days_after_install $env(user,days_after_install) \
 			    edn $env(user,edn)]
