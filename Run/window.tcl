@@ -436,7 +436,8 @@ proc AbandonObj {} {
 # so a little zoom is slipped in if this looks like happening. This is commented
 # out for now because it can send a cmd back to Prolog, which calls this again,
 # eventually bursting the stack and bombing out most horribly. Fix it properly
-# some time -- OK! 3rd param now cuts out Prolog if 0.
+# some time -- OK! 3rd param now cuts out Prolog if 0. Right thing now done --
+# remove it because ResizeBackground does the necessary.
 
 proc ChangeRegion {w l t r b} {
     global window_info
@@ -452,9 +453,9 @@ proc ChangeRegion {w l t r b} {
     eval {ResizeBackgnd $w} $newReg
     #ShowMess debug info "Just done [$w coords 1]" ok
     #    puts $comp
-    if {$comp>1.01} {
-        DoZoom $w $comp 0
-    }
+#    if {$comp>1.01} {
+#        DoZoom $w $comp 0
+#    }
 }
 
 #######################################################################
@@ -1175,10 +1176,10 @@ proc DoLocalCmd {win item} {
         print {PrintNow $win}
         rerun {Rerun $win 1}
 	tog_grid {ToggleGrid $win}
-        zoomin {DoZoom $win 1.414214 1}
+        zoomin {DoZoom $win 1.414214}
         tosel {DisplayArea $win}
         tofit {DisplayAll $win}
-        zoomout {DoZoom $win .707107 1}
+        zoomout {DoZoom $win .707107}
         find {prolog tk_bar_edit_menu('$win'); FindCaption $win}
         findnext {NextCaption $win}
         raiseMRE {RaiseWinMRE $win}
@@ -1411,18 +1412,18 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set fm2 [menu $fm.zoom -tearoff 0]
     $fm add cascade -label Zoom -menu $fm2
     $fm2 add command -label "In lots" -command "DoZoom \
-            $c 1.953125 1" -accelerator "$accKey+*"
+            $c 1.953125" -accelerator "$accKey+*"
     AddAccelerator $winid view.zoom "In lots" "<$accSym-KP_Multiply>"
     $fm2 add command -label "In a bit" -command "DoZoom \
-            $c 1.25 1" -accelerator "$accKey++"
+            $c 1.25" -accelerator "$accKey++"
     AddAccelerator $winid view.zoom "In a bit" "<$accSym-KP_Add>"
     $fm2 add command -label "To selection" -command "DisplayArea $c"
     $fm2 add command -label "To fit" -command "DisplayAll $c"
     $fm2 add command -label "Out a bit" -command "DoZoom \
-            $c 0.8 1" -accelerator "$accKey+-"
+            $c 0.8" -accelerator "$accKey+-"
     AddAccelerator $winid view.zoom "Out a bit" "<$accSym-KP_Subtract>"
     $fm2 add command -label "Out lots" -command "DoZoom \
-            $c 0.512 1" -accelerator "$accKey+/"
+            $c 0.512" -accelerator "$accKey+/"
     AddAccelerator $winid view.zoom "Out lots" "<$accSym-KP_Divide>"
     
     $fm add cascade -label "Show detail" -menu $fm.sub3

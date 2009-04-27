@@ -1071,12 +1071,12 @@ proc ChangeObjectTitle { w name title} {
     $w insert $capt end $title
 }
 
-# This zooms canvas in or out. Because it can be done in response to a
-# resize request from Prolog we need a special parameter (arg 3) to stop
-# Prolog being called back in this instance, because a loop would happen
+# This zooms canvas in or out. Because it cannot be done in response to a
+# resize request from Prolog we do not need a special parameter (arg 3) to stop
+# Prolog being called back in this instance, because a loop would not happen
 # sometimes due to rounding errors.
 
-proc DoZoom { winId factor toProlog} {
+proc DoZoom { winId factor} {
     global window_info looks
 
     # First, find canvas point at centre of display
@@ -1090,7 +1090,7 @@ proc DoZoom { winId factor toProlog} {
     set target_y [expr [$winId canvasy $centre_y]*$factor]
 
     # next make sure that enough canvas exists for the outcome of the operation
-    RollBack $winId $toProlog [expr (1 - 1/$factor)*$centre_x] \
+    RollBack $winId 1 [expr (1 - 1/$factor)*$centre_x] \
             [expr (1 - 1/$factor)*$centre_y] \
             [expr (1 + 1/$factor)*$centre_x] \
             [expr (1 + 1/$factor)*$centre_y]
@@ -1098,11 +1098,7 @@ proc DoZoom { winId factor toProlog} {
     # Next, scale all the window objects (centre must be 0 because all canvas/desktop
     # translation is done relative to 0)
 
-    if {$toProlog} {
-	ZoomImage $winId all $factor
-    } else {
-	InnerZoomImage $winId all $factor
-    }
+    ZoomImage $winId all $factor
 
     # Change the canvas area in accordance with the change in scale
 
@@ -1112,7 +1108,8 @@ proc DoZoom { winId factor toProlog} {
             [expr [lindex $oldSize 2]*$factor] \
             [expr [lindex $oldSize 3]*$factor]]
     $winId configure -scrollregion $newReg
-    eval [list ResizeBackgnd $winId] $newReg
+# no need for the following, RollBack takes care of it
+#    eval [list ResizeBackgnd $winId] $newReg
 
     # Find what is in the middle now
 
