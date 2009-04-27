@@ -25,33 +25,37 @@ if {![info exists window_info]} {
         prolog tk_kill_everything(_)
     }
     
-    rename ShowMessage ::renamed::ShowMessage
-    proc ShowMessage { title icon string resps {parent {}}} {
-        puts "$icon $title: $string"
-        switch -- $resps {
-            abortretryignore {
-                return abort
-            }
-            ok {
-                return ok
-            }
-            okcancel{
-                return ok
-            }
-            retrycancel {
-                return cancel
-            }
-            yesno {
-                return yes
-            }
-            yesnocancel {
-                return yes
-            }
-        }
-        
-    }
-}
-
+# This section no longer required, because:
+# (a) ShowMessage is now used only for debugging, not for user interaction -- 
+# that is all done through Query which has built-in scripted execution mode
+# (b) It is now called ShowMess for consistency with the c extensions.
+#    rename ShowMessage ::renamed::ShowMessage
+#    proc ShowMessage { title icon string resps {parent {}}} {
+#        puts "$icon $title: $string"
+#        switch -- $resps {
+#            abortretryignore {
+#                return abort
+#            }
+#            ok {
+#                return ok
+#            }
+#            okcancel{
+#                return ok
+#            }
+#            retrycancel {
+#                return cancel
+#            }
+#            yesno {
+#                return yes
+#            }
+#            yesnocancel {
+#                return yes
+#            }
+#        }
+#        
+#    }
+#}
+#
 if {[string match windows $tcl_platform(platform)]} {
     #tk_messageBox -message "ModelWin before registerfactory"
     #::tcom::object registerfactory ::SimileAutoObj::ModelWindow {similescript::ModelWindow #auto} {delete object}
