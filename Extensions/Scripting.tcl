@@ -45,8 +45,7 @@ itcl::class similescript::ModelWindow {
     
     public method UseMRE {bool} {
         # IS THIS GOING TO HAVE A TYPE PROBLEM???
-        global custom
-        set custom(helperManager) $bool
+	PrefValueSet helperManager $bool
     }
     
     # File Menu
@@ -557,6 +556,11 @@ itcl::class similescript::TableHelper {
         #puts "TableHelperImpl constr: $modelWindow [KeyValue] $winTitle"
     }
     
+    # procs do not inherit
+    public proc Identify {} {
+	return [$::helperTable(TableViewer)::identify]
+    }
+
 #    public method KeyValue {} {
 #        return tabular11510
 #    }

@@ -664,16 +664,13 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	    (member(NewLink, AllInputs),
 		(PrevDims = param_history(OldDefn, Used),
 		    (var(OldDefn), !,
-			NewInputs = AllInputs;
+			DefnInputs = AllInputs;
 		     raise_exception(parameter_name_recurs(ExpInt)));
 		raise_exception(parameter_name_reused(ExpInt)));
-	    NewInputs = [NewLink | AllInputs]),
+	    DefnInputs = [NewLink | AllInputs]),
 	    OldType=Type-Loops,
 	    PrevDims = param_history(Defn, Used),
 	    member(NewLink, ExpInters),
-	    (get_ground_part(NewInputs, OldInputs), !;
-		OldInputs = NewInputs), % in case already in a defn
-            append(OldInputs, _ForwardRefs, DefnInputs),
 	    replace_subexps(Defn, dialogue, expand_params,
 			    dim_data(SubL, PsUsed, DefnInputs, ExpInters),
 			    top_down, _, DefnExpr),
