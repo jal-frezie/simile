@@ -349,13 +349,13 @@ proc GrowImage {fCol mw mh} {
     set srcHeight [$fCol cget -height]
     # Resize X and Y axes separately to avoid making too large an
     # intermediate image
-    set xrat [ChooseIntegerRatio [expr 1.0*$mw/$srcWidth] 0.9]
+    set xrat [ChooseIntegerRatio [expr {$mw/0.9/$srcWidth}] 0.9]
     image create photo spare1
     spare1 copy $fCol -zoom [lindex $xrat 0] 1 -shrink
     image create photo spare2
     spare2 copy spare1 -subsample [lindex $xrat 1] 1 -shrink
     
-    set yrat [ChooseIntegerRatio [expr 1.0*$mh/$srcHeight] 0.9]
+    set yrat [ChooseIntegerRatio [expr {$mh/0.9/$srcHeight}] 0.9]
     spare1 blank
     spare1 copy spare2 -zoom 1 [lindex $yrat 0] -shrink
     spare2 blank

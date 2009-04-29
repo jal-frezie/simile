@@ -952,8 +952,10 @@ proc ShiftImages {topDir way args} {
             switch $way {
                 in {
                     image create photo $image
-                    foreach fmt {gif jpeg none} {
-                        if {![catch {$image read $imgFile.$fmt -shrink}]} {
+                    foreach fmt {png gif jpeg jpg none} { ;# all but png legacy
+                        if {[catch {$image read $imgFile.$fmt -shrink} spew]} {
+#			    ShowMess debug info "$spew loading $imgFile.$fmt" ok
+			} else {
                             PutSize $image
                             file delete $imgFile
 			    break
@@ -961,19 +963,21 @@ proc ShiftImages {topDir way args} {
                     }
                     # prevent crasho if reading fails
 		    if {[string match none $fmt]} {
-			$image read ../Images/splash.gif -shrink
+			$image read ../Images/bigsimile.gif -shrink
 			PutSize $image
 		    }
                 } out {
                     # try gif first, if too many colours try jpeg
-                    foreach fmt {gif jpeg} {
-                        if {![catch {$image write $imgFile.$fmt \
-					 -format $fmt} err]} {
-			    break
-			} else {
-			    puts "Failed to write $imgFile.$fmt -- $err"
-			}
-		    }
+#                    foreach fmt {gif jpeg} {
+#                        if {![catch {$image write $imgFile.$fmt \
+#					 -format $fmt} err]} {
+#			    break
+#			} else {
+#			    puts "Failed to write $imgFile.$fmt -- $err"
+#			}
+#		    }
+		    # ...actually why suffer patent worries when there's .png?
+		    $image write $imgFile.png -format png
                 }
             }
         }

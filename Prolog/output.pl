@@ -388,7 +388,7 @@ tk_change_color(Wid, Obj, Type, Density, Value) :-
 
 shift_images(TopDir, Fillers, Way) :-
 	windowize(TopDir, WTopDir),
-	safe_tcl_eval(['ShiftImages', WTopDir, Way | Fillers], _).
+	safe_tcl_eval(['ShiftImages', br(WTopDir), Way | Fillers], _).
 
 kill_featured(Wid, Victim_id) :-
 	safe_tcl_eval([Wid, delete, Victim_id], _).
