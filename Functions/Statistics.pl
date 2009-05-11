@@ -27,3 +27,7 @@ with_colin({Distribution},{Payload}) -->
 	with_greatest(if {Distribution}>0
 		     then pow(rand_var(0,1),1/{Distribution})
 		     else 0, {Payload}).
+
+quantize(v) --> out = (
+			tot = last(1.0*tot-1*out)+v*dt(''), round(tot)
+		      ), out/dt('').

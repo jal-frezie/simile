@@ -18,7 +18,7 @@ else
 	EXP_TICKS = $(shell date +%s -d $(ABS_EXP))
 endif
 
-DEFNS=-DUSE_TCL_STUBS -DSIM_FINAL_EXPIRY=$(EXP_TICKS) -DSIM_DAYS_AFTER_INSTALL=$(REL_EXP) -DSIM_$(EDN)
+DEFNS=-DSIM_FINAL_EXPIRY=$(EXP_TICKS) -DSIM_DAYS_AFTER_INSTALL=$(REL_EXP) -DSIM_$(EDN)
 
 ifeq ($(LICENSED),1)
 	DEFNS += -DSIM_LICENSED
@@ -56,7 +56,7 @@ endif
 	SHAREDLIBPREFX = 
 	MAKESL = -shared
 	VERS = 84
-	USETCL = -I../System/include -L../System/lib ../System/lib/tclstub$(VERS).lib
+	USETCL = -DUSE_TCL_STUBS -I../System/include -L../System/lib ../System/lib/tclstub$(VERS).lib
 	LOCALIZE_TCL_REFS =  ls # placebo command
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = _win
@@ -77,9 +77,9 @@ ifeq ($(UNAME),Darwin)
 	SHAREDLIBPREFX = lib
 	MAKESL = -fPIC -dynamiclib
 	VERS = 8.4
-	USETCL =  -F~/Desktop/CVS\ Simile\ v5.x/Contents/Frameworks -framework Tcl -L../System/lib
+	USETCL =  -DUSE_TCL_STUBS -F~/Desktop/CVS\ Simile\ v5.x/Contents/Frameworks -framework Tcl -L../System/lib
 	LOCALIZE_TCL_REFS = install_name_tool -change \
-		/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
+		/System/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
 	INSTLIB = 
@@ -91,7 +91,7 @@ ifeq ($(UNAME),Linux)
 	SHAREDLIBPREFX = lib
 	MAKESL = -fPIC -shared
 	VERS = 8.4
-	USETCL = -I../System/include -L../System/lib -ltclstub$(VERS)
+	USETCL = -DUSE_TCL_STUBS -I../System/include -L../System/lib -ltclstub$(VERS)
 	LOCALIZE_TCL_REFS = ls # placebo command
 	SHAREDLIBEXTN = .so
 	ARCHEXTN =
@@ -120,8 +120,8 @@ PPCUNPK = System/lib/Stubs/libunpacker$(VERS)_ppc.dylib
 PPCSHANK = System/lib/lib5d_ppc.dylib
 PPCRELAY = System/bin/relay_ppc
 ppcbits: $(PPCSHIM) $(PPCUNPK) $(PPCRELAY)
-$(PPCSHIM): ame_cmx.c dllcalls.h $(PPCSHANK)
-	cd Run; $(GCCCMD) -arch ppc -fPIC $(FLAGS) $(DEFNS) -I. $(MAKESL) \
+$(PPCSHIM): ame_cmx.c dllcalls.h
+	cd Run; $(GCCCMD) -arch ppc -fPIC $(FLAGS) -I. $(MAKESL) \
 		-o ../$(PPCSHIM) ame_cmx.c $(USETCL) \
 		-L../System/lib -l5d_ppc; cd ..; \
 	$(LOCALIZE_TCL_REFS) $(PPCSHIM)
@@ -170,8 +170,8 @@ vpath 	%.tcl 	Run
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
-$(SHIM): ame_cmx.c dllcalls.h $(SHANK)
-	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. $(MAKESL) \
+$(SHIM): ame_cmx.c dllcalls.h
+	cd Run; $(GCCCMD) $(FLAGS) -I. $(MAKESL) \
 		-o ../$(SHIM) ame_cmx.c $(USETCL) -l5d$(ARCHEXTN); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 

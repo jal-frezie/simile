@@ -391,7 +391,7 @@ set graph(font) [list helvetica 12 bold]
 set graph(megafont) [list helvetica 36 bold]
 toplevel .splash
 pack [canvas .splash.c -width $sphXdiam -height $sphYdiam -bd -$graph(origin) \
-	 -bg white] -padx 0 -pady 0
+	 -bg \#f0f8ff] -padx 0 -pady 0
 
 for {set y 0} {$y < $sphYdiam} {incr y 4} {
     if {$y>=$sphYdiam*0.18 && $y<$sphYdiam*0.27} {
