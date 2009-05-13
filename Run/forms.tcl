@@ -245,6 +245,17 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
 #        ShowComplexity $t
 #    }
 #   
+
+# Context frame for metadata
+    
+    $t add [frame $t.metadata] -text Context
+    TitleFrame $t.metadata.summary -text "Model summary"
+    set summaryf [GetFrame $t.metadata.summary]
+    pack $t.metadata.summary -padx 4 -pady 4 -fill both -expand 1
+    TitleFrame $t.metadata.publications -text "Publications"
+    set publicatff [GetFrame $t.metadata.publications]
+    pack $t.metadata.publications -padx 4 -pady 4 -fill both -expand 1
+
     SetHighlights $countf
     $t select 0
     pack $t -fill both -expand true

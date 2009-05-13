@@ -557,6 +557,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 	    set list $newList
 	}
     } elseif {[string equal ,gdal [lindex $list 1]]} {
+	# transposition not yet handled
 	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1 && !$when} {
 	    DoNotPassTcl $topNode $tgt $dims $list
 	    return -1 ;# typical fixed parameter
@@ -564,7 +565,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 	    set list [concat [NumberElements [ReadGdalRefToList $list \
 						  [lindex $dims 0] \
 						  [lindex $dims 1]] \
-				  [expr {!$when}]] [lrange $list 6 end]]
+				  [expr {!$when}]] [lrange $list 7 end]]
 	}
     }
 # do not do this, ve no longer allow params in VM submodels...

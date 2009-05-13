@@ -1053,7 +1053,7 @@ proc EditListAsTable {parent valueArray} {
             -command "set table_viewer(done) 0" -width 10] -padx 2 -pady 2 -side left
     
     set viewerId $::helperTable(TableViewer)
-    set ::${viewerId}::editMode($t) 1
+    set ::${viewerId}::editMode($t) $parent
     ${viewerId}::initialize $t
     
     upvar 1 $valueArray values

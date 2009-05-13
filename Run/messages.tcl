@@ -212,6 +212,9 @@ set msgs(cannot_combine_argument_dimensions_message) "Simile cannot work out wha
 set msgs(mismatched_units_title) "Argument types incompatible"
 set msgs(mismatched_units_message) "The arguments of the function \"%s\" in the term \"%s\" have the following types: %s. These cannot be matched to the expected argument types for this function, which are %s."
 
+set msgs(cannot_set_dims_title) "Not enough info"
+set msgs(cannot_set_dims_message) "The equation does not provide enough information to allow the size of dimension %s of explicit intermediate result %s to be determined."
+
 set msgs(unused_inter_title) "Unused intermediate result"
 set msgs(unused_inter_message) "The equation is badly formed because it creates the explicit intermediate result %s, which is not subsequently used."
 

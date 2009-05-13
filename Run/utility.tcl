@@ -528,7 +528,8 @@ proc ShrinkValueList {outerList limit} {
 	    set endRange [ReadGdalRefToList $list]
 	    set list [concat [NumberElements $startRange] \
 			  [NumberElements $endRange [lindex $list 2]]\
-			  [lrange $list 6 end]]
+			  [lrange $list 7 end]]
+# transpose not working, or enabled
 	}
     } elseif {[string equal ,bytes [lindex $list 1]]} {
 # in this case the list format is:
