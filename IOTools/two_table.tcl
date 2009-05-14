@@ -374,17 +374,26 @@ namespace eval $keyValue {
     
     # save table contents as CSV file
     proc Save {winId} {
-	global helperTable
         set types {
             {{Comma seperated values}       {.csv}        }
             {{All Files}        *             }
         }
         set filename [ChooseFile table.csv "Save table contents as.." 1 \
-			  [$helperTable($winId,whichInstance) GetNode]]
-        
+			  [GetTopNode $winId]]
         SaveToNamedFile $winId $filename
     }
     
+    proc GetTopNode {winId} {
+	global helperTable
+	variable editMode
+
+	if {[info exists editMode($winId)]} {
+	    return $editMode($winId)
+	} else {
+	    return [$helperTable($winId,whichInstance) GetNode]
+	}
+    }
+
     proc SaveToNamedFile {winId filename args} {
         global custom
         set rsep [$winId.t cget -rowseparator]
