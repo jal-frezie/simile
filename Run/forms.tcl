@@ -251,9 +251,25 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     $t add [frame $t.metadata] -text Context
     TitleFrame $t.metadata.summary -text "Model summary"
     set summaryf [GetFrame $t.metadata.summary]
+
+    grid [label $summaryf.namelabel -text "Model name:"] -row 0 -column 0 -sticky w
+    grid [entry $summaryf.nameentry] -row 0 -column 1 -sticky ew
+    grid [label $summaryf.purposelabel -text "Aim/Purpose of the Model"] \
+	-row 1 -column 0 -sticky w
+    grid [text $summaryf.purposetext -width 60 -height 4] -row 1 -column 1
+    grid [label $summaryf.desclabel -text "Description of the Model"] \
+	-row 2 -column 0 -sticky w
+    grid [text $summaryf.desctext -width 60 -height 4] -row 2 -column 1
+    grid [label $summaryf.origlabel -text "Description of Original Model"] \
+	-row 3 -column 0 -sticky w
+    grid [text $summaryf.origtext -width 60 -height 4] -row 3 -column 1
+
     pack $t.metadata.summary -padx 4 -pady 4 -fill both -expand 1
     TitleFrame $t.metadata.publications -text "Publications"
-    set publicatff [GetFrame $t.metadata.publications]
+    set publicatf [GetFrame $t.metadata.publications]
+    pack [listbox $publicatf.list -height 4] -fill x -expand 1
+    pack [button $publicatf.addb -text "Add Publication"] -side left
+    pack [button $publicatf.removeb -text "Remove Publication"] -side left
     pack $t.metadata.publications -padx 4 -pady 4 -fill both -expand 1
 
     SetHighlights $countf
