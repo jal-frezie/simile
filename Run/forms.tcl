@@ -268,7 +268,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     TitleFrame $t.metadata.publications -text "Publications"
     set publicatf [GetFrame $t.metadata.publications]
     pack [listbox $publicatf.list -height 4] -fill x -expand 1
-    pack [button $publicatf.addb -text "Add Publication"] -side left
+    pack [button $publicatf.addb -text "Add Publication" \
+	      -command "AddPub $mdl"] -side left
     pack [button $publicatf.removeb -text "Remove Publication"] -side left
     pack $t.metadata.publications -padx 4 -pady 4 -fill both -expand 1
 
@@ -342,6 +343,56 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     }
     unset disaggregate
     return $result
+}
+
+proc AddPub {mdl} {
+    global disaggregate
+
+    set t [PutItThere .addpublication .disaggregation]
+    wm title $t "Add Publication"
+    pack [TitleFrame $t.online -text "Online publication"] \
+	-padx 4 -pady 4 -fill x
+    set onlinef [GetFrame $t.online]
+    pack [label $onlinef.l -text "ID of Primary Publication:"] -side left
+    pack [entry $onlinef.e] -side left
+    foreach indexer {PUBMED DOI URL OFFLINE} {
+	pack [radiobutton $onlinef.rb$indexer -variable disaggregate(md_idxr) \
+		  -value $indexer -text $indexer] -side left
+    }
+
+    pack [TitleFrame $t.paper -text "Paper publication"] \
+	-padx 4 -pady 4 -fill x
+    set paperf [GetFrame $t.paper]
+
+    grid [label $paperf.jlabel -text "Journal:"] -row 0 -column 0 -sticky w
+    grid [entry $paperf.jentry] -row 0 -column 1 -sticky ew
+    grid [label $paperf.tlabel -text "Title:"] \
+	-row 1 -column 0 -sticky w
+    grid [entry $paperf.tentry] -row 1 -column 1 -sticky ew
+    grid [label $paperf.alabel -text "Authors:"] \
+	-row 2 -column 0 -sticky w
+    grid [entry $paperf.aentry] -row 2 -column 1 -sticky ew
+    grid [label $paperf.slabel -text "Abstract:"] \
+	-row 3 -column 0 -sticky w
+    grid [text $paperf.stext -width 60 -height 4] -row 3 -column 1
+
+
+    pack [frame $t.btnfr]
+    pack [button $t.btnfr.ok -text OK -command "set disaggregate(pdone) 1"] \
+	-side right
+    pack [button $t.btnfr.cancel -text Cancel \
+	      -command "set disaggregate(pdone) 0"] -side right
+    LetItShow $t
+    grab $t
+    tkwait variable disaggregate(pdone)
+    grab release $t
+#    if {$disaggregate(xdone)} {
+# transfer data back to variables
+#	set disaggregate(xproc) [[GetFrame $t.procnamfr].ent get]
+#	set disaggregate(xinc) [string trimright [$incFileTxt get 1.0 end]]
+#	set disaggregate(xlibs) [${LibListFr}.box get 0 end]
+#    }
+    PackItUp $t
 }
 
 proc AbleSetup {mathf} {
