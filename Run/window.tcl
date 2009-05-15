@@ -1318,7 +1318,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     # edit menu: purpose of postcommand is to enable/disable cut/copy/paste items
     # for what is available, overridden later if it is popup
     set fm [menu $topm.edit -tearoff 0 \
-            -postcommand "prolog tk_bar_edit_menu('$c')"]
+		-postcommand "prolog tk_bar_edit_menu('$c')"]
     $topm add cascade -label Edit -underline 0 -menu $topm.edit
     
     $fm add cascade -label "Create new" -menu $fm.add

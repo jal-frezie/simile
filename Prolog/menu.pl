@@ -789,9 +789,9 @@ find_innermost_selection_holder([Comp | Rest], Innermost, TempSels) :-
 */
 find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 	get_shape(Model, internal_extent, [ML, MT, MR, MB]),
-	(nonvar(DefPt), !; DX is (L+R)/2, DY is (T+B)/2),
-	DefPt = [DX, DY],
-
+	(DefPt = [DX, DY], !;
+	    DX is (L+R)/2, DY is (T+B)/2),
+	    
 	MinOffX is ML - L,
 	MinOffY is MT - T,
 	MaxOffX is MR - R,

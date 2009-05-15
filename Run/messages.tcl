@@ -559,6 +559,9 @@ set msgs(not_number_message) "You need to enter a number in the %s field"
 set msgs(save_helper_setup_title) "Helper setup changed"
 set msgs(save_helper_setup_message) "The helper setup has been altered since it was last loaded or saved. Do you want to save it?"
 
+# debugging messages: just show the whole string
+set msgs(debug_title) "Debugging info -- report to Simulistics"
+set msgs(debug_message) "%s"
 
 set msgs(ok_button) OK
 set msgs(yes_button) Yes

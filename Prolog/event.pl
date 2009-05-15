@@ -424,7 +424,9 @@ adjust_edit_menu(Wid, Comp, Point) :-
 	assert(menu_submodel_will_be(Wid, Comp, Point)).
 
 bar_edit_menu(Wid) :-
-	(retract(menu_submodel_will_be(Wid, Comp, Point)), !;
+	(menu_submodel_will_be(Wid, Comp, Point), !;
+% previously we retracted this, but that caused problems for MacOS, which can
+% call postcommand twice. Now rely on unclick to retract it.
 	Wid shows_model Comp,
 %	    get_shape(Comp, internal_extent, Box),
 %	    middle(Box, Point)
