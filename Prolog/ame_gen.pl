@@ -46,7 +46,7 @@ get_term(String, Term, Error) :-
 	    Error = []). */
 	
 	on_exception(Bug, sicstus_read_from_chars(Proper_string, Term),
-		     make_nice_error_message(Bug, Error)),
+		     make_nice_error_message(Proper_string, Bug, Error)),
 	(Error = [], !;
 	    name(Term, String)).
 
@@ -57,19 +57,44 @@ with_output_to_chars. It's not perfect anyway, so I have consulted perror/1
 (which actually does the work) to inspire what follows... */
 
 make_nice_error_message(ThrowUp, ErrorAtom) :-
-	(ThrowUp = syntax_error(_,_, Problem, Bits, Where), /* sicstus */
+	make_nice_error_message("Unknown", ThrowUp, ErrorAtom).
+
+make_nice_error_message(Eat, ThrowUp, ErrorAtom) :-
+	(ThrowUp = existence_error(_,_, Type, WhereLooked, _), !,
+	    sicstus_format_to_chars("This operation cannot proceed because the program failed to find a ~a called ~a", [Type, WhereLooked], Error);    
+        (ThrowUp = syntax_error(_,_, Problem, Bits, Where), /* sicstus */
 	space_elts(Problem, Desc),
 	append(BitsBefore, BitsAfter, Bits),
 	length(BitsAfter, Where),
 	connect_bits(BitsBefore, RunUp, _),
-	connect_bits(BitsAfter, WindDown, _), !,
+	connect_bits(BitsAfter, WindDown, _), !;
+	ThrowUp = error(syntax_error(RawAtom), _FailedOp), !, /* gnu */
+	    name(RawAtom, RawString),
+	    append(SrcStr, [58 | T1], RawString), % break at 1st :
+	    append(LineNoStr, [32,40,99,104,97,114,58 | T2], T1),
+	    append(CharNoStr, [41,32 | DescStr], T2),
+	    all(user, name, [build([_Source, LineNo, CharNo, Desc]),
+			     build([SrcStr, LineNoStr, CharNoStr, DescStr])]),
+	    (Eat = "Unknown",
+		RunUp = 'Unknown',
+		WindDown = 'Unknown';
+	    line_starts_at(LineNo, Eat, Posn),
+		Nasty is Posn+CharNo-1,
+		append(RunUpStr, WindDownStr, Eat),
+		length(RunUpStr, Nasty),
+		all(user, name, [build([RunUp, WindDown]),
+				 build([RunUpStr, WindDownStr])]))),
 	sicstus_format_to_chars("Attempting to decipher this item failed, generating this diagnostic message: \"~a\". This is what was read in, with an indication of where the problem was found:\n ~w <HERE> ~w", [Desc, RunUp, WindDown], Error);
-	ThrowUp = existence_error(_,_, Type, WhereLooked, _), !,
-	sicstus_format_to_chars("This operation cannot proceed because the program failed to find a ~a called ~a", [Type, WhereLooked], Error);    
-	ThrowUp = error(Info, _FailedOp), !, /* gnu */
-	    sicstus_write_to_chars(Info, Error);
 	sicstus_format_to_chars("Unexpected Prolog error message: ~w", [ThrowUp], Error)),
         name(ErrorAtom, Error).
+
+line_starts_at(1, _, 0) :- !.
+line_starts_at(N, Str, Posn) :-
+	append(Line1, [10 | Tail], Str),
+	NNow is N-1,
+	line_starts_at(NNow, Tail, Left),
+	length([10 | Line1], Done),
+	Posn is Done+Left.
 
 space_elts([Elt], Elt).
 space_elts([Elt | Rest], Desc) :-
