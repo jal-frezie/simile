@@ -445,10 +445,14 @@ proc ChangeRegion {w l t r b} {
     set allowScrollBar [winfo reqwidth [winfo parent $w].yscroll]
     set vw [expr {0.0+$window_info($w,width)-$allowScrollBar}]
     set vh [expr {0.0+$window_info($w,height)-$allowScrollBar}]
-    set hcomp [expr {[Unscale $w $vw]/($r - $l)}]
-    set vcomp [expr {[Unscale $w $vh]/($b - $t)}]
-    set comp [expr $hcomp>$vcomp?$hcomp:$vcomp]
-    set newReg [list [Scale $w $l] [Scale $w $t] [Scale $w $r] [Scale $w $b]]
+#    set hcomp [expr {[Unscale $w $vw]/($r - $l)}]
+#    set vcomp [expr {[Unscale $w $vh]/($b - $t)}]
+#    set comp [expr $hcomp>$vcomp?$hcomp:$vcomp]
+# these ensure new region at least as big as window
+    set hSpare [max [expr {([Unscale $w $vw]+$l-$r)/2}] 0]
+    set vSpare [max [expr {([Unscale $w $vh]+$t-$b)/2}] 0]
+    set newReg [ScaleList $w [list [expr {$l-$hSpare}] [expr {$t-$vSpare}] \
+				  [expr {$r+$hSpare}] [expr {$b+$vSpare}]]]
     $w configure -scrollregion $newReg
     eval {ResizeBackgnd $w} $newReg
     #ShowMess debug info "Just done [$w coords 1]" ok
@@ -666,17 +670,17 @@ proc AddGrid {c onCol wl wt wr wb} {
     }
     set interval [expr {[PrefValue custom(gridH) gridH]*$window_info($c,scale)}]
     for {set x [expr $interval*ceil($wl/$interval)]} {$x<$wr} \
-    {set x [expr $x+$interval]} {
-    set nearx [expr int($x)]
-    $c create line $nearx $wt $nearx $wb -state $stat -fill $onCol \
-        -tag "/background/ /base/ /grid/"
+	    {set x [expr $x+$interval]} {
+	set nearx [expr int($x)]
+	$c create line $nearx $wt $nearx $wb -state $stat -fill $onCol \
+	    -tag "/background/ /base/ /grid/"
     }
     set interval [expr {[PrefValue custom(gridV) gridV]*$window_info($c,scale)}]
     for {set y [expr $interval*ceil($wt/$interval)]} {$y<$wb} \
-    {set y [expr $y+$interval]} {
-    set neary [expr int($y)]
-    $c create line $wl $neary $wr $neary -state $stat -fill $onCol \
-        -tag "/background/ /base/ /grid/"
+	    {set y [expr $y+$interval]} {
+	set neary [expr int($y)]
+	$c create line $wl $neary $wr $neary -state $stat -fill $onCol \
+	    -tag "/background/ /base/ /grid/"
     }
 }
 
@@ -762,7 +766,7 @@ proc ResizeBackgnd {wc l t r b} {
     $wc lower /base/ ;# should keep them in order
     global window_info
     if {$window_info($wc,is_top_level)} {
-    prolog tk_resize_top_win('$wc',[expr $r-$l],[expr $b-$t])
+	prolog tk_resize_top_win('$wc',[expr $r-$l],[expr $b-$t])
     }
 }
 
