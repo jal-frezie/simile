@@ -528,8 +528,7 @@ get_actual_size(Node, Sub, Nums, Sizes, [Units]) :-
 			Sizes = [UseSize]);
 		    Err = submodel_name_recurs(ModName));
 		Err = absent_submodel(ModName));
-       dequote(Sub, BareSub), % enquoted: syntax error if not unit or e_t
-           \+ BareSub = Sub,
+       dequote(Sub, _BareSub), % enquoted: syntax error if not unit or e_t
 	    caption_for(Node, Capt),
 	    Err = absent_enum_type(Sub, Capt)),
 	(var(Err), !;
@@ -546,6 +545,7 @@ name_matches(Node, Top, Name) :-
 	caption_for(Node, Name).
 
 enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
+% also handles physical unit identifiers, which stand for 1 of that unit
 	(integer(Ref),
 	    Units = const_int;
 	Ref = var, 
@@ -566,10 +566,9 @@ enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
 
  dequote(Ref, BareRef) :-
        atom(Ref),
-       (name(Ref, RefStr),
-           append([34 | BareRefStr], [34], RefStr), !,
-           name(BareRef, BareRefStr);
-        BareRef = Ref).
+       name(Ref, RefStr),
+       append([34 | BareRefStr], [34], RefStr),
+       name(BareRef, BareRefStr).
 
 resolve_enum_type(Ref, Model, Value, Units, ETSpec) :-
 	(m_class:Model has_class_refinement enum_types of TypeList, !;
