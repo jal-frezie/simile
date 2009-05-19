@@ -1456,7 +1456,7 @@ remove_floater(Node) :-
 	(_ is_connector from Node to _;
 	_ is_connector from _ to Node;
 	Node has_class C,
-	    \+ member(C, [variable, cloud]);
+	    \+ member(C, [variable, cloud, border]);
 	Node has_class_refinement min_val of _), !;
 	draw:off(Node),
 	oblitterfry(Node).
