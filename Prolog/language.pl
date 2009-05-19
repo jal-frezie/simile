@@ -558,7 +558,7 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 /* OK, now for mortality. This will have to be called before immigration or reproduction because any new individuals might not yet have values for their loss nodes. It used to be done as part of the reproduction loop but had to be separated now there can be many reproduction channels. However, all loss channels are equivalent, so there only needs to
 be one of these loops; the instruction has a list of the appropriate nodes. */
 
-do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
+do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
 	      Indent, Used, Stream) :-
 	Indent1 is Indent + 4,
 	Indent2 is Indent1 + 4,

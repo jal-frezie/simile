@@ -699,7 +699,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	    DoneExpr =.. [Cumulative | DsDone],
 	    SubL = [x | DimL];
 	(length(Param, N), 
-	    DParam =.. [do | Param],
+	    DParam =.. [do | Param], % conversion to fn avoids recursion
 	    length(DoneExpr, N),
 	    DDone =.. [do | DoneExpr];
 	 Param = makearray(Elt, Count),
@@ -711,17 +711,15 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, DDone),
 	    DimL = [x | SubL];
 	Param = element(List, Index),
+% work out dimty as if:
+% element([[a,b,c],[d,e,f]],[x,y,z]) is [element([a,d],x)...element([c,f],z)].
 	    replace_subexps(List, dialogue, expand_params,
-			    dim_data(ListL, PsUsed, AllInputs, ExpInters),
+			    dim_data([x | DimL], PsUsed, AllInputs, ExpInters),
 			    top_down, _, ListExpr),
 	    replace_subexps(Index, dialogue, expand_params,
-			    dim_data(IndxL, PsUsed, AllInputs, ExpInters),
+			    dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, IndXpr),
-	    DoneExpr = element(ListExpr, IndXpr),
-	    ListL = [x | DimL],
-	    suffix(Tail, DimL),
-	    var(Tail), !,
-	    Tail = IndxL),
+	    DoneExpr = element(ListExpr, IndXpr)),
 	    Recurse = 0;
 	expand_library('/dest/', Param, DoneExpr),
 	    Recurse = 1.

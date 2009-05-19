@@ -278,6 +278,7 @@ set msgs(eqn_parse_fail_full) "While Simile attempts to produce a relevant messa
 set msgs(bad_syntax_title) "Syntax error"
 set msgs(bad_syntax_message) "The contents of the \"%s\" field could not be parsed."
 set msgs(bad_syntax_detail) "The parser responded: %2\$s"
+set msgs(bad_syntax_full) "The parser responded: %2\$s"
 
 set msgs(wrong_bracket_count_title) "Wrong parameter name format"
 set msgs(wrong_bracket_count_message) "Your %s, %s, has brackets round it that identify it as %s."

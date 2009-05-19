@@ -1042,7 +1042,7 @@ nodes.
 
 		CreateRules = [make(culled(Name), [init_list(Name),
 				 time | BasesEnumerated], Path, Step,
-				[lose(Step, Ptr, Name, Losses)]),
+				[lose(Ptr, Name, Losses)]),
 			   make(created(Name),
 				[culled(Name), on_reset | Creators], Path, 0,
 				[init_mems(Ptr, Name, create(Creators))])],

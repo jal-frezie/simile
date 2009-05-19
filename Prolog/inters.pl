@@ -477,9 +477,7 @@ make_intermediates(
 
 	(var(MadeDim), !, /* Summing over something other than a bunch of
 	                  assoc models */
-	    (append(TailLoops, [SumLoop | ItemLoops], SubLoops),
-	    loops(SumLoop),
-	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
+ 	    (break_at_last_loop(SubLoops, TailLoops, SumLoop, ItemLoops);
 		Source =.. [Fn, Arg],
 		throw(needs_array_or_list(Fn, Arg)));
 	TailLoops = SubLoops),
@@ -745,9 +743,8 @@ make_intermediates(
 			part_result(AContext, ASetups, AArgs, SourceRef)),
 	    get_model_and_loops(IContext, DestPath, _, ILoops, IBase),
 	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
-	    (append(TailLoops, [set(IntIndxRef, loop(Limit)) | ItemLoops],
-		    ALoops),
-	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
+ 	    (break_at_last_loop(ALoops, TailLoops,
+ 	                       set(IntIndxRef, loop(Limit)), ItemLoops);
 		throw(only_works_on_array(element, Array))),
 	    (Step = dummy,
 		type_ind(Limit, NeedType);
@@ -768,9 +765,9 @@ make_intermediates(
 	    add_extra_dependencies(IContext, DestPath, IndxRef, IArgs, IWaits),
 	    append(AArgs, IWaits, Args),
 	    longest_path([ABase, IBase], EltBase),
-	    append([TailLoops, ItemLoops, ILoops, EltBase], SourceContext);
-	    /* 'catch' is in case we use an element that doesn't exist in the
-	    counterfactual arm of a conditional */
+ 	    append(TailLoops, ItemLoops, EltLoops),
+ 	    special_combine_paths(EltLoops, ILoops, [], ResultLoops),
+ 	    append(ResultLoops, EltBase, SourceContext);
 	
 	Source = (Param=SubExp,Rest), !,
 	    (Param = param(arr(_, Ref, _), UseUnit, LoopSlot,_,_), !;
@@ -1340,6 +1337,20 @@ combine_paths(C1, C2, C) :-
 	    \+ T = [], !,
 	    combine_paths(H1, H2, H),
 	    append(H, T, C).
+
+special_combine_paths(Datum, Index, Delayed, Joint) :-
+	break_at_last_loop(Index, IInside, ILoop, IOutside),
+	break_at_last_loop(Datum, DInside, DLoop, DOutside), !,
+	    DLoop = ILoop,
+	    append(DOutside, Delayed, AllDelayed),
+ 	    special_combine_paths(DInside, IInside, AllDelayed, InJoint),
+	    append(InJoint, [ILoop | IOutside], Joint);
+	append([Datum, Delayed, Index], Joint).
+	
+break_at_last_loop(SubLoops, TailLoops, SumLoop, ItemLoops) :-
+	append(TailLoops, [SumLoop | ItemLoops], SubLoops),
+	loops(SumLoop),
+	\+ (member(OtherLoop, ItemLoops), loops(OtherLoop)).
 
 /* Combine contexts. Takes a source context, a context in which a number
 of other sources are being assigned to the destination and a dest
