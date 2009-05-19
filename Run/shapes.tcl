@@ -1316,15 +1316,26 @@ proc DisplayAll { winId } {
         set bt [expr $bt - $clearBorder]
         set br [expr $br + $clearBorder]
         set bb [expr $bb + $clearBorder]
-        set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]
+        set allowScrollBar 0.0 ;# [winfo reqwidth [winfo parent $winId].yscroll]
         # zoom to correct size
-	set w $window_info($winId,width)
-	set h $window_info($winId,height)
-        set xscale [expr ($w - $allowScrollBar)/double($br - $bl)]
-        set yscale [expr ($h - $allowScrollBar)/double($bb - $bt)]
+	set w [expr {$window_info($winId,width) - $allowScrollBar}]
+	set h [expr {$window_info($winId,height) - $allowScrollBar}]
 	set keepAspect [expr {!$window_info($winId,is_top_level)}]
-        set scale [expr {$xscale>$yscale==$keepAspect ? $xscale : $yscale}]
-
+        if {$keepAspect} {
+# zoom image to smallest size that causes scroll region to fill window
+	    set oldReg [$winId cget -scrollregion]
+	    set scrollW [expr {[lindex $oldReg 2]-[lindex $oldReg 0]}]
+	    set scrollH [expr {[lindex $oldReg 3]-[lindex $oldReg 1]}]
+	    set xReScroll [expr {$w/$scrollW}]
+	    set yReScroll [expr {$h/$scrollH}]
+	    set reScroll [expr {$xReScroll>$yReScroll?$xReScroll:$yReScroll}]
+	    set xscale [expr {$reScroll*$scrollW/($br - $bl)}]
+	    set yscale [expr {$reScroll*$scrollH/($bb - $bt)}]
+	} else {
+	    set xscale [expr {$w/($br - $bl)}]
+	    set yscale [expr {$h/($bb - $bt)}]
+	}
+	set scale [expr {$xscale<$yscale ? $xscale : $yscale}]
         # ShowMess debug info "xscale $xscale yscale $yscale scale $scale" ok
 
         ZoomImage $winId all $scale
