@@ -418,7 +418,7 @@ Works but buggers up GNU prolog (do after loading?) */
 
 :- op(500, yfx, [++]).
 
-:- op(700, yfx, ['<=']).
+:- op(700, yfx, ['=', '==', '<', '<=', '>', '>=']).
 
 :- op(700, yfx, ['=\\=', '!=', neq, =:=]).
 
