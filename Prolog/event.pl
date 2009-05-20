@@ -2244,10 +2244,12 @@ resnap(Node, SelOnly) :-
 internal grid with external; if reparenting leave internals as they
 are because undo/redo graphics cannot cope */
 	    (SelOnly = 1,
-		IW is R-L, IH is B-T,
+		snap_to_grid([L, T], [NL, NT]),
+		JumpL is L-NL, JumpT is T-NT,
+		NR is R-JumpL, NB is B-JumpT,
 		get_shape(Bit, internal_extent, OldIntern),
-		change_shape(Bit, internal_extent, [0, 0, IW, IH]),
-		move_boxes(Bit, [L, T, 1,1]),
+		change_shape(Bit, internal_extent, [NL, NT, NR, NB]),
+		move_boxes(Bit, [JumpL, JumpT, 1,1]),
 		tweak_link_connections(Bit, OldIntern),
 		resnap(Bit, 1);
 	    SelOnly = 0,
