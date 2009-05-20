@@ -2250,7 +2250,12 @@ are because undo/redo graphics cannot cope */
 		get_shape(Bit, internal_extent, OldIntern),
 		change_shape(Bit, internal_extent, [NL, NT, NR, NB]),
 		move_boxes(Bit, [JumpL, JumpT, 1,1]),
-		tweak_link_connections(Bit, OldIntern),
+		SfL is -JumpL, SfT is -JumpT,
+		% No idea why graphics shift must be opposite direction to work
+		(Wid shows_model Bit,
+		    draw:shift_model(Wid, Bit, [SfL, SfT]),
+		    fail;
+		tweak_link_connections(Bit, OldIntern)),
 		resnap(Bit, 1);
 	    SelOnly = 0,
 		change_shape(Bit, internal_extent, [L, T, R, B])),
