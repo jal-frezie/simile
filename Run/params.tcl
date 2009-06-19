@@ -433,17 +433,17 @@ proc AcceptData {topNode compName notInput complain} {
 		    } else {
 			tcl_setparamarray $topNode $recordNode
 		    }
-# Not sure how this condition would ever fail...
-		    set outerDims [lrange [GetCompProperty $topNode Dims \
-					       $recordNode] 0 end-1]
+# Not sure how this condition would ever fail...does if TIME added above
+#		    set outerDims [lrange [GetCompProperty $topNode Dims \
+#					       $recordNode] 0 end-1]
 #puts "node $recordNode outer dims $outerDims"
-		    if {[string match $outerDims \
-			     [lrange $recordDims 0 $recordDepth]]} {
+#		    if {[string match $outerDims \
+#			     [lrange $recordDims 0 $recordDepth]]} {
 # note afterTime will always be 0 here as RECORDS levels removed otherwise NOT
 			set recordDims [lset recordDims $recordDepth \
 					    [list RECORDS $recordNode]]
 			break
-		    }
+#		    }
 		}
 	    }
 #            }

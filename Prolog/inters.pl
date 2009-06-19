@@ -169,10 +169,10 @@ expand_library(DestRef, Var, NewVar) :-
 	    NewVar = (ThenCl:(Bool?IfCl));
 	Var = choose(Bool, V1, V2), !,
 	    NewVar = (Bool?V1:V2). */
-
+	    
 read_library_funx(Done) :-
 	retractall(macro_expansion(_Cat, _Line)),
-	/* in case I ship it after a run */
+	% in case I ship it after a run
 	assert(macro_expansion('Built-in', (if Bool then ThenCl else ElseCl -->
 			       choose(Bool, ThenCl, ElseCl)))),
 	assert(macro_expansion('Built-in', (if Bool then ThenCl elseif IfCl -->
@@ -191,7 +191,7 @@ read_func_tree(TopDir, AllDirs, BuiltIn, Done) :-
 	output:list_matching_files(LocalTpt, FnIncs),
 	all(inters, read_func_file, [build(FnIncs), unify(TopDir),
 				     unify(BuiltIn), append(Local, [])]),
-	append_atoms(AllDirs, '*/', DeepTpt),
+	append_atoms([AllDirs, /, *], DeepTpt), % insert start-comment sequence
 	output:list_matching_files(DeepTpt, DeepDirs),
 	all(inters, read_func_tree, [unify(TopDir), build(DeepDirs),
 				     unify(BuiltIn), append(Done, Local)]).
@@ -221,9 +221,9 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 	    Category = WhereFound),
 	(Line = (Macro --> Defn),
 	    WhereFound = 'Macros',
-	    /* Only allow free vars in function template -- fix them all then
-	    replace those in template with free ones */ 
-	    /* get rid of dummy argument */
+	    % Only allow free vars in function template -- fix them all then
+	    % replace those in template with free ones
+	    % get rid of dummy argument
 	    shed_dummy_args(Macro, Fn),
 	    (atom(Fn), !,
 		Op = Fn,
@@ -265,10 +265,10 @@ shed_dummy_args(Op, NewOp) :-
 	NewOp = Op.
 
 free_params(switch(Fixed, Var), Arg, ArgVar, 0) :-
-	var(Arg), !; /* in case someone used an underscore */
+	var(Arg), !; % in case someone used an underscore
 	m_update:get_solo_list_depth(Arg, _),
 	(nth(N, Fixed, ArgConst),
-	    \+ var(ArgConst), /* in case some b**** used an underscore */
+	    \+ var(ArgConst), % in case some b**** used an underscore
 	    Arg = ArgConst,
 	    nth(N, Var, ArgVar);
 	ArgVar = Arg).
