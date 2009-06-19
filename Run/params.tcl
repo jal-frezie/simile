@@ -1148,8 +1148,12 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     set parseStatus(outStr) [open $newPath w]
     $parseStatus(spfParser) reset
     set pStr [open $oldPath r]
-    set broke [catch {$parseStatus(spfParser) parse [read $pStr]} feedback]
+    set dada [read $pStr]
     close $pStr
+    if {[string first {<?xml version=} $dada]} { ;# is not 0
+	return 0 ;# catch pre-XML .spf before it crashes parser
+    }
+    set broke [catch {$parseStatus(spfParser) parse $dada} feedback]
     close $parseStatus(outStr)
     if {$broke} {
 	if {[info exists parseStatus(simV)]} { ;# parsing at least started
