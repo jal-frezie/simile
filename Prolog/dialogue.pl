@@ -273,7 +273,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	       given, or set given units to the default units for the
 	       equation if there are none. */
 	  \+ UnitFormError = [],
-	    UnitError = UnitFormError;
+	    UnitError = bad_syntax('Units', UnitFormError);
 	  promote_unit(RawBase, ComboBase),
 	    \+ member(ComboBase, [const_int, const_ratio]),
 		% variables cannot have constant units even if constant
