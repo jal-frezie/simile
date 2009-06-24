@@ -1192,7 +1192,7 @@ proc InitExecThread {} {
     set execThread(id) [thread::create]
 
     if {[info exists execThread]} {
-	foreach stubCmd {load_c_stub_1 randseed c_setparamarray c_setparamall c_cleartimeseries c_settimepointarray c_settimepointall c_setrecordlist c_getparamall c_gettimepointall PlaceInArray SetWrapTime SetFillMethod ex_load_dll update_executable free_data_handle c_killmodel GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
+	foreach stubCmd {load_c_stub_1 randseed c_setparamarray c_setparamall c_cleartimeseries c_settimepointarray c_settimepointall c_settimepointrecords c_setrecordlist c_getparamall c_gettimepointall PlaceInArray SetWrapTime SetFillMethod ex_load_dll update_executable free_data_handle c_killmodel GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
 	    proc $stubCmd {args} {
 		global execThread
 		#puts "exec bother [lindex [info level 0] 0]"
