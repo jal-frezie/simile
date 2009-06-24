@@ -1868,7 +1868,7 @@ proc Query {specifics icon helpRef parent opts} {
     if {[info exists dialogues(logText)]} { ;# messages skipped
 	lappend dialogues(logText) $message
 	if {[string equal abort $defButton]} {
-	    return continue
+	    return more
 	} else {
 	    return $defButton
 	}
