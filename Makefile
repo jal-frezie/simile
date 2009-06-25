@@ -109,7 +109,7 @@ SHIM = System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN)
 UNPK = System/lib/Stubs/$(SHAREDLIBPREFX)unpacker$(VERS)$(SHAREDLIBEXTN)
 SHANK = System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 
-simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) $(SHIM) $(UNPK) \
+simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) $(SHIM) $(SHANK) $(UNPK) \
 	 $(INSTLIB) $(MAIN)
 
 ifeq ($(ARCHEXTN),_i386)
@@ -119,7 +119,7 @@ PPCSHIM = System/lib/Stubs/libame_dll$(VERS)_ppc.dylib
 PPCUNPK = System/lib/Stubs/libunpacker$(VERS)_ppc.dylib
 PPCSHANK = System/lib/lib5d_ppc.dylib
 PPCRELAY = System/bin/relay_ppc
-ppcbits: $(PPCSHIM) $(PPCUNPK) $(PPCRELAY)
+ppcbits: $(PPCSHIM) $(PPCSHANK) $(PPCUNPK) $(PPCRELAY)
 $(PPCSHIM): ame_cmx.c dllcalls.h
 	cd Run; $(GCCCMD) -arch ppc -fPIC $(FLAGS) -I. $(MAKESL) \
 		-o ../$(PPCSHIM) ame_cmx.c $(USETCL) \
