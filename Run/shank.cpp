@@ -474,6 +474,7 @@ char* interpolate_bloc_data(char* loSource, char* hiSource, int* ptDims,
     for (count=0; count<reps; ++count) {
       //substitute OWNSIZED to create right size block then put back
       *subDims = ((sizeAndPtr*)loSource)[count].size;
+      ((sizeAndPtr*)newData)[count].size = *subDims;
       ((sizeAndPtr*)newData)[count].ptr = 
 	interpolate_bloc_data(((sizeAndPtr*)loSource)[count].ptr, 
 			      ((sizeAndPtr*)hiSource)[count].ptr, 
