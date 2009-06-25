@@ -450,6 +450,7 @@ char* copy_bloc_data(char* source, int* ptDims) {
     for (count=0; count<reps; ++count) {
       //substitute OWNSIZED to create right size block then put back
       *subDims = ((sizeAndPtr*)source)[count].size;
+      ((sizeAndPtr*)newData)[count].size = *subDims;
       ((sizeAndPtr*)newData)[count].ptr = 
 	copy_bloc_data(((sizeAndPtr*)source)[count].ptr, subDims);
     }
