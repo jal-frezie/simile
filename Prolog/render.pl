@@ -231,7 +231,7 @@ render(c, public_cons_dest,
 /* end of any kind of loop */
 render( L, end(Loop), Name, Indent, [For_End]) :-
 	member(Loop, [for, while, switch, case, class, cond, procedure,
-		      declaration, namespace, catch]),
+		      declaration, namespace, catch, if]),
 	render(L, comment, end(Loop,Name), 0, [IdComment]),
 	(L = c, Format = "~*s}; ~a"; L = tcl, Format = "~*s} ~a"),
 	sicstus_format_to_chars( Format, [Indent," ", IdComment], CharList ),
@@ -369,10 +369,12 @@ strings_direct( L, make_reference, Dest=Source, Indent, Stream) :-
 	refer(L, Source, SourceRef),
 	strings_direct( L, assignment, Dest=SourceRef, Indent, Stream).
 
-strings_direct(c, assign_space, Dest=[_, Name, _], Indent, Stream) :-
-	format(Stream, "~*s~a = new ~atype;\n", [Indent," ", Dest, Name]).
+strings_direct(c, assign_space, Dest=[_, Name, _, Dims], Indent, Stream) :-
+	squarify_dims(Dims, DimAtom),
+	format(Stream, "~*s~a = new ~atype~a;\n",
+	       [Indent," ", Dest, Name, DimAtom]).
 
-strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices], Indent,
+strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, Dims], Indent,
 	       Stream) :-
 	append_atoms(Struct, maker, ProcName),
 	make_struct_reference(tcl, Top, ProcName, CurrentName),
@@ -431,7 +433,7 @@ strings_direct(L, data_declaration,
 		Indent, Stream) :-
 	(NodeType = submodel, !,
 	    NameIn = NameBase,
-	    (variable_size(SymbolicName), !,
+	    ((variable_size(SymbolicName); by_record(SymbolicName)), !,
 			/* variable length submodel - declare a pointer */
 		declare_pointer(L, NameBase, Name),
 		UseDims = [];
@@ -515,6 +517,11 @@ do_loop_pointers(L, SmName, Type, Name, Late) :-
 	    Late = [[int, Cond, []], [Type, MetaPtdPtd, []]];
 	Late = []).
 
+squarify_dims([], '').
+squarify_dims([D | More], Atom) :-
+	squarify_dims(More, Tail),
+	append_atoms(['[', D, ']', Tail], Atom).
+	
 generate_all_case_entries(_,_, [], _).
 generate_all_case_entries(L, Match, [Inst | Insts], String) :-
 	generate_case_entry(L, Match, Inst, String),
@@ -531,7 +538,9 @@ generate_case_entry(L, Match, Inst, String) :-
 	((InstType = submodel, variable_size(BaseName);
 	  L = tcl, Name = instanceid), !,
 	    Item = Name;
-	length(LocalDims, DimCount),
+	(by_record(BaseName), !,
+	    DimCount = 1;
+	length(LocalDims, DimCount)),
 	refer_value(L, dims, DimsRef),
 	make_procedure_call_chars(L, [step_list, DimsRef, 2], SubStr),
 	name(Subscript, SubStr),
@@ -541,7 +550,21 @@ generate_case_entry(L, Match, Inst, String) :-
 	make_indexed_reference(L, Name, Subs, Item))),
 	
 	refer(L, Item, ItemRef),
-	excrete(L, procedure_call, return(ItemRef), 8, String),
+	(by_record(BaseName), !,
+	    % if dims is REQ_COUNT, point to made count and return
+	    resolve_pointer(L, dims, DimPtr),
+	    resolve_pointer(L, DimPtr, DimsMeta),
+	    excrete(L, if_start, (DimsMeta == 'REQ_COUNT'), 8, String),
+	    % advance dims past REQ_COUNT -- stops burrow_to iterating
+	    excrete(L, procedure_call, step_list(DimsRef, 2), 12, String),
+	    append_atoms(Name, made, MadeCount),
+	    make_indexed_reference(L, MadeCount, [], Count),
+	    refer(L, Count, CountRef),
+	    excrete(L, procedure_call, return(CountRef), 12, String),
+	    excrete(L, else_clause, (DimsMeta == 'REQ_COUNT'), 8, String),
+	    excrete(L, procedure_call, return(ItemRef), 12, String),
+	    excrete(L, end(if), (DimsMeta == 'REQ_COUNT'), 8, String);
+	excrete(L, procedure_call, return(ItemRef), 8, String)),
 	excrete(L, case_end, Match, 8, String).
 
 generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-

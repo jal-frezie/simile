@@ -234,6 +234,8 @@ list_local_index_meanings(Submodel, Meanings) :-
 	append_atoms(['"', BareCaption, '"'], Caption),
 	(is_population(Submodel), !,
 		LocalDims = [pop];
+	by_record(Submodel), !,
+		LocalDims = [records];
 	get_node_size(Submodel, LocalDims)),
 	list_node_index_meanings(Caption, 
 			LocalDims, Group1),

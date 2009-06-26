@@ -77,7 +77,13 @@ do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
 %	declare(L, _Feature, bound, int, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
         (make_indexed_reference(L, Loop, Inds, Count),
-	    excrete(L, for_start, [Count, 1, Bound, 1], Indent, Stream),
+	    (Bound = pra_bound(Ptr, Name),
+		wake,
+		append_atoms(Name, made, MadeBound),
+		make_struct_reference(L, Ptr, MadeBound, UseBound);
+	     \+ Bound = pra_bound(Ptr, Name),
+		UseBound = Bound),
+	    excrete(L, for_start, [Count, 1, UseBound, 1], Indent, Stream),
 	    do_assign_list(L, MyLoop, NewIndent, Used, Stream),
 	    excrete(L, end(for), Count, Indent, Stream),
 	    fail;
@@ -255,7 +261,7 @@ failed through to make sure all later temporary variables get declared. */
 	(number(Phase),
 	    excrete(L, if_start, MemberCheckRef, Indent1, Stream);
 	 \+ number(Phase)),
-	excrete(L, assign_space, Pointer=[Top, Name, RefIndices],
+	excrete(L, assign_space, Pointer=[Top, Name, RefIndices, []],
 		Indent2, Stream),
 	/* record instance id -- this is list of all count
 	values local and remote, with a 0 at the end so the extractor
@@ -328,6 +334,16 @@ when generating new instances, I can leave the conditional open while I add the
 initialization of the instance, then slip in the close after it. All this would be
 unnecessary if the thing were designed so it could call itself on parts of the
 program. I blame Geraint....*/
+
+do_assignment(L, [assign_array(Parent, Name) | Clauses], Indent,
+	      Used, Stream) :-
+	append_atoms(Name, made, Made),
+	make_struct_reference(L, Parent, Made, Count),
+	refer_value(L, Count, CountRef),
+	make_struct_reference(L, Parent, Name, Dest),
+	excrete(L, assign_space, Dest=[Parent, Name, [], [CountRef]],
+		Indent, Stream),
+	do_assign_list(L, Clauses, Indent, Used, Stream).
 
 do_assignment(L, [verbatim(CodeLine) | Clauses],
 	      Indent, Used, Stream) :-
@@ -472,7 +488,7 @@ do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
 	make_expr(L, CompValRef-1, NewCompVal),
 	excrete(L, assignment, CompVal=NewCompVal, Indent1, Stream),
 	excrete(L, increment_by, [Index, 1], Indent1, Stream),
-	excrete(L, assign_space, Pointer=[ParentPtr, Name, [UseElementRef]],
+	excrete(L, assign_space, Pointer=[ParentPtr, Name, [UseElementRef], []],
 	       Indent1, Stream),
 	nth(ChannelN, Used, InitVar), !,
 	excrete(L, procedure_call, init_pop_member(Pointer, RefIndex, 0,
@@ -537,7 +553,7 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 	/* Now make context for new individual */
 	excrete(L, increment_by, [Index, 1], Indent2, Stream),
 	excrete(L, assign_space, 
-			MPTarget=[ParentPtr, Name, [RefIndex]],
+			MPTarget=[ParentPtr, Name, [RefIndex], []],
 			Indent2, Stream),
 	nth(ChannelN, Used, ReproName), !,
 	excrete(L, procedure_call, init_pop_member(MPTarget,RefIndex, ParentRef,

@@ -146,9 +146,17 @@ t3 = estimate of next initial increment
 
 FINDABLE EXPORT getpointer_type burrow_to;
 FINDABLE EXPORT void* burrow_to(void* level, int** id_meta, int** dim_list) {
-  while (**id_meta>0) { /* 0 means end of tree, -1 means vm level,
--2 means nested separate-dll submodel */
+  int* lastDim;
+  while (**id_meta>0) { /* 0 means end of tree, -1 means vm level */
+    lastDim = *dim_list;
+    // char globMess[255];
+    // sprintf(globMess, "gonna g_p id %d,%d... dims %d,%d",
+    //    **id_meta, *(*id_meta+1), **dim_list, *(*dim_list+1));
+    // suppShowMess(globMess);
     level = ((submodeltype*)level)->get_pointer(step_list(id_meta,1),dim_list);
+    if ((*lastDim == REQ_COUNT) && (*dim_list != lastDim)) { // moved on
+      return(level);
+    }
   }
   return(level);
 };

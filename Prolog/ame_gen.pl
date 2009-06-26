@@ -548,7 +548,7 @@ enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
 % also handles physical unit identifiers, which stand for 1 of that unit
 	(integer(Ref),
 	    Units = const_int;
-	Ref = var, 
+	member(Ref, [var, records]), 
 	    Units = int;
 	number(Ref),
 	    Units = 1), !,
@@ -602,11 +602,17 @@ get_node_size(Source, SizeN, Size, Units) :-
 /* This returns all the array bounds associated with a submodel in the
 canonical order, i.e., those accessed by the highest index numbers first. */
 
+:- dynamic(by_record_brackets/1).
+
 get_all_dims(Source, AllDims) :-
 	Source has_class_refinement assume_simple of 1, !,
 	    AllDims = [];
 	variable_size(Source), !,
 	    AllDims = [var];
+	by_record(Source),
+	    (by_record_brackets(curly),
+		AllDims = [var]; % change to en/disable indexed reference
+	     AllDims = [records]), !;
 	get_node_size(Source, AllDims).
 	
 /* Purge removes all elements of the 2nd arg from the 1st leaving the 3rd.
@@ -691,8 +697,7 @@ get_base_sections([], []).
 
 is_population(Node) :-
 	Node has_class_refinement multiplication_spec of Spec,
-	member(type=Type, Spec),
-	member(Type, [population, records]).
+	member(type=population, Spec). % records now not a population
 
 by_record(Node) :-
 	Node has_class_refinement multiplication_spec of Spec,

@@ -61,6 +61,8 @@ proc PrettifyValList {ugly args} {
 
 proc UglifyValList {pretty} {
 #puts "pretty $pretty"
+# Something should go in around here to deal with the fact that user input is
+# not necessarily a list
     set midlin [regsub -all {: ([^\#\{\}]+)( \#|\}|$)} $pretty \
 		    {: {"\1"}\2}]
 #puts "midlin $midlin"

@@ -252,10 +252,14 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     # This is the diameter of the rounded corner as fraction of the box width
     
     set width [GetLineSize $w submodel $fatness]
-    set dots [expr !$stack]
-    set pile [expr $stack==-1]
+    set dots [expr !$stack] ;# conditional
+    set pile [expr $stack==-1] ;# population
+    set wedge [expr $stack==-2] ;# per-record
     if {$dots} {
         set stack 4
+    }
+    if {$wedge} {
+	set stack 1
     }
     if {$pile} {
         set stack 2
@@ -343,6 +347,11 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	set stackOn $poly
     }
 
+    if {$wedge} {
+	lappend i [$w create line $ml $v6 $ml $mt [expr $ml+$cornerRad/4] $mt \
+		       [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
+	    -width $width -tag /new_bd/]
+    }
     set tabs 0
     while {$tabs < $back} {
 	if {$tabs} {$w move /new_bd/ $backSpacing $backSpacing}

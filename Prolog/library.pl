@@ -33,6 +33,9 @@ ame_save( File, Model, Date, SelOnly ) :-
 	output:windowize(File, WFile),
 	on_exception(_, open_native(WFile, write, Stream), 
 	fail), !,
+	ame_gen:assert(by_record_brackets(curly)),
+	dialogue:reassure_user("Converting to non-Simile 5.5 model representation"),
+	adjust_to_9_5(Model), % write non-5.5 format for now
 	(dialogue:reassure_user("Writing root information"),
 	state:version_is(VStr),
 	name(SimV, VStr),
@@ -50,6 +53,9 @@ ame_save( File, Model, Date, SelOnly ) :-
 	nl(Stream),
 	dialogue:reassure_user("Writing arc information"),
 	save_arcs( ArcsUsed, Stream),
+	ame_gen:retractall(by_record_brackets(_)),
+	dialogue:reassure_user("Converting to Simile 5.5 model representation"),
+	adjust_to_9_5(Model), % return saved model to 5.5 format
 	close( Stream ), !;
 	fail)).
 
@@ -287,6 +293,8 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV >= 5.0, !;
 	dialogue:reassure_user("Updating pre-Simile 5.0 model representation"),
 	    adjust_to_9(Translated)),
+	dialogue:reassure_user("Updating non-Simile 5.5 model representation"),
+	adjust_to_9_5(Parent),
 	state:version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
@@ -492,7 +500,46 @@ adjust_to_9(Trans) :-
 	    Obj has_new_graphical_attribute curve of CPt),
 	fail;
 	true.
-	    
+
+adjust_to_9_5(Parent) :-
+	contains(Parent, Node),
+	Node has_class submodel,
+	by_record(Node),
+	Link is_connector from Node to _,
+	Link has_type influence,
+	(OtherArc = Link; sequence(Link, OtherArc)),
+	\+ sequence(OtherArc, _),
+	OtherArc has_attribute role of Roles,
+	OtherArc is_connector from _ to Fn,
+	m_update:get_all_links(Fn, _, input_link(id(OtherArc, Rel, Use),
+						 _, AddRef, _, NewDims)),
+	select(use(Rel, Use, OldRef, _), Roles, MoreRoles),
+	(OldRef = usr(SubRef), NewRef = usr(AddRef);
+	    \+ OldRef = usr(_), SubRef = OldRef, NewRef = AddRef),
+	OtherArc has_changed_attribute role to
+	[use(Rel, Use, NewRef, NewDims) | MoreRoles],
+	% OK now substitute new name into eqn
+	Fn has_class_refinement value of OldVal,
+	replace_subexps(OldVal, inters, swap_vars, switch(SubRef, AddRef),
+			top_down, _, NewVal),
+	Fn has_changed_class_refinement value of NewVal,
+	Fn has_class_refinement spec of OldSpec, % may fail
+	name(OldSpec, OldStr),
+	sicstus_write_to_chars(SubRef, SubStr),
+	sicstus_write_to_chars(AddRef, AddStr),
+	replace_substrings(SubStr, OldStr, AddStr, NewStr),
+	name(NewSpec, NewStr),
+	Fn has_changed_class_refinement spec of NewSpec,
+	fail; true.
+
+replace_substrings(Lose, Start, Gain, Result) :-
+	append(Lose, Tail, Half),
+	\+ append(Head, Half, Gain), % subbing inadvisable and maybe unnecessary
+	append(Head, Half, Start), !,
+	append([Head, Gain, Tail], Mid),
+	replace_substrings(Lose, Mid, Gain, Result);
+	Result = Start.
+	
 posn_if_needed(Prim, Pt) :-
 	find_type(Prim, Type),
 	(Type = submodel, !,

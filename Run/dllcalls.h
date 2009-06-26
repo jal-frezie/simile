@@ -47,6 +47,7 @@
 #define SEPARATE       -3
 #define START_VM       -4
 #define END_VM         -5
+#define REQ_COUNT      -6
 
 /* integration methods */
 #define EULER           0
@@ -57,7 +58,7 @@
 #define USE_CLOSEST     1
 #define INTERPOLATE     2
 
-#define SIMILE_VERSION	"5.4"
+#define SIMILE_VERSION	"5.5"
 #define NEST 32
 
 #ifdef __cplusplus

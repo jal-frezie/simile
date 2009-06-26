@@ -1761,10 +1761,11 @@ void* get_ptr(long int modelType, long int level, int** id_meta,
 }
 
 long int step_ptr(long int type, long int ptr) {
-  int next_handle[] = {1,0}, *idler;
+  int next_handle[] = {1,0}, dimDum[] = {0}, *idler1, *idler2;
 
-  idler = next_handle;
-  return *(long int*)(get_ptr(type, ptr, &idler, NULL));
+  idler1 = next_handle;
+  idler2 = dimDum; // dummy dim needed to survive member count retreival test
+  return *(long int*)(get_ptr(type, ptr, &idler1, &idler2));
 }
 
 int count_members(long int type, long int ptr) {
@@ -1801,24 +1802,26 @@ int skip_vm_bounds(int** modelDimList) {
 // forward declaration for co-recursing procedures
 // void fill_raw_values(long int, long int, int[], int*, int[], int*, char**);
 
-// dims is the array of counts that are being incremented in the instances of
-// this procedure from which the current one is being called
+// dims starts off as the block sizes at each level of data nesting,
+// but ass we recurse through this it gets replaced by the array of
+// counts that are being incremented in the instances of this
+// procedure from which the current one is being called
 void fill_raw_values(long int localType, long int smHandle, int tree[],
 		     int* use_dims, int dims[], int* dim_place,
 		     char** insertionPt) {
   int count, dimty = 0; // value for RECORDS
   void* model_val_ptr;
   char *newBlk;
-  
-//    sprintf(globMess, "fill_raw: case %d %d, dims %d %d %d %d, off %d",
-//  	  use_dims[0], use_dims[1], dims[0], dims[1], dims[2], dims[3], 
-//  	  dim_place - dims);
-//    showMess(globMess);
-
+  /*
+    sprintf(globMess, "fill_raw: case %d %d, dims %d %d %d %d, off %d fill %d",
+  	  use_dims[0], use_dims[1], dims[0], dims[1], dims[2], dims[3], 
+	    dim_place - dims, (int)*insertionPt);
+    showMess(globMess);
+  */
   switch (*use_dims) {
   case START_VM:
     dimty = skip_vm_bounds(&use_dims); // and drop through, keeping this value
-  case RECORDS: // dimty will end up as 0
+//  case RECORDS: // dimty will end up as 0
     --dimty; // and drop through
   case MEMBERS: // dimty will end up as 1
     ++dimty; 
@@ -1845,6 +1848,22 @@ void fill_raw_values(long int localType, long int smHandle, int tree[],
     model_val_ptr = get_ptr(localType, smHandle, &tree, &dims);
     memcpy(*insertionPt, model_val_ptr, *dim_place);
     *insertionPt += *dim_place;
+    break;
+  case RECORDS:
+    *dim_place = REQ_COUNT; // tells get_ptr to get made count
+    int *tree_copy, *dims_copy;
+    tree_copy = tree;
+    dims_copy = dims; 
+    count = *(int*)get_ptr(localType, smHandle, &tree_copy, &dims_copy);
+    ((sizeAndPtr*)(*insertionPt))->size = count;
+    newBlk = new char[count*dim_place[1]];
+    ((sizeAndPtr*)(*insertionPt))->ptr = newBlk;
+    *insertionPt += sizeof(sizeAndPtr);
+    // now overwrite dim to look like normal array, recurse, and put back
+    *use_dims=count;
+    fill_raw_values(localType, smHandle, tree, 
+    		    use_dims, dims, dim_place, &newBlk);
+    *use_dims=RECORDS;
     break;
   default: /* value is a dimension of the array we are accessing */
     count = *dim_place; // save block size in case we need it again
@@ -1895,7 +1914,7 @@ void translate_dims(int fromModel[], int blockSizes[], int structDims[],
     structDims[0]  = dataType;
     blockSizes[0] = size_for_data_type(dataType);
     return;
-  default: // an array dimension
+  default: // an array dimension, or RECORDS
     structDims[0] = fromModel[0];
   }
   translate_dims(fromModel+1, blockSizes+1, structDims+1, dataType, skip_vms);

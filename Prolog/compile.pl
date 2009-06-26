@@ -231,12 +231,12 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	\+ defines_membership(Submodel, _Param),
 	caption_for(Submodel, OuterText),
 	Wrinkle = no_defining_param(OuterText);
-	uses_channels(Submodel),
+	is_population(Submodel),
 	\+ (find_all_comps(Submodel, SmChannel),
 	       SmChannel is_of_sort value_outside),
 	caption_for(Submodel, OuterText),
 	Wrinkle = no_seed_param(OuterText);
-	\+ uses_channels(Submodel),
+	\+ is_population(Submodel),
 	find_all_comps(Submodel, SmChannel),
 	SmChannel is_of_sort pop_only,
 	caption_for(Submodel, OuterText),
@@ -250,9 +250,6 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	caption_for(Param, InnerText),
 	Wrinkle = param_in_vm_model(OuterText, InnerText).
 
-uses_channels(Submodel) :-
-	is_population(Submodel),
-	\+ by_record(Submodel).
 /*
 remove_redundant_equivs(Submodel, Equivs) :-
 	Submodel has_link_equivalences OldEquivs,
@@ -638,18 +635,20 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 		/* In the past, SmDims was replaced by Posn, which is
 		a number from -10 down indicating the data structure in the
 	        executable corresponding to the actual enumerated type. */
-	(Type = submodel, variable_size(Node), !,
+	(Type = submodel,
 	    StartCases = 4,
 	    append(Tree, [Level, -1], DeepTree),
-	    (by_record(Node), !,
-		['RECORDS'] =  NewDims;
-	    is_population(Node), !,
+	    (is_population(Node), !,
 		['MEMBERS'] = NewDims;
-	    substitute(0, Posn, 'MEMBERS', VmBounds),
+	    variable_size(Node), !,
+		substitute(0, Posn, 'MEMBERS', Mid),
+		substitute(records, Mid, 'RECORDS', VmBounds),
 		append(['START_VM' | VmBounds], ['END_VM'], NewDims));
 	append(Tree, [Level], DeepTree),
 	    StartCases = 1,
-	    Posn = NewDims),
+	    (by_record(Node), !,
+		['RECORDS'] =  NewDims;
+	    Posn = NewDims)),
 	(Loc = xrefs(Model, _,_,_),
 	extract_instances(Model, RealDecls), !,
 	generate_metadata(L, RealDecls, DeepTree, StartCases,
@@ -989,22 +988,6 @@ instruction because they will not require individual initialization routines. */
 	    [ %instance(internal, inter(LocalPath, _,_), _, parentId, int-[]),
 	      %instance(internal, inter(LocalPath, _,_), _, channelId, int-[]),
 	     instance(internal, inter(Path, _,_),_, Count, int-[])],
-	    (by_record(SmName), !,
-		SetMems = -1,
-		append_atoms(Name, made, NMade),
-		SmInters =[instance(internal, inter(Path, _,_),_, NMade,
-				     int-[]) | GenInters],
-		get_dims_from_loops(Path, _, UseInds),
-		length(UseInds, IdxN),
-		CFn =.. [collect, arr(Ptr, NMade, []), Name, IdxN | UseInds],
-		CreateRules = [make(completed(Name), [], LocalPath, -1,
-				    [assign(arr(NewPtr, new_instance, []), 0)]),
-			       % goes in advance proc so reload ignored, use -1
-			       make(created(Name), [on_reload], Path, Step,
-				    [CFn, init_mems(Ptr, Name, create([NMade]))])],
-		% create in step -1 as membership only changes with file param
-		Losses = [], ReproRules = [], ImmigRules = [];
-		
 	    /* generate instructions for each immigration, reproduction  etc.
 	    node...*/
 	    /* little botch-ette: all the population adjustments have to be
@@ -1028,42 +1011,42 @@ nodes.
 	    CreateRules = []),
 */
 	    SetMems = Step,
-	        SmInters = GenInters,
-	        (setof(CreateBox, InitName^X^U^(SmName has_part InitName,
-					member(instance(creation, InitName, X,
-					elt(_, CreateBox, _), U),
-					       ParentFns)), Creators), !;
-		    Creators = []),
-
-		(setof(LossBox, S^X^U^member(instance(loss, S,X,
-						      elt(_, LossBox, _), U),
-					     Functions), Losses), !;
-		    Losses = []),
-
-		CreateRules = [make(culled(Name), [init_list(Name),
-				 time | BasesEnumerated], Path, Step,
+	    SmInters = GenInters,
+	    (setof(CreateBox, InitName^X^U^(SmName has_part InitName,
+				member(instance(creation, InitName, X,
+						elt(_, CreateBox, _), U),
+				       ParentFns)), Creators), !;
+		Creators = []),
+	    
+	    (setof(LossBox, S^X^U^member(instance(loss, S,X,
+						  elt(_, LossBox, _), U),
+					 Functions), Losses), !;
+		Losses = []),
+	    
+	    CreateRules = [make(culled(Name), [init_list(Name),
+					time | BasesEnumerated], Path, Step,
 				[lose(Ptr, Name, Losses)]),
 			   make(created(Name),
 				[culled(Name), on_reset | Creators], Path, 0,
 				[init_mems(Ptr, Name, create(Creators))])],
-		% create in step 0 as membership may have changed during run
-		(setof(make(bred(Name,InitSpec), [culled(Name), time], Path,
-			    Step, [reproduce(Ptr, Name, InitSpec)]),
+	    % create in step 0 as membership may have changed during run
+	    (setof(make(bred(Name,InitSpec), [culled(Name), time], Path,
+			Step, [reproduce(Ptr, Name, InitSpec)]),
 		   S^X^U^member(instance(reproduction, S,X,
 					 elt(_, InitSpec, _), U),
-			  Functions),
-		       ReproRules), !; 
-		    ReproRules = []),
-
-		(setof(make(settled(Name,InitSpec),
-			    [culled(Name), time, InitSpec], Path, Step,
-			    [new_member(Ptr, Name, immigrate(InitSpec))]),
-		       InitName^X^U^(SmName has_part InitName,
-				     member(instance(immigration, InitName, X,
-						     elt(_, InitSpec, _), U),
-					    ParentFns)),
-		       ImmigRules), !; 
-		    ImmigRules = [])),
+				Functions),
+		   ReproRules), !; 
+		ReproRules = []),
+	    
+	    (setof(make(settled(Name,InitSpec),
+			[culled(Name), time, InitSpec], Path, Step,
+			[new_member(Ptr, Name, immigrate(InitSpec))]),
+		   InitName^X^U^(SmName has_part InitName,
+				 member(instance(immigration, InitName, X,
+						 elt(_, InitSpec, _), U),
+					ParentFns)),
+		   ImmigRules), !; 
+		ImmigRules = []),
 	    all(compile, unfinished_in,
 		[build(ReproRules), build(ReproConds)]),
 	    all(compile, unfinished_in,
@@ -1121,7 +1104,19 @@ nodes.
 	Level = [sm(_,_,_, fm_loop(Globs, _)) | _Loops],
 	% its the _Loops that have the bounds!
 	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
-            [BaseSides, SmInters, Specials] = [[], [], []]),
+            (by_record(SmName), !,
+		append_atoms(Name, made, NMade),
+	        SmInters =[instance(internal, inter(Path, _,_), _, NMade,
+				    int-[])],
+		get_dims_from_loops(Path, _, UseInds),
+		length(UseInds, IdxN),
+		CFn =.. [collect, arr(Ptr, NMade, []), Name, IdxN | UseInds],
+		Specials = [make(startable(Name), [enumerate(Name)], Path, Step,
+				 [assign_array(Ptr, Name)]),
+			    make(enumerate(Name), [on_reload], Path, Step,
+				 [CFn])];
+	     [SmInters, Specials] = [[], []]),
+	    BaseSides = []),
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps, Used,
 			    SubIncludes, FnInters, AssignList0),
 /* Now add an extra instruction if this needs an external proc */
@@ -1815,8 +1810,11 @@ convert_form(make(T1, Conds, Path, Ph, T5), Phase,
 	(\+ member(T1, [lastvalue(_), completed(_)]),
 				% can_enter irrelevant in state
 	    member(sm(Name,_,_, vm_loop(_,_,_,_)), Path), !,
-	    ECs = [earlier(can_enter(Name)) | Conds];
-	ECs = Conds),
+	    XCs = [earlier(can_enter(Name)) | Conds];
+	XCs = Conds),
+	(member(set(_Idx, loop(pra_bound(_, PraName))), Path), !,
+	    ECs = [startable(PraName) | XCs];
+	ECs = XCs),
 	all(compile, handle_key_functors,
 	    [build(ECs), build(NewC), append(Refs, [])])).
 
