@@ -261,8 +261,9 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 			sub(InputPairs, Refs), top_down,
 			Switched, FinalExpr),
 	(member(var_pair(_, Sub), Switched),
-	    m_update:get_solo_list_depth(Sub, _),
-	    raise_exception(bad_parameter(Node, Sub));
+	    m_update:get_solo_list_depth(Sub, _), !,
+	    caption_for(Node, Capt),
+	    raise_exception(bad_parameter(Capt, Sub));
 	length(Refs, _Fix)),
 	get_units(Node, Base, Units),
 	is_instance(FType, Node, FinalExpr, elt(Path, _, Base-Units),

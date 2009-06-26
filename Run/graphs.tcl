@@ -1307,7 +1307,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		}
             }
         }
-        set indexList [list $rowList $colList]
+        # set indexList [list $rowList $colList]
     } elseif {[string equal ,image [lindex $tableSpec 1]]} {
         set rowList {}
         set colList {}
@@ -1380,7 +1380,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		set paramArray($subscriptList) $level
 	    }
 	}
-        set indexList [list $rowList $colList]
+        # set indexList [list $rowList $colList]
     } elseif {[string equal ,gdal [lindex $tableSpec 1]]} {
         #	set indexList [ReadGdalRefToArray paramArray $tableSpec]
         return $tableSpec
@@ -1409,12 +1409,19 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    #ShowMess debug info "Headers are $headerList" ok
 	    
 	    foreach headerIndex [lrange $tableSpec $indexStart end] {
-		lappend indexColumns [lsearch -exact $headerList $headerIndex]
+		set indexColumn  [lsearch -exact $headerList $headerIndex]
+		if {$indexColumn==-1} {
+		    Query [concat no_info_col index [lrange $tableSpec 0 0] \
+			       [list $headerIndex $headerList]] warning \
+			data_in_cols {} ok
+		return
+	    }
+		lappend indexColumns $indexColumn
 	    }
 	    set headerColumn [lsearch -exact $headerList [lindex $tableSpec 1]]
 	    #ShowMess debug info "Columns: header $headerColumn indxs $indexColumns" ok
 	    if {$headerColumn==-1} {
-		Query [concat no_data_col [lrange $tableSpec 0 1] \
+		Query [concat no_info_col data [lrange $tableSpec 0 1] \
 			   [list $headerList]] warning data_in_cols {} ok
 		return
 	    }
@@ -1491,7 +1498,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	}
     }
     
-    #ShowMess debug info "Converting [array get paramArray] with $indexList" ok
+    #ShowMess debug info "Converting [array get paramArray]" ok
     close $tStr
     set result [ArrayToList paramArray]
     if {$addSpecials} {
