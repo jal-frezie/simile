@@ -36,20 +36,49 @@ GPPCMD = g++
 OPT = 
 
 UNAME = $(shell uname)
+PLATFORM = $(UNAME)
 ifeq ($(UNAME),CYGWIN_NT-5.1)
-	UNAME = CYGWIN_NT
+	PLATFORM = Windows
 endif 
 ifeq ($(UNAME),CYGWIN_NT-5.0)
-	UNAME = CYGWIN_NT
+	PLATFORM = Windows
 endif 
 ifeq ($(UNAME),MINGW32_NT-5.1)
-	UNAME = MINGW32_NT
+	PLATFORM = Windows
 endif 
 ifeq ($(UNAME),MINGW32_NT-5.0)
-	UNAME = MINGW32_NT
+	PLATFORM = Windows
 endif 
 
-# Default case: any Windows, any toolchain
+# Default case: Linux
+FLAGS = $(OPT) -m32
+SLDIR = lib
+SHAREDLIBPREFX = lib
+MAKESL = -fPIC -shared
+VERS = 8.4
+USETCL = -DUSE_TCL_STUBS -I../System/include -L../System/lib -ltclstub$(VERS)
+LOCALIZE_TCL_REFS = ls # placebo command
+SHAREDLIBEXTN = .so
+
+ifeq ($(PLATFORM),Darwin)
+	OSNUMBER = $(shell uname -r)
+	ifneq ($(OSNUMBER),7.9.0)
+		FLAGS = $(OPT) -mmacosx-version-min=10.3
+	endif
+	ARCHEXTN = _$(shell uname -m)
+	ifeq ($(ARCHEXTN),_Power Macintosh)
+		ARCHEXTN = _ppc
+	endif
+	EXECEXTN = $(ARCHEXTN)
+	MAKESL = -fPIC -dynamiclib
+	USETCL =  -DUSE_TCL_STUBS -F~/Desktop/CVS\ Simile\ v5.x/Contents/Frameworks -framework Tcl -L../System/lib
+	LOCALIZE_TCL_REFS = install_name_tool -change \
+		/System/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
+		@executable_path/../Frameworks/Tcl.framework/Tcl
+	SHAREDLIBEXTN = $(ARCHEXTN).dylib
+endif 
+
+ifeq ($(PLATFORM),Windows) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	FLAGS = $(OPT)
 	SLDIR = bin
@@ -63,41 +92,6 @@ endif
 	EXECEXTN = .exe
 	INSTLIB = Run/install.dll
 	MAIN = System/bin/Simile.exe
-ifeq ($(UNAME),Darwin)
-	OSNUMBER = $(shell uname -r)
-	ifneq ($(OSNUMBER),7.9.0)
-		FLAGS = $(OPT) -mmacosx-version-min=10.3
-	endif
-	ARCHEXTN = _$(shell uname -m)
-	ifeq ($(ARCHEXTN),_Power Macintosh)
-		ARCHEXTN = _ppc
-	endif
-	EXECEXTN = $(ARCHEXTN)
-	SLDIR = lib
-	SHAREDLIBPREFX = lib
-	MAKESL = -fPIC -dynamiclib
-	VERS = 8.4
-	USETCL =  -DUSE_TCL_STUBS -F~/Desktop/CVS\ Simile\ v5.x/Contents/Frameworks -framework Tcl -L../System/lib
-	LOCALIZE_TCL_REFS = install_name_tool -change \
-		/System/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
-		@executable_path/../Frameworks/Tcl.framework/Tcl
-	SHAREDLIBEXTN = $(ARCHEXTN).dylib
-	INSTLIB = 
-	MAIN = 
-endif 
-ifeq ($(UNAME),Linux)
-	FLAGS = $(OPT) -m32
-	SLDIR = lib
-	SHAREDLIBPREFX = lib
-	MAKESL = -fPIC -shared
-	VERS = 8.4
-	USETCL = -DUSE_TCL_STUBS -I../System/include -L../System/lib -ltclstub$(VERS)
-	LOCALIZE_TCL_REFS = ls # placebo command
-	SHAREDLIBEXTN = .so
-	ARCHEXTN =
-	EXECEXTN =
-	INSTLIB = 
-	MAIN = 
 endif
 
 PROLOGSTATE = Run/xgsimile$(EXECEXTN)

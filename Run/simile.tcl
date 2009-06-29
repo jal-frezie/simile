@@ -284,19 +284,20 @@ switch $tcl_platform(platform) {
 
 set savedCredentials [list prologId interfaceId install_time license_code \
 			  licensee_name licensee_corp]
-if {[string equal windows $tcl_platform(platform)]} {
-    package require registry
-    set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
-    foreach regEntry $savedCredentials {
-	catch {set env($regEntry) [registry get $regKey $regEntry]}
-    }
-} else {
+# from v5.5, windows installer creates usrinfo.txt rather than writing registry
+# if {[string equal windows $tcl_platform(platform)]} {
+#     package require registry
+#     set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
+#     foreach regEntry $savedCredentials {
+# 	catch {set env($regEntry) [registry get $regKey $regEntry]}
+#     }
+# } else {
     set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
     foreach regEntry $savedCredentials {
 	gets $UserStream env($regEntry)
     }
     close $UserStream
-}
+# }
 set env(prologId) gnu ;# goodbye forever Sicstus
 if {[info exists prolog_in_console]} {
     set SIMILE_PATH [file dirname [pwd]] ;# otherwise it is relative
