@@ -35,7 +35,7 @@ ame_save( File, Model, Date, SelOnly ) :-
 	fail), !,
 	ame_gen:assert(by_record_brackets(curly)),
 	dialogue:reassure_user("Converting to non-Simile 5.5 model representation"),
-	adjust_to_9_5(Model), % write non-5.5 format for now
+	update_all_pr_brackets(Model), % write non-5.5 format for now (remove for v6)
 	(dialogue:reassure_user("Writing root information"),
 	state:version_is(VStr),
 	name(SimV, VStr),
@@ -55,10 +55,15 @@ ame_save( File, Model, Date, SelOnly ) :-
 	save_arcs( ArcsUsed, Stream),
 	ame_gen:retractall(by_record_brackets(_)),
 	dialogue:reassure_user("Converting to Simile 5.5 model representation"),
-	adjust_to_9_5(Model), % return saved model to 5.5 format
+	update_all_pr_brackets(Model), % return saved model to 5.5 format (remove for v6)
 	close( Stream ), !;
 	fail)).
 
+update_all_pr_brackets(Model) :-
+	contains(Model, Sub),
+	update_per_record_bracket_style(Sub);
+	true.
+	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_stream - does the work of ame_save/[12]. Arg [34] are "done" lists for
 % Nodes and Arcs respectively - don't do the same node twice.
@@ -293,8 +298,11 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV >= 5.0, !;
 	dialogue:reassure_user("Updating pre-Simile 5.0 model representation"),
 	    adjust_to_9(Translated)),
-	dialogue:reassure_user("Updating non-Simile 5.5 model representation"),
-	adjust_to_9_5(Parent),
+	(SimileV >= 5.5, !;
+	dialogue:reassure_user("Updating pre-Simile 5.5 model representation"),
+	    adjust_to_9_5(Parent)),
+	dialogue:reassure_user("Updating Simile 5.x model representation"),
+	adjust_to_10(Parent),
 	state:version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
@@ -503,6 +511,15 @@ adjust_to_9(Trans) :-
 
 adjust_to_9_5(Parent) :-
 	contains(Parent, Node),
+	m_update:remove_floater(Node), fail;
+	true.
+
+adjust_to_10(Parent) :-
+	update_per_record_bracket_style(Parent);
+	true.
+
+update_per_record_bracket_style(Parent) :- % should do all then fail
+	contains(Parent, Node),
 	Node has_class submodel,
 	by_record(Node),
 	Link is_connector from Node to _,
@@ -530,7 +547,7 @@ adjust_to_9_5(Parent) :-
 	replace_substrings(SubStr, OldStr, AddStr, NewStr),
 	name(NewSpec, NewStr),
 	Fn has_changed_class_refinement spec of NewSpec,
-	fail; true.
+	fail.
 
 replace_substrings(Lose, Start, Gain, Result) :-
 	append(Lose, Tail, Half),

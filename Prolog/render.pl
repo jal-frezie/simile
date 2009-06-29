@@ -374,7 +374,7 @@ strings_direct(c, assign_space, Dest=[_, Name, _, Dims], Indent, Stream) :-
 	format(Stream, "~*s~a = new ~atype~a;\n",
 	       [Indent," ", Dest, Name, DimAtom]).
 
-strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, Dims], Indent,
+strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, _Dims], Indent,
 	       Stream) :-
 	append_atoms(Struct, maker, ProcName),
 	make_struct_reference(tcl, Top, ProcName, CurrentName),
