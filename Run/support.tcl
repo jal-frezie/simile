@@ -1196,7 +1196,7 @@ proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
 #puts "FLV $nextRef $listDims $dimPlace"
     set result {}
     set smHandle $nextRef
-    set nextElt [set [burrow_to $smHandle {2 0} {}]]
+    set nextElt [set [burrow_to $smHandle {2 0} dummy]]
     set newDimPlace [expr $dimPlace+1]
     while {[string match $listDims [lrange $nextElt 0 $dimPlace]]} {
 	if {[llength $nextElt] == $newDimPlace} {
@@ -1224,7 +1224,7 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 #do_in_editor puts \
 	   "filling tree $tree bounds $useDims inds $dims place $dimPlace"
     set nextUseDim [lindex $useDims 0]
-    if {[lsearch {RECORDS MEMBERS START_VM} $nextUseDim]!=-1} {
+    if {[lsearch {MEMBERS START_VM} $nextUseDim]!=-1} {
 	set breakPt [lsearch $tree -1]
 	set oldTree [lrange $tree 0 [expr $breakPt-1]]
 	set newTree [lrange $tree [expr $breakPt+1] end]
@@ -1258,7 +1258,7 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 #	    set nextRef [set [burrow_to $smHandle {1 0} {}]]
 #	}
 #	return $result	    
-    }  elseif {!$nextUseDim} {
+    }  elseif {$nextUseDim==0} {
 	if {[string match VALUELESS $type]} {
 	    return sm
 	} else {
@@ -1270,6 +1270,10 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 	    return $oldVal
 	}
     } else {
+	if {[string equal RECORDS $nextUseDim]} {
+	    set tgtVar [burrow_to $smHandle $tree [concat $dims REQ_COUNT]]
+	    set nextUseDim [set $tgtVar]
+	}
 	array set arrayVals $newVals
 	set result {}
 	for {set nextDim 1} {$nextUseDim>=$nextDim} \
@@ -1293,7 +1297,12 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 
 proc burrow_to {level id_meta dim_list} {
     while {[lindex $id_meta 0]>0} {
+	set lastDim $dim_list
 	append level ::[${level}::get_pointer [step_list id_meta 1] dim_list]
+	if {[string equal REQ_COUNT [lindex $lastDim 0]] && \
+		![string equal $dim_list $lastDim]} {
+	    break;
+	}
 	if {[lindex $id_meta 0]==-1} {
 	    set inst1 [set ::$level]
 	    set nInds [llength [set ${inst1}::instanceid]]
@@ -1310,6 +1319,11 @@ proc step_list {dimList climb} {
     set head [lindex $useList 0]
     set useList [lrange $useList 1 end]
     return $head
+}
+
+proc requests_record_count {dimList} {
+    upvar 2 $dimList useList
+    return [string equal REQ_COUNT $useList]
 }
 
 proc glob_element {arrptr phase} {

@@ -1216,7 +1216,7 @@ proc InitExecThread {} {
 						       exec.tcl]]
 	load_c_stub_1 [thread::id]
     } else {
-	source [file join $SIMILE_PATH Run exec.tcl]
+	uplevel #0 [list source [file join $SIMILE_PATH Run exec.tcl]]
 	load_c_stub_1
     }
 }

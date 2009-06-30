@@ -78,12 +78,12 @@ do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
         (make_indexed_reference(L, Loop, Inds, Count),
 	    (Bound = pra_bound(Ptr, Name),
-		wake,
 		append_atoms(Name, made, MadeBound),
-		make_struct_reference(L, Ptr, MadeBound, UseBound);
+		make_struct_reference(L, Ptr, MadeBound, UseBound),
+		refer_value(L, UseBound, UseBoundRef);
 	     \+ Bound = pra_bound(Ptr, Name),
-		UseBound = Bound),
-	    excrete(L, for_start, [Count, 1, UseBound, 1], Indent, Stream),
+		UseBoundRef = Bound),
+	    excrete(L, for_start, [Count, 1, UseBoundRef, 1], Indent, Stream),
 	    do_assign_list(L, MyLoop, NewIndent, Used, Stream),
 	    excrete(L, end(for), Count, Indent, Stream),
 	    fail;

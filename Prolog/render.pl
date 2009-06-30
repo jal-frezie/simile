@@ -281,7 +281,7 @@ loop is in a different namespace... */
 render(tcl, class_declaration,
        instance(NodeType, SymbolicName, _, Name, _), Indent, Decl) :-
 	NodeType = submodel, !,
-	    (variable_size(SymbolicName), !,
+	    ((variable_size(SymbolicName); by_record(SymbolicName)), !,
 		append_atoms(Name, maker, ProcName),
 		render(tcl, procedure_start,
 		       call(_, ProcName, [_, instance]), Indent, Opens),
@@ -374,14 +374,20 @@ strings_direct(c, assign_space, Dest=[_, Name, _, Dims], Indent, Stream) :-
 	format(Stream, "~*s~a = new ~atype~a;\n",
 	       [Indent," ", Dest, Name, DimAtom]).
 
-strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, _Dims], Indent,
+strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, Dims], Indent,
 	       Stream) :-
+	make_array_assignment(tcl, Indent, Dims, _Used, FinalIndent, _Temps,
+			      MoreIndices, Opens, Closes),
+	append(Indices, MoreIndices, AllIndices),
 	append_atoms(Struct, maker, ProcName),
 	make_struct_reference(tcl, Top, ProcName, CurrentName),
-	make_indexed_namespace(tcl, Struct, Indices, Target),
+	make_indexed_namespace(tcl, Struct, AllIndices, Target),
+	make_indexed_namespace(tcl, Dest, MoreIndices, Ptr),
 	make_procedure_call_chars(tcl, [CurrentName, Target], MakerStr),
 	name(Maker, MakerStr),
-	strings_direct(tcl, assignment, Dest = Maker, Indent, Stream).
+	do_writing(Opens, Stream),
+	strings_direct(tcl, assignment, Ptr = Maker, FinalIndent, Stream),
+	do_writing(Closes, Stream).
 /*	Call =.. [CurrentName, Target],
 	render(tcl, procedure_call, Call, Indent, Line1),
 	render(tcl, enter_context, Dest = [Top, Struct, Indices],
@@ -553,17 +559,18 @@ generate_case_entry(L, Match, Inst, String) :-
 	(by_record(BaseName), !,
 	    % if dims is REQ_COUNT, point to made count and return
 	    resolve_pointer(L, dims, DimPtr),
-	    resolve_pointer(L, DimPtr, DimsMeta),
-	    excrete(L, if_start, (DimsMeta == 'REQ_COUNT'), 8, String),
+	    make_procedure_call_chars(L, [requests_record_count, DimPtr], CStr),
+	    name(Cond, CStr),
+	    excrete(L, if_start, Cond, 8, String),
 	    % advance dims past REQ_COUNT -- stops burrow_to iterating
 	    excrete(L, procedure_call, step_list(DimsRef, 2), 12, String),
 	    append_atoms(Name, made, MadeCount),
 	    make_indexed_reference(L, MadeCount, [], Count),
 	    refer(L, Count, CountRef),
 	    excrete(L, procedure_call, return(CountRef), 12, String),
-	    excrete(L, else_clause, (DimsMeta == 'REQ_COUNT'), 8, String),
+	    excrete(L, else_clause, Cond, 8, String),
 	    excrete(L, procedure_call, return(ItemRef), 12, String),
-	    excrete(L, end(if), (DimsMeta == 'REQ_COUNT'), 8, String);
+	    excrete(L, end(if), Cond, 8, String);
 	excrete(L, procedure_call, return(ItemRef), 8, String)),
 	excrete(L, case_end, Match, 8, String).
 

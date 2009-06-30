@@ -461,6 +461,10 @@ int step_list(int **dim_list, int unused) {
   return *(*dim_list)++;
 }
 
+BOOLEAN requests_record_count(int *dim_list) {
+  return (*dim_list == REQ_COUNT);
+}
+
 void discard_instance(void* instanceId) {
 }
 

@@ -154,8 +154,8 @@ FINDABLE EXPORT void* burrow_to(void* level, int** id_meta, int** dim_list) {
     //    **id_meta, *(*id_meta+1), **dim_list, *(*dim_list+1));
     // suppShowMess(globMess);
     level = ((submodeltype*)level)->get_pointer(step_list(id_meta,1),dim_list);
-    if ((*lastDim == REQ_COUNT) && (*dim_list != lastDim)) { // moved on
-      return(level);
+    if ((*lastDim == -6) && (*dim_list != lastDim)) { // moved on
+      break;
     }
   }
   return(level);
