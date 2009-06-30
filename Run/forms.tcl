@@ -1554,6 +1554,7 @@ proc equationlisting_start {DefEquationListingFileName topNode} {
     
     bind $w <Control-a>  {EquationListingSelectAll $equationlist(textbox)}
     $w configure -height 600 -width 800
+    focus $equationlist(textbox)
 }
 
 proc EquationListingFindPopup {winId} {
@@ -1588,7 +1589,6 @@ proc EquationListingFindPopup {winId} {
 }
 
 proc EquationListingSelectAll {winId} {
-    focus $winId 
     $winId tag add sel 1.0 end
 }
 
