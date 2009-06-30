@@ -199,6 +199,9 @@ set msgs(missing_function_detail) "%s should have a definition in the file %s, b
 set msgs(no_such_function_title) "Non-existent function used"
 set msgs(no_such_function_message) "Attempting to process subexpression \"%s\": Simile does not include \"%s\" as a function."
 
+set msgs(wrong_format_of_args_title) "Wrong format of args"
+set msgs(wrong_format_of_args_message) "Attempting to process subexpression \"%s\": You have tried to use the macro or function \"%s\" with arguments \"%s\", but it must take arguments of the form \"%s\"."
+
 set msgs(wrong_no_of_args_title) "Wrong number of args"
 set msgs(wrong_no_of_args_message) "Attempting to process subexpression \"%s\": You have tried to use the macro or function \"%s\" with %s arguments, but it must take %s"
 

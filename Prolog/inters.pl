@@ -145,7 +145,7 @@ expand_library(DestRef, Var, NewVar) :-
 	 UseVar =.. [Op | BadArgs],
 	    (MacroMatch = bad_format,
 		length(BadArgs, Arity),
-		% not sure if this ever happens
+		% e.g., if arg of 'if' has no 'then'
 		throw(wrong_format_of_args(Var, Op, Args, BadArgs));
 	    MacroMatch = bad_arity,
 		length(BadArgs, FnArity),
