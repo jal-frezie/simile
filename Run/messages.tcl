@@ -201,6 +201,7 @@ set msgs(no_such_function_message) "Attempting to process subexpression \"%s\": 
 
 set msgs(wrong_format_of_args_title) "Wrong format of args"
 set msgs(wrong_format_of_args_message) "Attempting to process subexpression \"%s\": You have tried to use the macro or function \"%s\" with arguments \"%s\", but it must take arguments of the form \"%s\"."
+set msgs(wrong_format_of_args_detail) "This problem might be fixed by adding parentheses around a subexpression that forms an argument of this subexpression."
 
 set msgs(wrong_no_of_args_title) "Wrong number of args"
 set msgs(wrong_no_of_args_message) "Attempting to process subexpression \"%s\": You have tried to use the macro or function \"%s\" with %s arguments, but it must take %s"

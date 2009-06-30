@@ -142,13 +142,13 @@ expand_library(DestRef, Var, NewVar) :-
 	macro_expansion(_Orig, (UseVar --> NewVar)),
 	(MacroMatch = right,
 	    UseVar = Fn, !;
-	 UseVar =.. [Op | BadArgs],
+	 UseVar =.. [Op | GoodArgs],
 	    (MacroMatch = bad_format,
-		length(BadArgs, Arity),
+		length(GoodArgs, Arity),
 		% e.g., if arg of 'if' has no 'then'
-		throw(wrong_format_of_args(Var, Op, Args, BadArgs));
+		throw(wrong_format_of_args(Var, Op, Args, GoodArgs));
 	    MacroMatch = bad_arity,
-		length(BadArgs, FnArity),
+		length(GoodArgs, FnArity),
 		throw(wrong_no_of_args(Var, Op, Arity, FnArity))));
 	Var = prev(N),
 	    ((\+ integer(N); N < 0),
