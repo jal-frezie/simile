@@ -705,9 +705,9 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_SetObjResult(interp, Tcl_NewStringObj("set_param_array_elt: no array has been created for this node", -1));
     return TCL_ERROR;
   }
-//  sprintf(globMess, "setting element %d %d in %lx to %lf",
-//	  indxs[0], indxs[1], bloc, val);
-//  showMess(globMess);
+  //sprintf(globMess, "setting element %d %d of %d %d in %lx to %lf",
+  //	  indxs[0], indxs[1], dims[0], dims[1], (long unsigned int)bloc, val);
+  //showMess(globMess);
   set_bloc_element(bloc, dims, indxs, val);
   return TCL_OK;
 }

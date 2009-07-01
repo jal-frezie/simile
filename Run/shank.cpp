@@ -1442,7 +1442,7 @@ void set_bloc_element(char* ptData, int* ptDims, int* indxs, double value) {
   // Because Simile input tools may not supply all the dimensions of the 
   // parameter array, this has to work out how many dimensions are supplied
   // and fill all the elements for which these are the innermost indices.
-  int count, haveDims, needDims, makeDims, useDims[32], done = 0;
+  int count, haveDims, needDims, makeDims, useDims[32], recBounds[32], done = 0;
   for (count=31; count>=0; count--) {
     if (!indxs[count]) {
       haveDims = count;
@@ -1457,6 +1457,7 @@ void set_bloc_element(char* ptData, int* ptDims, int* indxs, double value) {
   //showMess(globMess);
   for (count = 0; count<needDims; count++) {
     if (count<makeDims) {
+      recBounds[count] = ptDims[count];
       useDims[count] = 1;
     } else {
       useDims[count] = indxs[count-makeDims];
@@ -1465,11 +1466,17 @@ void set_bloc_element(char* ptData, int* ptDims, int* indxs, double value) {
   // next bit iterates over all combinations of outer dimensions
   while (!done) {
     insert_to_array(ptData, value, ptDims, useDims, ptDims[needDims]);
-    for (count = 0; count<makeDims; count++) {
-      if (++useDims[count]<=ptDims[count]) break;
+    for (count = makeDims-1; count>=0; count--) {
+      if (useDims[count] == 1 && ptDims[count] == OWNSIZED) {
+	useDims[count] = 0; // tells locate_elt to get record count
+	recBounds[count] = 
+	  ((sizeAndPtr*)locate_elt(ptData, 0, ptDims, useDims))->size;
+	useDims[count] = 1; // back to normal
+      }
+      if (++useDims[count]<=recBounds[count]) break;
       useDims[count] = 1;
     }
-    done = count==makeDims;
+    done = count==-1;
   }
 }
 
