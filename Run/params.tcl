@@ -466,7 +466,7 @@ proc AcceptData {topNode compName notInput complain} {
 	    tcl_setparamarray $topNode $node
 	}
 	if {$complain>0} {
-	    set errorData [list $whatMaking $compName]
+	    set errorData [list $whatMaking [TrimDTFromPath $compName]]
 	} else {
 	    set errorData {}
 	}
