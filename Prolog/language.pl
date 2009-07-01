@@ -261,7 +261,7 @@ failed through to make sure all later temporary variables get declared. */
 	(number(Phase),
 	    excrete(L, if_start, MemberCheckRef, Indent1, Stream);
 	 \+ number(Phase)),
-	excrete(L, assign_space, Pointer=[Top, Name, RefIndices, []],
+	excrete(L, assign_space, Pointer=[Top, Name, RefIndices, _, []],
 		Indent2, Stream),
 	/* record instance id -- this is list of all count
 	values local and remote, with a 0 at the end so the extractor
@@ -341,7 +341,7 @@ do_assignment(L, [assign_array(Parent, Name) | Clauses], Indent,
 	make_struct_reference(L, Parent, Made, Count),
 	refer_value(L, Count, CountRef),
 	make_struct_reference(L, Parent, Name, Dest),
-	excrete(L, assign_space, Dest=[Parent, Name, [], [CountRef]],
+	excrete(L, assign_space, Dest=[Parent, Name, [], Used, [CountRef]],
 		Indent, Stream),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 
@@ -488,8 +488,8 @@ do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
 	make_expr(L, CompValRef-1, NewCompVal),
 	excrete(L, assignment, CompVal=NewCompVal, Indent1, Stream),
 	excrete(L, increment_by, [Index, 1], Indent1, Stream),
-	excrete(L, assign_space, Pointer=[ParentPtr, Name, [UseElementRef], []],
-	       Indent1, Stream),
+	excrete(L, assign_space, Pointer=[ParentPtr, Name, [UseElementRef],
+					  _, []], Indent1, Stream),
 	nth(ChannelN, Used, InitVar), !,
 	excrete(L, procedure_call, init_pop_member(Pointer, RefIndex, 0,
 						  ChannelN), Indent1, Stream),
@@ -552,9 +552,8 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 
 	/* Now make context for new individual */
 	excrete(L, increment_by, [Index, 1], Indent2, Stream),
-	excrete(L, assign_space, 
-			MPTarget=[ParentPtr, Name, [RefIndex], []],
-			Indent2, Stream),
+	excrete(L, assign_space, MPTarget=[ParentPtr, Name, [RefIndex],
+					   _, []], Indent2, Stream),
 	nth(ChannelN, Used, ReproName), !,
 	excrete(L, procedure_call, init_pop_member(MPTarget,RefIndex, ParentRef,
 						  ChannelN), Indent1, Stream),

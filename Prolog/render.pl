@@ -369,31 +369,31 @@ strings_direct( L, make_reference, Dest=Source, Indent, Stream) :-
 	refer(L, Source, SourceRef),
 	strings_direct( L, assignment, Dest=SourceRef, Indent, Stream).
 
-strings_direct(c, assign_space, Dest=[_, Name, _, Dims], Indent, Stream) :-
+strings_direct(c, assign_space, Dest=[_, Name, _,_, Dims], Indent, Stream) :-
 	squarify_dims(Dims, DimAtom),
 	format(Stream, "~*s~a = new ~atype~a;\n",
 	       [Indent," ", Dest, Name, DimAtom]).
 
-strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, Dims], Indent,
-	       Stream) :-
-	make_array_assignment(tcl, Indent, Dims, _Used, FinalIndent, _Temps,
-			      MoreIndices, Opens, Closes),
-	append(Indices, MoreIndices, AllIndices),
+strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, Used, Dims],
+	       Indent, Stream) :-
+	Dims = [Dim | More], !, % won't work for multiple dims but no need
+	    language:declare(tcl, XIndex, loop, int, Used, Indent, Stream),
+	    DeepIndent is Indent+4,
+	    strings_direct(tcl, for_start, [XIndex, 1, Dim, 1],
+			   Indent, Stream),
+	    refer_value(tcl, XIndex, XIndexRef),
+	    make_indexed_namespace(tcl, Dest, [XIndexRef], NewDest),
+	    append(Indices, [XIndexRef], AllIndices),
+	    strings_direct(tcl, assign_space, NewDest=[Top, Struct, AllIndices,
+						       Used, More],
+			   DeepIndent, Stream),
+	    excrete(tcl, end(for), XIndex, Indent, Stream);
 	append_atoms(Struct, maker, ProcName),
-	make_struct_reference(tcl, Top, ProcName, CurrentName),
-	make_indexed_namespace(tcl, Struct, AllIndices, Target),
-	make_indexed_namespace(tcl, Dest, MoreIndices, Ptr),
-	make_procedure_call_chars(tcl, [CurrentName, Target], MakerStr),
-	name(Maker, MakerStr),
-	do_writing(Opens, Stream),
-	strings_direct(tcl, assignment, Ptr = Maker, FinalIndent, Stream),
-	do_writing(Closes, Stream).
-/*	Call =.. [CurrentName, Target],
-	render(tcl, procedure_call, Call, Indent, Line1),
-	render(tcl, enter_context, Dest = [Top, Struct, Indices],
-			Indent, Line2),
-	append(Line1, Line2, Result),
-*/
+	    make_struct_reference(tcl, Top, ProcName, CurrentName),
+	    make_indexed_namespace(tcl, Struct, Indices, Target),
+	    make_procedure_call_chars(tcl, [CurrentName, Target], MakerStr),
+	    name(Maker, MakerStr),
+	    strings_direct(tcl, assignment, Dest = Maker, Indent, Stream).
 
 strings_direct(tcl, global_declaration, [_, Name | _], _Indent, Stream) :-
 	format(Stream, "global ~a\n", [Name]).
@@ -502,7 +502,7 @@ excrete(L, Stat, Args, Indent, Stream) :-
 do_obsolete_thing(L, Stat, Args, Indent, Stream) :-
 	render(L, Stat, Args, Indent, Stuff), !,
 	do_writing(Stuff, Stream);
-	raise_exception("Tried to do obsolete thing").
+	raise_exception(failed_to_do_obsolete_thing(Stat,Args)).
 
 /*
 do_base_pointers(_, base(_,_, []), []).
