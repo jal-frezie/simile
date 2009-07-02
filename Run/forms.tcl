@@ -1986,13 +1986,17 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
             -command [list $labf1.lab2 yview]] -side right -fill y
     pack [text $labf1.lab2 -width 80 -height 24 -relief sunken -bd 2 -highlightthickness 0 -wrap word -yscrollcommand [list AdjustCanvas $labf1 img y]] -fill both -expand on
 
+    $labf1.lab2 insert 1.0 {Press "Help" to display a relevant page from Simile's documentation.}
+    $labf1.lab2 insert 1.0 \n\n
     set key [lindex $specifics 0]
-    upvar #0 msgs(${key}_full) trans
-    if {[info exists trans]} {
-	$labf1.lab2 insert 1.0 \n\n[eval format [list $trans] \
-					[lrange $specifics 1 end]]
+    foreach extra {full detail} {
+	upvar #0 msgs(${key}_$extra) trans
+	if {[info exists trans]} {
+	    $labf1.lab2 insert 1.0 \n\n[eval format [list $trans] \
+					    [lrange $specifics 1 end]]
+	}
     }
-
+    
     $labf1.lab2 insert 1.0 $msg
     $labf1.lab2 config -state disabled
     #    pack [label $labf1.lab2 -text $msg -wraplength 320 \

@@ -77,6 +77,10 @@ itcl::class similescript::ModelWindow {
         MenuSelect PrintNow [GetModelWindow].canvas
     }
     
+    public method ListEnumTypes {} {
+	GetFromProlog tk_get_info(dummy,$modelNode,enum_type_defns)
+    }
+
     public method Destroy {} {
         itcl::delete object $this
     }

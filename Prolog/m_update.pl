@@ -1578,10 +1578,7 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 	Desc = ''),
 	(Submodel has_class_refinement comment of Comment, !;
 	Comment = ''),
-	(Submodel has_class_refinement enum_types of EnumTypes,
-	    all(menu, separate_type_from_mems,
-		[build(EnumSpecs), build(EnumTypes)]), !;
-	EnumSpecs = []),
+	enum_types_for(Submodel, EnumSpecs),
 	(Submodel has_class_refinement eqn_units of Fix, !;
 	Fix = 'Default'),
 	(Submodel has_graphical_attribute hide_contents of Hide, !;
@@ -1600,6 +1597,12 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 time_step_for(Model, TopStep, Step) :-
 	Model has_class_refinement step of Step, !;
 	Step = TopStep.
+
+enum_types_for(Submodel, EnumSpecs) :-
+	(Submodel has_class_refinement enum_types of EnumTypes,
+	    all(menu, separate_type_from_mems,
+		[build(EnumSpecs), build(EnumTypes)]), !;
+	 EnumSpecs = []).
 
 use_units_in(root, 'No').
 use_units_in(Model, Do) :-
