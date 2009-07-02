@@ -81,17 +81,21 @@ itcl::class similescript::ModelWindow {
 	GetFromProlog tk_get_info(dummy,$modelNode,enum_type_defns)
     }
 
+    public method GetEnumTypeMembers {ident} {
+	foreach typeDef [ListEnumTypes] {
+	    if {[string equal $ident [lindex $typeDef 0]]} {
+		return [lrange $typeDef 1 end]
+	    }
+	}
+	error "Model does not include type $ident"
+    }
+
     public method ChangeEnumType {args} {
 	if {[llength $args]<2} {
 	    error "Type definition needs identifier and at least one member"
 	}
-	foreach typeDef [ListEnumTypes] {
-	    if {[string equal [lindex $args 0] [lindex $typeDef 0]]} {
-		prolog tk_change_enum_type($modelNode,'$args')
-		return
-	    }
-	}
-	error "Model does not include type \"[lindex $args 0]\""
+	GetEnumTypeMembers [lindex $args 0] ;# check it exists
+	prolog tk_change_enum_type($modelNode,'$args')
     }
 
     public method Destroy {} {

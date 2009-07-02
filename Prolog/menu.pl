@@ -1190,8 +1190,8 @@ separate_type_from_mems([H | T], H-T).
 
 change_enum_type(Node, ArgAtom) :-
 	name(ArgAtom, ArgStr),
-	chop_list(ArgStr, DataStrs),
-	strings_to_atoms(DataStrs, [Type | Mems]),
+	output:chop_list(ArgStr, DataStrs),
+	dialogue:strings_to_atoms(DataStrs, [Type | Mems]),
 	get_av_pair(Node, 0, enum_types, EnumTypes),
 	append(Front, [Type-_OldMems | Back], EnumTypes),
 	append(Front, [Type-Mems | Back], NewEnumTypes),	
