@@ -8,7 +8,7 @@ interface of the application. It responds by:
 * Making calls to the screen drawing module (new image, or redraw)
 */
 sicstus_module(menu, [undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
-	menu_handle/3, set_box_size/5, change_size/2,
+	menu_handle/3, set_box_size/5, change_size/2, change_enum_type/2,
 	not_last_toplevel/1, off_window/2, certain_death_node/1,
 	kill_everything/1]).
 	
@@ -1187,6 +1187,16 @@ set_properties(Wid, Model) :-
 	    finish_move(Model, 1)).
 
 separate_type_from_mems([H | T], H-T).
+
+change_enum_type(Node, ArgAtom) :-
+	name(ArgAtom, ArgStr),
+	chop_list(ArgStr, DataStrs),
+	strings_to_atoms(DataStrs, [Type | Mems]),
+	get_av_pair(Node, 0, enum_types, EnumTypes),
+	append(Front, [Type-_OldMems | Back], EnumTypes),
+	append(Front, [Type-Mems | Back], NewEnumTypes),	
+	add_parameter(Node, 0, enum_types, NewEnumTypes),
+	finish_move(Node, 1).
 
 flip_innards(Node_name, Action) :-
 	get_shape(Node_name, internal_extent, [IL, IT, IR, IB]),

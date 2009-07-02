@@ -735,6 +735,7 @@ make_intermediates(
 	    append(EltLoops, [LocalLoop | EltBase], SourceContext);
 
 	Source = element(Array, Indx), !,
+	wake,
 	    make_intermediates(Indx, SubId, Target, DestPath, BackSwap,
 			PrevInters, BuildingArrays, Step, Used, Int, MidInters,
 			part_result(IContext, ISetups, IArgs, IndxRef)),

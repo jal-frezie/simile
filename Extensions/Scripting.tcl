@@ -81,6 +81,19 @@ itcl::class similescript::ModelWindow {
 	GetFromProlog tk_get_info(dummy,$modelNode,enum_type_defns)
     }
 
+    public method ChangeEnumType {args} {
+	if {[llength $args]<2} {
+	    error "Type definition needs identifier and at least one member"
+	}
+	foreach typeDef [ListEnumTypes] {
+	    if {[string equal [lindex $args 0] [lindex $typeDef 0]]} {
+		prolog tk_change_enum_type($modelNode,'$args')
+		return
+	    }
+	}
+	error "Model does not include type \"[lindex $args 0]\""
+    }
+
     public method Destroy {} {
         itcl::delete object $this
     }
@@ -482,7 +495,7 @@ redo with snap object
                 if {[string match [$this GetModelClass $path]  COMPARTMENT]} {
                     do_for_node $modelNode SetModelValue $nodeId $value
                 } else  {
-                    puts "$path is not a parameter (variable or fixed) or compartment so it's value cannot be changed."
+                    puts "$path is not a parameter (variable or fixed) or compartment so its value cannot be changed."
                 }
             }
         }

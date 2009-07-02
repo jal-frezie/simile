@@ -12,7 +12,7 @@ sicstus_module(input, [tk_make_desktop_node/0,
 		       tk_click/4, tk_doubleclick/4, tk_unclick/2, tk_drag/2,
 		       tk_menu/3, tk_menu_select/2, tk_mode_select/1,
 		       tk_context_find/3, tk_resize_top_win/3, tk_visible/5,
-		       tk_embrace/2, tk_abandon/0,
+		       tk_change_enum_type/2, tk_embrace/2, tk_abandon/0,
 		       tk_abandon_eqn/0, check_use/1, compile_to_file/1,
 		       tk_run_settings_tweaked/1, tk_off_window/2,
 		       tk_certain_death_node/1, tk_kill_everything/1,
@@ -121,6 +121,8 @@ finish_window_resize :-
 	fail;
 	true.
 	       
+tk_change_enum_type(Node, NewDefn) :-
+	change_enum_type(Node, NewDefn).
 
 tk_embrace(Wid, Comp) :-
 	prioritize_window(Wid),
