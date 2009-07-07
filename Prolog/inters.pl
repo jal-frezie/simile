@@ -69,7 +69,7 @@ assigned_in_vm_subloop(Formula, FContext, AllSetups) :-
 	member(make(_,_, MoreLoops, _, Acts), AllSetups),
 	member(assign(Formula, _), Acts),
 	append(ExtraLoops, FContext, MoreLoops),
-	member(sm(_,_,_, vm_loop(_,_,_,_)), ExtraLoops).
+	member(sm(_,_,_, vm_loop(_,_,_,_,_)), ExtraLoops).
 
 insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
 	(Var = input(Location, PathExp, Link, Units),
@@ -275,7 +275,7 @@ free_params(switch(Fixed, Var), Arg, ArgVar, 0) :-
 
 import_path_for(Dims, Path, ArcI, Lvl0, Ptr0, LvlN, PtrN, LocalLoops, Inds) :-
 	append(Outer, [var | Inner], Dims), !,
-	    (suffix([sm(Name, _,_, vm_loop(_,_,_,_)) | InnerPath], Path), !;
+	    (suffix([sm(Name, _,_, vm_loop(_,_,_,_,_)) | InnerPath], Path), !;
 		Name = none, InnerPath = []),
 	    Lvl1 is Lvl0 + 1,
 	    make_inds_for(Outer, OutLoops, OutInds),
@@ -361,7 +361,7 @@ make_intermediates(
 
 	    (\+ var(OrigUnits),
 	    member(OrigUnits, [n(Type), a(Type)]),
-	    \+ enum_type_ref(_, SubId, _, OrigUnits, _), !,
+	    \+ ame_gen:resolve_enum_type(_, SubId, _, OrigUnits, _), !,
 		throw(no_local_defn_for_type(Type, SubId));
 		
 	    get_dims_from_loops(OrigLoops, Dims, _)),
@@ -661,26 +661,26 @@ make_intermediates(
 	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !;
 	Source = keep(SourceRef), !;
 	(Source = place_in(IndN), !,
-	        get_dims_from_loops(BuildingArrays, DestDims, DestVals),
-	        (Step = dummy, !,
-		    DestInds = DestDims;
-		DestInds = DestVals);
-	    Source = index(IndN), !,
+	        get_dims_from_loops(BuildingArrays, DestDims, DestInds);
+	    Source = index(IndN), wake, !,
 	        reverse(DestPath, BackDP),
 	        all(inters, indices_for,
-		    [build(BackDP), append(DestInds, [])])),
+		    [build(BackDP), append(DestInds, []),
+		     append(DestDims, [])])),
 	    (integer(IndN), !;
 	    throw(bad_index_number(N, index))),
 	    length(DestInds, AvailInds),
 	    IndPosn is AvailInds-IndN,
-	    (nth0(IndPosn, DestInds, SourceRef),
-		(Step = dummy,
-		    type_ind(SourceRef, Units);
-		Units = int), !;
+	    (nth0(IndPosn, DestInds, IndRef),
+		nth0(IndPosn, DestDims, DimRef),
+		type_ind(DimRef, Units), !;
 		throw(index_number_out_of_range(IndN, AvailInds))),
-	    (nonvar(SourceRef), !;
+	    (nonvar(IndRef), !;
 		/* generate_name(c, loop, LoopName, Used), */
-		SourceRef = glob(_LoopName, _))),
+		IndRef = glob(_LoopName, _)),
+	    (Units = boolean, !,
+		SourceRef = IndRef-1;
+	     SourceRef = IndRef)), % first index is 1 in model, 0 in code
 	    Args = []),
 	SourceContext = DestPath,
 	Setups = [],
@@ -735,7 +735,6 @@ make_intermediates(
 	    append(EltLoops, [LocalLoop | EltBase], SourceContext);
 
 	Source = element(Array, Indx), !,
-	wake,
 	    make_intermediates(Indx, SubId, Target, DestPath, BackSwap,
 			PrevInters, BuildingArrays, Step, Used, Int, MidInters,
 			part_result(IContext, ISetups, IArgs, IndxRef)),
@@ -747,19 +746,21 @@ make_intermediates(
  	    (break_at_last_loop(ALoops, TailLoops,
  	                       set(IntIndxRef, loop(Limit)), ItemLoops);
 		throw(only_works_on_array(element, Array))),
-	    (Step = dummy,
-		type_ind(Limit, NeedType);
-	     \+ Step = dummy,
-	        NeedType = int),
-	    ((promote_unit(Int, NeedType);
+	    ((type_ind(Limit, NeedType);
+		\+ Step = dummy, member(NeedType, [boolean,a(AnET)])),
+		(promote_unit(Int, NeedType);
 	      Int = n(AnET), NeedType = a(AnET)), !,
 		/* special case -- count or name of ET can refer to last elt */
 		TryIndxRef = IndxRef;
-	    promote_arg(Int, real, _),
+	    type_ind(Limit, NeedType),
+		promote_arg(Int, real, _),
 		promote_arg(NeedType, real, _), !, /* for legacy cases */
 	        TryIndxRef = simile_int(IndxRef);
 	    throw(needs_index_of_type(element, Array, NeedType, Indx, Int))),
-	    (IntIndxRef = TryIndxRef, !;
+	    ((NeedType = boolean,
+	          IntIndxRef = TryIndxRef+1;
+	      IntIndxRef = TryIndxRef), !;
+				% first index is 1 in model, 0 in code
 	    throw(redundant_array(Source))),
 	    
 	    append(ASetups, ISetups, Setups),
@@ -954,11 +955,11 @@ remove_physical_units_if_disabled(SubId, SrcUnits, Units) :-
 	standard_name(SrcUnits, Units)).
 
 unmake_enum_units(SrcUnits, Units) :-
-	SrcUnits = n(_),
+	/* SrcUnits = n(_),
 	    Units = const_int;
 	SrcUnits = a(_),
 	    Units = int;
-	Units = SrcUnits.
+	*/ Units = SrcUnits.
 
 raise_units(Base, Num, Units) :-
 	Num = 0, Units = 1;
@@ -1273,18 +1274,18 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 	N is M+1.
 
 /* Returns expressions for a model's indices, those for outer loops first */
-indices_for(set(_, loop(_)), []).
+indices_for(set(_, loop(_)), [], []).
 
-indices_for(sm(_,_, Ptr, Spec), Inds) :-
-	Spec = fm_loop(Inds, _);
-	Spec = vm_loop(N, _,_,_),
+indices_for(sm(_,_, Ptr, Spec), Inds, Dims) :-
+	Spec = fm_loop(Inds, Dims,_);
+	Spec = vm_loop(N,_, Dims,_,_),
 	member(N, [pop, rec]), !,
 	    Inds = [ind(Ptr, pop)];	  
-	Spec = vm_loop(Count, _,_,_),
+	Spec = vm_loop(Count, _, Dims, _,_),
 	    (Count = 0, !,
 		Inds = [];
 	    IndCt is Count - 1,
-		indices_for(sm(_,_, Ptr, vm_loop(IndCt, _,_,_)), Rest),
+		indices_for(sm(_,_, Ptr, vm_loop(IndCt, _,_,_,_)), Rest, _),
 		/* Inds = [ind(Ptr, IndCt) | Rest].  for inner first */
 		append(Rest, [ind(Ptr, IndCt)], Inds)).
 
@@ -1292,6 +1293,7 @@ indices_for(sm(_,_, Ptr, Spec), Inds) :-
 type_ind(Ind, Type) :-
 	var(Ind), !;
 	(integer(Ind); Ind = glob(_,_); Ind = records), Type = int;
+	Ind = '"boolean"', Type = boolean;
 	Type = a(Ind).
 	
 make_choose_form([LastElt], _,_, LastElt) :- !.
@@ -1480,7 +1482,7 @@ enumerate instructions.  */
 wait_for_submodels([], []).
 
 wait_for_submodels([Level | AlsoExited], Waits) :-
-	(Level = sm(Model, _,_, vm_loop(_,_,_,_)), !,
+	(Level = sm(Model, _,_, vm_loop(_,_,_,_,_)), !,
 	    Waits = [enumerate(Model) | Others];
 	Waits = Others),
 	wait_for_submodels(AlsoExited, Others).
@@ -1507,9 +1509,9 @@ get_dims_from_loops([], [], []).
 get_dims_from_loops(Loops, Dims, Inds) :-
 	append(InnerLoops, [Loop], Loops),
 	(Loop = sm(_,_, Ptr, VLoop),
-	\+ VLoop = fm_loop(_,_), !,
+	\+ VLoop = fm_loop(_,_,_), !,
 	    Dims = [var | RDims],
-	    (VLoop = vm_loop(rec, _,_,_), !,
+	    (VLoop = vm_loop(rec, _,_,_,_), !,
 		Inds = [ind(Ptr, pop) | RInds];
 	    Inds = [none | RInds]);
 	Loop = set(Ind, loop(Dim)), !,
@@ -1520,7 +1522,7 @@ get_dims_from_loops(Loops, Dims, Inds) :-
 	get_dims_from_loops(InnerLoops, RDims, RInds).
 
 loops(set(_, loop(_))).
-loops(sm(_,_,_, vm_loop(_,_,_,_))).
+loops(sm(_,_,_, vm_loop(_,_,_,_,_))).
 loops(sm(_,_,_, rm_loop(_,_,_))).
 
 get_model_and_loops(Context, Dest, Path, Loops, Base) :-

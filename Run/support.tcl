@@ -1060,6 +1060,9 @@ proc GetTclCompProperty {topNode prop args} {
 				    [expr [llength $typeList]+$aDim+9]]
 		    lset dimRefs $count [lindex $usedET 0]
 		    lappend transList [lrange $usedET 1 end]
+		} elseif {[string equal FLAG $aDim]} {
+		    lset dimRefs $count 2
+		    lappend transList [list boolean false true]
 		} else {
 		    lappend transList {}
 		}
@@ -1221,8 +1224,7 @@ proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
 }
 
 proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
-#do_in_editor puts \
-	   "filling tree $tree bounds $useDims inds $dims place $dimPlace"
+#puts "filling tree $tree bounds $useDims inds $dims place $dimPlace"
     set nextUseDim [lindex $useDims 0]
     if {[lsearch {MEMBERS START_VM} $nextUseDim]!=-1} {
 	set breakPt [lsearch $tree -1]

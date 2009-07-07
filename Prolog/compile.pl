@@ -915,7 +915,7 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
                                               _,_,_), _,_),
 	(member(instance(alarm,_,_,elt(_, Al,_),_),
 		Functions), !,
-	    Path = [sm(_,_,_, fm_loop(_, Al))|_];
+	    Path = [sm(_,_,_, fm_loop(_,_, Al))|_];
 	    true),
 /*	(setof(ParamUpdate,
 	       input_params_in(Functions, Path, Step, ParamUpdate),
@@ -963,6 +963,9 @@ extract_submodel_assignment(Instance, ParentFns,
 	/* bug flusher! (nonvar(Ptr); append_atoms(Name, pointer, Ptr)), */
 	path_section_for(SmName, Name, Dims, Level, Ptr, NewPtr),
 	append(Level, Path, LocalPath),
+	list_local_index_meanings(SmName, ISpecs),
+	all(dialogue, index_names_and_sizes,
+	    [build(ISpecs), build(_IndexList), build(IndxCount)]),
 	/* Do not allow an associated model to be started until its
 	bases have all been enumerated */
 
@@ -983,7 +986,7 @@ instruction because they will not require individual initialization routines. */
         (is_population(SmName), !,
 	    BaseSides = [],
 	    append_atoms(Name, count, Count),
-	    Level = [sm(_,_,_, vm_loop(_,_,_, SetMems))],
+	    Level = [sm(_,_,_, vm_loop(_,_, IndxCount,_, SetMems))],
 	    GenInters = % some now in special population class
 	    [ %instance(internal, inter(LocalPath, _,_), _, parentId, int-[]),
 	      %instance(internal, inter(LocalPath, _,_), _, channelId, int-[]),
@@ -1075,7 +1078,8 @@ nodes.
 	    versions (not that they were...) */
 	    all(ame_gen, enum_type_ref, [build(Dims), unify(SmName),
 					 build(Sizes), build(_), build(_)]),
-	    Level = [sm(_,_,_, vm_loop(_IndCount, Sizes, BaseSides, _))],
+	    Level = [sm(_,_,_, vm_loop(_IndCount, Sizes, IndxCount,
+				       BaseSides, _))],
 	    (setof(CondBox, member(instance(condition,_, function,
 			elt(_, CondBox, _),_), Functions), Conds), !,
 		TestExpr = Conds;
@@ -1101,7 +1105,7 @@ nodes.
 			     [assign(arr(Ptr, Name, []), 0)]),
 			make(startable(Name), [init_list(Name) | BasesCleared],
 			     Path, Step, [reset_list(Ptr, Name)])];
-	Level = [sm(_,_,_, fm_loop(Globs, _)) | _Loops],
+	Level = [sm(_,_,_, fm_loop(Globs, IndxCount,_)) | _Loops],
 	% its the _Loops that have the bounds!
 	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
             (by_record(SmName), !,
@@ -1181,7 +1185,7 @@ get_swaps_and_waits(Instance, [base(Assoc, Link, Ptrs) | Rest], Dir,
 	
 	(Dir = out,
 	    get_route_between(Instance, Assoc, Exited, Entered),
-	    Entered = [sm(_,_,_, vm_loop(_,_, AssocSides, _)) | _],
+	    Entered = [sm(_,_,_, vm_loop(_,_,_, AssocSides, _)) | _],
 	    Assoc = instance(submodel, _, xrefs(_,_, Bases, _), _,_),
 	    get_swaps_and_waits(Assoc, Bases, in, SwapsBack, _),
 	    all(compile, get_base_side, [unify(Entered), build(SwapsBack),
@@ -1619,7 +1623,7 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 	    Actually I also need it to pick useful instructions, but both here
 	    and there I just need the existence tests, so now I select these
 	    before ordering */
-	    \+ (SmLevel = sm(Sm, _,_, vm_loop(_,_,_,_)),
+	    \+ (SmLevel = sm(Sm, _,_, vm_loop(_,_,_,_,_)),
 		   member(make(existence_tested(Sm), _,_, [_,_,D], _), All),
 		   var(D)),
 
@@ -1643,7 +1647,7 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 		/* and add extra loops that go around generate statement --
 		record test phase to use in later new instance tests */
 		SmLevel = sm(Submodel, ParentPtr, Ptr,
-			     vm_loop(_, Dims, MoreLoops, _)),
+			     vm_loop(_, Dims,_, MoreLoops, _)),
 		ptr_to_last_vm(Path, ParentNew),
 		make_inds_for(Dims, Sets, LocalInds),
 		all(compile, ptr_to_last_vm,
@@ -1654,7 +1658,7 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 		    [build([D1, D1 | AllLoops]), build([D2, D2 | OpenLoops]),
 		     build(LastStep)]),
 		all(inters, indices_for,
-		    [build(AllLoops), append(LoopInds, [])]),
+		    [build(AllLoops), append(LoopInds, []), append(_Types, _)]),
 		append(LoopInds, LocalInds, Inds),
 
 		/* At this point we need to replace the innermost loop with an
@@ -1702,7 +1706,7 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 	    are doing now, or we might end up failing to set some values
 	    in new ones */
 
-	    \+ (SmLevel = sm(_,_,_, vm_loop(_,_,_, EnumPhase)),
+	    \+ (SmLevel = sm(_,_,_, vm_loop(_,_,_,_, EnumPhase)),
 		   EnumPhase > Phase), !,
 		ptr_to_last_vm([SmLevel | Path], SmNew),
 		FirstStep = [StartPass],
@@ -1724,7 +1728,7 @@ indices_direct([MPtr | Inds], ind(IPtr, N), Ind, 0) :-
 	nth0(N, Inds, Ind).
 
 ptr_to_last_vm(Path, Ptrs) :-
-	member(sm(_,_, Ptr, vm_loop(_,_,_,Phase)), Path), !,
+	member(sm(_,_, Ptr, vm_loop(_,_,_,_,Phase)), Path), !,
 	    Ptrs = [new_context(Ptr, Phase)];
 	Ptrs = [].
 
@@ -1785,7 +1789,7 @@ insert_enum_phases(_, []).
 
 insert_enum_phases(vm_spec_pair(Name, Phase),
 			 [make(_,_, Path, _,_) | Insts]) :-
-	(member(sm(Name, _,_, vm_loop(_,_,_, Phase)), Path), !; true),
+	(member(sm(Name, _,_, vm_loop(_,_,_,_, Phase)), Path), !; true),
 	insert_enum_phases(vm_spec_pair(Name, Phase), Insts).	
 
 /* This one just inserts the shortest time step into any undecided phases.
@@ -1809,7 +1813,7 @@ convert_form(make(T1, Conds, Path, Ph, T5), Phase,
 	    Refs = [], NewC = []; % no order needed in update
 	(\+ member(T1, [lastvalue(_), completed(_)]),
 				% can_enter irrelevant in state
-	    member(sm(Name,_,_, vm_loop(_,_,_,_)), Path), !,
+	    member(sm(Name,_,_, vm_loop(_,_,_,_,_)), Path), !,
 	    XCs = [earlier(can_enter(Name)) | Conds];
 	XCs = Conds),
 	(member(set(_Idx, loop(pra_bound(_, PraName))), Path), !,
@@ -1859,7 +1863,7 @@ add_to_deps(Dep, Cond, Full) :-
 close_dep_list(make(_,_-Deps, _,_,_)) :-
 	length(Deps, _N).
 
-made_in(Feature, sm(Submodel, _,_, vm_loop(_,_,_,_)), Pass) :-
+made_in(Feature, sm(Submodel, _,_, vm_loop(_,_,_,_,_)), Pass) :-
 	Test =.. [Feature, Submodel],
 	member(make(Test, _,_,_,_), Pass).
 
@@ -1981,7 +1985,7 @@ get_next_evaluation(Assignments, Path, Phase, Remainder, Next) :-
 	       member(later(Next), LocalConds)).*/
 
 pick_useful_instruction(All, Path, Next) :-
-	member(sm(Name, _,_, vm_loop(_,_,_,_)), Path),
+	member(sm(Name, _,_, vm_loop(_,_,_,_,_)), Path),
 	/* get longest suffix first */
 	Priority = make(existence_tested(Name), _, TestPath, _,_),
 	member(Priority, All),
@@ -2049,7 +2053,7 @@ variables used are made before we open it) */
 
 open_separately(Level) :-
 	loops(Level);
-	Level = sm(_,_,_, fm_loop(Inds, Alarm)),
+	Level = sm(_,_,_, fm_loop(Inds, _, Alarm)),
 	(member(I, Inds),
 	\+ I = glob(_,_);
 	    nonvar(Alarm)).

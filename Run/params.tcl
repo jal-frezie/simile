@@ -521,7 +521,7 @@ proc rsearch {list tgt} {
 }
 
 proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
-#ShowMess debug info  "Go! tgt $tgt trans $trans dims $dims list $list cpp $useCppArray" ok
+#ShowMess debug info  "Go! tgt $tgt subs $subs trans $trans dims $dims list $list cpp $useCppArray" ok
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
     # ... string match stops cleanly at end of list

@@ -609,7 +609,7 @@ int  ints_from_list(Tcl_Interp *interp, Tcl_Obj *CONST obList, int indxs[]) {
     if ((error = Tcl_GetIntFromObj(interp, elt, indxs + i)) != TCL_OK)
       return error;
   }
-  indxs[i]=0; // terminate array with zero
+  indxs[i]=0; // terminate array
   return TCL_OK;
 }
 

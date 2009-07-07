@@ -83,7 +83,7 @@ do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
 		refer_value(L, UseBound, UseBoundRef);
 	     \+ Bound = pra_bound(Ptr, Name),
 		UseBoundRef = Bound),
-	    excrete(L, for_start, [Count, 1, UseBoundRef, 1], Indent, Stream),
+	    excrete(L, for_start, [Count, UseBoundRef, 1], Indent, Stream),
 	    do_assign_list(L, MyLoop, NewIndent, Used, Stream),
 	    excrete(L, end(for), Count, Indent, Stream),
 	    fail;
@@ -93,7 +93,7 @@ do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
 explicitly (using element(...)), so it can contain any expression, even a
 graph. */
 
-do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
+do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs,_, Alarm))
 		 | Clauses], Indent, Used, Stream) :-
 
 	/* some of this belongs in the next disjunction */
@@ -153,7 +153,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	    name(OnPointerRef, AdvanceStr),
 	    LoadBaseRefs = []; */
 
-	LoopSpec = vm_loop(_,_, BaseLoops, _),
+	LoopSpec = vm_loop(_,_,_, BaseLoops, _),
 	all(compile, get_base_ptrs,
 	    [build(BaseLoops), append(Names, []), append(BasePtrs, [])]), !,
 	append_atoms(Name, 'type*', Type),
@@ -902,7 +902,7 @@ make_scalar(L, Param, FullLocalExpr) :-
 	Param = glob(LocalExpr, Inds),
 	    Var = ''), !,
 	make_evaluation_routine_all(L, Inds, ITerms),
-	all(language, aim_at_array, [unify(L), build(ITerms), build(ATerms)]),
+ 	all(language, aim_at_array, [unify(L), build(ITerms), build(ATerms)]),
 	all(render, make_expr, [unify(L), build(ATerms), build(IExprs)]),
 	( /* Var = import(Type, _, Level, _, TopPtr, _,_, ArcIndex),
 	    (Type = a(_ET),

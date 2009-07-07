@@ -126,7 +126,7 @@ render(tcl, clear_memory, instance(submodel, _, _, Name, _-Dims), Indent,
 		[Line1, Clearance, LineN]) :-
 	(number(Dims), !,
 		NewIndent is Indent + 4,
-		render(tcl, for_start, [makenames, 1, Dims, 1], Indent, [Line1]),
+		render(tcl, for_start, [makenames, Dims, 1], Indent, [Line1]),
 		refer_value(tcl, makenames, VWithDollar),
 		make_struct_reference(tcl, Name, VWithDollar, SpaceName),
 		render(tcl, end(for), makenames, Indent, [LineN]);
@@ -176,8 +176,8 @@ render(L, switch_start, Condition, Indent, [Line]) :-
 	name(Line, LineStr).
 
 /* start of a for loop */
-render( L, for_start, [Name,Start,End,Step], Indent, [For_Start]) :- 
-	make_assignment(L, Name, Start, Init),
+render( L, for_start, [Name,End,Step], Indent, [For_Start]) :- 
+	make_assignment(L, Name, 1, Init),
 	refer_value(L, Name, NameRef),
 	make_increment_expr(L, Name, Step, Incr),
 	(L = c, Template = "~*sfor ( ~s; ~w; ~s ) {";
@@ -379,7 +379,7 @@ strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, Used, Dims],
 	Dims = [Dim | More], !, % won't work for multiple dims but no need
 	    language:declare(tcl, XIndex, loop, int, Used, Indent, Stream),
 	    DeepIndent is Indent+4,
-	    strings_direct(tcl, for_start, [XIndex, 1, Dim, 1],
+	    strings_direct(tcl, for_start, [XIndex, Dim, 1],
 			   Indent, Stream),
 	    refer_value(tcl, XIndex, XIndexRef),
 	    make_indexed_namespace(tcl, Dest, [XIndexRef], NewDest),
@@ -454,8 +454,8 @@ strings_direct(L, data_declaration,
 			Indent, Stream).
 
 /* start of a for loop */
-strings_direct( L, for_start, [Name,Start,End,Step], Indent, Stream) :- 
-	make_assignment(L, Name, Start, Init),
+strings_direct( L, for_start, [Name,End,Step], Indent, Stream) :- 
+	make_assignment(L, Name, 1, Init),
 	refer_value(L, Name, NameRef),
 	make_increment_expr(L, Name, Step, Incr),
 	(L = c, Template = "~*sfor ( ~s; ~w; ~s ) {\n";
@@ -741,7 +741,7 @@ make_array_assignment(L, Indent, [Sub | Rest],
 	generate_name(L, loop, Temp, Used),
 	add_temps(Temps0, [Temp], int, [], Temps),
 	refer_value(L, Temp, Index),
-	render(L, for_start, [Temp, 1, Sub, 1], 
+	render(L, for_start, [Temp, Sub, 1], 
 			Indent, Opens1),
 	render(L, end(for), Index, Indent, Closes2),
 	make_array_assignment(L, NewIndent, Rest, Used,
@@ -807,6 +807,7 @@ make_tcl_array_set(Inds, Val, Done) :-
 	    comma_separate(Inds, IndCsvStr),
 	    name(IndCsv, IndCsvStr),
 	    Done = [IndCsv, Val];
+	% tcl constant arrays start at index
 	make_tcl_array_elts(Inds, 1, Val, Done).
 
 make_tcl_array_elts(_,_, [], []).
@@ -826,7 +827,7 @@ swap_squares_for_curlies(L, ListList, Stream) :-
 	append(Start, [Br, C | Rest], NestStr),
 		append(Start, [Br, C], String), !,
 		split_lines(Rest, Strings);
-	String = NestStr,
+	String = NestStr, 
 		Strings = [].
 */
 

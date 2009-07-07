@@ -499,9 +499,9 @@ char* interpolate_bloc_data(char* loSource, char* hiSource, int* ptDims,
 void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
   sizeAndPtr* newRecord;
 
-//   sprintf(globMess, "locate_elt array %lx off %d d0 %d d1 %d d2 %d indx %d", 
-// 	  startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
-//   showMess(globMess);
+  // sprintf(globMess, "locate_elt array %lx off %d d0 %d d1 %d d2 %d indx %d", 
+  // (long)startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
+  // showMess(globMess);
   if (*dimPtr==OWNSIZED) {
     newRecord = (sizeAndPtr*)startPtr + off;
     if  (*indxs) // more indices, use to get value from a record submodel
@@ -1444,7 +1444,7 @@ void set_bloc_element(char* ptData, int* ptDims, int* indxs, double value) {
   // and fill all the elements for which these are the innermost indices.
   int count, haveDims, needDims, makeDims, useDims[32], recBounds[32], done = 0;
   for (count=31; count>=0; count--) {
-    if (!indxs[count]) {
+    if (indxs[count]<0) {
       haveDims = count;
     }
     if (is_base_type(ptDims[count])) {
@@ -1532,8 +1532,8 @@ void get_value_pointer(void* modelId, void* modelSlot, int paramId,
 		       int ic, int* indxs) {
   listParamArray* paramArrayItem;
 
-  // sprintf(globMess, "get_value_pointer for %ld node %d count %d indx0 %d indx1 %d", (long int)modelSlot, paramId, ic, indxs[0], indxs[1]);
-  // showMessLocal(globMess);
+  //sprintf(globMess, "get_value_pointer for %ld node %d count %d indx0 %d indx1 %d", (long)modelSlot, paramId, ic, indxs[0], indxs[1]);
+  //showMessLocal(globMess);
   paramArrayItem = param_array_base;
   switch (param_item_from_id(&paramArrayItem, (Model*)modelId, paramId)) {
   case 1:
@@ -1708,8 +1708,12 @@ End removed separate submodel case */
   return(NULL);
 }
 
+char *falseTxt = (char*)"false";
 char *trueTxt = (char*)"true";
-enum_type_data noType = {0, NULL, NULL}, boolType = {1, "false", &trueTxt};
+char *booleanMems[2] = {falseTxt, trueTxt};
+enum_type_data noType = {0, NULL, NULL}, 
+  boolDataType = {1, falseTxt, &trueTxt},
+  boolDimType = {2, "boolean", (char**)booleanMems};
 
 node_data_line* searchinfo(char* node, long int* tgtModel, char* caption, 
 			   int* dims, int* path, enum_type_data** usedTypes) {
@@ -1734,8 +1738,10 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
 	thisType = localTypes[ENUM_BASE-dims[dimCount]];
 	usedTypes[usedCount++] = thisType;
 	dims[dimCount] = thisType->count;
-      } else if (dims[dimCount]==SEPARATE || 
-		 dims[dimCount]==START_VM || 
+      } else if (dims[dimCount] == FLAG) {
+	usedTypes[usedCount++] = &boolDimType;
+	dims[dimCount] = 2;
+      } else if (dims[dimCount]==START_VM || 
 		 dims[dimCount]==END_VM) {
       } else {
 	usedTypes[usedCount++] = &noType;
@@ -1749,7 +1755,7 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
       //    showMess(globMess);
       usedTypes[usedCount++] = thisType;
     } else if (bottomLine->datatype == FLAG) {
-      usedTypes[usedCount++] = &boolType;
+      usedTypes[usedCount++] = &boolDataType;
     } else {
       usedTypes[usedCount++] = &noType;
     }

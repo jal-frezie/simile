@@ -555,16 +555,17 @@ enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
 	    Value = Ref,
 	    ETSpec = Ref;
 	dequote(Ref, BareRef),
-	(nth0(Value, [false, true], BareRef), !,
+	(nth0(Value, [false, true], BareRef),
 	    Units = boolean;
+	[BareRef, Value, Units, ETSpec] = [boolean, 2, n(boolean), 'FLAG'];
 	BareRef = 'NULL',
 	    Value = 0,
 	    Units = any;
-	units:defined_as_unit(BareRef, _), !,
+	units:defined_as_unit(BareRef, _),
 	    Units = BareRef, Value = 1;
-	resolve_enum_type(BareRef, Model, Value, Units, ETSpec)).
+	resolve_enum_type(BareRef, Model, Value, Units, ETSpec)), !.
 
- dequote(Ref, BareRef) :-
+dequote(Ref, BareRef) :-
        atom(Ref),
        name(Ref, RefStr),
        append([34 | BareRefStr], [34], RefStr),
