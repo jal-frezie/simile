@@ -361,7 +361,7 @@ make_intermediates(
 
 	    (\+ var(OrigUnits),
 	    member(OrigUnits, [n(Type), a(Type)]),
-	    \+ ame_gen:resolve_enum_type(_, SubId, _, OrigUnits, _), !,
+	    \+ enum_type_ref(_, SubId, _, OrigUnits, _), !,
 		throw(no_local_defn_for_type(Type, SubId));
 		
 	    get_dims_from_loops(OrigLoops, Dims, _)),

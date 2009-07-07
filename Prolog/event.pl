@@ -27,9 +27,14 @@ eqn_for(Comp, Eqn) :-
 	    name(Eqn, EqnStr)).
 
 units_for(Comp, UnitStr) :-
-	find_node_with_data(Comp, _, Func),
-	get_av_pair(Func, 0, units, Units),
-	analyze_array(Units, Base, Dims),
+	(find_node_with_data(Comp, _, Func),
+	    get_av_pair(Func, 0, units, Units),
+	    analyze_array(Units, Base, Dims);
+	 find_type(Comp, submodel),
+	    (get_av_pair(Comp, 0, multiplication_spec, Spec),
+		member(count=Dims, Spec), !;
+		Dims = []),
+	    Base = submodel),
 	to_text_prefix(Dims, Pref),
 	(Base = 1, !, append(Pref, "real", UnitStr);
 	sicstus_format_to_chars("~s~w", [Pref, Base], UnitStr)).
