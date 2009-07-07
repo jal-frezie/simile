@@ -1203,11 +1203,16 @@ proc InitExecThread {} {
 	foreach stubSgst {ResetModel ExecuteTo} {
 	    proc $stubSgst {args} {
 		global execThread
-		thread::send -async $execThread(id) [info level 0] \
-		    execThread(reply)
+		thread::send -async $execThread(id) \
+		    [concat Nappy [info level 0]] execThread(reply)
 		vwait execThread(reply)
 		# can process events and incoming messages
-		return $execThread(reply)
+		if {[lindex $execThread(reply) 0]} {
+		    error "Mishap in execution thread" \
+			[lindex $execThread(reply) 2]
+		} else {
+		    return [lindex $execThread(reply) 1]
+		}
 	    }
 	}
 

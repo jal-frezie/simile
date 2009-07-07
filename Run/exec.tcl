@@ -60,6 +60,11 @@ proc ex_load_dll {topNode lang progDir id node incs} {
     }
 }
 
+proc Nappy {args} {
+    set fill [catch $args poop]
+    return [list $fill $poop $::errorInfo]
+}
+
 proc update_executable {node lang} {
     #    ShowMess debug info "References are $finderList" ok
     global model_id instance_id
