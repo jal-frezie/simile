@@ -115,7 +115,7 @@ namespace eval ::$keyValue {
     }
     
     proc Restore {winId} {
-        #    ShowMessage debug info "plotter.tcl Restore $winId" ok
+        #    ShowMess debug info "plotter.tcl Restore $winId" ok
         global ::graphtools::plot
         #    global ::graphtools::Xvalues
         global ::graphtools::YYold
@@ -135,7 +135,7 @@ namespace eval ::$keyValue {
         regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set plot $restoreString
         InitPlatformDependentPlotVars $winId
-        #ShowMessage debug info "ys $plot($winId,Yvars) xs $plot($winId,Xvars)" ok
+        #ShowMess debug info "ys $plot($winId,Yvars) xs $plot($winId,Xvars)" ok
 # 'foreach' changed to 'set' -- only one node can be plotted so all it did was
 # cause errors if the names had spaces
         set path $plot($winId,Yvars) ;# {
@@ -206,13 +206,13 @@ namespace eval ::$keyValue {
                 }
                 ycoord {
                     set plot($w,Yvars) $name
-                    #ShowMessage debug info "x $xnodes($w) [GetModelDims $xnodes($w)]" ok
-                    #ShowMessage debug info "y $node [GetModelDims $node]" ok
+                    #ShowMess debug info "x $xnodes($w) [GetModelDims $xnodes($w)]" ok
+                    #ShowMess debug info "y $node [GetModelDims $node]" ok
                     #############  GET DIMENSIONS
                     set xdim  [GetModelDims $xnodes($w)]
                     set ydim  [GetModelDims $node]
                     if {$xdim != $ydim} {
-                        ShowMessage Error info \
+                        ShowMess Error info \
                         "x and y dimensions do not match lease choose another y variable." ok
                         return
                     }
@@ -394,7 +394,7 @@ namespace eval ::$keyValue {
             set ::graphtools::plot($w,CurrentOnly) $CurrentOnly
             UpdateState $w
         }
-        #ShowMessage debug info "$::graphtools::plot($w,DrawLines) $::graphtools::plot($w,DrawPoints)" ok
+        #ShowMess debug info "$::graphtools::plot($w,DrawLines) $::graphtools::plot($w,DrawPoints)" ok
         
         destroy $dlg
     }
@@ -709,11 +709,11 @@ namespace eval ::$keyValue {
     proc plot_Y {w iplot Told Yold Tnew Ynew} {
         global ::graphtools::plot
         
-#ShowMessage debug info "plt_Y_in Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
+#ShowMess debug info "plt_Y_in Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
         if {[llength $Ynew]==1} then {
             set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,9))}]]
             adjustLimits $w $Tnew $Ynew
-#ShowMessage debug info "drawPoint Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
+#ShowMess debug info "drawPoint Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
             drawPoint $w $Told $Yold $Tnew $Ynew $colour
         } else {
 	    array set allYOld $Yold
@@ -794,7 +794,7 @@ namespace eval ::$keyValue {
     proc adjustLimits {w Tnew Ynew} {
         global ::graphtools::plot
         
-        #    ShowMessage debug info "adjustLimits $Tnew $Ynew" ok
+        #    ShowMess debug info "adjustLimits $Tnew $Ynew" ok
         if { ( $Tnew>$plot($w,Xmax_axis) || ($Tnew<$plot($w,Xmin_axis)) )} {
             if {$Tnew>$plot($w,Xmax_axis)} {
                 set plot($w,Xmax_data) $Tnew
@@ -840,7 +840,7 @@ namespace eval ::$keyValue {
             set numMinorInt 0
             set OldYrange [expr 1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)]
             set OldYmax_axis $plot($w,Ymax_axis)
-            #ShowMessage debug info "$plot($w,Ymin_data) $plot($w,Ymax_data)" ok
+            #ShowMess debug info "$plot($w,Ymin_data) $plot($w,Ymax_data)" ok
             AxisRound $plot($w,Ymin_data) $plot($w,Ymax_data) 0 \
                     plot($w,Ymin_axis) plot($w,Ymax_axis) \
                     plot($w,Ymajorstep) numInt plot($w,Yminorstep) numMinorInt plot($w,Yprecision)
@@ -901,7 +901,7 @@ namespace eval ::$keyValue {
             set values [GetModelValue $node]
             set values [lindex $values 0]
             lappend YYnew($w) [list $node $values]
-            #        ShowMessage debug info "$YYnew($w)" ok
+            #        ShowMess debug info "$YYnew($w)" ok
         }
     }
     
@@ -916,7 +916,7 @@ namespace eval ::$keyValue {
             set values [GetModelValue $node]
             set values [lindex $values 0]
             lappend Tnew($w) [list $node $values]
-            #        ShowMessage debug info "$YYnew($w)" ok
+            #        ShowMess debug info "$YYnew($w)" ok
         }
         
     }

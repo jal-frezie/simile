@@ -139,7 +139,7 @@ namespace eval $keyValue {
            set displayUpdate($winId) 1
         }
         #set colWidths($winId) [lindex $oldState 4]
-        #ShowMessage debug info "colWidths" ok
+        #ShowMess debug info "colWidths" ok
         #$winId.t width $colWidths($winId)
         display $winId [GetModelTime] 0 0
         SaveState $winId
@@ -154,7 +154,7 @@ namespace eval $keyValue {
         #variable colWidths
         
         #set colWidths($winId) [$winId.t width ]
-        #ShowMessage debug info "colWidths" ok
+        #ShowMess debug info "colWidths" ok
         
         set clip [string length $winId,]
         set winDisplayFormat {}
@@ -267,7 +267,7 @@ namespace eval $keyValue {
             set varIndex [llength $displayList($winId)]
             lappend displayList($winId) $newHeader
             ################################################################################
-            #             #ShowMessage debug info "[GetModelType $node]" ok
+            #             #ShowMess debug info "[GetModelType $node]" ok
             #             # auto set display format doesn't work
             #             switch {[GetModelType $node]} {
             #                 INTEGER {set displayFormat($winId,$varIndex) {Fixed 0 0}}
@@ -423,7 +423,7 @@ namespace eval $keyValue {
     }
     
     
-    proc Print {winId} {ShowMessage Warning warning \
+    proc Print {winId} {ShowMess Warning warning \
                 "[identify] does not support printing.\n\
                 However, you can copy the contents and paste them into another application for printing." ok
     }
@@ -445,7 +445,7 @@ namespace eval $keyValue {
     #             $winId.t configure -titlerows 0; # to allow all table to be selected by selection command
     #             $winId.t selection set origin end
     #             event generate $winId.t <<Copy>>
-    #             #ShowMessage debug info "[selection get -displayof $winId.t -selection CLIPBOARD]" ok
+    #             #ShowMess debug info "[selection get -displayof $winId.t -selection CLIPBOARD]" ok
     #             set data [selection get -displayof $winId.t -selection CLIPBOARD]
     #             print_data $data
     #         $winId.t configure -titlecols $titlecols
@@ -493,7 +493,7 @@ namespace eval $keyValue {
         }
         
         #puts "Data transferred to 2-d table mirror array"
-#	ShowMessage debug info "Table has [llength [array names rowNames]] rows and [llength [array names colNames]] columns" ok
+#	ShowMess debug info "Table has [llength [array names rowNames]] rows and [llength [array names colNames]] columns" ok
 	set lineMax 10000
 	set boxMax 1000000
 	if {[llength [array names rowNames]]>$lineMax} {

@@ -315,11 +315,13 @@ namespace eval $keyValue {
     }
     
     proc ClearOut {winId} {
+	global targetData
         variable useNodes
         foreach current [winfo children $useNodes($winId,output).sliderframe] {
             destroy $current
         }
 	set useNodes($winId,drivers) {}
+	array unset targetData
     }
     
     proc Restore {winId} {
@@ -336,7 +338,7 @@ namespace eval $keyValue {
                     set title [lindex $action 1]
                     set node [GetIdFromCaptionPath $title]
                     if {[string equal nomatch $node]} {
-                        ShowMessage "Problem restoring PEST settings" warning \
+                        ShowMess "Problem restoring PEST settings" warning \
                                 "Could not add $title to PEST inputs because there is no component with this caption in the model" ok
                         continue
                     }
@@ -365,7 +367,7 @@ namespace eval $keyValue {
                     set title [lindex $action 1]
                     set node [GetIdFromCaptionPath $title]
                     if {[string equal nomatch $node]} {
-                        ShowMessage "Problem restoring PEST settings" warning \
+                        ShowMess "Problem restoring PEST settings" warning \
                                 "Could not add $title to PEST outputs because there is no component with this caption in the model" ok
                         continue
                     }
@@ -399,7 +401,7 @@ namespace eval $keyValue {
                         set clevers($tgt) $val
                     }
                 } default {
-                    ShowMessage {Problem with PEST saved state} info \
+                    ShowMess {Problem with PEST saved state} info \
                             "Could not use this line: $action" ok
                 }
             }
@@ -786,14 +788,21 @@ namespace eval $keyValue {
     
     proc RemoveOut {winId title} {
         variable useNodes
+	global targetData
         set outId $useNodes($winId,output)
         set levels [split $title /]
         set f [MakeSubFrames {} $outId.sliderframe \
                 $levels [namespace current] 0]
         Prune $outId $f
+	array unset targetData $title
 	set index [lsearch $useNodes($winId,drivers) $title]
 	set useNodes($winId,drivers) \
 	    [lreplace $useNodes($winId,drivers) $index $index]
+	set index [lsearch $targetData(needed) $title]
+	if {$index>-1} { ;# data was incomplete
+	    set targetData(needed) \
+			     [lreplace $targetData(needed) $index $index]
+	}
     }
     
     proc Prune {winId tree} {
@@ -814,7 +823,7 @@ namespace eval $keyValue {
         variable useNodes
         
         if {$useNodes($winId,scrogging)} {
-            ShowMessage {Substituting measured values} warning \
+            ShowMess {Substituting measured values} warning \
                     "You have selected to display the measured values supplied to the PEST interface helper for the output components, rather than their actual values from the model." ok
         }
     }
@@ -855,7 +864,7 @@ namespace eval $keyValue {
         set useNodes($winId,rnum) 1
         if {$useNodes($winId,preds)} {
 	    if {![info exists useNodes($winId,npred)]} {
-		ShowMessage "No value to predict" warning "Predictive analysis selected, but no model value chosen for prediction!" ok
+		ShowMess "No value to predict" warning "Predictive analysis selected, but no model value chosen for prediction!" ok
 		return
 	    }
             set useNodes($winId,predall) {}
@@ -920,7 +929,7 @@ namespace eval $keyValue {
             }
         }
 	if {[llength $targetData(needed)]} {
-	    ShowMessage "PEST setup incomplete" warning "Some measured data not specified: [join $targetData(needed) ", "]" ok
+	    ShowMess "PEST setup incomplete" warning "Some measured data not specified: [join $targetData(needed) ", "]" ok
 	    return
 	}
 	set numOutputs [llength $useNodes($winId,drivers)]
@@ -938,7 +947,7 @@ namespace eval $keyValue {
         set lastPt [lindex $ptList end]
         if {[info exists useEndTime]} {
             if {$runLength<$lastPt} {
-                ShowMessage "Run length too short" warning \
+                ShowMess "Run length too short" warning \
                         "You have specified a run length of $runLength time units. This is not long enough to record all the model outputs, which are required at times up until $lastPt units." ok
                 return
             }
@@ -1137,7 +1146,7 @@ $numOutputs"
         SetButtonAct $winId pause
         cd $simtmpdir
         set pip [open pestmsgs.txt w]; puts $pip 0; close $pip
-        StartRelay $ourWish
+        StartRelay $winId $ourWish
         
         # ok, now we need to execute pest in immediate mode in order to get
         # any error messages back from it. However, while doing that we can't
@@ -1176,7 +1185,7 @@ $numOutputs"
 	}
     }
     
-    proc StartRelay {cmd} {
+    proc StartRelay {winId cmd} {
         global simtmpdir
         variable relayProc
         
@@ -1185,9 +1194,10 @@ $numOutputs"
 
         set relayProc [open |$cmd r]
         # was [SilentRun $cmd]
-        #ShowMessage debug info "started $hanger" ok
+        #ShowMess debug info "started $hanger" ok
         fconfigure $relayProc -blocking 0
-        fileevent $relayProc readable [namespace code [list pestificate $cmd]]
+        fileevent $relayProc readable \
+	    [namespace code [list pestificate $winId $cmd]]
         cd $oldDir
     }
     
@@ -1232,7 +1242,7 @@ $numOutputs"
         } elseif {[eof $spout]} {
             close $spout
             set pip [open $simtmpdir/pestmsgs.txt r]; gets $pip pidl; close $pip
-            #ShowMessage debug info "Shrink...I wanna kill $pidl" ok
+            #ShowMess debug info "Shrink...I wanna kill $pidl" ok
             c_killmodel $pidl
             close $relayProc
             unset relayProc
@@ -1289,7 +1299,7 @@ $numOutputs"
     
     # Next bit will actually be executed by command supplied to PEST
     
-    proc pestificate {cmd} {
+    proc pestificate {winId cmd} {
         global runState simtmpdir errorInfo
         variable ptList
         variable spitLists
@@ -1346,8 +1356,10 @@ $numOutputs"
                     set runState($topNode,pause) $breakPt
                     $widget.upper.topbuttons.start invoke
                     if {$runState($topNode,currentTime)<$breakPt} {
-                        error "PEST tried to run this model up to time $breakPt but it was interrupted at time $runState($topNode,currentTime)"
-                        return
+			Pause $winId
+			Query [list pause_in_pest_exec $breakPt \
+				   $runState($topNode,currentTime)] \
+			    warning pest_setup {} ok
                     }
                     foreach pair $spitLists($breakPt) {
                         set node [lindex [split $pair =] 0]
@@ -1358,9 +1370,9 @@ $numOutputs"
                     set current $breakPt
                 }
                 close $execLog
-                StartRelay $cmd
+                StartRelay $winId $cmd
             }]} {
-            ShowMessage "Problem executing from PEST" warning $errorInfo ok
+            ShowMess "Problem executing from PEST" warning $errorInfo ok
         }
         incr runData($topNode,rollCount)
         #	set runData($topNode,recSize) [file size \

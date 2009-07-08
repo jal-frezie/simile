@@ -107,7 +107,7 @@ namespace eval slide139 {
             return {}
         }
         set initVal [lindex [GetModelValue $node] 0]
-        #ShowMessage debug info $def ok
+        #ShowMess debug info $def ok
         set levels [split $title /]
         set trans [GetTransTable $node]
         set type [GetModelType $node]
@@ -446,7 +446,7 @@ namespace eval slide139 {
     }
     
     proc GetDefVal {vals levels index} {
-        #ShowMessage debug info "GetDefVal $vals $levels $index" ok
+        #ShowMess debug info "GetDefVal $vals $levels $index" ok
         if {[llength  $vals]==1} {
             return $vals
         } elseif {$levels==0 && $index>0} {

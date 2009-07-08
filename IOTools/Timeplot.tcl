@@ -31,7 +31,7 @@ namespace eval ::origplot72514 {
     proc reset {winId} {
 	variable timeplotvars
 	AdvanceColour timeplotvars($winId,colour)
-	    #		ShowMessage debug info "colour now $timeplotvars($winName,colour)" ok
+	    #		ShowMess debug info "colour now $timeplotvars($winName,colour)" ok
 	set timeplotvars($winId) {}
     }
 
@@ -55,11 +55,11 @@ namespace eval ::origplot72514 {
                 pack forget $winId.intro
                 # Show which variable being plotted change for MRE JMM
                 if {[PrefValue custom(helperManager) helperManager]} {
-                    #                ShowMessage debug info "FindHelperPage [RunEnv::FindHelperPage $winId]; Caption $caption" ok
+                    #                ShowMess debug info "FindHelperPage [RunEnv::FindHelperPage $winId]; Caption $caption" ok
 #                    set notebookPage [RunEnv::FindHelperPage $winId]; #sdoesn't work anymore todo
 #                    set notebook [lindex $notebookPage 0]
 #                    set page [lindex $notebookPage 1]
-                    #ShowMessage debug info "$notebook itemconfigure $page -text" ok; #" "$caption (plot against time)"
+                    #ShowMess debug info "$notebook itemconfigure $page -text" ok; #" "$caption (plot against time)"
                 } else  {
                     wm title $winId "$caption (plot against time)"
                 }

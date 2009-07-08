@@ -77,7 +77,7 @@ namespace eval ::ModelDiagram20060804 {
     }
     
     proc DoInspPopup {winId x y X Y} {
-	#	    ShowMessage debug info $args ok
+	#	    ShowMess debug info $args ok
 	global helperTable runState
 
 	set context [CaptPathFromPoint $winId $x $y]

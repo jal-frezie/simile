@@ -223,7 +223,7 @@ namespace eval $keyValue {
                     set title [lindex $action 1]
                     set node [GetIdFromCaptionPath $title]
                     if {[string equal nomatch $node]} {
-                        ShowMessage "Problem restoring PEST settings" warning \
+                        ShowMess "Problem restoring PEST settings" warning \
                                 "Could not add $title to PEST inputs because there is no component with this caption in the model" ok
                         continue
                     }
@@ -252,7 +252,7 @@ namespace eval $keyValue {
                     set title [lindex $action 1]
                     set node [GetIdFromCaptionPath $title]
                     if {[string equal nomatch $node]} {
-                        ShowMessage "Problem restoring PEST settings" warning \
+                        ShowMess "Problem restoring PEST settings" warning \
                                 "Could not add $title to PEST outputs because there is no component with this caption in the model" ok
                         continue
                     }
@@ -286,7 +286,7 @@ namespace eval $keyValue {
                         set clevers($tgt) $val
                     }
                 } default {
-                    ShowMessage {Problem with PEST saved state} info \
+                    ShowMess {Problem with PEST saved state} info \
                             "Could not use this line: $action" ok
                 }
             }
@@ -706,7 +706,7 @@ namespace eval $keyValue {
     proc Go {winId} {
         variable useNodes
         
-        #ShowMessage debug info "Go" ok
+        #ShowMess debug info "Go" ok
         
         if {$useNodes($winId,state)==3} { ;# it was paused
             SetButtonAct $winId pause
@@ -749,40 +749,40 @@ namespace eval $keyValue {
             do_for_node $myNode runcontrol33857::SetMode $myNode reset
             #end SetModelValue $node $val
             
-            #ShowMessage debug info "$param = $val\
+            #ShowMess debug info "$param = $val\
             #    GetModelEval  [GetModelEval $node]" ok
             lappend a [GetModelValue $node]
         }
-        #ShowMessage debug info "args = $args; a $a" ok
+        #ShowMess debug info "args = $args; a $a" ok
         
         set resultNode [GetIdFromCaptionPath $useNodes($w,drivers)]
         
         # big values outside range!! todo
         
         #reset and then run the model (start the run, it will then run to SetExecuteFor time)
-        #ShowMessage debug info "Before reset result = [GetModelValue $resultNode]" ok
+        #ShowMess debug info "Before reset result = [GetModelValue $resultNode]" ok
         ##ResetModel $myNode -1; # WRONG RESET, FIXED PARAMS NOT CHANGED http://twiki.simulistics.com/twiki/bin/view/Simile/ParametersNotUpdated
         # -1 for a fixed parameter or 0 for a time series
         # no -1 no good -2?
         #do_for_node $myNode runcontrol33857::SetMode $myNode reset
         #runcontrol33857::SetMode $myNode reset; # no good
-        #ShowMessage debug info "After reset result = [GetModelValue $resultNode]" ok
+        #ShowMess debug info "After reset result = [GetModelValue $resultNode]" ok
         
         Run
-        #ShowMessage debug info "After run result = [GetModelValue $resultNode]" ok
+        #ShowMess debug info "After run result = [GetModelValue $resultNode]" ok
         
         #[GetCaptionPathFromId $node]
         # get the output value
-        #ShowMessage debug info "node = $node" ok
+        #ShowMess debug info "node = $node" ok
         set y [GetModelValue $resultNode]
         #return [expr $y]; # +1.0
-        #ShowMessage debug info "func: $useNodes($w,drivers) = $y" ok
+        #ShowMess debug info "func: $useNodes($w,drivers) = $y" ok
         return $y; #[expr {$y}]
     }
     
     proc TraceOut {winId msg} {
         variable useNodes
-        #ShowMessage debug info "$winId \n$msg" ok
+        #ShowMess debug info "$winId \n$msg" ok
         $useNodes($winId,results).dbf.c.text configure -state normal
         $useNodes($winId,results).dbf.c.text insert end "${msg}\n"
         $useNodes($winId,results).dbf.c.text yview moveto 1
@@ -799,15 +799,15 @@ namespace eval $keyValue {
         $useNodes($winId,results).dbf.c.text delete 1.0 end
         $useNodes($winId,results).dbf.c.text configure -state disabled
         
-        #ShowMessage debug info "Var to optimise $useNodes($winId,drivers)" ok
-        #ShowMessage debug info "Param? $useNodes($winId,sliders)" ok;
+        #ShowMess debug info "Var to optimise $useNodes($winId,drivers)" ok
+        #ShowMess debug info "Param? $useNodes($winId,sliders)" ok;
         #
         # # pred predictive ?
         #
         # redirect output
         
         #$minForOpt($node) $maxForOpt($node)
-        #ShowMessage debug info "useNodes($w,sliders) = $useNodes($w,sliders)" ok
+        #ShowMess debug info "useNodes($w,sliders) = $useNodes($w,sliders)" ok
         
         # guessed values
         set initialEstimates {}
@@ -815,7 +815,7 @@ namespace eval $keyValue {
             set node [GetIdFromCaptionPath $param]
             lappend initialEstimates $initialEstimate($node)
         }
-        #ShowMessage debug info "initialEstimates = $initialEstimates" ok
+        #ShowMess debug info "initialEstimates = $initialEstimates" ok
         
 ################################################################################
 #         xScaleVector is an initial guess at the problem scale; the first function
@@ -871,7 +871,7 @@ namespace eval $keyValue {
                 [::math::optimize::nelderMead [namespace current]::func \
                 $initialEstimates -trace on \
                 -traceCommand [namespace code "TraceOut $winId"]]
-        #ShowMessage debug info "[namespace current]::func [array get results]" ok
+        #ShowMess debug info "[namespace current]::func [array get results]" ok
         $useNodes($winId,results).dbf.c.text configure -state normal
         $useNodes($winId,results).dbf.c.text insert end "[array get results]\n"
         $useNodes($winId,results).dbf.c.text configure -state disabled
@@ -945,7 +945,7 @@ namespace eval $keyValue {
         set lastPt [lindex $ptList end]
         if {[info exists useEndTime]} {
             if {$runLength<$lastPt} {
-                ShowMessage "Run length too short" warning \
+                ShowMess "Run length too short" warning \
                         "You have specified a run length of $runLength time units. This is not long enough to record all the model outputs, which are required at times up until $lastPt units." ok
                 return
             }
@@ -1192,7 +1192,7 @@ namespace eval $keyValue {
         
         set relayProc [open |$cmd r]
         # was [SilentRun $cmd]
-        #ShowMessage debug info "started $hanger" ok
+        #ShowMess debug info "started $hanger" ok
         fconfigure $relayProc -blocking 0
         fileevent $relayProc readable [namespace code [list pestificate $cmd]]
         cd $oldDir

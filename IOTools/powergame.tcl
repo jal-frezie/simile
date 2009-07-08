@@ -119,7 +119,7 @@ proc DoAtStart {win elements} {
                set node_label /Desktop/$node_label
                set node_ID [GetIdFromCaptionPath $node_label]
 		if {[string match nomatch $node_ID]} {
-		    ShowMessage "Missing component" warning "Could not find component $node_label in the model" ok
+		    ShowMess "Missing component" warning "Could not find component $node_label in the model" ok
 		    set oops 1
 		} else {
 		    set info($ielement,node_ID) $node_ID
@@ -494,7 +494,7 @@ proc DoEachTimeStep {win time} {
             set line_colour [lindex $info($i,line_colours) $colPt]
             set val [lindex [GetModelValue $node_ID] 0]
 	     if {[string match novalue $val]} {
-		 ShowMessage "Missing value" warning "Could not get a value for $i (Label $info($i,node_label), node $node_ID)" ok
+		 ShowMess "Missing value" warning "Could not get a value for $i (Label $info($i,node_label), node $node_ID)" ok
 	     } else {
 		set maxtcap [$win.canvas find withtag xmax$i]
 		set mymax_time [$win.canvas itemcget $maxtcap -text]
@@ -829,7 +829,7 @@ proc pg_image {canvas i} {
     if {[catch {
 	set im [image create photo -file $file]
     }]} {
-	ShowMessage {Missing file} warning "Could not find image file $file" ok
+	ShowMess {Missing file} warning "Could not find image file $file" ok
     } else {
 	$canvas create image $x0 $y0 -image $im -anchor sw -tag element$i
     }
@@ -883,7 +883,7 @@ proc pg_movie {canvas i} {
        if {[catch {
 	   set im [image create photo -file $filepath]
        }]} {
-	   ShowMessage {Missing file} warning \
+	   ShowMess {Missing file} warning \
 	       "Could not find image file $file" ok
        } else {
 	   lappend images $im
@@ -1183,7 +1183,7 @@ proc slider_end {node_ID i} {
 
 
 proc slider_drag {tag i node_ID x can slidervaluetag} {
-#ShowMessage debug info "Draggging $tag $i $node_ID $x $can $slidervaluetag" ok
+#ShowMess debug info "Draggging $tag $i $node_ID $x $can $slidervaluetag" ok
    global canvas
    global info
 

@@ -483,7 +483,9 @@ proc AcceptData {topNode compName notInput complain} {
 
 	if {![string length $result]} { ;# there were errors
             # new bit for using it as an input tool: notify that we have values
-            lappend suppliedData(needed) $compName
+            if {[lsearch $suppliedData(needed) $compName]<0} {
+		lappend suppliedData(needed) $compName
+	    }
 	    if {$complain>-1} {
 		ColourCaptions $outNames($compName) red
 	    }
@@ -1145,7 +1147,6 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     array unset parseStatus simV
     array set parseStatus [list oldPath $oldPath topNode $topNode \
 			       smPath $smPath submodel {} valNesting 0]
-    set parseStatus(outStr) [open $newPath w]
     $parseStatus(spfParser) reset
     set pStr [open $oldPath r]
     set dada [read $pStr]
@@ -1153,6 +1154,7 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     if {[string first {<?xml version=} $dada]} { ;# is not 0
 	return 0 ;# catch pre-XML .spf before it crashes parser
     }
+    set parseStatus(outStr) [open $newPath w]
     set broke [catch {$parseStatus(spfParser) parse $dada} feedback]
     close $parseStatus(outStr)
     if {$broke} {

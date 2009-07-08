@@ -91,7 +91,7 @@ namespace eval ::$keyValue {
             # substitute " " for <cr>s so entry goes on one line # no - need the crs
             set SubbedCompList [split $SubbedComp /]
             set path [lrange $SubbedCompList 1 end]
-            #        ShowMessage debug info "GetModelValue $component = [GetModelValue $component]" ok
+            #        ShowMess debug info "GetModelValue $component = [GetModelValue $component]" ok
             if {[llength [info commands GetModelClass]] >0} {
                 set type [GetModelClass $component]; # Simile 2.7+
             } else  {
@@ -113,20 +113,20 @@ namespace eval ::$keyValue {
             }
             
             set pathLength [llength $path]
-            #ShowMessage debug info "$component; $type; path $path;" ok
+            #ShowMess debug info "$component; $type; path $path;" ok
             if {$pathLength == 1} {
                 set parent {}
             } else  {
                 set parentLabel [lrange $path 0 [expr {$pathLength-2}]]; # indexed from 0
                 set parent $submodel($parentLabel)
             }
-            #        ShowMessage debug info "$component; $parent; path $path" ok
+            #        ShowMess debug info "$component; $parent; path $path" ok
             if {![$tableframe.table exists $component]} {
                 # search parent for node with same text
                 set text [BlankCrs [lindex $path end]]
                 set sameText 0
                 foreach node [$tableframe.table children $parent] {
-                    #ShowMessage debug info "$node" ok ; # Simile node IDs
+                    #ShowMess debug info "$node" ok ; # Simile node IDs
                     if {[string match [$tableframe.table item $node -text] $text]} {
                         set sameText 1
                     }
@@ -184,7 +184,7 @@ namespace eval ::$keyValue {
     }
     
     proc DoInspPopup {winId X Y x y} {
-	#	    ShowMessage debug info $args ok
+	#	    ShowMess debug info $args ok
 	global helperTable runState nowPopped
 	set plName [$winId.tableframe.table identify row $x $y]
 	set helperTable($winId,whatPopped) $plName

@@ -334,7 +334,7 @@ namespace eval $keyValue {
                     set title [lindex $action 1]
                     set node [GetIdFromCaptionPath $title]
                     if {[string equal nomatch $node]} {
-                        ShowMessage "Problem restoring PEST settings" warning \
+                        ShowMess "Problem restoring PEST settings" warning \
                                 "Could not add $title to PEST inputs because there is no component with this caption in the model" ok
                         continue
                     }
@@ -363,7 +363,7 @@ namespace eval $keyValue {
                     set title [lindex $action 1]
                     set node [GetIdFromCaptionPath $title]
                     if {[string equal nomatch $node]} {
-                        ShowMessage "Problem restoring PEST settings" warning \
+                        ShowMess "Problem restoring PEST settings" warning \
                                 "Could not add $title to PEST outputs because there is no component with this caption in the model" ok
                         continue
                     }
@@ -397,7 +397,7 @@ namespace eval $keyValue {
                         set clevers($tgt) $val
                     }
                 } default {
-                    ShowMessage {Problem with PEST saved state} info \
+                    ShowMess {Problem with PEST saved state} info \
                             "Could not use this line: $action" ok
                 }
             }
@@ -797,7 +797,7 @@ namespace eval $keyValue {
         variable useNodes
         
         if {$useNodes($winId,scrogging)} {
-            ShowMessage {Substituting measured values} warning \
+            ShowMess {Substituting measured values} warning \
                     "You have selected to display the measured values supplied to the PEST interface helper for the output components, rather than their actual values from the model." ok
         }
     }
@@ -838,7 +838,7 @@ namespace eval $keyValue {
         set useNodes($winId,rnum) 1
         if {$useNodes($winId,preds)} {
 	    if {![info exists useNodes($winId,npred)]} {
-		ShowMessage "No value to predict" warning "Predictive analysis selected, but no model value chosen for prediction!" ok
+		ShowMess "No value to predict" warning "Predictive analysis selected, but no model value chosen for prediction!" ok
 		return
 	    }
             set useNodes($winId,predall) {}
@@ -920,7 +920,7 @@ namespace eval $keyValue {
         set lastPt [lindex $ptList end]
         if {[info exists useEndTime]} {
             if {$runLength<$lastPt} {
-                ShowMessage "Run length too short" warning \
+                ShowMess "Run length too short" warning \
                         "You have specified a run length of $runLength time units. This is not long enough to record all the model outputs, which are required at times up until $lastPt units." ok
                 return
             }
@@ -1167,7 +1167,7 @@ $numOutputs"
 
         set relayProc [open |$cmd r]
         # was [SilentRun $cmd]
-        #ShowMessage debug info "started $hanger" ok
+        #ShowMess debug info "started $hanger" ok
         fconfigure $relayProc -blocking 0
         fileevent $relayProc readable [namespace code [list pestificate $cmd]]
         cd $oldDir
@@ -1214,7 +1214,7 @@ $numOutputs"
         } elseif {[eof $spout]} {
             close $spout
             set pip [open $simtmpdir/pestmsgs.txt r]; gets $pip pidl; close $pip
-            #ShowMessage debug info "Shrink...I wanna kill $pidl" ok
+            #ShowMess debug info "Shrink...I wanna kill $pidl" ok
             c_killmodel $pidl
             close $relayProc
             unset relayProc
@@ -1342,7 +1342,7 @@ $numOutputs"
                 close $execLog
                 StartRelay $cmd
             }]} {
-            ShowMessage "Problem executing from PEST" warning $errorInfo ok
+            ShowMess "Problem executing from PEST" warning $errorInfo ok
         }
         incr runData($topNode,rollCount)
         #	set runData($topNode,recSize) [file size \

@@ -836,7 +836,7 @@ namespace eval grid005 {
 
     # need to recode for this legend
     proc ColourScale {winData winId} {
-        #    ShowMessage debug info "proc ColourScale" ok
+        #    ShowMess debug info "proc ColourScale" ok
         upvar 1 $winData useNodes
         for {set swatch 0} {$swatch<=$useNodes($winId,nswatches)} {incr swatch} {
             $winId.legend.pop$swatch configure -bg $useNodes($winId,c$swatch)

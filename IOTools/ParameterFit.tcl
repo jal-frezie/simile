@@ -337,7 +337,7 @@ namespace eval $keyValue {
                     set title [lindex $action 1]
                     set node [GetIdFromCaptionPath $title]
                     if {[string equal nomatch $node]} {
-                        ShowMessage "Problem restoring PEST settings" warning \
+                        ShowMess "Problem restoring PEST settings" warning \
                                 "Could not add $title to PEST inputs because there is no component with this caption in the model" ok
                         continue
                     }
@@ -366,7 +366,7 @@ namespace eval $keyValue {
                     set title [lindex $action 1]
                     set node [GetIdFromCaptionPath $title]
                     if {[string equal nomatch $node]} {
-                        ShowMessage "Problem restoring PEST settings" warning \
+                        ShowMess "Problem restoring PEST settings" warning \
                                 "Could not add $title to PEST outputs because there is no component with this caption in the model" ok
                         continue
                     }
@@ -400,7 +400,7 @@ namespace eval $keyValue {
                         set clevers($tgt) $val
                     }
                 } default {
-                    ShowMessage {Problem with PEST saved state} info \
+                    ShowMess {Problem with PEST saved state} info \
                             "Could not use this line: $action" ok
                 }
             }
@@ -803,7 +803,7 @@ namespace eval $keyValue {
         set observedVals {}
         
         if {$useNodes($winId,scrogging)} {
-            ShowMessage {Substituting measured values} warning \
+            ShowMess {Substituting measured values} warning \
                     "You have selected to display the measured values supplied to the PEST interface helper for the output components, rather than their actual values from the model." ok
         }
     }
@@ -835,7 +835,7 @@ namespace eval $keyValue {
     proc Go {winId} {
         variable useNodes
         
-        #ShowMessage debug info "Go" ok
+        #ShowMess debug info "Go" ok
         
         if {$useNodes($winId,state)==3} { ;# it was paused
             SetButtonAct $winId pause
@@ -862,7 +862,7 @@ namespace eval $keyValue {
         variable observedVals
         
         
-        #ShowMessage debug info "useNodes(\$w,sliders) = $useNodes($w,sliders)\
+        #ShowMess debug info "useNodes(\$w,sliders) = $useNodes($w,sliders)\
         #        args $args" ok
         
         # model values useNodes($w,modelY)
@@ -877,14 +877,14 @@ namespace eval $keyValue {
             do_for_node $myNode runcontrol33857::SetMode $myNode reset
             #end SetModelValue $node $val
             
-            #ShowMessage debug info "$param = $val\
+            #ShowMess debug info "$param = $val\
             #    GetModelEval  [GetModelEval $node]" ok
             lappend a [GetModelValue $node]
         }
-        #ShowMessage debug info "args = $args; a $a" ok
+        #ShowMess debug info "args = $args; a $a" ok
         
         Run
-        #ShowMessage debug info "useNodes(\$w,modelY) = $useNodes($w,modelY)\
+        #ShowMess debug info "useNodes(\$w,modelY) = $useNodes($w,modelY)\
         #        useNodes($w,drivers) $useNodes($w,drivers)" ok
         # what's the observed y?
         #proc display builds modelled and observed value lists
@@ -907,7 +907,7 @@ namespace eval $keyValue {
     
     proc TraceOut {winId msg} {
         variable useNodes
-        #ShowMessage debug info "$winId \n$msg" ok
+        #ShowMess debug info "$winId \n$msg" ok
         $useNodes($winId,results).dbf.c.text configure -state normal
         $useNodes($winId,results).dbf.c.text insert end "${msg}\n"
         $useNodes($winId,results).dbf.c.text yview moveto 1
@@ -921,9 +921,9 @@ namespace eval $keyValue {
         variable w
         variable outGrpData
         set w $winId
-        ShowMessage debug info "Optimize" ok
-        #ShowMessage debug info "outGrpData [array get outGrpData]" ok
-        #ShowMessage debug info "array names outGrpData *,mems [array names outGrpData *,mems]" ok
+        ShowMess debug info "Optimize" ok
+        #ShowMess debug info "outGrpData [array get outGrpData]" ok
+        #ShowMess debug info "array names outGrpData *,mems [array names outGrpData *,mems]" ok
         
         global targetData
         array unset spitLists
@@ -932,9 +932,9 @@ namespace eval $keyValue {
         
         # Descend hierarchically through the frames to get the data? No, use kill menu
         
-        ShowMessage debug info "Optimize2" ok
+        ShowMess debug info "Optimize2" ok
         
-        ShowMessage debug info "* observation data\
+        ShowMess debug info "* observation data\
                 array names outGrpData *,mems [array names outGrpData *,mems]" ok
         
         
@@ -945,21 +945,21 @@ namespace eval $keyValue {
             puts $control $node
         }
         
-        ShowMessage debug info "Optimize2" ok
+        ShowMess debug info "Optimize2" ok
         set outGrpData(predict,weight) 1 ;# this is ignored if used
-        ShowMessage debug info "* observation data\
+        ShowMess debug info "* observation data\
                 array names outGrpData *,mems [array names outGrpData *,mems]" ok
         # [array names outGrpData *,mems] EMPTY
         #TraceOut $w {* observation data}
         foreach obsGrp [array names outGrpData *,mems] {
             # doesn't get here
-            ShowMessage debug info "Optimize3" ok
+            ShowMess debug info "Optimize3" ok
             set node [string range $obsGrp 0 end-5]
             foreach combo $outGrpData($obsGrp) {
-                ShowMessage debug info "Optimize4" ok
+                ShowMess debug info "Optimize4" ok
                 #TraceOut $w  [concat [split $combo =] \
                 [list $outGrpData($node,weight) $node]]
-                ShowMessage debug info "[concat [split $combo =] \
+                ShowMess debug info "[concat [split $combo =] \
                         [list $outGrpData($node,weight) $node]]" ok
             }
         }
@@ -983,7 +983,7 @@ namespace eval $keyValue {
                 [::math::optimize::nelderMead [namespace current]::sumSqrDev \
                 $initialEstimates -trace on \
                 -traceCommand [namespace code "TraceOut $winId"]]
-        #ShowMessage debug info "[namespace current]::func [array get results]" ok
+        #ShowMess debug info "[namespace current]::func [array get results]" ok
         $useNodes($winId,results).dbf.c.text insert end "[array get results]\n"
         ###############################################################################
         
@@ -1049,7 +1049,7 @@ namespace eval $keyValue {
         set lastPt [lindex $ptList end]
         if {[info exists useEndTime]} {
             if {$runLength<$lastPt} {
-                ShowMessage "Run length too short" warning \
+                ShowMess "Run length too short" warning \
                         "You have specified a run length of $runLength time units. This is not long enough to record all the model outputs, which are required at times up until $lastPt units." ok
                 return
             }
@@ -1126,7 +1126,7 @@ namespace eval $keyValue {
                         [::math::optimize::nelderMead [namespace current]::sumSqrDev \
                         $initialEstimates -maxiter $maxiter -trace on -ftol $epsilon \
                 -traceCommand [namespace code "TraceOut $winId"]]
-        #ShowMessage debug info "[namespace current]::func [array get results]" ok
+        #ShowMess debug info "[namespace current]::func [array get results]" ok
         #$useNodes($winId,results).dbf.c.text insert end "[array get results]\n"
         TraceOut $winId "results [array get results]"; # remove todo
         ###############################################################################
@@ -1220,7 +1220,7 @@ namespace eval $keyValue {
                 close $execLog
                 StartRelay $cmd
             }]} {
-            ShowMessage "Problem executing from PEST" warning $errorInfo ok
+            ShowMess "Problem executing from PEST" warning $errorInfo ok
         }
         incr runData($topNode,rollCount)
         #	set runData($topNode,recSize) [file size \

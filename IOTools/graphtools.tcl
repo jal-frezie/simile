@@ -78,7 +78,7 @@ proc ::graphtools::UpdateState {winId} {
     global ::graphtools::plot
     
     regsub -all $winId [array get plot $winId,*] /WIN/ saveString
-    #    ShowMessage debug info "graphs.tcl UpdateState $saveString" ok
+    #    ShowMess debug info "graphs.tcl UpdateState $saveString" ok
     SetState $winId $saveString
 }
 
@@ -199,7 +199,7 @@ proc ::graphtools::draw_Xaxis { w } {
                 / ($Xmax_axis-$Xmin_axis)}]
     set value $Xmin_axis
     set y [expr {$y0+2}]
-    #    ShowMessage debug info "Maj $Xmajorstep min $Xminorstep -- Going from $x0 up to $x1 in steps of $step" ok
+    #    ShowMess debug info "Maj $Xmajorstep min $Xminorstep -- Going from $x0 up to $x1 in steps of $step" ok
     for {set x $x0} {$x<=$x1} {set x [expr $x+$step]} {
         $w.canvas create line $x $y0 $x [expr $y0-6] \
                 -tags {scalable axis_line xaxis_item xtick markable \
@@ -214,7 +214,7 @@ proc ::graphtools::draw_Xaxis { w } {
     set step [expr $step/2]
     #    set step [expr 1.0*$plot($w,xlength)*$Xminorstep \
     #            / ($Xmax_axis-$Xmin_axis)]
-    #ShowMessage debug info "Going from $x0 up to $x1 in steps of $step" ok
+    #ShowMess debug info "Going from $x0 up to $x1 in steps of $step" ok
     for {set x $x0} {$x<$x1} {set x [expr $x+$step]} {
         $w.canvas create line $x $y0 $x [expr $y0-4] \
                 -tags {scalable axis_line xaxis_item xtick markable \
@@ -225,7 +225,7 @@ proc ::graphtools::draw_Xaxis { w } {
 proc ::graphtools::draw_Yaxis { w} {
     global ::graphtools::plot
     global ::graphtools::Tnew
-    #ShowMessage debug info "draw_Yaxis $plot($w,Ymin_axis) $plot($w,Ymax_axis); dp $plot($w,Yprecision)" ok
+    #ShowMess debug info "draw_Yaxis $plot($w,Ymin_axis) $plot($w,Ymax_axis); dp $plot($w,Yprecision)" ok
     if {$plot($w,Ymax_axis)<$plot($w,Ymin_axis)} {
         set Ymax_axis 10
         set Ymin_axis 0
@@ -248,7 +248,7 @@ proc ::graphtools::draw_Yaxis { w} {
             / ($Ymax_axis-$Ymin_axis)]
     set value $Ymin_axis
     set x [expr $x0-2]
-    #ShowMessage debug info "Going from $y0 down to [expr $y1-2] in steps of [expr -$step]" ok
+    #ShowMess debug info "Going from $y0 down to [expr $y1-2] in steps of [expr -$step]" ok
     for {set y $y0} {$y>=[expr $y1-2]} {set y [expr $y-$step]} {
         $w.canvas create line $x0 $y [expr $x0+6] $y \
                 -tags {scalable axis_line yaxis_item ytick markable \
@@ -263,7 +263,7 @@ proc ::graphtools::draw_Yaxis { w} {
     set step [expr $step/2]
     #    set step [expr 1.0*$plot($w,ylength)*$Yminorstep \
     #            / ($Ymax_axis-$Ymin_axis)]
-    #ShowMessage debug info "Going from $y0 down to [expr $y1-2] in steps of [expr -$step]" ok
+    #ShowMess debug info "Going from $y0 down to [expr $y1-2] in steps of [expr -$step]" ok
     for {set y $y0} {$y>=$y1} {set y [expr $y-$step]} {
         $w.canvas create line $x0 $y [expr $x0+4] $y \
                 -tags {scalable axis_line yaxis_item ytick markable \
@@ -411,7 +411,7 @@ proc ::graphtools::ZoomUsingSelnBox {canvas x2 y2} {
     global ::graphtools::plot
     
     set w [winfo parent $canvas]
-    #ShowMessage debug info "ZoomUsingSelnBox $::graphtools::plot($w,Tscale) $::graphtools::plot($w,Yscale)" ok
+    #ShowMess debug info "ZoomUsingSelnBox $::graphtools::plot($w,Tscale) $::graphtools::plot($w,Yscale)" ok
     
     set coordList [$canvas coords $box($canvas,last)]
     set x1 [lindex $coordList 0]
@@ -422,7 +422,7 @@ proc ::graphtools::ZoomUsingSelnBox {canvas x2 y2} {
     set dataY1 [get_datay $w $y1 $plot($w,Yscale)]
     set dataY2 [get_datay $w $y2 $plot($w,Yscale)]
     
-    #ShowMessage debug info "ZoomUsingSelnBox canvas coord ($x1,$y1) ($x2,$y2)\n\
+    #ShowMess debug info "ZoomUsingSelnBox canvas coord ($x1,$y1) ($x2,$y2)\n\
     #        data coord ($dataX1,$dataY1) ($dataX2,$dataY2)" ok
 ######################################################################    
     # scale x
@@ -466,13 +466,13 @@ proc ::graphtools::ZoomUsingSelnBox {canvas x2 y2} {
             set plot($w,Yminorstep) [expr {$plot($w,Ymajorstep)/2}]
             set Yrange [expr 1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)]
             set scaleChange [expr {$OldYrange/$Yrange}]
-            #        ShowMessage debug info "$plot($w,Ymin_data) $plot($w,Ymax_data) \
+            #        ShowMess debug info "$plot($w,Ymin_data) $plot($w,Ymax_data) \
             #                $plot($w,Ymin_axis) $plot($w,Ymax_axis) \
             #                $plot($w,Ymajorstep) $numInt $scaleChange" ok
             
             set plot($w,Yscale) [expr {$Yrange/$plot($w,ylength)}]
             set x0 $plot($w,xborder_left)
-            #        ShowMessage debug info "$plot($w,Ymax_axis) $OldYmax_axis \
+            #        ShowMess debug info "$plot($w,Ymax_axis) $OldYmax_axis \
             #                $plot($w,Yscale)\
             #                [expr {($plot($w,Ymax_axis)-$OldYmax_axis)*$plot($w,Yscale)}]" ok
             
@@ -613,7 +613,7 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
         set axis 1; # dealing with y axis
     }
     #puts "==================================="
-#ShowMessage debug info "dataMin $dataMin; dataMax $dataMax" ok
+#ShowMess debug info "dataMin $dataMin; dataMax $dataMax" ok
     if {$dataMin==0} {set dataMin 0.0000000001}; # prevent div by zero errors
     
     # seperate min and max if they are equal

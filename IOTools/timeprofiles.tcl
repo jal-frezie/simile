@@ -115,7 +115,7 @@ proc OnOk { w } {
 }
 
 proc Restore {winId} {
-    #ShowMessage debug info "timeprofiles.tcl Restore $winId" ok
+    #ShowMess debug info "timeprofiles.tcl Restore $winId" ok
     namespace import -force ::graphtools::*; # todo make graphtools common
     global ::graphtools::plot
     global ::graphtools::Xvalues
@@ -132,7 +132,7 @@ proc Restore {winId} {
     
     regsub -all /WIN/ [GetState $winId] $winId restoreString
     array set plot $restoreString
-    #ShowMessage debug info $restoreString ok
+    #ShowMess debug info $restoreString ok
     ShowHelper $winId
 }
 
@@ -163,7 +163,7 @@ proc click {w node caption} {
                         click on the OK button to finish."}
         }
         UpdateState $w
-        #ShowMessage debug info "Click after UpdateState" ok
+        #ShowMess debug info "Click after UpdateState" ok
     } else { $ms configure -text "This component does not have a value; please choose a variable to be plotted." }
 }
 
@@ -179,10 +179,10 @@ proc ShowHelper {w} {
 #     if [winfo exists $w.ok] {
 #         destroy $w.ok
 #     }
-# #    ShowMessage debug info "ShowHelper ere constructControlPanel" ok
+# #    ShowMess debug info "ShowHelper ere constructControlPanel" ok
 ################################################################################
     constructControlPanel $w
-#    ShowMessage debug info "ShowHelper af constructControlPanel" ok
+#    ShowMess debug info "ShowHelper af constructControlPanel" ok
     
     # Initialise values list.
     set Told($w) 0
@@ -200,9 +200,9 @@ proc ShowHelper {w} {
     
     #adjustLimits $w
     
-#    ShowMessage debug info "ShowHelper ere drawGraphpad ok
+#    ShowMess debug info "ShowHelper ere drawGraphpad ok
     drawGraphpad $w
-#    ShowMessage debug info "ShowHelper af drawGraphpad ok
+#    ShowMess debug info "ShowHelper af drawGraphpad ok
 }
 
 proc reset {winId} {
@@ -251,7 +251,7 @@ proc display {w time step remainder} {
 # Draw panel containing controls and canvas for the graph.
 proc constructControlPanel {w} {
     #	global checkstates ; # isnt used jmm 20/4
-#    ShowMessage debug info "constructControlPanel $w" ok
+#    ShowMess debug info "constructControlPanel $w" ok
     global ::graphtools::plot
     
     frame $w.control -width 150 -height 24
@@ -279,7 +279,7 @@ proc constructControlPanel {w} {
             $plot($w,yborder_top)] \
             -bg $plot($w,canvas_colour) -relief solid
     pack $w.canvas -fill both -expand true -side bottom
-#    ShowMessage debug info "end of constructControlPanel $w" ok
+#    ShowMess debug info "end of constructControlPanel $w" ok
 }
 
 proc settings {w} {
@@ -322,7 +322,7 @@ proc settings {w} {
 ### Draw everything except the actual data points.
 proc drawGraphpad {w} {
     global ::graphtools::plot
-    #ShowMessage debug info "dGP" ok
+    #ShowMess debug info "dGP" ok
 	### rub out previous graph
 	$w.canvas delete all
 
@@ -773,7 +773,7 @@ proc adjustLimits {w Tnew Ynew} {
 }
 
 proc get_Yvalues {w} {
-#    ShowMessage debug info "[namespace current]" ok
+#    ShowMess debug info "[namespace current]" ok
     global ::graphtools::plot
     global ::graphtools::YYold
     global ::graphtools::YYnew

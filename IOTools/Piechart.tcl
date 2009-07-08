@@ -105,7 +105,7 @@ proc initialize {w} {
 }
 
 proc Restore {winId} {
-    #    ShowMessage debug info "plotter.tcl Restore $winId" ok
+    #    ShowMess debug info "plotter.tcl Restore $winId" ok
     namespace import -force ::graphtools::*; # todo make graphtools common
     global ::graphtools::plot
     global ::graphtools::Xvalues
@@ -123,7 +123,7 @@ proc Restore {winId} {
     
     regsub -all /WIN/ [GetState $winId] $winId restoreString
     array set plot $restoreString
-    #    ShowMessage debug info $restoreString ok
+    #    ShowMess debug info $restoreString ok
     ShowHelper $winId
     get_Yvalues $winId
     
@@ -148,7 +148,7 @@ proc click {w node caption} {
     set testResult [GetModelValue $node]
     if {[string compare $testResult novalue]} {
         set values [lindex [GetModelValue $node] 0]
-        #ShowMessage debug info "[llength $values] $values" ok
+        #ShowMess debug info "[llength $values] $values" ok
         #lappend plot($w,Ylabels) $caption
         if {[llength $values]==1} then {
             lappend plot($w,Ylabels) $caption
@@ -172,7 +172,7 @@ proc click {w node caption} {
 
 proc ArrayLabeling { w caption values index } {
     global ::graphtools::plot
-#    ShowMessage debug info "ArrayLabeling [llength $values] $values" ok
+#    ShowMess debug info "ArrayLabeling [llength $values] $values" ok
     if {[llength $values]==1} then {
         lappend plot($w,Ylabels) ${caption}/$index
     } else {
@@ -358,7 +358,7 @@ proc drawGraphpad {w} {
 proc resize {w win x y width height} {
   global ::graphtools::plot
     
-#    ShowMessage debug info "resize" ok
+#    ShowMess debug info "resize" ok
     
     set old_width $plot($w,xlength)
     set old_height $plot($w,ylength)
@@ -435,11 +435,11 @@ proc plot_YY {w} {
     variable piesum
     variable pievalues
     
-#    ShowMessage debug info "plot_YY" ok            
+#    ShowMess debug info "plot_YY" ok            
     set piesum($w) 0
     set pievalues($w) {}
     foreach Ynew $YYnew($w) {
-#        ShowMessage debug info "$Ynew" ok
+#        ShowMess debug info "$Ynew" ok
         plot_Y $w {} $Tnew($w) $Ynew
     }
     
@@ -458,7 +458,7 @@ proc plot_Y {w index Tnew Ynew} {
     } else {
         array set Ynew_array $Ynew
         foreach element [lsort -decreasing [array names Ynew_array]] {
-#            ShowMessage debug info "Ynew_array($element) $Ynew_array($element)" ok
+#            ShowMess debug info "Ynew_array($element) $Ynew_array($element)" ok
             plot_Y $w $element $Tnew $Ynew_array($element)
         }
     }
@@ -558,7 +558,7 @@ proc get_Yvalues {w} {
 ##        set YYnew($w) [lindex $values 0]
         
         lappend YYnew($w) [list $node $values]
-#        ShowMessage debug info "$YYnew($w)" ok
+#        ShowMess debug info "$YYnew($w)" ok
 	}
 }
 

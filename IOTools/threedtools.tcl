@@ -29,14 +29,14 @@ proc project {winId pt3d} {
     set scy [expr [winfo height $winId.c]*(($multx*$ptz - $multy*$roty)/-150.0 + .5)]
     set depth [expr -$multx*$roty - $multy*$ptz]
 
-#ShowMessage debug info "pt3d $pt3d rots $rotx $roty cams $scx $scy $depth" ok
+#ShowMess debug info "pt3d $pt3d rots $rotx $roty cams $scx $scy $depth" ok
     return [list $scx $scy $depth]
 }
 
 proc DrawShapes {winId solids tag} {
     set insts {}
     foreach object3d $solids {
-#ShowMessage debug info $object3d ok
+#ShowMess debug info $object3d ok
 	switch [lindex $object3d 0] {
 	    line {
 		set startMap [project $winId [lindex $object3d 2]]
@@ -45,7 +45,7 @@ proc DrawShapes {winId solids tag} {
 		set starty [lindex $startMap 1]
 		set endx [lindex $endMap 0]
 		set endy [lindex $endMap 1]
-#ShowMessage debug info "$startMap $endMap" ok
+#ShowMess debug info "$startMap $endMap" ok
 		lappend insts [list [list \
 		$winId.c create line $startx $starty $endx $endy -tag $tag \
 		    -width [lindex $object3d 4] -fill [lindex $object3d 5]] \

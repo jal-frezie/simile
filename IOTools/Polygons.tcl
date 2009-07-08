@@ -383,29 +383,29 @@ $useNodes($winId,scaley)"
 	    GetQuadList {} [lindex [GetModelValue $hs] 0] $xcoords $ycoords
         
         # previous line appended variable quadlist at this level, now to use it
-        # ShowMessage debug info "Got quadlist $quadlist" ok
+        # ShowMess debug info "Got quadlist $quadlist" ok
 	    array set quadarray $quadlist
 	    foreach id [array names quadarray] {
 		set quad $quadarray($id)
 		set corners ""
-		#        ShowMessage debug info [lindex $quad 2] ok
+		#        ShowMess debug info [lindex $quad 2] ok
 		set polyycorrds {}
 		set i 0
 		set j 1
 		set tmp [lindex $quad 2]
-		#        ShowMessage debug info $tmp ok
+		#        ShowMess debug info $tmp ok
 		while {$i < [llength [lindex $quad 2]]} {
 		    lappend polyycorrds [lindex $tmp $i]
 		    incr i 2
 		    set ttmp [lindex $tmp $j]
-		    #        ShowMessage debug info "ttmp $ttmp" ok
+		    #        ShowMess debug info "ttmp $ttmp" ok
 		    lappend polyycorrds [expr $ttmp * -1]
 		    incr j 2
 		}
-		#        ShowMessage debug info $polyycorrds ok
+		#        ShowMess debug info $polyycorrds ok
 		Interweave corners [lindex $quad 1] $polyycorrds
 		set indxs [join $id ,]
-		#        ShowMessage debug info $corners ok
+		#        ShowMess debug info $corners ok
 		set polyId [eval {$winId.viewport.c create polygon} $corners \
 			    {-outline black -tag [list map [IdToTag $indxs]]}]
 	    }
@@ -541,7 +541,7 @@ $useNodes($winId,scaley)"
         if {[IsNumber $min($winId)]} {
             set useNodes($winId,min) $min($winId)
         } else  {
-            ShowMessage Error error "Value must be a number." ok
+            ShowMess Error error "Value must be a number." ok
             $rangeF.minF.entry selection range 0 end
             focus $rangeF.minF.entry
             return
@@ -549,7 +549,7 @@ $useNodes($winId,scaley)"
         if {[IsNumber $max($winId)]} {
             set useNodes($winId,max) $max($winId)
         } else  {
-            ShowMessage Error error "Value must be a number." ok
+            ShowMess Error error "Value must be a number." ok
             $rangeF.maxF.entry selection range 0 end
             focus $rangeF.maxF.entry
             return
@@ -671,7 +671,7 @@ $useNodes($winId,scaley)"
         upvar 1 $target outlist
 #        if {[llength $xs]} {
 #            lappend outlist [lindex $xs 1] [lindex $ys 1]
-            #ShowMessage debug info "$xs; $ys; $outlist" ok
+            #ShowMess debug info "$xs; $ys; $outlist" ok
 #            Interweave outlist [lrange $xs 2 end] [lrange $ys 2 end]
 #        }
 # naaah...

@@ -152,7 +152,7 @@ namespace eval ::$keyValue {
     }
     
     proc Restore {winId} {
-        #    ShowMessage debug info "plotter.tcl Restore $winId" ok
+        #    ShowMess debug info "plotter.tcl Restore $winId" ok
 	
         global ::graphtools::plot
         global ::graphtools::YYold
@@ -197,10 +197,10 @@ namespace eval ::$keyValue {
         variable ynodes
         
         set path [GetCaptionPathFromId $node]
-        #ShowMessage debug info "node $node; caption $caption; path $path" ok
+        #ShowMess debug info "node $node; caption $caption; path $path" ok
         
         set testResult [GetModelValue $node]
-        #ShowMessage debug info "testResult $testResult" ok
+        #ShowMess debug info "testResult $testResult" ok
         if {[string compare $testResult novalue]} {
             if {[lsearch $plot($w,Yvars) $path]==-1} {
                 set plot(caption,$node) $caption
@@ -565,7 +565,7 @@ namespace eval ::$keyValue {
     
     proc drawLegend {w} {
         global ::graphtools::plot
-        #ShowMessage debug info "font [font families -displayof $w.canvas]" ok
+        #ShowMess debug info "font [font families -displayof $w.canvas]" ok
         # legend vars only, not elements of arrays
         set nYlabel [llength $plot($w,Ylabels)]
         set longestlbl 0
@@ -759,7 +759,7 @@ namespace eval ::$keyValue {
     proc captionNo {w node} {
         global ::graphtools::plot
         variable runCount
-        #ShowMessage debug info "captionNo" ok
+        #ShowMess debug info "captionNo" ok
         if {$plot($w,IdArrayElements)} {
             set capt "$plot(caption,$node)"
         } else  {
@@ -841,7 +841,7 @@ namespace eval ::$keyValue {
     # Connect two points on the graph
     proc drawPoint { w X0 Y0 X1 Y1 Colour node id} {
         global ::graphtools::plot
-        #ShowMessage debug info "draw $node.$id" ok
+        #ShowMess debug info "draw $node.$id" ok
 #puts "Drawing from $X0 $Y0 to $X1 $Y1"
         set x0 [get_x $w $X0 $plot($w,Tscale)]
         set x1 [get_x $w $X1 $plot($w,Tscale)]
@@ -921,7 +921,7 @@ namespace eval ::$keyValue {
             RescaleGraphX $w $OldRange $OldXmin_axis
         }
         if { ( ($Ynew>$plot($w,Ymax_axis)) || ($Ynew<$plot($w,Ymin_axis)) )} {
-            #       ShowMessage debug info "$Ynew $plot($w,Ymin_data) $plot($w,Ymax_data)\
+            #       ShowMess debug info "$Ynew $plot($w,Ymin_data) $plot($w,Ymax_data)\
             #                $plot($w,Ymin_axis) $plot($w,Ymax_axis)" ok
             if {$Ynew>$plot($w,Ymax_axis)} {
                 set plot($w,Ymax_data) $Ynew

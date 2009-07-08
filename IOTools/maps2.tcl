@@ -53,7 +53,7 @@ namespace eval ::maptools2 {
 		    [expr int($useNodes($winId,range))]
 	    }
         }
-#	ShowMessage debug info "min $useNodes($winId,min); \
+#	ShowMess debug info "min $useNodes($winId,min); \
 #                    max $useNodes($winId,max); dataETs $useNodes($winId,dataETs); $useNodes($winId,range); \
 #                    $useNodes($winId,nswatches)" ok
 #	if {[info exists useNodes($winId,cbot)]} {
@@ -62,7 +62,7 @@ namespace eval ::maptools2 {
     }
     
     proc SetColours {winData winId} {
-        #    ShowMessage debug info "proc SetColours" ok
+        #    ShowMess debug info "proc SetColours" ok
         upvar 1 $winData useNodes
         
 	if {$useNodes($winId,ETCount)>2} {
@@ -86,7 +86,7 @@ namespace eval ::maptools2 {
 	    set max $useNodes($winId,nswatches); #[expr int($useNodes($winId,max))]
 	    set min 0; #[expr int($useNodes($winId,min))]
 	    set med [expr $useNodes($winId,nswatches)/2.0]
-        #    ShowMessage debug info "$min $max $med" ok
+        #    ShowMess debug info "$min $max $med" ok
         # make the colour descriptions, this should improve speed
 	    for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
 		if {$icolour<$med} {
@@ -108,7 +108,7 @@ namespace eval ::maptools2 {
         variable ${parentSpc}::useNodes
         
 	set cnv [${parentSpc}::GetCanvas $winId]
-        #ShowMessage debug info "recolour_scale " ok
+        #ShowMess debug info "recolour_scale " ok
         $cnv delete colour_scale
 #        if {$useNodes($winId,nrow)>$useNodes($winId,ncol)} then {
 #            set n $useNodes($winId,nrow)
@@ -275,11 +275,11 @@ namespace eval ::maptools2 {
 
 # redundant
     proc InsertLegend {winData winId} {
-        #    ShowMessage debug info "proc InsertLegend" ok
+        #    ShowMess debug info "proc InsertLegend" ok
         upvar 1 $winData useNodes
         set max [expr int($useNodes($winId,max))]
         set min [expr int($useNodes($winId,min))]
-        #ShowMessage debug info "min $min; max $max" ok
+        #ShowMess debug info "min $min; max $max" ok
         frame $winId.legend
         pack $winId.legend -side right -fill y -pady 2m
         if $useNodes($winId,integer) {
@@ -291,7 +291,7 @@ namespace eval ::maptools2 {
         }
         #-tickinterval [expr $useNodes($winId,range)/10.0] TODO
         #-resolution [expr $useNodes($winId,range)/100.0] TODO
-        #ShowMessage debug info "min $min; max $max; $tickinterval; $resolution" ok
+        #ShowMess debug info "min $min; max $max; $tickinterval; $resolution" ok
         scale $winId.legend.scale -from $max \
                 -to $min -showvalue false -sliderlength 2 \
                 -width 5 -tickinterval $tickinterval \
@@ -305,7 +305,7 @@ namespace eval ::maptools2 {
     
 # redundant
     proc ColourScale {winData winId} {
-        #    ShowMessage debug info "proc ColourScale" ok
+        #    ShowMess debug info "proc ColourScale" ok
         upvar 1 $winData useNodes
         set max [expr int($useNodes($winId,max))]
         set min [expr int($useNodes($winId,min))]
