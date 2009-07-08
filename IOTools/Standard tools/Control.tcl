@@ -194,7 +194,7 @@ namespace eval runcontrol33857 {
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
         #        set sendvars($node,timeUnit) unit
-        set runState($node,expected_end) 0
+        set runState($node,expected_end) 0.0
         SendData $node
         set sendvars($node,prevDisplay) 0.0
         set sendvars($node,currentMode) stop
@@ -421,7 +421,7 @@ namespace eval runcontrol33857 {
 	}
 	do_in_editor RecordRunParams $node
 	if {[string equal reset $sendvars($node,currentMode)]} {
-	    set current 0.0
+	    set current 0
 	    set exec $runState($node,run_length)
 	    SetupBar $node $current [expr $current + $exec]
 	    if {[info exists runState($node,reloadParams)]} {

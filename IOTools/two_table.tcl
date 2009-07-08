@@ -319,7 +319,7 @@ namespace eval $keyValue {
         variable lastDisplay
         variable orientList
         variable displayUpdate
-        
+	
         set lastDisplay($winId) $tCur
         set varIndex 0
         foreach varCapt $displayList($winId) {

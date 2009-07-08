@@ -133,7 +133,8 @@ proc ExecuteTo {node current pause unitLength display foci intMethod maxErr} {
 		    lappend payload $point $dataHand
 		}
 	    }
-	    if {[ShiftDisplays $node $payload $current $display]} {
+	    if {[ShiftDisplays $node $payload [format %.8g $current] \
+		     $display]} {
 		set currentMode stop
 	    }
 

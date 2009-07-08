@@ -1187,10 +1187,12 @@ proc ControlDraw {prologVersion} {
 proc InitExecThread {} {
     global execThread SIMILE_PATH
 
+    if {![string equal console $::env(interfaceId)]} {
 # comment out next two lines for thread free operation
-    package require Thread
-    set execThread(id) [thread::create]
-
+	package require Thread
+	set execThread(id) [thread::create]
+    }
+#puts "Created thread $execThread(id) from [thread::id]"
     if {[info exists execThread]} {
 	foreach stubCmd {load_c_stub_1 randseed c_setparamarray c_setparamall c_cleartimeseries c_settimepointarray c_settimepointall c_settimepointrecords c_setrecordlist c_getparamall c_gettimepointall PlaceInArray SetWrapTime SetFillMethod ex_load_dll update_executable free_data_handle c_killmodel GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
 	    proc $stubCmd {args} {
