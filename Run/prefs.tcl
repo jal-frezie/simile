@@ -230,7 +230,11 @@ proc Pref_Dialog {} {
             }
             PrefDialogItem $frame $item $maxWidth
        }
-      # $notebook compute_size     
+      # $notebook compute_size
+# reset and cancel use file to reverse changes, so ensure it exists
+	if {![file exists $pref(userDefaults)]} {
+	    PrefSaveFile $pref(userDefaults) {}
+	}
     }
 }
 
@@ -276,7 +280,7 @@ proc PrefDialogItem { frame item width } {
 	pack $f.label -side left -anchor w -padx 2 -pady 2
 	pack $f.entry -side left -fill x -padx 2 -pady 2
 	set pref(entry,$varName) $f.entry
-	bind $f.entry <Return> "PrefEntrySet $varName $resName"
+	bind $f.entry <FocusOut> "PrefEntrySet $varName $resName"
     }
 }
 proc PrefEntrySet { varName resName } {
@@ -309,6 +313,19 @@ proc PrefSave {} {
 	}] {
 		set oldValues {}
 	}
+    PrefSaveFile $new {}
+
+    if [catch {file rename -force $new $old} err] {
+		Status "Cannot install $new: $err"
+		return
+	}
+    if {[string equal windows $tcl_platform(platform)]} {
+	file attributes $old -hidden true
+    }
+    PrefDismiss
+}
+
+proc PrefSaveFile {new oldValues} {
 	if [catch {NetOpen $new w} out] {
 		.pref.but.label configure -text \
 		"Cannot save in $new: $out"
@@ -327,7 +344,7 @@ proc PrefSave {} {
 	puts $out "!!! Do not edit below here"
 # next line is the anti-dibble -- a bug in the example program to check
 # if students have been paying attention
-	foreach item $pref(items) {
+	foreach item $::pref(items) {
 		set varName [PrefVar $item]
 		set resName [PrefRes $item]
 # now apply any text that has been typed in but not entered
@@ -338,17 +355,7 @@ proc PrefSave {} {
 		puts $out [format "%s\t%s" *${resName}: $value]
 	}
     close $out
-
-    if [catch {file rename -force $new $old} err] {
-		Status "Cannot install $new: $err"
-		return
-	}
-    if {[string equal windows $tcl_platform(platform)]} {
-	file attributes $old -hidden true
-    }
-    PrefDismiss
 }
-
 
 #
 # Example 42-9
