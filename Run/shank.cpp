@@ -1863,6 +1863,7 @@ void fill_raw_values(long int localType, long int smHandle, int tree[],
     *insertionPt += *dim_place;
     break;
   case RECORDS:
+    dimty = *dim_place; // save block size in case we need it again
     *dim_place = REQ_COUNT; // tells get_ptr to get made count
     int *tree_copy, *dims_copy;
     tree_copy = tree;
@@ -1872,6 +1873,7 @@ void fill_raw_values(long int localType, long int smHandle, int tree[],
     newBlk = new char[count*dim_place[1]];
     ((sizeAndPtr*)(*insertionPt))->ptr = newBlk;
     *insertionPt += sizeof(sizeAndPtr);
+    *dim_place = dimty;
     // now overwrite dim to look like normal array, recurse, and put back
     *use_dims=count;
     fill_raw_values(localType, smHandle, tree, 

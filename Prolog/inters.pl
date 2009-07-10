@@ -662,7 +662,7 @@ make_intermediates(
 	Source = keep(SourceRef), !;
 	(Source = place_in(IndN), !,
 	        get_dims_from_loops(BuildingArrays, DestDims, DestInds);
-	    Source = index(IndN), wake, !,
+	    Source = index(IndN), !,
 	        reverse(DestPath, BackDP),
 	        all(inters, indices_for,
 		    [build(BackDP), append(DestInds, []),
@@ -673,7 +673,10 @@ make_intermediates(
 	    IndPosn is AvailInds-IndN,
 	    (nth0(IndPosn, DestInds, IndRef),
 		nth0(IndPosn, DestDims, DimRef),
-		type_ind(DimRef, Units), !;
+		type_ind(DimRef, OrigUnits),
+		(Step = dummy, !,
+		    Units = OrigUnits;
+		unmake_enum_units(OrigUnits, Units)), !;
 		throw(index_number_out_of_range(IndN, AvailInds))),
 	    (nonvar(IndRef), !;
 		/* generate_name(c, loop, LoopName, Used), */
@@ -747,7 +750,9 @@ make_intermediates(
  	                       set(IntIndxRef, loop(Limit)), ItemLoops);
 		throw(only_works_on_array(element, Array))),
 	    ((type_ind(Limit, NeedType);
-		\+ Step = dummy, member(NeedType, [boolean,a(AnET)])),
+	      % bodge: if building code, bounds have been made integer, so
+	      % accept boolean as index
+		\+ Step = dummy, NeedType = boolean),
 		(promote_unit(Int, NeedType);
 	      Int = n(AnET), NeedType = a(AnET)), !,
 		/* special case -- count or name of ET can refer to last elt */
@@ -955,11 +960,11 @@ remove_physical_units_if_disabled(SubId, SrcUnits, Units) :-
 	standard_name(SrcUnits, Units)).
 
 unmake_enum_units(SrcUnits, Units) :-
-	/* SrcUnits = n(_),
+	SrcUnits = n(_),
 	    Units = const_int;
 	SrcUnits = a(_),
 	    Units = int;
-	*/ Units = SrcUnits.
+	Units = SrcUnits.
 
 raise_units(Base, Num, Units) :-
 	Num = 0, Units = 1;
