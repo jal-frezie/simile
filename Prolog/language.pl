@@ -69,7 +69,7 @@ do_assign_list(_, [], _, _, _).
 /* This makes a loop for a fixed membership submodel.
 Should really be done with make_array_assignment. */
 
-do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
+do_assignment(L, [open_index(glob(Loop, Inds), Bound) | Clauses],
                 Indent, Used, Stream) :-
         NewIndent is Indent+4,
 	declare(L, Loop, loop, int, Used, Indent, Stream),

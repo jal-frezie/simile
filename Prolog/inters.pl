@@ -525,7 +525,7 @@ make_intermediates(
 	    [Wee, Muckle] = [-268435455, 268435455];
 	[Wee, Muckle] = [-1.0e100, 1.0e100]), 
 
-	(\+ (member(VarDim, TotalDims), VarDim == var), !;
+	(\+ (member(VarDim, TotalDims), member(VarDim, [var, records])), !;
 	    throw(avoid_var_size_inter(Epsilon, TotalDims))),
 	get_dims_from_loops(NowBuilding, BuildDims, BuildInds),
 	append(BuildDims, TotalDims, InterDims),
@@ -710,6 +710,7 @@ make_intermediates(
 	    suffix([LocalLoop], SzLoops), !,
 	    NowBuilding = [LocalLoop | BuildingArrays];
 	((Source = makearray(Element, Dim); Source = soloarr(Element), Dim=1),
+	    wake,
 	    ((catch(DimVal is Dim, _, fail),
 	          integer(DimVal);	% it is integer now
 	        make_intermediates(Dim, SubId, [dum], DestPath,_, PrevInters,

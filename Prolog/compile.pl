@@ -1673,7 +1673,7 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 		    /* check condition is for this level...oh sod it */
 		    /* find last looping construct */
 		    (append(OuterLoops, [make(_,_,_,_,
-					      [open_index(IdRef, loop(N))])
+					      [open_index(IdRef, N)])
 					| SmLoop], OpenLoops),
 			member(SmLoop,
 			   [[make(_,_,_,_, [start_submodel(_,_,_,_)])],[]]), !;
@@ -1938,7 +1938,7 @@ get_non_looping_levels(Path, [make(_,_, IPath, _,_) | More], Levels) :-
 get_pass_ends(Level, StartInit, Finish) :-
 	(Level = catch(Ind, Bound), !,
 	    extract_action(StartInit, [catch(Ind, Bound)]);
-	Level = set(Ind, IndSrc), !,
+	Level = set(Ind, loop(IndSrc)), !,
 	    extract_action(StartInit, [open_index(Ind, IndSrc)]);
 	Level = sm(Submodel, ParentPtr, Ptr, Inds),
 	    extract_action(StartInit,
