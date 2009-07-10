@@ -489,7 +489,7 @@ make_intermediates(
 	    (nonvar(SumLoop), SumLoop = set(_, loop(SourceRef)),
 		(integer(SourceRef),
 		    Units = const_int;
-		atom(SourceRef),
+		atom(SourceRef), \+ SourceRef = records,
 		    Units = n(SourceRef)),
 		UsingDim = true;
 	    Units = int,
@@ -1297,7 +1297,8 @@ indices_for(sm(_,_, Ptr, Spec), Inds, Dims) :-
 /* might do better to get submodel and use g_a_s to convert */
 type_ind(Ind, Type) :-
 	var(Ind), !;
-	(integer(Ind); Ind = glob(_,_); Ind = records), Type = int;
+	(integer(Ind); Ind = glob(_,_);
+	    Ind = records; Ind = pra_bound(_,_)), Type = int;
 	Ind = '"boolean"', Type = boolean;
 	Type = a(Ind).
 	
