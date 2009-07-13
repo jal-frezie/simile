@@ -548,7 +548,7 @@ enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
 % also handles physical unit identifiers, which stand for 1 of that unit
 	(integer(Ref),
 	    Units = const_int;
-	member(Ref, [var, records]), 
+	member(Ref, [var, pop, records]), 
 	    Units = int;
 	number(Ref),
 	    Units = 1), !,

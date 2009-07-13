@@ -486,7 +486,7 @@ make_intermediates(
 	so lets work that out... */
 	(Functor = count,
 	    IncrExpr = FillRef+1,
-	    (nonvar(SumLoop), SumLoop = set(_, loop(SourceRef)),
+	    (nonvar(SumLoop), SumLoop = set(_, loop(SourceRef,_)),
 		(integer(SourceRef),
 		    Units = const_int;
 		atom(SourceRef), \+ SourceRef = records,
@@ -661,7 +661,8 @@ make_intermediates(
 	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !;
 	Source = keep(SourceRef), !;
 	(Source = place_in(IndN), !,
-	        get_dims_from_loops(BuildingArrays, DestDims, DestInds);
+	        all(inters, building_dims_and_indices,
+	        [build(BuildingArrays), build(DestDims), build(DestInds)]);
 	    Source = index(IndN), !,
 	        reverse(DestPath, BackDP),
 	        all(inters, indices_for,
@@ -672,8 +673,7 @@ make_intermediates(
 	    length(DestInds, AvailInds),
 	    IndPosn is AvailInds-IndN,
 	    (nth0(IndPosn, DestInds, IndRef),
-		nth0(IndPosn, DestDims, DimRef),
-		type_ind(DimRef, OrigUnits),
+		nth0(IndPosn, DestDims, OrigUnits),
 		(Step = dummy, !,
 		    Units = OrigUnits;
 		unmake_enum_units(OrigUnits, Units)), !;
@@ -710,14 +710,17 @@ make_intermediates(
 	    suffix([LocalLoop], SzLoops), !,
 	    NowBuilding = [LocalLoop | BuildingArrays];
 	((Source = makearray(Element, Dim); Source = soloarr(Element), Dim=1),
-	    wake,
 	    ((catch(DimVal is Dim, _, fail),
-	          integer(DimVal);	% it is integer now
+	          integer(DimVal), IndxUnits = int;	% it is integer now
 	        make_intermediates(Dim, SubId, [dum], DestPath,_, PrevInters,
 				   BuildingArrays, Step, Used, Dun, MidInters,
 				   part_result([], [], _, DimVal)),
 	        promote_unit(Dun, const_int)), !; % will be integer later
-		  throw(bad_index_number(Dim, makearray))), !,
+		  throw(bad_index_number(Dim, makearray))),
+	        (Dun = n(Type),
+		    (Type = boolean, IndxUnits = boolean;
+			IndxUnits = a(Type));
+		    IndxUnits = int), !,
 	        NowBuilding = [LocalLoop | BuildingArrays],
 	        length(BuildingArrays, BDept),
 	        append_atoms(arraybuild, BDept, BuildName),
@@ -727,10 +730,11 @@ make_intermediates(
 	        length(Source, DimVal),
 %	        DimSetups = [],
 %	        MidInters = PrevInters,
-	        NowBuilding = BuildingArrays), !,
+	        NowBuilding = BuildingArrays,
+	        IndxUnits = int), !,
 	    ((\+ number(DimVal); DimVal > 1; Source = soloarr(_)), !;
 		throw(bad_array_size(Source, DimVal))),
-	    LocalLoop = set(LocalInd, loop(DimVal))),
+	    LocalLoop = set(LocalInd, loop(DimVal, IndxUnits))),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
 			PrevInters, NowBuilding, Step, Used, Units, NewInters,
 			part_result(EltContext, Setups, Args, SourceRef)),
@@ -748,7 +752,7 @@ make_intermediates(
 	    get_model_and_loops(IContext, DestPath, _, ILoops, IBase),
 	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
  	    (break_at_last_loop(ALoops, TailLoops,
- 	                       set(IntIndxRef, loop(Limit)), ItemLoops);
+ 	                       set(IntIndxRef, loop(Limit,_)), ItemLoops);
 		throw(only_works_on_array(element, Array))),
 	    ((type_ind(Limit, NeedType);
 	      % bodge: if building code, bounds have been made integer, so
@@ -961,7 +965,8 @@ remove_physical_units_if_disabled(SubId, SrcUnits, Units) :-
 	standard_name(SrcUnits, Units)).
 
 unmake_enum_units(SrcUnits, Units) :-
-	SrcUnits = n(_),
+	SrcUnits = n(Type),
+	    \+ Type = boolean,
 	    Units = const_int;
 	SrcUnits = a(_),
 	    Units = int;
@@ -1280,7 +1285,7 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 	N is M+1.
 
 /* Returns expressions for a model's indices, those for outer loops first */
-indices_for(set(_, loop(_)), [], []).
+indices_for(set(_, loop(_,_)), [], []).
 
 indices_for(sm(_,_, Ptr, Spec), Inds, Dims) :-
 	Spec = fm_loop(Inds, Dims,_);
@@ -1295,14 +1300,15 @@ indices_for(sm(_,_, Ptr, Spec), Inds, Dims) :-
 		/* Inds = [ind(Ptr, IndCt) | Rest].  for inner first */
 		append(Rest, [ind(Ptr, IndCt)], Inds)).
 
+revert_bound(n(Type), Type) :- !.
+
 /* might do better to get submodel and use g_a_s to convert */
 type_ind(Ind, Type) :-
-	var(Ind), !;
 	(integer(Ind); Ind = glob(_,_);
-	    Ind = records; Ind = pra_bound(_,_)), Type = int;
+	    Ind = pop; Ind = records; Ind = pra_bound(_,_)), Type = int;
 	Ind = '"boolean"', Type = boolean;
 	Type = a(Ind).
-	
+
 make_choose_form([LastElt], _,_, LastElt) :- !.
 
 make_choose_form([Elt | Elts], Ind, N, choose(Ind==N,Elt,Later)) :-
@@ -1507,7 +1513,7 @@ make_inds_for([], [], []).
 make_inds_for([Bound | RB], Sets, [Ind | RI]) :-
 	(Bound == var, !,
 	    Level = sm(_,_,_, rm_loop(_,_,_));
-	Level = set(Ind, loop(Bound))),
+	Level = set(Ind, loop(Bound,_))),
 	make_inds_for(RB, RX, RI),
 	append(RX, [Level], Sets).
 	    
@@ -1521,14 +1527,16 @@ get_dims_from_loops(Loops, Dims, Inds) :-
 	    (VLoop = vm_loop(rec, _,_,_,_), !,
 		Inds = [ind(Ptr, pop) | RInds];
 	    Inds = [none | RInds]);
-	Loop = set(Ind, loop(Dim)), !,
+	Loop = set(Ind, loop(Dim,_)), !,
 	    Dims = [Dim | RDims],
 	    Inds = [Ind | RInds];
 	Dims = RDims,
 	    Inds = RInds),
 	get_dims_from_loops(InnerLoops, RDims, RInds).
 
-loops(set(_, loop(_))).
+building_dims_and_indices(set(I, loop(_,L)), L, I).
+
+loops(set(_, loop(_,_))).
 loops(sm(_,_,_, vm_loop(_,_,_,_,_))).
 loops(sm(_,_,_, rm_loop(_,_,_))).
 

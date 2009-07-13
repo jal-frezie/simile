@@ -627,7 +627,7 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 	(Type = submodel, !,
 	    list_local_index_meanings(Node, SmIndSpecs),
 	    all(dialogue, index_names_and_sizes,
-		[build(SmIndSpecs), build(_Text), build(RSizes)]),
+		[build(SmIndSpecs), build(_Names), build(RSizes)]),
 	    reverse(RSizes, SmSizes);
 	SmSizes = CSizes),
 	all(ame_gen, enum_type_ref,
@@ -641,7 +641,7 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 	    (is_population(Node), !,
 		['MEMBERS'] = NewDims;
 	    variable_size(Node), !,
-		substitute(0, Posn, 'MEMBERS', Mid),
+		substitute(pop, Posn, 'MEMBERS', Mid),
 		substitute(records, Mid, 'RECORDS', VmBounds),
 		append(['START_VM' | VmBounds], ['END_VM'], NewDims));
 	append(Tree, [Level], DeepTree),
@@ -964,8 +964,7 @@ extract_submodel_assignment(Instance, ParentFns,
 	path_section_for(SmName, Name, Dims, Level, Ptr, NewPtr),
 	append(Level, Path, LocalPath),
 	list_local_index_meanings(SmName, ISpecs),
-	all(dialogue, index_names_and_sizes,
-	    [build(ISpecs), build(_IndexList), build(IndxCount)]),
+	all(dialogue, index_types, [build(ISpecs), build(IndxCount)]),
 	/* Do not allow an associated model to be started until its
 	bases have all been enumerated */
 
@@ -1816,7 +1815,7 @@ convert_form(make(T1, Conds, Path, Ph, T5), Phase,
 	    member(sm(Name,_,_, vm_loop(_,_,_,_,_)), Path), !,
 	    XCs = [earlier(can_enter(Name)) | Conds];
 	XCs = Conds),
-	(member(set(_Idx, loop(pra_bound(_, PraName))), Path), !,
+	(member(set(_Idx, loop(pra_bound(_, PraName),_)), Path), !,
 	    ECs = [startable(PraName) | XCs];
 	ECs = XCs),
 	all(compile, handle_key_functors,
@@ -1938,7 +1937,7 @@ get_non_looping_levels(Path, [make(_,_, IPath, _,_) | More], Levels) :-
 get_pass_ends(Level, StartInit, Finish) :-
 	(Level = catch(Ind, Bound), !,
 	    extract_action(StartInit, [catch(Ind, Bound)]);
-	Level = set(Ind, loop(IndSrc)), !,
+	Level = set(Ind, loop(IndSrc,_)), !,
 	    extract_action(StartInit, [open_index(Ind, IndSrc)]);
 	Level = sm(Submodel, ParentPtr, Ptr, Inds),
 	    extract_action(StartInit,

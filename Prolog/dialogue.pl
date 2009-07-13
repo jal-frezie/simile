@@ -84,8 +84,9 @@ do_equation_dialog(Win, Part) :-
 BoxHeaderStr),
 	name(BoxHeader, BoxHeaderStr),
 	list_index_meanings(Part, ISpecs),
-	all(dialogue, index_names_and_sizes,
-	    [build(ISpecs), build(IndexList), build(IndxCount)]),
+	all(dialogue, index_names_and_sizes, [build(ISpecs), build(IndexList),
+					      build(_Sz)]),
+	all(dialogue, index_types, [build(ISpecs), build(IndxCount)]),
 	pick_equation(Part, Equation),
 	(get_av_pair(Part, 0, units, Units), !,
 	    analyze_array(Units, Base, Dims);
@@ -139,11 +140,13 @@ BoxHeaderStr),
 	/* last cut necessary because otherwise a retry will cause 
 errors */
 
-index_names_and_sizes(ind_spec(Name, Posn, Dim), Meaning, DimN) :-
+index_names_and_sizes(ind_spec(Name, Posn, Dim), Meaning, Dim) :-
 	sicstus_format_to_chars("Dimension ~d of ~a (~w)", [Posn, Name, Dim],
 				MeaningStr),
-	name(Meaning, MeaningStr),
-	(Dim = pop, !, DimN = 0; DimN = Dim).
+	name(Meaning, MeaningStr).
+
+index_types(ind_spec(_Name, _Posn, Ind), Type) :-
+	inters:type_ind(Ind, Type).
 
 /* might change these one day so, e.g., compartments have
 automatic lower limit of 0, but not yet. */
@@ -622,7 +625,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 			     ParseError = ParseExcp))),
 	(nonvar(ParseError), !;
 	(member(input_link(_,_, Param, _-PLoops, _), ExpInters),
-	    nth(N, PLoops, set(_, loop(Bound))),
+	    nth(N, PLoops, set(_, loop(Bound,_))),
 	    var(Bound),
 	    ParseError = cannot_set_dims(N, Param);
 	    %sicstus_format_to_chars("Dimension ~d of explicit intermediate variable ~w cannot be determined from its definition", [N, Param], ParseError);
