@@ -153,7 +153,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	    name(OnPointerRef, AdvanceStr),
 	    LoadBaseRefs = []; */
 
-	LoopSpec = vm_loop(_,_,_, BaseLoops, _),
+	LoopSpec = vm_loop(_,_, BaseLoops, _),
 	all(compile, get_base_ptrs,
 	    [build(BaseLoops), append(Names, []), append(BasePtrs, [])]), !,
 	append_atoms(Name, 'type*', Type),

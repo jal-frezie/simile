@@ -483,10 +483,8 @@ path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
 	    (% by_record(SmName), !,
 		% SmSpec = vm_loop(rec, _,[],_);
 	    is_population(SmName), !,
-		SmSpec = vm_loop(pop, _,_, [],_);
-	    m_update:list_local_index_meanings(SmName, Bounds),
-		length(Bounds, NumInds),
-		SmSpec = vm_loop(NumInds, _Bounds, _Dims, _Loops, _)),
+		SmSpec = vm_loop(pop, _, [],_);
+	    SmSpec = vm_loop(_Bounds, _Dims, _Loops, _)),
 	    Level = [sm(Context, HiPtr, LoPtr, SmSpec)];
 	(by_record(SmName), !,
 	    SmSizes = [pra_bound(HiPtr, Context)];
