@@ -30,7 +30,7 @@ namespace eval slide139 {
         ::graphtools::MakeToolBar $winId $toolbarItems
         pack [message $winId.intro -aspect 800] -fill x
         
-        MakeFrames $winId
+        set ::topSFrame($winId) [MakeFrames $winId]
         SetState $winId {}
         set geom [PrefValue custom(slidersPosition) slidersPosition]
         #        catch {wm geometry $winId $geom}
@@ -131,7 +131,7 @@ namespace eval slide139 {
         set nodeDims [GetModelDims $node]
         set useDim [FindUseDim $nodeDims]
         if {$nest} {
-            set f [MakeSubFrames $winId $winId.sliderframe \
+            set f [MakeSubFrames $winId $::topSFrame($winId) \
                     $levels [namespace current] 0]
             if {[winfo exists $f]} {
                 $winId.c.canvas see $f
@@ -322,7 +322,7 @@ namespace eval slide139 {
     
     proc Remove {winId title} {
         set levels [split $title /]
-        set f [MakeSubFrames $winId $winId.sliderframe \
+        set f [MakeSubFrames $winId $::topSFrame($winId) \
                 $levels [namespace current] 0]
         Prune $winId $f
         set oldState [GetState $winId]
@@ -516,7 +516,7 @@ namespace eval slide139 {
 	    set model [$helperTable($winId,whichInstance) GetNode]
 	    if {[string match ENUM(*) [GetCompProperty $model Type $node]]} {
                 # will need widget address to update it!
-                set f [MakeSubFrames $winId $winId.sliderframe \
+                set f [MakeSubFrames $winId $::topSFrame($winId) \
                         [split $title /] [namespace current] 0]
             } else {
                 set f {}

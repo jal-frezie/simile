@@ -87,17 +87,18 @@ proc FileParamDialogue {topWin mustShow} {
 # would need a lot of pi^H^Hmessing about with yview to achieve
 # this. So hang on to bwidget for the time being.
 
+# Note that in neither case does BindMouseWheel do anything useful, because
+# for some reason the subframes stop the event getting to the top frame or
+# canvas. However, style::as will do the job provided you do not pack anything
+# -in anything...
+
 proc MakeFrames {windowId} {
     ScrolledWindow $windowId.c
-    set canId $windowId.c.canvas
-    ScrollableFrame $canId -constrainedwidth true ;# \
-            -yscrollcommand [list AdjustCanvas $windowId.c canvas y]
+    set canId [ScrollableFrame $windowId.c.canvas -constrainedwidth true]
     $windowId.c setwidget $canId
 
     pack $windowId.c -side top -fill both -expand true
-    
-    pack [frame $windowId.sliderframe] -in [$canId getframe] \
-	-side top -fill x -expand true -padx 2 -pady 2
+    return [$canId getframe]
 }
 
 proc DIYMakeFrames {windowId} {
@@ -163,8 +164,9 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     
     set dimList [MakeDimsLegible $nodeDims \
 		     [GetCompProperty $topNode Type $node]]
-    pack [set slot [frame [MakeSubFrames $topNode $winId.sliderframe $levels \
-            fileparams 0]]] -fill x -expand on
+    pack [set slot [frame [MakeSubFrames $topNode \
+			       $winId.c.canvas.frame $levels \
+			       fileparams 0]]] -fill x -expand on
     pack [label $slot.l1 -text [lindex $levels end] -fg red -width 12] \
 	-side left
 #    pack [label $slot.l2 -text ($dimList) -fg red] -side left
@@ -281,8 +283,8 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
         set nextLevel $parent.frame$level
         if {![winfo exists $nextLevel]} {
 #            pack [ttk::labelframe $nextLevel -borderwidth 2 -relief sunken]
-            pack [frame $nextLevel -bd 2 -relief sunken] \
-		-fill x -expand true -padx 2 -pady 2 -side bottom
+            frame $nextLevel -bd 2 -relief sunken
+	    pack $nextLevel -fill x -expand true -padx 2 -pady 2 -side bottom
             pack [frame $nextLevel.head] -fill x -expand true
             set path /[join [lrange $hierarchy 0 $pt] /]
             # added setting of SimileProject element to store spf path

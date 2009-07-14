@@ -89,8 +89,6 @@ build_instances(Language, DestDir, Parent, TopNode,
 		Step, ChangeNext, LocalFnsUsed, LocalExtLibs, KeepParents) :-
 	caption_for(Parent, Name),
 	append_atoms([DestDir, '/', Name], CheckDir),
-	check_directory(CheckDir),
-	windowize(CheckDir, WCheckDir),
 	time_step_for(Parent, Step, MyStep),
 	build_sub_instances(Language, CheckDir, Parent,
 			    TopNode, MyStep, ChangeTop,
@@ -126,7 +124,13 @@ build_instances(Language, DestDir, Parent, TopNode,
 		    OldTgt = 1), !;
 	    /* if no c_new look for dll from save file with 1 in name */
 	    OldTgt = 0),
-	    check_exec_fns_fresh(Language, CheckDir, OldTgt, FnsUsed, RStrs),
+	    check_directory(CheckDir),
+	    /* Only create directory if building code -- for now I
+	    /* only build code for top-level models so do not need
+	    /* directories for others in case their children create
+	    /* code */
+	    windowize(CheckDir, WCheckDir),
+	    check_exec_fns_fresh(Language, WCheckDir, OldTgt, FnsUsed, RStrs),
 	    all(user, name, [build([Stat | Includes]), build(RStrs)]),
 	    (Stat < 3, !;
 		Includes = [LostFn, WhereSought],

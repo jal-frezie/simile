@@ -617,8 +617,7 @@ compile_c_program(ModelPath, ExtLibs, Fuss, Err) :-
 	safe_tcl_eval([compile_c, br(WModelPath), WExtList, Fuss], ErrStr),
 	name(Err, ErrStr).
 
-check_exec_fns_fresh(L, ModelPath, Id, Fns, Stat) :-
-	windowize(ModelPath, WModelPath),
+check_exec_fns_fresh(L, WModelPath, Id, Fns, Stat) :-
 	bracketize(Fns, BrFns),
 	safe_tcl_eval(['CheckFnsFresh',  L, br(WModelPath), Id, BrFns], RVal),
 	chop_list(RVal, Stat).

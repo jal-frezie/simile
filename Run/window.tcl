@@ -840,7 +840,7 @@ proc AddCanvasBindings { c topNode } {
     }
     bind $c <FocusIn> {EmbraceObj %W}
     bind $c <Leave> {AbandonObj}
-    BindMouseWheel $c
+#    BindMouseWheel $c
 
     # text/clipboard action from Welch example
     # commented because we can now cut/copy parts of a model
@@ -925,29 +925,31 @@ proc AddEqnPopup {node x y winId X Y} {
 #	None.
 #
 # Simile-specific version, with fewer bugs
+# Now replaced with style::as from the tklib
 #
-proc BindMouseWheel { widget } {
-    if {[string equal aqua [tk windowingsystem]]} {
-	bind $widget <MouseWheel> {%W yview scroll [expr %D/-1] units}
-	bind $widget <Shift-MouseWheel> {%W xview scroll [expr %D/-1] units}
-    } else {
-	bind $widget <MouseWheel> {%W yview scroll [expr %D/-24] units}
-	bind $widget <Shift-MouseWheel> {%W xview scroll [expr %D/-24] units}
-    }
-
-#    bind $widget <Button-4> {event generate %W <MouseWheel> -delta  120}
-#    bind $widget <Button-5> {event generate %W <MouseWheel> -delta -120}
-#    bind $widget <Shift-Button-4> {event generate %W <Shift-MouseWheel> -delta  120}
-#    bind $widget <Shift-Button-5> {event generate %W <Shift-MouseWheel> -delta -120}
-# event generate mw seems to have stopped working on Linux so go directly to...
-    bind $widget <Button-4> {%W yview scroll -5 units}
-    bind $widget <Button-5> {%W yview scroll 5 units}
-    bind $widget <Shift-Button-4> {%W xview scroll -5 units}
-    bind $widget <Shift-Button-5> {%W xview scroll 5 units}
-
-    bind $widget <Control-Button-4> {event generate %W <Control-MouseWheel> -delta  120}
-    bind $widget <Control-Button-5> {event generate %W <Control-MouseWheel> -delta -120}
-}
+#proc BindMouseWheel { widget } {
+#    if {[string equal aqua [tk windowingsystem]]} {
+#	bind $widget <MouseWheel> {%W yview scroll [expr %D/-1] units}
+#	bind $widget <Shift-MouseWheel> {%W xview scroll [expr %D/-1] units}
+#    } else {
+#	bind $widget <MouseWheel> {%W yview scroll [expr %D/-24] units}
+#	bind $widget <Shift-MouseWheel> {%W xview scroll [expr %D/-24] units}
+#    }
+#
+##    bind $widget <Button-4> {event generate %W <MouseWheel> -delta  120}
+##    bind $widget <Button-5> {event generate %W <MouseWheel> -delta -120}
+##    bind $widget <Shift-Button-4> {event generate %W <Shift-MouseWheel> -delta  120}
+##    bind $widget <Shift-Button-5> {event generate %W <Shift-MouseWheel> -delta -120}
+## event generate mw seems to have stopped working on Linux so go directly to...
+#    bind $widget <Button-4> {%W yview scroll -5 units}
+#    bind $widget <Button-5> {%W yview scroll 5 units}
+#    bind $widget <Shift-Button-4> {%W xview scroll -5 units}
+#    bind $widget <Shift-Button-5> {%W xview scroll 5 units}
+#
+#    bind $widget <Control-Button-4> {event generate %W <Control-MouseWheel> -delta  120}
+#    bind $widget <Control-Button-5> {event generate %W <Control-MouseWheel> -delta -120}
+#}
+#
 
 # Canvas chapter (of Welch)
 

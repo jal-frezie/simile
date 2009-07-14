@@ -8,6 +8,9 @@
 #package require BWidget
 #catch {namespace import BWidget::*}
 package require tile
+package require style::as
+style::as::enable mousewheel global
+
 # tile creates: TkCaptionFont TkTooltipFont TkFixedFont TkHeadingFont 
 #               TkMenuFont TkIconFont TkTextFont TkDefaultFont
 # ...on Linux. On the Mac it makes:

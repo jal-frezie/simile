@@ -308,7 +308,7 @@ namespace eval $keyValue {
     
     proc Clear {winId} {
         variable useNodes
-        foreach current [winfo children $useNodes($winId,input).sliderframe] {
+        foreach current [winfo children $useNodes($winId,input).c.canvas.frame] {
             destroy $current
         }
 	set useNodes($winId,sliders) {}
@@ -317,7 +317,7 @@ namespace eval $keyValue {
     proc ClearOut {winId} {
 	global targetData
         variable useNodes
-        foreach current [winfo children $useNodes($winId,output).sliderframe] {
+        foreach current [winfo children $useNodes($winId,output).c.canvas.frame] {
             destroy $current
         }
 	set useNodes($winId,drivers) {}
@@ -522,7 +522,7 @@ namespace eval $keyValue {
         }
         set levels [split $title /]
         if {$nest} {
-            set f [MakeSubFrames $inpId $inpId.sliderframe \
+            set f [MakeSubFrames $inpId $inpId.c.canvas.frame \
                     $levels [namespace current] 0]
             if {[winfo exists $f]} {
                 $inpId.c.canvas see $f
@@ -690,7 +690,7 @@ namespace eval $keyValue {
         }
         
         set outGrpData($node,weight) 1.0
-        set f [MakeSubFrames $myNode $outId.sliderframe \
+        set f [MakeSubFrames $myNode $outId.c.canvas.frame \
                 [split $title /] [namespace current] 0]
         if {[winfo exists $f]} {
             $outId.c.canvas see $f
@@ -778,7 +778,7 @@ namespace eval $keyValue {
         variable useNodes
         set inpId $useNodes($winId,input)
         set levels [split $title /]
-        set f [MakeSubFrames {} $inpId.sliderframe \
+        set f [MakeSubFrames {} $inpId.c.canvas.frame \
                 $levels [namespace current] 0]
         Prune $inpId $f
 	set index [lsearch $useNodes($winId,sliders) $title]
@@ -791,7 +791,7 @@ namespace eval $keyValue {
 	global targetData
         set outId $useNodes($winId,output)
         set levels [split $title /]
-        set f [MakeSubFrames {} $outId.sliderframe \
+        set f [MakeSubFrames {} $outId.c.canvas.frame \
                 $levels [namespace current] 0]
         Prune $outId $f
 	array unset targetData $title
@@ -808,7 +808,7 @@ namespace eval $keyValue {
     proc Prune {winId tree} {
         set up [winfo parent $tree]
         destroy $tree
-        if {![string equal ${winId}.sliderframe $up]} {
+        if {![string equal ${winId}.c.canvas.frame $up]} {
             foreach remain [winfo children $up] {
                 set box [winfo name $remain]
                 if {[string match box* $box] || [string match frame* $box]} {
@@ -917,7 +917,7 @@ namespace eval $keyValue {
             set node [GetIdFromCaptionPath $eTitle]
             set levels [split $eTitle /]
             set outId $useNodes($winId,output)
-            set f [MakeSubFrames {} $outId.sliderframe \
+            set f [MakeSubFrames {} $outId.c.canvas.frame \
                     $levels [namespace current] 0]
             if {$readMany($eTitle)} {
                 foreach {time defSet} $targetData($eTitle) {
@@ -968,7 +968,7 @@ namespace eval $keyValue {
             set node [GetIdFromCaptionPath $eTitle]
             set levels [split $eTitle /]
             set inpId $useNodes($winId,input)
-            set f [MakeSubFrames {} $inpId.sliderframe \
+            set f [MakeSubFrames {} $inpId.c.canvas.frame \
                     $levels [namespace current] 0]
             
             set nodeDims [GetModelDims $node]
