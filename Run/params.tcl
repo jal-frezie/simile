@@ -1050,9 +1050,10 @@ namespace eval fileparams {
 			puts $pStr />
 		    } ,grid {
 			puts -nonewline $pStr "$indent<csv_grid label=$subbedComp filename=[Entitize $relName]"
-			foreach att {rowmin rowmax colmin colmax xpose} val [lrange $paramState($compName) 2 6] {
-			    puts -nonewline $pStr " $att=[Entitize $val]"
-			}
+			foreach val [lrange $paramState($compName) 2 8] \
+			    att {rowmin rowmax colmin colmax xpose irow icol} {
+				puts -nonewline $pStr " $att=[Entitize $val]"
+			    }
 			puts $pStr />
 		    } default {
 			puts $pStr "$indent<csv_columns label=$subbedComp filename=[Entitize $relName] data_column=[Entitize [lindex $paramState($compName) 1]]>"
@@ -1183,6 +1184,7 @@ proc StartElement {name attList args} {
     global parseStatus
 #    puts "Started a $name, atts -$attList-, args -$args-"
     set attVals(xpose) 0 ;# in case older spf does not include it
+    set attVals(irow) [set attVals(icol) position_in_data_area] ;# ditto
     array set attVals $attList
     switch $name {
 	submodel {
@@ -1212,7 +1214,7 @@ proc StartElement {name attList args} {
 	    set parseStatus(translateExtras) \
 		[list $attVals(filename) $attVals(data_column)]
 	} csv_grid {
-	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose)]
+	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose) $attVals(irow) $attVals(icol)]
 	} image {
 	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,image $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(blackval) $attVals(whiteval) $attVals(transpval) $attVals(use) $attVals(xpose)]
 	} geotiff {

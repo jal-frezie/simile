@@ -628,19 +628,39 @@ proc equationDoTable {parent mdl tgt dims startLine} {
             -expand true -fill x
     pack [label $flim.ycapt.hi -text "Finish at row:"] \
             -expand true -fill x
+    pack [label $flim.ycapt.idx -text "Row index from:"] \
+            -expand true -fill x
     pack [label $flim.xcapt.lo -text "Start at column:"] \
             -expand true -fill x
     pack [label $flim.xcapt.hi -text "Finish at column:"] \
+            -expand true -fill x
+    pack [label $flim.xcapt.idx -text "Column index from:"] \
             -expand true -fill x
     
     pack [Entry $flim.yval.lo -textvariable table_entry(row1)] \
             -expand true -fill x
     pack [Entry $flim.yval.hi -textvariable table_entry(rown)] \
             -expand true -fill x
+    pack [ttk::combobox $flim.yval.idx -width 16 -state readonly \
+	      -textvariable table_entry(irow) \
+	      -values [list "Position in data area" \
+			   "First column in grid" \
+			   "Column to left of data"]] \
+	-expand true -fill x
+    set table_entry(irow) [lindex [$flim.yval.idx cget -values] 0]
+# in case not used before
     pack [Entry $flim.xval.lo -textvariable table_entry(col1)] \
             -expand true -fill x
     pack [Entry $flim.xval.hi -textvariable table_entry(coln)] \
             -expand true -fill x
+    pack [ttk::combobox $flim.xval.idx -width 16 -state readonly \
+	      -textvariable table_entry(icol) \
+	      -values [list "Position in data area" \
+			   "First row in grid" \
+			   "Row above data"]] \
+	-expand true -fill x
+    set table_entry(icol) [lindex [$flim.xval.idx cget -values] 0]
+# in case not used before
     pack $fg.limits -fill both -expand true
     
     $t add [set fi [frame $t.image]] -text "Data from image"
@@ -864,6 +884,8 @@ proc equationDoTable {parent mdl tgt dims startLine} {
                 set table_entry(col1) [lindex $table_entry(data) 4]
                 set table_entry(coln) [lindex $table_entry(data) 5]
 		set table_entry(xpose) [lindex $table_entry(data) 6]
+                set table_entry(irow) [TagToName [lindex $table_entry(data) 7]]
+                set table_entry(icol) [TagToName [lindex $table_entry(data) 8]]
             } ,image {
                 .table.notebook select .table.notebook.image
                 set table_entry(row1) [lindex $table_entry(data) 2]
@@ -1012,9 +1034,12 @@ proc AcquireTableData {redo startLine} {
                         ,dbtable:$table_entry(dbtable)]
             }
         } .table.notebook.grid {
-            set tableSpec [list $table_entry(fileName) ,grid \
-                    $table_entry(row1) $table_entry(rown) \
-                    $table_entry(col1) $table_entry(coln) $table_entry(xpose)]
+            set tableSpec \
+		[list $table_entry(fileName) ,grid \
+		     $table_entry(row1) $table_entry(rown) \
+		     $table_entry(col1) $table_entry(coln) $table_entry(xpose) \
+		     [NameToTag $table_entry(irow)] \
+		     [NameToTag $table_entry(icol)]]
         } .table.notebook.image {
             set tableSpec [list $table_entry(fileName) ,image \
                     $table_entry(row1) $table_entry(rown) \
@@ -1254,8 +1279,8 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
     #set mode [lindex $tableSpec 1]
     
     # end JMM ODBC
-    set tStr [NetOpen [lindex $tableSpec 0] r]
-    if {[string equal ,grid [lindex $tableSpec 1]]} {
+    switch -exact [lindex $tableSpec 1] {
+    ,grid {
         set rowList {}
         set colList {}
 	set transpose [expr {[string equal 1 [lindex $tableSpec 6]]}]
@@ -1275,18 +1300,46 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    set xfirst [lindex $tableSpec 4]
 	    set xlast [lindex $tableSpec 5]
 	}
+
+	switch [lindex $tableSpec 8] {
+	    first_row_in_grid {
+		set idxRow 1
+	    } row_above_data {
+		set idxRow [expr {$yfirst-1}]
+	    } default {
+		set idxRow 0
+	    }
+	}
+	switch [lindex $tableSpec 7] {
+	    first_column_in_grid {
+		set idxCol 1
+	    } column_above_data {
+		set idxCol [expr {$xfirst-1}]
+	    } default {
+		set idxCol 0
+	    }
+	}
+
+	set tStr [NetOpen [lindex $tableSpec 0] r]
         for {set rowInd 1} {$rowInd <= $ylast} {incr rowInd} {
             gets $tStr entryLine
+	    if {$rowInd == $idxRow} {
+		set xIndPts [TrimFields [split ,$entryLine ,]]
+	    }
             if {$rowInd >= $yfirst} {
-		if {$yflip} {
+                set usePts [TrimFields [split ,$entryLine ,]]
+		if {$idxCol} {
+		    set yInd [lindex $usePts $idxCol]
+		} elseif {$yflip} {
 		    set yInd [expr {$lineCount+$ylast-$rowInd}]
 		} else {
 		    set yInd [expr {$lineCount+$rowInd-$yfirst}]
 		}
                 lappend rowList $yInd
-                set usePts [TrimFields [split ,$entryLine ,]]
                 for {set colInd $xfirst} {$colInd<=$xlast} {incr colInd} {
-		    if {$xflip} {
+		    if {$idxRow} {
+			set xInd [lindex $xIndPts $colInd]
+		    } elseif {$xflip} {
 			set xInd [expr 1+$xlast-$colInd]
 		    } else {
 			set xInd [expr 1+$colInd-$xfirst]
@@ -1308,7 +1361,8 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
             }
         }
         # set indexList [list $rowList $colList]
-    } elseif {[string equal ,image [lindex $tableSpec 1]]} {
+	close $tStr
+    } ,image {
         set rowList {}
         set colList {}
 	set transpose [expr {[string equal 1 [lindex $tableSpec 10]]}]
@@ -1352,7 +1406,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		if {[tableImage transparency get $colInd $rowInd]} {
 		    if {![string length [lindex $tableSpec 8]]} {
 			Query [list no_clear_val [lindex $tableSpec 0]]\
-			    warning top {} ok
+			    warning data_in_image {} ok
 			return
 		    }
 		    set paramArray($subscriptList) [lindex $tableSpec 8]
@@ -1381,10 +1435,10 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    }
 	}
         # set indexList [list $rowList $colList]
-    } elseif {[string equal ,gdal [lindex $tableSpec 1]]} {
+    } ,gdal {
         #	set indexList [ReadGdalRefToArray paramArray $tableSpec]
         return $tableSpec
-    } else {
+    } default {
 # tableSpec should be:
 # fileName dataHeader ?dbtableId? ?wrapTime? ?fillMethod? indHeaders...
 	set indexStart 2
@@ -1404,6 +1458,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
         # csv handled by existing code other extensions handled with ODBC
         #ShowMess debug info "Loading table with data $tableSpec; ext $ext" ok
         if { $ext == {.csv} } {
+	    set tStr [NetOpen [lindex $tableSpec 0] r]
 	    gets $tStr headerLine
 	    set headerList [TrimFields [split $headerLine ,]]
 	    #ShowMess debug info "Headers are $headerList" ok
@@ -1423,6 +1478,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    if {$headerColumn==-1} {
 		Query [concat no_info_col data [lrange $tableSpec 0 1] \
 			   [list $headerList]] warning data_in_cols {} ok
+		close $tStr
 		return
 	    }
 	    while {[gets $tStr entryLine] != -1} {
@@ -1462,6 +1518,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		    }
 		}
 	    }
+	    close $tStr
 	} else { ;# data is from a tclodbc-connected database
 	    #set driver "Microsoft Excel Driver (*.xls)"
 	    if {![llength [set driver [odbcdriverFromExt $ext]]]} {
@@ -1496,10 +1553,9 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    # todo add error messages!!!
 	    # make sure have some data
 	}
-    }
+    }}
     
     #ShowMess debug info "Converting [array get paramArray]" ok
-    close $tStr
     set result [ArrayToList paramArray]
     if {$addSpecials} {
         if {[info exists fillMtd]} {
