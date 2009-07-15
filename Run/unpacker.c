@@ -488,16 +488,23 @@ void call_for_each_val(int* ptDims, char* ptData, int offset,
 		       valCallback callback_proc, void* cbData) {
   int count;
   sizeAndPtr* convenience;
+
+  convenience = (sizeAndPtr*)ptData + offset;
   switch (ptDims[0]) {
   case OWNSIZED:
-    convenience = (sizeAndPtr*)ptData + offset;
     for (count=0; count<convenience->size; ++count) {
       call_for_each_val(ptDims+1, convenience->ptr, count,
 			callback_proc, cbData);
     }
     break;
-  case SPARSEARRAY: // or any other kind this doesn't handle yet
-    //do the necessary (see free_bloc_level)
+  case SPARSEARRAY:
+    // done by looking at free_bloc_level, which looked here
+    for (count=0; count<convenience->size; ++count) {
+      call_for_each_val(ptDims+2, 
+			convenience->ptr + sizeof(int)*ptDims[1]*(1+count), 
+			// corrects for space taken up by indices
+			count, callback_proc, cbData);
+    }
     break;
   default:
     if (ptDims[0]>0)
