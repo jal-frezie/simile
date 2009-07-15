@@ -1301,25 +1301,28 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    set xlast [lindex $tableSpec 5]
 	}
 
-	switch [lindex $tableSpec 8] {
-	    first_row_in_grid {
-		set idxRow 1
-	    } row_above_data {
-		set idxRow [expr {$yfirst-1}]
-	    } default {
-		set idxRow 0
-	    }
-	}
 	switch [lindex $tableSpec 7] {
 	    first_column_in_grid {
 		set idxCol 1
 	    } column_above_data {
 		set idxCol [expr {$xfirst-1}]
 	    } default {
-		set idxCol 0
+		set idxCol -1
 	    }
 	}
-
+	switch [lindex $tableSpec 8] {
+	    first_row_in_grid {
+		set idxRow 1
+	    } row_above_data {
+		set idxRow [expr {$yfirst-1}]
+	    } default {
+		set idxRow -1
+	    }
+	}
+	if {$idxCol==$xfirst || $idxCol==0 || $idxRow==$yfirst || $idxRow==0} {
+	    Query wayward_grid_index warning data_in_grid {} ok
+	    return
+	}
 	set tStr [NetOpen [lindex $tableSpec 0] r]
         for {set rowInd 1} {$rowInd <= $ylast} {incr rowInd} {
             gets $tStr entryLine
@@ -1328,7 +1331,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    }
             if {$rowInd >= $yfirst} {
                 set usePts [TrimFields [split ,$entryLine ,]]
-		if {$idxCol} {
+		if {$idxCol>-1} {
 		    set yInd [lindex $usePts $idxCol]
 		} elseif {$yflip} {
 		    set yInd [expr {$lineCount+$ylast-$rowInd}]
@@ -1337,7 +1340,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		}
                 lappend rowList $yInd
                 for {set colInd $xfirst} {$colInd<=$xlast} {incr colInd} {
-		    if {$idxRow} {
+		    if {$idxRow>-1} {
 			set xInd [lindex $xIndPts $colInd]
 		    } elseif {$xflip} {
 			set xInd [expr 1+$xlast-$colInd]
