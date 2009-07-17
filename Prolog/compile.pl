@@ -355,17 +355,13 @@ used when entering file parameters */
 	    raise_exception(no_phases);
 	true),
 	set_free_phases(ReevaluateForm, Phases, NewForm),
-	pick_state_vars(NewForm, EvaluateForm, StateForm, UpdateForm),
-	all(utility, all, % just showing off here
-	    [unify(compile), unify(put_in_phase),
-	     build([[build(StateForm)], [build(UpdateForm)]])]),
-	check_functions(EvaluateForm, Phases, VMSPs),
+	pick_state_vars(NewForm),
+	all(compile, put_updates_in_phase, [build(NewForm)]),
+	check_functions(NewForm, Phases, VMSPs),
 	/* first off, unify all matching vm level specs in the two lists so
 	that those that are completed when ordering their condition nodes
 	can be used later */
-	all(compile, insert_enum_phases, [build(VMSPs), unify(UpdateForm)]),
-	all(compile, insert_enum_phases, [build(VMSPs), unify(StateForm)]),
-	all(compile, insert_enum_phases, [build(VMSPs), unify(EvaluateForm)]),
+	all(compile, insert_enum_phases, [build(VMSPs), unify(NewForm)]),
 
 	state:version_is(VStr),
 	state:edition_is(Edition),
@@ -423,8 +419,7 @@ wot need them */
 	generate_main_decls(Language, RootInstance, EndTopType, Stream),
 
 	build_submodel_functions(Language, Phases, Constants,
-				 StateForm, UpdateForm, EvaluateForm, Used,
-				 AllGraphs, Stream),
+				 NewForm, Used, AllGraphs, Stream),
 	make_exit_proc(Language, [RootInstance], Stream),
 	send_to_dest(Stream, EndTopType),
 	fail;
@@ -511,18 +506,30 @@ invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs) :-
 	    invent_ptr_names(L, LinkName, Parent, Instance, Used, MorePtrs),
 	    Ptrs = [Ptr | MorePtrs].
 
-pick_state_vars([], [], [], []).
+pick_state_vars(Form) :-
+	all(compile, mark_update_insts, [build(Form), append(Marked, [])]),
+	mark_antecedents_eval(Marked),
+	all(compile, mark_unphased,
+	    [build(Form), unify(advance), append(_Adv, [])]).
 
-pick_state_vars([One | All], Rate, State, Update) :-
-	pick_state_vars(All, MoreRate, MoreState, MoreUpdate),
-	One = make(Tgt, _,_,_, Acts),
-	(member(Acts, [[assign(SV, SV+stage_incr(_,_,_))],
-		      [update_submodel(_,_,_)]]), !,
-	    Rate = MoreRate, State = MoreState, Update = [One | MoreUpdate];
-	(member(Tgt, [lastvalue(_), completed(_)]);
-	        Acts = [advance_submodel(_,_,_)]), !,
-	    Rate = MoreRate, State = [One | MoreState], Update = MoreUpdate;
-	Rate = [One | MoreRate], State = MoreState, Update = MoreUpdate).
+mark_update_insts(Act, Add) :-
+	Act = make(_,_,_, [update | _], [assign(SV, SV+stage_incr(_,_,_))]), !,
+	    Add = [Act];
+	Add = [].
+
+mark_antecedents_eval(List) :-
+	List = [make(_, Conds-_, _,_,_) | Rest], !,
+	all(compile, mark_unphased,
+	    [build(Conds), unify(eval), append(Marked, Rest)]),
+	mark_antecedents_eval(Marked);
+	true.
+
+mark_unphased(Act, Set, Add) :-
+	Act = make(_,_,_, [Phase | _], _),
+	    var(Phase), !,
+	    Phase = Set,
+	    Add = [Act];
+	Add = [].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % check_functions tests for circularity, then puts each function
@@ -541,13 +548,13 @@ check_functions(Functions, Phases, VMSPs) :-
 	(member(Start, Functions),
 	    Start = make(_, Conds-_, _,_,_), 
 	    member(later(Loop2), Conds),
-	    Loop2 = make(LoopEnd, _, Path, [_, Phase | _], _),
+	    Loop2 = make(LoopEnd, _, Path, [_,_, Phase | _], _),
 	    remove_non_loopers(Path, PurePath),
 	    find_antecedent([Loop2], outside_loop, PurePath-Phase, Out),
 	    /* would be better to get setof these and trace them all back at
 	    once but that needs too_many_variables */
 	    find_antecedent([Out], =, Start, _),
-	    Out = make(Xefct, _, APath, [_, APhase | _], _),
+	    Out = make(Xefct, _, APath, [_,_, APhase | _], _),
 	    (remove_non_loopers(APath, PureAPath),
 		\+ suffix(PurePath, PureAPath),
 		raise_exception(condition_outside_loop(LoopEnd, Xefct));
@@ -563,7 +570,8 @@ reachable(P, Trail) :-
 	all(compile, reachable, [build(Qs), unify([P | Trail])]),
 	    Chkd = 1).
 */
-put_in_phase(make(_,_,_, [P,P | _], _)).
+put_updates_in_phase(make(_,_,_, [update, P,P | _], _)) :- !.
+put_updates_in_phase(_).
 	    
 /* generate_main_decls does all the declarations except the ones for
 temporary variables used when expanding expressions.
@@ -760,19 +768,20 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 % the relevant language. Ratio is the multiplier to scale values in the inner
 % loop to the standard preferred unit
 
-build_submodel_functions( Language, Phases, Constants, StateForm, UpdateForm,
-			  SortedForm, Used, AllGraphs, Stream) :-
+build_submodel_functions( Language, Phases, Constants, NewForm,
+			  Used, AllGraphs, Stream) :-
 	reassure_user("Ordering model execution assignments"),
 
 	/* rough and ready -- phase NotDone means it never gets scheduled */
-	order_all_assignments(Phases, StateForm, OrdStates, _),
-	order_all_assignments(Phases, UpdateForm, OrdUpdates, _),
-	order_all_assignments(Phases, SortedForm, Ordered, Lost), !,
-	(member(Forgotten, SortedForm),
+	order_all_assignments(Phases, NewForm, update, OrdUpdates, ULost),
+	order_all_assignments(Phases, NewForm, eval, Ordered, ELost), !,
+	order_all_assignments(Phases, NewForm, advance, OrdStates, ALost),
+	(member(Forgotten, NewForm),
 	    not_yet_ordered(Forgotten), !,
 	    find_circle([Forgotten], Loop),
 	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
+	append([ULost, ELost, ALost], Lost),
 	member(Awkward, Lost),
 	    /* lost instructions can be caused by circularity elsewhere,
 	    so check for that first */
@@ -807,7 +816,7 @@ find_circle([Head | Chain], Loop) :-
 	    Loop = [NewHead | Circle];
 	 find_circle([NewHead, Head | Chain], SubLoop),
 	    (SubLoop = [], !, %this was fruitless, tag it and try another
-		NewHead = make(_,_,_, [_,_,x | _], _),
+		NewHead = make(_,_,_, [_,_,_,x | _], _),
 		find_circle([Head | Chain], Loop);
 	     Loop = SubLoop)); % found one further down
 	Loop = []. % No leads from here, go back
@@ -1504,7 +1513,7 @@ sort_assignments(Instructions, Phase, VMSpecPairs) :-
 	    sort_assignments(Instructions, LongerPhase, VMSpecPairs)).
 
 goes_this_step(NextInst, Phase, VMSpecPairs) :-
-	NextInst = make(Efx, Conds-_, _, [DefP, NewP | _], _),
+	NextInst = make(Efx, Conds-_, _, [_, DefP, NewP | _], _),
 	var(NewP),
 	DefP >= Phase,
 	(Phase = -2;
@@ -1521,7 +1530,7 @@ goes_this_step(NextInst, Phase, VMSpecPairs) :-
 	member(time, Conds);
 	member(SameStep, Conds),
 	    member(SameStep, [Cond, later(Cond), this_step(Cond)]),
-	    Cond = make(_,_,_, [_, SPhase | _], _),
+	    Cond = make(_,_,_, [_,_, SPhase | _], _),
 	    nonvar(SPhase),
 	    SPhase >= Phase),
 	NewP = Phase,
@@ -1626,7 +1635,7 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 	    and there I just need the existence tests, so now I select these
 	    before ordering */
 	    \+ (SmLevel = sm(Sm, _,_, vm_loop(_,_,_,_)),
-		   member(make(existence_tested(Sm), _,_, [_,_,D], _), All),
+		   member(make(existence_tested(Sm), _,_, [_,_,_,D], _), All),
 		   var(D)),
 
 	    /* For the time being, do not do anything that would use the
@@ -1765,16 +1774,17 @@ relevant(Phase, new_context(Ptr, EnumPhase), UseContext) :-
 	    UseContext = [new_context(Ptr, EnumPhase)];
 	UseContext = [].
 
-order_phase(Phase, Path, RawAssign, All, ThisPass, Later, Taboo) :-
+order_phase(Step, Path, RawAssign, All, ThisPass, Later, Taboo) :-
 	pick_useful_instruction(All, Path, Instruction),
-	get_next_evaluation(RawAssign, Path, Phase, Others, Instruction),
+	get_next_evaluation(RawAssign, Path, Step, Others, Instruction),
 	\+ member(Instruction, Taboo),
-	(Instruction = make(_,_-Deps,_, [_,_, Phase | _], _),
-	all(compile, select_ready, [build(Deps), append(Assign, Others)]),
-	    order_phase(Phase, Path, Assign, All, Rest, Later, Taboo),
+	(Instruction = make(_,_-Deps,_, [Phase,_,_, Step | _], _),
+	    all(compile, select_ready,
+		[build(Deps), unify(Phase), append(Assign, Others)]),
+	    order_phase(Step, Path, Assign, All, Rest, Later, Taboo),
 	    ThisPass = [Instruction | Rest];
 	(delayable(Instruction); !, fail),
-	    order_phase(Phase, Path, RawAssign, All, ThisPass, Later,
+	    order_phase(Step, Path, RawAssign, All, ThisPass, Later,
 			[Instruction | Taboo]));
 	ThisPass = [],
 	    Later = RawAssign.
@@ -1809,11 +1819,11 @@ set_free_phases(OldForm, Phase, NewForm) :-
 	all(compile, close_dep_list, [build(NewForm)]), !.
 
 convert_form(make(T1, Conds, Path, Ph, T5), Phase,
-	     make(T1, NewC-_Deps, Path, [Ph | _], T5), Refs) :-
+	     make(T1, NewC-_Deps, Path, [_, Ph | _], T5), Refs) :-
 	(nonvar(Ph), \+ Ph = Phase; Ph = Phase),
-	(T5 = [assign(SV, SV+stage_incr(_,_,_))], !,
-	    Refs = [], NewC = []; % no order needed in update
-	(\+ member(T1, [lastvalue(_), completed(_)]),
+	( /* T5 = [assign(SV, SV+stage_incr(_,_,_))], !,
+	    Refs = [], NewC = []; % no order needed in update */
+	(\+ member(T1, [lastvalue(_)]),
 				% can_enter irrelevant in state
 	    member(sm(Name,_,_, vm_loop(_,_,_,_)), Path), !,
 	    XCs = [earlier(can_enter(Name)) | Conds];
@@ -1857,8 +1867,8 @@ add_to_deps(Dep, Cond, Full) :-
 	member(Cond, Full), !,
 	    Cond = make(_,_-Deps, _,_,_),
 	    member(Dep, Deps);
-	Cond = make(Act, []-_, [], [-2, -2, -2 | _], []),
-	    (member(Act, [lastvalue(_), completed(_), update(_)]);
+	Cond = make(Act, []-_, [], [_, -2, -2, -2 | _], []),
+	    (member(Act, [lastvalue(_), update(_)]);
 				% conditions that may not need making
 	    raise_exception(cond_not_found(Act))).
 
@@ -1869,25 +1879,28 @@ made_in(Feature, sm(Submodel, _,_, vm_loop(_,_,_,_)), Pass) :-
 	Test =.. [Feature, Submodel],
 	member(make(Test, _,_,_,_), Pass).
 
-order_all_assignments(Phase, All, Done, Left) :-
-	all(compile, select_ready, [build(All), append(Ready, [])]),
+order_all_assignments(Step, All, Phase, Done, Left) :-
+	all(compile, select_ready,
+	    [build(All), unify(Phase), append(Ready, [])]),
 	all(compile, select_ext_tests, [build(All), append(XTests, [])]),
-	order_all(Phase, Ready, XTests, Done, Left).
+	order_all(Step, Ready, XTests, Done, Left).
 
-order_all(Phase, Undone, All, Done, Left) :-
-	order_submodel_assignments(Phase, [], Undone, All, NowDone, NowLeft, _),
+order_all(Step, Undone, All, Done, Left) :-
+	order_submodel_assignments(Step, [], Undone, All, NowDone, NowLeft, _),
 	(NowLeft = Undone, !, /* couldnt do any */
 	    Done = [],
 	    Left = NowLeft;
 	add_phase_conditions(NowDone, -2, [], NowDoneForm),
-	    order_all(Phase, NowLeft, All, ThenDone, Left),
+	    order_all(Step, NowLeft, All, ThenDone, Left),
 	    append(NowDoneForm, ThenDone, Done)).
 
-select_ready(All, Ready) :-
-	All = make(_, Conds-_, _,_,_),
-	member(Cond, Conds),
-	(Cond = RealCond; Cond = earlier(RealCond)),
-	not_yet_ordered(RealCond), !,
+select_ready(All, Phase, Ready) :-
+	All = make(_, Conds-_, _, [MPhase | _], _),
+	(\+ MPhase = Phase;
+	\+ Phase = update,
+	    member(Cond, Conds),
+	    (Cond = RealCond; Cond = earlier(RealCond)),
+	    not_yet_ordered(RealCond)), !,
 	Ready = [];
 	Ready = [All].
 
@@ -1954,7 +1967,7 @@ prepares(V, F) :-
 
 unfinished_submodels([], _,_, []).
 
-unfinished_submodels([make(_,_, PathPlus, [_, FoundPhase | _], _) | Waiting],
+unfinished_submodels([make(_,_, PathPlus, [_,_, FoundPhase | _], _) | Waiting],
 		     Phase, Current, Subs) :-
 	unfinished_submodels(Waiting, Phase, Current, MoreSubs),
 	(Phase >= FoundPhase,
@@ -1970,7 +1983,7 @@ unfinished_submodels([make(_,_, PathPlus, [_, FoundPhase | _], _) | Waiting],
 get_next_evaluation(Assignments, Path, Phase, Remainder, Next) :-
 	select(Next, Assignments, Remainder),
 	not_yet_ordered(Next),
-	Next = make(_, _, IPath, [_, Phase | _], _),
+	Next = make(_, _, IPath, [_,_, Phase | _], _),
 	remove_non_loopers(IPath, Path).
 	/* now keep ready instructions separate so no need to check readiness
 	\+ (member(Prereq, Dependencies),
@@ -2005,13 +2018,13 @@ select_for(Path, Priority, Next) :-
 	    suffix(Path, GenPath),
 	    select_for(Path, Needed, Next).
 
-not_yet_ordered(make(_,_,_, [_,_, IsOrdered | _], _)) :-
+not_yet_ordered(make(_,_,_, [_,_,_, IsOrdered | _], _)) :-
 	var(IsOrdered).
 
 find_antecedent(Chain, TestFn, TestData, Found) :-
 	member(make(_, Conds-_, _,_,_), Chain),
 	member(Prev, Conds),
-	Prev = make(_,_,_, [_,_,Cur | _], _),
+	Prev = make(_,_,_, [_,_,_,Cur | _], _),
 	var(Cur), Cur = 1, !,
 	/* above cut is important -- we do not want to retry selection. If this
 	one gets us nowhere we will call the procedure again with it removed
@@ -2026,7 +2039,7 @@ find_antecedent(Chain, TestFn, TestData, Found) :-
 	    find_antecedent(Chain, TestFn, TestData, Found));
 	find_antecedent([Prev | Chain], TestFn, TestData, Found)).
 
-outside_loop(make(_,_, Path, [_, NPhase | _], _), LoopedPath-Phase) :-
+outside_loop(make(_,_, Path, [_,_, NPhase | _], _), LoopedPath-Phase) :-
 	\+ NPhase == Phase, !;
 	remove_non_loopers(Path, ShortPath),
 	\+ suffix(LoopedPath, ShortPath).

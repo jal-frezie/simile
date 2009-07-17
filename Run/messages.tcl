@@ -231,6 +231,10 @@ set msgs(parameter_name_recurs_message) "The equation is badly formed because it
 set msgs(circular_evaluation_title) "Problem with model design"
 set msgs(circular_evaluation_message) "This model cannot be executed because it contains the following circular set(s) of function evaluations: %s"
 
+set msgs(ordering_failure_title) "Problem ordering calculations"
+set msgs(ordering_failure_message) "Failed to put this instruction into ordered sequence, despite it not seeming to depend on anything: %s"
+set msgs(ordering_failure_detail) "Please contact your software supplier."
+
 set msgs(condition_outside_loop_title) "Problem with model design"
 set msgs(condition_outside_loop_message) "This model contains the target %1\$s which depends on its own values from previous iterations of a program loop. However the cycle of evaluations includes target %2\$s, which is calculated outside the innermost program loop containing target %1\$s"
 

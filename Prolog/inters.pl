@@ -377,7 +377,8 @@ make_intermediates(
 	    swap_back(SourceContext, TermSwap, ParamContext, _),
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
-	        ([Var | _] = Target, !, % it cannot be a condition of itself
+	        (([Var | _] = Target; 	% it cannot be a condition of itself,
+		  Units = diffs), !,    % or its structure if a compartment
 		    Args = [];
 		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
 	        /* note that for the time being the made_at condition is thrown
@@ -560,8 +561,10 @@ make_intermediates(
 	    Setting = [make(increment(TotalName),
 			    [Target, increment(Target) | Depends])],
 	    but now goes in update phase before compartments so only needs to
-	    check if another last(...) has been copied from it */
-	    Setting = [make(lastvalue(TotalName), [lastvalue(InnerTgt)],
+	    check if another last(...) has been copied from it
+	    Dependencies now put back as target eval may go in advance phase */
+	    Setting = [make(lastvalue(TotalName),
+			    [InnerTgt, lastvalue(InnerTgt) | Depends],
 			    WriteContext, Step, [IncrAct]),
 		       make(TotalName, [cleared(TotalName), time],
 			    ClearContext, Step, [])];
