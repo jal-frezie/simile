@@ -986,7 +986,7 @@ showMess(globMess); */
 	if (!errlim) {
 	  made_step = 1;
 	} else {
-	  if (userDefStop->excpNo=(*evalmodel)(id, big_phase)) break;
+	  if (userDefStop->excpNo=(*evalmodel)(id, big_phase+1)) break;
 	  // from inner loop
 
 	  // get the model to generate its error estimate
@@ -1054,14 +1054,14 @@ showMess(globMess); */
 
     advance_time(this, big_phase, 0.5);
     setdt(2, 0);
-    if (err=(*evalmodel)(id, big_phase)) return err;
+    if (err=(*evalmodel)(id, big_phase+1)) return err;
     (*updatemodel)(id, big_phase);
     setdt(3, 0);
-    if (err=(*evalmodel)(id, big_phase)) return err;
+    if (err=(*evalmodel)(id, big_phase+1)) return err;
     (*updatemodel)(id, big_phase);
     advance_time(this, big_phase, 0.5);
     setdt(4, 0);
-    if (err=(*evalmodel)(id, big_phase)) return err;
+    if (err=(*evalmodel)(id, big_phase+1)) return err;
     (*updatemodel)(id, big_phase);
     setdt(1, 0);
     return 0;

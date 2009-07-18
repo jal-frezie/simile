@@ -354,13 +354,17 @@ used when entering file parameters */
 	(Phases = 0,
 	    raise_exception(no_phases);
 	true),
+	  % This sets default time step of anything not done in a particular
+	  % step to that of its submodel
 	set_free_phases(ReevaluateForm, Phases, NewForm),
-	pick_state_vars(NewForm),
-	all(compile, put_updates_in_phase, [build(NewForm)]),
-	check_functions(NewForm, Phases, VMSPs),
+	  % This marks state variable changes as going in the update phase
+	all(compile, mark_update_insts, [build(NewForm), append(Marked, [])]),
+	  % this puts everything in the longest possible time step
+	check_functions(NewForm, Phases, Marked),
 	/* first off, unify all matching vm level specs in the two lists so
 	that those that are completed when ordering their condition nodes
 	can be used later */
+	all(compile, get_vmsps, [build(NewForm), append(VMSPs, [])]),
 	all(compile, insert_enum_phases, [build(VMSPs), unify(NewForm)]),
 
 	state:version_is(VStr),
@@ -418,7 +422,7 @@ wot need them */
 				'AME_model', 'AME_model'-[]),
 	generate_main_decls(Language, RootInstance, EndTopType, Stream),
 
-	build_submodel_functions(Language, Phases, Constants,
+	build_submodel_functions(Language, BoostPhases, Constants,
 				 NewForm, Used, AllGraphs, Stream),
 	make_exit_proc(Language, [RootInstance], Stream),
 	send_to_dest(Stream, EndTopType),
@@ -506,59 +510,60 @@ invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs) :-
 	    invent_ptr_names(L, LinkName, Parent, Instance, Used, MorePtrs),
 	    Ptrs = [Ptr | MorePtrs].
 
-pick_state_vars(Form) :-
-	all(compile, mark_update_insts, [build(Form), append(Marked, [])]),
-	mark_antecedents_eval(Marked),
-	all(compile, mark_unphased,
-	    [build(Form), unify(advance), append(_Adv, [])]).
-
 mark_update_insts(Act, Add) :-
-	Act = make(_,_,_, [update | _], [assign(SV, SV+stage_incr(_,_,_))]), !,
+	Act = make(_,_,_, [update | _],
+		   [assign(SV, SV+stage_incr(_,_,_))]), !,
 	    Add = [Act];
-	Add = [].
+	Act = make(_,_,_, [eval | _], _),
+	    Add = [].
 
-mark_antecedents_eval(List) :-
+update_antes_to_step(List, Step) :-
 	List = [make(_, Conds-_, _,_,_) | Rest], !,
-	all(compile, mark_unphased,
-	    [build(Conds), unify(eval), append(Marked, Rest)]),
-	mark_antecedents_eval(Marked);
+	all(compile, mark_unstepped,
+	    [build(Conds), unify(Step), append(Marked, Rest)]),
+	update_antes_to_step(Marked, Step);
 	true.
 
-mark_unphased(Act, Set, Add) :-
-	Act = make(_,_,_, [Phase | _], _),
-	    var(Phase), !,
-	    Phase = Set,
+mark_unstepped(Act, Set, Add) :-
+	Act = make(_,_,_, [_,_, Step | _], _),
+	    var(Step), !,
+	    Step = Set,
 	    Add = [Act];
 	Add = [].
-
+	    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % check_functions tests for circularity, then puts each function
 % evaluation into the slowest time step in which it needs to be updated
 
-check_functions(Functions, Phases, VMSPs) :-
+check_functions(Functions, Steps, Updates) :-
 /*	reassure_user("Checking for circularity in model assignment order"),
 	(\+ all(compile, reachable, [build(Functions), unify([])]),
 	    retract(heres_yer_loop(Loop)),
 	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
 */	reassure_user("Sorting assignments into correct time steps"),
-        sort_assignments(Functions, Phases, VMSPs),
+        SpecialSteps is Steps-1,
+        sort_assignments(Functions, SpecialSteps),
+	RKStep is Steps+1,
+	update_antes_to_step(Updates, RKStep),
+	all(compile, mark_unstepped, [build(Functions), unify(Steps),
+				      append(_Normal, [])]),
 	/* Check all same-time-step circles can be done in one program loop */
 	reassure_user("Checking consistency of same-time-step loops"),
 	(member(Start, Functions),
 	    Start = make(_, Conds-_, _,_,_), 
 	    member(later(Loop2), Conds),
-	    Loop2 = make(LoopEnd, _, Path, [_,_, Phase | _], _),
+	    Loop2 = make(LoopEnd, _, Path, [_,_, Step | _], _),
 	    remove_non_loopers(Path, PurePath),
-	    find_antecedent([Loop2], outside_loop, PurePath-Phase, Out),
+	    find_antecedent([Loop2], outside_loop, PurePath-Step, Out),
 	    /* would be better to get setof these and trace them all back at
 	    once but that needs too_many_variables */
 	    find_antecedent([Out], =, Start, _),
-	    Out = make(Xefct, _, APath, [_,_, APhase | _], _),
+	    Out = make(Xefct, _, APath, [_,_, AStep | _], _),
 	    (remove_non_loopers(APath, PureAPath),
 		\+ suffix(PurePath, PureAPath),
 		raise_exception(condition_outside_loop(LoopEnd, Xefct));
-	    raise_exception(mixed_phase_loop(LoopEnd, Xefct, Phase, APhase)));
+	    raise_exception(mixed_phase_loop(LoopEnd, Xefct, Step, AStep)));
 	!).
 /*
 reachable(P, Trail) :-
@@ -570,8 +575,6 @@ reachable(P, Trail) :-
 	all(compile, reachable, [build(Qs), unify([P | Trail])]),
 	    Chkd = 1).
 */
-put_updates_in_phase(make(_,_,_, [update, P,P | _], _)) :- !.
-put_updates_in_phase(_).
 	    
 /* generate_main_decls does all the declarations except the ones for
 temporary variables used when expanding expressions.
@@ -796,8 +799,8 @@ build_submodel_functions( Language, Phases, Constants, NewForm,
 	reassure_user("Generating code for model execution"),
 	all(compile, build_eval_proc,
 	    [unify(Language), unify(Constants),
-	     build([updatemodel, advancemodel, evalmodel]),
-	     build([OrdUpdates, OrdStates, Ordered]),
+	     build([updatemodel, evalmodel, advancemodel]),
+	     build([OrdUpdates, Ordered, OrdStates]),
 	     unify(Used), unify(AllGraphs), unify(Stream)]).
 
 /* find_circle([Head | Chain], Loop) :-
@@ -1330,7 +1333,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    apply_minmax(Node, Source, SourceEqn);
 	member(Type, [compartment, immigration, reproduction]),
 	  \+ Source = none,
-	    UseList = RefList, 
+	    UseList = [time | RefList], 
 	    Made = update(Dest),
 	    UseStep = SmStep,
 	    SourceEqn = Source),
@@ -1499,7 +1502,31 @@ compartments are updated on step 0 -- that would be silly!
 Also pairs up names of vm models with the phases they get enumerated
 in, so this info is available when they are used as bases
 
-/* Experimental arse over tit version */
+21st century, fully double-link-aware version */
+
+sort_assignments(Instructions, Phase) :-
+	(Phase = -2, !;
+	 LongerPhase is Phase-1,
+	    sort_assignments(Instructions, LongerPhase)),
+	go_this_step(Instructions, Phase).
+
+go_this_step([], _).
+go_this_step([make(_, Conds-Afx, _, [_, DefP, NewP | _],_) | More], Phase) :-
+	((\+ var(NewP); % gone already
+	 DefP > Phase,	% need not go now
+	    member(Cond, Conds),
+	    (Cond = on_reload, Phase < -1;
+		Cond = on_reset, Phase < 0;
+		Cond = time, Phase < DefP;
+		member(Cond, [Act, later(Act), this_step(Act)]),
+		Act = make(_,_,_,[_,_,Done,_], _),
+		var(Done))), !,
+	    ToTry = More;
+	NewP = Phase,
+	    append(Afx, More, ToTry)),
+	go_this_step(ToTry, Phase).
+
+/* Experimental arse over tit version 
 
 sort_assignments(Instructions, Phase, VMSpecPairs) :-
 	member(NextInst, Instructions),
@@ -1517,12 +1544,6 @@ goes_this_step(NextInst, Phase, VMSpecPairs) :-
 	var(NewP),
 	DefP >= Phase,
 	(Phase = -2;
-	 /* member(AlLevel, Path), /* if anything from an alarm submodel goes,
-	    everything else from it goes	    
-	    AlLevel = sm(_,_,_, fm_loop(_, Al)),
-	    nonvar(Al),
-	    member(make(_,_, AlPath, _,_), Compartments),
-	    member(AlLevel, AlPath); */
 	Phase = -1,
 	    member(on_reload, Conds);
 	Phase = 0,
@@ -1537,7 +1558,9 @@ goes_this_step(NextInst, Phase, VMSpecPairs) :-
 	(Efx = enumerate(Name),
 	    VMSpecPairs = [vm_spec_pair(Name, Phase)];
 	VMSpecPairs = []), !.	
-			 /*
+			 
+older forward-pointing version
+
 sort_assignments(Instructions, MustDo, Compartments, Phase, SortedForm) :-
 	Instructions = [], !,
 	    SortedForm = Instructions;
@@ -1792,6 +1815,11 @@ order_phase(Step, Path, RawAssign, All, ThisPass, Later, Taboo) :-
 delayable(make(_, Conds-_, _,_,_)) :-
 	member(later(_), Conds), !.
 
+get_vmsps(make(Efct, _,_, [_,_, Step | _], _), VMSP) :-
+	Efct = enumerate(Name), !,
+	VMSP = [vm_spec_pair(Name, Step)];
+	VMSP = [].
+	
 /* insert_enum_phases: when we find an enumerate instruction, we want to
 make sure that any time later we go into its submodel, the path will tell us
 which phase the submodel was enumerated (had its membership decided) in. So
