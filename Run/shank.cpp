@@ -978,7 +978,7 @@ showMess(globMess); */
 	    setdt(-2,0);
 	  }
 	  (*updatemodel)(id, big_phase);
-	  userDefStop->excpNo=rk_update(id, big_phase);
+	  userDefStop->excpNo=rk_update(id);
 	  break;
 	}
 	if (userDefStop->excpNo) break; // from inner loop
@@ -986,7 +986,7 @@ showMess(globMess); */
 	if (!errlim) {
 	  made_step = 1;
 	} else {
-	  if (userDefStop->excpNo=(*evalmodel)(id, big_phase+1)) break;
+	  if (userDefStop->excpNo=(*evalmodel)(id, phases+1)) break;
 	  // from inner loop
 
 	  // get the model to generate its error estimate
@@ -1049,20 +1049,21 @@ showMess(globMess); */
     }
   }
 
-  int rk_update(void* id, int big_phase) {
-    int err;
+  int rk_update(void* id) {
+    int wee_phase, err;
 
-    advance_time(this, big_phase, 0.5);
+    wee_phase=phases+1;
+    advance_time(this, phases, 0.5);
     setdt(2, 0);
-    if (err=(*evalmodel)(id, big_phase+1)) return err;
-    (*updatemodel)(id, big_phase);
+    if (err=(*evalmodel)(id, wee_phase)) return err;
+    (*updatemodel)(id, phases);
     setdt(3, 0);
-    if (err=(*evalmodel)(id, big_phase+1)) return err;
-    (*updatemodel)(id, big_phase);
-    advance_time(this, big_phase, 0.5);
+    if (err=(*evalmodel)(id, wee_phase)) return err;
+    (*updatemodel)(id, phases);
+    advance_time(this, phases, 0.5);
     setdt(4, 0);
-    if (err=(*evalmodel)(id, big_phase+1)) return err;
-    (*updatemodel)(id, big_phase);
+    if (err=(*evalmodel)(id, wee_phase)) return err;
+    (*updatemodel)(id, phases);
     setdt(1, 0);
     return 0;
   }
