@@ -2048,7 +2048,8 @@ not_yet_ordered(make(_,_,_, [_,_,_, IsOrdered | _], _)) :-
 find_antecedent(Chain, TestFn, TestData, Found) :-
 	member(make(_, Conds-_, _,_,_), Chain),
 	member(Prev, Conds),
-	Prev = make(_,_,_, [_,_,_,Cur | _], _),
+	Prev = make(_,_,_, [Phase,_,_,Cur | _], _),
+	\+ Phase = update,
 	var(Cur), Cur = 1, !,
 	/* above cut is important -- we do not want to retry selection. If this
 	one gets us nowhere we will call the procedure again with it removed
