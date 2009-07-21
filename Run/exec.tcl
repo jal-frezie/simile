@@ -150,7 +150,9 @@ proc ExecuteTo {node current pause unitLength display foci intMethod maxErr} {
 	}
     }
     waitForDisps
-#    InteractGUI $instanceId $scaled_next 1 ;# must do it at end
+    InteractGUI $node $scaled_next 1
+# above is required to leave right time in progress display if not finishing
+# on display interval boundary
     FreeAll $payload
     return $currentMode
 }

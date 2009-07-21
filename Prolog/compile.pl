@@ -777,22 +777,14 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 	reassure_user("Ordering model execution assignments"),
 
 	/* rough and ready -- phase NotDone means it never gets scheduled */
-	order_all_assignments(Phases, Updates, update, OrdUpdates, ULost),
-	order_all_assignments(Phases, NewForm, eval, Ordered, ELost), !,
-	order_all_assignments(Phases, NewForm, advance, OrdStates, ALost),
+	order_all_assignments(Phases, Updates, update, OrdUpdates),
+	order_all_assignments(Phases, NewForm, eval, Ordered), !,
+	order_all_assignments(Phases, NewForm, advance, OrdStates),
 	(member(Forgotten, NewForm),
 	    not_yet_ordered(Forgotten), !,
 	    find_circle([Forgotten], Loop),
-	    all(compile, unfinished_in, [build([Forgotten | Loop]), build(CircSet)]),
+	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
-	append([ULost, ELost, ALost], Lost),
-	member(Awkward, Lost),
-	    /* lost instructions can be caused by circularity elsewhere,
-	    so check for that first */
-	    \+ (order(Holdup, Awkward), not_yet_ordered(Holdup)),
-	    Awkward = make(Tail, _,_,_,_),
-	    % pick act because raising exception with self-ref term crashes GNU
-	    raise_exception(ordering_failure(Tail));
 	true),
 	/* note state variables implemented by 'last' might refer to
 	compartment values, hence must go before them */
@@ -823,7 +815,7 @@ find_circle([Head | Chain], Loop) :-
 		NewHead = make(_,_,_, [_,_,_,x | _], _),
 		find_circle([Head | Chain], Loop);
 	     Loop = SubLoop)); % found one further down
-	Head = make(Tail, _,_,_,_),
+	unfinished_in(Head, Tail),
 	% pick act because raising exception with self-ref term crashes GNU
 	raise_exception(ordering_failure(Tail)),
 	Loop = []. % No leads from here, go back
@@ -1912,19 +1904,18 @@ made_in(Feature, sm(Submodel, _,_, vm_loop(_,_,_,_)), Pass) :-
 	Test =.. [Feature, Submodel],
 	member(make(Test, _,_,_,_), Pass).
 
-order_all_assignments(Step, All, Phase, Done, Left) :-
+order_all_assignments(Step, All, Phase, Done) :-
 	all(compile, select_ready,
 	    [build(All), unify(Phase), append(Ready, [])]),
 	all(compile, select_ext_tests, [build(All), append(XTests, [])]),
-	order_all(Step, Ready, XTests, Done, Left).
+	order_all(Step, Ready, XTests, Done).
 
-order_all(Step, Undone, All, Done, Left) :-
+order_all(Step, Undone, All, Done) :-
 	order_submodel_assignments(Step, [], Undone, All, NowDone, NowLeft, _),
 	(NowLeft = Undone, !, /* couldnt do any */
-	    Done = [],
-	    Left = NowLeft;
+	    Done = [];
 	add_phase_conditions(NowDone, -2, [], NowDoneForm),
-	    order_all(Step, NowLeft, All, ThenDone, Left),
+	    order_all(Step, NowLeft, All, ThenDone),
 	    append(NowDoneForm, ThenDone, Done)).
 
 select_ready(All, Phase, Ready) :-

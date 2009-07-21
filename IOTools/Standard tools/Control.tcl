@@ -484,7 +484,8 @@ namespace eval runcontrol33857 {
 	    if {[string equal start $sendvars($node,currentMode)]} {
 		set sendvars($node,currentMode) $modelAct
 	    }
-	    switchMode $node
+#	    switchMode $node
+# don't know what the above was for, it caused spurious display updates
 	}
 	set current $runState($node,currentTime)
 	if {[string equal exit $sendvars($node,currentMode)]} {
@@ -494,7 +495,7 @@ namespace eval runcontrol33857 {
 		set runState($node,modelRunning) 2
 	    }
 	} else {
-	    if {$current>=$finish} {
+	    if {abs($current-$finish)<1e-12} { ;# allow for floating point drift
 		set exec $runState($node,run_length)
 		SetupBar $node $finish [expr $finish+$exec]
 	    } else {
