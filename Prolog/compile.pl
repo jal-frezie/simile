@@ -423,7 +423,7 @@ wot need them */
 	generate_main_decls(Language, RootInstance, EndTopType, Stream),
 
 	build_submodel_functions(Language, BoostPhases, Constants,
-				 NewForm, Used, AllGraphs, Stream),
+				 NewForm, Marked, Used, AllGraphs, Stream),
 	make_exit_proc(Language, [RootInstance], Stream),
 	send_to_dest(Stream, EndTopType),
 	fail;
@@ -524,11 +524,12 @@ update_antes_to_step(List, Step) :-
 	update_antes_to_step(Marked, Step);
 	true.
 
-mark_unstepped(Act, Set, Add) :-
+mark_unstepped(Cond, Set, Add) :-
+	member(Cond, [Act, later(Act), this_step(Act)]),
 	Act = make(_,_,_, [_,_, Step | _], _),
-	    var(Step), !,
-	    Step = Set,
-	    Add = [Act];
+	var(Step), !,
+	Step = Set,
+	Add = [Act];
 	Add = [].
 	    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -771,18 +772,18 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 % the relevant language. Ratio is the multiplier to scale values in the inner
 % loop to the standard preferred unit
 
-build_submodel_functions( Language, Phases, Constants, NewForm,
+build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 			  Used, AllGraphs, Stream) :-
 	reassure_user("Ordering model execution assignments"),
 
 	/* rough and ready -- phase NotDone means it never gets scheduled */
-	order_all_assignments(Phases, NewForm, update, OrdUpdates, ULost),
+	order_all_assignments(Phases, Updates, update, OrdUpdates, ULost),
 	order_all_assignments(Phases, NewForm, eval, Ordered, ELost), !,
 	order_all_assignments(Phases, NewForm, advance, OrdStates, ALost),
 	(member(Forgotten, NewForm),
 	    not_yet_ordered(Forgotten), !,
 	    find_circle([Forgotten], Loop),
-	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
+	    all(compile, unfinished_in, [build([Forgotten | Loop]), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
 	append([ULost, ELost, ALost], Lost),
 	member(Awkward, Lost),
@@ -822,6 +823,9 @@ find_circle([Head | Chain], Loop) :-
 		NewHead = make(_,_,_, [_,_,_,x | _], _),
 		find_circle([Head | Chain], Loop);
 	     Loop = SubLoop)); % found one further down
+	Head = make(Tail, _,_,_,_),
+	% pick act because raising exception with self-ref term crashes GNU
+	raise_exception(ordering_failure(Tail)),
 	Loop = []. % No leads from here, go back
 
 match_levels([], []).
@@ -980,7 +984,8 @@ extract_submodel_assignment(Instance, ParentFns,
 	path_section_for(SmName, Name, Dims, Level, Ptr, NewPtr),
 	append(Level, Path, LocalPath),
 	list_local_index_meanings(SmName, ISpecs),
-	all(dialogue, index_types, [build(ISpecs), build(IndxCount)]),
+	all(dialogue, index_types, [build(ISpecs), build(RevIndxCount)]),
+	reverse(RevIndxCount, IndxCount),
 	/* Do not allow an associated model to be started until its
 	bases have all been enumerated */
 

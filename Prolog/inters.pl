@@ -664,8 +664,9 @@ make_intermediates(
 	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !;
 	Source = keep(SourceRef), !;
 	(Source = place_in(IndN), !,
+	        reverse(BuildingArrays, BackBA),
 	        all(inters, building_dims_and_indices,
-	        [build(BuildingArrays), build(DestDims), build(DestInds)]);
+	        [build(BackBA), build(DestDims), build(DestInds)]);
 	    Source = index(IndN), !,
 	        reverse(DestPath, BackDP),
 	        all(inters, indices_for,
