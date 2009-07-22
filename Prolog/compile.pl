@@ -975,9 +975,6 @@ extract_submodel_assignment(Instance, ParentFns,
 	/* bug flusher! (nonvar(Ptr); append_atoms(Name, pointer, Ptr)), */
 	path_section_for(SmName, Name, Dims, Level, Ptr, NewPtr),
 	append(Level, Path, LocalPath),
-	list_local_index_meanings(SmName, ISpecs),
-	all(dialogue, index_types, [build(ISpecs), build(RevIndxCount)]),
-	reverse(RevIndxCount, IndxCount),
 	/* Do not allow an associated model to be started until its
 	bases have all been enumerated */
 
@@ -998,7 +995,7 @@ instruction because they will not require individual initialization routines. */
         (is_population(SmName), !,
 	    BaseSides = [],
 	    append_atoms(Name, count, Count),
-	    Level = [sm(_,_,_, vm_loop(_, IndxCount,_, SetMems))],
+	    Level = [sm(_,_,_, vm_loop(_,_,_, SetMems))],
 	    GenInters = % some now in special population class
 	    [ %instance(internal, inter(LocalPath, _,_), _, parentId, int-[]),
 	      %instance(internal, inter(LocalPath, _,_), _, channelId, int-[]),
@@ -1090,7 +1087,7 @@ nodes.
 	    versions (not that they were...) */
 	    all(ame_gen, enum_type_ref, [build(Dims), unify(SmName),
 					 build(Sizes), build(_), build(_)]),
-	    Level = [sm(_,_,_, vm_loop(Sizes, IndxCount, BaseSides, _))],
+	    Level = [sm(_,_,_, vm_loop(Sizes, _, BaseSides, _))],
 	    (setof(CondBox, member(instance(condition,_, function,
 			elt(_, CondBox, _),_), Functions), Conds), !,
 		TestExpr = Conds;
@@ -1116,7 +1113,7 @@ nodes.
 			     [assign(arr(Ptr, Name, []), 0)]),
 			make(startable(Name), [init_list(Name) | BasesCleared],
 			     Path, Step, [reset_list(Ptr, Name)])];
-	Level = [sm(_,_,_, fm_loop(Globs, IndxCount,_)) | _Loops],
+	Level = [sm(_,_,_, fm_loop(Globs,_,_)) | _Loops],
 	% its the _Loops that have the bounds!
 	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
             (by_record(SmName), !,
@@ -1689,7 +1686,7 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 		    [build([D1, D1 | AllLoops]), build([D2, D2 | OpenLoops]),
 		     build(LastStep)]),
 		all(inters, indices_for,
-		    [build(AllLoops), append(LoopInds, []), append(_Types, _)]),
+		    [build(AllLoops), append(LoopInds, []), append(_Ts, [])]),
 		append(LoopInds, LocalInds, Inds),
 
 		/* At this point we need to replace the innermost loop with an

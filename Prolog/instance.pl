@@ -479,12 +479,15 @@ valid_tap(Flow, Controller) :-
 
 % 3rd arg of *m_loop(...) is inserted by extract_submodel_assignments
 path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
-	variable_size(SmName), !,
+	m_update:list_local_index_meanings(SmName, ISpecs),
+	all(dialogue, index_types, [build(ISpecs), build(RevIndxCount)]),
+	reverse(RevIndxCount, IndxCount),
+	(variable_size(SmName), !,
 	    (% by_record(SmName), !,
 		% SmSpec = vm_loop(rec, _,[],_);
 	    is_population(SmName), !,
-		SmSpec = vm_loop(pop, _, [],_);
-	    SmSpec = vm_loop(_Bounds, _Dims, _Loops, _)),
+		SmSpec = vm_loop(pop, IndxCount, [],_);
+	    SmSpec = vm_loop(_Bounds, IndxCount, _Loops, _)),
 	    Level = [sm(Context, HiPtr, LoPtr, SmSpec)];
 	(by_record(SmName), !,
 	    SmSizes = [pra_bound(HiPtr, Context)];
@@ -492,4 +495,4 @@ path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
 				     build(SmSizes), build(_), build(_)])),
 	    make_inds_for(SmSizes, SmPath, SmInds),
 	    Level = [sm(Context, HiPtr, LoPtr,
-			fm_loop(SmInds, _Dims,_)) | SmPath].
+			fm_loop(SmInds, IndxCount,_)) | SmPath]).

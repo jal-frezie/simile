@@ -1294,7 +1294,7 @@ indices_for(set(_, loop(_,_)), [], []).
 indices_for(sm(_,_, Ptr, Spec), Inds, Dims) :-
 	Spec = fm_loop(Inds, Dims,_);
 	Spec = vm_loop(N, Dims,_,_),
-	(N = pop, !,
+	(N == pop, !,
 	    Inds = [ind(Ptr, pop)];	  
 	 (Dims = [], !,
 		Inds = [];
