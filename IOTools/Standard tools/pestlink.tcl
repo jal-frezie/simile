@@ -63,8 +63,10 @@ namespace eval $keyValue {
         pack [checkbutton $inpId.gather -text "Use current data as estimates" \
                 -variable ::[namespace current]::useNodes($winId,gathering) \
                 -command [namespace code [list AbleEstimateFields $winId]]]
+	set scrogVar ::[namespace current]::useNodes($winId,scrogging)
         pack [checkbutton $outId.show -text "Show these on plots" \
-                -variable ::[namespace current]::useNodes($winId,scrogging)]
+                -variable $scrogVar]
+	bind $outId.show <Destroy> [list unset $scrogVar] ;# tidy up
         # Actions frame
         # Control buttons
         pack [set lf [labelframe $resId.lbf -text {Parameter estimation}]] \

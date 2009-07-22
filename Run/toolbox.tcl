@@ -1420,6 +1420,8 @@ proc LoadFile {topNode tree tgt} {
                 switch [lindex $Desc 0] {
                     "Run Status" {
                         set runState($topNode,runParams) $boddledy
+# make sure they are used...good how 'array unset' never raises error
+			array unset runState $topNode,currentTime
 # do next bit when starting exec proc
 #                        do_for_node $topNode SetRunParams $topNode $runParams
                     } "Authentication Code" { ;# old method: separate part
