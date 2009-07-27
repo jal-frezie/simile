@@ -2,7 +2,7 @@
 # edition: evaluation, teaching, standard or enterprise
 EDN = STANDARD
 # date of final expiry: "hh:mm D M Y" or "" for permanent
-ABS_EXP = ""
+ABS_EXP = "00:00 1 Oct 2009"
 # days after install: 0 for no installation expiry
 REL_EXP = 0
 # License code required to verify name/corp/edition: 0 for no

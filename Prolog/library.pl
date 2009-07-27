@@ -522,7 +522,10 @@ update_per_record_bracket_style(Parent) :- % should do all then fail
 	contains(Parent, Node),
 	Node has_class submodel,
 	by_record(Node),
-	Link is_connector from Node to _,
+	ExitLink is_connector from Node to _,
+	(ghost_link(ExitLink, _Base, Ghost),
+	    Link is_connector from Ghost to _;
+	Link = ExitLink),
 	Link has_type influence,
 	(OtherArc = Link; sequence(Link, OtherArc)),
 	\+ sequence(OtherArc, _),
