@@ -787,7 +787,7 @@ class Model {
 
 public:
   updatemodel_type *updatemodel;
-  advancemodel_type *advancemodel;
+//  advancemodel_type *advancemodel;
   evalmodel_type *evalmodel;
   getpointer_type *getpointer;
   setstep_type *setstepmodel;
@@ -828,8 +828,8 @@ showMess(globMess); */
     getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
     createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
     updatemodel = (updatemodel_type *)FIND_FUNCTION(handle, "do_updatemodel");
-    advancemodel = (advancemodel_type *)FIND_FUNCTION(handle, 
-						      "do_advancemodel");
+//    advancemodel = (advancemodel_type *)FIND_FUNCTION(handle, 
+//						      "do_advancemodel");
     evalmodel = (evalmodel_type *)FIND_FUNCTION(handle, "do_evalmodel");
     setstepmodel = (setstep_type *)FIND_FUNCTION(handle, "do_setstep");
     getpointer = (getpointer_type *)FIND_FUNCTION(handle, "burrow_to");
@@ -924,8 +924,8 @@ showMess(globMess); */
     err=(*evalmodel)(modelHandle, top_phase);
     if (err)
       userDefStop->excpNo = err;
-    else
-      (*advancemodel)(modelHandle, top_phase);
+//    else
+//      (*advancemodel)(modelHandle, top_phase);
     if (userDefStop->excpNo)
       return userDefStop;
     return NULL;
@@ -1018,7 +1018,7 @@ showMess(globMess); */
       } // made progress
       if (userDefStop->excpNo) break; // from outer loop
       if (userDefStop->excpNo=(*evalmodel)(id, big_phase)) break;
-      (*advancemodel)(id, big_phase);
+//      (*advancemodel)(id, big_phase);
     }
     if (check_gui(id, *end, 0) && !userDefStop->excpNo)
       // always go to make sure time is right

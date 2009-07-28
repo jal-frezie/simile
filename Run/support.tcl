@@ -79,7 +79,7 @@ proc ExplainError {myNode errList origError} {
     switch $what {
 	evalmodel {set operation "calculating the value of"}
 	updatemodel {set operation "updating the state"}
-	advancemodel {set operation "advancing the time point for"}
+#	advancemodel {set operation "advancing the time point for"}
 	resetmodel {set operation "resetting"}
 	default {set operation "doing $what for"}
     }
@@ -532,7 +532,7 @@ proc TclExecuteModel {node howInt start end errLim} {
             }
 	    SetDTs $bigPhase $xtime
 
-	    do_model advancemodel $bigPhase
+#	    do_model advancemodel $bigPhase
 	    if {[string equal Euler $howInt]} {
                 if {$firstPass} {
  		    set dts(0) 0

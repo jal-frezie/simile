@@ -335,14 +335,16 @@ initialization of the instance, then slip in the close after it. All this would 
 unnecessary if the thing were designed so it could call itself on parts of the
 program. I blame Geraint....*/
 
-do_assignment(L, [assign_array(Parent, Name) | Clauses], Indent,
+do_assignment(L, [assign_array(Parent, Name, Init) | Clauses], Indent,
 	      Used, Stream) :-
+	make_struct_reference(L, Parent, Name, Dest),
 	append_atoms(Name, made, Made),
 	make_struct_reference(L, Parent, Made, Count),
 	refer_value(L, Count, CountRef),
-	make_struct_reference(L, Parent, Name, Dest),
-	excrete(L, assign_space, Dest=[Parent, Name, [], Used, [CountRef]],
-		Indent, Stream),
+	(Init = -1, !,
+	    excrete(L, release_space, [Dest, CountRef, Used], Indent, Stream);
+	 excrete(L, assign_space, Dest=[Parent, Name, [], Used, [CountRef]],
+		Indent, Stream)),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 
 do_assignment(L, [verbatim(CodeLine) | Clauses],

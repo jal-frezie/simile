@@ -17,11 +17,11 @@ FINDABLE EXPORT void do_updatemodel(void* handle, int phase) {
   ((AME_model *)handle)->updatemodel(phase);
 }
 
-FINDABLE EXPORT advancemodel_type do_advancemodel;
-FINDABLE EXPORT void do_advancemodel(void* handle, int phase) {
-  ((AME_model *)handle)->advancemodel(phase);
-}
-
+//FINDABLE EXPORT advancemodel_type do_advancemodel;
+//FINDABLE EXPORT void do_advancemodel(void* handle, int phase) {
+//  ((AME_model *)handle)->advancemodel(phase);
+//}
+//
 jmp_buf env;
 
 static void exit_sighandler(int x){

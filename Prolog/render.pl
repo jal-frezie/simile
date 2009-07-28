@@ -77,15 +77,17 @@ ptr_compare(L, Ptr1, Ptr2, Expr) :-
 				      ExprStr),
 	    name(Expr, ExprStr).
 
-make_cons_dest(instance(Type, Sym, _, Nm, _), ConLines, DeLines) :-
+make_cons_dest(instance(Type, Sym, _, Name, _), ConLines, DeLines) :-
 	Type = submodel,
 	variable_size(Sym), !,
-	    Nm = Name,
 	    make_assignment(c, Name, 0, SubConLine),
 	    append(["        ", SubConLine, ";"], ConLineStr),
 	    name(ConLine, ConLineStr),
 	    ConLines = [ConLine],
 	    render(c, procedure_call, delete_list(Name), 8, DeLines);
+	by_record(Sym), !,
+	    ConLines = [],
+	    render(c, release_space, [Name,_,_], 8, DeLines); 
 /*	Type = external, !,
 	    Nm = elt(_, Name, _),
 	    make_constant_string(c, Sym, SymC),
@@ -119,24 +121,6 @@ render( tcl, comment, Comment, Indent, [Atom]) :-
          sicstus_format_to_chars( "~*s;# ~w", [Indent," ",Comment], CharList ),
          name( Atom, CharList ).
 
-render(c, clear_memory, Object, Indent, Clearance) :-
-	render(tcl, clear_memory, Object, Indent, TCLClearance),
-	render_all(c, comment, TCLClearance, 0, Clearance).
-render(tcl, clear_memory, instance(submodel, _, _, Name, _-Dims), Indent, 
-		[Line1, Clearance, LineN]) :-
-	(number(Dims), !,
-		NewIndent is Indent + 4,
-		render(tcl, for_start, [makenames, Dims, 1], Indent, [Line1]),
-		refer_value(tcl, makenames, VWithDollar),
-		make_struct_reference(tcl, Name, VWithDollar, SpaceName),
-		render(tcl, end(for), makenames, Indent, [LineN]);
-	Line1 = '',
-		LineN = '',
-		NewIndent = Indent,
-		SpaceName = Name),
-	sicstus_format_to_chars("~*snamespace delete ~w", [NewIndent," ", SpaceName], Expr),
-	name(Clearance,Expr).
-
 /* formatting to string
 render(c, format, [Dest, Pattern | Args], Indent, Result) :-
 	make_constant_string(c, Pattern, PatternStr),
@@ -150,31 +134,6 @@ render(tcl, format, [Dest, Pattern | Args], Indent, Result) :-
 
 Incrementation, including unity incrementation and decrementation. */
 
-render(L, increment_by, [Current, Step], Indent, Increment) :-
-	make_increment_expr(L, Current, Step, ActionStr),
-	render(L, function, ActionStr, Indent, Increment).
-
-render(L, if_start, ConditionExpr, Indent, [Line]) :-
-	(L = c, !,
-		sicstus_format_to_chars("~*sif (~w) {", [Indent, " ", ConditionExpr], 
-				LineStr);
-	L = tcl, !,
-		sicstus_format_to_chars("~*sif {~w} {", [Indent, " ", ConditionExpr], 
-				LineStr)),
-	name(Line, LineStr).
-
-render(L, else_clause, Cond, Indent, [Result]) :-
-	render(L, comment, Cond, 0, [Amble]),
-	sicstus_format_to_chars("~*s} else { ~a", [Indent, " ", Amble], ResultStr),
-	name(Result, ResultStr).
-
-render(L, switch_start, Condition, Indent, [Line]) :-
-	make_expr(L, Condition, ConditionExpr),
-	(L = c, Template = "~*sswitch (~w) {";
-	L = tcl, Template = "~*sswitch ~w {"),
-	sicstus_format_to_chars(Template, [Indent, " ", ConditionExpr], LineStr),
-	name(Line, LineStr).
-
 /* start of a for loop */
 render( L, for_start, [Name,End,Step], Indent, [For_Start]) :- 
 	make_assignment(L, Name, 1, Init),
@@ -187,16 +146,6 @@ render( L, for_start, [Name,End,Step], Indent, [For_Start]) :-
 	sicstus_format_to_chars( Template,
 		   [Indent," ",Init, Test, Incr], StartChars ),
 	name( For_Start, StartChars ).
-
-/* start of a while loop */
-render( L, while_start, Expr, Indent, [While_Start | AbChk]) :-
-	(L = c, Fmt = "~*swhile ( ~w ) {";
-	    L = tcl, Fmt =  "~*swhile {~w} {"),
-	sicstus_format_to_chars(Fmt, [Indent," ", Expr], StartChars),
-	ContDent is Indent+4,
-	refer_value(L, this, ThisRef),
-	render(L, procedure_call, abort_check(ThisRef), ContDent, AbChk),
-	name( While_Start, StartChars ).
 
 /* start of a procedure */
 render( L, procedure_start, Call, Indent, [Proc_Start]) :-
@@ -318,6 +267,12 @@ render(tcl, release_memory, Pointer, Indent, [Result]) :-
 			[Indent, " ", Zap], ResultStr),
 	name(Result, ResultStr).
 
+% needs render cos is used in destructor
+render(c, release_space, [Var, _Count, _Used], Indent, [Line]) :-
+	sicstus_format_to_chars("~*sdelete [] ~a;", [Indent, " ", Var],
+				LineStr),
+	name(Line, LineStr).
+
 % excrete: replacement for render which writes directly to pipe and
 % does not clutter the atom table
 
@@ -339,11 +294,25 @@ strings_direct( Target, NotNeeded, Variable, Indent, Stream) :-
 	member([NotNeeded, Target, Translation],
 			[[duplicate_context, c, tcl],
 			 [global_declaration, c, tcl],
+			 [clear_memory, c, tcl],
 			 [public_cons_dest, tcl, c],
 			 [end(class), tcl, c]]),
 	start_comment(Target, Stream),
 	strings_direct(Translation, NotNeeded, Variable, Indent, Stream),
 	end_comment(Target, Stream).
+
+strings_direct(tcl, clear_memory, instance(submodel,_,_, Name, _-Dims), Indent, 
+	       Stream) :-
+	(number(Dims), !,
+	    NewIndent is Indent + 4,
+	    excrete(tcl, for_start, [makenames, Dims, 1], Indent, Stream),
+	    refer_value(tcl, makenames, VWithDollar),
+	    make_struct_reference(tcl, Name, VWithDollar, SpaceName);
+	NewIndent = Indent,
+	    SpaceName = Name),
+	format(Stream, "~*snamespace delete ~w\n", [NewIndent," ", SpaceName]),
+	(\+ number(Dims), !;
+	excrete(tcl, end(for), makenames, Indent, Stream)).
 
 /* assignment */
 strings_direct(L, assignment, Dest=Source, Indent, Stream) :-
@@ -394,6 +363,10 @@ strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, Used, Dims],
 	    make_procedure_call_chars(tcl, [CurrentName, Target], MakerStr),
 	    name(Maker, MakerStr),
 	    strings_direct(tcl, assignment, Dest = Maker, Indent, Stream).
+
+strings_direct(L, increment_by, [Current, Step], Indent, Stream) :-
+	make_increment_expr(L, Current, Step, ActionStr),
+	excrete(L, function, ActionStr, Indent, Stream).
 
 strings_direct(tcl, global_declaration, [_, Name | _], _Indent, Stream) :-
 	format(Stream, "global ~a\n", [Name]).
@@ -474,6 +447,12 @@ strings_direct( L, while_start, Expr, Indent, Stream) :-
 	strings_direct(L, procedure_call, abort_check(ThisRef), ContDent,
 		       Stream).
 
+strings_direct(L, switch_start, Condition, Indent, Stream) :-
+	make_expr(L, Condition, ConditionExpr),
+	(L = c, Template = "~*sswitch (~w) {";
+	L = tcl, Template = "~*sswitch ~w {"),
+	format(Stream, Template, [Indent, " ", ConditionExpr]).
+
 strings_direct(L, case_start, Match, Indent, Stream) :-
 	(L = c, Template = "~*scase ~w:\n";
 	L = tcl, Template = "~*s~w {\n"),
@@ -483,6 +462,16 @@ strings_direct(L, case_end, Match, Indent, Stream) :-
 	(L = c, Template = "~*sbreak; // end(case,~w)\n";
 	L = tcl, Template = "~*s} ;# end(case,~w)\n"),
 	format(Stream, Template, [Indent, " ", Match]).
+
+strings_direct(L, if_start, ConditionExpr, Indent, Stream) :-
+	L = c, !,
+	    format(Stream, "~*sif (~w) {", [Indent, " ", ConditionExpr]);
+	L = tcl, !,
+	    format(Stream, "~*sif {~w} {", [Indent, " ", ConditionExpr]).
+
+strings_direct(L, else_clause, Cond, Indent, Stream) :-
+	format(Stream, "~*s} else { ", [Indent, " "]),
+	excrete(L, comment, Cond, 0, Stream).
 
 strings_direct(L, function, Act, Indent, Stream) :-
 	list_of(32, Indent, Leader),
@@ -494,6 +483,16 @@ strings_direct(L, procedure_call, DataFunc, Indent, Stream) :-
 	DataFunc =.. Data,
 	make_procedure_call(L, Data, CallString),
 	strings_direct(L, function, CallString, Indent, Stream).
+
+strings_direct(tcl, release_space, [Dest, Dim, Used], Indent, Stream) :-
+	language:declare(tcl, XIndex, loop, int, Used, Indent, Stream),
+	DeepIndent is Indent+4,
+	excrete(tcl, for_start, [XIndex, Dim, 1], Indent, Stream),
+	refer_value(tcl, XIndex, XIndexRef),
+	make_indexed_namespace(tcl, Dest, [XIndexRef], NewDest),
+	resolve_pointer(tcl, NewDest, Zap),
+	format(Stream, "~*snamespace delete ~a\n", [DeepIndent, " ", Zap]),
+	excrete(tcl, end(for), XIndex, Indent, Stream).
 
 excrete(L, Stat, Args, Indent, Stream) :-
 	strings_direct(L, Stat, Args, Indent, Stream), !;
@@ -529,15 +528,15 @@ squarify_dims([D | More], Atom) :-
 	append_atoms(['[', D, ']', Tail], Atom).
 	
 generate_all_case_entries(_,_, [], _).
-generate_all_case_entries(L, Match, [Inst | Insts], String) :-
-	generate_case_entry(L, Match, Inst, String),
+generate_all_case_entries(L, Match, [Inst | Insts], Stream) :-
+	generate_case_entry(L, Match, Inst, Stream),
 	NewMatch is Match+1,
-	generate_all_case_entries(L, NewMatch, Insts, String).
+	generate_all_case_entries(L, NewMatch, Insts, Stream).
 
-generate_case_entry(L, Match, Inst, String) :-
+generate_case_entry(L, Match, Inst, Stream) :-
 	Inst = instance(InstType, BaseName, _, NameIn, _-LocalDims),
 %	\+ InstType = internal, no metadata for internals
-	excrete(L, case_start, Match, 8, String),
+	excrete(L, case_start, Match, 8, Stream),
 
 	(NameIn = elt(_, Name, _), !;
 	    Name = NameIn),
@@ -561,18 +560,18 @@ generate_case_entry(L, Match, Inst, String) :-
 	    resolve_pointer(L, dims, DimPtr),
 	    make_procedure_call_chars(L, [requests_record_count, DimPtr], CStr),
 	    name(Cond, CStr),
-	    excrete(L, if_start, Cond, 8, String),
+	    excrete(L, if_start, Cond, 8, Stream),
 	    % advance dims past REQ_COUNT -- stops burrow_to iterating
-	    excrete(L, procedure_call, step_list(DimsRef, 2), 12, String),
+	    excrete(L, procedure_call, step_list(DimsRef, 2), 12, Stream),
 	    append_atoms(Name, made, MadeCount),
 	    make_indexed_reference(L, MadeCount, [], Count),
 	    refer(L, Count, CountRef),
-	    excrete(L, procedure_call, return(CountRef), 12, String),
-	    excrete(L, else_clause, Cond, 8, String),
-	    excrete(L, procedure_call, return(ItemRef), 12, String),
-	    excrete(L, end(if), Cond, 8, String);
-	excrete(L, procedure_call, return(ItemRef), 8, String)),
-	excrete(L, case_end, Match, 8, String).
+	    excrete(L, procedure_call, return(CountRef), 12, Stream),
+	    excrete(L, else_clause, Cond, 8, Stream),
+	    excrete(L, procedure_call, return(ItemRef), 12, Stream),
+	    excrete(L, end(if), Cond, 8, Stream);
+	excrete(L, procedure_call, return(ItemRef), 8, Stream)),
+	excrete(L, case_end, Match, 8, Stream).
 
 generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 	Inst = instance(InstType, BaseName, _, NameIn, Unit-_),

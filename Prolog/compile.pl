@@ -424,7 +424,7 @@ wot need them */
 
 	build_submodel_functions(Language, BoostPhases, Constants,
 				 NewForm, Marked, Used, AllGraphs, Stream),
-	make_exit_proc(Language, [RootInstance], Stream),
+	make_exit_proc(Language, RootInstance, Stream),
 	send_to_dest(Stream, EndTopType),
 	fail;
 
@@ -779,7 +779,7 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 	/* rough and ready -- phase NotDone means it never gets scheduled */
 	order_all_assignments(Phases, Updates, update, OrdUpdates),
 	order_all_assignments(Phases, NewForm, eval, Ordered), !,
-	order_all_assignments(Phases, NewForm, advance, OrdStates),
+%	order_all_assignments(Phases, NewForm, advance, OrdStates),
 	(member(Forgotten, NewForm),
 	    not_yet_ordered(Forgotten), !,
 	    find_circle([Forgotten], Loop),
@@ -792,8 +792,8 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 	reassure_user("Generating code for model execution"),
 	all(compile, build_eval_proc,
 	    [unify(Language), unify(Constants),
-	     build([updatemodel, evalmodel, advancemodel]),
-	     build([OrdUpdates, Ordered, OrdStates]),
+	     build([updatemodel, evalmodel]),
+	     build([OrdUpdates, Ordered]),
 	     unify(Used), unify(AllGraphs), unify(Stream)]).
 
 /* find_circle([Head | Chain], Loop) :-
@@ -853,20 +853,15 @@ get_circle_from(Steps, [First | Linked], Circle) :-
 
 Procedure to clear memory at end of run */
 
-make_exit_proc(Language, Instances, Dest) :-
-	render(Language, procedure_start,
-	       call(void, do_exitmodel), 0, FinalProcDeclText),
-
-	render_all(Language, clear_memory, Instances, 4, Finalisers),
-
-	render(Language, end(procedure), dummy, 0, Proc_ending),
-
-	render( Language, comment, 'FREE ALL DATA STRUCTURES', 4,
-							FinalProcDeclComment),
+make_exit_proc(Language, Instance, Dest) :-
 	Blank = [''],
-	append([FinalProcDeclComment, Blank, FinalProcDeclText, Blank,
-		Finalisers, Blank, Proc_ending], Decls),
-	send_to_dest(Dest, Decls).
+	excrete(Language, comment, 'FREE ALL DATA STRUCTURES', 4, Dest),
+	send_to_dest(Dest, Blank),
+	excrete(Language, procedure_start, call(void, do_exitmodel), 0, Dest),
+	send_to_dest(Dest, Blank),
+	excrete(Language, clear_memory, Instance, 4, Dest),
+	send_to_dest(Dest, Blank),
+	excrete(Language, end(procedure), dummy, 0, Dest).
 
 /* correct_graph_headers: building the code for the functions produces graph info
 related to the variable being calculated, including intermediate variables, but when
@@ -1122,11 +1117,14 @@ nodes.
 				    int-[])],
 		get_dims_from_loops(Path, _, UseInds),
 		length(UseInds, IdxN),
-		CFn =.. [collect, arr(Ptr, NMade, []), Name, IdxN | UseInds],
-		Specials = [make(startable(Name), [enumerate(Name)], Path, Step,
-				 [assign_array(Ptr, Name)]),
-			    make(enumerate(Name), [on_reload], Path, Step,
-				 [CFn])];
+		MadeCount = arr(Ptr, NMade, []),
+		CFn =.. [collect, MadeCount, Name, IdxN | UseInds],
+		AFn = assign_array(Ptr, Name, 1),
+		Specials = [make(init_list(Name), [], Path, Step,
+				 [assign(MadeCount, 0), AFn]),
+			    make(startable(Name), [on_reload, init_list(Name)],
+				 Path, Step,
+				 [assign_array(Ptr, Name, -1), CFn, AFn])];
 	     [SmInters, Specials] = [[], []]),
 	    BaseSides = []),
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps, Used,
