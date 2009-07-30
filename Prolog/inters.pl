@@ -526,7 +526,9 @@ make_intermediates(
 	    [Wee, Muckle] = [-268435455, 268435455];
 	[Wee, Muckle] = [-1.0e100, 1.0e100]), 
 
-	(\+ (member(VarDim, TotalDims), member(VarDim, [var, records])), !;
+	(\+ (member(Dim, TotalDims),
+		member(VarDim, [var, records]),
+		Dim == VarDim), !;
 	    throw(avoid_var_size_inter(Epsilon, TotalDims))),
 	get_dims_from_loops(NowBuilding, BuildDims, BuildInds),
 	append(BuildDims, TotalDims, InterDims),

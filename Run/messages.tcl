@@ -355,7 +355,7 @@ set msgs(needs_array_or_list_title) "Wrong dimensionality of argument"
 set msgs(needs_array_or_list_message) "The function \"%s\" performs an operation over a list or array of values represented by its argument. The argument \"%s\" however represents only one value."
 
 set msgs(avoid_var_size_inter_title) "Code generation problem"
-set msgs(avoid_var_size_inter_message) "This expression can only be conberted into a running program by making an intermediate variable for the subexpression \"%s\".\n This subexpression has dimensions %s, where \"var\" represents a list."
+set msgs(avoid_var_size_inter_message) "This expression can only be converted into a running program by making an intermediate variable for the subexpression \"%s\".\n This subexpression has dimensions %s, where \"var\" represents a list, and \"records\" represents a resizable array."
 set msgs(avoid_var_size_inter_detail) "Since this has a changing membership, it cannot be represented by a variable -- you need to do some more work inside the variable-membership submodel it comes from."
 
 set msgs(needs_channel_parameter_title) "Argument must be channel"
