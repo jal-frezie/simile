@@ -720,7 +720,7 @@ proc PutItThere {t parent} {
     if {[winfo exists $parent] && [string compare . $parent]} {
 	wm transient $t $parent
 	if [string match Darwin $tcl_platform(os)] {
-	    ::tk::unsupported::MacWindowStyle style $t movableDBoxProc
+	    ::tk::unsupported::MacWindowStyle style $t moveableModal resizable
 # was floatGrowProc but that crashed when messageboxes opened inside
 #	    ::tk::unsupported::MacWindowStyle style $t moveableModal {}
 	    AbleAllEntries $parent disabled
