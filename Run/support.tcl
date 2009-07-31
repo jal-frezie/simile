@@ -79,10 +79,10 @@ proc ExplainError {myNode errList origError} {
     switch $what {
 	evalmodel {set operation "calculating the value of"}
 	updatemodel {set operation "updating the state"}
-#	advancemodel {set operation "advancing the time point for"}
 	resetmodel {set operation "resetting"}
 	default {set operation "doing $what for"}
     }
+#	advancemodel {set operation "advancing the time point for"}
     if {![string equal none $dest]} {
 	set targetList [DescribeComponent $dest]
 	if {[catch {GetNodeIdFromRef $myNode $dest [lindex $targetList 1]} \
