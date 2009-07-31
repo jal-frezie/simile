@@ -423,7 +423,9 @@ make_intermediates(
 	    IncrOp = ('&&');
 	member(Source, [make_inter(Epsilon, Ref), at_init(Epsilon),
 			last(Epsilon), exists(Epsilon)]),
-	    MadeDim = new_dim), !,
+	    MadeDim = new_dim),
+% Before cutting, reject dummy arg so default fun handler gives sensible mess
+	\+ Epsilon = '', !,
 
 	/* If we are making an explicit intermediate variable then we
 	do NOT want it to have a different value each time we go round a loop!
