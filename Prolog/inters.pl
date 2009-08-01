@@ -568,7 +568,8 @@ make_intermediates(
 	    check if another last(...) has been copied from it
 	    Dependencies now put back as target eval may go in advance phase */
 	    Setting = [make(lastvalue(TotalName),
-			    [InnerTgt, lastvalue(InnerTgt) | Depends],
+			    [made_at(InnerTgt, DestPath), lastvalue(InnerTgt)
+			    | Depends],
 			    WriteContext, Step, [IncrAct]),
 		       make(TotalName, [cleared(TotalName), time],
 			    ClearContext, Step, [])];
