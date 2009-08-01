@@ -437,7 +437,7 @@ namespace eval runcontrol33857 {
 	set finish [expr {$current+$exec}]
 
 	ShareAction $node 0
-	set updateLastDone [clock clicks -milliseconds]
+	set runState(pacer) [set updateLastDone [clock clicks -milliseconds]]
 	if {[info exists redoPhase($node)]} {
 	    UpdateBar $node $current yellow
 	    if {![RunningInC $node]} {

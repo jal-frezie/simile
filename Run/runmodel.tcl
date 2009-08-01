@@ -536,12 +536,21 @@ proc UpdateIfFreezy {} {
 }
 
 proc ShiftDisplays {node payload current display} {
-    global helperTable
+    global helperTable runState sendvars
 
     $helperTable(RunControl)::UpdateBar $node $current blue
     UpdateIfFreezy
-    return [expr {![TellAllHelpers $node $payload Display \
-			$current $display 1]}]
+    set result [TellAllHelpers $node $payload Display $current $display 1]
+
+    if {$runState($node,splimit)} {
+	set minStep [expr {1000/$runState($node,speedLimit)}]
+	set extraDelay [expr {$minStep-([clock clicks -milliseconds]-$runState(pacer))}]
+	after $extraDelay [list set sendvars($node,busy) 1]
+	set sendvars($node,busy) 0
+	vwait sendvars($node,busy)
+    }
+    set runState(pacer) [clock clicks -milliseconds]
+    return $result
 }
 
 proc TellAllHelpers {node payload fun args} {
@@ -549,7 +558,7 @@ proc TellAllHelpers {node payload fun args} {
 
     set nodeForFocus $myNode
     set myNode $node
-    set success 1
+    set failure 0
     array set subbedPlots $payload
     set doScrog [expr [string equal Display $fun] && \
 		     [info exists helperTable(pestInterface)]]
@@ -563,7 +572,7 @@ proc TellAllHelpers {node payload fun args} {
 	    if {[catch {eval $inst $fun $args} HelpErr]} {
 		Query [list iotool_run_fail [[$inst info class]::Identify] \
 			   $fun $::errorInfo] warning helpers {} ok
-		set success 0
+		set failure 1
 	    }
 	    set helperTable(beingCalled) {}
 	}
@@ -588,7 +597,7 @@ proc TellAllHelpers {node payload fun args} {
     }
     set myNode $nodeForFocus
     array unset subbedPlots
-    return $success
+    return $failure
 }
 
 # Other stuff related to reorganization
