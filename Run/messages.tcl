@@ -50,6 +50,7 @@ set msgs(howmanytrue) "Takes an array of booleans and returns the number that ar
 set msgs(parent) "Returns the index of the instance from which this one was reproduced, or 0 if this one was created or immigrated"
 set msgs(init_time) "Returns the time at which this instance appeared -- argument is dummy"
 set msgs(at_init) "Returns the value the argument had when first used, i.e., on model reset or when the submodel instance containing this equation was created"
+set msgs(default) "Utility for writing type-independent macros; returns 0 if arg is number, \"false\" if arg is boolean, or first member of arg's enumerated type"
 set msgs(time) "Returns the current time, to nearest multiple of the time step specified by the argument -- none means that of current submodel"
 set msgs(dt) "Returns the duration of the time step specified by the argument -- none means that of current submodel"
 set msgs(prev) "Returns the value of this component the given number of time steps ago"

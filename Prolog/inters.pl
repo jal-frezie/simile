@@ -431,9 +431,12 @@ make_intermediates(
 	do NOT want it to have a different value each time we go round a loop!
 	Or do we...probably yes actually if making it inside a makearray. But
 	don't use extra dims if values will all be the same...actually dont
-	do it anyway, is just too hard */
+	do it anyway, is just too hard
+
+	5.5 solution: use random, not individuates, because they are
+	all in the same submodel instance...no, get more x-plicit...*/
 	
-	(contains_something(individuates, Source), !,
+	(contains_something(individuates_elements, Source), !,
 	    NowBuilding = BuildingArrays;
 	NowBuilding = []),
 	
@@ -824,7 +827,7 @@ make_intermediates(
 	    append(SubSetups, ExSetups, Setups);	  
 
 	\+ atom(Source),
-	    (individuates(_, Source, _, _), !,
+	    (individuates_instances(_, Source, _, _), !,
 		FunctionContext = DestPath;
 	    FunctionContext = []),
 
@@ -932,7 +935,8 @@ make_intermediates(
 			SourceRef = (Conv*Log)^Exp;
 		    raise_units(Base, Exp, Units),
 			SourceRef = ValRef);
-		 ValRef = sofar(SourceRef),
+		 (ValRef = sofar(SourceRef);
+		     ValRef = default(_), SourceRef = 0),
 		    UnitList = [Units];
 		 (var(Lop),
 		     SourceRef = ValRef;
@@ -1113,6 +1117,7 @@ builtin('Model properties', dies_of, boolean, [real]).
 builtin('Model properties', dt, real, [const_int_or_none]).
 builtin('Model properties', time, real, [const_int_or_none]).
 builtin('Model properties', at_init, any, [any]).
+builtin('Model properties', default, any, [any]).
 %builtin('Model properties', init_time, real, []).
 builtin('Model properties', parent, int, []).
 builtin('Model properties', stop, int, [int]).
@@ -1486,11 +1491,15 @@ and place_in will also individuate over makearray elements.
 
 I don't think we've done anything in contexts higher than dest for a while */
 
-individuates(_, Subexp, _, 0) :-
+individuates_instances(_, Subexp, _, 0) :-
+	individuates_elements(_, Subexp, _,_);
+	nonvar(Subexp),
+	member(Subexp, [channel_is(_), at_init(_), index(_)]).
+
+individuates_elements(_, Subexp, _, 0) :-
 	random(_, Subexp, _,_);
 	nonvar(Subexp),
-	member(Subexp, [channel_is(_), at_init(_),
-			index(_), place_in(_), use_inter(_)]).
+	member(Subexp, [place_in(_), use_inter(_)]).
 
 random(_, Subexp, _, 0) :-
 	nonvar(Subexp),

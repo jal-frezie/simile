@@ -182,6 +182,7 @@ proc TrimTree {Top Point} {
 # that is the same base as the one containing its declaration) and drops out
 # if the latter is newer
 
+set equation(fnDefs) {} ;# in case none loaded
 proc CheckFnsFresh {L progDir id userFnList} {
     global equation custom
     
