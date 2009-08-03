@@ -713,7 +713,10 @@ proc snap {topNode node} {
     pack $w.xscroll -side bottom -fill x
     pack $w.text -expand yes -fill both
     
-    UpdateSnap $w $label $submodels $topNode $node
+    if {[UpdateSnap $w $label $submodels $topNode $node]} { ;# raised error
+	destroy $w
+	return 
+    }
     return $w ;# for scripting
 }
 
@@ -726,8 +729,12 @@ proc UpdateSnap {w label submodels topNode node} {
     MakeSnapText $w
     pack $w.text -expand yes -fill both
 
+    set rawVals [GetCompProperty $topNode Value $node]
+    if {[string equal novalue $rawVals]} {
+	return 1
+    }
     set v1 [set runState(val$w) [TransEnums [GetTransTable $node] \
-		     [lindex [GetCompProperty $topNode Value $node] 0]]]
+		     [lindex $rawVals 0]]]
     catch {GetCompProperty $topNode Type $node} iType
     if {[string equal REAL $iType]} {
 	set precis [PrefValue custom(snapPrecision) snapPrecision]
@@ -761,6 +768,7 @@ proc UpdateSnap {w label submodels topNode node} {
     } else {
         snap_down3 $w $runState(val$w)
     }
+    return 0
 }
 
 proc snap_down1 {w values} {

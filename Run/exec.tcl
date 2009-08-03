@@ -215,7 +215,8 @@ proc ExecuteModel {myNode howInt start finish errLim} {
 	}
     } errList]} {
 	InteractGUI $myNode [lindex $errList 3] 2
-	return [ExplainError $myNode $errList $::errorInfo]
+	return [list [ExplainError $myNode $errList $::errorInfo] \
+		[lindex $errList 3]]
 # This will also need to raise an exception so we can retrieve stop time etc
 #    } elseif {$errList==-1} {
 #        start_in_editor BuildProblem "Execution notice" info "Model execution has been paused at a discontinuity which could not be dealt with by adaptive step size control." execution
