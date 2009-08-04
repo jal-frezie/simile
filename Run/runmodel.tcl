@@ -725,6 +725,8 @@ proc UpdateSnap {w label submodels topNode node} {
 
 #    $w.text delete 1.0 end
 # very slow for some reason! try deleting and making anew...
+    set oldX [lindex [$w.text xview] 0]
+    set oldY [lindex [$w.text yview] 0]
     destroy $w.text
     MakeSnapText $w
     pack $w.text -expand yes -fill both
@@ -768,6 +770,8 @@ proc UpdateSnap {w label submodels topNode node} {
     } else {
         snap_down3 $w $runState(val$w)
     }
+    $w.text yview moveto $oldY
+    $w.text xview moveto $oldX
     return 0
 }
 
