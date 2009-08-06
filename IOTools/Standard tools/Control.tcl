@@ -416,7 +416,8 @@ namespace eval runcontrol33857 {
 	    set $param [lindex $sendvars($node,newData) $idx]
 	}
 	set forward [expr $exec>0]
-	if {abs($current + $exec - $runState($node,expected_end)) > abs($update/2.0) || ![info exists runState($node,run_length)]} {
+	if {abs($current + $exec - $runState($node,expected_end)) > 1e-12 || \
+		![info exists runState($node,run_length)]} {
 	    SetupBar $node $current [expr $current + $exec]
 	}
 	do_in_editor RecordRunParams $node
