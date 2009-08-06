@@ -222,8 +222,16 @@ resize_canvas_for(Parent) :-
 	Tn is TB-10,
 	Rn is RB+10,
 	Bn is BB+10,
-	change_shape(Parent, internal_extent, [Ln, Tn, Rn, Bn]),
-	expand_canvas(Parent, [Ln, Tn, Rn, Bn]).
+	CBox = [Ln, Tn, Rn, Bn],
+	(is_toplevel(Parent), !,
+	    % make extent cover existing canvas area
+	    get_shape(Parent, bounding_box, BBox),
+	    all(image, unite_boxes, [unify([CBox]), build([l,t,r,b]),
+				     build(BBox), build(IBox)]);
+	  IBox = CBox),
+%	change_shape(Parent, internal_extent, [Ln, Tn, Rn, Bn]),
+% above is done in following
+	expand_canvas(Parent, IBox).
 
 /* menu_handle. First arg is title of menu, second is item selected. */
 
