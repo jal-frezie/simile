@@ -1295,15 +1295,17 @@ proc FixSize {c} {
         set stream [NetOpen $custom(prefDir)/.layout r]
         gets $stream whetherMaxed
         #ShowMess debug info $whetherMaxed ok
-	if {$whetherMaxed} {
-	    wm state $win zoomed
-	} else {
-	    gets $stream oldGeom
-	    scan $oldGeom "%dx%d%1s%d%1s%d" w h lr l tb t
-	    if {$l>=0 && $l+$w<[winfo screenwidth $win] && \
-		    $t>=0 && $t+$h<[winfo screenheight $win]} {
-# these give wrong values on multi-screen Windows setup
-		wm geometry $win $oldGeom
+	catch { ;# in case file is not what we think
+	    if {$whetherMaxed} {
+		wm state $win zoomed
+	    } else {
+		gets $stream oldGeom
+		scan $oldGeom "%dx%d%1s%d%1s%d" w h lr l tb t
+		if {$l>=0 && $l+$w<[winfo screenwidth $win] && \
+			$t>=0 && $t+$h<[winfo screenheight $win]} {
+		    # these give wrong values on multi-screen Windows setup
+		    wm geometry $win $oldGeom
+		}
 	    }
 	}
         close $stream
