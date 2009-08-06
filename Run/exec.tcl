@@ -123,7 +123,8 @@ proc ExecuteTo {node current pause unitLength display foci intMethod maxErr} {
 #	if {![info exists runState($node,cnvs)]} {
 #	    return $currentMode ;# run control window killed?
 #	}
-	if {$current==$nextDisp && ![string equal exit $currentMode]} {
+	if {abs($current-$nextDisp)<1e-12 && \
+		![string equal exit $currentMode]} {
 	    set oldPayload $payload
 	    set payload {}
 	    foreach point $foci {
