@@ -115,6 +115,10 @@ namespace eval ::maptools2 {
 #        } else {
 #            set n $useNodes($winId,ncol)
 #        }
+	# if no caption, add one (position later...)
+	if {![llength [$cnv find withtag caption]]} {
+	    $cnv create text 0 0 -anchor c -tag caption -text "Awaiting info"
+	}
 	if {[string equal v $useNodes($winId,orient)]} {
 	    set leftSc [$cnv canvasy 0]
 	    set rightSc [$cnv canvasy [winfo height $cnv]]
@@ -131,8 +135,8 @@ namespace eval ::maptools2 {
 	if {[string equal v $useNodes($winId,orient)]} {
 	    $cnv create rect $topSc $leftSc $bottomSc $rightSc \
 		-outline {} -fill [$cnv cget -bg] -tag {colour_scale scale_base}
-	    $cnv create text [expr $bottomSc-30] [expr ($leftSc+$rightSc)/2] \
-                -anchor c -tag {colour_scale caption}
+	    $cnv coords caption [expr $bottomSc-30] [expr ($leftSc+$rightSc)/2]
+	    $cnv itemconfigure caption -width 1
 #        UpdateCaption useNodes $winId
 	    $cnv create text [expr $bottomSc-10] [expr $leftSc+47] \
                 -text $useNodes($winId,min) -anchor s -tag colour_scale
@@ -141,8 +145,8 @@ namespace eval ::maptools2 {
 	} else {
 	    $cnv create rect $leftSc $topSc $rightSc $bottomSc \
 		-outline {} -fill [$cnv cget -bg] -tag {colour_scale scale_base}
-	    $cnv create text [expr ($leftSc+$rightSc)/2] [expr $bottomSc-30] \
-                -anchor c -tag {colour_scale caption}
+	    $cnv coords caption [expr ($leftSc+$rightSc)/2] [expr $bottomSc-30]
+	    $cnv itemconfigure caption -width 0 ;# = whatever it takes
 #        UpdateCaption useNodes $winId
 	    $cnv create text [expr $leftSc+47] [expr $bottomSc-10] \
                 -text $useNodes($winId,min) -anchor e -tag colour_scale
@@ -177,6 +181,7 @@ namespace eval ::maptools2 {
 		[namespace code "SetSwatchColour $parentSpc $winId $icolour"]
         }
         $cnv raise annotation
+	$cnv raise caption
     }
     
     proc SetSwatchColour { parentSpc winId icolour } {
@@ -203,6 +208,7 @@ namespace eval ::maptools2 {
 	set yoff [expr $bottomSc-[lindex $oldPt 3]]
 	
 	$cnv move colour_scale $xoff $yoff
+	$cnv move caption $xoff $yoff
     }
 
     proc UpdateCaption {winData winId} {
@@ -415,5 +421,5 @@ namespace eval ::maptools2 {
         return [expr {[string is integer $str] || [string is double $str]}]
     }
     
-    namespace export SetColourMap SetColours recolour_scale reposn_scale UpdateCaption ChangeEditMode InsertCaption InsertLegend ColourScale GetQuadList Flatten PokeValue IsNumber
+    namespace export SetColourMap SetColours recolour_scale reposn_scale UpdateCaption ChangeEditMode InsertLegend ColourScale GetQuadList Flatten PokeValue IsNumber
 }

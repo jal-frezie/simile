@@ -264,7 +264,6 @@ namespace eval grid005 {
 	    }
             DrawGrid6 $winId $useNodes($winId,color)
             FillCanvas $winId
-#            UpdateCaption useNodes $winId
 	    if {[info exists useNodes($winId,regSave)]} {
 		if {$useNodes($winId,regSave)} {
 		    WriteImage $winId $time
@@ -757,6 +756,8 @@ namespace eval grid005 {
         $useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
 	    -from [expr int($dataL)] [expr int($dataT)] $dataR $dataB -to 0 0 \
                 -zoom $useNodes($winId,mult) -shrink
+	UpdateCaption useNodes $winId
+# Above was commented out till 5.5 -- messy? Buggy?
     }
     
     #### Handle value popup
