@@ -1120,10 +1120,7 @@ nodes.
 		MadeCount = arr(Ptr, NMade, []),
 		CFn =.. [collect, MadeCount, Name, IdxN | UseInds],
 		AFn = assign_array(Ptr, Name, 1),
-		Specials = [make(init_list(Name), [], Path, Step,
-				 [assign(MadeCount, 0), AFn]),
-			    make(startable(Name), [on_reload, init_list(Name)],
-				 Path, Step,
+		Specials = [make(startable(Name), [on_reload], Path, Step,
 				 [assign_array(Ptr, Name, -1), CFn, AFn])];
 	     [SmInters, Specials] = [[], []]),
 	    BaseSides = []),

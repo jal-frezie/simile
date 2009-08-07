@@ -86,7 +86,7 @@ make_cons_dest(instance(Type, Sym, _, Name, _), ConLines, DeLines) :-
 	    ConLines = [ConLine],
 	    render(c, procedure_call, delete_list(Name), 8, DeLines);
 	by_record(Sym), !,
-	    ConLines = [],
+	    render(c, assign_space, Name= [_, Name,_,_, [0]], 8, ConLines),
 	    render(c, release_space, [Name,_,_], 8, DeLines); 
 /*	Type = external, !,
 	    Nm = elt(_, Name, _),
@@ -267,6 +267,13 @@ render(tcl, release_memory, Pointer, Indent, [Result]) :-
 			[Indent, " ", Zap], ResultStr),
 	name(Result, ResultStr).
 
+% needs render cos is used in constructor
+render(c, assign_space, Dest=[_, Name, _,_, Dims], Indent, [Result]) :-
+	squarify_dims(Dims, DimAtom),
+	sicstus_format_to_chars("~*s~a = new ~atype~a;",
+	       [Indent," ", Dest, Name, DimAtom], ResultStr),
+	name(Result, ResultStr).
+
 % needs render cos is used in destructor
 render(c, release_space, [Var, _Count, _Used], Indent, [Line]) :-
 	sicstus_format_to_chars("~*sdelete [] ~a;", [Indent, " ", Var],
@@ -337,11 +344,6 @@ strings_direct(L, enter_context, NewPointer=[CurrentPointer, Struct, Indices],
 strings_direct( L, make_reference, Dest=Source, Indent, Stream) :-
 	refer(L, Source, SourceRef),
 	strings_direct( L, assignment, Dest=SourceRef, Indent, Stream).
-
-strings_direct(c, assign_space, Dest=[_, Name, _,_, Dims], Indent, Stream) :-
-	squarify_dims(Dims, DimAtom),
-	format(Stream, "~*s~a = new ~atype~a;\n",
-	       [Indent," ", Dest, Name, DimAtom]).
 
 strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, Used, Dims],
 	       Indent, Stream) :-
@@ -449,8 +451,8 @@ strings_direct( L, while_start, Expr, Indent, Stream) :-
 
 strings_direct(L, switch_start, Condition, Indent, Stream) :-
 	make_expr(L, Condition, ConditionExpr),
-	(L = c, Template = "~*sswitch (~w) {";
-	L = tcl, Template = "~*sswitch ~w {"),
+	(L = c, Template = "~*sswitch (~w) {\n";
+	L = tcl, Template = "~*sswitch ~w {\n"),
 	format(Stream, Template, [Indent, " ", ConditionExpr]).
 
 strings_direct(L, case_start, Match, Indent, Stream) :-
@@ -465,9 +467,9 @@ strings_direct(L, case_end, Match, Indent, Stream) :-
 
 strings_direct(L, if_start, ConditionExpr, Indent, Stream) :-
 	L = c, !,
-	    format(Stream, "~*sif (~w) {", [Indent, " ", ConditionExpr]);
+	    format(Stream, "~*sif (~w) {\n", [Indent, " ", ConditionExpr]);
 	L = tcl, !,
-	    format(Stream, "~*sif {~w} {", [Indent, " ", ConditionExpr]).
+	    format(Stream, "~*sif {~w} {\n", [Indent, " ", ConditionExpr]).
 
 strings_direct(L, else_clause, Cond, Indent, Stream) :-
 	format(Stream, "~*s} else { ", [Indent, " "]),
