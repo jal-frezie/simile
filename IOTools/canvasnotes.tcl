@@ -82,9 +82,10 @@ namespace eval canvasnotes20070919 {
     }
 
     proc DialogInMiddle {c} {
+	global helperTable
 	variable whatNotes
 
-	set whatNotes(canvas) $c.canvas
+	set whatNotes(canvas) [$helperTable($c,whichInstance) GetCanvas]
 	set whatNotes(clkx) 100
 	set whatNotes(clky) 100
 
