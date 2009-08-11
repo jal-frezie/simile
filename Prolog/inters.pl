@@ -467,7 +467,7 @@ make_intermediates(
 				   TotalPath, SubSwap, PrevInters, NowBuilding,
 				   Step, Used, [TXUnits, ArgUnits], OldInters,
 				   PLPartResults),
-	    (combine_subexp_results(DestPath, PLPartResults, [],
+	    (combine_subexp_results(TotalPath, PLPartResults, [],
 				   SubContext, OldSetups, OldArgs,
 				   [IncrementRef, PayloadRef]), !;
 	    throw(cannot_combine_argument_dimensions(Source)))),
@@ -591,9 +591,25 @@ make_intermediates(
 	append([OldSetups, Clearing, Setting], Setups),
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
+% start of replacement section
+	Inter = instance(internal, inter(InterContext, _, SourceLoops),
+			      UseSource, TotalName, UseContextUnits-InterDims),
+	merge_lists([Inter], OldInters, MidInters),
+	(TXUnits = UseContextUnits, !;
+	throw(bad_expinter_units(TotalName, TXUnits, UseContextUnits))),
+	    (var(Payload), !,
+	    WhatMade = TotalName,
+	    NewInters = MidInters,
+	    FinalInter = Inter;
+	Outer = instance(internal, inter(InterContext, _, SourceLoops),
+			      UseSource, PayloadName, Units-InterDims),
+	    WhatMade = PayloadName,
+	    merge_lists([Outer], MidInters, NewInters),
+	    FinalInter = Outer),
+/* end of replacement section, replaced section follows
 	Inter = instance(internal, inter(InterContext, _, SourceLoops),
 			      UseSource, TotalName, TXUnits-InterDims),
-	(var(Payload), !,
+	    (var(Payload), !,
 	    (Functor = make_inter, !,
 		select(instance(internal, inter(InterContext, _, SourceLoops),
 			      UseSource, TotalName, UseContextUnits-InterDims),
@@ -610,7 +626,7 @@ make_intermediates(
 	    WhatMade = PayloadName,
 	    merge_lists([Inter, Outer], OldInters, NewInters),
 	    FinalInter = Outer),
-	refer_inter(FinalInter, DestPath, BuildingArrays,
+*/	refer_inter(FinalInter, DestPath, BuildingArrays,
 		    Units, SourceContext, Args, SourceRef));	  
 
 	/* third case: a numerical value. Usable in any context.  */
@@ -839,7 +855,8 @@ make_intermediates(
 			    switch(Source, none, none),
 			    top_down, Components, SourceRef), */
             append(_, [TopTgt], Target),
-	    nth(GraphId, Used, TopTgt),
+	    nth(GraphId, Used, TopTgt), !,
+	    
 	    (Source = [_ | _], !,
 		length(Source, Enums),
 		RUnits = any,
@@ -898,8 +915,10 @@ make_intermediates(
 				   BackSwap, PrevInters, BuildingArrays, Step,
 				   Used, UnitList, NewInters, PartResultList),
 	/* Now...if there are contexts in which all these things can be
-	evaluated, return results based on them. */
-	    (combine_subexp_results(DestPath, PartResultList, FunctionContext,
+	evaluated, return results based on them. New for 5.5: avoid polluting
+	the dest_path with pointer instantiations that break inter building */
+	    copy_term(DestPath, GuidePath),
+	    (combine_subexp_results(GuidePath, PartResultList, FunctionContext,
 				SourceContext, Setups, SubArgs, ResultList), !;
 	    throw(cannot_combine_argument_dimensions(Source))),
 		(ValRef =.. [Lop, _, _],
