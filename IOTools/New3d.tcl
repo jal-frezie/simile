@@ -231,8 +231,6 @@ namespace eval ::$keyValue {
  variable yColsStart
  variable xColsEnd
  variable yColsEnd
- variable i_canWidth
- variable i_canHeight
  variable b_columns
  variable b_backFaces
  
@@ -786,8 +784,6 @@ namespace eval graphics {
  upvar myDebug myDebug
  upvar b_columns b_columns 
  upvar b_backFaces b_backFaces 
- upvar i_canWidth i_canWidth
- upvar i_canHeight i_canHeight
  # Used in data::
  upvar a_ZValues a_ZValues
  upvar a_Id a_Id
@@ -825,13 +821,6 @@ namespace eval graphics {
     variable code_setNewColours [namespace code {setNewColours}]
     variable code_adjustValuesDialog [namespace code { adjustValuesDialog }]
     variable code_setNewValues [namespace code { setNewValues }]
-    # As usual, 0,0 is screen top left.
-    variable i_canWidth 500
-    variable i_canHeight 400
-    # The screen 'origin' ie where the  central point be drawn w. 0
-    #    rotation.
-    variable d_screenXOrigin [expr $i_canWidth / 2.0 ]
-    variable d_screenYOrigin [expr $i_canHeight * 0.6 ]
     # We need scaling for screen X,Y mappings.
     # version 0.0.4 : The new globals controlling screen mapping should be
     # set and calcViewParams called.
@@ -876,8 +865,11 @@ namespace eval graphics {
     variable d_YscreenXScale 
     variable d_YscreenYScale 
     variable d_screenZScale 
-    variable d_screenXOrigin 
-    variable d_screenYOrigin 
+    # As usual, 0,0 is screen top left.
+    # The screen 'origin' ie where the  central point be drawn w. 0
+    #    rotation.
+    variable d_screenXOrigin [expr [winfo width $winId] / 2.0 ]
+    variable d_screenYOrigin [expr [winfo height $winId] * 0.6 ]
     variable d_XScaleBodge
     variable d_gridMidX 
     variable d_gridMidY 
@@ -1079,6 +1071,7 @@ namespace eval graphics {
             # calculation etc.
             if { $b_columns == 0 } then {
                ############################################################
+
                # SURFACE display.
                
                setUpSurfaceVertices $winId x y x_count y_count link_display
@@ -1987,8 +1980,6 @@ namespace eval window {
  # These are needed outside this namespace
  # Used in graphics::
  upvar b_columns b_columns 
- upvar i_canWidth i_canWidth
- upvar i_canHeight i_canHeight
  upvar myCanvas  myCanvas 
  upvar myDebug myDebug
  upvar a_ZValues a_ZValues
@@ -2015,9 +2006,6 @@ namespace eval window {
     variable windowNS
     variable thdVersion
     # We need some variables for screen drawing. As usual, 0,0 is screen top left.
-    variable i_canWidth
-    variable i_canHeight
-    #
     variable b_columns
     # 
     # This neatens up the code and eases event bining. 
@@ -2102,9 +2090,7 @@ namespace eval window {
       frame $winId.viewer -bd 1 -relief raised
       frame $winId.viewer.can -bd 1 -relief raised
 
-      canvas $myCanvas    -width $i_canWidth      \
-               -height $i_canHeight    \
-               -background white
+      canvas $myCanvas -background white
       #########################
       # STATUS BAR
       frame $winId.status -borderwidth 0
