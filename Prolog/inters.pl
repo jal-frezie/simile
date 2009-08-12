@@ -89,16 +89,18 @@ insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
 		Path = RealPath;
 	    member(path_substitution(Base, Assoc, Link), Swaps),
 		(Location = in_base,
+		    Wait = true,
 		    find_name_host(Link, LinkWithAttrs),
-		    (m_class:LinkWithAttrs has_attribute last_membership of 1,
-			!; Wait = true),
+		    (\+ m_class:LinkWithAttrs has_attribute can_lookup of 1, !;
+			Assoc = [sm(OneSided, _,_,_) | _],
+			LookupWait = enumerate(OneSided)),
 		    suffix(BaseFrag, Base), /* longest first */
 		    append(BaseSide, Top, RealPath),
 		    append(Deeper, BaseFrag, BaseSide), !,
 		    pointer_from(Top, Ptr),
 		    pointer_to(Assoc, Ptr),
 		    append([Deeper, Assoc, Top], Path),
-		    BackSwap = values_from_base;
+		    BackSwap = values_from_base(LookupWait);
 		Location = in_assoc,
 		    Wait = true,
 		    append(Assoc, Top, AssocPath),
@@ -375,12 +377,16 @@ make_intermediates(
 		this before using it, just dont do it at init time */
 		Args = [time];
 	    swap_back(SourceContext, TermSwap, ParamContext, _),
+		(TermSwap = values_from_base(LookupWait),
+		    nonvar(LookupWait), !,
+		    LookupWaits = [LookupWait];
+		LookupWaits = []),
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
 	        (([Var | _] = Target; 	% it cannot be a condition of itself,
 		  Units == diffs), !,    % or its structure if a compartment
-		    Args = [];
-		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
+		    Args = LookupWaits;
+		Args = [made_at(Var, ParamContext) | LookupWaits])),
 	        /* note that for the time being the made_at condition is thrown
 	           away */
 	    Setups = [],

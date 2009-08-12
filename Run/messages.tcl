@@ -275,6 +275,9 @@ set msgs(param_in_vm_model_message) "There is an external parameter, %s, inside 
 set msgs(param_in_vm_model_detail) "This is not allowed, as the number of values in the file cannt change as the membership of the submodel does."
 set msgs(param_in_vm_model_full) "Perhaps a per-record submodel, with its membership set by the number of records in the file, is needed here."
 
+set msgs(lookup_not_allowed_title) "Problem with model"
+set msgs(lookup_not_allowed_message) "Submodel \"%s\" has a membership condition that looks up instances of the model at the base of role arrow \"%s\", but this role arrow does not have base instance lookup enabled."
+
 set msgs(offer_restore_title) "Restore option"
 set msgs(offer_restore_message) "Simile left a log file of unsaved changes when this model was last edited."
 set msgs(offer_restore_detail) "Ignore changes, or apply?"

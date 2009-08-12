@@ -1866,7 +1866,7 @@ proc Query {specifics icon helpRef parent opts} {
     }
 
     if {[info exists dialogues(logText)]} { ;# messages skipped
-	lappend dialogues(logText) $message
+	AddMsgsToLog
 	if {[string equal abort $defButton]} {
 	    return more
 	} else {
@@ -1901,7 +1901,7 @@ proc Query {specifics icon helpRef parent opts} {
 	    set result [ExpandQuery $specifics $title $icon \
 			    $message $helpRef $parent $opts]
 	} else { ;# "see all": display remaining messages together
-	    set dialogues(logText) [list $message]
+	    AddMsgsToLog
 	    set result $dialogues(done)
 	    after idle [list StopMsgLogging $specifics $title $icon \
 			    $helpRef $parent ok]
@@ -1915,6 +1915,18 @@ proc Query {specifics icon helpRef parent opts} {
     focus -force $oldFocus
 #    update idletasks
     return $result
+}
+
+proc AddMsgsToLog {} {
+    global dialogues
+
+    upvar 1 message message
+    lappend dialogues(logText) $message
+    upvar 1 detail detail
+    if {[info exists detail]} {
+	lappend dialogues(logText) ($detail)
+    }
+    lappend dialogues(logText) {}
 }
 
 proc SetDlgRes {val} {
@@ -2039,8 +2051,8 @@ proc StopMsgLogging {specifics title icon helpRef parent opts} {
     global dialogues
 
     HideProgressBox
-    ExpandQuery $specifics "$title -- showing all" $icon \
-		    [join $dialogues(logText) \n\n] $helpRef $parent $opts
+    ExpandQuery show_all "$title -- showing all" $icon \
+		    [join $dialogues(logText) \n] $helpRef $parent $opts
     unset dialogues(logText)
     ReplaceProgressBox
 }

@@ -247,12 +247,23 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	caption_for(SmChannel, InnerText),
 	Wrinkle = misplaced_channel(InnerText, OuterText);
 	variable_size(Submodel),
-	\+ by_record(Submodel),
 	contains(Submodel, Param),
 	is_parameter(Param, N), N>0,
 	caption_for(Submodel, OuterText),
 	caption_for(Param, InnerText),
-	Wrinkle = param_in_vm_model(OuterText, InnerText).
+	Wrinkle = param_in_vm_model(InnerText, OuterText);
+	find_all_comps(Submodel, Fn),
+	find_type(Fn, function),
+	get_host(Fn, Cond),
+	find_type(Cond, condition),
+	Fn has_class_refinement value of Val,
+	instance:is_lookup_cond(Val, _),
+	list_index_meanings(Submodel, [ind_spec(_,_,_, Link) | _]),
+	\+ (Link = none; Link has_attribute can_lookup of 1),
+	caption_for(Link, LinkText),
+	caption_for(Submodel, OuterText),
+	Wrinkle = lookup_not_allowed(OuterText, LinkText);
+	fail.
 
 /*
 remove_redundant_equivs(Submodel, Equivs) :-

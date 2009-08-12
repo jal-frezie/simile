@@ -255,20 +255,20 @@ list_link_index_meanings(DestCapt, [exits(Link, [Start | SRest]) | LRest],
 	caption_for(Link, LinkCapt),
 	sicstus_format_to_chars(" in role \"~a\" for ~a", [LinkCapt, DestCapt], RoleCaptStr),
 	all(m_update, append_base_role,
-	    [build(BaseMeanings), unify(RoleCaptStr), build(First)]),
+	    [build(BaseMeanings), unify([Link, RoleCaptStr]), build(First)]),
 	list_link_index_meanings(DestCapt, [exits(Link, SRest) | LRest],
 				 Last),
 	append(First, Last, Meanings).
 
-append_base_role(ind_spec(BaseMeaning, Posn, N), RoleCaptStr,
-		 ind_spec(FullMeaning, Posn, N)) :-
+append_base_role(ind_spec(BaseMeaning, Posn, N, _OldLink), [Link, RoleCaptStr],
+		 ind_spec(FullMeaning, Posn, N, Link)) :-
 	name(BaseMeaning, BaseMeaningStr),
 	append(BaseMeaningStr, RoleCaptStr, FullMeaningStr),
 	name(FullMeaning, FullMeaningStr).
 
 list_node_index_meanings(_, [], []).
 
-list_node_index_meanings(Capt, Indices, [ind_spec(Capt, DimCount, Dim)
+list_node_index_meanings(Capt, Indices, [ind_spec(Capt, DimCount, Dim, none)
 					| Meanings]) :-
 	append(Early, [Dim], Indices),
 	length(Indices, DimCount),

@@ -246,9 +246,7 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	    UseExpr = GroundExpr,
 	    FType = init_function;
 	RType = condition,
-	    (GroundExpr = (index(1) is UseId),
-		UseExpr = soloarr(UseId); % cheat to allow single-element arr
-	    GroundExpr = any(index(1) is UseExpr)), !,
+	    is_lookup_cond(GroundExpr, UseExpr), !,
 	    /* Try alternative way of enumerating instances */
 	    FType = id_function;
 	FType = function,
@@ -318,6 +316,11 @@ instance_of(Type, Node, _, Inst, Ref) :-
 	    caption_for(Parent, PCapt),
 	    query(remove_orphan(Capt, PCapt), info, top, [ok], _)).
 	    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+is_lookup_cond(GroundExpr, UseExpr) :-
+	(GroundExpr = (index(1) is UseId),
+	    UseExpr = soloarr(UseId); % cheat to allow single-element arr
+	 GroundExpr = any(index(1) is UseExpr)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 flows(Dir, Comp, Flow) :-

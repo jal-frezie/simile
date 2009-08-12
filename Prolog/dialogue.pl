@@ -140,12 +140,12 @@ BoxHeaderStr),
 	/* last cut necessary because otherwise a retry will cause 
 errors */
 
-index_names_and_sizes(ind_spec(Name, Posn, Dim), Meaning, Dim) :-
+index_names_and_sizes(ind_spec(Name, Posn, Dim, _Link), Meaning, Dim) :-
 	sicstus_format_to_chars("Dimension ~d of ~a (~w)", [Posn, Name, Dim],
 				MeaningStr),
 	name(Meaning, MeaningStr).
 
-index_types(ind_spec(_Name, _Posn, Ind), Type) :-
+index_types(ind_spec(_Name, _Posn, Ind, _Link), Type) :-
 	inters:type_ind(Ind, Type).
 
 /* might change these one day so, e.g., compartments have
