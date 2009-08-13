@@ -23,7 +23,8 @@ sicstus_module(draw,
 		give_focus/1, has_focus/1,
 		update_ability/5, scrub_run/2, kill_helpers/1,
 		display_mode/1, display_menu/1, off/1,
-		move_text/2, move_display/2, reroute_display/1,
+		shift_marked/2, untag_all/0,
+		move_text/2, move_group/2, move_display/2, reroute_display/1,
 		update_link_route/1, redisplay/1, redisplay_border/1,
 		add_window/9, redraw_window/1, delete_window/1,
 		inject_graphics/2, translate_canvas_pl_names/2, display_area/1,
@@ -131,6 +132,34 @@ move_text(Obj, [Xoff, Yoff]) :-
 		shift_text(Wid, Obj, [Xmotion, Ymotion]),
 		fail;
 	true.
+
+tag_movable(Obj) :-
+	find_relevant_windows(Obj, Wid, _, [_, _, _Xscale, _Yscale]),
+	    mark_model(Wid, Obj);
+	true.
+
+untag_all :-
+	Wid shows_model _,
+	    unmark_objs(Wid),
+	    fail;
+	true.
+
+mark_model(Wid, Obj) :-
+	mark_obj(Wid, Obj),
+	find_all_comps(Obj, Child),
+	mark_model(Wid, Child).
+
+shift_marked(Handle, [Xoff, Yoff]) :-
+	find_relevant_windows(Handle, Wid, _, [_, _, Xscale, Yscale]),
+	    Xmotion is Xoff/Xscale,
+	    Ymotion is Yoff/Yscale,
+	    shift_obj(Wid, '/moving/', [Xmotion, Ymotion]),
+	    fail;
+	true.
+
+move_group(Movers, [Xoffset, Yoffset]) :-
+	all(draw, move_display,
+	    [build(Movers), unify([Xoffset, Yoffset])]).
 
 /* move_display/2 is to make it go faster; just translates the vector and shifts
 everything answering to the description of obj. */

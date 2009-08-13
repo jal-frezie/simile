@@ -321,6 +321,7 @@ This starts addition. Last clause creates a new cloud when starting a flow in th
 middle of nowhere; i could also do variables for influences. */
 :- dynamic(menu_submodel_is/2).
 :- dynamic(menu_submodel_will_be/3).
+:- dynamic(currently_moving_set/1).
 :- dynamic(grid_pitch_is/2).
 
 set_snap :-
@@ -521,6 +522,10 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
  	    (tk_get_pref(quickDrag, 0);
 		retractall(ghostly_move(_,_)),
 		assert(ghostly_move(Xpt, Ypt))), !,
+	    find_all_comps(Parent, Moving_obj),
+	    setof(Mover, moves_with_seln(Parent, Mover), Movers),
+	    all(draw, tag_movable, [build(Movers)]),
+	    assert(currently_moving_set(Movers)),
 	    advance_phase_to(moving);
 	local_ends(Moving_obj, Start, Finish),
 	    (MovingEnd = moving_finish,
@@ -1101,7 +1106,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	get_phase(moving),
 	    find_all_comps(Parent, Moving_obj),
 	    get_shape(Parent, internal_extent, ParentShape),
-	    setof(Mover, moves_with_seln(Parent, Mover), Movers),
+	    currently_moving_set(Movers),
 	    (ghostly_move(_,_), !;
 		\+ (setof(NewPosn,
 			  Crasher^P1^(member(Crasher, Movers),
@@ -1114,8 +1119,8 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 			   \+ member(Crashed, Movers))),
 		all(event, reposition,
 		    [unify(Parent), build(Movers), unify([Xoffset, Yoffset])])),
-	    all(draw, move_display,
-		[build(Movers), unify([Xoffset, Yoffset])]);
+%	    move_group(Movers, [Xoffset, Yoffset]);
+	    shift_marked(Moving_obj, [Xoffset, Yoffset]);
 /*		find_new_box(Moving_obj, Xoffset, Yoffset, _, NewPosn),
 		     find_all_comps(Parent, Moving_obj),
  Succeed if parent doesn't have an extent limit, otherwise check it 
@@ -1747,6 +1752,8 @@ old_update_object_boundary(Submodel, Edge, XOff, YOff) :-
 unclick :-
 	retractall(clicked_obj_is(_Obj)),
 	retractall(menu_submodel_will_be(_,_,_)),
+	retractall(currently_moving_set(_Movers)),
+	untag_all,
 	find_current(Wid),
 	Wid shows_model Model,
 	(get_mode(select),
