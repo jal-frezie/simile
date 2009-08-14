@@ -225,7 +225,10 @@ list_index_meanings(root, []).
 
 list_index_meanings(Submodel, Meanings) :-
 	list_local_index_meanings(Submodel, Group1),
-	find_all_comps(Parent, Submodel),
+	find_all_comps(Contain, Submodel),
+	(instance:counts_as_outside(Submodel), !,
+	    find_all_comps(Parent, Contain);
+	Parent = Contain),
 	list_index_meanings(Parent, Group2),
 	append(Group1, Group2, Meanings).
 
