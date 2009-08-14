@@ -974,6 +974,11 @@ proc RecordRunParams {node} {
 		       timeUnit $runState($node,timeUnit) \
 		       displayInt $runState($node,displayInt) \
 		       intMethod $runState($node,intMethod)]
+    foreach {value checkstate} {errLimit adapt speedLimit splimit} {
+	if {$runState($node,$checkstate)} {
+	    lappend runParams $value $runState($node,$value)
+	}
+    }
 # Keep all available phase info, we may have edited the model without runing it
     for {set phase 1} {$phase <= 8} {incr phase} {
 	if {![info exists runState($node,update$phase)]} {
@@ -991,11 +996,15 @@ proc RecordRunParams {node} {
 proc SetRunParams {node runParams} {
     global runState
     
+    # some old ones omitted timeUnit etc so set defaults
+    foreach {feature value} \
+	{currentTime 0.0 timeUnit unit errLimit 0 speedLimit 0} {
+	set runState($node,$feature) $value
+    }
+    set runState($node,timeUnit) unit
     set runState($node,currentTime) 0.0
     #ShowMess debug info set ok
     if {[string match execTime [lindex $runParams 0]]} {
-	# some old ones omitted timeUnit so set default
-	set runState($node,timeUnit) unit
 	# no longer as simple as "array set runState $runParams"
 	foreach {feature value} $runParams {
 	    set runState($node,$feature) $value
@@ -1008,7 +1017,7 @@ proc SetRunParams {node runParams} {
 		set runState($node,prev_update$runState($node,phases)) $phase
 	    }
 	}
-    } else {
+    } else { ;# old style
 	set runState($node,execTime) [lindex $runParams 0]
 	set runState($node,displayInt) [lindex $runParams 1]
 	for {set others 2} {$others < [llength $runParams]} {incr others} {
@@ -1017,8 +1026,12 @@ proc SetRunParams {node runParams} {
 		[lindex $runParams $others]
 	}
 	set runState($node,phases) [expr $others-2]
-	set runState($node,timeUnit) day
 	set runState($node,intMethod) Euler
+    }
+    foreach {value checkstate} {errLimit adapt speedLimit splimit} {
+	if {![set runState($node,$checkstate) $runState($node,$value)]} {
+	    unset runState($node,$value)
+	}
     }
     #puts [array get runState]
 }
