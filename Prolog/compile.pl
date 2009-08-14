@@ -1711,7 +1711,9 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 					| SmLoop], OpenLoops),
 			member(SmLoop,
 			   [[make(_,_,_,_, [start_submodel(_,_,_,_)])],[]]), !;
-		    raise_exception(bad_instance_lookup(IdCond))),
+		    find_all_comps(AssocModel, IdCond),
+		    caption_for(AssocModel, IdCapt),	
+		    raise_exception(bad_instance_lookup(IdCapt))),
 		    append_atoms(Submodel, cond, IdVar),
 		    /* OK Normally a reference to index(n) in a vm submodel
 		    gets turned to an element of instanceid, but this will not

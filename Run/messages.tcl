@@ -278,6 +278,9 @@ set msgs(param_in_vm_model_full) "Perhaps a per-record submodel, with its member
 set msgs(lookup_not_allowed_title) "Problem with model"
 set msgs(lookup_not_allowed_message) "Submodel \"%s\" has a membership condition that looks up instances of the model at the base of role arrow \"%s\", but this role arrow does not have base instance lookup enabled."
 
+set msgs(bad_instance_lookup_title) "Problem with model"
+set msgs(bad_instance_lookup_message) "This model includes an attempt to use base instance lookup for the association submodel \"%s\". This cannot be done because index(1) in this submodel is the index of a variable-membership submodel other than itself, and therefore not an array subscript."
+
 set msgs(offer_restore_title) "Restore option"
 set msgs(offer_restore_message) "Simile left a log file of unsaved changes when this model was last edited."
 set msgs(offer_restore_detail) "Ignore changes, or apply?"
