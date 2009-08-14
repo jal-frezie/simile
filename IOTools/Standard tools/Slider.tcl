@@ -41,7 +41,7 @@ namespace eval slide139 {
     }
     
     proc Clear {winId} {
-        foreach current [winfo children $winId.sliderframe] {
+        foreach current [winfo children $::topSFrame($winId)] {
             destroy $current
         }
         $winId.slidervars delete 0 end
@@ -334,7 +334,7 @@ namespace eval slide139 {
     proc Prune {winId tree} {
         set up [winfo parent $tree]
         destroy $tree
-        if {![string equal ${winId}.sliderframe $up]} {
+        if {![string equal $::topSFrame($winId) $up]} {
             foreach remain [winfo children $up] {
                 set box [winfo name $remain]
                 if {[string match box* $box] || [string match frame* $box]} {
