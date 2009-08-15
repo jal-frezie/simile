@@ -1135,7 +1135,15 @@ link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
 %	remove_border_nodes(New_obj, Terminator, Start_thing);
 	add_new_line_between(New_obj, Start_thing, Terminator, Top_arc),
 	get_action_point(Top_arc, Terminator, Last_new_arc),
-        event:spread_colour(Last_new_arc, yes).
+%%% If flows, check whether bowties still exist and reroute/delete influences
+        (New_obj = flow,
+	    find_base(Top_arc, BowtieArc),
+	    (sequence(SimpleArc, BowtieArc); sequence(BowtieArc, SimpleArc)),
+	    implicit_function(SimpleArc, OldFn),
+	    NoUse is_connector from _ to OldFn,
+	    event:delete_by_dlg(NoUse),
+	    fail;
+	event:spread_colour(Last_new_arc, yes)).
 
 load_references(Submodel, ReferenceCapts) :-
 	pair_with_captions(Submodel, References, ReferenceCapts),
