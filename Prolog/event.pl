@@ -1832,15 +1832,20 @@ unclick_obj :-
 			    draw_line_to(Start_thing, New_obj, Terminator)),
 			    tie_ends(New_obj, Start_thing, Terminator),
 /* Now if replacing a visible terminator with a border node, reroute the links
-on either side (tests for this should be more explicit) */
-			    (\+ find_type(Terminator, New_obj), !;
-				m_class:Terminator follows Replacer,
-				menu:reroute_sections([Replacer, Terminator])),
-			    (Replacer == Start_thing, !;
-				\+ find_type(Start_thing, New_obj), !;
-				\+ New_obj = flow;
-				m_class:Rep2 follows Start_thing,
-				menu:reroute_sections([Start_thing, Rep2])))),
+on either side (tests for this should be more explicit) -- reroute all at once
+so endpoints of new bits are always defined */
+			    (\+ find_type(Terminator, New_obj), !,
+				EndSects = [];
+			     m_class:Terminator follows Replacer,
+				EndSects = [Replacer, Terminator]),
+			    ((Replacer == Start_thing;
+			      \+ find_type(Start_thing, New_obj);
+			      \+ New_obj = flow), !,
+				MoveSects = EndSects;
+			     m_class:Rep2 follows Start_thing,
+				merge_lists(EndSects, [Start_thing, Rep2],
+					    MoveSects)),
+			    menu:reroute_sections(MoveSects))),
 		    clear_incomplete,
 		    remove_old_incomplete;
 		get_phase(barge),
