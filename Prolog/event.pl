@@ -1978,6 +1978,7 @@ reuse_route(New_obj, LastArc) :-
 	    (clear_shape(NewArc, curve), fail; % in case rerouting
 		set_shape(NewArc, curve, CPt)),
 	    redisplay(NewArc),
+	    make_links_follow(NewArc),
 
 	    (New_obj = relation,
 		get_boundary_end(NewArc, true);
