@@ -388,6 +388,9 @@ set msgs(needs_index_of_type_title) "Argument type wrong for array"
 set msgs(needs_index_of_type_message) "The function \"%s\", when applied to the array \"%s\", needs a value of type %s for its second argument. \"%s\" does not fit -- it has a value of type %s, which cannot be converted to a value of the required type."
 set msgs(needs_index_of_type_detail) "The argument type must match the type used to create the array."
 
+set msgs(redundant_array_title) "Equation is needlessly complicated"
+set msgs(redundant_array_message) "The equation contains the subexpression %s, which could be expressed more simply."
+
 set msgs(index_number_out_of_range_message) "You have used the index number %s, but it must be between 1 and the number of available indices, which is %s."
 
 set msgs(only_works_on_array_title) "Argument must be array"

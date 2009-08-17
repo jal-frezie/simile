@@ -788,19 +788,19 @@ make_intermediates(
  	    (break_at_last_loop(ALoops, TailLoops,
  	                       set(IntIndxRef, loop(Limit,_)), ItemLoops);
 		throw(only_works_on_array(element, Array))),
-	    ((type_ind(Limit, NeedType);
+	    (type_ind(Limit, NeedType);
 	      % bodge: if building code, bounds have been made integer, so
 	      % accept boolean or ET as index
-		\+ Step = dummy, member(NeedType, [boolean, a(_ET)])),
-		(promote_unit(Int, NeedType);
-	      Int = n(AnET), NeedType = a(AnET)), !,
+	     \+ Step = dummy, member(NeedType, [boolean, a(_ET)])),
+	    (promote_unit(Int, NeedType);
+	     Int = n(AnET), NeedType = a(AnET);
+	     throw(needs_index_of_type(element, Array, NeedType, Indx, Int))),
+	    !,
 		/* special case -- count or name of ET can refer to last elt */
-		TryIndxRef = IndxRef;
-	    type_ind(Limit, NeedType),
-		promote_arg(Int, real, _),
+	    (TryIndxRef = IndxRef;
+	      promote_arg(Int, real, _),
 		promote_arg(NeedType, real, _), !, /* for legacy cases */
-	        TryIndxRef = simile_int(IndxRef);
-	    throw(needs_index_of_type(element, Array, NeedType, Indx, Int))),
+	        TryIndxRef = simile_int(IndxRef)),
 	    ((NeedType = boolean,
 	          IntIndxRef = TryIndxRef+1;
 	      IntIndxRef = TryIndxRef), !;
