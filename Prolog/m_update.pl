@@ -1014,18 +1014,18 @@ make_connection(Model, Type, Dir, ExternalSection,
 	check_input(Type, Dir, Model, SourceCapt, Properties,
 		     InputSection), !,
 	    /* We want to tie all possible continuation sections */
+	    wake,
 	    (setof(OutputSection, 
 		  ((Dir = out,
 		     find_all_comps(Parent, OutputSection);
 		  Dir = in,
 		     find_all_comps(Model, OutputSection)),
 		    check_output(Type, Dir, Model, DestCapt, Properties,
-				 InputSection, OutputSection)),
-		  [OutputSection | MoreOutputs]),
+				 InputSection, OutputSection)), Outputs),
 	    all(m_update, link_ends,
 		[unify(Type), unify(InputSection),
-		 build([OutputSection | MoreOutputs]), build(_TopArcs)]),
-	    menu:reroute_sections([InputSection, OutputSection]),
+		 build(Outputs), build(_TopArcs)]),
+	    menu:reroute_sections([InputSection | Outputs]),
 		menu:remove_old_incomplete;
 	    Hassle = spare_interface_spec(Type, Dir, destination, DestCapt));
 	Hassle = spare_interface_spec(Type, Dir, source, SourceCapt)).
