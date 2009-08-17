@@ -631,35 +631,35 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
     foreach {indx sublist} $list {
         # was array set sub $list...above would allow us to check that all indices were
         # the right type if we could be bothered...OK then...
-        set role "Index value"
         if {[string match TIME $nextDim]} {
-            set role "Time point"
             if {!([Numeric $indx] || \
 		      [lsearch {NOW OTHERS} [string toupper $indx]]>-1)} {
-                FPError "$role $indx must be NOW, OTHERS or a number." \
+                FPError "The entry $indx appears where a time point is expected. This must be NOW, OTHERS or a number." \
 		     $subs $errorData
 		set redoStep {}
             }
         } elseif {[string compare {} $thisTrans]} {
             set poss [lsearch $thisTrans $indx]
             if {$poss == -1} {
-                FPError "$role $indx is not a member of type [lindex $thisTrans 0], pick one of [lrange $thisTrans 1 end]." $subs $errorData
+                FPError "The entry $indx appears where an index value of type [lindex $thisTrans 0] is expected. This must be one of [lrange $thisTrans 1 end]." $subs $errorData
 		set redoStep {}
             }
         } elseif {![string is integer -strict $indx]} {
-            FPError "$role $indx is not an integer." $subs $errorData
+            FPError "The entry $indx appears where an index value of type integer is needed." $subs $errorData
 	    set redoStep {}
         } elseif {$indx<=0} {
-            FPError "$role $indx is zero or negative." $subs $errorData
+            FPError "Index value $indx is zero or negative." $subs $errorData
 	    set redoStep {}
         }
         if {[info exists sub($indx)]} {
-            FPError "$role $indx appears more than once." $subs $errorData
+            FPError "Index value $indx appears more than once." $subs $errorData
 	    set redoStep {}
         }
         set sub($indx) $sublist
     }
-    
+    if {[string equal {} $redoStep]} { ;# do not proceed with bad time step
+	return $redoStep
+    }
     #puts "dims remaining $dims"
     if {[string match TIME $nextDim]} {
         # If time, we can have as many or as few vals as we want, and they can be

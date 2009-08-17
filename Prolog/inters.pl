@@ -793,18 +793,20 @@ make_intermediates(
 	      % accept boolean or ET as index
 	     \+ Step = dummy, member(NeedType, [boolean, a(_ET)])),
 	    (promote_unit(Int, NeedType);
+		% special case -- count or name of ET can refer to last elt
 	     Int = n(AnET), NeedType = a(AnET);
 	     throw(needs_index_of_type(element, Array, NeedType, Indx, Int))),
 	    !,
-		/* special case -- count or name of ET can refer to last elt */
 	    (TryIndxRef = IndxRef;
 	      promote_arg(Int, real, _),
-		promote_arg(NeedType, real, _), !, /* for legacy cases */
+		promote_arg(NeedType, real, _), !, % for legacy cases
 	        TryIndxRef = simile_int(IndxRef)),
 	    ((NeedType = boolean,
+				% first index is 1 in model, 0 in code
 	          IntIndxRef = TryIndxRef+1;
 	      IntIndxRef = TryIndxRef), !;
-				% first index is 1 in model, 0 in code
+	    % only reason this might fail is if taking element of a made array;
+	    % too awkward to fix so just say don't be silly
 	    throw(redundant_array(Source))),
 	    
 	    append(ASetups, ISetups, Setups),
