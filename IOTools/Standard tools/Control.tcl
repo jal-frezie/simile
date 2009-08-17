@@ -33,16 +33,21 @@ namespace eval runcontrol33857 {
         set widget $frames($node,rsf)
 
         #set pt [$widget.edit.capt cget -text]
-        $widget.edit.num configure -textvar runState($node,update[expr $pt])
         $widget.edit.capt.menu delete 0 end
-        set sendvars($node,captList) {}
         for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
-            lappend sendvars($node,captList) \
-		[list Time step \#$phase {(} $::runState($node,update$phase) {)}]
-                $widget.edit.capt.menu add command -label [list Time step \#$phase {(} $::runState($node,update$phase) {)}] \
-                      -command [list [namespace current]::SwapDistVar $node $phase]                
+	    set step runState($node,update$phase)
+	    if {!$pt && [string equal $step [$widget.edit.num cget -textvar]]} {
+		# posting command, this is current entry
+		set pt $phase
+	    }
+	    set label [format {Time step #%d ( %s )} $phase [set ::$step]]
+	    $widget.edit.capt.menu add command -label $label \
+		-command [list [namespace current]::SwapDistVar $node $phase]
+	    if {$phase==$pt} {
+		$widget.edit.capt configure -text $label
+		$widget.edit.num configure -textvar $step
+	    }
         }
-        $widget.edit.capt configure -text [list Time step $pt {(} $::runState($node,update$pt) {)}]
         focus $widget.edit.num
     }
     
@@ -150,22 +155,27 @@ namespace eval runcontrol33857 {
               -textvariable runState($node,intMethod)
         pack $rsf.integration.pulldown -side left -anchor nw
         
-        set sendvars($node,captList) {}
-        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
-            lappend sendvars($node,captList) \
-                    [list Time step \#$phase {(} $::runState($node,update$phase) {)}]
-        }
+# This is done in SwapDistVar
+#        set sendvars($node,captList) {}
+#        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
+#            lappend sendvars($node,captList) \
+#                    [list Time step \#$phase {(} $::runState($node,update$phase) {)}]
+#        }
         pack [frame $rsf.edit] -pady 2 -expand on -fill both
         ::ttk::menubutton $rsf.edit.capt
-        set timeStepMenu [menu $rsf.edit.capt.menu -tearoff 0]
-        foreach timeStep $sendvars($node,captList) index {1 2 3 4 5 6 7 8 9} {
-          $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $node $index]
-        }
-        $rsf.edit.capt configure -menu $timeStepMenu -width 16
+	set tCd [namespace code [list SwapDistVar $node 0]]
+	set timeStepMenu [menu $rsf.edit.capt.menu -tearoff 0 -postcommand $tCd]
+# This is done in SwapDistVar
+#        foreach timeStep $sendvars($node,captList) index {1 2 3 4 5 6 7 8 9} {
+#          $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $node $index]
+#        }
+        $rsf.edit.capt configure -menu $timeStepMenu -width 18
         pack $rsf.edit.capt -side left -anchor nw
         pack [label $rsf.edit.colon -text " "] -side left
-        pack [::ttk::entry $rsf.edit.num -width 8] -side left -expand on -fill x -anchor nw
-        SwapDistVar $node 1
+	set stepField [::ttk::entry $rsf.edit.num -width 8]
+        pack $stepField -side left -expand on -fill x -anchor nw
+	bind $stepField <Return> $tCd
+        SwapDistVar $node [GetPhaseCount $node]
 
         pack [frame $rsf.stepsize] -pady 2 -expand on -fill both
 	pack [checkbutton $rsf.stepsize.adapt -variable runState($node,adapt) \
@@ -302,14 +312,15 @@ namespace eval runcontrol33857 {
 	}
         set phases [GetPhaseCount $node]
 	set sendvars($node,newData) {}
-	foreach entered [list displayInt update$phases currentTime execTime] {
+	foreach entered [list displayInt currentTime execTime] {
 # for some reason tcl thinks an empty string is a number
-	    if {![string is double -strict $runState($node,$entered)]} {
-		Query [list run_param_not_number $runState($node,$entered) \
+	    set globName runState($node,$entered)
+	    if {![string is double -strict [set $globName]]} {
+		Query [list run_param_not_number [set $globName] \
 			   $entered] warning execution {} ok
-		set runState($node,$entered) 1
+		set $globName 1
 	    }
-	    lappend sendvars($node,newData) $runState($node,$entered)
+	    lappend sendvars($node,newData) [set $globName]
 	}
 	if {$runState($node,execTime)<0} {
 	    set phaseFlip -1
@@ -324,7 +335,13 @@ namespace eval runcontrol33857 {
                       $runState($node,oldUnit)]]
         set runState($node,oldUnit) $runState($node,timeUnit)
         for {set setPhase $phases} {$setPhase > 0} {incr setPhase -1} {
-            set tick [expr $runState($node,update$setPhase)*$phaseFlip]
+	    set globName runState($node,update$setPhase)
+	    if {![string is double -strict [set $globName]]} {
+		Query [list run_param_not_number [set $globName] \
+			   [list time step $setPhase]] warning execution {} ok
+		set $globName 1
+	    }
+            set tick [expr [set $globName]*$phaseFlip]
             #puts "Checking $tick is $runState($node,prev_update$setPhase) and $runState($node,currentTime) is $runState($node,timeAtEval)"
             if {$newBalls || ($runState($node,prev_update$setPhase)!=$tick)} {
                 set runState($node,prev_update$setPhase) $tick
@@ -335,6 +352,7 @@ namespace eval runcontrol33857 {
             }
         }
         SetStep $node 0 0
+	SwapDistVar $node 0 ;# in case any non-numeric phases fixed
 #        SetState $winId $sendvars($node,newData)
     }
     
@@ -412,8 +430,8 @@ namespace eval runcontrol33857 {
 	    "[namespace current]::SetMode $node stop"
 	set sendvars($node,busy) 1
 
-	foreach {idx param} {0 display 1 update 2 current 3 exec} {
-	    set $param [lindex $sendvars($node,newData) $idx]
+	foreach param {display current exec} val $sendvars($node,newData) {
+	    set $param $val
 	}
 	set forward [expr $exec>0]
 	if {abs($current + $exec - $runState($node,expected_end)) > 1e-12 || \
@@ -459,7 +477,7 @@ namespace eval runcontrol33857 {
 		    set sendvars($node,currentMode) stop
                 }
                 if {$display} {
-		    TellAllHelpers $node {} Display $current $display $update
+		    TellAllHelpers $node {} Display $current $display 1
 		}
 	    } else {
 		set sendvars($node,currentMode) exit
