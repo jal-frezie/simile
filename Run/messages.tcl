@@ -354,8 +354,14 @@ set msgs(field_not_number_message) "Entry for %s must have a numerical value"
 set msgs(field_not_scalar_title) $msgs(bad_eqn_title)
 set msgs(field_not_scalar_message) "Entry for %s must have a single value."
 
+set msgs(bad_cond_spec_form_title) $msgs(bad_eqn_title)
+set msgs(bad_cond_spec_form_message) "You have used the operator 'is' in a context which is not one of the forms used for looking up submodel instances."
+
 set msgs(expr_denotes_list_title) $msgs(bad_eqn_title)
 set msgs(expr_denotes_list_message) "The expression evaluates to a list, or array of lists. A model variable cannot represent a list."
+
+set msgs(misplaced_cond_spec_title) $msgs(bad_eqn_title)
+set msgs(misplaced_cond_spec_message) "You have used one of the forms for looking up submodel instances, but this component is not an existence condition."
 
 set msgs(minmax_wrong_title) $msgs(bad_eqn_title)
 set msgs(minmax_wrong_message) "Equation has non-numeric units %s, so minimum or maximum values cannot be used."

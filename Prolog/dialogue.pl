@@ -242,6 +242,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 
 	(\+ EqnError = [], !,
 	    Complaint5 = EqnError;
+	EqnBase = cond_spec, \+ TypeBase == cond_spec,
+	    Complaint5 = misplaced_cond_spec;
 	check_limit(Min_st, 'Min. value', Function,
 		    MinMaxNeeded, Min, MinVal, MinBase, MinErr),
 	    (\+ MinErr = [], !,
@@ -297,7 +299,6 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	    check_unit(ComboBase, NewUnits, CheckLevel, EqnToUnitError)),
 	    (\+ EqnToUnitError == [],
 		UnitError = EqnToUnitError;
-
 	    /* Next check that the value's units,however they were
 	       specified, are appropriate for this component */
 	
@@ -569,11 +570,14 @@ check_exp(Eqn_st, Function, InterInputs, Base, Dims,
 	    (ParseError = [], !,
 		test_eqn(Equation, Function, IndxCount, InterInputs, 
 			 Base, Dims, ParamList, TestError),
-		(TestError = [],
-		    ((member(var, Dims), !,
-		      Error = expr_denotes_list);
-		    Error = []);
-		Error = TestError);
+		(\+ TestError = [],
+		    Error = TestError;
+		 Base = cond_spec,
+		    \+ instance:is_lookup_cond(Equation, _),
+		    Error = bad_cond_spec_form;
+		 member(var, Dims), !,
+		    Error = expr_denotes_list;
+		 Error = []);
 	    Error = bad_syntax('Equation', ParseError)).
 
 /* test_eqn: replaces the old parse_eqn. Because make_intermediates 
