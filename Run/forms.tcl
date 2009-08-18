@@ -589,7 +589,7 @@ proc AddEnumTypePopup {lb y X Y} {
 proc CheckForETDuplicates {new} {
     global disaggregate enumTypeMPEntry
 
-    if {![info exists enumTypeMPEntry] || ![llength $enumTypeMPEntry]} {
+    if {![info exists enumTypeMPEntry] || ![string length $enumTypeMPEntry]} {
 	Query [list no_et_member $new] warning enumtype {} ok
 	return 0
     }
