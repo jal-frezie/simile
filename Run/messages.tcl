@@ -644,6 +644,7 @@ set msgs(tooManyColumns) "the total number of columns is greater than"
 set msgs(tooManyCells) "the total number of cells is greater than"
 
 # references to documentation
+set help(search) "diagrams/search.htm"
 set help(g\\+\\+) "run/index.htm"
 set help(top) "index.htm"
 set help(license) "index.htm"

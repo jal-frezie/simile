@@ -1455,7 +1455,7 @@ proc NextCaption {canvas} {
 	MenuSelect $canvas edit unselall
     }
     if {![llength $find(List,$canvas)]} {
-	Query [list finished_matches $find(where)] info top {} ok
+	Query [list finished_matches $find(where)] info search $canvas ok
         array unset find *,$canvas
 	UpdateAbility $canvas findmore edit "Find next" 0
     } else {
