@@ -147,9 +147,9 @@ namespace eval ::$keyValue {
 #        $tableframe.table bindText <Button-1> \
 #	    [namespace code "OnElementClick $winId"]
         if [PrefValue custom(compValPop) compValPop] {
-	    bind $tableframe.table <Enter> \
-	        [list QueuePopup [namespace code DoInspPopup] \
-		     $winId %X %Y %x %y]
+#	    bind $tableframe.table <Enter> \
+#	        [list QueuePopup [namespace code DoInspPopup] \
+#		     $winId %X %Y %x %y]
 #	    $tableframe.table bindImage <Enter> \
 #	        [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
 #	    $tableframe.table bindText <Enter> \
@@ -185,9 +185,9 @@ namespace eval ::$keyValue {
     
     proc DoInspPopup {winId X Y x y} {
 	#	    ShowMess debug info $args ok
-	global helperTable runState nowPopped
-	set plName [$winId.tableframe.table identify row $x $y]
-	set helperTable($winId,whatPopped) $plName
+	global helperTable runState
+
+	set plName $helperTable($winId,whatPopped)
 #puts "setting helperTable($winId,whatPopped)"
 	if {![llength $plName]} {
 	    return
@@ -211,12 +211,17 @@ namespace eval ::$keyValue {
     
     proc MoveInInsp {winId X Y x y} {
 	global helperTable
-	catch {if {![string equal $helperTable($winId,whatPopped) \
-		  [$winId.tableframe.table identify row $x $y]]} {
+
+	set plName [$winId.tableframe.table identify row $x $y]
+	if {[info exists helperTable($winId,whatPopped)]} {
+	    if {[string equal $plName $helperTable($winId,whatPopped)]} {
+		return; #; it's already queueued
+	    }
+	}
+	set helperTable($winId,whatPopped) $plName
 	    # changed row; renew popup
-	    RemovePopup
-	    DoInspPopup $winId $X $Y $x $y
-	}}
+	RemovePopup
+	eval QueuePopup [namespace code DoInspPopup] $winId $X $Y $x $y
     }
 
     proc Restore {winId} {initialize $winId}
