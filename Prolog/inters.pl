@@ -585,8 +585,11 @@ make_intermediates(
 	    /* If keep_from_reseting, we can remove time from the increment expression's
 	    conditions since we need only do it once even though it changes */
 	(Functor = at_init, !,
-	    SetTime=0, purge(Depends, [time], KeepDeps);
-	SetTime = Step, KeepDeps = Depends),
+	    SetTime=0, purge(Depends, [time], KeepDeps);	    
+	SetTime = Step, 
+	    (Functor = count, !,
+		purge(Depends, OldArgs, KeepDeps);
+	    KeepDeps = Depends)),
         (member(Functor, [make_inter, at_init]), !,
 	    Setting = [make(TotalName, KeepDeps, WriteContext, SetTime,
 			    [IncrAct])];
