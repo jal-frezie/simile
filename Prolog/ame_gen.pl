@@ -364,8 +364,12 @@ find_reference(Object, Index, Remote) :-
 	(Object has_model_refinement references of RemoteList,
 		(nth0(Index, RemoteList, Label);
 		\+ member(Label, RemoteList),
-		    append(RemoteList, [Label], NewList),
-		    length(RemoteList, Index),
+		    (ForLookup = 1,
+			append(RemoteList, [Label], NewList),
+			length(RemoteList, Index);
+		     ForLookup = 0,
+			NewList = [Label | RemoteList],
+			Index = 0),
 		    Object has_changed_model_refinement references of NewList);
 	Index = 0,
 		Object has_new_model_refinement references of [Label]).
