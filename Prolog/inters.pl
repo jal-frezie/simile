@@ -792,15 +792,15 @@ make_intermediates(
 	      % bodge: if building code, bounds have been made integer, so
 	      % accept boolean or ET as index
 	     \+ Step = dummy, member(NeedType, [boolean, a(_ET)])),
-	    (promote_unit(Int, NeedType);
+	    ((promote_unit(Int, NeedType);
 		% special case -- count or name of ET can refer to last elt
-	     Int = n(AnET), NeedType = a(AnET);
+	      Int = n(AnET), NeedType = a(AnET)),
+		TryIndxRef = IndxRef;
+	     promote_arg(Int, real, _),
+		promote_arg(NeedType, real, _),
+		TryIndxRef = simile_int(IndxRef); % for legacy cases
 	     throw(needs_index_of_type(element, Array, NeedType, Indx, Int))),
 	    !,
-	    (TryIndxRef = IndxRef;
-	      promote_arg(Int, real, _),
-		promote_arg(NeedType, real, _), !, % for legacy cases
-	        TryIndxRef = simile_int(IndxRef)),
 	    ((NeedType = boolean,
 				% first index is 1 in model, 0 in code
 	          IntIndxRef = TryIndxRef+1;
