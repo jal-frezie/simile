@@ -5,7 +5,7 @@
 #
 # This file contains procedures for the equation dialogue.
 #
-proc create_equation {parent boxtitle indices} {
+proc create_equation {parent purpose comp indices} {
     global equation equationbar tcl_platform iconImages window_info custom
     ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
@@ -18,7 +18,7 @@ proc create_equation {parent boxtitle indices} {
     ### End formula bar section
     set topNode $window_info($parent,top_node) 
     set t [PutItThere .equation $parent]
-    wm title $t [BlankCrs $boxtitle]
+    wm title $t [BlankCrs "$purpose for $comp"]
     set equation(top) $t
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
     
@@ -193,8 +193,7 @@ proc create_equation {parent boxtitle indices} {
     frame $mainf.equation
     frame $mainf.equation.textbox
     
-    regsub { for } $boxtitle {: } eqnRBtext
-    radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
+    radiobutton $mainf.equation.textbox.radio0 -text "$purpose: $comp = " -variable equation(isparam) -value 0
     
     set en [text $mainf.equation.textbox.text -height 4 -width 64 \
 		-relief sunken -bd 2 -highlightthickness 0 -font EquationFont \
@@ -209,7 +208,6 @@ proc create_equation {parent boxtitle indices} {
     
     frame $mainf.equation.textbox.buttons
     #$notebook itemconfigure Main -raisecmd "focus $en"
-    set comp [lrange $boxtitle [expr [lsearch $boxtitle for]+1] end]
     
     if {[string match Darwin $tcl_platform(os)]} {
         set graph [button $mainf.equation.textbox.buttons.graph \

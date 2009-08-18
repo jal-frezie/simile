@@ -28,7 +28,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_display_mode/1, tk_display_menu/1,
 	tk_change_color/5, kill_featured/2, shift_images/3,
 	clear_display/1, set_interpreter/1, unset_interpreter/0,
-	prepare_equation/1, create_equation/3,
+	prepare_equation/1, create_equation/4,
 	fill_equation/8, fill_inputs/1, fill_table/2,
 	interact_equation/1, destroy_equation/0,
 	tk_start_progress_dialogue/1, tk_update_infobox/1, 
@@ -270,8 +270,10 @@ relation(Wid, Coords, Fatness, Colour_scheme, Features) :-
 		       Fatness, Colour_scheme, br(Features)], _).
 
 text(Wid, Coords, Type, Features, Fatness, Colour_scheme, Content) :-
+	name(Content, ContentStr),
+	argify(ContentStr, ContentArg),
 	safe_tcl_eval(['PutText', Wid, br(Coords), br(Type), br(Features),
-		       Fatness, Colour_scheme, br(write(Content))], _).
+		       Fatness, Colour_scheme, chars(ContentArg)], _).
 
 shift_text(Wid, Obj, Vector) :-
 	safe_tcl_eval(['MoveText', Wid, Obj, br(Vector)], _).
@@ -375,8 +377,10 @@ save_canvas(Wid, File, Depths, Date) :-
 	safe_tcl_eval(['WriteDesc', Wid, br(write(File)), br(write(Date))
 			 | Depths], _).
 
-change_text_to(Wid, Comp, New_title) :-
-	safe_tcl_eval(['ChangeObjectTitle', Wid, Comp, br(write(New_title))], _).
+change_text_to(Wid, Comp, NewTitle) :-
+	name(NewTitle, NewTitleStr),
+	argify(NewTitleStr, NewTitleArg),
+	safe_tcl_eval(['ChangeObjectTitle', Wid, Comp, chars(NewTitleArg)], _).
 
 tk_update_ability(Wid, Un, Men, Itm, Re) :-
 	safe_tcl_eval(['UpdateAbility', Wid, Un, Men, Itm, Re], _).
@@ -416,9 +420,11 @@ prepare_equation(Ops) :-
 	bracketize(Ops, BrOps),
 	safe_tcl_eval(['AttackGlobalVariable equation (fnDefs)', BrOps], _).
 
-create_equation(Win, Function, Indices) :-
+create_equation(Win, Use, Caption, Indices) :-
+	name(Caption, CaptStr),
+	argify(CaptStr, CaptArg),
 	bracketize(Indices, BrIndices),
-	safe_tcl_eval(['create_equation', Win, br(write(Function)),
+	safe_tcl_eval(['create_equation', Win, br(write(Use)), chars(CaptArg),
 			BrIndices], _).
 /*
 fill_equation(Cur_eqn, Cur_units, MultList, IsParam, List, TableData,
@@ -449,8 +455,7 @@ fill_equation(BadCurEqn, Cur_units, MultList, IsParam, BadDesc, BadCmt,
 
 fill_inputs(List) :-
 	get_from_list(List, Table),
-	bracketize(Table, Tk_table),
-	safe_tcl_eval(['fill_inputs', Tk_table], _).
+	safe_tcl_eval(['fill_inputs', br(Table)], _).
 
 fill_table(TableData, TableVals) :-
 	bracketize(TableData, Tk_tableData),
@@ -459,7 +464,11 @@ fill_table(TableData, TableVals) :-
 /* Do a bit of processing to the parameter name column so the square/curly
 brackets appear as text. */
 
-get_from_list([input_link(_, V, P, _, I) | R1], [[V, FP, U, FD] | R2]) :-
+get_from_list([input_link(_, V, P, _, I) | R1],
+	      [br([chars(AV), br(write(FP)), br(write(U)), br(write(FD))])
+	      | R2]) :-
+	name(V, SV),
+	argify(SV, AV),
 	sicstus_write_to_chars(P, SP),
 	name(FP, SP),
 	m_update:analyze_array(I, U, D),
@@ -518,11 +527,13 @@ tk_do_disag_dialog(Win, Caption,
 		   [Colour, Image, ImgPos, Type, Fatness, CountList, Step,
 		    Desc, Comment, EnumSpecs, Proc, Inc, LibList | Choices],
 		   ResultList) :-
+	name(Caption, CaptStr),
+	argify(CaptStr, CaptArg),
 	all(utility, wrap, [build(CountList), unify(write), build(Count)]),
 %	all(utility, wrap, [build(LibList), unify(write), build(Libs)]),
 	bracketize(LibList, Libs),
 	bracketize(EnumSpecs, EnumLists),
-	safe_tcl_eval(['Disaggregate', Win, br(write(Caption)), Colour, Image,
+	safe_tcl_eval(['Disaggregate', Win, chars(CaptArg), Colour, Image,
 		       ImgPos, Type, Fatness, br(Count), Step, br(write(Desc)),
 		       br(write(Comment)), EnumLists,
 		       br(write(Proc)), br(write(Inc)), Libs | Choices],

@@ -198,8 +198,7 @@ get_params(_, Comp) :-
 	find_node_with_data(Comp, _, Func),
 	get_input_info(Func, Params),
 	output:get_from_list(Params, Table),
-	output:bracketize(Table, BrTable),
-	callback(BrTable).
+	callback(br(Table)).
 
 :- dynamic(min_size_is/1).
 :- dynamic(max_size_is/1).

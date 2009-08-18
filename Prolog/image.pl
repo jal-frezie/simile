@@ -1104,8 +1104,9 @@ centre(Low1, Low2, High1, High2, Middle) :-
     Middle is (Low + High)/2.
 
 curve_route([X1, Y1], [X3, Y3], [X2, Y2]) :-
-    X2 is (2*X1 + 2*X3 + Y3 - Y1)/4,
-    Y2 is (2*Y1 + 2*Y3 + X1 - X3)/4.
+	WarpFactor = 1, % -ve for counterclockwise curve
+	X2 is (2*(X1 + X3) + WarpFactor*(Y3 - Y1))/4,
+	Y2 is (2*(Y1 + Y3) + WarpFactor*(X1 - X3))/4.
 
 get_linear(Acw_pt, Cw_pt, Acw_gap, Front_gap, Cw_gap, Mid_pt) :-
     Mid_pt is (Acw_pt*(Front_gap - Cw_gap) + Cw_pt*(Front_gap - Acw_gap)) / (2*Front_gap - Cw_gap - Acw_gap).

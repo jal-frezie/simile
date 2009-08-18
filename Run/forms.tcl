@@ -85,8 +85,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
             -padx 2 -pady 4 -side left
     $colourf.fixcolour configure -bg $disaggregate(colour)
     set disaggregate(defColour) $disaggregate(colour)
-    pack [button $colourf.setimage -text "Image..." \
-            -width 7 -command "ChooseImage $posRBs $mdl"] \
+    pack [button $colourf.setimage -text "Image..." -width 7 -command "ChooseImage $posRBs $mdl $window_info($parent,is_top_level)"] \
             -padx 2 -pady 4 -side left
     pack $posRBs -padx 2 -pady 4 -side left
     set rbState [ChooseText [string equal $disaggregate(image) none] \
@@ -247,8 +246,9 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
 #   
 
 # Context frame for metadata
-    
-    $t add [frame $t.metadata] -text Context
+# do not display fttb    
+    frame $t.metadata
+#    $t add [frame $t.metadata] -text Context
     TitleFrame $t.metadata.summary -text "Model summary"
     set summaryf [GetFrame $t.metadata.summary]
 
@@ -706,7 +706,7 @@ proc UpdateColour {parent f} {
 
 package require Img
 
-proc ChooseImage {posRBs mdl} {
+proc ChooseImage {posRBs mdl noCentred} {
     global disaggregate
     
     set uid 0
@@ -730,6 +730,9 @@ proc ChooseImage {posRBs mdl} {
                 foreach button [winfo children $posRBs] {
                     $button configure -state normal
                 }
+		if {$noCentred} {
+		    $posRBs.ipCentred configure -state disabled
+		}
                 if {[string equal none $disaggregate(imgpos)]} {
                     set disaggregate(imgpos) Tiled
                 }

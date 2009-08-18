@@ -80,9 +80,6 @@ do_equation_dialog(Win, Part) :-
 	(ClickedObj is_of_sort init_eval, !,
 	    TitleForm = 'Initial value';
 	TitleForm = 'Equation'),
-	sicstus_format_to_chars("~a for ~a", [TitleForm, Caption], 
-BoxHeaderStr),
-	name(BoxHeader, BoxHeaderStr),
 	list_index_meanings(Part, ISpecs),
 	all(dialogue, index_names_and_sizes, [build(ISpecs), build(IndexList),
 					      build(_Sz)]),
@@ -120,7 +117,7 @@ BoxHeaderStr),
 	is_parameter(ClickedObj, Is_P),
 	get_input_info(Part, Input_list),
 	
-	create_equation(Win, BoxHeader, IndexList),
+	create_equation(Win, TitleForm, Caption, IndexList),
 	fill_equation(Equation, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_inputs(Input_list),
 	fill_table(TableList, TableVals),
