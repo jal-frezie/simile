@@ -423,7 +423,7 @@ prepare_equation(Ops) :-
 create_equation(Win, Use, Caption, Indices) :-
 	name(Caption, CaptStr),
 	argify(CaptStr, CaptArg),
-	bracketize(Indices, BrIndices),
+	safe_list(Indices, BrIndices),
 	safe_tcl_eval(['create_equation', Win, br(write(Use)), chars(CaptArg),
 			BrIndices], _).
 /*
@@ -438,19 +438,18 @@ fill_equation(Cur_eqn, Cur_units, MultList, IsParam, List, TableData,
 			  br(write(Desc)), br(write(Comment)),
 			  br(write(Min)), br(write(Max))], _).
 */
-fill_equation(BadCurEqn, Cur_units, MultList, IsParam, BadDesc, BadCmt,
+fill_equation(BadCurEqn, CurUnits, MultList, IsParam, BadDesc, BadCmt,
 	      Min, Max) :-
 	sicstus_write_to_chars(BadCurEqn, BadCurEqnStr),
+	sicstus_write_to_chars(CurUnits, BadCurUnitStr),
 %	escape_curlies(BadCurEqnStr, CurEqnStr),
-	name(BadDesc, BadDescStr),
-	name(BadCmt, BadCmtStr),
 	argify(BadCurEqnStr, CurEqnStr),
-	argify(BadDescStr, DescStr),
-	argify(BadCmtStr, CmtStr),
-	all(utility, wrap, [build(MultList), unify(write), build(Mult)]),
+	argify(BadCurUnitStr, CurUnitStr),
+	safe_list([BadDesc, BadCmt], br([D, C])),
+	safe_list(MultList, M),
 	safe_tcl_eval(['fill_equation',
-		       chars(CurEqnStr), br(write(Cur_units)), br(Mult),
-		       br(write(IsParam)), chars(DescStr), chars(CmtStr),
+		       chars(CurEqnStr), chars(CurUnitStr), br(M),
+		       br(write(IsParam)), D, C,
 		       br(write(Min)), br(write(Max))], _).
 
 fill_inputs(List) :-
@@ -529,13 +528,14 @@ tk_do_disag_dialog(Win, Caption,
 		   ResultList) :-
 	name(Caption, CaptStr),
 	argify(CaptStr, CaptArg),
-	all(utility, wrap, [build(CountList), unify(write), build(Count)]),
+	safe_list(CountList, Count),
 %	all(utility, wrap, [build(LibList), unify(write), build(Libs)]),
 	bracketize(LibList, Libs),
-	bracketize(EnumSpecs, EnumLists),
+% Q&D fix for bad enum type chars
+	all(output, safe_list, [build(EnumSpecs), build(EnumLists)]),
 	safe_tcl_eval(['Disaggregate', Win, chars(CaptArg), Colour, Image,
-		       ImgPos, Type, Fatness, br(Count), Step, br(write(Desc)),
-		       br(write(Comment)), EnumLists,
+		       ImgPos, Type, Fatness, Count, Step, br(write(Desc)),
+		       br(write(Comment)), br(EnumLists),
 		       br(write(Proc)), br(write(Inc)), Libs | Choices],
 		      New_P_string),
 	chop_list(New_P_string, ResultListN),
@@ -546,6 +546,13 @@ tk_do_disag_dialog(Win, Caption,
 		[build(EnumTypeSpecLists), build(EnumTypes)]),
 	    append(ResultList0, [LibFileList, EnumTypes], ResultList);
 	ResultList = []).
+
+safe_list(BadList, br(GoodList)) :-
+	 all(output, safe_arg, [build(BadList), build(GoodList)]).
+
+safe_arg(BadAtom, chars(GoodArg)) :-
+	name(BadAtom, String),
+	argify(String, GoodArg).
 
 tk_do_relation_dialog(Win, Caption, Type, State, OldComment,
 		      OKd, NewState, NewComment) :-
