@@ -107,11 +107,13 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     set looks(darkerColor) [$buttons.enter cget -disabledforeground]
     
     if {[llength $target]} {
+	set graph($t,mode) helper
         $buttons.enter configure -command \
                 [namespace code [list UpdateGraph $t $target]]
         $buttons.cancel configure -command \
                 [namespace code [list RestoreSketch $t $target]]
     } else {
+	set graph($t,mode) equation
         $buttons.enter configure -command [list set graph($t,done) 1]
         $buttons.cancel configure -command [list set graph($t,done) 0]
         bind $t <Destroy> "set graph($t,done) -1"
@@ -185,19 +187,20 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     set resolution [frame $right.resolution]
     label $resolution.detail -text "X axis resolution:"
     pack $resolution.detail
-    frame $resolution.detailbox
+    set db [frame $resolution.detailbox]
     #    button $resolution.detailbox.less -text Less -command "CoarseX $grid"
     ArrowButton $resolution.detailbox.arrowleft -type button -dir \
-            left -command "CoarseX $grid" -width 25 -height 25 -clean 2
+            left -command "CoarseX $db $grid" -width 25 -height 25 -clean 2
     pack $resolution.detailbox.arrowleft -side left
     #    button $resolution.detailbox.more -text More -command "FineX $grid"
     ArrowButton $resolution.detailbox.arrowright -type button -dir right \
-            -command "FineX $grid" -width 25 -height 25 -clean 2
+            -command "FineX $db $grid" -width 25 -height 25 -clean 2
     pack $resolution.detailbox.arrowright -side left
     pack $resolution.detailbox
     pack $resolution -pady 8 -padx 4 -fill both
     pack $right -fill both
     pack $t.right.options -fill both -padx 2 -pady 2 -expand true
+    AbleArrows $db $t
     
     pack $gph -expand on -fill both -side left
     pack $t.gph -side left -expand on -fill both -padx 2 -pady 2
@@ -494,44 +497,59 @@ proc AttackShape {c w h} {
     }
 }
 
-proc CoarseX { c } {
+proc CoarseX { db c } {
     global graph
     
     set t [GetWidFromCanvas $c]
+    $c delete graph
+    set el 0
+    set graph($t,increment) [expr $graph($t,increment)*2]
+    while {$el < [llength $graph($t,points)]} {
+	set graph($t,points) [lreplace $graph($t,points) $el [expr $el + 1] \
+				  [lindex $graph($t,points) $el]]
+	set el [expr $el + 1]
+	AddLine $c $el
+    }
+    RedrawGrid $c $graph($t,width) $graph($t,height) $graph($t,increment)
+    AbleArrows $db $t
+}
+
+proc FineX { db c } {
+    global graph
+    
+    set t [GetWidFromCanvas $c]
+    $c delete graph
+    set el 1
+    set graph($t,increment) [expr $graph($t,increment)/2]
+    while {$el < [llength $graph($t,points)]} {
+	set graph($t,points) \
+	    [linsert $graph($t,points) $el \
+		 [expr ([lindex $graph($t,points) [expr $el - 1]] + \
+			    [lindex $graph($t,points) $el])/2]]
+	AddLine $c $el
+	AddLine $c [expr $el + 1]
+	set el [expr $el + 2]
+    }
+    RedrawGrid $c $graph($t,width) $graph($t,height) $graph($t,increment)
+    AbleArrows $db $t
+}
+
+proc AbleArrows {db t} {
+    global graph
+
     if {[llength $graph($t,points)]%2} {
-        $c delete graph
-        set el 0
-        set graph($t,increment) [expr $graph($t,increment)*2]
-        while {$el < [llength $graph($t,points)]} {
-            set graph($t,points) [lreplace $graph($t,points) \
-                    $el [expr $el + 1] [lindex $graph($t,points) $el]]
-            set el [expr $el + 1]
-            AddLine $c $el
-        }
-        RedrawGrid $c $graph($t,width) $graph($t,height) $graph($t,increment)
+	$db.arrowleft configure -state normal
+    } else {
+	$db.arrowleft configure -state disabled
+    }
+    if {$graph($t,increment) < 2.0 || \
+	    [string equal equation $graph($t,mode)] && \
+	    [llength $graph($t,points)]>120} {
+	$db.arrowright configure -state disabled
+    } else {
+	$db.arrowright configure -state normal
     }
 }
-
-proc FineX { c } {
-    global graph
-    
-    set t [GetWidFromCanvas $c]
-    if {$graph($t,increment) >= 2.0} {
-        $c delete graph
-        set el 1
-        set graph($t,increment) [expr $graph($t,increment)/2]
-        while {$el < [llength $graph($t,points)]} {
-            set graph($t,points) [linsert $graph($t,points) $el \
-                    [expr ([lindex $graph($t,points) [expr $el - 1]] + \
-                    [lindex $graph($t,points) $el])/2]]
-            AddLine $c $el
-            AddLine $c [expr $el + 1]
-            set el [expr $el + 2]
-        }
-        RedrawGrid $c $graph($t,width) $graph($t,height) $graph($t,increment)
-    }
-}
-
 #####################################################################
 # TABLE LOADING
 #####################################################################
