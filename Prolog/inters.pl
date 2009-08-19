@@ -791,19 +791,20 @@ make_intermediates(
  	    (break_at_last_loop(ALoops, TailLoops,
  	                       set(IntIndxRef, loop(Limit,_)), ItemLoops);
 		throw(only_works_on_array(element, Array))),
-	    (type_ind(Limit, NeedType);
+	    type_ind(Limit, XpectType),
+	    (NeedType = XpectType;
 	      % bodge: if building code, bounds have been made integer, so
 	      % accept boolean or ET as index
-	     \+ Step = dummy, member(NeedType, [boolean, a(_ET)])),
+	     \+ Step = dummy, member(NeedType, [boolean, a(_ET)]);
+		% but if next disjunction fails in both these cases...
+	     throw(needs_index_of_type(element, Array, XpectType, Indx, Int))),
 	    ((promote_unit(Int, NeedType);
 		% special case -- count or name of ET can refer to last elt
 	      Int = n(AnET), NeedType = a(AnET)),
 		TryIndxRef = IndxRef;
 	     promote_arg(Int, real, _),
 		promote_arg(NeedType, real, _),
-		TryIndxRef = simile_int(IndxRef); % for legacy cases
-	     throw(needs_index_of_type(element, Array, NeedType, Indx, Int))),
-	    !,
+		TryIndxRef = simile_int(IndxRef)), !,% for legacy cases
 	    ((NeedType = boolean,
 				% first index is 1 in model, 0 in code
 	          IntIndxRef = TryIndxRef+1;
