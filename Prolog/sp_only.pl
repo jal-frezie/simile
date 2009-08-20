@@ -42,6 +42,10 @@ sicstus_atom_chars(Atom, Chars) :-
 /* There are a few things where the GNU Prolog implementation is more concise
 than the Sicstus, like... */
 
+read_term_from_codes(String, Term, _Unusable) :-
+	append(String, ".", ProperString),
+	read_from_chars(ProperString, Term).
+
 print_to_codes(TermStr, Term) :-
 	with_output_to_chars(write_term(Term, [portrayed(true)]),
 			     TermStr).

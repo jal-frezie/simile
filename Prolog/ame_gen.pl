@@ -34,8 +34,8 @@ get_term(String, Term, Error) :-
 	String = [], !,
 		Term = '',
 		Error = [];
-	make_legible_for_prolog(String, ProcessedString),
-	append(ProcessedString, ".", Proper_string),
+	make_legible_for_prolog(String, Proper_String),
+%	append(ProcessedString, ".", Proper_string),
 /*	name(LooksLike, Proper_string), for debug 
 	open_chars_stream(Proper_string, Stream),
 	on_exception(Bug, read_term(Stream, Term, [variable_names(Vs)]),
@@ -45,8 +45,9 @@ get_term(String, Term, Error) :-
 	all(user, call, [build(Vs)]),
 	    Error = []). */
 	
-	on_exception(Bug, sicstus_read_from_chars(Proper_string, Term),
-		     make_nice_error_message(Proper_string, Bug, Error)),
+	on_exception(Bug,
+	    read_term_from_codes(Proper_String, Term, [end_of_term(eof)]),
+		     make_nice_error_message(Proper_String, Bug, Error)),
 	(Error = [], !;
 	    name(Term, String)).
 
