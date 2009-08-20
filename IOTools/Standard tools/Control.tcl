@@ -312,7 +312,7 @@ namespace eval runcontrol33857 {
 	}
         set phases [GetPhaseCount $node]
 	set sendvars($node,newData) {}
-	foreach entered [list displayInt currentTime execTime] {
+	foreach entered {displayInt currentTime execTime errLimit speedLimit} {
 # for some reason tcl thinks an empty string is a number
 	    set globName runState($node,$entered)
 	    if {![string is double -strict [set $globName]]} {
@@ -320,6 +320,7 @@ namespace eval runcontrol33857 {
 			   $entered] warning execution {} ok
 		set $globName 1
 	    }
+# last two not used from list, included just for format check
 	    lappend sendvars($node,newData) [set $globName]
 	}
 	if {$runState($node,execTime)<0} {

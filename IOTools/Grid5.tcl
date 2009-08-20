@@ -494,8 +494,9 @@ namespace eval grid005 {
 
 	set useNodes($winId,GDALTemplate) \
 	    [gdal_open_read_only $useNodes($winId,template)]
-	${useNodes($winId,actions)}.b configure -state normal
-	${useNodes($winId,actions)}.cb configure -state normal
+	set actionF $useNodes($winId,actions)
+	$actionF.b configure -state normal
+	$actionF.cb configure -state normal
     }
 
     proc WriteImage {winId time} {
