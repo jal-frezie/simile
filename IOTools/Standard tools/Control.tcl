@@ -177,29 +177,26 @@ namespace eval runcontrol33857 {
 	bind $stepField <Return> $tCd
         SwapDistVar $node [GetPhaseCount $node]
 
-        pack [frame $rsf.stepsize] -pady 2 -expand on -fill both
-	pack [checkbutton $rsf.stepsize.adapt -variable runState($node,adapt) \
-		  -text Adaptive\; -command "set runState($node,tweaked) 1"] \
+        pack [frame $rsf.stepsize] -pady 4 -expand on -fill both
+	pack [ttk::checkbutton $rsf.stepsize.adapt \
+		  -variable runState($node,adapt) \
+		  -text "Adaptive\; Error limit:" \
+		  -command "set runState($node,tweaked) 1"] \
 	    -side left
-	if {![info exists runState($node,errLimit)]} {
-	    set runState($node,errLimit) 1e-6
-	}
 	pack [::ttk::entry $rsf.stepsize.maxerr \
 		  -textvariable runState($node,errLimit) -width 8] \
 	    -side right -expand on -fill x
 	bind $rsf.stepsize.maxerr <Key> "set runState($node,tweaked) 1"
-        pack [label $rsf.stepsize.caption -text "Error limit:"] -side right
 
-	pack [frame $rsf.speedlim] -pady 2 -expand on -fill both
-	pack [checkbutton $rsf.speedlim.use -variable runState($node,splimit) \
+	pack [frame $rsf.speedlim] -pady 4 -expand on -fill both
+	pack [ttk::checkbutton $rsf.speedlim.use \
+		  -variable runState($node,splimit) \
 		  -text "Limit updates/sec to:" \
 		  -command "set runState($node,tweaked) 1"] -side left
-	if {![info exists runState($node,speedLimit)]} {
-	    set runState($node,speedLimit) 50
-	}
 	pack [::ttk::entry $rsf.speedlim.val \
 		  -textvariable runState($node,speedLimit) -width 8] \
 	    -side right -expand on -fill x
+	bind $rsf.speedlim.val <Key> "set runState($node,tweaked) 1"
 
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         

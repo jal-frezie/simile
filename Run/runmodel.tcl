@@ -1029,9 +1029,10 @@ proc SetRunParams {node runParams} {
 	set runState($node,intMethod) Euler
     }
     foreach {value checkstate} {errLimit adapt speedLimit splimit} {
-	if {![set runState($node,$checkstate) $runState($node,$value)]} {
+	if {$runState($node,$value)==0} {
 	    unset runState($node,$value)
 	}
+	set runState($node,$checkstate) [info exists runState($node,$value)]
     }
     #puts [array get runState]
 }
@@ -1069,6 +1070,11 @@ proc StartRun {node} {
 	    $runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
 	}
 	return 0
+    }
+    foreach {var defVal} {adapt 0 errLimit 1e-6 splimit 0 speedLimit 50} {
+	if {![info exists runState($node,$var)]} {
+	    set runState($node,$var) $defVal
+	}
     }
     if {[info exists runState($node,currentTime)]} {
 #        if {$runState($node,execTime) != $runState($node,currentTime)} {
