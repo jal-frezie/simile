@@ -351,16 +351,16 @@ find_reference(Object, Index, Remote) :-
 	(Parent has_part Object,
 	    find_reference(Parent, ParentIndex, Remote),
 	    Label = ancestor(ParentIndex);
+	member(ForLookup, [0,1]), % put base-instance lookup relation last
 	(nonvar(Remote), /* speed hack - do not search outgoing links */
-	    Remote is_connector from Object to _,
+	      Remote is_connector from Object to _,
 	      Remote has_type relation,
 	      initiates(Remote, Object);  
-	  member(ForLookup, [0,1]), % put base-instance lookup relation last
-	      Remote is_connector from _ to Object,
+	    Remote is_connector from _ to Object,
 	      Remote has_type relation,
-	      terminates(Remote, Object),
+	      terminates(Remote, Object)),
 	      (Remote has_attribute can_lookup of ForLookup;
-		  \+ Remote has_attribute can_lookup of _Any, ForLookup = 0)),
+		  \+ Remote has_attribute can_lookup of _Any, ForLookup = 0),
 	    Label = local(Remote)),
 	(Object has_model_refinement references of RemoteList,
 		(nth0(Index, RemoteList, Label);
