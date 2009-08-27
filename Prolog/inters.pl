@@ -1545,7 +1545,8 @@ enumerate instructions.  */
 wait_for_submodels([], []).
 
 wait_for_submodels([Level | AlsoExited], Waits) :-
-	(Level = sm(Model, _,_, vm_loop(_,_,_,_)), !,
+	(member(Level, [sm(Model, _,_, vm_loop(_,_,_,_)), % variable membership
+			set(_, loop(pra_bound(_, Model), _))]), !, % by record
 	    Waits = [enumerate(Model) | Others];
 	Waits = Others),
 	wait_for_submodels(AlsoExited, Others).

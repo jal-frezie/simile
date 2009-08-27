@@ -1108,17 +1108,17 @@ nodes.
 	    /* can_enter is needed to do anything in the model, but it must
 	    be an explicit precondition of existence_tested to make sure it
 	    happens in the right phase */
-	    Specials = [make(existence_tested(Name), [can_enter(Name) | Conds],
-			     LocalPath, Step, [test(Name, NewPtr, TestExpr)]),
-			make(enumerate(Name), [existence_tested(Name)],
+	    Specials = [make(enumerate(Name), [existence_tested(Name)],
 			     LocalPath, Step, []),
+			make(existence_tested(Name), [can_enter(Name) | Conds],
+			     LocalPath, Step, [test(Name, NewPtr, TestExpr)]),
 			make(can_enter(Name),
 			     [startable(Name) | BasesEnumerated], Path, Step,
 			     []),
-			make(init_list(Name), [], Path, Step,
-			     [assign(arr(Ptr, Name, []), 0)]),
 			make(startable(Name), [init_list(Name) | BasesCleared],
-			     Path, Step, [reset_list(Ptr, Name)])];
+			     Path, Step, [reset_list(Ptr, Name)]),
+			make(init_list(Name), [], Path, Step,
+			     [assign(arr(Ptr, Name, []), 0)])];
 	Level = [sm(_,_,_, fm_loop(Globs,_,_)) | _Loops],
 	% its the _Loops that have the bounds!
 	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
@@ -1131,8 +1131,10 @@ nodes.
 		MadeCount = arr(Ptr, NMade, []),
 		CFn =.. [collect, MadeCount, Name, IdxN | UseInds],
 		AFn = assign_array(Ptr, Name, 1),
-		Specials = [make(startable(Name), [on_reload], Path, Step,
-				 [assign_array(Ptr, Name, -1), CFn, AFn])];
+		Specials = [make(enumerate(Name), [startable(Name)], Path, Step,
+				 [CFn, AFn]),
+			    make(startable(Name), [on_reload], Path, Step,
+				 [assign_array(Ptr, Name, -1)])];
 	     [SmInters, Specials] = [[], []]),
 	    BaseSides = []),
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps, Used,
@@ -1193,10 +1195,6 @@ get_swaps_and_waits(instance(submodel, ID, _,_,_), FarEnds, _, [], []):-
 
 get_swaps_and_waits(Instance, [base(Assoc, Link, Ptrs) | Rest], Dir,
 	  [path_substitution(Exited, Entered, Link) | MorePathSwaps], Waits) :-
-	find_name_host(Link, LinkWithAttrs),
-	(LinkWithAttrs has_attribute last_membership of Delay, !;
-	Delay = 0),
-	
 	(Dir = out,
 	    get_route_between(Instance, Assoc, Exited, Entered),
 	    Entered = [sm(_,_,_, vm_loop(_,_, AssocSides, _)) | _],
@@ -1209,16 +1207,11 @@ get_swaps_and_waits(Instance, [base(Assoc, Link, Ptrs) | Rest], Dir,
 	    operation*/
 	    member(base(Instance, Link, FarPtrs), Bases),
 	    get_base_ptrs(Exited, _, FarPtrs),
-	    (Delay = 1, !,
-		wait_for_submodels(Entered, TheseWaits);
-	    TheseWaits = []);
+	    TheseWaits = [];
 	Dir = in,
 	    get_route_between(Assoc, Instance, Exited, Entered),
 	    get_base_ptrs(Exited, _, Ptrs), /* this actually sets them */
-	    (Delay = 0, !,
-		wait_for_submodels(Exited, TheseWaits);
-	    TheseWaits = [time])),
-	
+	    wait_for_submodels(Exited, TheseWaits)),	
 	get_swaps_and_waits(Instance, Rest, Dir, MorePathSwaps, OtherWaits),
 	append(TheseWaits, OtherWaits, Waits).
 
@@ -1244,6 +1237,7 @@ levels_to_path([instance(submodel, SmName, _, Name, _-SmDims) | MoreLevels],
 	levels_to_path(MoreLevels, Higher, TopPtr, HiPtr),
 	append(Level, Higher, Path).
 
+/*
 name_from_elt(FullRef, Cond) :-
 
 	(FullRef = IName*_Scale, !; FullRef = IName),
@@ -1255,7 +1249,6 @@ name_from_elt(FullRef, Cond) :-
 	Cond = [exts(Src) | Waits]);
 	Cond = [Name | Waits]).
 
-/*
 insert_ptr(Path, search_from(_, Name, Ptr)) :-
 	member(sm(Name, _, Ptr, _), Path).
 */
