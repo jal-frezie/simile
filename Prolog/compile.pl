@@ -1492,10 +1492,38 @@ evaluated on that long time step. We start off looking for what can be
 evaluated on step 0 (initialization) then 1, and so on. Assume no
 compartments are updated on step 0 -- that would be silly!
 
-Also pairs up names of vm models with the phases they get enumerated
-in, so this info is available when they are used as bases
+No longer pairs up names of vm models with the phases they get enumerated
+in, so this info is available when they are used as bases (this is now done
+separately)
 
-21st century, fully double-link-aware version */
+Search backwards until something that does not go is found, then fail */
+
+sort_assignments(Instructions, Step) :-
+	(Step = -2, !;
+	 LongerStep is Step-1,
+	    sort_assignments(Instructions, LongerStep)),
+	all(compile, check_this_step, [build(Instructions), unify(Step)]).
+
+check_this_step(Inst, Phase) :-
+	goes_this_step(Inst, Phase), !;
+	true.
+
+goes_this_step(make(_, Conds-_, _, [_, DefP, NewP | _],_), Step) :-
+	\+ var(NewP), !; % gone already
+	NewP = Step, % set while testing so loops go together
+	(Step >= DefP, !; % constrained by submodel step selection
+	  all(compile, cond_goes, [build(Conds), unify([DefP, Step])])).
+
+cond_goes(Cond, [DefP, Step]) :-
+	Cond = on_reload, Step >= -1;
+	Cond = on_reset, Step >= 0;
+	Cond = time, Step >= DefP;
+	Cond = earlier(Act); % wrapper means ignore step
+	member(Cond, [Act, later(Act), this_step(Act)]),
+	goes_this_step(Act, Step).
+
+/* 21st century, fully double-link-aware version: lacks AOT's ability to
+promote entire same-step loops
 
 sort_assignments(Instructions, Phase) :-
 	(Phase = -2, !;
@@ -1519,7 +1547,7 @@ go_this_step([make(_, Conds-Afx, _, [_, DefP, NewP | _],_) | More], Phase) :-
 	    append(Afx, More, ToTry)),
 	go_this_step(ToTry, Phase).
 
-/* Experimental arse over tit version 
+Tried and tested arse over tit version 
 
 sort_assignments(Instructions, Phase, VMSpecPairs) :-
 	member(NextInst, Instructions),
