@@ -12,7 +12,21 @@ proc FileParamDialogue {topWin mustShow} {
     set topNode $myNode
     set topCapt [GetExecTitle $topNode]
     set allNodes [GetCompProperty $topNode Objects]
+    # first check for any parameter values that are no longer needed
     # do it now to shake out errors before opening window
+    set ::bermudaTriangle {}
+    foreach curVal [array names paramData /$topNode/*] {
+        if {[llength $paramData($curVal)]} {
+	    set shortVal [TrimDTFromPath $curVal]
+            switch [ExistCheck $topNode $shortVal /$topNode 0 database] {
+                break {
+		    return 0
+                } continue {
+                    unset paramData($curVal)
+                }
+            }
+        }
+    }
     set t [PutItThere .fpdialogue $topWin]
     wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
     wm title $t "File parameters for $topCapt"
@@ -25,21 +39,6 @@ proc FileParamDialogue {topWin mustShow} {
         set notInput [FirstIndexCheck $topNode $node]
         if {$notInput != -1} {
             AddEntry $t $topNode $node $mustShow $notInput $topNode
-        }
-    }
-    # now check for any parameter values that are no longer needed
-    set ::bermudaTriangle {}
-    foreach curVal [array names paramData /$topNode/*] {
-        if {[llength $paramData($curVal)]} {
-	    set shortVal [TrimDTFromPath $curVal]
-            switch [ExistCheck $topNode $shortVal /$topNode 0 database] {
-                break {
-                    CancelParams
-                    break
-                } continue {
-                    unset paramData($curVal)
-                }
-            }
         }
     }
     if {$mustShow || [llength $paramData(needed)]} {
