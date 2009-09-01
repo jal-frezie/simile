@@ -327,7 +327,7 @@ important...(or was, back when the A stood for Agroforestry)... */
 		      dtarget, btarget, instance, time_step,
 		      time, times, ts, dts,
 		      parentId, channelId, version,
-		      on_reset, on_reload, externs_done, /* dummy conditions */
+		      on_reset, on_reload, /* dummy conditions */
 		      use_param_state, /* indicates file parameter */
 		      id, dims, /* arguments to extractor proc */
 		      next, instanceid, new_instance | _],
@@ -1515,12 +1515,13 @@ goes_this_step(make(_, Conds-_, _, [_, DefP, NewP | _],_), Step) :-
 	  all(compile, cond_goes, [build(Conds), unify([DefP, Step])])).
 
 cond_goes(Cond, [DefP, Step]) :-
-	Cond = on_reload, Step >= -1;
+	(Cond = on_reload, Step >= -1;
 	Cond = on_reset, Step >= 0;
 	Cond = time, Step >= DefP;
 	Cond = earlier(Act); % wrapper means ignore step
+	Cond = can_find_id(_Node); % dummy to do with one-sided enumeration
 	member(Cond, [Act, later(Act), this_step(Act)]),
-	goes_this_step(Act, Step).
+	goes_this_step(Act, Step)), !.
 
 /* 21st century, fully double-link-aware version: lacks AOT's ability to
 promote entire same-step loops
@@ -1890,7 +1891,6 @@ handle_key_functors(OldCond, NewCond, Refs) :-
 time, % Action to be done in its submodel's phase, even if conds ready earlier
 on_reset, % Action to be done in reset phase, even if conds ready earlier
 on_reload, % Action to be done only after setting fixed parameters
-externs_done, % wait till stuff outside this submodel dll is done
 can_find_id(_)]), % dummy to do with one-sided enumeration
 	    NewCond = OldCond,
 	    Refs = [];
