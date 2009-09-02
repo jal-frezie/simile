@@ -698,7 +698,7 @@ make_runtime_enum_data(L, Name-Mems, Used, [ETCount, NamePtr, ETPtr],
 	all(utility, generate_name,
 	    [unify(L), build(EltNames), build(EltPtrs), unify(Used)]),
 	all(render, templatify,
-	    [build([Name | Mems]), build(EltPtrs), build(VTemplates)]),
+	    [unify(L), build([Name|Mems]), build(EltPtrs), build(VTemplates)]),
 	length(Mems, ETCount),
 	append(VTemplates, [['char*', ETPtr, [ETCount], MemPtrs]], Templates),
 	all(render, excrete,
@@ -715,18 +715,17 @@ make_runtime_strings([L, Node, Name, Used], Field, Ptr, Stream) :-
 		FullStr = LocalStr);
 	    Node has_class_refinement Field of FullStr,
 	        atomic(FullStr)),
-	name(FullStr, TtfnStr),
-	    user:all_ttfn_to_utf8(TtfnStr, Utf8Str),
-	    name(Utf8Atom, Utf8Str),
-	    make_constant_string(L, Utf8Atom, StrV),
+	templatify(L, FullStr, Ptr, Decl),
 	    append_atoms([Name, '_', Field], PtrTag),
 	    generate_name(L, PtrTag, Ptr, Used),
-	    excrete(L, variable_declaration, [char, Ptr, void, StrV], 0,
-		    Stream);
+	    excrete(L, variable_declaration, Decl, 0, Stream);
 	Ptr = 'NULL'.
 
-templatify(Elt, Ptr, [char, Ptr, void, QElt]) :-
-	append_atoms(['"', Elt, '"'], QElt).
+templatify(L, Elt, Ptr, [char, Ptr, void, QElt]) :-
+	name(Elt, TtfnStr),
+	user:all_ttfn_to_utf8(TtfnStr, Utf8Str),
+	name(Utf8Atom, Utf8Str),
+	make_constant_string(L, Utf8Atom, QElt).
 				     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* make_array_assignment/9: all subscripts other than those for submodel loops and

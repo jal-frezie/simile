@@ -448,7 +448,7 @@ fill_equation(BadCurEqn, CurUnits, MultList, IsParam, BadDesc, BadCmt,
 	safe_list([BadDesc, BadCmt], br([D, C])),
 	safe_list(MultList, M),
 	safe_tcl_eval(['fill_equation',
-		       chars(CurEqnStr), chars(CurUnitStr), br(M),
+		       chars(CurEqnStr), chars(CurUnitStr), M,
 		       br(write(IsParam)), D, C,
 		       br(write(Min)), br(write(Max))], _).
 
@@ -471,7 +471,7 @@ get_from_list([input_link(_, V, P, _, I) | R1],
 	sicstus_write_to_chars(P, SP),
 	name(FP, SP),
 	m_update:analyze_array(I, U, D),
-	(D = [], !, FD = [];
+	(D = [], !, FD = '';
 	    render:comma_separate(D, SD),
 	    name(FD, SD)),
 	get_from_list(R1, R2).
