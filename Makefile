@@ -62,12 +62,12 @@ SHAREDLIBEXTN = .so
 
 ifeq ($(PLATFORM),Darwin)
 	OSNUMBER = $(shell uname -r)
+	FLAGS = $(OPT)
+	ARCHEXTN = _ppc
+# build for everything unless I am on Barbie
 	ifneq ($(OSNUMBER),7.9.0)
-		FLAGS = $(OPT) -mmacosx-version-min=10.3
-	endif
-	ARCHEXTN = _$(shell uname -m)
-	ifeq ($(ARCHEXTN),_Power Macintosh)
-		ARCHEXTN = _ppc
+		FLAGS = $(OPT) -arch ppc -arch i386 -arch ppc64 -arch x86_64 -mmacosx-version-min=10.3 # -arch salad -arch chilli_sauce -arch everything
+	        ARCHEXTN = _mac
 	endif
 	EXECEXTN = $(ARCHEXTN)
 	MAKESL = -fPIC -dynamiclib
@@ -101,39 +101,13 @@ endif
 
 SHIM = System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN)
 UNPK = System/lib/Stubs/$(SHAREDLIBPREFX)unpacker$(VERS)$(SHAREDLIBEXTN)
-SHANK = System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
+SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 
-simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) $(SHIM) $(SHANK) $(UNPK) \
-	 $(INSTLIB) $(MAIN)
-
-ifeq ($(ARCHEXTN),_i386)
-# this saves going on the ppc mac to make the object files for each edition --
-# still need it to make Gnu Prolog executable though
-PPCSHIM = System/lib/Stubs/libame_dll$(VERS)_ppc.dylib
-PPCUNPK = System/lib/Stubs/libunpacker$(VERS)_ppc.dylib
-PPCSHANK = System/lib/lib5d_ppc.dylib
-PPCRELAY = System/bin/relay_ppc
-ppcbits: $(PPCSHIM) $(PPCSHANK) $(PPCUNPK) $(PPCRELAY)
-$(PPCSHIM): ame_cmx.c dllcalls.h
-	cd Run; $(GCCCMD) -arch ppc -fPIC $(FLAGS) -I. $(MAKESL) \
-		-o ../$(PPCSHIM) ame_cmx.c $(USETCL) \
-		-L../System/lib -l5d_ppc; cd ..; \
-	$(LOCALIZE_TCL_REFS) $(PPCSHIM)
-
-$(PPCUNPK): unpacker.c dllcalls.h Makefile
-	cd Run; $(GCCCMD) -arch ppc -fPIC $(FLAGS) $(DEFNS) -I. $(MAKESL) \
-		-o ../$(PPCUNPK) unpacker.c $(USETCL) \
-		-L../System/lib -l5d_ppc; cd ..; \
-	$(LOCALIZE_TCL_REFS) $(PPCUNPK)
-
-$(PPCSHANK): shank.cpp dllcalls.h
-	cd Run; $(GPPCMD) -arch ppc -O -fPIC $(FLAGS) -I. $(MAKESL) \
-		$(PARALLEL) -o ../$(PPCSHANK) shank.cpp; cd ..
-
-$(PPCRELAY): Run/relay.c
-	cd Run; $(GCCCMD) -arch ppc $(FLAGS) -o ../$(PPCRELAY) relay.c; cd ..
-
-endif
+# shank before shims in dependencies because some Make utilities build them
+# in order, and while changed shank does not require shim rebuild, it must
+# be present...
+simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) \
+	System/$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN)
 
 vpath %.pl Prolog
 
@@ -152,9 +126,9 @@ System/bin/struct_db.dll: struct_db.pl Prolog/struct_db.c
 	cd Prolog; splfr struct_db.pl struct_db.c; mv struct_db.dll ../System/bin; cd ..
 
 Run/xgsimile$(EXECEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
-	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C '$(FLAGS) -D_GNU_PROLOG' gmain$(ARCHEXTN).o struct_db.c; cd ..
+	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C '-D_GNU_PROLOG' gmain$(ARCHEXTN).o struct_db.c; cd ..
 Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl
-	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c -C '$(FLAGS)' gmain.pl; cd ..
+	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c gmain.pl; cd ..
 
 vpath 	%.cpp 	Run
 vpath 	%.c 	Run
@@ -174,22 +148,25 @@ $(UNPK): unpacker.c dllcalls.h Makefile
 		-o ../$(UNPK) unpacker.c $(USETCL) -l5d$(ARCHEXTN); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
-System/bin/5d.dll: shank.cpp dllcalls.h
+# new cross-platform shank clause
+# System/$(SLDIR)/$(SHANK): shank.cpp dllcalls.h
+# 	cd Run; $(GPPCMD) $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
+# 		-o $(SHANK) $(FORLD) shank.cpp; \
+# 	mv $(SHANK) ../System/$(SLDIR); cd ..
+
+# literal SLDIR allows different SHANK clauses for Windows vs Unix
+
+# Windows: idiosyncratic stuff allows dynamic loader to work
+System/bin/$(SHANK): shank.cpp dllcalls.h
 	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
-		-o 5d.dll -Wl,--out-implib,lib5d_win.a shank.cpp; \
-		mv 5d.dll ../$(SHANK); mv lib5d_win.a ../System/lib; cd ..
+		-o $(SHANK) -Wl,--out-implib,lib5d_win.a shank.cpp; \
+		mv $(SHANK) ../System/$(SLDIR); \
+		mv lib5d_win.a ../System/lib; cd ..
 
-# not needed for Linux; Simile builds it when first run
-System/lib/lib5d.so: shank.cpp dllcalls.h
-	cd Run; $(GPPCMD) -fPIC $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
-		-o ../$(SHANK) shank.cpp; cd ..
-
-# gcc cannot build universal binary libraries for loading via ld
-# directly; build separately and load appropriate one at run time
-
-System/lib/lib5d$(ARCHEXTN).dylib: shank.cpp dllcalls.h
-	cd Run; $(GPPCMD) -O $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
-	-o ../$(SHANK) shank.cpp; cd ..
+# Unix: not needed for Linux as it can build at run time
+System/lib/$(SHANK): shank.cpp dllcalls.h
+	cd Run; $(GPPCMD) $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
+		-o $(SHANK) shank.cpp; mv $(SHANK) ../System/$(SLDIR); cd ..
 
 Run/install.dll: install.c Makefile
 	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include $(MAKESL) \

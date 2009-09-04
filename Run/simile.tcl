@@ -310,7 +310,7 @@ if {[info exists prolog_in_console]} {
 }
 
 set env(SIMILE_VERSION) 5.5
-set sendvars(simP) {p2}
+set sendvars(simP) {p3}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is
@@ -459,10 +459,12 @@ switch $tcl_platform(platform) {
 	set execExtn .exe
     } unix {
 	if {[string equal Darwin $tcl_platform(os)]} {
-	    set archExtn _$tcl_platform(machine)
-	    if {[string equal "_Power Macintosh" $archExtn]} { ;# too long
-		set archExtn _ppc
-	    }
+#	    set archExtn _$tcl_platform(machine)
+#	    if {[string equal "_Power Macintosh" $archExtn]} { ;# too long
+#		set archExtn _ppc
+#	    }
+# experiment with fatties
+	    set archExtn _mac
 	    scan $tcl_platform(osVersion) %d.%d.%d dMed dMin dNone
 	    if {$dMed<9} {
 		# I am building with 10.5 so cannot make i386 prolog
