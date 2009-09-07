@@ -93,6 +93,10 @@ if {[string match windows $tcl_platform(platform)]} {
 
 set equationbar(current_action) null
 
+proc WhatAmI {} {
+    return editor
+}
+
 proc NewTopLevel {} {
     MenuSelect dummy file new_toplevel
     #    set newInstance [interp create]

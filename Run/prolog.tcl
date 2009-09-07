@@ -1,6 +1,6 @@
 # Simile source code file: Run/prolog.tcl
 #
-# (c) Simulistics Ltd. 2001-2007
+# (c) Simulistics Ltd. 2001-2009
 # (c) University of Edinburgh 1995-2001
 #
 # A completely compilation-free Prolog/Tcl interface that

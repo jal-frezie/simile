@@ -168,10 +168,15 @@ main :-
 	database:clear_database, or not as the case may be */
 	database:empty_tree,
 	state:retractall(model_in(_,_)),
+        nl, write(ready), nl,
+        user:any_tcl_eval('WhatAmI', 1, CmdStr),
+        name(Cmd, CmdStr),
+        call(Cmd).
+
+editor :-
 	current_prolog_flag(prolog_name, Vname),
 	current_prolog_flag(prolog_version, Vnum),
 	append_atoms([Vname, ' ', Vnum], PlogV),
-        nl, write(ready), nl,
 	/* tcl files are sourced into the startup script rather
 	than loaded by Prolog because they contain references
 	to global variables which only work at top level

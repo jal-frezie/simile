@@ -60,10 +60,6 @@ main :-
 	state:retractall(model_file(_,_)),
 	state:retractall(model_in(_,_)),
 	state:retractall(edition_is(_)),
-	prolog_flag(version, FullVnum),
-	name(FullVnum, FullVnumStr),
-	append(VnumStr, [32, 40 | _], FullVnumStr),
-	name(Vnum, VnumStr), !, /* remove first ' (' onwards */
         tk_new([], Interp),
 	set_interpreter(Interp),
 	on_exception(ErrorFunction, 
@@ -74,14 +70,23 @@ main :-
 			 name(Bug, String),
 			 write(Bug), nl,
 			 fail)),
-	on_exception(ErrorFunction, state:kickoff(Vnum), true),
-        (nonvar(ErrorFunction),
-	    ame_gen:query(start_fail(ErrorFunction), error, top, [ok], _);
-	tk_main_loop),
+        user:any_tcl_eval('WhatAmI', 1, CmdStr),
+        name(Cmd, CmdStr),
+        call(Cmd),
         tcl_delete(Interp),
 	unset_interpreter,
 	state:kill_windows,
 	true.
+
+editor :-
+	prolog_flag(version, FullVnum),
+	name(FullVnum, FullVnumStr),
+	append(VnumStr, [32, 40 | _], FullVnumStr),
+	name(Vnum, VnumStr), !, /* remove first ' (' onwards */
+	on_exception(ErrorFunction, state:kickoff(Vnum), true),
+        (nonvar(ErrorFunction),
+	    ame_gen:query(start_fail(ErrorFunction), error, top, [ok], _);
+	tk_main_loop).
 
 wind_up :-
 	backup:use_temp_dir(TempDir),

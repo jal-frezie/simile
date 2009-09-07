@@ -21,11 +21,16 @@ main :-
 	database:clear_database, or not as the case may be */
 	database:empty_tree,
 	state:retractall(model_in(_,_)),
+        nl, write(ready), nl,
+        user:any_tcl_eval('WhatAmI', 1, CmdStr),
+        name(Cmd, CmdStr),
+        call(Cmd).
+
+editor :-
 	prolog_flag(version, FullVnum),
 	name(FullVnum, FullVnumStr),
 	append(VnumStr, [32, 40 | _], FullVnumStr),
 	name(Vnum, VnumStr), !, /* remove first ' (' onwards */
-        nl, write(ready), nl,
 	on_exception(ErrorFunction, state:kickoff(Vnum), true),
         (nonvar(ErrorFunction),
 	    ame_gen:query(start_fail(ErrorFunction), error, top, [ok], _);

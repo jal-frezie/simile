@@ -148,12 +148,6 @@ $(UNPK): unpacker.c dllcalls.h Makefile
 		-o ../$(UNPK) unpacker.c $(USETCL) -l5d$(ARCHEXTN); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
-# new cross-platform shank clause
-# System/$(SLDIR)/$(SHANK): shank.cpp dllcalls.h
-# 	cd Run; $(GPPCMD) $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
-# 		-o $(SHANK) $(FORLD) shank.cpp; \
-# 	mv $(SHANK) ../System/$(SLDIR); cd ..
-
 # literal SLDIR allows different SHANK clauses for Windows vs Unix
 
 # Windows: idiosyncratic stuff allows dynamic loader to work
@@ -166,7 +160,7 @@ System/bin/$(SHANK): shank.cpp dllcalls.h
 # Unix: not needed for Linux as it can build at run time
 System/lib/$(SHANK): shank.cpp dllcalls.h
 	cd Run; $(GPPCMD) $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
-		-o $(SHANK) shank.cpp; mv $(SHANK) ../System/$(SLDIR); cd ..
+		-o ../System/$(SLDIR)/$(SHANK) shank.cpp; cd ..
 
 Run/install.dll: install.c Makefile
 	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include $(MAKESL) \
