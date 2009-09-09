@@ -344,14 +344,15 @@ find_reference(Object, Index, Remote) :-
 		Object has_new_attribute references of [Remote].
 
 Note new version puts parent references first to minimize the chance of
-disruption due to new/deleted submodels */
+disruption due to new/deleted submodels
+
+v5.6: references are added when roles are, so this just has to find them*/
 
 find_reference(Object, Index, Remote) :-
 	Object has_class submodel,
 	(Parent has_part Object,
 	    find_reference(Parent, ParentIndex, Remote),
 	    Label = ancestor(ParentIndex);
-	member(ForLookup, [0,1]), % put base-instance lookup relation last
 	(nonvar(Remote), /* speed hack - do not search outgoing links */
 	      Remote is_connector from Object to _,
 	      Remote has_type relation,
@@ -359,22 +360,9 @@ find_reference(Object, Index, Remote) :-
 	    Remote is_connector from _ to Object,
 	      Remote has_type relation,
 	      terminates(Remote, Object)),
-	      (Remote has_attribute can_lookup of ForLookup;
-		  \+ Remote has_attribute can_lookup of _Any, ForLookup = 0),
 	    Label = local(Remote)),
-	(Object has_model_refinement references of RemoteList,
-		(nth0(Index, RemoteList, Label);
-		\+ member(Label, RemoteList),
-		    (ForLookup = 1,
-			append(RemoteList, [Label], NewList),
-			length(RemoteList, Index);
-		     ForLookup = 0,
-			NewList = [Label | RemoteList],
-			Index = 0),
-		    Object has_changed_model_refinement references of NewList);
-	Index = 0,
-		Object has_new_model_refinement references of [Label]).
-
+	Object has_model_refinement references of RemoteList,
+	nth0(Index, RemoteList, Label).
 
 /* do_dialogue: Takes a string to display and a list of button identifiers, and puts up a modal dialogue box containing them. The last value is the identifier of the button that was hit to end the dialogue.
 

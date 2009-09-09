@@ -536,10 +536,10 @@ in incoming links and submodels to reflect that change. */
 
 make_role_first(Role) :-
 	terminates(Role, Model),
-	(terminates(OtherRole, Model), /* un-flag any other relations */
+	(terminates(OtherRole, Model), % un-flag any other relations
 	    find_type(OtherRole, relation),
 	    \+ OtherRole = Role,
-	    find_name_host(OtherRole, OtherRole),
+	    find_name_host(OtherRole, OtherRole), % only proceed for host
 	    add_parameter(OtherRole, 2, can_lookup, 0),
 	    fail;
 	Model has_model_refinement references of Refs),
@@ -1145,6 +1145,17 @@ link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
 	    NoUse is_connector from _ to OldFn,
 	    event:delete_by_dlg(NoUse),
 	    fail;
+	  New_obj = relation, % make sure arrow for lookup still lowest index
+	    terminates(Top_arc, Assoc),
+	    (Assoc has_model_refinement references of RefList,
+		append(RefList, [local(Top_arc)], NewList),
+		Assoc has_changed_model_refinement references of NewList;
+	      Assoc has_new_model_refinement references of [local(Top_arc)]),
+	    OldObj is_connector from _ to Assoc,
+	    find_type(OldObj, relation),
+	    find_name_host(OldObj, OldHost),
+	    OldHost has_attribute can_lookup of 1,
+	    make_role_first(OldHost);
 	event:spread_colour(Last_new_arc, yes)).
 
 load_references(Submodel, ReferenceCapts) :-
