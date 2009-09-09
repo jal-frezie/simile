@@ -1146,11 +1146,17 @@ link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
 	    event:delete_by_dlg(NoUse),
 	    fail;
 	  New_obj = relation, % make sure arrow for lookup still lowest index
+	    Refs = [local(Top_arc)],
+	    initiates(Top_arc, Base),
+	    (Base has_model_refinement references of BRefList,
+		append(BRefList, Refs, BNewList),
+		Base has_changed_model_refinement references of BNewList;
+	      Base has_new_model_refinement references of Refs),
 	    terminates(Top_arc, Assoc),
 	    (Assoc has_model_refinement references of RefList,
-		append(RefList, [local(Top_arc)], NewList),
+		append(RefList, Refs, NewList),
 		Assoc has_changed_model_refinement references of NewList;
-	      Assoc has_new_model_refinement references of [local(Top_arc)]),
+	      Assoc has_new_model_refinement references of Refs),
 	    OldObj is_connector from _ to Assoc,
 	    find_type(OldObj, relation),
 	    find_name_host(OldObj, OldHost),

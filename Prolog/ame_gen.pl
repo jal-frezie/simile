@@ -346,7 +346,8 @@ find_reference(Object, Index, Remote) :-
 Note new version puts parent references first to minimize the chance of
 disruption due to new/deleted submodels
 
-v5.6: references are added when roles are, so this just has to find them*/
+v5.6: references are added when roles are, so this just has to find them, but
+is still able to add them to cope with legacy models */
 
 find_reference(Object, Index, Remote) :-
 	Object has_class submodel,
@@ -361,8 +362,15 @@ find_reference(Object, Index, Remote) :-
 	      Remote has_type relation,
 	      terminates(Remote, Object)),
 	    Label = local(Remote)),
-	Object has_model_refinement references of RemoteList,
-	nth0(Index, RemoteList, Label).
+	(Object has_model_refinement references of RemoteList,
+	    (nth0(Index, RemoteList, Label);
+	      \+ member(Label, RemoteList),
+		append(RemoteList, [Label], NewList),
+		length(RemoteList, Index),
+		Object has_changed_model_refinement references of NewList);
+	Index = 0,
+	    Object has_new_model_refinement references of [Label]).
+
 
 /* do_dialogue: Takes a string to display and a list of button identifiers, and puts up a modal dialogue box containing them. The last value is the identifier of the button that was hit to end the dialogue.
 
