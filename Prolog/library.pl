@@ -625,13 +625,18 @@ store_term( Term, Stream, Parent, Bindings, AllBindings, Rest ) :-
 	NewTerm =.. NewTermList,
 	call( build:NewTerm ),
 	!,
-	read( Stream, NextTerm ),
+	read_skipping_junk( Stream, NextTerm ),
 	store_term( NextTerm, Stream, Parent, NewBindings, AllBindings, Rest ).
 store_term( Term, Stream, Parent, Bindings, AllBindings, Rest ) :-
 				% delay and try again% if something fails
-	read( Stream, NextTerm ),
+	read_skipping_junk( Stream, NextTerm ),
 	store_term( NextTerm, Stream, Parent, Bindings, AllBindings,
 		    [Term|Rest] ).
+
+read_skipping_junk(Stream, Term) :-
+	catch(read(Stream, Term), Spew,
+	      (query(declaration_misparse(Spew), info, top, [abort], more),
+		  read_skipping_junk(Stream, Term))).
 
 % deal_with_rest does the same thing, but with a list of leftovers
 

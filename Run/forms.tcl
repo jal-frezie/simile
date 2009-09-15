@@ -1860,11 +1860,13 @@ proc Query {specifics icon helpRef parent opts} {
 		     -buttons [list $defButton more] \
 		     -default $defButton -cancel $defButton \
 		     -labels [list $defButton $defCapt more $moreCapt]]
-    foreach txtBit {title message detail} {
+    foreach txtBit {title message detail full} {
 	upvar #0 msgs(${key}_$txtBit) trans
 	if {[info exists trans]} {
 	    set $txtBit [eval format [list $trans] [lrange $specifics 1 end]]
-	    lappend mBoxCmd -$txtBit [set $txtBit]
+	    if {![string equal full $txtBit]} {
+		lappend mBoxCmd -$txtBit [set $txtBit]
+	    }
 	}
     }
 
@@ -1925,9 +1927,9 @@ proc AddMsgsToLog {} {
 
     upvar 1 message message
     lappend dialogues(logText) $message
-    upvar 1 detail detail
-    if {[info exists detail]} {
-	lappend dialogues(logText) ($detail)
+    upvar 1 full full
+    if {[info exists full]} {
+	lappend dialogues(logText) ($full)
     }
     lappend dialogues(logText) {}
 }

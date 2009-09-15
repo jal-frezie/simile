@@ -149,6 +149,11 @@ set msgs(future_shock_title) "Future shock!"
 set msgs(future_shock_message) "This file was created with a later version of Simile than the one you are currently running."
 set msgs(future_shock_detail) "To avoid potential problems, please update your copy to version %s or later."
 
+set msgs(declaration_misparse_title) "Problem loading model"
+set msgs(declaration_misparse_message) "A line in your model file could not be parsed."
+set msgs(declaration_misparse_detail) "This may be due to more careful checking of the syntax in recent versions of Simile. If you choose to continue (see all), and the model fails to run as expected, please contact your software supplier, quoting the full message."
+set msgs(declaration_misparse_full) "The syntax error was:\n%s"
+
 set msgs(lost_component_title) "Problem loading model"
 set msgs(lost_component_message) "Component %s missing. The following lines in the file contained references to model components that were not found: %s"
 
