@@ -121,21 +121,42 @@ do_equation_dialog(Win, Part) :-
 	fill_equation(Equation, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_inputs(Input_list),
 	fill_table(TableList, TableVals),
-	retractall(input_list_is(_)),
-	assert(input_list_is(Input_list)),
-	repeat,
-	( \+ input_list_is(_), /* failed to assert list -- something broke */
-	    query(eqn_parse_fail, warning, fill_equation, [ok], _),
-	    Updated_list = Input_list;
-	retract(input_list_is(Updated_list))),
+	handle_eqn_interaction(Part, ITypeBase-TypeDims, IndxCount,
+			       Input_list, TableSpec),
+	destroy_equation.
+
+handle_eqn_interaction(Part, DefUnit, IndxCount, Input_list, TableSpec) :-
 	interact_equation(Result_list),
-	(Result_list = [], !, destroy_equation, fail; 
-	on_exception(_, update_equation(Part, IndxCount, Updated_list,
-			ITypeBase-TypeDims, Result_list), fail)),
-		/* fails if action does not complete edit */
-	!, destroy_equation.
-	/* last cut necessary because otherwise a retry will cause 
-errors */
+	(Result_list = [], !; % dialogue cancelled
+	  update_equation(Part, IndxCount, Input_list,
+			  DefUnit, Result_list, Effect),
+	    (Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn, NewArrSpec,
+				   TableAttr, MinVal, MaxVal, Desc, Comment,
+				   NewInputs),
+		update_parameterhood(Part, Is_P, AffectedNode),
+		add_parameter(AffectedNode, 0, value, Result),
+		add_parameter(AffectedNode, 0, uses_local_fns, UserFnList),
+		add_parameter(AffectedNode, 0, spec, OldEqn),
+		add_parameter(AffectedNode, 0, units, NewArrSpec),
+		add_parameter(AffectedNode, 0, table_data, TableAttr),
+		add_parameter(AffectedNode, 0, min_val, MinVal),
+		add_parameter(AffectedNode, 0, max_val, MaxVal),
+		get_host(AffectedNode, Visible),
+		(Visible is_of_sort box, !, CAttrType = 0; CAttrType = 2),
+		add_parameter(Visible, CAttrType, description, Desc),
+		add_parameter(Visible, CAttrType, comment, Comment),
+		update_links_and_vars(NewInputs); % and finish
+	      (Effect = input_list_changed_to(NewInputList), !,
+		  fill_inputs(NewInputList);
+		  NewInputList = Input_list),
+		(Effect = table_spec_changed_to(NewTableSpec), !;
+		    % Tcl data already updated, no need to change it
+		    NewTableSpec = TableSpec),
+		(Effect = user_advice_generated(Mess),
+		    query(Mess, warning, fill_equation, [ok], _);
+		    true),
+		handle_eqn_interaction(Part, DefUnit, IndxCount,
+				       NewInputList, NewTableSpec))).
 
 index_names_and_sizes(ind_spec(Name, Posn, Dim, _Link), Meaning, Dim) :-
 	sicstus_format_to_chars("Dimension ~d of ~a (~w)", [Posn, Name, Dim],
@@ -163,8 +184,7 @@ all args being empty) escapes from here.
 Note that interact_equation should return strings for all these
 things. */
 
-update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
-	assert(input_list_is(InList)),
+update_equation(Function,_,_,_, [Table_st, Data_st], Effect) :-
 	get_term(Table_st, TableData, _),
 	/* should be no errors as it is auto generated */
 	TableData = [FileName | DataSpec],
@@ -174,20 +194,19 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	    output:chop_list(Data_st, DataStrs),
 	    all(user, sicstus_atom_chars, [build(DataTable), build(DataStrs)]),
 	    Units = 1,
-	    Bounds = 1;
+	    Bounds = 1,
+	    ComplaintStr = [];
 	get_table_data(Function, Data_st, DataTable,
-		       Units, Bounds, Dims, ComplaintStr),
-	    (\+ ComplaintStr = [], !,
-		name(Complaint, ComplaintStr),
-		query(bad_table_data(Complaint), warning, top, [ok], not);
-	    DataSpec = [DataField | Indices])),
-	retractall(table_data_is(_)),
-	assert(table_data_is([file = FileName, data = DataField,
-			      indices = Indices, current = DataTable,
-			      units=Units, bounds=Bounds, dims=Dims])),
-	fail.
+		       Units, Bounds, Dims, ComplaintStr)),
+	(ComplaintStr = [], !,
+	    Effect = table_spec_changed_to([file = FileName, data = DataField,
+				indices = Indices, current = DataTable,
+				units=Units, bounds=Bounds, dims=Dims]);
+	  name(Complaint, ComplaintStr),
+		Effect = user_advice_generated(bad_table_data(Complaint))).
 
-update_equation(_,_, Input_list, _, [Node_st, Parm_st, New_unit_st]) :-
+update_equation(_,_, Input_list, _, [Node_st, Parm_st, New_unit_st],
+		Effect) :-
 	name(New_var, Node_st),
 	sicstus_format_to_chars("local name for ~w", [New_var], ShowParam),
 	name(ShowParamAtom, ShowParam),
@@ -216,14 +235,12 @@ update_equation(_,_, Input_list, _, [Node_st, Parm_st, New_unit_st]) :-
 	(Complaint = [], !,
 	    append(EarlyInputs, [input_link(Link, New_var, New_param,
 		    Current_unit, NewInputUnit) | LateInputs], NewInputs),
-	    fill_inputs(NewInputs),
-	    assert(input_list_is(NewInputs));
-	    query(Complaint, warning, fill_equation, [ok], _),
-	    assert(input_list_is(Input_list))),
-	fail.
+	    Effect = input_list_changed_to(NewInputs);
+	Effect = user_advice_generated(Complaint)).
 
 update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
-		[Eqn_st, Unit_st, Is_P_st, Desc_st, Cmt_st, Min_st, Max_st]) :-
+		[Eqn_st, Unit_st, Is_P_st, Desc_st, Cmt_st, Min_st, Max_st],
+		Effect) :-
 	name(Is_P, Is_P_st),
 	member([Is_P, ParamsAllowed], [[-1,1], [0,1], [1,0], [2,0]]),
 	get_term(Unit_st, Units, UnitFormError),
@@ -251,7 +268,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	(Complaint5 = [], !,
 	(Unit_st = "", Eqn_st = "", Min_st = "", Max_st = "",
 	    /* If no eqn, bounds or units supplied, assume real */
-	    (Is_P > 0, NewArraySpec = 1; NewArraySpec = ''), UnitError = [], !;
+	    (Is_P > 0, NewArrSpec = 1; NewArrSpec = ''), UnitError = [], !;
 	/* If units but no eqn or limits supplied, accept any */
 /*	MinBase = any, EqnBase = any, MaxBase = any, var(TypeBase), !,
 	    NewUnits = Units,
@@ -299,10 +316,10 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	    /* Next check that the value's units,however they were
 	       specified, are appropriate for this component */
 	
-	      build_array(NewUnits, EqnDims, NewArraySpec),
+	      build_array(NewUnits, EqnDims, NewArrSpec),
 		(var(TypeDims), !,
 		    [Test, Target] = [NewUnits, TypeBase];
-		 Test = NewArraySpec,
+		 Test = NewArrSpec,
 		    build_array(TypeBase, TypeDims, Target)),
 		(TypeBase = any, !,
 		    Strict = 0;
@@ -388,25 +405,13 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	sicstus_atom_chars(OldEqn, OrigSt),
 
 	(FinalComplaint = [], !,
-	    update_parameterhood(Function, Is_P, AffectedNode),
-	    add_parameter(AffectedNode, 0, value, Result),
-	    add_parameter(AffectedNode, 0, uses_local_fns, UserFnList),
-	    add_parameter(AffectedNode, 0, spec, OldEqn),
-	    add_parameter(AffectedNode, 0, units, NewArraySpec),
-	    add_parameter(AffectedNode, 0, table_data, TableAttr),
-	    add_parameter(AffectedNode, 0, min_val, MinVal),
-	    add_parameter(AffectedNode, 0, max_val, MaxVal),
-	    get_host(AffectedNode, Visible),
-	    (Visible is_of_sort box, !, CAttrType = 0; CAttrType = 2),
-	    add_parameter(Visible, CAttrType, description, Desc),
-	    add_parameter(Visible, CAttrType, comment, Comment),
-	    update_links_and_vars(New_inputs);
+	    Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn, NewArrSpec,
+				  TableAttr, MinVal, MaxVal, Desc, Comment,
+				  New_inputs);
 %	fill_equation(OldEqn, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
-	    fill_inputs(New_inputs),
-	    assert(input_list_is(New_inputs)),
-	    (FinalComplaint = continue, !;
-		query(FinalComplaint, warning, fill_equation, [ok], _)),
-	    !, /* green */ fail).
+	 FinalComplaint = continue, !,
+	    Effect = input_list_changed_to(New_inputs);
+	 Effect = user_advice_generated(FinalComplaint)).
 
 /* This fails if the brackets are right */
 check_param_brackets(ShowParam, New_param, Current_unit, Complaint) :-

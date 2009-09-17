@@ -306,7 +306,7 @@ proc EditAsTable {t canvas} {
     }
     if {[EditListAsTable $t table]} {
         foreach {index y} $table {
-            set zone [expr round(($size-1.0)*$index/$range)]
+            set zone [expr round(($size-1.0)*($index-$graph($t,lowx))/$range)]
             GStick $canvas $zone [YValueToPoint $t $y]
         }
     }
