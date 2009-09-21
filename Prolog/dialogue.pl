@@ -69,34 +69,24 @@ into the dialog box, and interact_equation will be called again and
 return new 
 values. */
 
-:- dynamic(table_data_is/1).
-
 do_equation_dialog(Win, Part) :-
 	caption_for(Part, Caption),
 	get_host(Part, ClickedObj),
-	(default_units(ClickedObj, ITypeBase, TypeDims),
-	    (ITypeBase = 1, TypeBase = real; TypeBase = ITypeBase), !;
-	true),
 	(ClickedObj is_of_sort init_eval, !,
 	    TitleForm = 'Initial value';
 	TitleForm = 'Equation'),
 	list_index_meanings(Part, ISpecs),
 	all(dialogue, index_names_and_sizes, [build(ISpecs), build(IndexList),
 					      build(_Sz)]),
-	all(dialogue, index_types, [build(ISpecs), build(IndxCount)]),
 	pick_equation(Part, Equation),
 	(get_av_pair(Part, 0, units, Units), !,
 	    analyze_array(Units, Base, Dims);
-	(var(TypeBase), !,
-	        Base = '';
-	    Base = 1), /* hard to make happen */
+	Base = '',
 	    Dims = []),
-	retractall(table_data_is(_)),
 	(get_av_pair(Part, 0, table_data, TableSpec),
 	    permutation(TableSpec, [file=FilePath, data=DataField,
 				    indices=Indices, current=Values,
 				    units=TUnits, bounds=Bounds | _R]), !,
-	    assert(table_data_is(TableSpec)),
 	    (FilePath = '/graph/', !,
 		append([FilePath | DataField], [Bounds | Indices], TableList),
 		TableTrans = [[], []],
@@ -115,29 +105,39 @@ do_equation_dialog(Win, Part) :-
 	/* Node is an input parameter if a ghost whose base has no
 		associated function */
 	is_parameter(ClickedObj, Is_P),
-	get_input_info(Part, Input_list),
 	
 	create_equation(Win, TitleForm, Caption, IndexList),
 	fill_equation(Equation, Base, Dims, Is_P, Desc, Comment, Min, Max),
-	fill_inputs(Input_list),
-	fill_table(TableList, TableVals),
-	handle_eqn_interaction(Part, ITypeBase-TypeDims, IndxCount,
-			       Input_list, TableSpec),
+	fill_table(Part, TableList, TableVals), % calls interaction from tcl
 	destroy_equation.
 
+interactively_parse(Part) :-
+	get_input_info(Part, Input_list),
+	fill_inputs(Input_list),
+	get_host(Part, ClickedObj),
+	(default_units(ClickedObj, ITypeBase, TypeDims), !; true),
+	list_index_meanings(Part, ISpecs),
+	all(dialogue, index_types, [build(ISpecs), build(IndxCount)]),
+	(get_av_pair(Part, 0, table_data, TableSpec), !;
+	    TableSpec = ''),
+	handle_eqn_interaction(Part, ITypeBase-TypeDims, IndxCount,
+			       Input_list, TableSpec).
+	
 handle_eqn_interaction(Part, DefUnit, IndxCount, Input_list, TableSpec) :-
 	interact_equation(Result_list),
 	(Result_list = [], !; % dialogue cancelled
 	  update_equation(Part, IndxCount, Input_list,
 			  DefUnit, Result_list, Effect),
 	    (Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn, NewArrSpec,
-				   TableAttr, MinVal, MaxVal, Desc, Comment,
+				   TabDat, MinVal, MaxVal, Desc, Comment,
 				   NewInputs),
 		update_parameterhood(Part, Is_P, AffectedNode),
 		add_parameter(AffectedNode, 0, value, Result),
 		add_parameter(AffectedNode, 0, uses_local_fns, UserFnList),
 		add_parameter(AffectedNode, 0, spec, OldEqn),
 		add_parameter(AffectedNode, 0, units, NewArrSpec),
+		(\+ TabDat = 0, TableAttr = TableSpec, !;
+		    TableAttr = ''), /* no tables/graphs found */
 		add_parameter(AffectedNode, 0, table_data, TableAttr),
 		add_parameter(AffectedNode, 0, min_val, MinVal),
 		add_parameter(AffectedNode, 0, max_val, MaxVal),
@@ -388,8 +388,6 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	(var(UserFnOpen), !,
 	    UserFnList = '';
 	get_ground_part(UserFnOpen, UserFnList)),
-	(\+ TabDat = 0, table_data_is(TableAttr), !;
-	    TableAttr = ''), /* no tables/graphs found */
 	/* table data is auto-generated so should be well formed.
 	Missing table will already have been picked up by parser */
 
@@ -406,7 +404,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 
 	(FinalComplaint = [], !,
 	    Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn, NewArrSpec,
-				  TableAttr, MinVal, MaxVal, Desc, Comment,
+				  TabDat, MinVal, MaxVal, Desc, Comment,
 				  New_inputs);
 %	fill_equation(OldEqn, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
 	 FinalComplaint = continue, !,

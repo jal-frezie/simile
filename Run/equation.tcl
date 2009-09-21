@@ -423,6 +423,10 @@ proc interact_equation {} {
 	set equation(showing) 1
 	LetItShow $t
     }
+    if {[llength $equation(ckWidg)]} {
+	.equation.notebook select 1 ;# raise parameters tab
+	focus $equation(ckWidg) ;# keep here until correct input or cancel
+    }
     grab $t
     tkwait variable equation(done)
     grab release $t
@@ -572,8 +576,8 @@ proc fill_inputs { triples } {
                 -font TkDefaultFont -textvariable "equation(entry$line)"]
         bind $p <Enter> [list QueuePopup AddWidgetPopup %X %Y $paramPopMsg]
         bind $p <Double-1> "equationDouble %W $en; focus $en"
-        bind $p <FocusOut> "ListEditDone $line"
-        bind $p <Return> "ListEditDone $line"
+        bind $p <FocusOut> "ListEditDone %W $line entry"
+        bind $p <Return> "ListEditDone %W $line entry"
         bind $p <Leave> RemovePopup
         $p config -highlightbackground [$p cget -background]
         $p delete 0 end
@@ -582,8 +586,8 @@ proc fill_inputs { triples } {
         
         set u [entry $scroller.ilist.u$line -bd 0 -relief flat \
                 -font TkDefaultFont -textvariable "equation(unit$line)"]
-        bind $u <FocusOut> "ListEditDone $line"
-        bind $u <Return> "ListEditDone $line"
+        bind $u <FocusOut> "ListEditDone %W $line unit"
+        bind $u <Return> "ListEditDone %W $line unit"
         $u config -highlightbackground [$u cget -background]
         $u delete 0 end
         $u insert end $equation(oldunit,$line)
@@ -616,9 +620,10 @@ proc fill_inputs { triples } {
 # seems superfluous now it is placed on desktop window, and caused nasty bug by
 # allowing two doubleclicks to be processed at once
     }
+    set equation(ckWidg) {} ;# no need for widget to keep focus if updated
 }
 
-proc fill_table {table_data table_values} {
+proc fill_table {node table_data table_values} {
     global equation
     set equation(table_data) [lrange $table_data 0 end]
     # you would think that the above line would not change the list, as it
@@ -631,6 +636,8 @@ proc fill_table {table_data table_values} {
 
     # Translation should be done in Prolog by reverse_engineer
     set equation(table_values) $table_values
+
+    prolog tk_interactively_parse($node)
 }
 
 proc equationBindings { t en eu lbf lbx lbp gr ta ok can} {
@@ -731,51 +738,49 @@ proc equationCancel {} {
     set equation(done) 0
 }
 
-proc equationClick { lb y } {
+#proc equationClick { lb y } {
+#    global equation
+#    
+#    if {$equation(selected,$lb)==$y} {
+#        equationRight $lb $y
+#    } else {
+#        ListEditDone
+#        set equation(selected,$lb) -1
+#        after 500 [list set equation(selected,$lb) $y]
+#    }
+#}
+#
+#proc equationRight { lb y } {
+#    global equation
+#    ListEditDone
+#    if {$equation(done) == 2} {
+#        # If an entry has already been edited, dont try to start editing another one
+#        # because Prolog has to use the value entered for the old one first
+#        return
+#    }
+#    set widget [GetFrame $equation(main).bottom.influences]
+#    set ebox $widget.lists.e
+#    set equation(lbid) $lb
+#    set equation(ckLine) [$lb nearest $y]
+#    entry $ebox -textvariable equation(listedit)
+#    set equation(listedit) [$lb get $equation(ckLine)]
+#    place $ebox -in $lb \
+#            -rely [expr 1.0*$equation(ckLine)/$equation(listlength)] \
+#            -relwidth 1
+#    $ebox configure -font [$lb cget -font]
+#    $ebox select from 0
+#    $ebox select to end
+#    focus $ebox
+#    bind $ebox <Return> ListEditDone
+#}
+#
+proc ListEditDone {w line type} {
     global equation
-    
-    if {$equation(selected,$lb)==$y} {
-        equationRight $lb $y
-    } else {
-        ListEditDone
-        set equation(selected,$lb) -1
-        after 500 [list set equation(selected,$lb) $y]
-    }
-}
 
-proc equationRight { lb y } {
-    global equation
-    ListEditDone
-    if {$equation(done) == 2} {
-        # If an entry has already been edited, dont try to start editing another one
-        # because Prolog has to use the value entered for the old one first
-        return
-    }
-    set widget [GetFrame $equation(main).bottom.influences]
-    set ebox $widget.lists.e
-    set equation(lbid) $lb
-    set equation(ckLine) [$lb nearest $y]
-    entry $ebox -textvariable equation(listedit)
-    set equation(listedit) [$lb get $equation(ckLine)]
-    place $ebox -in $lb \
-            -rely [expr 1.0*$equation(ckLine)/$equation(listlength)] \
-            -relwidth 1
-    $ebox configure -font [$lb cget -font]
-    $ebox select from 0
-    $ebox select to end
-    focus $ebox
-    bind $ebox <Return> ListEditDone
-}
-
-proc ListEditDone {line} {
-    global equation
-    set widget [GetFrame $equation(main).bottom.influences]
-    set scroller [GetFrame $widget.lists.f]
-    
-    if {![string equal $equation(entry$line) $equation(oldentry,$line)] || \
-                ![string equal $equation(unit$line) $equation(oldunit,$line)]} {
-        set equation(ckLine) $line
-        set equation(done) 2
+    if {![string equal $equation($type$line) $equation(old$type,$line)]} {
+	set equation(ckLine) $line
+	set equation(ckWidg) $w
+	set equation(done) 2
     }
 }
 
