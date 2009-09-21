@@ -17,11 +17,16 @@
 # existing Simile processes. This means I need to know where my temporary
 # files are...
 
+if {[string equal windows $tcl_platform(platform)]} {
+    set homeDir [file attributes $env(HOME) -shortname] ;# is Ascii
+} else {
+    set homeDir $env(HOME)
+}
 if {[info exists embed_args]} {
     set custom(prefDir) {}
-} elseif {[file exists $env(HOME)]} {
+} elseif {[file exists $homeDir]} {
 # 4.1 moved SimileUserDirectory for Windows -- check in old position and update
-    set oldPrefs [file join $env(HOME) .simile]
+    set oldPrefs [file join $homeDir .simile]
     if {[string equal windows $tcl_platform(platform)]} {
 	if {[string equal "Windows NT" $tcl_platform(os)] && 
 	    $tcl_platform(osVersion)>=6.0} {
@@ -29,7 +34,7 @@ if {[info exists embed_args]} {
 	    } else {
 		set docsDir "My Documents"
 	    }
-        set custom(prefDir) [file join $env(HOME) $docsDir "My Simile files"]
+        set custom(prefDir) [file join $homeDir $docsDir "My Simile files"]
 	if {[file exists $oldPrefs]} {
 	    if {![file exists $custom(prefDir)]} {
 		file mkdir $custom(prefDir)
@@ -43,7 +48,7 @@ if {[info exists embed_args]} {
 	    }
 	}
     } elseif [string match Darwin $tcl_platform(os)] {
-	set custom(prefDir) [file join $env(HOME) "Simile"]
+	set custom(prefDir) [file join $homeDir "Simile"]
     } else {
 	set custom(prefDir) $oldPrefs
     }
@@ -63,7 +68,7 @@ set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
 regsub -all /\\./ [info script] / scriptCmd
 
 #tk_messageBox -title Invocation -icon info -message "$scriptCmd $argv" -type ok
-set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
+set SIMILE_PATH [file dirname [file dirname [file normalize $scriptCmd]]]
 set env(SP_PATH) $SIMILE_PATH/System
 # Above seems unnecessary for sicstus 3.10
 
@@ -338,8 +343,6 @@ set sendvars(simP) {p3}
 # here.
 
 # of course, none of these apply if using the scripting interface.
-
-encoding system utf-8
 
 entry .hidden_e
 pack .hidden_e

@@ -594,8 +594,8 @@ proc LeaveHelpers {node} {
 }
 
 proc load_dll {topNode lang progDir id node incs} {
-    if {[catch {ex_load_dll $topNode $lang $progDir $id $node $incs} \
-	     new_model_id]} {
+    if {[catch {ex_load_dll $topNode $lang $progDir $id \
+		    $node $incs} new_model_id]} {
 	if {[PrefValue custom(hackBreak) hackBreak]} {
 	    Query [list new_exec_needed $new_model_id] info top {} {ok}
 	}
@@ -637,6 +637,7 @@ proc compile_c {workingDir extLibs complain} {
 				  3 end] ;# trim off "lib..."
 	}
     }
+    set oldDir [pwd]
     cd $workingDir
 # get a so far unused file name
     set serial [newInt]
@@ -764,7 +765,7 @@ proc compile_c {workingDir extLibs complain} {
         }
     }} chuckup]} {
 	if {$complain} {
-	    cd $TOOLDIR; #Change back to Run directory in order to access Help file for subsequent dialogue
+	    cd $oldDir ;#Change back to Run directory in order to access Help file for subsequent dialogue
 	    Query [list compile_failed $chuckup] warning execution {} ok
 	    cd $workingDir
 	    set serial -1
@@ -778,7 +779,7 @@ proc compile_c {workingDir extLibs complain} {
 	file delete objtmp.o
     }
     # do not allow an old dcf to be saved with a new model
-    cd $TOOLDIR
+    cd $oldDir
     return $serial
 }
 
