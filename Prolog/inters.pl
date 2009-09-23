@@ -513,7 +513,7 @@ make_intermediates(
 	    Units = ArgUnits,
 	    ReadyContext = ClearContext;
 	member(Functor, [with_least, with_greatest]), !,
-	    append(NowBuilding, DestPath, ReadyContext),
+	    append([TailLoops, NowBuilding, DestPath], ReadyContext),
 	    IncrExpr =.. [Functor, Epsilon, Payload], % either arg can vary
 	    Units = ArgUnits;
 	IncrExpr =.. [IncrOp, IncrementRef, FillRef],
@@ -522,7 +522,7 @@ make_intermediates(
 	     member(Functor, [any, all]), !,
 		[RUnits | ArgTemplate] = [boolean, boolean];	
 		[RUnits | ArgTemplate] = [int, int]),
-	    append(NowBuilding, DestPath, ReadyContext),
+	    append([TailLoops, NowBuilding, DestPath], ReadyContext),
 	    propagate_units(Source, RUnits, ArgTemplate, [ArgUnits], Units)),
 	get_dims_from_loops(TailLoops, TotalDims, LoopInds),
 
@@ -706,7 +706,7 @@ make_intermediates(
 		    [build(BackDP), append(DestInds, []),
 		     append(DestDims, [])])),
 	    (integer(IndN), !;
-	    throw(bad_index_number(N, index))),
+	    throw(bad_index_number(IndN, index))),
 	    length(DestInds, AvailInds),
 	    IndPosn is AvailInds-IndN,
 	    (nth0(IndPosn, DestInds, IndRef),
