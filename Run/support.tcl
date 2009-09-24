@@ -265,23 +265,24 @@ proc tcl_settimepointelement {node inds val} {
     set paramData([join [concat [list $node] $inds] ,]) $val
 } 
  
-
-proc InputVarFor {topNode node} {
-    switch -glob [GetTclCompProperty $topNode Type $node] {
-	FLAG {
-	    return checkStates
-	} ENUM(*) {
-	    return comboChoices
-	} default {
-	    if {[string equal TABLE [GetTclCompProperty $topNode Eval $node]]} {
-		return paramData
-	    } else {
-		return sliderVals
-	    }
-	}
-    }
-}
-   
+# no longer needed, as sliderVars, checkStates and comboChoices are now all
+# subsumed under widgetSeln
+#proc InputVarFor {topNode node} {
+#    switch -glob [GetTclCompProperty $topNode Type $node] {
+#	FLAG {
+#	    return checkStates
+#	} ENUM(*) {
+#	    return comboChoices
+#	} default {
+#	    if {[string equal TABLE [GetTclCompProperty $topNode Eval $node]]} {
+#		return paramData
+#	    } else {
+#		return sliderVals
+#	    }
+#	}
+#    }
+#}
+#   
 proc oldcollect {tgt node count args} {
     global myNode
 # ShowMess debug info "Collecting...$tgt...$node...$count...$args" ok

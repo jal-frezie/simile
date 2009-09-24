@@ -131,6 +131,11 @@ enabling the channel ID to be got from it */
 	    UsePath = RealPath),
 	    NewVar = channel_is(param(arr(_, Ref,_),_, UsePath,_,_)),
 	    Recurse = 0;	  
+/* inter all index refs because they become useless if context swapped? Once I
+	    figure out how to stop that buggering up base instance lookup...
+	Var = index(_), !,
+	    NewVar = make_inter(Var, index),
+	    Recurse = 0; */
 	expand_library(DestRef, Var, NewVar),
 	    Recurse = 1.
 
@@ -393,7 +398,8 @@ make_intermediates(
 	    NewInters = PrevInters;
     /* Unable to merge this parameter's execution loop with what went before.
 		Make an intermediate variable for it instead. */
-	make_intermediates(make_inter(Source, 'n/a'), SubId, Target, DestPath,
+	UseRef = arr(_, Var, _),
+	    make_intermediates(make_inter(Source, Var), SubId, Target, DestPath,
 	    BackSwap, PrevInters, BuildingArrays, Step, Used, Units, NewInters,
 	    part_result(SourceContext, Setups, Args, SourceRef)));
 	
@@ -697,15 +703,15 @@ make_intermediates(
 	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !;
 	Source = keep(SourceRef), !;
 	(Source = place_in(IndN), !,
-	        reverse(BuildingArrays, BackBA),
-	        all(inters, building_dims_and_indices,
+	    reverse(BuildingArrays, BackBA),
+	    all(inters, building_dims_and_indices,
 	        [build(BackBA), build(DestDims), build(DestInds)]);
-	    Source = index(IndN), !,
-	        reverse(DestPath, BackDP),
-	        all(inters, indices_for,
-		    [build(BackDP), append(DestInds, []),
-		     append(DestDims, [])])),
-	    (integer(IndN), !;
+	  Source = index(IndN), !,
+	    reverse(DestPath, BackDP),
+	    all(inters, indices_for,
+		[build(BackDP), append(DestInds, []), append(DestDims, [])]),
+	    BackSwap = values_from_base(_)), % jam context swap 
+	(integer(IndN), !;
 	    throw(bad_index_number(IndN, index))),
 	    length(DestInds, AvailInds),
 	    IndPosn is AvailInds-IndN,

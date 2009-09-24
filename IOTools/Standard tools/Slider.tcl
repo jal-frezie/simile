@@ -100,7 +100,8 @@ namespace eval slide139 {
         }
     }
     proc InsertSlider {winId node title nest} {
-        global checkStates comboChoices
+	global widgetSeln
+
         set parmType [GetModelEval $node]
         set fixed [lsearch {INPUT TABLE} $parmType]
         if {$fixed==-1} {
@@ -153,48 +154,43 @@ namespace eval slide139 {
                 FLAG {
                     pack [checkbutton $f.check -text [lindex $levels end] \
 			      -offvalue 0 -onvalue 1 -relief ridge \
-			      -variable checkStates($node) -command \
-			      [namespace code [list CheckStateToC $node $fixed]]
+			      -variable widgetSeln($node) -command \
+			      [namespace code [list WidgetSelnToC \
+						   $node $fixed]]]
                     set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
                     BindPopup $f.check "$comment"
-                    set checkStates($node) $defVal
-                } ENUM(*) {
+		} ENUM(*) {
 #		    ComboBox $f.combo -values $possVals -editable 0 \
 #			-text [lindex $possVals [expr $defVal-1]] \
 #			-textvariable comboTypes($node) \
 #			-modifycmd [namespace code [list SetChoiceNumber $f.combo $node $fixed]]
-                    ::ttk::menubutton $f.combo
-                    set bxMenu [menu $f.combo.menu -tearoff 0]
+                    set bxMenu [menu $f.combomenu -tearoff 0]
                     foreach choice $possVals {
                         $bxMenu add command -label $choice -command \
                                 [namespace code [list SetChoiceNumber $f.combo \
                                 $node $fixed $choice]]
                     }
-                    $f.combo configure -menu $bxMenu \
-                            -textvariable comboTypes($node)
+                    ::ttk::menubutton $f.combo -menu $bxMenu
                     $bxMenu invoke [expr $defVal-1]
                     pack $f.combo -side right -fill x -expand true
                     pack [label $f.caption -text [lindex $levels end] -width 12]
-                    set comboChoices($node) $defVal
                 } default {
                     scale $f.scale -length 120 -orient h -showvalue false \
                             -sliderlength 10 -from $min -to $max \
                             -tickinterval $gap -resolution $spacing \
-                            -variable sliderVals($node) \
+                            -variable widgetSeln($node) \
                             -command [namespace code \
                             [list SetArrayIfUsed $node $fixed {}]]
-                    if {[llength $defVal]} {
-                        $f.scale set $defVal
-                    }
                     pack $f.scale -side right -fill x -expand true
                     pack [label $f.caption -text [lindex $levels end] -width 12]
                         
-                    pack [entry $f.entry -textvariable sliderVals($node) -width 8]\
-                            -padx 1 -pady 1
+                    pack [entry $f.entry -textvariable widgetSeln($node) \
+			      -width 8] -padx 1 -pady 1
                     bind $f.entry <KeyRelease> \
-                            [namespace code [list SliderValsToC $node $fixed]]
+                            [namespace code [list WidgetSelnToC $node $fixed]]
                 }
-            }
+	    }
+	    set widgetSeln($node) $defVal
             set allVals $defVal
         } else {
             #	    set useTrans [lindex $trans $useDim]
@@ -222,11 +218,10 @@ namespace eval slide139 {
                                     -side right
                         }
                         pack [checkbutton $row.elt$index -borderwidth 1 \
-                                -variable checkStates($node,$index) -command \
-				  [namespace code [list CheckStateToC \
+				  -variable widgetSeln($node,$index) -command \
+				  [namespace code [list WidgetSelnToC \
 						       $node $fixed $index]] \
-                                -padx 0 -offvalue 0 -onvalue 1] -side left
-                        set checkStates($node,$index) $defVal
+				  -padx 0 -offvalue 0 -onvalue 1] -side left
                         BindPopup $row.elt$index "For $slTitle"
                         set newbg white
                         if {fmod($line,2)==0} {
@@ -243,41 +238,36 @@ namespace eval slide139 {
 #			    -textvariable comboTypes($node,$index) \
 #			    -modifycmd [namespace code [list SetChoiceNumber \
 #							    $f.elt$index.c $node $fixed $index]]
-                        ::ttk::menubutton $f.elt$index.c
-                        set bxMenu [menu $f.elt$index.c.menu -tearoff 0]
+                        set bxMenu [menu $f.elt$index.cmenu -tearoff 0]
                         foreach choice $possVals {
                             $bxMenu add command -label $choice -command \
                                     [namespace code [list SetChoiceNumber \
                                     $f.elt$index.c $node $fixed $choice $index]]
                             
                         }
-                        $f.elt$index.c configure -menu $bxMenu \
-                                -textvariable comboTypes($node,$index)
+                        ::ttk::menubutton $f.elt$index.c -menu $bxMenu
                         $bxMenu invoke [expr $defVal-1]
                         pack $f.elt$index.c -side right -fill x -expand true
                         pack [label $f.elt$index.id -text $slTitle -width 10] \
                                 -side left
-                        set comboChoices($node,$index) $defVal
                     } default {
                         pack [frame $f.elt$index] -fill x -expand true
                         pack [label $f.elt$index.id -text $slTitle -width 10] \
                                 -side left
                         pack [entry $f.elt$index.val \
-                                -textvariable sliderVals($node,$index) \
+                                -textvariable widgetSeln($node,$index) \
                                 -width 8] -side left -padx 1 -pady 1
                         bind $f.elt$index.val <KeyRelease> \
-                                [namespace code [list SliderValsToC $node $fixed $index]]
+                                [namespace code [list WidgetSelnToC $node \
+						     $fixed $index]]
                         set newScale $f.elt$index.scale
                         scale $newScale -length 180 \
                                 -orient horizontal -showvalue false \
                                 -sliderlength 10 -from $min -to $max \
                                 -resolution $spacing \
-                                -variable sliderVals($node,$index) \
+                                -variable widgetSeln($node,$index) \
                                 -command [namespace code \
                                 [list SetArrayIfUsed $node $fixed $index]]
-                        if {[llength $defVal]} {
-                            $newScale set $defVal
-                        }
                         pack $newScale -fill x -expand true
                         # only put legend on bottom one
                         if {$count==$index} {
@@ -285,6 +275,7 @@ namespace eval slide139 {
                         }
                     }
                 }
+		set widgetSeln($node,$index) $defVal
                 lappend allVals $index $defVal
             }
         }
@@ -346,16 +337,10 @@ namespace eval slide139 {
         }
     }
     
-    proc SliderValsToC {node fixed args} {
-        global sliderVals
+    proc WidgetSelnToC {node fixed args} {
+        global widgetSeln
         set sub [join [concat [list $node] $args] ,]
-        SetArrayIfUsed $node $fixed $args $sliderVals($sub)
-    }
-    
-    proc CheckStateToC {node fixed args} {
-        global checkStates
-        set sub [join [concat [list $node] $args] ,]
-        SetArrayIfUsed $node $fixed $args $checkStates($sub)
+        SetArrayIfUsed $node $fixed $args $widgetSeln($sub)
     }
     
     proc SetArrayIfUsed {node fixed indices value} {
@@ -371,10 +356,9 @@ namespace eval slide139 {
     }
     
     proc SetChoiceNumber {cbox node fixed choice args} {
-        global comboTypes comboChoices
 	set sub [join [concat [list $node] $args] ,]
-        set comboTypes($sub) $choice
-	SetArrayIfUsed $node $fixed $args [expr {[$cbox.menu index $choice]+1}]
+	$cbox configure -text $choice
+	SetArrayIfUsed $node $fixed $args [expr {[${cbox}menu index $choice]+1}]
     }
     
     # If we load a file containing slider values, we only want to set the sliders
@@ -391,7 +375,7 @@ namespace eval slide139 {
     }
     
     proc Save {winId smPath} {
-        global helperTable simtmpdir env
+        global helperTable widgetSeln simtmpdir env
 
         #puts "Saving submodel $smPath inputs"
 	set topNode [$helperTable($winId,whichInstance) GetNode]
@@ -408,10 +392,8 @@ namespace eval slide139 {
                     set titleTail [string range $title $snip end]
                     set trans [GetTransTable $node]
                     # Below should be reimplemented in this interpreter somehow
-                    upvar \#0 [InputVarFor $topNode $node] collectPt
-                    #puts "Available values: [array get collectPt]"
                     
-                    foreach {elmt val} [array get collectPt $node*] {
+                    foreach {elmt val} [array get widgetSeln $node*] {
                         #puts "got pair $elmt $val"
                         set id [split $elmt ,]
                         if {[llength $id]==2} {
@@ -492,20 +474,20 @@ namespace eval slide139 {
     }
     
     proc ShowNthChoice {combi numbi} {
-	set newTxt [$combi.menu entrycget [expr {$numbi-1}] -label]
-	set ::[$combi cget -textvariable] $newTxt
+	set newTxt [${combi}menu entrycget [expr {$numbi-1}] -label]
+	$combi configure -text $newTxt
     }
     
     # purpose of display proc here is only to stop compartment sliders
     # being altered while model is running, since they refer only to
     # initial values. That is no longer necessary; compartments cannot be
     # variable parameters. But also we want to update other input tools to
-    # reflect values from time series data
+    # reflect values from time series data (or rebuilding the model)
     
     # this might be tidied by saving some data in a namespace variable
     
     proc display {winId time display remainder} {
-        global helperTable comboTypes
+        global helperTable widgetSeln
         foreach currentCaption [GetState $winId] {
             set title [RestoreCrs $currentCaption]
             set node [GetIdFromCaptionPath $title]
@@ -525,9 +507,9 @@ namespace eval slide139 {
             set data [lindex [GetModelValue $node] 0]
             set useDim [FindUseDim [set nodeDims [GetModelDims $node]]]
             if {$useDim==-1} {
-                set valArray($node) [GetDefVal $data -1 0]
+                set widgetSeln($node) [GetDefVal $data -1 0]
                 if {[llength $f]} {
-                    ShowNthChoice $f.combo $valArray($node)
+                    ShowNthChoice $f.combo $widgetSeln($node)
                 }
             } else {
                 set count [lindex $nodeDims $useDim]
@@ -536,10 +518,10 @@ namespace eval slide139 {
                     set count [expr {[llength $data]/2}]
                 }
                 for {set index 1} {$count >= $index} {incr index} {
-                    set valArray($node,$index) \
+                    set widgetSeln($node,$index) \
                             [GetDefVal $data $useDim $index]
                     if {[llength $f]} {
-                        ShowNthChoice $f.elt$index.c $valArray($node,$index)
+                        ShowNthChoice $f.elt$index.c $widgetSeln($node,$index)
                     }
                 }
             }
@@ -551,38 +533,38 @@ namespace eval slide139 {
     # only the appropriate value? Who wrote this crap?? Oh, it was
     # me. Never mind...
     
-    proc olddisplay {winId time display remainder} {
-        foreach valGroup {sliderVals checkStates comboTypes} {
-            upvar \#0 $valGroup valArray
-            foreach controlVal [array names valArray] {
-                set ids [split $controlVal ,]
-                set node [lindex $ids 0]
-                #		if {[info exists compList($node)]} {
-                #		    if {[llength $compList($node)]==1} {
-                #			set valArray($node) $compList($node)
-                #		    } else {
-                #			foreach {indx val} $compList($node) {
-                #			    set valArray($node,$indx) $val
-                #			}
-                #		    }
-                #		    continue
-                #		}
-                set data [lindex [GetModelValue $node] 0]
-                set indx [lindex $ids 1]
-                if {[string length $indx]} {
-                    while {[llength [lindex $data 1]]!=1} {
-                        set data [lindex $data 1]
-                    }
-                    set data [lindex $data [expr {2*$indx-1}]]
-                }
-                if {[string length $data]} {
-                    if {[string equal comboTypes $valGroup]} {
-                        set data [lindex [lindex [GetTransTable $node] end] \
-                                $data]
-                    }
-                    set valArray($controlVal) $data
-                }
-            }
-        }
-    }
+#    proc olddisplay {winId time display remainder} {
+#        foreach valGroup {sliderVals checkStates comboTypes} {
+#            upvar \#0 $valGroup valArray
+#            foreach controlVal [array names valArray] {
+#                set ids [split $controlVal ,]
+#                set node [lindex $ids 0]
+#                #		if {[info exists compList($node)]} {
+#                #		    if {[llength $compList($node)]==1} {
+#                #			set valArray($node) $compList($node)
+#                #		    } else {
+#                #			foreach {indx val} $compList($node) {
+#                #			    set valArray($node,$indx) $val
+#                #			}
+#                #		    }
+#                #		    continue
+#                #		}
+#                set data [lindex [GetModelValue $node] 0]
+#                set indx [lindex $ids 1]
+#                if {[string length $indx]} {
+#                    while {[llength [lindex $data 1]]!=1} {
+#                        set data [lindex $data 1]
+#                    }
+#                    set data [lindex $data [expr {2*$indx-1}]]
+#                }
+#                if {[string length $data]} {
+#                    if {[string equal comboTypes $valGroup]} {
+#                        set data [lindex [lindex [GetTransTable $node] end] \
+#                                $data]
+#                    }
+#                    set valArray($controlVal) $data
+#                }
+#            }
+#        }
+#    }
 } ;# end of namespace
