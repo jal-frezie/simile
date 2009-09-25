@@ -151,7 +151,16 @@ make_legible_for_prolog(String, NewString) :-
 	    \+ (Suffix = [EndsVar | _],
 		continuer_only([EndsVar], prolog, [EndsVar])),
 	    continuer_only(MoreVar, prolog, MoreVar),
-	    append([Sq, StartsVar | MoreVar], [Sq], Tweaked);
+	    /* now, if it is a Prolog operator but not a Simile operator, we
+	    must put in parentheses so parser treats it as an atom, otherwise
+	    put in quotes. How do I tell? */
+	    (name(ForeignOp, [StartsVar | MoreVar]),
+		current_op(_Prec, _Spec, ForeignOp), % prolog knows it
+		\+ (inters:macro_expansion(_Src, (Tplt --> _Xpn)),
+		       Tplt =.. [ForeignOp | _Args];
+		    inters:operator(ForeignOp, _R, _As)), % simile does not
+		append([Po, StartsVar | MoreVar], [Pc], Tweaked);
+	    append([Sq, StartsVar | MoreVar], [Sq], Tweaked));
 	/* Put single quotes round things in double quotes so they are read as
 	    atoms rather than lists of Ascii codes */
 	ToTweak = [Dq | AfterQuote],

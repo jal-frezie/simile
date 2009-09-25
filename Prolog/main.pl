@@ -37,11 +37,12 @@ reEncode(_, A, A, 0) :- atom(A).
 all_ttfn_to_utf8(S, S).
 
 portray(make(E, Conds, P, F, A)) :-
-	print(make(E, F)).
+	\+ Conds == conds, % print calls portray so avoid looping
+	print(make(E, conds, P, F, acts)).
 
-portray(sm(Name, _,_,Lp)) :-
-	print(sm(Name,Lp)).
-
+%portray(sm(Name, _,_,Lp)) :-
+%	print(sm(Name,Lp)).
+%
 portray(T) :-
 	rt_portray(T).
 

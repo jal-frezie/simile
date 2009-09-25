@@ -1244,6 +1244,11 @@ error comes up if they are used with the wrong number of args */
 operator(graph, real, [real]).
 operator(table, any, ['[index, ...]']).
 
+%operator(if, any, [[then_clause]). Not needed as macro subber flags errors
+operator(then, then_clause, [boolean, else_clause]).
+operator(else, else_clause, [Any, Any]) :- value(Any).
+operator(elseif, else_clause, [Any, then_clause]) :- value(Any).
+
 operator(+, int, [int]).
 operator(+, real, [real]).
 /* operator(++, int, [int]). */
@@ -1264,35 +1269,14 @@ operator(/, 1, [1,1]).
 /* Comparison ops need int arg version to avoid unnecessarily constraining
 parameters to real (and because everything does) */
 operator(^, real, [real, real]).
-operator(==, boolean, [int, int]).
-operator(==, boolean, [real, real]).
-operator(==, boolean, [boolean, boolean]).
-operator(==, boolean, [a(T), a(T)]).
 operator(is, cond_spec, [int, int]).
-operator('!=', boolean, [int, int]).
-operator('!=', boolean, [real, real]).
-operator('!=', boolean, [boolean, boolean]).
-operator('!=', boolean, [a(T), a(T)]).
-operator(<, boolean, [int, int]).
-operator(<, boolean, [real, real]).
-operator(<, boolean, [boolean, boolean]).
-operator(<, boolean, [a(T), a(T)]).
-operator(<=, boolean, [int, int]).
-operator(<=, boolean, [real, real]).
-operator(<=, boolean, [boolean, boolean]).
-operator(<=, boolean, [a(T), a(T)]).
-operator(>, boolean, [int, int]).
-operator(>, boolean, [real, real]).
-operator(>, boolean, [boolean, boolean]).
-operator(>, boolean, [a(T), a(T)]).
-operator(>=, boolean, [int, int]).
-operator(>=, boolean, [real, real]).
-operator(>=, boolean, [boolean, boolean]).
-operator(>=, boolean, [a(T), a(T)]).
-operator(<>, boolean, [int, int]).
-operator(<>, boolean, [real, real]).
-operator(<>, boolean, [boolean, boolean]).
-operator(<>, boolean, [a(T), a(T)]).
+operator(==, boolean, [Any, Any]) :- value(Any).
+operator('!=', boolean, [Any, Any]) :- value(Any).
+operator(<, boolean, [Any, Any]) :- value(Any).
+operator(<=, boolean, [Any, Any]) :- value(Any).
+operator(>, boolean, [Any, Any]) :- value(Any).
+operator(>=, boolean, [Any, Any]) :- value(Any).
+operator(<>, boolean, [Any, Any]) :- value(Any).
 
 operator('&&', boolean, [boolean, boolean]).
 operator('||', boolean, [boolean, boolean]).
@@ -1310,6 +1294,8 @@ use_tcl_proc_for(preceding).
 use_tcl_proc_for(first).
 use_tcl_proc_for(loses). % internal function decides loss from probability
 
+value(Any) :-
+	member(Any, [boolean, int, real, a(_Enum)]).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* add_zeros has the mind-numbingly monotonous task of shifting
 all the array elements along one so that wooly-minded treehuggers can address
