@@ -90,17 +90,21 @@ insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
 	    member(path_substitution(Base, Assoc, Link), Swaps),
 		(Location = in_base,
 		    Wait = true,
+/* precaution removed because it only works when getting stuff from looked-up
+		    model, actually you cannot get stuff from elsewhere in
+		assoc model either, and it caused...shall we say...difficulties
+		when the condition was not actually a lookup
 		    find_name_host(Link, LinkWithAttrs),
 		    (\+ m_class:LinkWithAttrs has_attribute can_lookup of 1, !;
 			Assoc = [sm(OneSided, _,_,_) | _],
-			LookupWait = enumerate(OneSided)),
+			LookupWait = enumerate(OneSided)),  */
 		    suffix(BaseFrag, Base), /* longest first */
 		    append(BaseSide, Top, RealPath),
 		    append(Deeper, BaseFrag, BaseSide), !,
 		    pointer_from(Top, Ptr),
 		    pointer_to(Assoc, Ptr),
 		    append([Deeper, Assoc, Top], Path),
-		    BackSwap = values_from_base(LookupWait);
+		    BackSwap = values_from_base(_LookupWait);
 		Location = in_assoc,
 		    Wait = true,
 		    append(Assoc, Top, AssocPath),
