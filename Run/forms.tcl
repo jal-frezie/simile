@@ -765,7 +765,7 @@ proc SetHighlights {t} {
     global disaggregate
     
     switch -regexp $disaggregate(type) {
-        none|population {
+        none|population|records {
             $t.value configure -state disabled
         }
         simple|generated {
