@@ -519,7 +519,7 @@ make_intermediates(
 	    Units = ArgUnits,
 	    ReadyContext = ClearContext;
 	member(Functor, [with_least, with_greatest]), !,
-	    append([TailLoops, NowBuilding, DestPath], ReadyContext),
+	    append(NowBuilding, DestPath, ReadyContext),
 	    IncrExpr =.. [Functor, Epsilon, Payload], % either arg can vary
 	    Units = ArgUnits;
 	IncrExpr =.. [IncrOp, IncrementRef, FillRef],
@@ -528,7 +528,7 @@ make_intermediates(
 	     member(Functor, [any, all]), !,
 		[RUnits | ArgTemplate] = [boolean, boolean];	
 		[RUnits | ArgTemplate] = [int, int]),
-	    append([TailLoops, NowBuilding, DestPath], ReadyContext),
+	    append(NowBuilding, DestPath, ReadyContext),
 	    propagate_units(Source, RUnits, ArgTemplate, [ArgUnits], Units)),
 	get_dims_from_loops(TailLoops, TotalDims, LoopInds),
 
@@ -1052,13 +1052,14 @@ refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 	    worry about accessing elements that haven't yet been set, and not
 	    using made_at(...) should prevent it being removed as an idler */
 	    Args = [made_at(Name, SourceContext)]),
-	    pointer_from(DestPath, SourcePtr),
+	    copy_term(DestPath, SourcePath),
+	    pointer_from(SourcePath, SourcePtr),
 	    make_inds_for(Dims, IntLoops, IntInds),
 	    copy_term(ParamLoops, SourceLoops),
 	    /* order of parts exchanged simply cos it made it work */
 	    append(SourceLoops, SpareLoops, IntLoops),
 	    suffix(SpareLoops, BuildLoops),
-	    append(SourceLoops, DestPath, SourceContext),
+	    append(SourceLoops, SourcePath, SourceContext),
 	    SourceRef = arr(SourcePtr, Name, IntInds).
 
 prevent_inappropriate_reuse(Explicit, instance(Type, I, Replaces, Name, Dims),
