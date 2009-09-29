@@ -1519,17 +1519,19 @@ proc GetParts {top tree noPkg} {
                     set Description "Simile canvas description"
                     set style attachment
                 }
-                *.shf {
+                #*.spf {
+# .spfs contain relative paths so are referenced, not moved into the tree
+# (note exra hashes because match string cannot be commented out)
+                    set PartType "application/x-simile"
+                    set Description "Simile parameter file"
+                    set style attachment
+                }
+                #*.shf {
+# reference .shfs as well, for consistency
                     set PartType "application/x-simile"
                     set Description "Simile helper configuration file"
                     set style attachment
                 }
-# .spfs contain relative paths so are referenced, not moved into the tree
-#                *.spf {
-#                    set PartType "application/x-simile"
-#                    set Description "Simile parameter file"
-#                    set style attachment
-#                }
                 *.spj {
                     set PartType "application/x-simile"
                     set Description "Simile package description"
@@ -1543,7 +1545,8 @@ proc GetParts {top tree noPkg} {
 			set Description Data
 		    }
                     set style attachment
-                } default {
+                } 
+		default {
                     set Description junk
                 }
             }
@@ -1767,7 +1770,7 @@ proc OpenProjectFile {path} {
 			     [PrefValue custom(helperManager) helperManager] \
 			     ::RunEnv::LoadSHF CreateView]
             do_in_node $topNode $command $topNode \
-		${path}/$SimileProject(nameOfHelperStateFile)
+		[file join $baseDir $SimileProject(nameOfHelperStateFile)]
         }
     }
 }
@@ -1799,12 +1802,13 @@ proc SaveProjectFile {topNode path tgt} {
 	}
     }
     if {[info exists helperTable($topNode,stateName)]} {
-	if {![string equal $path \
-		  [file dirname $helperTable($topNode,stateName)]]} {
-	    file copy -force $helperTable($topNode,stateName) $path
-	}
+# old method: include helper state in saved model, just because we could...
+#	if {![string equal $path \
+#		  [file dirname $helperTable($topNode,stateName)]]} {
+#	    file copy -force $helperTable($topNode,stateName) $path
+#	}
         set SimileProject(nameOfHelperStateFile) \
-	    [file tail $helperTable($topNode,stateName)]
+	    [Relativize $tgt $helperTable($topNode,stateName)]
     }
     # shf file name loaded
     

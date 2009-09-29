@@ -175,11 +175,10 @@ check_and_report_units(Target_base, TargetDims) :-
 	units:add_conversion(Target, *, 1, TargetDims, _,_).
 
 defined_as_unit(FullName, Def) :-
-	standard_name(FullName, Name),
-	stands_for(Name, Def).
+	standard_name(FullName, Unit),
+	(baseline(Unit, _Dim), Def = Unit;
+	unit_expansion(Unit, Def)).
 
 stands_for(Unit, Def) :-
 	baseline(Unit, _Dim), Def = Unit;
 	unit_definition(Unit, Def).
-
-
