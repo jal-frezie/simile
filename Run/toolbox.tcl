@@ -1791,8 +1791,11 @@ proc SaveProjectFile {topNode path tgt} {
     }
     if {[info exists helperTable($topNode,keepSetup)] && \
 	    $helperTable($topNode,keepSetup)} {
-	set helperAction [Query save_helper_setup question top {} \
-			      {update_shf keep_shf lose_shf}]
+	set choices {lose_shf update_shf}
+	if {[info exists helperTable($topNode,stateName)]} {
+	    set choices [linsert $choices 0 keep_shf]
+	}
+	set helperAction [Query save_helper_setup question top {} $choices]
 	switch $helperAction {
 	    update_shf {
 		::RunEnv::SaveView 0
