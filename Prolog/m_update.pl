@@ -1599,7 +1599,8 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 	(Submodel has_class_refinement image_posn of ImgPos, !;
 	    ImgPos = none),
 	(Submodel has_class_refinement multiplication_spec of Multi,
-	    member(count=Count, Multi), !;
+	    member(count=QCount, Multi), !,
+	    all(ame_gen, dequote, [build(QCount), build(Count)]);
 	Count=[]),
 	(Submodel has_class_refinement multiplication_spec of Multi,
 	    member(type=Nature, Multi), !;
