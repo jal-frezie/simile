@@ -324,12 +324,10 @@ menu_handle(Win, file, save_interface) :-
 	finish_progress_dialogue).
 
 menu_handle(Win, file, CompOrBuild) :-
-	(CompOrBuild = compile_c,
-	    output:safe_tcl_eval([info, sharedlibextension], IdentStr),
-	    Vers = Serial;
-	 CompOrBuild = build_c,
-	    IdentStr = ".cpp",
-	    Vers = ''),
+	(CompOrBuild = compile_c, % export shared library
+	    output:safe_tcl_eval([info, sharedlibextension], IdentStr);
+	 CompOrBuild = build_c, % export source code
+	    IdentStr = ".cpp"),
 	Win shows_model Model,
 	name(Ident, IdentStr),
 	get_default_export_name(Model, IdentStr, DefN),
@@ -344,7 +342,7 @@ menu_handle(Win, file, CompOrBuild) :-
 	(\+ rebuild_code(c, Model, CompDir), !;
 	(get_av_pair(Model, 1, c_new, Serial), !; Serial = 1),
 	    caption_for(Model, Capt),
-	    append_atoms([CompDir, '/', Capt, '/model', Vers, Ident], Top),
+	    append_atoms([CompDir, '/', Capt, '/model', Serial, Ident], Top),
 	    output:safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)).
 
 menu_handle(Win, file, RunCmd) :-
