@@ -1600,7 +1600,7 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 	    ImgPos = none),
 	(Submodel has_class_refinement multiplication_spec of Multi,
 	    member(count=QCount, Multi), !,
-	    all(ame_gen, dequote, [build(QCount), build(Count)]);
+	    all(m_update, dequote_nonnumeric, [build(QCount), build(Count)]);
 	Count=[]),
 	(Submodel has_class_refinement multiplication_spec of Multi,
 	    member(type=Nature, Multi), !;
@@ -1625,6 +1625,10 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 	Submodel has_graphical_attribute bounding_box of [LB, _, RB, _],
 	Submodel has_graphical_attribute internal_extent of [LI, _, RI, _],
 	Fat is 1.0*(RB-LB)/(RI-LI).
+
+dequote_nonnumeric(QCount, Count) :-
+	number(QCount), !, Count = QCount;
+	ame_gen:dequote(QCount, Count).
 
 time_step_for(Model, TopStep, Step) :-
 	Model has_class_refinement step of Step, !;
