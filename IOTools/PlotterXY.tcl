@@ -112,6 +112,7 @@ namespace eval ::$keyValue {
         set plot($w,DrawLines) 1
         set plot($w,DrawPoints) 0
         set plot($w,CurrentOnly) 0
+        set plot($w,ordinal) 0
     }
     
     proc Restore {winId} {
@@ -282,7 +283,8 @@ namespace eval ::$keyValue {
         get_Xvalues $w
         
         if {$plot($w,CurrentOnly)} {
-            $w.canvas delete trace
+	    set expired [expr {[incr plot($w,ordinal)]-$plot($w,CurrentOnly)}]
+            $w.canvas delete trace$expired
         }
         #redraw axis and graph if necessary; otherwise just extend plots
         if {$plot($w,redraw)} {
@@ -381,8 +383,8 @@ namespace eval ::$keyValue {
         pack [checkbutton $chkF.drawlinesF.cbutton -variable [namespace current]::DrawLines] -side right
         pack [LabelFrame $chkF.drawpointsF -text "Draw points"] -fill x
         pack [checkbutton $chkF.drawpointsF.cbutton -variable [namespace current]::DrawPoints] -side right
-        pack [LabelFrame $chkF.currentOnlyF -text "Draw current points only"] -fill x
-        pack [checkbutton $chkF.currentOnlyF.cbutton -variable [namespace current]::CurrentOnly] -side right
+        pack [LabelFrame $chkF.currentOnlyF -text "Persistence (0 for indefinite)"] -fill x
+        pack [entry $chkF.currentOnlyF.cbutton -textvariable [namespace current]::CurrentOnly] -side right
         
         pack $chkF -padx 10
         
@@ -742,14 +744,15 @@ namespace eval ::$keyValue {
         set y0 [get_y $w $Y0 $plot($w,Yscale)]
         set y1 [get_y $w $Y1 $plot($w,Yscale)]
         
+	set cTag trace$plot($w,ordinal)
         if $plot($w,DrawLines) {
-            $w.canvas create line $x0 $y0 $x1 $y1 \
-                    -fill $Colour -tags {graph scalable xaxis_item yaxis_item trace}
+            $w.canvas create line $x0 $y0 $x1 $y1 -fill $Colour \
+		-tags [list graph scalable xaxis_item yaxis_item $cTag]
             
         }
         if $plot($w,DrawPoints) {
-            $w.canvas create text $x1 $y1 -text X \
-                    -fill $Colour -tags {graph scalable xaxis_item yaxis_item trace}
+            $w.canvas create text $x1 $y1 -text X -fill $Colour \
+		-tags [list graph scalable xaxis_item yaxis_item $cTag]
             
         }
     }
