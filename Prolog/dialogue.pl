@@ -122,12 +122,16 @@ interactively_parse(Part) :-
 	    TableSpec = ''),
 	handle_eqn_interaction(Part, ITypeBase-TypeDims, IndxCount,
 			       Input_list, TableSpec).
-	
+
+:- dynamic(table_data_is/1).
+
 handle_eqn_interaction(Part, DefUnit, IndxCount, Input_list, TableSpec) :-
 	interact_equation(Result_list),
 	(Result_list = [], !; % dialogue cancelled
-	  update_equation(Part, IndxCount, Input_list,
-			  DefUnit, Result_list, Effect),
+	  asserta(table_data_is(TableSpec)),  % needed in parser
+	    update_equation(Part, IndxCount, Input_list,
+			    DefUnit, Result_list, Effect),
+	    retractall(table_data_is(_TableSpec)),  
 	    (Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn, NewArrSpec,
 				   TabDat, MinVal, MaxVal, Desc, Comment,
 				   NewInputs),
@@ -199,6 +203,7 @@ update_equation(Function,_,_,_, [Table_st, Data_st], Effect) :-
 	get_table_data(Function, Data_st, DataTable,
 		       Units, Bounds, Dims, ComplaintStr)),
 	(ComplaintStr = [], !,
+	    DataSpec = [DataField | Indices],
 	    Effect = table_spec_changed_to([file = FileName, data = DataField,
 				indices = Indices, current = DataTable,
 				units=Units, bounds=Bounds, dims=Dims]);
@@ -463,7 +468,7 @@ get_table_data(Function, Data, Table, Units, Dims, Sizes, Complaint) :-
 get_table_part(Function, Data, Table, Units, Dims, Sizes) :-
 	length(Data, Len), Len<255,
 	name(Num, Data),
-	enum_type_ref(Num, Function, Table, Units, _),
+	enum_type_ref(Num, Function, bare, Table, Units, _),
 	    Dims = [],
 	    Sizes = [];
 	output:chop_list(Data, Alternator),
@@ -476,7 +481,7 @@ feed_items(_, [], _, _, _, []).
 feed_items(Fn, [IndStr, ValStr | More], Table, Units, Dims, Sizes) :-
 	feed_items(Fn, More, Table, DUnit, Dims, LoSizes),
 	(name(Ind, IndStr),
-	    enum_type_ref(Ind, Fn, Posn, TUnit, _),
+	    enum_type_ref(Ind, Fn, bare, Posn, TUnit, _),
 	    (TUnit = a(_), IUnit = TUnit;
 		IUnit = int);
 	append(["Table contained the index item ", IndStr,

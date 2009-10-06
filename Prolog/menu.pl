@@ -1094,7 +1094,7 @@ get_ppairs([input_link(_, Source, Param, _, _) | R1], Terms) :-
 set_properties(Wid, Model) :-
 	get_disag_params(Model, P_list),
 	do_disag_dialog(Wid, Model, P_list, New_P_list),
-	(New_P_list = [], !; /* dialogue was cancelled */
+	(New_P_list = '', !; /* dialogue was cancelled */
 	New_P_list = [NewColour, NewImage, NewImgPos, NewNature, NewFatness,
 		      NewCount, NewStep, NewDesc, NewComment, NewFix, NewHide,
 		      NewSeparate, NewProc, NewInc, NewLibs, NewEnumSpecs],
