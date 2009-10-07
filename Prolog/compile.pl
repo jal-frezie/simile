@@ -1748,7 +1748,11 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 					  [assign(IdRef, IxExpr)])
 					| SmLoop], Next),
 		    append(OuterLoops, Next, UseLoops),
-		    append(Slower, [[make(_, IdConds-_, _,_, [assign(arr(Zn, TcVar, []), IxExpr>0&&IxExpr<=N)]) | NoIdConds] | Faster], UseSubPasses), !;
+		    (N = pra_bound(PraPtr, PraName),
+			append_atoms(PraName, made, MadeBound),
+			UpBound = arr(PraPtr, MadeBound, []);
+		    UpBound = N),
+		    append(Slower, [[make(_, IdConds-_, _,_, [assign(arr(Zn, TcVar, []), IxExpr>0&&IxExpr<=UpBound)]) | NoIdConds] | Faster], UseSubPasses), !;
 		UseLoops = OpenLoops,
 		    UseSubPasses = SubPasses),
 				    

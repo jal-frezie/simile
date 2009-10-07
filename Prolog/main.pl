@@ -38,7 +38,7 @@ all_ttfn_to_utf8(S, S).
 
 portray(make(E, Conds, P, F, A)) :-
 	\+ Conds == conds, % print calls portray so avoid looping
-	print(make(E, conds, P, F, acts)).
+	print(make(E, conds, P, F, A)).
 
 %portray(sm(Name, _,_,Lp)) :-
 %	print(sm(Name,Lp)).

@@ -1322,7 +1322,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	switch [lindex $tableSpec 7] {
 	    first_column_in_grid {
 		set idxCol 1
-	    } column_above_data {
+	    } column_to_left_of_data {
 		set idxCol [expr {$xfirst-1}]
 	    } default {
 		set idxCol -1
