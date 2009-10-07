@@ -803,8 +803,10 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 	reassure_user("Generating code for model execution"),
 	all(compile, build_eval_proc,
 	    [unify(Language), unify(Constants),
-	     build([updatemodel, evalmodel]),
-	     build([OrdUpdates, Ordered]),
+	     build([advancemodel, updatemodel, evalmodel]),
+	     % advancemodel only added to stop error when trying to reuse
+	     % source code in versions before v5.4
+	     build([[], OrdUpdates, Ordered]),
 	     unify(Used), unify(AllGraphs), unify(Stream)]).
 
 /* find_circle([Head | Chain], Loop) :-

@@ -589,7 +589,6 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         switch [llength $list] {
             0 {
                 FPError "Missing value" $subs $errorData
-		return {}
             } 1 {
                 if {![string last ,NOW [string toupper $subs] 3]} {
 		    # setting current value for var param
@@ -598,21 +597,23 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 			     [GetCompProperty $topNode Type $tgt]]} {
 			set comboTypes($idAndSubs) $list
 		    }
-                    EnumTypeToNumber $idAndSubs \
-                            $list $thisTrans 0 $useCppArray $subs $errorData
-                    return 1
+                    if {[EnumTypeToNumber $idAndSubs $list $thisTrans 0 \
+			     $useCppArray $subs $errorData]} {
+			return 1
+		    }
 		} else {
 		    # setting value for fixed param or time point
-                    EnumTypeToNumber $tgt$subs $list $thisTrans $when \
-			$useCppArray $subs $errorData
-                    return -1 ;# should be 0 if a comp
+                    if {[EnumTypeToNumber $tgt$subs $list $thisTrans $when \
+			$useCppArray $subs $errorData]} {
+			return -1 ;# should be 0 if a comp
+		    }
                 }
             } default {
                 FPError "Array $list supplied instead of scalar" \
 		    $subs $errorData
-		return {}
             }
         }
+	return {}
     }
     if {[llength $list]==1} {
         #puts "setting paramData($tgt) to $headNum"
@@ -737,7 +738,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 	} else { ;# use old system for Tcl
 	    set recordNode [lindex $nextDim 1]
 	    EnumTypeToNumber $recordNode$subs $last {} $when $useCppArray \
-		     $subs $errorData
+		     $subs $errorData ;# cannot fail
 	}
 
 # Hopefully, with the universal data structure, once we have set the
@@ -790,24 +791,26 @@ proc EnumTypeToNumber {tgt head trans when useCppArray subs errorData} {
         } else {
 	    tcl_cleartimeseries $tgt
         }
-    } elseif {[string compare {} $trans]} {
-        set poss [lsearch $trans [lindex $head 0]]
-        if {$poss == -1} {
-            if {[string equal false [lindex $trans 0]]} {
-                FPError "Data value $head is not a member of type boolean, pick one of $trans." $subs $errorData
-            } else {
-                FPError "Data value $head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]." $subs $errorData
-            }
-        } else {
-            PlaceInArray $tgt $poss $when $useCppArray
-        }
-    } elseif {![Numeric $head]} {
-        FPError "Data value $head is not a number." $subs $errorData
     } else {
-        PlaceInArray $tgt $head $when $useCppArray
-        #   set ${varData}($tgt) $head
+	if {[string compare {} $trans]} {
+	    set poss [lsearch $trans [lindex $head 0]]
+	    if {$poss == -1} {
+		if {[string equal false [lindex $trans 0]]} {
+		    FPError "Data value $head is not a member of type boolean, pick one of $trans." $subs $errorData
+		} else {
+		    FPError "Data value $head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]." $subs $errorData
+		}
+		return 0
+	    } 
+	    set head $poss
+	} elseif {![Numeric $head]} {
+	    FPError "Data value $head is not a number." $subs $errorData
+	    return 0
+	}
+	PlaceInArray $tgt $head $when $useCppArray
     }
     #puts "just went set paramData($tgt) $paramData($tgt)"
+    return 1
 }
 
 proc FPError {occurrence inds errorData} {
