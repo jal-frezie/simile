@@ -35,8 +35,8 @@ void crash (Tcl_Interp *interp, const char *cause) {
  /* oh dear. */
  /* oh dear, oh dear. */
   // fat chance, we have no Tk in the exec interpreter
-  //  Tcl_VarEval(interp, "ShowMessage {Authorization failure} error {Bad ", cause, " authorization. Simile will now exit.} ok", NULL);
-  // Tcl_Exit(-1);
+  Tcl_VarEval(interp, "ShowMessage {Authorization failure} error {Bad ", cause, " authorization. Simile will now exit.} ok", NULL);
+  Tcl_Exit(-1);
   strcpy(NULL, secret); // that should screw it up nicely
 }	 
 #ifdef USE_MY_HMAC

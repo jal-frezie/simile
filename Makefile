@@ -1,6 +1,6 @@
 # These are the settings for the particular version we want to make
 # edition: evaluation, teaching, standard or enterprise
-EDN = ENTERPRISE
+EDN = STANDARD
 # date of final expiry: "hh:mm D M Y" or "" for permanent
 ABS_EXP = ""
 # days after install: 0 for no installation expiry
@@ -66,12 +66,12 @@ ifeq ($(PLATFORM),Darwin)
 	ARCHEXTN = _ppc
 # build for everything unless I am on Barbie
 	ifneq ($(OSNUMBER),7.9.0)
-		FLAGS = $(OPT) -arch ppc -arch i386 -arch ppc64 -arch x86_64 -mmacosx-version-min=10.3 # -arch salad -arch chilli_sauce -arch everything
-	        ARCHEXTN = _mac
+		FLAGS = $(OPT) -arch i386 -mmacosx-version-min=10.4
+	        ARCHEXTN = _i386
 	endif
 	EXECEXTN = $(ARCHEXTN)
 	MAKESL = -fPIC -dynamiclib
-	USETCL =  -DUSE_TCL_STUBS -F~/Desktop/CVS\ Simile\ v5.x/Contents/Frameworks -framework Tcl -L../System/lib
+	USETCL =  -DUSE_TCL_STUBS -F~/Desktop/CVS\ Simile\ v5.x/Contents/Frameworks -framework Tcl -I../System/include -L../System/lib
 	LOCALIZE_TCL_REFS = install_name_tool -change \
 		/System/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl

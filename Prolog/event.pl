@@ -1605,14 +1605,15 @@ get_nearest_equivalent_link(Ltype, OrigStart, Target, Start) :-
                 (member(StartPoint, Entries),
 		    m_class:Start is_connector from _ to StartPoint;
 		member(StartPoint, BiggestFirst),
-		    m_class:Start is_connector from StartPoint to _),
+		    Start draws_inside StartPoint),
 		get_possible_start(OrigStart, Start),
 % following lines stop influences and ghost links sharing sections
 		draw_style_for(Start, Btype),
 		Btype = Ltype, % d_s_f can agree wrongly to ground type
 		appears(Start),
 		can_start(influence, Start),
-		can_finish(influence, Start, Target), !;
+		% can_finish(influence, Start, Target), -- entry was u-turn
+		!;
 	Start = OrigStart.
 
 extend_line_to(Start, Type, Target, Point) :-

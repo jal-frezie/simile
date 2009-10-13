@@ -68,7 +68,10 @@ set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
 regsub -all /\\./ [info script] / scriptCmd
 
 #tk_messageBox -title Invocation -icon info -message "$scriptCmd $argv" -type ok
-set SIMILE_PATH [file dirname [file dirname [file normalize $scriptCmd]]]
+# Awkward: you want to normalize to get rid of ..'s in path, but that also
+# resolves any pointers except for the complete argument, which can stop the
+# development version starting
+set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 set env(SP_PATH) $SIMILE_PATH/System
 # Above seems unnecessary for sicstus 3.10
 
@@ -462,12 +465,12 @@ switch $tcl_platform(platform) {
 	set execExtn .exe
     } unix {
 	if {[string equal Darwin $tcl_platform(os)]} {
-#	    set archExtn _$tcl_platform(machine)
-#	    if {[string equal "_Power Macintosh" $archExtn]} { ;# too long
-#		set archExtn _ppc
-#	    }
+	    set archExtn _$tcl_platform(machine)
+	    if {[string equal "_Power Macintosh" $archExtn]} { ;# too long
+		set archExtn _ppc
+	    }
 # experiment with fatties
-	    set archExtn _mac
+#	    set archExtn _mac
 	    scan $tcl_platform(osVersion) %d.%d.%d dMed dMin dNone
 	    if {$dMed<9} {
 		# I am building with 10.5 so cannot make i386 prolog
