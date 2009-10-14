@@ -323,9 +323,6 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/]
     lappend i [$w create arc $ir $ib $mr $mb -start 270 -extent 90 \
 		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/]
-    foreach tag [concat $tagSet /background/] {
-	$w addtag $tag withtag /new_bg/
-    }
     # Now to stick it behind anything that might be drawn inside
     $w raise /new_bg/ target_and_background
     $w dtag target_and_background
@@ -348,9 +345,15 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     }
 
     if {$wedge} {
+	lappend i [$w create polygon $ml $v6 $ml $mt [expr $ml+$cornerRad/4] \
+		       $mt [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
+	    -outline {} -fill $fillColour -tag /new_bg/]
 	lappend i [$w create line $ml $v6 $ml $mt [expr $ml+$cornerRad/4] $mt \
 		       [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
 	    -width $width -tag /new_bd/]
+    }
+    foreach tag [concat $tagSet /background/] {
+	$w addtag $tag withtag /new_bg/
     }
     set tabs 0
     while {$tabs < $back} {
