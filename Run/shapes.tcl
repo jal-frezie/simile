@@ -479,13 +479,7 @@ proc PutThinArrow { w ptz fatness density colourScheme tagSet} {
     set width [GetLineSize $w influence $fatness]
     set features [GetObjectSize $w influence $fatness]
     set mptz [ScaleList $w $ptz]
-    if {[string equal dashed $density]} {
-	set density {}
-	set dashClause "-dash -"
-    } else {
-	set dashClause {}
-    }
-    eval {$w create line} $mptz $dashClause {-arrow last \
+    eval {$w create line} $mptz {-arrow last \
                 -arrowshape [list [expr $features/6] [expr $features/5] \
                 [expr $features/16]] -smooth true -width $width \
                 -tag "$tagSet realwidth($width) has_info"}
@@ -812,12 +806,28 @@ proc FlashSymbol {w name outlineColor textColor} {
 
 proc StippleSymbol {w name density selected} {
     foreach object [$w find withtag $name] {
+	switch -regexp $selected {
+	    highlight {
+		$w dtag $object tocopy
+		$w itemconfigure $object -tag \
+		    [concat selected [$w gettags $object]]
+	    } select {
+		$w itemconfigure $object -tag \
+		    [concat tocopy selected [$w gettags $object]]
+	    } default {
+		$w dtag $object selected
+		$w dtag $object tocopy
+	    }
+	}
+	if {[string equal unchanged $density]} {
+	    continue
+	}
 	if {[string equal aqua [tk windowingsystem]]} {
 # stippling doesn't work, and crashes PostScript generation, so dash instead
 	    if {[lsearch {line rectangle arc polygon} [$w type $object]]>-1} {
 		if {[llength $density]} {
-		    $w itemconfigure $object -dash {1 3}
-		} else {
+                    $w itemconfigure $object -dash {1 3}
+                } else {
 		    $w itemconfigure $object -dash {}
 		}
 	    }
@@ -832,18 +842,8 @@ proc StippleSymbol {w name density selected} {
 		}
 	    }
         }
-	switch -regexp $selected {
-	    highlight {
-		$w dtag $object tocopy
-		$w itemconfigure $object -tag \
-		    [concat selected [$w gettags $object]]
-	    } select {
-		$w itemconfigure $object -tag \
-		    [concat tocopy selected [$w gettags $object]]
-	    } default {
-		$w dtag $object selected
-		$w dtag $object tocopy
-	    }
+	if {[string equal dashed $density]} {
+	    $w itemconfigure $object -dash {-}
 	}
     }
 }

@@ -104,9 +104,10 @@ do_equation_dialog(Win, Part) :-
 		get_default_upper_limit(Part, Max)),
 	/* Node is an input parameter if a ghost whose base has no
 		associated function */
+	get_all_enum_types(Part, ETList),
 	is_parameter(ClickedObj, Is_P),
 	
-	create_equation(Win, TitleForm, Caption, IndexList),
+	create_equation(Win, TitleForm, Caption, IndexList, ETList),
 	fill_equation(Equation, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_table(Part, TableList, TableVals), % calls interaction from tcl
 	destroy_equation.

@@ -17,7 +17,7 @@ sicstus_module(m_update,
 		load_references/2, save_references/2, link_ends/4,
 		moving_endpoint/3, update_links_and_vars/1,
 		sort_for_link/4, abs_path_name/3, rel_path_name/5,
-		build_array/3, analyze_array/3, 
+		build_array/3, analyze_array/3, get_all_enum_types/2,
 		get_solo_list_depth/2, delete_implicit_node/1, 
 		add_implicit_function/2, default_units/3, units_match_context/4,
 		get_exogenous_node/2, find_all_links/2, find_all_links/3,
@@ -1640,6 +1640,13 @@ enum_types_for(Submodel, EnumSpecs) :-
 		[build(EnumSpecs), build(EnumTypes)]), !;
 	 EnumSpecs = []).
 
+get_all_enum_types(root, []).
+get_all_enum_types(Node, TypeList) :-
+	enum_types_for(Node, LevelList),
+	Parent has_part Node,
+	get_all_enum_types(Parent, HigherList),
+	append(LevelList, HigherList, TypeList).
+	
 use_units_in(root, 'No').
 use_units_in(Model, Do) :-
 	Model has_class_refinement eqn_units of Local, !,

@@ -5,8 +5,9 @@
 #
 # This file contains procedures for the equation dialogue.
 #
-proc create_equation {parent purpose comp indices} {
+proc create_equation {parent purpose comp indices enum_types} {
     global equation equationbar tcl_platform iconImages window_info custom
+
     ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
         return
@@ -68,7 +69,7 @@ proc create_equation {parent purpose comp indices} {
 
     foreach funk $equation(fnDefs) {
         set box {} ;# was root for bwidget
-        foreach level [split [join [lindex $funk 0] /] /] {
+        foreach level [lindex $funk 0] {
             set lname $box.[join $level _]
             if {![$lbf exists $lname]} {
 #                $lbf insert end $box $lname -image $iconImages(find) \
@@ -87,6 +88,21 @@ proc create_equation {parent purpose comp indices} {
                     -image $iconImages(function) -text [lrange $funk 1 end]
         }
     }
+    $lbf insert {} end -id .et_top_level \
+	-text {Enum. type constants} -image $iconImages(open)
+# add menu entries for enum. type constants
+    foreach enumType [linsert $enum_types 0 [list boolean false true]] {
+	set type [lindex $enumType 0]
+	set lname .et_top_level.[join $type _]
+	$lbf insert .et_top_level end -id $lname \
+			-text $type -image $iconImages(open)
+	foreach member [lrange $enumType 1 end] {
+	    $lbf insert $lname end -id $lname.[join $member _] \
+			-text $member -image $iconImages(text)
+	}
+    }
+
+
     
 #    pack $middleF.functions -side left -anchor nw -padx 2 -pady 2 -expand true -fill both
     $middleF add [TitleFrame $middleF.params -text "Parameters: "]
@@ -827,6 +843,8 @@ proc functionClick {tree x y boxname} {
     # Take the item the user clicked on
     if {[llength [$tree children $fn]]} {
 	$tree item $fn -open [expr {![$tree item $fn -open]}]
+    } elseif {[string first .et_top_level $fn]==0} {
+	$boxname insert [$boxname index insert] \"[$tree item $fn -text]\"
     } else {
 	InsertFunction $boxname [lindex [split $fn .] end]
     }
@@ -839,6 +857,10 @@ proc functionClick {tree x y boxname} {
 proc AddFnPopup {w X Y x y} {
     global equation
     set equation(whatPopped) [$w identify row $x $y]
+# no popups for constants
+    if {[string first .et_top_level $equation(whatPopped)]==0} {
+	return
+    }
     set popTxt [lindex [split $equation(whatPopped) .] end]
     if {![string equal {} $popTxt]} {
 	AddWidgetPopup $X $Y $popTxt

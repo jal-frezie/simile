@@ -28,7 +28,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_display_mode/1, tk_display_menu/1,
 	tk_change_color/5, kill_featured/2, shift_images/3,
 	clear_display/1, set_interpreter/1, unset_interpreter/0,
-	prepare_equation/1, create_equation/4,
+	prepare_equation/1, create_equation/5,
 	fill_equation/8, fill_inputs/1, fill_table/3,
 	interact_equation/1, destroy_equation/0,
 	tk_start_progress_dialogue/1, tk_update_infobox/1, 
@@ -420,12 +420,13 @@ prepare_equation(Ops) :-
 	bracketize(Ops, BrOps),
 	safe_tcl_eval(['AttackGlobalVariable equation (fnDefs)', BrOps], _).
 
-create_equation(Win, Use, Caption, Indices) :-
+create_equation(Win, Use, Caption, Indices, ETs) :-
 	name(Caption, CaptStr),
 	argify(CaptStr, CaptArg),
 	safe_list(Indices, BrIndices),
+	all(output, safe_list, [build(ETs), build(EnumLists)]),
 	safe_tcl_eval(['create_equation', Win, br(write(Use)), chars(CaptArg),
-			BrIndices], _).
+			BrIndices, br(EnumLists)], _).
 /*
 fill_equation(Cur_eqn, Cur_units, MultList, IsParam, List, TableData,
 	      Desc, Comment, Min, Max) :-
