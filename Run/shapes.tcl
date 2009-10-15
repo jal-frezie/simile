@@ -323,6 +323,11 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/]
     lappend i [$w create arc $ir $ib $mr $mb -start 270 -extent 90 \
 		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/]
+    if {$wedge} {
+	lappend i [$w create polygon $ml $v6 $ml $mt [expr $ml+$cornerRad/4] \
+		       $mt [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
+	    -outline {} -fill $fillColour -tag /new_bg/]
+    }
     # Now to stick it behind anything that might be drawn inside
     $w raise /new_bg/ target_and_background
     $w dtag target_and_background
@@ -345,9 +350,6 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     }
 
     if {$wedge} {
-	lappend i [$w create polygon $ml $v6 $ml $mt [expr $ml+$cornerRad/4] \
-		       $mt [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
-	    -outline {} -fill $fillColour -tag /new_bg/]
 	lappend i [$w create line $ml $v6 $ml $mt [expr $ml+$cornerRad/4] $mt \
 		       [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
 	    -width $width -tag /new_bd/]
@@ -822,7 +824,9 @@ proc StippleSymbol {w name density selected} {
 	if {[string equal unchanged $density]} {
 	    continue
 	}
-	if {[string equal aqua [tk windowingsystem]]} {
+	if {[string equal dashed $density]} {
+	    $w itemconfigure $object -dash {-}
+	} elseif {[string equal aqua [tk windowingsystem]]} {
 # stippling doesn't work, and crashes PostScript generation, so dash instead
 	    if {[lsearch {line rectangle arc polygon} [$w type $object]]>-1} {
 		if {[llength $density]} {
@@ -842,9 +846,6 @@ proc StippleSymbol {w name density selected} {
 		}
 	    }
         }
-	if {[string equal dashed $density]} {
-	    $w itemconfigure $object -dash {-}
-	}
     }
 }
 
