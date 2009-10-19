@@ -421,12 +421,11 @@ prepare_equation(Ops) :-
 	safe_tcl_eval(['AttackGlobalVariable equation (fnDefs)', BrOps], _).
 
 create_equation(Win, Use, Caption, Indices, ETs) :-
-	name(Caption, CaptStr),
-	argify(CaptStr, CaptArg),
+	safe_list(Caption, CaptArg),
 	safe_list(Indices, BrIndices),
-	all(output, safe_list, [build(ETs), build(EnumLists)]),
-	safe_tcl_eval(['create_equation', Win, br(write(Use)), chars(CaptArg),
-			BrIndices, br(EnumLists)], _).
+	safe_list(ETs, EnumLists),
+	safe_tcl_eval(['create_equation', Win, br(write(Use)), CaptArg,
+			BrIndices, EnumLists], _).
 /*
 fill_equation(Cur_eqn, Cur_units, MultList, IsParam, List, TableData,
 	      Desc, Comment, Min, Max) :-
@@ -441,15 +440,9 @@ fill_equation(Cur_eqn, Cur_units, MultList, IsParam, List, TableData,
 */
 fill_equation(BadCurEqn, CurUnits, MultList, IsParam, BadDesc, BadCmt,
 	      Min, Max) :-
-	sicstus_write_to_chars(BadCurEqn, BadCurEqnStr),
-	sicstus_write_to_chars(CurUnits, BadCurUnitStr),
-%	escape_curlies(BadCurEqnStr, CurEqnStr),
-	argify(BadCurEqnStr, CurEqnStr),
-	argify(BadCurUnitStr, CurUnitStr),
-	safe_list([BadDesc, BadCmt], br([D, C])),
-	safe_list(MultList, M),
-	safe_tcl_eval(['fill_equation',
-		       chars(CurEqnStr), chars(CurUnitStr), M,
+	safe_list([BadCurEqn, CurUnits, BadDesc, MultList, BadCmt],
+		  br([E, U, D, M, C])),
+	safe_tcl_eval(['fill_equation', E, U, M,
 		       br(write(IsParam)), D, C,
 		       br(write(Min)), br(write(Max))], _).
 
@@ -533,10 +526,10 @@ tk_do_disag_dialog(Win, Caption,
 %	all(utility, wrap, [build(LibList), unify(write), build(Libs)]),
 	bracketize(LibList, Libs),
 % Q&D fix for bad enum type chars
-	all(output, safe_list, [build(EnumSpecs), build(EnumLists)]),
+	safe_list(EnumSpecs, EnumLists),
 	safe_tcl_eval(['Disaggregate', Win, chars(CaptArg), Colour, Image,
 		       ImgPos, Type, Fatness, Count, Step, br(write(Desc)),
-		       br(write(Comment)), br(EnumLists),
+		       br(write(Comment)), EnumLists,
 		       br(write(Proc)), br(write(Inc)), Libs | Choices],
 		      New_P_string),
 	chop_list(New_P_string, ResultListN),
@@ -548,12 +541,13 @@ tk_do_disag_dialog(Win, Caption,
 	    append(ResultList0, [LibFileList, EnumTypes], ResultList);
 	ResultList = []).
 
-safe_list(BadList, br(GoodList)) :-
-	 all(output, safe_arg, [build(BadList), build(GoodList)]).
-
-safe_arg(BadAtom, chars(GoodArg)) :-
-	name(BadAtom, String),
-	argify(String, GoodArg).
+safe_list(Bad, Good) :-
+	(Bad = []; Bad = [_|_]), !,
+	    all(output, safe_list, [build(Bad), build(IndGoods)]),
+	    Good = br(IndGoods);
+	  sicstus_write_to_chars(Bad, BadChars),
+	    argify(BadChars, GoodChars),
+	    Good = chars(GoodChars).
 
 tk_do_relation_dialog(Win, Caption, Type, State, OldComment,
 		      OKd, NewState, NewComment) :-

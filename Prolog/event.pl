@@ -83,10 +83,9 @@ build_suffix([H | T], Suffix) :-
 	    append(H, Tail, Suffix);
 	append([H, " ", Tail], Suffix)).
 
-%get_info(_Wid, Node, enum_type_defns, ETDefns) :-
-%	m_update:enum_types_for(Node, Specs),
-%	output:sub_bracketize(Specs, ETDefns).
-%
+get_info(_Wid, Node, enum_type_defns, ETDefns) :-
+	m_update:get_all_enum_types(Node, ETDefns).
+
 get_info(_Wid, selection, Dir, Ends) :-
 	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = '').
 	

@@ -260,12 +260,36 @@ proc ClickObj { x y winId X Y action} {
                 set equationbar($winid,node) $node
                 set equationbar($winid,initText) [BlankCrs $oldEqn]
                 set equationbar(current_action) null
+# now add relevant enumerated types to menu
+		set enumTypes \
+		    [GetFromProlog tk_get_info('$winId',$node,enum_type_defns)]
+		set lname $bar.function.menu.enumtypes
+# empty previous ones
+		while {![string equal none [$lname index end]]} {
+		    destroy [$lname entrycget end -menu]
+		    $lname delete end
+		}
+		foreach enumType [linsert $enumTypes 0 \
+				      [list boolean false true]] {
+		    set type [lindex $enumType 0]
+		    set kname $lname.mn[join $type _]
+		    menu $kname -tearoff 0
+		    $lname add cascade -menu $kname -label $type
+		    foreach member [lrange $enumType 1 end] {
+			$kname add command -label $member \
+			    -command [list InsertQuoted $bar.equation $member]
+		    }
+		}
                 SetEqnButtonState $bar normal
                 restore_equation $winid $bar
             }
         }
         ### End equation bar
     }
+}
+
+proc InsertQuoted {field string} {
+    $field insert [$field index insert] \"$string\"
 }
 
 # make sure modeller really wanted to discard any previous edit
@@ -1756,6 +1780,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
                     -command [list InsertFunction $eb.equation $component]
                 }
             }
+    set lname [menu $m.enumtypes -tearoff 0]
+    $m add cascade -menu $lname -label {Enum. type constants}
     
     
     #    set useFunctions [lrange $equation(fnDefs) 0 9]

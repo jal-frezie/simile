@@ -38,13 +38,8 @@ tk_redo(Cur, Wids) :-
 
 tk_get_info(Wid, Comp, What) :-
 	get_info(Wid, Comp, What, Answer),
-	(Answer = [_|_], !, % list -- convert to tcl one
-	    all(draw, append_callback, [build(Answer)]);
-	Answer = [], !,
-	    draw:callback(br(''));
- 	sicstus_write_to_chars(Answer, AnsStr),
- 	    text:argify(AnsStr, ArgStr),
- 	    draw:callback(chars(ArgStr))).
+	output:safe_list(Answer, Arg),
+	draw:callback(Arg).
 
 tk_get_params(Wid, Comp) :-
 	get_params(Wid, Comp).
