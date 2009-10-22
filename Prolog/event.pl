@@ -83,8 +83,9 @@ build_suffix([H | T], Suffix) :-
 	    append(H, Tail, Suffix);
 	append([H, " ", Tail], Suffix)).
 
-get_info(_Wid, Node, enum_type_defns, ETDefns) :-
-	m_update:get_all_enum_types(Node, ETDefns).
+get_info(_Wid, Comp, enum_type_defns, ETDefns) :-
+	find_all_comps(Sub, Comp),
+	m_update:get_all_enum_types(Sub, ETDefns).
 
 get_info(_Wid, selection, Dir, Ends) :-
 	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = '').
@@ -1611,7 +1612,7 @@ get_nearest_equivalent_link(Ltype, OrigStart, Target, Start) :-
 		Btype = Ltype, % d_s_f can agree wrongly to ground type
 		appears(Start),
 		can_start(influence, Start),
-		% can_finish(influence, Start, Target), -- entry was u-turn
+		can_finish(influence, Start, Target), % entry was u-turn
 		!;
 	Start = OrigStart.
 

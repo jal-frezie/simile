@@ -1443,6 +1443,11 @@ proc LoadFile {topNode tree tgt} {
 			    set CodeChecked yes
                         }
 			SaveMimeBit $boddledy $tree$oldPath
+		    } "Simile helper configuration file" {
+# as of 5.6 these are no longer included in the .sml file for reasons of
+# consistency, so this is an earlier saved model. Attempt to copy the .shf
+# relative to saved model file so it will open.
+			SaveMimeBit $boddledy [file dirname $tgt]$oldPath
                     } default {
 			# If no auth code, do not keep executable, but
 			# dont crash either -- could be innocent
