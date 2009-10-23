@@ -1050,21 +1050,12 @@ nodes.
 				[culled(Name), on_reset | Creators], Path, 0,
 				[init_mems(Ptr, Name, create(Creators))])],
 	    % create in step 0 as membership may have changed during run
-	    (setof(make(bred(Name,InitSpec), [culled(Name), time], Path,
-			Step, [reproduce(Ptr, Name, InitSpec)]),
-		   S^X^U^member(instance(reproduction, S,X,
-					 elt(_, InitSpec, _), U),
-				Functions),
+	    (setof(ReproRule, maker_for(SmName, Functions, Name, Path, Step,
+					Ptr, reproduction, ReproRule),
 		   ReproRules), !; 
-		ReproRules = []),
-	    
-	    (setof(make(settled(Name,InitSpec),
-			[culled(Name), time, InitSpec], Path, Step,
-			[new_member(Ptr, Name, immigrate(InitSpec))]),
-		   InitName^X^U^(SmName has_part InitName,
-				 member(instance(immigration, InitName, X,
-						 elt(_, InitSpec, _), U),
-					ParentFns)),
+		ReproRules = []),	    
+	    (setof(ImRule, maker_for(SmName, ParentFns, Name, Path, Step,
+				     Ptr, immigration, ImRule),
 		   ImmigRules), !; 
 		ImmigRules = []),
 	    all(compile, unfinished_in,
@@ -1159,6 +1150,16 @@ nodes.
 	ExtIncludes = SubIncludes,
 	    append(Specials, AssignList0, AssignList)),
 	append(FnInters, SmInters, Inters).
+
+maker_for(SmName, Fns, Name, Path, Step, Ptr, Channel,
+	  make(Effect, [culled(Name), time | XConds], Path, Step, [Action])) :-
+	member([Channel, EffectFr, ActFr, XConds],
+	       [[immigration, settled, new_member, [InitSpec]],
+		[reproduction, bred, reproduce, []]]),
+	Effect =.. [EffectFr, Name, InitSpec],
+	Action =.. [ActFr, Ptr, Name, InitSpec],
+	SmName has_part InitName,
+	member(instance(Channel, InitName, _X, elt(_, InitSpec, _), _U), Fns).
 
 list_params_from(BaseStr, N, Assigns, List) :-
 	sicstus_write_to_chars(N, NStr),
