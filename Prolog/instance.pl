@@ -448,9 +448,12 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % list of name-node pairs, and reconstructs the resulting expression. Only they
 % are little lists not atoms now.
 
+% for the channel functions we want to use the visible component; dies_of and
+% remainder just return its value, while channel_is keeps the function as it is
+% later processed into a comparison with an index saved in the individual.
 process_expr(sub(InputPairs, Refs), OldVar, NewVar, Recurse) :-
 	member(OldVar-RefNode, [dies_of(Var)-VisNode, remainder(Var)-VisNode,
-			       Var-Node]), 
+			       chnl(Var)-VisNode, Var-Node]), 
 	m_update:get_solo_list_depth(Var, _),
 	(member(input_pair(Var, Node, OutVar, NewVar), InputPairs),
 	    get_host(Node, VisNode),
@@ -458,7 +461,9 @@ process_expr(sub(InputPairs, Refs), OldVar, NewVar, Recurse) :-
 	    member(Ref, Refs), !;
 	NewVar = Var),
 	    Recurse = 0;
-	build_table_ref(table_const(1), OldVar, NewVar),
+	(build_table_ref(table_const(1), OldVar, NewVar);
+	  OldVar = channel_is(Ch), atom(Ch),
+	    NewVar = channel_is(chnl(Ch))),
 	    Recurse = 1.
 
 build_table_ref(Table, table, Table).
