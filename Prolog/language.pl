@@ -469,7 +469,7 @@ submodel instances where these can't always be done at init time, I leave an
 initialized when their parents are, this causes the tests to be done and the
 inits to be included. */
 
-do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
+do_assignment(L, [new_member(ParentPtr, Name, InitVar) | Clauses],
 	      Indent, Used, Stream) :-
 	Indent1 is Indent + 4,
 
@@ -480,7 +480,6 @@ do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
 	make_struct_reference(L, ParentPtr, Count, Index), 
 	refer_value(L, Index, RefIndex),
 
-	NewSpec =.. [_, InitVar],
 	UseElementRef = RefIndex,
 	make_struct_reference(L, ParentPtr, InitVar, CompVal),
 	refer_value(L, CompVal, CompValRef),
