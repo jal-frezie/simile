@@ -111,7 +111,6 @@ int bnldev (double pp, int n) {
     return n-bnl;
   }
 }
-
 This is a utility for delay functions that write an array, wrapping around
 when they reach the end. To find out if a particular element in the array is to
 be written, work out whether it is between the lower and higher values, or 
@@ -191,8 +190,8 @@ binome(double p, int n)
   register unsigned long i, a, b, k = 0;
   register double x, x1, x2;
   /* check for parameters out of range */
-  if (p<0 || p>1) stop(51);
-  else if (n<0) stop(52);
+  if (p<0 || p>1) return stop(51);
+  if (n<0) return stop(52);
 
   while (n > 20) {		/* tunable parameter; make member? */
     a = 1 + (n / 2);

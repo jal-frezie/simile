@@ -87,6 +87,10 @@ get_info(_Wid, Comp, enum_type_defns, ETDefns) :-
 	find_all_comps(Sub, Comp),
 	m_update:get_all_enum_types(Sub, ETDefns).
 
+get_info(_Wid, Comp, colour, ColorSpec) :-
+	get_av_pair(Comp, 0, fill_colour, ColorSpec), !;
+	ColorSpec = white.
+
 get_info(_Wid, selection, Dir, Ends) :-
 	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = '').
 	
@@ -143,7 +147,7 @@ get_info(_, Comp, comment, Pop) :-
 	    find_name_host(Comp, Func);
 	 find_type(Comp, flow), !,
 	    bowtie_section(Comp, Func);
-	Comp = Func),
+	find_base(Comp, Func)),
 	(get_av_pair(Func, _, comment, Cmt), !;
 	Cmt = 'no comment'),
 	(get_av_pair(Func, _, description, Desc),

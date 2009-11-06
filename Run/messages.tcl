@@ -114,6 +114,7 @@ set msgs(compChoice) "Default is gcc/g++ included in Simile distribution. Others
 set msgs(compDescPop) "Enable popups for component's equation when pointer hovers on component."
 set msgs(compValPop) "Enable popups for component's current value(s) or instance indices when pointer hovers on component."
 set msgs(compCmtPop) "Enable popups for component's description and comment text when pointer hovers on component."
+set msgs(ncfv) "No comment for value"
 set msgs(recentCount) "Save names of recently opened models for display on the File menu."
 set msgs(saveExtras) "Save the canvas file to reduce the time initially taken to draw the model diagram."
 set msgs(flowRouting) "Draw flows as a series of horizontal or vertical segments."

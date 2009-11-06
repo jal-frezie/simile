@@ -16,8 +16,9 @@ if {[string match windows $tcl_platform(platform)]} {
 set ::SimileAutoObjLoaded true; # used so .register (welcome) dialog not produced
 set env(LD_LIBRARY_PATH) "[file dirname [info script]]/../../../System/lib"
 if {![info exists window_info]} {
-    set argc 0; # simile.tcl expects to be called from the command line - tell it no args
-    set argv {}
+    set argc 1; # simile.tcl expects to be called from the command line -- 
+# the '-stealth' arg allows other instances of Simile to run independently
+    set argv {-stealth}
     source "[file dirname [info script]]/../../../Run/simile.tcl"
     
     rename exit ::renamed::exit

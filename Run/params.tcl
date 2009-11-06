@@ -166,12 +166,16 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     pack [set slot [frame [MakeSubFrames $topNode \
 			       $winId.c.canvas.frame $levels \
 			       fileparams 0]]] -fill x -expand on
-    pack [label $slot.l1 -text [lindex $levels end] -fg red -width 12] \
-	-side left
+    set lbg [[winfo parent $slot].head cget -bg]
+    pack [label $slot.l1 -text [lindex $levels end] -fg red \
+	      -width 12] -side left
 #    pack [label $slot.l2 -text ($dimList) -fg red] -side left
     set msgs(dim_list_$compName) $dimList
     if {![info exists msgs(param_source_$compName)]} {
         set msgs(param_source_$compName) Unsaved
+    }
+    if {![info exists msgs(comment_$compName)]} {
+        set msgs(comment_$compName) $msgs(ncfv)
     }
     #Show description and comments
     # Look at the code that gets the information for the variable's
@@ -192,7 +196,7 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     #       pack [entry $slot.e -textvariable paramData($compName)]
     # Using entries played merry hell with very long arrays -- texts work better
     pack [::ttk::entry $slot.e -width 1] -side left -fill x -expand on
-    BindPopup $slot.e param_source_$compName
+    BindPopup $slot.e param_source_$compName comment_$compName
     bind $slot.e <Return> [list $slot.tick invoke]
     if {[info exists suppliedData($compName)]} {
         FillIfSmall $slot.e $suppliedData($compName)
@@ -206,9 +210,10 @@ proc AddEntry {winId topNode node mustShow notInput args} {
 						$compName $notInput]]] \
 	    -side right
         BindPopup $slot.cross "Revert to old values"
-        pack [::ttk::button $slot.tick -style Toolbutton -image $iconImages(tick) \
-                -command [namespace code [list AcceptData $topNode $compName \
-					      $notInput 1]]] -side right
+        pack [::ttk::button $slot.tick -style Toolbutton \
+		  -image $iconImages(tick) \
+		  -command [namespace code [list AcceptData $topNode $compName \
+						$notInput 1]]] -side right
         BindPopup $slot.tick "Accept these values"
     }
     set outNames($compName) $slot
@@ -280,6 +285,9 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
         return $parent.box$level
     } else {
         set nextLevel $parent.frame$level
+	if {!$pt} {
+	    set level "TOP LEVEL"
+	}
         if {![winfo exists $nextLevel]} {
 #            pack [ttk::labelframe $nextLevel -borderwidth 2 -relief sunken]
             frame $nextLevel -bd 2 -relief sunken
@@ -292,23 +300,30 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
 			  -image $iconImages(save) \
 			  -command [list ${ns}::Save $clientId $path]] \
 		    -side right
-		BindPopup $nextLevel.head.save "Save values for this submodel"
+		BindPopup $nextLevel.head.save "Save values for submodel \"$level\""
 		pack [::ttk::button $nextLevel.head.open -style Toolbutton \
 			  -image $iconImages(open) \
 			  -command [list ${ns}::Open $clientId $path]] \
 		    -side right
-		BindPopup $nextLevel.head.open "Load values for this submodel"
+		BindPopup $nextLevel.head.open "Load values for submodel \"$level\""
 	    }
             if {[string equal fileparams $ns]} {
                 pack [::ttk::button $nextLevel.head.clear -style Toolbutton -image $iconImages(new) \
                         -command [list ${ns}::Clear $clientId $path]] -side right
                 BindPopup $nextLevel.head.clear "Clear values in this submodel"
             }
-            if {!$pt} {
-                set level "TOP LEVEL"
-            }
             pack [label $nextLevel.head.label -text $level:]
 #	    $nextLevel configure -text $level: -labelanchor n
+
+#set bg colour from submodel: rejected because not all widgets can have their
+#colours set so it looks odd
+#	    set node [IdFromTail $::myNode $path 0]
+#	    set fColour [GetFromProlog tk_get_info(dummy,$node,colour)]
+#	    if {![string equal clear $fColour]} {
+#		$nextLevel configure -bg $fColour
+#		$nextLevel.head configure -bg $fColour
+#		$nextLevel.head.label configure -bg $fColour
+#	    }
         }
         return [MakeSubFrames $clientId $nextLevel $hierarchy $ns $nextPt]
     }
@@ -997,11 +1012,16 @@ namespace eval fileparams {
 	    set nodeDims [lrange [GetCompProperty $topNode Dims $nodeId] \
 			      0 end-1]
 	    set recordLevel [lsearch $nodeDims RECORDS]
+	    set genericAVs label=$subbedComp
+	    if {![string equal $msgs(ncfv) $msgs(comment_$compName)]} {
+		append genericAVs { } \
+		    comment=[Entitize [StripCrs $msgs(comment_$compName)]]
+	    }
 	    if {[DataInScenario $compName] && \
 		    ($haveBytes || $recordLevel==-1)} {
 		set type [GetCompProperty $topNode Type $nodeId]
 		puts -nonewline $pStr \
-		    "$indent<byte_array label=$subbedComp type=[Entitize $type]"
+		    "$indent<byte_array $genericAVs type=[Entitize $type]"
 		set inC [RunningInC $topNode]
 		if {[set wrapTime [SetWrapTime $inC $nodeId]]} {
 		    puts -nonewline $pStr " wrap_time=[Entitize $wrapTime]"
@@ -1039,26 +1059,26 @@ namespace eval fileparams {
 				 [lindex $paramState($compName) 0]]
 		switch -exact [lindex $paramState($compName) 1] {
 		    ,image {
-			puts -nonewline $pStr "$indent<image label=$subbedComp filename=[Entitize $relName]"
+			puts -nonewline $pStr "$indent<image $genericAVs filename=[Entitize $relName]"
 			foreach att {rowmin rowmax colmin colmax blackval whiteval transpval use xpose} val [lrange $paramState($compName) 2 10] {
 			    puts -nonewline $pStr " $att=[Entitize $val]"
 			}
 			puts $pStr />
 		    } ,gdal {
-			puts -nonewline $pStr "$indent<geotiff label=$subbedComp filename=[Entitize $relName]"
+			puts -nonewline $pStr "$indent<geotiff $genericAVs filename=[Entitize $relName]"
 			foreach att {rowmin rowmax colmin colmax xpose} val [lrange $paramState($compName) 2 6] {
 			    puts -nonewline $pStr " $att=[Entitize $val]"
 			}
 			puts $pStr />
 		    } ,grid {
-			puts -nonewline $pStr "$indent<csv_grid label=$subbedComp filename=[Entitize $relName]"
+			puts -nonewline $pStr "$indent<csv_grid $genericAVs filename=[Entitize $relName]"
 			foreach val [lrange $paramState($compName) 2 8] \
 			    att {rowmin rowmax colmin colmax xpose irow icol} {
 				puts -nonewline $pStr " $att=[Entitize $val]"
 			    }
 			puts $pStr />
 		    } default {
-			puts $pStr "$indent<csv_columns label=$subbedComp filename=[Entitize $relName] data_column=[Entitize [lindex $paramState($compName) 1]]>"
+			puts $pStr "$indent<csv_columns $genericAVs filename=[Entitize $relName] data_column=[Entitize [lindex $paramState($compName) 1]]>"
 			set dimCount 0
 			foreach dim [lrange $paramState($compName) 2 end] {
 			    puts $pStr "$indent<value index=\"[incr dimCount]\" val=[Entitize $dim]/>"
@@ -1069,9 +1089,9 @@ namespace eval fileparams {
 		set msgs(param_source_$compName) \
 		    [concat $newPopup (reference to $relName)]
 	    } elseif {[llength $outData($compName)]==1} {
-		puts $pStr "$indent<single_value label=$subbedComp val=[Entitize $outData($compName)]/>"
+		puts $pStr "$indent<single_value $genericAVs val=[Entitize $outData($compName)]/>"
 	    } else {
-		puts $pStr "$indent<multi_value label=$subbedComp>"
+		puts $pStr "$indent<multi_value $genericAVs>"
 		WriteLiteralParam $pStr $outData($compName) "  $indent"
 		#		    puts $pStr "<literal label=\"$SubbedComp\" \
 		    #				    spec=\"$outData($compName)\"/>"
@@ -1188,13 +1208,19 @@ proc StartElement {name attList args} {
     set attVals(xpose) 0 ;# in case older spf does not include it
     set attVals(irow) [set attVals(icol) position_in_data_area] ;# ditto
     array set attVals $attList
+    if {[info exists attVals(label)]} {
+	set path $parseStatus(submodel)/$attVals(label)
+	if {[info exists attVals(comment)]} {
+	    set ::msgs(comment_$parseStatus(smPath)$path) \
+		[RestoreCrs $attVals(comment)]
+	}
+    }
     switch $name {
 	submodel {
 	    if {[string equal top $attVals(label)]} return;
 	    append parseStatus(submodel) /$attVals(label)
 	} single_value {
-	    puts $parseStatus(outStr) \
-		$parseStatus(submodel)/$attVals(label)=literal=$attVals(val)
+	    puts $parseStatus(outStr) $path=literal=$attVals(val)
 	} multi_value {
 	    set parseStatus(literal,0) $attVals(label)
 	    set parseStatus(literal,1) {}
@@ -1211,16 +1237,15 @@ proc StartElement {name attList args} {
 		    $attVals(index) [EnquoteIfNotElement $attVals(value)]
 	    }
 	} csv_columns {
-	    puts -nonewline $parseStatus(outStr) \
-		$parseStatus(submodel)/$attVals(label)=reference=
+	    puts -nonewline $parseStatus(outStr) $path=reference=
 	    set parseStatus(translateExtras) \
 		[list $attVals(filename) $attVals(data_column)]
 	} csv_grid {
-	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose) $attVals(irow) $attVals(icol)]
+	    puts $parseStatus(outStr) $path=reference=[list $attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose) $attVals(irow) $attVals(icol)]
 	} image {
-	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,image $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(blackval) $attVals(whiteval) $attVals(transpval) $attVals(use) $attVals(xpose)]
+	    puts $parseStatus(outStr) $path=reference=[list $attVals(filename) ,image $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(blackval) $attVals(whiteval) $attVals(transpval) $attVals(use) $attVals(xpose)]
 	} geotiff {
-	    puts $parseStatus(outStr) $parseStatus(submodel)/$attVals(label)=reference=[list $attVals(filename) ,gdal $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose)]
+	    puts $parseStatus(outStr) $path=reference=[list $attVals(filename) ,gdal $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose)]
 	} byte_array {
 	    set parseStatus(loadByteArray) $attVals(label) 
 	    set parseStatus(translateExtras) $attVals(type)
@@ -1641,6 +1666,9 @@ proc GetFromTable {parent topNode compName startLine} {
         set table_entry(values) $suppliedData($compName)
     }
     set table_entry(bytes) [DataInScenario $compName]
+    if {![string equal $msgs(ncfv) $msgs(comment_$compName)]} {
+	set table_entry(comment) $msgs(comment_$compName)
+    }
 # trim off model name from caption cos it is ugly
     set tablCapt [string range $compName [string first / $compName 1] end]
     set newSource [equationDoTable [winfo toplevel $parent] $topNode $tablCapt \
@@ -1651,7 +1679,7 @@ proc GetFromTable {parent topNode compName startLine} {
     if {$startLine==-1} {
 	grab release [winfo toplevel $parent]
     }
-    if {$newSource} {
+    if {$newSource>0} {
         set suppliedData($compName) $table_entry(values)
 	set whichParamsAffected($compName) 1
         FillIfSmall $outNames($compName).e $suppliedData($compName)
@@ -1666,6 +1694,12 @@ proc GetFromTable {parent topNode compName startLine} {
         }
 	if {$table_entry(bytes)} {
 	    append msgs(param_source_$compName) " -- keep data in scenario file"
+	}
+    }
+    if {$newSource} {
+	set msgs(comment_$compName) $msgs(ncfv)
+	if {[string length $table_entry(comment)]} {
+	    set msgs(comment_$compName) $table_entry(comment)
 	}
     }
 }

@@ -26,20 +26,49 @@ function(simile_mod, real, [real, real]).
 %Legacy -- needed idler variable trig
 gaussian(Trig, Mean, SD) --> gaussian_var(Mean, SD).
 
+%Hack to allow 3 EM wards th MRSA model:
+dual_hypergeom(pop, mark, samples) -->
+	all1=element(samples,1),
+	to1=hypergeom_equiv(pop,mark,all1),
+	[to1, hypergeom(pop-all1,mark-to1,element(samples,2))].
+
+poly_hypergeom(pop, mark, samples) -->
+	[all]=makearray(if place_in(1)==1 then pop 
+		       else element(sofar([all])-samples,place_in(1)-1),
+		count(samples)),
+	[result]=([marks]=makearray(if place_in(1)==1 then mark
+			 else element(sofar([marks])-sofar([result]),
+				      place_in(1)-1),
+		    count(samples)),
+		  hypergeom([all],[marks],samples)),
+	[result].
+
 /* FUNCTIONS WHOSE DEFINITION SETS STATISTICAL MODEL BEHAVIOUR
 Use these definitions for DETERMINISTIC:
 binome_equiv(Prob, Num) --> Prob*Num.
 
 hypergeom_equiv(Pop, Seln1, Seln2) -->
-	if Pop==0 then 0 else Seln1*Seln2/Pop. */
+	if Pop==0 then 0 else Seln1*Seln2/Pop.
 
+poly_hypergeom_equiv(Pop, Mark, Samples) -->
+	if Pop==0 then 0 else Mark*Samples/Pop.
+*/
 /* Use these definitions for STOCHASTIC: */
 binome_equiv(Prob, Num) --> binome(Prob, int(Num)).
 
 hypergeom_equiv(Pop, Seln1, Seln2) -->
 	hypergeom(int(Pop), int(Seln1), int(Seln2)).
 
-/* Definitions for INTEGER-DETERMINISTIC need to hold state, so
-/* currently need separate macro definition for each argument
-/* dimensionality. Model should really process them in submodels
-/* rather than as array components... */
+poly_hypergeom_equiv(Pop, Mark, Samples) -->
+	poly_hypergeom(int(Pop), int(Mark), int(Samples)).
+/*
+Definitions for INTEGER-DETERMINISTIC need to hold state, so
+currently need separate macro definition for each argument
+dimensionality. Model should really process them in submodels
+rather than as array components... */
+
+% subtotals over 1-d arrays
+subtotals1(Arr) --> [[st]]=makearray((if first(place_in(1)) then 0 else
+    element(sofar([[st]]),preceding(place_in(1))))+element(Arr,place_in(1)),
+    count(Arr)),[[st]].
+

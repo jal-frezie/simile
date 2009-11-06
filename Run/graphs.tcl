@@ -559,17 +559,18 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     PutItThere .table $parent
     wm title .table "Table data for [BlankCrs "$tgt $dims"]"
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
-    set table_entry(source) 0
+    set table_entry(source) -1
     
     set t [::ttk::notebook .table.notebook]
     $t add [set fc [frame $t.columns]] -text "Data in column"
     # Data file and data column heading
-    label $fc.instructions -wrap 400 -text "Choose a data file, select a worksheet if mecessary, then create table from file by dragging \
+    label $fc.instructions -wrap 400 -text "Choose a data file, select a worksheet if necessary, then create table from file by dragging \
             column headings to act either as indices or as data."
     pack $fc.instructions -side top -anchor w -padx 2 -pady 2
     TitleFrame $fc.fdata -text "Data file "
     set fdata [GetFrame $fc.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
+    $dfile xview end
     bind $dfile <Return> "LoadDataFile columns 0 $mdl"
     bind $dfile <Double-1> "LoadDataFile columns 0 $mdl"
     pack $dfile -side left -expand true -fill x
@@ -625,6 +626,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     TitleFrame $fg.fdata -text "Data file "
     set fdata [GetFrame $fg.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
+    $dfile xview end
     bind $dfile <Return> "LoadDataFile grid 0 $mdl"
     bind $dfile <Double-1> "LoadDataFile grid 0 $mdl"
     pack $dfile -side left -expand true -fill x
@@ -687,6 +689,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     TitleFrame $fi.fdata -text "Image file "
     set fdata [GetFrame $fi.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
+    $dfile xview end
     bind $dfile <Return> "LoadDataFile image 0 $mdl"
     bind $dfile <Double-1> "LoadDataFile image 0 $mdl"
     pack $dfile -side left -expand true -fill x
@@ -758,6 +761,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     TitleFrame $ft.fdata -text "Data file "
     set fdata [GetFrame $ft.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
+    $dfile xview end
     bind $dfile <Return> "LoadDataFile gdal 0 $mdl"
     bind $dfile <Double-1> "LoadDataFile gdal 0 $mdl"
     pack $dfile -side left -expand true -fill x
@@ -869,6 +873,13 @@ proc equationDoTable {parent mdl tgt dims startLine} {
         pack [checkbutton .table.fbuttons.keepvals -var table_entry(bytes) \
                 -text "Include values\nin scenario files" \
                 -command "set table_entry(source) 1"] -padx 4 -pady 4
+# comments section : new for 5.6
+	pack [text .table.commentt -height 4] -side bottom -fill x -expand 1
+	if {[info exists table_entry(comment)]} {
+	    .table.commentt insert end $table_entry(comment)
+	}
+	label .table.commentl -text "Comments regarding values:"
+	pack .table.commentl -side bottom
     }
     
     button .table.fbuttons.load -text Reload -width 10 \
@@ -889,7 +900,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack .table.fbuttons -side right  -anchor e
     pack $t -side left -expand true -fill both
     #
-    
+
     set t .table
     LetItShow .table
     if {[llength $table_entry(data)]} {
@@ -1014,6 +1025,7 @@ proc DoneTableData {startLine} {
                 !$table_entry(source)} {
         set table_entry(source) 0.5
     }
+    set table_entry(comment) [string trimright [.table.commentt get 1.0 end]]
     set table_entry(done) $table_entry(source)
 }
 
@@ -1169,6 +1181,7 @@ proc LoadDataFile {mode query mdl} {
             return 0
         }
     }
+    [GetFrame .table.notebook.$mode.fdata].dfile xview end
     
     if {[string equal gdal $mode]} {
         close $stream
