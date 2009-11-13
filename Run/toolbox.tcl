@@ -1093,6 +1093,7 @@ proc ControlDraw {prologVersion} {
     set cache [file join $custom(prefDir) .recent]
     if {[file exists $cache]} {
         set cacheStream [NetOpen $cache r]
+	fconfigure $cacheStream -encoding utf-8
         while {[gets $cacheStream oldFile]>0} {
             if {[file exists $oldFile] && \
                         [lsearch $custom(hotlist) $oldFile]==-1} {

@@ -709,7 +709,7 @@ proc AddGrid {c onCol wl wt wr wb} {
 }
 
 # following is pulled from tclers wiki
-    proc Gradient {rgb {window .}} {
+proc Gradient {rgb {window .} {swing 0}} {
 
         foreach {r g b} [winfo rgb $window $rgb] {break}
 
@@ -726,7 +726,10 @@ proc AddGrid {c onCol wl wt wr wb} {
         ### Compute new red value by incrementing the existing
         ### value by a value that gets it closer to either 0 (black)
         ### or $max (white)
-	set factor [expr {-[PrefValue custom(gridD) gridD]/100.0}]
+	if {$swing==0} {
+	    set swing [PrefValue custom(gridD) gridD]
+	}
+	set factor [expr {-$swing/100.0}]
         set range [expr {$factor >= 0.0 ? $max - $r : $r}]
         set increment [expr {int($range * $factor)}]
         incr r $increment
@@ -2246,6 +2249,7 @@ proc exit_simile {} {
     
     set cache [file join $custom(prefDir) .recent]
     set cacheStream [NetOpen $cache w]
+    fconfigure $cacheStream -encoding utf-8
     foreach oldFile $custom(hotlist) {
         puts $cacheStream $oldFile
     }

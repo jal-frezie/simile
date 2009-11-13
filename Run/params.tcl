@@ -166,16 +166,17 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     set topFrame $winId.c.canvas.frame
     set slot [frame [MakeSubFrames $topNode $topFrame $levels fileparams 0]]
     set holder [winfo parent $slot]
+# holder always contains header frame, which is packed at top
     foreach fellow [pack slaves $holder] {
 	if {[string compare -nocase $fellow $slot]<0} {
 	    break
 	}
     }
-# holder always contains header frame, which is packed at top
-    pack $slot -before $fellow -side bottom -fill x -expand on
+    set lbg [$holder.head cget -bg]
+    $slot configure -bg $lbg
 
-    set lbg [[winfo parent $slot].head cget -bg]
-    pack [label $slot.l1 -text [lindex $levels end] -fg red \
+    pack $slot -before $fellow -side bottom -fill x -expand on
+    pack [label $slot.l1 -text [lindex $levels end] -fg red -bg $lbg \
 	      -width 12] -side left
 #    pack [label $slot.l2 -text ($dimList) -fg red] -side left
     set msgs(dim_list_$compName) $dimList
@@ -194,7 +195,7 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     BindPopup $slot.l1 "[lindex $levels end] ($dimList)" $comment
 #    BindPopup $slot.l2 "$comment"
             
-    ::ttk::button $slot.b -style Toolbutton -image $iconImages(edit) \
+    ::ttk::button $slot.b -style style$holder -image $iconImages(edit) \
        -command [namespace code [list GetFromTable $winId $topNode \
 				     $compName $notInput]]
     BindPopup $slot.b "Get values from file"
@@ -213,13 +214,13 @@ proc AddEntry {winId topNode node mustShow notInput args} {
         set suppliedData($compName) {}
     }
     if {[string match normal [$slot.e cget -state]]} {
-        pack [::ttk::button $slot.cross -style Toolbutton \
+        pack [::ttk::button $slot.cross -style style$holder \
 		  -image $iconImages(cross) \
 		  -command [namespace code [list RevertData $winId \
 						$compName $notInput]]] \
 	    -side right
         BindPopup $slot.cross "Revert to old values"
-        pack [::ttk::button $slot.tick -style Toolbutton \
+        pack [::ttk::button $slot.tick -style style$holder \
 		  -image $iconImages(tick) \
 		  -command [namespace code [list AcceptData $topNode $compName \
 						$notInput 1]]] -side right
@@ -329,38 +330,52 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
 		pack $nextLevel -side bottom \
 		    -fill x -expand true -padx 2 -pady 2
 	    }
+# now create a style for this level which we will use for the buttons
+# to set their background colour to that of the appropriate submodel
+	    set bStyle style$nextLevel
+	    eval [list ttk::style configure $bStyle] \
+		[ttk::style configure Toolbutton]
+	    eval [list ttk::style map $bStyle] [ttk::style map Toolbutton]
+	    ttk::style layout $bStyle [ttk::style layout Toolbutton]
+
             pack [frame $nextLevel.head] -fill x -expand true
             set path /[join [lrange $hierarchy 0 $pt] /]
             # added setting of SimileProject element to store spf path
 	    if {[llength $ns]} {
-		pack [::ttk::button $nextLevel.head.save -style Toolbutton \
+		pack [::ttk::button $nextLevel.head.save -style $bStyle \
 			  -image $iconImages(save) \
 			  -command [list ${ns}::Save $clientId $path]] \
 		    -side right
 		BindPopup $nextLevel.head.save "Save values for submodel \"$level\""
-		pack [::ttk::button $nextLevel.head.open -style Toolbutton \
+		pack [::ttk::button $nextLevel.head.open -style $bStyle \
 			  -image $iconImages(open) \
 			  -command [list ${ns}::Open $clientId $path]] \
 		    -side right
 		BindPopup $nextLevel.head.open "Load values for submodel \"$level\""
 	    }
             if {[string equal fileparams $ns]} {
-                pack [::ttk::button $nextLevel.head.clear -style Toolbutton -image $iconImages(new) \
-                        -command [list ${ns}::Clear $clientId $path]] -side right
+                pack [::ttk::button $nextLevel.head.clear -style $bStyle \
+			  -image $iconImages(new) \
+			  -command [list ${ns}::Clear $clientId $path]] \
+		    -side right
                 BindPopup $nextLevel.head.clear "Clear values in this submodel"
             }
             pack [label $nextLevel.head.label -text $level:]
 #	    $nextLevel configure -text $level: -labelanchor n
 
 #set bg colour from submodel: rejected because not all widgets can have their
-#colours set so it looks odd
-#	    set node [IdFromTail $::myNode $path 0]
-#	    set fColour [GetFromProlog tk_get_info(dummy,$node,colour)]
-#	    if {![string equal clear $fColour]} {
-#		$nextLevel configure -bg $fColour
-#		$nextLevel.head configure -bg $fColour
-#		$nextLevel.head.label configure -bg $fColour
-#	    }
+#colours set so it looks odd, but then I discovered ttk styles...
+
+	    set node [IdFromTail $::myNode $path 0]
+	    set fColour [GetFromProlog tk_get_info(dummy,$node,colour)]
+	    if {[lsearch {white clear} $fColour]<0} {
+		$nextLevel configure -bg $fColour
+		$nextLevel.head configure -bg $fColour
+		$nextLevel.head.label configure -bg $fColour
+		ttk::style map $bStyle -background \
+		    [list pressed [Gradient $fColour $nextLevel 15] \
+			 active [Gradient $fColour $nextLevel -75] {} $fColour]
+	    }
         }
         return [MakeSubFrames $clientId $nextLevel $hierarchy $ns $nextPt]
     }

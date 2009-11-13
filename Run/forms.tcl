@@ -839,7 +839,10 @@ proc RelationCheck {parent title type state init_comment} {
             set entries {"Exclusive role" exclusive \
                         "Allow base\ninstance lookup" can_lookup}
         set helpPage submodels/association/dialogue.htm
-        }
+        } default {
+	    set entries {}
+	    set helpPage index.htm
+	}
     }
     foreach {text attr} $entries {
         pack [checkbutton $f.$attr -text $text \
