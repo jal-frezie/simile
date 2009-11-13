@@ -163,9 +163,17 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     
     set dimList [MakeDimsLegible $nodeDims \
 		     [GetCompProperty $topNode Type $node]]
-    pack [set slot [frame [MakeSubFrames $topNode \
-			       $winId.c.canvas.frame $levels \
-			       fileparams 0]]] -fill x -expand on
+    set topFrame $winId.c.canvas.frame
+    set slot [frame [MakeSubFrames $topNode $topFrame $levels fileparams 0]]
+    set holder [winfo parent $slot]
+    foreach fellow [pack slaves $holder] {
+	if {[string compare -nocase $fellow $slot]<0} {
+	    break
+	}
+    }
+# holder always contains header frame, which is packed at top
+    pack $slot -before $fellow -side bottom -fill x -expand on
+
     set lbg [[winfo parent $slot].head cget -bg]
     pack [label $slot.l1 -text [lindex $levels end] -fg red \
 	      -width 12] -side left
@@ -198,6 +206,7 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     pack [::ttk::entry $slot.e -width 1] -side left -fill x -expand on
     BindPopup $slot.e param_source_$compName comment_$compName
     bind $slot.e <Return> [list $slot.tick invoke]
+    bind $slot.e <Double-1> [list EditValueComment $topFrame $compName]
     if {[info exists suppliedData($compName)]} {
         FillIfSmall $slot.e $suppliedData($compName)
     } else {
@@ -225,6 +234,24 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     } else {
         AcceptData $topNode $compName $notInput 0
     }
+}
+
+proc EditValueComment {topFrame compName} {
+    global msgs
+
+    set oldComment $msgs(comment_$compName)
+    if {[string equal $oldComment $msgs(ncfv)]} {
+	set oldComment {}
+    }
+    set roll [RelationCheck $topFrame "Comment for value for $compName" \
+		  param_value {} $oldComment]
+    if {[lindex $roll 0]} {
+	set oldComment [lindex $roll 1]
+    }
+    if {![string length $oldComment]} {
+	set oldComment $msgs(ncfv)
+    }
+    set msgs(comment_$compName) $oldComment
 }
 
 proc RemoveVMLevels {nodeDims} {
@@ -285,13 +312,24 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
         return $parent.box$level
     } else {
         set nextLevel $parent.frame$level
-	if {!$pt} {
-	    set level "TOP LEVEL"
-	}
         if {![winfo exists $nextLevel]} {
 #            pack [ttk::labelframe $nextLevel -borderwidth 2 -relief sunken]
             frame $nextLevel -bd 2 -relief sunken
-	    pack $nextLevel -fill x -expand true -padx 2 -pady 2 -side bottom
+	    if {$pt} {
+		foreach fellow [pack slaves $parent] {
+puts "string compare -nocase $fellow $nextLevel"
+		    if {[string compare -nocase $fellow $nextLevel]<0} {
+			break
+		    }
+		}
+# parent always contains header frame, which is packed at top
+		pack $nextLevel -before $fellow -side bottom \
+		    -fill x -expand true -padx 2 -pady 2
+	    } else {
+		set level "TOP LEVEL"
+		pack $nextLevel -side bottom \
+		    -fill x -expand true -padx 2 -pady 2
+	    }
             pack [frame $nextLevel.head] -fill x -expand true
             set path /[join [lrange $hierarchy 0 $pt] /]
             # added setting of SimileProject element to store spf path
