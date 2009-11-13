@@ -317,7 +317,6 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
             frame $nextLevel -bd 2 -relief sunken
 	    if {$pt} {
 		foreach fellow [pack slaves $parent] {
-puts "string compare -nocase $fellow $nextLevel"
 		    if {[string compare -nocase $fellow $nextLevel]<0} {
 			break
 		    }
