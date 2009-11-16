@@ -62,6 +62,7 @@ make_nice_error_message(ThrowUp, ErrorAtom) :-
 	make_nice_error_message("Unknown", ThrowUp, ErrorAtom).
 
 make_nice_error_message(Eat, ThrowUp, ErrorAtom) :-
+	read_from_codes([114,101,108,97,120,46], _Relax), % undo buggy effects
 	(ThrowUp = existence_error(_,_, Type, WhereLooked, _), !,
 	    sicstus_format_to_chars("This operation cannot proceed because the program failed to find a ~a called ~a", [Type, WhereLooked], Error);    
         (ThrowUp = syntax_error(_,_, Problem, Bits, Where), /* sicstus */
