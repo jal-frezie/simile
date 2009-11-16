@@ -265,7 +265,7 @@ open_native(FileTtfn, Mode, Stream) :-
 	open(FileNative, Mode, Stream).
 
 get_native(FileTtfn, FileNative) :-
-	output:safe_tcl_eval(['GetSystemChars', br(FileTtfn)], Bag),
+	output:safe_tcl_eval(['GetSystemName', br(FileTtfn)], Bag),
 	sicstus_read_from_chars(Bag, String),
 	name(FileNative, String).
 

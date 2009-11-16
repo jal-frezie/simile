@@ -536,6 +536,7 @@ any_distance([X, Y], Line, approach(D, [XC, YC], P)) :-
     XL is FX-SX,
     YL is FY-SY,
     H is sqrt(XL*XL + YL*YL),
+    H > 0, % null segments cause trouble, leave them out
     Off is ((X-SX)*YL-(Y-SY)*XL)/H,
     XC is (X-(Off*YL/H)),
     YC is (Y+(Off*XL/H)),

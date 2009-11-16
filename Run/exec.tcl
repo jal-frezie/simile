@@ -48,7 +48,7 @@ proc ex_load_dll {topNode lang progDir id node incs} {
             return 1 ;# works if no IdentField in interp
         }
     } else {
-	set progFile $progDir/model${id}[info sharedlibextension]
+	set progFile [file join $progDir model${id}[info sharedlibextension]]
 	if {![file exists $progFile]} {
 	    return 0
 	}

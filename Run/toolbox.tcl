@@ -594,7 +594,7 @@ proc LeaveHelpers {node} {
 }
 
 proc load_dll {topNode lang progDir id node incs} {
-    if {[catch {ex_load_dll $topNode $lang $progDir $id \
+    if {[catch {ex_load_dll $topNode $lang [GetUsableName $progDir] $id \
 		    $node $incs} new_model_id]} {
 	if {[PrefValue custom(hackBreak) hackBreak]} {
 	    Query [list new_exec_needed $new_model_id] info top {} {ok}
@@ -941,10 +941,11 @@ proc ControlDraw {prologVersion} {
     } else {
 	set clipSpc [file join $custom(prefDir) clipboard.pl]
 	if {[catch {file mkdir $custom(prefDir); \
-			prolog check_use('$clipSpc'); \
 			file delete $clipSpc} pWibble]} {
 	    set foldErr [list cannot_use_home $pWibble]
 	}
+# above used to include this but now we make sure Prolog can handle anything:
+#			prolog check_use('$clipSpc'); \
     }
     if {[info exists foldErr]} {
 	catch {wm withdraw .splash}
@@ -1692,6 +1693,20 @@ proc GetSystemChars {string} {
 	}
     }
     return \[[join $ulist ,]\].
+}
+
+proc GetUsableName {string} {
+    if {[string equal windows $::tcl_platform(platform)]} {
+	if {![file exists $string]} {
+	    close [open $string a] ;# create it empty
+	}
+	set string [file attributes $string -shortname]
+    }
+    return $string
+}
+
+proc GetSystemName {string} {
+    return [GetSystemChars [GetUsableName $string]]
 }
 
 # Path names derived from Windows environment variables must be
