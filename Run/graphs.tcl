@@ -1315,21 +1315,19 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
         set rowList {}
         set colList {}
 	set transpose [expr {[string equal 1 [lindex $tableSpec 6]]}]
-	set yflip [expr {[lindex $tableSpec 2]>[lindex $tableSpec 3]}]
-	set xflip [expr {[lindex $tableSpec 4]>[lindex $tableSpec 5]}]
-	if {$yflip} {
-	    set yfirst [lindex $tableSpec 3]
-	    set ylast [lindex $tableSpec 2]
-	} else {
-	    set yfirst [lindex $tableSpec 2]
-	    set ylast [lindex $tableSpec 3]
+	set rown 0
+	set coln 0
+	set stream [NetOpen [lindex $tableSpec 0] r]
+	while {[gets $stream firstLine]!=-1} {
+	    set acoln [llength [split $firstLine ,]]
+	    if {$acoln>$coln} {
+		set coln $acoln
+	    }
+	    incr rown
 	}
-	if {$xflip} {
-	    set xfirst [lindex $tableSpec 5]
-	    set xlast [lindex $tableSpec 4]
-	} else {
-	    set xfirst [lindex $tableSpec 4]
-	    set xlast [lindex $tableSpec 5]
+	close $stream
+	foreach {bd v} [eval SubEndRefs $rown $coln [lrange $tableSpec 2 5]] {
+	    set $bd $v
 	}
 
 	switch [lindex $tableSpec 7] {
@@ -1354,6 +1352,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    Query wayward_grid_index warning data_in_grid {} ok
 	    return
 	}
+
 	set tStr [NetOpen [lindex $tableSpec 0] r]
         for {set rowInd 1} {$rowInd <= $ylast} {incr rowInd} {
             gets $tStr entryLine
@@ -1400,22 +1399,12 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
         set rowList {}
         set colList {}
 	set transpose [expr {[string equal 1 [lindex $tableSpec 10]]}]
-	set yflip [expr {[lindex $tableSpec 2]>[lindex $tableSpec 3]}]
-	set xflip [expr {[lindex $tableSpec 4]>[lindex $tableSpec 5]}]
-	if {$yflip} {
-	    set yfirst [lindex $tableSpec 3]
-	    set ylast [lindex $tableSpec 2]
-	} else {
-	    set yfirst [lindex $tableSpec 2]
-	    set ylast [lindex $tableSpec 3]
+	set rown [image height tableImage]
+	set coln [image width tableImage]
+	foreach {bd v} [eval SubEndRefs $rown $coln [lrange $tableSpec 2 5]] {
+	    set $bd $v
 	}
-	if {$xflip} {
-	    set xfirst [lindex $tableSpec 5]
-	    set xlast [lindex $tableSpec 4]
-	} else {
-	    set xfirst [lindex $tableSpec 4]
-	    set xlast [lindex $tableSpec 5]
-	}
+
         for {set rowInd [expr $yfirst-1]} {$rowInd<=$ylast-1} {incr rowInd} {
 	    if {$yflip} {
 		set yInd [expr $lineCount+$rowInd-$yfirst+1]
@@ -1601,6 +1590,32 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
     }
     #ShowMess debug info "result $result" ok
     return $result
+}
+
+proc SubEndRefs {rown coln rfirst rlast cfirst clast} {
+    set rfirst [expr [string map [list end $rown] $rfirst]]
+    set rlast [expr [string map [list end $rown] $rlast]]
+    set cfirst [expr [string map [list end $coln] $cfirst]]
+    set clast [expr [string map [list end $coln] $clast]]
+
+    set yflip [expr {$rfirst>$rlast}]
+    set xflip [expr {$cfirst>$clast}]
+    if {$yflip} {
+	set yfirst $rlast
+	set ylast $rfirst
+    } else {
+	set yfirst $rfirst
+	set ylast $rlast
+    }
+    if {$xflip} {
+	set xfirst $clast
+	set xlast $cfirst
+    } else {
+	set xfirst $cfirst
+	set xlast $clast
+    }
+    return [list xfirst $xfirst xlast $xlast yfirst $yfirst ylast $ylast \
+		xflip $xflip yflip $yflip]
 }
 
 proc TrimFields {dataLine} {

@@ -72,7 +72,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $countf.radio -anchor w -side left
     
     ::ttk::entry $countf.value -textvariable disaggregate(icount) -width 10
-    pack $countf.value -side left -anchor s -pady 4
+    pack $countf.value -side left -anchor s -pady 4 -fill x -expand 1
     pack $t.simple.left.count -padx 4 -pady 4 -fill both -expand true
     
     TitleFrame $t.simple.left.colour -text "Background shade:"
