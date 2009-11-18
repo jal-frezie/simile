@@ -1263,7 +1263,7 @@ proc StartElement {name attList args} {
     if {[info exists attVals(label)]} {
 	set path $parseStatus(submodel)/$attVals(label)
 	if {[info exists attVals(comment)]} {
-	    set ::msgs(comment_$parseStatus(smPath)$path) \
+	    set ::msgs(comment_$parseStatus(smPath)[RestoreCrs $path]) \
 		[RestoreCrs $attVals(comment)]
 	}
     }
