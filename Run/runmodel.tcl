@@ -689,7 +689,11 @@ proc snap {topNode node} {
     global runState
     
     set full_label [GetCompProperty $topNode Caption $node]
-    set w .snap[newInt]
+    set w .snap$node
+    if {[winfo exists $w]} { ;# do not allow two on same component
+	raise $w
+	return $w
+    }
     toplevel $w
     wm protocol $w WM_DELETE_WINDOW "unset runState(nst$w); unset runState(val$w); destroy $w"
     set last_slash [string last / $full_label]
@@ -919,8 +923,7 @@ proc WriteLogs {topNode time vname step} {
     global runState
     foreach logger [array names runState log*] {
 	if {[string equal $topNode [lindex $runState($logger) 0]]} {
-	    set curVals [GetCompProperty $topNode Value \
-			     [string range $logger 3 end]]
+	    set curVals [GetModelValue [string range $logger 3 end]]
 	    set str [lindex $runState($logger) 1]
 	    puts -nonewline $str $time
 	    PutValsOnly $str [lindex $curVals 0]
