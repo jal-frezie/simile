@@ -1308,7 +1308,17 @@ status_affects(Item, Affected) :-
 	    Link2 is_connector from _ to Finish,
 	    connects(Link2, _, Target),
 	    sequence(Link2, Affected),
-	    Affected is_connector from _ to Target.
+	    Affected is_connector from _ to Target;
+	find_type(Item, submodel),
+	    caption_for(Item, Capt),
+	    contains(Top, Item),
+	    backup:is_toplevel(Top),
+	    contains(Top, Affected),
+	    find_type(Affected, submodel),
+	    Affected has_class_refinement multiplication_spec of Multi,
+	    member(_Count=DimList, Multi),
+	    member(Ref, DimList),
+	    (Ref = size(Capt); Ref = size(Capt, _Nth)).
 
 /* OK, now here's the easy, teenage, New York version...
 

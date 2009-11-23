@@ -471,6 +471,19 @@ redo with snap object
         return [do_for_node $modelNode GetModelValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
+    public method RequestValues {args} {
+	global runState
+
+	array unset runState $this,scriptReqs
+	foreach path $args {
+	    set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
+	    if {[string equal nomatch $nodeId]} {
+		error "Could not find node $path"
+	    }
+	    lappend runState($this,scriptReqs) $nodeId
+	}
+    }
+    
     public method SetValue {path value} {
         set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
         switch -- [$this GetModelEval $path] {

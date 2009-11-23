@@ -44,7 +44,8 @@ poly_hypergeom(pop, mark, samples) -->
 	[result].
 
 /* FUNCTIONS WHOSE DEFINITION SETS STATISTICAL MODEL BEHAVIOUR
-Use these definitions for DETERMINISTIC:
+Args and result real for interchangeability
+Use these definitions for DETERMINISTIC: */
 binome_equiv(Prob, Num) --> Prob*Num.
 
 hypergeom_equiv(Pop, Seln1, Seln2) -->
@@ -52,15 +53,15 @@ hypergeom_equiv(Pop, Seln1, Seln2) -->
 
 poly_hypergeom_equiv(Pop, Mark, Samples) -->
 	if Pop==0 then 0 else Mark*Samples/Pop.
-*/
-/* Use these definitions for STOCHASTIC: */
-binome_equiv(Prob, Num) --> binome(Prob, int(Num)).
+
+/* Use these definitions for STOCHASTIC:
+binome_equiv(Prob, Num) --> 1.0*binome(Prob, int(Num)).
 
 hypergeom_equiv(Pop, Seln1, Seln2) -->
-	hypergeom(int(Pop), int(Seln1), int(Seln2)).
+	1.0*hypergeom(int(Pop), int(Seln1), int(Seln2)).
 
 poly_hypergeom_equiv(Pop, Mark, Samples) -->
-	poly_hypergeom(int(Pop), int(Mark), int(Samples)).
+	1.0*poly_hypergeom(int(Pop), int(Mark), int(Samples)).
 /*
 Definitions for INTEGER-DETERMINISTIC need to hold state, so
 currently need separate macro definition for each argument

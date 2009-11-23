@@ -572,6 +572,14 @@ namespace eval runcontrol33857 {
 		}
 	    }
 	}
+# and those for scripted callback requests
+	foreach {callback nodes} [array get runState *,scriptReqs] {
+	    foreach focus $nodes {
+		if {[lsearch $allFoci $focus]==-1} {
+		    lappend allFoci $focus
+		}
+	    }
+	}
 	return $allFoci
     }
 

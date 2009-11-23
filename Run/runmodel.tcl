@@ -554,7 +554,7 @@ proc ShiftDisplays {node payload current display} {
 }
 
 proc TellAllHelpers {node payload fun args} {
-    global helperTable myNode subbedPlots
+    global helperTable myNode subbedPlots runState
 
     set nodeForFocus $myNode
     set myNode $node
@@ -594,6 +594,16 @@ proc TellAllHelpers {node payload fun args} {
 #    set helperTable(beingCalled) {}
     if {$doScrog} {
 	eval WriteLogs $node $args
+
+	foreach {callback nodes} [array get runState *,scriptReqs] {
+	    set runControlID [string range $callback 0 end-11]
+	    set cbCmd [list ReceiveValues $runControlID [lindex $args 0]]
+	    # 2nd arg should be time
+	    foreach datum $nodes {
+		lappend cbCmd [GetModelValue $datum]
+	    }
+	    eval $cbCmd
+	}
     }
     set myNode $nodeForFocus
     array unset subbedPlots
