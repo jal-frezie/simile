@@ -529,6 +529,9 @@ namespace eval ::$keyValue {
 			    $plot($winId,Yscale)]
         set nearesttime [::graphtools::get_datax $winId [lindex $origin 0] \
 			     $plot($winId,Tscale)]
+	if {[llength [lindex $trTab end]]} {
+	    set nearestval [expr {int($nearestval)}]
+	}
 	foreach num [concat $id [list $nearestval]] key $trTab {
 	    lappend trVals [TransValue $key $num]
 	}
@@ -552,7 +555,7 @@ namespace eval ::$keyValue {
 #             wm overrideredirect .popup 1 
 	AddPopupMessage "$caption \n\
                 x     : $nearesttime\n\
-                y     : $nearestval\n\
+                y     : [lindex $trVals end]\n\
                 last y: $lastval" \#ffffc0
 #             pack [message .popup.message -aspect 400 -bg \#ffffc0] \
 #                     -fill x -expand true
