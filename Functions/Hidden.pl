@@ -26,7 +26,7 @@ function(simile_mod, real, [real, real]).
 %Legacy -- needed idler variable trig
 gaussian(Trig, Mean, SD) --> gaussian_var(Mean, SD).
 
-%Hack to allow 3 EM wards th MRSA model. Order should not matter:
+%Hack to allow 3 EM wards th MRSA model:
 dual_hypergeom(pop, mark, samples) -->
 	all1=element(samples,1),
 	to1=hypergeom_equiv(pop,mark,all1),
@@ -36,11 +36,12 @@ poly_hypergeom(pop, mark, samples) -->
 	[all]=makearray(if place_in(1)==1 then pop 
 		       else element(sofar([all])-samples,place_in(1)-1),
 		count(samples)),
-	[marks]=makearray(if place_in(1)==1 then mark
-			 else element(sofar([marks])-sofar(prev(0)),
+	[result]=([marks]=makearray(if place_in(1)==1 then mark
+			 else element(sofar([marks])-sofar([result]),
 				      place_in(1)-1),
 		    count(samples)),
-	hypergeom([all],[marks],samples).
+		  hypergeom([all],[marks],samples)),
+	[result].
 
 /* This is similar to above, but works on binomial rather than hypergeometric
 sampling. It takes a list of fractions and gives a binomial deviate for the
@@ -49,11 +50,12 @@ should make things simpler where there are multiple possibilities each
 involving a flow. Order is important. */
 
 poly_binome(probs, num) -->
-	[left]=makearray(if place_in(1)==1 then num
-			 else element(sofar([left])-sofar(prev(0)),
-				      place_in(1)-1),
-		    count(probs)),
-	binome(probs, [left]).
+	[result]=([left]=makearray(if place_in(1)==1 then num
+				  else element(sofar([left])-sofar([result]),
+					       place_in(1)-1),
+				   count(probs)),
+		  binome(probs, [left])),
+	[result].
 
 /* FUNCTIONS WHOSE DEFINITION SETS STATISTICAL MODEL BEHAVIOUR
 Args and result real for interchangeability
@@ -66,13 +68,13 @@ hypergeom_equiv(Pop, Seln1, Seln2) -->
 poly_hypergeom_equiv(Pop, Mark, Samples) -->
 	if Pop==0 then 0 else Mark*Samples/Pop.
 
-
-poly_binome(probs, num) -->
-	[left]=makearray(if place_in(1)==1 then num
-			 else element(sofar([left])-sofar(prev(0)),
-				      place_in(1)-1),
-		    count(probs)),
-	probs*[left].
+poly_binome_equiv(probs, num) -->
+	[result]=([left]=makearray(if place_in(1)==1 then num
+				  else element(sofar([left])-sofar([result]),
+					       place_in(1)-1),
+				   count(probs)),
+		  probs*[left]),
+	[result].
 
 /* Use these definitions for STOCHASTIC: */
 binome_equiv(Prob, Num) --> 1.0*binome(Prob, int(Num)).
