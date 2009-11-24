@@ -26,7 +26,7 @@ function(simile_mod, real, [real, real]).
 %Legacy -- needed idler variable trig
 gaussian(Trig, Mean, SD) --> gaussian_var(Mean, SD).
 
-%Hack to allow 3 EM wards th MRSA model:
+%Hack to allow 3 EM wards th MRSA model. Order should not matter:
 dual_hypergeom(pop, mark, samples) -->
 	all1=element(samples,1),
 	to1=hypergeom_equiv(pop,mark,all1),
@@ -36,16 +36,28 @@ poly_hypergeom(pop, mark, samples) -->
 	[all]=makearray(if place_in(1)==1 then pop 
 		       else element(sofar([all])-samples,place_in(1)-1),
 		count(samples)),
-	[result]=([marks]=makearray(if place_in(1)==1 then mark
-			 else element(sofar([marks])-sofar([result]),
+	[marks]=makearray(if place_in(1)==1 then mark
+			 else element(sofar([marks])-sofar(prev(0)),
 				      place_in(1)-1),
 		    count(samples)),
-		  hypergeom([all],[marks],samples)),
-	[result].
+	hypergeom([all],[marks],samples).
+
+/* This is similar to above, but works on binomial rather than hypergeometric
+sampling. It takes a list of fractions and gives a binomial deviate for the
+first, then one for the second using the remaining population, and so on. It
+should make things simpler where there are multiple possibilities each
+involving a flow. Order is important. */
+
+poly_binome(probs, num) -->
+	[left]=makearray(if place_in(1)==1 then num
+			 else element(sofar([left])-sofar(prev(0)),
+				      place_in(1)-1),
+		    count(probs)),
+	binome(probs, [left]).
 
 /* FUNCTIONS WHOSE DEFINITION SETS STATISTICAL MODEL BEHAVIOUR
 Args and result real for interchangeability
-Use these definitions for DETERMINISTIC: */
+Use these definitions for DETERMINISTIC:
 binome_equiv(Prob, Num) --> Prob*Num.
 
 hypergeom_equiv(Pop, Seln1, Seln2) -->
@@ -54,7 +66,15 @@ hypergeom_equiv(Pop, Seln1, Seln2) -->
 poly_hypergeom_equiv(Pop, Mark, Samples) -->
 	if Pop==0 then 0 else Mark*Samples/Pop.
 
-/* Use these definitions for STOCHASTIC:
+
+poly_binome(probs, num) -->
+	[left]=makearray(if place_in(1)==1 then num
+			 else element(sofar([left])-sofar(prev(0)),
+				      place_in(1)-1),
+		    count(probs)),
+	probs*[left].
+
+/* Use these definitions for STOCHASTIC: */
 binome_equiv(Prob, Num) --> 1.0*binome(Prob, int(Num)).
 
 hypergeom_equiv(Pop, Seln1, Seln2) -->
@@ -62,6 +82,8 @@ hypergeom_equiv(Pop, Seln1, Seln2) -->
 
 poly_hypergeom_equiv(Pop, Mark, Samples) -->
 	1.0*poly_hypergeom(int(Pop), int(Mark), int(Samples)).
+
+poly_binome_equiv(Probs, Num) --> 1.0*poly_binome(Probs, int(Num)).
 /*
 Definitions for INTEGER-DETERMINISTIC need to hold state, so
 currently need separate macro definition for each argument

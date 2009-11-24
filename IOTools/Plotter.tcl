@@ -516,19 +516,7 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         
         set caption $plot(caption,$node)
-	if {[llength $id]} {
-	    append caption \[[join $id ,]\]
-	}
-        if {[catch {
-	    set lastval [lindex [GetModelValue $node] 0]
-	    while {[llength $lastval]>1} {
-		array set valArray $lastval
-		set lastval $valArray([lindex $id 0])
-		set id [lrange $id 1 end]
-	    }
-	}]} {
-	    set lastval unavailable
-	}
+	set trTab [GetTransTable $node]
         #::graphtools::get_datax {w Xc Xscale}
         #plot($w,Tscale)
 
@@ -541,6 +529,23 @@ namespace eval ::$keyValue {
 			    $plot($winId,Yscale)]
         set nearesttime [::graphtools::get_datax $winId [lindex $origin 0] \
 			     $plot($winId,Tscale)]
+	foreach num [concat $id [list $nearestval]] key $trTab {
+	    lappend trVals [TransValue $key $num]
+	}
+	if {[llength $id]} {
+	    append caption \[[join [lrange $trVals 0 end-1] ,]\]
+	}
+        if {[catch {
+	    set lastval [lindex [GetModelValue $node] 0]
+	    while {[llength $lastval]>1} {
+		array set valArray $lastval
+		set lastval $valArray([lindex $id 0])
+		set id [lrange $id 1 end]
+	    }
+	    set lastval [TransValue [lindex $trTab end] $lastval]
+	}]} {
+	    set lastval unavailable
+	}
 	PostPopup $X $Y
 #         if {![winfo exists .popup]} {
 #             toplevel .popup -width 1 -height 1 -bd 2 -relief raised
