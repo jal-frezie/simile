@@ -2256,7 +2256,8 @@ relate_graphics(Node_name, Node_trans) :-
 
 move_boxes(Node_name, Node_trans) :-
 	find_all_comps(Node_name, Thing),
-	\+ border_node(Thing),
+%	\+ border_node(Thing),
+% need to move border nodes too for refatten to work -- other uses?
 	adjust_posn(Thing, Node_trans),
 	fail; true.
 
