@@ -275,6 +275,10 @@ proc ClickObj { x y winId X Y action} {
 		    set kname $lname.mn[join $type _]
 		    menu $kname -tearoff 0
 		    $lname add cascade -menu $kname -label $type
+# put type at top of submenu to insert its text
+		    $kname add command -label $type \
+			-command [list InsertQuoted $bar.equation $type]
+		    $kname add separator
 		    foreach member [lrange $enumType 1 end] {
 			$kname add command -label $member \
 			    -command [list InsertQuoted $bar.equation $member]

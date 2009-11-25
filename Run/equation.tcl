@@ -841,10 +841,10 @@ proc functionClick {tree x y boxname} {
     set fn [$tree identify row $x $y]
     # set tree [winfo parent $tree]
     # Take the item the user clicked on
-    if {[llength [$tree children $fn]]} {
-	$tree item $fn -open [expr {![$tree item $fn -open]}]
-    } elseif {[string first .et_top_level $fn]==0} {
+    if {[string first .et_top_level. $fn]==0} { ;# do for type and members
 	$boxname insert [$boxname index insert] \"[$tree item $fn -text]\"
+    } elseif {[llength [$tree children $fn]]} {
+	$tree item $fn -open [expr {![$tree item $fn -open]}]
     } else {
 	InsertFunction $boxname [lindex [split $fn .] end]
     }
