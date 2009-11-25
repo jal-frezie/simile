@@ -1304,10 +1304,12 @@ tweak_link_connections(Obj, OldInterns) :-
 	    get_shape(Comp, centre, OldCtr),
 	    translate(OldCtr, UseTrans, NewCtr),
 	    change_shape(Comp, centre, NewCtr),
+	    member(Comp, [From, To]),
+	    m_class:Link is_connector from From to To,
+	    move_link(Link),
 	    fail;
 	find_all_links(Obj, Link),
-	    (Shove = Link; has_outer_equiv(Shove, Obj, Link)),
-	    move_link(Shove),
+	    move_link(Link),
 	    fail;
 	true).
 
