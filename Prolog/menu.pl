@@ -240,7 +240,6 @@ menu_handle(Win, file, new) :-
 	check_deletable(Win, Parent),
 	remove_model(Win, Parent),
 	finish_move(Parent, 0),
-	clear_model_file(Parent),
 	set_save_status(Win, safe),
 %	caption_for(Parent, Name),
 %	new_autosave(Parent, Name),
@@ -1256,6 +1255,7 @@ remove_model(Win, Parent) :-
 	    add_parameter(Parent, 0, comment, ''),
 	    add_parameter(Parent, 0, fill_colour, ''),
 	    add_parameter(Parent, 0, fill_image, ''),
+	    add_parameter(Parent, 0, enum_types, ''),
 	    redraw_window(Win);
 	start_progress_dialogue(Win),
 	reassure_user("Creating new inputs for values from deleted submodel"),
