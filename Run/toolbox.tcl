@@ -2281,11 +2281,13 @@ proc AddInputs {winId bar} {
     global equationbar
     if {[string equal none [$bar.inputs.menu index last]]} {
 	set node $equationbar($winId,node)
+	set equationbar(params) {} ;# for autocomplete
 	set paramData [GetFromProlog tk_get_params('$winId',$node)]
 	foreach paramList $paramData {
 	    set paramName [lindex $paramList 1]
 	    $bar.inputs.menu add command -label $paramName \
                 -command [list InsertParam $bar $paramName]
+	    lappend equationbar(params) $paramName
 	}
 	MenuBindPopup $bar.inputs.menu $paramData
     }
@@ -2300,9 +2302,11 @@ proc restore_equation {winId bar} {
     global equationbar
 # for combobox version
 #    $bar.equation configure -text $equationbar($winId,initText)
+    $bar.equation configure -validate none
     $bar.equation delete 0 end
     $bar.inputs.menu delete 0 end
     $bar.equation insert 0 $equationbar($winId,initText)
+    $bar.equation configure -validate key
     focus $bar.equation
 }
 

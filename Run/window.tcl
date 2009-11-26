@@ -260,6 +260,7 @@ proc ClickObj { x y winId X Y action} {
                 set equationbar($winid,node) $node
                 set equationbar($winid,initText) [BlankCrs $oldEqn]
                 set equationbar(current_action) null
+		AddInputs $winid $bar
 # now add relevant enumerated types to menu
 		set enumTypes \
 		    [GetFromProlog tk_get_info('$winId',$node,enum_type_defns)]
@@ -1270,7 +1271,7 @@ if {[string match "Darwin" $tcl_platform(os)]} {
 }
 
 proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
-    global custom pushedbutton tcl_platform runState iconImages userinfo
+    global custom pushedbutton tcl_platform runState iconImages
     
     set c $winid.canvas
     set topm ${winid}top
@@ -1327,7 +1328,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     #set fm1 [menu $fm.sub0 -tearoff 0]
 #    $fm1 add command -label "Spreadsheet..." \
 #            -command "MenuSelect $c file import_ss"
-    if {[string equal enterprise $userinfo(edn)]} {
+    if {[string equal enterprise $::userinfo(edn)]} {
 	set sourceExps normal
     } else {
 	set sourceExps disabled
@@ -1760,8 +1761,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set image [image create photo -file "../Images/Eqnbar/inputs.gif"]
     ::ttk::menubutton $eb.inputs -state disabled -menu $eb.inputs.menu -image $image
     pack $eb.inputs -side left
-    set m [menu $eb.inputs.menu -tearoff 0 \
-            -postcommand [list AddInputs $winid $eb]]
+    set m [menu $eb.inputs.menu -tearoff 0]
+# now done when bar filled            -postcommand [list AddInputs $winid $eb]
     #    $m add command -label biomass -command bell
     #    $m add command -label k -command bell
     #BindPopup $m foobar
@@ -1770,26 +1771,32 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     pack $eb.function -side left
     set m [menu $eb.function.menu -tearoff 0]
     foreach funk $equation(fnDefs) {
-                set box $m
-                #puts "Adding $funk to $box"
-                foreach level [split [join [lindex $funk 0] /] /] {
-                    set lname $box.[string tolower [join $level _]]
-                    if {[catch {$box index $level}]} {
-                        menu $lname -tearoff 0
-                        MenuBindPopup $lname {}
-                        $box add cascade -menu $lname -label $level
-                    }
-                    set box $lname
-                }
-                set component [lindex $funk 1]
-                if {[catch {$box index $component\(\)}]} {
-                    $box add command -label $component\(\) \
-                    -command [list InsertFunction $eb.equation $component]
-                }
-            }
+	set box $m
+	#puts "Adding $funk to $box"
+	foreach level [split [join [lindex $funk 0] /] /] {
+	    set lname $box.[string tolower [join $level _]]
+	    if {[catch {$box index $level}]} {
+		menu $lname -tearoff 0
+		MenuBindPopup $lname {}
+		$box add cascade -menu $lname -label $level
+	    }
+	    set box $lname
+	}
+	set component [lindex $funk 1]
+	set wParen $component\(\)
+	if {[catch {$box index $wParen}]} {
+	    $box add command -label $wParen \
+		-command [list InsertFunction $eb.equation $component]
+	    lappend fnList $wParen
+	}
+    }
     set lname [menu $m.enumtypes -tearoff 0]
     $m add cascade -menu $lname -label {Enum. type constants}
     
+    $eb.equation configure -validatecommand \
+	[list autocomplete %W %d %i %P [lsort -dictionary $fnList]]
+    bind $eb.equation <Key-Up> [list ScrollCompletion %W -1]
+    bind $eb.equation <Key-Down> [list ScrollCompletion %W 1]
     
     #    set useFunctions [lrange $equation(fnDefs) 0 9]
     #    foreach defn $useFunctions {
@@ -1829,6 +1836,59 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     $nb.undo configure -state disabled
     $nb.redo configure -state disabled
+}
+
+proc autocomplete {win action pt value valuelist} {
+    global equationbar
+
+    after idle [list $win configure -validate key]
+# only try to match current group of alphas
+    if {[$win selection present]} {
+	$win selection clear
+    }
+    if {$action == 1} {    
+	set origin [string wordstart $value $pt]
+	set close [string wordend $value $pt]
+	set final [expr {$close-1}]
+	set trigger [string range $value $origin $final]
+	if {[string is wordchar -strict $trigger]} {
+	    set valuelist [concat $equationbar(params) $valuelist]
+# right now for some innovation. Up and down arrows will scroll through 
+# possible matches so we need to get all...
+	    set matches [lsearch -all -inline $valuelist $trigger*]
+	    if {[llength $matches]} {
+		foreach match $matches {
+		    lappend tails [string range $match \
+				      [expr {$close-$origin}] end]
+		}
+		set pop [lindex $matches 0]
+		$win delete $origin $final; $win insert $origin $pop
+		set selend [expr {$origin+[string length $pop]}]
+		$win selection range $close $selend
+		$win icursor $selend
+		set equationbar(tails) $tails
+		set equationbar(currentMatch) 0
+	    }
+	}
+    }
+    return 1
+}
+
+proc ScrollCompletion {win hop} {
+    global equationbar
+
+    if {[$win selection present] && [info exists equationbar(tails)]} {
+	$win configure -validate none
+	$win delete sel.first sel.last
+	set turn [llength $equationbar(tails)]
+	set equationbar(currentMatch) \
+	    [expr {int(fmod($equationbar(currentMatch)+$turn+$hop,$turn))}]
+	set newTail [lindex $equationbar(tails) $equationbar(currentMatch)]
+	set origin [$win index insert]
+	$win insert insert $newTail
+	$win selection range $origin insert
+	$win configure -validate key
+    }
 }
 
 proc EnterEqn {winid eb} {
