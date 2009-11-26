@@ -306,7 +306,8 @@ proc SafeEqnBarEdit {winId} {
 #puts [list [$bar.equation get] is $equationbar($winId,initText)]
         if {![string eq [$bar.equation get] $equationbar($winId,initText)]} {
 	    set capt [string range [$bar.label cget -text] 0 end-3]
-	    set choix [Query [list save_eqn_bar $capt] question top {} {yes no}]
+	    set choix [Query [list save_eqn_bar $capt] question top \
+			   $winId {yes no}]
             if {[string equal yes $choix]} {
                 accept_equation $winId $bar.equation
             } else {
@@ -1349,8 +1350,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -accelerator "Alt+x"
     AddAccelerator $winid file Close "<Alt-x>"
     if ![string match "Darwin" $tcl_platform(os)] {
-      $fm add command -label Exit \
-      -command "prolog tk_kill_everything($topNode)"
+      $fm add command -label Exit -command "MenuExit $topNode $c"
     }
     
     # edit menu: purpose of postcommand is to enable/disable cut/copy/paste items
@@ -2255,8 +2255,14 @@ proc KillTransients {winId} {
     }
 }
 
+proc MenuExit {topNode winId} {
+    SafeEqnBarEdit [winfo parent $winId]
+    prolog tk_kill_everything($topNode)
+}
+
 proc byebye {winId} {
     KillTransients $winId
+    SafeEqnBarEdit [winfo parent $winId]
     set runOnEmpty [string equal aqua [tk windowingsystem]]
     prolog [list tk_off_window( '$winId' , $runOnEmpty)]
 }
