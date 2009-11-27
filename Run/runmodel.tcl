@@ -298,6 +298,7 @@ proc ProdObj {topNode nodeId caption} {
 # than just values
 #	switch -regexp [GetCompProperty $topNode Type $nodeId] {
 #	    REAL|INTEGER|FLAG|ENUMERATED {
+	MyRaise [winfo toplevel [$inst cget -winId]]
 	SystemHelperCall $inst $topNode Click $useCapt
 #	    } default {
 #		ShowMess "Clicked on $caption" error \

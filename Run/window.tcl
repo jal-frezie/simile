@@ -1846,22 +1846,27 @@ proc autocomplete {win action pt value valuelist} {
     if {[$win selection present]} {
 	$win selection clear
     }
-    if {$action == 1} {    
+    if {$action == 1} {
 	set origin [string wordstart $value $pt]
 	set close [string wordend $value $pt]
 	set final [expr {$close-1}]
 	set trigger [string range $value $origin $final]
 	if {[string is wordchar -strict $trigger]} {
+# add any leading \['s to search string as options
+	    set br1 $origin
+	    while {[string equal \[ [string index $value [incr br1 -1]]]} {
+		set trigger \\\[?$trigger
+	    }
 	    set valuelist [concat $equationbar(params) $valuelist]
 # right now for some innovation. Up and down arrows will scroll through 
 # possible matches so we need to get all...
-	    set matches [lsearch -all -inline $valuelist $trigger*]
+	    set matches [lsearch -all -inline -regexp $valuelist ^$trigger]
 	    if {[llength $matches]} {
 		foreach match $matches {
-		    lappend tails [string range $match \
+		    lappend tails [string range [string trimleft $match \[] \
 				      [expr {$close-$origin}] end]
 		}
-		set pop [lindex $matches 0]
+		set pop [string trimleft [lindex $matches 0] \[]
 		$win delete $origin $final; $win insert $origin $pop
 		set selend [expr {$origin+[string length $pop]}]
 		$win selection range $close $selend
