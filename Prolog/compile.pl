@@ -37,7 +37,14 @@ compile( Language, Parent, DestDir) :-
 	      Err, 
 	      (Err = aborted, !; % no further message needed
 		  retractall(error_free(build)),
-		  query(Err, error, execution, [ok], _))),
+/* It really as the wrong thing to do to have the help reference as an
+/* argument to query(). It should be in messages.tcl, along with the
+/* text strings, since we are unlikely to ever want to offer different
+/* help pages with the same dialogue. */		  
+		  (Err = circular_evaluation(_Set), !,
+		      Help = circular;
+		    Help = execution),
+		  query(Err, error, Help, [ok], _))),
 	finish_progress_dialogue,
 	retract(error_free(build)). % only possible if nothing went wrong
 /*	(Language = tcl, !,
