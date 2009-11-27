@@ -346,13 +346,16 @@ namespace eval slide139 {
     proc SetArrayIfUsed {node fixed indices value} {
         global paramData runState myNode
 	set sub [join [concat $node $indices] ,]
-	PlaceInArray $sub $value 0 [RunningInC $myNode]
         if {$fixed} {
+	    set ledColour [$runState($myNode,cnvs) itemcget 1 -fill]
+	    if {[lsearch {yellow green blue} $ledColour]>-1} return
+	    set runState($myNode,reloadParams) -1
+# bug: command is called when slider created, generating spurious reset request
             if {![RunningInC $myNode]} {
                 set paramData($sub) $value
             }
-            set runState($myNode,reloadParams) -1
         }
+	PlaceInArray $sub $value 0 [RunningInC $myNode]
     }
     
     proc SetChoiceNumber {cbox node fixed choice args} {
