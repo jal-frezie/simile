@@ -435,11 +435,14 @@ int free_bloc_level(char* ptData, int* ptDims, int offset) {
   }
 }
 
+// free_bloc_data frees all memory used in a structure
 void free_bloc_data(char* ptData, int* ptDims) {
   if (free_bloc_level(ptData, ptDims, 0))
     delete ptData;
 }
 
+// copy_bloc_data duplicates a structure, allocating the required memory
+// (doesn't work on SPARSEARRAY)
 char* copy_bloc_data(char* source, int* ptDims) {
   int reps, count, *subDims;
   char* newData;
@@ -496,6 +499,12 @@ char* interpolate_bloc_data(char* loSource, char* hiSource, int* ptDims,
   return newData;
 }
 
+// locate_elt returns a pointer to one model value in the structure,
+// given its indices. If there are fewer than the full number of
+// indices, returns a pointer to the structure containing the values
+// whose indices start with the given ones. (doesn't work on
+// SPARSEARRAY and indeed cannot, because this structure may not
+// exist.)
 void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
   sizeAndPtr* newRecord;
 

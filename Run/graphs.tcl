@@ -1025,7 +1025,10 @@ proc DoneTableData {startLine} {
                 !$table_entry(source)} {
         set table_entry(source) 0.5
     }
-    set table_entry(comment) [string trimright [.table.commentt get 1.0 end]]
+    if {[winfo exists .table.commentt]} {
+	set table_entry(comment) \
+	    [string trimright [.table.commentt get 1.0 end]]
+    }
     set table_entry(done) $table_entry(source)
 }
 

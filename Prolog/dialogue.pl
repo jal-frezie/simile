@@ -201,10 +201,10 @@ update_equation(Function,_,_,_, [Table_st, Data_st], Effect) :-
 	    Units = 1,
 	    Bounds = 1,
 	    ComplaintStr = [];
-	get_table_data(Function, Data_st, DataTable,
-		       Units, Bounds, Dims, ComplaintStr)),
+	DataSpec = [DataField | Indices],
+	    get_table_data(Function, Data_st, DataTable,
+			   Units, Bounds, Dims, ComplaintStr)),
 	(ComplaintStr = [], !,
-	    DataSpec = [DataField | Indices],
 	    Effect = table_spec_changed_to([file = FileName, data = DataField,
 				indices = Indices, current = DataTable,
 				units=Units, bounds=Bounds, dims=Dims]);
