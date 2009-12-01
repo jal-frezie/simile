@@ -282,11 +282,11 @@ proc ClickObj { x y winId X Y action} {
 		    $lname add cascade -menu $kname -label $type
 # put type at top of submenu to insert its text
 		    $kname add command -label $type \
-			-command [list InsertQuoted $bar.equation $type]
+			-command [list InsertQuoted $bar $type]
 		    $kname add separator
 		    foreach member [lrange $enumType 1 end] {
 			$kname add command -label $member \
-			    -command [list InsertQuoted $bar.equation $member]
+			    -command [list InsertQuoted $bar $member]
 		    }
 		}
                 SetEqnButtonState $bar normal
@@ -298,7 +298,7 @@ proc ClickObj { x y winId X Y action} {
 }
 
 proc InsertQuoted {field string} {
-    $field insert [$field index insert] \"$string\"
+    InsertParam $field.equation \"$string\"
 }
 
 # make sure modeller really wanted to discard any previous edit

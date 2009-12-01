@@ -2287,15 +2287,17 @@ proc AddInputs {winId bar} {
     foreach paramList $paramData {
 	set paramName [lindex $paramList 1]
 	$bar.inputs.menu add command -label $paramName \
-	    -command [list InsertParam $bar $paramName]
+	    -command [list InsertParam $bar.equation $paramName]
 	lappend equationbar(params) $paramName
     }
     MenuBindPopup $bar.inputs.menu $paramData
 }
 
 proc InsertParam {bar paramName} {
-    $bar.equation insert insert $paramName
-    focus $bar.equation
+# only used for equation bar so assume validation on
+    $bar configure -validate none
+    $bar insert insert $paramName
+    $bar configure -validate key
 }
 
 proc restore_equation {winId bar} {
