@@ -170,10 +170,14 @@ proc ClickObj { x y winId X Y action} {
 #   set looks(lastXnode) $xco
 #   set looks(lastYnode) $yco
 #    }
-    focus $winId
+# Removed following line because it stopped doubleclick generating under Linux
+# in large models; surely clicking should focus winId anyway? See if WFUW. 
+# Needed to edit capt immediately after adding node; do elsewhere in this case
+#    focus $winId
     set target [GetClickedObj $winId $canx $cany 6]
     if {!$target} {
         # a background click
+	focus $winId
         $winId select clear
         $winId focus {}
         if {$RB && [string equal select $pushedbutton]} {
@@ -1842,11 +1846,11 @@ proc autocomplete {win action pt value valuelist} {
     global equationbar
 
     after idle [list $win configure -validate key]
-# only try to match current group of alphas
-    if {[$win selection present]} {
-	$win selection clear
-    }
+#    if {[$win selection present]} {
+#	$win selection clear
+#    }
     if {$action == 1} {
+# only try to match current group of alphas
 	set origin [string wordstart $value $pt]
 	set close [string wordend $value $pt]
 	set final [expr {$close-1}]

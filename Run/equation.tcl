@@ -899,6 +899,8 @@ proc InsertFunction {boxname functor} {
     } else {
         set useRange [$boxname select present]
         set insertCmd icursor
+	set val [$boxname cget -validate]
+	$boxname configure -validate none
     }
     if {$useRange} {
         $boxname insert sel.last \)
@@ -908,6 +910,9 @@ proc InsertFunction {boxname functor} {
         $boxname insert $insertPoint \)
         eval $boxname $insertCmd $insertPoint
         $boxname insert $insertPoint $functor\(
+    }
+    if {[info exists val]} {
+	$boxname configure -validate $val
     }
     focus $boxname
 }

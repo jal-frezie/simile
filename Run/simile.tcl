@@ -318,7 +318,7 @@ if {[info exists prolog_in_console]} {
 }
 
 set env(SIMILE_VERSION) 5.6
-set sendvars(simP) {a0}
+set sendvars(simP) {a1}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is
