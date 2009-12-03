@@ -146,7 +146,7 @@ proc ClickObj { x y winId X Y action} {
             set CD 1
         } default {
 	    if {[string equal busy $debounce(down)]} {
-		if {![string equal Linux $tcl_platform(os)]} {
+		if {[string equal Darwin $tcl_platform(os)]} {
 		    set action doubleclick
 		}
 	    } 
@@ -217,6 +217,7 @@ proc ClickObj { x y winId X Y action} {
                     set CD -1
                 }
                 if {!$RB && ([string equal $target $obj] || $CD==-1)} {
+		    focus $winId ;# get ready to edit canvas text
                     set action clicktext
                 }
             }

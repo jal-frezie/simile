@@ -961,6 +961,12 @@ namespace eval $keyValue {
         # Have a look at the inputs
         
         set template [NetOpen [file join $simtmpdir model.tpl] w]
+# What to use for delimiter? 
+# \ is needed to escape newlines in name
+# / appears between submodel levels
+# . may appear in a time point index
+# newline would probably confuse PEST
+# How about escaping some other character as well as newline and using that?
         puts $template "ptf \\"
         
         array unset inGrpData *,mems

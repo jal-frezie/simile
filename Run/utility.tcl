@@ -688,7 +688,6 @@ proc StripCrs {withCrs} {
     return $noCrs
 }
 
-
 proc RestoreCrs {noCrs} {
     regsub -all \\\\n $noCrs \n withCrs
 

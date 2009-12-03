@@ -1014,7 +1014,9 @@ proc ControlDraw {prologVersion} {
 	    set installTime [clock seconds]
 	    set env(install_time) "$installTime :: [clock format $installTime -gmt true]"
 
-	    set UserStream [open ../Run/userinfo.txt w]
+	    if {[catch {open ../Run/userinfo.txt w} UserStream]} {
+		error "Simile failed to create a file to keep the user authorization data. If you are using the Mac version, be sure to copy the application to a folder on your hard disk before attempting to run it. See the README for details."
+	    }
 	    puts $UserStream $env(prologId)
 	    puts $UserStream $env(interfaceId)
 	    puts $UserStream $env(install_time)
