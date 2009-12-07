@@ -4,7 +4,9 @@
 # itself loads dlls for the actual models as they are built.
 
 set auto_path [list [file join $env(SP_PATH) lib] \
-		   [file join $env(SP_PATH) lib tcl[info tclversion]]]
+		   [file join $env(SP_PATH) lib tcl[info tclversion]] \
+		   [file join [file dirname [file dirname [file normalize $env(SP_PATH)]]] Frameworks Tcl.framework Resources Scripts]]
+
 # package require Trf ;# loads right version of Trf, only needed in UI thread
 
 source [file join [file dirname $env(SP_PATH)] Run support.tcl]
@@ -16,9 +18,7 @@ proc load_c_stub_1 {{callerId {}}} {
     scan [info tclversion] {%d.%d} MAJ MIN
     set onUnix [string match unix $tcl_platform(platform)]
     set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
-    if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-	error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform) -- $dummy"
-    }
+    package require -exact Ame_dll $stubPkg
     randseed [clock scan now]
 }
 

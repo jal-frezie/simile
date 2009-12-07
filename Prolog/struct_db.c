@@ -55,7 +55,7 @@ arc arcs[USHRT_MAX];
 id_list* roots;
 
 long usedBits = 0;
-void* safe_malloc(count) {
+void* safe_malloc(int count) {
   long ptr;
 
   ptr = (long)malloc(count);
@@ -130,6 +130,14 @@ void remove_from_list(id_list** tgt, short int oldId) {
   }
 }
     
+int is_node(char* node) {
+  return !strncmp(node, "node", 4);
+}
+
+int is_arc(char* node) {
+  return !strncmp(node, "arc", 3);
+}
+
 void remove_node_from_list(id_list** tgt, char* oldId) {
   remove_from_list(tgt, get_number(oldId));
 }
@@ -360,14 +368,6 @@ FORPROL remove_curve(char* parent) {
   SUCCEED;
 }
   
-int is_node(char* node) {
-  return !strncmp(node, "node", 4);
-}
-
-int is_arc(char* node) {
-  return !strncmp(node, "arc", 3);
-}
-
 int node_exists(node* it) {
   return (it->hide & EXISTS);
 }

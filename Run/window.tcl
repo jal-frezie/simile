@@ -145,8 +145,12 @@ proc ClickObj { x y winId X Y action} {
             set RB 1
             set CD 1
         } default {
-	    if {[string equal busy $debounce(down)]} {
-		if {[string equal Darwin $tcl_platform(os)]} {
+	    if {[string equal Darwin $tcl_platform(os)]} {
+# Removed following line because it stopped doubleclick generating under Linux
+# in large models; surely clicking should focus winId anyway? See if WFUW. Was
+# needed to edit capt immediately after adding node; do elsewhere in this case
+		focus $winId
+		if {[string equal busy $debounce(down)]} {
 		    set action doubleclick
 		}
 	    } 
@@ -170,10 +174,6 @@ proc ClickObj { x y winId X Y action} {
 #   set looks(lastXnode) $xco
 #   set looks(lastYnode) $yco
 #    }
-# Removed following line because it stopped doubleclick generating under Linux
-# in large models; surely clicking should focus winId anyway? See if WFUW. 
-# Needed to edit capt immediately after adding node; do elsewhere in this case
-#    focus $winId
     set target [GetClickedObj $winId $canx $cany 6]
     if {!$target} {
         # a background click

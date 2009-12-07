@@ -100,7 +100,7 @@ on_exception(Error, Goal, Recovery) :-
 
 assert(T) :-
 	assertz(T).
-
+/* seems Daniel has added these in latest version */
 nth0(N, List, Element) :-
 	var(N), !,
 	    nth(M, List, Element),
