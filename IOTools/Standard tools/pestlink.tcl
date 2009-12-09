@@ -362,7 +362,10 @@ namespace eval $keyValue {
                             }
                         }
                     }
-                    AbleTimeData $node $f
+                    if {[winfo exists $f.int]} {
+# only exists if input is slider
+			AbleTimeData $node $f
+		    }
                 } inSource {
                     set useNodes($winId,gathering) [lindex $action 1]
                 } output {
@@ -1220,7 +1223,7 @@ $numOutputs"
                 # set spout [open "|cmd /c start /min $cmd" r]
 
 		set batSt [open runpest.bat w]
-				puts $batSt "type model.pst"
+		puts $batSt "type model.pst"
 		puts $batSt $cmd
 		close $batSt
                 set spout [open |runpest.bat r]
@@ -1248,7 +1251,6 @@ $numOutputs"
                 $useNodes($winId,results).dbf.c.text insert end "$bilge\n"
             }
         } elseif {[eof $spout]} {
-            close $spout
             set pip [open $simtmpdir/pestmsgs.txt r]; gets $pip pidl; close $pip
             #ShowMess debug info "Shrink...I wanna kill $pidl" ok
             c_killmodel $pidl
@@ -1257,9 +1259,14 @@ $numOutputs"
             SetButtonAct $winId start
             set useNodes($winId,state) 2 ;# stopped, with data
             $useNodes($winId,results).b configure -state normal
+            close $spout
             
             # now grab final PHI value from .rec
             set recFile [file join $simtmpdir model.rec]
+	    if {![file exists $recFile]} {
+		Query no_pest_output warning pest_setup {} ok
+		return
+	    }
             set recReader [NetOpen $recFile r]
             seek $recReader $runData($myNode,recSize)
             while {![eof $recReader]} {
@@ -1549,8 +1556,10 @@ $numOutputs"
             set line [list input $eTitle est $::initialEstimate($node) \
                     min $::minForOpt($node) max $::maxForOpt($node)]
             if {[info exists ::timeInfo($node)]} {
-                lappend line when $::timeInfo($node) \
-                        period $::regularInt($node)
+                lappend line when $::timeInfo($node)
+	    }
+	    if {[info exists ::regularInt($node)]} {
+                lappend line period $::regularInt($node)
             }
             foreach {val def} $inClevers1 {
                 lappend line $val $inGrpData($node,$val)
