@@ -1864,15 +1864,20 @@ proc autocomplete {win action pt value valuelist} {
 	    }
 	    set valuelist [concat $equationbar(params) $valuelist]
 # right now for some innovation. Up and down arrows will scroll through 
-# possible matches so we need to get all...
-	    set matches [lsearch -all -inline -regexp $valuelist ^$trigger]
+# possible matches so we need to get all...only include completion if it adds
+# at least one alphanumeric character
+	    set key ^$trigger\[\[:alnum:\]\]
+	    set matches [lsearch -all -inline -regexp $valuelist $key]
 	    if {[llength $matches]} {
 		foreach match $matches {
 		    lappend tails [string range [string trimleft $match \[] \
 				      [expr {$close-$origin}] end]
 		}
 		set pop [string trimleft [lindex $matches 0] \[]
-		$win delete $origin $final; $win insert $origin $pop
+#		$win delete $origin $final; $win insert $origin $pop
+# ignore previous contents, we may have pasted lots of text
+		$win delete 0 end
+		$win insert 0 [string replace $value $origin $close $pop]
 		set selend [expr {$origin+[string length $pop]}]
 		$win selection range $close $selend
 		$win icursor $selend
