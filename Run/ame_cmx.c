@@ -1394,12 +1394,13 @@ FINDABLE int freeDataHandleCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   Tcl_Obj *resultPtr, *newData;
-  int iPosn, error;
-
+  int error;
+  /*
   char spare[256];
   int dims[32], path[32];
   long int mSpare;
   enum_type_data* usedTypes[32];
+  */
   nodeValues* c_result;
   long int modelType;
   long int modelHandle;
@@ -1418,7 +1419,7 @@ FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
   if (error != TCL_OK) {
     return error;
   }
-  int count;
+  /* int count;
   node_data_line *data_line;
   int current_dims[32];
 
@@ -1433,7 +1434,7 @@ FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
   for (count=0;count+iPosn<argc;count++) {
 	Tcl_GetIntFromObj(interp, argv[count+iPosn], current_dims + count);
   }
-  /*  resultPtr = Tcl_NewObj();
+  resultPtr = Tcl_NewObj();
 
   if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[3], NULL), 
 			     &mSpare, spare, dims, path, usedTypes))) {

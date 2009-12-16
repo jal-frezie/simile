@@ -1374,7 +1374,7 @@ match to get it going again.
 
 Actually I found an example where it didn't work fine (gridspread) so
 have put it back for now. Inheritance workaround is to do all the
-peocessing in the relation model. */
+processing in the relation model. */
 
 connect_params(AllInsts, AllInters, Insts, Inters) :-
 	select(make(Tgt, Conds, PathPlus, Step, Acts), AllInsts, LeftInsts),
