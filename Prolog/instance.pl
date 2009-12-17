@@ -255,6 +255,7 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	       generate_input_pair(Node, InputPair),
 	       InputPairs ), !;
 	    InputPairs = []),
+	wake,
 	replace_subexps(UseExpr, instance, process_expr,
 			sub(InputPairs, Refs), top_down,
 			Switched, FinalExpr),
@@ -362,7 +363,6 @@ try_conversion(RelatedRef, Units, BaseUnits, ConvertedRef, ImpType) :-
 This adds code that limits a model value to the range specified by its
 min/max attributes. This currently is not done except for initial values
 of input parameters. */
-
 apply_minmax(Node, BaseExpr, UpdateExpr) :-
 	(Node has_class_refinement min_val of Min,
 	\+ Min = '', !,
@@ -449,11 +449,17 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % are little lists not atoms now.
 
 % for the channel functions we want to use the visible component; dies_of and
-% remainder just return its value, while channel_is keeps the function as it is
+% latency just return its value, while channel_is keeps the function as it is
 % later processed into a comparison with an index saved in the individual.
+
+% 'traffic' will not work because outvar will be the same for the two refs
+% even though refnode is different. This is very hard to fix and can probably
+% wait till we replace instantiation with something based on converting
+% captions to unique c++ variable names.
+
 process_expr(sub(InputPairs, Refs), OldVar, NewVar, Recurse) :-
-	member(OldVar-RefNode, [dies_of(Var)-VisNode, remainder(Var)-VisNode,
-			       chnl(Var)-VisNode, Var-Node]), 
+	member(OldVar-RefNode, [dies_of(Var)-VisNode, latency(Var)-VisNode,
+				Var-Node]), 
 	m_update:get_solo_list_depth(Var, _),
 	(member(input_pair(Var, Node, OutVar, NewVar), InputPairs),
 	    get_host(Node, VisNode),
@@ -462,8 +468,9 @@ process_expr(sub(InputPairs, Refs), OldVar, NewVar, Recurse) :-
 	NewVar = Var),
 	    Recurse = 0;
 	(build_table_ref(table_const(1), OldVar, NewVar);
-	  OldVar = channel_is(Ch), atom(Ch),
-	    NewVar = channel_is(chnl(Ch))),
+	  member(OldVar-NewVar, [channel_is(Ch)-channel_is(latency(Ch)),
+		traffic(Ch)-ceil(Ch-latency(Ch))]),
+	  atom(Ch)),
 	    Recurse = 1.
 
 build_table_ref(Table, table, Table).

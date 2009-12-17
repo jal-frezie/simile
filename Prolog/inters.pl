@@ -1228,6 +1228,7 @@ builtin('Model properties', first, boolean, [a(_T)]).
 builtin('Model properties', first, boolean, [int]).
 builtin('Model properties', dies_of, boolean, [boolean]).
 builtin('Model properties', dies_of, boolean, [real]).
+builtin('Model properties', latency, real, [real]).
 
 /* These are recognized by the parser but is not part of the equation
 language -- they and the operators are hidden */
@@ -1240,7 +1241,6 @@ operator(choose, int, [boolean, int, int]).
 operator(choose, a(T), [boolean, a(T), a(T)]).
 operator(choose, real, [boolean, real, real]).
 operator(choose, boolean, [boolean, boolean, boolean]).
-operator(remainder, real, [real]).
 
 /* These are handled by the parser but have special buttons to include them so
 we do not want them in the function list -- they only appear here so the right

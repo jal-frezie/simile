@@ -411,6 +411,16 @@ adjust_to_8(Trans) :-
 	    Node has_new_class_refinement fill_image of Image),	    
 	adjust_to_8(Trans).
 
+% new bit to update old boolean constants
+adjust_to_8(Trans) :-
+	(Trans = copy; member(_-Node, Trans)),
+	Node has_class function,
+	Node has_class_refinement value of Expr,
+	replace_subexps(Expr, library, update_old_booleans,
+			dummy, top_down, [_|_], NewExpr),
+	Node has_changed_class_refinement value of NewExpr,
+	adjust_to_8(Trans).
+	
 adjust_to_8(Trans) :-
 	(Trans = copy; member(_-Comp, Trans)),
 	(Fixing = node,
@@ -590,7 +600,11 @@ tabulate_graph_args([file='/graph/', data=[YL,YH,YR], indices=[XL,XH,XR,R],
 		     current=Pts, units=1, bounds=1, dims=N],
 		    graph(XL, XH, XR, YL, YH, YR, R, N, Ps, X), graph(X), 1) :-
 	Ps =.. [points | Pts].
-	
+
+update_old_booleans(dummy, Fn, ET, 0) :-
+	Fn =.. [Head | _],
+	member(Head-ET, [false-'"false"', true-'"true"']).
+
 inds_to_places(var_pair(Expr, NewExpr), Depth) :-
 	Expr = index(N),
 	    (Depth >= N, !,

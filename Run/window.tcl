@@ -1877,7 +1877,7 @@ proc autocomplete {win action pt value valuelist} {
 #		$win delete $origin $final; $win insert $origin $pop
 # ignore previous contents, we may have pasted lots of text
 		$win delete 0 end
-		$win insert 0 [string replace $value $origin $close $pop]
+		$win insert 0 [string replace $value $origin $final $pop]
 		set selend [expr {$origin+[string length $pop]}]
 		$win selection range $close $selend
 		$win icursor $selend

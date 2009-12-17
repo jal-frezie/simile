@@ -1158,15 +1158,17 @@ nodes.
 	    append(Specials, AssignList0, AssignList)),
 	append(FnInters, SmInters, Inters).
 
-maker_for(SmName, Fns, Name, Path, Step, Ptr, Channel,
-	  make(Effect, [culled(Name), time | XConds], Path, Step, [Action])) :-
-	member([Channel, EffectFr, ActFr, XConds],
-	       [[immigration, settled, new_member, [InitSpec]],
-		[reproduction, bred, reproduce, []]]),
+maker_for(SmName, Fns, Name, Path, Step, Ptr, Channel, Rule) :-
+	member([Channel, EffectFr, ActFr],
+	       [[immigration, settled, new_member],
+		[reproduction, bred, reproduce]]),
 	Effect =.. [EffectFr, Name, InitSpec],
 	Action =.. [ActFr, Ptr, Name, InitSpec],
 	SmName has_part InitName,
-	member(instance(Channel, InitName, _X, elt(_, InitSpec, _), _U), Fns).
+	member(instance(Channel, InitName, _X, elt(_, InitSpec, _), _U), Fns),
+	% first rule stops latency being used before instances created
+	member(Rule, [make(InitSpec, [Effect], Path, Step, []),
+	  make(Effect, [culled(Name), time], Path, Step, [Action])]).
 
 list_params_from(BaseStr, N, Assigns, List) :-
 	sicstus_write_to_chars(N, NStr),
