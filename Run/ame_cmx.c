@@ -111,7 +111,7 @@ int do_graph(graph_data_type** graphdata, Tcl_Interp *interp,
   resultPtr = Tcl_GetObjResult(interp);
   switch (action) {
   case READGRAPH:
-    graphptr = find_graph(index, *graphdata);
+    graphptr = find_graph_by_index(index, *graphdata);
     if (!graphptr) {
       Tcl_SetStringObj(resultPtr, 
 		       "There is no graph associated with this component", -1);
@@ -140,7 +140,7 @@ int do_graph(graph_data_type** graphdata, Tcl_Interp *interp,
       return TCL_ERROR;
     } /* if(error) */
 
-    graphptr = find_graph(index, *graphdata);
+    graphptr = find_graph_by_index(index, *graphdata);
     if (!graphptr) { /* add a new graph */
       graphptr = (graph_data_type*)malloc(sizeof(graph_data_type));
       graphptr->index = index;

@@ -163,13 +163,21 @@ void showMess(char* mess) {
 }
 
 /* utility procedures making no direct reference to model classes/instances */
+
+graph_data_type* find_graph_by_index(int index, graph_data_type* use_gptr) {
+  while (use_gptr && use_gptr->index != index) {
+    use_gptr = use_gptr->next;
+  }
+  return(use_gptr);
+}
+
 double graphpoint(double xval, graph_data_type* graphdata, int index) {
 	double interval, intersection;
 	int spaces, lower;
 	int *right, *left;
 	graph_data_type *use_graph_pointer;
 	
-	use_graph_pointer = find_graph(index, graphdata);
+	use_graph_pointer = find_graph_by_index(index, graphdata);
 
 	spaces = use_graph_pointer->xsize-1;
 	/* Interval is distance from left of graph in point units */

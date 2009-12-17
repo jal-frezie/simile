@@ -107,13 +107,6 @@ typedef struct graph_data_type_t {
    */
 } graph_data_type; /* end of graph data type decl */
 
-
-graph_data_type* find_graph (int index, graph_data_type* use_graph_pointer) {
-  while (use_graph_pointer && use_graph_pointer->index != index) {
-    use_graph_pointer = use_graph_pointer->next;
-  }
-  return(use_graph_pointer);
-}
 /*
 class enum_data_type {
 public:
@@ -247,7 +240,8 @@ EXTDEC get_value_pointer_type get_value_pointer;
 EXTDEC int get_node_count(long int);
 EXTDEC node_data_line* get_data_line(long int, int);
 EXTDEC long int get_node_model_id(char*);
-EXTDEC void release_graph_data(graph_data_type*);
+EXTDEC release_graph_data_type release_graph_data;
+EXTDEC graph_data_type* find_graph_by_index (int, graph_data_type*);
 EXTDEC graphpoint_type graphpoint;
 EXTDEC void setup_randoms(unsigned int);
 EXTDEC double rand_fract();
