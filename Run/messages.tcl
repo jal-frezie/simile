@@ -271,6 +271,12 @@ set msgs(absent_submodel_message) "Cannot resolve reference to size of %s. There
 set msgs(submodel_size_variable_title) "Problem getting number"
 set msgs(submodel_size_variable_message) "%s has a reference to a variable membership model in its dimensions."
 
+set msgs(failed_ref_in_dimensions_title) "Problem with submodel dimensions"
+set msgs(failed_ref_in_dimensions_message) "The dimensions of submodel \"%s\" cannot be found, because it contains a reference to the size of submodel \"%s\", which cannot be resolved. This reference will be removed."
+
+set msgs(dimensions_invalid_title) "Problem with submodel dimensions"
+set msgs(dimensions_invalid_message) "The dimensions of submodel \"%s\" cannot be found, because of a change elsewhere in the model. You should edit this submodel's properties to fix the problem."
+
 set msgs(absent_enum_type_title) "Problem getting number"
 set msgs(absent_enum_type_message) "Cannot resolve reference to size of %s in component %s. There is no local enumerated type of this name."
 

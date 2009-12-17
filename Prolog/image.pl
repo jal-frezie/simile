@@ -464,12 +464,26 @@ multiple_draw(VComp, Num) :-
         Num = -1;
     is_conditional(Comp), !,
         Num = 0;
-    (get_node_size(Comp, [Val | _]);
+    (catch(get_node_size(Comp, [Val | _]), Winge, mention(Comp, Winge, Val));
     (implicit_function(Comp, CompFn); CompFn=Comp),
         CompFn has_class_refinement units of array(_, Val)),
         enum_type_ref(Val, Comp, RealVal, _, _), !,
         Num is min(RealVal, 4);
     Num = 1).
+
+mention(Comp, Winge, Val) :-
+	caption_for(Comp, Capt),
+	(member(Winge, [absent_submodel(Foo), submodel_name_recurs(Foo)]),
+	    Comp has_class_refinement multiplication_spec of Specs,
+	    select(count=Dims, Specs, MoreSpecs),
+	    select(LostRef, Dims, GoodDims),
+	    LostRef =.. [size, Foo | _Level],
+	    Comp has_changed_class_refinement multiplication_spec of
+	        [count=GoodDims | MoreSpecs],
+	    query(failed_ref_in_dimensions(Capt, Foo), warning, top, [ok], _),
+	    multiple_draw(Comp, Val);
+	query(dimensions_invalid(Capt, Winge), warning, top, [ok], _),
+	    Val = 4).
 
 get_bowtie_size(Link, Bowtie) :-
     Link is_connector from Comp to _,
