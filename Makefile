@@ -71,7 +71,7 @@ ifeq ($(PLATFORM),Darwin)
 	endif
 	EXECEXTN = $(ARCHEXTN)
 	MAKESL = -fPIC -dynamiclib
-	USETCL =  -DUSE_TCL_STUBS -F~/Desktop/CVS\ Simile\ v5.x/Contents/Frameworks -framework Tcl -I../System/include -L../System/lib
+	USETCL =  -DUSE_TCL_STUBS -F~/Desktop/CVS\ Simile\ v5.x.app/Contents/Frameworks -framework Tcl -I../System/include -L../System/lib
 	LOCALIZE_TCL_REFS = install_name_tool -change \
 		/System/Library/Frameworks/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl
