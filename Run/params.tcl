@@ -1235,15 +1235,16 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     set broke [catch {$parseStatus(spfParser) parse $dada} feedback]
     close $parseStatus(outStr)
     if {$broke} {
-	if {[info exists parseStatus(simV)]} { ;# parsing at least started
+#	if {[info exists parseStatus(simV)]} { ;# parsing at least started
+# ... have already found xml header so I should hope so
 	    if {![string equal aborted $feedback]} { ;# a bad XML file
 		Query [list xml_parse_fail $errorInfo [array get parseStatus]] \
 							 error spf {} ok
 	    } ;# otherwise user aborted parsing at mismatched component name
 	    return -1
-	} else { ;# an earlier style of param file
-	    return 0
-	}
+#	} else { ;# an earlier style of param file
+#	    return 0
+#	}
     } else {
 	if {[info exists parseStatus(simV)]} {
 	    return $parseStatus(simV)

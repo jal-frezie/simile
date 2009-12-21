@@ -94,7 +94,7 @@ proc ChooseIntegerRatio {fraction accu} {
 	
 if {[string match Darwin $tcl_platform(os)]} {
     set auto_path [list $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts $SIMILE_PATH/System/lib]
-    package require tclAE
+#    package require tclAE
     proc ::tk::mac::OpenDocument {args} {
         global env
 # only opens the first of a group of files dropped or double-clicked,
@@ -106,13 +106,13 @@ if {[string match Darwin $tcl_platform(os)]} {
 #	tk_messageBox -message "open foo $foo bar $bar"
 #    }
 #    tclAE::installEventHandler aevt oapp handleOpenApp
-    proc handleReopenApp {foo bar} {
+    proc ::tk::mac::ReopenApplication {} {
 	global window_info
 	if {![llength [array names window_info *,parent]]} {
 	    NewTopLevel
 	}
     }
-    tclAE::installEventHandler aevt rapp handleReopenApp
+#    tclAE::installEventHandler aevt rapp handleReopenApp
 #    tk scaling 1.0
 } else {
 # If Simile is already running, make a new window there and exit. Note that
@@ -318,7 +318,7 @@ if {[info exists prolog_in_console]} {
 }
 
 set env(SIMILE_VERSION) 5.6
-set sendvars(simP) {b0}
+set sendvars(simP) {b1}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is
@@ -470,7 +470,8 @@ switch $tcl_platform(platform) {
 		set archExtn _ppc
 	    }
 # experiment with fatties
-#	    set archExtn _mac
+	    set plExtn $archExtn
+	    set archExtn _mac
 	    scan $tcl_platform(osVersion) %d.%d.%d dMed dMin dNone
 	    if {$dMed<9} {
 		# I am building with 10.5 so cannot make i386 prolog

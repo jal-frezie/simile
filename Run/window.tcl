@@ -440,6 +440,7 @@ proc ReleaseObj {winId xco yco} {
 	}
 	unset debounce(realdrag)
     }
+    focus $winId
     set canx [Unscale $winId [$winId canvasx $xco]]
     set cany [Unscale $winId [$winId canvasy $yco]]
     prolog [list tk_unclick( $canx , $cany )]

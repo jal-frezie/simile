@@ -1174,7 +1174,7 @@ list_params_from(BaseStr, N, Assigns, List) :-
 	sicstus_write_to_chars(N, NStr),
 	append(BaseStr, NStr, HeaderStr),
 	member(make(Tgt, _,_,_,_), Assigns),
-	name(Tgt, TgtStr),
+	atom(Tgt), name(Tgt, TgtStr),
 	append(HeaderStr, TailStr, TgtStr),
 	\+ (TailStr = [Next | _], \+ [Next] = "_"), !,
 	M is N+1,
