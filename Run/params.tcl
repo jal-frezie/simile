@@ -1266,6 +1266,8 @@ proc StartElement {name attList args} {
 	if {[info exists attVals(comment)]} {
 	    set ::msgs(comment_$parseStatus(smPath)[RestoreCrs $path]) \
 		[RestoreCrs $attVals(comment)]
+# add comments before lines for reporting (simile cannot read resulting temp_in)
+#	    puts $parseStatus(outStr) "\n# [RestoreCrs $attVals(comment)]"
 	}
     }
     switch $name {

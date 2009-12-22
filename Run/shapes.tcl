@@ -750,6 +750,7 @@ proc SelectText {w node} {
 	$w dtag currently_editable
 	$w itemconfig $new -tag [concat currently_editable [$w gettags $new]]
     }
+    focus $w
     $w focus $new
     $w select from $new 0
     $w select to $new end

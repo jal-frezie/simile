@@ -1000,7 +1000,8 @@ proc ControlDraw {prologVersion} {
 	if {[catch {set userinfo(corp) $env(licensee_corp)}]} {
 	    set userinfo(corp) {}
 	}
-    } else {
+    } ;# else {
+# (include ff in Windows anyway in case some twerp runs it with userinfo.tpl)
 # Windows installers can ask the user for a license code and stick it in
 # userinfo.txt (formerly the registry). On other platforms we have to DIY.
 	if {[string equal {<insert license code here>} \
@@ -1026,7 +1027,7 @@ proc ControlDraw {prologVersion} {
 	    puts $UserStream $userinfo(Version)
 	    close $UserStream
 	}
-    }
+#    }
     loadcommands
     array set userinfo [list name $userinfo(name) corp $userinfo(corp) \
 			    final_expiry $env(user,final_expiry) \
