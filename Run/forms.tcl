@@ -1206,7 +1206,10 @@ proc ContextSensitiveHelp {context page} {
             package require winhelp
             winhelp $context ../Help/simile_book.chm $page
         } aqua {
-            exec open -a "Help Viewer.app" ../Help/$page
+# try Snow Leopard location first
+	    if {[catch {exec open -a "HelpViewer.app" ../Help/$page}]} {
+		exec open -a "Help Viewer.app" ../Help/$page
+	    }
         } x11 {
             set url file://[file dirname [pwd]]/Help/$page
             if {![info exists env(BROWSER)]} {

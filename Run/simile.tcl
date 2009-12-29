@@ -473,10 +473,11 @@ switch $tcl_platform(platform) {
 	    set plExtn $archExtn
 	    set archExtn _mac
 	    scan $tcl_platform(osVersion) %d.%d.%d dMed dMin dNone
-	    if {$dMed<9} {
-		# I am building with 10.5 so cannot make i386 prolog
+	    if {$dMed<10} {
+		# I am building with 10.6 so cannot make i386 prolog
 		# for earlier versions, so if I have one use ppc (for
-		# 10.3) version under Rosetta
+		# 10.3) version under Rosetta; note Rosetta not included in
+		# 10.6 by default!
 		set plExtn _ppc
 	    }
 	} else {
