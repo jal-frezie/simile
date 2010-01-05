@@ -7,7 +7,7 @@
 sicstus_module( library, [ame_save/4, ame_merge/5, count_functions/2] ).
 
 sicstus_use_module( [library(lists),
-	sp_only, ame_gen,m_class,utility,text,build] ).
+	sp_only, ame_gen, m_class, utility, text, forms, build] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ame_save/4 - saves the submodels starting at the nodes listed in arg1 to the file
@@ -34,9 +34,9 @@ ame_save( File, Model, Date, SelOnly ) :-
 	on_exception(_, open_native(WFile, write, Stream), 
 	fail), !,
 	ame_gen:assert(by_record_brackets(curly)),
-	dialogue:reassure_user("Converting to non-Simile 5.5 model representation"),
+	reassure_user("Converting to non-Simile 5.5 model representation"),
 	update_all_pr_brackets(Model), % write non-5.5 format for now (remove for v6)
-	(dialogue:reassure_user("Writing root information"),
+	(reassure_user("Writing root information"),
 	state:version_is(VStr),
 	name(SimV, VStr),
 	V is SimV + 4,
@@ -48,13 +48,13 @@ ame_save( File, Model, Date, SelOnly ) :-
 	nl(Stream),
 	write_with_breaks( Stream, properties(Props)),
 	nl(Stream),
-	dialogue:reassure_user("Writing node information"),
+	reassure_user("Writing node information"),
 	save_nodes( Models, Stream, SelOnly, ArcsUsed ),
 	nl(Stream),
-	dialogue:reassure_user("Writing arc information"),
+	reassure_user("Writing arc information"),
 	save_arcs( ArcsUsed, Stream),
 	ame_gen:retractall(by_record_brackets(_)),
-	dialogue:reassure_user("Converting to Simile 5.5 model representation"),
+	reassure_user("Converting to Simile 5.5 model representation"),
 	update_all_pr_brackets(Model), % return saved model to 5.5 format (remove for v6)
 	close( Stream ), !;
 	fail)).
@@ -244,7 +244,7 @@ choose_breakpoint(Break) :-
 
 ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	open_native( File, read, Stream),
-	dialogue:reassure_user("Reading information from file"),
+	reassure_user("Reading information from file"),
 	read( Stream, Header ),
 	((Header = source(_,version=V,edition=E,date=Date);
 	        Header = source(_,version=V,date=Date), E=standard;
@@ -274,34 +274,34 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	    % abort loading project file
 	    output:safe_tcl_eval(['catch {unset ::loadingProject}'], _),
 	    query(bust_edition_limit(Fns, StopAt, Edn), error, top, [ok], _),
-	    dialogue:finish_progress_dialogue,
+	    finish_progress_dialogue,
 	    % prevent executable from running
 	    Parent has_new_model_refinement c_new of 0,
 	    fail;
 
 	(SimileV >= 0.0, !;
-	dialogue:reassure_user("Updating pre-AME 4.0 model representation"),
+	reassure_user("Updating pre-AME 4.0 model representation"),
 	    adjust_to_4),
 	(SimileV >= 2.0, !;
-	dialogue:reassure_user("Updating pre-Simile 2.0 model representation"),
+	reassure_user("Updating pre-Simile 2.0 model representation"),
 	    adjust_to_6([])),
 	(SimileV >= 4.0, !;
-	dialogue:reassure_user("Updating pre-Simile 4.0 model representation"),
+	reassure_user("Updating pre-Simile 4.0 model representation"),
 	    adjust_to_8(Translated)),
 	(SimileV > 4.29, SimileV < 4.31, !;
 	SimileV >= 5.0, !;
-	dialogue:reassure_user("Updating non-Simile 4.3 model representation"),
+	reassure_user("Updating non-Simile 4.3 model representation"),
 	    adjust_to_8_3(Translated)),
 	(SimileV >= 4.8, !;
-	dialogue:reassure_user("Updating pre-Simile 4.8 model representation"),
+	reassure_user("Updating pre-Simile 4.8 model representation"),
 	    adjust_to_8_8(Translated)),
 	(SimileV >= 5.0, !;
-	dialogue:reassure_user("Updating pre-Simile 5.0 model representation"),
+	reassure_user("Updating pre-Simile 5.0 model representation"),
 	    adjust_to_9(Translated)),
 	(SimileV >= 5.5, !;
-	dialogue:reassure_user("Updating pre-Simile 5.5 model representation"),
+	reassure_user("Updating pre-Simile 5.5 model representation"),
 	    adjust_to_9_5(Parent)),
-	dialogue:reassure_user("Updating Simile 5.x model representation"),
+	reassure_user("Updating Simile 5.x model representation"),
 	adjust_to_10(Parent),
 	state:version_is(MyVStr),
 	name(MyV, MyVStr),
@@ -631,7 +631,7 @@ arr_ind(_, Found, _, 0) :-
 store_term( end_of_file, _, Parent, Bindings, AllBindings, Rest ) :- 
 	!, % green cut
 	length( Rest, Number ),
-	dialogue:reassure_user("Co-ordinating model information"),
+	reassure_user("Co-ordinating model information"),
 	deal_with_rest( Rest, Number, Parent, Bindings, AllBindings, [] ).
 store_term( Term, Stream, Parent, Bindings, AllBindings, Rest ) :-
 	Term =.. TermList,

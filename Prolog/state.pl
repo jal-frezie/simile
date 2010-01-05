@@ -7,7 +7,7 @@ available to the other modules that use it.
 */
 
 sicstus_module(state,
-	       [kickoff/1, get_initial_window_size/2,
+	       [use_temp_dir/1, kickoff/1, get_initial_window_size/2,
 		create_window/2, destroy_window/1, clear_model_file/1,
 		set_model_file/2, get_model_file/2, get_edition_and_limit/2,
 		kill_windows/0, set_halo/3, get_halo/2,
@@ -29,6 +29,8 @@ sicstus_module(state,
 		change_style/1, get_style/1]).
 
 sicstus_use_module(library(lists)).
+
+:- dynamic(use_temp_dir/1).
 
 kickoff(Vnum) :-
 	user:any_tcl_eval(['ControlDraw', br(Vnum)], 1, EnvVars),

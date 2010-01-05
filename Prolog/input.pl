@@ -16,8 +16,7 @@ sicstus_module(input, [tk_make_desktop_node/0,
 		       tk_abandon_eqn/0, check_use/1, compile_to_file/1,
 		       tk_run_settings_tweaked/1, tk_off_window/2,
 		       tk_certain_death_node/1, tk_kill_everything/1,
-		       tk_set_new_size/3, tk_change_size/3, tk_do_colours/2,
-		       tk_interactively_parse/1]).
+		       tk_set_new_size/3, tk_change_size/3, tk_do_colours/2]).
 
 sicstus_use_module([library(lists), backup, event, menu, sp_only, utility]).
 
@@ -163,6 +162,3 @@ tk_certain_death_node(Wid) :-
 
 tk_do_colours(Node, Way) :-
 	do_colours(Node, Way).
-
-tk_interactively_parse(Node) :-
-	dialogue:interactively_parse(Node).

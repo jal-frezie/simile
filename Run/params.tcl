@@ -1002,6 +1002,7 @@ namespace eval fileparams {
             set pStr [NetOpen $metaFile w]
             
 	    puts $pStr {<?xml version="1.0"?>}
+	    puts $pStr {<?xml-stylesheet type="text/xsl" href="spf1.xsl"?>}
 	    puts $pStr "<spf simile_version=\"$env(SIMILE_VERSION)\">"
 	    puts $pStr {<submodel label="top">}
 	    WriteSubmodelParams suppliedData $topNode $metaFile $pStr $smPath {}

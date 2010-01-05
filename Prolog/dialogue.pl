@@ -9,13 +9,8 @@ user alone until values have been entered: the sort that sit quietly
 alongside
 the rest of the program are handled through gui_input. */
 
-sicstus_module(dialogue, [pick_equation/2, do_equation_dialog/2, 
-	do_disag_dialog/4, do_relation_dialog/8, test_eqn/8,
-			  check_param_usage/5,
-	get_load_file/2, get_save_file/2,
-	get_program_file/3, get_import_file/3, 
-        start_progress_dialogue/1,
-	finish_progress_dialogue/0, reassure_user/1]).
+sicstus_module(dialogue,
+	       [interactively_parse/1, test_eqn/8, check_param_usage/5]).
 
 sicstus_use_module([library(lists),
 		    sp_only, m_update, ame_gen, output, utility, inters]).
@@ -54,64 +49,6 @@ make_arg_list([Arg | Args], Str) :-
 	make_arg_list(Args, Str2),
 	append(Str1, [44, 32 | Str2], Str).
 
-pick_equation(Part, Equation) :-
-	(get_av_pair(Part, 0, spec, Equation),
-	    atom(Equation), \+ Equation = [],
-	    /* do not use old string version */ !;
-	get_av_pair(Part, 0, value, Equation), !;
-		Equation = '').
-
-/* the equation dialogue will only exit when a coherent set of 
-inputs have been 
-entered; if they are not, then update_equation fill fail after 
-putting new info 
-into the dialog box, and interact_equation will be called again and 
-return new 
-values. */
-
-do_equation_dialog(Win, Part) :-
-	caption_for(Part, Caption),
-	get_host(Part, ClickedObj),
-	(ClickedObj is_of_sort init_eval, !,
-	    TitleForm = 'Initial value';
-	TitleForm = 'Equation'),
-	list_index_meanings(Part, ISpecs),
-	all(dialogue, index_names_and_sizes, [build(ISpecs), build(IndexList),
-					      build(_Sz)]),
-	pick_equation(Part, Equation),
-	(get_av_pair(Part, 0, units, Units), !,
-	    analyze_array(Units, Base, Dims);
-	Base = '',
-	    Dims = []),
-	(get_av_pair(Part, 0, table_data, TableSpec),
-	    permutation(TableSpec, [file=FilePath, data=DataField,
-				    indices=Indices, current=Values,
-				    units=TUnits, bounds=Bounds | _R]), !,
-	    (FilePath = '/graph/', !,
-		append([FilePath | DataField], [Bounds | Indices], TableList),
-		TableTrans = [[], []],
-		TableVals = br(Values);
-	    TableList = [FilePath, DataField | Indices],
-		append(Bounds, [TUnits], TableTypes), 
-		all(event, insert_mem_list,
-		    [build(TableTypes), unify(ClickedObj), build(TableTrans)]),
-		reverse_engineer(Values, TableTrans, 1, TableVals));
-	TableList = '', TableTrans = '', TableVals = '{}'),
-	get_desc_and_comment(ClickedObj, Desc, Comment, ''),
-	(get_av_pair(Part, 0, min_val, Min), !;
-		get_default_lower_limit(Part, Min)),
-	(get_av_pair(Part, 0, max_val, Max), !;
-		get_default_upper_limit(Part, Max)),
-	/* Node is an input parameter if a ghost whose base has no
-		associated function */
-	get_all_enum_types(Part, ETList),
-	is_parameter(ClickedObj, Is_P),
-	
-	create_equation(Win, TitleForm, Caption, IndexList, ETList),
-	fill_equation(Equation, Base, Dims, Is_P, Desc, Comment, Min, Max),
-	fill_table(Part, TableList, TableVals), % calls interaction from tcl
-	destroy_equation.
-
 interactively_parse(Part) :-
 	get_input_info(Part, Input_list),
 	fill_inputs(Input_list),
@@ -129,7 +66,8 @@ interactively_parse(Part) :-
 handle_eqn_interaction(Part, DefUnit, IndxCount, Input_list, TableSpec) :-
 	interact_equation(Result_list),
 	(Result_list = [], !; % dialogue cancelled
-	  asserta(table_data_is(TableSpec)),  % needed in parser
+	  (TableSpec = '', !;
+	      asserta(table_data_is(TableSpec))), % needed in parser
 	    update_equation(Part, IndxCount, Input_list,
 			    DefUnit, Result_list, Effect),
 	    retractall(table_data_is(_TableSpec)),  
@@ -163,20 +101,8 @@ handle_eqn_interaction(Part, DefUnit, IndxCount, Input_list, TableSpec) :-
 		handle_eqn_interaction(Part, DefUnit, IndxCount,
 				       NewInputList, NewTableSpec))).
 
-index_names_and_sizes(ind_spec(Name, Posn, Dim, _Link), Meaning, Dim) :-
-	sicstus_format_to_chars("Dimension ~d of ~a (~w)", [Posn, Name, Dim],
-				MeaningStr),
-	name(Meaning, MeaningStr).
-
 index_types(ind_spec(_Name, _Posn, Ind, _Link), Type) :-
 	inters:type_ind(Ind, Type).
-
-/* might change these one day so, e.g., compartments have
-automatic lower limit of 0, but not yet. */
-
-get_default_lower_limit(_, '').
-
-get_default_upper_limit(_, '').
 
 /* update_equation/5: This makes sure that if the user has entered a
 new destination name or units for an existing variable they are added
@@ -790,46 +716,6 @@ work_out(==, _, 1).
 
 /* Back to realtive normality... */
 
-/* do_disag_dialog/4: This is called when disaggregate is selected. 
-First it asks for the disaggregation parameters (this shouldn't 
-really be necessary). */
-
-do_disag_dialog(Win, Model, P_list, New_P_List) :-
-	caption_for(Model, Capt),
-	tk_do_disag_dialog(Win, Capt, P_list, New_P_Strs),
-	strings_to_atoms(New_P_Strs, New_P_List).
-
-do_relation_dialog(Win, Relation, Type, State, OldComment,
-		   OKd, NewStat, NewComment) :-
-	caption_for(Relation, Capt),
-	tk_do_relation_dialog(Win, Capt, Type, State, OldComment,
-			      OKdStr, NewStr, NewCommentStr),
-	strings_to_atoms([OKdStr, NewCommentStr | NewStr],
-			 [OKd, NewComment | NewStat]).
-
-/*
-Version that did not work on singly-nested lists
-strings_to_atoms([],[]).
-
-strings_to_atoms([S | SR], [A | AR]) :-
-	(\+ S = [],
-	    all(dialogue, strings_to_atoms, [build(S), build(A)]), !;
-	(append([123 | InS], [125], S), !; InS = S),
-	name(A, InS)),
-	strings_to_atoms(SR, AR).
-*/
-strings_to_atoms([], '').
-
-strings_to_atoms(StNest, ANest) :-
-        StNest = [St | Sts],
-        (member(St, [[], [_|_]]), !, /* nested */
-            all(dialogue, strings_to_atoms, [build(StNest), build(ANest)]);
-        (St = 123,
-	/* If tcl has put it in curlies remove them */
-	    append(InS, [125], Sts), !;
-	 InS = StNest),
-            name(ANest, InS)).
-
 integer_between(Lo, Hi, Int) :-
 	Lo < Hi,
 	(Int = Lo;
@@ -839,26 +725,3 @@ integer_between(Lo, Hi, Int) :-
 get_array_nesting(Current_unit, Depth) :-
 	analyze_array(Current_unit, _, Dims),
 	length(Dims, Depth).
-
-get_load_file(Parent, FileName) :-
-	get_file_name('untitled.sml', 'Open file:', 0, Parent, FileName).
-
-get_save_file(Model, FileName) :-
-	get_file_name('untitled.sml', 'Save as:', 1, Model, FileName).
-
-get_import_file(Preferred, Model, FileName) :-
-	get_file_name(Preferred, 'Import from:', 0, Model, FileName),
-        \+ FileName = ''.
-
-get_program_file(Preferred, Model, FileName) :-
-	get_file_name(Preferred, 'Export to:', 1, Model, FileName),
-        \+ FileName = ''.
-
-start_progress_dialogue(Win) :-
-	tk_start_progress_dialogue(Win).
-
-reassure_user(String) :-
-	tk_update_infobox(String).
-
-finish_progress_dialogue :-
-	tk_finish_progress_dialogue.

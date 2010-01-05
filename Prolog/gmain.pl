@@ -11,15 +11,6 @@ _Module:Function :-
 :- discontiguous([sicstus_module/2, sicstus_use_module/1, sicstus_only/1,
 	sicstus_meta_predicate/1]).
 
-/* Reimplemented from Sicstus libraries: */
-
-substitute(_, [], _, []).
-
-substitute(E, [G | T1], F, [H | T2]) :-
-        (E=G, !, F=H;
-            G=H),
-        substitute(E, T1, F, T2).
-
 :- include('tcltk.pl').
 
 /* Files needed to load and save models */
@@ -45,6 +36,7 @@ substitute(E, [G | T1], F, [H | T2]) :-
 :- include('language.pl').
 :- include('compile.pl').
 :- include('m_update.pl').
+:- include('code.pl').
 
 /* files to run the GUI */
 
@@ -55,6 +47,7 @@ substitute(E, [G | T1], F, [H | T2]) :-
 :- include('backup.pl').
 :- include('image.pl').
 :- include('draw.pl').
+:- include('forms.pl').
 :- include('event.pl').
 :- include('menu.pl').
 :- include('input.pl').
@@ -100,6 +93,16 @@ on_exception(Error, Goal, Recovery) :-
 
 assert(T) :-
 	assertz(T).
+
+/* Reimplemented from Sicstus libraries: */
+
+substitute(_, [], _, []).
+
+substitute(E, [G | T1], F, [H | T2]) :-
+        (E=G, !, F=H;
+            G=H),
+        substitute(E, T1, F, T2).
+
 /* seems Daniel has added these in latest version
 nth0(N, List, Element) :-
 	var(N), !,
@@ -169,11 +172,6 @@ main :-
 	database:empty_tree,
 	state:retractall(model_in(_,_)),
         nl, write(ready), nl,
-        user:any_tcl_eval('WhatAmI', 1, CmdStr),
-        name(Cmd, CmdStr),
-        call(Cmd).
-
-editor :-
 	current_prolog_flag(prolog_name, Vname),
 	current_prolog_flag(prolog_version, Vnum),
 	append_atoms([Vname, ' ', Vnum], PlogV),

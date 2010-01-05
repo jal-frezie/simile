@@ -10,7 +10,7 @@ sicstus_module(backup, [initialize_ring/1,
 			go_back/1, go_forward/1, make_auto_name/3,
 			new_autosave/2, clear_autosave/2, check_autosave/4,
 			scrub_autosave/1,
-			is_toplevel/1, use_temp_dir/1, use_pref_dir/1,
+			is_toplevel/1, use_pref_dir/1,
 			into_save_file/2]).
 
 sicstus_use_module([library(lists), sp_only, ame_gen, database,
@@ -450,9 +450,6 @@ make_auto_name(Name, NewExtn, AutoName) :-
 	BaseStr = NameStr), !,
 	append(BaseStr, NewExtn, AutoNameStr),
 	name(AutoName, AutoNameStr).
-
-:- dynamic(use_temp_dir/1).
-/* this is set in state.pl */
 
 use_pref_dir(Dir) :-
 	use_temp_dir(PDir),

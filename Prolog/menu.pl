@@ -12,7 +12,7 @@ sicstus_module(menu, [undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
 	not_last_toplevel/1, off_window/2, certain_death_node/1,
 	kill_everything/1]).
 	
-sicstus_use_module([sp_only, compile, dialogue, m_update, image, draw, 
+sicstus_use_module([sp_only, forms, m_update, image, draw, 
 	state, backup, library, ame_gen, utility, ss_import, m_class,
 	library(lists), library(ordsets)]).
 
@@ -130,7 +130,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		    inject_graphics(Win2, GraphFileName),
 		    (Translated = copy;
 		    \+ Translated = copy,
-			dialogue:reassure_user("Translating internal IDs of canvas objects."),
+			reassure_user("Translating internal IDs of canvas objects."),
 			translate_canvas_pl_names(Win2, Translated)),
 		    fail;
 		true);
@@ -321,47 +321,6 @@ menu_handle(Win, file, save_interface) :-
 	    fail;
 	close(Stream),
 	finish_progress_dialogue).
-
-menu_handle(Win, file, CompOrBuild) :-
-	(CompOrBuild = compile_c, % export shared library
-	    output:safe_tcl_eval([info, sharedlibextension], IdentStr);
-	 CompOrBuild = build_c, % export source code
-	    IdentStr = ".cpp"),
-	Win shows_model Model,
-	name(Ident, IdentStr),
-	get_default_export_name(Model, IdentStr, DefN),
-	get_program_file(DefN, Model, Tgt),
-	start_progress_dialogue(Win),
-	use_temp_dir(Temp),
-	find_all_comps(Base, Model),
-	(Base = root,
-	    CompDir = Temp;
-	abs_path_name(Base, root, Path),
-	    append_atoms([Temp, '/', Path], CompDir)),
-	(\+ rebuild_code(c, Model, CompDir), !;
-	(get_av_pair(Model, 1, c_new, Serial), !; Serial = 1),
-	    caption_for(Model, Capt),
-	    append_atoms([CompDir, '/', Capt, '/model', Serial, Ident], Top),
-	    output:safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)).
-
-menu_handle(Win, file, RunCmd) :-
-	member([RunCmd, Lang], [[run_c, c], [run_tcl, tcl]]),
-	Win shows_model Node,
-	start_progress_dialogue(Win),
-	/* Compile the thing into whatever, load it */
-	use_temp_dir(Dir),
-	(rebuild_code(Lang, Node, Dir), !,
-	    % if exceps happen here, catch in Tcl and return failure
-	    % on_exception(Whoops,
-			 output:prepare_execution(Node, Lang),
-% 		     (sicstus_write_to_chars(Whoops, Squeak),
-% 			 scrub_run(Node, 0))),
-	    set_running_model(Node);
-	    true),
-	(retract(new_exec_for(_Any)), !,
-	    retractall(new_exec_for(_)),
-	    finish_move(Node, 0);
-	restart_move).
 
 %################################### Bob's changes (tcl/tk version): start (
 menu_handle(Win, file, list_eqns) :-
@@ -1196,7 +1155,7 @@ separate_type_from_mems([H | T], H-T).
 change_enum_type(Node, ArgAtom) :-
 	name(ArgAtom, ArgStr),
 	output:chop_list(ArgStr, DataStrs),
-	dialogue:strings_to_atoms(DataStrs, [Type | Mems]),
+	forms:strings_to_atoms(DataStrs, [Type | Mems]),
 	get_av_pair(Node, 0, enum_types, EnumTypes),
 	append(Front, [Type-_OldMems | Back], EnumTypes),
 	append(Front, [Type-Mems | Back], NewEnumTypes),	
@@ -1228,11 +1187,6 @@ flip_innards(Node_name, Action) :-
 			translate(Wherever, Trans, New_wherever)),
 		change_shape(Thing, Whatever, New_wherever),
 		fail).
-
-rebuild_code(Lang, Node, ProgFileDir) :-
-	compile(Lang, Node, ProgFileDir);
-	scrub_run(Node, 0),
-	fail.
 
 check_deletable(Win, Parent) :-
 	(\+ find_all_comps(Parent, _), !;

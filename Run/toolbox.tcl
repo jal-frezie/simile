@@ -93,10 +93,6 @@ if {[string match windows $tcl_platform(platform)]} {
 
 set equationbar(current_action) null
 
-proc WhatAmI {} {
-    return editor
-}
-
 proc NewTopLevel {} {
     MenuSelect dummy file new_toplevel
     #    set newInstance [interp create]
@@ -1741,6 +1737,7 @@ proc ExecQuery {args} {
 	eval Query $args
     }
 }
+
 proc OpenAll {win} {
     MenuSelect $win file open
     RunIfPackage
@@ -1783,9 +1780,9 @@ proc OpenProjectFile {path} {
 	    }
 	}
         if {$SimileProject(running_c)} {
-            MenuSelect $win file run_c
+            MenuSelect $win code run_c
         } else  {
-            MenuSelect $win file run_tcl
+            MenuSelect $win code run_tcl
         }
 	update
         if {$runState($topNode,modelRunning)>=3 && \
@@ -2075,7 +2072,7 @@ proc Rerun {winId go} {
             set runType run_c
         }
 
-        MenuSelect $winId file $runType
+        MenuSelect $winId code $runType
     } else {
         do_in_node $node StartRun $node
         # assume if model was running before it will run again

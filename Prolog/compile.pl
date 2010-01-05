@@ -4,7 +4,7 @@
 *** being the starting point.                                              ****
 ******************************************************************************/
 
-sicstus_module( compile, [compile/3, new_exec_for/1] ).
+sicstus_module( compile, [compile/3] ).
 
 sicstus_use_module( [library(ordsets),library(lists),
 		sp_only,instance,inters,language,render,m_class,utility,output,
@@ -20,7 +20,6 @@ sicstus_use_module( [library(ordsets),library(lists),
 % control over layout, which may be important for some languages. (Having said
 % that, the current version does simple block-style indenting.
 
-:- dynamic(new_exec_for/1).
 :- dynamic(error_free/1).
 
 compile( Language, Parent, DestDir) :-
@@ -28,7 +27,7 @@ compile( Language, Parent, DestDir) :-
 /*	(Language = tcl, !,
 	    unseparate(SeparateNodes);
 	list_interconnects(Parent)),
-*/	reassure_user("Checking that the model is complete and consistent"),
+*/	tk_update_infobox("Checking that the model is complete and consistent"),
 	/* This is a stopgap, we should really update a property of the
 	submodel containing the destination whenever a link is added or
 	deleted so only to do these checks when needed */
@@ -45,7 +44,6 @@ compile( Language, Parent, DestDir) :-
 		      Help = circular;
 		    Help = execution),
 		  query(Err, error, Help, [ok], _))),
-	finish_progress_dialogue,
 	retract(error_free(build)). % only possible if nothing went wrong
 /*	(Language = tcl, !,
 	    all(m_class, has_new_class_refinement,
@@ -157,7 +155,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 			build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]),
 		    (Language = c, Extn = '.cpp';
 		     Language = tcl, Extn = '.tcl'),
-		    dialogue:reassure_user("Instantiating expressions from node values"),
+		    dialogue:tk_update_infobox("Instantiating expressions from node values"),
 		    instantiate_all(Parent, Model),
 		    append_atoms([WCheckDir, '/', model, Extn], WProgName),
 		    open_native(WProgName, write, Stream),
@@ -167,15 +165,14 @@ build_instances(Language, DestDir, Parent, TopNode,
 				 (reclose(Stream), raise_exception(Puke))),
 		    close(Stream),
 		    Fuss = 1),
-		dialogue:reassure_user("Compiling the program generated for the model"),
+		dialogue:tk_update_infobox("Compiling the program generated for the model"),
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
 	     compile_c_program(CheckDir, ExtLibs, Fuss, Tgt),
 		 (Tgt = -1, !, fail;
 		  Tgt > 0,
 		  (Parent has_changed_model_refinement c_new of Tgt;
-		      Parent has_new_model_refinement c_new of Tgt)),
-		 assert(new_exec_for(Parent)))),
+		      Parent has_new_model_refinement c_new of Tgt)))),
 	    load_executable(Language, CheckDir, Tgt, Parent, TopNode, Includes),
 	    KeepDir = 1;
 	ChangeNext = ChangeTop),
@@ -350,13 +347,13 @@ important...(or was, back when the A stood for Agroforestry)... */
 structures corresponding to submodels, structure types, pointers and other 
 bits and pieces */
 
-	reassure_user("Choosing names for program variables"),
+	tk_update_infobox("Choosing names for program variables"),
 	declare_structure(Language, FullModel, Used, AllGraphs),
 
 	(
 % File writing starts here
 	send_to_dest(Stream, ['#include <support1.cpp>']),
-	dialogue:reassure_user("Creating submodel value expressions"),
+	dialogue:tk_update_infobox("Creating submodel value expressions"),
 	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_,_),
 				     _,_), [], TopStep, Phases, [], Used,
 			    ExtIncs, Inters, ReevaluateForm),
@@ -427,13 +424,13 @@ wot need them */
 	/* the " in the above line does not start a quoted string */
 	send_to_dest(Stream, FullIncs),
 	
-	reassure_user("Generating constant declarations"),
+	tk_update_infobox("Generating constant declarations"),
 	excrete(Language, comment, 'CONSTANT DECLARATIONS', 0, Stream),
 	all(compile, excrete,
 	    [unify(Language), unify(variable_declaration), build(Constants),
 	     unify(0), unify(Stream)]),
 	
-	reassure_user("Generating structure declarations"),
+	tk_update_infobox("Generating structure declarations"),
 	excrete(Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0, Stream),
 	
 	RootInstance = instance(submodel, root, xrefs(AugmentedModel, _,[],_),
@@ -456,7 +453,7 @@ wot need them */
 	).
 
 insert_metadata(Language, FullModel, Used, Stream) :-
-	reassure_user("Generating metadata declarations"),
+	tk_update_infobox("Generating metadata declarations"),
 	extract_instances(FullModel, RealDecls),
 	generate_metadata(Language, RealDecls, [], 1, Used, NodeData, Stream),
 	make_constant_list(Language, NodeData, StructText),
@@ -555,12 +552,12 @@ mark_unstepped(Cond, Set, Add) :-
 % evaluation into the slowest time step in which it needs to be updated
 
 check_functions(Functions, Steps, Updates) :-
-/*	reassure_user("Checking for circularity in model assignment order"),
+/*	tk_update_infobox("Checking for circularity in model assignment order"),
 	(\+ all(compile, reachable, [build(Functions), unify([])]),
 	    retract(heres_yer_loop(Loop)),
 	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
-*/	reassure_user("Sorting assignments into correct time steps"),
+*/	tk_update_infobox("Sorting assignments into correct time steps"),
         SpecialSteps is Steps-1,
         sort_assignments(Functions, SpecialSteps),
 	RKStep is Steps+1,
@@ -568,7 +565,7 @@ check_functions(Functions, Steps, Updates) :-
 	all(compile, mark_unstepped, [build(Functions), unify(Steps),
 				      append(_Normal, [])]),
 	/* Check all same-time-step circles can be done in one program loop */
-	reassure_user("Checking consistency of same-time-step loops"),
+	tk_update_infobox("Checking consistency of same-time-step loops"),
 	(member(Start, Functions),
 	    Start = make(_, Conds-_, _,_,_), 
 	    member(later(Loop2), Conds),
@@ -717,7 +714,7 @@ pick_types(All, Types, Picked) :-
 /* DeltaForm is used to indicate that nodes that depend on compartments cannot be set at initialization time. For the same reason we include NotionalInputUpdates -- update instructions for the input parameters, which are never actually executed but which are used to make sure nodes that depend on them are evaluated every time step.
 
 update_submodel_compartments(Language, Phases, Used, DeltaForm, Decls) :-
-	reassure_user("Generating compartment update expressions"),
+	tk_update_infobox("Generating compartment update expressions"),
 	render(Language, procedure_start,
 	       call(void, do_updatemodel, [real, start_time], 
 			[int, phase]), 0,
@@ -792,7 +789,7 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 
 build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 			  Used, AllGraphs, Stream) :-
-	reassure_user("Ordering model execution assignments"),
+	tk_update_infobox("Ordering model execution assignments"),
 
 	/* rough and ready -- phase NotDone means it never gets scheduled */
 	order_all_assignments(Phases, Updates, update, OrdUpdates),
@@ -807,7 +804,7 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 	/* note state variables implemented by 'last' might refer to
 	compartment values, hence must go before them */
 
-	reassure_user("Generating code for model execution"),
+	tk_update_infobox("Generating code for model execution"),
 	all(compile, build_eval_proc,
 	    [unify(Language), unify(Constants),
 	     build([advancemodel, updatemodel, evalmodel]),
@@ -1880,7 +1877,7 @@ set_free_phases([make(_,_,_, Ph, _) | Insts], Phases) :-
 	set_free_phases(Insts, Phases). */
 
 set_free_phases(OldForm, Phase, NewForm) :-
-	reassure_user("Cross-referencing effects and conditions"),
+	tk_update_infobox("Cross-referencing effects and conditions"),
 	all(compile, convert_form,
 	    [build(OldForm), unify(Phase), build(NewForm), build(Refs)]),
 	all(compile, find_member, [build(NewForm), build(Refs), unify(NewForm)]),
@@ -2157,6 +2154,7 @@ name_components(Language, [instance(_Type, Node, _, elt(_, Var, _), _)
 			  | Compartments], Used, Graphs) :-
 	caption_for(Node, Name),
 	generate_name( Language, Name, Var, Used),
+%	make_code_atom(Name, Var, Used),
 	(Node has_class_refinement table_data of
 	[file='/graph/', data=[YLow, YHigh, YSpan],
 	 indices=[XLow, XHigh, XSpan, Range], current=PointList,
@@ -2168,6 +2166,38 @@ name_components(Language, [instance(_Type, Node, _, elt(_, Var, _), _)
 	    Graphs = TGraphs),
 	name_components( Language, Compartments, Used, TGraphs).
 
+/* New technology: we want to convert any caption into a unique variable name,
+while hopefully keeping it recognizable.
+make_code_atom(Capt, Name, Used) :-
+	name(Capt, [Hd | CaptStr]),
+	(\+ available(Capt, Used), !,
+	    hex_pair_for(Hd, Hx),
+	    append(Hx, CaptStr, NameStr);
+	all(compile, make_code_tail,
+	    [build(CaptStr), append(TailStr, [])]),
+	    (is_alpha_or_(Hd), !,
+		NameStr = [Hd | TailStr];
+	      hex_pair_for(Hd, Hx),
+		append(Hx, TailStr, NameStr))),
+	name(Name, NameStr).
+
+available(Capt, Used) :-
+	length(Used, _), !,
+	\+ member(Capt, Used).
+
+hex_pair_for(AscNo, HxPr) :-
+	sicstus_format_to_chars("_%x", [AscNo], HxPr).
+
+make_code_tail(AscNo, Chunk) :-
+	(is_alpha_or_(AscNo); AscNo >= "0", "9" >= AscNo), !,
+	Chunk = [AscNo];
+	hex_pair_for(AscNo, Chunk).
+
+is_alpha_or_(AscNo) :-
+	AscNo >= "A", "Z" >= AscNo;
+	AscNo >= "a", "z" >= AscNo;
+	AscNo = "_".
+ */
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 send_to_dest(Stream, Stuff) :-
 	do_writing(Stuff, Stream).

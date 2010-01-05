@@ -7,7 +7,7 @@ This starts off the application and goes into an event loop from which it is dri
 :- consult(sp_only).
 
 :- 	use_module([library(tcltk), library(lists), library(charsio),
-		    input, utility]).
+		    input, code]).
 
 /* Just in case we use the outline runtime system from Sicstus 3.9... */
 runtime_entry(start) :-
@@ -44,7 +44,7 @@ portray(make(E, Conds, P, F, A)) :-
 %	print(sm(Name,Lp)).
 %
 portray(T) :-
-	rt_portray(T).
+	utility:rt_portray(T).
 
 trim_conds(Full, Short) :-
 	Full = make(Short, _,_,_,_), !;
@@ -71,15 +71,6 @@ main :-
 			 name(Bug, String),
 			 write(Bug), nl,
 			 fail)),
-        user:any_tcl_eval('WhatAmI', 1, CmdStr),
-        name(Cmd, CmdStr),
-        call(Cmd),
-        tcl_delete(Interp),
-	unset_interpreter,
-	state:kill_windows,
-	true.
-
-editor :-
 	prolog_flag(version, FullVnum),
 	name(FullVnum, FullVnumStr),
 	append(VnumStr, [32, 40 | _], FullVnumStr),
@@ -87,9 +78,13 @@ editor :-
 	on_exception(ErrorFunction, state:kickoff(Vnum), true),
         (nonvar(ErrorFunction),
 	    ame_gen:query(start_fail(ErrorFunction), error, top, [ok], _);
-	tk_main_loop).
+	tk_main_loop),
+        tcl_delete(Interp),
+	unset_interpreter,
+	state:kill_windows,
+	true.
 
 wind_up :-
-	backup:use_temp_dir(TempDir),
+	state:use_temp_dir(TempDir),
 	output:my_delete_file(TempDir),
 	any_tcl_eval([destroy, '.'], 0, _).

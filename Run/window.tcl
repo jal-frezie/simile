@@ -1202,13 +1202,33 @@ proc WindowDetail {window category level redraw} {
 # feedback window allowing progress reports on long activities.
 
 proc MenuSelect { window button item } {
-    if [string match local $button] {
-        DoLocalCmd $window $item
-    } else {
-        prolog tk_menu('$window',$button,'$item')
+    switch $button {
+	local {
+	    DoLocalCmd $window $item
+	} code {
+	    set node $::window_info($window,top_node)
+	    switch $item {
+		build_c {
+		    set extn .cpp
+		} compile_c {
+		    set extn [info sharedlibextn]
+		}
+	    }
+	    if {[info exists extn]} {
+		set tgt [ChooseFile [GetExecTitle $node]$extn \
+			     "Export code to:" 1 $node]
+	    } else {
+		set tgt dummy
+	    }
+	    OpenProgressBox $window
+	    prolog tk_code($node,$item,'$tgt')
+	    CloseProgressBox
+	} default {
+	    prolog tk_menu('$window',$button,'$item')
 # note this causes a problem with the dll interface as hi-8 chars in the item
 # get a representation in Prolog that then screws up when passed back via 
 # tcl_eval
+	}
     }
 }
 
@@ -1228,6 +1248,8 @@ proc DoLocalCmd {win item} {
         findnext {NextCaption $win}
         raiseMRE {RaiseWinMRE $win}
         open_all {OpenAll $win}
+	compile_c {ExportCode $win compile_c}
+	build_c {ExportCode $win build_c}
         insert {InsertModel $win}
 	empty {EmptyWindow $win}
     }
@@ -1344,9 +1366,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm2 add command -label "Model declarations" \
             -command "MenuSelect $c file export_prolog"
     $fm2 add command -label "C++ code" -state $sourceExps \
-            -command "MenuSelect $c file build_c"
+            -command "MenuSelect $c code build_c"
             $fm2 add command -label "Compiled binary" -state $sourceExps \
-            -command "MenuSelect $c file compile_c"
+            -command "MenuSelect $c code compile_c"
     $fm2 add command -label "PostScript graphics" \
             -command "ExportPostscript $c"
     $fm add separator
@@ -1517,11 +1539,11 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $topm add cascade -label Model -underline 0 \
             -menu $topm.model
     $fm add command -label "Run" -state $execEntryState \
-                    -command "MenuSelect $c file run_c" \
+                    -command "MenuSelect $c code run_c" \
                     -accelerator "$accKey+R"
     AddAccelerator $winid model "Run" "<$accSym-r>"
     $fm add command -label "Debug" -state $execEntryState \
-                    -command "MenuSelect $c file run_tcl" \
+                    -command "MenuSelect $c code run_tcl" \
                     -accelerator "$accKey+D"
     AddAccelerator $winid model "Debug" "<$accSym-d>"
     $fm add command -label "Abort execution" -state $execEntryState \

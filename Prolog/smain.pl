@@ -5,7 +5,7 @@ This starts off the application and goes into an event loop from which it is dri
 */
 
 :- 	use_module([library(lists),
-		    sp_only, tcltk, input, utility]).
+		    tcltk, input]).
 
 /* Just in case we use the outline runtime system from Sicstus 3.9... */
 runtime_entry(start) :-

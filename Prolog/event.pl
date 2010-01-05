@@ -15,7 +15,7 @@ sicstus_module(event, [get_info/4,context_find/3,get_params/2,bar_edit_menu/1,
 		       resize_top_win/3, adjust_display_area/2,
 		       prioritize_window/1, run_settings_tweaked/1]).
 
-sicstus_use_module([sp_only, dialogue, m_update, image, draw,
+sicstus_use_module([sp_only, forms, m_update, image, draw,
 		    state, backup, submodel, ame_gen, utility,
 		    library(lists), library(ordsets)]).
 
