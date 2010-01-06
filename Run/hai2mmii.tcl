@@ -142,7 +142,8 @@ proc GetModelValue { node } {
     global subbedPlots
     if {[info exists subbedPlots($node)]} {
 	if {[llength $subbedPlots($node)]==3} { # is pointer to univ struct
-	    return [list [extract_list [lindex $subbedPlots($node) 2]]]
+	    return [list [extract_list [lindex $subbedPlots($node) 2] \
+			      16777216]] ;# enough to freeze a 4 gig machine
 	} else { # from tcl model or measured value from pest interface
 	    return [list $subbedPlots($node)]
 	}
@@ -305,7 +306,7 @@ proc GetCompProperty {topNode prop args} {
 	    }
 	    switch -regexp $prop {
 		Value {
-		    set result [list [extract_list $hdl]]
+		    set result [list [extract_list $hdl 16777216]]
 		} Binary {
 		    set result [eval extract_binary [list $hdl] \
 				    [lrange $args 1 end]]

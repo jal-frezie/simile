@@ -257,72 +257,99 @@ FINDABLE int testlicenseCmd(ClientData clientData, Tcl_Interp *interp,
   }
 }
 
+// stuff to do with unpacking the general C format for model values follows:
+
+void extend_list(Tcl_Obj *localObj, int index, Tcl_Obj *localSubObj, int dir) {
+  int arrayOut;
+  Tcl_Obj *indObj;
+
+  Tcl_ListObjLength(NULL, localSubObj, &arrayOut);
+  if (arrayOut) {
+    indObj = Tcl_NewIntObj(index);
+      if (dir>=0) {
+	Tcl_ListObjAppendElement(NULL, localObj, indObj);
+	Tcl_ListObjAppendElement(NULL, localObj, localSubObj);
+      } else { // stick them in at the beginning
+	Tcl_ListObjReplace(NULL, localObj, 0,0,1, &indObj);
+	Tcl_ListObjReplace(NULL, localObj, 1,0,1, &localSubObj);
+      }
+  }
+}
+
 /* next two call convert_to_tcl, which calls them, so declare in advance */
-Tcl_Obj* convert_to_tcl(int*, int*, char*);
+Tcl_Obj* convert_to_tcl(int*, int*, char*, int*);
 
 Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices, 
-			     int* subBlocks, int *members, char** block) {
+			     int* subBlocks, int *members, char** block,
+			     int* toGet) {
   Tcl_Obj *localObj, *localSubObj;
-  int count;
+  int count, dir;
+
+  dir = *toGet>0?1:-1;
   if (depth==dimty) {
     if (*members) {
       *block += dimty*sizeof(int);
-      localObj = convert_to_tcl(dims, subBlocks, *block);
-      *block += subBlocks[0];
+      localObj = convert_to_tcl(dims, subBlocks, *block, toGet);
+      if (dir>0) {
+	*block += subBlocks[0];
+      } else {
+	*block -= (subBlocks[0]+2*dimty*sizeof(int));
+      }
       --*members;
     } else {
       localObj = Tcl_NewListObj(0, NULL);
     }
   } else {
     localObj = Tcl_NewListObj(0, NULL);
-    while (*members) {
+    while (*members && *toGet) {
       for (count=0; count<depth; ++count) {
 	if (((int*)*block)[count]!=indices[count]) return(localObj);
       }
       indices[depth] = ((int*)*block)[depth];
       localSubObj = append_list_members(dimty, depth+1, dims, indices,
-					subBlocks, members, block);
-      Tcl_ListObjLength(NULL, localSubObj, &count); // re-use count variable
-      if (count) {
-	Tcl_ListObjAppendElement(NULL, localObj, Tcl_NewIntObj(indices[depth]));
-	Tcl_ListObjAppendElement(NULL, localObj, localSubObj);
-      }
+					subBlocks, members, block, toGet);
+
+      extend_list(localObj, indices[depth], localSubObj, dir);
     }
   }
   return(localObj);
 }
 
 Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks, 
-			      char* block) {
-  Tcl_Obj *localObj, *indObj, *localSubObj;
-  int offset, arrayOut;
+			      char* block, int* count) {
+  Tcl_Obj *localObj, *localSubObj;
+  int offset, start, end, dir;
   
   localObj = Tcl_NewListObj(0, NULL);
-  for (offset = 0; membership > offset; ++offset) {
-    indObj = Tcl_NewIntObj(offset+1);
-    localSubObj = convert_to_tcl(dims, subBlocks, block+offset*subBlocks[0]);
-    Tcl_ListObjLength(NULL, localSubObj, &arrayOut);
-    if (arrayOut) {
-      Tcl_ListObjAppendElement(NULL, localObj, indObj);
-      Tcl_ListObjAppendElement(NULL, localObj, localSubObj);
-    }
+  dir = *count>0?1:-1;
+  if (dir==1) {
+    start = 0; end = membership;
+  } else {
+    start = membership-1; end = -1;
+  }
+  for (offset = start; offset != end; offset += dir) {
+    if (!*count) break;
+    localSubObj = convert_to_tcl(dims, subBlocks, block+offset*subBlocks[0],
+				 count);
+    extend_list(localObj, offset+1, localSubObj, dir);
   }
   return localObj;
 }
   
-Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block) {
+Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block, int* count) {
   Tcl_Obj *localObj;
   int membership, *indices;
-  char *newBlock, *blockEnd;
+  char *newBlock;
 
   if (dims[0] > 0) { // it's an array bound
-    localObj = append_array_members(dims[0], dims+1, subBlocks+1, block);
+    localObj = append_array_members(dims[0], dims+1, subBlocks+1, block, count);
   } else {
     switch (dims[0]) {
     case OWNSIZED:
       membership = ((sizeAndPtr*)block)->size;
       newBlock = ((sizeAndPtr*)block)->ptr;
-      localObj = append_array_members(membership, dims+1, subBlocks+1, newBlock);
+      localObj = append_array_members(membership, dims+1, subBlocks+1, 
+				      newBlock, count);
       break;
     case SPARSEARRAY: 
       // need clevers to nest indices; see old stuff
@@ -330,22 +357,28 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block) {
       newBlock = ((sizeAndPtr*)block)->ptr;
       block = newBlock;
       indices = (int*)malloc(sizeof(int)*dims[1]);
-      blockEnd = block+membership*(dims[1]*sizeof(int)+subBlocks[1]);
+      if (*count<0) { // start at last index group and work back
+	block = block+(membership-1)*(dims[1]*sizeof(int)+subBlocks[1]);
+      }
       localObj = append_list_members(dims[1], 0, dims+2, indices, subBlocks+1,
-				     &membership, &block);
+				     &membership, &block, count);
       free(indices);
       break;
     case VALUELESS:
       localObj = Tcl_NewStringObj("sm", -1);
+      *count -= *count>0?1:-1;
       break;
     case REAL:
       localObj = Tcl_NewDoubleObj(*(double *)block);
+      *count -= *count>0?1:-1;
       break;
     case FLAG:
       localObj = Tcl_NewBooleanObj(*(int *)block);
+      *count -= *count>0?1:-1;
       break;
     default: /* INTEGER or ENUM(*) */
       localObj = Tcl_NewIntObj(*(int *)block);
+      *count -= *count>0?1:-1;
     }
   }
   return localObj;
@@ -381,7 +414,7 @@ void make_sub_block_sizes(int *dims, int *sizes) {
 FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   Tcl_Obj *resultPtr, *newData;
-  int iPosn, error;
+  int iPosn, error, count;
 
   char spare[256];
   int dims[32], path[32];
@@ -389,8 +422,8 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
   enum_type_data* usedTypes[32];
   nodeValues* c_result;
 
-  if (argc != 2) {
-    Tcl_WrongNumArgs(interp, 1, argv, "data_handle");
+  if (argc != 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "data_handle value_count");
     return TCL_ERROR;
   }
 
@@ -399,9 +432,15 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
   
+  error = Tcl_GetIntFromObj(interp, argv[2], &count);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
   int subBlocks[32];
   make_sub_block_sizes(c_result->dimSpecs, subBlocks);
-  resultPtr = convert_to_tcl(c_result->dimSpecs, subBlocks, c_result->contents);
+  resultPtr = convert_to_tcl(c_result->dimSpecs, subBlocks, c_result->contents,
+			     &count);
   Tcl_SetObjResult(interp, resultPtr);
   return TCL_OK;
 }
@@ -626,6 +665,29 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
+FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
+		 int argc, Tcl_Obj *CONST argv[]) {
+  int size, error;
+  nodeValues* accessTool;
+
+  if (argc != 2) {
+    Tcl_WrongNumArgs(interp, 1, argv, "data_handle");
+    return TCL_ERROR;
+  }
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&accessTool);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  size = 0;
+  call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
+		    add_to_size, (void*)&size);
+  // this increments size once for each value
+
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
+  return TCL_OK;
+}
+
 FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   if (argc != 1) {
@@ -664,6 +726,9 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   
   Tcl_CreateObjCommand(interp, "distinct_values", extractBinCmd, 
 		       (ClientData)1, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "count_values", getValueCountCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   return TCL_OK;
 }

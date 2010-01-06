@@ -655,8 +655,22 @@ proc EatInput {} {
 }
 
 proc GetShortVals {topNode plName limit} {
-    set text [lindex [GetCompProperty $topNode Value $plName] 0]
-    set count [ShrinkValueList text $limit]
+    if {[RunningInC $topNode]} {
+	if {[catch {GetHandle $topNode $plName} hdl]} {
+	    set text novalue
+	    set count 0
+	} else {
+	    set text [extract_list $hdl 64]
+	    if {[CountValues $text]==64} { ;# probably lost some
+		eval {lappend text} [extract_list $hdl -64]
+	    }
+	    set count [count_values $hdl]
+	    free_data_handle $hdl
+	}
+    } else {
+	set text [lindex [GetCompProperty $topNode Value $plName] 0]
+	set count [ShrinkValueList text $limit]
+    }
     catch {GetCompProperty $topNode Type $plName} iType
     if {[string equal REAL $iType]} {
 	set precis [PrefValue custom(popupPrecision) popupPrecision]

@@ -196,15 +196,15 @@ namespace eval ::$keyValue {
 	if {$runState($node,modelRunning)>2} {
 	    PostPopup $X $Y
 #	    set trans [GetTransTable $plName]
-	    if {[catch {GetModelValue $plName} mVal]} {
-#		set missing [lindex [split $mVal \"] 1]
-#		set value \
-#		    "Missing value: [lindex [DescribeComponent $missing] 0]"
-		set value no_value
-	    } else {
-		set value [lindex $mVal 0]
-		#puts "trans $trans value $value"
-	    }
+#	    if {[catch {GetModelValue $plName} mVal]} {
+##		set missing [lindex [split $mVal \"] 1]
+##		set value \
+##		    "Missing value: [lindex [DescribeComponent $missing] 0]"
+#		set value no_value
+#	    } else {
+#		set value [lindex $mVal 0]
+#		#puts "trans $trans value $value"
+#	    }
 	    AddPopupMessage novalue \#ffffc0 GetShortVals $node $plName
 	}
     }
