@@ -660,11 +660,12 @@ proc GetShortVals {topNode plName limit} {
 	    set text novalue
 	    set count 0
 	} else {
-	    set text [extract_list $hdl 64]
-	    if {[CountValues $text]==64} { ;# probably lost some
-		eval {lappend text} [extract_list $hdl -64]
-	    }
 	    set count [count_values $hdl]
+	    if {$count<128} {
+		set text [extract_list $hdl 128]
+	    } else {
+		set text [concat [extract_list $hdl 64] [extract_list $hdl -64]]
+	    }
 	    free_data_handle $hdl
 	}
     } else {
