@@ -1872,18 +1872,22 @@ proc autocomplete {win action pt value valuelist} {
 #    if {[$win selection present]} {
 #	$win selection clear
 #    }
-    if {$action == 1} {
+# only try if edit adds 1 char
+    if {$action == 1 && [string length $value]==[$win index end]+1} {
 # only try to match current group of alphas
-	set origin [string wordstart $value $pt]
-	set close [string wordend $value $pt]
-	set final [expr {$close-1}]
-	set trigger [string range $value $origin $final]
-	if {[string is wordchar -strict $trigger]} {
-# add any leading \['s to search string as options
-	    set br1 $origin
-	    while {[string equal \[ [string index $value [incr br1 -1]]]} {
-		set trigger \\\[?$trigger
-	    }
+	set final [$win index insert]
+	# was [string wordend $value $pt]
+	set close [expr {$final+1}]
+	if {[string is wordchar -strict [string index $value $final]]} {
+	    set origin [string wordstart $value $pt]
+	    # add any leading \['s or \{'s to search string
+	    set wordMap [string map [list \[ _ \{ _] $value]
+	    set trigStart [string wordstart $wordMap $pt]
+	    set trigger [string range $value $trigStart $final]
+	    # now all leading brackets must be escaped, and leading ['s made
+	    # optional because they could be starting an itemized array
+	    set trigger [string map [list \[ \\\[? \{ \\\{] $trigger]
+
 	    set valuelist [concat $equationbar(params) $valuelist]
 # right now for some innovation. Up and down arrows will scroll through 
 # possible matches so we need to get all...only include completion if it adds
