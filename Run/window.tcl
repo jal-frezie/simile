@@ -1878,7 +1878,35 @@ proc autocomplete {win action pt value valuelist} {
 	set final [$win index insert]
 	# was [string wordend $value $pt]
 	set close [expr {$final+1}]
-	if {[string is wordchar -strict [string index $value $final]]} {
+# new bit: try to flash matching open bracket
+	set testChar [string index $value $final]
+	set brackets \(\[\{\)\]\}
+	set bNum [string first $testChar $brackets]
+	if {$bNum>2} { ;# 2 to enable; cannot config selbg for ttk::entry
+	    lappend stacket $bNum
+	    while {[incr final -1]>=0} {
+		set testChar [string index $value $final]
+		set bNum [string first $testChar $brackets]
+		if {$bNum>2} {
+		    lappend stacket $bNum
+		} elseif {$bNum>-1} {
+		    if {$bNum+3==[lindex $stacket end]} { ;# match!
+			set stacket [lrange $stacket 0 end-1]
+			if {![llength $stacket]} {
+			    FlashRange $win $final [expr {$final+1}]
+			    #$win config -selectbackground green
+			    break
+			}
+		    } else {
+			lappend stacket 99 ;# make sure no match happens
+		    }
+		}
+	    }
+	    if {$final<0} { ;# no match found
+		FlashRange $win [expr {$close-1}] $close
+		#$win config -selectbackground red
+	    }
+	} elseif {[string is wordchar -strict $testChar]} {
 	    set origin [string wordstart $value $pt]
 	    # add any leading \['s or \{'s to search string
 	    set wordMap [string map [list \[ _ \{ _] $value]
@@ -1913,6 +1941,15 @@ proc autocomplete {win action pt value valuelist} {
 	}
     }
     return 1
+}
+
+proc FlashRange {win start end} {
+    after idle $win selection range $start $end
+    after 100 $win selection clear
+    after 200 $win selection range $start $end
+    after 300 $win selection clear
+    after 400 $win selection range $start $end
+    after 500 $win selection clear
 }
 
 proc ScrollCompletion {win hop} {
