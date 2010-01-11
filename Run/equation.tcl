@@ -695,8 +695,55 @@ proc equationBindings { t en eu lbf lbx lbp gr ta ok can} {
     bind $ok <Tab> "focus $can"
     bind $can <Tab> "focus $gr"
     
+    bind $en <Key> "FlashMatchingBracket %W %A"
+    $en tag configure flash -background blue ;# for matching brackets
     # Set up for type in
     focus $en
+}
+
+# Following is copied from autocomplete in window, which does same job for
+# eqn bar. Diffrences interacting with a text widget are so great that it is
+# simplest just to have a separate procedure.
+proc FlashMatchingBracket {win testChar} {
+    set pt 0
+    set brackets \(\[\{\)\]\}
+    set bNum [string first $testChar $brackets]
+    if {$bNum>2} { ;# 2 to enable; cannot config selbg for ttk::entry
+	lappend stacket $bNum
+	while {[$win index "insert - $pt chars"]>1.0} {
+	    set testChar [$win get "insert - [incr pt] chars"]
+	    set bNum [string first $testChar $brackets]
+	    if {$bNum>2} {
+		lappend stacket $bNum
+	    } elseif {$bNum>-1} {
+		if {$bNum+3==[lindex $stacket end]} { ;# match!
+		    set stacket [lrange $stacket 0 end-1]
+		    if {![llength $stacket]} {
+			FlashTextRange $win $pt
+			#$win config -selectbackground green
+			break
+		    }
+		} else {
+		    lappend stacket 99 ;# make sure no match happens
+		}
+	    }
+	    set testChar {}
+	}
+	if {[string equal {} $testChar]} { ;# no match found
+	    FlashTextRange $win 0
+	    #$win config -selectbackground red
+	}
+    }
+}
+
+proc FlashTextRange {win pt} {
+    set pt [$win index "insert - $pt chars"]
+    after idle $win tag add flash $pt
+    after 100 $win tag remove flash $pt
+    after 200 $win tag add flash $pt
+    after 300 $win tag remove flash $pt
+    after 400 $win tag add flash $pt
+    after 500 $win tag remove flash $pt
 }
 
 proc MoveInFns {w X Y x y} {
