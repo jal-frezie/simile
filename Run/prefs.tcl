@@ -150,6 +150,7 @@ proc Pref_Dialog {} {
             set gridF $gridTF
             set popupTF [TitleFrame $vf.popuptTF -text "Popups over model components:"]
             set popupF $popupTF
+	    pack [frame $popupF.line2] -side bottom -fill x -expand 1
         set ef [frame $notebook.edit]
         $notebook add $ef -text Edit
             set genericTF [TitleFrame $ef.genericTF -text "All components:"]
@@ -212,6 +213,7 @@ proc Pref_Dialog {} {
                 gridSnap {set frame $genericF}
                 grid* {set frame $gridF}
                 comp* {set frame $popupF}
+		maxPopupSize {set frame $popupF.line2}
                 bigButtons {set frame $barF}
                 popupHelp {set frame $barF}
                 quickDrag {set frame $genericF}

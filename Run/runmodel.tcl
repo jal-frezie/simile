@@ -661,10 +661,12 @@ proc GetShortVals {topNode plName limit} {
 	    set count 0
 	} else {
 	    set count [count_values $hdl]
-	    if {$count<128} {
-		set text [extract_list $hdl 128]
+	    if {$count<$limit/5} {
+		set text [extract_list $hdl $count]
 	    } else {
-		set text [concat [extract_list $hdl 64] [extract_list $hdl -64]]
+		set tail [expr {$limit/10}]
+		set text [concat [extract_list $hdl $tail] \
+			      [extract_list $hdl -$tail]]
 	    }
 	    free_data_handle $hdl
 	}

@@ -1112,6 +1112,7 @@ proc ControlDraw {prologVersion} {
 		    {custom(gridH) gridH 15 "Horizontal pitch"} \
 		    {custom(gridV) gridV 15 "Vertical pitch"} \
 		    {custom(gridD) gridD 10 "Depth"} \
+		{custom(maxPopupSize) maxPopupSize 500 "Size limit"} \
                 {custom(bigButtons) bigButtons OFF "Use large buttons"} \
                 {custom(saveExtras) saveExtras {CHOICE {Canvas file} {Model file only}} "Save models as..."} \
                 {custom(recentCount) recentCount 10 "Entries on recently used file list"} \

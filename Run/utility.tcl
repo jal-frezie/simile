@@ -434,7 +434,7 @@ proc RemovePopup {args} {
 }
 
 proc AddPopupMessage {text colour args} {
-    set limit 500
+    set limit [PrefValue custom(maxPopupSize) maxPopupSize]
     if {[llength $args]} {
 	set combo [eval $args $limit]
 	set count [lindex $combo 0]
