@@ -18,12 +18,19 @@ proc FileParamDialogue {topWin mustShow} {
     foreach curVal [array names paramData /$topNode/*] {
         if {[llength $paramData($curVal)]} {
 	    set shortVal [TrimDTFromPath $curVal]
-            switch [ExistCheck $topNode $shortVal /$topNode 0 database] {
+            set hitsPath [ExistCheck $topNode $shortVal /$topNode 0 database]
+            switch $hitsPath {
                 break {
 		    return 0
                 } continue {
                     unset paramData($curVal)
-                }
+                } default {
+		    if {![string equal $shortVal $hitsPath]} {
+			set newPath /$topNode$hitsPath
+			set paramData($newPath) $paramData($curVal)
+			unset paramData($curVal)
+		    }
+		}
             }
         }
     }
@@ -1441,20 +1448,21 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	    # allows parameter names to contain the = sign
 	}
         #ShowMess debug info "Component is $restoredComp" ok
-        set node [ExistCheck $topNode $restoredComp $smPath $notInput file]
-        switch $node {
+        set path [ExistCheck $topNode $restoredComp $smPath $notInput file]
+        switch $path {
             break {
 		set anyGood 0
 		break
 	    }
             continue {continue}
         }
+	set node [GetCompProperty $topNode IdFromCapt $path]
         set startLine [FirstIndexCheck $topNode $node]
         if {($startLine!=-1)==($notInput!=-1)} {
 	    # change back now in case .spf filename is relative (possible
 	    # if merging params from script)
 	    cd $oldDir
-	    set restoredComp $smPath$restoredComp
+	    set restoredComp $smPath$path
             if {$origVersion>=4.0} {
 		set dataFinder [lindex $IdAndValue end]
                 set reference [string eq reference [lindex $IdAndValue end-1]]
@@ -1558,13 +1566,19 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     }
 }
 
-proc ExistCheck {topNode restoredComp tgtCap notInput source} {
+proc ExistCheck {topNode path level notInput source} {
     global bermudaTriangle
-    
+
+    set restoredComp $path
     set lostAtSea 0
-    foreach ship $bermudaTriangle {
-        if {![string first $ship $restoredComp]} {
-            set lostAtSea 1
+    foreach {lost found} $bermudaTriangle {
+        if {![string first $lost $restoredComp]} {
+	    if {[string equal none $found]} {
+		set lostAtSea 1
+	    } else {
+		set restoredComp $found[string range $restoredComp \
+					     [string length $lost] end]
+	    }
         }
     }
     if {$lostAtSea} {
@@ -1573,9 +1587,10 @@ proc ExistCheck {topNode restoredComp tgtCap notInput source} {
     
     if {$notInput>-1} {
 	set relevanceCheck {expr {[FirstIndexCheck $topNode $node]>-1}}
-	set tgtCap [TrimDTFromPath $tgtCap]
+	set tgtCap [TrimDTFromPath $level]
 	set lostType {file parameter}
     } else {
+	set tgtCap $level
 	set relevanceCheck {info exists ::targetNames($tgtCap$restoredComp)}
 	set lostType {output measurement}
     }
@@ -1601,16 +1616,60 @@ proc ExistCheck {topNode restoredComp tgtCap notInput source} {
             set lostType submodel
         }
         set act [Query [list unused_param $source $lostType $lostBit $tgtCap] \
-		     warning spf {} {abort}]
-        if {[string equal abort $act]} {
-            return break
-        }
+		     warning spf {} {forget abort reassign}]
+	switch $act {
+	    abort {
+		return break
+	    } reassign {
+		set newPath [ChooseByInspection $topNode $lostBit $lostType]
+	    } forget {
+		set newPath none
+	    }
+	}
         if {[string equal submodel $lostType]} {
-            lappend bermudaTriangle $lostBit
+            lappend bermudaTriangle $lostBit $newPath
+	    if {![string equal none $newPath]} { ;# check remaining nest levels
+		return [ExistCheck $topNode $path $level $notInput $source]
+	    }
+	} else {
+	    if {![string equal none $newPath]} {
+		return $newPath
+	    }
         }
         return continue
     }
-    return $node
+    return $tgtCap$restoredComp
+}
+
+# this gets a new location for the values of any parameters which were lying 
+# around in the model, or loaded from a file, but do not have a model component
+# in their current location. The component found need not use the part of
+# the previous location which does make sense, but must be inside the submodel
+# for which data is being loaded. Achieve this later by setting the last arg to
+# the required top level path.
+
+proc ChooseByInspection {topNode oldObj type} {
+    global helperTable classTable paramData
+
+    set t [PutItThere .newParamTgt {}] ;# window id used to bring clix here
+    wm protocol .newParamTgt WM_DELETE_WINDOW \
+	[list set paramData(newPath,done) none]
+    wm title $t "Choose a new $type for values from $oldObj" 
+
+# go through gymnastix to put a Model Inspector in ths window
+    set ::RunEnv::CurrentContainer $t
+    set hlp [UniqueId helper]
+    set helperId $helperTable(VariableList)
+    set runClass $classTable(run,$topNode)
+    similescript::$helperId $hlp $runClass Variables
+
+    LetItShow $t
+    grab $t
+    tkwait variable paramData(newPath,done)
+    grab release $t
+        
+    PackItUp $t
+    return $paramData(newPath,done)
 }
 
 proc IdFromTail {topNode fullCapt notInput} {

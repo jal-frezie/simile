@@ -778,7 +778,7 @@ set progressBoxCount 0
 proc OpenProgressBox {winId} {
     global progressBoxCount
 
-    if {[incr progressBoxCount]==1} {
+    if {!$progressBoxCount} {
 	PutItThere .progress $winId
 	wm title .progress "Progress with current operation"
 	wm protocol .progress WM_DELETE_WINDOW {set done 1}
@@ -792,6 +792,7 @@ proc OpenProgressBox {winId} {
 	message .progress.message -aspect 400 -text "Please wait"
 	pack .progress.message -fill both -expand true
 	update
+	incr progressBoxCount ;# update can cause AbandonEqn and ResetProgress
     }
     return $progressBoxCount
 }

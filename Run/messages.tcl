@@ -627,7 +627,9 @@ set msgs(ok_button) OK
 set msgs(yes_button) Yes
 set msgs(no_button) No
 set msgs(abort_button) "Give up"
-set msgs(forget_button) "Don't save"
+set msgs(forget_button) "Discard values"
+set msgs(reassign_button) "Use elsewhere"
+set msgs(abandon_button) "Don't save"
 set msgs(cancel_button) Cancel
 set msgs(save_button) Save
 set msgs(ignore_button) "Ignore log"

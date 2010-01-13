@@ -1289,10 +1289,10 @@ kill_everything(Model) :-
 ok_to_delete(Win, Target) :-
 	get_default_export_name(Target, ".sml", Handle),
 	caption_for(Target, Title),
-        query(abandon(Handle, Title), question, top, [forget, cancel, save],
+        query(abandon(Handle, Title), question, top, [abandon, cancel, save],
 	      Reply),
 	(Reply = save, do_save(Win, Target, false);
-	Reply = forget).
+	Reply = abandon).
 
 do_save(Win, Model, New_name) :-
 	\+ too_big_for_edn(Model),
