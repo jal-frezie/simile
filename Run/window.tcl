@@ -1212,6 +1212,8 @@ proc MenuSelect { window button item } {
 		    set extn .cpp
 		} compile_c {
 		    set extn [info sharedlibextn]
+		} default {
+		    set lang [string range $item 4 end]
 		}
 	    }
 	    if {[info exists extn]} {
@@ -1223,6 +1225,9 @@ proc MenuSelect { window button item } {
 	    OpenProgressBox $window
 	    prolog tk_code($node,$item,'$tgt')
 	    CloseProgressBox
+	    if {[info exists lang]} {
+		LoadProgram $node $lang
+	    }
 	} default {
 	    prolog tk_menu('$window',$button,'$item')
 # note this causes a problem with the dll interface as hi-8 chars in the item

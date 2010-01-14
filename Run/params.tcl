@@ -18,7 +18,8 @@ proc FileParamDialogue {topWin mustShow} {
     foreach curVal [array names paramData /$topNode/*] {
         if {[llength $paramData($curVal)]} {
 	    set shortVal [TrimDTFromPath $curVal]
-            set hitsPath [ExistCheck $topNode $shortVal /$topNode 0 database]
+            set hitsPath [lindex [ExistCheck $topNode $shortVal /$topNode 0 \
+				      database] 0]
             switch $hitsPath {
                 break {
 		    return 0
@@ -1448,21 +1449,21 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	    # allows parameter names to contain the = sign
 	}
         #ShowMess debug info "Component is $restoredComp" ok
-        set path [ExistCheck $topNode $restoredComp $smPath $notInput file]
-        switch $path {
+        set move [ExistCheck $topNode $restoredComp $smPath $notInput file]
+        switch $move {
             break {
 		set anyGood 0
 		break
 	    }
             continue {continue}
         }
-	set node [GetCompProperty $topNode IdFromCapt $path]
+	set node [lindex $move 1]
         set startLine [FirstIndexCheck $topNode $node]
         if {($startLine!=-1)==($notInput!=-1)} {
 	    # change back now in case .spf filename is relative (possible
 	    # if merging params from script)
 	    cd $oldDir
-	    set restoredComp $smPath$path
+	    set restoredComp $smPath[lindex $move 0]
             if {$origVersion>=4.0} {
 		set dataFinder [lindex $IdAndValue end]
                 set reference [string eq reference [lindex $IdAndValue end-1]]
@@ -1621,24 +1622,27 @@ proc ExistCheck {topNode path level notInput source} {
 	    abort {
 		return break
 	    } reassign {
-		set newPath [ChooseByInspection $topNode $lostBit $lostType]
+		set newPath [ChooseByInspection $topNode $lostBit $lostType \
+				$tgtCap]
 	    } forget {
 		set newPath none
 	    }
 	}
         if {[string equal submodel $lostType]} {
-            lappend bermudaTriangle $lostBit $newPath
+            lappend bermudaTriangle $lostBit [lindex $newPath 0]
 	    if {![string equal none $newPath]} { ;# check remaining nest levels
 		return [ExistCheck $topNode $path $level $notInput $source]
 	    }
 	} else {
 	    if {![string equal none $newPath]} {
+		#puts "shoved $path to $newPath"
 		return $newPath
 	    }
         }
         return continue
     }
-    return $tgtCap$restoredComp
+    #puts "moved $path to $restoredComp"
+    return [list $restoredComp $node]
 }
 
 # this gets a new location for the values of any parameters which were lying 
@@ -1648,20 +1652,20 @@ proc ExistCheck {topNode path level notInput source} {
 # for which data is being loaded. Achieve this later by setting the last arg to
 # the required top level path.
 
-proc ChooseByInspection {topNode oldObj type} {
+proc ChooseByInspection {topNode oldObj type context} {
     global helperTable classTable paramData
 
     set t [PutItThere .newParamTgt {}] ;# window id used to bring clix here
     wm protocol .newParamTgt WM_DELETE_WINDOW \
 	[list set paramData(newPath,done) none]
-    wm title $t "Choose a new $type for values from $oldObj" 
+    wm title $t "$type for $oldObj values:" 
 
 # go through gymnastix to put a Model Inspector in ths window
     set ::RunEnv::CurrentContainer $t
     set hlp [UniqueId helper]
     set helperId $helperTable(VariableList)
     set runClass $classTable(run,$topNode)
-    similescript::$helperId $hlp $runClass Variables
+    similescript::$helperId $hlp $runClass Variables $context
 
     LetItShow $t
     grab $t

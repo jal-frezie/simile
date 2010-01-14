@@ -37,7 +37,7 @@ tk_code(Node, RunCmd, _Dummy) :-
 	(rebuild_code(Lang, Node, Dir), !,
 	    % if exceps happen here, catch in Tcl and return failure
 	    % on_exception(Whoops,
-			 output:prepare_execution(Node, Lang),
+	%		 output:prepare_execution(Node, Lang),
 % 		     (sicstus_write_to_chars(Whoops, Squeak),
 % 			 scrub_run(Node, 0))),
 	    set_running_model(Node);

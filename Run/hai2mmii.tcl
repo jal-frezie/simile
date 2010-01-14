@@ -282,7 +282,7 @@ proc ProdFromHelper {winId node caption} {
     global helperTable
     if {[string first .newParamTgt $winId]==0 && [string length $node]} { 
 	# choosing new target for lost param data 
-	set ::paramData(newPath,done) $caption
+	set ::paramData(newPath,done) [list $caption $node]
     } else {
 	set inst $helperTable($winId,whichInstance)
 	ProdObj [$inst GetNode] $node $caption

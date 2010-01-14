@@ -621,10 +621,10 @@ shift_dll(Point, Top, Loc, Repl) :-
 	windowize(Loc, WLoc),
 	safe_tcl_eval(['ShiftDll', br(WPoint), br(Top), br(WLoc), br(Repl)],_).
 
-/* Only works for an all-in-one model for now...*/
+/* Only works for an all-in-one model for now...
 prepare_execution(Node, Lang) :-
 	safe_tcl_eval(['LoadProgram', Node, Lang], _).
-/*
+
 build_interconnects(TopNode, FinderList) :-
 	bracketize(FinderList, FinderTclList),
 	safe_tcl_eval([do_for_node, TopNode, set_connection_database,

@@ -35,6 +35,7 @@ namespace eval ::ModelInspector63654 {
     proc initialize {winId} {
         global tcl_platform
         variable tableframe
+	variable chop
         set im(submodel) [image create photo submodel_im -file "../Images/Toolbar/submodel.gif"]
         set im(compartment) [image create photo  -file "../Images/Toolbar/compartment.gif"]
         set im(flow) [image create photo  -file "../Images/Toolbar/flow.gif"]
@@ -62,15 +63,13 @@ namespace eval ::ModelInspector63654 {
 	set sorted [lsort -dictionary -index 1 $universe]
 	foreach pair $sorted {
 	    set component [lindex $pair 0]
-	    set SubbedComp [lindex $pair 1]
             if {[llength [info commands GetModelClass]] >0} {
                 set type [GetModelClass $component]; # Simile 2.7+
             } else  {
                 set type [GetModelType $component]; # Simile < 2.7 - not very good
             }
             if {[string match SUBMODEL $type ]} then {
-                set SubbedCompList [split $SubbedComp /]
-                set path [lrange $SubbedCompList 1 end]
+		set path [PreparePath $context [lindex $pair 1]]
                 set pathLength [llength $path]
                 if {$pathLength == 1} {
                     set parent root
@@ -87,10 +86,7 @@ namespace eval ::ModelInspector63654 {
 	
 	foreach pair $sorted {
 	    set component [lindex $pair 0]
-	    set SubbedComp [lindex $pair 1]
-             # substitute " " for <cr>s so entry goes on one line # no - need the crs
-            set SubbedCompList [split $SubbedComp /]
-            set path [lrange $SubbedCompList 1 end]
+	    set path [PreparePath $context [lindex $pair 1]]
             #        ShowMess debug info "GetModelValue $component = [GetModelValue $component]" ok
             if {[llength [info commands GetModelClass]] >0} {
                 set type [GetModelClass $component]; # Simile 2.7+
@@ -154,14 +150,24 @@ namespace eval ::ModelInspector63654 {
         }
     }
     
+    proc PreparePath {context SubbedComp} {
+	# substitute " " for <cr>s so entry goes on one line # no - need the crs
+	set SubbedCompList [split $SubbedComp /]
+	if {[string length $context]} {
+	    set path [concat $context [lrange $SubbedCompList 1 end]]
+	} else {
+	    set path [lrange $SubbedCompList 1 end]
+	}
+    }
+
     proc GetCanvas {winId} {
         return ""
     }
 
     proc OnElementClick { winId node } {
-	error "Needs fix to get full caption path"
-	set caption [$winId.tableframe.table itemcget $node -text]
-	ProdFromHelper $winId $node $caption
+	variable chop
+	ProdFromHelper $winId $node \
+	    [string range [GetCaptionPathFromId $node] $chop end]
     }
     
     proc DoInspPopup {winId X Y plName} {
