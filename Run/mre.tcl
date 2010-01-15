@@ -860,7 +860,7 @@ $tb1.b43 configure -state $useSpaceAbility
 	if {[info exists helperTable($currentNode,keepSetup)] && \
 		$helperTable($currentNode,keepSetup)} {
 	    set helperAction [Query save_helper_setup question top {} \
-				  {forget update_shf cancel}]
+				  {abandon update_shf cancel}]
 	    switch $helperAction {
 		update_shf {
 		    SaveView 0

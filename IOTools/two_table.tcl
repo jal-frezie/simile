@@ -996,12 +996,16 @@ namespace eval $keyValue {
 	    set newOrients [list [set ::${t}l1] [set ::${t}l2] \
                     [set ::${t}l3] [set ::${t}l4]]
             set displayUpdate($winId) [set ::${t}l5]
-	    EditCellIs $winId.t 0 0 ;# get final edit
             if {[string equal $newOrients $orientList($winId)]} {
+		$winId.t configure -state normal
 		RestoreFromMirror $winId
+		if {![info exists editMode($winId)]} {
+		    $winId.t configure -state disabled
+		}
 	    } else {
 		# only do if table is editable
 		if {[info exists editMode($winId)]} {
+		    EditCellIs $winId.t 0 0 ;# get final edit
 		    unset dataStore
 		    # need tweaking if time/var in use
 		    set dataStore($winId,0,0.0) [ExtractEdits $winId]
