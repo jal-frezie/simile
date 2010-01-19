@@ -262,7 +262,10 @@ need to change its own ttfn encoding to utf8 */
 
 open_native(FileTtfn, Mode, Stream) :-
         get_native(FileTtfn, FileNative),
-	open(FileNative, Mode, Stream).
+	catch(open(FileNative, Mode, Stream), NonTtfnErrMess,
+	      (replace_subexps(NonTtfnErrMess, ame_gen, swap_matches,
+			       FileNative=FileTtfn, top_down, _, SubbedErr),
+		  throw(SubbedErr))).
 
 get_native(FileTtfn, FileNative) :-
 	output:safe_tcl_eval(['GetSystemName', br(FileTtfn)], Bag),
