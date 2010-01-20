@@ -1175,7 +1175,8 @@ proc ControlDraw {prologVersion} {
     # Bogosity alert -- setting an env var to {} causes it to stay
     # (or be) unset (in windows) otherwise lappend env(OPEN_MODEL)
     # would do here...
-    if {[info exists env(OPEN_MODEL)]} {
+    if {[info exists env(OPEN_MODEL)] && \
+	    ![string equal -stealth [file tail $env(OPEN_MODEL)]]} {
         set openModel [brainwash $env(OPEN_MODEL)]
         # Add to path and recently opened files data
         RecordPathChoice .sml $openModel {}
