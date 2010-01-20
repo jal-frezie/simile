@@ -819,12 +819,15 @@ Another group of rules with lots of arguments... */
 make_evaluation_routine(
 	/* Externally defined arguments */
 	Language, /* programming language to generate */
-	Expr, /* What we are trying to evaluate */
+	GExpr, /* What we are trying to evaluate */
 	/* Results, i.e., arguments defined here */
 	Term /* the expression that evaluates to the destination
 		in current state; -ve = in preambles, +ve = in postambles, 
 		0 = inside deepest loop */
 	) :-
+	(GExpr = glob(_SpareLoop, Expr), % took element of madearray
+	    \+ list(Expr), !;
+	  Expr = GExpr),
 	(make_scalar(Language, Expr, LocalExpr), !,
 	    refer_value(Language, LocalExpr, Term);
 	Expr = ind(Ptr, Count), !,

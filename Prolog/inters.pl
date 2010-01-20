@@ -817,8 +817,9 @@ make_intermediates(
 		TryIndxRef = simile_int(IndxRef)), !,% for legacy cases
 	    ((NeedType = boolean,
 				% first index is 1 in model, 0 in code
-	          IntIndxRef = TryIndxRef+1;
-	      IntIndxRef = TryIndxRef), !;
+	          UseIndxRef = TryIndxRef+1;
+	      UseIndxRef = TryIndxRef),
+		member(IntIndxRef, [UseIndxRef, glob(_, UseIndxRef)]), !;
 	    % only reason this might fail is if taking element of a made array;
 	    % too awkward to fix so just say don't be silly
 	    throw(redundant_array(Source))),
