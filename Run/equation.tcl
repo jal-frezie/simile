@@ -361,14 +361,14 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     
     global equation
     global equationbar
-    
+
     set equationbar(units) $units
     set equationbar(isParam) $isParam
     set equationbar(desc) $desc
     set equationbar(comment) $comment
     set equationbar(min) $min
     set equationbar(max) $max
-    
+
     
     ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
@@ -396,11 +396,12 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     $widget.slider.cur_dims configure -text $emult
     set equation(isparam) $isParam
     if {$equation(isparam)==-1} {
+	set equation(isparam) 0
         set paramMenuState disabled
     } else {
         set paramMenuState normal
     }
-    $widget.equation.textbox.radio0 configure -state $paramMenuState
+#    $widget.equation.textbox.radio0 configure -state $paramMenuState
     $widget.slider.radio1 configure -state $paramMenuState
     $widget.file.radio2 configure -state $paramMenuState
     if {[string first Initial \
