@@ -412,11 +412,7 @@ for {set y 0} {$y < $sphYdiam} {incr y 4} {
 	-outline {} -fill $shade
 }
 .splash.c create image 36p 28p -image $splash
-set circle_c {Â©}
-if {[string equal windows $tcl_platform(platform)]} {
-    set circle_c {©}
-}
-set graph(anality) "$circle_c Copyright Simulistics Ltd. 2001-2009"
+set graph(anality) "\ua9 Copyright Simulistics Ltd. 2001-2009"
 .splash.c create text 395.0p 45.0p -font $graph(font) -fill \#99cc99 -anchor e \
     -text $graph(anality)
 .splash.c create text 250.0p 225.0p -font $graph(megafont) -fill #660066 \
