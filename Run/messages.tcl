@@ -502,9 +502,9 @@ set msgs(bad_v3x_param_detail) $msgs(failed_dir_reference_detail)
 set msgs(unused_param_title) "Some parameter values unused"
 set msgs(unused_param_message) "The %s contains parameter values for the %s %s, which does not exist in the target model %s."
 set msgs(unused_param_detail) "Do you want to stop this operation, or ignore these values and continue loading the %s?"
-set msgs(param_load_fail_title) "Problem setting %s value"
-set msgs(param_load_fail_message) "While attempting to load the %s value \"%s\"%s the following problem occurred: %s"
-set msgs(param_load_fail_detail) "Do you want to stop this operation, or skip this field and continue loading the %ss?"
+set msgs(param_load_fail_title) "Problem %sing %s value"
+set msgs(param_load_fail_message) "While attempting to %s the %s value \"%s\"%s the following problem occurred: %s"
+set msgs(param_load_fail_detail) "Do you want to stop this operation, or skip this field and continue %sing the %ss?"
 
 set msgs(number_needed_title) "Numeric value required"
 set msgs(number_needed_message) "This operation could not be completed because a numeric value must be placed in the entry field that currently contains this text: %s"

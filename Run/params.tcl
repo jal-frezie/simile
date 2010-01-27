@@ -542,11 +542,15 @@ proc AcceptData {topNode compName notInput complain} {
 	    tcl_setparamarray $topNode $node
 	}
 	if {$complain>0} {
-	    set errorData [list $whatMaking [TrimDTFromPath $compName]]
+	    set errorData [list [lindex {none load check} $complain] \
+			       $whatMaking [TrimDTFromPath $compName]]
 	} else {
 	    set errorData {}
 	}
-        if {[catch {ListToArray $topNode $node {} $trans $recordDims \
+	if {$complain==2 && ![string length $suppliedData($compName)]} {
+	    # accept empty field for saving data
+	    set result {} ;# handle as error
+	} elseif {[catch {ListToArray $topNode $node {} $trans $recordDims \
                         $suppliedData($compName) $readMany($compName) \
 			$useCppArray $errorData} result]} {
 	    if {[string equal aborted $result]} {
@@ -992,12 +996,12 @@ namespace eval fileparams {
 #puts "Need outNames cos have suppliedData for [array names suppliedData]"
 # first, make sure all values to be saved are up-to-date and well-formed
 	foreach smItem [array names outNames $smPath/*] {
-	    if {![AcceptData $topNode $smItem $notInput 1]} {
-		break
+	    if {![AcceptData $topNode $smItem $notInput 2] || \
+		[lsearch $suppliedData(needed) $smItem]!=-1 && \
+		    [string length $suppliedData($smItem)]} {
+# complain of 2 means accept empty entry but keep in needed list
+		return
 	    }
-	}
-	if {[lsearch $suppliedData(needed) $smPath*]!=-1} {
-	    return
 	}
 	set title "Save [LevelForTitle $smPath] parameters as:"
         set metaFile [ChooseFile $defFile $title 1 $topNode]
@@ -1151,7 +1155,8 @@ namespace eval fileparams {
 		    [concat $newPopup (reference to $relName)]
 	    } elseif {[llength $outData($compName)]==1} {
 		puts $pStr "$indent<single_value $genericAVs val=[Entitize $outData($compName)]/>"
-	    } else {
+	    } elseif {[llength $outData($compName)]} {
+# do not write if no data, can only cause trouble
 		puts $pStr "$indent<multi_value $genericAVs>"
 		WriteLiteralParam $pStr $outData($compName) "  $indent"
 		#		    puts $pStr "<literal label=\"$SubbedComp\" \
