@@ -198,14 +198,14 @@ read_library_funx(Done) :-
 	append(BuiltIns, Local, Done).
 
 read_func_tree(TopDir, AllDirs, BuiltIn, Done) :-
-	append_atoms(AllDirs, '*.pl', LocalTpt),
-	output:list_matching_files(LocalTpt, FnIncs),
-	all(inters, read_func_file, [build(FnIncs), unify(TopDir),
-				     unify(BuiltIn), append(Local, [])]),
-	append_atoms([AllDirs, /, *], DeepTpt), % insert start-comment sequence
-	output:list_matching_files(DeepTpt, DeepDirs),
-	all(inters, read_func_tree, [unify(TopDir), build(DeepDirs),
-				     unify(BuiltIn), append(Done, Local)]).
+	name(AllDirs, AllDirsStr),
+	    suffix("*.pl", AllDirsStr),
+	    all(inters, read_func_file, [build(AllDirs), unify(TopDir),
+					 unify(BuiltIn), append(Local, [])]);
+	append_atoms([AllDirs, /, *], DeepTpt), % avoid start-comment sequence
+	    output:list_matching_files(DeepTpt, DeepDirs),
+	    all(inters, read_func_tree, [unify(TopDir), build(DeepDirs),
+					 unify(BuiltIn), append(Done, Local)]).
 
 read_func_file(File, Context, IsBuiltIn, Done) :-
 	open_native(File, read, Stream),
