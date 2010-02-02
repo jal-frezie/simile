@@ -1341,8 +1341,9 @@ proc ShowAbout {winId} {
             set fSize 8; set fsSize 8
         }
     }
+    set fullVers $sendvars(simV)$sendvars(simP)
     pack [label .about.fr.lab1 -font "-family helvetica -size $fSize" \
-	      -text "Simile v$sendvars(simV)$sendvars(simP) $userinfo(edn)"]
+	      -text "[tr. Simile] v$fullVers [tr. $userinfo(edn)]"]
     set platform [frame .about.fr.platform]
     pack [label $platform.prolog -text "Prolog: $sendvars(proV)" \
             -font "-family helvetica -size $fsSize"] -side left
@@ -1358,31 +1359,27 @@ proc ShowAbout {winId} {
     if [info exists userinfo(exp_time)] {
         set edate [clock format $userinfo(exp_time) -format {%d %h %Y}]
         set expf [frame .about.fr.expf]
-        pack [label $expf.lab1 -text "This product expires on" \
+        pack [label $expf.lab1 -text [tr. "This product expires on"] \
             -font "-family helvetica -size $fsSize"] -side left
         pack [label $expf.lab2 -text $edate -font "-family helvetica -size $fsSize"] -side left
         pack $expf
     }
-    pack [label .about.fr.lab4 -text "This product is registered to\
+    pack [label .about.fr.lab4 -text "[tr. {This product is registered to}]\
             $userinfo(name), $userinfo(corp)" \
             -font "-family helvetica -size $fsSize"]
     
     set gen [frame .about.fr.gen]
     switch -regexp $userinfo(edn) {
         evaluation {
-            set info [label $gen.info -text "For upgrade to Standard\
-                    or Enterprise Editions," -font "-family helvetica -size $fSize"]
+	    set service {For upgrade to Standard, }
         } standard|teaching {
-            set info [label $gen.info -text "For support or to upgrade\
-                    to Enterprise Edition," -font "-family helvetica -size $fSize"]
+	    set service {For support or to upgrade, }
         } enterprise {
-            set info [label $gen.info -text "For support," \
-                    -font "-family helvetica -size $fsSize"]
+            set service {For support, }
         }
     }
-    pack $info -side left
-    pack [label $gen.visit -text "please visit" -font "-family helvetica -size $fsSize"]\
-            -side left
+    pack [label $gen.visit -text [tr. "${service}please visit"] \
+	      -font "-family helvetica -size $fsSize"] -side left
     pack [label $gen.www -text www.simulistics.com -relief flat \
             -font "-underline true -family helvetica -size $fsSize" -fg blue -cursor hand2] -pady 2 -side left
     bind $gen.www <Button-1> "VisitUrl http://www.simulistics.com/"
@@ -1392,7 +1389,7 @@ proc ShowAbout {winId} {
 #    label .about.lower -image dripl
 #    pack .about.lower
     
-    pack [label .about.low1 -text Simile -font $graph(megafont)]
+    pack [label .about.low1 -text [tr. Simile] -font $graph(megafont)]
     pack [label .about.low2 -text $graph(anality) -font $graph(font)]
     pack [button .about.b -text OK -width 10 -default active \
             -command "set sendvars(doneAbout) 1"] -pady 2

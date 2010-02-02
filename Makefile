@@ -55,8 +55,9 @@ FLAGS = $(OPT) -m32
 SLDIR = lib
 SHAREDLIBPREFX = lib
 MAKESL = -fPIC -shared
-VERS = 8.4
-USETCL = -DUSE_TCL_STUBS -I../System/include -L../System/lib -ltclstub$(VERS)
+VERS = 8.6
+TCLDIR = /usr/local/lib/ActiveTcl-$(VERS)
+USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include -L$(TCLDIR)/lib -ltclstub$(VERS)
 LOCALIZE_TCL_REFS = ls # placebo command
 SHAREDLIBEXTN = .so
 
@@ -139,13 +140,13 @@ vpath 	%.tcl 	Run
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
 $(SHIM): ame_cmx.c dllcalls.h
-	cd Run; $(GCCCMD) $(FLAGS) -I. $(MAKESL) \
-		-o ../$(SHIM) ame_cmx.c $(USETCL) -l5d$(ARCHEXTN); cd ..; \
+	cd Run; $(GCCCMD) $(FLAGS) -I. $(MAKESL) -o ../$(SHIM) ame_cmx.c \
+		$(USETCL) -L../System/lib -l5d$(ARCHEXTN); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 
 $(UNPK): unpacker.c dllcalls.h Makefile
-	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. $(MAKESL) \
-		-o ../$(UNPK) unpacker.c $(USETCL) -l5d$(ARCHEXTN); cd ..; \
+	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. $(MAKESL) -o ../$(UNPK) \
+		unpacker.c $(USETCL) -L../System/lib -l5d$(ARCHEXTN); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
 # literal SLDIR allows different SHANK clauses for Windows vs Unix

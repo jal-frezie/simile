@@ -7,7 +7,7 @@
 #
 #package require BWidget
 #catch {namespace import BWidget::*}
-package require tile
+package require tile 0.8.2
 package require style::as
 style::as::enable mousewheel global
 
@@ -996,7 +996,7 @@ proc ControlDraw {prologVersion} {
 	if {[catch {set userinfo(corp) $env(licensee_corp)}]} {
 	    set userinfo(corp) {}
 	}
-    } ;# else {
+    } else {
 # (include ff in Windows anyway in case some twerp runs it with userinfo.tpl)
 # Windows installers can ask the user for a license code and stick it in
 # userinfo.txt (formerly the registry). On other platforms we have to DIY.
@@ -2090,10 +2090,10 @@ proc Rerun {winId go} {
 }
 
 proc UpdateAbility {c what where which whether} {
-    global window_info
+    global window_info menuPosns
     set winId $window_info($c,parent)
     set newState [ChooseText $whether normal disabled]
-    ${winId}top.$where entryconfigure $which -state $newState
+    ${winId}top.$where entryconfigure $menuPosns($where,$which) -state $newState
     AcceleratorState $winId $where $which $newState
     if {![string equal none $what]} {
         set navBar $winId.toolSlot.navbar
@@ -2143,7 +2143,8 @@ proc ToggleIOToolMenu {node} {
                 set newState disabled
             }
             $winData.toolSlot.toolbar.snap configure -state $newState
-            $topMenu.tools entryconfigure {Inspect elements} -state $newState
+	    set snapIndx $::menuPosns(tools,Inspect\ elements)
+            $topMenu.tools entryconfigure $snapIndx -state $newState
         }
     }
 }

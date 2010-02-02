@@ -315,6 +315,8 @@ if {[info exists prolog_in_console]} {
     set env(interfaceId) console
 # this will simply let the script run out after loading the rest of the Tcl
 # so control goes back to Prolog
+} elseif {[info tclversion]>8.4} {
+    lappend auto_path $SIMILE_PATH/System/lib
 }
 
 set env(SIMILE_VERSION) 5.6
@@ -389,6 +391,7 @@ if {[string equal Linux $tcl_platform(os)]} {
 }
 
 # first put up the splash screen
+source $SIMILE_PATH/Run/language.tcl
 image create photo splash -width 90 -height 90
 
 splash read $SIMILE_PATH/Images/bigsimile.gif -shrink
@@ -412,18 +415,18 @@ for {set y 0} {$y < $sphYdiam} {incr y 4} {
 	-outline {} -fill $shade
 }
 .splash.c create image 36p 28p -image $splash
-set graph(anality) "\ua9 Copyright Simulistics Ltd. 2001-2009"
+set graph(anality) "\ua9 [tr. {Copyright Simulistics Ltd.}] 2001-2009"
 .splash.c create text 395.0p 45.0p -font $graph(font) -fill \#99cc99 -anchor e \
     -text $graph(anality)
 .splash.c create text 250.0p 225.0p -font $graph(megafont) -fill #660066 \
-    -text "Simile"
+    -text [tr. "Simile"]
 .splash.c create text 250.0p 290.0p -font $graph(font) -fill #660066 -anchor s \
-    -text "Version $env(SIMILE_VERSION)$sendvars(simP)"
+    -text "[tr. Version] $env(SIMILE_VERSION)$sendvars(simP)"
 set regInfo $env(licensee_name)
 catch {append regInfo ", $env(licensee_corp)"}
 .splash.c create text 250.0p 310.0p -font $graph(font) -fill #660066 -anchor s \
-    -text "Registered to $regInfo"
-    
+    -text "[tr. {Registered to}] $regInfo"
+
 wm geometry .splash $startGeom
 wm overrideredirect .splash 1
 
@@ -434,6 +437,7 @@ if {[info exists SimileAutoObjLoaded]} {
 }
 
 wm withdraw . ;# already withdrawn if not Linux
+# after 5000 ;# pause to admire
 
 # This is the folder that AME should start looking for model
 # files in -- must be an existing subfolder of the installation folder

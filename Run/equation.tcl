@@ -19,17 +19,18 @@ proc create_equation {parent purpose comp indices enum_types} {
     ### End formula bar section
     set topNode $window_info($parent,top_node) 
     set t [PutItThere .equation $parent]
-    wm title $t [BlankCrs "$purpose for $comp"]
+    wm title $t "[tr. $purpose] [tr. for] [BlankCrs $comp]"
     set equation(top) $t
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
     
     set notebook [::ttk::notebook $t.notebook]
     set mainF $notebook.main
-    $notebook add [panedwindow $mainF -orient vertical] -text Main
+    $notebook add [panedwindow $mainF -orient vertical] -text [tr. Main]
     set paramF $notebook.params
-    $notebook add [panedwindow $paramF -orient vertical] -text "Parameters etc."
+    $notebook add [panedwindow $paramF -orient vertical] \
+	-text [tr. "Parameters etc."]
     set docF $notebook.documentation
-    $notebook add [frame $docF] -text Documentation
+    $notebook add [frame $docF] -text [tr. Documentation]
     set equation(notebook) $notebook
     set equation(main) $mainF
     set equation(params) $paramF
@@ -38,12 +39,12 @@ proc create_equation {parent purpose comp indices enum_types} {
     # frame for buttons
     set buttonF [frame $t.buttons]
     set ok [button $buttonF.ok -command equationOK \
-            -width 10 -default active -text "OK"]
+		-width 10 -default active -text [tr. OK]]
     bind $ok <Button-1> "focus $ok" ;# make sure new names checked before exit
     set can [button $buttonF.cancel -command equationCancel \
-            -width 10 -text "Cancel"]
+		 -width 10 -text [tr. Cancel]]
     set help [button $buttonF.help -command {ContextSensitiveHelp .equation equations/dialogue.htm} \
-            -width 10 -text "Help"]
+		  -width 10 -text [tr. Help]]
     pack $help -side right -padx 8 -pady 4 -anchor e
     pack $can -side right -padx 8 -pady 4 -anchor e
     pack $ok -side right -padx 8 -pady 4 -anchor e
@@ -53,7 +54,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     # created variable middleF to point to the Middle frame makes moving the frame in
     # the widget hierrachy easier Jonathan 22 Aug 2002
     $mainF add [set middleF [panedwindow $mainF.middle -orient horizontal]]
-    $middleF add [TitleFrame $middleF.functions -text "Functions: "]
+    $middleF add [TitleFrame $middleF.functions -text "[tr. Functions]: "]
     set fnFrame [GetFrame $middleF.functions].fnFrame
 #    ScrolledWindow $fnFrame
     frame $fnFrame
@@ -75,7 +76,7 @@ proc create_equation {parent purpose comp indices enum_types} {
 #                $lbf insert end $box $lname -image $iconImages(find) \
 #                        -text $level -open [string equal Built-in $level]
 		$lbf insert $box end -id $lname \
-			-text $level -image $iconImages(open)
+		    -text [tr. $level] -image $iconImages(open)
 		if {[string equal {} [$lbf parent $box]]} {
 		    $lbf item $box -open 1
 		}
@@ -89,7 +90,7 @@ proc create_equation {parent purpose comp indices enum_types} {
         }
     }
     $lbf insert {} end -id .et_top_level \
-	-text {Enum. type constants} -image $iconImages(open)
+	-text [tr. {Enum. type constants}] -image $iconImages(open)
 # add menu entries for enum. type constants
     foreach enumType [linsert $enum_types 0 [list boolean false true]] {
 	set type [lindex $enumType 0]
@@ -105,7 +106,7 @@ proc create_equation {parent purpose comp indices enum_types} {
 
     
 #    pack $middleF.functions -side left -anchor nw -padx 2 -pady 2 -expand true -fill both
-    $middleF add [TitleFrame $middleF.params -text "Parameters: "]
+    $middleF add [TitleFrame $middleF.params -text "[tr. Parameters]: "]
     set paramsf [GetFrame $middleF.params]
     frame $paramsf.list
     set lbp [listbox $paramsf.list.ilist \
@@ -117,12 +118,15 @@ proc create_equation {parent purpose comp indices enum_types} {
     pack $paramsf.list -anchor nw -expand true -fill both
     
     # Stella special: a keypad frame to prevent users having to touch their kbd
-    $middleF add [TitleFrame $middleF.keypad -text "Keypad: "]
+    $middleF add [TitleFrame $middleF.keypad -text "[tr. Keypad]: "]
     set keypadf [GetFrame $middleF.keypad]
     frame $keypadf.keys
-    set keys {< > ( ) \[ \] custom AC = ^ , / and dummy if dummy 7 8 9 * or dummy then dummy \
-                4 5 6 - not dummy elseif dummy 1 2 3 + xor dummy else dummy 0 .  <- -> DEL \
-                dummy SPACE dummy}
+    set keys [list < > ( ) \[ \] custom AC \
+		  = ^ , / and dummy if dummy \
+		  7 8 9 * or dummy then dummy \
+		  4 5 6 - not dummy elseif dummy \
+		  1 2 3 + xor dummy else dummy \
+		  0 .  <- -> [tr. DEL] dummy [tr. SPACE] dummy]
     if {[string equal windows $tcl_platform(platform)]} {
 	set buttWidth 4
     } else {
@@ -186,30 +190,41 @@ proc create_equation {parent purpose comp indices enum_types} {
     
     # Now for the main frame: the equation and its commentary
     $mainF add [frame $mainF.main]
-    TitleFrame $mainF.main.main -text "Data source: "
+    TitleFrame $mainF.main.main -text "[tr. {Data source}]: "
     set mainf [GetFrame $mainF.main.main]
     frame $mainf.slider
-    radiobutton $mainf.slider.radio1 -text "Variable parameter: " -variable equation(isparam) -value 1
+    radiobutton $mainf.slider.radio1 -text "[tr. {Variable parameter}]: " \
+	-variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
-    pack [label $mainf.slider.minlabel -text Minimum] -side left -padx 4 -pady 4
-    pack [::ttk::entry $mainf.slider.minval -width 8 -textvariable equation(min)] -side left -padx 4 -pady 4
-    pack [label $mainf.slider.maxlabel -text Maximum] -side left -padx 4 -pady 4
-    pack [::ttk::entry $mainf.slider.maxval -width 8 -textvariable equation(max)] -side left -padx 4 -pady 4
+    pack [label $mainf.slider.minlabel -text [tr. Minimum]] -side left \
+	-padx 4 -pady 4
+    pack [::ttk::entry $mainf.slider.minval -width 8 \
+	      -textvariable equation(min)] -side left -padx 4 -pady 4
+    pack [label $mainf.slider.maxlabel -text [tr. Maximum]] -side left \
+	-padx 4 -pady 4
+    pack [::ttk::entry $mainf.slider.maxval -width 8 \
+	      -textvariable equation(max)] -side left -padx 4 -pady 4
     
     pack [label $mainf.slider.cur_dims] -side right -padx 4
-    pack [label $mainf.slider.dims_txt -text "Current\ndimensions:"] -side right -padx 4
-    pack [set eu [::ttk::entry $mainf.slider.entry -width 8 -textvariable equation(units)]] -side right -padx 4 -pady 4
-    pack [label $mainf.slider.unitslabel -text "Units:"] -side right -padx 4 -pady 4
+    pack [label $mainf.slider.dims_txt -text [tr. "Current dimensions"]: \
+	     -wraplength 100] -side right -padx 4
+    pack [set eu [::ttk::entry $mainf.slider.entry -width 8 \
+		      -textvariable equation(units)]] -side right \
+	-padx 4 -pady 4
+    pack [label $mainf.slider.unitslabel -text "[tr. Units]:"] -side right \
+	-padx 4 -pady 4
     
     pack $mainf.slider -anchor nw -fill x
     frame $mainf.file
-    radiobutton $mainf.file.radio2 -text "Fixed parameter" -variable equation(isparam) -value 2
+    radiobutton $mainf.file.radio2 -text [tr. "Fixed parameter"] \
+	-variable equation(isparam) -value 2
     pack $mainf.file.radio2 -side left
     pack $mainf.file -anchor nw
     frame $mainf.equation
     frame $mainf.equation.textbox
     
-    radiobutton $mainf.equation.textbox.radio0 -text "$purpose: $comp = " -variable equation(isparam) -value 0
+    radiobutton $mainf.equation.textbox.radio0 -variable equation(isparam) \
+	-text "[tr. $purpose]: $comp = " -value 0
     
     set en [text $mainf.equation.textbox.text -height 4 -width 64 \
 		-relief sunken -bd 2 -highlightthickness 0 -font EquationFont \
@@ -225,25 +240,19 @@ proc create_equation {parent purpose comp indices enum_types} {
     frame $mainf.equation.textbox.buttons
     #$notebook itemconfigure Main -raisecmd "focus $en"
     
-    if {[string match Darwin $tcl_platform(os)]} {
-        set graph [button $mainf.equation.textbox.buttons.graph \
-                -text " Graph... "\
-                -command "equationDoGraph $t $en"]
-        pack $graph -padx 8 -pady 4
-        set table [button $mainf.equation.textbox.buttons.table \
-		       -text " Table... " \
-		       -command [list GetTable $t $topNode $comp $en]]
-        pack $table -padx 8 -pady 4
-    } else  {
-        set graph [button $mainf.equation.textbox.buttons.graph \
-                -compound left -image $iconImages(graph) -text " Graph... "\
-                -command "equationDoGraph $t $en"]
-        pack $graph -padx 8 -pady 4
-        set table [button $mainf.equation.textbox.buttons.table \
-                -compound left -image $iconImages(table) -text " Table... "\
-                -command [list GetTable $t $topNode $comp $en]]
-        pack $table -padx 8 -pady 4
+    set graph [button $mainf.equation.textbox.buttons.graph \
+		   -text " [tr. Graph]... "\
+		   -command "equationDoGraph $t $en"]
+    pack $graph -padx 8 -pady 4
+    set table [button $mainf.equation.textbox.buttons.table \
+		   -text " [tr. Table]... " \
+		   -command [list GetTable $t $topNode $comp $en]]
+    pack $table -padx 8 -pady 4
+    if {![string match Darwin $tcl_platform(os)]} {
+	$graph configure -compound left -image $iconImages(graph)
+	$table configure -compound left -image $iconImages(table)
     }
+
     pack $mainf.equation.textbox.buttons -anchor e -side left
     pack $mainf.equation -expand true -fill both -anchor nw
     pack $mainF.main.main -anchor nw -expand true -fill both -padx 2 -pady 2 -side left
@@ -251,7 +260,7 @@ proc create_equation {parent purpose comp indices enum_types} {
 #    pack $mainF.main -anchor nw -expand true -fill both -anchor nw
     
     # Miscellaneous other stuff below
-    $paramF add [TitleFrame $paramF.indices -text "Indices: "]
+    $paramF add [TitleFrame $paramF.indices -text "[tr. Indices]: "]
     set indicesf [GetFrame $paramF.indices]
     frame $indicesf.list
     set lbx [listbox $indicesf.list.ilist \
@@ -268,12 +277,12 @@ proc create_equation {parent purpose comp indices enum_types} {
 
     # Bottom frame has the influences and parameters list boxes
     $paramF add [set bottomF [frame $paramF.bottom]]
-    TitleFrame $bottomF.influences -text "Influences: "
+    TitleFrame $bottomF.influences -text "[tr. Influences]: "
     set influencesf [GetFrame $bottomF.influences]
     frame $influencesf.captions
-    label $influencesf.captions.p -text "Parameter:"
-    label $influencesf.captions.i -text "In units:"
-    label $influencesf.captions.d -text "Dimensions:"
+    label $influencesf.captions.p -text [tr. Parameter]:
+    label $influencesf.captions.i -text [tr. "In units"]:
+    label $influencesf.captions.d -text [tr. Dimensions]:
     pack $influencesf.captions.p $influencesf.captions.i \
             $influencesf.captions.d -side left -fill x -expand true
     pack $influencesf.captions -fill x
@@ -299,9 +308,9 @@ proc create_equation {parent purpose comp indices enum_types} {
     # comments in the Documentation page
     
     set descF [frame $docF.descf]
-    TitleFrame $descF.description -text "Title: "
+    TitleFrame $descF.description -text "[tr. Title]: "
     set descf [GetFrame $descF.description]
-    label $descf.desclabel -text "Description:"
+    label $descf.desclabel -text "[tr. Description]: "
     text $descf.text -height 1 -width 20 -relief sunken -bd 2 -highlightthickness 0
     pack $descf.desclabel -side left -padx 2 -pady 2
     pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
@@ -310,7 +319,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     pack $docF.descf -fill x -expand off
     #$notebook itemconfigure Documentation -raisecmd "focus $descf.text"
     
-    label $docF.cmtlabel -text Comments:
+    label $docF.cmtlabel -text [tr. Comments]:
     pack $docF.cmtlabel -side top
     pack [set frm [frame $docF.cmtFrame]] -fill both -expand true
     text $frm.text -height 3 -width 40 -wrap word -relief sunken -bd 2 -highlightthickness 0 \

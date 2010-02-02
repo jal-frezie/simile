@@ -56,31 +56,31 @@ proc ChooseFile { preferred title canbenew context} {
     switch $fileType {
 	.sml {
 	    set typeList [list .sml .sim .ame]
-	    set desc Models
+	    set desc [tr. Models]
 	} .gif {
 	    set typeList [list .gif .jpg .jpeg .png .tif .tiff]
-	    set desc Images
+	    set desc [tr. Images]
 	} {} {
 	    set typeList {}
-	    set desc Directories
+	    set desc [tr. Directories]
 	} .cpp {
 	    set typeList [list .cpp .c .h]
-	    set desc "Source or header files"
+	    set desc [tr. "Source or header files"]
 	} .txt {
 	    set typeList [list .txt]
-	    set desc "Text files"
+	    set desc [tr. "Text files"]
 	} .csv {
 	    set typeList [list .csv .xls .mdb .dbf *.db]
-	    set desc "Data files" 
+	    set desc [tr. "Data files" ]
 	} default {
 	    set typeList [list $fileType]
-	    set desc "$fileType files"
+	    set desc "$fileType [tr. files]"
 	}
     }
-    set typeList [list [list $desc $typeList] [list {All files} *]]
+    set typeList [list [list $desc $typeList] [list [tr. {All files}] *]]
     set currentDir [do_in_editor GetPathChoice $fileType $context]
 #puts "Got path for $context"
-    set switches [list -title $title -defaultextension $fileType \
+    set switches [list -title [tr. $title] -defaultextension $fileType \
 		      -filetypes $typeList \
 		      -initialdir $currentDir]
     set active [focus]

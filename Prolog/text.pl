@@ -3,7 +3,7 @@
 *******************************************************************************/
 
 sicstus_module(text, [split_path_chars/4, replace_char/4, alphanumeric_only/3,
-		      starter_only/3, continuer_only/3, argify/2]).
+		      starter_only/3, continuer_only/3, argify/2, translate/2]).
 
 sicstus_use_module( [library( lists ), utility, sp_only] ).
 
@@ -105,3 +105,5 @@ escape_nasties(Chars, ArgChars) :-
 	escape_nasties(Stop, Rest);
 	ArgChars = Chars.
 	      
+translate(Word, Trans) :-
+	output:safe_tcl_eval(['tr.', br(Word)], Trans).

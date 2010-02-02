@@ -809,11 +809,12 @@ proc ResizeBackgnd {wc l t r b} {
 }
 
 proc AcceleratorState {winName menu item state} {
-    global accelerator
+    global accelerator menuPosns
 #puts "$item going $state"
     if {[info exists accelerator($menu,$item)]} {
         if {[string match normal $state]} {
-	    set action [${winName}top.$menu entrycget $item -command]
+	    set numItem $menuPosns($menu,$item)
+	    set action [${winName}top.$menu entrycget $numItem -command]
             bind $winName $accelerator($menu,$item) \
 		[list DoIfApplicable $winName $item $action]
         } else  {
@@ -822,11 +823,21 @@ proc AcceleratorState {winName menu item state} {
     }
 }
 
-proc AddAccelerator {winName menu item event} {
+proc AddAccelerator {winName menuName item event} {
 #puts "AddAccelerator {winName menu item event} $winName $menu $item $event"
-    global accelerator
-    set accelerator($menu,$item) $event
-    AcceleratorState $winName $menu $item [${winName}top.$menu entrycget $item -state]
+    global accelerator menuPosns
+# assume the corresponding entry has just been added to the menu
+    set menu ${winName}top.$menuName
+    set menuPosns($menuName,$item) [$menu index last]
+    if {[string equal none $event]} return
+    set accelerator($menuName,$item) $event
+    AcceleratorState $winName $menuName $item [$menu entrycget last -state]
+}
+
+proc AddCmdAndAccel {winId menuName item command {state normal}} {
+    set menu ${winId}top.$menuName
+    $menu add command -label [tr. $item] -state $state -command $command
+    AddAccelerator $winId $menuName $item none
 }
 
 proc NotEditingText {winName} {
@@ -1310,197 +1321,194 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set topm ${winid}top
 
     if [string match "Darwin" $tcl_platform(os)] {
-	set accKey Cmd
+	set accKey [tr. Cmd]
 	set accSym Command
 	set fm [menu $topm.apple -tearoff 0]
 	$fm delete 0 7
-	$fm add command -label "About Simile..." -command "ShowAbout $winid"
+	$fm add command -label [tr. "About Simile..."] -command "ShowAbout $winid"
 	$fm add separator
 	$topm add cascade -menu $fm
     } else {
-	set accKey Ctrl
+	set accKey [tr. Ctrl]
 	set accSym Control
     }
     
     set fm [menu $topm.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
-    $topm add cascade -label File -underline 0 -menu $topm.file
+    $topm add cascade -label [tr. File] -underline 0 -menu $topm.file
     if {$isTopLevel} {
 	set newCmd NewTopLevel
     } else {
 	set newCmd "MenuSelect $c local empty"
     }
-    $fm add command -label New -command $newCmd -accelerator "$accKey+N"
+    $fm add command -label [tr. New] -command $newCmd -accelerator "$accKey+N"
     AddAccelerator $winid file New "<$accSym-n>"
-#    $fm add command -label "New top-level" -command "NewTopLevel"
-    $fm add command -label Open... -command "MenuSelect $c local open_all" \
+#    $fm add command -label [tr. "New top-level"] -command "NewTopLevel"
+    $fm add command -label [tr. Open...] -command "MenuSelect $c local open_all" \
             -accelerator "$accKey+O"
     AddAccelerator $winid file Open... "<$accSym-o>"
 
-   $fm add cascade -label "Reopen" -menu .openrecent
+   $fm add cascade -label [tr. "Reopen"] -menu .openrecent
     if {[string equal .hi $winid]} {
     return
     }
-    $fm add command -label Save -command "MenuSelect $c file save" \
+    $fm add command -label [tr. Save] -command "MenuSelect $c file save" \
             -accelerator "$accKey+S"
     AddAccelerator $winid file Save "<$accSym-s>"
     
-    $fm add command -label "Save as..." \
+    $fm add command -label [tr. "Save as..."] \
             -command "MenuSelect $c file save_as"
-    $fm add command -label "Save selection as..." \
-            -command "MenuSelect $c file save_seln_as"
-#    $fm add command -label "Save package" \
+    AddCmdAndAccel $winid file "Save selection as..." \
+	"MenuSelect $c file save_seln_as"
+#    $fm add command -label [tr. "Save package"] \
 #            -command "MenuSelect $c local save_all"
     
     $fm add separator
-    $fm add command -label "Print..." \
+    $fm add command -label [tr. "Print..."] \
             -command "PrintNow $c" \
             -accelerator "$accKey+P"
     AddAccelerator $winid file "Print..." "<$accSym-p>"
-    #$fm add cascade -label "Import" -menu $fm.sub0
+    #$fm add cascade -label [tr. "Import"] -menu $fm.sub0
     #set fm1 [menu $fm.sub0 -tearoff 0]
-#    $fm1 add command -label "Spreadsheet..." \
+#    $fm1 add command -label [tr. "Spreadsheet..."] \
 #            -command "MenuSelect $c file import_ss"
     if {[string equal enterprise $::userinfo(edn)]} {
 	set sourceExps normal
     } else {
 	set sourceExps disabled
     }  
-    $fm add cascade -label "Export" -menu $fm.sub1
+    $fm add cascade -label [tr. "Export"] -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
-    $fm2 add command -label "Model declarations" \
+    $fm2 add command -label [tr. "Model declarations"] \
             -command "MenuSelect $c file export_prolog"
-    $fm2 add command -label "C++ code" -state $sourceExps \
+    $fm2 add command -label [tr. "C++ code"] -state $sourceExps \
             -command "MenuSelect $c code build_c"
-            $fm2 add command -label "Compiled binary" -state $sourceExps \
+            $fm2 add command -label [tr. "Compiled binary"] -state $sourceExps \
             -command "MenuSelect $c code compile_c"
-    $fm2 add command -label "PostScript graphics" \
+    $fm2 add command -label [tr. "PostScript graphics"] \
             -command "ExportPostscript $c"
     $fm add separator
     
-    $fm add command -label Close -command "MenuClose $c" \
-            -accelerator "Alt+x"
+    $fm add command -label [tr. Close] -command "MenuClose $c" \
+	-accelerator "[tr. Alt]+x"
     AddAccelerator $winid file Close "<Alt-x>"
     if ![string match "Darwin" $tcl_platform(os)] {
-      $fm add command -label Exit -command "MenuExit $topNode $c"
+      $fm add command -label [tr. Exit] -command "MenuExit $topNode $c"
     }
     
     # edit menu: purpose of postcommand is to enable/disable cut/copy/paste items
     # for what is available, overridden later if it is popup
     set fm [menu $topm.edit -tearoff 0 \
 		-postcommand "prolog tk_bar_edit_menu('$c')"]
-    $topm add cascade -label Edit -underline 0 -menu $topm.edit
+    $topm add cascade -label [tr. Edit] -underline 0 -menu $topm.edit
     
-    $fm add cascade -label "Create new" -menu $fm.add
+    $fm add cascade -label [tr. "Create new"] -menu $fm.add
+    set ::menuPosns(edit,Create\ new) [$fm index last]
     set em1 [menu $fm.add -tearoff 0]
 # add state, event and squirt
     foreach type {Compartment Variable Flow Influence Submodel} {
-        $em1 add command -label $type -command \
-                "MenuSelect $c edit [string tolower $type]"
+	AddCmdAndAccel $winid edit.add $type \
+	    "MenuSelect $c edit [string tolower $type]"
     }
-    $em1 add command -label "Role arrow" -command \
-            "MenuSelect $c edit relation"
-    $em1 add cascade -label "Membership control" -menu $em1.sub
-    $em1 add command -label "Text box" -command \
-            "MenuSelect $c edit text"
+    AddCmdAndAccel $winid edit.add "Role arrow" "MenuSelect $c edit relation"
+    $em1 add cascade -label [tr. "Membership control"] -menu $em1.sub
+    set ::menuPosns(edit.add,Membership\ control) [$fm index last]
+    AddCmdAndAccel $winid edit.add "Text box" "MenuSelect $c edit text"
     set em2 [menu $em1.sub -tearoff 0]
     foreach type {Creation Immigration Reproduction Loss} {
         $em2 add command -label $type -command \
                 "MenuSelect $c edit [string tolower $type]"
     }
-    $em2 add command -label "Existence condition" -command \
+    $em2 add command -label [tr. "Existence condition"] -command \
             "MenuSelect $c edit condition"
-    $em2 add command -label "Iteration condition" -command \
+    $em2 add command -label [tr. "Iteration condition"] -command \
             "MenuSelect $c edit alarm"
     $fm add separator
     
-    $fm add command -label Undo -command "UnOrReDo $c 0" \
+    $fm add command -label [tr. Undo] -command "UnOrReDo $c 0" \
             -state disabled -accelerator "$accKey+Z"
     AddAccelerator $winid edit Undo "<$accSym-z>"
-    $fm add command -label Redo -command "UnOrReDo $c 1" \
-            -state disabled
+    AddCmdAndAccel $winid edit Redo "UnOrReDo $c 1" disabled
     # no need for this as cut/copy now does it -- keep so we can have non blue
 #    if {[string match windows $tcl_platform(platform)]} {
         $fm add separator
-        $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $c 0"
+        $fm add command -label [tr. "Copy diagram"] -command "CopyCanvasToWindowsClipboard $c 0"
 #    }
     $fm add separator
     
-    $fm add command -label Cut -command "CopyCanvasToWindowsClipboard $c 1; \
+    $fm add command -label [tr. Cut] -command "CopyCanvasToWindowsClipboard $c 1; \
             MenuSelect $c edit cut" -accelerator "$accKey+X"
     AddAccelerator $winid edit Cut "<$accSym-x>"
-    $fm add command -label Copy -command "CopyCanvasToWindowsClipboard $c 1; \
+    $fm add command -label [tr. Copy] -command "CopyCanvasToWindowsClipboard $c 1; \
             MenuSelect $c edit copy" -accelerator "$accKey+C"
     AddAccelerator $winid edit Copy "<$accSym-c>"
-    $fm add command -label Paste -command "MenuSelect $c edit paste" \
+    $fm add command -label [tr. Paste] -command "MenuSelect $c edit paste" \
             -accelerator "$accKey+V"
     AddAccelerator $winid edit Paste "<$accSym-v>"
     unset ::accelerator(edit,Paste) ;# do not disable it later
-    $fm add command -label {Reroute links} \
-            -command "MenuSelect $c edit reroute"
-    $fm add command -label {Align to grid} \
-            -command "MenuSelect $c edit snap"
-    $fm add command -label Delete -command "MenuSelect $c edit delete" \
-            -accelerator "Del"
+    foreach cmd {{Reroute links} {Align to grid}} key {reroute snap} {
+	AddCmdAndAccel $winid edit $cmd "MenuSelect $c edit $key"
+    }
+    $fm add command -label [tr. Delete] -command "MenuSelect $c edit delete" \
+	-accelerator [tr. Del]
     AddAccelerator $winid edit Delete "<<Del>>"
     $fm add separator
     
-    $fm add command -label "Select all" -command "MenuSelect $c edit selall" \
+    $fm add command -label [tr. "Select all"] -command "MenuSelect $c edit selall" \
             -accelerator "$accKey+A"
     AddAccelerator $winid edit "Select all" "<$accSym-a>"
-    $fm add command -label "Unselect all" \
+    $fm add command -label [tr. "Unselect all"] \
             -command "MenuSelect $c edit unselall" -accelerator "$accKey+U"
     AddAccelerator $winid edit "Unselect all" "<$accSym-u>"
-    $fm add command -label "Invert selection" \
+    $fm add command -label [tr. "Invert selection"] \
             -command "MenuSelect $c edit invsel" -accelerator "$accKey+*"
     AddAccelerator $winid edit "Invert selection" "<$accSym-asterisk>"
     
     AddFindMenu $winid $c $fm
     $fm add separator
-    $fm add command -label "Properties..." \
-            -command "MenuSelect $c edit properties"
+    AddCmdAndAccel $winid edit "Properties..." "MenuSelect $c edit properties"
     if ![string match "Darwin" $tcl_platform(os)] {
-      $fm add command -label Preferences... -command Pref_Dialog
+      $fm add command -label [tr. Preferences...] -command Pref_Dialog
     }
     
     
     set fm [menu $topm.view -tearoff 0]
-    $topm add cascade -label View -underline 0 \
+    $topm add cascade -label [tr. View] -underline 0 \
             -menu $topm.view
-    $fm add check -label Toolbar -variable custom(shownavbar,$winid) \
+    $fm add check -label [tr. Toolbar] -variable custom(shownavbar,$winid) \
             -command "toggleBar $winid"
     $fm add check -command "toggleBar $winid" \
-            -label "Component bar" -variable custom(showtoolbar,$winid)
+            -label [tr. "Component bar"] -variable custom(showtoolbar,$winid)
     $fm add check -command "toggleBar $winid" \
-            -label "Equation bar" -variable custom(showeqnbar,$winid)
+            -label [tr. "Equation bar"] -variable custom(showeqnbar,$winid)
     $fm add check -command "UpdateGrid $c" \
-            -label "Grids" -variable custom(showgrids,$c)
+            -label [tr. "Grids"] -variable custom(showgrids,$c)
     
     $fm add separator
 
 # zoom submenu
     set fm2 [menu $fm.zoom -tearoff 0]
-    $fm add cascade -label Zoom -menu $fm2
-    $fm2 add command -label "In lots" -command "DoZoom \
+    $fm add cascade -label [tr. Zoom] -menu $fm2
+    $fm2 add command -label [tr. "In lots"] -command "DoZoom \
             $c 1.953125" -accelerator "$accKey+*"
     AddAccelerator $winid view.zoom "In lots" "<$accSym-KP_Multiply>"
-    $fm2 add command -label "In a bit" -command "DoZoom \
+    $fm2 add command -label [tr. "In a bit"] -command "DoZoom \
             $c 1.25" -accelerator "$accKey++"
     AddAccelerator $winid view.zoom "In a bit" "<$accSym-KP_Add>"
-    $fm2 add command -label "To selection" -command "DisplayArea $c"
-    $fm2 add command -label "To fit" -command "DisplayAll $c"
-    $fm2 add command -label "Out a bit" -command "DoZoom \
+    $fm2 add command -label [tr. "To selection"] -command "DisplayArea $c"
+    $fm2 add command -label [tr. "To fit"] -command "DisplayAll $c"
+    $fm2 add command -label [tr. "Out a bit"] -command "DoZoom \
             $c 0.8" -accelerator "$accKey+-"
     AddAccelerator $winid view.zoom "Out a bit" "<$accSym-KP_Subtract>"
-    $fm2 add command -label "Out lots" -command "DoZoom \
+    $fm2 add command -label [tr. "Out lots"] -command "DoZoom \
             $c 0.512" -accelerator "$accKey+/"
     AddAccelerator $winid view.zoom "Out lots" "<$accSym-KP_Divide>"
     
-    $fm add cascade -label "Show detail" -menu $fm.sub3
+    $fm add cascade -label [tr. "Show detail"] -menu $fm.sub3
     set fm3 [menu $fm.sub3 -tearoff 0]
     AddDetailMenu $c $fm3 $initDepths
     menu $fm.sub4 -tearoff 0
-    $fm add cascade -label "Customize" -menu $fm.sub4
+    $fm add cascade -label [tr. "Customize"] -menu $fm.sub4
     foreach category { \
                 {compartment "Compartments..."} \
                 {variable "Variables..."} \
@@ -1516,20 +1524,20 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
         -label [lindex $category 1]
     }
     menu $fm.sub5 -tearoff 0
-    $fm add cascade -label "Highlight back" -menu $fm.sub5
-    $fm.sub5 add radio -command "SetHalo $c back 0" -label "Bases only" \
+    $fm add cascade -label [tr. "Highlight back"] -menu $fm.sub5
+    $fm.sub5 add radio -command "SetHalo $c back 0" -label [tr. "Bases only"] \
 	-variable rads(back) -value 0
-    $fm.sub5 add radio -command "SetHalo $c back 1" -label "One function" \
+    $fm.sub5 add radio -command "SetHalo $c back 1" -label [tr. "One function"] \
 	-variable rads(back) -value 1
-    $fm.sub5 add radio -command "SetHalo $c back 2" -label "Two functions" \
+    $fm.sub5 add radio -command "SetHalo $c back 2" -label [tr. "Two functions"] \
 	-variable rads(back) -value 2
     menu $fm.sub6 -tearoff 0
-    $fm add cascade -label "Highlight forward" -menu $fm.sub6
-    $fm.sub6 add radio -command "SetHalo $c fwd 0" -label "Ghosts only" \
+    $fm add cascade -label [tr. "Highlight forward"] -menu $fm.sub6
+    $fm.sub6 add radio -command "SetHalo $c fwd 0" -label [tr. "Ghosts only"] \
 	-variable rads(fwd) -value 0
-    $fm.sub6 add radio -command "SetHalo $c fwd 1" -label "One function" \
+    $fm.sub6 add radio -command "SetHalo $c fwd 1" -label [tr. "One function"] \
 	-variable rads(fwd) -value 1
-    $fm.sub6 add radio -command "SetHalo $c fwd 2" -label "Two functions" \
+    $fm.sub6 add radio -command "SetHalo $c fwd 2" -label [tr. "Two functions"] \
 	-variable rads(fwd) -value 2
 
     if {$isTopLevel} {
@@ -1541,114 +1549,115 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
         set execEntryState disabled
     }
     set fm [menu $topm.model -tearoff 0 -postcommand "AbleComp $winid"]
-    $topm add cascade -label Model -underline 0 \
+    $topm add cascade -label [tr. Model] -underline 0 \
             -menu $topm.model
-    $fm add command -label "Run" -state $execEntryState \
+    $fm add command -label [tr. "Run"] -state $execEntryState \
                     -command "MenuSelect $c code run_c" \
                     -accelerator "$accKey+R"
     AddAccelerator $winid model "Run" "<$accSym-r>"
-    $fm add command -label "Debug" -state $execEntryState \
+    $fm add command -label [tr. "Debug"] -state $execEntryState \
                     -command "MenuSelect $c code run_tcl" \
                     -accelerator "$accKey+D"
     AddAccelerator $winid model "Debug" "<$accSym-d>"
-    $fm add command -label "Abort execution" -state $execEntryState \
+    $fm add command -label [tr. "Abort execution"] -state $execEntryState \
                     -command "FinishExec $c"
     $fm add separator
-    $fm add command -label "List equations" \
+    $fm add command -label [tr. "List equations"] \
             -command "MenuSelect $c file list_eqns" \
             -accelerator "$accKey+L"
     AddAccelerator $winid model "List equations" "<$accSym-l>"
     $fm add separator
-    $fm add cascade -label Add -menu $fm.sub1
+    $fm add cascade -label [tr. Add] -menu $fm.sub1
     set fm1 [menu $fm.sub1 -tearoff 0]
     
     # The radiobuttons use MIpushedbutton as their variable because
     # the command procedure has to know what the old pushedbutton was
     # so it can unpress it, so they cannot use that
     
-    $fm1 add radiobutton -label Compartment -command "ItemSelect compartment" \
+    $fm1 add radiobutton -label [tr. Compartment] -command "ItemSelect compartment" \
             -variable MIpushedbutton -value compartment
-#    $fm1 add radiobutton -label State -command "ItemSelect state" \
+#    $fm1 add radiobutton -label [tr. State] -command "ItemSelect state" \
 #            -variable MIpushedbutton -value state
 # event and squirt needed too
-    $fm1 add radiobutton -label Variable -command "ItemSelect variable" \
+    $fm1 add radiobutton -label [tr. Variable] -command "ItemSelect variable" \
             -variable MIpushedbutton -value variable
-    $fm1 add radiobutton -label Flow -command "ItemSelect flow" \
+    $fm1 add radiobutton -label [tr. Flow] -command "ItemSelect flow" \
             -variable MIpushedbutton -value flow
-    $fm1 add radiobutton -label Influence -command "ItemSelect influence" \
+    $fm1 add radiobutton -label [tr. Influence] -command "ItemSelect influence" \
             -variable MIpushedbutton -value influence
-    $fm1 add radiobutton -label Submodel -command "ItemSelect submodel" \
+    $fm1 add radiobutton -label [tr. Submodel] -command "ItemSelect submodel" \
             -variable MIpushedbutton -value submodel
-    $fm1 add radiobutton -label Relation -command "ItemSelect relation" \
+    $fm1 add radiobutton -label [tr. Relation] -command "ItemSelect relation" \
             -variable MIpushedbutton -value relation
     
     
-    $fm1 add radiobutton -label Creation -command "ItemSelect creation" \
+    $fm1 add radiobutton -label [tr. Creation] -command "ItemSelect creation" \
             -variable MIpushedbutton -value creation
-    $fm1 add radiobutton -label Migration -command "ItemSelect immigration" \
+    $fm1 add radiobutton -label [tr. Migration] -command "ItemSelect immigration" \
             -variable MIpushedbutton -value immigration
-    $fm1 add radiobutton -label Reproduction -command "ItemSelect reproduction" \
+    $fm1 add radiobutton -label [tr. Reproduction] -command "ItemSelect reproduction" \
             -variable MIpushedbutton -value reproduction
-    $fm1 add radiobutton -label Extermination -command "ItemSelect loss" \
+    $fm1 add radiobutton -label [tr. Extermination] -command "ItemSelect loss" \
             -variable MIpushedbutton -value loss
-    $fm1 add radiobutton -label Condition -command "ItemSelect condition" \
+    $fm1 add radiobutton -label [tr. Condition] -command "ItemSelect condition" \
             -variable MIpushedbutton -value condition
-    $fm1 add radiobutton -label Alarm -command "ItemSelect alarm" \
+    $fm1 add radiobutton -label [tr. Alarm] -command "ItemSelect alarm" \
             -variable MIpushedbutton -value alarm
-    $fm1 add radiobutton -label "Text box" -command "ItemSelect text" \
+    $fm1 add radiobutton -label [tr. "Text box"] -command "ItemSelect text" \
             -variable MIpushedbutton -value text
-    $fm add cascade -label Flip -menu $fm.sub2
+    $fm add cascade -label [tr. Flip] -menu $fm.sub2
     set fm2 [menu $fm.sub2 -tearoff 0]
-    $fm2 add command -label Horizontal \
+    $fm2 add command -label [tr. Horizontal] \
             -command "MenuSelect $c edit flip_h"
-    $fm2 add command -label Vertical \
+    $fm2 add command -label [tr. Vertical] \
             -command "MenuSelect $c edit flip_v"
     
-    $fm add command -label "Insert..." \
+    $fm add command -label [tr. "Insert..."] \
             -command "MenuSelect $c local insert"
     $fm add separator
-    $fm add command -label "Save interface" \
+    $fm add command -label [tr. "Save interface"] \
             -command "MenuSelect $c file save_interface"
-    $fm add command -label "Load interface" \
+    $fm add command -label [tr. "Load interface"] \
             -command "MenuSelect $c edit set_interface"
     
     
     set fm [menu $topm.tools -tearoff 0]
-    $topm add cascade -label Tools -underline 0 \
+    $topm add cascade -label [tr. Tools] -underline 0 \
             -menu $topm.tools
-    $fm add radiobutton -label "Label/move elements" \
+    $fm add radiobutton -label [tr. "Label/move elements"] \
             -command "ModeSelect select" -variable MIpushedbutton -value select
-    #    $fm add radiobutton -label "Move elements" -command "ModeSelect move" \
+    #    $fm add radiobutton -label [tr. "Move elements"] -command "ModeSelect move" \
     -variable MIpushedbutton -value move
-    #    $fm add radiobutton -label "Delete elements" -command "ModeSelect delete" \
+    #    $fm add radiobutton -label [tr. "Delete elements"] -command "ModeSelect delete" \
     -variable MIpushedbutton -value delete
-    #    $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy" \
+    #    $fm add radiobutton -label [tr. "Duplicate submodels"] -command "ModeSelect copy" \
     -variable MIpushedbutton -value copy
-    $fm add radiobutton -label "Move canvas"  -command "ModeSelect move" \
+    $fm add radiobutton -label [tr. "Move canvas"]  -command "ModeSelect move" \
             -variable MIpushedbutton -value move
-    $fm add radiobutton -label "Create ghost nodes"  -command "ModeSelect ghost" \
+    $fm add radiobutton -label [tr. "Create ghost nodes"]  -command "ModeSelect ghost" \
             -variable MIpushedbutton -value ghost
-    $fm add radiobutton -label "Inspect elements"  -command "ModeSelect snap" \
+    $fm add radiobutton -label [tr. "Inspect elements"]  -command "ModeSelect snap" \
             -variable MIpushedbutton -value snap -state disabled
+    set ::menuPosns(tools,Inspect\ elements) [$fm index last]
     
 #    if {[HaveValues $topNode] && \
 #	    ![PrefValue custom(helperManager) helperManager]} {
-#        $topm add  cascade -label "I/O tools" -underline 0 \
+#        $topm add  cascade -label [tr. "I/O tools"] -underline 0 \
 #        -menu $topm.helpers
 #        $fm entryconfigure "Inspect elements" -state normal
 #    }
 #
 # Window menu not finished (needs to work in exec windows)
-    $topm add cascade -label Window -underline 0 -menu .windowchoice
+    $topm add cascade -label [tr. Window] -underline 0 -menu .windowchoice
 
         set fm [menu $topm.help -tearoff 0]
-        $topm add cascade -label Help -underline 0 -menu $fm
-        $fm add command -label Contents -command "ContextSensitiveHelp $winid index.htm" \
+        $topm add cascade -label [tr. Help] -underline 0 -menu $fm
+        $fm add command -label [tr. Contents] -command "ContextSensitiveHelp $winid index.htm" \
                 -accelerator "F1"
         AddAccelerator $winid help Contents "<F1>"
 #        $fm add command -label Huh? -command {ShowMess debug info $errorInfo ok}
     if ![string match aqua [tk windowingsystem]] {
-        $fm add command -label About... -command [list ShowAbout $winid]
+        $fm add command -label [tr. About...] -command [list ShowAbout $winid]
     }
     set nb [::ttk::frame $winid.toolSlot.navbar -class Toolbar]
     pack [ttk::separator $nb.afterSeparator -orient horizontal] \
@@ -1795,8 +1804,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     pack $eb.inputs -side left
     set m [menu $eb.inputs.menu -tearoff 0]
 # now done when bar filled            -postcommand [list AddInputs $winid $eb]
-    #    $m add command -label biomass -command bell
-    #    $m add command -label k -command bell
+    #    $m add command -label [tr. biomass] -command bell
+    #    $m add command -label [tr. k] -command bell
     #BindPopup $m foobar
     
     ::ttk::menubutton $eb.function -state disabled -menu $eb.function.menu -image $iconImages(function)
@@ -1823,7 +1832,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	}
     }
     set lname [menu $m.enumtypes -tearoff 0]
-    $m add cascade -menu $lname -label {Enum. type constants}
+    $m add cascade -menu $lname -label [tr. "Enum. type constants"]
     
     $eb.equation configure -validatecommand \
 	[list autocomplete %W %d %i %P [lsort -dictionary $fnList]]
@@ -1836,7 +1845,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     #        $m add command -label $cmd\(\) \
     -command [list InsertFunction $eb.equation $cmd]
     #    }
-    #    $m add command -label "All functions..." -command bell
+    #    $m add command -label [tr. "All functions..."] -command bell
     
     #   set image [image create photo -file "../Images/eqnbar/props.gif"]
     #   pack [button $eb.properties -state disabled -image $image -borderwidth 1] \
@@ -1983,17 +1992,17 @@ proc EnterEqn {winid eb} {
 proc AddFindMenu {winid canvas menu} {
     global tcl_platform
     if [string match "Darwin" $tcl_platform(os)] {
-      set accKey Cmd
-      set accSym Command
+	set accKey [tr. Cmd]
+	set accSym Command
     } else {
-      set accKey Ctrl
-      set accSym Control
+	set accKey [tr. Ctrl]
+	set accSym Control
     }
     $menu add separator
-    $menu add command -label Find... -command "FindCaption $canvas" \
+    $menu add command -label [tr. Find...] -command "FindCaption $canvas" \
             -accelerator "$accKey+F"
     AddAccelerator $winid edit "Find..." "<$accSym-f>"
-    $menu add command -label "Find next" -command "NextCaption $canvas" \
+    $menu add command -label [tr. "Find next"] -command "NextCaption $canvas" \
             -accelerator "F3" -state disabled
     AddAccelerator $winid edit "Find next" "<F3>"
 }
@@ -2277,19 +2286,19 @@ proc AddDetailMenu {winId fm3 initVals} {
         $fm3 add cascade -label [lindex $category 1] \
                 -menu $fm3.$cat
         set lastmenu [menu $fm3.$cat -tearoff 0]
-        $lastmenu add radio -label "None" -variable rads($winId,$cat) \
+        $lastmenu add radio -label [tr. "None"] -variable rads($winId,$cat) \
                 -value 0 -command "WindowDetail $winId $cat 0 1"
         foreach depth {1 2 3 4 5 6} {
-            $lastmenu add radio -label "$depth levels" \
+            $lastmenu add radio -label [tr. "$depth levels"] \
                     -variable rads($winId,$cat) -value $depth \
                     -command "WindowDetail $winId $cat $depth 1"
             
 
         }
-        $lastmenu add radio -label "All" -variable rads($winId,$cat) \
+        $lastmenu add radio -label [tr. "All"] -variable rads($winId,$cat) \
                 -value 32 -command "WindowDetail $winId $cat 32 1"
     }
-    $fm3 add cascade -label "Influence sections..." -menu $fm3.sections
+    $fm3 add cascade -label [tr. "Influence sections..."] -menu $fm3.sections
     set lastmenu [menu $fm3.sections -tearoff 0]
     set rads($winId,sections) [lindex $initVals $posn]
     foreach sectType {Local Terminal All} {

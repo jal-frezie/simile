@@ -718,11 +718,13 @@ make_node(Parent, Type, Node) :-
 	Node has_new_class Type,
 	Node has_new_class_refinement name of Name.
 
-get_abbrev(Full, Short) :-
+get_abbrev(Full, TrShort) :-
 	member(Full-Short, [compartment-comp, function-fn, variable-var, 
 		cloud-cd, submodel-submodel, condition-cond, alarm-al,
 		creation-cr, immigration-im, reproduction-rep, loss-loss,
-		flow-flow, influence-i, relation-role]).
+		flow-flow, influence-i, relation-role]),
+	translate(Short, ShortStr),
+	name(TrShort, ShortStr).
 
 one_end_in(Boxes, Arc) :-
 	spans_border(Boxes, Arc); link_section(Boxes, Arc).
@@ -1744,7 +1746,9 @@ make_desktop(Desktop, Canvas_name) :-
 /* ...which calls the class constructor, which calls... */
 make_desktop_node(Desktop, Canvas_name) :-
         m_class:Root is_root,
-	make_node(Root, 'Desktop', Desktop),
+	translate('Desktop', DTStr),
+	name(DTWord, DTStr),
+	make_node(Root, DTWord, Desktop),
 	change_class(Desktop, _, submodel),
 	Desktop has_class_refinement name of ModelName,
 	state:set_initial_box_sizes(Desktop),
