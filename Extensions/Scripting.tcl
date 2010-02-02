@@ -1,4 +1,3 @@
-package require Itcl
 if {[string equal windows $::tcl_platform(platform)]} {
     package require dde
     dde servername Simile
@@ -15,7 +14,7 @@ itcl::class similescript::ModelWindow {
     }
 
     constructor {} {
-	set fromProlog [MakeNodeInProlog]
+	set fromProlog [MakeNodeInProlog $this]
         #tk_messageBox -message "ModelWin constructor"
 	set modelNode [lindex $fromProlog 0]
 	set modelCanvas [lindex $fromProlog 1]
@@ -319,7 +318,7 @@ itcl::class similescript::RunControl {
     
     constructor {{modelInst {}}} {
 	global botches
-
+puts "Constructing run control $modelInst"
 	if {[string equal {} $modelInst]} {
 	    set modelInst $botches(modelJustRun)
 	}

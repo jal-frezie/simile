@@ -811,7 +811,11 @@ proc UpdateExecution {node action} {
 if [string match Darwin $tcl_platform(os)] {
   set env(ITCL_LIBRARY) [pwd]/../System/lib/itcl3.3
 }
-package require Itcl
+if {[info tclversion] > 8.5} {
+    package require Itcl 4.0
+} else {
+    package require Itcl
+}
 itcl::class ModelWindowExtn {
     variable winId
     constructor {awinId} {
@@ -2007,13 +2011,13 @@ proc UniqueId {base {used {}}} {
 }
 
 # called from constructor
-proc MakeNodeInProlog {} {
+proc MakeNodeInProlog {newInstance} {
     global classTable fromProlog
 
     prolog tk_make_desktop_node
 # secret run instance for use by system helpers
-    upvar 1 this newInstance
     set newRunInstance [UniqueId modelRun]
+puts "similescript::RunControl $newRunInstance $newInstance"
     similescript::RunControl $newRunInstance $newInstance
     set node [lindex $fromProlog 0]
     set classTable(run,$node) $newRunInstance

@@ -14,14 +14,10 @@
 global env
 scan [info tclversion] "%d.%d" MAJ MIN
 if {![catch {set vers $env(SIMILE_VERSION)}]} {
-    package ifneeded Ame_dll 8.4.$vers.0 \
-	[list load [file join $dir ame_dll84.dll]]
-    package ifneeded Ame_dll 8.5.$vers.0 \
-	[list load [file join $dir ame_dll85.dll]]
-    package ifneeded Ame_dll 8.4.$vers.1 \
-	[list load [file join $dir libame_dll8.4$env(slTail)]]
-    package ifneeded Ame_dll 8.5.$vers.1 \
-	[list load [file join $dir libame_dll8.5$env(slTail)]]
+    package ifneeded Ame_dll $MAJ.$MIN.$vers.0 \
+	[list load [file join $dir ame_dll$MAJ$MIN.dll]]
+    package ifneeded Ame_dll $MAJ.$MIN.$vers.1 \
+	[list load [file join $dir libame_dll$MAJ.$MIN$env(slTail)]]
 
     if {[string equal .dll $env(slTail)]} {
 	package ifneeded Unpacker 1.0 \
