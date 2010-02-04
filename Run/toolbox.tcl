@@ -47,7 +47,8 @@ font configure TkTextFont -size $niceSize
 font configure TkCaptionFont -size $niceSize
 # Now here's one of my own...
 eval font create EquationFont [font actual TkTextFont]
-font configure EquationFont -size [expr {[font configure EquationFont -size]+2}]
+set eqnSize [expr {[font configure EquationFont -size]*5/4}]
+font configure EquationFont -size $eqnSize
 
 source ../Run/window.tcl
 source ../Run/shapes.tcl
@@ -78,7 +79,7 @@ if {[string match windows $tcl_platform(platform)]} {
     
     #   pkg_mkIndex ../System/lib/Extras
     source ../System/lib/Extras/prntcanv.tcl
-    source ../System/lib/Extras/prntproc.tcl
+#    source ../System/lib/Extras/prntproc.tcl
     
     # Make Simile a DDE server under Windows. Jonathan autotesting
     # Must be after the sourcing or Simile fails
@@ -2017,7 +2018,6 @@ proc MakeNodeInProlog {newInstance} {
     prolog tk_make_desktop_node
 # secret run instance for use by system helpers
     set newRunInstance [UniqueId modelRun]
-puts "similescript::RunControl $newRunInstance $newInstance"
     similescript::RunControl $newRunInstance $newInstance
     set node [lindex $fromProlog 0]
     set classTable(run,$node) $newRunInstance

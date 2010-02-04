@@ -1816,10 +1816,11 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	#puts "Adding $funk to $box"
 	foreach level [split [join [lindex $funk 0] /] /] {
 	    set lname $box.[string tolower [join $level _]]
-	    if {[catch {$box index $level}]} {
+	    set capt [tr. $level]
+	    if {[catch {$box index $capt}]} {
 		menu $lname -tearoff 0
 		MenuBindPopup $lname {}
-		$box add cascade -menu $lname -label $level
+		$box add cascade -menu $lname -label $capt
 	    }
 	    set box $lname
 	}

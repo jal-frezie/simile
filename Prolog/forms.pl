@@ -10,7 +10,7 @@ sicstus_module(forms, [pick_equation/2, do_equation_dialog/2,
 		       finish_progress_dialogue/0, reassure_user/1]).
 
 sicstus_use_module([library(lists),
-		    output, m_update, ame_gen, utility]).
+		    output, m_update, ame_gen, sp_only, utility]).
 
 pick_equation(Part, Equation) :-
 	(get_av_pair(Part, 0, spec, Equation),
@@ -129,7 +129,9 @@ start_progress_dialogue(Win) :-
 	tk_start_progress_dialogue(Win).
 
 reassure_user(String) :-
-	tk_update_infobox(String).
+	name(Atom, String),
+	text:translate(Atom, TrString),
+	tk_update_infobox(TrString).
 
 finish_progress_dialogue :-
 	tk_finish_progress_dialogue.

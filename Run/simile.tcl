@@ -1,7 +1,7 @@
 #!/home/jaspert/Simile/System/bin/wish
 # Simile source code file: Run/simile.tcl
 #
-# (c) Simulistics Ltd. 2001-2009
+# (c) Simulistics Ltd. 2001-2010
 # (c) University of Edinburgh 1995-2001
 #
 # This file contains the code initially sourced into the Tcl interpreter and
@@ -415,7 +415,7 @@ for {set y 0} {$y < $sphYdiam} {incr y 4} {
 	-outline {} -fill $shade
 }
 .splash.c create image 36p 28p -image $splash
-set graph(anality) "\ua9 [tr. {Copyright Simulistics Ltd.}] 2001-2009"
+set graph(anality) "\ua9 [tr. {Copyright Simulistics Ltd.}] 2001-2010"
 .splash.c create text 395.0p 45.0p -font $graph(font) -fill \#99cc99 -anchor e \
     -text $graph(anality)
 .splash.c create text 250.0p 225.0p -font $graph(megafont) -fill #660066 \

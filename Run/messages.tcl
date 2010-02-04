@@ -6,679 +6,679 @@
 # This file is sourced by toolbox.tcl, providing definitions of popup help text
 # and links to help file pages.
 #
-set msgs(compartment) "Add compartments"
-set msgs(flow) "Add flows"
-set msgs(variable) "Add variables"
-set msgs(influence) "Add influences"
-set msgs(submodel) "Add new submodels"
-set msgs(relation) "Connect submodels playing roles in a relationship to a relation submodel"
-set msgs(condition) "Add conditions for the existence of submodel instances"
-set msgs(alarm) "Add conditions for ending calculations within a submodel instance"
-set msgs(text) "Add a text box to display additional information"
-set msgs(creation) "Add creation processes to population submodels"
-set msgs(immigration) "Add immigration processes to population submodels"
-set msgs(reproduction) "Add reproduction processes to population submodels"
-set msgs(loss) "Add destruction processes to population submodels"
-set msgs(move) "Move diagram"
-set msgs(copy) "Make copies of submodels"
-set msgs(ghost) "Create 'ghosts' of components"
-set msgs(select) "Select components"
-set msgs(delete) "Delete components"
-set msgs(rerun) "Run the model, building it if necessary"
-set msgs(undo) "Undo operations sequentially"
-set msgs(redo) "Redo operations that were undone"
-set msgs(customize) "Customize appearance of components (first select type to customize from top row)"
-set msgs(find) "Find a component"
-set msgs(findmore) "Find more components"
-set msgs(exit) "Exit Simile"
-set msgs(runenv) "Go to the Run Environment window"
-set msgs(snap) "Inspect model variable"
+set msgs(compartment) [tr. "Add compartments"]
+set msgs(flow) [tr. "Add flows"]
+set msgs(variable) [tr. "Add variables"]
+set msgs(influence) [tr. "Add influences"]
+set msgs(submodel) [tr. "Add new submodels"]
+set msgs(relation) [tr. "Connect submodels playing roles in a relationship to a relation submodel"]
+set msgs(condition) [tr. "Add conditions for the existence of submodel instances"]
+set msgs(alarm) [tr. "Add conditions for ending calculations within a submodel instance"]
+set msgs(text) [tr. "Add a text box to display additional information"]
+set msgs(creation) [tr. "Add creation processes to population submodels"]
+set msgs(immigration) [tr. "Add immigration processes to population submodels"]
+set msgs(reproduction) [tr. "Add reproduction processes to population submodels"]
+set msgs(loss) [tr. "Add destruction processes to population submodels"]
+set msgs(move) [tr. "Move diagram"]
+set msgs(copy) [tr. "Make copies of submodels"]
+set msgs(ghost) [tr. "Create 'ghosts' of components"]
+set msgs(select) [tr. "Select components"]
+set msgs(delete) [tr. "Delete components"]
+set msgs(rerun) [tr. "Run the model, building it if necessary"]
+set msgs(undo) [tr. "Undo operations sequentially"]
+set msgs(redo) [tr. "Redo operations that were undone"]
+set msgs(customize) [tr. "Customize appearance of components (first select type to customize from top row)"]
+set msgs(find) [tr. "Find a component"]
+set msgs(findmore) [tr. "Find more components"]
+set msgs(exit) [tr. "Exit Simile"]
+set msgs(runenv) [tr. "Go to the Run Environment window"]
+set msgs(snap) [tr. "Inspect model variable"]
 
-set msgs(sum) "Returns the sum of all elements of the argument"
-set msgs(product) "Returns the product of all elements of the argument"
-set msgs(place_in) "Returns each term's position, when making an array with makearay -- argument is nesting depth"
-set msgs(count) "Returns the number of values in the argument"
-set msgs(any) "Returns true if any of the argument elements are true"
-set msgs(all) "Returns true if all of the argument elements are true"
-set msgs(subtotals) "Returns an array with the cumulative totals of the values in the argument array. Element n of the result is the sum of argument elements 1 through n."
-set msgs(rankings) "Returns an array with the ranks of the corresponding elements in the argument. This is 1 for the largest element, and equal to the size of the array for the smallest."
-set msgs(colin) "Returns a random integer corresponding to an element of the argument array, with the probability of each value proportional to the value of that element"
-set msgs(posgreatest) "returns the position of the highest value in the argument array, or the position of the first element with the highest value if there are more than one with that value"
-set msgs(posleast) "returns the position of the lowest value in the argument array, or the position of the first element with the lowest value if there are more than one with that value"
-set msgs(firsttrue) "Takes an array of booleans and returns the index of the first with value \"true\""
-set msgs(howmanytrue) "Takes an array of booleans and returns the number that are true"
-set msgs(parent) "Returns the index of the instance from which this one was reproduced, or 0 if this one was created or immigrated"
-set msgs(init_time) "Returns the time at which this instance appeared -- argument is dummy"
-set msgs(at_init) "Returns the value the argument had when first used, i.e., on model reset or when the submodel instance containing this equation was created"
-set msgs(default) "Utility for writing type-independent macros; returns 0 if arg is number, \"false\" if arg is boolean, or first member of arg's enumerated type"
-set msgs(time) "Returns the current time, to nearest multiple of the time step specified by the argument -- none means that of current submodel"
-set msgs(dt) "Returns the duration of the time step specified by the argument -- none means that of current submodel"
-set msgs(prev) "Returns the value of this component the given number of time steps ago"
-set msgs(makearray) "Returns an array of the given number of values from the first argument"
-set msgs(element) "Returns a value from an array according to the second argument"
-set msgs(first) "Returns \"true\" if argument is either the first member of its enumerated type or the integer 1"
-set msgs(following) "Returns the enumerated type member that comes after its argument, or the argument plus one if it is an integer"
-set msgs(preceding) "Returns the enumerated type member that comes before its argument, or the argument minus one if it is an integer"
-set msgs(size) "Takes the name of a fixed-membership submodel and if one arg, returns its number of instances or if two, the size of one of its dimensions"
-set msgs(stop) "If this gets executed, the model stops and displays a message including the argument. Use in a conditional statement to detect when things are going wrong."
-set msgs(const_delay) "Returns the first argument delayed by the time given in the second argument, which must be a numeric value. Resolution is 0.1 day."
-set msgs(var_delay) "Returns the first argument delayed by the time given in the second argument, which can be an expression. Resolution is 0.1 day and max delay is 100 days."
-set msgs(least) "Returns the smallest value from an array/list of values"
-set msgs(greatest) "Returns the largest value from an array/list of values"
-set msgs(with_least) "Takes two arrays or lists with equal size, and returns the element of the second that corresponds to the element of the first with the smallest value."
-set msgs(with_greatest) "Takes two arrays or lists with equal size, and returns the element of the second that corresponds to the element of the first with the largest value."
-set msgs(with_colin) "Takes two lists with equal size, and returns an element from the second argument, picked at random with the probability of each element proportional to the value of the corresponding element in the first argument."
-set msgs(abs) "Returns absolute difference between argument and zero"
-set msgs(ceil) "Rounds argument up to a whole number"
-set msgs(floor) "Rounds argument down to a whole number"
-set msgs(channel_is) "Argument is an immigration, reproduction or creation channel. Returns true if this individual appeared through that channel."
-set msgs(dies_of) "Argument is a mortality channel. Returns true if this channel will cause the individual to disappear at the end of the current time step."
-set msgs(latency) "Argument is an immigration or reproduction channel. Returns the fraction indicating how near that channel is to producing another individual. When it reaches 1 the individual appears and it goes back to 0."
-set msgs(choose) "choose(a,b,c) is shorthand for 'if a then b else c'"
-set msgs(exp) "Returns e to the power of a number"
-set msgs(fmod) "Returns remainder after dividing first argument by second"
-set msgs(hypot) "Returns length of hypotenuse of triangle with given base and height"
+set msgs(sum) [tr. "Returns the sum of all elements of the argument"]
+set msgs(product) [tr. "Returns the product of all elements of the argument"]
+set msgs(place_in) [tr. "Returns each term's position, when making an array with makearay -- argument is nesting depth"]
+set msgs(count) [tr. "Returns the number of values in the argument"]
+set msgs(any) [tr. "Returns true if any of the argument elements are true"]
+set msgs(all) [tr. "Returns true if all of the argument elements are true"]
+set msgs(subtotals) [tr. "Returns an array with the cumulative totals of the values in the argument array. Element n of the result is the sum of argument elements 1 through n."]
+set msgs(rankings) [tr. "Returns an array with the ranks of the corresponding elements in the argument. This is 1 for the largest element, and equal to the size of the array for the smallest."]
+set msgs(colin) [tr. "Returns a random integer corresponding to an element of the argument array, with the probability of each value proportional to the value of that element"]
+set msgs(posgreatest) [tr. "returns the position of the highest value in the argument array, or the position of the first element with the highest value if there are more than one with that value"]
+set msgs(posleast) [tr. "returns the position of the lowest value in the argument array, or the position of the first element with the lowest value if there are more than one with that value"]
+set msgs(firsttrue) [tr. "Takes an array of booleans and returns the index of the first with value \"true\""]
+set msgs(howmanytrue) [tr. "Takes an array of booleans and returns the number that are true"]
+set msgs(parent) [tr. "Returns the index of the instance from which this one was reproduced, or 0 if this one was created or immigrated"]
+set msgs(init_time) [tr. "Returns the time at which this instance appeared -- argument is dummy"]
+set msgs(at_init) [tr. "Returns the value the argument had when first used, i.e., on model reset or when the submodel instance containing this equation was created"]
+set msgs(default) [tr. "Utility for writing type-independent macros; returns 0 if arg is number, \"false\" if arg is boolean, or first member of arg's enumerated type"]
+set msgs(time) [tr. "Returns the current time, to nearest multiple of the time step specified by the argument -- none means that of current submodel"]
+set msgs(dt) [tr. "Returns the duration of the time step specified by the argument -- none means that of current submodel"]
+set msgs(prev) [tr. "Returns the value of this component the given number of time steps ago"]
+set msgs(makearray) [tr. "Returns an array of the given number of values from the first argument"]
+set msgs(element) [tr. "Returns a value from an array according to the second argument"]
+set msgs(first) [tr. "Returns \"true\" if argument is either the first member of its enumerated type or the integer 1"]
+set msgs(following) [tr. "Returns the enumerated type member that comes after its argument, or the argument plus one if it is an integer"]
+set msgs(preceding) [tr. "Returns the enumerated type member that comes before its argument, or the argument minus one if it is an integer"]
+set msgs(size) [tr. "Takes the name of a fixed-membership submodel and if one arg, returns its number of instances or if two, the size of one of its dimensions"]
+set msgs(stop) [tr. "If this gets executed, the model stops and displays a message including the argument. Use in a conditional statement to detect when things are going wrong."]
+set msgs(const_delay) [tr. "Returns the first argument delayed by the time given in the second argument, which must be a numeric value. Resolution is 0.1 day."]
+set msgs(var_delay) [tr. "Returns the first argument delayed by the time given in the second argument, which can be an expression. Resolution is 0.1 day and max delay is 100 days."]
+set msgs(least) [tr. "Returns the smallest value from an array/list of values"]
+set msgs(greatest) [tr. "Returns the largest value from an array/list of values"]
+set msgs(with_least) [tr. "Takes two arrays or lists with equal size, and returns the element of the second that corresponds to the element of the first with the smallest value."]
+set msgs(with_greatest) [tr. "Takes two arrays or lists with equal size, and returns the element of the second that corresponds to the element of the first with the largest value."]
+set msgs(with_colin) [tr. "Takes two lists with equal size, and returns an element from the second argument, picked at random with the probability of each element proportional to the value of the corresponding element in the first argument."]
+set msgs(abs) [tr. "Returns absolute difference between argument and zero"]
+set msgs(ceil) [tr. "Rounds argument up to a whole number"]
+set msgs(floor) [tr. "Rounds argument down to a whole number"]
+set msgs(channel_is) [tr. "Argument is an immigration, reproduction or creation channel. Returns true if this individual appeared through that channel."]
+set msgs(dies_of) [tr. "Argument is a mortality channel. Returns true if this channel will cause the individual to disappear at the end of the current time step."]
+set msgs(latency) [tr. "Argument is an immigration or reproduction channel. Returns the fraction indicating how near that channel is to producing another individual. When it reaches 1 the individual appears and it goes back to 0."]
+set msgs(choose) [tr. "choose(a,b,c) is shorthand for 'if a then b else c'"]
+set msgs(exp) [tr. "Returns e to the power of a number"]
+set msgs(fmod) [tr. "Returns remainder after dividing first argument by second"]
+set msgs(hypot) [tr. "Returns length of hypotenuse of triangle with given base and height"]
 set msgs(atan2) {atan2(y x): Returns the angle to the baseline of the line from the origin to [x,y], ranging from -pi to pi}
-set msgs(int) "Returns integer part of argument"
-set msgs(last) "Returns value of argument from last time step"
-set msgs(log) "Returns natural logarithm of argument"
-set msgs(log10) "Returns base-10 logarithm of argument"
-set msgs(max) "Returns greater of two values"
-set msgs(min) "Returns lesser of two values"
-set msgs(pow) "Returns first argument to the power of the second"
-set msgs(round) "Returns the closest whole number to its argument"
-set msgs(rand_var) "Returns a random number between the two arguments, with a new value every time step"
-set msgs(rand_const) "Returns a random number between the two arguments, which stays the same until reset"
-set msgs(sqrt) "Returns the square root of the argument. Calling this with a negative argument when running a model in Tcl under a version of Windows other than 95 original on an Intel Celeron processor can lead to mysterious crashes in Microsoft Office applications, especially early in the tax year."
-set msgs(gaussian_var) "gaussian_var(mean sd): returns values from a gaussian distribution with \
-        the given mean (mean) and standard deviation (sd)."
-set msgs(poidev) "poidev(mean): returns values from a Poisson distribution with the given mean (mean)."
-set msgs(binome) "binome(prob n): returns values from a binomial distribution resulting from n trials each of probability prob."
-set msgs(hypergeom) "hypergeom(pop mark sample): Returns random samples from a hypergeometric distribution, i.e., the number of positives drawing 'sample' individuals from a population of 'pop' containing 'marked' positives."
-set msgs(sgn) "sgn(r): returns the sign of r, -1 if negative or 1 if positive"
-set msgs(winPosn) "Choose placement of initial model window when Simile starts."
-set msgs(initToolbar) "Display component bar in the desktop window when Simile starts, and in new submodel windows if they are large enough."
-set msgs(initNavbar) "Display tool bar in the desktop window when Simile starts, and in new submodel windows if they are large enough."
-set msgs(initEqnbar) "Display equation bar in the desktop window when Simile starts, and in new submodel windows if they are large enough."
-set msgs(initGrid) "Display placement grid in new model windows."
-set msgs(gridH) "Spacing in pixels between vertical grid lines."
-set msgs(gridV) "Spacing in pixels between horizontal grid lines."
-set msgs(gridD) "Adjusts visual prominence of grid lines."
-set msgs(bigButtons) "Use alternative (larger) buttons for the tool bar and component bar."
-set msgs(popupHelp) "Display tooltips when hovering over tool bar and component bar buttons."
-set msgs(gridSnap) "When adding or moving components, keep them centred on a grid intersection, to keep the diagram neat."
-set msgs(quickDrag) "When moving the selection, do not update the routes of links going to or from it or check if the current location is free of overlaps until finishing the move. This makes dragging easier for very large selections."
-set msgs(myButton) "Text entered here can be added to equations using a button near the top right of the equation dialogue keypad."
-set msgs(desktopDetail) "Sets the initial number of submodel levels to display. This can be changed later with the Window -> Display detail -> Submodels and Relations menu item."
-set msgs(maxWinWidth) "Maximum width of a window, prevents new windows for complex submodels coming up huge. Maximum height is 3/4 of this."
-set msgs(compChoice) "Default is gcc/g++ included in Simile distribution. Others must be installed on your system before you can use them."
-set msgs(compDescPop) "Enable popups for component's equation when pointer hovers on component."
-set msgs(compValPop) "Enable popups for component's current value(s) or instance indices when pointer hovers on component."
-set msgs(compCmtPop) "Enable popups for component's description and comment text when pointer hovers on component."
-set msgs(ncfv) "No comment for value"
-set msgs(recentCount) "Save names of recently opened models for display on the File menu."
-set msgs(saveExtras) "Save the canvas file to reduce the time initially taken to draw the model diagram."
-set msgs(flowRouting) "Draw flows as a series of horizontal or vertical segments."
-set msgs(deleteEndToEnd) "Select or unselect all sections of multi-section influences, relations or flows as if they were a single component."
-set msgs(defBackground) "Choose whether the background of a new submodel hides the background of its parent model."
-set msgs(hackBreak) "Display a dialogue when the model code is about to be compiled, allowing it to be inspected or modified first. Selecting this option also causes some other dialogues with status information to be displayed."
-set msgs(popupPrecision) "Number of significant figures displayed when real values are shown in popups, or 0 for default."
-set msgs(snapPrecision) "Number of significant figures displayed when real values are shown in snapshot windows, or 0 for default."
-set msgs(helperManager) "Use single window to manange run time displays and controls."
+set msgs(int) [tr. "Returns integer part of argument"]
+set msgs(last) [tr. "Returns value of argument from last time step"]
+set msgs(log) [tr. "Returns natural logarithm of argument"]
+set msgs(log10) [tr. "Returns base-10 logarithm of argument"]
+set msgs(max) [tr. "Returns greater of two values"]
+set msgs(min) [tr. "Returns lesser of two values"]
+set msgs(pow) [tr. "Returns first argument to the power of the second"]
+set msgs(round) [tr. "Returns the closest whole number to its argument"]
+set msgs(rand_var) [tr. "Returns a random number between the two arguments, with a new value every time step"]
+set msgs(rand_const) [tr. "Returns a random number between the two arguments, which stays the same until reset"]
+set msgs(sqrt) [tr. "Returns the square root of the argument. Calling this with a negative argument when running a model in Tcl under a version of Windows other than 95 original on an Intel Celeron processor can lead to mysterious crashes in Microsoft Office applications, especially early in the tax year."]
+set msgs(gaussian_var) [tr. "gaussian_var(mean sd): returns values from a gaussian distribution with \
+        the given mean (mean) and standard deviation (sd)."]
+set msgs(poidev) [tr. "poidev(mean): returns values from a Poisson distribution with the given mean (mean)."]
+set msgs(binome) [tr. "binome(prob n): returns values from a binomial distribution resulting from n trials each of probability prob."]
+set msgs(hypergeom) [tr. "hypergeom(pop mark sample): Returns random samples from a hypergeometric distribution, i.e., the number of positives drawing 'sample' individuals from a population of 'pop' containing 'marked' positives."]
+set msgs(sgn) [tr. "sgn(r): returns the sign of r, -1 if negative or 1 if positive"]
+set msgs(winPosn) [tr. "Choose placement of initial model window when Simile starts."]
+set msgs(initToolbar) [tr. "Display component bar in the desktop window when Simile starts, and in new submodel windows if they are large enough."]
+set msgs(initNavbar) [tr. "Display tool bar in the desktop window when Simile starts, and in new submodel windows if they are large enough."]
+set msgs(initEqnbar) [tr. "Display equation bar in the desktop window when Simile starts, and in new submodel windows if they are large enough."]
+set msgs(initGrid) [tr. "Display placement grid in new model windows."]
+set msgs(gridH) [tr. "Spacing in pixels between vertical grid lines."]
+set msgs(gridV) [tr. "Spacing in pixels between horizontal grid lines."]
+set msgs(gridD) [tr. "Adjusts visual prominence of grid lines."]
+set msgs(bigButtons) [tr. "Use alternative (larger) buttons for the tool bar and component bar."]
+set msgs(popupHelp) [tr. "Display tooltips when hovering over tool bar and component bar buttons."]
+set msgs(gridSnap) [tr. "When adding or moving components, keep them centred on a grid intersection, to keep the diagram neat."]
+set msgs(quickDrag) [tr. "When moving the selection, do not update the routes of links going to or from it or check if the current location is free of overlaps until finishing the move. This makes dragging easier for very large selections."]
+set msgs(myButton) [tr. "Text entered here can be added to equations using a button near the top right of the equation dialogue keypad."]
+set msgs(desktopDetail) [tr. "Sets the initial number of submodel levels to display. This can be changed later with the Window -> Display detail -> Submodels and Relations menu item."]
+set msgs(maxWinWidth) [tr. "Maximum width of a window, prevents new windows for complex submodels coming up huge. Maximum height is 3/4 of this."]
+set msgs(compChoice) [tr. "Default is gcc/g++ included in Simile distribution. Others must be installed on your system before you can use them."]
+set msgs(compDescPop) [tr. "Enable popups for component's equation when pointer hovers on component."]
+set msgs(compValPop) [tr. "Enable popups for component's current value(s) or instance indices when pointer hovers on component."]
+set msgs(compCmtPop) [tr. "Enable popups for component's description and comment text when pointer hovers on component."]
+set msgs(ncfv) [tr. "No comment for value"]
+set msgs(recentCount) [tr. "Save names of recently opened models for display on the File menu."]
+set msgs(saveExtras) [tr. "Save the canvas file to reduce the time initially taken to draw the model diagram."]
+set msgs(flowRouting) [tr. "Draw flows as a series of horizontal or vertical segments."]
+set msgs(deleteEndToEnd) [tr. "Select or unselect all sections of multi-section influences, relations or flows as if they were a single component."]
+set msgs(defBackground) [tr. "Choose whether the background of a new submodel hides the background of its parent model."]
+set msgs(hackBreak) [tr. "Display a dialogue when the model code is about to be compiled, allowing it to be inspected or modified first. Selecting this option also causes some other dialogues with status information to be displayed."]
+set msgs(popupPrecision) [tr. "Number of significant figures displayed when real values are shown in popups, or 0 for default."]
+set msgs(snapPrecision) [tr. "Number of significant figures displayed when real values are shown in snapshot windows, or 0 for default."]
+set msgs(helperManager) [tr. "Use single window to manange run time displays and controls."]
 
-set msgs(start_fail_title) "Simile has been unable to start up due to problems with this system."
-set msgs(start_fail_message) "The following system error message was generated:\n%s"
+set msgs(start_fail_title) [tr. "Simile has been unable to start up due to problems with this system."]
+set msgs(start_fail_message) [tr. "The following system error message was generated:\n%1\$s"]
 
-set msgs(user_fn_misparse_title) "Parsing definitions in %s"
-set msgs(user_fn_misparse_message) "Error parsing user-defined macros and functions in %s"
-set msgs(user_fn_misparse_detail) "%2\$s"
+set msgs(user_fn_misparse_title) [tr. "Parsing definitions in %1\$s"]
+set msgs(user_fn_misparse_message) [tr. "Error parsing user-defined macros and functions in %1\$s"]
+set msgs(user_fn_misparse_detail) [tr. "%2\$s"]
 
-set msgs(unused_macro_param_title) "Parsing definitions in %s"
-set msgs(unused_macro_param_message) "Failed to parse macro definition:\n%s\nThe macro function contains the parameter %s, which does not appear in the arguments of the macro template"
+set msgs(unused_macro_param_title) [tr. "Parsing definitions in %1\$s"]
+set msgs(unused_macro_param_message) [tr. "Failed to parse macro definition:\n%1\$s\nThe macro function contains the parameter %3\$s, which does not appear in the arguments of the macro template"]
 
-set msgs(bad_user_fn_format_title) "Parsing definitions in %s"
-set msgs(bad_user_fn_format_message) "The file %s contained the line %s which is in the wrong format for a macro, function or unit definition -- please refer to the documentation."
+set msgs(bad_user_fn_format_title) [tr. "Parsing definitions in %1\$s"]
+set msgs(bad_user_fn_format_message) [tr. "The file %1\$s contained the line %2\$s which is in the wrong format for a macro, function or unit definition -- please refer to the documentation."]
 
-set msgs(bust_edition_limit_title) "Problem loading model"
-set msgs(bust_edition_limit_message) "Loading this model makes %d equations. This is greater than %d, and it was not created by the enterprise edition, so it cannot be loaded in the %s edition."
-set msgs(bust_edition_limit_detail) "To upgrade, go to simulistics.com"
+set msgs(bust_edition_limit_title) [tr. "Problem loading model"]
+set msgs(bust_edition_limit_message) [tr. "Loading this model makes %1\$d equations. This is greater than %2\$d, and it was not created by the enterprise edition, so it cannot be loaded in the %3\$s edition."]
+set msgs(bust_edition_limit_detail) [tr. "To upgrade, go to simulistics.com"]
 
-set msgs(save_edition_limit_title) "Problem saving model"
-set msgs(save_edition_limit_message) "This model has %s equations. This is greater than %s, so it cannot be saved in the %s edition."
-set msgs(save_edition_limit_detail) "To upgrade, go to simulistics.com"
+set msgs(save_edition_limit_title) [tr. "Problem saving model"]
+set msgs(save_edition_limit_message) [tr. "This model has %1\$s equations. This is greater than %2\$s, so it cannot be saved in the %3\$s edition."]
+set msgs(save_edition_limit_detail) [tr. "To upgrade, go to simulistics.com"]
 
-set msgs(future_shock_title) "Future shock!"
-set msgs(future_shock_message) "This file was created with a later version of Simile than the one you are currently running."
-set msgs(future_shock_detail) "To avoid potential problems, please update your copy to version %s or later."
+set msgs(future_shock_title) [tr. "Future shock!"]
+set msgs(future_shock_message) [tr. "This file was created with a later version of Simile than the one you are currently running."]
+set msgs(future_shock_detail) [tr. "To avoid potential problems, please update your copy to version %1\$s or later."]
 
-set msgs(declaration_misparse_title) "Problem loading model"
-set msgs(declaration_misparse_message) "A line in your model file could not be parsed."
-set msgs(declaration_misparse_detail) "This may be due to more careful checking of the syntax in recent versions of Simile. If you choose to continue (see all), and the model fails to run as expected, please contact your software supplier, quoting the full message."
-set msgs(declaration_misparse_full) "The syntax error was:\n%s"
+set msgs(declaration_misparse_title) [tr. "Problem loading model"]
+set msgs(declaration_misparse_message) [tr. "A line in your model file could not be parsed."]
+set msgs(declaration_misparse_detail) [tr. "This may be due to more careful checking of the syntax in recent versions of Simile. If you choose to continue (see all), and the model fails to run as expected, please contact your software supplier, quoting the full message."]
+set msgs(declaration_misparse_full) [tr. "The syntax error was:\n%1\$s"]
 
-set msgs(lost_component_title) "Problem loading model"
-set msgs(lost_component_message) "Component %s missing. The following lines in the file contained references to model components that were not found: %s"
+set msgs(lost_component_title) [tr. "Problem loading model"]
+set msgs(lost_component_message) [tr. "Component %1\$s missing. The following lines in the file contained references to model components that were not found: %2\$s"]
 
-set msgs(bad_model_format_title) "Problem loading model"
-set msgs(bad_model_format_message) "Simile had some sort of problem incorporating the following lines from the file into the model: %s"
-set msgs(bad_model_format_detail) "Although this data parses correctly, it does not make sense as part of a model specification in Simile's internal representation."
+set msgs(bad_model_format_title) [tr. "Problem loading model"]
+set msgs(bad_model_format_message) [tr. "Simile had some sort of problem incorporating the following lines from the file into the model: %1\$s"]
+set msgs(bad_model_format_detail) [tr. "Although this data parses correctly, it does not make sense as part of a model specification in Simile's internal representation."]
 
-set msgs(linuxPrintFail_title) "Print command result"
-set msgs(linuxPrintFail_message) "Printing seems to have failed."
-set msgs(linuxPrintFail_detail) "The result returned by the print command was:\n\n%s"
-set msgs(linuxPrintFail_full) "Please see the online help to find out more about setting up printing from Simile. Alternatively you can export the model diagram as a PostScript file (use the File...Export menu command) and then print that using another package."
+set msgs(linuxPrintFail_title) [tr. "Print command result"]
+set msgs(linuxPrintFail_message) [tr. "Printing seems to have failed."]
+set msgs(linuxPrintFail_detail) [tr. "The result returned by the print command was:\n\n%1\$s"]
+set msgs(linuxPrintFail_full) [tr. "Please see the online help to find out more about setting up printing from Simile. Alternatively you can export the model diagram as a PostScript file (use the File...Export menu command) and then print that using another package."]
 
-set msgs(overlap_title) "Failed to %s %s"
-set msgs(overlap_message) "Cannot %s %s here due to overlaps."
-set msgs(overlap_full) "You can increase the amount of space available by reducing the \"Relative scale\" value in the Advanced section of the desktop or submodel properties."
+set msgs(overlap_title) [tr. "Failed to %1\$s %2\$s"]
+set msgs(overlap_message) [tr. "Cannot %1\$s %2\$s here due to overlaps."]
+set msgs(overlap_full) [tr. "You can increase the amount of space available by reducing the \"Relative scale\" value in the Advanced section of the desktop or submodel properties."]
 
-set msgs(abandon_title) "Save changes"
-set msgs(abandon_message) "The current version of %s (in %s) has not been saved. Leave anyway?"
-set msgs(abandon_full) "If you don't save, the changes made in this session will be lost."
+set msgs(abandon_title) [tr. "Save changes"]
+set msgs(abandon_message) [tr. "The current version of %1\$s (in %2\$s) has not been saved. Leave anyway?"]
+set msgs(abandon_full) [tr. "If you don't save, the changes made in this session will be lost."]
 
-set msgs(open_model_failed_title) "Failed to open model"
-set msgs(open_model_failed_message) "Simile could not open this file as a model."
-set msgs(open_model_failed_detail) "It should be a model file or declaration list saved by Simile."
-set msgs(open_model_failed_full) "This file could not be read as a MIME because: %s. It could not be read as a model description because: %s."
+set msgs(open_model_failed_title) [tr. "Failed to open model"]
+set msgs(open_model_failed_message) [tr. "Simile could not open this file as a model."]
+set msgs(open_model_failed_detail) [tr. "It should be a model file or declaration list saved by Simile."]
+set msgs(open_model_failed_full) [tr. "This file could not be read as a MIME because: %1\$s. It could not be read as a model description because: %2\$s."]
 
-set msgs(flow_splits_at_border_title) "Problem with flow"
-set msgs(flow_splits_at_border_message) "Flow %s cannot connect to compartment %s because its value would be split where it crosses the border of submodel %s"
+set msgs(flow_splits_at_border_title) [tr. "Problem with flow"]
+set msgs(flow_splits_at_border_message) [tr. "Flow %1\$s cannot connect to compartment %2\$s because its value would be split where it crosses the border of submodel %3\$s"]
 
-set msgs(no_caption_match_title) "Submodel name mismatch"
-set msgs(no_caption_match_message) "The interface specification you have chosen is for a submodel named %s, whereas the current submodel is named %s. Do you want the submodel renamed?"
+set msgs(no_caption_match_title) [tr. "Submodel name mismatch"]
+set msgs(no_caption_match_message) [tr. "The interface specification you have chosen is for a submodel named %1\$s, whereas the current submodel is named %2\$s. Do you want the submodel renamed?"]
 
-set msgs(remove_orphan_title) "Correcting model inconsistency"
-set msgs(remove_orphan_message) "Removing orphan node %s from submodel %s."
+set msgs(remove_orphan_title) [tr. "Correcting model inconsistency"]
+set msgs(remove_orphan_message) [tr. "Removing orphan node %1\$s from submodel %2\$s."]
 
-set msgs(compile_failed_title) "Problem during compilation"
-set msgs(compile_failed_message) "The compiler raised a problem with the code generated for this model."
-set msgs(compile_failed_detail) "It may help to try the 'Debug' option."
-set msgs(compile_failed_full) "The error was: %s."
+set msgs(compile_failed_title) [tr. "Problem during compilation"]
+set msgs(compile_failed_message) [tr. "The compiler raised a problem with the code generated for this model."]
+set msgs(compile_failed_detail) [tr. "It may help to try the 'Debug' option."]
+set msgs(compile_failed_full) [tr. "The error was: %1\$s."]
 
-set msgs(link_inconsistency_title) "Problem with model"
-set msgs(link_inconsistency_message) "This model cannot be built because ot contains an inconsistent link equivalence: %s."
-set msgs(link_inconsistency_detail) "Please report this problem to your software supplier."
+set msgs(link_inconsistency_title) [tr. "Problem with model"]
+set msgs(link_inconsistency_message) [tr. "This model cannot be built because ot contains an inconsistent link equivalence: %1\$s."]
+set msgs(link_inconsistency_detail) [tr. "Please report this problem to your software supplier."]
 
-set msgs(unspecified_title) "Model is incomplete"
-set msgs(unspecified_message) "Submodel \"%s\" contains incomplete component: \"%s\""
-set msgs(unspecified_detail) "This component is shown in red, which means it has not been fully specified."
-set msgs(unspecified_full) "Edit the equation of this component, or make it a file parameter."
+set msgs(unspecified_title) [tr. "Model is incomplete"]
+set msgs(unspecified_message) [tr. "Submodel \"%1\$s\" contains incomplete component: \"%2\$s\""]
+set msgs(unspecified_detail) [tr. "This component is shown in red, which means it has not been fully specified."]
+set msgs(unspecified_full) [tr. "Edit the equation of this component, or make it a file parameter."]
 
-set msgs(no_defining_param_title) "Required component missing"
-set msgs(no_defining_param_message) "The membership of submodel \"%s\" is set by the number of values supplied for its fixed parameters, but it has no fixed parameters."
+set msgs(no_defining_param_title) [tr. "Required component missing"]
+set msgs(no_defining_param_message) [tr. "The membership of submodel \"%1\$s\" is set by the number of values supplied for its fixed parameters, but it has no fixed parameters."]
 
-set msgs(no_seed_param_title) "Required component missing"
-set msgs(no_seed_param_message) "The membership of submodel \"%s\" is set by the population channel symbols it contains. In order that the population have some members, it must contain at least one creation or immigration symbol, and it does not contain any."
+set msgs(no_seed_param_title) [tr. "Required component missing"]
+set msgs(no_seed_param_message) [tr. "The membership of submodel \"%1\$s\" is set by the population channel symbols it contains. In order that the population have some members, it must contain at least one creation or immigration symbol, and it does not contain any."]
 
-set msgs(misplaced_channel_title) "Component in wrong place"
-set msgs(misplaced_channel_message) "The component \"%s\" is a channel, which only has meaning if its parent is a population submodel, which submodel \"%s\" is not."
+set msgs(misplaced_channel_title) [tr. "Component in wrong place"]
+set msgs(misplaced_channel_message) [tr. "The component \"%1\$s\" is a channel, which only has meaning if its parent is a population submodel, which submodel \"%2\$s\" is not."]
 
-set msgs(missing_function_title) "User-defined function missing"
-set msgs(missing_function_message) "This model cannot be built because it contains the user-defined function %s"
-set msgs(missing_function_detail) "%s should have a definition in the file %s, but this file is missing."
+set msgs(missing_function_title) [tr. "User-defined function missing"]
+set msgs(missing_function_message) [tr. "This model cannot be built because it contains the user-defined function %1\$s"]
+set msgs(missing_function_detail) [tr. "%1\$s should have a definition in the file %2\$s, but this file is missing."]
 
-set msgs(no_such_function_title) "Non-existent function used"
-set msgs(no_such_function_message) "Attempting to process subexpression \"%s\": Simile does not include \"%s\" as a function."
+set msgs(no_such_function_title) [tr. "Non-existent function used"]
+set msgs(no_such_function_message) [tr. "Attempting to process subexpression \"%1\$s\": Simile does not include \"%2\$s\" as a function."]
 
-set msgs(wrong_format_of_args_title) "Wrong format of args"
-set msgs(wrong_format_of_args_message) "Attempting to process subexpression \"%s\": You have tried to use the macro or function \"%s\" with arguments \"%s\", but it must take arguments of the form \"%s\"."
-set msgs(wrong_format_of_args_detail) "This problem might be fixed by adding parentheses around a subexpression that forms an argument of this subexpression."
+set msgs(wrong_format_of_args_title) [tr. "Wrong format of args"]
+set msgs(wrong_format_of_args_message) [tr. "Attempting to process subexpression \"%1\$s\": You have tried to use the macro or function \"%2\$s\" with arguments \"%3\$s\", but it must take arguments of the form \"%4\$s\"."]
+set msgs(wrong_format_of_args_detail) [tr. "This problem might be fixed by adding parentheses around a subexpression that forms an argument of this subexpression."]
 
-set msgs(wrong_no_of_args_title) "Wrong number of args"
-set msgs(wrong_no_of_args_message) "Attempting to process subexpression \"%s\": You have tried to use the macro or function \"%s\" with %s arguments, but it must take %s"
+set msgs(wrong_no_of_args_title) [tr. "Wrong number of args"]
+set msgs(wrong_no_of_args_message) [tr. "Attempting to process subexpression \"%1\$s\": You have tried to use the macro or function \"%2\$s\" with %3\$s arguments, but it must take %4\$s"]
 
-set msgs(missing_graph_or_table_data_title) "Built-in data missing"
-set msgs(missing_graph_or_table_data_message) "Subexpression \"%s\" is a reference to a data table or sketch graph, but no data has been entered for it."
-set msgs(missing_graph_or_table_data_detail) "Use the Graph and Table buttons in the equation dialogue to add these functions and define data for them."
+set msgs(missing_graph_or_table_data_title) [tr. "Built-in data missing"]
+set msgs(missing_graph_or_table_data_message) [tr. "Subexpression \"%1\$s\" is a reference to a data table or sketch graph, but no data has been entered for it."]
+set msgs(missing_graph_or_table_data_detail) [tr. "Use the Graph and Table buttons in the equation dialogue to add these functions and define data for them."]
 
-set msgs(cannot_combine_argument_dimensions_title) "Argument dimensions incompatible"
-set msgs(cannot_combine_argument_dimensions_message) "Simile cannot work out what dimensions the result of \"%s\" should have -- the dimensions of the arguments are incompatible."
+set msgs(cannot_combine_argument_dimensions_title) [tr. "Argument dimensions incompatible"]
+set msgs(cannot_combine_argument_dimensions_message) [tr. "Simile cannot work out what dimensions the result of \"%1\$s\" should have -- the dimensions of the arguments are incompatible."]
 
-set msgs(mismatched_units_title) "Argument types incompatible"
-set msgs(mismatched_units_message) "The arguments of the function \"%s\" in the term \"%s\" have the following types: %s. These cannot be matched to the expected argument types for this function, which are %s."
+set msgs(mismatched_units_title) [tr. "Argument types incompatible"]
+set msgs(mismatched_units_message) [tr. "The arguments of the function \"%1\$s\" in the term \"%2\$s\" have the following types: %3\$s. These cannot be matched to the expected argument types for this function, which are %4\$s."]
 
-set msgs(cannot_set_dims_title) "Not enough info"
-set msgs(cannot_set_dims_message) "The equation does not provide enough information to allow the size of dimension %s of explicit intermediate result %s to be determined."
+set msgs(cannot_set_dims_title) [tr. "Not enough info"]
+set msgs(cannot_set_dims_message) [tr. "The equation does not provide enough information to allow the size of dimension %1\$s of explicit intermediate result %2\$s to be determined."]
 
-set msgs(unused_inter_title) "Unused intermediate result"
-set msgs(unused_inter_message) "The equation is badly formed because it creates the explicit intermediate result %s, which is not subsequently used."
+set msgs(unused_inter_title) [tr. "Unused intermediate result"]
+set msgs(unused_inter_message) [tr. "The equation is badly formed because it creates the explicit intermediate result %1\$s, which is not subsequently used."]
 
-set msgs(parameter_name_reused_title) "Problem with intermediate result name"
-set msgs(parameter_name_reused_message) "The equation is badly formed because it creates the explicit intermediate result %s, which is also the name of an input parameter."
+set msgs(parameter_name_reused_title) [tr. "Problem with intermediate result name"]
+set msgs(parameter_name_reused_message) [tr. "The equation is badly formed because it creates the explicit intermediate result %1\$s, which is also the name of an input parameter."]
 
-set msgs(parameter_name_recurs_title) "Problem with intermediate result name"
-set msgs(parameter_name_recurs_message) "The equation is badly formed because it creates the explicit intermediate result %s in the scope of an earlier explicit intermediate result with the same name."
+set msgs(parameter_name_recurs_title) [tr. "Problem with intermediate result name"]
+set msgs(parameter_name_recurs_message) [tr. "The equation is badly formed because it creates the explicit intermediate result %1\$s in the scope of an earlier explicit intermediate result with the same name."]
 
-set msgs(circular_evaluation_title) "Problem with model design"
-set msgs(circular_evaluation_message) "This model cannot be executed because it contains the following circular set(s) of function evaluations: %s"
+set msgs(circular_evaluation_title) [tr. "Problem with model design"]
+set msgs(circular_evaluation_message) [tr. "This model cannot be executed because it contains the following circular set(s) of function evaluations: %1\$s"]
 
-set msgs(ordering_failure_title) "Problem ordering calculations"
-set msgs(ordering_failure_message) "Failed to put this instruction into ordered sequence, despite it not seeming to depend on anything: %s"
-set msgs(ordering_failure_detail) "Please contact your software supplier."
+set msgs(ordering_failure_title) [tr. "Problem ordering calculations"]
+set msgs(ordering_failure_message) [tr. "Failed to put this instruction into ordered sequence, despite it not seeming to depend on anything: %1\$s"]
+set msgs(ordering_failure_detail) [tr. "Please contact your software supplier."]
 
-set msgs(condition_outside_loop_title) "Problem with model design"
-set msgs(condition_outside_loop_message) "This model contains the target %1\$s which depends on its own values from previous iterations of a program loop. However the cycle of evaluations includes target %2\$s, which is calculated outside the innermost program loop containing target %1\$s"
+set msgs(condition_outside_loop_title) [tr. "Problem with model design"]
+set msgs(condition_outside_loop_message) [tr. "This model contains the target %1\$s which depends on its own values from previous iterations of a program loop. However the cycle of evaluations includes target %2\$s, which is calculated outside the innermost program loop containing target %1\$s"]
 
-set msgs(undecipherable_operand_title) "Problem getting number"
-set msgs(undecipherable_operand_message) "%s does not stand for a number in the context of %s"
+set msgs(undecipherable_operand_title) [tr. "Problem getting number"]
+set msgs(undecipherable_operand_message) [tr. "%1\$s does not stand for a number in the context of %2\$s"]
 
-set msgs(submodel_name_recurs_title) "Problem getting number"
-set msgs(submodel_name_recurs_message) "Cannot resolve reference to size of %s. There are multiple submodels of this name."
+set msgs(submodel_name_recurs_title) [tr. "Problem getting number"]
+set msgs(submodel_name_recurs_message) [tr. "Cannot resolve reference to size of %1\$s. There are multiple submodels of this name."]
 
-set msgs(absent_submodel_title) "Problem getting number"
-set msgs(absent_submodel_message) "Cannot resolve reference to size of %s. There is no submodel of this name."
+set msgs(absent_submodel_title) [tr. "Problem getting number"]
+set msgs(absent_submodel_message) [tr. "Cannot resolve reference to size of %1\$s. There is no submodel of this name."]
 
-set msgs(submodel_size_variable_title) "Problem getting number"
-set msgs(submodel_size_variable_message) "%s has a reference to a variable membership model in its dimensions."
+set msgs(submodel_size_variable_title) [tr. "Problem getting number"]
+set msgs(submodel_size_variable_message) [tr. "%1\$s has a reference to a variable membership model in its dimensions."]
 
-set msgs(failed_ref_in_dimensions_title) "Problem with submodel dimensions"
-set msgs(failed_ref_in_dimensions_message) "The dimensions of submodel \"%s\" cannot be found, because it contains a reference to the size of submodel \"%s\", which cannot be resolved. This reference will be removed."
+set msgs(failed_ref_in_dimensions_title) [tr. "Problem with submodel dimensions"]
+set msgs(failed_ref_in_dimensions_message) [tr. "The dimensions of submodel \"%1\$s\" cannot be found, because it contains a reference to the size of submodel \"%2\$s\", which cannot be resolved. This reference will be removed."]
 
-set msgs(dimensions_invalid_title) "Problem with submodel dimensions"
-set msgs(dimensions_invalid_message) "The dimensions of submodel \"%s\" cannot be found, because of a change elsewhere in the model. You should edit this submodel's properties to fix the problem."
+set msgs(dimensions_invalid_title) [tr. "Problem with submodel dimensions"]
+set msgs(dimensions_invalid_message) [tr. "The dimensions of submodel \"%1\$s\" cannot be found, because of a change elsewhere in the model. You should edit this submodel's properties to fix the problem."]
 
-set msgs(absent_enum_type_title) "Problem getting number"
-set msgs(absent_enum_type_message) "Cannot resolve reference to size of %s in component %s. There is no local enumerated type of this name."
+set msgs(absent_enum_type_title) [tr. "Problem getting number"]
+set msgs(absent_enum_type_message) [tr. "Cannot resolve reference to size of %1\$s in component %2\$s. There is no local enumerated type of this name."]
 
-set msgs(enum_type_mix_title) "Inconsistent type definitions"
-set msgs(enum_type_mix_message) "You cannot refer to the value of %s at this point because it depends on the enumerated type %s, which at that point has the definition %s but here has the definition %s"
+set msgs(enum_type_mix_title) [tr. "Inconsistent type definitions"]
+set msgs(enum_type_mix_message) [tr. "You cannot refer to the value of %1\$s at this point because it depends on the enumerated type %2\$s, which at that point has the definition %3\$s but here has the definition %4\$s"]
 
-set msgs(param_in_vm_model_title) "Problem with model"
-set msgs(param_in_vm_model_message) "There is an external parameter, %s, inside a variable-membership submodel, %s."
-set msgs(param_in_vm_model_detail) "This is not allowed, as the number of values in the file cannt change as the membership of the submodel does."
-set msgs(param_in_vm_model_full) "Perhaps a per-record submodel, with its membership set by the number of records in the file, is needed here."
+set msgs(param_in_vm_model_title) [tr. "Problem with model"]
+set msgs(param_in_vm_model_message) [tr. "There is an external parameter, %1\$s, inside a variable-membership submodel, %2\$s."]
+set msgs(param_in_vm_model_detail) [tr. "This is not allowed, as the number of values in the file cannt change as the membership of the submodel does."]
+set msgs(param_in_vm_model_full) [tr. "Perhaps a per-record submodel, with its membership set by the number of records in the file, is needed here."]
 
-set msgs(lookup_not_allowed_title) "Problem with model"
-set msgs(lookup_not_allowed_message) "Submodel \"%s\" has a membership condition that looks up instances of the model at the base of role arrow \"%s\", but this role arrow does not have base instance lookup enabled."
+set msgs(lookup_not_allowed_title) [tr. "Problem with model"]
+set msgs(lookup_not_allowed_message) [tr. "Submodel \"%1\$s\" has a membership condition that looks up instances of the model at the base of role arrow \"%2\$s\", but this role arrow does not have base instance lookup enabled."]
 
-set msgs(bad_instance_lookup_title) "Problem with model"
-set msgs(bad_instance_lookup_message) "This model includes an attempt to use base instance lookup for the association submodel \"%s\". This cannot be done because index(1) in this submodel is the index of a variable-membership submodel other than itself, and therefore not an array subscript."
+set msgs(bad_instance_lookup_title) [tr. "Problem with model"]
+set msgs(bad_instance_lookup_message) [tr. "This model includes an attempt to use base instance lookup for the association submodel \"%1\$s\". This cannot be done because index(1) in this submodel is the index of a variable-membership submodel other than itself, and therefore not an array subscript."]
 
-set msgs(offer_restore_title) "Restore option"
-set msgs(offer_restore_message) "Simile left a log file of unsaved changes when this model was last edited."
-set msgs(offer_restore_detail) "Ignore changes, or apply?"
-set msgs(offer_restore_full) "You can ignore these changes and edit the model as it was saved, or apply them to get back to where you were when Simile exited."
+set msgs(offer_restore_title) [tr. "Restore option"]
+set msgs(offer_restore_message) [tr. "Simile left a log file of unsaved changes when this model was last edited."]
+set msgs(offer_restore_detail) [tr. "Ignore changes, or apply?"]
+set msgs(offer_restore_full) [tr. "You can ignore these changes and edit the model as it was saved, or apply them to get back to where you were when Simile exited."]
 
-set msgs(no_autosave_title) "Autosave warning!"
-set msgs(no_autosave_message) "Could not create an autosave file called %s for this model."
-set msgs(no_autosave_detail) "No autosave data will be stored until the model is saved somewhere else."
-set msgs(no_autosave_full) "The following message was produced: %2\$s. This may mean that the model was loaded from a read-only file system."
+set msgs(no_autosave_title) [tr. "Autosave warning!"]
+set msgs(no_autosave_message) [tr. "Could not create an autosave file called %1\$s for this model."]
+set msgs(no_autosave_detail) [tr. "No autosave data will be stored until the model is saved somewhere else."]
+set msgs(no_autosave_full) [tr. "The following message was produced: %2\$s. This may mean that the model was loaded from a read-only file system."]
 
-set msgs(lose_enum_type_title) "Model incompatibility"
-set msgs(lose_enum_type_message) "The components being merged include a definition for the enumerated type \"%s\", which will be replaced by the definition already in the model."
-set msgs(lose_enum_type_full) "Old members: %2\$s. Replaced by new members: %3\$s."
+set msgs(lose_enum_type_title) [tr. "Model incompatibility"]
+set msgs(lose_enum_type_message) [tr. "The components being merged include a definition for the enumerated type \"%1\$s\", which will be replaced by the definition already in the model."]
+set msgs(lose_enum_type_full) [tr. "Old members: %2\$s. Replaced by new members: %3\$s."]
 
-set msgs(bad_sm_dim_title) "Problem with dimensions"
-set msgs(bad_sm_dim_message) "%s is not a valid dimension -- for a simple submodel, leave dimension field empty"
+set msgs(bad_sm_dim_title) [tr. "Problem with dimensions"]
+set msgs(bad_sm_dim_message) [tr. "%1\$s is not a valid dimension -- for a simple submodel, leave dimension field empty"]
 
-set msgs(eqn_parse_fail_title) "Problem with equation parser"
-set msgs(eqn_parse_fail_message) "Simile was unable to make sense of the contents of the equation dialogue box."
-set msgs(eqn_parse_fail_detail) "Please report this problem to your supplier."
-set msgs(eqn_parse_fail_full) "While Simile attempts to produce a relevant message to anything that is entered in the equation field, sometimes it fails to do so."
+set msgs(eqn_parse_fail_title) [tr. "Problem with equation parser"]
+set msgs(eqn_parse_fail_message) [tr. "Simile was unable to make sense of the contents of the equation dialogue box."]
+set msgs(eqn_parse_fail_detail) [tr. "Please report this problem to your supplier."]
+set msgs(eqn_parse_fail_full) [tr. "While Simile attempts to produce a relevant message to anything that is entered in the equation field, sometimes it fails to do so."]
 
-set msgs(bad_syntax_title) "Syntax error"
-set msgs(bad_syntax_message) "The contents of the \"%s\" field could not be parsed."
-set msgs(bad_syntax_detail) "The parser responded: %2\$s"
+set msgs(bad_syntax_title) [tr. "Syntax error"]
+set msgs(bad_syntax_message) [tr. "The contents of the \"%1\$s\" field could not be parsed."]
+set msgs(bad_syntax_detail) [tr. "The parser responded: %2\$s"]
 
-set msgs(wrong_bracket_count_title) "Wrong parameter name format"
-set msgs(wrong_bracket_count_message) "Your %s, %s, has brackets round it that identify it as %s."
-set msgs(wrong_bracket_count_detail) "However it actually stands for %4\$s so should appear as follows: %5\$s."
+set msgs(wrong_bracket_count_title) [tr. "Wrong parameter name format"]
+set msgs(wrong_bracket_count_message) [tr. "Your %1\$s, %2\$s, has brackets round it that identify it as %3\$s."]
+set msgs(wrong_bracket_count_detail) [tr. "However it actually stands for %4\$s so should appear as follows: %5\$s."]
 
-set msgs(spare_interface_spec_title) "Cannot use interface data"
-set msgs(spare_interface_spec_message) "Could not find a free %s going %s the model with %s caption %s"
+set msgs(spare_interface_spec_title) [tr. "Cannot use interface data"]
+set msgs(spare_interface_spec_message) [tr. "Could not find a free %1\$s going %2\$s the model with %3\$s caption %4\$s"]
 
-set msgs(interface_mismatch_title) "Interface properties mismatch"
-set msgs(interface_mismatch_message) "%s a link of type %s from %s to %s, but it has properties %s whereas in the interface specification it is %s"
+set msgs(interface_mismatch_title) [tr. "Interface properties mismatch"]
+set msgs(interface_mismatch_message) [tr. "%1\$s a link of type %2\$s from %3\$s to %4\$s, but it has properties %5\$s whereas in the interface specification it is %6\$s"]
 
-set msgs(missing_relation_title) "Problem setting interface"
-set msgs(missing_relation_message) "Interface to submodel requires relation %s but this does not occur in the parent."
+set msgs(missing_relation_title) [tr. "Problem setting interface"]
+set msgs(missing_relation_message) [tr. "Interface to submodel requires relation %1\$s but this does not occur in the parent."]
 
-set msgs(unknown_unit_title) "Problem checking units"
-set msgs(unknown_unit_message) "Unit expression %s is not recognized as a valid unit."
+set msgs(unknown_unit_title) [tr. "Problem checking units"]
+set msgs(unknown_unit_message) [tr. "Unit expression %1\$s is not recognized as a valid unit."]
 
-set msgs(bad_type_conversion_title) "Problem converting units" 
-set msgs(bad_type_conversion_message) "You are not allowed to convert implicitly from a \"%s\" value to a \"%s\" value because of the possibility for confusion or loss of information." 
+set msgs(bad_type_conversion_title) [tr. "Problem converting units"] 
+set msgs(bad_type_conversion_message) [tr. "You are not allowed to convert implicitly from a \"%1\$s\" value to a \"%2\$s\" value because of the possibility for confusion or loss of information."] 
 
-set msgs(mismatched_dimensions_title) "Problem converting units"
-set msgs(mismatched_dimensions_message) "The units of the required quantity are %s which have physical dimensions %s. These are incompatible with the supplied value, whose units %s have dimensions %s."
-set msgs(mismatched_dimensions_detail) "Please do one of the following:\n* specify units with the same dimensions as the value\n* change the source of the value to have the units you wish, or\n* clear the units specification entry to get the default units for this value."
+set msgs(mismatched_dimensions_title) [tr. "Problem converting units"]
+set msgs(mismatched_dimensions_message) [tr. "The units of the required quantity are %1\$s which have physical dimensions %2\$s. These are incompatible with the supplied value, whose units %3\$s have dimensions %4\$s."]
+set msgs(mismatched_dimensions_detail) [tr. "Please do one of the following:\n* specify units with the same dimensions as the value\n* change the source of the value to have the units you wish, or\n* clear the units specification entry to get the default units for this value."]
 
-set msgs(mismatched_arrays_title) "Problem converting units"
-set msgs(mismatched_arrays_message) "The units of the required quantity are %s which have array dimensions %s. These are incompatible with the dimensions of the supplied value, which are %s."
+set msgs(mismatched_arrays_title) [tr. "Problem converting units"]
+set msgs(mismatched_arrays_message) [tr. "The units of the required quantity are %1\$s which have array dimensions %2\$s. These are incompatible with the dimensions of the supplied value, which are %3\$s."]
 set msgs(mismatched_arrays_detail) $msgs(mismatched_dimensions_detail)
 
-set msgs(unwanted_syntax_title) "Parameter contains confusing characters"
-set msgs(unwanted_syntax_message) "Your %s, %s, contains characters that might cause the interpreter to confuse it with a compound expression."
+set msgs(unwanted_syntax_title) [tr. "Parameter contains confusing characters"]
+set msgs(unwanted_syntax_message) [tr. "Your %1\$s, %2\$s, contains characters that might cause the interpreter to confuse it with a compound expression."]
 
-set msgs(bad_table_data_title) "Problem with input data"
-set msgs(bad_table_data_message) "The data you specified is not suitable for a lookup table. %s"
+set msgs(bad_table_data_title) [tr. "Problem with input data"]
+set msgs(bad_table_data_message) [tr. "The data you specified is not suitable for a lookup table. %1\$s"]
 
-set msgs(bad_eqn_title) "Problem with equation"
-set msgs(bad_eqn_message) "%s"
+set msgs(bad_eqn_title) [tr. "Problem with equation"]
+set msgs(bad_eqn_message) [tr. "%1\$s"]
 
 set msgs(field_needs_value_title) $msgs(bad_eqn_title)
-set msgs(field_needs_value_message) "You must supply a value in the \"%s\" field."
+set msgs(field_needs_value_message) [tr. "You must supply a value in the \"%1\$s\" field."]
 set msgs(field_not_const_title) $msgs(bad_eqn_title)
-set msgs(field_not_const_message) "Entry for %s must be a numeric constant."
+set msgs(field_not_const_message) [tr. "Entry for %1\$s must be a numeric constant."]
 
 set msgs(field_not_number_title) $msgs(bad_eqn_title)
-set msgs(field_not_number_message) "Entry for %s must have a numerical value"
+set msgs(field_not_number_message) [tr. "Entry for %1\$s must have a numerical value"]
 
 set msgs(field_not_scalar_title) $msgs(bad_eqn_title)
-set msgs(field_not_scalar_message) "Entry for %s must have a single value."
+set msgs(field_not_scalar_message) [tr. "Entry for %1\$s must have a single value."]
 
 set msgs(bad_cond_spec_form_title) $msgs(bad_eqn_title)
-set msgs(bad_cond_spec_form_message) "You have used the operator 'is' in a context which is not one of the forms used for looking up submodel instances."
+set msgs(bad_cond_spec_form_message) [tr. "You have used the operator 'is' in a context which is not one of the forms used for looking up submodel instances."]
 
 set msgs(expr_denotes_list_title) $msgs(bad_eqn_title)
-set msgs(expr_denotes_list_message) "The expression evaluates to a list, or array of lists. A model variable cannot represent a list."
+set msgs(expr_denotes_list_message) [tr. "The expression evaluates to a list, or array of lists. A model variable cannot represent a list."]
 
 set msgs(misplaced_cond_spec_title) $msgs(bad_eqn_title)
-set msgs(misplaced_cond_spec_message) "You have used one of the forms for looking up submodel instances, but this component is not an existence condition."
+set msgs(misplaced_cond_spec_message) [tr. "You have used one of the forms for looking up submodel instances, but this component is not an existence condition."]
 
 set msgs(minmax_wrong_title) $msgs(bad_eqn_title)
-set msgs(minmax_wrong_message) "Equation has non-numeric units %s, so minimum or maximum values cannot be used."
+set msgs(minmax_wrong_message) [tr. "Equation has non-numeric units %1\$s, so minimum or maximum values cannot be used."]
 
 set msgs(bad_array_size_title) $msgs(bad_eqn_title)
-set msgs(bad_array_size_message) "This equation evaluates to a data structure which includes an array of size %s."
-set msgs(bad_array_size_detail) "%s is not a valid dimension for a model component -- they must be integers greater than 1."
+set msgs(bad_array_size_message) [tr. "This equation evaluates to a data structure which includes an array of size %1\$s."]
+set msgs(bad_array_size_detail) [tr. "%1\$s is not a valid dimension for a model component -- they must be integers greater than 1."]
 
-set msgs(unwanted_links_title) "Unwanted inputs"
-set msgs(unwanted_links_message) "This node has a link from %s, but parameter default values are not allowed to have input variables themselves. Remove this link?"
+set msgs(unwanted_links_title) [tr. "Unwanted inputs"]
+set msgs(unwanted_links_message) [tr. "This node has a link from %1\$s, but parameter default values are not allowed to have input variables themselves. Remove this link?"]
 
-set msgs(undefined_parameter_title) "Undefined parameter"
-set msgs(undefined_parameter_message) "This expression contains the term %s, which appears to be used as a parameter, but it does not appear as a parameter name."
-set msgs(undefined_parameter_detail) "The list of available parameters appears at the bottom of the equation dialogue or in the pull-down menu to the right of the equation bar."
+set msgs(undefined_parameter_title) [tr. "Undefined parameter"]
+set msgs(undefined_parameter_message) [tr. "This expression contains the term %1\$s, which appears to be used as a parameter, but it does not appear as a parameter name."]
+set msgs(undefined_parameter_detail) [tr. "The list of available parameters appears at the bottom of the equation dialogue or in the pull-down menu to the right of the equation bar."]
 
-set msgs(needs_array_or_list_title) "Wrong dimensionality of argument"
-set msgs(needs_array_or_list_message) "The function \"%s\" performs an operation over a list or array of values represented by its argument. The argument \"%s\" however represents only one value."
+set msgs(needs_array_or_list_title) [tr. "Wrong dimensionality of argument"]
+set msgs(needs_array_or_list_message) [tr. "The function \"%1\$s\" performs an operation over a list or array of values represented by its argument. The argument \"%2\$s\" however represents only one value."]
 
-set msgs(avoid_var_size_inter_title) "Code generation problem"
-set msgs(avoid_var_size_inter_message) "This expression can only be converted into a running program by making an intermediate variable for the subexpression \"%s\".\n This subexpression has dimensions %s, where \"var\" represents a list, and \"records\" represents a resizable array."
-set msgs(avoid_var_size_inter_detail) "Since this has a changing membership, it cannot be represented by a variable -- you need to do some more work inside the variable-membership submodel it comes from."
+set msgs(avoid_var_size_inter_title) [tr. "Code generation problem"]
+set msgs(avoid_var_size_inter_message) [tr. "This expression can only be converted into a running program by making an intermediate variable for the subexpression \"%1\$s\".\n This subexpression has dimensions %2\$s, where \"var\" represents a list, and \"records\" represents a resizable array."]
+set msgs(avoid_var_size_inter_detail) [tr. "Since this has a changing membership, it cannot be represented by a variable -- you need to do some more work inside the variable-membership submodel it comes from."]
 
-set msgs(needs_channel_parameter_title) "Argument must be channel"
-set msgs(needs_channel_parameter_message) "The argument of \"channel_is\" must be a value from a channel (creation, immigration, reproduction) for the population submodel containing its node. \"%s\" is not this sort of argument."
+set msgs(needs_channel_parameter_title) [tr. "Argument must be channel"]
+set msgs(needs_channel_parameter_message) [tr. "The argument of \"channel_is\" must be a value from a channel (creation, immigration, reproduction) for the population submodel containing its node. \"%1\$s\" is not this sort of argument."]
 
-set msgs(bad_index_number_title) "Argument must be counting number"
-set msgs(bad_index_number_message) "The function \"%2\$s\" sets or accesses some property of the model, and needs a non-negative scalar integer constant as an argument to allow the right code to be built into the model to do this. \"%1\$s\" is not this sort of argument."
+set msgs(bad_index_number_title) [tr. "Argument must be counting number"]
+set msgs(bad_index_number_message) [tr. "The function \"%2\$s\" sets or accesses some property of the model, and needs a non-negative scalar integer constant as an argument to allow the right code to be built into the model to do this. \"%1\$s\" is not this sort of argument."]
 
-set msgs(needs_index_of_type_title) "Argument type wrong for array"
-set msgs(needs_index_of_type_message) "The function \"%s\", when applied to the array \"%s\", needs a value of type %s for its second argument. \"%s\" does not fit -- it has a value of type %s, which cannot be converted to a value of the required type."
-set msgs(needs_index_of_type_detail) "The argument type must match the type used to create the array."
+set msgs(needs_index_of_type_title) [tr. "Argument type wrong for array"]
+set msgs(needs_index_of_type_message) [tr. "The function \"%1\$s\", when applied to the array \"%2\$s\", needs a value of type %3\$s for its second argument. \"%4\$s\" does not fit -- it has a value of type %5\$s, which cannot be converted to a value of the required type."]
+set msgs(needs_index_of_type_detail) [tr. "The argument type must match the type used to create the array."]
 
-set msgs(redundant_array_title) "Equation is needlessly complicated"
-set msgs(redundant_array_message) "The equation contains the subexpression %s, which could be expressed more simply."
+set msgs(redundant_array_title) [tr. "Equation is needlessly complicated"]
+set msgs(redundant_array_message) [tr. "The equation contains the subexpression %1\$s, which could be expressed more simply."]
 
-set msgs(index_number_out_of_range_message) "You have used the index number %s, but it must be between 1 and the number of available indices, which is %s."
+set msgs(index_number_out_of_range_message) [tr. "You have used the index number %1\$s, but it must be between 1 and the number of available indices, which is %2\$s."]
 
-set msgs(only_works_on_array_title) "Argument must be array"
-set msgs(only_works_on_array_message) "The function \"%s\" needs a fixed membership array (of anything) for its first argument. \"%s\" does not fit -- it represents either a single value or a variable membership list."
+set msgs(only_works_on_array_title) [tr. "Argument must be array"]
+set msgs(only_works_on_array_message) [tr. "The function \"%1\$s\" needs a fixed membership array (of anything) for its first argument. \"%2\$s\" does not fit -- it represents either a single value or a variable membership list."]
 
-set msgs(lost_user_defined_fn_title) "Function definition not found"
-set msgs(lost_user_defined_fn_message) "Attempting to process subexpression \"%s\": When this was entered, \"%s\" was a user-defined function (a procedure or macro) with %s arguments, but currently there is no definition for it."
+set msgs(lost_user_defined_fn_title) [tr. "Function definition not found"]
+set msgs(lost_user_defined_fn_message) [tr. "Attempting to process subexpression \"%1\$s\": When this was entered, \"%2\$s\" was a user-defined function (a procedure or macro) with %3\$s arguments, but currently there is no definition for it."]
 
-set msgs(extra_links_title) "Too many inputs"
-set msgs(extra_links_message) "This node has a link from %s, which is not referred to by any of its parameter names in the equation. Remove this link?"
+set msgs(extra_links_title) [tr. "Too many inputs"]
+set msgs(extra_links_message) [tr. "This node has a link from %1\$s, which is not referred to by any of its parameter names in the equation. Remove this link?"]
 
-set msgs(blind_add_title) "Failed to add component"
-set msgs(blind_add_message) "Simile will not add a %s where it will not currently be displayed!"
-set msgs(blind_add_detail) "Check 'Show detail' settings, and whether parent submodel contents are hidden."
-set msgs(blind_add_full) "You tried to add a %s at depth %s."
+set msgs(blind_add_title) [tr. "Failed to add component"]
+set msgs(blind_add_message) [tr. "Simile will not add a %1\$s where it will not currently be displayed!"]
+set msgs(blind_add_detail) [tr. "Check 'Show detail' settings, and whether parent submodel contents are hidden."]
+set msgs(blind_add_full) [tr. "You tried to add a %1\$s at depth %2\$s."]
 
 
-set msgs(caption_clash_title) "Problem renaming component"
-set msgs(caption_clash_message) "Component %s cannot be renamed %s."
-set msgs(caption_clash_detail) "The parent model of %s already contains a component called %s."
-set msgs(caption_clash_full) "You are not allowed more than one component with the same caption in any one submodel."
+set msgs(caption_clash_title) [tr. "Problem renaming component"]
+set msgs(caption_clash_message) [tr. "Component %1\$s cannot be renamed %2\$s."]
+set msgs(caption_clash_detail) [tr. "The parent model of %1\$s already contains a component called %2\$s."]
+set msgs(caption_clash_full) [tr. "You are not allowed more than one component with the same caption in any one submodel."]
 
-set msgs(dodgy_chars_title) "Problem renaming component"
-set msgs(dodgy_chars_message) "Component %s cannot be renamed %s."
-set msgs(dodgy_chars_detail) "The new name contains potentially confusing symbols \"%3\$s\"."
-set msgs(dodgy_chars_full) "Slashes and dots are also used for showing hierarchies of folders or submodels."
+set msgs(dodgy_chars_title) [tr. "Problem renaming component"]
+set msgs(dodgy_chars_message) [tr. "Component %1\$s cannot be renamed %2\$s."]
+set msgs(dodgy_chars_detail) [tr. "The new name contains potentially confusing symbols \"%3\$s\"."]
+set msgs(dodgy_chars_full) [tr. "Slashes and dots are also used for showing hierarchies of folders or submodels."]
 
-set msgs(bad_ghost_title) "Ghosting error"
-set msgs(bad_ghost_message) "Unable to make ghost here"
+set msgs(bad_ghost_title) [tr. "Ghosting error"]
+set msgs(bad_ghost_message) [tr. "Unable to make ghost here"]
 
-set msgs(show_full_button) "See full error text"
-set msgs(conversion_failure_title) "Problem building code"
-set msgs(conversion_failure_message) "Simile failed to convert %s (in submodel \%s) into a program instruction."
-set msgs(conversion_failure_detail) "This may be because Simile earlier failed to detect when a change elsewhere in the model made the equation for this component inconsistent, in which case editing this component again will make the model runnable."
-set msgs(conversion_failure_full) "Parsing the equation for %s (in %s) gave this error code: %s. Hit \"$msgs(show_full_button)\" to see the full message."
+set msgs(show_full_button) [tr. "See full error text"]
+set msgs(conversion_failure_title) [tr. "Problem building code"]
+set msgs(conversion_failure_message) [tr. "Simile failed to convert %1\$s (in submodel \%2\$s) into a program instruction."]
+set msgs(conversion_failure_detail) [tr. "This may be because Simile earlier failed to detect when a change elsewhere in the model made the equation for this component inconsistent, in which case editing this component again will make the model runnable."]
+set msgs(conversion_failure_full) [tr. "Parsing the equation for %1\$s (in %2\$s) gave this error code: %3\$s. Hit \"$msgs(show_full_button)\" to see the full message."]
 
-set msgs(bad_parameter_title) "Problem interpreting equation"
-set msgs(bad_parameter_message) "The equation for component %s refers to an input parameter called \"%s\". This is not a valid parameter in the context of that component"
+set msgs(bad_parameter_title) [tr. "Problem interpreting equation"]
+set msgs(bad_parameter_message) [tr. "The equation for component %1\$s refers to an input parameter called \"%2\$s\". This is not a valid parameter in the context of that component"]
 set msgs(bad_parameter_detail) $msgs(conversion_failure_detail)
 
-set msgs(bad_param_data_title) "Problem with parameter setup"
-set msgs(bad_param_data_message) "%s"
+set msgs(bad_param_data_title) [tr. "Problem with parameter setup"]
+set msgs(bad_param_data_message) [tr. "%1\$s"]
 
 # attempt at organization: following queries are raised from the Tcl code
 
-set msgs(new_exec_needed_title) "Executable will be rebuilt"
-set msgs(new_exec_needed_message) "Simile attempted to reuse the existing executable or source code for this model, but failed. A new one will now be built."
-set msgs(new_exec_needed_detail) "The operating system returned the following message: %s"
-set msgs(bad_license_code_title) "Wrong license code"
-set msgs(bad_license_code_message) "You have entered the wrong license code for your name, organization and Simile version. Please try again, ensuring you have the correct license code."
-set msgs(dodgy_lib_title) "Dodgy filename"
-set msgs(dodgy_lib_message) "The compiler will only recognize shared library names that begin with \"lib...\""
+set msgs(new_exec_needed_title) [tr. "Executable will be rebuilt"]
+set msgs(new_exec_needed_message) [tr. "Simile attempted to reuse the existing executable or source code for this model, but failed. A new one will now be built."]
+set msgs(new_exec_needed_detail) [tr. "The operating system returned the following message: %1\$s"]
+set msgs(bad_license_code_title) [tr. "Wrong license code"]
+set msgs(bad_license_code_message) [tr. "You have entered the wrong license code for your name, organization and Simile version. Please try again, ensuring you have the correct license code."]
+set msgs(dodgy_lib_title) [tr. "Dodgy filename"]
+set msgs(dodgy_lib_message) [tr. "The compiler will only recognize shared library names that begin with \"lib...\""]
 
-set msgs(no_et_member_title) "No %s name"
-set msgs(no_et_member_message) "You must enter a name for the new %s in the box."
-set msgs(bad_et_member_title) "Bad %s name"
-set msgs(bad_et_member_message) "NULL is reserved for the value of a variable when it is not equal to any member of its type."
-set msgs(member_is_unit_title) "Unit name given for %s"
-set msgs(member_is_unit_message) "You cannot have a %s called %s because this name corresponds to a physical unit."
-set msgs(member_is_unit_detail) "The unit's definition is %3\$s"
-set msgs(duplicate_et_title) "Duplicate %s name"
-set msgs(duplicate_et_message) "This submodel already has an enumerated type called %2\$s."
-set msgs(duplicate_et_mem_title) "Duplicate %s name"
-set msgs(duplicate_et_mem_message) "The enumerated type %2\$s in this submodel already contains a member called %3\$s."
+set msgs(no_et_member_title) [tr. "No %1\$s name"]
+set msgs(no_et_member_message) [tr. "You must enter a name for the new %1\$s in the box."]
+set msgs(bad_et_member_title) [tr. "Bad %1\$s name"]
+set msgs(bad_et_member_message) [tr. "NULL is reserved for the value of a variable when it is not equal to any member of its type."]
+set msgs(member_is_unit_title) [tr. "Unit name given for %1\$s"]
+set msgs(member_is_unit_message) [tr. "You cannot have a %1\$s called %2\$s because this name corresponds to a physical unit."]
+set msgs(member_is_unit_detail) [tr. "The unit's definition is %3\$s"]
+set msgs(duplicate_et_title) [tr. "Duplicate %1\$s name"]
+set msgs(duplicate_et_message) [tr. "This submodel already has an enumerated type called %2\$s."]
+set msgs(duplicate_et_mem_title) [tr. "Duplicate %1\$s name"]
+set msgs(duplicate_et_mem_message) [tr. "The enumerated type %2\$s in this submodel already contains a member called %3\$s."]
 
-set msgs(read_image_failed_title) "Problem loading file"
-set msgs(read_image_failed_message) "Simile could not get an image from this file."
-set msgs(read_image_failed_detail) "The reported problem was:\n%s"
+set msgs(read_image_failed_title) [tr. "Problem loading file"]
+set msgs(read_image_failed_message) [tr. "Simile could not get an image from this file."]
+set msgs(read_image_failed_detail) [tr. "The reported problem was:\n%1\$s"]
 
-set msgs(xml_parse_fail_title) "Failed to parse XML parameter metafile"
-set msgs(xml_parse_fail_message) "The XML parser gave the following message: %s"
-set msgs(xml_parse_fail_detail) "The parser status was:\n%2\$s"
-set msgs(bad_xml_spf_title) "Wrong kind of XML"
-set msgs(bad_xml_spf_message) "%s is not a Simile parameter metafile"
-set msgs(measurements_missing_title) "No target values given"
-set msgs(measurements_missing_message) "You must supply at least one target value for each model output to be used by PEST"
-set msgs(pause_in_pest_exec_title) "PEST execution paused"
-set msgs(pause_in_pest_exec_message) "The PEST run has been paused at time %2\$s. To continue it, you should first restart the model execution and allow the current model run to complete at time %1\$s, then restart PEST execution."
-set msgs(no_pest_output_title) "No PEST output"
-set msgs(no_pest_output_message) "PEST has not produced any output. Please check that it is installed and that the location of the executables is included in the PATH environment variable."
-set msgs(failed_dir_reference_title)  "Missing parameter data directory"
-set msgs(failed_dir_reference_message) "The parameterization file contains a reference to data file \"%s\" for the parameter values for the component %s. This reference specifies the file path \"%s\" relative to the location of the parameterization file itself, so the file is being sought in the directory \"%s\", which does not exist on this computer."
-set msgs(failed_dir_reference_detail) "Do you want to abort the operation, or skip the missing component values and continue loading the parameterization file, seeing all missing components together?"
-set msgs(failed_param_reference_title)  "Missing parameter data file"
-set msgs(failed_param_reference_message) "The parameterization file contains a reference to data file \"%s\" for the parameter values for the component %s. This reference specifies the file path \"%s\" relative to the location of the parameterization file itself, so the file is being sought in the directory \"%s\", where no file of this name exists."
+set msgs(xml_parse_fail_title) [tr. "Failed to parse XML parameter metafile"]
+set msgs(xml_parse_fail_message) [tr. "The XML parser gave the following message: %1\$s"]
+set msgs(xml_parse_fail_detail) [tr. "The parser status was:\n%2\$s"]
+set msgs(bad_xml_spf_title) [tr. "Wrong kind of XML"]
+set msgs(bad_xml_spf_message) [tr. "%1\$s is not a Simile parameter metafile"]
+set msgs(measurements_missing_title) [tr. "No target values given"]
+set msgs(measurements_missing_message) [tr. "You must supply at least one target value for each model output to be used by PEST"]
+set msgs(pause_in_pest_exec_title) [tr. "PEST execution paused"]
+set msgs(pause_in_pest_exec_message) [tr. "The PEST run has been paused at time %2\$s. To continue it, you should first restart the model execution and allow the current model run to complete at time %1\$s, then restart PEST execution."]
+set msgs(no_pest_output_title) [tr. "No PEST output"]
+set msgs(no_pest_output_message) [tr. "PEST has not produced any output. Please check that it is installed and that the location of the executables is included in the PATH environment variable."]
+set msgs(failed_dir_reference_title)  [tr. "Missing parameter data directory"]
+set msgs(failed_dir_reference_message) [tr. "The parameterization file contains a reference to data file \"%1\$s\" for the parameter values for the component %2\$s. This reference specifies the file path \"%3\$s\" relative to the location of the parameterization file itself, so the file is being sought in the directory \"%4\$s\", which does not exist on this computer."]
+set msgs(failed_dir_reference_detail) [tr. "Do you want to abort the operation, or skip the missing component values and continue loading the parameterization file, seeing all missing components together?"]
+set msgs(failed_param_reference_title)  [tr. "Missing parameter data file"]
+set msgs(failed_param_reference_message) [tr. "The parameterization file contains a reference to data file \"%1\$s\" for the parameter values for the component %2\$s. This reference specifies the file path \"%3\$s\" relative to the location of the parameterization file itself, so the file is being sought in the directory \"%4\$s\", where no file of this name exists."]
 set msgs(failed_param_reference_detail) $msgs(failed_dir_reference_detail)
-set msgs(bad_v3x_param_title) "Bad parameter information"
-set msgs(bad_v3x_param_message) "Parameterization file contained the entry %s for component %s. This entry does not start with the name of an existing file, nor is it an allowed value for this component, which are %s."
+set msgs(bad_v3x_param_title) [tr. "Bad parameter information"]
+set msgs(bad_v3x_param_message) [tr. "Parameterization file contained the entry %1\$s for component %2\$s. This entry does not start with the name of an existing file, nor is it an allowed value for this component, which are %3\$s."]
 set msgs(bad_v3x_param_detail) $msgs(failed_dir_reference_detail)
-set msgs(unused_param_title) "Some parameter values unused"
-set msgs(unused_param_message) "The %s contains parameter values for the %s %s, which does not exist in the target model %s."
-set msgs(unused_param_detail) "Do you want to stop this operation, or ignore these values and continue loading the %s?"
-set msgs(param_load_fail_title) "Problem %sing %s value"
-set msgs(param_load_fail_message) "While attempting to %s the %s value \"%s\"%s the following problem occurred: %s"
-set msgs(param_load_fail_detail) "Do you want to stop this operation, or skip this field and continue %sing the %ss?"
+set msgs(unused_param_title) [tr. "Some parameter values unused"]
+set msgs(unused_param_message) [tr. "The %1\$s contains parameter values for the %2\$s %3\$s, which does not exist in the target model %4\$s."]
+set msgs(unused_param_detail) [tr. "Do you want to stop this operation, or ignore these values and continue loading the %1\$s?"]
+set msgs(param_load_fail_title) [tr. "Problem %1\$sing %2\$s value"]
+set msgs(param_load_fail_message) [tr. "While attempting to %1\$s the %2\$s value \"%3\$s\"%4\$s the following problem occurred: %5\$s"]
+set msgs(param_load_fail_detail) [tr. "Do you want to stop this operation, or skip this field and continue %1\$sing the %2\$ss?"]
 
-set msgs(number_needed_title) "Numeric value required"
-set msgs(number_needed_message) "This operation could not be completed because a numeric value must be placed in the entry field that currently contains this text: %s"
-set msgs(wayward_grid_index_title) "Bad grid index location"
-set msgs(wayward_grid_index_message) "You have selected a row or column from which to read index values that is either within the data area or ouside the grid altogether."
-set msgs(no_clear_val_title) "No value for clear"
-set msgs(no_clear_val_message) "The image file \"%s\" contains transparent pixels, but no value has been specified to use for these pixels."
-set msgs(no_info_col_title) "%s column not found"
-set msgs(no_info_col_message) "The file \"%2\$s\" does not contain a column with \"%3\$s\" as a heading."
-set msgs(no_info_col_detail) "Please supply a heading to identify the %1\$s column from this list: %4\$s."
-set msgs(no_odbc_driver_title) "ODBC driver not found"
-set msgs(no_odbc_driver_message) "This system does not appear to have an ODBC driver available for files with the extension \"%s\"."
-set msgs(no_odbc_driver_detail) "You will probably need to install one and register it."
-set msgs(iotool_load_fail_title) "Error loading I/O tool code"
-set msgs(iotool_load_fail_message) "A problem occurred loading the code for an I/O tool, from file %s"
-set msgs(iotool_load_fail_detail) "The error message was:\n%2\$s"
+set msgs(number_needed_title) [tr. "Numeric value required"]
+set msgs(number_needed_message) [tr. "This operation could not be completed because a numeric value must be placed in the entry field that currently contains this text: %1\$s"]
+set msgs(wayward_grid_index_title) [tr. "Bad grid index location"]
+set msgs(wayward_grid_index_message) [tr. "You have selected a row or column from which to read index values that is either within the data area or ouside the grid altogether."]
+set msgs(no_clear_val_title) [tr. "No value for clear"]
+set msgs(no_clear_val_message) [tr. "The image file \"%1\$s\" contains transparent pixels, but no value has been specified to use for these pixels."]
+set msgs(no_info_col_title) [tr. "%1\$s column not found"]
+set msgs(no_info_col_message) [tr. "The file \"%2\$s\" does not contain a column with \"%3\$s\" as a heading."]
+set msgs(no_info_col_detail) [tr. "Please supply a heading to identify the %1\$s column from this list: %4\$s."]
+set msgs(no_odbc_driver_title) [tr. "ODBC driver not found"]
+set msgs(no_odbc_driver_message) [tr. "This system does not appear to have an ODBC driver available for files with the extension \"%1\$s\"."]
+set msgs(no_odbc_driver_detail) [tr. "You will probably need to install one and register it."]
+set msgs(iotool_load_fail_title) [tr. "Error loading I/O tool code"]
+set msgs(iotool_load_fail_message) [tr. "A problem occurred loading the code for an I/O tool, from file %1\$s"]
+set msgs(iotool_load_fail_detail) [tr. "The error message was:\n%2\$s"]
 set msgs(iotool_load_fail_full) $msgs(iotool_load_fail_detail)
-set msgs(iotool_restore_fail_title) "Problem restoring helper"
-set msgs(iotool_restore_fail_message) "A software error occurred while attempting to restore the I/O tool \"%s\" from the saved setup."
-set msgs(iotool_restore_fail_detail) "Click \"See all...\" to see all error messages in full."
-set msgs(iotool_restore_fail_full) "The error message was:\n%2\$s"
-set msgs(iotool_run_fail_title) "Error running I/O tool"
-set msgs(iotool_run_fail_message) "I/O tool \"%s\" raised a problem during model execution. This occurred while doing the %s operation."
-set msgs(iotool_run_fail_detail) "The model has been paused. To continue running it you may have to kill this helper's display."
-set msgs(iotool_run_fail_full) "The error message was:\n%3\$s"
-set msgs(not_an_shf_title) "Unrecognized file format"
-set msgs(not_an_shf_message) "This file does not look like one of Simile's helper configuration files."
-set msgs(wrong_layout_title) "Inappropriate view specification"
-set msgs(wrong_layout_message) "This view specification file was created within the integrated Model Run Environment. Do you wish to launch a view-only version of MRE to view it?" 
-set msgs(missing_iotool_type_title) "Problem restoring helper"
-set msgs(missing_iotool_type_message) "No I/O tool with keyword \"%s\" is installed"
-set msgs(missing_var_requested_title) "Missing values for helper"
-set msgs(missing_var_requested_message) "An instance of the I/O tool \"%s\" has requested information about the %s %s, but there is no %s of this name in the current model."
-set msgs(missing_var_requested_detail) "If the model has changed since the I/O tools were set up, you should adjust the settings of the I/O tools to reflect these changes, otherwise more warnings may appear and the model may stop running."
-set msgs(no_spf_for_project_title) "Problem loading project"
-set msgs(no_spf_for_project_message) "Parameter metafile %s could not be found."
+set msgs(iotool_restore_fail_title) [tr. "Problem restoring helper"]
+set msgs(iotool_restore_fail_message) [tr. "A software error occurred while attempting to restore the I/O tool \"%1\$s\" from the saved setup."]
+set msgs(iotool_restore_fail_detail) [tr. "Click \"See all...\" to see all error messages in full."]
+set msgs(iotool_restore_fail_full) [tr. "The error message was:\n%2\$s"]
+set msgs(iotool_run_fail_title) [tr. "Error running I/O tool"]
+set msgs(iotool_run_fail_message) [tr. "I/O tool \"%1\$s\" raised a problem during model execution. This occurred while doing the %2\$s operation."]
+set msgs(iotool_run_fail_detail) [tr. "The model has been paused. To continue running it you may have to kill this helper's display."]
+set msgs(iotool_run_fail_full) [tr. "The error message was:\n%3\$s"]
+set msgs(not_an_shf_title) [tr. "Unrecognized file format"]
+set msgs(not_an_shf_message) [tr. "This file does not look like one of Simile's helper configuration files."]
+set msgs(wrong_layout_title) [tr. "Inappropriate view specification"]
+set msgs(wrong_layout_message) [tr. "This view specification file was created within the integrated Model Run Environment. Do you wish to launch a view-only version of MRE to view it?"] 
+set msgs(missing_iotool_type_title) [tr. "Problem restoring helper"]
+set msgs(missing_iotool_type_message) [tr. "No I/O tool with keyword \"%1\$s\" is installed"]
+set msgs(missing_var_requested_title) [tr. "Missing values for helper"]
+set msgs(missing_var_requested_message) [tr. "An instance of the I/O tool \"%1\$s\" has requested information about the %2\$s %3\$s, but there is no %2\$s of this name in the current model."]
+set msgs(missing_var_requested_detail) [tr. "If the model has changed since the I/O tools were set up, you should adjust the settings of the I/O tools to reflect these changes, otherwise more warnings may appear and the model may stop running."]
+set msgs(no_spf_for_project_title) [tr. "Problem loading project"]
+set msgs(no_spf_for_project_message) [tr. "Parameter metafile %1\$s could not be found."]
 
-set msgs(unhandled_tcl_error_title) "Simile error"
-set msgs(unhandled_tcl_error_message) "Simile encountered an unexpected problem:\n%s"
+set msgs(unhandled_tcl_error_title) [tr. "Simile error"]
+set msgs(unhandled_tcl_error_message) [tr. "Simile encountered an unexpected problem:\n%1\$s"]
 set msgs(unhandled_tcl_error_full) %2\$s
 
-set msgs(type_error_title) "Simile error"
-set msgs(type_error_message) "An unhandled error occurred in the Prolog engine."
-set msgs(type_error_detail) "Please contact your software supplier."
-set msgs(type_error_full) "The error was:\n%s"
+set msgs(type_error_title) [tr. "Simile error"]
+set msgs(type_error_message) [tr. "An unhandled error occurred in the Prolog engine."]
+set msgs(type_error_detail) [tr. "Please contact your software supplier."]
+set msgs(type_error_full) [tr. "The error was:\n%1\$s"]
 
-set msgs(cannot_delete_temp_folder_title) "Problem deleting temporary folder"
-set msgs(cannot_delete_temp_folder_message) "Simile could not delete its temporary folder %s. This probably means that it failed to unload a model executable."
-set msgs(cannot_delete_temp_folder_detail) "Any saved models will not be affected, and you can delete the temporary folder after Simile has exited."
+set msgs(cannot_delete_temp_folder_title) [tr. "Problem deleting temporary folder"]
+set msgs(cannot_delete_temp_folder_message) [tr. "Simile could not delete its temporary folder %1\$s. This probably means that it failed to unload a model executable."]
+set msgs(cannot_delete_temp_folder_detail) [tr. "Any saved models will not be affected, and you can delete the temporary folder after Simile has exited."]
 
-set msgs(home_not_set_title) "No HOME directory specified"
-set msgs(home_not_set_message) "Simile cannot determine which directory to use for its setup and temporary files."
-set msgs(home_not_set_detail) "If you know which directory to use, set the HOME environment variable. For this session, Simile will attempt to use its installation folder instead."
-set msgs(cannot_use_home_title) "File system problem"
-set msgs(cannot_use_home_message) "Simile could not create a folder within the HOME directory in which to save its setup and temporary files."
-set msgs(cannot_use_home_detail) "For this session, Simile will attempt to use its installation folder instead."
-set msgs(cannot_use_home_full) "The following error message was produced:\n%s"
+set msgs(home_not_set_title) [tr. "No HOME directory specified"]
+set msgs(home_not_set_message) [tr. "Simile cannot determine which directory to use for its setup and temporary files."]
+set msgs(home_not_set_detail) [tr. "If you know which directory to use, set the HOME environment variable. For this session, Simile will attempt to use its installation folder instead."]
+set msgs(cannot_use_home_title) [tr. "File system problem"]
+set msgs(cannot_use_home_message) [tr. "Simile could not create a folder within the HOME directory in which to save its setup and temporary files."]
+set msgs(cannot_use_home_detail) [tr. "For this session, Simile will attempt to use its installation folder instead."]
+set msgs(cannot_use_home_full) [tr. "The following error message was produced:\n%1\$s"]
 
-set msgs(hack_break_title) "Code editing opportunity"
-set msgs(hack_break_message) "About to compile model.cpp in %s"
-set msgs(pkg_contents_title) "Saving project file"
-set msgs(pkg_contents_message) "This project file will contain the following information:\n%s"
-set msgs(extn_bug_title) "Problem loading extension"
-set msgs(extn_bug_message) "There was an error loading a Simile extension from file %s"
-set msgs(extn_bug_full) "The error message was:\n%2\$s"
-set msgs(no_compiler_title) "Problem with c++ compiler setup"
-set msgs(no_compiler_message) "c++ compiler preference set to %s but no executable %s found."
-set msgs(no_compiler_full) "The following directories were checked:\n%s"
+set msgs(hack_break_title) [tr. "Code editing opportunity"]
+set msgs(hack_break_message) [tr. "About to compile model.cpp in %1\$s"]
+set msgs(pkg_contents_title) [tr. "Saving project file"]
+set msgs(pkg_contents_message) [tr. "This project file will contain the following information:\n%1\$s"]
+set msgs(extn_bug_title) [tr. "Problem loading extension"]
+set msgs(extn_bug_message) [tr. "There was an error loading a Simile extension from file %1\$s"]
+set msgs(extn_bug_full) [tr. "The error message was:\n%2\$s"]
+set msgs(no_compiler_title) [tr. "Problem with c++ compiler setup"]
+set msgs(no_compiler_message) [tr. "c++ compiler preference set to %1\$s but no executable %2\$s found."]
+set msgs(no_compiler_full) [tr. "The following directories were checked:\n%1\$s"]
 
-set msgs(get_graphics_failed_title) "Problem copying graphics"
-set msgs(get_graphics_failed_message) "Simile failed to get graphics from the canvas to put on the clipboard, so it will not be possible to paste them into another application."
-set msgs(get_graphics_failed_detail) "The canvas must all be visible (i.e., on screen and not hidden) for this to work."
+set msgs(get_graphics_failed_title) [tr. "Problem copying graphics"]
+set msgs(get_graphics_failed_message) [tr. "Simile failed to get graphics from the canvas to put on the clipboard, so it will not be possible to paste them into another application."]
+set msgs(get_graphics_failed_detail) [tr. "The canvas must all be visible (i.e., on screen and not hidden) for this to work."]
 
-set msgs(save_eqn_bar_title) "Save text edits for %s"
-set msgs(save_eqn_bar_message) "The equation bar is currently editing the equation for %s. Do you want to save the changes you have made?"
+set msgs(save_eqn_bar_title) [tr. "Save text edits for %1\$s"]
+set msgs(save_eqn_bar_message) [tr. "The equation bar is currently editing the equation for %1\$s. Do you want to save the changes you have made?"]
 
-set msgs(finished_matches_title) "No more matches"
-set msgs(finished_matches_message) "No more matching %ss in this submodel context"
+set msgs(finished_matches_title) [tr. "No more matches"]
+set msgs(finished_matches_message) [tr. "No more matching %1\$ss in this submodel context"]
 
 # model diagnostics -- text mostly generated elsewhere
-set msgs(model_crash_title) "Problem with model"
-set msgs(model_crash_message) "Simile ran into a problem trying to run this model.\nWhile %s %s during %s of the model%s, %s."
-set msgs(model_crash_full) "Original error message follows:\n%6\$s"
-set msgs(model_pause_title) "Model execution paused"
-set msgs(model_pause_message) "While %s %s during %s of the model%s, %s."
+set msgs(model_crash_title) [tr. "Problem with model"]
+set msgs(model_crash_message) [tr. "Simile ran into a problem trying to run this model.\nWhile %1\$s %2\$s during %3\$s of the model%4\$s, %5\$s."]
+set msgs(model_crash_full) [tr. "Original error message follows:\n%6\$s"]
+set msgs(model_pause_title) [tr. "Model execution paused"]
+set msgs(model_pause_message) [tr. "While %1\$s %2\$s during %3\$s of the model%4\$s, %5\$s."]
 
 #These are from the run control and helpers
-set msgs(model_out_of_date_title) "Model out of date"
-set msgs(model_out_of_date_message) "The model has been altered since the curent runnable version was built. Rebuild it now?"
+set msgs(model_out_of_date_title) [tr. "Model out of date"]
+set msgs(model_out_of_date_message) [tr. "The model has been altered since the curent runnable version was built. Rebuild it now?"]
 
-set msgs(not_runnable_title) "Cannot run model"
-set msgs(not_runnable_message) "The current model cannot run because it could not be built, or it failed to initialize, or it has been aborted during initialization."
-set msgs(not_runnable_detail) "You could try selecting \"Run\" again, or \"Debug\" to get more information."
+set msgs(not_runnable_title) [tr. "Cannot run model"]
+set msgs(not_runnable_message) [tr. "The current model cannot run because it could not be built, or it failed to initialize, or it has been aborted during initialization."]
+set msgs(not_runnable_detail) [tr. "You could try selecting \"Run\" again, or \"Debug\" to get more information."]
 
-set msgs(params_not_loaded_title) "Fixed parameters not loaded"
-set msgs(params_not_loaded_message) "The model cannot run because it contains fixed input parameters for which no source is defined."
-set msgs(model_has_exited_title) "Model has exited"
-set msgs(model_has_exited_message) "The model has run into a problem during execution and needs to be reset before it can run again."
-set msgs(params_out_of_date_title) "Parameters out of date"
-set msgs(params_out_of_date_message) "Some file parameters have been changed since you last reset the model. Do you want to reset it now before running it?"
-set msgs(params_out_of_date_detail) "New file parameters will not take effect until you reset the model."
-set msgs(manual_zero_title) "Not resetting model"
-set msgs(manual_zero_message) "You have manually edited the value for Current Time, setting it to zero. This action will not reset the model's state variables."
-set msgs(manual_zero_detail) "Editing the current time causes to model to jump to the new time in a single execution step, which can lead to poor accuracy and zigzag traces on time plots. To reset the model and create new plot traces, click on the 'Reset simulation' button in the run control."
+set msgs(params_not_loaded_title) [tr. "Fixed parameters not loaded"]
+set msgs(params_not_loaded_message) [tr. "The model cannot run because it contains fixed input parameters for which no source is defined."]
+set msgs(model_has_exited_title) [tr. "Model has exited"]
+set msgs(model_has_exited_message) [tr. "The model has run into a problem during execution and needs to be reset before it can run again."]
+set msgs(params_out_of_date_title) [tr. "Parameters out of date"]
+set msgs(params_out_of_date_message) [tr. "Some file parameters have been changed since you last reset the model. Do you want to reset it now before running it?"]
+set msgs(params_out_of_date_detail) [tr. "New file parameters will not take effect until you reset the model."]
+set msgs(manual_zero_title) [tr. "Not resetting model"]
+set msgs(manual_zero_message) [tr. "You have manually edited the value for Current Time, setting it to zero. This action will not reset the model's state variables."]
+set msgs(manual_zero_detail) [tr. "Editing the current time causes to model to jump to the new time in a single execution step, which can lead to poor accuracy and zigzag traces on time plots. To reset the model and create new plot traces, click on the 'Reset simulation' button in the run control."]
 # Button text
-set msgs(run_param_not_number_title) "Bad run parameter"
-set msgs(run_param_not_number_message) "Non-numeric value \"%s\" has been entered for run parameter %s -- replacing it with 1"
-set msgs(model_stuck_title) "Model step taking too long"
-set msgs(model_stuck_message) "This model appears to have got stuck with an endless or very long operation. Do you want to exit it now?"
-set msgs(not_number_title) "This must be a number"
-set msgs(not_number_message) "You need to enter a number in the %s field"
-set msgs(save_helper_setup_title) "Helper setup changed"
-set msgs(save_helper_setup_message) "The helper setup has been altered since it was last loaded or saved. Do you want to save it?"
+set msgs(run_param_not_number_title) [tr. "Bad run parameter"]
+set msgs(run_param_not_number_message) [tr. "Non-numeric value \"%1\$s\" has been entered for run parameter %2\$s -- replacing it with 1"]
+set msgs(model_stuck_title) [tr. "Model step taking too long"]
+set msgs(model_stuck_message) [tr. "This model appears to have got stuck with an endless or very long operation. Do you want to exit it now?"]
+set msgs(not_number_title) [tr. "This must be a number"]
+set msgs(not_number_message) [tr. "You need to enter a number in the %1\$s field"]
+set msgs(save_helper_setup_title) [tr. "Helper setup changed"]
+set msgs(save_helper_setup_message) [tr. "The helper setup has been altered since it was last loaded or saved. Do you want to save it?"]
 
 # debugging messages: just show the whole string
-set msgs(debug_title) "Debugging info -- report to Simulistics"
-set msgs(debug_message) "%s"
+set msgs(debug_title) [tr. "Debugging info -- report to Simulistics"]
+set msgs(debug_message) "%1\$s"
 
-set msgs(ok_button) OK
-set msgs(yes_button) Yes
-set msgs(no_button) No
-set msgs(abort_button) "Give up"
-set msgs(forget_button) "Discard values"
-set msgs(reassign_button) "Use elsewhere"
-set msgs(abandon_button) "Don't save"
-set msgs(cancel_button) Cancel
-set msgs(save_button) Save
-set msgs(ignore_button) "Ignore log"
-set msgs(apply_button) "Apply log"
-set msgs(rename_button) "Rename"
-set msgs(keep_name_button) "Keep name"
-set msgs(update_shf_button) "Save current setup"
-set msgs(keep_shf_button) "Keep old setup"
-set msgs(lose_shf_button) "Save without helper setup"
+set msgs(ok_button) [tr. OK]
+set msgs(yes_button) [tr. Yes]
+set msgs(no_button) [tr. No]
+set msgs(abort_button) [tr. "Give up"]
+set msgs(forget_button) [tr. "Discard values"]
+set msgs(reassign_button) [tr. "Use elsewhere"]
+set msgs(abandon_button) [tr. "Don't save"]
+set msgs(cancel_button) [tr. Cancel]
+set msgs(save_button) [tr. Save]
+set msgs(ignore_button) [tr. "Ignore log"]
+set msgs(apply_button) [tr. "Apply log"]
+set msgs(rename_button) [tr. "Rename"]
+set msgs(keep_name_button) [tr. "Keep name"]
+set msgs(update_shf_button) [tr. "Save current setup"]
+set msgs(keep_shf_button) [tr. "Keep old setup"]
+set msgs(lose_shf_button) [tr. "Save without helper setup"]
 
-set geometryXYexplanation "Set position of the run control window, in the form xy, where x and y specify the desired location of window on the screen, in pixels."
+set geometryXYexplanation [tr. "Set position of the run control window, in the form xy, where x and y specify the desired location of window on the screen, in pixels."]
 set msgs(runControlPosition) $geometryXYexplanation
 set msgs(slidersPosition) $geometryXYexplanation
-set msgs(new) "New empty model"
-set msgs(open) "Open"
-set msgs(print) "Print"
-set msgs(save) "Save"
-set msgs(flip_v) "Flip the model diagram vertically"
-set msgs(flip_h) "Flip the model diagram horizontally"
-set msgs(tog_grid) "Hide or display grids in this window"
-set msgs(zoomin) "Zoom in"
-set msgs(zoomsel) "Zoom to selection"
-set msgs(zoomfit) "Zoom to fit"
-set msgs(zoomout) "Zoom out"
-set msgs(tableWimpOut) "The latest values have not been displayed because "
-set msgs(tooManyRows) "the total number of rows is greater than"
-set msgs(tooManyColumns) "the total number of columns is greater than"
-set msgs(tooManyCells) "the total number of cells is greater than"
+set msgs(new) [tr. "New empty model"]
+set msgs(open) [tr. "Open"]
+set msgs(print) [tr. "Print"]
+set msgs(save) [tr. "Save"]
+set msgs(flip_v) [tr. "Flip the model diagram vertically"]
+set msgs(flip_h) [tr. "Flip the model diagram horizontally"]
+set msgs(tog_grid) [tr. "Hide or display grids in this window"]
+set msgs(zoomin) [tr. "Zoom in"]
+set msgs(zoomsel) [tr. "Zoom to selection"]
+set msgs(zoomfit) [tr. "Zoom to fit"]
+set msgs(zoomout) [tr. "Zoom out"]
+set msgs(tableWimpOut) [tr. "The latest values have not been displayed because "]
+set msgs(tooManyRows) [tr. "the total number of rows is greater than"]
+set msgs(tooManyColumns) [tr. "the total number of columns is greater than"]
+set msgs(tooManyCells) [tr. "the total number of cells is greater than"]
 
 # references to documentation
-set help(search) "diagrams/search.htm"
-set help(g\\+\\+) "run/index.htm"
-set help(top) "index.htm"
-set help(license) "index.htm"
-set help(execution) "run/index.htm"
-set help(circular) "elements/influence.htm#circular"
-set help(fill_equation) "equations/dialogue.htm"
-set help(user_defns) "equations/macro.htm"
-set help(ext_code) "submodels/external_code.htm"
-set help(expiry) "coviewexpiry.htm"
-set help(helpers) "run/tools/index.htm"
-set help(spf) "data/scenario.htm"
-set help(data_in_cols) "data/table/column.htm"
-set help(data_in_grid) "data/table/grid.htm"
-set help(data_in_image) "data/table/image.htm"
-set help(data_via_odbc) "data/table/column.htm"
-set help(enumtype) "equations/enumerated.htm"
-set help(model_dims) "submodels/dialogue.htm"
-set help(pest_setup) "run/pest/setup.htm"
+set help(search) diagrams/search.htm
+set help(g\\+\\+) run/index.htm
+set help(top) index.htm
+set help(license) index.htm
+set help(execution) run/index.htm
+set help(circular) elements/influence.htm#circular
+set help(fill_equation) equations/dialogue.htm
+set help(user_defns) equations/macro.htm
+set help(ext_code) submodels/external_code.htm
+set help(expiry) coviewexpiry.htm
+set help(helpers) run/tools/index.htm
+set help(spf) data/scenario.htm
+set help(data_in_cols) data/table/column.htm
+set help(data_in_grid) data/table/grid.htm
+set help(data_in_image) data/table/image.htm
+set help(data_via_odbc) data/table/column.htm
+set help(enumtype) equations/enumerated.htm
+set help(model_dims) submodels/dialogue.htm
+set help(pest_setup) run/pest/setup.htm
 
 set url(coviewexpiry.htm) {Permanent licence upgrade}
 set url(index.htm) {Contents}

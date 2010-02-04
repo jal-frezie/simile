@@ -21,8 +21,10 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
         set disaggregate(icount) 1
     }
     #puts $disaggregate(icount)
-    set stepNames [list {Initialize only} {New params only} {Reset only} \
-		       1st 2nd 3rd 4th 5th 6th 7th]
+    foreach stepId [list {Initialize only} {New params only} {Reset only} \
+			1st 2nd 3rd 4th 5th 6th 7th] {
+	lappend stepNames [tr. $stepId]
+    }
     if {[string is integer -strict $step]} {
 	set disaggregate(step) [lindex $stepNames [expr $step+2]]
     } else {
@@ -33,19 +35,19 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     set t [::ttk::notebook [PutItThere $tt $parent].notebook]
     wm resizable $tt 0 1
     wm protocol $tt WM_DELETE_WINDOW {set disaggregate(done) 0}
-    wm title $tt "Properties of [BlankCrs $title]"
+    wm title $tt [format [tr. "Properties of %1\$s"] [BlankCrs $title]]
     
-    $t add [frame $t.simple] -text Basic
-    TitleFrame $t.simple.notes -text "Notes:"
+    $t add [frame $t.simple] -text [tr. Basic]
+    TitleFrame $t.simple.notes -text [tr. Notes:]
     set notesf [GetFrame $t.simple.notes]
     set descf [frame $notesf.desc]
-    label $descf.desclabel -text "Description:"
+    label $descf.desclabel -text [tr. Description:]
     entry $descf.text -width 20 -relief sunken -bd 2 -highlightthickness 0
     pack $descf.desclabel -side left -padx 2 -pady 2
     pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
     $descf.text insert 0 $desc
     pack $descf -side top  -fill x -expand off
-    label $notesf.commentlabel -text Comments:
+    label $notesf.commentlabel -text [tr. Comments:]
     pack $notesf.commentlabel -padx 2 -pady 4 -anchor w
     # ScrolledWindow causes crash under Linux so replaced with ordinary frame
     #    frame $t.commentsSW
@@ -58,12 +60,13 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
 
     frame $t.simple.left
     
-    TitleFrame $t.simple.left.count -text "Control of number of instances:"
+    TitleFrame $t.simple.left.count \
+	-text [tr. "Control of number of instances:"]
     set countf [GetFrame $t.simple.left.count]
     
     frame $countf.radio
     foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
-        radiobutton $countf.radio.$rbutton -text [lindex $rbutton 1] \
+        radiobutton $countf.radio.$rbutton -text [tr. [lindex $rbutton 1]] \
                 -value [lindex $rbutton 0] \
                 -variable disaggregate(type) \
                 -command "SetHighlights $countf"
@@ -75,37 +78,37 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $countf.value -side left -anchor s -pady 4 -fill x -expand 1
     pack $t.simple.left.count -padx 4 -pady 4 -fill both -expand true
     
-    TitleFrame $t.simple.left.colour -text "Background shade:"
+    TitleFrame $t.simple.left.colour -text [tr. "Background shade:"]
     set colourf [GetFrame $t.simple.left.colour]
     set posRBs [frame $colourf.imageposns]
-    pack [button $colourf.clear -text "Clear" -width 7 \
+    pack [button $colourf.clear -text [tr. Clear] -width 7 \
             -command "ClearBG $posRBs"] -padx 2 -pady 4 -side left
-    pack [button $colourf.fixcolour -text "Colour..." \
+    pack [button $colourf.fixcolour -text [tr. Colour...] \
             -width 7 -command "UpdateColour $t $colourf"]  \
             -padx 2 -pady 4 -side left
     $colourf.fixcolour configure -bg $disaggregate(colour)
     set disaggregate(defColour) $disaggregate(colour)
-    pack [button $colourf.setimage -text "Image..." -width 7 -command "ChooseImage $posRBs $mdl $window_info($parent,is_top_level)"] \
+    pack [button $colourf.setimage -text [tr. Image...] -width 7 -command "ChooseImage $posRBs $mdl $window_info($parent,is_top_level)"] \
             -padx 2 -pady 4 -side left
     pack $posRBs -padx 2 -pady 4 -side left
     set rbState [ChooseText [string equal $disaggregate(image) none] \
             disabled normal]
     foreach rbutton {Tiled Centred Scaled} {
-        pack [radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
-                -value $rbutton -variable disaggregate(imgpos)] -anchor w
+        pack [radiobutton $posRBs.ip$rbutton -state $rbState -value $rbutton \
+		  -text [tr. $rbutton] -variable disaggregate(imgpos)] -anchor w
     }
     pack $t.simple.left.colour -padx 4 -pady 4 -fill both -expand true
     pack $t.simple.left -side left -fill both -expand 1
     
-    $t add [frame $t.complex] -text Advanced
-    TitleFrame $t.complex.enumtypes -text "Enumerated types"
+    $t add [frame $t.complex] -text [tr. Advanced]
+    TitleFrame $t.complex.enumtypes -text [tr. "Enumerated types"]
     set enumtypef [GetFrame $t.complex.enumtypes]
     pack [set canId [frame $enumtypef.listpair]] -side left -fill both \
             -expand true
     #    pack [frame $windowId.buttonframe] -side bottom
     # types (list box to keep selection highlighted when lost focus, -exportselection 0)
     set typef [frame $canId.typef]
-    label $typef.lbl -text "Types" -anchor w
+    label $typef.lbl -text [tr. Types] -anchor w
     listbox $typef.scrf -yscrollcommand [list AdjustCanvas $typef scrf y] \
             -exportselection 0
                 
@@ -116,7 +119,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     }                
     # members (list box to keep selection highlighted when lost focus)
     set memf [frame $canId.memf]
-    label $memf.lbl -text "Members" -anchor w
+    label $memf.lbl -text [tr. Members] -anchor w
     listbox $memf.mem -exportselection 0 \
             -yscrollcommand [list AdjustCanvas $memf mem y]
     scrollbar $memf.yscroll -orient v -command [list $memf.mem yview]
@@ -151,45 +154,45 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack [set btnId [frame $enumtypef.btns]] -side left
     pack [::ttk::entry $btnId.e -textvariable enumTypeMPEntry] -padx 2
     bind $btnId.e <ButtonRelease-1> "EnableTypeOps $enumtypef"
-    pack [button $btnId.addtype -text "Add type" -command "AddEnumType $canId"] \
-            -padx 2 -pady 4 -fill x
-    pack [button $btnId.remtype -text "Remove type" -state disabled \
+    pack [button $btnId.addtype -text [tr. "Add type"] \
+	      -command "AddEnumType $canId"] -padx 2 -pady 4 -fill x
+    pack [button $btnId.remtype -text [tr. "Remove type"] -state disabled \
 	      -command "RemoveEnumType $enumtypef"] \
 	-padx 2 -pady 4 -fill x
-    pack [button $btnId.addmems -text "Add member" -state disabled \
+    pack [button $btnId.addmems -text [tr. "Add member"] -state disabled \
 	      -command "AddEnumMem $enumtypef"] \
 	-padx 2 -pady 4 -fill x
-    pack [button $btnId.remmem -text "Remove member" -state disabled \
+    pack [button $btnId.remmem -text [tr. "Remove member"] -state disabled \
 	      -command "RemoveEnumMem $enumtypef"] \
 	-padx 2 -pady 4 -fill x
-    pack [button $btnId.getmem -text "Get from file" -state disabled \
+    pack [button $btnId.getmem -text [tr. "Get from file"] -state disabled \
 	      -command "GetEnumMems $enumtypef $mdl"] \
 	-padx 2 -pady 4 -fill x
     pack $t.complex.enumtypes -anchor nw -side bottom -padx 4 -pady 4 \
 	-fill both -expand true
     
-    TitleFrame $t.complex.appearance -text Appearance
+    TitleFrame $t.complex.appearance -text [tr. Appearance]
     set appearancef [GetFrame $t.complex.appearance]
-    checkbutton $appearancef.hide -text "Hide contents" \
+    checkbutton $appearancef.hide -text [tr. "Hide contents"] \
             -variable disaggregate(hide)
     pack $appearancef.hide -anchor w
     frame $appearancef.scale
     scale $appearancef.scale.value -from .01 -to 1 -length 150 -orient horizontal \
             -resolution 0.01 -variable disaggregate(fatness)
     pack $appearancef.scale.value
-    label $appearancef.scale.caption -text "Relative scale"
+    label $appearancef.scale.caption -text [tr. "Relative scale"]
     pack $appearancef.scale.caption
     pack $appearancef.scale -anchor w
     pack $t.complex.appearance -anchor nw -side left -padx 4 -pady 4 -fill both -expand true
     
-    TitleFrame $t.complex.math -text Calculation
+    TitleFrame $t.complex.math -text [tr. Calculation]
     set mathf [GetFrame $t.complex.math]
 #    checkbutton $mathf.separate -text "Build submodel in separate dll" \
 #            -variable disaggregate(separate)
 #    pack $mathf.separate -anchor w
     pack [frame $mathf.extcode] -anchor w -pady 6
     set disaggregate(useOwnCode) [expr {![string eq none $disaggregate(xinc)]}]
-    pack [checkbutton $mathf.extcode.whether -text "Use own code" \
+    pack [checkbutton $mathf.extcode.whether -text [tr. "Use own code"] \
 	      -variable disaggregate(useOwnCode) -command "AbleSetup $mathf"] \
 	-side left -anchor w
     pack [button $mathf.extcode.how -text Setup -command "ExtCodeSetup $mdl"]
@@ -198,11 +201,11 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     #            -variable disaggregate(matherror)
     #    pack $mathf.matherror -anchor w
     frame $mathf.eqnunit
-    label $mathf.eqnunit.caption -text "Use units in math:"
+    label $mathf.eqnunit.caption -text [tr. "Use units in math:"]
     pack $mathf.eqnunit.caption -side left
     #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
     ::ttk::combobox $mathf.eqnunit.pulldown -textvariable disaggregate(eqnunit) \
-            -values [list Default Yes No] \
+	-values [list [tr. Default] [tr. Yes] [tr. No]] \
             -width 10 -state readonly
 #    ::ttk::menubutton $mathf.eqnunit.pulldown -width 10 -textvariable disaggregate(eqnunit)
 #    set m [menu $mathf.eqnunit.pulldown.menu]
@@ -213,7 +216,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $mathf.eqnunit.pulldown
     pack $mathf.eqnunit -anchor w -padx 4 -pady 6
     frame $mathf.step
-    label $mathf.step.caption -text "Time step index:"
+    label $mathf.step.caption -text [tr. "Time step index:"]
     pack $mathf.step.caption -side left
     #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
     #ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
@@ -278,13 +281,13 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $t -fill both -expand true
 
     frame $tt.bottom
-    button $tt.bottom.ok -text "OK" -width 10 -default active \
+    button $tt.bottom.ok -text [tr. OK] -width 10 -default active \
             -command {set disaggregate(done) 1}
     pack $tt.bottom.ok -side left -padx 2 -pady 4
-    button $tt.bottom.cancel -text "Cancel" -width 10 \
+    button $tt.bottom.cancel -text [tr. Cancel] -width 10 \
             -command {set disaggregate(done) 0}
     pack $tt.bottom.cancel -side left -padx 2 -pady 4
-    button $tt.bottom.help -text "Help" -width 10 \
+    button $tt.bottom.help -text [tr. Help] -width 10 \
             -command {ContextSensitiveHelp .disaggregation submodels/dialogue.htm}
     pack $tt.bottom.help -side left -padx 2 -pady 4
 #    button $tt.bottom.more -text "More" -width 10 -command "ShowComplexity $t"
@@ -378,9 +381,9 @@ proc AddPub {mdl} {
 
 
     pack [frame $t.btnfr]
-    pack [button $t.btnfr.ok -text OK -command "set disaggregate(pdone) 1"] \
-	-side right
-    pack [button $t.btnfr.cancel -text Cancel \
+    pack [button $t.btnfr.ok -text [tr. OK] \
+	      -command "set disaggregate(pdone) 1"] -side right
+    pack [button $t.btnfr.cancel -text [tr. Cancel] \
 	      -command "set disaggregate(pdone) 0"] -side right
     LetItShow $t
     grab $t
@@ -406,38 +409,38 @@ proc ExtCodeSetup {mdl} {
     global disaggregate
 
     set t [PutItThere .extcodesetup .disaggregation]
-    wm title $t "External code interaction"
-    pack [TitleFrame $t.procnamfr -text "Procedure name:"] \
+    wm title $t [tr. "External code interaction"]
+    pack [TitleFrame $t.procnamfr -text [tr. "Procedure name:"]] \
 	-padx 4 -pady 4 -fill x
     pack [entry [GetFrame $t.procnamfr].ent] -fill x
     [GetFrame $t.procnamfr].ent insert 0 $disaggregate(xproc)
 
-    pack [TitleFrame $t.incfilefr -text "Include file:"] \
+    pack [TitleFrame $t.incfilefr -text [tr. "Include file:"]] \
 	-padx 4 -pady 4 -fill x
     set incFileTxt [GetFrame $t.incfilefr].txt
     pack [text $incFileTxt -width 32 -height 1] \
 	-side left -fill x
     $incFileTxt insert 1.0 $disaggregate(xinc)
     $incFileTxt configure -state disabled
-    pack [button [GetFrame $t.incfilefr].btn -text "Browse" \
+    pack [button [GetFrame $t.incfilefr].btn -text [tr. Browse] \
 	      -command "ChangeIncFile $incFileTxt $mdl"] -anchor e -side right
 
-    pack [TitleFrame $t.liblistfr -text "Library files:"] \
+    pack [TitleFrame $t.liblistfr -text [tr. "Library files:"]] \
 	-padx 4 -pady 4 -fill x
     set LibListFr [GetFrame $t.liblistfr]
     pack [listbox ${LibListFr}.box] -side left -fill x -expand true
     foreach libFile $disaggregate(xlibs) {
 	${LibListFr}.box insert end $libFile
     }
-    pack [button ${LibListFr}.badd -text Add \
+    pack [button ${LibListFr}.badd -text [tr. Add] \
 	      -command "AddLibF $LibListFr $mdl"] -anchor w -side top
-    pack [button ${LibListFr}.bdel -text Delete\
+    pack [button ${LibListFr}.bdel -text [tr. Delete] \
 	     -command "RemoveLibF $LibListFr"] -anchor w -side top
 
     pack [frame $t.btnfr]
-    pack [button $t.btnfr.ok -text OK -command "set disaggregate(xdone) 1"] \
-	-side right
-    pack [button $t.btnfr.cancel -text Cancel \
+    pack [button $t.btnfr.ok -text [tr. OK] \
+	      -command "set disaggregate(xdone) 1"] -side right
+    pack [button $t.btnfr.cancel -text [tr. Cancel] \
 	      -command "set disaggregate(xdone) 0"] -side right
     LetItShow $t
     grab $t
@@ -827,26 +830,27 @@ proc RelationCheck {parent title type state init_comment} {
     set t [PutItThere .relcheck $parent]
     wm resizable $t 0 0
     wm protocol $t WM_DELETE_WINDOW {set relation(done) 0}
-    wm title $t "Properties of [BlankCrs $title]"
+    wm title $t [format [tr. "Properties of %1\$s"] [BlankCrs $title]]
     frame .relcheck.top
-    TitleFrame .relcheck.top.left -text "[string toupper $type 0 0] options:"
+    TitleFrame .relcheck.top.left \
+	-text [format [tr. "%1\$s options:"] [string toupper $type]]
     set f [GetFrame .relcheck.top.left]
     
     switch $type {
         influence {
-            set entries {"Use values made\nin same time step" use_sofar}
-        set helpPage elements/influence.htm
+            set entries {"Use values made in same time step" use_sofar}
+	    set helpPage elements/influence.htm
         } relation {
             set entries {"Exclusive role" exclusive \
-                        "Allow base\ninstance lookup" can_lookup}
-        set helpPage submodels/association/dialogue.htm
+			     "Allow base instance lookup" can_lookup}
+	    set helpPage submodels/association/dialogue.htm
         } default {
 	    set entries {}
 	    set helpPage index.htm
 	}
     }
     foreach {text attr} $entries {
-        pack [checkbutton $f.$attr -text $text \
+        pack [checkbutton $f.$attr -text [tr. $text] -wraplength 160 \
                 -variable relation($attr) -offvalue 0 -onvalue 1] -anchor w
         set relation($attr) [lindex $state 0]
         set state [lrange $state 1 end]
@@ -856,15 +860,15 @@ proc RelationCheck {parent title type state init_comment} {
     }
     pack .relcheck.top.left -side left -padx 4 -pady 4 -expand on -fill both -anchor nw
     frame .relcheck.top.right
-    pack [button .relcheck.top.right.bdone \
-            -text OK -width 10 -command {set relation(done) 1}] -padx 4 -pady 4
-    pack [button .relcheck.top.right.bc \
-            -text Cancel -width 10 -command {set relation(done) 0}] -padx 4 -pady 4
-    pack [button .relcheck.top.right.help \
-            -text Help -width 10 -command "ContextSensitiveHelp .relcheck $helpPage"] -padx 4 -pady 4
+    pack [button .relcheck.top.right.bdone -text [tr. OK] -width 10 \
+	      -command {set relation(done) 1}] -padx 4 -pady 4
+    pack [button .relcheck.top.right.bc -text [tr. Cancel] -width 10 \
+	      -command {set relation(done) 0}] -padx 4 -pady 4
+    pack [button .relcheck.top.right.help -text [tr. Help] -width 10 \
+	  -command "ContextSensitiveHelp .relcheck $helpPage"] -padx 4 -pady 4
     pack .relcheck.top.right -side left
     pack .relcheck.top -expand on -fill both
-    TitleFrame .relcheck.bottom -text "Comments:"
+    TitleFrame .relcheck.bottom -text [tr. Comments:]
     set f [GetFrame .relcheck.bottom]
     pack [text $f.comment -width 40 -height 4 -relief sunken -bd 2 -highlightthickness 0 -wrap word] \
             -anchor w -expand on -fill both -padx 2 -pady 2
@@ -933,9 +937,13 @@ proc GetFindText {canvas} {
     pack .findentry.rbs -anchor nw -fill both
     pack [set bs [frame .findentry.buttframe]]
     #pack [button $bs.clear -text Clear -width 10 -command ".findentry.e delete 0 end"] -padx 2 -pady 2 -side left
-    pack [button $bs.ok -text OK -default active -width 10 -command "set find(done) 1"] -padx 2 -pady 4 -side left
-    pack [button $bs.cancel -text Cancel -width 10 -command "set find(done) 0"] -padx 2 -pady 4 -side left
-    pack [button $bs.help -text Help -width 10 -command "ContextSensitiveHelp .findentry diagrams/search.htm"] -padx 2 -pady 4 -side left
+    pack [button $bs.ok -text [tr. OK] -default active -width 10 \
+	      -command "set find(done) 1"] -padx 2 -pady 4 -side left
+    pack [button $bs.cancel -text [tr. Cancel] -width 10 \
+	      -command "set find(done) 0"] -padx 2 -pady 4 -side left
+    pack [button $bs.help -text [tr. Help] -width 10 \
+	      -command "ContextSensitiveHelp .findentry diagrams/search.htm"] \
+	-padx 2 -pady 4 -side left
     
     LetItShow .findentry
     grab .findentry
@@ -1271,7 +1279,8 @@ proc ErrorHelp {diagnostic} {
     pack .diag.topicsf.errorm -side top -padx 4 -pady 4
     pack [listbox .diag.topicsf.l -width 20 -height 8] -fill both -expand on  -padx 4 -pady 4
     bind .diag.topicsf.l <ButtonRelease-1> {GetHelp}
-    pack [button .diag.b -text OK -width 10 -command {set diagno(done) 0}] -pady 4
+    pack [button .diag.b -text [tr. OK] -width 10 \
+	      -command {set diagno(done) 0}] -pady 4
     set diagno(keys) {}
     foreach key [array names help] {
         if {[regexp $key $diagnostic]} {
@@ -1391,7 +1400,7 @@ proc ShowAbout {winId} {
     
     pack [label .about.low1 -text [tr. Simile] -font $graph(megafont)]
     pack [label .about.low2 -text $graph(anality) -font $graph(font)]
-    pack [button .about.b -text OK -width 10 -default active \
+    pack [button .about.b -text [tr. OK] -width 10 -default active \
             -command "set sendvars(doneAbout) 1"] -pady 2
     pack [label .about.l16]
     wm geometry .about +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-250]
@@ -1450,10 +1459,10 @@ proc ShowExpiryImminent {expTime left} {
     pack $labf2 -padx 8 -pady 2
     
     set buttons [frame .expiry.buttons]
-    pack [button $buttons.ok -text OK -width 10 \
+    pack [button $buttons.ok -text [tr. OK] -width 10 \
             -command {set ack 1}] \
             -side left -padx 4 -pady 4
-    pack [button $buttons.help -text Help -width 10 \
+    pack [button $buttons.help -text [tr. Help] -width 10 \
             -command {ContextSensitiveHelp .expiry coviewexpiry.htm}] \
             -side left -padx 4 -pady 8
     pack $buttons
@@ -1824,10 +1833,10 @@ proc NotifyOverLimit {edn limit} {
     pack $labf2 -padx 8 -pady 2
     
     set buttons [frame .notify.buttons]
-    pack [button $buttons.ok -text OK -width 10 \
+    pack [button $buttons.ok -text [tr. OK] -width 10 \
             -command {set ack 1}] \
             -side left -padx 4 -pady 4
-    pack [button $buttons.help -text Help -width 10 \
+    pack [button $buttons.help -text [tr. Help] -width 10 \
             -command {ContextSensitiveHelp .notify files/limit.htm}] \
             -side left -padx 4 -pady 8
     pack $buttons
@@ -1855,9 +1864,9 @@ proc Query {specifics icon helpRef parent opts} {
     }
     set defCapt $::msgs(${defButton}_button)
     switch $defButton {
-	ok {set moreCapt "More info..."}
-	abort {set moreCapt "See all..."}
-	default {set moreCapt "More options..."}
+	ok {set moreCapt [tr. "More info..."]}
+	abort {set moreCapt [tr. "See all..."]}
+	default {set moreCapt [tr. "More options..."]}
     }
     set key [lindex $specifics 0]
     set mBoxCmd [list ttk::dialog .shortDlg -icon $icon -command SetDlgRes \

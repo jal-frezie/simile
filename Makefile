@@ -88,7 +88,9 @@ ifeq ($(PLATFORM),Windows) # any Windows, any toolchain
 	SHAREDLIBPREFX = 
 	MAKESL = -shared
 	VERS = 84
-	USETCL = -DUSE_TCL_STUBS -I../System/include -L../System/lib ../System/lib/tclstub$(VERS).lib
+#	VERS = 86
+#	TCLDIR = c:/Tcl
+	USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include -L$(TCLDIR)/lib $(TCLDIR)/lib/tclstub$(VERS).lib
 	LOCALIZE_TCL_REFS =  ls # placebo command
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = _win
@@ -115,7 +117,7 @@ simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) \
 vpath %.pl Prolog
 
 PROLOG_FILES = ame_gen.pl backup.pl build.pl compile.pl database.pl \
-		dialogue.pl draw.pl event.pl graphics.pl image.pl \
+		dialogue.pl draw.pl event.pl forms.pl graphics.pl image.pl \
 		input.pl instance.pl inters.pl language.pl library.pl link.pl \
 		m_class.pl menu.pl m_struct.pl m_update.pl node.pl \
 		output.pl render.pl ss_import.pl state.pl \

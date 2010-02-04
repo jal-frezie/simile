@@ -158,7 +158,7 @@ namespace eval ::$keyValue {
 #	    $tableframe.table bindText <Enter> \
 #	        [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
 	    bind $tableframe.table <Motion> \
-		[list [namespace code MoveInInsp] $winId %X %Y %x %y]
+		[namespace code [list MoveInInsp $winId %X %Y %x %y]]
 	    bind $tableframe.table <Leave> RemovePopup
 #	    $tableframe.table bindImage <Leave> RemovePopup
 #	    $tableframe.table bindText <Leave> RemovePopup

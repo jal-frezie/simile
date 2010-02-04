@@ -283,6 +283,7 @@ itcl::class similescript::OldStyleHelper {
     } {
 	global helperTable
 
+	set this4 $this ;# flagrant Itcl4 bug workaround
 	set helperTable(beingCalled) $this
 	if {[llength $state]} {
 	    set State $state
@@ -318,7 +319,7 @@ itcl::class similescript::RunControl {
     
     constructor {{modelInst {}}} {
 	global botches
-puts "Constructing run control $modelInst"
+
 	if {[string equal {} $modelInst]} {
 	    set modelInst $botches(modelJustRun)
 	}

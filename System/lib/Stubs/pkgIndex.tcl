@@ -20,7 +20,7 @@ if {![catch {set vers $env(SIMILE_VERSION)}]} {
 	[list load [file join $dir libame_dll$MAJ.$MIN$env(slTail)]]
 
     if {[string equal .dll $env(slTail)]} {
-	package ifneeded Unpacker 1.0 \
+	package ifneeded Unpacker $vers \
 	    [list load [file join $dir unpacker$MAJ$MIN$env(slTail)]]
     } else {
 	package ifneeded Unpacker $vers \

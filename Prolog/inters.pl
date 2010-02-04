@@ -199,9 +199,8 @@ read_library_funx(Done) :-
 
 read_func_tree(TopDir, AllDirs, BuiltIn, Done) :-
 	name(AllDirs, AllDirsStr),
-	    suffix("*.pl", AllDirsStr),
-	    all(inters, read_func_file, [build(AllDirs), unify(TopDir),
-					 unify(BuiltIn), append(Local, [])]);
+	    suffix(".pl", AllDirsStr),
+	    read_func_file(AllDirs, TopDir, BuiltIn, Local);
 	append_atoms([AllDirs, /, *], DeepTpt), % avoid start-comment sequence
 	    output:list_matching_files(DeepTpt, DeepDirs),
 	    all(inters, read_func_tree, [unify(TopDir), build(DeepDirs),

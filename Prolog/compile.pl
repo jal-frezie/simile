@@ -657,7 +657,7 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 	Instance = instance(Type, Node, Loc, _, _-CSizes),
 	(Type = submodel, !,
 	    list_local_index_meanings(Node, SmIndSpecs),
-	    all(dialogue, index_names_and_sizes,
+	    all(forms, index_names_and_sizes,
 		[build(SmIndSpecs), build(_Names), build(RSizes)]),
 	    reverse(RSizes, SmSizes);
 	SmSizes = CSizes),

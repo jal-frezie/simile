@@ -60,7 +60,7 @@ namespace eval runcontrol33857 {
         global playImg
         #	global runState
 
-	upvar 1 this inst
+	upvar 1 this4 inst ;# note Itcl 4 bug workaround
 	set node [lindex [$inst GetNode] 0]
 # if cannot do above because trying to live without RunControl instance
 #	upvar 2 node node
