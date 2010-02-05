@@ -103,7 +103,7 @@ substitute(E, [G | T1], F, [H | T2]) :-
             G=H),
         substitute(E, T1, F, T2).
 
-/* seems Daniel has added these in latest version
+/* seems Daniel has added these in latest version */
 nth0(N, List, Element) :-
 	var(N), !,
 	    nth(M, List, Element),
@@ -115,7 +115,7 @@ ground(Term) :-
 	atomic(Term), !;
 	var(Term), !, fail;
 	Term =.. [_ | ListTerm], all_ground(ListTerm).
- */
+
 all_ground([]).
 
 all_ground([H | T]) :-
