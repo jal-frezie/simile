@@ -71,7 +71,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     foreach funk $equation(fnDefs) {
         set box {} ;# was root for bwidget
         foreach level [lindex $funk 0] {
-            set lname $box.[join $level _]
+            set lname $box.[string tolower [join $level _]]
             if {![$lbf exists $lname]} {
 #                $lbf insert end $box $lname -image $iconImages(find) \
 #                        -text $level -open [string equal Built-in $level]
@@ -224,7 +224,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     frame $mainf.equation.textbox
     
     radiobutton $mainf.equation.textbox.radio0 -variable equation(isparam) \
-	-text "[tr. $purpose]: $comp = " -value 0
+	-text "[tr. $purpose]: $comp = " -wraplength 120 -value 0
     
     set en [text $mainf.equation.textbox.text -height 4 -width 64 \
 		-relief sunken -bd 2 -highlightthickness 0 -font EquationFont \
@@ -914,8 +914,8 @@ proc functionClick {tree x y boxname} {
 proc AddFnPopup {w X Y x y} {
     global equation
     set equation(whatPopped) [$w identify row $x $y]
-# no popups for constants
-    if {[string first .et_top_level $equation(whatPopped)]==0} {
+# no popups for constants, until we can comment them for this purpose
+    if {[string first .et_top_level. $equation(whatPopped)]==0} {
 	return
     }
     set popTxt [lindex [split $equation(whatPopped) .] end]

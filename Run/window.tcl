@@ -1315,7 +1315,7 @@ if {[string match "Darwin" $tcl_platform(os)]} {
 }
 
 proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
-    global custom pushedbutton tcl_platform runState iconImages
+    global custom pushedbutton tcl_platform runState iconImages msgs
     
     set c $winid.canvas
     set topm ${winid}top
@@ -1335,7 +1335,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     set fm [menu $topm.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
-    $topm add cascade -label [tr. File] -underline 0 -menu $topm.file
+    $topm add cascade -label [tr. File] -menu $fm
     if {$isTopLevel} {
 	set newCmd NewTopLevel
     } else {
@@ -1387,6 +1387,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c code compile_c"
     $fm2 add command -label [tr. "PostScript graphics"] \
             -command "ExportPostscript $c"
+    UnderlineUniquely $fm2
+
     $fm add separator
     
     $fm add command -label [tr. Close] -command "MenuClose $c" \
@@ -1395,12 +1397,13 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     if ![string match "Darwin" $tcl_platform(os)] {
       $fm add command -label [tr. Exit] -command "MenuExit $topNode $c"
     }
+    UnderlineUniquely $fm
     
     # edit menu: purpose of postcommand is to enable/disable cut/copy/paste items
     # for what is available, overridden later if it is popup
     set fm [menu $topm.edit -tearoff 0 \
 		-postcommand "prolog tk_bar_edit_menu('$c')"]
-    $topm add cascade -label [tr. Edit] -underline 0 -menu $topm.edit
+    $topm add cascade -label [tr. Edit] -menu $topm.edit
     
     $fm add cascade -label [tr. "Create new"] -menu $fm.add
     set ::menuPosns(edit,Create\ new) [$fm index last]
@@ -1470,11 +1473,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     if ![string match "Darwin" $tcl_platform(os)] {
       $fm add command -label [tr. Preferences...] -command Pref_Dialog
     }
-    
+    UnderlineUniquely $fm
     
     set fm [menu $topm.view -tearoff 0]
-    $topm add cascade -label [tr. View] -underline 0 \
-            -menu $topm.view
+    $topm add cascade -label [tr. View] -menu $topm.view
     $fm add check -label [tr. Toolbar] -variable custom(shownavbar,$winid) \
             -command "toggleBar $winid"
     $fm add check -command "toggleBar $winid" \
@@ -1503,10 +1505,13 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm2 add command -label [tr. "Out lots"] -command "DoZoom \
             $c 0.512" -accelerator "$accKey+/"
     AddAccelerator $winid view.zoom "Out lots" "<$accSym-KP_Divide>"
-    
+    UnderlineUniquely $fm2
+
     $fm add cascade -label [tr. "Show detail"] -menu $fm.sub3
     set fm3 [menu $fm.sub3 -tearoff 0]
     AddDetailMenu $c $fm3 $initDepths
+    UnderlineUniquely $fm3
+
     menu $fm.sub4 -tearoff 0
     $fm add cascade -label [tr. "Customize"] -menu $fm.sub4
     foreach category { \
@@ -1523,6 +1528,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm.sub4 add command -command "Customize $winid [lindex $category 0]" \
         -label [lindex $category 1]
     }
+    UnderlineUniquely $fm.sub4
+
     menu $fm.sub5 -tearoff 0
     $fm add cascade -label [tr. "Highlight back"] -menu $fm.sub5
     $fm.sub5 add radio -command "SetHalo $c back 0" -label [tr. "Bases only"] \
@@ -1531,6 +1538,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	-variable rads(back) -value 1
     $fm.sub5 add radio -command "SetHalo $c back 2" -label [tr. "Two functions"] \
 	-variable rads(back) -value 2
+    UnderlineUniquely $fm.sub5
+
     menu $fm.sub6 -tearoff 0
     $fm add cascade -label [tr. "Highlight forward"] -menu $fm.sub6
     $fm.sub6 add radio -command "SetHalo $c fwd 0" -label [tr. "Ghosts only"] \
@@ -1539,6 +1548,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	-variable rads(fwd) -value 1
     $fm.sub6 add radio -command "SetHalo $c fwd 2" -label [tr. "Two functions"] \
 	-variable rads(fwd) -value 2
+    UnderlineUniquely $fm.sub6
 
     if {$isTopLevel} {
 #	$fm.sub5 invoke "Bases only"
@@ -1548,9 +1558,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     } else {
         set execEntryState disabled
     }
+    UnderlineUniquely $fm
+
     set fm [menu $topm.model -tearoff 0 -postcommand "AbleComp $winid"]
-    $topm add cascade -label [tr. Model] -underline 0 \
-            -menu $topm.model
+    $topm add cascade -label [tr. Model] -menu $topm.model
     $fm add command -label [tr. "Run"] -state $execEntryState \
                     -command "MenuSelect $c code run_c" \
                     -accelerator "$accKey+R"
@@ -1567,7 +1578,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -accelerator "$accKey+L"
     AddAccelerator $winid model "List equations" "<$accSym-l>"
     $fm add separator
-    $fm add cascade -label [tr. Add] -menu $fm.sub1
+    $fm add cascade -label [tr. "Add new"] -menu $fm.sub1
     set fm1 [menu $fm.sub1 -tearoff 0]
     
     # The radiobuttons use MIpushedbutton as their variable because
@@ -1605,12 +1616,15 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -variable MIpushedbutton -value alarm
     $fm1 add radiobutton -label [tr. "Text box"] -command "ItemSelect text" \
             -variable MIpushedbutton -value text
+    UnderlineUniquely $fm1
+
     $fm add cascade -label [tr. Flip] -menu $fm.sub2
     set fm2 [menu $fm.sub2 -tearoff 0]
     $fm2 add command -label [tr. Horizontal] \
             -command "MenuSelect $c edit flip_h"
     $fm2 add command -label [tr. Vertical] \
             -command "MenuSelect $c edit flip_v"
+    UnderlineUniquely $fm2
     
     $fm add command -label [tr. "Insert..."] \
             -command "MenuSelect $c local insert"
@@ -1619,11 +1633,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c file save_interface"
     $fm add command -label [tr. "Load interface"] \
             -command "MenuSelect $c edit set_interface"
-    
+    UnderlineUniquely $fm
     
     set fm [menu $topm.tools -tearoff 0]
-    $topm add cascade -label [tr. Tools] -underline 0 \
-            -menu $topm.tools
+    $topm add cascade -label [tr. Tools] -menu $topm.tools
     $fm add radiobutton -label [tr. "Label/move elements"] \
             -command "ModeSelect select" -variable MIpushedbutton -value select
     #    $fm add radiobutton -label [tr. "Move elements"] -command "ModeSelect move" \
@@ -1639,19 +1652,20 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add radiobutton -label [tr. "Inspect elements"]  -command "ModeSelect snap" \
             -variable MIpushedbutton -value snap -state disabled
     set ::menuPosns(tools,Inspect\ elements) [$fm index last]
-    
+    UnderlineUniquely $fm
+
+
 #    if {[HaveValues $topNode] && \
 #	    ![PrefValue custom(helperManager) helperManager]} {
-#        $topm add  cascade -label [tr. "I/O tools"] -underline 0 \
-#        -menu $topm.helpers
+#        $topm add  cascade -label [tr. "I/O tools"] -menu $topm.helpers
 #        $fm entryconfigure "Inspect elements" -state normal
 #    }
 #
 # Window menu not finished (needs to work in exec windows)
-    $topm add cascade -label [tr. Window] -underline 0 -menu .windowchoice
+    $topm add cascade -label [tr. Window] -menu .windowchoice
 
         set fm [menu $topm.help -tearoff 0]
-        $topm add cascade -label [tr. Help] -underline 0 -menu $fm
+        $topm add cascade -label [tr. Help] -menu $fm
         $fm add command -label [tr. Contents] -command "ContextSensitiveHelp $winid index.htm" \
                 -accelerator "F1"
         AddAccelerator $winid help Contents "<F1>"
@@ -1659,6 +1673,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     if ![string match aqua [tk windowingsystem]] {
         $fm add command -label [tr. About...] -command [list ShowAbout $winid]
     }
+    UnderlineUniquely $topm
+
     set nb [::ttk::frame $winid.toolSlot.navbar -class Toolbar]
     pack [ttk::separator $nb.afterSeparator -orient horizontal] \
 	-fill x -side bottom
@@ -1819,8 +1835,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	    set capt [tr. $level]
 	    if {[catch {$box index $capt}]} {
 		menu $lname -tearoff 0
-		MenuBindPopup $lname {}
 		$box add cascade -menu $lname -label $capt
+		lappend popLists($box) $msgs([string tolower [join $level _]])
 	    }
 	    set box $lname
 	}
@@ -1829,12 +1845,18 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	if {[catch {$box index $wParen}]} {
 	    $box add command -label $wParen \
 		-command [list InsertFunction $eb.equation $component]
+	    catch {set component $msgs($component)} ;# may not exist
+	    lappend popLists($box) $component
 	    lappend fnList $wParen
 	}
     }
     set lname [menu $m.enumtypes -tearoff 0]
     $m add cascade -menu $lname -label [tr. "Enum. type constants"]
-    
+    lappend popLists($m) $msgs(et_top_level)
+    foreach {lname pops} [array get popLists] {
+	MenuBindPopup $lname $pops
+    }
+
     $eb.equation configure -validatecommand \
 	[list autocomplete %W %d %i %P [lsort -dictionary $fnList]]
     bind $eb.equation <Key-Up> [list ScrollCompletion %W -1]

@@ -86,44 +86,44 @@ set toolbars [list \
             toplevel $mreId -width 200m -height 150m -menu ${mreId}top
 # following is the answer to all those pesky bgerrors on stdout
 #	    pack [button $mreId.reveal -text "Reveal all" -command {puts $errorInfo}]
-            wm title $mreId "Execution of [GetExecTitle $node] - Simile"
+            wm title $mreId [format $::msgs(exec_title) [GetExecTitle $node]]
             set currentNode $node
             bind $mreId <FocusIn> [namespace code "InMreFor $node"]
             set descmenu {
-                "&File" all file 0 {
-                    {command "&New configuration"    {} "Remove all display configuration" {} -command {::RunEnv::InitializeDisplays} }
-                    {command "&Load configuration..." {} "Load a configuration of displays" \
+                "File" all file 0 {
+                    {command "New configuration"    {} "Remove all display configuration" {} -command {::RunEnv::InitializeDisplays} }
+                    {command "Load configuration..." {} "Load a configuration of displays" \
                                 {} -command {::RunEnv::LoadView} }
-                    {command "&Save configuration" {} "Save configuration of displays" \
+                    {command "Save configuration" {} "Save configuration of displays" \
 			 {} -command {::RunEnv::SaveView 0} }
-                    {command "Save configuration &as..." {} "Save a configuration of displays" \
+                    {command "Save configuration as..." {} "Save a configuration of displays" \
                                 {} -command {::RunEnv::SaveView 1} }
                     
                     {separator}
-                    {command "&Print..." {} "Print display"  \
+                    {command "Print..." {} "Print display"  \
                                 {} -command { ::RunEnv::PrintCurrentContainer } }
-                    {command "&Export PostScript..." {} "Export display as PostScript"  \
+                    {command "Export PostScript..." {} "Export display as PostScript"  \
                                 {} -command { ::RunEnv::ExportCurrentContainer } }
                     {separator}
-                    {command "Pa&rameters..." {} "Modify file parameters"  \
+                    {command "Parameters..." {} "Modify file parameters"  \
                                 {} -command { ::RunEnv::InvokeFPDialogue } }
                     {separator}
-                    {command "&Close"    {} "Close the Run Environment window" \
+                    {command "Close"    {} "Close the Run Environment window" \
                                 {} -command RunEnv::Destroy }
                 }
-                "&Edit" all edit 0 {
-                    {command "Co&py"    {} "Copy display" {} \
+                "Edit" all edit 0 {
+                    {command "Copy"    {} "Copy display" {} \
                                 -command RunEnv::CopyHelper }
-                    {command "Cu&t"    {} "Cut display" {} \
+                    {command "Cut"    {} "Cut display" {} \
                                 -command RunEnv::CutHelper }
-                    {command "&Paste"    {} "Paste display" {} \
+                    {command "Paste"    {} "Paste display" {} \
                                 -command ::RunEnv::PasteHelper }
                     {separator}
-                    {command "&Remove"    {} "Remove display or container" {} -command {::RunEnv::DeleteHelperCurrentContainer}}
-                    {command "&Clear all"    {} "Clear all displays" {} -command {ClearView} }
+                    {command "Remove"    {} "Remove display or container" {} -command {::RunEnv::DeleteHelperCurrentContainer}}
+                    {command "Clear all"    {} "Clear all displays" {} -command {ClearView} }
                 }
-                "&Help" all help 0 {
-                    {command "&Contents..." {} "View the help file contents" {} -command ::RunEnv::ShowMreHelp}
+                "Help" all help 0 {
+                    {command "Contents..." {} "View the help file contents" {} -command ::RunEnv::ShowMreHelp}
                 }
             }
             
@@ -133,22 +133,22 @@ set toolbars [list \
 #			       -progressvar  RunEnv::prgindic]
 #...err, what for?
 #            $mainframe showstatusbar none
-	    menu ${mreId}top
+	    set mreMenu [$mreId cget -menu]
+	    menu $mreMenu
 	    foreach {header tags id tear spec} $descmenu {
-		set sub [menu ${mreId}top.$id -tearoff $tear]
+		set sub [menu $mreMenu.$id -tearoff $tear]
 		foreach item $spec {
 		    if {[llength $item]>1} {
-			eval [list $sub add [lindex $item 0]] \
-			    [Underlined [lindex $item 1]] [lrange $item 5 end]
+			eval [list $sub add [lindex $item 0] \
+				  -label [lindex $item 1]] [lrange $item 5 end]
 		    } else {
 			$sub add $item
 		    }
 		}
-		eval [list ${mreId}top add cascade] [Underlined $header] \
-		    [list -menu $sub]
+		UnderlineUniquely $sub
+		$mreMenu add cascade -label $header -menu $sub
 	    }
-	    
-            set mainframe $mreId
+            set mainframe [GetFrame $mreId]
 	    
             if [string match "Darwin" $tcl_platform(os)] {
 		set dummy [$mreId cget -menu]
@@ -158,7 +158,7 @@ set toolbars [list \
 		$dummy add cascade -menu $fm
 	    }
 	    
-            set tb1  [::ttk::frame [GetFrame $mainframe].tbar -class Toolbar]
+            set tb1  [::ttk::frame $mainframe.tbar -class Toolbar]
             # build the toolbar  from the toolbarItems list
             set tbnum 0
             foreach toolbar $toolbars {
@@ -180,14 +180,14 @@ set toolbars [list \
             
             #from runmodel.tcl AddHelperSublist
 	    #            set mreMenu [winfo parent [$mainframe getmenu help]]
-	    set mreMenu [$mainframe cget -menu]
-            $mreMenu insert 2 cascade -label "Add" -underline 0 -menu .helpers.sub2
+            $mreMenu insert 2 cascade -label "Add" -menu .helpers.sub2
 	    if {[info exists runHow(where)]} {
-		$mreMenu insert 3 cascade -label "Window" -underline 0 \
-		    -menu .windowchoice
+		$mreMenu insert 3 cascade -label "Window" -menu .windowchoice
 	    }
+	    UnderlineUniquely $mreMenu
+
             # Add a PanedWindow for the hierrachical/run control view and main display window
-            set mainpw [panedwindow [GetFrame $mainframe].mainpw  -orient horizontal]
+            set mainpw [panedwindow $mainframe.mainpw  -orient horizontal]
             set controlPane [AddPane $mainpw.controlPane]; # made by runmodel.tcl AddHelperSublist
             set dp0 [AddPane $mainpw.mainDisplayPane]
             set dp0s($node) $dp0
@@ -226,15 +226,6 @@ set toolbars [list \
             wm protocol $mreId WM_DELETE_WINDOW ::RunEnv::Destroy
             return $mreId
         } ; # if .mre exists
-    }
-
-    proc Underlined {hdr} {
-	set amp [string first & $hdr]
-	if {$amp==-1} {
-	    return [list -label $hdr]
-	} else {
-	    return [list -label [string replace $hdr $amp $amp] -underline $amp]
-	}
     }
 
     proc InMreFor {node} {

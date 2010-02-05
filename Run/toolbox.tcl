@@ -39,7 +39,8 @@ option add *TLabel.font TkCaptionFont widgetDefault
 # ...and this makes sure they all scale when the screen metrics change
 font configure TkDefaultFont -size $niceSize
 font configure $menuFont -size $niceSize
-if {[string equal x11 [tk windowingsystem]]} {
+if {[string equal x11 [tk windowingsystem]] && \
+	[info tclversion]<8.5} {
     font configure TkDefaultFont -weight bold
     font configure $menuFont -weight bold
 }
@@ -2291,13 +2292,16 @@ proc AddInputs {winId bar} {
     $bar.inputs.menu delete 0 end
     set equationbar(params) {} ;# for autocomplete
     set paramData [GetFromProlog tk_get_params('$winId',$node)]
+    set popupTable {}
     foreach paramList $paramData {
 	set paramName [lindex $paramList 1]
 	$bar.inputs.menu add command -label $paramName \
 	    -command [list InsertParam $bar.equation $paramName]
 	lappend equationbar(params) $paramName
+	lappend popupTable \
+	    "$paramName: [lindex $paramList 0] ([lindex $paramList 2])"
     }
-    MenuBindPopup $bar.inputs.menu $paramData
+    MenuBindPopup $bar.inputs.menu $popupTable
 }
 
 proc InsertParam {bar paramName} {

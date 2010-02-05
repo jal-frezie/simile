@@ -611,44 +611,44 @@ proc TellAllHelpers {node payload fun args} {
     return $failure
 }
 
-# Other stuff related to reorganization
-proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
-    global myNode ;# a stopgap, we shouldn't need it
-    global custom runState simtmpdir sender tcl_platform runHow
-
-    set myNode $nMyNode
-    set simtmpdir $nSimtmpdir
-    set sender $nSender
-    set runHow(return) $nRunHow
-
-    if {[string equal windows $tcl_platform(platform)]} {
-	source ../System/lib/Extras/prntcanv.tcl
-	# needed to copy helper canvasses
-	package require dde
-	dde servername exec_for_$myNode
-	wm iconbitmap . -default ../Run/simile16.ico
-    } else {
-	tk appname exec_for_$myNode
-    }
-    set custom(prefDir) [file dirname $nSimtmpdir]
-#    set env(LD_LIBRARY_PATH) [file dirname [info library]]
-#    ShowMess debug info $env(LD_LIBRARY_PATH) ok
-    load_c_stub_1
-    load_c_stub_2
-
-    set runState($nMyNode,modelRunning) 0
-    LoadIconImages
-    if {![info exists runHow(where)]} {
-	MakeHelperMenu
-    }
-    wm withdraw .
-
-    if {[string equal get_data $readPipe]} {
-	fileevent stdin readable EatInput
-    }
-    do_in_editor set runState($myNode,modelReady) 1
-}
-
+# Other stuff related to reorganization. This only used if in a separate process
+#proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
+#    global myNode ;# a stopgap, we shouldn't need it
+#    global custom runState simtmpdir sender tcl_platform runHow
+#
+#    set myNode $nMyNode
+#    set simtmpdir $nSimtmpdir
+#    set sender $nSender
+#    set runHow(return) $nRunHow
+#
+#    if {[string equal windows $tcl_platform(platform)]} {
+#	source ../System/lib/Extras/prntcanv.tcl
+#	# needed to copy helper canvasses
+#	package require dde
+#	dde servername exec_for_$myNode
+#	wm iconbitmap . -default ../Run/simile16.ico
+#    } else {
+#	tk appname exec_for_$myNode
+#    }
+#    set custom(prefDir) [file dirname $nSimtmpdir]
+##    set env(LD_LIBRARY_PATH) [file dirname [info library]]
+##    ShowMess debug info $env(LD_LIBRARY_PATH) ok
+#    load_c_stub_1
+#    load_c_stub_2
+#
+#    set runState($nMyNode,modelRunning) 0
+#    LoadIconImages
+#    if {![info exists runHow(where)]} {
+#	MakeHelperMenu
+#    }
+#    wm withdraw .
+#
+#    if {[string equal get_data $readPipe]} {
+#	fileevent stdin readable EatInput
+#    }
+#    do_in_editor set runState($myNode,modelReady) 1
+#}
+#
 proc EatInput {} {
     gets stdin blether
     eval [join $blether \n]

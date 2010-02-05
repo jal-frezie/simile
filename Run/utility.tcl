@@ -368,8 +368,7 @@ proc AddMenuPopup {widget list y X Y new} {
         return
     }
     if {[llength $list]} {
-	set line [lindex $list $entry]
-	set message "[lindex $line 1]: [lindex $line 0]"
+	set message [lindex $list $entry]
     } else {
 	set key [$widget entrycget $entry -label]
 	if {[string equal command [$widget type $entry]]} {
@@ -797,6 +796,33 @@ proc AbleAllEntries {parent newState} {
 	set lastId [$menu index last]
 	for {set id 0} {$id <= $lastId} {incr id} {
 	    $menu entryconfigure $id -state $newState
+	}
+    }
+}
+
+proc UnderlineUniquely {mu} {
+    # first make a string of all those so  far used
+    set used {}
+    set last [$mu index last]
+    if {![string is integer $last]} return ;# no entries
+    for {set line 0} {$line<=$last} {incr line} {
+	if {[catch {$mu entrycget $line -label} hdr]} continue ;# no text
+	# now list positions of the letters in the order we will try them
+	set posns 0 ;# start of label
+	set next 0
+	while {[set next [expr {[string first { } $hdr $next]+1}]]>0} {
+	    lappend posns $next ;# start of each word in label
+	}
+	for {set next 1} {$next < [string length $hdr]} {incr next} {
+	    lappend posns $next ;# each other letter in label
+	}
+	foreach place $posns {
+	    set try [string tolower [string index $hdr $place]]
+	    if {[string is alpha $try] && [string first $try $used]==-1} {
+		$mu entryconfigure $line -underline $place
+		append used $try
+		break
+	    }
 	}
     }
 }

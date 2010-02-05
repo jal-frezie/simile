@@ -232,14 +232,14 @@ itcl::class similescript::Helper {
     }
     
     destructor {
-	# ShowMessage debug info "Killing $winId" ok
+	#ShowMess debug info "Killing $winId" ok
 	global helperTable runState
 
 	if {[string equal $this [$modelInst HasClicks]]} {
 	    $modelInst ReleaseClicks
 	}
 	set modelNode [GetNode]
-	if {[info exists runState($modelNode,helperId)]} {
+	catch { ;# 'info exists' buggy in itcl4 here so do anyway
 	    if {[string equal $winId $runState($modelNode,helperId)]} {
 		unset runState($modelNode,cnvs)
 		unset runState($modelNode,helperId)

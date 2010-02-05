@@ -35,7 +35,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     set t [::ttk::notebook [PutItThere $tt $parent].notebook]
     wm resizable $tt 0 1
     wm protocol $tt WM_DELETE_WINDOW {set disaggregate(done) 0}
-    wm title $tt [format [tr. "Properties of %1\$s"] [BlankCrs $title]]
+    wm title $tt [format $::msgs(props_title) [BlankCrs $title]]
     
     $t add [frame $t.simple] -text [tr. Basic]
     TitleFrame $t.simple.notes -text [tr. Notes:]
@@ -830,7 +830,7 @@ proc RelationCheck {parent title type state init_comment} {
     set t [PutItThere .relcheck $parent]
     wm resizable $t 0 0
     wm protocol $t WM_DELETE_WINDOW {set relation(done) 0}
-    wm title $t [format [tr. "Properties of %1\$s"] [BlankCrs $title]]
+    wm title $t [format $::msgs(props_title) [BlankCrs $title]]
     frame .relcheck.top
     TitleFrame .relcheck.top.left \
 	-text [format [tr. "%1\$s options:"] [string toupper $type]]
