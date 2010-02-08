@@ -149,7 +149,7 @@ get_info(_, Comp, comment, Pop) :-
 	    bowtie_section(Comp, Func);
 	find_base(Comp, Func)),
 	(get_av_pair(Func, _, comment, Cmt), !;
-	translate('no comment', CmtStr),
+	text:translate('no comment', CmtStr),
 	    name(Cmt, CmtStr)),
 	(get_av_pair(Func, _, description, Desc),
 	    sicstus_format_to_chars("~w\n~w", [Desc, Cmt], PopStr),

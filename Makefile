@@ -1,6 +1,6 @@
 # These are the settings for the particular version we want to make
 # edition: evaluation, teaching, standard or enterprise
-EDN = ENTERPRISE
+EDN = STANDARD
 # date of final expiry: "hh:mm D M Y" or "" for permanent
 ABS_EXP = ""
 # days after install: 0 for no installation expiry

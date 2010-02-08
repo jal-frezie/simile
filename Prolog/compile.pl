@@ -27,7 +27,7 @@ compile( Language, Parent, DestDir) :-
 /*	(Language = tcl, !,
 	    unseparate(SeparateNodes);
 	list_interconnects(Parent)),
-*/	tk_update_infobox("Checking that the model is complete and consistent"),
+*/	tk_update_infobox(pl_check, []),
 	/* This is a stopgap, we should really update a property of the
 	submodel containing the destination whenever a link is added or
 	deleted so only to do these checks when needed */
@@ -155,7 +155,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 			build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]),
 		    (Language = c, Extn = '.cpp';
 		     Language = tcl, Extn = '.tcl'),
-		    dialogue:tk_update_infobox("Instantiating expressions from node values"),
+		    tk_update_infobox(pl_inst, []),
 		    instantiate_all(Parent, Model),
 		    append_atoms([WCheckDir, '/', model, Extn], WProgName),
 		    open_native(WProgName, write, Stream),
@@ -165,7 +165,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 				 (reclose(Stream), raise_exception(Puke))),
 		    close(Stream),
 		    Fuss = 1),
-		dialogue:tk_update_infobox("Compiling the program generated for the model"),
+		dialogue:tk_update_infobox(pl_comp, []),
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
 	     compile_c_program(CheckDir, ExtLibs, Fuss, Tgt),
@@ -347,13 +347,13 @@ important...(or was, back when the A stood for Agroforestry)... */
 structures corresponding to submodels, structure types, pointers and other 
 bits and pieces */
 
-	tk_update_infobox("Choosing names for program variables"),
+	tk_update_infobox(pl_name, []),
 	declare_structure(Language, FullModel, Used, AllGraphs),
 
 	(
 % File writing starts here
 	send_to_dest(Stream, ['#include <support1.cpp>']),
-	dialogue:tk_update_infobox("Creating submodel value expressions"),
+	dialogue:tk_update_infobox(pl_expr, []),
 	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_,_),
 				     _,_), [], TopStep, Phases, [], Used,
 			    ExtIncs, Inters, ReevaluateForm),
@@ -424,13 +424,13 @@ wot need them */
 	/* the " in the above line does not start a quoted string */
 	send_to_dest(Stream, FullIncs),
 	
-	tk_update_infobox("Generating constant declarations"),
+	tk_update_infobox(pl_const, []),
 	excrete(Language, comment, 'CONSTANT DECLARATIONS', 0, Stream),
 	all(compile, excrete,
 	    [unify(Language), unify(variable_declaration), build(Constants),
 	     unify(0), unify(Stream)]),
 	
-	tk_update_infobox("Generating structure declarations"),
+	tk_update_infobox(pl_struct, []),
 	excrete(Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0, Stream),
 	
 	RootInstance = instance(submodel, root, xrefs(AugmentedModel, _,[],_),
@@ -453,7 +453,7 @@ wot need them */
 	).
 
 insert_metadata(Language, FullModel, Used, Stream) :-
-	tk_update_infobox("Generating metadata declarations"),
+	tk_update_infobox(pl_meta, []),
 	extract_instances(FullModel, RealDecls),
 	generate_metadata(Language, RealDecls, [], 1, Used, NodeData, Stream),
 	make_constant_list(Language, NodeData, StructText),
@@ -557,7 +557,7 @@ check_functions(Functions, Steps, Updates) :-
 	    retract(heres_yer_loop(Loop)),
 	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
-*/	tk_update_infobox("Sorting assignments into correct time steps"),
+*/	tk_update_infobox(pl_sort, []),
         SpecialSteps is Steps-1,
         sort_assignments(Functions, SpecialSteps),
 	RKStep is Steps+1,
@@ -565,7 +565,7 @@ check_functions(Functions, Steps, Updates) :-
 	all(compile, mark_unstepped, [build(Functions), unify(Steps),
 				      append(_Normal, [])]),
 	/* Check all same-time-step circles can be done in one program loop */
-	tk_update_infobox("Checking consistency of same-time-step loops"),
+	tk_update_infobox(pl_loop, []),
 	(member(Start, Functions),
 	    Start = make(_, Conds-_, _,_,_), 
 	    member(later(Loop2), Conds),
@@ -789,7 +789,7 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 
 build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 			  Used, AllGraphs, Stream) :-
-	tk_update_infobox("Ordering model execution assignments"),
+	tk_update_infobox(pl_order, []),
 
 	/* rough and ready -- phase NotDone means it never gets scheduled */
 	order_all_assignments(Phases, Updates, update, OrdUpdates),
@@ -804,7 +804,7 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 	/* note state variables implemented by 'last' might refer to
 	compartment values, hence must go before them */
 
-	tk_update_infobox("Generating code for model execution"),
+	tk_update_infobox(pl_code, []),
 	all(compile, build_eval_proc,
 	    [unify(Language), unify(Constants),
 	     build([advancemodel, updatemodel, evalmodel]),
@@ -1877,7 +1877,7 @@ set_free_phases([make(_,_,_, Ph, _) | Insts], Phases) :-
 	set_free_phases(Insts, Phases). */
 
 set_free_phases(OldForm, Phase, NewForm) :-
-	tk_update_infobox("Cross-referencing effects and conditions"),
+	tk_update_infobox(pl_xref, []),
 	all(compile, convert_form,
 	    [build(OldForm), unify(Phase), build(NewForm), build(Refs)]),
 	all(compile, find_member, [build(NewForm), build(Refs), unify(NewForm)]),

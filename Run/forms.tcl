@@ -800,8 +800,10 @@ proc OpenProgressBox {winId} {
     return $progressBoxCount
 }
 
-proc FillProgressBox {text} {
-    .progress.message configure -text $text
+proc FillProgressBox {key lits} {
+    global msgs
+
+    .progress.message configure -text [eval [list format $msgs($key)] $lits]
     update
 }
 

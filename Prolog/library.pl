@@ -34,9 +34,9 @@ ame_save( File, Model, Date, SelOnly ) :-
 	on_exception(_, open_native(WFile, write, Stream), 
 	fail), !,
 	ame_gen:assert(by_record_brackets(curly)),
-	reassure_user("Converting to non-Simile 5.5 model representation"),
+	reassure_user(pl_convert_from, ['5.5']),
 	update_all_pr_brackets(Model), % write non-5.5 format for now (remove for v6)
-	(reassure_user("Writing root information"),
+	(reassure_user(writing_root, []),
 	state:version_is(VStr),
 	name(SimV, VStr),
 	V is SimV + 4,
@@ -48,13 +48,13 @@ ame_save( File, Model, Date, SelOnly ) :-
 	nl(Stream),
 	write_with_breaks( Stream, properties(Props)),
 	nl(Stream),
-	reassure_user("Writing node information"),
+	reassure_user(writing_node, []),
 	save_nodes( Models, Stream, SelOnly, ArcsUsed ),
 	nl(Stream),
-	reassure_user("Writing arc information"),
+	reassure_user(writing_arc, []),
 	save_arcs( ArcsUsed, Stream),
 	ame_gen:retractall(by_record_brackets(_)),
-	reassure_user("Converting to Simile 5.5 model representation"),
+	reassure_user(pl_convert_to, ['5.5']),
 	update_all_pr_brackets(Model), % return saved model to 5.5 format (remove for v6)
 	close( Stream ), !;
 	fail)).
@@ -244,7 +244,7 @@ choose_breakpoint(Break) :-
 
 ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	open_native( File, read, Stream),
-	reassure_user("Reading information from file"),
+	reassure_user(reading_file, []),
 	read( Stream, Header ),
 	((Header = source(_,version=V,edition=E,date=Date);
 	        Header = source(_,version=V,date=Date), E=standard;
@@ -280,28 +280,28 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	    fail;
 
 	(SimileV >= 0.0, !;
-	reassure_user("Updating pre-AME 4.0 model representation"),
+	reassure_user(updating_v, ['0.0']),
 	    adjust_to_4),
 	(SimileV >= 2.0, !;
-	reassure_user("Updating pre-Simile 2.0 model representation"),
+	reassure_user(updating_v, ['2.0']),
 	    adjust_to_6([])),
 	(SimileV >= 4.0, !;
-	reassure_user("Updating pre-Simile 4.0 model representation"),
+	reassure_user(updating_v, ['4.0']),
 	    adjust_to_8(Translated)),
 	(SimileV > 4.29, SimileV < 4.31, !;
 	SimileV >= 5.0, !;
-	reassure_user("Updating non-Simile 4.3 model representation"),
+	reassure_user(pl_convert_to, ['4.3']),
 	    adjust_to_8_3(Translated)),
 	(SimileV >= 4.8, !;
-	reassure_user("Updating pre-Simile 4.8 model representation"),
+	reassure_user(updating_v, ['4.8']),
 	    adjust_to_8_8(Translated)),
 	(SimileV >= 5.0, !;
-	reassure_user("Updating pre-Simile 5.0 model representation"),
+	reassure_user(updating_v, ['5.0']),
 	    adjust_to_9(Translated)),
 	(SimileV >= 5.5, !;
-	reassure_user("Updating pre-Simile 5.5 model representation"),
+	reassure_user(updating_v, ['5.5']),
 	    adjust_to_9_5(Parent)),
-	reassure_user("Updating Simile 5.x model representation"),
+	reassure_user(pl_convert_from, ['5.x']),
 	adjust_to_10(Parent),
 	state:version_is(MyVStr),
 	name(MyV, MyVStr),
@@ -631,7 +631,7 @@ arr_ind(_, Found, _, 0) :-
 store_term( end_of_file, _, Parent, Bindings, AllBindings, Rest ) :- 
 	!, % green cut
 	length( Rest, Number ),
-	reassure_user("Co-ordinating model information"),
+	reassure_user(pl_coord, []),
 	deal_with_rest( Rest, Number, Parent, Bindings, AllBindings, [] ).
 store_term( Term, Stream, Parent, Bindings, AllBindings, Rest ) :-
 	Term =.. TermList,

@@ -31,7 +31,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	prepare_equation/1, create_equation/5,
 	fill_equation/8, fill_inputs/1, fill_table/3,
 	interact_equation/1, destroy_equation/0,
-	tk_start_progress_dialogue/1, tk_update_infobox/1, 
+	tk_start_progress_dialogue/1, tk_update_infobox/2, 
 	tk_finish_progress_dialogue/0, tk_alter_model/1,
 	tk_scrub_run/2, tk_kill_helpers/1,
 	update_tk_variable/3, tk_clear_graph/1, handle_tk_events/0, 
@@ -487,9 +487,9 @@ interpreter running. */
 tk_start_progress_dialogue(Win) :-
 	safe_tcl_eval(['OpenProgressBox', Win], _).
 
-tk_update_infobox(String) :-
-	name(Text, String),
-	safe_tcl_eval(['FillProgressBox', br(write(Text))], _).
+tk_update_infobox(Key, Lits) :-
+	safe_list(Lits, LitList),
+	safe_tcl_eval(['FillProgressBox', Key, LitList], _).
 
 tk_finish_progress_dialogue :-
 	safe_tcl_eval(['CloseProgressBox'], _).

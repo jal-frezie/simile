@@ -33,7 +33,7 @@ proc ShowMess { title icon string resps {parent {}}} {
     set act [eval $mBoxCmd]
     if {$progressUp} {
 	OpenProgressBox $progBag
-	FillProgressBox $progMess
+	.progress.message configure -text $progMess
     }
     update idletasks
     return $act

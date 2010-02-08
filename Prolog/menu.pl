@@ -13,7 +13,7 @@ sicstus_module(menu, [undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
 	kill_everything/1]).
 	
 sicstus_use_module([sp_only, forms, m_update, image, draw, 
-	state, backup, library, ame_gen, utility, ss_import, m_class,
+	state, backup, library, ame_gen, utility, ss_import, m_class, text,
 	library(lists), library(ordsets)]).
 
 undo_edit(Wid, Wids) :-
@@ -95,7 +95,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	abs_path_name(Parent, root, InsertDir),
 	append_atoms([LocalDir, '/', InsertDir], TargetDir),
         start_progress_dialogue(Win),
-        reassure_user("Decoding MIME-format saved file"),
+        reassure_user(decode_mime, []),
 	output:load_file(Parent, TargetDir, Name, CheckedStr),
 	substitute(0, CheckedStr, 95, SafeCheckedStr),
 	name(Checked, SafeCheckedStr),
@@ -130,7 +130,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		    inject_graphics(Win2, GraphFileName),
 		    (Translated = copy;
 		    \+ Translated = copy,
-			reassure_user("Translating internal IDs of canvas objects."),
+			reassure_user(translate_cnv, []),
 			translate_canvas_pl_names(Win2, Translated)),
 		    fail;
 		true);
@@ -311,12 +311,15 @@ menu_handle(Win, file, save_interface) :-
 	write_with_breaks(Stream, interface_spec_for(MCaption, Bounds)),
 	save_references(Stream, Model),
 	(member(Type, [relation, flow, influence]),
-	member(Dir, [in, out]),
-	sicstus_format_to_chars("Listing ~as going ~a", [Type, Dir], ProgStr),
-	reassure_user(ProgStr),
-	nl(Stream),
-	write_with_breaks(Stream, section(Type, Dir)),
-	get_submodel_interface(Model, Type, Dir, _, Entry),
+	    translate(Type, TypeStr),
+	    name(TypeAtom, TypeStr),
+	    member(Dir, [in, out]),
+	    translate(Dir, DirStr),
+	    name(DirAtom, DirStr),
+	    reassure_user(write_interface, [TypeAtom, DirAtom]),
+	    nl(Stream),
+	    write_with_breaks(Stream, section(Type, Dir)),
+	    get_submodel_interface(Model, Type, Dir, _, Entry),
 	    write_with_breaks(Stream, Entry),
 	    fail;
 	close(Stream),
@@ -511,8 +514,10 @@ menu_handle(Win, edit, Component) :-
 
 Delete the selection */
 menu_handle(Win, edit, reroute) :-
+	translate('Reroute', RRStr),
+	name(RRAtom, RRStr),
         start_progress_dialogue(Win),
-	reassure_user("Reroute in progress"),
+	reassure_user(pl_action, [RRAtom]),
 	get_edit_model(Win, Model, _),
 	/* Get selected links top-down, flows first */
 	(setof(Rerouter, (contains(Model, Rerouter),
@@ -534,20 +539,21 @@ menu_handle(Win, edit, snap) :-
 	menu_handle(Win, edit, reroute).
 
 menu_handle(Win, edit, delete) :-
+	translate('Delete', DelStr),
+	name(DelAtom, DelStr),
         start_progress_dialogue(Win),
-	reassure_user("Delete in progress"),
+	reassure_user(pl_action, [DelAtom]),
 	get_edit_model(Win, Model, _),
 	event:delete_net(Model),
 	finish_move(Model, 1),
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, CutOrCopy) :-
-	(CutOrCopy = cut,
-	    Msg = "Cut in progress";
-	CutOrCopy = copy,
-	    Msg = "Copy in progress"),
+	member(CutOrCopy-VisAct, [cut-'Cut', copy-'Copy']),
+	translate(VisAct, DelStr),
+	name(DelAtom, DelStr),
         start_progress_dialogue(Win),
-	reassure_user(Msg),
+	reassure_user(pl_action, [DelAtom]),
 	get_edit_model(Win, Model, _),
 
 	/* Old version: took too long
@@ -605,21 +611,21 @@ menu_handle(Win, edit, paste) :-
 	
 menu_handle(Win, edit, selall) :-
         start_progress_dialogue(Win),
-	reassure_user("Selecting whole model"),
+	reassure_user(pl_selall, []),
 	get_edit_model(Win, Model, _),
 	select_all_in(Model, seln),
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, unselall) :-
         start_progress_dialogue(Win),
-	reassure_user("Unselecting whole model"),
+	reassure_user(pl_unselall, []),
 	get_edit_model(Win, Model, _),
 	select_all_in(Model, base),
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, invsel) :-
         start_progress_dialogue(Win),
-	reassure_user("Inverting selection"),
+	reassure_user(pl_invsel, []),
 	get_edit_model(Win, Model, _),
 	invert_seln_in(Model),
 	finish_progress_dialogue.
@@ -1212,14 +1218,14 @@ remove_model(Win, Parent) :-
 	    add_parameter(Parent, 0, enum_types, ''),
 	    redraw_window(Win);
 	start_progress_dialogue(Win),
-	reassure_user("Creating new inputs for values from deleted submodel"),
+	reassure_user(pl_trimin, []),
 	cutoff(Parent);
 	(contains(Parent, Junk),
 	    \+ Junk = Parent,
 	    off(Junk),
 	    fail;
 	superfast_delete(Parent),
-	    reassure_user("Updating screen representation of components affected by this delete"),
+	    reassure_user(pl_draw, []),
 	    event:spread_colour(Parent, no),
 	    finish_progress_dialogue,
 	    redisplay(Parent))),
@@ -1335,7 +1341,7 @@ do_save(Win, Model, New_name) :-
         finish_progress_dialogue, fail),
 
 	/* Now build the multi-part MIME format save file */
-        reassure_user("Creating MIME-format saved file"),
+        reassure_user(pl_mimeout, []),
 	output:save_file(Model, SaveDir, Name, Select, Oops),
 
         Oops = [], %If that succeeded, mark model as saved, else choose new name
@@ -1379,7 +1385,7 @@ check_save_canvas(SaveDir, Model, Date) :-
 	/* might still be useful if not, but would have to do something
 	about border nodes which have graphical attributes but aren't on
 	the canvas... */
-	reassure_user("Saving canvas description"),
+	reassure_user(save_cnv, []),
 	    Win shows_model Model,
 	    all(state, get_display_depth, [unify(Win),
 		 build([ghost_link, influence, variable, flow, compartment,

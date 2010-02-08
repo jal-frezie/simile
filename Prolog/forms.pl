@@ -7,7 +7,7 @@ sicstus_module(forms, [pick_equation/2, do_equation_dialog/2,
 		       get_load_file/2, get_save_file/2,
 		       get_program_file/3, get_import_file/3,
 		       start_progress_dialogue/1,
-		       finish_progress_dialogue/0, reassure_user/1]).
+		       finish_progress_dialogue/0, reassure_user/2]).
 
 sicstus_use_module([library(lists),
 		    output, m_update, ame_gen, sp_only, utility]).
@@ -128,10 +128,8 @@ get_program_file(Preferred, Model, FileName) :-
 start_progress_dialogue(Win) :-
 	tk_start_progress_dialogue(Win).
 
-reassure_user(String) :-
-	name(Atom, String),
-	text:translate(Atom, TrString),
-	tk_update_infobox(TrString).
+reassure_user(Key, Lits) :-
+	tk_update_infobox(Key, Lits).
 
 finish_progress_dialogue :-
 	tk_finish_progress_dialogue.
