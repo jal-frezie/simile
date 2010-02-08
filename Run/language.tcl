@@ -19,12 +19,12 @@ proc DoTr {english} {
     } else {
 	if {[string is alpha $latin]} {
 	    set ruski [lsearch {a v b g d y j z i {} k l m n o p r s t u f h q c {} x {} {} {} e w {}} [string tolower $latin]]
-#	    if {[string is upper $latin]} {
-#		set result [format %c [expr 0x410+$ruski]]
-#	    } else {
-#		set result [format %c [expr 0x430+$ruski]]
-#	    }
-	    set result [format %c [expr {int(0xac00+rand()*(0xd7a3-0xac00))}]]
+	    if {[string is upper $latin]} {
+		set result [format %c [expr 0x410+$ruski]]
+	    } else {
+		set result [format %c [expr 0x430+$ruski]]
+	    }
+#	    set result [format %c [expr {int(0xac00+rand()*(0xd7a3-0xac00))}]]
 	} else {
 	    set result $latin
 	}

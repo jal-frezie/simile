@@ -124,7 +124,7 @@ proc DIYMakeFrames {windowId} {
 }
 
 proc AddEntry {winId topNode node mustShow notInput args} {
-    global iconImages msgs readMany
+    global iconImages msgs paramMetadata readMany
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -187,9 +187,10 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     pack [label $slot.l1 -text [lindex $levels end] -fg red -bg $lbg \
 	      -width 12] -side left
 #    pack [label $slot.l2 -text ($dimList) -fg red] -side left
-    set msgs(dim_list_$compName) $dimList
+    set paramMetadata($compName,dimList) $dimList
     if {![info exists msgs(param_source_$compName)]} {
-        set msgs(param_source_$compName) Unsaved
+        set msgs(param_source_$compName) [tr. Unsaved]
+	set paramMetadata($compName,saveReference) 0
     }
     if {![info exists msgs(comment_$compName)]} {
         set msgs(comment_$compName) $msgs(ncfv)
@@ -314,7 +315,7 @@ proc MakeDimsLegible {dimList dataType} {
 # the commands in a matching one...
 
 proc MakeSubFrames {clientId parent hierarchy ns pt} {
-    global iconImages
+    global msgs iconImages
     set level [lindex $hierarchy $pt]
     set nextPt [expr $pt+1]
     if {[llength $hierarchy]<=$nextPt} {
@@ -375,6 +376,10 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
 #colours set so it looks odd, but then I discovered ttk styles...
 
 	    set node [IdFromTail $::myNode $path 0]
+# take advantage to have header pop submodel comment
+	    set msgs(comment_$path) \
+		[GetFromProlog tk_get_info(dummy,$node,comment)]
+	    BindPopup $nextLevel.head.label comment_$path
 	    set fColour [GetFromProlog tk_get_info(dummy,$node,colour)]
 	    if {[lsearch {white clear} $fColour]<0} {
 		$nextLevel configure -bg $fColour
@@ -428,7 +433,7 @@ proc AcceptAll {topNode compNames notInput complain} {
 
 proc AcceptData {topNode compName notInput complain} {
 #puts "AcceptData $topNode $compName $notInput $complain"
-    global runState msgs whichParamsAffected readMany
+    global runState msgs whichParamsAffected readMany paramMetadata
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -445,7 +450,8 @@ proc AcceptData {topNode compName notInput complain} {
         if {![string equal disabled [$outNames($compName).e cget -state]]} {
             set newData [UglifyValList [$outNames($compName).e get]]
             if {![string equal $newData $suppliedData($compName)]} {
-                set msgs(param_source_$compName) Unsaved
+                set msgs(param_source_$compName) [tr. Unsaved]
+		set paramMetadata($compName,saveReference) 0
                 set suppliedData($compName) $newData
 		set dataChanged 1
             }
@@ -965,12 +971,13 @@ proc CancelParams {} {
 namespace eval fileparams {
     
     proc Clear {spare smPath} {
-        global widgetNames msgs paramState
+        global widgetNames msgs paramState paramMetadata
 	ClearSubParamRefs $smPath
         foreach compName [array names widgetNames $smPath*] {
             $widgetNames($compName).e configure -state normal
             $widgetNames($compName).e delete 0 end
-            set msgs(param_source_$compName) Unsaved
+            set msgs(param_source_$compName) [tr. Unsaved]
+	    set paramMetadata($compName,saveReference) 0
 	    array unset paramState $compName
         }
     }
@@ -1070,7 +1077,6 @@ namespace eval fileparams {
 		continue
 	    }
 	    set subbedComp [Entitize [StripCrs [string range $compTail 1 end]]]
-	    set newPopup  "Specified by $metaFile"
 	    # if parameter is per-record, only write CDATA if we already have it
 	    set haveBytes [string equal scenario [lindex $outData($compName) 0]]
 	    set nodeId [IdFromTail $topNode $compName 0]
@@ -1152,7 +1158,7 @@ namespace eval fileparams {
 		    }
 		}
 		set msgs(param_source_$compName) \
-		    [concat $newPopup (reference to $relName)]
+		    [format $msgs(metafile_ref) $relName $metaFile]
 	    } elseif {[llength $outData($compName)]==1} {
 		puts $pStr "$indent<single_value $genericAVs val=[Entitize $outData($compName)]/>"
 	    } elseif {[llength $outData($compName)]} {
@@ -1162,7 +1168,8 @@ namespace eval fileparams {
 		#		    puts $pStr "<literal label=\"$SubbedComp\" \
 		    #				    spec=\"$outData($compName)\"/>"
 		puts $pStr "$indent</multi_value>"
-		set msgs(param_source_$compName) "$newPopup (literal)"
+		set msgs(param_source_$compName) \
+		    [format $msgs(metafile_lit) $metaFile]
 	    }
 	}
 	puts $pStr $indent</variables>
@@ -1368,7 +1375,8 @@ proc FinishElement {name args} {
 }
 
 proc LoadBase64CharData {encoded} {
-    global parseStatus paramData widgetNames whichParamsAffected msgs
+    global parseStatus paramData widgetNames whichParamsAffected msgs \
+	paramMetadata
 
     if {![info exists parseStatus(loadByteArray)]} return
     set relPath [RestoreCrs $parseStatus(submodel)/$parseStatus(loadByteArray)]
@@ -1388,8 +1396,9 @@ proc LoadBase64CharData {encoded} {
 	[concat {scenario ,bytes} $parseStatus(translateExtras) \
 	 [list  $parseStatus(wrapTime)  $parseStatus(fillMtd) $decoded]]
 # will now load when loading other data, or not if Tcl
-    set msgs(param_source_$compName) \
-	"Specified by $parseStatus(oldPath) (literal) -- keep data in scenario file"
+    set msgs(param_source_$compName) [format $msgs(metafile_bin) \
+					  $parseStatus(oldPath)]
+    set paramMetadata($compName,saveBinary) 1
     if {[info exists widgetNames($compName)]} { ;# should imply widget exists
 	FillIfSmall $widgetNames($compName).e \
 	    [concat $paramData($compName)]
@@ -1399,7 +1408,8 @@ proc LoadBase64CharData {encoded} {
 }
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
-    global readMany paramState mimeSquirter simtmpdir whichParamsAffected msgs
+    global readMany paramState mimeSquirter simtmpdir whichParamsAffected msgs \
+	paramMetadata
     global SimileProject
     if {$notInput==-1} {
 	set dataLocn targetData
@@ -1486,7 +1496,6 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
             }
             #ShowMess debug info "Param data is $paramData($restoredComp)" ok
             
-            set newPopup "Specified by $oldPath"
             # OK here we go...try and follow this...first go to the starting point..
             if {$reference} {
                 # Now use the saved relative path to move to the .csv file's directory
@@ -1526,8 +1535,10 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
                 set suppliedData($restoredComp) \
                         [LoadTableData $paramState($restoredComp) $startLine 1]
                 set whichParamsAffected($restoredComp) 1
-                set msgs(param_source_$restoredComp) [concat $newPopup \
-                        (reference to $VFile)]
+                set msgs(param_source_$restoredComp) \
+		    [format $msgs(metafile_ref) $VFile $oldPath]
+		set paramMetadata($restoredComp,saveBinary) 0
+		set paramMetadata($restoredComp,saveReference) 1
             } else {
                 set trans [GetTransTable $node]
                 if {!$startLine || ($startLine==-1 && 
@@ -1538,7 +1549,10 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
                  }
                 if {[SensibleValue $trans $suppliedData($restoredComp)]>0} {
                     set whichParamsAffected($restoredComp) 1
-                    set msgs(param_source_$restoredComp) "$newPopup (literal)"
+                    set msgs(param_source_$restoredComp) \
+			[format $msgs(metafile_lit) $oldPath]
+		    set paramMetadata($restoredComp,saveBinary) 0
+		    set paramMetadata($restoredComp,saveReference) 0
                 } else {
 		    if {![llength $trans]} {
 			set trans numerical
@@ -1697,20 +1711,23 @@ proc FirstIndexCheck {topNode node} {
 }
 
 proc DataInScenario {compName} {
-    global msgs
+    global paramMetadata
     
-    return [string equal " -- keep data in scenario file" \
-		[string range $msgs(param_source_$compName) end-29 end]]
+    if {[info exists paramMetadata(compName,saveBinary)]} {
+	return $paramMetadata(compName,saveBinary)
+    }
+    return 0
 }
 
 # This checks whether a parameter really has the value specified by its
 # .csv file reference
 
 proc ReferenceWorks {compName} {
-    global msgs
+    global paramMetadata
     
-    return [expr !([string match *(literal) $msgs(param_source_$compName)] \
-            || [string equal Unsaved $msgs(param_source_$compName)])]
+    if {[info exists paramMetadata(compName,saveReference)]} {
+	return $paramMetadata(compName,saveReference)
+    }
 }
 
 # This tests for sensible model values.
@@ -1767,7 +1784,8 @@ proc VarType {testVar types} {
 }
 
 proc GetFromTable {parent topNode compName startLine} {
-    global paramState readMany table_entry msgs widgetNames whichParamsAffected
+    global paramState readMany table_entry msgs paramMetadata \
+	widgetNames whichParamsAffected
 
     if {$startLine==-1} {
 	set dataLocn targetData
@@ -1796,7 +1814,7 @@ proc GetFromTable {parent topNode compName startLine} {
 # trim off model name from caption cos it is ugly
     set tablCapt [string range $compName [string first / $compName 1] end]
     set newSource [equationDoTable [winfo toplevel $parent] $topNode $tablCapt \
-		       ($msgs(dim_list_$compName)) \
+		       $paramMetadata($compName,dimList) \
 		       [expr {!$readMany($compName)}]]
 
 # If loading data for PEST there is no parent dialogue so do not keep grab
@@ -1809,16 +1827,18 @@ proc GetFromTable {parent topNode compName startLine} {
         FillIfSmall $outNames($compName).e $suppliedData($compName)
         switch $newSource {
             2 {
+		# data loaded from separate file and not altered
 		set paramState($compName) $table_entry(data)
                 set msgs(param_source_$compName) \
-		    "Loaded from $table_entry(fileName)"
+		    [format $msgs(direct_ref) $table_entry(fileName)]
+		set paramMetadata($compName,saveReference) 1
 	    } 1 {
-                set msgs(param_source_$compName) Unsaved
+		# data altered in table editor
+                set msgs(param_source_$compName) [tr. Unsaved]
+		set paramMetadata($compName,saveReference) 0
             }
         }
-	if {$table_entry(bytes)} {
-	    append msgs(param_source_$compName) " -- keep data in scenario file"
-	}
+	set paramMetadata($compName,saveBinary) $table_entry(bytes)
     }
     if {$newSource} {
 	set msgs(comment_$compName) $msgs(ncfv)

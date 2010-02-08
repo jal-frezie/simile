@@ -137,6 +137,11 @@ set msgs(helperManager) [tr. "Use single window to manange run time displays and
 set msgs(props_title) [tr. "Properties of %1\$s - Simile"]
 set msgs(exec_title) [tr. "Execution of %1\$s - Simile"]
 
+set msgs(metafile_ref) [tr. "Loaded from file \"%1\$s\" according to reference in file \"%2\$s\""]
+set msgs(metafile_lit) [tr. "Literal data in \"%1\$s\""]
+set msgs(metafile_bin) [tr. "Binary data in \"%1\$s\""]
+set msgs(direct_ref) [tr. "Loaded from file \"%1\$s\""]
+
 set msgs(start_fail_title) [tr. "Simile has been unable to start up due to problems with this system."]
 set msgs(start_fail_message) [tr. "The following system error message was generated:\n%1\$s"]
 
