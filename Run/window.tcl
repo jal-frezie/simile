@@ -1836,7 +1836,12 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	    if {[catch {$box index $capt}]} {
 		menu $lname -tearoff 0
 		$box add cascade -menu $lname -label $capt
-		lappend popLists($box) $msgs([string tolower [join $level _]])
+		set key [string tolower [join $level _]]
+		if {[info exists msgs($key)]} {
+		    lappend popLists($box) $msgs($key)
+		} else {
+		    lappend popLists($box) $level
+		}
 	    }
 	    set box $lname
 	}

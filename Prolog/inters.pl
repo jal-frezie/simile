@@ -190,7 +190,7 @@ read_library_funx(Done) :-
 			       choose(Bool, ThenCl, if IfCl)))),
 %	assert(macro_expansion('Built-in', (choose(Bool, ThenCl, ElseCl) -->
 %					       (Bool?ThenCl:ElseCl)))),
-	read_func_tree('../Functions/', '../Functions/', yes, BuiltIns),
+	read_func_tree('../Functions/', '../Functions', yes, BuiltIns),
 
 	backup:use_pref_dir(UserStuff),
 	append_atoms(UserStuff, '/Functions/', UserFns),
@@ -200,11 +200,11 @@ read_library_funx(Done) :-
 read_func_tree(TopDir, AllDirs, BuiltIn, Done) :-
 	name(AllDirs, AllDirsStr),
 	    suffix(".pl", AllDirsStr),
-	    read_func_file(AllDirs, TopDir, BuiltIn, Local);
+	    read_func_file(AllDirs, TopDir, BuiltIn, Done);
 	append_atoms([AllDirs, /, *], DeepTpt), % avoid start-comment sequence
 	    output:list_matching_files(DeepTpt, DeepDirs),
 	    all(inters, read_func_tree, [unify(TopDir), build(DeepDirs),
-					 unify(BuiltIn), append(Done, Local)]).
+					 unify(BuiltIn), append(Done, [])]).
 
 read_func_file(File, Context, IsBuiltIn, Done) :-
 	open_native(File, read, Stream),
@@ -436,8 +436,8 @@ make_intermediates(
 	Source = all(Epsilon),
 	    InitVal = 1,
 	    IncrOp = ('&&');
-	member(Source, [make_inter(Epsilon, Ref), at_init(Epsilon),
-			last(Epsilon), exists(Epsilon)]),
+	member(Source, [make_inter(Epsilon, Ref), at_phase(Ph, Epsilon),
+			at_phase(Epsilon), last(Epsilon), exists(Epsilon)]),
 	    MadeDim = new_dim),
 % Before cutting, reject dummy arg so default fun handler gives sensible mess
 	\+ Epsilon = '', !,
@@ -516,7 +516,7 @@ make_intermediates(
 	    Units = int,
 		append(NowBuilding, DestPath, ReadyContext)), !,
 	    InitVal = 0;
-	member(Functor, [make_inter, last, at_init]), !,
+	member(Functor, [make_inter, last, at_phase]), !,
 	    InitVal = 0,
 	    IncrExpr = IncrementRef,
 	    Units = ArgUnits,
@@ -568,7 +568,7 @@ make_intermediates(
 	have made inters that we will use elsewhere */
 	    Args = [],
 	    NewInters = OldInters;
-	((Functor = at_init; Functor = make_inter), !,
+	((Functor = at_phase; Functor = make_inter), !,
 	    Clearing = [];
 	Functor = last, !,
             Clearing = [make(cleared(TotalName), [on_reset], ClearContext,
@@ -593,13 +593,14 @@ make_intermediates(
 			    ClearContext, Step, [])];
 	    /* If keep_from_reseting, we can remove time from the increment expression's
 	    conditions since we need only do it once even though it changes */
-	(Functor = at_init, !,
-	    SetTime=0, purge(Depends, [time], KeepDeps);	    
+	(Functor = at_phase,
+	    (var(Ph), SetTime = Step; SetTime=Ph), !,
+	    purge(Depends, [], KeepDeps); % time OK cos phase set 
 	SetTime = Step, 
 	    (Functor = count, !,
 		purge(Depends, OldArgs, KeepDeps);
 	    KeepDeps = Depends)),
-        (member(Functor, [make_inter, at_init]), !,
+        (member(Functor, [make_inter, at_phase]), !,
 	    Setting = [make(TotalName, KeepDeps, WriteContext, SetTime,
 			    [IncrAct])];
 	Setting = [make(increment(WhatMade), [cleared(TotalName) | KeepDeps],
@@ -869,11 +870,15 @@ make_intermediates(
 		FunctionContext = DestPath;
 	    FunctionContext = []),
 
+/*
+	    Can't see what this next bit was for; what has randomness got to
+	    do with on_reset? a_x_d adds time to conds of all changeables anyway
+
 	    (random(_, Source, _,_), !,
 		Args = [on_reset | UseArgs];
 	    Args = UseArgs),
 
-/*	    replace_subexps(Source, inters, change_constituent,
+	    replace_subexps(Source, inters, change_constituent,
 			    switch(Source, none, none),
 			    top_down, Components, SourceRef), */
             append(_, [TopTgt], Target),
@@ -917,11 +922,12 @@ make_intermediates(
 		member(units=RUnits, TableData),
 		member(bounds=Arg_template, TableData),
 		ValRef = table(ResultList);
-	    Source = rand(Lo, Hi), /* deal with horrible legacy case */
+	    /* Source = rand(Lo, Hi), deal with horrible legacy case
+		-- removed cos rand_var now defined in terms of rand
 	        SourceList = [rand_var(Lo, Hi)],
 		RUnits = real,
 		Arg_template = [real],
-		[ValRef] = ResultList;
+		[ValRef] = ResultList; */
 	    Source =.. [Op | ArgListForm],
 		(ArgListForm = [''], !, ArgList = [];
 		    ArgList = ArgListForm),
@@ -998,8 +1004,8 @@ make_intermediates(
 		    throw(lost_user_defined_fn(Source, Op, Arity));
 		 throw(no_such_function(Source, Op))),
 	    (Source = sofar(_), !,
-		all(inters, dissociate, [build(SubArgs), build(UseArgs)]);
-	    UseArgs = SubArgs);
+		all(inters, dissociate, [build(SubArgs), build(Args)]);
+	    Args = SubArgs);
 	throw(undecipherable_operand(Source, SubId)).
 
 decode_number(Source, SubId, Step, SourceRef, Units) :-
@@ -1159,7 +1165,8 @@ builtin('Model properties', index, boolean, [int_or_enum_type_const]).
 builtin('Model properties', channel_is, boolean, [channel]).
 builtin('Model properties', dt, real, [const_int_or_none]).
 builtin('Model properties', time, real, [const_int_or_none]).
-builtin('Model properties', at_init, any, [any]).
+builtin('Model properties', at_phase, any, [any]).
+builtin('Model properties', at_phase, any, [int, any]).
 builtin('Model properties', default, any, [any]).
 %builtin('Model properties', init_time, real, []).
 builtin('Model properties', parent, int, []).
@@ -1208,7 +1215,7 @@ builtin('Trigonometry', acos, 1, [1]).
 builtin('Trigonometry', atan, 1, [1]).
 builtin('Trigonometry', arctan, 1, [1]).
 
-builtin('Statistics', rand_var, real, [real, real]).
+%builtin('Statistics', rand_var, real, [real, real]). Is now macro
 builtin('Arithmetic', pow, 1, [1, 1]). /* my c++ does not have int powers */
 builtin('Arithmetic', fmod, 1, [1, 1]).
 
@@ -1241,6 +1248,7 @@ operator(choose, int, [boolean, int, int]).
 operator(choose, a(T), [boolean, a(T), a(T)]).
 operator(choose, real, [boolean, real, real]).
 operator(choose, boolean, [boolean, boolean, boolean]).
+operator(rand, real, [real, real]).
 
 /* These are handled by the parser but have special buttons to include them so
 we do not want them in the function list -- they only appear here so the right
@@ -1501,7 +1509,7 @@ thereafter. */
 changeable(_, Subexp, _, 0) :-
 	nonvar(Subexp),
 	Subexp =.. [Functor | _],
-	(member(Functor, [time, dt, rand_var, last, loses]);
+	(member(Functor, [time, dt, rand, last, loses]);
 		sample(Functor)).
 
 /* do_once is the opposite: value must stay the same even if the args change,
@@ -1525,7 +1533,8 @@ I don't think we've done anything in contexts higher than dest for a while */
 individuates_instances(_, Subexp, _, 0) :-
 	individuates_elements(_, Subexp, _,_);
 	nonvar(Subexp),
-	member(Subexp, [channel_is(_), at_init(_), index(_)]).
+	member(Subexp, [channel_is(_), at_phase(_,_), index(_)]).
+% at_phase/1 does not, because membership not changed on subphase
 
 individuates_elements(_, Subexp, _, 0) :-
 	random(_, Subexp, _,_);
@@ -1534,7 +1543,7 @@ individuates_elements(_, Subexp, _, 0) :-
 
 random(_, Subexp, _, 0) :-
 	nonvar(Subexp),
-	member(Subexp, [rand(_,_), rand_var(_,_)]).
+	Subexp = rand(_,_).
 
 /* wait_for_submodels/2
 This adds the given property of any submodels from which we take values

@@ -558,8 +558,10 @@ check_functions(Functions, Steps, Updates) :-
 	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
 */	tk_update_infobox(pl_sort, []),
-        SpecialSteps is Steps-1,
-        sort_assignments(Functions, SpecialSteps),
+/*        SpecialSteps is Steps-1,
+Previously only did steps up to shortest-1, but need to do shortest as well to
+stop rand_vars being chaanged in the R-K subphase */
+        sort_assignments(Functions, Steps),
 	RKStep is Steps+1,
 	update_antes_to_step(Updates, RKStep),
 	all(compile, mark_unstepped, [build(Functions), unify(Steps),

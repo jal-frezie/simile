@@ -1,3 +1,4 @@
+at_init(Exp) --> at_phase(0,Exp).
 iterations(Alarm) --> st=sofar(if Alarm then 0 else st+1),st.
 
 const_delay(val,time) -->

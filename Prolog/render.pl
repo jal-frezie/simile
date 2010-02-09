@@ -1191,7 +1191,7 @@ furthermore, Tcl lacks the min and max operators although there are perfectly
 good ones in c... Now, 4/8/98 sees new Tcl interpretations of Boolean relations, to
 aid lazy evaluation as is done for Choose... */
 
-	member(Op, [rand, rand_var]),
+	Op = rand,
 		(L = tcl; L = c),
 			make_procedure_call_chars(L, [ame_rand | VArgExprs], CharList);
 	L = tcl,

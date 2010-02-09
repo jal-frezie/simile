@@ -218,7 +218,7 @@ instance_of(Type, Node, Path,
 	    [instance(Type, Node,
 		      with_phase(Step, Home+stage_incr(Diffs, Step, Struct)),
 		      Home, real-[]),
-	     instance(init_function, Node, rand_var(0,1), Home, real-[]),
+	     instance(init_function, Node, rand(0,1), Home, real-[]),
 	     DiffStruct],
 	    [instance(function, Function, _, Struct, _)]) :-
 	member(Type, [immigration, reproduction]),
