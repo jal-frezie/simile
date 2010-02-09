@@ -40,7 +40,8 @@ namespace eval runcontrol33857 {
 		# posting command, this is current entry
 		set pt $phase
 	    }
-	    set label [format {Time step #%d ( %s )} $phase [set ::$step]]
+	    set label [format [tr. {Time step #%1$d ( %2$s )}] \
+			   $phase [set ::$step]]
 	    $widget.edit.capt.menu add command -label $label \
 		-command [list [namespace current]::SwapDistVar $node $phase]
 	    if {$phase==$pt} {
@@ -81,7 +82,7 @@ namespace eval runcontrol33857 {
         
         ::ttk::notebook $t.nb
         
-        $t.nb add [frame $t.nb.rcf] -text "Run control"
+        $t.nb add [frame $t.nb.rcf] -text [tr. "Run control"]
         set rcf $t.nb.rcf
 	set frames($node,rcf) $rcf
         ttk::frame $rcf.upper -class Toolbar
@@ -92,11 +93,11 @@ namespace eval runcontrol33857 {
         ::ttk::button $rcf.upper.topbuttons.reset -image $stopImg -width 32 \
                 -command "[namespace current]::SetMode $node reset"
         pack $rcf.upper.topbuttons.reset -side left  -padx 1 -pady 2 -expand true -fill x
-        BindPopup $rcf.upper.topbuttons.reset "Reset simulation"
+        BindPopup $rcf.upper.topbuttons.reset [tr. "Reset simulation"]
         ::ttk::button $rcf.upper.topbuttons.start -image $playImg -width 32  \
                 -command "[namespace current]::SetMode $node start"
         pack $rcf.upper.topbuttons.start -side left  -padx 1 -pady 2 -expand true -fill x
-        BindPopup $rcf.upper.topbuttons.start "Run or pause simulation"
+        BindPopup $rcf.upper.topbuttons.start [tr. "Run or pause simulation"]
         pack $rcf.upper.topbuttons -side left
         
         frame $rcf.upper.bf
@@ -117,7 +118,8 @@ namespace eval runcontrol33857 {
                     current {Current time } currentTime \
                     disp {Display interval } displayInt} {
             frame $rcf.editBoxes.$name
-            label $rcf.editBoxes.$name.capt -text $capt -width $captWidth -anchor w
+            label $rcf.editBoxes.$name.capt -text [tr. $capt] \
+		-width $captWidth -anchor w
             pack $rcf.editBoxes.$name.capt -side left -anchor nw
             ::ttk::entry $rcf.editBoxes.$name.num \
                     -textvar runState($node,$var) -width 8
@@ -129,30 +131,34 @@ namespace eval runcontrol33857 {
         pack $rcf.editBoxes -side bottom -pady 2 -expand on -fill both
 	set runState($node,timeReached) $runState($node,currentTime)
         
-        $t.nb add [frame $t.nb.rsf] -text "Run settings"
+        $t.nb add [frame $t.nb.rsf] -text [tr. "Run settings"]
         set rsf $t.nb.rsf
         set frames($node,rsf) $rsf
         pack [frame $rsf.unitselection] -pady 2 -fill x
-        pack [label $rsf.unitselection.caption -text "Time units:" -width $captWidth -anchor w] -side left -anchor nw
+        pack [label $rsf.unitselection.caption -text [tr. "Time units:"] \
+		  -width $captWidth -anchor w] -side left -anchor nw
         ::ttk::menubutton $rsf.unitselection.pulldown
         set timeUnitMenu [menu $rsf.unitselection.pulldown.menu -tearoff 0]
         foreach unit {unit second minute hour day week month year Ma} {
 	    $timeUnitMenu add command -label $unit \
 		-command [namespace code [list AlterUnit $node $unit]]
         }
-        $rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 11 \
+        $rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 12 \
               -textvariable runState($node,timeUnit)
         pack $rsf.unitselection.pulldown -side left -anchor nw
         
         pack [frame $rsf.integration] -pady 2 -fill x
-        pack [label $rsf.integration.caption -text "Integration method:" -width $captWidth -anchor w] -side left -anchor nw
+        pack [label $rsf.integration.caption -text [tr. "Integration method:"] \
+		  -width $captWidth -anchor w] -side left -anchor nw
         ::ttk::menubutton $rsf.integration.pulldown
         set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0]
-        foreach method {Euler {Runge-Kutta}} {
-          $intMethodMenu add command -label $method -command "set runState($node,intMethod) {$method}"
+        foreach method {Euler Runge-Kutta} {
+	    $intMethodMenu add command -label [tr. $method] \
+		-command [namespace code [list UpdateIntMethod $intMethodMenu \
+					      $node $method]]
         }
-        $rsf.integration.pulldown configure -menu $intMethodMenu -width 11 \
-              -textvariable runState($node,intMethod)
+        $rsf.integration.pulldown configure -menu $intMethodMenu -width 12 \
+	    -text [tr. $runState($node,intMethod)]
         pack $rsf.integration.pulldown -side left -anchor nw
         
 # This is done in SwapDistVar
@@ -180,7 +186,7 @@ namespace eval runcontrol33857 {
         pack [frame $rsf.stepsize] -pady 4 -expand on -fill both
 	pack [ttk::checkbutton $rsf.stepsize.adapt \
 		  -variable runState($node,adapt) \
-		  -text "Adaptive\; Error limit:" \
+		  -text [tr. "Adaptive\; Error limit:"] \
 		  -command "set runState($node,tweaked) 1"] \
 	    -side left
 	pack [::ttk::entry $rsf.stepsize.maxerr \
@@ -191,7 +197,7 @@ namespace eval runcontrol33857 {
 	pack [frame $rsf.speedlim] -pady 4 -expand on -fill both
 	pack [ttk::checkbutton $rsf.speedlim.use \
 		  -variable runState($node,splimit) \
-		  -text "Limit updates/sec to:" \
+		  -text [tr. "Limit updates/sec to:"] \
 		  -command "set runState($node,tweaked) 1"] -side left
 	pack [::ttk::entry $rsf.speedlim.val \
 		  -textvariable runState($node,speedLimit) -width 8] \
@@ -208,6 +214,13 @@ namespace eval runcontrol33857 {
 	set sendvars($node,busy) 0
     }
     
+    proc UpdateIntMethod {menu node method} {
+	global runState
+	
+	[winfo parent $menu] configure -text [tr. $method]
+	set runState($node,intMethod) $method
+    }
+
     proc AlterUnit {node newUnit} {
 	global runState
 	set timeFactor [expr {[SecondsInA $runState($node,timeUnit)]/ \
