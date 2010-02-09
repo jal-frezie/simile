@@ -96,7 +96,7 @@ set toolbars [list \
                                 {} -command {::RunEnv::LoadView} }
                     {command "Save configuration" {} "Save configuration of displays" \
 			 {} -command {::RunEnv::SaveView 0} }
-                    {command "Save configuration as..." {} "Save a configuration of displays" \
+                    {command "Save configuration as..." {} "Save configuration of displays as a new file" \
                                 {} -command {::RunEnv::SaveView 1} }
                     
                     {separator}
@@ -105,22 +105,22 @@ set toolbars [list \
                     {command "Export PostScript..." {} "Export display as PostScript"  \
                                 {} -command { ::RunEnv::ExportCurrentContainer } }
                     {separator}
-                    {command "Parameters..." {} "Modify file parameters"  \
+                    {command "Parameters..." {} "View or modify file parameters"  \
                                 {} -command { ::RunEnv::InvokeFPDialogue } }
                     {separator}
                     {command "Close"    {} "Close the Run Environment window" \
                                 {} -command RunEnv::Destroy }
                 }
                 "Edit" all edit 0 {
-                    {command "Copy"    {} "Copy display" {} \
+                    {command "Copy"    {} "Copy display to clipboard" {} \
                                 -command RunEnv::CopyHelper }
-                    {command "Cut"    {} "Cut display" {} \
+                    {command "Cut"    {} "Cut display to clipboard" {} \
                                 -command RunEnv::CutHelper }
-                    {command "Paste"    {} "Paste display" {} \
+                    {command "Paste"    {} "Paste display from clipboard" {} \
                                 -command ::RunEnv::PasteHelper }
                     {separator}
                     {command "Remove"    {} "Remove display or container" {} -command {::RunEnv::DeleteHelperCurrentContainer}}
-                    {command "Clear all"    {} "Clear all displays" {} -command {ClearView} }
+                    {command "Clear all"    {} "Clear all saved data from displays" {} -command {ClearView} }
                 }
                 "Help" all help 0 {
                     {command "Contents..." {} "View the help file contents" {} -command ::RunEnv::ShowMreHelp}
@@ -137,16 +137,20 @@ set toolbars [list \
 	    menu $mreMenu
 	    foreach {header tags id tear spec} $descmenu {
 		set sub [menu $mreMenu.$id -tearoff $tear]
+		set pops {}
 		foreach item $spec {
 		    if {[llength $item]>1} {
 			eval [list $sub add [lindex $item 0] \
-				  -label [lindex $item 1]] [lrange $item 5 end]
+				  -label [tr. [lindex $item 1]]] [lrange $item 5 end]
+			lappend pops [tr. [lindex $item 3]]
 		    } else {
 			$sub add $item
+			lappend pops {}
 		    }
 		}
 		UnderlineUniquely $sub
-		$mreMenu add cascade -label $header -menu $sub
+		$mreMenu add cascade -label [tr. $header] -menu $sub
+		MenuBindPopup $sub $pops
 	    }
             set mainframe [GetFrame $mreId]
 	    
@@ -170,7 +174,7 @@ set toolbars [list \
                     set newButton [::ttk::button $tb1.b$tbnum$i -style Toolbutton -image [image create photo  -file "../Images/Toolbar/$gif"] \
 				       -command $command]
                     pack $newButton -padx 1 -pady 1  -side left -anchor w
-                    BindPopup $newButton $helptext
+                    BindPopup $newButton [tr. $helptext]
                     incr i
                 }
                 pack $tb1 -side top -anchor w -fill x
@@ -180,9 +184,9 @@ set toolbars [list \
             
             #from runmodel.tcl AddHelperSublist
 	    #            set mreMenu [winfo parent [$mainframe getmenu help]]
-            $mreMenu insert 2 cascade -label "Add" -menu .helpers.sub2
+            $mreMenu insert 2 cascade -label [tr. "Add"] -menu .helpers.sub2
 	    if {[info exists runHow(where)]} {
-		$mreMenu insert 3 cascade -label "Window" -menu .windowchoice
+		$mreMenu insert 3 cascade -label [tr. "Window"] -menu .windowchoice
 	    }
 	    UnderlineUniquely $mreMenu
 
@@ -724,15 +728,16 @@ set toolbars [list \
 	    set exportAbility disabled
 	    set printAbility disabled
 	}
-	$mreMenu entryconfigure Add -state $useSpaceAbility
+	$mreMenu entryconfigure [tr. Add] -state $useSpaceAbility
 	set mreMenu [$mainframe cget -menu]
-	set fileMenu [$mreMenu entrycget File -menu]
-	$fileMenu entryconfigure Print... -state $printAbility
-	$fileMenu entryconfigure {Export PostScript...} -state $exportAbility
-	set editMenu [$mreMenu entrycget Edit -menu]
-	$editMenu entryconfigure Copy -state $copyAbility
-	$editMenu entryconfigure Cut -state $copyAbility
-	$editMenu entryconfigure Paste -state $useSpaceAbility
+	set fileMenu [$mreMenu entrycget [tr. File] -menu]
+	$fileMenu entryconfigure [tr. Print..]. -state $printAbility
+	$fileMenu entryconfigure [tr. {Export PostScript...}] \
+	    -state $exportAbility
+	set editMenu [$mreMenu entrycget [tr. Edit] -menu]
+	$editMenu entryconfigure [tr. Copy] -state $copyAbility
+	$editMenu entryconfigure [tr. Cut] -state $copyAbility
+	$editMenu entryconfigure [tr. Paste] -state $useSpaceAbility
 
 ###############################################################################
 $tb1.b10 configure -state $copyAbility ;# copy button
@@ -835,8 +840,8 @@ $tb1.b43 configure -state $useSpaceAbility
 
 	set mainframe $helperTable($currentNode,whichRunEnv)
 	set mreMenu [$mainframe cget -menu]
-	set fileMenu [$mreMenu entrycget File -menu]
-	$fileMenu entryconfigure {Save configuration} -state $saveAbility
+	set fileMenu [$mreMenu entrycget [tr. File] -menu]
+	$fileMenu entryconfigure [tr. {Save configuration}] -state $saveAbility
 	set tb1 [GetFrame $mainframe].tbar
 	$tb1.b02 configure -state $saveAbility
 	

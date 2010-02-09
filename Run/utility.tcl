@@ -380,7 +380,11 @@ proc AddMenuPopup {widget list y X Y new} {
 	    set message $key
 	}
     }
-    .popup.message configure -text $message
+    if {[string equal {} $message]} {
+#	destroy .popup
+    } else {
+	.popup.message configure -text $message
+    }
 }
 
 proc PostPopup {X Y} {
