@@ -783,7 +783,7 @@ proc OpenProgressBox {winId} {
 
     if {!$progressBoxCount} {
 	PutItThere .progress $winId
-	wm title .progress "Progress with current operation"
+	wm title .progress [tr. "Progress with current operation"]
 	wm protocol .progress WM_DELETE_WINDOW {set done 1}
 	# do not allow delete
 	pack [frame .progress.filler -width 400 -height 100]

@@ -731,7 +731,7 @@ set toolbars [list \
 	$mreMenu entryconfigure [tr. Add] -state $useSpaceAbility
 	set mreMenu [$mainframe cget -menu]
 	set fileMenu [$mreMenu entrycget [tr. File] -menu]
-	$fileMenu entryconfigure [tr. Print..]. -state $printAbility
+	$fileMenu entryconfigure [tr. Print...] -state $printAbility
 	$fileMenu entryconfigure [tr. {Export PostScript...}] \
 	    -state $exportAbility
 	set editMenu [$mreMenu entrycget [tr. Edit] -menu]

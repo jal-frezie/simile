@@ -652,7 +652,7 @@ proc compile_c {workingDir extLibs complain} {
         unix {
 	    if {[string equal Darwin $tcl_platform(os)]} {
 # try doing it all in a special shell so I can bundle the compiler
-		set spout [open "|bash 2> ~/returns" r+]
+		set spout [open "|bash 2> returns" r+]
 		if {[string equal Default $useComp]} {
 		    puts $spout "export PATH=\"[file nativename [file join $SIMILE_PATH System bin]]\""
 		    puts $spout "export CPLUS_INCLUDE_PATH=\"[file nativename [file join $SIMILE_PATH System include MacOS]]\""
@@ -763,6 +763,12 @@ proc compile_c {workingDir extLibs complain} {
         }
     }} chuckup]} {
 	if {$complain} {
+	    if {[file exists returns]} {
+		set errStr [open returns r]
+		set chuckup [read $errStr]
+		close $errStr
+		file delete returns
+	    }
 	    cd $oldDir ;#Change back to Run directory in order to access Help file for subsequent dialogue
 	    Query [list compile_failed $chuckup] warning execution {} ok
 	    cd $workingDir
@@ -923,9 +929,9 @@ proc ControlDraw {prologVersion} {
 # using local compiler, check if we have to tell it our bitnesss
 	set gccBitness 32
 	catch {exec g++ -v} gppInfo
-	set relevant [string first arget $gppInfo]
+	set relevant [string first host= $gppInfo]
 	if {$relevant==-1} {
-	    set relevant [string first host= $gppInfo]
+	    set relevant [string first arget $gppInfo]
 	}
 	if {$relevant>-1 && [string first 64 $gppInfo $relevant]<$relevant+16} {
 	    set gccBitness 64

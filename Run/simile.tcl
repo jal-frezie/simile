@@ -92,7 +92,7 @@ proc ChooseIntegerRatio {fraction accu} {
     }
 }
 	
-if {[string match Darwin $tcl_platform(os)]} {
+if {[string match Darwin $tcl_platform(os)] && [info tclversion] < 8.6} {
     set auto_path [list $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts $SIMILE_PATH/System/lib]
 #    package require tclAE
     proc ::tk::mac::OpenDocument {args} {
