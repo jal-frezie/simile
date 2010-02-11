@@ -1713,8 +1713,8 @@ proc FirstIndexCheck {topNode node} {
 proc DataInScenario {compName} {
     global paramMetadata
     
-    if {[info exists paramMetadata(compName,saveBinary)]} {
-	return $paramMetadata(compName,saveBinary)
+    if {[info exists paramMetadata($compName,saveBinary)]} {
+	return $paramMetadata($compName,saveBinary)
     }
     return 0
 }
@@ -1728,6 +1728,7 @@ proc ReferenceWorks {compName} {
     if {[info exists paramMetadata(compName,saveReference)]} {
 	return $paramMetadata(compName,saveReference)
     }
+    return 0
 }
 
 # This tests for sensible model values.
