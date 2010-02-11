@@ -7,7 +7,7 @@
 #
 
 proc Status {burble} {
-    ShowMess "Error with preferences" error $burble ok
+    ShowMess [tr. "Error with preferences"] error $burble ok
 }
     
 proc Pref_Init { userDefaults } {
@@ -22,24 +22,24 @@ proc Pref_Init { userDefaults } {
 	}
 }
 proc PrefReadFile { basename level } {
-	if [catch {option readfile $basename $level} err] {
-		Status "Error in $basename: $err"
+    if [catch {option readfile $basename $level} err] {
+	Status [format [tr. "Error in $basename: %1\$s"] $err]
+    }
+    if {[string match *color* [winfo visual .]]} {
+	if [file exists $basename-color] {
+	    if [catch {option readfile \
+			   $basename-color $level} err] {
+		Status [format [tr. "Error in $basename-color: %1\$s"] $err]
+	    }
 	}
-	if {[string match *color* [winfo visual .]]} {
-		if [file exists $basename-color] {
-			if [catch {option readfile \
-					$basename-color $level} err] {
-				Status "Error in $basename-color: $err"
-			}
-		}
-	} else {
-		if [file exists $basename-mono] {
-			if [catch {option readfile $basename-mono \
-					$level} err] {
-				Status "Error in $basename-mono: $err"
-			}
-		}
+    } else {
+	if [file exists $basename-mono] {
+	    if [catch {option readfile $basename-mono \
+			   $level} err] {
+		Status [format [tr. "Error in $basename-mono: %1\$s"] $err]
+	    }
 	}
+    }
 }
 
 
@@ -125,7 +125,7 @@ proc Pref_HelpCommand { noteb } {
 }
 
 proc Pref_Apply {} {
-    tk_messageBox -message "Apply to be implemented " -type ok
+    tk_messageBox -message [tr. "Apply to be implemented "] -type ok
 }
 
 
@@ -135,65 +135,66 @@ proc Pref_Dialog {} {
         raise .pref
     } else  {
         set dlg [toplevel .pref]
-        wm title .pref "Preferences"
+        wm title .pref [tr. "Preferences"]
         wm resizable .pref 0 0 
         set notebook [::ttk::notebook $dlg.notebook]
         set vf [frame $notebook.view]
-        $notebook add $vf -text View
-            set initWinTF [TitleFrame $vf.initWinTF -text "Initial window position:"]
+        $notebook add $vf -text [tr. View]
+            set initWinTF [TitleFrame $vf.initWinTF -text [tr. "Initial window position:"]]
             set initWinF $initWinTF
-            set displayTF [TitleFrame $vf.displayTF -text "In new windows, display:"]
+            set displayTF [TitleFrame $vf.displayTF -text [tr. "In new windows, display:"]]
             set displayF $displayTF
-            set barTF [TitleFrame $vf.barTF -text "Tool bars:"]
+            set barTF [TitleFrame $vf.barTF -text [tr. "Tool bars:"]]
             set barF $barTF
-            set gridTF [TitleFrame $vf.gridTF -text "Placement grid:"]
+            set gridTF [TitleFrame $vf.gridTF -text [tr. "Placement grid:"]]
             set gridF $gridTF
-            set popupTF [TitleFrame $vf.popuptTF -text "Popups over model components:"]
+            set popupTF [TitleFrame $vf.popuptTF -text [tr. "Popups over model components:"]]
             set popupF $popupTF
 	    pack [frame $popupF.line2] -side bottom -fill x -expand 1
         set ef [frame $notebook.edit]
-        $notebook add $ef -text Edit
-            set genericTF [TitleFrame $ef.genericTF -text "All components:"]
+        $notebook add $ef -text [tr. Edit]
+            set genericTF [TitleFrame $ef.genericTF -text [tr. "All components:"]]
             set genericF $genericTF
-            set linkTF [TitleFrame $ef.linkTF -text "All links:"]
+            set linkTF [TitleFrame $ef.linkTF -text [tr. "All links:"]]
             set linkF $linkTF
-            set flowTF [TitleFrame $ef.flowTF -text "Flows:"]
+            set flowTF [TitleFrame $ef.flowTF -text [tr. "Flows:"]]
             set flowF $flowTF
-            set submodelTF [TitleFrame $ef.submodelTF -text "Submodels:"]
+            set submodelTF [TitleFrame $ef.submodelTF -text [tr. "Submodels:"]]
             set submodelF $submodelTF
         set bf [frame $notebook.build]
-        $notebook add $bf -text Build
-            set compTF [TitleFrame $bf.compTF -text "C++ compiler:"]
+        $notebook add $bf -text [tr. Build]
+            set compTF [TitleFrame $bf.compTF -text [tr. "C++ compiler:"]]
             set compF $compTF
+	    pack [frame $compF.line2] -side bottom -fill x -expand 1
         set sf [frame $notebook.save]
-        $notebook add $sf -text Save
-            set canvasTF [TitleFrame $sf.canvasTF -text "Save optimised canvas data:"]
+        $notebook add $sf -text [tr. Save]
+            set canvasTF [TitleFrame $sf.canvasTF -text [tr. "Save optimised canvas data:"]]
             set canvasF $canvasTF
-            set recentTF [TitleFrame $sf.recentTF -text "Recently used files:"]
+            set recentTF [TitleFrame $sf.recentTF -text [tr. "Recently used files:"]]
             set recentF $recentTF
         set rf [frame $notebook.run]
-        $notebook add $rf -text Run
-            set oneWinTF [TitleFrame $rf.oneWinTF -text "Run time environment:"]
+        $notebook add $rf -text [tr. Run]
+            set oneWinTF [TitleFrame $rf.oneWinTF -text [tr. "Run time environment:"]]
             set oneWinF $oneWinTF
-            set manyWinTF [TitleFrame $rf.manyWinTF -text "Window positions:"]
+            set manyWinTF [TitleFrame $rf.manyWinTF -text [tr. "Window positions:"]]
             set manyWinF $manyWinTF
-            set precisTF [TitleFrame $rf.precisTF -text "Numeric display precision (0 for default):"]
+            set precisTF [TitleFrame $rf.precisTF -text [tr. "Numeric display precision (0 for default):"]]
             set precisF $precisTF
        # $notebook select View
         pack $initWinTF $displayTF $gridTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $precisTF $compTF \
                 $canvasTF $recentTF $notebook -fill x -padx 4 -pady 4
         set bbox [frame $dlg.bbox] 
-        pack [::ttk::button $bbox.bok -text OK -underline 0 -width 8  \
+        pack [::ttk::button $bbox.bok -text [tr. OK] -underline 0 -width 8  \
                 -command {PrefSave}] -padx 2 -pady 2 -side left -anchor e
-        pack [::ttk::button $bbox.bccl -text Cancel -underline 0 -width 8 \
+        pack [::ttk::button $bbox.bccl -text [tr. Cancel] -underline 0 -width 8 \
                 -command {PrefCancel}] -padx 2 -pady 2 -side left -anchor e
-        pack [::ttk::button $bbox.bdef -text Default -underline 0 -width 8 \
+        pack [::ttk::button $bbox.bdef -text [tr. Default] -underline 0 -width 8 \
                 -command {PrefReset}]  -padx 2 -pady 2 -side left -anchor e
-        pack [::ttk::button $bbox.bhlp -text Help -underline 0 -width 8 \
+        pack [::ttk::button $bbox.bhlp -text [tr. Help] -underline 0 -width 8 \
                 -command "::Pref_HelpCommand $notebook"]  -padx 2 -pady 2 -side left -anchor e
         pack $dlg.bbox -side bottom -padx 4 -pady 8 -fill x
         
-#        ShowMess debug info "$pref(items)" ok
+#        ShowMess debug info [tr. "$pref(items)"] ok
         
        set maxWidth 0
        foreach item $pref(items) {
@@ -204,12 +205,12 @@ proc Pref_Dialog {} {
        }
        set pref(uid) 0
        foreach item $pref(items) {
-            #ShowMess debug info "$item; [PrefRes $item]" ok
+            #ShowMess debug info [tr. "$item; [PrefRes $item]"] ok
             switch -glob -- [PrefRes $item] {
                 winPosn {set frame $initWinF}
                 init* {set frame $displayF}
                 hackBreak {set frame $compF}
-                compChoice {set frame $compF}
+                compChoice {set frame $compF.line2}
                 gridSnap {set frame $genericF}
                 grid* {set frame $gridF}
                 comp* {set frame $popupF}
@@ -318,8 +319,8 @@ proc PrefSave {} {
     PrefSaveFile $new {}
 
     if [catch {file rename -force $new $old} err] {
-		Status "Cannot install $new: $err"
-		return
+	Status [tr. [format "Cannot install $new: %1\$s"] $err]
+	return
 	}
     if {[string equal windows $tcl_platform(platform)]} {
 	file attributes $old -hidden true
@@ -330,7 +331,7 @@ proc PrefSave {} {
 proc PrefSaveFile {new oldValues} {
 	if [catch {NetOpen $new w} out] {
 		.pref.but.label configure -text \
-		"Cannot save in $new: $out"
+		[tr. [format "Cannot save in $new: %1\$s"] $out]
 		return
 	}
 	foreach line $oldValues {
@@ -343,7 +344,7 @@ proc PrefSaveFile {new oldValues} {
 	}
     puts $out "!!! Lines below here automatically added"
     puts $out [clock format [clock seconds] -format "!!! %a %d %b %Y, %H:%M"]
-	puts $out "!!! Do not edit below here"
+	puts $out [tr. "!!! Do not edit below here"]
 # next line is the anti-dibble -- a bug in the example program to check
 # if students have been paying attention
 	foreach item $::pref(items) {

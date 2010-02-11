@@ -24,7 +24,7 @@ proc DoTr {english} {
 	    } else {
 		set result [format %c [expr 0x430+$ruski]]
 	    }
-#	    set result [format %c [expr {int(0xac00+rand()*(0xd7a3-0xac00))}]]
+	    set result [format %c [expr {int(0xac00+rand()*(0xd7a3-0xac00))}]]
 	} else {
 	    set result $latin
 	}
