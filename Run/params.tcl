@@ -50,25 +50,20 @@ proc FileParamDialogue {topWin mustShow} {
         }
     }
     if {$mustShow || [llength $paramData(needed)]} {
-        pack [set bfrm [frame .fpdialogue.buttons ]] \
-                -fill x
-        pack [frame $bfrm.banner]
-        pack [label $bfrm.banner.1 -text "All values"] -side left
-        pack [label $bfrm.banner.2 -fg red -text "with red captions"] \
-                -side left
-        pack [label $bfrm.banner.3 -text "must be set to run the model."] \
-                -side left
+        pack [set bfrm [frame .fpdialogue.buttons ]] -fill x
+        pack [label $bfrm.banner -fg red -text [tr. "All values with red captions must be set to run the model."]]
         pack [frame $bfrm.lpad] -side left -fill x -expand true
-        pack [button $bfrm.ok -text "OK" \
+	pack [button $bfrm.ok -text [tr. OK] \
                 -command [list DoneParams $topNode] -width 10] \
                 -side left -padx 2 -pady 2
-        pack [button $bfrm.cancel -text "Cancel" -command CancelParams -width 10] \
+		    pack [button $bfrm.cancel -text [tr. Cancel] -command CancelParams -width 10] \
                 -side left -padx 2 -pady 2
+	# next two now available for every submodel level
         #        pack [button $bfrm.merge -text "Load file" -command MergeParams -width 10] \
         -side left -padx 2 -pady 2
         #        pack [button $bfrm.save -text "Save file" -command SaveParams -width 10] \
         -side left -padx 2 -pady 2
-        pack [button $bfrm.help -text "Help" -command {ContextSensitiveHelp .fpdialogue data/index.htm} -width 10] \
+		    pack [button $bfrm.help -text [tr. Help] -command {ContextSensitiveHelp .fpdialogue data/index.htm} -width 10] \
                 -side left -padx 2 -pady 2
         pack [frame $bfrm.rpad] -side left -fill x -expand true
         raise .fpdialogue
@@ -207,7 +202,7 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     ::ttk::button $slot.b -style style$holder -image $iconImages(edit) \
        -command [namespace code [list GetFromTable $winId $topNode \
 				     $compName $notInput]]
-    BindPopup $slot.b "Get values from file"
+    BindPopup $slot.b [tr. "Get values from file"]
     if {[llength $nodeDims]>1} {
 	pack $slot.b -side right
     }
@@ -228,12 +223,12 @@ proc AddEntry {winId topNode node mustShow notInput args} {
 		  -command [namespace code [list RevertData $winId \
 						$compName $notInput]]] \
 	    -side right
-        BindPopup $slot.cross "Revert to old values"
+        BindPopup $slot.cross [tr. "Revert to old values"]
         pack [::ttk::button $slot.tick -style style$holder \
 		  -image $iconImages(tick) \
 		  -command [namespace code [list AcceptData $topNode $compName \
 						$notInput 1]]] -side right
-        BindPopup $slot.tick "Accept these values"
+        BindPopup $slot.tick [tr. "Accept these values"]
     }
     set outNames($compName) $slot
     # note whether we need to enter a parameter here...
@@ -335,7 +330,7 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
 		pack $nextLevel -before $fellow -side bottom \
 		    -fill x -expand true -padx 2 -pady 2
 	    } else {
-		set level "TOP LEVEL"
+		set level [tr. "TOP LEVEL"]
 		pack $nextLevel -side bottom \
 		    -fill x -expand true -padx 2 -pady 2
 	    }
@@ -355,19 +350,22 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
 			  -image $iconImages(save) \
 			  -command [list ${ns}::Save $clientId $path]] \
 		    -side right
-		BindPopup $nextLevel.head.save "Save values for submodel \"$level\""
+		BindPopup $nextLevel.head.save \
+		    [format [tr. "Save values for submodel \"%1\$s\""] $level]
 		pack [::ttk::button $nextLevel.head.open -style $bStyle \
 			  -image $iconImages(open) \
 			  -command [list ${ns}::Open $clientId $path]] \
 		    -side right
-		BindPopup $nextLevel.head.open "Load values for submodel \"$level\""
+		BindPopup $nextLevel.head.open \
+		    [format [tr. "Load values for submodel \"%1\$s\""] $level]
 	    }
             if {[string equal fileparams $ns]} {
                 pack [::ttk::button $nextLevel.head.clear -style $bStyle \
 			  -image $iconImages(new) \
 			  -command [list ${ns}::Clear $clientId $path]] \
 		    -side right
-                BindPopup $nextLevel.head.clear "Clear values in this submodel"
+                BindPopup $nextLevel.head.clear \
+		    [tr. "Clear values in this submodel"]
             }
             pack [label $nextLevel.head.label -text $level:]
 #	    $nextLevel configure -text $level: -labelanchor n
@@ -1815,7 +1813,7 @@ proc GetFromTable {parent topNode compName startLine} {
 # trim off model name from caption cos it is ugly
     set tablCapt [string range $compName [string first / $compName 1] end]
     set newSource [equationDoTable [winfo toplevel $parent] $topNode $tablCapt \
-		       $paramMetadata($compName,dimList) \
+		       ($paramMetadata($compName,dimList)) \
 		       [expr {!$readMany($compName)}]]
 
 # If loading data for PEST there is no parent dialogue so do not keep grab

@@ -320,7 +320,8 @@ set toolbars [list \
 	set pageId [UniqueId $ParentContainer.fpage [$ParentContainer tabs]]
 	set pageIndex [expr {[llength [$ParentContainer tabs]]+1}]
 	set newContainer [frame $pageId]
-	$ParentContainer add $newContainer -text "Page $pageIndex"
+	$ParentContainer add $newContainer \
+	    -text [format [tr. "Page %1\$d"] $pageIndex]
 	set parentPath [Addpanedwindow $newContainer vertical]
 	$ParentContainer select $newContainer
 	return [lindex [$parentPath panes] 0]
