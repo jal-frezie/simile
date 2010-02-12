@@ -1125,36 +1125,36 @@ proc ControlDraw {prologVersion} {
 	set compOptions [list CHOICE GNU]
     }
     Pref_Init $custom(prefDir)/.prefs
-    Pref_Add [list [list custom(winPosn) winPosn [list CHOICE [tr. "Where it was last time"] [tr. "OS default position"]] [tr. "Place initial window:"]] \
-		  [list custom(initNavbar) initNavbar ON [tr. "Tool bar"]] \
-		  [list custom(initToolbar) initToolbar ON [tr. "Component bar"]] \
-		  [list custom(initEqnbar) initEqnbar ON [tr. "Equation bar"]] \
-		  [list custom(initGrid) initGrid ON [tr. "Grid"]] \
-		  [list custom(gridH) gridH 15 [tr. "Horizontal pitch"]] \
-		  [list custom(gridV) gridV 15 [tr. "Vertical pitch"]] \
-		  [list custom(gridD) gridD 10 [tr. "Depth"]] \
-		  [list custom(maxPopupSize) maxPopupSize 500 [tr. "Size limit"]] \
-		  [list custom(bigButtons) bigButtons OFF [tr. "Use large buttons"]] \
-		  [list custom(saveExtras) saveExtras [list CHOICE [tr. "Canvas file"] [tr. "Model file only"]] [tr. "Save models as..."]] \
-		  [list custom(recentCount) recentCount 10 [tr. "Entries on recently used file list"]] \
-		  [list custom(gridSnap) gridSnap OFF [tr. "Snap to grid"]] \
-		  [list custom(quickDrag) quickDrag OFF [tr. "Quick drag"]] \
-		  [list custom(myButton) myButton \u03bc [tr. "Custom keypad button"]] \
-		  [list custom(defBackground) defBackground [list CHOICE [tr. "White"] [tr. "Clear"]] [tr. "Default background"]] \
-		  [list custom(flowRouting) flowRouting ON [tr. "Rectilinear flow routing"]] \
-		  [list custom(deleteEndToEnd) deleteEndToEnd ON [tr. "Select links end-to-end"]] \
-		  [list custom(helperManager) helperManager ON [tr. "Use single window manager"]] \
-		  [list custom(popupPrecision) popupPrecision 0 [tr. "Value popups"]] \
-		  [list custom(snapPrecision) snapPrecision 0 [tr. "Snapshots"]] \
-		  [list custom(runControlPosition) runControlPosition [tr. "+0-20"] [tr. "Position of run control"]] \
-		  [list custom(slidersPosition) slidersPosition [tr. "+0+0"] [tr. "Position of sliders"]] \
-		  [list custom(hackBreak) hackBreak OFF [tr. "Pause to edit C++ code?"]] \
+    Pref_Add [list [list custom(winPosn) winPosn [list CHOICE "Where it was last time" "OS default position"] "Place initial window:"] \
+		  [list custom(initNavbar) initNavbar ON "Tool bar"] \
+		  [list custom(initToolbar) initToolbar ON "Component bar"] \
+		  [list custom(initEqnbar) initEqnbar ON "Equation bar"] \
+		  [list custom(initGrid) initGrid ON "Grid"] \
+		  [list custom(gridH) gridH 15 "Horizontal pitch"] \
+		  [list custom(gridV) gridV 15 "Vertical pitch"] \
+		  [list custom(gridD) gridD 10 "Depth"] \
+		  [list custom(maxPopupSize) maxPopupSize 500 "Size limit"] \
+		  [list custom(bigButtons) bigButtons OFF "Use large buttons"] \
+		  [list custom(saveExtras) saveExtras [list CHOICE "Canvas file" "Model file only"] "Save models as..."] \
+		  [list custom(recentCount) recentCount 10 "Entries on recently used file list"] \
+		  [list custom(gridSnap) gridSnap OFF "Snap to grid"] \
+		  [list custom(quickDrag) quickDrag OFF "Quick drag"] \
+		  [list custom(myButton) myButton \u03bc "Custom keypad button"] \
+		  [list custom(defBackground) defBackground [list CHOICE "White" "Clear"] "Default background"] \
+		  [list custom(flowRouting) flowRouting ON "Rectilinear flow routing"] \
+		  [list custom(deleteEndToEnd) deleteEndToEnd ON "Select links end-to-end"] \
+		  [list custom(helperManager) helperManager ON "Use single window manager"] \
+		  [list custom(popupPrecision) popupPrecision 0 "Value popups"] \
+		  [list custom(snapPrecision) snapPrecision 0 "Snapshots"] \
+		  [list custom(runControlPosition) runControlPosition "+0-20" "Position of run control"] \
+		  [list custom(slidersPosition) slidersPosition "+0+0" "Position of sliders"] \
+		  [list custom(hackBreak) hackBreak OFF "Pause to edit C++ code?"] \
 		  [list custom(compChoice) compChoice \
-		       $compOptions [tr. "Use which C++ compiler?"]] \
-		  [list custom(popupHelp) popupHelp ON [tr. "Popup help text"]] \
-		  [list custom(compDescPop) compDescPop ON [tr. "Equation"]] \
-		  [list custom(compValPop) compValPop ON  [tr. "Value"]] \
-		  [list custom(compCmtPop) compCmtPop ON  [tr. "Comment"]] \
+		       $compOptions "Use which C++ compiler?"] \
+		  [list custom(popupHelp) popupHelp ON "Popup help text"] \
+		  [list custom(compDescPop) compDescPop ON "Equation"] \
+		  [list custom(compValPop) compValPop ON  "Value"] \
+		  [list custom(compCmtPop) compCmtPop ON  "Comment"] \
 		 ]
     CheckCompilerLocation
     LoadModelWindowExtensions

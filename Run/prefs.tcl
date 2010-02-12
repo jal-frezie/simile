@@ -253,7 +253,7 @@ proc PrefDialogItem { frame item width } {
     pack $f -fill x -anchor w -side left -expand on
 # No longer use consistent width -- each label is allowed its own
 #    label $f.label -text [PrefComment $item] -width $width
-    ttk::label $f.label -text [PrefComment $item] -anchor w
+    ttk::label $f.label -text [tr. [PrefComment $item]] -anchor w
     bind $f.label <Enter> [list QueuePopup AddWidgetPopup %X %Y [PrefRes $item]]
     bind $f.label <Leave> RemovePopup
 # Delay packing label until we know whether it goes to the left or right of the item
@@ -266,7 +266,7 @@ proc PrefDialogItem { frame item width } {
     if {[regexp "^CHOICE " $default]} {
         foreach choice [lreplace $default 0 0] {
             incr pref(uid)
-            ttk::radiobutton $f.c$pref(uid) -text $choice -variable $varName \
+            ttk::radiobutton $f.c$pref(uid) -text [tr. $choice] -variable $varName \
 		-command "PrefEntrySet $varName $resName" -value $choice
             pack $f.label -side left -anchor w -padx 2 -pady 2
             pack $f.c$pref(uid) -side left -padx 2 -pady 2
