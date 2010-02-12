@@ -54,16 +54,16 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     
     catch {wm title $t "Sketch graph"}
     
-    TitleFrame $t.gph -text "Graph pad"
+    TitleFrame $t.gph -text [tr. "Graph pad"]
     set gph [GetFrame $t.gph]
     frame $gph.yentry
     ::ttk::entry $gph.yentry.topentry -textvar graph($t,lowy) -width 8
     pack $gph.yentry.topentry -side top -pady 2
-    label $gph.yentry.toplabel -text "Y max"
+    label $gph.yentry.toplabel -text [tr. "Y max"]
     pack $gph.yentry.toplabel -side top -pady 2
-    label $gph.yentry.label -text "Value"
+    label $gph.yentry.label -text [tr. "Value"]
     pack $gph.yentry.label -side top -fill y -expand true
-    label $gph.yentry.bottomlabel -text "Y min"
+    label $gph.yentry.bottomlabel -text [tr. "Y min"]
     pack $gph.yentry.bottomlabel -side top -pady 2
     ::ttk::entry $gph.yentry.bottomentry -textvar graph($t,highy) -width 8
     pack $gph.yentry.bottomentry -side top -pady 2
@@ -81,11 +81,11 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     frame $gph.xentry
     ::ttk::entry $gph.xentry.leftentry -textvar graph($t,lowx) -width 8
     pack $gph.xentry.leftentry -side left -padx 2
-    label $gph.xentry.xmin -text "X min"
+    label $gph.xentry.xmin -text [tr. "X min"]
     pack $gph.xentry.xmin -side left -padx 2
-    label $gph.xentry.arg -text "Argument"
+    label $gph.xentry.arg -text [tr. "Argument"]
     pack $gph.xentry.arg  -side left -fill x -expand true
-    label $gph.xentry.rightlabel -text "X max"
+    label $gph.xentry.rightlabel -text [tr. "X max"]
     pack $gph.xentry.rightlabel -side left -padx 2
     ::ttk::entry $gph.xentry.rightentry -textvar graph($t,highx) -width 8
     pack $gph.xentry.rightentry -side left -padx 2
@@ -94,14 +94,14 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     frame $t.right
     
     set buttons [frame $t.right.buttons]
-    button $buttons.enter -text OK -width 10
+    button $buttons.enter -text [tr. OK] -width 10
     pack $buttons.enter -padx 4 -pady 4 -anchor e
-    button $buttons.cancel -text Cancel -width 10
+    button $buttons.cancel -text [tr. Cancel] -width 10
     pack $buttons.cancel -padx 4 -pady 4 -anchor e
-    button $buttons.edit -text "Edit as table" -width 10 \
+    button $buttons.edit -text [tr. "Edit as table"] -width 10 \
             -command [list EditAsTable $t $grid]
     pack $buttons.edit -padx 4 -pady 4 -anchor e
-    button $buttons.help -text Help -width 10 -command {ContextSensitiveHelp .graph equations/graph.htm}
+    button $buttons.help -text [tr. Help] -width 10 -command {ContextSensitiveHelp .graph equations/graph.htm}
     pack $buttons.help -padx 4 -pady 4 -anchor e
     pack $buttons -fill x -padx 8 -pady 8
     set looks(darkerColor) [$buttons.enter cget -disabledforeground]
@@ -119,18 +119,18 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
         bind $t <Destroy> "set graph($t,done) -1"
     }
     
-    TitleFrame $t.right.current -text "Current Position: "
+    TitleFrame $t.right.current -text [tr. "Current Position: "]
     set current [GetFrame $t.right.current]
     
     frame $current.y
-    label $current.y.yvalue -text "Y:"
+    label $current.y.yvalue -text [tr. "Y:"]
     pack $current.y.yvalue -side left -padx 2 -pady 4
     ::ttk::entry $current.y.yvaluebox -textvar yvalue -width 8
     bind $current.y.yvaluebox <Return> [list YEntry $grid]
     pack $current.y.yvaluebox -side left -padx 2 -pady 4
     pack $current.y -pady 4
     frame $current.x
-    label $current.x.xvalue -text "X:"
+    label $current.x.xvalue -text [tr. "X:"]
     pack $current.x.xvalue -side left -padx 2 -pady 4
     ::ttk::entry $current.x.xvaluebox -textvar xvalue -width 8
     pack $current.x.xvaluebox -side left  -padx 2 -pady 4
@@ -139,11 +139,11 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $t.right.current -pady 2 -padx 2 -fill x
     pack $t.right -side right -fill y
     
-    TitleFrame $t.right.options -text "Options: "
+    TitleFrame $t.right.options -text [tr. "Options: "]
     set right [GetFrame $t.right.options]
     
     set between [frame $right.between]
-    label $between.outrange -text "Between points:"
+    label $between.outrange -text [tr. "Between points:"]
     pack $between.outrange
     # Code fragment to switch to using menubutton from ComboBox
     # Work in progress / Alastair 9 Feb 2005
@@ -151,7 +151,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     #    foreach item {Interpolate Round} {
     #      $m add command -label $item -command "Reshape $t $item"
     #    }
-    #    set mb [::ttk::menubutton $between.rangeopts -menu $m -text Interpolate]
+    #    set mb [::ttk::menubutton $between.rangeopts -menu $m -text [tr. Interpolate]]
     #    pack $mb
     
     #    pack [ComboBox $between.rangeopts -values "Interpolate Round" -editable 0 \
@@ -159,8 +159,9 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     ::ttk::menubutton $between.rangeopts
     set betweenMenu [menu $between.rangeopts.menu -tearoff 0]
     foreach unit {Interpolate Round} {
-        $betweenMenu add command -label $unit \
-                -command "set graph($t,betweenOpt) $unit;Reshape $t"
+	set trUnit [tr. $unit]
+        $betweenMenu add command -label $trUnit \
+                -command "set graph($t,betweenOpt) $trUnit;Reshape $t"
     }
     $between.rangeopts configure -menu $betweenMenu -width 11 \
             -textvariable graph($t,betweenOpt)
@@ -168,14 +169,16 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     
     pack $between -pady 8 -padx 4
     set out [frame $right.out]
-    label $out.outrange -text "Out of range:"
+    label $out.outrange -text [tr. "Out of range:"]
     pack $out.outrange
     #    pack [ComboBox $out.rangeopts -values "Truncate Extrapolate Wraparound" \
     #	      -editable 0 -width 12]
     ::ttk::menubutton $out.rangeopts
     set outMenu [menu $out.rangeopts.menu -tearoff 0]
     foreach unit {Truncate Extrapolate Wraparound} {
-        $outMenu add command -label $unit -command "set graph($t,outOpt) $unit"
+	set trUnit [tr. $unit]
+        $outMenu add command -label $trUnit \
+	    -command "set graph($t,outOpt) $trUnit"
     }
     $out.rangeopts configure -menu $outMenu -width 11 \
             -textvariable graph($t,outOpt)
@@ -185,14 +188,14 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     SetCombos $t $range
     
     set resolution [frame $right.resolution]
-    label $resolution.detail -text "X axis resolution:"
+    label $resolution.detail -text [tr. "X axis resolution:"]
     pack $resolution.detail
     set db [frame $resolution.detailbox]
-    #    button $resolution.detailbox.less -text Less -command "CoarseX $grid"
+    #    button $resolution.detailbox.less -text [tr. Less] -command "CoarseX $grid"
     ArrowButton $resolution.detailbox.arrowleft -type button -dir \
             left -command "CoarseX $db $grid" -width 25 -height 25 -clean 2
     pack $resolution.detailbox.arrowleft -side left
-    #    button $resolution.detailbox.more -text More -command "FineX $grid"
+    #    button $resolution.detailbox.more -text [tr. More] -command "FineX $grid"
     ArrowButton $resolution.detailbox.arrowright -type button -dir right \
             -command "FineX $db $grid" -width 25 -height 25 -clean 2
     pack $resolution.detailbox.arrowright -side left
@@ -562,25 +565,25 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     set table_entry(source) -1
     
     set t [::ttk::notebook .table.notebook]
-    $t add [set fc [frame $t.columns]] -text "Data in column"
+    $t add [set fc [frame $t.columns]] -text [tr. "Data in column"]
     # Data file and data column heading
-    label $fc.instructions -wrap 400 -text "Choose a data file, select a worksheet if necessary, then create table from file by dragging \
-            column headings to act either as indices or as data."
-    pack $fc.instructions -side top -anchor w -padx 2 -pady 2
-    TitleFrame $fc.fdata -text "Data file "
+    label $fc.instructions -wrap 400 \
+	-text [tr. "Choose a data file, select a worksheet if necessary, then create table from file by dragging column headings to act either as indices or as data."]
+    pack $fc.instructions -side top -padx 2 -pady 2
+    TitleFrame $fc.fdata -text [tr. "Data file "]
     set fdata [GetFrame $fc.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     $dfile xview end
     bind $dfile <Return> "LoadDataFile columns 0 $mdl"
     bind $dfile <Double-1> "LoadDataFile columns 0 $mdl"
     pack $dfile -side left -expand true -fill x
-    button $fdata.new -compound left -image $iconImages(open) -text Browse \
+    button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
             -command "LoadDataFile columns 1 $mdl"
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $fc.fdata -fill x
     # new frame December 2008 for the choice of data table in a database JMM
-    TitleFrame $fc.ftable -text "Database table or worksheet "
+    TitleFrame $fc.ftable -text [tr. "Database table or worksheet "]
     set ftable [GetFrame $fc.ftable]
     pack $ftable -side top -expand true -fill x
     pack $fc.ftable
@@ -588,7 +591,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     set tablecb [ttk::combobox $ftable.tablecb -state readonly  -width 50 -textvariable table_entry(dbtable)]
     pack $tablecb -side left
     # end new frame December 2008 for the choice of data table in a database JMM
-    TitleFrame $fc.fheads -text "Table column headings"
+    TitleFrame $fc.fheads -text [tr. "Table column headings"]
     set fheads [GetFrame $fc.fheads]
     set lheads [ListBox $fheads.lheads -dragenabled true -dropenabled true \
             -selectmode single -dropcmd DeleteIndex \
@@ -597,7 +600,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack $fheads.yscroll -side right -fill y
     
     frame $fc.select
-    TitleFrame $fc.select.idxs -text "Use as indices"
+    TitleFrame $fc.select.idxs -text [tr. "Use as indices"]
     set fidx [GetFrame $fc.select.idxs]
     set lidx [ListBox $fidx.lidx -dragenabled true -dropenabled true \
             -selectmode single \
@@ -608,7 +611,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack $fc.select.idxs -expand true -fill both -anchor w \
             -padx 2 -pady 2
     
-    TitleFrame $fc.select.data -text "Use as data"
+    TitleFrame $fc.select.data -text [tr. "Use as data"]
     set didx [GetFrame $fc.select.data]
     set dhead [Entry $didx.dhead \
             -textvariable table_entry(dataField) \
@@ -620,47 +623,49 @@ proc equationDoTable {parent mdl tgt dims startLine} {
             -padx 2 -pady 2
     pack $fc.select -side left -expand true -fill both
     
-    $t add [set fg [frame $t.grid]] -text "Data in grid"
-    label $fg.instructions -wrap 400 -text "Choose a data file, then select row and column at which to start and finish loading data."
-    pack $fg.instructions -side top -anchor w -padx 2 -pady 2
-    TitleFrame $fg.fdata -text "Data file "
+    $t add [set fg [frame $t.grid]] -text [tr. "Data in grid"]
+    label $fg.instructions -wrap 400 -text [tr. "Choose a data file, then select row and column at which to start and finish loading data."]
+    pack $fg.instructions -side top -padx 2 -pady 2
+    TitleFrame $fg.fdata -text [tr. "Data file "]
     set fdata [GetFrame $fg.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     $dfile xview end
     bind $dfile <Return> "LoadDataFile grid 0 $mdl"
     bind $dfile <Double-1> "LoadDataFile grid 0 $mdl"
     pack $dfile -side left -expand true -fill x
-    button $fdata.new -compound left -image $iconImages(open) -text Browse \
+    button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
             -command "LoadDataFile grid 1 $mdl"
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $fg.fdata -fill x
-    TitleFrame $fg.limits -text "Boundaries of area to load "
+    TitleFrame $fg.limits -text [tr. "Boundaries of area to load "]
     set flim [GetFrame $fg.limits]
     pack [ttk::checkbutton $flim.transpose -variable table_entry(xpose) \
-	      -text "Transpose (so columns are outer dimension)"] -side bottom
+	      -text [tr. "Transpose (so columns are outer dimension)"]] -side bottom
     pack [frame $flim.ycapt] -side left -fill both -expand true
     pack [frame $flim.yval] -side left -fill both -expand true
     pack [frame $flim.xcapt] -side left -fill both -expand true
     pack [frame $flim.xval] -side left -fill both -expand true
     
-    pack [label $flim.ycapt.lo -text "Start at row:"] \
+    pack [label $flim.ycapt.lo -text [tr. "Start at row:"]] \
             -expand true -fill x
-    pack [label $flim.ycapt.hi -text "Finish at row:"] \
+    pack [label $flim.ycapt.hi -text [tr. "Finish at row:"]] \
             -expand true -fill x
-    pack [label $flim.ycapt.idx -text "Row index from:"] \
+    pack [label $flim.ycapt.idx -text [tr. "Row index from:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.lo -text "Start at column:"] \
+    pack [label $flim.xcapt.lo -text [tr. "Start at column:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.hi -text "Finish at column:"] \
+    pack [label $flim.xcapt.hi -text [tr. "Finish at column:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.idx -text "Column index from:"] \
+    pack [label $flim.xcapt.idx -text [tr. "Column index from:"]] \
             -expand true -fill x
     
     pack [Entry $flim.yval.lo -textvariable table_entry(row1)] \
             -expand true -fill x
     pack [Entry $flim.yval.hi -textvariable table_entry(rown)] \
             -expand true -fill x
+# these comboboxes are going to be a pain in the arse to translate because the
+# spf contains the keyed version of the actual English text -- do by indices
     pack [ttk::combobox $flim.yval.idx -width 16 -state readonly \
 	      -textvariable table_entry(irow) \
 	      -values [list "Position in data area" \
@@ -683,38 +688,38 @@ proc equationDoTable {parent mdl tgt dims startLine} {
 # in case not used before
     pack $fg.limits -fill both -expand true
     
-    $t add [set fi [frame $t.image]] -text "Data from image"
-    label $fi.instructions -wrap 400 -text "Choose an image file, then select row and column at which to start and finish loading data, and method for interpreting colours."
-    pack $fi.instructions -side top -anchor w -padx 2 -pady 2
-    TitleFrame $fi.fdata -text "Image file "
+    $t add [set fi [frame $t.image]] -text [tr. "Data from image"]
+    label $fi.instructions -wrap 400 -text [tr. "Choose an image file, then select row and column at which to start and finish loading data, and method for interpreting colours."]
+    pack $fi.instructions -side top -padx 2 -pady 2
+    TitleFrame $fi.fdata -text [tr. "Image file "]
     set fdata [GetFrame $fi.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     $dfile xview end
     bind $dfile <Return> "LoadDataFile image 0 $mdl"
     bind $dfile <Double-1> "LoadDataFile image 0 $mdl"
     pack $dfile -side left -expand true -fill x
-    button $fdata.new -compound left -image $iconImages(open) -text Browse \
+    button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
             -command "LoadDataFile image 1 $mdl"
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $fi.fdata -fill x
-    TitleFrame $fi.limits -text "Boundaries of area to load "
+    TitleFrame $fi.limits -text [tr. "Boundaries of area to load "]
     set flim [GetFrame $fi.limits]
     pack [ttk::checkbutton $flim.transpose -variable table_entry(xpose) \
-	      -text "Transpose (so X positions are outer dimension)"] \
+	      -text [tr. "Transpose (so X positions are outer dimension)"]] \
 	-side bottom
     pack [frame $flim.ycapt] -side left -fill both -expand true
     pack [frame $flim.yval] -side left -fill both -expand true
     pack [frame $flim.xcapt] -side left -fill both -expand true
     pack [frame $flim.xval] -side left -fill both -expand true
     
-    pack [label $flim.ycapt.lo -text "Start at Y position:"] \
+    pack [label $flim.ycapt.lo -text [tr. "Start at Y position:"]] \
             -expand true -fill x
-    pack [label $flim.ycapt.hi -text "Finish at Y position:"] \
+    pack [label $flim.ycapt.hi -text [tr. "Finish at Y position:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.lo -text "Start at X position:"] \
+    pack [label $flim.xcapt.lo -text [tr. "Start at X position:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.hi -text "Finish at X position:"] \
+    pack [label $flim.xcapt.hi -text [tr. "Finish at X position:"]] \
             -expand true -fill x
     
     pack [Entry $flim.yval.lo -textvariable table_entry(row1)] \
@@ -727,25 +732,25 @@ proc equationDoTable {parent mdl tgt dims startLine} {
             -expand true -fill x
     pack $fi.limits -fill both -expand true
     
-    TitleFrame $fi.interp -text "Values for colours: "
+    TitleFrame $fi.interp -text [tr. "Values for colours: "]
     set fterp [GetFrame $fi.interp]
     set fbounds [frame $fterp.bounds]
-    pack [label $fbounds.bklabel -text "Value for black:"] \
+    pack [label $fbounds.bklabel -text [tr. "Value for black:"]] \
             -side left -expand true -fill x
     pack [Entry $fbounds.bkentry -textvariable table_entry(blkval)] \
             -side left -expand true -fill x
-    pack [label $fbounds.wtlabel -text "Value for white:"] \
+    pack [label $fbounds.wtlabel -text [tr. "Value for white:"]] \
             -side left -expand true -fill x
     pack [Entry $fbounds.wtentry -textvariable table_entry(whtval)] \
             -side left -expand true -fill x
     pack $fbounds
     
     set fcols [frame $fterp.cols]
-    pack [label $fcols.trlabel -text "Value for clear:"] \
+    pack [label $fcols.trlabel -text [tr. "Value for clear:"]] \
             -side left -expand true -fill x
     pack [Entry $fcols.trentry -textvariable table_entry(trnval)] \
             -side left -expand true -fill x
-    pack [label $fcols.clabel -text "For other colours:"] \
+    pack [label $fcols.clabel -text [tr. "For other colours:"]] \
             -side left -expand true -fill x
     pack [::ttk::combobox $fcols.c -textvariable table_entry(othval) \
             -values {"Use luminosity" "Use red level" "Use green level" \
@@ -755,38 +760,38 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack $fcols
     pack $fi.interp -fill both -expand true
     
-    $t add [set ft [frame $t.gdal]] -text "Data from GeoTIFF etc."
-    label $ft.instructions -wrap 400 -text "Choose a georeferenced data file, then select row and column at which to start and finish loading data."
-    pack $ft.instructions -side top -anchor w -padx 2 -pady 2
-    TitleFrame $ft.fdata -text "Data file "
+    $t add [set ft [frame $t.gdal]] -text [tr. "Data from GeoTIFF etc."]
+    label $ft.instructions -wrap 400 -text [tr. "Choose a georeferenced data file, then select row and column at which to start and finish loading data."]
+    pack $ft.instructions -side top -padx 2 -pady 2
+    TitleFrame $ft.fdata -text [tr. "Data file "]
     set fdata [GetFrame $ft.fdata]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     $dfile xview end
     bind $dfile <Return> "LoadDataFile gdal 0 $mdl"
     bind $dfile <Double-1> "LoadDataFile gdal 0 $mdl"
     pack $dfile -side left -expand true -fill x
-    button $fdata.new -compound left -image $iconImages(open) -text Browse \
+    button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
             -command "LoadDataFile gdal 1 $mdl"
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $ft.fdata -fill x
-    TitleFrame $ft.limits -text "Boundaries of area to load "
+    TitleFrame $ft.limits -text [tr. "Boundaries of area to load "]
     set flim [GetFrame $ft.limits]
     pack [ttk::checkbutton $flim.transpose -variable table_entry(xpose) \
-	      -text "Transpose (so columns are outer dimension)" \
+	      -text [tr. "Transpose (so columns are outer dimension)"] \
 	      -state disabled] -side bottom ;# not working yet
     pack [frame $flim.ycapt] -side left -fill both -expand true
     pack [frame $flim.yval] -side left -fill both -expand true
     pack [frame $flim.xcapt] -side left -fill both -expand true
     pack [frame $flim.xval] -side left -fill both -expand true
     
-    pack [label $flim.ycapt.lo -text "Start at row:"] \
+    pack [label $flim.ycapt.lo -text [tr. "Start at row:"]] \
             -expand true -fill x
-    pack [label $flim.ycapt.hi -text "Finish at row:"] \
+    pack [label $flim.ycapt.hi -text [tr. "Finish at row:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.lo -text "Start at column:"] \
+    pack [label $flim.xcapt.lo -text [tr. "Start at column:"]] \
             -expand true -fill x
-    pack [label $flim.xcapt.hi -text "Finish at column:"] \
+    pack [label $flim.xcapt.hi -text [tr. "Finish at column:"]] \
             -expand true -fill x
     
     pack [Entry $flim.yval.lo -textvariable table_entry(row1)] \
@@ -841,14 +846,14 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     # OK, Cancel and Help buttons
     frame .table.fbuttons
     if {!$startLine} {
-        pack [TitleFrame .table.fbuttons.wrapf -text "Other times: "] \
+        pack [TitleFrame .table.fbuttons.wrapf -text [tr. "Other times: "]] \
                 -padx 4 -pady 4 -expand true -fill x
         set wrapf [GetFrame .table.fbuttons.wrapf]
-        pack [label $wrapf.bm -text "Between points:"]
+        pack [label $wrapf.bm -text [tr. "Between points:"]]
         pack [::ttk::combobox $wrapf.bc -textvariable table_entry(others) \
                 -width 10 -values {"Use last" "Use closest" Interpolate} \
                 -state readonly]
-        pack [label $wrapf.wm -text "Wraparound at:"]
+        pack [label $wrapf.wm -text [tr. "Wraparound at:"]]
         pack [entry $wrapf.we -width 1 -textvariable table_entry(wrapPt)] \
                 -expand true -fill x
         if {[string equal restart [string tolower \
@@ -871,26 +876,26 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     }
     if {[string equal .fpdialogue $parent]} {
         pack [checkbutton .table.fbuttons.keepvals -var table_entry(bytes) \
-                -text "Include values\nin scenario files" \
+                -text [tr. "Include values in scenario files"] -wrap 200 \
                 -command "set table_entry(source) 1"] -padx 4 -pady 4
 # comments section : new for 5.6
 	pack [text .table.commentt -height 4] -side bottom -fill x -expand 1
 	if {[info exists table_entry(comment)]} {
 	    .table.commentt insert end $table_entry(comment)
 	}
-	label .table.commentl -text "Comments regarding values:"
+	label .table.commentl -text [tr. "Comments regarding values:"]
 	pack .table.commentl -side bottom
     }
     
-    button .table.fbuttons.load -text Reload -width 10 \
+    button .table.fbuttons.load -text [tr. Reload] -width 10 \
             -command [list AcquireTableData 1 $startLine]
-    button .table.fbuttons.edit -text View/Edit -width 10 \
+    button .table.fbuttons.edit -text [tr. View/Edit] -width 10 \
             -command [list EditTableData $startLine $arrayDims]
-    button .table.fbuttons.ok -text OK -width 10 \
+    button .table.fbuttons.ok -text [tr. OK] -width 10 \
             -command [list DoneTableData $startLine]
-    button .table.fbuttons.cancel -text Cancel -width 10 \
+    button .table.fbuttons.cancel -text [tr. Cancel] -width 10 \
             -command "set table_entry(done) 0"
-    button .table.fbuttons.help -text Help -width 10 \
+    button .table.fbuttons.help -text [tr. Help] -width 10 \
             -command {ContextSensitiveHelp .table equations/table.htm}
     pack .table.fbuttons.load -side top -padx 4 -pady 4
     pack .table.fbuttons.edit -side top -padx 4 -pady 4
@@ -1105,9 +1110,9 @@ proc EditListAsTable {parent valueArray} {
     pack [frame $b] -side bottom
     # button frame packed first so it is not squeeeezed if window dragged smaller
     pack [frame $t] -fill x -expand true
-    pack [button $b.ok -text OK \
+    pack [button $b.ok -text [tr. OK] \
             -command "set table_viewer(done) 1" -width 10] -padx 2 -pady 2 -side left
-    pack [button $b.cancel -text Cancel \
+    pack [button $b.cancel -text [tr. Cancel] \
             -command "set table_viewer(done) 0" -width 10] -padx 2 -pady 2 -side left
     
     set viewerId $::helperTable(TableViewer)
