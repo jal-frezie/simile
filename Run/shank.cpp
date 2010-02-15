@@ -953,8 +953,8 @@ showMess(globMess); */
     double freq, xtime;
     int big_phase, err;
     BOOLEAN made_step, first_pass;
-    //    sprintf(globMess, "xm %lf-%lf at %lf", start, *end, errlim);
-    //    showMess(globMess);
+    // sprintf(globMess, "xm %d %lf-%lf at %lf", how_int, start, *end, errlim);
+    // showMess(globMess);
     userDefStop->excpNo = 0;
     freq = steps[phases]*pow(2,-adapt_doublings);
     xtime = start;

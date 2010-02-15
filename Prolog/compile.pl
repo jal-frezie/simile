@@ -331,7 +331,7 @@ important...(or was, back when the A stood for Agroforestry)... */
 		      dtarget, btarget, instance, time_step,
 		      time, times, ts, dts,
 		      parentId, channelId, version,
-		      on_reset, on_reload, /* dummy conditions */
+		      on_step, on_reset, on_reload, /* dummy conditions */
 		      use_param_state, /* indicates file parameter */
 		      id, dims, /* arguments to extractor proc */
 		      next, instanceid, new_instance | _],
@@ -371,7 +371,8 @@ used when entering file parameters */
 	true),
 	  % This sets default time step of anything not done in a particular
 	  % step to that of its submodel
-	set_free_phases(ReevaluateForm, Phases, NewForm),
+	PhasesWSub is Phases+1,
+	set_free_phases(ReevaluateForm, PhasesWSub, NewForm),
 	  % This marks state variable changes as going in the update phase
 	all(compile, mark_update_insts, [build(NewForm), append(Marked, [])]),
 	  % this puts everything in the longest possible time step
@@ -527,7 +528,7 @@ invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs) :-
 
 mark_update_insts(Act, Add) :-
 	Act = make(_,_,_, [update | _],
-		   [assign(SV, SV+stage_incr(_,_,_))]), !,
+		   [assign(SV, SV+stage_incr(_,_,_,_))]), !,
 	    Add = [Act];
 	Act = make(_,_,_, [eval | _], _),
 	    Add = [].
@@ -558,10 +559,10 @@ check_functions(Functions, Steps, Updates) :-
 	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
 */	tk_update_infobox(pl_sort, []),
-/*        SpecialSteps is Steps-1,
-Previously only did steps up to shortest-1, but need to do shortest as well to
-stop rand_vars being chaanged in the R-K subphase */
-        sort_assignments(Functions, Steps),
+/*         SpecialSteps is Steps-1,
+Previously only did steps up to shortest-1, but need to do shortest
+as well to stop rand_vars being changed in the R-K subphase */
+        sort_assignments(Functions, Steps, no),
 	RKStep is Steps+1,
 	update_antes_to_step(Updates, RKStep),
 	all(compile, mark_unstepped, [build(Functions), unify(Steps),
@@ -1509,30 +1510,32 @@ separately)
 
 Search backwards until something that does not go is found, then fail */
 
-sort_assignments(Instructions, Step) :-
+sort_assignments(Instructions, Step, Fix) :-
 	(Step = -2, !;
 	 LongerStep is Step-1,
-	    sort_assignments(Instructions, LongerStep)),
-	all(compile, check_this_step, [build(Instructions), unify(Step)]).
+	    sort_assignments(Instructions, LongerStep, yes)),
+	all(compile, check_this_step,
+	    [build(Instructions), unify(Step), unify(Fix)]).
 
-check_this_step(Inst, Phase) :-
-	goes_this_step(Inst, Phase), !;
+check_this_step(Inst, Phase, Fix) :-
+	goes_this_step(Inst, Phase, Fix), !;
 	true.
 
-goes_this_step(make(_, Conds-_, _, [_, DefP, NewP | _],_), Step) :-
+goes_this_step(make(_, Conds-_, _, [_, DefP, NewP | _],_), Step, Fix) :-
 	\+ var(NewP), !; % gone already
 	NewP = Step, % set while testing so loops go together
-	(Step >= DefP, !; % constrained by submodel step selection
-	  all(compile, cond_goes, [build(Conds), unify([DefP, Step])])).
+	(Step >= DefP, Fix = yes, !; % constrained by submodel step selection
+	  all(compile, cond_goes, [build(Conds), unify([DefP, Step, Fix])])).
 
-cond_goes(Cond, [DefP, Step]) :-
+cond_goes(Cond, [DefP, Step, Fix]) :-
 	(Cond = on_reload, Step >= -1;
 	Cond = on_reset, Step >= 0;
-	Cond = time, Step >= DefP;
+	Cond = on_step, Step >= DefP;
+	% Cond = time, Step >= DefP; 'time' never helps it get sorted!
 	Cond = earlier(Act); % wrapper means ignore step
 	Cond = can_find_id(_Node); % dummy to do with one-sided enumeration
 	member(Cond, [Act, later(Act), this_step(Act)]),
-	goes_this_step(Act, Step)), !.
+	goes_this_step(Act, Step, Fix)), !.
 
 /* 21st century, fully double-link-aware version: lacks AOT's ability to
 promote entire same-step loops
@@ -1888,6 +1891,9 @@ set_free_phases(OldForm, Phase, NewForm) :-
 convert_form(make(T1, Conds, Path, Ph, T5), Phase,
 	     make(T1, NewC-_Deps, Path, [_, Ph | _], T5), Refs) :-
 	(nonvar(Ph), \+ Ph = Phase; Ph = Phase),
+	/* above is not correct -- all instructions should have a ground step,
+	as the default step could be too short for their submodel. TODO: Find
+	and fix any case where something gets here with a variable step. */
 	( /* T5 = [assign(SV, SV+stage_incr(_,_,_))], !,
 	    Refs = [], NewC = []; % no order needed in update */
 	(\+ member(T1, [lastvalue(_)]),
@@ -1906,6 +1912,8 @@ handle_key_functors(OldCond, NewCond, Refs) :-
 time, % Action to be done in its submodel's phase, even if conds ready earlier
 on_reset, % Action to be done in reset phase, even if conds ready earlier
 on_reload, % Action to be done only after setting fixed parameters
+on_step, % action cannot be promoted to longer than given step
+% this could replace the above two if their steps were right
 can_find_id(_)]), % dummy to do with one-sided enumeration
 	    NewCond = OldCond,
 	    Refs = [];

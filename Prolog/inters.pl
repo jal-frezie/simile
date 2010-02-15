@@ -595,7 +595,7 @@ make_intermediates(
 	    conditions since we need only do it once even though it changes */
 	(Functor = at_phase,
 	    (var(Ph), SetTime = Step; SetTime=Ph), !,
-	    purge(Depends, [], KeepDeps); % time OK cos phase set 
+	    substitute(time, Depends, on_step, KeepDeps);
 	SetTime = Step, 
 	    (Functor = count, !,
 		purge(Depends, OldArgs, KeepDeps);
@@ -1241,7 +1241,7 @@ builtin('Model properties', latency, real, [real]).
 language -- they and the operators are hidden */
 
 %operator(ind_time, real, [const_int]).
-operator(stage_incr, real, [diffs, int, real]).
+operator(stage_incr, real, [diffs, int, real, real]).
 operator(loses, boolean, [real, const_int]).
 operator(loses, boolean, [boolean, const_int]).
 operator(choose, int, [boolean, int, int]).

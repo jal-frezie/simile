@@ -178,17 +178,21 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	(setof( Arc, flows(out, Node, Arc), OutArcs),
 	    bind_and_build_term(Node, OutArcs, Base, Units, Out, Out_refs),
 	    (In_refs = [], Change = -Out; Change = In++(-Out));
-	\+ In_refs = [], Change = In),
-	merge_lists(In_refs, Out_refs, Refs),
+	    \+ In_refs = [], Change = In),
+	    merge_lists(In_refs, Out_refs, Refs),
 	/* apply_minmax(F, Home+Step*(In-Out), UpdateExpr),
 	compartments will be updated in a separate procedure from flows
 	so ordering will not be done -- otherwise the above would be
 	Home+Step*last(In-Out) */
 	
-	is_instance(internal, st(Node), none, Diffs, diffs-Units, DiffStruct),
-	    Expr = with_phase(Step,Home++stage_incr(Diffs, Step, Change)),
-	    Local = [DiffStruct, Instance];
-	[Refs, Local, Expr] = [[], [Instance], none]),
+	(F has_class_refinement min_val of Min,
+	    F has_class_refinement max_val of Max, !,
+	    Span is Max-Min;
+	  Span = 100),
+	    is_instance(internal, st(Node), none, Diffs, diffs-Units, DiffSt),
+	    Expr = with_phase(Step,Home++stage_incr(Diffs, Step, Change, Span)),
+	    Local = [DiffSt, Instance];
+	  [Refs, Local, Expr] = [[], [Instance], none]),
 	    is_instance(compartment, Node, Expr, Home, Base-Units, Instance).
 
 /* Immigration and reproduction nodes behave like compartments with an
@@ -215,18 +219,16 @@ must be made for number of instances actually made, which would
 otherwise be lost. */
 
 instance_of(Type, Node, Path,
-	    [instance(Type, Node,
-		      with_phase(Step, Home+stage_incr(Diffs, Step, Struct)),
-		      Home, real-[]),
-	     instance(init_function, Node, rand(0,1), Home, real-[]),
-	     DiffStruct],
+	    [instance(Type, Node, Updater, Home, real-[]),
+	     instance(init_function, Node, rand(0,1), Home, real-[]), DiffSt],
 	    [instance(function, Function, _, Struct, _)]) :-
 	member(Type, [immigration, reproduction]),
 	Home = elt(Path, _, 1-[]),
 	Diffs = elt(Path, _, diffs-[]),
-	is_instance(internal, st(Node), none, Diffs, diffs-[], DiffStruct),
+	is_instance(internal, st(Node), none, Diffs, diffs-[], DiffSt),
 	Arc is_connector from _ to Node,
-	initiates(Arc, Function).
+	initiates(Arc, Function),
+	Updater = with_phase(Step, Home+stage_incr(Diffs, Step, Struct, 100)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* functions do not have any unit translations built into them, as it is assumed

@@ -99,7 +99,7 @@ double step_incr (int step, double v) {
 
 double maxerr;
 
-double stage_incr (diffs *extras, int step, double v) {
+double stage_incr (diffs *extras, int step, double v, double span) {
   double dv, result, errMagn;
 
   /*
@@ -139,7 +139,7 @@ t3 = estimate of next initial increment
     return (extras->t1 = dv)/2 - extras->t2;
   case 10: // does not change compartment, just checks for errors
     errMagn = fabs(dv-extras->t3);
-    maxerr = max(errMagn, maxerr);
+    maxerr = max(errMagn*100/span, maxerr);
     return 0;
   };
 };

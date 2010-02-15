@@ -167,7 +167,7 @@ public:
   double t1, t2, t3;
 };
 
-double stage_incr (diffs*, int, double);
+double stage_incr (diffs*, int, double, double);
 double step_incr (int, double);
 //int at_time_step ();
 int loses (double, int);

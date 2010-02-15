@@ -358,7 +358,7 @@ proc old_stage_incr {ns_extras step v} {
     }
 }
 
-proc stage_incr {ns_extras step v} {
+proc stage_incr {ns_extras step v span} {
     global adapt
     upvar \#0 $ns_extras extras
     if {[info exists extras]} {
