@@ -1882,6 +1882,12 @@ proc Query {specifics icon helpRef parent opts} {
 	    }
 	}
     }
+    if {![info exists title]} {
+	set title [tr. "Internal error"]
+	set message [tr. "Simile encountered an unexpected internal condition."]
+	lappend mBoxCmd -title $title -message $message
+	append message \n\n$specifics
+    }
 
     if {[info exists dialogues(logText)]} { ;# messages skipped
 	AddMsgsToLog

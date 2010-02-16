@@ -716,8 +716,8 @@ make_intermediates(
 		[build(BackDP), append(DestInds, []), append(DestDims, [])]),
 	    BackSwap = values_from_base(_)), % jam context swap 
 	(integer(IndN), !;
-	    length(DestInds, AvailInds),
 	    throw(bad_index_number(IndN, index, 32))),
+	    length(DestInds, AvailInds),
 	    IndPosn is AvailInds-IndN,
 	    (nth0(IndPosn, DestInds, IndRef),
 		nth0(IndPosn, DestDims, Units),

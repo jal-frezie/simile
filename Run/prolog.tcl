@@ -73,6 +73,7 @@ proc prolog {plCmd} {
     if {![string length $plPipe(stack)]} {
 	ResetProgressBox
     }
+    return $plOutcome
 }
 
 proc AddCurrentToPipe {stack} {

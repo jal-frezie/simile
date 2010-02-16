@@ -34,14 +34,13 @@ tk_code(Node, RunCmd, _Dummy) :-
 	member([RunCmd, Lang], [[run_c, c], [run_tcl, tcl]]),
 	/* Compile the thing into whatever, load it */
 	use_temp_dir(Dir),
-	(rebuild_code(Lang, Node, Dir), !,
+	rebuild_code(Lang, Node, Dir),
 	    % if exceps happen here, catch in Tcl and return failure
 	    % on_exception(Whoops,
 	%		 output:prepare_execution(Node, Lang),
 % 		     (sicstus_write_to_chars(Whoops, Squeak),
 % 			 scrub_run(Node, 0))),
-	    set_running_model(Node);
-	    true).
+	set_running_model(Node).
 
 rebuild_code(Lang, Node, ProgFileDir) :-
 	compile(Lang, Node, ProgFileDir);

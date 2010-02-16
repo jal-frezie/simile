@@ -1234,9 +1234,9 @@ proc MenuSelect { window button item } {
 		set tgt dummy
 	    }
 	    OpenProgressBox $window
-	    prolog tk_code($node,$item,'$tgt')
+	    set builtOK [prolog tk_code($node,$item,'$tgt')]
 	    CloseProgressBox
-	    if {[info exists lang]} {
+	    if {$builtOK && [info exists lang]} {
 		LoadProgram $node $lang
 	    }
 	} default {
@@ -1966,10 +1966,10 @@ proc autocomplete {win action pt value valuelist} {
 	    set matches [lsearch -all -inline -regexp $valuelist $key]
 	    if {[llength $matches]} {
 		foreach match $matches {
-		    lappend tails [string range [string trimleft $match \[] \
+		    lappend tails [string range [string trimleft $match \[\{] \
 				      [expr {$close-$origin}] end]
 		}
-		set pop [string trimleft [lindex $matches 0] \[]
+		set pop [string trimleft [lindex $matches 0] \[\{]
 #		$win delete $origin $final; $win insert $origin $pop
 # ignore previous contents, we may have pasted lots of text
 		$win delete 0 end

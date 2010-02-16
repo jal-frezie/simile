@@ -118,7 +118,7 @@ simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) \
 
 vpath %.pl Prolog
 
-PROLOG_FILES = ame_gen.pl backup.pl build.pl compile.pl database.pl \
+PROLOG_FILES = ame_gen.pl backup.pl build.pl code.pl compile.pl database.pl \
 		dialogue.pl draw.pl event.pl forms.pl graphics.pl image.pl \
 		input.pl instance.pl inters.pl language.pl library.pl link.pl \
 		m_class.pl menu.pl m_struct.pl m_update.pl node.pl \
