@@ -2067,7 +2067,8 @@ proc Rerun {winId go} {
     global runState window_info
     
     set node $window_info($winId,top_node)
-    if {![HaveValues $node] || $runState($node,updated)} {
+    if {![HaveValues $node] || $runState($node,updated) || \
+	    $runState($node,modelRunning)==4} {
         if {[info exists runState($node,lang)]} {
             set runType run_$runState($node,lang)
         } else {
