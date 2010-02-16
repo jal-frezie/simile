@@ -989,13 +989,6 @@ proc ControlDraw {prologVersion} {
         set userinfo(done) 0
     }
 #   ShowMess debug info "Got old version $userinfo(oldVersion)" ok
-    if {[string match Linux $tcl_platform(os)]} {
-	set shank ../System/lib/lib5d.so
-	if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
-	    eval {exec g++} $sendvars(arflags) \
-		[list -fPIC -I../Run -shared -o $shank ../Run/shank.cpp]
-	}
-    }
 
     if {[catch {package require Unpacker} dummy]} {
 	error "Could not find an unpacker for Simile -- $dummy"
@@ -1228,11 +1221,24 @@ proc InitExecThread {} {
 
 	thread::send $execThread(id) [list source [file join $SIMILE_PATH Run \
 						       exec.tcl]]
-	load_c_stub_1 [thread::id]
+	thread::send $execThread(id) [list set masterId [thread::id]]
     } else {
 	uplevel #0 [list source [file join $SIMILE_PATH Run exec.tcl]]
-	load_c_stub_1
     }
+    if {[catch {load_c_stub_1}]} {
+	if {[string match Linux $::tcl_platform(os)]} {
+# try rebuilding 5d dll if in Linux -- c++ libraries may have changed!
+	    if {[PrefValue custom(hackBreak) hackBreak]} {
+		Query [list new_exec_needed "Updating 5-d library"] \
+		    info top {} {ok}
+	    }
+	    set shank ../System/lib/lib5d.so
+	    eval {exec g++} $::sendvars(arflags) \
+		[list -fPIC -I../Run -shared -o $shank ../Run/shank.cpp]
+	}
+    }
+# now just do it again so error gets raised as per usual if still bad
+    load_c_stub_1
 }
 
 proc CheckCompilerLocation {} {

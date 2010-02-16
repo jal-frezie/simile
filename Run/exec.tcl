@@ -11,10 +11,9 @@ set auto_path [list [file join $env(SP_PATH) lib] \
 
 source [file join [file dirname $env(SP_PATH)] Run support.tcl]
 
-proc load_c_stub_1 {{callerId {}}} {
-    global env tcl_platform masterId
+proc load_c_stub_1 {} {
+    global env tcl_platform
 
-    set masterId $callerId
     scan [info tclversion] {%d.%d} MAJ MIN
     set onUnix [string match unix $tcl_platform(platform)]
     set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
