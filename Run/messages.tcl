@@ -391,11 +391,12 @@ set msgs(bad_type_conversion_title) [tr. "Problem converting units"]
 set msgs(bad_type_conversion_message) [tr. "You are not allowed to convert implicitly from a \"%1\$s\" value to a \"%2\$s\" value because of the possibility for confusion or loss of information."] 
 
 set msgs(mismatched_dimensions_title) [tr. "Problem converting units"]
-set msgs(mismatched_dimensions_message) [tr. "The units of the required quantity are %1\$s which have physical dimensions %2\$s. These are incompatible with the supplied value, whose units %3\$s have dimensions %4\$s."]
-set msgs(mismatched_dimensions_detail) [tr. "Please do one of the following:\n* specify units with the same dimensions as the value\n* change the source of the value to have the units you wish, or\n* clear the units specification entry to get the default units for this value."]
+#set msgs(mismatched_dimensions_message) [tr. "The units of the required quantity are %1\$s which have physical dimensions %2\$s. These are incompatible with the supplied value, whose units %3\$s have dimensions %4\$s."]
+set msgs(mismatched_dimensions_message) [tr. "You are trying to convert a value with units %3\$s to one with units %1\$s. This cannot be done because the first has physical dimensions %4\$s, while the second has physical dimensions %2\$s."]
+set msgs(mismatched_dimensions_detail) [tr. "Please do one of the following:\n* specify units with the same dimensions as the value, so it can be converted\n* change the source of the value to have the units you wish, or\n* clear the units specification entry to get the default units for this value."]
 
 set msgs(mismatched_arrays_title) [tr. "Problem converting units"]
-set msgs(mismatched_arrays_message) [tr. "The units of the required quantity are %1\$s which have array dimensions %2\$s. These are incompatible with the dimensions of the supplied value, which are %3\$s."]
+set msgs(mismatched_arrays_message) [tr. "The units of the required quantity are %1\$s which have array dimensions %2\$s. These are incompatible with the array dimensions of the supplied value, which are %3\$s."]
 set msgs(mismatched_arrays_detail) $msgs(mismatched_dimensions_detail)
 
 set msgs(unwanted_syntax_title) [tr. "Parameter contains confusing characters"]
