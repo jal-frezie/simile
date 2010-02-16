@@ -589,36 +589,34 @@ proc AddEnumTypePopup {lb y X Y} {
     }
 }
 
+# Changed reporting from list to single error as I can't see how you could get
+# more than one of these
 proc CheckForETDuplicates {new} {
     global disaggregate enumTypeMPEntry
 
     if {![info exists enumTypeMPEntry] || ![string length $enumTypeMPEntry]} {
-	Query [list no_et_member $new] warning enumtype {} ok
-	return 0
-    }
-    if {[string equal NULL $enumTypeMPEntry]} {
-	lappend queries [list bad_et_member $new]
-    }
-    set def [GetFromProlog tk_get_info({},'$enumTypeMPEntry',is_unit)]
-    if {![string equal none $def]} {
-	lappend queries [list member_is_unit $new $enumTypeMPEntry $def]
-    }
-    foreach {type members} [array get disaggregate enumtype,*] {
-        set oldType [string range $type 9 end]
-        if {[string equal $enumTypeMPEntry $oldType]} {
-	    lappend queries [list duplicate_et $new $oldType]
-        }
-        if {[lsearch $members $enumTypeMPEntry] != -1} {
-	    lappend queries [list duplicate_et_mem $new $oldType \
-				 $enumTypeMPEntry]
-        }
-    }
-    if {[info exists queries]} {
-	foreach query $queries {
-	    if {[string equal abort [Query $query warning enumtype {} abort]]} {
-		break
+	set query [list no_et_member $new]
+    } elseif {[string equal NULL $enumTypeMPEntry]} {
+	set query [list bad_et_member $new]
+    } else {
+	set def [GetFromProlog tk_get_info({},'$enumTypeMPEntry',is_unit)]
+	if {![string equal none $def]} {
+	    set query [list member_is_unit $new $enumTypeMPEntry $def]
+	} else {
+	    foreach {type members} [array get disaggregate enumtype,*] {
+		set oldType [string range $type 9 end]
+		if {[string equal $enumTypeMPEntry $oldType]} {
+		    set query [list duplicate_et $new $oldType]
+		}
+		if {[lsearch $members $enumTypeMPEntry] != -1} {
+		    set query [list duplicate_et_mem $new $oldType \
+					 $enumTypeMPEntry]
+		}
 	    }
 	}
+    }
+    if {[info exists query]} {
+	Query $query warning enumtype {} ok
 	return 0
     }
     return 1
