@@ -431,8 +431,8 @@ set msgs(minmax_wrong_title) $msgs(bad_eqn_title)
 set msgs(minmax_wrong_message) [tr. "Equation has non-numeric units %1\$s, so minimum or maximum values cannot be used."]
 
 set msgs(bad_array_size_title) $msgs(bad_eqn_title)
-set msgs(bad_array_size_message) [tr. "This equation evaluates to a data structure which includes an array of size %1\$s."]
-set msgs(bad_array_size_detail) [tr. "%1\$s is not a valid dimension for a model component -- they must be integers greater than 1."]
+set msgs(bad_array_size_message) [tr. "This equation conains the subexpression %1\$s, which evaluates to a data structure which includes an array of size %2\$s."]
+set msgs(bad_array_size_detail) [tr. "%2\$s is not a valid dimension for a model component -- they must be integers greater than 1."]
 
 set msgs(unwanted_links_title) [tr. "Unwanted inputs"]
 set msgs(unwanted_links_message) [tr. "This node has a link from %1\$s, but parameter default values are not allowed to have input variables themselves. Remove this link?"]
