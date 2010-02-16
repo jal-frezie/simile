@@ -162,8 +162,8 @@ expand_library(DestRef, Var, NewVar) :-
 		length(GoodArgs, FnArity),
 		throw(wrong_no_of_args(Var, Op, Arity, FnArity))));
 	Var = prev(N),
-	    ((\+ integer(N); N < 0),
-		throw(bad_index_number(N, prev));
+	    ((\+ integer(N); N < 0; N > 31),
+		throw(bad_index_number(N, prev, 32));
 	    N < 1,
 		NewVar = DestRef;
 	    M is N-1,
@@ -700,8 +700,8 @@ make_intermediates(
 	    name(TRef, LopStr),
 	    member(TRef, [time, dt]), % ind_time removed
 	    ((N=0; N = ''), TArg = Step;
-		integer(N), N>=0, TArg = N;
-		throw(bad_index_number(N, Op))),
+		integer(N), N>=0, N<8, TArg = N;
+		throw(bad_index_number(N, Op, 8))),
 	    SourceRef =.. [TRef, TArg],
 	    default_tick_is(OrigUnits),
 	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !;
@@ -716,8 +716,8 @@ make_intermediates(
 		[build(BackDP), append(DestInds, []), append(DestDims, [])]),
 	    BackSwap = values_from_base(_)), % jam context swap 
 	(integer(IndN), !;
-	    throw(bad_index_number(IndN, index))),
 	    length(DestInds, AvailInds),
+	    throw(bad_index_number(IndN, index, 32))),
 	    IndPosn is AvailInds-IndN,
 	    (nth0(IndPosn, DestInds, IndRef),
 		nth0(IndPosn, DestDims, Units),
@@ -763,7 +763,7 @@ make_intermediates(
 				   BuildingArrays, Step, Used, Dun, MidInters,
 				   part_result([], [], _, DimVal)),
 	        promote_unit(Dun, const_int)), !; % will be integer later
-		  throw(bad_index_number(Dim, makearray))),
+		  throw(bad_index_number(Dim, makearray, 'INT_MAX'))),
 	        (Dun = n(Type),
 		    (Type = boolean, IndxUnits = boolean;
 			IndxUnits = a(Type));

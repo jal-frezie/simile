@@ -452,7 +452,7 @@ set msgs(needs_channel_parameter_title) [tr. "Argument must be channel"]
 set msgs(needs_channel_parameter_message) [tr. "The argument of \"channel_is\" must be a value from a channel (creation, immigration, reproduction) for the population submodel containing its node. \"%1\$s\" is not this sort of argument."]
 
 set msgs(bad_index_number_title) [tr. "Argument must be counting number"]
-set msgs(bad_index_number_message) [tr. "The function \"%2\$s\" sets or accesses some property of the model, and needs a non-negative scalar integer constant as an argument to allow the right code to be built into the model to do this. \"%1\$s\" is not this sort of argument."]
+set msgs(bad_index_number_message) [tr. "The function \"%2\$s\" sets or accesses some property of the model, and needs a non-negative scalar integer constant less than %3\$s as an argument to allow the right code to be built into the model to do this. \"%1\$s\" is not this sort of argument."]
 
 set msgs(needs_index_of_type_title) [tr. "Argument type wrong for array"]
 set msgs(needs_index_of_type_message) [tr. "The function \"%1\$s\", when applied to the array \"%2\$s\", needs a value of type %3\$s for its second argument. \"%4\$s\" does not fit -- it has a value of type %5\$s, which cannot be converted to a value of the required type."]
