@@ -152,7 +152,7 @@ $(SHIM): ame_cmx.c dllcalls.h
 
 $(UNPK): unpacker.c dllcalls.h Makefile
 	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. $(MAKESL) -o ../$(UNPK) \
-		unpacker.c $(USETCL) -L../System/lib -l5d$(ARCHEXTN); cd ..; \
+		unpacker.c $(USETCL); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
 # literal SLDIR allows different SHANK clauses for Windows vs Unix

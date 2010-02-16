@@ -259,6 +259,10 @@ FINDABLE int testlicenseCmd(ClientData clientData, Tcl_Interp *interp,
 
 // stuff to do with unpacking the general C format for model values follows:
 
+BOOLEAN unp_base_type(int dim) {
+  return dim==VALUELESS||dim==REAL||dim==INTEGER||dim==FLAG||dim<=ENUM_BASE;
+}
+
 void extend_list(Tcl_Obj *localObj, int index, Tcl_Obj *localSubObj, int dir) {
   int arrayOut;
   Tcl_Obj *indObj;
@@ -602,7 +606,7 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   valspan=valfor255-valfor0; // set to span
 
   count = 0;
-  while (!is_base_type(baseType=accessTool->dimSpecs[count])) 
+  while (!unp_base_type(baseType=accessTool->dimSpecs[count])) 
     ++count; //stop at base data type
 
   size = 0;
