@@ -331,7 +331,7 @@ important...(or was, back when the A stood for Agroforestry)... */
 		      dtarget, btarget, instance, time_step,
 		      time, times, ts, dts,
 		      parentId, channelId, version,
-		      on_step, on_reset, on_reload, /* dummy conditions */
+		      on_step, on_reset, /* dummy conditions */
 		      use_param_state, /* indicates file parameter */
 		      id, dims, /* arguments to extractor proc */
 		      next, instanceid, new_instance | _],
@@ -1133,7 +1133,7 @@ nodes.
 		AFn = assign_array(Ptr, Name, 1),
 		Specials = [make(enumerate(Name), [startable(Name)], Path, Step,
 				 [CFn, AFn]),
-			    make(startable(Name), [on_reload], Path, Step,
+			    make(startable(Name), [on_step], Path, -1,
 				 [assign_array(Ptr, Name, -1)])];
 	     [SmInters, Specials] = [[], []]),
 	    BaseSides = []),
@@ -1298,7 +1298,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	is_parameter(Node, Is_P),
 	DestRef = elt(_, Dest, X),    
 	((Is_P = 2,
-	    (Type = function, Tgt = Dest, Step = -1, Wait = [on_reload];
+	    (Type = function, Tgt = Dest, Step = -1, Wait = [on_step];
 	    Type = init_function, Tgt = init(Dest),
 		Step = 0, Wait = [on_reset]);
 	 Is_P = 1,
@@ -1528,8 +1528,7 @@ goes_this_step(make(_, Conds-_, _, [_, DefP, NewP | _],_), Step, Fix) :-
 	  all(compile, cond_goes, [build(Conds), unify([DefP, Step, Fix])])).
 
 cond_goes(Cond, [DefP, Step, Fix]) :-
-	(Cond = on_reload, Step >= -1;
-	Cond = on_reset, Step >= 0;
+	(Cond = on_reset, Step >= 0;
 	Cond = on_step, Step >= DefP;
 	% Cond = time, Step >= DefP; 'time' never helps it get sorted!
 	Cond = earlier(Act); % wrapper means ignore step
@@ -1911,9 +1910,8 @@ handle_key_functors(OldCond, NewCond, Refs) :-
 	member(OldCond, [ % keyword conditions
 time, % Action to be done in its submodel's phase, even if conds ready earlier
 on_reset, % Action to be done in reset phase, even if conds ready earlier
-on_reload, % Action to be done only after setting fixed parameters
 on_step, % action cannot be promoted to longer than given step
-% this could replace the above two if their steps were right
+% this could replace the above one if their steps were right
 can_find_id(_)]), % dummy to do with one-sided enumeration
 	    NewCond = OldCond,
 	    Refs = [];
