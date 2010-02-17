@@ -1047,16 +1047,17 @@ nodes.
 	    
 	    (setof(LossBox, S^X^U^member(instance(loss, S,X,
 						  elt(_, LossBox, _), U),
-					 Functions), Losses), !;
-		Losses = []),
+					 Functions), Losses), !,
+		LossExtras = [on_step | BasesEnumerated];
+	      Losses = [],
+		LossExtras = BasesEnumerated),
 	    
-	    CreateRules = [make(culled(Name), [init_list(Name),
-					time | BasesEnumerated], Path, Step,
-				[lose(Ptr, Name, Losses)]),
+	    CreateRules = [make(culled(Name), [init_list(Name) | LossExtras],
+				Path, Step, [lose(Ptr, Name, Losses)]),
 			   make(created(Name),
 				[culled(Name), on_reset | Creators], Path, 0,
 				[init_mems(Ptr, Name, create(Creators))])],
-	    % create in step 0 as membership may have changed during run
+	    % relegate to 0 as membership may have changed during run
 	    (setof(ReproRule, maker_for(SmName, Functions, Name, Path, Step,
 					Ptr, reproduction, ReproRule),
 		   ReproRules), !; 
@@ -1071,8 +1072,10 @@ nodes.
 	        [build(ImmigRules), build(ImmigConds)]),
 	    append(ReproConds, ImmigConds, NewMemConds),
 	    /* Something that will be done in the initialization procedure, to make sure we don't try to create any before we can run this procedure */
-	    append([[make(can_enter(Name), [created(Name) | NewMemConds],
+	    append([[make(can_enter(Name),
+			  [culled(Name), created(Name) | NewMemConds],
 			  Path, Step, []),
+		     % need culled and created to get in right step
 		    make(enumerate(Name), [can_enter(Name)],
 			 LocalPath, Step, []),
 		    make(startable(Name), [init_list(Name)], Path, Step, []),
@@ -1168,7 +1171,8 @@ maker_for(SmName, Fns, Name, Path, Step, Ptr, Channel, Rule) :-
 	member(instance(Channel, InitName, _X, elt(_, InitSpec, _), _U), Fns),
 	% first rule stops latency being used before instances created
 	member(Rule, [make(InitSpec, [Effect], Path, Step, []),
-	  make(Effect, [culled(Name), time], Path, Step, [Action])]).
+	  make(Effect, [culled(Name), on_step], Path, Step, [Action])]).
+% on_step used rather than time because processes not reversible
 
 list_params_from(BaseStr, N, Assigns, List) :-
 	sicstus_write_to_chars(N, NStr),

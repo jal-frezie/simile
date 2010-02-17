@@ -82,14 +82,18 @@ FINDABLE EXPORT int do_setstep(double time, int phase) {
 //}
 //
 int loses (double prob, int phase) {
-  int kills_per_step;
+  /* kills_per_step was intended to make sure that for R-K the same proportion 
+     get killed in four passes as in a single pass for Euler. As of 5.7 we make
+     sure the loss process only happens once per time step. */
+//  int kills_per_step;
   if (prob<=0 || glob_element(ts,0)<0) {
     return 0;
   } else if (prob>=1) {
     return 1;
   } else {
-    kills_per_step=glob_element(ts,0)?4:1;
-    return ame_rand(0,1)>pow(1-prob,glob_element(dts,phase)/kills_per_step);
+//    kills_per_step=glob_element(ts,0)?4:1;
+//    return ame_rand(0,1)>pow(1-prob,glob_element(dts,phase)/kills_per_step);
+    return ame_rand(0,1)>pow(1-prob,glob_element(dts,phase));
   }
 }
 
