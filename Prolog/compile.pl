@@ -1665,8 +1665,10 @@ order_assignments(Phase, Path, RawAssign, All, OrderedAssign, Left) :-
 	order_deeper_assignments(Phase, Path, Later, All, DeepAssign, Left),
 	append(ThisPhase, DeepAssign, OrderedAssign),
 	/* Now check if we picked any instructions at this level with 'later'
-	conditions that we couldn't resolve: if so, redo order_phase. */
-	\+ (member(make(_, Conds-_, _,_,_), OrderedAssign),
+	conditions that we couldn't resolve: if so, redo order_phase.
+	18/2/10: changed OrderedAssign to ThisPhase in next line because o_d_a
+	contains cuts and cannot be redone. Other effects? */
+	\+ (member(make(_, Conds-_, _,_,_), ThisPhase),
 	       member(later(Hanger), Conds),
 	       not_yet_ordered(Hanger),
 	       Hanger = make(_,_, CPath, _,_),
