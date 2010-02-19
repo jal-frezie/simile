@@ -112,7 +112,7 @@ itcl::class similescript::ModelWindow {
 	global botches
         # builds the model with CPP and returns a run control command/object
         #RemoveRunControl
-        MenuSelect [GetModelWindow].canvas file run_c
+        MenuSelect [GetModelWindow].canvas code run_c
         #set rc [similescript::RunControl ::runControl $this]
         #return $rc
 	set botches(modelJustRun) $this
@@ -121,7 +121,7 @@ itcl::class similescript::ModelWindow {
     public method Debug {} {
         # builds the model with Tcl and returns a run control command/object
         #RemoveRunControl
-        MenuSelect [GetModelWindow].canvas file run_tcl
+        MenuSelect [GetModelWindow].canvas code run_tcl
         #set rc [similescript::RunControl ::runControl $this]
         #return $rc
     }
