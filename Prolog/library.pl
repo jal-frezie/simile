@@ -249,7 +249,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	((Header = source(_,version=V,edition=E,date=Date);
 	        Header = source(_,version=V,date=Date), E=standard;
 	        Header = source(_,version=V), E=standard, Date=old), !,
-	    SimileV is V-4,
+	    SimileV is V-4.0, % were there integer versions??
 	    read(Stream, Term);
 	Term = Header,
 	    Date=old,

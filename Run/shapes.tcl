@@ -1693,6 +1693,9 @@ proc LoadLooks {t n target object} {
     
 	$g.objectsize.scale set $looks($n,$object,objectsize)
 	$g.lines.scale set $looks($n,$object,lines)
+	foreach textAttr {xoffset yoffset textanchor} {
+	    set looks($n,$target,$textAttr) $looks($n,$object,$textAttr)
+	}
 	DoGraphics $t $target $middlex $middley $looks($n,$object,objectsize)
     } else {
 	$t.canvas delete sample
@@ -1956,10 +1959,20 @@ proc UpdateOffsets {t n type} {
     global looks
     set offsets [$t.canvas coords [GetCaptionItem $t.canvas sample]]
     if {[string equal flow $type]} {set type vflow}
-    set looks($n,$type,xoffset) [expr $looks($n,$type,xoffset) + \
+    set newXOff [expr $looks($n,$type,xoffset) + \
             [lindex $offsets 0] - [lindex $looks(cheat) 0]]
-    set looks($n,$type,yoffset) [expr $looks($n,$type,yoffset) + \
+    set newYOff [expr $looks($n,$type,yoffset) + \
             [lindex $offsets 1] - [lindex $looks(cheat) 1]]
+    if {[string equal generic $type]} {
+        foreach object {generic compartment channel function variable \
+			    submodel flow relation} {
+	    set looks($n,$object,xoffset) $newXOff
+	    set looks($n,$object,yoffset) $newYOff
+	}
+    } else {
+	set looks($n,$type,xoffset) $newXOff
+	set looks($n,$type,yoffset) $newYOff
+    }
     set looks(cheat) $offsets
 }
 
