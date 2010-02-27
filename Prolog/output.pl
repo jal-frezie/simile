@@ -457,11 +457,11 @@ fill_table(Part, TableData, TableVals) :-
 /* Do a bit of processing to the parameter name column so the square/curly
 brackets appear as text. */
 
-get_from_list([input_link(_, V, P, _, I) | R1],
-	      [br([chars(AV), br(write(FP)), br(write(U)), br(write(FD))])
+get_from_list([input_link(_, RTs, P, _, I) | R1],
+	      [br([AV, br(write(FP)), br(write(U)), br(write(FD))])
 	      | R2]) :-
-	name(V, SV),
-	argify(SV, AV),
+	RTs =.. [role_texts | Items],
+	safe_list(Items, AV),
 	sicstus_write_to_chars(P, SP),
 	name(FP, SP),
 	m_update:analyze_array(I, U, D),

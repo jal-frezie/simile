@@ -84,7 +84,7 @@ insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
 	    copy_term(RealPathForm, RealPath),
 
 	    pointer_from(RealPath, SmPtr),
-	    (Location = in_hierarchy,
+	    (Link = none,
 		Wait = true,
 		Path = RealPath;
 	    member(path_substitution(Base, Assoc, Link), Swaps),

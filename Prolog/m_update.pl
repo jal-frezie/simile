@@ -16,7 +16,7 @@ sicstus_module(m_update,
 		get_submodel_interface/5, load_submodel_interface/4,
 		load_references/2, save_references/2, link_ends/4,
 		moving_endpoint/3, update_links_and_vars/1,
-		sort_for_link/4, abs_path_name/3, rel_path_name/5,
+		sort_for_link/4, abs_path_name/3,
 		build_array/3, analyze_array/3, get_all_enum_types/2,
 		get_solo_list_depth/2, delete_implicit_node/1, 
 		add_implicit_function/2, default_units/3, units_match_context/4,
@@ -124,8 +124,7 @@ get_input_info(Function, Input_list) :-
 	assert(input_links_were(Input_list)).
 
 get_all_links(Function, ids(RemoteNode, Relation),
-              input_link(id(Link, Index, SourceLocation),
-			RemoteName, LocalName, 
+              input_link(id(Link, Index, SourceLocn), RemoteName, LocalName, 
 			RemoteUnit, Local_unit)) :- 
 	/* this should be cut free */
 	(valid_input(Function, Link);
@@ -133,13 +132,12 @@ get_all_links(Function, ids(RemoteNode, Relation),
 	    Link is_connector from _ to Function),
 	Link has_type influence,
 	get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
-		Relation, Index, SourceLocation),
+		Relation, Index, SourceLocn),
 	check_ET_consistency(RemoteUnit, RemoteNode, Function),
 	use_destination(Link, RemoteUnit, 
 			Index, LocalName, Local_unit),
 	find_all_comps(DestBox, Function),
-	rel_path_name(RemoteNode, DestBox, Relation, SourceLocation,
-		      RemoteName).
+	rel_path_name(RemoteNode, DestBox, Relation, SourceLocn, RemoteName).
 
 get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
 		Relation, Index, SourceLocation) :-
@@ -184,12 +182,13 @@ abs_path_name(RemoteNode, DestBox, RemoteName) :-
 	caption_for(VisibleNode, LocalCaption),
 	append_atoms([UpAll, DownAll, LocalCaption], RemoteName).
 
-rel_path_name(RemoteNode, DestBox, Relation, SourceLocation, RemoteName) :-
-	abs_path_name(RemoteNode, DestBox, AbsName),
+/* old version actually built the x-planatory text...ugh
+rel_path_name(RemoteNode, DestBox, Relation, SourceLocn, RemoteName, Tail) :-
+	abs_path_name(RemoteNode, DestBox, AbsName, Tail),
 	(Relation = none, !,
 		RemoteName = AbsName;
 	(Relation has_type relation, !,
-	    (SourceLocation = in_base, !,
+	    (SourceLocn = in_base, !,
 		Dir = (from);
 	    Dir = (to)),
 	    caption_for(Relation, RelCaption),
@@ -201,6 +200,20 @@ rel_path_name(RemoteNode, DestBox, Relation, SourceLocation, RemoteName) :-
 	sicstus_format_to_chars("~a (active channel?)", [AbsName], RemoteStr)),
 	name(RemoteName, RemoteStr)).
 
+v5.7 version: merely generate the strings and allow their arrangement elsewhere
+according to norms of whichever language is being used */
+rel_path_name(RemoteNode, DestBox, Relation, Dir,
+	      role_texts(AbsName, BaseBoxCaption, Dir, RelCaption)) :-
+	abs_path_name(RemoteNode, DestBox, AbsName),
+	(Relation = none, !,
+	    RelCaption = '/none/',
+	    BaseBoxCaption = '/none/';
+	Relation has_type relation, !,
+	    caption_for(Relation, RelCaption),
+	    initiates(Relation, BaseBox),
+	    caption_for(BaseBox, BaseBoxCaption);
+	append_atoms(['/', Relation, '/'], RelCaption)).
+	
 list_downs([], '').
 
 list_downs([Node | Rest], All) :-
@@ -317,12 +330,10 @@ get_unit_conversion(Remote, Local,
 	get_chain(RemoteModel, LocalModel, _, Exited, Entered),
 	reverse(Exited, BiggestFirst),
 	(/* Do not display parameter for input without role reference if there
-	is a reference */
-	\+ (member(Far, Exited), member(Near, Entered),
-	       (connects(Relation, Far, Near); connects(Relation, Near, Far)),
-	       Relation has_type relation),
+	is a reference...as of v5.7, do -- but use in_base or in_assoc as
+	appropriate (keep link id of none). */
 	all(ame_gen, get_all_dims, [build(BiggestFirst), append(Subs, [])]),
-	    SourceLocation = in_hierarchy,
+	    relation_of_source(Exited, Entered, SourceLocation),
 	    Relation = DefRel,
 	    Index = none;
 	suffix([Base | ReallyExited], BiggestFirst),
@@ -348,6 +359,15 @@ get_unit_conversion(Remote, Local,
 		all(ame_gen, get_all_dims,
 		    [build([Assoc | ReallyExited]), append(Subs, [])])),
 	    SourceLocation = in_assoc).
+
+relation_of_source(Exited, Entered, SourceLocation) :-
+	member(Far, Exited), member(Near, Entered),
+	    (connects(Relation, Far, Near),
+		SourceLocation = in_base;
+	      connects(Relation, Near, Far),
+		SourceLocation = in_assoc),
+	    Relation has_type relation, !;
+	  SourceLocation = in_hierarchy.
 
 is_exclusive_role(Role) :-
 	find_name_host(Role, RoleWithAttrs),
@@ -484,9 +504,20 @@ link_uses(List, Name) :-
 insert_existing_names(_, N, N).
 
 generate_new_names(InputList, NameList) :-
-	select(input_link(_, Remote_name, Local_name, Remote_unit, _),
-			InputList, NewInputList),
-	var(Local_name), !,
+	select(input_link(id(_, RelId, Dir), role_texts(Path, _,_, RelnCapt),
+			  Local_name, Remote_unit, _), InputList, NewInputList),
+	var(Local_name),
+	name(Path, PathStr),
+	(TailStr = PathStr; suffix([47 | TailStr], PathStr)), % [47] = "/"
+	\+ member(47, TailStr),
+	name(Tail, TailStr),
+	(Dir = in_hierarchy,
+	    Remote_name = Tail;
+	  RelId = none,
+	    append_atoms(every_, Tail, Remote_name);
+	  Dir = in_base,
+	    append_atoms([RelnCapt, '_', Tail], Remote_name);
+	  append_atoms([Tail, '_', RelnCapt], Remote_name)), !,
 	generate_name(prolog, Remote_name, Inter_name, NameList),
 	add_brackets(Inter_name, Remote_unit, Local_name),
 	generate_new_names(NewInputList, NameList).

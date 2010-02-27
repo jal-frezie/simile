@@ -2294,8 +2294,7 @@ proc AddInputs {winId bar} {
 	$bar.inputs.menu add command -label $paramName \
 	    -command [list InsertParam $bar.equation $paramName]
 	lappend equationbar(params) $paramName
-	lappend popupTable \
-	    "$paramName: [lindex $paramList 0] ([lindex $paramList 2])"
+	lappend popupTable "$paramName: [DescribeInputParam [lindex $paramList 0]] ([lindex $paramList 2])"
     }
     MenuBindPopup $bar.inputs.menu $popupTable
 }
@@ -2305,6 +2304,20 @@ proc InsertParam {bar paramName} {
     $bar configure -validate none
     $bar insert insert $paramName
     $bar configure -validate key
+}
+
+proc DescribeInputParam {paramSpec} {
+    if {[string equal in_hierarchy [lindex $paramSpec 2]] ||
+	[string equal /none/ [lindex $paramSpec 1]]} { 
+# no roles or role not used
+	set template {Value(s) of %1$s}
+    } elseif {[string equal in_base [lindex $paramSpec 2]]} {
+	set template {Value(s) of %1$s from submodel "%2$s" in role "%3$s"}
+    } else { ;# in_assoc
+	set template {Value(s) of %1$s for submodel "%2$s" in role "%3$s"}
+    }
+    format [tr. $template] \
+	[lindex $paramSpec 0] [lindex $paramSpec 1] [lindex $paramSpec 3]
 }
 
 proc restore_equation {winId bar} {
