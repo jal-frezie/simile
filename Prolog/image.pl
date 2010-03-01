@@ -746,7 +746,7 @@ make_header(Model, Header) :-
     dim_spec_for(Model, DimSpec),
     time_step_for(Model, default, Step),
 */
-    translate('Simile model', SimMod),
+    translate_message('Simile model', SimMod),
     sicstus_format_to_chars("~w (~s: ~s)", [Title, SimMod, FileNameChars],
             HeaderChars),
     name(Header, HeaderChars).
@@ -755,7 +755,7 @@ quick_file(Model, FileNameChars) :-
     get_model_file(Model, Name), !,
         name(Name, NameChars),
         split_path_chars(NameChars, _, _, FileNameChars);
-    translate('unsaved', FileNameChars).
+    translate_message('unsaved', FileNameChars).
     
 /* complete/1: determines draw style of item.
 · Compartments and functions are complete if they have values set

@@ -1491,7 +1491,7 @@ proc equationlisting_start {DefEquationListingFileName topNode} {
     set w .equations
     catch {destroy $w}
     toplevel $w -height 600 -width 800
-    wm title $w "Equation listing"
+    wm title $w [tr. {Equation listing}]
     
     if [string match "Darwin" $tcl_platform(os)] {
         set accKey Cmd
@@ -1507,29 +1507,31 @@ proc equationlisting_start {DefEquationListingFileName topNode} {
     set m [menu $w.topMenu -tearoff 0]
     
     set fm [menu $w.fileMenu -tearoff 0]
-    $m add cascade -label File -underline 0 -menu $fm
-    $fm add command -label Save -command "EquationListingSave $w $topNode" \
+    $m add cascade -label [tr. File] -underline 0 -menu $fm
+    $fm add command -label [tr. Save] -command "EquationListingSave $w $topNode" \
             -accelerator "$accKey+S"
     $fm add separator
 #    if {[string match windows $tcl_platform(platform)]} {
-        $fm add command -label Print -command "EquationListingPrint $w" \
+        $fm add command -label [tr. Print] -command "EquationListingPrint $w" \
                 -accelerator "$accKey+P"
 #    }
     $fm add separator
-    $fm add command -label Close -command "destroy $w"
+    $fm add command -label [tr. Close] -command "destroy $w"
+    UnderlineUniquely $fm
     
     set fm [menu $w.editMenu -tearoff 0]
-    $m add cascade -label Edit -underline 0 -menu $fm
-    $fm add command -label "Select All" \
+    $m add cascade -label [tr. Edit] -underline 0 -menu $fm
+    $fm add command -label [tr. "Select All"] \
             -command {EquationListingSelectAll $equationlist(textbox)} \
             -accelerator "$accKey+A"
-    $fm add command -label Copy -command {tk_textCopy $equationlist(textbox)} \
+    $fm add command -label [tr. Copy] -command {tk_textCopy $equationlist(textbox)} \
             -accelerator "$accKey+C"
     #        $fm add command -label "Find" \
     #                -command "EquationListingFindPopup $w" \
     #        -accelerator "$accKey+F"
-    
-    $w configure -menu $m
+    UnderlineUniquely $fm
+    UnderlineUniquely $m
+    $w configure -menu $m    
     
     frame $w.mainframe
     pack $w.mainframe -fill both -expand true
@@ -1573,6 +1575,7 @@ proc equationlisting_start {DefEquationListingFileName topNode} {
     focus $equationlist(textbox)
 }
 
+# unused for now
 proc EquationListingFindPopup {winId} {
     
     global seltxt repltxt
@@ -1618,10 +1621,12 @@ proc equationlisting_addsubmodel {isub submodel_label description comments times
     # toplevel
     if {$isub == 1} {
         $widget insert end "\n"
-        $widget insert end "Model [regsub -all "\n" $submodel_label " "]" bigtag
+        $widget insert end [format [tr. {Model %1$s}] \
+				[BlankCrs $submodel_label]] bigtag
     } else  {
         $widget insert end "\n"
-        $widget insert end "Submodel [regsub -all "\n" $submodel_label " "] " bigtag
+        $widget insert end [format [tr. {Submodel %1$s}] \
+				[BlankCrs $submodel_label]] bigtag
     }
     
     # Label and Description, if any
@@ -1643,7 +1648,7 @@ proc equationlisting_addsubmodel {isub submodel_label description comments times
     
     # time step index
     if {![string match null $timestep]} {
-        $widget insert end "\tTime step index: $timestep\n" cmttag
+        $widget insert end "\t[tr. {Time step index:}] $timestep\n" cmttag
     }
     
     # enumerated types
@@ -1655,9 +1660,9 @@ proc equationlisting_addsubmodel {isub submodel_label description comments times
 #     }
 ################################################################################
     if {![string match {[]} $enumtypes]} {
-        $widget insert end "\tEnumerated types: ${enumtypes}\n" cmttag
+        $widget insert end "\t[tr. {Enumerated types:}] ${enumtypes}\n" cmttag
     }
-    $equationlist(textbox) configure  -state disabled
+    $equationlist(textbox) configure -state disabled
     update idletasks
 }
 
@@ -1675,13 +1680,18 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     
     #puts "equationlisting_addvariable $varlabel $vartype $inflows $outflows $where"
     
-    $widget insert end "[string totitle ${vartype}] " typtag
+    $widget insert end "[tr. [string totitle ${vartype}]] " typtag
     $widget insert end " " descrtag
     $widget image create end -image equationlist(${vartype}img)
     $widget insert end " " descrtag
     
     set tidy_varlabel [regsub -all "\n" $varlabel " "]
-    set tidy_expression [regsub -all "\n" $expression "\n\t\t\t"]
+    if {[lsearch -exact {{Fixed parameter} {Variable parameter}} \
+	     $expression]>-1} {
+	set tidy_expression [tr. $expression]
+    } else {
+	set tidy_expression [regsub -all "\n" $expression "\n\t\t\t"]
+    }
     set tidy_description [regsub -all {\n} $description { }]
     set tidy_comments [regsub -all "\n" $comments " "]
 
@@ -1703,9 +1713,9 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
         
         # intial value
         
-        $widget insert end "\tInitial value" eqntag
+        $widget insert end "\t[tr. {Initial value}]" eqntag
         $widget insert end " = " eqntag
-        $widget insert end $expression eqntag
+        $widget insert end $tidy_expression eqntag
         $widget insert end "\n" eqntag
         
 	AddWhereClauses $widget $where $minmax
@@ -1714,7 +1724,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     }
         # ...rate equation
         if {[llength $outflows]>0 | [llength $inflows]>0} {
-            set text_string "Rate of change = "; #"d(${tidy_varlabel})/dt = "
+            set text_string "[tr. {Rate of change}] = "; #"d(${tidy_varlabel})/dt = "
             
             foreach inflow $inflows {
                 set text_string "$text_string + $inflow"
@@ -1735,7 +1745,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     
     # Comments
     if ![string match null $comments] {
-        $widget insert end "\tComments:\n\t\t$tidy_comments \n" cmttag; # should be empty if comments null
+        $widget insert end "\t[tr. Comments:]\n\t\t$tidy_comments \n" cmttag; # should be empty if comments null
         #add_text "Comments: $tidy_comments" {Helvetica 9 italic} 20 0 #000088
     }
     $equationlist(textbox) configure  -state disabled
@@ -1753,7 +1763,7 @@ proc AddWhereClauses {widget where minmax} {
 #	}
     set paramData [GetFromProlog tk_get_params(dummy,$where)]
     if {[string length $paramData]} {
-	$widget insert end "\tWhere:\n" whrtag
+	$widget insert end "\t[tr. Where:]\n" whrtag
 	foreach paramList $paramData {
 	    set paramName [lindex $paramList 1]
 	    $widget insert end "\t\t$paramName = [DescribeInputParam [lindex $paramList 0]]\n" whrtag

@@ -2316,8 +2316,8 @@ proc DescribeInputParam {paramSpec} {
     } else { ;# in_assoc
 	set template {Value(s) of %1$s for submodel "%2$s" in role "%3$s"}
     }
-    format [tr. $template] \
-	[lindex $paramSpec 0] [lindex $paramSpec 1] [lindex $paramSpec 3]
+    format [tr. $template] [BlankCrs [lindex $paramSpec 0]] \
+	[BlankCrs [lindex $paramSpec 1]] [BlankCrs [lindex $paramSpec 3]]
 }
 
 proc restore_equation {winId bar} {

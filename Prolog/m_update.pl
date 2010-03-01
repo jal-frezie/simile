@@ -754,7 +754,7 @@ get_abbrev(Full, TrShort) :-
 		cloud-cd, submodel-submodel, condition-cond, alarm-al,
 		creation-cr, immigration-im, reproduction-rep, loss-loss,
 		flow-flow, influence-i, relation-role]),
-	translate(Short, ShortStr),
+	translate_message(Short, ShortStr),
 	name(TrShort, ShortStr).
 
 one_end_in(Boxes, Arc) :-
@@ -1777,7 +1777,7 @@ make_desktop(Desktop, Canvas_name) :-
 /* ...which calls the class constructor, which calls... */
 make_desktop_node(Desktop, Canvas_name) :-
         m_class:Root is_root,
-	translate('Desktop', DTStr),
+	translate_message('Desktop', DTStr),
 	name(DTWord, DTStr),
 	make_node(Root, DTWord, Desktop),
 	change_class(Desktop, _, submodel),

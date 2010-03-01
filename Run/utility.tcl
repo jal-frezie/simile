@@ -849,3 +849,7 @@ proc GetFrame {special} {
 #    return [$special getframe] ;# bwidget TitleFrame version
     return $special
 }
+
+#proc TranslateFormatting {key params} {
+#    eval [list format [tr. $key]] $params
+#}

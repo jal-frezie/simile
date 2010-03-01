@@ -311,10 +311,10 @@ menu_handle(Win, file, save_interface) :-
 	write_with_breaks(Stream, interface_spec_for(MCaption, Bounds)),
 	save_references(Stream, Model),
 	(member(Type, [relation, flow, influence]),
-	    translate(Type, TypeStr),
+	    translate_message(Type, TypeStr),
 	    name(TypeAtom, TypeStr),
 	    member(Dir, [in, out]),
-	    translate(Dir, DirStr),
+	    translate_message(Dir, DirStr),
 	    name(DirAtom, DirStr),
 	    reassure_user(write_interface, [TypeAtom, DirAtom]),
 	    nl(Stream),
@@ -514,7 +514,7 @@ menu_handle(Win, edit, Component) :-
 
 Delete the selection */
 menu_handle(Win, edit, reroute) :-
-	translate('Reroute', RRStr),
+	translate_message('Reroute', RRStr),
 	name(RRAtom, RRStr),
         start_progress_dialogue(Win),
 	reassure_user(pl_action, [RRAtom]),
@@ -539,7 +539,7 @@ menu_handle(Win, edit, snap) :-
 	menu_handle(Win, edit, reroute).
 
 menu_handle(Win, edit, delete) :-
-	translate('Delete', DelStr),
+	translate_message('Delete', DelStr),
 	name(DelAtom, DelStr),
         start_progress_dialogue(Win),
 	reassure_user(pl_action, [DelAtom]),
@@ -550,7 +550,7 @@ menu_handle(Win, edit, delete) :-
 	   
 menu_handle(Win, edit, CutOrCopy) :-
 	member(CutOrCopy-VisAct, [cut-'Cut', copy-'Copy']),
-	translate(VisAct, DelStr),
+	translate_message(VisAct, DelStr),
 	name(DelAtom, DelStr),
         start_progress_dialogue(Win),
 	reassure_user(pl_action, [DelAtom]),
@@ -900,52 +900,23 @@ submodelpath(SubmodelNode, Path) :-
 	).
 
 submodel_type(Submodel,Type):-
-   connects(Link1, Submodel1, Submodel),
-   connects(Link2, Submodel2, Submodel),
-   Link1 has_type relation,
-   Link2 has_type relation,
-   Submodel1 \== Submodel2,
-   Link1 has_attribute name of Role1,
-   Link2 has_attribute name of Role2,
-   submodelpath(Submodel, Submodelpath),
-   submodelpath(Submodel1, Submodelpath1),
-   submodelpath(Submodel2, Submodelpath2),
-   sicstus_format_to_chars('Submodel  ~w is an association submodel between ~w (~w) and ~w (~w).', 
-      [Submodelpath, Submodelpath1,Role1,Submodelpath2,Role2], TypeStr),
-   name(Type, TypeStr),!.
-submodel_type(Submodel,Type):- 
-   connects(Link1, Submodel1, Submodel),
-   connects(Link2, Submodel1, Submodel),
-   Link1 has_type relation,
-   Link2 has_type relation,
-   Link1 has_attribute name of Role1,
-   Link2 has_attribute name of Role2,
-   Link1 \== Link2,
-   submodelpath(Submodel, Submodelpath),
-   submodelpath(Submodel1, Submodelpath1),
-   sicstus_format_to_chars(
-      'Submodel  ~w is an association submodel between ~w and itself with roles ~w and ~w.', 
-      [Submodelpath, Submodelpath1,Role1,Role2], TypeStr),
-   name(Type, TypeStr),!.
-submodel_type(Submodel,Type):-
-   connects(Link1, Submodel1, Submodel),
-   Link1 has_type relation,
-   Link1 has_attribute name of Role,
-   submodelpath(Submodel, Submodelpath),
-   submodelpath(Submodel1, Submodelpath1),
-   sicstus_format_to_chars(
-      'Submodel  ~w is a ~w satellite submodel of ~w.', 
-      [Submodelpath,Role, Submodelpath1], TypeStr),
-   name(Type, TypeStr),!.
+	submodelpath(Submodel, Submodelpath),
+	role_from_base(Submodel, Role1, Base1),
+	(role_from_base(Submodel, Role2, Base2),
+	    Role2 \== Role1,
+	    (Base2 \== Base1, !,
+		translate_message('Submodel %1$s an association submodel between %2$s (in role %3$s) and %4$s (in role %5$s).', [Submodelpath, Base1, Role1, Base2, Role2], Type);
+	      translate_message('Submodel %1$s is an association submodel between %2$s and itself with roles %3$s and %4$s.',
+				[Submodelpath, Base1, Role1, Role2], Type));
+	    translate_message('Submodel %1$s is a %2$s satellite of submodel %3$s.', [Submodelpath, Role1, Base1], Type)).
 
 submodel_type(Submodel,Type):-
    by_record(Submodel),
    submodelpath(Submodel, Submodelpath),
-   sicstus_format_to_chars(
-      'Submodel  ~w is a membership by record submodel.', 
-      [Submodelpath], TypeStr),
-   name(Type, TypeStr),!.
+   translate_message('Submodel %1$s is a membership by record submodel.',
+		     [Submodelpath], Type),!.
 
+/* no such thing
 submodel_type(Submodel,Type):-
    is_population(Submodel),
    is_conditional(Submodel),
@@ -954,32 +925,31 @@ submodel_type(Submodel,Type):-
       'Submodel  ~w is a conditional population submodel.', 
       [Submodelpath], TypeStr),
    name(Type, TypeStr),!.
-
+*/
 submodel_type(Submodel,Type):-
    is_population(Submodel),
    submodelpath(Submodel, Submodelpath),
-   sicstus_format_to_chars(
-      'Submodel  ~w is a population submodel.', 
-      [Submodelpath], TypeStr),
-   name(Type, TypeStr),!.
+   translate_message(
+      'Submodel %1$s is a population submodel.', 
+      [Submodelpath], Type),!.
 
 submodel_type(Submodel,Type):-
    is_conditional(Submodel),
    get_node_size(Submodel, Dimensions),
+   sicstus_write_to_chars(Dimensions, DimStr),
+   name(Dims, DimStr),
    submodelpath(Submodel, Submodelpath),
-   sicstus_format_to_chars(
-      'Submodel  ~w is a conditional fixed membership submodel of dimensions ~w.', 
-      [Submodelpath,Dimensions], TypeStr),
-   name(Type, TypeStr),!.
+   translate_message(
+      'Submodel %1$s is a conditional fixed membership submodel of dimensions %2$s.', 
+      [Submodelpath,Dims], Type),!.
 
 submodel_type(Submodel,Type):-
    is_conditional(Submodel),
    get_node_size(Submodel, []),
    submodelpath(Submodel, Submodelpath),
-   sicstus_format_to_chars(
-      'Submodel  ~w is a conditional submodel.', 
-      [Submodelpath], TypeStr),
-   name(Type, TypeStr),!.
+   translate_message(
+      'Submodel %1$s is a conditional submodel.', 
+      [Submodelpath], Type),!.
 
 submodel_type(Submodel,''):-
    get_all_dims(Submodel, '[]').
@@ -987,16 +957,25 @@ submodel_type(Submodel,''):-
 submodel_type(Submodel,Type):-
    get_all_dims(Submodel, Dimensions),
    Dimensions \== [],
+   sicstus_write_to_chars(Dimensions, DimStr),
+   name(Dims, DimStr),
    submodelpath(Submodel, Submodelpath),
    sicstus_format_to_chars(
-      'Submodel  ~w is a fixed_membership submodel with dimensions ~w.', 
-      [Submodelpath,Dimensions], TypeStr),
-   name(Type, TypeStr),!.
+      'Submodel %1$s is a fixed_membership submodel with dimensions %2$s', 
+      [Submodelpath,Dims], Type),!.
 
 submodel_type(Submodel,Type):-
    get_all_dims(Submodel, Type).
 %submodel_type(Submodel,simple_default).
 %submodel_type(Submodel,simple).
+
+role_from_base(Submodel, Role1, Submodelpath1) :-
+	Link1 is_connector from _ to Submodel,
+	Link1 has_type relation,
+	connects(Link1, Submodel1, Submodel),
+	submodelpath(Submodel1, Submodelpath1),
+	find_name_host(Link1, LinkA),
+	LinkA has_attribute name of Role1.
 
 mysetof(A,B,C):-
 	setof(A,B,C),!.
