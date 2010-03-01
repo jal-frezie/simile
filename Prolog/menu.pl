@@ -1016,8 +1016,8 @@ write_eqn_term(Submodel, Entry, MinMax, Description, Comment, InFlows, OutFlows)
 	get_desc_and_comment(VisNode, Description, Comment, null),
 	find_type(VisNode, CompType),
 	caption_for(VisNode, Dest),
-	get_input_info(Component, Links),
-	get_ppairs(Links, PPairs),
+%	get_input_info(Component, Links),
+%	get_ppairs(Links, PPairs),
 	((CompType = compartment, 
 	 get_flows(VisNode, out, OutFlows), 
 	 get_flows(VisNode, in, InFlows) 
@@ -1026,10 +1026,11 @@ write_eqn_term(Submodel, Entry, MinMax, Description, Comment, InFlows, OutFlows)
 	 InFlows = null, 
 	 OutFlows = null
 	)),
-	((PPairs = [],
-		Entry = (where((CompType:Dest=Eqn), [null]))); % Bob's change
-	(PPairs = [_ | _],
-		Entry = (where((CompType:Dest=Eqn), PPairs)))),
+%	((PPairs = [],
+%		Entry = (where((CompType:Dest=Eqn), [null]))); % Bob's change
+%	(PPairs = [_ | _],
+%		Entry = (where((CompType:Dest=Eqn), PPairs)))),
+	Entry = where((CompType:Dest=Eqn), Component),
 	make_min_max_line(Component, MinMax).
 
 make_min_max_line(Component, MinMax) :-
@@ -1047,14 +1048,15 @@ make_min_max_line(Component, MinMax) :-
 get_flows(CompartmentNode, Direction, Names) :-
 	findall(Caption,(instance:flows(Direction, CompartmentNode, Arc),caption_for(Arc,Caption)), Names).
 
+/* Got rid of this in favour of having tcl query the parameters
 get_ppairs([],[]).
-/* Only include a "...where P=V" entry where P is not the default parameter name for V. */
+ %Only include a "...where P=V" entry where P is not the default parameter name for V.
 get_ppairs([input_link(_, Source, Param, _, _) | R1], Terms) :-
 	get_ppairs(R1, R2),
 	(m_update:add_brackets(Source,_, Param), !,
 	    Terms = R2;
 	Terms = [Param = Source | R2]).
-
+*/
 set_properties(Wid, Model) :-
 	get_disag_params(Model, P_list),
 	do_disag_dialog(Wid, Model, P_list, New_P_list),

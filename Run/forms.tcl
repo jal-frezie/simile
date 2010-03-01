@@ -1684,9 +1684,6 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     set tidy_expression [regsub -all "\n" $expression "\n\t\t\t"]
     set tidy_description [regsub -all {\n} $description { }]
     set tidy_comments [regsub -all "\n" $comments " "]
-    set where [regsub -all "\n" $where " "]
-    set where [string range $where 1 end-1]
-    set tidy_where [regsub -all "," $where "\n\t\t"]
 
     # Label and Description, if any
     if [string match null $description] {
@@ -1711,10 +1708,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
         $widget insert end $expression eqntag
         $widget insert end "\n" eqntag
         
-        if ![string match {null} $where] {
-            $widget insert end "\tWhere:\n\t\t$tidy_where \n" whrtag; # tidy where should be empty if where null
-            #add_text "Where:\n$tidy_where" {Helvetica 9 italic} 20 0 #008800
-        }
+	AddWhereClauses $widget $where $minmax
         if {![string match {null} $minmax]} {
             $widget insert end "\t$minmax\n"
     }
@@ -1736,13 +1730,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
         $widget insert end "\t$tidy_varlabel = \t\t$tidy_expression \n" eqntag
         #$widget insert end "\t$tidy_varlabel = $expression \n" eqntag
         
-        if ![string match {null} $where] {
-            $widget insert end "\tWhere:\n\t\t$tidy_where \n" whrtag; # tidy where should be empty if where null
-            #add_text "Where:\n$tidy_where" {Helvetica 9 italic} 20 0 #008800
-        }
-        if {![string match {null} $minmax]} {
-            $widget insert end "\t$minmax\n"
-    }
+	AddWhereClauses $widget $where $minmax
     }
     
     # Comments
@@ -1752,6 +1740,28 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     }
     $equationlist(textbox) configure  -state disabled
     
+}
+
+proc AddWhereClauses {widget where minmax} {
+# old version got pre-built text and did this:
+#        if ![string match {null} $where] {
+#            $widget insert end "\tWhere:\n\t\t$tidy_where \n" whrtag; # tidy where should be empty if where null
+            #add_text "Where:\n$tidy_where" {Helvetica 9 italic} 20 0 #008800
+#        }
+#        if {![string match {null} $minmax]} {
+#            $widget insert end "\t$minmax\n"
+#	}
+    set paramData [GetFromProlog tk_get_params(dummy,$where)]
+    if {[string length $paramData]} {
+	$widget insert end "\tWhere:\n" whrtag
+	foreach paramList $paramData {
+	    set paramName [lindex $paramList 1]
+	    $widget insert end "\t\t$paramName = [DescribeInputParam [lindex $paramList 0]]\n" whrtag
+	}
+    }
+    if {![string match {null} $minmax]} {
+	$widget insert end "\t$minmax\n"
+    }
 }
 
 proc EquationListingSave {winId topNode} {
