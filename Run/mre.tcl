@@ -1279,13 +1279,14 @@ proc RaiseMREFor {node} {
 
 proc MyRaise {top} {
     wm deiconify $top
-    if {[string equal x11 [tk windowingsystem]]} {
+#    if {[string equal x11 [tk windowingsystem]]} {
 # work around mind-boggling KDE bug: lower works, raise does not
-	set allWins [wm stackorder .]
-	foreach hiWin [lrange $allWins [expr [lsearch $allWins $top]+1] end] {
-	    lower $hiWin $top
-	}
-    }
+# removed as did not necessarily help
+#	set allWins [wm stackorder .]
+#	foreach hiWin [lrange $allWins [expr [lsearch $allWins $top]+1] end] {
+#	    lower $hiWin $top
+#	}
+#    }
     raise $top
 
     if {[string equal aqua [tk windowingsystem]]} {
