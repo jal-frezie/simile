@@ -938,8 +938,19 @@ proc AddEqnPopup {node x y winId X Y} {
  #       }
         PostPopup $X $Y
         if {$doDesc} {
-            set desc [GetFromProlog tk_get_info('$winId',$plName,desc)]
-            
+            set desc [GetFromProlog tk_get_info('$winId',$plName,context)]
+	    set userDesc [GetFromProlog tk_get_info(dummy,$plName,description)]
+            if {[string equal {} $userDesc]} {
+		set userDesc [GetFromProlog tk_get_info(dummy,$plName,desc)]
+		# same property has different name for submodels
+	    }
+            if {[string equal {} $userDesc]} {
+		set userDesc [GetFromProlog tk_get_info(dummy,$plName,desc)]
+		# same property has different name for submodels
+	    }
+            if {![string equal {} $userDesc]} {
+		append desc { -- } $userDesc
+	    }
             # after going Prolog, check popup window still there
             # note colour etc are not comments though they look like them in emacs
             # actually new technology should make this unnecessary

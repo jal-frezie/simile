@@ -84,8 +84,11 @@ build_suffix([H | T], Suffix) :-
 	append([H, " ", Tail], Suffix)).
 
 get_info(_Wid, Comp, enum_type_defns, ETDefns) :-
-	find_all_comps(Sub, Comp),
-	m_update:get_all_enum_types(Sub, ETDefns).
+	(find_type(Comp, submodel), !,
+	    % just get defns for this submodel level
+	    m_update:enum_types_for(Comp, ETDefns);
+	  % if not a submodel, get all applicable enum types
+	    get_all_enum_types(Comp, ETDefns)).
 
 get_info(_Wid, Comp, colour, ColorSpec) :-
 	get_av_pair(Comp, 0, fill_colour, ColorSpec), !;
@@ -100,7 +103,7 @@ get_info(_Wid, Comp, eqn, Eqn) :-
 		Eqn = '');
 	 Eqn = '<none>').
 
-get_info(Wid, Comp, desc, DescAtm) :-
+get_info(Wid, Comp, context, DescAtm) :-
 	find_type(Comp, LType),
 	(LType is_class_of_sort captionless, !,
 	    Part1 = "";
@@ -142,23 +145,18 @@ get_info(Wid, Comp, desc, DescAtm) :-
 	append([Part1, Middle, " (", Suffix, ")"], Desc)),
 	name(DescAtm, Desc).
 
-get_info(_, Comp, comment, Pop) :-
+get_info(_, Name, is_unit, Def) :-
+	(units:defined_as_unit(Name, Def), !;
+	Def = none).
+
+get_info(_, Comp, Field, Pop) :-
+	% catch-all clause to get any attribute value
 	(find_type(Comp, relation), !,
 	    find_name_host(Comp, Func);
 	 find_type(Comp, flow), !,
 	    bowtie_section(Comp, Func);
 	find_base(Comp, Func)),
-	(get_av_pair(Func, _, comment, Cmt), !;
-	text:translate_message('no comment', CmtStr),
-	    name(Cmt, CmtStr)),
-	(get_av_pair(Func, _, description, Desc),
-	    sicstus_format_to_chars("~w\n~w", [Desc, Cmt], PopStr),
-	    name(Pop, PopStr), !;
-	Pop = Cmt).
-
-get_info(_, Name, is_unit, Def) :-
-	(units:defined_as_unit(Name, Def), !;
-	Def = none).
+	get_av_pair(Func, _, Field, Pop).
 
 context_find(Wid, Query, Target) :-
 	callback('{}'),

@@ -1148,6 +1148,9 @@ proc ControlDraw {prologVersion} {
 		  [list custom(compDescPop) compDescPop ON "Equation"] \
 		  [list custom(compValPop) compValPop ON  "Value"] \
 		  [list custom(compCmtPop) compCmtPop ON  "Comment"] \
+		  [list custom(eqListWhere) eqListWhere ON "Parameter origins"] \
+		  [list custom(eqListETDefns) eqListETDefns ON "Enumerated type definitions"] \
+		  [list custom(eqListComments) eqListComments ON "Comments"] \
 		 ]
     CheckCompilerLocation
     LoadModelWindowExtensions

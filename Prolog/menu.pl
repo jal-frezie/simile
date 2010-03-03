@@ -877,15 +877,15 @@ display_submodels(Isub,[Submodel|Submodels]):-
 	(get_av_pair(Submodel, 0, enum_types, EnumTypes)  ; 
 		\+ get_av_pair(Submodel, 0, enum_types, EnumTypes), EnumTypes = null),
         submodel_type(Submodel,SMType),
-	tk_equationlisting_addsubmodel(Isub,Path,SubmodelDesc,SubmodelComment,TimeStepIndex,EnumTypes,SMType),
-	mysetof((Entry,MinMax,Description,Comment,InFlows,OutFlows),write_eqn_term(Submodel,Entry,MinMax,Description,Comment,InFlows,OutFlows),Entries),
+	tk_equationlisting_addsubmodel(Submodel,Isub,Path,TimeStepIndex,SMType),
+	mysetof((Entry,MinMax,InFlows,OutFlows),write_eqn_term(Submodel,Entry,MinMax,InFlows,OutFlows),Entries),
 	display_entries(Isub,1,Entries),
 	Isub1 is Isub+1,
 	display_submodels(Isub1,Submodels).
 
 display_entries(_,_,[]).
-display_entries(Isub,Ivar,[(where(VarType:VarLabel=Expression, WhereList),MinMax,Description,Comment,InFlows,OutFlow)|Entries]):-
-	tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,WhereList, MinMax, Description, Comment,InFlows,OutFlow),
+display_entries(Isub,Ivar,[(where(VarType:VarLabel=Expression, Node),MinMax,InFlows,OutFlow)|Entries]):-
+	tk_equationlisting_addvariable(VarType,VarLabel,Expression,Node, MinMax, InFlows,OutFlow),
 	Ivar1 is Ivar+1,
 	display_entries(Isub,Ivar1,Entries).
 
@@ -960,7 +960,7 @@ submodel_type(Submodel,Type):-
    sicstus_write_to_chars(Dimensions, DimStr),
    name(Dims, DimStr),
    submodelpath(Submodel, Submodelpath),
-   sicstus_format_to_chars(
+   translate_message(
       'Submodel %1$s is a fixed_membership submodel with dimensions %2$s', 
       [Submodelpath,Dims], Type),!.
 
@@ -982,8 +982,8 @@ mysetof(A,B,C):-
 mysetof(_,_,[]).
 
 % spec insead value? Only if present and not a string
-write_eqn_term(Submodel, Entry, MinMax, Description, Comment, InFlows, OutFlows) :-
-	find_all_comps(Submodel, Component),	
+write_eqn_term(Submodel, Entry, MinMax, InFlows, OutFlows) :-
+	find_all_comps(Submodel, Component),
 	(find_type(Component, function),
 	    implicit_function(VisNode, Component),
 	    pick_equation(Component, Eqn),
@@ -992,7 +992,7 @@ write_eqn_term(Submodel, Entry, MinMax, Description, Comment, InFlows, OutFlows)
 	    VisNode = Component,
 	    (is_parameter(Component, 2), Eqn = 'Fixed parameter';
 		is_parameter(Component, 1), Eqn = 'Variable parameter')),
-	get_desc_and_comment(VisNode, Description, Comment, null),
+	\+ is_ghost(VisNode),
 	find_type(VisNode, CompType),
 	caption_for(VisNode, Dest),
 %	get_input_info(Component, Links),
@@ -1009,7 +1009,7 @@ write_eqn_term(Submodel, Entry, MinMax, Description, Comment, InFlows, OutFlows)
 %		Entry = (where((CompType:Dest=Eqn), [null]))); % Bob's change
 %	(PPairs = [_ | _],
 %		Entry = (where((CompType:Dest=Eqn), PPairs)))),
-	Entry = where((CompType:Dest=Eqn), Component),
+	Entry = where((CompType:Dest=Eqn), VisNode),
 	make_min_max_line(Component, MinMax).
 
 make_min_max_line(Component, MinMax) :-

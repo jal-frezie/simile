@@ -1612,8 +1612,8 @@ proc EquationListingSelectAll {winId} {
 }
 
 
-proc equationlisting_addsubmodel {isub submodel_label description comments timestep enumtypes type} {
-    global equationlist
+proc equationlisting_addsubmodel {node isub submodel_label timestep type} {
+    global equationlist custom
     $equationlist(textbox) configure  -state normal
     
     set widget $equationlist(textbox)
@@ -1630,6 +1630,7 @@ proc equationlisting_addsubmodel {isub submodel_label description comments times
     }
     
     # Label and Description, if any
+    set description [GetFromProlog tk_get_info(dummy,$node,desc)]
     if [string match null $description] {
     } else  {
         $widget insert end " : ${description}\n" descrtag
@@ -1641,10 +1642,7 @@ proc equationlisting_addsubmodel {isub submodel_label description comments times
         $widget insert end "\t$type\n" cmttag
     }
     
-    # Comments
-    if {![string match null $comments]} {
-        $widget insert end "\t\t$comments \n" cmttag; # should be empty if comments null
-    }
+    AddComments $widget $node
     
     # time step index
     if {![string match null $timestep]} {
@@ -1659,19 +1657,22 @@ proc equationlisting_addsubmodel {isub submodel_label description comments times
 #        }
 #     }
 ################################################################################
-    if {![string match {[]} $enumtypes]} {
-        $widget insert end "\t[tr. {Enumerated types:}] ${enumtypes}\n" cmttag
+    if {[PrefValue custom(eqListETDefns) eqListETDefns]} {
+	set enumtypes [GetFromProlog tk_get_info(dummy,$node,enum_type_defns)]
+	if {![string match {} $enumtypes]} {
+	    $widget insert end "\t[tr. {Enumerated types:}] ${enumtypes}\n" cmttag
+	}
     }
     $equationlist(textbox) configure -state disabled
     update idletasks
 }
 
 
-proc equationlisting_addvariable {isub ivar vartype varlabel expression where minmax description comments \
+proc equationlisting_addvariable {node vartype varlabel expression minmax \
             inflows outflows} {
     #puts "inflows $inflows outflows $outflows"
     # tabs (\t) used as well as margins to provide some formatting to text copied and pasted to other apps
-    global equationlist
+    global equationlist custom
     #ShowMess debug info "$comments" ok
     
     set widget $equationlist(textbox)
@@ -1692,8 +1693,8 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     } else {
 	set tidy_expression [regsub -all "\n" $expression "\n\t\t\t"]
     }
+    set description [GetFromProlog tk_get_info(dummy,$node,description)]
     set tidy_description [regsub -all {\n} $description { }]
-    set tidy_comments [regsub -all "\n" $comments " "]
 
     # Label and Description, if any
     if [string match null $description] {
@@ -1718,7 +1719,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
         $widget insert end $tidy_expression eqntag
         $widget insert end "\n" eqntag
         
-	AddWhereClauses $widget $where $minmax
+	AddWhereClauses $widget $node $minmax
         if {![string match {null} $minmax]} {
             $widget insert end "\t$minmax\n"
     }
@@ -1740,19 +1741,34 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
         $widget insert end "\t$tidy_varlabel = \t\t$tidy_expression \n" eqntag
         #$widget insert end "\t$tidy_varlabel = $expression \n" eqntag
         
-	AddWhereClauses $widget $where $minmax
+	AddWhereClauses $widget $node $minmax
     }
     
     # Comments
-    if ![string match null $comments] {
-        $widget insert end "\t[tr. Comments:]\n\t\t$tidy_comments \n" cmttag; # should be empty if comments null
-        #add_text "Comments: $tidy_comments" {Helvetica 9 italic} 20 0 #000088
-    }
-    $equationlist(textbox) configure  -state disabled
-    
+    AddComments $widget $node
+    $widget configure  -state disabled    
 }
 
-proc AddWhereClauses {widget where minmax} {
+proc AddComments {widget node} {
+    global custom
+    if {![PrefValue custom(eqListComments) eqListComments]} {
+	return
+    }
+    set commentText [GetFromProlog tk_get_info(dummy,$node,comment)]
+    if {[string equal {} $commentText]} {
+	return
+    }
+    set commentTidy [regsub -all "\n" $commentText "\n\t\t"]
+    # keep line breaks but allign new lines with start of text
+    $widget insert end "\t[tr. Comments:]\n\t\t$commentTidy \n" cmttag; 
+    # should be empty if comments null
+}
+
+proc AddWhereClauses {widget node minmax} {
+    global custom
+    if {![PrefValue custom(eqListWhere) eqListWhere]} {
+	return
+    }
 # old version got pre-built text and did this:
 #        if ![string match {null} $where] {
 #            $widget insert end "\tWhere:\n\t\t$tidy_where \n" whrtag; # tidy where should be empty if where null
@@ -1761,7 +1777,7 @@ proc AddWhereClauses {widget where minmax} {
 #        if {![string match {null} $minmax]} {
 #            $widget insert end "\t$minmax\n"
 #	}
-    set paramData [GetFromProlog tk_get_params(dummy,$where)]
+    set paramData [GetFromProlog tk_get_params(dummy,$node)]
     if {[string length $paramData]} {
 	$widget insert end "\t[tr. Where:]\n" whrtag
 	foreach paramList $paramData {

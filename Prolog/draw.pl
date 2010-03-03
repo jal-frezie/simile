@@ -34,8 +34,8 @@ sicstus_module(draw,
 		remove_old_incomplete/0, draw_rubberband/1,
 		remove_old_rubberband/0, draw_links/4,
 		tk_get_pref/2, exit_AME/0,
-		tk_equationlisting_start/2,tk_equationlisting_addsubmodel/7,
-		tk_equationlisting_addvariable/11]).
+		tk_equationlisting_start/2,tk_equationlisting_addsubmodel/5,
+		tk_equationlisting_addvariable/7]).
 
 sicstus_use_module([library(lists), state, image, ame_gen, output]).
 
@@ -665,18 +665,15 @@ tk_equationlisting_start(DefaultName, Model) :-
 	safe_tcl_eval(['equationlisting_start', br(write(DefaultName)),
 		       Model], _).
 
-tk_equationlisting_addsubmodel(Isub,Submodel,Description,Comment,TimeStep,EnumTypes,Type):-
-	safe_tcl_eval(['equationlisting_addsubmodel', 
+tk_equationlisting_addsubmodel(Node,Isub,Submodel,TimeStep,Type):-
+	safe_tcl_eval(['equationlisting_addsubmodel', Node,
 		br(write(Isub)),
 		br(write(Submodel)),
-		br(write(Description)),
-		br(write(Comment)),
 		br(write(TimeStep)),
-		br(write(EnumTypes)),
 		br(write(Type))], _).
 
-tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,Where,
-			       MinMax,Description,Comments,InFlows,OutFlows) :-
+tk_equationlisting_addvariable(VarType,VarLabel,Expression,
+			       Node, MinMax,InFlows,OutFlows) :-
 /*
 	safe_tcl_eval(['tk_messageBox -message {tk_equationlisting_addvariable ',
 		br(write(Isub)),
@@ -691,16 +688,11 @@ tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,Where,
 		br(write(OutFlows)),'}'], _),  % jmm
 	safe_tcl_eval(['update idletasks'],_),  % jmm
 */
-	safe_tcl_eval(['equationlisting_addvariable', 
-		br(write(Isub)),
-		br(write(Ivar)),
+	safe_tcl_eval(['equationlisting_addvariable', Node,
 		br(write(VarType)),
 		br(write(VarLabel)),
 		br(write(Expression)),
-		br(write(Where)),
 		br(write(MinMax)),
-		br(write(Description)),
-		br(write(Comments)),
 		br(write(InFlows)),
 		br(write(OutFlows))], _),  % jmm
 	safe_tcl_eval(['update idletasks'], _).

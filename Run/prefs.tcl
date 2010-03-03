@@ -138,8 +138,8 @@ proc Pref_Dialog {} {
         wm title .pref [tr. "Preferences"]
         wm resizable .pref 0 0 
         set notebook [::ttk::notebook $dlg.notebook]
-        set vf [frame $notebook.view]
-        $notebook add $vf -text [tr. View]
+        set vf [frame $notebook.layout]
+        $notebook add $vf -text [tr. Layout]
             set initWinTF [TitleFrame $vf.initWinTF -text [tr. "Initial window position:"]]
             set initWinF $initWinTF
             set displayTF [TitleFrame $vf.displayTF -text [tr. "In new windows, display:"]]
@@ -148,9 +148,13 @@ proc Pref_Dialog {} {
             set barF $barTF
             set gridTF [TitleFrame $vf.gridTF -text [tr. "Placement grid:"]]
             set gridF $gridTF
-            set popupTF [TitleFrame $vf.popuptTF -text [tr. "Popups over model components:"]]
+        set cf [frame $notebook.content]
+        $notebook add $cf -text [tr. Content]
+            set popupTF [TitleFrame $cf.popuptTF -text [tr. "Popups over model components:"]]
             set popupF $popupTF
 	    pack [frame $popupF.line2] -side bottom -fill x -expand 1
+	    set eqListTF [TitleFrame $cf.eqListTF -text [tr. "Equation listings show:"]]
+	    set eqListF $eqListTF
         set ef [frame $notebook.edit]
         $notebook add $ef -text [tr. Edit]
             set genericTF [TitleFrame $ef.genericTF -text [tr. "All components:"]]
@@ -181,7 +185,7 @@ proc Pref_Dialog {} {
             set precisTF [TitleFrame $rf.precisTF -text [tr. "Numeric display precision (0 for default):"]]
             set precisF $precisTF
        # $notebook select View
-        pack $initWinTF $displayTF $gridTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $precisTF $compTF \
+        pack $initWinTF $displayTF $gridTF $popupTF $eqListTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $precisTF $compTF \
                 $canvasTF $recentTF $notebook -fill x -padx 4 -pady 4
         set bbox [frame $dlg.bbox] 
         pack [::ttk::button $bbox.bok -text [tr. OK] -underline 0 -width 8  \
@@ -214,6 +218,7 @@ proc Pref_Dialog {} {
                 gridSnap {set frame $genericF}
                 grid* {set frame $gridF}
                 comp* {set frame $popupF}
+		eqList* {set frame $eqListF}
 		maxPopupSize {set frame $popupF.line2}
                 bigButtons {set frame $barF}
                 popupHelp {set frame $barF}
