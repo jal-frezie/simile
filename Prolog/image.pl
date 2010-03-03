@@ -895,7 +895,7 @@ route_interior_part_link(Type, Dir, Start, [X, Y], Route) :-
     (Type = flow, !,
         Route = [End, Begin];
     /* Otherwise */
-        curve_route(Begin, End, Midpoint),
+        curve_route(Type, Begin, End, Midpoint),
         Route = [End, Midpoint, Begin]).
     
 /* Extra clause to cope with inputs/outputs in grouped submodels which don't have 
@@ -1017,7 +1017,7 @@ route_parent_child_link(Type, Direction, Parent, Child, Route) :-
     (Type = flow, !, 
         Route = [Finish, Start];
     /* it's influence */
-        curve_route(Start, Finish, Midpoint),
+        curve_route(Type, Start, Finish, Midpoint),
         Route = [Finish, Midpoint, Start]).
 
 /* Easy one for straight whole routes; this and its partial equivalent might need 
@@ -1089,7 +1089,7 @@ shape_route(Type, Beginning, End, Route) :-
         kink_route(Beginning, End, Route);
         Route = [End, Beginning]);
     /* influence */
-    curve_route(Beginning, End, Midpoint),
+    curve_route(Type, Beginning, End, Midpoint),
         Route = [End, Midpoint, Beginning].
 
 /* kink_route: this creates a route between two points comprising a sequence of
@@ -1119,10 +1119,15 @@ centre(Low1, Low2, High1, High2, Middle) :-
     High >= Low,
     Middle is (Low + High)/2.
 
-curve_route([X1, Y1], [X3, Y3], [X2, Y2]) :-
-	WarpFactor = 1, % -ve for counterclockwise curve
-	X2 is (2*(X1 + X3) + WarpFactor*(Y3 - Y1))/4,
-	Y2 is (2*(Y1 + Y3) + WarpFactor*(X1 - X3))/4.
+curve_route(Type, [X1, Y1], [X3, Y3], [X2, Y2]) :-
+	(Type = influence,
+	    draw:tk_get_pref(infRouting, Curvature);
+	  Type = relation,
+	    draw:tk_get_pref(roleRouting, Curvature)),
+	UseCurve is min(max(Curvature,-90),90),
+	% -ve for counterclockwise curve
+	X2 is (2*(X1 + X3) + UseCurve*(Y3 - Y1)/30)/4,
+	Y2 is (2*(Y1 + Y3) + UseCurve*(X1 - X3)/30)/4.
 
 get_linear(Acw_pt, Cw_pt, Acw_gap, Front_gap, Cw_gap, Mid_pt) :-
     Mid_pt is (Acw_pt*(Front_gap - Cw_gap) + Cw_pt*(Front_gap - Acw_gap)) / (2*Front_gap - Cw_gap - Acw_gap).

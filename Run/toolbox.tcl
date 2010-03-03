@@ -1134,7 +1134,9 @@ proc ControlDraw {prologVersion} {
 		  [list custom(quickDrag) quickDrag OFF "Quick drag"] \
 		  [list custom(myButton) myButton \u03bc "Custom keypad button"] \
 		  [list custom(defBackground) defBackground [list CHOICE "White" "Clear"] "Default background"] \
-		  [list custom(flowRouting) flowRouting ON "Rectilinear flow routing"] \
+		  [list custom(flowRouting) flowRouting ON "Straight flows"] \
+		  [list custom(infRouting) infRouting 10 "Curve influences"] \
+		  [list custom(roleRouting) roleRouting 10 "Curve role arrows"] \
 		  [list custom(deleteEndToEnd) deleteEndToEnd ON "Select links end-to-end"] \
 		  [list custom(helperManager) helperManager ON "Use single window manager"] \
 		  [list custom(popupPrecision) popupPrecision 0 "Value popups"] \

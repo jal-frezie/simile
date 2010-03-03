@@ -159,9 +159,9 @@ proc Pref_Dialog {} {
         $notebook add $ef -text [tr. Edit]
             set genericTF [TitleFrame $ef.genericTF -text [tr. "All components:"]]
             set genericF $genericTF
-            set linkTF [TitleFrame $ef.linkTF -text [tr. "All links:"]]
+            set linkTF [TitleFrame $ef.linkTF -text [tr. "Link selection:"]]
             set linkF $linkTF
-            set flowTF [TitleFrame $ef.flowTF -text [tr. "Flows:"]]
+            set flowTF [TitleFrame $ef.flowTF -text [tr. "Link routing:"]]
             set flowF $flowTF
             set submodelTF [TitleFrame $ef.submodelTF -text [tr. "Submodels:"]]
             set submodelF $submodelTF
@@ -225,7 +225,7 @@ proc Pref_Dialog {} {
                 quickDrag {set frame $genericF}
                 myButton {set frame $genericF}
                 deleteEndToEnd {set frame $linkF}
-                flowRouting {set frame $flowF}
+                *Routing {set frame $flowF}
                 defBackground {set frame $submodelF}
                 saveExtras {set frame $canvasF}
                 recentCount {set frame $recentF}
