@@ -859,7 +859,7 @@ spread_dims(Node) :-
 	(length(Inds, 32),
 	    dialogue:test_eqn(Equation, Node, Inds, IList,
 			      Type, FoundArray, Xs, Err),
-	    check_param_usage(IList, [], Xs, IList, []),
+	    dialogue:check_param_usage(IList, [], Xs, IList, []),
 	    Err = [],
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
 	    (get_actual_sizes(Node, FoundArray, _, Array, _),

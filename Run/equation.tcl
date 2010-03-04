@@ -466,7 +466,7 @@ proc interact_equation {} {
                     [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
                     $equation(min) $equation(max)]
         } 2 {
-            return [list $equation(paths,$equation(ckLine)) \
+            return [list $equation(ckLine) \
                     $equation(entry$equation(ckLine)) \
                     [UnityForReal $equation(unit$equation(ckLine))]]
         } 3 {

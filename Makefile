@@ -35,20 +35,7 @@ GCCCMD = gcc
 GPPCMD = g++
 OPT = 
 
-UNAME = $(shell uname)
-PLATFORM = $(UNAME)
-ifeq ($(UNAME),CYGWIN_NT-5.1)
-	PLATFORM = Windows
-endif 
-ifeq ($(UNAME),CYGWIN_NT-5.0)
-	PLATFORM = Windows
-endif 
-ifeq ($(UNAME),MINGW32_NT-5.1)
-	PLATFORM = Windows
-endif 
-ifeq ($(UNAME),MINGW32_NT-5.0)
-	PLATFORM = Windows
-endif 
+PLATFORM = $(shell uname -o)
 
 # Default case: Linux
 FLAGS = $(OPT) -m32
@@ -83,7 +70,7 @@ ifeq ($(PLATFORM),Darwin)
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
 endif 
 
-ifeq ($(PLATFORM),Windows) # any Windows, any toolchain
+ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	FLAGS = $(OPT)
 	SLDIR = bin

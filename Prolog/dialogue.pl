@@ -137,25 +137,25 @@ update_equation(Function,_,_,_, [Table_st, Data_st], Effect) :-
 	  name(Complaint, ComplaintStr),
 		Effect = user_advice_generated(bad_table_data(Complaint))).
 
-update_equation(_,_, Input_list, _, [Node_st, Parm_st, New_unit_st],
+update_equation(_,_, Input_list, _, [LineIndxStr, Parm_st, New_unit_st],
 		Effect) :-
-	name(New_var, Node_st),
-	sicstus_format_to_chars("local name for ~w", [New_var], ShowParam),
-	name(ShowParamAtom, ShowParam),
-	sicstus_format_to_chars("local units for ~w", [New_var], ShowUnits),
+	name(LineIndx, LineIndxStr),
 	append(EarlyInputs,
 	       [input_link(Link, New_var, _, Current_unit, _) | LateInputs],
-	       Input_list), !,
+	       Input_list),
+	length(EarlyInputs, LineIndx), !,
 	get_term(Parm_st, New_param, Complaint0),
 	(\+ Complaint0 = [], !,
-	    Complaint2 = bad_syntax(ShowParamAtom, Complaint0);
+	    text:translate_message('Parameter', [], TrField),
+	    Complaint2 = bad_syntax(TrField, Complaint0);
 	    get_term(New_unit_st, NewUnits, Complaint1),
 	    (Complaint1 = [], !;
-		name(ShowUnitsAtom, ShowUnits),
-		Complaint2 = bad_syntax(ShowUnitsAtom, Complaint1))),
+		text:translate_message('In units', [], TrField),
+		Complaint2 = bad_syntax(TrField, Complaint1))),
 	
 	(Complaint2 = [], !,
-	    (check_param_brackets(ShowParamAtom, New_param, Current_unit,
+	    text:translate_message('input parameter name', [], TrParam),
+	    (check_param_brackets(TrParam, New_param, Current_unit,
 				  Complaint), !;
 		(NewUnits = '', !,
 		    NewInputUnit = Current_unit;
@@ -622,8 +622,9 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, UseExpr),
 	    (get_ground_part(SubL, DimG),
 		build_array(1, DimG, Array),
-		check_param_brackets('explicit intermediate result',
-				     ExpInt, Array, ParseError), !,
+		text:translate_message('explicit intermediate result', [],
+				       TrXIR),
+		check_param_brackets(TrXIR, ExpInt, Array, ParseError), !,
 		raise_exception(ParseError);
 	    member(input_link(_,_, FPar, param_history(FDef, _)), DefnInputs),
 		var(FDef), !,
