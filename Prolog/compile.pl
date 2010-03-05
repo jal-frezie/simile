@@ -1047,15 +1047,14 @@ nodes.
 	    
 	    (setof(LossBox, S^X^U^member(instance(loss, S,X,
 						  elt(_, LossBox, _), U),
-					 Functions), Losses), !,
-		LossExtras = [on_step | BasesEnumerated];
-	      Losses = [],
-		LossExtras = BasesEnumerated),
+					 Functions), Losses), !;
+	      Losses = []),
 	    
-	    CreateRules = [make(culled(Name), [init_list(Name) | LossExtras],
+	    CreateRules = [make(culled(Name),
+				[init_list(Name), on_step | BasesEnumerated],
 				Path, Step, [lose(Ptr, Name, Losses)]),
 			   make(created(Name),
-				[culled(Name), on_reset | Creators], Path, 0,
+				[culled(Name) | Creators], Path, 0,
 				[init_mems(Ptr, Name, create(Creators))])],
 	    % relegate to 0 as membership may have changed during run
 	    (setof(ReproRule, maker_for(SmName, Functions, Name, Path, Step,
@@ -1171,8 +1170,7 @@ maker_for(SmName, Fns, Name, Path, Step, Ptr, Channel, Rule) :-
 	member(instance(Channel, InitName, _X, elt(_, InitSpec, _), _U), Fns),
 	% first rule stops latency being used before instances created
 	member(Rule, [make(InitSpec, [Effect], Path, Step, []),
-	  make(Effect, [culled(Name), on_step], Path, Step, [Action])]).
-% on_step used rather than time because processes not reversible
+	  make(Effect, [culled(Name)], Path, Step, [Action])]).
 
 list_params_from(BaseStr, N, Assigns, List) :-
 	sicstus_write_to_chars(N, NStr),
