@@ -656,7 +656,9 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 
 	    /* Now do what needs with the enumerated types */
 	    (InstType = submodel, /* do not include types for externals */
-		BaseName has_class_refinement enum_types of TypeList, !;
+	        DescAttr = desc, !;
+	      DescAttr = description),
+	    (BaseName has_class_refinement enum_types of TypeList, !;
 		TypeList = []),
 	    length(TypeList, ETCount),
 	    (ETCount = 0, !,
@@ -668,23 +670,32 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 		generate_name(L, ETPtrName, MetaPtr, Used),
 		excrete(L, variable_declaration, ['enum_type_data', MetaPtr,
 					     [ETCount], ETPtrs], 0, Stream)),
+	    % same thing for ghost references
+	    (setof(ConstPair,
+		  Ghost^Base^(BaseName has_part Ghost,
+			      is_ghost(Ghost),
+			      find_base(Ghost, Base),
+			      all(render, make_constant_string,
+				  [unify(L), build([Ghost, Base]),
+				   build(ConstPair)])), GBList), !,
+		length(GBList, GBCount),
+		append_atoms(Name, '_ghosts', GBPtrName),
+		generate_name(L, GBPtrName, GRefPtr, Used),
+		excrete(L, variable_declaration, ['ghost_ref_data', GRefPtr,
+					     [GBCount], GBList], 0, Stream);
+	      GBCount = 0,
+		GRefPtr = 'NULL'),
+
 	    /* do something similar for any strings that need including */
-	    make_runtime_strings([L, VisName, Name, Used], name,
-				 SpecStrId, Stream),
-	    all(render, make_runtime_strings,
-		[unify([L, BaseName, Name, Used]),
-		 build([spec, description, comment]),
-		 build(StringIds), unify(Stream)]),
+	    all(render, make_runtime_string,
+		[unify([L, Name, Used]),
+		 build([VisName, BaseName, VisName, VisName]),
+		 build([name, spec, DescAttr, comment]),
+		 build(StringPtrs), unify(Stream)]),
 		/* make a value lookup entry for each node with this value */
-	    setof([NodeName, Type, ETCount, MetaPtr, PutEval,
-		   CappedDims, NewPath, GraphPointer,
-		   [SpecStrId | StringIds], Min, Max, Class, Name],
-			
-		     (NodeName = VisName,
-			 PutEval = Eval;
-		     find_ghosts(VisName, NodeName),
-			 PutEval = 'GHOST'),
-		      NodeData);
+	    NodeData = [[VisName, Type, ETCount, MetaPtr, GBCount, GRefPtr,
+			 Eval, CappedDims, NewPath, GraphPointer,
+			 StringPtrs, Min, Max, Class, Name]];
 	/* No need to handle ghosts and link terminators */
 	NodeData = []).
 
@@ -705,7 +716,7 @@ make_runtime_enum_data(L, Name-Mems, Used, [ETCount, NamePtr, ETPtr],
 	    [unify(L), unify(variable_declaration), build(Templates),
 	     unify(0), unify(Stream)]).
 
-make_runtime_strings([L, Node, Name, Used], Field, Ptr, Stream) :-
+make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 	(Field = name, !,
 	    caption_for(Node, LocalStr),
 	    (Node is_of_sort value_outside, !,
@@ -713,7 +724,7 @@ make_runtime_strings([L, Node, Name, Used], Field, Ptr, Stream) :-
 		caption_for(Pop, CaptionHead),
 		append_atoms([CaptionHead, '/', LocalStr], FullStr);
 		FullStr = LocalStr);
-	    Node has_class_refinement Field of FullStr,
+	  Node has_class_refinement Field of FullStr,
 	        atomic(FullStr)),
 	templatify(L, FullStr, Ptr, Decl),
 	    append_atoms([Name, '_', Field], PtrTag),
@@ -916,9 +927,9 @@ make_arg_string(L, [Arg | Rest], Arg_string) :-
 	L = tcl,
 		append(String, [32 | Tail], Arg_string)), !. /* green */
 
-build_constant(Language, [String, Type, ETCount, ETArrPtr, Eval, Dims, Array,
-			  GraphPtr, Captions, Min, Max, Class, _Comment],
-	       Chars) :-
+build_constant(Language, [String, Type, ETCount, ETArrPtr, GBCount, GBArrPtr,
+			  Eval, Dims, Array, GraphPtr, Captions, Min, Max,
+			  Class, _Comment], Chars) :-
 	make_list_chars(Language, Dims, DimsString),
 	make_list_chars(Language, Array, ArrayString),
 	make_constant_string(Language, String, Arg1),
@@ -927,7 +938,8 @@ build_constant(Language, [String, Type, ETCount, ETArrPtr, Eval, Dims, Array,
 	name(Arg2, DimsString),
 	name(Arg3, ArrayString),
 	name(Arg5, PtrString),
-	make_list_chars(Language, [Arg1, Type, ETCount, ETArrPtr, Eval,
+	make_list_chars(Language, [Arg1, Type, ETCount, ETArrPtr,
+				   GBCount, GBArrPtr, Eval,
 				   Arg2,Arg3, GraphPtr, Min, Max, Class, Arg5],
 			Chars).
 /* 	render(Language, comment, Comment, 0, [CommentWd]),
@@ -963,6 +975,7 @@ make_param_string(L, [Param], String) :- !,
 	Param = [Unit, Arg],
 	type_for_unit(Unit, Type),
 	(L = c,
+	    
 		sicstus_format_to_chars("~w ~w", [Type, Arg], String);
 	L = tcl,
 		name(Arg, String)).

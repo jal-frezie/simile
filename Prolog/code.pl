@@ -44,5 +44,5 @@ tk_code(Node, RunCmd, _Dummy) :-
 
 rebuild_code(Lang, Node, ProgFileDir) :-
 	compile(Lang, Node, ProgFileDir);
-	scrub_run(Node, 0),
+	draw:scrub_run(Node, 0),
 	fail.

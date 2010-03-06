@@ -1175,11 +1175,21 @@ showMess(globMess); */
     return 3;
   }
   */
-  int getinfo(char* node_id) {
-    int count;
-    for (count=1;nodecount>count;++count) {
-      if (!strcmp(node_id, nodedata[count].name)) { 
-      return count;
+  int getinfo(char* node_id, int* gLine) {
+    int count, gcount;
+    char* ghosts;
+    ghost_ref_data* gpair;
+
+    *gLine = -1;
+    for (count=0;nodecount>count;++count) {
+      if (!strcmp(node_id, nodedata[count].name))
+	return count; // found node line
+      for (gcount=0;gcount<nodedata[count].ghost_count;++gcount) {
+	gpair = nodedata[count].ghost_ref_ptrs + gcount;
+	if (!strcmp(node_id, gpair->ghost)) {
+	  *gLine = count;
+	  return getinfo(gpair->base, &count); // count is spare
+	}
       }
     }
     return -1;
@@ -1653,23 +1663,26 @@ node_data_line* search_intnl(char* node, long int* tgtModel, char* caption,
   node_data_line *bottomLine;
   char localCapt[256];
   int localDims[32], dimCount;
-  int line, typeCount, typeIdx;
+  int line, ghostLine, typeCount, typeIdx;
 
   while (searchPoint) {
 //    sprintf(globMess, "seeking %s in %s", node, searchPoint->node);
 //    showMess(globMess);
     tryModel = searchPoint->model;
     if (!strcmp(node,searchPoint->node)) line=0;
-    else line=tryModel->getinfo(node);
+    else line=tryModel->getinfo(node, &ghostLine);
+    if (ghostLine>-1) {
+      tryModel->make_full_caption(ghostLine, caption, localDims, usedTypes);
+    }
     if (line>-1) {
       bottomLine = tryModel->nodedata + line;
       typeCount = tryModel->make_full_caption(line, localCapt, 
 					      localDims, usedTypes);
       if (line) {
-	if (!search_intnl(searchPoint->node, tgtModel, caption,
-		       dims, path, usedTypes + typeCount)) {
-	  return NULL;
-	}
+//	if (!search_intnl(searchPoint->node, tgtModel, caption,
+//		       dims, path, usedTypes + typeCount)) {
+//	  return NULL;
+//	}
       } else {
 	*tgtModel = (long int)tryModel;
       }
@@ -1693,10 +1706,13 @@ node_data_line* search_intnl(char* node, long int* tgtModel, char* caption,
 	*dims = *path = 0;
 	append_ints_to_null(dims, localDims, 0, 0);
 	append_ints_to_null(path, bottomLine->path, 0, 0);
-	*caption = 0;
+	// *caption = 0;
 	/*      } 
 End removed separate submodel case */
-      strcpy(caption + strlen(caption), localCapt);
+	if (ghostLine>-1) // append base tail to ghost submodel caption
+	  strcpy(caption + strlen(caption), strrchr(localCapt, '/'));
+	else
+	  strcpy(caption, localCapt);
 
       /* Old version with only one model hierarchy...
       if (searchPoint == nodeModelList) {

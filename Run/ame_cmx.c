@@ -83,7 +83,7 @@ int list(long int listType, Tcl_Interp *interp) {
 
   Tcl_Obj *resultPtr;
   char* find;
-  int line, nodecount;
+  int line, nodecount, gcount;
   node_data_line* node_data;
 
   resultPtr = Tcl_GetObjResult(interp);
@@ -95,6 +95,10 @@ int list(long int listType, Tcl_Interp *interp) {
       } else { */
       Tcl_ListObjAppendElement(interp, resultPtr, 
 			       Tcl_NewStringObj(node_data->name, -1));
+      for (gcount=0; gcount<node_data->ghost_count;++gcount) {
+	Tcl_ListObjAppendElement(interp, resultPtr,
+	  Tcl_NewStringObj(node_data->ghost_ref_ptrs[gcount].ghost, -1));
+      }
       //    }
   }
   return TCL_OK;
@@ -266,7 +270,11 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
     break;
 
   case GETEVAL:
-    resultPtr = Tcl_NewIntObj(data_line->eval);
+    if (strcmp(data_line->name, Tcl_GetStringFromObj(argv[1], NULL)))
+      // data line has different id, original must have been a ghost
+      resultPtr = Tcl_NewIntObj(GHOST);
+    else
+      resultPtr = Tcl_NewIntObj(data_line->eval);
     break;
 
   case GETMIN:

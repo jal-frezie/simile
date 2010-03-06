@@ -141,6 +141,11 @@ typedef struct enum_type_data_t {
   char** members;
 } enum_type_data; /* end of enum type data type decl */
 
+typedef struct ghost_ref_data_t {
+  char ghost[16];
+  char base[16];
+} ghost_ref_data;
+
 /* This declares the structure used by the generated code to hold metadata
 about model components. It is repeated in the stub ame_cmx.cpp to access fields
 outside the dll. */
@@ -150,6 +155,8 @@ typedef struct node_data_line_t {
   int datatype;
   int enum_type_count;
   enum_type_data* enum_type_ptrs;
+  int ghost_count;
+  ghost_ref_data* ghost_ref_ptrs;
   int eval;
   int dims[32];
   int path[32];
