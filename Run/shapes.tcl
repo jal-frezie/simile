@@ -707,10 +707,8 @@ proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
 #    }
     set useFont [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
             [lindex $fontData 2] $realFont]
-    set textX [Scale $w [expr [lindex $ptz 0] \
-            + $looks($n,$ptype,xoffset)*$fatness/100]]
-    set textY [Scale $w [expr [lindex $ptz 1] \
-            + $looks($n,$ptype,yoffset)*$fatness/100]]
+    set textX [Scale $w [expr [lindex $ptz 0] + $looks($n,$ptype,xoffset)*$fatness/100]]
+    set textY [Scale $w [expr [lindex $ptz 1] + $looks($n,$ptype,yoffset)*$fatness/100]]
 # experimental background box for text
     if {$looks($n,$type,txtbg)} {
 	set txtbg \#ffffc0
@@ -1634,7 +1632,7 @@ proc Customize {winId mode} {
 #	-command "SaveLooks $t $object"
 #    pack $t.actions.save -side left
     button $t.actions.normal -text "Normalize" \
-	-command "LoadLooks $t $n $object normal"
+	-command "ResetLooks $n $object; LoadLooks $t $n $object"
     pack $t.actions.normal -side left
     button $t.actions.done -text "Done" -command "set done 1"
     pack $t.actions.done -side left
@@ -1644,7 +1642,7 @@ proc Customize {winId mode} {
     button $t.actions.cancel -text "Cancel" -command "set done 0"
     pack $t.actions.cancel -side left
     pack $t.actions
-    LoadLooks $t $n $object $object
+    LoadLooks $t $n $object
     RememberLooks $n
     
     LetItShow $t
@@ -1660,15 +1658,15 @@ proc Customize {winId mode} {
     PackItUp $t
 }
 
-proc LoadLooks {t n target object} {
+proc LoadLooks {t n object} {
     global looks
     
-    if {[string compare $target influence]} {
+    if {[string compare $object influence]} {
 #        puts "ExtractFontData looks($n,$object,font) [ExtractFontData $looks($n,$object,font)]"
 	set fontData [ExtractFontData $looks($n,$object,font)]
-	set looks($n,$target,family) [lindex $fontData 0]
-	set looks($n,$target,weight) [lindex $fontData 1]
-	set looks($n,$target,style) [lindex $fontData 2]
+	set looks($n,$object,family) [lindex $fontData 0]
+	set looks($n,$object,weight) [lindex $fontData 1]
+	set looks($n,$object,style) [lindex $fontData 2]
 	set textsize [lindex $fontData 3]
         [GetFrame $t.text].size.scale set $textsize
 	[GetFrame $t.text].backbox.col configure \
@@ -1694,9 +1692,9 @@ proc LoadLooks {t n target object} {
 	$g.objectsize.scale set $looks($n,$object,objectsize)
 	$g.lines.scale set $looks($n,$object,lines)
 	foreach textAttr {xoffset yoffset textanchor} {
-	    set looks($n,$target,$textAttr) $looks($n,$object,$textAttr)
+	    set looks($n,$object,$textAttr) $looks($n,$object,$textAttr)
 	}
-	DoGraphics $t $target $middlex $middley $looks($n,$object,objectsize)
+	DoGraphics $t $object $middlex $middley $looks($n,$object,objectsize)
     } else {
 	$t.canvas delete sample
         PutText $t.canvas [list $middlex $middley] \
@@ -1724,7 +1722,7 @@ proc ExtractFontData {font} {
     return [list $family $weight $style $textsize]
 }
 
-proc CopyLooks {t n object} {
+proc CopyLooks {t n object nta} {
     global looks
     if {[string compare $object text]} {
 	set g [GetFrame $t.graphics]
@@ -1756,7 +1754,9 @@ proc CopyLooks {t n object} {
 	set looks($n,$object,txtbd) $looks(txtbd)
 	set looks($n,$object,txtbg) $looks(txtbg)
 	if {[string equal flow $object]} {set object vflow}
-        set looks($n,$object,textanchor) [GetTextAnchor $t]
+        if {!$nta} {
+	    set looks($n,$object,textanchor) [GetTextAnchor $t]
+	}
     }
 }
 
@@ -1821,7 +1821,26 @@ proc DoGraphics {box type middlex middley size} {
     }
 
     if {[info exists b]} {
-# side to put caption on -- this is fixed for now
+# side to put caption on -- this is fixed for now, but one day...
+#    switch -regexp $looks($n,$ptype,captanchor) {
+#	nw|w|sw {
+#	    set ptx [lindex $ptz 0] ;# l
+#	} ne|e|se {
+#	    set ptx [lindex $ptz 2] ;# r
+#	} n|c|s {
+#	    set ptx [expr {([lindex $ptz 0]+[lindex $ptz 2])/2}]
+#	}
+#    }
+#    switch -regexp $looks($n,$ptype,captanchor) {
+#	ne|n|nw {
+#	    set pty [lindex $ptz 1] ;# t
+#	} se|s|sw {
+#	    set pty [lindex $ptz 3] ;# b
+#	} e|c|w {
+#	    set pty [expr {([lindex $ptz 1]+[lindex $ptz 3])/2}]
+#	}
+#    }
+
 	set capt "Sample $type"
 	switch $type {
 	    submodel {
@@ -1836,7 +1855,6 @@ proc DoGraphics {box type middlex middley size} {
 		set ybase $b
 	    }
 	}
-
         PutText $box.canvas [list $xbase $ybase] \
                 $type "sample movable" 100 normal $capt
         set looks(cheat) [$box.canvas coords [GetCaptionItem $box.canvas sample]]
@@ -1927,7 +1945,7 @@ proc ZotColor {t n role type} {
             [$role cget -activebackground]]
     if {[llength $newColour]} {
 	$role configure -activebackground $newColour
-	CopyLooks $t $n $type
+	CopyLooks $t $n $type 0
 	ResetColours $t.canvas $type {} normal sample
     }
 }
@@ -1944,13 +1962,13 @@ proc ZotObjectSize {t n type size} {
         set useLooks $type
 #    }
     
-    CopyLooks $t $n $useLooks
+    CopyLooks $t $n $useLooks 0
     if {[string compare text $type]} {
 	DoGraphics $t $useLooks $middlex $middley \
 	    [[GetFrame $t.graphics].objectsize.scale get]
     } else {
 	$t.canvas delete sample
-        PutText $t.canvas [list $middlex $middley] \
+        PutText $t.canvas [list $middlex $middley $middlex $middley] \
                 text "sample" 100 normal "Sample text box"
     }
 }
@@ -1963,6 +1981,8 @@ proc UpdateOffsets {t n type} {
             [lindex $offsets 0] - [lindex $looks(cheat) 0]]
     set newYOff [expr $looks($n,$type,yoffset) + \
             [lindex $offsets 1] - [lindex $looks(cheat) 1]]
+# Do not need to update all because it gets called for each on closure --
+# actually you do because the baseline (cheat) gets updated on first call
     if {[string equal generic $type]} {
         foreach object {generic compartment channel function variable \
 			    submodel flow relation} {
@@ -2000,21 +2020,30 @@ proc ResetLooks {c type} {
     set looks($c,$type,xoffset) 0
     set looks($c,$type,yoffset) 0
     set looks($c,$type,textanchor) n
-}
-
-proc CustomizeLooks {c} {
-    global looks
-    
+    set looks($c,$type,captanchor) s
+#
+#
+#proc CustomizeLooks {c type} 
+#    global looks
+#    
     #    prolog tk_set_new_size(compartment,30,0,0)
     #    prolog tk_set_new_size(variable,15,0,0)
     #    prolog tk_set_new_size(function,15,0,0)
     #    prolog tk_set_new_size(cloud,25,0,0)
     #    prolog tk_set_new_size(channel,30,0,0)
-    set looks($c,vflow,xoffset) 2
-    set looks($c,vflow,yoffset) 0
-    set looks($c,vflow,textanchor) w
-    set looks($c,submodel,textanchor) sw
-    set looks($c,text,textanchor) c
+    switch $type {
+	flow {
+	    set looks($c,vflow,xoffset) 2
+	    set looks($c,vflow,yoffset) 0
+	    set looks($c,vflow,textanchor) w
+	    set looks($c,vflow,captanchor) e
+	} submodel {
+	    set looks($c,submodel,textanchor) sw
+	    set looks($c,submodel,captanchor) nw
+	} text {
+	    set looks($c,text,textanchor) c
+	}
+    }
 }
 
 proc Desystematize {colorSpec} {
@@ -2026,13 +2055,13 @@ proc Desystematize {colorSpec} {
 proc ApplyLooks {t topNode type} {
     RememberLooks $topNode
     if {[string compare $type generic]} {
-	CopyLooks $t $topNode $type
+	CopyLooks $t $topNode $type 0
         ExportLooks $t $topNode $type
     } else {
 # add state to next line
-        foreach object {generic compartment channel function variable \
-			    ghost_link text submodel flow influence relation} {
-            CopyLooks $t $topNode $object
+        foreach object {generic compartment channel function variable text \
+			    ghost_link submodel flow influence relation} {
+	    CopyLooks $t $topNode $object [string equal submodel $object]
             ExportLooks $t $topNode $object
         }
     }
@@ -2097,7 +2126,7 @@ proc ExportLooks {t topNode type} {
 proc MakeLooksSaver {n} {
     global looks
 # add state to next line
-    set objects {normal generic compartment channel text \
+    set objects {generic compartment channel text \
 		     variable function submodel flow influence \
 		     ghost_link relation}
     set aspects {font txtbd txtbg outline fill text select highlight target \

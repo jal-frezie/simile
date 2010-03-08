@@ -1710,8 +1710,8 @@ node_data_line* search_intnl(char* node, long int* tgtModel, char* caption,
 	/*      } 
 End removed separate submodel case */
 	if (ghostLine>-1) { // append base tail to ghost submodel caption
-	  strcpy(caption + strlen(caption), "/");
-	  strcpy(caption + strlen(caption), bottomLine->strings[0]);
+	  strcat(caption, "/");
+	  strcat(caption, bottomLine->strings[0]);
 	} else
 	  strcpy(caption, localCapt);
 
