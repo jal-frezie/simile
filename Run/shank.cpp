@@ -1709,9 +1709,10 @@ node_data_line* search_intnl(char* node, long int* tgtModel, char* caption,
 	// *caption = 0;
 	/*      } 
 End removed separate submodel case */
-	if (ghostLine>-1) // append base tail to ghost submodel caption
-	  strcpy(caption + strlen(caption), strrchr(localCapt, '/'));
-	else
+	if (ghostLine>-1) { // append base tail to ghost submodel caption
+	  strcpy(caption + strlen(caption), "/");
+	  strcpy(caption + strlen(caption), bottomLine->strings[0]);
+	} else
 	  strcpy(caption, localCapt);
 
       /* Old version with only one model hierarchy...

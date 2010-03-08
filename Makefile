@@ -35,7 +35,7 @@ GCCCMD = gcc
 GPPCMD = g++
 OPT = 
 
-PLATFORM = $(shell uname -o)
+PLATFORM = $(shell uname -s)
 
 # Default case: Linux
 FLAGS = $(OPT) -m32
@@ -56,7 +56,7 @@ ifeq ($(PLATFORM),Darwin)
 	ARCHEXTN = _ppc
 # build for everything unless I am on Barbie
 	ifneq ($(OSNUMBER),7.9.0)
-		FLAGS = $(OPT) -arch i386 -arch ppc -mmacosx-version-min=10.3
+		FLAGS = $(OPT) -arch i386 -arch ppc -mmacosx-version-min=10.2
 	        ARCHEXTN = _mac
 	endif
 	EXECEXTN = $(ARCHEXTN)
@@ -68,6 +68,8 @@ ifeq ($(PLATFORM),Darwin)
 		$(TCLFW)/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
+else
+	PLATFORM = $(shell uname -o)
 endif 
 
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
