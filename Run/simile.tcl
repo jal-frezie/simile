@@ -319,7 +319,7 @@ if {[info exists prolog_in_console]} {
     lappend auto_path $SIMILE_PATH/System/lib
 }
 
-set env(SIMILE_VERSION) 5.6
+set env(SIMILE_VERSION) 5.7
 set sendvars(simP) {p1}
 
 # KDE launch feedback will fail unless root window is displayed

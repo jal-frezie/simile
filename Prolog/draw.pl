@@ -342,24 +342,29 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 	    Style = compartment;
 	Style = ExactStyle),
 
-	(Style = submodel, !,
-	    DefAnchor = nw;
+	( /* Style = submodel, !,
+	    DefAnchor = nw; */
 	Style = flow,
 	Box = [L, T, R, B],
 	R-L>B-T, !,
-	    DefAnchor = e,
+%	    DefAnchor = e,
 	    PosStyle = vflow;
-	member(Style, [compartment, channel, variable, flow]), !,
+/*	member(Style, [compartment, channel, variable, flow]), !,
 	    DefAnchor = s;
 	DefAnchor = c),
-	(nonvar(PosStyle), !;
+	(nonvar(PosStyle), !; */
 	 PosStyle = Style),
 
+	get_text_offset(Id, Style, DefAnchor, _ForLater),
+	(PosStyle = vflow, !,
+	    rotate_compass(DefAnchor, UseAnchor);
+	    UseAnchor = DefAnchor),
+	
 	(get_shape(Id, caption_offset, [XOff, YOff]);
 	 get_shape(Id, caption_offset, [XOff, YOff, _Anchor]);
 	 XOff = 0, YOff = 0,
 	    set_shape(Id, caption_offset, [XOff, YOff])), !,
-	image:map(Box, DefAnchor, _,_, TextX, TextY),
+	image:map(Box, UseAnchor, _,_, TextX, TextY),
 	VirtX is TextX + XOff,
 	VirtY is TextY + YOff,
 	untranslate([VirtX, VirtY], Trans, ScreenPoint),
@@ -371,6 +376,9 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 /* currently added to last choice to test alternative edit prevention */
 	text(Wid, ScreenPoint, PosStyle, [Id, fillable | EditState],
 			Fatness, Colour_scheme, Caption).
+
+rotate_compass(H, V) :-
+	suffix([V, _, H | _], [e, se, s, sw, w, nw, n, ne, e, se, c, _, c]), !.
 
 get_group_from_gui(W, Box, List) :-
 	tk_get_group_from_gui(W, Box, List).

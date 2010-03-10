@@ -16,7 +16,7 @@ sicstus_module(input, [tk_make_desktop_node/0,
 		       tk_abandon_eqn/0, check_use/1, compile_to_file/1,
 		       tk_run_settings_tweaked/1, tk_off_window/2,
 		       tk_certain_death_node/1, tk_kill_everything/1,
-		       tk_set_new_size/3, tk_change_size/3, tk_do_colours/2]).
+		       tk_set_new_size/4, tk_change_size/4, tk_do_colours/2]).
 
 sicstus_use_module([library(lists), backup, event, menu, sp_only, utility]).
 
@@ -137,11 +137,11 @@ check_use(TestFile) :-
 	write(St, 'Testing'), nl(St),
 	close(St).
 
-tk_set_new_size(Node, CType, New_size) :-
-	set_box_size(Node, CType, New_size, 0,0).
+tk_set_new_size(Node, CType, New_size, NewCaptCorner) :-
+	set_box_size(Node, CType, New_size, NewCaptCorner, 0).
 
-tk_change_size(TopNode, CType, New_size) :-
-	tk_set_new_size(TopNode, CType, New_size),
+tk_change_size(TopNode, CType, New_size, NewCaptCorner) :-
+	tk_set_new_size(TopNode, CType, New_size, NewCaptCorner),
 	change_size(TopNode, CType).
 
 tk_run_settings_tweaked(Node) :-

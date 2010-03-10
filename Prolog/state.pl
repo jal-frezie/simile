@@ -223,8 +223,10 @@ get_box_size(Parent, Box_type, Cur_box_size) :-
 	    Cur_box_size is Scale*Abs_box_size;
 	Cur_box_size = Abs_box_size).
 
-get_text_offset(TopNode, Box_type, XDefOffset, YDefOffset) :-
-	box_size_is(TopNode, Box_type, _, XDefOffset, YDefOffset).
+get_text_offset(Node, Box_type, XDefOffset, YDefOffset) :-
+	ame_gen:contains(Top, Node),
+	backup:is_toplevel(Top),
+	box_size_is(Top, Box_type, _, XDefOffset, YDefOffset).
 
 set_box_size(TopNode, Box_type, New_box_size, XDefOffset, YDefOffset) :-
 	retractall(box_size_is(TopNode, Box_type, _,_,_)),
@@ -383,15 +385,15 @@ get_style(Style) :-
 /* Set editing state to initial default... */
 set_initial_box_sizes(TopNode) :-
 	retractall(box_size_is(TopNode, _,_,_,_)),
-	assert(box_size_is(TopNode, compartment, 50, 0, 0)),
-	assert(box_size_is(TopNode, state, 50, 0, 0)),
-	assert(box_size_is(TopNode, function, 50, 0, 0)),
-	assert(box_size_is(TopNode, variable, 50, 0, 0)),
-	assert(box_size_is(TopNode, cloud, 50, 0, 0)),
-	assert(box_size_is(TopNode, submodel, 50, 0, 0)),
-	assert(box_size_is(TopNode, channel, 50, 0, 0)),
-	assert(box_size_is(TopNode, flow, 50, 0, 0)),
-	assert(box_size_is(TopNode, influence, 50, 0, 0)),
-	assert(box_size_is(TopNode, ghost_link, 50, 0, 0)),
-	assert(box_size_is(TopNode, relation, 50, 0, 0)).
+	assert(box_size_is(TopNode, compartment, 50, s, 0)),
+	assert(box_size_is(TopNode, state, 50, s, 0)),
+	assert(box_size_is(TopNode, function, 50, c, 0)),
+	assert(box_size_is(TopNode, variable, 50, s, 0)),
+	assert(box_size_is(TopNode, cloud, 50, c, 0)),
+	assert(box_size_is(TopNode, submodel, 50, nw, 0)),
+	assert(box_size_is(TopNode, channel, 50, s, 0)),
+	assert(box_size_is(TopNode, flow, 50, s, 0)),
+	assert(box_size_is(TopNode, influence, 50, c, 0)),
+	assert(box_size_is(TopNode, ghost_link, 50, c, 0)),
+	assert(box_size_is(TopNode, relation, 50, c, 0)).
 
