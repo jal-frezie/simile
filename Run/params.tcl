@@ -1095,8 +1095,9 @@ namespace eval fileparams {
 		if {[set wrapTime [SetWrapTime $inC $nodeId]]} {
 		    puts -nonewline $pStr " wrap_time=[Entitize $wrapTime]"
 		}
-		if {[set fillMtd [SetFillMethod $inC $nodeId]]} {
-		    puts -nonewline $pStr " fill_method=\"[lindex {USE_LAST USE_CLOSEST INTERPOLATE} $fillMtd]\""
+		set fillMtd [SetFillMethod $inC $nodeId]
+		if {![string equal use_last $fillMtd]} {
+		    puts -nonewline $pStr " fill_method=\"$fillMtd\""
 		}
 		puts $pStr ">"
 		set dimCount 0
