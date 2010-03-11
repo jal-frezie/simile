@@ -1618,7 +1618,8 @@ get_nearest_equivalent_link(Ltype, OrigStart, Target, Start) :-
 		Btype = Ltype, % d_s_f can agree wrongly to ground type
 		appears(Start),
 		can_start(influence, Start),
-		can_finish(influence, Start, Target), % entry was u-turn
+		(PossFinish = Target; find_all_comps(Target, PossFinish)),
+		can_finish(influence, Start, PossFinish), % or entry was u-turn
 		!;
 	Start = OrigStart.
 
