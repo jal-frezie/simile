@@ -2228,13 +2228,17 @@ attempt_new_component(Parent, Box) :-
 /* List components inside the box */
 	get_inclusions(Parent, Box, Contents),
 
+	(setof(CrossingFlow, just_crosses(CrossingFlow, Contents), Exclude), !,
+	    purge(Exclude, Contents, Include);
+	  Include = Contents),
+	    
 	/* Undisplay arcs that will not exist after the operation...*/
-	(one_end_in(Contents, Arc), 
+	(one_end_in(Include, Arc), 
 		off(Arc), 
 		clear_shape(Arc, _),
 		fail;
 	true),
-	encapsulate(Contents, Node_name),
+	encapsulate(Include, Node_name),
 	set_shape(Node_name, internal_extent, [0,0,W,H]),
 	add_to_translation([0, 0, 1, 1], Node_name, Node_trans),
 	relate_graphics(Node_name, Node_trans),
@@ -2243,6 +2247,12 @@ attempt_new_component(Parent, Box) :-
 	give_focus(Node_name),
 	do_colours(Node_name, on),
 	select_text(Wid, Node_name).
+
+just_crosses(Flow, Contents) :-
+	member(Flow, Contents),
+	m_class:Flow is_connector from Start to Finish,
+	\+ member(Start, Contents),
+	\+ member(Finish, Contents).
 
 relate_graphics(Node_name, Node_trans) :-
 	move_boxes(Node_name, Node_trans),
