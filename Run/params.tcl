@@ -450,7 +450,8 @@ proc AcceptData {topNode compName notInput complain} {
             if {![string equal $newData $suppliedData($compName)]} {
                 set msgs(param_source_$compName) [tr. Unsaved]
 		set paramMetadata($compName,saveReference) 0
-                set suppliedData($compName) $newData
+#                set suppliedData($compName) $newData
+# will do that later _if_ it is error free
 		set dataChanged 1
             }
         }
@@ -530,7 +531,7 @@ proc AcceptData {topNode compName notInput complain} {
         }
         #puts "About to ListToArray $node {} $trans $recordDims $suppliedData($compName)"
         if {[string equal targetData $dataLocn]} {
-	    if {![llength $suppliedData($compName)]} {
+	    if {![llength $newData]} {
 		Query pest_measurements_missing warning pest_setup {} ok
 		return
 	    }
@@ -551,11 +552,11 @@ proc AcceptData {topNode compName notInput complain} {
 	} else {
 	    set errorData {}
 	}
-	if {$complain==2 && ![string length $suppliedData($compName)]} {
+	if {$complain==2 && ![string length $newData]} {
 	    # accept empty field for saving data
 	    set result {} ;# handle as error
 	} elseif {[catch {ListToArray $topNode $node {} $trans $recordDims \
-                        $suppliedData($compName) $readMany($compName) \
+                        $newData $readMany($compName) \
 			$useCppArray $errorData} result]} {
 	    if {[string equal aborted $result]} {
 		set abort 1
@@ -576,7 +577,8 @@ proc AcceptData {topNode compName notInput complain} {
 	    if {[info exists abort]} {
 		return 0
 	    }
-        } else {
+        } else { ;# all went well
+	    set suppliedData($compName) $newData
             if {$complain>-1} {
                 ColourCaptions $outNames($compName) black
             }
@@ -932,11 +934,14 @@ proc RevertData {winId compName notInput} {
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
 
+    set oldData [UglifyValList [$outNames($compName).e get]]
     $outNames($compName).e delete 0 end
     if {[info exists suppliedData($compName)]} {
         $outNames($compName).e insert 0 \
 	    [PrettifyValList $suppliedData($compName)]
+	set suppliedData($compName) $oldData
     }
+    
 }
 
 proc FillIfSmall {entry text} {
