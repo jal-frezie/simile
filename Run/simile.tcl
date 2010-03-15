@@ -190,7 +190,8 @@ if {[string match Darwin $tcl_platform(os)] && [info tclversion] < 8.6} {
 # Fixed in 5.4 by explicitly making it apply to everything.
 # Silly val for testing: 3.0
 # Make conversion easier: pick nice ratio
-    set scalRat [ChooseIntegerRatio [tk scaling] 0.9]
+    set defScaling [tk scaling]
+    set scalRat [ChooseIntegerRatio $defScaling 0.9]
     tk scaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
 
 # These are needed for platforms where they would other wise be a fixed number
@@ -435,6 +436,11 @@ if {[info exists SimileAutoObjLoaded]} {
 } else {
     update
 }
+
+# now before we put up any regular Simile windows, reset the scaling, because
+# a change in monitor layout may cause it to be reset for us, resulting in bad
+# screen coordinates
+tk scaling $defScaling
 
 wm withdraw . ;# already withdrawn if not Linux
 # after 5000 ;# pause to admire

@@ -833,11 +833,14 @@ public:
     getversion = (getversion_type *)FIND_FUNCTION(handle, "get_version");
     if (getversion == NULL) {
       UNLOAD_DLL(handle);
-      throw DllLossage("get version number of", fileName, WHAT_WENT_WRONG());
+      sprintf(erreur, "the shared object is probably not a Simile model");
+      throw DllLossage("get version number of", fileName, erreur);
     }
     if (fabs((*getversion)()-atof(xsimileVersion))>0.00001) {
+      sprintf(erreur, "client is for version %s but model is %.1f", 
+	      xsimileVersion, (*getversion)());
       UNLOAD_DLL(handle);
-      throw DllLossage("find current version of", fileName, WHAT_WENT_WRONG());
+      throw DllLossage("find current version of", fileName, erreur);
     }
 /* sprintf(globMess, "Loaded %ld", handle);
 showMess(globMess); */

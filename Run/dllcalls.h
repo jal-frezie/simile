@@ -304,3 +304,8 @@ EXTDEC int rdDatatype(long int);
 EXTDEC int rdBound(long int, int);
 EXTDEC void* rdLocateElement(long int old, int* indices);
 */
+
+//////////////////////////////////////////////////////////////////////////////
+// 6-D interface: class-based access to functionality accessed by procedure //
+// calls in 5-D.                                                            //
+//////////////////////////////////////////////////////////////////////////////
