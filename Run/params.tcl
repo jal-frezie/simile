@@ -453,8 +453,11 @@ proc AcceptData {topNode compName notInput complain} {
 #                set suppliedData($compName) $newData
 # will do that later _if_ it is error free
 		set dataChanged 1
+		set entryChanged 1
             }
-        }
+        } else {
+	    upvar 0 suppliedData($compName) newData
+	}
     }
     
     # for each constant value, check whether it has been changed, and if so,
@@ -578,7 +581,9 @@ proc AcceptData {topNode compName notInput complain} {
 		return 0
 	    }
         } else { ;# all went well
-	    set suppliedData($compName) $newData
+	    if {[info exists entryChanged]} {
+		set suppliedData($compName) $newData
+	    }
             if {$complain>-1} {
                 ColourCaptions $outNames($compName) black
             }
