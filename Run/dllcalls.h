@@ -270,8 +270,8 @@ EXTDEC graphpoint_type graphpoint;
 EXTDEC void setup_randoms(unsigned int);
 EXTDEC double rand_fract();
 EXTDEC graph_data_type** get_graph_base(long int);
-EXTDEC node_data_line* searchinfo(char*, long int*, char*, 
-				  int*, int*, enum_type_data**);
+EXTDEC node_data_line* searchinfo(char*, long int, char*, int*, 
+				  enum_type_data**);
 EXTDEC node_data_line* nodlin_from_id(long int, int);
 EXTDEC long int fetch_top_instance(long int);
 

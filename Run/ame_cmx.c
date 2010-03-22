@@ -196,23 +196,36 @@ int do_graph(graph_data_type** graphdata, Tcl_Interp *interp,
   } /* end(switch,action) */
 }
 
-int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
-{
+FINDABLE int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
+		 int argc, Tcl_Obj *CONST argv[]) {
+  int error;
+  long int modelType;
+
+  if (argc < 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id node_id action ?parameters?");
+    return TCL_ERROR;
+  }
+
+  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
   char current[255];
   int dims[32], path[32];
   Tcl_Obj *resultPtr, *oneType;
-  int error, action, count;
+  int action, count;
   node_data_line *data_line;
   long int tgtModel;
   enum_type_data *usedTypes[32], **usedTypePtr;
 
-  error = Tcl_GetIntFromObj(interp, argv[2], &action);
+  error = Tcl_GetIntFromObj(interp, argv[3], &action);
   if (error != TCL_OK) {
     return error;
   } /* if(error) */
 
-  if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[1], NULL), &tgtModel,
-			     current, dims, path, usedTypes))) {
+  if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[2], NULL), modelType,
+			     current, dims, usedTypes))) {
     sprintf(current, "noitem");
     resultPtr = Tcl_NewStringObj(current, -1);
     Tcl_SetObjResult(interp, resultPtr);
@@ -235,10 +248,11 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
     resultPtr = Tcl_NewListObj(0, NULL);
     do {
       if (Tcl_ListObjAppendElement(interp, resultPtr, 
-			       Tcl_NewIntObj(path[count])) != TCL_OK) {
+				   Tcl_NewIntObj(data_line->path[count])) != 
+	  TCL_OK) {
 	return TCL_ERROR;
 	}
-    } while (path[count++]);
+    } while (data_line->path[count++]);
     break;
 
   case GETCLASS:
@@ -250,7 +264,7 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
     break;
 
   case GETEVAL:
-    if (strcmp(data_line->name, Tcl_GetStringFromObj(argv[1], NULL)))
+    if (strcmp(data_line->name, Tcl_GetStringFromObj(argv[2], NULL)))
       // data line has different id, original must have been a ghost
       resultPtr = Tcl_NewIntObj(GHOST);
     else
@@ -269,7 +283,7 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
   case SETGRAPH:
     action = action + READGRAPH - GETGRAPH; // SETGRAPH becomes WRITEGRAPH
     return do_graph(get_graph_base(tgtModel), interp, action, data_line->graph,
-		    argc, argv);
+		    argc-1, argv+1);
 
   case GETCAPTION:
     resultPtr = Tcl_NewStringObj(current, -1);
@@ -317,7 +331,9 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 } /* end(procedure,!(finished)) */
 
 /* Now for procedures that are called from the dll and therefore have to be
-   global even though they may refer to stuff by model type and instance */
+   global even though they may refer to stuff by model type and instance
+
+   This is no longer used...
 
 void get_tcl_value_pointer(void* modelPtr, void* tgt, int paramId, 
 			   int count, int* inds) {
@@ -361,10 +377,10 @@ void get_tcl_value_pointer(void* modelPtr, void* tgt, int paramId,
     case REAL:
       serviceError = Tcl_GetDoubleFromObj(globInterp, valPtr, (double*)tgt);
       return;
-    default: /* could be VALUELESS if getting number of instances for record 
-		submodel, INTEGER or ENUM(*) */
-      /* if someone enters a float in a slider entry box or time series for
-	 an integer input, we want the nearest int value... */
+    default: // could be VALUELESS if getting number of instances for record 
+             // submodel, INTEGER or ENUM(*)
+         // if someone enters a float in a slider entry box or time series for
+	 // an integer input, we want the nearest int value...
       serviceError = Tcl_GetDoubleFromObj(globInterp, valPtr, &makeInt);
       if (serviceError == TCL_OK) {
 	*(int*)tgt = (int)(makeInt);
@@ -373,7 +389,7 @@ void get_tcl_value_pointer(void* modelPtr, void* tgt, int paramId,
     }
   }
 }
-      
+*/
 Tcl_Obj* make_exec_error(Tcl_Interp* interp, const char* phase, 
 			 const char* tgt,  double time, int step, 
 			 char* complaint) {
@@ -1154,24 +1170,6 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 		     (char*)NULL);
     return TCL_ERROR;
   }
-}
-
-FINDABLE int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
-		 int argc, Tcl_Obj *CONST argv[]) {
-  int error;
-  long int modelType;
-
-  if (argc < 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id node_id action ?parameters?");
-    return TCL_ERROR;
-  }
-
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  return do_interface(interp, argc-1, argv+1);
 }
 
 FINDABLE int graphCmd(ClientData clientData, Tcl_Interp *interp,

@@ -1573,7 +1573,7 @@ char* load_model(char* fileName, char* nodeName, long int* modelType) {
     return complaint;
   }
 ///// STOPGAP
-  add_to_list(newModel, nodeName);
+//  add_to_list(newModel, nodeName);
 
   *modelType = (long int)newModel;
   return NULL;
@@ -1759,11 +1759,11 @@ enum_type_data noType = {0, NULL, NULL},
   boolDataType = {1, falseTxt, &trueTxt},
   boolDimType = {2, "boolean", (char**)booleanMems};
 
-node_data_line* searchinfo(char* node, long int* tgtModel, char* caption, 
-			   int* dims, int* path, enum_type_data** usedTypes) {
-  node_data_line *bottomLine;
+node_data_line* searchinfo(char* node, long int tgtModel, char* caption, 
+			   int* dims, enum_type_data** usedTypes) {
   enum_type_data *thisType, *localTypes[128];
-  int dimCount = 0, usedCount = 0;
+  int dimCount = 0, usedCount, lineNum, iType;
+  node_data_line* bottomLine;
 
   /* botch: when getting info on a new separate submodel, we don't
      want references to enumerated types in parent models to crash it,
@@ -1771,10 +1771,12 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
   for (usedCount=0; usedCount<128; ++usedCount) {
     localTypes[usedCount]=&noType;
   }
-  usedCount=0;
+  lineNum = ((Model*)tgtModel)->getinfo(node, &usedCount); // latter is spare
 	
-  bottomLine = search_intnl(node, tgtModel, caption, dims, path, localTypes);
-  if (bottomLine) {
+  ((Model*)tgtModel)->make_full_caption(lineNum, caption, dims, localTypes);
+  //  bottomLine = search_intnl(node, tgtModel, caption, dims, path, localTypes);
+  // if (bottomLine) {
+  usedCount=0;
     while (dims[dimCount]) {
       //    sprintf(globMess, "dim %d is %d", dimCount, dims[dimCount]);
       //    showMess(globMess);
@@ -1792,6 +1794,7 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
       }
       ++dimCount;
     }
+    bottomLine = ((Model*)tgtModel)->nodedata + lineNum;
     if (bottomLine->datatype <= ENUM_BASE) {
       thisType = localTypes[ENUM_BASE-bottomLine->datatype];
       //    sprintf(globMess, "type is %d, setting result %d to %s", 
@@ -1803,7 +1806,7 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
     } else {
       usedTypes[usedCount++] = &noType;
     }
-  }
+  // }
   usedTypes[usedCount] = NULL;
   return bottomLine;
 }
