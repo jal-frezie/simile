@@ -39,7 +39,6 @@ return (char*)lpMsgBuf;
     #include <setjmp.h>
     #include <dlfcn.h>
 
-    #define HINSTANCE void*
     #define LOAD_DLL flopen
 /* 'dummyunload' clause was used with macos because dlcompat didn't include
  * unload, but using -bundle instead of -dynamiclib to build the model seems to
@@ -64,7 +63,7 @@ static void exit_sighandler(int x){
   longjmp(env, x);
 }
 
-HINSTANCE flopen(char* fileName) {
+void* flopen(char* fileName) {
   int error;
 
   signal(SIGFPE,exit_sighandler);
@@ -90,6 +89,8 @@ int max(int a, int b) {
 
 /* Definitions used in this code and the model code */
 #include <dllcalls.h>
+/* class interface for c++ clients */
+#include <6d.h>
 
 interact_gui_type* interact_gui;
 get_value_pointer_type* get_client_value_pointer;
@@ -115,7 +116,7 @@ unsigned long int took[]={0,0,0,0,0,0,0,0};
 long int topType;
 int resetting;
 
-BOOLEAN check_gui(void* id, double model_time, int this_op) {
+BOOLEAN check_gui(ExecutingModel* id, double model_time, int this_op) {
   unsigned long int this_update;
   long int while_running;
   BOOLEAN result = FALSE;
@@ -128,7 +129,7 @@ BOOLEAN check_gui(void* id, double model_time, int this_op) {
   if ((this_update-last_update)+took[this_op]>flash) {
     while_running = topType;
     while_resetting = resetting;
-    result=interact_gui(id, 1+!this_op, model_time);
+    result=interact_gui(id->clientRef, 1+!this_op, model_time);
     topType = while_running;
     resetting = while_resetting;
     this_update=clock(); // GUI may have taken time
@@ -149,7 +150,7 @@ int stat_check(void* id) {
 
   this_update=clock();
   if (this_update-last_check>2*flash) {
-    result=interact_gui(id, 0, 0);
+    result=interact_gui(((ExecutingModel*)id)->clientRef, 0, 0);
     this_update=clock(); // GUI may have taken time
     last_check=this_update;
   } else {
@@ -537,50 +538,32 @@ void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
 
 /* listable class for keeping track of arrays associated with parameters */
 
-class listParamArray {
-public:
-  char* nodeId;
-  node_data_line *nodeLine;
-  long int spareModel;
-  nodeValues dataPtr;
-  listTimePoint* timePoints;
-  listTimePoint* finalTimePoint;
-  listTimePoint* curTimePoint;
-  double wrapAroundPoint;
-  int wraps;
-  int fillMethod;
-  listParamArray* next;
-
-  int size_for_type() {
-    /*    if (nodeLine->compclass == SUBMODEL)
-      return sizeof(int); // keeps count of per-record type
-    */ return size_for_data_type(nodeLine->datatype);
-  }
-
-  listParamArray(char* newNodeId) {
+FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum) {
     int fullDims[32], sparePath[32];
     char spareCapt[255];
     enum_type_data *spareTypes[32]; // might need for reading files
 
-    nodeId = strdup(newNodeId);
-    nodeLine = searchinfo(nodeId, &spareModel, spareCapt, fullDims, sparePath,
-			  spareTypes);
-    translate_dims(fullDims, sparePath, dataPtr.dimSpecs, nodeLine->datatype, 
-		   TRUE);
+    myModelExec = instToUse;
+    nodeNum = newNodeNum;
+    instToUse->modelSpec->make_full_caption(nodeNum, spareCapt, fullDims,
+					    spareTypes);
+    translate_dims(fullDims, sparePath, dataPtr.dimSpecs, 
+		   myModelExec->modelSpec->nodedata[nodeNum].datatype, TRUE);
     dataPtr.contents = init_space(dataPtr.dimSpecs);
     //    dataPtr.contents = new char[sparePath[0]];
     timePoints = NULL;
     finalTimePoint = NULL;
     curTimePoint = NULL;
     fillMethod = USE_LAST;
-    next = NULL;
+    // now insert it into the list (at beginning)
+    next = myModelExec->param_array_base;
+    myModelExec->param_array_base = this;
   }      
 
-  ~listParamArray() {
+  FileParamData::~FileParamData() {
     int size, count;
     char* innerSp;
     
-    delete(nodeId);
     while (timePoints) {
       curTimePoint = timePoints;
       timePoints = curTimePoint->next;
@@ -588,30 +571,19 @@ public:
       delete(curTimePoint);
     }
     free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+    // now remove it from the list
+    FileParamData** current = &(myModelExec->param_array_base);
+    while (*current != this) current = &(*current)->next; // better be in there
+    *current = next;
   }
   
-  listParamArray* strip_out(long int oldModelId) {
-    listParamArray* current;
-
-    if (next) {
-      next = next->strip_out(oldModelId);
-    }
-    if (spareModel == oldModelId) { // node belongs to model being removed
-      current = next;
-      delete(this);
-      return current;
-    } else {
-      return this;
-    }
-  }
-
-  int space_used() {
+  int FileParamData::space_used() {
     int *base;
     // hope it evaluates left to right
     return array_count(dataPtr.dimSpecs, &base)*size_for_data_type(*base);
   }
 
-  char* create_time_point(double time) {
+  char* FileParamData::create_time_point(double time) {
     listTimePoint *lastTimePt, *thisTimePt, *nextTimePt;
     if (timePoints && timePoints->when<=time) {
       lastTimePt = timePoints->find_last_pt(time);
@@ -645,7 +617,7 @@ public:
     thisTimePt->dataPtr = init_space(dataPtr.dimSpecs);
   }
 
-  char* time_point_exists (double time) {
+  char* FileParamData::time_point_exists (double time) {
     listTimePoint* timePt;
 
     if (timePoints) {
@@ -655,7 +627,7 @@ public:
     return NULL;
   }
 
-  listTimePoint *roll_forward(listTimePoint *bound, int *newWraps) {
+  listTimePoint* FileParamData::roll_forward(listTimePoint *bound, int *newWraps) {
     bound = bound->next;
     if (!bound && wrapAroundPoint>0.0) {
       *newWraps = wraps+1;
@@ -665,7 +637,7 @@ public:
     return bound;
   }
 
-  void update_from_points(BOOLEAN dir, double now) {
+  void FileParamData::update_from_points(BOOLEAN dir, double now) {
     listTimePoint *loBound, *hiBound;
     int hiWraps = 0;
     double interFract;
@@ -700,7 +672,8 @@ public:
       //            sprintf(globMess, "lotime %lf hitime %lf Fract %lf", 
       //		    loBound->when, hiBound->when, interFract);
       //      showMess(globMess);
-      if (fillMethod==INTERPOLATE && nodeLine->datatype != FLAG) {
+      if (fillMethod==INTERPOLATE && 
+	  myModelExec->modelSpec->nodedata[nodeNum].datatype != FLAG) {
 	curTimePoint = loBound; // cos that's what wraps refers to
 	free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
 	dataPtr.contents = interpolate_bloc_data(loBound->dataPtr, 
@@ -723,13 +696,13 @@ public:
 
   /* These last three are actually called by the model code to get data */
 
-  void back_copy_vars(long int modelClass, long int modelInstance) {
+  void FileParamData::back_copy_vars() {
     nodeValues* fromModel;
 
-    if (spareModel==modelClass && nodeLine->eval == INPUT &&
+    if (myModelExec->modelSpec->nodedata[nodeNum].eval == INPUT &&
 	!time_point_exists(0.0)) {
       free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-      fromModel = get_raw_values(nodeId, modelInstance);
+      fromModel = myModelExec->GetRawValues(nodeNum);
       dataPtr.contents = fromModel->contents;
       // sprintf(globMess, "dims %d %d backcopied %d records 1st %lf", 
 	      // dataPtr.dimSpecs[0], dataPtr.dimSpecs[1], ((sizeAndPtr*)dataPtr.contents)->size,
@@ -737,16 +710,33 @@ public:
       // showMess(globMess);
       delete fromModel;
     }
+    if (next) next->back_copy_vars();
   }
 
-  void extract_elt(void* tgt, int* indxs) {
+void FileParamData::ResetTimeSeries() {
+  curTimePoint = NULL;
+  wraps = 0;
+  update_from_points(TRUE, 0);
+
+  if (next) next->ResetTimeSeries();  
+}
+
+void FileParamData::UpdateTimeSeries(double now, BOOLEAN forward) {
+  update_from_points(forward, now);
+
+  if (next) next->UpdateTimeSeries(now, forward);  
+}    
+  
+  void FileParamData::extract_elt(void* tgt, int* indxs) {
     // do not do it if this is a variable parameter and we are initializing --
     // array not yet set so let model keep default value...in fact, save it in
     // the array for later
     void* insertionPt;
-    
+    node_data_line* nodeLine;
+
     insertionPt = locate_elt(dataPtr.contents, 0, dataPtr.dimSpecs, indxs);
     if (!insertionPt) return; // record pointers not yet made
+    nodeLine = myModelExec->modelSpec->nodedata + nodeNum;
     if (nodeLine->eval==INPUT && resetting<-1 && !(time_point_exists(0.0))) {
       // back copy now done in blocks afterwards to make record spaces
       // memcpy(insertionPt, tgt, size_for_type());
@@ -754,11 +744,11 @@ public:
       // sprintf(globMess, "Gonna copy %d from %ld to %ld", size_for_type(),
 // 	      (long int)insertionPt, (long int)tgt);
       // showMess(globMess);
-      memcpy(tgt, insertionPt, size_for_type());
+      memcpy(tgt, insertionPt, size_for_data_type(nodeLine->datatype));
     }
   }
 
-  void extract_record_count(void* tgt, int ic, int* indxs) {
+  void FileParamData::extract_record_count(void* tgt, int ic, int* indxs) {
     sizeAndPtr* insertionPt;
     int count, indxsWith0[32];
 
@@ -771,79 +761,37 @@ public:
 					  dataPtr.dimSpecs, indxsWith0);
     *(int*)tgt = insertionPt->size;
   }
-};   // end of listParamArray class
-
-listParamArray* param_array_base = NULL;
+// end of FileParamData class
 
 class Model;
-
-void update_time_series(Model* client, double now);
-  
-void reset_time_series(Model* client);
 
 typedef struct channelRecord_t {
   void* SearchBase;
   int* UpTree;
 } channelRecord;
 
-void setdt(double, int);
-
-/* Matching set of declarations for the pointers by which we will access
-   these functions locally */
-
-class Model {
-  HINSTANCE handle;
-  int count, count2, count3;
-/*  int inArcCount;
-  char** inArcList; */
-  //  enum_data_type *enumtypedata;
-
-  getcount_type *getcount;
-  getversion_type *getversion;
-  createmodel_type *createmodel;
-
-public:
-  updatemodel_type *updatemodel;
-//  advancemodel_type *advancemodel;
-  evalmodel_type *evalmodel;
-  getpointer_type *getpointer;
-  setstep_type *setstepmodel;
-  exitmodel_type *exitmodel;
-
-  int phases;
-  /* Time series info exists only for each model class, so thisTsPosn
-     remembers for what time the series have been set up, so we know
-     what to do when setting them up for a different instance which
-     may be at a different time */
-  double lts[8], ldts[8], steps[8], thisTsPosn;
-  graph_data_type* c_graphdata;
-  int nodecount;
-  node_data_line* nodedata;
-  int *connLines;
-  // channelRecord* channelData; only used in top model
-  double* adapt_maxerr;
-  excpData* userDefStop; // set by stop function in model
-  char erreur[256];
-
-  Model(char* fileName) {
+// Implementation of class Model
+Model::Model(char* fileName, char** complaint) {
     handle = LOAD_DLL(fileName);
-    if (handle == NULL) {
-      throw DllLossage("load", fileName, WHAT_WENT_WRONG());
+    if (!handle) {
+      *complaint = strdup(WHAT_WENT_WRONG());
+      return;
     }
     getversion = (getversion_type *)FIND_FUNCTION(handle, "get_version");
     if (getversion == NULL) {
-      UNLOAD_DLL(handle);
-      sprintf(erreur, "the shared object is probably not a Simile model");
-      throw DllLossage("get version number of", fileName, erreur);
+      *complaint = new char[256];
+      sprintf(*complaint, "the shared object is probably not a Simile model");
+      return;
     }
     if (fabs((*getversion)()-atof(xsimileVersion))>0.00001) {
-      sprintf(erreur, "client is for version %s but model is %.1f", 
+      *complaint = new char[256];
+      sprintf(*complaint, "client is for version %s but model is %.1f", 
 	      xsimileVersion, (*getversion)());
-      UNLOAD_DLL(handle);
-      throw DllLossage("find current version of", fileName, erreur);
+      return;
     }
 /* sprintf(globMess, "Loaded %ld", handle);
 showMess(globMess); */
+    *complaint = NULL;
 
     getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
     createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
@@ -871,185 +819,28 @@ showMess(globMess); */
 */			    (void*)stat_check,
 			    (void*)showMess,
 			    (void*)&c_graphdata,
-			    &phases, &nodedata, &adapt_maxerr, &userDefStop);
+			    &phases, &nodedata, &adapt_maxerr);
   }
 
-  ~Model() {
-    if (!UNLOAD_DLL(handle)) {
-      throw DllLossage("unload", (char*)"", WHAT_WENT_WRONG());
-    }
-    // if (channelData) delete channelData;
+Model::~Model() {
+  if (handle && !UNLOAD_DLL(handle)) {
+    throw DllLossage("unload", (char*)"", WHAT_WENT_WRONG());
   }
+  // if (channelData) delete channelData;
+}
 
   /* Next bit is really boring...and possibly needles...but I feel I have to
      make class procedures for the things loaded from the model dll rather than
      trying to refer to procedure variables in the model class directly */
 
-  void* create() {
+ExecutingModel* Model::create(void* yourRef) {
     c_graphdata = NULL; // this will be filled when initializing new instance
-    return (*createmodel)();
+    // Do not return raw instance -- just create a wrapper object with fields
+    // for raw instance and model type object
+    return new ExecutingModel(this, yourRef);
   }
 
-  /* 
-  Now for the locally defined model class procedures 
-
-  Following can go anyway if new ones outside the model class work
-
-  void update(void* id, double start, int phase) {
-    (*updatemodel)(id, start, phase);
-  }
-
-  void advance(void* id, double start, int phase) {
-    (*advancemodel)(id, start, phase);
-  }
-
-  int eval(void* id, double start, int phase, BOOLEAN exo) {
-    return (*evalmodel)(id, start, phase, exo);
-  }
-
-  int setstep(double start, int phase) {
-    return (*setstepmodel)(start, phase);
-  }
-
-  void* get_ptr(void* level, int** id_meta, int** dim_list) {
-    return (*getpointer)(level, id_meta, dim_list);
-  }
-
-  void exit(void* id) {
-    (*exitmodel)(id);
-  }
-*/
-  int adapt_doublings;
-
-  excpData* resetmodel(void* modelHandle, int how_int, int top_phase) {
-    int tweak_phase, err;
-    
-    userDefStop->excpNo = 0;
-    if (top_phase<=0) {
-      for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
-	lts[tweak_phase]=0;
-	setdt(0, -tweak_phase);
-	setdt(steps[tweak_phase], tweak_phase);
-      }
-      switch (how_int) {
-      case EULER:
-	setdt(0,0);
-	break;
-      case RUNGE_KUTTA:
-	setdt(1,0);
-      } // was -1,0 to stop loss, but now we want it cos it happens next step
-      reset_time_series(this);
-      adapt_doublings = 0;
-    }
-    err=(*evalmodel)(modelHandle, top_phase);
-    if (err)
-      userDefStop->excpNo = err;
-//    else
-//      (*advancemodel)(modelHandle, top_phase);
-    if (userDefStop->excpNo)
-      return userDefStop;
-    return NULL;
-  }
-
-  excpData* executemodel(void* id, int how_int, 
-		   double start, double* end, double errlim) {
-    double freq, xtime;
-    int big_phase, err;
-    BOOLEAN made_step, first_pass;
-    // sprintf(globMess, "xm %d %lf-%lf at %lf", how_int, start, *end, errlim);
-    // showMess(globMess);
-    userDefStop->excpNo = 0;
-    freq = steps[phases]*pow(2,-adapt_doublings);
-    xtime = start;
-    while (freq*(*end-xtime)>0) { // freq only affects sign
-      made_step = 0;
-      first_pass = 1;
-      big_phase = phase_for(xtime, freq, phases);
-      // that is the biggest phase we will try to run, we may not succeed
-      if (check_gui(id, xtime, big_phase)) {
-	userDefStop->excpNo = -100; // should not conflict with os signals
-	*end = xtime;
-	return userDefStop;
-      }
-      while(!made_step) {
-	// stretch interval to hit end if necssary
-	if (xtime/freq+1.0625>*end/freq) {
-	  freq = *end-xtime;
-	  xtime = *end;
-	} else {
-	  xtime+=freq;
-	}
-	set_dts(big_phase, xtime);
-
-	switch (how_int) {
-	case EULER:
-	  if (first_pass) {
-	    setdt(0,0);
-	  } else {
-	    setdt(-1,0);
-	  }
-	  advance_time(this, big_phase, 1);
-	  (*updatemodel)(id, big_phase);
-	  break;
-	case RUNGE_KUTTA:
-	  if (first_pass) {
-	    setdt(1,0);
-	  } else {
-	    setdt(-2,0);
-	  }
-	  (*updatemodel)(id, big_phase);
-	  userDefStop->excpNo=rk_update(id);
-	  break;
-	}
-	if (userDefStop->excpNo) break; // from inner loop
-	first_pass = 0;
-	if (!errlim) {
-	  made_step = 1;
-	} else {
-	  if (userDefStop->excpNo=(*evalmodel)(id, phases+1)) break;
-	  // from inner loop
-
-	  // get the model to generate its error estimate
-	  *adapt_maxerr = 0;
-	  setdt(10, 0);
-	  (*updatemodel)(id, big_phase);
-	  if (*adapt_maxerr>errlim) {
-	    // error too great; put comps back and try shorter
-	    if (adapt_doublings<31) {
-	      advance_time(this, big_phase, -1); // back to start
-	      xtime-=freq;
-	      adapt_doublings++;
-	      freq = steps[phases]*pow(2,-adapt_doublings);
-	      big_phase = phase_for(xtime, freq, phases);
-	    } else {
-	      // signal problem
-	      userDefStop->excpNo = -99;
-	      break;
-	    }
-	  } else {
-	    made_step = 1;
-	    if (adapt_doublings && *adapt_maxerr<errlim/16) {
-	      // low error; try longer next time if poss
-	      adapt_doublings--;
-	      freq = steps[phases]*pow(2,-adapt_doublings);
-	    } // lengthen time step
-	  } // timestep too short or not
-	} // error limit exists
-      } // made progress
-      if (userDefStop->excpNo) break; // from outer loop
-      if (userDefStop->excpNo=(*evalmodel)(id, big_phase)) break;
-//      (*advancemodel)(id, big_phase);
-    }
-    if (check_gui(id, *end, 0) && !userDefStop->excpNo)
-      // always go to make sure time is right
-      userDefStop->excpNo = -100;
-    *end=xtime;
-    if (userDefStop->excpNo)
-      return userDefStop;
-    return NULL;
-  }
-  
-  int phase_for(double current, double step, int so_far) {
+int ExecutingModel::phase_for(double current, double step, int so_far) {
     int try_now, try_current;
     double last, next, next_step;
 
@@ -1069,35 +860,36 @@ showMess(globMess); */
     }
   }
 
-  int rk_update(void* id) {
+int Model::rk_update(ExecutingModel* inst) {
     int wee_phase, err;
+    InstanceOfModel* id = inst->loadedInst;
 
     wee_phase=phases+1;
-    advance_time(this, phases, 0.5);
-    setdt(2, 0);
-    if (err=(*evalmodel)(id, wee_phase)) return err;
+    advance_time(inst, phases, 0.5);
+    inst->SetdT( 0,2);
+    if (err=evalmodel(id,wee_phase)) return err;
     (*updatemodel)(id, phases);
-    setdt(3, 0);
-    if (err=(*evalmodel)(id, wee_phase)) return err;
+    inst->SetdT( 0,3);
+    if (err=evalmodel(id,wee_phase)) return err;
     (*updatemodel)(id, phases);
-    advance_time(this, phases, 0.5);
-    setdt(4, 0);
-    if (err=(*evalmodel)(id, wee_phase)) return err;
+    advance_time(inst, phases, 0.5);
+    inst->SetdT( 0,4);
+    if (err=evalmodel(id,wee_phase)) return err;
     (*updatemodel)(id, phases);
-    setdt(1, 0);
+    inst->SetdT( 0,1);
     return 0;
   }
 
-  void set_dts (int phase, double current) {
+void Model::set_dts (ExecutingModel* inst, int phase, double current) {
     int tweak_phase;
     for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
       ldts[tweak_phase]=current-lts[tweak_phase];
-      setdt(ldts[tweak_phase],tweak_phase); 
+      inst->SetdT(tweak_phase,ldts[tweak_phase]); 
       // dts should only be global but im lazy
     }
   }
   
-  void advance_time (Model* client, int phase, double fraction) {
+void Model::advance_time (ExecutingModel* inst, int phase, double fraction) {
     int tweak_phase;
     double series_pt;
 
@@ -1105,16 +897,18 @@ showMess(globMess); */
     // load values for middle of interval as they apply throughout it...no
     for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
       lts[tweak_phase]=lts[tweak_phase]+ldts[tweak_phase]*fraction;
-      setdt(lts[tweak_phase],-tweak_phase); 
+      inst->SetdT(-tweak_phase,lts[tweak_phase]); 
       // ts should only be global but im lazy
     }
     // time value is chosen to work with RK so series pt should do the same
     series_pt = lts[phases];
-    update_time_series(this, series_pt);
-    client->thisTsPosn = series_pt;
+    if (inst->param_array_base) 
+      inst->param_array_base->UpdateTimeSeries(series_pt, 
+						 series_pt > thisTsPosn);
+    thisTsPosn = series_pt;
   }
   
-  int parent_line (int line) {
+int Model::parent_line (int line) {
     int count, level, test, *path;
     path = nodedata[line].path;
     for (count=0;nodecount>count;count++) {
@@ -1133,7 +927,7 @@ showMess(globMess); */
     return(-1);
   }
       
-  int make_full_caption(int line, char *result, int* dims,
+int Model::make_full_caption(int line, char *result, int* dims,
 			 enum_type_data** types) {
     /* New version which does not depend on the nodedata array being in
        any particular order -- and returns the whole caption */
@@ -1168,7 +962,7 @@ showMess(globMess); */
       types[typesSoFar++]=&(nodedata[line].enum_type_ptrs[count]);
       } ...not any more */
     return typesSoFar;
-  }
+}
   
   /*  int find_et_struct(int fake_dim) {
     enum_data_type* seeker = enumtypedata;
@@ -1178,7 +972,8 @@ showMess(globMess); */
     return 3;
   }
   */
-  int getinfo(char* node_id, int* gLine) {
+
+int Model::getinfo(char* node_id, int* gLine) {
     int count, gcount;
     char* ghosts;
     ghost_ref_data* gpair;
@@ -1197,7 +992,196 @@ showMess(globMess); */
     }
     return -1;
   }
-} /* end of class Model */ ;
+
+int Model::GetProperty(int line, int propertyId) {
+  switch (propertyId) {
+    case GETTYPE:
+      return nodedata[line].datatype;
+    case GETEVAL:
+      return nodedata[line].eval;
+    case GETCLASS:
+      return nodedata[line].compclass;
+    case GETGRAPH:
+      return nodedata[line].graph;
+    default:
+      return BADTYPE;
+    }
+}
+
+char* Model::GetMetadataText(int line, int propertyId) {
+  switch (propertyId) {
+    case GETINTERNALID:
+      return nodedata[line].name;
+    case GETSPEC:
+      return nodedata[line].strings[1];
+    case GETDESC:
+      return nodedata[line].strings[2];
+    case GETCOMMENT:
+      return nodedata[line].strings[3];
+    default:
+      return NULL;
+    }
+}
+
+ExecutingModel::ExecutingModel(Model* newModelSpec, void* yourRef) {
+    modelSpec = newModelSpec;
+    clientRef = yourRef;
+    loadedInst = modelSpec->createmodel(this);
+    //sprintf(globMess, "This is XM %lx of M %lx being created with IOM %lx", 
+//	    (long)this, (long)modelSpec, (long)loadedInst);
+    //showMessLocal(globMess);
+    param_array_base = NULL;
+}
+
+ExecutingModel::~ExecutingModel() {
+  while (param_array_base) delete param_array_base;
+  modelSpec->exitmodel(loadedInst);
+}
+
+excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
+  int tweak_phase, err;
+
+  loadedInst->userStop.excpNo = 0;
+  if (top_phase<=0) {
+    for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
+      modelSpec->lts[tweak_phase]=0;
+      SetdT( -tweak_phase,0);
+      SetdT( tweak_phase,steps[tweak_phase]);
+    }
+    switch (how_int) {
+    case EULER:
+      SetdT(0,0);
+      break;
+    case RUNGE_KUTTA:
+      SetdT(0,1);
+    } // was -1,0 to stop loss, but now we want it cos it happens next step
+    modelSpec->thisTsPosn = 0.0;
+    if (param_array_base)
+      param_array_base->ResetTimeSeries();
+    modelSpec->adapt_doublings = 0;
+  }
+  
+  err=modelSpec->evalmodel(loadedInst, top_phase);
+  if (err)
+    loadedInst->userStop.excpNo = err;
+  //    else
+  //      (*advancemodel)(modelHandle, top_phase);
+  if (loadedInst->userStop.excpNo)
+    return &(loadedInst->userStop);
+  // reset successful: now do back copy if needed
+  if (top_phase<-1 && param_array_base) {
+    param_array_base->back_copy_vars(); // does all
+  }
+  return NULL;
+}
+
+excpData* Model::executemodel(ExecutingModel* inst, int how_int, 
+		   double start, double* end, double errlim) {
+    double freq, xtime;
+    int big_phase, err;
+    BOOLEAN made_step, first_pass;
+    // sprintf(globMess, "xm %d %lf-%lf at %lf", how_int, start, *end, errlim);
+    // showMess(globMess);
+    // temporary arrangement until we move this function into the instance
+    InstanceOfModel* id = inst->loadedInst;
+    excpData* userDefStop = &(id->userStop);
+
+    userDefStop->excpNo = 0;
+    freq = inst->steps[phases]*pow(2,-adapt_doublings);
+    xtime = start;
+    while (freq*(*end-xtime)>0) { // freq only affects sign
+      made_step = 0;
+      first_pass = 1;
+      big_phase = inst->phase_for(xtime, freq, phases);
+      // that is the biggest phase we will try to run, we may not succeed
+      if (check_gui(inst, xtime, big_phase)) {
+	userDefStop->excpNo = -100; // should not conflict with os signals
+	*end = xtime;
+	return userDefStop;
+      }
+      while(!made_step) {
+	// stretch interval to hit end if necssary
+	if (xtime/freq+1.0625>*end/freq) {
+	  freq = *end-xtime;
+	  xtime = *end;
+	} else {
+	  xtime+=freq;
+	}
+	set_dts(inst, big_phase, xtime);
+
+	switch (how_int) {
+	case EULER:
+	  if (first_pass) {
+	    inst->SetdT(0,0);
+	  } else {
+	    inst->SetdT(0,-1);
+	  }
+	  advance_time(inst, big_phase, 1);
+	  (*updatemodel)(id, big_phase);
+	  break;
+	case RUNGE_KUTTA:
+	  if (first_pass) {
+	    inst->SetdT(0,1);
+	  } else {
+	    inst->SetdT(0,-2);
+	  }
+	  (*updatemodel)(id, big_phase);
+	  userDefStop->excpNo=rk_update(inst);
+	  break;
+	}
+	if (userDefStop->excpNo) break; // from inner loop
+	first_pass = 0;
+	if (!errlim) {
+	  made_step = 1;
+	} else {
+	  if (userDefStop->excpNo=evalmodel(id,phases+1)) break;
+	  // from inner loop
+
+	  // get the model to generate its error estimate
+	  *adapt_maxerr = 0;
+	  inst->SetdT( 0,10);
+	  (*updatemodel)(id, big_phase);
+	  if (*adapt_maxerr>errlim) {
+	    // error too great; put comps back and try shorter
+	    if (adapt_doublings<31) {
+	      advance_time(inst, big_phase, -1); // back to start
+	      xtime-=freq;
+	      adapt_doublings++;
+	      freq = inst->steps[phases]*pow(2,-adapt_doublings);
+	      big_phase = inst->phase_for(xtime, freq, phases);
+	    } else {
+	      // signal problem
+	      userDefStop->excpNo = -99;
+	      break;
+	    }
+	  } else {
+	    made_step = 1;
+	    if (adapt_doublings && *adapt_maxerr<errlim/16) {
+	      // low error; try longer next time if poss
+	      adapt_doublings--;
+	      freq = inst->steps[phases]*pow(2,-adapt_doublings);
+	    } // lengthen time step
+	  } // timestep too short or not
+	} // error limit exists
+      } // made progress
+      if (userDefStop->excpNo) break; // from outer loop
+      if (userDefStop->excpNo=evalmodel(id,big_phase)) break;
+//      (*advancemodel)(id, big_phase);
+    }
+    if (check_gui(inst, *end, 0) && !userDefStop->excpNo)
+      // always go to make sure time is right
+      userDefStop->excpNo = -100;
+    *end=xtime;
+    if (userDefStop->excpNo)
+      return userDefStop;
+    return NULL;
+  }
+  
+// pure laziness: define instance function in terms of spec function
+excpData* ExecutingModel::ExecuteInstance(int how_int, 
+		   double start, double* end, double errlim) {
+  return modelSpec->executemodel(this, how_int, start, end, errlim);
+}
 
 /* listable class for submodel data -- allows us to find model id from node id
  */
@@ -1272,119 +1256,107 @@ public:
   }
   }; */
 
-void update_time_series(Model* client, double now) {
-  listParamArray* param_array_current;
-  BOOLEAN forward;
-
-  param_array_current = param_array_base;
-  forward = (now >= client->thisTsPosn);
-  client->thisTsPosn = now;
-  while (param_array_current) {
-    if (param_array_current->spareModel == (long int)client) {
-      param_array_current->update_from_points(forward, now);
-    }
-    param_array_current = param_array_current->next;
-  }
-}    
-  
-void reset_time_series(Model* client) {
-  listParamArray* param_array_current;
-
-  param_array_current = param_array_base;
-  client->thisTsPosn = 0;
-  while (param_array_current) {
-    if (param_array_current->spareModel == (long int)client) {
-      param_array_current->curTimePoint = NULL;
-      param_array_current->wraps = 0;
-      param_array_current->update_from_points(TRUE, 0);
-    }
-    param_array_current = param_array_current->next;
-  }
+FileParamData* ExecutingModel::UseArrayForParams(int nodeNum) {
+  return new FileParamData(this, nodeNum);
 }
 
-listParamArray* param_array_item(listParamArray* start, char* seekNodeId) {
-  if (!start) {
+FileParamData* FileParamForNodeNum(FileParamData* start, int seekNodeNum) {
+  if (!start)
     return NULL;
-  } else if (!strcmp(start->nodeId, seekNodeId)) {
+  else if (start->nodeNum == seekNodeNum)
     return start;
-  } else {
-    return param_array_item(start->next, seekNodeId);
-  }
+  else
+    return FileParamForNodeNum(start->next, seekNodeNum);
 }
 
-void* use_array_for_params(char* nodeId) {
-  listParamArray* arrSlot;
+FileParamData* param_array_item(FileParamData* start, char* seekNodeId) {
+  int seekNodeNum, spareInt;
 
-  /* sprintf(globMess, "use_array_for_params node %s",
-	  nodeId);
-	  showMess(globMess); */
-  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    arrSlot = new listParamArray(nodeId);
-    if (!arrSlot->nodeLine) {
+  if (!start)
+    return NULL;
+  // all params are for same model instance so convert nodeId to line number
+  // using model spec from first
+  seekNodeNum = start->myModelExec->modelSpec->getinfo(seekNodeId, &spareInt);
+  return FileParamForNodeNum(start, seekNodeNum);
+}
+    
+long int use_array_for_params(long int xmHandle, char* nodeId) {
+  FileParamData* arrSlot;
+  int lineFromNodeId, spareInt;
+  ExecutingModel* recipient = (ExecutingModel*)xmHandle;
+
+  // sprintf(globMess, "use_array_for_params node %s", nodeId);
+  // showMess(globMess);
+  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
+    lineFromNodeId = recipient->modelSpec->getinfo(nodeId, &spareInt);
+    arrSlot = recipient->UseArrayForParams(lineFromNodeId);
+    if (!arrSlot->myModelExec) { // no failure condition made yet
       delete arrSlot;
       return NULL;
     }
-    arrSlot->next = param_array_base;
-    param_array_base = arrSlot;
+    // these now done in constructor
+    // arrSlot->next = param_array_base;
+    // param_array_base = arrSlot;
   }
 
-  return arrSlot->dataPtr.contents;
+  return (long int)arrSlot;
 }
 
-int param_array_size(char* nodeId) {
-  listParamArray* arrSlot;
-
-  if (!(arrSlot=param_array_item(param_array_base, nodeId))) return 0;
-  return arrSlot->space_used();
+void* get_param_data_space(long int fpHandle) {
+  return ((FileParamData*)fpHandle)->dataPtr.contents;
+}
+			   
+int param_array_size(long int fpHandle) {
+  return ((FileParamData*)fpHandle)->space_used();
 }
 
-int clear_time_point_elts(char* nodeId) {
-  listParamArray* arrSlot;
+int clear_time_point_elts(long int fpHandle) {
+  FileParamData* arrSlot = (FileParamData*)fpHandle;
 
-  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    return 1; // no data structure for this elt
-  }
+//  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
+//    return 1; // no data structure for this elt
+//  }
   delete arrSlot->timePoints;
   arrSlot->timePoints = NULL;
   arrSlot->finalTimePoint = NULL;
   arrSlot->curTimePoint = NULL;
 }
 
-double* get_wrap_ptr(char* nodeId) {
-  listParamArray* arrSlot;
+double* get_wrap_ptr(long int fpHandle) {
+  FileParamData* arrSlot = (FileParamData*)fpHandle;
 
-  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    return NULL; // no data structure for this elt
-  }
+//  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
+//    return NULL; // no data structure for this elt
+//  }
   return &arrSlot->wrapAroundPoint;
 }
 
-int* get_fill_ptr(char* nodeId) {
-  listParamArray* arrSlot;
+int* get_fill_ptr(long int fpHandle) {
+  FileParamData* arrSlot = (FileParamData*)fpHandle;
 
-  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    return NULL; // no data structure for this elt
-  }
+//  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
+//    return NULL; // no data structure for this elt
+//  }
   return &arrSlot->fillMethod;
 }
 
-int create_time_point(char* nodeId, double time) {
-  listParamArray* arrSlot;
+int create_time_point(long int fpHandle, double time) {
+  FileParamData* arrSlot = (FileParamData*)fpHandle;
 
-  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    return 1; // no data structure for this elt
-  }
+//  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
+//    return 1; // no data structure for this elt
+//  }
   arrSlot->create_time_point(time);
   return 0;
 }
 
-void* find_next_timept_space(char* nodeId, double* last_time) {
-  listParamArray* arrSlot;
+void* find_next_timept_space(long int fpHandle, double* last_time) {
+  FileParamData* arrSlot = (FileParamData*)fpHandle;
   listTimePoint* seek;
 
-  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    return NULL; // no data structure for this elt
-  }
+//  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
+//    return NULL; // no data structure for this elt
+//  }
   seek = arrSlot->timePoints;
   while (seek) {
     if (seek->when>*last_time) {
@@ -1399,24 +1371,24 @@ void* find_next_timept_space(char* nodeId, double* last_time) {
     return NULL;
 }
 
-char* get_param_ptr_and_dims(char* nodeId, int** dimSlot) {
-  listParamArray* arrSlot;
-  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    return NULL; // no data structure for this elt
-  }
+char* get_param_ptr_and_dims(long int fpHandle, int** dimSlot) {
+  FileParamData* arrSlot = (FileParamData*)fpHandle;
+//  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
+//    return NULL; // no data structure for this elt
+//  }
 
   *dimSlot = arrSlot->dataPtr.dimSpecs;
   return arrSlot->dataPtr.contents;
 }
 
-int get_timepoint_ptr_and_dims(char* nodeId, double time, 
+int get_timepoint_ptr_and_dims(long int fpHandle, double time, 
 				 char** ptDataSlot, int** dimSlot) {
-  listParamArray* arrSlot;
+  FileParamData* arrSlot = (FileParamData*)fpHandle;
   char* ptData;
 
-  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    return 2; // no data structure for this elt
-  }
+//  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
+//    return 2; // no data structure for this elt
+//  }
   ptData = arrSlot->time_point_exists(time);
   if (!ptData) return 1; // no matching time point
 
@@ -1511,17 +1483,21 @@ void set_bloc_element(char* ptData, int* ptDims, int* indxs, double value) {
   }
 }
 
-int member_param_item(listParamArray** start, void* modelId, int* parentPath) {
+int member_param_item(FileParamData** start, Model* modelId, int* parentPath) {
+  node_data_line* nLine;
+
   if (!*start)
     return 0; // no children found
-  else if ((*start)->spareModel==(long int)modelId && // in right model
-	   (*start)->nodeLine->eval == TABLE) { // and fixed, is child?
-    int count = -1;
-    while (parentPath[++count])
-      if (((*start)->nodeLine)->path[count] != parentPath[count])
-	break; // found difference
-    if (!parentPath[count]) // got to end without difference, result!
-      return 2;
+  else {
+    nLine = modelId->nodedata + (*start)->nodeNum;
+    if (nLine->eval == TABLE) { // and fixed, is child?
+      int count = -1;
+      while (parentPath[++count])
+	if (nLine->path[count] != parentPath[count])
+	  break; // found difference
+      if (!parentPath[count]) // got to end without difference, result!
+	return 2;
+    }
   }
   *start = (*start)->next;
   return  member_param_item(start, modelId, parentPath); // keep looking
@@ -1541,54 +1517,63 @@ node_data_line* nodlin_from_id(long int modelId, int paramId) {
   return md_nodlin_from_id((Model*)modelId, paramId);
 }
 
-int param_item_from_id(listParamArray** start, Model* modelId,
-				   int paramId) {
+int param_item_from_id(FileParamData** start, Model* modelId, int paramId) {
   if (!*start) {
-    // couldn't find id, try to find a member parameter
-    // first get its nodeline
-    node_data_line *nodeLine;
-    nodeLine = md_nodlin_from_id(modelId, paramId);
-    *start = param_array_base;
-    return member_param_item(start, modelId, nodeLine->path);
-  } else if ((*start)->spareModel==(long int)modelId && 
-	     ((*start)->nodeLine)->graph==paramId) {
+    return NULL;
+  } else if (modelId->nodedata[(*start)->nodeNum].graph==paramId)
     return 1;
-  } else {
+  else {
     *start = (*start)->next;
     return param_item_from_id(start, modelId, paramId);
   }
 }
  
-void get_value_pointer(void* modelId, void* modelSlot, int paramId,
+void get_value_pointer(void* instId, void* modelSlot, int paramId,
 		       int ic, int* indxs) {
-  listParamArray* paramArrayItem;
-
-  //sprintf(globMess, "get_value_pointer for %ld node %d count %d indx0 %d indx1 %d", (long)modelSlot, paramId, ic, indxs[0], indxs[1]);
+  //sprintf(globMess, "get_value_pointer to location %lx for exmod %lx node %d count %d indx0 %d indx1 %d", (long)modelSlot, (long)instId, paramId, ic, indxs[0], indxs[1]);
   //showMessLocal(globMess);
+  ((ExecutingModel*)instId)->GetValuePointer(modelSlot, paramId, ic, indxs);
+}
+
+void ExecutingModel::GetValuePointer(void* modelSlot, int paramId,
+				     int ic, int* indxs) {
+  FileParamData* paramArrayItem;
+
   paramArrayItem = param_array_base;
-  switch (param_item_from_id(&paramArrayItem, (Model*)modelId, paramId)) {
-  case 1:
+  if (param_item_from_id(&paramArrayItem, modelSpec, paramId))
     paramArrayItem->extract_elt(modelSlot, indxs);
-    break;
-  case 2: // found a parameter inside this submodel, get record count
-    paramArrayItem->extract_record_count(modelSlot, ic, indxs);
-    break;
-  default:
-    get_client_value_pointer(modelId, modelSlot, paramId, ic, indxs);
+  else {
+    // couldn't find id, try to find a member parameter
+    // first get its nodeline
+    node_data_line *nodeLine;
+    nodeLine = md_nodlin_from_id(modelSpec, paramId);
+    paramArrayItem = param_array_base;
+    if (member_param_item(&paramArrayItem, modelSpec, nodeLine->path))
+      // found a parameter inside this submodel, get record count
+      paramArrayItem->extract_record_count(modelSlot, ic, indxs);
+    else
+      get_client_value_pointer(clientRef, modelSlot, paramId, ic, indxs);
   }
   // sprintf(globMess, "Think we got %d (%lf)", *(int*)modelSlot, *(double*)modelSlot);
   // showMessLocal(globMess);
 
 }
+///// STOPGAP
+void add_to_list(Model* newModel, char* nodeName) {
+  nodeModelList = new listNodeModel(nodeName, newModel, nodeModelList);
+}
 
 char* load_model(char* fileName, char* nodeName, long int* modelType) {
   Model* newModel;
-  try {
-    newModel = new Model(fileName);
-  } catch(DllLossage prang) {
-    return prang.tell();
+  char* complaint;
+
+  newModel = new Model(fileName, &complaint);
+  if (complaint) {
+    // delete newModel;
+    return complaint;
   }
-  nodeModelList = new listNodeModel(nodeName, newModel, nodeModelList);
+///// STOPGAP
+  add_to_list(newModel, nodeName);
 
   *modelType = (long int)newModel;
   return NULL;
@@ -1646,6 +1631,27 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
   /* Node with given caption not found... */
   return -1;
 }
+
+// New version of above is member function of model spec, and returns count
+// -- who knows, maybe one day it will work intelligently?
+int Model::NodeNumFromCapt(char* seeknode) {
+  int count;
+  char test[255];
+  int dims[32];
+  enum_type_data* types[32];
+
+  for (count = 1; nodecount>count; ++count) {
+    if (nodedata[count].eval == GHOST) continue;
+    make_full_caption(count, test, dims, types);
+	  
+    if (!strcmp(seeknode, test)) {
+      return(count);
+    }
+  }
+  /* Node with given caption not found... */
+  return -1;
+}
+
 
 /* global version of getinfo, uses the list defined above to search through all
    current models to find given node, and combine their extraction data
@@ -1803,7 +1809,12 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
 }
 
 long int fetch_top_instance(long int modelType) {
-   return (long int)((Model*)modelType)->create();
+  ExecutingModel* justMade;
+
+  // 5-D callbacks have the client data set to the instance
+  justMade = ((Model*)modelType)->create(NULL);
+  justMade->clientRef = justMade;
+  return (long int)justMade;
 }
 
 void* get_ptr(long int modelType, long int level, int** id_meta, 
@@ -1978,30 +1989,43 @@ void translate_dims(int fromModel[], int blockSizes[], int structDims[],
 
 /* filling a structure of this type is going to be a straight copy of the Tcl
    list builder in the shim, cos it's the easiest way to think through it */
+
+// 5-D wrapper
 nodeValues* get_raw_values(char* nodeId, long int instance_id) {
-  long int spareModel;
+  int nodeNum, spareNum;
+
+  nodeNum = ((ExecutingModel*)instance_id)->modelSpec->getinfo(nodeId, 
+							       &spareNum);
+  if (nodeNum==-1)
+    return NULL;
+  return ((ExecutingModel*)instance_id)->GetRawValues(nodeNum);
+}
+
+// new version: is member of model-execution class and takes numerical node id
+nodeValues* ExecutingModel::GetRawValues(int nodeId) {
   int sparePath[32], fullDims[32], indices[32];
   char spareCapt[255], *insertionPt;
   enum_type_data *spareTypes[32]; // might need for reading files
-  node_data_line *nodeLine;
   nodeValues* newBlk;
 
-  if (!(nodeLine = searchinfo(nodeId, &spareModel, spareCapt, 
-			      fullDims, sparePath, spareTypes)))
-    return NULL;
+  modelSpec->make_full_caption(nodeId, spareCapt, fullDims, spareTypes);
   newBlk = new nodeValues;
   // find first dimension not a positive integer
-  translate_dims(fullDims, indices, newBlk->dimSpecs, nodeLine->datatype, 
+  translate_dims(fullDims, indices, newBlk->dimSpecs, 
+		 modelSpec->nodedata[nodeId].datatype, 
 		 FALSE);
 
   if (indices[0]) {
     insertionPt = newBlk->contents = new char[indices[0]];
-    fill_raw_values(spareModel, instance_id, sparePath, 
+    *sparePath = 0; // copy path data because f_r_v could overwrite it
+    append_ints_to_null(sparePath, modelSpec->nodedata[nodeId].path, 0, 0);
+    fill_raw_values((long int)modelSpec, (long int)loadedInst, sparePath, 
 		    fullDims, indices, indices, &insertionPt);
   } else
     newBlk->contents = NULL;
   return newBlk;
 }
+
 
 /* definitions for regularData class -- note we may later want
 to use regularData items to describe simple c++ arrays, which is why we 
@@ -2120,22 +2144,9 @@ to drive the model...
 
 excpData* reset(long int modelType, long int modelHandle, int how_int,
 		int top_phase) {
-  excpData* result;
-
   topType = modelType;
   resetting=top_phase;
-  result = ((Model*)topType)->resetmodel((void*)modelHandle, how_int, 
-					 top_phase);
-  if (!result && top_phase<-1) {
-    listParamArray* paramArrayItem;
-
-    paramArrayItem = param_array_base;
-    while (paramArrayItem) {
-      paramArrayItem->back_copy_vars(modelType, modelHandle);
-      paramArrayItem = paramArrayItem->next;
-    }
-  }
-  return result;
+  return ((ExecutingModel*)modelHandle)->ResetInstance(how_int, top_phase);
 }
 
 excpData* execute(long int modelType, long int modelHandle, int how_int,
@@ -2143,7 +2154,7 @@ excpData* execute(long int modelType, long int modelHandle, int how_int,
 
   topType = modelType;
   resetting=0;
-  return ((Model*)topType)->executemodel((void*)modelHandle, 
+  return ((Model*)topType)->executemodel((ExecutingModel*)modelHandle, 
 				  how_int, starttime, endtime, errlim);
 }
 
@@ -2160,30 +2171,23 @@ void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
   xsimileVersion = simileVersionPtr;
 }
 
-int setstep(long int modelId, double starttime, int phase) {
-  ((Model*)modelId)->steps[phase] = starttime;
-  return ((Model*)modelId)->phases;
+int setstep(long int instId, double starttime, int phase) {
+  return ((ExecutingModel*)instId)->SetStep(phase, starttime);
 }
 
-void setdt(double starttime, int phase) {
-  listNodeModel* nodeModelPoint = nodeModelList;
-  Model* modelType;
+int ExecutingModel::SetStep(int phase, double step) {
+  steps[phase] = step;
+  return modelSpec->phases;
+}
 
-  while (nodeModelPoint) {
-    modelType = nodeModelPoint->model;
-    if (modelType->phases>=abs(phase)) {
-      modelType->setstepmodel(starttime, phase);
-    }
-    nodeModelPoint = nodeModelPoint->next;
-  }
+void ExecutingModel::SetdT(int phase, double starttime) {
+  if (modelSpec->phases>=abs(phase))
+    modelSpec->setstepmodel(loadedInst, starttime, phase);
 }
 
 char* myexit(long int modelType, long int modelHandle) {  
   if (modelHandle) { 
-    ((Model*)modelType)->exitmodel((void*)modelHandle);
-  }
-  if (param_array_base) {
-    param_array_base = param_array_base->strip_out(modelType);
+    delete (ExecutingModel*)modelHandle;
   }
   if (nodeModelList) {
     try {

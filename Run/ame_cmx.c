@@ -7,26 +7,6 @@ them to be executed etc by Tcl commands. */
 #include <signal.h> /* for killing stuck model execution */
 #include <tcl.h>
 
-#define	GETDIMS		0
-#define	GETTYPE		1
-#define	GETEVAL		2
-#define	GETGRAPH	3
-#define	SETGRAPH	4
-#define	GETCAPTION	5
-#define	GETMIN          6
-#define	GETMAX	        8
-#define GETPATH        10
-#define GETCLASS       11
-#define GETTRANS       12
-#define GETSPEC        13
-#define GETDESC        14
-#define GETCOMMENT     15
-#define	TEST	       99
-
-#define READGRAPH      21
-#define WRITEGRAPH     22
-#define USEGRAPH       23
-
 #ifdef WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
@@ -486,13 +466,21 @@ First two args are model type and instance, 3rd is node name */
 FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
+  long int modelInst, fpHandle;
 
-  if (argc != 2) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id");
+  if (argc != 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "instance_id node_id");
     return TCL_ERROR;
   }
   
-  if (use_array_for_params(Tcl_GetStringFromObj(argv[1], NULL))) {
+  error = Tcl_GetLongFromObj(interp, argv[1], &modelInst);
+  if (error != TCL_OK) {
+    return error;
+  }
+  fpHandle = use_array_for_params(modelInst, 
+				  Tcl_GetStringFromObj(argv[2], NULL));
+  if (fpHandle) {
+    Tcl_SetLongObj(Tcl_GetObjResult(interp), fpHandle);
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
@@ -503,12 +491,17 @@ FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int cleartimeseriesCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
+  long int fpHandle;
   if (argc != 2) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id");
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id");
     return TCL_ERROR;
   }
   
-  clear_time_point_elts(Tcl_GetStringFromObj(argv[1], NULL));
+  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
+  clear_time_point_elts(fpHandle);
   return TCL_OK;
 }
 /*
@@ -537,15 +530,20 @@ FINDABLE int savetimepointCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
+  long int fpHandle;
   double *time;
 
   if (argc != 2 && argc != 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id ?time?");
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id ?time?");
 
     return TCL_ERROR;
   }
   
-  if (time=get_wrap_ptr(Tcl_GetStringFromObj(argv[1], NULL)))
+  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
+  if (time=get_wrap_ptr(fpHandle))
     if (argc == 3)
       return Tcl_GetDoubleFromObj(interp, argv[2], time);
     else {
@@ -561,14 +559,19 @@ FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error, *mtd;
+  long int fpHandle;
 
   if (argc != 2 && argc != 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id ?method?");
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id ?method?");
 
     return TCL_ERROR;
   }
   
-  if (mtd=get_fill_ptr(Tcl_GetStringFromObj(argv[1], NULL)))
+  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
+  if (mtd=get_fill_ptr(fpHandle))
     if (argc == 3)
       return Tcl_GetIntFromObj(interp, argv[2], mtd);
     else {
@@ -584,19 +587,24 @@ FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int settimepointarrayCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
+  long int fpHandle;
   double timePt;
 
   if (argc != 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id time");
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id time");
     return TCL_ERROR;
   }
   
+  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
   error = Tcl_GetDoubleFromObj(interp, argv[2], &timePt);
   if (error != TCL_OK) {
     return error;
   }
 
-  if (!create_time_point(Tcl_GetStringFromObj(argv[1], NULL), timePt)) {
+  if (!create_time_point(fpHandle, timePt)) {
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("create_time_point: no array has been created for this node", -1));
@@ -624,13 +632,18 @@ int  ints_from_list(Tcl_Interp *interp, Tcl_Obj *CONST obList, int indxs[]) {
 FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int count, error, indxs[32], *dims;
+  long int fpHandle;
   char* bloc;
 
   if (argc != 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id index_list value");
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id index_list value");
     return TCL_ERROR;
   }
   
+  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
   if ((error = ints_from_list(interp, argv[2], indxs)) != TCL_OK)
     return error;
 
@@ -638,7 +651,7 @@ FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
   if (error != TCL_OK) {
     return error;
   }
-  bloc = get_param_ptr_and_dims(Tcl_GetStringFromObj(argv[1], NULL), &dims);
+  bloc = get_param_ptr_and_dims(fpHandle, &dims);
   if (!bloc) {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("set_record_list: no array has been created for this node", -1));
     return TCL_ERROR;
@@ -653,14 +666,20 @@ FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int settimepointrecordsCmd(ClientData clientData, Tcl_Interp *interp,
 				    int argc, Tcl_Obj *CONST argv[]) {
   int count, error, indxs[32], *dims;
+  long int fpHandle;
   char* bloc;
   double timePt;
 
   if (argc != 5) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id index_list time value");
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id index_list time value");
     return TCL_ERROR;
   }
   
+  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
+
   if ((error = ints_from_list(interp, argv[2], indxs)) != TCL_OK)
     return error;
 
@@ -673,8 +692,7 @@ FINDABLE int settimepointrecordsCmd(ClientData clientData, Tcl_Interp *interp,
   if (error != TCL_OK) {
     return error;
   }
-  switch (get_timepoint_ptr_and_dims(Tcl_GetStringFromObj(argv[1], NULL), 
-				     timePt, &bloc, &dims)) {
+  switch (get_timepoint_ptr_and_dims(fpHandle, timePt, &bloc, &dims)) {
   case 2:
     Tcl_SetObjResult(interp, Tcl_NewStringObj("set_tp_records: no array has been created for this node", -1));
     return TCL_ERROR;
@@ -692,14 +710,19 @@ FINDABLE int settimepointrecordsCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
 				int argc, Tcl_Obj *CONST argv[]) {
   int i, error, indxs[32], *dims;
+  long int fpHandle;
   double val;
   char* bloc;
   
   if (argc != 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id index_list value");
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id index_list value");
     return TCL_ERROR;
   }
   
+  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
   error = Tcl_GetDoubleFromObj(interp, argv[3], &val);
   if (error != TCL_OK) {
     return error;
@@ -708,7 +731,7 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
   if ((error = ints_from_list(interp, argv[2], indxs)) != TCL_OK)
     return error;
   
-  bloc = get_param_ptr_and_dims(Tcl_GetStringFromObj(argv[1], NULL), &dims);
+  bloc = get_param_ptr_and_dims(fpHandle, &dims);
   if (!bloc) {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("set_param_array_elt: no array has been created for this node", -1));
     return TCL_ERROR;
@@ -725,24 +748,25 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int count, error, indxs[32];
+  long int fpHandle;
   void *sourcePtr, *destPtr;
 
   if (argc != 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id data indices");
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id data indices");
     return TCL_ERROR;
   }
   
+  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
   if ((error = ints_from_list(interp, argv[3], indxs)) != TCL_OK)
     return error;
 
   sourcePtr = Tcl_GetByteArrayFromObj(argv[2], &count);
   
-  destPtr=use_array_for_params(Tcl_GetStringFromObj(argv[1], NULL));
-  if (!destPtr) {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("c_setparamall: no array can be created for this node", -1));
-    return TCL_ERROR;
-  }
   // OK, clever stuff (probably in shank) to go here...
+  destPtr = get_param_data_space(fpHandle);
   memcpy(destPtr, sourcePtr, count);
   return TCL_OK;
 }
@@ -750,36 +774,42 @@ FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int count, error;
+  long int fpHandle;
   char *nodeId;
   unsigned char *holder;
 
   if (argc != 2) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id");
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id");
     return TCL_ERROR;
   }
   
-  nodeId = Tcl_GetStringFromObj(argv[1], NULL);
-  if (count=param_array_size(nodeId)) { // assignment
-    holder = Tcl_SetByteArrayLength(Tcl_GetObjResult(interp), count);
-    memcpy(holder, use_array_for_params(nodeId), count);
-    return TCL_OK;
-  } else {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("c_getparamall: no array can be located for this node", -1));
-    return TCL_ERROR;
+  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
+  if (error != TCL_OK) {
+    return error;
   }
+  count=param_array_size(fpHandle);
+  holder = Tcl_SetByteArrayLength(Tcl_GetObjResult(interp), count);
+  memcpy(holder, get_param_data_space(fpHandle), count);
+  return TCL_OK;
 }
 
 FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error, indxs[32], *dims;
+  long int fpHandle;
   double time, val;
   char* bloc;
 
   if (argc != 5) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id index_list time value");
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id index_list time value");
     return TCL_ERROR;
   }
   
+  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
+
   error = Tcl_GetDoubleFromObj(interp, argv[3], &time);
   if (error != TCL_OK) {
     return error;
@@ -792,8 +822,7 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 
   if ((error = ints_from_list(interp, argv[2], indxs)) != TCL_OK)
     return error;
-  switch (get_timepoint_ptr_and_dims(Tcl_GetStringFromObj(argv[1], NULL), time,
-				     &bloc, &dims)) {
+  switch (get_timepoint_ptr_and_dims(fpHandle, time, &bloc, &dims)) {
   case 2:
     Tcl_SetObjResult(interp, Tcl_NewStringObj("set_tp_element: no array has been created for this node", -1));
     return TCL_ERROR;
@@ -808,29 +837,34 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int count, error, squirtPtr = 0, num_bytes, *dims;
-  char *nodeId, *ptBytes;
+  long int fpHandle;
+  char *ptBytes;
   unsigned char *holder;
   double seekTime;
   Tcl_Obj* resultPtr;
 
   if (argc != 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id data");
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id data");
     return TCL_ERROR;
   }
   
-  nodeId = Tcl_GetStringFromObj(argv[1], NULL);
-  if (count=param_array_size(nodeId)) {
+  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  if (count=param_array_size(fpHandle)) {
     holder = Tcl_GetByteArrayFromObj(argv[2], &num_bytes);
 //    sprintf(globMess, "Array has %d bytes, time points %d", num_bytes, count);
 //    showMess(globMess);
     while (squirtPtr<num_bytes) {
 // Needs new system
       seekTime = *(double*)(holder+squirtPtr);
-      if (create_time_point(nodeId, seekTime)) {
+      if (create_time_point(fpHandle, seekTime)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
 	return TCL_ERROR;
       }
-      get_timepoint_ptr_and_dims(nodeId, seekTime, &ptBytes, &dims);
+      get_timepoint_ptr_and_dims(fpHandle, seekTime, &ptBytes, &dims);
       // assume above works as we have just created it
       squirtPtr += sizeof(double);
       memcpy(ptBytes, holder+squirtPtr, count);
@@ -846,25 +880,28 @@ FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int gettimepointallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int count, error, squirtPtr = 0, currentSize;
-  char *nodeId;
+  long int fpHandle;
   unsigned char *holder;
   void *ptBytes;
   double seekTime;
   Tcl_Obj* resultPtr;
 
   if (argc != 2) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id");
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id");
     return TCL_ERROR;
   }
+  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
   
-  nodeId = Tcl_GetStringFromObj(argv[1], NULL);
-  if (count=param_array_size(nodeId)) { // assignment
+  if (count=param_array_size(fpHandle)) { // assignment
     currentSize = (count + sizeof(double))/2;
     resultPtr = Tcl_NewObj();
     holder = Tcl_SetByteArrayLength(resultPtr, currentSize);
     seekTime = -1e100;
     // copy data for each timept to ByteArray, doubling its size if too small
-    while (ptBytes = find_next_timept_space(nodeId, &seekTime)) { // assignment
+    while (ptBytes=find_next_timept_space(fpHandle, &seekTime)) { // assignment
       if (squirtPtr + count + sizeof(double) > currentSize) {
 	holder = Tcl_SetByteArrayLength(resultPtr, currentSize=2*currentSize);
       }
@@ -1029,14 +1066,14 @@ FINDABLE int setstepCmd(ClientData clientData, Tcl_Interp *interp,
   double starttime;
   int phase;
   int error;
-  long int modelType;
+  long int modelInst;
 
   if (argc != 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id interval/phase step_id");
+    Tcl_WrongNumArgs(interp, 1, argv, "instance_id interval/phase step_id");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelInst);
   if (error != TCL_OK) {
     return error;
   }
@@ -1052,7 +1089,7 @@ FINDABLE int setstepCmd(ClientData clientData, Tcl_Interp *interp,
   }
   
   Tcl_SetIntObj(Tcl_GetObjResult(interp), 
-		setstep(modelType, starttime, phase));
+		setstep(modelInst, starttime, phase));
   return TCL_OK;
 }
 
@@ -1141,7 +1178,7 @@ FINDABLE int graphCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   int action, index, error;
 
-  if (argc < 3) {
+  if (argc != 3) {
     Tcl_WrongNumArgs(interp, 2, argv, "graph_id");
     return TCL_ERROR;
   }
@@ -1219,7 +1256,10 @@ indices as far as the pointer, 0 if that is all the indices, and -1 if there
 is a mismatch before the pointer
 
 Change for 4.8: we put a 0 at the end of the dims so we do not need one at the
-end of each model instance's ids */
+end of each model instance's ids
+
+No longer used: they have been replaced by get_raw_values which are turned
+into Tcl by unpacker.c
 
 int match_type(long int localType, long int smHandle, int dims[], 
 	       int* dim_place) {
@@ -1244,7 +1284,8 @@ int match_type(long int localType, long int smHandle, int dims[],
   return 0;
 }
 
-/* next two call one another so one needs to be declared in advance */
+// next two call one another so one needs to be declared in advance
+
 Tcl_Obj* fill_value(long int, long int, int[], int, int*, int[], int*, 
 		    Tcl_Obj*);
 
@@ -1275,12 +1316,13 @@ Tcl_Obj* fill_list_value(long int localType, long int* smHandle, int tree[],
   return(localObj);
 }
 
-/* fill_value extracts a list of values from the model. Type is the full id
-path to the component whose values we are after. use_dims is array of array
-sizes which we are to get all the values from. Dims is an array of ints
-for the indices in the arrays we are getting values from, and dim_place is the
-pointer into this array where we can add more values as we go through the loops
-up to the sizes specified in use_dims. */
+// fill_value extracts a list of values from the model. Type is the full
+// id path to the component whose values we are after. use_dims is array
+// of array sizes which we are to get all the values from. Dims is an
+// array of ints for the indices in the arrays we are getting values
+// from, and dim_place is the pointer into this array where we can add
+// more values as we go through the loops up to the sizes specified in
+// use_dims.
 
 Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[], 
 		    int type, int* use_dims, int dims[], int* dim_place, 
@@ -1341,10 +1383,9 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
 	Tcl_GetBooleanFromObj(NULL, nVs, (int *)model_val_ptr);
       }
       break;
-      /*    case EXTERNAL:
-      localObj = Tcl_NewStringObj("ex", -1);
-      break;
-      */
+    //case EXTERNAL:
+    //  localObj = Tcl_NewStringObj("ex", -1);
+    //  break;
     default: // INTEGER or ENUM(*)
       localObj = Tcl_NewIntObj(*(int *)model_val_ptr);
       if (nVs) {
@@ -1353,7 +1394,7 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
       break;
     }
     break;
-  default: /* value is a dimension of the array we are accessing */
+  default: // value is a dimension of the array we are accessing
     localObj = Tcl_NewListObj(0, NULL);
     if (nVs) {
       Tcl_ListObjGetElements(NULL, nVs, &arrayLength, &arrayVals);
@@ -1378,7 +1419,7 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
   }
   return(localObj);
 }
-
+*/
 FINDABLE int freeDataHandleCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   int error;
@@ -1414,7 +1455,7 @@ FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
   long int modelHandle;
 
   if (argc != 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id caption");
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id");
     return TCL_ERROR;
   }
   
@@ -1509,7 +1550,7 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
-void respond_to_param_req(void* modelId, void* modelSlot, int paramId, 
+void respond_to_param_req(void* clientRef, void* modelSlot, int paramId, 
 			  int indCount, int* indices) {
   Tcl_BackgroundError(globInterp);
 }
@@ -1653,40 +1694,43 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   Tcl_CreateObjCommand(interp, "c_createmodel", createmodelCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "c_setparamarray", setparamarrayCmd, 
+  Tcl_CreateObjCommand(interp, "c_createparamarray", setparamarrayCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     
-  Tcl_CreateObjCommand(interp, "c_settimepointarray", settimepointarrayCmd, 
+  Tcl_CreateObjCommand(interp, "newc_settimepointarray", settimepointarrayCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "c_setrecordlist", setrecordlistCmd, 
+  Tcl_CreateObjCommand(interp, "newc_setrecordlist", setrecordlistCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "c_settimepointrecords", settimepointrecordsCmd, 
+  Tcl_CreateObjCommand(interp, "newc_settimepointrecords", 
+		       settimepointrecordsCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "c_cleartimeseries", cleartimeseriesCmd, 
+  Tcl_CreateObjCommand(interp, "newc_cleartimeseries", cleartimeseriesCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   /*
   Tcl_CreateObjCommand(interp, "c_savetimepoint", savetimepointCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   */
-  Tcl_CreateObjCommand(interp, "c_setparamelement", setparamelementCmd, 
+  Tcl_CreateObjCommand(interp, "newc_setparamelement", setparamelementCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
+  Tcl_CreateObjCommand(interp, "newc_setwraparoundtime", setwrapCmd,
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "newc_setfillmethod", setfillCmd,
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "newc_settimepointelement", 
+		       settimepointelementCmd,
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  // next four were used for byte-array params so will not bother to update
+  // to 6-D interface
   Tcl_CreateObjCommand(interp, "c_setparamall", setparamallCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_getparamall", getparamallCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "c_setwraparoundtime", setwrapCmd,
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "c_setfillmethod", setfillCmd,
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "c_settimepointelement", settimepointelementCmd,
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_settimepointall", settimepointallCmd, 

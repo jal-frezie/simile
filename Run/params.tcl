@@ -545,7 +545,7 @@ proc AcceptData {topNode compName notInput complain} {
         }
 	if {$useCppArray} {
 	    #puts "c_setparamarray b $node"
-	    c_setparamarray $node
+	    c_setparamarray $topNode $node
 	} else {
 	    tcl_setparamarray $topNode $node
 	}
@@ -813,17 +813,20 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         if {$useCppArray} {
 	    if {$when} {
 		set map [split $subs ,]
-		if {[catch {c_settimepointrecords $tgt [lrange $map 2 end] \
-				[lindex $map 1] $last} err]} {
-		    FPError $err $subs $errorData
-		    set redoStep {}
-		} 
+		c_settimepointrecords $tgt [lrange $map 2 end] \
+		    [lindex $map 1] $last
+		# if {[catch {c_settimepointrecords $tgt [lrange $map 2 end] \
+		# 		[lindex $map 1] $last} err]} {
+		#     FPError $err $subs $errorData
+		#     set redoStep {}
+		# } 
 	    } else {
-		if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
-						      1 end] $last} err]} {
-		    FPError $err $subs $errorData
-		    set redoStep {}
-		} 
+		c_setrecordlist $tgt [lrange [split $subs ,] 1 end] $last
+		# if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
+		# 				      1 end] $last} err]} {
+		#     FPError $err $subs $errorData
+		#     set redoStep {}
+		# } 
 	    }
 	} else { ;# use old system for Tcl
 	    set recordNode [lindex $nextDim 1]

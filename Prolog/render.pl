@@ -204,9 +204,12 @@ is supplied by making it a subclass of a base submodel class, if necessary. */
 render(c, class_declaration, Instance, Indent, ClassDecl) :-
 	Instance = instance(submodel, SymbolicName, _,_, Name-_),
 
-	(nonvar(SymbolicName), !,
-	    sicstus_format_to_chars( "~*sclass ~w : public ~atype {",
-			 [Indent, " ", Name, submodel], HeaderStr),
+	(nonvar(SymbolicName),
+	    (SymbolicName = root,
+		Abstract = 'InstanceOfModel';
+	      Abstract = submodeltype), !,
+	    sicstus_format_to_chars( "~*sclass ~w : public ~a {",
+			 [Indent, " ", Name, Abstract], HeaderStr),
 	    render(c, public_cons_dest, Instance, Indent, PublicHeads);
 	sicstus_format_to_chars( "~*sclass ~w {", [Indent, " ", Name], HeaderStr),
 	    PublicHeads = ['public:']),

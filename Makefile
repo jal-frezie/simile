@@ -126,18 +126,15 @@ Run/xgsimile$(EXECEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
 Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl
 	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c gmain.pl; cd ..
 
-vpath 	%.h 	Run
-vpath 	%.tcl 	Run
-
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
-$(SHIM): Run/ame_cmx.c dllcalls.h
+$(SHIM): Run/ame_cmx.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(FLAGS) -I. $(MAKESL) -o ../$(SHIM) ame_cmx.c \
 		$(USETCL) -L../System/lib -l5d$(ARCHEXTN); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 
-$(UNPK): Run/unpacker.c dllcalls.h Makefile
+$(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
 	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. $(MAKESL) -o ../$(UNPK) \
 		unpacker.c $(USETCL); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(UNPK)
@@ -145,14 +142,14 @@ $(UNPK): Run/unpacker.c dllcalls.h Makefile
 # literal SLDIR allows different SHANK clauses for Windows vs Unix
 
 # Windows: idiosyncratic stuff allows dynamic loader to work
-System/bin/$(SHANK): Run/shank.cpp dllcalls.h
+System/bin/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h
 	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
 		-o $(SHANK) -Wl,--out-implib,lib5d_win.a shank.cpp; \
 		mv $(SHANK) ../System/$(SLDIR); \
 		mv lib5d_win.a ../System/lib; cd ..
 
 # Unix: not needed for Linux as it can build at run time
-System/lib/$(SHANK): Run/shank.cpp dllcalls.h
+System/lib/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h
 	cd Run; $(GPPCMD) $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
 		-o ../System/$(SLDIR)/$(SHANK) shank.cpp; cd ..
 

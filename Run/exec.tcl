@@ -307,7 +307,7 @@ proc GetCCompProperty {topNode prop args} {
 	    return [lrange [listobjects \
 				$model_id($topNode)] 1 end]
 	} SetStep { ;# node is actually time
-	    return [c_setstepmodel $model_id($topNode) $node $set]
+	    return [c_setstepmodel $instance_id($topNode) $node $set]
 	} Class|Type|Eval {
 	    array set propData [list Class,cIdx 11 Class,names \
 			    {SUBMODEL VARIABLE COMPARTMENT FLOW CONDITION \
@@ -374,8 +374,37 @@ proc c_getvalue {topNode node action} {
 #    getinfo $node $field
 #}
 
-# this could be more efficient
+proc c_setparamarray {topNode tgtNode} {
+    global instance_id param_id
 
+    set param_id($tgtNode) [c_createparamarray $instance_id($topNode) $tgtNode]
+}
+
+foreach oldCProc {c_setparamelement c_settimepointelement c_settimepointarray \
+		      c_cleartimeseries c_setwraparoundtime c_setfillmethod \
+		  c_setrecordlist c_settimepointrecords} {
+    proc $oldCProc {args} {
+	global param_id
+	set cmd [info level 0]
+	
+	return [eval [list new[lindex $cmd 0] $param_id([lindex $cmd 1])] \
+		    [lrange $cmd 2 end]]
+    }
+}
+
+#proc c_setparamelement {tgtNode args} {
+#    global param_id
+#
+#    return [eval [list newc_setparamelement $param_id($tgtNode)] $args]
+#}
+#
+#proc c_settimepointelement {tgtNode args} {
+#    global param_id
+#
+#    return [eval [list newc_settimepointelement $param_id($tgtNode)] $args]
+#}
+#
+# this could be more efficient
 proc ExScrubRun {node times} {
     global runState model_id instance_id
     #    if {![string match ok [ShowMess debug info Scrubbing okcancel]]} {

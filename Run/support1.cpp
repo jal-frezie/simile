@@ -3,6 +3,7 @@
 #include        <setjmp.h>
 
 #include <dllcalls.h>
+#include <6d.h>
 
 /* Every dll has a variable to hold the id of the model type instance it
    represents */
@@ -29,11 +30,23 @@ get_remote_value_type* get_remote_value;
 stat_check_type* stat_check;
 showMess_type* suppShowMess;
 
-excpData userStop;
+// excpData userStop;
+
+struct InternalStop
+{
+  int lineNo;
+  int userCode;
+
+  InternalStop(int l, int c) {
+    lineNo = l;
+    userCode = c;
+  }
+};
 
 int stop_on_id(int lineId, int code) {
-  userStop.targetId = lineId;
-  return (userStop.excpNo = code);
+  throw InternalStop(lineId,code);
+//  userStop.targetId = lineId;
+//  return (userStop.excpNo = code);
 }
 
 int stop(int code) { 
@@ -42,10 +55,10 @@ int stop(int code) {
 }
 
 int lazy = 16384;
-void abort_check (void* instId) {
+void abort_check (InstanceOfModel* instId) {
   if (!lazy--) {
     lazy=16384;
-    if (stat_check(instId)) {
+    if (stat_check(instId->partner)) {
       throw -101;
     }
   }
@@ -152,32 +165,6 @@ void* advance_ptr(void* mType, void* mInst) {
   return (*advance_ptr_ref)(mType, mInst);
 }
 */
-/* class definition and handling procedure for extra variables used in
-   complicated integration methods */
-
-class diffs {
-public:
-  diffs () {
-    t1 = 0;
-    t2 = 0;
-    t3 = 0;
-  }
-  ~diffs () {
-  }
-  double t1, t2, t3;
-};
-
-double stage_incr (diffs*, int, double, double);
-double step_incr (int, double);
-//int at_time_step ();
-int loses (double, int);
-
-/* abstract base class for submodels, with extractor virtual function */
-class submodeltype {
-public:
-  virtual void* get_pointer(int id, int** dims) = 0;
-};
-
 /* Fn template for deleting a linked list of models -- if non-null, 
 calls itself for the on pointer before deleting instance
 
@@ -204,12 +191,12 @@ void delete_list (SMClass *ptr) {
     ptr = next_ptr;
   }
 }
-
+/*
 double glob_element (double* arrptr, int phase) {
   return arrptr[phase];
 }
-
-void collect (void* dest, int record_id, int id_count, ...) {
+*/
+void InstanceOfModel::collect (void* dest, int record_id, int id_count, ...) {
   va_list argptr;
   int curIndices[32];
   int length;
@@ -220,7 +207,7 @@ void collect (void* dest, int record_id, int id_count, ...) {
   }
   va_end(argptr);
 
-  (*get_value_pointer_ref)(myClassPtr, dest, record_id, id_count, curIndices);
+  (*get_value_pointer_ref)(partner, dest, record_id, id_count, curIndices);
 }
    
 template <class SMClass>

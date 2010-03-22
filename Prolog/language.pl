@@ -839,15 +839,15 @@ make_evaluation_routine(
 	    print_to_codes(TermStr, Expr),
 	    sicstus_atom_chars(Term, TermStr); */
 	member(Expr, [time(P), ind_time(P)]), !,
-	    make_procedure_call_chars(Language, [glob_element, ts, P],
-				      TimeElmtStr),
-	    name(Term, TimeElmtStr);
+	    make_indexed_reference(Language, ts, [P], Term);
+%	    make_procedure_call_chars(Language, [glob_element, ts, P],
+%				      TimeElmtStr),
+%	    name(Term, TimeElmtStr);
 
 	Expr = dt(P), !, /* still used for explicit references to dt */
-	    make_procedure_call_chars(Language, [glob_element, dts, P],
-				      TimeElmtStr),
-	    name(Term, TimeElmtStr);
-
+	    make_indexed_reference(Language, dts, [P], Term);
+	    % formerly similar to commented out bit above
+	    
 	Expr = assign(Tgt, SubExpr), !,
 	    make_scalar(Language, Tgt, Dest),
 	    make_evaluation_routine(Language, SubExpr, Source),

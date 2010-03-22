@@ -92,6 +92,7 @@ proc ChooseIntegerRatio {fraction accu} {
     }
 }
 	
+set defScaling [tk scaling]
 if {[string match Darwin $tcl_platform(os)] && [info tclversion] < 8.6} {
     set auto_path [list $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts $SIMILE_PATH/System/lib]
 #    package require tclAE
@@ -190,7 +191,6 @@ if {[string match Darwin $tcl_platform(os)] && [info tclversion] < 8.6} {
 # Fixed in 5.4 by explicitly making it apply to everything.
 # Silly val for testing: 3.0
 # Make conversion easier: pick nice ratio
-    set defScaling [tk scaling]
     set scalRat [ChooseIntegerRatio $defScaling 0.9]
     tk scaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
 

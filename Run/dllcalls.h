@@ -1,3 +1,9 @@
+/* This contans headers and other important bits and pieces for the
+   interface between Simile's 'shank' and the model executables,
+   including the declarations of the types of the functions that are
+   loaded, and the fundamentals of dynamic loading on the appropriate
+   platform. */
+
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -57,6 +63,29 @@
 #define USE_LAST        0
 #define USE_CLOSEST     1
 #define INTERPOLATE     2
+
+// Data request action codes
+#define	GETDIMS		0
+#define	GETTYPE		1
+#define	GETEVAL		2
+#define	GETGRAPH	3
+#define	SETGRAPH	4
+#define	GETCAPTION	5
+#define	GETMIN          6
+#define	GETMAX	        8
+#define GETPATH        10
+#define GETCLASS       11
+#define GETTRANS       12
+#define GETSPEC        13
+#define GETDESC        14
+#define GETCOMMENT     15
+#define GETINTERNALID  16
+#define BADTYPE        20
+#define	TEST	       99
+
+#define READGRAPH      21
+#define WRITEGRAPH     22
+#define USEGRAPH       23
 
 #define SIMILE_VERSION	"5.7"
 #define NEST 32
@@ -182,19 +211,6 @@ typedef struct excpData_t {
   int targetId;
 } excpData;
 
-// Declaration for procedure types found in the model dll by the shank
-typedef int getcount_type(void*, void*, void*, void* ,void*,
-			  void*, void*, void*, void*,
-			  int*, node_data_line**, double**, excpData**);
-typedef double getversion_type(void);
-typedef void* createmodel_type(void);
-typedef int setstep_type(double, int);
-typedef void updatemodel_type(void*, int);
-typedef void advancemodel_type(void*, int);
-typedef int evalmodel_type(void*, int);
-typedef void* getpointer_type(void*, int**, int**);
-typedef void exitmodel_type(void*);
-
 /* this is defined in the stub, which is loaded as a library...well it
    used to be, but now once the stub has loaded the dll it just sends
    over the pointers to all the functions used by the dll (the other
@@ -226,19 +242,20 @@ typedef void showMess_type(const char*);
 
 /* Defined in the shank, used by the shim */
 EXTDEC char* load_model(char*, char*, long int*);
-EXTDEC void* use_array_for_params(char*);
-EXTDEC int param_array_size(char*);
-EXTDEC int clear_time_point_elts(char*);
-EXTDEC double* get_wrap_ptr(char*);
-EXTDEC int* get_fill_ptr(char*);
-EXTDEC int create_time_point(char*, double);
-EXTDEC void* find_next_timept_space(char*, double*);
+EXTDEC long int use_array_for_params(long int, char*);
+EXTDEC void* get_param_data_space(long int);
+EXTDEC int param_array_size(long int);
+EXTDEC int clear_time_point_elts(long int);
+EXTDEC double* get_wrap_ptr(long int);
+EXTDEC int* get_fill_ptr(long int);
+EXTDEC int create_time_point(long int, double);
+EXTDEC void* find_next_timept_space(long int, double*);
 //EXTDEC int set_record_list(char*, int*, int);
 //EXTDEC int set_tp_records(char*, int*, double, int);
 //EXTDEC int set_param_array_elt(char*, double, int*);
 //EXTDEC int set_time_point_elt(char*, double, double, int*);
-EXTDEC char* get_param_ptr_and_dims(char*, int**);
-EXTDEC int get_timepoint_ptr_and_dims(char*, double, char**, int**);
+EXTDEC char* get_param_ptr_and_dims(long int, int**);
+EXTDEC int get_timepoint_ptr_and_dims(long int, double, char**, int**);
 EXTDEC void free_bloc_records(char*, int*);
 EXTDEC int set_bloc_record_count(char*, int*, int*, int);
 EXTDEC void set_bloc_element(char*, int*, int*, double);
@@ -304,8 +321,3 @@ EXTDEC int rdDatatype(long int);
 EXTDEC int rdBound(long int, int);
 EXTDEC void* rdLocateElement(long int old, int* indices);
 */
-
-//////////////////////////////////////////////////////////////////////////////
-// 6-D interface: class-based access to functionality accessed by procedure //
-// calls in 5-D.                                                            //
-//////////////////////////////////////////////////////////////////////////////
