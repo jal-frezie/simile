@@ -875,14 +875,15 @@ make_evaluation_routine(
 	    make_procedure_call_chars(Language, [stop_on_id, GraphId, VIdent],
 				      Content_chars),
 	    name(Term, Content_chars);
-	Expr = stage_incr(Struct, Step, Delta, Span), !, 
+	Expr = stage_incr(Struct, Step, Delta, Span, GraphId), !, 
 	    make_scalar(Language, Struct, SStruct),
 	    make_pointer(Language, SStruct, VStruct),
 	    make_evaluation_routine_all(Language, [Step, Delta],
 					[VStep, XDelta]),
 	    make_expr(Language, XDelta, VDelta),
 	    make_procedure_call_chars(Language, [stage_incr, VStruct, VStep,
-						 VDelta, Span], Content_chars),
+						 VDelta, Span, GraphId],
+				      Content_chars),
 	    name(Term, Content_chars);
 	Expr =.. [Op | Args],
 	    make_evaluation_routine_all(Language, Args, VArgs),

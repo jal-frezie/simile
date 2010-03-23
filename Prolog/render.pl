@@ -306,7 +306,8 @@ strings_direct( Target, NotNeeded, Variable, Indent, Stream) :-
 			 [global_declaration, c, tcl],
 			 [clear_memory, c, tcl],
 			 [public_cons_dest, tcl, c],
-			 [end(class), tcl, c]]),
+			 [end(class), tcl, c],
+			 [procedure_defn, tcl, c]]),
 	start_comment(Target, Stream),
 	strings_direct(Translation, NotNeeded, Variable, Indent, Stream),
 	end_comment(Target, Stream).
@@ -488,6 +489,9 @@ strings_direct(L, procedure_call, DataFunc, Indent, Stream) :-
 	DataFunc =.. Data,
 	make_procedure_call(L, Data, CallString),
 	strings_direct(L, function, CallString, Indent, Stream).
+
+strings_direct(c, procedure_defn, [ReturnType, Fn], Indent, Stream) :-
+	format(Stream, "~*s~a ~w;\n", [Indent, " ", ReturnType, Fn]).
 
 strings_direct(tcl, release_space, [Dest, Dim, Used], Indent, Stream) :-
 	language:declare(tcl, XIndex, loop, int, Used, Indent, Stream),

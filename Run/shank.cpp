@@ -108,15 +108,10 @@ char* xsimileVersion;
 showMess_type* showMessLocal;
 char globMess[256];
 
-/* values for keeping track of GUI interaction and execution times */
-int last_op = 0;
-unsigned long int last_exit = 0, last_update = 0, last_check = 0;
-unsigned long int flash=CLOCKS_PER_SEC/25; // 40ms
-unsigned long int took[]={0,0,0,0,0,0,0,0};
 long int topType;
 int resetting;
 
-BOOLEAN check_gui(ExecutingModel* id, double model_time, int this_op) {
+BOOLEAN ExecutingModel::check_gui(double model_time, int this_op) {
   unsigned long int this_update;
   long int while_running;
   BOOLEAN result = FALSE;
@@ -126,10 +121,10 @@ BOOLEAN check_gui(ExecutingModel* id, double model_time, int this_op) {
   this_update=clock();
   took[last_op]=this_update-last_exit;
   
-  if ((this_update-last_update)+took[this_op]>flash) {
+  if ((this_update-last_update)+took[this_op]>FLASH) {
     while_running = topType;
     while_resetting = resetting;
-    result=interact_gui(id->clientRef, 1+!this_op, model_time);
+    result=interact_gui(clientRef, 1+!this_op, model_time);
     topType = while_running;
     resetting = while_resetting;
     this_update=clock(); // GUI may have taken time
@@ -149,10 +144,10 @@ int stat_check(void* id) {
   BOOLEAN result;
 
   this_update=clock();
-  if (this_update-last_check>2*flash) {
+  if (this_update-((ExecutingModel*)id)->last_check>2*FLASH) {
     result=interact_gui(((ExecutingModel*)id)->clientRef, 0, 0);
     this_update=clock(); // GUI may have taken time
-    last_check=this_update;
+    ((ExecutingModel*)id)->last_check=this_update;
   } else {
     result=FALSE;
   }
@@ -545,7 +540,7 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum) {
 
     myModelExec = instToUse;
     nodeNum = newNodeNum;
-    instToUse->modelSpec->make_full_caption(nodeNum, spareCapt, fullDims,
+    instToUse->modelSpec->SearchInfo(nodeNum, spareCapt, fullDims,
 					    spareTypes);
     translate_dims(fullDims, sparePath, dataPtr.dimSpecs, 
 		   myModelExec->modelSpec->nodedata[nodeNum].datatype, TRUE);
@@ -778,6 +773,8 @@ Model::Model(char* fileName, char** complaint) {
       return;
     }
     getversion = (getversion_type *)FIND_FUNCTION(handle, "get_version");
+    // this does nothing but return the version number, so it can be checked 
+    // even if different versions change the args to getcount()
     if (getversion == NULL) {
       *complaint = new char[256];
       sprintf(*complaint, "the shared object is probably not a Simile model");
@@ -795,13 +792,13 @@ showMess(globMess); */
 
     getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
     createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
-    updatemodel = (updatemodel_type *)FIND_FUNCTION(handle, "do_updatemodel");
+//    updatemodel = (updatemodel_type *)FIND_FUNCTION(handle, "do_updatemodel");
 //    advancemodel = (advancemodel_type *)FIND_FUNCTION(handle, 
 //						      "do_advancemodel");
-    evalmodel = (evalmodel_type *)FIND_FUNCTION(handle, "do_evalmodel");
-    setstepmodel = (setstep_type *)FIND_FUNCTION(handle, "do_setstep");
-    getpointer = (getpointer_type *)FIND_FUNCTION(handle, "burrow_to");
-    exitmodel = (exitmodel_type *)FIND_FUNCTION(handle, "do_exitmodel");
+//    evalmodel = (evalmodel_type *)FIND_FUNCTION(handle, "do_evalmodel");
+//    setstepmodel = (setstep_type *)FIND_FUNCTION(handle, "do_setstep");
+//    getpointer = (getpointer_type *)FIND_FUNCTION(handle, "burrow_to");
+//    exitmodel = (exitmodel_type *)FIND_FUNCTION(handle, "do_exitmodel");
 
     nodecount = (*getcount)(this, 
 			    (void*)ame_rand, 
@@ -819,7 +816,7 @@ showMess(globMess); */
 */			    (void*)stat_check,
 			    (void*)showMess,
 			    (void*)&c_graphdata,
-			    &phases, &nodedata, &adapt_maxerr);
+			    &phases, &nodedata);
   }
 
 Model::~Model() {
@@ -860,51 +857,50 @@ int ExecutingModel::phase_for(double current, double step, int so_far) {
     }
   }
 
-int Model::rk_update(ExecutingModel* inst) {
-    int wee_phase, err;
-    InstanceOfModel* id = inst->loadedInst;
+int ExecutingModel::rk_update() {
+  int wee_phase, err, phases=modelSpec->phases;
+    InstanceOfModel* id = loadedInst;
 
     wee_phase=phases+1;
-    advance_time(inst, phases, 0.5);
-    inst->SetdT( 0,2);
-    if (err=evalmodel(id,wee_phase)) return err;
-    (*updatemodel)(id, phases);
-    inst->SetdT( 0,3);
-    if (err=evalmodel(id,wee_phase)) return err;
-    (*updatemodel)(id, phases);
-    advance_time(inst, phases, 0.5);
-    inst->SetdT( 0,4);
-    if (err=evalmodel(id,wee_phase)) return err;
-    (*updatemodel)(id, phases);
-    inst->SetdT( 0,1);
+    advance_time(phases, 0.5);
+    SetdT( 0,2);
+    if (err=id->do_evalmodel(wee_phase)) return err;
+    id->updatemodel(phases);
+    SetdT( 0,3);
+    if (err=id->do_evalmodel(wee_phase)) return err;
+    id->updatemodel(phases);
+    advance_time(phases, 0.5);
+    SetdT( 0,4);
+    if (err=id->do_evalmodel(wee_phase)) return err;
+    id->updatemodel(phases);
+    SetdT( 0,1);
     return 0;
   }
 
-void Model::set_dts (ExecutingModel* inst, int phase, double current) {
+void ExecutingModel::set_dts (int phase, double current) {
     int tweak_phase;
-    for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
+    for (tweak_phase=phase; tweak_phase<=modelSpec->phases; tweak_phase++) {
       ldts[tweak_phase]=current-lts[tweak_phase];
-      inst->SetdT(tweak_phase,ldts[tweak_phase]); 
+      SetdT(tweak_phase,ldts[tweak_phase]); 
       // dts should only be global but im lazy
     }
   }
   
-void Model::advance_time (ExecutingModel* inst, int phase, double fraction) {
+void ExecutingModel::advance_time (int phase, double fraction) {
     int tweak_phase;
     double series_pt;
 
     // series_pt = lts[phases]+ldts[phases]*fraction/2; 
     // load values for middle of interval as they apply throughout it...no
-    for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
+    for (tweak_phase=phase; tweak_phase<=modelSpec->phases; tweak_phase++) {
       lts[tweak_phase]=lts[tweak_phase]+ldts[tweak_phase]*fraction;
-      inst->SetdT(-tweak_phase,lts[tweak_phase]); 
+      SetdT(-tweak_phase,lts[tweak_phase]); 
       // ts should only be global but im lazy
     }
     // time value is chosen to work with RK so series pt should do the same
-    series_pt = lts[phases];
-    if (inst->param_array_base) 
-      inst->param_array_base->UpdateTimeSeries(series_pt, 
-						 series_pt > thisTsPosn);
+    series_pt = lts[modelSpec->phases];
+    if (param_array_base) 
+      param_array_base->UpdateTimeSeries(series_pt, series_pt > thisTsPosn);
     thisTsPosn = series_pt;
   }
   
@@ -1035,7 +1031,7 @@ ExecutingModel::ExecutingModel(Model* newModelSpec, void* yourRef) {
 
 ExecutingModel::~ExecutingModel() {
   while (param_array_base) delete param_array_base;
-  modelSpec->exitmodel(loadedInst);
+  delete loadedInst;
 }
 
 excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
@@ -1043,8 +1039,11 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
 
   loadedInst->userStop.excpNo = 0;
   if (top_phase<=0) {
+    last_op = 0;
+    last_exit = last_update = last_check = 0; // reset timekeeping
     for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
-      modelSpec->lts[tweak_phase]=0;
+      lts[tweak_phase]=0;
+      took[tweak_phase]=0;
       SetdT( -tweak_phase,0);
       SetdT( tweak_phase,steps[tweak_phase]);
     }
@@ -1055,13 +1054,13 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
     case RUNGE_KUTTA:
       SetdT(0,1);
     } // was -1,0 to stop loss, but now we want it cos it happens next step
-    modelSpec->thisTsPosn = 0.0;
+    thisTsPosn = 0.0;
     if (param_array_base)
       param_array_base->ResetTimeSeries();
-    modelSpec->adapt_doublings = 0;
+    adapt_doublings = 0;
   }
   
-  err=modelSpec->evalmodel(loadedInst, top_phase);
+  err=loadedInst->do_evalmodel(top_phase);
   if (err)
     loadedInst->userStop.excpNo = err;
   //    else
@@ -1075,7 +1074,7 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
   return NULL;
 }
 
-excpData* Model::executemodel(ExecutingModel* inst, int how_int, 
+excpData* ExecutingModel::ExecuteInstance(int how_int, 
 		   double start, double* end, double errlim) {
     double freq, xtime;
     int big_phase, err;
@@ -1083,18 +1082,17 @@ excpData* Model::executemodel(ExecutingModel* inst, int how_int,
     // sprintf(globMess, "xm %d %lf-%lf at %lf", how_int, start, *end, errlim);
     // showMess(globMess);
     // temporary arrangement until we move this function into the instance
-    InstanceOfModel* id = inst->loadedInst;
-    excpData* userDefStop = &(id->userStop);
+    excpData* userDefStop = &(loadedInst->userStop);
 
     userDefStop->excpNo = 0;
-    freq = inst->steps[phases]*pow(2,-adapt_doublings);
+    freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
     xtime = start;
     while (freq*(*end-xtime)>0) { // freq only affects sign
       made_step = 0;
       first_pass = 1;
-      big_phase = inst->phase_for(xtime, freq, phases);
+      big_phase = phase_for(xtime, freq, modelSpec->phases);
       // that is the biggest phase we will try to run, we may not succeed
-      if (check_gui(inst, xtime, big_phase)) {
+      if (check_gui(xtime, big_phase)) {
 	userDefStop->excpNo = -100; // should not conflict with os signals
 	*end = xtime;
 	return userDefStop;
@@ -1107,26 +1105,26 @@ excpData* Model::executemodel(ExecutingModel* inst, int how_int,
 	} else {
 	  xtime+=freq;
 	}
-	set_dts(inst, big_phase, xtime);
+	set_dts(big_phase, xtime);
 
 	switch (how_int) {
 	case EULER:
 	  if (first_pass) {
-	    inst->SetdT(0,0);
+	    SetdT(0,0);
 	  } else {
-	    inst->SetdT(0,-1);
+	    SetdT(0,-1);
 	  }
-	  advance_time(inst, big_phase, 1);
-	  (*updatemodel)(id, big_phase);
+	  advance_time(big_phase, 1);
+	  loadedInst->updatemodel(big_phase);
 	  break;
 	case RUNGE_KUTTA:
 	  if (first_pass) {
-	    inst->SetdT(0,1);
+	    SetdT(0,1);
 	  } else {
-	    inst->SetdT(0,-2);
+	    SetdT(0,-2);
 	  }
-	  (*updatemodel)(id, big_phase);
-	  userDefStop->excpNo=rk_update(inst);
+	  loadedInst->updatemodel(big_phase);
+	  userDefStop->excpNo=rk_update();
 	  break;
 	}
 	if (userDefStop->excpNo) break; // from inner loop
@@ -1134,21 +1132,22 @@ excpData* Model::executemodel(ExecutingModel* inst, int how_int,
 	if (!errlim) {
 	  made_step = 1;
 	} else {
-	  if (userDefStop->excpNo=evalmodel(id,phases+1)) break;
+	  if (userDefStop->excpNo=loadedInst->do_evalmodel(modelSpec->phases+1))
+	    break;
 	  // from inner loop
 
 	  // get the model to generate its error estimate
-	  *adapt_maxerr = 0;
-	  inst->SetdT( 0,10);
-	  (*updatemodel)(id, big_phase);
-	  if (*adapt_maxerr>errlim) {
+	  loadedInst->adapt_maxerr = 0;
+	  SetdT( 0,10);
+	  loadedInst->updatemodel(big_phase);
+	  if (loadedInst->adapt_maxerr>errlim) {
 	    // error too great; put comps back and try shorter
 	    if (adapt_doublings<31) {
-	      advance_time(inst, big_phase, -1); // back to start
+	      advance_time(big_phase, -1); // back to start
 	      xtime-=freq;
 	      adapt_doublings++;
-	      freq = inst->steps[phases]*pow(2,-adapt_doublings);
-	      big_phase = inst->phase_for(xtime, freq, phases);
+	      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
+	      big_phase = phase_for(xtime, freq, modelSpec->phases);
 	    } else {
 	      // signal problem
 	      userDefStop->excpNo = -99;
@@ -1156,19 +1155,19 @@ excpData* Model::executemodel(ExecutingModel* inst, int how_int,
 	    }
 	  } else {
 	    made_step = 1;
-	    if (adapt_doublings && *adapt_maxerr<errlim/16) {
+	    if (adapt_doublings && loadedInst->adapt_maxerr<errlim/16) {
 	      // low error; try longer next time if poss
 	      adapt_doublings--;
-	      freq = inst->steps[phases]*pow(2,-adapt_doublings);
+	      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
 	    } // lengthen time step
 	  } // timestep too short or not
 	} // error limit exists
       } // made progress
       if (userDefStop->excpNo) break; // from outer loop
-      if (userDefStop->excpNo=evalmodel(id,big_phase)) break;
+      if (userDefStop->excpNo=loadedInst->do_evalmodel(big_phase)) break;
 //      (*advancemodel)(id, big_phase);
     }
-    if (check_gui(inst, *end, 0) && !userDefStop->excpNo)
+    if (check_gui(*end, 0) && !userDefStop->excpNo)
       // always go to make sure time is right
       userDefStop->excpNo = -100;
     *end=xtime;
@@ -1178,9 +1177,9 @@ excpData* Model::executemodel(ExecutingModel* inst, int how_int,
   }
   
 // pure laziness: define instance function in terms of spec function
-excpData* ExecutingModel::ExecuteInstance(int how_int, 
-		   double start, double* end, double errlim) {
-  return modelSpec->executemodel(this, how_int, start, end, errlim);
+excpData* Model::executemodel(ExecutingModel* inst, int how_int, 
+			      double start, double* end, double errlim) {
+  return inst->ExecuteInstance(how_int, start, end, errlim);
 }
 
 /* listable class for submodel data -- allows us to find model id from node id
@@ -1558,10 +1557,6 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId,
   // showMessLocal(globMess);
 
 }
-///// STOPGAP
-void add_to_list(Model* newModel, char* nodeName) {
-  nodeModelList = new listNodeModel(nodeName, newModel, nodeModelList);
-}
 
 char* load_model(char* fileName, char* nodeName, long int* modelType) {
   Model* newModel;
@@ -1572,9 +1567,6 @@ char* load_model(char* fileName, char* nodeName, long int* modelType) {
     // delete newModel;
     return complaint;
   }
-///// STOPGAP
-//  add_to_list(newModel, nodeName);
-
   *modelType = (long int)newModel;
   return NULL;
 }
@@ -1652,106 +1644,6 @@ int Model::NodeNumFromCapt(char* seeknode) {
   return -1;
 }
 
-
-/* global version of getinfo, uses the list defined above to search through all
-   current models to find given node, and combine their extraction data
-
-   Needs a new node_data_line, to which it is passed a ptr. Returns 0 if
-   fails to find path. 
-
-   This is very ugly -- it should return a lot of NULLs if called with the
-   top node, and otherwise call itself recursively before getting the local
-   data, thus allowing it to pass pointers to current positions along the
-   result arrays to make_full_caption. Well that's stepwise refinement...
-*/
-
-node_data_line* search_intnl(char* node, long int* tgtModel, char* caption, 
-			   int* dims, int* path, enum_type_data** usedTypes) {
-  listNodeModel* searchPoint = nodeModelList;
-  Model* tryModel;
-  node_data_line *bottomLine;
-  char localCapt[256];
-  int localDims[32], dimCount;
-  int line, ghostLine, typeCount, typeIdx;
-
-  while (searchPoint) {
-//    sprintf(globMess, "seeking %s in %s", node, searchPoint->node);
-//    showMess(globMess);
-    tryModel = searchPoint->model;
-    if (!strcmp(node,searchPoint->node)) line=0;
-    else line=tryModel->getinfo(node, &ghostLine);
-    if (ghostLine>-1) {
-      tryModel->make_full_caption(ghostLine, caption, localDims, usedTypes);
-    }
-    if (line>-1) {
-      bottomLine = tryModel->nodedata + line;
-      typeCount = tryModel->make_full_caption(line, localCapt, 
-					      localDims, usedTypes);
-      if (line) {
-//	if (!search_intnl(searchPoint->node, tgtModel, caption,
-//		       dims, path, usedTypes + typeCount)) {
-//	  return NULL;
-//	}
-      } else {
-	*tgtModel = (long int)tryModel;
-      }
-
-      /* Case for a separate submodel below toplevel: no longer used as of v5
-	 (also breaks 64bit build)
-      if (*tgtModel!=(long int)tryModel) {
-	// correct higher ET references for those added at this level
-	dimCount = 0;
-	while (dims[dimCount]) {
-	  if (dims[dimCount] <= ENUM_BASE) {
-	    dims[dimCount] = dims[dimCount]-typeCount;
-	  }
-	  ++dimCount;
-	}
-
-	append_ints_to_null(dims, localDims, SEPARATE, 0);
-	append_ints_to_null(path, bottomLine->path, SEPARATE, 
-			    (int)searchPoint->model);
-			    } else { */
-	*dims = *path = 0;
-	append_ints_to_null(dims, localDims, 0, 0);
-	append_ints_to_null(path, bottomLine->path, 0, 0);
-	// *caption = 0;
-	/*      } 
-End removed separate submodel case */
-	if (ghostLine>-1) { // append base tail to ghost submodel caption
-	  strcat(caption, "/");
-	  strcat(caption, bottomLine->strings[0]);
-	} else
-	  strcpy(caption, localCapt);
-
-      /* Old version with only one model hierarchy...
-      if (searchPoint == nodeModelList) {
-	strcpy(caption, localCapt);
-	*dims = *path = 0;
-	*usedTypes = NULL;
-	append_ints_to_null(dims, localDims, 0, 0);
-	append_ints_to_null(path, bottomLine->path, 0, 0);
-	append_ptrs_to_null(usedTypes, localUsed);
-      } else if (searchinfo(searchPoint->node, tgtModel, caption,
-			    dims, path, usedTypes)) {
-	append_ints_to_null(dims, localDims, SEPARATE, 0);
-	append_ints_to_null(path, bottomLine->path, SEPARATE, 
-			    (int)searchPoint->model);
-	append_ptrs_to_null(usedTypes, localUsed);
-	strcpy(caption + strlen(caption), // was strrchr(caption, '/'),
-	       localCapt);
-      } else {
-	bottomLine = NULL;
-      }
-      */
-      *tgtModel = (long int)tryModel;
-      return(bottomLine);
-    }
-    searchPoint = searchPoint->next;
-  }
-  return(NULL);
-}
-
 char *falseTxt = (char*)"false";
 char *trueTxt = (char*)"true";
 char *booleanMems[2] = {falseTxt, trueTxt};
@@ -1761,8 +1653,15 @@ enum_type_data noType = {0, NULL, NULL},
 
 node_data_line* searchinfo(char* node, long int tgtModel, char* caption, 
 			   int* dims, enum_type_data** usedTypes) {
+  int lineNum = ((Model*)tgtModel)->getinfo(node, &lineNum);
+  // use destination as spare, it is assigned after proc exits
+  return ((Model*)tgtModel)->SearchInfo(lineNum, caption, dims, usedTypes);
+}
+
+node_data_line* Model::SearchInfo(int lineNum, char* caption, 
+			   int* dims, enum_type_data** usedTypes) {
   enum_type_data *thisType, *localTypes[128];
-  int dimCount = 0, usedCount, lineNum, iType;
+  int dimCount, usedCount, iType;
   node_data_line* bottomLine;
 
   /* botch: when getting info on a new separate submodel, we don't
@@ -1770,16 +1669,14 @@ node_data_line* searchinfo(char* node, long int tgtModel, char* caption,
      so fill the array with null types */
   for (usedCount=0; usedCount<128; ++usedCount) {
     localTypes[usedCount]=&noType;
-  }
-  lineNum = ((Model*)tgtModel)->getinfo(node, &usedCount); // latter is spare
-	
-  ((Model*)tgtModel)->make_full_caption(lineNum, caption, dims, localTypes);
+  }	
+  make_full_caption(lineNum, caption, dims, localTypes);
   //  bottomLine = search_intnl(node, tgtModel, caption, dims, path, localTypes);
   // if (bottomLine) {
-  usedCount=0;
+  usedCount=dimCount=0;
     while (dims[dimCount]) {
-      //    sprintf(globMess, "dim %d is %d", dimCount, dims[dimCount]);
-      //    showMess(globMess);
+      // sprintf(globMess, "dim %d is %d", dimCount, dims[dimCount]);
+      // showMess(globMess);
       if (dims[dimCount] <= ENUM_BASE) {
 	thisType = localTypes[ENUM_BASE-dims[dimCount]];
 	usedTypes[usedCount++] = thisType;
@@ -1794,12 +1691,12 @@ node_data_line* searchinfo(char* node, long int tgtModel, char* caption,
       }
       ++dimCount;
     }
-    bottomLine = ((Model*)tgtModel)->nodedata + lineNum;
+    bottomLine = nodedata + lineNum;
     if (bottomLine->datatype <= ENUM_BASE) {
       thisType = localTypes[ENUM_BASE-bottomLine->datatype];
-      //    sprintf(globMess, "type is %d, setting result %d to %s", 
-      //        datatype, usedCount, thisType->name);
-      //    showMess(globMess);
+      // sprintf(globMess, "type is %d, setting result %d to %s", 
+      //         bottomLine->datatype, usedCount, thisType->name);
+      // showMess(globMess);
       usedTypes[usedCount++] = thisType;
     } else if (bottomLine->datatype == FLAG) {
       usedTypes[usedCount++] = &boolDataType;
@@ -1820,38 +1717,39 @@ long int fetch_top_instance(long int modelType) {
   return (long int)justMade;
 }
 
-void* get_ptr(long int modelType, long int level, int** id_meta, 
-	      int** dim_list) {
-  return ((Model*)modelType)->getpointer((void*)level, id_meta, dim_list);
+void* get_ptr(InstanceOfModel* level, int** id_meta, int** dim_list) {
+  return level->burrow_to(id_meta, dim_list);
+  // look -- no casts! Was...
+  //  return ((Model*)modelType)->getpointer((void*)level, id_meta, dim_list);
 }
 
-long int step_ptr(long int type, long int ptr) {
+InstanceOfModel* step_ptr(InstanceOfModel* ptr) {
   int next_handle[] = {1,0}, dimDum[] = {0}, *idler1, *idler2;
 
   idler1 = next_handle;
   idler2 = dimDum; // dummy dim needed to survive member count retreival test
-  return *(long int*)(get_ptr(type, ptr, &idler1, &idler2));
+  return *(InstanceOfModel**)(get_ptr(ptr, &idler1, &idler2));
 }
 
-int count_members(long int type, long int ptr) {
+int count_members(InstanceOfModel* ptr) {
   // do not recurse, there may be too many of them
   int count = 0;
   while(ptr) {
-    ptr = step_ptr(type, ptr);
+    ptr = step_ptr(ptr);
     ++count;
   }
   return count;
 }
 
 // put indices of current instance onto data blk
-void fill_indices(long int localType, long int smHandle,
-		  int indxCount, char** insertionPt) {
+void fill_indices(InstanceOfModel* smHandle, int indxCount, 
+		  char** insertionPt) {
   int idHandle[] = {2,0}, idIdx[1], *idler1, *idler2;
 
   for (idIdx[0] = 0; idIdx[0]<indxCount; ++idIdx[0]) {
     idler1 = idHandle;
     idler2 = idIdx;
-    memcpy(*insertionPt, get_ptr(localType, smHandle, &idler1, &idler2),
+    memcpy(*insertionPt, get_ptr(smHandle, &idler1, &idler2),
 	   sizeof(int));
     *insertionPt += sizeof(int);
   }
@@ -1871,7 +1769,7 @@ int skip_vm_bounds(int** modelDimList) {
 // but ass we recurse through this it gets replaced by the array of
 // counts that are being incremented in the instances of this
 // procedure from which the current one is being called
-void fill_raw_values(long int localType, long int smHandle, int tree[],
+void fill_raw_values(InstanceOfModel* smHandle, int tree[],
 		     int* use_dims, int dims[], int* dim_place,
 		     char** insertionPt) {
   int count, dimty = 0; // value for RECORDS
@@ -1894,8 +1792,8 @@ void fill_raw_values(long int localType, long int smHandle, int tree[],
        needed for each instance and its indices, alloc this and
        recurse to fill it up, and place count and pointer to new space
        in insertionPt. */
-    smHandle = *(long int*)get_ptr(localType, smHandle, &tree, &dims);
-    count = count_members(localType, smHandle);
+    smHandle = *(InstanceOfModel**)get_ptr(smHandle, &tree, &dims);
+    count = count_members(smHandle);
     ((sizeAndPtr*)(*insertionPt))->size = count;
     if (count) // do not waste energy creating zero-length blox
       newBlk = new char[count*(dimty*sizeof(int) + dim_place[1])];
@@ -1903,14 +1801,14 @@ void fill_raw_values(long int localType, long int smHandle, int tree[],
     *insertionPt += sizeof(sizeAndPtr);
     while (*tree++ != -1) {} // make relevant to current submodel
     while (smHandle) {
-      fill_indices(localType, smHandle, dimty, &newBlk);
-      fill_raw_values(localType, smHandle, tree,
+      fill_indices(smHandle, dimty, &newBlk);
+      fill_raw_values(smHandle, tree,
 		      use_dims+1, dim_place+1, dim_place+1, &newBlk);
-      smHandle = step_ptr(localType, smHandle);
+      smHandle = step_ptr(smHandle);
     }
     break;
   case 0:
-    model_val_ptr = get_ptr(localType, smHandle, &tree, &dims);
+    model_val_ptr = get_ptr(smHandle, &tree, &dims);
     memcpy(*insertionPt, model_val_ptr, *dim_place);
     *insertionPt += *dim_place;
     break;
@@ -1920,7 +1818,7 @@ void fill_raw_values(long int localType, long int smHandle, int tree[],
     int *tree_copy, *dims_copy;
     tree_copy = tree;
     dims_copy = dims; 
-    count = *(int*)get_ptr(localType, smHandle, &tree_copy, &dims_copy);
+    count = *(int*)get_ptr(smHandle, &tree_copy, &dims_copy);
     ((sizeAndPtr*)(*insertionPt))->size = count;
     newBlk = new char[count*dim_place[1]];
     ((sizeAndPtr*)(*insertionPt))->ptr = newBlk;
@@ -1928,15 +1826,14 @@ void fill_raw_values(long int localType, long int smHandle, int tree[],
     *dim_place = dimty;
     // now overwrite dim to look like normal array, recurse, and put back
     *use_dims=count;
-    fill_raw_values(localType, smHandle, tree, 
-    		    use_dims, dims, dim_place, &newBlk);
+    fill_raw_values(smHandle, tree, use_dims, dims, dim_place, &newBlk);
     *use_dims=RECORDS;
     break;
   default: /* value is a dimension of the array we are accessing */
     count = *dim_place; // save block size in case we need it again
     for (*dim_place = 0; *use_dims > *dim_place; ++*dim_place) {
-      fill_raw_values(localType, smHandle, tree,
-		      use_dims+1, dims, dim_place+1, insertionPt);
+      fill_raw_values(smHandle, tree, use_dims+1, dims, dim_place+1, 
+		      insertionPt);
     }
     *dim_place = count;
     break;
@@ -2011,7 +1908,7 @@ nodeValues* ExecutingModel::GetRawValues(int nodeId) {
   enum_type_data *spareTypes[32]; // might need for reading files
   nodeValues* newBlk;
 
-  modelSpec->make_full_caption(nodeId, spareCapt, fullDims, spareTypes);
+  modelSpec->SearchInfo(nodeId, spareCapt, fullDims, spareTypes);
   newBlk = new nodeValues;
   // find first dimension not a positive integer
   translate_dims(fullDims, indices, newBlk->dimSpecs, 
@@ -2022,7 +1919,7 @@ nodeValues* ExecutingModel::GetRawValues(int nodeId) {
     insertionPt = newBlk->contents = new char[indices[0]];
     *sparePath = 0; // copy path data because f_r_v could overwrite it
     append_ints_to_null(sparePath, modelSpec->nodedata[nodeId].path, 0, 0);
-    fill_raw_values((long int)modelSpec, (long int)loadedInst, sparePath, 
+    fill_raw_values(loadedInst, sparePath, 
 		    fullDims, indices, indices, &insertionPt);
   } else
     newBlk->contents = NULL;
@@ -2178,6 +2075,11 @@ int setstep(long int instId, double starttime, int phase) {
   return ((ExecutingModel*)instId)->SetStep(phase, starttime);
 }
 
+// setstep: the model class instances contain an array of doubles called
+// dts representing the time steps at the various phases. This function reaches
+// in and sets one of them. Returns phase count. Node that ts[0] is set to
+// the integration step being done: 0 for Euler, 1-4 for the four stages of RK
+
 int ExecutingModel::SetStep(int phase, double step) {
   steps[phase] = step;
   return modelSpec->phases;
@@ -2185,7 +2087,11 @@ int ExecutingModel::SetStep(int phase, double step) {
 
 void ExecutingModel::SetdT(int phase, double starttime) {
   if (modelSpec->phases>=abs(phase))
-    modelSpec->setstepmodel(loadedInst, starttime, phase);
+    if (phase>0) { /* lazy */
+      loadedInst->dts[phase] = starttime;
+    } else {
+      loadedInst->ts[-phase] = starttime;
+    }
 }
 
 char* myexit(long int modelType, long int modelHandle) {  

@@ -37,16 +37,22 @@ public:
 class InstanceOfModel : public submodeltype {
 public:
   excpData userStop;
+  double adapt_maxerr;
   ExecutingModel* partner;
   double ts[8], dts[8];
 
+  // functions called by host module
+  virtual int do_evalmodel(int) = 0;
+  virtual void* burrow_to(int**, int**) = 0;
+  
+  // functions implemented by model code
   virtual void advancemodel (int phase) = 0;
   virtual void updatemodel (int phase) = 0;
   virtual void evalmodel (int phase) = 0;
   virtual void do_exitmodel () = 0;
 
   // support functions called by model code
-  double stage_incr (diffs*, int, double, double);
+  double stage_incr (diffs*, int, double, double, int);
   int loses(double, int);
   void collect(void*, int, int, ...);
 };
@@ -93,42 +99,59 @@ class ExecutingModel
   InstanceOfModel* loadedInst;
   FileParamData* param_array_base;
  
+  // state of execution
+  int adapt_doublings;
+
+  // values for keeping track of GUI interaction and execution times
+  int last_op;
+  unsigned long int last_exit, last_update, last_check;
+  #define FLASH CLOCKS_PER_SEC/25 // 40ms
+  unsigned long int took[8];
 
   double steps[8];
+  double lts[8], ldts[8], thisTsPosn;
   int SetStep(int, double);
   void SetdT(int, double);
+  void set_dts (int, double);
+  int rk_update();
+  void advance_time (int, double);
   int phase_for(double, double, int);
 
+  // set up model data
   FileParamData* UseArrayForParams(int);
 
+  // control model execution
   excpData* ResetInstance(int, int);
   excpData* ExecuteInstance(int, double, double*, double);
 
+  // allow model to access data
   void GetValuePointer(void*, int, int, int*);
 
+  // get results from model
   nodeValues* GetRawValues(int);
+
+  // interact with client during execution
+  BOOLEAN check_gui(double, int);
 }; // End of class ExecutingModel
 
 // Declaration for procedure types found in the model dll by the shank
 typedef int getcount_type(void*, void*, void*, void* ,void*,
 			  void*, void*, void*, void*,
-			  int*, node_data_line**, double**);
+			  int*, node_data_line**);
 typedef double getversion_type(void);
 typedef InstanceOfModel* createmodel_type(ExecutingModel*);
-typedef int setstep_type(InstanceOfModel*, double, int);
-typedef void updatemodel_type(InstanceOfModel*, int);
-typedef void advancemodel_type(void*, int);
-typedef int evalmodel_type(InstanceOfModel*, int);
-typedef void* getpointer_type(void*, int**, int**);
-typedef void exitmodel_type(InstanceOfModel*);
+//typedef int setstep_type(InstanceOfModel*, double, int);
+//typedef void updatemodel_type(InstanceOfModel*, int);
+//typedef void advancemodel_type(void*, int);
+//typedef int evalmodel_type(InstanceOfModel*, int);
+//typedef void* getpointer_type(void*, int**, int**);
+//typedef void exitmodel_type(InstanceOfModel*);
 
 class Model 
 {
   friend class ExecutingModel;
 
   HINSTANCE handle;
-  int count, count2, count3;
-  int adapt_doublings;
 
 /*  int inArcCount;
   char** inArcList; */
@@ -140,12 +163,9 @@ class Model
 /* Matching set of declarations for the pointers by which we will access
    these functions locally */
 
-  updatemodel_type *updatemodel;
+//  updatemodel_type *updatemodel;
 //  advancemodel_type *advancemodel;
-  evalmodel_type *evalmodel;
-  int rk_update(ExecutingModel*);
-  void set_dts (ExecutingModel*, int, double);
-  void advance_time (ExecutingModel*, int, double);
+//  evalmodel_type *evalmodel;
   int parent_line (int);
 
 public:
@@ -155,29 +175,25 @@ public:
   ExecutingModel* create(void*);
   excpData* executemodel(ExecutingModel*, int, double, double*, double);
 
-  getpointer_type *getpointer;
-  setstep_type *setstepmodel;
-  exitmodel_type *exitmodel;
+  //getpointer_type *getpointer;
   int make_full_caption(int, char *, int*, enum_type_data**);
+  node_data_line* SearchInfo(int, char *, int*, enum_type_data**);
 
   int phases;
   /* Time series info exists only for each model class, so thisTsPosn
      remembers for what time the series have been set up, so we know
      what to do when setting them up for a different instance which
-     may be at a different time */
+     may be at a different time...not sure that ever worked...but now 
+     everything should be in the instance
   double lts[8], ldts[8], thisTsPosn;
+  */
   graph_data_type* c_graphdata;
   int nodecount;
   node_data_line* nodedata;
-  int *connLines;
   // channelRecord* channelData; only used in top model
-  double* adapt_maxerr;
   // excpData* userDefStop; // set by stop function in model
   int getinfo(char*, int*);
   int GetProperty(int, int);
   char* GetMetadataText(int, int);
   int NodeNumFromCapt(char*);
 }; // End of class Model
-
-///// STOPGAP
-void add_to_list(Model*, char*);

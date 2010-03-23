@@ -141,11 +141,11 @@ build_instances(Language, DestDir, Parent, TopNode,
 		Includes = [LostFn, WhereSought],
 	        raise_exception(missing_function(LostFn, WhereSought))),
 
-	    (\+ ChangeTop == 1, % no change to model; reuse executable?
+	    (\+ ChangeTop == 1, fail, % no change to model; reuse executable?
 		Stat = 0,
 		Tgt = OldTgt;
 	    
-		(\+ ChangeTop == 1, % no change to model; reuse source?
+		(\+ ChangeTop == 1, fail, % no change to model; reuse source?
 		    Language = c,
 		    safe_tcl_eval(['ReuseSourceCode', br(WCheckDir), OldTgt],
 				  "1"), % succeeds if old source code found
@@ -441,6 +441,10 @@ wot need them */
 	build_submodel_functions(Language, BoostPhases, Constants,
 				 NewForm, Marked, Used, AllGraphs, Stream),
 	make_exit_proc(Language, RootInstance, Stream),
+	excrete(Language, procedure_defn, [int, do_evalmodel(int)], 0, Stream),
+	excrete(Language, procedure_defn,
+		['void*', burrow_to('int**', 'int**')], 0, Stream),
+	  
 	send_to_dest(Stream, EndTopType),
 	fail;
 
@@ -528,7 +532,7 @@ invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs) :-
 
 mark_update_insts(Act, Add) :-
 	Act = make(_,_,_, [update | _],
-		   [assign(SV, SV+stage_incr(_,_,_,_))]), !,
+		   [assign(SV, SV+stage_incr(_,_,_,_,_))]), !,
 	    Add = [Act];
 	Act = make(_,_,_, [eval | _], _),
 	    Add = [].

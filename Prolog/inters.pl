@@ -912,6 +912,12 @@ make_intermediates(
 		ResultList = [RVal],
 		RUnits = int,
 		ValRef = stop_on_id(GraphId, RVal);
+	    Source = stage_incr(Diffs, Step, Change, Span), % same again
+		SourceList = [Diffs, Change],
+		Arg_template = [diffs, real],
+		ResultList = [RDiffs, RChange],
+		RUnits = real,
+		ValRef = stage_incr(RDiffs, Step, RChange, Span, GraphId);
 	    Source =.. [table | SourceList],
 	    Step = dummy,
 		\+ SourceList = [''], /* let checker handle empty args */
@@ -1241,7 +1247,8 @@ builtin('Model properties', latency, real, [real]).
 language -- they and the operators are hidden */
 
 %operator(ind_time, real, [const_int]).
-operator(stage_incr, real, [diffs, int, real, real]).
+%operator(stage_incr, real, [diffs, int, real, real]).
+% above now done by parser to insert graph id to identify discontinuity posn
 operator(loses, boolean, [real, const_int]).
 operator(loses, boolean, [boolean, const_int]).
 operator(choose, int, [boolean, int, int]).
