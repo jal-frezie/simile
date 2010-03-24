@@ -43,9 +43,8 @@ int kill (int pid, int sig) {
 // Definitions used in this code and the model code
 #include <dllcalls.h>
 
+// seeems OK for arrays to be globals? Then why not...[1]
 char simileVersion[] = SIMILE_VERSION;
-
-Tcl_Interp* globInterp;
 char globMess[255];
 
 void showMess (const char* mess) {
@@ -1543,15 +1542,24 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
+// whatever I'm using on the ppc doesn't like globals
+Tcl_Interp* CurInterp(Tcl_Interp* replace) {
+  static Tcl_Interp* saved;
+
+  if (replace) saved=replace;
+  return saved;
+}
+
 void respond_to_param_req(void* clientRef, void* modelSlot, int paramId, 
 			  int indCount, int* indices) {
-  Tcl_BackgroundError(globInterp);
+  Tcl_BackgroundError(CurInterp(NULL));
 }
 
 BOOLEAN outeract_gui(void* id, BOOLEAN stop_chk, double now) {
   BOOLEAN response;
-
+  Tcl_Interp* globInterp = CurInterp(NULL);
   Tcl_Obj* feedbackCmd;
+
   Tcl_VarEval(globInterp, "update", NULL); // allow display to tell us if idle
   if (!Tcl_GetVar(globInterp, "::dispDone", 0))
     return 0; // do not wait for GUI if busy
@@ -1675,7 +1683,7 @@ FINDABLE int killmodelCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   char pkgName[16];
 
-  globInterp = interp;
+  CurInterp(interp);
   proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess, 
 			  simileVersion);
   sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
