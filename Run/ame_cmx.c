@@ -46,8 +46,6 @@ int kill (int pid, int sig) {
 char simileVersion[] = SIMILE_VERSION;
 
 Tcl_Interp* globInterp;
-int serviceError;
-graph_data_type* tcl_graphdata;
 char globMess[255];
 
 void showMess (const char* mess) {
@@ -70,16 +68,12 @@ int list(long int listType, Tcl_Interp *interp) {
   nodecount = get_node_count(listType);
   for (line=0; line<nodecount; line++) {
     node_data = get_data_line(listType, line);
-/*    if (node_data->datatype == EXTERNAL) {
-      list(get_node_model_id(node_data->name), interp);
-      } else { */
-      Tcl_ListObjAppendElement(interp, resultPtr, 
-			       Tcl_NewStringObj(node_data->name, -1));
-      for (gcount=0; gcount<node_data->ghost_count;++gcount) {
-	Tcl_ListObjAppendElement(interp, resultPtr,
-	  Tcl_NewStringObj(node_data->ghost_ref_ptrs[gcount].ghost, -1));
-      }
-      //    }
+    Tcl_ListObjAppendElement(interp, resultPtr, 
+			     Tcl_NewStringObj(node_data->name, -1));
+    for (gcount=0; gcount<node_data->ghost_count;++gcount) {
+      Tcl_ListObjAppendElement(interp, resultPtr,
+			       Tcl_NewStringObj(node_data->ghost_ref_ptrs[gcount].ghost, -1));
+    }
   }
   return TCL_OK;
 }
@@ -1175,6 +1169,7 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int graphCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   int action, index, error;
+  static graph_data_type* tcl_graphdata;
 
   if (argc != 3) {
     Tcl_WrongNumArgs(interp, 2, argv, "graph_id");
@@ -1725,16 +1720,16 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   // next four were used for byte-array params so will not bother to update
   // to 6-D interface
-  Tcl_CreateObjCommand(interp, "c_setparamall", setparamallCmd, 
+  Tcl_CreateObjCommand(interp, "newc_setparamall", setparamallCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "c_getparamall", getparamallCmd, 
+  Tcl_CreateObjCommand(interp, "newc_getparamall", getparamallCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "c_settimepointall", settimepointallCmd, 
+  Tcl_CreateObjCommand(interp, "newc_settimepointall", settimepointallCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "c_gettimepointall", gettimepointallCmd, 
+  Tcl_CreateObjCommand(interp, "newc_gettimepointall", gettimepointallCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_resetmodel", resetmodelCmd, 
