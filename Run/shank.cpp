@@ -2069,9 +2069,13 @@ void ExecutingModel::SetdT(int phase, double starttime) {
     }
 }
 
+// This deletes a model instance and/or a class -- both when used in Simile
 char* myexit(long int modelType, long int modelHandle) {  
   if (modelHandle) { 
     delete (ExecutingModel*)modelHandle;
+  }
+  if (modelType) { 
+    delete (Model*)modelType;
   }
   return NULL; // message displayed in destructor cos it is not allowed
   // to have params or retval
