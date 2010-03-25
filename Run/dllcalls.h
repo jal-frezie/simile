@@ -235,6 +235,19 @@ typedef int stat_check_type(void*);
 
 typedef void showMess_type(const char*);
 
+#ifdef __cplusplus
+// Declaration for procedure types found in the model dll by the shank -- 
+// here because they are used in both the Model class and the backend, but not
+// in a 5-D client which knows no c++
+class InstanceOfModel;
+class ExecutingModel;
+typedef int getcount_type(void*, void*, void*, void* ,void*,
+			  void*, void*, void*, void*,
+			  int*, node_data_line**);
+typedef double getversion_type(void);
+typedef InstanceOfModel* createmodel_type(ExecutingModel*);
+#endif
+
 /* These are for passing procedure addresses in the shim to the shank */
 
 // typedef void get_value_pointer_type(void*, char*, int, int*);

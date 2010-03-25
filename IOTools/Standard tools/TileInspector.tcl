@@ -76,7 +76,7 @@ namespace eval ::$keyValue {
             } else  {
                 set type [GetModelType $component]; # Simile < 2.7 - not very good
             }
-            if {[string match SUBMODEL $type ]} then {
+            if {[string match SUBMODEL $type]} then {
 		set path [PreparePath $context [lindex $pair 1]]
                 set pathLength [llength $path]
                 if {$pathLength == 1} {

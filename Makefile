@@ -141,15 +141,15 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
 
 # literal SLDIR allows different SHANK clauses for Windows vs Unix
 
-# Windows: idiosyncratic stuff allows dynamic loader to work
-System/bin/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h
+# Windows: idiosyncratic stuff allows dynamic linker to work
+System/bin/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
 		-o $(SHANK) -Wl,--out-implib,lib5d_win.a shank.cpp; \
 		mv $(SHANK) ../System/$(SLDIR); \
 		mv lib5d_win.a ../System/lib; cd ..
 
 # Unix: not needed for Linux as it can build at run time
-System/lib/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h
+System/lib/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
 		-o ../System/$(SLDIR)/$(SHANK) shank.cpp; cd ..
 

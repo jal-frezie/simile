@@ -87,9 +87,11 @@ int max(int a, int b) {
 
 #endif
 
-/* Definitions used in this code and the model code */
+// Definitions used in this code and the model code
 #include <dllcalls.h>
-/* class interface for c++ clients */
+// for talking to compiled models
+#include <backend.h>
+// class interface for c++ clients
 #include <6d.h>
 
 interact_gui_type* interact_gui;
@@ -1343,7 +1345,7 @@ char* Model::GetMetadataText(int line, int propertyId) {
 
 int Model::param_item_from_id(FileParamData** start, int paramId) {
   if (!*start) {
-    return NULL;
+    return 0;
   } else if (nodedata[(*start)->nodeNum].graph==paramId)
     return 1;
   else {
@@ -1507,7 +1509,7 @@ long int use_array_for_params(long int xmHandle, char* nodeId) {
     arrSlot = recipient->UseArrayForParams(lineFromNodeId);
     if (!arrSlot->myModelExec) { // no failure condition made yet
       delete arrSlot;
-      return NULL;
+      return 0;
     }
     // these now done in constructor
     // arrSlot->next = param_array_base;

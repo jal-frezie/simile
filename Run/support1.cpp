@@ -3,7 +3,7 @@
 #include        <setjmp.h>
 
 #include <dllcalls.h>
-#include <6d.h>
+#include <backend.h>
 
 /* Every dll has a variable to hold the id of the model type instance it
    represents */
