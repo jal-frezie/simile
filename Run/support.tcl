@@ -57,7 +57,7 @@ proc tcl_insert {node newVs} {
 
     foreach record [array names nodedata] {
 	if {[string equal $node [lindex $nodedata($record) 0]]} {
-	    set tree [lindex $nodedata($record) 6]
+	    set tree [lindex $nodedata($record) 8]
 	    set type [lindex $nodedata($record) 1]
 	    set dims [GetTclCompProperty dummy Dims $node]
 	    return [list [FillValue ::AME_model<> $tree $type $dims \
@@ -204,7 +204,7 @@ proc GetNodeIdFromRef {top dest indices} {
 	foreach record [array names nodedata] {
 	    if {[string equal $dest \
 		     [burrow_to ::AME_model<> \
-			  [lindex $nodedata($record) 6] $indices]]} {
+			  [lindex $nodedata($record) 8] $indices]]} {
 		return [lindex $nodedata($record) 0]
 	    }
 	}
@@ -236,7 +236,7 @@ proc BringParameter {array node inds} {
 proc tcl_setparamarray {model node} {
     global paramLocns
 
-    set paramIdx [getinfo $node 6]
+    set paramIdx [getinfo $node 8]
 #puts "tcl_setparamarray $model $node $paramIdx"
     set paramLocns($paramIdx,nod) $node
     set paramLocns($paramIdx,arr) tclParmData ;# was [InputVarFor $model $node]
@@ -245,7 +245,7 @@ proc tcl_setparamarray {model node} {
 proc tcl_cleartimeseries {node} {
     global paramLocns
 
-    set paramIdx [getinfo $node 6]
+    set paramIdx [getinfo $node 8]
     upvar #0 $paramLocns($paramIdx,arr) varData
     array unset varData $node*
 }
@@ -253,7 +253,7 @@ proc tcl_cleartimeseries {node} {
 proc tcl_setparamelement {node inds val} {
     global paramLocns
 
-    set paramIdx [getinfo $node 6]
+    set paramIdx [getinfo $node 8]
     upvar #0 $paramLocns($paramIdx,arr) varData
     set varData([join [concat [list $node] $inds] ,]) $val
 } 
@@ -286,7 +286,7 @@ proc tcl_settimepointelement {node inds val} {
 proc oldcollect {tgt node count args} {
     global myNode
 # ShowMess debug info "Collecting...$tgt...$node...$count...$args" ok
-    if {[string match TABLE [getinfo $node 3]]} {
+    if {[string match TABLE [getinfo $node 5]]} {
 	set inputSrc paramData
     } else {
 	set inputSrc [InputVarFor $myNode $node]
@@ -1042,7 +1042,7 @@ proc GetTclCompProperty {topNode prop args} {
 	    set steps($set) $node
 	    return $phasecount
 	} Class|Type|Eval {
-	    array set propData [list Class 9 Type 0 Eval 3]
+	    array set propData [list Class 11 Type 0 Eval 5]
 	    set extracted [getinfo $node $propData($prop)]
 	    if {[string is integer $extracted]} {
 		return ENUM([expr -10-$extracted])
@@ -1083,7 +1083,7 @@ proc GetTclCompProperty {topNode prop args} {
 		return $transList
 	    }
 	} Graph {
-	    set index [getinfo $node 6]
+	    set index [getinfo $node 8]
 	    if {[llength $set]} {
 		eval {setup_graph_data $index} $set
 	    } else {
@@ -1094,7 +1094,7 @@ proc GetTclCompProperty {topNode prop args} {
 #ShowMess debug info "node $node data [array get nodedata] npath $numericPath" ok
 	} IdFromCapt {
 	    foreach record [array names nodedata] {
-		if {![string equal GHOST [lindex $nodedata($record) 4]]} {
+		if {![string equal GHOST [lindex $nodedata($record) 6]]} {
 		    if {[string equal $node \
 			     [GetFullCaption $nodedata($record)]]} {
 			return [lindex $nodedata($record) 0]
@@ -1103,12 +1103,12 @@ proc GetTclCompProperty {topNode prop args} {
 	    }
 	    return nomatch
 	} MinVal {
-	    getinfo $node 7
+	    getinfo $node 9
 	} MaxVal {
-	    getinfo $node 8
+	    getinfo $node 10
 	} Spec|Desc|Comment {
 	    set which [lsearch {Name Spec Desc Comment} $prop]
-	    set targetVar [lindex [getinfo $node 10] $which]
+	    set targetVar [lindex [getinfo $node 12] $which]
 	    if {![string equal NULL $targetVar]} {
 		return [set ::$targetVar]
 	    }
@@ -1122,14 +1122,14 @@ proc GetTclCompProperty {topNode prop args} {
 
 proc ParentLine {line} {
     global nodedata
-    set handle [lindex $line 6]
+    set handle [lindex $line 8]
     if {[lindex $handle end-1]<0} {
 	set ptHand [lreplace $handle end-2 end 0]
     } else {
 	set ptHand [lreplace $handle end-1 end 0]
     }
     foreach record [array names nodedata] {
-	if {[ListSameNumbers [lindex $nodedata($record) 6] $ptHand]} {
+	if {[ListSameNumbers [lindex $nodedata($record) 8] $ptHand]} {
 	    return $nodedata($record)
 	}
     }
@@ -1145,11 +1145,11 @@ proc ListSameNumbers {list1 list2} {
 }
 
 proc GetFullCaption {line} {
-    if {[llength [lindex $line 6]] < 3} {
+    if {[llength [lindex $line 8]] < 3} {
 	return {}
     } else {
 	set parentCapt [GetFullCaption [ParentLine $line]]
-	append parentCapt / [set ::[lindex [lindex $line 11] 0]]
+	append parentCapt / [set ::[lindex [lindex $line 13] 0]]
 	return $parentCapt
     }
 }				      
@@ -1169,7 +1169,7 @@ proc TypeAsList {arrName count} {
 proc GetFullDims {line ETptrs} {
 #do_in_editor puts $handle
     upvar 1 $ETptrs localETs
-    if {[llength [lindex $line 6]] < 3} {
+    if {[llength [lindex $line 8]] < 3} {
 	set parentDims 0
 	set localETs {}
     } else {
@@ -1191,7 +1191,7 @@ proc GetFullDims {line ETptrs} {
 	    lset parentDims $count [expr $oVal-[lindex $line 2]]
 	}
     }
-    set parentDims [concat [lrange $parentDims 0 end-1] [lindex $line 5]]
+    set parentDims [concat [lrange $parentDims 0 end-1] [lindex $line 7]]
     return $parentDims
 }				      
 	    

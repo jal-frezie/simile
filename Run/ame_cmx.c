@@ -1170,7 +1170,7 @@ FINDABLE int graphCmd(ClientData clientData, Tcl_Interp *interp,
   int action, index, error;
   static graph_data_type* tcl_graphdata;
 
-  if (argc != 3) {
+  if (argc < 3) {
     Tcl_WrongNumArgs(interp, 2, argv, "graph_id");
     return TCL_ERROR;
   }

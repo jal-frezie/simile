@@ -380,10 +380,11 @@ proc c_setparamarray {topNode tgtNode} {
     set param_id($tgtNode) [c_createparamarray $instance_id($topNode) $tgtNode]
 }
 
-foreach oldCProc {c_setparamelement c_settimepointelement c_settimepointarray \
-		      c_cleartimeseries c_setwraparoundtime c_setfillmethod \
-		  c_setrecordlist c_settimepointrecords} {
-    proc $oldCProc {args} {
+foreach oldCProc {setparamelement settimepointelement settimepointarray \
+		      cleartimeseries setwraparoundtime setfillmethod \
+		      setrecordlist settimepointrecords \
+		      setparamall getparamall settimepointall gettimepointall} {
+    proc c_$oldCProc {args} {
 	global param_id
 	set cmd [info level 0]
 	

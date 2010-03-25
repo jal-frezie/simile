@@ -44,16 +44,16 @@ return (char*)lpMsgBuf;
  * unload, but using -bundle instead of -dynamiclib to build the model seems to
  * make dlcompat, and dummyunload, unnecessary. Indeed it allows model
  * crosstalk on Intel macs, so is now never used.
- */
+
 #ifdef SIM_OPSYS_Darwin
 #define UNLOAD_DLL dummyunload
 int dummyunload(HINSTANCE unused) {
   return(1);
 }
-#else
+#else */
     #define UNLOAD_DLL !dlclose
-/* dlclose inverted cos it seems to return NULL when it works */
-#endif
+// dlclose inverted cos it seems to return NULL when it works */
+// #endif
     #define WHAT_WENT_WRONG (char*)dlerror
     #define FIND_FUNCTION dlsym
 /* sig handler cos 64bit gcc code sigfpe's on 32bit machine */
@@ -94,47 +94,11 @@ int max(int a, int b) {
 
 interact_gui_type* interact_gui;
 get_value_pointer_type* get_client_value_pointer;
-/*fetch_instance_type fetch_instance;
-update_submodel_type update_submodel;
-advance_submodel_type advance_submodel;
-eval_submodel_type eval_submodel;
-search_from_type search_from;
-advance_ptr_type advance_ptr;
-get_remote_value_type get_remote_value;
-*/
 stat_check_type stat_check;
 
 char* xsimileVersion;
 showMess_type* showMessLocal;
 char globMess[256];
-
-long int topType;
-int resetting;
-
-BOOLEAN ExecutingModel::check_gui(double model_time, int this_op) {
-  unsigned long int this_update;
-  long int while_running;
-  BOOLEAN result = FALSE;
-  int while_resetting;
-
-  // first record how much time the last op took
-  this_update=clock();
-  took[last_op]=this_update-last_exit;
-  
-  if ((this_update-last_update)+took[this_op]>FLASH) {
-    while_running = topType;
-    while_resetting = resetting;
-    result=interact_gui(clientRef, 1+!this_op, model_time);
-    topType = while_running;
-    resetting = while_resetting;
-    this_update=clock(); // GUI may have taken time
-    last_update=last_check=this_update;
-  }
-
-  last_op = this_op;
-  last_exit=this_update;
-  return result;
-}
 
 // check for abort (and do non-intrusive gui action). Do not do this if the
 // time point borders are happening frequently.
@@ -277,7 +241,8 @@ void append_ints_to_null(int* dest, int* src, int sep, int sep2) {
   if (sep2) { *(dest++)=sep2; }
   do { *(dest++)= *src; } while (*src++);
 }
-  
+/* This was used to throw exceptions when creating model instances -- these are
+tricky for clients to handle, so instead we just report errors into a char**
 class DllLossage {
  public:
   const char* action;
@@ -299,7 +264,7 @@ class DllLossage {
   }
 };
 
-/* listable class for data to be loaded at a time point This contains
+   listable class for data to be loaded at a time point This contains
    data in a char*, rather than a nodeValue structure, because the
    dimSpecs are the same for all the time points of a parameter. */
 
@@ -732,7 +697,8 @@ void FileParamData::UpdateTimeSeries(double now, BOOLEAN forward) {
     insertionPt = locate_elt(dataPtr.contents, 0, dataPtr.dimSpecs, indxs);
     if (!insertionPt) return; // record pointers not yet made
     nodeLine = myModelExec->modelSpec->nodedata + nodeNum;
-    if (nodeLine->eval==INPUT && resetting<-1 && !(time_point_exists(0.0))) {
+    if (nodeLine->eval==INPUT &&  myModelExec->resetting<-1 && 
+	!(time_point_exists(0.0))) {
       // back copy now done in blocks afterwards to make record spaces
       // memcpy(insertionPt, tgt, size_for_type());
     } else {
@@ -758,85 +724,311 @@ void FileParamData::UpdateTimeSeries(double now, BOOLEAN forward) {
   }
 // end of FileParamData class
 
-class Model;
-
-typedef struct channelRecord_t {
-  void* SearchBase;
-  int* UpTree;
-} channelRecord;
-
-// Implementation of class Model
-Model::Model(char* fileName, char** complaint) {
-    handle = LOAD_DLL(fileName);
-    if (!handle) {
-      *complaint = strdup(WHAT_WENT_WRONG());
-      return;
-    }
-    getversion = (getversion_type *)FIND_FUNCTION(handle, "get_version");
-    // this does nothing but return the version number, so it can be checked 
-    // even if different versions change the args to getcount()
-    if (getversion == NULL) {
-      *complaint = new char[256];
-      sprintf(*complaint, "the shared object is probably not a Simile model");
-      return;
-    }
-    if (fabs((*getversion)()-atof(xsimileVersion))>0.00001) {
-      *complaint = new char[256];
-      sprintf(*complaint, "client is for version %s but model is %.1f", 
-	      xsimileVersion, (*getversion)());
-      return;
-    }
-/* sprintf(globMess, "Loaded %ld", handle);
-showMess(globMess); */
-    *complaint = NULL;
-
-    getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
-    createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
-//    updatemodel = (updatemodel_type *)FIND_FUNCTION(handle, "do_updatemodel");
-//    advancemodel = (advancemodel_type *)FIND_FUNCTION(handle, 
-//						      "do_advancemodel");
-//    evalmodel = (evalmodel_type *)FIND_FUNCTION(handle, "do_evalmodel");
-//    setstepmodel = (setstep_type *)FIND_FUNCTION(handle, "do_setstep");
-//    getpointer = (getpointer_type *)FIND_FUNCTION(handle, "burrow_to");
-//    exitmodel = (exitmodel_type *)FIND_FUNCTION(handle, "do_exitmodel");
-
-    nodecount = (*getcount)(this, 
-			    (void*)ame_rand, 
-			    (void*)graphpoint,
-			    (void*)release_graph_data, 
-			    (void*)compare_instance_status, 
-			    (void*)get_value_pointer, 
-/*			    (void*)fetch_instance,
-			    (void*)update_submodel,
-			    (void*)advance_submodel,
-			    (void*)eval_submodel,
-			    (void*)search_from,
-			    (void*)advance_ptr,
-			    (void*)get_remote_value,
-*/			    (void*)stat_check,
-			    (void*)showMess,
-			    (void*)&c_graphdata,
-			    &phases, &nodedata);
-  }
-
-Model::~Model() {
-  if (handle && !UNLOAD_DLL(handle)) {
-    throw DllLossage("unload", (char*)"", WHAT_WENT_WRONG());
-  }
-  // if (channelData) delete channelData;
+int step_list(int **dim_list) {
+  return *(*dim_list)++;
 }
 
-  /* Next bit is really boring...and possibly needles...but I feel I have to
-     make class procedures for the things loaded from the model dll rather than
-     trying to refer to procedure variables in the model class directly */
+// FINDABLE EXPORT getpointer_type burrow_to;
+// FINDABLE EXPORT void* burrow_to(void* level, int** id_meta, int** dim_list) {
+// This has been messed with in a manner similar to do_evalmodel above
+void* get_ptr(void* level, int** id_meta, int** dim_list) {
+  int* lastDim;
 
-ExecutingModel* Model::create(void* yourRef) {
-    c_graphdata = NULL; // this will be filled when initializing new instance
-    // Do not return raw instance -- just create a wrapper object with fields
-    // for raw instance and model type object
-    return new ExecutingModel(this, yourRef);
+  while (**id_meta>0) { /* 0 means end of tree, -1 means vm level */
+    lastDim = *dim_list;
+    // char globMess[255];
+    // sprintf(globMess, "gonna g_p id %d,%d... dims %d,%d",
+    //    **id_meta, *(*id_meta+1), **dim_list, *(*dim_list+1));
+    // suppShowMess(globMess);
+    level = ((submodeltype*)level)->get_pointer(step_list(id_meta),dim_list);
+    // note that if it is a vm submodel, level is set to a metapointer
+    // so we had better not recurse
+    if ((*lastDim == REQ_COUNT) && (*dim_list != lastDim)) { // moved on
+      break;
+    }
   }
+  return(level);
+};
 
+InstanceOfModel* step_ptr(InstanceOfModel* ptr) {
+  int next_handle[] = {1,0}, dimDum[] = {0}, *idler1, *idler2;
+
+  idler1 = next_handle;
+  idler2 = dimDum; // dummy dim needed to survive member count retreival test
+  return *(InstanceOfModel**)(get_ptr(ptr, &idler1, &idler2));
+}
+
+int count_members(InstanceOfModel* ptr) {
+  // do not recurse, there may be too many of them
+  int count = 0;
+  while(ptr) {
+    ptr = step_ptr(ptr);
+    ++count;
+  }
+  return count;
+}
+
+// put indices of current instance onto data blk
+void fill_indices(InstanceOfModel* smHandle, int indxCount, 
+		  char** insertionPt) {
+  int idHandle[] = {2,0}, idIdx[1], *idler1, *idler2;
+
+  for (idIdx[0] = 0; idIdx[0]<indxCount; ++idIdx[0]) {
+    idler1 = idHandle;
+    idler2 = idIdx;
+    memcpy(*insertionPt, get_ptr(smHandle, &idler1, &idler2),
+	   sizeof(int));
+    *insertionPt += sizeof(int);
+  }
+}
+
+int skip_vm_bounds(int** modelDimList) {
+  int count = 0;
+  while (*(++(*modelDimList)) != END_VM)
+    ++count;
+  return count;
+}
+
+// this is used by the ExecutingModel class to recurse through submodels
+// to get values. Not a class member because it works at a lower level
+
+// dims starts off as the block sizes at each level of data nesting,
+// but ass we recurse through this it gets replaced by the array of
+// counts that are being incremented in the instances of this
+// procedure from which the current one is being called
+void fill_raw_values(InstanceOfModel* smHandle, int tree[],
+		     int* use_dims, int dims[], int* dim_place,
+		     char** insertionPt) {
+  int count, dimty = 0; // value for RECORDS
+  void* model_val_ptr;
+  char *newBlk;
+  
+//  sprintf(globMess, "fill_raw: case %d %d, dims %d %d %d %d, off %d fill %d",
+//	  use_dims[0], use_dims[1], dims[0], dims[1], dims[2], dims[3], 
+//        dim_place - dims, (int)*insertionPt);
+//  showMess(globMess);
+  
+  switch (*use_dims) {
+  case START_VM:
+    dimty = skip_vm_bounds(&use_dims); // and drop through, keeping this value
+//  case RECORDS: // dimty will end up as 0
+    --dimty; // and drop through
+  case MEMBERS: // dimty will end up as 1
+    ++dimty; 
+    /* Count the number of instances in the submodel, multiply by size
+       needed for each instance and its indices, alloc this and
+       recurse to fill it up, and place count and pointer to new space
+       in insertionPt. */
+    smHandle = *(InstanceOfModel**)get_ptr(smHandle, &tree, &dims);
+    count = count_members(smHandle);
+    ((sizeAndPtr*)(*insertionPt))->size = count;
+    if (count) // do not waste energy creating zero-length blox
+      newBlk = new char[count*(dimty*sizeof(int) + dim_place[1])];
+    ((sizeAndPtr*)(*insertionPt))->ptr = newBlk;
+    *insertionPt += sizeof(sizeAndPtr);
+    while (*tree++ != -1) {} // make relevant to current submodel
+    while (smHandle) {
+      fill_indices(smHandle, dimty, &newBlk);
+      fill_raw_values(smHandle, tree,
+		      use_dims+1, dim_place+1, dim_place+1, &newBlk);
+      smHandle = step_ptr(smHandle);
+    }
+    break;
+  case 0:
+    model_val_ptr = get_ptr(smHandle, &tree, &dims);
+    memcpy(*insertionPt, model_val_ptr, *dim_place);
+    *insertionPt += *dim_place;
+    break;
+  case RECORDS:
+    dimty = *dim_place; // save block size in case we need it again
+    *dim_place = REQ_COUNT; // tells get_ptr to get made count
+    int *tree_copy, *dims_copy;
+    tree_copy = tree;
+    dims_copy = dims; 
+    count = *(int*)get_ptr(smHandle, &tree_copy, &dims_copy);
+    ((sizeAndPtr*)(*insertionPt))->size = count;
+    newBlk = new char[count*dim_place[1]];
+    ((sizeAndPtr*)(*insertionPt))->ptr = newBlk;
+    *insertionPt += sizeof(sizeAndPtr);
+    *dim_place = dimty;
+    // now overwrite dim to look like normal array, recurse, and put back
+    *use_dims=count;
+    fill_raw_values(smHandle, tree, use_dims, dims, dim_place, &newBlk);
+    *use_dims=RECORDS;
+    break;
+  default: /* value is a dimension of the array we are accessing */
+    count = *dim_place; // save block size in case we need it again
+    for (*dim_place = 0; *use_dims > *dim_place; ++*dim_place) {
+      fill_raw_values(smHandle, tree, use_dims+1, dims, dim_place+1, 
+		      insertionPt);
+    }
+    *dim_place = count;
+    break;
+  }
+}
+
+class Model;
+
+// Implementation of class ExecutingModel
+ExecutingModel::ExecutingModel(Model* newModelSpec, void* yourRef) {
+    modelSpec = newModelSpec;
+    clientRef = yourRef;
+    loadedInst = modelSpec->createmodel(this);
+    //sprintf(globMess, "This is XM %lx of M %lx being created with IOM %lx", 
+//	    (long)this, (long)modelSpec, (long)loadedInst);
+    //showMess(globMess);
+    param_array_base = NULL;
+}
+
+ExecutingModel::~ExecutingModel() {
+  while (param_array_base) delete param_array_base;
+  delete loadedInst;
+}
+
+excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
+  int tweak_phase, err;
+
+  loadedInst->userStop.excpNo = 0;
+  if (top_phase<=0) {
+    resetting = top_phase;
+    last_op = 0;
+    last_exit = last_update = last_check = 0; // reset timekeeping
+    for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
+      lts[tweak_phase]=0;
+      took[tweak_phase]=0;
+      SetdT( -tweak_phase,0);
+      SetdT( tweak_phase,steps[tweak_phase]);
+    }
+    switch (how_int) {
+    case EULER:
+      SetdT(0,0);
+      break;
+    case RUNGE_KUTTA:
+      SetdT(0,1);
+    } // was -1,0 to stop loss, but now we want it cos it happens next step
+    thisTsPosn = 0.0;
+    if (param_array_base)
+      param_array_base->ResetTimeSeries();
+    adapt_doublings = 0;
+  }
+  
+  err=loadedInst->do_evalmodel(top_phase);
+  if (err)
+    loadedInst->userStop.excpNo = err;
+  //    else
+  //      (*advancemodel)(modelHandle, top_phase);
+  if (loadedInst->userStop.excpNo)
+    return &(loadedInst->userStop);
+  // reset successful: now do back copy if needed
+  if (top_phase<-1 && param_array_base) {
+    param_array_base->back_copy_vars(); // does all
+  }
+  return NULL;
+}
+
+excpData* ExecutingModel::ExecuteInstance(int how_int, 
+		   double start, double* end, double errlim) {
+    double freq, xtime;
+    int big_phase, err;
+    BOOLEAN made_step, first_pass;
+    // sprintf(globMess, "xm %d %lf-%lf at %lf", how_int, start, *end, errlim);
+    // showMess(globMess);
+    // temporary arrangement until we move this function into the instance
+    excpData* userDefStop = &(loadedInst->userStop);
+
+    resetting = 0;
+    userDefStop->excpNo = 0;
+    freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
+    xtime = start;
+    while (freq*(*end-xtime)>0) { // freq only affects sign
+      made_step = 0;
+      first_pass = 1;
+      big_phase = phase_for(xtime, freq, modelSpec->phases);
+      // that is the biggest phase we will try to run, we may not succeed
+      if (check_gui(xtime, big_phase)) {
+	userDefStop->excpNo = -100; // should not conflict with os signals
+	*end = xtime;
+	return userDefStop;
+      }
+      while(!made_step) {
+	// stretch interval to hit end if necssary
+	if (xtime/freq+1.0625>*end/freq) {
+	  freq = *end-xtime;
+	  xtime = *end;
+	} else {
+	  xtime+=freq;
+	}
+	set_dts(big_phase, xtime);
+
+	switch (how_int) {
+	case EULER:
+	  if (first_pass) {
+	    SetdT(0,0);
+	  } else {
+	    SetdT(0,-1);
+	  }
+	  advance_time(big_phase, 1);
+	  loadedInst->updatemodel(big_phase);
+	  break;
+	case RUNGE_KUTTA:
+	  if (first_pass) {
+	    SetdT(0,1);
+	  } else {
+	    SetdT(0,-2);
+	  }
+	  loadedInst->updatemodel(big_phase);
+	  userDefStop->excpNo=rk_update();
+	  break;
+	}
+	if (userDefStop->excpNo) break; // from inner loop
+	first_pass = 0;
+	if (!errlim) {
+	  made_step = 1;
+	} else {
+	  if (userDefStop->excpNo=loadedInst->do_evalmodel(modelSpec->phases+1))
+	    break;
+	  // from inner loop
+
+	  // get the model to generate its error estimate
+	  loadedInst->adapt_maxerr = 0;
+	  SetdT( 0,10);
+	  loadedInst->updatemodel(big_phase);
+	  if (loadedInst->adapt_maxerr>errlim) {
+	    // error too great; put comps back and try shorter
+	    if (adapt_doublings<31) {
+	      advance_time(big_phase, -1); // back to start
+	      xtime-=freq;
+	      adapt_doublings++;
+	      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
+	      big_phase = phase_for(xtime, freq, modelSpec->phases);
+	    } else {
+	      // signal problem
+	      userDefStop->excpNo = -99;
+	      break;
+	    }
+	  } else {
+	    made_step = 1;
+	    if (adapt_doublings && loadedInst->adapt_maxerr<errlim/16) {
+	      // low error; try longer next time if poss
+	      adapt_doublings--;
+	      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
+	    } // lengthen time step
+	  } // timestep too short or not
+	} // error limit exists
+      } // made progress
+      if (userDefStop->excpNo) break; // from outer loop
+      if (userDefStop->excpNo=loadedInst->do_evalmodel(big_phase)) break;
+//      (*advancemodel)(id, big_phase);
+    }
+    if (check_gui(*end, 0) && !userDefStop->excpNo)
+      // always go to make sure time is right
+      userDefStop->excpNo = -100;
+    *end=xtime;
+    if (userDefStop->excpNo)
+      return userDefStop;
+    return NULL;
+  }
+  
 int ExecutingModel::phase_for(double current, double step, int so_far) {
     int try_now, try_current;
     double last, next, next_step;
@@ -904,6 +1096,136 @@ void ExecutingModel::advance_time (int phase, double fraction) {
     thisTsPosn = series_pt;
   }
   
+// new version: is member of model-execution class and takes numerical node id
+nodeValues* ExecutingModel::GetRawValues(int nodeId) {
+  int sparePath[32], fullDims[32], indices[32];
+  char spareCapt[255], *insertionPt;
+  enum_type_data *spareTypes[32]; // might need for reading files
+  nodeValues* newBlk;
+
+  modelSpec->SearchInfo(nodeId, spareCapt, fullDims, spareTypes);
+  newBlk = new nodeValues;
+  // find first dimension not a positive integer
+  translate_dims(fullDims, indices, newBlk->dimSpecs, 
+		 modelSpec->nodedata[nodeId].datatype, 
+		 FALSE);
+
+  if (indices[0]) {
+    insertionPt = newBlk->contents = new char[indices[0]];
+    *sparePath = 0; // copy path data because f_r_v could overwrite it
+    append_ints_to_null(sparePath, modelSpec->nodedata[nodeId].path, 0, 0);
+    fill_raw_values(loadedInst, sparePath, 
+		    fullDims, indices, indices, &insertionPt);
+  } else
+    newBlk->contents = NULL;
+  return newBlk;
+}
+
+BOOLEAN ExecutingModel::check_gui(double model_time, int this_op) {
+  unsigned long int this_update;
+  BOOLEAN result = FALSE;
+
+  // first record how much time the last op took
+  this_update=clock();
+  took[last_op]=this_update-last_exit;
+  
+  if ((this_update-last_update)+took[this_op]>FLASH) {
+    result=interact_gui(clientRef, 1+!this_op, model_time);
+    this_update=clock(); // GUI may have taken time
+    last_update=last_check=this_update;
+  }
+
+  last_op = this_op;
+  last_exit=this_update;
+  return result;
+}
+
+FileParamData* ExecutingModel::UseArrayForParams(int nodeNum) {
+  return new FileParamData(this, nodeNum);
+}
+
+void ExecutingModel::GetValuePointer(void* modelSlot, int paramId,
+				     int ic, int* indxs) {
+  FileParamData* paramArrayItem;
+
+  paramArrayItem = param_array_base;
+  if (modelSpec->param_item_from_id(&paramArrayItem, paramId))
+    paramArrayItem->extract_elt(modelSlot, indxs);
+  else {
+    // couldn't find id, try to find a member parameter
+    // first get its nodeline
+    node_data_line *nodeLine;
+    nodeLine = modelSpec->md_nodlin_from_id(paramId);
+    paramArrayItem = param_array_base;
+    if (modelSpec->member_param_item(&paramArrayItem, nodeLine->path))
+      // found a parameter inside this submodel, get record count
+      paramArrayItem->extract_record_count(modelSlot, ic, indxs);
+    else
+      get_client_value_pointer(clientRef, modelSlot, paramId, ic, indxs);
+  }
+  // sprintf(globMess, "Think we got %d (%lf)", *(int*)modelSlot, *(double*)modelSlot);
+  // showMess(globMess);
+
+}
+
+// Implementation of class Model
+Model::Model(char* fileName, char** complaint) {
+    handle = LOAD_DLL(fileName);
+    if (!handle) {
+      *complaint = strdup(WHAT_WENT_WRONG());
+      return;
+    }
+    getversion = (getversion_type *)FIND_FUNCTION(handle, "get_version");
+    // this does nothing but return the version number, so it can be checked 
+    // even if different versions change the args to getcount()
+    if (getversion == NULL) {
+      *complaint = new char[256];
+      sprintf(*complaint, "the shared object is probably not a Simile model");
+      return;
+    }
+    if (fabs(getversion()-atof(xsimileVersion))>0.00001) {
+      *complaint = new char[256];
+      sprintf(*complaint, "client is for version %s but model is %.1f", 
+	      xsimileVersion, getversion());
+      return;
+    }
+/* sprintf(globMess, "Loaded %ld", handle);
+showMess(globMess); */
+    *complaint = NULL;
+
+    getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
+    nodecount = getcount(this, 
+			 (void*)ame_rand, 
+			 (void*)graphpoint,
+			 (void*)release_graph_data, 
+			 (void*)compare_instance_status, 
+			 (void*)get_value_pointer, 
+			 (void*)stat_check,
+			 (void*)showMess,
+			 (void*)&c_graphdata,
+			 &phases, &nodedata);
+
+    createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
+  }
+
+Model::~Model() {
+  if (handle && !UNLOAD_DLL(handle)) {
+    showMess(WHAT_WENT_WRONG());
+  }
+  // if (channelData) delete channelData;
+}
+
+  /* Next bit is really boring...and possibly needles...but I feel I have to
+     make class procedures for the things loaded from the model dll rather than
+     trying to refer to procedure variables in the model class directly */
+
+ExecutingModel* Model::create(void* yourRef) {
+    c_graphdata = NULL; // this will be filled when initializing new instance
+    // Do not return raw instance -- just create a wrapper object with fields
+    // for raw instance and model type object
+    return new ExecutingModel(this, yourRef);
+  }
+
 int Model::parent_line (int line) {
     int count, level, test, *path;
     path = nodedata[line].path;
@@ -1019,171 +1341,69 @@ char* Model::GetMetadataText(int line, int propertyId) {
     }
 }
 
-ExecutingModel::ExecutingModel(Model* newModelSpec, void* yourRef) {
-    modelSpec = newModelSpec;
-    clientRef = yourRef;
-    loadedInst = modelSpec->createmodel(this);
-    //sprintf(globMess, "This is XM %lx of M %lx being created with IOM %lx", 
-//	    (long)this, (long)modelSpec, (long)loadedInst);
-    //showMessLocal(globMess);
-    param_array_base = NULL;
-}
-
-ExecutingModel::~ExecutingModel() {
-  while (param_array_base) delete param_array_base;
-  delete loadedInst;
-}
-
-excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
-  int tweak_phase, err;
-
-  loadedInst->userStop.excpNo = 0;
-  if (top_phase<=0) {
-    last_op = 0;
-    last_exit = last_update = last_check = 0; // reset timekeeping
-    for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
-      lts[tweak_phase]=0;
-      took[tweak_phase]=0;
-      SetdT( -tweak_phase,0);
-      SetdT( tweak_phase,steps[tweak_phase]);
-    }
-    switch (how_int) {
-    case EULER:
-      SetdT(0,0);
-      break;
-    case RUNGE_KUTTA:
-      SetdT(0,1);
-    } // was -1,0 to stop loss, but now we want it cos it happens next step
-    thisTsPosn = 0.0;
-    if (param_array_base)
-      param_array_base->ResetTimeSeries();
-    adapt_doublings = 0;
-  }
-  
-  err=loadedInst->do_evalmodel(top_phase);
-  if (err)
-    loadedInst->userStop.excpNo = err;
-  //    else
-  //      (*advancemodel)(modelHandle, top_phase);
-  if (loadedInst->userStop.excpNo)
-    return &(loadedInst->userStop);
-  // reset successful: now do back copy if needed
-  if (top_phase<-1 && param_array_base) {
-    param_array_base->back_copy_vars(); // does all
-  }
-  return NULL;
-}
-
-excpData* ExecutingModel::ExecuteInstance(int how_int, 
-		   double start, double* end, double errlim) {
-    double freq, xtime;
-    int big_phase, err;
-    BOOLEAN made_step, first_pass;
-    // sprintf(globMess, "xm %d %lf-%lf at %lf", how_int, start, *end, errlim);
-    // showMess(globMess);
-    // temporary arrangement until we move this function into the instance
-    excpData* userDefStop = &(loadedInst->userStop);
-
-    userDefStop->excpNo = 0;
-    freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
-    xtime = start;
-    while (freq*(*end-xtime)>0) { // freq only affects sign
-      made_step = 0;
-      first_pass = 1;
-      big_phase = phase_for(xtime, freq, modelSpec->phases);
-      // that is the biggest phase we will try to run, we may not succeed
-      if (check_gui(xtime, big_phase)) {
-	userDefStop->excpNo = -100; // should not conflict with os signals
-	*end = xtime;
-	return userDefStop;
-      }
-      while(!made_step) {
-	// stretch interval to hit end if necssary
-	if (xtime/freq+1.0625>*end/freq) {
-	  freq = *end-xtime;
-	  xtime = *end;
-	} else {
-	  xtime+=freq;
-	}
-	set_dts(big_phase, xtime);
-
-	switch (how_int) {
-	case EULER:
-	  if (first_pass) {
-	    SetdT(0,0);
-	  } else {
-	    SetdT(0,-1);
-	  }
-	  advance_time(big_phase, 1);
-	  loadedInst->updatemodel(big_phase);
-	  break;
-	case RUNGE_KUTTA:
-	  if (first_pass) {
-	    SetdT(0,1);
-	  } else {
-	    SetdT(0,-2);
-	  }
-	  loadedInst->updatemodel(big_phase);
-	  userDefStop->excpNo=rk_update();
-	  break;
-	}
-	if (userDefStop->excpNo) break; // from inner loop
-	first_pass = 0;
-	if (!errlim) {
-	  made_step = 1;
-	} else {
-	  if (userDefStop->excpNo=loadedInst->do_evalmodel(modelSpec->phases+1))
-	    break;
-	  // from inner loop
-
-	  // get the model to generate its error estimate
-	  loadedInst->adapt_maxerr = 0;
-	  SetdT( 0,10);
-	  loadedInst->updatemodel(big_phase);
-	  if (loadedInst->adapt_maxerr>errlim) {
-	    // error too great; put comps back and try shorter
-	    if (adapt_doublings<31) {
-	      advance_time(big_phase, -1); // back to start
-	      xtime-=freq;
-	      adapt_doublings++;
-	      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
-	      big_phase = phase_for(xtime, freq, modelSpec->phases);
-	    } else {
-	      // signal problem
-	      userDefStop->excpNo = -99;
-	      break;
-	    }
-	  } else {
-	    made_step = 1;
-	    if (adapt_doublings && loadedInst->adapt_maxerr<errlim/16) {
-	      // low error; try longer next time if poss
-	      adapt_doublings--;
-	      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
-	    } // lengthen time step
-	  } // timestep too short or not
-	} // error limit exists
-      } // made progress
-      if (userDefStop->excpNo) break; // from outer loop
-      if (userDefStop->excpNo=loadedInst->do_evalmodel(big_phase)) break;
-//      (*advancemodel)(id, big_phase);
-    }
-    if (check_gui(*end, 0) && !userDefStop->excpNo)
-      // always go to make sure time is right
-      userDefStop->excpNo = -100;
-    *end=xtime;
-    if (userDefStop->excpNo)
-      return userDefStop;
+int Model::param_item_from_id(FileParamData** start, int paramId) {
+  if (!*start) {
     return NULL;
+  } else if (nodedata[(*start)->nodeNum].graph==paramId)
+    return 1;
+  else {
+    *start = (*start)->next;
+    return param_item_from_id(start, paramId);
   }
-  
-// pure laziness: define instance function in terms of spec function
-excpData* Model::executemodel(ExecutingModel* inst, int how_int, 
-			      double start, double* end, double errlim) {
-  return inst->ExecuteInstance(how_int, start, end, errlim);
+}
+
+// New version of nodeModelAndId returns number
+// -- who knows, maybe one day it will work intelligently?
+int Model::NodeNumFromCapt(char* seeknode) {
+  int count;
+  char test[255];
+  int dims[32];
+  enum_type_data* types[32];
+
+  for (count = 1; nodecount>count; ++count) {
+    if (nodedata[count].eval == GHOST) continue;
+    make_full_caption(count, test, dims, types);
+	  
+    if (!strcmp(seeknode, test)) {
+      return(count);
+    }
+  }
+  /* Node with given caption not found... */
+  return -1;
+}
+
+int Model::member_param_item(FileParamData** start, int* parentPath) {
+  node_data_line* nLine;
+
+  if (!*start)
+    return 0; // no children found
+  else {
+    nLine = nodedata + (*start)->nodeNum;
+    if (nLine->eval == TABLE) { // and fixed, is child?
+      int count = -1;
+      while (parentPath[++count])
+	if (nLine->path[count] != parentPath[count])
+	  break; // found difference
+      if (!parentPath[count]) // got to end without difference, result!
+	return 2;
+    }
+  }
+  *start = (*start)->next;
+  return  member_param_item(start, parentPath); // keep looking
+}
+
+node_data_line* Model::md_nodlin_from_id(int paramId) {
+    int count;
+    node_data_line *nodeLine;
+    for (count=0; count<nodecount; ++count) {
+      nodeLine = nodedata + count;
+      if (nodeLine->graph==paramId) return nodeLine;
+    }
+    return NULL;
 }
 
 /* listable class for submodel data -- allows us to find model id from node id
- */
+...no longer needed because instance ID is always given
 class listNodeModel {
 public:
   char* node;
@@ -1220,12 +1440,12 @@ public:
       next = next->strip_out(oldModelId);
     }
     if (model == oldModelId) { // node belongs to model being removed
-      /* delete any separate submodels in here (old)
-      for (count=0; count<model->nodecount;count++) {
-	if ((model->nodedata[count]).datatype==EXTERNAL) {
-	  strip_out(nodeModel((model->nodedata[count]).name));
-	}
-	} */
+      // delete any separate submodels in here (old)
+      // for (count=0; count<model->nodecount;count++) {
+// 	if ((model->nodedata[count]).datatype==EXTERNAL) {
+// 	  strip_out(nodeModel((model->nodedata[count]).name));
+// 	}
+// 	}
       current = next;
       delete(this);
       return current;
@@ -1237,7 +1457,7 @@ public:
 
 listNodeModel* nodeModelList = NULL;
 
-/* listable class for enumerated types, similar to above
+listable class for enumerated types, similar to above
 class listEnumTypes {
 public:
   enum_type_data* enumTypePtr;
@@ -1254,10 +1474,6 @@ public:
     }
   }
   }; */
-
-FileParamData* ExecutingModel::UseArrayForParams(int nodeNum) {
-  return new FileParamData(this, nodeNum);
-}
 
 FileParamData* FileParamForNodeNum(FileParamData* start, int seekNodeNum) {
   if (!start)
@@ -1482,80 +1698,15 @@ void set_bloc_element(char* ptData, int* ptDims, int* indxs, double value) {
   }
 }
 
-int member_param_item(FileParamData** start, Model* modelId, int* parentPath) {
-  node_data_line* nLine;
-
-  if (!*start)
-    return 0; // no children found
-  else {
-    nLine = modelId->nodedata + (*start)->nodeNum;
-    if (nLine->eval == TABLE) { // and fixed, is child?
-      int count = -1;
-      while (parentPath[++count])
-	if (nLine->path[count] != parentPath[count])
-	  break; // found difference
-      if (!parentPath[count]) // got to end without difference, result!
-	return 2;
-    }
-  }
-  *start = (*start)->next;
-  return  member_param_item(start, modelId, parentPath); // keep looking
-}
-
-node_data_line* md_nodlin_from_id(Model* modelId, int paramId) {
-    int count;
-    node_data_line *nodeLine;
-    for (count=0; count<modelId->nodecount; ++count) {
-      nodeLine = modelId->nodedata + count;
-      if (nodeLine->graph==paramId) return nodeLine;
-    }
-    return NULL;
-}
-
 node_data_line* nodlin_from_id(long int modelId, int paramId) {
-  return md_nodlin_from_id((Model*)modelId, paramId);
+  return ((Model*)modelId)->md_nodlin_from_id(paramId);
 }
 
-int param_item_from_id(FileParamData** start, Model* modelId, int paramId) {
-  if (!*start) {
-    return NULL;
-  } else if (modelId->nodedata[(*start)->nodeNum].graph==paramId)
-    return 1;
-  else {
-    *start = (*start)->next;
-    return param_item_from_id(start, modelId, paramId);
-  }
-}
- 
 void get_value_pointer(void* instId, void* modelSlot, int paramId,
 		       int ic, int* indxs) {
   //sprintf(globMess, "get_value_pointer to location %lx for exmod %lx node %d count %d indx0 %d indx1 %d", (long)modelSlot, (long)instId, paramId, ic, indxs[0], indxs[1]);
-  //showMessLocal(globMess);
+  //showMess(globMess);
   ((ExecutingModel*)instId)->GetValuePointer(modelSlot, paramId, ic, indxs);
-}
-
-void ExecutingModel::GetValuePointer(void* modelSlot, int paramId,
-				     int ic, int* indxs) {
-  FileParamData* paramArrayItem;
-
-  paramArrayItem = param_array_base;
-  if (param_item_from_id(&paramArrayItem, modelSpec, paramId))
-    paramArrayItem->extract_elt(modelSlot, indxs);
-  else {
-    // couldn't find id, try to find a member parameter
-    // first get its nodeline
-    node_data_line *nodeLine;
-    nodeLine = md_nodlin_from_id(modelSpec, paramId);
-    paramArrayItem = param_array_base;
-    if (member_param_item(&paramArrayItem, modelSpec, nodeLine->path))
-      // found a parameter inside this submodel, get record count
-      paramArrayItem->extract_record_count(modelSlot, ic, indxs);
-    else
-      get_client_value_pointer(clientRef, modelSlot, paramId, ic, indxs);
-  }
-  // sprintf(globMess, "Think we got %d (%lf)", *(int*)modelSlot, *(double*)modelSlot);
-  // showMessLocal(globMess);
-
 }
 
 char* load_model(char* fileName, char* nodeName, long int* modelType) {
@@ -1579,10 +1730,6 @@ int get_node_count(long int type) {
 
 node_data_line* get_data_line(long int type, int line) {
   return &((Model*)type)->nodedata[line];
-}
-
-long int get_node_model_id(char* find) {
-  return (long int)nodeModelList->nodeModel(find);
 }
 
 graph_data_type** get_graph_base(long int type) {
@@ -1619,26 +1766,6 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
       }
       
     } */
-  }
-  /* Node with given caption not found... */
-  return -1;
-}
-
-// New version of above is member function of model spec, and returns count
-// -- who knows, maybe one day it will work intelligently?
-int Model::NodeNumFromCapt(char* seeknode) {
-  int count;
-  char test[255];
-  int dims[32];
-  enum_type_data* types[32];
-
-  for (count = 1; nodecount>count; ++count) {
-    if (nodedata[count].eval == GHOST) continue;
-    make_full_caption(count, test, dims, types);
-	  
-    if (!strcmp(seeknode, test)) {
-      return(count);
-    }
   }
   /* Node with given caption not found... */
   return -1;
@@ -1717,129 +1844,6 @@ long int fetch_top_instance(long int modelType) {
   return (long int)justMade;
 }
 
-void* get_ptr(InstanceOfModel* level, int** id_meta, int** dim_list) {
-  return level->burrow_to(id_meta, dim_list);
-  // look -- no casts! Was...
-  //  return ((Model*)modelType)->getpointer((void*)level, id_meta, dim_list);
-}
-
-InstanceOfModel* step_ptr(InstanceOfModel* ptr) {
-  int next_handle[] = {1,0}, dimDum[] = {0}, *idler1, *idler2;
-
-  idler1 = next_handle;
-  idler2 = dimDum; // dummy dim needed to survive member count retreival test
-  return *(InstanceOfModel**)(get_ptr(ptr, &idler1, &idler2));
-}
-
-int count_members(InstanceOfModel* ptr) {
-  // do not recurse, there may be too many of them
-  int count = 0;
-  while(ptr) {
-    ptr = step_ptr(ptr);
-    ++count;
-  }
-  return count;
-}
-
-// put indices of current instance onto data blk
-void fill_indices(InstanceOfModel* smHandle, int indxCount, 
-		  char** insertionPt) {
-  int idHandle[] = {2,0}, idIdx[1], *idler1, *idler2;
-
-  for (idIdx[0] = 0; idIdx[0]<indxCount; ++idIdx[0]) {
-    idler1 = idHandle;
-    idler2 = idIdx;
-    memcpy(*insertionPt, get_ptr(smHandle, &idler1, &idler2),
-	   sizeof(int));
-    *insertionPt += sizeof(int);
-  }
-}
-
-int skip_vm_bounds(int** modelDimList) {
-  int count = 0;
-  while (*(++(*modelDimList)) != END_VM)
-    ++count;
-  return count;
-}
-
-// forward declaration for co-recursing procedures
-// void fill_raw_values(long int, long int, int[], int*, int[], int*, char**);
-
-// dims starts off as the block sizes at each level of data nesting,
-// but ass we recurse through this it gets replaced by the array of
-// counts that are being incremented in the instances of this
-// procedure from which the current one is being called
-void fill_raw_values(InstanceOfModel* smHandle, int tree[],
-		     int* use_dims, int dims[], int* dim_place,
-		     char** insertionPt) {
-  int count, dimty = 0; // value for RECORDS
-  void* model_val_ptr;
-  char *newBlk;
-  /*
-    sprintf(globMess, "fill_raw: case %d %d, dims %d %d %d %d, off %d fill %d",
-  	  use_dims[0], use_dims[1], dims[0], dims[1], dims[2], dims[3], 
-	    dim_place - dims, (int)*insertionPt);
-    showMess(globMess);
-  */
-  switch (*use_dims) {
-  case START_VM:
-    dimty = skip_vm_bounds(&use_dims); // and drop through, keeping this value
-//  case RECORDS: // dimty will end up as 0
-    --dimty; // and drop through
-  case MEMBERS: // dimty will end up as 1
-    ++dimty; 
-    /* Count the number of instances in the submodel, multiply by size
-       needed for each instance and its indices, alloc this and
-       recurse to fill it up, and place count and pointer to new space
-       in insertionPt. */
-    smHandle = *(InstanceOfModel**)get_ptr(smHandle, &tree, &dims);
-    count = count_members(smHandle);
-    ((sizeAndPtr*)(*insertionPt))->size = count;
-    if (count) // do not waste energy creating zero-length blox
-      newBlk = new char[count*(dimty*sizeof(int) + dim_place[1])];
-    ((sizeAndPtr*)(*insertionPt))->ptr = newBlk;
-    *insertionPt += sizeof(sizeAndPtr);
-    while (*tree++ != -1) {} // make relevant to current submodel
-    while (smHandle) {
-      fill_indices(smHandle, dimty, &newBlk);
-      fill_raw_values(smHandle, tree,
-		      use_dims+1, dim_place+1, dim_place+1, &newBlk);
-      smHandle = step_ptr(smHandle);
-    }
-    break;
-  case 0:
-    model_val_ptr = get_ptr(smHandle, &tree, &dims);
-    memcpy(*insertionPt, model_val_ptr, *dim_place);
-    *insertionPt += *dim_place;
-    break;
-  case RECORDS:
-    dimty = *dim_place; // save block size in case we need it again
-    *dim_place = REQ_COUNT; // tells get_ptr to get made count
-    int *tree_copy, *dims_copy;
-    tree_copy = tree;
-    dims_copy = dims; 
-    count = *(int*)get_ptr(smHandle, &tree_copy, &dims_copy);
-    ((sizeAndPtr*)(*insertionPt))->size = count;
-    newBlk = new char[count*dim_place[1]];
-    ((sizeAndPtr*)(*insertionPt))->ptr = newBlk;
-    *insertionPt += sizeof(sizeAndPtr);
-    *dim_place = dimty;
-    // now overwrite dim to look like normal array, recurse, and put back
-    *use_dims=count;
-    fill_raw_values(smHandle, tree, use_dims, dims, dim_place, &newBlk);
-    *use_dims=RECORDS;
-    break;
-  default: /* value is a dimension of the array we are accessing */
-    count = *dim_place; // save block size in case we need it again
-    for (*dim_place = 0; *use_dims > *dim_place; ++*dim_place) {
-      fill_raw_values(smHandle, tree, use_dims+1, dims, dim_place+1, 
-		      insertionPt);
-    }
-    *dim_place = count;
-    break;
-  }
-}
-
 /* translate_dims: this takes the dimensions of the node's data as
 returned by the model, and converts them to those used in the data
 structure. The main difference is that in the data structure, a
@@ -1900,32 +1904,6 @@ nodeValues* get_raw_values(char* nodeId, long int instance_id) {
     return NULL;
   return ((ExecutingModel*)instance_id)->GetRawValues(nodeNum);
 }
-
-// new version: is member of model-execution class and takes numerical node id
-nodeValues* ExecutingModel::GetRawValues(int nodeId) {
-  int sparePath[32], fullDims[32], indices[32];
-  char spareCapt[255], *insertionPt;
-  enum_type_data *spareTypes[32]; // might need for reading files
-  nodeValues* newBlk;
-
-  modelSpec->SearchInfo(nodeId, spareCapt, fullDims, spareTypes);
-  newBlk = new nodeValues;
-  // find first dimension not a positive integer
-  translate_dims(fullDims, indices, newBlk->dimSpecs, 
-		 modelSpec->nodedata[nodeId].datatype, 
-		 FALSE);
-
-  if (indices[0]) {
-    insertionPt = newBlk->contents = new char[indices[0]];
-    *sparePath = 0; // copy path data because f_r_v could overwrite it
-    append_ints_to_null(sparePath, modelSpec->nodedata[nodeId].path, 0, 0);
-    fill_raw_values(loadedInst, sparePath, 
-		    fullDims, indices, indices, &insertionPt);
-  } else
-    newBlk->contents = NULL;
-  return newBlk;
-}
-
 
 /* definitions for regularData class -- note we may later want
 to use regularData items to describe simple c++ arrays, which is why we 
@@ -2044,18 +2022,13 @@ to drive the model...
 
 excpData* reset(long int modelType, long int modelHandle, int how_int,
 		int top_phase) {
-  topType = modelType;
-  resetting=top_phase;
   return ((ExecutingModel*)modelHandle)->ResetInstance(how_int, top_phase);
 }
 
 excpData* execute(long int modelType, long int modelHandle, int how_int,
 	 double starttime, double* endtime, double errlim) {
-
-  topType = modelType;
-  resetting=0;
-  return ((Model*)topType)->executemodel((ExecutingModel*)modelHandle, 
-				  how_int, starttime, endtime, errlim);
+  return ((ExecutingModel*)modelHandle)->ExecuteInstance(how_int, starttime, 
+							 endtime, errlim);
 }
 
 /* procedure that is called by shim when it is loaded to supply pointers
@@ -2098,14 +2071,8 @@ char* myexit(long int modelType, long int modelHandle) {
   if (modelHandle) { 
     delete (ExecutingModel*)modelHandle;
   }
-  if (nodeModelList) {
-    try {
-      nodeModelList = nodeModelList->strip_out((Model*)modelType);
-    } catch(DllLossage prang) {
-      return prang.tell();
-    }
-  }
-  return NULL;
+  return NULL; // message displayed in destructor cos it is not allowed
+  // to have params or retval
 }
 
 char* getNodeId(long int modelType, char* capt) {

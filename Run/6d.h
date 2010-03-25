@@ -43,7 +43,6 @@ public:
 
   // functions called by host module
   virtual int do_evalmodel(int) = 0;
-  virtual void* burrow_to(int**, int**) = 0;
   
   // functions implemented by model code
   virtual void advancemodel (int phase) = 0;
@@ -110,6 +109,7 @@ class ExecutingModel
 
   double steps[8];
   double lts[8], ldts[8], thisTsPosn;
+  int resetting;
   int SetStep(int, double);
   void SetdT(int, double);
   void set_dts (int, double);
@@ -196,4 +196,7 @@ public:
   int GetProperty(int, int);
   char* GetMetadataText(int, int);
   int NodeNumFromCapt(char*);
+  int param_item_from_id(FileParamData**, int);
+  node_data_line* md_nodlin_from_id(int);
+  int member_param_item(FileParamData**, int*);
 }; // End of class Model

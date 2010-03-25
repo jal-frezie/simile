@@ -144,28 +144,6 @@ t3 = estimate of next initial increment
   };
 };
 
-// FINDABLE EXPORT getpointer_type burrow_to;
-// FINDABLE EXPORT void* burrow_to(void* level, int** id_meta, int** dim_list) {
-// This has been messed with in a manner similar to do_evalmodel above
-void* AME_model::burrow_to(int** id_meta, int** dim_list) {
-  int* lastDim;
-  submodeltype* level = this;
-
-  while (**id_meta>0) { /* 0 means end of tree, -1 means vm level */
-    lastDim = *dim_list;
-    // char globMess[255];
-    // sprintf(globMess, "gonna g_p id %d,%d... dims %d,%d",
-    //    **id_meta, *(*id_meta+1), **dim_list, *(*dim_list+1));
-    // suppShowMess(globMess);
-    level = (submodeltype*)level->get_pointer(step_list(id_meta,1),dim_list);
-    // above casts the result, not the called objct pointer
-    if ((*lastDim == REQ_COUNT) && (*dim_list != lastDim)) { // moved on
-      break;
-    }
-  }
-  return(level);
-};
-
 /* This is called only when we create the type, to return model constants */
 FINDABLE EXPORT getcount_type get_count;
 FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr, 
@@ -173,14 +151,7 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
 		       void* release_graph_data_ptr, 
 		       void* compare_instance_status_ptr, 
 		       void* get_value_pointer_ptr, 
-/*		       void* fetch_instance_ptr,
-		       void* update_submodel_ptr,
-		       void* advance_submodel_ptr,
-		       void* eval_submodel_ptr,
-		       void* search_from_ptr,
-		       void* advance_ptr_ptr,
-		       void* get_remote_value_ptr, 
-*/		       void* stat_check_ptr,
+		       void* stat_check_ptr,
 		       void* showMess_ptr,
 		       void* graph_ptr, 
 		       int* phases, node_data_line** data_ptr) {
