@@ -32,8 +32,8 @@ class FileParamData
   ~FileParamData();
 
   int space_used();
-  char* create_time_point(double);
-  char* time_point_exists(double);
+  BOOLEAN create_time_point(double);
+  char* GetTimePtDataSpace(double);
   listTimePoint* roll_forward(listTimePoint*, int*);
   void update_from_points(int, double);
   void back_copy_vars();

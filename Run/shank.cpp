@@ -265,39 +265,7 @@ class DllLossage {
     return complaint;
   }
 };
-
-   listable class for data to be loaded at a time point This contains
-   data in a char*, rather than a nodeValue structure, because the
-   dimSpecs are the same for all the time points of a parameter. */
-
-class listTimePoint {
-public:
-  double when;
-  BOOLEAN myArraySpace;
-  char* dataPtr;
-  listTimePoint *last, *next;
-
-  listTimePoint() {
-    myArraySpace = FALSE;
-    dataPtr = NULL;
-    last = next = NULL;
-  }      
-
-  // delete contents when deleting parent class cos it has access to dims
-  ~listTimePoint() {
-  }
-
-  listTimePoint* find_last_pt(double time) {
-    if (next) {
-      /* sprintf(globMess, "seeking after %lf for %lf", when, time);
-      showMess(globMess); */
-      if (next->when<=time) {
-	return next->find_last_pt(time);
-      }
-    }
-    return this;
-  }
-};
+*/
   
 BOOLEAN is_base_type(int dim) {
   return dim==VALUELESS||dim==REAL||dim==INTEGER||dim==FLAG||dim<=ENUM_BASE;
@@ -498,7 +466,41 @@ void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
     return locate_elt(startPtr, *dimPtr*off+(*indxs)-1, dimPtr+1, indxs+1);
 }
 
-/* listable class for keeping track of arrays associated with parameters */
+// listable class for data to be loaded at a time point This contains
+// data in a char*, rather than a nodeValue structure, because the
+// dimSpecs are the same for all the time points of a parameter.
+
+class listTimePoint {
+public:
+  double when;
+  BOOLEAN myArraySpace;
+  char* dataPtr;
+  listTimePoint *last, *next;
+
+  listTimePoint(double time, int* dimSpecs) {
+    myArraySpace = FALSE;
+    when = time;
+    dataPtr = init_space(dimSpecs);
+    last = next = NULL;
+  }      
+
+  // delete contents when deleting parent class cos it has access to dims
+  ~listTimePoint() {
+  }
+
+  listTimePoint* find_last_pt(double time) {
+    if (next) {
+      /* sprintf(globMess, "seeking after %lf for %lf", when, time);
+      showMess(globMess); */
+      if (next->when<=time) {
+	return next->find_last_pt(time);
+      }
+    }
+    return this;
+  }
+};
+
+// class for keeping track of arrays associated with parameters
 
 FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum) {
     int fullDims[32], sparePath[32];
@@ -545,15 +547,15 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum) {
     return array_count(dataPtr.dimSpecs, &base)*size_for_data_type(*base);
   }
 
-  char* FileParamData::create_time_point(double time) {
+  BOOLEAN FileParamData::create_time_point(double time) {
     listTimePoint *lastTimePt, *thisTimePt, *nextTimePt;
     if (timePoints && timePoints->when<=time) {
       lastTimePt = timePoints->find_last_pt(time);
       if (lastTimePt->when==time) {
-	thisTimePt = lastTimePt;
+	return FALSE; // a point already exists at this time
       } else { // lastTimePt is earlier than new one
 	nextTimePt = lastTimePt->next;
-	thisTimePt = new listTimePoint;
+	thisTimePt = new listTimePoint(time, dataPtr.dimSpecs);
 	thisTimePt->next = lastTimePt->next;
 	lastTimePt->next = thisTimePt;
 	thisTimePt->last = lastTimePt;
@@ -564,7 +566,7 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum) {
 	}
       }
     } else {
-      thisTimePt = new listTimePoint;
+      thisTimePt = new listTimePoint(time, dataPtr.dimSpecs);
       thisTimePt->next = timePoints;
       if (timePoints) {
 	timePoints->last = thisTimePt;
@@ -574,12 +576,10 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum) {
       thisTimePt->last = NULL;
       timePoints = thisTimePt;
     }
-    thisTimePt->when = time;
-
-    thisTimePt->dataPtr = init_space(dataPtr.dimSpecs);
+    return TRUE; // new point has been created
   }
 
-  char* FileParamData::time_point_exists (double time) {
+  char* FileParamData::GetTimePtDataSpace (double time) {
     listTimePoint* timePt;
 
     if (timePoints) {
@@ -662,7 +662,7 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum) {
     nodeValues* fromModel;
 
     if (myModelExec->modelSpec->nodedata[nodeNum].eval == INPUT &&
-	!time_point_exists(0.0)) {
+	!GetTimePtDataSpace(0.0)) {
       free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
       fromModel = myModelExec->GetRawValues(nodeNum);
       dataPtr.contents = fromModel->contents;
@@ -700,7 +700,7 @@ void FileParamData::UpdateTimeSeries(double now, BOOLEAN forward) {
     if (!insertionPt) return; // record pointers not yet made
     nodeLine = myModelExec->modelSpec->nodedata + nodeNum;
     if (nodeLine->eval==INPUT &&  myModelExec->resetting<-1 && 
-	!(time_point_exists(0.0))) {
+	!(GetTimePtDataSpace(0.0))) {
       // back copy now done in blocks afterwards to make record spaces
       // memcpy(insertionPt, tgt, size_for_type());
     } else {
@@ -1606,7 +1606,7 @@ int get_timepoint_ptr_and_dims(long int fpHandle, double time,
 //  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
 //    return 2; // no data structure for this elt
 //  }
-  ptData = arrSlot->time_point_exists(time);
+  ptData = arrSlot->GetTimePtDataSpace(time);
   if (!ptData) return 1; // no matching time point
 
   *ptDataSlot = ptData;
