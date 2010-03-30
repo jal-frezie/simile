@@ -1550,8 +1550,9 @@ Tcl_Interp* CurInterp(Tcl_Interp* replace) {
   return saved;
 }
 
-void respond_to_param_req(void* clientRef, void* modelSlot, int paramId, 
-			  int indCount, int* indices) {
+void respond_to_param_req(void* clientRef, void* modelSlot, double reqTime,
+			  int paramId, int indCount, int* indices) {
+  printf("Unwanted parameter value request at %lf\n", reqTime);
   Tcl_BackgroundError(CurInterp(NULL));
 }
 
@@ -1684,8 +1685,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   char pkgName[16];
 
   CurInterp(interp);
-  proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess, 
-			  simileVersion);
+  proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess);
   sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
   /* Use the Tcl Stubs mechanism */
   Tcl_InitStubs(interp, pkgName, 0);

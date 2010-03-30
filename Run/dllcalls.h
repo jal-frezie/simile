@@ -60,6 +60,7 @@
 #define RUNGE_KUTTA     1
 
 /* fill methods for time series */
+#define NO_FILL         -1
 #define USE_LAST        0
 #define USE_CLOSEST     1
 #define INTERPOLATE     2
@@ -221,7 +222,7 @@ typedef BOOLEAN interact_gui_type(void*, BOOLEAN, double);
 typedef double graphpoint_type(double, graph_data_type*, int);
 typedef void release_graph_data_type(graph_data_type*);
 typedef int compare_instance_status_type (const int*, const int*, int);
-typedef void get_value_pointer_type(void*, void*, int, int, int*);
+typedef void get_value_pointer_type(void*, void*, double, int, int, int*);
 /*
 typedef void* fetch_instance_type(char*);
 typedef void update_submodel_type(char*, void*, int);
@@ -297,7 +298,7 @@ EXTDEC void* get_ptr(long int, long int, int**, int**);
 EXTDEC char* getNodeId(long int, char*);
 
 EXTDEC void proc_pointers_for_shank(get_value_pointer_type*, interact_gui_type*,
-				    showMess_type*, char*);
+				    showMess_type*);
 
 /* new class that will hold any set of values for a model component, hopefully
    replacing the regularData class. */

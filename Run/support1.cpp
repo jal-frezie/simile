@@ -17,7 +17,7 @@ ame_rand_type* ame_rand_ref;
 graphpoint_type* graphpoint_ref;
 release_graph_data_type* release_graph_data_ref;
 compare_instance_status_type* compare_instance_status;
-get_value_pointer_type* get_value_pointer_ref;
+model_requests_file_param_type* model_requests_file_param;
 /* fetch_instance_type* fetch_instance_ref;
 update_submodel_type* update_submodel_ref;
 advance_submodel_type* advance_submodel_ref;
@@ -207,7 +207,9 @@ void InstanceOfModel::collect (void* dest, int record_id, int id_count, ...) {
   }
   va_end(argptr);
 
-  (*get_value_pointer_ref)(partner, dest, record_id, id_count, curIndices);
+  (*model_requests_file_param)(partner, dest, record_id, id_count, curIndices);
+  // time value is dummy, there because we share the function definition
+  // with the client side, which uses it
 }
    
 template <class SMClass>

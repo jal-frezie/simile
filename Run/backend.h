@@ -1,3 +1,17 @@
+// Declaration for procedure types found in the model dll by the shank
+typedef int getcount_type(void*, void*, void*, void* ,void*,
+			  void*, void*, void*, void*,
+			  int*, node_data_line**);
+typedef double getversion_type(void);
+typedef InstanceOfModel* createmodel_type(ExecutingModel*);
+typedef void model_requests_file_param_type(void*, void*, int, int, int*);
+//typedef int setstep_type(InstanceOfModel*, double, int);
+//typedef void updatemodel_type(InstanceOfModel*, int);
+//typedef void advancemodel_type(void*, int);
+//typedef int evalmodel_type(InstanceOfModel*, int);
+//typedef void* getpointer_type(void*, int**, int**);
+//typedef void exitmodel_type(InstanceOfModel*);
+
 // class definition and handling procedure for extra variables used in
 // complicated integration methods
 

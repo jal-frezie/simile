@@ -150,7 +150,7 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
 		       void* graphpoint_ptr, 
 		       void* release_graph_data_ptr, 
 		       void* compare_instance_status_ptr, 
-		       void* get_value_pointer_ptr, 
+		       void* model_requests_file_param_ptr, 
 		       void* stat_check_ptr,
 		       void* showMess_ptr,
 		       void* graph_ptr, 
@@ -162,8 +162,10 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
   ame_rand_ref = (ame_rand_type*)ame_rand_ptr;
   graphpoint_ref = (graphpoint_type*)graphpoint_ptr;
   release_graph_data_ref = (release_graph_data_type*)release_graph_data_ptr;
-  compare_instance_status = (compare_instance_status_type*)compare_instance_status_ptr;
-  get_value_pointer_ref = (get_value_pointer_type*)get_value_pointer_ptr;
+  compare_instance_status = 
+    (compare_instance_status_type*)compare_instance_status_ptr;
+  model_requests_file_param = 
+    (model_requests_file_param_type*)model_requests_file_param_ptr;
   /*  fetch_instance_ref = (fetch_instance_type*)fetch_instance_ptr;
   update_submodel_ref = (update_submodel_type*)update_submodel_ptr;
   advance_submodel_ref = (advance_submodel_type*)advance_submodel_ptr;

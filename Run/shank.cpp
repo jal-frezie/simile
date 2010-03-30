@@ -95,10 +95,10 @@ int max(int a, int b) {
 #include <6d.h>
 
 interact_gui_type* interact_gui;
-get_value_pointer_type* get_client_value_pointer;
 stat_check_type stat_check;
+model_requests_file_param_type handle_model_param_request;
 
-char* xsimileVersion;
+get_value_pointer_type* get_client_value_pointer;
 showMess_type* showMessLocal;
 char globMess[256];
 
@@ -466,12 +466,17 @@ void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
     return locate_elt(startPtr, *dimPtr*off+(*indxs)-1, dimPtr+1, indxs+1);
 }
 
-// listable class for data to be loaded at a time point This contains
-// data in a char*, rather than a nodeValue structure, because the
-// dimSpecs are the same for all the time points of a parameter.
+//! listable class for data to be loaded at a time point 
+
+//! This contains
+//! data in a char*, rather than a nodeValue structure, because the
+//! dimSpecs are the same for all the time points of a parameter. All
+//! members are private because all its operations are done by methods
+//! of the FileParamdata class.
 
 class listTimePoint {
-public:
+  friend class VarParamData;
+
   double when;
   BOOLEAN myArraySpace;
   char* dataPtr;
@@ -502,38 +507,26 @@ public:
 
 // class for keeping track of arrays associated with parameters
 
-FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum) {
-    int fullDims[32], sparePath[32];
-    char spareCapt[255];
-    enum_type_data *spareTypes[32]; // might need for reading files
+FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum,
+			     int* fullDims) {
+  int sparePath[32];
 
-    myModelExec = instToUse;
-    nodeNum = newNodeNum;
-    instToUse->modelSpec->SearchInfo(nodeNum, spareCapt, fullDims,
-					    spareTypes);
-    translate_dims(fullDims, sparePath, dataPtr.dimSpecs, 
-		   myModelExec->modelSpec->nodedata[nodeNum].datatype, TRUE);
-    dataPtr.contents = init_space(dataPtr.dimSpecs);
-    //    dataPtr.contents = new char[sparePath[0]];
-    timePoints = NULL;
-    finalTimePoint = NULL;
-    curTimePoint = NULL;
-    fillMethod = USE_LAST;
-    // now insert it into the list (at beginning)
-    next = myModelExec->param_array_base;
-    myModelExec->param_array_base = this;
-  }      
+  myModelExec = instToUse;
+  nodeNum = newNodeNum;
+  fillMethod = NO_FILL;
+  translate_dims(fullDims, sparePath, dataPtr.dimSpecs, 
+		 myModelExec->modelSpec->nodedata[nodeNum].datatype, TRUE);
+  dataPtr.contents = init_space(dataPtr.dimSpecs);
+  //    dataPtr.contents = new char[sparePath[0]];
+  // now insert it into the list (at beginning)
+  next = myModelExec->param_array_base;
+  myModelExec->param_array_base = this;
+}      
 
   FileParamData::~FileParamData() {
     int size, count;
     char* innerSp;
     
-    while (timePoints) {
-      curTimePoint = timePoints;
-      timePoints = curTimePoint->next;
-      free_bloc_data(curTimePoint->dataPtr, dataPtr.dimSpecs);
-      delete(curTimePoint);
-    }
     free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
     // now remove it from the list
     FileParamData** current = &(myModelExec->param_array_base);
@@ -541,13 +534,118 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum) {
     *current = next;
   }
   
-  int FileParamData::space_used() {
-    int *base;
-    // hope it evaluates left to right
-    return array_count(dataPtr.dimSpecs, &base)*size_for_data_type(*base);
+// These last two are actually called by the model code to get data
+
+  void FileParamData::extract_elt(void* tgt, int* indxs) {
+    // do not do it if this is a variable parameter and we are initializing --
+    // array not yet set so let model keep default value...in fact, save it in
+    // the array for later
+    void* insertionPt;
+    node_data_line* nodeLine;
+
+    insertionPt = locate_elt(dataPtr.contents, 0, dataPtr.dimSpecs, indxs);
+    if (!insertionPt) return; // record pointers not yet made
+    nodeLine = myModelExec->modelSpec->nodedata + nodeNum;
+
+    if (myModelExec->resetting<-1 && fillMethod != NO_FILL)
+      if (!((VarParamData*)this)->GetTimePtDataSpace(0.0)) 
+	return;
+    // back copy now done in blocks afterwards to make record spaces, but
+    // avoid forward copying first
+    // memcpy(insertionPt, tgt, size_for_type());
+    memcpy(tgt, insertionPt, size_for_data_type(nodeLine->datatype));
   }
 
-  BOOLEAN FileParamData::create_time_point(double time) {
+  void FileParamData::extract_record_count(void* tgt, int ic, int* indxs) {
+    sizeAndPtr* insertionPt;
+    int count, indxsWith0[32];
+
+    // need zero at appropriate point in indxs to stop at record pointer
+    for (count=0; count<ic; ++count) {
+      indxsWith0[count] = indxs[count];
+    }
+    indxsWith0[count] = 0;
+    insertionPt = (sizeAndPtr*)locate_elt(dataPtr.contents, 0, 
+					  dataPtr.dimSpecs, indxsWith0);
+    *(int*)tgt = insertionPt->size;
+  }
+// end of FileParamData class
+
+// start of VarParamData class
+VarParamData::VarParamData(ExecutingModel* instToUse, int newNodeNum,
+			   int* fullDims) 
+  : FileParamData(instToUse, newNodeNum, fullDims) {
+  timePoints = NULL;
+  finalTimePoint = NULL;
+  curTimePoint = NULL;
+  fillMethod = USE_LAST;
+
+  nextVP = myModelExec->varParamArrayBase;
+  myModelExec->varParamArrayBase = this;
+}
+
+VarParamData::~VarParamData() {
+  ClearTimePtElements();
+}
+
+void VarParamData::update_from_points(BOOLEAN dir, double now) {
+  listTimePoint *loBound, *hiBound;
+  int hiWraps = 0;
+  double interFract;
+  
+  loBound = curTimePoint;
+  if (loBound)
+    hiBound = roll_forward(loBound, &hiWraps);
+  else
+    hiBound = timePoints; // first point
+  
+  if (dir) {
+    while (hiBound && now>=hiBound->when+hiWraps*wrapAroundPoint) {
+      loBound = hiBound;
+      wraps = hiWraps;
+      hiBound = roll_forward(loBound, &hiWraps);
+    }
+  } else {
+    while (loBound && now<loBound->when+wraps*wrapAroundPoint) {
+      hiBound = loBound;
+      hiWraps = wraps;
+      loBound = loBound->last;
+      if (wrapAroundPoint>0.0 && !loBound) {
+	--wraps;
+	loBound = finalTimePoint;
+      }
+    }
+  }
+  
+  if (loBound && hiBound && fillMethod!=USE_LAST) {
+    interFract = (now-wraps*wrapAroundPoint-loBound->when)/
+      (hiBound->when+(hiWraps-wraps)*wrapAroundPoint-loBound->when);
+    //            sprintf(globMess, "lotime %lf hitime %lf Fract %lf", 
+    //		    loBound->when, hiBound->when, interFract);
+    //      showMess(globMess);
+    if (fillMethod==INTERPOLATE && 
+	myModelExec->modelSpec->nodedata[nodeNum].datatype != FLAG) {
+      curTimePoint = loBound; // cos that's what wraps refers to
+      free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+      dataPtr.contents = interpolate_bloc_data(loBound->dataPtr, 
+					       hiBound->dataPtr, 
+					       dataPtr.dimSpecs, 
+					       interFract);
+      return;
+    }
+    if (interFract>0.5) { // fillMethod is USE_CLOSEST
+      loBound = hiBound;
+      wraps = hiWraps;
+    }
+  }
+  if (loBound && loBound!=curTimePoint) {
+    curTimePoint = loBound;
+    free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+    dataPtr.contents = copy_bloc_data(loBound->dataPtr, dataPtr.dimSpecs);
+  }
+}
+
+  BOOLEAN VarParamData::create_time_point(double time) {
     listTimePoint *lastTimePt, *thisTimePt, *nextTimePt;
     if (timePoints && timePoints->when<=time) {
       lastTimePt = timePoints->find_last_pt(time);
@@ -579,7 +677,31 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum) {
     return TRUE; // new point has been created
   }
 
-  char* FileParamData::GetTimePtDataSpace (double time) {
+// only used for saving byte array, so obsolescent
+char* VarParamData::FindNextTimePtSpace(double* last_time) {
+  listTimePoint* seek = timePoints->find_last_pt(*last_time);
+
+  if (seek = seek->next) { // assignment
+    *last_time = seek->when;
+    return seek->dataPtr;
+  }
+  return NULL;
+  /* old version duplicated effort
+  while (seek) {
+    if (seek->when>*last_time) {
+      *last_time = seek->when;
+      break;
+    }
+    seek = seek->next;
+  }
+  if (seek)
+    return seek->dataPtr;
+  else
+    return NULL;
+  */
+}
+
+  char* VarParamData::GetTimePtDataSpace (double time) {
     listTimePoint* timePt;
 
     if (timePoints) {
@@ -589,7 +711,7 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum) {
     return NULL;
   }
 
-  listTimePoint* FileParamData::roll_forward(listTimePoint *bound, int *newWraps) {
+  listTimePoint* VarParamData::roll_forward(listTimePoint *bound, int *newWraps) {
     bound = bound->next;
     if (!bound && wrapAroundPoint>0.0) {
       *newWraps = wraps+1;
@@ -599,133 +721,48 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum) {
     return bound;
   }
 
-  void FileParamData::update_from_points(BOOLEAN dir, double now) {
-    listTimePoint *loBound, *hiBound;
-    int hiWraps = 0;
-    double interFract;
-
-    loBound = curTimePoint;
-    if (loBound)
-      hiBound = roll_forward(loBound, &hiWraps);
-    else
-      hiBound = timePoints; // first point
-
-    if (dir) {
-      while (hiBound && now>=hiBound->when+hiWraps*wrapAroundPoint) {
-	loBound = hiBound;
-	wraps = hiWraps;
-	hiBound = roll_forward(loBound, &hiWraps);
-      }
-    } else {
-      while (loBound && now<loBound->when+wraps*wrapAroundPoint) {
-	hiBound = loBound;
-	hiWraps = wraps;
-	loBound = loBound->last;
-	if (wrapAroundPoint>0.0 && !loBound) {
-	  --wraps;
-	  loBound = finalTimePoint;
-	}
-      }
-    }
-
-    if (loBound && hiBound && fillMethod!=USE_LAST) {
-      interFract = (now-wraps*wrapAroundPoint-loBound->when)/
-	(hiBound->when+(hiWraps-wraps)*wrapAroundPoint-loBound->when);
-      //            sprintf(globMess, "lotime %lf hitime %lf Fract %lf", 
-      //		    loBound->when, hiBound->when, interFract);
-      //      showMess(globMess);
-      if (fillMethod==INTERPOLATE && 
-	  myModelExec->modelSpec->nodedata[nodeNum].datatype != FLAG) {
-	curTimePoint = loBound; // cos that's what wraps refers to
-	free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-	dataPtr.contents = interpolate_bloc_data(loBound->dataPtr, 
-						 hiBound->dataPtr, 
-						 dataPtr.dimSpecs, 
-						 interFract);
-	return;
-      }
-      if (interFract>0.5) { // fillMethod is USE_CLOSEST
-	loBound = hiBound;
-	wraps = hiWraps;
-      }
-    }
-    if (loBound && loBound!=curTimePoint) {
-      curTimePoint = loBound;
-      free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-      dataPtr.contents = copy_bloc_data(loBound->dataPtr, dataPtr.dimSpecs);
-    }
+void VarParamData::ClearTimePtElements() {
+  while (timePoints) {
+    curTimePoint = timePoints;
+    timePoints = curTimePoint->next;
+    free_bloc_data(curTimePoint->dataPtr, dataPtr.dimSpecs);
+    delete(curTimePoint);
   }
+  finalTimePoint = NULL;
+  curTimePoint = NULL;
+}
 
-  /* These last three are actually called by the model code to get data */
-
-  void FileParamData::back_copy_vars() {
-    nodeValues* fromModel;
-
-    if (myModelExec->modelSpec->nodedata[nodeNum].eval == INPUT &&
-	!GetTimePtDataSpace(0.0)) {
-      free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-      fromModel = myModelExec->GetRawValues(nodeNum);
-      dataPtr.contents = fromModel->contents;
-      // sprintf(globMess, "dims %d %d backcopied %d records 1st %lf", 
-	      // dataPtr.dimSpecs[0], dataPtr.dimSpecs[1], ((sizeAndPtr*)dataPtr.contents)->size,
-	      // *(double*)(((sizeAndPtr*)dataPtr.contents)->ptr));
-      // showMess(globMess);
-      delete fromModel;
-    }
-    if (next) next->back_copy_vars();
+void VarParamData::back_copy_vars() {
+  nodeValues* fromModel;
+  
+  // check it really is a var before doing
+  if (fillMethod != NO_FILL && !GetTimePtDataSpace(0.0)) {
+    free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+    fromModel = myModelExec->GetRawValues(nodeNum);
+    dataPtr.contents = fromModel->contents;
+//    sprintf(globMess, "dims %d %d backcopied %d records 1st %lf", 
+//	    dataPtr.dimSpecs[0], dataPtr.dimSpecs[1], ((sizeAndPtr*)dataPtr.contents)->size,
+//	    *(double*)(((sizeAndPtr*)dataPtr.contents)->ptr));
+//    showMess(globMess);
+    delete fromModel;
   }
+  if (nextVP) nextVP->back_copy_vars();
+}
 
-void FileParamData::ResetTimeSeries() {
+void VarParamData::ResetTimeSeries() {
   curTimePoint = NULL;
   wraps = 0;
   update_from_points(TRUE, 0);
 
-  if (next) next->ResetTimeSeries();  
+  if (nextVP) nextVP->ResetTimeSeries();  
 }
 
-void FileParamData::UpdateTimeSeries(double now, BOOLEAN forward) {
+void VarParamData::UpdateTimeSeries(double now, BOOLEAN forward) {
   update_from_points(forward, now);
 
-  if (next) next->UpdateTimeSeries(now, forward);  
+  if (nextVP) nextVP->UpdateTimeSeries(now, forward);  
 }    
   
-  void FileParamData::extract_elt(void* tgt, int* indxs) {
-    // do not do it if this is a variable parameter and we are initializing --
-    // array not yet set so let model keep default value...in fact, save it in
-    // the array for later
-    void* insertionPt;
-    node_data_line* nodeLine;
-
-    insertionPt = locate_elt(dataPtr.contents, 0, dataPtr.dimSpecs, indxs);
-    if (!insertionPt) return; // record pointers not yet made
-    nodeLine = myModelExec->modelSpec->nodedata + nodeNum;
-    if (nodeLine->eval==INPUT &&  myModelExec->resetting<-1 && 
-	!(GetTimePtDataSpace(0.0))) {
-      // back copy now done in blocks afterwards to make record spaces
-      // memcpy(insertionPt, tgt, size_for_type());
-    } else {
-      // sprintf(globMess, "Gonna copy %d from %ld to %ld", size_for_type(),
-// 	      (long int)insertionPt, (long int)tgt);
-      // showMess(globMess);
-      memcpy(tgt, insertionPt, size_for_data_type(nodeLine->datatype));
-    }
-  }
-
-  void FileParamData::extract_record_count(void* tgt, int ic, int* indxs) {
-    sizeAndPtr* insertionPt;
-    int count, indxsWith0[32];
-
-    // need zero at appropriate point in indxs to stop at record pointer
-    for (count=0; count<ic; ++count) {
-      indxsWith0[count] = indxs[count];
-    }
-    indxsWith0[count] = 0;
-    insertionPt = (sizeAndPtr*)locate_elt(dataPtr.contents, 0, 
-					  dataPtr.dimSpecs, indxsWith0);
-    *(int*)tgt = insertionPt->size;
-  }
-// end of FileParamData class
-
 int step_list(int **dim_list) {
   return *(*dim_list)++;
 }
@@ -880,6 +917,7 @@ ExecutingModel::ExecutingModel(Model* newModelSpec, void* yourRef) {
 //	    (long)this, (long)modelSpec, (long)loadedInst);
     //showMess(globMess);
     param_array_base = NULL;
+    varParamArrayBase = NULL;
 }
 
 ExecutingModel::~ExecutingModel() {
@@ -909,8 +947,8 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
       SetdT(0,1);
     } // was -1,0 to stop loss, but now we want it cos it happens next step
     thisTsPosn = 0.0;
-    if (param_array_base)
-      param_array_base->ResetTimeSeries();
+    if (varParamArrayBase)
+      varParamArrayBase->ResetTimeSeries();
     adapt_doublings = 0;
   }
   
@@ -922,8 +960,8 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
   if (loadedInst->userStop.excpNo)
     return &(loadedInst->userStop);
   // reset successful: now do back copy if needed
-  if (top_phase<-1 && param_array_base) {
-    param_array_base->back_copy_vars(); // does all
+  if (top_phase<-1 && varParamArrayBase) {
+    varParamArrayBase->back_copy_vars(); // does all
   }
   return NULL;
 }
@@ -1093,8 +1131,8 @@ void ExecutingModel::advance_time (int phase, double fraction) {
     }
     // time value is chosen to work with RK so series pt should do the same
     series_pt = lts[modelSpec->phases];
-    if (param_array_base) 
-      param_array_base->UpdateTimeSeries(series_pt, series_pt > thisTsPosn);
+    if (varParamArrayBase) 
+      varParamArrayBase->UpdateTimeSeries(series_pt, series_pt > thisTsPosn);
     thisTsPosn = series_pt;
   }
   
@@ -1143,7 +1181,17 @@ BOOLEAN ExecutingModel::check_gui(double model_time, int this_op) {
 }
 
 FileParamData* ExecutingModel::UseArrayForParams(int nodeNum) {
-  return new FileParamData(this, nodeNum);
+  int fullDims[32];
+  char spareCapt[255];
+  enum_type_data *spareTypes[32]; // might need for reading files
+
+  // use searchinfo because we want the ET dims translated to numbers
+  modelSpec->SearchInfo(nodeNum, spareCapt, fullDims, spareTypes);
+  // make the appropriate kind of file parameter
+  if (modelSpec->GetProperty(nodeNum, GETEVAL) == INPUT)
+    return new VarParamData(this, nodeNum, fullDims);
+  else
+    return new FileParamData(this, nodeNum, fullDims);
 }
 
 void ExecutingModel::GetValuePointer(void* modelSlot, int paramId,
@@ -1163,7 +1211,8 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId,
       // found a parameter inside this submodel, get record count
       paramArrayItem->extract_record_count(modelSlot, ic, indxs);
     else
-      get_client_value_pointer(clientRef, modelSlot, paramId, ic, indxs);
+      get_client_value_pointer(clientRef, modelSlot, thisTsPosn,
+			       paramId, ic, indxs);
   }
   // sprintf(globMess, "Think we got %d (%lf)", *(int*)modelSlot, *(double*)modelSlot);
   // showMess(globMess);
@@ -1185,10 +1234,10 @@ Model::Model(char* fileName, char** complaint) {
       sprintf(*complaint, "the shared object is probably not a Simile model");
       return;
     }
-    if (fabs(getversion()-atof(xsimileVersion))>0.00001) {
+    if (fabs(getversion()-atof(SIMILE_VERSION))>0.00001) {
       *complaint = new char[256];
       sprintf(*complaint, "client is for version %s but model is %.1f", 
-	      xsimileVersion, getversion());
+	      SIMILE_VERSION, getversion());
       return;
     }
 /* sprintf(globMess, "Loaded %ld", handle);
@@ -1201,7 +1250,7 @@ showMess(globMess); */
 			 (void*)graphpoint,
 			 (void*)release_graph_data, 
 			 (void*)compare_instance_status, 
-			 (void*)get_value_pointer, 
+			 (void*)handle_model_param_request, 
 			 (void*)stat_check,
 			 (void*)showMess,
 			 (void*)&c_graphdata,
@@ -1477,37 +1526,37 @@ public:
   }
   }; */
 
-FileParamData* FileParamForNodeNum(FileParamData* start, int seekNodeNum) {
-  if (!start)
-    return NULL;
-  else if (start->nodeNum == seekNodeNum)
-    return start;
-  else
-    return FileParamForNodeNum(start->next, seekNodeNum);
+FileParamData* ExecutingModel::FileParamForNodeNum(int seekNodeNum) {
+  FileParamData* check = param_array_base;
+  while (check) {
+    if (check->nodeNum == seekNodeNum)
+      return check;
+    check = check->next;
+  }
+  return NULL;
 }
 
-FileParamData* param_array_item(FileParamData* start, char* seekNodeId) {
+FileParamData* param_array_item(ExecutingModel* xm, char* seekNodeId) {
   int seekNodeNum, spareInt;
 
-  if (!start)
-    return NULL;
   // all params are for same model instance so convert nodeId to line number
   // using model spec from first
-  seekNodeNum = start->myModelExec->modelSpec->getinfo(seekNodeId, &spareInt);
-  return FileParamForNodeNum(start, seekNodeNum);
+  seekNodeNum = xm->modelSpec->getinfo(seekNodeId, &spareInt);
+  return xm->FileParamForNodeNum(seekNodeNum);
 }
     
 long int use_array_for_params(long int xmHandle, char* nodeId) {
   FileParamData* arrSlot;
-  int lineFromNodeId, spareInt;
+  int lineFromNodeId, spareInt, seekNodeNum;
   ExecutingModel* recipient = (ExecutingModel*)xmHandle;
 
   // sprintf(globMess, "use_array_for_params node %s", nodeId);
   // showMess(globMess);
-  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
+
+  if (!(arrSlot=param_array_item(recipient, nodeId))) {
     lineFromNodeId = recipient->modelSpec->getinfo(nodeId, &spareInt);
     arrSlot = recipient->UseArrayForParams(lineFromNodeId);
-    if (!arrSlot->myModelExec) { // no failure condition made yet
+    if (!arrSlot) { // no failure condition made yet
       delete arrSlot;
       return 0;
     }
@@ -1523,24 +1572,26 @@ void* get_param_data_space(long int fpHandle) {
   return ((FileParamData*)fpHandle)->dataPtr.contents;
 }
 			   
+int space_used(nodeValues* dataPtr) {
+  int *base;
+  // hope it evaluates left to right
+  return array_count(dataPtr->dimSpecs, &base)*size_for_data_type(*base);
+}
+
 int param_array_size(long int fpHandle) {
-  return ((FileParamData*)fpHandle)->space_used();
+  return space_used(&((FileParamData*)fpHandle)->dataPtr);
 }
 
 int clear_time_point_elts(long int fpHandle) {
-  FileParamData* arrSlot = (FileParamData*)fpHandle;
+  ((VarParamData*)fpHandle)->ClearTimePtElements();
 
 //  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
 //    return 1; // no data structure for this elt
 //  }
-  delete arrSlot->timePoints;
-  arrSlot->timePoints = NULL;
-  arrSlot->finalTimePoint = NULL;
-  arrSlot->curTimePoint = NULL;
 }
 
 double* get_wrap_ptr(long int fpHandle) {
-  FileParamData* arrSlot = (FileParamData*)fpHandle;
+  VarParamData* arrSlot = (VarParamData*)fpHandle;
 
 //  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
 //    return NULL; // no data structure for this elt
@@ -1549,7 +1600,7 @@ double* get_wrap_ptr(long int fpHandle) {
 }
 
 int* get_fill_ptr(long int fpHandle) {
-  FileParamData* arrSlot = (FileParamData*)fpHandle;
+  VarParamData* arrSlot = (VarParamData*)fpHandle;
 
 //  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
 //    return NULL; // no data structure for this elt
@@ -1558,7 +1609,7 @@ int* get_fill_ptr(long int fpHandle) {
 }
 
 int create_time_point(long int fpHandle, double time) {
-  FileParamData* arrSlot = (FileParamData*)fpHandle;
+  VarParamData* arrSlot = (VarParamData*)fpHandle;
 
 //  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
 //    return 1; // no data structure for this elt
@@ -1568,24 +1619,7 @@ int create_time_point(long int fpHandle, double time) {
 }
 
 void* find_next_timept_space(long int fpHandle, double* last_time) {
-  FileParamData* arrSlot = (FileParamData*)fpHandle;
-  listTimePoint* seek;
-
-//  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-//    return NULL; // no data structure for this elt
-//  }
-  seek = arrSlot->timePoints;
-  while (seek) {
-    if (seek->when>*last_time) {
-      *last_time = seek->when;
-      break;
-    }
-    seek = seek->next;
-  }
-  if (seek)
-    return seek->dataPtr;
-  else
-    return NULL;
+  ((VarParamData*)fpHandle)->FindNextTimePtSpace(last_time);
 }
 
 char* get_param_ptr_and_dims(long int fpHandle, int** dimSlot) {
@@ -1600,7 +1634,7 @@ char* get_param_ptr_and_dims(long int fpHandle, int** dimSlot) {
 
 int get_timepoint_ptr_and_dims(long int fpHandle, double time, 
 				 char** ptDataSlot, int** dimSlot) {
-  FileParamData* arrSlot = (FileParamData*)fpHandle;
+  VarParamData* arrSlot = (VarParamData*)fpHandle;
   char* ptData;
 
 //  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
@@ -1704,10 +1738,10 @@ node_data_line* nodlin_from_id(long int modelId, int paramId) {
   return ((Model*)modelId)->md_nodlin_from_id(paramId);
 }
 
-void get_value_pointer(void* instId, void* modelSlot, int paramId,
-		       int ic, int* indxs) {
-  //sprintf(globMess, "get_value_pointer to location %lx for exmod %lx node %d count %d indx0 %d indx1 %d", (long)modelSlot, (long)instId, paramId, ic, indxs[0], indxs[1]);
-  //showMess(globMess);
+void handle_model_param_request(void* instId, void* modelSlot,
+		       int paramId, int ic, int* indxs) {
+//  sprintf(globMess, "h_m_p_t to location %lx for exmod %lx node %d count %d indx0 %d indx1 %d", (long)modelSlot, (long)instId, paramId, ic, indxs[0], indxs[1]);
+//  showMess(globMess);
   ((ExecutingModel*)instId)->GetValuePointer(modelSlot, paramId, ic, indxs);
 }
 
@@ -1804,10 +1838,11 @@ node_data_line* Model::SearchInfo(int lineNum, char* caption,
   // if (bottomLine) {
   usedCount=dimCount=0;
     while (dims[dimCount]) {
-      // sprintf(globMess, "dim %d is %d", dimCount, dims[dimCount]);
-      // showMess(globMess);
+//      sprintf(globMess, "dim %d is %d", dimCount, dims[dimCount]);
+//      showMess(globMess);
       if (dims[dimCount] <= ENUM_BASE) {
 	thisType = localTypes[ENUM_BASE-dims[dimCount]];
+//	printf("chaining type %s\n", thisType->name);
 	usedTypes[usedCount++] = thisType;
 	dims[dimCount] = thisType->count;
       } else if (dims[dimCount] == FLAG) {
@@ -1823,9 +1858,9 @@ node_data_line* Model::SearchInfo(int lineNum, char* caption,
     bottomLine = nodedata + lineNum;
     if (bottomLine->datatype <= ENUM_BASE) {
       thisType = localTypes[ENUM_BASE-bottomLine->datatype];
-      // sprintf(globMess, "type is %d, setting result %d to %s", 
-      //         bottomLine->datatype, usedCount, thisType->name);
-      // showMess(globMess);
+//      sprintf(globMess, "type is %d, setting result %d to %s", 
+//              bottomLine->datatype, usedCount, thisType->name);
+//      showMess(globMess);
       usedTypes[usedCount++] = thisType;
     } else if (bottomLine->datatype == FLAG) {
       usedTypes[usedCount++] = &boolDataType;
@@ -2038,16 +2073,10 @@ excpData* execute(long int modelType, long int modelHandle, int how_int,
 
 void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
 			     interact_gui_type* interact_gui_ptr,
-			     showMess_type* showMess_ptr,
-			     char* simileVersionPtr) {
+			     showMess_type* showMess_ptr) {
   get_client_value_pointer = get_value_pointer_ptr;
   interact_gui = interact_gui_ptr;
   showMessLocal = showMess_ptr;
-  xsimileVersion = simileVersionPtr;
-}
-
-int setstep(long int instId, double starttime, int phase) {
-  return ((ExecutingModel*)instId)->SetStep(phase, starttime);
 }
 
 // setstep: the model class instances contain an array of doubles called
@@ -2067,6 +2096,10 @@ void ExecutingModel::SetdT(int phase, double starttime) {
     } else {
       loadedInst->ts[-phase] = starttime;
     }
+}
+
+int setstep(long int instId, double starttime, int phase) {
+  return ((ExecutingModel*)instId)->SetStep(phase, starttime);
 }
 
 // This deletes a model instance and/or a class -- both when used in Simile
