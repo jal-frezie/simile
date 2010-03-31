@@ -8,7 +8,7 @@
 #define HINSTANCE void*
 #endif
 
-class Model;
+class ModelServer;
 
 class ExecutingModel;
 
@@ -41,7 +41,7 @@ class FileParamData
  public: // public methods
 
   //! Constructor: args are:
-  //! (0) Model instance to which to apply these values
+  //! (0) ModelServer instance to which to apply these values
   //! (1) Line index of model component which gets the values in that instance
   //! (2) Dimension list in model format, passed for convenience
   FileParamData(ExecutingModel*, int, int*);
@@ -150,8 +150,14 @@ class ExecutingModel
   unsigned long int took[8];
 
  public: // public attributes
-  Model* modelSpec;
+
+  //! The model type of which this is an instance
+  ModelServer* modelSpec;
+
+  //! identification data passed by the client for use in callbacks
   void* clientRef;
+
+  //! Time at which GUI was last updated with model execution status
   unsigned long int last_check;
   #define FLASH CLOCKS_PER_SEC/25 // 40ms
  
@@ -161,76 +167,79 @@ class ExecutingModel
   int rk_update();
   void advance_time (int, double);
   int phase_for(double, double, int);
+  BOOLEAN check_gui(double, int);
 
  public: // public methods
-  ExecutingModel(Model*, void*);
+
+  //! Constructor takes model type object and client reference
+  ExecutingModel(ModelServer*, void*);
   ~ExecutingModel();
 
+  //! Set the length (double) of an execution step of depth int
   int SetStep(int, double);
 
-  // set up model data
-  FileParamData* FileParamForNodeNum(int);
+  //! Create local data structure for a fixed parameter by serial number
   FileParamData* UseArrayForParams(int);
 
-  // control model execution
+  //! Find local data structure for a fixed parameter by serial number
+  FileParamData* FileParamForNodeNum(int);
+
+  //! reset the model instance -- args are integration method and action
+
+  //! Actions are: -2 = initialize
+  //! -1 == reload fixed parameters
+  //! 0 == reset state variables etc
+  //! +ve: re-evaluate derived variables for that time step
   excpData* ResetInstance(int, int);
+
+  //! Execute the model -- args are int. method, start/end times and error limit
+
+  //! End time passed as pointer; value overwritten if model stopped early
+  //! Error limit controls adaptive timestep variation, 0 turns it off
   excpData* ExecuteInstance(int, double, double*, double);
 
-  // allow model to access data
-  void GetValuePointer(void*, int, int, int*);
-
-  // get results from model
+  //! get results from model by node serial number in general c format
   nodeValues* GetRawValues(int);
 
-  // interact with client during execution
-  BOOLEAN check_gui(double, int);
+  //! allow model to access parameter data; client should not call this
+  void GetValuePointer(void*, int, int, int*);
+
+  // allow model to update client during execution; client should not call
+  BOOLEAN do_gui_check(double, int);
 }; // End of class ExecutingModel
 
-class Model 
+//! An instance of this class corresponds to a type of model with own executable
+
+//! Perhaps it could be a class template for things like the above class?
+class ModelServer 
 {
   friend class ExecutingModel;
-
+ protected: // protected attributes
   HINSTANCE handle;
-
-/*  int inArcCount;
-  char** inArcList; */
-  //  enum_data_type *enumtypedata;
-
+  
   getcount_type *getcount;
   getversion_type *getversion;
   createmodel_type *createmodel;
-/* Matching set of declarations for the pointers by which we will access
-   these functions locally */
-
-//  updatemodel_type *updatemodel;
-//  advancemodel_type *advancemodel;
-//  evalmodel_type *evalmodel;
-  int parent_line (int);
-
-public:
-  Model(char*, char**);
-  ~Model();
-
-  ExecutingModel* create(void*);
-  excpData* executemodel(ExecutingModel*, int, double, double*, double);
-
-  //getpointer_type *getpointer;
-  int make_full_caption(int, char *, int*, enum_type_data**);
-  node_data_line* SearchInfo(int, char *, int*, enum_type_data**);
-
+  
+ public: // public attributes
   int phases;
-  /* Time series info exists only for each model class, so thisTsPosn
-     remembers for what time the series have been set up, so we know
-     what to do when setting them up for a different instance which
-     may be at a different time...not sure that ever worked...but now 
-     everything should be in the instance
-  double lts[8], ldts[8], thisTsPosn;
-  */
   graph_data_type* c_graphdata;
   int nodecount;
   node_data_line* nodedata;
-  // channelRecord* channelData; only used in top model
-  // excpData* userDefStop; // set by stop function in model
+  
+ protected: // protected methods
+  int parent_line (int);
+  
+ public:// public methods
+  ModelServer(char*, char**);
+  ~ModelServer();
+  
+  ExecutingModel* create(void*);
+  node_data_line* SearchInfo(int, char *, int*, enum_type_data**);
+
+  int make_full_caption(int, char *, int*, enum_type_data**);
+
+  //! Gets node serial number from old id (last arg set to submodel if ghost)
   int getinfo(char*, int*);
   int GetProperty(int, int);
   char* GetMetadataText(int, int);
@@ -238,4 +247,10 @@ public:
   int param_item_from_id(FileParamData**, int);
   node_data_line* md_nodlin_from_id(int);
   int member_param_item(FileParamData**, int*);
-}; // End of class Model
+
+  // Virtual callback functions: clients use a class that inherits ModelServer
+  // and implements these, and the server calls them
+  virtual void get_value_pointer(void*, void*, double, int, int, int*) = 0;
+  virtual int interact_gui(void*, int, double) = 0;
+  virtual void showMess(const char*) = 0;
+}; // End of class ModelServer

@@ -94,34 +94,24 @@ int max(int a, int b) {
 // class interface for c++ clients
 #include <6d.h>
 
-interact_gui_type* interact_gui;
 stat_check_type stat_check;
 model_requests_file_param_type handle_model_param_request;
 
-get_value_pointer_type* get_client_value_pointer;
-showMess_type* showMessLocal;
 char globMess[256];
 
 // check for abort (and do non-intrusive gui action). Do not do this if the
 // time point borders are happening frequently.
 
 int stat_check(void* id) {
-  unsigned long int this_update;
-  BOOLEAN result;
-
-  this_update=clock();
-  if (this_update-((ExecutingModel*)id)->last_check>2*FLASH) {
-    result=interact_gui(((ExecutingModel*)id)->clientRef, 0, 0);
-    this_update=clock(); // GUI may have taken time
-    ((ExecutingModel*)id)->last_check=this_update;
-  } else {
-    result=FALSE;
-  }
-  return result;
+  if (clock()-((ExecutingModel*)id)->last_check>2*FLASH)
+    return ((ExecutingModel*)id)->do_gui_check(0, 0);
+  else
+    return FALSE;
 }
 
-void showMess(char* mess) {
-  (*showMessLocal)(mess);
+show_model_mess_type showModelMess;
+void showModelMess(void* id, const char* content) {
+  ((ExecutingModel*)id)->modelSpec->showMess(content);
 }
 
 /* utility procedures making no direct reference to model classes/instances */
@@ -906,10 +896,10 @@ void fill_raw_values(InstanceOfModel* smHandle, int tree[],
   }
 }
 
-class Model;
+class ModelServer;
 
 // Implementation of class ExecutingModel
-ExecutingModel::ExecutingModel(Model* newModelSpec, void* yourRef) {
+ExecutingModel::ExecutingModel(ModelServer* newModelSpec, void* yourRef) {
     modelSpec = newModelSpec;
     clientRef = yourRef;
     loadedInst = modelSpec->createmodel(this);
@@ -1161,6 +1151,14 @@ nodeValues* ExecutingModel::GetRawValues(int nodeId) {
   return newBlk;
 }
 
+BOOLEAN ExecutingModel::do_gui_check(double model_time, int actionType) {
+  BOOLEAN result;
+
+  result = modelSpec->interact_gui(clientRef, actionType, model_time);
+  last_check = clock(); // GUI may have taken time
+  return result;
+}
+
 BOOLEAN ExecutingModel::check_gui(double model_time, int this_op) {
   unsigned long int this_update;
   BOOLEAN result = FALSE;
@@ -1170,9 +1168,8 @@ BOOLEAN ExecutingModel::check_gui(double model_time, int this_op) {
   took[last_op]=this_update-last_exit;
   
   if ((this_update-last_update)+took[this_op]>FLASH) {
-    result=interact_gui(clientRef, 1+!this_op, model_time);
-    this_update=clock(); // GUI may have taken time
-    last_update=last_check=this_update;
+    result=do_gui_check(model_time, 1+!this_op);
+    last_update=last_check;
   }
 
   last_op = this_op;
@@ -1211,7 +1208,7 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId,
       // found a parameter inside this submodel, get record count
       paramArrayItem->extract_record_count(modelSlot, ic, indxs);
     else
-      get_client_value_pointer(clientRef, modelSlot, thisTsPosn,
+      modelSpec->get_value_pointer(clientRef, modelSlot, thisTsPosn,
 			       paramId, ic, indxs);
   }
   // sprintf(globMess, "Think we got %d (%lf)", *(int*)modelSlot, *(double*)modelSlot);
@@ -1219,8 +1216,8 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId,
 
 }
 
-// Implementation of class Model
-Model::Model(char* fileName, char** complaint) {
+// Implementation of class ModelServer
+ModelServer::ModelServer(char* fileName, char** complaint) {
     handle = LOAD_DLL(fileName);
     if (!handle) {
       *complaint = strdup(WHAT_WENT_WRONG());
@@ -1252,16 +1249,17 @@ showMess(globMess); */
 			 (void*)compare_instance_status, 
 			 (void*)handle_model_param_request, 
 			 (void*)stat_check,
-			 (void*)showMess,
+			 (void*)showModelMess,
 			 (void*)&c_graphdata,
 			 &phases, &nodedata);
 
     createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
   }
 
-Model::~Model() {
+ModelServer::~ModelServer() {
   if (handle && !UNLOAD_DLL(handle)) {
-    showMess(WHAT_WENT_WRONG());
+    // cannot use showMess because deleting object
+    printf("Failed to unload shared library: %s\n", WHAT_WENT_WRONG());
   }
   // if (channelData) delete channelData;
 }
@@ -1270,14 +1268,14 @@ Model::~Model() {
      make class procedures for the things loaded from the model dll rather than
      trying to refer to procedure variables in the model class directly */
 
-ExecutingModel* Model::create(void* yourRef) {
+ExecutingModel* ModelServer::create(void* yourRef) {
     c_graphdata = NULL; // this will be filled when initializing new instance
     // Do not return raw instance -- just create a wrapper object with fields
     // for raw instance and model type object
     return new ExecutingModel(this, yourRef);
   }
 
-int Model::parent_line (int line) {
+int ModelServer::parent_line (int line) {
     int count, level, test, *path;
     path = nodedata[line].path;
     for (count=0;nodecount>count;count++) {
@@ -1296,7 +1294,7 @@ int Model::parent_line (int line) {
     return(-1);
   }
       
-int Model::make_full_caption(int line, char *result, int* dims,
+int ModelServer::make_full_caption(int line, char *result, int* dims,
 			 enum_type_data** types) {
     /* New version which does not depend on the nodedata array being in
        any particular order -- and returns the whole caption */
@@ -1342,7 +1340,7 @@ int Model::make_full_caption(int line, char *result, int* dims,
   }
   */
 
-int Model::getinfo(char* node_id, int* gLine) {
+int ModelServer::getinfo(char* node_id, int* gLine) {
     int count, gcount;
     char* ghosts;
     ghost_ref_data* gpair;
@@ -1362,7 +1360,7 @@ int Model::getinfo(char* node_id, int* gLine) {
     return -1;
   }
 
-int Model::GetProperty(int line, int propertyId) {
+int ModelServer::GetProperty(int line, int propertyId) {
   switch (propertyId) {
     case GETTYPE:
       return nodedata[line].datatype;
@@ -1377,7 +1375,7 @@ int Model::GetProperty(int line, int propertyId) {
     }
 }
 
-char* Model::GetMetadataText(int line, int propertyId) {
+char* ModelServer::GetMetadataText(int line, int propertyId) {
   switch (propertyId) {
     case GETINTERNALID:
       return nodedata[line].name;
@@ -1392,7 +1390,7 @@ char* Model::GetMetadataText(int line, int propertyId) {
     }
 }
 
-int Model::param_item_from_id(FileParamData** start, int paramId) {
+int ModelServer::param_item_from_id(FileParamData** start, int paramId) {
   if (!*start) {
     return 0;
   } else if (nodedata[(*start)->nodeNum].graph==paramId)
@@ -1405,7 +1403,7 @@ int Model::param_item_from_id(FileParamData** start, int paramId) {
 
 // New version of nodeModelAndId returns number
 // -- who knows, maybe one day it will work intelligently?
-int Model::NodeNumFromCapt(char* seeknode) {
+int ModelServer::NodeNumFromCapt(char* seeknode) {
   int count;
   char test[255];
   int dims[32];
@@ -1423,7 +1421,7 @@ int Model::NodeNumFromCapt(char* seeknode) {
   return -1;
 }
 
-int Model::member_param_item(FileParamData** start, int* parentPath) {
+int ModelServer::member_param_item(FileParamData** start, int* parentPath) {
   node_data_line* nLine;
 
   if (!*start)
@@ -1443,7 +1441,7 @@ int Model::member_param_item(FileParamData** start, int* parentPath) {
   return  member_param_item(start, parentPath); // keep looking
 }
 
-node_data_line* Model::md_nodlin_from_id(int paramId) {
+node_data_line* ModelServer::md_nodlin_from_id(int paramId) {
     int count;
     node_data_line *nodeLine;
     for (count=0; count<nodecount; ++count) {
@@ -1453,78 +1451,19 @@ node_data_line* Model::md_nodlin_from_id(int paramId) {
     return NULL;
 }
 
-/* listable class for submodel data -- allows us to find model id from node id
-...no longer needed because instance ID is always given
-class listNodeModel {
-public:
-  char* node;
-  Model* model;
-  listNodeModel* next;
+int ExecutingModel::SetStep(int phase, double step) {
+  steps[phase] = step;
+  return modelSpec->phases;
+}
 
-  listNodeModel(char* newNode, Model* newModel, listNodeModel* prev) {
-    node = strdup(newNode);
-    model = newModel;
-    next = prev;
-  }
-
-  ~listNodeModel() {
-    delete(node);
-    delete(model);
-  }
-      
-  Model* nodeModel(char* seekNode) {
-    if (!strcmp(node, seekNode)) {
-
-      return(model);
-    } else if (next) {
-      return(next->nodeModel(seekNode));
+void ExecutingModel::SetdT(int phase, double starttime) {
+  if (modelSpec->phases>=abs(phase))
+    if (phase>0) { /* lazy */
+      loadedInst->dts[phase] = starttime;
     } else {
-      return NULL;
+      loadedInst->ts[-phase] = starttime;
     }
-  }
-
-  listNodeModel* strip_out(Model* oldModelId) {
-    int count;
-    listNodeModel* current;
-
-    if (next) {
-      next = next->strip_out(oldModelId);
-    }
-    if (model == oldModelId) { // node belongs to model being removed
-      // delete any separate submodels in here (old)
-      // for (count=0; count<model->nodecount;count++) {
-// 	if ((model->nodedata[count]).datatype==EXTERNAL) {
-// 	  strip_out(nodeModel((model->nodedata[count]).name));
-// 	}
-// 	}
-      current = next;
-      delete(this);
-      return current;
-    } else {
-      return this;
-    }
-  }
-}; // end of class listNodeModel
-
-listNodeModel* nodeModelList = NULL;
-
-listable class for enumerated types, similar to above
-class listEnumTypes {
-public:
-  enum_type_data* enumTypePtr;
-  listEnumTypes* next;
-
-  listEnumTypes(enum_type_data* newType, listEnumTypes* prev) {
-    enumTypePtr = newType;
-    next = prev;
-  }
-
-  ~listEnumTypes() {
-    if (next) {
-      delete(next);
-    }
-  }
-  }; */
+}
 
 FileParamData* ExecutingModel::FileParamForNodeNum(int seekNodeNum) {
   FileParamData* check = param_array_base;
@@ -1535,6 +1474,7 @@ FileParamData* ExecutingModel::FileParamForNodeNum(int seekNodeNum) {
   }
   return NULL;
 }
+// End of implementation of class ExecutingModel
 
 FileParamData* param_array_item(ExecutingModel* xm, char* seekNodeId) {
   int seekNodeNum, spareInt;
@@ -1734,42 +1674,11 @@ void set_bloc_element(char* ptData, int* ptDims, int* indxs, double value) {
   }
 }
 
-node_data_line* nodlin_from_id(long int modelId, int paramId) {
-  return ((Model*)modelId)->md_nodlin_from_id(paramId);
-}
-
 void handle_model_param_request(void* instId, void* modelSlot,
 		       int paramId, int ic, int* indxs) {
 //  sprintf(globMess, "h_m_p_t to location %lx for exmod %lx node %d count %d indx0 %d indx1 %d", (long)modelSlot, (long)instId, paramId, ic, indxs[0], indxs[1]);
 //  showMess(globMess);
   ((ExecutingModel*)instId)->GetValuePointer(modelSlot, paramId, ic, indxs);
-}
-
-char* load_model(char* fileName, char* nodeName, long int* modelType) {
-  Model* newModel;
-  char* complaint;
-
-  newModel = new Model(fileName, &complaint);
-  if (complaint) {
-    // delete newModel;
-    return complaint;
-  }
-  *modelType = (long int)newModel;
-  return NULL;
-}
-
-/* utility procedures for accessing model data */
-
-int get_node_count(long int type) {
-  return ((Model*)type)->nodecount;
-}
-
-node_data_line* get_data_line(long int type, int line) {
-  return &((Model*)type)->nodedata[line];
-}
-
-graph_data_type** get_graph_base(long int type) {
-  return &((Model*)type)->c_graphdata;
 }
 
 /* This finds node ids from captions globally. It runs through a model
@@ -1779,7 +1688,8 @@ caption fits the start of what we are after (after trimming the portion found
 from the search string, less the submodel itself -- note it may be an issue
 that the submodel name is searched for in both models ) */
 
-int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
+int nodeModelAndId(ModelServer* seekType, char* seeknode,
+		   ModelServer** tgtModel) {
   int count;
   char test[255];
   int dims[32];
@@ -1792,16 +1702,7 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
     if (!strcmp(seeknode, test)) {
       *tgtModel = seekType;
       return(count);
-    } /* separate submodels no longer in use
-    if (seekType->nodedata[count].datatype == EXTERNAL) {
-      if (!strncmp(seeknode, test, strlen(test))) {
-	return(nodeModelAndId(nodeModelList->nodeModel(seekType->
-						       nodedata[count].name),
-			      seeknode + strlen(test), // was (strrchr(test, '/') - test),
-			      tgtModel));
-      }
-      
-    } */
+    }
   }
   /* Node with given caption not found... */
   return -1;
@@ -1814,14 +1715,7 @@ enum_type_data noType = {0, NULL, NULL},
   boolDataType = {1, falseTxt, &trueTxt},
   boolDimType = {2, "boolean", (char**)booleanMems};
 
-node_data_line* searchinfo(char* node, long int tgtModel, char* caption, 
-			   int* dims, enum_type_data** usedTypes) {
-  int lineNum = ((Model*)tgtModel)->getinfo(node, &lineNum);
-  // use destination as spare, it is assigned after proc exits
-  return ((Model*)tgtModel)->SearchInfo(lineNum, caption, dims, usedTypes);
-}
-
-node_data_line* Model::SearchInfo(int lineNum, char* caption, 
+node_data_line* ModelServer::SearchInfo(int lineNum, char* caption, 
 			   int* dims, enum_type_data** usedTypes) {
   enum_type_data *thisType, *localTypes[128];
   int dimCount, usedCount, iType;
@@ -1834,8 +1728,6 @@ node_data_line* Model::SearchInfo(int lineNum, char* caption,
     localTypes[usedCount]=&noType;
   }	
   make_full_caption(lineNum, caption, dims, localTypes);
-  //  bottomLine = search_intnl(node, tgtModel, caption, dims, path, localTypes);
-  // if (bottomLine) {
   usedCount=dimCount=0;
     while (dims[dimCount]) {
 //      sprintf(globMess, "dim %d is %d", dimCount, dims[dimCount]);
@@ -1870,15 +1762,6 @@ node_data_line* Model::SearchInfo(int lineNum, char* caption,
   // }
   usedTypes[usedCount] = NULL;
   return bottomLine;
-}
-
-long int fetch_top_instance(long int modelType) {
-  ExecutingModel* justMade;
-
-  // 5-D callbacks have the client data set to the instance
-  justMade = ((Model*)modelType)->create(NULL);
-  justMade->clientRef = justMade;
-  return (long int)justMade;
 }
 
 /* translate_dims: this takes the dimensions of the node's data as
@@ -1928,10 +1811,112 @@ void translate_dims(int fromModel[], int blockSizes[], int structDims[],
     blockSizes[0] = blockSizes[1]*fromModel[0];
 }
 
+// Start of 5-D interface for straight-C clients
+
+// function pointers for callbacks
+
+interact_gui_type* fivedee_interact_gui;
+get_value_pointer_type* fivedee_get_value_pointer;
+showMess_type* fivedee_showMess;
+
+// procedure that is called by shim when it is loaded to supply pointers
+// to its callback procedures
+
+void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
+			     interact_gui_type* interact_gui_ptr,
+			     showMess_type* showMess_ptr) {
+  fivedee_get_value_pointer = get_value_pointer_ptr;
+  fivedee_interact_gui = interact_gui_ptr;
+  fivedee_showMess = showMess_ptr;
+}
+
+// Derived class which instantiates the callback procedures to those supplied
+// by proc_pointers_for_shank
+class ModelFor5D: public ModelServer {
+public:
+  ModelFor5D(char* fileName, char** complaint):ModelServer(fileName, complaint)
+  {
+  }
+
+  void get_value_pointer(void* ref, void* slot, double time,
+				int paramId, int ic, int* indxs) {
+    fivedee_get_value_pointer(ref, slot, time, paramId, ic, indxs);
+  }
+
+  BOOLEAN interact_gui(void* ref, int action, double modelTime) {
+    fivedee_interact_gui(ref, action, modelTime);
+  }
+  
+  void showMess(const char* toShow) {
+    fivedee_showMess(toShow);
+  }
+}; // End of class ModelFor5D
+
+// Now here are the procedures which a 5-D client (such as Simile) will call
+
+// This one creates a new kind of model from the saved executable
+char* load_model(char* fileName, char* nodeName, long int* modelType) {
+  ModelFor5D* newModel;
+  char* complaint;
+
+  newModel = new ModelFor5D(fileName, &complaint);
+  if (complaint) {
+    // delete newModel;
+    return complaint;
+  }
+  *modelType = (long int)newModel;
+  return NULL;
+}
+
+// create a model instance
+long int fetch_top_instance(long int modelType) {
+  ExecutingModel* justMade;
+
+  // 5-D callbacks have the client data set to the instance
+  justMade = ((ModelFor5D*)modelType)->create(NULL);
+  justMade->clientRef = justMade;
+  return (long int)justMade;
+}
+
+// get metadata: deprecated as each attribute should be sought individually
+node_data_line* searchinfo(char* node, long int tgtModel, char* caption, 
+			   int* dims, enum_type_data** usedTypes) {
+  int lineNum = ((ModelFor5D*)tgtModel)->getinfo(node, &lineNum);
+  // use destination as spare, it is assigned after proc exits
+  return ((ModelFor5D*)tgtModel)->SearchInfo(lineNum, caption, dims, usedTypes);
+}
+
+/* utility procedures for accessing model data */
+
+int get_node_count(long int type) {
+  return ((ModelFor5D*)type)->nodecount;
+}
+
+node_data_line* get_data_line(long int type, int line) {
+  return &((ModelFor5D*)type)->nodedata[line];
+}
+
+graph_data_type** get_graph_base(long int type) {
+  return &((ModelFor5D*)type)->c_graphdata;
+}
+
+// get a node data line from the 'graph' number of the node
+node_data_line* nodlin_from_id(long int modelId, int paramId) {
+  return ((ModelFor5D*)modelId)->md_nodlin_from_id(paramId);
+}
+
+// setstep: the model class instances contain an array of doubles called
+// dts representing the time steps at the various phases. This function reaches
+// in and sets one of them. Returns phase count. Node that ts[0] is set to
+// the integration step being done: 0 for Euler, 1-4 for the four stages of RK
+
+int setstep(long int instId, double starttime, int phase) {
+  return ((ExecutingModel*)instId)->SetStep(phase, starttime);
+}
+
 /* filling a structure of this type is going to be a straight copy of the Tcl
    list builder in the shim, cos it's the easiest way to think through it */
 
-// 5-D wrapper
 nodeValues* get_raw_values(char* nodeId, long int instance_id) {
   int nodeNum, spareNum;
 
@@ -1941,121 +1926,6 @@ nodeValues* get_raw_values(char* nodeId, long int instance_id) {
     return NULL;
   return ((ExecutingModel*)instance_id)->GetRawValues(nodeNum);
 }
-
-/* definitions for regularData class -- note we may later want
-to use regularData items to describe simple c++ arrays, which is why we 
-create them and then set them to a model item
-
-these now obsolete, replaced by the more general nodeValues data type
-
-class regularData {
-  int spacings[32];
-  char* top;
-public:
-  int datatype;
-  int dimensionality;
-  int bounds[32];
-  
-  regularData() {
-  }
-
-  ~regularData() {
-  }
-
-  int set_to_model_value(long int model_id, long int instance_id,
-			 char* caption) {
-    int count, *quickpath, *pathref, *testref;
-    char test[255];
-    enum_type_data* types[32];
-    int test_indices[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-			  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    for (count = 1; ((Model*)model_id)->nodecount>count; ++count) {
-      ((Model*)model_id)->make_full_caption(count, test, bounds, types);
-      if (!strcmp(caption, test)) {
-	dimensionality = 0;
-	while (*(bounds + dimensionality)) {
-	  ++dimensionality;
-	}
-	datatype = ((Model*)model_id)->nodedata[count].datatype;
-	quickpath = ((Model*)model_id)->nodedata[count].path;
-	pathref = quickpath;
-	testref = test_indices;
-	top = (char*)get_ptr(model_id, instance_id, &pathref, &testref);
-	for (count = 0; count < dimensionality; ++count) {
-	  test_indices[count] = 1;
-	  pathref = quickpath;
-	  testref = test_indices;
-	  spacings[count] = (char*)get_ptr(model_id, instance_id, 
-					   &pathref, &testref) - top;
-	  test_indices[count] = 0;
-	}
-	return 0;
-      }
-    }
-    return -1;
-  }
-
-  void* locate_element(int* indices) {
-    char* result;
-    int count;
-    
-    result = top;
-    for (count = 0; count < dimensionality; ++count) {
-      result += spacings[count]*indices[count];
-    }
-    return result;
-  }
-};
-
-// need non-class versions of these for 5-d interface!
-
-long int createRegularData () {
-  return (long int) new regularData;
-}
-
-void deleteRegularData (long int old) {
-  delete (regularData*)old;
-}
-
-int rdSetToNodeValue(long int old, long int mid, long int iid, char* caption) {
-  return ((regularData*)old)->set_to_model_value(mid, iid, caption);
-}
-
-int rdDimensionality(long int old) {
-  return ((regularData*)old)->dimensionality;
-}
-
-int rdDatatype(long int old) {
-  return ((regularData*)old)->datatype;
-}
-
-int rdBound(long int old, int idx) {
-  return ((regularData*)old)->bounds[idx];
-}
-
-void* rdLocateElement(long int old, int* indices) {
-  return ((regularData*)old)->locate_element(indices);
-}
-
-// Procedures to carry out individual phases of model execution; no longer
-// needed as part of the interface cos the whole loop is on this side
-
-void update(long int modelType, long int modelHandle, int phase) {
-  ((Model*)modelType)->updatemodel((void*)modelHandle, phase);
-}
-
-void advance(long int modelType, long int modelHandle, int phase) {
-  ((Model*)modelType)->advancemodel((void*)modelHandle, phase);
-}
-
-int eval(long int modelType, long int modelHandle, int phase) {
-  return ((Model*)modelType)->evalmodel((void*)modelHandle, phase);
-}
-
-Above ones should now only be called by the do_submodel routines,
-so we will simplify them eventually. These next two allow the client
-to drive the model...
-*/
 
 excpData* reset(long int modelType, long int modelHandle, int how_int,
 		int top_phase) {
@@ -2068,57 +1938,23 @@ excpData* execute(long int modelType, long int modelHandle, int how_int,
 							 endtime, errlim);
 }
 
-/* procedure that is called by shim when it is loaded to supply pointers
-   to its callback procedures */
-
-void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
-			     interact_gui_type* interact_gui_ptr,
-			     showMess_type* showMess_ptr) {
-  get_client_value_pointer = get_value_pointer_ptr;
-  interact_gui = interact_gui_ptr;
-  showMessLocal = showMess_ptr;
-}
-
-// setstep: the model class instances contain an array of doubles called
-// dts representing the time steps at the various phases. This function reaches
-// in and sets one of them. Returns phase count. Node that ts[0] is set to
-// the integration step being done: 0 for Euler, 1-4 for the four stages of RK
-
-int ExecutingModel::SetStep(int phase, double step) {
-  steps[phase] = step;
-  return modelSpec->phases;
-}
-
-void ExecutingModel::SetdT(int phase, double starttime) {
-  if (modelSpec->phases>=abs(phase))
-    if (phase>0) { /* lazy */
-      loadedInst->dts[phase] = starttime;
-    } else {
-      loadedInst->ts[-phase] = starttime;
-    }
-}
-
-int setstep(long int instId, double starttime, int phase) {
-  return ((ExecutingModel*)instId)->SetStep(phase, starttime);
-}
-
 // This deletes a model instance and/or a class -- both when used in Simile
 char* myexit(long int modelType, long int modelHandle) {  
   if (modelHandle) { 
     delete (ExecutingModel*)modelHandle;
   }
   if (modelType) { 
-    delete (Model*)modelType;
+    delete (ModelFor5D*)modelType;
   }
   return NULL; // message displayed in destructor cos it is not allowed
   // to have params or retval
 }
 
 char* getNodeId(long int modelType, char* capt) {
-  Model* tgtModel;
+  ModelServer* tgtModel;
   int tgtIndex;
 
-  tgtIndex = nodeModelAndId((Model*)modelType, capt, &tgtModel);
+  tgtIndex = nodeModelAndId((ModelFor5D*)modelType, capt, &tgtModel);
   if (tgtIndex != -1) {
     return tgtModel->nodedata[tgtIndex].name;
   } else {

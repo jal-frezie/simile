@@ -28,7 +28,7 @@ get_remote_value_type* get_remote_value;
 */
 
 stat_check_type* stat_check;
-showMess_type* suppShowMess;
+show_model_mess_type* suppShowMess;
 
 // excpData userStop;
 
