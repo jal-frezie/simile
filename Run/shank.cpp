@@ -1881,9 +1881,23 @@ long int fetch_top_instance(long int modelType) {
 // get metadata: deprecated as each attribute should be sought individually
 node_data_line* searchinfo(char* node, long int tgtModel, char* caption, 
 			   int* dims, enum_type_data** usedTypes) {
-  int lineNum = ((ModelFor5D*)tgtModel)->getinfo(node, &lineNum);
-  // use destination as spare, it is assigned after proc exits
-  return ((ModelFor5D*)tgtModel)->SearchInfo(lineNum, caption, dims, usedTypes);
+  int ghostLine;
+  node_data_line* bottomLine;
+  char localCapt[255];
+
+  int lineNum = ((ModelFor5D*)tgtModel)->getinfo(node, &ghostLine);
+  if (ghostLine>-1) {
+    ((ModelFor5D*)tgtModel)->make_full_caption(ghostLine, caption, 
+					       dims, usedTypes);
+  }
+  bottomLine = ((ModelFor5D*)tgtModel)->SearchInfo(lineNum, localCapt, 
+						dims, usedTypes);
+  if (ghostLine>-1) { // append base tail to ghost submodel caption
+    strcat(caption, "/");
+    strcat(caption, bottomLine->strings[0]);
+  } else
+    strcpy(caption, localCapt);
+  return bottomLine;
 }
 
 /* utility procedures for accessing model data */
