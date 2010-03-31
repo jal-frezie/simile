@@ -222,35 +222,76 @@ class ModelServer
   createmodel_type *createmodel;
   
  public: // public attributes
+  //! Number of different tie steps in model
   int phases;
+  //! Pointer to start of list of graph data objects
   graph_data_type* c_graphdata;
+  //! Number of components in model
   int nodecount;
+  //! Array of info structures for components
   node_data_line* nodedata;
   
  protected: // protected methods
   int parent_line (int);
+  int member_param_item(FileParamData**, int*);
   
  public:// public methods
+  //! Constructor takes shared lib filename and pointer to string for error mess
   ModelServer(char*, char**);
   ~ModelServer();
   
+  //! Creates a model instance of this type
   ExecutingModel* create(void*);
+
+  //! Gets info by searching for ancestors of node identified by arg 1
+
+  //! Arg 2 is full caption path /fee/fi/fo/foo
+  //! Arg 3 is list of all dims of component's value
+  //! Arg 4 is corresponding list of applicable enumerated types
+  //! Client must make space for all of these
   node_data_line* SearchInfo(int, char *, int*, enum_type_data**);
 
-  int make_full_caption(int, char *, int*, enum_type_data**);
+  //! As above but lists all applicable enum types and does not convert dims
+  int make_full_caption(int, char*, int*, enum_type_data**);
 
   //! Gets node serial number from old id (last arg set to submodel if ghost)
   int getinfo(char*, int*);
+
+  //! Gets an integer property (arg2 = GETCLASS, GETTYPE, GETEVAL) for node
   int GetProperty(int, int);
+
+  //! Gets a node string property (arg2 = 0:name, 1:spec, 2:desc, 3:comment)
   char* GetMetadataText(int, int);
+
+  //! Gets node serial number from its full caption
   int NodeNumFromCapt(char*);
+
+  //! Gets file parameter object (either sort) from param node's serial number
   int param_item_from_id(FileParamData**, int);
+
+  //! decodes 'graph id' property of node, returning relevant data line
   node_data_line* md_nodlin_from_id(int);
-  int member_param_item(FileParamData**, int*);
 
   // Virtual callback functions: clients use a class that inherits ModelServer
   // and implements these, and the server calls them
+
+  //! Get a parameter element: called if local array not created
+
+  //! Arg 1 is client ref of instance requesting value
+  //! Arg 2 is pointer to where client can stick it
+  //! Arg 3 is simulation time at which it is required (0 if fixed param)
+  //! Arg 4 is serial number of component needing value
+  //! Arg 5 says how many array indices are given to pick the value
+  //! Arg 6 points to array holding the indices
   virtual void get_value_pointer(void*, void*, double, int, int, int*) = 0;
+
+  //! Inform the client about model progress: client returns nonzero to halt it
+
+  //! Arg 1 is client supplied reference
+  //! Arg 2 is time step being calculated
+  //! Arg 3 is model time
   virtual int interact_gui(void*, int, double) = 0;
+
+  //! What client is to do if model produces an error or debugging message
   virtual void showMess(const char*) = 0;
 }; // End of class ModelServer
