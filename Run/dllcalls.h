@@ -60,7 +60,6 @@
 #define RUNGE_KUTTA     1
 
 /* fill methods for time series */
-#define NO_FILL         -1
 #define USE_LAST        0
 #define USE_CLOSEST     1
 #define INTERPOLATE     2

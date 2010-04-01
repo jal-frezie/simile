@@ -503,7 +503,6 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum,
 
   myModelExec = instToUse;
   nodeNum = newNodeNum;
-  fillMethod = NO_FILL;
   translate_dims(fullDims, sparePath, dataPtr.dimSpecs, 
 		 myModelExec->modelSpec->nodedata[nodeNum].datatype, TRUE);
   dataPtr.contents = init_space(dataPtr.dimSpecs);
@@ -537,7 +536,7 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum,
     if (!insertionPt) return; // record pointers not yet made
     nodeLine = myModelExec->modelSpec->nodedata + nodeNum;
 
-    if (myModelExec->resetting<-1 && fillMethod != NO_FILL)
+    if (myModelExec->resetting<-1 && nodeLine->eval == INPUT)
       if (!((VarParamData*)this)->GetTimePtDataSpace(0.0)) 
 	return;
     // back copy now done in blocks afterwards to make record spaces, but
@@ -725,8 +724,7 @@ void VarParamData::ClearTimePtElements() {
 void VarParamData::back_copy_vars() {
   nodeValues* fromModel;
   
-  // check it really is a var before doing
-  if (fillMethod != NO_FILL && !GetTimePtDataSpace(0.0)) {
+  if (!GetTimePtDataSpace(0.0)) {
     free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
     fromModel = myModelExec->GetRawValues(nodeNum);
     dataPtr.contents = fromModel->contents;

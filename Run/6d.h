@@ -32,12 +32,6 @@ class FileParamData
   //! This contains the current values for the parameter
   nodeValues dataPtr;
 
-  //! Specifies how to set parameter values at times between specified points
-
-  //! This is in the base class because the NO_FILL method indicates
-  //! that we are not dealing with a variable parameter with time points
-  int fillMethod;
-
  public: // public methods
 
   //! Constructor: args are:
@@ -80,8 +74,11 @@ class VarParamData : public FileParamData {
   //! Number of times wrapAroundPoint reached before loading curTimePoint
   int wraps;
 
-  //! Time at which to start going through time points from 0 again
+  //! Time at which to start going through time points from 0 again (0 for none)
   double wrapAroundPoint;
+
+  //! Specifies how to set parameter values at times between specified points
+  int fillMethod;
 
  protected: // protected methods
 
