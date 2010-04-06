@@ -146,7 +146,7 @@ t3 = estimate of next initial increment
 
 /* This is called only when we create the type, to return model constants */
 FINDABLE EXPORT getcount_type get_count;
-FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr, 
+FINDABLE EXPORT int get_count(void* ame_rand_ptr, 
 		       void* graphpoint_ptr, 
 		       void* release_graph_data_ptr, 
 		       void* compare_instance_status_ptr, 
@@ -155,10 +155,7 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
 		       void* showMess_ptr,
 		       void* graph_ptr, 
 		       int* phases, node_data_line** data_ptr) {
-  /* Stub is telling us... */
-  myClassPtr = useClassPtr;
-
-  /* ...and also giving us function pointers to save us using the linker... */
+  /* Stub is giving us function pointers to save us using the linker... */
   ame_rand_ref = (ame_rand_type*)ame_rand_ptr;
   graphpoint_ref = (graphpoint_type*)graphpoint_ptr;
   release_graph_data_ref = (release_graph_data_type*)release_graph_data_ptr;

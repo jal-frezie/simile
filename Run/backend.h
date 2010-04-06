@@ -1,5 +1,5 @@
 // Declaration for procedure types found in the model dll by the shank
-typedef int getcount_type(void*, void*, void*, void* ,void*,
+typedef int getcount_type(void*, void*, void* ,void*,
 			  void*, void*, void*, void*,
 			  int*, node_data_line**);
 typedef double getversion_type(void);

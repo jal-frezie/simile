@@ -5,11 +5,6 @@
 #include <dllcalls.h>
 #include <backend.h>
 
-/* Every dll has a variable to hold the id of the model type instance it
-   represents */
-void* myClassPtr;
-
-    
 graph_data_type** graph_data_pointer;
 
 /* Pointers to functions in the stub: */

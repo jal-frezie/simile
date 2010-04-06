@@ -1240,8 +1240,7 @@ showMess(globMess); */
     *complaint = NULL;
 
     getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
-    nodecount = getcount(this, 
-			 (void*)ame_rand, 
+    nodecount = getcount((void*)ame_rand, 
 			 (void*)graphpoint,
 			 (void*)release_graph_data, 
 			 (void*)compare_instance_status, 

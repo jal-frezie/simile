@@ -241,9 +241,7 @@ typedef void show_model_mess_type(void*, const char*);
 // in a 5-D client which knows no c++
 class InstanceOfModel;
 class ExecutingModel;
-typedef int getcount_type(void*, void*, void*, void* ,void*,
-			  void*, void*, void*, void*,
-			  int*, node_data_line**);
+
 typedef double getversion_type(void);
 typedef InstanceOfModel* createmodel_type(ExecutingModel*);
 #endif

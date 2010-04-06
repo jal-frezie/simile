@@ -707,7 +707,8 @@ proc compile_c {workingDir extLibs complain} {
 		}
 	    }
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
-		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o -I$TOOLDIR \
+		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o \
+                        -I[file nativename $TOOLDIR] \
                         -I[file nativename [file join [file dirname $TOOLDIR] \
                             System include mingw]] \
                         -I[file nativename [file join \
