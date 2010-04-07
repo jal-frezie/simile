@@ -297,7 +297,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     pack $influencesf.lists.f -fill x -expand true
     pack $influencesf.lists -side top -fill x -expand true
     
-    set canId [GetFrame $influencesf.lists.f]
+    set canId [$influencesf.lists.f getframe]
     frame $canId.plist -bd 2 -relief sunken
     frame $canId.ilist -bd 2 -relief sunken
     frame $canId.dlist -bd 2 -relief sunken
@@ -580,7 +580,7 @@ proc fill_inputs { triples } {
     set paramList [GetFrame $equation(main).middle.params]
     set lbp $paramList.list.ilist
     set widget [GetFrame $equation(params).bottom.influences]
-    set scroller [GetFrame $widget.lists.f]
+    set scroller [$widget.lists.f getframe]
     # Initialize variables and display  list
     foreach ipFrame {plist ilist dlist} {
         foreach ipEntry [winfo children $scroller.$ipFrame] {
