@@ -356,10 +356,12 @@ proc KillHelpers {node} {
 }
 
 proc ClearView {} {
-    global helperTable
+    global helperTable myNode
 
     foreach {name inst} [array get helperTable *,whichInstance] {
-	$inst Clear
+	if {[string equal $myNode [$inst GetNode]]} { 
+	    $inst Clear
+	}
     }
 }
 
@@ -558,9 +560,11 @@ proc TellAllHelpers {node payload fun args} {
     global helperTable myNode subbedPlots runState
 
     set nodeForFocus $myNode
+    set handlesForFocus [array get subbedPlots]
+    array unset subbedPlots
+    array set subbedPlots $payload
     set myNode $node
     set failure 0
-    array set subbedPlots $payload
     set doScrog [expr [string equal Display $fun] && \
 		     [info exists helperTable(pestInterface)]]
     if {$doScrog} {
@@ -608,6 +612,7 @@ proc TellAllHelpers {node payload fun args} {
     }
     set myNode $nodeForFocus
     array unset subbedPlots
+    array set subbedPlots $handlesForFocus
     return $failure
 }
 

@@ -1883,6 +1883,7 @@ node_data_line* searchinfo(char* node, long int tgtModel, char* caption,
   char localCapt[255];
 
   int lineNum = ((ModelFor5D*)tgtModel)->getinfo(node, &ghostLine);
+  if (lineNum == -1) return NULL;
   if (ghostLine>-1) {
     ((ModelFor5D*)tgtModel)->make_full_caption(ghostLine, caption, 
 					       dims, usedTypes);

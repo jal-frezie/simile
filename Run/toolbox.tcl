@@ -434,7 +434,7 @@ proc do_in_node {node args} {
 
     set command [list do $args]
     if {[string equal interp $runHow(call)]} {
-    set result [$runState($node,interp) eval $command]
+	set result [$runState($node,interp) eval $command]
     } else {
 	while {!$runState($node,modelReady)} {
 	    tkwait variable runState($node,modelReady)
@@ -1209,17 +1209,17 @@ proc InitExecThread {} {
 	}
 
 	foreach stubSgst {ResetModel ExecuteTo} {
-	    proc $stubSgst {args} {
+	    proc $stubSgst {node args} {
 		global execThread
 		thread::send -async $execThread(id) \
-		    [concat Nappy [info level 0]] execThread(reply)
-		vwait execThread(reply)
+		    [concat Nappy [info level 0]] execThread($node,reply)
+		vwait execThread($node,reply)
 		# can process events and incoming messages
-		if {[lindex $execThread(reply) 0]} {
+		if {[lindex $execThread($node,reply) 0]} {
 		    error "Mishap in execution thread" \
-			[lindex $execThread(reply) 2]
+			[lindex $execThread($node,reply) 2]
 		} else {
-		    return [lindex $execThread(reply) 1]
+		    return [lindex $execThread($node,reply) 1]
 		}
 	    }
 	}
