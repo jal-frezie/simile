@@ -1866,12 +1866,11 @@ char* load_model(char* fileName, char* nodeName, long int* modelType) {
 }
 
 // create a model instance
-long int fetch_top_instance(long int modelType) {
+long int fetch_top_instance(long int modelType, void* clientRef) {
   ExecutingModel* justMade;
 
   // 5-D callbacks have the client data set to the instance
-  justMade = ((ModelFor5D*)modelType)->create(NULL);
-  justMade->clientRef = justMade;
+  justMade = ((ModelFor5D*)modelType)->create(clientRef);
   return (long int)justMade;
 }
 

@@ -355,7 +355,7 @@ namespace eval slide139 {
                 set paramData($sub) $value
             }
         }
-	PlaceInArray $sub $value 0 [RunningInC $myNode]
+	PlaceInArray $myNode $sub $value 0 [RunningInC $myNode]
     }
     
     proc SetChoiceNumber {cbox node fixed choice args} {

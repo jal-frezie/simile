@@ -52,7 +52,7 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 	    return 0
 	}
 	set new_model_id [loadmodel $progFile $node]
-	set model_id($topNode) $new_model_id
+	set model_id $new_model_id
         #        set model_id [loadmodel $nameBase[info sharedlibextension] $node]
         set model_ids($node) $new_model_id
         return $new_model_id
@@ -66,18 +66,19 @@ proc Nappy {args} {
 
 proc update_executable {node lang} {
     #    ShowMess debug info "References are $finderList" ok
-    global model_id instance_id
+    global nodeId model_id instance_id
 
+    set nodeId $node
     # For the toplevel model, make an instance. This will also make
     # instances of any fixed-membership submodels immediately, so they had
     # better already be loaded
     switch $lang {
 	c {
-	    set instance_id($node) [c_createmodel $model_id($node)]
+	    set instance_id [c_createmodel $model_id]
 	} tcl {
     #    ShowMess debug info "model instance $instance_id created" ok
-	    set model_id($node) 0
-	    set instance_id($node) 0
+	    set model_id 0
+	    set instance_id 0
 	}
     }
 }
@@ -167,7 +168,7 @@ proc GetPayload {node point} {
 
 proc GetHandle {node point} {
     global model_id instance_id
-    return [handle_data $model_id($node) $instance_id($node) $point]
+    return [handle_data $model_id $instance_id $point]
 }
   
 proc ReleaseHandle {node handle} {
@@ -188,9 +189,9 @@ proc ResetModel {myNode howInt redo} {
     set dispDone 0 ;# allow execution to call back
     set readyForRK [expr {![string equal Euler $howInt]}]
     if {[catch {
-	if {$model_id($myNode)} {
-#	    set model_id(running) $myNode
-	    c_resetmodel $model_id($myNode) $instance_id($myNode) \
+	if {$model_id} {
+#	    set model_id $myNode
+	    c_resetmodel $model_id $instance_id \
 		$readyForRK $redo
 	} else {
 	    TclResetModel $myNode $readyForRK $redo
@@ -209,9 +210,9 @@ proc ResetModel {myNode howInt redo} {
 proc ExecuteModel {myNode howInt start finish errLim} {
     global model_id instance_id
     if {[catch {
-	if {$model_id($myNode)} {
-	    set model_id(running) $myNode
-	    c_executemodel $model_id($myNode) $instance_id($myNode) \
+	if {$model_id} {
+#	    set model_id $myNode
+	    c_executemodel $model_id $instance_id \
 		[expr ![string equal Euler $howInt]] $start $finish $errLim
 	} else {
 	    TclExecuteModel $myNode $howInt $start $finish $errLim
@@ -237,24 +238,17 @@ proc waitForDisps {} {
     }
 }
 
-proc OuterCheck {id} {
-    set nodeId [DecodeInstance $id]
+proc OuterCheck {} {
+    global nodeId
+
     set abortLevel [AbortCheck $nodeId]
     return [expr {$abortLevel>=10}]
 }
 
-proc OuteractGUI {id time mode} {
-    return [InteractGUI [DecodeInstance $id] $time $mode]
-}
+proc OuteractGUI {time mode} {
+    global nodeId
 
-proc DecodeInstance {handle} {
-    global instance_id
-    foreach {model h_id} [array get instance_id] {
-	if {$h_id==$handle} {
-	    return $model
-	}
-    }
-    return $handle
+    return [InteractGUI $nodeId $time $mode]
 }
 
 if {![info exists runHow]} { ;# we are in separate interp
@@ -296,7 +290,7 @@ if {![info exists runHow]} { ;# we are in separate interp
 
 proc RunningInC {myNode} {
     global model_id
-    return $model_id($myNode) ;# it is ready
+    return $model_id ;# it is ready
 } 
     
 proc GetCCompProperty {topNode prop args} {
@@ -308,9 +302,9 @@ proc GetCCompProperty {topNode prop args} {
     switch -regexp $prop [list \
 	Objects {
 	    return [lrange [listobjects \
-				$model_id($topNode)] 1 end]
+				$model_id] 1 end]
 	} SetStep { ;# node is actually time
-	    return [c_setstepmodel $instance_id($topNode) $node $set]
+	    return [c_setstepmodel $instance_id $node $set]
 	} Class|Type|Eval {
 	    array set propData [list Class,cIdx 11 Class,names \
 			    {SUBMODEL VARIABLE COMPARTMENT FLOW CONDITION \
@@ -346,7 +340,7 @@ proc GetCCompProperty {topNode prop args} {
 	    return $fullList
 	} Graph {
 	    if {[llength $set]} {
-		eval {getvalue $model_id($topNode) $node 4} $set
+		eval {getvalue $model_id $node 4} $set
 	    } else {
 		return [c_getvalue $topNode $node 3]
 	    }
@@ -356,7 +350,7 @@ proc GetCCompProperty {topNode prop args} {
 	    return [c_getvalue $topNode $node $dataWang]
 	} IdFromCapt {
 	    # node is actually caption in this case
-	    if {[catch {getnodeid $model_id($topNode) $node} id]} {
+	    if {[catch {getnodeid $model_id $node} id]} {
 		set id nomatch
 	    }
 	    return $id
@@ -369,7 +363,7 @@ proc GetCCompProperty {topNode prop args} {
 # wraps c++ defined version in different interp
 proc c_getvalue {topNode node action} {
     global model_id
-    set res [getvalue $model_id($topNode) $node $action]
+    set res [getvalue $model_id $node $action]
     return $res
 }
 	    
@@ -380,7 +374,7 @@ proc c_getvalue {topNode node action} {
 proc c_setparamarray {topNode tgtNode} {
     global instance_id param_id
 
-    set param_id($tgtNode) [c_createparamarray $instance_id($topNode) $tgtNode]
+    set param_id($tgtNode) [c_createparamarray $instance_id $tgtNode]
 }
 
 # Old versions of these (identifying parameters by target node id) are passed
@@ -423,26 +417,26 @@ proc ExScrubRun {node times} {
     if {[info exists runState($node,cnvs)]} {
 	$runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
     }
-    if {[info exists model_id($node)]} {
-        if {$model_id($node)} {
-            if {[info exists instance_id($node)]} {
-                #ShowMess debug info "Exiting $model_id($node) $instance_id($node)" ok
-                c_exitmodel $model_id($node) \
-		    $instance_id($node)
-                unset instance_id($node)
+    if {[info exists model_id]} {
+        if {$model_id} {
+            if {[info exists instance_id]} {
+                #ShowMess debug info "Exiting $model_id $instance_id" ok
+                c_exitmodel $model_id \
+		    $instance_id
+                unset instance_id
             } else {
                 #ShowMess debug info "Exiting $model_id 0" ok
-                c_exitmodel $model_id($node) 0
+                c_exitmodel $model_id 0
             }
         } else {
-            if {[info exists instance_id($node)]} {
+            if {[info exists instance_id]} {
                 #ShowMess debug info "Exiting $model_id $instance_id" ok
 		namespace delete ::AME_model<>
 		array unset nodedata
-                unset instance_id($node)
+                unset instance_id
 	    }
         }
-        unset model_id($node)
+        unset model_id
     }
 
 }

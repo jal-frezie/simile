@@ -437,36 +437,6 @@ FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
-// Now I am using a separate thread for each model execution, so the
-// callbacks need to be sent to the right interpreter -- different
-// threads in same interpreter is not safe, but could be interesting. So
-// this has to keep a list of instance ids and their interpreters...
-
-typedef struct listIdInterp_type {
-  void* id;
-  Tcl_Interp* interp;
-  struct listIdInterp_type* next;
-} listIdInterp;
-
-Tcl_Interp* CurInterp(void* inst, Tcl_Interp* replace) {
-  static listIdInterp* saved = NULL;
-  listIdInterp** ptr;
-
-  ptr = &saved;
-  while (*ptr && (*ptr)->id != inst)
-    ptr = &(*ptr)->next;
-  if (!*ptr) { // reached end of list without finding inst, make new entry
-    *ptr = (listIdInterp*)malloc(sizeof(listIdInterp));
-    (*ptr)->id = inst;
-    (*ptr)->interp = NULL;
-    (*ptr)->next = NULL;
-  }
-  if (replace)
-    (*ptr)->interp = replace;
-  //  printf("Got interp %lx for id %lx\n", (long)(*ptr)->interp, (long)inst);
-  return (*ptr)->interp;
-}
-
 /* Create also sets up the tables required to get data out of one submodel
    instance into another...or at least used to */
 
@@ -485,9 +455,8 @@ FINDABLE int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
   if (error != TCL_OK) {
     return error;
   }
-  modelHandle = fetch_top_instance(modelType);
+  modelHandle = fetch_top_instance(modelType, interp);
   if (modelHandle) {
-    CurInterp((void*)modelHandle, interp); 
     // save interp for callbacks from instance
     Tcl_SetLongObj(Tcl_GetObjResult(interp), modelHandle);
     return TCL_OK;
@@ -1577,12 +1546,12 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
 void respond_to_param_req(void* clientRef, void* modelSlot, double reqTime,
 			  int paramId, int indCount, int* indices) {
   printf("Unwanted parameter value request at %lf\n", reqTime);
-  Tcl_BackgroundError(CurInterp(clientRef, NULL));
+  Tcl_BackgroundError((Tcl_Interp*)clientRef);
 }
 
-BOOLEAN outeract_gui(void* id, BOOLEAN stop_chk, double now) {
+BOOLEAN outeract_gui(void* ref, BOOLEAN stop_chk, double now) {
   BOOLEAN response;
-  Tcl_Interp* globInterp = CurInterp(id, NULL);
+  Tcl_Interp* globInterp = (Tcl_Interp*)ref;
   Tcl_Obj* feedbackCmd;
 
   Tcl_VarEval(globInterp, "update", NULL); // allow display to tell us if idle
@@ -1590,14 +1559,10 @@ BOOLEAN outeract_gui(void* id, BOOLEAN stop_chk, double now) {
     return 0; // do not wait for GUI if busy
   if (stop_chk) {
     feedbackCmd = Tcl_NewStringObj("OuteractGUI", -1);
-    Tcl_ListObjAppendElement(globInterp, feedbackCmd,
-			     Tcl_NewLongObj((long int)id));
     Tcl_ListObjAppendElement(globInterp, feedbackCmd, Tcl_NewDoubleObj(now));
     Tcl_ListObjAppendElement(globInterp, feedbackCmd, Tcl_NewIntObj(stop_chk));
   } else {
     feedbackCmd = Tcl_NewStringObj("OuterCheck", -1);
-    Tcl_ListObjAppendElement(globInterp, feedbackCmd,
-			     Tcl_NewLongObj((long int)id));
   }
   Tcl_EvalObjEx(globInterp, feedbackCmd, 0);
 

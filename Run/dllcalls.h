@@ -284,7 +284,7 @@ EXTDEC graph_data_type** get_graph_base(long int);
 EXTDEC node_data_line* searchinfo(char*, long int, char*, int*, 
 				  enum_type_data**);
 EXTDEC node_data_line* nodlin_from_id(long int, int);
-EXTDEC long int fetch_top_instance(long int);
+EXTDEC long int fetch_top_instance(long int, void*);
 
 EXTDEC excpData* reset(long int, long int, int, int);
 EXTDEC excpData* execute(long int, long int, int, double, double*, double);
