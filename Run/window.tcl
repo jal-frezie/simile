@@ -2462,8 +2462,8 @@ proc exit_simile {} {
     if {[string equal windows $tcl_platform(platform)]} {
 	file attributes $cache -hidden true
     }
-    if {[info exists execThread]} {
-	thread::release $execThread(id)
+    foreach {name runner} [array get execThread *,id] {
+	thread::release $runner
     }
     StartComms -1
 }

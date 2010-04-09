@@ -544,6 +544,7 @@ proc TryToKill {node} {
     if {![info exists runState($node,interp)]} {
 	return
     } 
+# rest is unused -- if I need it, move killmodel from ame_cmx to unpacker
     if {[string equal open $runHow(launch)]} {
         c_killmodel [pid $runState($node,interp)]
         catch {close $runState($node,interp)}
@@ -566,10 +567,12 @@ proc TryToKill {node} {
 
 # Pass on Prolog calls meant for model
 proc ScrubRun {node times} {
-    global runState
+    global runState execThread
 
-    if {![llength [info procs ExScrubRun]]} {
-	InitExecThread
+    if {![llength [info procs ExScrubRun]] || \
+	    [info exists execThread] && ![info exists execThread($node,id)]} {
+	# exec code not loaded, or threaded but no exec for this node
+	InitExecThread $node
     }
     set runState($node,modelRunning) 0
     set optKill [after 3000 TryToKill $node]
@@ -1190,28 +1193,28 @@ proc ControlDraw {prologVersion} {
             $openModel $userinfo(edn)]
 }
 
-proc InitExecThread {} {
+proc InitExecThread {node} {
     global execThread SIMILE_PATH
 
     if {![string equal console $::env(interfaceId)]} {
 # comment out next two lines for thread free operation
 	package require Thread
-	set execThread(id) [thread::create]
+	set execThread($node,id) [thread::create]
     }
 #puts "Created thread $execThread(id) from [thread::id]"
     if {[info exists execThread]} {
-	foreach stubCmd {load_c_stub_1 randseed c_setparamarray c_setparamall c_cleartimeseries c_settimepointarray c_settimepointall c_settimepointrecords c_setrecordlist c_getparamall c_gettimepointall PlaceInArray SetWrapTime SetFillMethod ex_load_dll update_executable free_data_handle c_killmodel GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
-	    proc $stubCmd {args} {
+	foreach stubCmd {load_c_stub_1 c_setparamarray c_setparamall c_cleartimeseries c_settimepointarray c_settimepointall c_settimepointrecords c_setrecordlist c_getparamall c_gettimepointall PlaceInArray SetWrapTime SetFillMethod ex_load_dll update_executable ReleaseHandle GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
+	    proc $stubCmd {node args} {
 		global execThread
 		#puts "exec bother [lindex [info level 0] 0]"
-		return [thread::send $execThread(id) [info level 0]]
+		return [thread::send $execThread($node,id) [info level 0]]
 	    }
 	}
 
 	foreach stubSgst {ResetModel ExecuteTo} {
 	    proc $stubSgst {node args} {
 		global execThread
-		thread::send -async $execThread(id) \
+		thread::send -async $execThread($node,id) \
 		    [concat Nappy [info level 0]] execThread($node,reply)
 		vwait execThread($node,reply)
 		# can process events and incoming messages
@@ -1225,13 +1228,13 @@ proc InitExecThread {} {
 	}
 
 
-	thread::send $execThread(id) [list source [file join $SIMILE_PATH Run \
-						       exec.tcl]]
-	thread::send $execThread(id) [list set masterId [thread::id]]
+	thread::send $execThread($node,id) \
+	    [list source [file join $SIMILE_PATH Run exec.tcl]]
+	thread::send $execThread($node,id) [list set masterId [thread::id]]
     } else {
 	uplevel #0 [list source [file join $SIMILE_PATH Run exec.tcl]]
     }
-    if {[catch {load_c_stub_1}]} {
+    if {[catch {load_c_stub_1 $node}]} {
 	if {[string match Linux $::tcl_platform(os)]} {
 # try rebuilding 5d dll if in Linux -- c++ libraries may have changed!
 	    if {[PrefValue custom(hackBreak) hackBreak]} {
@@ -1244,7 +1247,7 @@ proc InitExecThread {} {
 	}
     }
 # now just do it again so error gets raised as per usual if still bad
-    load_c_stub_1
+    load_c_stub_1 $node
 }
 
 proc CheckCompilerLocation {} {

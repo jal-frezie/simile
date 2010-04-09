@@ -242,7 +242,7 @@ proc tcl_setparamarray {model node} {
     set paramLocns($paramIdx,arr) tclParmData ;# was [InputVarFor $model $node]
 }
 
-proc tcl_cleartimeseries {node} {
+proc tcl_cleartimeseries {topNode node} {
     global paramLocns
 
     set paramIdx [getinfo $node 8]
@@ -754,7 +754,7 @@ proc UpdateTimeSeries {topNode newTime} {
 		    set midValue [expr $paramData($hiValue)*$interFract + \
 				      $paramData($loValue)*(1-$interFract)]
 		    set tgtIndex [join [lreplace [split $loValue ,] 1 1] ,]
-		    PlaceInArray $tgtIndex $midValue 0 $inC
+		    PlaceInArray $topNode $tgtIndex $midValue 0 $inC
 		}
 		return
 	    }
@@ -770,7 +770,7 @@ proc UpdateTimeSeries {topNode newTime} {
             foreach tsValue [concat [array names paramData $node,$useTime] \
                                  [array names paramData $node,$useTime,*]] {
                 set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
-                PlaceInArray $tgtIndex $paramData($tsValue) 0 $inC
+                PlaceInArray $topNode $tgtIndex $paramData($tsValue) 0 $inC
             }
 	}
     }
@@ -854,7 +854,7 @@ proc OldUpdateTimeSeries {topNode newTime} {
 # time point, series the index of the higher one (but may be off end)
                 set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
                 #                set inputSrc($tgtIndex) $paramData($tsValue)
-                PlaceInArray $tgtIndex $paramData($tsValue) 0 $inC
+                PlaceInArray $topNode $tgtIndex $paramData($tsValue) 0 $inC
             }
         }
     }
@@ -1485,15 +1485,15 @@ proc remote {result} {
 }
 
 ########################### stuff for both languages below ###############
-proc PlaceInArray {where what when inC} {
+proc PlaceInArray {topNode where what when inC} {
     #puts "PlaceInArray $where $what $inC"
     set map [split $where ,]
     if {$inC} {
 	if {$when} {
-	    c_settimepointelement [lindex $map 0] \
+	    c_settimepointelement $topNode [lindex $map 0] \
 		[lrange $map 2 end] [lindex $map 1] $what
 	} else {
-	    c_setparamelement [lindex $map 0] \
+	    c_setparamelement $topNode [lindex $map 0] \
 		[lrange $map 1 end] $what
 	}
     } else {
@@ -1505,17 +1505,17 @@ proc PlaceInArray {where what when inC} {
     }
 }
 
-proc SetWrapTime {inC where args} {
+proc SetWrapTime {topNode inC where args} {
     global paramData
     if {$inC} {
-	eval c_setwraparoundtime $where $args
+	eval c_setwraparoundtime $topNode $where $args
     } else {
 	eval set paramData(wrapAroundPoint,$where) $args
     }
 }
 
 # this one takes numerical for c and textual for tcl
-proc SetFillMethod {inC where {what {}}} {
+proc SetFillMethod {topNode inC where {what {}}} {
     global paramData
 
     set fillMtds {use_last use_closest interpolate}
@@ -1527,7 +1527,7 @@ proc SetFillMethod {inC where {what {}}} {
 	set which {}
     }
     if {$inC} {
-	lindex $fillMtds [eval c_setfillmethod $where $which]
+	lindex $fillMtds [eval c_setfillmethod $topNode $where $which]
     } else {
 	eval set paramData(fillMethod,$where) [string toupper $what]
     }

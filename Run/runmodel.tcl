@@ -673,7 +673,7 @@ proc GetShortVals {topNode plName limit} {
 		set text [concat [extract_list $hdl $tail] \
 			      [extract_list $hdl -$tail]]
 	    }
-	    free_data_handle $hdl
+	    ReleaseHandle $topNode $hdl
 	}
     } else {
 	set text [lindex [GetCompProperty $topNode Value $plName] 0]

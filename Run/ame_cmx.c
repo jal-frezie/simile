@@ -437,8 +437,38 @@ FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
+// Now I am using a separate thread for each model execution, so the
+// callbacks need to be sent to the right interpreter -- different
+// threads in same interpreter is not safe, but could be interesting. So
+// this has to keep a list of instance ids and their interpreters...
+
+typedef struct listIdInterp_type {
+  void* id;
+  Tcl_Interp* interp;
+  struct listIdInterp_type* next;
+} listIdInterp;
+
+Tcl_Interp* CurInterp(void* inst, Tcl_Interp* replace) {
+  static listIdInterp* saved = NULL;
+  listIdInterp** ptr;
+
+  ptr = &saved;
+  while (*ptr && (*ptr)->id != inst)
+    ptr = &(*ptr)->next;
+  if (!*ptr) { // reached end of list without finding inst, make new entry
+    *ptr = (listIdInterp*)malloc(sizeof(listIdInterp));
+    (*ptr)->id = inst;
+    (*ptr)->interp = NULL;
+    (*ptr)->next = NULL;
+  }
+  if (replace)
+    (*ptr)->interp = replace;
+  //  printf("Got interp %lx for id %lx\n", (long)(*ptr)->interp, (long)inst);
+  return (*ptr)->interp;
+}
+
 /* Create also sets up the tables required to get data out of one submodel
-   instance into another */
+   instance into another...or at least used to */
 
 FINDABLE int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
@@ -457,6 +487,8 @@ FINDABLE int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
   }
   modelHandle = fetch_top_instance(modelType);
   if (modelHandle) {
+    CurInterp((void*)modelHandle, interp); 
+    // save interp for callbacks from instance
     Tcl_SetLongObj(Tcl_GetObjResult(interp), modelHandle);
     return TCL_OK;
   } else {
@@ -1542,23 +1574,15 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
-// whatever I'm using on the ppc doesn't like globals
-Tcl_Interp* CurInterp(Tcl_Interp* replace) {
-  static Tcl_Interp* saved;
-
-  if (replace) saved=replace;
-  return saved;
-}
-
 void respond_to_param_req(void* clientRef, void* modelSlot, double reqTime,
 			  int paramId, int indCount, int* indices) {
   printf("Unwanted parameter value request at %lf\n", reqTime);
-  Tcl_BackgroundError(CurInterp(NULL));
+  Tcl_BackgroundError(CurInterp(clientRef, NULL));
 }
 
 BOOLEAN outeract_gui(void* id, BOOLEAN stop_chk, double now) {
   BOOLEAN response;
-  Tcl_Interp* globInterp = CurInterp(NULL);
+  Tcl_Interp* globInterp = CurInterp(id, NULL);
   Tcl_Obj* feedbackCmd;
 
   Tcl_VarEval(globInterp, "update", NULL); // allow display to tell us if idle
@@ -1684,7 +1708,6 @@ FINDABLE int killmodelCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   char pkgName[16];
 
-  CurInterp(interp);
   proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess);
   sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
   /* Use the Tcl Stubs mechanism */

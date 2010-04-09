@@ -11,7 +11,7 @@ set auto_path [list [file join $env(SP_PATH) lib] \
 
 source [file join [file dirname $env(SP_PATH)] Run support.tcl]
 
-proc load_c_stub_1 {} {
+proc load_c_stub_1 {node} {
     global env tcl_platform
 
     scan [info tclversion] {%d.%d} MAJ MIN
@@ -73,8 +73,7 @@ proc update_executable {node lang} {
     # better already be loaded
     switch $lang {
 	c {
-	    set instance_id($node) [c_createmodel \
-					$model_id($node)]
+	    set instance_id($node) [c_createmodel $model_id($node)]
 	} tcl {
     #    ShowMess debug info "model instance $instance_id created" ok
 	    set model_id($node) 0
@@ -171,6 +170,10 @@ proc GetHandle {node point} {
     return [handle_data $model_id($node) $instance_id($node) $point]
 }
   
+proc ReleaseHandle {node handle} {
+    free_data_handle $handle
+}
+
 proc FreeAll {load} {
     foreach {id hdl} $load {
 	if {[llength $hdl]==3} {
@@ -380,6 +383,9 @@ proc c_setparamarray {topNode tgtNode} {
     set param_id($tgtNode) [c_createparamarray $instance_id($topNode) $tgtNode]
 }
 
+# Old versions of these (identifying parameters by target node id) are passed
+# to the exec thread. These calls now also have the top node to identify the
+# right exec thread, so strip it off here
 foreach oldCProc {setparamelement settimepointelement settimepointarray \
 		      cleartimeseries setwraparoundtime setfillmethod \
 		      setrecordlist settimepointrecords \
@@ -388,8 +394,8 @@ foreach oldCProc {setparamelement settimepointelement settimepointarray \
 	global param_id
 	set cmd [info level 0]
 	
-	return [eval [list new[lindex $cmd 0] $param_id([lindex $cmd 1])] \
-		    [lrange $cmd 2 end]]
+	return [eval [list new[lindex $cmd 0] $param_id([lindex $cmd 2])] \
+		    [lrange $cmd 3 end]] ;# elt 1 (2nd) is top node
     }
 }
 

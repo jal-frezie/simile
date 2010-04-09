@@ -5,7 +5,8 @@
 # This allows the user to start the random number generator on a predictable
 # sequence
 
-set keyValue setrand92383
+# Deactivated -- rewrite in new style so setrand can have topnode arg
+#set keyValue setrand92383
 
 namespace eval ::setrand92383 {
 

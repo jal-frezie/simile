@@ -319,7 +319,7 @@ proc GetCompProperty {topNode prop args} {
 		    set result [distinct_values $hdl]
 		}
 	    }
-	    free_data_handle $hdl
+	    ReleaseHandle $topNode $hdl
 	} else {
 	    set result [eval GetCCompProperty $topNode $prop $args]
 	}

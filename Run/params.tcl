@@ -623,11 +623,12 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
     if {[string equal ,bytes [lindex $list 1]]} {
 	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1} {
 	    if {$when} {
-		c_settimepointall $tgt [lindex $list end]
-		SetWrapTime $useCppArray $tgt [lindex $list end-2]
-		SetFillMethod $useCppArray $tgt [lindex $list end-1]
+		c_settimepointall $topNode $tgt [lindex $list end]
+		SetWrapTime $topNode $useCppArray $tgt [lindex $list end-2]
+		SetFillMethod $topNode $useCppArray $tgt [lindex $list end-1]
 	    } else {
-		c_setparamall $tgt [lindex $list end] [lrange $list 3 end-3]
+		c_setparamall $topNode $tgt [lindex $list end] \
+		    [lrange $list 3 end-3]
 	    }
 	    return -1 ;# do nothing more, the data has now been loaded to c
 	} else {
@@ -687,14 +688,14 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 			     [GetCompProperty $topNode Type $tgt]]} {
 			set comboTypes($idAndSubs) $list
 		    }
-                    if {[EnumTypeToNumber $idAndSubs $list $thisTrans 0 \
-			     $useCppArray $subs $errorData]} {
+                    if {[EnumTypeToNumber $topNode $idAndSubs $list $thisTrans \
+			     0 $useCppArray $subs $errorData]} {
 			return 1
 		    }
 		} else {
 		    # setting value for fixed param or time point
-                    if {[EnumTypeToNumber $tgt$subs $list $thisTrans $when \
-			$useCppArray $subs $errorData]} {
+                    if {[EnumTypeToNumber $topNode $tgt$subs $list $thisTrans \
+			     $when $useCppArray $subs $errorData]} {
 			return -1 ;# should be 0 if a comp
 		    }
                 }
@@ -759,9 +760,9 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         # just like other dimensions, i.e., all must be set
 
         # Next call removes old time series data from the system
-        EnumTypeToNumber $tgt {} {} 1 $useCppArray $subs $errorData
-	SetWrapTime $useCppArray $tgt 0 ;# clear old wraparound point
-	SetFillMethod $useCppArray $tgt use_last ;# and fill method
+        EnumTypeToNumber $topNode $tgt {} {} 1 $useCppArray $subs $errorData
+	SetWrapTime $topNode $useCppArray $tgt 0 ;# clear old wraparound point
+	SetFillMethod $topNode $useCppArray $tgt use_last ;# and fill method
         foreach arrayPt [array names sub] {
             if {[set pt [lsearch {NOW OTHERS} [string toupper $arrayPt]]]>-1} {
 		if {[llength $subs]} {
@@ -773,13 +774,13 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 		     $subs,[list $arrayPt] $errorData
 		set redoStep {}
             } elseif {[string equal RESTART [string toupper $sub($arrayPt)]]} {
-		SetWrapTime $useCppArray $tgt $arrayPt
+		SetWrapTime $topNode $useCppArray $tgt $arrayPt
 		continue
 	    } elseif {$useCppArray && [Numeric $arrayPt]} {
-                c_settimepointarray $tgt $arrayPt
+                c_settimepointarray $topNode $tgt $arrayPt
             }
-	    set noMtd [catch {SetFillMethod $useCppArray $tgt $sub($arrayPt)} \
-			   badFill]
+	    set noMtd [catch {SetFillMethod $topNode $useCppArray $tgt \
+				  $sub($arrayPt)} badFill]
 	    if {$pt==1} {
 		if {$noMtd} {
 		    FPError $badFill  $subs,[list $arrayPt] $errorData
@@ -813,7 +814,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         if {$useCppArray} {
 	    if {$when} {
 		set map [split $subs ,]
-		c_settimepointrecords $tgt [lrange $map 2 end] \
+		c_settimepointrecords $topNode $tgt [lrange $map 2 end] \
 		    [lindex $map 1] $last
 		# if {[catch {c_settimepointrecords $tgt [lrange $map 2 end] \
 		# 		[lindex $map 1] $last} err]} {
@@ -821,7 +822,8 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 		#     set redoStep {}
 		# } 
 	    } else {
-		c_setrecordlist $tgt [lrange [split $subs ,] 1 end] $last
+		c_setrecordlist $topNode $tgt [lrange [split $subs ,] 1 end] \
+		    $last
 		# if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
 		# 				      1 end] $last} err]} {
 		#     FPError $err $subs $errorData
@@ -830,8 +832,8 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 	    }
 	} else { ;# use old system for Tcl
 	    set recordNode [lindex $nextDim 1]
-	    EnumTypeToNumber $recordNode$subs $last {} $when $useCppArray \
-		     $subs $errorData ;# cannot fail
+	    EnumTypeToNumber $topNode $recordNode$subs $last {} $when \
+		     $useCppArray $subs $errorData ;# cannot fail
 	}
 
 # Hopefully, with the universal data structure, once we have set the
@@ -876,13 +878,13 @@ proc JoinSteps {stepA stepB} {
     }
 }
 
-proc EnumTypeToNumber {tgt head trans when useCppArray subs errorData} {
+proc EnumTypeToNumber {topNode tgt head trans when useCppArray subs errorData} {
     if {![llength $head]} {
         # empty head, signal to clear out old values
         if {$useCppArray} {
-            c_cleartimeseries $tgt
+            c_cleartimeseries $topNode $tgt
         } else {
-	    tcl_cleartimeseries $tgt
+	    tcl_cleartimeseries $topNode $tgt
         }
     } else {
 	if {[string compare {} $trans]} {
@@ -900,7 +902,7 @@ proc EnumTypeToNumber {tgt head trans when useCppArray subs errorData} {
 	    FPError "Data value $head is not a number." $subs $errorData
 	    return 0
 	}
-	PlaceInArray $tgt $head $when $useCppArray
+	PlaceInArray $topNode $tgt $head $when $useCppArray
     }
     #puts "just went set paramData($tgt) $paramData($tgt)"
     return 1
@@ -1105,10 +1107,10 @@ namespace eval fileparams {
 		puts -nonewline $pStr \
 		    "$indent<byte_array $genericAVs type=[Entitize $type]"
 		set inC [RunningInC $topNode]
-		if {[set wrapTime [SetWrapTime $inC $nodeId]]} {
+		if {[set wrapTime [SetWrapTime $topNode $inC $nodeId]]} {
 		    puts -nonewline $pStr " wrap_time=[Entitize $wrapTime]"
 		}
-		set fillMtd [SetFillMethod $inC $nodeId]
+		set fillMtd [SetFillMethod $topNode $inC $nodeId]
 		if {![string equal use_last $fillMtd]} {
 		    puts -nonewline $pStr " fill_method=\"$fillMtd\""
 		}
@@ -1130,9 +1132,9 @@ namespace eval fileparams {
 		if {$haveBytes} { ;# do not bother c++, we already have it
 		    set raw [lindex $outData($compName) end]
 		} elseif {$readMany($compName)} {
-		    set raw [c_gettimepointall $nodeId]
+		    set raw [c_gettimepointall $topNode $nodeId]
 		} else {
-		    set raw [c_getparamall $nodeId]
+		    set raw [c_getparamall $topNode $nodeId]
 		}
 		puts $pStr [base64 -mode encode -- $raw]
 		puts $pStr "  $indent\]\]>"
@@ -1882,5 +1884,5 @@ proc DoNotPassTcl {topNode node dims tableSpec} {
 		     $dataCols $dataRows $gdalType $fillCols $fillRows]
     gdal_close $hg
     
-    c_setparamall $node $bytesFromGdal [list $fillRows $fillCols]
+    c_setparamall $topNode $node $bytesFromGdal [list $fillRows $fillCols]
 }
