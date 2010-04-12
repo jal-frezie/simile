@@ -567,10 +567,10 @@ proc TryToKill {node} {
 
 # Pass on Prolog calls meant for model
 proc ScrubRun {node times} {
-    global runState execThread
+    global runState execThread execInterp
 
-    if {![llength [info procs ExScrubRun]] || \
-	    [info exists execThread] && ![info exists execThread($node,id)]} {
+    if {![info exists execThread($node,id)] && \
+	    ![info exists execInterp($node,id)]} {
 	# exec code not loaded, or threaded but no exec for this node
 	InitExecThread $node
     }
@@ -1194,24 +1194,35 @@ proc ControlDraw {prologVersion} {
 }
 
 proc InitExecThread {node} {
-    global execThread SIMILE_PATH
+    global execThread execInterp SIMILE_PATH
 
-    if {![string equal console $::env(interfaceId)]} {
-# comment out next two lines for thread free operation
+    set useThreads [expr {![string equal console $::env(interfaceId)] && \
+			      [info exists ::tcl_platform(threaded)]}]
+    if {$useThreads} {
 	package require Thread
 	set execThread($node,id) [thread::create]
+    } else {
+	set execInterp($node,id) [interp create]
     }
 #puts "Created thread $execThread(id) from [thread::id]"
-    if {[info exists execThread]} {
-	foreach stubCmd {load_c_stub_1 c_setparamarray c_setparamall c_cleartimeseries c_settimepointarray c_settimepointall c_settimepointrecords c_setrecordlist c_getparamall c_gettimepointall PlaceInArray SetWrapTime SetFillMethod ex_load_dll update_executable ReleaseHandle GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
+
+    foreach stubCmd {load_c_stub_1 c_setparamarray c_setparamall c_cleartimeseries c_settimepointarray c_settimepointall c_settimepointrecords c_setrecordlist c_getparamall c_gettimepointall PlaceInArray SetWrapTime SetFillMethod ex_load_dll update_executable ReleaseHandle GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
+	if {$useThreads} {
 	    proc $stubCmd {node args} {
 		global execThread
 		#puts "exec bother [lindex [info level 0] 0]"
 		return [thread::send $execThread($node,id) [info level 0]]
 	    }
+	} else {
+	    proc $stubCmd {node args} {
+		global execInterp
+		return [$execInterp($node,id) eval [info level 0]]
+	    }
 	}
+    }
 
-	foreach stubSgst {ResetModel ExecuteTo} {
+    foreach stubSgst {ResetModel ExecuteTo} {
+	if {$useThreads} {
 	    proc $stubSgst {node args} {
 		global execThread
 		thread::send -async $execThread($node,id) \
@@ -1225,14 +1236,24 @@ proc InitExecThread {node} {
 		    return [lindex $execThread($node,reply) 1]
 		}
 	    }
+	} else {
+	    proc $stubSgst {node args} {
+		global execInterp
+		return [$execInterp($node,id) eval [info level 0]]
+	    }
 	}
+    }
 
-
+    if {$useThreads} {
+	thread::send $execThread($node,id) [list set masterId [thread::id]]
 	thread::send $execThread($node,id) \
 	    [list source [file join $SIMILE_PATH Run exec.tcl]]
-	thread::send $execThread($node,id) [list set masterId [thread::id]]
     } else {
-	uplevel #0 [list source [file join $SIMILE_PATH Run exec.tcl]]
+	$execInterp($node,id) eval \
+	    [list source [file join $SIMILE_PATH Run exec.tcl]]
+	foreach callbackCmd {AbortCheck InteractGUI ShiftDisplays ExecQuery} {
+	    $execInterp($node,id) alias $callbackCmd $callbackCmd
+	}
     }
     if {[catch {load_c_stub_1 $node}]} {
 	if {[string match Linux $::tcl_platform(os)]} {

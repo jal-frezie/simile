@@ -271,7 +271,7 @@ switch $tcl_platform(platform) {
     windows {
 # This is needed for dll interface with tcl later than 8.0p2
 	dde servername $oldProc
-	set env(TCL_LIBRARY) [info library]
+#	set env(TCL_LIBRARY) [info library]
 # Now, win95 etc needs the tcltk binaries in the path
 	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
@@ -316,7 +316,7 @@ if {[info exists prolog_in_console]} {
     set env(interfaceId) console
 # this will simply let the script run out after loading the rest of the Tcl
 # so control goes back to Prolog
-} elseif {[info tclversion]>8.4} {
+} elseif {![info exists env(TCL_PATH)]} {
     lappend auto_path $SIMILE_PATH/System/lib
 }
 

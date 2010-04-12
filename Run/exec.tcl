@@ -3,9 +3,13 @@
 # it's being debugged, once it's right we'll just load it. This component
 # itself loads dlls for the actual models as they are built.
 
-set auto_path [list [file join $env(SP_PATH) lib] \
-		   [file join $env(SP_PATH) lib tcl[info tclversion]] \
-		   [file join [file dirname [file dirname [file normalize $env(SP_PATH)]]] Frameworks Tcl.framework Resources Scripts]]
+if {[info exists env(TCL_PATH)]} {
+    set auto_path [file join $env(SP_PATH) lib] \
+	[file join $env(SP_PATH) lib tcl[info tclversion]] \
+	[file join [file dirname [file dirname [file normalize $env(SP_PATH)]]] Frameworks Tcl.framework Resources Scripts]
+} else { ;# Orange Herald
+    lappend auto_path [file join $env(SP_PATH) lib]
+}
 
 # package require Trf ;# loads right version of Trf, only needed in UI thread
 
@@ -251,7 +255,7 @@ proc OuteractGUI {time mode} {
     return [InteractGUI $nodeId $time $mode]
 }
 
-if {![info exists runHow]} { ;# we are in separate interp
+if {[info exists masterId]} { ;# we are in separate interp
     proc PullAction {inst} {
 	return [tsv::get action $inst]
     }
