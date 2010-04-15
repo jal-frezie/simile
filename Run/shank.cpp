@@ -71,7 +71,7 @@ void* flopen(char* fileName) {
   if (error) {
     return 0;
   } else {
-    return dlopen(fileName, RTLD_NOW);
+    return dlopen(fileName, RTLD_NOW | RTLD_LOCAL);
   }
 }
 
