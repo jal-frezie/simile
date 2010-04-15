@@ -1130,7 +1130,7 @@ proc EditListAsTable {parent valueArray} {
     LetItShow .table_edit
     grab .table_edit
     tkwait variable table_viewer(done)
-    ${viewerId}::EditCellIs $t.t 0 0 ;# get final edit
+#    ${viewerId}::EditCellIs $t.t 0 0 ;# get final edit
     grab release .table_edit
     if {![set ${viewerId}::editMode($t,tweaked)]} {
         set table_viewer(done) 0 ;# treat OK as Cancel if no change

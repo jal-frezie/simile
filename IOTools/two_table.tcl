@@ -1,5 +1,65 @@
 package require Tktable
 
+# this is copied from the Tktable 2.9 distribution but has extra bit to call
+# the validatecommand each time a cell is changed
+proc ::tk_tablePasteHandler {w cell data} {
+    #
+    # Don't allow pasting into the title cells
+    #
+    if {[$w tag includes title $cell]} {
+        return
+    }
+
+    set rows	[expr {[$w cget -rows]-[$w cget -roworigin]}]
+    set cols	[expr {[$w cget -cols]-[$w cget -colorigin]}]
+    set r	[$w index $cell row]
+    set c	[$w index $cell col]
+    set rsep	[$w cget -rowseparator]
+    set csep	[$w cget -colseparator]
+
+# new bit:
+    set vldCmdTplt [regsub -all {([^%])%W} [$w cget -validatecommand] \\1$w]
+# end of new bit
+    ## Assume separate rows are split by row separator if specified
+    ## If you were to want multi-character row separators, you would need:
+    # regsub -all $rsep $data <newline> data
+    # set data [join $data <newline>]
+    if {[string compare {} $rsep]} { set data [split $data $rsep] }
+    set row	$r
+    foreach line $data {
+	if {$row > $rows} break
+# new bit:
+	set vldCmdRow [regsub -all {([^%])%r} $vldCmdTplt \\1$row]
+# end of new bit
+	set col	$c
+	## Assume separate cols are split by col separator if specified
+	## Unless a -separator was specified
+	if {[string compare {} $csep]} { set line [split $line $csep] }
+	## If you were to want multi-character col separators, you would need:
+	# regsub -all $csep $line <newline> line
+	# set line [join $line <newline>]
+	foreach item $line {
+	    if {$col > $cols} break
+# new bit: 
+	    set oldTxt [$w get $row,$col]
+	    if {![string equal $item $oldTxt]} {
+		set vldCmd [regsub -all {([^%])%c} $vldCmdRow \\1$col]
+		set vldCmd [regsub -all {([^%])%s} $vldCmd \\1$oldTxt]
+		set vldCmd [regsub -all {([^%])%S} $vldCmd \\1$item]
+		set vldCmd [regsub -all %% $vldCmd %]
+		if {![eval $vldCmd]} {
+		    incr col
+		    continue ;# skip update
+		}
+	    }
+# end of new bit
+	    $w set $row,$col $item
+	    incr col
+	}
+	incr row
+    }
+}
+
 set keyValue tabular11510
 
 # column widths
@@ -102,8 +162,8 @@ namespace eval $keyValue {
 	    -rowseparator \n -colseparator \t \
 	    -yscrollcommand [list AdjustCanvas $winId t y] \
 	    -xscrollcommand [list AdjustCanvas $winId f x] \
-	    -browsecommand [namespace code [list EditCellIs %W %r %c]] \
-	-selecttitle true
+	    -validatecommand [namespace code [list EditCellIs %W %r %c %s %S]] \
+	    -validate 1 -selecttitle true
         
         pack $winId.t -fill both -expand true
         $winId.t tag configure red -fg red
@@ -197,34 +257,36 @@ namespace eval $keyValue {
 
 # we keep the values array and update it when a cell is edited. This means
 # we do not lose precision when loading the edited array.
-    proc EditCellIs {t row col} {
+    proc EditCellIs {t row col oldVal newVal} {
 	variable editMode
 	variable rowIds
 	variable colIds
 	variable values
 
 	set winId [winfo parent $t]
-	if {[info exists editMode($winId,lastVal)]} {
-	    set newVal [set ::data${winId}($editMode($winId,lastRow),$editMode($winId,lastCol))]
-	    if {![string equal $editMode($winId,lastVal) $newVal]} {
-		foreach rowEntry [array names rowIds $winId,*] {
-		    if {$rowIds($rowEntry)==$editMode($winId,lastRow)} {
-			set rowsHeaders [lindex [split $rowEntry ,] 1]
-			foreach colEntry [array names colIds $winId,*] {
-			    if {$colIds($colEntry)==$editMode($winId,lastCol)} {
-				set colsHeaders [lindex [split $colEntry ,] 1]
-				set values($rowsHeaders,$colsHeaders) $newVal
-				set editMode($winId,tweaked) 1
-			    }
-			}
+#	if {[info exists editMode($winId,lastVal)]} {
+#	    set newVal [set ::data${winId}($editMode($winId,lastRow),$editMode($winId,lastCol))]
+#	    if {![string equal $editMode($winId,lastVal) $newVal]} {
+	foreach rowEntry [array names rowIds $winId,*] {
+	    if {$rowIds($rowEntry)==$row} {
+		set rowsHeaders [lindex [split $rowEntry ,] 1]
+		foreach colEntry [array names colIds $winId,*] {
+		    if {$colIds($colEntry)==$col} {
+			set colsHeaders [lindex [split $colEntry ,] 1]
+			set values($rowsHeaders,$colsHeaders) $newVal
+			#puts "set values($rowsHeaders,$colsHeaders) $newVal"
+			set editMode($winId,tweaked) 1
 		    }
 		}
 	    }
 	}
-	set editMode($winId,lastRow) $row
-	set editMode($winId,lastCol) $col
-	catch {set editMode($winId,lastVal) [set ::data${winId}($row,$col)]}
+#	    }
+#	}
+#	set editMode($winId,lastRow) $row
+#	set editMode($winId,lastCol) $col
+#	catch {set editMode($winId,lastVal) [set ::data${winId}($row,$col)]}
 # catch is in case field is empty -- val will not exist
+	return 1
     }
     
     proc Remove {winId var} {
@@ -1005,7 +1067,7 @@ namespace eval $keyValue {
 	    } else {
 		# only do if table is editable
 		if {[info exists editMode($winId)]} {
-		    EditCellIs $winId.t 0 0 ;# get final edit
+#		    EditCellIs $winId.t 0 0 ;# get final edit
 		    unset dataStore
 		    # need tweaking if time/var in use
 		    set dataStore($winId,0,0.0) [ExtractEdits $winId]
