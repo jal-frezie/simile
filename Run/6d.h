@@ -214,12 +214,10 @@ class ModelServer
  protected: // protected attributes
   HINSTANCE handle;
   
-  getcount_type *getcount;
-  getversion_type *getversion;
-  createmodel_type *createmodel;
+  void *getcount,  *getversion, *createmodel;
   
  public: // public attributes
-  //! Number of different tie steps in model
+  //! Number of different time steps in model
   int phases;
   //! Pointer to start of list of graph data objects
   graph_data_type* c_graphdata;

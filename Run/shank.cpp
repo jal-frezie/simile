@@ -900,7 +900,7 @@ class ModelServer;
 ExecutingModel::ExecutingModel(ModelServer* newModelSpec, void* yourRef) {
     modelSpec = newModelSpec;
     clientRef = yourRef;
-    loadedInst = modelSpec->createmodel(this);
+    loadedInst = ((createmodel_type*)modelSpec->createmodel)(this);
     //sprintf(globMess, "This is XM %lx of M %lx being created with IOM %lx", 
 //	    (long)this, (long)modelSpec, (long)loadedInst);
     //showMess(globMess);
@@ -1221,7 +1221,7 @@ ModelServer::ModelServer(char* fileName, char** complaint) {
       *complaint = strdup(WHAT_WENT_WRONG());
       return;
     }
-    getversion = (getversion_type *)FIND_FUNCTION(handle, "get_version");
+    getversion = FIND_FUNCTION(handle, "get_version");
     // this does nothing but return the version number, so it can be checked 
     // even if different versions change the args to getcount()
     if (getversion == NULL) {
@@ -1229,18 +1229,18 @@ ModelServer::ModelServer(char* fileName, char** complaint) {
       sprintf(*complaint, "the shared object is probably not a Simile model");
       return;
     }
-    if (fabs(getversion()-atof(SIMILE_VERSION))>0.00001) {
+    if (fabs(((getversion_type*)getversion)()-atof(SIMILE_VERSION))>0.00001) {
       *complaint = new char[256];
       sprintf(*complaint, "client is for version %s but model is %.1f", 
-	      SIMILE_VERSION, getversion());
+	      SIMILE_VERSION, ((getversion_type*)getversion)());
       return;
     }
 /* sprintf(globMess, "Loaded %ld", handle);
 showMess(globMess); */
     *complaint = NULL;
 
-    getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
-    nodecount = getcount((void*)ame_rand, 
+    getcount = FIND_FUNCTION(handle, "get_count");
+    nodecount = ((getcount_type*)getcount)((void*)ame_rand, 
 			 (void*)graphpoint,
 			 (void*)release_graph_data, 
 			 (void*)compare_instance_status, 
@@ -1250,7 +1250,7 @@ showMess(globMess); */
 			 (void*)&c_graphdata,
 			 &phases, &nodedata);
 
-    createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
+    createmodel = FIND_FUNCTION(handle, "do_createmodel");
   }
 
 ModelServer::~ModelServer() {
