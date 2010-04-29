@@ -57,6 +57,8 @@ namespace eval ::polygon375 {
                 [list zoomin.gif "Zoom in" [namespace code "Zoom $winId 2 2"] ]\
                 [list zoomout.gif "Zoom out" [namespace code "Zoom $winId 0.5 0.5"] ]\
                 [list zoomfit.gif "Zoom to fit" [namespace code "Fit $winId"] ]\
+			      [list save.gif "Save polygon shapes" \
+				   [namespace code [list SaveShapes $winId]]] \
 	            [list property.gif " Properties " [namespace code "Settings $winId"] ]\
 			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [namespace current] $winId"]] \
                 [list refresh.gif Update [namespace code "Update $winId"]]\
@@ -624,6 +626,16 @@ $useNodes($winId,scaley)"
         Zoom $winId [expr ($boxw-2.0)/($cr-$cl)] [expr ($boxh-42.0)/($cb-$ct)]
     }
     
+    proc SaveShapes {winId} {
+	variable useNodes
+
+	if {![llength [set file [tk_getSaveFile]]]} return
+	set strm [open $file w]
+	puts $strm [concat [GetModelValue $useNodes($winId,xcoord)] \
+				[GetModelValue $useNodes($winId,ycoord)]]
+	close $strm
+    }
+
     proc Zoom {winId fx fy} {
         variable useNodes
 	set useNodes($winId,scalex) [expr $fx*$useNodes($winId,scalex)]
