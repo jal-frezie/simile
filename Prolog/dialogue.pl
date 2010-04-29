@@ -302,7 +302,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 			Complaint6 = expr_denotes_list;
 		    \+ (integer(Dim), Dim > 1), !,
 		    % should never happen, parser now checks subexps for this
-		    Complaint6 = bad_array_size(Dim));
+		    Complaint6 = bad_array_size(Result, Dim));
 		true /* ,
 		    this check now done by generating default units for flows
 		    check_flow_ends(Function, NewArraySpec, Complaint6) */ );

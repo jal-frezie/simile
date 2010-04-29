@@ -35,7 +35,7 @@ ame_save( File, Model, Date, SelOnly ) :-
 	fail), !,
 	ame_gen:assert(by_record_brackets(curly)),
 	reassure_user(pl_convert_from, ['5.5']),
-	update_all_pr_brackets(Model), % write non-5.5 format for now (remove for v6)
+	adjust_to_10(Model), % write non-5.5 format for now (remove for v6)
 	(reassure_user(writing_root, []),
 	state:version_is(VStr),
 	name(SimV, VStr),
@@ -55,15 +55,10 @@ ame_save( File, Model, Date, SelOnly ) :-
 	save_arcs( ArcsUsed, Stream),
 	ame_gen:retractall(by_record_brackets(_)),
 	reassure_user(pl_convert_to, ['5.5']),
-	update_all_pr_brackets(Model), % return saved model to 5.5 format (remove for v6)
+	adjust_to_10(Model), % return saved model to 5.5 format (remove for v6)
 	close( Stream ), !;
 	fail)).
 
-update_all_pr_brackets(Model) :-
-	contains(Model, Sub),
-	update_per_record_bracket_style(Sub);
-	true.
-	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_stream - does the work of ame_save/[12]. Arg [34] are "done" lists for
 % Nodes and Arcs respectively - don't do the same node twice.
@@ -539,10 +534,10 @@ update_per_record_bracket_style(Parent) :- % should do all then fail
 	Link has_type influence,
 	(OtherArc = Link; sequence(Link, OtherArc)),
 	\+ sequence(OtherArc, _),
-	OtherArc has_attribute role of Roles,
 	OtherArc is_connector from _ to Fn,
 	m_update:get_all_links(Fn, _, input_link(id(OtherArc, Rel, Use),
 						 _, AddRef, _, NewDims)),
+	OtherArc has_attribute role of Roles,
 	select(use(Rel, Use, OldRef, _), Roles, MoreRoles),
 	(OldRef = usr(SubRef), NewRef = usr(AddRef);
 	    \+ OldRef = usr(_), SubRef = OldRef, NewRef = AddRef),
