@@ -718,6 +718,11 @@ proc AddGrid {c onCol wl wt wr wb} {
     }
 }
 
+proc FixDisabledImgBug {ttkButton} {
+    set origImg [$ttkButton cget -image]
+    $ttkButton config -image [list $origImg disabled $origImg]
+}
+
 # following is pulled from tclers wiki
 proc Gradient {rgb {window .} {swing 0}} {
 
@@ -1308,7 +1313,10 @@ if {[string match "Darwin" $tcl_platform(os)]} {
       set currentDesk _
       catch {set currentDesk \
          $window_info([winfo toplevel [focus]].canvas,top_node)}
-      prolog tk_kill_everything($currentDesk)
+# following is after 100 because funny things happen to the event loop while
+# actually executing the exit procedure in the Cocoa version, and 'after idle'
+# has never quite worked properly on the Mac
+      after 100 prolog tk_kill_everything($currentDesk)
   }
   bind all <Command-q> exit
 #
@@ -1676,12 +1684,14 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 
         set fm [menu $topm.help -tearoff 0]
         $topm add cascade -label [tr. Help] -menu $fm
+    if ![string match aqua [tk windowingsystem]] {
         $fm add command -label [tr. Contents] -command "ContextSensitiveHelp $winid index.htm" \
                 -accelerator "F1"
         AddAccelerator $winid help Contents "<F1>"
 #        $fm add command -label Huh? -command {ShowMess debug info $errorInfo ok}
-    if ![string match aqua [tk windowingsystem]] {
         $fm add command -label [tr. About...] -command [list ShowAbout $winid]
+    } else {
+	#$topm.help itemconfig 0 -accelerator "F1"
     }
     UnderlineUniquely $topm
 
@@ -1709,6 +1719,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton \
                     -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
                     -side left -padx 2 -pady 2
+	    FixDisabledImgBug $nb.$handle
             BindPopup $nb.$handle $handle
         }
     }
@@ -1732,6 +1743,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton \
                     -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
                     -side left -padx 2 -pady 2
+	    FixDisabledImgBug $nb.$handle
             BindPopup $nb.$handle $handle
         }
     }
@@ -1748,6 +1760,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton \
                     -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
                     -side left -padx 2 -pady 2
+	    FixDisabledImgBug $nb.$handle
             BindPopup $nb.$handle $handle
         }
     }
@@ -1779,6 +1792,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
         set testImg [image create photo -file $buttonImages/${mode}.gif]
         pack [::ttk::button $tb.$mode -image $testImg -command "ModeSelect $mode" -style Toolbutton] \
             -side left -padx 2 -pady 2
+	FixDisabledImgBug $tb.$mode
         BindPopup $tb.$mode $mode
     }
     if {![HaveValues $topNode]} {
@@ -1817,16 +1831,19 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     pack [::ttk::button $eb.tick -state disabled -image $iconImages(tick) \
             -style $buttonStyle \
             -command [list accept_equation $winid $eb.equation]] -side left
+    FixDisabledImgBug $eb.tick
     
     pack [::ttk::button $eb.cross -state disabled -image $iconImages(cross) \
             -style $buttonStyle \
             -command [list restore_equation $winid $eb]] -side left
+    FixDisabledImgBug $eb.cross
     
     frame $eb.padding2 -width 3
     pack $eb.padding2 -side left
     
     set image [image create photo -file "../Images/Eqnbar/inputs.gif"]
     ::ttk::menubutton $eb.inputs -state disabled -menu $eb.inputs.menu -image $image
+    FixDisabledImgBug $eb.inputs
     pack $eb.inputs -side left
     set m [menu $eb.inputs.menu -tearoff 0]
 # now done when bar filled            -postcommand [list AddInputs $winid $eb]
@@ -1836,6 +1853,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     ::ttk::menubutton $eb.function -state disabled -menu $eb.function.menu -image $iconImages(function)
     pack $eb.function -side left
+    FixDisabledImgBug $eb.function
     set m [menu $eb.function.menu -tearoff 0]
     foreach funk $equation(fnDefs) {
 	set box $m
@@ -1892,13 +1910,13 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     ### End of formula bar section
     
     update idletasks ;# to allow reqwidth to be calculated
-    set navWidth [winfo reqwidth $tb] ;# tool bar is widest
-    #ShowMess debug info "Toolbar needs $navWidth" ok
-    set custom(showtoolbar,$winid) [expr $initWidth>=$navWidth && \
+    #set navWidth [winfo reqwidth $tb] ;# tool bar is widest
+    #ShowMess debug info "Toolbar has $initWidth, needs $navWidth" ok
+    set custom(showtoolbar,$winid) [expr \
             [PrefValue custom(initToolbar) initToolbar]]
-    set custom(shownavbar,$winid) [expr $initWidth>=$navWidth && \
+    set custom(shownavbar,$winid) [expr  \
             [PrefValue custom(initNavbar) initNavbar]]
-    set custom(showeqnbar,$winid) [expr $initWidth>=$navWidth && \
+    set custom(showeqnbar,$winid) [expr \
             [PrefValue custom(initEqnbar) initEqnbar]]
     
     pack [ttk::separator $winid.toolSlot.topseparator -orient horizontal] \

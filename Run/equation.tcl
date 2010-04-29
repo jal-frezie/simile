@@ -130,7 +130,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     if {[string equal windows $tcl_platform(platform)]} {
 	set buttWidth 4
     } else {
-	set buttWidth 1
+	set buttWidth 2
     }
     for {set row 0} {$row < 6} {incr row} {
         pack [frame $keypadf.keys.row$row] -fill x

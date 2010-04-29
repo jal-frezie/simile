@@ -2045,11 +2045,13 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
     }
 
     set labf1 [frame $ProbWin.labf1]
-    if {[package vcompare 0.8 [package provide tile]]>0} {
-	set iconSpc tile
-    } else {
+# do not vcompare because pre 0.8 no longer used, and no tile at all if
+# wish >= 8.5
+#    if {[package vcompare 0.8 [package provide tile]]>0} {
+#	set iconSpc tile
+#    } else {
 	set iconSpc ttk
-    }
+#    }
     pack [label $labf1.img -image [${iconSpc}::stockIcon dialog/$errLevel]] \
 	-side left 
 #    pack [label $labf1.lab1 -text "Warning:" \

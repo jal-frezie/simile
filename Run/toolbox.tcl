@@ -7,7 +7,11 @@
 #
 #package require BWidget
 #catch {namespace import BWidget::*}
-package require tile 0.8.2
+if {[info tclversion]>=8.5} {
+    package require ttk::dialog
+} else {
+    package require tile 0.8.2
+}
 package require style::as
 style::as::enable mousewheel global
 

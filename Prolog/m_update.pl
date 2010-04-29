@@ -16,7 +16,7 @@ sicstus_module(m_update,
 		get_submodel_interface/5, load_submodel_interface/4,
 		load_references/2, save_references/2, link_ends/4,
 		moving_endpoint/3, update_links_and_vars/1,
-		sort_for_link/4, abs_path_name/3,
+		name_from_role_texts/3, sort_for_link/4, abs_path_name/3,
 		build_array/3, analyze_array/3, get_all_enum_types/2,
 		get_solo_list_depth/2, delete_implicit_node/1, 
 		add_implicit_function/2, default_units/3, units_match_context/4,
@@ -490,7 +490,7 @@ check_flow_ends(Func, EndUnits, AnyErr) :-
 */	    
 decide_param_names(InputList) :-
 	already_used_in(InputList, Used),
-	generate_new_names(InputList, Used).
+	all(m_update, generate_new_name, [build(InputList), unify(Used)]).
 
 already_used_in(List, Used) :-
 	(setof(Name, link_uses(List, Name), AlreadyUsed), !; AlreadyUsed = []),
@@ -503,27 +503,25 @@ link_uses(List, Name) :-
 
 insert_existing_names(_, N, N).
 
-generate_new_names(InputList, NameList) :-
-	select(input_link(id(_, RelId, Dir), role_texts(Path, _,_, RelnCapt),
-			  Local_name, Remote_unit, _), InputList, NewInputList),
-	var(Local_name),
+generate_new_name(input_link(_, RoleTexts, Local_name, Remote_unit, _), Used) :-
+	nonvar(Local_name), !;
+	name_from_role_texts(RoleTexts, Used, Inter_name),
+	add_brackets(Inter_name, Remote_unit, Local_name).
+
+name_from_role_texts(role_texts(Path, RelId, Dir, RelnCapt), Used, Name) :-
 	name(Path, PathStr),
 	(TailStr = PathStr; suffix([47 | TailStr], PathStr)), % [47] = "/"
 	\+ member(47, TailStr),
 	name(Tail, TailStr),
 	(Dir = in_hierarchy,
 	    Remote_name = Tail;
-	  RelId = none,
+	  RelId = '/none/',
 	    append_atoms(every_, Tail, Remote_name);
 	  Dir = in_base,
 	    append_atoms([RelnCapt, '_', Tail], Remote_name);
 	  append_atoms([Tail, '_', RelnCapt], Remote_name)), !,
-	generate_name(prolog, Remote_name, Inter_name, NameList),
-	add_brackets(Inter_name, Remote_unit, Local_name),
-	generate_new_names(NewInputList, NameList).
-
-generate_new_names(_,_).
-
+	generate_name(prolog, Remote_name, Name, Used).
+	
 /* This one updates the info on the links after the dialogue box has been filled in.
 */
 

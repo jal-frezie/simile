@@ -173,6 +173,7 @@ set toolbars [list \
                     set command [lindex $item 2]
                     set newButton [::ttk::button $tb1.b$tbnum$i -style Toolbutton -image [image create photo  -file "../Images/Toolbar/$gif"] \
 				       -command $command]
+		    FixDisabledImgBug $newButton
                     pack $newButton -padx 1 -pady 1  -side left -anchor w
                     BindPopup $newButton [tr. $helptext]
                     incr i

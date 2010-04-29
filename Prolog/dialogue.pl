@@ -671,7 +671,7 @@ collapse_params(_, param(arr(_, Param, _), _,_,_,_), Param, 0).
 
 check_param_usage(Current, AllowLinks, Used, Left, Challenge) :-
 	member(input_link(id(LinkName, _,_), 
-			SourceCaption,_,_,_), Current),
+			role_texts(SourceCaption,_,_,_), _,_,_), Current),
 	/* Really we only need one reference to each link, but since Bob
 	decided it was confusing to have role-free references where there were
 	roles I don't know how to be sure of getting exactly one... */

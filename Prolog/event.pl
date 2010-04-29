@@ -746,7 +746,7 @@ update_role(use(P1, P2, Ref, P3), InputSpecs, AllUsed,
 	    use(P1, P2, NewRef, P3)) :-
 	\+ Ref = usr(_),
 	member(input_link(_, Spec, Ref, Unit,_), InputSpecs), !,
-	generate_name(prolog, Spec, NewName, AllUsed),
+	name_from_role_texts(Spec, AllUsed, NewName),
 	m_update:add_brackets(NewName, Unit, NewRef);
 	NewRef = Ref.
 
