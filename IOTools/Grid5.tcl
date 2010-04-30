@@ -91,7 +91,8 @@ namespace eval grid005 {
     
     proc Recolour {winId whichCol exampleWidget} {
         variable useNodes
-        set colour [tk_chooseColor -initialcolor $useNodes($winId,c$whichCol)]
+        set colour [tk_chooseColor -parent .gridprop \
+			-initialcolor $useNodes($winId,c$whichCol)]
         if {[string length $colour]} {
 	    $exampleWidget configure -bg $colour
 	    set useNodes($winId,colourMapTweaked) 0
@@ -380,8 +381,8 @@ namespace eval grid005 {
         variable useNodes
         variable min
         variable max
-        set dlg [Dialog .gridprop -parent $winId -title "Grid display properties" \
-                -modal local -default 0 -cancel 1]
+        set dlg [Dialog .gridprop -parent [winfo toplevel $winId] -modal local \
+		     -title "Grid display properties" -default 0 -cancel 1]
         
         # copy display parameters to temp values
         # colours are stored by frames used as example colour swatch (eg $coloursF.lowcolourF.colF)

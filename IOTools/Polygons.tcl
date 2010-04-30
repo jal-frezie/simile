@@ -115,8 +115,10 @@ $useNodes($winId,scaley)"
 	} else {
 	    DoFrame $winId
 	    foreach {type coords tags} $useNodes($winId,shapes) {
-		eval {$winId.viewport.c create $type} $coords {-outline black \
-								  -tag $tags}
+		if {[string match poly* $type]} {
+		    eval {$winId.viewport.c create $type} $coords \
+			{-outline black -tag $tags}
+		}
 	    }
 	    Repaint $winId $useNodes($winId,color)
 	}
@@ -244,8 +246,10 @@ $useNodes($winId,scaley)"
     
     proc Recolour {winId whichCol exampleWidget} {
         variable useNodes
-        set useNodes($winId,c$whichCol) \
-	    [tk_chooseColor -initialcolor $useNodes($winId,c$whichCol)]
+	set col [tk_chooseColor -parent .polyprop \
+		     -initialcolor $useNodes($winId,c$whichCol)]
+	if {![string length $col]} return
+        set useNodes($winId,c$whichCol) $col
 	$exampleWidget configure -bg $useNodes($winId,c$whichCol)
         SetColours useNodes $winId
         PrepareSaveString $winId
@@ -476,8 +480,9 @@ $useNodes($winId,scaley)"
 	global ${winId}l5
 
         set ${winId}l5 $displayUpdate($winId)
-	set dlg [Dialog .polyprop -parent $winId -title "Polygon display properties" \
-                -modal local -default 0 -cancel 1]
+	set dlg [Dialog .polyprop -parent [winfo toplevel $winId] \
+		     -title "Polygon display properties" \
+		     -modal local -default 0 -cancel 1]
         
         # copy display parameters to temp values
         # colours are stored by frames used as example colour swatch (eg $coloursF.lowcolourF.colF)
