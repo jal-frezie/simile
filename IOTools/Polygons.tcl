@@ -435,7 +435,7 @@ $useNodes($winId,scaley)"
 #	    $winId.bbframe.buttonBox itemconfigure $i -state normal
 #	}
         Repaint $winId $hs
-	if {$fit} {
+	if {$fit && !$useNodes($winId,ETCount)} { ;# do not tweak scale if ETs
 	    if {![GoodFit $useNodes($winId,min) $useNodes($winId,max) \
 		      $useNodes($winId,datamin) $useNodes($winId,datamax)]} {
 		::graphtools::AxisRound \

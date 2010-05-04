@@ -74,7 +74,7 @@ proc ChooseFile { preferred title canbenew context} {
 	    set desc [tr. "Data files" ]
 	} .spf|.smf {
 	    set typeList [list .spf .smf]
-	    set desc [tr. "Prarmeter or measurement metafiles" ]
+	    set desc [tr. "Parameter or measurement metafiles" ]
 	} default {
 	    set typeList [list $fileType]
 	    set desc "$fileType [tr. files]"
