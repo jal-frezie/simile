@@ -1003,11 +1003,11 @@ namespace eval fileparams {
 	    set dataLocn targetData
 	    set widgetLocn targetNames
 	    set smPath [string range $smPath 1 end]
-	    set defFile measures.spf
+	    set defFile [GetExecTitle $topNode].smf
 	} else {
 	    set dataLocn paramData
 	    set widgetLocn widgetNames
-	    set defFile params.spf
+	    set defFile [GetExecTitle $topNode].spf
 	}
 	upvar \#0 $dataLocn suppliedData
 	upvar \#0 $widgetLocn outNames
@@ -1026,9 +1026,9 @@ namespace eval fileparams {
 	set title "Save [LevelForTitle $smPath] parameters as:"
         set metaFile [ChooseFile $defFile $title 1 $topNode]
 	ClearSubParamRefs $smPath ;# old spfs below this are superseded
-        set SimileProject(fileparam,$smPath/) $metaFile
-#puts "setting SimileProject(fileparam,$smPath) to $SimileProject(fileparam,$smPath)"
         if {[llength $metaFile]} {
+	    set SimileProject(fileparam,$smPath/) $metaFile
+#puts "setting SimileProject(fileparam,$smPath) to $SimileProject(fileparam,$smPath)"
 #            set part [file join $simtmpdir temp_out.spf]
 #            set pStr [NetOpen $part w]
             set pStr [NetOpen $metaFile w]
@@ -1227,7 +1227,7 @@ namespace eval fileparams {
     proc Open {topNode smPath args} {
 	set notInput [expr -[llength $args]]
         set title "Load [LevelForTitle $smPath] parameters from:"
-        set metaFile [ChooseFile params.spf $title 0 $topNode]
+        set metaFile [ChooseFile [GetExecTitle $topNode].spf $title 0 $topNode]
         if {[llength $metaFile]} {
             MergeParams $topNode $smPath $metaFile $notInput 1
             
