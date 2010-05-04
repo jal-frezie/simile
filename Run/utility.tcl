@@ -75,6 +75,9 @@ proc ChooseFile { preferred title canbenew context} {
 	} .spf|.smf {
 	    set typeList [list .spf .smf]
 	    set desc [tr. "Parameter or measurement metafiles" ]
+	} .txt {
+	    set typeList [list .bgx]
+	    set desc [tr. "Idiosyncratic polygon vertices"]
 	} default {
 	    set typeList [list $fileType]
 	    set desc "$fileType [tr. files]"

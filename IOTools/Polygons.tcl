@@ -71,7 +71,7 @@ namespace eval ::polygon375 {
     proc AddVariable {winId} {
         variable useNodes
         ########## start polyfile changes
-        set useNodes($winId,sourcefile) [coords_source]
+        set useNodes($winId,sourcefile) [coords_source $winId]
         
         if {[string compare $useNodes($winId,sourcefile) model]==0} then {
             set ms [message $winId.intro -text "Click on the array value \
@@ -435,9 +435,10 @@ $useNodes($winId,scaley)"
 #	    $winId.bbframe.buttonBox itemconfigure $i -state normal
 #	}
         Repaint $winId $hs
-	if {$fit && !$useNodes($winId,ETCount)} { ;# do not tweak scale if ETs
+	if {$fit} {
 	    if {![GoodFit $useNodes($winId,min) $useNodes($winId,max) \
-		      $useNodes($winId,datamin) $useNodes($winId,datamax)]} {
+		      $useNodes($winId,datamin) $useNodes($winId,datamax)] && \
+		    !$useNodes($winId,ETCount)} { ;# do not tweak scale if ETs
 		::graphtools::AxisRound \
 		    $useNodes($winId,datamin) $useNodes($winId,datamax) 0 \
 		    useNodes($winId,min) useNodes($winId,max) s1 s2 s3 s4 s5
@@ -625,16 +626,25 @@ $useNodes($winId,scaley)"
     }
     
     proc Fit {winId} {
+	variable useNodes
+	
         scan [winfo geometry $winId.viewport.c] {%dx%d+} boxw boxh
+# make room for legend
+	if {[string equal h $useNodes($winId,orient)]} {
+	    incr boxh -40
+	} else {
+	    incr boxw -40
+	}
         scan [$winId.viewport.c bbox map] {%d %d %d %d} cl ct cr cb
 #puts "fitting $cl $ct $cr $cb to $boxw $boxh"
-        Zoom $winId [expr ($boxw-2.0)/($cr-$cl)] [expr ($boxh-42.0)/($cb-$ct)]
+        Zoom $winId [expr ($boxw-2.0)/($cr-$cl)] [expr ($boxh-2.0)/($cb-$ct)]
     }
     
     proc SaveShapes {winId} {
 	variable useNodes
 
-	if {![llength [set file [tk_getSaveFile]]]} return
+	if {![llength [ChooseFile image.tif "Save polygon boundaries as:" 1 \
+		 [$helperTable($winId,whichInstance) GetNode]]]} return
 	set strm [open $file w]
 	puts $strm [concat [GetModelValue $useNodes($winId,xcoord)] \
 				[GetModelValue $useNodes($winId,ycoord)]]
@@ -698,13 +708,15 @@ $useNodes($winId,scaley)"
     }
     
     
-    proc coords_source {} {
+    proc coords_source {winId} {
         after idle {.dialog1.msg configure -wraplength 4i}
         set i [tk_dialog .dialog1 "Source of polygon coordinates" {Click on a button to select the source of the polygon coordinates.} \
                 info 0 {Coords from file} {Coords from model}]
         
         switch $i {
-            0 {set sourcefile [tk_getOpenFile]}
+            0 {set sourcefile \
+		   [ChooseFile polys.bgx "Load polygon boundaries from:" 0 \
+			[$::helperTable($winId,whichInstance) GetNode]]}
             1 {set sourcefile model}
         }
         return $sourcefile
