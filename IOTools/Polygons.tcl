@@ -107,11 +107,6 @@ namespace eval ::polygon375 {
 	    DrawPolys $winId $useNodes($winId,xcoord) \
 		$useNodes($winId,ycoord) \
 		$useNodes($winId,color) 0
-	    set ZoomCmd "Zoom $winId $useNodes($winId,scalex) \
-$useNodes($winId,scaley)"
-	    set useNodes($winId,scalex) 1.0
-	    set useNodes($winId,scaley) 1.0
-	    eval $ZoomCmd
 	} else {
 	    DoFrame $winId
 	    foreach {type coords tags} $useNodes($winId,shapes) {
@@ -122,6 +117,11 @@ $useNodes($winId,scaley)"
 	    }
 	    Repaint $winId $useNodes($winId,color)
 	}
+	set ZoomCmd [list Zoom $winId $useNodes($winId,scalex) \
+			 $useNodes($winId,scaley)]
+	set useNodes($winId,scalex) 1.0
+	set useNodes($winId,scaley) 1.0
+	eval $ZoomCmd
 	if {$useNodes($winId,editMode)} {
 	    set useNodes($winId,editMode) 0
 	    ChangeEditMode [namespace current] $winId
