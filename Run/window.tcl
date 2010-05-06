@@ -2014,12 +2014,11 @@ proc autocomplete {win action pt value valuelist} {
 }
 
 proc FlashRange {win start end} {
-    after idle $win selection range $start $end
-    after 100 $win selection clear
-    after 200 $win selection range $start $end
-    after 300 $win selection clear
-    after 400 $win selection range $start $end
-    after 500 $win selection clear
+# pause event handling while bracket highlit, or new text replaces it
+    set pop "$win selection range $start $end; update idletasks; after 100; $win selection clear"
+    after idle $pop
+    after 200 $pop
+    after 400 $pop
 }
 
 proc ScrollCompletion {win hop} {
