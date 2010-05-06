@@ -467,6 +467,7 @@ set msgs(needs_index_of_type_detail) [tr. "The argument type must match the type
 set msgs(redundant_array_title) [tr. "Equation is needlessly complicated"]
 set msgs(redundant_array_message) [tr. "The equation contains the subexpression %1\$s, which could be expressed more simply."]
 
+set msgs(index_number_out_of_range_title) [tr. "Index number out of range"]
 set msgs(index_number_out_of_range_message) [tr. "You have used the index number %1\$s, but it must be between 1 and the number of available indices, which is %2\$s."]
 
 set msgs(only_works_on_array_title) [tr. "Argument must be array"]
