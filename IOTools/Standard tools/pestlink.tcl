@@ -65,7 +65,8 @@ namespace eval $keyValue {
                 -command [namespace code [list AbleEstimateFields $winId]]]
 	set scrogVar ::[namespace current]::useNodes($winId,scrogging)
         pack [checkbutton $outId.show -text "Show these on plots" \
-                -variable $scrogVar]
+		  -variable $scrogVar \
+		  -command [namespace code [list LoadMeasurements $winId]]]
 	bind $outId.show <Destroy> [list unset $scrogVar] ;# tidy up
         # Actions frame
         # Control buttons
@@ -159,7 +160,7 @@ namespace eval $keyValue {
         # Commentary window
         ScrolledWindow $df.c
         set canId $df.c.text
-        pack [text $canId -height 4] -fill both -expand true
+        text $canId -height 4
         $df.c setwidget $canId
         pack $df.c -side top -fill both -expand true
         
@@ -883,40 +884,14 @@ namespace eval $keyValue {
 	Optimize $winId
     }
     
-    proc Optimize {winId} {
-        
-        # Time to invoke PEST. First we must make a template file that allows
-        # PEST to create a .spf file that will parameterize the model. Usually
-        # a .spf file is MIME-encoded and contains references to other files,
-        # but neither of these need be done here.
-        
-        global simtmpdir initialEstimate minForOpt maxForOpt readMany
-        global tcl_platform sender paramData myNode execExtn
-        variable useNodes
-        variable clevers
-        variable usedHangers
-        variable inGrpData
-        variable outGrpData
-        variable inClevers1
-        variable ptList
-        variable spitLists
-        variable runData
-        
+    proc LoadMeasurements {winId} {
+	global myNode readMany targetData
+
+	variable useNodes
+	variable spitLists
+	variable ptList
+
         set runLength [$useNodes($winId,results).lbf.rl.ent get]
-        $useNodes($winId,results).dbf.c.text delete 1.0 end
-        $useNodes($winId,results).b configure -state disabled
-        
-        # First, look at the outputs required at times before the end
-        # of the run and create an array holding lists of nodes whose
-        # values will be written at each time...
-        
-        global targetData
-        array unset spitLists
-        set usedHangers 0
-        array unset outGrpData *,mems
-        
-        # Descend hierarchically through the frames to get the data? No, use kill menu
-        
 	foreach eTitle $useNodes($winId,drivers) {
             AcceptData $myNode $eTitle -1 1
             set node [GetIdFromCaptionPath $eTitle]
@@ -937,18 +912,54 @@ namespace eval $keyValue {
 	    ShowMess "PEST setup incomplete" warning "Some measured data not specified: [join $targetData(needed) ", "]" ok
 	    return
 	}
+        set ptList [lsort -real [array names spitLists]]   
+	return runLength
+    }
+
+    proc Optimize {winId} {
+        
+        # Time to invoke PEST. First we must make a template file that allows
+        # PEST to create a .spf file that will parameterize the model. Usually
+        # a .spf file is MIME-encoded and contains references to other files,
+        # but neither of these need be done here.
+        
+        global simtmpdir initialEstimate minForOpt maxForOpt
+        global tcl_platform sender paramData myNode execExtn
+        variable useNodes
+        variable clevers
+        variable usedHangers
+        variable inGrpData
+        variable outGrpData
+        variable inClevers1
+        variable ptList
+        variable spitLists
+        variable runData
+        
+        $useNodes($winId,results).dbf.c.text delete 1.0 end
+        $useNodes($winId,results).b configure -state disabled
+        
+        # First, look at the outputs required at times before the end
+        # of the run and create an array holding lists of nodes whose
+        # values will be written at each time...
+        
+        array unset spitLists
+        set usedHangers 0
+        array unset outGrpData *,mems
+        
+        # Descend hierarchically through the frames to get the data? No, use kill menu
+        set runLength [LoadMeasurements $winId]
+
 	set numOutputs [llength $useNodes($winId,drivers)]
         if {$useNodes($winId,preds)} {
-            set mode prediction
             incr numOutputs
             lappend spitLists($useNodes($winId,ptim)) \
                     $useNodes($winId,npred)=what
+	    lappend ptList $useNodes($winId,ptim)
+            set mode prediction
         } else {
             set mode estimation
         }
-        
-        set ptList [lsort -real [array names spitLists]]
-        
+
         set lastPt [lindex $ptList end]
         if {[info exists useEndTime]} {
             if {$runLength<$lastPt} {
@@ -1205,7 +1216,6 @@ $numOutputs"
 
         set relayProc [open |$cmd r]
         # was [SilentRun $cmd]
-        #ShowMess debug info "started $hanger" ok
         fconfigure $relayProc -blocking 0
         fileevent $relayProc readable \
 	    [namespace code [list pestificate $winId $cmd]]
@@ -1320,7 +1330,7 @@ $numOutputs"
         variable spitLists
         variable runData
         variable relayProc
-        
+
         if {![info exists relayProc]} {
             return ;# we have finished the run
         }
@@ -1394,8 +1404,6 @@ $numOutputs"
         #					   [file join $simtmpdir model.rec]]
     }
     
-    proc ShowMeasurements {} {
-        
         # This is to allow us to produce the 'killer graphic' of the field
         # measurements superposed on a plot of the corresponding
         # model-generated data. It runs the model up to the timepoints at
@@ -1412,22 +1420,13 @@ $numOutputs"
         # ends? X-trapolate nearest two points? Of course if we only have one
         # point we just use it...
         
-        global runState simtmpdir errorInfo
-        variable ptList
-        variable spitLists
-        
         # Turn off interval display? Why bother; displaying at irregular
         # intervals will only mess up the other plots, and if we are
         # interpolating anyway, why not do so at every time point? Just so
         # long as we can scrog the values before the display tools get
         # them...(and put them back after)...do by putting specials at
         # beginning and end of helper list? Fine, except it's an array...
-        
-        set widget $runState($topNode,helperId).nb.rcf
-        $widget.upper.topbuttons.reset invoke
-        
-    }
-    
+            
     proc ScrogOutputs {subTime} {
 	global subbedPlots
 

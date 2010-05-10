@@ -4,39 +4,12 @@ AME starts up. Subsequently it can itself load other shared
 libraries corresponding to compiled model programs, and allow
 them to be executed etc by Tcl commands. */
 
-#include <signal.h> /* for killing stuck model execution */
 #include <tcl.h>
 
 #ifdef WIN32
-    #define WIN32_LEAN_AND_MEAN
-    #include <windows.h>
-    #undef WIN32_LEAN_AND_MEAN
-
-    #define FORUNIX 0
-/*
-BOOL APIENTRY
-DllEntryPoint(
-    HINSTANCE hInst,		// Library instance handle.
-    DWORD reason,		// Reason this function is being called.    LPVOID reserved)		// Not used.
-    LPVOID reserved)		// Not used.
-{
-    return TRUE;
-}
-*/
-int kill (int pid, int sig) {
-  HANDLE procHandle;
-  BOOL outcome;
-
-  procHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-  outcome = TerminateProcess(procHandle, sig);
-  CloseHandle(procHandle);
-  return(outcome);
-}
-
+#define FORUNIX 0
 #else
-
 #define FORUNIX 1
-
 #endif
 #include <locale.h>
 
@@ -1619,24 +1592,6 @@ FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 */
-FINDABLE int killmodelCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
-  int error, pid;
-  Tcl_Obj* resultPtr;
-
-  if (argc != 2) {
-    Tcl_WrongNumArgs(interp, 1, argv, "pid");
-    return TCL_ERROR;
-  }
-  error = Tcl_GetIntFromObj(interp, argv[1], &pid);
-  if (error != TCL_OK) {
-    return error;
-  }
-  resultPtr = Tcl_GetObjResult(interp);
-  Tcl_SetIntObj(resultPtr, kill(pid, SIGTERM));
-  return TCL_OK;
-}
-
 /*
  * The following declarations refer to internal Tk routines.  These
  * interfaces are available for use, but are not supported.
@@ -1767,8 +1722,6 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   /*  Tcl_CreateObjCommand(interp, "c_set_connection_database", SetConnDBCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   */
-  Tcl_CreateObjCommand(interp, "c_killmodel", killmodelCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   sprintf(pkgName + strlen(pkgName), ".%s.%d", simileVersion, FORUNIX);
   return Tcl_PkgProvide(interp, "Ame_dll", pkgName);
 }

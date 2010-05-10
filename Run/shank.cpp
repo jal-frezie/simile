@@ -1221,7 +1221,7 @@ ModelServer::ModelServer(char* fileName, char** complaint) {
       *complaint = strdup(WHAT_WENT_WRONG());
       return;
     }
-    getversion = FIND_FUNCTION(handle, "get_version");
+    getversion = (void*)FIND_FUNCTION(handle, "get_version");
     // this does nothing but return the version number, so it can be checked 
     // even if different versions change the args to getcount()
     if (getversion == NULL) {
@@ -1239,7 +1239,7 @@ ModelServer::ModelServer(char* fileName, char** complaint) {
 showMess(globMess); */
     *complaint = NULL;
 
-    getcount = FIND_FUNCTION(handle, "get_count");
+    getcount = (void*)FIND_FUNCTION(handle, "get_count");
     nodecount = ((getcount_type*)getcount)((void*)ame_rand, 
 			 (void*)graphpoint,
 			 (void*)release_graph_data, 
@@ -1250,7 +1250,7 @@ showMess(globMess); */
 			 (void*)&c_graphdata,
 			 &phases, &nodedata);
 
-    createmodel = FIND_FUNCTION(handle, "do_createmodel");
+    createmodel = (void*)FIND_FUNCTION(handle, "do_createmodel");
   }
 
 ModelServer::~ModelServer() {

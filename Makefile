@@ -43,10 +43,11 @@ SLDIR = lib
 SHAREDLIBPREFX = lib
 MAKESL = -fPIC -shared
 VERS = 8.4
-TCLDIR = ../System
 # VERS = 8.6
+TCLDIR = ../System
 # TCLDIR = /usr/local/lib/ActiveTcl-$(VERS)
 USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include -L$(TCLDIR)/lib -ltclstub$(VERS)
+# USETCL = -DUSE_TCL_STUBS -I/usr/include/tcl$(VERS) -L/usr/lib/tcl$(VERS) -ltclstub$(VERS)
 LOCALIZE_TCL_REFS = ls # placebo command
 SHAREDLIBEXTN = .so
 

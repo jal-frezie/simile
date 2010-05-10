@@ -829,8 +829,10 @@ if [string match Darwin $tcl_platform(os)] {
 }
 if {[info tclversion] > 8.5} {
     package require Itcl 4.0
+} elseif {[info tclversion] > 8.4} {
+    package require Itcl 3.4
 } else {
-    package require Itcl
+    package require -exact Itcl 3.3
 }
 itcl::class ModelWindowExtn {
     variable winId

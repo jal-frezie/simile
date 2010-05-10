@@ -444,20 +444,19 @@ proc AcceptData {topNode compName notInput complain} {
 
     set node [IdFromTail $topNode $compName $notInput]
     set dataChanged 0
-    if {$complain > -1} {
-        if {![string equal disabled [$outNames($compName).e cget -state]]} {
-            set newData [UglifyValList [$outNames($compName).e get]]
-            if {![string equal $newData $suppliedData($compName)]} {
-                set msgs(param_source_$compName) [tr. Unsaved]
-		set paramMetadata($compName,saveReference) 0
-#                set suppliedData($compName) $newData
-# will do that later _if_ it is error free
-		set dataChanged 1
-		set entryChanged 1
-            }
-        } else {
-	    upvar 0 suppliedData($compName) newData
+    if {$complain > -1 && \
+	    ![string equal disabled [$outNames($compName).e cget -state]]} {
+	set newData [UglifyValList [$outNames($compName).e get]]
+	if {![string equal $newData $suppliedData($compName)]} {
+	    set msgs(param_source_$compName) [tr. Unsaved]
+	    set paramMetadata($compName,saveReference) 0
+	    #                set suppliedData($compName) $newData
+	    # will do that later _if_ it is error free
+	    set dataChanged 1
+	    set entryChanged 1
 	}
+    } else {
+	upvar 0 suppliedData($compName) newData
     }
     
     # for each constant value, check whether it has been changed, and if so,
@@ -1226,8 +1225,15 @@ namespace eval fileparams {
     
     proc Open {topNode smPath args} {
 	set notInput [expr -[llength $args]]
-        set title "Load [LevelForTitle $smPath] parameters from:"
-        set metaFile [ChooseFile [GetExecTitle $topNode].spf $title 0 $topNode]
+	if {$notInput} {
+	    set titlePath [file normalize /$topNode$smPath]
+	    set extn .smf
+	} else {
+	    set titlePath $smPath
+	    set extn .spf
+	}
+	set title "Load [LevelForTitle $titlePath] measurements from:"
+	set metaFile [ChooseFile [GetExecTitle $topNode]$extn $title 0 $topNode]
         if {[llength $metaFile]} {
             MergeParams $topNode $smPath $metaFile $notInput 1
             
@@ -1247,7 +1253,7 @@ proc LevelForTitle {path} {
     return \"[lindex $levels end]\"
 }
 
-package require xml
+package require -exact xml 3.1
 set parseStatus(spfParser) [::xml::parser -ignorewhitespace true \
 				-elementstartcommand StartElement \
 				-elementendcommand FinishElement \

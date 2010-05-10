@@ -72,7 +72,10 @@ proc ChooseFile { preferred title canbenew context} {
 	} .csv {
 	    set typeList [list .csv .xls .mdb .dbf *.db]
 	    set desc [tr. "Data files" ]
-	} .spf|.smf {
+	} .spf {
+	    set typeList [list .spf .smf]
+	    set desc [tr. "Parameter or measurement metafiles" ]
+	} .smf {
 	    set typeList [list .spf .smf]
 	    set desc [tr. "Parameter or measurement metafiles" ]
 	} .txt {
@@ -795,8 +798,9 @@ proc PackItUp {t} {
 }
 
 proc ShellFileRef {spaced} {
-# Pop a backslash before chars that would break tcl lists
-    regsub -all {([ ])} $spaced {\\\1} straight
+# Pop a backslash before chars that would break commands sent to shell --
+# currently spaces and parentheses (by PEST), there may be others
+    regsub -all {([ ()])} $spaced {\\\1} straight
     return $straight
 }
 

@@ -34,4 +34,7 @@ export LD_LIBRARY_PATH
 # wish8.6 "$SIMDIR/Run/simile.tcl" $1
 TCL_LIBRARY="$LD_LIBRARY_PATH/tcl8.4"
 export TCL_LIBRARY
+# ITCL_LIBRARY="$LD_LIBRARY_PATH/itcl4.0"
+# export ITCL_LIBRARY
 "$SIMDIR/System/bin/wish" "$SIMDIR/Run/simile.tcl" $1
+

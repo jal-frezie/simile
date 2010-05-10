@@ -1,5 +1,23 @@
 // Definitions used in this code and the model code
+#include <signal.h> /* for killing stuck model execution */
 #include <tcl.h>
+
+#ifdef WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
+    #undef WIN32_LEAN_AND_MEAN
+
+int kill (int pid, int sig) {
+  HANDLE procHandle;
+  BOOL outcome;
+  
+  procHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+  outcome = TerminateProcess(procHandle, sig);
+  CloseHandle(procHandle);
+  return(outcome);
+}
+#endif
+
 #include <dllcalls.h>
 
 #define USE_MY_HMAC
@@ -692,6 +710,24 @@ FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
+FINDABLE int killmodelCmd(ClientData clientData, Tcl_Interp *interp, 
+		int argc, Tcl_Obj *CONST argv[]) {
+  int error, pid;
+  Tcl_Obj* resultPtr;
+
+  if (argc != 2) {
+    Tcl_WrongNumArgs(interp, 1, argv, "pid");
+    return TCL_ERROR;
+  }
+  error = Tcl_GetIntFromObj(interp, argv[1], &pid);
+  if (error != TCL_OK) {
+    return error;
+  }
+  resultPtr = Tcl_GetObjResult(interp);
+  Tcl_SetIntObj(resultPtr, kill(pid, SIGTERM));
+  return TCL_OK;
+}
+
 FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   if (argc != 1) {
@@ -734,7 +770,9 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_CreateObjCommand(interp, "count_values", getValueCountCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  return TCL_OK;
+  Tcl_CreateObjCommand(interp, "c_killmodel", killmodelCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+return TCL_OK;
 }
  
 FINDABLE EXPORT int Unpacker_Init(Tcl_Interp *interp) {
