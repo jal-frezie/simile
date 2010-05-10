@@ -156,17 +156,17 @@ System/lib/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 
 # Build a .dll to check licence code during Windows installation
 # Version for GPInstall by QSC
-#Run/install.dll: install.c Makefile
-#	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include $(MAKESL) \
-#		-o install.dll install.c -L../System/lib -lcrypto -lssl; \
-#		cd ..
+Run/install.dll: install.c Makefile
+	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include $(MAKESL) \
+		-o install.dll install.c -L../System/lib -lcrypto -lssl; \
+		cd ..
 # Version for MakeMSI
-Run/install.dll: Run/install_msi.c Run/install_msi.rc Makefile
-	cd Run; windres -i install_msi.rc -o resource_msi.o; \
-		$(GCCCMD) $(FLAGS) $(DEFNS) -I../System/include \
-		-I/c/MsiIntel.SDK/include $(MAKESL) -o install.dll \
-		install_msi.c resource_msi.o /c/MsiIntel.SDK/lib/msi.lib \
-		-L../System/lib -lcrypto -lssl; cd ..
+#Run/install.dll: Run/install_msi.c Run/install_msi.rc Makefile
+#	cd Run; windres -i install_msi.rc -o resource_msi.o; \
+#		$(GCCCMD) $(FLAGS) $(DEFNS) -I../System/include \
+#		-I/c/MsiIntel.SDK/include $(MAKESL) -o install.dll \
+#		install_msi.c resource_msi.o /c/MsiIntel.SDK/lib/msi.lib \
+#		-L../System/lib -lcrypto -lssl; cd ..
 
 System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc
 	cd Interp; windres -I../System/include/tcl -o rc.o Simile.rc; \
