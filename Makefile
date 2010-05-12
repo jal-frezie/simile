@@ -156,7 +156,7 @@ System/lib/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 
 # Build a .dll to check licence code during Windows installation
 # Version for GPInstall by QSC
-Run/install.dll: install.c Makefile
+Run/install.dll: Run/install.c Makefile
 	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include $(MAKESL) \
 		-o install.dll install.c -L../System/lib -lcrypto -lssl; \
 		cd ..

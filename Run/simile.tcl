@@ -71,7 +71,7 @@ regsub -all /\\./ [info script] / scriptCmd
 # Awkward: you want to normalize to get rid of ..'s in path, but that also
 # resolves any pointers except for the complete argument, which can stop the
 # development version starting
-set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
+set SIMILE_PATH [file normalize [file dirname [file dirname $scriptCmd]]]
 set env(SP_PATH) $SIMILE_PATH/System
 # Above seems unnecessary for sicstus 3.10
 
@@ -93,8 +93,11 @@ proc ChooseIntegerRatio {fraction accu} {
 }
 	
 set defScaling [tk scaling]
+# v5.7: try to keep even Linux and Windows from loading any TclTk packages they
+# find on the system, to avoid buggy XML or inappropriate Itcl?
 if {[string match Darwin $tcl_platform(os)] && [info tclversion] < 8.6} {
-    set auto_path [list $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts $SIMILE_PATH/System/lib]
+    set auto_path [list $SIMILE_PATH/System/lib]
+    lappend auto_path $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts $SIMILE_PATH/System/lib
 #    package require tclAE
     proc ::tk::mac::OpenDocument {args} {
         global env

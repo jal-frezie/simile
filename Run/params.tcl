@@ -1088,7 +1088,7 @@ namespace eval fileparams {
 		set inners([string range $compTail 1 [incr slashPosn -1]]) 1
 		continue
 	    }
-	    set subbedComp [Entitize [StripCrs [string range $compTail 1 end]]]
+	    set subbedComp [Entitize [string range $compTail 1 end]]
 	    # if parameter is per-record, only write CDATA if we already have it
 	    set haveBytes [string equal scenario [lindex $outData($compName) 0]]
 	    set nodeId [IdFromTail $topNode $compName 0]
@@ -1098,7 +1098,7 @@ namespace eval fileparams {
 	    set genericAVs label=$subbedComp
 	    if {![string equal $msgs(ncfv) $msgs(comment_$compName)]} {
 		append genericAVs { } \
-		    comment=[Entitize [StripCrs $msgs(comment_$compName)]]
+		    comment=[Entitize $msgs(comment_$compName)]
 	    }
 	    if {[DataInScenario $compName] && \
 		    ($haveBytes || $recordLevel==-1)} {
@@ -1188,7 +1188,7 @@ namespace eval fileparams {
 	puts $pStr $indent</variables>
  	puts $pStr $indent<submodels>
 	foreach sm [array names inners] {
-	    puts $pStr "$indent<submodel label=[Entitize [StripCrs $sm]]>"
+	    puts $pStr "$indent<submodel label=[Entitize $sm]>"
 	    WriteSubmodelParams outData $topNode $metaFile $pStr $smPath/$sm \
 		"  $indent"
 	    puts $pStr $indent</submodel>
@@ -1214,7 +1214,14 @@ namespace eval fileparams {
 	regsub -all ' $str {\&apos;} str
 	regsub -all < $str {\&lt;} str
 	regsub -all > $str {\&gt;} str
-	return \"$str\"
+	
+	# now to make the character references for non-Ascii stuff.
+	# Force no iteration in script and no command substitution
+	# This also substitutes newlines 
+	set ascii \u0000-\u0009\u000b-\u007f ;# ascii characters excluding newline
+	set scn [regsub -all \[^$ascii\] [regsub -all \[$ascii\]+ $str %\[$ascii\]] %c]
+	set fmt [regsub -all \[^$ascii\] [regsub -all \[$ascii\]+ $str %s] {\&#%d;}]
+	return \"[eval [list format $fmt] [scan $str $scn]]\"
     }
 
     # merge a parameter metafile. These are saved with the pathnames of the .csv files
@@ -1305,8 +1312,8 @@ proc StartElement {name attList args} {
     if {[info exists attVals(label)]} {
 	set path $parseStatus(submodel)/$attVals(label)
 	if {[info exists attVals(comment)]} {
-	    set ::msgs(comment_$parseStatus(smPath)[RestoreCrs $path]) \
-		[RestoreCrs $attVals(comment)]
+	    set ::msgs(comment_$parseStatus(smPath)[RestoreOldCrs $path]) \
+		[RestoreOldCrs $attVals(comment)]
 # add comments before lines for reporting (simile cannot read resulting temp_in)
 #	    puts $parseStatus(outStr) "\n# [RestoreCrs $attVals(comment)]"
 	}
@@ -1399,7 +1406,7 @@ proc LoadBase64CharData {encoded} {
 	paramMetadata
 
     if {![info exists parseStatus(loadByteArray)]} return
-    set relPath [RestoreCrs $parseStatus(submodel)/$parseStatus(loadByteArray)]
+    set relPath [RestoreOldCrs $parseStatus(submodel)/$parseStatus(loadByteArray)]
     set compName $parseStatus(smPath)$relPath
 
     set nodeId [ExistCheck $parseStatus(topNode) $relPath \
@@ -1427,6 +1434,13 @@ proc LoadBase64CharData {encoded} {
 #    set whichParamsAffected($compName) 1
 }
 
+proc RestoreOldCrs {txt} {
+    if {$::parseStatus(simV)<5.7} {
+	return [RestoreCrs $txt]
+    }
+    return $txt
+}
+
 proc MergeParams {topNode smPath oldPath notInput interactive} {
     global readMany paramState mimeSquirter simtmpdir whichParamsAffected msgs \
 	paramMetadata
@@ -1446,20 +1460,20 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     set oldDir [pwd]
     set metaFile [file join $simtmpdir temp_in.spf]
     set ::bermudaTriangle {}
-    set origVersion [RevertXMLParams $oldPath $metaFile $topNode $smPath]
-    switch -- $origVersion {
+    set paramState(origVersion) [RevertXMLParams $oldPath $metaFile $topNode $smPath]
+    switch -- $paramState(origVersion) {
 	-1 { ;# User aborted because XML full of unusable bytearrays
 	    return 0
 	} 0 { ;# File failed to parse as XML, try older formats
 	    if {[catch {
 		set multiT [mime::initialize -file $oldPath]
-		set origVersion [mime::getheader $multiT Simile-Version]
+		set paramState(origVersion) [mime::getheader $multiT Simile-Version]
 		set mimeSquirter [NetOpen $metaFile w]
 		fconfigure $mimeSquirter -translation binary
 		mime::getbody $multiT -command SquirtMime -blocksize 256}]
 	    } {
 		set metaFile $oldPath
-		set origVersion 0.0
+		set paramState(origVersion) 0.0
 	    }
 	}
     }
@@ -1473,14 +1487,17 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
             continue
         }
         set IdAndValue [split $savedValue =]
-        if {$origVersion<4.0} {
+        if {$paramState(origVersion)<4.0} {
 	    set restoredComp [RestoreCrs [lindex $IdAndValue 0]]
             # pre-multiple desktop -- trim outermost model
             if {[string equal /Desktop/ [string range $restoredComp 0 8]]} {
                 set restoredComp [string range $restoredComp 8 end]
             }
         } else {
-	    set restoredComp [RestoreCrs [join [lrange $IdAndValue 0 end-2] =]]
+	    set restoredComp [join [lrange $IdAndValue 0 end-2] =]
+	    if {$paramState(origVersion)<5.7} {
+		set restoredComp [RestoreCrs $restoredComp]
+	    }
 	    # allows parameter names to contain the = sign
 	}
         #ShowMess debug info "Component is $restoredComp" ok
@@ -1499,7 +1516,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	    # if merging params from script)
 	    cd $oldDir
 	    set restoredComp $smPath[lindex $move 0]
-            if {$origVersion>=4.0} {
+            if {$paramState(origVersion)>=4.0} {
 		set dataFinder [lindex $IdAndValue end]
                 set reference [string eq reference [lindex $IdAndValue end-1]]
                 if {$reference} {
@@ -1598,7 +1615,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     }
     close $pStr
     cd $oldDir
-    if {$origVersion>=4.0} {
+    if {$paramState(origVersion)>=4.0} {
         file delete $metaFile
     }
     if {$anyGood} {

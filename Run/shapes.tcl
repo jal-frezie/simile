@@ -916,7 +916,7 @@ proc WriteDesc {canvas canvasFile date args} {
 	# use diag in helper. Kill after reloading.
 #        if {[string match */base/* [$canvas gettags $object]]} {
 #        } else {
-            set config ""
+	set config {}
             foreach conf [$canvas itemconfigure $object] {
                 set default [lindex $conf 3]
                 set value [lindex $conf 4]
@@ -927,9 +927,15 @@ proc WriteDesc {canvas canvasFile date args} {
                 if {[string match $default $value.0]} {
                     set value $default
                 }
-                # Don't bother writing default values
-                if {[string compare $default $value]} {
-                    append config [list [lindex $conf 0] $value] " "
+		# this should allow Unicode to be independent of system
+		# encoding. 'Bad' characters also substituted so we can use
+		# concat to stop Tcl making it a list member (sensible?)
+		if {[string equal -text [lindex $conf 0]]} {
+		    # for some reason, breaking next line with \ causes error
+		    set config [concat $config [list -text] [EscapeNasties $value]]
+		} elseif {[string compare $default $value]} {
+		    # Don't bother writing default values
+                    lappend config [lindex $conf 0] $value
                 }
             }
 	    puts $stream [concat \$c create [$canvas type $object] \

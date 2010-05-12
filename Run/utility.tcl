@@ -700,6 +700,13 @@ proc StripCrs {withCrs} {
     return $noCrs
 }
 
+proc EscapeNasties {withBads} {
+# straight from tcl regsub docs
+# this has the advantage of not needing a reverse substitution
+    return [subst [regsub -all {[][{};\#\\\$\s\u0080-\uffff]} $withBads \
+		       {[format \\\\u%04x [scan "\\&" %c]]}]]
+}
+
 proc RestoreCrs {noCrs} {
     regsub -all \\\\n $noCrs \n withCrs
 
