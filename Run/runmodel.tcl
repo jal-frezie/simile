@@ -453,7 +453,7 @@ proc CreateView {node oldPath} {
 
     set stream [NetOpen $metaFile r]
     if {$origVersion >= 5.7} {
-	fconfigure $stream -translation utf-8
+	fconfigure $stream -encoding utf-8
     }
     if {[string equal mre $origin]} {
 	set response [Query wrong_layout question helpers {} {yes no cancel}]

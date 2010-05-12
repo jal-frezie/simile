@@ -918,7 +918,7 @@ $tb1.b43 configure -state $useSpaceAbility
             set mainframe $helperTable($currentNode,whichRunEnv)
             set tempFile [file join $simtmpdir temp_out.shf]
             set stream [NetOpen $tempFile w]
-	    fconfigure $stream -translation utf-8
+	    fconfigure $stream -encoding utf-8
             
             set mreId $helperTable($currentNode,whichRunEnv)
             # save skeleton mre config
