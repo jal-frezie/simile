@@ -374,6 +374,7 @@ proc SaveView {} {
     if {[llength $helperTable($topNode,stateName)]} {
 	set tempFile [file join $simtmpdir temp_out.shf]
         set stream [NetOpen $tempFile w]
+	fconfigure stream -encoding utf-8
         foreach displayBox [array name helperTable *,whichInstance] {
             set helperId $helperTable($displayBox)
 	    set winId [$helperId cget -winId]
@@ -451,6 +452,9 @@ proc CreateView {node oldPath} {
     }
 
     set stream [NetOpen $metaFile r]
+    if {$origVersion >= 5.7} {
+	fconfigure $stream -translation utf-8
+    }
     if {[string equal mre $origin]} {
 	set response [Query wrong_layout question helpers {} {yes no cancel}]
 	switch $response {
