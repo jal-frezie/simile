@@ -374,7 +374,6 @@ proc SaveView {} {
     if {[llength $helperTable($topNode,stateName)]} {
 	set tempFile [file join $simtmpdir temp_out.shf]
         set stream [NetOpen $tempFile w]
-	fconfigure stream -encoding utf-8
         foreach displayBox [array name helperTable *,whichInstance] {
             set helperId $helperTable($displayBox)
 	    set winId [$helperId cget -winId]
@@ -397,24 +396,25 @@ proc SaveView {} {
 
 package require mime
 
-proc MimifySHF {inFile outFile origin} {
+proc MimifySHF {inString outFile origin} {
     global env
     set PartType "application/x-simile"
     set Description "Simile I/O tool configuration file"
     set style attachment
     set newMime [mime::initialize -canonical $PartType \
+		     -param {charset "utf-8"} \
 		     -header [list "Content-Disposition" $style] \
 		     -header [list "Content-Description" $Description] \
 		     -header [list "Simile-Version" $env(SIMILE_VERSION)] \
 		     -header [list "Simile-Origin" $origin] \
-		     -file $inFile]
+		     -string [encoding convertto utf-8 $inString]]
     set stream [NetOpen $outFile w]
     fconfigure $stream -translation binary
     mime::copymessage $newMime $stream
     # clean everything up
     close $stream
     mime::finalize $newMime
-    file delete $inFile
+#    file delete $inFile
 }
 
 proc LoadView {} {
@@ -427,53 +427,78 @@ proc LoadView {} {
     }
 }
 
-proc CreateView {node oldPath} {
-    global mimeSquirter simtmpdir errorInfo helperTable
+proc SHFtoList {oldPath} {
+    global mimeSquirter simtmpdir
+
     if {[catch {
 	set multiT [mime::initialize -file $oldPath]
 	set origVersion [mime::getheader $multiT Simile-Version]
 	set origin [mime::getheader $multiT Simile-Origin]
-	set metaFile [file join $simtmpdir temp_in.shf]
-	set mimeSquirter [NetOpen $metaFile w]
-	fconfigure $mimeSquirter -translation binary
-	mime::getbody $multiT -command SquirtMime -blocksize 256}]
-    } {
+	if {$origVersion<5.7} {
+	    set metaFile [file join $simtmpdir temp_in.shf]
+	    set mimeSquirter [NetOpen $metaFile w]
+	    fconfigure $mimeSquirter -translation binary
+	    mime::getbody $multiT -command SquirtMime -blocksize 256
+	    set stream [NetOpen $metaFile r]
+	    set metaList [RestoreCrs [split [read $stream] \n]]
+	    close $stream
+	} else {
+	    set metaList [encoding convertfrom utf-8 \
+			      [mime::getbody $multiT]]
+	}
+    } syndrome]} {
+	#do_in_editor puts "MIME open failed: $syndrome"
 	set metaFile $oldPath
 	set origVersion 0.0
 	set stream [NetOpen $metaFile r]
 	# check for run env that made the shf
-	gets $stream line
-	if {[llength $line]==4} {
+	set metaList [RestoreCrs [split [read $stream] \n]]
+	if {[llength [lindex $metaList 0]]==4} {
 	    set origin mre
 	} else {
 	    set origin many_windows
 	}
 	close $stream
     }
+    return [concat [list $origin $origVersion] $metaList]
+}
 
-    set stream [NetOpen $metaFile r]
-    if {$origVersion >= 5.7} {
-	fconfigure $stream -encoding utf-8
+proc PullMember {tgtRef} {
+    upvar 1 $tgtRef tgt
+
+    upvar 1 metaList listRef
+    if {![llength $listRef]} {
+	return -1
     }
+    set tgt [lindex $listRef 0]
+    set listRef [lrange $listRef 1 end]
+    return [string length $tgt]
+}
+
+proc CreateView {node oldPath} {
+    global mimeSquirter simtmpdir errorInfo helperTable
+    set SHFContents [SHFtoList $oldPath]
+    set origin [lindex $SHFContents 0]
+    set origVersion [lindex $SHFContents 1]
+    set metaList [lrange  $SHFContents 2 end]
     if {[string equal mre $origin]} {
 	set response [Query wrong_layout question helpers {} {yes no cancel}]
 	switch $response {
 	    yes {
 		raise [Makemre $node]
-		RunEnv::LoadViewFile $node $stream $origVersion
+		RunEnv::LoadViewFile $node $metaList $origVersion
 	    } no {
-		LoadMREFormatView $node $stream $origVersion
+		LoadMREFormatView $node $metaList $origVersion
 	    } cancel {
 	    }
 	}
-	close $stream
 	return
     }
     
-    while {[gets $stream helperId] >= 0} {
-	gets $stream helperTitle
-	gets $stream geometry
-	gets $stream oldStatus
+    while {[PullMember helperId] >= 0} {
+	PullMember helperTitle
+	PullMember geometry
+	PullMember oldStatus
 
 	set inst [ReinstateHelper $origVersion $oldStatus \
 		      $helperId $helperTitle]
@@ -498,8 +523,7 @@ proc ReinstateHelper {origVersion oldStatus helperId helperTitle} {
 	return [Query [list missing_iotool_type $helperId] \
 		    warning helpers {} abort]
     }
-    if {[catch {CreateHelperWindow $helperId [RestoreCrs $helperTitle] \
-		    [RestoreCrs $oldStatus]} inst]} {
+    if {[catch {CreateHelperWindow $helperId $helperTitle $oldStatus} inst]} {
 	if {[string equal aborted $inst]} {
 	    return abort
 	}
@@ -510,10 +534,10 @@ proc ReinstateHelper {origVersion oldStatus helperId helperTitle} {
     }
 }
 
-proc LoadMREFormatView {node stream origVersion} {
+proc LoadMREFormatView {node metaList origVersion} {
     global helperTable
-    while {[gets $stream helperId] >= 0} {
-        gets $stream oldStatus
+    while {[PullMember helperId] >= 0} {
+        PullMember oldStatus
 	set inst [ReinstateHelper $origVersion $oldStatus $helperId {}]
 	if {[string equal abort $inst]} {
 	    break

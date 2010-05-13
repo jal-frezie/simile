@@ -916,81 +916,87 @@ $tb1.b43 configure -state $useSpaceAbility
 	    return
 	} else {
             set mainframe $helperTable($currentNode,whichRunEnv)
-            set tempFile [file join $simtmpdir temp_out.shf]
-            set stream [NetOpen $tempFile w]
-	    fconfigure $stream -encoding utf-8
-            
+#            set tempFile [file join $simtmpdir temp_out.shf]
+#            set stream [NetOpen $tempFile w]
+            set metaList {}
+
             set mreId $helperTable($currentNode,whichRunEnv)
             # save skeleton mre config
-            puts $stream "[winfo x $mreId] [winfo y $mreId] \
+            lappend metaList "[winfo x $mreId] [winfo y $mreId] \
                     [winfo width $mreId] [winfo height $mreId]"
-            puts $stream "[[GetFrame $mainframe].mainpw sash coord 0]"
-            puts $stream "[[GetFrame $mainframe].mainpw.controlPane.panedwindow sash coord 0]"
-            SaveChildrenConfig $dp0 [string length $dp0.] $stream
+            lappend metaList "[[GetFrame $mainframe].mainpw sash coord 0]"
+            lappend metaList "[[GetFrame $mainframe].mainpw.controlPane.panedwindow sash coord 0]"
+            SaveChildrenConfig $dp0 [string length $dp0.]
             
-            close $stream
-            MimifySHF $tempFile $saveName mre
+#            close $stream
+            MimifySHF $metaList $saveName mre
 	    do_in_editor AttackGlobalVariable helperTable \
 		($currentNode,stateName) $saveName
 	    PreserveSetup 0
 	}
     }
     
-    proc SaveChildrenConfig {page loss stream} {
+    proc SaveChildrenConfig {page loss} {
+	upvar 1 metaList metaList
 	switch [winfo class $page] {
 	    Panedwindow {
-		SavePanedwindowConfig $page $loss $stream
+		SavePanedwindowConfig $page $loss
 	    }
 	    TNotebook {
-		SaveNotebookConfig $page $loss $stream
+		SaveNotebookConfig $page $loss
 	    }
 	    default {
-		#puts $stream "Unhandled Notebook page child: $child"
+		#lappend metaList "Unhandled Notebook page child: $child"
 		if {[string equal container [winfo name $page]]} {
-		    SaveContainer $page $loss $stream
+		    SaveContainer $page $loss
 		} else {
 		    foreach child [winfo children $page]  {
-			SaveChildrenConfig $child $loss $stream
+			SaveChildrenConfig $child $loss
                     }
                 }
 	    }
 	}
     }
 
-    proc SaveNotebookConfig {notebook loss stream} {
+    proc SaveNotebookConfig {notebook loss} {
+	upvar 1 metaList metaList
+
         set nb [string range $notebook $loss end]
-        puts $stream "notebook $nb"
+        lappend metaList "notebook $nb"
         foreach page [$notebook tabs] {
             set pagecaption [$notebook tab $page -text]
             regsub -all " " $pagecaption _ noSpcpagecaption
 	    set pageId [string range [winfo name $page] 1 end]
-            puts $stream "page $nb $pageId $noSpcpagecaption"
-	    SaveChildrenConfig $page $loss $stream
+            lappend metaList "page $nb $pageId $noSpcpagecaption"
+	    SaveChildrenConfig $page $loss
         }
     }
     
-    proc SavePanedwindowConfig {panedwindow loss stream} {
-        puts $stream "panedwindow [string range $panedwindow $loss end] [$panedwindow cget -orient]"
+    proc SavePanedwindowConfig {panedwindow loss} {
+	upvar 1 metaList metaList
+
+        lappend metaList "panedwindow [string range $panedwindow $loss end] [$panedwindow cget -orient]"
         foreach pane [$panedwindow panes] {
-            puts $stream "pane [string range $pane $loss end]"
-	    SaveChildrenConfig $pane $loss $stream
+            lappend metaList "pane [string range $pane $loss end]"
+	    SaveChildrenConfig $pane $loss
 	}
         for {set index 0} {$index < [expr [llength [$panedwindow panes]]-1]} \
 	    {incr index} {
-		puts $stream "sash [string range [winfo parent $pane] $loss end] $index [$panedwindow sash coord $index]"
+		lappend metaList "sash [string range [winfo parent $pane] $loss end] $index [$panedwindow sash coord $index]"
 	    }
     }
     
-    proc SaveContainer {winId loss stream} {
+    proc SaveContainer {winId loss} {
         global helperTable
+	upvar 1 metaList metaList
 
 	set inst $helperTable($winId,whichInstance)
         set helperId [$inst info class]
-        puts $stream "container [string range [winfo parent $winId] $loss end]"
-        puts $stream [namespace tail $helperId]
+        lappend metaList "container [string range [winfo parent $winId] $loss end]"
+        lappend metaList [namespace tail $helperId]
         # substitute <cr>s so entry goes on one line
-        # not a toplevel #puts $stream [StripCrs [wm title $winId]]
-        # not a toplevel #puts $stream [wm geometry $winId]
+        # not a toplevel #lappend metaList [StripCrs [wm title $winId]]
+        # not a toplevel #lappend metaList [wm geometry $winId]
 	
 # If helper includes a PrepareSaveString command, call it. 1st arg is 
 # expanded before executing helper namespace so window Id is copied from local 
@@ -1001,7 +1007,7 @@ $tb1.b43 configure -state $useSpaceAbility
 #	    }
 #	}
 	$inst PrepareSaveString
-	puts $stream [StripCrs [$inst cget -State]]
+	lappend metaList [$inst cget -State]
     }
     
     proc LoadView {} {
@@ -1014,37 +1020,17 @@ $tb1.b43 configure -state $useSpaceAbility
     }
     
     proc LoadSHF {currentNode oldPath} {
-        global mimeSquirter simtmpdir
         global helperTable errorInfo
         variable dp0 
-        if {[catch {
-                set multiT [mime::initialize -file $oldPath]
-                set origVersion [mime::getheader $multiT Simile-Version]
-                set origin [mime::getheader $multiT Simile-Origin]
-                set metaFile [file join $simtmpdir temp_in.shf]
-                set mimeSquirter [NetOpen $metaFile w]
-                fconfigure $mimeSquirter -translation binary
-                mime::getbody $multiT -command SquirtMime -blocksize 256
-	} syndrome]} {
-#do_in_editor puts "MIME open failed: $syndrome"
-            set metaFile $oldPath
-            set origVersion 0.0
-            set stream [NetOpen $metaFile r]
-            # check for run env that made the shf
-            gets $stream line
-            if {[llength $line]==4} {
-                set origin mre
-            } else {
-                set origin many_windows
-            }
-            close $stream
-        }
-        
+
+	set SHFContents [SHFtoList $oldPath]
+	set origin [lindex $SHFContents 0]
+	set origVersion [lindex $SHFContents 1]
+	set metaList [lrange  $SHFContents 2 end]
         set helperTable($currentNode,stateName) $oldPath
-        set stream [NetOpen $metaFile r]
        
         if {[string equal mre $origin]} {
-            LoadViewFile $currentNode $stream $origVersion
+            LoadViewFile $currentNode $metaList $origVersion
         } elseif {[string equal many_windows $origin]}  {
 
             # assume that it is an shf made by the multiple window run env
@@ -1055,7 +1041,7 @@ $tb1.b43 configure -state $useSpaceAbility
 		return
 	    }; #what if there is an error in the file delete MRE, rebuild
             AddNotebook $dp0
-            while {[gets $stream helperId] >= 0} {
+            while {[PullMember helperId] >= 0} {
                 set emptyPage [MainNotebookEmptyPage]
                 if {![string match none $emptyPage]} {
                     set containerId [MainNotebookEmptyPage]
@@ -1063,15 +1049,15 @@ $tb1.b43 configure -state $useSpaceAbility
                     set containerId [AddNotebookPage $dp0.notebook]
                 }
                 #ShowMess debug info "LoadView winId $containerId" ok
-                gets $stream helperTitle
-                set winId [NewHelperInWindow $containerId $helperId [RestoreCrs $helperTitle]]
-                gets $stream geometry
+                PullMember helperTitle
+                set winId [NewHelperInWindow $containerId $helperId $helperTitle]
+                PullMember geometry
                 #wm geometry $winId $geometry # not a toplevel
-                gets $stream oldStatus
+                PullMember oldStatus
                 if {$origVersion<4.0} {
                     set oldStatus [LoseDTRef $oldStatus]
                 }
-                set helperTable($winId,status) [RestoreCrs $oldStatus]
+                set helperTable($winId,status) $oldStatus
                 if {[catch {SystemHelperCall $winId $currentNode \
 				Restore $winId} prang]} {
 		    if {[string equal aborted $prang]} {
@@ -1092,13 +1078,13 @@ $tb1.b43 configure -state $useSpaceAbility
         } else  {
 	    Query not_an_shf error execution {} ok
         }
-        close $stream
+#        close $stream
 # allow helper windows to configure themselves
 	update
 	PreserveSetup 0
     }
     
-    proc LoadViewFile {currentNode stream origVersion} {
+    proc LoadViewFile {currentNode metaList origVersion} {
         global helperTable
         variable dp0
         
@@ -1109,7 +1095,7 @@ $tb1.b43 configure -state $useSpaceAbility
         set win $helperTable($currentNode,whichRunEnv)
 	set mainframe $win
         # read and set .mre position and size
-        gets $stream line
+        PullMember line
         scan $line "%i %i %i %i" x y width height
 	if {$x>=0 && $x+$width<[winfo screenwidth $win] && \
 		$y>=0 && $y+$height<[winfo screenheight $win]} {
@@ -1118,16 +1104,16 @@ $tb1.b43 configure -state $useSpaceAbility
 	    wm geometry $win ${width}x${height}
 	}
 
-        gets $stream line
+        PullMember line
         scan $line "%i %i" x y;
         [GetFrame $mainframe].mainpw sash place  0 $x $y
         
-        gets $stream line
+        PullMember line
         scan $line "%i %i" x y
         [GetFrame $mainframe].mainpw.controlPane.panedwindow sash place  0 $x $y
 
         set newNotebooks {}
-        while {[gets $stream line] >= 0} {
+        while {[PullMember line] >= 0} {
             switch [scan $line %s] {
                 container {
                     if {[scan $line "%s %s" widget tail]==1} {
@@ -1137,12 +1123,12 @@ $tb1.b43 configure -state $useSpaceAbility
                         set tail [LoseTLRef $tail]
                     }
                     if {[string equal abort [LoadContainer $currentNode \
-						 $stream $tail $origVersion]]} {
+						 $tail $origVersion]]} {
 			break
 		    }
                 }
                 panedwindow {
-                    #%puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
+                    #%lappend metaList "panedwindow $panedwindow [$panedwindow cget -orient]"
                     scan $line "%s %s %s" widget path orient
                     if {$origVersion<4.0} {
                         set path [LoseTLRef $path]
@@ -1152,7 +1138,7 @@ $tb1.b43 configure -state $useSpaceAbility
                     pack $dp0.$path -expand yes -fill both
                 }
                 pane {
-                    #%puts $stream "pane $pane"
+                    #%lappend metaList "pane $pane"
                     scan $line "%s %s" widget tail
                     if {$origVersion<4.0} {
                         set tail [LoseTLRef $tail]
@@ -1180,7 +1166,7 @@ $tb1.b43 configure -state $useSpaceAbility
                     $panedwindow sash place $index $sashx $sashy
                 }
                 notebook {
-                    #puts $stream "notebook $notebook"
+                    #lappend metaList "notebook $notebook"
                     scan $line "%s %s" widget tail
                     if {$origVersion<4.0} {
                         set tail [LoseTLRef $tail]
@@ -1198,7 +1184,7 @@ $tb1.b43 configure -state $useSpaceAbility
                     pack $path -fill both -expand yes
                 }
                 page {
-                    #puts $stream "page $notebook $page $pagecaption"
+                    #lappend metaList "page $notebook $page $pagecaption"
                     scan $line "%s %s %s %s" widget nbtail pageId noSpcpagecaption
                     if {$origVersion<4.0} {
                         set nbtail [LoseTLRef $nbtail]
@@ -1216,7 +1202,7 @@ $tb1.b43 configure -state $useSpaceAbility
                             "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
                 }
                 default {
-                    # puts $stream "Unhandled mre element"
+                    # lappend metaList "Unhandled mre element"
                 }
             }
         }
@@ -1233,11 +1219,12 @@ $tb1.b43 configure -state $useSpaceAbility
         }
     }
     
-    proc LoadContainer {node stream containerId origVersion} {
+    proc LoadContainer {node containerId origVersion} {
         global helperTable
         variable dp0
 	variable CurrentContainer
 
+	upvar 1 metaList metaList
         #ShowMess debug info "LoadContainer: stream $stream, line $line" ok
         if {[string length $containerId]} {
 	    set CurrentContainer $dp0.$containerId
@@ -1245,9 +1232,9 @@ $tb1.b43 configure -state $useSpaceAbility
 	    set CurrentContainer $dp0
 	}
         
-        gets $stream helperId
+        PullMember helperId
         #ShowMess debug info "LoadContainer: $item $containerId; helperId $helperId" ok
-        gets $stream oldStatus
+        PullMember oldStatus
 	return [ReinstateHelper $origVersion $oldStatus $helperId {}]
     }
     
