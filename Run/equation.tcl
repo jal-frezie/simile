@@ -499,7 +499,8 @@ proc destroy_equation {} {
     puts $layoutStream [string equal zoomed [wm state $equation(top)]]
     puts $layoutStream [wm geometry $equation(top)]
 
-    RunEnv::SaveChildrenConfig $equation(top).notebook 0 $layoutStream
+    RunEnv::SaveChildrenConfig $equation(top).notebook 0 ;# creates metaList
+    puts $layoutStream [join $metaList \n]
     close $layoutStream
     PackItUp $equation(top)
 }

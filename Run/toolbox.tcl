@@ -576,7 +576,7 @@ proc ScrubRun {node times} {
     if {![info exists execThread($node,id)] && \
 	    ![info exists execInterp($node,id)]} {
 	# exec code not loaded, or threaded but no exec for this node
-	InitExecThread $node
+	return
     }
     set runState($node,modelRunning) 0
     set optKill [after 3000 TryToKill $node]
@@ -599,6 +599,13 @@ proc LeaveHelpers {node} {
 }
 
 proc load_dll {topNode lang progDir id node incs} {
+    global execThread execInterp
+
+    if {![info exists execThread($node,id)] && \
+	    ![info exists execInterp($node,id)]} {
+	# exec code not loaded, or threaded but no exec for this node
+	InitExecThread $node
+    }
     if {[catch {ex_load_dll $topNode $lang [GetUsableName $progDir] $id \
 		    $node $incs} new_model_id]} {
 	if {[PrefValue custom(hackBreak) hackBreak]} {
