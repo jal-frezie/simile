@@ -83,7 +83,14 @@ proc ExplainError {myNode errList origError} {
 	default {set operation "doing $what for"}
     }
 #	advancemodel {set operation "advancing the time point for"}
-    if {![string equal none $dest]} {
+    if {[string is integer -strict $dest]} { ;# graph id
+	foreach {n record} [array get ::nodedata] {
+	    if {[lindex $record 9]==$dest} {
+		set target "[GetFullCaption $record] (node [lindex $record 0])"
+		break;
+	    }
+	}
+    } elseif {![string equal none $dest]} {
 	set targetList [DescribeComponent $dest]
 	if {[catch {GetNodeIdFromRef $myNode $dest [lindex $targetList 1]} \
 		 TargetId]} {
@@ -358,7 +365,7 @@ proc old_stage_incr {ns_extras step v} {
     }
 }
 
-proc stage_incr {ns_extras step v span} {
+proc stage_incr {ns_extras step v span gId} {
     global adapt
     upvar \#0 $ns_extras extras
     if {[info exists extras]} {
@@ -406,6 +413,7 @@ proc stage_incr {ns_extras step v span} {
 	        set errMagn [expr abs($dv-$t3)]
 #puts "p10 pred_change $extras(pred_change) dv $dv errMagn $errMagn"
 	        if {$errMagn > $adapt(maxErr)} {
+		    set adapt(culprit) $gId
 		    set adapt(maxErr) $errMagn
 	        }
 #            }
@@ -572,8 +580,8 @@ proc TclExecuteModel {node howInt start end errLim} {
                         set bigPhase [PhaseFor $xtime $freq $phasecount]
                     } else {
                         # signal problem
-                        error [list tcl_model_err evalmodel unknown $xtime $bigPhase \
-				  discontinuity]
+                        error [list tcl_model_err evalmodel $adapt(culprit) \
+				   $xtime $bigPhase discontinuity]
                     }
                 } else {
                     set madeStep 1
