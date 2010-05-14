@@ -2,7 +2,7 @@ at_init(Exp) --> at_phase(0,Exp).
 iterations(Alarm) --> st=sofar(if Alarm then 0 else st+1),st.
 
 const_delay(val,time) -->
-	count_through = int(10*time(0)),
+	count_through = round(10.0*time(0)),
 	shift = count_through - last(count_through),
 	[array] = makearray(if place_in(1)>10*time-shift then
 			   val
@@ -13,8 +13,8 @@ const_delay(val,time) -->
 	element([array],1).
 
 var_delay(val,time) -->
-	ptw = int(simile_mod(10*time(0),1000))+1,
-	ptr = int(simile_mod(10*(time(0)-time),1000))+1,
+	ptw = round(simile_mod(10*time(0),1000))+1,
+	ptr = round(simile_mod(10*(time(0)-time),1000))+1,
 	[array] = makearray(if wrapped(last(ptw),ptw,place_in(1))
 			   then val
 			   else last(element([array],place_in(1))),
