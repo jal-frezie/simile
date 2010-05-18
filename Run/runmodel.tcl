@@ -1211,8 +1211,6 @@ proc StartRun {node} {
 	set hlp [UniqueId helper]
 	similescript::$defHelper $hlp $runClass "Run control for $topCapt"
 	set runState($node,helperId) [$hlp cget -winId]
-	wm protocol $runState($node,helperId) WM_DELETE_WINDOW \
-	    [list $defHelper::AbortFromMenu $node]
     }
 # Do not put up mre, sliders, etc if model has failed to start
 #    if {![info exists running_c]} {
@@ -1255,7 +1253,11 @@ proc StartRun {node} {
 	    $ctrlPane sash place 0 10 $aimPane
 	    update
 	}
-	::RunEnv::InMreFor $node ;# in case it has been focussed since creation    }
+	::RunEnv::InMreFor $node ;# in case it has been focussed since creation
+    } else {
+	wm protocol $runState($node,helperId) WM_DELETE_WINDOW \
+	    [list ${defHelper}::AbortFromMenu $node]
+    }
 # Now list all the inputs in the model, so we can avoid running it until
 # all have tools attached to provide their values
 #    if {[info exists inputHelper]} {
