@@ -1991,8 +1991,10 @@ proc autocomplete {win action pt value valuelist} {
 # right now for some innovation. Up and down arrows will scroll through 
 # possible matches so we need to get all...only include completion if it adds
 # at least one alphanumeric character
-	    set key ^$trigger\[\[:alnum:\]\]
-	    set matches [lsearch -all -inline -regexp $valuelist $key]
+#	    set key ^$trigger\[\[:alnum:\]\]
+# actually its awkward having a completion appear if you have entered the whole
+# item, so drop this restriction
+	    set matches [lsearch -all -inline -regexp $valuelist ^$trigger]
 	    if {[llength $matches]} {
 		foreach match $matches {
 		    lappend tails [string range [string trimleft $match \[\{] \
@@ -2025,16 +2027,20 @@ proc FlashRange {win start end} {
 proc ScrollCompletion {win hop} {
     global equationbar
 
-    if {[$win selection present] && [info exists equationbar(tails)]} {
+#    if {[$win selection present] && [info exists equationbar(tails)]}
+# selection not present if whole string matches, drop condition
+    if {[info exists equationbar(tails)]} {
 	$win configure -validate none
-	$win delete sel.first sel.last
+	if {[$win select present]} {
+	    $win delete sel.first sel.last
+	}
 	set turn [llength $equationbar(tails)]
 	set equationbar(currentMatch) \
 	    [expr {int(fmod($equationbar(currentMatch)+$turn+$hop,$turn))}]
 	set newTail [lindex $equationbar(tails) $equationbar(currentMatch)]
 	set origin [$win index insert]
 	$win insert insert $newTail
-	$win selection range $origin insert
+	$win select range $origin insert
 	$win configure -validate key
     }
 }

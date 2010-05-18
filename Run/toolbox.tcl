@@ -2312,7 +2312,7 @@ proc AddInputs {winId bar} {
     set equationbar(params) {} ;# for autocomplete
     set paramData [GetFromProlog tk_get_params('$winId',$node)]
     set popupTable {}
-    foreach paramList $paramData {
+    foreach paramList [lsort -dictionary -index 1 $paramData] {
 	set paramName [lindex $paramList 1]
 	$bar.inputs.menu add command -label $paramName \
 	    -command [list InsertParam $bar.equation $paramName]
