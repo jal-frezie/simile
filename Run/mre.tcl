@@ -31,7 +31,7 @@ namespace eval RunEnv {
     # A separator is placed between the
     #    package require BWidget
 
-set toolbars [list \
+    set toolbars [list \
    [list \
 	[list new.gif "New display configuration" RunEnv::InitializeDisplays] \
 	[list open.gif "Load a configuration of displays" RunEnv::LoadView] \
@@ -109,7 +109,7 @@ set toolbars [list \
                                 {} -command { ::RunEnv::InvokeFPDialogue } }
                     {separator}
                     {command "Close"    {} "Close the Run Environment window" \
-                                {} -command RunEnv::Destroy }
+                                {} -command RunEnv::WindUp }
                 }
                 "Edit" all edit 0 {
                     {command "Copy"    {} "Copy display to clipboard" {} \
@@ -228,7 +228,7 @@ set toolbars [list \
             if {[string match unix $tcl_platform(platform)]} {
                 wm iconbitmap $mreId @../Images/dribble.xbm
             }; # on Windows uses default icon set in Runmodel.tcl
-            wm protocol $mreId WM_DELETE_WINDOW ::RunEnv::Destroy
+            wm protocol $mreId WM_DELETE_WINDOW ::RunEnv::WindUp
             return $mreId
         } ; # if .mre exists
     }
@@ -615,17 +615,19 @@ set toolbars [list \
 	array unset helperTable $currentNode,stateName
     }
 
-    proc Destroy {args} {
+    proc WindUp {} {
+	global helperTable
+        variable currentNode
+	
+	$helperTable(RunControl)::AbortFromMenu $currentNode
+    }
+
+    proc Destroy {node} {
         global helperTable window_info model_id
         variable runControlWindId
         variable currentNode
         
-
-        if {[llength $args]} {
-            InMreFor [lindex $args 0]
-        }
-	set node $currentNode
-
+        InMreFor $node
 	set mreId $helperTable($node,whichRunEnv)
 	KillTransients $mreId
         destroy .helpPopup
@@ -645,7 +647,6 @@ set toolbars [list \
         }
         destroy $mreId
         unset helperTable($node,whichRunEnv)
-	TryToKill $node
     }
     
     proc Addpanedwindow {containerId orientation} {

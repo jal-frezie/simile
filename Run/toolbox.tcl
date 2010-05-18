@@ -489,25 +489,6 @@ proc FeedModel {node incoming} {
     }
 }
 
-proc KillInterpFor {node} {
-    global runState runHow
-    if {[info exists runState($node,interp)]} {
-    if {[string equal interp $runHow(call)]} {
-        interp delete $runState($node,interp)
-    } else {
-#       tell_runner $node {wm deiconify .}
-#       do_in_node $node exit_exec    
-#       tell_runner $node exit
-        TryToKill $node
-        if {[string equal pipe $runHow(call)]} {
-#       gets $runState($node,interp)
-#       close $runState($node,interp)
-        }
-    }
-#       unset runState($node,interp)
-    }
-}
-
 proc tell_runner {node action} {
     global runState runHow
 #puts "Sending \"$action\" to $node exec"
@@ -1774,7 +1755,6 @@ proc FinishExec {win} {
     global window_info helperTable hideQuery
 
     set node $window_info($win,top_node)
-    set hideQuery 1
     $helperTable(RunControl)::AbortFromMenu $node
 }
 

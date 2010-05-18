@@ -1211,6 +1211,8 @@ proc StartRun {node} {
 	set hlp [UniqueId helper]
 	similescript::$defHelper $hlp $runClass "Run control for $topCapt"
 	set runState($node,helperId) [$hlp cget -winId]
+	wm protocol $runState($node,helperId) WM_DELETE_WINDOW \
+	    [list $defHelper::AbortFromMenu $node]
     }
 # Do not put up mre, sliders, etc if model has failed to start
 #    if {![info exists running_c]} {

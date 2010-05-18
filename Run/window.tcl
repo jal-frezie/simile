@@ -1588,8 +1588,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
                     -command "MenuSelect $c code run_tcl" \
                     -accelerator "$accKey+D"
     AddAccelerator $winid model "Debug" "<$accSym-d>"
-    $fm add command -label [tr. "Abort execution"] -state $execEntryState \
-                    -command "FinishExec $c"
+#Model now aborted by closing run control
+#    $fm add command -label [tr. "Abort execution"] -state $execEntryState \
+#                    -command "FinishExec $c"
     $fm add separator
     $fm add command -label [tr. "List equations"] \
             -command "MenuSelect $c file list_eqns" \

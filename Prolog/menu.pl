@@ -1184,7 +1184,6 @@ check_deletable(Win, Parent) :-
 close_exec(Parent) :-
 	scrub_run(Parent, 1),
 	kill_helpers(Parent),
-	output:safe_tcl_eval(['KillInterpFor', Parent], _),
 	scrub_autosave(Parent).
 	
 remove_model(Win, Parent) :-

@@ -64,8 +64,11 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 }
 
 proc Nappy {args} {
-    set fill [catch $args poop]
-    return [list $fill $poop $::errorInfo]
+    if {[catch $args poop]} {
+	return [list 1 $poop $::errorInfo]
+    } else {
+	return [list 0 $poop]
+    }
 }
 
 proc update_executable {node lang} {
