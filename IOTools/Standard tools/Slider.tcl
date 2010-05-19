@@ -140,7 +140,11 @@ namespace eval slide139 {
                 return already_up
             } else {
                 pack [frame $f] -fill x -expand true
-                SetState $winId [concat [GetState $winId] \
+		set lbg [[winfo parent $f].head cget -bg]
+		set dbg [Gradient $lbg $f 15]
+		set fbg [Gradient $lbg $f -50]
+                $f configure -bg $lbg
+		SetState $winId [concat [GetState $winId] \
                         [list [StripCrs $title]]]
             }
         } else {
@@ -176,13 +180,15 @@ namespace eval slide139 {
                     pack [label $f.caption -text [lindex $levels end] -width 12]
                 } default {
                     scale $f.scale -length 120 -orient h -showvalue false \
-                            -sliderlength 10 -from $min -to $max \
-                            -tickinterval $gap -resolution $spacing \
-                            -variable widgetSeln($node) \
-                            -command [namespace code \
-                            [list SetArrayIfUsed $node $fixed {}]]
+			-sliderlength 10 -from $min -to $max \
+			-tickinterval $gap -resolution $spacing \
+			-bg $lbg -troughcolor $dbg -activebackground $fbg \
+			-variable widgetSeln($node) \
+			-command [namespace code \
+				      [list SetArrayIfUsed $node $fixed {}]]
                     pack $f.scale -side right -fill x -expand true
-                    pack [label $f.caption -text [lindex $levels end] -width 12]
+                    pack [label $f.caption -text [lindex $levels end] \
+			      -bg $lbg -width 12]
                         
                     pack [entry $f.entry -textvariable widgetSeln($node) \
 			      -width 8] -padx 1 -pady 1
@@ -194,7 +200,8 @@ namespace eval slide139 {
             set allVals $defVal
         } else {
             #	    set useTrans [lindex $trans $useDim]
-            pack [label $f.caption -text [lindex $levels end]]
+            pack [label $f.caption -text [lindex $levels end] \
+			      -bg $lbg -width 12]
             set count [lindex $nodeDims $useDim]
             # bodge it to work with record submodels
             if {[string equal RECORDS $count]} {
@@ -252,8 +259,8 @@ namespace eval slide139 {
                                 -side left
                     } default {
                         pack [frame $f.elt$index] -fill x -expand true
-                        pack [label $f.elt$index.id -text $slTitle -width 10] \
-                                -side left
+                        pack [label $f.elt$index.id -text $slTitle \
+			      -bg $lbg -width 10] -side left
                         pack [entry $f.elt$index.val \
                                 -textvariable widgetSeln($node,$index) \
                                 -width 8] -side left -padx 1 -pady 1
@@ -262,12 +269,13 @@ namespace eval slide139 {
 						     $fixed $index]]
                         set newScale $f.elt$index.scale
                         scale $newScale -length 180 \
-                                -orient horizontal -showvalue false \
-                                -sliderlength 10 -from $min -to $max \
-                                -resolution $spacing \
-                                -variable widgetSeln($node,$index) \
-                                -command [namespace code \
-                                [list SetArrayIfUsed $node $fixed $index]]
+			    -orient horizontal -showvalue false \
+			    -sliderlength 10 -from $min -to $max \
+			    -resolution $spacing \
+			    -bg $lbg -troughcolor $dbg -activebackground $fbg \
+			    -variable widgetSeln($node,$index) \
+			    -command [namespace code [list SetArrayIfUsed \
+							  $node $fixed $index]]
                         pack $newScale -fill x -expand true
                         # only put legend on bottom one
                         if {$count==$index} {
