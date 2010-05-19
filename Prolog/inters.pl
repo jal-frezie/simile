@@ -341,7 +341,8 @@ make_intermediates(
 	a subexpression that matches this one: need to save loops as well
 	as context!! Cannot do this with randoms (other than in explicit
 	inters), which should all be different. */
-	(Source = make_inter(Payload, Ref); Source = Payload),
+	( /* Source = make_inter(Payload, Ref); */ Source = Payload),
+	% make_inter functor should force us to make one
 	Inter = instance(internal,_, Payload, Ref, _),
 	member(Inter, PrevInters),
 	\+ contains_something(random, Payload), !,
