@@ -103,6 +103,8 @@ namespace eval $keyValue {
         set lastDisplay($winId) 0.0
         variable displayUpdate
         set displayUpdate($winId) 1
+        variable displayFormat
+	set displayFormat($winId,-1) {General 4 0}; # format dp Neg_in_red
         variable editMode
         
         menu $winId.formatMenu -tearoff 0 -postcommand \
@@ -337,7 +339,7 @@ namespace eval $keyValue {
             #                 default {set displayFormat($winId,$varIndex) {General 4 0}}
             #             }; # format dp Neg_in_red
             ################################################################################
-            set displayFormat($winId,$varIndex) {General 4 0}; # format dp Neg_in_red
+            set displayFormat($winId,$varIndex) $displayFormat($winId,-1)
             if {[GetModelTime]==$lastDisplay($winId)} {
                 set dataStore($winId,$varIndex,$lastDisplay($winId)) \
                         [GetTransVals $winId $node]
@@ -1156,8 +1158,11 @@ namespace eval $keyValue {
 	set selected [$varCB get]
 	set varIndex 0
 	foreach varId $displayList($winId) {
-	    if {[string equal $varId $selected] || \
-		    [string equal "All..." $selected]} {
+	    if {[string equal $varId $selected]} {
+		lset displayFormat($winId,$varIndex) $posn $val
+	    }
+	    if {[string equal "All..." $selected]} {
+		lset displayFormat($winId,-1) $posn $val
 		lset displayFormat($winId,$varIndex) $posn $val
 	    }
 	    incr varIndex
