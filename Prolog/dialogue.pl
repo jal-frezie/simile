@@ -188,7 +188,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 
 	(\+ EqnError = [], !,
 	    Complaint5 = EqnError;
-	EqnBase = cond_spec, \+ TypeBase == cond_spec,
+	EqnBase == cond_spec, \+ TypeBase == cond_spec,
 	    Complaint5 = misplaced_cond_spec;
 	check_limit(Min_st, 'Min. value', Function,
 		    MinMaxNeeded, Min, MinVal, MinBase, MinErr),
@@ -504,7 +504,7 @@ check_exp(Eqn_st, Function, InterInputs, Base, Dims,
 			 Base, Dims, ParamList, TestError),
 		(\+ TestError = [],
 		    Error = TestError;
-		 Base = cond_spec,
+		 Base == cond_spec,
 		    \+ instance:is_lookup_cond(Equation, _),
 		    Error = bad_cond_spec_form;
 		 member(var, Dims), !,
