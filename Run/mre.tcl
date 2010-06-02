@@ -1234,7 +1234,6 @@ $tb1.b43 configure -state $useSpaceAbility
 	}
         
         PullMember helperId
-        #ShowMess debug info "LoadContainer: $item $containerId; helperId $helperId" ok
         PullMember oldStatus
 	return [ReinstateHelper $origVersion $oldStatus $helperId {}]
     }

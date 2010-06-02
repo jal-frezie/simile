@@ -5,13 +5,14 @@
 # Copyright (c) 2001-2003 Zveno Pty Ltd
 # http://ww.zveno.com/
 #
-# $Id: pkgIndex.tcl,v 1.1 2004/07/07 14:24:25 jaspert Exp $
+# $Id: pkgIndex.tcl,v 1.2 2010/06/02 18:22:45 u45169214 Exp $
 
 # edited by Jasper for dual-boot use and to work with spaces in dirname
 
 switch [info sharedlibextension] {
     .dll {set sharedLib Tclxslt26.dll}
     .so {set sharedLib libTclxslt2.6.so}
+    .dylib {set sharedLib libTclxslt2.6.dylib}
 }
 
 package ifneeded xslt 2.6 "

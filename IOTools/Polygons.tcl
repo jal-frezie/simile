@@ -420,7 +420,7 @@ namespace eval ::polygon375 {
 	if {$coordSource != 0} {
 	    # Now copy the poly info into the state so it can be saved
 	    set useNodes($winId,shapes) {}
-	    foreach poly [$winId.viewport.c find all] {
+	    foreach poly [$winId.viewport.c find withtag map] {
 		lappend useNodes($winId,shapes) \
 		    [$winId.viewport.c type $poly] \
 		    [$winId.viewport.c coords $poly] \

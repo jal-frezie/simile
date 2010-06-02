@@ -9,21 +9,22 @@
 # full path name of this file's directory.
 
 # JAT: this is very old, Windows vs Linux are decided by separate version
-# numbers rather than checking [info sharedlibextension]
+# numbers rather than checking [info sharedlibextension] -- note that in Win7
+# the env is not necessaily passed to the execution thread
 
 global env
 scan [info tclversion] "%d.%d" MAJ MIN
-if {![catch {set vers $env(SIMILE_VERSION)}]} {
-    package ifneeded Ame_dll $MAJ.$MIN.$vers.0 \
-	[list load [file join $dir ame_dll$MAJ$MIN.dll]]
-    package ifneeded Ame_dll $MAJ.$MIN.$vers.1 \
-	[list load [file join $dir libame_dll$MAJ.$MIN$env(slTail)]]
+set vers $env(SIMILE_VERSION)
 
-    if {[string equal .dll $env(slTail)]} {
-	package ifneeded Unpacker $vers \
-	    [list load [file join $dir unpacker$MAJ$MIN$env(slTail)]]
-    } else {
-	package ifneeded Unpacker $vers \
-	    [list load [file join $dir libunpacker$MAJ.$MIN$env(slTail)]]
-    }
+package ifneeded Ame_dll $MAJ.$MIN.$vers.0 \
+    [list load [file join $dir ame_dll$MAJ$MIN.dll]]
+package ifneeded Ame_dll $MAJ.$MIN.$vers.1 \
+    [list load [file join $dir libame_dll$MAJ.$MIN$env(slTail)]]
+
+if {[string equal .dll $env(slTail)]} {
+    package ifneeded Unpacker $vers \
+	[list load [file join $dir unpacker$MAJ$MIN$env(slTail)]]
+} else {
+    package ifneeded Unpacker $vers \
+	[list load [file join $dir libunpacker$MAJ.$MIN$env(slTail)]]
 }

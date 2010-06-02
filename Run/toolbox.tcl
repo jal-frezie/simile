@@ -695,22 +695,22 @@ proc compile_c {workingDir extLibs complain} {
 		    puts $batSt "set PATH=[file nativename [file join \
                         [file dirname $TOOLDIR] System libexec gcc \
                         mingw32 3.4.2]];%PATH%"
-		    puts $batSt "copy [file nativename [file join \
-                        $LIBDIR dllcrt*.o]] ."
-		    puts $batSt "copy [file nativename [file join \
-                         $LIBDIR gcc mingw32 3.4.2 crt*.o]] ."
+		    puts $batSt "copy \"[file nativename [file join \
+                        $LIBDIR dllcrt*.o]]\" ."
+		    puts $batSt "copy \"[file nativename [file join \
+                         $LIBDIR gcc mingw32 3.4.2 crt*.o]]\" ."
 		}
 	    }
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
 		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o \
-                        -I[file nativename $TOOLDIR] \
-                        -I[file nativename [file join [file dirname $TOOLDIR] \
-                            System include mingw]] \
-                        -I[file nativename [file join \
-                            $LIBDIR gcc mingw32 3.4.2 include]] model.cpp"
-		set libOpt1 -L[file nativename $LIBDIR]
-		set libOpt2 -L[file nativename [file join $LIBDIR gcc \
-						    mingw32 3.4.2]]
+                        -I\"[file nativename $TOOLDIR]\" \
+                        -I\"[file nativename [file join [file dirname $TOOLDIR] \
+                            System include mingw]]\" \
+                        -I\"[file nativename [file join \
+                            $LIBDIR gcc mingw32 3.4.2 include]]\" model.cpp"
+		set libOpt1 -L\"[file nativename $LIBDIR]\"
+		set libOpt2 -L\"[file nativename [file join $LIBDIR gcc \
+						    mingw32 3.4.2]]\"
 		puts $batSt "g++ -shared -o $TARGET \
                         $libOpt1 $libOpt2 objtmp.o [concat $lDirs $lFiles]"
 	    } else {
@@ -812,9 +812,9 @@ proc UpdateExecution {node action} {
 }
 # Not clear why this need only be set on MacOS, but it seems to work without on other platforms
 # so no sense in tinkering.  Probably because of different auto_path setting mechanisms.
-if [string match Darwin $tcl_platform(os)] {
-  set env(ITCL_LIBRARY) [pwd]/../System/lib/itcl3.3
-}
+#if [string match Darwin $tcl_platform(os)] {
+#  set env(ITCL_LIBRARY) [pwd]/../System/lib/itcl3.4
+#}
 if {[info tclversion] > 8.5} {
     package require Itcl 4.0
 } elseif {[info tclversion] > 8.4} {

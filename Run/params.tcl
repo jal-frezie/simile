@@ -1260,7 +1260,7 @@ proc LevelForTitle {path} {
     return \"[lindex $levels end]\"
 }
 
-package require -exact xml 3.1
+package require xml
 set parseStatus(spfParser) [::xml::parser -ignorewhitespace true \
 				-elementstartcommand StartElement \
 				-elementendcommand FinishElement \

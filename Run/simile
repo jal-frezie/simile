@@ -31,10 +31,7 @@ RUNDIR=`dirname "$TOP"`;
 SIMDIR=`dirname "$RUNDIR"`;
 LD_LIBRARY_PATH="$SIMDIR/System/lib"
 export LD_LIBRARY_PATH
-# wish8.6 "$SIMDIR/Run/simile.tcl" $1
-TCL_LIBRARY="$LD_LIBRARY_PATH/tcl8.4"
-export TCL_LIBRARY
-# ITCL_LIBRARY="$LD_LIBRARY_PATH/itcl4.0"
-# export ITCL_LIBRARY
+#TCL_LIBRARY="$LD_LIBRARY_PATH/tcl8.5"
+#export TCL_LIBRARY
 "$SIMDIR/System/bin/wish" "$SIMDIR/Run/simile.tcl" $1
 

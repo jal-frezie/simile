@@ -372,23 +372,21 @@ proc SaveView {} {
     set helperTable($topNode,stateName) \
 	[ChooseFile iotools.shf "Save view specification file" 1 $topNode]
     if {[llength $helperTable($topNode,stateName)]} {
-	set tempFile [file join $simtmpdir temp_out.shf]
-        set stream [NetOpen $tempFile w]
+	set metaList {}
         foreach displayBox [array name helperTable *,whichInstance] {
             set helperId $helperTable($displayBox)
 	    set winId [$helperId cget -winId]
             if {[string equal $topNode [$helperId GetNode]] && \
 		    ![string match $winId $runState($topNode,helperId)]} {
-                puts $stream [namespace tail [$helperId info class]]
-                puts $stream [wm title $winId]
-                puts $stream [wm geometry $winId]
+                lappend metaList [namespace tail [$helperId info class]]
+                lappend metaList [wm title $winId]
+                lappend metaList [wm geometry $winId]
                 set clickedPaths {}
 		$helperId PrepareSaveString
-		puts $stream [StripCrs [$helperId cget -State]]
+		lappend metaList [$helperId cget -State]
             }
         }
-        close $stream
-	MimifySHF $tempFile $helperTable($topNode,stateName) many_windows
+	MimifySHF $metaList $helperTable($topNode,stateName) many_windows
     } else {
 	unset helperTable($topNode,stateName)
     }
@@ -401,13 +399,17 @@ proc MimifySHF {inString outFile origin} {
     set PartType "application/x-simile"
     set Description "Simile I/O tool configuration file"
     set style attachment
+# for compatibility with earlier versions we replace nl's with \n and put each
+# item on a new line -- this messes real \ns in annotation texts etc. Do
+# something else as of v6.
+    set preppedString [join [StripCrs $inString] \n]
     set newMime [mime::initialize -canonical $PartType \
 		     -param {charset "utf-8"} \
 		     -header [list "Content-Disposition" $style] \
 		     -header [list "Content-Description" $Description] \
 		     -header [list "Simile-Version" $env(SIMILE_VERSION)] \
 		     -header [list "Simile-Origin" $origin] \
-		     -string [encoding convertto utf-8 $inString]]
+		     -string [encoding convertto utf-8 $preppedString]]
     set stream [NetOpen $outFile w]
     fconfigure $stream -translation binary
     mime::copymessage $newMime $stream
@@ -434,7 +436,7 @@ proc SHFtoList {oldPath} {
 	set multiT [mime::initialize -file $oldPath]
 	set origVersion [mime::getheader $multiT Simile-Version]
 	set origin [mime::getheader $multiT Simile-Origin]
-	if {$origVersion<5.7} {
+#	if {$origVersion<5.7} {
 	    set metaFile [file join $simtmpdir temp_in.shf]
 	    set mimeSquirter [NetOpen $metaFile w]
 	    fconfigure $mimeSquirter -translation binary
@@ -442,10 +444,11 @@ proc SHFtoList {oldPath} {
 	    set stream [NetOpen $metaFile r]
 	    set metaList [RestoreCrs [split [read $stream] \n]]
 	    close $stream
-	} else {
-	    set metaList [encoding convertfrom utf-8 \
-			      [mime::getbody $multiT]]
-	}
+#	} else {
+# this much simpler version has problems, perhaps with os-specific line ends
+#	    set metaList [RestoreCrs [split [encoding convertfrom utf-8 \
+						 [mime::getbody $multiT]] \n]]
+#	}
     } syndrome]} {
 	#do_in_editor puts "MIME open failed: $syndrome"
 	set metaFile $oldPath

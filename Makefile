@@ -42,7 +42,7 @@ FLAGS = $(OPT) -m32
 SLDIR = lib
 SHAREDLIBPREFX = lib
 MAKESL = -fPIC -shared
-VERS = 8.4
+VERS = 8.5
 # VERS = 8.6
 TCLDIR = ../System
 # TCLDIR = /usr/local/lib/ActiveTcl-$(VERS)
@@ -79,9 +79,9 @@ ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
 	SLDIR = bin
 	SHAREDLIBPREFX = 
 	MAKESL = -shared
-	VERS = 84
+	VERS = 85
 #	VERS = 86
-#	TCLDIR = c:/Tcl
+	TCLDIR = c:/Tcl
 	USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include -L$(TCLDIR)/lib $(TCLDIR)/lib/tclstub$(VERS).lib
 	LOCALIZE_TCL_REFS =  ls # placebo command
 	SHAREDLIBEXTN = .dll
@@ -156,23 +156,30 @@ System/lib/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 
 # Build a .dll to check licence code during Windows installation
 # Version for GPInstall by QSC
-Run/install.dll: Run/install.c Makefile
-	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include $(MAKESL) \
-		-o install.dll install.c -L../System/lib -lcrypto -lssl; \
-		cd ..
+#Run/install.dll: Run/install.c Makefile
+#	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include $(MAKESL) \
+#		-o install.dll install.c -L../System/lib -lcrypto -lssl; \
+#		cd ..
 # Version for MakeMSI
-#Run/install.dll: Run/install_msi.c Run/install_msi.rc Makefile
+#Run/install.dll: Run/install_msi.cpp Run/install_msi.rc Makefile
 #	cd Run; windres -i install_msi.rc -o resource_msi.o; \
-#		$(GCCCMD) $(FLAGS) $(DEFNS) -I../System/include \
+#		$(GPPCMD) $(FLAGS) $(DEFNS) -I../System/include \
 #		-I/c/MsiIntel.SDK/include $(MAKESL) -o install.dll \
 #		install_msi.c resource_msi.o /c/MsiIntel.SDK/lib/msi.lib \
 #		-L../System/lib -lcrypto -lssl; cd ..
+# Version for Advanced Installer
+Run/install.dll: Run/install_adv.cpp Makefile
+	cd Run; $(GPPCMD) $(FLAGS) $(DEFNS) \
+		-I/c/MsiIntel.SDK/include $(MAKESL) -o install.dll \
+		install_adv.cpp /c/MsiIntel.SDK/lib/msi.lib \
+		-L../System/lib -lcrypto -lssl; cd ..
 
 System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc
-	cd Interp; windres -I../System/include/tcl -o rc.o Simile.rc; \
-	$(GCCCMD) $(FLAGS) -I../System/include/tcl \
+	cd Interp; windres -I$(TCLDIR)/include -o rc.o Simile.rc; \
+		$(GCCCMD) $(FLAGS) -I$(TCLDIR)/include \
 		-o ../System/bin/Simile.exe Simile.c rc.o \
-		../System/lib/tcl84.lib ../System/lib/tk84.lib -mwindows; cd ..
+		$(TCLDIR)/lib/tcl$(VERS).lib $(TCLDIR)/lib/tk$(VERS).lib \
+		-mwindows; cd ..
 
 #else
 

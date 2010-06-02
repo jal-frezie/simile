@@ -1322,8 +1322,8 @@ if {[string match "Darwin" $tcl_platform(os)]} {
 #
 # Enable the Preferences command in the application menu using Carbon extension
 #
-  package require tclCarbonHICommand
-  carbon::enableMenuCommand pref 0
+#  package require tclCarbonHICommand
+#  carbon::enableMenuCommand pref 0
   proc ::tk::mac::ShowPreferences {} {
     Pref_Dialog
   }

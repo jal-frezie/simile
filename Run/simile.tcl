@@ -95,9 +95,9 @@ proc ChooseIntegerRatio {fraction accu} {
 set defScaling [tk scaling]
 # v5.7: try to keep even Linux and Windows from loading any TclTk packages they
 # find on the system, to avoid buggy XML or inappropriate Itcl?
-if {[string match Darwin $tcl_platform(os)] && [info tclversion] < 8.6} {
-    set auto_path [list $SIMILE_PATH/System/lib]
-    lappend auto_path $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts $SIMILE_PATH/System/lib
+set auto_path [list [file join $SIMILE_PATH System lib]]
+if {[string match Darwin $tcl_platform(os)] && [info tclversion] < 8.5} {
+    lappend auto_path $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts
 #    package require tclAE
     proc ::tk::mac::OpenDocument {args} {
         global env
@@ -119,6 +119,7 @@ if {[string match Darwin $tcl_platform(os)] && [info tclversion] < 8.6} {
 #    tclAE::installEventHandler aevt rapp handleReopenApp
 #    tk scaling 1.0
 } else {
+    lappend auto_path [file join $SIMILE_PATH System lib tk[info tclversion]]
 # If Simile is already running, make a new window there and exit. Note that
 # on Macs the OpenDocument takes care of this and we don't even get this far
 # OTOH, if Simile is not running already, need to skip the following on Macs.
@@ -324,7 +325,7 @@ if {[info exists prolog_in_console]} {
 }
 
 set env(SIMILE_VERSION) 5.7
-set sendvars(simP) {a2}
+set sendvars(simP) {b1}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is
