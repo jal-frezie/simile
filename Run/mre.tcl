@@ -732,7 +732,12 @@ namespace eval RunEnv {
 	    set printAbility disabled
 	}
 	$mreMenu entryconfigure [tr. Add] -state $useSpaceAbility
-	set mreMenu [$mainframe cget -menu]
+# Now work around what looks like a bug in Cocoa Tk
+	set addMenu [$mreMenu entrycget [tr. Add] -menu]
+	set adds [$addMenu index last]
+	for {set add 0} {$add<=$adds} {incr add} {
+	    $addMenu entryconfigure $add -state $useSpaceAbility
+	}
 	set fileMenu [$mreMenu entrycget [tr. File] -menu]
 	$fileMenu entryconfigure [tr. Print...] -state $printAbility
 	$fileMenu entryconfigure [tr. {Export PostScript...}] \
