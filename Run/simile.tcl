@@ -16,7 +16,6 @@
 # Now I am trying to use the relay system to pass messages between new and 
 # existing Simile processes. This means I need to know where my temporary
 # files are...
-
 if {[string equal windows $tcl_platform(platform)]} {
     set homeDir [file attributes $env(HOME) -shortname] ;# is Ascii
 } else {
@@ -96,15 +95,24 @@ set defScaling [tk scaling]
 # v5.7: try to keep even Linux and Windows from loading any TclTk packages they
 # find on the system, to avoid buggy XML or inappropriate Itcl?
 set auto_path [list [file join $SIMILE_PATH System lib]]
-if {[string match Darwin $tcl_platform(os)] && [info tclversion] < 8.5} {
+if {[string match Darwin $tcl_platform(os)]} {
     lappend auto_path $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts
 #    package require tclAE
+
+    if {[string match \-psn_0_* [lindex $argv 0]]} {
+# Process ID added by MacOS -- discard
+	incr argc -1
+	set argv [lrange $argv 1 end]
+    }
+
     proc ::tk::mac::OpenDocument {args} {
         global env
 # only opens the first of a group of files dropped or double-clicked,
 # but at least it handles files with spaces in the name.      
-        set env(OPEN_MODEL) [lindex $args 0]
-        OpenTopLevel [lindex $args 0]
+        if {[catch {OpenTopLevel [lindex $args 0]} splat]} {
+# fails (because proc not yet loaded?) if Simile started by drag/drop
+	    set env(OPEN_MODEL) [lindex $args 0]
+	}
     }
 #    proc handleOpenApp {foo bar} {
 #	tk_messageBox -message "open foo $foo bar $bar"
@@ -180,15 +188,6 @@ if {[string match Darwin $tcl_platform(os)] && [info tclversion] < 8.5} {
         }
     }
             
-    if {$argc} {
-#	if {[string match relative [file pathtype $argv]]} {
-#	    set env(OPEN_MODEL) [pwd]/$argv
-#	} else {
-#	    set env(OPEN_MODEL) $argv
-#	}
-	set env(OPEN_MODEL) [file normalize $argv]
-    } 
-
 # Scaling affects some metrics but not all, so squash it FTTB
 # to ensure consistency (do now cos about to put up dialogues)
 
@@ -270,6 +269,15 @@ if {[string match Darwin $tcl_platform(os)] && [info tclversion] < 8.5} {
         }
     }
 }
+
+    if {$argc} {
+#	if {[string match relative [file pathtype $argv]]} {
+#	    set env(OPEN_MODEL) [pwd]/$argv
+#	} else {
+#	    set env(OPEN_MODEL) $argv
+#	}
+	set env(OPEN_MODEL) [file normalize $argv]
+    } 
 
 switch $tcl_platform(platform) {
     windows {

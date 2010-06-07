@@ -442,6 +442,7 @@ proc SHFtoList {oldPath} {
 	    fconfigure $mimeSquirter -translation binary
 	    mime::getbody $multiT -command SquirtMime -blocksize 256
 	    set stream [NetOpen $metaFile r]
+	    fconfigure $stream -encoding utf-8
 	    set metaList [RestoreCrs [split [read $stream] \n]]
 	    close $stream
 #	} else {
