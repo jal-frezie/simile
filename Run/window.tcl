@@ -531,6 +531,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     #   [winfo screenheight $winName]
     
     AddMainMenu $winName $topNode [expr $wr-$wl] $isTopLevel $args
+    $winName configure  -menu ${winName}top
     set window_info(current) $c
     AddCanvasBindings $c $topNode
 
@@ -562,7 +563,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
 proc ModelWindow {winName} {
     global tcl_platform looks SimileAutoObjLoaded SIMILE_PATH
     menu ${winName}top
-    toplevel $winName -menu ${winName}top
+    toplevel $winName
     if {[info exists SimileAutoObjLoaded]} {
 	wm state $winName withdrawn
     }
@@ -1342,7 +1343,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	set accKey [tr. Cmd]
 	set accSym Command
 	set fm [menu $topm.apple -tearoff 0]
-	$fm delete 0 7
+#	$fm delete 0 7
 	$fm add command -label [tr. "About Simile..."] -command "ShowAbout $winid"
 	$fm add separator
 	$topm add cascade -menu $fm

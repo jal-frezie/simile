@@ -14,8 +14,9 @@
 # graph function is graph(param, xlow, xhigh, xspan,
 #	ylow, yhigh, yspan, [pt1, pt2 ... ptn])
 
+if {![info exists simplify]} {
 package require BWidget
-
+}
 proc odbcdriverFromExt { ext } {
     # e.g. [odbcdriverFromExt .xls] -> Microsoft Excel Driver (*.xls)
     package require tclodbc; #jmm ODBC

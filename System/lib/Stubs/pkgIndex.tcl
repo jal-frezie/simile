@@ -12,19 +12,21 @@
 # numbers rather than checking [info sharedlibextension] -- note that in Win7
 # the env is not necessaily passed to the execution thread
 
-global env
+# All new for Simile 5.7: just offer what we have..,
+
 scan [info tclversion] "%d.%d" MAJ MIN
-set vers $env(SIMILE_VERSION)
-
-package ifneeded Ame_dll $MAJ.$MIN.$vers.0 \
-    [list load [file join $dir ame_dll$MAJ$MIN.dll]]
-package ifneeded Ame_dll $MAJ.$MIN.$vers.1 \
-    [list load [file join $dir libame_dll$MAJ.$MIN$env(slTail)]]
-
-if {[string equal .dll $env(slTail)]} {
-    package ifneeded Unpacker $vers \
-	[list load [file join $dir unpacker$MAJ$MIN$env(slTail)]]
+set tail [info sharedlibextension]
+if {[string equal .dll $tail]} {
+    set head {}
+    set mid {}
 } else {
-    package ifneeded Unpacker $vers \
-	[list load [file join $dir libunpacker$MAJ.$MIN$env(slTail)]]
+    set head lib
+    set mid .
+}
+    
+foreach comp {ame_dll unpacker} {
+    set shareLib [file join $dir $head$comp$MAJ$mid$MIN$tail]
+    if {[file exists $shareLib]} {
+	package ifneeded [string totitle $comp] $MAJ.$MIN [list load $shareLib]
+    }
 }

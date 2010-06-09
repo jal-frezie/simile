@@ -1,3 +1,4 @@
+#set simplify 1 ;# avoid loading anything awkward
 #!/home/jaspert/Simile/System/bin/wish
 # Simile source code file: Run/simile.tcl
 #
@@ -99,7 +100,7 @@ if {[string match Darwin $tcl_platform(os)]} {
     lappend auto_path $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts
 #    package require tclAE
 
-    if {[string match \-psn_0_* [lindex $argv 0]]} {
+    if {[string match \-psn_* [lindex $argv 0]]} {
 # Process ID added by MacOS -- discard
 	incr argc -1
 	set argv [lrange $argv 1 end]
@@ -483,21 +484,9 @@ switch $tcl_platform(platform) {
 	set execExtn .exe
     } unix {
 	if {[string equal Darwin $tcl_platform(os)]} {
-	    set archExtn _$tcl_platform(machine)
-	    if {[string equal "_Power Macintosh" $archExtn]} { ;# too long
-		set archExtn _ppc
-	    }
 # experiment with fatties
-	    set plExtn $archExtn
+	    set plExtn _mac
 	    set archExtn _mac
-	    scan $tcl_platform(osVersion) %d.%d.%d dMed dMin dNone
-	    if {$dMed<10} {
-		# I am building with 10.6 so cannot make i386 prolog
-		# for earlier versions, so if I have one use ppc (for
-		# 10.3) version under Rosetta; note Rosetta not included in
-		# 10.6 by default!
-		set plExtn _ppc
-	    }
 	} else {
 	    set archExtn {}
 	}

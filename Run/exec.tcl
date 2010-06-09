@@ -19,8 +19,8 @@ proc load_c_stub_1 {node} {
     global env tcl_platform
 
     scan [info tclversion] {%d.%d} MAJ MIN
-    set onUnix [string match unix $tcl_platform(platform)]
-    set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
+#    set onUnix [string match unix $tcl_platform(platform)]
+    set stubPkg ${MAJ}.${MIN} ;# .$env(SIMILE_VERSION).$onUnix
     package require -exact Ame_dll $stubPkg
     randseed [clock scan now]
 }

@@ -707,9 +707,11 @@ proc UpdateColour {parent f} {
 
 # try to be choosy rather than support everything
 # package require tkpng ;# next wave, for internal image storage
+if {![info exists simplify]} {
 package require img::bmp ;# for grid helper (could use ppm)
 package require img::jpeg ;# support this popular format
 package require img::png ;# for internal image storage
+}
 
 proc ChooseImage {posRBs mdl noCentred} {
     global disaggregate

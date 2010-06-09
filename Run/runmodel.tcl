@@ -42,7 +42,7 @@ if {[string match "Darwin" $tcl_platform(os)] & ![info exists runHow(where)]} {
 }
 
 proc MakeHelperMenu {} {
-    global custom tcl_platform
+    global custom tcl_platform SIMILE_PATH
     set fm [menu .helpers -tearoff 0]
 
     $fm add command -label "Load" -command LoadView
@@ -51,9 +51,8 @@ proc MakeHelperMenu {} {
     $fm add command -label "Close" -command KillHelpers
     $fm add command -label "Parameters..." \
 	-command [list FileParamDialogue {} 1]
-
     set oldDir [pwd]
-    cd ../IOTools
+    cd $SIMILE_PATH/IOTools
     AddHelperSublist $fm "Add tool" 2
     set ioDir [file join $custom(prefDir) IOTools]
 #do_in_editor puts "locals in $ioDir"
@@ -392,7 +391,9 @@ proc SaveView {} {
     }
 }
 
+if {![info exists simplify]} {
 package require mime
+}
 
 proc MimifySHF {inString outFile origin} {
     global env

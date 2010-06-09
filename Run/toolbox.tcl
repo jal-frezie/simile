@@ -7,6 +7,7 @@
 #
 #package require BWidget
 #catch {namespace import BWidget::*}
+if {![info exists simplify]} {
 if {[info tclversion]>=8.5} {
     package require ttk::dialog
 } else {
@@ -14,6 +15,7 @@ if {[info tclversion]>=8.5} {
 }
 package require style::as
 style::as::enable mousewheel global
+}
 
 # tile creates: TkCaptionFont TkTooltipFont TkFixedFont TkHeadingFont 
 #               TkMenuFont TkIconFont TkTextFont TkDefaultFont
@@ -815,6 +817,7 @@ proc UpdateExecution {node action} {
 #if [string match Darwin $tcl_platform(os)] {
 #  set env(ITCL_LIBRARY) [pwd]/../System/lib/itcl3.4
 #}
+if {![info exists simplify]} {
 if {[info tclversion] > 8.5} {
     package require Itcl 4.0
 } elseif {[info tclversion] > 8.4} {
@@ -827,6 +830,7 @@ itcl::class ModelWindowExtn {
     constructor {awinId} {
         set winId $awinId
     }
+}
 }
 
 proc LoadModelWindowExtensions {} {
@@ -1355,8 +1359,6 @@ proc AlterModel {topNode} {
     global runState
     set runState($topNode,updated) 1
 }
-
-package require mime ;# will load Trf also
 
 proc PathFromDispo {bit} {
     set Disposition [mime::getheader $bit Content-Disposition]

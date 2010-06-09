@@ -787,5 +787,5 @@ FINDABLE EXPORT int Unpacker_Init(Tcl_Interp *interp) {
 
   Tcl_CreateObjCommand(interp, "loadcommands", loadcmdsCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  return Tcl_PkgProvide(interp, "Unpacker", simileVersion);
+  return Tcl_PkgProvide(interp, "Unpacker", pkgName);
 }

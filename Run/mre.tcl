@@ -83,7 +83,8 @@ namespace eval RunEnv {
             CreateDisplayPageContextMenu
             
             #tk_messageBox -message MakeMRE -type ok
-            toplevel $mreId -width 200m -height 150m -menu ${mreId}top
+	    set mreMenu ${mreId}top
+            toplevel $mreId -width 200m -height 150m
 # following is the answer to all those pesky bgerrors on stdout
 #	    pack [button $mreId.reveal -text "Reveal all" -command {puts $errorInfo}]
             wm title $mreId [format $::msgs(exec_title) [GetExecTitle $node]]
@@ -133,7 +134,6 @@ namespace eval RunEnv {
 #			       -progressvar  RunEnv::prgindic]
 #...err, what for?
 #            $mainframe showstatusbar none
-	    set mreMenu [$mreId cget -menu]
 	    menu $mreMenu
 	    foreach {header tags id tear spec} $descmenu {
 		set sub [menu $mreMenu.$id -tearoff $tear]
@@ -155,13 +155,13 @@ namespace eval RunEnv {
             set mainframe [GetFrame $mreId]
 	    
             if [string match "Darwin" $tcl_platform(os)] {
-		set dummy [$mreId cget -menu]
-		set fm [menu $dummy.apple -tearoff 0]
+		set fm [menu $mreMenu.apple -tearoff 0]
 		$fm add command -label "About Simile..." -command "ShowAbout $mreId"
 		$fm add separator
-		$dummy add cascade -menu $fm
+		$mreMenu add cascade -menu $fm
 	    }
-	    
+	    $mreId configure -menu $mreMenu
+
             set tb1  [::ttk::frame $mainframe.tbar -class Toolbar]
             # build the toolbar  from the toolbarItems list
             set tbnum 0

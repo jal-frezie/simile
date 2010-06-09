@@ -1260,12 +1260,13 @@ proc LevelForTitle {path} {
     return \"[lindex $levels end]\"
 }
 
+if {![info exists simplify]} {
 package require xml
 set parseStatus(spfParser) [::xml::parser -ignorewhitespace true \
 				-elementstartcommand StartElement \
 				-elementendcommand FinishElement \
 				-characterdatacommand LoadBase64CharData]
-
+}
 proc RevertXMLParams {oldPath newPath topNode smPath} {
     global parseStatus widgetNames errorInfo
 
