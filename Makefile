@@ -57,14 +57,14 @@ ifeq ($(PLATFORM),Darwin)
 	ARCHEXTN = _ppc
 # build for everything unless I am on Barbie
 	ifneq ($(OSNUMBER),7.9.0)
-		FLAGS = $(OPT) -arch i386 -arch ppc -mmacosx-version-min=10.2
+		FLAGS = $(OPT) -arch i386 -mmacosx-version-min=10.5
 	        ARCHEXTN = _mac
 	endif
 	EXECEXTN = $(ARCHEXTN)
 	MAKESL = -fPIC -dynamiclib
-	TCLFW = /System/Library/Frameworks
+	TCLFW = /Library/Frameworks
 # make sure Current is set to right version
-	USETCL =  -DUSE_TCL_STUBS -F$(TCLFW) -framework Tcl -I$(TCLFW)/Tcl.framework/Headers
+	USETCL =  -DUSE_TCL_STUBS -F$(TCLFW) -framework Tcl -I$(TCLFW)/Tcl.framework/Headers -L$(TCLFW)/Tcl.framework -ltclstub$(VERS)
 	LOCALIZE_TCL_REFS = install_name_tool -change \
 		$(TCLFW)/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl

@@ -16,6 +16,9 @@
 
 scan [info tclversion] "%d.%d" MAJ MIN
 set tail [info sharedlibextension]
+if {[string equal .dylib $tail]} {
+    set tail _mac$tail
+}
 if {[string equal .dll $tail]} {
     set head {}
     set mid {}
