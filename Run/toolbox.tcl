@@ -812,19 +812,20 @@ proc newInt {} {
 proc UpdateExecution {node action} {
     Rerun [FindNodeTopWin $node].canvas [string equal start $action]
 }
-# Not clear why this need only be set on MacOS, but it seems to work without on other platforms
-# so no sense in tinkering.  Probably because of different auto_path setting mechanisms.
-#if [string match Darwin $tcl_platform(os)] {
-#  set env(ITCL_LIBRARY) [pwd]/../System/lib/itcl3.4
-#}
 if {![info exists simplify]} {
 if {[info tclversion] > 8.5} {
-    package require Itcl 4.0
+    set itclVers 4.0b4
 } elseif {[info tclversion] > 8.4} {
-    package require Itcl 3.4
+    set itclVers 3.4
 } else {
-    package require -exact Itcl 3.3
+    set itclVers 3.3
 }
+# Not clear why this need only be set on MacOS, but it seems to work without on other platforms
+# so no sense in tinkering.  Probably because of different auto_path setting mechanisms.
+if [string match Darwin $tcl_platform(os)] {
+  set env(ITCL_LIBRARY) [pwd]/../System/lib/itcl$itclVers
+}
+package require Itcl $itclVers
 itcl::class ModelWindowExtn {
     variable winId
     constructor {awinId} {
@@ -1665,6 +1666,9 @@ proc ConvertSSxml {node} {
     global simtmpdir SIMILE_PATH
     package require xslt
     package require mime
+    if {![string length [package provide Trf]} {
+	puts "Warning -- using Mime in fallback mode: $errorInfo"
+    }
 
     set importSrc [ChooseFile spreadsheet.xml "Import spreadsheet from:" 0 \
 		      $node]
