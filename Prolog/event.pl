@@ -2341,7 +2341,7 @@ dissolve_component(Node) :-
 	(setof(IntLink, 
 	   (IntLink draws_inside Node, \+ has_outer_equiv(IntLink, Node, _)),
 	       OrphanLinks), !; OrphanLinks = []),
-	append(Orphan_nodes, OrphanLinks, Orphans),
+	append(OrphanLinks, Orphan_nodes, Orphans),
 	(list_captions(Parent, Used), !,
 	    all(event, retitle_duplicate, [build(Orphans), unify(Used)]);
 	true),
