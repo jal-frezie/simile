@@ -1763,8 +1763,8 @@ proc DataInScenario {compName} {
 proc ReferenceWorks {compName} {
     global paramMetadata
     
-    if {[info exists paramMetadata(compName,saveReference)]} {
-	return $paramMetadata(compName,saveReference)
+    if {[info exists paramMetadata($compName,saveReference)]} {
+	return $paramMetadata($compName,saveReference)
     }
     return 0
 }
