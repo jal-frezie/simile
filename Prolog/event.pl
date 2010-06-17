@@ -2341,7 +2341,7 @@ dissolve_component(Node) :-
 	(setof(IntLink, 
 	   (IntLink draws_inside Node, \+ has_outer_equiv(IntLink, Node, _)),
 	       OrphanLinks), !; OrphanLinks = []),
-	append(OrphanLinks, Orphan_nodes, Orphans),
+	append(Orphan_nodes, OrphanLinks, Orphans),
 	(list_captions(Parent, Used), !,
 	    all(event, retitle_duplicate, [build(Orphans), unify(Used)]);
 	true),
@@ -2385,6 +2385,7 @@ list_captions(Parent, Used) :-
 	append(UsedNow, _, Used).
 
 retitle_duplicate(Node, Used) :-
+	(\+ appears(Node); Node is_of_sort captionless), !;
 	caption_for(Node, OldCapt),
 	ensure_unused(OldCapt, NewCapt, Used, []),
 	(NewCapt = OldCapt, !;

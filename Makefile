@@ -42,12 +42,10 @@ FLAGS = $(OPT) -m32
 SLDIR = lib
 SHAREDLIBPREFX = lib
 MAKESL = -fPIC -shared
-VERS = 8.5
-# VERS = 8.6
+VERS = 8.4
 TCLDIR = ../System
-# TCLDIR = /usr/local/lib/ActiveTcl-$(VERS)
-USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include -L$(TCLDIR)/lib -ltclstub$(VERS)
-# USETCL = -DUSE_TCL_STUBS -I/usr/include/tcl$(VERS) -L/usr/lib/tcl$(VERS) -ltclstub$(VERS)
+# USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include -L$(TCLDIR)/lib -ltclstub$(VERS)
+USETCL = -DUSE_TCL_STUBS -I/usr/include/tcl$(VERS) -L/usr/lib/tcl$(VERS) -ltclstub$(VERS)
 LOCALIZE_TCL_REFS = ls # placebo command
 SHAREDLIBEXTN = .so
 
@@ -168,9 +166,9 @@ System/lib/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 #		install_msi.c resource_msi.o /c/MsiIntel.SDK/lib/msi.lib \
 #		-L../System/lib -lcrypto -lssl; cd ..
 # Version for Advanced Installer
-Run/install.dll: Run/install_adv.cpp Makefile
+$(INSTLIB): Run/install_adv.cpp Makefile
 	cd Run; $(GPPCMD) $(FLAGS) $(DEFNS) \
-		-I/c/MsiIntel.SDK/include $(MAKESL) -o install.dll \
+		-I/c/MsiIntel.SDK/include $(MAKESL) -o ../$(INSTLIB) \
 		install_adv.cpp /c/MsiIntel.SDK/lib/msi.lib \
 		-L../System/lib -lcrypto -lssl; cd ..
 

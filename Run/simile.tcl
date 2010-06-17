@@ -93,9 +93,34 @@ proc ChooseIntegerRatio {fraction accu} {
 }
 	
 set defScaling [tk scaling]
+set savedCredentials [list prologId interfaceId install_time license_code \
+			  licensee_name licensee_corp]
+# from v5.5, windows installer creates usrinfo.txt rather than writing registry
+# if {[string equal windows $tcl_platform(platform)]} {
+#     package require registry
+#     set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
+#     foreach regEntry $savedCredentials {
+# 	catch {set env($regEntry) [registry get $regKey $regEntry]}
+#     }
+# } else {
+    set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
+    foreach regEntry $savedCredentials {
+	gets $UserStream env($regEntry)
+    }
+    close $UserStream
+# }
+# set env(prologId) gnu ;# goodbye forever Sicstus
+if {[info exists prolog_in_console]} {
+    set SIMILE_PATH [file dirname [pwd]] ;# otherwise it is relative
+    set env(interfaceId) console
+# this will simply let the script run out after loading the rest of the Tcl
+# so control goes back to Prolog
+} else {
 # v5.7: try to keep even Linux and Windows from loading any TclTk packages they
 # find on the system, to avoid buggy XML or inappropriate Itcl?
-set auto_path [list [file join $SIMILE_PATH System lib]]
+    set auto_path {}
+}
+lappend auto_path [file join $SIMILE_PATH System lib]
 if {[string match Darwin $tcl_platform(os)]} {
     lappend auto_path $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts
 #    package require tclAE
@@ -302,35 +327,6 @@ switch $tcl_platform(platform) {
 	    set graph(origin) 1
         }
     }
-}
-
-set savedCredentials [list prologId interfaceId install_time license_code \
-			  licensee_name licensee_corp]
-# from v5.5, windows installer creates usrinfo.txt rather than writing registry
-# if {[string equal windows $tcl_platform(platform)]} {
-#     package require registry
-#     set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
-#     foreach regEntry $savedCredentials {
-# 	catch {set env($regEntry) [registry get $regKey $regEntry]}
-#     }
-# } else {
-    set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
-    foreach regEntry $savedCredentials {
-	gets $UserStream env($regEntry)
-    }
-    close $UserStream
-# }
-# set env(prologId) gnu ;# goodbye forever Sicstus
-if {[info exists prolog_in_console]} {
-    set SIMILE_PATH [file dirname [pwd]] ;# otherwise it is relative
-    lappend auto_path $SIMILE_PATH/System/lib
-# temporary to get wkng with local tcltk
-
-    set env(interfaceId) console
-# this will simply let the script run out after loading the rest of the Tcl
-# so control goes back to Prolog
-} elseif {![info exists env(TCL_PATH)]} {
-    lappend auto_path $SIMILE_PATH/System/lib
 }
 
 set env(SIMILE_VERSION) 5.7
