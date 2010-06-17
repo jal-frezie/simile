@@ -2002,12 +2002,14 @@ proc SetDlgRes {val} {
     set dialogues(done) $val
 }
 
+# tweaked to cover any type of modal box
 proc HideProgressBox {} {
     global dialogues
 
-    set dialogues(progressUp) [winfo exists .progress]
-    if {$dialogues(progressUp)} { ;# avoid yet another potential MacOS stuffup
-	grab release .progress
+    set dialogues(progressUp) [grab current]
+    if {[string length $dialogues(progressUp)]} {
+	# avoid yet another potential MacOS stuffup
+	grab release $dialogues(progressUp)
 #	set dialogues(progBag) [wm transient .progress]
 #	set dialogues(progMess) [.progress.message cget -text]
 #	CloseProgressBox
@@ -2017,8 +2019,8 @@ proc HideProgressBox {} {
 proc ReplaceProgressBox {} {
     global dialogues
 
-    if {$dialogues(progressUp)} {
-	grab .progress
+    if {[string length $dialogues(progressUp)]} {
+	grab $dialogues(progressUp)
 #	OpenProgressBox $dialogues(progBag)
 #	FillProgressBox $dialogues(progMess)
     }
