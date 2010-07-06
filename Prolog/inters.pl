@@ -438,7 +438,8 @@ make_intermediates(
 	    InitVal = 1,
 	    IncrOp = ('&&');
 	member(Source, [make_inter(Epsilon, Ref), at_phase(Ph, Epsilon),
-			at_phase(Epsilon), last(Epsilon), exists(Epsilon)]),
+			at_phase(Epsilon), last(Epsilon), in_preceding(Epsilon),
+			exists(Epsilon)]),
 	    MadeDim = new_dim),
 % Before cutting, reject dummy arg so default fun handler gives sensible mess
 	\+ Epsilon = '', !,
@@ -465,7 +466,15 @@ make_intermediates(
 	    sicstus_format_to_chars("~a_~a", [InnerTgt, Functor], TotalNameStr)),
 	name(TotalNameBase, TotalNameStr),
 	generate_name(c, TotalNameBase, TotalName, Used),
+
 	copy_term(DestPath, TotalPath),
+	(Functor = in_preceding, !,
+	    DestPath = [_ | DestTail],
+	    TotalPath = [_ | TotalTail],
+	    get_model(DestTail, InterPath),
+	    get_model(TotalTail, OuterPath); % Use to read stuff out
+	InterPath = DestPath,
+	    OuterPath = TotalPath),
 	(var(Payload), !,
 	    IncrAct = assign(FillRef, IncrExpr),
 	    TXUnits = Units,
@@ -494,8 +503,8 @@ make_intermediates(
 	of the pointer references from the source */
 	swap_back(TotalPath, SubSwap, WritePath, MadeDim),
 	append([SubLoops, NowBuilding, WritePath], WriteContext),
-	pointer_from(TotalPath, TotalPtr),
-	pointer_from(DestPath, SourcePtr),
+	pointer_from(OuterPath, TotalPtr),
+	pointer_from(InterPath, SourcePtr),
 
 	(var(MadeDim), !, /* Summing over something other than a bunch of
 	                  assoc models */
@@ -517,7 +526,7 @@ make_intermediates(
 	    Units = int,
 		append(NowBuilding, DestPath, ReadyContext)), !,
 	    InitVal = 0;
-	member(Functor, [make_inter, last, at_phase]), !,
+	member(Functor, [make_inter, last, in_preceding, at_phase]), !,
 	    InitVal = 0,
 	    IncrExpr = IncrementRef,
 	    Units = ArgUnits,
@@ -561,8 +570,8 @@ make_intermediates(
 
 	add_extra_dependencies(WriteContext, DestPath, IncrExpr, OldArgs,
 			       Depends),
-	append(SourceLoops, DestPath, InterContext),
-	append([SourceLoops, NowBuilding, DestPath], ClearContext),
+	append(SourceLoops, InterPath, InterContext),
+	append([SourceLoops, NowBuilding, InterPath], ClearContext),
 
 	(UsingDim == true, !,
 	    Setups = OldSetups, /* So, we are just using a number, but we might
@@ -571,14 +580,16 @@ make_intermediates(
 	    NewInters = OldInters;
 	((Functor = at_phase; Functor = make_inter), !,
 	    Clearing = [];
-	Functor = last, !,
-            Clearing = [make(cleared(TotalName), [on_reset], ClearContext,
-                             0, [assign(ClearRef, InitVal)])];
+	member(Functor-ClearTime,
+	       [last-on_reset, in_preceding-this_step(WhatMade)]), !,
+	    % clearing will be promoted to chosen step
+            Clearing = [make(cleared(TotalName), [ClearTime], ClearContext,
+                             Step, [assign(ClearRef, InitVal)])];
         Clearing = [make(clearing(TotalName), [this_step(WhatMade)],
 			 ClearContext, Step, [assign(ClearRef, InitVal)]),
 		    make(cleared(TotalName), [clearing(TotalName)],
 			 ReadyContext, Step, [])]),
-	(Functor = last, !,
+	(Functor= last, !,
 	    /* we can update the saved value as soon as it has been used,
 	    but we need to wait for all the goals that might use it...started
 	    Setting = [make(increment(TotalName),
@@ -592,6 +603,12 @@ make_intermediates(
 			    WriteContext, Step, [IncrAct]),
 		       make(TotalName, [cleared(TotalName), time],
 			    ClearContext, Step, [])];
+	Functor = in_preceding, !,
+	    Setting = [make(lastvalue(TotalName),
+			    [InnerTgt, lastvalue(InnerTgt) | Depends],
+			    WriteContext, Step, [IncrAct]),
+		       make(TotalName, [cleared(TotalName), time],
+			    ClearContext, Step, [])];
 	    /* If keep_from_reseting, we can remove time from the increment expression's
 	    conditions since we need only do it once even though it changes */
 	(Functor = at_phase,
@@ -601,7 +618,7 @@ make_intermediates(
 	    (Functor = count, !,
 		purge(Depends, OldArgs, KeepDeps);
 	    KeepDeps = Depends)),
-        (member(Functor, [make_inter, at_phase]), !,
+        (member(Functor, [make_inter, at_phase, last, in_preceding]), !,
 	    Setting = [make(TotalName, KeepDeps, WriteContext, SetTime,
 			    [IncrAct])];
 	Setting = [make(increment(WhatMade), [cleared(TotalName) | KeepDeps],
@@ -646,7 +663,7 @@ make_intermediates(
 	    WhatMade = PayloadName,
 	    merge_lists([Inter, Outer], OldInters, NewInters),
 	    FinalInter = Outer),
-*/	refer_inter(FinalInter, DestPath, BuildingArrays,
+*/	refer_inter(FinalInter, InterPath, BuildingArrays,
 		    Units, SourceContext, Args, SourceRef));	  
 
 	/* third case: a numerical value. Usable in any context.  */
@@ -1068,6 +1085,9 @@ refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 	    we use the total from the previous time step we don't need to
 	    worry about accessing elements that haven't yet been set, and not
 	    using made_at(...) should prevent it being removed as an idler */
+	    Source = in_preceding(_), !,
+		Args = [later(lastvalue(Name))];
+				% access before setting in same loop
 	    Args = [made_at(Name, SourceContext)]),
 	    copy_term(DestPath, SourcePath),
 	    pointer_from(SourcePath, SourcePtr),
@@ -1184,6 +1204,7 @@ builtin('Model properties', stop, int, [int]).
 builtin('Model properties', parent, int, [dummy_int]).
 
 builtin('Model properties', last, any, [any]).
+builtin('Model properties', in_preceding, any, [any]).
 builtin('Model properties', prev, given_units, [const_int]).
 builtin('List handling', makearray, array_of_any, [any, const_int]).
 builtin('List handling', place_in, int, [const_int]).

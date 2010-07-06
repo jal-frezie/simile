@@ -89,6 +89,7 @@ set msgs(hypot) [tr. "Returns length of hypotenuse of triangle with given base a
 set msgs(atan2) {atan2(y x): Returns the angle to the baseline of the line from the origin to [x,y], ranging from -pi to pi}
 set msgs(int) [tr. "Returns integer part of argument"]
 set msgs(last) [tr. "Returns value of argument from last time step"]
+set msgs(in_preceding) [tr. "Returns value of argument in the preceding submodel instance, or 0 in first instance"]
 set msgs(log) [tr. "Returns natural logarithm of argument"]
 set msgs(log10) [tr. "Returns base-10 logarithm of argument"]
 set msgs(max) [tr. "Returns greater of two values"]

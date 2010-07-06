@@ -42,10 +42,11 @@ FLAGS = $(OPT) -m32
 SLDIR = lib
 SHAREDLIBPREFX = lib
 MAKESL = -fPIC -shared
-VERS = 8.4
+VERS = 8.5
 TCLDIR = ../System
-# USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include -L$(TCLDIR)/lib -ltclstub$(VERS)
-USETCL = -DUSE_TCL_STUBS -I/usr/include/tcl$(VERS) -L/usr/lib/tcl$(VERS) -ltclstub$(VERS)
+USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include -L$(TCLDIR)/lib -ltclstub$(VERS)
+# Next builds against system Tcl for Prolog debugging with Sicstus/dll
+# USETCL = -DUSE_TCL_STUBS -I/usr/include/tcl$(VERS) -L/usr/lib/tcl$(VERS) -ltclstub$(VERS)
 LOCALIZE_TCL_REFS = ls # placebo command
 SHAREDLIBEXTN = .so
 

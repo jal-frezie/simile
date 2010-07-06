@@ -312,21 +312,21 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 #		  $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 -outline {} \
 #		  -fill $fillColour -tag "$tagSet /background/"]
 # These make up the fill shape
-    set i [$w create polygon $ml $v6 $h6 $mt $h7 $mt $mr $v6 \
-	       $mr $v7 $h7 $mb $h6 $mb $ml $v7 \
-	       -outline {} -fill $fillColour -tag /new_bg/]
-    lappend i [$w create arc $ir $mt $mr $it -start 0 -extent 90 \
-		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/]
-    lappend i [$w create arc $ml $mt $il $it -start 90 -extent 90 \
-		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/]
-    lappend i [$w create arc $ml $ib $il $mb -start 180 -extent 90 \
-		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/]
-    lappend i [$w create arc $ir $ib $mr $mb -start 270 -extent 90 \
-		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/]
+    $w create polygon $ml $v6 $h6 $mt $h7 $mt $mr $v6 \
+	$mr $v7 $h7 $mb $h6 $mb $ml $v7 \
+	-outline {} -fill $fillColour -tag /new_bg/
+    $w create arc $ir $mt $mr $it -start 0 -extent 90 \
+		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/
+    $w create arc $ml $mt $il $it -start 90 -extent 90 \
+		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/
+    $w create arc $ml $ib $il $mb -start 180 -extent 90 \
+		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/
+    $w create arc $ir $ib $mr $mb -start 270 -extent 90 \
+		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/
     if {$wedge} {
-	lappend i [$w create polygon $ml $v6 $ml $mt [expr $ml+$cornerRad/4] \
-		       $mt [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
-	    -outline {} -fill $fillColour -tag /new_bg/]
+	$w create polygon $ml $v6 $ml $mt [expr $ml+$cornerRad/4] \
+	    $mt [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
+	    -outline {} -fill $fillColour -tag /new_bg/
     }
     # Now to stick it behind anything that might be drawn inside
     $w raise /new_bg/ target_and_background
@@ -350,24 +350,27 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     }
 
     if {$wedge} {
-	lappend i [$w create line $ml $v6 $ml $mt [expr $ml+$cornerRad/4] $mt \
-		       [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
-	    -width $width -tag /new_bd/]
+	$w create line $ml $v6 $ml $mt [expr $ml+$cornerRad/4] $mt \
+	    [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
+	    -width $width -tag /new_bd/
     }
     foreach tag [concat $tagSet /background/] {
 	$w addtag $tag withtag /new_bg/
     }
     set tabs 0
     while {$tabs < $back} {
-	if {$tabs} {$w move /new_bd/ $backSpacing $backSpacing}
-	lappend i [$w create arc $ml $ib $il $mb -start 180 -extent 45 \
-	    -style arc -width $width -tag /new_bd/]
-	lappend i [$w create line $ml $v7 $ml $v6 -width $width -tag /new_bd/]
-	lappend i [$w create arc $ml $mt $il $it -start 90 -extent 90 \
-	    -style arc -width $width -tag /new_bd/]
-	lappend i [$w create line $h6 $mt $h7 $mt -width $width -tag /new_bd/]
-	lappend i [$w create arc $ir $mt $mr $it -start 45 -extent 45 \
-	    -style arc -width $width -tag /new_bd/]
+	if {$tabs} {
+	    $w dtag /new_bd/ /encs/
+	    $w move /new_bd/ $backSpacing $backSpacing
+	}
+	$w create arc $ml $ib $il $mb -start 180 -extent 45 \
+	    -style arc -width $width -tag "/new_bd/ /encs/"
+	$w create line $ml $v7 $ml $v6 -width $width -tag "/new_bd/ /encs/"
+	$w create arc $ml $mt $il $it -start 90 -extent 90 \
+	    -style arc -width $width -tag "/new_bd/ /encs/"
+	$w create line $h6 $mt $h7 $mt -width $width -tag "/new_bd/ /encs/"
+	$w create arc $ir $mt $mr $it -start 45 -extent 45 \
+	    -style arc -width $width -tag "/new_bd/ /encs/"
         incr tabs
     }
     set tabs 0
@@ -390,17 +393,20 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
             set mr [expr $mr + $stackSpacing]
             set mb [expr $mb + $stackSpacing]
         } else {
-	    if {$tabs} {$w move /new_br/ $stackSpacing $stackSpacing}
-	    lappend i [$w create arc $ml $ib $il $mb -start 225 -extent 45 \
-		-style arc -width $width -tag /new_br/]
-	    lappend i [$w create line $mr $v7 $mr $v6 -width $width \
-			   -tag /new_br/]
-	    lappend i [$w create arc $mr $mb $ir $ib -start 270 -extent 90 \
-		-style arc -width $width -tag /new_br/]
-	    lappend i [$w create line $h6 $mb $h7 $mb -width $width \
-			   -tag /new_br/]
-	    lappend i [$w create arc $ir $mt $mr $it -start 0 -extent 45 \
-		-style arc -width $width -tag /new_br/]
+	    if {$tabs} {
+		$w dtag /new_br/ /encs/
+		$w move /new_br/ $stackSpacing $stackSpacing
+	    }
+	    $w create arc $ml $ib $il $mb -start 225 -extent 45 \
+		-style arc -width $width -tag "/new_br/ /encs/"
+	    $w create line $mr $v7 $mr $v6 -width $width \
+			   -tag "/new_br/ /encs/"
+	    $w create arc $mr $mb $ir $ib -start 270 -extent 90 \
+		-style arc -width $width -tag "/new_br/ /encs/"
+	    $w create line $h6 $mb $h7 $mb -width $width \
+			   -tag "/new_br/ /encs/"
+	    $w create arc $ir $mt $mr $it -start 0 -extent 45 \
+		-style arc -width $width -tag "/new_br/ /encs/"
         }
         incr tabs
     }
@@ -422,7 +428,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 
 #    MakeSubmodelGrid $w $l $t $r $b $fatness $origX $origY $bgColour
     if {[string equal incomplete $colourScheme] || !$inFat} {
-	set window_info($w,temporary) $i
+#	set window_info($w,temporary) $i
     } else {
 	set plRad [expr $cornerRad/$window_info($w,scale)]
 	set nCol [Gradient $bgColour $w]
@@ -1207,7 +1213,11 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 	} line {
 	    if {![string match "*/grid/*" [$winId gettags $object]]} {
 		set newWidth [AdjustWidth $winId $object $factor]
-		if {$hideTinies && $newWidth<0.1} {
+		set minWidth 0.1
+		if {[string match */encs/* [$winId gettags $object]]} {
+		    set minWidth 0.01
+		}
+		if {$hideTinies && $newWidth<$minWidth} {
 		    $winId itemconfigure $object -state hidden
 		} else {
 		    $winId itemconfigure $object -width $newWidth
@@ -1250,7 +1260,11 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 	    }
 	} arc {
 	    set newWidth [AdjustWidth $winId $object $factor]
-	    if {$hideTinies && $newWidth<0.1} {
+	    set minWidth 0.1
+	    if {[string match */encs/* [$winId gettags $object]]} {
+		set minWidth 0.01
+	    }
+	    if {$hideTinies && $newWidth<$minWidth} {
 		$winId itemconfigure $object -state hidden
 	    } else {
 		$winId itemconfigure $object -width $newWidth
