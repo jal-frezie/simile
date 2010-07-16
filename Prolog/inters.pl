@@ -472,7 +472,8 @@ make_intermediates(
 	    DestPath = [_ | DestTail],
 	    TotalPath = [_ | TotalTail],
 	    get_model(DestTail, InterPath),
-	    get_model(TotalTail, OuterPath); % Use to read stuff out
+	    get_model(TotalTail, OuterPath), % Use to read stuff out
+	    append(Exited, OuterPath, TotalPath);
 	InterPath = DestPath,
 	    OuterPath = TotalPath),
 	(var(Payload), !,
@@ -604,10 +605,12 @@ make_intermediates(
 		       make(TotalName, [cleared(TotalName), time],
 			    ClearContext, Step, [])];
 	Functor = in_preceding, !,
+	    wait_for_submodels(Exited, Access),
 	    Setting = [make(lastvalue(TotalName),
 			    [InnerTgt, lastvalue(InnerTgt) | Depends],
 			    WriteContext, Step, [IncrAct]),
-		       make(TotalName, [cleared(TotalName), time],
+		       make(TotalName,
+			    [cleared(TotalName), this_step(InnerTgt) | Access],
 			    ClearContext, Step, [])];
 	    /* If keep_from_reseting, we can remove time from the increment expression's
 	    conditions since we need only do it once even though it changes */
@@ -633,12 +636,12 @@ make_intermediates(
 			      UseSource, TotalName, UseContextUnits-InterDims),
 	merge_lists([Inter], OldInters, MidInters),
 	(TXUnits = UseContextUnits, !;
-	throw(bad_expinter_units(TotalName, TXUnits, UseContextUnits))),
-	    (var(Payload), !,
+	  throw(bad_expinter_units(TotalName, TXUnits, UseContextUnits))),
+	(var(Payload), !,
 	    WhatMade = TotalName,
 	    NewInters = MidInters,
 	    FinalInter = Inter;
-	Outer = instance(internal, inter(InterContext, _, SourceLoops),
+	  Outer = instance(internal, inter(InterContext, _, SourceLoops),
 			      UseSource, PayloadName, Units-InterDims),
 	    WhatMade = PayloadName,
 	    merge_lists([Outer], MidInters, NewInters),
