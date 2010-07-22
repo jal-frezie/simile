@@ -220,6 +220,8 @@ set msgs(bad_model_format_title) [tr. "Problem loading model"]
 set msgs(bad_model_format_message) [tr. "Simile had some sort of problem incorporating the following lines from the file into the model: %1\$s"]
 set msgs(bad_model_format_detail) [tr. "Although this data parses correctly, it does not make sense as part of a model specification in Simile's internal representation."]
 
+set msgs(xml_import_fail_title) [tr. "Bad XML model description"]
+set msgs(xml_import_fail_message) [tr. "The Webflow service failed to convert this file from an XML model description to a set of Prolog-format model declarations. Please try using the service via your browser to see a full error diagnosis."]
 set msgs(linuxPrintFail_title) [tr. "Print command result"]
 set msgs(linuxPrintFail_message) [tr. "Printing seems to have failed."]
 set msgs(linuxPrintFail_detail) [tr. "The result returned by the print command was:\n\n%1\$s"]
@@ -717,6 +719,8 @@ set msgs(tableWimpOut) [tr. "The latest values have not been displayed because "
 set msgs(tooManyRows) [tr. "the total number of rows is greater than"]
 set msgs(tooManyColumns) [tr. "the total number of columns is greater than"]
 set msgs(tooManyCells) [tr. "the total number of cells is greater than"]
+
+set msgs(wait_for_web) [tr. "Interacting with web service to convert file..."]
 
 # references to documentation
 set help(search) diagrams/search.htm

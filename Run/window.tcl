@@ -1284,6 +1284,7 @@ proc DoLocalCmd {win item} {
 	build_c {ExportCode $win build_c}
         insert {InsertModel $win}
 	empty {EmptyWindow $win}
+	import_xml {ImportXML $win}
     }
 }
 
@@ -1396,6 +1397,11 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     } else {
 	set sourceExps disabled
     }  
+    $fm add cascade -label [tr. "Import"] -menu $fm.sub0
+    set fm0 [menu $fm.sub0 -tearoff 0]
+    $fm0 add command -label [tr. "XML Model Description"] \
+            -command "MenuSelect $c local import_xml"
+
     $fm add cascade -label [tr. "Export"] -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
     $fm2 add command -label [tr. "Model declarations"] \

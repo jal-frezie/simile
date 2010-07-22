@@ -81,7 +81,7 @@ set_cursor_for(NewMode) :-
 	cursor_is(arrow).
 
 stick_model_in(Win, Parent, Name, Mode) :-
-	Mode = reopen,
+	Mode = open_toplevel,
 	(set_model_file(Parent, Name),
 	    is_toplevel(Parent),
 	    get_default_export_name(Parent, "", DefName),
@@ -121,7 +121,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    append_atoms(TargetDir, '/model.cnv', GraphFileName),
 	/* If this exists, call tcl to skee-WIRT it into each parent window
 	(obviously stupid if window not empty!) */
-	    (Mode = reopen,
+	    (Mode = open_toplevel,
 		output:my_file_exists(GraphFileName),
 		FileV > 4.05, !,
 		/* reject canvas files older than v4.1 because clear submodels
@@ -149,7 +149,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    finish_progress_dialogue,
 	    !, fail),
         finish_progress_dialogue,
-	(Mode = reopen,
+	(member(Mode, [open_toplevel, add]),
 	    check_autosave(Parent, Name, Translated, NeedsRedraw),
 	    (NeedsRedraw = 0,
 		/* Graphics update will have made a tk_visible call which we do
@@ -248,13 +248,15 @@ menu_handle(Win, file, new) :-
 menu_handle(_Win, file, new_toplevel) :-
 	m_update:make_desktop(_,_).
 
-menu_handle(_Win, open_toplevel, Name) :-
-	check_if_already_open(Name), !;
+menu_handle(_Win, Mode, Name) :-
+	member(Mode, [open_toplevel, add]),
+	(check_if_already_open(Name), !;
 	m_update:make_desktop(Parent, Win),
 	scrub_autosave(Parent),
-	stick_model_in(Win, Parent, Name, reopen).
+	stick_model_in(Win, Parent, Name, Mode)).
 
-menu_handle(CurWin, file, open) :-
+menu_handle(CurWin, file, OpenAct) :-
+	member(OpenAct-Mode, [open-open_toplevel, import-add]),
         (CurWin shows_model Parent,
 	    Win = CurWin;
 	 Win shows_model Parent;
@@ -264,16 +266,16 @@ menu_handle(CurWin, file, open) :-
 	get_load_file(Parent, Name),
 	(Name = '', !;
 	Win = '.hi.canvas', !,
-	    menu_handle(Win, open_toplevel, Name);
+	    menu_handle(Win, Mode, Name);
 	(is_toplevel(Parent),
 	    find_all_comps(Parent, _), !,
-	    menu_handle(Win, open_toplevel, Name);
+	    menu_handle(Win, Mode, Name);
 	(is_toplevel(Parent), !,
 	    \+ check_if_already_open(Name),
 	    scrub_autosave(Parent);   
 	 check_deletable(Win, Parent),
 	    remove_model(Win, Parent)),
-	    stick_model_in(Win, Parent, Name, reopen))).
+	    stick_model_in(Win, Parent, Name, Mode))).
 
 menu_handle(Win, model, insert) :-
 	Win shows_model Parent,

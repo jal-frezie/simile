@@ -1251,6 +1251,113 @@ proc ContextSensitiveHelp {context page} {
     }
 }
 
+# Provide multipart/form-data for http
+
+ package provide form-data 1.0
+ package require mime
+
+ namespace eval form-data {}
+
+ proc form-data::compose {partv {type multipart/form-data}} {
+     upvar 1 $partv parts
+
+     set mime [mime::initialize -canonical $type -parts $parts]
+     set packaged [mime::buildmessage $mime]
+     foreach part $parts {
+ 	mime::finalize $part
+     }
+     mime::finalize $mime
+
+     return $packaged
+ }
+
+ proc form-data::add_binary {partv name filename value type} {
+     upvar 1 $partv parts
+     set disposition "form-data; name=\"${name}\"; filename=\"$filename\""
+     lappend parts [mime::initialize -canonical $type \
+ 		   -string $value \
+ 		   -encoding binary \
+ 		   -header [list Content-Disposition $disposition]]
+ }
+
+ proc form-data::add_field {partv name value} {
+     upvar 1 $partv parts
+     set disposition "form-data; name=\"${name}\""
+     lappend parts [mime::initialize -canonical text/plain -string $value \
+ 		       -header [list Content-Disposition $disposition]]
+ }
+
+ proc form-data::format {name filename value type args} {
+     set parts {}
+     foreach {n v} $args {
+ 	add_field parts $n $v
+     }
+     add_binary parts $name $filename $value $type
+     return [compose parts]
+ }
+
+# This opens the file selctor to get a model description in XML format, then
+# sends it to the WebFlow service to convert it to Prolog and puts that in a
+# temporary file. What about ttfn conversion? None done yet.
+proc ImportXML {c} {
+    global window_info simtmpdir preSelect
+
+    package require http
+    set mdl $window_info($c,top_node)
+    set xmlFile [ChooseFile model.xml [tr. "XML model description to import:"] \
+		     0 $mdl]
+    if {![string length $xmlFile]} {return 0}
+    set strm [NetOpen $xmlFile r]
+    set content [read $strm]
+    close $strm
+
+# ...what follows owes much to http://wiki.tcl.tk/13675
+     # format the file and form
+     set message [form-data::format in_file [file tail $xmlFile] \
+			    $content application/x-xml]
+
+     # parse the headers out of the message body because http get url wants
+     # them as a separate parameter
+     set headerEnd [string first "\r\n\r\n" $message]
+     incr headerEnd 1
+     set bodystart [expr $headerEnd + 3]
+     set headers_raw [string range $message 0 $headerEnd]
+     set body [string range $message $bodystart end]
+     set headers_raw [string map {"\r\n " " " "\r\n" "\n"} $headers_raw]
+     regsub {  +} $headers_raw " " headers_raw
+
+     foreach line [split $headers_raw "\n"] {
+         regexp {^([^:]+): (.*)$} $line all label value
+         lappend headers $label $value
+     }
+
+     # get the content-type
+     array set ha $headers
+     set content_type $ha(Content-Type)
+     unset ha(Content-Type)
+     set headers [array get ha]
+
+     # POST it
+    OpenProgressBox $c
+    FillProgressBox wait_for_web {}
+    set url http://webflow.simileweb.com/processes/xml_to_pl/
+     set token [::http::geturl $url -type $content_type -binary true \
+                             -headers $headers -query $body]
+     ::http::wait $token
+    CloseProgressBox
+
+    upvar #0 $token foo
+    if {![string equal "HTTP/1.1 200 OK" $foo(http)]} {
+	Query xml_import_fail warning top $c ok
+	return
+    }
+    set preSelect [file join $simtmpdir temp_in.pl]
+    set strm [NetOpen $preSelect w]
+    puts $strm $foo(body)
+    close $strm
+    MenuSelect $c file import
+}
+
 proc CheckHyper {ywhat} {
     return 0
 }
@@ -1810,7 +1917,7 @@ proc EquationListingSave {winId topNode} {
 }
 
 proc EquationListingPrint {winId} {
-    global simtmpdir env tcl_platform
+    global env tcl_platform
     global printargs equationlist
     
     if {[string match windows $tcl_platform(platform)]} {
