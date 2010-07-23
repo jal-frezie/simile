@@ -1284,7 +1284,8 @@ proc DoLocalCmd {win item} {
 	build_c {ExportCode $win build_c}
         insert {InsertModel $win}
 	empty {EmptyWindow $win}
-	import_xml {ImportXML $win}
+	import_xml {TradeXML $win 0}
+	export_xml {TradeXML $win 1}
     }
 }
 
@@ -1406,6 +1407,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set fm2 [menu $fm.sub1 -tearoff 0]
     $fm2 add command -label [tr. "Model declarations"] \
             -command "MenuSelect $c file export_prolog"
+    $fm2 add command -label [tr. "XML Model Description"] \
+            -command "MenuSelect $c local export_xml"
     $fm2 add command -label [tr. "C++ code"] -state $sourceExps \
             -command "MenuSelect $c code build_c"
             $fm2 add command -label [tr. "Compiled binary"] -state $sourceExps \

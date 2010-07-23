@@ -1299,22 +1299,31 @@ proc ContextSensitiveHelp {context page} {
 # This opens the file selctor to get a model description in XML format, then
 # sends it to the WebFlow service to convert it to Prolog and puts that in a
 # temporary file. What about ttfn conversion? None done yet.
-proc ImportXML {c} {
+proc TradeXML {c exp} {
     global window_info simtmpdir preSelect
 
     package require http
     set mdl $window_info($c,top_node)
-    set xmlFile [ChooseFile model.xml [tr. "XML model description to import:"] \
-		     0 $mdl]
-    if {![string length $xmlFile]} {return 0}
-    set strm [NetOpen $xmlFile r]
+    if {$exp} {
+	set service pl_to_xml
+	set srcFile [set preSelect [file join $simtmpdir temp_out.pl]]
+	MenuSelect $c file export_prolog
+	set appTail simile
+    } else {
+	set service xml_to_pl
+	set srcFile [ChooseFile model.xml \
+			 [tr. "XML model description to import:"] 0 $mdl]
+	if {![string length $srcFile]} {return 0}
+	set appTail xml
+    }
+    set strm [NetOpen $srcFile r]
     set content [read $strm]
     close $strm
 
 # ...what follows owes much to http://wiki.tcl.tk/13675
      # format the file and form
-     set message [form-data::format in_file [file tail $xmlFile] \
-			    $content application/x-xml]
+     set message [form-data::format in_file [file tail $srcFile] \
+			    $content application/x-$appTail]
 
      # parse the headers out of the message body because http get url wants
      # them as a separate parameter
@@ -1340,7 +1349,7 @@ proc ImportXML {c} {
      # POST it
     OpenProgressBox $c
     FillProgressBox wait_for_web {}
-    set url http://webflow.simileweb.com/processes/xml_to_pl/
+    set url http://webflow.simileweb.com/processes/$service/
      set token [::http::geturl $url -type $content_type -binary true \
                              -headers $headers -query $body]
      ::http::wait $token
@@ -1348,13 +1357,20 @@ proc ImportXML {c} {
 
     upvar #0 $token foo
     if {![string equal "HTTP/1.1 200 OK" $foo(http)]} {
-	Query xml_import_fail warning top $c ok
+	Query xml_trade_fail warning top $c ok
 	return
     }
-    set preSelect [file join $simtmpdir temp_in.pl]
-    set strm [NetOpen $preSelect w]
+    if {$exp} {
+	set destFile [ChooseFile model.xml \
+			 [tr. "XML model description to export:"] 1 $mdl]
+	if {![string length $srcFile]} {return 0}
+    } else {
+	set destFile [set preSelect [file join $simtmpdir temp_in.pl]]
+    }
+    set strm [NetOpen $destFile w]
     puts $strm $foo(body)
     close $strm
+    if {$exp} {return 0}
     MenuSelect $c file import
 }
 

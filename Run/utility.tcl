@@ -107,16 +107,16 @@ proc ChooseFile { preferred title canbenew context} {
     if {[info exists preSelect]} {
 	set chosenFile $preSelect
 	unset preSelect
-# path should already be recorded
     } else {
 	set chosenFile [eval $cmd $switches]
+    }
     
 #    cd $prevDir
 #puts "Recording path for $context"
-	if {[string compare $chosenFile {}]} {
+	if {[string length $chosenFile] && ![string equal .pl $fileType]} {
+# Prolog file may be temp for XML trade
 	    do_in_editor RecordPathChoice $fileType $chosenFile $context
 	}
-    }
     return $chosenFile
 }
 
