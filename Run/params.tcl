@@ -1027,7 +1027,7 @@ namespace eval fileparams {
 	ClearSubParamRefs $smPath ;# old spfs below this are superseded
         if {[llength $metaFile]} {
 	    set SimileProject(fileparam,$smPath/) $metaFile
-#puts "setting SimileProject(fileparam,$smPath) to $SimileProject(fileparam,$smPath)"
+#puts "setting SimileProject(fileparam,$smPath/) to $SimileProject(fileparam,$smPath/)"
 #            set part [file join $simtmpdir temp_out.spf]
 #            set pStr [NetOpen $part w]
             set pStr [NetOpen $metaFile w]
@@ -1138,6 +1138,8 @@ namespace eval fileparams {
 		puts $pStr [base64 -mode encode -- $raw]
 		puts $pStr "  $indent\]\]>"
 		puts $pStr "$indent</byte_array>"
+		set msgs(param_source_$compName) \
+		    [format $msgs(metafile_bin) $metaFile]
 	    } elseif {[ReferenceWorks $compName]} {
 		set relName [Relativize $metaFile \
 				 [lindex $paramState($compName) 0]]
@@ -1174,6 +1176,8 @@ namespace eval fileparams {
 		    [format $msgs(metafile_ref) $relName $metaFile]
 	    } elseif {[llength $outData($compName)]==1} {
 		puts $pStr "$indent<single_value $genericAVs val=[Entitize $outData($compName)]/>"
+		set msgs(param_source_$compName) \
+		    [format $msgs(metafile_lit) $metaFile]
 	    } elseif {[llength $outData($compName)]} {
 # do not write if no data, can only cause trouble
 		puts $pStr "$indent<multi_value $genericAVs>"
@@ -1620,6 +1624,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
         file delete $metaFile
     }
     if {$anyGood} {
+#puts "setting SimileProject(fileparam,$smPath/) to $SimileProject(fileparam,$smPath/)"
         set SimileProject(fileparam,$smPath/) $oldPath
     }
 }

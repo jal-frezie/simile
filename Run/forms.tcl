@@ -1363,7 +1363,7 @@ proc TradeXML {c exp} {
     if {$exp} {
 	set destFile [ChooseFile model.xml \
 			 [tr. "XML model description to export:"] 1 $mdl]
-	if {![string length $srcFile]} {return 0}
+	if {![string length $destFile]} {return 0}
     } else {
 	set destFile [set preSelect [file join $simtmpdir temp_in.pl]]
     }
