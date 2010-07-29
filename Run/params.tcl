@@ -248,7 +248,7 @@ proc EditValueComment {topFrame compName} {
     if {[string equal $oldComment $msgs(ncfv)]} {
 	set oldComment {}
     }
-    set roll [RelationCheck $topFrame "Comment for value for $compName" \
+    set roll [RelationCheck $topFrame "value for $compName" \
 		  param_value {} $oldComment]
     if {[lindex $roll 0]} {
 	set oldComment [lindex $roll 1]
