@@ -25,7 +25,7 @@ namespace eval slide139 {
                 [list remove.gif "Remove a variable" \
                 [namespace code "RemoveVariable $winId"]] \
                 [list slider.gif "Add all variables" \
-                [namespace code "AddAllVariables $winId /"]]]
+                [namespace code "AddAllVariables $winId"]]]
         
         ::graphtools::MakeToolBar $winId $toolbarItems
         pack [message $winId.intro -aspect 800] -fill x
@@ -70,7 +70,7 @@ namespace eval slide139 {
     proc click {winId node caption} {
         set fullCapt [GetCaptionPathFromId $node]
         if {[string equal SUBMODEL [GetModelClass $node]]} {
-            AddAllVariables $winId $fullCapt
+            AddAllVariablesInSubmodel $winId $fullCapt
         } elseif {[llength [InsertSlider $winId $node $fullCapt 1]]} {
             $winId.intro configure -text {}
             ReleaseClicks $winId
@@ -79,7 +79,15 @@ namespace eval slide139 {
         }
     }
     
-    proc AddAllVariables {winId prefix} {
+    proc AddAllVariables {winId} {
+	global helperTable
+
+	set helperTable(beingCalled) $helperTable($winId,whichInstance)
+	AddAllVariablesInSubmodel $winId /
+	set helperTable(beingCalled) {}
+    }
+
+    proc AddAllVariablesInSubmodel {winId prefix} {
         foreach node [GetObjectList] {
             set title [GetCaptionPathFromId $node]
             if {[string first $prefix $title] || \
@@ -100,8 +108,9 @@ namespace eval slide139 {
         }
     }
     proc InsertSlider {winId node title nest} {
-	global widgetSeln
+	global widgetSeln sliderDoes
 
+	set sliderDoes($title,node) $node
         set parmType [GetModelEval $node]
         set fixed [lsearch {INPUT TABLE} $parmType]
         if {$fixed==-1} {
@@ -112,6 +121,7 @@ namespace eval slide139 {
         set levels [split $title /]
         set trans [GetTransTable $node]
         set type [GetModelType $node]
+	set sliderDoes($title,type) $type
         switch -glob $type {
             FLAG {
             } ENUM(*) {
@@ -130,8 +140,8 @@ namespace eval slide139 {
                 }
             }
         }
-        set nodeDims [GetModelDims $node]
-        set useDim [FindUseDim $nodeDims]
+        set sliderDoes($title,dims) [GetModelDims $node]
+        set useDim [FindUseDim $sliderDoes($title,dims)]
         if {$nest} {
             set f [MakeSubFrames $winId $::topSFrame($winId) \
                     $levels [namespace current] 0]
@@ -202,7 +212,7 @@ namespace eval slide139 {
             #	    set useTrans [lindex $trans $useDim]
             pack [label $f.caption -text [lindex $levels end] \
 			      -bg $lbg -width 12]
-            set count [lindex $nodeDims $useDim]
+            set count [lindex $sliderDoes($title,dims) $useDim]
             # bodge it to work with record submodels
             if {[string equal RECORDS $count]} {
                 set count [expr [llength $initVal]/2]
@@ -288,7 +298,7 @@ namespace eval slide139 {
             }
         }
 	if {[winfo exists $f.caption]} {
-	    set nodeDims [TransBounds $trans $nodeDims]
+	    set nodeDims [TransBounds $trans $sliderDoes($title,dims)]
 	    set dimList [MakeDimsLegible $nodeDims $type]
             set comment [do_in_editor GetFromProlog \
 			     tk_get_info('$winId',$node,comment)]
@@ -498,17 +508,20 @@ namespace eval slide139 {
     # this might be tidied by saving some data in a namespace variable
     
     proc display {winId time display remainder} {
-        global helperTable widgetSeln
+	global helperTable widgetSeln sliderDoes
+
         foreach currentCaption [GetState $winId] {
             set title [RestoreCrs $currentCaption]
-            set node [GetIdFromCaptionPath $title]
+            set node $sliderDoes($title,node)
+            set type $sliderDoes($title,type)
+            set dims $sliderDoes($title,dims)
 	    
 #            set valGroup [InputVarFor [$helperTable($winId,whichInstance) \
 #					   GetNode] $node]
 #            upvar \#0 $valGroup valArray
 #            if {[string equal comboChoices $valGroup]} {}
 	    set model [$helperTable($winId,whichInstance) GetNode]
-	    if {[string match ENUM(*) [GetCompProperty $model Type $node]]} {
+	    if {[string match ENUM(*) $type]} {
                 # will need widget address to update it!
                 set f [MakeSubFrames $winId $::topSFrame($winId) \
                         [split $title /] [namespace current] 0]
@@ -516,14 +529,14 @@ namespace eval slide139 {
                 set f {}
             }
             set data [lindex [GetModelValue $node] 0]
-            set useDim [FindUseDim [set nodeDims [GetModelDims $node]]]
+            set useDim [FindUseDim $sliderDoes($title,dims)]
             if {$useDim==-1} {
                 set widgetSeln($node) [GetDefVal $data -1 0]
                 if {[llength $f]} {
                     ShowNthChoice $f.combo $widgetSeln($node)
                 }
             } else {
-                set count [lindex $nodeDims $useDim]
+                set count [lindex $sliderDoes($title,dims) $useDim]
                 # bodge it to work with record submodels
                 if {[string equal RECORDS $count]} {
                     set count [expr {[llength $data]/2}]
