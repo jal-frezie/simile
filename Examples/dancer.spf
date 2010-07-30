@@ -1,0 +1,17 @@
+MIME-Version: 1.0
+Content-Disposition: attachment
+Content-Description: Simile parameter file
+Simile-Version: 5.7
+Simile-Origin: input-param-tool
+Content-ID: <7193.1280506845.2@spacehopper>
+Content-Type: application/x-simile
+
+start/start tooth=literal=NOW 13.4
+start/h offset=literal=NOW -24
+start/ring=literal=NOW 105
+start/wheel=literal=NOW 84
+start/hole=literal=NOW 12
+increment/start tooth=literal=NOW 1.50
+increment/h offset=literal=NOW 3.00
+increment/hole=literal=NOW 0
+pattern count=literal=NOW 18
