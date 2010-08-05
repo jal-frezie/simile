@@ -739,14 +739,14 @@ proc PutItThere {t parent} {
     toplevel .$t -bd 4
     if {[winfo exists $parent] && [string compare . $parent]} {
 	wm transient $t $parent
-	if [string match Darwin $tcl_platform(os)] {
-	    ::tk::unsupported::MacWindowStyle style $t moveableModal resizable
-# was floatGrowProc but that crashed when messageboxes opened inside
-#	    ::tk::unsupported::MacWindowStyle style $t moveableModal {}
-	    AbleAllEntries $parent disabled
-	}
     } else {
 	wm transient $t
+    }
+    if [string match Darwin $tcl_platform(os)] {
+	::tk::unsupported::MacWindowStyle style $t moveableModal resizable
+# was floatGrowProc but that crashed when messageboxes opened inside
+#	::tk::unsupported::MacWindowStyle style $t moveableModal {}
+	AbleAllEntries $parent disabled
     }
     if {![string eq x11 [tk windowingsystem]]} {
 	wm geometry $t +0+[winfo screenheight $t]

@@ -37,13 +37,13 @@ proc create_equation {parent purpose comp indices enum_types} {
     set equation(doc) $docF
     
     # frame for buttons
-    set buttonF [frame $t.buttons]
-    set ok [button $buttonF.ok -command equationOK \
-		-width 10 -default active -text [tr. OK]]
+    set buttonF [ttk::frame $t.buttons]
+    set ok [ttk::button $buttonF.ok -command equationOK \
+		-width 10 -text [tr. OK]]
     bind $ok <Button-1> "focus $ok" ;# make sure new names checked before exit
-    set can [button $buttonF.cancel -command equationCancel \
+    set can [ttk::button $buttonF.cancel -command equationCancel \
 		 -width 10 -text [tr. Cancel]]
-    set help [button $buttonF.help -command {ContextSensitiveHelp .equation equations/dialogue.htm} \
+    set help [ttk::button $buttonF.help -command {ContextSensitiveHelp .equation equations/dialogue.htm} \
 		  -width 10 -text [tr. Help]]
     pack $help -side right -padx 8 -pady 4 -anchor e
     pack $can -side right -padx 8 -pady 4 -anchor e
@@ -139,8 +139,8 @@ proc create_equation {parent purpose comp indices enum_types} {
 	    if {[string match custom $act]} {
 		set act [PrefValue custom(myButton) myButton]
 	    }
-	    set bid [button $keypadf.keys.row$row.col$col -width $buttWidth \
-		      -text $act -command [list HitKey $t $act]]
+	    set bid [button $keypadf.keys.row$row.col$col -text $act \
+			 -width $buttWidth -command [list HitKey $t $act]]
 	    pack $bid -side left -fill x -expand false
 	    if {[string first $act .0123456789]>-1} {
 		$bid configure -bg \#a0a0a0 -activebackground \#a0a0a0
@@ -219,7 +219,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     radiobutton $mainf.file.radio2 -text [tr. "Fixed parameter"] \
 	-variable equation(isparam) -value 2
     pack $mainf.file.radio2 -side left
-    pack $mainf.file -anchor nw
+    pack $mainf.file -anchor nw -fill x
     frame $mainf.equation
     frame $mainf.equation.textbox
     

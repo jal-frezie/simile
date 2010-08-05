@@ -1,21 +1,41 @@
 # These are the settings for the particular version we want to make
 # edition: evaluation, teaching, standard or enterprise
-EDN = STANDARD
+# EDN = STANDARD (this now defined externally for scripting)
+
+ifeq ($(EDN), EVALUATION)
+# License code required to verify name/corp/edition: 0 for no
+	LICENSED = 0
 # date of final expiry: "hh:mm D M Y" or "" for permanent
-ABS_EXP = ""
+	MONTHS_TO_RUN = 9
+else
+	LICENSED = 1
+	MONTHS_TO_RUN = 0
+endif
+ifeq ($(EDN), TEACHING)
+	MONTHS_TO_RUN = 21
+endif
+
 # days after install: 0 for no installation expiry
 REL_EXP = 0
-# License code required to verify name/corp/edition: 0 for no
-LICENSED = 1
+
+# What kind of system are we on
+PLATFORM = $(shell uname -s)
+
 # Prolog implementation to use -- SICSTUS for Windows releases, GNU otherwise
+# (currently GNU for everything)
 PROLOG = GNU
+
 # Set this to '-fopenmp' to include v6 parallelism
 PARALLEL =
 
-ifeq ($(ABS_EXP),"")
+ifeq ($(MONTHS_TO_RUN),0)
 	EXP_TICKS = 0
 else
-	EXP_TICKS = $(shell date +%s -d $(ABS_EXP))
+ifeq ($(PLATFORM),Darwin)
+	EXP_TICKS = $(shell date -v+$(MONTHS_TO_RUN)m -v1d -v0H -v0M -v0S +%s)
+else
+	EXP_TICKS = $(shell date +%s -d "$(MONTHS_TO_RUN) months Sunday")
+endif
 endif
 
 DEFNS=-DSIM_FINAL_EXPIRY=$(EXP_TICKS) -DSIM_DAYS_AFTER_INSTALL=$(REL_EXP) -DSIM_$(EDN)
@@ -35,8 +55,6 @@ GCCCMD = gcc
 GPPCMD = g++
 OPT = 
 
-PLATFORM = $(shell uname -s)
-
 # Default case: Linux
 FLAGS = $(OPT) -m32
 SLDIR = lib
@@ -51,6 +69,7 @@ LOCALIZE_TCL_REFS = ls # placebo command
 SHAREDLIBEXTN = .so
 
 ifeq ($(PLATFORM),Darwin)
+	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
 	FLAGS = $(OPT)
 	ARCHEXTN = _ppc
@@ -61,7 +80,10 @@ ifeq ($(PLATFORM),Darwin)
 	endif
 	EXECEXTN = $(ARCHEXTN)
 	MAKESL = -fPIC -dynamiclib
+#	TCLFW = /System/Library/Frameworks
+# for tcl8.5
 	TCLFW = /Library/Frameworks
+# for tcl8.6
 # make sure Current is set to right version
 	USETCL =  -DUSE_TCL_STUBS -F$(TCLFW) -framework Tcl -I$(TCLFW)/Tcl.framework/Headers -L$(TCLFW)/Tcl.framework -ltclstub$(VERS)
 	LOCALIZE_TCL_REFS = install_name_tool -change \

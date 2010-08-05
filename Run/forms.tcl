@@ -32,22 +32,23 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     }
 
     set tt .disaggregation
-    set t [::ttk::notebook [PutItThere $tt $parent].notebook]
+    set tf [::ttk::frame [PutItThere $tt $parent].all]
+    set t [::ttk::notebook $tf.notebook]
     wm resizable $tt 0 1
     wm protocol $tt WM_DELETE_WINDOW {set disaggregate(done) 0}
     wm title $tt [format $::msgs(props_title) [BlankCrs $title]]
     
-    $t add [frame $t.simple] -text [tr. Basic]
+    $t add [ttk::frame $t.simple] -text [tr. Basic]
     TitleFrame $t.simple.notes -text [tr. Notes:]
     set notesf [GetFrame $t.simple.notes]
-    set descf [frame $notesf.desc]
-    label $descf.desclabel -text [tr. Description:]
+    set descf [ttk::frame $notesf.desc]
+    ttk::label $descf.desclabel -text [tr. Description:]
     entry $descf.text -width 20 -relief sunken -bd 2 -highlightthickness 0
     pack $descf.desclabel -side left -padx 2 -pady 2
     pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
     $descf.text insert 0 $desc
     pack $descf -side top  -fill x -expand off
-    label $notesf.commentlabel -text [tr. Comments:]
+    ttk::label $notesf.commentlabel -text [tr. Comments:]
     pack $notesf.commentlabel -padx 2 -pady 4 -anchor w
     # ScrolledWindow causes crash under Linux so replaced with ordinary frame
     #    frame $t.commentsSW
@@ -64,12 +65,11 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
 	-text [tr. "Control of number of instances:"]
     set countf [GetFrame $t.simple.left.count]
     
-    frame $countf.radio
+    ttk::frame $countf.radio
     foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
-        radiobutton $countf.radio.$rbutton -text [tr. [lindex $rbutton 1]] \
-                -value [lindex $rbutton 0] \
-                -variable disaggregate(type) \
-                -command "SetHighlights $countf"
+        ttk::radiobutton $countf.radio.$rbutton \
+	    -text [tr. [lindex $rbutton 1]] -value [lindex $rbutton 0] \
+	    -variable disaggregate(type) -command "SetHighlights $countf"
         pack $countf.radio.$rbutton -anchor w
     }
     pack $countf.radio -anchor w -side left
@@ -81,21 +81,22 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     TitleFrame $t.simple.left.colour -text [tr. "Background shade:"]
     set colourf [GetFrame $t.simple.left.colour]
     set posRBs [frame $colourf.imageposns]
-    pack [button $colourf.clear -text [tr. Clear] -width 7 \
+    pack [ttk::button $colourf.clear -text [tr. Clear] -width 7 \
             -command "ClearBG $posRBs"] -padx 2 -pady 4 -side left
-    pack [button $colourf.fixcolour -text [tr. Colour...] \
+    pack [ttk::button $colourf.fixcolour -text [tr. Colour...] \
             -width 7 -command "UpdateColour $t $colourf"]  \
             -padx 2 -pady 4 -side left
-    $colourf.fixcolour configure -bg $disaggregate(colour)
+#    $colourf.fixcolour configure -bg $disaggregate(colour)
     set disaggregate(defColour) $disaggregate(colour)
-    pack [button $colourf.setimage -text [tr. Image...] -width 7 -command "ChooseImage $posRBs $mdl $window_info($parent,is_top_level)"] \
+    pack [ttk::button $colourf.setimage -text [tr. Image...] -width 7 -command "ChooseImage $posRBs $mdl $window_info($parent,is_top_level)"] \
             -padx 2 -pady 4 -side left
     pack $posRBs -padx 2 -pady 4 -side left
     set rbState [ChooseText [string equal $disaggregate(image) none] \
             disabled normal]
     foreach rbutton {Tiled Centred Scaled} {
-        pack [radiobutton $posRBs.ip$rbutton -state $rbState -value $rbutton \
-		  -text [tr. $rbutton] -variable disaggregate(imgpos)] -anchor w
+        pack [ttk::radiobutton $posRBs.ip$rbutton -state $rbState \
+	      -value $rbutton -text [tr. $rbutton] \
+		  -variable disaggregate(imgpos)] -anchor w -fill x
     }
     pack $t.simple.left.colour -padx 4 -pady 4 -fill both -expand true
     pack $t.simple.left -side left -fill both -expand 1
@@ -151,36 +152,36 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     #pack $canId.memyscroll -side right -fill y
     #pack $canId.mem -side left -fill both -expand true
     
-    pack [set btnId [frame $enumtypef.btns]] -side left
+    pack [set btnId [ttk::frame $enumtypef.btns]] -side left
     pack [::ttk::entry $btnId.e -textvariable enumTypeMPEntry] -padx 2
     bind $btnId.e <ButtonRelease-1> "EnableTypeOps $enumtypef"
-    pack [button $btnId.addtype -text [tr. "Add type"] \
+    pack [ttk::button $btnId.addtype -text [tr. "Add type"] \
 	      -command "AddEnumType $canId"] -padx 2 -pady 4 -fill x
-    pack [button $btnId.remtype -text [tr. "Remove type"] -state disabled \
-	      -command "RemoveEnumType $enumtypef"] \
+    pack [ttk::button $btnId.remtype -text [tr. "Remove type"] \
+	      -state disabled -command "RemoveEnumType $enumtypef"] \
 	-padx 2 -pady 4 -fill x
-    pack [button $btnId.addmems -text [tr. "Add member"] -state disabled \
+    pack [ttk::button $btnId.addmems -text [tr. "Add member"] -state disabled \
 	      -command "AddEnumMem $enumtypef"] \
 	-padx 2 -pady 4 -fill x
-    pack [button $btnId.remmem -text [tr. "Remove member"] -state disabled \
-	      -command "RemoveEnumMem $enumtypef"] \
+    pack [ttk::button $btnId.remmem -text [tr. "Remove member"] \
+	      -state disabled -command "RemoveEnumMem $enumtypef"] \
 	-padx 2 -pady 4 -fill x
-    pack [button $btnId.getmem -text [tr. "Get from file"] -state disabled \
-	      -command "GetEnumMems $enumtypef $mdl"] \
+    pack [ttk::button $btnId.getmem -text [tr. "Get from file"] \
+	  -state disabled -command "GetEnumMems $enumtypef $mdl"] \
 	-padx 2 -pady 4 -fill x
     pack $t.complex.enumtypes -anchor nw -side bottom -padx 4 -pady 4 \
 	-fill both -expand true
     
     TitleFrame $t.complex.appearance -text [tr. Appearance]
     set appearancef [GetFrame $t.complex.appearance]
-    checkbutton $appearancef.hide -text [tr. "Hide contents"] \
+    ttk::checkbutton $appearancef.hide -text [tr. "Hide contents"] \
             -variable disaggregate(hide)
     pack $appearancef.hide -anchor w
-    frame $appearancef.scale
+    ttk::frame $appearancef.scale
     scale $appearancef.scale.value -from .01 -to 1 -length 150 -orient horizontal \
             -resolution 0.01 -variable disaggregate(fatness)
     pack $appearancef.scale.value
-    label $appearancef.scale.caption -text [tr. "Relative scale"]
+    ttk::label $appearancef.scale.caption -text [tr. "Relative scale"]
     pack $appearancef.scale.caption
     pack $appearancef.scale -anchor w
     pack $t.complex.appearance -anchor nw -side left -padx 4 -pady 4 -fill both -expand true
@@ -190,18 +191,18 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
 #    checkbutton $mathf.separate -text "Build submodel in separate dll" \
 #            -variable disaggregate(separate)
 #    pack $mathf.separate -anchor w
-    pack [frame $mathf.extcode] -anchor w -pady 6
+    pack [ttk::frame $mathf.extcode] -anchor w -pady 6
     set disaggregate(useOwnCode) [expr {![string eq none $disaggregate(xinc)]}]
-    pack [checkbutton $mathf.extcode.whether -text [tr. "Use own code"] \
+    pack [ttk::checkbutton $mathf.extcode.whether -text [tr. "Use own code"] \
 	      -variable disaggregate(useOwnCode) -command "AbleSetup $mathf"] \
 	-side left -anchor w
-    pack [button $mathf.extcode.how -text Setup -command "ExtCodeSetup $mdl"]
+    pack [ttk::button $mathf.extcode.how -text Setup -command "ExtCodeSetup $mdl"]
     AbleSetup $mathf
     #    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
     #            -variable disaggregate(matherror)
     #    pack $mathf.matherror -anchor w
-    frame $mathf.eqnunit
-    label $mathf.eqnunit.caption -text [tr. "Use units in math:"]
+    ttk::frame $mathf.eqnunit
+    ttk::label $mathf.eqnunit.caption -text [tr. "Use units in math:"]
     pack $mathf.eqnunit.caption -side left
     #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
     ::ttk::combobox $mathf.eqnunit.pulldown -textvariable disaggregate(eqnunit) \
@@ -215,8 +216,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
 #    $mathf.eqnunit.pulldown configure -menu $m
     pack $mathf.eqnunit.pulldown
     pack $mathf.eqnunit -anchor w -padx 4 -pady 6
-    frame $mathf.step
-    label $mathf.step.caption -text [tr. "Time step index:"]
+    ttk::frame $mathf.step
+    ttk::label $mathf.step.caption -text [tr. "Time step index:"]
     pack $mathf.step.caption -side left
     #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
     #ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
@@ -280,19 +281,20 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     $t select 0
     pack $t -fill both -expand true
 
-    frame $tt.bottom
-    button $tt.bottom.ok -text [tr. OK] -width 10 -default active \
-            -command {set disaggregate(done) 1}
-    pack $tt.bottom.ok -side left -padx 2 -pady 4
-    button $tt.bottom.cancel -text [tr. Cancel] -width 10 \
+    set okCmd {set disaggregate(done) 1}
+    ttk::button $tf.ok -text [tr. OK] -width 10 -default active \
+            -command $okCmd
+    bind $tt <Return> $okCmd
+    pack $tf.ok -side left -padx 2 -pady 4
+    ttk::button $tf.cancel -text [tr. Cancel] -width 10 \
             -command {set disaggregate(done) 0}
-    pack $tt.bottom.cancel -side left -padx 2 -pady 4
-    button $tt.bottom.help -text [tr. Help] -width 10 \
+    pack $tf.cancel -side left -padx 2 -pady 4
+    ttk::button $tf.help -text [tr. Help] -width 10 \
             -command {ContextSensitiveHelp .disaggregation submodels/dialogue.htm}
-    pack $tt.bottom.help -side left -padx 2 -pady 4
-#    button $tt.bottom.more -text "More" -width 10 -command "ShowComplexity $t"
-#    pack $tt.bottom.more -padx 2 -pady 4
-    pack $tt.bottom -anchor e -padx 4 -pady 4
+    pack $tf.help -side left -padx 2 -pady 4
+    pack $tf
+#    button $tf.more -text "More" -width 10 -command "ShowComplexity $t"
+#    pack $tf.more -padx 2 -pady 4
     
 #    pack $t.simple -anchor nw -fill both; # -expand 1 -fill both
     
@@ -484,13 +486,13 @@ proc RemoveLibF {LibListFr} {
 }
 
 #proc ShowComplexity {t} {
-#    if {[string match [$tt.bottom.more cget -text] More]} {
+#    if {[string match [$tf.more cget -text] More]} {
 #        pack $t.complex -anchor sw -side bottom
 #        wm geometry $t {}; # resize to size requested internally by its widget
-#        $tt.bottom.more configure -text Less
+#        $tf.more configure -text Less
 #    } else  {
 #        pack forget $t.complex
-#        $tt.bottom.more configure -text More
+#        $tf.more configure -text More
 #    }
 #}
 #
@@ -701,7 +703,7 @@ proc UpdateColour {parent f} {
     if {[llength $new]} {
         set disaggregate(colour) $new
         set disaggregate(defColour) $new
-        $f.fixcolour configure -bg $new
+#        $f.fixcolour configure -bg $new
     }
 }
 
@@ -911,15 +913,18 @@ proc GetFindText {canvas} {
     } else {
 	set traceFns disabled
     }
-    pack [button $follow.back -text "Components\ninfluencing\nselection" \
+    pack [ttk::label $follow.to -text [tr. Components...]] -anchor w
+    pack [ttk::label $follow.from -text [tr. ...selection]] \
+	-side bottom -anchor e
+    pack [ttk::button $follow.back -text [tr. "influencing"] \
 	      -command "set find(done) 10" -state $traceFns] \
 	-padx 2 -pady 4 -side left
-    pack [button $follow.here -text "Components\nequivalent\nto selection" \
-	      -command "set find(done) 11" -state $traceFns] \
-	-padx 2 -pady 4 -side left
-    pack [button $follow.forward -text "Components\ninfluenced\nby selection" \
+    pack [ttk::button $follow.forward -text [tr. "influenced by"] \
 	      -command "set find(done) 12" -state $traceFns] \
-	-padx 2 -pady 4 -side left
+	-padx 2 -pady 4 -side right
+    pack [ttk::button $follow.here -text [tr. "equivalent to"] \
+	      -command "set find(done) 11" -state $traceFns] \
+	-padx 2 -pady 4
     pack .findentry.follow -anchor nw -fill both
 
     set ft [frame .findentry.ft]
@@ -933,9 +938,11 @@ proc GetFindText {canvas} {
     TitleFrame .findentry.rbs -text "Search for text in "
     set rbs [GetFrame .findentry.rbs]
     set find(where) caption
-    radiobutton $rbs.r1 -text "Captions" -variable find(where) -value caption
-    radiobutton $rbs.r2 -text "Equations" -variable find(where) -value equation
-    radiobutton $rbs.r3 -text "Descriptions and comments" \
+    ttk::radiobutton $rbs.r1 -text "Captions" -variable find(where) \
+	-value caption
+    ttk::radiobutton $rbs.r2 -text "Equations" -variable find(where) \
+	-value equation
+    ttk::radiobutton $rbs.r3 -text "Descriptions and comments" \
             -variable find(where) -value description
     pack $rbs.r1 -anchor nw
     pack $rbs.r2 -anchor nw
