@@ -82,7 +82,7 @@ ifeq ($(PLATFORM),Darwin)
 	MAKESL = -fPIC -dynamiclib
 #	TCLFW = /System/Library/Frameworks
 # for tcl8.5
-	TCLFW = /Library/Frameworks
+	TCLFW = /Users/jaspert/Build/Simile/Frameworks
 # for tcl8.6
 # make sure Current is set to right version
 	USETCL =  -DUSE_TCL_STUBS -F$(TCLFW) -framework Tcl -I$(TCLFW)/Tcl.framework/Headers -L$(TCLFW)/Tcl.framework -ltclstub$(VERS)

@@ -4,6 +4,6 @@ switch [info sharedlibextension] {
     } .dll {
 	package ifneeded Trf 2.1  [list load [file join $dir Trf21.dll]]
     } .dylib {
-	package ifneeded Trf 2.1  [list load [file join $dir libTrf2.1.dylib]]
+	package ifneeded Trf 2.1.3  [list load [file join $dir libTrf2.1.dylib]]
     }
 }

@@ -746,7 +746,9 @@ proc PutItThere {t parent} {
 	::tk::unsupported::MacWindowStyle style $t moveableModal resizable
 # was floatGrowProc but that crashed when messageboxes opened inside
 #	::tk::unsupported::MacWindowStyle style $t moveableModal {}
-	AbleAllEntries $parent disabled
+	if {[string length $parent]} {
+	    AbleAllEntries $parent disabled
+	}
     }
     if {![string eq x11 [tk windowingsystem]]} {
 	wm geometry $t +0+[winfo screenheight $t]

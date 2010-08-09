@@ -1,3 +1,4 @@
+package require ttk::dialog
 # Simile source code file: Run/toolbox.tcl
 #
 # (c) Simulistics Ltd. 2001-2007
@@ -812,7 +813,7 @@ proc newInt {} {
 proc UpdateExecution {node action} {
     Rerun [FindNodeTopWin $node].canvas [string equal start $action]
 }
-if {![info exists simplify]} {
+
 if {[info tclversion] > 8.5} {
     set itclVers 4.0b4
 } elseif {[info tclversion] > 8.4} {
@@ -832,7 +833,6 @@ itcl::class ModelWindowExtn {
         set winId $awinId
     }
 }
-}
 
 proc LoadModelWindowExtensions {} {
     set origDir [pwd]
@@ -841,7 +841,7 @@ proc LoadModelWindowExtensions {} {
     set extensionList [glob -nocomplain *.tcl]
     foreach extension [lsort $extensionList] {
         if [catch {source $extension} wibble] {
-	    Query [list extn_bug [pwd]/$extension $wibble] warning top {} abort
+	    Query [list extn_bug [pwd]/$extension $wibble] warning top {} ok
         }
     }
     cd $origDir
@@ -1193,10 +1193,11 @@ proc ControlDraw {prologVersion} {
 }
 
 proc InitExecThread {node} {
-    global execThread execInterp SIMILE_PATH
+    global execThread execInterp SIMILE_PATH simplify
 
     set useThreads [expr {![string equal console $::env(interfaceId)] && \
-			      [info exists ::tcl_platform(threaded)]}]
+			      [info exists ::tcl_platform(threaded)] && \
+			      ![info exists simplify]}]
     if {$useThreads} {
 	package require Thread
 	set execThread($node,id) [thread::create]
