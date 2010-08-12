@@ -1,6 +1,9 @@
 # These are the settings for the particular version we want to make
 # edition: evaluation, teaching, standard or enterprise
-# EDN = STANDARD (this now defined externally for scripting)
+ifndef EDN
+EDN = STANDARD 
+endif
+# (this now defined externally for scripting)
 
 ifeq ($(EDN), EVALUATION)
 # License code required to verify name/corp/edition: 0 for no
@@ -69,7 +72,7 @@ LOCALIZE_TCL_REFS = ls # placebo command
 SHAREDLIBEXTN = .so
 
 ifeq ($(PLATFORM),Darwin)
-	VERS = 8.6
+#	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
 	FLAGS = $(OPT)
 	ARCHEXTN = _ppc
@@ -82,7 +85,7 @@ ifeq ($(PLATFORM),Darwin)
 	MAKESL = -fPIC -dynamiclib
 #	TCLFW = /System/Library/Frameworks
 # for tcl8.5
-	TCLFW = /Users/jaspert/Build/Simile/Frameworks
+	TCLFW = /Library/Frameworks
 # for tcl8.6
 # make sure Current is set to right version
 	USETCL =  -DUSE_TCL_STUBS -F$(TCLFW) -framework Tcl -I$(TCLFW)/Tcl.framework/Headers -L$(TCLFW)/Tcl.framework -ltclstub$(VERS)

@@ -875,7 +875,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
             set table_entry(oldOthers) {}
         }
     }
-    if {[string equal .fpdialogue $parent]} {
+    if {![string equal .equation $parent]} {
         pack [checkbutton .table.fbuttons.keepvals -var table_entry(bytes) \
                 -text [tr. "Include values in scenario files"] -wrap 200 \
                 -command "set table_entry(source) 1"] -padx 4 -pady 4

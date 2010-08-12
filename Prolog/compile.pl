@@ -141,11 +141,11 @@ build_instances(Language, DestDir, Parent, TopNode,
 		Includes = [LostFn, WhereSought],
 	        raise_exception(missing_function(LostFn, WhereSought))),
 
-	    (\+ ChangeTop == 1, fail, % no change to model; reuse executable?
+	    (\+ ChangeTop == 1, % no change to model; reuse executable?
 		Stat = 0,
 		Tgt = OldTgt;
 	    
-		(\+ ChangeTop == 1, fail, % no change to model; reuse source?
+		(\+ ChangeTop == 1, % no change to model; reuse source?
 		    Language = c,
 		    safe_tcl_eval(['ReuseSourceCode', br(WCheckDir), OldTgt],
 				  "1"), % succeeds if old source code found
@@ -172,7 +172,8 @@ build_instances(Language, DestDir, Parent, TopNode,
 		 (Tgt = -1, !, fail;
 		  Tgt > 0,
 		  (Parent has_changed_model_refinement c_new of Tgt;
-		      Parent has_new_model_refinement c_new of Tgt)))),
+		      Parent has_new_model_refinement c_new of Tgt),
+		    backup:finish_move(Parent, 0)))),
 	    load_executable(Language, CheckDir, Tgt, Parent, TopNode, Includes),
 	    KeepDir = 1;
 	ChangeNext = ChangeTop),

@@ -720,8 +720,11 @@ proc AddGrid {c onCol wl wt wr wb} {
 }
 
 proc FixDisabledImgBug {ttkButton} {
-    set origImg [$ttkButton cget -image]
-    $ttkButton config -image [list $origImg disabled $origImg]
+# Only do for Cocoa so disabled images greyed elsewhere
+    if {[string match cocoa [winfo server .]]} {
+	set origImg [$ttkButton cget -image]
+	$ttkButton config -image [list $origImg disabled $origImg]
+    }
 }
 
 # following is pulled from tclers wiki
