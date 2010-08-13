@@ -923,7 +923,7 @@ namespace eval $keyValue {
         # a .spf file is MIME-encoded and contains references to other files,
         # but neither of these need be done here.
         
-        global simtmpdir initialEstimate minForOpt maxForOpt
+        global simtmpdir minForOpt maxForOpt
         global tcl_platform sender paramData myNode execExtn
         variable useNodes
         variable clevers
@@ -986,63 +986,79 @@ namespace eval $keyValue {
         array unset inGrpData *,mems
 	$useNodes($winId,results).dbf.c.text insert end \
 	    "PEST indentifiers for Simile model input values:\n"
-	foreach eTitle $useNodes($winId,sliders) {
-            set node [GetIdFromCaptionPath $eTitle]
-            set levels [split $eTitle /]
-            set inpId $useNodes($winId,input)
-            set f [MakeSubFrames {} $inpId.c.canvas.frame \
-                    $levels [namespace current] 0]
-            
-            set nodeDims [GetModelDims $node]
-            if {$useNodes($winId,gathering)} {
-                #		set defCons $paramData($eTitle)
-                #		if {![string length $defCons]} {
-                set defCons [lindex [GetModelValue $node] 0]
-                if {[winfo exists $f.int]} {
-                    set defCons [list NOW $defCons]
-                }
-                #		}
-            } else {
-                set defCons $initialEstimate($node)
-            }
-            set defVal [$f.est get]
-	    set startHanger [expr $usedHangers+1]
-            puts -nonewline $template $eTitle=
-            if {[winfo exists $f.int]} {
-                if {$useNodes($winId,gathering)} {
-                    foreach {timePt vList} $defCons {
-                        puts -nonewline $template "$timePt "
-                        AddHangers $node $template $vList $nodeDims 1
-                        puts -nonewline $template " "
-                    }
-                } elseif {[string equal normal [$f.int cget -state]]} {
-                    set int [$f.int get]
-                    
-                    # Only try to calculate inputs up to and including the time
-                    # at which the last output is read
-                    
-                    for {set setTime 0} {$setTime <= $lastPt} \
-                            {set setTime [expr {$setTime+$int}]} {
-                                puts -nonewline $template "$setTime "
-                                AddHangers $node $template $defCons $nodeDims 1
-                                puts -nonewline $template " "
-                            }
-                } else {
-                    puts -nonewline $template "NOW "
-                    AddHangers $node $template $defCons $nodeDims 1
-                }
-            } else {
-                AddHangers $node $template $defCons $nodeDims 0
-            }
-            puts $template {}
-	    if {$usedHangers==$startHanger} {
-		set hangerRange "is i$usedHangers"
-	    } else {
-		set hangerRange "from $startHanger to $usedHangers"
-	    }
-	    $useNodes($winId,results).dbf.c.text insert end \
-		"$eTitle $hangerRange\n"
-        }
+
+# new version that writes XML and uses the frame hierarchy to get the submodel
+# hierarchy this requires
+puts $template "<?xml version=\"1.0\"?>"
+puts $template "<?xml-stylesheet type=\"text/xsl\" href=\"spf1.xsl\"?>"
+puts $template "<spf simile_version=\"$::env(SIMILE_VERSION)\">"
+puts $template "<submodel label=\"top\">"
+	
+	set inpId $useNodes($winId,input)
+	WriteXMLTemplate $winId $template {} $inpId.c.canvas.frame.frame
+
+puts $template "</submodel>"
+puts $template "</spf>"
+
+# end of new version
+
+#	foreach eTitle $useNodes($winId,sliders) {
+#            set node [GetIdFromCaptionPath $eTitle]
+#            set levels [split $eTitle /]
+#            set inpId $useNodes($winId,input)
+#            set f [MakeSubFrames {} $inpId.c.canvas.frame \
+#                    $levels [namespace current] 0]
+#            
+#            set nodeDims [GetModelDims $node]
+#            if {$useNodes($winId,gathering)} {
+#                #		set defCons $paramData($eTitle)
+#                #		if {![string length $defCons]} {
+#                set defCons [lindex [GetModelValue $node] 0]
+#                if {[winfo exists $f.int]} {
+#                    set defCons [list NOW $defCons]
+#                }
+#                #		}
+#            } else {
+#                set defCons $initialEstimate($node)
+#            }
+#            set defVal [$f.est get]
+#	    set startHanger [expr $usedHangers+1]
+#            puts -nonewline $template $eTitle=
+#            if {[winfo exists $f.int]} {
+#                if {$useNodes($winId,gathering)} {
+#                    foreach {timePt vList} $defCons {
+#                        puts -nonewline $template "$timePt "
+#                        AddHangers $node $template $vList $nodeDims 1
+#                        puts -nonewline $template " "
+#                    }
+#                } elseif {[string equal normal [$f.int cget -state]]} {
+#                    set int [$f.int get]
+#                    
+#                    # Only try to calculate inputs up to and including the time
+#                    # at which the last output is read
+#                    
+#                    for {set setTime 0} {$setTime <= $lastPt} \
+#                            {set setTime [expr {$setTime+$int}]} {
+#                                puts -nonewline $template "$setTime "
+#                                AddHangers $node $template $defCons $nodeDims 1
+#                                puts -nonewline $template " "
+#                            }
+#                } else {
+#                    puts -nonewline $template "NOW "
+#                    AddHangers $node $template $defCons $nodeDims 1
+#                }
+#            } else {
+#                AddHangers $node $template $defCons $nodeDims 0
+#            }
+#            puts $template {}
+#	    if {$usedHangers==$startHanger} {
+#		set hangerRange "is i$usedHangers"
+#	    } else {
+#		set hangerRange "from $startHanger to $usedHangers"
+#	    }
+#	    $useNodes($winId,results).dbf.c.text insert end \
+#		"$eTitle $hangerRange\n"
+#        }
         close $template
         
         set control [NetOpen [file join $simtmpdir model.pst] w]
@@ -1520,7 +1536,37 @@ $numOutputs"
         }
     }
     
-    proc AddHangers {node str est dms brs} {
+#    proc AddHangers {node str est dms brs} {
+#        variable usedHangers
+#        variable inGrpData
+#        
+#        if {[lindex $dms 0]>0} {
+#            if {[llength $est]>1} {
+#                array set arrEst $est
+#            }
+#            if {$brs==1} {
+#                puts -nonewline $str \{
+#            }
+#            for {set n 1} {$n <= [lindex $dms 0]} {incr n} {
+#                puts -nonewline $str "$n "
+#                if {[info exists arrEst]} {
+#                    set est $arrEst($n)
+#                }
+#                AddHangers $node $str $est [lrange $dms 1 end] 1
+#                puts -nonewline $str " "
+#            }
+#            if {$brs==1} {
+#                puts -nonewline $str \}
+#            }
+#        } else {
+#            puts -nonewline $str [format \\%10s\\ i[incr usedHangers]]
+#            lappend inGrpData($node,mems) i$usedHangers $est
+#        }
+#    }
+#    
+
+# version for XML
+    proc AddHangers {node str est dms i} {
         variable usedHangers
         variable inGrpData
         
@@ -1528,26 +1574,98 @@ $numOutputs"
             if {[llength $est]>1} {
                 array set arrEst $est
             }
-            if {$brs==1} {
-                puts -nonewline $str \{
-            }
+	    puts $stm "<values index=\"$i\">"
             for {set n 1} {$n <= [lindex $dms 0]} {incr n} {
-                puts -nonewline $str "$n "
                 if {[info exists arrEst]} {
                     set est $arrEst($n)
                 }
-                AddHangers $node $str $est [lrange $dms 1 end] 1
-                puts -nonewline $str " "
+                AddHangers $node $str $est [lrange $dms 1 end] $n
             }
-            if {$brs==1} {
-                puts -nonewline $str \}
-            }
+	    puts $stm "</values>"
         } else {
-            puts -nonewline $str [format \\%10s\\ i[incr usedHangers]]
+	    puts $stm "<value index=\"$i\" val=\"[format \\%10s\\ i[incr usedHangers]]\"/>"
             lappend inGrpData($node,mems) i$usedHangers $est
         }
     }
     
+    proc WriteXMLTemplate {winId stm path subFrame} {
+	global initialEstimate
+	variable useNodes
+	variable usedHangers
+        variable inGrpData
+
+	set descent [winfo children $subFrame]
+	puts $stm "<variables>"
+	foreach f [lsearch -inline -all $descent $subFrame.box*] {
+	    set level [string range $f [expr {[string last . $f]+4}] end]
+	    set node [GetIdFromCaptionPath $path/$level]
+
+            set nodeDims [GetModelDims $node]
+            if {$useNodes($winId,gathering)} {
+                #		set defCons $paramData($eTitle)
+                #		if {![string length $defCons]} {
+                set defCons [lindex [GetModelValue $node] 0]
+                if {[winfo exists $f.int]} {
+                    set defCons [list NOW $defCons]
+                }
+                #		}
+            } else {
+                set defCons $initialEstimate($node)
+            }
+            set defVal [$f.est get]
+	    set startHanger [expr $usedHangers+1]
+            if {[winfo exists $f.int]} {
+		puts $stm "<multi_value label=\"$level\">"
+                if {$useNodes($winId,gathering)} {
+                    foreach {timePt vList} $defCons {
+                        AddHangers $node $stm $vList $nodeDims $timePt
+		    }
+                } elseif {[string equal normal [$f.int cget -state]]} {
+                    set int [$f.int get]
+                    
+                    # Only try to calculate inputs up to and including the time
+                    # at which the last output is read
+                    
+                    for {set setTime 0} {$setTime <= $lastPt} \
+			{set setTime [expr {$setTime+$int}]} {
+			    AddHangers $node $stm $defCons $nodeDims $setTime
+			}
+                } else {
+                    AddHangers $node $template $defCons $nodeDims NOW
+		}
+		puts $stm "</multi_value>"
+            } else {
+		if {![lindex $nodeDims 0]} {
+		    puts $stm "<single_value label=\"$level\" val=\"[format \\%10s\\ i[incr usedHangers]]\"/>"
+		    lappend inGrpData($node,mems) i$usedHangers $defCons
+		} else {
+		    puts $stm "<multi_value label=\"$level\">"
+		    for {set n 1} {$n <= [lindex $nodeDims 0]} {incr n} {
+			AddHangers $node $stm $defCons \
+			    [lrange $nodeDims 1 end] $n
+		    }
+		    puts $stm "</multi_value>"
+		}
+	    }
+	    if {$usedHangers==$startHanger} {
+		set hangerRange "is i$usedHangers"
+	    } else {
+		set hangerRange "from $startHanger to $usedHangers"
+	    }
+	    $useNodes($winId,results).dbf.c.text insert end \
+		"$path/$level $hangerRange\n"
+	}
+	puts $stm "</variables>"
+	puts $stm "<submodels>"
+	foreach f [lsearch -inline -all $descent $subFrame.frame*] {
+	    set level [string range $f [expr {[string last . $f]+6}] end]
+	    puts $stm "<submodel label=\"$level\">"
+	    WriteXMLTemplate $winId $stm $path/$level $f
+	    puts $stm "</submodel>"
+	}
+	puts $stm "</submodels>"
+    }
+
     proc Save {topNode smPath} {
         namespace eval ::fileparams [list Save $topNode $smPath -1]
     }
