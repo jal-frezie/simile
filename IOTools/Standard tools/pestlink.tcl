@@ -1060,12 +1060,12 @@ namespace eval $keyValue {
             foreach entry $spitLists($brkPt) {
                 set pair [split $entry =]
                 set node [lindex $pair 0]
-                puts -nonewline $instruct "\\$node at $brkPt is\\ "
+#                puts -nonewline $instruct "\\$node at $brkPt is\\ "
                 if {[string equal what [lindex $pair 1]]} { ;# prediction
-                    AddChoppers predict $instruct 1.0
+                    AddChoppers predict $brkPt $instruct {} 1.0
                     set runData($myNode,predictTag) o$usedHangers
                 } else {
-                    AddChoppers $node $instruct [lindex $pair 1]
+                    AddChoppers $node $brkPt $instruct {} [lindex $pair 1]
                 }
                 puts $instruct {}
             }
@@ -1389,8 +1389,11 @@ $numOutputs"
                     foreach pair $spitLists($breakPt) {
                         set node [lindex [split $pair =] 0]
                         # need to prettify so we can seek on indices
-                        set writable [PrettifyValList [lindex [GetModelValue $node] 0]]
-                        puts $execLog "$node at $breakPt is $writable"
+                        #set writable [PrettifyValList [lindex [GetModelValue $node] 0]]
+                        #puts $execLog "$node at $breakPt is $writable"
+			# no more, each value now gets its own line
+			WriteForPest $execLog $node $breakPt \
+			    [lindex [GetModelValue $node] 0]
                     }
                     set current $breakPt
                 }
@@ -1404,6 +1407,16 @@ $numOutputs"
         #					   [file join $simtmpdir model.rec]]
     }
     
+    proc WriteForPest {log node timePt data} {
+	if {[llength $data]==1} {
+	    puts $log "$node at $timePt is $data"
+	} else {
+	    foreach {ind value} $data {
+		WriteForPest $log $node.$ind $timePt $value
+	    }
+	}
+    }
+
         # This is to allow us to produce the 'killer graphic' of the field
         # measurements superposed on a plot of the corresponding
         # model-generated data. It runs the model up to the timepoints at
@@ -1490,18 +1503,19 @@ $numOutputs"
         }
     }
     
-    proc AddChoppers {node str data} {
+    proc AddChoppers {node brkPt str subscripts data} {
         variable usedHangers
         variable outGrpData
         
         if {[llength $data]!=1} {
             foreach {n val} $data {
-                puts -nonewline $str "\\\#$n:\\ "
-                AddChoppers $node $str $val
-                puts -nonewline $str " "
+#                puts -nonewline $str "\\\#$n:\\ "
+                AddChoppers $node $brkPt $str $subscripts.$n $val
+#                puts -nonewline $str " "
             }
         } else {
-            puts -nonewline $str !o[incr usedHangers]!
+	    puts $str "\\$node$subscripts at $brkPt is\\ !o[incr usedHangers]!"
+#            puts -nonewline $str !o[incr usedHangers]!
             lappend outGrpData($node,mems) o$usedHangers=$data
         }
     }
