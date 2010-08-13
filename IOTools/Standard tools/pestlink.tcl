@@ -1566,7 +1566,7 @@ $numOutputs"
 #    
 
 # version for XML
-    proc AddHangers {node str est dms i} {
+    proc AddHangers {node stm est dms i} {
         variable usedHangers
         variable inGrpData
         
@@ -1579,11 +1579,11 @@ $numOutputs"
                 if {[info exists arrEst]} {
                     set est $arrEst($n)
                 }
-                AddHangers $node $str $est [lrange $dms 1 end] $n
+                AddHangers $node $stm $est [lrange $dms 1 end] $n
             }
 	    puts $stm "</values>"
         } else {
-	    puts $stm "<value index=\"$i\" val=\"[format \\%10s\\ i[incr usedHangers]]\"/>"
+	    puts $stm "<value index=\"$i\" value=\"[format \\%10s\\ i[incr usedHangers]]\"/>"
             lappend inGrpData($node,mems) i$usedHangers $est
         }
     }
@@ -1591,6 +1591,7 @@ $numOutputs"
     proc WriteXMLTemplate {winId stm path subFrame} {
 	global initialEstimate
 	variable useNodes
+	variable ptList
 	variable usedHangers
         variable inGrpData
 
@@ -1626,12 +1627,12 @@ $numOutputs"
                     # Only try to calculate inputs up to and including the time
                     # at which the last output is read
                     
-                    for {set setTime 0} {$setTime <= $lastPt} \
+                    for {set setTime 0} {$setTime <= [lindex $ptList end]} \
 			{set setTime [expr {$setTime+$int}]} {
 			    AddHangers $node $stm $defCons $nodeDims $setTime
 			}
                 } else {
-                    AddHangers $node $template $defCons $nodeDims NOW
+                    AddHangers $node $stm $defCons $nodeDims NOW
 		}
 		puts $stm "</multi_value>"
             } else {
