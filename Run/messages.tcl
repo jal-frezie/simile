@@ -545,6 +545,8 @@ set msgs(xml_parse_fail_message) [tr. "The XML parser gave the following message
 set msgs(xml_parse_fail_detail) [tr. "The parser status was:\n%2\$s"]
 set msgs(bad_xml_spf_title) [tr. "Wrong kind of XML"]
 set msgs(bad_xml_spf_message) [tr. "%1\$s is not a Simile parameter metafile"]
+set msgs(no_model_to_start_title) [tr. "No model running"]
+set msgs(no_model_to_start_message) [tr. "You cannot invoke PEST because the model is not currently ready to run. Select \"Model -> Run\" and finish setting up the model for execution."]
 set msgs(measurements_missing_title) [tr. "No target values given"]
 set msgs(measurements_missing_message) [tr. "You must supply at least one target value for each model output to be used by PEST"]
 set msgs(pause_in_pest_exec_title) [tr. "PEST execution paused"]
@@ -721,6 +723,7 @@ set msgs(tooManyColumns) [tr. "the total number of columns is greater than"]
 set msgs(tooManyCells) [tr. "the total number of cells is greater than"]
 
 set msgs(wait_for_web) [tr. "Interacting with web service to convert file..."]
+set msgs(too_many_pest_pts) [tr. "Warning -- too many measurements with indices %1\$s"]
 
 # references to documentation
 set help(search) diagrams/search.htm

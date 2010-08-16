@@ -57,8 +57,8 @@ namespace eval $keyValue {
         pack [message $outId.intro -aspect 800] -fill x
         pack [message $resId.intro -aspect 800] -fill x
         
-        MakeFrames $inpId
-        MakeFrames $outId
+        MakeFrames $inpId; Clear $winId
+        MakeFrames $outId; ClearOut $winId
         
         pack [checkbutton $inpId.gather -text "Use current data as estimates" \
                 -variable ::[namespace current]::useNodes($winId,gathering) \
@@ -703,6 +703,7 @@ namespace eval $keyValue {
         } else {
             lappend targetData(needed) $title
             AddEntry $outId $myNode $node 1 -1
+	    set targetData($title) {} ;# in case used before with different reqs
 	    lappend useNodes($winId,drivers) $title
             
 #            pack [checkbutton $f.end -variable ::readMany($title) \
@@ -733,26 +734,26 @@ namespace eval $keyValue {
     }
     
 # No longer used -- now have two buttons, one for each time setting
-    proc AbleTimeSampling {topNode node title f} {
-        global readMany
-        
-	set nodeDims [GetCompProperty $topNode Dims $node]
-        set trans [GetTransTable $node]
-        if {$readMany($title)} {
-            set $nodeDims [linsert $nodeDims 0 TIME]
-            set trans [linsert $trans 0 {}]
-        }
-        set nodeDims [TransBounds $trans $nodeDims]
-        set dimList [MakeDimsLegible $nodeDims REAL]
-        $f.l2 config -text ($dimList)
-        ColourCaptions $f red
-        if {[llength $nodeDims]>1} {
-            pack $f.b -after $f.l2 -side right
-        } else {
-            pack forget $f.b
-        }
-    }
-    
+#    proc AbleTimeSampling {topNode node title f} {
+#        global readMany
+#        
+#	set nodeDims [GetCompProperty $topNode Dims $node]
+#        set trans [GetTransTable $node]
+#        if {$readMany($title)} {
+#            set $nodeDims [linsert $nodeDims 0 TIME]
+#            set trans [linsert $trans 0 {}]
+#        }
+#        set nodeDims [TransBounds $trans $nodeDims]
+#        set dimList [MakeDimsLegible $nodeDims REAL]
+#        $f.l2 config -text ($dimList)
+#        ColourCaptions $f red
+#        if {[llength $nodeDims]>1} {
+#            pack $f.b -after $f.l2 -side right
+#        } else {
+#            pack forget $f.b
+#        }
+#    }
+#    
     proc DoOutDlg {node win title} {
         global minForOpt maxForOpt
         variable outGrpData
@@ -860,6 +861,10 @@ namespace eval $keyValue {
     proc Go {winId} {
         variable useNodes
         
+	if {$::runState($::myNode,modelRunning)<3} {
+	    Query no_model_to_start warning pest_setup $winId ok
+	    return
+	}
         PokeStopFile $winId 0
         if {$useNodes($winId,state)==3} { ;# it was paused
 	    SetButtonAct $winId pause
@@ -1069,21 +1074,33 @@ puts $template "</spf>"
         
         # right, now to make the instruction file for reading the outputs
         
+	$useNodes($winId,results).dbf.c.text insert end \
+	    "PEST indentifiers for Simile model output values:\n"
         set usedHangers 0
         set instruct [NetOpen [file join $simtmpdir model.ins] w]
         puts $instruct "pif \\"
         foreach brkPt $ptList {
             foreach entry $spitLists($brkPt) {
+		set startHanger [expr $usedHangers+1]
                 set pair [split $entry =]
                 set node [lindex $pair 0]
+		set dims [GetModelDims $node]
 #                puts -nonewline $instruct "\\$node at $brkPt is\\ "
                 if {[string equal what [lindex $pair 1]]} { ;# prediction
-                    AddChoppers predict $brkPt $instruct {} 1.0
+		    set warns [AddChoppers predict $brkPt $instruct {} $dims 1]
                     set runData($myNode,predictTag) o$usedHangers
                 } else {
-                    AddChoppers $node $brkPt $instruct {} [lindex $pair 1]
+                    set warns [AddChoppers $node $brkPt $instruct {} $dims \
+				   [lindex $pair 1]]
                 }
                 puts $instruct {}
+		if {$usedHangers==$startHanger} {
+		    set hangerRange "is o$usedHangers"
+		} else {
+		    set hangerRange "from o$startHanger to o$usedHangers"
+		}
+		$useNodes($winId,results).dbf.c.text insert end \
+		    [join [concat [list "[GetCaptionPathFromId $node] $hangerRange"] $warns [list {}]] \n]
             }
         }
         close $instruct
@@ -1519,21 +1536,29 @@ $numOutputs"
         }
     }
     
-    proc AddChoppers {node brkPt str subscripts data} {
+    proc AddChoppers {node brkPt str subs dims data} {
         variable usedHangers
         variable outGrpData
         
+	set wobbles {}
         if {[llength $data]!=1} {
             foreach {n val} $data {
+		if {$n>[lindex $dims 0]} {
+		    lappend wobbles [format $::msgs(too_many_pest_pts) $subs]
+		    break
+		}
 #                puts -nonewline $str "\\\#$n:\\ "
-                AddChoppers $node $brkPt $str $subscripts.$n $val
+                set wobbles [concat $wobbles \
+				 [AddChoppers $node $brkPt $str $subs.$n \
+				      [lrange $dims 1 end] $val]]
 #                puts -nonewline $str " "
             }
         } else {
-	    puts $str "\\$node$subscripts at $brkPt is\\ !o[incr usedHangers]!"
+	    puts $str "\\$node$subs at $brkPt is\\ !o[incr usedHangers]!"
 #            puts -nonewline $str !o[incr usedHangers]!
             lappend outGrpData($node,mems) o$usedHangers=$data
         }
+	return $wobbles
     }
     
 #    proc AddHangers {node str est dms brs} {
@@ -1651,7 +1676,7 @@ $numOutputs"
 	    if {$usedHangers==$startHanger} {
 		set hangerRange "is i$usedHangers"
 	    } else {
-		set hangerRange "from $startHanger to $usedHangers"
+		set hangerRange "from i$startHanger to i$usedHangers"
 	    }
 	    $useNodes($winId,results).dbf.c.text insert end \
 		"$path/$level $hangerRange\n"
