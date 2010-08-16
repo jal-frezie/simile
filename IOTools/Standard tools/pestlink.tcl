@@ -929,7 +929,7 @@ namespace eval $keyValue {
         # but neither of these need be done here.
         
         global simtmpdir minForOpt maxForOpt
-        global tcl_platform sender paramData myNode execExtn
+        global tcl_platform sender paramData myNode archExtn execExtn
         variable useNodes
         variable clevers
         variable usedHangers
@@ -1163,7 +1163,7 @@ $numOutputs"
             set oldDir [file attributes $oldDir -shortname]
         }
         puts $control {* model command line}
-        set ourWish [ShellFileRef [file join [file dirname $oldDir] System bin relay$execExtn]]
+        set ourWish [ShellFileRef [file join [file dirname $oldDir] System bin relay$archExtn$execExtn]]
         puts $control [file nativename $ourWish]
         puts $control {* model input/output}
         puts $control {model.tpl model.inp}

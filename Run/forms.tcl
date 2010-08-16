@@ -1475,7 +1475,7 @@ proc ShowAbout {winId} {
     wm title .about About\ Simile
     image create photo dripu
 #    image create photo dripl
-    dripu read "../Images/HelpAboutUpper.gif"
+    dripu read "$::SIMILE_PATH/Images/HelpAboutUpper.gif"
 #    dripl read "../Images/HelpAboutLower.gif"
     label .about.upper -image dripu
     pack .about.upper -pady 4
