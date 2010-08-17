@@ -810,9 +810,12 @@ proc PackItUp {t} {
 
 proc ShellFileRef {spaced} {
 # Pop a backslash before chars that would break commands sent to shell --
-# currently spaces and parentheses (by PEST), there may be others
-    regsub -all {([ ()])} $spaced {\\\1} straight
-    return $straight
+# currently spaces and parentheses (by PEST), there may be others. A bit
+# counterproductive in Windows as backslashes also break commands, so new 
+# version just enquotes.
+#    regsub -all {([ ()])} $spaced {\\\1} straight
+#    return $straight
+    return \"$spaced\"
 }
 
 proc AbleAllEntries {parent newState} {
