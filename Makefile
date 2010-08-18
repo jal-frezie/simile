@@ -35,10 +35,11 @@ ifeq ($(MONTHS_TO_RUN),0)
 	EXP_TICKS = 0
 else
 ifeq ($(PLATFORM),Darwin)
-	EXP_TICKS = $(shell date -v+$(MONTHS_TO_RUN)m -v1d -v0H -v0M -v0S +%s)
+	DATESPEC = -v+$(MONTHS_TO_RUN)m -v1d -v0H -v0M -v0S
 else
-	EXP_TICKS = $(shell date +%s -d "$(MONTHS_TO_RUN) months Sunday")
+	DATESPEC = -d `date -d "$(MONTHS_TO_RUN) months" +%Y-%m-01`
 endif
+EXP_TICKS = $(shell date $(DATESPEC) +%s)
 endif
 
 DEFNS=-DSIM_FINAL_EXPIRY=$(EXP_TICKS) -DSIM_DAYS_AFTER_INSTALL=$(REL_EXP) -DSIM_$(EDN)
