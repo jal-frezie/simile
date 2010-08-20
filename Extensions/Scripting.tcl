@@ -488,7 +488,7 @@ redo with snap object
         set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
         switch -- [$this GetModelEval $path] {
             INPUT {
-		PlaceInArray $nodeId $value 0 [RunningInC $modelNode]
+		PlaceInArray $modelNode $nodeId $value 0 [RunningInC $modelNode]
                 switch -glob -- [$this GetModelType $path] {
                     FLAG {
                         do_for_node $modelNode set ::checkStates($nodeId) $value
@@ -503,7 +503,7 @@ redo with snap object
                 }
             }
             TABLE {
-		PlaceInArray $nodeId $value 0 [RunningInC $modelNode]
+		PlaceInArray $modelNode $nodeId $value 0 [RunningInC $modelNode]
 		do_for_node $modelNode set ::paramData(/$modelNode$path) $value
                 do_for_node $modelNode set ::runState($modelNode,reloadParams) -1 ;# this makes sure the value is propagated in the model
                 Reset

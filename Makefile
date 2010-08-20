@@ -114,6 +114,7 @@ ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
 	EXECEXTN = .exe
 	INSTLIB = Run/install.dll
 	MAIN = System/bin/Simile.exe
+	SCRIPT = System/bin/SimileScript.exe
 endif
 
 PROLOGSTATE = Run/xgsimile$(EXECEXTN)
@@ -129,7 +130,7 @@ SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
 simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) \
-	System/$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN)
+	System/$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT)
 
 vpath %.pl Prolog
 
@@ -200,12 +201,19 @@ $(INSTLIB): Run/install_adv.cpp Makefile
 		-L../System/lib -lcrypto -lssl; cd ..
 
 System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc
-	cd Interp; windres -I$(TCLDIR)/include -o rc.o Simile.rc; \
+	cd Interp; windres -I$(TCLDIR)/include -o rc.o Simile.rc;
 		$(GCCCMD) $(FLAGS) -I$(TCLDIR)/include \
 		-o ../System/bin/Simile.exe Simile.c rc.o \
 		$(TCLDIR)/lib/tcl$(VERS).lib $(TCLDIR)/lib/tk$(VERS).lib \
 		-mwindows; cd ..
 
+$(SCRIPT): Interp/script.c Interp/script.rc
+	windres -I$(TCLDIR)/include -o Interp/scriptrc.o Interp/script.rc;
+		 $(GCCCMD) $(FLAGS) -I$(TCLDIR)/include \
+		-o System/bin/SimileScript.exe \
+		Interp/script.c Interp/scriptrc.o \
+		$(TCLDIR)/lib/tcl$(VERS).lib $(TCLDIR)/lib/tk$(VERS).lib \
+		-mwindows
 #else
 
 # CYGWIN and non-Windows

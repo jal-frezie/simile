@@ -1200,8 +1200,8 @@ proc StartRun {node} {
 #    UnMakeSlidersForInputs
 
     set runClass $classTable(run,$node)
+    set defHelper $helperTable(RunControl)
     if {![info exists runState($node,helperId)]} {
-	set defHelper $helperTable(RunControl)
     
 #    if {[regexp "(.helper\[0-9\]+),whichHelper $defHelper" \
 #                [array get helperTable] spare helperId]} {
