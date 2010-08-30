@@ -515,10 +515,13 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     set window_info($c,height) [expr $wb - $wt]
     if {[set window_info($c,is_top_level) $isTopLevel]} {
 	set window_info($c,topCapt) {}
-
-	foreach nodeType {generic compartment channel text \
+	set lookers [list generic compartment channel text \
 			      variable function submodel flow influence \
-			      ghost_link relation} {
+			 ghost_link relation]
+	if {[info exists ::do_events]} {
+	    lappend lookers event state squirt
+	}
+	foreach nodeType $lookers {
 	    # add event squirt state to above
 	    ResetLooks $topNode $nodeType
 	}
@@ -1440,7 +1443,11 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set ::menuPosns(edit,Create\ new) [$fm index last]
     set em1 [menu $fm.add -tearoff 0]
 # add state, event and squirt
-    foreach type {Compartment Variable Flow Influence Submodel} {
+    set lookers [list Compartment Variable Flow Influence Submodel]
+    if {[info exists ::do_events]} {
+	lappend lookers State Event Squirt
+    }
+    foreach type $lookers {
 	AddCmdAndAccel $winid edit.add $type \
 	    "MenuSelect $c edit [string tolower $type]"
     }
@@ -1617,37 +1624,18 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     # the command procedure has to know what the old pushedbutton was
     # so it can unpress it, so they cannot use that
     
-    $fm1 add radiobutton -label [tr. Compartment] -command "ItemSelect compartment" \
-            -variable MIpushedbutton -value compartment
-#    $fm1 add radiobutton -label [tr. State] -command "ItemSelect state" \
-#            -variable MIpushedbutton -value state
-# event and squirt needed too
-    $fm1 add radiobutton -label [tr. Variable] -command "ItemSelect variable" \
-            -variable MIpushedbutton -value variable
-    $fm1 add radiobutton -label [tr. Flow] -command "ItemSelect flow" \
-            -variable MIpushedbutton -value flow
-    $fm1 add radiobutton -label [tr. Influence] -command "ItemSelect influence" \
-            -variable MIpushedbutton -value influence
-    $fm1 add radiobutton -label [tr. Submodel] -command "ItemSelect submodel" \
-            -variable MIpushedbutton -value submodel
-    $fm1 add radiobutton -label [tr. Relation] -command "ItemSelect relation" \
-            -variable MIpushedbutton -value relation
-    
-    
-    $fm1 add radiobutton -label [tr. Creation] -command "ItemSelect creation" \
-            -variable MIpushedbutton -value creation
-    $fm1 add radiobutton -label [tr. Migration] -command "ItemSelect immigration" \
-            -variable MIpushedbutton -value immigration
-    $fm1 add radiobutton -label [tr. Reproduction] -command "ItemSelect reproduction" \
-            -variable MIpushedbutton -value reproduction
-    $fm1 add radiobutton -label [tr. Extermination] -command "ItemSelect loss" \
-            -variable MIpushedbutton -value loss
-    $fm1 add radiobutton -label [tr. Condition] -command "ItemSelect condition" \
-            -variable MIpushedbutton -value condition
-    $fm1 add radiobutton -label [tr. Alarm] -command "ItemSelect alarm" \
-            -variable MIpushedbutton -value alarm
-    $fm1 add radiobutton -label [tr. "Text box"] -command "ItemSelect text" \
-            -variable MIpushedbutton -value text
+    set lookers [list compartment variable flow influence submodel relation \
+		     creation immigration reproduction loss \
+		     condition alarm text]
+    if {[info exists ::do_events]} {
+	set lookers \
+	    [linsert [linsert [linsert $lookers 3 squirt] 2 event] 1 state]
+    }
+    foreach itemType $lookers {
+	$fm1 add radiobutton -label [tr. [string totitle $itemType]] \
+	    -command "ItemSelect $itemType" \
+            -variable MIpushedbutton -value $itemType
+    }
     UnderlineUniquely $fm1
 
     $fm add cascade -label [tr. Flip] -menu $fm.sub2
@@ -1784,10 +1772,14 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     pack [ttk::separator $tb.afterSeparator -orient horizontal] \
 	-fill x -side bottom
 # add state event squirt separator3 before creation for v5
-    foreach mode {compartment variable flow influence separator1 \
+    set lookers [list compartment variable flow influence separator1 \
 		      submodel relation separator2 \
 		      creation immigration reproduction loss condition alarm \
-		      separator4 text} {
+		     separator4 text]
+    if {[info exists ::do_events]} {
+	set lookers [linsert $lookers 8 state event squirt separator3]
+    }
+    foreach mode $lookers {
         if {[string match separator* $mode]} {
             
             pack [ttk::separator $tb.$mode -orient vertical] -fill y -side left

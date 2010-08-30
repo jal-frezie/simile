@@ -182,8 +182,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	    member(input_link(_, SourceCapt, _,_,_), InterInputs), !,
 	    EqnError = unwanted_links(SourceCapt);
 	 EqnError = ParseError), */
-	(Is_P = 1, \+ member(Units, [boolean, a(_)]), \+ member(EqnBase, [boolean, a(_)]), !,
-	    MinMaxNeeded = 1;
+	(Is_P = 1, \+ inherently_bound(Units),
+	    \+ inherently_bound(EqnBase), !, MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
 
 	(\+ EqnError = [], !,
@@ -213,12 +213,12 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	    (ComboType = real, !, ComboUnits = 1;
 		member(ComboType, [n(_), const_int]), ComboUnits = int;
 		ComboType = ComboUnits), */
-
+/* This is a very roundabout way of checking unit consistency of min/max
+	-- it works, but is pretty opaque */
 	on_exception(_PropError, propagate_units(min(Max, max(Min, Result)),
 						any, [any, any, any],
 			[EqnBase, MinBase, MaxBase], RawBase),
 		     UnitError = minmax_wrong(EqnBase)),
-	    
 	(nonvar(UnitError);
 	    /* First, check that the equation can have the units
 	       given, or set given units to the default units for the
@@ -342,6 +342,9 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	 FinalComplaint = continue, !,
 	    Effect = input_list_changed_to(New_inputs);
 	 Effect = user_advice_generated(FinalComplaint)).
+
+inherently_bound(Units) :-
+	member(Units, [boolean, a(_)]).
 
 /* This fails if the brackets are right */
 check_param_brackets(ShowParam, New_param, Current_unit, Complaint) :-

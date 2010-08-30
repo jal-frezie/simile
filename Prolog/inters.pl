@@ -1144,7 +1144,6 @@ promote_unit(Lo, Hi) :-
 	uses_as(Lo, Med),
 	promote_unit(Med, Hi).
 
-
 uses_as(any, Type) :-
 	member(Type, [boolean, a(_ET), n(_ET)]).
 uses_as(boolean, cond_spec).

@@ -1975,10 +1975,10 @@ reuse_route(New_obj, LastArc) :-
 	    /* Arcs need points at ends of other arcs to draw, so draw after */
 %	    set_shape(NewArc, course, Route),
 %	    update_bowtie(NewArc, Route),
-	    (New_obj = flow,
+	    (member(New_obj, [flow, squirt]),
 		CPt = [550,450];
 		% First is posn of kink, 2nd is posn of bowtie /1000
-	      \+ New_obj = flow,
+	      \+ member(New_obj, [flow, squirt]),
 		get_end_pt(NewArc, start, _, Spt, _),
 		get_end_pt(NewArc, finish, _, FPt, _),
 		relativize_centre(Spt, FPt, MPt, CPt)),

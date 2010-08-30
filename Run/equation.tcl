@@ -196,6 +196,10 @@ proc create_equation {parent purpose comp indices enum_types} {
     radiobutton $mainf.slider.radio1 -text "[tr. {Variable parameter}]: " \
 	-variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
+    if {[string first Initial $purpose]==0} {
+# do not allow variable parameter for initial values...derrr
+	$mainf.slider.radio1 configure -state disabled
+    }
     pack [label $mainf.slider.minlabel -text [tr. Minimum]] -side left \
 	-padx 4 -pady 4
     pack [::ttk::entry $mainf.slider.minval -width 8 \
@@ -406,17 +410,9 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     set equation(isparam) $isParam
     if {$equation(isparam)==-1} {
 	set equation(isparam) 0
-        set paramMenuState disabled
-    } else {
-        set paramMenuState normal
-    }
 #    $widget.equation.textbox.radio0 configure -state $paramMenuState
-    $widget.slider.radio1 configure -state $paramMenuState
-    $widget.file.radio2 configure -state $paramMenuState
-    if {[string first Initial \
-	     [wm title [winfo toplevel $equation(main)]]]==0} {
-# do not allow variable parameter for initial values...derrr
 	$widget.slider.radio1 configure -state disabled
+	$widget.file.radio2 configure -state disabled
     }
     set equation(min) $min
     set equation(max) $max
