@@ -609,7 +609,8 @@ proc TellAllHelpers {node payload fun args} {
 	    set helperTable(beingCalled) $inst
 	    if {[catch {eval $inst $fun $args} HelpErr]} {
 		Query [list iotool_run_fail [[$inst info class]::Identify] \
-			   $fun $::errorInfo] warning helpers {} ok
+			   $fun $::errorInfo [$inst cget -State]] \
+		    warning helpers {} ok
 		set failure 1
 	    }
 	    set helperTable(beingCalled) {}
@@ -727,13 +728,22 @@ proc GetShortVals {topNode plName limit} {
 
 proc FormatVals {fmt list} {
     if {[llength $list]==1} {
-	return [format $fmt $list]
+	return [SafeFormat $fmt $list]
     } else {
 	set res {}
 	foreach {ind elt} $list {
 	    lappend res $ind [FormatVals $fmt $elt]
 	}
 	return $res
+    }
+}
+
+proc SafeFormat {fmt val} {
+    if {$val==$val} {
+# nan raises error on format and is only real value that does not equal itself
+	return [format $fmt $val]
+    } else {
+	return $val
     }
 }
     

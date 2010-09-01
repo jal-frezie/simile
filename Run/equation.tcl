@@ -189,12 +189,25 @@ proc create_equation {parent purpose comp indices enum_types} {
     
     
     # Now for the main frame: the equation and its commentary
+    if {[string first Cause $purpose]==0} {
+	set eqnFrameTitle "Event condition"
+	set topType "Limit: Equation reaches..."
+	set midType "Time series"
+	set bottomType "Derived"
+	set startParamNosAt 3
+    } else {
+	set eqnFrameTitle "Data source"
+	set topType "Variable parameter"
+	set midType "Fixed parameter"
+	set bottomType $purpose
+	set startParamNosAt 0
+    }
     $mainF add [frame $mainF.main]
-    TitleFrame $mainF.main.main -text "[tr. {Data source}]: "
+    TitleFrame $mainF.main.main -text "[tr. $eqnFrameTitle]: "
     set mainf [GetFrame $mainF.main.main]
     frame $mainf.slider
-    radiobutton $mainf.slider.radio1 -text "[tr. {Variable parameter}]: " \
-	-variable equation(isparam) -value 1
+    radiobutton $mainf.slider.radio1 -text "[tr. $topType]: " \
+	-variable equation(isparam) -value [expr {$startParamNosAt+1}]
     pack $mainf.slider.radio1 -side left
     if {[string first Initial $purpose]==0} {
 # do not allow variable parameter for initial values...derrr
@@ -220,15 +233,16 @@ proc create_equation {parent purpose comp indices enum_types} {
     
     pack $mainf.slider -anchor nw -fill x
     frame $mainf.file
-    radiobutton $mainf.file.radio2 -text [tr. "Fixed parameter"] \
-	-variable equation(isparam) -value 2
+    radiobutton $mainf.file.radio2 -text [tr. $midType] \
+	-variable equation(isparam) -value [expr {$startParamNosAt+2}]
     pack $mainf.file.radio2 -side left
     pack $mainf.file -anchor nw -fill x
     frame $mainf.equation
     frame $mainf.equation.textbox
     
     radiobutton $mainf.equation.textbox.radio0 -variable equation(isparam) \
-	-text "[tr. $purpose]: $comp = " -wraplength 120 -value 0
+	-text "[tr. $bottomType]: $comp = " -wraplength 120 \
+	-value $startParamNosAt
     
     set en [text $mainf.equation.textbox.text -height 4 -width 64 \
 		-relief sunken -bd 2 -highlightthickness 0 -font EquationFont \

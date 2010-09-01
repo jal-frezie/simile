@@ -11,7 +11,8 @@ namespace eval DisplayFormat {
     
     proc General {val prec} {
         # was VarPrecRender
-        if {![string is double $val] || [string is integer $val]} {
+        if {![string is double $val] || [string is integer $val] || \
+		$val!=$val} { ;# last disjunct catches nan
        	    return $val
         }
         set regular [format %.${prec}f $val]
@@ -34,11 +35,11 @@ namespace eval DisplayFormat {
     }
     
     proc Fixed {val dp} {
-        return [format %.${dp}f $val]
+        return [SafeFormat %.${dp}f $val]
     }
     
     proc Scientific {val dp} {
-        return [format %.${dp}e $val]
+        return [SafeFormat %.${dp}e $val]
     }
     
     proc Percent {var dp} {
@@ -57,7 +58,7 @@ namespace eval DisplayFormat {
         set minutes [expr {($absval-$degrees_int)*60}]
         set minutes_int [expr {int($minutes)}]
         set seconds [expr {int($minutes-$minutes_int)*60}]
-        return [format %d:%d:%d $degrees_int $minutes_int $seconds]
+        return [SafeFormat %d:%d:%d $degrees_int $minutes_int $seconds]
     }
     
     proc RadinDMS {val dp} {
@@ -70,7 +71,7 @@ namespace eval DisplayFormat {
     proc YYYYMMDD {val dp} {
         set j [expr {int($val+2415020)}]; # need Rata die (Julian Day here) for 1900 or 1900-1?
         JulianDayToEYMD  $j datevar
-        return [format %.4d/%.2d/%.2d  $datevar(YEAR) $datevar(MONTH) $datevar(DAY_OF_MONTH)]
+        return [SafeFormat %.4d/%.2d/%.2d  $datevar(YEAR) $datevar(MONTH) $datevar(DAY_OF_MONTH)]
     }
     
     proc HHMM {val dp} {
@@ -78,7 +79,7 @@ namespace eval DisplayFormat {
         set hours_int [expr {int($val)}]
         set minutes [expr {($val-$hours_int)*60}]
         set minutes_int [expr {int($minutes)}]
-        return [format %.2d:%.2d $hours_int $minutes_int]
+        return [SafeFormat %.2d:%.2d $hours_int $minutes_int]
     }
     
     proc HHMMSS {val dp} {
@@ -87,7 +88,7 @@ namespace eval DisplayFormat {
         set minutes [expr {($val-$hours_int)*60}]
         set minutes_int [expr {int($minutes)}]
         set seconds [expr {int(($minutes-$minutes_int)*60)}]
-        return [format %.2d:%.2d:%.2d $hours_int $minutes_int $seconds]
+        return [SafeFormat %.2d:%.2d:%.2d $hours_int $minutes_int $seconds]
     }
     
     proc YYYYMMDDHHMMSS {val dp} {

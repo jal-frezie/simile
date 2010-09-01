@@ -798,7 +798,7 @@ namespace eval ::$keyValue {
 		set xm [expr $plot($w,xborder_left)+60]
 		set ym [expr $plot($w,yborder_top)+60]
 		$w.canvas create text $xm $ym -tags prompt -width 100 \
-		    -justify center -text "Some values resulting from maths errors have not been plotted"
+		    -justify center -text [tr. "Some values resulting from maths errors have not been plotted"]
 	    } else {
 		if $plot($w,AutoAxisScaling) {
 		    adjustLimits $w $Tnew $Ynew
@@ -838,12 +838,12 @@ namespace eval ::$keyValue {
 		}
             }
         }
-        
     }
     
     proc dodgyValue {val} {
         return [expr ![string is double -strict $val] || \
-                [lsearch {inf nan +inf +nan -inf -nan} $val]>-1]
+		    [lsearch {inf nan +inf +nan -inf -nan} \
+			 [string tolower $val]]>-1]
     }
     
     # Connect two points on the graph

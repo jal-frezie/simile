@@ -30,7 +30,9 @@ values. */
 do_equation_dialog(Win, Part) :-
 	caption_for(Part, Caption),
 	get_host(Part, ClickedObj),
-	(ClickedObj is_of_sort init_eval, !,
+	(ClickedObj is_of_sort discrete, !,
+	    TitleForm = 'Cause';
+	ClickedObj is_of_sort init_eval, !,
 	    TitleForm = 'Initial value';
 	TitleForm = 'Equation'),
 	list_index_meanings(Part, ISpecs),
