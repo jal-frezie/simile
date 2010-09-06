@@ -29,6 +29,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	(m_update:use_units_in(Sm, 'Yes'),
 	    \+ Units = 1,
 	    \+ promote_unit(Units, real),
+	    \+ promote_unit(Units, XUnits),
 	    (get_conversion(Formula, Units, XUnits, ScaledF);
 		report(Sm, wrong_derived_units(Units))), !;
 	ScaledF=Formula),

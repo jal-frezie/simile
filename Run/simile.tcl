@@ -1,5 +1,5 @@
 #set simplify 1 ;# avoid loading anything awkward
-# set do_events 1 ;# include event symbols
+#set do_events 1 ;# include event symbols
 #!/home/jaspert/Simile/System/bin/wish
 # Simile source code file: Run/simile.tcl
 #
@@ -331,7 +331,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 5.7
-set sendvars(simP) {}
+set sendvars(simP) {p1}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is
