@@ -1223,6 +1223,8 @@ namespace eval fileparams {
 	# Force no iteration in script and no command substitution
 	# This also substitutes newlines 
 	set ascii \u0000-\u0009\u000b-\u007f ;# ascii characters excluding newline
+	# note string must contain those that stay unchanged because if it is
+	# the other way round, the substitution will itself be substituted
 	set scn [regsub -all \[^$ascii\] [regsub -all \[$ascii\]+ $str %\[$ascii\]] %c]
 	set fmt [regsub -all \[^$ascii\] [regsub -all \[$ascii\]+ $str %s] {\&#%d;}]
 	return \"[eval [list format $fmt] [scan $str $scn]]\"
