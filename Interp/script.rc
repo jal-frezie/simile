@@ -77,7 +77,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-APP                     ICON    DISCARDABLE     "script100.ico"
+APP                     ICON    DISCARDABLE     "scriptv2_100.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //

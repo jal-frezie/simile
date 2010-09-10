@@ -331,7 +331,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 5.7
-set sendvars(simP) {p1}
+set sendvars(simP) {p2}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is
@@ -483,17 +483,27 @@ switch $tcl_platform(platform) {
 	if {[string equal Darwin $tcl_platform(os)]} {
 # experiment with fatties
 	    set archExtn _mac
+	    scan $tcl_platform(osVersion) %d.%d.%d dMed dMin dNone
+	    if {$dMed<10} {
+		# I am building with 10.6 so cannot make i386 prolog
+		# for earlier versions, so if I have one use ppc (for
+		# 10.3) version under Rosetta
+		set plExtn _ppc
+	    }
 	} else {
 	    set archExtn {}
 	}
 	set execExtn {}
     }
 }
+if {![info exists plExtn]} {
+    set plExtn $archExtn
+}
 
 switch $env(interfaceId) {
     pipe {
 #	set whatCalled [file rootname [file tail [info nameofexecutable]]]
-	set PROLOG_CMD $SIMILE_PATH/$tgt$archExtn$execExtn
+	set PROLOG_CMD $SIMILE_PATH/$tgt$plExtn$execExtn
 	source ../Run/toolbox.tcl
 	source ../Run/prolog.tcl
 # next bit was to enable same file as simile.exe to use as script launcher
@@ -507,7 +517,7 @@ switch $env(interfaceId) {
 #	console show
 #    }
     } dll {
-	exec $SIMILE_PATH/$tgt$archExtn$execExtn &
+	exec $SIMILE_PATH/$tgt$plExtn$execExtn &
     } console {
 	set ::argv0 {} ;# stops error message loading tclmath
 	source ../Run/toolbox.tcl

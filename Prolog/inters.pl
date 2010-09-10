@@ -232,21 +232,7 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 	    Category = WhereFound),
 	(Line = (Macro --> Defn),
 	    WhereFound = 'Macros',
-	    % Only allow free vars in function template -- fix them all then
-	    % replace those in template with free ones
-	    % get rid of dummy argument
-	    shed_dummy_args(Macro, Fn),
-	    (atom(Fn), !,
-		Op = Fn,
-		NewLine = (Fn --> Defn),
-		Pairs = [];
-	    Fn =.. [Op | Args],
-		replace_subexps(Line, inters, free_params,
-				switch(Args, _), top_down, Pairs, NewLine)),
-	    (member(var_pair(Param, NewParam), Pairs), NewParam == Param, !,
-		query(unused_macro_param(Line, Param), warning, user_defns,
-		      [ok], _);
-	    assert(macro_expansion(Category, NewLine))),
+	    add_macro(Category, Macro=Defn, Op),
 	    append_atoms(['{', Category, ' {', File, '}} ', Op], FnEntry);
 	(Line = sample(Functor, ReturnType, ArgTypes),
 	        assert(sample(Functor));
@@ -268,6 +254,24 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 	    read_funcs(File, Stream, IsBuiltIn, Done);
 	query(bad_user_fn_format(File, Line), warning, user_defns, [ok], _),
 	    read_funcs(File, Stream, IsBuiltIn, Done)).
+
+add_macro(Category, Macro=Defn, Op) :-
+	% Only allow free vars in function template -- fix them all then
+	% replace those in template with free ones
+	% get rid of dummy argument
+	shed_dummy_args(Macro, Fn),
+	(atom(Fn), !,
+	    Op = Fn,
+	    NewLine = (Fn --> Defn),
+	    Pairs = [];
+	  Fn =.. [Op | Args],
+	    Line = (Macro --> Defn),
+	    replace_subexps(Line, inters, free_params,
+			    switch(Args, _), top_down, Pairs, NewLine)),
+	(member(var_pair(Param, NewParam), Pairs), NewParam == Param, !,
+	    query(unused_macro_param(Line, Param), warning, user_defns,
+		  [ok], _);
+	  assert(macro_expansion(Category, NewLine))).
 
 shed_dummy_args(Op, NewOp) :-
 	Op =.. [Fn | Args],

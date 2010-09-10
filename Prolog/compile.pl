@@ -942,7 +942,7 @@ many individuals in each population submodel within it are created each round. *
 extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 		    ExtIncs, Inters, AssignList) :-
 	Instance = instance(submodel, Id, xrefs(model(Functions, Submodels),
-                                              _,_,_), _,_),
+						_,_,_), _,_),
 	(member(instance(alarm,_,_,elt(_, Al,_),_),
 		Functions), !,
 	    Path = [sm(_,_,_, fm_loop(_,_, Al))|_];
@@ -954,6 +954,10 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 */	(Id has_class_refinement enum_types of ETS, !,
 	    all(compile, make_et_spec, [unify(Id), build(ETS), build(ETS0)]);
 	    ETS0 = []),
+% Add submodel-local function definitions to database
+	(Id has_class_refinement function_defns of FnDefs, !; FnDefs = []),
+	all(inters, add_macro, [unify(in(Path)), build(FnDefs), build(_Ops)]),
+	
 	all(compile, get_assignment,
 	    [build(Functions),
 	     unify(Path), unify(Step), unify(Swaps),
@@ -963,7 +967,9 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 	     unify(Functions), unify(Path),
 	     unify(Swaps), unify(Step), biggest(MaxStep, Step), unify(Used),
 	     merge_lists(ExtIncs, []),
-	     append(Inters, Inters0), append(AssignList, AssignList0)]).
+	     append(Inters, Inters0), append(AssignList, AssignList0)]),
+% Remove submodel-local function definitions from database
+	retractall(macro_expansion(in(Path), _)).
 
 biggest(B1, B2, Big) :-
 	Big is max(B1, B2).
