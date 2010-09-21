@@ -418,6 +418,8 @@ set msgs(bad_eqn_message) [tr. "%1\$s"]
 
 set msgs(field_needs_value_title) $msgs(bad_eqn_title)
 set msgs(field_needs_value_message) [tr. "You must supply a value in the \"%1\$s\" field."]
+set msgs(some_field_needs_value_title) $msgs(bad_eqn_title)
+set msgs(some_field_needs_value_message) [tr. "You must supply a value in one of the \"%1\$s\" fields."]
 set msgs(field_not_const_title) $msgs(bad_eqn_title)
 set msgs(field_not_const_message) [tr. "Entry for %1\$s must be a numeric constant."]
 
