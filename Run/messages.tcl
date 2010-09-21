@@ -448,8 +448,10 @@ set msgs(bad_array_size_title) $msgs(bad_eqn_title)
 set msgs(bad_array_size_message) [tr. "This equation conains the subexpression %1\$s, which evaluates to a data structure which includes an array of size %2\$s."]
 set msgs(bad_array_size_detail) [tr. "%2\$s is not a valid dimension for a model component -- they must be integers greater than 1."]
 
+set msgs(bad_link_use_title) [tr. "Wrong use of inputs"]
+set msgs(bad_link_use_message) [tr. "The equation uses the parameter \"%1\$s\" from an incoming influence, but the component is marked as a file parameter, which cannot have influences from other components."]
 set msgs(unwanted_links_title) [tr. "Unwanted inputs"]
-set msgs(unwanted_links_message) [tr. "This node has a link from %1\$s, but parameter default values are not allowed to have input variables themselves. Remove this link?"]
+set msgs(unwanted_links_message) [tr. "This node has a link from %1\$s, which is not used in the equation. Parameter default values are not allowed to have input variables themselves. Remove this link?"]
 
 set msgs(undefined_parameter_title) [tr. "Undefined parameter"]
 set msgs(undefined_parameter_message) [tr. "This expression contains the term %1\$s, which appears to be used as a parameter, but it does not appear as a parameter name."]

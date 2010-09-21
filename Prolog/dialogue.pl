@@ -177,11 +177,11 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	member([Is_P, ParamsAllowed], [[-1,1], [0,1], [1,0], [2,0]]),
 	get_term(Unit_st, Units, UnitFormError),
 	check_exp(Eqn_st, Function, InterInputs, EqnBase, EqnDims,
-		  IndxCount, ParamList, Result, EqnError),
-/*	(ParamsAllowed = 0,
-	    member(input_link(_, SourceCapt, _,_,_), InterInputs), !,
-	    EqnError = unwanted_links(SourceCapt);
-	 EqnError = ParseError), */
+		  IndxCount, ParamList, Result, ParseError),
+	(ParamsAllowed = 0,
+	    member(ParamName, ParamList), !,
+	    EqnError = bad_link_use(ParamName);
+	 EqnError = ParseError),
 	(Is_P = 1, \+ inherently_bound(Units),
 	    \+ inherently_bound(EqnBase), !, MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
