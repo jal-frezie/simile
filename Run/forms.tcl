@@ -799,7 +799,7 @@ proc OpenProgressBox {winId} {
 	}
 	destroy .progress.filler
 	wm geometry .progress 400x100
-	message .progress.message -aspect 400 -text "Please wait"
+	message .progress.message -aspect 400 -text [tr. "Please wait"]
 	pack .progress.message -fill both -expand true
 	update
 	incr progressBoxCount ;# update can cause AbandonEqn and ResetProgress
@@ -1357,9 +1357,13 @@ proc TradeXML {c exp} {
     OpenProgressBox $c
     FillProgressBox wait_for_web {}
     set url http://webflow.simileweb.com/processes/$service/
-     set token [::http::geturl $url -type $content_type -binary true \
-                             -headers $headers -query $body]
-     ::http::wait $token
+    if {[catch {::http::geturl $url -type $content_type -binary true \
+		    -headers $headers -query $body} token]} {
+	CloseProgressBox
+	Query [list web_fail $token] warning top $c ok
+	return
+    }
+    ::http::wait $token
     CloseProgressBox
 
     upvar #0 $token foo
@@ -2132,17 +2136,21 @@ proc SetDlgRes {val} {
     set dialogues(done) $val
 }
 
-# tweaked to cover any type of modal box
+# tweaked to cover any type of modal box -- remove progress box to stop Prolog
+# calls clearing it
 proc HideProgressBox {} {
     global dialogues
 
     set dialogues(progressUp) [grab current]
     if {[string length $dialogues(progressUp)]} {
-	# avoid yet another potential MacOS stuffup
-	grab release $dialogues(progressUp)
-#	set dialogues(progBag) [wm transient .progress]
-#	set dialogues(progMess) [.progress.message cget -text]
-#	CloseProgressBox
+	if {[string equal .progress $dialogues(progressUp)]} {
+	    set dialogues(progBag) [wm transient .progress]
+	    set dialogues(progMess) [.progress.message cget -text]
+	    CloseProgressBox
+	} else {
+	    # avoid yet another potential MacOS stuffup
+	    grab release $dialogues(progressUp)
+	}
     }
 }
 
@@ -2150,9 +2158,12 @@ proc ReplaceProgressBox {} {
     global dialogues
 
     if {[string length $dialogues(progressUp)]} {
-	grab $dialogues(progressUp)
-#	OpenProgressBox $dialogues(progBag)
-#	FillProgressBox $dialogues(progMess)
+	if {[string equal .progress $dialogues(progressUp)]} {
+	    OpenProgressBox $dialogues(progBag)
+	    .progress.message configure -text $dialogues(progMess)
+	} else {
+	    grab $dialogues(progressUp)
+	}
     }
 }
 
