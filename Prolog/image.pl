@@ -208,8 +208,7 @@ get_closest_edge(Node, [X,Y], Edge, [EfX, EfY]) :-
     member(MM-Edge, [LM-l, TM-t, RM-r, BM-b]). */
 
 make_bounding_box(New_obj, Xpt, Ypt, Cur_size, [L, T, R, B]) :-
-    ((New_obj is_class_of_sort regular_box; New_obj = channel;
-      New_obj = squirt),
+    ((New_obj is_class_of_sort regular_box; New_obj = channel),
         L is Xpt - Cur_size/2,
         R is Xpt + Cur_size/2;
     New_obj is_class_of_sort elongated_box,
@@ -220,7 +219,10 @@ make_bounding_box(New_obj, Xpt, Ypt, Cur_size, [L, T, R, B]) :-
         R is Xpt + 3*Cur_size/8;
     New_obj = flow,
         L is Xpt - Cur_size/4,
-        R is Xpt + Cur_size/4),
+        R is Xpt + Cur_size/4;
+      New_obj = squirt,
+        L is Xpt - Cur_size/2 + 1, % tweak to allow caption rottion if verical
+        R is Xpt + Cur_size/2 - 1),
     T is Ypt - Cur_size/2,
     B is Ypt + Cur_size/2.
 
