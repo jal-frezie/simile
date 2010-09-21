@@ -724,7 +724,7 @@ proc AddGrid {c onCol wl wt wr wb} {
 
 proc FixDisabledImgBug {ttkButton} {
 # Only do for Cocoa so disabled images greyed elsewhere
-    if {[string match cocoa [winfo server .]]} {
+    if {[string match CG* [winfo server .]]} {
 	set origImg [$ttkButton cget -image]
 	$ttkButton config -image [list $origImg disabled $origImg]
     }

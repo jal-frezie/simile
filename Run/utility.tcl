@@ -707,8 +707,8 @@ proc EscapeNasties {str} {
 # this has the advantage of not needing a reverse substitution
 #    return [subst [regsub -all {[][{};\#\\\$\s\u0080-\uffff]} $withBads \
 #		       {[format \\\\u%04x [scan & %c]]}]]
-# This one is all my own work
-    set RE {][{};\#\\\$\%\s\u0080-\uffff} ;# everything "bad"
+# This one is all my own work -- does % as well cos that messes formatting
+    set RE {][{};\"\#\\\$\%\s\u0080-\uffff} ;# everything "bad"
     set scn [regsub -all \[$RE\] $str %c]
     set fmt [regsub -all \[$RE\] $str {\u%04x}]
     return [eval [list format $fmt] [scan $str $scn]]

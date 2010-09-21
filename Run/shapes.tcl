@@ -730,7 +730,7 @@ proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
     }
     set ankh $looks($n,$type,textanchor)
 # rotate clockwise for horizontal flow
-    if {[string equal vflow $ptype] && ![string equal c $ankh]} {
+    if {![string equal $type $ptype] && ![string equal c $ankh]} {
 	set compass {e ne n nw w sw s se e ne}
 	set ankh [lindex $compass [expr {[lsearch $compass $ankh]+2}]]
     }

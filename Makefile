@@ -79,7 +79,7 @@ ifeq ($(PLATFORM),Darwin)
 	ARCHEXTN = _ppc
 # build for everything unless I am on Barbie
 	ifneq ($(OSNUMBER),7.9.0)
-		FLAGS = $(OPT) -arch i386 -mmacosx-version-min=10.5
+		FLAGS = $(OPT) -arch i386 -mmacosx-version-min=10.4
 	        ARCHEXTN = _mac
 	endif
 	EXECEXTN = $(ARCHEXTN)
