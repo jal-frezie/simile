@@ -341,6 +341,7 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 	(ExactStyle=state, !,
 	    Style = compartment;
 	Style = ExactStyle),
+	get_text_offset(Id, Style, DefAnchor, _ForLater),
 
 	( /* Style = submodel, !,
 	    DefAnchor = nw; */
@@ -348,18 +349,15 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 	Box = [L, T, R, B],
 	R-L>B-T, !,
 %	    DefAnchor = e,
-	    PosStyle = vflow;
+	    PosStyle = vflow,
+	    rotate_compass(DefAnchor, UseAnchor);
 /*	member(Style, [compartment, channel, variable, flow]), !,
 	    DefAnchor = s;
 	DefAnchor = c),
 	(nonvar(PosStyle), !; */
-	 PosStyle = Style),
-
-	get_text_offset(Id, Style, DefAnchor, _ForLater),
-	(PosStyle = vflow, !,
-	    rotate_compass(DefAnchor, UseAnchor);
+	  PosStyle = Style,
 	    UseAnchor = DefAnchor),
-	
+
 	(get_shape(Id, caption_offset, [XOff, YOff]);
 	 get_shape(Id, caption_offset, [XOff, YOff, _Anchor]);
 	 XOff = 0, YOff = 0,
