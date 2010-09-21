@@ -956,7 +956,7 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
 
 excpData* ExecutingModel::ExecuteInstance(int how_int, 
 		   double start, double* end, double errlim) {
-    double freq, xtime;
+  double freq, xtime, recover;
     int big_phase, err;
     BOOLEAN made_step, first_pass;
     // sprintf(globMess, "xm %d %lf-%lf at %lf", how_int, start, *end, errlim);
@@ -991,6 +991,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int,
 	switch (how_int) {
 	case EULER:
 	  if (first_pass) {
+	    recover = 0.5;
 	    SetdT(0,0);
 	  } else {
 	    SetdT(0,-1);
@@ -1001,6 +1002,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int,
 	case RUNGE_KUTTA:
 	  if (first_pass) {
 	    SetdT(0,1);
+	    recover = 0.0625;
 	  } else {
 	    SetdT(0,-2);
 	  }
@@ -1013,14 +1015,20 @@ excpData* ExecutingModel::ExecuteInstance(int how_int,
 	if (!errlim) {
 	  made_step = 1;
 	} else {
+	  /* tweak to allow events to be placed precisely in time. Clear maxerr
+	     before the final rate calculation, and allow threshold detection 
+	     to increase it to the amount by which the threshold is crossed. */
+	  loadedInst->adapt_maxerr = 0;
 	  if (userDefStop->excpNo=loadedInst->do_evalmodel(modelSpec->phases+1))
 	    break;
 	  // from inner loop
 
 	  // get the model to generate its error estimate
-	  loadedInst->adapt_maxerr = 0;
-	  SetdT( 0,10);
-	  loadedInst->updatemodel(big_phase);
+	  // previous point for zeroing maxerr
+	  if (loadedInst->adapt_maxerr<=errlim) { // no point if already over
+	    SetdT( 0,10);
+	    loadedInst->updatemodel(big_phase);
+	  }
 	  if (loadedInst->adapt_maxerr>errlim) {
 	    // error too great; put comps back and try shorter
 	    if (adapt_doublings<31) {
@@ -1036,7 +1044,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int,
 	    }
 	  } else {
 	    made_step = 1;
-	    if (adapt_doublings && loadedInst->adapt_maxerr<errlim/16) {
+	    if (adapt_doublings && loadedInst->adapt_maxerr<errlim*recover) {
 	      // low error; try longer next time if poss
 	      adapt_doublings--;
 	      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
@@ -1044,6 +1052,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int,
 	  } // timestep too short or not
 	} // error limit exists
       } // made progress
+//      printf("Moved forward %f units\n", freq);
       if (userDefStop->excpNo) break; // from outer loop
       if (userDefStop->excpNo=loadedInst->do_evalmodel(big_phase)) break;
 //      (*advancemodel)(id, big_phase);
