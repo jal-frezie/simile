@@ -46,7 +46,7 @@ namespace eval printer {
     variable option
     variable vtgPrint
 
-    set debug 0
+    set debug 1
     set option(use_copybits) 1
     set vtgPrint(printer.bg) white
   }
@@ -236,9 +236,20 @@ namespace eval printer {
     if { [winfo class $wid] == "Canvas" } {
       set sc [ lindex [ $wid configure -scrollregion ] 4 ]
       # if there is no scrollregion, use width and height.
+# JAT: no, these may be set lower than viewable size if -expand is true, so
+# find box containing graphical items...
       if { "$sc" == "" } {
-        set window_x [ lindex [ $wid configure -width ] 4 ]
-        set window_y [ lindex [ $wid configure -height ] 4 ]
+#        set window_x [ lindex [ $wid configure -width ] 4 ]
+#        set window_y [ lindex [ $wid configure -height ] 4 ]
+	  set bb [$wid bbox all]
+	  if {[llength $bb]} {
+	      set window_x [expr {[lindex $bb 2]-[lindex $bb 0]}]
+	      set window_y [expr {[lindex $bb 3]-[lindex $bb 1]}]
+	  } else {
+	      debug_puts "warning, canvas has no graphical items on it"
+	      set window_x 1
+	      set window_y 1
+	  }
       } else {
         set window_x [ lindex $sc 2 ]
         set window_y [ lindex $sc 3 ]
@@ -467,30 +478,34 @@ namespace eval printer {
   proc print_canvas.arc {hdc cw id} {
     variable vtgPrint
 
-    set color [print_canvas.TransColor [$cw itemcget $id -outline]]
-    if {[string match $vtgPrint(printer.bg) $color]} {return}
-    set coords  [$cw coords $id]
-    set wdth    [$cw itemcget $id -width]
-    set style   [ $cw itemcget $id -style ]
-    set start   [ $cw itemcget $id -start ]
-    set extent  [ $cw itemcget $id -extent ]
+    set color [$cw itemcget $id -outline]
+#Not sure what this would do as background can be any colour(s)
+#    if {[string match $vtgPrint(printer.bg) $color]} {return}
     set fill    [ $cw itemcget $id -fill ]
-      if {$wdth>0 && $wdth<1} {set wdth 1}
 
-      set cmmd  [concat [list gdi arc $hdc] $coords [list -outline $color -style $style -start $start -extent $extent]]
-    if { $wdth > 0 } {
-        set cmmd "$cmmd -width $wdth"
+# OK, need 2B clever. Cannot print a transparent outline, so if
+# outline is transparent set it to fill colour unless fill is
+# also transparent in which case do nit print at all...
+
+    if {![string length $color]} {set color $fill}
+    if {[string length $color]} {
+
+	set coords  [$cw coords $id]
+	set wdth    [$cw itemcget $id -width]
+	set style   [ $cw itemcget $id -style ]
+	set start   [ $cw itemcget $id -start ]
+	set extent  [ $cw itemcget $id -extent ]
+	if {$wdth>0 && $wdth<1} {set wdth 1}
+	
+	set cmmd  [concat [list gdi arc $hdc] $coords \
+		       [list -outline $color -fill $fill -style $style \
+			    -start $start -extent $extent]]
+	if { $wdth > 0 } {
+	    set cmmd "$cmmd -width $wdth"
+	}
+	debug_puts "$cmmd"
+	eval $cmmd
     }
-    if { $fill != "" } {
-        set cmmd "$cmmd -fill $fill"
-    }
-
-
-    
-    debug_puts "$cmmd"
-
-
-    eval $cmmd
   }
   
 

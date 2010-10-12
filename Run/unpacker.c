@@ -485,7 +485,7 @@ typedef struct addSorted_pt {
 void addSorted(void* values, int offset, addSortedParms* cbData) {
   //void addDSorted(int* discCount, double** dPtrDiscList, double newVal) {
   double *spareArr, **dPtrDiscList, newVal;
-  int count, exp, bigexp, *discCount;
+  int count, locount, hicount, exp, bigexp, *discCount;
 
   if (cbData->baseType == REAL) 
     newVal = ((double*)values)[offset];
@@ -496,13 +496,27 @@ void addSorted(void* values, int offset, addSortedParms* cbData) {
 
   spareArr = *dPtrDiscList;
   // straight search could be replaced by binary if more speed needed
-  for (count=0; count<*discCount; ++count) {
-    if (newVal==spareArr[count]) {
+  // for (count=0; count<*discCount; ++count) {
+  //   if (newVal==spareArr[count]) {
+  //     return;
+  //   } else if (newVal<spareArr[count]) {
+  //     break;
+  //   }
+  // }
+  // ok, sew a button on this...
+  locount=0;
+  hicount=*discCount;
+  count=hicount/2;
+  while (count!=hicount) {
+    if (newVal==spareArr[count])
       return;
-    } else if (newVal<spareArr[count]) {
-      break;
-    }
+    if (newVal>spareArr[count])
+      locount = count+1;
+    else
+      hicount = count;
+    count = (locount+hicount)/2;
   }
+
   if (*discCount>=16 && frexp(*discCount,&bigexp)<frexp((*discCount)-1,&exp)) {
     *dPtrDiscList = (double*)malloc(sizeof(double)*(int)(ldexp(1,bigexp)));
     memmove(*dPtrDiscList, spareArr, count*sizeof(double));
@@ -591,7 +605,7 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   char* myClientData[32];
 
   double *dDiscList;
-  int discCount, *iDiscList;
+  int discCount;
 
   if (clientData) {
     // listing distinct vals
@@ -642,7 +656,6 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
   } else {
     dDiscList = (double*)malloc(sizeof(double)*16);
-    iDiscList = (int*)malloc(sizeof(int)*16);
   }
 
   discCount=0;
@@ -673,15 +686,10 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   if (clientData) {
     Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewIntObj(size));
     for (count=0; count<discCount; ++count) {
-      if (baseType==REAL) {
-	spareObjPtr = Tcl_NewDoubleObj(dDiscList[count]);
-      } else {
-	spareObjPtr = Tcl_NewIntObj(iDiscList[count]);
-      }
+      spareObjPtr = Tcl_NewDoubleObj(dDiscList[count]);
       Tcl_ListObjAppendElement(interp, resultPtr, spareObjPtr);
     }
     free(dDiscList);
-    free(iDiscList);
   }
   Tcl_SetObjResult(interp, resultPtr);
   return TCL_OK;

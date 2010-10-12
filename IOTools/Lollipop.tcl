@@ -36,8 +36,6 @@ proc initialize {winId} {
     $winId.elv set 0.5
     canvas $winId.c -width 1 -height 1 -bg white
     frame $winId.buttons -relief raised -bd 1
-    button $winId.buttons.but_print -text "Print..." \
-	-command "PrintNow $winId.c"
     pack [label $winId.buttons.anglab -text "View angle:"] -side left
     scale $winId.buttons.ang -orient h -from -$pi -to $pi \
 	-resolution 0.01 \
@@ -45,7 +43,6 @@ proc initialize {winId} {
     $winId.buttons.ang set -0.3
     pack $winId.buttons.ang -side left -fill x -expand true
     pack [label $winId.buttons.elvlab -text "View\nelev."] -side right
-    pack $winId.buttons.but_print -side right
     pack $winId.buttons -side bottom -fill x
     pack $winId.elv -side right -fill y
     pack $winId.c -fill both -expand true
