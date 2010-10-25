@@ -1,4 +1,3 @@
-package require ttk::dialog
 # Simile source code file: Run/toolbox.tcl
 #
 # (c) Simulistics Ltd. 2001-2007
@@ -10,7 +9,8 @@ package require ttk::dialog
 #catch {namespace import BWidget::*}
 if {![info exists simplify]} {
 if {[info tclversion]>=8.5} {
-    package require ttk::dialog
+# use our own
+#    package require ttk::dialog
 } else {
     package require tile 0.8.2
 }
@@ -87,7 +87,7 @@ if {[string match windows $tcl_platform(platform)]} {
     
     #   pkg_mkIndex ../System/lib/Extras
     source ../System/lib/Extras/prntcanv.tcl
-#    source ../System/lib/Extras/prntproc.tcl
+    source ../System/lib/Extras/prntproc.tcl ;# needed for eqn listings
     
     # Make Simile a DDE server under Windows. Jonathan autotesting
     # Must be after the sourcing or Simile fails
@@ -593,7 +593,7 @@ proc load_dll {topNode lang progDir id node incs} {
     if {[catch {ex_load_dll $topNode $lang [GetUsableName $progDir] $id \
 		    $node $incs} new_model_id]} {
 	if {[PrefValue custom(hackBreak) hackBreak]} {
-	    Query [list new_exec_needed $new_model_id] info top {} {ok}
+	    Query [list new_exec_needed $::errorInfo] info top {} {ok}
 	}
 	return 0
     }
@@ -688,27 +688,27 @@ proc compile_c {workingDir extLibs complain} {
 	GNU|Default {
 	    set vistaFix 0
 	    set batSt [open runmingw.bat w]
+	    set mingwPath c:/MINGW
 	    if {[string equal Default $useComp]} {
-		puts $batSt "set PATH=[file nativename [file join \
-                        [file dirname $TOOLDIR] System bin]]"
+		set mingwPath [file dirname $TOOLDIR]/System
 		if {[string equal {Windows NT} $tcl_platform(os)] && \
 			$tcl_platform(osVersion)>=6.0} {
 # extra paths etc for Vista might make it more fragile so avoid if not needed
-		    set LIBDIR [file join [file dirname $TOOLDIR] System lib]
+# -- assume a separately installed compiler will be set up right and not need
+# them
+		    set LIBDIR [file join $mingwPath lib]
 		    puts $batSt "set PATH=[file nativename [file join \
-                        [file dirname $TOOLDIR] System libexec gcc \
-                        mingw32 3.4.2]];%PATH%"
+                        $mingwPath libexec gcc mingw32 3.4.2]];%PATH%"
 		    puts $batSt "copy \"[file nativename [file join \
                         $LIBDIR dllcrt*.o]]\" ."
 		    puts $batSt "copy \"[file nativename [file join \
                          $LIBDIR gcc mingw32 3.4.2 crt*.o]]\" ."
 		}
 	    }
+	    puts $batSt "set PATH=[file nativename [file join $mingwPath bin]]"
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
 		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o \
-                        -I\"[file nativename $TOOLDIR]\" \
-                        -I\"[file nativename [file join [file dirname $TOOLDIR] \
-                            System include mingw]]\" \
+                        -I\"[file nativename [file join $mingwPath include]]\" \
                         -I\"[file nativename [file join \
                             $LIBDIR gcc mingw32 3.4.2 include]]\" model.cpp"
 		set libOpt1 -L\"[file nativename $LIBDIR]\"
@@ -717,9 +717,9 @@ proc compile_c {workingDir extLibs complain} {
 		puts $batSt "g++ -shared -o $TARGET \
                         $libOpt1 $libOpt2 objtmp.o [concat $lDirs $lFiles]"
 	    } else {
-		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o -I$TOOLDIR \
-                        -I[file nativename [file join [file dirname $TOOLDIR] \
-                            System include mingw]] model.cpp"
+		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o \
+                        -I\"[file nativename $TOOLDIR]\" \
+                        -I\"[file nativename [file join $mingwPath include]]\" model.cpp"
 #        puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtmp.o"
 		puts $batSt [concat [list g++ -shared -o $TARGET objtmp.o] \
 				 $lDirs $lFiles]
@@ -939,7 +939,7 @@ proc ControlDraw {prologVersion} {
 	if {$relevant>-1 && [string first 64 $gppInfo $relevant]<$relevant+16} {
 	    set gccBitness 64
 	} ;# assume any 64-bit gcc will be proud enough to proclaim itself
-	set tclBitness [expr {8*$tcl_platform(wordSize)}]
+	set tclBitness [expr {8*$tcl_platform(pointerSize)}]
 	if {$tclBitness != $gccBitness} {
 	    lappend sendvars(arflags) -m$tclBitness
 	}

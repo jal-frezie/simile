@@ -1492,8 +1492,9 @@ proc ShowAbout {winId} {
         }
     }
     set fullVers $sendvars(simV)$sendvars(simP)
+    set bitness [expr {8*$::tcl_platform(pointerSize)}]-bit
     pack [label .about.fr.lab1 -font "-family helvetica -size $fSize" \
-	      -text "[tr. Simile] v$fullVers [tr. $userinfo(edn)]"]
+	      -text "[tr. Simile] v$fullVers [tr. $userinfo(edn)], $bitness"]
     set platform [frame .about.fr.platform]
     pack [label $platform.prolog -text "Prolog: $sendvars(proV)" \
             -font "-family helvetica -size $fsSize"] -side left
@@ -1573,7 +1574,7 @@ proc ShowExpiryImminent {expTime left} {
     }
     
     set labf1 [frame .expiry.labf1]
-    pack [label $labf1.img -image [ttk::stockIcon dialog/warning]] -side left
+    pack [label $labf1.img -image $iconImages(warning)] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     if {$left<0} {
@@ -1992,7 +1993,7 @@ proc NotifyOverLimit {edn limit} {
     }
     
     set labf1 [frame .notify.labf1]
-    pack [label $labf1.img -image [ttk::stockIcon dialog/warning]] -side left
+    pack [label $labf1.img -image $iconImages(warning)] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [label $labf1.lab2 -text "The $edn edition is limited to $limit functions. \n\
@@ -2029,6 +2030,151 @@ proc NotifyOverLimit {edn limit} {
     destroy .notify
 }
 
+proc TtkLikeDialogue {dlg args} {
+    upvar #0 $dlg D
+    variable Config
+    variable ButtonOptions
+    variable DialogTypes
+
+    # 
+    # Option processing:
+    #
+    array set defaults {
+	-title 		""
+    	-message	""
+	-detail		""
+	-command	ttk::dialog::nop
+	-icon 		""
+	-buttons 	{}
+	-labels 	{}
+	-default 	{}
+	-cancel		{}
+	-parent		#AUTO
+    }
+    array set options [array get defaults]
+
+    foreach {option value} $args {
+	if {$option eq "-type"} {
+	    array set options $DialogTypes($value)
+	} elseif {![info exists options($option)]} {
+	    set validOptions [join [lsort [array names options]] ", "]
+	    return -code error \
+	    	"Illegal option $option: must be one of $validOptions"
+	}
+    }
+    array set options $args
+
+    # ...
+    #
+#    array set buttonOptions [array get ::ttk::dialog::ButtonOptions]
+    foreach {button label} $options(-labels) {
+	lappend buttonOptions($button) -text $label
+    }
+
+    #
+    # Initialize dialog private data:
+    #
+    foreach option {-command -message -detail} {
+	set D($option) $options($option)
+    }
+
+    toplevel $dlg -class Dialog; wm withdraw $dlg
+
+    #
+    # Determine default transient parent.
+    #
+    # NB: menus (including menubars) are considered toplevels,
+    # so skip over those. 
+    #
+    if {$options(-parent) eq "#AUTO"} {
+	set parent [winfo toplevel [winfo parent $dlg]]
+	while {[winfo class $parent] eq "Menu" && $parent ne "."} {
+	    set parent [winfo toplevel [winfo parent $parent]]
+	}
+	set options(-parent) $parent
+    }
+
+    #
+    # Build dialog:
+    #
+    if {$options(-parent) ne ""} {
+    	wm transient $dlg $options(-parent)
+    }
+    wm title $dlg $options(-title)
+    wm protocol $dlg WM_DELETE_WINDOW { }
+
+    set f [ttk::frame $dlg.f] 
+
+    ttk::label $f.icon 
+    if {$options(-icon) ne ""} {
+	$f.icon configure -image [Bitmap::get $options(-icon)] ;# from BWidget
+    }
+    ttk::label $f.message -textvariable ${dlg}(-message) \
+    	-font TkCaptionFont -wraplength 400 -anchor w -justify left
+    ttk::label $f.detail -textvariable ${dlg}(-detail) \
+    	-font TkTextFont -wraplength 400 -anchor w -justify left
+
+    #
+    # Command buttons:
+    #
+    set cmd [ttk::frame $f.cmd]
+    set column 0
+    grid columnconfigure $f.cmd 0 -weight 1
+
+    foreach button $options(-buttons) {
+	incr column
+	eval [linsert $buttonOptions($button) 0 ttk::button $cmd.$button]
+        $cmd.$button configure -command [list SetDlgRes $button]
+    	grid $cmd.$button -row 0 -column $column \
+	    -padx [list 6 0] -sticky ew
+	grid columnconfigure $cmd $column -uniform buttons
+    }
+
+    if {$options(-default) ne ""} {
+	bind $dlg <Return> [$cmd.$options(-default) invoke]
+	focus $cmd.$options(-default)
+    }
+    if {$options(-cancel) ne ""} {
+	bind $dlg <KeyPress-Escape> \
+	    [list event generate $cmd.$options(-cancel) <<Invoke>>]
+	wm protocol $dlg WM_DELETE_WINDOW \
+	    [list event generate $cmd.$options(-cancel) <<Invoke>>]
+    }
+
+    #
+    # Assemble dialog.
+    #
+    pack $f.cmd -side bottom -expand false -fill x \
+    	-pady [list 24 12] -padx 12
+
+    if {0} {
+	# GNOME and Apple HIGs say not to use separators.
+	# But in case we want them anyway:
+	#
+	pack [ttk::separator $f.sep -orient horizontal] \
+	    -side bottom -expand false -fill x \
+	    -pady [list 24 0] \
+	    -padx 12
+    }
+
+    if {$options(-icon) ne ""} {
+	pack $f.icon -side left -anchor n -expand false \
+	    -pady 12 -padx 12
+    }
+
+    pack $f.message -side top -expand false -fill x \
+    	-padx 12 -pady 12
+    if {$options(-detail) != ""} {
+	pack $f.detail -side top -expand false -fill x \
+	    -padx 12
+    }
+
+    # Client area goes here.
+
+    pack $f -expand true -fill both
+    wm deiconify $dlg
+}
+
 # New unified issue handler; use for any unexpected occurrence
 proc Query {specifics icon helpRef parent opts} {
     global dialogues
@@ -2046,7 +2192,7 @@ proc Query {specifics icon helpRef parent opts} {
 	default {set moreCapt [tr. "More options..."]}
     }
     set key [lindex $specifics 0]
-    set mBoxCmd [list ttk::dialog .shortDlg -icon $icon -command SetDlgRes \
+    set mBoxCmd [list TtkLikeDialogue .shortDlg -icon $icon -command SetDlgRes \
 		     -buttons [list $defButton more] \
 		     -default $defButton -cancel $defButton \
 		     -labels [list $defButton $defCapt more $moreCapt]]
@@ -2096,6 +2242,7 @@ proc Query {specifics icon helpRef parent opts} {
     grab .shortDlg
     tkwait variable dialogues(done)
     grab release .shortDlg
+    destroy .shortDlg
 
     if {[string equal more $dialogues(done)]} {
 	if {![string equal abort $defButton]} { ;# add more detail now
@@ -2152,6 +2299,7 @@ proc HideProgressBox {} {
 	    grab release $dialogues(progressUp)
 	}
     }
+    update ;# avoids Mac hang
 }
 
 proc ReplaceProgressBox {} {
@@ -2195,14 +2343,7 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
     }
 
     set labf1 [frame $ProbWin.labf1]
-# do not vcompare because pre 0.8 no longer used, and no tile at all if
-# wish >= 8.5
-#    if {[package vcompare 0.8 [package provide tile]]>0} {
-#	set iconSpc tile
-#    } else {
-	set iconSpc ttk
-#    }
-    pack [label $labf1.img -image [${iconSpc}::stockIcon dialog/$errLevel]] \
+    pack [label $labf1.img -image [Bitmap::get $errLevel]] \
 	-side left 
 #    pack [label $labf1.lab1 -text "Warning:" \
 #            -font {-weight bold -family helvetica -size 10}] -side left
@@ -2232,8 +2373,9 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
     set defButton [lindex $opts 0]
     set defCapt $::msgs(${defButton}_button)
     pack [button $buttons.bn$defButton -text $defCapt -width 20 \
-	      -command [list set dialogues(ack) [incr ack1]]] \
+	    -default active -command [list set dialogues(ack) [incr ack1]]] \
             -side left -padx 4 -pady 4
+    bind $ProbWin <Return> [list $buttons.bn$defButton invoke]
     foreach extra [lrange $opts 1 end] {
         pack [button $buttons.bn$extra -text $::msgs(${extra}_button) \
 	      -width 20 -command [list set dialogues(ack) [incr ack1]]] \
