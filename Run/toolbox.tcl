@@ -689,8 +689,10 @@ proc compile_c {workingDir extLibs complain} {
 	    set vistaFix 0
 	    set batSt [open runmingw.bat w]
 	    set mingwPath c:/MINGW
+	    set mingwIncs {}
 	    if {[string equal Default $useComp]} {
 		set mingwPath [file dirname $TOOLDIR]/System
+		set mingwIncs -I\"[file nativename $mingwPath/include/mingw]\"
 		if {[string equal {Windows NT} $tcl_platform(os)] && \
 			$tcl_platform(osVersion)>=6.0} {
 # extra paths etc for Vista might make it more fragile so avoid if not needed
@@ -718,8 +720,7 @@ proc compile_c {workingDir extLibs complain} {
                         $libOpt1 $libOpt2 objtmp.o [concat $lDirs $lFiles]"
 	    } else {
 		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o \
-                        -I\"[file nativename $TOOLDIR]\" \
-                        -I\"[file nativename [file join $mingwPath include]]\" model.cpp"
+                        -I\"[file nativename $TOOLDIR]\" $mingwIncs model.cpp"
 #        puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtmp.o"
 		puts $batSt [concat [list g++ -shared -o $TARGET objtmp.o] \
 				 $lDirs $lFiles]
