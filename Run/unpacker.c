@@ -440,7 +440,6 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
 
   char spare[256];
   int dims[32], path[32];
-  long int mSpare;
   enum_type_data* usedTypes[32];
   nodeValues* c_result;
 
@@ -449,10 +448,7 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
 
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int*)&c_result);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&c_result, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   
   error = Tcl_GetIntFromObj(interp, argv[2], &count);
   if (error != TCL_OK) {
@@ -630,10 +626,7 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     }
   }
 
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&accessTool);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&accessTool, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   
   valspan=valfor255-valfor0; // set to span
 
@@ -704,10 +697,7 @@ FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_WrongNumArgs(interp, 1, argv, "data_handle");
     return TCL_ERROR;
   }
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&accessTool);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&accessTool, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   
   size = 0;
   call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,

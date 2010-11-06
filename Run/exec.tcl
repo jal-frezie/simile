@@ -84,8 +84,8 @@ proc update_executable {node lang} {
 	    set instance_id [c_createmodel $model_id]
 	} tcl {
     #    ShowMess debug info "model instance $instance_id created" ok
-	    set model_id 0
-	    set instance_id 0
+	    set model_id {}
+	    set instance_id {}
 	}
     }
 }
@@ -196,7 +196,7 @@ proc ResetModel {myNode howInt redo} {
     set dispDone 0 ;# allow execution to call back
     set readyForRK [expr {![string equal Euler $howInt]}]
     if {[catch {
-	if {$model_id} {
+	if {[string bytelength $model_id]} {
 #	    set model_id $myNode
 	    c_resetmodel $model_id $instance_id \
 		$readyForRK $redo
@@ -217,7 +217,7 @@ proc ResetModel {myNode howInt redo} {
 proc ExecuteModel {myNode howInt start finish errLim} {
     global model_id instance_id
     if {[catch {
-	if {$model_id} {
+	if {[string bytelength $model_id]} {
 #	    set model_id $myNode
 	    c_executemodel $model_id $instance_id \
 		[expr ![string equal Euler $howInt]] $start $finish $errLim
@@ -297,7 +297,7 @@ if {[info exists masterId]} { ;# we are in separate interp
 
 proc RunningInC {myNode} {
     global model_id
-    return $model_id ;# it is ready
+    return [string bytelength $model_id] ;# it is ready
 } 
     
 proc GetCCompProperty {topNode prop args} {
@@ -425,7 +425,7 @@ proc ExScrubRun {node times} {
 	$runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
     }
     if {[info exists model_id]} {
-        if {$model_id} {
+        if {[string bytelength $model_id]} {
             if {[info exists instance_id]} {
                 #ShowMess debug info "Exiting $model_id $instance_id" ok
                 c_exitmodel $model_id \

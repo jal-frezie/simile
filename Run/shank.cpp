@@ -1491,7 +1491,7 @@ FileParamData* param_array_item(ExecutingModel* xm, char* seekNodeId) {
   return xm->FileParamForNodeNum(seekNodeNum);
 }
     
-long int use_array_for_params(long int xmHandle, char* nodeId) {
+void* use_array_for_params(void* xmHandle, char* nodeId) {
   FileParamData* arrSlot;
   int lineFromNodeId, spareInt, seekNodeNum;
   ExecutingModel* recipient = (ExecutingModel*)xmHandle;
@@ -1511,10 +1511,10 @@ long int use_array_for_params(long int xmHandle, char* nodeId) {
     // param_array_base = arrSlot;
   }
 
-  return (long int)arrSlot;
+  return arrSlot;
 }
 
-void* get_param_data_space(long int fpHandle) {
+void* get_param_data_space(void* fpHandle) {
   return ((FileParamData*)fpHandle)->dataPtr.contents;
 }
 			   
@@ -1524,11 +1524,11 @@ int space_used(nodeValues* dataPtr) {
   return array_count(dataPtr->dimSpecs, &base)*size_for_data_type(*base);
 }
 
-int param_array_size(long int fpHandle) {
+int param_array_size(void* fpHandle) {
   return space_used(&((FileParamData*)fpHandle)->dataPtr);
 }
 
-int clear_time_point_elts(long int fpHandle) {
+int clear_time_point_elts(void* fpHandle) {
   ((VarParamData*)fpHandle)->ClearTimePtElements();
 
 //  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
@@ -1536,7 +1536,7 @@ int clear_time_point_elts(long int fpHandle) {
 //  }
 }
 
-double* get_wrap_ptr(long int fpHandle) {
+double* get_wrap_ptr(void* fpHandle) {
   VarParamData* arrSlot = (VarParamData*)fpHandle;
 
 //  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
@@ -1545,7 +1545,7 @@ double* get_wrap_ptr(long int fpHandle) {
   return &arrSlot->wrapAroundPoint;
 }
 
-int* get_fill_ptr(long int fpHandle) {
+int* get_fill_ptr(void* fpHandle) {
   VarParamData* arrSlot = (VarParamData*)fpHandle;
 
 //  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
@@ -1554,7 +1554,7 @@ int* get_fill_ptr(long int fpHandle) {
   return &arrSlot->fillMethod;
 }
 
-int create_time_point(long int fpHandle, double time) {
+int create_time_point(void* fpHandle, double time) {
   VarParamData* arrSlot = (VarParamData*)fpHandle;
 
 //  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
@@ -1564,11 +1564,11 @@ int create_time_point(long int fpHandle, double time) {
   return 0;
 }
 
-void* find_next_timept_space(long int fpHandle, double* last_time) {
+void* find_next_timept_space(void* fpHandle, double* last_time) {
   ((VarParamData*)fpHandle)->FindNextTimePtSpace(last_time);
 }
 
-char* get_param_ptr_and_dims(long int fpHandle, int** dimSlot) {
+char* get_param_ptr_and_dims(void* fpHandle, int** dimSlot) {
   FileParamData* arrSlot = (FileParamData*)fpHandle;
 //  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
 //    return NULL; // no data structure for this elt
@@ -1578,7 +1578,7 @@ char* get_param_ptr_and_dims(long int fpHandle, int** dimSlot) {
   return arrSlot->dataPtr.contents;
 }
 
-int get_timepoint_ptr_and_dims(long int fpHandle, double time, 
+int get_timepoint_ptr_and_dims(void* fpHandle, double time, 
 				 char** ptDataSlot, int** dimSlot) {
   VarParamData* arrSlot = (VarParamData*)fpHandle;
   char* ptData;
@@ -1861,7 +1861,7 @@ public:
 // Now here are the procedures which a 5-D client (such as Simile) will call
 
 // This one creates a new kind of model from the saved executable
-char* load_model(char* fileName, char* nodeName, long int* modelType) {
+char* load_model(char* fileName, char* nodeName, void** modelType) {
   ModelFor5D* newModel;
   char* complaint;
 
@@ -1870,21 +1870,21 @@ char* load_model(char* fileName, char* nodeName, long int* modelType) {
     // delete newModel;
     return complaint;
   }
-  *modelType = (long int)newModel;
+  *modelType = newModel;
   return NULL;
 }
 
 // create a model instance
-long int fetch_top_instance(long int modelType, void* clientRef) {
+void* fetch_top_instance(void* modelType, void* clientRef) {
   ExecutingModel* justMade;
 
   // 5-D callbacks have the client data set to the instance
   justMade = ((ModelFor5D*)modelType)->create(clientRef);
-  return (long int)justMade;
+  return justMade;
 }
 
 // get metadata: deprecated as each attribute should be sought individually
-node_data_line* searchinfo(char* node, long int tgtModel, char* caption, 
+node_data_line* searchinfo(char* node, void* tgtModel, char* caption, 
 			   int* dims, enum_type_data** usedTypes) {
   int ghostLine;
   node_data_line* bottomLine;
@@ -1908,20 +1908,20 @@ node_data_line* searchinfo(char* node, long int tgtModel, char* caption,
 
 /* utility procedures for accessing model data */
 
-int get_node_count(long int type) {
+int get_node_count(void* type) {
   return ((ModelFor5D*)type)->nodecount;
 }
 
-node_data_line* get_data_line(long int type, int line) {
+node_data_line* get_data_line(void* type, int line) {
   return &((ModelFor5D*)type)->nodedata[line];
 }
 
-graph_data_type** get_graph_base(long int type) {
+graph_data_type** get_graph_base(void* type) {
   return &((ModelFor5D*)type)->c_graphdata;
 }
 
 // get a node data line from the 'graph' number of the node
-node_data_line* nodlin_from_id(long int modelId, int paramId) {
+node_data_line* nodlin_from_id(void* modelId, int paramId) {
   return ((ModelFor5D*)modelId)->md_nodlin_from_id(paramId);
 }
 
@@ -1930,14 +1930,14 @@ node_data_line* nodlin_from_id(long int modelId, int paramId) {
 // in and sets one of them. Returns phase count. Node that ts[0] is set to
 // the integration step being done: 0 for Euler, 1-4 for the four stages of RK
 
-int setstep(long int instId, double starttime, int phase) {
+int setstep(void* instId, double starttime, int phase) {
   return ((ExecutingModel*)instId)->SetStep(phase, starttime);
 }
 
 /* filling a structure of this type is going to be a straight copy of the Tcl
    list builder in the shim, cos it's the easiest way to think through it */
 
-nodeValues* get_raw_values(char* nodeId, long int instance_id) {
+nodeValues* get_raw_values(char* nodeId, void* instance_id) {
   int nodeNum, spareNum;
 
   nodeNum = ((ExecutingModel*)instance_id)->modelSpec->getinfo(nodeId, 
@@ -1947,19 +1947,19 @@ nodeValues* get_raw_values(char* nodeId, long int instance_id) {
   return ((ExecutingModel*)instance_id)->GetRawValues(nodeNum);
 }
 
-excpData* reset(long int modelType, long int modelHandle, int how_int,
+excpData* reset(void* modelType, void* modelHandle, int how_int,
 		int top_phase) {
   return ((ExecutingModel*)modelHandle)->ResetInstance(how_int, top_phase);
 }
 
-excpData* execute(long int modelType, long int modelHandle, int how_int,
+excpData* execute(void* modelType, void* modelHandle, int how_int,
 	 double starttime, double* endtime, double errlim) {
   return ((ExecutingModel*)modelHandle)->ExecuteInstance(how_int, starttime, 
 							 endtime, errlim);
 }
 
 // This deletes a model instance and/or a class -- both when used in Simile
-char* myexit(long int modelType, long int modelHandle) {  
+char* myexit(void* modelType, void* modelHandle) {  
   if (modelHandle) { 
     delete (ExecutingModel*)modelHandle;
   }
@@ -1970,7 +1970,7 @@ char* myexit(long int modelType, long int modelHandle) {
   // to have params or retval
 }
 
-char* getNodeId(long int modelType, char* capt) {
+char* getNodeId(void* modelType, char* capt) {
   ModelServer* tgtModel;
   int tgtIndex;
 

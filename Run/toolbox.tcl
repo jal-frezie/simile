@@ -940,7 +940,10 @@ proc ControlDraw {prologVersion} {
 	if {$relevant>-1 && [string first 64 $gppInfo $relevant]<$relevant+16} {
 	    set gccBitness 64
 	} ;# assume any 64-bit gcc will be proud enough to proclaim itself
-	set tclBitness [expr {8*$tcl_platform(pointerSize)}]
+	set tclBitness [expr {8*$tcl_platform(wordSize)}]
+	if {[info exists tcl_platform(pointerSize)]} {
+	    set tclBitness [expr {8*$tcl_platform(pointerSize)}]
+	}
 	if {$tclBitness != $gccBitness} {
 	    lappend sendvars(arflags) -m$tclBitness
 	}

@@ -29,7 +29,7 @@ void showMess (const char* mess) {
 /* this simply makes up a tcl list of all the objects that
 appear in the object table. */
 
-int list(long int listType, Tcl_Interp *interp) {
+int list(void* listType, Tcl_Interp *interp) {
 
   Tcl_Obj *resultPtr;
   char* find;
@@ -165,24 +165,21 @@ int do_graph(graph_data_type** graphdata, Tcl_Interp *interp,
 FINDABLE int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   int error;
-  long int modelType;
+  void* modelType;
 
   if (argc < 4) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id node_id action ?parameters?");
     return TCL_ERROR;
   }
 
-  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&modelType, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   
   char current[255];
   int dims[32], path[32];
   Tcl_Obj *resultPtr, *oneType;
   int action, count;
   node_data_line *data_line;
-  long int tgtModel;
+  void* tgtModel;
   enum_type_data *usedTypes[32], **usedTypePtr;
 
   error = Tcl_GetIntFromObj(interp, argv[3], &action);
@@ -309,7 +306,7 @@ void get_tcl_value_pointer(void* modelPtr, void* tgt, int paramId,
   int dims[32], path[32];
   Tcl_Obj* valPtr;
   int stepIndex, rv;
-  long int mSpare;
+  void* mSpare;
   double makeInt;
   enum_type_data* usedTypes[32];
   char id[] = "dummy";
@@ -388,7 +385,7 @@ FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
   char* fileName;
   char* nodeName;
   char* dllProblem;
-  long int modelType;
+  void* modelType;
 
   switch (argc) {
   case 3:
@@ -400,7 +397,8 @@ FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
       free(dllProblem);
       return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewLongObj(modelType));
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((char*)&modelType, 
+						 sizeof(void*)));
     break;
     
   default:
@@ -416,22 +414,20 @@ FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
-  long int modelType;
-  long int modelHandle;
+  void* modelType;
+  void* modelHandle;
 
   if (argc != 2) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&modelType, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   modelHandle = fetch_top_instance(modelType, interp);
   if (modelHandle) {
     // save interp for callbacks from instance
-    Tcl_SetLongObj(Tcl_GetObjResult(interp), modelHandle);
+    Tcl_SetByteArrayObj(Tcl_GetObjResult(interp), (char*)&modelHandle, 
+			sizeof(void*));
     return TCL_OK;
   } else {
     Tcl_SetStringObj(Tcl_GetObjResult(interp), 
@@ -449,21 +445,20 @@ First two args are model type and instance, 3rd is node name */
 FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
-  long int modelInst, fpHandle;
+  void* modelInst;
+  void* fpHandle;
 
   if (argc != 3) {
     Tcl_WrongNumArgs(interp, 1, argv, "instance_id node_id");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &modelInst);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&modelInst, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   fpHandle = use_array_for_params(modelInst, 
 				  Tcl_GetStringFromObj(argv[2], NULL));
   if (fpHandle) {
-    Tcl_SetLongObj(Tcl_GetObjResult(interp), fpHandle);
+    Tcl_SetByteArrayObj(Tcl_GetObjResult(interp), (char*)&fpHandle, 
+			sizeof(void*));
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
@@ -474,16 +469,13 @@ FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int cleartimeseriesCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
-  long int fpHandle;
+  void* fpHandle;
   if (argc != 2) {
     Tcl_WrongNumArgs(interp, 1, argv, "param_id");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   clear_time_point_elts(fpHandle);
   return TCL_OK;
 }
@@ -513,7 +505,7 @@ FINDABLE int savetimepointCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
-  long int fpHandle;
+  void* fpHandle;
   double *time;
 
   if (argc != 2 && argc != 3) {
@@ -522,10 +514,7 @@ FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   if (time=get_wrap_ptr(fpHandle))
     if (argc == 3)
       return Tcl_GetDoubleFromObj(interp, argv[2], time);
@@ -542,7 +531,7 @@ FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error, *mtd;
-  long int fpHandle;
+  void* fpHandle;
 
   if (argc != 2 && argc != 3) {
     Tcl_WrongNumArgs(interp, 1, argv, "param_id ?method?");
@@ -550,10 +539,7 @@ FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   if (mtd=get_fill_ptr(fpHandle))
     if (argc == 3)
       return Tcl_GetIntFromObj(interp, argv[2], mtd);
@@ -570,7 +556,7 @@ FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int settimepointarrayCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
-  long int fpHandle;
+  void* fpHandle;
   double timePt;
 
   if (argc != 3) {
@@ -578,10 +564,7 @@ FINDABLE int settimepointarrayCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   error = Tcl_GetDoubleFromObj(interp, argv[2], &timePt);
   if (error != TCL_OK) {
     return error;
@@ -615,7 +598,7 @@ int  ints_from_list(Tcl_Interp *interp, Tcl_Obj *CONST obList, int indxs[]) {
 FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int count, error, indxs[32], *dims;
-  long int fpHandle;
+  void* fpHandle;
   char* bloc;
 
   if (argc != 4) {
@@ -623,10 +606,7 @@ FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   if ((error = ints_from_list(interp, argv[2], indxs)) != TCL_OK)
     return error;
 
@@ -649,7 +629,7 @@ FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int settimepointrecordsCmd(ClientData clientData, Tcl_Interp *interp,
 				    int argc, Tcl_Obj *CONST argv[]) {
   int count, error, indxs[32], *dims;
-  long int fpHandle;
+  void* fpHandle;
   char* bloc;
   double timePt;
 
@@ -658,10 +638,7 @@ FINDABLE int settimepointrecordsCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
 
   if ((error = ints_from_list(interp, argv[2], indxs)) != TCL_OK)
     return error;
@@ -693,7 +670,7 @@ FINDABLE int settimepointrecordsCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
 				int argc, Tcl_Obj *CONST argv[]) {
   int i, error, indxs[32], *dims;
-  long int fpHandle;
+  void* fpHandle;
   double val;
   char* bloc;
   
@@ -702,10 +679,7 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   error = Tcl_GetDoubleFromObj(interp, argv[3], &val);
   if (error != TCL_OK) {
     return error;
@@ -731,7 +705,7 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int count, error, indxs[32];
-  long int fpHandle;
+  void* fpHandle;
   void *sourcePtr, *destPtr;
 
   if (argc != 4) {
@@ -739,10 +713,7 @@ FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   if ((error = ints_from_list(interp, argv[3], indxs)) != TCL_OK)
     return error;
 
@@ -757,7 +728,7 @@ FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int count, error;
-  long int fpHandle;
+  void* fpHandle;
   char *nodeId;
   unsigned char *holder;
 
@@ -766,10 +737,7 @@ FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   count=param_array_size(fpHandle);
   holder = Tcl_SetByteArrayLength(Tcl_GetObjResult(interp), count);
   memcpy(holder, get_param_data_space(fpHandle), count);
@@ -779,7 +747,7 @@ FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error, indxs[32], *dims;
-  long int fpHandle;
+  void* fpHandle;
   double time, val;
   char* bloc;
 
@@ -788,10 +756,7 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
 
   error = Tcl_GetDoubleFromObj(interp, argv[3], &time);
   if (error != TCL_OK) {
@@ -820,7 +785,7 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int count, error, squirtPtr = 0, num_bytes, *dims;
-  long int fpHandle;
+  void* fpHandle;
   char *ptBytes;
   unsigned char *holder;
   double seekTime;
@@ -831,10 +796,7 @@ FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   
   if (count=param_array_size(fpHandle)) {
     holder = Tcl_GetByteArrayFromObj(argv[2], &num_bytes);
@@ -863,7 +825,7 @@ FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int gettimepointallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int count, error, squirtPtr = 0, currentSize;
-  long int fpHandle;
+  void* fpHandle;
   unsigned char *holder;
   void *ptBytes;
   double seekTime;
@@ -873,10 +835,7 @@ FINDABLE int gettimepointallCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_WrongNumArgs(interp, 1, argv, "param_id");
     return TCL_ERROR;
   }
-  error = Tcl_GetLongFromObj(interp, argv[1], &fpHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   
   if (count=param_array_size(fpHandle)) { // assignment
     currentSize = (count + sizeof(double))/2;
@@ -915,7 +874,7 @@ void get_string_for_error(char* spare, int error) {
   }
 }
 
-const char* name_in_line(long int modelType, int lineId) {
+const char* name_in_line(void* modelType, int lineId) {
     node_data_line *nodeLine;
 
     if (lineId) {
@@ -929,24 +888,16 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
   char spare[256];
   int how_int, phase, error;
   excpData* errorBlk;
-  long int modelType;
-  long int modelHandle;
+  void* modelType;
+  void* modelHandle;
 
   if (argc != 5) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id integration_method phase");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
-  if (error != TCL_OK) {
-    return error;
-    
-  }
+  memcpy(&modelType, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  memcpy(&modelHandle, Tcl_GetByteArrayFromObj(argv[2], NULL), sizeof(void*));
   
   error = Tcl_GetIntFromObj(interp, argv[3], &how_int);
   if (error != TCL_OK) {
@@ -978,24 +929,16 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
   int how_int, error;
   excpData* errorBlk;
   Tcl_Obj* working;
-  long int modelType;
-  long int modelHandle;
+  void* modelType;
+  void* modelHandle;
 
   if (argc != 7) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id integration_method start_time end_time error_limit");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
-  if (error != TCL_OK) {
-    return error;
-    
-  }
+  memcpy(&modelType, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));  
+  memcpy(&modelHandle, Tcl_GetByteArrayFromObj(argv[2], NULL), sizeof(void*));
   
   error = Tcl_GetIntFromObj(interp, argv[3], &how_int);
   if (error != TCL_OK) {
@@ -1049,17 +992,14 @@ FINDABLE int setstepCmd(ClientData clientData, Tcl_Interp *interp,
   double starttime;
   int phase;
   int error;
-  long int modelInst;
+  void* modelInst;
 
   if (argc != 4) {
     Tcl_WrongNumArgs(interp, 1, argv, "instance_id interval/phase step_id");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelInst);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&modelInst, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   
   error = Tcl_GetDoubleFromObj(interp, argv[2], &starttime);
   if (error != TCL_OK) {
@@ -1084,23 +1024,16 @@ FINDABLE int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
   char* dllProblem;
-  long int modelType;
-  long int modelHandle;
+  void* modelType;
+  void* modelHandle;
 
   if (argc != 3) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  error = Tcl_GetLongFromObj(interp, argv[2], &modelHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&modelType, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  memcpy(&modelHandle, Tcl_GetByteArrayFromObj(argv[2], NULL), sizeof(void*));
   
   dllProblem = myexit(modelType, modelHandle);
   if (dllProblem) {
@@ -1115,17 +1048,14 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
   char* nodeId;
-  long int modelType;
+  void* modelType;
   
   if (argc != 3) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id caption");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&modelType, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   
   nodeId = getNodeId(modelType, Tcl_GetStringFromObj(argv[2], NULL));
   if (nodeId) {
@@ -1227,7 +1157,7 @@ end of each model instance's ids
 No longer used: they have been replaced by get_raw_values which are turned
 into Tcl by unpacker.c
 
-int match_type(long int localType, long int smHandle, int dims[], 
+int match_type(void* localType, void* smHandle, int dims[], 
 	       int* dim_place) {
   int id_handle[] = {2,0}, *cur_place, *short_tree, *id_ptr, id_val, id_count;
   short_tree = id_handle;
@@ -1252,10 +1182,10 @@ int match_type(long int localType, long int smHandle, int dims[],
 
 // next two call one another so one needs to be declared in advance
 
-Tcl_Obj* fill_value(long int, long int, int[], int, int*, int[], int*, 
+Tcl_Obj* fill_value(void*, void*, int[], int, int*, int[], int*, 
 		    Tcl_Obj*);
 
-Tcl_Obj* fill_list_value(long int localType, long int* smHandle, int tree[], 
+Tcl_Obj* fill_list_value(void* localType, void** smHandle, int tree[], 
 			 int type, int* use_dims, int dims[], int* dim_place) {
   Tcl_Obj *localObj, *localSubObj;
   int next_handle[] = {1,0}, match, arrayOut, *short_tree;
@@ -1266,7 +1196,7 @@ Tcl_Obj* fill_list_value(long int localType, long int* smHandle, int tree[],
       localObj = fill_value(localType, *smHandle, tree, type, use_dims, 
 			    dim_place+1, dim_place+1, NULL);
       short_tree = next_handle;
-      *smHandle = *(long int*)(get_ptr(localType, *smHandle, &short_tree, 
+      *smHandle = *(void**)(get_ptr(localType, *smHandle, &short_tree, 
 						  NULL));
     } else {
       *dim_place=match;
@@ -1290,7 +1220,7 @@ Tcl_Obj* fill_list_value(long int localType, long int* smHandle, int tree[],
 // more values as we go through the loops up to the sizes specified in
 // use_dims.
 
-Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[], 
+Tcl_Obj* fill_value(void* localType, void* smHandle, int tree[], 
 		    int type, int* use_dims, int dims[], int* dim_place, 
 		    Tcl_Obj* nVs) {
   Tcl_Obj *localObj, *indObj, *localSubObj, **arrayVals, *eltVals;
@@ -1310,7 +1240,7 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
     new_tree = tree;
     while (*new_tree++ != SEPARATE) {}
 
-    smHandle = *(long int*)(get_ptr(localType, smHandle, &tree, &dims));
+    smHandle = *(void**)(get_ptr(localType, smHandle, &tree, &dims));
     localType = *(new_tree++);
     return(fill_value(localType, smHandle, new_tree, type, 
 		      use_dims+1, dim_place, dim_place, nVs));
@@ -1325,7 +1255,7 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
     new_tree = tree;
     while (*new_tree++ != -1) {}
 
-    smHandle = *(long int*)(get_ptr(localType, smHandle, &tree, &dims));
+    smHandle = *(void**)(get_ptr(localType, smHandle, &tree, &dims));
     localObj = fill_list_value(localType, &smHandle, new_tree, type, 
 			       use_dims+1, dim_place+1, dim_place+1);
     break;
@@ -1396,10 +1326,7 @@ FINDABLE int freeDataHandleCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int*)&toFree);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&toFree, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   
   free_bloc_data(toFree->contents, toFree->dimSpecs);
   free(toFree);
@@ -1413,27 +1340,20 @@ FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
   /*
   char spare[256];
   int dims[32], path[32];
-  long int mSpare;
+  void* mSpare;
   enum_type_data* usedTypes[32];
   */
   nodeValues* c_result;
-  long int modelType;
-  long int modelHandle;
+  void* modelType;
+  void* modelHandle;
 
   if (argc != 4) {
     Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  error = Tcl_GetLongFromObj(interp, argv[2], &modelHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
+  memcpy(&modelType, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  memcpy(&modelHandle, Tcl_GetByteArrayFromObj(argv[2], NULL), sizeof(void*));
   /* int count;
   node_data_line *data_line;
   int current_dims[32];
@@ -1462,7 +1382,7 @@ FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
   */
   c_result = get_raw_values(Tcl_GetStringFromObj(argv[3], NULL), modelHandle);
   if (c_result) {
-    Tcl_SetObjResult(interp, Tcl_NewLongObj((long int)c_result));
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((char*)&c_result, sizeof(void*)));
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("component has no data", -1));
@@ -1473,16 +1393,13 @@ FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int listobjCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
    int error;
-   long int modelType;
+   void* modelType;
 
    if (argc != 2) {
      Tcl_WrongNumArgs(interp, 1, argv, "model_id");
      return TCL_ERROR;
    }
-   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
-   if (error != TCL_OK) {
-	return error;
-   }
+   memcpy(&modelType, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
 
    return list(modelType, interp);
 }

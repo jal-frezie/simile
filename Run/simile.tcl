@@ -1,5 +1,6 @@
 #set simplify 1 ;# avoid loading anything awkward
 #set do_events 1 ;# include event symbols
+#set use_system_tcltk 1 ;# use separately installed tcltk and tools
 #!/home/jaspert/Simile/System/bin/wish
 # Simile source code file: Run/simile.tcl
 #
@@ -119,9 +120,16 @@ if {[info exists prolog_in_console]} {
 } else {
 # v5.7: try to keep even Linux and Windows from loading any TclTk packages they
 # find on the system, to avoid buggy XML or inappropriate Itcl?
-    set auto_path {}
+#     set auto_path {}
 }
-lappend auto_path [file join $SIMILE_PATH System lib]
+set similePkgCollection [file join $SIMILE_PATH System lib]
+if {[info exists use_system_tcltk]} {
+    lappend auto_path [file join $similePkgCollection Stubs]
+} else {
+# may be needed if using included tcltk, but should get it from 
+# location of executable
+    set auto_path [list $similePkgCollection]
+}
 if {[string match Darwin $tcl_platform(os)]} {
     lappend auto_path $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts
 #    package require tclAE
@@ -312,7 +320,7 @@ switch $tcl_platform(platform) {
 	dde servername $oldProc
 #	set env(TCL_LIBRARY) [info library]
 # Now, win95 etc needs the tcltk binaries in the path
-	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
+	append env(PATH) ";[file nativename $SIMILE_PATH/System/bin]"
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
 	set graph(origin) 2
     } unix {

@@ -29,9 +29,12 @@ fi
 
 RUNDIR=`dirname "$TOP"`;
 SIMDIR=`dirname "$RUNDIR"`;
+# next two lines needed if tk included in distribution
 LD_LIBRARY_PATH="$SIMDIR/System/lib"
 export LD_LIBRARY_PATH
-#TCL_LIBRARY="$LD_LIBRARY_PATH/tcl8.5"
-#export TCL_LIBRARY
+# TCL_LIBRARY="$LD_LIBRARY_PATH/tcl8.5"
+# export TCL_LIBRARY
+# start included tk
 "$SIMDIR/System/bin/wish" "$SIMDIR/Run/simile.tcl" $1
-
+# start system tk
+# wish8.5 "$SIMDIR/Run/simile.tcl" $1

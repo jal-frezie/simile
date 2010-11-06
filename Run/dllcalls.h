@@ -252,47 +252,47 @@ typedef InstanceOfModel* createmodel_type(ExecutingModel*);
 // (its same as above)
 
 /* Defined in the shank, used by the shim */
-EXTDEC char* load_model(char*, char*, long int*);
-EXTDEC long int use_array_for_params(long int, char*);
-EXTDEC void* get_param_data_space(long int);
-EXTDEC int param_array_size(long int);
-EXTDEC int clear_time_point_elts(long int);
-EXTDEC double* get_wrap_ptr(long int);
-EXTDEC int* get_fill_ptr(long int);
-EXTDEC int create_time_point(long int, double);
-EXTDEC void* find_next_timept_space(long int, double*);
+EXTDEC char* load_model(char*, char*, void**);
+EXTDEC void* use_array_for_params(void*, char*);
+EXTDEC void* get_param_data_space(void*);
+EXTDEC int param_array_size(void*);
+EXTDEC int clear_time_point_elts(void*);
+EXTDEC double* get_wrap_ptr(void*);
+EXTDEC int* get_fill_ptr(void*);
+EXTDEC int create_time_point(void*, double);
+EXTDEC void* find_next_timept_space(void*, double*);
 //EXTDEC int set_record_list(char*, int*, int);
 //EXTDEC int set_tp_records(char*, int*, double, int);
 //EXTDEC int set_param_array_elt(char*, double, int*);
 //EXTDEC int set_time_point_elt(char*, double, double, int*);
-EXTDEC char* get_param_ptr_and_dims(long int, int**);
-EXTDEC int get_timepoint_ptr_and_dims(long int, double, char**, int**);
+EXTDEC char* get_param_ptr_and_dims(void*, int**);
+EXTDEC int get_timepoint_ptr_and_dims(void*, double, char**, int**);
 EXTDEC void free_bloc_records(char*, int*);
 EXTDEC int set_bloc_record_count(char*, int*, int*, int);
 EXTDEC void set_bloc_element(char*, int*, int*, double);
 
 EXTDEC get_value_pointer_type get_value_pointer;
-EXTDEC int get_node_count(long int);
-EXTDEC node_data_line* get_data_line(long int, int);
-EXTDEC long int get_node_model_id(char*);
+EXTDEC int get_node_count(void*);
+EXTDEC node_data_line* get_data_line(void*, int);
+EXTDEC void* get_node_model_id(char*);
 EXTDEC release_graph_data_type release_graph_data;
 EXTDEC graph_data_type* find_graph_by_index (int, graph_data_type*);
 EXTDEC graphpoint_type graphpoint;
 EXTDEC void setup_randoms(unsigned int);
 EXTDEC double rand_fract();
-EXTDEC graph_data_type** get_graph_base(long int);
-EXTDEC node_data_line* searchinfo(char*, long int, char*, int*, 
+EXTDEC graph_data_type** get_graph_base(void*);
+EXTDEC node_data_line* searchinfo(char*, void*, char*, int*, 
 				  enum_type_data**);
-EXTDEC node_data_line* nodlin_from_id(long int, int);
-EXTDEC long int fetch_top_instance(long int, void*);
+EXTDEC node_data_line* nodlin_from_id(void*, int);
+EXTDEC void* fetch_top_instance(void*, void*);
 
-EXTDEC excpData* reset(long int, long int, int, int);
-EXTDEC excpData* execute(long int, long int, int, double, double*, double);
-EXTDEC int setstep(long int, double, int);
-EXTDEC char* myexit(long int, long int);
+EXTDEC excpData* reset(void*, void*, int, int);
+EXTDEC excpData* execute(void*, void*, int, double, double*, double);
+EXTDEC int setstep(void*, double, int);
+EXTDEC char* myexit(void*, void*);
 
-EXTDEC void* get_ptr(long int, long int, int**, int**);
-EXTDEC char* getNodeId(long int, char*);
+EXTDEC void* get_ptr(void*, void*, int**, int**);
+EXTDEC char* getNodeId(void*, char*);
 
 EXTDEC void proc_pointers_for_shank(get_value_pointer_type*, interact_gui_type*,
 				    showMess_type*);
@@ -317,7 +317,7 @@ typedef struct sizeAndPtr_t {
 typedef void valCallback(void*, int, void*);
 
 // use of nodeValues class
-EXTDEC nodeValues* get_raw_values(char*, long int);
+EXTDEC nodeValues* get_raw_values(char*, void*);
 EXTDEC void translate_dims(int[], int[], int[], int, BOOLEAN);
 EXTDEC BOOLEAN is_base_type(int);
 EXTDEC void free_bloc_data(char*, int*);

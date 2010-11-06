@@ -1287,6 +1287,7 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
 	return 0 ;# catch pre-XML .spf before it crashes parser
     }
     set parseStatus(outStr) [open $newPath w]
+    fconfigure $parseStatus(outStr) -encoding utf-8
     set broke [catch {$parseStatus(spfParser) parse $dada} feedback]
     close $parseStatus(outStr)
     if {$broke} {
@@ -1317,9 +1318,10 @@ proc StartElement {name attList args} {
     set attVals(irow) [set attVals(icol) position_in_data_area] ;# ditto
     array set attVals $attList
     if {[info exists attVals(label)]} {
+	set attVals(label) [StripNewCrs $attVals(label)]
 	set path $parseStatus(submodel)/$attVals(label)
 	if {[info exists attVals(comment)]} {
-	    set ::msgs(comment_$parseStatus(smPath)[RestoreOldCrs $path]) \
+	    set ::msgs(comment_$parseStatus(smPath)$path) \
 		[RestoreOldCrs $attVals(comment)]
 # add comments before lines for reporting (simile cannot read resulting temp_in)
 #	    puts $parseStatus(outStr) "\n# [RestoreCrs $attVals(comment)]"
@@ -1413,7 +1415,7 @@ proc LoadBase64CharData {encoded} {
 	paramMetadata
 
     if {![info exists parseStatus(loadByteArray)]} return
-    set relPath [RestoreOldCrs $parseStatus(submodel)/$parseStatus(loadByteArray)]
+    set relPath $parseStatus(submodel)/$parseStatus(loadByteArray)
     set compName $parseStatus(smPath)$relPath
 
     set nodeId [ExistCheck $parseStatus(topNode) $relPath \
@@ -1446,6 +1448,13 @@ proc RestoreOldCrs {txt} {
 	return [RestoreCrs $txt]
     }
     return $txt
+}
+
+proc StripNewCrs {txt} {
+    if {$::parseStatus(simV)<5.7} {
+	return $txt
+    }
+    return [StripCrs $txt]
 }
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
@@ -1487,6 +1496,9 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     # If neither of the above, XML file successfully converted
     set anyGood 1
     set pStr [NetOpen $metaFile r]
+    if {$paramState(origVersion)>=5.0} { ;# converted from xml so will be...
+	fconfigure $pStr -encoding utf-8
+    }
     while {[gets $pStr savedValue] != -1} {
         # ShowMess debug info "Restoring $savedValue" ok
         # ignore blank lines
@@ -1501,10 +1513,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
                 set restoredComp [string range $restoredComp 8 end]
             }
         } else {
-	    set restoredComp [join [lrange $IdAndValue 0 end-2] =]
-	    if {$paramState(origVersion)<5.7} {
-		set restoredComp [RestoreCrs $restoredComp]
-	    }
+	    set restoredComp [RestoreCrs [join [lrange $IdAndValue 0 end-2] =]]
 	    # allows parameter names to contain the = sign
 	}
         #ShowMess debug info "Component is $restoredComp" ok
