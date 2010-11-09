@@ -1321,7 +1321,7 @@ proc StartElement {name attList args} {
 	set attVals(label) [StripNewCrs $attVals(label)]
 	set path $parseStatus(submodel)/$attVals(label)
 	if {[info exists attVals(comment)]} {
-	    set ::msgs(comment_$parseStatus(smPath)$path) \
+	    set ::msgs(comment_[RestoreCrs $parseStatus(smPath)$path]) \
 		[RestoreOldCrs $attVals(comment)]
 # add comments before lines for reporting (simile cannot read resulting temp_in)
 #	    puts $parseStatus(outStr) "\n# [RestoreCrs $attVals(comment)]"
