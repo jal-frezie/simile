@@ -1144,6 +1144,8 @@ proc StartRun {node} {
 	    }
 	}
     }
+    update idletasks ;# 'see all' missing spfs if that option was selected
+    # otherwise query tangles with fp dialogue and hangs under windows
     if {[FileParamDialogue $fpParent 0]<1} {
 	if {[info exists runState($node,cnvs)]} {
 	    $runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
