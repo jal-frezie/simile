@@ -4,10 +4,10 @@ namespace eval DisplayFormat {
             General Fixed Scientific Percent\
             DMS RadinDMS \
             HHMM HHMMSS \
-            YYYYMMDDHHMMSS YYYYMMDD YYYYMMDDHHMMSS \
+            YYYYMMDD YYYYMMDDHHMMSS \
             Boolean
     
-    package require calendar
+#    package require calendar
     
     proc General {val prec} {
         # was VarPrecRender
@@ -68,11 +68,11 @@ namespace eval DisplayFormat {
     
     set datevar(ERA) CE
     
-    proc YYYYMMDD {val dp} {
-        set j [expr {int($val+2415020)}]; # need Rata die (Julian Day here) for 1900 or 1900-1?
-        JulianDayToEYMD  $j datevar
-        return [SafeFormat %.4d/%.2d/%.2d  $datevar(YEAR) $datevar(MONTH) $datevar(DAY_OF_MONTH)]
-    }
+#    proc YYYYMMDD {val dp} {
+#        set j [expr {int($val+2415020)}]; # need Rata die (Julian Day here) for 1900 or 1900-1?
+#        JulianDayToEYMD  $j datevar
+#        return [SafeFormat %.4d/%.2d/%.2d  $datevar(YEAR) $datevar(MONTH) $datevar(DAY_OF_MONTH)]
+#    }
     
     proc HHMM {val dp} {
         set val [expr {24*$val}]
@@ -91,10 +91,10 @@ namespace eval DisplayFormat {
         return [SafeFormat %.2d:%.2d:%.2d $hours_int $minutes_int $seconds]
     }
     
-    proc YYYYMMDDHHMMSS {val dp} {
-        set time [expr {$val-int($val)}]
-        return "[YYYYMMDD $val $dp] [HHMMSS $time $dp]"
-    }
+#    proc YYYYMMDDHHMMSS {val dp} {
+#        set time [expr {$val-int($val)}]
+#        return "[YYYYMMDD $val $dp] [HHMMSS $time $dp]"
+#    }
     
     proc Boolean {val dp} {
         if {$val} {

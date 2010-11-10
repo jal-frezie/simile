@@ -2289,6 +2289,7 @@ proc HideProgressBox {} {
     global dialogues
 
     set dialogues(progressUp) [grab current]
+    puts "Hiding  $dialogues(progressUp)"
     if {[string length $dialogues(progressUp)]} {
 	if {[string equal .progress $dialogues(progressUp)]} {
 	    set dialogues(progBag) [wm transient .progress]
@@ -2306,6 +2307,7 @@ proc ReplaceProgressBox {} {
     global dialogues
 
     if {[string length $dialogues(progressUp)]} {
+    puts "Replacing  $dialogues(progressUp)"
 	if {[string equal .progress $dialogues(progressUp)]} {
 	    OpenProgressBox $dialogues(progBag)
 	    .progress.message configure -text $dialogues(progMess)

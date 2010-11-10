@@ -10,8 +10,9 @@ package require Itcl
 package require Tk
 
 if {[string match windows $tcl_platform(platform)]} {
-    package require tcom
-    ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
+# removed until I can get hold of a 64-bit version
+#     package require tcom
+#     ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
 }
 set ::SimileAutoObjLoaded true; # used so .register (welcome) dialog not produced
 set env(LD_LIBRARY_PATH) "[file dirname [info script]]/../../../System/lib"

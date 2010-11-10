@@ -251,8 +251,8 @@ namespace eval printer {
 	      set window_y 1
 	  }
       } else {
-        set window_x [ lindex $sc 2 ]
-        set window_y [ lindex $sc 3 ]
+        set window_x [expr {[ lindex $sc 2 ]-[lindex $sc 0]}]
+        set window_y [expr {[ lindex $sc 3 ]-[lindex $sc 1]}]
       }
     } else {
       set window_x [ winfo width $wid ]
@@ -312,8 +312,11 @@ namespace eval printer {
     }
 
     # end printing process ------
+    puts "printer page end"
     printer page end
+    puts "printer job end"
     printer job end
+    puts "printer close"
     printer close
   }
 
@@ -619,8 +622,9 @@ namespace eval printer {
     variable p
 
     set p(0) 1 ; unset p(0)
-    page_args p
-    
+      # What was the next line doing here, no other item commands had it and
+      # it made the 64-bit version crash
+      #    page_args p
     set color [print_canvas.TransColor [$cw itemcget $id -fill]]
   #    if {[string match white [string tolower $color]]} {return}
   #    set color black
@@ -633,7 +637,7 @@ namespace eval printer {
     set wdth [expr [lindex $bbox 2] - [lindex $bbox 0]]
 
     set just [$cw itemcget $id -justify]
-    
+
     # Get the canvas font info
     set font [ $cw itemcget $id -font ]
     # Find the real font info

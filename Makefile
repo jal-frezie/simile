@@ -60,13 +60,13 @@ GPPCMD = g++
 OPT = 
 
 # Default case: Linux
-FLAGS = $(OPT) -m32
-SLDIR = lib
+FLAGS = $(OPT)
 SHAREDLIBPREFX = lib
 MAKESL = -fPIC -shared
 VERS = 8.5
-TCLDIR = ../System
-USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include -L$(TCLDIR)/lib -ltclstub$(VERS)
+TCLDIR = /usr
+SLDIR = System/lib
+USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include/tcl$(VERS) -L$(TCLDIR)/lib -ltclstub$(VERS)
 # Next builds against system Tcl for Prolog debugging with Sicstus/dll
 # USETCL = -DUSE_TCL_STUBS -I/usr/include/tcl$(VERS) -L/usr/lib/tcl$(VERS) -ltclstub$(VERS)
 LOCALIZE_TCL_REFS = ls # placebo command
@@ -100,13 +100,16 @@ endif
 
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
+	GCCCMD = x86_64-w64-mingw32-gcc
+	GPPCMD = x86_64-w64-mingw32-g++
+	RESCMD = x86_64-w64-mingw32-windres
 	FLAGS = $(OPT)
-	SLDIR = bin
 	SHAREDLIBPREFX = 
 	MAKESL = -shared
 	VERS = 85
 #	VERS = 86
-	TCLDIR = c:/Tcl
+	TCLDIR = /c/Tcl
+	SLDIR = System/bin
 	USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include -L$(TCLDIR)/lib $(TCLDIR)/lib/tclstub$(VERS).lib
 	LOCALIZE_TCL_REFS =  ls # placebo command
 	SHAREDLIBEXTN = .dll
@@ -122,15 +125,16 @@ ifeq ($(PROLOG),SICSTUS)
 	PROLOGSTATE = System/bin/main.sav
 endif
 
-SHIM = System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN)
-UNPK = System/lib/Stubs/$(SHAREDLIBPREFX)unpacker$(VERS)$(SHAREDLIBEXTN)
+STUBS_DIR = System/lib/Stubs
+SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN)
+UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(VERS)$(SHAREDLIBEXTN)
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 
 # shank before shims in dependencies because some Make utilities build them
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
 simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) \
-	System/$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT)
+	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT)
 
 vpath %.pl Prolog
 
@@ -172,13 +176,13 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
 System/bin/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
 		-o $(SHANK) -Wl,--out-implib,lib5d_win.a shank.cpp; \
-		mv $(SHANK) ../System/$(SLDIR); \
-		mv lib5d_win.a ../System/lib; cd ..
+		mv $(SHANK) ../$(SLDIR); \
+		mv lib5d_win.a $(TCLDIR)/lib; cd ..
 
 # Unix: not needed for Linux as it can build at run time
 System/lib/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
-		-o ../System/$(SLDIR)/$(SHANK) shank.cpp; cd ..
+		-o ../$(SLDIR)/$(SHANK) shank.cpp; cd ..
 
 # Build a .dll to check licence code during Windows installation
 # Version for GPInstall by QSC
@@ -200,24 +204,26 @@ $(INSTLIB): Run/install_adv.cpp Makefile
 		install_adv.cpp /c/MsiIntel.SDK/lib/msi.lib \
 		-L../System/lib -lcrypto -lssl; cd ..
 
+# the rc objects from windres are ommitted from linking below becaise they
+# do strange things to dll dependencies causing c000007b errors
 System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc
-	cd Interp; windres -I$(TCLDIR)/include -o rc.o Simile.rc;
-		$(GCCCMD) $(FLAGS) -I$(TCLDIR)/include \
-		-o ../System/bin/Simile.exe Simile.c rc.o \
+	$(RESCMD) -o rc.o Interp/Simile.rc;
+	$(GCCCMD) $(FLAGS) -I$(TCLDIR)/include \
+		-o System/bin/Simile.exe Interp/Simile.c rc.o \
 		$(TCLDIR)/lib/tcl$(VERS).lib $(TCLDIR)/lib/tk$(VERS).lib \
 		-mwindows; cd ..
 
 $(SCRIPT): Interp/script.c Interp/script.rc
-	windres -I$(TCLDIR)/include -o Interp/scriptrc.o Interp/script.rc;
-		 $(GCCCMD) $(FLAGS) -I$(TCLDIR)/include \
+	$(RESCMD) -I$(TCLDIR)/include -o scriptrc.o Interp/script.rc;
+	$(GCCCMD) $(FLAGS) -I$(TCLDIR)/include \
 		-o System/bin/SimileScript.exe \
-		Interp/script.c Interp/scriptrc.o \
+		Interp/script.c \
 		$(TCLDIR)/lib/tcl$(VERS).lib $(TCLDIR)/lib/tk$(VERS).lib \
 		-mwindows
 #else
 
 # CYGWIN and non-Windows
-#System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN): \
+#$(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN): \
 #	ame_cmx.cpp dllcalls.h shank.cpp makedlls.tcl
 #	cd Run; $(WISHCMD) makedlls.tcl; cd ..
 
@@ -234,7 +240,8 @@ System/bin/relay$(EXECEXTN): Run/relay.c
 
 # call clean after changing license info in this file
 clean:
-	rm System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN) \
-		System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) \
+	rm $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN) \
+		$(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(VERS)$(SHAREDLIBEXTN) \
+		$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) \
 		Run/install.dll
 
