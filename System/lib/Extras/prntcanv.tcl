@@ -243,20 +243,28 @@ namespace eval printer {
 #        set window_y [ lindex [ $wid configure -height ] 4 ]
 	  set bb [$wid bbox all]
 	  if {[llength $bb]} {
+	      set winbaseX [lindex $bb 0]
+	      set winbaseY [lindex $bb 1]
 	      set window_x [expr {[lindex $bb 2]-[lindex $bb 0]}]
 	      set window_y [expr {[lindex $bb 3]-[lindex $bb 1]}]
 	  } else {
 	      debug_puts "warning, canvas has no graphical items on it"
+	      set winbaseX 0
+	      set winbaseY 0
 	      set window_x 1
 	      set window_y 1
 	  }
       } else {
-        set window_x [expr {[ lindex $sc 2 ]-[lindex $sc 0]}]
-        set window_y [expr {[ lindex $sc 3 ]-[lindex $sc 1]}]
+	  set winbaseX [lindex $sc 0]
+	  set winbaseY [lindex $sc 1]
+	  set window_x [expr {[ lindex $sc 2 ]-[lindex $sc 0]}]
+	  set window_y [expr {[ lindex $sc 3 ]-[lindex $sc 1]}]
       }
     } else {
-      set window_x [ winfo width $wid ]
-      set window_y [ winfo height $wid ]
+	set winbaseX 0
+	set winbaseY 0
+	set window_x [ winfo width $wid ]
+	set window_y [ winfo height $wid ]
     }
 
     set pd "page dimensions"
@@ -288,12 +296,14 @@ namespace eval printer {
         set ph $printer_x
     }
 
-    # The offset still needs to be set based on page margins
+    # The offset still needs to be set based on page margins...and the rest
+    set offsets [list [expr {round(-$winbaseX*$ph/$lo)}] \
+			   [expr {round(-$winbaseY*$ph/$lo)}]]
     debug_puts [ list \
-      gdi map $hdc -logical $lo -physical $ph -offset $p(resolution) \
+      gdi map $hdc -logical $lo -physical $ph -offset $offsets \
     ]
     
-    gdi map $hdc -logical $lo -physical $ph -offset $p(resolution)
+    gdi map $hdc -logical $lo -physical $ph -offset $offsets
     
     # handling of canvas widgets
     # additional procs can be added for other widget types
