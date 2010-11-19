@@ -56,6 +56,40 @@ if {[info exists embed_args]} {
     }
 }
 
+# replace /./ in path with / to avoid confusing file dirname
+regsub -all /\\./ [info script] / scriptCmd
+
+#tk_messageBox -title Invocation -icon info -message "$scriptCmd $argv" -type ok
+# Awkward: you want to normalize to get rid of ..'s in path, but that also
+# resolves any pointers except for the complete argument, which can stop the
+# development version starting
+set SIMILE_PATH [file normalize [file dirname [file dirname $scriptCmd]]]
+set tclBitness [expr {8*$tcl_platform(wordSize)}]
+if {[info exists tcl_platform(pointerSize)]} {
+    set tclBitness [expr {8*$tcl_platform(pointerSize)}]
+}
+set env(SYSDIR) [file join $SIMILE_PATH System]
+if {$tclBitness==64} {
+    append env(SYSDIR) 64
+}
+set execDir [file join $env(SYSDIR) bin]
+set libDir [file join $env(SYSDIR) lib]
+if {[info exists use_system_tcltk]} {
+    lappend auto_path [file join $libDir Stubs]
+# special Simile things that cannot be found in standard TclTk
+} else {
+# may be needed if using included tcltk, but should get it from 
+# location of executable
+    set auto_path [list $libDir]
+# May need to reinstate this for non-system-tcl case to avoid msgcat err
+    if {[string equal Darwin $tcl_platform(platform)]} {
+	lappend auto_path $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts
+    } else {
+	lappend auto_path [file join $libDir tcl[info tclversion]] \
+	    [file join $libDir tk[info tclversion]]
+    }
+}
+
 if {[string match windows $tcl_platform(platform)]} {
     package require dde 1.2
     set runHow(sendOp) {dde eval}
@@ -65,17 +99,6 @@ if {[string match windows $tcl_platform(platform)]} {
 }
 set oldProc Simile
 set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
-
-# replace /./ in path with / to avoid confusing file dirname
-regsub -all /\\./ [info script] / scriptCmd
-
-#tk_messageBox -title Invocation -icon info -message "$scriptCmd $argv" -type ok
-# Awkward: you want to normalize to get rid of ..'s in path, but that also
-# resolves any pointers except for the complete argument, which can stop the
-# development version starting
-set SIMILE_PATH [file normalize [file dirname [file dirname $scriptCmd]]]
-set env(SP_PATH) $SIMILE_PATH/System
-# Above seems unnecessary for sicstus 3.10
 
 proc ChooseIntegerRatio {fraction accu} {
     set m 1
@@ -122,16 +145,7 @@ if {[info exists prolog_in_console]} {
 # find on the system, to avoid buggy XML or inappropriate Itcl?
 #     set auto_path {}
 }
-set similePkgCollection [file join $SIMILE_PATH System lib]
-if {[info exists use_system_tcltk]} {
-    lappend auto_path [file join $similePkgCollection Stubs]
-} else {
-# may be needed if using included tcltk, but should get it from 
-# location of executable
-    set auto_path [list $similePkgCollection]
-}
 if {[string match Darwin $tcl_platform(os)]} {
-    lappend auto_path $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts
 #    package require tclAE
 
     if {[string match \-psn_* [lindex $argv 0]]} {
@@ -162,7 +176,6 @@ if {[string match Darwin $tcl_platform(os)]} {
 #    tclAE::installEventHandler aevt rapp handleReopenApp
 #    tk scaling 1.0
 } else {
-    lappend auto_path [file join $SIMILE_PATH System lib tk[info tclversion]]
 # If Simile is already running, make a new window there and exit. Note that
 # on Macs the OpenDocument takes care of this and we don't even get this far
 # OTOH, if Simile is not running already, need to skip the following on Macs.
@@ -253,7 +266,7 @@ if {[string match Darwin $tcl_platform(os)]} {
         close $strm
 #puts "Starting up: 2nd line is $tellProc"
 # ping to see if old proc there
-        set relay [file join $SIMILE_PATH System bin relay]
+        set relay [file join $execDir relay]
         switch -regexp [lindex $tellProc 0] {
             OhNeverMind {
 # we already did the hung instance dialogue and chose to cancel. No resolution
@@ -320,7 +333,7 @@ switch $tcl_platform(platform) {
 	dde servername $oldProc
 #	set env(TCL_LIBRARY) [info library]
 # Now, win95 etc needs the tcltk binaries in the path
-	append env(PATH) ";[file nativename $SIMILE_PATH/System/bin]"
+	append env(PATH) ";[file nativename $execDir]"
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
 	set graph(origin) 2
     } unix {
@@ -479,9 +492,9 @@ cd $SIMILE_PATH/Examples
 
 switch $env(prologId) {
     gnu {
-	set tgt Run/xgsimile
+	set tgt [file join $execDir xgsimile]
     } sicstus {
-	set tgt System/bin/sprt
+	set tgt [file join $execDir sprt]
     }
 }
 
@@ -500,10 +513,10 @@ switch $tcl_platform(platform) {
     }
 }
 
+set PROLOG_CMD $tgt$archExtn$execExtn
 switch $env(interfaceId) {
     pipe {
 #	set whatCalled [file rootname [file tail [info nameofexecutable]]]
-	set PROLOG_CMD $SIMILE_PATH/$tgt$archExtn$execExtn
 	source ../Run/toolbox.tcl
 	source ../Run/prolog.tcl
 # next bit was to enable same file as simile.exe to use as script launcher
@@ -517,7 +530,7 @@ switch $env(interfaceId) {
 #	console show
 #    }
     } dll {
-	exec $SIMILE_PATH/$tgt$archExtn$execExtn &
+	exec $PROLOG_CMD &
     } console {
 	set ::argv0 {} ;# stops error message loading tclmath
 	source ../Run/toolbox.tcl

@@ -86,8 +86,8 @@ if {[string match windows $tcl_platform(platform)]} {
     #    set tempDir [file join [file dirname $tempDir] [file tail $tempDir]]
     
     #   pkg_mkIndex ../System/lib/Extras
-    source ../System/lib/Extras/prntcanv.tcl
-    source ../System/lib/Extras/prntproc.tcl ;# needed for eqn listings
+    source $libDir/Extras/prntcanv.tcl
+    source $libDir/Extras/prntproc.tcl ;# needed for eqn listings
     
     # Make Simile a DDE server under Windows. Jonathan autotesting
     # Must be after the sourcing or Simile fails
@@ -361,7 +361,7 @@ proc do_for_node {node args} {
 		set makeExec ../../MacOS/Simile
 		#              catch {file rename ../Scripts/AppMain.tcl ../Scripts/AppMain.hide}
             } else {
-		set makeExec ../System/bin/wish
+		set makeExec $::execDir/wish
             }
             set srcLoc ../Run/runmodel.tcl          
 	    if {![info exists runHow(sendCmd)]} { ;# fix debug env
@@ -643,7 +643,7 @@ proc compile_c {workingDir extLibs complain} {
 	set TARGET model${serial}$shLibExt
     }
     set TOOLDIR [file join $SIMILE_PATH Run]
-    set TCL [file dirname [file dirname [info library]]]
+    #set TCL [file dirname [file dirname [info library]]]
     #ShowMess debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
     set useComp [PrefValue custom(compChoice) compChoice]
     if {[catch {switch $tcl_platform(platform) {
@@ -652,8 +652,8 @@ proc compile_c {workingDir extLibs complain} {
 # try doing it all in a special shell so I can bundle the compiler
 		set spout [open "|bash 2> returns" r+]
 		if {[string equal Default $useComp]} {
-		    puts $spout "export PATH=\"[file nativename [file join $SIMILE_PATH System bin]]\""
-		    puts $spout "export CPLUS_INCLUDE_PATH=\"[file nativename [file join $SIMILE_PATH System include MacOS]]\""
+		    puts $spout "export PATH=\"[file nativename [file join $env(SYSDIR) bin]]\""
+		    puts $spout "export CPLUS_INCLUDE_PATH=\"[file nativename [file join $env(SYSDIR) include MacOS]]\""
 		}
 		puts $spout "g++ $sendvars(arflags) -fPIC -c -I\"$TOOLDIR\" -o objtmp.o model.cpp" 
 		set switchForLib -bundle 
@@ -688,29 +688,30 @@ proc compile_c {workingDir extLibs complain} {
 	GNU|Default {
 	    set vistaFix 0
 	    set batSt [open runmingw.bat w]
-	    set mingwPath c:/MINGW
 	    set mingwIncs {}
 	    if {[string equal Default $useComp]} {
-		set mingwPath [file dirname $TOOLDIR]/System
-		set mingwIncs -I\"[file nativename $mingwPath/include/mingw]\"
+		set mingwIncs -I\"[file nativename $env(SYSDIR)/include/mingw]\"
+		puts $batSt "set PATH=[file nativename \
+                        [file join $env(SYSDIR) bin]]"
 		if {[string equal {Windows NT} $tcl_platform(os)] && \
-			$tcl_platform(osVersion)>=6.0} {
+			$tcl_platform(osVersion)>=6.0 && \
+			$::tclBitness==32} {
 # extra paths etc for Vista might make it more fragile so avoid if not needed
 # -- assume a separately installed compiler will be set up right and not need
 # them
-		    set LIBDIR [file join $mingwPath lib]
+		    set LIBDIR [file join $env(SYSDIR) lib]
 		    puts $batSt "set PATH=[file nativename [file join \
-                        $mingwPath libexec gcc mingw32 3.4.2]];%PATH%"
+                        $env(SYSDIR) libexec gcc mingw32 3.4.2]];%PATH%"
 		    puts $batSt "copy \"[file nativename [file join \
                         $LIBDIR dllcrt*.o]]\" ."
 		    puts $batSt "copy \"[file nativename [file join \
                          $LIBDIR gcc mingw32 3.4.2 crt*.o]]\" ."
 		}
 	    }
-	    puts $batSt "set PATH=[file nativename [file join $mingwPath bin]]"
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
 		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o \
-                        -I\"[file nativename [file join $mingwPath include]]\" \
+                        -I\"[file nativename $TOOLDIR]\" \
+                        -I\"[file nativename [file join $env(SYSDIR) include mingw]]\" \
                         -I\"[file nativename [file join \
                             $LIBDIR gcc mingw32 3.4.2 include]]\" model.cpp"
 		set libOpt1 -L\"[file nativename $LIBDIR]\"
@@ -825,7 +826,7 @@ if {[info tclversion] > 8.5} {
 # Not clear why this need only be set on MacOS, but it seems to work without on other platforms
 # so no sense in tinkering.  Probably because of different auto_path setting mechanisms.
 if [string match Darwin $tcl_platform(os)] {
-  set env(ITCL_LIBRARY) [pwd]/../System/lib/itcl$itclVers
+  set env(ITCL_LIBRARY) $libDir/itcl$itclVers
 }
 package require Itcl $itclVers
 itcl::class ModelWindowExtn {
@@ -888,7 +889,7 @@ proc StartComms {firstTime} {
 	    [string equal -stealth [file tail $env(OPEN_MODEL)]]} {
 	return ;# MacOS takes care of this stuff -- well?
     }
-    set relay [file join $SIMILE_PATH System bin relay]
+    set relay [file join $env(SYSDIR) bin relay]
     switch -- $firstTime {
         1 {
 # initializing -- set old proc to 0
@@ -912,7 +913,7 @@ proc StartComms {firstTime} {
 
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo openModel simtmpdir runHow
-    global regularActs
+    global regularActs tclBitness
 
     LoadIconImages
     # Defaults to use if debugging
@@ -940,10 +941,6 @@ proc ControlDraw {prologVersion} {
 	if {$relevant>-1 && [string first 64 $gppInfo $relevant]<$relevant+16} {
 	    set gccBitness 64
 	} ;# assume any 64-bit gcc will be proud enough to proclaim itself
-	set tclBitness [expr {8*$tcl_platform(wordSize)}]
-	if {[info exists tcl_platform(pointerSize)]} {
-	    set tclBitness [expr {8*$tcl_platform(pointerSize)}]
-	}
 	if {$tclBitness != $gccBitness} {
 	    lappend sendvars(arflags) -m$tclBitness
 	}
@@ -1266,7 +1263,7 @@ proc InitExecThread {node} {
 		Query [list new_exec_needed "Updating 5-d library"] \
 		    info top {} {ok}
 	    }
-	    set shank ../System/lib/lib5d.so
+	    set shank $::libDir/lib5d.so
 	    eval {exec g++} $::sendvars(arflags) \
 		[list -fPIC -I../Run -shared -o $shank ../Run/shank.cpp]
 	}

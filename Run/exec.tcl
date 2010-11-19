@@ -3,17 +3,17 @@
 # it's being debugged, once it's right we'll just load it. This component
 # itself loads dlls for the actual models as they are built.
 
-if {[info exists env(TCL_PATH)]} {
-    set auto_path [file join $env(SP_PATH) lib] \
-	[file join $env(SP_PATH) lib tcl[info tclversion]] \
-	[file join [file dirname [file dirname [file normalize $env(SP_PATH)]]] Frameworks Tcl.framework Resources Scripts]
-} else { ;# Orange Herald
-    lappend auto_path [file join $env(SP_PATH) lib]
-}
-
+# if {[info exists env(TCL_PATH)]} {
+#     set auto_path [file join $env(SP_PATH) lib] \
+# 	[file join $env(SP_PATH) lib tcl[info tclversion]] \
+# 	[file join [file dirname [file dirname [file normalize $env(SP_PATH)]]] Frameworks Tcl.framework Resources Scripts]
+# } else { ;# Orange Herald
+#     lappend auto_path [file join $env(SP_PATH) lib]
+# }
+set auto_path [list [file join $env(SYSDIR) lib tcl[info tclversion]] [file join $env(SYSDIR) lib]]
 # package require Trf ;# loads right version of Trf, only needed in UI thread
 
-source [file join [file dirname $env(SP_PATH)] Run support.tcl]
+source [file join [file dirname $env(SYSDIR)] Run support.tcl]
 
 proc load_c_stub_1 {node} {
     global env tcl_platform

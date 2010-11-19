@@ -963,7 +963,19 @@ proc equationDoTable {parent mdl tgt dims startLine} {
         #            return 0
         #        }
 	set table_entry(xpose) 0 ;# ttk checkbutton doesnt set this unless hit
-        set table_entry(indices) {}
+        if {[info exists table_entry(indices)] && \
+		[llength $table_entry(indices)]} {
+	    LoadDataFile columns 0 $mdl
+	    set i 1
+	    foreach idx $table_entry(indices) {
+		if {![string match ,* $idx]} { ;# this is wrap or db info
+		    $lidx insert end id$i -text $idx
+		}
+		incr i
+	    }
+	} else {
+	    set table_entry(indices) {}
+	}
     }
     
     #    if {![LoadDataFile]} {

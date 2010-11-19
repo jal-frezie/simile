@@ -1474,12 +1474,12 @@ proc VisitUrl {x} {
 }
 
 proc ShowAbout {winId} {
-    global sendvars userinfo interface tcl_platform graph
+    global SIMILE_PATH sendvars userinfo interface tcl_platform graph
     PutItThere .about $winId
     wm title .about About\ Simile
     image create photo dripu
 #    image create photo dripl
-    dripu read "$::SIMILE_PATH/Images/HelpAboutUpper.gif"
+    dripu read "$SIMILE_PATH/Images/HelpAboutUpper.gif"
 #    dripl read "../Images/HelpAboutLower.gif"
     label .about.upper -image dripu
     pack .about.upper -pady 4
@@ -1492,9 +1492,8 @@ proc ShowAbout {winId} {
         }
     }
     set fullVers $sendvars(simV)$sendvars(simP)
-    set bitness [expr {8*$::tcl_platform(pointerSize)}]-bit
     pack [label .about.fr.lab1 -font "-family helvetica -size $fSize" \
-	      -text "[tr. Simile] v$fullVers [tr. $userinfo(edn)], $bitness"]
+	      -text "[tr. Simile] v$fullVers [tr. $userinfo(edn)], $::tclBitness-bit"]
     set platform [frame .about.fr.platform]
     pack [label $platform.prolog -text "Prolog: $sendvars(proV)" \
             -font "-family helvetica -size $fsSize"] -side left
@@ -1502,8 +1501,15 @@ proc ShowAbout {winId} {
             -font "-family helvetica -size $fsSize"] -side left
     switch [tk windowingsystem] {
         win32 {
-            pack [label $platform.g++ -text "MinGW g++: [exec ../System/bin/g++ -dumpversion]" \
-                -font "-family helvetica -size $fsSize"] -side left
+	    if {[string equal GNU [PrefValue custom(compChoice) compChoice]]} {
+		set gppcmd g++
+	    } else {
+		set gppcmd [file join $::execDir g++]
+		# bundled location for default choice
+	    }
+            pack [label $platform.g++ \
+		      -text "MinGW g++: [exec $gppcmd -dumpversion]" \
+		      -font "-family helvetica -size $fsSize"] -side left
         }
     }
     pack $platform

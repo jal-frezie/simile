@@ -57,16 +57,29 @@ endif
 # default *nix variables overwritten in special cases
 GCCCMD = gcc
 GPPCMD = g++
-OPT = 
+
+ifdef MAKE64
+OPT =
+SYSDIR = System64
+TCLDIR = /usr
+else
+OPT = -m32
+SYSDIR = System
+# build on included tcl -- deprecated but needed for selectable bitness
+TCLDIR = "/home/jaspert/Documents/My Simile files/Source/$(SYSDIR)"
+endif
 
 # Default case: Linux
 FLAGS = $(OPT)
 SHAREDLIBPREFX = lib
 MAKESL = -fPIC -shared
 VERS = 8.5
-TCLDIR = /usr
-SLDIR = System/lib
+
+EXECDIR = $(SYSDIR)/bin
+LIBDIR = $(SYSDIR)/lib
+SLDIR = $(LIBDIR)
 USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include/tcl$(VERS) -L$(TCLDIR)/lib -ltclstub$(VERS)
+
 # Next builds against system Tcl for Prolog debugging with Sicstus/dll
 # USETCL = -DUSE_TCL_STUBS -I/usr/include/tcl$(VERS) -L/usr/lib/tcl$(VERS) -ltclstub$(VERS)
 LOCALIZE_TCL_REFS = ls # placebo command
@@ -100,32 +113,41 @@ endif
 
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
+ifdef MAKE64
+	TCLDIR = "/c/Tcl"
 	GCCCMD = x86_64-w64-mingw32-gcc
 	GPPCMD = x86_64-w64-mingw32-g++
 	RESCMD = x86_64-w64-mingw32-windres
+else
+	TCLDIR = "/c/Program files (x86)/Tcl"
+	RESCMD = windres
+	INSTLIB = Run/install.dll
+# must be 32-bit because installer is
+endif
 	FLAGS = $(OPT)
 	SHAREDLIBPREFX = 
 	MAKESL = -shared
 	VERS = 85
 #	VERS = 86
-	TCLDIR = /c/Tcl
-	SLDIR = System/bin
-	USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include -L$(TCLDIR)/lib $(TCLDIR)/lib/tclstub$(VERS).lib
+#
+	SLDIR = $(EXECDIR)
+# to be used after CDing to Run
+	TCLREF = $(TCLDIR)
+	USETCL = -DUSE_TCL_STUBS -I$(TCLREF)/include -L$(TCLREF)/lib $(TCLREF)/lib/tclstub$(VERS).lib
 	LOCALIZE_TCL_REFS =  ls # placebo command
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = _win
 	EXECEXTN = .exe
-	INSTLIB = Run/install.dll
-	MAIN = System/bin/Simile.exe
-	SCRIPT = System/bin/SimileScript.exe
+	MAIN = $(EXECDIR)/Simile.exe
+	SCRIPT = $(EXECDIR)/SimileScript.exe
 endif
 
-PROLOGSTATE = Run/xgsimile$(EXECEXTN)
+PROLOGSTATE = $(EXECDIR)/xgsimile$(EXECEXTN)
 ifeq ($(PROLOG),SICSTUS)
-	PROLOGSTATE = System/bin/main.sav
+	PROLOGSTATE = $(EXECDIR)/main.sav
 endif
 
-STUBS_DIR = System/lib/Stubs
+STUBS_DIR = $(LIBDIR)/Stubs
 SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN)
 UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(VERS)$(SHAREDLIBEXTN)
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
@@ -133,7 +155,7 @@ SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 # shank before shims in dependencies because some Make utilities build them
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
-simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) \
+simile: $(PROLOGSTATE) $(EXECDIR)/relay$(EXECEXTN) \
 	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT)
 
 vpath %.pl Prolog
@@ -146,13 +168,13 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl code.pl compile.pl database.pl \
 		submodel.pl tcltk.pl text.pl units.pl utility.pl
 
 # Prolog is Sicstus
-System/bin/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl System/bin/struct_db.dll
+$(EXECDIR)/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl $(EXECDIR)/struct_db.dll
 	cd Prolog; sicstus -l buildmainsav.pl; cd ..
 
-System/bin/struct_db.dll: struct_db.pl Prolog/struct_db.c
-	cd Prolog; splfr struct_db.pl struct_db.c; mv struct_db.dll ../System/bin; cd ..
+$(EXECDIR)/struct_db.dll: struct_db.pl Prolog/struct_db.c
+	cd Prolog; splfr struct_db.pl struct_db.c; mv struct_db.dll ../$(EXECDIR); cd ..
 
-Run/xgsimile$(EXECEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
+$(EXECDIR)/xgsimile$(EXECEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C '-D_GNU_PROLOG' gmain$(ARCHEXTN).o struct_db.c; cd ..
 Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl
 	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c gmain.pl; cd ..
@@ -162,7 +184,7 @@ Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl
 
 $(SHIM): Run/ame_cmx.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(FLAGS) -I. $(MAKESL) -o ../$(SHIM) ame_cmx.c \
-		$(USETCL) -L../System/lib -l5d$(ARCHEXTN); cd ..; \
+		$(USETCL) -L../$(LIBDIR) -l5d$(ARCHEXTN); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 
 $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
@@ -173,14 +195,14 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
 # literal SLDIR allows different SHANK clauses for Windows vs Unix
 
 # Windows: idiosyncratic stuff allows dynamic linker to work
-System/bin/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
+$(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
 		-o $(SHANK) -Wl,--out-implib,lib5d_win.a shank.cpp; \
 		mv $(SHANK) ../$(SLDIR); \
 		mv lib5d_win.a $(TCLDIR)/lib; cd ..
 
 # Unix: not needed for Linux as it can build at run time
-System/lib/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
+$(LIBDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
 		-o ../$(SLDIR)/$(SHANK) shank.cpp; cd ..
 
@@ -199,25 +221,23 @@ System/lib/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 #		-L../System/lib -lcrypto -lssl; cd ..
 # Version for Advanced Installer
 $(INSTLIB): Run/install_adv.cpp Makefile
-	cd Run; $(GPPCMD) $(FLAGS) $(DEFNS) \
+	cd Run; $(GPPCMD) -m32 $(FLAGS) $(DEFNS) \
 		-I/c/MsiIntel.SDK/include $(MAKESL) -o ../$(INSTLIB) \
 		install_adv.cpp /c/MsiIntel.SDK/lib/msi.lib \
-		-L../System/lib -lcrypto -lssl; cd ..
+		-L../$(LIBDIR) -lcrypto -lssl; cd ..
 
 # the rc objects from windres are ommitted from linking below becaise they
 # do strange things to dll dependencies causing c000007b errors
-System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc
+$(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile.rc
 	$(RESCMD) -o rc.o Interp/Simile.rc;
 	$(GCCCMD) $(FLAGS) -I$(TCLDIR)/include \
-		-o System/bin/Simile.exe Interp/Simile.c rc.o \
+		-o $(EXECDIR)/Simile.exe Interp/Simile.c \
 		$(TCLDIR)/lib/tcl$(VERS).lib $(TCLDIR)/lib/tk$(VERS).lib \
 		-mwindows; cd ..
 
 $(SCRIPT): Interp/script.c Interp/script.rc
-	$(RESCMD) -I$(TCLDIR)/include -o scriptrc.o Interp/script.rc;
-	$(GCCCMD) $(FLAGS) -I$(TCLDIR)/include \
-		-o System/bin/SimileScript.exe \
-		Interp/script.c \
+	$(RESCMD) -o scriptrc.o Interp/script.rc;
+	$(GCCCMD) $(FLAGS) -I$(TCLDIR)/include -o $(SCRIPT) Interp/script.c \
 		$(TCLDIR)/lib/tcl$(VERS).lib $(TCLDIR)/lib/tk$(VERS).lib \
 		-mwindows
 #else
@@ -234,14 +254,12 @@ $(SCRIPT): Interp/script.c Interp/script.rc
 #	cd Run; $(WISHCMD) makedlls.tcl; cd ..
 #endif
 
-System/bin/relay$(EXECEXTN): Run/relay.c
-	cd Run; $(GCCCMD) $(FLAGS) -o ../System/bin/relay$(EXECEXTN) relay.c; \
+$(EXECDIR)/relay$(EXECEXTN): Run/relay.c
+	cd Run; $(GCCCMD) $(FLAGS) -o ../$(EXECDIR)/relay$(EXECEXTN) relay.c; \
 		cd ..
 
 # call clean after changing license info in this file
 clean:
 	rm $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN) \
 		$(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(VERS)$(SHAREDLIBEXTN) \
-		$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) \
-		Run/install.dll
-
+		$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) $(INSTLIB)

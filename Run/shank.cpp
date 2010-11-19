@@ -74,17 +74,23 @@ void* flopen(char* fileName) {
     return dlopen(fileName, RTLD_NOW | RTLD_LOCAL);
   }
 }
+#define NEED_MINMAX
+#endif
 
 /*
- * Unix version: does not have min & max defined
+ * Unix or Win64 version: does not have min & max defined
  */
+
+#ifdef _WIN64
+    #define NEED_MINMAX
+#endif
+#ifdef NEED_MINMAX
 int min(int a, int b) {
   return a<b?a:b;
 }
 int max(int a, int b) {
   return a>b?a:b;
 }
-
 #endif
 
 // Definitions used in this code and the model code

@@ -5,10 +5,6 @@
 #
 # This file loads all procedures, and sets up the model execution environment.
 #
-if [string match "Darwin" $tcl_platform(os)] {
-    regsub -all /\\./ [info script] / scriptCmd
-    lappend auto_path $SIMILE_PATH/System/lib
-}
 
 source ../Run/graphs.tcl
 source ../Run/utility.tcl
