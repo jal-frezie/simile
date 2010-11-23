@@ -179,7 +179,6 @@ FINDABLE int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_Obj *resultPtr, *oneType;
   int action, count;
   node_data_line *data_line;
-  void* tgtModel;
   enum_type_data *usedTypes[32], **usedTypePtr;
 
   error = Tcl_GetIntFromObj(interp, argv[3], &action);
@@ -245,7 +244,7 @@ FINDABLE int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
   case GETGRAPH:
   case SETGRAPH:
     action = action + READGRAPH - GETGRAPH; // SETGRAPH becomes WRITEGRAPH
-    return do_graph(get_graph_base(tgtModel), interp, action, data_line->graph,
+    return do_graph(get_graph_base(modelType), interp, action, data_line->graph,
 		    argc-1, argv+1);
 
   case GETCAPTION:

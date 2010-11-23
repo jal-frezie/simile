@@ -37,7 +37,7 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 	}
 	set model_prog($topNode) $progDir/model.tcl
 	# This won't catch defns in subdirectories
-	set funs [file join [file dirname $env(SP_PATH)] Functions *.tcl]
+	set funs [file join [file dirname $env(SYSDIR)] Functions *.tcl]
 	foreach fnFile [glob -nocomplain $funs] {
 	    source $fnFile
 	}
