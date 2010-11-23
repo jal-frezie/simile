@@ -46,7 +46,7 @@ namespace eval printer {
     variable option
     variable vtgPrint
 
-    set debug 1
+    set debug 0
     set option(use_copybits) 1
     set vtgPrint(printer.bg) white
   }

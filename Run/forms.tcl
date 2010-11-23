@@ -1563,8 +1563,6 @@ proc ShowAbout {winId} {
 #set bwVers [package require BWidget]
 
 proc ShowExpiryImminent {expTime left} {
-    global iconImages
-    
     toplevel .expiry
     #    wm transient .expiry $winId
     if {$left<0} {
@@ -1580,7 +1578,7 @@ proc ShowExpiryImminent {expTime left} {
     }
     
     set labf1 [frame .expiry.labf1]
-    pack [label $labf1.img -image $iconImages(warning)] -side left
+    pack [label $labf1.img -image [Bitmap::get warning]] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     if {$left<0} {
@@ -1988,8 +1986,6 @@ proc add_text {text font across down colour} {
 # execution interps, so the reporting stuff can be kept in the editor interp
 
 proc NotifyOverLimit {edn limit} {
-    global iconImages
-    
     toplevel .notify
     wm title .notify "Over Limit For Edition"
     wm protocol .notify WM_DELETE_WINDOW {set ack 1}
@@ -1999,7 +1995,7 @@ proc NotifyOverLimit {edn limit} {
     }
     
     set labf1 [frame .notify.labf1]
-    pack [label $labf1.img -image $iconImages(warning)] -side left
+    pack [label $labf1.img -image [Bitmap::get warning]] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [label $labf1.lab2 -text "The $edn edition is limited to $limit functions. \n\
@@ -2295,7 +2291,6 @@ proc HideProgressBox {} {
     global dialogues
 
     set dialogues(progressUp) [grab current]
-    puts "Hiding  $dialogues(progressUp)"
     if {[string length $dialogues(progressUp)]} {
 	if {[string equal .progress $dialogues(progressUp)]} {
 	    set dialogues(progBag) [wm transient .progress]
@@ -2313,7 +2308,6 @@ proc ReplaceProgressBox {} {
     global dialogues
 
     if {[string length $dialogues(progressUp)]} {
-    puts "Replacing  $dialogues(progressUp)"
 	if {[string equal .progress $dialogues(progressUp)]} {
 	    OpenProgressBox $dialogues(progBag)
 	    .progress.message configure -text $dialogues(progMess)
