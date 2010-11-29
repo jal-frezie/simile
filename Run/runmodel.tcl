@@ -762,17 +762,18 @@ proc snap {topNode node} {
     
     set full_label [GetCompProperty $topNode Caption $node]
     set w .snap$node
-    if {[winfo exists $w]} { ;# do not allow two on same component
-	raise $w
-	return $w
-    }
-    toplevel $w
-    wm protocol $w WM_DELETE_WINDOW "unset runState(nst$w); unset runState(val$w); destroy $w"
     set last_slash [string last / $full_label]
     set start_label [expr $last_slash+1]
     set end_submodels [expr $last_slash-1]
     set submodels [string range $full_label 0 $end_submodels]
     set label [string range $full_label $start_label end]
+    if {[winfo exists $w]} { ;# do not allow two on same component
+	UpdateSnap $w $label $submodels $topNode $node
+	raise $w
+	return $w
+    }
+    toplevel $w
+    wm protocol $w WM_DELETE_WINDOW "unset runState(nst$w); unset runState(val$w); destroy $w"
     wm title $w "[BlankCrs $label] at time $runState($topNode,currentTime)"
     set tbItems [list \
 		 [list save.gif "Save to file" \
@@ -848,6 +849,7 @@ proc UpdateSnap {w label submodels topNode node} {
     }
     $w.text yview moveto $oldY
     $w.text xview moveto $oldX
+    wm title $w "[BlankCrs $label] at time $runState($topNode,currentTime)"
     return 0
 }
 

@@ -10,8 +10,13 @@
 # } else { ;# Orange Herald
 #     lappend auto_path [file join $env(SP_PATH) lib]
 # }
-set auto_path [list [file join $env(SYSDIR) lib tcl[info tclversion]] [file join $env(SYSDIR) lib]]
-# package require Trf ;# loads right version of Trf, only needed in UI thread
+set auto_path [list [file join $env(SYSDIR) lib]]
+# As for master but without Tk bits or Orange version
+if {[string equal Darwin $tcl_platform(os)]} {
+    lappend auto_path [file dirname [file dirname $env(SYSDIR)]]/Frameworks/Tcl.framework/Resources/Scripts
+} else {
+    lappend auto_path [file join $env(SYSDIR) lib tcl[info tclversion]]
+}
 
 source [file join [file dirname $env(SYSDIR)] Run support.tcl]
 

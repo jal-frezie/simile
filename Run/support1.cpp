@@ -251,6 +251,7 @@ int init_pop (SMClass*** meta, double crNode, int ptCount, int channelId) {
       submodelptr->new_instance = 1;
     }; /* end(cond,Instance exists) */
     submodelptr->parentId = 0; // all new
+    submodelptr->baseptrs[0] = 0;
     submodelptr->channelId = channelId; // (val from i_p_m)
     // from cond construct
     submodelptr->next = **meta;
@@ -261,9 +262,11 @@ int init_pop (SMClass*** meta, double crNode, int ptCount, int channelId) {
 }
   
 template <class SMClass>
-void init_pop_member (SMClass *new_one, int index, int parent, int channel) {
+void init_pop_member (SMClass *new_one, int index, int parent, SMClass *pPtr,
+		      int channel) {
   new_one->instanceid[0] = index;
   new_one->parentId = parent;
+  new_one->baseptrs[0] = pPtr;
   new_one->channelId = channel;
   new_one->new_instance = 1;
   new_one->next = 0;

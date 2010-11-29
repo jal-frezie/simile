@@ -153,11 +153,15 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	    name(OnPointerRef, AdvanceStr),
 	    LoadBaseRefs = []; */
 
-	LoopSpec = vm_loop(_,_, BaseLoops, _),
-	all(compile, get_base_ptrs,
-	    [build(BaseLoops), append(Names, []), append(BasePtrs, [])]), !,
+	LoopSpec = vm_loop(Dims, _, BaseLoops, _),
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, PointerForm),
+        (Dims = pop, !,
+	    append_atoms(Name, parent, ParentPtr),
+	    BasePtrs = [ParentPtr],
+	    Names = [Name];
+	all(compile, get_base_ptrs,
+	    [build(BaseLoops), append(Names, []), append(BasePtrs, [])])), !,
 	declare(L, Pointer, PointerForm, Type, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
 	refer_value(L, Pointer, PointerRef),
@@ -492,7 +496,7 @@ do_assignment(L, [new_member(ParentPtr, Name, InitVar) | Clauses],
 	excrete(L, assign_space, Pointer=[ParentPtr, Name, [UseElementRef],
 					  _, []], Indent1, Stream),
 	nth(ChannelN, Used, InitVar), !,
-	excrete(L, procedure_call, init_pop_member(Pointer, RefIndex, 0,
+	excrete(L, procedure_call, init_pop_member(Pointer, RefIndex, 0, 0,
 						  ChannelN), Indent1, Stream),
 	/* no parent we are doing creation/immigration here */
 
@@ -556,8 +560,8 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 	excrete(L, assign_space, MPTarget=[ParentPtr, Name, [RefIndex],
 					   _, []], Indent2, Stream),
 	nth(ChannelN, Used, ReproName), !,
-	excrete(L, procedure_call, init_pop_member(MPTarget,RefIndex, ParentRef,
-						  ChannelN), Indent1, Stream),
+	excrete(L, procedure_call, init_pop_member(MPTarget, RefIndex, 
+	              ParentRef, Pointer, ChannelN), Indent2, Stream),
 
 	/* End of submodel loop; insert into list and do next */
 	make_struct_reference(L, MPTarget, next, OnMeta),

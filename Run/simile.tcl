@@ -82,8 +82,8 @@ if {[info exists use_system_tcltk]} {
 # location of executable
     set auto_path [list $libDir]
 # May need to reinstate this for non-system-tcl case to avoid msgcat err
-    if {[string equal Darwin $tcl_platform(platform)]} {
-	lappend auto_path $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts
+    if {[string equal Darwin $tcl_platform(os)]} {
+	lappend auto_path [file dirname $SIMILE_PATH]/Frameworks/Tcl.framework/Resources/Scripts [file dirname $SIMILE_PATH]/Frameworks/Tk.framework/Resources/Scripts
     } else {
 	lappend auto_path [file join $libDir tcl[info tclversion]] \
 	    [file join $libDir tk[info tclversion]]
@@ -352,7 +352,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 5.7
-set sendvars(simP) {p3}
+set sendvars(simP) {p4}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is

@@ -443,7 +443,8 @@ make_intermediates(
 	    InitVal = 1,
 	    IncrOp = ('&&');
 	member(Source, [make_inter(Epsilon, Ref), at_phase(Ph, Epsilon),
-			at_phase(Epsilon), last(Epsilon), in_preceding(Epsilon),
+			at_phase(Epsilon), last(Epsilon), 
+			in_preceding(Epsilon), in_progenitor(Epsilon),
 			exists(Epsilon)]),
 	    MadeDim = new_dim),
 % Before cutting, reject dummy arg so default fun handler gives sensible mess
@@ -473,7 +474,7 @@ make_intermediates(
 	generate_name(c, TotalNameBase, TotalName, Used),
 
 	copy_term(DestPath, TotalPath),
-	(Functor = in_preceding, !,
+	(member(Functor, [in_preceding]), !,
 	    DestPath = [_ | DestTail],
 	    TotalPath = [_ | TotalTail],
 	    get_model(DestTail, InterPath),
@@ -509,6 +510,7 @@ make_intermediates(
 	of the pointer references from the source */
 	swap_back(TotalPath, SubSwap, WritePath, MadeDim),
 	append([SubLoops, NowBuilding, WritePath], WriteContext),
+
 	pointer_from(OuterPath, TotalPtr),
 	pointer_from(InterPath, SourcePtr),
 
@@ -532,7 +534,8 @@ make_intermediates(
 	    Units = int,
 		append(NowBuilding, DestPath, ReadyContext)), !,
 	    InitVal = 0;
-	member(Functor, [make_inter, last, in_preceding, at_phase]), !,
+	member(Functor, [make_inter, last, 
+			 in_preceding, in_progenitor, at_phase]), !,
 	    InitVal = 0,
 	    IncrExpr = IncrementRef,
 	    Units = ArgUnits,
@@ -591,6 +594,8 @@ make_intermediates(
 	    % clearing will be promoted to chosen step
             Clearing = [make(cleared(TotalName), [ClearTime], ClearContext,
                              Step, [assign(ClearRef, InitVal)])];
+	Functor = in_progenitor, !, % check for null pointer rather than clear
+	    Clearing = [make(cleared(TotalName), [], [], Step, [])];
         Clearing = [make(clearing(TotalName), [this_step(WhatMade)],
 			 ClearContext, Step, [assign(ClearRef, InitVal)]),
 		    make(cleared(TotalName), [clearing(TotalName)],
@@ -609,7 +614,7 @@ make_intermediates(
 			    WriteContext, Step, [IncrAct]),
 		       make(TotalName, [cleared(TotalName), time],
 			    ClearContext, Step, [])];
-	Functor = in_preceding, !,
+	member(Functor, [in_preceding, in_progenitor]), !,
 	    wait_for_submodels(Exited, Access),
 	    Setting = [make(lastvalue(TotalName),
 			    [InnerTgt, lastvalue(InnerTgt) | Depends],
@@ -626,7 +631,8 @@ make_intermediates(
 	    (Functor = count, !,
 		purge(Depends, OldArgs, KeepDeps);
 	    KeepDeps = Depends)),
-        (member(Functor, [make_inter, at_phase, last, in_preceding]), !,
+        (member(Functor, [make_inter, at_phase, last, 
+			  in_preceding, in_progenitor]), !,
 	    Setting = [make(TotalName, KeepDeps, WriteContext, SetTime,
 			    [IncrAct])];
 	Setting = [make(increment(WhatMade), [cleared(TotalName) | KeepDeps],
@@ -1093,19 +1099,24 @@ refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 	    we use the total from the previous time step we don't need to
 	    worry about accessing elements that haven't yet been set, and not
 	    using made_at(...) should prevent it being removed as an idler */
-	    Source = in_preceding(_), !,
+	    member(Source, [in_preceding(_), in_progenitor(_)]), !,
 		Args = [later(lastvalue(Name))];
 				% access before setting in same loop
 	    Args = [made_at(Name, SourceContext)]),
 	    copy_term(DestPath, SourcePath),
-	    pointer_from(SourcePath, SourcePtr),
+	    (Source = in_progenitor(_),
+	        DestPath = [sm(BitOfAHack, _,_,_) | _],
+	        atom(BitOfAHack), !, % undefined and irrelevant when parsing
+	        append_atoms(BitOfAHack, parent, SourcePtr),
+		SourceRef = choose(SourcePtr, arr(SourcePtr, Name, IntInds), 0);
+	      pointer_from(SourcePath, SourcePtr),
+		SourceRef = arr(SourcePtr, Name, IntInds)),
 	    make_inds_for(Dims, IntLoops, IntInds),
 	    copy_term(ParamLoops, SourceLoops),
 	    /* order of parts exchanged simply cos it made it work */
 	    append(SourceLoops, SpareLoops, IntLoops),
 	    suffix(SpareLoops, BuildLoops),
-	    append(SourceLoops, SourcePath, SourceContext),
-	    SourceRef = arr(SourcePtr, Name, IntInds).
+	    append(SourceLoops, SourcePath, SourceContext).
 
 prevent_inappropriate_reuse(Explicit, instance(Type, I, Replaces, Name, Dims),
 			    instance(Type, I, NewReplaces, Name, Dims)) :-
@@ -1285,6 +1296,7 @@ operator(choose, a(T), [boolean, a(T), a(T)]).
 operator(choose, real, [boolean, real, real]).
 operator(choose, boolean, [boolean, boolean, boolean]).
 operator(rand, real, [real, real]).
+operator(in_progenitor, any, [any]).
 
 /* These are handled by the parser but have special buttons to include them so
 we do not want them in the function list -- they only appear here so the right
