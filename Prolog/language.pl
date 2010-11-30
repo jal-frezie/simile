@@ -157,7 +157,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, PointerForm),
         (Dims = pop, !,
-	    append_atoms(Name, parent, ParentPtr),
+	    append_atoms(Name, progen, ParentPtr),
 	    BasePtrs = [ParentPtr],
 	    Names = [Name];
 	all(compile, get_base_ptrs,
@@ -182,7 +182,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 		[build(Names), build(Types), build(BasePtrs),
 		 unify([L, Indent1, Stream])]),
 	    move_base_ptrs(L, Pointer, restore, Indent1,
-			   Names, BasePtrs, Types, Stream),
+			   BasePtrs, Types, Stream),
 	    do_assign_list(L, MyLoop, Indent1, Used, Stream),
 	    excrete(L, assignment, Pointer=OnPointerRef, Indent1, Stream),
 	    excrete(L, end(while), Pointer, Indent, Stream),
@@ -271,7 +271,7 @@ failed through to make sure all later temporary variables get declared. */
 	values local and remote, with a 0 at the end so the extractor
 	knows where to stop */
 	fill_instance_ids(L, 0, Pointer, RefIndices, Indent2, Stream),
-	move_base_ptrs(L, Pointer, save, Indent2,_, BasePtrs,_, Stream),
+	move_base_ptrs(L, Pointer, save, Indent2, BasePtrs,_, Stream),
 	excrete(L, assignment, NewInstance=1, Indent2, Stream),
 	/* CheckEnd */
 	do_writing(CheckEnd, Stream),
@@ -496,8 +496,9 @@ do_assignment(L, [new_member(ParentPtr, Name, InitVar) | Clauses],
 	excrete(L, assign_space, Pointer=[ParentPtr, Name, [UseElementRef],
 					  _, []], Indent1, Stream),
 	nth(ChannelN, Used, InitVar), !,
-	excrete(L, procedure_call, init_pop_member(Pointer, RefIndex, 0, 0,
+	excrete(L, procedure_call, init_pop_member(Pointer, RefIndex, 0,
 						  ChannelN), Indent1, Stream),
+	move_base_ptrs(L, Pointer, save, Indent1, [0], _, Stream),
 	/* no parent we are doing creation/immigration here */
 
 	/* End of submodel loop; insert into list and do next */
@@ -561,7 +562,8 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 					   _, []], Indent2, Stream),
 	nth(ChannelN, Used, ReproName), !,
 	excrete(L, procedure_call, init_pop_member(MPTarget, RefIndex, 
-	              ParentRef, Pointer, ChannelN), Indent2, Stream),
+	              ParentRef, ChannelN), Indent2, Stream),
+	move_base_ptrs(L, MPTarget, save, Indent1, [Pointer], _, Stream),
 
 	/* End of submodel loop; insert into list and do next */
 	make_struct_reference(L, MPTarget, next, OnMeta),
@@ -703,9 +705,9 @@ copy_to_exit([Inst | Togo], N, Tail) :-
 	 M=N),
 	copy_to_exit(Togo, M, Tail).
 
-move_base_ptrs(_,_,_,_, [],[],[],_).
+move_base_ptrs(_,_,_,_, [],[],_).
 move_base_ptrs(L, Pointer, Action, Indent,
-	       [Name | Names], [Ptr | Ptrs], [Type | Types], Stream) :-
+	       [Ptr | Ptrs], [Type | Types], Stream) :-
 	length(Ptrs, Count),
 	make_struct_reference(L, Pointer, baseptrs, SafeArray),
 	make_indexed_reference(L, SafeArray, [Count], Target),
@@ -718,13 +720,12 @@ move_base_ptrs(L, Pointer, Action, Indent,
 	    right type -- the array in which the assoc model
 	    stores them is type (void *) */
 	    (L = c,
-		append_atoms(Name, 'type*', Type),
 	        sicstus_format_to_chars("(~a)~a", [Type, Target], CastTgtStr),
 		name(CastTgt, CastTgtStr);
 	    L = tcl,
 	        refer_value(L, Target, CastTgt)),
 	    excrete(L, assignment, Ptr=CastTgt, Indent, Stream)),
-	move_base_ptrs(L, Pointer, Action, Indent, Names, Ptrs, Types, Stream).
+	move_base_ptrs(L, Pointer, Action, Indent, Ptrs, Types, Stream).
 
 make_section_cond(L, VMPtrs, PassTest) :-
 	refer_value(L, phase, PhaseRef),

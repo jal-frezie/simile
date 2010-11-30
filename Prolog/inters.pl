@@ -1107,7 +1107,7 @@ refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 	    (Source = in_progenitor(_),
 	        DestPath = [sm(BitOfAHack, _,_,_) | _],
 	        atom(BitOfAHack), !, % undefined and irrelevant when parsing
-	        append_atoms(BitOfAHack, parent, SourcePtr),
+	        append_atoms(BitOfAHack, progen, SourcePtr),
 		SourceRef = choose(SourcePtr, arr(SourcePtr, Name, IntInds), 0);
 	      pointer_from(SourcePath, SourcePtr),
 		SourceRef = arr(SourcePtr, Name, IntInds)),
