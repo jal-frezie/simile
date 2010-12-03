@@ -60,7 +60,7 @@ an exception if one of them fails, to assist debugging. */
 
 do_assign_list(L, [Clause | Clauses], Indent, Used, Stream) :-
 	/* write_to_chars(Clause, ClauseMess),
-	dialogue:reassure_user(ClauseMess), test only */
+	dialogue'><'reassure_user(ClauseMess), test only */
 	do_assignment(L, [Clause | Clauses], Indent, Used, Stream), !;
 	raise_exception(cannot_convert_to_code(Clause)).
 
@@ -395,7 +395,7 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 		   [update_submodel, advance_submodel,
 		    int_eval_submodel, ext_eval_submodel]),
 	    make_section_cond(L, NewCond, PassTest),
-	    render:make_constant_string(L, NodeId, Node),
+	    render'><'make_constant_string(L, NodeId, Node),
 	    make_scalar(L, InstHandle, InstPtr),
 	    refer_value(L, InstPtr, InstHandleRef),
 	    CallSpec =.. [SubCall, Node, InstHandleRef, PassTest];
@@ -752,7 +752,7 @@ and adds it if it isn't there.  */
 declare(L, Name, NameBase, Type, Used, Indent, Stream) :-
 	(var(Name),
 	    generate_name(L, NameBase, Name, Used);
-	 \+ utility:something_used_in([decl(Name)], Used)),
+	 \+ utility'><'something_used_in([decl(Name)], Used)),
 	    member(Name, Used),
 	    member(decl(Name), Used), !,
 	    excrete(L, variable_declaration, [Type, Name, []], Indent, Stream);

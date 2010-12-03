@@ -22,8 +22,8 @@ sicstus_use_module([library(lists), backup, event, menu, sp_only, utility]).
 
 
 tk_make_desktop_node :-
-        m_update:make_desktop_node(Desktop, Canvas_name),
-	draw:callback(br([Desktop, Canvas_name])).
+        m_update'><'make_desktop_node(Desktop, Canvas_name),
+	draw'><'callback(br([Desktop, Canvas_name])).
 
 tk_undo(Cur, Wids) :-
 	nth0(Cur, Wids, Wid),
@@ -37,8 +37,8 @@ tk_redo(Cur, Wids) :-
 
 tk_get_info(Wid, Comp, What) :-
 	get_info(Wid, Comp, What, Answer),
-	output:safe_list(Answer, Arg),
-	draw:callback(Arg).
+	output'><'safe_list(Answer, Arg),
+	draw'><'callback(Arg).
 
 tk_get_params(Wid, Comp) :-
 	get_params(Wid, Comp).
@@ -111,7 +111,7 @@ tk_visible(Wid, L, T, R, B) :-
 
 finish_window_resize :-
 	retract(resizing_windows(Wid)),
-	state:Wid shows_model Model,
+	state'><'Wid shows_model Model,
 	finish_move(Model, 0),
 	fail;
 	true.

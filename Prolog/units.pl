@@ -3,6 +3,7 @@
 sicstus_module(units, [get_conversion/4, extract_units_root/4,
 		       default_tick_is/1, sort_units/3, standard_name/2,
 		       check_and_report_units/2, defined_as_unit/2]).
+sicstus_use_module([ame_gen]).
 
 default_tick_is(day).
 
@@ -157,7 +158,7 @@ unit_prefixes(1.0e-24, yocto, y ).
 standard_name(Unit, AbbrevUnit) :-
 	(atom(Unit),
 	    name(Unit, UnitStr),
-	    ame_gen:lower(UnitStr, LowUnitStr),
+	    lower(UnitStr, LowUnitStr),
 	    name(LowUnit, LowUnitStr),
 	    longhand(LowUnit, AbbrevUnit), !;
 	    AbbrevUnit = Unit).
@@ -172,7 +173,7 @@ unit_expansion(Unit, Def) :-
 
 check_and_report_units(Target_base, TargetDims) :-
 	standard_name(Target_base, Target),
-	units:add_conversion(Target, *, 1, TargetDims, _,_).
+	add_conversion(Target, *, 1, TargetDims, _,_).
 
 defined_as_unit(FullName, Def) :-
 	standard_name(FullName, Unit),

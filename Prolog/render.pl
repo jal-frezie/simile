@@ -352,7 +352,7 @@ strings_direct( L, make_reference, Dest=Source, Indent, Stream) :-
 strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, Used, Dims],
 	       Indent, Stream) :-
 	Dims = [Dim | More], !, % won't work for multiple dims but no need
-	    language:declare(tcl, XIndex, loop, int, Used, Indent, Stream),
+	    language'><'declare(tcl, XIndex, loop, int, Used, Indent, Stream),
 	    DeepIndent is Indent+4,
 	    strings_direct(tcl, for_start, [XIndex, Dim, 1],
 			   Indent, Stream),
@@ -494,7 +494,7 @@ strings_direct(c, procedure_defn, [ReturnType, Fn], Indent, Stream) :-
 	format(Stream, "~*s~a ~w;\n", [Indent, " ", ReturnType, Fn]).
 
 strings_direct(tcl, release_space, [Dest, Dim, Used], Indent, Stream) :-
-	language:declare(tcl, XIndex, loop, int, Used, Indent, Stream),
+	language'><'declare(tcl, XIndex, loop, int, Used, Indent, Stream),
 	DeepIndent is Indent+4,
 	excrete(tcl, for_start, [XIndex, Dim, 1], Indent, Stream),
 	refer_value(tcl, XIndex, XIndexRef),
@@ -638,7 +638,7 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 		append_atoms([CaptionHead, '/', CaptionTail], Caption);
 	    CaptionTail = Caption),
 	    name(Caption, CaptionTtfnStr),
-	    user:all_ttfn_to_utf8(CaptionTtfnStr, CaptionUtf8Str),
+	    user'><'all_ttfn_to_utf8(CaptionTtfnStr, CaptionUtf8Str),
 	    name(UseCaption, CaptionUtf8Str),
 */	    member(VisType-Class, [submodel-'SUBMODEL',
 				   variable-'VARIABLE',
@@ -741,7 +741,7 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 
 templatify(L, Elt, Ptr, [char, Ptr, void, QElt]) :-
 	name(Elt, TtfnStr),
-	user:all_ttfn_to_utf8(TtfnStr, Utf8Str),
+	user'><'all_ttfn_to_utf8(TtfnStr, Utf8Str),
 	name(Utf8Atom, Utf8Str),
 	make_constant_string(L, Utf8Atom, QElt).
 				     
@@ -1147,11 +1147,11 @@ combine( L, Op, VArgs, Atom) :-
 	make_expr_all(L, VArgs, VArgExprs),
 	(
 /*	Op = (?), L = tcl, !,
-	    VArgs = [VCond, VTrue:VFalse],
+	    VArgs = [VCond, VTrue'><'VFalse],
 	    sicstus_format_to_chars("[if {~w} {expr ~w} else {expr ~w}]",
 			    [VCond, VTrue, VFalse], CharList);
 	    
-Yes, horrible, nasty, ugly, repugnant, grotesque Tcl has the a?b:c format but,
+Yes, horrible, nasty, ugly, repugnant, grotesque Tcl has the a?b'><'c format but,
 mindbogglingly stupidly, evaluates the non-chosen half, and, worse, complains
 about undefined array elements in it. Blooaaargh!!
 
@@ -1163,7 +1163,7 @@ about undefined array elements in it. Blooaaargh!!
 					VArgs, CharList));
 	  
 Or so I thought. As it happens, if the programmer isn't a complete
-moron, he writes 'expr {a?b:c}' rather than 'expr a?b:c', thus
+moron, he writes 'expr {a?b'><'c}' rather than 'expr a?b'><'c', thus
 ensuring only the true half is evaluated. */
 	
 	Op = choose, !,
@@ -1176,7 +1176,7 @@ What follows is even worse; it allows conditionals to be entered in the
 if-then-elseif-else format, though I can't see why anyone would want to.
 
 Since this causes problems anyway (due to inters and contexts) it's all
-obsolete. A stopgap conversion to a?b:c format is in place, pending the
+obsolete. A stopgap conversion to a?b'><'c format is in place, pending the
 incorporation of the actual conditionality into program generation
 
 	Op = if,
@@ -1215,7 +1215,7 @@ aid lazy evaluation as is done for Choose... */
 		(L = tcl; L = c),
 			make_procedure_call_chars(L, [ame_rand | VArgExprs], CharList);
 	L = tcl,
-		(inters:use_tcl_proc_for(Op),
+		(inters'><'use_tcl_proc_for(Op),
 			make_procedure_call_chars(L, [Op | VArgExprs], CharList);
 		member(Op, [and, ',', '&&']),
 			sicstus_format_to_chars("[if {~w} then {expr ~w} else {expr 0}]",
@@ -1230,7 +1230,7 @@ aid lazy evaluation as is done for Choose... */
 quietly stick in a huge but finite value when you, say, divide by zero. With 
 the next few lines in place, and math_protect asserted, AME will do the same.
 
-	state:math_protect,
+	state'><'math_protect,
 	(Op = (/),
 		VArgs = [Nom, Div],
 		Test = '==0',

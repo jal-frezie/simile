@@ -144,7 +144,7 @@ all(_, _, ArgList) :-
 all(Module, Pred, ArgList) :-
     split_args(Module, ArgList, FirstList, RestList),
     Step =.. [Pred | FirstList],
-    call(Module:Step), !,
+    Module'><'Step, !,
     all(Module, Pred, RestList),
     join_args(Module, FirstList, RestList, ArgList).
 	
@@ -165,7 +165,7 @@ split_args(Module, [Arg | Args], [First | Firsts], [Rest | Rests]) :-
 	Arg =.. [UserFunc, First],
 	    \+ member(UserFunc, [build, unify]),
 	    DoSplit =.. [UserFunc, First, Next],
-	    call(Module:DoSplit),
+	    Module'><'DoSplit,
 	    Rest =.. [UserFunc, Next];
 	Arg =.. [UserFunc, _Result, Limit],
 	    Rest =.. [UserFunc, _Inter, Limit]),
@@ -181,7 +181,7 @@ join_args(Module, [First | Firsts], [Rest | Rests], [Arg | Args]) :-
 	    \+ member(UserFunc, [build, unify]);
 	Rest =.. [UserFunc, SoFar, Base],
 	    DoJoin =.. [UserFunc, First, SoFar, Next],
-	    call(Module:DoJoin),
+	    call(Module'><'DoJoin),
 	    Arg =.. [UserFunc, Next, Base]),
 	join_args(Module, Firsts, Rests, Args).
 */
@@ -190,7 +190,7 @@ join_args(Module, [First | Firsts], [Rest | Rests], [Arg | Args]) :-
 	(Arg =.. [UserFunc, Next, Base], !,
 	    Rest =.. [UserFunc, SoFar, Base],
 	    DoJoin =.. [UserFunc, First, SoFar, Next],
-	    call(Module:DoJoin);
+	    Module'><'DoJoin;
 	true).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -268,7 +268,7 @@ open_native(FileTtfn, Mode, Stream) :-
 		  throw(SubbedErr))).
 
 get_native(FileTtfn, FileNative) :-
-	output:safe_tcl_eval(['GetSystemName', br(FileTtfn)], Bag),
+	output'><'safe_tcl_eval(['GetSystemName', br(FileTtfn)], Bag),
 	sicstus_read_from_chars(Bag, String),
 	name(FileNative, String).
 

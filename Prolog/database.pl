@@ -216,9 +216,9 @@ tcl_call(P, Funt, MatchStr) :-
 	P =.. [Funt | Args],
 	all(database, pack_term, [build(Args), build(FixArgs)]),
 	safe_tcl_eval(['PrologQuery', Funt | FixArgs], Str),
-	output:chop_list(Str, MatchStrs),
+	output'><'chop_list(Str, MatchStrs),
 	member(MatchStr, MatchStrs),
-	output:chop_list(MatchStr, ArgStrs),
+	output'><'chop_list(MatchStr, ArgStrs),
 	all(database, unpack_term, [build(ArgStrs), build(InstArgs)]),
 	Args = InstArgs.
 
@@ -297,10 +297,10 @@ find_all_children(Parent, Child) :-
 make_node_atom(ParentId, Parent) :-
 	node_id_for_root_is(ParentId), !,
 	    Parent = root;
-	utility:build_name('node', ParentId, 5, Parent).
+	utility'><'build_name('node', ParentId, 5, Parent).
 
 make_arc_atom(ArcId, Arc) :-
-	utility:build_name('arc', ArcId, 5, Arc).
+	utility'><'build_name('arc', ArcId, 5, Arc).
 
 descendent(Node, Desc) :-
 	Desc = Node;

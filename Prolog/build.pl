@@ -53,7 +53,7 @@ merge_enum_types(Types, Parent) :-
 	Types = [Class-Mems | Rest],
 	(ancestor_has_enum_type(Parent, Class-OldMems),
 	    (Mems = OldMems;
-	     ame_gen:query(lose_enum_type(Class, Mems, OldMems), warning,
+	     ame_gen'><'query(lose_enum_type(Class, Mems, OldMems), warning,
 			   enumtype, [ok], _)), !;
 	 Parent has_class_refinement enum_types of OldTypes,
 	     Parent has_changed_class_refinement enum_types of
@@ -62,7 +62,7 @@ merge_enum_types(Types, Parent) :-
 	merge_enum_types(Rest, Parent).
 
 ancestor_has_enum_type(Model, Enum) :-
-	ame_gen:contains(Outer, Model),
+	ame_gen'><'contains(Outer, Model),
 	Outer has_class_refinement enum_types of Types,
 	member(Enum, Types).
 

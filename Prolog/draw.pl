@@ -37,7 +37,7 @@ sicstus_module(draw,
 		tk_equationlisting_start/2,tk_equationlisting_addsubmodel/5,
 		tk_equationlisting_addvariable/7]).
 
-sicstus_use_module([library(lists), state, image, ame_gen, output]).
+sicstus_use_module([library(lists), sp_only, state, image, ame_gen, output]).
 
 cursor_is(Cursor) :-
 	tk_cursor_is(Cursor).
@@ -362,7 +362,7 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 	 get_shape(Id, caption_offset, [XOff, YOff, _Anchor]);
 	 XOff = 0, YOff = 0,
 	    set_shape(Id, caption_offset, [XOff, YOff])), !,
-	image:map(Box, UseAnchor, _,_, TextX, TextY),
+	image'><'map(Box, UseAnchor, _,_, TextX, TextY),
 	VirtX is TextX + XOff,
 	VirtY is TextY + YOff,
 	untranslate([VirtX, VirtY], Trans, ScreenPoint),
@@ -414,7 +414,7 @@ bit to make sure the new
 canvas has the same aspect ratio as the old. */
 
 expand_canvas(Parent, [NL, NT, NR, NB]) :-
-	(\+ backup:is_toplevel(Parent),
+	(\+ backup'><'is_toplevel(Parent),
 	    get_shape(Parent, bounding_box, [BL, BT, BR, BB]), !,
 	    BoxRatio is (BR-BL)/(BB-BT),
 	    ModelRatio is (NR-NL)/(NB-NT),
@@ -462,7 +462,7 @@ to apply that transform to the submodel graphics...simple */
 	zoom_bits_in(Win, Model, FatChange, [L, T], InList),
 	fail; % now do simple stuff
 	redisplay_border(Model),
-	event:make_links_follow(Model).
+	event'><'make_links_follow(Model).
 	
 get_flash(Comp, Colour_scheme) :-
 	get_highlit_obj(Comp, Index), !,
@@ -508,9 +508,9 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    Draw_command =.. [DCmd, Wid, Screen_list, Num, Fatness,
 				  Density, Colour_scheme, [Comp]],
 		call(Draw_command);
-	    output:safe_tcl_eval([puts, dq(['Failed to draw component',
+	    output'><'safe_tcl_eval([puts, dq(['Failed to draw component',
 			Comp, 'as', Style, '...removing'])], _),
-		m_update:oblitterfry(Comp)),
+		m_update'><'oblitterfry(Comp)),
 	    (get_display_depth(Wid, caption, Caption_detail),
 		((Style = cloud; \+ appears(Comp); Caption_detail =< Depth), !;
 		add_caption(Wid, Comp, BBox, Trans, Fatness, Colour_scheme)));
@@ -533,7 +533,7 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	get_flash(Link, Colour_scheme),
 	(Type = influence,
 	    find_name_host(Link, ControlThing),
-	    m_class:ControlThing has_attribute use_sofar of 1, !,
+	    m_class'><'ControlThing has_attribute use_sofar of 1, !,
 	    UseType = broken_influence;
 	UseType = Type),
 	Draw_command =.. [UseType, Wid, Screen_coords, 
@@ -652,7 +652,7 @@ show_invisible_links(Links) :-
 	    Wid shows_model Backgnd,
 	    member(Link, Links),
 	    find_all_comps(Daddy, Link),
-	    m_update:contains(Backgnd, Daddy, Chain),
+	    m_update'><'contains(Backgnd, Daddy, Chain),
 	    length(Chain, Depth),
 	    draw_style_for(Link, Type),
 	    \+ draws_at(Wid, Type, Depth),

@@ -6,10 +6,15 @@
 term_expansion to make something which it can treat as a predicate and ignore,
 but which Sicstus uses to do modules. */
 
+:- op(550, xfy, '><').
 term_expansion(sicstus_use_module(ModuleList), ( :- use_module(ModuleList))).
 term_expansion(sicstus_load_foreign_resource(ModuleList), ( :- load_foreign_resource(ModuleList))).
 term_expansion(sicstus_module(Title, Exports), ( :- module(Title, Exports))).
+%term_expansion(Module'><'Pred, (Module:Pred)).
 term_expansion(sicstus_meta_predicate(Pred), ( :- meta_predicate(Pred))).
+
+'><'(Module,Pred) :-
+	call(Module:Pred).
 
 sicstus_use_module([library(charsio)]).
 

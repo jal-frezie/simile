@@ -54,12 +54,12 @@ move_components(Migrants, California) :-
 make_branch(Arc, California) :-
 	initiates(Arc, DeepSource),
 	initiates(CompleteArc, DeepSource),
-	m_update:continues_from(CompleteArc, California),
+	m_update'><'continues_from(CompleteArc, California),
 	CompleteArc has_type influence,
 	California has_link_equivalences Equivs,
 	member(InnerArc-CompleteArc, Equivs),
 	CompleteArc is_connector from Junction to _,
-	(m_update:continues_from(Arc, OldBorder), !,
+	(m_update'><'continues_from(Arc, OldBorder), !,
 	    OldBorder has_link_equivalences OBEquivs,
 	    select(_-Arc, OBEquivs, OBRest),
 	    OldBorder has_changed_link_equivalences OBRest;
@@ -89,7 +89,7 @@ add_section(California, Direction, Keep, Flow, NearEnd, FarEnd) :-
 	    BaseFn has_new_class_refinement value of '';
 	true),
 
-	m_update:make_border_node(Type, California, NewNode),
+	m_update'><'make_border_node(Type, California, NewNode),
 	((Direction = sink, Keep = out; Direction = source, Keep = in) ->
 		EndToChange = start;
 		EndToChange = finish),
@@ -111,7 +111,7 @@ add_section(California, Direction, Keep, Flow, NearEnd, FarEnd) :-
 	    Flow now_follows NewFlow),
 	copy_local_attributes(Flow, NewFlow),
 	change_references(OldEnd, Flow, NewFlow),
-	m_update:add_implicit_function(NewFlow, _NewFunc).
+	m_update'><'add_implicit_function(NewFlow, _NewFunc).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % unencapsulate/2 does the opposite of the above, but only returns a list of 
@@ -173,7 +173,7 @@ make_link_spec(Submodel, Equivs, [Link | NewLinks]) :-
 	    (	Cutoff = Post1; Cutoff = Post2),
 	    \+ member(Cutoff, [Origin, Submodel, Destination]),
 	    \+ _ is_connector from Cutoff to _,
-	    m_update:oblitterfry(Cutoff),
+	    m_update'><'oblitterfry(Cutoff),
 	    fail;
 	make_link_spec(Submodel, Others, NewLinks),
 	    scrap_spare_functions(Link)).
@@ -185,13 +185,13 @@ and obliterates the others, transferring any incoming links to the chosen one.
 Harsh but fair. */
 
 scrap_spare_functions(Link) :-
-	Link is_of_sort has_bowtie, state:get_style(sd),
+	Link is_of_sort has_bowtie, state'><'get_style(sd),
 		pick_best_function(Link, Grain),
 		(_ is_connector from Chaff to Link,
 			\+ Chaff = Grain,
 			(_ has_changed_termination finish from Chaff to Grain,
 				fail;
-			m_update:oblitterfry(Chaff),
+			m_update'><'oblitterfry(Chaff),
 				fail));
 	true.
 

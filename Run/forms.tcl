@@ -2354,6 +2354,12 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
     pack [text $labf1.lab2 -width 80 -height 24 -relief sunken -bd 2 -highlightthickness 0 -wrap word -yscrollcommand [list AdjustCanvas $labf1 img y]] -fill both -expand on
 
     $labf1.lab2 insert 1.0 {Press "Help" to display a relevant page from Simile's documentation.}
+
+    if {[string equal .progress $dialogues(progressUp)]} {
+	$labf1.lab2 insert 1.0 \
+	    "Message in progress box was:\n$dialogues(progMess)\n\n"
+    }
+
     $labf1.lab2 insert 1.0 \n\n
     set key [lindex $specifics 0]
     foreach extra {full detail} {

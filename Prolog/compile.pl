@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *** COMPILATION module. This module contains all the templates necessary   ****
 *** to compile AME code. Everything is parameterised by language, BASIC    ****
@@ -122,7 +123,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 
 	(( %Parent has_class_refinement separate of 1;
 	  error_free(build),
-	   backup:is_toplevel(Parent)), !,
+	   backup'><'is_toplevel(Parent)), !,
 	    /* we need an executable for this level */
 	    (Language = c,
 	        (Parent has_model_refinement c_new of OldTgt;
@@ -165,7 +166,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 				 (reclose(Stream), raise_exception(Puke))),
 		    close(Stream),
 		    Fuss = 1),
-		dialogue:tk_update_infobox(pl_comp, []),
+		dialogue'><'tk_update_infobox(pl_comp, []),
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
 	     compile_c_program(CheckDir, ExtLibs, Fuss, Tgt),
@@ -173,7 +174,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 		  Tgt > 0,
 		  (Parent has_changed_model_refinement c_new of Tgt;
 		      Parent has_new_model_refinement c_new of Tgt),
-		    backup:finish_move(Parent, 0)))),
+		    backup'><'finish_move(Parent, 0)))),
 	    load_executable(Language, CheckDir, Tgt, Parent, TopNode, Includes),
 	    KeepDir = 1;
 	ChangeNext = ChangeTop),
@@ -218,10 +219,10 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	appears(VisEntity),
 	\+ VisEntity is_of_sort captionless,
 	\+ is_ghost(VisEntity),
-	\+ image:draws_complete(VisEntity),
+	\+ image'><'draws_complete(VisEntity),
 	abs_path_name(Submodel, TopNode, OuterText),
 	caption_for(VisEntity, RedText),
-	menu:select_all_in(Submodel, base), /* make sure the red shows */
+	menu'><'select_all_in(Submodel, base), /* make sure the red shows */
 	safe_tcl_eval([set, log, entered_exception], _),
 	Wrinkle = unspecified(OuterText, RedText);
 	Parent has_part Submodel,
@@ -262,7 +263,7 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	get_host(Fn, Cond),
 	find_type(Cond, condition),
 	Fn has_class_refinement value of Val,
-	instance:is_lookup_cond(Val, _),
+	instance'><'is_lookup_cond(Val, _),
 	list_index_meanings(Submodel, [ind_spec(_,_,_, Link) | _]),
 	\+ (Link = none; Link has_attribute can_lookup of 1),
 	caption_for(Link, LinkText),
@@ -354,7 +355,7 @@ bits and pieces */
 	(
 % File writing starts here
 	send_to_dest(Stream, ['#include <support1.cpp>']),
-	dialogue:tk_update_infobox(pl_expr, []),
+	dialogue'><'tk_update_infobox(pl_expr, []),
 	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_,_),
 				     _,_), [], TopStep, Phases, [], Used,
 			    ExtIncs, Inters, ReevaluateForm),
@@ -384,9 +385,9 @@ used when entering file parameters */
 	all(compile, get_vmsps, [build(NewForm), append(VMSPs, [])]),
 	all(compile, insert_enum_phases, [build(VMSPs), unify(NewForm)]),
 
-	state:version_is(VStr),
-	state:edition_is(Edition),
-	library:count_functions(Top, FnCount),
+	state'><'version_is(VStr),
+	state'><'edition_is(Edition),
+	library'><'count_functions(Top, FnCount),
 	sicstus_format_to_chars("\"program='AME',version=~s,edition=~a,date=unused,size=~d,\"", [VStr, Edition, FnCount], IdentStr),
 	sicstus_atom_chars(IdentAtom, IdentStr),
 %	name(V, VStr),
@@ -618,7 +619,7 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 			     instance(system, _,_, channelId, int-[])];
 	    length(Bounds, IdCount),
 		DummyCompDims = [IdCount],
-		(render:count_base_ptrs(Bases, PtrCount),
+		(render'><'count_base_ptrs(Bases, PtrCount),
 		    PtrCount > 0, !,
 		    /* model have an array of assoc pointers
 		    for multiple associations.
@@ -2121,7 +2122,7 @@ find_antecedent(Chain, TestFn, TestData, Found) :-
 	of something that satisfied the condition. */
 
 	TestCall =.. [TestFn, Prev, TestData],
-	(call(compile:TestCall), !,
+	(call(compile'><'TestCall), !,
 	    (Found = Prev;
 	    find_antecedent(Chain, TestFn, TestData, Found));
 	find_antecedent([Prev | Chain], TestFn, TestData, Found)).

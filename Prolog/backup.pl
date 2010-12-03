@@ -55,11 +55,11 @@ initialize_ring(Model) :-
 exit_two_click_op :-
 	get_phase(targetting),
 	/* halfway through two-click link addition -- tidy up. */
-	event:retractall(instant_link(_)),
+	event'><'retractall(instant_link(_)),
 	advance_phase_to(peruse),
 	get_line_start_obj(New),
 	New is_of_sort cloud,
-	draw:off(New).
+	draw'><'off(New).
 
 synchronize_graphics(LostExtents, Redrawn) :-
 	all(draw, adjust_submodel_internals, [build(LostExtents)]),
@@ -99,17 +99,17 @@ go_forward(Model) :-
 
 finish_move(EditedModel, ChangeExec) :-
 	\+ anything_done, !;
-	m_update:contains(Model, EditedModel),
+	m_update'><'contains(Model, EditedModel),
 	Win shows_model Model,
 	set_save_status(Win, risky),
 	(ChangeExec = 0;
 	 ChangeExec = 1,
-	    m_update:add_parameter(EditedModel, 1, c_new, 0)),
+	    m_update'><'add_parameter(EditedModel, 1, c_new, 0)),
 	/* Only proceed for toplevel window containing model */
 	is_toplevel(Model),
 	(ChangeExec = 0;
 	 ChangeExec = 1,
-	    output:tk_alter_model(Model)),
+	    output'><'tk_alter_model(Model)),
 	retract(saved_state(Model, first, First)),
 	retract(saved_state(Model, last, _)),
 	retract(saved_state(Model, current, Current)),
@@ -154,7 +154,7 @@ save_allowed(Model, OK) :-
 		/* canny buggers can get round save limit by killing the app
 		and restoring from logfile, so stop keeping logfile */
 	    assert(autosave_suspended(Model)),
-		output:safe_tcl_eval(['NotifyOverLimit', Edn, Limit], _)), !,
+		output'><'safe_tcl_eval(['NotifyOverLimit', Edn, Limit], _)), !,
 	    OK = 0;
 	retractall(autosave_suspended(Model)),
 	    OK = 1);
@@ -208,7 +208,7 @@ restore_save_file(Model, Load, IdSwaps) :-
 
 set_edit_abilities(Model) :-
 	save_allowed(Model, CanSave),
-	draw:update_ability(Model, save, file, 'Save', CanSave),
+	draw'><'update_ability(Model, save, file, 'Save', CanSave),
 	saved_state(Model, current, Here),
 	(saved_state(Model, first, Here), !,
 	    UndoOn = 0;
@@ -216,8 +216,8 @@ set_edit_abilities(Model) :-
 	(saved_state(Model, last, Here), !,
 	    RedoOn = 0;
 	 RedoOn = 1),
-	draw:update_ability(Model, undo, edit, 'Undo', UndoOn),
-	draw:update_ability(Model, redo, edit, 'Redo', RedoOn).
+	draw'><'update_ability(Model, undo, edit, 'Undo', UndoOn),
+	draw'><'update_ability(Model, redo, edit, 'Redo', RedoOn).
 
 repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps) :-
 	ActSpec = undo,
@@ -321,8 +321,8 @@ swap_args([Arg | Args], [Template | Templates], Swaps, NewSwaps,
 	 member(Arg-NewArg, Swaps)), !,
 	    MidSwaps = Swaps;
 	 unique_name(Template, NewArg),
-	    \+ m_class:is_part_of(NewArg, _),
-	    \+ m_class:is_connector(NewArg, _), !,
+	    \+ m_class'><'is_part_of(NewArg, _),
+	    \+ m_class'><'is_connector(NewArg, _), !,
 	    MidSwaps = [Arg-NewArg | Swaps]),
 	swap_args(Args, Templates, MidSwaps, NewSwaps, NewArgs).
 
@@ -365,7 +365,7 @@ mentions_graphics(Action, Comp) :-
 	    Action = add(Term)),
 	(Term = graphical_info(Comp, _Attr, _Val);
 	    Term = node_refinement(Fn, _Attr, _Val),
-	    image:implicit_function(Comp, Fn);
+	    image'><'implicit_function(Comp, Fn);
 	    Term = arc_info(Comp, complete, _Val)).
 
 internal_extent_jiggered(Model, Slot, ExtChgs) :-
@@ -378,7 +378,7 @@ get_extent_change(Model, Slot, Comp-Was) :-
 % do not redraw contents if parent changed -- offset will be wrong
 	\+ saved_state(Model, Slot, add(subsystem(_, Comp))),
 	member(What, [bounding_box, internal_extent]),
-	image:add_to_translation([0,0,1,1], Comp, Was).
+	image'><'add_to_translation([0,0,1,1], Comp, Was).
 % world-class yuckiness -- if the border has been dragged, both attributes will
 % be changed so there will be two entries, but they will both be null
 % transforms so that's all right :-)
@@ -402,14 +402,14 @@ new_autosave(Desktop, ModelName) :-
 check_autosave(Model, Name, IdSwaps, Tweaked) :-
 	Win shows_model Model,
 	set_save_status(Win, safe),
-	draw:update_ability(Model, undo, edit, 'Undo', 0),
-	draw:update_ability(Model, redo, edit, 'Redo', 0),
-	draw:update_ability(Model, save, file, 'Save', 0),
+	draw'><'update_ability(Model, undo, edit, 'Undo', 0),
+	draw'><'update_ability(Model, redo, edit, 'Redo', 0),
+	draw'><'update_ability(Model, save, file, 'Save', 0),
 	(is_toplevel(Model), !,
 	    initialize_ring(Model),
 	    make_auto_name(Name, ".smx", AutoName),
 	    assert(autosave_file_is(Model, AutoName)),
-	    (output:my_file_exists(AutoName),
+	    (output'><'my_file_exists(AutoName),
                query(offer_restore, question, top, [ignore, apply], apply), !,
 		open_native(AutoName, read, Load),
 		(IdSwaps = copy, !,
@@ -419,7 +419,7 @@ check_autosave(Model, Name, IdSwaps, Tweaked) :-
 		Tweaked = 1,
 		set_edit_abilities(Model),
 		set_save_status(Win, risky);
-	     output:my_delete_file(AutoName),
+	     output'><'my_delete_file(AutoName),
 	     (IdSwaps = copy, !,
 		 assert(translation_info(Model, [top_level_is(Model)]));
 	     assert(translation_info(Model, [top_level_is(Model),
@@ -430,13 +430,13 @@ scrub_autosave(Model) :-
 	(is_toplevel(Model),
 %	    retractall(genint(_,_)),
 	    retract(autosave_file_is(Model, AutoName)),
-	    output:my_file_exists(AutoName),
-	    output:my_delete_file(AutoName),
+	    output'><'my_file_exists(AutoName),
+	    output'><'my_delete_file(AutoName),
 	    fail;
 	true).
 
 is_toplevel(Model) :-
-	m_class:has_part(root, Model).
+	m_class'><'has_part(root, Model).
 
 /* This is one place where you have to take account of the fact that you
 cannot rely on Windows to give you the file name extension in any particular
@@ -453,5 +453,5 @@ make_auto_name(Name, NewExtn, AutoName) :-
 
 use_pref_dir(Dir) :-
 	use_temp_dir(PDir),
-	output:safe_tcl_eval([file, dirname, br(PDir)], DirStr),
+	output'><'safe_tcl_eval([file, dirname, br(PDir)], DirStr),
 	name(Dir, DirStr).

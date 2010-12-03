@@ -160,8 +160,8 @@ check_ET_consistency(RemoteUnit, RemoteNode, Function) :-
 	Base = boolean, Type = boolean;
 	Type = 0), !,
 	(member(Checking, [Type | Dims]),
-	event:insert_mem_list(Checking, RemoteNode, SourceEnumSpec),
-	event:insert_mem_list(Checking, Function, DestEnumSpec),
+	event'><'insert_mem_list(Checking, RemoteNode, SourceEnumSpec),
+	event'><'insert_mem_list(Checking, Function, DestEnumSpec),
 	\+ DestEnumSpec = SourceEnumSpec, !,
 	caption_for(RemoteNode, RemoteCapt),
 	query(enum_type_mix(RemoteCapt, Checking, SourceEnumSpec, DestEnumSpec),
@@ -239,7 +239,7 @@ list_index_meanings(root, []).
 list_index_meanings(Submodel, Meanings) :-
 	list_local_index_meanings(Submodel, Group1),
 	find_all_comps(Contain, Submodel),
-	(instance:counts_as_outside(Submodel), !,
+	(instance'><'counts_as_outside(Submodel), !,
 	    find_all_comps(Parent, Contain);
 	Parent = Contain),
 	list_index_meanings(Parent, Group2),
@@ -317,12 +317,12 @@ parameter or destination. */
 
 get_unit_conversion(Remote, Local, 
 		Subs, Relation, Index, SourceLocation) :-
-	(instance:counts_as_outside(Remote), !,
+	(instance'><'counts_as_outside(Remote), !,
 	        DefRel = outside,
 		RemoteEnv has_part Remote;
 	DefRel = none,
 	    RemoteEnv = Remote),
-	(instance:counts_as_outside(Local), !,
+	(instance'><'counts_as_outside(Local), !,
 		LocalEnv has_part Local;
 	LocalEnv = Local),
 	RemoteModel has_part RemoteEnv,
@@ -429,7 +429,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	          Target_type = real),
 		(Severity = 0, !;
 		    /* Unit_base = Target_base, !; */
-		    inters:promote_arg(Unit_base, Target_type, Unit_type), !,
+		    inters'><'promote_arg(Unit_base, Target_type, Unit_type), !,
 		    (Target_unit = 1, Target_name = real;
 			Target_name = Target_unit),
 		    (Severity = 1, !;
@@ -637,7 +637,7 @@ in, currently a function if the mode is system dynamics and the new node is a
 variable or a flow. This also copies parent's role references for new submodels.*/
 
 add_implicit_function(Exp_node, Node_name) :-
-	state:get_style(sd),
+	state'><'get_style(sd),
 	Exp_node is_of_sort has_function, !,
 		find_all_comps(Parent, Exp_node),
 		make_node(Parent, function, Node_name),
@@ -864,7 +864,7 @@ parameters when initializing compartments. However compartments cannot influence
 other compartments. */
 
 can_connect(Arc, Node1, Node2) :-
-	(state:get_style(sd), !,
+	(state'><'get_style(sd), !,
 	    ConnectTable =
 	[[flow,
 	  [[[compartment, cloud], [compartment, cloud]]]],
@@ -1058,8 +1058,8 @@ make_connection(Model, Type, Dir, ExternalSection,
 	    all(m_update, link_ends,
 		[unify(Type), unify(InputSection),
 		 build(Outputs), build(_TopArcs)]),
-	    menu:reroute_sections([InputSection | Outputs]),
-		menu:remove_old_incomplete;
+	    menu'><'reroute_sections([InputSection | Outputs]),
+		menu'><'remove_old_incomplete;
 	    Hassle = spare_interface_spec(Type, Dir, destination, DestCapt));
 	Hassle = spare_interface_spec(Type, Dir, source, SourceCapt)).
 
@@ -1174,7 +1174,7 @@ link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
 	    (sequence(SimpleArc, BowtieArc); sequence(BowtieArc, SimpleArc)),
 	    implicit_function(SimpleArc, OldFn),
 	    NoUse is_connector from _ to OldFn,
-	    event:delete_by_dlg(NoUse),
+	    event'><'delete_by_dlg(NoUse),
 	    fail;
 	  New_obj = relation, % make sure arrow for lookup still lowest index
 	    Refs = [local(Top_arc)],
@@ -1193,7 +1193,7 @@ link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
 	    find_name_host(OldObj, OldHost),
 	    OldHost has_attribute can_lookup of 1,
 	    make_role_first(OldHost);
-	event:spread_colour(Last_new_arc, yes)).
+	event'><'spread_colour(Last_new_arc, yes)).
 
 load_references(Submodel, ReferenceCapts) :-
 	pair_with_captions(Submodel, References, ReferenceCapts),
@@ -1343,7 +1343,7 @@ status_affects(Item, Affected) :-
 	find_type(Item, submodel),
 	    caption_for(Item, Capt),
 	    contains(Top, Item),
-	    backup:is_toplevel(Top),
+	    backup'><'is_toplevel(Top),
 	    contains(Top, Affected),
 	    find_type(Affected, submodel),
 	    Affected has_class_refinement multiplication_spec of Multi,
@@ -1397,7 +1397,7 @@ connects_ghost_flow(Type, Link) :-
 	\+ bowtie_section(Link, Link).
 
 remove_equivs(DeadPair) :-
-	link:remove_connection(DeadPair),
+	link'><'remove_connection(DeadPair),
 	fail.
 
 is_top_arc(TopArc) :-
@@ -1412,8 +1412,8 @@ start point, allowing it to be used for end-to-end deletes. */
 
 fast_delete(Dead) :-
 	delete_implicit_node(Dead),
-	state:shows_model(Win,Dead),
-	    draw:delete_window(Win),
+	state'><'shows_model(Win,Dead),
+	    draw'><'delete_window(Win),
 	    fail;
 	oblitterfry(Dead);
 	Dead is_connector from In to Out,
@@ -1426,10 +1426,10 @@ superfast_delete(Dead) :-
 	Dead has_part AlsoDead,
 	    superfast_delete(AlsoDead),
 	    oblitterfry(AlsoDead),
-	    state:shows_model(Win, AlsoDead),
-	    draw:delete_window(Win),
+	    state'><'shows_model(Win, AlsoDead),
+	    draw'><'delete_window(Win),
 	    fail;
-	state:forget_highlit_obj(_, Dead).
+	state'><'forget_highlit_obj(_, Dead).
 
 do_delete(Kill_obj) :-
 	delete_implicit_node(Kill_obj),
@@ -1486,12 +1486,12 @@ make_new_end_node(Submodel, DeadLink, Dir,
 	setof(NextBit, member(DeadLink-NextBit, OuterFirst), Others),
 	Others = [TestBit | _],
 	TestBit is_connector from NextStart to NextFinish,
-	image:get_link_route(TestBit, Course),
+	image'><'get_link_route(TestBit, Course),
 	append([EndPair | _], [StartPair], Course),
 	find_all_comps(Model, OldEnd),
 	(find_type(OldEnd, submodel),
 	    make_node(Model, NodeType, NewEnd);
-	image:clear_shape(OldEnd, centre),
+	image'><'clear_shape(OldEnd, centre),
 	    change_class(OldEnd, border, NodeType),
 	    NewEnd = OldEnd),
 	/* make sure its name is unique to the submodel -- currently not done,
@@ -1509,13 +1509,13 @@ make_new_end_node(Submodel, DeadLink, Dir,
 	    add_parameter(NewEnd, 0, value, NewDefVal)),
 	(var(NewMaxVal), !;
 	    add_parameter(NewEnd, 0, max_val, NewMaxVal)),
-	event:insert_variable(Model, X, Y, NodeType, NewEnd),
+	event'><'insert_variable(Model, X, Y, NodeType, NewEnd),
 
 	/* Next bit is continually retried to delete all spare nodes */
 	member(MoveBit, Others),
 	MoveBit is_connector from CourseStart to CourseEnd,
 	MoveBit has_changed_termination Dir from NodePosn to NewEnd,
-	event:move_link(MoveBit),
+	event'><'move_link(MoveBit),
 	    /* Now delete old terminator if it is redundant */
 	remove_floater(NodePosn),
 	fail.
@@ -1532,7 +1532,7 @@ remove_floater(Node) :-
 	    \+ member(C, [variable, cloud, border]);
 	Node has_class_refinement min_val of _;
 	is_parameter(Node, 2)), !;
-	draw:off(Node),
+	draw'><'off(Node),
 	oblitterfry(Node).
 
 make_border_node(Line_type, Parent, Node_name) :-
@@ -1550,7 +1550,7 @@ remove_border_nodes(LineType, Finish, Start) :-
 	stick_on_edge(Local, Far, Other, LineType, InputNode),
 	\+ _somethingElse is_connector from InputNode to _,
 	\+ _somethingElse is_connector from _ to InputNode,
-	draw:off(InputNode),
+	draw'><'off(InputNode),
 	fast_delete(InputNode),
 	fail.
 
@@ -1621,7 +1621,7 @@ oldd_new_line_between(Line_type, Start, Finish, Top_link) :-
 
 unique_name_for_new(Parent, Type, Name) :-
 	(get_abbrev(Type, Abbrev), !; Type = Abbrev),
-	utility:unique_name(Abbrev, Name, _),
+	utility'><'unique_name(Abbrev, Name, _),
 	\+ (Type is_class_of_sort line,
 	       Part has_attribute name of Name,
 	       Part draws_inside Parent;
@@ -1668,7 +1668,7 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 	Fat is 1.0*(RB-LB)/(RI-LI).
 
 dequote_atom(QCount, Count) :-
-	ame_gen:dequote(QCount, Count), !;
+	ame_gen'><'dequote(QCount, Count), !;
 	Count = QCount.
 
 time_step_for(Model, TopStep, Step) :-
@@ -1708,14 +1708,14 @@ unmake_ghost(Ghost) :-
 	find_base(Ghost, Base),
 	\+ Base = Ghost,
 	remove_connection(Base, Ghost),
-	event:spread_colour(Base, no),
+	event'><'spread_colour(Base, no),
 	fail.
 
 remove_connection(Base, Ghost) :-
 	setof(GhostLink, exists_for(GhostLink, Base, Ghost), Links),
 	member(Link, Links),
 	(remove_equivs(Link-_);
-	draw:off(Link),
+	draw'><'off(Link),
 	    fast_delete(Link),
 	    fail);
 	true.
@@ -1771,23 +1771,23 @@ get_action_point(Top, End, Point) :-
 /* Procedure to draw first model window */
 
 make_desktop(Desktop, Canvas_name) :-
-	output:tk_make_desktop(Desktop, Canvas_name).
+	output'><'tk_make_desktop(Desktop, Canvas_name).
 /* ...which calls the class constructor, which calls... */
 make_desktop_node(Desktop, Canvas_name) :-
-        m_class:Root is_root,
+        m_class'><'Root is_root,
 	translate_message('Desktop', DTStr),
 	name(DTWord, DTStr),
 	make_node(Root, DTWord, Desktop),
 	change_class(Desktop, _, submodel),
 	Desktop has_class_refinement name of ModelName,
-	state:set_initial_box_sizes(Desktop),
-        state:get_initial_window_size(X, Y),
-        image:set_shape(Desktop, internal_extent, [0, 0, X, Y]),
-        image:set_shape(Desktop, bounding_box, [0, 0, X, Y]),
-	backup:new_autosave(Desktop, ModelName),
+	state'><'set_initial_box_sizes(Desktop),
+        state'><'get_initial_window_size(X, Y),
+        image'><'set_shape(Desktop, internal_extent, [0, 0, X, Y]),
+        image'><'set_shape(Desktop, bounding_box, [0, 0, X, Y]),
+	backup'><'new_autosave(Desktop, ModelName),
 	InitDepths=[0,32,32,32,32,32,32,32,showAll],
-        event:new_window_for(Desktop, Desktop, Canvas_name, InitDepths, 1),
+        event'><'new_window_for(Desktop, Desktop, Canvas_name, InitDepths, 1),
         all(state, set_display_depth, [unify(Canvas_name),
             build([ghost_link, influence, variable, flow, compartment,
                    submodel, caption, text, sections]), build(InitDepths)]),
-        draw:redraw_window(Canvas_name).
+        draw'><'redraw_window(Canvas_name).

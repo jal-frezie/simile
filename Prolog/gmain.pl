@@ -5,7 +5,8 @@ This starts off the application and goes into an event loop from which it is dri
 */
 
 /* allow module system to be ignored */
-_Module:Function :-
+:- op(550, xfy, '><').
+_Module'><'Function :-
         call(Function).
 
 :- discontiguous([sicstus_module/2, sicstus_use_module/1, sicstus_only/1,
@@ -168,9 +169,9 @@ portray(T) :-
 	rt_portray(T).
 main :-
 	/* first clear state from previous run (only matters in dev sys)
-	database:clear_database, or not as the case may be */
-	database:empty_tree,
-	state:retractall(model_in(_,_)),
+	database'><'clear_database, or not as the case may be */
+	database'><'empty_tree,
+	state'><'retractall(model_in(_,_)),
         nl, write(ready), nl,
 	current_prolog_flag(prolog_name, Vname),
 	current_prolog_flag(prolog_version, Vnum),
@@ -185,7 +186,7 @@ main :-
 			 name(Bug, String),
 			 write(Bug), nl,
 			 fail)), */
-	on_exception(ErrorFunction, state:kickoff(PlogV), true),
+	on_exception(ErrorFunction, state'><'kickoff(PlogV), true),
         (nonvar(ErrorFunction),
 	    query(start_fail(ErrorFunction), error, top, [ok], _);
 	tk_main_loop).

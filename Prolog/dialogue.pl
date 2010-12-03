@@ -22,7 +22,7 @@ pass_functions(LibFuns) :-
 	prepare_equation(AllFns).
 	
 atomize_function(FnAtom) :-
-	inters:builtin(Category, Functor, ResultSort, ArgSorts),
+	inters'><'builtin(Category, Functor, ResultSort, ArgSorts),
 	spell_out([ResultSort | ArgSorts], 1),
 	make_arg_list(ArgSorts, String),
 	sicstus_format_to_chars("{Built-in {~a}} ~a (~s) returns ~w",
@@ -102,7 +102,7 @@ handle_eqn_interaction(Part, DefUnit, IndxCount, Input_list, TableSpec) :-
 				       NewInputList, NewTableSpec))).
 
 index_types(ind_spec(_Name, _Posn, Ind, _Link), Type) :-
-	inters:type_ind(Ind, Type).
+	inters'><'type_ind(Ind, Type).
 
 /* update_equation/5: This makes sure that if the user has entered a
 new destination name or units for an existing variable they are added
@@ -122,7 +122,7 @@ update_equation(Function,_,_,_, [Table_st, Data_st], Effect) :-
 	(FileName = '/graph/', !,
 	    length(DataField, 3),
 	    append(DataField, [Dims | Indices], DataSpec),
-	    output:chop_list(Data_st, DataStrs),
+	    output'><'chop_list(Data_st, DataStrs),
 	    all(user, sicstus_atom_chars, [build(DataTable), build(DataStrs)]),
 	    Units = 1,
 	    Bounds = 1,
@@ -146,15 +146,15 @@ update_equation(_,_, Input_list, _, [LineIndxStr, Parm_st, New_unit_st],
 	length(EarlyInputs, LineIndx), !,
 	get_term(Parm_st, New_param, Complaint0),
 	(\+ Complaint0 = [], !,
-	    text:translate_message('Parameter', [], TrField),
+	    text'><'translate_message('Parameter', [], TrField),
 	    Complaint2 = bad_syntax(TrField, Complaint0);
 	    get_term(New_unit_st, NewUnits, Complaint1),
 	    (Complaint1 = [], !;
-		text:translate_message('In units', [], TrField),
+		text'><'translate_message('In units', [], TrField),
 		Complaint2 = bad_syntax(TrField, Complaint1))),
 	
 	(Complaint2 = [], !,
-	    text:translate_message('input parameter name', [], TrParam),
+	    text'><'translate_message('input parameter name', [], TrParam),
 	    (check_param_brackets(TrParam, New_param, Current_unit,
 				  Complaint), !;
 		(NewUnits = '', !,
@@ -401,7 +401,7 @@ get_table_part(Function, Data, Table, Units, Dims, Sizes) :-
 	enum_type_ref(Num, Function, bare, Table, Units, _),
 	    Dims = [],
 	    Sizes = [];
-	output:chop_list(Data, Alternator),
+	output'><'chop_list(Data, Alternator),
 	    feed_items(Function, Alternator, Table, Units, Dims, Sizes), !;
 	append(["Table contained the data item ", Data,
 		", which is not a recognizable constant."], Loss),
@@ -508,7 +508,7 @@ check_exp(Eqn_st, Function, InterInputs, Base, Dims,
 		(\+ TestError = [],
 		    Error = TestError;
 		 Base == cond_spec,
-		    \+ instance:is_lookup_cond(Equation, _),
+		    \+ instance'><'is_lookup_cond(Equation, _),
 		    Error = bad_cond_spec_form;
 		 member(var, Dims), !,
 		    Error = expr_denotes_list;
@@ -557,7 +557,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 					     DummyDest, _, [],
 					     [], dummy, _, Type, _I,
 					     part_result(Context, _,_,_)),
-			     inters:get_model_and_loops(Context, DummyDest, _,
+			     inters'><'get_model_and_loops(Context, DummyDest, _,
 							Loops, _)),
 			 (replace_subexps(ParseExcp, dialogue, collapse_params,
 					  _, top_down, _, ParseError);
@@ -584,14 +584,14 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	        (nonvar(Link), !,
 		    member(Param, PsUsed),
 		    analyze_array(Units, Type, Dims),
-/*		    (units:get_conversion(_, Base, Base, _), !,
+/*		    (units'><'get_conversion(_, Base, Base, _), !,
 		        Type = real;
 		    Type = Base), */
 		    make_inds_for(Dims, PLoops, Inds);
 	        (Param = '/dest/', !,
 		        get_ground_part(LRefs, GRefs),
 		        length(GRefs, L);
-		    m_update:analyze_array(Depth, any, Dims),
+		    m_update'><'analyze_array(Depth, any, Dims),
 	                make_inds_for(Dims, PLoops, Inds)),
 	            Type-PLoops = Loops,
 	            Units = param_history(_Defn, 1)),
@@ -625,7 +625,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, UseExpr),
 	    (get_ground_part(SubL, DimG),
 		build_array(1, DimG, Array),
-		text:translate_message('explicit intermediate result', [],
+		text'><'translate_message('explicit intermediate result', [],
 				       TrXIR),
 		check_param_brackets(TrXIR, ExpInt, Array, ParseError), !,
 		raise_exception(ParseError);
@@ -686,8 +686,8 @@ check_param_usage(Current, AllowLinks, Used, Left, Challenge) :-
 		AllowLinks = 1, Prob = extra_links(SourceCaption)),
 	    query(Prob, question, fill_equation, [ok, cancel], Choice),
 	    (Choice = ok,
-		event:off(LinkName),
-		event:delete_by_dlg(LinkName),
+		event'><'off(LinkName),
+		event'><'delete_by_dlg(LinkName),
 		check_param_usage(FromOthers, AllowLinks, Used, Left, Challenge);
 	     Choice = cancel,
 		Left = Current,
@@ -702,7 +702,7 @@ update_parameterhood(Function, Is_P, AffectedNode) :-
 	    AffectedNode = Function;
 	((Was_P = 0, !,
 	        implicit_function(AffectedNode, Function),
-	        m_update:delete_implicit_node(AffectedNode);
+	        m_update'><'delete_implicit_node(AffectedNode);
 	    Is_P = 0, !,
 	        add_implicit_function(Function, AffectedNode);
 	        AffectedNode = Function),

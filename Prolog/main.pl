@@ -6,8 +6,7 @@ This starts off the application and goes into an event loop from which it is dri
 
 :- consult(sp_only).
 
-:- 	use_module([library(tcltk), library(lists), library(charsio),
-		    input, code]).
+:- 	use_module([library(tcltk), library(lists), input, code]).
 
 /* Just in case we use the outline runtime system from Sicstus 3.9... */
 runtime_entry(start) :-

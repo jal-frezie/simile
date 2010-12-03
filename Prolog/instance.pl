@@ -262,7 +262,7 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 			sub(InputPairs, Refs), top_down,
 			Switched, FinalExpr),
 	(member(var_pair(_, Sub), Switched),
-	    m_update:get_solo_list_depth(Sub, _), !,
+	    m_update'><'get_solo_list_depth(Sub, _), !,
 	    caption_for(Node, Capt),
 	    raise_exception(bad_parameter(Capt, Sub));
 	length(Refs, _Fix)),
@@ -315,7 +315,7 @@ instance_of(Type, Node, _, Inst, Ref) :-
 	% (buggy legacy models only)
 	caption_for(Node, Capt),
 	    Node is_part_of Parent,
-	    m_update:oblitterfry(Node),
+	    m_update'><'oblitterfry(Node),
 	    caption_for(Parent, PCapt),
 	    query(remove_orphan(Capt, PCapt), info, top, [ok], _)).
 	    
@@ -335,7 +335,7 @@ flows(Dir, Comp, Flow) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* generate_input_pair is used in setof so should be cut free */
 generate_input_pair(Node, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
-	m_update:get_all_links(Node, ids(SourceID, Relation),
+	m_update'><'get_all_links(Node, ids(SourceID, Relation),
 			       input_link(id(Link,_, SourceLocation), _,
 					  ArcName, SourceUnits, ArcUnits)),
 	/* just in case we have extra inputs... */
@@ -343,15 +343,15 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
         NodeID = SourceID,
 	RefExp = Ref,
 
-	m_update:analyze_array(SourceUnits, FarUnits, FarDims),
+	m_update'><'analyze_array(SourceUnits, FarUnits, FarDims),
 	get_actual_sizes(Node, FarDims, _,_,_),
-	m_update:analyze_array(ArcUnits, BaseUnits, _),
+	m_update'><'analyze_array(ArcUnits, BaseUnits, _),
 	RelatedRef = input(SourceLocation, RefExp, Relation, ArcUnits),
 	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, _),
 	find_name_host(Link, ControlLink),
-	(m_update:get_av_pair(ControlLink, 2, use_sofar, 1),
+	(m_update'><'get_av_pair(ControlLink, 2, use_sofar, 1),
 	    ExprRef = sofar(ConvertedRef);
-	\+ m_update:get_av_pair(ControlLink, 2, use_sofar, 1),
+	\+ m_update'><'get_av_pair(ControlLink, 2, use_sofar, 1),
 	    ExprRef = ConvertedRef).
 
 try_conversion(RelatedRef, Units, BaseUnits, ConvertedRef, ImpType) :-
@@ -400,7 +400,7 @@ language */
 
 get_units(Node, Type, Dims) :-
 	(Node has_class_refinement units of Unit, !; Unit = 1),
-	m_update:analyze_array(Unit, Type, Number),
+	m_update'><'analyze_array(Unit, Type, Number),
 	get_actual_sizes(Node, Number, _, Dims, _).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -462,7 +462,7 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 process_expr(sub(InputPairs, Refs), OldVar, NewVar, Recurse) :-
 	member(OldVar-RefNode, [dies_of(Var)-VisNode, latency(Var)-VisNode,
 				Var-Node]), 
-	m_update:get_solo_list_depth(Var, _),
+	m_update'><'get_solo_list_depth(Var, _),
 	(member(input_pair(Var, Node, OutVar, NewVar), InputPairs),
 	    get_host(Node, VisNode),
 	    is_instance(_, RefNode, _, OutVar, _, Ref),
@@ -496,7 +496,7 @@ valid_tap(Flow, Controller) :-
 
 % 3rd arg of *m_loop(...) is inserted by extract_submodel_assignments
 path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
-	m_update:list_local_index_meanings(SmName, ISpecs),
+	m_update'><'list_local_index_meanings(SmName, ISpecs),
 	all(dialogue, index_types, [build(ISpecs), build(RevIndxCount)]),
 	reverse(RevIndxCount, IndxCount),
 	(variable_size(SmName), !,

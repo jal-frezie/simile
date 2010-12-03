@@ -26,7 +26,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	/* If managing units, apply conversion; error message not brilliant but
 	only occurs if unit management turned on since entering equation */
 	get_dims_from_loops(SourceLoops, _, SourceInds),
-	(m_update:use_units_in(Sm, 'Yes'),
+	(m_update'><'use_units_in(Sm, 'Yes'),
 	    \+ Units = 1,
 	    \+ promote_unit(Units, real),
 	    \+ promote_unit(Units, XUnits),
@@ -74,7 +74,7 @@ assigned_in_vm_subloop(Formula, FContext, AllSetups) :-
 
 insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
 	(Var = input(Location, PathExp, Link, Units),
-	    m_update:analyze_array(Units, Type, _);
+	    m_update'><'analyze_array(Units, Type, _);
 	Var = PathExp,
 	    /* from compartment expressions -- used? -- and dest ref */
 	    [Location, Link, Type]=[in_hierarchy, none, SourceType]),
@@ -96,7 +96,7 @@ insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
 		assoc model either, and it caused...shall we say...difficulties
 		when the condition was not actually a lookup
 		    find_name_host(Link, LinkWithAttrs),
-		    (\+ m_class:LinkWithAttrs has_attribute can_lookup of 1, !;
+		    (\+ m_class'><'LinkWithAttrs has_attribute can_lookup of 1, !;
 			Assoc = [sm(OneSided, _,_,_) | _],
 			LookupWait = enumerate(OneSided)),  */
 		    suffix(BaseFrag, Base), /* longest first */
@@ -115,8 +115,8 @@ insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
 	    append(LocalLoops, Path, Loops),
 	    NewVar = param(arr(SmPtr, Ref, Inds), Type, Loops, BackSwap, Wait),
 	    Recurse = 0;
-%	m_update:get_solo_list_depth(Var, DimExp),
-%	    m_update:build_array(any, Dims, DimExp),
+%	m_update'><'get_solo_list_depth(Var, DimExp),
+%	    m_update'><'build_array(any, Dims, DimExp),
 %	    make_inds_for(Dims, Loops, _),
 %	    NewVar = use_inter(Var),
 	    /* just to make sure same var is used for name each occurrence...
@@ -176,7 +176,7 @@ expand_library(DestRef, Var, NewVar) :-
 	Var = (if Bool then IfCl), !,
 	    NewVar = (Bool?IfCl);
 	Var = (ThenCl else ElseCl), !,
-	    NewVar = (ThenCl:ElseCl);
+	    NewVar = (ThenCl'><'ElseCl);
 	Var = (ThenCl elseif Bool then IfCl), !,
 	    NewVar = (ThenCl:(Bool?IfCl));
 	Var = choose(Bool, V1, V2), !,
@@ -190,10 +190,10 @@ read_library_funx(Done) :-
 	assert(macro_expansion('Built-in', (if Bool then ThenCl elseif IfCl -->
 			       choose(Bool, ThenCl, if IfCl)))),
 %	assert(macro_expansion('Built-in', (choose(Bool, ThenCl, ElseCl) -->
-%					       (Bool?ThenCl:ElseCl)))),
+%					       (Bool?ThenCl'><'ElseCl)))),
 	read_func_tree('../Functions/', '../Functions', yes, BuiltIns),
 
-	backup:use_pref_dir(UserStuff),
+	backup'><'use_pref_dir(UserStuff),
 	append_atoms(UserStuff, '/Functions/', UserFns),
 	read_func_tree(UserFns, UserFns, no, Local),
 	append(BuiltIns, Local, Done).
@@ -203,7 +203,7 @@ read_func_tree(TopDir, AllDirs, BuiltIn, Done) :-
 	    suffix(".pl", AllDirsStr),
 	    read_func_file(AllDirs, TopDir, BuiltIn, Done);
 	append_atoms([AllDirs, /, *], DeepTpt), % avoid start-comment sequence
-	    output:list_matching_files(DeepTpt, DeepDirs),
+	    output'><'list_matching_files(DeepTpt, DeepDirs),
 	    all(inters, read_func_tree, [unify(TopDir), build(DeepDirs),
 					 unify(BuiltIn), append(Done, [])]).
 
@@ -240,8 +240,8 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 	    WhereFound = 'Procedures',
 	    assert(function(Category, Functor, ReturnType, ArgTypes)),
 	    assert(use_tcl_proc_for(Functor)), !,
-	    dialogue:spell_out([ReturnType | ArgTypes], 1),
-	    dialogue:make_arg_list(ArgTypes, String),
+	    dialogue'><'spell_out([ReturnType | ArgTypes], 1),
+	    dialogue'><'make_arg_list(ArgTypes, String),
 	    sicstus_format_to_chars("{~a {~a}} ~a (~s) returns ~w",
 		[Category, File, Functor, String, ReturnType], FnChars),
 	    name(FnEntry, FnChars)),
@@ -250,7 +250,7 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 		\+ File = 'Hidden', Done = [FnEntry | More]);
 	member(Line, [baseline(_,_), unit_definition(_,_), longhand(_,_)]), !,
 	    % use asserta so user-supplied definitions override system ones
-	    units:asserta(Line),
+	    units'><'asserta(Line),
 	    read_funcs(File, Stream, IsBuiltIn, Done);
 	query(bad_user_fn_format(File, Line), warning, user_defns, [ok], _),
 	    read_funcs(File, Stream, IsBuiltIn, Done)).
@@ -281,7 +281,7 @@ shed_dummy_args(Op, NewOp) :-
 
 free_params(switch(Fixed, Var), Arg, ArgVar, 0) :-
 	var(Arg), !; % in case someone used an underscore
-	m_update:get_solo_list_depth(Arg, _),
+	m_update'><'get_solo_list_depth(Arg, _),
 	(nth(N, Fixed, ArgConst),
 	    \+ var(ArgConst), % in case some b**** used an underscore
 	    Arg = ArgConst,
@@ -377,7 +377,7 @@ make_intermediates(
 
 	    (\+ var(Units),
 	    member(Units, [n(Type), a(Type)]),
-	    \+ ame_gen:resolve_enum_type(_, SubId, _, Units, _), !,
+	    \+ ame_gen'><'resolve_enum_type(_, SubId, _, Units, _), !,
 		throw(no_local_defn_for_type(Type, SubId));
 		
 	    get_dims_from_loops(OrigLoops, Dims, _)),
@@ -689,7 +689,7 @@ make_intermediates(
 
 	(Source = table_const(1),
 	    \+ Step = dummy,
-	    (m_class:SubId has_class_refinement table_data of TableData;
+	    (m_class'><'SubId has_class_refinement table_data of TableData;
 		throw(missing_graph_or_table_data(Source))),
 	    member(dims=ConstBounds, TableData),
 	    member(current=BoundArray, TableData),
@@ -870,8 +870,8 @@ make_intermediates(
 	    Param = Ref,
 %		member(instance(internal, inter(_,_, Loops), Param,_, _-Dims),
 %		       PrevInters),
-		m_update:get_solo_list_depth(Ref, DimExp),
-		m_update:analyze_array(DimExp, any, RefDims),
+		m_update'><'get_solo_list_depth(Ref, DimExp),
+		m_update'><'analyze_array(DimExp, any, RefDims),
 		make_inds_for(RefDims, Loops, _),
 		append(Loops, BuildingArrays, Access),
 		get_dims_from_loops(Access, Dims, _)), /* building code */
@@ -923,15 +923,15 @@ make_intermediates(
 		    /* need type for bool/int */
 		SourceList = Source,
 		ValRef = ResultList;
-%	    Source = (Test?True:False), !,
+%	    Source = (Test?True'><'False), !,
 %		SourceList = [Test, True, False],
 %		RUnits = any,
 %	        Arg_template = [boolean, RUnits, RUnits],
 %		ResultList = [RTest, RTrue, RFalse],
-%		ValRef = (RTest?RTrue:RFalse);
+%		ValRef = (RTest?RTrue'><'RFalse);
 	    Source = graph(Param), \+ Param = '',
 		(\+ Step = dummy;
-		dialogue:table_data_is(_);
+		dialogue'><'table_data_is(_);
 		    throw(missing_graph_or_table_data(Source))),
 		SourceList = [Param],
 		RUnits = real,
@@ -955,7 +955,7 @@ make_intermediates(
 		\+ SourceList = [''], /* let checker handle empty args */
 	        (SourceList = [_|_], !;
 		throw(only_works_on_array(Source))),
-		(dialogue:table_data_is(TableData);
+		(dialogue'><'table_data_is(TableData);
 		 throw(missing_graph_or_table_data(Source))),
 		member(units=RUnits, TableData),
 		member(bounds=Arg_template, TableData),
@@ -1037,7 +1037,7 @@ make_intermediates(
 		    length(WrongLen, FnArity),
 		    throw(wrong_no_of_args(Source, Op,
 						     Arity, FnArity));
-		 m_class:SubId has_class_refinement uses_local_fns of UserFns,
+		 m_class'><'SubId has_class_refinement uses_local_fns of UserFns,
 		    member(Op/Arity, UserFns),
 		    throw(lost_user_defined_fn(Source, Op, Arity));
 		 throw(no_such_function(Source, Op))),
@@ -1056,7 +1056,7 @@ decode_number(Source, SubId, Step, SourceRef, Units) :-
 	    SourceRef = SrcNum).
 
 remove_physical_units_if_disabled(SubId, SrcUnits, Units) :-
-	(m_update:use_units_in(SubId, 'No'),
+	(m_update'><'use_units_in(SubId, 'No'),
 	    nonvar(SrcUnits),
 	    get_conversion(_, SrcUnits, SrcUnits, _), !,
 	    Units = 1;
@@ -1136,7 +1136,7 @@ swap_back(BaseContext, BackSwap, Context, MadeDim) :-
 	    append(Base, Top, BasePath),
 	    append(Tail, BasePath, BaseContext),
 	    append([Tail, Assoc, Top], Context),
-	    (m_update:is_exclusive_role(Link);
+	    (m_update'><'is_exclusive_role(Link);
 		MadeDim = new_dim), !;
 	Context = BaseContext.
 

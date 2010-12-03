@@ -1015,9 +1015,7 @@ namespace eval fileparams {
 #puts "Need outNames cos have suppliedData for [array names suppliedData]"
 # first, make sure all values to be saved are up-to-date and well-formed
 	foreach smItem [array names outNames $smPath/*] {
-	    if {![AcceptData $topNode $smItem $notInput 2] || \
-		[lsearch $suppliedData(needed) $smItem]!=-1 && \
-		    [string length $suppliedData($smItem)]} {
+	    if {![AcceptData $topNode $smItem $notInput 2]} {
 # complain of 2 means accept empty entry but keep in needed list
 		return
 	    }
@@ -1036,7 +1034,8 @@ namespace eval fileparams {
 	    puts $pStr {<?xml-stylesheet type="text/xsl" href="spf1.xsl"?>}
 	    puts $pStr "<spf simile_version=\"$env(SIMILE_VERSION)\">"
 	    puts $pStr {<submodel label="top">}
-	    WriteSubmodelParams suppliedData $topNode $metaFile $pStr $smPath {}
+	    WriteSubmodelParams suppliedData outNames $topNode $metaFile \
+		$pStr $smPath {}
 	    puts $pStr {</submodel>}
 	    puts $pStr {</spf>}
 #            foreach compName [array names outNames $smPath*] {
@@ -1076,11 +1075,13 @@ namespace eval fileparams {
         }
     }
     
-    proc WriteSubmodelParams {outerData topNode metaFile pStr smPath indent} {
+    proc WriteSubmodelParams {outerData outerWidgets topNode metaFile \
+				  pStr smPath indent} {
 	global paramState msgs readMany
 
 	puts $pStr $indent<variables>
 	upvar 1 $outerData outData
+	upvar 1 $outerWidgets outWidgets
 	foreach compName [array names outData $smPath/*] {
 	    if {[IsRecordCount $compName]} continue
 	    set compTail [string range $compName [string length $smPath] end]
@@ -1100,7 +1101,9 @@ namespace eval fileparams {
 		append genericAVs { } \
 		    comment=[Entitize $msgs(comment_$compName)]
 	    }
-	    if {[DataInScenario $compName] && \
+	    if {![string length [$outWidgets($compName).e get]]} {
+# visible entry is empty, probably cleared, so skip writing
+	    } elseif {[DataInScenario $compName] && \
 		    ($haveBytes || $recordLevel==-1)} {
 		set type [GetCompProperty $topNode Type $nodeId]
 		puts -nonewline $pStr \
@@ -1193,8 +1196,8 @@ namespace eval fileparams {
  	puts $pStr $indent<submodels>
 	foreach sm [array names inners] {
 	    puts $pStr "$indent<submodel label=[Entitize $sm]>"
-	    WriteSubmodelParams outData $topNode $metaFile $pStr $smPath/$sm \
-		"  $indent"
+	    WriteSubmodelParams outData outWidgets $topNode $metaFile \
+		$pStr $smPath/$sm " $indent"
 	    puts $pStr $indent</submodel>
 	}
  	puts $pStr $indent</submodels>

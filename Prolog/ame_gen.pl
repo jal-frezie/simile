@@ -22,7 +22,7 @@ sicstus_module(ame_gen,
 		find_type/2, find_all_comps/2, draws_inside/2,
 		is_primitive/1, is_of_sort/2, is_class_of_sort/2, sp_is/2]).
 
-sicstus_use_module([library(lists), sp_only, m_class, utility, text]).
+sicstus_use_module([library(lists), sp_only, utility, text, m_class]).
 
 /* Full syntax error text currently not displayed because it is too
 distressing to users. Not sure why I use open_chars_stream and
@@ -158,9 +158,9 @@ make_legible_for_prolog(String, NewString) :-
 	    put in quotes. How do I tell? */
 	    (name(ForeignOp, [StartsVar | MoreVar]),
 		current_op(_Prec, _Spec, ForeignOp), % prolog knows it
-		\+ (inters:macro_expansion(_Src, (Tplt --> _Xpn)),
+		\+ (inters'><'macro_expansion(_Src, (Tplt --> _Xpn)),
 		       Tplt =.. [ForeignOp | _Args];
-		    inters:operator(ForeignOp, _R, _As)), % simile does not
+		    inters'><'operator(ForeignOp, _R, _As)), % simile does not
 		append([Po, StartsVar | MoreVar], [Pc], Tweaked);
 	    append([Sq, StartsVar | MoreVar], [Sq], Tweaked));
 	/* Put single quotes round things in double quotes so they are read as
@@ -202,7 +202,7 @@ bite_off_number(String, Num, Left) :-
 	(append(Safe, [Brace | _], String),
 	    member(Brace, "{\\}"), !;
 	String = Safe),
-	output:safe_tcl_eval(['EatNumber', br(chars(Safe))], RList),
+	output'><'safe_tcl_eval(['EatNumber', br(chars(Safe))], RList),
 	append(Num, [32 | SzStr], RList),
 	name(Size, SzStr),
 	append(Eaten, Left, String),
@@ -389,10 +389,10 @@ find_reference(Object, Index, Remote) :-
 do_dialogue(Header, Icon, RiskyBlurb, Buttons, Response) :-
 	argify(RiskyBlurb, Blurb),
 	(Buttons = ok, !,
-	    output:safe_tcl_eval(['BuildProblem', br(chars(Header)), Icon,
+	    output'><'safe_tcl_eval(['BuildProblem', br(chars(Header)), Icon,
 				  chars(Blurb), top], _),
 	    Response = Buttons;
-	output:safe_tcl_eval(['ShowMessage', br(chars(Header)), Icon,
+	output'><'safe_tcl_eval(['ShowMessage', br(chars(Header)), Icon,
 			      chars(Blurb), Buttons], Feedback),
 	    name(Response, Feedback)).
 */
@@ -400,8 +400,8 @@ do_dialogue(Header, Icon, RiskyBlurb, Buttons, Response) :-
 query(Specifics, Icon, HelpRef, Opts, Act) :-
 	Specifics =.. ListForm,
 	all(ame_gen, write_nice, [build(ListForm), build(SafeForm)]),
-%        output:bracketize(ListForm, SpecList),
-        output:safe_tcl_eval(['Query', br(SafeForm), Icon, HelpRef, '{}',
+%        output'><'bracketize(ListForm, SpecList),
+        output'><'safe_tcl_eval(['Query', br(SafeForm), Icon, HelpRef, '{}',
 			      br(Opts)], ActStr),
         name(Act, ActStr).
 
@@ -409,7 +409,7 @@ query(Specifics, Icon, HelpRef, Opts, Act) :-
 announce(Format, Specifics) :-
 	sicstus_format_to_chars(Format, Specifics, String),
 	argify(String, WontBreakIt),
-	output:safe_tcl_eval(['tk_messageBox -title "Debugging message" -icon info -message', chars(WontBreakIt), '-type ok'], _).
+	output'><'safe_tcl_eval(['tk_messageBox -title "Debugging message" -icon info -message', chars(WontBreakIt), '-type ok'], _).
 
 write_nice(Term, chars(Nice)) :-
 	sicstus_write_to_chars(Term, Str),
@@ -462,7 +462,7 @@ Sep 99 : middle arg added to specify top_down or bottom_up */
 replace_subexps(Expr, TestModule, Test, Data, Dir, AllVarPairs, FinalExpr) :-
 	(Dir = top_down,
 	RunTest =.. [Test, Data, Expr, MidExpr, Recurse],
-	call(TestModule:RunTest), !,
+	call(TestModule'><'RunTest), !,
 	(Recurse = 1,
 	    replace_subexps(MidExpr, TestModule, Test, Data, Dir,
 			    MorePairs, NewExpr),
@@ -494,7 +494,7 @@ replace_subexps(Expr, TestModule, Test, Data, Dir, AllVarPairs, FinalExpr) :-
 		NewExpr =.. [Op | NewArgs]),
 	(Dir = bottom_up,
 	RunTest =.. [Test, Data, NewExpr, FinalExpr, Recurse],
-	call(TestModule:RunTest), !, /* never recurse on bottom-up */
+	call(TestModule'><'RunTest), !, /* never recurse on bottom-up */
 	[var_pair(NewExpr, FinalExpr) | VarPairs] = AllVarPairs;
 	AllVarPairs = VarPairs,
 	    FinalExpr = NewExpr).
@@ -527,7 +527,7 @@ get_actual_size(Node, Sub, Nums, Sizes, [Units]) :-
 	    Units = Unit;
 	(Sub = size(ModName); Sub = size(ModName, Ind)),
 	    contains(Top, Node),
-	    backup:is_toplevel(Top),
+	    backup'><'is_toplevel(Top),
 	    (setof(SizeSource, name_matches(SizeSource, Top, ModName),
 		   Sources), !,
 		(Sources = [Source], !,
@@ -581,7 +581,7 @@ enum_type_ref(Ref, Model, ETStyle, Value, Units, ETSpec) :-
 	BareRef = 'NULL',
 	    Value = 0,
 	    Units = any;
-	units:defined_as_unit(BareRef, _),
+	units'><'defined_as_unit(BareRef, _),
 	    Units = BareRef, Value = 1;
 	resolve_enum_type(BareRef, Model, Value, Units, ETSpec)), !.
 
@@ -592,7 +592,7 @@ dequote(Ref, BareRef) :-
        name(BareRef, BareRefStr).
 
 resolve_enum_type(Ref, Model, Value, Units, ETSpec) :-
-	(m_class:Model has_class_refinement enum_types of TypeList, !;
+	(m_class'><'Model has_class_refinement enum_types of TypeList, !;
 	    TypeList = []),
 	(nth0(Posn, TypeList, TypeName-TypeMems),
 	    (Ref = TypeName; nth(Value, TypeMems, Ref)),
@@ -790,7 +790,7 @@ the highest-level model */
 :- op(500, xfy, draws_inside).
 
 caption_for(Comp, ID) :-
-	image:get_host(Comp, CompVisDest),
+	image'><'get_host(Comp, CompVisDest),
 	find_base(CompVisDest, CompVisSrc),
 
 	(CompVisSrc has_class_refinement name of ID, !;
