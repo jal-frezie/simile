@@ -851,7 +851,8 @@ checks_out_locally(Func) :-
     analyze_array(Units, Base, Dims),
     units_match_context(Func, Base, Dims, []),
     replace_subexps(Expr, image, pick_var, Func, top_down, Pairs, _),
-    (setof(Source, valid_input(Func, Source), Sources), !; Sources = []),
+    (setof(Source, valid_input(Func, continuous, Source), Sources), !;
+	Sources = []),
     pair_off(Func, Sources, Pairs).
 
 pick_var(_, V, _, 0) :-

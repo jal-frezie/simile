@@ -173,8 +173,12 @@ update_equation(_,_, Input_list, _, [LineIndxStr, Parm_st, New_unit_st],
 update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		[Eqn_st, Unit_st, Is_P_st, Desc_st, Cmt_st, Min_st, Max_st],
 		Effect) :-
+	get_host(Function, Ev),
 	name(Is_P, Is_P_st),
-	member([Is_P, ParamsAllowed], [[-1,1], [0,1], [1,0], [2,0]]),
+	(Ev is_of_sort discrete, !,
+	    ParamAllowances = [[-1,1,1], [0,1,1], [1,1,0], [2,0,0]];
+	  ParamAllowances = [[-1,1,0], [0,1,0], [1,0,0], [2,0,0]]),
+	member([Is_P, ParamsAllowed, _EventInsAllowed], ParamAllowances),
 	get_term(Unit_st, Units, UnitFormError),
 	check_exp(Eqn_st, Function, InterInputs, EqnBase, EqnDims,
 		  IndxCount, ParamList, Result, ParseError),
@@ -182,20 +186,27 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	    member(ParamName, ParamList), !,
 	    EqnError = bad_link_use(ParamName);
 	 EqnError = ParseError),
-	(Is_P = 1, \+ inherently_bound(Units),
-	    \+ inherently_bound(EqnBase), !, MinMaxNeeded = 1;
-	MinMaxNeeded = 0),
 
 	(\+ EqnError = [], !,
 	    Complaint5 = EqnError;
 	EqnBase == cond_spec, \+ TypeBase == cond_spec,
 	    Complaint5 = misplaced_cond_spec;
-	check_limit(Min_st, 'Min. value', Function,
-		    MinMaxNeeded, Min, MinVal, MinBase, MinErr),
+	(Is_P = 1, find_type(Ev, event), !, % limit-type
+	    MinMaxNeeded = 1; % at least
+	  Is_P = 1, \+ inherently_bound(Units),
+	    \+ inherently_bound(EqnBase), !, MinMaxNeeded = 2;
+	  MinMaxNeeded = 0),
+	text'><'translate_message('Min. value', [], TrMin),
+	text'><'translate_message('Max. value', [], TrMax),
+	check_limit(Min_st, TrMin, Function, MinMaxNeeded, [],
+		    Min, MinVal, MinBase, MinErr),
 	    (\+ MinErr = [], !,
 		Complaint5 = MinErr;
-	    check_limit(Max_st, 'Max. value', Function,
-			MinMaxNeeded, Max, MaxVal, MaxBase, Complaint5))),
+	      (Min = '', !,
+		  Alts = [TrMin];
+		Alts = []),
+		check_limit(Max_st, TrMax, Function, MinMaxNeeded, Alts,
+			Max, MaxVal, MaxBase, Complaint5))),
 
 	(Complaint5 = [], !,
 	(Unit_st = "", Eqn_st = "", Min_st = "", Max_st = "",
@@ -470,13 +481,16 @@ make_e_t(Table, Trans, TclRep) :-
 	nth0(Table, Trans, Enum),
 	    append_atoms(['{"', Enum, '"}'], TclRep).
 
-check_limit(Eqn_st, FieldName, Function, Needed, Eqn, Value, Base, Error) :-
+check_limit(Eqn_st, FieldName, Function, Needed,
+            Alternatives, Eqn, Value, Base, Error) :-
 	Eqn_st = [], !,
 	    Base = any,
 	    Eqn = '',
 	    Value = '',
-	    (Needed = 1, !,
+	    (Needed = 2, !,
 		Error = field_needs_value(FieldName);
+	    Needed = 1, \+ Alternatives = [],
+		Error = some_field_needs_value([FieldName | Alternatives]);
 	    Error = []);
 	get_term(Eqn_st, Eqn, ParseError),
 	(ParseError = [], !,
@@ -695,20 +709,26 @@ check_param_usage(Current, AllowLinks, Used, Left, Challenge) :-
 	Left = Current,
 		Challenge = [].
 
-
 update_parameterhood(Function, Is_P, AffectedNode) :-
-	is_parameter(Function, Was_P),
-	((Is_P = Was_P; Is_P = -1), !,
+	(member(Function, [Has, Is]),
+	implicit_function(Has, Is), !,
+	    UsedFn = yes;
+	Function = Has,
+	    UsedFn = no),
+	is_parameter(Has, Was_P),
+	((Is_P = Was_P; Was_P = -1), !,
 	    AffectedNode = Function;
-	((Was_P = 0, !,
-	        implicit_function(AffectedNode, Function),
-	        m_update'><'delete_implicit_node(AffectedNode);
-	    Is_P = 0, !,
-	        add_implicit_function(Function, AffectedNode);
-	        AffectedNode = Function),
-	    (Is_P = 2, !,
-		add_parameter(AffectedNode, 0, param_type, file);
-	    add_parameter(AffectedNode, 0, param_type, '')))).
+	  paramness_setup(Has, Is_P, HasFpType, UsesFn),
+	  (UsedFn = yes,
+	      (UsesFn = yes,
+		  AffectedNode = Is;
+		m_update'><'delete_implicit_node(Has),
+		  AffectedNode = Has);
+	    UsedFn = no,
+	      (UsesFn = yes,
+		  add_implicit_function(Function, AffectedNode);
+	        AffectedNode = Function)),
+	    add_parameter(AffectedNode, 0, param_type, HasFpType)).
 
 can_build_with(SubValue) :-
 	\+ var(SubValue),

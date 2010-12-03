@@ -59,7 +59,8 @@ list_interconnects(Node) :-
 	setof(TopArc, top_arc_for_exit(Node, TopArc), TopArcs), !,
 	all(compile, entries_for, [build(TopArcs), build(XS)]),
 	build_interconnects(Node, XS);
-	build_interconnects(Node, []).
+	build_interconnects
+	(Node, []).
 	
 top_arc_for_exit(Node, TopArc) :-
 	contains(Node, DLLSpec),
@@ -336,7 +337,8 @@ important...(or was, back when the A stood for Agroforestry)... */
 		      on_step, on_reset, /* dummy conditions */
 		      use_param_state, /* indicates file parameter */
 		      id, dims, /* arguments to extractor proc */
-		      next, instanceid, new_instance | _],
+		      next, instanceid, new_instance,
+		      cause | _], /* dummy arg to event proc
 	/* system vars in submodel */
 /* we cannot change names of external procedures, so add them to the used */
 
@@ -377,8 +379,11 @@ used when entering file parameters */
 	set_free_phases(ReevaluateForm, PhasesWSub, NewForm),
 	  % This marks state variable changes as going in the update phase
 	all(compile, mark_update_insts, [build(NewForm), append(Marked, [])]),
+	  % check for limit events also goes in sub-step
+	all(compile, mark_limit_checks,
+	    [build(NewForm), append(CondsInSubStep, Marked)]),
 	  % this puts everything in the longest possible time step
-	check_functions(NewForm, Phases, Marked),
+	check_functions(NewForm, Phases, CondsInSubStep),
 	/* first off, unify all matching vm level specs in the two lists so
 	that those that are completed when ordering their condition nodes
 	can be used later */
@@ -493,8 +498,8 @@ all named after the nodes from which they take their values. */
 declare_structure(Language, model(Vars, Submodels), Used, AllGraphs) :-
 
 	declare_submodel_structures(Language, Submodels, Used, SmGraphs),
-	pick_types(Vars, [function, init_function, id_function,
-			  loss, internal, external], NamedVars),
+	pick_types(Vars, [function, init_function, id_function, loss,
+			  internal, external, magnitude, limit], NamedVars),
 	name_components( Language, NamedVars, Used, Graphs),
 	append(SmGraphs, Graphs, AllGraphs).
 
@@ -537,6 +542,13 @@ mark_update_insts(Act, Add) :-
 	Act = make(_,_,_, [eval | _], _),
 	    Add = [].
 
+mark_limit_checks(Act, Add) :-
+	Act = make(checked(_), _,_,_,_), !,
+	    Add = [Act];
+	Add = [].
+
+% anything that affects a compartment has to go in the sub-shortest time step
+% so R-K integration works. 
 update_antes_to_step(List, Step) :-
 	List = [make(_, Conds-_, _,_,_) | Rest], !,
 	all(compile, mark_unstepped,
@@ -546,7 +558,8 @@ update_antes_to_step(List, Step) :-
 
 mark_unstepped(Cond, Set, Add) :-
 	member(Cond, [Act, later(Act), this_step(Act)]),
-	Act = make(_,_,_, [_,_, Step | _], _),
+	Act = make(Tgt, _,_, [_,_, Step | _], _),
+	\+ Tgt = tweaked(_), % do not put squirts in subphase
 	var(Step), !,
 	Step = Set,
 	Add = [Act];
@@ -642,7 +655,7 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 	append(MainClass, [proc_decls | EndClass], ThisDecl),
 	append(ClassStart, [submodel_decls | ClassEnd], MainClass),
 	send_to_dest(Stream, ClassStart),
-	Model = model(_, Submodels),
+	Model = model(_Funx, Submodels),
 	all(compile, generate_main_decls,
 	    [unify(L), build(Submodels), unify(1), unify(Stream)]),
 	send_to_dest(Stream, ClassEnd),
@@ -656,10 +669,62 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 	excrete(L, end(switch), IdRef, 4, Stream),
 	excrete(L, procedure_call, return('NULL'), 4, Stream),
 	excrete(L, end(procedure), get_pointer, 0, Stream),
+	nl(Stream),
+
+	% Events are now conditionals in the main line of execution, so no need
+	% to implement them as procedures
+	
+	% pick_types(Funx, [magnitude], Evts),
+	% all(compile, make_event_proc,
+	%     [build(Evts), unify([L, SymbolicName, Stream])]),
+					 
 	(var(Finish), !,
 	    Finish = EndClass;
 	 send_to_dest(Stream, EndClass)).
 
+/* All events are procedures, which call those of downstream events if
+the value is non-null. Additionally, some events (e.g., limits) may
+insert conditions for calling themselves, others (e.g., squirts) may
+adjust compartment values.
+make_event_proc(instance(_Type, _, Motion, elt(Home, Name, _), Unit-Dim),
+		[L, Sm, Stm]) :-
+	(Motion = squirt(Sqt, InType, (Src->Dest), Conseqs),
+	    (Src = 0, Twk1 = [];
+	      Src = elt(_, BSrc, _), CSrc = arr('', BSrc, []),
+		Twk1 = [assign(CSrc, CSrc-magnitude)]),
+	    (Dest = 0, Twk2 = Twk1;
+	      Dest = elt(_, BDest, _), CDest = arr('', BDest, []),
+		Twk2 = [assign(CDest, CDest+magnitude) | Twk1]), !;
+	  Motion = event(Sqt, InType, Conseqs),
+	    Twk2 = []),
+	(InType = void, !,
+	    ProcSpec = call('void', Name);
+	    ProcSpec = call('void', Name, [InType, cause])),
+	excrete(L, procedure_start, ProcSpec, 0, Stm),
+	excrete(L, variable_declaration, [Unit, magnitude, Dim], 4, Stm),
+	final_assignment(Sqt, Sm, elt(Home, magnitude, _-Dim), [], 1, Used,
+			 Formula, Setups, _Path, Deps, AllInters),
+	connect_params([make(magnitude, Deps, [], 1, Formula) | Setups],
+		       AllInters, Actions, Inters),
+	all(compile, excrete, 
+	    [unify(L), unify(data_declaration), build(Inters),
+	     unify(4), unify(Stm)]),
+% next get actions from instructions and run through language
+	all(compile, old_extract_action,
+	    [build(Actions), append(ActionForm, Twk2)]),
+	do_assign_list( L, ActionForm, 4, Used, Stm),
+
+	% Now call consequent events if our magnitude is non-NULL
+	(Conseqs = [], !;
+	  copy_term(Conseqs, SafeCons),
+% avoid going through whole ordering system to make sure event proc pointers
+% have a context
+	    excrete(L, cond_events, [magnitude, SafeCons, [magnitude]], 4, Stm)),
+	excrete(L, end(procedure), Name, 0, Stm),
+	nl(Stm).
+
+old_extract_action(make(_E,_C,_P,_S,A),A).
+ */
 generate_metadata(_, [], _,_,_, [], _).
 generate_metadata(L, [Instance | Instances], Tree, Level,
 		     Used, NodeData, Stream) :-
@@ -704,7 +769,7 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 	    
 extract_instances(model(Funx, Subz), Instances) :-
 	pick_types(Funx, [function, init_function, id_function, fp_compartment,
-			  loss, internal, external],
+			  loss, internal, external, magnitude, limit, series],
 		   ValFunx),
 	append(Subz, ValFunx, Instances).
 
@@ -1309,7 +1374,9 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 /* Only make assignments for functions, for now, and
 	    Do not make an assignment if we are expecting one on init/reset
 	    from outside */
-	is_parameter(Node, Is_P),
+	(member(Type, [event, magnitude, limit, series]), !,
+	    Is_P = 0;
+	  is_parameter(Node, Is_P)),
 	DestRef = elt(_, Dest, X),    
 	((Is_P = 2,
 	    (Type = function, Tgt = Dest, Step = -1, Wait = [on_step];
@@ -1339,8 +1406,9 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 		UseStep = 0;
 	    (Type = id_function,
 		UseList = [can_find_id(Node) | RefList];
-	    member(Type, [function, loss]),
-		UseList = RefList), !,
+	      member(Type, [function, loss, limit]),
+		UseList = RefList;
+	      Type = magnitude), !,
 		Made = Dest,
 		UseStep = SmStep),
 	    SourceEqn = Source;
@@ -1357,21 +1425,80 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    UseStep = SmStep,
 	    SourceEqn = Source),
 	    
-	(SourceEqn = with_phase(SmStep, GroundEqn);
-	    GroundEqn = SourceEqn), !,
+	(Type = limit, !,
+	    SourceEqn = limit(ActEqn, BoundForm),
+	    ErrVar = arr('', adapt_maxerr, []),
+	    (BoundForm = min(Upper, More),
+		CK1 = [assign(ErrVar, max(I-Upper, ErrVar))],
+		SX1 = choose(trigger>Upper, 1,0);
+	      More = BoundForm,
+		CK1 = [],
+		SX1 = 0),
+	    (More = max(Lower, result),
+		CK2 = [assign(ErrVar, max(Lower-I, ErrVar))],
+		SX2 = choose(trigger<Lower, -1, 0);
+	      More = result,
+		CK2 = CK1,
+		SX2 = SX1),
+	    GroundEqn = (trigger=ActEqn,SX2),
+	    AllActs = [Expr | CK2];
+	  Type = magnitude, !, % no derived events yet but same
+	    SourceEqn = event(ActEqn, TriggerEqn, (From->To)),
+	    GroundEqn = (magnitude=TriggerEqn,
+			    choose(magnitude '!=' 0, ActEqn, 0)),
+	    % trigger is just a sum of references so building is simple
+%	    final_assignment(TriggerEqn, Node,
+%			     elt([], current_event_magnitude, X), Swaps,
+%			     UseStep, Used, [TriggerExpr], [], _Path, EvtConds,
+%			     []),
+	    Expr = assign(I, _Fn), % dig out the result
+	    I = arr(SquirtPtr, _, _), % and its submodel pointer
+	    (From = 0, Twk1 = [];
+	      From = elt(_, BSrc, _), CSrc = arr(SquirtPtr, BSrc, []),
+		Twk1 = [assign(CSrc, CSrc-I)]),
+	    (To = 0, Twk2 = Twk1;
+	      To = elt(_, BDest, _), CDest = arr(SquirtPtr, BDest, []),
+		Twk2 = [assign(CDest, CDest+I) | Twk1]), !,
+%	    AllActs = [cond_event(TriggerExpr, Expr, Twk2)],
+%	    append(EvtConds, RefList, UseList);
+	    AllActs = [Expr | Twk2],
+	    UseList = RefList;
+	  (SourceEqn = with_phase(SmStep, EvtElts, GroundEqn),
+	      all(user, arg, [unify(2), build(EvtElts), build(EvtConds)]);
+	    EvtConds = [],
+	      GroundEqn = SourceEqn),
+	    AllActs = [Expr]), !,
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
-			 UseStep, Used, Expr, Setups, Path, RefList,
+			 UseStep, Used, [Expr], Setups, Path, RefList,
 			 AllInters),
-	connect_params([make(Made, UseList, Path, UseStep, Expr) | Setups],
+	connect_params([make(Made, UseList, Path, UseStep, AllActs) | Setups],
 		       AllInters, Actions, Inters);
 	Actions = [],
 	Inters = []),
-	((member(Type, [compartment, creation, immigration, reproduction]);
+	(Type = limit, !,
+	    Expr = assign(_D, choose(Test1, _Y, _N)),
+	    Test1 =.. [_Ineq, I, _Bound],
+				% dig out the inter
+	    % unite_event_contexts(Callable, Path, Combo),
+	    % this merely puts its conds in the subphase
+	    Linkers = [make(checked(Dest), [Dest], Path, SmStep, [])];
+	    % pass value because consequent event may care whether we are minned
+	    % or maxed (or cannoned into oblivion by an upstream squirt)
+	    % but mostly cos it is easier
+	  (member(Type, [compartment, creation, immigration, reproduction]);
 	        Is_P = 1;
 	        Is_P = 2, Type = init_function), !,
-	    Linkers = [make(Dest, [init(Dest), update(Dest)], DestPath, SmStep, [])];
+	    Linkers = [make(Dest, [init(Dest), update(Dest), tweaked(Dest)],
+			    DestPath, SmStep, []),
+		       make(tweaked(Dest), EvtConds, DestPath, SmStep, [])];
 	Linkers = []),
 	append([Collects, Actions, Linkers], Assignments).
+
+unite_event_contexts([], Test, Test).
+unite_event_contexts([elt(Path, _,_) | Others], Test, Act) :-
+	unite_event_contexts(Others, Test, OldAct),
+	inters'><'combine_contexts(Path, OldAct, Test, Act).
+
 
 /* Now...when using a variable in the equation I have been putting
 'made_at' in the conditions, the idea being that I have to exit any

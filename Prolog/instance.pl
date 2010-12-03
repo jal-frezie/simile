@@ -6,7 +6,7 @@
 sicstus_module(instance, [instantiate_all/2, apply_minmax/3,
 			  path_section_for/6] ).
 
-sicstus_use_module([sp_only, m_class, inters, ame_gen, units, utility,
+sicstus_use_module([sp_only, m_class, inters, ame_gen, units, utility, m_update,
 	       library(lists),library(ordsets)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -144,9 +144,8 @@ instance_of(_, Node, _,
 /* Nodes that have been specified as input parameters are set by a function
 call to the stub */
 
-instance_of(Type, Node, Path,
+instance_of(variable, Node, Path,
 	    [instance(function, Node, Default, Val, Base-Dims)], []) :-
-	\+ member(Type, [compartment, creation, immigration, reproduction]),
 	is_parameter(Node, PType),
 	PType > 0, !,
 	get_units(Node, Base, Dims),
@@ -172,14 +171,15 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	(\+ PType = 1, !;
 	    choose_default_value(Node, Base, PType, Default)),
 	FuncRef = instance(init_function, F, Default, Home, Base-Units),
-	((setof( Arc, flows(in, Node, Arc), InArcs),
+	squirt_names_and_refs(Node, SqtNames, SqtRefs),
+	((setof( Arc, flows(flow, in, Node, Arc), InArcs),
 	  bind_and_build_term(Node, InArcs, Base, Units, In, In_refs);
 	  In_refs = []),
-	(setof( Arc, flows(out, Node, Arc), OutArcs),
+	(setof( Arc, flows(flow, out, Node, Arc), OutArcs),
 	    bind_and_build_term(Node, OutArcs, Base, Units, Out, Out_refs),
 	    (In_refs = [], Change = -Out; Change = In++(-Out));
-	    \+ In_refs = [], Change = In),
-	    merge_lists(In_refs, Out_refs, Refs),
+	    Out_refs = [], \+ In_refs = [], Change = In),
+	    append([In_refs, Out_refs, SqtRefs], Refs),
 	/* apply_minmax(F, Home+Step*(In-Out), UpdateExpr),
 	compartments will be updated in a separate procedure from flows
 	so ordering will not be done -- otherwise the above would be
@@ -189,11 +189,14 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	    F has_class_refinement max_val of Max, !,
 	    Span is Max-Min;
 	  Span = 100),
-	    is_instance(internal, st(Node), none, Diffs, diffs-Units, DiffSt),
-	    Expr = with_phase(Step,Home++stage_incr(Diffs, Step, Change, Span)),
+	is_instance(internal, st(Node), none, Diffs, diffs-Units, DiffSt),
+	Expr = with_phase(Step, SqtNames,
+			  Home++stage_incr(Diffs, Step, Change, Span)),
 	    Local = [DiffSt, Instance];
-	  [Refs, Local, Expr] = [[], [Instance], none]),
-	    is_instance(compartment, Node, Expr, Home, Base-Units, Instance).
+	    % flowless compartment -- hpefully rare
+	    [Refs, Local, Expr] = [SqtRefs, [Instance],
+				   with_phase(Step, SqtNames, Home)]),
+	is_instance(compartment, Node, Expr, Home, Base-Units, Instance).
 
 /* Immigration and reproduction nodes behave like compartments with an
 inflow equal to their functional value and an initial value of random
@@ -228,7 +231,8 @@ instance_of(Type, Node, Path,
 	is_instance(internal, st(Node), none, Diffs, diffs-[], DiffSt),
 	Arc is_connector from _ to Node,
 	initiates(Arc, Function),
-	Updater = with_phase(Step, Home+stage_incr(Diffs, Step, Struct, 100)).
+	Updater = with_phase(Step, [],
+			     Home+stage_incr(Diffs, Step, Struct, 100)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* functions do not have any unit translations built into them, as it is assumed
@@ -244,28 +248,68 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	\+ is_ghost(Result),
 	find_type(Result, RType),
 	Node has_class_refinement value of GroundExpr,
-	(member(RType, [creation, compartment]), !,
-	    UseExpr = GroundExpr,
-	    FType = init_function;
-	RType = condition,
-	    is_lookup_cond(GroundExpr, UseExpr), !,
-	    /* Try alternative way of enumerating instances */
-	    FType = id_function;
-	FType = function,
-	    UseExpr = GroundExpr),
+
 	(setof(InputPair,
-	       generate_input_pair(Node, InputPair),
+	       generate_input_pair(Node, cont, InputPair),
 	       InputPairs ), !;
 	    InputPairs = []),
-	wake,
-	replace_subexps(UseExpr, instance, process_expr,
+	replace_subexps(GroundExpr, instance, process_expr,
 			sub(InputPairs, Refs), top_down,
-			Switched, FinalExpr),
+			Switched, SubbedExpr),
+
+	(member(RType, [creation, compartment]), !,
+	    FinalExpr = SubbedExpr,
+	    FType = init_function;
+	    
+	  (RType = event,
+	      is_parameter(Node, PType),
+	      nth0(PType, [magnitude, limit], FType);
+	    RType-FType = squirt-magnitude), !,	    
+	    (FType = limit, !,
+		apply_minmax(Node, result, BoundForm),
+		FinalExpr = limit(SubbedExpr, BoundForm);
+% derived event: make magnitude expression
+	      setof(EvtPair,
+		    generate_input_pair(Node, discrete, EvtPair),
+		    EvtPairs), % must have triggers; make red if none!
+		all(user, arg, [unify(2), build(EvtPairs), build(EvtNodes)]),
+		all(user, arg, [unify(3), build(EvtPairs), build(EvtNames)]),
+		all(user, arg, [unify(4), build(EvtPairs), build(EvtArgs)]),
+		build_sum(EvtArgs, EvtTrigger),
+		all(instance, is_instance, 
+		    [unify(event), build(EvtNodes), build(_Load),
+		     build(EvtNames), build(_Type), build(EvtRefs)]),
+		(RType = squirt, !,
+		    connects(Result, Source, Dest),
+		    (find_type(Dest, compartment), !,
+			MidRefs = [instance(compartment, Dest, _, DestName, _)
+				  | EvtRefs],
+			DestEntry = DestName;
+		      MidRefs = EvtRefs,
+			DestEntry = 0),
+		    (find_type(Source, compartment), !,
+			EndRefs = [instance(compartment, Source, _, SourceName,
+					  _) | MidRefs],
+			SourceEntry = SourceName;
+		      EndRefs = MidRefs,
+			SourceEntry = 0),
+		    FinalExpr = event(SubbedExpr, EvtTrigger,
+				       (SourceEntry->DestEntry));
+		  FinalExpr = event(SubbedExpr, EvtTrigger, (0->0)),
+		    EndRefs = EvtRefs));
+	  RType = condition,
+	    is_lookup_cond(SubbedExpr, FinalExpr), !,
+	    /* Try alternative way of enumerating instances */
+	    FType = id_function;
+	  FType = function,
+	    FinalExpr = SubbedExpr),
+
 	(member(var_pair(_, Sub), Switched),
-	    m_update'><'get_solo_list_depth(Sub, _), !,
+	    get_solo_list_depth(Sub, _), !,
 	    caption_for(Node, Capt),
 	    raise_exception(bad_parameter(Capt, Sub));
-	length(Refs, _Fix)),
+	suffix(EndRefs, Refs),
+	    length(Refs, _Fix)),
 	get_units(Node, Base, Units),
 	is_instance(FType, Node, FinalExpr, elt(Path, _, Base-Units),
 		    Base-Units, Instance).
@@ -292,7 +336,7 @@ instance_of(flow, Arc, _, [instance(flow, Arc, _, Value, Units)],
 
 instance_of(loss, Node, Path,
 	    [instance(loss, Node,
-		      with_phase(Step, loses(Home, Step)),
+		      with_phase(Step, [], loses(Home, Step)),
 		      elt(Path, _, boolean-[]), boolean-[])],
 	    [instance(function, Function, _, Home, _)]) :-
 	Home = elt(Path, _, _-[]),
@@ -305,7 +349,7 @@ are the same as the functions from which they are generated. This also goes for
 condition, creation and loss nodes. Type is as function. */
 
 instance_of(Type, Node, _, Inst, Ref) :-
-	member(Type, [variable, condition, creation, alarm]),
+	member(Type, [variable, condition, creation, alarm, event, squirt]),
 	(member(Node, [B, A]),
 	    Arc is_connector from A to B, !,
 	    initiates(Arc, F),
@@ -315,10 +359,10 @@ instance_of(Type, Node, _, Inst, Ref) :-
 	% (buggy legacy models only)
 	caption_for(Node, Capt),
 	    Node is_part_of Parent,
-	    m_update'><'oblitterfry(Node),
+	    oblitterfry(Node),
 	    caption_for(Parent, PCapt),
 	    query(remove_orphan(Capt, PCapt), info, top, [ok], _)).
-	    
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 is_lookup_cond(GroundExpr, UseExpr) :-
 	(GroundExpr = (index(1) is UseId),
@@ -326,16 +370,32 @@ is_lookup_cond(GroundExpr, UseExpr) :-
 	 GroundExpr = any(index(1) is UseExpr)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-flows(Dir, Comp, Flow) :-
+build_sum([Solo], Solo).
+build_sum([First | Rest], First+Run) :-
+	build_sum(Rest, Run).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+squirt_names_and_refs(Comp, Names, Refs) :-
+	(setof(SqtArc,
+	       Dir^LocalArc^(member(Dir, [in, out]),
+			     flows(squirt, Dir, Comp, LocalArc),
+			     find_name_host(LocalArc, SqtArc)), SqtArcs), !;
+	    SqtArcs = []),
+	all(instance, is_instance,
+	    [unify(squirt), build(SqtArcs), build(_Load), build(Names),
+	     build(_Type), build(Refs)]).
+	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+flows(Type, Dir, Comp, Flow) :-
 	(Tgt = Comp; find_ghosts(Comp, Tgt)),
 	(Dir = in, Dest = Tgt; Dir = out, Src = Tgt),
 	Flow is_connector from Src to Dest,
-	find_type(Flow, flow).
+	find_type(Flow, Type).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* generate_input_pair is used in setof so should be cut free */
-generate_input_pair(Node, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
-	m_update'><'get_all_links(Node, ids(SourceID, Relation),
+generate_input_pair(Node, IType, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
+	m_update'><'get_all_links(Node, IType, ids(SourceID, Relation),
 			       input_link(id(Link,_, SourceLocation), _,
 					  ArcName, SourceUnits, ArcUnits)),
 	/* just in case we have extra inputs... */
@@ -343,15 +403,18 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
         NodeID = SourceID,
 	RefExp = Ref,
 
-	m_update'><'analyze_array(SourceUnits, FarUnits, FarDims),
+	analyze_array(SourceUnits, FarUnits, FarDims),
 	get_actual_sizes(Node, FarDims, _,_,_),
-	m_update'><'analyze_array(ArcUnits, BaseUnits, _),
+	analyze_array(ArcUnits, BaseUnits, _),
 	RelatedRef = input(SourceLocation, RefExp, Relation, ArcUnits),
 	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, _),
 	find_name_host(Link, ControlLink),
-	(m_update'><'get_av_pair(ControlLink, 2, use_sofar, 1),
-	    ExprRef = sofar(ConvertedRef);
-	\+ m_update'><'get_av_pair(ControlLink, 2, use_sofar, 1),
+	(get_av_pair(ControlLink, 2, use_sofar, 1),
+	    (find_type(SourceId, compartment),
+		ExprRef = at_update(ConvertedRef);
+	      \+ find_type(SourceId, compartment),
+		ExprRef = sofar(ConvertedRef));
+	\+ get_av_pair(ControlLink, 2, use_sofar, 1),
 	    ExprRef = ConvertedRef).
 
 try_conversion(RelatedRef, Units, BaseUnits, ConvertedRef, ImpType) :-
@@ -400,7 +463,7 @@ language */
 
 get_units(Node, Type, Dims) :-
 	(Node has_class_refinement units of Unit, !; Unit = 1),
-	m_update'><'analyze_array(Unit, Type, Number),
+	analyze_array(Unit, Type, Number),
 	get_actual_sizes(Node, Number, _, Dims, _).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -462,7 +525,7 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 process_expr(sub(InputPairs, Refs), OldVar, NewVar, Recurse) :-
 	member(OldVar-RefNode, [dies_of(Var)-VisNode, latency(Var)-VisNode,
 				Var-Node]), 
-	m_update'><'get_solo_list_depth(Var, _),
+	get_solo_list_depth(Var, _),
 	(member(input_pair(Var, Node, OutVar, NewVar), InputPairs),
 	    get_host(Node, VisNode),
 	    is_instance(_, RefNode, _, OutVar, _, Ref),
@@ -496,7 +559,7 @@ valid_tap(Flow, Controller) :-
 
 % 3rd arg of *m_loop(...) is inserted by extract_submodel_assignments
 path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
-	m_update'><'list_local_index_meanings(SmName, ISpecs),
+	list_local_index_meanings(SmName, ISpecs),
 	all(dialogue, index_types, [build(ISpecs), build(RevIndxCount)]),
 	reverse(RevIndxCount, IndxCount),
 	(variable_size(SmName), !,

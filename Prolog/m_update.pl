@@ -11,7 +11,7 @@ sicstus_module(m_update,
 	       [get_av_pair/4, add_parameter/4, get_desc_and_comment/4,
 		list_index_meanings/2, list_local_index_meanings/2,
 		get_input_info/2,get_link_source_data/7, find_node_with_data/3,
-		valid_input/2, check_unit/4,
+		valid_input/3, check_unit/4,
 		need_same_dims/2, check_flow_ends/3,
 		get_submodel_interface/5, load_submodel_interface/4,
 		load_references/2, save_references/2, link_ends/4,
@@ -116,18 +116,18 @@ dealing with multiple instances. */
 
 get_input_info(Function, Input_list) :-
 	(setof(Link_entry,
-	      IDs^get_all_links(Function, IDs, Link_entry),
+	      IDs^get_all_links(Function, cont, IDs, Link_entry),
 	      Input_list),
 	    decide_param_names(Input_list), !;
 	Input_list = []),
 	retractall(input_links_were(_)),
 	assert(input_links_were(Input_list)).
 
-get_all_links(Function, ids(RemoteNode, Relation),
+get_all_links(Function, SrcType, ids(RemoteNode, Relation),
               input_link(id(Link, Index, SourceLocn), RemoteName, LocalName, 
 			RemoteUnit, Local_unit)) :- 
 	/* this should be cut free */
-	(valid_input(Function, Link);
+	(valid_input(Function, SrcType, Link);
 	    Function has_class submodel,
 	    Link is_connector from _ to Function),
 	Link has_type influence,
@@ -295,13 +295,17 @@ input to a function. i.e., those to that function,
 plus those to functions associated with variables
 that are ghosts of that function's variable. */
 
-valid_input(Real, InputLink) :-
+valid_input(Real, SourceType, InputLink) :-
 	implicit_function(RealVar, Real),
 	find_base(RealVar, BaseVar),
 	(GhostVar = BaseVar;
 	find_ghosts(BaseVar, GhostVar)),
 	implicit_function(GhostVar, AlsoUsed),
-	InputLink is_connector from _ to AlsoUsed.
+	InputLink is_connector from Source to AlsoUsed,
+	(\+ SourceType = discrete,
+	    \+ Source is_of_sort discrete; % event values not to be used
+	  SourceType = discrete,
+	    Source is_of_sort discrete). % event values to be used
 
 /* This generates the extra array nestings due to submodels that are exited between a
 link's source and its destination. Note that if the destination is a creation or

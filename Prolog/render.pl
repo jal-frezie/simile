@@ -503,6 +503,13 @@ strings_direct(tcl, release_space, [Dest, Dim, Used], Indent, Stream) :-
 	format(Stream, "~*snamespace delete ~a\n", [DeepIndent, " ", Zap]),
 	excrete(tcl, end(for), XIndex, Indent, Stream).
 
+strings_direct(L, cond_events, [Cond, Procs, Args], Indent, Stream) :-
+	excrete(L, if_start, Cond, Indent, Stream),
+	DeepIndent is Indent+4,
+	all(render, insert_event_call,
+		[build(Procs), unify([L, Args, DeepIndent, Stream])]),
+	excrete(L, end(if), Cond, Indent, Stream).
+
 excrete(L, Stat, Args, Indent, Stream) :-
 	strings_direct(L, Stat, Args, Indent, Stream), !;
 	do_obsolete_thing(L, Stat, Args, Indent, Stream), fail; true.
@@ -511,6 +518,12 @@ do_obsolete_thing(L, Stat, Args, Indent, Stream) :-
 	render(L, Stat, Args, Indent, Stuff), !,
 	do_writing(Stuff, Stream);
 	raise_exception(failed_to_do_obsolete_thing(Stat,Args)).
+
+insert_event_call(elt(Path, Proc, _Dims), [L, Args, Indent, Stm]) :-
+	inters'><'pointer_from(Path, Ptr),
+	make_struct_reference(L, Ptr, Proc, Call),
+	Action =.. [Call | Args],
+	excrete(L, procedure_call, Action, Indent, Stm).
 
 /*
 do_base_pointers(_, base(_,_, []), []).
@@ -649,7 +662,9 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 				   creation-'CREATION',
 				   reproduction-'REPRODUCTION',
 				   immigration-'IMMIGRATION',
-				   loss-'LOSS']),
+				   loss-'LOSS',
+				   event-'EVENT',
+				   squirt-'SQUIRT']),
 	    ( % nth(GraphPointer, GraphOwners, [BaseName | _]), !;
 	    nth(GraphPointer, Used, Name), !;
 	    GraphPointer = 0),

@@ -29,6 +29,8 @@
 #define IMMIGRATION     7
 #define LOSS            8
 #define ALARM           9
+#define EVENT           10
+#define SQUIRT          11
 
 /* data types -- zero or negative as they will end lists of dimensions */
 #define	VALUELESS	0

@@ -1021,6 +1021,7 @@ make_intermediates(
 		    raise_units(Base, Exp, Units),
 			SourceRef = ValRef);
 		 (ValRef = sofar(SourceRef);
+		     ValRef = at_update(SourceRef);
 		     ValRef = default(_), SourceRef = 0),
 		    UnitList = [Units];
 		 (var(Lop),
@@ -1042,7 +1043,11 @@ make_intermediates(
 		    throw(lost_user_defined_fn(Source, Op, Arity));
 		 throw(no_such_function(Source, Op))),
 	    (Source = sofar(_), !,
-		all(inters, dissociate, [build(SubArgs), build(Args)]);
+		all(inters, dissociate,
+		    [unify(later), build(SubArgs), build(Args)]);
+	    Source = at_update(_), !,
+		all(inters, dissociate,
+		    [unify(this_step), build(SubArgs), build(Args)]);
 	    Args = SubArgs);
 	throw(undecipherable_operand(Source, SubId)).
 
@@ -1086,9 +1091,10 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	name(MxOp, MxOpStr),
 	lower(MxOpStr, OpStr).
 
-dissociate(made_at(Arg, _), later(Arg)).
-dissociate(Arg, Arg) :-
-	Arg = later(_Cond);	% in case sofars/samesteps are nested
+dissociate(Wrapper, made_at(Arg, _), NewArg) :-
+	NewArg =.. [Wrapper, Arg].
+dissociate(Wrapper, Arg, Arg) :-
+	Arg =.. [Wrapper, _Cond];	% in case sofars/samesteps are nested
 	Arg = enumerate(_Parent). % need this even if not waiting for source
 	
 refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
@@ -1608,7 +1614,7 @@ wait_for_submodels([Level | AlsoExited], Waits) :-
 	Waits = Others),
 	wait_for_submodels(AlsoExited, Others).
 
-pointer_from([], this).
+pointer_from([], ''). % was 'this' -- why? '' makes locals for event procs.
 pointer_from([sm(_,_, Ptr, _) | _], Ptr).
 
 pointer_to([], '').

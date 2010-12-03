@@ -355,7 +355,13 @@ do_assignment(L, [verbatim(CodeLine) | Clauses],
 	      Indent, Used, Stream) :-
 	do_writing(CodeLine, Stream),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
-/* cannot use cos we only assign when condition is right
+
+/*
+do_assignment(L, [marker(_) | Clauses],
+	      Indent, Used, Stream) :-
+	do_assign_list(L, Clauses, Indent, Used, Stream).
+
+cannot use cos we only assign when condition is right
 do_assignment(L, [cond_assign(Dest, Tested, Payload, Op, SoFar) | Clauses],
 		Collects, 
 		Preambles, [Current | Postambles],
@@ -431,6 +437,63 @@ do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Indent,
 	    fail;
 	do_assign_list(L, Later, Indent, Used, Stream)).
 
+do_assignment(L, [check_limits(DestSpec, BoundForm) | Clauses],
+	      Indent, Used, Stream) :-
+	make_scalar(L, DestSpec, Dest),
+	(BoundForm = min(Upper, More),
+	    make_expr(L, max(Dest-Upper, adapt_maxerr), Overshoot),
+	    excrete(L, assignment, adapt_maxerr=Overshoot, Indent, Stream);
+	  More = BoundForm),
+	(More = max(Lower, result),
+	    make_expr(L, max(Lower-Dest, adapt_maxerr), Undershoot),
+	    excrete(L, assignment, adapt_maxerr=Undershoot, Indent, Stream);
+	  More = result),
+	do_assign_list(L, Clauses, Indent, Used, Stream).
+
+do_assignment(L, [apply_limits(DestSpec, BoundForm, Callable, ArgSpecs)
+		 | Clauses], Indent, Used, Stream) :-
+	all(language, make_scalar,
+	    [unify(L), build([DestSpec | ArgSpecs]), build([Dest | Args])]),
+	(BoundForm = min(Upper, More),
+	    make_expr(L, Dest>Upper, Overshoot),
+	    SomeConds = [Overshoot];
+	  More = BoundForm,
+	    SomeConds = []),
+	(More = max(Lower, result),
+	    make_expr(L, Dest<Lower, Undershoot),
+	    AllConds = [Undershoot | SomeConds];
+	  More = result,
+	    AllConds = SomeConds),
+	build_disjunction(L, AllConds, AppTest),
+	excrete(L, cond_events, [AppTest, Callable, Args], Indent, Stream),
+	do_assign_list(L, Clauses, Indent, Used, Stream).
+
+do_assignment(L, [apply_event(AllConds, Tgt, Expr, MoreActs) | Clauses],
+	      Indent, Used, Stream) :-
+	(build_disjunction(L, AllConds, AppTest), !, % fail if no triggers
+	    excrete(L, if_start, AppTest, Indent, Stream),
+	    DeepIndent is Indent+4,
+	    do_assignment(L, [assign(Tgt, Expr) | MoreActs],
+			  DeepIndent, Used, Stream),
+	    excrete(L, else_clause, AppTest, Indent, Stream),
+	    do_assignment(L, [assign(Tgt, 0)], DeepIndent, Used, Stream),
+	    excrete(L, end(if), AppTest, Indent, Stream);
+	  do_assignment(L, [assign(Tgt, 0)], Indent, Used, Stream)),
+	do_assign_list(L, Clauses, Indent, Used, Stream).
+
+do_assignment(L, [cond_event(TriggerExpr, Expr, Transfers) | Clauses],
+		  Indent, Used, Stream) :-
+	do_assignment(L, [TriggerExpr], Indent, Used, Stream),
+	refer_value(L, current_event_magnitude, Magn),
+	excrete(L, if_start, Magn, Indent, Stream),
+	DeepIndent is Indent+4,
+	do_assignment(L, [Expr | Transfers], DeepIndent, Used, Stream),
+	excrete(L, else_clause, Magn, Indent, Stream),
+	Expr = assign(Dest, _),
+	do_assignment(L, [assign(Dest, 0)], DeepIndent, Used, Stream),
+	excrete(L, end(if), Magn, Indent, Stream),
+	do_assign_list(L, Clauses, Indent, Used, Stream).
+		    
 /* Initial membership of populations was handled by the new_member
 clause up until Simile 4.5, but now it is done like initializing a VM
 model, so individuals can persist across a reset. This means their

@@ -535,7 +535,7 @@ update_per_record_bracket_style(Parent) :- % should do all then fail
 	(OtherArc = Link; sequence(Link, OtherArc)),
 	\+ sequence(OtherArc, _),
 	OtherArc is_connector from _ to Fn,
-	m_update'><'get_all_links(Fn, _, input_link(id(OtherArc, Rel, Use),
+	m_update'><'get_all_links(Fn, cont,_, input_link(id(OtherArc, Rel, Use),
 						 _, AddRef, _, NewDims)),
 	OtherArc has_attribute role of Roles,
 	select(use(Rel, Use, OldRef, _), Roles, MoreRoles),

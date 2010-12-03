@@ -8,6 +8,7 @@ functions that are needed both in model_update and image. */
 sicstus_module(ame_gen,
 	       [get_term/3, make_nice_error_message/2, get_host/2, appears/1, 
 		implicit_function/2, border_node/1, is_parameter/2,
+		paramness_setup/4,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
 		bowtie_section/2, find_reference/3, query/5, announce/2,
 		substitute_in_expr/4, replace_subexps/7, replace_all_subexps/7,
@@ -328,17 +329,47 @@ find_ghosts(Base, Ghost) :-
 /* test for whether node is an input parameter, i.e., something
 	that would normally have a function, but without any kind of
 	input link. Result is 1 if yes, 0 if no, -1 if type cannot be one. */
-
+/*
 is_parameter(Node, Val) :-
 	(\+ Node is_of_sort can_be_input; is_ghost(Node)), !,
 	    Val = -1;
-	appears(Node),
+	  appears(Node),
 	    Node is_of_sort has_function,
-	    \+ implicit_function(Node, _ImpFunc), !,
-	    (Node has_class_refinement param_type of file, !,
-		Val = 2;
-	    Val = 1);
-	Val = 0.
+	    (Node has_class_refinement param_type of file,
+		has_fp_type(Node, Val);
+	      \+ implicit_function(Node, _ImpFunc),
+		(Node is_of_sort discrete, % event series
+		    Val = 2; % or fixed parameter
+		  Val = 1)), !;	% limit event
+	  Val = 0. % derived var or event, or other.
+
+has_fp_type(Node, Val) :-
+	Node is_of_sort discrete,
+	    Val = 2;
+	\+ Node is_of_sort discrete,
+	    Val = 1.
+
+would_use_implicit(Node, IsP) :-
+	Node is_of_sort discrete,
+	member(IsP, [0,2]);
+*/
+is_parameter(Node, Val) :-
+	(member(Node, [Has, Is]),
+	implicit_function(Has, Is), !,
+	    UsesFn = yes;
+	Node-Node = Has-Is,
+	    UsesFn = no),
+	(Is has_class_refinement param_type of HasFpType, !;
+	    HasFpType = ''),
+	paramness_setup(Has, Val, HasFpType, UsesFn).
+
+paramness_setup(Node, IsP, HasFpType, UsesFn) :-
+	(\+ Node is_of_sort can_be_input; is_ghost(Node)), !,
+	    IsP = -1;
+	Node is_of_sort discrete,
+	    member(IsP-HasFpType-UsesFn, [0-''-yes, 1-file-yes, 2-''-no]);
+	\+ Node is_of_sort discrete,
+	    member(IsP-HasFpType-UsesFn, [0-''-yes, 1-''-no, 2-file-no]).
 
 /* New system for preserving relationships between model entities when they are saved and restored: references to other entities are saved in an attribute called References, which is adjusted when the model is re-read. Other attributes refer to remote entities only by their position in this list.
 
