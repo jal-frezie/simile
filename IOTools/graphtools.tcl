@@ -7,7 +7,7 @@ namespace eval ::graphtools {
             Xslide Yslide CanvasMark CanvasDrag Ylabel_move settings_axis \
             do_axis_settings horizlines vertlines boxed \
             delist decimalPlaces myAssembleFont get_x get_y get_Yvalues \
-            resetGraph AxisRound
+            resetGraph AxisRound dodgyValue
     
     # protected       gridOnOff myAssembleFont
     
@@ -749,5 +749,11 @@ proc ::graphtools::myAssembleFont {family weight style textsize} {
 			$family $weight $style $textsize]
 	#tk_messageBox -message "font $font"
 	return $font
+}
+
+proc ::graphtools::dodgyValue {val} {
+    return [expr ![string is double -strict $val] || \
+		[lsearch {inf nan +inf +nan -inf -nan} \
+		     [string tolower $val]]>-1]
 }
 

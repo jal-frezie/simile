@@ -65,7 +65,6 @@ clear_model([Funt/Args | Rest]) :-
 
 /* Stuff needed for c database */
 % sicstus_load_foreign_resource(struct_db).
-:- foreign(empty_tree(-integer)).
 :- dynamic(node_id_for_root_is/1).
 empty_tree :-
         load_foreign_resource('../System/bin/struct_db'),
@@ -87,19 +86,6 @@ tcl_assert(P) :-
 	all(database, pack_term, [build(Args), build(FixArgs)]),
 	safe_tcl_eval(['PrologAssert', Funt | FixArgs], _), fail; true.
 
-:- foreign(create_node(+string)). 
-:- foreign(add_to_tree(+string, +string)). 
-:- foreign(set_class(+string, +atom)). 
-:- foreign(create_arc(+string)). 
-:- foreign(add_link(+string, +string, +string)). 
-:- foreign(set_type(+string, +atom)). 
-:- foreign(add_continuation(+string, +string)).
-:- foreign(add_curve(+string, +integer, +integer)).
-:- foreign(add_bbox(+string, +integer, +integer, +integer, +integer)).
-:- foreign(add_iext(+string, +integer, +integer, +integer, +integer)).
-:- foreign(add_capt_off(+string, +integer, +integer)).
-:- foreign(add_centre(+string, +integer, +integer)).
-:- foreign(set_hidden(+string, +integer)).
 c_assert(P) :-
 %	safe_tcl_eval([puts, br(write(assert(P)))], _),
 	P = is_node(Node), !,
@@ -150,18 +136,6 @@ tcl_retract(P) :-
 	tcl_call(P, Funt, MatchStr),
 	safe_tcl_eval(['PrologRetract', Funt, chars(MatchStr)], _).
 
-:- foreign(delete_node(+string)). 
-:- foreign(remove_from_tree(+string, +string)). 
-:- foreign(unset_class(+string, +atom)). 
-:- foreign(delete_arc(+string)). 
-:- foreign(remove_link(+string, +string, +string)). 
-:- foreign(unset_type(+string, +atom)). 
-:- foreign(remove_continuation(+string, +string)).
-:- foreign(remove_curve(+string)).
-:- foreign(remove_bbox(+string)).
-:- foreign(remove_iext(+string)).
-:- foreign(remove_capt_off(+string)).
-:- foreign(remove_centre(+string)).
 c_retract(P) :-
 %	safe_tcl_eval([puts, br(write(retract(P)))], _),
 	P = is_node(Node), !,
@@ -222,22 +196,6 @@ tcl_call(P, Funt, MatchStr) :-
 	all(database, unpack_term, [build(ArgStrs), build(InstArgs)]),
 	Args = InstArgs.
 
-:- foreign(find_parent(+string, -integer)).
-:- foreign(get_child_list_pointer(+string, -integer)).
-:- foreign(get_class(+string, -atom)). 
-:- foreign(find_ends(+string, -string, -string)). 
-:- foreign(get_in_list_pointer(+string, -integer)).
-:- foreign(get_out_list_pointer(+string, -integer)).
-:- foreign(get_type(+string, -atom)).
-:- foreign(find_prev(+string, -integer)).
-:- foreign(get_next_list_pointer(+string, -integer)).
-:- foreign(find_curve(+string, -integer, -integer)).
-:- foreign(find_bbox(+string, -integer, -integer, -integer, -integer)).
-:- foreign(find_iext(+string, -integer, -integer, -integer, -integer)).
-:- foreign(find_capt_off(+string, -integer, -integer)).
-:- foreign(find_centre(+string, -integer, -integer)).
-:- foreign(is_hidden(+string)).
-:- foreign(get_id_and_next_ptr(+integer, -integer, -integer)).
 c_call(P) :-
 %	safe_tcl_eval([puts, br(write(call(P)))], _),
 	(P = subsystem(Parent, Child), !,

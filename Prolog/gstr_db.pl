@@ -1,0 +1,45 @@
+:- foreign(empty_tree(-integer)).
+
+:- foreign(create_node(+string)). 
+:- foreign(add_to_tree(+string, +string)). 
+:- foreign(set_class(+string, +atom)). 
+:- foreign(create_arc(+string)). 
+:- foreign(add_link(+string, +string, +string)). 
+:- foreign(set_type(+string, +atom)). 
+:- foreign(add_continuation(+string, +string)).
+:- foreign(add_curve(+string, +integer, +integer)).
+:- foreign(add_bbox(+string, +integer, +integer, +integer, +integer)).
+:- foreign(add_iext(+string, +integer, +integer, +integer, +integer)).
+:- foreign(add_capt_off(+string, +integer, +integer)).
+:- foreign(add_centre(+string, +integer, +integer)).
+:- foreign(set_hidden(+string, +integer)).
+
+:- foreign(delete_node(+string)). 
+:- foreign(remove_from_tree(+string, +string)). 
+:- foreign(unset_class(+string, +atom)). 
+:- foreign(delete_arc(+string)). 
+:- foreign(remove_link(+string, +string, +string)). 
+:- foreign(unset_type(+string, +atom)). 
+:- foreign(remove_continuation(+string, +string)).
+:- foreign(remove_curve(+string)).
+:- foreign(remove_bbox(+string)).
+:- foreign(remove_iext(+string)).
+:- foreign(remove_capt_off(+string)).
+:- foreign(remove_centre(+string)).
+
+:- foreign(find_parent(+string, -integer)).
+:- foreign(get_child_list_pointer(+string, -integer)).
+:- foreign(get_class(+string, -atom)). 
+:- foreign(find_ends(+string, -string, -string)). 
+:- foreign(get_in_list_pointer(+string, -integer)).
+:- foreign(get_out_list_pointer(+string, -integer)).
+:- foreign(get_type(+string, -atom)).
+:- foreign(find_prev(+string, -integer)).
+:- foreign(get_next_list_pointer(+string, -integer)).
+:- foreign(find_curve(+string, -integer, -integer)).
+:- foreign(find_bbox(+string, -integer, -integer, -integer, -integer)).
+:- foreign(find_iext(+string, -integer, -integer, -integer, -integer)).
+:- foreign(find_capt_off(+string, -integer, -integer)).
+:- foreign(find_centre(+string, -integer, -integer)).
+:- foreign(is_hidden(+string)).
+:- foreign(get_id_and_next_ptr(+integer, -integer, -integer)).

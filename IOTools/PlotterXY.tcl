@@ -713,10 +713,17 @@ namespace eval ::$keyValue {
         
 #ShowMess debug info "plt_Y_in Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
         if {[llength $Ynew]==1} then {
-            set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,9))}]]
-            adjustLimits $w $Tnew $Ynew
+	    if {[dodgyValue $Tnew] || [dodgyValue $Ynew]} {
+		set xm [expr $plot($w,xborder_left)+60]
+		set ym [expr $plot($w,yborder_top)+60]
+		$w.canvas create text $xm $ym -tags prompt -width 100 \
+		    -justify center -text [tr. "Some values resulting from maths errors have not been plotted"]
+	    } else {
+		set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,9))}]]
+		adjustLimits $w $Tnew $Ynew
 #ShowMess debug info "drawPoint Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
-            drawPoint $w $Told $Yold $Tnew $Ynew $colour
+		drawPoint $w $Told $Yold $Tnew $Ynew $colour
+	    }
         } else {
 	    array set allYOld $Yold
 	    array set allTOld $Told

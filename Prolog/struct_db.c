@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <limits.h>
 #ifdef _GNU_PROLOG
     #include "gprolog.h"
@@ -53,7 +54,7 @@ typedef struct arc_t {
 node nodes[USHRT_MAX];
 arc arcs[USHRT_MAX];
 id_list* roots;
-
+/*
 long usedBits = 0;
 void* safe_malloc(int count) {
   long ptr;
@@ -65,7 +66,7 @@ void* safe_malloc(int count) {
   }
   return (void*)ptr;
 }
-
+*/
 FORPROL empty_tree(long* ushrtmx) {
   int count;
   for (count=0; count<USHRT_MAX; ++count) {
@@ -512,13 +513,13 @@ FORPROL find_child(char* parent, char** child) {
   return run_through_list(p, child);
 }
 */
-FORPROL get_child_list_pointer(char* parent, unsigned long* ptr) {
+FORPROL get_child_list_pointer(char* parent, uintptr_t* ptr) {
     if (!strcmp(parent, "root"))
-      *ptr = (unsigned long)roots;
+      *ptr = (uintptr_t)roots;
     else if (!is_node(parent))
-      *ptr = (unsigned long)NULL;
+      *ptr = (uintptr_t)NULL;
     else
-      *ptr = (unsigned long)nodes[get_number(parent)].children;
+      *ptr = (uintptr_t)nodes[get_number(parent)].children;
     SUCCEED;
 }
 /*
@@ -541,10 +542,10 @@ SUCCEED;                         // succeed
   FAIL;
 }
 */
-FORPROL get_id_and_next_ptr(unsigned long oldptr, long* result, 
-			     unsigned long *newptr) {
+FORPROL get_id_and_next_ptr(uintptr_t oldptr, long* result, 
+			     uintptr_t *newptr) {
   *result = (long)((id_list*)oldptr)->me;
-  *newptr = (unsigned long)((id_list*)oldptr)->next;
+  *newptr = (uintptr_t)((id_list*)oldptr)->next;
   SUCCEED;
 }
 
@@ -596,13 +597,13 @@ FORPROL find_arc_to(char* dest, char** arc) {
   return run_through_list(end_pts, arc);
 }
 */
-FORPROL get_in_list_pointer(char* dest, unsigned long* ptr) {
+FORPROL get_in_list_pointer(char* dest, uintptr_t* ptr) {
   if (is_arc(dest))
-    *ptr = (unsigned long)arcs[get_arc_number(dest)].arcs_to;
+    *ptr = (uintptr_t)arcs[get_arc_number(dest)].arcs_to;
   else if (is_node(dest))
-    *ptr = (unsigned long)nodes[get_number(dest)].arcs_to;
+    *ptr = (uintptr_t)nodes[get_number(dest)].arcs_to;
   else
-    *ptr = (unsigned long)NULL;
+    *ptr = (uintptr_t)NULL;
   SUCCEED;
 }
 /*
@@ -627,24 +628,24 @@ FORPROL find_arc_from(char* source, char** arc) {
   return run_through_list(end_pts, arc);
 }
 */
-FORPROL get_out_list_pointer(char* dest, unsigned long* ptr) {
+FORPROL get_out_list_pointer(char* dest, uintptr_t* ptr) {
   if (is_arc(dest))
-    *ptr = (unsigned long)arcs[get_arc_number(dest)].arcs_from;
+    *ptr = (uintptr_t)arcs[get_arc_number(dest)].arcs_from;
   else if (is_node(dest))
-    *ptr = (unsigned long)nodes[get_number(dest)].arcs_from;
+    *ptr = (uintptr_t)nodes[get_number(dest)].arcs_from;
   else
-    *ptr = (unsigned long)NULL;
+    *ptr = (uintptr_t)NULL;
   SUCCEED;
 }
 
-FORPROL get_next_list_pointer(char* link, unsigned long* ptr) {
+FORPROL get_next_list_pointer(char* link, uintptr_t* ptr) {
   arc* thisLink;
 
-  *ptr = (unsigned long)NULL;
+  *ptr = (uintptr_t)NULL;
   if (is_arc(link)) {
     thisLink = &(arcs[get_arc_number(link)]);
     if (arc_exists(thisLink))
-      *ptr = (unsigned long)thisLink->subs;
+      *ptr = (uintptr_t)thisLink->subs;
   }
   SUCCEED;
 }

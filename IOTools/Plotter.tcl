@@ -840,12 +840,6 @@ namespace eval ::$keyValue {
         }
     }
     
-    proc dodgyValue {val} {
-        return [expr ![string is double -strict $val] || \
-		    [lsearch {inf nan +inf +nan -inf -nan} \
-			 [string tolower $val]]>-1]
-    }
-    
     # Connect two points on the graph
     proc drawPoint { w X0 Y0 X1 Y1 Colour node id} {
         global ::graphtools::plot

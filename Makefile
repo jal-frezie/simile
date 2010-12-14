@@ -58,7 +58,7 @@ endif
 GCCCMD = gcc
 GPPCMD = g++
 
-ifdef MAKE64
+ifeq ($(MY_CPU),x86_64)
 OPT =
 SYSDIR = System64
 TCLDIR = /usr
@@ -113,7 +113,7 @@ endif
 
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
-ifdef MAKE64
+ifeq ($(MY_CPU),x86_64)
 	TCLDIR = "/c/Tcl"
 	GCCCMD = x86_64-w64-mingw32-gcc
 	GPPCMD = x86_64-w64-mingw32-g++
@@ -164,18 +164,18 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl code.pl compile.pl database.pl \
 		dialogue.pl draw.pl event.pl forms.pl graphics.pl image.pl \
 		input.pl instance.pl inters.pl language.pl library.pl link.pl \
 		m_class.pl menu.pl m_struct.pl m_update.pl node.pl \
-		output.pl render.pl ss_import.pl state.pl \
+		output.pl render.pl ss_import.pl state.pl struct_db.pl \
 		submodel.pl tcltk.pl text.pl units.pl utility.pl
 
 # Prolog is Sicstus
 $(EXECDIR)/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl $(EXECDIR)/struct_db.dll
 	cd Prolog; sicstus -l buildmainsav.pl; cd ..
 
-$(EXECDIR)/struct_db.dll: struct_db.pl Prolog/struct_db.c
+$(EXECDIR)/struct_db.dll: Prolog/struct_db.pl Prolog/struct_db.c
 	cd Prolog; splfr struct_db.pl struct_db.c; mv struct_db.dll ../$(EXECDIR); cd ..
 
 $(EXECDIR)/xgsimile$(EXECEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
-	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C '-D_GNU_PROLOG' gmain$(ARCHEXTN).o struct_db.c; cd ..
+	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C '$(OPT) -D_GNU_PROLOG' -L $(OPT) gmain$(ARCHEXTN).o struct_db.c; cd ..
 Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl
 	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c gmain.pl; cd ..
 
@@ -195,11 +195,12 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
 # literal SLDIR allows different SHANK clauses for Windows vs Unix
 
 # Windows: idiosyncratic stuff allows dynamic linker to work
+# (even with gcc 4.5.0)
 $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
-		-o $(SHANK) -Wl,--out-implib,lib5d_win.a shank.cpp; \
+		-Wl,--out-implib,lib5d_win.a -o $(SHANK) shank.cpp; \
 		mv $(SHANK) ../$(SLDIR); \
-		mv lib5d_win.a $(TCLDIR)/lib; cd ..
+		mv lib5d_win.a ../$(LIBDIR); cd ..
 
 # Unix: not needed for Linux as it can build at run time
 $(LIBDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h

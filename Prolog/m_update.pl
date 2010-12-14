@@ -1533,7 +1533,7 @@ remove_floater(Node) :-
 	(_ is_connector from Node to _;
 	_ is_connector from _ to Node;
 	Node has_class C,
-	    \+ member(C, [variable, cloud, border]);
+	    \+ member(C, [variable, cloud, border, function]);
 	Node has_class_refinement min_val of _;
 	is_parameter(Node, 2)), !;
 	draw'><'off(Node),

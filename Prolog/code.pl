@@ -5,7 +5,7 @@ process, which is why they are separated out here. */
 sicstus_module(code, [tk_interactively_parse/1, tk_code/3]).
 
 sicstus_use_module([library(lists),
-		    dialogue, compile, state]).
+		    sp_only, dialogue, compile, state]).
 
 tk_interactively_parse(Node) :-
 	interactively_parse(Node).

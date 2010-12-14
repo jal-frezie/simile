@@ -16,6 +16,7 @@ _Module'><'Function :-
 
 /* Files needed to load and save models */
 
+:- include('gstr_db.pl').
 :- include('database.pl').
 :- include('text.pl').
 :- include('graphics.pl').

@@ -400,6 +400,20 @@ redo with snap object
         do_for_node $modelNode set ::runState($modelNode,intMethod) {4th-order Runge-Kutta}
     }
     
+    public method GetStepAdaptLimit {} {
+	if {[do_for_node $modelNode set ::runState($modelNode,adapt)]} {
+	    return [do_for_node $modelNode set ::runState($modelNode,errLimit)]
+	} else {
+	    return 0
+	}
+    }
+
+    public method SetStepAdaptLimit {limit} {
+	do_for_node $modelNode set ::runState($modelNode,adapt) \
+	    [expr {$limit!=0}]
+	do_for_node $modelNode set ::runState($modelNode,errLimit) $limit
+    }
+
     public method SetExecuteFor {time} {
         do_for_node $modelNode set ::runState($modelNode,execTime) $time
     }

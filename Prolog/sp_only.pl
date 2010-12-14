@@ -75,5 +75,6 @@ wrap_fixes(Op) :-
 	\+ suffix(")", Cncl), !,
 	write('('), write(Op), write(')').
 
-/* stop compiler complaining about foreign/1 directives intended for GNU */
-database:foreign(_).
+/* stop compiler complaining about foreign/1 directives intended for GNU 
+(now in different file) */
+% database:foreign(_).

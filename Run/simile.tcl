@@ -77,6 +77,8 @@ set libDir [file join $env(SYSDIR) lib]
 if {[info exists use_system_tcltk]} {
     lappend auto_path [file join $libDir Stubs]
 # special Simile things that cannot be found in standard TclTk
+} elseif {[info exists prolog_in_console]} {
+    set auto_path [linsert $auto_path 0 $libDir] ;# must be 8.4, look everywhere
 } else {
 # may be needed if using included tcltk, but should get it from 
 # location of executable

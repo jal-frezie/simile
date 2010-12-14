@@ -156,7 +156,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	LoopSpec = vm_loop(Dims, _, BaseLoops, _),
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, PointerForm),
-        (Dims = pop, !,
+        (Dims == pop, !,
 	    append_atoms(Name, progen, ParentPtr),
 	    BasePtrs = [ParentPtr],
 	    Names = [Name];

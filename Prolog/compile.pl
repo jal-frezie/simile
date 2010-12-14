@@ -110,10 +110,11 @@ build_instances(Language, DestDir, Parent, TopNode,
 	ExtLibs = SubExtLibs),
 	/* model can go incomplete then complete again without change
 	 so check all */
-	(check_level_for_reds(TopNode, Parent, Wrinkle),
-	    retractall(error_free(build)),
-	    query(Wrinkle, warning, top, [abort], abort),
-	    throw(aborted);
+	(setof(Issue, check_level_for_reds(TopNode, Parent, Issue), Issues),
+	    retractall(error_free(build)),	    
+	    (all(ame_gen, query, [build(Issues), unify(warning), unify(top),
+				  unify([abort]), unify(more)]), fail;
+	    throw(aborted));
 	Parent has_model_refinement c_new of 0, !,
 	    Parent has_changed_model_refinement c_new of 1,
 	    ChangeTop = 1,

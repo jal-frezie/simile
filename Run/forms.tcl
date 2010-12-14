@@ -2229,7 +2229,9 @@ proc Query {specifics icon helpRef parent opts} {
     if {[winfo exists .popup]} {
 	destroy .popup ;# avoid weird hang under Aqua, or at least try
     }
-    HideProgressBox
+#    HideProgressBox
+# This creates no end of trouble, e.g., re-creating the box does an update
+# which breaks a 'see all', try just re-parenting the dialogues...
     set active [set oldFocus [focus]]
     if {[llength $active]} {set active [winfo toplevel $active]}
     if {![string length $parent] && [string length $active]>1} {
@@ -2259,7 +2261,7 @@ proc Query {specifics icon helpRef parent opts} {
     } else {
 	set result $dialogues(done)
     }
-    ReplaceProgressBox
+#    ReplaceProgressBox
     unset dialogues(done)
 
     focus -force $oldFocus
@@ -2355,10 +2357,11 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
 
     $labf1.lab2 insert 1.0 {Press "Help" to display a relevant page from Simile's documentation.}
 
-    if {[string equal .progress $dialogues(progressUp)]} {
-	$labf1.lab2 insert 1.0 \
-	    "Message in progress box was:\n$dialogues(progMess)\n\n"
-    }
+# boxes left up for now
+#    if {[string equal .progress $dialogues(progressUp)]} {
+#	$labf1.lab2 insert 1.0 \
+#	    "Message in progress box was:\n$dialogues(progMess)\n\n"
+#    }
 
     $labf1.lab2 insert 1.0 \n\n
     set key [lindex $specifics 0]
@@ -2412,9 +2415,9 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
 proc StopMsgLogging {specifics title icon helpRef parent opts} {
     global dialogues
 
-    HideProgressBox
+#    HideProgressBox
     ExpandQuery show_all "$title -- showing all" $icon \
 		    [join $dialogues(logText) \n] $helpRef $parent $opts
     unset dialogues(logText)
-    ReplaceProgressBox
+#    ReplaceProgressBox
 }
