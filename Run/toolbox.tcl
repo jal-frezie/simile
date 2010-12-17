@@ -1196,8 +1196,7 @@ proc ControlDraw {prologVersion} {
 proc InitExecThread {node} {
     global execThread execInterp SIMILE_PATH simplify
 
-    set useThreads [expr {![string equal console $::env(interfaceId)] && \
-			      [info exists ::tcl_platform(threaded)] && \
+    set useThreads [expr {[info exists ::tcl_platform(threaded)] && \
 			      ![info exists simplify]}]
     if {$useThreads} {
 	package require Thread
@@ -1256,7 +1255,7 @@ proc InitExecThread {node} {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd
 	}
     }
-    if {[catch {load_c_stub_1 $node}]} {
+    if {[catch {load_c_stub_1 $node $::auto_path}]} {
 	if {[string match Linux $::tcl_platform(os)]} {
 # try rebuilding 5d dll if in Linux -- c++ libraries may have changed!
 	    if {[PrefValue custom(hackBreak) hackBreak]} {
@@ -1269,7 +1268,7 @@ proc InitExecThread {node} {
 	}
     }
 # now just do it again so error gets raised as per usual if still bad
-    load_c_stub_1 $node
+    load_c_stub_1 $node $::auto_path
 }
 
 proc CheckCompilerLocation {} {

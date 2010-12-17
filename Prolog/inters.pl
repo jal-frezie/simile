@@ -1614,7 +1614,8 @@ wait_for_submodels([Level | AlsoExited], Waits) :-
 	Waits = Others),
 	wait_for_submodels(AlsoExited, Others).
 
-pointer_from([], ''). % was 'this' -- why? '' makes locals for event procs.
+%pointer_from([], ''). % was 'this' -- why? '' makes locals for event procs.
+pointer_from([], this). % needed for tcl exec. Events no longer procs?
 pointer_from([sm(_,_, Ptr, _) | _], Ptr).
 
 pointer_to([], '').

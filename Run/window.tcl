@@ -1244,7 +1244,7 @@ proc MenuSelect { window button item } {
 		build_c {
 		    set extn .cpp
 		} compile_c {
-		    set extn [info sharedlibextn]
+		    set extn [info sharedlibextension]
 		} default {
 		    set lang [string range $item 4 end]
 		}

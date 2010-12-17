@@ -3,26 +3,16 @@
 # it's being debugged, once it's right we'll just load it. This component
 # itself loads dlls for the actual models as they are built.
 
-# if {[info exists env(TCL_PATH)]} {
-#     set auto_path [file join $env(SP_PATH) lib] \
-# 	[file join $env(SP_PATH) lib tcl[info tclversion]] \
-# 	[file join [file dirname [file dirname [file normalize $env(SP_PATH)]]] Frameworks Tcl.framework Resources Scripts]
-# } else { ;# Orange Herald
-#     lappend auto_path [file join $env(SP_PATH) lib]
-# }
-set auto_path [list [file join $env(SYSDIR) lib]]
-# As for master but without Tk bits or Orange version
-if {[string equal Darwin $tcl_platform(os)]} {
-    lappend auto_path [file dirname [file dirname $env(SYSDIR)]]/Frameworks/Tcl.framework/Resources/Scripts
-} else {
-    lappend auto_path [file join $env(SYSDIR) lib tcl[info tclversion]]
-}
+# earlier versions tried to reproduce the master's auto_path minus the
+# Tk-specific bits, but much easier just to pass it -- the Tk bits do
+# no harm
 
 source [file join [file dirname $env(SYSDIR)] Run support.tcl]
 
-proc load_c_stub_1 {node} {
+proc load_c_stub_1 {node ap} {
     global env tcl_platform
 
+    set ::auto_path $ap
     scan [info tclversion] {%d.%d} MAJ MIN
 #    set onUnix [string match unix $tcl_platform(platform)]
     set stubPkg ${MAJ}.${MIN} ;# .$env(SIMILE_VERSION).$onUnix

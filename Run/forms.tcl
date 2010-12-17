@@ -2177,6 +2177,14 @@ proc TtkLikeDialogue {dlg args} {
     wm deiconify $dlg
 }
 
+proc ChooseParent  {parent active} {
+    if {[llength $active]} {set active [winfo toplevel $active]}
+    if {![string length $parent] && [string length $active]>1} {
+	set parent $active ;# window . is hidden so must not
+    }
+    return $parent
+}
+
 # New unified issue handler; use for any unexpected occurrence
 proc Query {specifics icon helpRef parent opts} {
     global dialogues
@@ -2229,15 +2237,11 @@ proc Query {specifics icon helpRef parent opts} {
     if {[winfo exists .popup]} {
 	destroy .popup ;# avoid weird hang under Aqua, or at least try
     }
-#    HideProgressBox
 # This creates no end of trouble, e.g., re-creating the box does an update
 # which breaks a 'see all', try just re-parenting the dialogues...
-    set active [set oldFocus [focus]]
-    if {[llength $active]} {set active [winfo toplevel $active]}
-    if {![string length $parent] && [string length $active]>1} {
-	set parent $active ;# window . is hidden so must not
-    }
-    lappend mBoxCmd -parent $parent
+#    HideProgressBox
+
+    lappend mBoxCmd -parent [ChooseParent $parent [set oldFocus [focus]]] 
     eval $mBoxCmd
 
 #    after 10000 set dialogues(done) more
@@ -2323,7 +2327,7 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
     global help tcl_platform dialogues
 
     set ProbWin .bprob[clock clicks]
-    PutItThere $ProbWin $parent
+    PutItThere $ProbWin [ChooseParent $parent [set oldFocus [focus]]]
 
 #    switch $fault {
 #        user {

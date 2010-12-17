@@ -246,13 +246,13 @@ spinout_ttfn(Val, [First | Rest]) :-
 deEncode(_, TtfnAtom, Utf8Atom, 0) :-
 	atom(TtfnAtom),
 	name(TtfnAtom, TtfnStr),
-	user:all_ttfn_to_utf8(TtfnStr, Utf8Str),
+	user'><'all_ttfn_to_utf8(TtfnStr, Utf8Str),
 	name(Utf8Atom, Utf8Str).
 
 reEncode(_, Utf8Atom, TtfnAtom, 0) :-
 	atom(Utf8Atom),
 	name(Utf8Atom, Utf8Str),
-	(user:all_utf8_to_ttfn(Utf8Str, TtfnStr), !;
+	(user'><'all_utf8_to_ttfn(Utf8Str, TtfnStr), !;
 	all(user, unicode_to_ttfn, [build(Utf8Str), append(TtfnStr, [])])),
 	/* if cannot convert from utf8, was probably Unicode (Hi8) already */
 	name(TtfnAtom, TtfnStr).

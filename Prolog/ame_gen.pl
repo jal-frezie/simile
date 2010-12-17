@@ -895,7 +895,7 @@ Obj is_class_of_sort Class :-
 			   can_be_ghost],
 		event-[regular_box, box, has_function, can_be_input, discrete,
 			   can_be_ghost],
-		function-[regular_box, box, can_be_input],
+		function-[regular_box, box],
 		compartment-[rectangle, elongated_box, box, has_function,
 			     can_be_input, init_eval, level, can_be_ghost],
 		state-[rectangle, tall_box, box, has_function, can_be_input,
