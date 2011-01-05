@@ -55,11 +55,11 @@ node nodes[USHRT_MAX];
 arc arcs[USHRT_MAX];
 id_list* roots;
 /*
-long usedBits = 0;
+intptr_t usedBits = 0;
 void* safe_malloc(int count) {
-  long ptr;
+  intptr_t ptr;
 
-  ptr = (long)malloc(count);
+  ptr = (intptr_t)malloc(count);
   if (ptr & ~usedBits) {
     usedBits = usedBits|ptr;
     printf("debug_c malloc uses new bits, mask now %lx\n", usedBits);
@@ -67,7 +67,7 @@ void* safe_malloc(int count) {
   return (void*)ptr;
 }
 */
-FORPROL empty_tree(long* ushrtmx) {
+FORPROL empty_tree(intptr_t* ushrtmx) {
   int count;
   for (count=0; count<USHRT_MAX; ++count) {
     nodes[count].hide = 0;
@@ -179,7 +179,7 @@ FORPROL add_to_tree(char* parent, char* child) {
   SUCCEED;
 }
 
-FORPROL add_bbox(char* parent, long l, long t, long r, long b) {
+FORPROL add_bbox(char* parent, intptr_t l, intptr_t t, intptr_t r, intptr_t b) {
   node *parentNode;
 
   parentNode =  &(nodes[get_number(parent)]);
@@ -190,7 +190,7 @@ FORPROL add_bbox(char* parent, long l, long t, long r, long b) {
   SUCCEED;
 }
 
-FORPROL add_iext(char* parent, long il, long it, long ir, long ib) {
+FORPROL add_iext(char* parent, intptr_t il, intptr_t it, intptr_t ir, intptr_t ib) {
   node *parentNode;
 
   parentNode =  &(nodes[get_number(parent)]);
@@ -201,7 +201,7 @@ FORPROL add_iext(char* parent, long il, long it, long ir, long ib) {
   SUCCEED;
 }
 
-FORPROL add_capt_off(char* parent, long offx, long offy) {
+FORPROL add_capt_off(char* parent, intptr_t offx, intptr_t offy) {
   node *Node;
   arc *Arc;
   
@@ -217,7 +217,7 @@ FORPROL add_capt_off(char* parent, long offx, long offy) {
   SUCCEED;
 }
 
-FORPROL add_centre(char* parent, long cx, long cy) {
+FORPROL add_centre(char* parent, intptr_t cx, intptr_t cy) {
   node *parentNode;
 
   parentNode =  &(nodes[get_number(parent)]);
@@ -226,7 +226,7 @@ FORPROL add_centre(char* parent, long cx, long cy) {
   SUCCEED;
 }
 
-FORPROL set_hidden(char* parent, long whether) {
+FORPROL set_hidden(char* parent, intptr_t whether) {
   unsigned char* hid_reg;
 
   hid_reg = &(nodes[get_number(parent)].hide);
@@ -281,7 +281,7 @@ FORPROL add_continuation(char* before, char* after) {
   SUCCEED;
 }
 
-FORPROL add_curve(char* parent, long xk, long yb) {
+FORPROL add_curve(char* parent, intptr_t xk, intptr_t yb) {
   arc *parentArc;
 
   parentArc = &(arcs[get_arc_number(parent)]);
@@ -377,7 +377,7 @@ int arc_exists(arc* it) {
   return *(it->source);
 }
 
-FORPROL find_parent(char* child, long* parent) {
+FORPROL find_parent(char* child, intptr_t* parent) {
   node* childNode;
 
   if (!is_node(child))
@@ -385,11 +385,11 @@ FORPROL find_parent(char* child, long* parent) {
   childNode = &(nodes[get_number(child)]);
   if (!node_exists(childNode)) 
     FAIL;
-  *parent = (long)childNode->parent;
+  *parent = (intptr_t)childNode->parent;
   SUCCEED;
 }
 
-FORPROL find_bbox(char* child, long* l, long* t, long* r, long* b) {
+FORPROL find_bbox(char* child, intptr_t* l, intptr_t* t, intptr_t* r, intptr_t* b) {
   node* childNode;
 
   if (!is_node(child))
@@ -399,14 +399,14 @@ FORPROL find_bbox(char* child, long* l, long* t, long* r, long* b) {
     FAIL;
   if (childNode->b == INT_MIN)
     FAIL;
-  *l = (long)childNode->l;
-  *t = (long)childNode->t;
-  *r = (long)childNode->r;
-  *b = (long)childNode->b;
+  *l = (intptr_t)childNode->l;
+  *t = (intptr_t)childNode->t;
+  *r = (intptr_t)childNode->r;
+  *b = (intptr_t)childNode->b;
   SUCCEED;
 }
 
-FORPROL find_iext(char* child, long* il, long* it, long* ir, long* ib) {
+FORPROL find_iext(char* child, intptr_t* il, intptr_t* it, intptr_t* ir, intptr_t* ib) {
   node* childNode;
 
   if (!is_node(child))
@@ -416,14 +416,14 @@ FORPROL find_iext(char* child, long* il, long* it, long* ir, long* ib) {
     FAIL;
   if (childNode->ib == INT_MIN)
     FAIL;
-  *il = (long)childNode->il;
-  *it = (long)childNode->it;
-  *ir = (long)childNode->ir;
-  *ib = (long)childNode->ib;
+  *il = (intptr_t)childNode->il;
+  *it = (intptr_t)childNode->it;
+  *ir = (intptr_t)childNode->ir;
+  *ib = (intptr_t)childNode->ib;
   SUCCEED;
 }
 
-FORPROL find_capt_off(char* parent, long* offx, long* offy) {
+FORPROL find_capt_off(char* parent, intptr_t* offx, intptr_t* offy) {
   node *Node;
   arc *Arc;
   
@@ -433,8 +433,8 @@ FORPROL find_capt_off(char* parent, long* offx, long* offy) {
       FAIL;
     if (Arc->offy == INT_MIN)
       FAIL;
-    *offx = (long)Arc->offx;
-    *offy = (long)Arc->offy;
+    *offx = (intptr_t)Arc->offx;
+    *offy = (intptr_t)Arc->offy;
     SUCCEED;
   } else if (is_node(parent)) {
     Node = &(nodes[get_number(parent)]);
@@ -442,14 +442,14 @@ FORPROL find_capt_off(char* parent, long* offx, long* offy) {
       FAIL;
     if (Node->offy == INT_MIN)
       FAIL;
-    *offx = (long)Node->offx;
-    *offy = (long)Node->offy;
+    *offx = (intptr_t)Node->offx;
+    *offy = (intptr_t)Node->offy;
     SUCCEED;
   } else
       FAIL;
 }
 
-FORPROL find_centre(char* child, long* cx, long* cy) {
+FORPROL find_centre(char* child, intptr_t* cx, intptr_t* cy) {
   node* childNode;
 
   if (!is_node(child))
@@ -459,8 +459,8 @@ FORPROL find_centre(char* child, long* cx, long* cy) {
     FAIL;
   if (childNode->cy == INT_MIN)
     FAIL;
-  *cx = (long)childNode->cx;
-  *cy = (long)childNode->cy;
+  *cx = (intptr_t)childNode->cx;
+  *cy = (intptr_t)childNode->cy;
   SUCCEED;
 }
 
@@ -477,7 +477,7 @@ FORPROL is_hidden(char* parent) {
   FAIL;
 }
 
-FORPROL find_curve(char* child, long* xk, long* yb) {
+FORPROL find_curve(char* child, intptr_t* xk, intptr_t* yb) {
   arc* childArc;
 
   if (!is_arc(child))
@@ -487,8 +487,8 @@ FORPROL find_curve(char* child, long* xk, long* yb) {
     FAIL;
   if (childArc->yb == INT_MIN)
     FAIL;
-  *xk = (long)childArc->xk;
-  *yb = (long)childArc->yb;
+  *xk = (intptr_t)childArc->xk;
+  *yb = (intptr_t)childArc->yb;
   SUCCEED;
 }
 /* 
@@ -542,9 +542,9 @@ SUCCEED;                         // succeed
   FAIL;
 }
 */
-FORPROL get_id_and_next_ptr(uintptr_t oldptr, long* result, 
+FORPROL get_id_and_next_ptr(uintptr_t oldptr, intptr_t* result, 
 			     uintptr_t *newptr) {
-  *result = (long)((id_list*)oldptr)->me;
+  *result = (intptr_t)((id_list*)oldptr)->me;
   *newptr = (uintptr_t)((id_list*)oldptr)->next;
   SUCCEED;
 }
@@ -562,7 +562,7 @@ FORPROL find_ends(char* link, char** source, char** dest) {
   SUCCEED;
 }
 
-FORPROL find_prev(char* link, long* prev) {
+FORPROL find_prev(char* link, intptr_t* prev) {
   arc* thisLink;
 
   if (!is_arc(link))
@@ -572,7 +572,7 @@ FORPROL find_prev(char* link, long* prev) {
     FAIL;
   if (thisLink->prev == USHRT_MAX) 
     FAIL;
-  *prev = (long)thisLink->prev;
+  *prev = (intptr_t)thisLink->prev;
   SUCCEED;
 }
 /*

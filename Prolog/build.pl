@@ -13,7 +13,7 @@
 sicstus_module(build, [source/5,roots/4,properties/4,
 	node/8,node/9,arc/9,ghosts/5, ancestor_has_enum_type/2] ).
 
-sicstus_use_module( [library( lists),m_class,utility] ).
+sicstus_use_module( [library( lists), sp_only, m_class, utility] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % roots builds new nodes, attaches them to the desktop root and adds

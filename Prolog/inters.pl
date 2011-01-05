@@ -595,6 +595,7 @@ make_intermediates(
             Clearing = [make(cleared(TotalName), [ClearTime], ClearContext,
                              Step, [assign(ClearRef, InitVal)])];
 	Functor = in_progenitor, !, % check for null pointer rather than clear
+            ClearTime = on_reset, % harmless value (I hope)
 	    Clearing = [make(cleared(TotalName), [], [], Step, [])];
         Clearing = [make(clearing(TotalName), [this_step(WhatMade)],
 			 ClearContext, Step, [assign(ClearRef, InitVal)]),
@@ -617,7 +618,7 @@ make_intermediates(
 	member(Functor, [in_preceding, in_progenitor]), !,
 	    wait_for_submodels(Exited, Access),
 	    Setting = [make(lastvalue(TotalName),
-			    [InnerTgt, lastvalue(InnerTgt) | Depends],
+			    [ClearTime,InnerTgt,lastvalue(InnerTgt) | Depends],
 			    WriteContext, Step, [IncrAct]),
 		       make(TotalName,
 			    [cleared(TotalName), this_step(InnerTgt) | Access],

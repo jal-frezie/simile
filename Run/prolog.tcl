@@ -132,11 +132,7 @@ proc ClosePipe {} {
 
 # These allow GNU prolog to use a decent amount of memory -- 64bit OSes are
 # especially voracious and run on big machines so give them more
-set bitness 32
-if {[string equal x86_64 $tcl_platform(machine)]} {
-    set bitness 64
-}
-set vm_usage [expr $bitness*$bitness/4+16] ;# in megs
+set vm_usage [expr $::tclBitness*$::tclBitness/4+16] ;# in megs
 set spraf {}
 while {![string match ready $spraf]} {
     incr vm_usage -16
