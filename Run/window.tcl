@@ -1415,10 +1415,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c file export_prolog"
     $fm2 add command -label [tr. "XML Model Description"] \
             -command "MenuSelect $c local export_xml"
-    $fm2 add command -label [tr. "C++ code"] -state $sourceExps \
-            -command "MenuSelect $c code build_c"
-            $fm2 add command -label [tr. "Compiled binary"] -state $sourceExps \
-            -command "MenuSelect $c code compile_c"
+    $fm2 add command -label [tr. "C++ code"] \
+            -command "MenuSelect $c code build_c" -state $sourceExps
+    $fm2 add command -label [tr. "Compiled binary"] \
+	-command "MenuSelect $c code compile_c" -state $sourceExps
     $fm2 add command -label [tr. "PostScript graphics"] \
             -command "ExportPostscript $c"
     UnderlineUniquely $fm2

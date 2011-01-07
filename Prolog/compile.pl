@@ -24,8 +24,8 @@ sicstus_use_module( [library(ordsets),library(lists),
 :- dynamic(error_free/1).
 
 compile( Language, Parent, DestDir) :-
-	tk_scrub_run(Parent, 0),
-/*	(Language = tcl, !,
+/*	tk_scrub_run(Parent, 0),
+	(Language = tcl, !,
 	    unseparate(SeparateNodes);
 	list_interconnects(Parent)),
 */	tk_update_infobox(pl_check, []),

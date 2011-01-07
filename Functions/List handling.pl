@@ -11,11 +11,11 @@ rankings(ExL) --> [L] = ExL,
 
 howmanytrue(BoolList) --> sum(if BoolList then 1 else 0).
 
-firsttrue(BoolArr) --> [st]=makearray(
+firsttrue(BoolArr) --> [SelfCont] = BoolArr, [st]=makearray(
 	if not (first(place_in(1)) or
 		element(sofar([st]),preceding(place_in(1))) == '"NULL"')
 	    then element(sofar([st]),preceding(place_in(1)))
-	elseif element(BoolArr,place_in(1)) then place_in(1)
+	elseif element([SelfCont],place_in(1)) then place_in(1)
 	else '"NULL"', count(BoolArr)),
     element([st],count(BoolArr)).
 
@@ -26,3 +26,11 @@ posgreatest(Incoming) --> [local]=Incoming,[records]=makearray(
             element([records],count([local])).
 
 posleast(Incoming) --> posgreatest(-Incoming).
+
+ordinals(EnumType) --> [res]=makearray(
+    if first(place_in(1)) then 1 
+    else element(sofar([res]),preceding(place_in(1)))+1,
+    EnumType), [res].
+
+for_members_of_type(EnumType, [Vals]) -->
+    element([Vals], ordinals(EnumType)).
