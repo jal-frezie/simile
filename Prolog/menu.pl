@@ -1136,7 +1136,7 @@ set_properties(Wid, Model) :-
 		update_captions(Submodel),
 		fail;
 	    NewNature = Nature, UseCount = Count, !;
-		event'><'spread_colour(Model, yes)),
+		event'><'spread_colour(Model, dims)),
 	    finish_move(Model, 1)).
 
 separate_type_from_mems([H | T], H-T).
@@ -1208,7 +1208,7 @@ remove_model(Win, Parent) :-
 	    fail;
 	superfast_delete(Parent),
 	    reassure_user(pl_draw, []),
-	    event'><'spread_colour(Parent, no),
+	    event'><'spread_colour(Parent, none),
 	    finish_progress_dialogue,
 	    redisplay(Parent))),
 	clear_model_file(Parent),

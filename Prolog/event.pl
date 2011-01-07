@@ -422,7 +422,7 @@ insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
 	select_text(Wid, NewNode),
 	(setof(NewLook, presence_affects(NewNode, NewLook), NewLooks), !;
 	    NewLooks = []),
-	all(event, spread_colour, [build(NewLooks), unify(yes)]).
+	all(event, spread_colour, [build(NewLooks), unify(dims)]).
 
 check_drawing_at_depth(Wid, Levels, New_obj, Depth) :-
 	(\+ (member(Hider, Levels),
@@ -831,8 +831,8 @@ doubleclick_on(Edit_thing) :-
 	    (is_parameter(NewControlThing, WasP), !;
 		redisplay_border(Edit_thing)),
 	    (get_av_pair(NewControlThing, 0, units, OldUnits), !,
-		NewDims = no;
-	    NewDims = yes),
+		NewDims = none;
+	    NewDims = dims),
 	    spread_colour(Base, NewDims),
 	    find_all_comps(Parent, Base),
 	    update_runnable(Parent)).
@@ -856,9 +856,14 @@ spread_dims(Node) :-
 	get_av_pair(Obj, 0, units, GivenUnits),
 	get_input_info(Obj, IList),
 	
-	(length(Inds, 32),
-	    dialogue'><'test_eqn(Equation, Node, Inds, IList,
+	(list_index_meanings(Obj, ISpecs),
+	    all(dialogue, index_types, [build(ISpecs), build(IndxCount)]),
+	    (get_av_pair(Obj, 0, table_data, TD) ->
+	        dialogue'><'assert(table_data_is(TD)); true),
+	    dialogue'><'test_eqn(Equation, Obj, IndxCount, IList,
 			      Type, FoundArray, Xs, Err),
+	    (get_av_pair(Obj, 0, table_data, TD) ->
+	        dialogue'><'retract(table_data_is(TD)); true),
 	    dialogue'><'check_param_usage(IList, [], Xs, IList, []),
 	    Err = [],
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
@@ -866,7 +871,7 @@ spread_dims(Node) :-
 		get_actual_sizes(Node, GivenArray, _, Array, _), !,
 		UseArray = GivenArray;
 		UseArray = FoundArray,
-		UnitsChanged = yes),
+		SpecChanged = dims),
 	    (Type = real, !, Base = 1; Base = Type),
 	    (use_units_in(Obj, 'No'),
 		CheckLevel = 1;
@@ -874,18 +879,18 @@ spread_dims(Node) :-
 	    (check_unit(Base, GivenBase, CheckLevel, []), !,
 		UseBase = GivenBase;
 	    UseBase = Base,
-		UnitsChanged = yes),
+		SpecChanged = units),
 	    update_links_and_vars(IList);
 	true),
-	(UnitsChanged = no;
+	(SpecChanged = none;
 	build_array(UseBase, UseArray, NewUnits),
 	    add_parameter(Obj, 0, units, NewUnits)), !;
 	find_type(Node, submodel)),
-	spread_colour(Node, UnitsChanged).
+	spread_colour(Node, SpecChanged).
 
 /* this will update colours of all nodes connected with the given node */
 
-spread_colour(Node, NewDims) :-
+spread_colour(Node, WhatsNew) :-
 	need_same_dims(Node, Flow),
 	    update_color(Flow),
 	    fail;
@@ -895,12 +900,12 @@ spread_colour(Node, NewDims) :-
 	        \+ find_type(Hit, influence);
 	    member(Hit, SpreadList), find_type(Hit, influence)),
 	/* Do influences last cos they depend on others! */
-	(NewDims = no,
-	    update_color(Hit);
-	NewDims = yes,
+	(WhatsNew = dims ->
 	    check_complete(Hit),
-	    redisplay_border(Hit),
-	    presence_affects(Hit, MayChange),
+	    redisplay_border(Hit);	    
+	  update_color(Hit)),
+	(WhatsNew = none -> true;
+	  presence_affects(Hit, MayChange),
 	    spread_dims(MayChange)),
 	/* Component colour will be normalized so get its links normal too 
 	(normalize_ghosts_etc(Hit); */
@@ -2021,7 +2026,7 @@ reghost(Ghost, Base) :-
 
 change_ghosthood(Node) :-
 /*	make_links_follow(Node), */
-	spread_colour(Node, yes).	    
+	spread_colour(Node, dims).	    
 
 delete_by_dlg(Target) :-
 	remove_highlights,
@@ -2104,7 +2109,7 @@ delete_net(Top) :-
 	    change_ghosthood(ExGhost),
 	    fail; */
 	member(NewVisLook, ChangedLooks),
-	    spread_colour(NewVisLook, yes), /* Only need to update dims
+	    spread_colour(NewVisLook, dims), /* Only need to update dims
 					    if arc is a relation */
 	    update_captions(NewVisLook),
 	    fail;
@@ -2349,7 +2354,7 @@ dissolve_component(Node) :-
 	/* First, strip the model's dimensions and check external vars */
 	(get_all_dims(Node, []), !;
 	add_parameter(Node, 0, assume_simple, 1),
-	    spread_colour(Node, yes)),
+	    spread_colour(Node, dims)),
 	/* next, set its internal extent to its bounding box so I can snap its
 	    already-moved components to the parent's grid */
 	get_shape(Node, bounding_box, BB),

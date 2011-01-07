@@ -55,7 +55,7 @@ do_equation_dialog(Win, Part) :-
 		append(Bounds, [TUnits], TableTypes), 
 		all(event, insert_mem_list,
 		    [build(TableTypes), unify(ClickedObj), build(TableTrans)]),
-		reverse_engineer(Values, TableTrans, 1, TableVals));
+		dialogue'><'reverse_engineer(Values, TableTrans, 1, TableVals));
 	TableList = '', TableTrans = '', TableVals = '{}'),
 	get_desc_and_comment(ClickedObj, Desc, Comment, ''),
 	(get_av_pair(Part, 0, min_val, Min), !;

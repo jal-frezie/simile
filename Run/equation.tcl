@@ -562,12 +562,27 @@ proc GetTable {parent topNode comp box} {
 	    set equation(table_values) \
 		[NumberElements [ReadGdalRefToList $table_entry(values)]]
 	} else {
-	    set equation(table_values) $table_entry(values)
+	    set equation(table_values) [FloatifyBigInts $table_entry(values)]
 	}
         if {![string match *table(*)* [$box get 1.0 end]]} {
 	    InsertFunction $box table
         }
         set equation(done) 3
+    }
+}
+
+proc FloatifyBigInts {vals} {
+    if {[llength $vals]==1} {
+	if {[string is double -strict $vals] && abs($vals)>=268435456} {
+	    return [expr {double($vals)}]
+	} else {
+	    return $vals
+	}
+    } else {
+	foreach {ind val} $vals {
+	    lappend fltd $ind [FloatifyBigInts $val]
+	}
+	return $fltd
     }
 }
 

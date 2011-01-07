@@ -296,6 +296,9 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV >= 5.5, !;
 	reassure_user(updating_v, ['5.5']),
 	    adjust_to_9_5(Parent)),
+	(SimileV >= 5.8, !;
+	reassure_user(updating_v, ['5.8']),
+	    adjust_to_9_8(Parent)),
 	reassure_user(pl_convert_from, ['5.x']),
 	adjust_to_10(Parent),
 	state'><'version_is(MyVStr),
@@ -519,9 +522,33 @@ adjust_to_9_5(Parent) :-
 	m_update'><'remove_floater(Node), fail;
 	true.
 
+adjust_to_9_8(Parent) :-
+        contains(Parent, Fn),
+	Fn has_class_refinement table_data of TDList,
+        select(current=ListList, TDList, Others),
+        floatify_large_ints(ListList, NewLL, Hit),
+	Hit == 1,
+	(select(units=const_int, Others, Leave) ->
+	    New = [current=NewLL, units=1 | Leave];
+	    New = [current=NewLL | Others]),
+	Fn has_changed_class_refinement table_data of New,
+% now need to re-parse eqn to fix overall units
+	get_host(Fn, Vis),
+	event'><'spread_dims(Vis),
+	fail; true.
+
 adjust_to_10(Parent) :-
 	update_per_record_bracket_style(Parent);
 	true.
+
+floatify_large_ints([H | T], [NH | NT], Hit) :- !,
+        floatify_large_ints(H, NH, Hit),
+        floatify_large_ints(T, NT, Hit).
+
+floatify_large_ints(N, NN, Hit) :-
+        integer(N), abs(N) >= 268435456, !, % largest int for 32-bit GProlog
+	    NN is float(N), Hit = 1;
+	NN = N.
 
 update_per_record_bracket_style(Parent) :- % should do all then fail
 	contains(Parent, Node),

@@ -1051,7 +1051,6 @@ make_connection(Model, Type, Dir, ExternalSection,
 	check_input(Type, Dir, Model, SourceCapt, Properties,
 		     InputSection), !,
 	    /* We want to tie all possible continuation sections */
-	    wake,
 	    (setof(OutputSection, 
 		  ((Dir = out,
 		     find_all_comps(Parent, OutputSection);
@@ -1197,7 +1196,7 @@ link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
 	    find_name_host(OldObj, OldHost),
 	    OldHost has_attribute can_lookup of 1,
 	    make_role_first(OldHost);
-	event'><'spread_colour(Last_new_arc, yes)).
+	event'><'spread_colour(Last_new_arc, dims)).
 
 load_references(Submodel, ReferenceCapts) :-
 	pair_with_captions(Submodel, References, ReferenceCapts),
@@ -1712,7 +1711,7 @@ unmake_ghost(Ghost) :-
 	find_base(Ghost, Base),
 	\+ Base = Ghost,
 	remove_connection(Base, Ghost),
-	event'><'spread_colour(Base, no),
+	event'><'spread_colour(Base, none),
 	fail.
 
 remove_connection(Base, Ghost) :-
