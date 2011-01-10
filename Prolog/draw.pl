@@ -531,12 +531,15 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	untranslate(Coord_list, Trans, Screen_coords),
 	find_fatness(Trans, RelFatness),
 	get_flash(Link, Colour_scheme),
+        (Type = flow ->
+	    multiple_draw(Link, Num);
+	    Num = 1),
 	(Type = influence,
 	    find_name_host(Link, ControlThing),
 	    m_class'><'ControlThing has_attribute use_sofar of 1, !,
 	    UseType = broken_influence;
 	UseType = Type),
-	Draw_command =.. [UseType, Wid, Screen_coords, 
+	Draw_command =.. [UseType, Wid, Screen_coords, Num,
 			RelFatness, Colour_scheme, [Link]],
 	call(Draw_command),
 	((get_drawing_form(Link, LType, Bowtie),
@@ -567,7 +570,8 @@ draw_incomplete(Line_type) :-
 	get_translation(Trans),
 	find_fatness(Trans, Fatness),
 	use_style_for(Line_type, Draw_type),
-	Draw_command =.. [Draw_type, Window_id, Draw_coords, Fatness, incomplete, [unfinished_line]],
+	Draw_command =.. [Draw_type, Window_id, Draw_coords, 1,
+			  Fatness, incomplete, [unfinished_line]],
 	call(Draw_command),
 	fail;
 	true.

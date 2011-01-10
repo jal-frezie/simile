@@ -15,8 +15,8 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_make_desktop/2, get_file_name/5, list_matching_files/2,
 	enable_text_editing_in/1, disable_text_editing_in/1, select_text/2,
 	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
-	submodel/13, bowtie/6, flow/5, influence/5, broken_influence/5,
-			ghost_link/5, relation/5, text/7,
+	submodel/13, bowtie/6, flow/6, influence/6, broken_influence/6,
+			ghost_link/6, relation/6, text/7,
 	shift_text/3, shift_obj/3, mark_obj/2, unmark_objs/1,
 			zap_route/3, zap_bowtie/3,
 	tk_add_window/9, change_title_to/3, current_edit/2, force_edit/2,
@@ -244,27 +244,27 @@ bowtie(Wid, [L, T, R, B], Fatness, Density, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutBowTie', Wid, L, T, R, B, Fatness, Density,
 		 Colour_scheme, br(Features)], _).
 
-flow(Wid, Coords, Fatness, Colour_scheme, Features) :-
+flow(Wid, Coords, Stack, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutFatArrow', Wid, br(Singleton_list),
+	safe_tcl_eval(['PutFatArrow', Wid, br(Singleton_list), Stack,
 		      Fatness, Colour_scheme, br(Features)], _).
 
-influence(Wid, Coords, Fatness, Colour_scheme, Features) :-
+influence(Wid, Coords, _Stack, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
 		       Fatness, {}, Colour_scheme, br(Features)], _).
 
-broken_influence(Wid, Coords, Fatness, Colour_scheme, Features) :-
+broken_influence(Wid, Coords, _Stack, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
 		       Fatness, dashed, Colour_scheme, br(Features)], _).
 
-ghost_link(Wid, Coords, Fatness, Colour_scheme, Features) :-
+ghost_link(Wid, Coords, _Stack, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
 		       Fatness, gray50, Colour_scheme, br(Features)], _).
 
-relation(Wid, Coords, Fatness, Colour_scheme, Features) :-
+relation(Wid, Coords, _Stack, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['PutRelation', Wid, br(Singleton_list),
 		       Fatness, Colour_scheme, br(Features)], _).

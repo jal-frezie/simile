@@ -89,7 +89,7 @@
 #define WRITEGRAPH     22
 #define USEGRAPH       23
 
-#define SIMILE_VERSION	"5.7"
+#define SIMILE_VERSION	"5.8"
 #define NEST 32
 
 #ifdef __cplusplus

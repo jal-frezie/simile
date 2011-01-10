@@ -516,7 +516,7 @@ proc PutRelation { w ptz fatness colourScheme tagSet} {
     ResetColours $w relation gray50 $colourScheme [lindex $tagSet 0]
 }
 
-proc PutFatArrow { w ptz fatness colourScheme tagSet} {
+proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
     set width [expr 5*[GetLineSize $w flow $fatness]]
     set features [GetObjectSize $w flow $fatness]
     #    set width [Scale $w [expr $fatness/10.0]]
@@ -527,6 +527,18 @@ proc PutFatArrow { w ptz fatness colourScheme tagSet} {
 		-width $width -tag "$tagSet realwidth($width) has_info"}
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] \
 		   [expr 2*$arrowRad] "$tagSet startblob"
+    set stackDepth 1
+    while {$stackDepth < $stack} {
+        set stackDistance [expr {$stackDepth*$features/25}]
+	set levelLine {}
+	foreach pt $mptz {
+	    lappend levelLine [expr $pt+$stackDistance]
+	}
+	eval {$w create line} $levelLine {-width [expr {$features/50}] -tag \
+					      [list $tagSet size_on_this \
+						   realwidth($width)]}
+        incr stackDepth
+    }
     ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
 }
 
@@ -1822,7 +1834,7 @@ proc DoGraphics {box type middlex middley size captAnchor} {
 # Above drew bowtie on vertical section -- do horizontal for easy life
 	    PutFatArrow $box.canvas \
 		"30 $middley [expr 2*$middlex - 30] $middley" \
-		100 normal "sample"
+		1 100 normal "sample"
         } variable {
             set l [expr $middlex - 3*$size/20]
             set r [expr $middlex + 3*$size/20]
