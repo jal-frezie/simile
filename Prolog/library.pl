@@ -529,10 +529,12 @@ adjust_to_9_8(Parent) :-
         floatify_large_ints(ListList, NewLL, Hit),
 	Hit == 1,
 	(select(units=const_int, Others, Leave) ->
-	    New = [current=NewLL, units=1 | Leave];
+	    New = [current=NewLL, units=1 | Leave],
+	    NewUnits = 1;
 	    New = [current=NewLL | Others]),
 	Fn has_changed_class_refinement table_data of New,
-% now need to re-parse eqn to fix overall units
+% now may need to re-parse eqn to fix overall units
+        NewUnits == 1,
 	get_host(Fn, Vis),
 	event'><'spread_dims(Vis),
 	fail; true.

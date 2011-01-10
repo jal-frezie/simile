@@ -334,7 +334,7 @@ important...(or was, back when the A stood for Agroforestry)... */
 	LocalNames = [tree, type, set, newvalue, finished, current, context,
 		      dtarget, btarget, instance, time_step,
 		      time, times, ts, dts,
-		      parentId, channelId, version,
+		      channelId, version,
 		      on_step, on_reset, /* dummy conditions */
 		      use_param_state, /* indicates file parameter */
 		      id, dims, /* arguments to extractor proc */
@@ -629,7 +629,6 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 		DummyCompDims = [1],
 		DeclsOnly = [instance(internal, baseptrs,_,
 					baseptrs, 'void*'-[1]),
-			     instance(system, _,_, parentId, int-[]),
 			     instance(system, _,_, channelId, int-[])];
 	    length(Bounds, IdCount),
 		DummyCompDims = [IdCount],

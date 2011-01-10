@@ -21,3 +21,7 @@ var_delay(val,time) -->
 			1000),
 	element([array],ptr).
 
+parent('') -->
+    at_init(in_progenitor(index(1))).
+parent(dummy) -->
+    at_init(in_progenitor(index(1))).

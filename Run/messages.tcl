@@ -90,6 +90,7 @@ set msgs(atan2) {atan2(y x): Returns the angle to the baseline of the line from 
 set msgs(int) [tr. "Returns integer part of argument"]
 set msgs(last) [tr. "Returns value of argument from last time step"]
 set msgs(in_preceding) [tr. "Returns value of argument in the preceding submodel instance, or 0 in first instance"]
+set msgs(in_progenitor) "Returns value of argument in the individual from which this one was reproduced, or 0 if this one was created or immigrated. Behaviour undefined (and can crash model) if this individual is an orphan; if this is a possibility, use at_init(in_progenitor(exp)) so progenitor exists when it is evaluated."
 set msgs(log) [tr. "Returns natural logarithm of argument"]
 set msgs(log10) [tr. "Returns base-10 logarithm of argument"]
 set msgs(max) [tr. "Returns greater of two values"]
@@ -463,6 +464,9 @@ set msgs(needs_array_or_list_message) [tr. "The function \"%1\$s\" performs an o
 set msgs(avoid_var_size_inter_title) [tr. "Code generation problem"]
 set msgs(avoid_var_size_inter_message) [tr. "This expression can only be converted into a running program by making an intermediate variable for the subexpression \"%1\$s\".\n This subexpression has dimensions %2\$s, where \"var\" represents a list, and \"records\" represents a resizable array."]
 set msgs(avoid_var_size_inter_detail) [tr. "Since this has a changing membership, it cannot be represented by a variable -- you need to do some more work inside the variable-membership submodel it comes from."]
+
+set msgs(misplaced_progenitor_ref_title) [tr. "Function has no value here"]
+set msgs(misplaced_progenitor_ref_message) [tr. "The expression \"%1\$s\" only has meaning inside a population submodel."]
 
 set msgs(needs_channel_parameter_title) [tr. "Argument must be channel"]
 set msgs(needs_channel_parameter_message) [tr. "The argument of \"channel_is\" must be a value from a channel (creation, immigration, reproduction) for the population submodel containing its node. \"%1\$s\" is not this sort of argument."]

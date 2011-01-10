@@ -309,8 +309,7 @@ in exec_contexts.txt. Meantime, here is the list of arguments: */
 
 make_intermediates(
     Source, /* representation of the formula we are trying to evaluate */
-    SubId, /* Id of submodel containing expression, needed for evaluating
-		  enumerated types */
+    SubId, /* Id of expression, needed for evaluating enumerated types */
     Target, /* The variables we are making, we may have to wait for them before
 		  saving something for next step */
     DestPath, /* a list giving the context in which we are attempting to
@@ -594,7 +593,11 @@ make_intermediates(
 	    % clearing will be promoted to chosen step
             Clearing = [make(cleared(TotalName), [ClearTime], ClearContext,
                              Step, [assign(ClearRef, InitVal)])];
-	Functor = in_progenitor, !, % check for null pointer rather than clear
+	Functor = in_progenitor, % check for null pointer rather than clear
+% also good place to check we are in a pop
+	    (find_all_comps(ParentId, SubId),
+		is_population(ParentId), !;
+		throw(misplaced_progenitor_ref(Source))),
             ClearTime = on_reset, % harmless value (I hope)
 	    Clearing = [make(cleared(TotalName), [], [], Step, [])];
         Clearing = [make(clearing(TotalName), [this_step(WhatMade)],
@@ -712,11 +715,7 @@ make_intermediates(
 	individual. Arg must be converted to numerical id of channel, and
 	source context is dest path because channel_is "individuates". */
 
-	((Source = parent(_), !,
-	    pointer_from(DestPath, ChannelPtr),
-	    SourceRef = arr(ChannelPtr, parentId, []),
-	    Units = int;
-	Source = channel_is(ChannelName), !,
+	((Source = channel_is(ChannelName), !,
 	    (ChannelName = param(arr(_, ChannelVar,_),_, ChanPath,_,_);
 	    throw(needs_channel_parameter(ChannelName))),
 	    nth(ChannelNum, Used, ChannelVar), !,
@@ -1221,7 +1220,6 @@ builtin('Model properties', at_phase, any, [any]).
 builtin('Model properties', at_phase, any, [int, any]).
 builtin('Model properties', default, any, [any]).
 %builtin('Model properties', init_time, real, []).
-builtin('Model properties', parent, int, []).
 builtin('Model properties', stop, int, [int]).
 /* legacy versions from before we had empty arg lists */
 %builtin('Model properties', time, real, [const_int]).
@@ -1230,6 +1228,7 @@ builtin('Model properties', parent, int, [dummy_int]).
 
 builtin('Model properties', last, any, [any]).
 builtin('Model properties', in_preceding, any, [any]).
+builtin('Model properties', in_progenitor, any, [any]).
 builtin('Model properties', prev, given_units, [const_int]).
 builtin('List handling', makearray, array_of_any, [any, const_int]).
 builtin('List handling', place_in, int, [const_int]).
@@ -1303,7 +1302,6 @@ operator(choose, a(T), [boolean, a(T), a(T)]).
 operator(choose, real, [boolean, real, real]).
 operator(choose, boolean, [boolean, boolean, boolean]).
 operator(rand, real, [real, real]).
-operator(in_progenitor, any, [any]).
 
 /* These are handled by the parser but have special buttons to include them so
 we do not want them in the function list -- they only appear here so the right
