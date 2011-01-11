@@ -244,7 +244,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		  NewUnits = 1;
 		% num constant changed from int to float -- allow
 	      NewUnits = Units); % otherwise if units were given, use them
-	    nonvar(TypeBase), (\+ TypeBase = 1; ComboBase = int), !,
+	    nonvar(TypeBase), \+ TypeBase = any,
+		(\+ TypeBase = 1; ComboBase = int), !,
 	      NewUnits = TypeBase; % interesting default units, use them
 	    NewUnits = ComboBase), % last resort, use units from eqn
 	    ((InterInputs = [], % If there are no incoming influences...
