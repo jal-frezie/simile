@@ -2244,7 +2244,9 @@ proc Query {specifics icon helpRef parent opts} {
     lappend mBoxCmd -parent [ChooseParent $parent [set oldFocus [focus]]] 
     eval $mBoxCmd
 
-#    after 10000 set dialogues(done) more
+    if {[string equal None [PrefValue custom(quickExit) quickExit]]} {
+	after 10 set dialogues(done) more
+    }
 # (in case Mac version siezes)
     tkwait visibility .shortDlg
     grab .shortDlg

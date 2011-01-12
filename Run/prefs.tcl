@@ -176,6 +176,8 @@ proc Pref_Dialog {} {
             set canvasF $canvasTF
             set recentTF [TitleFrame $sf.recentTF -text [tr. "Recently used files:"]]
             set recentF $recentTF
+            set abandonTF [TitleFrame $sf.abandonTF -text [tr. "Show quick exit option:"]]
+            set abandonF $abandonTF
         set rf [frame $notebook.run]
         $notebook add $rf -text [tr. Run]
             set oneWinTF [TitleFrame $rf.oneWinTF -text [tr. "Run time environment:"]]
@@ -186,7 +188,7 @@ proc Pref_Dialog {} {
             set precisF $precisTF
        # $notebook select View
         pack $initWinTF $displayTF $gridTF $popupTF $eqListTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $precisTF $compTF \
-                $canvasTF $recentTF $notebook -fill x -padx 4 -pady 4
+                $canvasTF $recentTF $abandonTF $notebook -fill x -padx 4 -pady 4
         set bbox [frame $dlg.bbox] 
         pack [::ttk::button $bbox.bok -text [tr. OK] -underline 0 -width 8  \
                 -command {PrefSave}] -padx 2 -pady 2 -side left -anchor e
@@ -229,6 +231,7 @@ proc Pref_Dialog {} {
                 defBackground {set frame $submodelF}
                 saveExtras {set frame $canvasF}
                 recentCount {set frame $recentF}
+		quickExit {set frame $abandonF}
                 helperManager {set frame $oneWinF}
                 popupPrecision {set frame $precisF}
                 snapPrecision {set frame $precisF}

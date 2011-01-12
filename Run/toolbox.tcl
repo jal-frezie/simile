@@ -1134,6 +1134,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(bigButtons) bigButtons OFF "Use large buttons"] \
 		  [list custom(saveExtras) saveExtras [list CHOICE "Canvas file" "Model file only"] "Save models as..."] \
 		  [list custom(recentCount) recentCount 10 "Entries on recently used file list"] \
+		  [list custom(quickExit) quickExit [list CHOICE "None" "Abandon"] "Quick exit option..."] \
 		  [list custom(gridSnap) gridSnap OFF "Snap to grid"] \
 		  [list custom(quickDrag) quickDrag OFF "Quick drag"] \
 		  [list custom(myButton) myButton \u03bc "Custom keypad button"] \
