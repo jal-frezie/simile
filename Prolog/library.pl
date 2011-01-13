@@ -548,7 +548,7 @@ floatify_large_ints([H | T], [NH | NT], Hit) :- !,
         floatify_large_ints(T, NT, Hit).
 
 floatify_large_ints(N, NN, Hit) :-
-        integer(N), abs(N) >= 268435456, !, % largest int for 32-bit GProlog
+        integer(N), abs(N) > 268435455, !, % largest int for 32-bit GProlog
 	    NN is float(N), Hit = 1;
 	NN = N.
 

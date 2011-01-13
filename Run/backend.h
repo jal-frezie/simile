@@ -36,6 +36,7 @@ public:
 // these are actually made in the model code itself
 class InstanceOfModel : public submodeltype {
 public:
+  virtual ~InstanceOfModel() {}
   excpData userStop;
   double adapt_maxerr;
   ExecutingModel* partner;

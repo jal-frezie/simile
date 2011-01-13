@@ -1873,7 +1873,7 @@ char* load_model(char* fileName, char* nodeName, void** modelType) {
 
   newModel = new ModelFor5D(fileName, &complaint);
   if (complaint) {
-    // delete newModel;
+    delete newModel; // will unload dll if one has been loaded
     return complaint;
   }
   *modelType = newModel;
