@@ -36,7 +36,8 @@ public:
 // these are actually made in the model code itself
 class InstanceOfModel : public submodeltype {
 public:
-  virtual ~InstanceOfModel() {}
+  //  virtual ~InstanceOfModel() {}
+  // Above stops memory leak in Windows but causes crash in Linux
   excpData userStop;
   double adapt_maxerr;
   ExecutingModel* partner;
