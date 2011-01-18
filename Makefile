@@ -59,15 +59,16 @@ GCCCMD = gcc
 GPPCMD = g++
 
 ifeq ($(MY_CPU),x86_64)
+BITEXTN = 64
 OPT =
-SYSDIR = System64
 TCLDIR = /usr
 else
+BITEXTN = 
 OPT = -m32
-SYSDIR = System
 # build on included tcl -- deprecated but needed for selectable bitness
-TCLDIR = "/home/jaspert/Documents/My Simile files/Source/$(SYSDIR)"
+TCLDIR = "/home/jaspert/Documents/My Simile files/Source/System"
 endif
+SYSDIR = System$(BITEXTN)
 
 # Default case: Linux
 FLAGS = $(OPT)
@@ -136,7 +137,7 @@ endif
 	USETCL = -DUSE_TCL_STUBS -I$(TCLREF)/include -L$(TCLREF)/lib $(TCLREF)/lib/tclstub$(VERS).lib
 	LOCALIZE_TCL_REFS =  ls # placebo command
 	SHAREDLIBEXTN = .dll
-	ARCHEXTN = _win
+	ARCHEXTN = _win$(BITEXTN)
 	EXECEXTN = .exe
 	MAIN = $(EXECDIR)/Simile.exe
 	SCRIPT = $(EXECDIR)/SimileScript.exe

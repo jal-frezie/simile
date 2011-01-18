@@ -2212,10 +2212,15 @@ proc ExtractPrologName { winId target } {
 
 proc GetClickedObj { winId canx cany range} {
     for {set halo 1} {$halo < $range} {incr halo 2} {
-        set target [$winId find closest $canx $cany $halo]
-        if {![string match "*/background/*" [$winId gettags $target]] && \
-		[Visible $winId $target]} {
-            return $target
+        set tgt1 [set target [$winId find closest $canx $cany $halo]]
+	set looped 0
+	while {!$looped} {
+	    if {![string match "*/background/*" [$winId gettags $target]] && \
+		    [Visible $winId $target]} {
+		return $target
+	    }
+	    set target [$winId find closest $canx $cany $halo $target]
+	    set looped [expr {$target==$tgt1}]
         }
     }
     return 0
