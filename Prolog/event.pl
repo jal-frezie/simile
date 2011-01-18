@@ -1396,7 +1396,6 @@ lit_by(Target, Ghost) :-
 	(Halo = Base; find_ghosts(Base, Halo)),
 	\+ Ghost = Target.
 	
-
 update_halo(_) :-
 	get_highlit_obj(2, OldHalo),
 	normalize(OldHalo), fail;

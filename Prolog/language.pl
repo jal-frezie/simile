@@ -559,10 +559,10 @@ do_assignment(L, [new_member(ParentPtr, Name, InitVar) | Clauses],
 	excrete(L, assign_space, Pointer=[ParentPtr, Name, [UseElementRef],
 					  _, []], Indent1, Stream),
 	nth(ChannelN, Used, InitVar), !,
-	excrete(L, procedure_call, init_pop_member(Pointer, RefIndex, 0,
+	excrete(L, procedure_call, init_pop_member(Pointer, RefIndex,
 						  ChannelN), Indent1, Stream),
-	move_base_ptrs(L, Pointer, save, Indent1, [0], _, Stream),
-	/* no parent we are doing creation/immigration here */
+	%move_base_ptrs(L, Pointer, save, Indent1, [0], _, Stream),
+	/* this now set to 0 in i_p_m*/
 
 	/* End of submodel loop; insert into list and do next */
 	refer_value(L, Pointer, PointerRef),
@@ -625,7 +625,7 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 					   _, []], Indent2, Stream),
 	nth(ChannelN, Used, ReproName), !,
 	excrete(L, procedure_call, init_pop_member(MPTarget, RefIndex, 
-	              ParentRef, ChannelN), Indent2, Stream),
+						   ChannelN), Indent2, Stream),
 	move_base_ptrs(L, MPTarget, save, Indent1, [Pointer], _, Stream),
 
 	/* End of submodel loop; insert into list and do next */

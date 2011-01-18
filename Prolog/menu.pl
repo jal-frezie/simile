@@ -705,7 +705,7 @@ menu_handle(Win, window, NastyAtom) :-
 	    (Redraw=0, !; redraw_window(Win));
 	 get_term(NastyStr, halo(Way,Depth), []),
 	    set_halo(Win, Way, Depth),
-	    update_halo(Win)).
+	    event'><'update_halo(Win)).
 
 menu_handle(_, _, _).
 

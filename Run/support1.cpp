@@ -262,9 +262,9 @@ int init_pop (SMClass*** meta, double crNode, int ptCount, int channelId) {
 }
   
 template <class SMClass>
-void init_pop_member (SMClass *new_one, int index, int parent, int channel) {
+void init_pop_member (SMClass *new_one, int index, int channel) {
   new_one->instanceid[0] = index;
-  // new_one->parentId = parent; // no need with in_progenitor
+  new_one->baseptrs[0] = NULL; // overwritten in generated code if has parent
   new_one->channelId = channel;
   new_one->new_instance = 1;
   new_one->next = 0;
