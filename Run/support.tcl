@@ -932,7 +932,7 @@ proc init_pop {metaTxt crNode ptCount channelId maker} {
 	    set ${submodelptr}::instanceid $ptCount
 	    set ${submodelptr}::new_instance 1
 	} ;# end(cond,Instance exists)
-	set ${submodelptr}::baseptrs(0) 0
+	set ${submodelptr}::baseptrs(0) NULL
 	set ${submodelptr}::channelId $channelId
 
 	set ${submodelptr}::next [set $meta]
@@ -995,7 +995,7 @@ proc init_pop_member {new_one index channel} {
     upvar 1 $new_one tgt
 
     set ${tgt}::instanceid $index
-    set ${tgt}::baseptrs(0) 0
+    set ${tgt}::baseptrs(0) NULL ;# overwritten in generated code if has parent
     set ${tgt}::channelId $channel
     set ${tgt}::new_instance 1
     set ${tgt}::next 0

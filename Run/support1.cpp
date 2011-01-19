@@ -251,7 +251,7 @@ int init_pop (SMClass*** meta, double crNode, int ptCount, int channelId) {
       submodelptr->new_instance = 1;
     }; /* end(cond,Instance exists) */
     // submodelptr->parentId = 0; // no need with in_progenitor
-    submodelptr->baseptrs[0] = 0;
+    submodelptr->baseptrs[0] = NULL;
     submodelptr->channelId = channelId; // (val from i_p_m)
     // from cond construct
     submodelptr->next = **meta;

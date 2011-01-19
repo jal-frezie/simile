@@ -1114,7 +1114,7 @@ refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 	        DestPath = [sm(BitOfAHack, _,_,_) | _],
 	        atom(BitOfAHack), !, % undefined and irrelevant when parsing
 	        append_atoms(BitOfAHack, progen, SourcePtr),
-		SourceRef = choose(arr('', SourcePtr, []),
+		SourceRef = choose(nonnull(arr('', SourcePtr, [])),
 				   arr(SourcePtr, Name, IntInds), 0);
 	      pointer_from(SourcePath, SourcePtr),
 		SourceRef = arr(SourcePtr, Name, IntInds)),

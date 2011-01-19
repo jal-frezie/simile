@@ -1191,7 +1191,7 @@ What follows is even worse; it allows conditionals to be entered in the
 if-then-elseif-else format, though I can't see why anyone would want to.
 
 Since this causes problems anyway (due to inters and contexts) it's all
-obsolete. A stopgap conversion to a?b'><'c format is in place, pending the
+obsolete. A stopgap conversion to a?b:c format is in place, pending the
 incorporation of the actual conditionality into program generation
 
 	Op = if,
@@ -1229,6 +1229,12 @@ aid lazy evaluation as is done for Choose... */
 	Op = rand,
 		(L = tcl; L = c),
 			make_procedure_call_chars(L, [ame_rand | VArgExprs], CharList);
+        Op = nonnull, VArgExprs = [Test], !,
+            (L = c,
+		sicstus_write_to_chars(Test, CharList);
+	     L = tcl,
+		sicstus_format_to_chars("[string compare NULL ~w]", Test,
+					CharList));
 	L = tcl,
 		(inters'><'use_tcl_proc_for(Op),
 			make_procedure_call_chars(L, [Op | VArgExprs], CharList);
@@ -1275,7 +1281,6 @@ the next few lines in place, and math_protect asserted, AME will do the same.
 	member(Op, [round, floor, ceil]), !,
 	    Expr =.. [Op | VArgs],
 	    combine(L, int, [Expr], Atom);
-
 	(member(Op, [and, ',', '&&']), !,
 		(L = c,
 			TargetOp = (&&);
