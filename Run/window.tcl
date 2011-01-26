@@ -1788,7 +1788,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             set bt [::ttk::radiobutton $tb.$mode -command "ItemSelect $mode"  \
                 -variable MIpushedbutton -value $mode -image $testImg -style Toolbutton]
             pack $bt -side left -padx 2 -pady 2
-            BindPopup $bt $mode
+            BindPopup $bt add_$mode
             bind $bt <ButtonRelease-1> "DragComponentIn $c $bt %X %Y"
         }
     }

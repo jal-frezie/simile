@@ -6,19 +6,66 @@
 # This file is sourced by toolbox.tcl, providing definitions of popup help text
 # and links to help file pages.
 #
-set msgs(compartment) [tr. "Add compartments"]
-set msgs(flow) [tr. "Add flows"]
-set msgs(variable) [tr. "Add variables"]
-set msgs(influence) [tr. "Add influences"]
-set msgs(submodel) [tr. "Add new submodels"]
-set msgs(relation) [tr. "Connect submodels playing roles in a relationship to a relation submodel"]
-set msgs(condition) [tr. "Add conditions for the existence of submodel instances"]
-set msgs(alarm) [tr. "Add conditions for ending calculations within a submodel instance"]
-set msgs(text) [tr. "Add a text box to display additional information"]
-set msgs(creation) [tr. "Add creation processes to population submodels"]
-set msgs(immigration) [tr. "Add immigration processes to population submodels"]
-set msgs(reproduction) [tr. "Add reproduction processes to population submodels"]
-set msgs(loss) [tr. "Add destruction processes to population submodels"]
+# prepositions etc
+set msgs(in) [tr. in]
+set msgs(out) [tr. out]
+
+# simile basics -- objects
+set msgs(relation) [tr. "relation"]
+set msgs(flow) [tr. "flow"]
+set msgs(influence) [tr. "influence"]
+set msgs(model) [tr. "Simile model"]
+set msgs(unsaved) [tr. "unsaved"]
+
+# abbreviations for default component names, e.g., compartment -> comp, so 1st
+# compartment gets default name of comp1
+set msgs(compartment_abbrev) [tr. "comp"]
+set msgs(function_abbrev) [tr. "fn"]
+set msgs(variable_abbrev) [tr. "var"]
+set msgs(cloud_abbrev) [tr. "cd"]
+set msgs(submodel_abbrev) [tr. "submodel"]
+set msgs(condition_abbrev) [tr. "cond"]
+set msgs(alarm_abbrev) [tr. "al"]
+set msgs(creation_abbrev) [tr. "cr"]
+set msgs(immigration_abbrev) [tr. "im"]
+set msgs(reproduction_abbrev) [tr. "rep"]
+set msgs(loss_abbrev) [tr. "loss"]
+set msgs(text_abbrev) [tr. "text"]
+set msgs(flow_abbrev) [tr. "flow"]
+set msgs(influence_abbrev) [tr. "i"]
+set msgs(relation_abbrev) [tr. "role"]
+set msgs(desktop_abbrev) [tr. "Desktop"]
+
+# simile basics -- actions
+set msgs(reroute) [tr. "Reroute"]
+set msgs(delete) [tr. "Delete"]
+set msgs(cut) [tr. "Cut"]
+set msgs(copy) [tr. "Copy"]
+set msgs() [tr. ""]
+
+# simile basics -- for wqn dialogue
+set msgs(param) [tr. "Parameter"]
+set msgs(in_units) [tr. "In units"]
+set msgs(ip_name) [tr. "input parameter name"]
+set msgs(minval) [tr. "Min. value"]
+set msgs(maxval) [tr. "Max. value"]
+set msgs(exp_inter) [tr. "explicit intermediate result"]
+set msgs() [tr. ""]
+
+# popup messages
+set msgs(add_compartment) [tr. "Add compartments"]
+set msgs(add_flow) [tr. "Add flows"]
+set msgs(add_variable) [tr. "Add variables"]
+set msgs(add_influence) [tr. "Add influences"]
+set msgs(add_submodel) [tr. "Add new submodels"]
+set msgs(add_relation) [tr. "Connect submodels playing roles in a relationship to a relation submodel"]
+set msgs(add_condition) [tr. "Add conditions for the existence of submodel instances"]
+set msgs(add_alarm) [tr. "Add conditions for ending calculations within a submodel instance"]
+set msgs(add_text) [tr. "Add a text box to display additional information"]
+set msgs(add_creation) [tr. "Add creation processes to population submodels"]
+set msgs(add_immigration) [tr. "Add immigration processes to population submodels"]
+set msgs(add_reproduction) [tr. "Add reproduction processes to population submodels"]
+set msgs(add_loss) [tr. "Add destruction processes to population submodels"]
 set msgs(move) [tr. "Move diagram"]
 set msgs(copy) [tr. "Make copies of submodels"]
 set msgs(ghost) [tr. "Create 'ghosts' of components"]
@@ -141,13 +188,27 @@ set msgs(popupPrecision) [tr. "Number of significant figures displayed when real
 set msgs(snapPrecision) [tr. "Number of significant figures displayed when real values are shown in snapshot windows, or 0 for default."]
 set msgs(helperManager) [tr. "Use single window to manange run time displays and controls."]
 
-set msgs(props_title) [tr. "Properties of %1\$s - Simile"]
-set msgs(exec_title) [tr. "Execution of %1\$s - Simile"]
+# for equation listings
+set msgs(list_assoc_sm) [tr. "Submodel \"%1\$s\" an association submodel between \"%2\$s\" (in role \"%3\$s\") and \"%4\$s\" (in role \"%5\$s\")."]
+set msgs(list_selfassoc_sm) [tr. "Submodel \"%1\$s\" is an association submodel between \"%2\$s\" and itself with roles \"%3\$s\" and \"%4\$s\"."]
+set msgs(list_satellite_sm) [tr. "Submodel \"%1\$s\" is a \"%2\$s\" satellite of submodel \"%3\$s\"."]
+set msgs(list_by_record_sm) [tr. "Submodel \"%1\$s\" is a membership by record submodel."]
+set msgs(list_pop_sm) [tr. "Submodel \"%1\$s\" is a population submodel."]
+set msgs(list_cond_sm) [tr. "Submodel \"%1\$s\" is a conditional fixed membership submodel of dimensions %2\$s."]
+set msgs(list_unicond_sm) [tr. "Submodel \"%1\$s\" is a conditional submodel."]
+set msgs(list_multi_sm) [tr. "Submodel \"%1\$s\" is a fixed_membership multi-instance submodel with dimensions %2\$s."]
 
+# window headings
+set msgs(props_title) [tr. "Properties of \"%1\$s\" - Simile"]
+set msgs(exec_title) [tr. "Execution of \"%1\$s\" - Simile"]
+
+# parameter sources
 set msgs(metafile_ref) [tr. "Loaded from file \"%1\$s\" according to reference in file \"%2\$s\""]
 set msgs(metafile_lit) [tr. "Literal data in \"%1\$s\""]
 set msgs(metafile_bin) [tr. "Binary data in \"%1\$s\""]
 set msgs(direct_ref) [tr. "Loaded from file \"%1\$s\""]
+
+# file read/write operations
 set msgs(reading_file) [tr. "Reading information from file"]
 
 set msgs(pl_convert_from) [tr. "Converting from Simile version %1\$s model representation"]
@@ -160,7 +221,7 @@ set msgs(pl_coord) [tr. "Co-ordinating model information"]
 set msgs(decode_mime) [tr. "Decoding MIME-format saved file"]
 set msgs(translate_cnv) [tr. "Translating internal IDs of canvas objects."]
 set msgs(write_interface) [tr. "Listing all %1\$ss going %2\$sside the model"]
-# second parameter is translation of 'in' or 'out'
+# (1st parameter is component type, 2nd is translation of 'in' or 'out')
 set msgs(pl_action) [tr. "%1\$s in progress"]
 set msgs(pl_selall) [tr. "Selecting whole model"]
 set msgs(pl_unselall) [tr. "Unselecting whole model"]
@@ -170,6 +231,7 @@ set msgs(pl_draw) [tr. "Updating screen representation of components affected by
 set msgs(pl_mimeout) [tr. "Creating MIME-format saved file"]
 set msgs(save_cnv) [tr. "Saving canvas description"]
 
+# stages in model build process
 set msgs(pl_check) [tr. "Checking that the model is complete and consistent"]
 set msgs(pl_inst) [tr. "Instantiating expressions from node values"]
 set msgs(pl_comp) [tr. "Compiling the program generated for the model"]

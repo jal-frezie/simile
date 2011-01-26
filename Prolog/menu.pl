@@ -313,10 +313,10 @@ menu_handle(Win, file, save_interface) :-
 	write_with_breaks(Stream, interface_spec_for(MCaption, Bounds)),
 	save_references(Stream, Model),
 	(member(Type, [relation, flow, influence]),
-	    translate_message(Type, TypeStr),
+	    expand_message(Type, TypeStr),
 	    name(TypeAtom, TypeStr),
 	    member(Dir, [in, out]),
-	    translate_message(Dir, DirStr),
+	    expand_message(Dir, DirStr),
 	    name(DirAtom, DirStr),
 	    reassure_user(write_interface, [TypeAtom, DirAtom]),
 	    nl(Stream),
@@ -516,7 +516,7 @@ menu_handle(Win, edit, Component) :-
 
 Delete the selection */
 menu_handle(Win, edit, reroute) :-
-	translate_message('Reroute', RRStr),
+	expand_message(reroute, RRStr),
 	name(RRAtom, RRStr),
         start_progress_dialogue(Win),
 	reassure_user(pl_action, [RRAtom]),
@@ -541,7 +541,7 @@ menu_handle(Win, edit, snap) :-
 	menu_handle(Win, edit, reroute).
 
 menu_handle(Win, edit, delete) :-
-	translate_message('Delete', DelStr),
+	expand_message(delete, DelStr),
 	name(DelAtom, DelStr),
         start_progress_dialogue(Win),
 	reassure_user(pl_action, [DelAtom]),
@@ -551,8 +551,8 @@ menu_handle(Win, edit, delete) :-
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, CutOrCopy) :-
-	member(CutOrCopy-VisAct, [cut-'Cut', copy-'Copy']),
-	translate_message(VisAct, DelStr),
+	member(CutOrCopy, [cut, copy]),
+	expand_message(CutOrCopy, DelStr),
 	name(DelAtom, DelStr),
         start_progress_dialogue(Win),
 	reassure_user(pl_action, [DelAtom]),
@@ -907,16 +907,17 @@ submodel_type(Submodel,Type):-
 	(role_from_base(Submodel, Role2, Base2),
 	    Role2 \== Role1,
 	    (Base2 \== Base1, !,
-		translate_message('Submodel %1$s an association submodel between %2$s (in role %3$s) and %4$s (in role %5$s).', [Submodelpath, Base1, Role1, Base2, Role2], Type);
-	      translate_message('Submodel %1$s is an association submodel between %2$s and itself with roles %3$s and %4$s.',
-				[Submodelpath, Base1, Role1, Role2], Type));
-	    translate_message('Submodel %1$s is a %2$s satellite of submodel %3$s.', [Submodelpath, Role1, Base1], Type)).
+		expand_message(list_assoc_sm, [Submodelpath, Base1, Role1,
+					       Base2, Role2], Type);
+	      expand_message(list_selfassoc_sm, [Submodelpath, Base1,
+						 Role1, Role2], Type));
+	    expand_message(list_satellite_sm, [Submodelpath, Role1, Base1],
+			   Type)).
 
 submodel_type(Submodel,Type):-
    by_record(Submodel),
    submodelpath(Submodel, Submodelpath),
-   translate_message('Submodel %1$s is a membership by record submodel.',
-		     [Submodelpath], Type),!.
+   expand_message(list_by_record_sm, [Submodelpath], Type), !.
 
 /* no such thing
 submodel_type(Submodel,Type):-
@@ -931,9 +932,7 @@ submodel_type(Submodel,Type):-
 submodel_type(Submodel,Type):-
    is_population(Submodel),
    submodelpath(Submodel, Submodelpath),
-   translate_message(
-      'Submodel %1$s is a population submodel.', 
-      [Submodelpath], Type),!.
+   expand_message(list_pop_sm, [Submodelpath], Type), !.
 
 submodel_type(Submodel,Type):-
    is_conditional(Submodel),
@@ -941,17 +940,13 @@ submodel_type(Submodel,Type):-
    sicstus_write_to_chars(Dimensions, DimStr),
    name(Dims, DimStr),
    submodelpath(Submodel, Submodelpath),
-   translate_message(
-      'Submodel %1$s is a conditional fixed membership submodel of dimensions %2$s.', 
-      [Submodelpath,Dims], Type),!.
+   expand_message(list_cond_sm, [Submodelpath, Dims], Type), !.
 
 submodel_type(Submodel,Type):-
    is_conditional(Submodel),
    get_node_size(Submodel, []),
    submodelpath(Submodel, Submodelpath),
-   translate_message(
-      'Submodel %1$s is a conditional submodel.', 
-      [Submodelpath], Type),!.
+   expand_message(list_unicond_sm, [Submodelpath], Type), !.
 
 submodel_type(Submodel,''):-
    get_all_dims(Submodel, '[]').
@@ -962,9 +957,7 @@ submodel_type(Submodel,Type):-
    sicstus_write_to_chars(Dimensions, DimStr),
    name(Dims, DimStr),
    submodelpath(Submodel, Submodelpath),
-   translate_message(
-      'Submodel %1$s is a fixed_membership submodel with dimensions %2$s', 
-      [Submodelpath,Dims], Type),!.
+   expand_message(list_multi_sm, [Submodelpath, Dims], Type),!.
 
 submodel_type(Submodel,Type):-
    get_all_dims(Submodel, Type).

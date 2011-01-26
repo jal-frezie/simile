@@ -4,7 +4,7 @@
 
 sicstus_module(text, [split_path_chars/4, replace_char/4, alphanumeric_only/3,
 		      starter_only/3, continuer_only/3, argify/2,
-		      translate_message/2, translate_message/3]).
+		      expand_message/2, expand_message/3]).
 
 sicstus_use_module( [library( lists ), utility, sp_only] ).
 
@@ -105,7 +105,8 @@ escape_nasties(Chars, ArgChars) :-
 	!,
 	escape_nasties(Stop, Rest);
 	ArgChars = Chars.
-	      
+
+/* to be removed
 translate_message(Word, Trans) :-
 	output'><'safe_tcl_eval(['tr.', br(Word)], Trans).
 
@@ -116,4 +117,14 @@ translate_message(Word, Args, Trans) :-
 	output'><'safe_tcl_eval([format, chars(SafeTemplate) | SafeArgs],
 			     TransStr),
 	name(Trans, TransStr).
-			      
+	*/		      
+expand_message(Key, Trans) :-
+	output'><'safe_tcl_eval(['ExpandMessage', Key], Trans).
+
+expand_message(Key, Args, Trans) :-
+	expand_message(Key, Template),
+	argify(Template, SafeTemplate),
+	output'><'safe_list(Args, br(SafeArgs)),
+	output'><'safe_tcl_eval([format, chars(SafeTemplate) | SafeArgs],
+			     TransStr),
+	name(Trans, TransStr).

@@ -40,3 +40,7 @@ proc DoTr {english} {
 proc tr. {english} {
     return $english
 }
+
+proc ExpandMessage {key} {
+    return $::msgs($key)
+}
