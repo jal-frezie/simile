@@ -48,6 +48,7 @@
 #define INPUT           3
 #define SPLIT           4
 #define GHOST           5
+#define LIMIT           6
 
 /* special dimensions */
 #define RECORDS        -1

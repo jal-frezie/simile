@@ -626,13 +626,15 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 		/* limits for GNU integers; Sicstus can go further */
 	    Type = 'REAL',
 	        [Wee, Muckle] = [-1.0e100, 1.0e100]),
+	    DefEval = 'DERIVED'),
 
-	    ( /*member(make(_,_,_,_, [assign(arr(_, Name, _), _)]), ExtSets), !,
-		DefEval = 'EXOGENOUS'; */
-		DefEval = 'DERIVED')),
+	get_host(BaseName, VisName),
 	is_parameter(BaseName, PType),
+	(VisName is_of_sort discrete ->
+	    Types = [DefEval, 'LIMIT', 'INPUT'];
+	    Types = [DefEval, 'INPUT', 'TABLE']),
 	(PType = -1, Eval = DefEval;
-	nth0(PType, [DefEval, 'INPUT', 'TABLE'], Eval)),
+	nth0(PType, Types, Eval)),
 	
 	append(Path, [0], NewPath),
 	append(Dims, [0], CappedDims), 
@@ -640,7 +642,6 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 	/* Try not doing internals -- but will we need to for save/restore
 	 state? init functions confuse sketch graph editing. */
 	(\+ member(InstType, [internal, loss]),
-	get_host(BaseName, VisName),
 	find_type(VisName, VisType),
 	\+ (InstType = init_function,
 	       member(VisType, [immigration, reproduction])), !,

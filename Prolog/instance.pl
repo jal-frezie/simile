@@ -144,10 +144,11 @@ instance_of(_, Node, _,
 /* Nodes that have been specified as input parameters are set by a function
 call to the stub */
 
-instance_of(variable, Node, Path,
+instance_of(NType, Node, Path,
 	    [instance(function, Node, Default, Val, Base-Dims)], []) :-
+        member(NType-BelowParam, [variable-0, event-1]),
 	is_parameter(Node, PType),
-	PType > 0, !,
+	PType > BelowParam, !,
 	get_units(Node, Base, Dims),
 	Val = elt(Path, _, Base-Dims),
 	choose_default_value(Node, Base, PType, Default).

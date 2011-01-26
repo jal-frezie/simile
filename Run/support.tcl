@@ -366,7 +366,7 @@ proc old_stage_incr {ns_extras step v} {
 }
 
 proc stage_incr {ns_extras step v span gId} {
-    global adapt
+    global adapt adapt_maxerr
     upvar \#0 $ns_extras extras
     if {[info exists extras]} {
 	scan $extras "%f %f %f" t1 t2 t3
@@ -410,11 +410,11 @@ proc stage_incr {ns_extras step v span gId} {
             set result [expr [expr [set t1 $dv]/2.0]-$t2]
         } 10 { ;# does not change compartment, just checks for errors
 #            if {$dv} {
-	        set errMagn [expr abs($dv-$t3)]
+	    set errMagn [expr {abs($dv-$t3)*100/$span}]
 #puts "p10 pred_change $extras(pred_change) dv $dv errMagn $errMagn"
-	        if {$errMagn > $adapt(maxErr)} {
+	        if {$errMagn > $adapt_maxerr} {
 		    set adapt(culprit) $gId
-		    set adapt(maxErr) $errMagn
+		    set adapt_maxerr $errMagn
 	        }
 #            }
             set result 0
@@ -502,7 +502,7 @@ proc abort_check {args} {
 }
 
 proc TclResetModel {node doingRK topPhase} {
-    global myNode ts dts steps phasecount
+    global myNode ts dts steps phasecount adapt_maxerr
 
     set myNode $node
     if {$topPhase <= 0} {
@@ -512,12 +512,13 @@ proc TclResetModel {node doingRK topPhase} {
             set dts($tweakPhase) [expr $steps($tweakPhase)]
         }
     }
+    set adapt_maxerr 0 ;# just so it is defined at first comparison
     do_model evalmodel $topPhase
     return 1
 }
 
 proc TclExecuteModel {node howInt start end errLim} {
-    global dts steps phasecount adapt
+    global dts steps phasecount adapt adapt_maxerr
 #    if {[string equal cancel [ShowMess debug info "XM from $start to $end" okcancel]]} {
 #	error cancelled
 #    }
@@ -544,6 +545,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 #	    do_model advancemodel $bigPhase
 	    if {[string equal Euler $howInt]} {
                 if {$firstPass} {
+		    set recover 0.5
  		    set dts(0) 0
                 } else {
                     set dts(0) -1
@@ -552,6 +554,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 		do_model updatemodel $bigPhase
 	    } else {
                 if {$firstPass} {
+		    set recover 0.0625
                     set dts(0) 1
                 } else {
                     set dts(0) -2
@@ -563,15 +566,23 @@ proc TclExecuteModel {node howInt start end errLim} {
             if {!$errLim} {
                 set madeStep 1
             } else {
-                # get the model to generate its error estimate
-                do_model evalmodel $bigPhase
-                set adapt(maxErr) 0
-                set dts(0) 10
-                do_model updatemodel $bigPhase
-#puts "time $xtime max error $adapt(maxErr) doublings $adapt(doublings)"
-                if {$adapt(maxErr)>$errLim} {
+# tweak to allow events to be placed precisely in time. Clear maxerr
+# before the final rate calculation, and allow threshold detection to
+# increase it to the amount by which the threshold is crossed.
+                set adapt_maxerr 0
+		do_model evalmodel [expr {$phasecount+1}]
+# get the model to generate its error estimate
+# previous point for zeroing maxerr
+                if {$adapt_maxerr<=$errLim} { ;# no point if already over
+		    set dts(0) 10
+		    do_model updatemodel $bigPhase
+		} else {
+		    set adapt(culprit) event
+		}
+#puts "time $xtime max error $adapt_maxerr doublings $adapt(doublings)"
+                if {$adapt_maxerr>$errLim} {
                 # error too great; put comps back and try shorter
-                    if {$adapt(doublings)<30} {
+                    if {$adapt(doublings)<31} {
                         AdvanceTime $node $bigPhase -1 ;# back to the start
                         set xtime [expr $xtime-$freq]
                         incr adapt(doublings)
@@ -585,7 +596,7 @@ proc TclExecuteModel {node howInt start end errLim} {
                     }
                 } else {
                     set madeStep 1
-                    if {$adapt(doublings) && $adapt(maxErr)<$errLim/16} {
+                    if {$adapt(doublings) && $adapt_maxerr<$errLim*$recover} {
                         # low error; try longer next time if poss
                         incr adapt(doublings) -1
                         set freq [expr $steps($phasecount) * \

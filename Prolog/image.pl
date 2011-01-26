@@ -787,7 +787,7 @@ test_complete(Item) :-
             member(Base, [boolean, a(_)]);
         Item has_class_refinement min_val of _Min,
             Item has_class_refinement max_val of _Max;
-        Item has_class_refinement param_type of file);
+        is_parameter(Item, 2));
     Item has_type flow, /* in addition to the above disjunct */
         (sequence(Control, Item);
             sequence(Item, Control)),

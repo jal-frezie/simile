@@ -608,12 +608,6 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 	
 	make_struct_reference(L, Pointer, ReproName, Repro),
 	refer_value(L, Repro, ReproRef),
-	make_struct_reference(L, Pointer, instanceid, ParentArray),
-	(L = c,
-	    make_indexed_reference(L, ParentArray, [0], ParentId);
-	 L = tcl,
-	    ParentId = ParentArray),
-	refer_value(L, ParentId, ParentRef),
 	excrete(L, while_start, ReproRef>=1, Indent1, Stream),
 	make_expr(L, ReproRef-1, NewRepro),
 	/* cannot use decrement because quantity is floating point */
