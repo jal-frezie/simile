@@ -1020,7 +1020,8 @@ make_min_max_line(Component, MinMax) :-
 	 append_atoms([Min, ', ', Max], MinMax)).
 	
 get_flows(CompartmentNode, Direction, Names) :-
-	findall(Caption,(instance'><'flows(Direction, CompartmentNode, Arc),caption_for(Arc,Caption)), Names).
+	findall(Caption,(instance'><'flows(flow, Direction, CompartmentNode, Arc),
+			 caption_for(Arc,Caption)), Names).
 
 /* Got rid of this in favour of having tcl query the parameters
 get_ppairs([],[]).
