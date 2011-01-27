@@ -199,9 +199,9 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
 # (even with gcc 4.5.0)
 $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
-		-Wl,--out-implib,lib5d_win.a -o $(SHANK) shank.cpp; \
+		-Wl,--out-implib,lib5d$(ARCHEXTN).a -o $(SHANK) shank.cpp; \
 		mv $(SHANK) ../$(SLDIR); \
-		mv lib5d_win.a ../$(LIBDIR); cd ..
+		mv lib5d$(ARCHEXTN).a ../$(LIBDIR); cd ..
 
 # Unix: not needed for Linux as it can build at run time
 $(LIBDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
