@@ -1552,19 +1552,19 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 
     menu $fm.sub4 -tearoff 0
     $fm add cascade -label [tr. "Customize"] -menu $fm.sub4
-    foreach category { \
-                {compartment "Compartments..."} \
-                {variable "Variables..."} \
-                {flow "Flows, bowties and clouds..."} \
-		{influence "Influences..."} \
-                {submodel "Submodels..."} \
-                {relation "Relations..."} \
-                {condition "Channels..."}
-                {text "Text boxes..."}
-                {ghost_link "Ghost links..."}
-                {select "All components..."}} {
-    $fm.sub4 add command -command "Customize $winid [lindex $category 0]" \
-        -label [lindex $category 1]
+    foreach {category loc_label} \
+	[list compartment [tr. "Compartments..."] \
+	     variable [tr. "Variables..."] \
+	     flow [tr. "Flows, bowties and clouds..."] \
+	     influence [tr. "Influences..."] \
+	     submodel [tr. "Submodels..."] \
+	     relation [tr. "Relations..."] \
+	     condition [tr. "Channels..."] \
+	     text [tr. "Text boxes..."] \
+	     ghost_link [tr. "Ghost links..."] \
+	     select [tr. "All components..."]] {
+    $fm.sub4 add command -command "Customize $winid $category" \
+        -label $loc_label
     }
     UnderlineUniquely $fm.sub4
 
@@ -2342,26 +2342,29 @@ proc AddDetailMenu {winId fm3 initVals} {
     
     global rads
     set posn 0
-    foreach category { \
-        {ghost_link "Ghost links..."} \
-                {influence "Influences..."} \
-                {variable "Variables..."} \
-                {flow "Flows and clouds..."} \
-                {compartment "Compartments, states..."} \
-                {submodel "Submodels and relations..."} \
-                {caption "Captions..."}
-            {text "Text boxes..."}} {
-        
-        set cat [lindex $category 0]
+    foreach {cat loc_label} \
+        [list ghost_link [tr. "Ghost links..."] \
+	     influence [tr. "Influences..."] \
+	     variable [tr. "Variables..."] \
+	     flow [tr. "Flows and clouds..."] \
+	     compartment [tr. "Compartments, states..."] \
+	     submodel [tr. "Submodels and relations..."] \
+	     caption [tr. "Captions..."] \
+	     text [tr. "Text boxes..."]] {
+	     
         set rads($winId,$cat) [lindex $initVals $posn]
         incr posn
-        $fm3 add cascade -label [lindex $category 1] \
+        $fm3 add cascade -label $loc_label \
                 -menu $fm3.$cat
         set lastmenu [menu $fm3.$cat -tearoff 0]
         $lastmenu add radio -label [tr. "None"] -variable rads($winId,$cat) \
                 -value 0 -command "WindowDetail $winId $cat 0 1"
+        $lastmenu add radio -label [tr. "One level"] \
+	    -variable rads($winId,$cat) \
+	    -value 0 -command "WindowDetail $winId $cat 1 1"
+	set tr_plural_levels [tr. {%1$s levels}]
         foreach depth {1 2 3 4 5 6} {
-            $lastmenu add radio -label [tr. "$depth levels"] \
+            $lastmenu add radio -label [format $tr_plural_levels $depth] \
                     -variable rads($winId,$cat) -value $depth \
                     -command "WindowDetail $winId $cat $depth 1"
             
@@ -2374,7 +2377,7 @@ proc AddDetailMenu {winId fm3 initVals} {
     set lastmenu [menu $fm3.sections -tearoff 0]
     set rads($winId,sections) [lindex $initVals $posn]
     foreach sectType {Local Terminal All} {
-        $lastmenu add radio -label $sectType \
+        $lastmenu add radio -label [tr. $sectType] \
                 -variable rads($winId,sections) -value show$sectType \
                 -command "WindowDetail $winId sections show$sectType 1"
     }
