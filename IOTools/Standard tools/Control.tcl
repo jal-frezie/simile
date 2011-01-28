@@ -114,9 +114,9 @@ namespace eval runcontrol33857 {
         pack $rcf.upper -side top -anchor n -fill x -padx 4 -pady 4
         set captWidth 17
         frame $rcf.editBoxes
-        foreach {name capt var} {exec {Execute for} execTime \
-                    current {Current time} currentTime \
-                    disp {Display interval} displayInt} {
+        foreach {name capt var} {exec {Execute for:} execTime \
+                    current {Current time:} currentTime \
+                    disp {Display interval:} displayInt} {
             frame $rcf.editBoxes.$name
             label $rcf.editBoxes.$name.capt -text [tr. $capt] \
 		-width $captWidth -anchor w

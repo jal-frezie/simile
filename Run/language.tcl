@@ -37,7 +37,7 @@ proc DoTr {english} {
 # Hangul is 0xd7a3-0xac00
 
 # In use: just return the original English
-proc tr. {english} {
+proc DoTr {english} {
     return $english
 }
 

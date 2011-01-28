@@ -70,8 +70,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
         ttk::radiobutton $countf.radio.$rbutton \
 	    -text [tr. [lindex $rbutton 1]] -value [lindex $rbutton 0] \
-# TRANSLATOR: These are the second strings in each pair of braces after rbutton
 	    -variable disaggregate(type) -command "SetHighlights $countf"
+# TRANSLATOR: These are the second strings in each pair of braces after rbutton
         pack $countf.radio.$rbutton -anchor w
     }
     pack $countf.radio -anchor w -side left
@@ -97,9 +97,9 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
             disabled normal]
     foreach rbutton {Tiled Centred Scaled} {
         pack [ttk::radiobutton $posRBs.ip$rbutton -state $rbState \
-	      -value $rbutton -text [tr. $rbutton] \
-# TRANSLATOR: See list after rbutton
+		  -value $rbutton -text [tr. $rbutton] \
 		  -variable disaggregate(imgpos)] -anchor w -fill x
+# TRANSLATOR: See list after rbutton
     }
     pack $t.simple.left.colour -padx 4 -pady 4 -fill both -expand true
     pack $t.simple.left -side left -fill both -expand 1
