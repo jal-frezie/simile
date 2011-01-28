@@ -143,6 +143,7 @@ namespace eval RunEnv {
 			eval [list $sub add [lindex $item 0] \
 				  -label [tr. [lindex $item 1]]] [lrange $item 5 end]
 			lappend pops [tr. [lindex $item 3]]
+# TRANSLATOR: These are the quoted strings in the lines starting "command" above
 		    } else {
 			$sub add $item
 			lappend pops {}
@@ -150,6 +151,7 @@ namespace eval RunEnv {
 		}
 		UnderlineUniquely $sub
 		$mreMenu add cascade -label [tr. $header] -menu $sub
+# TRANSLATOR: These are: File, Edit, Help
 		MenuBindPopup $sub $pops
 	    }
             set mainframe [GetFrame $mreId]
@@ -176,6 +178,8 @@ namespace eval RunEnv {
 		    FixDisabledImgBug $newButton
                     pack $newButton -padx 1 -pady 1  -side left -anchor w
                     BindPopup $newButton [tr. $helptext]
+# TRANSLATOR: These are the quoted strings in the table after "set toolbars"
+# near start of file
                     incr i
                 }
                 pack $tb1 -side top -anchor w -fill x
@@ -322,7 +326,7 @@ namespace eval RunEnv {
 	set pageIndex [expr {[llength [$ParentContainer tabs]]+1}]
 	set newContainer [frame $pageId]
 	$ParentContainer add $newContainer \
-	    -text [format [tr. "Page %1\$d"] $pageIndex]
+	    -text [format [tr. {Page %1$d}] $pageIndex]
 	set parentPath [Addpanedwindow $newContainer vertical]
 	$ParentContainer select $newContainer
 	return [lindex [$parentPath panes] 0]
@@ -916,7 +920,7 @@ $tb1.b43 configure -state $useSpaceAbility
 	}
 	if {$newName} {
 	    set saveName [ChooseFile [file tail $saveName] \
-			      "Save display configuration" 1 $currentNode]
+			      [tr. "Save display configuration"] 1 $currentNode]
 	}
         if {![llength $saveName]} { ;# operation cancelled
 	    return
@@ -1019,7 +1023,7 @@ $tb1.b43 configure -state $useSpaceAbility
     proc LoadView {} {
 	variable currentNode
         set HelperStateFileName [ChooseFile Displays.shf \
-                "Open view specification file" 0 $currentNode]
+		[tr. "Open view specification file"] 0 $currentNode]
         if {[llength $HelperStateFileName]} {
             LoadSHF $currentNode $HelperStateFileName
         }

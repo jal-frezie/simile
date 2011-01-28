@@ -30,8 +30,8 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method LoadAcros {} {
-	set acroTable [ChooseFile acronyms.txt "Acronym definition file:" 0 \
-			   [GetNode]]
+	set acroTable [ChooseFile acronyms.txt \
+			   [tr. "Acronym definition file:"] 0 [GetNode]]
 	set acroFile [open $acroTable r]
 	while {![eof $acroFile]} {
 	    set acros [read $acroFile]

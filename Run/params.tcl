@@ -351,13 +351,13 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
 			  -command [list ${ns}::Save $clientId $path]] \
 		    -side right
 		BindPopup $nextLevel.head.save \
-		    [format [tr. "Save values for submodel \"%1\$s\""] $level]
+		    [format [tr. {Save values for submodel "%1$s"}] $level]
 		pack [::ttk::button $nextLevel.head.open -style $bStyle \
 			  -image $iconImages(open) \
 			  -command [list ${ns}::Open $clientId $path]] \
 		    -side right
 		BindPopup $nextLevel.head.open \
-		    [format [tr. "Load values for submodel \"%1\$s\""] $level]
+		    [format [tr. {Load values for submodel "%1$s"}] $level]
 	    }
             if {[string equal fileparams $ns]} {
                 pack [::ttk::button $nextLevel.head.clear -style $bStyle \
@@ -1020,7 +1020,8 @@ namespace eval fileparams {
 		return
 	    }
 	}
-	set title "Save [LevelForTitle $smPath] parameters as:"
+	set title [format [tr. {Save %1$s parameters as:}] \
+		       [LevelForTitle $smPath]]
         set metaFile [ChooseFile $defFile $title 1 $topNode]
 	ClearSubParamRefs $smPath ;# old spfs below this are superseded
         if {[llength $metaFile]} {
@@ -1248,7 +1249,8 @@ namespace eval fileparams {
 	    set titlePath $smPath
 	    set extn .spf
 	}
-	set title "Load [LevelForTitle $titlePath] measurements from:"
+	set title [format [tr. {Load %1$s measurements from:}] \
+		       [LevelForTitle $titlePath]]
 	set metaFile [ChooseFile [GetExecTitle $topNode]$extn $title 0 $topNode]
         if {[llength $metaFile]} {
             MergeParams $topNode $smPath $metaFile $notInput 1

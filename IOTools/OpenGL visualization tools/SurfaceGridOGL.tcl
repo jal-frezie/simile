@@ -1174,7 +1174,7 @@ namespace eval $keyValue {
     proc SaveAsFile {winId} {
         variable useNodes
         # should have dialog to set for options
-        set filename [ChooseFile image.gif "Save image as:" 1]
+        set filename [ChooseFile image.gif  [tr."Save image as:"] 1]
         if {[string length $filename]} {
             $useNodes($winId,visibleMap) write $filename \
                     -format [string range [file extension $filename] 1 end]

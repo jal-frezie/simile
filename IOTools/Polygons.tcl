@@ -643,8 +643,9 @@ namespace eval ::polygon375 {
     proc SaveShapes {winId} {
 	variable useNodes
 
-	if {![llength [ChooseFile image.tif "Save polygon boundaries as:" 1 \
-		 [$helperTable($winId,whichInstance) GetNode]]]} return
+	if {![llength \
+		  [ChooseFile image.tif [tr. "Save polygon boundaries as:"] 1 \
+		       [$helperTable($winId,whichInstance) GetNode]]]} return
 	set strm [open $file w]
 	puts $strm [concat [GetModelValue $useNodes($winId,xcoord)] \
 				[GetModelValue $useNodes($winId,ycoord)]]
@@ -715,8 +716,8 @@ namespace eval ::polygon375 {
         
         switch $i {
             0 {set sourcefile \
-		   [ChooseFile polys.bgx "Load polygon boundaries from:" 0 \
-			[$::helperTable($winId,whichInstance) GetNode]]}
+		   [ChooseFile polys.bgx [tr. "Load polygon boundaries from:"] \
+			0 [$::helperTable($winId,whichInstance) GetNode]]}
             1 {set sourcefile model}
         }
         return $sourcefile

@@ -89,7 +89,7 @@ proc ChooseFile { preferred title canbenew context} {
     set typeList [list [list $desc $typeList] [list [tr. {All files}] *]]
     set currentDir [do_in_editor GetPathChoice $fileType $context]
 #puts "Got path for $context"
-    set switches [list -title [tr. $title] -defaultextension $fileType \
+    set switches [list -title $title -defaultextension $fileType \
 		      -filetypes $typeList \
 		      -initialdir $currentDir]
     set active [focus]
@@ -292,7 +292,7 @@ proc PrintRandomCanvas {canvas} {
 # pixels = 1 inch (so my beautiful 1152x864 screen will be about a sheet of A4)
 
 proc PostScrog { winId node } {
-    set psfile [ChooseFile image.ps "Name of postscript file" 1 $node]
+    set psfile [ChooseFile image.ps [tr. "Name of postscript file:"] 1 $node]
     # check for cancel
     if {![string match */ $psfile]} {
         

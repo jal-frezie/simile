@@ -146,7 +146,7 @@ set line [open "c:/dump.txt" w]
 proc Save {w} {
 	global box
 
-	set channel [open [ChooseFile poster.cnv "Poster file" 1] w]
+    set channel [open [ChooseFile poster.cnv [tr. "Poster file"] 1] w]
 
 	set items [$w.canvas find all]
 	foreach item $items {
@@ -168,7 +168,7 @@ proc Save {w} {
 
 proc Load {w} {
 	global box
-	set posterfile [ChooseFile poster.cnv "Poster file" 0]
+    set posterfile [ChooseFile poster.cnv [tr. "Poster file"] 0]
 	source $posterfile
 	set items [$w.canvas find withtag isbox]
 	foreach item $items {

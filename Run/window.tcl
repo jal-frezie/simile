@@ -1255,7 +1255,7 @@ proc MenuSelect { window button item } {
 	    }
 	    if {[info exists extn]} {
 		set tgt [ChooseFile [GetExecTitle $node]$extn \
-			     "Export code to:" 1 $node]
+			     [tr. "Export code to:"] 1 $node]
 	    } else {
 		set tgt dummy
 	    }

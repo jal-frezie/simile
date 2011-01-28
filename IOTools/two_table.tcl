@@ -450,7 +450,7 @@ namespace eval $keyValue {
             {{Comma seperated values}       {.csv}        }
             {{All Files}        *             }
         }
-        set filename [ChooseFile table.csv "Save table contents as.." 1 \
+        set filename [ChooseFile table.csv [tr. "Save table contents as.."] 1 \
 			  [GetTopNode $winId]]
         SaveToNamedFile $winId $filename
     }

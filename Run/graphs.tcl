@@ -161,6 +161,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     set betweenMenu [menu $between.rangeopts.menu -tearoff 0]
     foreach unit {Interpolate Round} {
 	set trUnit [tr. $unit]
+# TRANSLATOR: values in brackets above
         $betweenMenu add command -label $trUnit \
                 -command "set graph($t,betweenOpt) $trUnit;Reshape $t"
     }
@@ -178,6 +179,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     set outMenu [menu $out.rangeopts.menu -tearoff 0]
     foreach unit {Truncate Extrapolate Wraparound} {
 	set trUnit [tr. $unit]
+# TRANSLATOR: values in brackets above
         $outMenu add command -label $trUnit \
 	    -command "set graph($t,outOpt) $trUnit"
     }
@@ -1182,7 +1184,7 @@ proc LoadDataFile {mode query mdl} {
     # xls
     
     if {$query} {
-        set info "Select new $mode file"
+        set info [tr. "Select new $mode file"]
         if {![llength [set table_entry(fileName) \
                     [ChooseFile data$type $info 0 $mdl]]]} {
             return 0
@@ -1196,7 +1198,7 @@ proc LoadDataFile {mode query mdl} {
     #$ext" ok ; # jmm
     
     while {[catch {open $table_entry(fileName) r} stream]} {
-        set info "Cannot read $mode file $table_entry(fileName)"
+        set info [tr. "Cannot read $mode file $table_entry(fileName)"]
         if {![llength [set table_entry(fileName) \
                     [ChooseFile data$type $info 0 $mdl]]]} {
             return 0

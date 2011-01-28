@@ -24,6 +24,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     foreach stepId [list {Initialize only} {New params only} {Reset only} \
 			1st 2nd 3rd 4th 5th 6th 7th] {
 	lappend stepNames [tr. $stepId]
+# TRANSLATOR: see list above for values of $stepId
     }
     if {[string is integer -strict $step]} {
 	set disaggregate(step) [lindex $stepNames [expr $step+2]]
@@ -69,6 +70,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
         ttk::radiobutton $countf.radio.$rbutton \
 	    -text [tr. [lindex $rbutton 1]] -value [lindex $rbutton 0] \
+# TRANSLATOR: These are the second strings in each pair of braces after rbutton
 	    -variable disaggregate(type) -command "SetHighlights $countf"
         pack $countf.radio.$rbutton -anchor w
     }
@@ -96,6 +98,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     foreach rbutton {Tiled Centred Scaled} {
         pack [ttk::radiobutton $posRBs.ip$rbutton -state $rbState \
 	      -value $rbutton -text [tr. $rbutton] \
+# TRANSLATOR: See list after rbutton
 		  -variable disaggregate(imgpos)] -anchor w -fill x
     }
     pack $t.simple.left.colour -padx 4 -pady 4 -fill both -expand true
@@ -458,7 +461,8 @@ proc ExtCodeSetup {mdl} {
 }    
 
 proc ChangeIncFile {incFileTxt mdl} {
-    set newFile [ChooseFile external.cpp "External source/header file:" 0 $mdl]
+    set newFile [ChooseFile external.cpp [tr. "External source/header file:"] \
+		     0 $mdl]
     if {[string length $newFile]} {
 	$incFileTxt configure -state normal
 	$incFileTxt delete 1.0 end
@@ -469,7 +473,7 @@ proc ChangeIncFile {incFileTxt mdl} {
 
 proc AddLibF {LibListFr mdl} {
     set newFile [ChooseFile library[linkableExt [info sharedlibextension]] \
-		     "External library file:" 0 $mdl]
+		     [tr. "External library file:"] 0 $mdl]
     if {[string length $newFile]} {
 	if {[string match lib* [file tail $newFile]]} {
 	    ${LibListFr}.box insert end $newFile
@@ -728,7 +732,7 @@ proc ChooseImage {posRBs mdl noCentred} {
     image create photo $newImage
     set choosing 1
     while {$choosing} {
-        set new [ChooseFile image.gif {Image for model background} 0 $mdl]
+        set new [ChooseFile image.gif [tr. {Image for model background}] 0 $mdl]
         if {[llength $new]} {
             if {![catch {$newImage read $new -shrink} readFlop]} {
                 if {![llength $readFlop]} {
@@ -842,7 +846,7 @@ proc RelationCheck {parent title type state init_comment} {
     wm title $t [format $::msgs(props_title) [BlankCrs $title]]
     frame .relcheck.top
     TitleFrame .relcheck.top.left \
-	-text [format [tr. "%1\$s options:"] [string toupper $type]]
+	-text [format [tr. {%1$s options:}] [string toupper $type]]
     set f [GetFrame .relcheck.top.left]
     
     switch $type {
@@ -861,6 +865,10 @@ proc RelationCheck {parent title type state init_comment} {
     foreach {text attr} $entries {
         pack [checkbutton $f.$attr -text [tr. $text] -wraplength 160 \
                 -variable relation($attr) -offvalue 0 -onvalue 1] -anchor w
+# TRANSLATOR: $text is one of:
+# "Use values made in same time step"
+# "Exclusive role"
+# "Allow base instance lookup"
         set relation($attr) [lindex $state 0]
         set state [lrange $state 1 end]
         if {$relation($attr)==-1} {
@@ -1494,6 +1502,8 @@ proc ShowAbout {winId} {
     set fullVers $sendvars(simV)$sendvars(simP)
     pack [label .about.fr.lab1 -font "-family helvetica -size $fSize" \
 	      -text "[tr. Simile] v$fullVers [tr. $userinfo(edn)], $::tclBitness-bit"]
+# TRANSLATOR: $userinfo(edn) is one of:
+# evaluation, teaching, standard, enterprise
     set platform [frame .about.fr.platform]
     pack [label $platform.prolog -text "Prolog: $sendvars(proV)" \
             -font "-family helvetica -size $fsSize"] -side left
@@ -1528,14 +1538,14 @@ proc ShowAbout {winId} {
     set gen [frame .about.fr.gen]
     switch -regexp $userinfo(edn) {
         evaluation {
-	    set service {For upgrade to Standard, }
+	    set service [tr. {For upgrade to Standard, please visit}]
         } standard|teaching {
-	    set service {For support or to upgrade, }
+	    set service [tr. {For support or to upgrade, please visit}]
         } enterprise {
-            set service {For support, }
+            set service [tr. {For support, please visit}]
         }
     }
-    pack [label $gen.visit -text [tr. "${service}please visit"] \
+    pack [label $gen.visit -text $service \
 	      -font "-family helvetica -size $fsSize"] -side left
     pack [label $gen.www -text www.simulistics.com -relief flat \
             -font "-underline true -family helvetica -size $fsSize" -fg blue -cursor hand2] -pady 2 -side left
@@ -1695,6 +1705,8 @@ proc equationlisting_start {DefEquationListingFileName topNode} {
     
     foreach imgType [list compartment flow variable creation \
              immigration loss reproduction condition alarm] {
+# TRANSLATOR: These will be used below in proc equationlisting_addvariable
+# but with first letter uppercase
     image create photo equationlist(${imgType}img)
     equationlist(${imgType}img) read "../Images/Toolbar/${imgType}.gif"
     }
@@ -1828,6 +1840,7 @@ proc equationlisting_addvariable {node vartype varlabel expression minmax \
     #puts "equationlisting_addvariable $varlabel $vartype $inflows $outflows $where"
     
     $widget insert end "[tr. [string totitle ${vartype}]] " typtag
+# TRANSLATOR: see note at definition of imgType above
     $widget insert end " " descrtag
     $widget image create end -image equationlist(${vartype}img)
     $widget insert end " " descrtag
@@ -1836,6 +1849,7 @@ proc equationlisting_addvariable {node vartype varlabel expression minmax \
     if {[lsearch -exact {{Fixed parameter} {Variable parameter}} \
 	     $expression]>-1} {
 	set tidy_expression [tr. $expression]
+# TRANSLATOR: $expression is one of {Fixed parameter} {Variable parameter}
     } else {
 	set tidy_expression [regsub -all "\n" $expression "\n\t\t\t"]
     }
@@ -1940,7 +1954,7 @@ proc EquationListingSave {winId topNode} {
     global equationlist DefaultEquationListingFileName
 
     set fname [ChooseFile $DefaultEquationListingFileName \
-		   "Save equation listing as:" 1 $topNode]
+		   [tr. "Save equation listing as:"] 1 $topNode]
     if {![string match "" $fname]} {
         set f [open $fname w]
         puts $f [$equationlist(textbox) get 1.0 end]

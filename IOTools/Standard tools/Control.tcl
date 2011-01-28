@@ -114,12 +114,13 @@ namespace eval runcontrol33857 {
         pack $rcf.upper -side top -anchor n -fill x -padx 4 -pady 4
         set captWidth 17
         frame $rcf.editBoxes
-        foreach {name capt var} {exec {Execute for } execTime \
-                    current {Current time } currentTime \
-                    disp {Display interval } displayInt} {
+        foreach {name capt var} {exec {Execute for} execTime \
+                    current {Current time} currentTime \
+                    disp {Display interval} displayInt} {
             frame $rcf.editBoxes.$name
             label $rcf.editBoxes.$name.capt -text [tr. $capt] \
 		-width $captWidth -anchor w
+# TRANSLATOR: $capt is one of doubly bracketed strings after foreach above
             pack $rcf.editBoxes.$name.capt -side left -anchor nw
             ::ttk::entry $rcf.editBoxes.$name.num \
                     -textvar runState($node,$var) -width 8
@@ -153,12 +154,13 @@ namespace eval runcontrol33857 {
         ::ttk::menubutton $rsf.integration.pulldown
         set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0]
         foreach method {Euler Runge-Kutta} {
+# TRANSLATOR: these methods need translation
 	    $intMethodMenu add command -label [tr. $method] \
 		-command [namespace code [list UpdateIntMethod $intMethodMenu \
 					      $node $method]]
         }
         $rsf.integration.pulldown configure -menu $intMethodMenu -width 12 \
-	    -text [tr. $runState($node,intMethod)]
+	    -text [tr. $runState($node,intMethod)] ;# TRANSLATOR done
         pack $rsf.integration.pulldown -side left -anchor nw
         
 # This is done in SwapDistVar
@@ -217,7 +219,7 @@ namespace eval runcontrol33857 {
     proc UpdateIntMethod {menu node method} {
 	global runState
 	
-	[winfo parent $menu] configure -text [tr. $method]
+	[winfo parent $menu] configure -text [tr. $method] ;# TRANSLATOR done
 	set runState($node,intMethod) $method
     }
 

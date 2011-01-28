@@ -1672,8 +1672,8 @@ proc ConvertSSxml {node} {
 	puts "Warning -- using Mime in fallback mode: $errorInfo"
     }
 
-    set importSrc [ChooseFile spreadsheet.xml "Import spreadsheet from:" 0 \
-		      $node]
+	set importSrc [ChooseFile spreadsheet.xml \
+			   [tr. "Import spreadsheet from:"] 0 $node]
     set mm1 [mime::initialize -canonical application/x-xml 
 	     -encoding base64 -file $importSrc]
     set XML [mime::getbody $mm1]
@@ -1918,7 +1918,7 @@ proc UnOrReDo {curWin fwd} {
 proc ExportPostscript { winId } {
     global window_info
 
-    set psfile [ChooseFile image.ps "Name of postscript file" 1 \
+    set psfile [ChooseFile image.ps [tr. "Name of postscript file"] 1 \
 		   $window_info($winId,top_node)]
     # check for cancel
     if {![string match */ $psfile]} {
@@ -2341,13 +2341,13 @@ proc DescribeInputParam {paramSpec} {
     if {[string equal in_hierarchy [lindex $paramSpec 2]] ||
 	[string equal /none/ [lindex $paramSpec 1]]} { 
 # no roles or role not used
-	set template {Value(s) of %1$s}
+	set template [tr. {Value(s) of %1$s}]
     } elseif {[string equal in_base [lindex $paramSpec 2]]} {
-	set template {Value(s) of %1$s from submodel "%2$s" in role "%3$s"}
+	set template [tr. {Value(s) of %1$s from submodel "%2$s" in role "%3$s"}]
     } else { ;# in_assoc
-	set template {Value(s) of %1$s for submodel "%2$s" in role "%3$s"}
+	set template [tr. {Value(s) of %1$s for submodel "%2$s" in role "%3$s"}]
     }
-    format [tr. $template] [BlankCrs [lindex $paramSpec 0]] \
+    format $template [BlankCrs [lindex $paramSpec 0]] \
 	[BlankCrs [lindex $paramSpec 1]] [BlankCrs [lindex $paramSpec 3]]
 }
 

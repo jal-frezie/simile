@@ -19,7 +19,9 @@ proc create_equation {parent purpose comp indices enum_types} {
     ### End formula bar section
     set topNode $window_info($parent,top_node) 
     set t [PutItThere .equation $parent]
-    wm title $t "[tr. $purpose] [tr. for] [BlankCrs $comp]"
+    wm title $t [format [tr. "$purpose for %1\$s"] [BlankCrs $comp]]
+# TRANSLATOR: $purpose part of string is one of:
+# Cause, Initial value, equation
     set equation(top) $t
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
     
@@ -198,6 +200,7 @@ proc create_equation {parent purpose comp indices enum_types} {
 	set eqnFrameTitle "Data source"
 	set topType "Variable parameter"
 	set midType "Fixed parameter"
+# TRANSLATOR: Last seven quoted strings need translations in next block
 	set bottomType $purpose
     }
     $mainF add [frame $mainF.main]

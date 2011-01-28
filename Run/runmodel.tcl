@@ -365,7 +365,7 @@ proc SaveView {} {
 
     set topNode [GetNodeFromFocus]
     set helperTable($topNode,stateName) \
-	[ChooseFile iotools.shf "Save view specification file" 1 $topNode]
+	[ChooseFile iotools.shf [tr. "Save view specification file"] 1 $topNode]
     if {[llength $helperTable($topNode,stateName)]} {
 	set metaList {}
         foreach displayBox [array name helperTable *,whichInstance] {
@@ -420,7 +420,7 @@ proc LoadView {} {
     global helperTable errorInfo
     set topNode [GetNodeFromFocus]
     set helperTable($topNode,stateName) \
-	[ChooseFile iotools.shf "Open view specification file" 0 $topNode]
+	[ChooseFile iotools.shf [tr. "Open view specification file"] 0 $topNode]
     if {[llength $helperTable($topNode,stateName)]} {
 	CreateView $topNode $helperTable($topNode,stateName)
     }
@@ -942,7 +942,8 @@ proc snap_down3 {w values} {
 }
 
 proc SaveSnap {w vname topNode} {
-    set filename [ChooseFile snap.csv "Save snapshot data as.." 1 $topNode]
+    set filename [ChooseFile snap.csv [tr. "Save snapshot data as.."] 1 \
+		      $topNode]
     if {![llength $filename]} return
     SaveSnapToFile $w $vname $filename
 }
@@ -964,7 +965,9 @@ proc LogSnap {w vname tree topNode node} {
     if {[info exists runState(log$node)]} {
 	StopLogging $w $topNode $node
     } else {
-	set filename [ChooseFile snap.csv "Log data for $vname as.." 1 $topNode]
+	set filename [ChooseFile snap.csv \
+			  [format [tr. {Log data for %1$s as...}] $vname] 1 \
+			       $topNode]
 	if {![llength $filename]} return
 	StartLogging $w $topNode $node $filename
     }

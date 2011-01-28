@@ -200,7 +200,7 @@ proc Pref_Dialog {} {
                 -command "::Pref_HelpCommand $notebook"]  -padx 2 -pady 2 -side left -anchor e
         pack $dlg.bbox -side bottom -padx 4 -pady 8 -fill x
         
-#        ShowMess debug info [tr. "$pref(items)"] ok
+#        ShowMess debug info $pref(items) ok
         
        set maxWidth 0
        foreach item $pref(items) {
@@ -211,7 +211,7 @@ proc Pref_Dialog {} {
        }
        set pref(uid) 0
        foreach item $pref(items) {
-            #ShowMess debug info [tr. "$item; [PrefRes $item]"] ok
+            #ShowMess debug info "$item; [PrefRes $item]" ok
             switch -glob -- [PrefRes $item] {
                 winPosn {set frame $initWinF}
                 init* {set frame $displayF}
@@ -327,7 +327,8 @@ proc PrefSave {} {
     PrefSaveFile $new {}
 
     if [catch {file rename -force $new $old} err] {
-	Status [tr. [format "Cannot install $new: %1\$s"] $err]
+	Status [format [tr. {Cannot install %1$s; error was:
+%2$s}] $new $err]
 	return
 	}
     if {[string equal windows $tcl_platform(platform)]} {
@@ -338,8 +339,9 @@ proc PrefSave {} {
 
 proc PrefSaveFile {new oldValues} {
 	if [catch {NetOpen $new w} out] {
-		.pref.but.label configure -text \
-		[tr. [format "Cannot save in $new: %1\$s"] $out]
+	    .pref.but.label configure -text \
+		[format [tr. {Cannot save in %1$s; error was:
+%2$s}] $new $out]
 		return
 	}
 	foreach line $oldValues {
