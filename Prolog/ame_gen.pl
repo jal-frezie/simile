@@ -65,7 +65,7 @@ make_nice_error_message(ThrowUp, ErrorAtom) :-
 make_nice_error_message(Eat, ThrowUp, ErrorAtom) :-
 	sicstus_read_from_chars([114,101,108,97,120,46], _Relax), % undo buggy effects
 	(ThrowUp = existence_error(_,_, Type, WhereLooked, _), !,
-	    sicstus_format_to_chars("This operation cannot proceed because the program failed to find a ~a called ~a", [Type, WhereLooked], Error);    
+	 expand_message(prolog_ref_fail, [Type, WhereLooked], ErrorAtom);
         (ThrowUp = syntax_error(_,_, Problem, Bits, Where), /* sicstus */
 	space_elts(Problem, Desc),
 	append(BitsBefore, BitsAfter, Bits),
@@ -88,9 +88,8 @@ make_nice_error_message(Eat, ThrowUp, ErrorAtom) :-
 		length(RunUpStr, Nasty),
 		all(user, name, [build([RunUp, WindDown]),
 				 build([RunUpStr, WindDownStr])]))),
-	sicstus_format_to_chars("Attempting to decipher this item failed, generating this diagnostic message: \"~a\". This is what was read in, with an indication of where the problem was found:\n ~w <HERE> ~w", [Desc, RunUp, WindDown], Error);
-	sicstus_format_to_chars("Unexpected Prolog error message: ~w", [ThrowUp], Error)),
-        name(ErrorAtom, Error).
+	 expand_message(prolog_misparse, [Desc, RunUp, WindDown], ErrorAtom);
+	expand_message(prolog_bug, [ThrowUp], ErrorAtom)).
 
 line_starts_at(1, _, 0) :- !.
 line_starts_at(N, Str, Posn) :-

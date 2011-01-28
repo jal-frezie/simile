@@ -848,6 +848,10 @@ proc AddAccelerator {winName menuName item event} {
 proc AddCmdAndAccel {winId menuName item command {state normal}} {
     set menu ${winId}top.$menuName
     $menu add command -label [tr. $item] -state $state -command $command
+# TRANSLATOR: The following 15 strings can be translated here: $item may be
+    # {Save selection as...} Compartment Variable Flow Influence Submodel
+    # State Event Squirt {Role arrow} {Text box} Redo {Reroute links}
+    # {Align to grid} {Properties...}
     AddAccelerator $winId $menuName $item none
 }
 
@@ -1635,6 +1639,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	$fm1 add radiobutton -label [tr. [string totitle $itemType]] \
 	    -command "ItemSelect $itemType" \
             -variable MIpushedbutton -value $itemType
+# TRANSLATOR: Strings are any of those following "set lookers [list..." above,
+# or "event", "squirt" or "state" -- but always starting with uppercase letter
     }
     UnderlineUniquely $fm1
 
@@ -1867,6 +1873,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	foreach level [split [join [lindex $funk 0] /] /] {
 	    set lname $box.[string tolower [join $level _]]
 	    set capt [tr. $level]
+# TRANSLATOR: String $level may be "Built-in", "Macros" or
+# the name of any directory under Functions
 	    if {[catch {$box index $capt}]} {
 		menu $lname -tearoff 0
 		$box add cascade -menu $lname -label $capt
@@ -2380,6 +2388,7 @@ proc AddDetailMenu {winId fm3 initVals} {
         $lastmenu add radio -label [tr. $sectType] \
                 -variable rads($winId,sections) -value show$sectType \
                 -command "WindowDetail $winId sections show$sectType 1"
+# TRANSLATOR: $sectType may be Local, Terminal or All
     }
 }
 

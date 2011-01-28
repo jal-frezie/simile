@@ -246,13 +246,19 @@ set msgs(pl_order) [tr. {Ordering model execution assignments}]
 set msgs(pl_code) [tr. {Generating code for model execution}]
 set msgs(pl_xref) [tr. {Cross-referencing effects and conditions}]
 
+set msgs(prolog_ref_fail) [tr. {This operation cannot proceed because the program failed to find a %1$s called %2$s}]
+# arg 1 is a component, e.g., submodel
+set msgs(prolog_misparse) [tr. {Attempting to decipher this item failed, generating this diagnostic message: "%1$s". This is what was read in, with an indication of where the problem was found:
+%2$s <HERE> %3$s}]
+set msgs(prolog_bug) [tr. {Unexpected Prolog error message: "%1$s"}]
+
 set msgs(start_fail_title) [tr. {Simile has been unable to start up due to problems with this system.}]
 set msgs(start_fail_message) [tr. {The following system error message was generated:
 %1$s}]
 
 set msgs(user_fn_misparse_title) [tr. {Parsing definitions in %1$s}]
 set msgs(user_fn_misparse_message) [tr. {Error parsing user-defined macros and functions in %1$s}]
-set msgs(user_fn_misparse_detail) [tr. {%2$s}]
+set msgs(user_fn_misparse_detail) {%2$s}
 
 set msgs(unused_macro_param_title) [tr. {Parsing definitions in %1$s}]
 set msgs(unused_macro_param_message) [tr. {Failed to parse macro definition:
