@@ -2298,14 +2298,17 @@ proc AddIfAbsent {entry list} {
     }
 }
 
+set equation(prevs) {}
+
 proc accept_equation {winId text} {
     global equation
     global equationbar
     set equationbar(current_action) tick
     set equationbar(equation) [string trimright [$text get]]
 # do if a combobox -- not now cos no cursor insert
-#    $text configure -values [AddIfAbsent $equationbar(equation) \
-                 [$text cget -values]]
+# (huh? Seems OK with ttk::combobox)
+    set equation(prevs) [AddIfAbsent $equationbar(equation) $equation(prevs)]
+    $text configure -values $equation(prevs)
     set node $equationbar($winId,node)
     prolog [list tk_click_obj('$winId.canvas',  doubleclick, 0 , 0 , $node, 0)]
     set equationbar($winId,initText) $equationbar(equation)

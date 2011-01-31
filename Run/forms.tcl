@@ -24,7 +24,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     foreach stepId [list {Initialize only} {New params only} {Reset only} \
 			1st 2nd 3rd 4th 5th 6th 7th] {
 	lappend stepNames [tr. $stepId]
-# TRANSLATOR: see list above for values of $stepId
+# TRANSLATOR: see list above for values of $stepId -- include cardinals
     }
     if {[string is integer -strict $step]} {
 	set disaggregate(step) [lindex $stepNames [expr $step+2]]

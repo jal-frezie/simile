@@ -34,6 +34,7 @@ set msgs(text_abbrev) [tr. {text}]
 set msgs(flow_abbrev) [tr. {flow}]
 set msgs(influence_abbrev) [tr. {i}]
 set msgs(relation_abbrev) [tr. {role}]
+set msgs(border_abbrev) [tr. {bdr}]
 set msgs(desktop_abbrev) [tr. {Desktop}]
 
 # simile basics -- actions
@@ -673,6 +674,9 @@ set msgs(no_info_col_detail) [tr. {Please supply a heading to identify the %1$s 
 set msgs(no_odbc_driver_title) [tr. {ODBC driver not found}]
 set msgs(no_odbc_driver_message) [tr. {This system does not appear to have an ODBC driver available for files with the extension "%1$s".}]
 set msgs(no_odbc_driver_detail) [tr. {You will probably need to install one and register it.}]
+set msgs(area_misses_data_title) [tr. {Area contains no data}]
+set msgs(area_misses_data_message) [tr. {The boundaries given do not enclose any usable data in this file.}]
+set msgs(area_misses_data_detail) [tr. {Check that the file is of the right type and has enough rows and columns to cover the area specified.}]
 set msgs(iotool_load_fail_title) [tr. {Error loading I/O tool code}]
 set msgs(iotool_load_fail_message) [tr. {A problem occurred loading the code for an I/O tool, from file %1$s}]
 set msgs(iotool_load_fail_detail) [tr. {The error message was:

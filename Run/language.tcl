@@ -1,5 +1,3 @@
-# This version translates any string into random Russian characters,
-# keeping the same one for each translation
 proc tr. {english} {
     global means
 
@@ -7,6 +5,18 @@ proc tr. {english} {
 	set means($english) [DoTr $english]
     }
     return $means($english)
+}
+
+proc LoadTrans {} {
+    set stm [open $::SIMILE_PATH/means.txt r]
+    array set ::means [read $stm]
+    close $stm
+}
+
+proc SaveTrans {} {
+    set stm [open $::SIMILE_PATH/means.txt w]
+    puts -nonewline $stm [array get ::means]
+    close $stm
 }
 
 proc DoTr {english} {

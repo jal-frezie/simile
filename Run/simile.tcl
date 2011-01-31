@@ -426,6 +426,7 @@ if {[string equal Linux $tcl_platform(os)]} {
 
 # first put up the splash screen
 source $SIMILE_PATH/Run/language.tcl
+LoadTrans
 image create photo splash -width 90 -height 90
 
 splash read $SIMILE_PATH/Images/bigsimile.gif -shrink

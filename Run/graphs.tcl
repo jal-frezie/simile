@@ -157,7 +157,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     
     #    pack [ComboBox $between.rangeopts -values "Interpolate Round" -editable 0 \
     #	      -modifycmd "Reshape $t" -width 12]
-    ::ttk::menubutton $between.rangeopts
+    ::ttk::menubutton $between.rangeopts -style Toolbutton
     set betweenMenu [menu $between.rangeopts.menu -tearoff 0]
     foreach unit {Interpolate Round} {
 	set trUnit [tr. $unit]
@@ -175,7 +175,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $out.outrange
     #    pack [ComboBox $out.rangeopts -values "Truncate Extrapolate Wraparound" \
     #	      -editable 0 -width 12]
-    ::ttk::menubutton $out.rangeopts
+    ::ttk::menubutton $out.rangeopts -style Toolbutton
     set outMenu [menu $out.rangeopts.menu -tearoff 0]
     foreach unit {Truncate Extrapolate Wraparound} {
 	set trUnit [tr. $unit]
@@ -667,25 +667,17 @@ proc equationDoTable {parent mdl tgt dims startLine} {
             -expand true -fill x
     pack [Entry $flim.yval.hi -textvariable table_entry(rown)] \
             -expand true -fill x
-# these comboboxes are going to be a pain in the arse to translate because the
-# spf contains the keyed version of the actual English text -- do by indices
     pack [ttk::combobox $flim.yval.idx -width 16 -state readonly \
-	      -textvariable table_entry(irow) \
-	      -values [list "Position in data area" \
-			   "First column in grid" \
-			   "Column to left of data"]] \
+	      -textvariable table_entry(irow) -values $table_entry(irow_txts)] \
 	-expand true -fill x
-    set table_entry(irow) [lindex [$flim.yval.idx cget -values] 0]
+    set table_entry(irow) [lindex $table_entry(irow_txts) 0]
 # in case not used before
     pack [Entry $flim.xval.lo -textvariable table_entry(col1)] \
             -expand true -fill x
     pack [Entry $flim.xval.hi -textvariable table_entry(coln)] \
             -expand true -fill x
     pack [ttk::combobox $flim.xval.idx -width 16 -state readonly \
-	      -textvariable table_entry(icol) \
-	      -values [list "Position in data area" \
-			   "First row in grid" \
-			   "Row above data"]] \
+	      -textvariable table_entry(icol) -values $table_entry(icol_txts)] \
 	-expand true -fill x
     set table_entry(icol) [lindex [$flim.xval.idx cget -values] 0]
 # in case not used before
@@ -756,10 +748,8 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack [label $fcols.clabel -text [tr. "For other colours:"]] \
             -side left -expand true -fill x
     pack [::ttk::combobox $fcols.c -textvariable table_entry(othval) \
-            -values {"Use luminosity" "Use red level" "Use green level" \
-                "Use blue level" "Use 8-bit colourmap"} \
-            -width 16 -state readonly]
-    set table_entry(othval) "Use luminosity"
+	      -values $table_entry(oth_txts) -width 16 -state readonly]
+    set table_entry(othval) [lindex $table_entry(oth_txts) 0]
     pack $fcols
     pack $fi.interp -fill both -expand true
     
@@ -854,7 +844,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
         set wrapf [GetFrame .table.fbuttons.wrapf]
         pack [label $wrapf.bm -text [tr. "Between points:"]]
         pack [::ttk::combobox $wrapf.bc -textvariable table_entry(others) \
-                -width 10 -values {"Use last" "Use closest" Interpolate} \
+                -width 10 -values $table_entry(between_txts) \
                 -state readonly]
         pack [label $wrapf.wm -text [tr. "Wraparound at:"]]
         pack [entry $wrapf.we -width 1 -textvariable table_entry(wrapPt)] \
@@ -869,8 +859,10 @@ proc equationDoTable {parent mdl tgt dims startLine} {
         }
         if {[string equal others [string tolower \
                     [lindex $table_entry(values) end-1]]]} {
-            set table_entry(oldOthers) [TagToName \
-                    [lindex $table_entry(values) end]]
+            set table_entry(oldOthers) \
+		[lindex $table_entry(between_txts) \
+		     [lsearch $table_entry(between_keys) \
+			  [lindex $table_entry(values) end]]
             set table_entry(others) $table_entry(oldOthers)
             set table_entry(values) [lrange $table_entry(values) 0 end-2]
         } else {
@@ -921,8 +913,14 @@ proc equationDoTable {parent mdl tgt dims startLine} {
                 set table_entry(col1) [lindex $table_entry(data) 4]
                 set table_entry(coln) [lindex $table_entry(data) 5]
 		set table_entry(xpose) [lindex $table_entry(data) 6]
-                set table_entry(irow) [TagToName [lindex $table_entry(data) 7]]
-                set table_entry(icol) [TagToName [lindex $table_entry(data) 8]]
+                set table_entry(irow) \
+		    [lindex $table_entry(irow_txts) \
+			 [lsearch $table_entry(irow_keys) \
+			      [lindex $table_entry(data) 7]]]
+                set table_entry(icol) \
+		    [lindex $table_entry(icol_txts) \
+			 [lsearch $table_entry(icol_keys) \
+			      [lindex $table_entry(data) 8]]]
             } ,image {
                 .table.notebook select .table.notebook.image
                 set table_entry(row1) [lindex $table_entry(data) 2]
@@ -933,7 +931,9 @@ proc equationDoTable {parent mdl tgt dims startLine} {
                 set table_entry(whtval) [lindex $table_entry(data) 7]
                 set table_entry(trnval) [lindex $table_entry(data) 8]
                 set table_entry(othval) \
-                        [TagToName [lindex $table_entry(data) 9]]
+		    [lindex $table_entry(oth_txts) \
+			 [lsearch $table_entry(oth_keys) \
+			      [lindex $table_entry(data) 9]]]
 		set table_entry(xpose) [lindex $table_entry(data) 10]
             } ,gdal {
                 .table.notebook select .table.notebook.gdal
@@ -992,7 +992,9 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     grab $parent
     if {[info exists table_entry(others)] && [llength $table_entry(others)] && \
                 ![string equal others [lindex $table_entry(values) end-1]]} {
-        lappend table_entry(values) others [NameToTag $table_entry(others)]
+        lappend table_entry(values) others \
+	    [lindex $table_entry(between_keys) \
+		 [lsearch $table_entry(between_txts) $table_entry(others)]]
     }
     if {[info exists table_entry(wrapPt)] && [Numeric $table_entry(wrapPt)] && \
                 ![string equal restart [lindex $table_entry(values) end]]} {
@@ -1012,6 +1014,33 @@ proc TagToName {tag} {
 
 proc NameToTag {name} {
     string map {{ } _} [string tolower $name]
+}
+
+foreach comboboxEng [list "Position in data area" \
+			 "First column in grid" \
+			 "Column to left of data"] {
+# TRANSLATOR: do the above strings
+    lappend table_entry(irow_txts) [tr. $comboboxEng]
+    lappend table_entry(irow_keys) [NameToTag $comboboxEng]
+}
+foreach comboboxEng [list "Position in data area" \
+			 "First row in grid" \
+			 "Row above data"] {
+# TRANSLATOR: do the above strings
+    lappend table_entry(icol_txts) [tr. $comboboxEng]
+    lappend table_entry(icol_keys) [NameToTag $comboboxEng]
+}
+foreach comboboxEng [list "Use luminosity" "Use red level" "Use green level" \
+			 "Use blue level" "Use 8-bit colourmap"] {
+# TRANSLATOR: do the above strings
+    lappend table_entry(oth_txts) [tr. $comboboxEng]
+    lappend table_entry(oth_keys) [NameToTag $comboboxEng]
+}
+
+foreach comboboxEng [list "Use last" "Use closest" "Interpolate"] {
+# TRANSLATOR: do the above strings
+    lappend table_entry(between_txts) [tr. $comboboxEng]
+    lappend table_entry(between_keys) [NameToTag $comboboxEng]
 }
 
 # array dims are now passed to this -- for now we only use them to scale the
@@ -1091,15 +1120,22 @@ proc AcquireTableData {redo startLine} {
 		[list $table_entry(fileName) ,grid \
 		     $table_entry(row1) $table_entry(rown) \
 		     $table_entry(col1) $table_entry(coln) $table_entry(xpose) \
-		     [NameToTag $table_entry(irow)] \
-		     [NameToTag $table_entry(icol)]]
+		     [lindex $table_entry(irow_keys) \
+			  [lsearch $table_entry(irow_txts) \
+			       $table_entry(irow)]] \
+		     [lindex $table_entry(icol_keys) \
+			  [lsearch $table_entry(icol_txts) \
+			       $table_entry(icol)]]]
         } .table.notebook.image {
             set tableSpec [list $table_entry(fileName) ,image \
-                    $table_entry(row1) $table_entry(rown) \
-                    $table_entry(col1) $table_entry(coln) \
-                    $table_entry(blkval) $table_entry(whtval) \
-                    $table_entry(trnval) \
-                    [NameToTag $table_entry(othval)] $table_entry(xpose)]
+			       $table_entry(row1) $table_entry(rown) \
+			       $table_entry(col1) $table_entry(coln) \
+			       $table_entry(blkval) $table_entry(whtval) \
+			       $table_entry(trnval) \
+			       [lindex $table_entry(oth_keys) \
+				    [lsearch $table_entry(oth_txts) \
+					 $table_entry(othval)]] \
+			       $table_entry(xpose)]
         } .table.notebook.gdal {
             set tableSpec [list $table_entry(fileName) ,gdal \
                     $table_entry(row1) $table_entry(rown) \
@@ -1602,6 +1638,10 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
     }}
     
     #ShowMess debug info "Converting [array get paramArray]" ok
+    if {![info exists paramArray]} {
+	Query area_misses_data warning data_in_grid {} ok
+	return
+    }
     set result [ArrayToList paramArray]
     if {$addSpecials} {
         if {[info exists fillMtd]} {

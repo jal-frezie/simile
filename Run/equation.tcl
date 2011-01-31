@@ -79,6 +79,7 @@ proc create_equation {parent purpose comp indices enum_types} {
 #                        -text $level -open [string equal Built-in $level]
 		$lbf insert $box end -id $lname \
 		    -text [tr. $level] -image $iconImages(open)
+# TRANSLATOR: strings for $level provided elsewhere
 		if {[string equal {} [$lbf parent $box]]} {
 		    $lbf item $box -open 1
 		}

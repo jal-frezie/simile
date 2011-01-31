@@ -482,7 +482,7 @@ namespace eval grid005 {
 	variable useNodes
 
 	set useNodes($winId,template) \
-	    [ChooseFile image.tif [tr. "Copy metadata from:"] ]0 \
+	    [ChooseFile image.tif [tr. "Copy metadata from:"] 0 \
 		 [$helperTable($winId,whichInstance) GetNode]]
 	if {[string length $useNodes($winId,template)]} { ;# no cancel
 	    SetGDALTemplateHandle $winId

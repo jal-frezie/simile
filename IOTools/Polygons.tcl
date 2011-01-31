@@ -644,8 +644,8 @@ namespace eval ::polygon375 {
 	variable useNodes
 
 	if {![llength \
-		  [ChooseFile image.tif [tr. "Save polygon boundaries as:"] 1 \
-		       [$helperTable($winId,whichInstance) GetNode]]]} return
+		  [ChooseFile polys.bgx [tr. "Save polygon boundaries as:"] 1 \
+		       [$::helperTable($winId,whichInstance) GetNode]]]} return
 	set strm [open $file w]
 	puts $strm [concat [GetModelValue $useNodes($winId,xcoord)] \
 				[GetModelValue $useNodes($winId,ycoord)]]

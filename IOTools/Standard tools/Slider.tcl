@@ -389,7 +389,7 @@ namespace eval slide139 {
         global helperTable whichParamsAffected
 
 	set topNode [$helperTable($winId,whichInstance) GetNode]
-        set metaFile [ChooseFile params.spf  [tr."Load parameters from:"] \
+        set metaFile [ChooseFile params.spf  [tr. "Load parameters from:"] \
 			  0 $topNode]
         if {[llength $metaFile]} {
             ZapParams $topNode $smPath $metaFile
@@ -401,7 +401,7 @@ namespace eval slide139 {
 
         #puts "Saving submodel $smPath inputs"
 	set topNode [$helperTable($winId,whichInstance) GetNode]
-        set metaFile [ChooseFile inputs.spf  [tr."Save input values as:"] \
+        set metaFile [ChooseFile inputs.spf  [tr. "Save input values as:"] \
 			  1 $topNode]
         if {[llength $metaFile]} {
             set part [file join $simtmpdir temp_out.spf]
