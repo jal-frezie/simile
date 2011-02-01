@@ -4,7 +4,7 @@
 #!/home/jaspert/Simile/System/bin/wish
 # Simile source code file: Run/simile.tcl
 #
-# (c) Simulistics Ltd. 2001-2010
+# (c) Simulistics Ltd. 2001-2011
 # (c) University of Edinburgh 1995-2001
 #
 # This file contains the code initially sourced into the Tcl interpreter and
@@ -450,19 +450,19 @@ for {set y 0} {$y < $sphYdiam} {incr y 4} {
 	-outline {} -fill $shade
 }
 .splash.c create image 36p 28p -image $splash
-set graph(anality) "\ua9 [tr. {Copyright Simulistics Ltd.}] 2001-2010"
+set graph(anality) "\ua9 [tr. {Copyright Simulistics Ltd.}] 2001-2011"
 .splash.c create text 395.0p 45.0p -font $graph(font) -fill \#99cc99 -anchor e \
     -text $graph(anality)
 .splash.c create text 250.0p 225.0p -font $graph(megafont) -fill #660066 \
     -text [tr. "Simile"]
 .splash.c create text 250.0p 290.0p -font $graph(font) -fill #660066 -anchor s \
-    -text "[tr. Version] $env(SIMILE_VERSION)$sendvars(simP)"
+    -text "[format [tr. {Version %1$s}] $env(SIMILE_VERSION)$sendvars(simP)]"
 if {[catch {set regInfo $env(licensee_name)}]} {
     set regInfo [set env(licensee_name) [tr. Anonymous]]
 }
 catch {append regInfo ", $env(licensee_corp)"}
 .splash.c create text 250.0p 310.0p -font $graph(font) -fill #660066 -anchor s \
-    -text "[tr. {Registered to}] $regInfo"
+    -text "[format [tr. {Registered to %1$s}] $regInfo]"
 
 wm geometry .splash $startGeom
 wm overrideredirect .splash 1

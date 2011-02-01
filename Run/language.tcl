@@ -7,16 +7,17 @@ proc tr. {english} {
     return $means($english)
 }
 
+# These are used for making lists of strings requiring translation
 proc LoadTrans {} {
-    set stm [open $::SIMILE_PATH/means.txt r]
-    array set ::means [read $stm]
-    close $stm
+#    set stm [open $::SIMILE_PATH/means.txt r]
+#    array set ::means [read $stm]
+#    close $stm
 }
 
 proc SaveTrans {} {
-    set stm [open $::SIMILE_PATH/means.txt w]
-    puts -nonewline $stm [array get ::means]
-    close $stm
+#    set stm [open $::SIMILE_PATH/means.txt w]
+#    puts -nonewline $stm [array get ::means]
+#    close $stm
 }
 
 proc DoTr {english} {

@@ -684,8 +684,8 @@ proc compile_c {workingDir extLibs complain} {
 #                   }
 #                }
 #            } 
-        switch -regexp -- $useComp {
-	    [tr. GNU]|[tr. Default] {
+	    switch -regexp -- $useComp \
+		[list [tr. GNU]|[tr. Default] {
 	    set vistaFix 0
 	    set batSt [open runmingw.bat w]
 	    set mingwIncs {}
@@ -744,7 +744,7 @@ proc compile_c {workingDir extLibs complain} {
 		-entry:_DllMainCRTStartup@12 -dll -out:$TARGET \
 		$TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib \
 		$TOOLS32/lib/oldnames.lib objtmp.o
-        }}
+	    }]
             # Method using command line calls to Borland C++ 4.0 or later -- not finished
 
             #   set TOOLS32 "c:/program files/borland/cbuilder4"
