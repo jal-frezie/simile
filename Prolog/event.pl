@@ -2226,8 +2226,8 @@ attempt_new_component(Parent, Box) :-
 	W > Standard//2,
 	H > Standard//2,
 	attempt_addition(submodel, Parent, Box, Node_name, yes, yes),
-	tk_get_pref(defBackground, DefBG),
-	member([DefFill, DefBG], [[clear, 'Clear'], [white, 'White']]),
+	output'><'safe_tcl_eval(['CanvasDefBG'], DefFillStr),
+	name(DefFill, DefFillStr),
 	add_parameter(Node_name, 0, fill_colour, DefFill),
 /* List components inside the box */
 	get_inclusions(Parent, Box, Contents),

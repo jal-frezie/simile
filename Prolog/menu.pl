@@ -1356,7 +1356,7 @@ transfer_images(Model, TopDir, Way) :-
 	/* Save canvas file */
 check_save_canvas(SaveDir, Model, Date) :-
 	append_atoms(SaveDir, '/model.cnv', CanvasName),
-	(tk_get_pref(saveExtras, 'Canvas file'),
+	(output'><'safe_tcl_eval(['CanvasSavesSelected'], "1"),
 	is_toplevel(Model), !,
 	/* might still be useful if not, but would have to do something
 	about border nodes which have graphical attributes but aren't on

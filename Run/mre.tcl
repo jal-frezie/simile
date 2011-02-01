@@ -920,7 +920,7 @@ $tb1.b43 configure -state $useSpaceAbility
 	}
 	if {$newName} {
 	    set saveName [ChooseFile [file tail $saveName] \
-			      [tr. "Save display configuration"] 1 $currentNode]
+			      [tr. "Save display configuration as:"] 1 $currentNode]
 	}
         if {![llength $saveName]} { ;# operation cancelled
 	    return
@@ -1023,7 +1023,7 @@ $tb1.b43 configure -state $useSpaceAbility
     proc LoadView {} {
 	variable currentNode
         set HelperStateFileName [ChooseFile Displays.shf \
-		[tr. "Open view specification file"] 0 $currentNode]
+		[tr. "Open view specification file:"] 0 $currentNode]
         if {[llength $HelperStateFileName]} {
             LoadSHF $currentNode $HelperStateFileName
         }

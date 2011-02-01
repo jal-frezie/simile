@@ -651,7 +651,7 @@ proc compile_c {workingDir extLibs complain} {
 	    if {[string equal Darwin $tcl_platform(os)]} {
 # try doing it all in a special shell so I can bundle the compiler
 		set spout [open "|bash 2> returns" r+]
-		if {[string equal Default $useComp]} {
+		if {[string equal [tr. Default] $useComp]} {
 		    puts $spout "export PATH=\"[file nativename [file join $env(SYSDIR) bin]]\""
 		    puts $spout "export CPLUS_INCLUDE_PATH=\"[file nativename [file join $env(SYSDIR) include MacOS]]\""
 		}
@@ -685,11 +685,11 @@ proc compile_c {workingDir extLibs complain} {
 #                }
 #            } 
         switch -regexp -- $useComp {
-	GNU|Default {
+	    [tr. GNU]|[tr. Default] {
 	    set vistaFix 0
 	    set batSt [open runmingw.bat w]
 	    set mingwIncs {}
-	    if {[string equal Default $useComp]} {
+		if {[string equal [tr. Default] $useComp]} {
 		set mingwIncs -I\"[file nativename $env(SYSDIR)/include/mingw]\"
 		puts $batSt "set PATH=[file nativename \
                         [file join $env(SYSDIR) bin]]"
@@ -732,7 +732,7 @@ proc compile_c {workingDir extLibs complain} {
 	    file delete exptemp.exp
 
                 # Method using command line calls to MSVC 4.0 or later -- works well
-	} Microsoft {
+	    } [tr. Microsoft] {
 	    set TOOLS32 [file dirname $env(MSVCDIR)/bin]
 	    exec $TOOLS32/bin/cl.exe -GX -Ox -c -W1 -nologo \
 		-DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
@@ -930,7 +930,8 @@ proc ControlDraw {prologVersion} {
     
     # set up to compile stub and models with same bitness as tcltk
     set sendvars(arflags) [list -Wno-trigraphs] ;# [list -O3]
-    if {![string equal Default [PrefValue custom(compChoice) compChoice]]} {
+    if {![string equal [tr. Default] \
+	  [PrefValue custom(compChoice) compChoice]]} {
 # using local compiler, check if we have to tell it our bitnesss
 	set gccBitness 32
 	catch {exec g++ -v} gppInfo
@@ -1113,51 +1114,51 @@ proc ControlDraw {prologVersion} {
     }
     
     if {[string match windows $tcl_platform(platform)]} {
-        set compOptions [list CHOICE Default Microsoft GNU]
+        set compOptions [list CHOICE [tr. Default] [tr. Microsoft] [tr. GNU]]
 	file attributes $simtmpdir -hidden true
 	file attributes $custom(prefDir)/.version -hidden true
     } elseif {[string equal Darwin $tcl_platform(os)]} {
-	set compOptions [list CHOICE Default GNU]
+	set compOptions [list CHOICE [tr. Default] [tr. GNU]]
     } else {
-	set compOptions [list CHOICE GNU]
+	set compOptions [list CHOICE [tr. GNU]]
     }
     Pref_Init $custom(prefDir)/.prefs
-    Pref_Add [list [list custom(winPosn) winPosn [list CHOICE "Where it was last time" "OS default position"] "Place initial window:"] \
-		  [list custom(initNavbar) initNavbar ON "Tool bar"] \
-		  [list custom(initToolbar) initToolbar ON "Component bar"] \
-		  [list custom(initEqnbar) initEqnbar ON "Equation bar"] \
-		  [list custom(initGrid) initGrid ON "Grid"] \
-		  [list custom(gridH) gridH 15 "Horizontal pitch"] \
-		  [list custom(gridV) gridV 15 "Vertical pitch"] \
-		  [list custom(gridD) gridD 10 "Depth"] \
-		  [list custom(maxPopupSize) maxPopupSize 500 "Size limit"] \
-		  [list custom(bigButtons) bigButtons OFF "Use large buttons"] \
-		  [list custom(saveExtras) saveExtras [list CHOICE "Canvas file" "Model file only"] "Save models as..."] \
-		  [list custom(recentCount) recentCount 10 "Entries on recently used file list"] \
-		  [list custom(quickExit) quickExit [list CHOICE "None" "Abandon"] "Quick exit option..."] \
-		  [list custom(gridSnap) gridSnap OFF "Snap to grid"] \
-		  [list custom(quickDrag) quickDrag OFF "Quick drag"] \
-		  [list custom(myButton) myButton \u03bc "Custom keypad button"] \
-		  [list custom(defBackground) defBackground [list CHOICE "White" "Clear"] "Default background"] \
-		  [list custom(flowRouting) flowRouting ON "Kink flows"] \
-		  [list custom(infRouting) infRouting 10 "Curve influences"] \
-		  [list custom(roleRouting) roleRouting 10 "Curve role arrows"] \
-		  [list custom(deleteEndToEnd) deleteEndToEnd ON "Select links end-to-end"] \
-		  [list custom(helperManager) helperManager ON "Use single window manager"] \
-		  [list custom(popupPrecision) popupPrecision 0 "Value popups"] \
-		  [list custom(snapPrecision) snapPrecision 0 "Snapshots"] \
-		  [list custom(runControlPosition) runControlPosition "+0-20" "Position of run control"] \
-		  [list custom(slidersPosition) slidersPosition "+0+0" "Position of sliders"] \
-		  [list custom(hackBreak) hackBreak OFF "Pause to edit C++ code?"] \
+    Pref_Add [list [list custom(winPosn) winPosn [list CHOICE [tr. "Where it was last time"]  [tr. "OS default position"]]  [tr. "Place initial window:"]] \
+		  [list custom(initNavbar) initNavbar ON [tr. "Tool bar"]] \
+		  [list custom(initToolbar) initToolbar ON [tr. "Component bar"]] \
+		  [list custom(initEqnbar) initEqnbar ON [tr. "Equation bar"]] \
+		  [list custom(initGrid) initGrid ON [tr. "Grid"]] \
+		  [list custom(gridH) gridH 15 [tr. "Horizontal pitch"]] \
+		  [list custom(gridV) gridV 15 [tr. "Vertical pitch"]] \
+		  [list custom(gridD) gridD 10 [tr. "Depth"]] \
+		  [list custom(maxPopupSize) maxPopupSize 500 [tr. "Size limit"]] \
+		  [list custom(bigButtons) bigButtons OFF [tr. "Use large buttons"]] \
+		  [list custom(saveExtras) saveExtras [list CHOICE [tr. "Canvas file"] [tr. "Model file only"]] [tr. "Save models as..."]] \
+		  [list custom(recentCount) recentCount 10 [tr. "Entries on recently used file list"]] \
+		  [list custom(quickExit) quickExit [list CHOICE [tr. "None"] [tr. "Abandon"]] [tr. "Quick exit option..."]] \
+		  [list custom(gridSnap) gridSnap OFF [tr. "Snap to grid"]] \
+		  [list custom(quickDrag) quickDrag OFF  [tr. "Quick drag"]] \
+		  [list custom(myButton) myButton \u03bc [tr. "Custom keypad button"]] \
+		  [list custom(defBackground) defBackground [list CHOICE [tr. "White"] [tr. "Black"] [tr. "Clear"]] [tr. "Default background"]] \
+		  [list custom(flowRouting) flowRouting ON [tr. "Kink flows"]] \
+		  [list custom(infRouting) infRouting 10 [tr. "Curve influences"]] \
+		  [list custom(roleRouting) roleRouting 10 [tr. "Curve role arrows"]] \
+		  [list custom(deleteEndToEnd) deleteEndToEnd ON [tr. "Select links end-to-end"]] \
+		  [list custom(helperManager) helperManager ON [tr. "Use single window manager"]] \
+		  [list custom(popupPrecision) popupPrecision 0 [tr. "Value popups"]] \
+		  [list custom(snapPrecision) snapPrecision 0 [tr. "Snapshots"]] \
+		  [list custom(runControlPosition) runControlPosition "+0-20" [tr. "Position of run control"]] \
+		  [list custom(slidersPosition) slidersPosition "+0+0" [tr. "Position of sliders"]] \
+		  [list custom(hackBreak) hackBreak OFF [tr. "Pause to edit C++ code?"]] \
 		  [list custom(compChoice) compChoice \
-		       $compOptions "Use which C++ compiler?"] \
-		  [list custom(popupHelp) popupHelp ON "Popup help text"] \
-		  [list custom(compDescPop) compDescPop ON "Equation"] \
-		  [list custom(compValPop) compValPop ON  "Value"] \
-		  [list custom(compCmtPop) compCmtPop ON  "Comment"] \
-		  [list custom(eqListWhere) eqListWhere ON "Parameter origins"] \
-		  [list custom(eqListETDefns) eqListETDefns ON "Enumerated type definitions"] \
-		  [list custom(eqListComments) eqListComments ON "Comments"] \
+		       $compOptions [tr. "Use which C++ compiler?"]] \
+		  [list custom(popupHelp) popupHelp ON [tr. "Popup help text"]] \
+		  [list custom(compDescPop) compDescPop ON [tr. "Equation"]] \
+		  [list custom(compValPop) compValPop ON [tr. "Value"]] \
+		  [list custom(compCmtPop) compCmtPop ON [tr. "Comment"]] \
+		  [list custom(eqListWhere) eqListWhere ON [tr. "Parameter origins"]] \
+		  [list custom(eqListETDefns) eqListETDefns ON [tr. "Enumerated type definitions"]] \
+		  [list custom(eqListComments) eqListComments ON [tr. "Comments"]] \
 		 ]
     CheckCompilerLocation
     LoadModelWindowExtensions
@@ -1275,7 +1276,7 @@ proc InitExecThread {node} {
 proc CheckCompilerLocation {} {
     global tcl_platform custom env
     if {![string match Linux $tcl_platform(os)]} {
-        if {[string mat Microsoft [PrefValue custom(compChoice) compChoice]]} {
+        if {[string mat [tr. Microsoft] [PrefValue custom(compChoice) compChoice]]} {
             set compiler cl.exe
             set possDirs {}
             if {[info exists env(MSVCDIR)]} {
@@ -1287,10 +1288,10 @@ proc CheckCompilerLocation {} {
             lappend possDirs {c:/progra~1/micros~1/vc98} {}
         }
     } else {
-        set custom(compChoice) GNU
+        set custom(compChoice) [tr. GNU]
     }
 
-    if {[string mat GNU [PrefValue custom(compChoice) compChoice]]} {
+    if {[string mat [tr. GNU] [PrefValue custom(compChoice) compChoice]]} {
         set compiler g++
         set possDirs {{}}
     }
@@ -1310,7 +1311,7 @@ proc CheckCompilerLocation {} {
 		set compChoice [PrefValue custom(compChoice) compChoice]
 		Query [list no_compiler $compChoice $compiler $possDirs] \
 		    warning top {} ok
-                set custom(compChoice) none
+                set custom(compChoice) [tr. none]
             }
         }
     }
@@ -1330,7 +1331,7 @@ proc FixSize {c} {
     # seems necessary for console to hide
     #    catch {console hide}
     if {[file exists $custom(prefDir)/.layout] && \
-	    [string equal {Where it was last time} \
+	    [string equal [tr. {Where it was last time}] \
 		 [PrefValue custom(winPosn) winPosn]]} {
         set stream [NetOpen $custom(prefDir)/.layout r]
         gets $stream whetherMaxed

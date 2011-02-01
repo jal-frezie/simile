@@ -1511,7 +1511,8 @@ proc ShowAbout {winId} {
             -font "-family helvetica -size $fsSize"] -side left
     switch [tk windowingsystem] {
         win32 {
-	    if {[string equal GNU [PrefValue custom(compChoice) compChoice]]} {
+	    if {[string equal [tr. GNU] \
+		     [PrefValue custom(compChoice) compChoice]]} {
 		set gppcmd g++
 	    } else {
 		set gppcmd [file join $::execDir g++]
@@ -2259,7 +2260,7 @@ proc Query {specifics icon helpRef parent opts} {
     eval $mBoxCmd
 
     if {[string equal abandon $key] && \
-	    [string equal None [PrefValue custom(quickExit) quickExit]]} {
+	    [string equal [tr. None] [PrefValue custom(quickExit) quickExit]]} {
 	after 10 set dialogues(done) more
     }
 # (in case Mac version siezes)

@@ -53,7 +53,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     set graph($t,highx) $xhigh
     set graph($t,width) $xspan
     
-    catch {wm title $t "Sketch graph"}
+    catch {wm title $t [tr. "Sketch graph"]}
     
     TitleFrame $t.gph -text [tr. "Graph pad"]
     set gph [GetFrame $t.gph]
@@ -157,7 +157,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     
     #    pack [ComboBox $between.rangeopts -values "Interpolate Round" -editable 0 \
     #	      -modifycmd "Reshape $t" -width 12]
-    ::ttk::menubutton $between.rangeopts -style Toolbutton
+    ::ttk::menubutton $between.rangeopts
     set betweenMenu [menu $between.rangeopts.menu -tearoff 0]
     foreach unit {Interpolate Round} {
 	set trUnit [tr. $unit]
@@ -175,7 +175,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $out.outrange
     #    pack [ComboBox $out.rangeopts -values "Truncate Extrapolate Wraparound" \
     #	      -editable 0 -width 12]
-    ::ttk::menubutton $out.rangeopts -style Toolbutton
+    ::ttk::menubutton $out.rangeopts
     set outMenu [menu $out.rangeopts.menu -tearoff 0]
     foreach unit {Truncate Extrapolate Wraparound} {
 	set trUnit [tr. $unit]
@@ -846,6 +846,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
         pack [::ttk::combobox $wrapf.bc -textvariable table_entry(others) \
                 -width 10 -values $table_entry(between_txts) \
                 -state readonly]
+	set table_entry(others) [lindex $table_entry(between_txts) 0]
         pack [label $wrapf.wm -text [tr. "Wraparound at:"]]
         pack [entry $wrapf.we -width 1 -textvariable table_entry(wrapPt)] \
                 -expand true -fill x
@@ -1220,7 +1221,7 @@ proc LoadDataFile {mode query mdl} {
     # xls
     
     if {$query} {
-        set info [tr. "Select new $mode file"]
+        set info [format [tr. {Select new %1$s file}] $mode]
         if {![llength [set table_entry(fileName) \
                     [ChooseFile data$type $info 0 $mdl]]]} {
             return 0
@@ -1234,7 +1235,8 @@ proc LoadDataFile {mode query mdl} {
     #$ext" ok ; # jmm
     
     while {[catch {open $table_entry(fileName) r} stream]} {
-        set info [tr. "Cannot read $mode file $table_entry(fileName)"]
+        set info [format [tr. {Cannot read %1$s file "%2$s"}] \
+		      $mode $table_entry(fileName)]
         if {![llength [set table_entry(fileName) \
                     [ChooseFile data$type $info 0 $mdl]]]} {
             return 0

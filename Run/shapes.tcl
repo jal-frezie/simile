@@ -899,6 +899,27 @@ proc ColourExists {col} {
     }
 }
 
+proc CanvasDefBG {} {
+    switch [PrefValue custom(defBackground) defBackground] \
+	[list [tr. {White}] {
+	    return white
+	} [tr. {Black}] {
+	    return black
+	} default {
+	    return clear
+	}
+	]
+}
+
+proc CanvasSavesSelected {} {
+    if {[string equal [tr. {Canvas file}] \
+	     [PrefValue custom(saveExtras) saveExtras]]} {
+	return 1
+    } else {
+	return 0
+    }
+}
+
 # adapted from Welch p265
 proc WriteDesc {canvas canvasFile date args} {
     global window_info

@@ -37,7 +37,7 @@ proc FileParamDialogue {topWin mustShow} {
     }
     set t [PutItThere .fpdialogue $topWin]
     wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
-    wm title $t [format [tr. "File parameters for \"%1\$s\""] $topCapt]
+    wm title $t [format [tr. {File parameters for "%1$s"}] $topCapt]
     if {!$mustShow} {
         set paramData(needed) {}
     }
