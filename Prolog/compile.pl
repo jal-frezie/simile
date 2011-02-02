@@ -154,8 +154,10 @@ build_instances(Language, DestDir, Parent, TopNode,
 				  "1"), % succeeds if old source code found
 		    Fuss = 0; % rebuild quietly if it fails to compile
 		 % neither worked, or model changed: rebuild source
+		    % delete old code, including c++ v1 as 1 may mean last
+		    % build was tcl, or get sought after save/restore
 		    all(compile, delete_prog, [unify(CheckDir),
-			build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]),
+			build(['.tcl', '1.cpp', '.dll', '1.so', '.dylib'])]),
 		    (Language = c, Extn = '.cpp';
 		     Language = tcl, Extn = '.tcl'),
 		    tk_update_infobox(pl_inst, []),
