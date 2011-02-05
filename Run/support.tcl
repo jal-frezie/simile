@@ -682,6 +682,7 @@ proc InitTimeSeries {topNode} {
 		    [lsort -real [array names $node]]
 		set setFromSeries($topNode,$node,next) -1 ;# no data yet loaded
 		set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
+		set setFromSeries($topNode,$node,active) 0
 #puts "initted $setFromSeries($topNode,$node,times)"
 	    }
 	}
@@ -706,6 +707,7 @@ proc ResetTimeSeries {topNode} {
 
 proc UpdateTimeSeries {topNode newTime} {
     global setFromSeries paramData comboTypes
+    set inC [RunningInC $topNode]
     foreach list [array names setFromSeries $topNode,*,times] {
 	set ptCount [llength $setFromSeries($list)]
 	if {!$ptCount} continue ;# no time points so go to next param
@@ -754,18 +756,23 @@ proc UpdateTimeSeries {topNode newTime} {
 		}
 	    }
 	}
-
+# Now if fill method is interpolate, calculate the place in the interval,
+# set the value to it and finish. Otherwise only set the value if it has
+# changed, i.e., if we have gone past a time point for use_last, or past 
+# midway between two if use_closest.
+	if {[string equal EVENT [GetTclCompProperty $topNode Class $node]]} {
+	    set fillMethod none
+	} else {
+	    set fillMethod [string tolower [SetFillMethod $topNode $inC $node]]
+	}
 	if {$loBound>-1 && $hiBound>-1 && \
-		![string equal use_last \
-		      [string tolower $paramData(fillMethod,$node)]]} {
+		[lsearch {use_closest interpolate} $fillMethod]>-1} {
 	    set interFract [expr ($newTime-$setFromSeries($topNode,$node,wraps)*$paramData(wrapAroundPoint,$node)-[lindex $setFromSeries($list) $loBound])/([lindex $setFromSeries($list) $hiBound]+($hiWraps-$setFromSeries($topNode,$node,wraps))*$paramData(wrapAroundPoint,$node)-[lindex $setFromSeries($list) $loBound])]
-	    if {[string equal interpolate \
-		     [string tolower $paramData(fillMethod,$node)]]} {
+	    if {[string equal interpolate $fillMethod]} {
 		set setFromSeries($topNode,$node,next) $loBound
 		# cos that's what wraps refers to...now do interpolation
 		set loTime [lindex $setFromSeries($list) $loBound]
 		set hiTime [lindex $setFromSeries($list) $hiBound]
-		set inC [RunningInC $topNode]
 		foreach loValue [concat [array names paramData $node,$loTime] \
 				     [array names paramData $node,$loTime,*]] \
 			hiValue	[concat [array names paramData $node,$hiTime] \
@@ -782,14 +789,25 @@ proc UpdateTimeSeries {topNode newTime} {
 		set setFromSeries($topNode,$node,wraps) $hiWraps
 	    }
 	}
+# any but interpolate: change value (or have nonzero if none) only if new
+# value in series reached
 	if {$loBound>-1 && $loBound!=$setFromSeries($topNode,$node,next)} {
 	    set useTime [lindex $setFromSeries($list) $loBound]
 	    set setFromSeries($topNode,$node,next) $loBound
-            set inC [RunningInC $topNode]
+	    set setFromSeries($topNode,$node,active) 1
             foreach tsValue [concat [array names paramData $node,$useTime] \
                                  [array names paramData $node,$useTime,*]] {
                 set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
                 PlaceInArray $topNode $tgtIndex $paramData($tsValue) 0 $inC
+            }
+	} elseif {[string equal none $fillMethod] && \
+		      $setFromSeries($topNode,$node,active)} {
+	    set useTime [lindex $setFromSeries($list) 0] ;# any elt will do
+	    set setFromSeries($topNode,$node,active) 0
+            foreach tsValue [concat [array names paramData $node,$useTime] \
+                                 [array names paramData $node,$useTime,*]] {
+                set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
+                PlaceInArray $topNode $tgtIndex 0 0 $inC
             }
 	}
     }

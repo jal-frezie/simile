@@ -434,6 +434,30 @@ char* interpolate_bloc_data(char* loSource, char* hiSource, int* ptDims,
   return newData;
 }
 
+// this sets all the actual values in the structure to 0 without changing
+// the size of anything -- used for cancelling events
+void zero_bloc_data(char* dest, int* ptDims) {
+  int reps, count, *subDims;
+  char* newData;
+  
+  reps = array_count(ptDims, &subDims);
+  if (!is_base_type(*subDims)) { // assume its OWNSIZED
+    for (count=0; count<reps; ++count) {
+      //substitute OWNSIZED to create right size block then put back
+      *subDims = ((sizeAndPtr*)dest)[count].size;
+      zero_bloc_data(((sizeAndPtr*)dest)[count].ptr, subDims);
+    }
+    *subDims = OWNSIZED;
+  } else {
+    if (*subDims == REAL)
+      for (count=0; count<reps; ++count)
+	*((double*)dest+count) = 0;
+    else
+      for (count=0; count<reps; ++count)
+	*((int*)dest+count) = 0;
+  }
+}
+
 // locate_elt returns a pointer to one model value in the structure,
 // given its indices. If there are fewer than the full number of
 // indices, returns a pointer to the structure containing the values
@@ -637,6 +661,13 @@ void VarParamData::update_from_points(BOOLEAN dir, double now) {
     curTimePoint = loBound;
     free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
     dataPtr.contents = copy_bloc_data(loBound->dataPtr, dataPtr.dimSpecs);
+    active=TRUE;
+  } else {
+    if (active && 
+	myModelExec->modelSpec->nodedata[nodeNum].compclass == EVENT ) {
+      zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+      active=FALSE;
+    }
   }
 }
 
@@ -743,12 +774,14 @@ void VarParamData::back_copy_vars() {
   if (nextVP) nextVP->back_copy_vars();
 }
 
-void VarParamData::ResetTimeSeries() {
+void VarParamData::ResetTimeSeries(int topPhase) {
   curTimePoint = NULL;
   wraps = 0;
+  if (topPhase <= -2)
+    active = FALSE;
   update_from_points(TRUE, 0);
 
-  if (nextVP) nextVP->ResetTimeSeries();  
+  if (nextVP) nextVP->ResetTimeSeries(topPhase);  
 }
 
 void VarParamData::UpdateTimeSeries(double now, BOOLEAN forward) {
@@ -942,7 +975,7 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
     } // was -1,0 to stop loss, but now we want it cos it happens next step
     thisTsPosn = 0.0;
     if (varParamArrayBase)
-      varParamArrayBase->ResetTimeSeries();
+      varParamArrayBase->ResetTimeSeries(top_phase);
     adapt_doublings = 0;
   }
   

@@ -80,6 +80,9 @@ class VarParamData : public FileParamData {
   //! Specifies how to set parameter values at times between specified points
   int fillMethod;
 
+  //! valid for time series events only, set if currently nonzero
+  BOOLEAN active;
+
  protected: // protected methods
 
   listTimePoint* roll_forward(listTimePoint*, int*);
@@ -109,7 +112,8 @@ class VarParamData : public FileParamData {
   void ClearTimePtElements();
 
   //! Set up current data from time points as if running forward to time zero
-  void ResetTimeSeries();
+  //! (argument is phase)
+  void ResetTimeSeries(int);
 
   //! Copy values from model into current data space if no time point zero
 

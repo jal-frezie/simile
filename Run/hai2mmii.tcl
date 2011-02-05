@@ -76,8 +76,8 @@ proc NormalizeQuotes {table} {
 	return [DequoteNumeric $table]
     } else {
 	set result {}
-	foreach {indx val} $table {
-	    lappend result [DequoteNumeric $indx] [NormalizeQuotes $val]
+	foreach entry $table {
+	    lappend result [NormalizeQuotes $entry]
 	}
 	return $result
     }

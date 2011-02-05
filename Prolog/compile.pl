@@ -1354,39 +1354,21 @@ the actions corresponding to them.*/
 
 get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	       DestPath, SmStep, Swaps, Used, Inters, Assignments) :-
-/*	Type = external, !,
-	    (Inters = [],
-	    Source = for_extern(CondElts, Tops),
-	    all(compile, insert_ptr, [unify(DestPath), build(Tops)]),
-	    all(compile, name_from_elt, [build(CondElts), append(Conds, [])]),
-	    DestRef = elt(_, Dest, _),    
-	    pointer_from(DestPath, Ptr),
-	    ptr_to_last_vm(DestPath, BuiltWith),
-	    append(Tops, [ext_eval_submodel(Node, arr(Ptr, Dest, []),
-						   BuiltWith)], Xvl),
-	    Assignments = [make(ints(Dest), [time], DestPath, _,
-				[int_eval_submodel(Node, arr(Ptr, Dest, []),
-						   BuiltWith)]),
-			   make(exts(Dest), [time | Conds], DestPath, _, Xvl),
-			   make(none, [time], DestPath, _,
-				[update_submodel(Node, arr(Ptr, Dest, []),
-						   BuiltWith)]),
-			   make(none, [time], DestPath, _,
-				[advance_submodel(Node, arr(Ptr, Dest, []),
-						   BuiltWith)])]);
-*/
 /* Only make assignments for functions, for now, and
 	    Do not make an assignment if we are expecting one on init/reset
 	    from outside */
 	(member(Type, [event, magnitude, limit, series]), !,
 	    Is_P = 0;
-	  is_parameter(Node, Is_P)),
+	  is_parameter(Node, Norm_P),
+	    (Norm_P = 2, \+ Node has_class_refinement param_type of file, !,
+		Is_P = 3;	% a time series event
+	     Is_P = Norm_P)),
 	DestRef = elt(_, Dest, X),    
 	((Is_P = 2,
 	    (Type = function, Tgt = Dest, Step = -1, Wait = [on_step];
 	    Type = init_function, Tgt = init(Dest),
 		Step = 0, Wait = [on_reset]);
-	 Is_P = 1,
+	 member(Is_P, [1,3]),
 	    Tgt = update(Dest),
 	    (Type = function, Step = SmStep, Wait = [init(Dest), time];
 	    Type = init_function, Step = 0, Wait = [on_reset])), !,
@@ -1416,12 +1398,12 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 		Made = Dest,
 		UseStep = SmStep),
 	    SourceEqn = Source;
-	Is_P = 1,
+	(Is_P = 1, apply_minmax(Node, Source, SourceEqn);
+	    Is_P = 3, SourceEqn = 0),
 	    Type = function,
 	    UseList = RefList, 
 	    Made = init(Dest),
-	    UseStep = -2,
-	    apply_minmax(Node, Source, SourceEqn);
+	    UseStep = -2;
 	member(Type, [compartment, immigration, reproduction]),
 	  \+ Source = none,
 	    UseList = [time | RefList], 
@@ -1490,7 +1472,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    % or maxed (or cannoned into oblivion by an upstream squirt)
 	    % but mostly cos it is easier
 	  (member(Type, [compartment, creation, immigration, reproduction]);
-	        Is_P = 1;
+	        member(Is_P, [1, 3]);
 	        Is_P = 2, Type = init_function), !,
 	    Linkers = [make(Dest, [init(Dest), update(Dest), tweaked(Dest)],
 			    DestPath, SmStep, []),

@@ -30,6 +30,9 @@ set msgs(creation_abbrev) [tr. {cr}]
 set msgs(immigration_abbrev) [tr. {im}]
 set msgs(reproduction_abbrev) [tr. {rep}]
 set msgs(loss_abbrev) [tr. {loss}]
+set msgs(event_abbrev) [tr. {event}]
+set msgs(squirt_abbrev) [tr. {sqt}]
+set msgs(state_abbrev) [tr. {state}]
 set msgs(text_abbrev) [tr. {text}]
 set msgs(flow_abbrev) [tr. {flow}]
 set msgs(influence_abbrev) [tr. {i}]
@@ -661,6 +664,7 @@ set msgs(unused_param_detail) [tr. {Do you want to ignore these values and conti
 set msgs(unused_param_full) [tr. {You may also choose to select another %2$s which will get these values instead of "%3$s", for instance if it has been renamed since saving the parameters.}]
 set msgs(param_load_fail_title) [tr. {Problem %1$sing %2$s value}]
 set msgs(param_load_fail_message) [tr. {While attempting to %1$s the %2$s value "%3$s"%4$s the following problem occurred: %5$s}]
+# %4$s is " at indices x,y,z..." or empty
 set msgs(param_load_fail_detail) [tr. {Do you want to stop this operation, or skip this field and continue %1$sing the %2$ss?}]
 
 set msgs(number_needed_title) [tr. {Numeric value required}]

@@ -863,7 +863,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
             set table_entry(oldOthers) \
 		[lindex $table_entry(between_txts) \
 		     [lsearch $table_entry(between_keys) \
-			  [lindex $table_entry(values) end]]
+			  [lindex $table_entry(values) end]]]
             set table_entry(others) $table_entry(oldOthers)
             set table_entry(values) [lrange $table_entry(values) 0 end-2]
         } else {

@@ -436,7 +436,7 @@ do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Indent,
 	    excrete(L, end(cond), PhaseTest, Indent, Stream),
 	    fail;
 	do_assign_list(L, Later, Indent, Used, Stream)).
-
+/*
 do_assignment(L, [check_limits(DestSpec, BoundForm) | Clauses],
 	      Indent, Used, Stream) :-
 	make_scalar(L, DestSpec, Dest),
@@ -494,7 +494,7 @@ do_assignment(L, [cond_event(TriggerExpr, Expr, Transfers) | Clauses],
 	excrete(L, end(if), Magn, Indent, Stream),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 		    
-/* Initial membership of populations was handled by the new_member
+Initial membership of populations was handled by the new_member
 clause up until Simile 4.5, but now it is done like initializing a VM
 model, so individuals can persist across a reset. This means their
 associations can too, and makes resetting faster. */

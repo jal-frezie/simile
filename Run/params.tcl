@@ -458,7 +458,7 @@ proc AcceptData {topNode compName notInput complain} {
     } else {
 	upvar 0 suppliedData($compName) newData
     }
-    
+
     # for each constant value, check whether it has been changed, and if so,
     # flag a complete model rebuild. Do same if running_c lost due to crash
     # or model not yet started
@@ -678,7 +678,8 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
     if {![llength $dims]} {
         switch [llength $list] {
             0 {
-                FPError "Missing value" $subs $errorData
+                FPError [tr. "Empty list supplied instead of value"] \
+		    $subs $errorData
             } 1 {
                 if {![string last ,NOW [string toupper $subs] 3]} {
 		    # setting current value for var param
@@ -699,96 +700,75 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 		    }
                 }
             } default {
-                FPError "Array $list supplied instead of scalar" \
-		    $subs $errorData
+                FPError [format [tr. {Array %1$s supplied instead of scalar}] \
+			     $list] $subs $errorData
             }
         }
 	return {}
     }
+
     if {[llength $list]==1} {
         #puts "setting paramData($tgt) to $headNum"
         set userDims [join $dims { x }]
-        FPError "scalar $list supplied instead of array of $userDims" \
-	    $subs $errorData
+        FPError [format [tr. {scalar %1$s supplied instead of array of %2$s}] \
+		     $list $userDims] $subs $errorData
 	return {}
     }
     set redoStep 1
     if {[llength $list]%2} {
-        FPError "Missing value" $subs,[list [lindex $list end]] $errorData
+        FPError [tr. "Expecting a value"] $subs,[list [lindex $list end]] \
+	    $errorData
 	set redoStep {}
     }
     
-    foreach {indx sublist} $list {
-        # was array set sub $list...above would allow us to check that all indices were
-        # the right type if we could be bothered...OK then...
-        if {[string match TIME $nextDim]} {
-            if {!([Numeric $indx] || \
-		      [lsearch {NOW OTHERS} [string toupper $indx]]>-1)} {
-                FPError "The entry $indx appears where a time point is expected. This must be NOW, OTHERS or a number." \
-		     $subs $errorData
-		set redoStep {}
-            }
-        } elseif {[string compare {} $thisTrans]} {
-            set poss [lsearch $thisTrans $indx]
-            if {$poss == -1} {
-                FPError "The entry $indx appears where an index value of type [lindex $thisTrans 0] is expected. This must be one of [lrange $thisTrans 1 end]." $subs $errorData
-		set redoStep {}
-            }
-        } elseif {![string is integer -strict $indx]} {
-            FPError "The entry $indx appears where an index value of type integer is needed." $subs $errorData
-	    set redoStep {}
-        } elseif {$indx<=0} {
-            FPError "Index value $indx is zero or negative." $subs $errorData
-	    set redoStep {}
-        }
-        if {[info exists sub($indx)]} {
-            FPError "Index value $indx appears more than once." $subs $errorData
-	    set redoStep {}
-        }
-        set sub($indx) $sublist
-    }
-    if {[string equal {} $redoStep]} { ;# do not proceed with bad time step
-	return $redoStep
-    }
     #puts "dims remaining $dims"
     if {[string match TIME $nextDim]} {
-        # If time, we can have as many or as few vals as we want, and they can be
-        # any positive number. If there are values other than NOW, do an init step
-        
-        # not quite working, note that later dimensions for a time point are treated
-        # just like other dimensions, i.e., all must be set
+        # If time, we can have as many or as few vals as we want, and
+        # they can be any number, although negative ones may not take
+        # effect at start of simulation.
+	array set sub $list
 
         # Next call removes old time series data from the system
         EnumTypeToNumber $topNode $tgt {} {} 1 $useCppArray $subs $errorData
 	SetWrapTime $topNode $useCppArray $tgt 0 ;# clear old wraparound point
-	SetFillMethod $topNode $useCppArray $tgt use_last ;# and fill method
+# do not allow OTHERS if an event series
+	if {[string equal EVENT [GetCompProperty $topNode Class $tgt]]} {
+	    set specialPts NOW
+	} else {
+	    set specialPts [list NOW OTHERS]
+	    SetFillMethod $topNode $useCppArray $tgt use_last ;# and fill method
+	}
+    
         foreach arrayPt [array names sub] {
-            if {[set pt [lsearch {NOW OTHERS} [string toupper $arrayPt]]]>-1} {
-		if {[llength $subs]} {
-		    FPError "NOW or OTHERS must be outermost index." \
-			 $subs $errorData
-		}
+            if {[set pt [lsearch $specialPts [string toupper $arrayPt]]]>-1} {
+# Following never happens, TIME is always outermost dimension
+#		if {[llength $subs]} {
+#		    FPError [format [tr. {"%1$s" must be outermost index.}] \
+#					 $arrayPt] $subs $errorData
+#		}
             } elseif {![Numeric $arrayPt]} {
-                FPError "Time point must be NOW, OTHERS or a number." \
-		     $subs,[list $arrayPt] $errorData
+                FPError [format [tr. {Time point index must be one of %1$s or a number.}] $specialPts] $subs,[list $arrayPt] $errorData
 		set redoStep {}
             } elseif {[string equal RESTART [string toupper $sub($arrayPt)]]} {
 		SetWrapTime $topNode $useCppArray $tgt $arrayPt
 		continue
 	    } elseif {$useCppArray && [Numeric $arrayPt]} {
+# If there are values other than NOW, do an init step
                 c_settimepointarray $topNode $tgt $arrayPt
             }
-	    set noMtd [catch {SetFillMethod $topNode $useCppArray $tgt \
-				  $sub($arrayPt)} badFill]
-	    if {$pt==1} {
-		if {$noMtd} {
-		    FPError $badFill  $subs,[list $arrayPt] $errorData
+# check for fill method if one might be appropriate
+	    if {[lsearch $specialPts OTHERS]>-1} {
+		set noMtd [catch {SetFillMethod $topNode $useCppArray $tgt \
+				      $sub($arrayPt)} badFill]
+		if {$pt==1} { ;# fill method expected
+		    if {$noMtd} {
+			FPError $badFill $subs,[list $arrayPt] $errorData
+		    }
+		    continue
+		} elseif {!$noMtd} { ;# fill method found but expected
+		    FPError [format [tr. {Fill method "%1$s" must be preceded by OTHERS.}] $sub($arrayPt)] $subs,[list $arrayPt] $errorData
+		    set redoStep {}
 		}
-		continue
-	    } elseif {!$noMtd} {
-		FPError "Fill method must be preceded by OTHERS." \
-		     $subs,[list $arrayPt] $errorData
-		set redoStep {}
 	    }
 
 	    set redoStep [JoinSteps $redoStep \
@@ -798,6 +778,35 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         }
         return $redoStep
     }
+
+    # Not time points: check the indices are good
+    foreach {indx sublist} $list {
+        # was array set sub $list...above would allow us to check that all indices were
+        # the right type if we could be bothered...OK then...
+	if {[string compare {} $thisTrans]} {
+            set poss [lsearch $thisTrans $indx]
+            if {$poss == -1} {
+                FPError [format [tr. {The entry "%1$s" appears where an index value of type %2$s is expected. This must be one of %3$s.}] $indx [lindex $thisTrans 0] [lrange $thisTrans 1 end]] \
+		    $subs $errorData
+		set redoStep {}
+            }
+        } elseif {![string is integer -strict $indx]} {
+            FPError [format [tr. {The entry "%1$s" appears where an index value of type integer is needed.}] $indx] $subs $errorData
+	    set redoStep {}
+        } elseif {$indx<=0} {
+            FPError [format [tr. {Index value %1$s is zero or negative.}] $indx] $subs $errorData
+	    set redoStep {}
+        }
+        if {[info exists sub($indx)]} {
+            FPError [format [tr. {Index value %1$s appears more than once.}] $indx] $subs $errorData
+	    set redoStep {}
+        }
+        set sub($indx) $sublist
+    }
+    if {[string equal {} $redoStep]} { ;# do not proceed with bad time step
+	return $redoStep
+    }
+
     if {[llength $nextDim]==2 && \
                 [string match RECORDS [lindex $nextDim 0]]} {
         # by-record submodel; check up to biggest. OK hows this for branez...use
@@ -805,7 +814,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         # number of elements, one the same or smaller will be missing!
         set last [array size sub]
         if {!$last} {
-            FPError "Per-record submodel must have values for at least one member." $subs $errorData
+            FPError [tr. "Per-record submodel must have values for at least one member."] $subs $errorData
 	    set redoStep {}
         }
         
@@ -857,7 +866,8 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         set indx [NumberToEnumType $arrayPt $thisTrans]
         if {![info exists sub($indx)]} {
             #puts "No $indx in [array names sub]"
-            FPError "Missing value"  $subs,[list $indx] $errorData
+            FPError [tr. "Missing index and value"] $subs,[list $indx] \
+		$errorData
 	    set redoStep {}
         } else {
 	    set redoStep [JoinSteps $redoStep \
@@ -890,15 +900,16 @@ proc EnumTypeToNumber {topNode tgt head trans when useCppArray subs errorData} {
 	    set poss [lsearch $trans [lindex $head 0]]
 	    if {$poss == -1} {
 		if {[string equal false [lindex $trans 0]]} {
-		    FPError "Data value $head is not a member of type boolean, pick one of $trans." $subs $errorData
+		    FPError [format [tr. {Data value %1$s is not a member of type boolean, pick one of %2$s.}] $head $trans] $subs $errorData
 		} else {
-		    FPError "Data value $head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]." $subs $errorData
+		    FPError [format [tr. {Data value %1%s is not a member of type %2$s, pick one of %3$s.}] $head [lindex $trans 0] [lrange $trans 1 end]] $subs $errorData
 		}
 		return 0
 	    } 
 	    set head $poss
 	} elseif {![Numeric $head]} {
-	    FPError "Data value $head is not a number." $subs $errorData
+	    FPError [format [tr. {Data value %1$s is not a number.}] $head] \
+		$subs $errorData
 	    return 0
 	}
 	PlaceInArray $topNode $tgt $head $when $useCppArray
@@ -912,7 +923,8 @@ proc FPError {occurrence inds errorData} {
 	error aborted ;# quick way out
     }
     if {[llength $inds]} {
-	set where " at indices [string range $inds 1 end]" ;# exclude leading ,
+	set where [format [tr. { at indices %1$s}] [string range $inds 1 end]]
+	# exclude leading ,
     } else {
 	set where {}
     }
@@ -1113,9 +1125,12 @@ namespace eval fileparams {
 		if {[set wrapTime [SetWrapTime $topNode $inC $nodeId]]} {
 		    puts -nonewline $pStr " wrap_time=[Entitize $wrapTime]"
 		}
-		set fillMtd [SetFillMethod $topNode $inC $nodeId]
-		if {![string equal use_last $fillMtd]} {
-		    puts -nonewline $pStr " fill_method=\"$fillMtd\""
+		if {![string equal EVENT \
+			  [GetCompProperty $topNode Class $nodeId]]} {
+		    set fillMtd [SetFillMethod $topNode $inC $nodeId]
+		    if {![string equal use_last $fillMtd]} {
+			puts -nonewline $pStr " fill_method=\"$fillMtd\""
+		    }
 		}
 		puts $pStr ">"
 		set dimCount 0
