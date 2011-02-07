@@ -966,6 +966,14 @@ make_intermediates(
 		RUnits = real,
 		Arg_template = [real],
 		[ValRef] = ResultList; */
+	    Source = trigger_magnitude(_),
+		(Step = dummy, % trigger inter not defined so avoid using
+		    (get_host(SubId, SuperId),
+			\+ SuperId is_of_sort discrete,
+			throw(only_allowed_in_event(Source));
+		      SourceList = [0]);
+		  SourceList = [magnitude]), !,
+		[ValRef] = ResultList;
 	    Source =.. [Op | ArgListForm],
 		(ArgListForm = [''], !, ArgList = [];
 		    ArgList = ArgListForm),
@@ -1231,6 +1239,7 @@ builtin('Model properties', last, any, [any]).
 builtin('Model properties', in_preceding, any, [any]).
 builtin('Model properties', in_progenitor, any, [any]).
 builtin('Model properties', prev, given_units, [const_int]).
+builtin('Model properties', trigger_magnitude, given_units, [none]).
 builtin('List handling', makearray, array_of_any, [any, const_int]).
 builtin('List handling', place_in, int, [const_int]).
 builtin('List handling', element, any, [array_of_any, int]).
