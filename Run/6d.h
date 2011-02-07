@@ -80,8 +80,10 @@ class VarParamData : public FileParamData {
   //! Specifies how to set parameter values at times between specified points
   int fillMethod;
 
-  //! valid for time series events only, set if currently nonzero
-  BOOLEAN active;
+  //! valid for time series events only: 0 means no activity
+  //! 1 means used and needs resetting
+  //! 2 means set but not yet used
+  int active;
 
  protected: // protected methods
 

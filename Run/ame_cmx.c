@@ -699,6 +699,23 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
+FINDABLE int markevtparamactiveCmd(ClientData clientData, Tcl_Interp *interp,
+				int argc, Tcl_Obj *CONST argv[]) {
+  int i, error, indxs[32], *dims;
+  void* fpHandle;
+  double val;
+  char* bloc;
+  
+  if (argc != 2) {
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id");
+    return TCL_ERROR;
+  }
+  
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  mark_values_active(fpHandle);
+  return TCL_OK;
+}
+
 /* For this one, we have all the data in a Tcl ByteArray object */
 
 FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1584,6 +1601,10 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   
   Tcl_CreateObjCommand(interp, "newc_settimepointelement", 
 		       settimepointelementCmd,
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "newc_markevtparamactive", 
+		       markevtparamactiveCmd,
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   // next four were used for byte-array params so will not bother to update
   // to 6-D interface

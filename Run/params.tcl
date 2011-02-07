@@ -675,7 +675,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
     set nextDim [lindex $dims 0]
     
     set thisTrans [lindex $trans 0]
-    if {![llength $dims]} {
+    if {![llength $dims]} { ;# no more dims, this should be a single value
         switch [llength $list] {
             0 {
                 FPError [tr. "Empty list supplied instead of value"] \
@@ -746,6 +746,9 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 #		    FPError [format [tr. {"%1$s" must be outermost index.}] \
 #					 $arrayPt] $subs $errorData
 #		}
+		if {!$pt} { ;# NOW: mark param active so it clears after event
+		    MarkEvtParamActive $topNode $tgt $useCppArray
+		}
             } elseif {![Numeric $arrayPt]} {
                 FPError [format [tr. {Time point index must be one of %1$s or a number.}] $specialPts] $subs,[list $arrayPt] $errorData
 		set redoStep {}

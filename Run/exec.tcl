@@ -384,7 +384,7 @@ proc c_setparamarray {topNode tgtNode} {
 # right exec thread, so strip it off here
 foreach oldCProc {setparamelement settimepointelement settimepointarray \
 		      cleartimeseries setwraparoundtime setfillmethod \
-		      setrecordlist settimepointrecords \
+		      setrecordlist settimepointrecords markevtparamactive \
 		      setparamall getparamall settimepointall gettimepointall} {
     proc c_$oldCProc {args} {
 	global param_id

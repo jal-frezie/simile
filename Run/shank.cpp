@@ -661,47 +661,47 @@ void VarParamData::update_from_points(BOOLEAN dir, double now) {
     curTimePoint = loBound;
     free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
     dataPtr.contents = copy_bloc_data(loBound->dataPtr, dataPtr.dimSpecs);
-    active=TRUE;
+    active=1;
   } else {
     if (active && 
 	myModelExec->modelSpec->nodedata[nodeNum].compclass == EVENT ) {
-      zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-      active=FALSE;
+      if (!--active)
+	zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
     }
   }
 }
 
-  BOOLEAN VarParamData::create_time_point(double time) {
-    listTimePoint *lastTimePt, *thisTimePt, *nextTimePt;
-    if (timePoints && timePoints->when<=time) {
-      lastTimePt = timePoints->find_last_pt(time);
-      if (lastTimePt->when==time) {
-	return FALSE; // a point already exists at this time
-      } else { // lastTimePt is earlier than new one
-	nextTimePt = lastTimePt->next;
-	thisTimePt = new listTimePoint(time, dataPtr.dimSpecs);
-	thisTimePt->next = lastTimePt->next;
-	lastTimePt->next = thisTimePt;
-	thisTimePt->last = lastTimePt;
-	if (nextTimePt) {
-	  nextTimePt->last = thisTimePt;
-	} else {
-	  finalTimePoint  = thisTimePt;
-	}
-      }
-    } else {
+BOOLEAN VarParamData::create_time_point(double time) {
+  listTimePoint *lastTimePt, *thisTimePt, *nextTimePt;
+  if (timePoints && timePoints->when<=time) {
+    lastTimePt = timePoints->find_last_pt(time);
+    if (lastTimePt->when==time) {
+      return FALSE; // a point already exists at this time
+    } else { // lastTimePt is earlier than new one
+      nextTimePt = lastTimePt->next;
       thisTimePt = new listTimePoint(time, dataPtr.dimSpecs);
-      thisTimePt->next = timePoints;
-      if (timePoints) {
-	timePoints->last = thisTimePt;
+      thisTimePt->next = lastTimePt->next;
+      lastTimePt->next = thisTimePt;
+      thisTimePt->last = lastTimePt;
+      if (nextTimePt) {
+	nextTimePt->last = thisTimePt;
       } else {
 	finalTimePoint  = thisTimePt;
       }
-      thisTimePt->last = NULL;
-      timePoints = thisTimePt;
     }
-    return TRUE; // new point has been created
+  } else {
+    thisTimePt = new listTimePoint(time, dataPtr.dimSpecs);
+    thisTimePt->next = timePoints;
+    if (timePoints) {
+      timePoints->last = thisTimePt;
+    } else {
+      finalTimePoint  = thisTimePt;
+    }
+    thisTimePt->last = NULL;
+    timePoints = thisTimePt;
   }
+  return TRUE; // new point has been created
+}
 
 // only used for saving byte array, so obsolescent
 char* VarParamData::FindNextTimePtSpace(double* last_time) {
@@ -778,7 +778,7 @@ void VarParamData::ResetTimeSeries(int topPhase) {
   curTimePoint = NULL;
   wraps = 0;
   if (topPhase <= -2)
-    active = FALSE;
+    active = 0;
   update_from_points(TRUE, 0);
 
   if (nextVP) nextVP->ResetTimeSeries(topPhase);  
@@ -1631,6 +1631,10 @@ int get_timepoint_ptr_and_dims(void* fpHandle, double time,
   *ptDataSlot = ptData;
   *dimSlot = arrSlot->dataPtr.dimSpecs;
   return 0; // success
+}
+
+void mark_values_active(void* fpHandle) {
+  ((VarParamData*)fpHandle)->active = 2;
 }
 
 int set_bloc_record_count(char* ptData, int* ptDims, int* indxs, int length) {

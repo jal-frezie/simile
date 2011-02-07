@@ -264,6 +264,7 @@ EXTDEC double* get_wrap_ptr(void*);
 EXTDEC int* get_fill_ptr(void*);
 EXTDEC int create_time_point(void*, double);
 EXTDEC void* find_next_timept_space(void*, double*);
+EXTDEC void mark_values_active(void*);
 //EXTDEC int set_record_list(char*, int*, int);
 //EXTDEC int set_tp_records(char*, int*, double, int);
 //EXTDEC int set_param_array_elt(char*, double, int*);
