@@ -123,6 +123,7 @@ namespace eval slide139 {
         set type [GetModelType $node]
 	set class [GetModelClass $node]
 	set sliderDoes($title,type) $type
+	set sliderDoes($title,class) $class
         switch -glob $type {
             FLAG {
             } ENUM(*) {
@@ -168,8 +169,7 @@ namespace eval slide139 {
 	    if {[string equal EVENT $class]} {
 		set holder [winfo parent $f]
 		pack [::ttk::button $f.zap -style style$holder \
-			  -image $::iconImages(zap) \
-			  -command [namespace code [list Rock]]] -side right
+			  -image $::iconImages(zap)] -side right
 		BindPopup $f.zap [tr. {Trigger an event now with this magnitude}]
 	    }
 puts $class
@@ -202,9 +202,14 @@ puts $class
 			-sliderlength 10 -from $min -to $max \
 			-tickinterval $gap -resolution $spacing \
 			-bg $lbg -troughcolor $dbg -activebackground $fbg \
-			-variable widgetSeln($node) \
-			-command [namespace code \
-				      [list SetArrayIfUsed $node $fixed {}]]
+			-variable widgetSeln($node)
+		    if {[string equal EVENT $class]} {
+			$f.zap configure -command \
+			  [namespace code [list SliderEvent $node {} $f.scale]]
+		    } else {
+			$f.scale configure -command [namespace code \
+					  [list SetArrayIfUsed $node $fixed {}]]
+		    }
                     pack $f.scale -side right -fill x -expand true
                     pack [label $f.caption -text [lindex $levels end] \
 			      -bg $lbg -width 12]
@@ -377,6 +382,13 @@ puts $class
         SetArrayIfUsed $node $fixed $args $widgetSeln($sub)
     }
     
+    proc SliderEvent {node indices scale} {
+	global myNode
+
+	SetArrayIfUsed $node 0 $indices [$scale get]
+	MarkEvtParamActive $myNode $node [RunningInC $myNode]
+    }
+
     proc SetArrayIfUsed {node fixed indices value} {
         global paramData runState myNode
 	set sub [join [concat $node $indices] ,]
@@ -530,6 +542,7 @@ puts $class
 
         foreach currentCaption [GetState $winId] {
             set title [RestoreCrs $currentCaption]
+            if {[string equal EVENT $sliderDoes($title,class)]} continue
             set node $sliderDoes($title,node)
             set type $sliderDoes($title,type)
             set dims $sliderDoes($title,dims)
