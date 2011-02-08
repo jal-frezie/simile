@@ -310,7 +310,8 @@ proc GetCCompProperty {topNode prop args} {
 	} Class|Type|Eval {
 	    array set propData [list Class,cIdx 11 Class,names \
 			    {SUBMODEL VARIABLE COMPARTMENT FLOW CONDITION \
-			       CREATION REPRODUCTION IMMIGRATION LOSS ALARM} \
+			       CREATION REPRODUCTION IMMIGRATION LOSS ALARM \
+			       EVENT SQUIRT STATE} \
 			    Type,cIdx 1 Type,names \
 			    {VALUELESS REAL INTEGER FLAG EXTERNAL} \
 			    Eval,cIdx 2 Eval,names \
@@ -319,7 +320,7 @@ proc GetCCompProperty {topNode prop args} {
 	    if {![string is integer -strict $numericVal]} {
 		return $numericVal
 	    }
-	    if {$numericVal>=10} {
+	    if {[string equal Type $prop] && $numericVal>=10} {
 		return ENUM([expr $numericVal-10])
 	    } else {
 		return [lindex $propData($prop,names) $numericVal]

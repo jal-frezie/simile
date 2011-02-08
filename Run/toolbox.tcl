@@ -1203,10 +1203,11 @@ proc InitExecThread {node} {
     if {$useThreads} {
 	package require Thread
 	set execThread($node,id) [thread::create]
+# puts "Created thread $execThread($node,id) for $node from [thread::id]"
     } else {
 	set execInterp($node,id) [interp create]
+# puts "Created interp $execInterp($node,id) for $node"
     }
-#puts "Created thread $execThread(id) from [thread::id]"
 
     foreach stubCmd {load_c_stub_1 c_setparamarray c_setparamall c_cleartimeseries c_settimepointarray c_settimepointall c_settimepointrecords c_setrecordlist c_markevtparamactive c_getparamall c_gettimepointall PlaceInArray MarkEvtParamActive SetWrapTime SetFillMethod ex_load_dll update_executable ReleaseHandle GetHandle RunningInC InitTimeSeries ResetTimeSeries UpdateTimeSeries tcl_setparamarray tcl_cleartimeseries GetTclCompProperty GetCCompProperty ExScrubRun} {
 	if {$useThreads} {

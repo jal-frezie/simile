@@ -31,6 +31,7 @@
 #define ALARM           9
 #define EVENT           10
 #define SQUIRT          11
+#define STATE           12
 
 /* data types -- zero or negative as they will end lists of dimensions */
 #define	VALUELESS	0

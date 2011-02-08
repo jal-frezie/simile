@@ -121,6 +121,7 @@ namespace eval slide139 {
         set levels [split $title /]
         set trans [GetTransTable $node]
         set type [GetModelType $node]
+	set class [GetModelClass $node]
 	set sliderDoes($title,type) $type
         switch -glob $type {
             FLAG {
@@ -164,6 +165,14 @@ namespace eval slide139 {
                 -command [namespace code [list Remove $winId $title]]
         if {$useDim==-1} {
             set defVal [GetDefVal $initVal -1 0]
+	    if {[string equal EVENT $class]} {
+		set holder [winfo parent $f]
+		pack [::ttk::button $f.zap -style style$holder \
+			  -image $::iconImages(zap) \
+			  -command [namespace code [list Rock]]] -side right
+		BindPopup $f.zap [tr. {Trigger an event now with this magnitude}]
+	    }
+puts $class
             switch -glob $type {
                 FLAG {
                     pack [checkbutton $f.check -text [lindex $levels end] \
@@ -210,6 +219,13 @@ namespace eval slide139 {
             set allVals $defVal
         } else {
             #	    set useTrans [lindex $trans $useDim]
+	    if {[string equal EVENT $class]} {
+		set holder [winfo parent $f]
+		pack [::ttk::button $f.zap -style style$holder \
+			  -image $::iconImages(zap) \
+			  -command [namespace code [list Rock]]] -side right
+		BindPopup $f.zap [tr. {Trigger an event now with these magnitudes}]
+	    }
             pack [label $f.caption -text [lindex $levels end] \
 			      -bg $lbg -width 12]
             set count [lindex $sliderDoes($title,dims) $useDim]
