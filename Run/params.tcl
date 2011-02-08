@@ -1776,6 +1776,9 @@ proc IdFromTail {topNode fullCapt notInput} {
     if {$notInput>-1} {
 	set fullCapt [TrimDTFromPath $fullCapt]
     }
+    if {![string length $fullCapt]} {
+	return $topNode
+    }
     return [GetCompProperty $topNode IdFromCapt $fullCapt]
 }
 

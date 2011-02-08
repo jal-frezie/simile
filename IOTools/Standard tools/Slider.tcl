@@ -172,7 +172,6 @@ namespace eval slide139 {
 			  -image $::iconImages(zap)] -side right
 		BindPopup $f.zap [tr. {Trigger an event now with this magnitude}]
 	    }
-puts $class
             switch -glob $type {
                 FLAG {
                     pack [checkbutton $f.check -text [lindex $levels end] \
