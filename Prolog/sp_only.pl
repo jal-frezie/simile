@@ -1,15 +1,18 @@
-/* :- module(sp_only, [sicstus_read_from_chars/2, sicstus_write_to_chars/2,
-		    sicstus_format_to_chars/3, sicstus_write_chars/1,
-		    sicstus_writeq/2]).
+% actually, anything other than gnu-prolog
 
-...and here is the first component of this port! GNU has no modules, so use
+:- module(sp_only, ['><'/2, sicstus_read_from_chars/2, sicstus_write_to_chars/2,
+		    sicstus_format_to_chars/3, 
+		    sicstus_write_chars/1, sicstus_write_chars/2,
+		    sicstus_atom_chars/2, wind_up/0,
+		    read_term_from_codes/3, print_to_codes/2, number_atom/2,
+		    gnu_round/2, list/1, wrap_fixes/1]).
+:- use_module([library(lists)]).
+
+/* ...and here is the first component of this port! GNU has no modules, so use
 term_expansion to make something which it can treat as a predicate and ignore,
 but which Sicstus uses to do modules. */
 
-:- op(550, xfy, '><').
-term_expansion(sicstus_use_module(ModuleList), ( :- use_module(ModuleList))).
 term_expansion(sicstus_load_foreign_resource(ModuleList), ( :- load_foreign_resource(ModuleList))).
-term_expansion(sicstus_module(Title, Exports), ( :- module(Title, Exports))).
 %term_expansion(Module'><'Pred, (Module:Pred)).
 term_expansion(sicstus_meta_predicate(Pred), ( :- meta_predicate(Pred))).
 
@@ -42,7 +45,10 @@ sicstus_write_chars(Stream, [Char | Rest]) :-
 	sicstus_write_chars(Stream, Rest).
 
 sicstus_atom_chars(Atom, Chars) :-
-	atom_chars(Atom, Chars).
+  user:local_atom_chars(Atom, Chars).
+
+wind_up :-
+  user:local_wind_up.
 
 /* There are a few things where the GNU Prolog implementation is more concise
 than the Sicstus, like... */

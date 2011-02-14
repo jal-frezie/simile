@@ -1,7 +1,8 @@
 %%% tcl_eval(+Cmd, -Result) evaluates the Tcl command represented by Cmd
 %%% (roughly as SICStus, but smarter handling of chars/1).
 
-sicstus_use_module(sp_only).
+sicstus_module(tcltk, [tk_main_loop/0, any_tcl_eval/3]).
+sicstus_use_module([library(lists), sp_only]).
 
 any_tcl_eval(Cmd, Except, Result) :-
         decode_command(Cmd, BrokenString),
@@ -110,7 +111,7 @@ decode_command([C|Cs], Res) :- !,
         decode_command(Cs, Rx),
 	append(R1, [32 | Rx], Res).
 decode_command(Float, Chars) :-
-	trim_float(Float, Chars), !.
+	utility'><'trim_float(Float, Chars), !.
 decode_command(WTorA, Chars) :-
 	(WTorA = write(Term);
 	    atomic(WTorA), Term = WTorA), !, 
@@ -150,9 +151,6 @@ do_cmd(TermStr) :-
 	write(fail))),
 	format("~w calling ~s", [PlError, TermStr])), !,
 	nl, flush_output.
-
-wind_up :-
-	halt(0).
 
 /* cannot use all because of variable length source */
 all_utf8_to_ttfn([], []).
@@ -246,13 +244,13 @@ spinout_ttfn(Val, [First | Rest]) :-
 deEncode(_, TtfnAtom, Utf8Atom, 0) :-
 	atom(TtfnAtom),
 	name(TtfnAtom, TtfnStr),
-	user'><'all_ttfn_to_utf8(TtfnStr, Utf8Str),
+	all_ttfn_to_utf8(TtfnStr, Utf8Str),
 	name(Utf8Atom, Utf8Str).
 
 reEncode(_, Utf8Atom, TtfnAtom, 0) :-
 	atom(Utf8Atom),
 	name(Utf8Atom, Utf8Str),
-	(user'><'all_utf8_to_ttfn(Utf8Str, TtfnStr), !;
+	(all_utf8_to_ttfn(Utf8Str, TtfnStr), !;
 	all(user, unicode_to_ttfn, [build(Utf8Str), append(TtfnStr, [])])),
 	/* if cannot convert from utf8, was probably Unicode (Hi8) already */
 	name(TtfnAtom, TtfnStr).

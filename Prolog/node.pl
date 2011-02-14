@@ -3,10 +3,10 @@
 *******************************************************************************/
 
 sicstus_module(node,	
-	       [has_class/2, has_class_refinement/2, has_model_refinement/2,
-		has_new_class/2, has_new_class_refinement/2,
-		no_longer_has_class/1, no_longer_has_class/2,
-		has_new_model_refinement/2, no_longer_has_class_refinement/2,
+	       [has_class/2, has_new_class/2, no_longer_has_class/2,
+		has_class_refinement/2, has_new_class_refinement/2,
+		no_longer_has_class_refinement/2,
+		has_model_refinement/2, has_new_model_refinement/2,
 		no_longer_has_model_refinement/2, no_longer_has_refinements/1,
 		has_changed_class_refinement/2,
 		has_changed_model_refinement/2] ).

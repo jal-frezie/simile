@@ -42,7 +42,9 @@ sicstus_use_module([library(lists), sp_only, utility, output]).
 		
 :- dynamic(graphical_info/3).
 		
-:- op(500, xfy, [of, from, to]).
+:- op(500, xfy, of).
+:- op(500, xfy, from).
+:- op(500, xfy, to).
 
 clear_database :-
 	clear_model([
@@ -66,6 +68,7 @@ clear_model([Funt/Args | Rest]) :-
 /* Stuff needed for c database */
 % sicstus_load_foreign_resource(struct_db).
 :- dynamic(node_id_for_root_is/1).
+
 empty_tree :-
         load_foreign_resource('../System/bin/struct_db'),
 	empty_tree(Ushrtmx),

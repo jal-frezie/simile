@@ -18,7 +18,7 @@ sicstus_module(ame_gen,
 		is_population/1, by_record/1, is_conditional/1, get_all_dims/2,
 		variable_size/1, list_links/2,
 		get_link_exits/2, get_chain/5, contains/2, contains/3,
-		purge/3, generates/2, upper/2, lower/2, mybagof/3,
+		purge/3, upper/2, lower/2, mybagof/3,
 		list_of/3, abs_path_for/2, caption_for/2, find_name_host/2,
 		find_type/2, find_all_comps/2, draws_inside/2,
 		is_primitive/1, is_of_sort/2, is_class_of_sort/2, sp_is/2]).
@@ -72,11 +72,11 @@ make_nice_error_message(Eat, ThrowUp, ErrorAtom) :-
 	length(BitsAfter, Where),
 	connect_bits(BitsBefore, RunUp, _),
 	connect_bits(BitsAfter, WindDown, _), !;
-	ThrowUp = error(syntax_error(RawAtom), _FailedOp), !, /* gnu */
+	ThrowUp = error(syntax_error(RawAtom), _FailedOp), /* gnu */
 	    name(RawAtom, RawString),
 	    append(SrcStr, [58 | T1], RawString), % break at 1st :
 	    append(LineNoStr, [32,40,99,104,97,114,58 | T2], T1),
-	    append(CharNoStr, [41,32 | DescStr], T2),
+	    append(CharNoStr, [41,32 | DescStr], T2), !,
 	    all(user, name, [build([_Source, LineNo, CharNo, Desc]),
 			     build([SrcStr, LineNoStr, CharNoStr, DescStr])]),
 	    (Eat = "Unknown",

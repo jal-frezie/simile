@@ -12,10 +12,10 @@ sicstus_module(m_update,
 		list_index_meanings/2, list_local_index_meanings/2,
 		get_input_info/2,get_link_source_data/7, find_node_with_data/3,
 		valid_input/3, check_unit/4,
-		need_same_dims/2, check_flow_ends/3,
+		need_same_dims/2,
 		get_submodel_interface/5, load_submodel_interface/4,
 		load_references/2, save_references/2, link_ends/4,
-		moving_endpoint/3, update_links_and_vars/1,
+		update_links_and_vars/1,
 		name_from_role_texts/3, sort_for_link/4, abs_path_name/3,
 		build_array/3, analyze_array/3, get_all_enum_types/2,
 		get_solo_list_depth/2, delete_implicit_node/1, 
@@ -426,7 +426,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 				 get_actual_sizes(TargetExprs,Dims1)), true),
         */
 	(DimExprs = TargetExprs, !,
-	    ((member(Target_base, [any, n(_ET), a(_ET),
+	    ((member(Target_base, [any, n(_ET1), a(_ET2),
 				      boolean, cond_spec, int]), !,
 	          Target_type = Target_base;	 
 	      check_and_report_units(Target_base, TargetDims),
@@ -1388,7 +1388,7 @@ finish_full(Type, Link) :-
 old_cloud(Link) :-
 	find_type(Link, cloud),
 	(_F0 is_connector from Link to _;
-	    _F0 is_connector from _ to Link).
+	    _F1 is_connector from _ to Link).
 
 connects_ghost_flow(Type, Link) :-
 	Type = influence,

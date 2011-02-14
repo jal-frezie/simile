@@ -363,10 +363,10 @@ appearance_changes(Model, Slot, Reshapes, Comps) :-
 mentions_graphics(Action, Comp) :-
 	(Action = remove(Term);
 	    Action = add(Term)),
-	(Term = graphical_info(Comp, _Attr, _Val);
-	    Term = node_refinement(Fn, _Attr, _Val),
+	(Term = graphical_info(Comp, _Attr1, _Val1);
+	    Term = node_refinement(Fn, _Att2r, _Val2),
 	    image'><'implicit_function(Comp, Fn);
-	    Term = arc_info(Comp, complete, _Val)).
+	    Term = arc_info(Comp, complete, _Val3)).
 
 internal_extent_jiggered(Model, Slot, ExtChgs) :-
 	setof(Change, get_extent_change(Model, Slot, Change), ExtChgs), !;

@@ -3,9 +3,7 @@
 **** manipulating models 						    ****
 *******************************************************************************/
 
-sicstus_module(submodel, [encapsulate/2, unencapsulate/3, find_flow_control/2,
-			  extended_connection/3, extended_connection/4,
-			  extended_connections/3, extended_connections/4] ).
+sicstus_module(submodel, [encapsulate/2, unencapsulate/3]).
 
 sicstus_use_module( [ame_gen,m_class,utility,library(lists)] ).
 
@@ -246,7 +244,7 @@ add_link_equivalence( Node, Pair ) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 kill_equivalences(Link) :-
-	(Link no_longer_follows _Any; _Any no_longer_follows Link),
+	(Link no_longer_follows _Any0; _Any1 no_longer_follows Link),
 	fail; true.
 	
 copy_local_attributes(Arc, NewArc) :-

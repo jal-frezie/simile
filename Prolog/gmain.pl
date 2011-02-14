@@ -4,14 +4,17 @@ launch.pl
 This starts off the application and goes into an event loop from which it is driven the rest of the time. The identity of the interpreter is saved as a global so it can be used at the other end of the system, i.e., when putting stuff on the screen. Uses all my modules to make reloading quicker.
 */
 
-/* allow module system to be ignored */
+% GNU-friendly notation for cross-module calls
 :- op(550, xfy, '><').
+
+/* allow module system to be ignored */
 _Module'><'Function :-
         call(Function).
 
-:- discontiguous([sicstus_module/2, sicstus_use_module/1, sicstus_only/1,
-	sicstus_meta_predicate/1]).
+:- discontiguous([sicstus_module/2, sicstus_use_module/1,
+		  sicstus_meta_predicate/1]).
 
+% enable pipe interface
 :- include('tcltk.pl').
 
 /* Files needed to load and save models */
@@ -192,6 +195,8 @@ main :-
 	    query(start_fail(ErrorFunction), error, top, [ok], _);
 	tk_main_loop).
 	 
+wind_up :-
+    halt(0).
 
 :- op(500, fx, ['!']).
 /* Works but buggers up GNU prolog (do after loading?) */

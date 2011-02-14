@@ -196,7 +196,7 @@ write_with_breaks(Stream, Term) :-
 	sicstus_write_chars(Stream, FullTermStr),
 	nl(Stream).
 
-/* Clever part disabled to try to help mime stuff
+Clever part disabled to try to help mime stuff
 
 insert_breaks(Stream, Term, Done, Rest) :-
 	length(Rest, RLen),
@@ -205,17 +205,17 @@ insert_breaks(Stream, Term, Done, Rest) :-
 	    sicstus_write_chars(Stream, Rest);
 	length(Line, Break),
 	    append(Line, NewRest, Rest),
-	    \+ suffix("\\", Line), /* do not put cr where it will be escaped
-	    \+ prefix("'", NewRest), /* do not put cr before a single quote as
+	    \+ suffix("\\", Line), % do not put cr where it will be escaped
+	    \+ prefix("'", NewRest), % do not put cr before a single quote as
 		     this sometimes gets escaped along with the cr 
-	    \+ suffix("-", Line), /* do not put cr between a - sign and its
+	    \+ suffix("-", Line), % do not put cr between a - sign and its
 		     number, as the result will be read as -(n) by gnu 
 	    (append([Done, Line, [10]], NewDone);
 	    append([Done, Line, [92, 10]], NewDone),
 		Escaped = true),
-		/* try inserting a cr either on its own, which will work if it
-		hits the end of a prolog atom, or escaped, which will work if
-		it goes inside a single-quoted atom 
+		% try inserting a cr either on its own, which will work if it
+		% hits the end of a prolog atom, or escaped, which will work if
+		% it goes inside a single-quoted atom 
 	    append(NewDone, NewRest, TestStr),
 	    on_exception(_Oops, sicstus_read_from_chars(TestStr, TestTerm), 
 	        fail),
@@ -252,8 +252,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	    SimileV = -1), 
 	(Parent = node00000,
 	    \+ (_ has_part Other, \+ Other = Parent), !,
-	    /* do not bother with renaming if opening
-	    first and only model */
+	    % do not bother with renaming if opening first and only model */
 	    InitBindings = copy;   
 	InitBindings = []),
 	store_term( Term, Stream, Parent, InitBindings, Translated, [] ),
@@ -376,7 +375,7 @@ adjust_to_6(Done) :-
 	Node has_class submodel,
 	Node has_class_refinement multiplication_spec of Multis,
 	append(Before, [count=Solo | After], Multis),
-	\+ member(Solo, [[], [_ | _]]), /* not a list */
+	\+ member(Solo, [[], [_ | _]]), % not a list
 	append(Before, [count=[Solo] | After], NewMultis),	
 	Node has_changed_class_refinement multiplication_spec of NewMultis,
 	adjust_to_6(Done), !.
@@ -390,7 +389,7 @@ adjust_to_8(Trans) :-
 	    
 	Node has_class_refinement table_data of
 	    [file=F, data=T, indices=I, current=C],
-	/* table entered before enum_types invented */
+	% table entered before enum_types invented
 	    inters'><'add_zeros(C, Node, 0, NC, D, U),
 	    length(D, N),
 	    list_of(int, N, B),
@@ -437,7 +436,7 @@ adjust_to_8(Trans) :-
 
 adjust_to_8_3(Trans) :-
 	(Trans = copy; member(_-Node, Trans)),
-	 Node has_class_refinement table_data of _, /* just reduces workload */
+	 Node has_class_refinement table_data of _, % just reduces workload
 	    Node has_class_refinement value of Expr,
 	    replace_subexps(Expr, library, separate_table_args,
 			    _, top_down, _, NewExpr),

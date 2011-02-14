@@ -658,7 +658,8 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, DsDone),
 	    DoneExpr =.. [Cumulative | DsDone],
 	    SubL = [x | DimL];
-	(length(Param, N), 
+	(list(Param),
+	    length(Param, N), 
 	    DParam =.. [do | Param], % conversion to fn avoids recursion
 	    length(DoneExpr, N),
 	    DDone =.. [do | DoneExpr];

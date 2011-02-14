@@ -37,10 +37,10 @@ compile( Language, Parent, DestDir) :-
 	      Err, 
 	      (Err = aborted, !; % no further message needed
 		  retractall(error_free(build)),
-/* It really as the wrong thing to do to have the help reference as an
-/* argument to query(). It should be in messages.tcl, along with the
-/* text strings, since we are unlikely to ever want to offer different
-/* help pages with the same dialogue. */		  
+% It really as the wrong thing to do to have the help reference as an
+% argument to query(). It should be in messages.tcl, along with the
+% text strings, since we are unlikely to ever want to offer different
+% help pages with the same dialogue.		  
 		  (Err = circular_evaluation(_Set), !,
 		      Help = circular;
 		    Help = execution),
@@ -133,10 +133,10 @@ build_instances(Language, DestDir, Parent, TopNode,
 	    /* if no c_new look for dll from save file with 1 in name */
 	    OldTgt = 0),
 	    check_directory(CheckDir),
-	    /* Only create directory if building code -- for now I
-	    /* only build code for top-level models so do not need
-	    /* directories for others in case their children create
-	    /* code */
+	    % Only create directory if building code -- for now I
+	    % only build code for top-level models so do not need
+	    % directories for others in case their children create
+	    % code
 	    windowize(CheckDir, WCheckDir),
 	    check_exec_fns_fresh(Language, WCheckDir, OldTgt, FnsUsed, RStrs),
 	    all(user, name, [build([Stat | Includes]), build(RStrs)]),
@@ -341,7 +341,7 @@ important...(or was, back when the A stood for Agroforestry)... */
 		      use_param_state, /* indicates file parameter */
 		      id, dims, /* arguments to extractor proc */
 		      next, instanceid, new_instance,
-		      cause | _], /* dummy arg to event proc
+		      cause | _], % dummy arg to event proc
 	/* system vars in submodel */
 /* we cannot change names of external procedures, so add them to the used */
 
@@ -425,7 +425,7 @@ wot need them */
 	       [real, dts, [BoostPhases]], 0, Stream),
 
 	list_matching_files('../Functions/*.cpp', FnIncs),
-	/* the /* in the above line does not start a comment */
+	% the /* in the above line does not start a comment, nor that in this */
         all(utility, get_native, [build(ExtIncs), build(UExtIncs)]),
 	append([FnIncs, LocalIncs, UExtIncs], Incs),
 	all(utility, append_atoms,

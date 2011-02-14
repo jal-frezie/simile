@@ -4,17 +4,15 @@
 
 sicstus_module( utility, [wake/0, genint/2, rt_portray/1, trim_float/2,
 			  unique_name/2, unique_name/3,
-			  indent/1, delete_member/2,
 			  y_or_n/1, any_setof/3,foreach/3, wrap/3,
 			  all/3, unify_all/2, get_precedence/2,
 			  replace_in_list/4, write_with_breaks/2,
 			  writelist/1,writelisttofile/2,
 			  do_writing/2, open_native/3, get_native/2,
-			  delall/3, append/2, append_atoms/2, append_atoms/3,
-			  try/1,equate/2,
+			  delall/3, append_atoms/2, append_atoms/3,
 			  merge_lists/2, merge_lists/3, split_lists/3,
 			  get_ground_part/2, generate_name/4, generate_name/5,
-			  ensure_unused/4, count_to/4] ).
+			  ensure_unused/4, count_to/4, append/2] ).
 
 sicstus_use_module([database, text, sp_only,
 		    library(lists), library(ordsets)]).
@@ -280,17 +278,6 @@ delall(All, Target, Left) :-
 	Left = [].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% append/2 appends a list of lists
-
-append( [], [] ).
-
-append( [H|T], Y ) :-
-	var(H),
-	raise_exception(['Very bad! Tried to concatenate list including free variable', [H|T]]);
-	append( T, Z ),
-	append( H, Z, Y ).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 append_atoms(A1, A2, A) :-
 	name(A1, S1), name(A2, S2), append(S1, S2, S12), name(A12, S12),
@@ -307,6 +294,7 @@ append_atoms( [H|T], Y ) :-
 	append_atoms( T, Z ),
 	append_atoms( H, Z, Y ).
 
+/*
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % try/1 is a metapredicate which calls its argument, but always succeeds, even
 % if the subcall fails on the first call. Backtracking into the call is not
@@ -321,6 +309,7 @@ try Call :-
 	!.
 try _ .
 
+*/
 merge_lists([], L, L).
 
 merge_lists([J | K], L, M) :-
@@ -448,6 +437,8 @@ count_to(Min, Max, Step, N) :-
 	(Last >= Max, !, fail;
 	N is Last+Step).
 
-
-
+append([], []).
+append([H|T], A) :-
+        append(T, B),
+        append(H, B, A).
 

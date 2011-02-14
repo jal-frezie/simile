@@ -8,12 +8,11 @@ sicstus_module( render, [render/5, excrete/5, make_assignment/4, render_all/5,
 		get_empty_list/2,
 		refer_value/3, refer/3, make_expr/3, make_increment_expr/4,
 		make_struct_reference/4, make_indexed_reference/4,
-		put_in_context/6, ptr_compare/4,
+		ptr_compare/4,
 		combine/4, make_arg_string/3, 
 		make_pointer/3, resolve_pointer/3, 
 		make_constant_list/3, get_element_ref/4,
-		make_integer/3, command_substitute/3,
-			 generate_all_case_entries/4,
+		command_substitute/3, generate_all_case_entries/4,
 		generate_data_decls/7, make_procedure_call_chars/3] ).
 
 sicstus_use_module( [sp_only, m_class, utility, ame_gen, units, text,
@@ -1136,7 +1135,7 @@ type_for_unit(Unit, Type) :-
 	    Type = double;
 	member(Unit, [boolean, cond_spec]), !,
 	    Type = 'BOOLEAN';
-	member(Unit, [const_int, a(_ET), n(_ET)]), !,
+	member(Unit, [const_int, a(_ET0), n(_ET1)]), !,
 	    Type = int;
 	Type = Unit.
 

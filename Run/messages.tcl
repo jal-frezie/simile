@@ -272,6 +272,7 @@ The macro function contains the parameter %3$s, which does not appear in the arg
 
 set msgs(bad_user_fn_format_title) [tr. {Parsing definitions in %1$s}]
 set msgs(bad_user_fn_format_message) [tr. {The file %1$s contained the line %2$s which is in the wrong format for a macro, function or unit definition -- please refer to the documentation.}]
+set msgs(bad_user_fn_format_full) [tr. {It appears that the functor in this line is "%3$s" and the arguments are %4$s.}]
 
 set msgs(bust_edition_limit_title) [tr. {Problem loading model}]
 set msgs(bust_edition_limit_message) [tr. {Loading this model makes %1$d equations. This is greater than %2$d, and it was not created by the enterprise edition, so it cannot be loaded in the %3$s edition.}]

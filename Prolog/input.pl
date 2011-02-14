@@ -13,7 +13,7 @@ sicstus_module(input, [tk_make_desktop_node/0,
 		       tk_menu/3, tk_menu_select/2, tk_mode_select/1,
 		       tk_context_find/3, tk_resize_top_win/3, tk_visible/5,
 		       tk_change_enum_type/2, tk_embrace/2, tk_abandon/0,
-		       tk_abandon_eqn/0, check_use/1, compile_to_file/1,
+		       tk_abandon_eqn/0, check_use/1,
 		       tk_run_settings_tweaked/1, tk_off_window/2,
 		       tk_certain_death_node/1, tk_kill_everything/1,
 		       tk_set_new_size/4, tk_change_size/4, tk_do_colours/2]).
@@ -111,7 +111,7 @@ tk_visible(Wid, L, T, R, B) :-
 
 finish_window_resize :-
 	retract(resizing_windows(Wid)),
-	state'><'Wid shows_model Model,
+	state'><'shows_model(Wid, Model),
 	finish_move(Model, 0),
 	fail;
 	true.

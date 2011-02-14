@@ -26,8 +26,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_grow_canvas/2, tk_refatten/2, zoom_bits_in/5,
 			tk_display_area/1, tk_update_ability/5,  update_tk/0,
 	tk_display_mode/1, tk_display_menu/1,
-	tk_change_color/5, kill_featured/2, shift_images/3,
-	clear_display/1, set_interpreter/1, unset_interpreter/0,
+	tk_change_color/5, kill_featured/2, shift_images/3, clear_display/1,
 	prepare_equation/1, create_equation/5,
 	fill_equation/8, fill_inputs/1, fill_table/3,
 	interact_equation/1, destroy_equation/0,
@@ -35,7 +34,6 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_finish_progress_dialogue/0, tk_alter_model/1,
 	tk_scrub_run/2, tk_kill_helpers/1,
 	update_tk_variable/3, tk_clear_graph/1, handle_tk_events/0, 
-	set_interp_menu_state/1,
 	tk_update_sim_display/3, my_file_exists/1, my_delete_file/1,
 	tk_do_disag_dialog/4, tk_do_relation_dialog/8, get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2,
@@ -150,18 +148,18 @@ curly_text(T) :-
 
 chop_list([], []).
 
-/* argument enclosed in curlybrackets 
+% argument enclosed in curlybrackets 
 chop_list([123 | TclText], [Arg | Prolog_rest]) :-
 	append(Curly, TclRest, [123 | TclText]),
 	curly(Curly, Arg), !,
 
 	chop_list(TclRest, Prolog_rest).
 
-/* throw away inter-arg space 
+% throw away inter-arg space 
 chop_list([32 | P], Q) :-
 	!, chop_list(P, Q).
 
-/* arg terminated by space or end of string 
+% arg terminated by space or end of string 
 chop_list(Tcl_string, [Arg | Rest]) :-
 	append(Arg, [32 | Tcl_rest], Tcl_string), !,
 		chop_list(Tcl_rest, Rest);

@@ -4,7 +4,24 @@ launch.pl
 This starts off the application and goes into an event loop from which it is driven the rest of the time. The identity of the interpreter is saved as a global so it can be used at the other end of the system, i.e., when putting stuff on the screen. Uses all my modules to make reloading quicker.
 */
 
+term_expansion(sicstus_module(Title, Exports), ( :- module(Title, Exports))).
+term_expansion(sicstus_use_module(ModuleList), ( :- use_module(ModuleList))).
+term_expansion(sicstus_meta_predicate(Pred), ( :- meta_predicate(Pred))).
+
+% sicstus-only, as opposed to non-GNU:
+local_atom_chars(Atom, Chars) :-
+	atom_chars(Atom, Chars).
+
+% specific to dll interface
+local_wind_up :-
+	state:use_temp_dir(TempDir),
+	output:my_delete_file(TempDir),
+	any_tcl_eval([destroy, '.'], 0, _).
+
 :- consult(sp_only).
+
+% GNU-friendly notation for cross-module calls
+:- op(550, xfy, '><').
 
 :- 	use_module([library(tcltk), library(lists), input, code]).
 
@@ -42,9 +59,9 @@ portray(make(E, Conds, P, F, A)) :-
 %portray(sm(Name, _,_,Lp)) :-
 %	print(sm(Name,Lp)).
 %
-portray(T) :-
-	utility:rt_portray(T).
-
+%portray(T) :-
+%	utility:rt_portray(T).
+%
 trim_conds(Full, Short) :-
 	Full = make(Short, _,_,_,_), !;
 	Full =.. [Hdr, Cond], !,
@@ -82,8 +99,3 @@ main :-
 	unset_interpreter,
 	state:kill_windows,
 	true.
-
-wind_up :-
-	state:use_temp_dir(TempDir),
-	output:my_delete_file(TempDir),
-	any_tcl_eval([destroy, '.'], 0, _).

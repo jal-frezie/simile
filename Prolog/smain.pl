@@ -4,8 +4,45 @@ launch.pl
 This starts off the application and goes into an event loop from which it is driven the rest of the time. The identity of the interpreter is saved as a global so it can be used at the other end of the system, i.e., when putting stuff on the screen. Uses all my modules to make reloading quicker.
 */
 
-:- 	use_module([library(lists),
-		    tcltk, input]).
+term_expansion(sicstus_module(Title, Exports), ( :- module(Title, Exports))).
+term_expansion(sicstus_use_module(ModuleList), ( :- use_module(ModuleList))).
+term_expansion(sicstus_meta_predicate(Pred), ( :- meta_predicate(Pred))).
+
+% swi: allow operators to be used outside modules declaring them
+goal_expansion(op(X,Y,N), op(X,Y,user:N)) :- \+ N = user:_.
+
+% swi: inexplicably missing predicates
+prefix(Front, Whole) :- append(Front, _Back, Whole).
+suffix(Back, Whole) :- append(_Front, Back, Whole).
+
+nth(N, List, Element) :-
+	var(N), !,
+	    nth0(M, List, Element),
+	    N is M+1;
+	M is N-1,
+	    nth0(M, List, Element).
+
+substitute(_, [], _, []).
+
+substitute(E, [G | T1], F, [H | T2]) :-
+        (E=G, !, F=H;
+            G=H),
+        substitute(E, T1, F, T2).
+
+% swi: things actually more similar to gnu-prolog
+
+local_atom_chars(Atom, Chars) :-
+	atom_codes(Atom, Chars).
+
+local_wind_up :-
+    halt(0).
+
+% GNU-friendly notation for cross-module calls -- already an operator in swi
+% but precedence needs changing
+:- op(550, xfy, '><').
+
+% include tcltk -- we are using pipe interface
+:- 	use_module([library(lists), sp_only, tcltk, input, code]).
 
 /* Just in case we use the outline runtime system from Sicstus 3.9... */
 runtime_entry(start) :-
@@ -17,16 +54,15 @@ been loaded. Others are in ame_gen.pl */
 :- op(500, fx, ['!']).
 
 main :-
+%    guitracer,
+%    spy(language:make_section_cond),
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
-	database:empty_tree,
+%	database:empty_tree,
 	state:retractall(model_in(_,_)),
+        % swi: avoid prompt chars messing up the pipe interface
+        prompt(_P, ''),
         nl, write(ready), nl,
-        user:any_tcl_eval('WhatAmI', 1, CmdStr),
-        name(Cmd, CmdStr),
-        call(Cmd).
-
-editor :-
 	prolog_flag(version, FullVnum),
 	name(FullVnum, FullVnumStr),
 	append(VnumStr, [32, 40 | _], FullVnumStr),

@@ -252,7 +252,9 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 	    % use asserta so user-supplied definitions override system ones
 	    units'><'asserta(Line),
 	    read_funcs(File, Stream, IsBuiltIn, Done);
-	query(bad_user_fn_format(File, Line), warning, user_defns, [ok], _),
+	  Line =.. [LFunctor | LArgs],
+	    query(bad_user_fn_format(File, Line, LFunctor, LArgs), warning,
+		  user_defns, [ok], _),
 	    read_funcs(File, Stream, IsBuiltIn, Done)).
 
 add_macro(Category, Macro=Defn, Op) :-
@@ -1093,8 +1095,8 @@ raise_units(Base, Num, Units) :-
 fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	var(Op), MxOp = Op, !;
 	name(Op, OpStr),
-	(function(_Cat, MxOp, RUnits, AUnits);
-	builtin(_Cat, MxOp, RUnits, AUnits);
+	(function(_Cat0, MxOp, RUnits, AUnits);
+	builtin(_Cat1, MxOp, RUnits, AUnits);
 	operator(MxOp, RUnits, AUnits)),
 	name(MxOp, MxOpStr),
 	lower(MxOpStr, OpStr).
@@ -1176,7 +1178,7 @@ promote_unit(Lo, Hi) :-
 	promote_unit(Med, Hi).
 
 uses_as(any, Type) :-
-	member(Type, [boolean, a(_ET), n(_ET)]).
+	member(Type, [boolean, a(_ET0), n(_ET1)]).
 uses_as(boolean, cond_spec).
 /* above was commented out, but seems to belong
 -- probably so as not to allow cond_specs to use outside conditions

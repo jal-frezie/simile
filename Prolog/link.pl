@@ -194,7 +194,7 @@ Node has_changed_link_equivalences Links :-
 
 Arc is_no_longer_connector :-
 	Arc no_longer_has_connections,
-	try( Arc no_longer_has_type _Type ),
+	Arc no_longer_has_type _Type,
 	any_setof( Attribute-Value,
 		   Arc has_attribute Attribute of Value,
 		   Pairs ),

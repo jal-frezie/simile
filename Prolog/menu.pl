@@ -1265,7 +1265,7 @@ kill_everything(Model) :-
 	off_window(Win, ExitIfKilled),
 	 kill_everything(_);
 	 exit_AME,
-       user'><'wind_up.
+         wind_up.
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ok_to_delete(Win, Target) :-

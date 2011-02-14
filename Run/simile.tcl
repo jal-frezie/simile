@@ -495,9 +495,13 @@ cd $SIMILE_PATH/Examples
 
 switch $env(prologId) {
     gnu {
-	set tgt [file join $execDir xgsimile]
+	set tgt \"[file join $execDir xgsimile]\"
     } sicstus {
-	set tgt [file join $execDir sprt]
+	set tgt \"[file join $execDir sprt]\"
+    } swi_interp {
+	set tgt {swipl -f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}
+    } swi_comp {
+	set tgt \"[file join $execDir xssimile]\"
     }
 }
 

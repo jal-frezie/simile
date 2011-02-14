@@ -143,7 +143,7 @@ while {![string match ready $spraf]} {
     set env(GLOBALSZ) [expr 512*$vm_usage]
     set env(LOCALSZ) [expr 256*$vm_usage]
     set env(TRAILSZ) [expr 192*$vm_usage]
-    set plPipe(stream) [open |[ShellFileRef $PROLOG_CMD] r+]
+    set plPipe(stream) [open |$PROLOG_CMD r+]
 #set plPipe [open "|m:/progra~1/GNU-Prolog/bin/gprolog.exe --init-goal load('../Run/gsimile.wbc') 2> $PROLOG_ERR" r+]
     fconfigure $plPipe(stream) -translation {auto lf} -encoding utf-8
 

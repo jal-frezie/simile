@@ -57,9 +57,10 @@ poly_binome(probs, num) -->
 		  binome(probs, [left])),
 	[result].
 
-/* FUNCTIONS WHOSE DEFINITION SETS STATISTICAL MODEL BEHAVIOUR
-Args and result real for interchangeability
-Use these definitions for DETERMINISTIC:
+% FUNCTIONS WHOSE DEFINITION SETS STATISTICAL MODEL BEHAVIOUR
+% Args and result real for interchangeability
+% Use these definitions for DETERMINISTIC:
+/*
 binome_equiv(Prob, Num) --> Prob*Num.
 
 hypergeom_equiv(Pop, Seln1, Seln2) -->
@@ -75,8 +76,8 @@ poly_binome_equiv(probs, num) -->
 				   count(probs)),
 		  probs*[left]),
 	[result].
-
-/* Use these definitions for STOCHASTIC: */
+*/
+% Use these definitions for STOCHASTIC:
 binome_equiv(Prob, Num) --> 1.0*binome(Prob, int(Num)).
 
 hypergeom_equiv(Pop, Seln1, Seln2) -->
