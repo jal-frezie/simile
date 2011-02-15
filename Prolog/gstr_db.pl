@@ -1,10 +1,10 @@
 :- foreign(empty_tree(-integer)).
 
-:- foreign(create_node(+string)). 
+:- foreign(create_node(term)). 
 :- foreign(add_to_tree(+string, +string)). 
 :- foreign(set_class(+string, +atom)). 
-:- foreign(create_arc(+string)). 
-:- foreign(add_link(+string, +string, +string)). 
+:- foreign(create_arc(term)). 
+:- foreign(add_link(term, term, term)). 
 :- foreign(set_type(+string, +atom)). 
 :- foreign(add_continuation(+string, +string)).
 :- foreign(add_curve(+string, +integer, +integer)).
@@ -30,7 +30,7 @@
 :- foreign(find_parent(+string, -integer)).
 :- foreign(get_child_list_pointer(+string, -integer)).
 :- foreign(get_class(+string, -atom)). 
-:- foreign(find_ends(+string, -string, -string)). 
+:- foreign(find_ends(term, term, term)). 
 :- foreign(get_in_list_pointer(+string, -integer)).
 :- foreign(get_out_list_pointer(+string, -integer)).
 :- foreign(get_type(+string, -atom)).

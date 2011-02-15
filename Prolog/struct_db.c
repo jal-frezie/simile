@@ -27,6 +27,7 @@ id_list id_lists[4*USHRT_MAX];
 int next_id_list = 0;
   
 typedef struct node_t {
+  int id_atom;
   int nclass;
   unsigned short parent;
   id_list *children;
@@ -40,9 +41,10 @@ typedef struct node_t {
 } node;
     
 typedef struct arc_t {
+  int id_atom;
   int aclass;
-  char dest[10];
-  char source[10];
+  int dest;
+  int source;
   unsigned short prev;
   id_list *subs;
   id_list *arcs_to;
@@ -71,7 +73,7 @@ FORPROL empty_tree(intptr_t* ushrtmx) {
   int count;
   for (count=0; count<USHRT_MAX; ++count) {
     nodes[count].hide = 0;
-    *(arcs[count].source) = 0;
+    arcs[count].id_atom = 0;
   }
   for (count=0; count<4*USHRT_MAX; ++count) {
     id_lists[count].me = USHRT_MAX;
@@ -147,10 +149,13 @@ void remove_arc_from_list(id_list** tgt, char* oldId) {
   remove_from_list(tgt, get_arc_number(oldId));
 }
 
-FORPROL create_node(char* newnode) {
+FORPROL create_node(PlTerm newnode) {
   node *childNode;
-
-  childNode = &(nodes[get_number(newnode)]);
+  int childAtom;
+  
+  childAtom = Pl_Rd_Atom(newnode);
+  childNode = &(nodes[get_number(Pl_Atom_Name(childAtom))]);
+  childNode->id_atom = childAtom;
   childNode->nclass = 0;
   childNode->children = NULL;
   childNode->arcs_to = NULL;
@@ -237,10 +242,13 @@ FORPROL set_hidden(char* parent, intptr_t whether) {
   SUCCEED;
 }
 
-FORPROL create_arc(char* newlink) {
+FORPROL create_arc(PlTerm newlink) {
   arc *newArc;
-
-  newArc = &(arcs[get_arc_number(newlink)]);
+  int childAtom;
+  
+  childAtom = Pl_Rd_Atom(newlink);
+  newArc = &(arcs[get_arc_number(Pl_Atom_Name(childAtom))]);
+  newArc->id_atom = childAtom;
   newArc->aclass = 0;
   newArc->prev = USHRT_MAX;
   newArc->subs = NULL;
@@ -251,23 +259,30 @@ FORPROL create_arc(char* newlink) {
   SUCCEED;
 }
 
-FORPROL add_link(char* dest, char* source, char* link) {
+FORPROL add_link(PlTerm dest, PlTerm source, PlTerm link) {
   arc *newArc;
   id_list** end_pts;
+  char* endName;
+  char* linkName;
 
-  newArc = &(arcs[get_arc_number(link)]);
-  strcpy(newArc->dest, dest);
-  strcpy(newArc->source, source);
-  if (is_arc(dest))
-    end_pts = &(arcs[get_arc_number(dest)].arcs_to);
+  linkName = Pl_Atom_Name(Pl_Rd_Atom(link));
+  newArc = &(arcs[get_arc_number(linkName)]);
+  newArc->source = Pl_Rd_Atom(source);
+  newArc->dest = Pl_Rd_Atom(dest);
+
+  endName = Pl_Atom_Name(newArc->dest);
+  if (is_arc(endName))
+    end_pts = &(arcs[get_arc_number(endName)].arcs_to);
   else 
-    end_pts = &(nodes[get_number(dest)].arcs_to);
-  add_arc_to_list(end_pts, link);
-  if (is_arc(source))
-    end_pts = &(arcs[get_arc_number(source)].arcs_from);
+    end_pts = &(nodes[get_number(endName)].arcs_to);
+  add_arc_to_list(end_pts, linkName);
+
+  endName = Pl_Atom_Name(newArc->source);
+  if (is_arc(endName))
+    end_pts = &(arcs[get_arc_number(endName)].arcs_from);
   else 
-    end_pts = &(nodes[get_number(source)].arcs_from);
-  add_arc_to_list(end_pts, link);
+    end_pts = &(nodes[get_number(endName)].arcs_from);
+  add_arc_to_list(end_pts, linkName);
   SUCCEED;
 }
 
@@ -326,7 +341,7 @@ FORPROL remove_centre(char* parent) {
 }
   
 FORPROL delete_arc(char* oldlink) {
-  *(arcs[get_arc_number(oldlink)].source) = 0;
+  arcs[get_arc_number(oldlink)].id_atom = 0;
   SUCCEED;
 }
 
@@ -374,7 +389,7 @@ int node_exists(node* it) {
 }
 
 int arc_exists(arc* it) {
-  return *(it->source);
+  return it->id_atom;
 }
 
 FORPROL find_parent(char* child, intptr_t* parent) {
@@ -549,16 +564,20 @@ FORPROL get_id_and_next_ptr(uintptr_t oldptr, intptr_t* result,
   SUCCEED;
 }
 
-FORPROL find_ends(char* link, char** source, char** dest) {
+FORPROL find_ends(PlTerm link, PlTerm source, PlTerm dest) {
   arc* thisLink;
+  char* linkName;
 
-  if (!is_arc(link))
+  linkName = Pl_Atom_Name(Pl_Rd_Atom(link));
+  if (!is_arc(linkName))
     FAIL;
-  thisLink = &(arcs[get_arc_number(link)]);
+  thisLink = &(arcs[get_arc_number(linkName)]);
   if (!arc_exists(thisLink)) 
     FAIL;
-  *source = thisLink->source;
-  *dest = thisLink->dest;
+  if (!Pl_Un_Atom(thisLink->source, source)) 
+    FAIL;
+  if (!Pl_Un_Atom(thisLink->dest, dest)) 
+    FAIL;
   SUCCEED;
 }
 
