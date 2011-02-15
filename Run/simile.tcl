@@ -495,13 +495,11 @@ cd $SIMILE_PATH/Examples
 
 switch $env(prologId) {
     gnu {
-	set tgt \"[file join $execDir xgsimile]\"
+	set tgt [file join $execDir xgsimile]
     } sicstus {
-	set tgt \"[file join $execDir sprt]\"
-    } swi_interp {
-	set tgt {swipl -f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}
+	set tgt [file join $execDir sprt]
     } swi_comp {
-	set tgt \"[file join $execDir xssimile]\"
+	set tgt [file join $execDir xssimile]
     }
 }
 
@@ -520,7 +518,12 @@ switch $tcl_platform(platform) {
     }
 }
 
-set PROLOG_CMD $tgt$archExtn$execExtn
+if {[string equal swi_interp $env(prologId)]} {
+    set PROLOG_CMD {swipl -f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}
+} else {
+    set PROLOG_CMD \"$tgt$archExtn$execExtn\"
+}
+
 switch $env(interfaceId) {
     pipe {
 #	set whatCalled [file rootname [file tail [info nameofexecutable]]]
