@@ -177,7 +177,7 @@ $(EXECDIR)/struct_db.dll: Prolog/struct_db.pl Prolog/struct_db.c
 
 $(EXECDIR)/xgsimile$(EXECEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C '$(OPT) -D_GNU_PROLOG' -L $(OPT) gmain$(ARCHEXTN).o struct_db.c; cd ..
-Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl
+Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl 
 	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c gmain.pl; cd ..
 
 #ifeq ($(UNAME),MINGW32_NT)

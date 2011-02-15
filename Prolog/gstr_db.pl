@@ -1,18 +1,18 @@
-:- foreign(empty_tree(-integer)).
+:- foreign(empty_tree(term)).
 
 :- foreign(create_node(term)). 
-:- foreign(add_to_tree(+string, +string)). 
-:- foreign(set_class(+string, +atom)). 
+:- foreign(add_to_tree(term, term)). 
+:- foreign(set_class(term, term)). 
+:- foreign(add_bbox(term, term, term, term, term)).
+:- foreign(add_iext(term, term, term, term, term)).
+:- foreign(add_capt_off(term, term, term)).
+:- foreign(add_centre(term, term, term)).
+:- foreign(set_hidden(term, term)).
 :- foreign(create_arc(term)). 
 :- foreign(add_link(term, term, term)). 
-:- foreign(set_type(+string, +atom)). 
-:- foreign(add_continuation(+string, +string)).
-:- foreign(add_curve(+string, +integer, +integer)).
-:- foreign(add_bbox(+string, +integer, +integer, +integer, +integer)).
-:- foreign(add_iext(+string, +integer, +integer, +integer, +integer)).
-:- foreign(add_capt_off(+string, +integer, +integer)).
-:- foreign(add_centre(+string, +integer, +integer)).
-:- foreign(set_hidden(+string, +integer)).
+:- foreign(add_continuation(term, term)).
+:- foreign(set_type(term, term)). 
+:- foreign(add_curve(term, term, term)).
 
 :- foreign(delete_node(+string)). 
 :- foreign(remove_from_tree(+string, +string)). 

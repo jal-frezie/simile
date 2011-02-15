@@ -25,6 +25,7 @@ typedef struct id_list_t {
 
 id_list id_lists[4*USHRT_MAX];
 int next_id_list = 0;
+int rootAtom;
   
 typedef struct node_t {
   int id_atom;
@@ -69,7 +70,7 @@ void* safe_malloc(int count) {
   return (void*)ptr;
 }
 */
-FORPROL empty_tree(intptr_t* ushrtmx) {
+FORPROL empty_tree(PlTerm ushrtmx) {
   int count;
   for (count=0; count<USHRT_MAX; ++count) {
     nodes[count].hide = 0;
@@ -79,8 +80,8 @@ FORPROL empty_tree(intptr_t* ushrtmx) {
     id_lists[count].me = USHRT_MAX;
   }
   roots = NULL;
-  *ushrtmx = USHRT_MAX;
-  SUCCEED;
+  rootAtom = Pl_Create_Atom("root");
+  return Pl_Un_Positive(USHRT_MAX, ushrtmx);
 }
 
 id_list* alloc_id_list() {
@@ -168,74 +169,91 @@ FORPROL create_node(PlTerm newnode) {
   SUCCEED;
 }
   
-FORPROL add_to_tree(char* parent, char* child) {
+FORPROL add_to_tree(PlTerm parent, PlTerm child) {
+  int parentAtom;
   unsigned short parentNum;
   node *childNode, *parentNode;
+  char* childStr;
 
-  childNode = &(nodes[get_number(child)]);
-  if (strcmp("root", parent)) {
-    childNode->parent = get_number(parent);
+  parentAtom = Pl_Rd_Atom(parent);
+  childStr = Pl_Atom_Name(Pl_Rd_Atom(child));
+  childNode = &(nodes[get_number(childStr)]);
+
+  if (parentAtom != rootAtom) {
+    childNode->parent = get_number(Pl_Atom_Name(parentAtom));
     parentNode = &(nodes[childNode->parent]);
-    add_node_to_list(&(parentNode->children), child);
+    add_node_to_list(&(parentNode->children), childStr);
   } else {
     childNode->parent = USHRT_MAX;
-    add_node_to_list(&roots, child);
+    add_node_to_list(&roots, childStr);
   }
   SUCCEED;
 }
 
-FORPROL add_bbox(char* parent, intptr_t l, intptr_t t, intptr_t r, intptr_t b) {
-  node *parentNode;
+// just to shorten the code...
+node* node_from_term(PlTerm term) {
+  return  &(nodes[get_number(Pl_Atom_Name(Pl_Rd_Atom(term)))]);
+}
 
-  parentNode =  &(nodes[get_number(parent)]);
-  parentNode->l = (int)l;
-  parentNode->t = (int)t;
-  parentNode->r = (int)r;
-  parentNode->b = (int)b;
+FORPROL set_class(PlTerm cNode, PlTerm cClass) {
+  //  printf("debug_c Set class of %s to %d\n", cNode, cClass);
+  node_from_term(cNode)->nclass = Pl_Rd_Atom(cClass);
   SUCCEED;
 }
 
-FORPROL add_iext(char* parent, intptr_t il, intptr_t it, intptr_t ir, intptr_t ib) {
+FORPROL add_bbox(PlTerm parent, PlTerm l, PlTerm t, PlTerm r, PlTerm b) {
   node *parentNode;
 
-  parentNode =  &(nodes[get_number(parent)]);
-  parentNode->il = (int)il;
-  parentNode->it = (int)it;
-  parentNode->ir = (int)ir;
-  parentNode->ib = (int)ib;
+  parentNode = node_from_term(parent);
+  parentNode->l = (int)Pl_Rd_Integer(l);
+  parentNode->t = (int)Pl_Rd_Integer(t);
+  parentNode->r = (int)Pl_Rd_Integer(r);
+  parentNode->b = (int)Pl_Rd_Integer(b);
   SUCCEED;
 }
 
-FORPROL add_capt_off(char* parent, intptr_t offx, intptr_t offy) {
+FORPROL add_iext(PlTerm parent, PlTerm il, PlTerm it, PlTerm ir, PlTerm ib) {
+  node *parentNode;
+
+  parentNode = node_from_term(parent);
+  parentNode->il = (int)Pl_Rd_Integer(il);
+  parentNode->it = (int)Pl_Rd_Integer(it);
+  parentNode->ir = (int)Pl_Rd_Integer(ir);
+  parentNode->ib = (int)Pl_Rd_Integer(ib);
+  SUCCEED;
+}
+
+FORPROL add_capt_off(PlTerm parent, PlTerm offx, PlTerm offy) {
   node *Node;
   arc *Arc;
+  char* atomStr;
   
-  if (is_arc(parent)) {
-    Arc = &(arcs[get_arc_number(parent)]);
-    Arc->offx = (int)offx;
-    Arc->offy = (int)offy;
+  if (is_arc(atomStr = Pl_Atom_Name(Pl_Rd_Atom(parent)))) {
+    Arc = &(arcs[get_arc_number(atomStr)]);
+    Arc->offx = (int)Pl_Rd_Integer(offx);
+    Arc->offy = (int)Pl_Rd_Integer(offy);
   } else {
-    Node =  &(nodes[get_number(parent)]);
-    Node->offx = (int)offx;
-    Node->offy = (int)offy;
+    Node =  &(nodes[get_number(atomStr)]);
+    Node->offx = (int)Pl_Rd_Integer(offx);
+    Node->offy = (int)Pl_Rd_Integer(offy);
   }
   SUCCEED;
 }
 
-FORPROL add_centre(char* parent, intptr_t cx, intptr_t cy) {
+FORPROL add_centre(PlTerm parent, PlTerm cx, PlTerm cy) {
   node *parentNode;
 
-  parentNode =  &(nodes[get_number(parent)]);
-  parentNode->cx = (int)cx;
-  parentNode->cy = (int)cy;
+  parentNode = node_from_term(parent);
+  parentNode->cx = (int)Pl_Rd_Integer(cx);
+  parentNode->cy = (int)Pl_Rd_Integer(cy);
   SUCCEED;
 }
 
-FORPROL set_hidden(char* parent, intptr_t whether) {
+FORPROL set_hidden(PlTerm parent, PlTerm whether) {
   unsigned char* hid_reg;
 
-  hid_reg = &(nodes[get_number(parent)].hide);
-  if (whether) 
+  hid_reg = &(node_from_term(parent)->hide);
+  if (Pl_Rd_Integer(whether))
     *hid_reg = *hid_reg | HIDDEN;
   else
     *hid_reg = *hid_reg & ~HIDDEN;
@@ -286,22 +304,34 @@ FORPROL add_link(PlTerm dest, PlTerm source, PlTerm link) {
   SUCCEED;
 }
 
-FORPROL add_continuation(char* before, char* after) {
+FORPROL add_continuation(PlTerm before, PlTerm after) {
   arc *Arc;
+  char* afterName;
 
-  Arc = &(arcs[get_arc_number(after)]);
-  Arc->prev = get_arc_number(before);
+  afterName = Pl_Atom_Name(Pl_Rd_Atom(after));
+  Arc = &(arcs[get_arc_number(afterName)]);
+  Arc->prev = get_arc_number(Pl_Atom_Name(Pl_Rd_Atom(before)));
   Arc = &(arcs[Arc->prev]);
-  add_arc_to_list(&(Arc->subs), after);
+  add_arc_to_list(&(Arc->subs), afterName);
   SUCCEED;
 }
 
-FORPROL add_curve(char* parent, intptr_t xk, intptr_t yb) {
+// just to shorten the code...
+arc* arc_from_term(PlTerm term) {
+  return  &(arcs[get_arc_number(Pl_Atom_Name(Pl_Rd_Atom(term)))]);
+}
+
+FORPROL set_type(PlTerm cArc, PlTerm cType) {
+  arc_from_term(cArc)->aclass = Pl_Rd_Atom(cType);
+  SUCCEED;
+}
+
+FORPROL add_curve(PlTerm parent, PlTerm xk, PlTerm yb) {
   arc *parentArc;
 
-  parentArc = &(arcs[get_arc_number(parent)]);
-  parentArc->xk = (int)xk;
-  parentArc->yb = (int)yb;
+  parentArc = arc_from_term(parent);
+  parentArc->xk = (int)Pl_Rd_Integer(xk);
+  parentArc->yb = (int)Pl_Rd_Integer(yb);
   SUCCEED;
 }
 
@@ -666,17 +696,6 @@ FORPROL get_next_list_pointer(char* link, uintptr_t* ptr) {
     if (arc_exists(thisLink))
       *ptr = (uintptr_t)thisLink->subs;
   }
-  SUCCEED;
-}
-
-FORPROL set_class(char* cNode, int cClass) {
-  //  printf("debug_c Set class of %s to %d\n", cNode, cClass);
-  nodes[get_number(cNode)].nclass = cClass;
-  SUCCEED;
-}
-
-FORPROL set_type(char* cNode, int cClass) {
-  arcs[get_arc_number(cNode)].aclass = cClass;
   SUCCEED;
 }
 
