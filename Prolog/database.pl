@@ -145,17 +145,17 @@ c_retract(P) :-
 	delete_node(Node);
 	P = subsystem(Parent, Child), !,
 	remove_from_tree(Parent, Child);
-	P = node_class(Node, Class), !,
+	P = node_class(Node, _Class), !,
 	c_call(P),
-	unset_class(Node, Class);
+	unset_class(Node);
 	P = is_arc(Node), !,
 	delete_arc(Node);
 	P = connection(Dest, Source, Arc), !,
 	c_call(P),
 	remove_link(Dest, Source, Arc);
-	P = arc_type(Arc,Type), !,
+	P = arc_type(Arc, _Type), !,
 	c_call(P),
-	unset_type(Arc,Type);
+	unset_type(Arc);
 	P = continues(Arc1, Arc2), !,
 	c_call(P),
 	remove_continuation(Arc1, Arc2);
@@ -206,8 +206,7 @@ c_call(P) :-
 	    (var(Parent), !,
 	    	find_all_children(Parent, Child);
 	    find_child(Parent, Child));
-	find_parent(Child, ParentId),
-	    make_node_atom(ParentId, Parent));
+	find_parent(Child, Parent));
 	P = node_class(Node, Class), !,
 	(atom(Node), !;
 	    var(Node), descendent(root, Node)),
@@ -226,24 +225,18 @@ c_call(P) :-
 	P = continues(Arc1, Arc2), !,
 	(var(Arc2), !,
 	    find_next(Arc1, Arc2);
-	find_prev(Arc2, ArcId),
-	    make_arc_atom(ArcId, Arc1));
+	find_prev(Arc2, Arc1));
 	P = graphical_info(Obj, GAttr, Pts), \+ legacy_graphic(GAttr), !,
 	    (GAttr = curve,
-		find_curve(Obj, XK, YB),
-		Pts = [XK, YB];
+		find_curve(Obj, Pts);
 	    GAttr = bounding_box,
-		find_bbox(Obj, L, T, R, B),
-		Pts = [L,T,R,B];
+		find_bbox(Obj, Pts);
 	    GAttr = internal_extent,
-		find_iext(Obj, L, T, R, B),
-		Pts = [L,T,R,B];
+		find_iext(Obj, Pts);
 	    GAttr = caption_offset,
-		find_capt_off(Obj, OX, OY),
-		Pts = [OX, OY];
+		find_capt_off(Obj, Pts);
 	    GAttr = centre,
-		find_centre(Obj, CX, CY),
-		Pts = [CX, CY];
+		find_centre(Obj, Pts);
 	    GAttr = hide_contents,
 		is_hidden(Obj),
 		Pts = 1);
@@ -252,16 +245,7 @@ c_call(P) :-
 
 find_all_children(Parent, Child) :-
 	descendent(root, Child),
-	find_parent(Child, ParentId),
-	make_node_atom(ParentId, Parent).
-
-make_node_atom(ParentId, Parent) :-
-	node_id_for_root_is(ParentId), !,
-	    Parent = root;
-	utility'><'build_name('node', ParentId, 5, Parent).
-
-make_arc_atom(ArcId, Arc) :-
-	utility'><'build_name('arc', ArcId, 5, Arc).
+	find_parent(Child, Parent).
 
 descendent(Node, Desc) :-
 	Desc = Node;
@@ -286,13 +270,15 @@ find_next(PrevArc, SubsArc) :-
 	
 comps_from_pointer(Ptr, Comp) :-
 	\+ Ptr = 0, % or whatever a NULL translates to
-	get_id_and_next_ptr(Ptr, First, NxtPtr),
-	(make_node_atom(First, Comp); comps_from_pointer(NxtPtr, Comp)).
+	get_node_and_next_ptr(Ptr, ThisComp, NxtPtr),
+	(Comp = ThisComp;
+	    comps_from_pointer(NxtPtr, Comp)).
 
-links_from_pointer(Ptr, Comp) :-
+links_from_pointer(Ptr, Link) :-
 	\+ Ptr = 0, % or whatever a NULL translates to
-	get_id_and_next_ptr(Ptr, First, NxtPtr),
-	(make_arc_atom(First, Comp); links_from_pointer(NxtPtr, Comp)).
+	get_arc_and_next_ptr(Ptr, ThisLink, NxtPtr),
+	(Link = ThisLink;
+	    links_from_pointer(NxtPtr, Link)).
 
 legacy_graphic(Attr) :-
 	member(Old, [bowtie, course]),

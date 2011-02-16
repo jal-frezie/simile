@@ -335,85 +335,108 @@ FORPROL add_curve(PlTerm parent, PlTerm xk, PlTerm yb) {
   SUCCEED;
 }
 
-FORPROL remove_from_tree(char* parent, char* child) {
+
+FORPROL delete_node(PlTerm oldcomp) {
+  node_from_term(oldcomp)->hide = 0;
+  SUCCEED;
+}
+
+FORPROL remove_from_tree(PlTerm parent, PlTerm child) {
   node* parentNode;
+  int parentAtom;
+  char* childStr;
 
-  if (strcmp(parent, "root")) {
-    parentNode = &(nodes[get_number(parent)]);
-    remove_node_from_list(&(parentNode->children), child);
+  // no need to clear parent field in child, it will get another soon
+  parentAtom = Pl_Rd_Atom(parent);
+  childStr = Pl_Atom_Name(Pl_Rd_Atom(child));
+
+  if (parentAtom != rootAtom) {
+    parentNode = &(nodes[get_number(Pl_Atom_Name(parentAtom))]);
+    remove_node_from_list(&(parentNode->children), childStr);
   } else {
-    remove_node_from_list(&roots, child);
+    remove_node_from_list(&roots, childStr);
   }
   SUCCEED;
 }
 
-FORPROL remove_bbox(char* parent) {
-  nodes[get_number(parent)].b = INT_MIN;
+FORPROL unset_class(PlTerm cNode) {
+  node_from_term(cNode)->nclass = 0;
+  SUCCEED;
+}
+
+FORPROL remove_bbox(PlTerm parent) {
+  node_from_term(parent)->b = INT_MIN;
   SUCCEED;
 }
   
-FORPROL remove_iext(char* parent) {
-  nodes[get_number(parent)].ib = INT_MIN;
+FORPROL remove_iext(PlTerm parent) {
+  node_from_term(parent)->ib = INT_MIN;
   SUCCEED;
 }
   
-FORPROL remove_capt_off(char* parent) {
-  if (is_arc(parent))
-    arcs[get_arc_number(parent)].offy = INT_MIN;
+FORPROL remove_centre(PlTerm parent) {
+  node_from_term(parent)->cy = INT_MIN;
+  SUCCEED;
+}
+  
+FORPROL remove_capt_off(PlTerm parent) {
+  char* parentStr;
+
+  parentStr = Pl_Atom_Name(Pl_Rd_Atom(parent));
+  if (is_arc(parentStr))
+    arcs[get_arc_number(parentStr)].offy = INT_MIN;
   else
-    nodes[get_number(parent)].offy = INT_MIN;
+    nodes[get_number(parentStr)].offy = INT_MIN;
   SUCCEED;
 }
 
-FORPROL remove_centre(char* parent) {
-  nodes[get_number(parent)].cy = INT_MIN;
-  SUCCEED;
-}
-  
-FORPROL delete_arc(char* oldlink) {
-  arcs[get_arc_number(oldlink)].id_atom = 0;
+FORPROL delete_arc(PlTerm oldlink) {
+  arc_from_term(oldlink)->id_atom = 0;
   SUCCEED;
 }
 
-FORPROL remove_link(char* dest, char* source, char* link) {
+FORPROL remove_link(PlTerm dest, PlTerm source, PlTerm link) {
   id_list** end_pts;
+  char* linkName;
+  char* endName;
 
-  if (is_arc(dest))
-    end_pts = &(arcs[get_arc_number(dest)].arcs_to);
+  linkName = Pl_Atom_Name(Pl_Rd_Atom(link));
+  endName = Pl_Atom_Name(Pl_Rd_Atom(dest));
+  if (is_arc(endName))
+    end_pts = &(arcs[get_arc_number(endName)].arcs_to);
   else 
-    end_pts = &(nodes[get_number(dest)].arcs_to);
-  remove_arc_from_list(end_pts, link);
-  if (is_arc(source))
-    end_pts = &(arcs[get_arc_number(source)].arcs_from);
+    end_pts = &(nodes[get_number(endName)].arcs_to);
+  remove_arc_from_list(end_pts, linkName);
+
+  endName = Pl_Atom_Name(Pl_Rd_Atom(source));
+  if (is_arc(endName))
+    end_pts = &(arcs[get_arc_number(endName)].arcs_from);
   else 
-    end_pts = &(nodes[get_number(source)].arcs_from);
-  remove_arc_from_list(end_pts, link);
+    end_pts = &(nodes[get_number(endName)].arcs_from);
+  remove_arc_from_list(end_pts, linkName);
   SUCCEED;
 }
 
-FORPROL remove_continuation(char* before, char* after) {
-  arc *Arc;
-
-  Arc = &(arcs[get_arc_number(after)]);
-  if (!Arc) {
-    printf("debug_c lost subs arc %s-%s\n", before, after);
-    FAIL;
-  }
-  Arc->prev = USHRT_MAX;
-  Arc = &(arcs[get_arc_number(before)]);
-  if (!Arc) {
-    printf("debug_c lost prev arc %s-%s\n", before, after);
-    FAIL;
-  }
-  remove_arc_from_list(&(Arc->subs), after);
+FORPROL unset_type(PlTerm oldlink) {
+  arc_from_term(oldlink)->aclass = 0;
   SUCCEED;
 }
 
-FORPROL remove_curve(char* parent) {
-  arcs[get_arc_number(parent)].yb = INT_MIN;
+FORPROL remove_continuation(PlTerm before, PlTerm after) {
+  char* afterStr;
+
+  afterStr = Pl_Atom_Name(Pl_Rd_Atom(after));
+  arcs[get_arc_number(afterStr)].prev = USHRT_MAX;
+  remove_arc_from_list(&(arc_from_term(before)->subs), afterStr);
   SUCCEED;
 }
-  
+
+FORPROL remove_curve(PlTerm parent) {
+  arc_from_term(parent)->yb = INT_MIN;
+  SUCCEED;
+}
+
+
 int node_exists(node* it) {
   return (it->hide & EXISTS);
 }
@@ -422,119 +445,142 @@ int arc_exists(arc* it) {
   return it->id_atom;
 }
 
-FORPROL find_parent(char* child, intptr_t* parent) {
+FORPROL find_parent(PlTerm child, PlTerm parent) {
   node* childNode;
+  char* childStr;
 
-  if (!is_node(child))
+  childStr = Pl_Atom_Name(Pl_Rd_Atom(child));
+
+  if (!is_node(childStr))
     FAIL;
-  childNode = &(nodes[get_number(child)]);
+  childNode = &(nodes[get_number(childStr)]);
   if (!node_exists(childNode)) 
     FAIL;
-  *parent = (intptr_t)childNode->parent;
-  SUCCEED;
+  return Pl_Un_Atom(nodes[childNode->parent].id_atom, parent);
 }
 
-FORPROL find_bbox(char* child, intptr_t* l, intptr_t* t, intptr_t* r, intptr_t* b) {
-  node* childNode;
+// need to make a list so unification is all or nothing
+PlBool list_box_ints(intptr_t l, intptr_t t, intptr_t r, intptr_t b, PlTerm tgt)
+{
+  PlTerm ints[4];
 
-  if (!is_node(child))
+  ints[0] = Pl_Mk_Integer(l);
+  ints[1] = Pl_Mk_Integer(t);
+  ints[2] = Pl_Mk_Integer(r);
+  ints[3] = Pl_Mk_Integer(b);
+
+  return Pl_Un_Proper_List(4, ints, tgt);
+}
+
+PlBool list_vect_ints(intptr_t x, intptr_t y, PlTerm tgt)
+{
+  PlTerm ints[2];
+
+  ints[0] = Pl_Mk_Integer(x);
+  ints[1] = Pl_Mk_Integer(y);
+
+  return Pl_Un_Proper_List(2, ints, tgt);
+}
+
+FORPROL find_bbox(PlTerm child, PlTerm result) {
+  node* childNode;
+  char* childStr;
+
+  childStr = Pl_Atom_Name(Pl_Rd_Atom(child));
+  if (!is_node(childStr))
     FAIL;
-  childNode = &(nodes[get_number(child)]);
+  childNode = &(nodes[get_number(childStr)]);
   if (!node_exists(childNode)) 
     FAIL;
   if (childNode->b == INT_MIN)
     FAIL;
-  *l = (intptr_t)childNode->l;
-  *t = (intptr_t)childNode->t;
-  *r = (intptr_t)childNode->r;
-  *b = (intptr_t)childNode->b;
-  SUCCEED;
+  return list_box_ints(childNode->l, childNode->t, childNode->r, childNode->b, 
+		       result);
 }
 
-FORPROL find_iext(char* child, intptr_t* il, intptr_t* it, intptr_t* ir, intptr_t* ib) {
+FORPROL find_iext(PlTerm child, PlTerm result) {
   node* childNode;
+  char* childStr;
 
-  if (!is_node(child))
+  childStr = Pl_Atom_Name(Pl_Rd_Atom(child));
+  if (!is_node(childStr))
     FAIL;
-  childNode = &(nodes[get_number(child)]);
+  childNode = &(nodes[get_number(childStr)]);
   if (!node_exists(childNode)) 
     FAIL;
   if (childNode->ib == INT_MIN)
     FAIL;
-  *il = (intptr_t)childNode->il;
-  *it = (intptr_t)childNode->it;
-  *ir = (intptr_t)childNode->ir;
-  *ib = (intptr_t)childNode->ib;
-  SUCCEED;
+  return list_box_ints(childNode->il, childNode->it, 
+		       childNode->ir, childNode->ib, result);
 }
 
-FORPROL find_capt_off(char* parent, intptr_t* offx, intptr_t* offy) {
+FORPROL find_capt_off(PlTerm comp, PlTerm result) {
   node *Node;
   arc *Arc;
+  char* compStr;
   
-  if (is_arc(parent)) {
-    Arc = &(arcs[get_arc_number(parent)]);
+  compStr = Pl_Atom_Name(Pl_Rd_Atom(comp));
+  if (is_arc(compStr)) {
+    Arc = &(arcs[get_arc_number(compStr)]);
     if (!arc_exists(Arc)) 
       FAIL;
     if (Arc->offy == INT_MIN)
       FAIL;
-    *offx = (intptr_t)Arc->offx;
-    *offy = (intptr_t)Arc->offy;
-    SUCCEED;
-  } else if (is_node(parent)) {
-    Node = &(nodes[get_number(parent)]);
+    return list_vect_ints(Arc->offx, Arc->offy, result);
+  } else if (is_node(compStr)) {
+    Node = &(nodes[get_number(compStr)]);
     if (!node_exists(Node)) 
       FAIL;
     if (Node->offy == INT_MIN)
       FAIL;
-    *offx = (intptr_t)Node->offx;
-    *offy = (intptr_t)Node->offy;
-    SUCCEED;
+    return list_vect_ints(Node->offx, Node->offy, result);
   } else
       FAIL;
 }
 
-FORPROL find_centre(char* child, intptr_t* cx, intptr_t* cy) {
+FORPROL find_centre(PlTerm child, PlTerm result) {
   node* childNode;
+  char* nodeStr;
 
-  if (!is_node(child))
+  nodeStr = Pl_Atom_Name(Pl_Rd_Atom(child));
+  if (!is_node(nodeStr))
     FAIL;
-  childNode = &(nodes[get_number(child)]);
+  childNode = &(nodes[get_number(nodeStr)]);
   if (!node_exists(childNode)) 
     FAIL;
   if (childNode->cy == INT_MIN)
     FAIL;
-  *cx = (intptr_t)childNode->cx;
-  *cy = (intptr_t)childNode->cy;
-  SUCCEED;
+  return list_vect_ints(childNode->cx, childNode->cy, result);
 }
 
-FORPROL is_hidden(char* parent) {
-  node* childNode;
+FORPROL is_hidden(PlTerm parent) {
+  node* parentNode;
+  char* parentStr;
 
-  if (!is_node(parent))
+  parentStr = Pl_Atom_Name(Pl_Rd_Atom(parent));
+  if (!is_node(parentStr))
     FAIL;
-  childNode = &(nodes[get_number(parent)]);
-  if (!node_exists(childNode)) 
+  parentNode = &(nodes[get_number(parentStr)]);
+  if (!node_exists(parentNode)) 
     FAIL;
-  if (childNode->hide & HIDDEN)
+  if (parentNode->hide & HIDDEN)
     SUCCEED;
   FAIL;
 }
 
-FORPROL find_curve(char* child, intptr_t* xk, intptr_t* yb) {
+FORPROL find_curve(PlTerm link, PlTerm result) {
   arc* childArc;
+  char* arcStr;
 
-  if (!is_arc(child))
+  arcStr = Pl_Atom_Name(Pl_Rd_Atom(link));
+  if (!is_arc(arcStr))
     FAIL;
-  childArc = &(arcs[get_arc_number(child)]);
+  childArc = &(arcs[get_arc_number(arcStr)]);
   if (!arc_exists(childArc)) 
     FAIL;
   if (childArc->yb == INT_MIN)
     FAIL;
-  *xk = (intptr_t)childArc->xk;
-  *yb = (intptr_t)childArc->yb;
-  SUCCEED;
+  return list_vect_ints(childArc->xk, childArc->yb, result);
 }
 /* 
 FORPROL find_child(char* parent, char** child) {
@@ -558,16 +604,27 @@ FORPROL find_child(char* parent, char** child) {
   return run_through_list(p, child);
 }
 */
-FORPROL get_child_list_pointer(char* parent, uintptr_t* ptr) {
-    if (!strcmp(parent, "root"))
-      *ptr = (uintptr_t)roots;
-    else if (!is_node(parent))
-      *ptr = (uintptr_t)NULL;
+FORPROL get_child_list_pointer(PlTerm parent, PlTerm ptr) {
+  int parentAtom;
+  id_list* result;
+
+  parentAtom = Pl_Rd_Atom(parent);
+  if (parentAtom == rootAtom)
+    result = roots;
+  else {
+    char* parentStr;
+    parentStr = Pl_Atom_Name(parentAtom);
+    if (is_node(parentStr))
+      result = nodes[get_number(parentStr)].children;
     else
-      *ptr = (uintptr_t)nodes[get_number(parent)].children;
-    SUCCEED;
+      result = NULL;
+  }
+  return Pl_Un_Positive((uintptr_t)result, ptr);
 }
 /*
+This used the nondeterministic features of the interface, but too complicated
+and not portable. Easier to let Prolog decide whether to retry...
+
 FORPROL run_through_list(id_list* p, char** result) {
   id_list **info_pos;
 
@@ -587,11 +644,20 @@ SUCCEED;                         // succeed
   FAIL;
 }
 */
-FORPROL get_id_and_next_ptr(uintptr_t oldptr, intptr_t* result, 
-			     uintptr_t *newptr) {
-  *result = (intptr_t)((id_list*)oldptr)->me;
-  *newptr = (uintptr_t)((id_list*)oldptr)->next;
-  SUCCEED;
+FORPROL get_node_and_next_ptr(PlTerm oldptr, PlTerm result, PlTerm newptr) {
+  id_list* realPtr;
+  
+  realPtr = (id_list*)Pl_Rd_Positive(oldptr);
+  Pl_Un_Positive((uintptr_t)(realPtr->next), newptr); // always succeed
+  return Pl_Un_Atom(nodes[realPtr->me].id_atom, result);
+}
+
+FORPROL get_arc_and_next_ptr(PlTerm oldptr, PlTerm result, PlTerm newptr) {
+  id_list* realPtr;
+  
+  realPtr = (id_list*)Pl_Rd_Positive(oldptr);
+  Pl_Un_Positive((uintptr_t)(realPtr->next), newptr); // always succeed
+  return Pl_Un_Atom(arcs[realPtr->me].id_atom, result);
 }
 
 FORPROL find_ends(PlTerm link, PlTerm source, PlTerm dest) {
@@ -611,18 +677,19 @@ FORPROL find_ends(PlTerm link, PlTerm source, PlTerm dest) {
   SUCCEED;
 }
 
-FORPROL find_prev(char* link, intptr_t* prev) {
+FORPROL find_prev(PlTerm link, PlTerm prev) {
   arc* thisLink;
+  char* linkName;
 
-  if (!is_arc(link))
+  linkName = Pl_Atom_Name(Pl_Rd_Atom(link));
+  if (!is_arc(linkName))
     FAIL;
-  thisLink = &(arcs[get_arc_number(link)]);
+  thisLink = &(arcs[get_arc_number(linkName)]);
   if (!arc_exists(thisLink)) 
     FAIL;
   if (thisLink->prev == USHRT_MAX) 
     FAIL;
-  *prev = (intptr_t)thisLink->prev;
-  SUCCEED;
+  return Pl_Un_Atom(arcs[thisLink->prev].id_atom, prev);
 }
 /*
 FORPROL find_arc_to(char* dest, char** arc) {
@@ -646,14 +713,18 @@ FORPROL find_arc_to(char* dest, char** arc) {
   return run_through_list(end_pts, arc);
 }
 */
-FORPROL get_in_list_pointer(char* dest, uintptr_t* ptr) {
-  if (is_arc(dest))
-    *ptr = (uintptr_t)arcs[get_arc_number(dest)].arcs_to;
-  else if (is_node(dest))
-    *ptr = (uintptr_t)nodes[get_number(dest)].arcs_to;
+FORPROL get_in_list_pointer(PlTerm dest, PlTerm inPtr) {
+  char* destName;
+  id_list* ptr;
+
+  destName = Pl_Atom_Name(Pl_Rd_Atom(dest));
+  if (is_arc(destName))
+    ptr = arcs[get_arc_number(destName)].arcs_to;
+  else if (is_node(destName))
+    ptr = nodes[get_number(destName)].arcs_to;
   else
-    *ptr = (uintptr_t)NULL;
-  SUCCEED;
+    ptr = NULL;
+  return Pl_Un_Positive((uintptr_t)ptr, inPtr);
 }
 /*
 FORPROL find_arc_from(char* source, char** arc) {
@@ -677,73 +748,63 @@ FORPROL find_arc_from(char* source, char** arc) {
   return run_through_list(end_pts, arc);
 }
 */
-FORPROL get_out_list_pointer(char* dest, uintptr_t* ptr) {
-  if (is_arc(dest))
-    *ptr = (uintptr_t)arcs[get_arc_number(dest)].arcs_from;
-  else if (is_node(dest))
-    *ptr = (uintptr_t)nodes[get_number(dest)].arcs_from;
+FORPROL get_out_list_pointer(PlTerm src, PlTerm inPtr) {
+  char* srcName;
+  id_list* ptr;
+
+  srcName = Pl_Atom_Name(Pl_Rd_Atom(src));
+  if (is_arc(srcName))
+    ptr = arcs[get_arc_number(srcName)].arcs_from;
+  else if (is_node(srcName))
+    ptr = nodes[get_number(srcName)].arcs_from;
   else
-    *ptr = (uintptr_t)NULL;
-  SUCCEED;
+    ptr = NULL;
+  return Pl_Un_Positive((uintptr_t)ptr, inPtr);
 }
 
-FORPROL get_next_list_pointer(char* link, uintptr_t* ptr) {
+FORPROL get_next_list_pointer(PlTerm link, PlTerm nxtPtr) {
   arc* thisLink;
+  char* linkName;
+  id_list* ptr;
 
-  *ptr = (uintptr_t)NULL;
-  if (is_arc(link)) {
-    thisLink = &(arcs[get_arc_number(link)]);
+  ptr = NULL;
+  linkName = Pl_Atom_Name(Pl_Rd_Atom(link));
+  if (is_arc(linkName)) {
+    thisLink = &(arcs[get_arc_number(linkName)]);
     if (arc_exists(thisLink))
-      *ptr = (uintptr_t)thisLink->subs;
+      ptr = thisLink->subs;
   }
-  SUCCEED;
+  return Pl_Un_Positive((uintptr_t)ptr, nxtPtr);
 }
 
-FORPROL unset_class(char* cNode, int cClass) {
-  nodes[get_number(cNode)].nclass = 0;
-  SUCCEED;
-}
-
-FORPROL delete_node(char* oldcomp) {
-  node* oldNode;
-
-  oldNode = &(nodes[get_number(oldcomp)]);
-  oldNode->hide = 0;
-  SUCCEED;
-}
-
-FORPROL unset_type(char* cNode, int cClass) {
-  arcs[get_arc_number(cNode)].aclass = 0;
-  SUCCEED;
-}
-
-FORPROL get_class(char* cNode, int* cClass) {
+FORPROL get_class(PlTerm cNode, PlTerm cClass) {
   node* thisNode;
+  char* cNodeName;
   /* OK, Sicstus external rules always succeed -- how do I tell Prolog there
      was no class? Another output? Can return val be other than FORPROL for GNU?
   */
-  *cClass = 0;
-  if (!is_node(cNode))
+  cNodeName = Pl_Atom_Name(Pl_Rd_Atom(cNode));
+  if (!is_node(cNodeName))
     FAIL;
-  thisNode = &(nodes[get_number(cNode)]);
+  thisNode = &(nodes[get_number(cNodeName)]);
   if (!node_exists(thisNode)) 
     FAIL;
   if (!thisNode->nclass)
     FAIL;
-  *cClass = thisNode->nclass;
-  SUCCEED;
+  return Pl_Un_Atom(thisNode->nclass, cClass);
 }
 
-FORPROL get_type(char* cNode, int* cClass) {
-  arc* thisNode;
+FORPROL get_type(PlTerm cArc, PlTerm cClass) {
+  arc* thisArc;
+  char* cArcName;
 
-  if (!is_arc(cNode))
+  cArcName = Pl_Atom_Name(Pl_Rd_Atom(cArc));
+  if (!is_arc(cArcName))
     FAIL;
-  thisNode = &(arcs[get_arc_number(cNode)]);
-  if (!arc_exists(thisNode))
+  thisArc = &(arcs[get_arc_number(cArcName)]);
+  if (!arc_exists(thisArc))
     FAIL;
-  if (!thisNode->aclass)
+  if (!thisArc->aclass)
     FAIL;
-  *cClass = thisNode->aclass;
-  SUCCEED;
+  return Pl_Un_Atom(thisArc->aclass, cClass);
 }
