@@ -1,4 +1,4 @@
-:- foreign(empty_tree(term)).
+:- foreign(empty_tree(term, term)).
 
 :- foreign(create_node(term)). 
 :- foreign(add_to_tree(term, term)). 

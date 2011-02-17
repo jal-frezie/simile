@@ -26,7 +26,7 @@ sicstus_module(database, [
 		graphical_info/3]).
 
 sicstus_use_module([library(lists), sp_only, utility, output]).
-
+		    
 :- dynamic(is_arc/1). 
 :- dynamic(connection/3).
 :- dynamic(arc_type/2).
@@ -70,8 +70,8 @@ clear_model([Funt/Args | Rest]) :-
 :- dynamic(node_id_for_root_is/1).
 
 empty_tree :-
-        load_foreign_resource('../System/bin/struct_db'),
-	empty_tree(Ushrtmx),
+	load_foreign_library('../Prolog/struct_db'),
+	empty_tree(root, Ushrtmx),
 	asserta(node_id_for_root_is(Ushrtmx)).
 
 assert_model(P) :-
@@ -269,13 +269,13 @@ find_next(PrevArc, SubsArc) :-
 	links_from_pointer(Ptr, SubsArc).
 	
 comps_from_pointer(Ptr, Comp) :-
-	\+ Ptr = 0, % or whatever a NULL translates to
+	% Ptr is not anything special for a null pointer --
+	% following should fail if it is
 	get_node_and_next_ptr(Ptr, ThisComp, NxtPtr),
 	(Comp = ThisComp;
 	    comps_from_pointer(NxtPtr, Comp)).
 
 links_from_pointer(Ptr, Link) :-
-	\+ Ptr = 0, % or whatever a NULL translates to
 	get_arc_and_next_ptr(Ptr, ThisLink, NxtPtr),
 	(Link = ThisLink;
 	    links_from_pointer(NxtPtr, Link)).

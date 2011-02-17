@@ -55,10 +55,10 @@ been loaded. Others are in ame_gen.pl */
 
 main :-
 %    guitracer,
-%    spy(language:make_section_cond),
+%    spy(input:tk_make_desktop_node),
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
-%	database:empty_tree,
+	database:empty_tree,
 	state:retractall(model_in(_,_)),
         % swi: avoid prompt chars messing up the pipe interface
         prompt(_P, ''),
