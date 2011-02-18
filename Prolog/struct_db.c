@@ -559,6 +559,8 @@ FORPROL find_parent(PlTerm child, PlTerm parent) {
   childNode = &(nodes[get_node_number(childStr)]);
   if (!node_exists(childNode)) 
     FAIL;
+  if (childNode->parent == USHRT_MAX)
+    return Pl_Un_Atom(rootAtom, parent);
   return Pl_Un_Atom(nodes[childNode->parent].id_atom, parent);
 }
 
