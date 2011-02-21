@@ -799,12 +799,10 @@ proc ColorSymbol { w name type density colorSpec } {
         set outlineColor $looks($n,$type,outline)
         set textColor $looks($n,$type,text)
     }
-    FlashSymbol $w $name $outlineColor $textColor
-
-    StippleSymbol $w $name $density $colorSpec
+    FlashAndStippleSymbol $w $name $outlineColor $textColor $density $colorSpec
 }
 
-proc FlashSymbol {w name outlineColor textColor} {
+proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
     foreach object [$w find withtag $name] {
         switch -regexp [$w type $object] {
             text {$w itemconfigure $object -fill $textColor}
@@ -825,11 +823,7 @@ proc FlashSymbol {w name outlineColor textColor} {
 		}
 	    }
         }
-    }
-}
 
-proc StippleSymbol {w name density selected} {
-    foreach object [$w find withtag $name] {
 	switch -regexp $selected {
 	    highlight {
 		$w dtag $object tocopy

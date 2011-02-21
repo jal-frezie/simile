@@ -157,44 +157,10 @@ all_utf8_to_ttfn([], []).
 
 all_utf8_to_ttfn(String, NewString) :-
 	append(Code, Rest, String),
-	utf8_to_unicode(Code, Char), !,
+	user'><'utf8_to_unicode(Code, Char), !,
 	unicode_to_ttfn(Char, Start),
 	all_utf8_to_ttfn(Rest, More),
 	append(Start, More, NewString).
-
-utf8_to_unicode([H | String], Char) :-
-	H < 192, !,
-	    Char = H,
-	    String = [];
-	Spares is floor(7-log(256-H)/log(2))//1,
-	    length(String, Spares),
-	    TopVal is 128+(H /\ (63 >> Spares)),
-	    base64([TopVal | String], Char).
-
-base64([], 0).
-
-base64(String, All) :-
-	append(Rest, [Last], String),
-	Last>=128,
-	base64(Rest, Tail),
-	All is 64*Tail + (Last-128).
-
-unicode_to_utf8(Char, [Key | String]) :-
-	Char < 128, !,
-	    Key = Char,
-	    String = [];
-	Length is floor(log(Char)/log(2)-1)//5,
-	    Key is (Char >> (6*Length)) \/ (255 >> (7-Length) << (7-Length)),
-	    length(String, Length),
-	    fill_chars(String, Char).
-
-fill_chars([], _Char).
-
-fill_chars(St, Char) :-
-	append(More, [Hole], St),
-	Hole is 128 \/ (Char /\ 63),
-	LChar is Char >> 6,
-	fill_chars(More, LChar).
 
 /* Now let's see how much easier this is with a properly designed encoding
 system... */
@@ -205,7 +171,7 @@ all_ttfn_to_utf8([], []).
 all_ttfn_to_utf8(String, NewString) :-
 	append(Code, Rest, String),
 	ttfn_to_unicode(Code, Char), !,
-	unicode_to_utf8(Char, Start),
+	user'><'unicode_to_utf8(Char, Start),
 	all_ttfn_to_utf8(Rest, More),
 	append(Start, More, NewString).
 

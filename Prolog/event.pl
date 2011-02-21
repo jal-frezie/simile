@@ -1374,10 +1374,11 @@ dark green: deletes
 light green: changes status */
 
 do_colours(Obj, Way) :-
+	tk_get_pref(deleteEndToEnd, E2E),
 	(Way = on,
-	    highlight_deletes(Obj);
+	    highlight_deletes(Obj, E2E);
 	Way = off,
-	    normalize_deletes(Obj)).
+	    normalize_deletes(Obj, E2E)).
 
 /* lit_by: As well as the selection, there are other highlit components
 in a certain relation to the selection. Traditionally these are ghosts of
@@ -1407,33 +1408,34 @@ update_halo(_) :-
 
 /* highlight_deletes: this highlights all the objects which will be zapped if a particular delete selection is made. The target itself highlights at defcon 0 and any colateral damage at defcon 1. */
 
-highlight_deletes(Target) :-
+highlight_deletes(Target, E2E) :-
 	lit_by(Target, Ghost),
 	\+ get_highlit_obj(_, Ghost),
 	highlight(Ghost, 2),
 	fail; 
-	recursive_highlight(Target, on, base);
-	recursive_highlight(Target, off, seln);
+	recursive_highlight(Target, on, base,  E2E);
+	recursive_highlight(Target, off, seln,  E2E);
 	true.
 
-normalize_deletes(Target) :-
+normalize_deletes(Target, E2E) :-
 	lit_by(Target, Ghost),
 	    get_highlit_obj(2, Ghost),
 	    normalize(Ghost),
 	    fail;
-	recursive_highlight(Target, on, seln);
-	recursive_highlight(Target, off, base);
+	recursive_highlight(Target, on, seln,  E2E);
+	recursive_highlight(Target, off, base,  E2E);
 	lit_by(Base, Target),
 	    doomed(Base),
 	    highlight(Target, 2), fail;
 	keep_only_if_links_stay(Target, base), fail;
 	true.
 
-recursive_highlight(Target, Way, Where) :-
+
+recursive_highlight(Target, Way, Where, E2E) :-
 	(Target is_of_sort box, !,
 	    change_delete_status(Target, Way, Where),
 	    Also = Target;
-	tk_get_pref(deleteEndToEnd, 1),
+	E2E = 1,
 	    m_class'><'connects(Target, Start, Mid),
 	    get_host(Mid, Finish),
 	    match_delete_status([Start, Finish], Way, Where),
@@ -1442,15 +1444,17 @@ recursive_highlight(Target, Way, Where) :-
 	    adjust_link_backwards(Target, Way, Also, Where);
 	    adjust_link_forwards(Target, Way, Also, Where);
 	    bring_dependents_into_line([Start, Finish], Where), fail);
-	tk_get_pref(deleteEndToEnd, 0),
+	E2E = 0,
 	    local_ends(Target, Start, Finish),
 	    match_delete_status([Start, Finish], Way, Where),
 	    change_delete_status(Target, Way, Where),
 	    bring_dependents_into_line([Start, Finish], Where),
 	    Also = Target),
 	find_all_links(Also, Linked),
+	% new bit to stop redoing what has already been done
+	    (at_def_con(Linked, Where) -> Way = on; Way = off),
 	    \+ has_outer_equiv(_, Also, Linked),
-	    recursive_highlight(Linked, Way, Where).
+	    recursive_highlight(Linked, Way, Where, E2E).
 
 adjust_link_backwards(Target, Way, Also, Where) :-
 	m_class'><'Target follows Prev,
@@ -1469,7 +1473,7 @@ adjust_link_forwards(Target, Way, Also, Where) :-
 	 Way = off,
 	    m_class'><'connects(Next, _, Mid),
 	    get_host(Mid, Finish),
-	    match_delete_status([Finish], Way, Where),
+	    match_delete_status([Finish], off, Where),
 	    change_delete_status(Next, off, Where)),
 	(Also = Next; adjust_link_forwards(Next, Way, Also, Where)).
 	
@@ -1502,7 +1506,8 @@ to_def_con(Tgt, FromWhere) :-
 	    highlight(Tgt, 0).
 
 depends_on_links(Damage) :-
-	find_type(Damage, cloud) /* keep unattached parameters for now ;
+	find_type(Damage, Type),
+	member(Type, [cloud, border]) /* keep unattached parameters for now ;
 	is_parameter(Damage, N), N>0 */ .
 
 keep_only_if_links_stay(Damage, Where) :-
@@ -1514,11 +1519,10 @@ keep_only_if_links_stay(Damage, Where) :-
 	highlight(Damage, 1)).
 
 match_delete_status(Ends, Way, Where) :-
-	Way = on;
 	member(End, Ends),
-	(Where = seln; \+ depends_on_links(End)),
+	\+ depends_on_links(End),
 	\+ at_def_con(End, Where), !, Way = on;
-	Way = off.
+	true.
 
 local_ends(Link, Start, Finish) :-
 	m_class'><'Link is_connector from Start to Mid,
@@ -2029,7 +2033,9 @@ change_ghosthood(Node) :-
 
 delete_by_dlg(Target) :-
 	remove_highlights,
-	recursive_highlight(Target, on, base);
+	% cached to reduce load on interface...
+	tk_get_pref(deleteEndToEnd, E2E),
+	recursive_highlight(Target, on, base, E2E);
 	contains(Top, Target),
 	is_toplevel(Top),
 	delete_net(Top).

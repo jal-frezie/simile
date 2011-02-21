@@ -37,6 +37,10 @@ local_atom_chars(Atom, Chars) :-
 local_wind_up :-
     halt(0).
 
+% swi: can read unicode direct so do not need this
+unicode_to_utf8(C, [C]).
+utf8_to_unicode([C], C).
+
 % GNU-friendly notation for cross-module calls -- already an operator in swi
 % but precedence needs changing
 :- op(550, xfy, '><').
@@ -54,14 +58,16 @@ been loaded. Others are in ame_gen.pl */
 :- op(500, fx, ['!']).
 
 main :-
-%    guitracer,
-%    spy(input:tk_make_desktop_node),
+    guitracer,
+    spy(utility:wake),
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
 	database:empty_tree,
 	state:retractall(model_in(_,_)),
         % swi: avoid prompt chars messing up the pipe interface
         prompt(_P, ''),
+        % swi: include decimals in floats so they are readable by other Prologs
+        set_prolog_flag(float_format, '%#.12g'),
         nl, write(ready), nl,
 	prolog_flag(version, FullVnum),
 	name(FullVnum, FullVnumStr),

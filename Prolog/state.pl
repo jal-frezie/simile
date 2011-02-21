@@ -274,15 +274,15 @@ set_adding_object(New_obj) :-
 :- dynamic(lit_obj_is/2).
 
 get_highlit_obj(N, Obj) :-
-	lit_obj_is(N, Obj).
+	lit_obj_is(Obj, N).
 
 /* Note that many objects can be highlit at once...*/
 set_highlit_obj(N, Obj) :-
 	forget_highlit_obj(_, Obj),
-	assertz(lit_obj_is(N, Obj)).
+	assertz(lit_obj_is(Obj, N)).
 
 forget_highlit_obj(N, Obj) :-
-	retractall(lit_obj_is(N, Obj)).
+	retractall(lit_obj_is(Obj, N)).
 
 /* Initialize_phase: some edit functions allow the user to go through a series of states; this sets the state to the appropriate 'first state' for whatever function the user has selected */
 
