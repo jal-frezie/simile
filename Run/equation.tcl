@@ -19,7 +19,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     ### End formula bar section
     set topNode $window_info($parent,top_node) 
     set t [PutItThere .equation $parent]
-    wm title $t [format [tr. "$purpose for %1\$s"] [BlankCrs $comp]]
+    wm title $t [format $::msgs($purpose) [BlankCrs $comp]]
 # TRANSLATOR: $purpose part of string is one of:
 # Cause, Initial value, equation
     set equation(top) $t
@@ -192,17 +192,17 @@ proc create_equation {parent purpose comp indices enum_types} {
     
     
     # Now for the main frame: the equation and its commentary
-    if {[string first Cause $purpose]==0} {
+    if {[string equal cause_for $purpose]} {
 	set eqnFrameTitle "Event condition"
 	set topType "Limit: Equation reaches..."
 	set midType "Time series"
-	set bottomType "Derived"
+	set bottomType "[tr. Derived:] $comp"
     } else {
 	set eqnFrameTitle "Data source"
 	set topType "Variable parameter"
 	set midType "Fixed parameter"
-# TRANSLATOR: Last seven quoted strings need translations in next block
-	set bottomType $purpose
+# TRANSLATOR: Last six quoted strings need translations in next block
+	set bottomType [wm title $t]
     }
     $mainF add [frame $mainF.main]
     TitleFrame $mainF.main.main -text "[tr. $eqnFrameTitle]: "
@@ -211,7 +211,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     radiobutton $mainf.slider.radio1 -text "[tr. $topType]: " \
 	-variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
-    if {[string first Initial $purpose]==0} {
+    if {[string equal init_val_for $purpose]} {
 # do not allow variable parameter for initial values...derrr
 	$mainf.slider.radio1 configure -state disabled
     }
@@ -243,7 +243,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     frame $mainf.equation.textbox
     
     radiobutton $mainf.equation.textbox.radio0 -variable equation(isparam) \
-	-text "[tr. $bottomType]: $comp = " -wraplength 120 \
+	-text "$bottomType = " -wraplength 120 \
 	-value 0
     
     set en [text $mainf.equation.textbox.text -height 4 -width 64 \

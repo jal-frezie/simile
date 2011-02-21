@@ -47,7 +47,11 @@ set msgs(cut) [tr. {Cut}]
 set msgs(copy) [tr. {Copy}]
 set msgs() [tr. {}]
 
-# simile basics -- for wqn dialogue
+# simile basics -- for eqn dialogue
+set msgs(equation_for) [tr. {Equation for %1$s}]
+set msgs(init_val_for) [tr. {Initial value for %1$s}]
+set msgs(cause_for) [tr. {Cause for %1$s}]
+set msgs(rules_for) [tr. {Rules for %1$s}]
 set msgs(param) [tr. {Parameter}]
 set msgs(in_units) [tr. {In units}]
 set msgs(ip_name) [tr. {input parameter name}]
