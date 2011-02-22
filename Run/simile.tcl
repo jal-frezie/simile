@@ -257,6 +257,15 @@ if {[string match Darwin $tcl_platform(os)]} {
 
 # ok, is anybody out there?
 
+    if {$argc} {
+#	if {[string match relative [file pathtype $argv]]} {
+#	    set env(OPEN_MODEL) [pwd]/$argv
+#	} else {
+#	    set env(OPEN_MODEL) $argv
+#	}
+	set env(OPEN_MODEL) [file normalize $argv]
+    } 
+
     set checkFor [file join $SIMILE_PATH Examples handover.txt]
     if {![file exists $checkFor] && [info exists custom(prefDir)]} {
         set checkFor [file join $custom(prefDir) handover.txt]
@@ -319,15 +328,6 @@ if {[string match Darwin $tcl_platform(os)]} {
         }
     }
 }
-
-    if {$argc} {
-#	if {[string match relative [file pathtype $argv]]} {
-#	    set env(OPEN_MODEL) [pwd]/$argv
-#	} else {
-#	    set env(OPEN_MODEL) $argv
-#	}
-	set env(OPEN_MODEL) [file normalize $argv]
-    } 
 
 switch $tcl_platform(platform) {
     windows {
