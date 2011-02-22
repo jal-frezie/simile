@@ -2370,9 +2370,9 @@ proc AddDetailMenu {winId fm3 initVals} {
                 -value 0 -command "WindowDetail $winId $cat 0 1"
         $lastmenu add radio -label [tr. "One level"] \
 	    -variable rads($winId,$cat) \
-	    -value 0 -command "WindowDetail $winId $cat 1 1"
+	    -value 1 -command "WindowDetail $winId $cat 1 1"
 	set tr_plural_levels [tr. {%1$s levels}]
-        foreach depth {1 2 3 4 5 6} {
+        foreach depth {2 3 4 5 6} {
             $lastmenu add radio -label [format $tr_plural_levels $depth] \
                     -variable rads($winId,$cat) -value $depth \
                     -command "WindowDetail $winId $cat $depth 1"

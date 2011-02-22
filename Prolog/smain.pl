@@ -9,7 +9,8 @@ term_expansion(sicstus_use_module(ModuleList), ( :- use_module(ModuleList))).
 term_expansion(sicstus_meta_predicate(Pred), ( :- meta_predicate(Pred))).
 
 % swi: allow operators to be used outside modules declaring them
-goal_expansion(op(X,Y,N), op(X,Y,user:N)) :- \+ N = user:_.
+goal_expansion(op(X,Y,N), (initialization(op(X,Y,user:N)), op(X,Y,user:N))) :- 
+    \+ N = user:_.
 
 % swi: inexplicably missing predicates
 prefix(Front, Whole) :- append(Front, _Back, Whole).

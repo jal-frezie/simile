@@ -54,7 +54,7 @@ kickoff(Vnum) :-
 	(OpenStr = [];
 	append(Base, ".smx", OpenStr);
 	name(OpenModel, OpenStr),
-	    menu'><'stick_model_in(Canvas, Desktop, OpenModel, reopen);
+	    menu'><'stick_model_in(Canvas, Desktop, OpenModel, open_toplevel);
 	true), !,
 	user'><'any_tcl_eval(['FixSize', Canvas], 1, _),
 	(var(Base), !;

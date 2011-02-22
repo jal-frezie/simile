@@ -70,9 +70,22 @@ do_equation_dialog(Win, Part) :-
 	is_parameter(ClickedObj, Is_P),
 	
 	create_equation(Win, TitleForm, Caption, IndexList, ETList),
-	fill_equation(Equation, Base, Dims, Is_P, Desc, Comment, Min, Max),
+	(TitleForm = rules_for, !,
+	    (setof(DiscIn,
+		   P1^(m_update'><'get_all_links(Part, discrete, P1, DiscIn)),
+		   EvtCapts),
+		all(forms, list_evt_efct_pairs,
+		    [unify(Equation), build(EvtCapts), append(ToPass, [])]), !;
+	      ToPass = []);
+	  ToPass = Equation),
+	fill_equation(ToPass, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_table(Part, TableList, TableVals), % calls interaction from tcl
 	destroy_equation.
+
+list_evt_efct_pairs(AVList, input_link(_, role_texts(Capt, _,_,_), _,_,_),
+		    [Capt, Efct]) :-
+	member(Capt-Efct, AVList), !;
+	Efct = ''.
 
 index_names_and_sizes(ind_spec(Name, Posn, Dim, _Link), Meaning, Dim) :-
 	sicstus_format_to_chars("Dimension ~d of ~a (~w)", [Posn, Name, Dim],

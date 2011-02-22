@@ -192,18 +192,30 @@ proc create_equation {parent purpose comp indices enum_types} {
     
     
     # Now for the main frame: the equation and its commentary
-    if {[string equal cause_for $purpose]} {
-	set eqnFrameTitle "Event condition"
-	set topType "Limit: Equation reaches..."
-	set midType "Time series"
-	set bottomType "[tr. Derived:] $comp"
-    } else {
-	set eqnFrameTitle "Data source"
-	set topType "Variable parameter"
-	set midType "Fixed parameter"
-# TRANSLATOR: Last six quoted strings need translations in next block
-	set bottomType [wm title $t]
+    switch $purpose {
+	cause_for {
+	    set eqnFrameTitle "Event condition"
+	    set topType "Limit: Equation reaches..."
+	    set midType "Time series"
+	    set bottomType "Derived"
+	} rules_for {
+	    set eqnFrameTitle "Rules and boundaries"
+	    set topType "Range of allowed values"
+	    set midType "Initial values from file"
+	    set bottomType "Rules"
+	} init_val_for {
+	    set eqnFrameTitle "Data source"
+	    set topType "Range of allowed values"
+	    set midType "Initial values from file"
+	    set bottomType "Initial value"
+	} equation_for {
+	    set eqnFrameTitle "Data source"
+	    set topType "Variable parameter"
+	    set midType "Fixed parameter"
+	    set bottomType "Derived"
+	}
     }
+# TRANSLATOR: Quoted strings above need translations in next block
     $mainF add [frame $mainF.main]
     TitleFrame $mainF.main.main -text "[tr. $eqnFrameTitle]: "
     set mainf [GetFrame $mainF.main.main]
@@ -211,7 +223,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     radiobutton $mainf.slider.radio1 -text "[tr. $topType]: " \
 	-variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
-    if {[string equal init_val_for $purpose]} {
+    if {[lsearch $purpose {init_val_for rules_for}]} {
 # do not allow variable parameter for initial values...derrr
 	$mainf.slider.radio1 configure -state disabled
     }
@@ -243,7 +255,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     frame $mainf.equation.textbox
     
     radiobutton $mainf.equation.textbox.radio0 -variable equation(isparam) \
-	-text "$bottomType = " -wraplength 120 \
+	-text "$bottomType: $comp = " -wraplength 120 \
 	-value 0
     
     set en [text $mainf.equation.textbox.text -height 4 -width 64 \
@@ -253,6 +265,11 @@ proc create_equation {parent purpose comp indices enum_types} {
     scrollbar $mainf.equation.textbox.scroll -orient vert -command "$en yview"
     pack $mainf.equation.textbox.scroll -side right -fill y
     pack $en -side right -expand true -fill both
+    if {[string equal rules_for $purpose]} {
+	$en configure -width 48
+	set ev [listbox $mainf.equation.textbox.evts -height 4]
+	pack $ev -side right -expand true -fill both
+    }
     pack $mainf.equation.textbox.radio0 -anchor nw
     pack $mainf.equation.textbox -expand true -fill both -side left
     focus $en
@@ -415,7 +432,20 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     $equation(doc).cmtFrame.text insert 1.0 $comment
     set widget [GetFrame $equation(main).main.main]
     $widget.equation.textbox.text delete 1.0 end
-    $widget.equation.textbox.text insert 1.0 $current_equation
+
+    set causeList $widget.equation.textbox.evts
+    if {[winfo exists $causeList]} {
+# a set of rules for a state
+	foreach {cause effect} $current_equation {
+	    set equation(rule,$cause) $effect
+	    $causeList insert end $cause
+	}
+	$causeList selection set 0 0
+	$widget.equation.textbox.text insert 1.0 \
+	    $equation(rule,[$causeList get 0])
+    } else {	
+	$widget.equation.textbox.text insert 1.0 $current_equation
+    }
     set equation(units) [RealForUnity $units]
     if {[llength $mult]} {
         set emult [join $mult ,]

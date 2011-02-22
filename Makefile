@@ -28,9 +28,6 @@ PLATFORM = $(shell uname -s)
 # (currently GNU for everything)
 PROLOG = GNU
 
-# Set this to '-fopenmp' to include v6 parallelism
-PARALLEL =
-
 ifeq ($(MONTHS_TO_RUN),0)
 	EXP_TICKS = 0
 else
@@ -73,7 +70,8 @@ SYSDIR = System$(BITEXTN)
 # Default case: Linux
 FLAGS = $(OPT)
 SHAREDLIBPREFX = lib
-MAKESL = -fPIC -shared
+MAKEPIC = -fPIC
+MAKESL = -shared
 VERS = 8.5
 
 EXECDIR = $(SYSDIR)/bin
@@ -97,7 +95,8 @@ ifeq ($(PLATFORM),Darwin)
 	        ARCHEXTN = _mac
 	endif
 	EXECEXTN = $(ARCHEXTN)
-	MAKESL = -fPIC -dynamiclib
+	MAKEPIC = -fPIC
+	MAKESL = -dynamiclib
 #	TCLFW = /System/Library/Frameworks
 # for tcl8.5
 	TCLFW = /Library/Frameworks
@@ -127,6 +126,7 @@ else
 endif
 	FLAGS = $(OPT)
 	SHAREDLIBPREFX = 
+	MAKEPIC = 
 	MAKESL = -shared
 	VERS = 85
 #	VERS = 86
@@ -144,6 +144,9 @@ endif
 endif
 
 PROLOGSTATE = $(EXECDIR)/xgsimile$(EXECEXTN)
+ifeq ($(PROLOG),SWI)
+	PROLOGSTATE = $(EXECDIR)/xssimile$(EXECEXTN)
+endif
 ifeq ($(PROLOG),SICSTUS)
 	PROLOGSTATE = $(EXECDIR)/main.sav
 endif
@@ -175,22 +178,38 @@ $(EXECDIR)/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl $(EXECDIR)/struct_db.dl
 $(EXECDIR)/struct_db.dll: Prolog/struct_db.pl Prolog/struct_db.c
 	cd Prolog; splfr struct_db.pl struct_db.c; mv struct_db.dll ../$(EXECDIR); cd ..
 
+#ifeq ($(PROLOG),SWI)
+$(EXECDIR)/xssimile$(EXECEXTN): $(PROLOG_FILES)  Prolog/smain.pl \
+		Prolog/struct_db$(SHAREDLIBEXTN)
+	cd Prolog; swipl --goal=main --stand_alone=true \
+		-o ../$(PROLOGSTATE)  -c smain.pl; cd ..
+Prolog/struct_db$(SHAREDLIBEXTN): Prolog/struct_db.c
+# for old SWI
+	cd Prolog; gcc -I/usr/lib/swi-prolog/include -D__SWI_PROLOG__ \
+		$(MAKEPIC) $(MAKESL) -o struct_db$(SHAREDLIBEXTN) \
+		struct_db.c; cd ..
+# for new SWI
+#	cd Prolog; swipl-ld -cc-options,$(MAKEPIC) -ld-options,$(MAKESL) \
+#		-o struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
+#endif
+#ifeq ($(PROLOG),GNU)
 $(EXECDIR)/xgsimile$(EXECEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C '$(OPT) -D_GNU_PROLOG' -L $(OPT) gmain$(ARCHEXTN).o struct_db.c; cd ..
 Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl 
 	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c gmain.pl; cd ..
+#endif
 
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
 $(SHIM): Run/ame_cmx.c Run/dllcalls.h
-	cd Run; $(GCCCMD) $(FLAGS) -I. $(MAKESL) -o ../$(SHIM) ame_cmx.c \
-		$(USETCL) -L../$(LIBDIR) -l5d$(ARCHEXTN); cd ..; \
+	cd Run; $(GCCCMD) $(FLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
+		ame_cmx.c $(USETCL) -L../$(LIBDIR) -l5d$(ARCHEXTN); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 
 $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
-	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. $(MAKESL) -o ../$(UNPK) \
-		unpacker.c $(USETCL); cd ..; \
+	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. $(MAKEPIC) $(MAKESL) \
+		-o ../$(UNPK) unpacker.c $(USETCL); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
 # literal SLDIR allows different SHANK clauses for Windows vs Unix
@@ -198,14 +217,14 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
 # Windows: idiosyncratic stuff allows dynamic linker to work
 # (even with gcc 4.5.0)
 $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
-	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
+	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. $(MAKEPIC) $(MAKESL) \
 		-Wl,--out-implib,lib5d$(ARCHEXTN).a -o $(SHANK) shank.cpp; \
 		mv $(SHANK) ../$(SLDIR); \
 		mv lib5d$(ARCHEXTN).a ../$(LIBDIR); cd ..
 
 # Unix: not needed for Linux as it can build at run time
 $(LIBDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
-	cd Run; $(GPPCMD) $(FLAGS) -I. $(MAKESL) $(PARALLEL) \
+	cd Run; $(GPPCMD) $(FLAGS) -I. $(MAKEPIC) $(MAKESL) \
 		-o ../$(SLDIR)/$(SHANK) shank.cpp; cd ..
 
 # Build a .dll to check licence code during Windows installation
@@ -224,8 +243,8 @@ $(LIBDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 # Version for Advanced Installer
 $(INSTLIB): Run/install_adv.cpp Makefile
 	cd Run; $(GPPCMD) -m32 $(FLAGS) $(DEFNS) \
-		-I/c/MsiIntel.SDK/include $(MAKESL) -o ../$(INSTLIB) \
-		install_adv.cpp /c/MsiIntel.SDK/lib/msi.lib \
+		-I/c/MsiIntel.SDK/include $(MAKEPIC) $(MAKESL) \
+		-o ../$(INSTLIB) install_adv.cpp /c/MsiIntel.SDK/lib/msi.lib \
 		-L../$(LIBDIR) -lcrypto -lssl; cd ..
 
 # the rc objects from windres are ommitted from linking below becaise they
