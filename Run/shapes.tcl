@@ -151,7 +151,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	set ot [expr $vm-$outer]
 	set or [expr $hm+$outer]
 	set ob [expr $vm+$outer]
-	eval {$w create oval $ol $ot $or $ob} $generic
+	eval {$w create oval $ol $ot $or $ob -outline {}} $generic
 #	scan [GetPoints $ol $outer] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
 #	scan [GetPoints $ot $outer] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
 #	scan [GetPoints $or (-$outer)] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
