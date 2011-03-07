@@ -8,7 +8,7 @@ sicstus_module( utility, [wake/0, genint/2, rt_portray/1, trim_float/2,
 			  all/3, unify_all/2, get_precedence/2,
 			  replace_in_list/4, write_with_breaks/2,
 			  writelist/1,writelisttofile/2,
-			  do_writing/2, open_native/3, get_native/2,
+			  do_writing/2, open_native/3,
 			  delall/3, append_atoms/2, append_atoms/3,
 			  merge_lists/2, merge_lists/3, split_lists/3,
 			  get_ground_part/2, generate_name/4, generate_name/5,
@@ -259,16 +259,11 @@ do_reading([], _Str).
 need to change its own ttfn encoding to utf8 */
 
 open_native(FileTtfn, Mode, Stream) :-
-        get_native(FileTtfn, FileNative),
+        user'><'get_native(FileTtfn, FileNative),
 	catch(open(FileNative, Mode, Stream), NonTtfnErrMess,
-	      (replace_subexps(NonTtfnErrMess, ame_gen, swap_matches,
+	      (ame_gen'><'replace_subexps(NonTtfnErrMess, ame_gen, swap_matches,
 			       FileNative=FileTtfn, top_down, _, SubbedErr),
 		  throw(SubbedErr))).
-
-get_native(FileTtfn, FileNative) :-
-	output'><'safe_tcl_eval(['GetSystemName', br(FileTtfn)], Bag),
-	sicstus_read_from_chars(Bag, String),
-	name(FileNative, String).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % delall deletes all occurrances of an element from a list 

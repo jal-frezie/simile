@@ -426,7 +426,7 @@ wot need them */
 
 	list_matching_files('../Functions/*.cpp', FnIncs),
 	% the /* in the above line does not start a comment, nor that in this */
-        all(utility, get_native, [build(ExtIncs), build(UExtIncs)]),
+        all(user, get_native, [build(ExtIncs), build(UExtIncs)]),
 	append([FnIncs, LocalIncs, UExtIncs], Incs),
 	all(utility, append_atoms,
 	    [unify('#include "'), build(Incs), build(PartIncs)]),

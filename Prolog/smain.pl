@@ -49,6 +49,12 @@ utf8_to_unicode([C], C).
 % include tcltk -- we are using pipe interface
 :- 	use_module([library(lists), sp_only, tcltk, input, code]).
 
+% actually converts to Unicode -- see above
+get_native(FileTtfn, FileNative) :-
+        name(FileTtfn, StrTtfn),
+        tcltk:all_ttfn_to_utf8(StrTtfn, StrNative),
+        name(FileNative, StrNative).
+
 /* Just in case we use the outline runtime system from Sicstus 3.9... */
 runtime_entry(start) :-
 	main.

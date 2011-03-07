@@ -200,6 +200,11 @@ fill_chars(St, Char) :-
 	LChar is Char >> 6,
 	fill_chars(More, LChar).
 
+get_native(FileTtfn, FileNative) :-
+	output'><'safe_tcl_eval(['GetSystemName', br(FileTtfn)], Bag),
+	sicstus_read_from_chars(Bag, String),
+	name(FileNative, String).
+
 runtime_entry(start) :-
 	main.
 
