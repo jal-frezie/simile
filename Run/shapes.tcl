@@ -211,13 +211,20 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     
     set mtb13 [expr ($mb + 2*$mt)/3]
-    $w create oval $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -width $width \
-            -tag "$tagSet size_on_this realwidth($width)"
-    $w create oval [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -width $width \
-            -tag "$tagSet size_on_this realwidth($width)"
+    set arcTags [concat $tagSet [list size_on_this realwidth($width)]]
+    $w create oval $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -outline {} \
+            -tag $tagSet
+    $w create oval [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -outline {} \
+            -tag $tagSet
     $w create oval [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
+            [expr (2*$mb + $mt)/3] -outline {} -tag $tagSet
+    $w create arc $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -width $width \
+            -style arc -start 120 -extent 200 -tag $arcTags
+    $w create arc [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -width $width \
+            -style arc -start 240 -extent 200 -tag $arcTags
+    $w create arc [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
             [expr (2*$mb + $mt)/3] -width $width \
-            -tag "$tagSet size_on_this realwidth($width)"
+            -style arc -start -10 -extent 220 -tag $arcTags
     ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
@@ -813,9 +820,10 @@ proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
 		    $w itemconfigure $object -fill $outlineColor
 		}
             } oval {
-                if {![string match */background/* [$w gettags $object]]} {
-		    $w itemconfigure $object -outline $outlineColor
-		}
+# clouds have separate arcs too now
+#                if {![string match */background/* [$w gettags $object]]} {
+#		    $w itemconfigure $object -outline $outlineColor
+#		}
             } arc {
 		if {[string equal arc [$w itemcget $object -style]] && \
 			![string match */background/* [$w gettags $object]]} {
