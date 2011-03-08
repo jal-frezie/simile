@@ -252,36 +252,38 @@ proc create_equation {parent purpose comp indices enum_types} {
     pack $mainf.file.radio2 -side left
     pack $mainf.file -anchor nw -fill x
     frame $mainf.equation
-    frame $mainf.equation.textbox
     
-    radiobutton $mainf.equation.textbox.radio0 -variable equation(isparam) \
+    set equation(actzone) $mainf.equation.textbox
+    frame $equation(actzone)
+    radiobutton $equation(actzone).radio0 -variable equation(isparam) \
 	-text "$bottomType: $comp = " -wraplength 120 \
 	-value 0
     
-    set en [text $mainf.equation.textbox.text -height 4 -width 64 \
+    set en [text $equation(actzone).text -height 4 -width 64 \
 		-relief sunken -bd 2 -highlightthickness 0 -font EquationFont \
-		-yscrollcommand "$mainf.equation.textbox.scroll set"]
+		-yscrollcommand "$equation(actzone).scroll set"]
 
-    scrollbar $mainf.equation.textbox.scroll -orient vert -command "$en yview"
-    pack $mainf.equation.textbox.scroll -side right -fill y
+    scrollbar $equation(actzone).scroll -orient vert -command "$en yview"
+    pack $equation(actzone).scroll -side right -fill y
     pack $en -side right -expand true -fill both
     if {[string equal rules_for $purpose]} {
 	$en configure -width 48
-	set ev [listbox $mainf.equation.textbox.evts -height 4]
+	set ev [listbox $equation(actzone).evts -height 4]
 	pack $ev -side right -expand true -fill both
+	bind $ev <<ListboxSelect>> ChangeEvtSeln
     }
-    pack $mainf.equation.textbox.radio0 -anchor nw
-    pack $mainf.equation.textbox -expand true -fill both -side left
+    pack $equation(actzone).radio0 -anchor nw
+    pack $equation(actzone) -expand true -fill both -side left
     focus $en
     
-    frame $mainf.equation.textbox.buttons
+    frame $equation(actzone).buttons
     #$notebook itemconfigure Main -raisecmd "focus $en"
     
-    set graph [button $mainf.equation.textbox.buttons.graph \
+    set graph [button $equation(actzone).buttons.graph \
 		   -text " [tr. Graph]... "\
 		   -command "equationDoGraph $t $en"]
     pack $graph -padx 8 -pady 4
-    set table [button $mainf.equation.textbox.buttons.table \
+    set table [button $equation(actzone).buttons.table \
 		   -text " [tr. Table]... " \
 		   -command [list GetTable $t $topNode $comp $en]]
     pack $table -padx 8 -pady 4
@@ -290,7 +292,7 @@ proc create_equation {parent purpose comp indices enum_types} {
 	$table configure -compound left -image $iconImages(table)
     }
 
-    pack $mainf.equation.textbox.buttons -anchor e -side left
+    pack $equation(actzone).buttons -anchor e -side left
     pack $mainf.equation -expand true -fill both -anchor nw
     pack $mainF.main.main -anchor nw -expand true -fill both -padx 2 -pady 2 -side left
     
@@ -403,6 +405,36 @@ proc create_equation {parent purpose comp indices enum_types} {
     }
 }
 
+# when the selection in the list of causes changes, we have to check with 
+# Prolog that the effect parses OK, so the change must first be reversed...
+proc ChangeEvtSeln {} {
+    global equation
+
+    set en $equation(actzone).text
+    set ev $equation(actzone).evts
+    if {[llength [set equation(cur_cause) [$ev curselection]]]} {
+	set equation(last_efct) [string trimright [$en get 1.0 end]]
+	$ev selection clear 0 end
+	$ev selection set $equation(last_cause)
+# now give Prolog a chance to accept new data and redo switch
+	set equation(done) 4
+    }
+}
+
+# This is called from Prolog if the effect equation is OK
+proc RedoChangeOfCause {} {
+    global equation
+
+    set en $equation(actzone).text
+    set ev $equation(actzone).evts
+    lset equation(rule_efx) $equation(last_cause) $equation(last_efct)
+    $en delete 1.0 end
+    $en insert 1.0 [lindex $equation(rule_efx) $equation(cur_cause)]
+    set equation(last_cause) $equation(cur_cause)
+    $ev selection clear 0 end
+    $ev selection set $equation(last_cause)
+}
+
 proc fill_equation {current_equation units mult isParam desc comment min max} {
     
     global equation
@@ -436,13 +468,14 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     set causeList $widget.equation.textbox.evts
     if {[winfo exists $causeList]} {
 # a set of rules for a state
+	set equation(rule_efx) {}
 	foreach {cause effect} $current_equation {
-	    set equation(rule,$cause) $effect
+	    lappend equation(rule_efx) $effect
 	    $causeList insert end $cause
 	}
 	$causeList selection set 0 0
-	$widget.equation.textbox.text insert 1.0 \
-	    $equation(rule,[$causeList get 0])
+	$widget.equation.textbox.text insert 1.0 [lindex $equation(rule_efx) 0]
+	set equation(last_cause) 0
     } else {	
 	$widget.equation.textbox.text insert 1.0 $current_equation
     }
@@ -485,7 +518,6 @@ proc interact_equation {} {
 
     set t $equation(top)
     set descFrame [GetFrame $equation(doc).descf.description]
-    set eqnFrame [GetFrame $equation(main).main.main]
     
     if {!$equation(showing)} {
 	set equation(showing) 1
@@ -502,7 +534,7 @@ proc interact_equation {} {
         1 {
             set units [UnityForReal $equation(units)]
             return [list [string trimright \
-                    [$eqnFrame.equation.textbox.text get 1.0 end]] \
+                    [$equation(actzone).text get 1.0 end]] \
                     $units $equation(isparam) \
                     [string trimright [$descFrame.text get 1.0 end]] \
                     [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
@@ -514,7 +546,12 @@ proc interact_equation {} {
         } 3 {
             return [list \['[join $equation(table_data) ',']'\] \
                     $equation(table_values)]
-        }
+        } 4 {
+            set units [UnityForReal $equation(units)]
+            return [list $equation(last_efct) \
+			$units $equation(isparam) $equation(last_cause) \
+			$equation(min) $equation(max)]
+	}
     }
 }
 

@@ -49,27 +49,27 @@ make_arg_list([Arg | Args], Str) :-
 	make_arg_list(Args, Str2),
 	append(Str1, [44, 32 | Str2], Str).
 
+:- dynamic([table_data_is/1, def_unit_and_index_type_list_are/2]).
+
 interactively_parse(Part) :-
 	get_input_info(Part, Input_list),
 	fill_inputs(Input_list),
 	get_host(Part, ClickedObj),
-	(default_units(ClickedObj, ITypeBase, TypeDims), !; true),
+	(default_units(ClickedObj, TypeBase, TypeDims), !; true),
 	list_index_meanings(Part, ISpecs),
 	all(dialogue, index_types, [build(ISpecs), build(IndxCount)]),
+	asserta(def_unit_and_index_type_list_are(TypeBase-TypeDims, IndxCount)),
 	(get_av_pair(Part, 0, table_data, TableSpec), !;
 	    TableSpec = ''),
-	handle_eqn_interaction(Part, ITypeBase-TypeDims, IndxCount,
-			       Input_list, TableSpec).
+	handle_eqn_interaction(Part, Input_list, TableSpec),
+	    retractall(def_unit_and_index_type_list_are(_,_)).
 
-:- dynamic(table_data_is/1).
-
-handle_eqn_interaction(Part, DefUnit, IndxCount, Input_list, TableSpec) :-
+handle_eqn_interaction(Part, Input_list, TableSpec) :-
 	interact_equation(Result_list),
 	(Result_list = [], !; % dialogue cancelled
 	  (TableSpec = '', !;
 	      asserta(table_data_is(TableSpec))), % needed in parser
-	    update_equation(Part, IndxCount, Input_list,
-			    DefUnit, Result_list, Effect),
+	    update_equation(Part, Input_list, Result_list, Effect),
 	    retractall(table_data_is(_TableSpec)),  
 	    (Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn, NewArrSpec,
 				   TabDat, MinVal, MaxVal, Desc, Comment,
@@ -95,11 +95,13 @@ handle_eqn_interaction(Part, DefUnit, IndxCount, Input_list, TableSpec) :-
 		(Effect = table_spec_changed_to(NewTableSpec), !;
 		    % Tcl data already updated, no need to change it
 		    NewTableSpec = TableSpec),
+		(Effect = new_effect_accepted, !,
+		    safe_tcl_eval(['RedoChangeOfCause'], _);
+		    true),
 		(Effect = user_advice_generated(Mess),
 		    query(Mess, warning, fill_equation, [ok], _);
 		    true),
-		handle_eqn_interaction(Part, DefUnit, IndxCount,
-				       NewInputList, NewTableSpec))).
+		handle_eqn_interaction(Part, NewInputList, NewTableSpec))).
 
 index_types(ind_spec(_Name, _Posn, Ind, _Link), Type) :-
 	inters'><'type_ind(Ind, Type).
@@ -115,7 +117,7 @@ all args being empty) escapes from here.
 Note that interact_equation should return strings for all these
 things. */
 
-update_equation(Function,_,_,_, [Table_st, Data_st], Effect) :-
+update_equation(Function,_, [Table_st, Data_st], Effect) :-
 	get_term(Table_st, TableData, _),
 	/* should be no errors as it is auto generated */
 	TableData = [FileName | DataSpec],
@@ -137,8 +139,7 @@ update_equation(Function,_,_,_, [Table_st, Data_st], Effect) :-
 	  name(Complaint, ComplaintStr),
 		Effect = user_advice_generated(bad_table_data(Complaint))).
 
-update_equation(_,_, Input_list, _, [LineIndxStr, Parm_st, New_unit_st],
-		Effect) :-
+update_equation(_, Input_list, [LineIndxStr, Parm_st, New_unit_st], Effect) :-
 	name(LineIndx, LineIndxStr),
 	append(EarlyInputs,
 	       [input_link(Link, New_var, _, Current_unit, _) | LateInputs],
@@ -170,9 +171,10 @@ update_equation(_,_, Input_list, _, [LineIndxStr, Parm_st, New_unit_st],
 	    Effect = input_list_changed_to(NewInputs);
 	Effect = user_advice_generated(Complaint)).
 
-update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
+update_equation(Function, InterInputs,
 		[Eqn_st, Unit_st, Is_P_st, Desc_st, Cmt_st, Min_st, Max_st],
 		Effect) :-
+	def_unit_and_index_type_list_are(TypeBase-TypeDims, IndxCount),
 	get_host(Function, Ev),
 	name(Is_P, Is_P_st),
 	(Ev is_of_sort discrete, !,
@@ -355,6 +357,16 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	    Effect = input_list_changed_to(New_inputs);
 	 Effect = user_advice_generated(FinalComplaint)).
 
+% new trigger selected for a state-change rule -- has 6 elts
+update_equation(Function, InterInputs, [Eqn_st, _Unit_st, _Is_P_st, 
+					_EvtId, _Min_st, _Max_st], Effect) :-
+	def_unit_and_index_type_list_are(_, IndxCount),
+	check_exp(Eqn_st, Function, InterInputs, _EqnBase, _EqnDims,
+		  IndxCount, _ParamList, _Result, ParseError),
+	(ParseError = [], !,
+	    Effect = new_effect_accepted;
+	 Effect = user_advice_generated(ParseError)).
+	    
 inherently_bound(Units) :-
 	member(Units, [boolean, a(_)]).
 
