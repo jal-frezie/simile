@@ -533,12 +533,25 @@ proc interact_equation {} {
     switch $equation(done) {
         1 {
             set units [UnityForReal $equation(units)]
-            return [list [string trimright \
-                    [$equation(actzone).text get 1.0 end]] \
-                    $units $equation(isparam) \
-                    [string trimright [$descFrame.text get 1.0 end]] \
-                    [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
-                    $equation(min) $equation(max)]
+	    if {[winfo exists $equation(actzone).evts]} {
+# entering rules -- individual items already passed back (case 4 below)
+# but have to pass current pair in case modified
+		return [list [string trimright \
+				  [$equation(actzone).text get 1.0 end]] \
+			    [$equation(actzone).evts get $equation(last_cause)] \
+			    $units $equation(isparam) \
+			    [string trimright [$descFrame.text get 1.0 end]] \
+			    [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
+			    $equation(min) $equation(max)]
+		
+	    } else {
+		return [list [string trimright \
+				  [$equation(actzone).text get 1.0 end]] \
+			    $units $equation(isparam) \
+			    [string trimright [$descFrame.text get 1.0 end]] \
+			    [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
+			    $equation(min) $equation(max)]
+	    }
         } 2 {
             return [list $equation(ckLine) \
                     $equation(entry$equation(ckLine)) \
@@ -547,10 +560,11 @@ proc interact_equation {} {
             return [list \['[join $equation(table_data) ',']'\] \
                     $equation(table_values)]
         } 4 {
-            set units [UnityForReal $equation(units)]
             return [list $equation(last_efct) \
-			$units $equation(isparam) $equation(last_cause) \
+			[$equation(actzone).evts get $equation(last_cause)] \
 			$equation(min) $equation(max)]
+# min and max included to make up numbers and in case we decide they can differ
+# between clauses
 	}
     }
 }

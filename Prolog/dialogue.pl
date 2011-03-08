@@ -61,27 +61,51 @@ interactively_parse(Part) :-
 	asserta(def_unit_and_index_type_list_are(TypeBase-TypeDims, IndxCount)),
 	(get_av_pair(Part, 0, table_data, TableSpec), !;
 	    TableSpec = ''),
-	handle_eqn_interaction(Part, Input_list, TableSpec),
+	(find_type(ClickedObj, state), !,
+	    extract_rule_forms(Part, Rules);
+	  Rules = []),
+	handle_eqn_interaction(Part, Input_list, TableSpec, Rules),
 	    retractall(def_unit_and_index_type_list_are(_,_)).
 
-handle_eqn_interaction(Part, Input_list, TableSpec) :-
+handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 	interact_equation(Result_list),
 	(Result_list = [], !; % dialogue cancelled
 	  (TableSpec = '', !;
 	      asserta(table_data_is(TableSpec))), % needed in parser
 	    update_equation(Part, Input_list, Result_list, Effect),
 	    retractall(table_data_is(_TableSpec)),  
-	    (Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn, NewArrSpec,
-				   TabDat, MinVal, MaxVal, Desc, Comment,
-				   NewInputs),
+		((Effect = new_effect_accepted(Cause, NewSpec, NewVal),
+		    safe_tcl_eval(['RedoChangeOfCause'], _);
+		  Effect = rule_list_accepted(Cause, NewSpec, NewVal,
+					      _,_,_,_,_,_,_)), !,
+		    update_rules(Rules, Cause-NewSpec-NewVal, NewRules);
+		  NewRules = Rules),
+	      (Effect = input_list_changed_to(NewInputList), !,
+		  fill_inputs(NewInputList);
+		  NewInputList = Input_list),
+		(Effect = table_spec_changed_to(NewTableSpec), !;
+		    % Tcl data already updated, no need to change it
+		    NewTableSpec = TableSpec),
+		(Effect = user_advice_generated(Mess),
+		    query(Mess, warning, fill_equation, [ok], _);
+		    true),
+	    ((Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn,
+				    NewArrSpec, TabDat, MinVal, MaxVal,
+				    Desc, Comment, NewInputs),
 		update_parameterhood(Part, Is_P, AffectedNode),
 		add_parameter(AffectedNode, 0, value, Result),
-		add_parameter(AffectedNode, 0, uses_local_fns, UserFnList),
 		add_parameter(AffectedNode, 0, spec, OldEqn),
-		add_parameter(AffectedNode, 0, units, NewArrSpec),
 		(\+ TabDat = 0, TableAttr = TableSpec, !;
 		    TableAttr = ''), /* no tables/graphs found */
 		add_parameter(AffectedNode, 0, table_data, TableAttr),
+		add_parameter(AffectedNode, 0, uses_local_fns, UserFnList);
+	      Effect = rule_list_accepted(_,_,_, Is_P,  NewArrSpec, MinVal, MaxVal,
+					  Desc, Comment, NewInputs),
+		update_parameterhood(Part, Is_P, AffectedNode),
+	        add_rule_specs_and_vals(AffectedNode, NewRules)),
+		% decide how to save specs and values -- merge with above
+	      
+		add_parameter(AffectedNode, 0, units, NewArrSpec),
 		add_parameter(AffectedNode, 0, min_val, MinVal),
 		add_parameter(AffectedNode, 0, max_val, MaxVal),
 		get_host(AffectedNode, Visible),
@@ -89,23 +113,35 @@ handle_eqn_interaction(Part, Input_list, TableSpec) :-
 		add_parameter(Visible, CAttrType, description, Desc),
 		add_parameter(Visible, CAttrType, comment, Comment),
 		update_links_and_vars(NewInputs); % and finish
-	      (Effect = input_list_changed_to(NewInputList), !,
-		  fill_inputs(NewInputList);
-		  NewInputList = Input_list),
-		(Effect = table_spec_changed_to(NewTableSpec), !;
-		    % Tcl data already updated, no need to change it
-		    NewTableSpec = TableSpec),
-		(Effect = new_effect_accepted, !,
-		    safe_tcl_eval(['RedoChangeOfCause'], _);
-		    true),
-		(Effect = user_advice_generated(Mess),
-		    query(Mess, warning, fill_equation, [ok], _);
-		    true),
-		handle_eqn_interaction(Part, NewInputList, NewTableSpec))).
+		handle_eqn_interaction(Part, NewInputList, NewTableSpec,
+				       NewRules))).
 
 index_types(ind_spec(_Name, _Posn, Ind, _Link), Type) :-
 	inters'><'type_ind(Ind, Type).
 
+update_rules(Old, C-S-V, [C-S-V | Left]) :-
+	select(C-_S-_V, Old, Left), !;
+	Left = Old.
+
+extract_rule_forms(Part, Rules) :-
+	get_av_pair(Part, 0, spec, SpecList),
+	get_av_pair(Part, 0, value, ValueList), !,
+	convert_rule_format(SpecList, ValueList, Rules);
+	Rules = [].
+
+add_rule_specs_and_vals(Node, Rules) :-
+	convert_rule_format(SpecList, ValueList, Rules),
+	add_parameter(Node, 0, value, ValueList),
+	add_parameter(Node, 0, spec, SpecList).
+	
+convert_rule_format([], [], []).
+convert_rule_format(Spec, Value, Rules) :-
+	select(C-S, Spec, MoreSpec),
+	select(C-V, Value, MoreValue),
+	select(C-S-V, Rules, MoreRules),
+	convert_rule_format(MoreSpec, MoreValue, MoreRules).
+
+	
 /* update_equation/5: This makes sure that if the user has entered a
 new destination name or units for an existing variable they are added
 to the model; it also adds them to the triples and checks that the
@@ -357,16 +393,36 @@ update_equation(Function, InterInputs,
 	    Effect = input_list_changed_to(New_inputs);
 	 Effect = user_advice_generated(FinalComplaint)).
 
-% new trigger selected for a state-change rule -- has 6 elts
-update_equation(Function, InterInputs, [Eqn_st, _Unit_st, _Is_P_st, 
-					_EvtId, _Min_st, _Max_st], Effect) :-
+% new trigger selected for a state-change rule -- has 4 elts
+update_equation(Function, InterInputs, [Eqn_st, Evt_st, _Min_st, _Max_st],
+		Effect) :-
+	name(EvtId, Evt_st),
 	def_unit_and_index_type_list_are(_, IndxCount),
 	check_exp(Eqn_st, Function, InterInputs, _EqnBase, _EqnDims,
-		  IndxCount, _ParamList, _Result, ParseError),
+		  IndxCount, _ParamList, Result, ParseError),
 	(ParseError = [], !,
-	    Effect = new_effect_accepted;
+	    purge(Eqn_st, "\\", OrigSt),
+	    sicstus_atom_chars(OldEqn, OrigSt),
+	    Effect = new_effect_accepted(EvtId, OldEqn, Result);
 	 Effect = user_advice_generated(ParseError)).
-	    
+
+% OK to rule dialogue -- has 8 elts
+update_equation(Function, Inputs, [Eqn_st, Evt_st, Unit_st, Is_P_st,
+				   Desc_st, Cmt_st, Min_st, Max_st], Effect) :-
+	update_equation(Function, Inputs, [Eqn_st, Evt_st, Min_st, Max_st],
+	                SubEffect),
+	(SubEffect = new_effect_accepted(EvtId, OldEqn, Result), !,
+	    name(NewArrSpec, Unit_st),
+	    name(Is_P, Is_P_st),
+	    name(MinVal, Min_st),
+	    name(MaxVal, Max_st),
+	    name(Desc, Desc_st),
+	    name(Comment, Cmt_st),
+% have to check the other stuff some time but later
+	    Effect = rule_list_accepted(EvtId, OldEqn, Result, Is_P, NewArrSpec,
+					MinVal, MaxVal, Desc, Comment, Inputs);
+	  Effect = SubEffect).
+
 inherently_bound(Units) :-
 	member(Units, [boolean, a(_)]).
 
