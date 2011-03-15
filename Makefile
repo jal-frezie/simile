@@ -193,10 +193,15 @@ Prolog/struct_db$(SHAREDLIBEXTN): Prolog/struct_db.c
 #		-o struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
 #endif
 #ifeq ($(PROLOG),GNU)
-$(EXECDIR)/xgsimile$(EXECEXTN): Prolog/gmain$(ARCHEXTN).o Prolog/struct_db.c
-	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C '$(OPT) -D_GNU_PROLOG' -L $(OPT) gmain$(ARCHEXTN).o struct_db.c; cd ..
+$(EXECDIR)/xgsimile$(EXECEXTN): \
+		Prolog/gmain$(ARCHEXTN).o Prolog/struct_db$(ARCHEXTN).o
+	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -L $(OPT) \
+		gmain$(ARCHEXTN).o struct_db$(ARCHEXTN).o; cd ..
 Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl 
 	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c gmain.pl; cd ..
+Prolog/struct_db$(ARCHEXTN).o: Prolog/struct_db.c
+	cd Prolog; gplc -c -C '$(OPT) -D_GNU_PROLOG' -o struct_db$(ARCHEXTN).o \
+		struct_db.c; cd ..
 #endif
 
 #ifeq ($(UNAME),MINGW32_NT)

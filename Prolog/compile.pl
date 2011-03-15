@@ -502,7 +502,7 @@ all named after the nodes from which they take their values. */
 declare_structure(Language, model(Vars, Submodels), Used, AllGraphs) :-
 
 	declare_submodel_structures(Language, Submodels, Used, SmGraphs),
-	pick_types(Vars, [function, init_function, id_function, loss,
+	pick_types(Vars, [function, init_function, id_function, state_fn, loss,
 			  internal, external, magnitude, limit], NamedVars),
 	name_components( Language, NamedVars, Used, Graphs),
 	append(SmGraphs, Graphs, AllGraphs).
@@ -771,7 +771,8 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 	append([LocalNodeData, DeepNodeData, MoreNodeData], NodeData).
 	    
 extract_instances(model(Funx, Subz), Instances) :-
-	pick_types(Funx, [function, init_function, id_function, fp_compartment,
+	pick_types(Funx, [function, init_function, id_function, state_fn,
+			  fp_compartment,
 			  loss, internal, external, magnitude, limit, series],
 		   ValFunx),
 	append(Subz, ValFunx, Instances).
@@ -1029,7 +1030,7 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 % Add submodel-local function definitions to database
 	(Id has_class_refinement function_defns of FnDefs, !; FnDefs = []),
 	all(inters, add_macro, [unify(in(Path)), build(FnDefs), build(_Ops)]),
-	
+
 	all(compile, get_assignment,
 	    [build(Functions),
 	     unify(Path), unify(Step), unify(Swaps),
@@ -1357,7 +1358,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 /* Only make assignments for functions, for now, and
 	    Do not make an assignment if we are expecting one on init/reset
 	    from outside */
-	(member(Type, [event, magnitude, limit, series]), !,
+	(member(Type, [event, magnitude, limit, series, state_fn]), !,
 	    Is_P = 0;
 	  is_parameter(Node, Norm_P),
 	    (Norm_P = 2, \+ Node has_class_refinement param_type of file, !,
@@ -1394,7 +1395,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 		UseList = [can_find_id(Node) | RefList];
 	      member(Type, [function, loss, limit]),
 		UseList = RefList;
-	      Type = magnitude), !,
+	      member(Type, [magnitude, state_fn])), !,
 		Made = Dest,
 		UseStep = SmStep),
 	    SourceEqn = Source;
@@ -1449,6 +1450,12 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 %	    append(EvtConds, RefList, UseList);
 	    AllActs = [Expr | Twk2],
 	    UseList = RefList;
+	  Type = state_fn, !,
+	    SourceEqn = event(ActEqn, TriggerEqn, (0->0)),
+	    choosify(ActEqn, ChooseForm),
+	    GroundEqn = (magnitude=TriggerEqn, ChooseForm),
+	    AllActs = [Expr],
+	    UseList = RefList;
 	  (SourceEqn = with_phase(SmStep, EvtElts, GroundEqn),
 	      all(user, arg, [unify(2), build(EvtElts), build(EvtConds)]);
 	    EvtConds = [],
@@ -1485,6 +1492,9 @@ unite_event_contexts([elt(Path, _,_) | Others], Test, Act) :-
 	unite_event_contexts(Others, Test, OldAct),
 	inters'><'combine_contexts(Path, OldAct, Test, Act).
 
+choosify([], prev(0)).
+choosify([Evt-Cons | Rest], choose(happens(Evt), Cons, IfNot)) :-
+	choosify(Rest, IfNot).
 
 /* Now...when using a variable in the equation I have been putting
 'made_at' in the conditions, the idea being that I have to exit any

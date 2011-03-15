@@ -116,7 +116,7 @@ dealing with multiple instances. */
 
 get_input_info(Function, Input_list) :-
 	(setof(Link_entry,
-	      IDs^get_all_links(Function, cont, IDs, Link_entry),
+	      IDs^get_all_links(Function, continuous, IDs, Link_entry),
 	      Input_list),
 	    decide_param_names(Input_list), !;
 	Input_list = []),
@@ -302,7 +302,7 @@ valid_input(Real, SourceType, InputLink) :-
 	find_ghosts(BaseVar, GhostVar)),
 	implicit_function(GhostVar, AlsoUsed),
 	InputLink is_connector from Source to AlsoUsed,
-	(\+ SourceType = discrete,
+	(SourceType = continuous,
 	    \+ Source is_of_sort discrete; % event values not to be used
 	  SourceType = discrete,
 	    Source is_of_sort discrete). % event values to be used

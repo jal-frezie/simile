@@ -12,7 +12,7 @@ sicstus_module( utility, [wake/0, genint/2, rt_portray/1, trim_float/2,
 			  delall/3, append_atoms/2, append_atoms/3,
 			  merge_lists/2, merge_lists/3, split_lists/3,
 			  get_ground_part/2, generate_name/4, generate_name/5,
-			  ensure_unused/4, count_to/4, append/2] ).
+			  ensure_unused/4, count_to/4] ).
 
 sicstus_use_module([database, text, sp_only,
 		    library(lists), library(ordsets)]).
@@ -431,9 +431,9 @@ count_to(Min, Max, Step, N) :-
 	count_to(Min, Max, Step, Last),
 	(Last >= Max, !, fail;
 	N is Last+Step).
-
+/* built-in definition varies between Prolog systems
 append([], []).
 append([H|T], A) :-
         append(T, B),
         append(H, B, A).
-
+*/

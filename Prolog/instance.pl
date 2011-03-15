@@ -251,11 +251,17 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	Node has_class_refinement value of GroundExpr,
 
 	(setof(InputPair,
-	       generate_input_pair(Node, cont, InputPair),
+	       generate_input_pair(Node, continuous, InputPair),
 	       InputPairs ), !;
 	    InputPairs = []),
+	(setof(EvtPair,
+	       generate_input_pair(Node, discrete, EvtPair),
+	       EvtPairs), !;
+	    EvtPairs = []),
+	(RType = state -> append(InputPairs, EvtPairs, AllowedInExp);
+	    AllowedInExp = InputPairs),
 	replace_subexps(GroundExpr, instance, process_expr,
-			sub(InputPairs, Refs), top_down,
+			sub(AllowedInExp, Refs), top_down,
 			Switched, SubbedExpr),
 
 	(member(RType, [creation, compartment]), !,
@@ -265,14 +271,11 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	  (RType = event,
 	      is_parameter(Node, PType),
 	      nth0(PType, [magnitude, limit], FType);
-	    RType-FType = squirt-magnitude), !,	    
+	    member(RType-FType, [squirt-magnitude, state-state_fn])), !,	    
 	    (FType = limit, !,
 		apply_minmax(Node, result, BoundForm),
 		FinalExpr = limit(SubbedExpr, BoundForm);
-% derived event: make magnitude expression
-	      setof(EvtPair,
-		    generate_input_pair(Node, discrete, EvtPair),
-		    EvtPairs), % must have triggers; make red if none!
+% derived event or state: make magnitude expression
 		all(user, arg, [unify(2), build(EvtPairs), build(EvtNodes)]),
 		all(user, arg, [unify(3), build(EvtPairs), build(EvtNames)]),
 		all(user, arg, [unify(4), build(EvtPairs), build(EvtArgs)]),
@@ -350,7 +353,8 @@ are the same as the functions from which they are generated. This also goes for
 condition, creation and loss nodes. Type is as function. */
 
 instance_of(Type, Node, _, Inst, Ref) :-
-	member(Type, [variable, condition, creation, alarm, event, squirt]),
+	member(Type, [variable, condition, creation, alarm, 
+		      event, squirt, state]),
 	(member(Node, [B, A]),
 	    Arc is_connector from A to B, !,
 	    initiates(Arc, F),
@@ -397,10 +401,10 @@ flows(Type, Dir, Comp, Flow) :-
 /* generate_input_pair is used in setof so should be cut free */
 generate_input_pair(Node, IType, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
 	m_update'><'get_all_links(Node, IType, ids(SourceID, Relation),
-			       input_link(id(Link,_, SourceLocation), _,
+			       input_link(id(Link,_, SourceLocation), SrcData,
 					  ArcName, SourceUnits, ArcUnits)),
 	/* just in case we have extra inputs... */
-	(nonvar(ArcName); ArcName = '/unused/'),
+	(nonvar(ArcName); SrcData = role_texts(ArcName, _,_,_)),
         NodeID = SourceID,
 	RefExp = Ref,
 

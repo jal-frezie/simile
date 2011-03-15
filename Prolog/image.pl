@@ -842,7 +842,7 @@ would require the function to be parsed, which takes too long.
 
 Fails if either there is a link without a corresponding variable, or vice versa. */
 
-checks_out_locally(Func) :- 
+checks_out_locally(Func) :-
     Func has_class_refinement value of Expr,
     \+ Expr = '', /* sometimes given to flow to get bowtie on right
               section 
@@ -850,13 +850,24 @@ checks_out_locally(Func) :-
     Func has_class_refinement units of Units,
     analyze_array(Units, Base, Dims),
     units_match_context(Func, Base, Dims, []),
-    replace_subexps(Expr, image, pick_var, Func, top_down, Pairs, _),
+    (get_host(Func, Vis),
+	find_type(Vis, state), !,
+	% value is [evt1-val1, evt2-val2...] so include evts in check
+	utility'><'all(image, sieve_events,
+		    [build(Expr), unify(Func), build(HasConts)]);
+      HasConts = Expr),
+    replace_subexps(HasConts, image, pick_var, Func, top_down, Pairs, _),
     (setof(Source, valid_input(Func, continuous, Source), Sources), !;
 	Sources = []),
+    
     pair_off(Func, Sources, Pairs).
 
 pick_var(_, V, _, 0) :-
     get_solo_list_depth(V, _).
+
+sieve_events(Evt-Outcome, Fn, Outcome) :-
+	m_update'><'get_all_links(Fn, discrete, _,
+		      input_link(_, role_texts(Evt, _,_,_), _,_,_)).
 
 /* pair_off is true if every variable in the expression represents a role of some link to the function, and every link to the function has at least one variable representing some role it has. Later we may keep the unit error and pop it up when the user mouses over to see why the node is red... */
 

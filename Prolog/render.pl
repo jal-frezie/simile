@@ -664,7 +664,8 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 				   immigration-'IMMIGRATION',
 				   loss-'LOSS',
 				   event-'EVENT',
-				   squirt-'SQUIRT']),
+				   squirt-'SQUIRT',
+				   state-'STATE']),
 	    ( % nth(GraphPointer, GraphOwners, [BaseName | _]), !;
 	    nth(GraphPointer, Used, Name), !;
 	    GraphPointer = 0),
@@ -1229,6 +1230,8 @@ aid lazy evaluation as is done for Choose... */
 	Op = rand,
 		(L = tcl; L = c),
 			make_procedure_call_chars(L, [ame_rand | VArgExprs], CharList);
+	Op = happens, VArgExprs = [Test], !,
+	    sicstus_write_to_chars(Test, CharList);	
         Op = nonnull, VArgExprs = [Test], !,
             (L = c,
 		sicstus_write_to_chars(Test, CharList);

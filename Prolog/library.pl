@@ -589,7 +589,8 @@ replace_substrings(Lose, Start, Gain, Result) :-
 	append(Lose, Tail, Half),
 	\+ append(Head, Half, Gain), % subbing inadvisable and maybe unnecessary
 	append(Head, Half, Start), !,
-	append([Head, Gain, Tail], Mid),
+	append(Gain, Tail, NewHalf),
+	append(Head, NewHalf, Mid),
 	replace_substrings(Lose, Mid, Gain, Result);
 	Result = Start.
 	

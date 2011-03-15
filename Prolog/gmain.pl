@@ -99,6 +99,11 @@ on_exception(Error, Goal, Recovery) :-
 assert(T) :-
 	assertz(T).
 
+append([], []).
+append([H | T], L) :-
+	append(T, S),
+	append(H, S, L).
+
 /* Reimplemented from Sicstus libraries: */
 
 substitute(_, [], _, []).

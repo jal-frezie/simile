@@ -189,7 +189,8 @@ make_legible_for_prolog(String, NewString) :-
 	ToTweak = [Xm | Suffix],
 	    Tweaked = "not "), !,
 	make_legible_for_prolog(Suffix, NewSuffix),
-	append([Prefix, Tweaked, NewSuffix], NewString);	
+	append(Tweaked, NewSuffix, Fixed),	
+	append(Prefix, Fixed, NewString);	
 	NewString = String.
 
 double_backslashes(Str, Dtr) :-

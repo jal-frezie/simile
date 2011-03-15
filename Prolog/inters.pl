@@ -1313,6 +1313,7 @@ operator(choose, int, [boolean, int, int]).
 operator(choose, a(T), [boolean, a(T), a(T)]).
 operator(choose, real, [boolean, real, real]).
 operator(choose, boolean, [boolean, boolean, boolean]).
+operator(happens, boolean, [Any]) :- value(Any).
 operator(rand, real, [real, real]).
 
 /* These are handled by the parser but have special buttons to include them so
