@@ -1385,7 +1385,9 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    CollectFn =.. [collect, arr(DestPtr, Dest, LocalInds), Dest, Count
 			  | VarInds],
 	    Collects = [make(Tgt, Wait, Path, Step, [CollectFn])];
-	Collects = []),
+	  Type = state_fn,
+	    Collects = [make(init(Tgt), [on_reset], Path, 0, [assign(I, 0)])];
+	  Collects = []),
 	((Is_P < 1,
 	    (Type = init_function, !,
 		UseList = [on_reset | RefList],
@@ -1438,7 +1440,6 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 %			     elt([], current_event_magnitude, X), Swaps,
 %			     UseStep, Used, [TriggerExpr], [], _Path, EvtConds,
 %			     []),
-	    Expr = assign(I, _Fn), % dig out the result
 	    I = arr(SquirtPtr, _, _), % and its submodel pointer
 	    (From = 0, Twk1 = [];
 	      From = elt(_, BSrc, _), CSrc = arr(SquirtPtr, BSrc, []),
@@ -1464,6 +1465,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
 			 UseStep, Used, [Expr], Setups, Path, RefList,
 			 AllInters),
+	Expr = assign(I, _Fn), % dig out the result
 	connect_params([make(Made, UseList, Path, UseStep, AllActs) | Setups],
 		       AllInters, Actions, Inters);
 	Actions = [],
