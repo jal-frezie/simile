@@ -119,7 +119,9 @@ ifeq ($(MY_CPU),x86_64)
 	GPPCMD = x86_64-w64-mingw32-g++
 	RESCMD = x86_64-w64-mingw32-windres
 else
-	TCLDIR = "/c/Program files (x86)/Tcl"
+#	TCLDIR = "/c/Program files (x86)/Tcl"
+# Actually, use local TclTk as above dir not exist on 32bit machines --
+	TCLDIR = $(SYSDIR)
 	RESCMD = windres
 	INSTLIB = Run/install.dll
 # must be 32-bit because installer is
@@ -132,8 +134,8 @@ endif
 #	VERS = 86
 #
 	SLDIR = $(EXECDIR)
-# to be used after CDing to Run
-	TCLREF = $(TCLDIR)
+# to be used after CDing to Run -- assume all refs are from a subdirectory
+	TCLREF = ../$(TCLDIR)
 	USETCL = -DUSE_TCL_STUBS -I$(TCLREF)/include -L$(TCLREF)/lib $(TCLREF)/lib/tclstub$(VERS).lib
 	LOCALIZE_TCL_REFS =  ls # placebo command
 	SHAREDLIBEXTN = .dll
