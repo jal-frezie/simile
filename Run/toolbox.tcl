@@ -700,12 +700,13 @@ proc compile_c {workingDir extLibs complain} {
 # -- assume a separately installed compiler will be set up right and not need
 # them
 		    set LIBDIR [file join $env(SYSDIR) lib]
+		    set GCCLIBDIR  [file join $LIBDIR gcc mingw32 3.4.2]
 		    puts $batSt "set PATH=[file nativename [file join \
                         $env(SYSDIR) libexec gcc mingw32 3.4.2]];%PATH%"
 		    puts $batSt "copy \"[file nativename [file join \
-                        $LIBDIR dllcrt*.o]]\" ."
+                        $GCCLIBDIR lib dllcrt*.o]]\" ."
 		    puts $batSt "copy \"[file nativename [file join \
-                         $LIBDIR gcc mingw32 3.4.2 crt*.o]]\" ."
+                         $GCCLIBDIR crt*.o]]\" ."
 		}
 	    }
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
@@ -713,10 +714,9 @@ proc compile_c {workingDir extLibs complain} {
                         -I\"[file nativename $TOOLDIR]\" \
                         -I\"[file nativename [file join $env(SYSDIR) include mingw]]\" \
                         -I\"[file nativename [file join \
-                            $LIBDIR gcc mingw32 3.4.2 include]]\" model.cpp"
+                            $GCCLIBDIR include]]\" model.cpp"
 		set libOpt1 -L\"[file nativename $LIBDIR]\"
-		set libOpt2 -L\"[file nativename [file join $LIBDIR gcc \
-						    mingw32 3.4.2]]\"
+		set libOpt2 -L\"[file nativename [file join $GCCLIBDIR lib]]\"
 		puts $batSt "g++ -shared -o $TARGET \
                         $libOpt1 $libOpt2 objtmp.o [concat $lDirs $lFiles]"
 	    } else {

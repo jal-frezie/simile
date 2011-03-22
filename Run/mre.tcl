@@ -1060,7 +1060,7 @@ $tb1.b43 configure -state $useSpaceAbility
                 }
                 #ShowMess debug info "LoadView winId $containerId" ok
                 PullMember helperTitle
-                set winId [NewHelperInWindow $containerId $helperId $helperTitle]
+                set winId [CreateHelperWindow $helperId $helperTitle {}]
                 PullMember geometry
                 #wm geometry $winId $geometry # not a toplevel
                 PullMember oldStatus
@@ -1083,7 +1083,7 @@ $tb1.b43 configure -state $useSpaceAbility
                     ChildrenFocusParent $winId
                 }
             }
-            $dp0.notebook raise [lindex [$dp0.notebook pages] 0]
+            $dp0.notebook raise [lindex [$dp0.notebook tabs] 0]
             
         } else  {
 	    Query not_an_shf error execution {} ok
@@ -1249,10 +1249,10 @@ $tb1.b43 configure -state $useSpaceAbility
     
     proc MainNotebookEmptyPage {} {
         variable dp0
-        foreach page [$dp0.notebook pages] {
+        foreach page [$dp0.notebook tabs] {
             if {![winfo exists \
-                        [$dp0.notebook getframe $page].panedwindow.pane0.container]} {
-                return [$dp0.notebook getframe $page].panedwindow.pane0
+		      [GetFrame $page].panedwindow.pane0.container]} {
+                return [GetFrame $page].panedwindow.pane0
             }
         }
         return none
