@@ -360,8 +360,11 @@ namespace eval $keyValue {
             ################################################################################
             set displayFormat($winId,$varIndex) $displayFormat($winId,-1)
             if {[GetModelTime]==$lastDisplay($winId)} {
-                set dataStore($winId,$varIndex,$lastDisplay($winId)) \
-		    [TransEnums $trans [lindex [GetModelValue $varId] 0]]
+		set values [lindex [GetModelValue $varId] 0]
+		if {[llength $values]} {
+		    set dataStore($winId,$varIndex,$lastDisplay($winId)) \
+			[TransEnums $trans $values]
+		}
             }
             Reconbobulate $winId
             SaveState $winId
@@ -405,12 +408,23 @@ namespace eval $keyValue {
 	
         set lastDisplay($winId) $tCur
         set varIndex 0
+	if {[string match none [lindex $orientList($winId) 0]]} {
+# if displaying current values only, we do not want to keep previous values
+# as they may consume very much memory (and stop headers appearing)
+	    foreach entry [array names dataStore $winId,*,*] {
+		unset dataStore($entry)
+	    }
+	}
         foreach varCapt $displayList($winId,paths) {
             if {[llength $varCapt]} { ;# check not deleted
                 set varId [lindex $displayList($winId,ids) $varIndex]
-		set trans [lindex $displayList($winId,transes) $varIndex]
-                set dataStore($winId,$varIndex,$tCur) \
-                        [TransEnums $trans [lindex [GetModelValue $varId] 0]]
+		set values [lindex [GetModelValue $varId] 0]
+		if {[llength $values]} {
+# do not add empty lists they make finding dataless variables harder
+		    set trans [lindex $displayList($winId,transes) $varIndex]
+		    set dataStore($winId,$varIndex,$tCur) \
+                        [TransEnums $trans $values]
+		}
                 
             }
             incr varIndex
@@ -544,13 +558,25 @@ namespace eval $keyValue {
         if {[info exists values]} {unset values}
         
         set varIndex 0
+	set dummied {}
+	set allPts [array names dataStore $winId,*,*]
+	if {[llength $allPts]} {
+	    set dummyTime [lindex [split [lindex $allPts 0] ,] 2]
+	} else {
+	    set dummyTime $lastDisplay($winId)
+	}
         foreach varCapt $displayList($winId,paths) {
             if {[llength $varCapt]} { ;# check not deleted
-                #		set dataStore($winId,$varIndex,$lastDisplay($winId)) empty
+		if {![llength [array names dataStore $winId,$varIndex,*]]} {
+# component is selected for tabulation but no values recorded --
+# insert empty value for existing or current time so header appears.
+		    lappend dummied $varIndex
+		    set dataStore($winId,$varIndex,$dummyTime) [list " "]
+		}
             }
             incr varIndex
         }
-        
+
         foreach valId [array names dataStore $winId,*,*] {
             set valDims [split $valId ,]
             set varId [lindex $valDims 1]
@@ -777,6 +803,10 @@ namespace eval $keyValue {
         if {![info exists editMode($winId)]} {
             $winId.t configure -state disabled
         }
+# now remove dummy values added to ensure appearance of useful headers
+	foreach varIndex $dummied {
+	    array unset dataStore $winId,$varIndex,$dummyTime
+	}
     }
     
     proc RestoreFromMirror {winId} {
