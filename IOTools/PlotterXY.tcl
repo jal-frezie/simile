@@ -448,36 +448,40 @@ namespace eval ::$keyValue {
         
         ### Label the two axes
         $w.canvas create text [expr $x0+$plot($w,xlength)/2.0] \
-                [expr $y0+$plot($w,yborder_bottom)-5] \
-                -text $plot($w,XaxisLabel) -anchor s \
-                -tags {movable scalable xaxis_label markable toplevel}
-        
+	    [expr $y0+$plot($w,yborder_bottom)-5] \
+	    -text $plot($w,XaxisLabel) -anchor s \
+	    -tags {movable scalable xaxis_label markable toplevel}
+	$w.canvas create text 5 [expr $y0-$plot($w,ylength)/2.0] \
+	    -text [lindex $plot($w,Ylabels) 0] -anchor w \
+	    -tags {movable scalable xaxis_label markable toplevel}
+       
         # legend vars only not elements of arrays
-        set nYlabel [llength $plot($w,Ylabels)]
-        set j 0
-        set k 0
-        for {set i 0} {$i<$nYlabel} {incr i} {
-            set x [expr $plot($w,x_Ylabels)+$k*$plot($w,xstep_Ylabels)]
-            set y [expr $plot($w,y_Ylabels)+$j*$plot($w,ystep_Ylabels)]
-            set xa [expr $x-15]
-            set xb [expr $x-2]
-            set ya [expr $y+8]
-            set vartag {}
-            append vartag var $i
-            $w.canvas create line $xa $ya $xb $ya \
-                    -fill [lindex $plot($w,YColours) $i] \
-                    -width 2 \
-                    -tags [list $vartag axis_label markable toplevel]
-            $w.canvas create text $x $y \
-                    -text [lindex $plot($w,Ylabels) $i] \
-                    -anchor nw \
-                    -tags [list $vartag axis_label markable toplevel]
-            incr j
-            if {$j==2} {
-                incr k
-                set j 0
-            }
-        }
+	# for now, legend nothing
+#        set nYlabel [llength $plot($w,Ylabels)]
+#        set j 0
+#        set k 0
+#        for {set i 0} {$i<$nYlabel} {incr i} {
+#            set x [expr $plot($w,x_Ylabels)+$k*$plot($w,xstep_Ylabels)]
+#            set y [expr $plot($w,y_Ylabels)+$j*$plot($w,ystep_Ylabels)]
+#            set xa [expr $x-15]
+#            set xb [expr $x-2]
+#            set ya [expr $y+8]
+#            set vartag {}
+#            append vartag var $i
+#            $w.canvas create line $xa $ya $xb $ya \
+#                    -fill [lindex $plot($w,YColours) $i] \
+#                    -width 2 \
+#                    -tags [list $vartag axis_label markable toplevel]
+#            $w.canvas create text $x $y \
+#                    -text [lindex $plot($w,Ylabels) $i] \
+#                    -anchor nw \
+#                    -tags [list $vartag axis_label markable toplevel]
+#            incr j
+#            if {$j==2} {
+#                incr k
+#                set j 0
+#            }
+#        }
         
         ### Apply graticule and values to axis.
         # drawGraticule $w $Xintercept $Yintercept
@@ -508,13 +512,14 @@ namespace eval ::$keyValue {
         #$w.canvas bind xaxis_movable <ButtonRelease-1> \
         [namespace code "draw_Xaxis $w"]
         
-        for {set i 0} {$i<$nYlabel} {incr i} {
-            set vartag {}
-            append vartag var $i
-            $w.canvas bind $vartag <B1-Motion> \
-                    [namespace code "Ylabel_move %W %x %y"]
-        }
-        $w.canvas bind Ylabel
+# whatever this is supposed to do, it fails to, even if nYlabel set
+#        for {set i 0} {$i<$nYlabel} {incr i} {
+#            set vartag {}
+#            append vartag var $i
+#            $w.canvas bind $vartag <B1-Motion> \
+#                    [namespace code "Ylabel_move %W %x %y"]
+#        }
+#        $w.canvas bind Ylabel
         
         
         #$w.canvas bind graph <Motion> [namespace code ring_bell]
