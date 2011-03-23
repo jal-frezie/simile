@@ -206,6 +206,7 @@ namespace eval ::$keyValue {
                 set plot(caption,$node) $caption
                 lappend plot($w,Yvars) $path
                 lappend ynodes($w) $node
+		captionNo $w $node ;# add legend whether traced or not
                 
                 UpdateState $w
                 display $w [GetModelTime] 0 0
@@ -579,7 +580,7 @@ namespace eval ::$keyValue {
         set longestlbl 0
         foreach label $plot($w,Ylabels) {
             if {[string length $label]>$longestlbl} {
-                set longestlbl $label
+                set longestlbl $label ;# derrr
             }
         }
         set plot($w,xstep_Ylabels) \
@@ -825,17 +826,18 @@ namespace eval ::$keyValue {
 		plot_Y $w $iplot $Told $Yold_array($element) $Tnew \
 		    $Ynew_array($element) $node $identList
 		# WRONG COLOURS  -VAR1 -(4) -(2) ETC!!!
-		if {$plot($w,IdArrayElements)} {
-		    incr iplot; #give element of an array a unique id, eg for colour
-		    set posn [lsearch $plot($w,Ylabels) ($iplot)]
-		    if {$posn==-1} {
-			#set posn [llength $plot($w,Ylabels)]
-			lappend plot($w,Ylabels) ($iplot)
-			if {$plot($w,DrawLegend)} {
-			    drawLegend $w
-			}
-		    }
-		}
+# below stands not a chance because it confuses index with caption
+#		if {$plot($w,IdArrayElements)} {
+#		    incr iplot; #give element of an array a unique id, eg for colour
+#		    set posn [lsearch $plot($w,Ylabels) ($iplot)]
+#		    if {$posn==-1} {
+#			#set posn [llength $plot($w,Ylabels)]
+#			lappend plot($w,Ylabels) ($iplot)
+#			if {$plot($w,DrawLegend)} {
+#			    drawLegend $w
+#			}
+#		    }
+#		}
             }
         }
     }
