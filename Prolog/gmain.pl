@@ -30,7 +30,7 @@ _Module'><'Function :-
 :- include('utility.pl').
 :- include('ame_gen.pl').
 :- include('library.pl').
-% :- include('ss_import.pl').
+:- include('imexport.pl').
 
 /* files needed to build programs */
 
@@ -103,6 +103,11 @@ append([], []).
 append([H | T], L) :-
 	append(T, S),
 	append(H, S, L).
+
+atom_number(A, N) :- number_atom(N, A).
+
+term_to_atom(T, A) :-
+	write_to_atom(A, T).
 
 /* Reimplemented from Sicstus libraries: */
 
@@ -214,6 +219,7 @@ runtime_entry(start) :-
 	main.
 
 :- dynamic(version_is/1).
+:- dynamic(write_file_of_sort/1).
 
 portray(T) :-
 	rt_portray(T).

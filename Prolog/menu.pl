@@ -13,7 +13,7 @@ sicstus_module(menu, [undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
 	kill_everything/1]).
 	
 sicstus_use_module([sp_only, forms, m_update, image, draw, 
-	state, backup, library, ame_gen, utility, ss_import, m_class, text,
+	state, backup, library, ame_gen, utility, imexport, m_class, text,
 	library(lists), library(ordsets)]).
 
 undo_edit(Wid, Wids) :-
@@ -479,6 +479,22 @@ menu_handle(Win, file, export_prolog) :-
 	save_isolated(FileName, Model, Date, no),
         finish_progress_dialogue.
 
+menu_handle(Win, file, export_xml) :-
+	Win shows_model Model,
+	\+ too_big_for_edn(Model),
+	contains(TopModel, Model),
+	is_toplevel(TopModel),
+	use_pref_dir(Dir),
+	append_atoms(Dir, '/temp_out.pl', TempFile),
+	output'><'date_is(Date),
+        start_progress_dialogue(Win),
+	save_isolated(TempFile, Model, Date, no),
+        finish_progress_dialogue,
+	get_default_export_name(Model, ".xml", DefName),
+	get_program_file(DefName, TopModel, FileName),
+	convert_simileprolog_to_similexmlv3(TempFile, FileName),
+	output'><'my_delete_file(TempFile).
+	
 menu_handle(Win, edit, Component) :-
 	(Component is_class_of_sort box; Component is_class_of_sort line),
 	get_edit_model(Win, _Model, Node),

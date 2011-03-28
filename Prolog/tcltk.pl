@@ -168,8 +168,8 @@ system... */
 /* cannot use all because of variable length source */
 all_ttfn_to_utf8([], []).
 
-all_ttfn_to_utf8(String, NewString) :-
-	append(Code, Rest, String),
+all_ttfn_to_utf8([H|T], NewString) :-
+	append(Code, Rest, [H|T]),
 	ttfn_to_unicode(Code, Char), !,
 	user'><'unicode_to_utf8(Char, Start),
 	all_ttfn_to_utf8(Rest, More),

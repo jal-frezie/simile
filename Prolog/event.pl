@@ -725,7 +725,7 @@ change_name(RenamedNode, Name) :-
 	    implicit_function(Reference, DownFunc),
 	    setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^
 		  (InputSpec = input_link(id(OtherGhost,P1,P2), P3,P4,P5,P6),
-		      m_update'><'get_all_links(DownFunc, cont, P0, InputSpec)),
+		      m_update'><'get_all_links(DownFunc, continuous, P0, InputSpec)),
 		   InputSpecs),
 	    get_av_pair(OtherGhost, 2, role, Roles),
 	    get_av_pair(DownFunc, 0, value, Eqn),
