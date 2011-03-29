@@ -52,12 +52,14 @@ map(top,
   node(ID,Type,[],[],[]),
   element(node,[id=ID,type=Type],[])).
 
-map(top,
-  node(ID,Type,[],SpecsProlog,[]),
-  element(node,[id=ID,type=Type],
-    [element(nodespecs,[],SpecsXML)])):-
-         map_list(node_arc,SpecsProlog,SpecsXML).
-
+% JAT -- following allowed nodegraphics element to be left out, but this failed
+% webflow reconversion
+%map(top,
+%  node(ID,Type,[],SpecsProlog,[]),
+%  element(node,[id=ID,type=Type],
+%    [element(nodespecs,[],SpecsXML)])):-
+%         map_list(node_arc,SpecsProlog,SpecsXML).
+%
 map(top,
   node(ID,Type,[],SpecsProlog,GraphicsProlog),
   element(node,[id=ID,type=Type],[element(nodespecs,[],SpecsXML),element(nodegraphics,[],GraphicsXML)])):-
@@ -75,15 +77,17 @@ map(top,
          map_list(node_arc,SpecsProlog,SpecsXML),
          map_list(node_arc,GraphicsProlog,GraphicsXML).
 
-map(top,
-  arc(ID,From,To,Type,SpecsProlog,[]),
-  element(arc,[id=ID,from=From,to=To,type=Type],
-    [element(arcspecs,[],SpecsXML)])):-
-         map_list(node_arc,SpecsProlog,SpecsXML).
+% JAT -- following allowed arcgraphics element to be left out, but this failed
+% webflow reconversion
+%map(top,
+%  arc(ID,From,To,Type,SpecsProlog,[]),
+%  element(arc,[id=ID,(from)=From,(to)=To,type=Type],
+%    [element(arcspecs,[],SpecsXML)])):-
+%         map_list(node_arc,SpecsProlog,SpecsXML).
 
 map(top,
   arc(ID,From,To,Type,SpecsProlog,GraphicsProlog),
-  element(arc,[id=ID,from=From,to=To,type=Type],
+  element(arc,[id=ID,(from)=From,(to)=To,type=Type],
     [element(arcspecs,[],SpecsXML),
      element(arcgraphics,[],GraphicsXML)])):-
          map_list(node_arc,SpecsProlog,SpecsXML),
@@ -445,7 +449,7 @@ map(av,
 
 map(av,
   value=V,
-  element(value,[],[element('m:math',[],[Vmath])])):-
+  element(value,[],[element('m:math',[],[Vmath])])):- wake,
       map(math,V,Vmath).
 
 
@@ -613,7 +617,7 @@ map(use,
       element(way,[],[W]),
       element(local_name,[],[Vxml]),
       element(units,[],[element('m:math',[],[Umath])])])):-
-         number_atom(Rprolog,Rxml),
+         (number(Rprolog) -> number_atom(Rprolog,Rxml) ; Rxml = Rprolog),
          map(useV,Vprolog,Vxml),
          map(math,Uprolog,Umath).
 
@@ -678,8 +682,6 @@ map(table_data,
    element(dims,[],[DsXML])):-
       term_to_atom(DsProlog,DsXML).
 
-
-
 map(atom,
    A,
    element(data,[],[A])).
@@ -707,19 +709,10 @@ map(math,V,element('m:cn',[],[Vatom])):-
 
 
 % ------------------------------ if ... then ... elseif ... else
-map(math,
-   if A then B else C,
-   element('m:piecewise',[],[element('m:piece',[],[Bmath,Amath]),element('m:otherwise',[],[Cmath])])):-
-      map(math,A,Amath),
-      map(math,B,Bmath),
-      map(math,C,Cmath).
-
 
 map(math,
-   if A then B elseif E else C,
-   element('m:piecewise',[],[element('m:piece',[],[Bmath,Amath])|Rest])):-
-      map(math,A,Amath),
-      map(math,B,Bmath),
+   if E else C,
+   element('m:piecewise',[],Rest)):- wake,
       elseif_rule(E,Cmath,Rest),
       map(math,C,Cmath).
 
@@ -812,25 +805,23 @@ map(math,
 % an error, even if it's actually a mistake.   But of course mistakes should not happen,
 % since models will generally be valid Simile models...
 
-map(math,
-   Expr,
-   element('m:csymbol',[encoding=text,definitionURL=DefURL],[Opsim])):-
-      var(Expr),
-      make_def_url(Opsim,DefURL),
-      Expr =.. [Opsim,''],!.
+% JAT: This is a special case in Simile. time() and dt() (and possibly others)
+% are shorthands for time(0) etc, and internally are unary with the arg being
+% ''. Webflow xml-to-pl appears not to handle 0-ary operators so the XML
+% contains the full form of these.
+% Note dt(...) is deprecated now we have explicit events.
 
-map(math,
-   Expr,
-   element('m:csymbol',[encoding=text,definitionURL=DefURL],[Opsim])):-
-      var(Opsim),
-      Expr =.. [Opsim,''],
-      make_def_url(Opsim,DefURL),!.
+%%% TEMPORARY BOTCH: args expanded to 1 because 0 does not work in WebFlow
 
 map(math,
    Expr,
    element('m:apply',[],[element('m:csymbol',[encoding=text,definitionURL=DefURL],[Opsim])|ArgsXML])):-
       var(Expr),
-      map_list(math,ArgsSim,ArgsXML),
+      map_list(math,ArgsSimFull,ArgsXML),
+      % restore 0-ary operators
+      ((member(Opsim, [time, dt]), ArgsSimFull=[1]) ->
+          ArgsSim = [''];
+	ArgsSim = ArgsSimFull),
       make_def_url(Opsim,DefURL),
       Expr =.. [Opsim|ArgsSim],!.
 
@@ -839,7 +830,11 @@ map(math,
    element('m:apply',[],[element('m:csymbol',[encoding=text,definitionURL=DefURL],[Opsim])|ArgsXML])):-
       var(Opsim),
       Expr =.. [Opsim|ArgsSim],
-      map_list(math,ArgsSim,ArgsXML),
+      \+ member(Opsim, ['.', ',', if, {}]),
+      % expand 0-ary operators
+      ((member(Opsim, [time, dt]), ArgsSim=['']) ->
+	  map_list(math,[1],ArgsXML);
+      map_list(math,ArgsSim,ArgsXML)),
       make_def_url(Opsim,DefURL),!.
 
 
@@ -875,10 +870,12 @@ map(math,
 % We then need to use a special predicate (like maplist) to handle them.
 map(math,
    (A=B,Arest),
-   element('m:where',[],[element('m:apply',[],[element('m:eq',[],[]),Amath,Bmath])|Arestmath])):-
-      map(math,A,Amath),
-      map(math,B,Bmath),
-      map_assignments(Arest,Arestmath).
+   element('m:apply',[],[Wmath, element('m:apply',[],[element('m:eq',[],[]),Amath,Bmath])|Arestmath])):-
+	map(math, where, Wmath),
+	term_to_atom(A, Aatom),
+	map(math,Aatom,Amath),
+	map(math,B,Bmath),
+	map_assignments(Arest,Arestmath).
 
 
 
@@ -904,7 +901,8 @@ map_list(Mode,[A|As],[B|Bs]):-
   %write(A),tab(2),write(B),nl,
   map_list(Mode,As,Bs).
 
-map_list(Mode,[A|B],C):- write('ERROR from maplist/3: '),write(Mode),write(' '),write([A,' ::: ',B,' ... ',C]),nl,nl.
+map_list(Mode,[A|B],C):-
+	ame_gen'><'query(format_conversion_failure(Mode, [A|B], C), error, top, [ok], _).
 
 
 
@@ -1082,29 +1080,6 @@ op(simile, prefix, 2, not_in_mathml, with_least).
 
 % #################################### UTILITIES ################################
 
-write_list([]).
-write_list([H|T]):-writeq(H),write('.'),nl,write_list(T).
-
-mysetof(A,B,C):-
-  setof(A,B,C),!.
-mysetof(_,_,[]).
-
-mybagof(A,B,C):-
-   bagof(A,B,C),!.
-mybagof(_,_,[]).
-
-
-my_tab(_).
-my_nl.
-
-/*
-my_tab(N):-
-   tab(N).
-my_nl:-
-   nl.
-*/
-
-
 % This is the definitive version of the mapping between atoms and numbers.
 % This should replace all uses of (the built-in predicate) atom/number/2 and 
 % convert_number_to_atom/2 (below).
@@ -1147,7 +1122,7 @@ extract_date(Date,[Day,Month,Day_number,Hour,Minute,Second,Time_zone,Year]):-
    sub_atom(Date,24,4,_,Year).
 extract_date(Date,DateList):-
    pad_numbers(DateList,DateList1),
-   concat_atom(DateList1,' ',Date).
+   atom_concat(DateList1,' ',Date).
 
 pad_numbers([Day,Month,Day_number,Hour,Minute,Second,Time_zone,Year],[Day,Month,Day_number1,Hour1,Minute1,Second1,Time_zone,Year]):-
    pad_number(Day_number,Day_number1),
@@ -1157,7 +1132,7 @@ pad_numbers([Day,Month,Day_number,Hour,Minute,Second,Time_zone,Year],[Day,Month,
 
 pad_number(A,A1):-
    atom_length(A,1),
-   concat('0',A,A1).
+   atom_concat('0',A,A1).
 pad_number(A,A).
 
 
