@@ -23,7 +23,7 @@ map(top,
         element(second,[],[Second]),
         element(time_zone,[],[Time_zone]),
         element(year,[],[Year])])])):-
-   atom_number(Va,Vn),
+   term_to_atom(Vn,Va),
    extract_date(D,[Day,Month,Day_number,Hour,Minute,Second,Time_zone,Year]).
 
 map(top,
@@ -122,7 +122,7 @@ map(reference,
 map(reference,
   ancestor(I),
   element(ancestor,[],[A])):-
-      atom_number(A,I).
+      term_to_atom(I,A).
 
 map(reference,
   obsolete,
@@ -298,12 +298,23 @@ map(av,
 map(av,
   exclusive=N,
   element(exclusive,[],[A])):-
-      atom_number(A,N).
+      term_to_atom(N,A).
+
+% Note: THIS IS NOT RIGHT.     It's done this way to conform to the current (Feb 2011) version of the Schema.
+% In practice, there is a list of external_code values; and then a list (possibly empty) of libraries.
+map(av,
+  external_code=[procedure=P,include=I,libraries=[]],
+  element(external_code,[],
+     [element(procedure,[],[P]),
+      element(include,[],[I]),
+      element(libraries,[],[])])).
 
 map(av,
-  external_code=ECprolog,
-  element(external_code,[],ECxml)):-
-      map_list(ECprolog,ECxml).
+  external_code=[procedure=P,include=I,libraries=[L]],
+  element(external_code,[],
+     [element(procedure,[],[P]),
+      element(include,[],[I]),
+      element(libraries,[],[L])])).
 
 map(av,
   file_name=F,
@@ -334,10 +345,6 @@ map(av,
   element(image_posn,[],[P])).
 
 map(av,
-  include=P,
-  element(include,[],[P])).
-
-map(av,
   internal_extent=[X1n,Y1n,X2n,Y2n],
   element(internal_extent,[],
     [element(coords,[x=X1a,y=Y1a],[]),
@@ -350,11 +357,6 @@ map(av,
 map(av,
   last_membership=LM,
   element(last_membership,[],[LM])).
-
-map(av,
-  libraries=LibsProlog,
-  element(libraries,[],LibsXML)):-
-    map_list(LibsProlog,LibsXML).
 
 map(av,
   caption_offset=[Xn,Yn,P],
@@ -393,10 +395,6 @@ map(av,
   element(param_type,[],[P])).
 
 map(av,
-  procedure=P,
-  element(procedure,[],[P])).
-
-map(av,
   references=RefsProlog,
   element(references,[],RefsXML)):-
       map_list(ref_attribute, RefsProlog, RefsXML).
@@ -409,7 +407,7 @@ map(av,
 map(av,
   separate=Sn,
   element(separate,[],[Sa])):-
-      atom_number(Sa,Sn).
+      term_to_atom(Sn,Sa).
 
 % The list that's being checked for here is the list of characters in a 
 % Prolog string.
@@ -428,28 +426,11 @@ map(av,
   step=S,
   element(step,[],[S])).
 
-/*
-% ALERT!!!   This is a temporary fix to get things working.            ALERT!!!
-%            the table_data attribute actually takes a list of 
-%            attribute=value pairs, for some of which 'value' is 
-%            itself a list.
-map(av,
-  table_data=TD,
-  element(table_data,[],[TD])).
-*/
-
-/*
-map(av,
-  table_data=TDProlog,
-  element(table_data,[],[TDXML])):-
-      term_to_atom(TDProlog,TDXML).
-*/
-
-
+% Note that this does *not* use maplist/3 - see maplist_table_data/2 for an explanation.
 map(av,
   table_data=TDProlog,
   element(table_data,[],TDXML)):-
-      map_list(table_data,TDProlog,TDXML).
+      maplist_table_data(TDProlog,TDXML).
 
 
 map(av,
@@ -467,6 +448,28 @@ map(av,
   element(value,[],[element('m:math',[],[Vmath])])):-
       map(math,V,Vmath).
 
+
+% ------------------------------------- EXTERNAL_CODE
+% Note: This is not right.   
+% See av/external_code above.
+
+/* map(external_code,
+  include=P,
+  element(include,[],[P])).
+
+map(external_code,
+  libraries=[],
+  element(libraries,[],[])).
+
+map(external_code,
+  libraries=LibsProlog,
+  element(libraries,[],LibsXML)):-
+    map_list(libraries,LibsProlog,LibsXML).
+
+map(external_code,
+  procedure=P,
+  element(procedure,[],[P])).
+*/
 
 % ------------------------------------- METADATA
 
@@ -564,8 +567,8 @@ map(count_item,
 map(count_item,
    An,
    element(dimension,[],[Aa])):-
-      integer(An),
-      atom_number(Aa,An),!.
+      term_to_atom(An,Aa),
+      number(An),!.
 map(count_item,
    A,
    element(enumerated_type,[],[A])).
@@ -620,14 +623,11 @@ map(useV,
    element(usr,[],[V])):-!.
 map(useV,
    Vterm,
-   Vatom):-
+   element(text,[],[Vatom])):-
       term_to_atom(Vterm,Vatom).
 
    
 
-
-
-% ------------------------------------- TABLE_DATA
 
 map(table_data,
    file=F,
@@ -658,32 +658,21 @@ map(table_data,
    element(units,[],[element('m:math',[],[Umath])])):-
       map(math,UProlog,Umath).
 
-/*map(table_data,
-   bounds=Bds,
-   element(bounds,[],[Bds])):-
-      atom(Bds).
-
 map(table_data,
-   bounds=BdsProlog,
-   element(bounds,[],[BdsXML])):-
-      atom_number(BdsXML,BdsProlog).
-
-map(table_data,
-   bounds=BdsProlog,
+   bounds=[BdsProlog],
    element(array_bounds,[],[BdsXML])):-
-      atom_number(BdsXML,BdsProlog).
-*/
+      term_to_atom(BdsProlog,BdsXML).
 
 map(table_data,
    bounds=BdsProlog,
    element(bounds,[],[BdsXML])):-
       term_to_atom(BdsProlog,BdsXML).
 
-/*
 map(table_data,
-   dims=Ds,
-   element(dims,[],[Ds])).
-*/
+   dims=[DsProlog],
+   element(array_dims,[],[DsXML])):-
+      term_to_atom(DsProlog,DsXML).
+
 map(table_data,
    dims=DsProlog,
    element(dims,[],[DsXML])):-
@@ -698,7 +687,7 @@ map(atom,
 map(number,
    N,
    element(data,[],[A])):-
-      atom_number(A,N).
+      term_to_atom(N,A).
 
 
 
@@ -710,11 +699,11 @@ map(math,V,element('m:ci',[],[V])):-
 
 map(math,V,element('m:cn',[],[Vatom])):-
    atom(Vatom),
-   atom_number(Vatom,V).
+   term_to_atom(V,Vatom).
 
 map(math,V,element('m:cn',[],[Vatom])):-
    number(V),
-   atom_number(Vatom,V).
+   term_to_atom(V,Vatom).
 
 
 % ------------------------------ if ... then ... elseif ... else
@@ -776,7 +765,8 @@ map(math,
 % --- SimileProlog to SimileXMLv3
 map(math,
    Expr,
-   element('m:apply',[],[element(Opmath,[],[]),Amath])):-
+   element('m:apply',[],[element(Opmath,[],[]),
+Amath])):-
       var(Opmath),
       Expr =.. [Opsim,A],
       op(mathml,_,1,Opmath,Opsim),
@@ -882,7 +872,7 @@ map(math,
 
 % The bracketed, comma-separated term is an expression with assignments.
 % The comma is left-associative, so all the assignments are picked up together.
-% We then need to use a special predicate (like map_list) to handle them.
+% We then need to use a special predicate (like maplist) to handle them.
 map(math,
    (A=B,Arest),
    element('m:where',[],[element('m:apply',[],[element('m:eq',[],[]),Amath,Bmath])|Arestmath])):-
@@ -905,15 +895,47 @@ map(math,
 
 
 
-% ------------------------------ MAP_LIST ----------------------------------
+% ------------------------------ MAPLIST ----------------------------------
 
 map_list(_,[],[]).
 
 map_list(Mode,[A|As],[B|Bs]):-
   map(Mode,A,B),
+  %write(A),tab(2),write(B),nl,
   map_list(Mode,As,Bs).
 
-map_list(Mode,[A|B],C):- write('ERROR from map_list/3: '),write(Mode),write(' '),write([A,' ::: ',B,' ... ',C]),nl,nl.
+map_list(Mode,[A|B],C):- write('ERROR from maplist/3: '),write(Mode),write(' '),write([A,' ::: ',B,' ... ',C]),nl,nl.
+
+
+
+% ------------------------------------- TABLE_DATA
+% This is a hack pending a slight change to the XML Schema.   The Schema expects the 
+% table_data list elements to be in a certain order, but the order seems to vary between 
+% Simile files.   So:
+% - going from SimileXMLv3 to Simile Prolog, we simply use malplist/3;
+% - going from SimileProlog to SimileXMLv3, we have to put them in the order expected by 
+%   the Schema, which is: file, data_list, data_single, current, units, bounds, dims, 
+%   array_bounds, array_dims.
+
+maplist_table_data(TDprolog,TDxml):-
+   var(TDprolog),
+   map_list(table_data,TDprolog,TDxml).
+
+maplist_table_data(TDprolog,TDxml):-
+   var(TDxml),
+   table_data_list(TDlist),
+   maptdlist(TDlist,TDprolog,TDxml).
+
+table_data_list([file,data,indices,current,units,bounds,dims,array_bounds,array_dims]).
+
+maptdlist([],_,_).
+maptdlist([TD|TDlist],As,[B|Bs]):-
+  member(TD=TV,As),
+  map(table_data,TD=TV,B),
+  maptdlist(TDlist,As,Bs).
+maptdlist([_|TDlist],As,Bs):-
+   maptdlist(TDlist,As,Bs).
+
 
 
 
@@ -963,7 +985,7 @@ op(mathml, infix, 2, 'm:divide', '/').
 op(mathml, infix, 2, 'm:minus', '-').
 op(mathml, infix, 2, 'm:power', '^').
 op(mathml, infix, 2, 'm:eq', '==').
-op(mathml, infix, 2, 'm:neq', '\\=').
+op(mathml, infix, 2, 'm:neq', '\=').
 op(mathml, infix, 2, 'm:gt', '>').
 op(mathml, infix, 2, 'm:lt', '<').
 op(mathml, infix, 2, 'm:geq', '>=').
@@ -1003,6 +1025,10 @@ op(mathml, prefix, 1, 'm:tanh', tanh).
 op(mathml, constant, 0, 'm:exponentiale', e).
 op(mathml, constant, 0, 'm:pi', pi).
 
+% NOT NOW USED.   The function handler allows any non-MathML function to
+% be processed, regardless of whether it is a Simile built-in or not.
+% This allows for arbitrary user-defined functions to be handled without
+% raising an error.
 op(simile, prefix, 1, not_in_mathml, all).
 op(simile, prefix, 1, not_in_mathml, any).
 op(simile, prefix, 1, not_in_mathml, at_init).
@@ -1087,12 +1113,19 @@ my_nl:-
 
 % This is needed because xml_write/3 fails when it tries to generate the XML for 
 % a Prolog number.
-/*
+
+/* Not used - generates error ratherthan failing if atim is not a number.
 number_atom(N,A):-
    number(N),
    atom_number(A,N),!.
+number_atom(N,A):-
+   var(N),
+   atom_number(A,N),!.
 number_atom(A,A).
 */
+number_atom(N,A):-
+   term_to_atom(N,A).
+
 
 % Go through and remove all instances, replacing with number_atom/2.
 convert_number_to_atom(S1,S2):-
