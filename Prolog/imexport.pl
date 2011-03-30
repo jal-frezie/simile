@@ -1,3 +1,84 @@
+sicstus_module(imexport, [convert_simileprolog_to_similexmlv3/2]).
+sicstus_use_module([utility]).
+% ========================================= convert_simileprolog_to_similexmlv3
+
+convert_simileprolog_to_similexmlv3(FileIn,FileOut):-
+   open(FileIn,read,StreamIn),
+   list_mapped_terms_in(StreamIn, Es),
+   close(StreamIn),
+   xml_write(element(model, ['xmlns:m'='http://www.w3.org/1998/Math/MathML'], Es),
+	     FileOut).
+
+list_mapped_terms_in(Stm, L) :-
+	read(Stm, T),
+	(T = end_of_file -> L = [];
+	    map(top, T, XML_clause),
+	    list_mapped_terms_in(Stm, LTail),
+	    L = [XML_clause | LTail]).
+
+	    
+xml_write(Term, File) :-
+	open_native(File, write, Stm),
+	write(Stm, '<?xml version="1.0" encoding="US-ASCII"?>'),
+	xml_to_pipe([Term], 0, Stm),
+	close(Stm).
+
+xml_to_pipe([], _Indent, _Stm).
+xml_to_pipe([Term | More], Indent, Stm) :-
+	(Term = element(Type, AVs, Content), !,
+	    nl(Stm), indent_to(Indent, Stm),
+	    write(Stm, '<'),
+	    write(Stm, Type),
+	    write_AVs(AVs, Stm),
+	    write(Stm, '>'),
+	    DeepIndent is Indent+2,
+	    xml_to_pipe(Content, DeepIndent, Stm),
+	    (\+ Content = [element(_,_,_) | _], !;
+		nl(Stm), indent_to(Indent, Stm)),
+	    write(Stm, '</'),
+	    write(Stm, Type),
+	    write(Stm, '>');
+	  Term = pi(Content), !,
+	    indent_to(Indent, Stm),
+	    write(Stm, '<?'),
+	    write(Stm, Content),
+	    write(Stm, '?>');
+	  write_with_xml_escs(Stm, Term)),
+	xml_to_pipe(More, Indent, Stm).
+
+indent_to(N, Stm) :-
+	N=0, !;
+	write(Stm, ' '), M is N-1, indent_to(M, Stm).
+	
+write_AVs([], _Stm).
+write_AVs([A=V | More], Stm) :-
+	write(Stm, ' '),
+	write_with_xml_escs(Stm, A),
+	write(Stm, '="'),
+	write_with_xml_escs(Stm, V),
+	write(Stm, '"'),
+	write_AVs(More, Stm).
+
+write_with_xml_escs(Stm, Term) :-
+	sicstus_write_to_chars(Term, Str),
+	expand_jollies(Str, GoodStr),
+	sicstus_write_chars(Stm, GoodStr).
+
+expand_jollies(Chars, AllGood) :-
+	append(NoneBad, [Special | After], Chars),
+	xml_equiv(Special, Jolly), !,
+	expand_jollies(After, MoreFixed),
+	append(Jolly, MoreFixed, AllFixed),
+	append(NoneBad, AllFixed, AllGood);
+	Chars = AllGood.
+
+xml_equiv(Char, Jolly) :-
+	nth0(Posn, "&\"\'<>\n", Char),
+	nth0(Posn, ["&amp;", "&quot;", "&apos;", "&lt;", "&gt;", " "],
+	     % BOTCH ALERT: nl replaced by space cos webflow cannot cope
+	     % with &#10;
+	     Jolly).
+
 % ######################## START OF SYMMETRICAL MAPPING SECTION ##########################
 
 % Note that there is quite a lot of scope for reducing the number of map/3 clauses, since quite
@@ -781,7 +862,7 @@ map(math,
    element('m:apply',[],[element(Opmath,[],[]),Amath,Bmath])):-
       var(Opmath),
       Expr =.. [Opsim,A,B],
-      op(mathml,infix,2,Opmath,Opsim),
+      op(mathml,_,2,Opmath,Opsim),
       map(math,A,Amath),
       map(math,B,Bmath).
 
@@ -824,6 +905,16 @@ map(math,
 	ArgsSim = ArgsSimFull),
       make_def_url(Opsim,DefURL),
       Expr =.. [Opsim|ArgsSim],!.
+
+%%% JAT: This is wat seems to be needed for Simile's 'is' operator
+map(math, Expr, element('m:apply',[],
+			[element('m:csymbol', [],
+				 [element('m:ci', [], [Opsim])])
+			| ArgsXML])) :-
+	var(Opsim), % reverse version later
+	Expr =.. [Opsim|ArgsSim],
+	op(simile, infix, 2, _, Opsim),
+	map_list(math, ArgsSim, ArgsXML).
 
 map(math,
    Expr,
@@ -902,7 +993,7 @@ map_list(Mode,[A|As],[B|Bs]):-
   map_list(Mode,As,Bs).
 
 map_list(Mode,[A|B],C):-
-	ame_gen'><'query(format_conversion_failure(Mode, [A|B], C), error, top, [ok], _).
+	handle_xml_parse_error(Mode, [A|B], C).
 
 
 
@@ -983,7 +1074,7 @@ op(mathml, infix, 2, 'm:divide', '/').
 op(mathml, infix, 2, 'm:minus', '-').
 op(mathml, infix, 2, 'm:power', '^').
 op(mathml, infix, 2, 'm:eq', '==').
-op(mathml, infix, 2, 'm:neq', '\=').
+op(mathml, infix, 2, 'm:neq', '\\=').
 op(mathml, infix, 2, 'm:gt', '>').
 op(mathml, infix, 2, 'm:lt', '<').
 op(mathml, infix, 2, 'm:geq', '>=').
@@ -1020,6 +1111,8 @@ op(mathml, prefix, 1, 'm:sin', sin).
 op(mathml, prefix, 1, 'm:sinh', sinh).
 op(mathml, prefix, 1, 'm:tan', tan).
 op(mathml, prefix, 1, 'm:tanh', tanh).
+op(mathml, prefix, 2, 'm:min', min).
+op(mathml, prefix, 2, 'm:max', max).
 op(mathml, constant, 0, 'm:exponentiale', e).
 op(mathml, constant, 0, 'm:pi', pi).
 
@@ -1027,6 +1120,7 @@ op(mathml, constant, 0, 'm:pi', pi).
 % be processed, regardless of whether it is a Simile built-in or not.
 % This allows for arbitrary user-defined functions to be handled without
 % raising an error.
+op(simile, infix, 2,  not_in_mathml, is).
 op(simile, prefix, 1, not_in_mathml, all).
 op(simile, prefix, 1, not_in_mathml, any).
 op(simile, prefix, 1, not_in_mathml, at_init).
@@ -1052,8 +1146,6 @@ op(simile, prefix, 1, not_in_mathml, last).
 op(simile, prefix, 1, not_in_mathml, least).
 op(simile, prefix, 1, not_in_mathml, log).
 op(simile, prefix, 2, not_in_mathml, makearray).
-op(simile, prefix, 2, not_in_mathml, max).
-op(simile, prefix, 2, not_in_mathml, min).
 op(simile, prefix, 1, not_in_mathml, parent).
 op(simile, prefix, 1, not_in_mathml, place_in).
 op(simile, prefix, 1, not_in_mathml, poidev).
@@ -1097,10 +1189,11 @@ number_atom(N,A):-
    var(N),
    atom_number(A,N),!.
 number_atom(A,A).
-*/
+
+Not needed at all in GNU-prolog; put in client code if needed
 number_atom(N,A):-
    term_to_atom(N,A).
-
+*/
 
 % Go through and remove all instances, replacing with number_atom/2.
 convert_number_to_atom(S1,S2):-
@@ -1139,3 +1232,7 @@ pad_number(A,A).
 make_def_url(Opsim,DefURL):-
    atom_concat('http://www.simulistics.com/help/equations/functions/',Opsim,Partial),
    atom_concat(Partial,'.htm',DefURL).
+
+handle_xml_parse_error(Mode, SimilePl, XmlPl) :-
+	ame_gen'><'query(map_failure(Mode, SimilePl, XmlPl), error, top, [ok],
+			 _).
