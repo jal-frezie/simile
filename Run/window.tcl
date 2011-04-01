@@ -887,7 +887,8 @@ proc AddCanvasBindings { c topNode } {
         bind $c <Control-Button-1> {ClickObj %x %y %W %X %Y ctrl}
     }
     # Doubleclicks now bound to objects not canvas
-    bind $c <Double-1> {ClickObj %x %y %W %X %Y doubleclick}
+    # (works around Korean IME bug)
+    .c bind all <Double-1> {ClickObj %x %y %W %X %Y doubleclick}
     
     bind $c <B1-Motion> {DragObj %W %x %y}
     bind $c <ButtonRelease-1> {ReleaseObj %W %x %y}
