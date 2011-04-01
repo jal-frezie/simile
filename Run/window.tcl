@@ -975,6 +975,9 @@ proc AddEqnPopup {node x y winId X Y} {
         if {$doCmt} {
             set fromProlog [GetFromProlog tk_get_info('$winId',$plName,comment)]
             #if {![winfo exists .popup]} return
+	    if {![string length $fromProlog]} {
+		set fromProlog [tr. {No comment}]
+	    }
             AddPopupMessage $fromProlog \#ffe0c0
         }
         if {$doVal} {
@@ -1410,6 +1413,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     }  
     $fm add cascade -label [tr. "Import"] -menu $fm.sub0
     set fm0 [menu $fm.sub0 -tearoff 0]
+    # XML im/export via web service is local; replace with file to use built-in
+    # convertor
     $fm0 add command -label [tr. "XML Model Description"] \
             -command "MenuSelect $c local import_xml"
 
@@ -1418,7 +1423,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm2 add command -label [tr. "Model declarations"] \
             -command "MenuSelect $c file export_prolog"
     $fm2 add command -label [tr. "XML Model Description"] \
-            -command "MenuSelect $c file export_xml"
+            -command "MenuSelect $c local export_xml"
     $fm2 add command -label [tr. "C++ code"] \
             -command "MenuSelect $c code build_c" -state $sourceExps
     $fm2 add command -label [tr. "Compiled binary"] \

@@ -539,7 +539,7 @@ update_links_and_vars(InputList) :-
 		Link has_new_attribute role of Roles),
 	update_links_and_vars(OtherList).
 
-make_role(InputLink, use(Index, SourceLoc, NewName, Unit)) :- wake,
+make_role(InputLink, use(Index, SourceLoc, NewName, Unit)) :-
 	InputLink = input_link(id(Link, Index, SourceLoc),_, Name,_, FullUnit),
 	input_links_were(OldLinks),
 	(member(InputLink, OldLinks),

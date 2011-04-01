@@ -530,7 +530,7 @@ map(av,
 
 map(av,
   value=V,
-  element(value,[],[element('m:math',[],[Vmath])])):- wake,
+  element(value,[],[element('m:math',[],[Vmath])])):-
       map(math,V,Vmath).
 
 
@@ -793,7 +793,7 @@ map(math,V,element('m:cn',[],[Vatom])):-
 
 map(math,
    if E else C,
-   element('m:piecewise',[],Rest)):- wake,
+   element('m:piecewise',[],Rest)):-
       elseif_rule(E,Cmath,Rest),
       map(math,C,Cmath).
 

@@ -165,8 +165,9 @@ context_find(Wid, Query, Target) :-
 	find_all_comps(Sub, Comp),
 	appears(Comp), %     check draws_at as well
 	(Target = description,
-	    get_info(Wid, Comp, comment, Field),
-	    \+ Field = 'no comment';
+	    (get_info(Wid, Comp, desc, Field);
+	    get_info(Wid, Comp, description, Field);
+	    get_info(Wid, Comp, comment, Field));
 	 Target = equation,
 	    get_info(Wid, Comp, eqn, Field),
 	    \+ Field = '<none>';
