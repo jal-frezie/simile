@@ -792,10 +792,9 @@ map(math,V,element('m:cn',[],[Vatom])):-
 % ------------------------------ if ... then ... elseif ... else
 
 map(math,
-   if E else C,
+   if E,
    element('m:piecewise',[],Rest)):-
-      elseif_rule(E,Cmath,Rest),
-      map(math,C,Cmath).
+      elseif_rule(E,Rest).
 
 
 map(math,
@@ -1032,17 +1031,17 @@ maptdlist([_|TDlist],As,Bs):-
 
 elseif_rule(
    E1 then E2 elseif Erest,
-   Cmath,
    [element('m:piece',[],[E2math,E1math])|Rest]):-
       map(math,E1,E1math),
       map(math,E2,E2math),
-      elseif_rule(Erest,Cmath,Rest).
+      elseif_rule(Erest,Rest).
+
 elseif_rule(
-   E1 then E2,
-   Cmath,
+   E1 then E2 else C,
    [element('m:piece',[],[E2math,E1math]),element('m:otherwise',[],[Cmath])]):-
       map(math,E1,E1math),
-      map(math,E2,E2math).
+      map(math,E2,E2math),
+      map(math,C,Cmath).
 
 
 

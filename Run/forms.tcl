@@ -2000,9 +2000,8 @@ proc add_text {text font across down colour} {
 # general error handling -- note that only user errors will be raised from
 # execution interps, so the reporting stuff can be kept in the editor interp
 
-proc NotifyOverLimit {edn limit} {
-    toplevel .notify
-    wm title .notify "Over Limit For Edition"
+proc NotifyOverLimit {win edn limit} {
+    wm title [PutItThere .notify $win] "Over Limit For Edition"
     wm protocol .notify WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
     switch [tk windowingsystem] {
@@ -2041,10 +2040,11 @@ proc NotifyOverLimit {edn limit} {
     set sheight [winfo screenheight .notify]
     set swidth [winfo screenwidth .notify]
     wm geometry .notify +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
-    update
-    
+    LetItShow .notify
+    grab .notify
     tkwait variable ack
-    destroy .notify
+    grab release .notify
+    PackItUp .notify
 }
 
 proc TtkLikeDialogue {dlg args} {

@@ -154,7 +154,9 @@ save_allowed(Model, OK) :-
 		/* canny buggers can get round save limit by killing the app
 		and restoring from logfile, so stop keeping logfile */
 	    assert(autosave_suspended(Model)),
-		output'><'safe_tcl_eval(['NotifyOverLimit', Edn, Limit], _)), !,
+		Win shows_model Model,
+		output'><'safe_tcl_eval(['NotifyOverLimit', Win, Edn, Limit],
+					_)), !,
 	    OK = 0;
 	retractall(autosave_suspended(Model)),
 	    OK = 1);
