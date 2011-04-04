@@ -33,7 +33,7 @@ namespace eval ::$keyValue {
 	variable chop
 	set imgDir [file join [file dirname $::env(SYSDIR)] Images Toolbar]
 	foreach symbol [list submodel compartment flow variable condition \
-			    creation reproduction immigration loss] {
+			    creation reproduction immigration loss alarm] {
 	    set im($symbol) [image create photo ${symbol}_im -file \
 				 [file join $imgDir $symbol.gif]]
 	}
@@ -109,6 +109,7 @@ namespace eval ::$keyValue {
                 REPRODUCTION {set image $im(reproduction)}
                 IMMIGRATION  {set image $im(immigration)}
                 LOSS         {set image $im(loss)}
+                ALARM        {set image $im(alarm)}
                 default      {set image $im(variable)}
             }
             
