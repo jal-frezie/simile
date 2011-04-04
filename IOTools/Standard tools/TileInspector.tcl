@@ -31,15 +31,12 @@ namespace eval ::$keyValue {
         global tcl_platform
         variable tableframe
 	variable chop
-        set im(submodel) [image create photo submodel_im -file "../Images/Toolbar/submodel.gif"]
-        set im(compartment) [image create photo  -file "../Images/Toolbar/compartment.gif"]
-        set im(flow) [image create photo  -file "../Images/Toolbar/flow.gif"]
-        set im(variable) [image create photo  -file "../Images/Toolbar/variable.gif"]
-        set im(condition) [image create photo  -file "../Images/Toolbar/condition.gif"]
-        set im(creation) [image create photo  -file "../Images/Toolbar/creation.gif"]
-        set im(reproduction) [image create photo  -file "../Images/Toolbar/reproduction.gif"]
-        set im(immigration) [image create photo  -file "../Images/Toolbar/immigration.gif"]
-        set im(loss) [image create photo  -file "../Images/Toolbar/loss.gif"]
+	set imgDir [file join [file dirname $::env(SYSDIR)] Images Toolbar]
+	foreach symbol [list submodel compartment flow variable condition \
+			    creation reproduction immigration loss] {
+	    set im($symbol) [image create photo ${symbol}_im -file \
+				 [file join $imgDir $symbol.gif]]
+	}
         
         set tableframe $winId.tableframe
 #        ScrolledWindow $tableframe -scrollbar vertical
