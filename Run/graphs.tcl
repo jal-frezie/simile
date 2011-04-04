@@ -869,6 +869,9 @@ proc equationDoTable {parent mdl tgt dims startLine} {
         } else {
             set table_entry(oldOthers) {}
         }
+    } else {
+	array unset table_entry others
+	array unset table_entry wrapPt
     }
     if {![string equal .equation $parent]} {
         pack [checkbutton .table.fbuttons.keepvals -var table_entry(bytes) \
