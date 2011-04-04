@@ -1195,6 +1195,7 @@ proc EditListAsTable {parent valueArray} {
     if {$table_viewer(done)} {
         set values [${viewerId}::ExtractEdits $t]
     }
+    grab $parent
     return $table_viewer(done)
 }
 

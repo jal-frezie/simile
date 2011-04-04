@@ -1751,7 +1751,8 @@ proc ExistCheck {topNode path level notInput source} {
 proc ChooseByInspection {topNode oldObj type context} {
     global helperTable classTable paramData
 
-    set t [PutItThere .newParamTgt {}] ;# window id used to bring clix here
+    set parent [grab current]
+    set t [PutItThere .newParamTgt $parent] ;# window id used to bring clix here
     wm protocol .newParamTgt WM_DELETE_WINDOW \
 	[list set paramData(newPath,done) none]
     wm title $t "$type for $oldObj values:" 
@@ -1769,6 +1770,9 @@ proc ChooseByInspection {topNode oldObj type context} {
     grab release $t
         
     PackItUp $t
+    if {[string length $parent]} {
+	grab $parent
+    }
     return $paramData(newPath,done)
 }
 

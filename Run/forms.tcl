@@ -401,6 +401,7 @@ proc AddPub {mdl} {
 #	set disaggregate(xlibs) [${LibListFr}.box get 0 end]
 #    }
     PackItUp $t
+    grab .disaggregatopn
 }
 
 proc AbleSetup {mathf} {
@@ -458,6 +459,7 @@ proc ExtCodeSetup {mdl} {
 	set disaggregate(xlibs) [${LibListFr}.box get 0 end]
     }
     PackItUp $t
+    grab .disaggregation
 }    
 
 proc ChangeIncFile {incFileTxt mdl} {
@@ -510,26 +512,26 @@ proc ClearBG {posRBs} {
     }
 }
 
-proc OldAddEnumType {fr} {
-    global addenumtype tcl_platform
-    PutItThere .typeadder $fr
-    pack [frame .typeadder.what]
-    pack [label .typeadder.what.l -text Name:] -side left
-    pack [entry .typeadder.what.e -textvariable addenumtype(name)] -side left
-    pack [frame .typeadder.btns]
-    pack [button .typeadder.btns.ok -text OK \
-            -command "set addenumtype(done) 1"] -side left
-    pack [button .typeadder.btns.cancel -text Cancel \
-            -command "set addenumtype(done) 0"] -side left
-    grab .typeadder
-    tkwait variable addenumtype(done)
-    grab release .typeadder
-    if {$addenumtype(done)} {
-        $fr.scrf insert end $addenumtype(name)
-    }
-    PackItUp .typeadder
-}
-
+#proc OldAddEnumType {fr} {
+#    global addenumtype tcl_platform
+#    PutItThere .typeadder $fr
+#    pack [frame .typeadder.what]
+#    pack [label .typeadder.what.l -text Name:] -side left
+#    pack [entry .typeadder.what.e -textvariable addenumtype(name)] -side left
+#    pack [frame .typeadder.btns]
+#    pack [button .typeadder.btns.ok -text OK \
+#            -command "set addenumtype(done) 1"] -side left
+#    pack [button .typeadder.btns.cancel -text Cancel \
+#            -command "set addenumtype(done) 0"] -side left
+#    grab .typeadder
+#    tkwait variable addenumtype(done)
+#    grab release .typeadder
+#    if {$addenumtype(done)} {
+#        $fr.scrf insert end $addenumtype(name)
+#    }
+#    PackItUp .typeadder
+#}
+#
 proc AddEnumTypeMems {fr} {
     global disaggregate
     set togo [$fr.listpair.typef.scrf curselection]
@@ -2264,16 +2266,16 @@ proc Query {specifics icon helpRef parent opts} {
 	after 10 set dialogues(done) more
     }
 # (in case Mac version siezes)
+    set oldGrab [grab current]
     tkwait visibility .shortDlg
     grab .shortDlg
     tkwait variable dialogues(done)
     grab release .shortDlg
-    destroy .shortDlg
 
     if {[string equal more $dialogues(done)]} {
 	if {![string equal abort $defButton]} { ;# add more detail now
 	    set result [ExpandQuery $specifics $title $icon \
-			    $message $helpRef $parent $opts]
+			    $message $helpRef .shortDlg $opts]
 	} else { ;# "see all": display remaining messages together
 	    AddMsgsToLog
 	    set result $dialogues(done)
@@ -2284,8 +2286,12 @@ proc Query {specifics icon helpRef parent opts} {
 	set result $dialogues(done)
     }
 #    ReplaceProgressBox
+    destroy .shortDlg
     unset dialogues(done)
 
+    if {[string length $oldGrab]} {
+	grab $oldGrab
+    }
     focus -force $oldFocus
 #    update idletasks
     return $result
