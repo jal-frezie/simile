@@ -24,7 +24,7 @@ REL_EXP = 0
 # What kind of system are we on
 PLATFORM = $(shell uname -s)
 
-# Prolog implementation to use -- SICSTUS for Windows releases, GNU otherwise
+# Prolog implementation to use -- GNU for Windows releases, GNU otherwise
 # (currently GNU for everything)
 PROLOG = GNU
 
@@ -72,7 +72,9 @@ FLAGS = $(OPT)
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
 MAKESL = -shared
-VERS = 8.5
+MAJ = 8
+MIN = 5
+VERS = $(MAJ).$(MIN)
 
 EXECDIR = $(SYSDIR)/bin
 LIBDIR = $(SYSDIR)/lib
@@ -114,7 +116,8 @@ endif
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 ifeq ($(MY_CPU),x86_64)
-	TCLDIR = "/c/Tcl"
+	TCLDIR = /c/Tcl
+	TCLREF = $(TCLDIR)
 	GCCCMD = x86_64-w64-mingw32-gcc
 	GPPCMD = x86_64-w64-mingw32-g++
 	RESCMD = x86_64-w64-mingw32-windres
@@ -122,6 +125,7 @@ else
 #	TCLDIR = "/c/Program files (x86)/Tcl"
 # Actually, use local TclTk as above dir not exist on 32bit machines --
 	TCLDIR = $(SYSDIR)
+	TCLREF = ../$(TCLDIR)
 	RESCMD = windres
 	INSTLIB = Run/install.dll
 # must be 32-bit because installer is
@@ -130,27 +134,23 @@ endif
 	SHAREDLIBPREFX = 
 	MAKEPIC = 
 	MAKESL = -shared
-	VERS = 85
+	VERS = $(MAJ)$(MIN)
 #	VERS = 86
 #
 	SLDIR = $(EXECDIR)
 # to be used after CDing to Run -- assume all refs are from a subdirectory
-	TCLREF = ../$(TCLDIR)
-	USETCL = -DUSE_TCL_STUBS -I$(TCLREF)/include -L$(TCLREF)/lib $(TCLREF)/lib/tclstub$(VERS).lib
+	USETCL = -DUSE_TCL_STUBS -I$(TCLREF)/include/tcl$(MAJ).$(MIN) -L$(TCLREF)/lib $(TCLREF)/lib/tclstub$(VERS).lib
 	LOCALIZE_TCL_REFS =  ls # placebo command
 	SHAREDLIBEXTN = .dll
-	ARCHEXTN = _win$(BITEXTN)
+	ARCHEXTN = _win
 	EXECEXTN = .exe
 	MAIN = $(EXECDIR)/Simile.exe
 	SCRIPT = $(EXECDIR)/SimileScript.exe
 endif
 
-PROLOGSTATE = $(EXECDIR)/xgsimile$(EXECEXTN)
+PROLOGSTATE = xgsimile$(EXECEXTN)
 ifeq ($(PROLOG),SWI)
-	PROLOGSTATE = $(EXECDIR)/xssimile$(EXECEXTN)
-endif
-ifeq ($(PROLOG),SICSTUS)
-	PROLOGSTATE = $(EXECDIR)/main.sav
+	PROLOGSTATE = xssimile$(EXECEXTN)
 endif
 
 STUBS_DIR = $(LIBDIR)/Stubs
@@ -161,7 +161,7 @@ SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 # shank before shims in dependencies because some Make utilities build them
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
-simile: $(PROLOGSTATE) $(EXECDIR)/relay$(EXECEXTN) \
+simile: $(EXECDIR)/$(PROLOGSTATE) $(EXECDIR)/relay$(EXECEXTN) \
 	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT)
 
 vpath %.pl Prolog
@@ -173,37 +173,31 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl code.pl compile.pl database.pl \
 		node.pl output.pl render.pl ss_import.pl state.pl struct_db.pl \
 		submodel.pl tcltk.pl text.pl units.pl utility.pl
 
-# Prolog is Sicstus
-$(EXECDIR)/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl $(EXECDIR)/struct_db.dll
-	cd Prolog; sicstus -l buildmainsav.pl; cd ..
-
-$(EXECDIR)/struct_db.dll: Prolog/struct_db.pl Prolog/struct_db.c
-	cd Prolog; splfr struct_db.pl struct_db.c; mv struct_db.dll ../$(EXECDIR); cd ..
-
+# Prolog is not Sicstus
 #ifeq ($(PROLOG),SWI)
 $(EXECDIR)/xssimile$(EXECEXTN): $(PROLOG_FILES)  Prolog/smain.pl \
-		Prolog/struct_db$(SHAREDLIBEXTN)
+		$(EXECDIR)/struct_db$(SHAREDLIBEXTN)
 	cd Prolog; swipl --goal=main --stand_alone=true \
-		-o ../$(PROLOGSTATE)  -c smain.pl; cd ..
-Prolog/struct_db$(SHAREDLIBEXTN): Prolog/struct_db.c
+		-o ../$(EXECDIR)/$(PROLOGSTATE) -c smain.pl; cd ..
+$(EXECDIR)/struct_db$(SHAREDLIBEXTN): Prolog/struct_db.c
 # for old SWI
 	cd Prolog; gcc -I/usr/lib/swi-prolog/include -D__SWI_PROLOG__ \
-		$(MAKEPIC) $(MAKESL) -o struct_db$(SHAREDLIBEXTN) \
-		struct_db.c; cd ..
+		$(MAKEPIC) $(MAKESL) \
+		-o ../$(EXECDIR)/struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
 # for new SWI
 #	cd Prolog; swipl-ld -cc-options,$(MAKEPIC) -ld-options,$(MAKESL) \
 #		-o struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
 #endif
 #ifeq ($(PROLOG),GNU)
 $(EXECDIR)/xgsimile$(EXECEXTN): \
-		Prolog/gmain$(ARCHEXTN).o Prolog/struct_db$(ARCHEXTN).o
-	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -L $(OPT) \
-		gmain$(ARCHEXTN).o struct_db$(ARCHEXTN).o; cd ..
-Prolog/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl 
-	cd Prolog; gplc -o gmain$(ARCHEXTN).o -c gmain.pl; cd ..
-Prolog/struct_db$(ARCHEXTN).o: Prolog/struct_db.c
-	cd Prolog; gplc -c -C '$(OPT) -D_GNU_PROLOG' -o struct_db$(ARCHEXTN).o \
-		struct_db.c; cd ..
+		$(EXECDIR)/gmain$(ARCHEXTN).o $(EXECDIR)/struct_db$(ARCHEXTN).o
+	cd $(EXECDIR); gplc --no-top-level -o $(PROLOGSTATE) -L $(OPT) \
+		gmain$(ARCHEXTN).o struct_db$(ARCHEXTN).o; cd ../..
+$(EXECDIR)/gmain$(ARCHEXTN).o: $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
+	cd Prolog; gplc -o ../$(EXECDIR)/gmain$(ARCHEXTN).o -c gmain.pl; cd ..
+$(EXECDIR)/struct_db$(ARCHEXTN).o: Prolog/struct_db.c
+	cd Prolog; gplc -c -C '$(OPT) -D_GNU_PROLOG' \
+		-o ../$(EXECDIR)/struct_db$(ARCHEXTN).o struct_db.c; cd ..
 #endif
 
 #ifeq ($(UNAME),MINGW32_NT)
