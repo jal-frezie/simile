@@ -2261,17 +2261,17 @@ proc Query {specifics icon helpRef parent opts} {
     lappend mBoxCmd -parent [ChooseParent $parent [set oldFocus [focus]]] 
     eval $mBoxCmd
 
-    if {[string equal abandon $key] && \
-	    [string equal [tr. None] [PrefValue custom(quickExit) quickExit]]} {
-	after 10 set dialogues(done) more
-    }
 # (in case Mac version siezes)
     set oldGrab [grab current]
-    tkwait visibility .shortDlg
-    grab .shortDlg
-    tkwait variable dialogues(done)
-    grab release .shortDlg
-
+    if {[string equal abandon $key] && \
+	    [string equal [tr. None] [PrefValue custom(quickExit) quickExit]]} {
+	set dialogues(done) more
+    } else {
+	tkwait visibility .shortDlg
+	grab .shortDlg
+	tkwait variable dialogues(done)
+	grab release .shortDlg
+    }
     if {[string equal more $dialogues(done)]} {
 	if {![string equal abort $defButton]} { ;# add more detail now
 	    set result [ExpandQuery $specifics $title $icon \
