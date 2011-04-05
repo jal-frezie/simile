@@ -242,8 +242,10 @@ $(LIBDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 #		install_msi.c resource_msi.o /c/MsiIntel.SDK/lib/msi.lib \
 #		-L../System/lib -lcrypto -lssl; cd ..
 # Version for Advanced Installer
+# -static-libgcc is neeeded because this also used for 64bit install (and 32bit
+# install on 64bit systems) where 32bit libraries maybe missing
 $(INSTLIB): Run/install_adv.cpp Makefile
-	cd Run; $(GPPCMD) -m32 $(FLAGS) $(DEFNS) \
+	cd Run; $(GPPCMD) -static-libgcc -m32 $(FLAGS) $(DEFNS) \
 		-I/c/MsiIntel.SDK/include $(MAKEPIC) $(MAKESL) \
 		-o ../$(INSTLIB) install_adv.cpp /c/MsiIntel.SDK/lib/msi.lib \
 		-L../$(LIBDIR) -lcrypto -lssl; cd ..
