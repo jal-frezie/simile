@@ -13,7 +13,6 @@ goal_expansion(op(X,Y,N), (initialization(op(X,Y,user:N)), op(X,Y,user:N))) :-
     \+ N = user:_.
 
 % swi: inexplicably missing predicates
-prefix(Front, Whole) :- append(Front, _Back, Whole).
 suffix(Back, Whole) :- append(_Front, Back, Whole).
 
 nth(N, List, Element) :-

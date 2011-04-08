@@ -174,7 +174,7 @@ make_legible_for_prolog(String, NewString) :-
 	    bite_off_number(ToTweak, Tweaked, Suffix);
 	/* separate a unary operator from other symbols */
 	ToTweak = [M, N | Suffix],
-	member(M, "+-*/\\^<>=`~:.?@#$&"),	
+	member(M, "+*/\\^<>=`~:.?@#$&"), /* 	    (not - cos we use -->) */
 	member(N, "-"), /* 	    (not + cos we use ++) */
 	    Tweaked = [M, Sp, N];
 	/* If a function has no args, pop in an empty atom */

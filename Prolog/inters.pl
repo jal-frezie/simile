@@ -209,12 +209,30 @@ read_func_tree(TopDir, AllDirs, BuiltIn, Done) :-
 
 read_func_file(File, Context, IsBuiltIn, Done) :-
 	open_native(File, read, Stream),
+	swallow_to_chars(Stream, Contents),
+	make_legible_for_prolog(Contents, EuContents),
+	state'><'use_temp_dir(TempDir),
+	append_atoms(TempDir, '/temp_io.pl', TempFile),
+	open_native(TempFile, write, Stream2),
+	sicstus_write_chars(Stream2, EuContents),
+	close(Stream2),
+	
 	name(File, FileStr),
 	append(Base, ".pl", FileStr),
 	name(Context, ContextStr),
 	append(ContextStr, NameStr, Base),
 	name(Name, NameStr),
-	read_funcs(Name, Stream, IsBuiltIn, Done).
+	open_native(TempFile, read, Stream3),
+	read_funcs(Name, Stream3, IsBuiltIn, Done),
+	output'><'my_delete_file(TempFile).
+
+swallow_to_chars(Stream, Contents) :-
+	get_code(Stream, C),
+	(C = -1, !,
+	    close(Stream),
+	    Contents = [];
+	  swallow_to_chars(Stream, Tail),
+	    Contents = [C | Tail]).
 
 read_funcs(File, Stream, IsBuiltIn, Done) :-
 	catch(read_term(Stream, Line, [variable_names(VPrs)]), WrongUDF,
