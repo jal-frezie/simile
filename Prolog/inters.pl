@@ -210,7 +210,7 @@ read_func_tree(TopDir, AllDirs, BuiltIn, Done) :-
 read_func_file(File, Context, IsBuiltIn, Done) :-
 	open_native(File, read, Stream),
 	swallow_to_chars(Stream, Contents),
-	make_legible_for_prolog(Contents, EuContents),
+	ame_gen'><'make_legible_for_prolog(Contents, EuContents),
 	state'><'use_temp_dir(TempDir),
 	append_atoms(TempDir, '/temp_io.pl', TempFile),
 	open_native(TempFile, write, Stream2),

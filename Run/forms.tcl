@@ -1706,14 +1706,6 @@ proc equationlisting_start {DefEquationListingFileName topNode} {
 		-window $equationlist(textbox)]
     bind $wrapper <Configure> [list TrackSize $wrapper $ww]
     
-    foreach imgType [list compartment flow variable creation \
-             immigration loss reproduction condition alarm] {
-# TRANSLATOR: These will be used below in proc equationlisting_addvariable
-# but with first letter uppercase
-    image create photo equationlist(${imgType}img)
-    equationlist(${imgType}img) read "../Images/Toolbar/${imgType}.gif"
-    }
-    
     $equationlist(textbox) tag configure bigtag \
             -font {Helvetica 12 bold} -wrap word -spacing3 5 -lmargin1 10 -lmargin2 10
     $equationlist(textbox) tag configure descrtag \
@@ -1845,7 +1837,7 @@ proc equationlisting_addvariable {node vartype varlabel expression minmax \
     $widget insert end "[tr. [string totitle ${vartype}]] " typtag
 # TRANSLATOR: see note at definition of imgType above
     $widget insert end " " descrtag
-    $widget image create end -image equationlist(${vartype}img)
+    $widget image create end -image $::iconImages($vartype)
     $widget insert end " " descrtag
     
     set tidy_varlabel [regsub -all "\n" $varlabel " "]

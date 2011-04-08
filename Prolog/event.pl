@@ -1521,7 +1521,7 @@ keep_only_if_links_stay(Damage, Where) :-
 
 match_delete_status(Ends, Way, Where) :-
 	member(End, Ends),
-	\+ depends_on_links(End),
+	(Where = seln; \+ depends_on_links(End)),
 	\+ at_def_con(End, Where), !, Way = on;
 	true.
 

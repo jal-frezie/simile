@@ -686,9 +686,17 @@ proc LoadIconImages {} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
     }
-    foreach fn {graph table new open save edit reel noreel text zap} {
+    foreach fn {graph table new open save edit reel noreel text zap \
+		    submodel compartment flow variable condition \
+		    creation reproduction immigration loss alarm} {
         set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
+    }
+    if {$::do_events} {
+	foreach fn {event state squirt} {
+	    set iconImages($fn) \
+		[image create photo -file "../Images/Toolbar/${fn}.gif"]
+	}
     }
 }
 

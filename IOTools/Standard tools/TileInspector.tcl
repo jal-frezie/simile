@@ -28,15 +28,9 @@ namespace eval ::$keyValue {
     }
 
     proc initialize {winId} {
-        global tcl_platform
+        global tcl_platform iconImages
         variable tableframe
 	variable chop
-	set imgDir [file join [file dirname $::env(SYSDIR)] Images Toolbar]
-	foreach symbol [list submodel compartment flow variable condition \
-			    creation reproduction immigration loss alarm] {
-	    set im($symbol) [image create photo ${symbol}_im -file \
-				 [file join $imgDir $symbol.gif]]
-	}
         
         set tableframe $winId.tableframe
 #        ScrolledWindow $tableframe -scrollbar vertical
@@ -85,7 +79,7 @@ namespace eval ::$keyValue {
                 set submodel($path) $component
                 $tableframe.table insert $parent end -id $component \
 		    -text [BlankCrs [lindex $path end]] -open 1 \
-		    -image $im(submodel)
+		    -image $iconImages(submodel)
             }
         }
 	foreach pair $sorted {
@@ -100,17 +94,20 @@ namespace eval ::$keyValue {
             switch $type {
                 INTERNAL { continue ;# don't show internal variables
 		}
-                SUBMODEL { set image $im(submodel) }
-                VARIABLE     {set image $im(variable) }
-                COMPARTMENT  {set image $im(compartment) }
-                FLOW         {set image $im(flow)}
-                CONDITION    {set image $im(condition)}
-                CREATION     {set image $im(creation)}
-                REPRODUCTION {set image $im(reproduction)}
-                IMMIGRATION  {set image $im(immigration)}
-                LOSS         {set image $im(loss)}
-                ALARM        {set image $im(alarm)}
-                default      {set image $im(variable)}
+                SUBMODEL     {set image $iconImages(submodel) }
+                VARIABLE     {set image $iconImages(variable) }
+                COMPARTMENT  {set image $iconImages(compartment) }
+                FLOW         {set image $iconImages(flow)}
+                CONDITION    {set image $iconImages(condition)}
+                CREATION     {set image $iconImages(creation)}
+                REPRODUCTION {set image $iconImages(reproduction)}
+                IMMIGRATION  {set image $iconImages(immigration)}
+                LOSS         {set image $iconImages(loss)}
+                ALARM        {set image $iconImages(alarm)}
+                EVENT        {set image $iconImages(event)}
+                STATE        {set image $iconImages(state)}
+                SQUIRT       {set image $iconImages(squirt)}
+                default      {set image $iconImages(variable)}
             }
             
             set pathLength [llength $path]
