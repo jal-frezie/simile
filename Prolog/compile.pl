@@ -1386,7 +1386,8 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 			  | VarInds],
 	    Collects = [make(Tgt, Wait, Path, Step, [CollectFn])];
 	  Type = state_fn,
-	    Collects = [make(init(Tgt), [on_reset], Path, 0, [assign(I, 0)])];
+	    Collects = [make(init(Tgt), [on_reset], Path, 0,
+			     [assign(Val, 0)])];
 	  Collects = []),
 	((Is_P < 1,
 	    (Type = init_function, !,
@@ -1418,13 +1419,13 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    SourceEqn = limit(ActEqn, BoundForm),
 	    ErrVar = arr('', adapt_maxerr, []),
 	    (BoundForm = min(Upper, More),
-		CK1 = max(I-Upper, ErrVar),
+		CK1 = max(Val-Upper, ErrVar),
 		SX1 = choose(trigger>Upper, 1,0);
 	      More = BoundForm,
 		CK1 = ErrVar,
 		SX1 = 0),
 	    (More = max(Lower, result),
-		CK2 = max(Lower-I, CK1),
+		CK2 = max(Lower-Val, CK1),
 		SX2 = choose(trigger<Lower, -1, SX1);
 	      More = result,
 		CK2 = CK1,
@@ -1440,13 +1441,13 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 %			     elt([], current_event_magnitude, X), Swaps,
 %			     UseStep, Used, [TriggerExpr], [], _Path, EvtConds,
 %			     []),
-	    I = arr(SquirtPtr, _, _), % and its submodel pointer
+	    Val = arr(SquirtPtr, _, _), % and its submodel pointer
 	    (From = 0, Twk1 = [];
 	      From = elt(_, BSrc, _), CSrc = arr(SquirtPtr, BSrc, []),
-		Twk1 = [assign(CSrc, CSrc-I)]),
+		Twk1 = [assign(CSrc, CSrc-Val)]),
 	    (To = 0, Twk2 = Twk1;
 	      To = elt(_, BDest, _), CDest = arr(SquirtPtr, BDest, []),
-		Twk2 = [assign(CDest, CDest+I) | Twk1]), !,
+		Twk2 = [assign(CDest, CDest+Val) | Twk1]), !,
 %	    AllActs = [cond_event(TriggerExpr, Expr, Twk2)],
 %	    append(EvtConds, RefList, UseList);
 	    AllActs = [Expr | Twk2],
@@ -1465,14 +1466,13 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
 			 UseStep, Used, [Expr], Setups, Path, RefList,
 			 AllInters),
-	Expr = assign(I, _Fn), % dig out the result
 	connect_params([make(Made, UseList, Path, UseStep, AllActs) | Setups],
 		       AllInters, Actions, Inters);
 	Actions = [],
 	Inters = []),
 	(Type = limit, !,
 	    Expr = assign(_D, choose(Test1, _Y, _N)),
-	    Test1 =.. [_Ineq, I, _Bound],
+	    Test1 =.. [_Ineq, Val, _Bound],
 				% dig out the inter
 	    % unite_event_contexts(Callable, Path, Combo),
 	    % this merely puts its conds in the subphase
@@ -1486,7 +1486,8 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    Linkers = [make(Dest, [init(Dest), update(Dest), tweaked(Dest)],
 			    DestPath, SmStep, []),
 		       make(tweaked(Dest), EvtConds, DestPath, SmStep, [])];
-	Linkers = []),
+	Expr = assign(Val, _Fn), % dig out the result
+	    Linkers = []),
 	append([Collects, Actions, Linkers], Assignments).
 
 unite_event_contexts([], Test, Test).
