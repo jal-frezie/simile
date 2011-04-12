@@ -531,6 +531,7 @@ make_assoc_loop_names(L, Instance, Used,
 invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs) :-
 	ancestor(Instance, BaseInstance, _), !,
 	    Ptrs = []; % 19/12/02: does this ever happen...?
+            % 12/04/11: I'm pretty confident it does not
 	BaseInstance = instance(submodel, BaseSm, xrefs(_, Parent, _,_), _,_),
 	    caption_for(BaseSm, BaseCapt),
 	    append_atoms(LinkName, BaseCapt, Context),

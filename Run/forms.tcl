@@ -2188,7 +2188,8 @@ proc TtkLikeDialogue {dlg args} {
 
 proc ChooseParent  {parent active} {
     if {[llength $active]} {set active [winfo toplevel $active]}
-    if {![string length $parent] && [string length $active]>1} {
+    if {![string length $parent] && [string length $active]>1 && \
+	    [winfo viewable $active]} {
 	set parent $active ;# window . is hidden so must not
     }
     return $parent
