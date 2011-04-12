@@ -893,10 +893,13 @@ void get_string_for_error(char* spare, int error) {
 const char* name_in_line(void* modelType, int lineId) {
     node_data_line *nodeLine;
 
-    if (lineId) {
-      nodeLine = nodlin_from_id(modelType, lineId);
-      return nodeLine->strings[0];
-    } else return "external procedure";
+    if (lineId)
+      if (nodeLine = nodlin_from_id(modelType, lineId))
+	return nodeLine->strings[0];
+      else
+	return "limit event";
+    else 
+      return "external procedure";
 }
 
 FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
