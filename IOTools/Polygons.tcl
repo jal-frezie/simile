@@ -34,10 +34,12 @@ namespace eval ::polygon375 {
         
         set useNodes($winId,min) 0
         set useNodes($winId,max) 100
+        set useNodes($winId,bw) 1
 
         set useNodes($winId,cbot) black
         set useNodes($winId,cmid) green
         set useNodes($winId,ctop) white
+        set useNodes($winId,cbord) black
         
 	set useNodes($winId,scalex) 1.0
 	set useNodes($winId,scaley) 1.0
@@ -93,9 +95,12 @@ namespace eval ::polygon375 {
     
     proc Restore {winId} {
         variable useNodes
+# defaults for things perhaps added in newer version than created saved state
         set useNodes($winId,editMode) 0
         set useNodes($winId,orient) h
-	LoadTools
+        set useNodes($winId,bw) 1
+        set useNodes($winId,cbord) black
+ 	LoadTools
         
         AddToolBar $winId
 	regsub -all /WIN/ [GetState $winId] $winId restoreString
@@ -251,9 +256,11 @@ namespace eval ::polygon375 {
 	if {![string length $col]} return
         set useNodes($winId,c$whichCol) $col
 	$exampleWidget configure -bg $useNodes($winId,c$whichCol)
-        SetColours useNodes $winId
+	if {![string equal bord $whichCol]} {
+	    SetColours useNodes $winId
+	    recolour_scale [namespace current] $winId
+	}
         PrepareSaveString $winId
-	recolour_scale [namespace current] $winId
 #        ColourScale useNodes $winId
         Repaint $winId $useNodes($winId,color)
     }
@@ -285,6 +292,13 @@ namespace eval ::polygon375 {
 		CanvasBindPopup $winId.viewport.c $polyId \
                     [list Index $dispIndxs Value \
 			 [TransValue $useNodes($winId,dataETs) $value]]
+		if {$useNodes($winId,bw)} {
+		    set newBord $useNodes($winId,cbord)
+		} else {
+		    set newBord {}
+		}
+		$winId.viewport.c itemconfigure $polyId \
+		    -width $useNodes($winId,bw) -outline $newBord
 		set newColour [ColourFor $winId $value]
 		if {![string match $newColour \
 			  [$winId.viewport.c itemcget $polyId -fill]]} {
@@ -413,7 +427,9 @@ namespace eval ::polygon375 {
 		set indxs [join $id ,]
 		#        ShowMess debug info $corners ok
 		set polyId [eval {$winId.viewport.c create polygon} $corners \
-			    {-outline black -tag [list map [IdToTag $indxs]]}]
+			    {-width $useNodes($winId,bw) \
+				 -outline $useNodes($winId,cbord) \
+				 -tag [list map [IdToTag $indxs]]}]
 	    }
 	}
 
@@ -511,6 +527,16 @@ namespace eval ::polygon375 {
         pack $coloursF.topcolourF.colF -side right -padx 10
         
         pack $coloursF -padx 10 -pady 10 -fill x
+        
+        set borderF [labelframe [GetFrame $dlg].border -text "Borders"]
+        pack [LabelFrame $borderF.widF -text "Width"] -fill x  -padx 10 -pady 5
+        pack [entry $borderF.widF.entry -textvar [namespace current]::useNodes($winId,bw) -width 20] -side left -padx 10
+        pack [LabelFrame $borderF.colourF -text "Colour"] -fill x -padx 10
+        frame $borderF.colourF.colF -width 20 -height 15 -bg $useNodes($winId,cbord)
+        pack [button $borderF.colourF.cbutton -text "..." \
+                -command [namespace code "Recolour $winId bord $borderF.colourF.colF"]] -side right
+        pack $borderF.colourF.colF -side right -padx 10
+        pack $borderF -padx 10 -pady 10
         
         set rangeF [labelframe [GetFrame $dlg].range -text "Scale range"]
         pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,datamin)"] -fill x  -padx 10
