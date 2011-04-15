@@ -124,6 +124,9 @@ proc ExplainError {myNode errList origError} {
 	} discontinuity {
 	    set problem "there was a discontinuity which could not be dealt with by adaptive step size control"
 	    set severity 0
+	} event {
+	    set problem "there was a limit event, producing a pause"
+	    set severity 0
 	} "Illegal operation signal *" {
 	    set code [lindex $whoopsie end]
 	    set which [lindex {SIGEOF SIGHUP SIGINT SIGQUIT SIGILL SIGTRAP 

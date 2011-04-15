@@ -412,7 +412,7 @@ wot need them */
 	excrete(Language, comment, 'GLOBAL DECLARATIONS', 0, Stream),
 	all(compile, excrete,
 	    [unify(Language), unify(global_declaration),
-	     build([[void, this, []], [void, adapt_maxerr, []] | Constants]),
+	     build([[void, this, []] | Constants]),
 	     unify(0), unify(Stream)]),
 	excrete(Language, variable_declaration,
 	       [char, simile_identifier, void, IdentAtom], 0, Stream),
@@ -836,7 +836,7 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 	nl(Stream),
 	all(render, excrete,
 	    [unify(Language), unify(global_declaration),
-	     build([[void, this, []], [void, adapt_maxerr, []]  | Consts]),
+	     build([[void, this, []] | Consts]),
 	     unify(0), unify(Stream)]),
 	nl(Stream),
 	excrete(Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0, Stream),
@@ -1293,10 +1293,12 @@ get_swaps_and_waits(instance(submodel, ID, _,_,_), FarEnds, _, [], []):-
 get_swaps_and_waits(Instance, [base(Assoc, Link, Ptrs) | Rest], Dir,
 	  [path_substitution(Exited, Entered, Link) | MorePathSwaps], Waits) :-
 	(Dir = out,
-	    get_route_between(Instance, Assoc, Exited, Entered),
+% include only a node id rather than full model structure in assoc as attempt
+% to eliminate cyclic structures
+	    FullAssoc = instance(submodel, Assoc,  xrefs(_,_, Bases, _), _,_),
+	    get_route_between(Instance, FullAssoc, Exited, Entered),
 	    Entered = [sm(_,_,_, vm_loop(_,_, AssocSides, _)) | _],
-	    Assoc = instance(submodel, _, xrefs(_,_, Bases, _), _,_),
-	    get_swaps_and_waits(Assoc, Bases, in, SwapsBack, _),
+	    get_swaps_and_waits(FullAssoc, Bases, in, SwapsBack, _),
 	    all(compile, get_base_side, [unify(Entered), build(SwapsBack),
 					 build(AssocSides)]),
 	    /* reverse(RevAssocSides, AssocSides),
@@ -1317,7 +1319,7 @@ convert_base_specs(enumerate(Model), startable(Model)).
 
 get_route_between(Start, Finish, Exited, Entered) :-
 	ancestor(Start, Top, StartTree),
-	ancestor(Finish, Top, EndTree), !,
+	descendent(Top, Finish, EndTree), !,
 	levels_to_path(StartTree, Exited, TopPtr, _),
 	levels_to_path(EndTree, Entered, TopPtr, _).
 
@@ -1325,6 +1327,13 @@ ancestor(Instance, Instance, []).
 ancestor(Instance, Top, [Instance | Higher]) :-
 	Instance = instance(submodel, _, xrefs(_, Parent, _,_), _,_),
 	ancestor(Parent, Top, Higher).
+
+descendent(Instance, Instance, []).
+descendent(Top, Instance, Tree) :-
+	Top = instance(submodel, _, xrefs(model(_Funx, Subs), _,_,_), _,_),
+	member(Next, Subs),
+	descendent(Next, Instance, Tail),
+	append(Tail, [Next], Tree).
 
 levels_to_path([], [], Ptr, Ptr).
 
@@ -1418,21 +1427,18 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    
 	(Type = limit, !,
 	    SourceEqn = limit(ActEqn, BoundForm),
-	    ErrVar = arr('', adapt_maxerr, []),
 	    (BoundForm = min(Upper, More),
-		CK1 = max(Val-Upper, ErrVar),
-		SX1 = choose(trigger>Upper, 1,0);
+		FL1 = 2;
 	      More = BoundForm,
-		CK1 = ErrVar,
-		SX1 = 0),
+		FL1 = 0,
+		Upper = 0),
 	    (More = max(Lower, result),
-		CK2 = max(Lower-Val, CK1),
-		SX2 = choose(trigger<Lower, -1, SX1);
+		Flags is FL1 + 1;
 	      More = result,
-		CK2 = CK1,
-		SX2 = SX1),
-	    GroundEqn = (trigger=ActEqn,SX2),
-	    AllActs = [Expr, assign(ErrVar, CK2)];
+		Flags = FL1,
+		Lower = 0),
+	    GroundEqn = check_limit(ActEqn, Lower, Upper, Flags),
+	    AllActs = [Expr];
 	  Type = magnitude, !, % no derived events yet but same
 	    SourceEqn = event(ActEqn, TriggerEqn, (From->To)),
 	    GroundEqn = (magnitude=TriggerEqn,
@@ -1472,8 +1478,8 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	Actions = [],
 	Inters = []),
 	(Type = limit, !,
-	    Expr = assign(_D, choose(Test1, _Y, _N)),
-	    Test1 =.. [_Ineq, Val, _Bound],
+%	    Expr = assign(_D, choose(Test1, _Y, _N)),
+%	    Test1 =.. [_Ineq, Val, _Bound],
 				% dig out the inter
 	    % unite_event_contexts(Callable, Path, Combo),
 	    % this merely puts its conds in the subphase

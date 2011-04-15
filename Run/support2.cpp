@@ -144,6 +144,30 @@ t3 = estimate of next initial increment
   };
 };
 
+#define   CHECK_LOWER   1
+#define   CHECK_UPPER   2
+int InstanceOfModel::check_limit (double trigger, double lower, double upper,
+				  int action, int graphId) {
+  double overshoot;
+
+  if (action & CHECK_LOWER) {
+    overshoot = lower-trigger;
+    if (overshoot > 0) {
+      adapt_maxerr = max(adapt_maxerr, overshoot);
+      userStop.targetId = graphId;
+      return -1;
+    }
+  }
+  if (action & CHECK_UPPER) {
+    overshoot = trigger-upper;
+    if (overshoot > 0) {
+      adapt_maxerr = max(adapt_maxerr, overshoot);
+      userStop.targetId = graphId;
+      return 1;
+    }
+  }  
+}
+
 /* This is called only when we create the type, to return model constants */
 FINDABLE EXPORT getcount_type get_count;
 FINDABLE EXPORT int get_count(void* ame_rand_ptr, 

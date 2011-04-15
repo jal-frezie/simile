@@ -1,7 +1,7 @@
 # These are the settings for the particular version we want to make
 # edition: evaluation, teaching, standard or enterprise
 ifndef EDN
-EDN = STANDARD 
+EDN = ENTERPRISE
 endif
 # (this now defined externally for scripting)
 

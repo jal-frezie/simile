@@ -86,7 +86,7 @@ instantiate_trees([Node|Nodes], [Instance|Instances], Path, ResultOut) :-
 	list_links(Node, Links),
 	make_base_refs(Node, Links, BaseRefs),
 	/* I don't think the assoc_refs need to be in any special order... */
-	(setof(base(instance(submodel, Assoc, _,_,_), Link, _),
+	(setof(base(Assoc, Link, _),
 			FarEnd^(connects(Link, Node, Assoc),
 				Link is_connector from Node to FarEnd,
 				Link has_type relation),
@@ -101,9 +101,8 @@ instantiate_trees([Node|Nodes], [Instance|Instances], Path, ResultOut) :-
 			Name, _-Multiple, Instance),
 	instantiate_trees(Nodes, Instances, Path, ResultIn),
 	split_base_refs(BaseRefs, BaseModelRefs),
-	split_base_refs(AssocRefs, AssocModelRefs),
-	append([[Instance, ParentRef | Results], 
-			BaseModelRefs, AssocModelRefs],
+	append([Instance, ParentRef | Results], 
+			BaseModelRefs,
 			LocalRefs),
 	merge_lists(LocalRefs, ResultIn, ResultOut), !.
 

@@ -883,6 +883,8 @@ void get_string_for_error(char* spare, int error) {
     sprintf(spare, "abort request from the user");
   } else if (error == -99) {
     sprintf(spare, "discontinuity");
+  } else if (error == -98) {
+    sprintf(spare, "event");
   } else if (error < 0) {
     sprintf(spare, "Illegal operation signal %d", -error);
   } else {

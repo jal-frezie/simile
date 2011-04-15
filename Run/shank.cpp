@@ -1057,7 +1057,8 @@ excpData* ExecutingModel::ExecuteInstance(int how_int,
 	  /* tweak to allow events to be placed precisely in time. Clear maxerr
 	     before the final rate calculation, and allow threshold detection 
 	     to increase it to the amount by which the threshold is crossed. */
-	  loadedInst->adapt_maxerr = 0;
+	  loadedInst->adapt_maxerr = 0; // errlim*recover;
+	  userDefStop->targetId = 0;
 	  if (userDefStop->excpNo=loadedInst->do_evalmodel(modelSpec->phases+1))
 	    break;
 	  // from inner loop
@@ -1077,13 +1078,13 @@ excpData* ExecutingModel::ExecuteInstance(int how_int,
 	      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
 	      big_phase = phase_for(xtime, freq, modelSpec->phases);
 	    } else {
-	      // signal problem
+	      // reached doubling limit; could be compartment or event
 	      userDefStop->excpNo = -99;
 	      break;
 	    }
 	  } else {
 	    made_step = 1;
-	    if (adapt_doublings && loadedInst->adapt_maxerr<errlim*recover) {
+	    if (adapt_doublings && loadedInst->adapt_maxerr<=errlim*recover) {
 	      // low error; try longer next time if poss
 	      adapt_doublings--;
 	      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
@@ -1093,9 +1094,17 @@ excpData* ExecutingModel::ExecuteInstance(int how_int,
       } // made progress
 //      printf("Moved forward %f units\n", freq);
       if (userDefStop->excpNo) break; // from outer loop
+      userDefStop->targetId = 0; // only report events that happen here
       if (userDefStop->excpNo=loadedInst->do_evalmodel(big_phase)) break;
 //      (*advancemodel)(id, big_phase);
-    }
+      
+      if (userDefStop->targetId) {
+	adapt_doublings = 0; // no reason to expect more stiffness soon
+	userDefStop->excpNo = -98;
+	break;
+//	printf("Event %d at %f\n", userDefStop->targetId, xtime);
+      }
+    } // finished executing
     if (check_gui(*end, 0) && !userDefStop->excpNo)
       // always go to make sure time is right
       userDefStop->excpNo = -100;
