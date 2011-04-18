@@ -54,7 +54,7 @@ public:
 
   // support functions called by model code
   double stage_incr (diffs*, int, double, double, int);
-  int check_limit(double, double, double, int, int);
+  int check_limit(double, double, double, int, int, diffs);
   int loses(double, int);
   void collect(void*, int, int, ...);
 };

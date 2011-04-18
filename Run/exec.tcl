@@ -85,7 +85,8 @@ proc update_executable {node lang} {
     }
 }
 
-proc ExecuteTo {node current pause unitLength display foci intMethod maxErr} {
+proc ExecuteTo {node current pause unitLength display foci \
+		    intMethod maxErr evtPause} {
     global adapt dispDone actDone
 
     set dispDone 0
@@ -113,7 +114,7 @@ proc ExecuteTo {node current pause unitLength display foci intMethod maxErr} {
 	}
 	set scaled_next [expr {$current*$unitLength}]
 	set howAndWhen [ExecuteModel $node $intMethod \
-			    $scaled_current $scaled_next $maxErr]
+			    $scaled_current $scaled_next $maxErr $evtPause]
 	switch -- [lindex $howAndWhen 0] {
 	    -1 {
 		set currentMode exit
@@ -210,13 +211,14 @@ proc ResetModel {myNode howInt redo} {
     return $done
 }
 
-proc ExecuteModel {myNode howInt start finish errLim} {
+proc ExecuteModel {myNode howInt start finish errLim evtPause} {
     global model_id instance_id
     if {[catch {
 	if {[string bytelength $model_id]} {
 #	    set model_id $myNode
 	    c_executemodel $model_id $instance_id \
-		[expr ![string equal Euler $howInt]] $start $finish $errLim
+		[expr ![string equal Euler $howInt]] \
+		$start $finish $errLim $evtPause
 	} else {
 	    TclExecuteModel $myNode $howInt $start $finish $errLim
 	}

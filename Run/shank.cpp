@@ -993,8 +993,9 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
   return NULL;
 }
 
-excpData* ExecutingModel::ExecuteInstance(int how_int, 
-		   double start, double* end, double errlim) {
+excpData* ExecutingModel::ExecuteInstance(int how_int, double start, 
+					  double* end, double errlim,
+					  BOOLEAN pause_on_events) {
   double freq, xtime, recover;
     int big_phase, err;
     BOOLEAN made_step, first_pass;
@@ -1100,8 +1101,12 @@ excpData* ExecutingModel::ExecuteInstance(int how_int,
       
       if (userDefStop->targetId) {
 	adapt_doublings = 0; // no reason to expect more stiffness soon
-	userDefStop->excpNo = -98;
-	break;
+	// -- bodge -- make sure trigger moves out of limit
+	freq = steps[modelSpec->phases]; // reset freq too
+	if (pause_on_events) {
+	  userDefStop->excpNo = -98;
+	  break;
+	}
 //	printf("Event %d at %f\n", userDefStop->targetId, xtime);
       }
     } // finished executing
@@ -2005,9 +2010,11 @@ excpData* reset(void* modelType, void* modelHandle, int how_int,
 }
 
 excpData* execute(void* modelType, void* modelHandle, int how_int,
-	 double starttime, double* endtime, double errlim) {
+		  double starttime, double* endtime, double errlim,
+		  BOOLEAN evt_pause) {
   return ((ExecutingModel*)modelHandle)->ExecuteInstance(how_int, starttime, 
-							 endtime, errlim);
+							 endtime, errlim,
+							 evt_pause);
 }
 
 // This deletes a model instance and/or a class -- both when used in Simile

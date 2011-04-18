@@ -1425,7 +1425,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    UseStep = SmStep,
 	    SourceEqn = Source),
 	    
-	(Type = limit, !,
+	( /* Type = limit, !,
 	    SourceEqn = limit(ActEqn, BoundForm),
 	    (BoundForm = min(Upper, More),
 		FL1 = 2;
@@ -1438,7 +1438,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 		Flags = FL1,
 		Lower = 0),
 	    GroundEqn = check_limit(ActEqn, Lower, Upper, Flags),
-	    AllActs = [Expr];
+	    AllActs = [Expr]; */
 	  Type = magnitude, !, % no derived events yet but same
 	    SourceEqn = event(ActEqn, TriggerEqn, (From->To)),
 	    GroundEqn = (magnitude=TriggerEqn,
@@ -2309,7 +2309,10 @@ name_components( _, [], _, []).
 
 name_components(Language, [instance(_Type, Node, _, elt(_, Var, _), _)
 			  | Compartments], Used, Graphs) :-
-	caption_for(Node, Name),
+	(member(Node, [st(Host), hist(Host)]), !,
+	    caption_for(Host, CompName),
+	    append_atoms(CompName, '_extras', Name);
+	  caption_for(Node, Name)),
 	generate_name( Language, Name, Var, Used),
 %	make_code_atom(Name, Var, Used),
 	(Node has_class_refinement table_data of

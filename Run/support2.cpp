@@ -147,7 +147,7 @@ t3 = estimate of next initial increment
 #define   CHECK_LOWER   1
 #define   CHECK_UPPER   2
 int InstanceOfModel::check_limit (double trigger, double lower, double upper,
-				  int action, int graphId) {
+				  int action, int graphId, diffs extras) {
   double overshoot;
 
   if (action & CHECK_LOWER) {

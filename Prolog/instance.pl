@@ -243,7 +243,7 @@ the specified output units. Painful, but imagine the pleasure of not allowing
 the user any numeric values except universal constants in MKS! 
 */
 
-instance_of( function, Node, Path, [Instance], Refs) :-
+instance_of( function, Node, Path, Instances, Refs) :-
 	_ is_connector from Node to Result,
 	\+ is_ghost(Result),
 	find_type(Result, RType),
@@ -273,9 +273,24 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	    member(RType-FType, [squirt-magnitude, state-state_fn])), !,	    
 	    (FType = limit, !,
 		apply_minmax(Node, result, BoundForm),
-		FinalExpr = limit(SubbedExpr, BoundForm);
+		(BoundForm = min(Upper, More),
+		    FL1 = 2;
+		  More = BoundForm,
+		    FL1 = 0,
+		    Upper = 0),
+		(More = max(Lower, result),
+		    Flags is FL1 + 1;
+		  More = result,
+		    Flags = FL1,
+		    Lower = 0),
+		Diffs = elt(Path, _, diffs-Units),
+		FinalExpr = check_limit(SubbedExpr, Lower, Upper, Flags, Diffs),
+		MagBase = int,
+		is_instance(internal, hist(Node), none, Diffs, diffs-Units,
+			    DiffSt),
+		Instances = [DiffSt, Instance];
 % derived event or state: make magnitude expression
-		all(user, arg, [unify(2), build(EvtPairs), build(EvtNodes)]),
+	      all(user, arg, [unify(2), build(EvtPairs), build(EvtNodes)]),
 		all(user, arg, [unify(3), build(EvtPairs), build(EvtNames)]),
 		all(user, arg, [unify(4), build(EvtPairs), build(EvtArgs)]),
 		build_sum(EvtArgs, EvtTrigger),
@@ -314,8 +329,11 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	suffix(EndRefs, Refs),
 	    length(Refs, _Fix)),
 	get_units(Node, Base, Units),
-	is_instance(FType, Node, FinalExpr, elt(Path, _, Base-Units),
-		    Base-Units, Instance).
+	(FType = limit, !;
+	  MagBase = Base,
+	    Instances = [Instance]),
+	is_instance(FType, Node, FinalExpr, elt(Path, _, MagBase-Units),
+		    MagBase-Units, Instance).
 	     
 /* Note if the function lacks a value it may not be the user's fault; it might be
 an unnecessary virtual function generated in the SD view. 

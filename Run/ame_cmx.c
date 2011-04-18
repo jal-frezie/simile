@@ -947,14 +947,15 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
   double starttime, endtime, errlim;
+  BOOLEAN evt_pause;
   int how_int, error;
   excpData* errorBlk;
   Tcl_Obj* working;
   void* modelType;
   void* modelHandle;
 
-  if (argc != 7) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id integration_method start_time end_time error_limit");
+  if (argc != 8) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id integration_method start_time end_time error_limit pause_on_events");
     return TCL_ERROR;
   }
   
@@ -982,8 +983,13 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
   
+  error = Tcl_GetBooleanFromObj(interp, argv[7], &evt_pause);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
   errorBlk = execute(modelType, modelHandle, how_int, starttime, &endtime, 
-		     errlim);
+		     errlim, evt_pause);
   error = 1; //i.e., no error
   if (errorBlk) {
     switch (errorBlk->excpNo) {

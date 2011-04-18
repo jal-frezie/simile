@@ -30,7 +30,7 @@ namespace eval runcontrol33857 {
     proc SwapDistVar {node pt} {
         variable sendvars
 	variable frames
-        set widget $frames($node,rsf)
+        set widget $frames($node,rcf)
 
         #set pt [$widget.edit.capt cget -text]
         $widget.edit.capt.menu delete 0 end
@@ -129,8 +129,23 @@ namespace eval runcontrol33857 {
             pack $rcf.editBoxes.$name.unit -side left
             pack $rcf.editBoxes.$name  -anchor nw -pady 2 -fill x
         }
-        pack $rcf.editBoxes -side bottom -pady 2 -expand on -fill both
+        pack $rcf.editBoxes -side top -pady 2 -expand on -fill both
 	set runState($node,timeReached) $runState($node,currentTime)
+        pack [frame $rcf.edit] -pady 2 -expand on -fill both
+        ::ttk::menubutton $rcf.edit.capt
+	set tCd [namespace code [list SwapDistVar $node 0]]
+	set timeStepMenu [menu $rcf.edit.capt.menu -tearoff 0 -postcommand $tCd]
+# This is done in SwapDistVar
+#        foreach timeStep $sendvars($node,captList) index {1 2 3 4 5 6 7 8 9} {
+#          $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $node $index]
+#        }
+        $rcf.edit.capt configure -menu $timeStepMenu -width 18
+        pack $rcf.edit.capt -side left -anchor nw
+        pack [label $rcf.edit.colon -text " "] -side left
+	set stepField [::ttk::entry $rcf.edit.num -width 8]
+        pack $stepField -side left -expand on -fill x -anchor nw
+	bind $stepField <Return> $tCd
+        SwapDistVar $node [GetPhaseCount $node]
         
         $t.nb add [frame $t.nb.rsf] -text [tr. "Run settings"]
         set rsf $t.nb.rsf
@@ -169,21 +184,6 @@ namespace eval runcontrol33857 {
 #            lappend sendvars($node,captList) \
 #                    [list Time step \#$phase {(} $::runState($node,update$phase) {)}]
 #        }
-        pack [frame $rsf.edit] -pady 2 -expand on -fill both
-        ::ttk::menubutton $rsf.edit.capt
-	set tCd [namespace code [list SwapDistVar $node 0]]
-	set timeStepMenu [menu $rsf.edit.capt.menu -tearoff 0 -postcommand $tCd]
-# This is done in SwapDistVar
-#        foreach timeStep $sendvars($node,captList) index {1 2 3 4 5 6 7 8 9} {
-#          $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $node $index]
-#        }
-        $rsf.edit.capt configure -menu $timeStepMenu -width 18
-        pack $rsf.edit.capt -side left -anchor nw
-        pack [label $rsf.edit.colon -text " "] -side left
-	set stepField [::ttk::entry $rsf.edit.num -width 8]
-        pack $stepField -side left -expand on -fill x -anchor nw
-	bind $stepField <Return> $tCd
-        SwapDistVar $node [GetPhaseCount $node]
 
         pack [frame $rsf.stepsize] -pady 4 -expand on -fill both
 	pack [ttk::checkbutton $rsf.stepsize.adapt \
@@ -205,6 +205,18 @@ namespace eval runcontrol33857 {
 		  -textvariable runState($node,speedLimit) -width 8] \
 	    -side right -expand on -fill x
 	bind $rsf.speedlim.val <Key> "set runState($node,tweaked) 1"
+
+	pack [frame $rsf.pauses] -pady 4 -expand on -fill both
+	pack [label $rsf.pauses.capt -text [tr. "Pause on:"] -anchor w] \
+	    -side left -padx 4 -anchor w
+	pack [ttk::checkbutton $rsf.pauses.event \
+		  -variable runState($node,evtpause) \
+		  -text [tr. "Events"] \
+		  -command "set runState($node,tweaked) 1"] -side left -padx 4
+	pack [ttk::checkbutton $rsf.pauses.limit \
+		  -variable runState($node,lmtpause) \
+		  -text [tr. "Under/Overruns"] \
+		  -command "set runState($node,tweaked) 1"] -side left -padx 4
 
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
@@ -512,7 +524,8 @@ namespace eval runcontrol33857 {
 	if {[string equal start $sendvars($node,currentMode)]} {
 	    set modelAct [ExecuteTo $node \
 		     $current $pause $sendvars($node,unitLength) $display \
-		     [ListFoci $node] $runState($node,intMethod) $maxErr]
+		     [ListFoci $node] $runState($node,intMethod) $maxErr \
+			     $runState($node,evtpause)]
 	    if {[string equal start $sendvars($node,currentMode)]} {
 		set sendvars($node,currentMode) $modelAct
 	    }
