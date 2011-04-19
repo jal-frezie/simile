@@ -977,6 +977,7 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
     if (varParamArrayBase)
       varParamArrayBase->ResetTimeSeries(top_phase);
     adapt_doublings = 0;
+    loadedInst->event_prev_sign = loadedInst->event_cur_sign = 0;
   }
   
   err=loadedInst->do_evalmodel(top_phase);
@@ -996,7 +997,7 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
 excpData* ExecutingModel::ExecuteInstance(int how_int, double start, 
 					  double* end, double errlim,
 					  BOOLEAN pause_on_events) {
-  double freq, xtime, recover;
+  double freq, xtime, aim_for, recover;
     int big_phase, err;
     BOOLEAN made_step, first_pass;
     // sprintf(globMess, "xm %d %lf-%lf at %lf", how_int, start, *end, errlim);
@@ -1019,10 +1020,20 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	return userDefStop;
       }
       while(!made_step) {
+	// aim for next predicted event if closer than end
+// 	printf("Freq %f; e_p_s %d; end %f; e_p %f\n", 
+// 	       freq, loadedInst->event_prev_sign, *end, loadedInst->event_predict);
+	if (loadedInst->event_prev_sign &&
+	    freq*(*end-loadedInst->event_predict)>0) 
+	  aim_for = loadedInst->event_predict;
+	else {
+	  loadedInst->event_prev_sign = 0; // do not call event anyway
+	  aim_for = *end;
+	}
 	// stretch interval to hit end if necssary
-	if (xtime/freq+1.0625>*end/freq) {
-	  freq = *end-xtime;
-	  xtime = *end;
+	if (xtime/freq+1.0625>aim_for/freq) {
+	  freq = aim_for-xtime;
+	  xtime = aim_for;
 	} else {
 	  xtime+=freq;
 	}
@@ -1060,6 +1071,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	     to increase it to the amount by which the threshold is crossed. */
 	  loadedInst->adapt_maxerr = 0; // errlim*recover;
 	  userDefStop->targetId = 0;
+	  SetdT(0, 10); // do not record vals for later prediction
 	  if (userDefStop->excpNo=loadedInst->do_evalmodel(modelSpec->phases+1))
 	    break;
 	  // from inner loop
@@ -1067,8 +1079,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	  // get the model to generate its error estimate
 	  // previous point for zeroing maxerr
 	  if (loadedInst->adapt_maxerr<=errlim) { // no point if already over
-	    SetdT( 0,10);
-	    loadedInst->updatemodel(big_phase);
+	    loadedInst->updatemodel(big_phase); // ts[0] still 10
 	  }
 	  if (loadedInst->adapt_maxerr>errlim) {
 	    // error too great; put comps back and try shorter
@@ -1096,9 +1107,14 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 //      printf("Moved forward %f units\n", freq);
       if (userDefStop->excpNo) break; // from outer loop
       userDefStop->targetId = 0; // only report events that happen here
+      SetdT(0, 5); // now limit events will actually affect the model
+      loadedInst->event_cur_sign = 0;
+      loadedInst->event_predict = xtime + steps[modelSpec->phases]; 
+      // limit of period of interest
       if (userDefStop->excpNo=loadedInst->do_evalmodel(big_phase)) break;
 //      (*advancemodel)(id, big_phase);
       
+      loadedInst->event_prev_sign = loadedInst->event_cur_sign;
       if (userDefStop->targetId) {
 	adapt_doublings = 0; // no reason to expect more stiffness soon
 	// -- bodge -- make sure trigger moves out of limit

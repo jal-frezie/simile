@@ -943,6 +943,13 @@ make_evaluation_routine(
 						 VDelta, Span, GraphId],
 				      Content_chars),
 	    name(Term, Content_chars);
+	Expr =.. [check_limit, Trigger | Args], !,
+	    append(EarlyArgs, [Struct], Args),
+	    make_scalar(Language, Struct, SStruct),
+	    make_pointer(Language, SStruct, VStruct),
+	    append(EarlyArgs, [VStruct], VArgs),
+	    make_evaluation_routine(Language, Trigger, VTrigger),
+	    combine(Language, check_limit, [VTrigger | VArgs], Term);
 	Expr =.. [Op | Args],
 	    make_evaluation_routine_all(Language, Args, VArgs),
 	    combine(Language, Op, VArgs, Term)).

@@ -39,7 +39,8 @@ public:
   //  virtual ~InstanceOfModel() {}
   // Above stops memory leak in Windows but causes crash in Linux
   excpData userStop;
-  double adapt_maxerr;
+  double adapt_maxerr, event_predict;
+  int event_cur_sign, event_prev_sign;
   ExecutingModel* partner;
   double ts[8], dts[8];
 
@@ -54,7 +55,7 @@ public:
 
   // support functions called by model code
   double stage_incr (diffs*, int, double, double, int);
-  int check_limit(double, double, double, int, int, diffs);
+  int check_limit(double, double, double, int, int, int, diffs*);
   int loses(double, int);
   void collect(void*, int, int, ...);
 };

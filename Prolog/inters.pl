@@ -970,13 +970,13 @@ make_intermediates(
 		ResultList = [RDiffs, RChange],
 		RUnits = real,
 		ValRef = stage_incr(RDiffs, Step, RChange, Span, GraphId);
-	      Source = check_limit(ActEqn, Lower, Upper, Flags, Diffs),
+	      Source = check_limit(ActEqn, Lower, Upper, Flags, Step, Diffs),
 		SourceList = [ActEqn, Diffs],
 		Arg_template = [real, diffs],
 		ResultList = [RActEqn, RDiffs],
 		RUnits = int,
 		ValRef = check_limit(RActEqn, Lower, Upper, Flags, GraphId,
-				     RDiffs);
+				     Step, RDiffs);
 	    Source =.. [table | SourceList],
 	    Step = dummy,
 		\+ SourceList = [''], /* let checker handle empty args */

@@ -147,13 +147,38 @@ t3 = estimate of next initial increment
 #define   CHECK_LOWER   1
 #define   CHECK_UPPER   2
 int InstanceOfModel::check_limit (double trigger, double lower, double upper,
-				  int action, int graphId, diffs extras) {
-  double overshoot;
+				  int action, int graphId, 
+				  int step, diffs* extras) {
+  double overshoot, prediction;
+  BOOLEAN heading_out, go;
 
   if (action & CHECK_LOWER) {
     overshoot = lower-trigger;
-    if (overshoot > 0) {
-      adapt_maxerr = max(adapt_maxerr, overshoot);
+    heading_out = (trigger<extras->t1);
+    go = (heading_out && overshoot >= 0);
+    switch (int(ts[0])) {
+    case 0: case 1: // resetting model, do not use saved data
+      extras->t1 = trigger; // for prediction next step
+      go = (overshoot >= 0);
+      break;
+    case 5: // setting model rates for real, make predictions
+      if (heading_out && !(event_prev_sign==graphId)) { 
+	// value is dropping....not firing it now
+	prediction = ts[step] + dts[step]*overshoot/(trigger-extras->t1);
+	if (prediction<event_predict) {
+	  event_predict = prediction;
+	  event_cur_sign = graphId;
+	} 
+      } 
+      extras->t1 = trigger; // for prediction next step
+      // and drop through
+    case 10: // will not keep results of step -- 
+      // however we may want predictions to wind back to interpolated points
+      go = go || event_prev_sign==graphId;
+    }
+
+    if (go) {
+      adapt_maxerr = max(adapt_maxerr, abs(overshoot));
       userStop.targetId = graphId;
       return -1;
     }
@@ -166,6 +191,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       return 1;
     }
   }  
+  return 0;
 }
 
 /* This is called only when we create the type, to return model constants */

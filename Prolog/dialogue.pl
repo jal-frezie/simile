@@ -236,14 +236,14 @@ update_equation(Function, InterInputs,
 	  MinMaxNeeded = 0),
 	text'><'expand_message(minval, [], TrMin),
 	text'><'expand_message(maxval, [], TrMax),
-	check_limit(Min_st, TrMin, Function, MinMaxNeeded, [],
+	check_bound(Min_st, TrMin, Function, MinMaxNeeded, [],
 		    Min, MinVal, MinBase, MinErr),
 	    (\+ MinErr = [], !,
 		Complaint5 = MinErr;
 	      (Min = '', !,
 		  Alts = [TrMin];
 		Alts = []),
-		check_limit(Max_st, TrMax, Function, MinMaxNeeded, Alts,
+		check_bound(Max_st, TrMax, Function, MinMaxNeeded, Alts,
 			Max, MaxVal, MaxBase, Complaint5))),
 
 	(Complaint5 = [], !,
@@ -550,7 +550,7 @@ make_e_t(Table, Trans, TclRep) :-
 	nth0(Table, Trans, Enum),
 	    append_atoms(['{"', Enum, '"}'], TclRep).
 
-check_limit(Eqn_st, FieldName, Function, Needed,
+check_bound(Eqn_st, FieldName, Function, Needed,
             Alternatives, Eqn, Value, Base, Error) :-
 	Eqn_st = [], !,
 	    Base = any,
