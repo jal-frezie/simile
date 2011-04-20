@@ -662,7 +662,7 @@ double VarParamData::update_from_points(BOOLEAN dir, double now) {
       if (!--active) // don't trust lazy evaluation
 	zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
     if (hiBound) // return time at which event will next happen
-      now = hiBound->when+(hiWraps-wraps)*wrapAroundPoint;
+      now = hiBound->when+hiWraps*wrapAroundPoint;
   }
   if (loBound && loBound!=curTimePoint) {
     curTimePoint = loBound;
