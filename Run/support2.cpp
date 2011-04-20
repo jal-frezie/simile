@@ -163,7 +163,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       break;
     case 5: // setting model rates for real, make predictions
       if (heading_out && !(event_prev_sign==graphId)) { 
-	// value is dropping....not firing it now
+	// no predict if firing now
 	prediction = ts[step] + dts[step]*overshoot/(trigger-extras->t1);
 	if (prediction<event_predict) {
 	  event_predict = prediction;

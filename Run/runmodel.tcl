@@ -1155,7 +1155,7 @@ proc StartRun {node} {
 	return 0
     }
     foreach {var defVal} {adapt 0 errLimit 1e-6 splimit 0 speedLimit 50 \
-			  eventPauses 0} {
+			      evtpause 0} {
 	if {![info exists runState($node,$var)]} {
 	    set runState($node,$var) $defVal
 	}
