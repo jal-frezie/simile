@@ -88,7 +88,7 @@ class VarParamData : public FileParamData {
  protected: // protected methods
 
   listTimePoint* roll_forward(listTimePoint*, int*);
-  void update_from_points(int, double); // overrides FileParamData version
+  double update_from_points(int, double); // overrides FileParamData version
 
  public: // public methods
 
@@ -114,8 +114,8 @@ class VarParamData : public FileParamData {
   void ClearTimePtElements();
 
   //! Set up current data from time points as if running forward to time zero
-  //! (argument is phase)
-  void ResetTimeSeries(int);
+  //! (argument is phase, result is time of first event, 0 if none)
+  double ResetTimeSeries(int);
 
   //! Copy values from model into current data space if no time point zero
 
@@ -125,8 +125,10 @@ class VarParamData : public FileParamData {
   //! the uninitialized current data space would be copied over them
   void back_copy_vars();
 
-  //! Set up current data from time points for time and direction (TRUE=forward)
-  void UpdateTimeSeries(double, BOOLEAN);
+  //! Set up current data from time points for time and direction 
+  //! Arguments are time and dir (TRUE=forward), 
+  //! result is time of next event (now if none)
+  double UpdateTimeSeries(double, BOOLEAN);
 };
 
 //! Class for model instances
@@ -147,6 +149,7 @@ class ExecutingModel
   double lts[8], ldts[8], thisTsPosn;
   int resetting;
   int adapt_doublings;
+  double nextSeriesEvt;
   // values for keeping track of GUI interaction and execution times
   int last_op;
   unsigned long int last_exit, last_update;
