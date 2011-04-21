@@ -162,7 +162,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       go = (overshoot >= 0);
       break;
     case 5: // setting model rates for real, make predictions
-      if (heading_out && !(event_prev_sign==graphId)) { 
+      if (heading_out && !(go || event_prev_sign==graphId)) { 
 	// no predict if firing now
 	prediction = ts[step] + dts[step]*overshoot/(trigger-extras->t1);
 	if (prediction<event_predict) {
@@ -170,6 +170,9 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 	  event_cur_sign = graphId;
 	} 
       } 
+//      printf("time %f heading %d oldsign %d newsign %d predict %f return %f\n",
+//	     ts[step], heading_out, event_prev_sign, event_cur_sign, prediction,
+//	     event_predict);
       extras->t1 = trigger; // for prediction next step
       // and drop through
     case 10: // will not keep results of step -- 

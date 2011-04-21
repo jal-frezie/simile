@@ -611,6 +611,7 @@ double VarParamData::update_from_points(BOOLEAN dir, double now) {
   listTimePoint *loBound, *hiBound;
   int hiWraps = 0;
   double interFract;
+  node_data_line* ndRef = myModelExec->modelSpec->nodedata + nodeNum;
   
   loBound = curTimePoint;
   if (loBound)
@@ -642,8 +643,7 @@ double VarParamData::update_from_points(BOOLEAN dir, double now) {
     //            sprintf(globMess, "lotime %lf hitime %lf Fract %lf", 
     //		    loBound->when, hiBound->when, interFract);
     //      showMess(globMess);
-    if (fillMethod==INTERPOLATE && 
-	myModelExec->modelSpec->nodedata[nodeNum].datatype != FLAG) {
+    if (fillMethod==INTERPOLATE && ndRef->datatype != FLAG) {
       curTimePoint = loBound; // cos that's what wraps refers to
       free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
       dataPtr.contents = interpolate_bloc_data(loBound->dataPtr, 
@@ -657,12 +657,14 @@ double VarParamData::update_from_points(BOOLEAN dir, double now) {
       wraps = hiWraps;
     }
   }
-  if (myModelExec->modelSpec->nodedata[nodeNum].compclass == EVENT) {
+  if (ndRef->compclass == EVENT) {
     if (active)
       if (!--active) // don't trust lazy evaluation
 	zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-    if (hiBound) // return time at which event will next happen
+    if (hiBound) { // return time at which event will next happen
+      myModelExec->seriesEvtSign = ndRef->graph;
       now = hiBound->when+hiWraps*wrapAroundPoint;
+    }
   }
   if (loBound && loBound!=curTimePoint) {
     curTimePoint = loBound;
@@ -991,6 +993,7 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
       SetdT(0,1);
     } // was -1,0 to stop loss, but now we want it cos it happens next step
     thisTsPosn = 0.0;
+    seriesEvtSign = 0;
     if (varParamArrayBase)
       nextSeriesEvt = varParamArrayBase->ResetTimeSeries(top_phase);
     adapt_doublings = 0;
@@ -1038,11 +1041,11 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       }
       while(!made_step) {
 	// aim for next predicted event if closer than end
-// 	printf("Freq %f; e_p_s %d; end %f; e_p %f\n", 
-// 	       freq, loadedInst->event_prev_sign, *end, loadedInst->event_predict);
+// 	printf("Freq %f; e_p_s %d; end %f; e_p %f xt %f n_s_e %f eq %d\n", 
+// 	       freq, loadedInst->event_prev_sign, *end, loadedInst->event_predict, xtime, nextSeriesEvt, xtime==nextSeriesEvt);
 	aim_for = *end;
-	if (nextSeriesEvt != xtime && freq*(*end-nextSeriesEvt)>0) 
-	  aim_for = nextSeriesEvt;
+ 	if (seriesEvtSign && freq*(*end-nextSeriesEvt)>0) 
+ 	  aim_for = nextSeriesEvt;
 	if (loadedInst->event_prev_sign &&
 	    freq*(aim_for-loadedInst->event_predict)>0) 
 	  aim_for = loadedInst->event_predict;
@@ -1128,16 +1131,16 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       userDefStop->targetId = 0; // only report events that happen here
       SetdT(0, 5); // now limit events will actually affect the model
       loadedInst->event_cur_sign = 0;
-      loadedInst->event_predict = xtime + steps[modelSpec->phases]; 
+      loadedInst->event_predict = xtime + 1.0625*freq; // max for next step 
       // limit of period of interest
       if (userDefStop->excpNo=loadedInst->do_evalmodel(big_phase)) break;
 //      (*advancemodel)(id, big_phase);
       
       loadedInst->event_prev_sign = loadedInst->event_cur_sign;
       if (userDefStop->targetId) {
-	adapt_doublings = 0; // no reason to expect more stiffness soon
 	// -- bodge -- make sure trigger moves out of limit
-	freq = steps[modelSpec->phases]; // reset freq too
+	// adapt_doublings = 0; // no reason to expect more stiffness soon
+	// freq = steps[modelSpec->phases]; // reset freq too
 	if (pause_on_events) {
 	  userDefStop->excpNo = -98;
 	  break;
@@ -1216,6 +1219,7 @@ void ExecutingModel::advance_time (int phase, double fraction) {
     }
     // time value is chosen to work with RK so series pt should do the same
     series_pt = lts[modelSpec->phases];
+    seriesEvtSign = 0;
     if (varParamArrayBase) 
       nextSeriesEvt = varParamArrayBase->UpdateTimeSeries(series_pt, series_pt > thisTsPosn);
     else

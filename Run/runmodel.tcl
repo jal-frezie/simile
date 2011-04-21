@@ -1055,7 +1055,7 @@ proc RecordRunParams {node} {
 		       displayInt $runState($node,displayInt) \
 		       intMethod $runState($node,intMethod)]
     foreach {value checkstate} {errLimit adapt speedLimit splimit \
-				eventPauses evtpause} {
+				evtpause evtpause} {
 	if {$runState($node,$checkstate)} {
 	    lappend runParams $value $runState($node,$value)
 	}
