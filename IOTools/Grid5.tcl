@@ -37,6 +37,7 @@ namespace eval grid005 {
         set useNodes($winId,dataMin) 1e100
         set useNodes($winId,dataMax) -1e100
         set useNodes($winId,orient) h
+        set useNodes($winId,imgs) 0
         SetState $winId {}
 	message	$winId.msg -aspect 1000
         AddToolbar $winId
@@ -105,6 +106,7 @@ namespace eval grid005 {
         variable useNodes
         set useNodes($winId,editMode) 0
         set useNodes($winId,orient) h
+        set useNodes($winId,imgs) 0
 	message	$winId.msg -aspect 1000
 	set state [GetState $winId]
 # looks like "displaying %s %s colourmap %s %s %s aspect %d %g %g magnification %d"
@@ -415,6 +417,8 @@ namespace eval grid005 {
         pack [button $coloursF.topcolourF.cbutton -text "..." \
                 -command [namespace code "Recolour $winId top $coloursF.topcolourF.colF"]] -side right
         pack $coloursF.topcolourF.colF -side right -padx 10
+	pack [checkbutton $coloursF.imgs -text [tr. {Superimpose images}] \
+		  -variable [namespace current]::useNodes($winId,imgs)]
         
         pack $coloursF -padx 10 -pady 10 -fill x
         
@@ -750,21 +754,49 @@ namespace eval grid005 {
 #	if {![winfo viewable $winId.c]} return
 # was this to make it go faster or avoid some heinous Tk bug?
 # removed 1/9/09 so grid not out-of-date when restored to view
+	set mult $useNodes($winId,mult) ;# shorthand
         set visible [concat [$winId.c xview] [$winId.c yview]]
         set dataL [expr [lindex $visible 0]*$useNodes($winId,ncol)]
         set dataR [expr int(ceil([lindex $visible 1]*$useNodes($winId,ncol)))]
         set dataT [expr [lindex $visible 2]*$useNodes($winId,nrow)]
         set dataB [expr int(ceil([lindex $visible 3]*$useNodes($winId,nrow)))]
 	set miss [expr {$graph(origin)+2}] ;# 2 is border width
-	set atLeft [expr {-fmod($dataL,1)*$useNodes($winId,mult)+$miss}]
-	set atTop [expr {-fmod($dataT,1)*$useNodes($winId,mult)+$miss}]
+	set atLeft [expr {-fmod($dataL,1)*$mult+$miss}]
+	set atTop [expr {-fmod($dataT,1)*$mult+$miss}]
         $winId.c coords 1 [$winId.c canvasx $atLeft] [$winId.c canvasy $atTop]
 #puts "Displaying $dataL $dataT $dataR $dataB"
         $useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
 	    -from [expr int($dataL)] [expr int($dataT)] $dataR $dataB -to 0 0 \
-                -zoom $useNodes($winId,mult) -shrink
+                -zoom $mult -shrink
 	UpdateCaption useNodes $winId
 # Above was commented out till 5.5 -- messy? Buggy?
+
+# now superpose images if needed...first sort them by colour they replace
+	if {$useNodes($winId,imgs)} {
+# images can be all different sizes and shapes, so regularize
+	    for {set c 0} {$c<=$useNodes($winId,nswatches)} {incr c} {
+		if {[info exists useNodes($winId,i$c)]} {
+		    set new [image create photo]
+		    $new copy [GrowImage $useNodes($winId,i$c) $mult $mult]
+		    set imgFor([winfo rgb $winId $useNodes($winId,c$c)]) $new
+		}
+	    }
+	    for {set row [expr {int($dataT)}]} {$row<$dataB} {incr row} {
+		for {set col [expr {int($dataL)}]} {$col<$dataR} {incr col} {
+		    set dataPt [winfo rgb $winId [lindex [$useNodes($winId,hiddenMap) data -from $col $row [expr {$col+1}] [expr {$row+1}]] 0]]
+		    if {[info exists imgFor($dataPt)]} {
+#puts "Using image $imgFor($dataPt) for $dataPt"
+			$useNodes($winId,visibleMap) copy $imgFor($dataPt) \
+			    -to [expr {($col-int($dataL))*$mult}] \
+			    [expr {($row-int($dataT))*$mult}]
+		    }
+		}
+	    }
+# tidy up
+	    foreach new [array names imgFor] {
+		image delete $imgFor($new)
+	    }
+	}
     }
     
     #### Handle value popup

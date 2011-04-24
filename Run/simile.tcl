@@ -112,7 +112,7 @@ proc ChooseIntegerRatio {fraction accu} {
 	}
 	# set d [max round($m/$fraction) 1]
 	set close [expr $m/($fraction*$d)]
-	if {$close > $accu && $close < 1/$accu} {
+	if {$close >= $accu && $close <= 1/$accu} {
 	    return [list $m $d]
 	}
 	incr m
@@ -390,15 +390,16 @@ pack .hidden_e
 proc GrowImage {fCol mw mh} {
     set srcWidth [$fCol cget -width]
     set srcHeight [$fCol cget -height]
+#    puts "Growing from $srcWidth $srcHeight to $mw $mh"
     # Resize X and Y axes separately to avoid making too large an
     # intermediate image
-    set xrat [ChooseIntegerRatio [expr {$mw/0.9/$srcWidth}] 0.9]
+    set xrat [ChooseIntegerRatio [expr {$mw/0.91/$srcWidth}] 0.9]
     image create photo spare1
     spare1 copy $fCol -zoom [lindex $xrat 0] 1 -shrink
     image create photo spare2
     spare2 copy spare1 -subsample [lindex $xrat 1] 1 -shrink
     
-    set yrat [ChooseIntegerRatio [expr {$mh/0.9/$srcHeight}] 0.9]
+    set yrat [ChooseIntegerRatio [expr {$mh/0.91/$srcHeight}] 0.9]
     spare1 blank
     spare1 copy spare2 -zoom 1 [lindex $yrat 0] -shrink
     spare2 blank

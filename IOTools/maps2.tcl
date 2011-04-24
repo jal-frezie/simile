@@ -187,15 +187,22 @@ namespace eval ::maptools2 {
     proc SetSwatchColour { parentSpc winId icolour } {
         variable ${parentSpc}::useNodes
 
-	set newCol [tk_chooseColor -initialcolor $useNodes($winId,c$icolour) \
-			-title "Choose colour" -parent $winId]
-	if {[string length $newCol]} {
+	if {$useNodes($winId,imgs)} {
+	    set newCol [ChooseFile value.gif [tr. {Image for this value:}] \
+			    0 $winId]
+	    if {![string length $newCol]} return
+	    set useNodes($winId,i$icolour) [image create photo -file $newCol]
+	    PutSize $useNodes($winId,i$icolour)
+	} else {
+	    set newCol [tk_chooseColor -title "Choose colour" -parent $winId \
+			    -initialcolor $useNodes($winId,c$icolour)]
+	    if {![string length $newCol]} return
 	    set useNodes($winId,c$icolour) $newCol
-	    recolour_scale $parentSpc $winId
-	    set useNodes($winId,colourMapTweaked) 1
-#	    ${parentSpc}::UpdateState $winId
-	    ${parentSpc}::display $winId 0 0 0
 	}
+	recolour_scale $parentSpc $winId
+	set useNodes($winId,colourMapTweaked) 1
+	#	    ${parentSpc}::UpdateState $winId
+	${parentSpc}::display $winId 0 0 0
     }
     
     proc reposn_scale {parentSpc winId} {
