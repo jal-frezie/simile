@@ -146,6 +146,16 @@ namespace eval grid005 {
 	if {$annotationBase != -1} {
 	    set annot [lindex $state [incr annotationBase]]
 	}
+	set imgBase [lsearch $state images]
+	if {$imgBase>-1} {
+	    set useNodes($winId,imgs) [lindex $state [incr imgBase]]
+	    while {[string is integer -strict \
+			[set imgNo [lindex $state [incr imgBase]]]]} {
+		set imgData [lindex $state [incr imgBase]]
+		set useNodes($winId,i$imgNo) [image create photo -data $imgData]
+		PutSize $useNodes($winId,i$imgNo)
+	    }
+	}
         set useNodes($winId,caption) [lindex $state 1]
         
         AddToolbar $winId
@@ -252,6 +262,14 @@ namespace eval grid005 {
 	} else {
 	    lappend state colourmap $useNodes($winId,cbot) \
 		$useNodes($winId,cmid) $useNodes($winId,ctop)
+	}
+	lappend state images $useNodes($winId,imgs)
+	foreach possImg [array names useNodes $winId,i*] {
+	    set thei [string last i $possImg]
+	    set indx [string range $possImg [incr thei] end]
+	    if {[string is integer -strict $indx]} {
+		lappend state $indx [$useNodes($possImg) data -format png]
+	    }
 	}
 	lappend state aspect $useNodes($winId,nswatches) \
                 $useNodes($winId,min) $useNodes($winId,max) \
