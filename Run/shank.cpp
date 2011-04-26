@@ -1027,11 +1027,11 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 
     resetting = 0;
     userDefStop->excpNo = 0;
-    freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
     xtime = start;
-    while (freq*(*end-xtime)>0) { // freq only affects sign
+    while ((*end-xtime)/steps[1]>0) { // step only affects sign
       made_step = 0;
       first_pass = 1;
+      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
       big_phase = phase_for(xtime, freq, modelSpec->phases);
       // that is the biggest phase we will try to run, we may not succeed
       if (check_gui(xtime, big_phase)) {

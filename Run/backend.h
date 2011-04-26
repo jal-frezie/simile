@@ -40,7 +40,8 @@ public:
   // Above stops memory leak in Windows but causes crash in Linux
   excpData userStop;
   double adapt_maxerr, event_predict;
-  int event_cur_sign, event_prev_sign;
+  diffs *event_cur_sign, *event_prev_sign;
+  // above saves identity of predicted events as pointer to their structure
   ExecutingModel* partner;
   double ts[8], dts[8];
 

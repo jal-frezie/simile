@@ -162,12 +162,12 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       go = (overshoot >= 0);
       break;
     case 5: // setting model rates for real, make predictions
-      if (heading_out && !(go || event_prev_sign==graphId)) { 
+      if (heading_out && !(go || event_prev_sign==extras)) { 
 	// no predict if firing now
 	prediction = ts[step] + dts[step]*overshoot/(trigger-extras->t1);
 	if (prediction<event_predict) {
 	  event_predict = prediction;
-	  event_cur_sign = graphId;
+	  event_cur_sign = extras;
 	} 
       } 
 //      printf("time %f heading %d oldsign %d newsign %d predict %f return %f\n",
@@ -177,13 +177,29 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       // and drop through
     case 10: // will not keep results of step -- 
       // however we may want predictions to wind back to interpolated points
-      go = go || event_prev_sign==graphId;
+      go = go || event_prev_sign==extras;
     }
 
     if (go) {
       adapt_maxerr = max(adapt_maxerr, abs(overshoot));
       userStop.targetId = graphId;
-      return -1;
+      /* system for shortening time step after double events: questionable
+      if (event_prev_sign) {
+	if (event_prev_sign != extras) {
+	  // this is 2nd event at this point: 1st was predicted or has occurred
+	  // so post anonymous prediction for short time in future
+	  prediction =  ts[step] + dts[step]*pow(2,-16);
+	  if (prediction<event_predict) {
+	    event_predict = prediction;
+	    event_cur_sign = (diffs*)1; // v unlikely to exist
+	  } 
+	} 
+      } else { // no event was predicted, record this for double evt detection
+	event_prev_sign = extras;
+      }
+      */	  
+
+      return -1; // hit lower limit
     }
   }
   if (action & CHECK_UPPER) {
