@@ -148,7 +148,7 @@ class ExecutingModel
   double steps[8];
   double lts[8], ldts[8], thisTsPosn;
   int resetting;
-  int adapt_doublings;
+  double freq;
   int seriesEvtSign;
   double nextSeriesEvt;
   // values for keeping track of GUI interaction and execution times

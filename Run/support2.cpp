@@ -174,14 +174,24 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 //	     ts[step], heading_out, event_prev_sign, event_cur_sign, prediction,
 //	     event_predict);
       extras->t1 = trigger; // for prediction next step
-      // and drop through
-    case 10: // will not keep results of step -- 
-      // however we may want predictions to wind back to interpolated points
       go = go || event_prev_sign==extras;
+      break;
+    case 10: // error checking, do not fire events they will break adaptive 
+      // however we will want predictions to wind back to interpolated points
+      // but do not reset starting point
+      printf("time %f heading %d sign %d dt %e return %f\n",
+	     ts[step], heading_out, graphId, dts[step], event_predict);
+     if (heading_out) { 
+	prediction = ts[step] + dts[step]*overshoot/(trigger-extras->t1);
+	if (prediction<event_predict) {
+	  event_predict = prediction;
+	  event_cur_sign = extras;
+	} 
+      } 
+      go = 0;
     }
 
     if (go) {
-      adapt_maxerr = max(adapt_maxerr, abs(overshoot));
       userStop.targetId = graphId;
       /* system for shortening time step after double events: questionable
       if (event_prev_sign) {
@@ -205,7 +215,6 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
   if (action & CHECK_UPPER) {
     overshoot = trigger-upper;
     if (overshoot > 0) {
-      adapt_maxerr = max(adapt_maxerr, overshoot);
       userStop.targetId = graphId;
       return 1;
     }

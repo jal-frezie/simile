@@ -996,7 +996,7 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
     seriesEvtSign = 0;
     if (varParamArrayBase)
       nextSeriesEvt = varParamArrayBase->ResetTimeSeries(top_phase);
-    adapt_doublings = 0;
+    freq = steps[modelSpec->phases];
     loadedInst->event_prev_sign = loadedInst->event_cur_sign = 0;
   }
   
@@ -1017,145 +1017,173 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
 excpData* ExecutingModel::ExecuteInstance(int how_int, double start, 
 					  double* end, double errlim,
 					  BOOLEAN pause_on_events) {
-  double freq, xtime, aim_for, recover;
-    int big_phase, err;
-    BOOLEAN made_step, first_pass;
+  double xtime, aim_for, recover, evtError, newFreq, minFreq;
+  int big_phase, err;
+  BOOLEAN made_step, first_pass;
     // sprintf(globMess, "xm %d %lf-%lf at %lf", how_int, start, *end, errlim);
     // showMess(globMess);
     // temporary arrangement until we move this function into the instance
-    excpData* userDefStop = &(loadedInst->userStop);
+  excpData* userDefStop = &(loadedInst->userStop);
 
-    resetting = 0;
-    userDefStop->excpNo = 0;
-    xtime = start;
-    while ((*end-xtime)/steps[1]>0) { // step only affects sign
-      made_step = 0;
-      first_pass = 1;
-      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
-      big_phase = phase_for(xtime, freq, modelSpec->phases);
-      // that is the biggest phase we will try to run, we may not succeed
-      if (check_gui(xtime, big_phase)) {
-	userDefStop->excpNo = -100; // should not conflict with os signals
-	*end = xtime;
-	return userDefStop;
-      }
-      while(!made_step) {
-	// aim for next predicted event if closer than end
-// 	printf("Freq %f; e_p_s %d; end %f; e_p %f xt %f n_s_e %f eq %d\n", 
-// 	       freq, loadedInst->event_prev_sign, *end, loadedInst->event_predict, xtime, nextSeriesEvt, xtime==nextSeriesEvt);
-	aim_for = *end;
- 	if (seriesEvtSign && freq*(*end-nextSeriesEvt)>0) 
- 	  aim_for = nextSeriesEvt;
-	if (loadedInst->event_prev_sign &&
-	    freq*(aim_for-loadedInst->event_predict)>0) 
-	  aim_for = loadedInst->event_predict;
-	else {
-	  loadedInst->event_prev_sign = 0; // cancel event if stopping short
-	}
-	// stretch interval to hit end if necssary
-	if (xtime/freq+1.0625>aim_for/freq) {
-	  freq = aim_for-xtime;
-	  xtime = aim_for;
-	} else {
-	  xtime+=freq;
-	}
-	set_dts(big_phase, xtime);
-
-	switch (how_int) {
-	case EULER:
-	  if (first_pass) {
-	    recover = 0.5;
-	    SetdT(0,0);
-	  } else {
-	    SetdT(0,-1);
-	  }
-	  advance_time(big_phase, 1); // sets nextSeriesEvt
-	  loadedInst->updatemodel(big_phase);
-	  break;
-	case RUNGE_KUTTA:
-	  if (first_pass) {
-	    SetdT(0,1);
-	    recover = 0.0625;
-	  } else {
-	    SetdT(0,-2);
-	  }
-	  loadedInst->updatemodel(big_phase);
-	  userDefStop->excpNo=rk_update();
-	  break;
-	}
-	if (userDefStop->excpNo) break; // from inner loop
-	first_pass = 0;
-	if (!errlim) {
-	  made_step = 1;
-	} else {
-	  /* tweak to allow events to be placed precisely in time. Clear maxerr
-	     before the final rate calculation, and allow threshold detection 
-	     to increase it to the amount by which the threshold is crossed. */
-	  loadedInst->adapt_maxerr = 0; // errlim*recover;
-	  userDefStop->targetId = 0;
-	  SetdT(0, 10); // do not record vals for later prediction
-	  if (userDefStop->excpNo=loadedInst->do_evalmodel(modelSpec->phases+1))
-	    break;
-	  // from inner loop
-
-	  // get the model to generate its error estimate
-	  // previous point for zeroing maxerr
-	  if (loadedInst->adapt_maxerr<=errlim) { // no point if already over
-	    loadedInst->updatemodel(big_phase); // ts[0] still 10
-	  }
-	  if (loadedInst->adapt_maxerr>errlim) {
-	    // error too great; put comps back and try shorter
-	    if (adapt_doublings<31) {
-	      advance_time(big_phase, -1); // back to start
-	      xtime-=freq;
-	      adapt_doublings++;
-	      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
-	      big_phase = phase_for(xtime, freq, modelSpec->phases);
-	    } else {
-	      // reached doubling limit; could be compartment or event
-	      userDefStop->excpNo = -99;
-	      break;
-	    }
-	  } else {
-	    made_step = 1;
-	    if (adapt_doublings && loadedInst->adapt_maxerr<=errlim*recover) {
-	      // low error; try longer next time if poss
-	      adapt_doublings--;
-	      freq = steps[modelSpec->phases]*pow(2,-adapt_doublings);
-	    } // lengthen time step
-	  } // timestep too short or not
-	} // error limit exists
-      } // made progress
-//      printf("Moved forward %f units\n", freq);
-      if (userDefStop->excpNo) break; // from outer loop
-      userDefStop->targetId = 0; // only report events that happen here
-      SetdT(0, 5); // now limit events will actually affect the model
-      loadedInst->event_cur_sign = 0;
-      loadedInst->event_predict = xtime + 1.0625*freq; // max for next step 
-      // limit of period of interest
-      if (userDefStop->excpNo=loadedInst->do_evalmodel(big_phase)) break;
-//      (*advancemodel)(id, big_phase);
-      
-      loadedInst->event_prev_sign = loadedInst->event_cur_sign;
-      if (userDefStop->targetId) {
-	// -- bodge -- make sure trigger moves out of limit
-	// adapt_doublings = 0; // no reason to expect more stiffness soon
-	// freq = steps[modelSpec->phases]; // reset freq too
-	if (pause_on_events) {
-	  userDefStop->excpNo = -98;
-	  break;
-	}
-//	printf("Event %d at %f\n", userDefStop->targetId, xtime);
-      }
-    } // finished executing
-    if (check_gui(*end, 0) && !userDefStop->excpNo)
-      // always go to make sure time is right
-      userDefStop->excpNo = -100;
-    *end=xtime;
-    if (userDefStop->excpNo)
+  resetting = 0;
+  userDefStop->excpNo = 0;
+  xtime = start;
+  minFreq = 1e-6; // *steps[modelSpec->phases]
+  while ((*end-xtime)/steps[1]>0) { // step only affects sign
+    made_step = 0;
+    first_pass = 1;
+    big_phase = phase_for(xtime, freq, modelSpec->phases);
+    // that is the biggest phase we will try to run, we may not succeed
+    if (check_gui(xtime, big_phase)) {
+      userDefStop->excpNo = -100; // should not conflict with os signals
+      *end = xtime;
       return userDefStop;
-    return NULL;
-  }
+    }
+    while(!made_step) {
+      // aim for next predicted event if closer than end
+      // 	printf("Freq %f; e_p_s %d; end %f; e_p %f xt %f n_s_e %f eq %d\n", 
+      // 	       freq, loadedInst->event_prev_sign, *end, loadedInst->event_predict, xtime, nextSeriesEvt, xtime==nextSeriesEvt);
+      aim_for = *end;
+      if (seriesEvtSign && (aim_for-nextSeriesEvt)/freq>0) 
+	aim_for = nextSeriesEvt;
+      if (loadedInst->event_prev_sign &&
+	  (aim_for-loadedInst->event_predict)/freq>0) 
+	aim_for = loadedInst->event_predict;
+      else {
+	loadedInst->event_prev_sign = 0; // cancel event if stopping short
+      }
+      // stretch interval to hit end if necssary
+      if (xtime/freq+1.0625>aim_for/freq) {
+	freq = aim_for-xtime;
+	if (freq/minFreq<1)
+	  freq = minFreq;
+      }
+      xtime+=freq;
+
+      set_dts(big_phase, xtime);
+      
+      switch (how_int) {
+      case EULER:
+	if (first_pass) {
+	  recover = 0.5;
+	  SetdT(0,0);
+	} else {
+	  SetdT(0,-1);
+	}
+	advance_time(big_phase, 1); // sets nextSeriesEvt
+	loadedInst->updatemodel(big_phase);
+	break;
+      case RUNGE_KUTTA:
+	if (first_pass) {
+	  SetdT(0,1);
+	  recover = 0.0625;
+	} else {
+	  SetdT(0,-2);
+	}
+	loadedInst->updatemodel(big_phase);
+	userDefStop->excpNo=rk_update();
+	break;
+      }
+      if (userDefStop->excpNo) break; // from inner loop
+      first_pass = 0;
+      if (!errlim) {
+	made_step = 1;
+	freq = steps[modelSpec->phases];
+      } else {
+	/* tweak to allow events to be placed precisely in time. Clear maxerr
+	   before the final rate calculation, and allow threshold detection 
+	   to increase it to the amount by which the threshold is crossed. */
+	evtError = 0; // errlim*recover;
+	userDefStop->targetId = 0;
+	SetdT(0, 10); // do not record vals for later prediction
+	loadedInst->event_cur_sign = 0;
+	loadedInst->event_predict = xtime; 
+	// only interested in interpolation not slight overshoot
+	if (userDefStop->excpNo=loadedInst->do_evalmodel(modelSpec->phases+1))
+	  break; // from inner loop
+	// event error is time by which new prediction earlier or later
+	if (loadedInst->event_cur_sign) {
+	  evtError = fabs(loadedInst->event_predict-xtime);
+	  printf("predicted an event for %f at %f, error %f\n", 
+		 loadedInst->event_predict, xtime, evtError);
+	}
+	// now, if this error is too great, we wish to shorten the step
+	// -- no need to undo anything -- and try again
+	newFreq = 0;
+	if (evtError>errlim) {
+	  newFreq = loadedInst->event_predict - (xtime-freq);
+	  if (newFreq/minFreq<1) {
+	    newFreq = minFreq;
+	    loadedInst->event_predict = (xtime-freq) + minFreq;
+	  }
+	  // this is now the prediction (or absence thereof) to use
+	  loadedInst->event_prev_sign = loadedInst->event_cur_sign;
+
+	  printf("Shifting freq from %f to %g\n", freq, newFreq);
+	}
+	// Now, type 10 act will not actually fire events so we can check for
+	// continuous errors too
+	loadedInst->adapt_maxerr = 0;
+	loadedInst->updatemodel(big_phase); // ts[0] still 10
+	  
+	if (loadedInst->adapt_maxerr>errlim) {
+	  if (!newFreq || newFreq/freq>0.5) // from event error
+	    newFreq = freq/2;
+	}
+
+	if (newFreq) { // error too great; put comps back and try shorter
+	  if (freq/minFreq > 1) {
+	    advance_time(big_phase, -1); // back to start
+	    xtime-=freq;
+	    freq = newFreq;
+	    big_phase = phase_for(xtime, freq, modelSpec->phases);
+	  } else {
+	    // reached max freq limit; could be compartment or event
+	    userDefStop->excpNo = -99;
+	    break;
+	  }
+	} else {
+	  made_step = 1;
+	  if (freq!=steps[modelSpec->phases] &&	\
+	      loadedInst->adapt_maxerr<=errlim*recover) {
+	    // low error; try longer next time if poss
+	    if (freq/steps[modelSpec->phases] < 0.5)
+	      freq = 2*freq;
+	    else
+	      freq = steps[modelSpec->phases];
+	  } // lengthen time step
+	} // timestep too short or not
+      } // error limit exists
+    } // made progress
+//      printf("Moved forward %f units\n", freq);
+    if (userDefStop->excpNo) break; // from outer loop
+    userDefStop->targetId = 0; // only report events that happen here
+    SetdT(0, 5); // now limit events will actually affect the model
+    loadedInst->event_cur_sign = 0;
+    loadedInst->event_predict = xtime + 1.0625*freq; // max for next step 
+    // limit of period of interest
+    if (userDefStop->excpNo=loadedInst->do_evalmodel(big_phase)) break;
+    //      (*advancemodel)(id, big_phase);
+    
+    loadedInst->event_prev_sign = loadedInst->event_cur_sign;
+    if (userDefStop->targetId) {
+      // -- bodge -- make sure trigger moves out of limit
+      // freq = steps[modelSpec->phases]; // reset freq too
+      if (pause_on_events) {
+	userDefStop->excpNo = -98;
+	break;
+      }
+      //	printf("Event %d at %f\n", userDefStop->targetId, xtime);
+    }
+  } // finished executing
+  if (check_gui(*end, 0) && !userDefStop->excpNo)
+    // always go to make sure time is right
+    userDefStop->excpNo = -100;
+  *end=xtime;
+  if (userDefStop->excpNo)
+    return userDefStop;
+  return NULL;
+}
   
 int ExecutingModel::phase_for(double current, double step, int so_far) {
     int try_now, try_current;
@@ -1203,6 +1231,7 @@ void ExecutingModel::set_dts (int phase, double current) {
       ldts[tweak_phase]=current-lts[tweak_phase];
       SetdT(tweak_phase,ldts[tweak_phase]); 
       // dts should only be global but im lazy
+      printf("current %f SetdT %d %e\n", current, tweak_phase,ldts[tweak_phase]);
     }
   }
   
