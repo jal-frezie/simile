@@ -219,12 +219,12 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
     $w create oval [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
             [expr (2*$mb + $mt)/3] -outline {} -tag $tagSet
     $w create arc $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -width $width \
-            -style arc -start 120 -extent 200 -tag $arcTags
+            -style arc -start 120 -extent 210 -tag $arcTags
     $w create arc [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -width $width \
-            -style arc -start 240 -extent 200 -tag $arcTags
+            -style arc -start 240 -extent 210 -tag $arcTags
     $w create arc [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
             [expr (2*$mb + $mt)/3] -width $width \
-            -style arc -start -10 -extent 220 -tag $arcTags
+            -style arc -start -10 -extent 225 -tag $arcTags
     ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 

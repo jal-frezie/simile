@@ -1028,7 +1028,11 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   resetting = 0;
   userDefStop->excpNo = 0;
   xtime = start;
-  minFreq = 1e-6; // *steps[modelSpec->phases]
+  if (errlim && errlim<1e-6*steps[modelSpec->phases])
+    minFreq = errlim;
+  else
+    minFreq = 1e-6*steps[modelSpec->phases];
+
   while ((*end-xtime)/steps[1]>0) { // step only affects sign
     made_step = 0;
     first_pass = 1;
@@ -1104,8 +1108,8 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	// event error is time by which new prediction earlier or later
 	if (loadedInst->event_cur_sign) {
 	  evtError = fabs(loadedInst->event_predict-xtime);
-	  printf("predicted an event for %f at %f, error %f\n", 
-		 loadedInst->event_predict, xtime, evtError);
+	  // printf("predicted an event for %f at %f, error %f\n", 
+		 // loadedInst->event_predict, xtime, evtError);
 	}
 	// now, if this error is too great, we wish to shorten the step
 	// -- no need to undo anything -- and try again
@@ -1119,7 +1123,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	  // this is now the prediction (or absence thereof) to use
 	  loadedInst->event_prev_sign = loadedInst->event_cur_sign;
 
-	  printf("Shifting freq from %f to %g\n", freq, newFreq);
+	  // printf("Shifting freq from %f to %g\n", freq, newFreq);
 	}
 	// Now, type 10 act will not actually fire events so we can check for
 	// continuous errors too
@@ -1231,7 +1235,6 @@ void ExecutingModel::set_dts (int phase, double current) {
       ldts[tweak_phase]=current-lts[tweak_phase];
       SetdT(tweak_phase,ldts[tweak_phase]); 
       // dts should only be global but im lazy
-      printf("current %f SetdT %d %e\n", current, tweak_phase,ldts[tweak_phase]);
     }
   }
   
