@@ -161,7 +161,7 @@ render( L, procedure_start, Call, Indent, [Proc_Start]) :-
 
 /* Bits common to all model classes: public-access con- and destructor. */
 render(c, public_cons_dest,
-       instance(submodel, _, xrefs(model(_, Subs), _,_,_), _,
+       instance(submodel, _, xrefs(model(_, Subs), _,_), _,
 		ClassName-_), Indent, PubConDe) :-
 	InIndent is Indent+4,
 	sicstus_format_to_chars( "~*spublic:", [Indent," "], PubStr),

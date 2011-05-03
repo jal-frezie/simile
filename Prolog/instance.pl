@@ -93,17 +93,11 @@ instantiate_trees([Node|Nodes], [Instance|Instances], Path, ResultOut) :-
 			AssocRefs), !;
 	AssocRefs = []),
 
-	Parent has_part Node,
-	ParentRef = instance(submodel, Parent, _,_,_),
-	
 	is_instance(submodel, Node, 
-			xrefs(Submodel, ParentRef, BaseRefs, AssocRefs), 
+			xrefs(Submodel, BaseRefs, AssocRefs), 
 			Name, _-Multiple, Instance),
 	instantiate_trees(Nodes, Instances, Path, ResultIn),
-	split_base_refs(BaseRefs, BaseModelRefs),
-	append([Instance, ParentRef | Results], 
-			BaseModelRefs,
-			LocalRefs),
+	LocalRefs = [Instance | Results],
 	merge_lists(LocalRefs, ResultIn, ResultOut), !.
 
 instantiate_trees(_, _, _, _) :-
@@ -115,14 +109,9 @@ builder -- that connected to the source. */
 
 make_base_refs(_, [], []).
 
-make_base_refs(Node, [Link | R1],
-	       [base(instance(submodel, Base, _,_,_), Link, _) | R2]) :-
+make_base_refs(Node, [Link | R1], [base(Base, Link, _) | R2]) :-
 	Link is_connector from Base to _,
 	make_base_refs(Node, R1, R2).
-
-split_base_refs([],[]).
-split_base_refs([base(M, _,_) | R1], [M | R2]) :-
-	split_base_refs(R1, R2).
 
 instantiate_node(Node, Class, Instances, Path, Old_instances, New_instances) :-
 	(instance_of( Class, Node, Path, Instances, Refs), !;

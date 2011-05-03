@@ -295,9 +295,8 @@ defines_membership(SmByRec, Fp) :-
 % model, and then working out bit by bit what the program has to be.
 
 protected_build(Language, Stream, TopStep, FullModel, LocalIncs) :-
-	FullModel = model(_Channels, [instance(submodel, Top, xrefs(_,
-	    instance(submodel, _, xrefs(FullModel, top, [], []),
-		     'AME_model', top-[]), _,_), _,_)]), 
+	FullModel = model(_Channels,
+			  [instance(submodel, Top, xrefs(_,_,_), _,_)]), 
 	/* Parent of top level model is not specified, so set it empty */
 	
 	% then, traverse it in a sensible order, and make up names for the
@@ -361,8 +360,8 @@ bits and pieces */
 % File writing starts here
 	send_to_dest(Stream, ['#include <support1.cpp>']),
 	dialogue'><'tk_update_infobox(pl_expr, []),
-	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_,_),
-				     _,_), [], TopStep, Phases, [], Used,
+	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_),
+				     _,_), [], [], TopStep, Phases, [], Used,
 			    ExtIncs, Inters, ReevaluateForm),
 	merge_inters(Inters, FullModel, AugmentedModel, Constants),
 	
@@ -445,7 +444,7 @@ wot need them */
 	tk_update_infobox(pl_struct, []),
 	excrete(Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0, Stream),
 	
-	RootInstance = instance(submodel, root, xrefs(AugmentedModel, _,[],_),
+	RootInstance = instance(submodel, root, xrefs(AugmentedModel, [],_),
 				'AME_model', 'AME_model'-[]),
 	generate_main_decls(Language, RootInstance, EndTopType, Stream),
 
@@ -510,34 +509,34 @@ declare_structure(Language, model(Vars, Submodels), Used, AllGraphs) :-
 declare_submodel_structures(_, [], _, []).
 
 declare_submodel_structures(Language, [Instance | Instances], Used, Graphs) :-
-	Instance = instance(submodel, Node, xrefs(Model, _, Bases, _), 
+	Instance = instance(submodel, Node, xrefs(Model, Bases, _), 
 		Name, Type-_),
 	caption_for(Node, Capt),
 	generate_name(Language, Capt, Name, Used, [type, made]),
 	append_atoms(Name, type, Type),
-	make_assoc_loop_names(Language, Instance, Used, Bases),
+	make_assoc_loop_names(Language, Node, Used, Bases),
 	declare_structure(Language, Model, Used, HeadGraphs),
 	declare_submodel_structures(Language, Instances, Used, TailGraphs),
 	append(HeadGraphs, TailGraphs, Graphs).
 
 make_assoc_loop_names(_,_,_, []).
 
-make_assoc_loop_names(L, Instance, Used,
-		[base(BaseInstance, Link, Ptrs) | Bases]) :-
+make_assoc_loop_names(L, Node, Used, [base(BaseSm, Link, Ptrs) | Bases]) :-
 	caption_for(Link, LinkName),
-	invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs),
-	make_assoc_loop_names(L, Instance, Used, Bases).
+	invent_ptr_names(L, LinkName, BaseSm, Node, Used, Ptrs),
+	make_assoc_loop_names(L, Node, Used, Bases).
 
-invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs) :-
-	ancestor(Instance, BaseInstance, _), !,
+invent_ptr_names(L, LinkName, BaseSm, Node, Used, Ptrs) :-
+	contains(BaseSm, Node), !,
 	    Ptrs = []; % 19/12/02: does this ever happen...?
             % 12/04/11: I'm pretty confident it does not
-	BaseInstance = instance(submodel, BaseSm, xrefs(_, Parent, _,_), _,_),
-	    caption_for(BaseSm, BaseCapt),
+	    % 03/05/11: Yes it does, it's the boundary for the recursion
+	caption_for(BaseSm, BaseCapt),
 	    append_atoms(LinkName, BaseCapt, Context),
 	    append_atoms(Context, ptr, PtrBase),
 	    generate_name(L, PtrBase, Ptr, Used),
-	    invent_ptr_names(L, LinkName, Parent, Instance, Used, MorePtrs),
+	    Parent has_part BaseSm,
+	    invent_ptr_names(L, LinkName, Parent, Node, Used, MorePtrs),
 	    Ptrs = [Ptr | MorePtrs].
 
 mark_update_insts(Act, Add) :-
@@ -624,7 +623,7 @@ the model node data table and the extractor case statements */
 
 generate_main_decls(L, Instance, Finish, Stream) :-
 	Instance = instance(submodel, SymbolicName, 
-			xrefs(Model, _, Bases, _), _, ModelType-_),
+			xrefs(Model, Bases, _), _, ModelType-_),
 	(variable_size(SymbolicName), !,
 	    /* Declare the type with 'compartment' to hold instance numbers */
 	    list_local_index_meanings(SymbolicName, Bounds),
@@ -758,7 +757,7 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 	    (by_record(Node), !,
 		['RECORDS'] =  NewDims;
 	    Posn = NewDims)),
-	(Loc = xrefs(Model, _,_,_),
+	(Loc = xrefs(Model, _,_),
 	extract_instances(Model, RealDecls), !,
 	generate_metadata(L, RealDecls, DeepTree, StartCases,
 			     Used, DeepNodeData, Stream);
@@ -985,12 +984,12 @@ merge_inters([Function | Rest], Model, NewModel, Constants) :-
 	(Function = instance(internal, inter(Path, _,_), _, Name, Type-Dims),
 	    (append(LowPath, [sm(Top, _,_,_) | _], Path),
 		append(BeforeSubs,
-		       [instance(submodel, P2, xrefs(NextModel, X2,X3,X4),
+		       [instance(submodel, P2, xrefs(NextModel, X3,X4),
 				 Top, P5) | AfterSubs], Submodels), !,
 		merge_inters([instance(internal, inter(LowPath, _,_), _, Name, 
 				       Type-Dims)], NextModel, NewNext, []),
 		append(BeforeSubs,
-		       [instance(submodel, P2, xrefs(NewNext, X2,X3,X4),
+		       [instance(submodel, P2, xrefs(NewNext, X3,X4),
 				 Top, P5) | AfterSubs], NewSubs),
 		InterModel = model(Functions, NewSubs);
 		append(Functions, [Function], NewFunctions),
@@ -1013,10 +1012,10 @@ extract_action(make(Effect, Conds-_,_,_, Actions), Actions) :-
 and functions within a submodel. It also creates the instructions that determine how
 many individuals in each population submodel within it are created each round. */
 
-extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
+extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 		    ExtIncs, Inters, AssignList) :-
-	Instance = instance(submodel, Id, xrefs(model(Functions, Submodels),
-						_,_,_), _,_),
+	Instance = instance(submodel, Id,
+			    xrefs(model(Functions, Submodels), _,_), _,_),
 	(member(instance(alarm,_,_,elt(_, Al,_),_),
 		Functions), !,
 	    Path = [sm(_,_,_, fm_loop(_,_, Al))|_];
@@ -1038,7 +1037,7 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 	     unify(Used), append(Inters0, []), append(AssignList0, [])]),
 	all(compile, extract_submodel_assignment,
 	    [build(Submodels),
-	     unify(Functions), unify(Path),
+	     unify(Functions), unify(Path), unify(Tree),
 	     unify(Swaps), unify(Step), biggest(MaxStep, Step), unify(Used),
 	     merge_lists(ExtIncs, []),
 	     append(Inters, Inters0), append(AssignList, AssignList0)]),
@@ -1061,10 +1060,10 @@ and generating any intermediate nodes that are needed. We then make a version
 of the full model augmented with the extra nodes. */
 
 extract_submodel_assignment(Instance, ParentFns,
-			    Path, Swaps, TopStep, MaxStep, Used,
+			    Path, Tree, Swaps, TopStep, MaxStep, Used,
 			    ExtIncludes, Inters, AssignList) :-
 
-	Instance = instance(submodel, SmName, xrefs(Model, _, Bases, Assocs), 
+	Instance = instance(submodel, SmName, xrefs(Model, Bases, Assocs), 
 			    Name, _-Dims),
 	time_step_for(SmName, TopStep, Step),
 
@@ -1073,12 +1072,13 @@ extract_submodel_assignment(Instance, ParentFns,
 	/* bug flusher! (nonvar(Ptr); append_atoms(Name, pointer, Ptr)), */
 	path_section_for(SmName, Name, Dims, Level, Ptr, NewPtr),
 	append(Level, Path, LocalPath),
+	LocalTree = [Instance | Tree],
 	/* Do not allow an associated model to be started until its
 	bases have all been enumerated */
 
-	get_swaps_and_waits(Instance, Bases, in, InSwaps, 
+	get_swaps_and_waits(LocalTree, Bases, in, InSwaps, 
 			    CurrentBaseMembershipsSet),
-	get_swaps_and_waits(Instance, Assocs, out, OutSwaps,
+	get_swaps_and_waits(LocalTree, Assocs, out, OutSwaps,
 			    LastLocalMembershipUsed),
 	append([Swaps, InSwaps, OutSwaps], NewSwaps),
 	append(CurrentBaseMembershipsSet, LastLocalMembershipUsed,
@@ -1222,8 +1222,8 @@ nodes.
 				 [assign_array(Ptr, Name, -1)])];
 	     [SmInters, Specials] = [[], []]),
 	    BaseSides = []),
-	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps, Used,
-			    SubIncludes, FnInters, AssignList0),
+	extract_assignments(Instance, LocalPath, LocalTree, Step, MaxStep,
+			    NewSwaps, Used, SubIncludes, FnInters, AssignList0),
 /* Now add an extra instruction if this needs an external proc */
 	(SmName has_class_refinement external_code of ExtCode,
 	member(include=Inc, ExtCode),
@@ -1284,57 +1284,63 @@ get_base_side(Locale, path_substitution(Exited, Entered, _), Exited) :-
 	prefix(Entered, Locale), !;
 	prefix(Locale, Entered).
 
-get_swaps_and_waits(instance(submodel, ID, _,_,_), FarEnds, _, [], []):-
+get_swaps_and_waits([instance(submodel, ID, _,_,_) | _], FarEnds, _, [], []) :-
 	var(FarEnds),
 	    caption_for(ID, Lost),
 	    raise_exception(bad_role(Lost));
 	FarEnds = [].
 
-get_swaps_and_waits(Instance, [base(Assoc, Link, Ptrs) | Rest], Dir,
+get_swaps_and_waits(Tree, [base(Assoc, Link, Ptrs) | Rest], Dir,
 	  [path_substitution(Exited, Entered, Link) | MorePathSwaps], Waits) :-
 	(Dir = out,
-% include only a node id rather than full model structure in assoc as attempt
-% to eliminate cyclic structures
-	    FullAssoc = instance(submodel, Assoc,  xrefs(_,_, Bases, _), _,_),
-	    get_route_between(Instance, FullAssoc, Exited, Entered),
+	    make_branch(Tree, Assoc, OutTree, InTree),
+	    levels_to_path(OutTree, Exited, TopPtr, _),
+	    levels_to_path(InTree, Entered, TopPtr, _),
 	    Entered = [sm(_,_,_, vm_loop(_,_, AssocSides, _)) | _],
-	    get_swaps_and_waits(FullAssoc, Bases, in, SwapsBack, _),
+	    InTree = [instance(_, Assoc, xrefs(_, Bases, _), _,_) | _],
+	    append(OutTree, Stump, Tree),
+	    append(InTree, Stump, AssocTree),
+	    get_swaps_and_waits(AssocTree, Bases, in, SwapsBack, _),
 	    all(compile, get_base_side, [unify(Entered), build(SwapsBack),
 					 build(AssocSides)]),
 	    /* reverse(RevAssocSides, AssocSides),
 	    Keeping my fingers crossed that removing this will not affect
 	    operation*/
-	    member(base(Instance, Link, FarPtrs), Bases),
+	    Tree = [instance(_, Base, _,_,_) | _], 
+	    member(base(Base, Link, FarPtrs), Bases),
 	    get_base_ptrs(Exited, _, FarPtrs),
 	    TheseWaits = [];
 	Dir = in,
-	    get_route_between(Assoc, Instance, Exited, Entered),
+	    make_branch(Tree, Assoc, InTree, OutTree),
+	    levels_to_path(OutTree, Exited, TopPtr, _),
+	    levels_to_path(InTree, Entered, TopPtr, _),
 	    get_base_ptrs(Exited, _, Ptrs), /* this actually sets them */
 	    wait_for_submodels(Exited, TheseWaits)),	
-	get_swaps_and_waits(Instance, Rest, Dir, MorePathSwaps, OtherWaits),
+	get_swaps_and_waits(Tree, Rest, Dir, MorePathSwaps, OtherWaits),
 	append(TheseWaits, OtherWaits, Waits).
 
 convert_base_specs(time, on_reset).
 convert_base_specs(enumerate(Model), startable(Model)).
 
-get_route_between(Start, Finish, Exited, Entered) :-
-	ancestor(Start, Top, StartTree),
-	descendent(Top, Finish, EndTree), !,
-	levels_to_path(StartTree, Exited, TopPtr, _),
-	levels_to_path(EndTree, Entered, TopPtr, _).
+% This takes a tree, being a list of nested component instances innermost first,
+% and a node id, and creates the lists that must be removed and added to convert
+% the tree to point to the given node.
 
-ancestor(Instance, Instance, []).
-ancestor(Instance, Top, [Instance | Higher]) :-
-	Instance = instance(submodel, _, xrefs(_, Parent, _,_), _,_),
-	ancestor(Parent, Top, Higher).
+make_branch(Tree, Tip, OldBranch, NewBranch) :-
+	contains(Fork, Tip, List),
+	append(OldBranch, [ForkInst | _], Tree),
+	ForkInst = instance(_, Fork, xrefs(model(_Funx, Subs), _,_), _,_), !,
+	nodes_to_levels(List, Subs, NewBranch).
 
-descendent(Instance, Instance, []).
-descendent(Top, Instance, Tree) :-
-	Top = instance(submodel, _, xrefs(model(_Funx, Subs), _,_,_), _,_),
-	member(Next, Subs),
-	descendent(Next, Instance, Tail),
-	append(Tail, [Next], Tree).
-
+nodes_to_levels([], _, []).
+nodes_to_levels(List, Subs, NewBranch) :-
+	append(Trail, [HighNode], List),
+	member(HighInst, Subs),
+	HighInst = instance(_, HighNode, xrefs(model(_Funx, LowerSubs), _,_),
+			    _,_),
+	nodes_to_levels(Trail, LowerSubs, LowerInsts),
+	append(LowerInsts, [HighInst], NewBranch).
+	
 levels_to_path([], [], Ptr, Ptr).
 
 levels_to_path([instance(submodel, SmName, _, Name, _-SmDims) | MoreLevels],
