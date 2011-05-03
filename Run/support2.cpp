@@ -161,9 +161,12 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       extras->t1 = trigger; // for prediction next step
       go = (overshoot >= 0);
       break;
-    case 5: // setting model rates for real, make predictions
-      if (heading_out && !(go || event_prev_sign==extras)) { 
-	// no predict if firing now
+    case 5: // setting model rates for real
+      go = go || event_prev_sign==extras; // fire if predicted
+      if (go) { // firing
+	event_predict = ts[step]; // in case it causes another event immediately
+	event_cur_sign = (diffs*)-1; // but do not say which
+      } else if (heading_out) { // make prediction for this event
 	prediction = ts[step] + dts[step]*overshoot/(trigger-extras->t1);
 	if (prediction<event_predict) {
 	  event_predict = prediction;
@@ -171,11 +174,10 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 	} 
       } 
       extras->t1 = trigger; // for prediction next step
-      go = go || event_prev_sign==extras;
       break;
     case 10: // error checking, do not fire events they will break adaptive 
       // however we will want predictions to wind back to interpolated points
-      // but do not reset starting point
+      // but do not reset value for starting point
 //       printf("time %f heading %d sign %d dt %e return %f\n",
 // 	     ts[step], heading_out, graphId, dts[step], event_predict);
      if (heading_out) { 

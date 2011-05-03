@@ -1045,8 +1045,8 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     }
     while(!made_step) {
       // aim for next predicted event if closer than end
-      // 	printf("Freq %f; e_p_s %d; end %f; e_p %f xt %f n_s_e %f eq %d\n", 
-      // 	       freq, loadedInst->event_prev_sign, *end, loadedInst->event_predict, xtime, nextSeriesEvt, xtime==nextSeriesEvt);
+      //  	printf("Freq %f; e_p_s %p; end %f; e_p %f xt %f n_s_e %f eq %d\n", 
+      //  	       freq, loadedInst->event_prev_sign, *end, loadedInst->event_predict, xtime, nextSeriesEvt, xtime==nextSeriesEvt);
       aim_for = *end;
       if (seriesEvtSign && (aim_for-nextSeriesEvt)/freq>0) 
 	aim_for = nextSeriesEvt;
