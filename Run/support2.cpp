@@ -149,76 +149,76 @@ t3 = estimate of next initial increment
 int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 				  int action, int graphId, 
 				  int step, diffs* extras) {
-  double overshoot, prediction;
+  double to_limit, rate, prediction;
   BOOLEAN heading_out, go;
 
-  if (action & CHECK_LOWER) {
-    overshoot = lower-trigger;
-    heading_out = (trigger<extras->t1);
-    go = (heading_out && overshoot >= 0);
-    switch (int(ts[0])) {
-    case 0: case 1: // resetting model, do not use saved data
-      extras->t1 = trigger; // for prediction next step
-      go = (overshoot >= 0);
-      break;
-    case 5: // setting model rates for real
-      go = go || event_prev_sign==extras; // fire if predicted
-      if (go) { // firing
-	event_predict = ts[step]; // in case it causes another event immediately
-	event_cur_sign = (diffs*)-1; // but do not say which
-      } else if (heading_out) { // make prediction for this event
-	prediction = ts[step] + dts[step]*overshoot/(trigger-extras->t1);
-	if (prediction<event_predict) {
-	  event_predict = prediction;
-	  event_cur_sign = extras;
-	} 
-      } 
-      extras->t1 = trigger; // for prediction next step
-      break;
-    case 10: // error checking, do not fire events they will break adaptive 
-      // however we will want predictions to wind back to interpolated points
-      // but do not reset value for starting point
-//       printf("time %f heading %d sign %d dt %e return %f\n",
-// 	     ts[step], heading_out, graphId, dts[step], event_predict);
-     if (heading_out) { 
-	prediction = ts[step] + dts[step]*overshoot/(trigger-extras->t1);
-	if (prediction<event_predict) {
-	  event_predict = prediction;
-	  event_cur_sign = extras;
-	} 
-      } 
-      go = 0;
-    }
+  if (trigger>extras->t1 && (action & CHECK_UPPER)) {
+    heading_out = 1;
+    to_limit = upper-trigger;
+    rate = trigger-extras->t1;
+  } else if (trigger<extras->t1 && (action & CHECK_LOWER)) {
+    heading_out = -1;
+    to_limit = trigger-lower;
+    rate = extras->t1-trigger;
+  } else
+    heading_out = 0;
 
-    if (go) {
-      userStop.targetId = graphId;
-      /* system for shortening time step after double events: questionable
-      if (event_prev_sign) {
-	if (event_prev_sign != extras) {
-	  // this is 2nd event at this point: 1st was predicted or has occurred
-	  // so post anonymous prediction for short time in future
-	  prediction =  ts[step] + dts[step]*pow(2,-16);
-	  if (prediction<event_predict) {
-	    event_predict = prediction;
-	    event_cur_sign = (diffs*)1; // v unlikely to exist
-	  } 
-	} 
-      } else { // no event was predicted, record this for double evt detection
-	event_prev_sign = extras;
-      }
-      */	  
-
-      return -1; // hit lower limit
-    }
+  switch (int(ts[0])) {
+  case 0: case 1: // resetting model, do not use saved data
+    extras->t1 = trigger; // for prediction next step
+    go = (to_limit < 0);
+    break;
+  case 5: // setting model rates for real
+    go = (heading_out && to_limit < 0) || 
+      event_prev_sign==extras; // fire if predicted
+    if (go) { // firing
+      event_predict = ts[step]; // in case it causes another event immediately
+      event_cur_sign = (diffs*)-1; // but do not say which
+    } else if (heading_out) { // make prediction for this event
+      prediction = ts[step] + dts[step]*to_limit/rate;
+      if (prediction<event_predict) {
+	event_predict = prediction;
+	event_cur_sign = extras;
+      } 
+    } 
+    extras->t1 = trigger; // for prediction next step
+    break;
+  case 10: // error checking, do not fire events they will break adaptive 
+    // however we will want predictions to wind back to interpolated points
+    // but do not reset value for starting point
+    //       printf("time %f heading %d sign %d dt %e return %f\n",
+    // 	     ts[step], heading_out, graphId, dts[step], event_predict);
+    if (heading_out) { 
+      prediction = ts[step] + dts[step]*to_limit/(trigger-extras->t1);
+      if (prediction<event_predict) {
+	event_predict = prediction;
+	event_cur_sign = extras;
+      } 
+    } 
+    go = 0;
   }
-  if (action & CHECK_UPPER) {
-    overshoot = trigger-upper;
-    if (overshoot > 0) {
-      userStop.targetId = graphId;
-      return 1;
-    }
-  }  
-  return 0;
+
+  if (go) {
+    userStop.targetId = graphId;
+    /* system for shortening time step after double events: questionable
+       if (event_prev_sign) {
+       if (event_prev_sign != extras) {
+       // this is 2nd event at this point: 1st was predicted or has occurred
+       // so post anonymous prediction for short time in future
+       prediction =  ts[step] + dts[step]*pow(2,-16);
+       if (prediction<event_predict) {
+       event_predict = prediction;
+       event_cur_sign = (diffs*)1; // v unlikely to exist
+       } 
+       } 
+       } else { // no event was predicted, record this for double evt detection
+       event_prev_sign = extras;
+       }
+    */	  
+
+    return heading_out;
+  } else
+    return 0;
 }
 
 /* This is called only when we create the type, to return model constants */
