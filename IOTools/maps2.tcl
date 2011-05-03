@@ -22,12 +22,12 @@ namespace eval ::maptools2 {
 	    set useNodes($winId,min) 1
 	    set useNodes($winId,max) [expr $useNodes($winId,ETCount)-1]
 	    set useNodes($winId,range) [expr $useNodes($winId,max)-1]
-	    set useNodes($winId,nswatches) $useNodes($winId,range)
+	    set nswatches $useNodes($winId,range)
 	} elseif {$useNodes($winId,ETCount)} { ;# a boolean
 	    set useNodes($winId,min) 0
 	    set useNodes($winId,max) 1
 	    set useNodes($winId,range) 1
-	    set useNodes($winId,nswatches) 1
+	    set nswatches 1
 	} else {
 	    set useNodes($winId,integer) \
 		[string match INTEGER [GetModelType $node]]
@@ -47,12 +47,14 @@ namespace eval ::maptools2 {
 	    set useNodes($winId,range) \
                 [expr $useNodes($winId,max)-$useNodes($winId,min)]
 	    if [expr !$useNodes($winId,integer) || [expr $useNodes($winId,range) > 32]] {
-		set useNodes($winId,nswatches) 32
+		set nswatches 32
 	    } else  {
-		set useNodes($winId,nswatches) \
-		    [expr int($useNodes($winId,range))]
+		set nswatches [expr int($useNodes($winId,range))]
 	    }
         }
+	if {![info exists useNodes($winId,nswatches)]} {
+	    set useNodes($winId,nswatches) $nswatches
+	}
 #	ShowMess debug info "min $useNodes($winId,min); \
 #                    max $useNodes($winId,max); dataETs $useNodes($winId,dataETs); $useNodes($winId,range); \
 #                    $useNodes($winId,nswatches)" ok

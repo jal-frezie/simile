@@ -118,13 +118,11 @@ namespace eval grid005 {
 		set useNodes($winId,$colourPt) [lindex $state [incr mapBase]]
 	    }
 	}
-	SetColourMap useNodes $winId $useNodes($winId,color)
-# must come before setting rangepts because if swatch colours are included, the
-# included value of nswatches must be used
 	set rangeBase [lsearch $state aspect]
 	foreach rangePt {nswatches min max} {
 	    set useNodes($winId,$rangePt) [lindex $state [incr rangeBase]]
 	}
+	SetColourMap useNodes $winId $useNodes($winId,color)
 	set swatchBase [lsearch $state swatches]
 	if {$swatchBase > -1} {
 	    for {set col 0} {$col<=$useNodes($winId,nswatches)} {incr col} {
