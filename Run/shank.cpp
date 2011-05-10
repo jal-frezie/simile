@@ -1099,7 +1099,8 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	   to increase it to the amount by which the threshold is crossed. */
 	evtError = 0; // errlim*recover;
 	userDefStop->targetId = 0;
-	SetdT(0, 10); // do not record vals for later prediction
+	SetdT(0, 10+(how_int==RUNGE_KUTTA)); 
+	// do not record vals for later prediction
 	loadedInst->event_cur_sign = 0;
 	loadedInst->event_predict = xtime; 
 	// only interested in interpolation not slight overshoot
@@ -1162,7 +1163,8 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 //      printf("Moved forward %f units\n", freq);
     if (userDefStop->excpNo) break; // from outer loop
     userDefStop->targetId = 0; // only report events that happen here
-    SetdT(0, 5); // now limit events will actually affect the model
+    SetdT(0, 5+(how_int==RUNGE_KUTTA)); 
+    // now limit events will actually affect the model
     loadedInst->event_cur_sign = 0;
     loadedInst->event_predict = xtime + 1.0625*freq; // max for next step 
     // limit of period of interest

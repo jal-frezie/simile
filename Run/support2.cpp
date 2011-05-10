@@ -134,7 +134,7 @@ t3 = estimate of next initial increment
     return (extras->t2 = dv)-result;
   case -2: // undoes previous change R-K
     return (extras->t1 = dv)/2 - extras->t2;
-  case 10: // does not change compartment, just checks for errors
+  case 10: case 11: // does not change compartment, just checks for errors
     errMagn = fabs(dv-extras->t3)*100/span;
     if (errMagn>adapt_maxerr) {
       userStop.targetId = graphId;
@@ -149,53 +149,76 @@ t3 = estimate of next initial increment
 int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 				  int action, int graphId, 
 				  int step, diffs* extras) {
-  double to_limit, rate, prediction;
+  double old, to_limit, rate, prediction;
   BOOLEAN heading_out, go;
+  int phase = int(ts[0]);
 
-  if (trigger>extras->t1 && (action & CHECK_UPPER)) {
-    heading_out = 1;
-    to_limit = upper-trigger;
-    rate = trigger-extras->t1;
-  } else if (trigger<extras->t1 && (action & CHECK_LOWER)) {
-    heading_out = -1;
-    to_limit = trigger-lower;
-    rate = extras->t1-trigger;
-  } else
-    heading_out = 0;
-
-  switch (int(ts[0])) {
+  go = 0; // save time by preventing useless firing
+  switch (phase) {
   case 0: case 1: // resetting model, do not use saved data
     extras->t1 = trigger; // for prediction next step
-    go = (to_limit < 0);
+    // go = (to_limit < 0); events on init = nothing but trouble
     break;
-  case 5: // setting model rates for real
-    go = (heading_out && to_limit < 0) || 
-      event_prev_sign==extras; // fire if predicted
-    if (go) { // firing
-      event_predict = ts[step]; // in case it causes another event immediately
-      event_cur_sign = (diffs*)-1; // but do not say which
-    } else if (heading_out) { // make prediction for this event
-      prediction = ts[step] + dts[step]*to_limit/rate;
+  case 2: // next 3 are R-K substeps
+    extras->t2 = trigger;
+    break;
+  case 3:
+    extras->t2 = (extras->t2+trigger)/2;
+    break;
+  case 5: // setting model rates for real -- euler
+  case 6: // setting model rates for real -- R-K
+  case 10: // error checking -- euler
+  case 11: // error checking -- R-K
+    old = extras->t1;
+    if (trigger>old && (action & CHECK_UPPER)) {
+      heading_out = 1;
+      to_limit = upper-trigger;
+      rate = trigger-old;
+    } else if (trigger<old && (action & CHECK_LOWER)) {
+      heading_out = -1;
+      to_limit = trigger-lower;
+      rate = old-trigger;
+    } else
+      heading_out = 0;
+    
+    if (phase==5 || phase==6) { // doing actual rate step
+      go = (heading_out && to_limit < 0) || 
+	event_prev_sign==extras; // fire if predicted
+      if (go) { // firing
+	event_predict = ts[step]; // in case it causes another event immediately
+	event_cur_sign = (diffs*)-1; // but do not say which
+      }
+      extras->t1 = trigger; // for prediction next step
+    }
+
+    if (!go && heading_out) { // make prediction for this event
+      if (phase==6 || phase==11) { // ok approximate to quadratic
+	// printf("old %f mid %f new %f\n", old, extras->t2, trigger);
+	double a,b,det;
+	a=-heading_out*2*(trigger-2*extras->t2+old)/pow(dts[step],2);
+	if (a==0) // it is linear
+	  prediction = ts[step] + dts[step]*to_limit/rate;
+	else {
+	  b=-heading_out*(3*trigger-4*extras->t2+old)/dts[step];
+
+	  // that is the eqn for the curve. Determinant:
+	  det = pow(b,2)-4*a*to_limit;
+	  if (det<=0) return 0; // no misses or grazes
+	  det = pow(det,0.5);
+	  // printf("a %f b %f c %f det %f\n", a, b, to_limit, det);
+	  if (to_limit*dts[step]*a<0) // outside limit XOR going backwards
+	    prediction = ts[step] + (-b - det)/(2*a);
+	  else // take later root
+	    prediction = ts[step] + (-b + det)/(2*a);
+	}
+      } else // phase is 5 or 10, do linear extrap
+	prediction = ts[step] + dts[step]*to_limit/rate;
+
       if (prediction<event_predict) {
 	event_predict = prediction;
 	event_cur_sign = extras;
       } 
     } 
-    extras->t1 = trigger; // for prediction next step
-    break;
-  case 10: // error checking, do not fire events they will break adaptive 
-    // however we will want predictions to wind back to interpolated points
-    // but do not reset value for starting point
-    //       printf("time %f heading %d sign %d dt %e return %f\n",
-    // 	     ts[step], heading_out, graphId, dts[step], event_predict);
-    if (heading_out) { 
-      prediction = ts[step] + dts[step]*to_limit/(trigger-extras->t1);
-      if (prediction<event_predict) {
-	event_predict = prediction;
-	event_cur_sign = extras;
-      } 
-    } 
-    go = 0;
   }
 
   if (go) {

@@ -12,6 +12,60 @@ proc LoadTrans {} {
 #    set stm [open $::SIMILE_PATH/means.txt r]
 #    array set ::means [read $stm]
 #    close $stm
+    global parseStatus
+
+    package require xml
+    set transRsrc $::SIMILE_PATH/Help/langspec.trn
+    if {![file exists $transRsrc]} return
+    set parseStatus(trnParser) [::xml::parser -ignorewhitespace true \
+				-elementstartcommand StartTrnElt \
+				-elementendcommand FinishTrnElt \
+				-characterdatacommand DoTrnElt]
+    $parseStatus(trnParser) reset
+    set pStr [open $transRsrc r]
+    set dada [read $pStr]
+    close $pStr
+
+    set parseStatus(trnStatus) idle
+    $parseStatus(trnParser) parse $dada
+}
+
+proc StartTrnElt {name attList args} {
+    global parseStatus
+
+    switch $name {
+	phrase {
+	    array unset parseStatus trnContent
+	} english {
+	    set parseStatus(trnStatus) expecting_english
+	} target {
+	    set parseStatus(trnStatus) expecting_target
+	}
+    }
+}
+
+proc DoTrnElt {rawContent} {
+    global parseStatus means
+
+    # simile strings use 3 periods for ellipsis so substitute Unicode repn
+    set content [string map {\u2026 ...} $rawContent]
+    if {[info exists parseStatus(trnContent)]} {	
+	switch $parseStatus(trnStatus) {
+	    expecting_english {
+		set means($content) $parseStatus(trnContent)
+	    } expecting_target {
+		set means($parseStatus(trnContent)) $content
+	    }
+	}
+    } else {
+	set parseStatus(trnContent) $content
+    }
+}
+
+proc FinishTrnElt {name args} {
+    global parseStatus
+
+    set parseStatus(trnStatus) idle
 }
 
 proc SaveTrans {} {
