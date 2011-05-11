@@ -24,6 +24,9 @@ proc LoadTrans {} {
     $parseStatus(trnParser) reset
     set pStr [open $transRsrc r]
     set dada [read $pStr]
+    if {[string equal \ufeff [string index $dada 0]]} { ;# drop the BOM
+	set dada [string range $dada 1 end] ;# or it bombs the XML parser
+    }
     close $pStr
 
     set parseStatus(trnStatus) idle

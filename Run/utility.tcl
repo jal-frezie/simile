@@ -692,7 +692,7 @@ proc LoadIconImages {} {
         set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
-    if {$::do_events} {
+    if {[info exists ::do_events]} {
 	foreach fn {event state squirt} {
 	    set iconImages($fn) \
 		[image create photo -file "../Images/Toolbar/${fn}.gif"]
