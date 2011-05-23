@@ -881,7 +881,8 @@ make_intermediates(
 	    append(AArgs, IWaits, Args),
 	    longest_path([ABase, IBase], EltBase),
  	    append(TailLoops, ItemLoops, EltLoops),
- 	    special_combine_paths(EltLoops, ILoops, [], ResultLoops),
+ 	    (special_combine_paths(EltLoops, ILoops, [], ResultLoops), !;
+		throw(cannot_combine_argument_dimensions(Source))),
  	    append(ResultLoops, EltBase, SourceContext);
 	
 	Source = (Param=SubExp,Rest), !,
