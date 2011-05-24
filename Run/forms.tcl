@@ -2142,7 +2142,7 @@ proc TtkLikeDialogue {dlg args} {
     }
 
     if {$options(-default) ne ""} {
-	bind $dlg <Return> [$cmd.$options(-default) invoke]
+	bind $dlg <Return> [list $cmd.$options(-default) invoke]
 	focus $cmd.$options(-default)
     }
     if {$options(-cancel) ne ""} {

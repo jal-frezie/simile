@@ -23,6 +23,7 @@ proc LoadTrans {} {
 				-characterdatacommand DoTrnElt]
     $parseStatus(trnParser) reset
     set pStr [open $transRsrc r]
+    fconfigure $pStr -encoding utf-8
     set dada [read $pStr]
     if {[string equal \ufeff [string index $dada 0]]} { ;# drop the BOM
 	set dada [string range $dada 1 end] ;# or it bombs the XML parser
