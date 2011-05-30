@@ -96,10 +96,10 @@ namespace eval DisplayFormat {
         return [format %.2d:%.2d:%.2d $hours_int $minutes_int $seconds]
     }
     
-#    proc YYYYMMDDHHMMSS {val dp} {
-#        set time [expr {$val-int($val)}]
-#        return "[YYYYMMDD $val $dp] [HHMMSS $time $dp]"
-#    }
+    proc YYYYMMDDHHMMSS {val dp} {
+        set time [expr {$val-int($val)}]
+        return "[YYYYMMDD $val $dp] [HHMMSS $time $dp]"
+    }
     
     proc Boolean {val dp} {
         if {$val} {
