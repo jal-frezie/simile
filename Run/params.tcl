@@ -6,10 +6,9 @@
 # This file contains procedures for reading and editing tables of data at run-time.
 #
 
-proc FileParamDialogue {topWin mustShow} {
+proc FileParamDialogue {topNode topWin mustShow} {
     global paramData widgetNames myNode
 
-    set topNode $myNode
     set topCapt [GetExecTitle $topNode]
     set allNodes [GetCompProperty $topNode Objects]
     # first check for any parameter values that are no longer needed
@@ -149,7 +148,7 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     # bit of voodoo...get table relating numerical indices of node to enumerated
     # types (from model) and use to translate array bounds. Do this first because
     # there will be null entries in the table for vm model levels.
-    set trans [GetTransTable $node]
+    set trans [GetCompProperty $topNode Trans $node]
     if {$readMany($compName)} {
         set nodeDims [linsert $nodeDims 0 TIME]
         set trans [linsert $trans 0 {}]
@@ -167,7 +166,8 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     set dimList [MakeDimsLegible $nodeDims \
 		     [GetCompProperty $topNode Type $node]]
     set topFrame $winId.c.canvas.frame
-    set slot [frame [MakeSubFrames $topNode $topFrame $levels fileparams 0]]
+    set slot [frame [AddSubFrames $topNode $topNode $topFrame $levels \
+			 fileparams 0]]
     set holder [winfo parent $slot]
 # holder always contains header frame, which is packed at top
     foreach fellow [pack slaves $holder] {
@@ -305,11 +305,11 @@ proc MakeDimsLegible {dimList dataType} {
     return $dimList
 }
 
-# MakeSubFrames puts up a load and a save button for each submodel frame, and
+# AddSubFrames puts up a load and a save button for each submodel frame, and
 # gives them the Load and Save commands in a given namespace. So we must put
 # the commands in a matching one...
 
-proc MakeSubFrames {clientId parent hierarchy ns pt} {
+proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
     global msgs iconImages
     set level [lindex $hierarchy $pt]
     set nextPt [expr $pt+1]
@@ -373,7 +373,7 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
 #set bg colour from submodel: rejected because not all widgets can have their
 #colours set so it looks odd, but then I discovered ttk styles...
 
-	    set node [IdFromTail $::myNode $path 0]
+	    set node [IdFromTail $topNode $path 0]
 # take advantage to have header pop submodel comment
 	    set msgs(comment_$path) \
 		[GetFromProlog tk_get_info(dummy,$node,comment)]
@@ -388,7 +388,8 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
 			 active [Gradient $fColour $nextLevel -75] {} $fColour]
 	    }
         }
-        return [MakeSubFrames $clientId $nextLevel $hierarchy $ns $nextPt]
+        return [AddSubFrames $topNode $clientId $nextLevel $hierarchy \
+		    $ns $nextPt]
     }
 }
 
@@ -489,7 +490,7 @@ proc AcceptData {topNode compName notInput complain} {
         #   set msgs(param_source_$compName) Unsaved
         # only if the actual entry field has been edited
 	set recordDims [lrange [GetCompProperty $topNode Dims $node] 0 end-1]
-        set trans [GetTransTable $node]
+        set trans [GetCompProperty $topNode Trans $node]
         if {$readMany($compName)} {
 	    set recordDims [linsert $recordDims 0 TIME]
 	}
@@ -1616,7 +1617,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 		set paramMetadata($restoredComp,saveBinary) 0
 		set paramMetadata($restoredComp,saveReference) 1
             } else {
-                set trans [GetTransTable $node]
+                set trans [GetCompProperty $topNode Trans $node]
                 if {!$startLine || ($startLine==-1 && 
 				    $readMany($restoredComp))} {
 		    set trans [lreplace $trans 0 0 time \

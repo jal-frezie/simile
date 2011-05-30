@@ -278,6 +278,10 @@ proc GetTransTable { node } {
 #    return [do_in_editor GetTransTable $node]
 }
 
+proc MakeSubFrames {clientId nextLevel hierarchy ns nextPt} {
+    AddSubFrames $::myNode $clientId $nextLevel $hierarchy $ns $nextPt
+}
+
 proc ProdFromHelper {winId node caption} {
     global helperTable
     if {[string first .newParamTgt $winId]==0 && [string length $node]} { 

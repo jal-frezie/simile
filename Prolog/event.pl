@@ -176,11 +176,16 @@ context_find(Wid, Query, Target) :-
 	    caption_for(Comp, Field)),
 	name(Query, QueryStr),
 	name(Field, FieldStr),
-	lower(QueryStr, LQueryStr),
-	lower(FieldStr, LFieldStr),
+	squint_at(QueryStr, LQueryStr),
+	squint_at(FieldStr, LFieldStr),
 	is_infix(LQueryStr, LFieldStr),
 	append_callback(Comp),
 	fail; true.
+
+squint_at(Str, FlatStr) :-
+	lower(Str, LStr),
+	[CR, Sp] = "\n ",
+	substitute(CR, LStr, Sp, FlatStr).
 
 is_infix(In, Out) :-
 	prefix(Start, Out),

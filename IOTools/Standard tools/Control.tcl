@@ -206,7 +206,7 @@ namespace eval runcontrol33857 {
 	    -side right -expand on -fill x
 	bind $rsf.speedlim.val <Key> "set runState($node,tweaked) 1"
 
-	pack [frame $rsf.pauses] -pady 4 -expand on -fill both
+	frame $rsf.pauses
 	pack [label $rsf.pauses.capt -text [tr. "Pause on:"] -anchor w] \
 	    -side left -padx 4 -anchor w
 	pack [ttk::checkbutton $rsf.pauses.event \
@@ -217,7 +217,9 @@ namespace eval runcontrol33857 {
 		  -variable runState($node,lmtpause) \
 		  -text [tr. "Under/Overruns"] \
 		  -command "set runState($node,tweaked) 1"] -side left -padx 4
-
+	if {[info exists ::do_events]} {
+	    pack $rsf.pauses -pady 4 -expand on -fill both
+	}
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
         #        set sendvars($node,timeUnit) unit

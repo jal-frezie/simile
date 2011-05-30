@@ -254,162 +254,11 @@ proc do_in_editor {args} {
     return [eval $args]
 }
 
-# elements of runHow specify communication mode between editor and execution
-# processes
-
-# where 
-# ----- 
-# This is one of 'home', 'namespace', 'interp', 'thread' or 'process'
-# depending on what a model's execution gets to itself. Obviously most
-# of these are place holders; currently anything other than 'home'
-# will stick the execution into its own process.
-set runHow(where) home
-if {[string equal home $runHow(where)]} {
 # load the whole execution code rather than just the common bits
-    source ../Run/runmodel.tcl
-} else {
-    source ../Run/graphs.tcl
-    source ../Run/utility.tcl
-
-    # Allow table viewer to be used in this interp
-    source ../IOTools/DisplayFormats.tcl 
-    source ../IOTools/graphtools.tcl
-    source ../IOTools/two_table.tcl
-    set helperTable(tableViewer) $keyValue
-}
-
-# launch
-# ------
-# set launch to exec or open depending on what command is used to start the
-# execution process -- must be open if pipes are used
-set runHow(launch) open
-
-# init
-# ----
-# set init to interactive or script, for how to do the initialization
-
-# It cannot be interactive for the Mac because if you start Wish without a
-# script filename it will load appMain.tcl and start a new instance of Simile
-
-# However it must be interactive for Windows because using script occasionally
-# causes a file selector dialogue in the execution process to freeze. Linux is
-# easy but I want to keep all Unix platforms similar
-
-# call
-# ----
-# set call to send or pipe, for the way to pass data to the exec
-# process send must be async because a sync send will not allow
-# callbacks to be handled note that if init is interactive this cannot
-# be send because there is no way to set the exec process's
-# application name
-set runHow(call) pipe
-
-# return
-# ------
-# set return to send_sync, send_async or pipe, for the way to get data from
-# the exec process. Must be pipe for the Mac because there is no send cmd, but
-# Windows machines cannot raise one process's window in response to a command
-# from the other if it is pipe. Linux again is easy -- but I get complaints
-# when running models over VNC if using send, so use pipe.
-
-# readpipe
-# --------
-# Set readpipe to await_cmd or get_data to decide how the exec process
-# expects to get commands. It only makes a difference if call is pipe
-# -- otherwise the exec gets commands directly anyway. If return is
-# pipe it must be get_data because it cannot process another command
-# from stdin while waiting for the last one to finish. Also if init is
-# script it must be get_data because the process does not accept
-# commands from stdin after initializing from a script.
-
-# Simile 4.2 used a third option in which the execution process awaited
-# commands itself but would call gets to get the result after sending a 
-# command of its own to the editor. This worked in Linux whereas get_data
-# does not with interactive start, probably because the channel does not stop
-# being readable otherwise
-
-if {![string match Darwin $tcl_platform(os)]} {
-    set runHow(init) interactive
-    set runHow(return) send_sync
-    set runHow(readpipe) await_cmd
-} else {
-    set runHow(init) script
-    set runHow(return) pipe
-    set runHow(readpipe) get_data
-}
-
-# this is obsolete and must be 'parallel'
-set runHow(time) parallel
-
-# this exists in case I don't want to exploit the concat in eval
-proc do_for_node {node args} {
-    global runState tcl_platform runHow simtmpdir
-
-    if {![string equal home $runHow(where)] && \
-	    ![info exists runState($node,interp)]} {
-	if {[string equal interp $runHow(call)]} {
-	    set runState($node,interp) [interp create]
-	    $runState($node,interp) eval set runHow $runHow(return)
-	} else {
-#	    scan [info tclversion] {%d.%d} MAJ MIN
-	    if {[string equal windows $tcl_platform(platform)]} {
-		set sep {}
-	    } else {
-		set sep .
-	    }
-            if [string match Darwin $tcl_platform(os)] {
-		set makeExec ../../MacOS/Simile
-		#              catch {file rename ../Scripts/AppMain.tcl ../Scripts/AppMain.hide}
-            } else {
-		set makeExec $::execDir/wish
-            }
-            set srcLoc ../Run/runmodel.tcl          
-	    if {![info exists runHow(sendCmd)]} { ;# fix debug env
-		set runHow(sendCmd) [list send [tk appname]]
-	    }
-	    set scArgs [list $node $simtmpdir $runHow(sendCmd) $runHow(return) \
-			    $runHow(readpipe)]
-	    set runHow(loaded) 0
-	    if {[string equal script $runHow(init)]} {
-		set launchArgs [concat $srcLoc $scArgs]
-		set runHow(loaded) 1
-	    } else {
-		set launchArgs {}
-	    }
-	    if {[string equal open $runHow(launch)]} {
-		set runState($node,interp) \
-		    [open [concat |$makeExec $launchArgs] r+]
-	    } else {
-		set runState($node,interp) \
-		    [eval exec $makeExec $launchArgs &]
-	    }
-	    if {[string equal pipe $runHow(return)]} {
-		fileevent $runState($node,interp) readable \
-		    [list FeedModel $node pipe]
-	    }
-	    if {[string equal interactive $runHow(init)]} {
-		tell_runner $node [list set argv $scArgs]
-		tell_runner $node [list source $srcLoc]
-		set runHow(loaded) 1
-	    }
-	    tkwait variable runState($node,modelReady)
-	    #tk_messageBox -message "Go! mr is '$runState($node,modelReady)'"
-            if [string match Darwin $tcl_platform(os)] {
-		#              catch {file rename ../Scripts/AppMain.hide ../Scripts/AppMain.tcl}
-		#      carbon::processHICommand hide {}
-            }
-	    set runState($node,queueSize) 0
-	}
-# tickle runs all the time now for other purposes so this should just append
-# its action to the list of stuff to do
-#	tickle $node
-	RaiseModelWindow $node
-    }
-    return [eval do_in_node $node $args]
-}
-
+source ../Run/runmodel.tcl
 # experimental way to stop hangs -- this does something in the execution process and
-# does it again as long as it works
+# does it again as long as it works. With blind execution processes this is no
+# longer needed, but still used to keep Mac window list current
 
 proc tickle {} {
     global regularActs
@@ -423,134 +272,28 @@ proc tickle {} {
 # one call gets a result while another is waiting to start, the second must be
 # started -- and finished -- before the first can use its result.
 
-proc do_in_node {node args} {
-    global myNode runState runHow
+proc do_for_node {node args} {
+    global myNode runState
 
-    if {[string equal home $runHow(where)]} {
-	if {[info exists myNode]} {
-	    set helpersNode $myNode
-	}
-	set myNode $node
-	set res [eval $args]
-	unset myNode
-	if {[info exists helpersNode]} {
-	    set myNode $helpersNode
-	}
-	return $res
+    if {[info exists myNode]} {
+	set helpersNode $myNode
     }
-
-    set command [list do $args]
-    if {[string equal interp $runHow(call)]} {
-	set result [$runState($node,interp) eval $command]
-    } else {
-	while {!$runState($node,modelReady)} {
-	    tkwait variable runState($node,modelReady)
-	}
-    if {$runState($node,modelReady)==1} {
-	tell_runner $node $command
-	incr runState($node,queueSize)
-#puts "put: $command"
-	set runState($node,modelReady) 0
-	upvar \#0 runState($node,response$runState($node,queueSize)) result
-	tkwait variable runState($node,response$runState($node,queueSize))
-#puts "Got $result"
-	incr runState($node,queueSize) -1
-    } else {
-        set result {res 0}
-#puts "$command: model dead"
-        }
+    set myNode $node
+    set res [eval $args]
+    unset myNode
+    if {[info exists helpersNode]} {
+	set myNode $helpersNode
     }
-    set info [lindex $result 1]
-    switch [lindex $result 0] {
-	err {
-	    error [lindex $info 0] [join $info \n]
-	} res {
-	    return $info
-	}
-    }
-}
-
-proc FeedModel {node incoming} {
-    global runState errorInfo
-
-    if {[string equal pipe $incoming]} {
-	gets $runState($node,interp) incoming_lines
-        set incoming [join $incoming_lines \n]
-    }
-#puts "Received \"$incoming\" from $node exec"
-    if {[string equal get [lindex $incoming 0]]} {
-	if {[catch [lindex $incoming 1] response]} {
-	    set result [list err [split $errorInfo \n]]
-	} else {
-	    set result [list res $response]
-	}
-	tell_runner $node $result
-#   eval $runHow(sendOp) exec_for_$node {$result}
-    } else {
-	set runState($node,modelReady) 1
-	set runState($node,response$runState($node,queueSize)) $incoming
-    }
-}
-
-proc tell_runner {node action} {
-    global runState runHow
-#puts "Sending \"$action\" to $node exec"
-    if {[string equal pipe $runHow(call)]} {
-	if {[string equal get_data $runHow(readpipe)] && $runHow(loaded)} {
-	    set action [split $action \n] ;# command must be on one line
-	}
-	puts $runState($node,interp) $action
-	flush $runState($node,interp)
-    } else {
-	eval $runHow(sendOp) -async exec_for_$node {after idle [list $action]}
-    }
-}
-
-proc do_if_running {node args} {
-    global runState runHow
-
-    if {[string equal home $runHow(where)]} {
-	set running [info exists runState($node,modelRunning)]
-    } else {
-	set running [info exists runState($node,interp)]
-    }
-    if {$running} {
-	return [eval do_in_node $node $args]
-    } else {
-	return 0
-    }
+    return $res
 }
 
 proc HaveValues {node} {
-    set globRef \$::runState($node,modelRunning)
-    return [do_if_running $node expr $globRef>2]
-}
-
-proc TryToKill {node} {
-    global runState runHow
-#puts "Trying to kill $node"
-    if {![info exists runState($node,interp)]} {
-	return
-    } 
-# rest is unused -- if I need it, move killmodel from ame_cmx to unpacker
-    if {[string equal open $runHow(launch)]} {
-        c_killmodel [pid $runState($node,interp)]
-        catch {close $runState($node,interp)}
+    global runState
+    if {[info exists runState($node,modelRunning)]} {
+	return $runState($node,modelRunning)
     } else {
-        c_killmodel $runState($node,interp)
+	return 0
     }
-    unset runState($node,interp)
-
-# now supply bogus result to interrupted model call
-    set runState($node,response$runState($node,queueSize)) {res 0}
-#puts "get: model killed"
-# and unstick anything still waiting for it
-    set runState($node,modelReady) -1
-#    set runState($node,modelRunning) 0
-
-#    unset instance_id($node)
-#    unset model_id($node)
-    ToggleIOToolMenu $node
 }
 
 # Pass on Prolog calls meant for model
@@ -563,9 +306,7 @@ proc ScrubRun {node times} {
 	return
     }
     set runState($node,modelRunning) 0
-    set optKill [after 3000 TryToKill $node]
-    do_if_running $node ExScrubRun $node $times
-    after cancel $optKill
+    ExScrubRun $node $times
     ToggleIOToolMenu $node
 }
 
@@ -579,7 +320,7 @@ proc DestroyHelpers {node} {
 }
 
 proc LeaveHelpers {node} {
-    do_if_running $node ExDestroyHelpers $node
+    ExDestroyHelpers $node
 }
 
 proc load_dll {topNode lang progDir id node incs} {
@@ -704,7 +445,7 @@ proc compile_c {workingDir extLibs complain} {
 		    puts $batSt "set PATH=[file nativename [file join \
                         $env(SYSDIR) libexec gcc mingw32 3.4.2]];%PATH%"
 		    puts $batSt "copy \"[file nativename [file join \
-                        $GCCLIBDIR lib dllcrt*.o]]\" ."
+                        $GCCLIBDIR dllcrt*.o]]\" ."
 		    puts $batSt "copy \"[file nativename [file join \
                          $GCCLIBDIR crt*.o]]\" ."
 		}
@@ -716,7 +457,7 @@ proc compile_c {workingDir extLibs complain} {
                         -I\"[file nativename [file join \
                             $GCCLIBDIR include]]\" model.cpp"
 		set libOpt1 -L\"[file nativename $LIBDIR]\"
-		set libOpt2 -L\"[file nativename [file join $GCCLIBDIR lib]]\"
+		set libOpt2 -L\"[file nativename [file join $GCCLIBDIR]]\"
 		puts $batSt "g++ -shared -o $TARGET \
                         $libOpt1 $libOpt2 objtmp.o [concat $lDirs $lFiles]"
 	    } else {
@@ -789,19 +530,17 @@ proc compile_c {workingDir extLibs complain} {
 }
 
 proc LoadProgram {node lang} {
-    global runState runHow myNode
+    global runState myNode
     set runState($node,updated) 0
     set runState($node,lang) $lang
     if {[info exists runState($node,runParams)] && \
 	    ![info exists runState($node,currentTime)]} {
-	do_for_node $node SetRunParams $node $runState($node,runParams)
+	SetRunParams $node $runState($node,runParams)
     }
     update_executable $node $lang
-    if {[do_for_node $node StartRun $node]} {
+    if {[StartRun $node]} {
         ToggleIOToolMenu $node
-	if {[string equal home $runHow(where)]} {
-	    set myNode $node ;# cos new MRE will have focus
-	}
+	set myNode $node ;# cos new MRE will have focus
     }
 }
 
@@ -912,7 +651,7 @@ proc StartComms {firstTime} {
 }
 
 proc ControlDraw {prologVersion} {
-    global sendvars custom tcl_platform env userinfo openModel simtmpdir runHow
+    global sendvars custom tcl_platform env userinfo openModel simtmpdir
     global regularActs tclBitness
 
     LoadIconImages
@@ -1162,9 +901,8 @@ proc ControlDraw {prologVersion} {
 		 ]
     CheckCompilerLocation
     LoadModelWindowExtensions
-    if {[string equal home $runHow(where)]} {
-	MakeHelperMenu
-    }
+    MakeHelperMenu
+
     set regularActs "ListWindows .windowchoice"
     menu .windowchoice -tearoff 0 -postcommand $regularActs
     if {[string equal aqua [tk windowingsystem]]} {
@@ -1758,7 +1496,7 @@ proc RaiseWinMRE {win} {
     global window_info
     
     set node $window_info($win,top_node)
-    do_if_running $node RaiseMREFor $node
+    RaiseMREFor $node
 }
 
 proc FinishExec {win} {
@@ -1811,8 +1549,7 @@ proc OpenProjectFile {path} {
         # variable which will be read before opening the dialogue
 #puts "retrieved SimileProject(spfList) $SimileProject(spfList)"
 	    foreach {smPath spfRelPath} $SimileProject(spfList) {
-		do_for_node $topNode set ::projectParams($smPath) \
-		    [file join $baseDir $spfRelPath]
+		set ::projectParams($smPath) [file join $baseDir $spfRelPath]
 	    }
 	}
         if {$SimileProject(running_c)} {
@@ -1826,7 +1563,7 @@ proc OpenProjectFile {path} {
             set command [ChooseText \
 			     [PrefValue custom(helperManager) helperManager] \
 			     ::RunEnv::LoadSHF CreateView]
-            do_in_node $topNode $command $topNode \
+            $command $topNode \
 		[file join $baseDir $SimileProject(nameOfHelperStateFile)]
         }
     }
@@ -1872,8 +1609,7 @@ proc SaveProjectFile {topNode path tgt} {
     }
     # shf file name loaded
     
-    set spfList [do_in_node $topNode array get ::SimileProject \
-		     fileparam,/${topNode}/*]
+    set spfList [array get ::SimileProject fileparam,/${topNode}/*]
     foreach {varName spfPath} $spfList {
 	set smPart [Submodelize $varName]
 	set relPath [Relativize $tgt $spfPath]
@@ -2110,7 +1846,7 @@ proc Rerun {winId go} {
 
         MenuSelect $winId code $runType
     } else {
-        do_in_node $node StartRun $node
+        StartRun $node
         # assume if model was running before it will run again
     }
     # Only proceed if it worked
@@ -2118,7 +1854,7 @@ proc Rerun {winId go} {
         return fail
     }
     if {$go} {
-        do_in_node $node StartNow $node start
+        StartNow $node start
     }
     return yes
 }
@@ -2160,7 +1896,7 @@ proc ToggleIOToolMenu {node} {
                     $winData.toolSlot.navbar.runenv configure -state normal
                 } else {
                     if {![winfo exists $topMenu.helpers]} {
-                        set menuSpec [do_in_node $node ListMenuContents .helpers]
+                        set menuSpec [ListMenuContents .helpers]
                         ReconstituteMenu $topMenu.helpers $menuSpec $node
                     }
 # Add menu at end if using MacOS, since Help menu is not defined by application

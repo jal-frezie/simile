@@ -15,28 +15,6 @@ source ../Run/hai2mmii.tcl
 
 source ../Run/mre.tcl
 
-#
-# MacOS X specific procedures for the run-time window
-# Alastair 31 Jan 2005
-#
-
-if {[string match "Darwin" $tcl_platform(os)] & ![info exists runHow(where)]} {
-#
-# The Quit command in the application menu ALWAYS calls exit, so we must quit 
-# by that route however it is invoked (keyboard shortcut or mouse click)
-#
-    rename exit wishExit
-    proc exit {} {
-	global myNode
-#	do_in_editor tclAE::send -s misc actv
-	RaiseModelWindow $myNode
-	prolog tk_kill_everything([GetNodeFromFocus])
-    }
-    bind all <Command-q> exit
-    package require tclAE
-    tclAE::send -s misc actv
-}
-
 proc MakeHelperMenu {} {
     global custom tcl_platform SIMILE_PATH
     set fm [menu .helpers -tearoff 0]
@@ -45,8 +23,7 @@ proc MakeHelperMenu {} {
     $fm add command -label "Save" -command SaveView
     $fm add command -label "Clear" -command ClearView
     $fm add command -label "Close" -command KillHelpers
-    $fm add command -label "Parameters..." \
-	-command [list FileParamDialogue {} 1]
+    $fm add command -label "Parameters..." -command MessCurrentFileParams
     set oldDir [pwd]
     cd $SIMILE_PATH/IOTools
     AddHelperSublist $fm "Add tool" 2
@@ -83,7 +60,7 @@ proc ListMenuContents {menu} {
 
 proc MessFileParams {topNode parent} {
     global runState
-    switch -exact -- [FileParamDialogue $parent 1] {
+    switch -exact -- [FileParamDialogue $topNode $parent 1] {
 	-1 {
 #	    StartNow $topNode stop
 	    set runState($topNode,modelRunning) 1
@@ -97,6 +74,10 @@ proc MessFileParams {topNode parent} {
 	
     }
     $runState($topNode,cnvs) itemconfigure 1 -fill [RestingColour $topNode]
+}
+
+proc MessCurrentFileParams {} {
+    MessFileParams $::myNode {}
 }
 
 proc RestingColour {node} {
@@ -198,7 +179,7 @@ proc AddHelperSublist {fm title ct} {
 			       Plotter SliderControl TableViewer} $posn]
 		set helperTable($classIdx) $newHelperClass
 	    }
-	    $m add command -label $action \
+	    $m add command -label [tr. $action] \
 		-command [list CreateHelperWindow $newHelperClass $action]
 	    unset newHelperClass
 	}
@@ -588,7 +569,9 @@ proc ShiftDisplays {node payload current display} {
 proc TellAllHelpers {node payload fun args} {
     global helperTable myNode subbedPlots runState
 
-    set nodeForFocus $myNode
+    if {[info exists myNode]} {
+	set nodeForFocus $myNode
+    }
     set handlesForFocus [array get subbedPlots]
     array unset subbedPlots
     array set subbedPlots $payload
@@ -640,7 +623,9 @@ proc TellAllHelpers {node payload fun args} {
 	    eval $cbCmd
 	}
     }
-    set myNode $nodeForFocus
+    if {[info exists nodeForFocus]} {
+	set myNode $nodeForFocus
+    }
     array unset subbedPlots
     array set subbedPlots $handlesForFocus
     return $failure
@@ -717,7 +702,8 @@ proc GetShortVals {topNode plName limit} {
 	}
     }
     if {![string equal novalue $text]} {
-	set text [PrettifyValList [TransEnums [GetTransTable $plName] $text]]
+	set text [PrettifyValList [TransEnums [GetCompProperty $topNode Trans \
+						   $plName] $text]]
     }
     return [list $count $text]
 }
@@ -812,8 +798,8 @@ proc UpdateSnap {w label submodels topNode node} {
     if {[string equal novalue $rawVals]} {
 	return 1
     }
-    set v1 [set runState(val$w) [TransEnums [GetTransTable $node] \
-		     [lindex $rawVals 0]]]
+    set v1 [set runState(val$w) [TransEnums [GetCompProperty $topNode Trans \
+						 $node] [lindex $rawVals 0]]]
     catch {GetCompProperty $topNode Type $node} iType
     if {[string equal REAL $iType]} {
 	set precis [PrefValue custom(snapPrecision) snapPrecision]
@@ -1148,7 +1134,7 @@ proc StartRun {node} {
     }
     update idletasks ;# 'see all' missing spfs if that option was selected
     # otherwise query tangles with fp dialogue and hangs under windows
-    if {[FileParamDialogue $fpParent 0]<1} {
+    if {[FileParamDialogue $node $fpParent 0]<1} {
 	if {[info exists runState($node,cnvs)]} {
 	    $runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
 	}
@@ -1482,15 +1468,4 @@ proc newInt {} {
 proc ModelDirectory {} {
     global custom
     return [file dirname [lindex $custom(hotlist) 0]]
-}
-
-proc SetNodeForHelper {node} {
-    global runHow myNode sender
-
-    if {[info exists runHow(where)]} {
-	set myNode $node
-# guess I would only need this for old-style PEST interface and it breaks
-# dll interface for debugging
-#	set sender $runHow(sendCmd)
-    }
 }

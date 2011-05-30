@@ -194,12 +194,12 @@ proc ClickObj { x y winId X Y action} {
     set node [ExtractPrologName $winId $target]
     set context [GetClickCapt $winId $canx $cany $node]
     set topNode $window_info($winId,top_node)
-    if {[do_if_running $topNode ProdObj $topNode $node $context]} {
+    if {[ProdObj $topNode $node $context]} {
 	return
     }
     # IO tool took the click, so do no more
     if {[string compare $pushedbutton snap]==0} then {
-        do_in_node $topNode snap $topNode $node
+        snap $topNode $node
     } else {
 	set window_info(lastClickCapt) $context
         if {[string equal click $action]} {
@@ -982,14 +982,14 @@ proc AddEqnPopup {node x y winId X Y} {
             AddPopupMessage $fromProlog \#ffe0c0
         }
         if {$doVal} {
-        set cptPath [GetClickCapt $winId $canx $cany $plName]
-        set execName [do_for_node $node GetIdFromCaptionPath $cptPath]
-        if {[string equal nomatch $execName]} {
-            AddPopupMessage novalue \#ffffc0 do_for_node $node GetShortVals $node $plName
-        } else {
-            AddPopupMessage novalue \#ffffc0 do_for_node $node GetShortVals $node $execName
-        }
-    }
+	    set cptPath [GetClickCapt $winId $canx $cany $plName]
+	    set execName [GetCompProperty $node IdFromCapt $cptPath]
+	    if {[string equal nomatch $execName]} {
+		set execName $plName
+	    }
+            AddPopupMessage novalue \#ffffc0 GetShortVals $node $execName
+	    
+	}
     }
 }
 
@@ -1322,10 +1322,12 @@ proc EmptyWindow {c} {
 if {[string match "Darwin" $tcl_platform(os)]} {
 #
 # The Quit command in the application menu ALWAYS calls exit, so we must quit 
-# by that route however it is invoked (keyboard shortcut or mouse click)
+# by that route however it is invoked (keyboard shortcut or mouse click) -- 
+# although it helpfully calls ::tk::mac::Quit first
 #
-  rename exit wishExit
-  proc exit {} {
+#  rename exit wishExit
+  bind all <Command-q> exit
+  proc ::tk::mac::Quit {} {
       global window_info
       set currentDesk _
       catch {set currentDesk \
@@ -1334,8 +1336,9 @@ if {[string match "Darwin" $tcl_platform(os)]} {
 # actually executing the exit procedure in the Cocoa version, and 'after idle'
 # has never quite worked properly on the Mac
       after 100 prolog tk_kill_everything($currentDesk)
+#...should not be needed now using ::tk::mac::Quit, but ww1t+a...
+      return 0
   }
-  bind all <Command-q> exit
 #
 # Enable the Preferences command in the application menu using Carbon extension
 #
@@ -2097,8 +2100,7 @@ proc ReconstituteMenu {newMenu mList tgtNode} {
     $newMenu add $type -label [lindex $entrySpec 1]
     switch $type {
         command {
-        $newMenu entryconfigure last -command \
-            [concat do_in_node $tgtNode [lindex $entrySpec 2]]
+        $newMenu entryconfigure last -command [lindex $entrySpec 2]
         } cascade {
         set subMenu $newMenu.sub$subs
         incr subs
@@ -2137,7 +2139,7 @@ proc RaiseAny {node win} {
     if {[string equal editor $node]} {
 	raise $win
     } else {
-	after idle do_for_node $node MyRaise $win
+	after idle MyRaise $win
     }
 }
 

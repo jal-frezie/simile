@@ -1323,92 +1323,6 @@ proc first {lo} {
     return [expr $lo==1] ;# fn will accept floats so better work with them
 }
 
-# this version allowed supposedly unlimited nested callbacks, but the 
-# rest of the system could not cope...
-#
-#proc do_in_editor {args} {
-#    global runHow edResponse
-#
-#    remote [list get $args]
-#    while (1) { ;# this loop onle ever once if dde/send
-#	if {[string equal pipe $runHow]} {
-#	    set edResponse [gets stdin]
-#	} else {
-#	    if {[info exists edResponse]} {unset edResponse}
-#	    tkwait variable edResponse
-#	} 
-#	set info [lindex $edResponse 1]
-#	switch [lindex $edResponse 0] {
-#	    do { ;# will not happen if dde/send
-#		do $info
-#	    } err {
-#		error [lindex $info 0] [join $info \n]
-#	    } res {
-#		return $info
-#	    }
-#	}
-#    }
-#}
-#
-#proc err {info} {
-#    global edResponse
-#    set edResponse [list err $info]
-#}
-#
-#proc res {info} {
-#    global edResponse
-#    set edResponse [list res $info]
-#}
-#
-# so now only simple callbacks are allowed and these are done synchronously
-
-# set to get_data or await_cmd -- if the former, then after sending commands
-# to the editor this will execute a get to read the pipe, otherwise it waits
-# for a command to set the return value
-#set readPipe get_data
-
-# 'after idle' doesn't quite work in MacOS X
-proc start_in_editor {args} {
-    do_in_editor after 1 $args
-}
-
-if {![info exists runHow(where)]} { ;# we are not at home, so call
-proc do_in_editor {args} {
-    global masterId
-    return [thread::send $masterId [lrange [info level 0] 1 end]]
-}
-
-proc old_do_in_editor {args} {
-    global runHow sender fromEditor
-#    tk_messageBox -message "callback $args"
-    if {[string equal send_sync $runHow(return)]} {
-	return [eval $sender {$args}]
-    }
-    remote [list get $args]
-#    if {[string match get_data $readPipe]} {
-#	set gotResp 0
-#	while {!$gotResp} {
-#	    set fromEditor [gets stdin]
-#	    if {[string equal do [lindex $fromEditor 0]]} {
-#		eval $fromEditor
-#	    } else {
-#		set gotResp 1
-#	    }
-#	}
-#    } else {
-	tkwait variable fromEditor
-#    }
-    set info [lindex $fromEditor 1]
-    switch [lindex $fromEditor 0] {
-	err {
-	    error [lindex $info 0] [join $info \n]
-	} res {
-	    return $info
-	}
-    }
-}
-}
-
 proc res {value} {
     global fromEditor
     set fromEditor [list res $value]
@@ -1417,38 +1331,6 @@ proc res {value} {
 proc err {value} {
     global fromEditor
     set fromEditor [list err $value]
-}
-
-proc exit_exec {} {
-	remote done
-	wm deiconify .
-	after idle exit
-}
-
-proc do {argList} {
-    global errorInfo
-    if {[catch $argList response]} {
-	set result [list err [split $errorInfo \n]]
-    } else { 
-	set result [list res $response]
-    }
-    return [remote $result]
-}
-
-proc remote {result} {
-    global runHow myNode sender
-    switch $runHow(return) {
-	interp {
-	    return $result
-	} send_async {
-	    eval $sender {after idle [list FeedModel $myNode [list $result]]}
-	} send_sync {
-	    catch {eval $sender {FeedModel $myNode [list $result]}}
-	} pipe {
-	    puts [split $result \n]
-	}
-    }
-    return done
 }
 
 ########################### stuff for both languages below ###############

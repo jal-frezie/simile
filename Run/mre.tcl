@@ -63,7 +63,7 @@ namespace eval RunEnv {
     
     # A top level window to contain the helpers
     proc Create { node } {
-        global helperTable tcl_platform runHow
+        global helperTable tcl_platform
         variable runControlFrame
         variable sliderControlFrame;
         variable variableListFrame;
@@ -190,9 +190,7 @@ namespace eval RunEnv {
             #from runmodel.tcl AddHelperSublist
 	    #            set mreMenu [winfo parent [$mainframe getmenu help]]
             $mreMenu insert 2 cascade -label [tr. "Add"] -menu .helpers.sub2
-	    if {[info exists runHow(where)]} {
-		$mreMenu insert 3 cascade -label [tr. "Window"] -menu .windowchoice
-	    }
+	    $mreMenu insert 3 cascade -label [tr. "Window"] -menu .windowchoice
 	    UnderlineUniquely $mreMenu
 
             # Add a PanedWindow for the hierrachical/run control view and main display window
@@ -245,7 +243,7 @@ namespace eval RunEnv {
         variable dp0s
 
         set currentNode $node
-        SetNodeForHelper $node
+        set ::myNode $node
 # Problem with $CurrentContainers(node) not set for first use: ignore potential error
 # ALD 28 Feb 2005 - not thoroughly tested; patching up MacVersion
 # JAT 25 Apr 2006 - patch caused nasty in Tile 0.7.5 (and probably Mac too, check) - reversed to enable find of real bug
