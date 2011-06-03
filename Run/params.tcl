@@ -211,6 +211,7 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     pack [::ttk::entry $slot.e -width 1] -side left -fill x -expand on
     BindPopup $slot.e param_source_$compName comment_$compName
     bind $slot.e <Return> [list $slot.tick invoke]
+    KoreanClick $slot.e 1 {}
     bind $slot.e <Double-1> [list EditValueComment $topFrame $compName]
     if {[info exists suppliedData($compName)]} {
         FillIfSmall $slot.e $suppliedData($compName)

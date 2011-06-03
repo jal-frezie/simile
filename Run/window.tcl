@@ -876,7 +876,9 @@ proc DoIfApplicable {winName item action} {
 proc AddCanvasBindings { c topNode } {
     global tcl_platform
 
-    bind $c <Button-1> {ClickObj %x %y %W %X %Y click}
+# If doubles are bound to items (see Korean below) then singles must be too
+# so they happen in the right order
+    $c bind all <Button-1> {ClickObj %x %y %W %X %Y click}
 # Bindings are slightly different in the MacVersion because many users have
 # one button mice.  Thus ctrl-left click is used to simulate right click,
 # and command-left click replaces the function of ctrl-left.    

@@ -710,6 +710,7 @@ proc fill_inputs { triples } {
         set p [entry $scroller.plist.p$line -bd 0 -relief flat \
                 -font TkDefaultFont -textvariable "equation(entry$line)"]
         bind $p <Enter> [list QueuePopup AddWidgetPopup %X %Y $paramPopMsg]
+	KoreanClick $p 1 {}
         bind $p <Double-1> "equationDouble %W $en; focus $en"
         bind $p <FocusOut> "ListEditDone %W $line entry"
         bind $p <Return> "ListEditDone %W $line entry"
@@ -795,18 +796,21 @@ proc equationBindings { t en eu lbf lbx lbp gr ta ok can} {
     bind $lbf <Enter> [list QueuePopup AddFnPopup %W %X %Y %x %y]
     bind $lbf <Motion> [list MoveInFns %W %X %Y %x %y]
     bind $lbf <Leave> RemovePopup
+    KoreanClick $lbf 1 {}
     bind $lbf <Double-1> [list functionClick %W %x %y $en]
 
     set PopCmd [list QueuePopup AddIndexPopup %W %y %X %Y]
     bind $lbx <Enter> $PopCmd
     bind $lbx <Motion> "RemovePopup;$PopCmd"
     bind $lbx <Leave> RemovePopup
+    KoreanClick $lbx 1 {}
     bind $lbx <Double-1> "indexClick %W %y $en; focus $en"
 
     set PopCmd [list QueuePopup AddParamPopup %W %y %X %Y]
     bind $lbp <Enter> $PopCmd
     bind $lbp <Motion> "RemovePopup;$PopCmd"
     bind $lbp <Leave> RemovePopup    
+    KoreanClick $lbp 1 {}
     bind $lbp <Double-1> "paramClick %W %y $en; focus $en"
     
     bind $gr <Tab> "focus $ta"

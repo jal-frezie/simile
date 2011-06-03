@@ -535,6 +535,7 @@ namespace eval $keyValue {
                 return $f
             } else {
                 pack [frame $f] -fill x -expand true
+		KoreanClick $f 1 {}
                 bind $f <Double-1> [namespace code \
                         [list DoInpDlg $node $f $title]]
                 bind $f <Button-3> [namespace code \
@@ -582,6 +583,7 @@ namespace eval $keyValue {
                 -side right
         pack [label $f.estlbl -text Estimate:] -side right
         foreach widjo [winfo children $f] {
+	    KoreanClick $widjo 1 {}
             bind $widjo <Double-1> [namespace code \
                     [list DoInpDlg $node $f $title]]
             bind $widjo <Button-3> [namespace code \
@@ -714,6 +716,7 @@ namespace eval $keyValue {
 # do command now in case it was selected last time
 #            AbleTimeSampling $myNode $node $title $f
 	    foreach widjo [concat [list $f] [winfo children $f]] {
+		KoreanClick $widjo 1 {}
                 bind $widjo <Double-1> [namespace code \
                         [list DoOutDlg $node $f $title]]
                 bind $widjo <Button-3> [namespace code \

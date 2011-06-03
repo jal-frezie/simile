@@ -275,6 +275,7 @@ namespace eval RunEnv {
 	    set pane$i [AddNotebookPage $containerId.notebook]
         }
         
+	KoreanClick $containerId.notebook 1 {}
         bind $containerId.notebook <Double-1> "::RunEnv::EditTabLabel %W"
         bind $containerId.notebook <Button-3> "::RunEnv::EditTabLabel %W"
         
@@ -1187,6 +1188,7 @@ $tb1.b43 configure -state $useSpaceAbility
         
                     set containerId [winfo parent $path]
                     #ShowMess debug info "containerId $containerId" ok
+		    KoreanClick $path 1 {}
                     bind $path <Double-1> "::RunEnv::EditTabLabel %W"
                     bind $path <Button-3> "::RunEnv::EditTabLabel %W"
                     pack $path -fill both -expand yes

@@ -578,6 +578,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     $dfile xview end
     bind $dfile <Return> "LoadDataFile columns 0 $mdl"
+    KoreanClick $dfile 1 {}
     bind $dfile <Double-1> "LoadDataFile columns 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
@@ -620,6 +621,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
             -textvariable table_entry(dataField) \
             -dropenabled true -droptypes LISTBOX_ITEM \
             -dropcmd ChooseDataHeader]
+    KoreanClick $lheads 1 {}
     bind $lheads <Double-1> [list PutInDataField $lheads $dhead]
     pack $dhead -side top -expand true -fill x
     pack $fc.select.data -expand true -fill x -anchor w \
@@ -634,6 +636,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     $dfile xview end
     bind $dfile <Return> "LoadDataFile grid 0 $mdl"
+    KoreanClick $dfile 1 {}
     bind $dfile <Double-1> "LoadDataFile grid 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
@@ -691,6 +694,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     $dfile xview end
     bind $dfile <Return> "LoadDataFile image 0 $mdl"
+    KoreanClick $dfile 1 {}
     bind $dfile <Double-1> "LoadDataFile image 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
@@ -761,6 +765,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     $dfile xview end
     bind $dfile <Return> "LoadDataFile gdal 0 $mdl"
+    KoreanClick $dfile 1 {}
     bind $dfile <Double-1> "LoadDataFile gdal 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \

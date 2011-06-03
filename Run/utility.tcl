@@ -880,3 +880,24 @@ proc GetFrame {special} {
 #proc TranslateFormatting {key params} {
 #    eval [list format [tr. $key]] $params
 #}
+
+# use this to look after the single clicks and the doubleclicks will
+# look after themselves    
+set ::clickTimeKO 0
+proc KoreanClick {widget buttonNo cmd} {
+    if {[string match windows $::tcl_platform(platform)]} {
+	bind $widget <Button-$buttonNo> [subst -nocommands {
+	    set gap [expr {[clock milliseconds]-[set ::clickTimeKO]}]
+	    incr ::clickTimeKO [set gap]
+	    if {[set gap]<500} {
+		event generate [list $widget] <Button-$buttonNo> \
+		    -rootx %X -rooty %Y -x %x -y %y
+		# which will be converted to double
+	    } else {
+		eval [list $cmd]
+	    }
+	}]
+    } else { # no bug to work around
+	bind $widget <Button-$buttonNo> $cmd
+    }
+}
