@@ -807,7 +807,7 @@ doubleclick_on(Edit_thing) :-
 	    Edit_type = influence, Attrs = [use_sofar]), !,
 	    find_name_host(Edit_thing, ControlThing),
 	    all(event, get_refinement_or_0,
-		[unify(ControlThing), build(Attrs), build(OldVals)]),
+		[unify(ControlThing), unify(2), build(Attrs), build(OldVals)]),
 	    (get_av_pair(ControlThing, 2, comment, OldComment), !;
 		OldComment = ''),
 	    do_relation_dialog(Wid, ControlThing, Edit_type, OldVals,
@@ -827,6 +827,19 @@ doubleclick_on(Edit_thing) :-
 		    fail;
 		finish_move(Parent, 1));
 	    OKd == 0);
+	Edit_type = text, !,
+	    Attrs = [columns],
+	    all(event, get_refinement_or_0,
+		[unify(Edit_thing), unify(1), build(Attrs), build(OldVals)]),
+	    do_text_item_dialog(Wid, Edit_thing, OldVals, OKd, NewVals),
+	    (OKd == 1, !,
+		all(m_update, add_parameter,
+		    [unify(Edit_thing), unify(1), build(Attrs),
+		     build(NewVals)]),
+		(redisplay(Edit_thing),
+		    fail;
+		  finish_move(Parent, 1));
+	    OKd == 0);
 	Edit_type is_class_of_sort has_function, !,
 	    find_node_with_data(Edit_thing, Base, Control_thing),
 	    is_parameter(Control_thing, WasP),
@@ -844,8 +857,8 @@ doubleclick_on(Edit_thing) :-
 	    find_all_comps(Parent, Base),
 	    update_runnable(Parent)).
 	
-get_refinement_or_0(ControlThing, Attr, OldExc) :-
-	get_av_pair(ControlThing, 2, Attr, OldExc), !;
+get_refinement_or_0(ControlThing, AttSort, Attr, OldExc) :-
+	get_av_pair(ControlThing, AttSort, Attr, OldExc), !;
 	OldExc = 0.
 
 /* If something's dimensions have changed, check all the equations

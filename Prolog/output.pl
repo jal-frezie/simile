@@ -35,7 +35,8 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_scrub_run/2, tk_kill_helpers/1,
 	update_tk_variable/3, tk_clear_graph/1, handle_tk_events/0, 
 	tk_update_sim_display/3, my_file_exists/1, my_delete_file/1,
-	tk_do_disag_dialog/4, tk_do_relation_dialog/8, get_tcl_shpiel/1,
+	tk_do_disag_dialog/4, tk_do_relation_dialog/8, tk_do_text_item_dialog/5,
+			get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2,
 	check_directory/1, windowize/2,
 	compile_c_program/4, check_exec_fns_fresh/5, load_executable/6,
@@ -267,7 +268,7 @@ relation(Wid, Coords, _Stack, Fatness, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutRelation', Wid, br(Singleton_list),
 		       Fatness, Colour_scheme, br(Features)], _).
 
-text(Wid, Coords, Type, Features, Fatness, Colour_scheme, Content) :-
+text(Wid, Coords, Type, Features, Fatness, _Specials, Colour_scheme, Content) :-
 	name(Content, ContentStr),
 	argify(ContentStr, ContentArg),
 	safe_tcl_eval(['PutText', Wid, br(Coords), br(Type), br(Features),
@@ -554,6 +555,12 @@ tk_do_relation_dialog(Win, Caption, Type, State, OldComment,
 			  Type, StateList, br(write(OldComment))],
 		 New_P_string),
 	chop_list(New_P_string, [OKd, NewComment | NewState]).
+
+tk_do_text_item_dialog(Win, Caption, State, OKd, NewState) :-
+	bracketize(State, StateList),
+	safe_tcl_eval(['TextCheckAndSet', Win, br(write(Caption)),  StateList],
+		 New_P_string),
+	chop_list(New_P_string, [OKd | NewState]).
 
 tk_get_pref(ResourceName, ResourceValue) :-
 	safe_tcl_eval(['PrefValue', write(custom(ResourceName)),

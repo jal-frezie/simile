@@ -235,7 +235,9 @@ display(Window_id, Comp, Depth, Trans, Recurse) :-
 	    get_shape(Comp, centre, [X,Y]),
 	    find_fatness(Trans, Fatness),
 	    get_flash(Comp, Lit),
-	    add_caption(Window_id, Comp, [X,Y,X,Y], Trans, Fatness, Lit);
+	    all(event, get_refinement_or_0,
+		[unify(Comp), unify(1), build([columns]), build(Vals)]),
+	    add_caption(Window_id, Comp, [X,Y,X,Y], Trans, Fatness, Vals, Lit);
 	Comp is_of_sort box,
 	display_in(Window_id, Comp, Depth, Trans),
 	(Recurse = 1,
@@ -335,7 +337,7 @@ add_caption: This is somewhat tricky as most of our GUI languages support the us
 Powersim does this. Still, we must simply call a textual output device, and when the user changes the name of the component we will end up coming through here, where a pre-draw check will (in the tk case) show us that the name has already changed, thus not needing further interference. 
 */
 
-add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
+add_caption(Wid, Id, Box, Trans, Fatness, Specials, Colour_scheme) :-
 	caption_for(Id, Caption),
 	draw_style_for(Id, ExactStyle),
 	(ExactStyle=state, !,
@@ -373,7 +375,7 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 	EditState = [editable]),
 /* currently added to last choice to test alternative edit prevention */
 	text(Wid, ScreenPoint, PosStyle, [Id, fillable | EditState],
-			Fatness, Colour_scheme, Caption).
+			Fatness, Specials, Colour_scheme, Caption).
 
 rotate_compass(H, V) :-
 	suffix([V, _, H | _], [e, se, s, sw, w, nw, n, ne, e, se, c, _, c]), !.
@@ -513,7 +515,7 @@ display_in(Wid, Comp, Depth, Trans) :-
 		m_update'><'oblitterfry(Comp)),
 	    (get_display_depth(Wid, caption, Caption_detail),
 		((Style = cloud; \+ appears(Comp); Caption_detail =< Depth), !;
-		add_caption(Wid, Comp, BBox, Trans, Fatness, Colour_scheme)));
+		add_caption(Wid, Comp, BBox, Trans, Fatness, [0], Colour_scheme)));
 	true).
 
 display_link_in(Wid, Link, Depth, Trans) :-
@@ -558,7 +560,7 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	    relations have captions */
 	    (get_display_depth(Wid, caption, Caption_detail),
 		Caption_detail =< Depth, !;
-	    add_caption(Wid, Link, Bowtie, Trans, RelFatness, Colour_scheme));
+	    add_caption(Wid, Link, Bowtie, Trans, RelFatness, [0], Colour_scheme));
 	true).
 
 find_fatness([_,_,FatX,FatY], Fatness) :-

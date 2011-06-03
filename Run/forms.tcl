@@ -839,6 +839,40 @@ proc ResetProgressBox {} {
     set progressBoxCount 0
 }
 
+proc TextCheckAndSet {parent title state} {
+    global text_props
+
+    set t [PutItThere .relcheck $parent]
+    wm resizable $t 0 0
+    wm protocol $t WM_DELETE_WINDOW {set text_props(done) 0}
+    wm title $t [format $::msgs(props_title) [BlankCrs $title]]
+    frame .relcheck.top
+    TitleFrame .relcheck.top.left -text [tr. {Text options:}]]
+    set f [GetFrame .relcheck.top.left]
+    pack [frame $f.width]
+    pack [ttk::label $f.width.lab -text [tr. {Width (in columns):}]] -side left
+    pack [ttk::entry $f.width.ent -textvariable text_props(width)]
+    set text_props(width) [lindex $state 0]
+    pack .relcheck.top.left -expand on -fill both
+    pack .relcheck.top -expand on -fill both
+
+    frame .relcheck.bottom
+    pack [button .relcheck.bottom.bdone -text [tr. OK] -width 10 \
+	      -command {set text_props(done) 1}] -padx 4 -pady 4
+    pack [button .relcheck.bottom.bc -text [tr. Cancel] -width 10 \
+	      -command {set text_props(done) 0}] -padx 4 -pady 4
+    pack .relcheck.bottom -side left
+
+    LetItShow $t
+    grab $t
+    tkwait variable text_props(done)
+    grab release $t
+    PackItUp $t
+    set results $text_props(done)
+    lappend results $text_props(width)
+    return $results
+}
+
 proc RelationCheck {parent title type state init_comment} {
     global relation tcl_platform
     

@@ -4,6 +4,7 @@ Code for putting up dialogue boxes, progress boxes, etc */
 
 sicstus_module(forms, [pick_equation/2, do_equation_dialog/2,
 		       do_disag_dialog/4, do_relation_dialog/8,
+		       do_text_item_dialog/5,
 		       get_load_file/2, get_save_file/2,
 		       get_program_file/3, get_import_file/3,
 		       start_progress_dialogue/1,
@@ -115,6 +116,12 @@ do_relation_dialog(Win, Relation, Type, State, OldComment,
 			      OKdStr, NewStr, NewCommentStr),
 	strings_to_atoms([OKdStr, NewCommentStr | NewStr],
 			 [OKd, NewComment | NewStat]).
+
+do_text_item_dialog(Win, Text, State, OKd, NewState) :-
+	caption_for(Text, Capt),
+	tk_do_text_item_dialog(Win, Capt, State, OKdStr, NewStr),
+	strings_to_atoms([OKdStr | NewStr],
+			 [OKd | NewState]).
 
 strings_to_atoms([], '').
 
