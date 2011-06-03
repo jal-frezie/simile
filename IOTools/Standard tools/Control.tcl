@@ -206,6 +206,14 @@ namespace eval runcontrol33857 {
 	    -side right -expand on -fill x
 	bind $rsf.speedlim.val <Key> "set runState($node,tweaked) 1"
 
+	pack [frame $rsf.resetTo] -anchor nw -pady 2 -fill x
+	label $rsf.resetTo.capt -text [tr. {Time at reset:}] \
+	    -width $captWidth -anchor w
+	pack $rsf.resetTo.capt -side left -anchor nw
+	::ttk::entry $rsf.resetTo.num \
+	    -textvar runState($node,resetTo) -width 8
+	pack $rsf.resetTo.num -side left -expand on -fill x -anchor nw
+
 	frame $rsf.pauses
 	pack [label $rsf.pauses.capt -text [tr. "Pause on:"] -anchor w] \
 	    -side left -padx 4 -anchor w
@@ -338,7 +346,8 @@ namespace eval runcontrol33857 {
 	}
         set phases [GetPhaseCount $node]
 	set sendvars($node,newData) {}
-	foreach entered {displayInt currentTime execTime errLimit speedLimit} {
+	foreach entered \
+	    {displayInt currentTime execTime errLimit speedLimit resetTo} {
 # for some reason tcl thinks an empty string is a number
 	    set globName runState($node,$entered)
 	    if {![string is double -strict [set $globName]]} {
@@ -467,7 +476,7 @@ namespace eval runcontrol33857 {
 	}
 	do_in_editor RecordRunParams $node
 	if {[string equal reset $sendvars($node,currentMode)]} {
-	    set current 0
+	    set current $runState($node,resetTo)
 	    set exec $runState($node,run_length)
 	    SetupBar $node $current [expr $current + $exec]
 	    if {[info exists runState($node,reloadParams)]} {
