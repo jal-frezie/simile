@@ -691,7 +691,8 @@ finish_old_edit(NextEdit) :-
 		    (cannot_call_in(RenamedNode, Parent, Name),
 			query(caption_clash(OldName, Name), warning, top,
 			      [ok], _);
-		    name(Name, NameStr),
+		    \+ RenamedNode is_of_sort no_properties,
+			name(Name, NameStr),
 			member(DodgyChr, "\\./"),
 			member(DodgyChr, NameStr),
 			name(Dodgy, [DodgyChr]),

@@ -422,6 +422,14 @@ redo with snap object
         return [do_for_node $modelNode set ::runState($modelNode,execTime)]
     }
     
+    public method SetTimeAtReset {time} {
+        do_for_node $modelNode set ::runState($modelNode,resetTo) $time
+    }
+    
+    public method GetTimeAtReset {} {
+        return [do_for_node $modelNode set ::runState($modelNode,resetTo)]
+    }
+    
     public method GetCurrentTime {} {
         return [do_for_node $modelNode set ::runState($modelNode,currentTime)]
     }
