@@ -708,7 +708,7 @@ proc DrawBlob {w startX startY size tags} {
 
 # This puts random bits of normally non-editable text on the screen...
 
-proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
+proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
     global looks window_info
     
     if {[string equal vflow $ptype]} {
@@ -761,7 +761,8 @@ proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
 	set tjust center ;# Blooaaargh! Spell it right dudes!
     }
     set textItem [$w create text $textX $textY -text $capt -fill $textColor \
-	-font $useFont -anchor $ankh -justify $tjust \
+		      -width [expr {$realFont*[lindex $specials 0]}] \
+		      -font $useFont -anchor $ankh -justify $tjust \
 		      -tag "$tagSet is_caption size_on_this realwidth([expr {$realFont*12.0}]) has_info"]
     FixBackBox $w $textItem
 }
@@ -1244,6 +1245,8 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 			 [expr {round($newTextSize/12.0)}]]
 		$winId itemconfigure $object -state normal
 	    }
+	    set oldWidth [$winId itemcget $object -width]
+	    $winId itemconfigure $object -width [expr {$fontor*$oldWidth}]
 	    FixBackBox $winId $object
 	} line {
 	    if {![string match "*/grid/*" [$winId gettags $object]]} {
@@ -1759,7 +1762,7 @@ proc LoadLooks {t n object} {
     } else {
 	$t.canvas delete sample
         PutText $t.canvas [list $middlex $middley] \
-                text "sample" 100 normal "Sample text box"
+                text "sample" 100 0 normal "Sample text box"
     }
     $t.canvas configure -background $looks(windowColor)
     #	TweakObject $t target
@@ -1908,7 +1911,7 @@ proc DoGraphics {box type middlex middley size captAnchor} {
 #	    }
 #	}
         PutText $box.canvas $anchorPt \
-                $type "sample movable" 100 normal $capt
+                $type "sample movable" 100 0 normal $capt
         $box.canvas bind movable <Button-1> {SampleMark %x %y %W}
         $box.canvas bind movable <B1-Motion> {SampleMove %x %y %W}
 # A third binding is required, one that on release will get the bbox of the 
@@ -2067,7 +2070,7 @@ proc ZotObjectSize {t n type size} {
     } else {
 	$t.canvas delete sample
         PutText $t.canvas [list $middlex $middley] \
-                text "sample" 100 normal "Sample text box"
+                text "sample" 100 0 normal "Sample text box"
     }
 }
 

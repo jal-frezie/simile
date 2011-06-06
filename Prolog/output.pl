@@ -268,11 +268,12 @@ relation(Wid, Coords, _Stack, Fatness, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutRelation', Wid, br(Singleton_list),
 		       Fatness, Colour_scheme, br(Features)], _).
 
-text(Wid, Coords, Type, Features, Fatness, _Specials, Colour_scheme, Content) :-
+text(Wid, Coords, Type, Features, Fatness, Specials, Colour_scheme, Content) :-
+	bracketize(Specials, SpList),
 	name(Content, ContentStr),
 	argify(ContentStr, ContentArg),
 	safe_tcl_eval(['PutText', Wid, br(Coords), br(Type), br(Features),
-		       Fatness, Colour_scheme, chars(ContentArg)], _).
+		       Fatness, SpList, Colour_scheme, chars(ContentArg)], _).
 
 shift_text(Wid, Obj, Vector) :-
 	safe_tcl_eval(['MoveText', Wid, Obj, br(Vector)], _).
