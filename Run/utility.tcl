@@ -225,6 +225,7 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
         set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle
         wmf copy $wmfdc; # Copy to the clipboard
     } else { ;# unix: own clipboard and set up request handler
+	package require img::window
 	update ;# get canvas displayed again
 	# Easy, teenage, New York version
 	#clipboard clear
@@ -232,7 +233,7 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
 	#clipboard append -type "image/png" [$img data -format png]
 	
 	if {[catch {image create photo -format window -data $canvas} img]} {
-	    Query get_graphics_failed warning top {} ok
+	    Query [list get_graphics_failed $img] warning top {} ok
 	} else {
 	    # now if I just get it to yack up the data like this...
 	    #set selnImages [$img data -format png]

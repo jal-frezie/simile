@@ -757,7 +757,9 @@ set msgs(no_compiler_full) [tr. {The following directories were checked:
 
 set msgs(get_graphics_failed_title) [tr. {Problem copying graphics}]
 set msgs(get_graphics_failed_message) [tr. {Simile failed to get graphics from the canvas to put on the clipboard, so it will not be possible to paste them into another application.}]
-set msgs(get_graphics_failed_detail) [tr. {The canvas must all be visible (i.e., on screen and not hidden) for this to work.}]
+set msgs(get_graphics_failed_detail) [tr. {The copying process responded:
+%1$s
+The canvas must all be visible (i.e., on screen and not hidden) for this to work.}]
 
 set msgs(save_eqn_bar_title) [tr. {Save text edits for %1$s}]
 set msgs(save_eqn_bar_message) [tr. {The equation bar is currently editing the equation for %1$s. Do you want to save the changes you have made?}]
