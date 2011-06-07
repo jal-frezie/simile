@@ -30,46 +30,53 @@ proc LoadTrans {} {
     }
     close $pStr
 
-    set parseStatus(trnStatus) idle
     $parseStatus(trnParser) parse $dada
 }
 
 proc StartTrnElt {name attList args} {
     global parseStatus
 
-    switch $name {
-	phrase {
-	    array unset parseStatus trnContent
-	} english {
-	    set parseStatus(trnStatus) expecting_english
-	} target {
-	    set parseStatus(trnStatus) expecting_target
+    switch -regexp $name {
+	english|target {
+	    set parseStatus(idList) {}
+	} literal {
+	    set id [lindex $attList 1]
+	    if {[lsearch $parseStatus(idList) $id] == -1} {
+		lappend parseStatus(idList) $id
+	    }
+	    append parseStatus(trnContent) %$id\$s
 	}
     }
 }
 
 proc DoTrnElt {rawContent} {
-    global parseStatus means
+    global parseStatus
 
     # simile strings use 3 periods for ellipsis so substitute Unicode repn
     set content [string map {\u2026 ...} $rawContent]
-    if {[info exists parseStatus(trnContent)]} {	
-	switch $parseStatus(trnStatus) {
-	    expecting_english {
-		set means($content) $parseStatus(trnContent)
-	    } expecting_target {
-		set means($parseStatus(trnContent)) $content
-	    }
-	}
-    } else {
-	set parseStatus(trnContent) $content
-    }
+    append parseStatus(trnContent) $content
 }
 
 proc FinishTrnElt {name args} {
-    global parseStatus
+    global parseStatus means
 
-    set parseStatus(trnStatus) idle
+    switch -regexp $name {
+	english|target {
+	    set parseStatus($name) $parseStatus(trnContent)
+	    unset parseStatus(trnContent)
+	    if {[string equal english $name]} {
+		set parseStatus(engIdList) $parseStatus(idList)
+	    }
+	} phrase {
+	    set seqNo 0
+	    set map {}
+	    foreach id $parseStatus(engIdList) {
+		lappend map %$id\$s %[incr seqNo]\$s
+	    }
+	    set means([string map $map $parseStatus(english)]) \
+		[string map $map $parseStatus(target)]
+	}
+    }
 }
 
 proc SaveTrans {} {
