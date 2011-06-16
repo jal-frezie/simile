@@ -933,7 +933,7 @@ proc AddCanvasBindings { c topNode } {
 proc AddEqnPopup {node x y winId X Y} {
     global pushedbutton errorInfo runState
     set doDesc [PrefValue custom(compDescPop) compDescPop]
-    set doVal [expr [HaveValues $node] && \
+    set doVal [expr [HaveValues $node]>1 && \
             [PrefValue custom(compValPop) compValPop]]
     set doCmt [PrefValue custom(compCmtPop) compCmtPop]
     if {[string compare select $pushedbutton] || \
@@ -958,10 +958,6 @@ proc AddEqnPopup {node x y winId X Y} {
         if {$doDesc} {
             set desc [GetFromProlog tk_get_info('$winId',$plName,context)]
 	    set userDesc [GetFromProlog tk_get_info(dummy,$plName,description)]
-            if {[string equal {} $userDesc]} {
-		set userDesc [GetFromProlog tk_get_info(dummy,$plName,desc)]
-		# same property has different name for submodels
-	    }
             if {[string equal {} $userDesc]} {
 		set userDesc [GetFromProlog tk_get_info(dummy,$plName,desc)]
 		# same property has different name for submodels

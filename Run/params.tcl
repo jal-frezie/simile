@@ -195,8 +195,13 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     # popup in the model window -- it's in window.tcl, procedure AddEqnPopup --
     # look for the calls to Prolog proc tk_get_info
     #set desc [do_in_editor GetFromProlog tk_get_info('$winId',$node,desc)]
+    set userDesc [GetFromProlog tk_get_info(dummy,$node,description)]
     set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
-    BindPopup $slot.l1 "[lindex $levels end] ($dimList)" $comment
+    set desc "[lindex $levels end] ($dimList)"
+    if {![string equal {} $userDesc]} {
+	append desc { -- } $userDesc
+    }
+    BindPopup $slot.l1 $desc $comment
 #    BindPopup $slot.l2 "$comment"
             
     ::ttk::button $slot.b -style style$holder -image $iconImages(edit) \
@@ -378,7 +383,8 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 # take advantage to have header pop submodel comment
 	    set msgs(comment_$path) \
 		[GetFromProlog tk_get_info(dummy,$node,comment)]
-	    BindPopup $nextLevel.head.label comment_$path
+	    BindPopup $nextLevel.head.label \
+		[GetFromProlog tk_get_info(dummy,$node,desc)] comment_$path
 	    set fColour [GetFromProlog tk_get_info(dummy,$node,colour)]
 	    if {[lsearch {white clear} $fColour]<0} {
 		$nextLevel configure -bg $fColour
