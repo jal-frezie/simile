@@ -224,7 +224,7 @@ read_func_file(File, Context, IsBuiltIn, Done) :-
 	append(ContextStr, NameStr, Base),
 	name(Name, NameStr),
 	open_native(TempFile, read, Stream3),
-	read_funcs(Name, Stream3, IsBuiltIn, Done),
+	read_funcs(Name, Stream3, EuContents, IsBuiltIn, Done),
 	output'><'my_delete_file(TempFile).
 
 swallow_to_chars(Stream, Contents) :-
@@ -235,12 +235,12 @@ swallow_to_chars(Stream, Contents) :-
 	  swallow_to_chars(Stream, Tail),
 	    Contents = [C | Tail]).
 
-read_funcs(File, Stream, IsBuiltIn, Done) :-
+read_funcs(File, Stream, Text, IsBuiltIn, Done) :-
 	catch(read_term(Stream, Line, [variable_names(VPrs)]), WrongUDF,
-		     make_nice_error_message(WrongUDF, Bug)),
+		     make_nice_error_message(Text, WrongUDF, Bug)),
 	(nonvar(Bug), !,
 	    query(user_fn_misparse(File, Bug), warning, user_defns, [ok], _),
-	    read_funcs(File, Stream, IsBuiltIn, Done);
+	    read_funcs(File, Stream, Text, IsBuiltIn, Done);
 	 Line == end_of_file, !,
 	    close(Stream),
 	    Done = [];
@@ -264,17 +264,17 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 	    sicstus_format_to_chars("{~a {~a}} ~a (~s) returns ~w",
 		[Category, File, Functor, String, ReturnType], FnChars),
 	    name(FnEntry, FnChars)),
-	    read_funcs(File, Stream, IsBuiltIn, More),
+	    read_funcs(File, Stream, Text, IsBuiltIn, More),
 	    (File = 'Hidden', Done = More;
 		\+ File = 'Hidden', Done = [FnEntry | More]);
 	member(Line, [baseline(_,_), unit_definition(_,_), longhand(_,_)]), !,
 	    % use asserta so user-supplied definitions override system ones
 	    units'><'asserta(Line),
-	    read_funcs(File, Stream, IsBuiltIn, Done);
+	    read_funcs(File, Stream, Text, IsBuiltIn, Done);
 	  Line =.. [LFunctor | LArgs],
 	    query(bad_user_fn_format(File, Line, LFunctor, LArgs), warning,
 		  user_defns, [ok], _),
-	    read_funcs(File, Stream, IsBuiltIn, Done)).
+	    read_funcs(File, Stream, Text, IsBuiltIn, Done)).
 
 add_macro(Category, Macro=Defn, Op) :-
 	% Only allow free vars in function template -- fix them all then

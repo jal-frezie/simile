@@ -6,7 +6,8 @@ about mathematical properties). To put it another way, it contains all the
 functions that are needed both in model_update and image. */
 
 sicstus_module(ame_gen,
-	       [get_term/3, make_nice_error_message/2, get_host/2, appears/1, 
+	       [get_term/3, make_nice_error_message/2,
+		make_nice_error_message/3, get_host/2, appears/1, 
 		implicit_function/2, border_node/1, is_parameter/2,
 		paramness_setup/4,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
@@ -86,8 +87,20 @@ make_nice_error_message(Eat, ThrowUp, ErrorAtom) :-
 		Nasty is Posn+CharNo-1,
 		append(RunUpStr, WindDownStr, Eat),
 		length(RunUpStr, Nasty),
+		% display max of 255 chars each side for legibility
+		(Nasty > 255, !,
+		    suffix(ShortRunUpStr, RunUpStr),
+		    length(ShortRunUpStr, 252),
+		    append("...", ShortRunUpStr, UseRunUpStr);
+		    UseRunUpStr = RunUpStr),
+		length(WindDownStr, PostNasty),
+		(PostNasty > 255, !,
+		    prefix(ShortWindDownStr, WindDownStr),
+		    length(ShortWindDownStr, 252),
+		    append(ShortWindDownStr, "...", UseWindDownStr);
+		    UseWindDownStr = WindDownStr),
 		all(user, name, [build([RunUp, WindDown]),
-				 build([RunUpStr, WindDownStr])]))),
+				 build([UseRunUpStr, UseWindDownStr])]))),
 	 expand_message(prolog_misparse, [Desc, RunUp, WindDown], ErrorAtom);
 	expand_message(prolog_bug, [ThrowUp], ErrorAtom)).
 
