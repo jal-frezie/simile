@@ -336,7 +336,7 @@ switch $tcl_platform(platform) {
 #	set env(TCL_LIBRARY) [info library]
 # Now, win95 etc needs the tcltk binaries in the path
 	append env(PATH) ";[file nativename $execDir]"
-	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
+#	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
 	set graph(origin) 2
     } unix {
 	tk appname $oldProc ;# in case starting it from SimileAutoObj

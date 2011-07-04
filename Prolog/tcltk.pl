@@ -173,7 +173,8 @@ all_ttfn_to_utf8([H|T], NewString) :-
 	ttfn_to_unicode(Code, Char), !,
 	user'><'unicode_to_utf8(Char, Start),
 	all_ttfn_to_utf8(Rest, More),
-	append(Start, More, NewString).
+	append(Start, More, NewString);
+	write('Could not convert '), write([H|T]), write(' to unicode'), nl.
 
 ttfn_to_unicode([H | String], Val) :-
 	[H] = "X", !,

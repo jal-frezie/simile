@@ -89,20 +89,22 @@ SHAREDLIBEXTN = .so
 ifeq ($(PLATFORM),Darwin)
 #	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
+ifeq ($(MY_CPU),x86_64)
 	FLAGS = $(OPT)
+	TCLFW = /System/Library/Frameworks
+else
+	FLAGS = $(OPT) -arch i386
+	TCLFW = /Library/Frameworks
+endif
 	ARCHEXTN = _ppc
 # build for everything unless I am on Barbie
 	ifneq ($(OSNUMBER),7.9.0)
-		FLAGS = $(OPT) -arch i386 -mmacosx-version-min=10.4
+		FLAGS = $(OPT) -mmacosx-version-min=10.4
 	        ARCHEXTN = _mac
 	endif
 	EXECEXTN = $(ARCHEXTN)
 	MAKEPIC = -fPIC
 	MAKESL = -dynamiclib
-#	TCLFW = /System/Library/Frameworks
-# for tcl8.5
-	TCLFW = /Library/Frameworks
-# for tcl8.6
 # make sure Current is set to right version
 	USETCL =  -DUSE_TCL_STUBS -F$(TCLFW) -framework Tcl -I$(TCLFW)/Tcl.framework/Headers -L$(TCLFW)/Tcl.framework -ltclstub$(VERS)
 	LOCALIZE_TCL_REFS = install_name_tool -change \
@@ -205,7 +207,8 @@ $(EXECDIR)/struct_db$(ARCHEXTN).o: Prolog/struct_db.c
 
 $(SHIM): Run/ame_cmx.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(FLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
-		ame_cmx.c $(USETCL) -L../$(LIBDIR) -l5d$(ARCHEXTN); cd ..; \
+		ame_cmx.c $(USETCL) -L../$(LIBDIR) -l5d$(ARCHEXTN) \
+		-Wl,-rpath,'../$(LIBDIR)'; cd ..; \
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 
 $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile

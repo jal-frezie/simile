@@ -10,8 +10,6 @@
 source [file join [file dirname $env(SYSDIR)] Run support.tcl]
 
 proc load_c_stub_1 {node ap} {
-    global env tcl_platform
-
     set ::auto_path $ap
     scan [info tclversion] {%d.%d} MAJ MIN
 #    set onUnix [string match unix $tcl_platform(platform)]

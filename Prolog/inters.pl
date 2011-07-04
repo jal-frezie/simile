@@ -209,7 +209,8 @@ read_func_tree(TopDir, AllDirs, BuiltIn, Done) :-
 
 read_func_file(File, Context, IsBuiltIn, Done) :-
 	open_native(File, read, Stream),
-	swallow_to_chars(Stream, Contents),
+	swallow_to_chars(Stream, U8Contents),
+	tcltk'><'all_utf8_to_ttfn(U8Contents, Contents),
 	ame_gen'><'make_legible_for_prolog(Contents, EuContents),
 	state'><'use_temp_dir(TempDir),
 	append_atoms(TempDir, '/temp_io.pl', TempFile),
@@ -815,7 +816,7 @@ make_intermediates(
 				   BuildingArrays, Step, Used, Dun, MidInters,
 				   part_result([], [], _, DimVal)),
 	        promote_unit(Dun, const_int)), !; % will be integer later
-		  throw(bad_index_number(Dim, makearray, 'INT_MAX'))),
+		  throw(bad_index_number(Dim, makearray, 16777215))),
 	        (Dun = n(Type),
 		    (Type = boolean, IndxUnits = boolean;
 			IndxUnits = a(Type));
@@ -905,7 +906,10 @@ make_intermediates(
 	    get_model_and_loops(XIContext, DestPath,_, XILoops,_),
 	    suffix(XILoops, LoopSlot),
 	    /* If we know what the parameter units are by now, use them */
-	    (nonvar(UseUnit), !; UseUnit = DefUnit),
+	    (nonvar(UseUnit), !;
+		promote_unit(DefUnit, UseUnit),
+	      \+ member(UseUnit, [const_int, const_ratio])),
+		% variables cannot have constant units even if constant
 	    make_intermediates(Rest, SubId, Target, 
 			DestPath, BackSwap, MidInters, BuildingArrays, 
 			Step, Used, Units, MixedInters,
