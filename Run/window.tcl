@@ -1913,7 +1913,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     }
 
     $eb.equation configure -validatecommand \
-	[list autocomplete %W %d %i %P [lsort -dictionary $fnList]]
+	[list autocomplete %W %d %i %P %S [lsort -dictionary $fnList]]
     bind $eb.equation <Key-Up> [list ScrollCompletion %W -1]
 # do not bind to down arrow cos that activates drop-down list
 #    bind $eb.equation <Key-Down> [list ScrollCompletion %W 1]
@@ -1958,15 +1958,18 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $nb.redo configure -state disabled
 }
 
-proc autocomplete {win action pt value valuelist} {
+proc autocomplete {win action pt value change valuelist} {
     global equationbar
-
+#    puts [lrange [info level 0] 0 end-1]
     after idle [list $win configure -validate key]
 #    if {[$win selection present]} {
 #	$win selection clear
 #    }
 # only try if edit adds 1 char
-    if {!$action} {return 1} ;# why do we get these
+    if {!$action} {
+	set equationbar(justLost) $change
+	return 1
+    } ;# why do we get these? for the undoc'd delete? yep
     if {[string length $value]==[$win index end]+1} {
 # only try to match current group of alphas
 	set final [$win index insert]
@@ -2034,11 +2037,12 @@ proc autocomplete {win action pt value valuelist} {
 	    }
 	} else {
 # non-alpha character -- reinsert the undocumentedly deleted selection
-	    if {[info exists equationbar(tails)]} {
+	    if {$testChar != "(" && [info exists equationbar(justLost)] && \
+					 [info exists equationbar(tails)]} {
 		$win delete 0 end
 		$win insert 0 $value
-		$win insert [expr {[string length $value]-1}] \
-		    [lindex $equationbar(tails) $equationbar(currentMatch)]
+		$win icursor $close
+		$win insert $final $equationbar(justLost)
 	    }
 	}
     }
@@ -2048,7 +2052,8 @@ proc autocomplete {win action pt value valuelist} {
     } else {
 	array unset equationbar tails ;# former roll options no longer valid
     }
-   return 1
+    array unset equationbar justLost
+    return 1
 }
 
 proc FlashRange {win start end} {
