@@ -1915,7 +1915,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $eb.equation configure -validatecommand \
 	[list autocomplete %W %d %i %P [lsort -dictionary $fnList]]
     bind $eb.equation <Key-Up> [list ScrollCompletion %W -1]
-    bind $eb.equation <Key-Down> [list ScrollCompletion %W 1]
+# do not bind to down arrow cos that activates drop-down list
+#    bind $eb.equation <Key-Down> [list ScrollCompletion %W 1]
     
     #    set useFunctions [lrange $equation(fnDefs) 0 9]
     #    foreach defn $useFunctions {
@@ -1965,7 +1966,8 @@ proc autocomplete {win action pt value valuelist} {
 #	$win selection clear
 #    }
 # only try if edit adds 1 char
-    if {$action == 1 && [string length $value]==[$win index end]+1} {
+    if {!$action} {return 1} ;# why do we get these
+    if {[string length $value]==[$win index end]+1} {
 # only try to match current group of alphas
 	set final [$win index insert]
 	# was [string wordend $value $pt]
@@ -2029,12 +2031,24 @@ proc autocomplete {win action pt value valuelist} {
 		set selend [expr {$origin+[string length $pop]}]
 		$win selection range $close $selend
 		$win icursor $selend
-		set equationbar(tails) $tails
-		set equationbar(currentMatch) 0
+	    }
+	} else {
+# non-alpha character -- reinsert the undocumentedly deleted selection
+	    if {[info exists equationbar(tails)]} {
+		$win delete 0 end
+		$win insert 0 $value
+		$win insert [expr {[string length $value]-1}] \
+		    [lindex $equationbar(tails) $equationbar(currentMatch)]
 	    }
 	}
     }
-    return 1
+    if {[info exists tails]} {
+	set equationbar(tails) $tails
+	set equationbar(currentMatch) 0
+    } else {
+	array unset equationbar tails ;# former roll options no longer valid
+    }
+   return 1
 }
 
 proc FlashRange {win start end} {
