@@ -1833,12 +1833,12 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 	    get_pass_ends(SmLevel, StartPass, FinishPass),
 	    order_submodel_assignments(Phase, [SmLevel | Path], Later, All,
 				       SubPasses, LaterYet, TestPhase),
-	    /* don't go to a level where I can't do anything (note test for
+	    /* go to a level where I can do something (note test for
 	    having done something was on what is outstanding, as there may
 	    not actually have been any new commands generated -- if this causes
 	    a problem, add a 'nop' command) */
-	    member(SubPass, SubPasses),
-	    \+ SubPass = [],		     
+	    member(NonEmptySubPass, SubPasses),
+	    \+ NonEmptySubPass = [],		     
 	    /* do not go into a sumbodel if I cannot get the existence
 	    test done by the time I come out -- NOTE this is the only time I
 	    need the list of all instructions in the make process, and would
@@ -1856,6 +1856,11 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 	    \+ (number(TestPhase), TestPhase < Phase),
 	    /* Do not go into an alarmed submodel unless I can get the whole
 	    thing done in this pass */
+	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, Alarm)),
+		   nonvar(Alarm),
+		   \+ (member(AlarmSubPass, SubPasses),
+			  member(make(Alarm, _,_,_,_), AlarmSubPass))),
+				   
 			    
 	    /* OK, have I just done an existence test for it? */
 	    (number(TestPhase),
