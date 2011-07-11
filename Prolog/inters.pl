@@ -366,11 +366,11 @@ make_intermediates(
 	a subexpression that matches this one: need to save loops as well
 	as context!! Cannot do this with randoms (other than in explicit
 	inters), which should all be different. */
-	( /* Source = make_inter(Payload, Ref); */ Source = Payload),
+	/* Source = make_inter(Payload, Ref); */
 	% make_inter functor should force us to make one
-	Inter = instance(internal,_, Payload, Ref, _),
+	Inter = instance(internal,_, Source, _,_),
 	member(Inter, PrevInters),
-	\+ contains_something(random, Payload), !,
+	\+ contains_something(random, Source, _), !,
 	    NewInters = PrevInters,
 	    Setups = [],
 	    refer_inter(Inter, DestPath, BuildingArrays,
@@ -479,7 +479,7 @@ make_intermediates(
 	5.5 solution: use random, not individuates, because they are
 	all in the same submodel instance...no, get more x-plicit...*/
 	
-	(contains_something(individuates_elements, Source), !,
+	(contains_something(individuates_elements, Source, PrevInters), !,
 	    NowBuilding = BuildingArrays;
 	NowBuilding = []),
 	
@@ -1590,12 +1590,12 @@ function...similarly a dependemcy on time for any population submodels */
 it cannot be evaluated at init time, so treat these as references to a compartment
 called 'time' (reserved word) */
 
-	(contains_something(changeable, Source), !,
+	(contains_something(changeable, Source, _), !,
 	    append(WaitList, [time | VarList], FullList);
 	append(WaitList, VarList, FullList)).
 
-contains_something(Property, Expr) :-
-	replace_subexps(Expr, inters, Property, 0, top_down, [_ | _], _).
+contains_something(Property, Expr, Backgnd) :-
+	replace_subexps(Expr, inters, Property, Backgnd, top_down, [_ | _], _).
 
 /* Changeable subexps are those whose value can change even if their
 arguments stay the same. last(_) is in here because the 'last' value of a
@@ -1626,16 +1626,18 @@ and place_in will also individuate over makearray elements.
 
 I don't think we've done anything in contexts higher than dest for a while */
 
-individuates_instances(_, Subexp, _, 0) :-
-	individuates_elements(_, Subexp, _,_);
+individuates_instances(InterDefs, Subexp, _, 0) :-
+	individuates_elements(InterDefs, Subexp, _,_);
 	nonvar(Subexp),
 	member(Subexp, [channel_is(_), at_phase(_,_), index(_)]).
 % at_phase/1 does not, because membership not changed on subphase
 
-individuates_elements(_, Subexp, _, 0) :-
+individuates_elements(InterDefs, Subexp, _, 0) :-
 	random(_, Subexp, _,_);
 	nonvar(Subexp),
-	member(Subexp, [place_in(_), use_inter(_)]).
+	(Subexp = place_in(_);
+	  member(instance(internal, _, Subexp, _, _-[_|_]),
+		 InterDefs)). % refers to inter with multiple vals
 
 random(_, Subexp, _, 0) :-
 	nonvar(Subexp),

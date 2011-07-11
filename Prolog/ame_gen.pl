@@ -514,7 +514,8 @@ replace_subexps(Expr, TestModule, Test, Data, Dir, AllVarPairs, FinalExpr) :-
 	Recurse = 0,
 	    NewExpr = MidExpr,
 	    VarPairs = [var_pair(Expr, NewExpr)]);
-	(atomic(Expr); var(Expr); Expr = size(_); Expr = size(_,_)), !,
+	(atomic(Expr); var(Expr); Expr = size(_); Expr = size(_,_);
+	    Expr = param(_,_,_,_,_)), !,
 		VarPairs = [],
 		NewExpr = Expr;
 	Expr = [_ | _], !,
