@@ -26,7 +26,7 @@ PLATFORM = $(shell uname -s)
 
 # Prolog implementation to use -- GNU for Windows releases, GNU otherwise
 # (currently GNU for everything)
-PROLOG = GNU
+PROLOG = SWI
 
 ifeq ($(MONTHS_TO_RUN),0)
 	EXP_TICKS = 0
@@ -183,12 +183,12 @@ $(EXECDIR)/xssimile$(EXECEXTN): $(PROLOG_FILES)  Prolog/smain.pl \
 		-o ../$(EXECDIR)/$(PROLOGSTATE) -c smain.pl; cd ..
 $(EXECDIR)/struct_db$(SHAREDLIBEXTN): Prolog/struct_db.c
 # for old SWI
-	cd Prolog; gcc -I/usr/lib/swi-prolog/include -D__SWI_PROLOG__ \
-		$(MAKEPIC) $(MAKESL) \
-		-o ../$(EXECDIR)/struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
+#	cd Prolog; gcc -I/usr/lib/swi-prolog/include -D__SWI_PROLOG__ \
+#		$(MAKEPIC) $(MAKESL) \
+#		-o ../$(EXECDIR)/struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
 # for new SWI
-#	cd Prolog; swipl-ld -cc-options,$(MAKEPIC) -ld-options,$(MAKESL) \
-#		-o struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
+	cd Prolog; swipl-ld -cc-options,$(MAKEPIC) -ld-options,$(MAKESL) \
+		-o struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
 #endif
 #ifeq ($(PROLOG),GNU)
 $(EXECDIR)/xgsimile$(EXECEXTN): \

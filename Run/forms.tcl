@@ -891,7 +891,7 @@ proc RelationCheck {parent title type state init_comment} {
     
     switch $type {
         influence {
-            set entries {"Use values made in same time step" use_sofar}
+            set entries {"Use destination values made in same time step" use_sofar}
 	    set helpPage elements/influence.htm
         } relation {
             set entries {"Exclusive role" exclusive \

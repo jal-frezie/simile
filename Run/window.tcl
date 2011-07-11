@@ -1962,14 +1962,6 @@ proc autocomplete {win action pt value change valuelist} {
     global equationbar
 #    puts [lrange [info level 0] 0 end-1]
     after idle [list $win configure -validate key]
-#    if {[$win selection present]} {
-#	$win selection clear
-#    }
-# only try if edit adds 1 char
-    if {!$action} {
-	set equationbar(justLost) $change
-	return 1
-    } ;# why do we get these? for the undoc'd delete? yep
     if {[string length $value]==[$win index end]+1} {
 # only try to match current group of alphas
 	set final [$win index insert]
@@ -2035,15 +2027,6 @@ proc autocomplete {win action pt value change valuelist} {
 		$win selection range $close $selend
 		$win icursor $selend
 	    }
-	} else {
-# non-alpha character -- reinsert the undocumentedly deleted selection
-	    if {$testChar != "(" && [info exists equationbar(justLost)] && \
-					 [info exists equationbar(tails)]} {
-		$win delete 0 end
-		$win insert 0 $value
-		$win icursor $close
-		$win insert $final $equationbar(justLost)
-	    }
 	}
     }
     if {[info exists tails]} {
@@ -2052,7 +2035,6 @@ proc autocomplete {win action pt value change valuelist} {
     } else {
 	array unset equationbar tails ;# former roll options no longer valid
     }
-    array unset equationbar justLost
     return 1
 }
 
@@ -2086,6 +2068,14 @@ proc ScrollCompletion {win hop} {
 }
 
 proc EnterEqn {winid eb} {
+    global equationbar
+
+# If there is an autocomplete active, 'enter' just accepts this
+    if {[info exists equationbar(tails)]} {
+	$eb selection clear
+	array unset equationbar tails
+	return
+    }
     focus [winfo parent $eb].tick
 # remove from eqnbar without save dialogue
     accept_equation $winid $eb
