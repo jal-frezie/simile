@@ -428,12 +428,11 @@ proc ExScrubRun {node times} {
         if {[string bytelength $model_id]} {
             if {[info exists instance_id]} {
                 #ShowMess debug info "Exiting $model_id $instance_id" ok
-                c_exitmodel $model_id \
-		    $instance_id
+                c_exitmodel $model_id $instance_id
                 unset instance_id
             } else {
                 #ShowMess debug info "Exiting $model_id 0" ok
-                c_exitmodel $model_id 0
+                c_exitmodel $model_id \u00\u00\u00\u00\u00\u00\u00\u00
             }
         } else {
             if {[info exists instance_id]} {
