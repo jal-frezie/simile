@@ -1,5 +1,5 @@
 rand_const(Lo, Hi) --> at_init(rand(Lo, Hi)).
-rand_var(Lo, Hi) --> rand(Lo, Hi).
+rand_var(Lo, Hi) --> at_phase(rand(Lo, Hi)).
 
 %function( name_of_function, return type, list_of_parameter_types).
 function(factorial, real, [real]).
