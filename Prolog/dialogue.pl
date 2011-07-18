@@ -636,7 +636,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	
 	DummyDest = [sm(_,_,_, fm_loop(IndxSzs, IndxSzs, _))],
 	on_exception(ParseExcp,
-		     make_intermediates(FullExpr, Fn, ['/dest/'],
+		     (make_intermediates(FullExpr, Fn, ['/dest/'],
 		                        DummyDest, _, [],
 					[], dummy, _, Type, _I,
 					part_result(Context, DestDims, _,_,_)),
@@ -644,7 +644,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 						   Loops, _)),
 	(replace_subexps(ParseExcp, dialogue, collapse_params,
 			 _, top_down, _, ParseError);
-			     ParseError = ParseExcp)),
+			     ParseError = ParseExcp))),
 	(nonvar(ParseError), !;
 	(member(input_link(_,_, Param, _-PLoops, _), ExpInters),
 	    nth(N, PLoops, set(_, loop(Bound,_))),
