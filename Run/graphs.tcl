@@ -1075,14 +1075,14 @@ proc EditTableData {startLine dims} {
 
 proc DoneTableData {startLine} {
     global table_entry
-    AcquireTableData 0 $startLine
     if {([info exists table_entry(wrapPt)] && \
-                ![string equal $table_entry(wrapPt) $table_entry(oldWrapPt)] || \
-                [info exists table_entry(others)] && \
-                ![string equal $table_entry(others) $table_entry(oldOthers)]) && \
-                !$table_entry(source)} {
+	     ![string equal $table_entry(wrapPt) $table_entry(oldWrapPt)] || \
+	     [info exists table_entry(others)] && \
+	     ![string equal $table_entry(others) $table_entry(oldOthers)]) && \
+	    !$table_entry(source)} {
         set table_entry(source) 0.5
     }
+    AcquireTableData $table_entry(source) $startLine
     if {[winfo exists .table.commentt]} {
 	set table_entry(comment) \
 	    [string trimright [.table.commentt get 1.0 end]]
