@@ -2182,8 +2182,8 @@ get_non_looping_levels(Path, [make(_,_, IPath, _,_) | More], Levels) :-
 	merge_lists(NLPart, MoreLevels, Levels)).
 
 get_pass_ends(Level, StartInit, Finish) :-
-	(Level = catch(Ind, Bound), !,
-	    extract_action(StartInit, [catch(Ind, Bound)]);
+	(Level = cond_section(Cond), !,
+	    extract_action(StartInit, [check_cond(Cond)]);
 	Level = set(Ind, loop(IndSrc,_)), !,
 	    extract_action(StartInit, [open_index(Ind, IndSrc)]);
 	Level = sm(Submodel, ParentPtr, Ptr, Inds),

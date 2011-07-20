@@ -436,6 +436,17 @@ do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Indent,
 	    excrete(L, end(cond), PhaseTest, Indent, Stream),
 	    fail;
 	do_assign_list(L, Later, Indent, Used, Stream)).
+
+do_assignment(L, [check_cond(Cond) | Clauses], Indent,
+	      Used, Stream) :-
+	InnerIndent is Indent+4,
+	get_rest_of_my_loop(Clauses, MyLoop, Later),
+	(make_evaluation_routine(L, Cond, CondXpr),
+	    excrete(L, if_start, CondXpr, Indent, Stream),
+	    do_assign_list(L, MyLoop, InnerIndent, Used, Stream),
+	    excrete(L, end(cond), CondXpr, Indent, Stream),
+	    fail;
+	do_assign_list(L, Later, Indent, Used, Stream)).
 /*
 do_assignment(L, [check_limits(DestSpec, BoundForm) | Clauses],
 	      Indent, Used, Stream) :-
@@ -747,7 +758,7 @@ do_assignment(L, [assign(Dest, Source) | Clauses], Indent, Used, Stream) :-
 starts_a_level(Inst) :-
 	member(Inst, [open_index(_,_), start_submodel(_,_,_,_),
 		      generate(_,_,_,_,_,_,_), bound_gen_loop(_,_),
-		      check_phase(_,_)]).
+		      check_phase(_,_), check_cond(_)]).
 
 get_rest_of_my_loop(More, MyLoop, Later) :-
 	copy_to_exit(More, 0, Later),

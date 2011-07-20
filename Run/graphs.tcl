@@ -1385,6 +1385,13 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
         set rowList {}
         set colList {}
 	set transpose [expr {[string equal 1 [lindex $tableSpec 6]]}]
+	if {$transpose} {
+	    set rowCount 1
+	    set colCount $lineCount
+	} else {
+	    set rowCount $lineCount
+	    set colCount 1
+	}
 	set rown 0
 	set coln 0
 	set stream [NetOpen [lindex $tableSpec 0] r]
@@ -1434,18 +1441,18 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		if {$idxCol>-1} {
 		    set yInd [lindex $usePts $idxCol]
 		} elseif {$yflip} {
-		    set yInd [expr {$lineCount+$ylast-$rowInd}]
+		    set yInd [expr {$rowCount+$ylast-$rowInd}]
 		} else {
-		    set yInd [expr {$lineCount+$rowInd-$yfirst}]
+		    set yInd [expr {$rowCount+$rowInd-$yfirst}]
 		}
                 lappend rowList $yInd
                 for {set colInd $xfirst} {$colInd<=$xlast} {incr colInd} {
 		    if {$idxRow>-1} {
 			set xInd [lindex $xIndPts $colInd]
 		    } elseif {$xflip} {
-			set xInd [expr 1+$xlast-$colInd]
+			set xInd [expr $colCount+$xlast-$colInd]
 		    } else {
-			set xInd [expr 1+$colInd-$xfirst]
+			set xInd [expr $colCount+$colInd-$xfirst]
 		    }
 		    if {$yInd==1} {
 			lappend colList $xInd

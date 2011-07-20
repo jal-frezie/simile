@@ -853,13 +853,15 @@ make_intermediates(
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
 			MidInters, BuildingArrays, Step,
 			Used, Units, NewInters,
-			part_result(SourceContext, void, ASetups, AArgs,
+			part_result(AContext, void, ASetups, AArgs,
 				    SourceRef)),
+	    combine_contexts(IContext, AContext, DestPath, SourceContext),
 	    TgtDims = [dest_index(IndxRef,Dim)],
 	    append(ASetups, ISetups, Setups),
 	    add_extra_dependencies(IContext, DestPath, IndxRef, IArgs, IWaits),
 	    append(AArgs, IWaits, Args);
 	    
+/* Original version that put a separate initialization instruction in step 0
 	Source = statearray(Element, Dim, Indx, Init), !,
 	    make_intermediates(Init, SubId, Target, DestPath, BackSwap,
 		    PrevInters, BuildingArrays, Step, Used, Int, MidInters,
@@ -879,7 +881,47 @@ make_intermediates(
 	    append([DoInit | ASetups], ISetups, Setups),
 	    append([init(TopTgt) | AArgs], IArgs, Args);
 
-	Source = element(Array, Indx), !,
+New version that creates an inter with a special super-instruction
+        Source = statearray(Action, Single, Multi), !,
+	    % get stuff to make all values
+	    make_intermediates(Multi, SubId, Target, DestPath, BackSwap,
+		    PrevInters, BuildingArrays, Step, Used, MUnits, MInters,
+		    part_result(MContext, void, MSetups, MArgs, MRef)),
+	    % MContext will have a possibly-submodel loop
+
+Now one that uses a special conditional level */
+        Source = statearray(Action, Single, Multi), !,
+	    generate_name(prolog, state, InterRef, Used),
+	    make_intermediates(make_inter(Multi, InterRef),
+			       SubId, Target, DestPath, BackSwap,
+		    PrevInters, BuildingArrays, Step, Used, Int, MidInters,
+		    part_result(SourceContext, void, FullSetups, Args, SourceRef)),
+	    member(AuntSally, MidInters),
+	    AuntSally = instance(internal, _, InterRef, InterEfct, _-[Size|_]),
+	    make_intermediates(Action, SubId, Target, DestPath, BackSwap,
+		    MidInters, BuildingArrays, Step, Used, AUnits, LateInters,
+		    part_result(AContext, void, ASetups, AArgs, ARef)),
+	    get_model_and_loops(AContext, DestPath, _, [], _),
+	    
+	    all(inters, add_condition_to_context,
+		[build(FullSetups), unify([AContext, AArgs, ARef==0]),
+		 build(CondSetups)]),
+	    make_intermediates(Single, SubId, Target, DestPath, BackSwap,
+			LateInters, BuildingArrays, Step,
+			Used, SUnits, NewInters,
+			part_result(SContext, void, SSetups, SArgs, SRef)),
+		   pointer_from(DestPath, Ptr),
+		   PartSetups = [make(ARef, SArgs, SContext, Step,
+				      [assign(arr(Ptr, InterEfct, [ARef]), SRef)]) | SSetups],
+	    promote_unit(AUnits, Unit),
+	    promote_unit(SUnits, Unit),
+	    all(inters, add_condition_to_context,
+		[build(PartSetups), unify([SContext, AArgs,
+					   ARef>0 and ARef<=Size]),
+		 build(NotCondSetups)]),
+	    append([ASetups, CondSetups, NotCondSetups], Setups);
+	    
+        Source = element(Array, Indx), !,
 	    make_intermediates(Indx, SubId, Target, DestPath, BackSwap,
 			PrevInters, BuildingArrays, Step, Used, Int, MidInters,
 			part_result(IContext, void, ISetups, IArgs, IndxRef)),
@@ -1313,7 +1355,7 @@ builtin('Model properties', trigger_magnitude, given_units, [none]).
 builtin('List handling', makearray, array_of_any, [any, const_int]).
 builtin('List handling', place_in, int, [const_int]).
 builtin('List handling', tweakarray, array_of_any, [any, const_int, int]).
-builtin('List handling', statearray, array_of_any, [any, const_int, int, array_of_any]).
+builtin('List handling', statearray, array_of_any, [const_int, any, array_of_any]).
 builtin('List handling', element, any, [array_of_any, int]).
 builtin('Model properties', size, int, [submodel_name]).
 builtin('Model properties', size, int, [submodel_name, const_int]).
@@ -1698,6 +1740,13 @@ wait_for_submodels([Level | AlsoExited], Waits) :-
 	Waits = Others),
 	wait_for_submodels(AlsoExited, Others).
 
+add_condition_to_context(make(Fx, R, C, S, A), [CondCtxt, CondArgs, Cond],
+			 make(Fx, AllR, CPl, S, A)) :-
+	append(CondArgs, R, AllR),
+	combine_contexts(CondCtxt, C, [], JointC),
+	append(ForFill, CondCtxt, JointC),
+	append(ForFill, [cond_section(Cond) | CondCtxt], CPl).
+
 %pointer_from([], ''). % was 'this' -- why? '' makes locals for event procs.
 pointer_from([], this). % needed for tcl exec. Events no longer procs?
 pointer_from([sm(_,_, Ptr, _) | _], Ptr).
@@ -1736,6 +1785,7 @@ building_dims_and_indices(set(I, loop(_,L)), L, I).
 loops(set(_, loop(_,_))).
 loops(sm(_,_,_, vm_loop(_,_,_,_))).
 loops(sm(_,_,_, rm_loop(_,_,_))).
+loops(cond_section(_)).
 
 get_model_and_loops(Context, Dest, Path, Loops, Base) :-
 	get_model(Context, Path),

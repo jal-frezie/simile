@@ -607,7 +607,8 @@ set msgs(show_full_button) [tr. {See full error text}]
 set msgs(conversion_failure_title) [tr. {Problem building code}]
 set msgs(conversion_failure_message) [tr. {Simile failed to convert %1$s (in submodel %2$s) into a program instruction.}]
 set msgs(conversion_failure_detail) [tr. {This may be because Simile earlier failed to detect when a change elsewhere in the model made the equation for this component inconsistent, in which case editing this component again will make the model runnable.}]
-set msgs(conversion_failure_full) [tr. {Parsing the equation for %1$s (in %2$s) gave this error code: %3$s. Hit "$msgs(show_full_button)" to see the full message.}]
+# must be quoted so show_full msg gets subbed
+set msgs(conversion_failure_full) [tr. "Parsing the equation for %1\$s (in %2\$s) gave this error code: %3\$s. Hit $msgs(show_full_button) to see the full message."]
 
 set msgs(bad_parameter_title) [tr. {Problem interpreting equation}]
 set msgs(bad_parameter_message) [tr. {The equation for component %1$s refers to an input parameter called "%2$s". This is not a valid parameter in the context of that component}]
