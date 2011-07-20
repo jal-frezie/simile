@@ -115,7 +115,7 @@ class VarParamData : public FileParamData {
 
   //! Set up current data from time points as if running forward to time zero
   //! (argument is phase, result is time of first event, 0 if none)
-  double ResetTimeSeries(int);
+  double ResetTimeSeries(double, int);
 
   //! Copy values from model into current data space if no time point zero
 
@@ -197,7 +197,7 @@ class ExecutingModel
   //! -1 == reload fixed parameters
   //! 0 == reset state variables etc
   //! +ve: re-evaluate derived variables for that time step
-  excpData* ResetInstance(int, int);
+  excpData* ResetInstance(double, int, int);
 
   //! Execute the model -- args are int. method, start/end times and error limit
 

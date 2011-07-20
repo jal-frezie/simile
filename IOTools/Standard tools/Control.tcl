@@ -498,10 +498,10 @@ namespace eval runcontrol33857 {
 	    if {![RunningInC $node]} {
 		if {$redoPhase($node) <= 0} {
 		    ResetTimeSeries $node
-		    UpdateTimeSeries $node 0
+		    UpdateTimeSeries $node $current
 		}
 	    }
-	    if {[ResetModel $node $runState($node,intMethod) \
+	    if {[ResetModel $node $runState($node,intMethod) $current \
 		     $redoPhase($node)]} {
 		if {$runState($node,modelRunning)<3} {
 		    set runState($node,modelRunning) 3

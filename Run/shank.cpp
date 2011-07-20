@@ -778,17 +778,17 @@ void VarParamData::back_copy_vars() {
   if (nextVP) nextVP->back_copy_vars();
 }
 
-double VarParamData::ResetTimeSeries(int topPhase) {
+double VarParamData::ResetTimeSeries(double init_time, int topPhase) {
   double next_evt_sofar, next_evt;
 
   curTimePoint = NULL;
   wraps = 0;
   if (topPhase <= -2)
     active = 0;
-  next_evt = update_from_points(TRUE, 0);
+  next_evt = update_from_points(TRUE, init_time);
 
   if (nextVP) {
-    next_evt_sofar = nextVP->ResetTimeSeries(topPhase);  
+    next_evt_sofar = nextVP->ResetTimeSeries(init_time, topPhase);  
     if (next_evt_sofar != 0 && (next_evt == 0 || next_evt_sofar < next_evt))
       next_evt = next_evt_sofar;
   }
@@ -971,7 +971,8 @@ ExecutingModel::~ExecutingModel() {
   delete loadedInst;
 }
 
-excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
+excpData* ExecutingModel::ResetInstance(double init_time, int how_int, 
+					int top_phase) {
   int tweak_phase, err;
 
   loadedInst->userStop.excpNo = 0;
@@ -980,9 +981,9 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
     last_op = 0;
     last_exit = last_update = last_check = 0; // reset timekeeping
     for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
-      lts[tweak_phase]=0;
+      lts[tweak_phase]=init_time;
       took[tweak_phase]=0;
-      SetdT( -tweak_phase,0);
+      SetdT( -tweak_phase,init_time);
       SetdT( tweak_phase,steps[tweak_phase]);
     }
     switch (how_int) {
@@ -995,7 +996,7 @@ excpData* ExecutingModel::ResetInstance(int how_int, int top_phase) {
     thisTsPosn = 0.0;
     seriesEvtSign = 0;
     if (varParamArrayBase)
-      nextSeriesEvt = varParamArrayBase->ResetTimeSeries(top_phase);
+      nextSeriesEvt = varParamArrayBase->ResetTimeSeries(init_time, top_phase);
     freq = steps[modelSpec->phases];
     loadedInst->event_prev_sign = loadedInst->event_cur_sign = 0;
   }
@@ -2079,9 +2080,9 @@ nodeValues* get_raw_values(char* nodeId, void* instance_id) {
   return ((ExecutingModel*)instance_id)->GetRawValues(nodeNum);
 }
 
-excpData* reset(void* modelType, void* modelHandle, int how_int,
+excpData* reset(void* modelType, void* modelHandle, double t0, int how_int,
 		int top_phase) {
-  return ((ExecutingModel*)modelHandle)->ResetInstance(how_int, top_phase);
+  return ((ExecutingModel*)modelHandle)->ResetInstance(t0, how_int, top_phase);
 }
 
 excpData* execute(void* modelType, void* modelHandle, int how_int,

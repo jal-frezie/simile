@@ -911,32 +911,38 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
   excpData* errorBlk;
   void* modelType;
   void* modelHandle;
+  double t0;
 
-  if (argc != 5) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id integration_method phase");
+  if (argc != 6) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id initial_time integration_method phase");
     return TCL_ERROR;
   }
   
   memcpy(&modelType, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   memcpy(&modelHandle, Tcl_GetByteArrayFromObj(argv[2], NULL), sizeof(void*));
   
-  error = Tcl_GetIntFromObj(interp, argv[3], &how_int);
+  error = Tcl_GetDoubleFromObj(interp, argv[3], &t0);
   if (error != TCL_OK) {
     return error;
   }
   
-  error = Tcl_GetIntFromObj(interp, argv[4], &phase);
+  error = Tcl_GetIntFromObj(interp, argv[4], &how_int);
   if (error != TCL_OK) {
     return error;
   }
-  errorBlk = reset(modelType, modelHandle, how_int, phase);
+  
+  error = Tcl_GetIntFromObj(interp, argv[5], &phase);
+  if (error != TCL_OK) {
+    return error;
+  }
+  errorBlk = reset(modelType, modelHandle, t0, how_int, phase);
 
   if (errorBlk) {
     get_string_for_error(spare, errorBlk->excpNo);
     Tcl_SetObjResult(interp, make_exec_error(interp, "resetmodel", 
 					     name_in_line(modelType, 
 							  errorBlk->targetId), 
-					     0, phase, spare));
+					     t0, phase, spare));
     return TCL_ERROR;
   } else {
     return TCL_OK;

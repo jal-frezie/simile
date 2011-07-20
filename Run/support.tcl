@@ -514,14 +514,14 @@ proc abort_check {args} {
     }
 }
 
-proc TclResetModel {node doingRK topPhase} {
+proc TclResetModel {node t0 doingRK topPhase} {
     global myNode ts dts steps phasecount adapt_maxerr
 
     set myNode $node
     if {$topPhase <= 0} {
 	set dts(0) $doingRK
         for {set tweakPhase 1} {$tweakPhase <= $phasecount} {incr tweakPhase} {
-            set ts($tweakPhase) 0
+            set ts($tweakPhase) $t0
             set dts($tweakPhase) [expr $steps($tweakPhase)]
         }
     }

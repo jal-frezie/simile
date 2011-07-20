@@ -188,7 +188,7 @@ proc FreeAll {load} {
     }
 }
 
-proc ResetModel {myNode howInt redo} {
+proc ResetModel {myNode howInt initTime redo} {
     global model_id instance_id dispDone
 
     set dispDone 0 ;# allow execution to call back
@@ -196,10 +196,10 @@ proc ResetModel {myNode howInt redo} {
     if {[catch {
 	if {[string bytelength $model_id]} {
 #	    set model_id $myNode
-	    c_resetmodel $model_id $instance_id \
+	    c_resetmodel $model_id $instance_id $initTime \
 		$readyForRK $redo
 	} else {
-	    TclResetModel $myNode $readyForRK $redo
+	    TclResetModel $myNode $initTime $readyForRK $redo
 	}
     } errList]} {
 	ExplainError $myNode $errList $::errorInfo
