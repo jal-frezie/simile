@@ -910,11 +910,11 @@ Now one that uses a special conditional level */
 			LateInters, BuildingArrays, Step,
 			Used, SUnits, NewInters,
 			part_result(SContext, void, SSetups, SArgs, SRef)),
-		   pointer_from(DestPath, Ptr),
-		   PartSetups = [make(ARef, SArgs, SContext, Step,
-				      [assign(arr(Ptr, InterEfct, [ARef]), SRef)]) | SSetups],
-	    promote_unit(AUnits, Unit),
-	    promote_unit(SUnits, Unit),
+	    pointer_from(DestPath, Ptr),
+	    PartSetups = [make(InterEfct, SArgs, SContext, Step,
+			       [assign(arr(Ptr, InterEfct, [ARef]), SRef)]) | SSetups],
+	    value(Any),
+	    try_units(Any, [Any, Any], [AUnits, SUnits], Units),
 	    all(inters, add_condition_to_context,
 		[build(PartSetups), unify([SContext, AArgs,
 					   ARef>0 and ARef<=Size]),
@@ -1355,7 +1355,7 @@ builtin('Model properties', trigger_magnitude, given_units, [none]).
 builtin('List handling', makearray, array_of_any, [any, const_int]).
 builtin('List handling', place_in, int, [const_int]).
 builtin('List handling', tweakarray, array_of_any, [any, const_int, int]).
-builtin('List handling', statearray, array_of_any, [const_int, any, array_of_any]).
+builtin('List handling', statearray, array_of_any, [int, any, array_of_any]).
 builtin('List handling', element, any, [array_of_any, int]).
 builtin('Model properties', size, int, [submodel_name]).
 builtin('Model properties', size, int, [submodel_name, const_int]).
