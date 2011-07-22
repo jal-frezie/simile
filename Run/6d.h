@@ -44,7 +44,7 @@ class FileParamData
   ~FileParamData();
 
  public:
-  void extract_elt(void*, int*);
+  void extract_elt(void*, double, int*);
   void extract_record_count(void*, int, int*);
 };
 
@@ -123,7 +123,7 @@ class VarParamData : public FileParamData {
   //! value as defined in the model until they are set by a time point or user 
   //! action, otherwise
   //! the uninitialized current data space would be copied over them
-  void back_copy_vars();
+  void back_copy_vars(double);
 
   //! Set up current data from time points for time and direction 
   //! Arguments are time and dir (TRUE=forward), 

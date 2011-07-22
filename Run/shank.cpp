@@ -555,7 +555,7 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum,
   
 // These last two are actually called by the model code to get data
 
-  void FileParamData::extract_elt(void* tgt, int* indxs) {
+void FileParamData::extract_elt(void* tgt, double forT, int* indxs) {
     // do not do it if this is a variable parameter and we are initializing --
     // array not yet set so let model keep default value...in fact, save it in
     // the array for later
@@ -567,7 +567,7 @@ FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum,
     nodeLine = myModelExec->modelSpec->nodedata + nodeNum;
 
     if (myModelExec->resetting<-1 && nodeLine->eval == INPUT)
-      if (!((VarParamData*)this)->GetTimePtDataSpace(0.0)) 
+      if (!((VarParamData*)this)->GetTimePtDataSpace(forT)) 
 	return;
     // back copy now done in blocks afterwards to make record spaces, but
     // avoid forward copying first
@@ -762,10 +762,10 @@ void VarParamData::ClearTimePtElements() {
   curTimePoint = NULL;
 }
 
-void VarParamData::back_copy_vars() {
+void VarParamData::back_copy_vars(double t0) {
   nodeValues* fromModel;
   
-  if (!GetTimePtDataSpace(0.0)) {
+  if (!GetTimePtDataSpace(t0)) {
     free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
     fromModel = myModelExec->GetRawValues(nodeNum);
     dataPtr.contents = fromModel->contents;
@@ -775,7 +775,7 @@ void VarParamData::back_copy_vars() {
 //    showMess(globMess);
     delete fromModel;
   }
-  if (nextVP) nextVP->back_copy_vars();
+  if (nextVP) nextVP->back_copy_vars(t0);
 }
 
 double VarParamData::ResetTimeSeries(double init_time, int topPhase) {
@@ -993,7 +993,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
     case RUNGE_KUTTA:
       SetdT(0,1);
     } // was -1,0 to stop loss, but now we want it cos it happens next step
-    thisTsPosn = 0.0;
+    thisTsPosn = init_time;
     seriesEvtSign = 0;
     if (varParamArrayBase)
       nextSeriesEvt = varParamArrayBase->ResetTimeSeries(init_time, top_phase);
@@ -1010,7 +1010,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
     return &(loadedInst->userStop);
   // reset successful: now do back copy if needed
   if (top_phase<-1 && varParamArrayBase) {
-    varParamArrayBase->back_copy_vars(); // does all
+    varParamArrayBase->back_copy_vars(init_time); // does all
   }
   return NULL;
 }
@@ -1333,7 +1333,7 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId,
 
   paramArrayItem = param_array_base;
   if (modelSpec->param_item_from_id(&paramArrayItem, paramId))
-    paramArrayItem->extract_elt(modelSlot, indxs);
+    paramArrayItem->extract_elt(modelSlot, thisTsPosn, indxs);
   else {
     // couldn't find id, try to find a member parameter
     // first get its nodeline

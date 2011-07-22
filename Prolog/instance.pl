@@ -310,7 +310,9 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	    is_lookup_cond(SubbedExpr, FinalExpr), !,
 	    /* Try alternative way of enumerating instances */
 	    FType = id_function;
-	  FType = function,
+	  (RType = alarm, !,
+	    FType = al_function;
+	  FType = function),
 	    FinalExpr = SubbedExpr),
 
 	(member(var_pair(_, Sub), Switched),

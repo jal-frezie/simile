@@ -501,7 +501,8 @@ all named after the nodes from which they take their values. */
 declare_structure(Language, model(Vars, Submodels), Used, AllGraphs) :-
 
 	declare_submodel_structures(Language, Submodels, Used, SmGraphs),
-	pick_types(Vars, [function, init_function, id_function, state_fn, loss,
+	pick_types(Vars, [function, init_function, id_function, al_function,
+			  state_fn, loss,
 			  internal, external, magnitude, limit], NamedVars),
 	name_components( Language, NamedVars, Used, Graphs),
 	append(SmGraphs, Graphs, AllGraphs).
@@ -771,8 +772,8 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 	append([LocalNodeData, DeepNodeData, MoreNodeData], NodeData).
 	    
 extract_instances(model(Funx, Subz), Instances) :-
-	pick_types(Funx, [function, init_function, id_function, state_fn,
-			  fp_compartment,
+	pick_types(Funx, [function, init_function, id_function, al_function,
+			  state_fn, fp_compartment,
 			  loss, internal, external, magnitude, limit, series],
 		   ValFunx),
 	append(Subz, ValFunx, Instances).
@@ -1016,10 +1017,14 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 		    ExtIncs, Inters, AssignList) :-
 	Instance = instance(submodel, Id,
 			    xrefs(model(Functions, Submodels), _,_), _,_),
-	(member(instance(alarm,_,_,elt(_, Al,_),_),
-		Functions), !,
-	    Path = [sm(_,_,_, fm_loop(_,_, Al))|_];
-	    true),
+	(select(instance(alarm,_,_,elt(_, Al,_),_), Functions, NoAlarm),
+	    select(instance(al_function,_,_,elt(_, Al,_),_), NoAlarm, ForAlarm),
+	    Path = [sm(_,_,_, fm_loop(_,_, Al))|_], !,
+	    % now make alarm depend on everything in its submodel
+	    % so the whole thing gets done in one pass
+	    all_targets(model(ForAlarm, Submodels), AlConds),
+	    AlDelay = [make(all_for(Al), AlConds, Path, Step, [])];
+	  AlDelay = []),
 /*	(setof(ParamUpdate,
 	       input_params_in(Functions, Path, Step, ParamUpdate),
 	       ParamUpdates), !;
@@ -1034,7 +1039,7 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 	all(compile, get_assignment,
 	    [build(Functions),
 	     unify(Path), unify(Step), unify(Swaps),
-	     unify(Used), append(Inters0, []), append(AssignList0, [])]),
+	     unify(Used), append(Inters0, []), append(AssignList0, AlDelay)]),
 	all(compile, extract_submodel_assignment,
 	    [build(Submodels),
 	     unify(Functions), unify(Path), unify(Tree),
@@ -1044,6 +1049,15 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 % Remove submodel-local function definitions from database
 	retractall(macro_expansion(in(Path), _)).
 
+all_targets(model(Functions, Submodels), Tgts) :-
+	all(user, arg, [unify(4), build(Functions), build(LocalElts)]),
+	all(user, arg, [unify(2), build(LocalElts), build(LocalTgts)]),
+	all(user, arg, [unify(3), build(Submodels), build(XRefs)]),
+	all(user, arg, [unify(1), build(XRefs), build(Trees)]),
+	all(compile, all_targets, [build(Trees), append(Tgts, LocalTgts)]).
+% note changes to instance(), elt() and xrefs() structures may affect this!
+% you say thats overkill, I say thanks for the compliment
+	
 biggest(B1, B2, Big) :-
 	Big is max(B1, B2).
 
@@ -1412,6 +1426,8 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 		UseStep = 0;
 	    (Type = id_function,
 		UseList = [can_find_id(Node) | RefList];
+	      Type = al_function,
+		UseList = [all_for(Dest) | RefList];
 	      member(Type, [function, loss, limit]),
 		UseList = RefList;
 	      member(Type, [magnitude, state_fn])), !,
@@ -1860,7 +1876,6 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 		   nonvar(Alarm),
 		   \+ (member(AlarmSubPass, SubPasses),
 			  member(make(Alarm, _,_,_,_), AlarmSubPass))),
-				   
 			    
 	    /* OK, have I just done an existence test for it? */
 	    (number(TestPhase),
