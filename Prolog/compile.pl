@@ -565,6 +565,7 @@ mark_unstepped(Cond, Set, Add) :-
 	member(Cond, [Act, later(Act), this_step(Act)]),
 	Act = make(Tgt, _,_, [_,_, Step | _], _),
 	\+ Tgt = tweaked(_), % do not put squirts in subphase
+	% ... but above would not put them in any phase! Sort.
 	var(Step), !,
 	Step = Set,
 	Add = [Act];
