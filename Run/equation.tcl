@@ -818,23 +818,35 @@ proc equationBindings { t en eu lbf lbx lbp gr ta ok can} {
     bind $ok <Tab> "focus $can"
     bind $can <Tab> "focus $gr"
     
-    bind $en <Key> "FlashMatchingBracket %W %A"
+    bind $en <Key> "FlashMatchingBracket 1 %W 0 %A"
+    bind $en <Button-1> "after 10 FlashOnClick 1 %W"
+# pause is to allow insert point to move to click first
     $en tag configure flash -background blue ;# for matching brackets
     # Set up for type in
     focus $en
 }
 
+proc FlashOnClick {inText win} {
+    if {$inText} {
+	FlashMatchingBracket $inText $win 0 [$win get insert]
+    } else {
+	set start [$win index insert]
+	FlashMatchingBracket $inText $win $start \
+	    [string index [$win get] $start]
+    }
+}
+
 # Following is copied from autocomplete in window, which does same job for
 # eqn bar. Diffrences interacting with a text widget are so great that it is
 # simplest just to have a separate procedure.
-proc FlashMatchingBracket {win testChar} {
-    set pt 0
+proc FlashMatchingBracket {inText win pt testChar} {
     set brackets \(\[\{\)\]\}
+    set start $pt
     set bNum [string first $testChar $brackets]
     if {$bNum>2} { ;# 2 to enable; cannot config selbg for ttk::entry
 	lappend stacket $bNum
-	while {[$win index "insert - $pt chars"]>1.0} {
-	    set testChar [$win get "insert - [incr pt] chars"]
+	while {[SeekingMatch $inText $win $pt]} {	  
+	    set testChar [GetTestChar $inText $win [incr pt -1]]
 	    set bNum [string first $testChar $brackets]
 	    if {$bNum>2} {
 		lappend stacket $bNum
@@ -842,7 +854,7 @@ proc FlashMatchingBracket {win testChar} {
 		if {$bNum+3==[lindex $stacket end]} { ;# match!
 		    set stacket [lrange $stacket 0 end-1]
 		    if {![llength $stacket]} {
-			FlashTextRange $win $pt
+			FlashRange $inText $win $pt
 			#$win config -selectbackground green
 			break
 		    }
@@ -853,20 +865,44 @@ proc FlashMatchingBracket {win testChar} {
 	    set testChar {}
 	}
 	if {[string equal {} $testChar]} { ;# no match found
-	    FlashTextRange $win 0
+	    FlashRange $inText $win $start
 	    #$win config -selectbackground red
 	}
     }
 }
 
-proc FlashTextRange {win pt} {
-    set pt [$win index "insert - $pt chars"]
-    after idle $win tag add flash $pt
-    after 100 $win tag remove flash $pt
-    after 200 $win tag add flash $pt
-    after 300 $win tag remove flash $pt
-    after 400 $win tag add flash $pt
-    after 500 $win tag remove flash $pt
+proc SeekingMatch {inText win pt} {
+    if {$inText} {
+	return [expr {[$win index "insert + $pt chars"]>1.0}]
+    } else {
+	return [expr {$pt>0}]
+    }
+}
+
+proc GetTestChar {inText win pt} {
+    if {$inText} {
+	return [$win get "insert + $pt chars"]
+    } else {
+	return [string index [$win get] $pt]
+    }
+}
+
+proc FlashRange {inText win pt} {
+    if {$inText} {
+	set pt [$win index "insert + $pt chars"]
+	after idle $win tag add flash $pt
+	after 100 $win tag remove flash $pt
+	after 200 $win tag add flash $pt
+	after 300 $win tag remove flash $pt
+	after 400 $win tag add flash $pt
+	after 500 $win tag remove flash $pt
+    } else {
+	set end [expr {$pt+1}]
+	set pop "$win selection range $pt $end; update idletasks; after 100; $win selection clear"
+	after idle $pop
+	after 200 $pop
+	after 400 $pop
+    }
 }
 
 proc MoveInFns {w X Y x y} {
