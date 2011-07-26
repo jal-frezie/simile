@@ -876,9 +876,7 @@ proc DoIfApplicable {winName item action} {
 proc AddCanvasBindings { c topNode } {
     global tcl_platform
 
-# If doubles are bound to items (see Korean below) then singles must be too
-# so they happen in the right order
-    $c bind all <Button-1> {ClickObj %x %y %W %X %Y click}
+    KoreanClick $c 1 {ClickObj %x %y %W %X %Y click}
 # Bindings are slightly different in the MacVersion because many users have
 # one button mice.  Thus ctrl-left click is used to simulate right click,
 # and command-left click replaces the function of ctrl-left.    
@@ -888,9 +886,7 @@ proc AddCanvasBindings { c topNode } {
     } else {
         bind $c <Control-Button-1> {ClickObj %x %y %W %X %Y ctrl}
     }
-    # Doubleclicks now bound to objects not canvas
-    # (works around Korean IME bug)
-    $c bind all <Double-1> {ClickObj %x %y %W %X %Y doubleclick}
+    bind $c <Double-1> {ClickObj %x %y %W %X %Y doubleclick}
     
     bind $c <B1-Motion> {DragObj %W %x %y}
     bind $c <ButtonRelease-1> {ReleaseObj %W %x %y}
