@@ -1,0 +1,13 @@
+Package: Simile
+Type: Package
+Title: Interact with Simile models
+Version: 1.0
+Depends: tcltk
+Date: 2011-05-30
+Author: Simulistics Ltd
+Maintainer: Simile support <support@simulistics.com>
+Description: Allows a Simile model saved as a compiled binary to be
+  loaded, parameterized, executed and interrogated
+License: Unlimited
+LazyLoad: yes
+Packaged: 2011-05-31 16:40:45 UTC; jaspert

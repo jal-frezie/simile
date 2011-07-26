@@ -1,0 +1,52 @@
+\name{create.param.array}
+\alias{create.param.array}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+  Allocates memory for interactively loading model parameters
+}
+\description{
+If a script is to provide values directly for a Simile model parameter,
+this command must be called first to set up a location for the
+parameters to be held
+}
+\usage{
+create.param.array(instance.handle,param.name)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{instance.handle}{
+The handle returned by create.model() identifying the model instance.
+}
+  \item{param.name}{
+Caption path to the model component whose value is to be specified
+}
+}
+\details{
+%%  ~~ If necessary, more details than the description above ~~
+}
+\value{
+  A handle to the location that has been created.
+%%  ~Describe the value returned
+%%  If it is a LIST, use
+%%  \item{comp1 }{Description of 'comp1'}
+%%  \item{comp2 }{Description of 'comp2'}
+%% ...
+}
+\references{
+%% ~put references to the literature/web site here ~
+}
+\author{
+Jasper Taylor
+}
+\note{
+%%  ~~further notes~~
+}
+
+%% ~Make other sections like Warning with \section{Warning }{....} ~
+
+\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+}
+\examples{
+param.handle <- create.param.array(instance.handle, "/submodel1/trees/larch")
+}
