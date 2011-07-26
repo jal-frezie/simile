@@ -1035,26 +1035,26 @@ event add <<Del>> <Delete> <BackSpace>
 
 proc CanvasEditBind { c } {
     
-    $c bind currently_editable <B1-Motion> {
+    $c bind editable <B1-Motion> {
         if {[lsearch [%W gettags [%W focus]] selected] != -1} {
             %W select to current \
                     @[join [canvasTLDistance %W [%W canvasx %x] \
                     [%W canvasy %y]] ,]
         }
     }
-    $c bind currently_editable <Delete> {
+    $c bind editable <Delete> {
         if {![CanvasDelSeln %W]} {
             %W dchars [%W focus] insert
         }
     FixBackBox %W [%W focus]
     }
-    $c bind currently_editable <Control-d> {
+    $c bind editable <Control-d> {
         if {[%W focus] != {}} {
             %W dchars [%W focus] insert
         FixBackBox %W [%W focus]
         }
     }
-    $c bind currently_editable <Control-h> {
+    $c bind editable <Control-h> {
         if {![CanvasDelSeln %W]} {
             set _t [%W focus]
             if {[%W index $_t insert]} {
@@ -1064,18 +1064,18 @@ proc CanvasEditBind { c } {
         }
     FixBackBox %W [%W focus]
     }
-    $c bind currently_editable <BackSpace> \
-            [$c bind currently_editable <Control-h>]
+    $c bind editable <BackSpace> \
+            [$c bind editable <Control-h>]
     
-    $c bind currently_editable <Control-Delete> {
+    $c bind editable <Control-Delete> {
         %W delete [%W focus]
     FixBackBox %W [%W focus]
     }
-    $c bind currently_editable <Return> {
+    $c bind editable <Return> {
         %W insert [%W focus] insert \n
     FixBackBox %W [%W focus]
     }
-    $c bind currently_editable <Any-Key> {
+    $c bind editable <Any-Key> {
         # do not allow control chars other than the above mentioned
         if {[string compare %A { }] > -1} {
             CanvasDelSeln %W
@@ -1091,11 +1091,11 @@ proc CanvasEditBind { c } {
         FixBackBox %W [%W focus]
     }
     }
-    $c bind currently_editable <Key-Right> {
+    $c bind editable <Key-Right> {
         %W select clear
         %W icursor [%W focus] [expr [%W index [%W focus] insert]+1]
     }
-    $c bind currently_editable <Shift-Right> {
+    $c bind editable <Shift-Right> {
         set farEnd [%W index [%W focus] insert]
         if {[llength [%W select item]]} {
             set newEnd [%W index [%W focus] sel.first]
@@ -1108,14 +1108,14 @@ proc CanvasEditBind { c } {
         }
         %W select to [%W focus] [expr $newEnd+1]
     }
-    $c bind currently_editable <Control-f> \
-            [$c bind currently_editable <Key-Right>]
+    $c bind editable <Control-f> \
+            [$c bind editable <Key-Right>]
     
-    $c bind currently_editable <Key-Left> {
+    $c bind editable <Key-Left> {
         %W select clear
         %W icursor [%W focus] [expr [%W index [%W focus] insert]-1]
     }
-    $c bind currently_editable <Shift-Left> {
+    $c bind editable <Shift-Left> {
         set farEnd [%W index [%W focus] insert]
         if {[llength [%W select item]]} {
             set newEnd [%W index [%W focus] sel.first]
@@ -1128,26 +1128,26 @@ proc CanvasEditBind { c } {
         }
         %W select to [%W focus] [expr $newEnd-1]
     }
-    $c bind currently_editable <Control-b> \
-            [$c bind currently_editable <Key-Left>]
+    $c bind editable <Control-b> \
+            [$c bind editable <Key-Left>]
     
-    $c bind currently_editable <Key-Home> {
+    $c bind editable <Key-Home> {
         %W icursor [%W focus] 0
     }
-    $c bind currently_editable <Control-a> \
-            [$c bind currently_editable <Key-Home>]
+    $c bind editable <Control-a> \
+            [$c bind editable <Key-Home>]
     
-    $c bind currently_editable <Key-End> {
+    $c bind editable <Key-End> {
         %W icursor [%W focus] end
     }
-    $c bind currently_editable <Control-e> \
-            [$c bind currently_editable <Key-End>]
+    $c bind editable <Control-e> \
+            [$c bind editable <Key-End>]
     
-    $c bind currently_editable <<Cut>> {CanvasTextCopy %W; CanvasDelete %W
+    $c bind editable <<Cut>> {CanvasTextCopy %W; CanvasDelete %W
     FixBackBox %W [%W focus]
     }
-    $c bind currently_editable <<Copy>> {CanvasTextCopy %W}
-    $c bind currently_editable <<Paste>> {
+    $c bind editable <<Copy>> {CanvasTextCopy %W}
+    $c bind editable <<Paste>> {
     .hidden_e delete 0 end
     event generate .hidden_e <<Paste>>
     CanvasDelSeln %W

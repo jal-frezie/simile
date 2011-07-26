@@ -1757,8 +1757,9 @@ proc ExistCheck {topNode path level notInput source} {
 # the required top level path.
 
 proc ChooseByInspection {topNode oldObj type context} {
-    global helperTable classTable paramData
+    global helperTable classTable paramData myNode
 
+    set myNode $topNode ;# for inspector helper
     set parent [grab current]
     set t [PutItThere .newParamTgt $parent] ;# window id used to bring clix here
     wm protocol .newParamTgt WM_DELETE_WINDOW \

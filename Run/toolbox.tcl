@@ -1528,12 +1528,11 @@ proc OpenProjectFile {path} {
     global loadingProject runState
     set pFile [file join $path model.spj]
     set projectF [NetOpen $pFile r]
-    gets $projectF SimileProjectData
+    #gets $projectF SimileProjectData
+    set SimileProjectData [read $projectF] ;# may be line breaks in sm names
     close $projectF
     file delete $pFile
-    #ShowMess debug info "open_all win $win; $SimileProjectData" ok
     array set SimileProject $SimileProjectData
-    #ShowMess debug info "open_all SimileProject(ModelFile) $SimileProject(ModelFile)" ok
     
     # if params it should load the spfs
     # MergeParams {smPath metaFile interactive}
