@@ -1562,7 +1562,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	    # change back now in case .spf filename is relative (possible
 	    # if merging params from script)
 	    cd $oldDir
-	    set restoredComp $smPath[lindex $move 0]
+	    set restoredComp /$topNode[lindex $move 0]
             if {$paramState(origVersion)>=4.0} {
 		set dataFinder [lindex $IdAndValue end]
                 set reference [string eq reference [lindex $IdAndValue end-1]]
@@ -1757,9 +1757,8 @@ proc ExistCheck {topNode path level notInput source} {
 # the required top level path.
 
 proc ChooseByInspection {topNode oldObj type context} {
-    global helperTable classTable paramData myNode
+    global helperTable classTable paramData
 
-    set myNode $topNode ;# for inspector helper
     set parent [grab current]
     set t [PutItThere .newParamTgt $parent] ;# window id used to bring clix here
     wm protocol .newParamTgt WM_DELETE_WINDOW \
@@ -1767,11 +1766,12 @@ proc ChooseByInspection {topNode oldObj type context} {
     wm title $t "$type for $oldObj values:" 
 
 # go through gymnastix to put a Model Inspector in ths window
+    set ::myNode $topNode ;# for inspector helper
     set ::RunEnv::CurrentContainer $t
     set hlp [UniqueId helper]
     set helperId $helperTable(VariableList)
     set runClass $classTable(run,$topNode)
-    similescript::$helperId $hlp $runClass Variables $context
+    similescript::$helperId $hlp $runClass Variables {}
 
     LetItShow $t
     grab $t

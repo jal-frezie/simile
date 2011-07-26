@@ -228,7 +228,7 @@ itcl::class similescript::Helper {
 	}
 	set helperTable($this,foci) {}
 	set helperTable($winId,whichInstance) $this
-        # puts "Helper constr $this winId $winId"
+        #puts "Helper constr $this winId $winId"
     }
     
     destructor {
