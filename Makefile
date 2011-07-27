@@ -84,6 +84,7 @@ USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include/tcl$(VERS) -L$(TCLDIR)/lib -ltclstu
 # Next builds against system Tcl for Prolog debugging with Sicstus/dll
 # USETCL = -DUSE_TCL_STUBS -I/usr/include/tcl$(VERS) -L/usr/lib/tcl$(VERS) -ltclstub$(VERS)
 LOCALIZE_TCL_REFS = ls # placebo command
+CHECK_LOCAL_LIBS = -Wl,-rpath,'../$(LIBDIR)'
 SHAREDLIBEXTN = .so
 
 ifeq ($(PLATFORM),Darwin)
@@ -110,6 +111,7 @@ endif
 	LOCALIZE_TCL_REFS = install_name_tool -change \
 		$(TCLFW)/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl
+	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
 else
 	PLATFORM = $(shell uname -o)
@@ -143,6 +145,7 @@ endif
 # to be used after CDing to Run -- assume all refs are from a subdirectory
 	USETCL = -DUSE_TCL_STUBS -I$(TCLREF)/include/tcl$(MAJ).$(MIN) -L$(TCLREF)/lib $(TCLREF)/lib/tclstub$(VERS).lib
 	LOCALIZE_TCL_REFS =  ls # placebo command
+	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = _win
 	EXECEXTN = .exe
@@ -208,7 +211,7 @@ $(EXECDIR)/struct_db$(ARCHEXTN).o: Prolog/struct_db.c
 $(SHIM): Run/ame_cmx.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(FLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
 		ame_cmx.c $(USETCL) -L../$(LIBDIR) -l5d$(ARCHEXTN) \
-		-Wl,-rpath,'../$(LIBDIR)'; cd ..; \
+		$(CHECK_LOCAL_LIBS); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 
 $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
