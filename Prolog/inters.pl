@@ -15,8 +15,8 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 			       sub(Sm, DestRef, Swaps), top_down, _, FullExp),
 	       make_intermediates(FullExp, Sm, [Target], DestPath, BackSwap,
 				  [], [], Step, Used, Units, AllInters,
-				  part_result(SourceContext, DestDims,
-					      AllSetups, Args, Formula))), Prob,
+				  part_result(SourceContext, AllSetups, Args,
+					      Formula))), Prob,
 		     report(Sm, Prob)),
 
 	get_model_and_loops(SourceContext, DestPath, _, SourceLoops, _),
@@ -51,9 +51,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	[Setups, NewInters, Context] =
 	[AllSetups, AllInters, FContext],
 	    pointer_from(DestPath, DestPtr),
-	    (nonvar(DestDims), !,
-		all(user, arg, [unify(1), build(DestDims), build(Inds)]);
-	    get_dims_from_loops(SourceLoops, _, Inds)),
+	    get_dims_from_loops(SourceLoops, _, Inds),
 	 NewFormula = [assign(arr(DestPtr, Target, Inds), ScaledF)],
 	add_extra_dependencies(Context, DestPath, Formula, Args, Prereqs)).
 
@@ -361,7 +359,6 @@ make_intermediates(
     part_result( /* bag up the result parameters we will be making sets of */
     SourceContext, /* A context in which we can calculate the formula that
 		  this procedure generates */
-    TgtDims, % dimensions of result if these differ from suggested by above
     Setups, /* Instructions that must be executed before this formula */
     Args, /* A list of variables used in the formula */
     SourceRef) /* the formula we finally generate */
@@ -434,7 +431,7 @@ make_intermediates(
 	UseRef = arr(_, Var, _),
 	    make_intermediates(make_inter(Source, Var), SubId, Target, DestPath,
 	    BackSwap, PrevInters, BuildingArrays, Step, Used, Units, NewInters,
-	    part_result(SourceContext, void, Setups, Args, SourceRef)));
+	    part_result(SourceContext, Setups, Args, SourceRef)));
 	
 	/* second case: a cumulative function. For the cases count and exists.
 	where the result does not depend on the actual values being checked,
@@ -512,7 +509,7 @@ make_intermediates(
 	    make_intermediates(Epsilon, SubId, [TotalName | Target], TotalPath,
 			       SubSwap, PrevInters, NowBuilding, Step, Used,
 			       ArgUnits, OldInters,
-			       part_result(SubContext, void, OldSetups,
+			       part_result(SubContext, OldSetups,
 					   OldArgs, IncrementRef));
 	 append_atoms(InnerTgt, '_payload', PayloadNameBase),
 	    generate_name(c, PayloadNameBase, PayloadName, Used),
@@ -809,7 +806,7 @@ make_intermediates(
 	    fail, % not yet tested enough for release
 	    make_intermediates(Reps, SubId, [dum], DestPath,_, PrevInters,
 			       BuildingArrays, Step, Used, Dun, MidInters,
-			       part_result(Counted, void, [], _, DimVal)),
+			       part_result(Counted, [], _, DimVal)),
 	    get_model_and_loops(Counted, DestPath, _, SzLoops, _),
 	    suffix([LocalLoop], SzLoops), !,
 	    NowBuilding = [LocalLoop | BuildingArrays];
@@ -818,7 +815,7 @@ make_intermediates(
 	          integer(DimVal), IndxUnits = int;	% it is integer now
 	        make_intermediates(Dim, SubId, [dum], DestPath,_, PrevInters,
 				   BuildingArrays, Step, Used, Dun, MidInters,
-				   part_result([], void, [], _, DimVal)),
+				   part_result([], [], _, DimVal)),
 	        promote_unit(Dun, const_int)), !; % will be integer later
 		  throw(bad_index_number(Dim, makearray, 16777215))),
 	        (Dun = n(Type),
@@ -841,31 +838,35 @@ make_intermediates(
 	    LocalLoop = set(LocalInd, loop(DimVal, IndxUnits))),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
 			PrevInters, NowBuilding, Step, Used, Units, NewInters,
-			part_result(EltContext, void, Setups, Args, SourceRef)),
+			part_result(EltContext, Setups, Args, SourceRef)),
 %	    append(DimSetups, EltSetups, Setups),
 	    get_model_and_loops(EltContext, DestPath, _, EltLoops, EltBase),
 	    append(EltLoops, [LocalLoop | EltBase], SourceContext);
 
-	Source = tweakarray(Element, Dim, Indx), !,
+/* This should work like current version of statearray(), i.e.,
+   generate an inter that should get pruned as an idler in typical use
+   cases, thus not need separate signalling of result dimensions --
+   but might be different for explicit state arrays
+
+	    Source = tweakarray(Element, Dim, Indx), !,
 	    make_intermediates(Indx, SubId, Target, DestPath, BackSwap,
 			PrevInters, BuildingArrays, Step, Used, Int, MidInters,
-			part_result(IContext, void, ISetups, IArgs, IndxRef)),
+			part_result(IContext, ISetups, IArgs, IndxRef)),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
 			MidInters, BuildingArrays, Step,
 			Used, Units, NewInters,
-			part_result(AContext, void, ASetups, AArgs,
-				    SourceRef)),
+			part_result(AContext, ASetups, AArgs, SourceRef)),
 	    combine_contexts(IContext, AContext, DestPath, SourceContext),
 	    TgtDims = [dest_index(IndxRef,Dim)],
 	    append(ASetups, ISetups, Setups),
 	    add_extra_dependencies(IContext, DestPath, IndxRef, IArgs, IWaits),
 	    append(AArgs, IWaits, Args);
 	    
-/* Original version that put a separate initialization instruction in step 0
+Original version that put a separate initialization instruction in step 0
 	Source = statearray(Element, Dim, Indx, Init), !,
 	    make_intermediates(Init, SubId, Target, DestPath, BackSwap,
 		    PrevInters, BuildingArrays, Step, Used, Int, MidInters,
-		    part_result(IContext, void, ISetups, IArgs, InitRef)),
+		    part_result(IContext, ISetups, IArgs, InitRef)),
 	    pointer_from(DestPath, DestPtr),
 	    ILoop = set(_, loop(Dim, _)),
 	    combine_contexts(IContext, [ILoop | DestPath], DestPath, IDContext),
@@ -886,7 +887,7 @@ New version that creates an inter with a special super-instruction
 	    % get stuff to make all values
 	    make_intermediates(Multi, SubId, Target, DestPath, BackSwap,
 		    PrevInters, BuildingArrays, Step, Used, MUnits, MInters,
-		    part_result(MContext, void, MSetups, MArgs, MRef)),
+		    part_result(MContext, MSetups, MArgs, MRef)),
 	    % MContext will have a possibly-submodel loop
 
 Now one that uses a special conditional level */
@@ -895,12 +896,12 @@ Now one that uses a special conditional level */
 	    make_intermediates(make_inter(Multi, InterRef),
 			       SubId, Target, DestPath, BackSwap,
 		    PrevInters, BuildingArrays, Step, Used, Int, MidInters,
-		    part_result(SourceContext, void, FullSetups, Args, SourceRef)),
+		    part_result(SourceContext, FullSetups, Args, SourceRef)),
 	    member(AuntSally, MidInters),
 	    AuntSally = instance(internal, _, InterRef, InterEfct, _-[Size|_]),
 	    make_intermediates(Action, SubId, Target, DestPath, BackSwap,
 		    MidInters, BuildingArrays, Step, Used, AUnits, LateInters,
-		    part_result(AContext, void, ASetups, AArgs, ARef)),
+		    part_result(AContext, ASetups, AArgs, ARef)),
 	    get_model_and_loops(AContext, DestPath, _, [], _),
 	    
 	    all(inters, add_condition_to_context,
@@ -910,7 +911,7 @@ Now one that uses a special conditional level */
 	    make_intermediates(Single, SubId, Target, DestPath, BackSwap,
 			LateInters, BuildingArrays, Step,
 			Used, SUnits, NewInters,
-			part_result(SContext, void, SSetups, SArgs, SRef)),
+			part_result(SContext, SSetups, SArgs, SRef)),
 	    pointer_from(DestPath, Ptr),
 	    PartSetups = [make(poked(InterEfct), SArgs, SContext, Step,
 			       [assign(arr(Ptr, InterEfct, [ARef]), SRef)]) | SSetups],
@@ -925,10 +926,10 @@ Now one that uses a special conditional level */
         Source = element(Array, Indx), !,
 	    make_intermediates(Indx, SubId, Target, DestPath, BackSwap,
 			PrevInters, BuildingArrays, Step, Used, Int, MidInters,
-			part_result(IContext, void, ISetups, IArgs, IndxRef)),
+			part_result(IContext, ISetups, IArgs, IndxRef)),
 	    make_intermediates(Array, SubId, Target, DestPath, BackSwap,
 			MidInters, BuildingArrays, Step, Used,Units, NewInters,
-			part_result(AContext, void, ASetups, AArgs, SourceRef)),
+			part_result(AContext, ASetups, AArgs, SourceRef)),
 	    get_model_and_loops(IContext, DestPath, _, ILoops, IBase),
 	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
  	    (break_at_last_loop(ALoops, TailLoops,
@@ -982,7 +983,7 @@ Now one that uses a special conditional level */
 	    make_intermediates(make_inter(SubExp, Ref), SubId, Target, 
 			DestPath, BackSwap, InitInters, BuildingArrays, 
 			Step, Used, DefUnit, MidInters,
-			part_result(XIContext, void, SubSetups, _,_)),
+			part_result(XIContext, SubSetups, _,_)),
 	    get_model_and_loops(XIContext, DestPath,_, XILoops,_),
 	    suffix(XILoops, LoopSlot),
 	    /* If we know what the parameter units are by now, use them */
@@ -993,8 +994,7 @@ Now one that uses a special conditional level */
 	    make_intermediates(Rest, SubId, Target, 
 			DestPath, BackSwap, MidInters, BuildingArrays, 
 			Step, Used, Units, MixedInters,
-			part_result(SourceContext, void,
-				    ExSetups, Args, SourceRef)),
+			part_result(SourceContext, ExSetups, Args, SourceRef)),
 	    all(inters, prevent_inappropriate_reuse,
 		[unify(Param), build(MixedInters), build(NewInters)]),
 				% in case they use param
@@ -1002,6 +1002,15 @@ Now one that uses a special conditional level */
 		% not sure how to make this happen
 		throw(wrong_param_units(Param, UseUnit, DefUnit))),!,
 	    append(SubSetups, ExSetups, Setups);	  
+
+	Source = ready(ToDoFirst), % keep deps but return TRUE
+	    replace_subexps(ToDoFirst, inters, just_inputs, Args, _,_,_),
+	    length(Args, _L), !,
+	    Units = int,
+	    NewInters = [],
+	    SourceContext = [],
+	    Setups = [],
+	    SourceRef = 1;	    
 
 	\+ atom(Source),
 	    (individuates_instances(_, Source, _, _), !,
@@ -1353,6 +1362,7 @@ builtin('Model properties', in_preceding, any, [any]).
 builtin('Model properties', in_progenitor, any, [any]).
 builtin('Model properties', prev, given_units, [const_int]).
 builtin('Model properties', trigger_magnitude, given_units, [none]).
+builtin('Model properties', ready, int, [any]).
 builtin('List handling', makearray, array_of_any, [any, const_int]).
 builtin('List handling', place_in, int, [const_int]).
 builtin('List handling', tweakarray, array_of_any, [any, const_int, int]).
@@ -1646,7 +1656,7 @@ but there is no way to tell yet. */
 combine_subexp_results(_, [], FunctionContext, FunctionContext, [], [], []).
 
 combine_subexp_results(DestPath,
-		       [part_result(SourceContext, _, Setup, Args, NewRef)
+		       [part_result(SourceContext, Setup, Args, NewRef)
 		       | ResultList], FunctionContext,
 		       NewContext, NewSetup, NewArgs,
 		       [NewRef | Comps]) :-
@@ -1662,6 +1672,9 @@ change_constituent(switch(All, Bit, NewBit), Old, New, 0) :-
 	    New = NewBit;
 	\+ Old = All.
 
+just_inputs(All, param(arr(_, Name, _), _,_,_,_), _, 0) :-
+	member(Name, All).
+	    
 add_extra_dependencies(OldCon, NewCon, Source, VarList, FullList) :-
 /* Now if I come out of any generated submodels, add a dependency on the generator
 function...similarly a dependemcy on time for any population submodels */

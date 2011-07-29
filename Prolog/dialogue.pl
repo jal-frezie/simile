@@ -639,7 +639,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 		     (make_intermediates(FullExpr, Fn, ['/dest/'],
 		                        DummyDest, _, [],
 					[], dummy, _, Type, _I,
-					part_result(Context, DestDims, _,_,_)),
+					part_result(Context, _,_,_)),
 		     inters'><'get_model_and_loops(Context, DummyDest, _,
 						   Loops, _)),
 	(replace_subexps(ParseExcp, dialogue, collapse_params,
@@ -651,9 +651,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	    var(Bound),
 	    ParseError = cannot_set_dims(N, Param);
 	    %sicstus_format_to_chars("Dimension ~d of explicit intermediate variable ~w cannot be determined from its definition", [N, Param], ParseError);
-	    (nonvar(DestDims), !,
-		all(user, arg, [unify(2), build(DestDims), build(Dims)]);
-	      get_dims_from_loops(Loops, Dims, _)))).
+	  get_dims_from_loops(Loops, Dims, _))).
 	/* real_dims_only(XDims, Dims).
 	Hack alert. The term representing the dest context has indices
 	(   so index(n) will work) but no loops, so we don't need to add it

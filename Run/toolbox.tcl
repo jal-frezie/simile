@@ -1444,12 +1444,21 @@ proc EatNumber {str} {
 # is decimal point. But not using it can leave out point altogether, which
 # also screws it, so use e instead of g -- after all, the user never sees this
 # format -- it only exists to get the value into Prolog.
-	set floatVal [format %.16e $floatVal]
+#	set floatVal [format %.16e $floatVal]
+
+# Except of course they do if there's a syntax error...the solution
+# appears to be to use expr, which makes sure the printed string is
+# taken afresh from the numeric value, and thus:
+
+# carries its full precision (and no more), 
+# uses point to show whether float or int,
+# happily does not start with a point!
+
 # this never happens now
 #	if {[string is integer $floatVal]} {
 #	    append floatVal .0
 #	}
-	return [list $floatVal $floatSize]
+	return [list [expr {$floatVal}] $floatSize]
     }
 }
 
