@@ -257,6 +257,11 @@ itcl::class similescript::Helper {
     }
 # only old-style helpers have keyvalues, but this is needed for some reason
 
+    # likewise
+    public method Identify {} {
+        return abstractTitle
+    }
+
 # This is optional, some helpers do not store earlier values
     public method Clear {} {
     }

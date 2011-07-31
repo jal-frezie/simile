@@ -1674,7 +1674,17 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 proc ExistCheck {topNode path level notInput source} {
     global bermudaTriangle
 
-    set restoredComp $path
+    if {$notInput>-1} {
+	set relevanceCheck {expr {[FirstIndexCheck $topNode $node]>-1}}
+	set tgtCap [TrimDTFromPath $level]
+	set lostType {file parameter}
+    } else {
+	set tgtCap $level
+	set relevanceCheck {info exists ::targetNames($restoredComp)}
+	set lostType {output measurement}
+    }
+
+    set restoredComp $tgtCap$path
     set lostAtSea 0
     foreach {lost found} $bermudaTriangle {
         if {![string first $lost $restoredComp]} {
@@ -1690,17 +1700,7 @@ proc ExistCheck {topNode path level notInput source} {
         return continue
     }
     
-    if {$notInput>-1} {
-	set relevanceCheck {expr {[FirstIndexCheck $topNode $node]>-1}}
-	set tgtCap [TrimDTFromPath $level]
-	set lostType {file parameter}
-    } else {
-	set tgtCap $level
-	set relevanceCheck {info exists ::targetNames($tgtCap$restoredComp)}
-	set lostType {output measurement}
-    }
-#puts "checking $tgtCap$restoredComp"
-    set node [GetCompProperty $topNode IdFromCapt $tgtCap$restoredComp]
+    set node [GetCompProperty $topNode IdFromCapt $restoredComp]
     if {![string equal nomatch $node]} {
 	if {![eval $relevanceCheck]} {
 	    set node nomatch
@@ -1710,9 +1710,11 @@ proc ExistCheck {topNode path level notInput source} {
         set nextLook $restoredComp
         while {[string equal nomatch $node]} {
             set lostBit $nextLook
-            set nextLook [join [lrange [split $lostBit /] 0 end-1] /]
+	    set listVers [split $lostBit /]
+	    set badPt [lindex $listVers end]
+            set nextLook [join [lrange $listVers 0 end-1] /]
             if {[llength $nextLook]} {
-                set node [GetCompProperty $topNode IdFromCapt $tgtCap$nextLook]
+                set node [GetCompProperty $topNode IdFromCapt $nextLook]
             } else {
                 set node $topNode
             }
@@ -1720,14 +1722,13 @@ proc ExistCheck {topNode path level notInput source} {
         if {![string equal $lostBit $restoredComp]} {
             set lostType submodel
         }
-        set act [Query [list unused_param $source $lostType $lostBit $tgtCap] \
+        set act [Query [list unused_param $source $lostType $badPt $nextLook] \
 		     warning spf {} {forget abort reassign}]
 	switch $act {
 	    abort {
 		return break
 	    } reassign {
-		set newPath [ChooseByInspection $topNode $lostBit $lostType \
-				$tgtCap]
+		set newPath [ChooseByInspection $topNode $lostBit $lostType]
 	    } forget {
 		set newPath none
 	    }
@@ -1756,7 +1757,7 @@ proc ExistCheck {topNode path level notInput source} {
 # for which data is being loaded. Achieve this later by setting the last arg to
 # the required top level path.
 
-proc ChooseByInspection {topNode oldObj type context} {
+proc ChooseByInspection {topNode oldObj type} {
     global helperTable classTable paramData
 
     set parent [grab current]

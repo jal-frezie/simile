@@ -53,8 +53,11 @@ namespace eval ::$keyValue {
 	set chop [string length $context]
         foreach component [GetObjectList] {
 	    set fullCapt [GetCaptionPathFromId $component]
-	    if {![string length $context] || \
-		    ![string first $context $fullCapt]} {
+	    if {(![string length $context] || \
+		    ![string first $context $fullCapt]) && \
+		  ([string first .newParamTgt $winId] || \
+		       [lsearch {INPUT TABLE SPLIT} \
+			    [GetModelEval $component]]>=0)} {
 		lappend universe [list $component [string range $fullCapt \
 						      $chop end]]
 	    }
