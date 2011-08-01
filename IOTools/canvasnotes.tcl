@@ -21,6 +21,8 @@ namespace eval canvasnotes20070919 {
 	$c bind annotation <B1-Motion> [namespace code {StepDrag %W %x %y}]
 	$c bind annotation <Button-3> \
 	    [namespace code {MessTextHere %W %X %Y %x %y}]
+	$c bind annotation <Double-1> \
+	    [namespace code {MessTextHere %W %X %Y %x %y}]
 	$cm add command -label "Add text here" \
 	    -command [namespace code StickTextHere]
 	if {[string length $props]} {
@@ -114,7 +116,7 @@ namespace eval canvasnotes20070919 {
 		  -variable whatNotes(size) -label Size: -resolution 1] \
 	    -fill x -expand 1
 	set font [$whatNotes(canvas) itemcget $whatNotes(text) -font]
-	$txtFrame.scale set [font actual $font -size]
+	$txtFrame.scale set [expr {abs([font actual $font -size])}]
 	pack [button $txtFrame.colour -text "Set colour" \
 		  -command [namespace code ChangeColour]] -padx 10 -pady 10
 	TweakText [.annotationprop draw]
