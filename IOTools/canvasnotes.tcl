@@ -21,8 +21,7 @@ namespace eval canvasnotes20070919 {
 	$c bind annotation <B1-Motion> [namespace code {StepDrag %W %x %y}]
 	$c bind annotation <Button-3> \
 	    [namespace code {MessTextHere %W %X %Y %x %y}]
-	$c bind annotation <Double-1> \
-	    [namespace code {MessTextHere %W %X %Y %x %y}]
+	$c bind annotation <Double-1> [namespace code Properties]
 	$cm add command -label "Add text here" \
 	    -command [namespace code StickTextHere]
 	if {[string length $props]} {
