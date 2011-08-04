@@ -510,7 +510,7 @@ adjust_to_9(Trans) :-
 		    image'><'middle(BTBox, BTPt),
 		    image'><'closest_centre(BTPt, Course, _,_, BTPosn);
 		\+ BowtieArc = Obj,
-		    BTPosn = 450),
+		    BTPosn = 550),
 		CPt = [KinkPosn, BTPosn]),
 	    Obj has_new_graphical_attribute curve of CPt),
 	fail;

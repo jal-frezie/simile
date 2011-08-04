@@ -2004,7 +2004,7 @@ reuse_route(New_obj, LastArc) :-
 %	    set_shape(NewArc, course, Route),
 %	    update_bowtie(NewArc, Route),
 	    (member(New_obj, [flow, squirt]),
-		CPt = [550,450];
+		CPt = [550,550];
 		% First is posn of kink, 2nd is posn of bowtie /1000
 	      \+ member(New_obj, [flow, squirt]),
 		get_end_pt(NewArc, start, _, Spt, _),

@@ -1984,8 +1984,14 @@ proc autocomplete {win action pt value change valuelist} {
 # at least one alphanumeric character
 #	    set key ^$trigger\[\[:alnum:\]\]
 # actually its awkward having a completion appear if you have entered the whole
-# item, so drop this restriction
-	    set matches [lsearch -all -inline -regexp $valuelist ^$trigger]
+# item, so drop this restriction (on the restriction? comment makes no sense. 
+# perhaps its about case where the whole item is one possibility -- if it is 
+# allowed as a completion, longer item will not show. But this is confusing and
+# contrary to other apps behaviour, so...)
+	    set key ^$trigger.
+# currently allow any completion that adds anything -- have to delete if you
+# want substring
+	    set matches [lsearch -all -inline -regexp $valuelist $key]
 	    if {[llength $matches]} {
 		foreach match $matches {
 		    lappend tails [string range [string trimleft $match \[\{] \
