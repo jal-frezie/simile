@@ -22,6 +22,8 @@ sicstus_use_module([library(lists), sp_only, ame_gen, database,
 
 :- dynamic(save_status_of/2).
 
+:- dynamic(running_session/3).
+
 set_save_status(Model, Stat) :-
 	retractall(save_status_of(Model, _)),
 	assert(save_status_of(Model, Stat)).
@@ -86,15 +88,26 @@ go_back(Model) :-
 go_forward(Model) :-
 	exit_two_click_op, fail; % should never happen
 	restart_move,
-	retract(saved_state(Model, current, Current)),
-	wrap(Current, Next),
+	saved_state(Model, current, Current),
+	(running_session(Model, Stm, IdMap),
+	    saved_state(Model, last, Current), !,
+	    % playing a session and no outstanding undos, so read session file
+	    retract(running_session(Model, Stm, IdMap)),
+	    get_ring_point(Current),
+	    retractall(saved_state(Model, Current, _)),
+	    run_move_from_file(Model, Stm, Current, IdMap, NewIdMap),
+	    (NewIdMap = done, !;
+	      assert(running_session(Model, Stm, NewIdMap))),
+	    update_autosave(Model, Current);
+	  retract(saved_state(Model, current, Current)),
+	    wrap(Current, Next),
+	    enact_changes(Model, Current, forward),
+	    into_save_file(Model, redo),
+	    assert(saved_state(Model, current, Next))),
 	internal_extent_jiggered(Model, Current, LostExtents),
 	appearance_changes(Model, Current, LostExtents, Redrawn),
 	all(draw, off, [build(Redrawn)]), /* safe if they don't exist yet */
-	enact_changes(Model, Current, forward),
 	synchronize_graphics(LostExtents, Redrawn),
-	into_save_file(Model, redo),
-	assert(saved_state(Model, current, Next)),
 	set_edit_abilities(Model).
 
 finish_move(EditedModel, ChangeExec) :-
@@ -108,21 +121,24 @@ finish_move(EditedModel, ChangeExec) :-
 	/* Only proceed for toplevel window containing model */
 	is_toplevel(Model),
 	(ChangeExec = 0;
-	 ChangeExec = 1,
+	  ChangeExec = 1,
 	    output'><'tk_alter_model(Model)),
+	get_ring_point(Current),
+	record_changes(Model, Current),
+	update_autosave(Model, Current),
+	set_edit_abilities(Model).
+
+get_ring_point(Current) :-
 	retract(saved_state(Model, first, First)),
 	retract(saved_state(Model, last, _)),
 	retract(saved_state(Model, current, Current)),
-	record_changes(Model, Current),
-	update_autosave(Model, Current),
 	wrap(Current,Next),
 	(First = Next, !,
 		wrap(Next, Following),
 		assert(saved_state(Model, first, Following));
 	assert(saved_state(Model, first, First))),
 	assert(saved_state(Model, last, Next)),
-	assert(saved_state(Model, current, Next)),
-	set_edit_abilities(Model).
+	assert(saved_state(Model, current, Next)).
 
 /* This undoes anything that has happened since the last finish_move; needed
 after putting up restore dialog, to be sure we are restoring from the same
@@ -195,8 +211,8 @@ into_save_file(Model, ActList) :-
 restore_save_file(Model, Load, IdSwaps) :-
 	read(Load, ActSpec),
 	(ActSpec = end_of_file,
-		close(Load),
-	        assert(translation_info(Model, [translated(IdSwaps)]));
+	    close(Load),
+	    assert(translation_info(Model, [translated(IdSwaps)]));
 		/* now load the mirror of the current state so I can continue to
 			update undos and redos -- no longer needed
 		saved_state(phase, Record),
@@ -206,7 +222,17 @@ restore_save_file(Model, Load, IdSwaps) :-
 			fail;
 		true); */
 	repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps),
-		restore_save_file(Model, Load, NewIdSwaps)).
+	    restore_save_file(Model, Load, NewIdSwaps)).
+
+run_move_from_file(Model, Stm, Current, IdSwaps, NewIdSwaps) :-
+	read(Stm, ActSpec),
+	(ActSpec = end_of_file,
+	    close(Stm),
+	    NewIdSwaps = done;
+	  ActSpec = pause,
+	    NewIdSwaps = IdSwaps;
+	  enact_from_file(Model, Current, IdSwaps, MidIdSwaps, ActSpec),
+	    run_move_from_file(Model, Stm, Current, MidIdSwaps, NewIdSwaps)).
 
 set_edit_abilities(Model) :-
 	save_allowed(Model, CanSave),
@@ -215,7 +241,8 @@ set_edit_abilities(Model) :-
 	(saved_state(Model, first, Here), !,
 	    UndoOn = 0;
 	 UndoOn = 1),
-	(saved_state(Model, last, Here), !,
+	(saved_state(Model, last, Here),
+	    \+ running_session(Model, _Stm, _Trans), !,
 	    RedoOn = 0;
 	 RedoOn = 1),
 	draw'><'update_ability(Model, undo, edit, 'Undo', UndoOn),
@@ -223,30 +250,21 @@ set_edit_abilities(Model) :-
 
 repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps) :-
 	ActSpec = undo,
-	        NewIdSwaps = IdSwaps,
-		retract(saved_state(Model, current, Current)),
-		wrap(Prev, Current), !,
-		enact_changes(Model, Prev, reverse),
-		assert(saved_state(Model, current, Prev));
+	    NewIdSwaps = IdSwaps,
+	    retract(saved_state(Model, current, Current)),
+	    wrap(Prev, Current), !,
+	    enact_changes(Model, Prev, reverse),
+	    assert(saved_state(Model, current, Prev));
 	ActSpec = redo,
-	        NewIdSwaps = IdSwaps,
-		retract(saved_state(Model, current, Current)),
-		wrap(Current, Next), !,
-		enact_changes(Model, Current, forward),
-		assert(saved_state(Model, current, Next));
+	    NewIdSwaps = IdSwaps,
+	    retract(saved_state(Model, current, Current)),
+	    wrap(Current, Next), !,
+	    enact_changes(Model, Current, forward),
+	    assert(saved_state(Model, current, Next));
 	(ActSpec = []; ActSpec = [_|_]),
-	        retract(saved_state(Model, first, First)),
-		retract(saved_state(Model, last, _)),
-		retract(saved_state(Model, current, Current)),
-		retractall(saved_state(Model, Current, _)),
-		enact_from_file(Model, Current, IdSwaps, NewIdSwaps, ActSpec),
-		wrap(Current,Next),
-		(First = Next, !,
-			wrap(Next, Following),
-			assert(saved_state(Model, first, Following));
-		assert(saved_state(Model, first, First))),
-		assert(saved_state(Model, last, Next)),
-		assert(saved_state(Model, current, Next)).
+	    get_ring_point(Current),
+	    retractall(saved_state(Model, Current, _)),
+	    enact_from_file(Model, Current, IdSwaps, NewIdSwaps, ActSpec).
 
 enact_from_file(_,_, I,I, []).
 
@@ -447,7 +465,7 @@ case... */
 make_auto_name(Name, NewExtn, AutoName) :-
 	name(Name, NameStr),
 	(member(Extn, [".sml", ".SML", ".sim", ".SIM", ".ame", ".AME",
-		      ".pl", ".PL"]), % .pl included to gruntle Alastair
+		      ".pl", ".PL", ".ses", ".SES"]),
 	    append(BaseStr, Extn, NameStr);
 	BaseStr = NameStr), !,
 	append(BaseStr, NewExtn, AutoNameStr),

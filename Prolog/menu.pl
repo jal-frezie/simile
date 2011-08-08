@@ -139,10 +139,14 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    output'><'my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
 	    no canvas, images or runnables */
-	on_exception(ProLoss, ame_merge(Parent, Name, _FileV, no, Translated),
+	(is_session(Name), !,
+	    open_native(Name, read, Stm),
+	    backup'><'assert(running_session(Parent, Stm, [Parent-Parent])),
+	    redo_edit(Win, [Win]); % go to first pause so something shows
+	  on_exception(ProLoss, ame_merge(Parent, Name, _FileV, no, Translated),
 		     (make_nice_error_message(ProLoss, ProLite),
 		     query(open_model_failed(Checked, ProLite), error, top,
-			   [ok], _))),
+			   [ok], _)))),
 	    NeedsRedraw = 1;
 	/* insert failed because it took model over comp limit */
 	restart_move,
@@ -150,7 +154,8 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    !, fail),
         finish_progress_dialogue,
 	(member(Mode, [open_toplevel, add]),
-	    check_autosave(Parent, Name, Translated, NeedsRedraw),
+	    (is_session(Name), !;
+	      check_autosave(Parent, Name, Translated, NeedsRedraw)),
 	    (NeedsRedraw = 0,
 		/* Graphics update will have made a tk_visible call which we do
 		not want to save as a separate move so forget it */
@@ -252,8 +257,8 @@ menu_handle(_Win, Mode, Name) :-
 	member(Mode, [open_toplevel, add]),
 	(check_if_already_open(Name), !;
 	m_update'><'make_desktop(Parent, Win),
-	scrub_autosave(Parent),
-	stick_model_in(Win, Parent, Name, Mode)).
+	    scrub_autosave(Parent),
+	    stick_model_in(Win, Parent, Name, Mode)).
 
 menu_handle(CurWin, file, OpenAct) :-
 	member(OpenAct-Mode, [open-open_toplevel, import-add]),
@@ -476,7 +481,7 @@ menu_handle(Win, file, export_prolog) :-
 	get_program_file(DefName, TopModel, FileName),
 	output'><'date_is(Date),
         start_progress_dialogue(Win),
-	save_isolated(FileName, Model, Date, no),
+	save_isolated(FileName, Model, Date, no, yes),
         finish_progress_dialogue.
 
 menu_handle(Win, file, export_xml) :-
@@ -488,7 +493,7 @@ menu_handle(Win, file, export_xml) :-
 	append_atoms(Dir, '/temp_out.pl', TempFile),
 	output'><'date_is(Date),
         start_progress_dialogue(Win),
-	save_isolated(TempFile, Model, Date, no),
+	save_isolated(TempFile, Model, Date, no, yes),
         finish_progress_dialogue,
 	get_default_export_name(Model, ".xml", DefName),
 	get_program_file(DefName, TopModel, FileName),
@@ -600,7 +605,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
 	output'><'date_is(Date),
-	save_isolated(CopyFile, Model, Date, yes),
+	save_isolated(CopyFile, Model, Date, yes, no),
 	/* restart_move will put the rest of the model back but it will
 	not be selected, so list the nodes and select them after the rest is
 	added so any external links and ghosts come out right
@@ -613,6 +618,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 
 	/* Restore original selection as we may have added submodels */
 	(CutOrCopy = cut,
+	    reassure_user(pl_action, [DelAtom]),
 	    event'><'delete_net(Model),
 	    finish_move(Model, 1);
 	CutOrCopy = copy),
@@ -724,6 +730,10 @@ menu_handle(Win, window, NastyAtom) :-
 	    event'><'update_halo(Win)).
 
 menu_handle(_, _, _).
+
+is_session(Name) :-
+	name(Name, NameStr),
+	suffix(".ses", NameStr).
 
 get_edit_model(Win, Comp, Pt) :-
 	(event'><'menu_submodel_is(Comp, Pt), !;
@@ -1307,7 +1317,7 @@ do_save(Win, Model, New_name) :-
 	output'><'date_is(Date),
 	(New_name = seln_only, Select = yes, CanvasModel = none;
 	    \+ New_name = seln_only, Select = no, CanvasModel = Model),
-	save_isolated(TempFile, Model, Date, Select),
+	save_isolated(TempFile, Model, Date, Select, yes),
 	
 	/* Save image backgrounds */
 	transfer_images(Model, SaveDir, out),
@@ -1413,7 +1423,7 @@ try_save_files(Model, Name) :-
 	(Name = TestName;
 	try_save_files(Model, Name)).
 
-save_isolated(Name, Part, Date, SelnOnly) :-
+save_isolated(Name, Part, Date, SelnOnly, MakeCompat) :-
 /*	(SelnOnly = yes, !,
 	    setof(Seln, (contains(Model, Seln),
 			    \+ Seln = Model,
@@ -1423,7 +1433,7 @@ save_isolated(Name, Part, Date, SelnOnly) :-
 	    TempSels = []),
 */	assert(suspend_display),
 	(cutout(Part, SelnOnly);
-	ame_save(Name, Part, Date, SelnOnly),
+	ame_save(Name, Part, Date, SelnOnly, MakeCompat),
 	    Done = 1;
 	true),
 %	all(event, do_colours, [build(TempSels), unify(off)]),

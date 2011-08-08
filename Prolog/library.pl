@@ -4,7 +4,7 @@
 **** is defined in terms of the model class ADT 			    ****
 *******************************************************************************/
 
-sicstus_module( library, [ame_save/4, ame_merge/5, count_functions/2] ).
+sicstus_module( library, [ame_save/5, ame_merge/5, count_functions/2] ).
 
 sicstus_use_module( [library(lists),
 	sp_only, ame_gen, m_class, utility, text, forms, build] ).
@@ -15,13 +15,13 @@ sicstus_use_module( [library(lists),
 % models are saved in terms of calls to predicates defined in construction:, 
 % thus keeping the abstract syntax away from the user.
 
-ame_save( File, Model, Date, SelOnly ) :-
+ame_save( File, Model, Date, SelOnly, MakeCompat) :-
 	(setof(Sub, (Model has_part Sub, go_with(Sub, SelOnly)), Models), !;
 	       Models = []),
 	(SelOnly = yes,
 	    Models = [UseAsParent],
 	    \+ draw'><'get_highlit_obj(0, UseAsParent), !,
-	    ame_save(File, UseAsParent, Date, SelOnly);
+	    ame_save(File, UseAsParent, Date, SelOnly, MakeCompat);
 	(backup'><'is_toplevel(Model),
 	    SelOnly = no,
 	    setof(A-V, Model has_class_refinement A of V, Props);
@@ -33,13 +33,15 @@ ame_save( File, Model, Date, SelOnly ) :-
 	output'><'windowize(File, WFile),
 	on_exception(_, open_native(WFile, write, Stream), 
 	fail), !,
-	ame_gen'><'assert(by_record_brackets(curly)),
-	reassure_user(pl_convert_from, ['5.5']),
-	adjust_to_10(Model), % write non-5.5 format for now (remove for v6)
+	(MakeCompat = no, !,
+	    V = 9.99; % look forward to a time when...   
+	  state'><'version_is(VStr),
+	    name(SimV, VStr),
+	    V is SimV + 4,
+	    ame_gen'><'assert(by_record_brackets(curly)),
+	    reassure_user(pl_convert_from, ['5.5']),
+	    adjust_to_10(Model)), % write non-5.5 format for now (remove for v6)
 	(reassure_user(writing_root, []),
-	state'><'version_is(VStr),
-	name(SimV, VStr),
-	V is SimV + 4,
 	state'><'edition_is(Edition),
 	write_with_breaks(Stream, source(program='AME', version=V,
 					 edition=Edition, date=Date)),
@@ -53,9 +55,10 @@ ame_save( File, Model, Date, SelOnly ) :-
 	nl(Stream),
 	reassure_user(writing_arc, []),
 	save_arcs( ArcsUsed, Stream),
-	ame_gen'><'retractall(by_record_brackets(_)),
-	reassure_user(pl_convert_to, ['5.5']),
-	adjust_to_10(Model), % return saved model to 5.5 format (remove for v6)
+	(MakeCompat = no, !;    
+	   ame_gen'><'retractall(by_record_brackets(_)),
+	    reassure_user(pl_convert_to, ['5.5']),
+	    adjust_to_10(Model)), % return model to 5.5 format (remove for v6)
 	close( Stream ), !;
 	fail)).
 
@@ -298,8 +301,9 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV >= 5.8, !;
 	reassure_user(updating_v, ['5.8']),
 	    adjust_to_9_8(Parent)),
-	reassure_user(pl_convert_from, ['5.x']),
-	adjust_to_10(Parent),
+	(SimileV >= 5.99, !; % only for cut/copy for now
+	  reassure_user(pl_convert_from, ['5.x']),
+	    adjust_to_10(Parent)),
 	state'><'version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
