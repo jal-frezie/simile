@@ -1415,6 +1415,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     # convertor
     $fm0 add command -label [tr. "XML Model Description"] \
             -command "MenuSelect $c local import_xml"
+    $fm0 add command -label [tr. "Session record"] \
+            -command "MenuSelect $c file run_session"
 
     $fm add cascade -label [tr. "Export"] -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
@@ -1422,6 +1424,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c file export_prolog"
     $fm2 add command -label [tr. "XML Model Description"] \
             -command "MenuSelect $c local export_xml"
+    $fm2 add command -label [tr. "Session record"] \
+            -command "MenuSelect $c file export_session"
     $fm2 add command -label [tr. "C++ code"] \
             -command "MenuSelect $c code build_c" -state $sourceExps
     $fm2 add command -label [tr. "Compiled binary"] \
@@ -1532,7 +1536,6 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -label [tr. "Grids"] -variable custom(showgrids,$c)
     
     $fm add separator
-
 # zoom submenu
     set fm2 [menu $fm.zoom -tearoff 0]
     $fm add cascade -label [tr. Zoom] -menu $fm2
@@ -1604,6 +1607,12 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
         set execEntryState disabled
     }
     UnderlineUniquely $fm
+
+    $fm add separator
+    set fmsesp [menu $fm.sesp -tearoff 0]
+    $fm add cascade -label [tr. {In replay}] -menu $fmsesp
+    $fmsesp add command -label [tr. Pause] \
+	-command "prolog tk_append_to_log($topNode,pause)"
 
     set fm [menu $topm.model -tearoff 0 -postcommand "AbleComp $winid"]
     $topm add cascade -label [tr. Model] -menu $topm.model

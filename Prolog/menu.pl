@@ -261,14 +261,17 @@ menu_handle(_Win, Mode, Name) :-
 	    stick_model_in(Win, Parent, Name, Mode)).
 
 menu_handle(CurWin, file, OpenAct) :-
-	member(OpenAct-Mode, [open-open_toplevel, import-add]),
+	member(OpenAct-Mode, [open-open_toplevel, run_session-open_toplevel,
+			      import-add]),
         (CurWin shows_model Parent,
 	    Win = CurWin;
 	 Win shows_model Parent;
          Win = CurWin,
 	     Parent = node00000), !,
 % last case only if win is .hi and no models open
-	get_load_file(Parent, Name),
+	(OpenAct = run_session, !,
+	    get_import_file('untitled.ssn', Parent, Name);
+	  get_load_file(Parent, Name)),
 	(Name = '', !;
 	Win = '.hi.canvas', !,
 	    menu_handle(Win, Mode, Name);
@@ -472,17 +475,36 @@ menu_handle(_Win, file, import_ss) :-
 	finish_move(Parent, 0).
 */
 
-menu_handle(Win, file, export_prolog) :-
+menu_handle(Win, file, ExportType) :-
+	member(ExportType, [export_prolog, export_xml, export_session]),
 	Win shows_model Model,
 	\+ too_big_for_edn(Model),
 	contains(TopModel, Model),
 	is_toplevel(TopModel),
-	get_default_export_name(Model, ".pl", DefName),
-	get_program_file(DefName, TopModel, FileName),
 	output'><'date_is(Date),
-        start_progress_dialogue(Win),
-	save_isolated(FileName, Model, Date, no, yes),
-        finish_progress_dialogue.
+	(ExportType = export_prolog,
+	    get_default_export_name(Model, ".pl", DefName),
+	    get_program_file(DefName, TopModel, FileName),
+	    start_progress_dialogue(Win),
+	    save_isolated(FileName, Model, Date, no, yes),
+	    finish_progress_dialogue;
+	  ExportType = export_xml,
+	    use_pref_dir(Dir),
+	    append_atoms(Dir, '/temp_out.pl', TempFile),
+	    start_progress_dialogue(Win),
+	    save_isolated(TempFile, Model, Date, no, yes),
+	    finish_progress_dialogue,
+	    get_default_export_name(Model, ".xml", DefName),
+	    get_program_file(DefName, TopModel, FileName),
+	    convert_simileprolog_to_similexmlv3(TempFile, FileName),
+	    output'><'my_delete_file(TempFile);
+	  ExportType = export_session,
+	    autosave_file_is(TopModel, Log),
+	    get_default_export_name(TopModel, ".ssn", DefName),
+	    get_program_file(DefName, TopModel, FileName),
+	    (FileName = '', !; % cancelled
+	    output'><'safe_tcl_eval(['file copy -force',
+				     br(Log), br(FileName)], _))).
 
 menu_handle(Win, file, export_xml) :-
 	Win shows_model Model,
@@ -733,7 +755,7 @@ menu_handle(_, _, _).
 
 is_session(Name) :-
 	name(Name, NameStr),
-	suffix(".ses", NameStr).
+	suffix(".ssn", NameStr).
 
 get_edit_model(Win, Comp, Pt) :-
 	(event'><'menu_submodel_is(Comp, Pt), !;
@@ -1356,8 +1378,8 @@ do_save(Win, Model, New_name) :-
 	    abs_path_name(Model, root, NewPoint),
 	    (NewPoint = Point, !;
 	    append_atoms([Dir, '/', NewPoint], NewSaveDir),
-		output'><'safe_tcl_eval(['file copy -force', br(SaveDir), br(NewSaveDir)],
-				     _));
+		output'><'safe_tcl_eval(['file copy -force',
+					 br(SaveDir), br(NewSaveDir)], _));
 	true),
 	update_captions(Model),
 	clear_autosave(Model, Name),

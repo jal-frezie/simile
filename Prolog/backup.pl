@@ -10,8 +10,7 @@ sicstus_module(backup, [initialize_ring/1,
 			go_back/1, go_forward/1, make_auto_name/3,
 			new_autosave/2, clear_autosave/2, check_autosave/4,
 			scrub_autosave/1,
-			is_toplevel/1, use_pref_dir/1,
-			into_save_file/2]).
+			is_toplevel/1, use_pref_dir/1, append_to_log/2]).
 
 sicstus_use_module([library(lists), sp_only, ame_gen, database,
 		    utility, state]).
@@ -197,13 +196,16 @@ update_autosave(Model, Slot) :-
 	into_save_file(Model, ActList).
 
 into_save_file(Model, ActList) :-
-	autosave_file_is(Model, File),
 	\+ autosave_suspended(Model), !,
 	(retract(translation_info(Model, TransInfo)), !,	    
 	    append(TransInfo, ActList, FullList);
 	FullList = ActList),
+	append_to_log(Model, FullList).
+
+append_to_log(Model, Action) :-
+	autosave_file_is(Model, File),
 	on_exception(Lossage, (open_native(File, append, Save),
-				  write_with_breaks(Save, FullList),
+				  write_with_breaks(Save, Action),
 				  close(Save)),
 		      (query(no_autosave(File, Lossage), warning, top, [ok], _),
 		       retract(autosave_file_is(Model, _)))); true.

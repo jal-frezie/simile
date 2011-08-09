@@ -162,3 +162,6 @@ tk_certain_death_node(Wid) :-
 
 tk_do_colours(Node, Way) :-
 	do_colours(Node, Way).
+
+tk_append_to_log(Model, Action) :-
+	append_to_log(Model, Action).
