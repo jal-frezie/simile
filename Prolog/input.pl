@@ -27,12 +27,12 @@ tk_make_desktop_node :-
 
 tk_undo(Cur, Wids) :-
 	nth0(Cur, Wids, Wid),
-	finish_window_resize,
+%	finish_window_resize, (can mess up effect?)
 	undo_edit(Wid, Wids).
 
 tk_redo(Cur, Wids) :-
 	nth0(Cur, Wids, Wid),
-	finish_window_resize,
+%	finish_window_resize,
 	redo_edit(Wid, Wids).
 
 tk_get_info(Wid, Comp, What) :-

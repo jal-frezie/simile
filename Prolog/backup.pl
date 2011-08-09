@@ -75,12 +75,10 @@ go_back(Model) :-
 	restart_move,
 	retract(saved_state(Model, current, Current)),
 	wrap(Prev, Current),
-	internal_extent_jiggered(Model, Prev, LostExtents),
-	appearance_changes(Model, Prev, LostExtents, Redrawn),
-	all(draw, off, [build(Redrawn)]), /* safe if they don't exist yet */
+	purge_graphics(Model, Prev, LostExtents, Redrawn),
 	enact_changes(Model, Prev, reverse),
 	synchronize_graphics(LostExtents, Redrawn),
-	into_save_file(Model, undo),
+	update_autosave(Model, Prev, no),
 	assert(saved_state(Model, current, Prev))),
 	set_edit_abilities(Model).
 
@@ -97,17 +95,20 @@ go_forward(Model) :-
 	    run_move_from_file(Model, Stm, Current, IdMap, NewIdMap),
 	    (NewIdMap = done, !;
 	      assert(running_session(Model, Stm, NewIdMap))),
-	    update_autosave(Model, Current);
+	    update_autosave(Model, Current, yes);
 	  retract(saved_state(Model, current, Current)),
 	    wrap(Current, Next),
+	    purge_graphics(Model, Current, LostExtents, Redrawn),
 	    enact_changes(Model, Current, forward),
-	    into_save_file(Model, redo),
+	    synchronize_graphics(LostExtents, Redrawn),
+	    update_autosave(Model, Current, yes),
 	    assert(saved_state(Model, current, Next))),
-	internal_extent_jiggered(Model, Current, LostExtents),
-	appearance_changes(Model, Current, LostExtents, Redrawn),
-	all(draw, off, [build(Redrawn)]), /* safe if they don't exist yet */
-	synchronize_graphics(LostExtents, Redrawn),
 	set_edit_abilities(Model).
+
+purge_graphics(Model, Prev, LostExtents, Redrawn) :-
+	internal_extent_jiggered(Model, Prev, LostExtents),
+	appearance_changes(Model, Prev, LostExtents, Redrawn),
+	all(draw, off, [build(Redrawn)]). /* safe if they don't exist yet */
 
 finish_move(EditedModel, ChangeExec) :-
 	\+ anything_done, !;
@@ -124,7 +125,7 @@ finish_move(EditedModel, ChangeExec) :-
 	    output'><'tk_alter_model(Model)),
 	get_ring_point(Current),
 	record_changes(Model, Current),
-	update_autosave(Model, Current),
+	update_autosave(Model, Current, yes),
 	set_edit_abilities(Model).
 
 get_ring_point(Current) :-
@@ -190,11 +191,16 @@ record_changes(Model, Slot) :-
 		fail;
 	true.
 
-update_autosave(Model, Slot) :-
-	(setof(Acts, saved_state(Model, Slot, Acts), ActList), !;
+update_autosave(Model, Slot, Fwd) :-
+	(setof(Act, point_act(Model, Slot, Fwd, Act), ActList), !;
 	    ActList = []),
 	into_save_file(Model, ActList).
 
+point_act(Model, Slot, Fwd, Act) :-
+	saved_state(Model, Slot, Go),
+	(Fwd = yes, Act = Go;
+	  Fwd = no, select(Go, [add(Fact), remove(Fact)], [Act])).
+	
 into_save_file(Model, ActList) :-
 	\+ autosave_suspended(Model), !,
 	(retract(translation_info(Model, TransInfo)), !,	    
@@ -233,7 +239,7 @@ run_move_from_file(Model, Stm, Current, IdSwaps, NewIdSwaps) :-
 	    NewIdSwaps = done;
 	  ActSpec = pause,
 	    NewIdSwaps = IdSwaps;
-	  enact_from_file(Model, Current, IdSwaps, MidIdSwaps, ActSpec),
+	  enact_from_file(Model, Current, IdSwaps, MidIdSwaps, ActSpec, yes),
 	    run_move_from_file(Model, Stm, Current, MidIdSwaps, NewIdSwaps)).
 
 set_edit_abilities(Model) :-
@@ -251,6 +257,9 @@ set_edit_abilities(Model) :-
 	draw'><'update_ability(Model, redo, edit, 'Redo', RedoOn).
 
 repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps) :-
+/* undo and redo clauses no longer needed because the acts are put into the
+	autosave file in full (needed for sessions) but clauses left in in case
+	we are restoring a crash record from an older version */
 	ActSpec = undo,
 	    NewIdSwaps = IdSwaps,
 	    retract(saved_state(Model, current, Current)),
@@ -263,14 +272,16 @@ repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps) :-
 	    wrap(Current, Next), !,
 	    enact_changes(Model, Current, forward),
 	    assert(saved_state(Model, current, Next));
+	ActSpec = pause,
+	    NewIdSwaps = IdSwaps;
 	(ActSpec = []; ActSpec = [_|_]),
 	    get_ring_point(Current),
 	    retractall(saved_state(Model, Current, _)),
-	    enact_from_file(Model, Current, IdSwaps, NewIdSwaps, ActSpec).
+	    enact_from_file(Model, Current, IdSwaps, NewIdSwaps, ActSpec, no).
 
 enact_from_file(_,_, I,I, []).
 
-enact_from_file(Model, Slot, IdSwaps, NewIdSwaps, Acts) :-
+enact_from_file(Model, Slot, IdSwaps, NewIdSwaps, Acts, Animate) :-
 	(Acts = [top_level_is(OldModel) | More], !,
 	    append(SW1, [_-Model | SW2], IdSwaps),
 	    append(SW1, [OldModel-Model | SW2], MidIdSwaps);
@@ -281,7 +292,12 @@ enact_from_file(Model, Slot, IdSwaps, NewIdSwaps, Acts) :-
 	DBActs = More,
 	    TransIdSwaps = MidIdSwaps),
 	swap_all_ids(Model, Slot, DBActs, TransIdSwaps, NewIdSwaps, TransActs),
-	enact_list(TransActs, forward).
+	(Animate = yes,
+	    purge_graphics(Model, Slot, Reshaped, Redrawn),
+	    enact_list(TransActs, forward),
+	    synchronize_graphics(Reshaped, Redrawn);
+	  Animate = no,
+	     enact_list(TransActs, forward)).
 
 swap_all_ids(_Model, _Slot, [], IdSwaps, IdSwaps, []).
 swap_all_ids(Model, Slot, [Act | MoreActs], IdSwaps, NewIdSwaps,
@@ -388,6 +404,7 @@ mentions_graphics(Action, Comp) :-
 	(Term = graphical_info(Comp, _Attr1, _Val1);
 	    Term = node_refinement(Fn, _Att2r, _Val2),
 	    image'><'implicit_function(Comp, Fn);
+	    Term = node_refinement(Comp, name, _Val4);
 	    Term = arc_info(Comp, complete, _Val3)).
 
 internal_extent_jiggered(Model, Slot, ExtChgs) :-

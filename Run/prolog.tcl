@@ -25,7 +25,7 @@ proc KeepLooking {} {
 	    set prologExit 1
 	} elseif {[gets $plPipe(stream) noCrs] >= 0} {
 	    regsub -all \\\\u000a $noCrs \n line
-	    puts [concat < $line]
+#	    puts [concat < $line]
 	    if {$plPipe(debug)} {
 		puts $plPipe(debug_stream) [concat < $line]
 	    }
@@ -105,7 +105,7 @@ proc do_tail {header args} {
 proc send_pl_cmd {withCrs} {
     global plPipe
     set plCmd [string map [list \n \\n \r \\r] $withCrs]
-    puts [concat > $plCmd]
+#    puts [concat > $plCmd]
     if {$plPipe(debug)} {
 	puts $plPipe(debug_stream) [concat > $plCmd]
     }
