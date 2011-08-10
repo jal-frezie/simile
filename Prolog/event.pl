@@ -1017,7 +1017,9 @@ drag(Xpt, Ypt) :-
 	(get_phase(Phase),
 	    member(Phase, [moving_spline, moving_text,
 			   moving_bowtie, moving_kink]), !,
-	    RelPt = [NewXpt, NewYpt];
+	    RelPt = [RelX, RelY],
+	    NewXpt is round(RelX),
+	    NewYpt is round(RelY);
 	snap_to_grid(RelPt, [NewXpt, NewYpt])),
 	drag_to(NewXpt, NewYpt, Comp).
 
