@@ -1033,7 +1033,7 @@ proc CanvasEditBind { c } {
     
     $c bind editable <B1-Motion> {
         if {[lsearch [%W gettags [%W focus]] selected] != -1} {
-            %W select to current \
+            %W select to [%W focus] \
                     @[join [canvasTLDistance %W [%W canvasx %x] \
                     [%W canvasy %y]] ,]
         }
