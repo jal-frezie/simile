@@ -485,14 +485,17 @@ bar_edit_menu(Wid) :-
 		       CanAddNode),
 	update_ability(Model, none, 'edit.add', '{Text box}', CanAddNode)).
 
-click_on(_XY, Poss_start, _CD) :-
+click_on(XY, Poss_start, CD) :-
 	doing_add(New_obj), !,
 	finish_old_edit(none),
 	(New_obj is_class_of_sort line,
 	    do_linear(New_obj, Poss_start);
 	Poss_start is_of_sort cloud,
 	    New_obj = compartment,
-	    cloud_to_comp(Poss_start)).
+	    cloud_to_comp(Poss_start);
+	find_relevant_windows(Poss_start, Wid, Depth, Trans),
+	    find_all_comps(Parent, Poss_start),
+	    click_in(Wid, XY, Trans, Depth, Parent, CD)).
 /* add extra disjunct here to implement splitting of flows/influences by new
 compartments/variables */
 
@@ -2205,10 +2208,11 @@ abandon :-
 abandon_eqn /* :-
 	normalize(_Obj) */ .
 
-/* This will make a new node at the given position if the 4th
-arg is var, or move the given node there if it is not. Fails if it
-interferes with another component -- the test previously used picks,
-but now uses get_component_from_gui because it is quicker. */
+/* This will make a new node at the given position if the 4th arg is
+var, or move the given node there if it is not. Fails if it interferes
+with another component -- the test previously used picks, but now uses
+get_component_from_gui because it is quicker (except as of v5 it
+probably isnt....) */
 
 attempt_addition(Type, Parent, Posn, Node_name, CanBag, Verbal) :-
 	/* check it is inside its parent */
