@@ -62,7 +62,7 @@ kickoff(Vnum) :-
 	    name(OpenModel, OpenFiloidStr),
 	    backup'><'check_autosave(Desktop, OpenModel, copy, Done),
 	    (Done = 0;
-	     draw'><'redraw_window(Canvas))).
+		draw'><'redraw_window(Canvas))).
 
 :- dynamic(model_in/2).
 :- dynamic(model_file/2).

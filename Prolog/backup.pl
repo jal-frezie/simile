@@ -457,7 +457,9 @@ check_autosave(Model, Name, IdSwaps, Tweaked) :-
 		restore_save_file(Model, Load, UseIdSwaps),
 		Tweaked = 1,
 		set_edit_abilities(Model),
-		set_save_status(Win, risky);
+		set_save_status(Win, risky),
+		retractall(autosave_file_is(Model, _)),
+		assert(autosave_file_is(Model, AutoName));
 	     output'><'my_delete_file(AutoName),
 	     (IdSwaps = copy, !,
 		 assert(translation_info(Model, [top_level_is(Model)]));

@@ -246,8 +246,8 @@ menu_handle(Win, file, new) :-
 	remove_model(Win, Parent),
 	finish_move(Parent, 0),
 	set_save_status(Win, safe),
-%	caption_for(Parent, Name),
-%	new_autosave(Parent, Name),
+	caption_for(Parent, Name),
+	new_autosave(Parent, Name),
 	update_captions(Parent).
 
 menu_handle(_Win, file, new_toplevel) :-
