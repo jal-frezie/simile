@@ -94,15 +94,14 @@ go_forward(Model) :-
 	    retractall(saved_state(Model, Current, _)),
 	    run_move_from_file(Model, Stm, Current, IdMap, NewIdMap),
 	    (NewIdMap = done, !;
-	      assert(running_session(Model, Stm, NewIdMap))),
-	    update_autosave(Model, Current, yes);
+	      assert(running_session(Model, Stm, NewIdMap)));
 	  retract(saved_state(Model, current, Current)),
 	    wrap(Current, Next),
-	    purge_graphics(Model, Current, LostExtents, Redrawn),
-	    enact_changes(Model, Current, forward),
-	    synchronize_graphics(LostExtents, Redrawn),
-	    update_autosave(Model, Current, yes),
 	    assert(saved_state(Model, current, Next))),
+	purge_graphics(Model, Current, LostExtents, Redrawn),
+	enact_changes(Model, Current, forward),
+	synchronize_graphics(LostExtents, Redrawn),
+	update_autosave(Model, Current, yes),
 	set_edit_abilities(Model).
 
 purge_graphics(Model, Prev, LostExtents, Redrawn) :-
@@ -279,8 +278,6 @@ repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps) :-
 	    retractall(saved_state(Model, Current, _)),
 	    enact_from_file(Model, Current, IdSwaps, NewIdSwaps, ActSpec, no).
 
-enact_from_file(_,_, I,I, []).
-
 enact_from_file(Model, Slot, IdSwaps, NewIdSwaps, Acts, Animate) :-
 	(Acts = [top_level_is(OldModel) | More], !,
 	    append(SW1, [_-Model | SW2], IdSwaps),
@@ -292,10 +289,10 @@ enact_from_file(Model, Slot, IdSwaps, NewIdSwaps, Acts, Animate) :-
 	DBActs = More,
 	    TransIdSwaps = MidIdSwaps),
 	swap_all_ids(Model, Slot, DBActs, TransIdSwaps, NewIdSwaps, TransActs),
-	(Animate = yes,
+	(Animate = yes /* ,
 	    purge_graphics(Model, Slot, Reshaped, Redrawn),
 	    enact_list(TransActs, forward),
-	    synchronize_graphics(Reshaped, Redrawn);
+	    synchronize_graphics(Reshaped, Redrawn) */ ;
 	  Animate = no,
 	     enact_list(TransActs, forward)).
 
@@ -305,11 +302,16 @@ swap_all_ids(Model, Slot, [Act | MoreActs], IdSwaps, NewIdSwaps,
 	Act =.. [Motion, OldTerm],
 	swap_ids(OldTerm, IdSwaps, MidIdSwaps, Term),
 	TransAct =.. [Motion, Term],
-	assert(saved_state(Model, Slot, TransAct)),
+	    (select(Motion, [add, remove], [UnMotion]),
+	    TransUnAct =.. [UnMotion, Term],
+	    retract(saved_state(Model, Slot, TransUnAct)), !;
+	  assert(saved_state(Model, Slot, TransAct))),
 	swap_all_ids(Model, Slot, MoreActs, MidIdSwaps, NewIdSwaps,
 	     MoreTransActs).
 
 /*
+enact_from_file(_,_, I,I, []).
+
 enact_from_file(Model, Slot, IdSwaps, NewIdSwaps, [Act | Rest]) :-
 	((Act = add(OldP),
 	    swap_ids(OldP, IdSwaps, MidIdSwaps, P),
@@ -400,12 +402,12 @@ appearance_changes(Model, Slot, Reshapes, Comps) :-
 
 mentions_graphics(Action, Comp) :-
 	(Action = remove(Term);
-	    Action = add(Term)),
+	  Action = add(Term)),
 	(Term = graphical_info(Comp, _Attr1, _Val1);
-	    Term = node_refinement(Fn, _Att2r, _Val2),
-	    image'><'implicit_function(Comp, Fn);
-	    Term = node_refinement(Comp, name, _Val4);
-	    Term = arc_info(Comp, complete, _Val3)).
+	  Term = node_refinement(Fn, _Att2r, _Val2),
+	    get_host(Fn, Comp);
+	  Term = arc_info(Comp, complete, _Val3)).
+% things that make submodel conditional still not handled
 
 internal_extent_jiggered(Model, Slot, ExtChgs) :-
 	setof(Change, get_extent_change(Model, Slot, Change), ExtChgs), !;
