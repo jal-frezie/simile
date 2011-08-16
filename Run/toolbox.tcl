@@ -1523,7 +1523,9 @@ proc ExecQuery {args} {
 
 proc OpenAll {win} {
     MenuSelect $win file open
-    RunIfPackage
+    if {$::window_info($win,is_top_level)} {
+	RunIfPackage
+    }
 }
 
 proc RunIfPackage {} {
