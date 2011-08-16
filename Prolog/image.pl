@@ -628,7 +628,7 @@ warp_factor_for(Link, WarpFactor) :-
 	Link is_connector from A to B,
 	setof(GenLink, GenLink is_connector from A to B, Links),
 	nth(Seq, Links, Link),
-	WarpFactor is (Seq - 1.3 - 2.6*floor(Seq/2.6))/1.3.
+	WarpFactor is 1-2*float_fractional_part(Seq/2.6).
 
 get_link_route(Link, Route) :-
 	get_end_pt(Link, start, SType, [SX, SY], SBox),
