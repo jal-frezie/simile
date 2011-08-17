@@ -156,6 +156,11 @@ proc Relativize {current remote} {
     return [eval {file join} $base $tail]
 }
 
+# reverses the above
+proc Relate {startPt offset} {
+    return [file join [file dirname $startPt] $offset]
+}
+
 # This deals with the quirk of Netware file systems that if the user has
 # read/write access to a file it cannot be opened readonly, or something...
 

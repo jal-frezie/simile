@@ -141,7 +141,17 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    no canvas, images or runnables */
 	(is_session(Name), !,
 	    open_native(Name, read, Stm),
-	    backup'><'assert(running_session(Parent, Stm, [Parent-Parent])),
+	    stream_property(Stm, position(Top)),
+	    (read(Stm, start_with(RelModelFile)),
+		output'><'safe_tcl_eval(['Relate', br(Name), br(RelModelFile)],
+					MNameStr),
+		name(MName, MNameStr),
+		stick_model_in(Win, Parent, MName, open_toplevel);
+	      set_stream_position(Stm, Top)),
+	    (backup'><'translation_info(Parent, ForTrans),
+		member(translated(TransList), ForTrans), !;
+	      setof(Comp-Comp, contains(Parent, Comp), TransList)),
+	    backup'><'assert(running_session(Parent, Stm, TransList)),
 	    redo_edit(Win, [Win]); % go to first pause so something shows
 	  on_exception(ProLoss, ame_merge(Parent, Name, _FileV, no, Translated),
 		     (make_nice_error_message(ProLoss, ProLite),
@@ -502,6 +512,21 @@ menu_handle(Win, file, ExportType) :-
 	    get_default_export_name(TopModel, ".ssn", DefName),
 	    get_program_file(DefName, TopModel, FileName),
 	    (FileName = '', !; % cancelled
+		%%%%% if editing saved model, put ref and transfer session
+	      get_model_file(TopModel, SavedModel),
+		output'><'safe_tcl_eval(['Relativize', br(FileName),
+					 br(SavedModel)], RelSaveStr),
+		name(RelSave, RelSaveStr),
+		open_native(FileName, write, StmW),
+		write_with_breaks(StmW, start_with(RelSave)),
+		open_native(Log, read, StmR),
+		repeat,
+		read(StmR, Step),
+		(Step = end_of_file;
+		    write_with_breaks(StmW, Step),
+		    fail),
+		close(StmR),
+		close(StmW);
 	    output'><'safe_tcl_eval(['file copy -force',
 				     br(Log), br(FileName)], _))).
 
