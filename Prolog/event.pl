@@ -832,7 +832,8 @@ doubleclick_on(Edit_thing) :-
 	    OKd == 0);
 	Edit_type = text, !,
 	    (get_shape(Edit_thing, caption_offset, OldVals), !,
-		clear_shape(Edit_thing, caption_offset);
+		clear_shape(Edit_thing, caption_offset),
+		\+ OldVals = [0, 0];
 	      OldVals = [100, 0]),
 	    do_text_item_dialog(Wid, Edit_thing, OldVals, OKd, NewVals),
 	    (OKd == 1, !,

@@ -236,7 +236,7 @@ display(Window_id, Comp, Depth, Trans, Recurse) :-
 	    get_shape(Comp, centre, [X,Y]),
 	    find_fatness(Trans, DefFatness),
 	    get_flash(Comp, Lit),
-	    (get_shape(Comp, caption_offset, [RelSize | Vals]), !;
+	    (get_shape(Comp, caption_offset, [RelSize | Vals]), RelSize > 0, !;
 		[RelSize | Vals] = [100, 0]),
 	    Fatness is RelSize*DefFatness/100,
 	    add_caption(Window_id, Comp, [X,Y,X,Y], Trans, Fatness, Vals, Lit);
