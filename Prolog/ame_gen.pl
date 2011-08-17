@@ -920,7 +920,7 @@ Obj is_class_of_sort Class :-
 		influence-[line, curved, captionless],
 		relation-[line, curved],
 		cloud-[cloud, regular_box, box, captionless, no_properties],
-		text-[box, no_properties],
+		text-[box],
 		alarm-[regular_box, box, rectangle, channel, has_function,
 			   boolean_value],
 		condition-[regular_box, box, rectangle, channel, has_function,
