@@ -37,7 +37,8 @@ sicstus_module(draw,
 		tk_equationlisting_start/2,tk_equationlisting_addsubmodel/5,
 		tk_equationlisting_addvariable/7]).
 
-sicstus_use_module([library(lists), sp_only, state, image, ame_gen, output]).
+sicstus_use_module([library(lists), sp_only, state, image, ame_gen, output,
+		    utility]).
 
 cursor_is(Cursor) :-
 	tk_cursor_is(Cursor).
@@ -233,10 +234,11 @@ display(Window_id, Comp, Depth, Trans, Recurse) :-
 	(find_type(Comp, text), !,
 	    draws_at(Window_id, text, Depth),
 	    get_shape(Comp, centre, [X,Y]),
-	    find_fatness(Trans, Fatness),
+	    find_fatness(Trans, DefFatness),
 	    get_flash(Comp, Lit),
-	    all(event, get_refinement_or_0,
-		[unify(Comp), unify(1), build([columns]), build(Vals)]),
+	    (get_shape(Comp, caption_offset, [RelSize | Vals]), !;
+		[RelSize | Vals] = [100, 0]),
+	    Fatness is RelSize*DefFatness/100,
 	    add_caption(Window_id, Comp, [X,Y,X,Y], Trans, Fatness, Vals, Lit);
 	Comp is_of_sort box,
 	display_in(Window_id, Comp, Depth, Trans),
@@ -360,10 +362,12 @@ add_caption(Wid, Id, Box, Trans, Fatness, Specials, Colour_scheme) :-
 	  PosStyle = Style,
 	    UseAnchor = DefAnchor),
 
-	(get_shape(Id, caption_offset, [XOff, YOff]);
-	 get_shape(Id, caption_offset, [XOff, YOff, _Anchor]);
-	 XOff = 0, YOff = 0,
-	    set_shape(Id, caption_offset, [XOff, YOff])), !,
+	(Style = text ->
+	    [XOff, YOff] = [0, 0];
+	  (get_shape(Id, caption_offset, [XOff, YOff]);
+	      get_shape(Id, caption_offset, [XOff, YOff, _Anchor]);
+	      XOff = 0, YOff = 0,
+	      set_shape(Id, caption_offset, [XOff, YOff]))), !,
 	image'><'map(Box, UseAnchor, _,_, TextX, TextY),
 	VirtX is TextX + XOff,
 	VirtY is TextY + YOff,

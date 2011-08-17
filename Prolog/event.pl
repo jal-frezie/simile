@@ -831,14 +831,12 @@ doubleclick_on(Edit_thing) :-
 		finish_move(Parent, 1));
 	    OKd == 0);
 	Edit_type = text, !,
-	    Attrs = [columns],
-	    all(event, get_refinement_or_0,
-		[unify(Edit_thing), unify(1), build(Attrs), build(OldVals)]),
+	    (get_shape(Edit_thing, caption_offset, OldVals), !,
+		clear_shape(Edit_thing, caption_offset);
+	      OldVals = [100, 0]),
 	    do_text_item_dialog(Wid, Edit_thing, OldVals, OKd, NewVals),
 	    (OKd == 1, !,
-		all(m_update, add_parameter,
-		    [unify(Edit_thing), unify(1), build(Attrs),
-		     build(NewVals)]),
+		set_shape(Edit_thing, caption_offset, NewVals),
 		(redisplay(Edit_thing),
 		    fail;
 		  finish_move(Parent, 1));

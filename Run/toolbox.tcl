@@ -2031,6 +2031,7 @@ proc FindNodeTopWin {node} {
         set c [string range $key 0 end-7]
         if {[string equal $node $window_info($c,top_node)] && \
                     [info exists window_info($c,is_top_level)]} {
+# latter clause just weeds out silly answers
             return $win
         }
     }

@@ -851,12 +851,19 @@ proc TextCheckAndSet {parent title state} {
     wm protocol $t WM_DELETE_WINDOW {set text_props(done) 0}
     wm title $t [format $::msgs(props_title) [BlankCrs $title]]
     frame .relcheck.top
-    TitleFrame .relcheck.top.left -text [tr. {Text options:}]]
+    TitleFrame .relcheck.top.left -text [tr. {Text options:}]
     set f [GetFrame .relcheck.top.left]
-    pack [frame $f.width]
-    pack [ttk::label $f.width.lab -text [tr. {Width (in columns):}]] -side left
-    pack [ttk::entry $f.width.ent -textvariable text_props(width)]
-    set text_props(width) [lindex $state 0]
+    pack [frame $f.width -bd 4]
+    pack [ttk::label $f.width.lab -text [tr. {Width (in columns): }]] \
+	-side left
+    pack [ttk::entry $f.width.ent -textvariable text_props(columns)]
+    pack [frame $f.relsize -bd 4] -fill x -expand true
+    pack [ttk::label $f.relsize.lab -text [tr. {Relative size: }]] \
+        -side left
+    pack [ttk::scale $f.relsize.ent -from 20 -to 500 -orient h \
+	      -variable text_props(rel_size)] -fill x -expand true
+    set text_props(rel_size) [lindex $state 0]
+    set text_props(columns) [lindex $state 1]
     pack .relcheck.top.left -expand on -fill both
     pack .relcheck.top -expand on -fill both
 
@@ -873,7 +880,7 @@ proc TextCheckAndSet {parent title state} {
     grab release $t
     PackItUp $t
     set results $text_props(done)
-    lappend results $text_props(width)
+    lappend results $text_props(rel_size) $text_props(columns)
     return $results
 }
 
