@@ -147,7 +147,10 @@ stick_model_in(Win, Parent, Name, Mode) :-
 					MNameStr),
 		name(MName, MNameStr),
 		stick_model_in(Win, Parent, MName, open_toplevel);
-	      set_stream_position(Stm, Top)),
+	      set_stream_position(Stm, Top),
+		clear_model_file(Parent), % or it would be session file
+		caption_for(Parent, NewName),
+		new_autosave(Parent, NewName)),
 	    (backup'><'translation_info(Parent, ForTrans),
 		member(translated(TransList), ForTrans), !;
 	      setof(Comp-Comp, contains(Parent, Comp), TransList)),

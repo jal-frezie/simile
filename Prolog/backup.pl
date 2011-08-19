@@ -102,6 +102,9 @@ go_forward(Model) :-
 	enact_changes(Model, Current, forward),
 	synchronize_graphics(LostExtents, Redrawn),
 	update_autosave(Model, Current, yes),
+% if running (or just finished) session, retain pauses
+	(var(IdMap), !;
+	    append_to_log(Model, pause)),
 	set_edit_abilities(Model).
 
 purge_graphics(Model, Prev, LostExtents, Redrawn) :-
