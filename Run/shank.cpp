@@ -609,7 +609,7 @@ VarParamData::~VarParamData() {
 
 double VarParamData::update_from_points(BOOLEAN dir, double now) {
   listTimePoint *loBound, *hiBound;
-  int hiWraps = 0;
+  int hiWraps = 0, oldWraps = wraps;
   double interFract;
   node_data_line* ndRef = myModelExec->modelSpec->nodedata + nodeNum;
   
@@ -666,7 +666,7 @@ double VarParamData::update_from_points(BOOLEAN dir, double now) {
       now = hiBound->when+hiWraps*wrapAroundPoint;
     }
   }
-  if (loBound && loBound!=curTimePoint) {
+  if (loBound && (loBound!=curTimePoint || wraps!=oldWraps)) {
     curTimePoint = loBound;
     free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
     dataPtr.contents = copy_bloc_data(loBound->dataPtr, dataPtr.dimSpecs);

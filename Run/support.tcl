@@ -731,7 +731,8 @@ proc UpdateTimeSeries {topNode newTime} {
 	if {$ptCount} {
 	    #puts "node $node times $setFromSeries($list) next $setFromSeries($topNode,$node,next) newTime $newTime"
 
-	    set hiWraps $setFromSeries($topNode,$node,wraps)
+	    set loWraps $setFromSeries($topNode,$node,wraps)
+	    set hiWraps $loWraps
 
 	    set loBound $setFromSeries($topNode,$node,next)
 #	    if ($loBound>-1) {
@@ -751,7 +752,7 @@ proc UpdateTimeSeries {topNode newTime} {
 	    if {$newTime>=$setFromSeries($topNode,current)} {
 		while {$hiBound>-1 && $newTime>=[lindex $setFromSeries($list) $hiBound]+$hiWraps*$paramData(wrapAroundPoint,$node)} {
 		    set loBound $hiBound
-		    set setFromSeries($topNode,$node,wraps) $hiWraps
+		    set loWraps $hiWraps
 		    incr hiBound
 		    if {$hiBound >= $ptCount} {
 			if {$paramData(wrapAroundPoint,$node)} {
@@ -763,12 +764,12 @@ proc UpdateTimeSeries {topNode newTime} {
 		    }
 		}
 	    } else {
-		while {$loBound>-1 && $newTime<[lindex $setFromSeries($list) $loBound]+$setFromSeries($topNode,$node,wraps)*$paramData(wrapAroundPoint,$node)} {
+		while {$loBound>-1 && $newTime<[lindex $setFromSeries($list) $loBound]+$loWraps*$paramData(wrapAroundPoint,$node)} {
 		    set hiBound $loBound
-		    set hiWraps $setFromSeries($topNode,$node,wraps)
+		    set hiWraps $loWraps
 		    incr loBound -1
 		    if {$paramData(wrapAroundPoint,$node) && $loBound==-1} {
-			incr setFromSeries($topNode,$node,wraps) -1
+			incr loWraps -1
 			set loBound [expr $ptCount-1]
 		    }
 		}
@@ -779,7 +780,7 @@ proc UpdateTimeSeries {topNode newTime} {
 # midway between two if use_closest.
 	    if {$loBound>-1 && $hiBound>-1 && \
 		    [lsearch {use_closest interpolate} $fillMethod]>-1} {
-		set interFract [expr ($newTime-$setFromSeries($topNode,$node,wraps)*$paramData(wrapAroundPoint,$node)-[lindex $setFromSeries($list) $loBound])/([lindex $setFromSeries($list) $hiBound]+($hiWraps-$setFromSeries($topNode,$node,wraps))*$paramData(wrapAroundPoint,$node)-[lindex $setFromSeries($list) $loBound])]
+		set interFract [expr ($newTime-$loWraps*$paramData(wrapAroundPoint,$node)-[lindex $setFromSeries($list) $loBound])/([lindex $setFromSeries($list) $hiBound]+($hiWraps-$loWraps*$paramData(wrapAroundPoint,$node)-[lindex $setFromSeries($list) $loBound])]
 		if {[string equal interpolate $fillMethod]} {
 		    set setFromSeries($topNode,$node,next) $loBound
 		    # cos that's what wraps refers to...now do interpolation
@@ -800,15 +801,18 @@ proc UpdateTimeSeries {topNode newTime} {
 		}
 		if {$interFract>0.5} { ;# fillMethod is USE_CLOSEST
 		    set loBound $hiBound
-		    set setFromSeries($topNode,$node,wraps) $hiWraps
+		    set loWraps $hiWraps
 		}
 	    }
 # any but interpolate: change value (or have nonzero if none) only if new
 # value in series reached
 
-	    if {$loBound>-1 && $loBound!=$setFromSeries($topNode,$node,next)} {
+	    if {$loBound>-1 && 
+		($loBound != $setFromSeries($topNode,$node,next) || \
+		 $loWraps != $setFromSeries($topNode,$node,wraps))} {
 		set useTime [lindex $setFromSeries($list) $loBound]
 		set setFromSeries($topNode,$node,next) $loBound
+		set setFromSeries($topNode,$node,wraps) $loWraps
 		set setFromSeries($topNode,$node,active) 1
 		foreach tsValue [concat [array names paramData $node,$useTime] \
 				     [array names paramData $node,$useTime,*]] {
