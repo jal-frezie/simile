@@ -253,11 +253,9 @@ proc tcl_setparamarray {model node} {
 }
 
 proc tcl_cleartimeseries {topNode node} {
-    global paramLocns
+    global paramData
 
-    set paramIdx [getinfo $node 8]
-    upvar #0 $paramLocns($paramIdx,arr) varData
-    array unset varData $node*
+    array unset paramData $node*
 }
 
 proc tcl_setparamelement {node inds val} {
@@ -736,7 +734,7 @@ proc UpdateTimeSeries {topNode newTime} {
 	    set hiWraps $setFromSeries($topNode,$node,wraps)
 
 	    set loBound $setFromSeries($topNode,$node,next)
-	    if ($loBound>-1) {
+#	    if ($loBound>-1) {
 		set hiBound [expr $loBound+1]
 		if {$hiBound >= $ptCount} {
 		    if {$paramData(wrapAroundPoint,$node)} {
@@ -746,9 +744,9 @@ proc UpdateTimeSeries {topNode newTime} {
 			set hiBound -1
 		    }
 		}
-	    } else {
-		set hiBound 0 ;# first point
-	    }
+#	    } else {
+#		set hiBound 0 ;# first point
+#	    }
 
 	    if {$newTime>=$setFromSeries($topNode,current)} {
 		while {$hiBound>-1 && $newTime>=[lindex $setFromSeries($list) $hiBound]+$hiWraps*$paramData(wrapAroundPoint,$node)} {
