@@ -990,7 +990,8 @@ make_constant_string(L, String, Atom) :-
 	name(Atom, Const).
 
 escape_string_breaks(With, Without) :-
-	member(With-Without, [10-[92,110,92,10], 34-[92,34], C-[C]]), !.
+	member(With-Without, [10-[92,110,92,10], 34-[92,34], 92-[92,92],
+			      C-[C]]), !.
 
 make_param_string(_, [], []).
 
