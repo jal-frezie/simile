@@ -17,8 +17,8 @@ sicstus_module(image,
       [get_colour/4, get_window_colour/3,
        get_closest_edge/4, map/6, get_inner_bound/3, get_outer_bound/4,
        change_shape/3, get_shape/3, set_shape/3, clear_shape/2,
-       targets/5, inside_shape/3, near/2, get_middle/2, middle/2,
-       crossing_point/6, make_bounding_box/5,
+       targets/5, inside_shape/4, near/2, get_middle/2, middle/2,
+       crossing_point/7, make_bounding_box/5,
        density_for/2, draw_style_for/2, use_style_for/2,
        get_drawing_form/3, get_boundary_end/2,
        has_outer_equiv/3, connected_at/2, fits_inside/2,
@@ -87,18 +87,18 @@ targets(Wid, Parent, Point, Depth, Comp) :-
     find_type(Comp, submodel),
     draws_at(Wid, submodel, Depth),
     appears(Comp),
-    inside(Point, Comp).
+    inside(Parent, Point, Comp).
 
-inside([X, Y], Comp) :-
+inside(Parent, [X, Y], Comp) :-
     get_shape(Comp, bounding_box, Box),
     Comp has_class Class,
-    inside_shape([X, Y], Class, Box).
+    inside_shape(Parent, [X, Y], Class, Box).
 
-inside([X, Y], Comp) :-
+inside(_Parent, [X, Y], Comp) :-
     get_bowtie(Comp, [L, T, R, B]),
     X > L, X < R, Y > T, Y < B.
 
-inside_shape([X, Y], Class, [L, T, R, B]) :-
+inside_shape(Parent, [X, Y], Class, [L, T, R, B]) :-
 /* first do a rough test, for sake of speed: is point inside bounding box? */
     X > L, X < R, Y > T, Y < B,
 /* If it is, do the accurate test depending on shape of component
@@ -117,7 +117,7 @@ inside_shape([X, Y], Class, [L, T, R, B]) :-
         get_cloud_centres([L, T, R, B], Radius, [Cx, Cy]),
         inside_range([X, Y], [Cx, Cy], Radius);
     Class is_class_of_sort rounded_rect,
-        get_submodel_corner_radius([L, T, R, B], Radius),
+        get_submodel_corner_radius(Parent, [L, T, R, B], Radius),
         Xmiss is max(0, max(L + Radius - X, X + Radius - R)),
         Ymiss is max(0, max(T + Radius - Y, Y + Radius - B)),
         Xmiss*Xmiss + Ymiss*Ymiss < Radius*Radius), !.
@@ -275,13 +275,13 @@ connected_at(Link, End) :-
         has_outer_equiv(Link, Parent, _);
     true), !. /* regular links don't need equivalents */
 
-/* crossing_point/6 returns the point at which a line from arg1 (inside Comp)
+/* crossing_point/7 returns the point at which a line from arg1 (inside Comp)
     to arg2 (outside Comp) crosses its boundary, it used to work by successive
     approximation (Inefficient? Who said that?) calling iterate_to_crossing,
     but no longer.
 */
 
-crossing_point([X1, Y1], [RX2, RY2], Class, [L, T, R, B], Warp, Exit) :-
+crossing_point(Parent, [X1, Y1], [RX2, RY2], Class, [L, T, R, B], Warp, Exit) :-
     L = R, T = B, !, Exit = [L, T]; /* do not faff with null areas */
     X2 is RX2 - Warp*(RY2-Y1),
     Y2 is RY2 + Warp*(RX2-X1),
@@ -295,7 +295,7 @@ crossing_point([X1, Y1], [RX2, RY2], Class, [L, T, R, B], Warp, Exit) :-
         Rad is X1 - L,
         get_circle_crossings([X1, Y1], Rad, [X1, Y1], Xoff, Yoff, _, Exit);
     Class = submodel, !,
-        get_submodel_corner_radius([L, T, R, B], Rad),
+        get_submodel_corner_radius(Parent, [L, T, R, B], Rad),
         /* now choose a corner and constrain result to external segment */
         Exit = [X, Y],
         ((Xj is L + Rad,
@@ -345,8 +345,9 @@ get_circle_crossings([Xj, Yj], Rad, [X0, Y0], F, G, Tp, [X, Y]) :-
     X is X0 + F*Tp,
     Y is Y0 + G*Tp.
 
-get_submodel_corner_radius([L, T, R, B], Radius) :-
-        Radius is min(B - T, R - L)/8.
+get_submodel_corner_radius(Parent, [L, T, R, B], Radius) :-
+	get_box_size(Parent, submodel, Size),
+        Radius is min(B - T, R - L)*Size/400.
 
 get_cloud_centres([L, T, R, B], Rad, [Cx, Cy]) :-
     Rad is (B - T)/3,
@@ -633,14 +634,17 @@ warp_factor_for(Link, WarpFactor) :-
 get_link_route(Link, Route) :-
 	get_end_pt(Link, start, SType, [SX, SY], SBox),
 	get_end_pt(Link, finish, FType, [FX, FY], FBox),
+	find_all_comps(Parent, Link),
 	warp_factor_for(Link, WarpFactor), % clockwise round start
 
 	(Link is_of_sort curved, !,
 	    get_shape(Link, curve, [CX, CY]),
 	    MX is CX + (SX+FX)/2,
 	    MY is CY + (SY+FY)/2,
-	    crossing_point([SX, SY], [MX, MY], SType, SBox, WarpFactor/4, P0),
-	    crossing_point([FX, FY], [MX, MY], FType, FBox, -WarpFactor/4, Pn),
+	    crossing_point(Parent, [SX, SY], [MX, MY], SType, SBox,
+			   WarpFactor/4, P0),
+	    crossing_point(Parent, [FX, FY], [MX, MY], FType, FBox,
+			   -WarpFactor/4, Pn),
 	    Route = [Pn, [MX, MY], P0];
 	SBox = [SL, ST, SR, SB],
 	    FBox = [FL, FT, FR, FB],
@@ -658,12 +662,14 @@ get_link_route(Link, Route) :-
 		parallel(SL, SR, FL, FR, HWarp, PX),
 		SPt = [PX, SY],
 		FPt = [PX, FY]), !,
-	    crossing_point(SPt, FPt, SType, SBox, RWarp, P0),
-	    crossing_point(FPt, SPt, FType, FBox, -RWarp, Pn),
+	    crossing_point(Parent, SPt, FPt, SType, SBox, RWarp, P0),
+	    crossing_point(Parent, FPt, SPt, FType, FBox, -RWarp, Pn),
 	    Route = [Pn, P0];
 	% kinked flow route    
-	crossing_point([SX, SY], [FX, FY], SType, SBox, WarpFactor, [X0, Y0]),
-	crossing_point([FX, FY], [SX, SY], FType, FBox, -WarpFactor, [Xn, Yn]),
+	crossing_point(Parent, [SX, SY], [FX, FY], SType, SBox,
+		       WarpFactor, [X0, Y0]),
+	crossing_point(Parent, [FX, FY], [SX, SY], FType, FBox,
+		       -WarpFactor, [Xn, Yn]),
 	    get_shape(Link, curve, [Kink, _Bowtie]),
 	    (abs(Yn-Y0)>abs(Xn-X0), !, % kink is horizontal
 		Yk is Y0+Kink*(Yn-Y0)/1000,
@@ -921,7 +927,7 @@ Also links between submodels must now be affected by the children they connect,
 so this takes a hierarchical list (which may end in, or even be, a point) and
 gets points from within it. */
 
-get_termination_zone([Obj | Rest], Dir, Area, CompType, Centre) :-
+get_termination_zone([Obj | Rest], Dir, Top, Area, CompType, Centre) :-
 
 /* comment out following to restore old system */
     Obj = [X, Y], !,
@@ -929,13 +935,14 @@ get_termination_zone([Obj | Rest], Dir, Area, CompType, Centre) :-
         CompType = point,
         Centre = [X, Y];
     get_drawing_form(Obj, DrawType, Area),
+    find_all_comps(Top, Obj),
 
     (Obj has_type squirt, !,
         CompType = variable;
     CompType = DrawType),
     (CompType = submodel,
     \+ Rest = [], !,
-        get_termination_zone(Rest, Dir, _, _, InnerCentre),
+        get_termination_zone(Rest, Dir, _, _, _, InnerCentre),
         add_to_translation([0, 0, 1, 1], Obj, InnerTrans),
         untranslate(InnerCentre, InnerTrans, PrevCentre),
             constrain_inside(PrevCentre, Area, Centre);
@@ -971,15 +978,15 @@ blobify([X, Y], [L, T, R, B]) :-
 /* Easy one for straight part routes */
 route_part_link(Type, Dir, Start, [X, Y], Route) :-
     Type is_class_of_sort has_bowtie,
-    get_termination_zone(Start, Dir, [L, T, R, B], NodeType, _),
+    get_termination_zone(Start, Dir, Parent, [L, T, R, B], NodeType, _),
     (L < X, X < R,
         Y1 is (T + B)/2,
-        crossing_point([X, Y1], [X, Y], NodeType, [L, T, R, B],
+        crossing_point(Parent, [X, Y1], [X, Y], NodeType, [L, T, R, B],
                    0, [_X, Y2]),
         X2 = X;
     T < Y, Y < B,
         X1 is (L + R)/2,
-        crossing_point([X1, Y], [X, Y], NodeType, [L, T, R, B],
+        crossing_point(Parent, [X1, Y], [X, Y], NodeType, [L, T, R, B],
                    0, [X2, _Y]),
         Y2 = Y),
     (Dir = out, !,
@@ -989,8 +996,8 @@ route_part_link(Type, Dir, Start, [X, Y], Route) :-
 
 /* general one */
 route_part_link(Type, Dir, Start, Point, Route) :-
-    get_termination_zone(Start, Dir, Box, NodeType, Centre),
-    crossing_point(Centre, Point, NodeType, Box, 0, Exit),
+    get_termination_zone(Start, Dir, Parent, Box, NodeType, Centre),
+    crossing_point(Parent, Centre, Point, NodeType, Box, 0, Exit),
     (Dir = out, !,
         Exit = Begin, Point = End;
     /* in */ Point = Begin, Exit = End),
@@ -1004,7 +1011,7 @@ external link. */
 
 route_parent_child_link(Type, Direction, Parent, Child, Route) :-
     get_shape(Parent, internal_extent, [L2, T2, R2, B2]),
-    get_termination_zone(Child, Direction, [L1, T1, R1, B1], 
+    get_termination_zone(Child, Direction, _, [L1, T1, R1, B1], 
             NodeType, [Xint, Yint]),
     GL is L1 - L2,
     GT is T1 - T2,
@@ -1013,16 +1020,16 @@ route_parent_child_link(Type, Direction, Parent, Child, Route) :-
     (min(GL, GR) < min(GT, GB), !,
             Yext = Yint,
         (GL < GR, !, Xext = L2; Xext = R2),
-        crossing_point([Xint, Yext], [Xext, Yext], 
+        crossing_point(Parent, [Xint, Yext], [Xext, Yext], 
                 NodeType, [L1, T1, R1, B1], 0, InPt),
-        crossing_point([Xint, Yext], [Xext, Yext], 
+        crossing_point(Parent, [Xint, Yext], [Xext, Yext], 
                 submodel, [L2, T2, R2, B2], 0, OutPt);
     /* otherwise */
         Xext = Xint,
         (GT < GB, !, Yext = T2; Yext = B2),
-        crossing_point([Xext, Yint], [Xext, Yext], 
+        crossing_point(Parent, [Xext, Yint], [Xext, Yext], 
                 NodeType, [L1, T1, R1, B1], 0, InPt),
-        crossing_point([Xext, Yint], [Xext, Yext], 
+        crossing_point(Parent, [Xext, Yint], [Xext, Yext], 
                 submodel, [L2, T2, R2, B2], 0, OutPt)),
     (Direction = in, !,
         Start = OutPt, Finish = InPt;
@@ -1037,25 +1044,27 @@ route_parent_child_link(Type, Direction, Parent, Child, Route) :-
 /* Easy one for straight whole routes; this and its partial equivalent might need 
 to take some note of the centres...OK then */
 
-route_link(Type, Start, Finish, [End, Beginning]) :-
+route_link(Parent, Type, Start, Finish, [End, Beginning]) :-
     Type is_class_of_sort has_bowtie,
-    get_termination_zone(Start, in, [L1, T1, R1, B1], NodeType1, [CX1, CY1]),
-    get_termination_zone(Finish, out, [L2, T2, R2, B2], NodeType2, [CX2, CY2]),
+    get_termination_zone(Start, in, Parent,
+			 [L1, T1, R1, B1], NodeType1, [CX1, CY1]),
+    get_termination_zone(Finish, out, Parent,
+			 [L2, T2, R2, B2], NodeType2, [CX2, CY2]),
         ((CX1 >= L2, CX1 =< R2, X = CX1;
             CX2 >= L1, CX2 =< R1, X = CX2),
         Y2 is (T2 + B2)/2,
         Y1 is (T1 + B1)/2,
-        crossing_point([X, Y1], [X, Y2], 0, NodeType1, 
+        crossing_point(Parent, [X, Y1], [X, Y2], 0, NodeType1, 
                 [L1, T1, R1, B1], Beginning),
-        crossing_point([X, Y2], Beginning, 0, NodeType2, 
+        crossing_point(Parent, [X, Y2], Beginning, 0, NodeType2, 
                 [L2, T2, R2, B2], End);
     (CY1 >= T2, CY1 =< B2, Y = CY1;
             CY2 >= T1, CY2 =< B1, Y = CY2),
         X2 is (L2 + R2)/2,
         X1 is (L1 + R1)/2,
-        crossing_point([X1, Y], [X2, Y], 0, NodeType1, 
+        crossing_point(Parent, [X1, Y], [X2, Y], 0, NodeType1, 
                 [L1, T1, R1, B1], Beginning),
-        crossing_point([X2, Y], Beginning, 0, NodeType2, 
+        crossing_point(Parent, [X2, Y], Beginning, 0, NodeType2, 
                 [L2, T2, R2, B2], End)), !.
 
 /* Slight mod to the one below to start flows in the centre of the appropriate
@@ -1064,8 +1073,8 @@ directions */
 
 route_link(Type, Start, Finish, Route) :-
     member(Type, [flow, squirt]),
-    get_termination_zone(Start, in, [SL, ST, SR, SB], _, [SX, SY]),
-    get_termination_zone(Finish, out, FBox, NodeType2, [FX, FY]),
+    get_termination_zone(Start, in, Parent, [SL, ST, SR, SB], _, [SX, SY]),
+    get_termination_zone(Finish, out, Parent, FBox, NodeType2, [FX, FY]),
     (FX-SX>FY-SY, !, /* flow goes top right */
         (SX-FX>FY-SY, !, /* up */
             BX = SX, BY = ST;
@@ -1073,16 +1082,16 @@ route_link(Type, Start, Finish, Route) :-
         (SX-FX>FY-SY, !, /* left */
             BX = SL, BY = SY;
         BX = SX, BY = SB)),
-    crossing_point([FX, FY], [BX, BY], NodeType2, FBox, 0, End),
+    crossing_point(Parent, [FX, FY], [BX, BY], NodeType2, FBox, 0, End),
     shape_route(Type, [BX, BY], End, Route), !.
 
 /* General one for other whole routes between graphically displayed objects */
 
 route_link(Type, Start, Finish, Route) :-
-    get_termination_zone(Start, in, SBox, NodeType1, Centre1),
-    get_termination_zone(Finish, out, FBox, NodeType2, Centre2),
-    crossing_point(Centre1, Centre2, NodeType1, SBox, 0, Beginning),
-    crossing_point(Centre2, Centre1, NodeType2, FBox, 0, End),
+    get_termination_zone(Start, in, Parent, SBox, NodeType1, Centre1),
+    get_termination_zone(Finish, out, Parent, FBox, NodeType2, Centre2),
+    crossing_point(Parent, Centre1, Centre2, NodeType1, SBox, 0, Beginning),
+    crossing_point(Parent, Centre2, Centre1, NodeType2, FBox, 0, End),
     shape_route(Type, Beginning, End, Route), !.
 
 /* This clause will be resorted to if I cannot get the coordinates for one end of
@@ -1091,7 +1100,7 @@ the link by any degree of subterfuge. */
 route_link(Type, Start, Finish, Route) :-
     (Start = NoGraph, Finish = Graph, Direction = in;
     Finish = NoGraph, Start = Graph, Direction = out),
-    \+ get_termination_zone(NoGraph, Direction, _, _, _),
+    \+ get_termination_zone(NoGraph, Direction, _, _, _, _),
 
     NoGraph = [Mystery | _],
     find_all_comps(Parent, Mystery),

@@ -1208,10 +1208,10 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	Yin is Ypt + Leeway*(Yc - Ypt),
 	Xout is Xpt + Leeway*(Xpt - Xc),
 	Yout is Ypt + Leeway*(Ypt - Yc),
-	inside_shape([Xin, Yin], EType, ParentBox),
-	\+ inside_shape([Xout, Yout], EType, ParentBox),
+	inside_shape(Parent, [Xin, Yin], EType, ParentBox),
+	\+ inside_shape(Parent, [Xout, Yout], EType, ParentBox),
 	/* Snap to border */
-	crossing_point([Xc, Yc], [Xout, Yout], EType, ParentBox,
+	crossing_point(Parent, [Xc, Yc], [Xout, Yout], EType, ParentBox,
 			0, NewEndPt),
 	
 	(Phase = moving_start,

@@ -206,13 +206,14 @@ c_call(P) :-
 	    (var(Parent), !,
 	    	find_all_children(Parent, Child);
 	    find_child(Parent, Child));
-	find_parent(Child, Parent));
+	  atom(Child),
+	    find_parent(Child, Parent));
 	P = node_class(Node, Class), !,
 	(atom(Node), !;
 	    var(Node), descendent(root, Node)),
 	get_class(Node, Class);
 	P = connection(Dest, Source, Arc), !,
-	(nonvar(Arc), !;
+	(atom(Arc), !;
 	    (var(Source), !,
 		atom(Dest),
 		find_arc_to(Dest, Arc);
