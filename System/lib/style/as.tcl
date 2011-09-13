@@ -454,9 +454,8 @@ proc style::as::MouseWheel {wFired X Y D {shifted 0}} {
 	    set view [expr {$shifted ? "xview" : "yview"}]
 	    # Walking up to find the proper widget handles cases like
 	    # embedded widgets in a canvas
-	    while {[catch {if {[$w $view] ne {0.0 1.0}} {
-		$w $view scroll $delta units}}]
-		&& [winfo toplevel $w] ne $w} {
+	    while {[catch {$w $view scroll $delta units}]
+		   && [winfo toplevel $w] ne $w} {
 		set w [winfo parent $w]
 	    }
 	}
@@ -481,9 +480,15 @@ proc style::as::init_mousewheel {args} {
 	# mapping the wheel to the extended buttons.
 	bind all <Button-4> [list ::style::as::MouseWheel %W %X %Y 120]
 	bind all <Button-5> [list ::style::as::MouseWheel %W %X %Y -120]
+# JAT: Rectify fairly obvious omission
+	bind all <Shift-Button-4> [list ::style::as::MouseWheel %W %X %Y 120 1]
+	bind all <Shift-Button-5> [list ::style::as::MouseWheel %W %X %Y -120 1]
 	foreach class $mw(classes) {
 	    bind $class <Button-4> {}
 	    bind $class <Button-5> {}
+# JAT: Rectify fairly obvious omission
+	    bind $class <Shift-Button-4> {}
+	    bind $class <Shift-Button-5> {}
 	}
     }
     # Disable this bwidget proc if it exists.  It creates bindings that

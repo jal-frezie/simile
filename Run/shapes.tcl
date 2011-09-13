@@ -1081,7 +1081,9 @@ proc InjectGraphics {c canvasFile} {
     # be displayed.
     $c delete withtag /base/ ;# these will be re-created
     update idletasks
-    CanvasSee $c [lindex [$c find all] end] ;# view topmost item
+    CanvasSee $c [lindex [$c find all] end] \
+	[expr $window_info($c,width)/2] [expr $window_info($c,height)/2]
+# view topmost item
 #puts "Rolling back to 0 0 $window_info($c,width) $window_info($c,height)"
     RollBack $c 1 0 0 $window_info($c,width) $window_info($c,height)
     return DoneInjectGraphics
@@ -1145,24 +1147,37 @@ proc ChangeObjectTitle { w name title} {
 # Prolog being called back in this instance, because a loop would not happen
 # sometimes due to rounding errors.
 
-proc DoZoom { winId factor} {
-    global window_info looks
+proc DoZoom { winId factor {invX none} {invY none}} {
+    global window_info looks doneZoom
 
-    # First, find canvas point at centre of display
-    set centre_x [expr $window_info($winId,width)/2]
-    set centre_y [expr $window_info($winId,height)/2]
-
-    # Now work out where this should be in the image, so I can put it back in the
-    # centre afterwards
-
-    set target_x [expr [$winId canvasx $centre_x]*$factor]
-    set target_y [expr [$winId canvasy $centre_y]*$factor]
+    set width $window_info($winId,width)
+    set height $window_info($winId,height)
+    # First, find canvas point at centre of zoom action 
+    # (default = centre of window)
+    if {[string equal none $invX]} {
+	set invX [expr $width/2]
+    }
+    if {[string equal none $invY]} {
+	set invY [expr $height/2]
+    }
+    set target_x [$winId canvasx $invX]
+    set target_y [$winId canvasy $invY]
+# Mark the centre of the zoom. When doing mousewheel zooms, several ops 
+# can fall over each other, so do not re-create marker if already there.
+    if {[info exists doneZoom]} {
+	after cancel $doneZoom
+    } else {
+	$winId create line $target_x $target_y $target_x $target_y \
+	    -tag /zoom_centre/
+    }
+    set doneZoom [after 100 DeleteMarker $winId]
 
     # next make sure that enough canvas exists for the outcome of the operation
-    RollBack $winId 1 [expr (1 - 1/$factor)*$centre_x] \
-            [expr (1 - 1/$factor)*$centre_y] \
-            [expr (1 + 1/$factor)*$centre_x] \
-            [expr (1 + 1/$factor)*$centre_y]
+    set extraMargin [expr {1/$factor-1}]
+    RollBack $winId 1 [expr {$invX-$invX/$factor}] \
+	[expr {$invY-$invY/$factor}] \
+	[expr {$invX+($width-$invX)/$factor}] \
+	[expr {$invY+($height-$invY)/$factor}]
 
     # Next, scale all the window objects (centre must be 0 because all canvas/desktop
     # translation is done relative to 0)
@@ -1172,23 +1187,21 @@ proc DoZoom { winId factor} {
     # Change the canvas area in accordance with the change in scale
 
     set oldSize [$winId cget -scrollregion]
-    set newReg [list [expr [lindex $oldSize 0]*$factor] \
-            [expr [lindex $oldSize 1]*$factor] \
-            [expr [lindex $oldSize 2]*$factor] \
-            [expr [lindex $oldSize 3]*$factor]]
-    $winId configure -scrollregion $newReg
+    set newL [expr [lindex $oldSize 0]*$factor]
+    set newT [expr [lindex $oldSize 1]*$factor]
+    set newR [expr [lindex $oldSize 2]*$factor]
+    set newB [expr [lindex $oldSize 3]*$factor]
+    $winId configure -scrollregion [list $newL $newT $newR $newB]
 # no need for the following, RollBack takes care of it
 #    eval [list ResizeBackgnd $winId] $newReg
 
-    # Find what is in the middle now
+    CanvasSee $winId /zoom_centre/ $invX $invY
+    return
+}
 
-    set currentX [$winId canvasx $centre_x]
-    set currentY [$winId canvasy $centre_y]
-
-    # Now scroll it so what was previously in the middle of the display is still there
-
-    $winId xview scroll [expr round(($target_x - $currentX)/$looks(scrollIncr))] units
-    $winId yview scroll [expr round(($target_y - $currentY)/$looks(scrollIncr))] units
+proc DeleteMarker {winId} {
+    $winId delete withtag /zoom_centre/
+    unset ::doneZoom
 }
 
 # ZoomImage: Scale the graphical stuff in the window, and explicitly
@@ -1222,7 +1235,7 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
         catch {set window_info($winId,scale) \
                     [expr $window_info($winId,scale) * $factor]}
 
-	scan [$winId cget -scrollregion] "%g %g %g %g" bl bt br bb
+#	scan [$winId cget -scrollregion] "%g %g %g %g" bl bt br bb
         set objList [$winId find all]
     }
     if {[string match none $optFontor]} {
@@ -1530,7 +1543,8 @@ proc NextCaption {canvas} {
         #	$canvas itemconfigure $this -fill blue
         # left in in case the thing fails to highlight, or is exec_only
 
-	CanvasSee $canvas $this
+	CanvasSee $canvas $this [expr $::window_info($canvas,width)/2] \
+	    [expr $window_info($canvas,height)/2]
         set find(now,$canvas) $this
 	prolog tk_do_colours($find(now,$canvas),on)
 #        FlashSymbol $canvas $find(now,$canvas) orange orange
@@ -1539,7 +1553,7 @@ proc NextCaption {canvas} {
     }
 }
 
-proc CanvasSee {canvas this} {
+proc CanvasSee {canvas this scnX scnY} {
     global window_info
 
     # Now to pervert the 'scan' command to make an ad-hoc 'see'...
@@ -1547,12 +1561,13 @@ proc CanvasSee {canvas this} {
     # if the values they return are updated by resizing the window (which
     # the reported width and height aren't).
     
-    set middleX [$canvas canvasx [expr $window_info($canvas,width)/2]]
-    set middleY [$canvas canvasy [expr $window_info($canvas,height)/2]]
-    scan [$canvas coords $this] {%f %f} tgtX tgtY
-    if {[info exists tgtX]} {
+    set middleX [$canvas canvasx $scnX]
+    set middleY [$canvas canvasy $scnY]
+    scan [$canvas bbox $this] {%d %d %d %d} tgtL tgtT tgtR tgtB
+    if {[info exists tgtL]} {
 	$canvas scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
-	$canvas scan dragto [expr int(-0.1*$tgtX)] [expr int(-0.1*$tgtY)]
+	$canvas scan dragto [expr int(-0.05*($tgtL+$tgtR))] \
+	    [expr int(-0.05*($tgtT+$tgtB))]
     } else {
 	puts "Missed with $this coords [$canvas coords $this]"
     }

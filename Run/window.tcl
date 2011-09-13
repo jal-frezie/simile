@@ -904,7 +904,24 @@ proc AddCanvasBindings { c topNode } {
     bind $c <FocusIn> {EmbraceObj %W}
     bind $c <Leave> {AbandonObj}
 #    BindMouseWheel $c
-
+# as style binds mousewheel for all, so to stop this making events for
+# ctrl-mousewheel we have to define a non-emptybinding for ctrl-mousewheel
+# at that level, but it do nothing because errors would result otherwise
+    switch [tk windowingsystem] {
+	x11 {
+	    bind all <Control-Button-4> {return}
+	    bind $c <Control-Button-4> {WheelZoom %W 5 %x %y}
+	    bind all <Control-Button-5> {return}
+	    bind $c <Control-Button-5> {WheelZoom %W -5 %x %y}
+	} aqua {
+	    bind $all <Command-MouseWheel> {return}
+	    bind $c <Command-MouseWheel> {WheelZoom %W %D %x %y}
+	} default  {
+	    bind $all <Control-MouseWheel> {return}
+	    bind $c <Control-MouseWheel> {WheelZoom %W %D %x %y}
+	}
+    }
+    
     # text/clipboard action from Welch example
     # commented because we can now cut/copy parts of a model
     #    bind $c <<Cut>> {CanvasTextCopy %W; CanvasDelete %W}
@@ -924,6 +941,11 @@ proc AddCanvasBindings { c topNode } {
             %x %y %W %X %Y]
     $c bind has_info <B1-Enter> RemovePopup ;# make sure it does nothing
     $c bind has_info <Leave> RemovePopup
+}
+
+proc WheelZoom {win change x y} {
+#    puts [info level 0]
+    DoZoom $win [expr {exp($change/100.0)}] $x $y
 }
 
 proc AddEqnPopup {node x y winId X Y} {
@@ -1513,8 +1535,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c edit unselall" -accelerator "$accKey+U"
     AddAccelerator $winid edit "Unselect all" "<$accSym-u>"
     $fm add command -label [tr. "Invert selection"] \
-            -command "MenuSelect $c edit invsel" -accelerator "$accKey+*"
-    AddAccelerator $winid edit "Invert selection" "<$accSym-asterisk>"
+            -command "MenuSelect $c edit invsel" -accelerator "$accKey+!"
+    AddAccelerator $winid edit "Invert selection" "<$accSym-exclam>"
     
     AddFindMenu $winid $c $fm
     $fm add separator
@@ -1542,17 +1564,25 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm2 add command -label [tr. "In lots"] -command "DoZoom \
             $c 1.953125" -accelerator "$accKey+*"
     AddAccelerator $winid view.zoom "In lots" "<$accSym-KP_Multiply>"
+    AddAccelerator $winid view.zoom "In lots" "<$accSym-asterisk>"
     $fm2 add command -label [tr. "In a bit"] -command "DoZoom \
             $c 1.25" -accelerator "$accKey++"
     AddAccelerator $winid view.zoom "In a bit" "<$accSym-KP_Add>"
-    $fm2 add command -label [tr. "To selection"] -command "DisplayArea $c"
-    $fm2 add command -label [tr. "To fit"] -command "DisplayAll $c"
+    AddAccelerator $winid view.zoom "In a bit" "<$accSym-plus>"
+    $fm2 add command -label [tr. "To selection"] -command "DisplayArea $c" \
+	-accelerator "$accKey+@"
+    AddAccelerator $winid view.zoom "To selection" "<$accSym-at>"
+    $fm2 add command -label [tr. "To fit"] -command "DisplayAll $c" \
+	-accelerator "$accKey+t"
+    AddAccelerator $winid view.zoom "To fit" "<$accSym-t>"
     $fm2 add command -label [tr. "Out a bit"] -command "DoZoom \
             $c 0.8" -accelerator "$accKey+-"
     AddAccelerator $winid view.zoom "Out a bit" "<$accSym-KP_Subtract>"
+    AddAccelerator $winid view.zoom "Out a bit" "<$accSym-minus>"
     $fm2 add command -label [tr. "Out lots"] -command "DoZoom \
             $c 0.512" -accelerator "$accKey+/"
     AddAccelerator $winid view.zoom "Out lots" "<$accSym-KP_Divide>"
+    AddAccelerator $winid view.zoom "Out lots" "<$accSym-slash>"
     UnderlineUniquely $fm2
 
     $fm add cascade -label [tr. "Show detail"] -menu $fm.sub3
