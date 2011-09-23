@@ -1,4 +1,3 @@
-
 /******************************************************************************
 *** COMPILATION module. This module contains all the templates necessary   ****
 *** to compile AME code. Everything is parameterised by language, BASIC    ****
@@ -258,7 +257,9 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	Wrinkle = misplaced_channel(InnerText, OuterText);
 	variable_size(Submodel),
 	contains(Submodel, Param),
-	is_parameter(Param, N), N>0,
+	appears(Param),
+	is_parameter(Param, N),
+	(Param is_of_sort discrete -> N>1 ; N>0),
 	caption_for(Submodel, OuterText),
 	caption_for(Param, InnerText),
 	Wrinkle = param_in_vm_model(InnerText, OuterText);
@@ -1384,7 +1385,7 @@ things that need to be evaluated in the model and turns them into a
 list of 'make' functions which include information about how to order
 the actions corresponding to them.*/
 
-get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
+get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	       DestPath, SmStep, Swaps, Used, Inters, Assignments) :-
 /* Only make assignments for functions, for now, and
 	    Do not make an assignment if we are expecting one on init/reset
@@ -1464,8 +1465,9 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    AllActs = [Expr]; */
 	  Type = magnitude, !, % no derived events yet but same
 	    SourceEqn = event(ActEqn, TriggerEqn, (From->To)),
+	    (Unit = boolean -> Inactive = '"false"' ; Inactive = 0),
 	    GroundEqn = (magnitude=TriggerEqn,
-			    choose(magnitude '!=' 0, ActEqn, 0)),
+			    choose(magnitude '!=' 0, ActEqn, Inactive)),
 	    % trigger is just a sum of references so building is simple
 %	    final_assignment(TriggerEqn, Node,
 %			     elt([], current_event_magnitude, X), Swaps,

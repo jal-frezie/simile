@@ -386,7 +386,7 @@ is_lookup_cond(GroundExpr, UseExpr) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 build_sum([Solo], Solo).
-build_sum([First | Rest], First+Run) :-
+build_sum([First | Rest], First++Run) :-
 	build_sum(Rest, Run).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1088,14 +1088,13 @@ Now one that uses a special conditional level */
 		RUnits = real,
 		Arg_template = [real],
 		[ValRef] = ResultList; */
-	    Source = trigger_magnitude(_),
+	    Source = trigger_magnitude(MagU),
 		(Step = dummy, % trigger inter not defined so avoid using
-		    (get_host(SubId, SuperId),
-			\+ SuperId is_of_sort discrete,
-			throw(only_allowed_in_event(Source));
-		      SourceList = [0]);
+		    SourceList = [0],
+		    ArgList = [int], % just to match units of above
+		    RUnits = MagU;
 		  SourceList = [magnitude]), !,
-		[ValRef] = ResultList;
+		    [ValRef] = ResultList;
 	    Source =.. [Op | ArgListForm],
 		(ArgListForm = [''], !, ArgList = [];
 		    ArgList = ArgListForm),

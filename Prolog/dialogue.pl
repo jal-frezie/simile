@@ -613,14 +613,29 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	reverse(IndxCount, IndxSzs),
 	append(InterInputs, [input_link(_, DimL, '/dest/', _-DLoops,_)],
 	       AllInputs),
-	
+
 	on_exception(ParseException,
 		     replace_subexps(Equation, dialogue, expand_params,
 			dim_data(DimL, ParamList, AllInputs, ExpInters),
-				     top_down, _ParamSubs, FullExpr),
+				     top_down, ParamSubs, FullExpr),
 		     ParseError = ParseException),
 	
 	(nonvar(ParseError), !;
+	% if we use trigger magnitude, find units for it
+	(setof(MagUnits,
+	member(var_pair(_, trigger_magnitude(MagUnits)), ParamSubs), _), !,
+	(setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits),
+	% check dimensions the same
+	all(m_update, analyze_array,
+	    [build(EvtUnits), build(EvtBases), unify(_EvtDims)]),
+	length(EvtBases, NEvts),
+	inters'><'value(Any),
+	list_of(Any, NEvts, Anies),
+	inters'><'try_units(Any, Anies, EvtBases, MagUnits),
+	\+ MagUnits = boolean;
+	ParseError = no_usable_trigger_magnitude);
+	true),
+	
 	length(ParamList, _LenP),
 	    get_ground_part(DimL, DimDG),
 	    length(DimDG, LenD),
@@ -656,6 +671,10 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	Hack alert. The term representing the dest context has indices
 	(   so index(n) will work) but no loops, so we don't need to add it
 	to the relative source contexts */
+
+units_for_evt_antecedents(Fn, EvtUnit) :-
+	m_update'><'get_all_links(Fn, discrete, _,
+	     input_link(_,_,_,_, EvtUnit)).
 
 expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	      Param, DoneExpr, Recurse) :-
@@ -749,6 +768,9 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, IndXpr),
 	    DoneExpr = element(ListExpr, IndXpr)),
+	    Recurse = 0;
+	Param = trigger_magnitude(''), % make space to insert evt units
+	    DoneExpr = trigger_magnitude(_),
 	    Recurse = 0;
 	expand_library('/dest/', Param, DoneExpr),
 	    Recurse = 1.

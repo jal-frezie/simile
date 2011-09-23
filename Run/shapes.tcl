@@ -1527,7 +1527,7 @@ proc FindCaption {canvas} {
 }
 
 proc NextCaption {canvas} {
-    global find
+    global window_info find
     if {[info exists find(now,$canvas)]} {
 	prolog tk_do_colours($find(now,$canvas),off)
     } else {
@@ -1543,7 +1543,7 @@ proc NextCaption {canvas} {
         #	$canvas itemconfigure $this -fill blue
         # left in in case the thing fails to highlight, or is exec_only
 
-	CanvasSee $canvas $this [expr $::window_info($canvas,width)/2] \
+	CanvasSee $canvas $this [expr $window_info($canvas,width)/2] \
 	    [expr $window_info($canvas,height)/2]
         set find(now,$canvas) $this
 	prolog tk_do_colours($find(now,$canvas),on)
