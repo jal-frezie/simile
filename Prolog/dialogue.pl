@@ -153,6 +153,7 @@ all args being empty) escapes from here.
 Note that interact_equation should return strings for all these
 things. */
 
+% sketch graph or table edited -- 2 elts
 update_equation(Function,_, [Table_st, Data_st], Effect) :-
 	get_term(Table_st, TableData, _),
 	/* should be no errors as it is auto generated */
@@ -175,6 +176,7 @@ update_equation(Function,_, [Table_st, Data_st], Effect) :-
 	  name(Complaint, ComplaintStr),
 		Effect = user_advice_generated(bad_table_data(Complaint))).
 
+% name or units for an input parameter edited -- 3 elts
 update_equation(_, Input_list, [LineIndxStr, Parm_st, New_unit_st], Effect) :-
 	name(LineIndx, LineIndxStr),
 	append(EarlyInputs,
@@ -207,6 +209,7 @@ update_equation(_, Input_list, [LineIndxStr, Parm_st, New_unit_st], Effect) :-
 	    Effect = input_list_changed_to(NewInputs);
 	Effect = user_advice_generated(Complaint)).
 
+% Normal equation entry -- 7 elts
 update_equation(Function, InterInputs,
 		[Eqn_st, Unit_st, Is_P_st, Desc_st, Cmt_st, Min_st, Max_st],
 		Effect) :-
@@ -393,8 +396,9 @@ update_equation(Function, InterInputs,
 	    Effect = input_list_changed_to(New_inputs);
 	 Effect = user_advice_generated(FinalComplaint)).
 
-% new trigger selected for a state-change rule -- has 4 elts
-update_equation(Function, InterInputs, [Eqn_st, Evt_st, _Min_st, _Max_st],
+% new trigger selected for a state-change rule -- has 5 elts
+update_equation(Function, InterInputs, [Eqn_st, Evt_st, _Unit_st,
+					_Min_st, _Max_st],
 		Effect) :-
 	name(EvtId, Evt_st),
 	def_unit_and_index_type_list_are(_, IndxCount),
@@ -409,18 +413,22 @@ update_equation(Function, InterInputs, [Eqn_st, Evt_st, _Min_st, _Max_st],
 % OK to rule dialogue -- has 8 elts
 update_equation(Function, Inputs, [Eqn_st, Evt_st, Unit_st, Is_P_st,
 				   Desc_st, Cmt_st, Min_st, Max_st], Effect) :-
-	update_equation(Function, Inputs, [Eqn_st, Evt_st, Min_st, Max_st],
-	                SubEffect),
+	update_equation(Function, Inputs, [Eqn_st, Evt_st, Unit_st,
+					   Min_st, Max_st], SubEffect),
 	(SubEffect = new_effect_accepted(EvtId, OldEqn, Result), !,
-	    name(NewArrSpec, Unit_st),
+	    get_term(Unit_st, NewArrSpec, ParseError),
 	    name(Is_P, Is_P_st),
 	    name(MinVal, Min_st),
 	    name(MaxVal, Max_st),
 	    name(Desc, Desc_st),
 	    name(Comment, Cmt_st),
 % have to check the other stuff some time but later
-	    Effect = rule_list_accepted(EvtId, OldEqn, Result, Is_P, NewArrSpec,
+	    (ParseError = [], !,
+		purge(Eqn_st, "\\", OrigSt),
+		sicstus_atom_chars(OldEqn, OrigSt),
+		Effect = rule_list_accepted(EvtId, OldEqn, Result, Is_P, NewArrSpec,
 					MinVal, MaxVal, Desc, Comment, Inputs);
+	      Effect = user_advice_generated(ParseError));
 	  Effect = SubEffect).
 
 inherently_bound(Units) :-

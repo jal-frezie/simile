@@ -562,7 +562,7 @@ proc interact_equation {} {
         } 4 {
             return [list $equation(last_efct) \
 			[$equation(actzone).evts get $equation(last_cause)] \
-			$equation(min) $equation(max)]
+			$units $equation(min) $equation(max)]
 # min and max included to make up numbers and in case we decide they can differ
 # between clauses
 	}

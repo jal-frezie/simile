@@ -558,15 +558,14 @@ mark_limit_checks(Act, Add) :-
 update_antes_to_step(List, Step) :-
 	List = [make(_, Conds-_, _,_,_) | Rest], !,
 	all(compile, mark_unstepped,
-	    [build(Conds), unify(Step), append(Marked, Rest)]),
+	    [build(Conds), unify(Step), append(Marked, Rest), unify(no)]),
 	update_antes_to_step(Marked, Step);
 	true.
 
-mark_unstepped(Cond, Set, Add) :-
+mark_unstepped(Cond, Set, Add, DoSquirts) :-
 	member(Cond, [Act, later(Act), this_step(Act)]),
 	Act = make(Tgt, _,_, [_,_, Step | _], _),
-	\+ Tgt = tweaked(_), % do not put squirts in subphase
-	% ... but above would not put them in any phase! Sort.
+	(\+ Tgt = tweaked(_); DoSquirts = yes),
 	var(Step), !,
 	Step = Set,
 	Add = [Act];
@@ -590,7 +589,7 @@ as well to stop rand_vars being changed in the R-K subphase */
 	RKStep is Steps+1,
 	update_antes_to_step(Updates, RKStep),
 	all(compile, mark_unstepped, [build(Functions), unify(Steps),
-				      append(_Normal, [])]),
+				      append(_Normal, []), unify(yes)]),
 	/* Check all same-time-step circles can be done in one program loop */
 	tk_update_infobox(pl_loop, []),
 	(member(Start, Functions),
