@@ -88,7 +88,8 @@ get_info(_Wid, Comp, enum_type_defns, ETDefns) :-
 	    % just get defns for this submodel level
 	    m_update'><'enum_types_for(Comp, ETDefns);
 	  % if not a submodel, get all applicable enum types
-	    get_all_enum_types(Comp, ETDefns)).
+	    find_all_comps(MotherShip, Comp),
+	    get_all_enum_types(MotherShip, ETDefns)).
 
 get_info(_Wid, Comp, colour, ColorSpec) :-
 	get_av_pair(Comp, 0, fill_colour, ColorSpec), !;
