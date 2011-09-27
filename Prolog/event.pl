@@ -748,7 +748,11 @@ change_name(RenamedNode, Name) :-
 	    replace_subexps(Eqn, event, swap_def_params,
 			    [Roles, NewRoles], top_down, _, NewEqn),
 	    add_parameter(DownFunc, 0, value, NewEqn),
-	    add_parameter(DownFunc, 0, spec, ''), /* till I can update it */
+	    get_av_pair(DownFunc, 0, spec, OldSpec),
+	    name(OldSpec, OldStr),
+	    ame_gen'><'update_substrings(OldStr, Roles, NewRoles, NewStr),
+	    name(NewSpec, NewStr),
+	    add_parameter(DownFunc, 0, spec, NewSpec),
 	    add_parameter(OtherGhost, 2, role, NewRoles),
 	    fail;
 	 update_captions(RenamedNode)).

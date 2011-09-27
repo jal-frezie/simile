@@ -558,6 +558,40 @@ clobber_local_vars([var_pair(Lambda, _) | Rest], Lambda, NewRest) :-
 
 clobber_local_vars([A | B], Lambda, [A | C]) :-
 	clobber_local_vars(B, Lambda, C).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+update_substrings(OldStr, OldRoles, NewRoles, NewStr) :-
+	OldRoles = [use(_,_, OldSubT, _) | MoreOld],
+	NewRoles = [use(_,_, NewSubT, _) | MoreNew], !,
+	all(user, sicstus_write_to_chars,
+	    [build([OldSubT, NewSubT]), build([OldSub, NewSub])]),
+	elide(OldSub, OldStr, CutStr),
+	inflate(NewSub, CutStr, MidStr),
+	update_substrings(MidStr, MoreOld, MoreNew, NewStr);
+	NewStr = OldStr.
+
+elide(OldSub, OldStr, NewStr) :-
+	append(Before, Tail, OldStr),
+	append(OldSub, After, Tail),
+	\+ (After = [MoreSub | _],
+	       continuer_only([MoreSub], prolog, [MoreSub])),
+	\+ starts_name(Before), !,
+	append(Before, [-1 | After], MidStr),
+	elide(OldSub, MidStr, NewStr);
+	NewStr = OldStr.
+
+starts_name(Str) :-
+	append(Head, [Base], Str),
+	(starter_only(Base, prolog, Base), !;
+	  continuer_only([Base], prolog, [Base]),
+	    starts_name(Head)).
+
+inflate(NewSub, OldStr, NewStr) :-
+	append(Before, [-1 | After], OldStr), !,
+	append([Before, NewSub, After], MidStr),
+	inflate(NewSub, MidStr, NewStr);
+	NewStr = OldStr.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* This takes a list of dimensions including some which are specified in terms of
 numbers of submodel instances, and translates those that can be translated,

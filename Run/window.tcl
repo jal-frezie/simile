@@ -263,7 +263,8 @@ proc ClickObj { x y winId X Y action} {
                 set label "[file tail [BlankCrs $context]] = "
                 $bar.label configure -text $label
                 set equationbar($winid,node) $node
-                set equationbar($winid,initText) [BlankCrs $oldEqn]
+                set equationbar($winid,initText) [StripCrs $oldEqn]
+# converts CRs to \n -- use BlankCrs for spaces (non reversible)
                 set equationbar(current_action) null
 		AddInputs $winid $bar
 # now add relevant enumerated types to menu
