@@ -593,9 +593,9 @@ as well to stop rand_vars being changed in the R-K subphase */
 	/* Check all same-time-step circles can be done in one program loop */
 	tk_update_infobox(pl_loop, []),
 	(member(Start, Functions),
-	    Start = make(_, Conds-_, _,_,_), 
+	    Start = make(LoopEnd, Conds-_, Path, _,_), 
 	    member(later(Loop2), Conds),
-	    Loop2 = make(LoopEnd, _, Path, [_,_, Step | _], _),
+	    Loop2 = make(LoopStart, _,_, [_,_, Step | _], _),
 	    remove_non_loopers(Path, PurePath),
 	    find_antecedent([Loop2], outside_loop, PurePath-Step, Out),
 	    /* would be better to get setof these and trace them all back at
@@ -604,7 +604,8 @@ as well to stop rand_vars being changed in the R-K subphase */
 	    Out = make(Xefct, _, APath, [_,_, AStep | _], _),
 	    (remove_non_loopers(APath, PureAPath),
 		\+ suffix(PurePath, PureAPath),
-		raise_exception(condition_outside_loop(LoopEnd, Xefct));
+		raise_exception(condition_outside_loop(LoopEnd, LoopStart,
+						       Xefct));
 	    raise_exception(mixed_phase_loop(LoopEnd, Xefct, Step, AStep)));
 	!).
 /*

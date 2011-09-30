@@ -326,9 +326,10 @@ strings_direct(tcl, clear_memory, instance(submodel,_,_, Name, _-Dims), Indent,
 
 /* assignment */
 strings_direct(L, assignment, Dest=Source, Indent, Stream) :-
-	(L = c, Fmt = "~*s~a = ~w;\n";
-	    L = tcl, Fmt = "~*sset ~a ~w\n"),
-	format(Stream, Fmt, [Indent, " ", Dest, Source]).
+	list_of(32, Indent, Leader),
+	(L = c, Fmt = "~s~a = ~w;\n";
+	    L = tcl, Fmt = "~sset ~a ~w\n"),
+	format(Stream, Fmt, [Leader, Dest, Source]).
 
 strings_direct(L, open_context, Pointer=[_, _, MPTargetRef], Indent1, Stream) :-
 	strings_direct(L, assignment, Pointer=MPTargetRef, Indent1, Stream).

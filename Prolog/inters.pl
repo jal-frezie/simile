@@ -496,8 +496,8 @@ make_intermediates(
 
 	copy_term(DestPath, TotalPath),
 	(member(Functor, [in_preceding]), !,
-	    DestPath = [_ | DestTail],
-	    TotalPath = [_ | TotalTail],
+	    break_at_last_loop(DestPath, _,_, DestTail),
+	    break_at_last_loop(TotalPath, _,_, TotalTail),
 	    get_model(DestTail, InterPath),
 	    get_model(TotalTail, OuterPath), % Use to read stuff out
 	    append(Exited, OuterPath, TotalPath);
@@ -657,8 +657,9 @@ make_intermediates(
 	    (Functor = count, !,
 		purge(Depends, OldArgs, KeepDeps);
 	    KeepDeps = Depends)),
-        (member(Functor, [make_inter, at_phase, last, 
-			  in_preceding, in_progenitor]), !,
+        (member(Functor, [make_inter, at_phase /*, last, 
+			  in_preceding, in_progenitor */]), !,
+ 	    % commented-out cases handled in other clauses!
 	    Setting = [make(TotalName, KeepDeps, WriteContext, SetTime,
 			    [IncrAct])];
 	Setting = [make(increment(WhatMade), [cleared(TotalName) | KeepDeps],
@@ -1220,7 +1221,7 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	name(MxOp, MxOpStr),
 	lower(MxOpStr, OpStr).
 
-dissociate(Wrapper, made_at(Arg, _), NewArg) :-
+dissociate(Wrapper, made_at(Arg, Level), made_at(NewArg, Level)) :-
 	NewArg =.. [Wrapper, Arg].
 dissociate(Wrapper, Arg, Arg) :-
 	Arg =.. [Wrapper, _Cond];	% in case sofars/samesteps are nested
@@ -1235,7 +1236,10 @@ refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 	    worry about accessing elements that haven't yet been set, and not
 	    using made_at(...) should prevent it being removed as an idler */
 	    member(Source, [in_preceding(_), in_progenitor(_)]), !,
-		Args = [later(lastvalue(Name))];
+		Args = [made_at(cleared(Name), [SourceContext]),
+ 				% array must be cleared before first use
+ 			made_at(later(lastvalue(Name)),
+				[cond_section(nomatch) | DestPath])];
 				% access before setting in same loop
 	    Args = [made_at(Name, SourceContext)]),
 	    copy_term(DestPath, SourcePath),
