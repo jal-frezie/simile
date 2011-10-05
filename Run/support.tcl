@@ -507,7 +507,7 @@ proc CheckGUI {node modelTime thisOp} {
     
 proc abort_check {args} {
     global myNode
-    if {[AbortCheck $myNode]>10} {
+    if {[AbortCheck $myNode]>=10} {
 	error "abort request from the user"
     }
 }

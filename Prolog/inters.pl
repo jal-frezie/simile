@@ -1050,8 +1050,8 @@ Now one that uses a special conditional level */
 		dialogue'><'table_data_is(_);
 		    throw(missing_graph_or_table_data(Source))),
 		SourceList = [Param],
-		RUnits = real,
-		Arg_template = [real],
+		RUnits = 1,
+		Arg_template = [1],
 		ResultList = [RVal],
 		ValRef = graph(GraphId, RVal);
 	    Source = stop(ExcpCode), % need to insert line ID
@@ -1446,7 +1446,7 @@ operator(rand, real, [real, real]).
 we do not want them in the function list -- they only appear here so the right
 error comes up if they are used with the wrong number of args */
 
-operator(graph, real, [real]).
+operator(graph, 1, [1]).
 operator(table, any, ['[index, ...]']).
 
 %operator(if, any, [[then_clause]). Not needed as macro subber flags errors

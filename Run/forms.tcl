@@ -2296,7 +2296,8 @@ proc Query {specifics icon helpRef parent opts} {
 # which breaks a 'see all', try just re-parenting the dialogues...
 #    HideProgressBox
 
-    lappend mBoxCmd -parent [ChooseParent $parent [set oldFocus [focus]]] 
+    set useParent [ChooseParent $parent [set oldFocus [focus]]] 
+    lappend mBoxCmd -parent $useParent
     eval $mBoxCmd
 
 # (in case Mac version siezes)
@@ -2312,13 +2313,14 @@ proc Query {specifics icon helpRef parent opts} {
     }
     if {[string equal more $dialogues(done)]} {
 	if {![string equal abort $defButton]} { ;# add more detail now
+	    wm withdraw .shortDlg
 	    set result [ExpandQuery $specifics $title $icon \
-			    $message $helpRef .shortDlg $opts]
+			    $message $helpRef $useParent $opts]
 	} else { ;# "see all": display remaining messages together
 	    AddMsgsToLog
 	    set result $dialogues(done)
 	    after idle [list StopMsgLogging $specifics $title $icon \
-			    $helpRef $parent ok]
+			    $helpRef $useParent ok]
 	}
     } else {
 	set result $dialogues(done)

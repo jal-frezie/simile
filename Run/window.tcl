@@ -906,7 +906,7 @@ proc AddCanvasBindings { c topNode } {
     bind $c <Leave> {AbandonObj}
 #    BindMouseWheel $c
 # as style binds mousewheel for all, so to stop this making events for
-# ctrl-mousewheel we have to define a non-emptybinding for ctrl-mousewheel
+# ctrl-mousewheel we have to define a non-empty binding for ctrl-mousewheel
 # at that level, but it do nothing because errors would result otherwise
     switch [tk windowingsystem] {
 	x11 {
@@ -915,10 +915,10 @@ proc AddCanvasBindings { c topNode } {
 	    bind all <Control-Button-5> {return}
 	    bind $c <Control-Button-5> {WheelZoom %W -5 %x %y}
 	} aqua {
-	    bind $all <Command-MouseWheel> {return}
+	    bind all <Command-MouseWheel> {return}
 	    bind $c <Command-MouseWheel> {WheelZoom %W %D %x %y}
 	} default  {
-	    bind $all <Control-MouseWheel> {return}
+	    bind all <Control-MouseWheel> {return}
 	    bind $c <Control-MouseWheel> {WheelZoom %W %D %x %y}
 	}
     }

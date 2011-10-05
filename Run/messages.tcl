@@ -489,6 +489,9 @@ set msgs(unknown_unit_message) [tr. {Unit expression %1$s is not recognized as a
 set msgs(bad_type_conversion_title) [tr. {Problem converting units}]
 set msgs(bad_type_conversion_message) [tr. {You are not allowed to convert implicitly from a "%1$s" value to a "%2$s" value because of the possibility for confusion or loss of information.}]
 
+set msgs(is_scale_factor_title) [tr. {Esoteric use of unit matching}]
+set msgs(is_scale_factor_message) [tr. {You have provided a unit specification, "%1$s", that is equivalent to a dimensionless non-unity scaling factor of %2$s. This will cause the associated value to be treated as a number of quantities of that size. You may continue if this is what you want.}]
+
 set msgs(mismatched_dimensions_title) [tr. {Problem converting units}]
 #set msgs(mismatched_dimensions_message) [tr. {The units of the required quantity are %1$s which have physical dimensions %2$s. These are incompatible with the supplied value, whose units %3$s have dimensions %4$s.}]
 set msgs(mismatched_dimensions_message) [tr. {You are trying to convert a value with units %3$s to one with units %1$s. This cannot be done because the first has physical dimensions %4$s, while the second has physical dimensions %2$s.}]

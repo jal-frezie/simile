@@ -414,7 +414,7 @@ as follows:
 0: Succeeds for any pair of units that can be matched
 1: Allows assignment to convert from 'int' to 'real' but not back
 2: Checks for convertibility between physical units
-3: Types must be identical or physically convertible
+3: Types must be identical or physically equivalent
 
 Note that the 2nd argument, Target_unit, is the one the user has somehow
 provided...*/
@@ -429,7 +429,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	    ((member(Target_base, [any, n(_ET1), a(_ET2),
 				      boolean, cond_spec, int]), !,
 	          Target_type = Target_base;	 
-	      check_and_report_units(Target_base, TargetDims),
+	      check_and_report_units(Target_base, TargetDims, _),
 	          Target_type = real),
 		(Severity = 0, !;
 		    /* Unit_base = Target_base, !; */
@@ -438,12 +438,16 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 			Target_name = Target_unit),
 		    (Severity = 1, !;
 			\+ Target_type = real, !;
-		    get_conversion(1, Unit_type, Target_base, Scale),
+% flag up dimensionless conversions; here is not really the place
+%		      (\+ TargetDims = 1; Scale = 1.0;
+%			  query(is_scale_factor(Target_unit, Scale),
+%				warning, top, [ok], ok)), !,
+			get_conversion(1, Unit_type, Target_base, Scale),
 			(Severity = 2, !;
 			1 is Scale, !;
 			Complaint = needs_conversion(Target_name, Target_base,
 						     Unit_base));
-		    (check_and_report_units(Unit_base, UnitDims), !;
+		    (check_and_report_units(Unit_base, UnitDims, _), !;
 		     UnitDims = Unit_base),
 		    Complaint = mismatched_dimensions(Target_name, TargetDims,
 						      Unit_base, UnitDims));

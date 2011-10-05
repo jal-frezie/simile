@@ -204,6 +204,11 @@ update_equation(_, Input_list, [LineIndxStr, Parm_st, New_unit_st], Effect) :-
 	    Complaint = Complaint2),
 	
 	(Complaint = [], !,
+	    check_and_report_units(NewUnits, TargetDims, ScaleFactor),
+% flag up dimensionless conversions; here is not really the place, but...
+	    (\+ TargetDims = 1; ScaleFactor = 1.0;
+		query(is_scale_factor(NewUnits, ScaleFactor),
+		      warning, top, [ok], ok)), !,
 	    append(EarlyInputs, [input_link(Link, New_var, New_param,
 		    Current_unit, NewInputUnit) | LateInputs], NewInputs),
 	    Effect = input_list_changed_to(NewInputs);
@@ -387,6 +392,11 @@ update_equation(Function, InterInputs,
 	purge(Eqn_st, "\\", OrigSt),
 	sicstus_atom_chars(OldEqn, OrigSt),
 
+	check_and_report_units(NewUnits, TargetDims, ScaleFactor),
+% flag up dimensionless conversions; here is not really the place, but...
+		      (\+ TargetDims = 1; ScaleFactor = 1.0;
+			  query(is_scale_factor(NewUnits, ScaleFactor),
+				warning, top, [ok], ok)), !,
 	(FinalComplaint = [], !,
 	    Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn, NewArrSpec,
 				  TabDat, MinVal, MaxVal, Desc, Comment,
