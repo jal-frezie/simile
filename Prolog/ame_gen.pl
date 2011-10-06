@@ -214,7 +214,7 @@ double_backslashes(Str, Dtr) :-
 
 bite_off_number(String, Num, Left) :-
 	(append(Safe, [Brake | _], String),
-	    member(Brake, "{\\} \n"), !;
+	    member(Brake, "{\\} \n\r"), !;
 	String = Safe),
 	output'><'safe_tcl_eval(['EatNumber', br(chars(Safe))], RList),
 	append(Num, [32 | SzStr], RList),

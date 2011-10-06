@@ -2,7 +2,7 @@ sicstus_module(inters, [final_assignment/11, make_intermediates/12,
 			expand_library/3, macro_expansion/2, function/4,
 			promote_unit/2, promote_arg/3, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
-			make_inds_for/3, pointer_from/2]).
+			inherently_bound/2, make_inds_for/3, pointer_from/2]).
 
 sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
@@ -1119,7 +1119,9 @@ Now one that uses a special conditional level */
 	    throw(cannot_combine_argument_dimensions(Source))),
 		(ValRef =.. [Lop, _, _],
 		 member(Lop, [*, /]),
-		    select(One, UnitList, [Other]),
+		    \+ (member(MathWouldBeSilly, UnitList),
+			   inherently_bound(MathWouldBeSilly)),
+		    select(One, UnitList, [Other]), % == permutation
 		    \+ promote_arg(One, 1, _),
 		    (promote_arg(Other, 1, _),
 			(UnitList == [Other, One], Lop = (/),
@@ -1205,6 +1207,9 @@ unmake_enum_units(SrcUnits, Units) :-
 	    Units = int;
 	Units = SrcUnits.
 */
+inherently_bound(Units) :-
+	member(Units, [boolean, a(_)]).
+
 raise_units(Base, Num, Units) :-
 	Num = 0, Units = 1;
 	(Num < 0, Next is Num+1, Do = (/);

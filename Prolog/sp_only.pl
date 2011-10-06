@@ -1,7 +1,7 @@
 % actually, anything other than gnu-prolog
 
 :- module(sp_only, ['><'/2, sicstus_read_from_chars/2, sicstus_write_to_chars/2,
-		    sicstus_format_to_chars/3, 
+		    sicstus_format_to_chars/3,
 		    sicstus_write_chars/1, sicstus_write_chars/2,
 		    sicstus_atom_chars/2, wind_up/0,
 		    read_term_from_codes/3, print_to_codes/2, number_atom/2,
@@ -81,6 +81,6 @@ wrap_fixes(Op) :-
 	\+ suffix(")", Cncl), !,
 	write('('), write(Op), write(')').
 
-/* stop compiler complaining about foreign/1 directives intended for GNU 
+/* stop compiler complaining about foreign/1 directives intended for GNU
 (now in different file) */
 % database:foreign(_).
