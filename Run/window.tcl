@@ -1758,7 +1758,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     } else {
         set buttonImages ../Images/Toolbar
     }
-    foreach navCmd {{new {local empty}} {open {file open}} \
+    foreach navCmd {{new {local empty}} {open {local open_all}} \
                 {save {file save}}  {print {local print}} {separator1}\
                 {undo {local undo}} {redo {local redo}} {separator2}\
                 {flip_h {edit flip_h}} {flip_v {edit flip_v}} {separator3}\
