@@ -122,6 +122,7 @@ set debounce(down) quiet
 # to interrogate it to find what is closest to the click point
 # (actually "$canvas find withtag current" does this, but no point changing now)
 
+set equationbar(enumTypes) {}
 proc ClickObj { x y winId X Y action} {
     global debounce equationbar pushedbutton window_info looks
     global tcl_platform
@@ -270,25 +271,28 @@ proc ClickObj { x y winId X Y action} {
 # now add relevant enumerated types to menu
 		set enumTypes \
 		    [GetFromProlog tk_get_info('$winId',$node,enum_type_defns)]
-		set lname $bar.function.menu.enumtypes
+		if {![string equal $enumTypes $equationbar(enumTypes)]} {
+		    set equationbar(enumTypes) $enumTypes
+		    set lname $bar.function.menu.enumtypes
 # empty previous ones
-		while {![string equal none [$lname index end]]} {
-		    destroy [$lname entrycget end -menu]
-		    $lname delete end
-		}
-		foreach enumType [linsert $enumTypes 0 \
-				      [list boolean false true]] {
-		    set type [lindex $enumType 0]
-		    set kname $lname.mn[join $type _]
-		    menu $kname -tearoff 0
-		    $lname add cascade -menu $kname -label $type
-# put type at top of submenu to insert its text
-		    $kname add command -label $type \
-			-command [list InsertQuoted $bar $type]
-		    $kname add separator
-		    foreach member [lrange $enumType 1 end] {
-			$kname add command -label $member \
-			    -command [list InsertQuoted $bar $member]
+		    while {![string equal none [$lname index end]]} {
+			destroy [$lname entrycget end -menu]
+			$lname delete end
+		    }
+		    foreach enumType [linsert $enumTypes 0 \
+					  [list boolean false true]] {
+			set type [lindex $enumType 0]
+			set kname $lname.mn[join $type _]
+			menu $kname -tearoff 0
+			$lname add cascade -menu $kname -label $type
+			# put type at top of submenu to insert its text
+			$kname add command -label $type \
+			    -command [list InsertQuoted $bar $type]
+			$kname add separator
+			foreach member [lrange $enumType 1 end] {
+			    $kname add command -label $member \
+				-command [list InsertQuoted $bar $member]
+			}
 		    }
 		}
                 SetEqnButtonState $bar normal

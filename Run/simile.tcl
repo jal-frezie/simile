@@ -353,8 +353,8 @@ switch $tcl_platform(platform) {
     }
 }
 
-set env(SIMILE_VERSION) 5.8
-set sendvars(simP) {p4}
+set env(SIMILE_VERSION) 5.9
+set sendvars(simP) {b1}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is

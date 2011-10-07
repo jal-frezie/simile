@@ -2,7 +2,7 @@ sicstus_module(inters, [final_assignment/11, make_intermediates/12,
 			expand_library/3, macro_expansion/2, function/4,
 			promote_unit/2, promote_arg/3, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
-			inherently_bound/2, make_inds_for/3, pointer_from/2]).
+			inherently_bound/1, make_inds_for/3, pointer_from/2]).
 
 sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
