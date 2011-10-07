@@ -103,9 +103,12 @@ namespace eval slide139 {
                 #		}
             }
         }
-        if {![info exists done]} {
+        if {[info exists done]} {
+            $winId.intro configure -text {}
+            ReleaseClicks $winId
+        } else {
             $winId.intro configure -text "There are no more parameters in this model which can be set by sliders, check boxes or pulldown lists. Note that these tools cannot be used on multidimensional parameters."
-        }
+	}
     }
     proc InsertSlider {winId node title nest} {
 	global widgetSeln sliderDoes
