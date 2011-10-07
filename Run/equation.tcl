@@ -999,7 +999,8 @@ proc equationCancel {} {
 proc ListEditDone {w line type} {
     global equation
 
-    if {![string equal $equation($type$line) $equation(old$type,$line)]} {
+    if {![string equal $equation($type$line) $equation(old$type,$line)] &&
+	![string equal [focus] .equation.buttons.cancel]} {
 	set equation(ckLine) $line
 	set equation(ckWidg) $w
 	set equation(done) 2
