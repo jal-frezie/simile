@@ -867,25 +867,25 @@ proc ControlDraw {prologVersion} {
 		  [list custom(initToolbar) initToolbar ON [tr. "Component bar"]] \
 		  [list custom(initEqnbar) initEqnbar ON [tr. "Equation bar"]] \
 		  [list custom(initGrid) initGrid ON [tr. "Grid"]] \
-		  [list custom(gridH) gridH 15 [tr. "Horizontal pitch"]] \
-		  [list custom(gridV) gridV 15 [tr. "Vertical pitch"]] \
-		  [list custom(gridD) gridD 10 [tr. "Depth"]] \
-		  [list custom(maxPopupSize) maxPopupSize 500 [tr. "Size limit"]] \
+		  [list custom(gridH) gridH {15 1 1000} [tr. "Horizontal pitch"]] \
+		  [list custom(gridV) gridV {15 1 1000} [tr. "Vertical pitch"]] \
+		  [list custom(gridD) gridD {10 -100 100} [tr. "Depth"]] \
+		  [list custom(maxPopupSize) maxPopupSize {500 10 10000} [tr. "Size limit"]] \
 		  [list custom(bigButtons) bigButtons OFF [tr. "Use large buttons"]] \
 		  [list custom(saveExtras) saveExtras [list CHOICE [tr. "Canvas file"] [tr. "Model file only"]] [tr. "Save models as..."]] \
-		  [list custom(recentCount) recentCount 10 [tr. "Entries on recently used file list"]] \
+		  [list custom(recentCount) recentCount {10 0 200} [tr. "Entries on recently used file list"]] \
 		  [list custom(quickExit) quickExit [list CHOICE [tr. "None"] [tr. "Abandon"]] [tr. "Quick exit option..."]] \
 		  [list custom(gridSnap) gridSnap OFF [tr. "Snap to grid"]] \
 		  [list custom(quickDrag) quickDrag OFF  [tr. "Quick drag"]] \
 		  [list custom(myButton) myButton \u03bc [tr. "Custom keypad button"]] \
 		  [list custom(defBackground) defBackground [list CHOICE [tr. "White"] [tr. "Black"] [tr. "Clear"]] [tr. "Default background"]] \
 		  [list custom(flowRouting) flowRouting ON [tr. "Kink flows"]] \
-		  [list custom(infRouting) infRouting 10 [tr. "Curve influences"]] \
-		  [list custom(roleRouting) roleRouting 10 [tr. "Curve role arrows"]] \
+		  [list custom(infRouting) infRouting {10 -100 100} [tr. "Curve influences"]] \
+		  [list custom(roleRouting) roleRouting {10 -100 100} [tr. "Curve role arrows"]] \
 		  [list custom(deleteEndToEnd) deleteEndToEnd ON [tr. "Select links end-to-end"]] \
 		  [list custom(helperManager) helperManager ON [tr. "Use single window manager"]] \
-		  [list custom(popupPrecision) popupPrecision 0 [tr. "Value popups"]] \
-		  [list custom(snapPrecision) snapPrecision 0 [tr. "Snapshots"]] \
+		  [list custom(popupPrecision) popupPrecision {0 0 16} [tr. "Value popups"]] \
+		  [list custom(snapPrecision) snapPrecision {0 0 16} [tr. "Snapshots"]] \
 		  [list custom(runControlPosition) runControlPosition "+0-20" [tr. "Position of run control"]] \
 		  [list custom(slidersPosition) slidersPosition "+0+0" [tr. "Position of sliders"]] \
 		  [list custom(hackBreak) hackBreak OFF [tr. "Pause to edit C++ code?"]] \

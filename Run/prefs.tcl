@@ -54,42 +54,49 @@ proc PrefDefault { item } { lindex $item 2 }
 proc PrefComment { item } { lindex $item 3 }
 
 proc Pref_Add { prefs } {
-	global pref
-	append pref(items) $prefs " "
-	foreach item $prefs {
-		set varName [PrefVar $item]
-		set resName [PrefRes $item]
-		set value [PrefValue $varName $resName]
-#		if {$value == {}} {
-			# Set variables that are still not set
-			set default [PrefDefault $item]
-			switch -regexp -- $default {
-				^CHOICE {
-				    if {[lsearch $default $value]<1} {
-					PrefValueSet $resName [lindex $default 1]
-				    }
-				}
-				^OFF {
-				    if {$value!=1} {
-					PrefValueSet $resName 0
-				    }
-				}
-				^ON {
-				    if {$value!=0} {
-					PrefValueSet $resName 1
-				    }
-				}
-				default {
-				    if {$value=={} || \
-					    ([string is double -strict $default] && \
-						 ![string is double $value])} {
-					# This is a string or numeric
-					PrefValueSet $resName $default
-				    }
-				}
-			}
-#		}
+    global pref
+    append pref(items) $prefs " "
+    foreach item $prefs {
+	set varName [PrefVar $item]
+	set resName [PrefRes $item]
+	set value [PrefValue $varName $resName]
+	#		if {$value == {}} {
+	# Set variables that are still not set
+	set default [PrefDefault $item]
+	switch -regexp -- $default {
+	    ^CHOICE {
+		if {[lsearch $default $value]<1} {
+		    PrefValueSet $resName [lindex $default 1]
+		}
+	    }
+	    ^OFF {
+		if {$value!=1} {
+		    PrefValueSet $resName 0
+		}
+	    }
+	    ^ON {
+		if {$value!=0} {
+		    PrefValueSet $resName 1
+		}
+	    }
+	    default {
+		set nNums [scan $default {%d %d %d} def lo hi]
+		if {$nNums==0} {
+		    # This is a string
+		    if {$value=={}} {
+			PrefValueSet $resName $default
+		    }
+		} elseif {![string is double -strict $value]} {
+		    PrefValueSet $resName $def
+		} elseif {$nNums>1 && $value<$lo} {
+		    PrefValueSet $resName $lo
+		} elseif {$nNums>2 && $value>$hi} {
+		    PrefValueSet $resName $hi
+		}
+	    }
 	}
+	#		}
+    }
 }
 
 
