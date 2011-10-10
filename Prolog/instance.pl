@@ -422,7 +422,7 @@ generate_input_pair(Node, IType, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
 	get_actual_sizes(Node, FarDims, _,_,_),
 	analyze_array(ArcUnits, BaseUnits, _),
 	RelatedRef = input(SourceLocation, RefExp, Relation, ArcUnits),
-	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, _),
+	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef),
 	find_name_host(Link, ControlLink),
 	(get_av_pair(ControlLink, 2, use_sofar, 1),
 	    (find_type(SourceId, compartment),
@@ -432,13 +432,10 @@ generate_input_pair(Node, IType, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
 	\+ get_av_pair(ControlLink, 2, use_sofar, 1),
 	    ExprRef = ConvertedRef).
 
-try_conversion(RelatedRef, Units, BaseUnits, ConvertedRef, ImpType) :-
-	get_conversion(RelatedRef, Units, BaseUnits, ConvertedRef), !,
-	    ImpType = real;    
-	RelatedRef = ConvertedRef,
-	    (Units = any, !, ImpType = real;
-		/* (only legacy nodes have no units!) */
-	    ImpType = Units).
+try_conversion(RelatedRef, Units, BaseUnits, ConvertedRef) :-
+	(Units = int -> TreatAs = 1; TreatAs = Units),
+	get_conversion(RelatedRef, TreatAs, BaseUnits, ConvertedRef), !;    
+	RelatedRef = ConvertedRef.
 /*
 This adds code that limits a model value to the range specified by its
 min/max attributes. This currently is not done except for initial values
@@ -511,7 +508,7 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 	is_instance(_, Controller, _, BaseVar, _, Ref),
 	default_tick_is(Tick),
 	standard_name(NodeBase, TrimBase),
-	try_conversion(Var, ArcUnits, TrimBase/Tick, Term, _ImpType).
+	try_conversion(Var, ArcUnits, TrimBase/Tick, Term).
 
 bind_and_build_term(Node, [Arc|Arcs], Base, Dims, NewTerm, Refs) :-
 	bind_and_build_term(Node, [Arc], Base, Dims, Term1, [Ref]),
