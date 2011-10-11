@@ -1082,12 +1082,12 @@ proc FixSize {c} {
 		gets $stream oldGeom
 		scan $oldGeom "%dx%d%1s%d%1s%d" w h lr l tb t
 		if {$w>200 && $h>200 && \
-			$l>=0 && $l+$w<[winfo screenwidth $win] && \
-			$t>=0 && $t+$h<[winfo screenheight $win]} {
+			$l>=0 && $l+$w<=[winfo screenwidth $win] && \
+			$t>=0 && $t+$h<=[winfo screenheight $win]} {
 		    # these give wrong values on multi-screen Windows setup
 		    wm geometry $win $oldGeom
 		} else {
-		    puts "$w $h $lr $l $tb $t"
+		    # puts "$w $h $lr $l $tb $t"
 		}
 	    }
 	}

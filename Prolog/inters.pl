@@ -1704,13 +1704,15 @@ contains_something(Property, Expr, Backgnd) :-
 /* Changeable subexps are those whose value can change even if their
 arguments stay the same. last(_) is in here because the 'last' value of a
 constant is zero on the first evaluation step, value of the constant
-thereafter. */
+thereafter.
+All randoms are now changeable because the const versions are defined as
+macros using at_init(). */
 
 changeable(_, Subexp, _, 0) :-
+	random(_, Subexp, _, 0);
 	nonvar(Subexp),
 	Subexp =.. [Functor | _],
-	(member(Functor, [time, dt, rand, last, loses]);
-		sample(Functor)).
+	member(Functor, [time, dt, last, loses]).
 
 /* do_once is the opposite: value must stay the same even if the args change,
 though the modeller has probably erred if they do -- except for init_time,
@@ -1745,7 +1747,9 @@ individuates_elements(InterDefs, Subexp, _, 0) :-
 
 random(_, Subexp, _, 0) :-
 	nonvar(Subexp),
-	Subexp = rand(_,_).
+	Subexp =.. [Functor | _],
+	(member(Functor, [rand]);
+	    sample(Functor)).
 
 /* wait_for_submodels/2
 This adds the given property of any submodels from which we take values
