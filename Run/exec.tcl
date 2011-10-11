@@ -438,7 +438,7 @@ proc ExScrubRun {node times} {
             if {[info exists instance_id]} {
                 #ShowMess debug info "Exiting $model_id $instance_id" ok
 		namespace delete ::AME_model<>
-		array unset nodedata
+		array unset ::nodedata
                 unset instance_id
 	    }
         }

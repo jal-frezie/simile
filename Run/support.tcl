@@ -92,13 +92,12 @@ proc ExplainError {myNode errList origError} {
 	}
     } elseif {![string equal none $dest]} {
 	set targetList [DescribeComponent $dest]
-	if {[catch {GetNodeIdFromRef $myNode $dest [lindex $targetList 1]} \
-		 TargetId]} {
-	    set target [lindex $targetList 0]
+	if {![namespace exists [join [lrange [split $dest ::] 0 end-1] ::]]} {
 	    set whoopsie dest_missing
-	} else {
-	    set target "[lindex $targetList 0] (node $TargetId)"
+# Just remind me, when does this happen? 
+# Probably never, due to base index range checking
 	}
+	set target [lindex $targetList 0]
     } else {
 	set target something
     }
@@ -108,12 +107,10 @@ proc ExplainError {myNode errList origError} {
 	"can't read \"*\": no such variable" {
 	    set ref [lindex [split $whoopsie \"] 1]
 	    set sourceList [DescribeComponent $ref] 
-	    if {[catch {GetNodeIdFromRef $myNode $ref \
-			    [lindex $sourceList 1]} TargetId]} {
+	    if {![namespace exists [join [lrange [split $ref ::] 0 end-1] ::]]} {
 		set problem "it found that there was no submodel instance when trying to get [lindex $sourceList 0]"
 	    } else {
-		set vdesc "[lindex $sourceList 0] (node $TargetId)"
-		set problem "it found that there was no value for $vdesc"
+		set problem "it found that there was no value for [lindex $sourceList 0]"
 	    }
 	} dest_missing {
 	    set problem "it found there was no instance with these indices. This may mean that you have specified a base model instance by an index which is out of range"
@@ -146,8 +143,12 @@ proc ExplainError {myNode errList origError} {
     }
     
     switch -- $mstep {
-	-1 {
+	-2 {
 	    set action initialization
+	    set timing {}
+	    #		ScrubRun $node 0
+	} -1 {
+	    set action parameterization
 	    set timing {}
 	    #		ScrubRun $node 0
 	} 0 {

@@ -552,6 +552,7 @@ proc AddEnumType {fr} {
         EnableTypeOps [winfo parent $fr]
         set disaggregate(enumtype,$enumTypeMPEntry) {}
         [winfo parent $fr].btns.e delete 0 end
+	focus [winfo parent $fr].btns.e
     }
 }
 
@@ -585,6 +586,7 @@ proc AddEnumMem {fr} {
         $fr.listpair.memf.mem configure -listvariable disaggregate(enumtype,$togo)
         $fr.listpair.memf.mem selection clear 0 end
         $fr.btns.e delete 0 end
+	focus $fr.btns.e
     }
 }
 
