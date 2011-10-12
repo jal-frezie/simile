@@ -180,14 +180,22 @@ proc DescribeComponent {ref} {
     set variable [lindex $hierarchy end]
     set br [string first \( $variable]
     if {$br == -1} {
-	set vdesc "variable $variable"
+	set vdesc "variable [CaptionIfAvail $variable]"
     } else {
-	set vdesc "variable [string range $variable 0 [incr br -1]]"
+	set vdesc [CaptionIfAvail [string range $variable 0 [incr br -1]]]
 	set locals [string range $variable [incr br 2] end-1]
-	set vdesc "element [join $locals ,] of $vdesc"
+	set vdesc "element [join $locals ,] of variable $vdesc"
 	eval {lappend inds} $locals
     }
     return [list $vdesc$context $inds]
+}
+
+proc CaptionIfAvail {name} {
+    if {[info exists ::${name}_name]} {
+	return \"[set ::${name}_name]\"
+    } else {
+	return \"$name\"
+    }
 }
 
 proc MakeContext {levels} {
@@ -198,7 +206,8 @@ proc MakeContext {levels} {
 	set this [lindex $levels 0]
 	set obr [string first < $this]
 	set cbr [string first > $this]
-	set submodel "submodel [string range $this 0 [incr obr -1]]"
+	set handle [string range $this 0 [incr obr -1]]
+	set submodel "submodel [CaptionIfAvail $handle]"
 	if {$cbr-$obr > 2} {
 	    set locals [string range $this [incr obr 2] [incr cbr -1]]
 	    set submodel "instance [join $locals ,] of $submodel"
