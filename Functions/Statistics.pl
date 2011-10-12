@@ -9,19 +9,19 @@ ways_to_pick(chosen,all) -->
 %sample/3 same syntax but declares func that gives different result each call
 
 sample(gaussian, real, [real, real]).
-gaussian_const(mean, SD) --> at_init(gaussian(mean, SD))
-gaussian_var(mean, SD) --> at_phase(gaussian(mean, SD))
+gaussian_const(mean, SD) --> at_init(gaussian(mean, SD)).
+gaussian_var(mean, SD) --> at_phase(gaussian(mean, SD)).
 sample(poidev, int, [real]).
 poidev_const(density) --> at_init(poidev(density)).
 poidev_var(density) --> at_phase(poidev(density)).
 
 %function(bnldev, int, [real, int]).
 sample(binome, int, [real, int]).
-binome_const(prob,throws) --> at_init(binome(prob,throws))
-binome_var(prob,throws) --> at_phase(binome(prob,throws))
+binome_const(prob,throws) --> at_init(binome(prob,throws)).
+binome_var(prob,throws) --> at_phase(binome(prob,throws)).
 sample(hypergeom, int, [int, int, int]).
-hypergeom_const(pop, seln1, seln2) --> at_init(hypergeom(pop, seln1, seln2))
-hypergeom_var(pop, seln1, seln2) --> at_phase(hypergeom(pop, seln1, seln2))
+hypergeom_const(pop, seln1, seln2) --> at_init(hypergeom(pop, seln1, seln2)).
+hypergeom_var(pop, seln1, seln2) --> at_phase(hypergeom(pop, seln1, seln2)).
 
 colin(List) --> 
 	[st0]=makearray(if first(place_in(1)) then 0 else
