@@ -14,7 +14,7 @@ set this ::AME_model<>
 # searching through records like this is not the best way -- try and change
 # the tcl model code so the node id is the index
 
-proc findRecord {node} {
+proc FindRecord {node} {
     global nodedata
 
     foreach record [array names nodedata] {
@@ -22,10 +22,11 @@ proc findRecord {node} {
 	    return $nodedata($record)
 	}
     }
+    return {}
 }
 
 proc getinfo {node field} {
-    return [lindex [findRecord $node] [expr $field+1]]
+    return [lindex [FindRecord $node] [expr $field+1]]
 }
 
 # Graph handling stuff
@@ -55,14 +56,12 @@ proc setup_enum_type_data {args} {
 proc tcl_insert {node newVs} {
     global nodedata
 
-    foreach record [array names nodedata] {
-	if {[string equal $node [lindex $nodedata($record) 0]]} {
-	    set tree [lindex $nodedata($record) 8]
-	    set type [lindex $nodedata($record) 1]
-	    set dims [GetTclCompProperty dummy Dims $node]
-	    return [list [FillValue ::AME_model<> $tree $type $dims \
-			      {} 0 $newVs]]
-	}
+    set line [FindRecord $node]
+    if {[llength $line]} {
+	set tree [lindex $line 8]
+	set type [lindex $line 1]
+	set dims [GetTclCompProperty dummy Dims $node]
+	return [list [FillValue ::AME_model<> $tree $type $dims {} 0 $newVs]]
     }
     return novalue
 }
@@ -91,8 +90,8 @@ proc ExplainError {myNode errList origError} {
 	    }
 	}
     } elseif {![string equal none $dest]} {
-	set targetList [DescribeComponent $dest]
-	if {![namespace exists [join [lrange [split $dest ::] 0 end-1] ::]]} {
+	set targetList [DescribeComponent $myNode $dest]
+	if {![namespace exists [join [lrange [split $dest :] 0 end-2] :]]} {
 	    set whoopsie dest_missing
 # Just remind me, when does this happen? 
 # Probably never, due to base index range checking
@@ -106,8 +105,8 @@ proc ExplainError {myNode errList origError} {
 	"can't read \"*\": no such element in array" - 
 	"can't read \"*\": no such variable" {
 	    set ref [lindex [split $whoopsie \"] 1]
-	    set sourceList [DescribeComponent $ref] 
-	    if {![namespace exists [join [lrange [split $ref ::] 0 end-1] ::]]} {
+	    set sourceList [DescribeComponent $myNode $ref] 
+	    if {![namespace exists [join [lrange [split $ref :] 0 end-2] :]]} {
 		set problem "it found that there was no submodel instance when trying to get [lindex $sourceList 0]"
 	    } else {
 		set problem "it found that there was no value for [lindex $sourceList 0]"
@@ -173,63 +172,65 @@ proc ExplainError {myNode errList origError} {
     return $severity
 }
 
-proc DescribeComponent {ref} {
-    set hierarchy [split $ref :]
+proc DescribeComponent {topNode ref} {
+    set hierarchy [split $ref :] ;# joins actually :: so every other elt null
     set inds {}
-    set context [MakeContext [lrange $hierarchy 6 end-1]]
+    set context [MakeContext [lrange $hierarchy 0 end-2]]
     set variable [lindex $hierarchy end]
     set br [string first \( $variable]
     if {$br == -1} {
-	set vdesc "variable [CaptionIfAvail $variable]"
+	set captPath [NewCaptionIfAvail $hierarchy $inds $variable]
+	set vdesc "variable $captPath"
     } else {
-	set vdesc [CaptionIfAvail [string range $variable 0 [incr br -1]]]
 	set locals [string range $variable [incr br 2] end-1]
-	set vdesc "element [join $locals ,] of variable $vdesc"
 	eval {lappend inds} $locals
+	set captPath [NewCaptionIfAvail $hierarchy $inds \
+			  [string range $variable 0 [incr br -3]]]
+	set vdesc "element [join $locals ,] of variable $captPath"
     }
+# next turn last arg into node
     return [list $vdesc$context $inds]
 }
 
-proc CaptionIfAvail {name} {
-    if {[info exists ::${name}_name]} {
-	return \"[set ::${name}_name]\"
-    } else {
-	return \"$name\"
+proc NewCaptionIfAvail {dest indices in_code} {
+    global nodedata
+
+    foreach record [array names nodedata] {
+	set texts [lindex $nodedata($record) 13]
+	if {[string equal $in_code [lindex $texts 4]]} {
+	    return [set ::[lindex $texts 0]]
+	}
     }
+#    foreach record [array names nodedata] {
+#	if {![catch {burrow_to ::AME_model<> \
+#			 [lindex $nodedata($record) 8] $indices} ptr]} {
+#	    if {[string equal $dest $ptr]} {
+#		return [set ::[lindex $nodedata($record) end 0]]
+#	    }
+#	}
+#    }
+    return $in_code
 }
 
 proc MakeContext {levels} {
     upvar 1 inds inds
-    if {![llength $levels]} {
+    if {[llength $levels]<=4} {
 	return {}
     } else {
-	set this [lindex $levels 0]
+	set rest [MakeContext [lrange $levels 0 end-2]]
+	set this [lindex $levels end]
 	set obr [string first < $this]
 	set cbr [string first > $this]
 	set handle [string range $this 0 [incr obr -1]]
-	set submodel "submodel [CaptionIfAvail $handle]"
-	if {$cbr-$obr > 2} {
-	    set locals [string range $this [incr obr 2] [incr cbr -1]]
+	set locals [string range $this [incr obr 2] [incr cbr -1]]
+	eval {lappend inds} $locals
+	set levelCapt [NewCaptionIfAvail [join $levels :] $inds $handle]
+	set submodel "submodel $levelCapt"
+	if {[llength $locals]} {
 	    set submodel "instance [join $locals ,] of $submodel"
-	    eval {lappend inds} $locals
 	}
-	return "[MakeContext [lrange $levels 2 end]] in $submodel"
+	return " in $submodel$rest"
     }
-}
-
-# right now to get the node id
-proc GetNodeIdFromRef {top dest indices} {
-    global nodedata
-    if {![RunningInC $top]} {
-	foreach record [array names nodedata] {
-	    if {[string equal $dest \
-		     [burrow_to ::AME_model<> \
-			  [lindex $nodedata($record) 8] $indices]]} {
-		return [lindex $nodedata($record) 0]
-	    }
-	}
-    }
-    return unavailable
 }
 
 proc collect {tgt index count args} {
@@ -1029,7 +1030,7 @@ proc GetTclCompProperty {topNode prop args} {
 		return $extracted
 	    }
 	} Dims|Trans {
-	    set dimRefs [GetFullDims [findRecord $node] typeList]
+	    set dimRefs [GetFullDims [FindRecord $node] typeList]
 	    set count 0
 	    set transList {}
 	    while {$count<[llength $dimRefs]-1} {
@@ -1069,13 +1070,13 @@ proc GetTclCompProperty {topNode prop args} {
 		return [graph_table 21 $index]
 	    }
 	} Caption {
-	    return [GetFullCaption [findRecord $node]]
+	    return [GetFullCaption [FindRecord $node]]
 #ShowMess debug info "node $node data [array get nodedata] npath $numericPath" ok
 	} IdFromCapt {
 	    foreach record [array names nodedata] {
 		if {![string equal GHOST [lindex $nodedata($record) 6]]} {
-		    if {[string equal $node \
-			     [GetFullCaption $nodedata($record)]]} {
+		    set poss [GetFullCaption $nodedata($record)]
+		    if {[string equal $node $poss]} {
 			return [lindex $nodedata($record) 0]
 		    }
 		}
@@ -1085,7 +1086,7 @@ proc GetTclCompProperty {topNode prop args} {
 	    getinfo $node 9
 	} MaxVal {
 	    getinfo $node 10
-	} Spec|Desc|Comment {
+	} Name|Spec|Desc|Comment {
 	    set which [lsearch {Name Spec Desc Comment} $prop]
 	    set targetVar [lindex [getinfo $node 12] $which]
 	    if {![string equal NULL $targetVar]} {

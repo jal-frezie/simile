@@ -7,7 +7,7 @@ double factorial(int n) {
 
 double spare;
 BOOLEAN have_spare = 0;
-double gaussian(double mean, double sd) {
+double inst_gaussian(double mean, double sd) {
   double v1,v2,r,fac,norm;
   if (have_spare) {
     norm = spare;

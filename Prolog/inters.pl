@@ -1,4 +1,4 @@
-sicstus_module(inters, [final_assignment/11, make_intermediates/12,
+sicstus_module(inters, [final_assignment/12, make_intermediates/12,
 			expand_library/3, macro_expansion/2, function/4,
 			promote_unit/2, promote_arg/3, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
@@ -6,13 +6,14 @@ sicstus_module(inters, [final_assignment/11, make_intermediates/12,
 
 sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
-final_assignment(Expr, Sm, DestRef, Swaps, Step, Used, 
+final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, Used, 
                  NewFormula, Setups, Context, Prereqs, NewInters) :-
 	DestRef = elt(DestPathForm, Target, XUnits-Dims),
 	copy_term(DestPathForm, DestPath),
 	
 	catch((replace_subexps(Expr, inters, insert_paths,
-			       sub(Sm, DestRef, Swaps), top_down, _, FullExp),
+			       sub(Sm, DestRef, Swaps, SmStep),
+			       top_down, _, FullExp),
 	       make_intermediates(FullExp, Sm, [Target], DestPath, BackSwap,
 				  [], [], Step, Used, Units, AllInters,
 				  part_result(SourceContext, AllSetups, Args,
@@ -73,7 +74,7 @@ assigned_in_vm_subloop(Formula, FContext, AllSetups) :-
 	append(ExtraLoops, FContext, MoreLoops),
 	member(sm(_,_,_, vm_loop(_,_,_,_)), ExtraLoops).
 
-insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
+insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	(Var = input(Location, PathExp, Link, Units),
 	    m_update'><'analyze_array(Units, Type, _);
 	Var = PathExp,
@@ -142,6 +143,10 @@ enabling the channel ID to be got from it */
 	Var = index(_), !,
 	    NewVar = make_inter(Var, index),
 	    Recurse = 0; */
+	Var =.. [TimeFn, TimeArg],
+	    member(TimeFn, [time, dt]), member(TimeArg, [0, '']), !,
+	    NewVar =.. [TimeFn, Step], % do here rather than pass sm time to m_i
+	    Recurse = 0;
 	expand_library(DestRef, Var, NewVar),
 	    Recurse = 1.
 
@@ -670,7 +675,7 @@ make_intermediates(
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
 % start of replacement section
-	Inter = instance(internal, inter(InterContext, _, SourceLoops),
+	Inter = instance(internal, inter(InterContext, InnerTgt, SourceLoops),
 			      UseSource, TotalName, UseContextUnits-InterDims),
 	merge_lists([Inter], OldInters, MidInters),
 	(TXUnits = UseContextUnits, !;
@@ -755,6 +760,7 @@ make_intermediates(
 	    name(TRef, LopStr),
 	    member(TRef, [time, dt]), % ind_time removed
 	    ((N=0; N = ''), TArg = Step;
+		% now done in insert_paths so only needed here for parsing
 		integer(N), N>=0, N<8, TArg = N;
 		throw(bad_index_number(N, Op, 8))),
 	    SourceRef =.. [TRef, TArg],

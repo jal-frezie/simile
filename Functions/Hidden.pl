@@ -26,6 +26,16 @@ function(simile_mod, real, [real, real]).
 %Legacy -- needed idler variable trig
 gaussian(Trig, Mean, SD) --> gaussian_var(Mean, SD).
 
+% These are the actual sampling functions, returning a new value on
+% each evaluation. They should not be used in models, instead use
+% e.g., gaussian_const, binome_var, for constants or values that
+% behave right in RK and/or ASV.
+
+sample(inst_gaussian, real, [real, real]).
+sample(poidev, int, [real]).
+sample(binome, int, [real, int]).
+sample(hypergeom, int, [int, int, int]).
+
 %Hack to allow 3 EM wards th MRSA model:
 dual_hypergeom(pop, mark, samples) -->
 	all1=element(samples,1),

@@ -1496,7 +1496,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	      GroundEqn = SourceEqn),
 	    AllActs = [Expr]), !,
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
-			 UseStep, Used, [Expr], Setups, Path, RefList,
+			 SmStep, UseStep, Used, [Expr], Setups, Path, RefList,
 			 AllInters),
 	connect_params([make(Made, UseList, Path, UseStep, AllActs) | Setups],
 		       AllInters, Actions, Inters);

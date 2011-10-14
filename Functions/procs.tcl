@@ -2,7 +2,7 @@
 
 global have_spare
 set have_spare 0
-proc gaussian {mean sd} {
+proc inst_gaussian {mean sd} {
     global spare have_spare
     if {$have_spare} {
 	set norm $spare

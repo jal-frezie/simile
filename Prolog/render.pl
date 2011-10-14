@@ -716,10 +716,13 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 		 build([VisName, BaseName, VisName, VisName]),
 		 build([name, spec, DescAttr, comment]),
 		 build(StringPtrs), unify(Stream)]),
+	    % if tcl, put in name itself to find when debugging
+	    (L = tcl -> append(StringPtrs, [Name], AllStrPtrs);
+			       AllStrPtrs = StringPtrs),
 		/* make a value lookup entry for each node with this value */
 	    NodeData = [[VisName, Type, ETCount, MetaPtr, GBCount, GRefPtr,
 			 Eval, CappedDims, NewPath, GraphPointer,
-			 StringPtrs, Min, Max, Class, Name]];
+			 AllStrPtrs, Min, Max, Class, Name]];
 	/* No need to handle ghosts and link terminators */
 	NodeData = []).
 
