@@ -391,7 +391,8 @@ used when entering file parameters */
 	that those that are completed when ordering their condition nodes
 	can be used later */
 	all(compile, get_vmsps, [build(NewForm), append(VMSPs, [])]),
-	all(compile, insert_enum_phases, [build(VMSPs), unify(NewForm)]),
+	all(user, arg, [unify(3), build(NewForm), build(AllPaths)]),
+	insert_enum_phases(VMSPs, AllPaths),
 
 	state'><'version_is(VStr),
 	state'><'edition_is(Edition),
@@ -1211,7 +1212,8 @@ nodes.
 	    happens in the right phase */
 	    Specials = [make(enumerate(Name), [existence_tested(Name)],
 			     LocalPath, Step, []),
-			make(existence_tested(Name), [can_enter(Name) | Conds],
+			make(existence_tested(Name),
+			     [earlier(can_enter(Name)) | Conds],
 			     LocalPath, Step, [test(Name, NewPtr, TestExpr)]),
 			make(can_enter(Name),
 			     [startable(Name) | BasesEnumerated], Path, Step,
@@ -1870,9 +1872,9 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 		   member(make(existence_tested(Sm), _,_, [_,_,_,D], _), All),
 		   var(D)),
 
-	    /* For the time being, do not do anything that would use the
+	    /* If this line uncommented, do not do anything that would use the
 	    check-member feature */
-	    \+ (number(TestPhase), TestPhase < Phase),
+	    % \+ (number(TestPhase), TestPhase < Phase),
 	    /* Do not go into an alarmed submodel unless I can get the whole
 	    thing done in this pass */
 	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, Alarm)),
@@ -1897,6 +1899,9 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 			     vm_loop(Dims,_, MoreLoops, _)),
 		ptr_to_last_vm(Path, -2, ParentNew),
 		make_inds_for(Dims, Sets, LocalInds),
+		% check for new base instances removed in 5.9 -- if one is
+		% new, the assoc instance must be, since it is enumerated
+		% at least as often as the base models
 		all(compile, ptr_to_last_vm,
 		    [build(MoreLoops), unify(-2), append(VMPtrs, ParentNew)]),
 		append([Sets | MoreLoops], BLoops),
@@ -2044,7 +2049,7 @@ get_vmsps(make(Efct, _,_, [_,_, Step | _], _), VMSP) :-
 	Efct = enumerate(Name), !,
 	VMSP = [vm_spec_pair(Name, Step)];
 	VMSP = [].
-	
+
 /* insert_enum_phases: when we find an enumerate instruction, we want to
 make sure that any time later we go into its submodel, the path will tell us
 which phase the submodel was enumerated (had its membership decided) in. So
@@ -2052,11 +2057,14 @@ here we instantiate the 4th arg of vm_loop to the phase in all the paths... */
 
 insert_enum_phases(_, []).
 
-insert_enum_phases(vm_spec_pair(Name, Phase),
-			 [make(_,_, Path, _,_) | Insts]) :-
-	(member(sm(Name, _,_, vm_loop(_,_,_, Phase)), Path), !; true),
-	insert_enum_phases(vm_spec_pair(Name, Phase), Insts).	
-
+insert_enum_phases(VmSpecPairs, [Path | MorePaths]) :-
+	(suffix([sm(Name, _,_, vm_loop(_,_, BPaths, Phase)) | Head], Path), !,
+	    member(vm_spec_pair(Name, Phase), VmSpecPairs), % should be there
+	    (var(BPaths) -> ToDo = [Head | MorePaths];
+		append([Head | BPaths], MorePaths, ToDo));
+	  ToDo = MorePaths),
+	insert_enum_phases(VmSpecPairs, ToDo).
+	
 /* This one just inserts the shortest time step into any undecided phases.
 Oh, and switches the conditions for references to their instructions.
 set_free_phases([], _).
@@ -2174,6 +2182,7 @@ order_submodel_assignments(Phase, Path, RawAssign, All,
 				       HighPasses, Later, DoneTest),
 	    (number(DoneTest), !,
 		OrderedPasses = HighPasses,
+		Left = Later,
 		FoundTest = DoneTest;
 	    order_assignments(Phase, Path, Later, All, LastPass, Left),
 		(Path = [TestModel | _], !,

@@ -235,7 +235,8 @@ failed through to make sure all later temporary variables get declared. */
 	    
 	    declare(L, MemberCheck, check_members, int, Used, Indent, Stream),
 	    make_section_cond(L, VMPtrs, MemberCheckTest),
-	    combine(L, >=, [Phase, MemberCheckTest], MemberCheckExpr),
+	    combine(L, >=, [Phase, MemberCheckTest], MemberCheckCompare),
+	    make_expr(L, MemberCheckCompare, MemberCheckExpr),
 	    excrete(L, assignment, MemberCheck=MemberCheckExpr, Indent,
 		    Stream);
 	 \+ number(Phase)),
@@ -246,6 +247,7 @@ failed through to make sure all later temporary variables get declared. */
 	excrete(L, assignment, NewInstance=0, Indent1, Stream),
 	/* IfChecking */
 	(number(Phase), !,
+	    refer_value(L, MemberCheck, MemberCheckRef),
 	    excrete(L, if_start, MemberCheckRef, Indent1, Stream),
 	    Indent2 is Indent1+4;
 	 \+ number(Phase),
@@ -253,7 +255,6 @@ failed through to make sure all later temporary variables get declared. */
 	excrete(L, assignment, MPTarget=OnPointerRef, Indent2, Stream),
 	/* CheckElse, StepOver, CheckEnd */
 	(number(Phase),
-	    refer_value(L, MemberCheck, MemberCheckRef),
 	    excrete(L, else_clause, MemberCheckRef, Indent1, Stream),
 	    excrete(L, make_reference, Meta = OnPointer, Indent2, Stream),
 	    render(L, end(cond), MemberCheckRef, Indent1, CheckEnd),
