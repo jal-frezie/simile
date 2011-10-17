@@ -1895,10 +1895,10 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 		record test phase to use in later new instance tests */
 		SmLevel = sm(Submodel, ParentPtr, Ptr,
 			     vm_loop(Dims,_, MoreLoops, _)),
-		ptr_to_last_vm(Path, ParentNew),
+		ptr_to_last_vm(Path, -2, ParentNew),
 		make_inds_for(Dims, Sets, LocalInds),
 		all(compile, ptr_to_last_vm,
-		    [build(MoreLoops), append(VMPtrs, ParentNew)]),
+		    [build(MoreLoops), unify(-2), append(VMPtrs, ParentNew)]),
 		append([Sets | MoreLoops], BLoops),
 		reverse(BLoops, AllLoops),
 		all(compile, get_pass_ends,
@@ -1961,7 +1961,7 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 
 	    \+ (SmLevel = sm(_,_,_, vm_loop(_,_,_, EnumPhase)),
 		   EnumPhase > Phase), !,
-		ptr_to_last_vm([SmLevel | Path], SmNew),
+		ptr_to_last_vm([SmLevel | Path], -2, SmNew),
 		FirstStep = [StartPass],
 		LastStep = [FinishPass],
 		UseSubPasses = SubPasses),
@@ -1980,10 +1980,16 @@ indices_direct([MPtr | Inds], ind(IPtr, N), Ind, 0) :-
 	MPtr == IPtr,
 	nth0(N, Inds, Ind).
 
-ptr_to_last_vm(Path, Ptrs) :-
-	member(sm(_,_, Ptr, vm_loop(_,_,_,Phase)), Path), !,
-	    Ptrs = [new_context(Ptr, Phase)];
-	Ptrs = [].
+/* we will need to initialize a submodel's contents if it is new and
+the time step level is as large as the level in which it is
+enumerated, or if that is true of any of its ancestors if they are
+enumerated on a smaller time step than it */
+
+ptr_to_last_vm(Path, Relevant, [new_context(Ptr, Phase) | MorePtrs]) :-
+	suffix([sm(_,_, Ptr, vm_loop(_,_,_,Phase)) | Deeper], Path),
+	Phase > Relevant, !,
+	ptr_to_last_vm(Deeper, Phase, MorePtrs).
+ptr_to_last_vm(_,_, []).
 
 get_base_ptrs([], [], []) :- !.
 get_base_ptrs([Level | AlsoExited], Names, Ptrs) :-
