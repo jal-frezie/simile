@@ -419,7 +419,7 @@ namespace eval ::maptools2 {
     proc PokeValue {node index newVal} {
 	global myNode
 
-	PlaceInArray [join [concat [list $node] $index] ,] $newVal 0 \
+	PlaceInArray $myNode [join [concat [list $node] $index] ,] $newVal 0 \
 	    [RunningInC $myNode]
 	if {[string equal TABLE [GetModelEval $node]]} {
 	    set ::runState($myNode,reloadParams) -1
