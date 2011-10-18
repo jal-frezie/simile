@@ -1212,7 +1212,8 @@ nodes.
 	    /* can_enter is needed to do anything in the model, but it must
 	    be an explicit precondition of existence_tested to make sure it
 	    happens in the right phase */
-	    Specials = [make(enumerate(Name), [existence_tested(Name)],
+	    Specials = [make(enumerate(Name),
+			     [existence_tested(Name), can_enter(Name)],
 			     LocalPath, Step, []),
 			make(existence_tested(Name),
 			     [earlier(can_enter(Name)) | Conds],
