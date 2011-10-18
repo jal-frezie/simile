@@ -1053,7 +1053,9 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 	retractall(macro_expansion(in(Path), _)).
 
 all_targets(model(Functions, Submodels), Tgts) :-
-	all(user, arg, [unify(4), build(Functions), build(LocalElts)]),
+	purge([instance(variable, _,_,_,_)], Functions, LocalFns),
+	% variables removed because they include ghosts from outside
+	all(user, arg, [unify(4), build(LocalFns), build(LocalElts)]),
 	all(user, arg, [unify(2), build(LocalElts), build(LocalTgts)]),
 	all(user, arg, [unify(3), build(Submodels), build(XRefs)]),
 	all(user, arg, [unify(1), build(XRefs), build(Trees)]),
