@@ -1462,7 +1462,14 @@ proc EatNumber {str} {
 #	if {[string is integer $floatVal]} {
 #	    append floatVal .0
 #	}
-	return [list [expr {$floatVal}] $floatSize]
+
+# however, scientific notation values may not get a point, so check
+# for this and insert .0 before the e if so...
+	set fltResult [expr {$floatVal}]
+	if {[string first . $fltResult]==-1} {
+	    set fltResult [string map {e .0e} $fltResult]
+	}
+	return [list $fltResult $floatSize]
     }
 }
 
