@@ -292,6 +292,12 @@ if {[info exists masterId]} { ;# we are in separate interp
 
 	return [thread::send $masterId [info level 0]]
     }
+
+    proc TransEnums {args} {
+	global masterId
+
+	return [thread::send $masterId [info level 0]]
+    }
 }
 
 proc RunningInC {myNode} {

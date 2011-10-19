@@ -175,30 +175,35 @@ proc ExplainError {myNode errList origError} {
 proc DescribeComponent {topNode ref} {
     set hierarchy [split $ref :] ;# joins actually :: so every other elt null
     set inds {} ;# inds no longer needed, kept as spare part
-    set context [MakeContext [lrange $hierarchy 0 end-2]]
+    set context [MakeContext $topNode [lrange $hierarchy 0 end-2]]
     set variable [lindex $hierarchy end]
     set br [string first \( $variable]
     if {$br == -1} {
-	set captPath [NewCaptionIfAvail $hierarchy $inds $variable]
-	set vdesc "variable $captPath"
+	set captPath [NewCaptionIfAvail $topNode $hierarchy 1 $variable]
+	set vdesc "variable [lindex $captPath 0]"
     } else {
-	set locals [string range $variable [incr br 1] end-1]
+	set locals [split [string range $variable [incr br 1] end-1] ,]
 	eval {lappend inds} $locals
-	set captPath [NewCaptionIfAvail $hierarchy $inds \
+	set captPath [NewCaptionIfAvail $topNode $hierarchy \
+			  [concat $locals [list 1]] \
 			  [string range $variable 0 [incr br -2]]]
-	set vdesc "element [join $locals ,] of variable $captPath"
+	set vdesc "element [join [lrange $captPath 1 end-1] ,] of variable [lindex $captPath 0]"
     }
 # next turn last arg into node
     return [list $vdesc$context $inds]
 }
 
-proc NewCaptionIfAvail {dest indices in_code} {
+proc NewCaptionIfAvail {topNode dest inds in_code} {
     global nodedata
 
     foreach record [array names nodedata] {
 	set texts [lindex $nodedata($record) 13]
 	if {[string equal $in_code [lindex $texts 4]]} {
-	    return [set ::[lindex $texts 0]]
+	    set allETs [GetTclCompProperty $topNode Trans \
+		      [lindex $nodedata($record) 0]]
+	    set useETs [lrange $allETs end-[expr {[llength $inds]-1}] end]
+	    return [concat [list [set ::[lindex $texts 0]]] \
+			[TransEnums $useETs $inds]]
 	}
     }
 #    foreach record [array names nodedata] {
@@ -212,22 +217,23 @@ proc NewCaptionIfAvail {dest indices in_code} {
     return $in_code
 }
 
-proc MakeContext {levels} {
+proc MakeContext {topNode levels} {
     upvar 1 inds inds
     if {[llength $levels]<=4} {
 	return {}
     } else {
-	set rest [MakeContext [lrange $levels 0 end-2]]
+	set rest [MakeContext $topNode [lrange $levels 0 end-2]]
 	set this [lindex $levels end]
 	set obr [string first < $this]
 	set cbr [string first > $this]
 	set handle [string range $this 0 [incr obr -1]]
 	set locals [string range $this [incr obr 2] [incr cbr -1]]
 	eval {lappend inds} $locals
-	set levelCapt [NewCaptionIfAvail [join $levels :] $inds $handle]
-	set submodel "submodel $levelCapt"
+	set levelCapt [NewCaptionIfAvail $topNode [join $levels :] \
+			   $locals $handle]
+	set submodel "submodel [lindex $levelCapt 0]"
 	if {[llength $locals]} {
-	    set submodel "instance [join $locals ,] of $submodel"
+	    set submodel "instance [join [lrange $levelCapt 1 end] ,] of $submodel"
 	}
 	return " in $submodel$rest"
     }
