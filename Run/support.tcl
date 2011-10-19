@@ -174,7 +174,7 @@ proc ExplainError {myNode errList origError} {
 
 proc DescribeComponent {topNode ref} {
     set hierarchy [split $ref :] ;# joins actually :: so every other elt null
-    set inds {}
+    set inds {} ;# inds no longer needed, kept as spare part
     set context [MakeContext [lrange $hierarchy 0 end-2]]
     set variable [lindex $hierarchy end]
     set br [string first \( $variable]
@@ -182,10 +182,10 @@ proc DescribeComponent {topNode ref} {
 	set captPath [NewCaptionIfAvail $hierarchy $inds $variable]
 	set vdesc "variable $captPath"
     } else {
-	set locals [string range $variable [incr br 2] end-1]
+	set locals [string range $variable [incr br 1] end-1]
 	eval {lappend inds} $locals
 	set captPath [NewCaptionIfAvail $hierarchy $inds \
-			  [string range $variable 0 [incr br -3]]]
+			  [string range $variable 0 [incr br -2]]]
 	set vdesc "element [join $locals ,] of variable $captPath"
     }
 # next turn last arg into node
