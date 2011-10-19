@@ -1079,7 +1079,10 @@ write_eqn_term(Submodel, Entry, MinMax, InFlows, OutFlows) :-
 %		Entry = (where((CompType'><'Dest=Eqn), [null]))); % Bob's change
 %	(PPairs = [_ | _],
 %		Entry = (where((CompType'><'Dest=Eqn), PPairs)))),
-	Entry = where((CompType'><'Dest=Eqn), VisNode),
+	event'><'units_for(Component, UnitStr),
+	sicstus_format_to_chars("~w (~s)", [Eqn, UnitStr], EqnWUStr),
+	name(EqnWU, EqnWUStr),
+	Entry = where((CompType'><'Dest=EqnWU), VisNode),
 	make_min_max_line(Component, MinMax).
 
 make_min_max_line(Component, MinMax) :-
