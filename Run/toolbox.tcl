@@ -749,8 +749,7 @@ proc ControlDraw {prologVersion} {
 # (include ff in Windows anyway in case some twerp runs it with userinfo.tpl)
 # Windows installers can ask the user for a license code and stick it in
 # userinfo.txt (formerly the registry). On other platforms we have to DIY.
-	if {[string equal {<insert license code here>} \
-		     $env(license_code)]} {
+	if {[string equal {<insert license code here>} $env(license_code)]} {
 	    if {![DoUserDialogue]} {
 		error "No license supplied"
 	    }
@@ -774,6 +773,10 @@ proc ControlDraw {prologVersion} {
 	}
     }
     loadcommands
+    if {![info exists userinfo(name)]} {
+	set userinfo(name) $env(licensee_name)
+	set userinfo(corp) $env(licensee_corp)
+    }
     array set userinfo [list name $userinfo(name) corp $userinfo(corp) \
 			    final_expiry $env(user,final_expiry) \
 			    days_after_install $env(user,days_after_install) \

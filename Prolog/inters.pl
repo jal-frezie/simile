@@ -501,10 +501,10 @@ make_intermediates(
 
 	copy_term(DestPath, TotalPath),
 	(member(Functor, [in_preceding]), !,
-	    break_at_last_loop(DestPath, _,_, DestTail),
-	    break_at_last_loop(TotalPath, _,_, TotalTail),
+	    suffix([MultiInst | DestTail], DestPath),
+	    indices_for(MultiInst, [_Some | _], _),
 	    get_model(DestTail, InterPath),
-	    get_model(TotalTail, OuterPath), % Use to read stuff out
+	    copy_term(InterPath, OuterPath), % Use to read stuff out
 	    append(Exited, OuterPath, TotalPath);
 	InterPath = DestPath,
 	    OuterPath = TotalPath),
