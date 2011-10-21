@@ -773,7 +773,7 @@ proc ControlDraw {prologVersion} {
 	}
     }
     loadcommands
-    if {![info exists userinfo(name)]} {
+    if {![info exists userinfo(name)]} { ;# settings directory has come to grief
 	set userinfo(name) $env(licensee_name)
 	set userinfo(corp) $env(licensee_corp)
     }

@@ -909,6 +909,7 @@ This looks combinatorial but I have tested it with some pretty extreme
 examples, and it's fast enough. Still, if a thing's worth doing... */
 
 find_circle([Head | Chain], Loop) :-
+	(NewHead = make(enumerate(_), _,_,_,_); true), % prioritize
 	order(NewHead, Head),
 	not_yet_ordered(NewHead), !,
 	(append(Circle, [NewHead | _], [Head | Chain]), % this completes it
