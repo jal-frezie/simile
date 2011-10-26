@@ -1166,7 +1166,7 @@ $numOutputs"
             set oldDir [file attributes $oldDir -shortname]
         }
         puts $control {* model command line}
-        set ourWish [ShellFileRef [file join [file dirname $oldDir] System bin relay$archExtn$execExtn]]
+        set ourWish \"[file join [file dirname $oldDir] System bin relay$archExtn$execExtn]\"
         puts $control [file nativename $ourWish]
         puts $control {* model input/output}
         puts $control {model.tpl model.inp}
@@ -1602,14 +1602,18 @@ $numOutputs"
             if {[llength $est]>1} {
                 array set arrEst $est
             }
-	    puts $stm "<values index=\"$i\">"
             for {set n 1} {$n <= [lindex $dms 0]} {incr n} {
                 if {[info exists arrEst]} {
                     set est $arrEst($n)
                 }
+		if {[lindex $dms 1]>0} {
+		    puts $stm "<values index=\"$n\">"
+		}
                 AddHangers $node $stm $est [lrange $dms 1 end] $n
+		if {[lindex $dms 1]>0} {
+		    puts $stm "</values>"
+		}
             }
-	    puts $stm "</values>"
         } else {
 	    puts $stm "<value index=\"$i\" value=\"[format \\%10s\\ i[incr usedHangers]]\"/>"
             lappend inGrpData($node,mems) i$usedHangers $est
@@ -1669,10 +1673,7 @@ $numOutputs"
 		    lappend inGrpData($node,mems) i$usedHangers $defCons
 		} else {
 		    puts $stm "<multi_value label=\"$level\">"
-		    for {set n 1} {$n <= [lindex $nodeDims 0]} {incr n} {
-			AddHangers $node $stm $defCons \
-			    [lrange $nodeDims 1 end] $n
-		    }
+		    AddHangers $node $stm $defCons $nodeDims unused
 		    puts $stm "</multi_value>"
 		}
 	    }

@@ -68,6 +68,7 @@ namespace eval ::polygon375 {
 			       [namespace code "DialogInMiddle $winId"]]]
 
         ::graphtools::MakeToolBar $winId $toolbarItems
+        message $winId.msg -aspect 1000
     }
 
     proc AddVariable {winId} {
@@ -82,8 +83,7 @@ namespace eval ::polygon375 {
             pack $ms
             set useNodes($winId,state) xcoord
         } else {
-            set ms [message $winId.intro -text "Click on the array value \
-                    representing the data to be mapped."]
+            set ms [message $winId.intro -text "Now select a value to determine the colour of the polygons."]
             GrabClicks $winId
             pack $ms
             set useNodes($winId,state) sizeval
@@ -161,7 +161,7 @@ namespace eval ::polygon375 {
                         set useNodes($winId,state) ycoord
                     }
                     ycoord {
-                        $ms configure -text "Now select a value to determine the colour of the objects."
+                        $ms configure -text "Now select a value to determine the colour of the polygons."
                         set useNodes($winId,ycoord) $node
                         set useNodes($winId,state) sizeval
                     }
@@ -336,7 +336,6 @@ namespace eval ::polygon375 {
         variable viewpoint
         variable useNodes
         
-        message $winId.msg -aspect 1000
 #        InsertLegend useNodes $winId
         
         

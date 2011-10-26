@@ -1556,13 +1556,16 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	    }
             continue {continue}
         }
+	set restoredComp [lindex $move 0]
 	set node [lindex $move 1]
         set startLine [FirstIndexCheck $topNode $node]
         if {($startLine!=-1)==($notInput!=-1)} {
 	    # change back now in case .spf filename is relative (possible
 	    # if merging params from script)
 	    cd $oldDir
-	    set restoredComp /$topNode[lindex $move 0]
+	    if {$notInput>-1} {
+		set restoredComp /$topNode$restoredComp
+	    }
             if {$paramState(origVersion)>=4.0} {
 		set dataFinder [lindex $IdAndValue end]
                 set reference [string eq reference [lindex $IdAndValue end-1]]
