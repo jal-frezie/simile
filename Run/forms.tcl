@@ -38,6 +38,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     wm resizable $tt 0 1
     wm protocol $tt WM_DELETE_WINDOW {set disaggregate(done) 0}
     wm title $tt [format $::msgs(props_title) [BlankCrs $title]]
+    set okCmd {set disaggregate(done) 1}
     
     $t add [ttk::frame $t.simple] -text [tr. Basic]
     TitleFrame $t.simple.notes -text [tr. Notes:]
@@ -45,6 +46,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     set descf [ttk::frame $notesf.desc]
     ttk::label $descf.desclabel -text [tr. Description:]
     entry $descf.text -width 20 -relief sunken -bd 2 -highlightthickness 0
+    bind $descf.text <Return> $okCmd
     pack $descf.desclabel -side left -padx 2 -pady 2
     pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
     $descf.text insert 0 $desc
@@ -55,6 +57,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     #    frame $t.commentsSW
     ScrolledWindow $notesf.commentsSW
     text $notesf.commentsSW.comment -height 4 -width 40 -relief sunken -bd 2 -highlightthickness 0 -wrap word
+    bind $notesf.commentsSW.comment <Return> {expr 1}
     $notesf.commentsSW setwidget $notesf.commentsSW.comment
     $notesf.commentsSW.comment insert 1.0 $comment
     pack $notesf.commentsSW -padx 2 -pady 2 -fill both -expand true
@@ -79,6 +82,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     ::ttk::entry $countf.value -textvariable disaggregate(icount) -width 10
     pack $countf.value -side left -anchor s -pady 4 -fill x -expand 1
     pack $t.simple.left.count -padx 4 -pady 4 -fill both -expand true
+    bind $countf.value <Return> $okCmd
     
     TitleFrame $t.simple.left.colour -text [tr. "Background shade:"]
     set colourf [GetFrame $t.simple.left.colour]
@@ -284,10 +288,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     $t select 0
     pack $t -fill both -expand true
 
-    set okCmd {set disaggregate(done) 1}
     ttk::button $tf.ok -text [tr. OK] -width 10 -default active \
             -command $okCmd
-    bind $tt <Return> $okCmd
     pack $tf.ok -side left -padx 2 -pady 4
     ttk::button $tf.cancel -text [tr. Cancel] -width 10 \
             -command {set disaggregate(done) 0}
