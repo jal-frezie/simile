@@ -982,7 +982,9 @@ namespace eval ::$keyValue {
         set ymove [expr {\
             -[get_y $w $plot($w,Ymax_axis) $plot($w,Yscale)]\
                     +[get_y $w $OldYmax_axis $plot($w,Yscale)] }]
-	if {$scaleChange==1} {
+	if {$scaleChange>0.99 && $scaleChange<1.01} {
+# ignore very small changes due to fp error -- all real ones large
+# since resizes handled separately
 	    $w.canvas move yaxis_item 0 $ymove
 	} else {
 # single move for greater speed?
