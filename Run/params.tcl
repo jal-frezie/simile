@@ -443,9 +443,11 @@ proc AcceptData {topNode compName notInput complain} {
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
+	set compLocal $compName
     } else {
 	set dataLocn paramData
 	set widgetLocn widgetNames
+	set compLocal [TrimDTFromPath $compName]
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
@@ -507,16 +509,16 @@ proc AcceptData {topNode compName notInput complain} {
         set useCppArray [RunningInC $topNode]
 
 #puts "node $compName has dims $recordDims"
-        while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
+	while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
 #            if {$afterTIME} {
 #                set recordDims [lset recordDims $recordDepth MEMBERS]
 #            } else {
 #puts "recordDims $recordDims recordDepth $recordDepth"
-	    foreach recordId [array names suppliedData] {
-#puts "recordId is $recordId"
-		if {[string first $recordId $compName]==0 && \
-			![string equal $recordId $compName]} {
-		    set recordNode [IdFromTail $topNode $recordId $notInput]
+	    foreach globalRecordId [array names ::paramData] {
+		set recordId [TrimDTFromPath $globalRecordId]
+		if {[string first $recordId $compLocal]==0 && \
+			![string equal $recordId $compLocal]} {
+		    set recordNode [IdFromTail $topNode $recordId -1]
 		    if {$useCppArray} {
 #puts "c_setparamarray a $recordNode"
 #                            c_setparamarray $recordNode
@@ -531,14 +533,14 @@ proc AcceptData {topNode compName notInput complain} {
 #		    if {[string match $outerDims \
 #			     [lrange $recordDims 0 $recordDepth]]} {
 # note afterTime will always be 0 here as RECORDS levels removed otherwise NOT
-			set recordDims [lset recordDims $recordDepth \
+		    set recordDims [lset recordDims $recordDepth \
 					    [list RECORDS $recordNode]]
-			break
+		    break
 #		    }
 		}
 	    }
 #            }
-        }
+	}
         #puts "About to ListToArray $node {} $trans $recordDims $suppliedData($compName)"
         if {[string equal targetData $dataLocn]} {
 	    if {![llength $newData]} {
@@ -558,7 +560,7 @@ proc AcceptData {topNode compName notInput complain} {
 	}
 	if {$complain>0} {
 	    set errorData [list [lindex {none load check} $complain] \
-			       $whatMaking [TrimDTFromPath $compName]]
+			       $whatMaking $compLocal]
 	} else {
 	    set errorData {}
 	}
