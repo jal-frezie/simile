@@ -59,4 +59,6 @@ public:
   int check_limit(double, double, double, int, int, int, diffs*);
   int loses(double, int);
   void collect(void*, int, int, ...);
+  int stop_on_id(int, int);
+  int stop(int);
 };

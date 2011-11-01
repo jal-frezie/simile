@@ -38,15 +38,18 @@ struct InternalStop
   }
 };
 
-int stop_on_id(int lineId, int code) {
-  throw InternalStop(lineId,code);
-//  userStop.targetId = lineId;
-//  return (userStop.excpNo = code);
+int InstanceOfModel::stop_on_id(int lineId, int code) {
+  // this stops execution immediately
+  //  throw InternalStop(lineId,code);
+  // this causes it to stop at end of step
+  userStop.targetId = lineId;
+  return (userStop.excpNo = code);
 }
 
+InstanceOfModel* curInst;
 int stop(int code) { 
 // this one for use in procedurally user-defined functions
-  stop_on_id(0, code);
+  curInst->stop_on_id(0, code);
 }
 
 int lazy = 16384;

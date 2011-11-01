@@ -20,6 +20,7 @@ static void exit_sighandler(int x){
 // now however it is a class method
 int AME_model::do_evalmodel(int phase) {
   int error;
+  curInst = this;
 
   // Dont want a crash while running model to terminate Simile, so add 
    // handler. This has to be done on reset cos using the handler in some OS
@@ -40,6 +41,7 @@ int AME_model::do_evalmodel(int phase) {
       return error;
     }
     catch (InternalStop notice) {
+      // used if stop_on_id throws exception
       userStop.targetId = notice.lineNo;
       userStop.excpNo = notice.userCode;
     }
