@@ -187,8 +187,13 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	        reset_titles(Parent),
 	        setof(Mover, (contains(Parent, Mover),
 				 appears(Mover), \+ Mover = Parent), Lighters);
-	    setof(Mover, O^(member(O-Mover, Translated),
-			 appears(Mover)), Lighters)),
+		/* paste into model which already has content --
+		now relink ghosts, if their bases are in same toplevel */
+	    contains(TopNode, Parent),
+		is_toplevel(TopNode),
+		relink_ghosts(TopNode, Translated),
+		setof(Mover, O^(member(O-Mover, Translated),
+				appears(Mover)), Lighters)),
 	    setof(Mover, (member(Mover, Lighters),
 			     find_all_comps(Parent, Mover)), Movers),
 	    (member(Mover, Lighters),
@@ -213,7 +218,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    query(overlap(insert, components), warning, top, [ok], _),
 		restart_move)).
 
-:- dynamic(combined_box_is/1).
+:- dynamic(combined_box_is/1, lost_ghost_in_seln/2).
 
 merge_box([L1, T1, R1, B1]) :-
 	(retract(combined_box_is([L2, T2, R2, B2])),
@@ -654,6 +659,8 @@ menu_handle(Win, edit, CutOrCopy) :-
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
 	output'><'date_is(Date),
+	retractall(lost_ghost_in_seln(_,_)),
+	record_lost_ghosts(Model),
 	save_isolated(CopyFile, Model, Date, yes, no),
 	/* restart_move will put the rest of the model back but it will
 	not be selected, so list the nodes and select them after the rest is
@@ -780,6 +787,23 @@ menu_handle(Win, window, NastyAtom) :-
 
 menu_handle(_, _, _).
 
+record_lost_ghosts(Model) :-
+	contains(Model, Ghost),
+	find_base(Ghost, Base),
+	\+ Base = Ghost, % for speed only
+	\+ (get_highlit_obj(0, Base), contains(Model, Base)),
+	assert(lost_ghost_in_seln(Ghost, Base)),
+	fail; true.
+
+relink_ghosts(TopNode, IdSwaps) :-
+	member(Saved-Restored, IdSwaps),
+	lost_ghost_in_seln(Saved, Base),
+	contains(TopNode, Base),
+	event'><'get_nearest_equivalent_link(ghost_link, Base,
+					     Restored, OutLink),
+	event'><'reghost(Restored, OutLink),
+	fail; true.
+	
 is_session(Name) :-
 	name(Name, NameStr),
 	suffix(".ssn", NameStr).
@@ -1273,7 +1297,7 @@ remove_model(Win, Parent) :-
 	    redraw_window(Win);
 	start_progress_dialogue(Win),
 	reassure_user(pl_trimin, []),
-	cutoff(Parent);
+	cutout(Parent, no);
 	(contains(Parent, Junk),
 	    \+ Junk = Parent,
 	    off(Junk),
@@ -1288,11 +1312,6 @@ remove_model(Win, Parent) :-
 	abs_path_name(Parent, root, DeleteDir),
 	output'><'trim_tree(LocalDir, DeleteDir).
 
-cutoff(Parent) :-
-	find_all_comps(Parent, Child),
-	sever_links(Child, Parent),
-	fail.
-		
 cutout(Parent, SelnOnly) :-
 	find_all_links(Parent, Child),
 	\+ (SelnOnly = yes, \+ event'><'doomed(Child)),
