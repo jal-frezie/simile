@@ -1244,24 +1244,6 @@ namespace eval fileparams {
 	}
     }
 
-    proc Entitize {str} {
-	regsub -all & $str {\&amp;} str ;# do first because subs add them
-	regsub -all \" $str {\&quot;} str
-	regsub -all ' $str {\&apos;} str
-	regsub -all < $str {\&lt;} str
-	regsub -all > $str {\&gt;} str
-	
-	# now to make the character references for non-Ascii stuff.
-	# Force no iteration in script and no command substitution
-	# This also substitutes newlines 
-	set ascii \u0000-\u0009\u000b-\u007f ;# ascii characters excluding newline
-	# note string must contain those that stay unchanged because if it is
-	# the other way round, the substitution will itself be substituted
-	set scn [regsub -all \[^$ascii\] [regsub -all \[$ascii\]+ $str %\[$ascii\]] %c]
-	set fmt [regsub -all \[^$ascii\] [regsub -all \[$ascii\]+ $str %s] {\&#%d;}]
-	return \"[eval [list format $fmt] [scan $str $scn]]\"
-    }
-
     # merge a parameter metafile. These are saved with the pathnames of the .csv files
     # relative to the location of the metafile, so in order to reload the .csvs we need to
     # reconnect them with this pathname...trouble is, if I save in a new directory I'll need
@@ -1285,6 +1267,24 @@ namespace eval fileparams {
             
         }
     }
+}
+
+proc Entitize {str} {
+    regsub -all & $str {\&amp;} str ;# do first because subs add them
+    regsub -all \" $str {\&quot;} str
+    regsub -all ' $str {\&apos;} str
+    regsub -all < $str {\&lt;} str
+    regsub -all > $str {\&gt;} str
+	
+    # now to make the character references for non-Ascii stuff.
+    # Force no iteration in script and no command substitution
+    # This also substitutes newlines 
+    set ascii \u0000-\u0009\u000b-\u007f ;# ascii characters excluding newline
+    # note string must contain those that stay unchanged because if it is
+    # the other way round, the substitution will itself be substituted
+    set scn [regsub -all \[^$ascii\] [regsub -all \[$ascii\]+ $str %\[$ascii\]] %c]
+    set fmt [regsub -all \[^$ascii\] [regsub -all \[$ascii\]+ $str %s] {\&#%d;}]
+    return \"[eval [list format $fmt] [scan $str $scn]]\"
 }
 
 proc IsRecordCount {compName} {

@@ -1607,7 +1607,7 @@ $numOutputs"
                     set est $arrEst($n)
                 }
 		if {[lindex $dms 1]>0} {
-		    puts $stm "<values index=\"$n\">"
+		    puts $stm "<values index=[Entitize $n]>"
 		}
                 AddHangers $node $stm $est [lrange $dms 1 end] $n
 		if {[lindex $dms 1]>0} {
@@ -1615,7 +1615,7 @@ $numOutputs"
 		}
             }
         } else {
-	    puts $stm "<value index=\"$i\" value=\"[format \\%10s\\ i[incr usedHangers]]\"/>"
+	    puts $stm "<value index=[Entitize $i] value=\"[format \\%10s\\ i[incr usedHangers]]\"/>"
             lappend inGrpData($node,mems) i$usedHangers $est
         }
     }
@@ -1648,7 +1648,7 @@ $numOutputs"
             set defVal [$f.est get]
 	    set startHanger [expr $usedHangers+1]
             if {[winfo exists $f.int]} {
-		puts $stm "<multi_value label=\"$level\">"
+		puts $stm "<multi_value label=[Entitize $level]>"
                 if {$useNodes($winId,gathering)} {
                     foreach {timePt vList} $defCons {
                         AddHangers $node $stm $vList $nodeDims $timePt
@@ -1669,10 +1669,10 @@ $numOutputs"
 		puts $stm "</multi_value>"
             } else {
 		if {![lindex $nodeDims 0]} {
-		    puts $stm "<single_value label=\"$level\" val=\"[format \\%10s\\ i[incr usedHangers]]\"/>"
+		    puts $stm "<single_value label=[Entitize $level] val=\"[format \\%10s\\ i[incr usedHangers]]\"/>"
 		    lappend inGrpData($node,mems) i$usedHangers $defCons
 		} else {
-		    puts $stm "<multi_value label=\"$level\">"
+		    puts $stm "<multi_value label=[Entitize $level]>"
 		    AddHangers $node $stm $defCons $nodeDims unused
 		    puts $stm "</multi_value>"
 		}
@@ -1689,7 +1689,7 @@ $numOutputs"
 	puts $stm "<submodels>"
 	foreach f [lsearch -inline -all $descent $subFrame.frame*] {
 	    set level [string range $f [expr {[string last . $f]+6}] end]
-	    puts $stm "<submodel label=\"$level\">"
+	    puts $stm "<submodel label=[Entitize $level]>"
 	    WriteXMLTemplate $winId $stm $path/$level $f
 	    puts $stm "</submodel>"
 	}
