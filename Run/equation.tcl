@@ -636,7 +636,7 @@ proc GetTable {parent topNode comp box} {
     set table_entry(data) $equation(table_data)
     set table_entry(values) $equation(table_values)
     if {[equationDoTable $parent $topNode $comp "(data determines dimensions)" \
-	     1]>0} {
+	     1 no]>0} {
 #        if {[llength $table_entry(dataField)]} {
 #            set equation(table_data) [concat [list $table_entry(fileName) \
 #                    $table_entry(dataField)] \

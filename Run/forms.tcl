@@ -660,7 +660,7 @@ proc GetEnumMems {fr mdl} {
                 [list [lindex $memList $pos]]
     }
     if {[equationDoTable .disaggregation $mdl "enumerated type" \
-	     "(defined by values)" 1]} {
+	     "(defined by values)" 1 no]} {
         set fileState [list $table_entry(fileName) $table_entry(dataField)]
         set fileData $table_entry(values)
 	ListDiscrete memList $fileData

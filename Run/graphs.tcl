@@ -559,7 +559,7 @@ proc AbleArrows {db t} {
 #####################################################################
 # TABLE LOADING
 #####################################################################
-proc equationDoTable {parent mdl tgt dims startLine} {
+proc equationDoTable {parent mdl tgt dims startLine continuous} {
     global table_entry iconImages tcl_platform
     
     PutItThere .table $parent
@@ -843,7 +843,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     #
     # OK, Cancel and Help buttons
     frame .table.fbuttons
-    if {!$startLine} {
+    if {$continuous} {
         pack [TitleFrame .table.fbuttons.wrapf -text [tr. "Other times: "]] \
                 -padx 4 -pady 4 -expand true -fill x
         set wrapf [GetFrame .table.fbuttons.wrapf]

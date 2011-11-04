@@ -742,7 +742,10 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         EnumTypeToNumber $topNode $tgt {} {} 1 $useCppArray $subs $errorData
 	SetWrapTime $topNode $useCppArray $tgt 0 ;# clear old wraparound point
 # do not allow OTHERS if an event series
-	if {[string equal EVENT [GetCompProperty $topNode Class $tgt]]} {
+
+	if {[string equal DERIVED [GetCompProperty $topNode Eval $tgt]]} {
+	    set specialPts {} ;# loading measurements for PEST
+	} elseif {[string equal EVENT [GetCompProperty $topNode Class $tgt]]} {
 	    set specialPts NOW
 	} else {
 	    set specialPts [list NOW OTHERS]
@@ -1915,7 +1918,7 @@ proc GetFromTable {parent topNode compName startLine} {
     set tablCapt [string range $compName [string first / $compName 1] end]
     set newSource [equationDoTable [winfo toplevel $parent] $topNode $tablCapt \
 		       ($paramMetadata($compName,dimList)) \
-		       [expr {!$readMany($compName)}]]
+		       [expr {!$readMany($compName)}] [expr {$startLine!=-1}]]
 
 # If loading data for PEST there is no parent dialogue so do not keep grab
     if {$startLine==-1} {
