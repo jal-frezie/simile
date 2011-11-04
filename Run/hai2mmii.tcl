@@ -284,7 +284,7 @@ proc MakeSubFrames {clientId nextLevel hierarchy ns nextPt} {
 
 proc ProdFromHelper {winId node caption} {
     global helperTable
-    if {[string first .newParamTgt $winId]==0 && [string length $node]} { 
+    if {[string first .new $winId]==0 && [string length $node]} { 
 	# choosing new target for lost param data 
 	set ::paramData(newPath,done) [list $caption $node]
     } else {

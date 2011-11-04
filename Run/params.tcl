@@ -45,7 +45,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
     foreach node $allNodes {
         set notInput [FirstIndexCheck $topNode $node]
         if {$notInput != -1} {
-            AddEntry $t $topNode $node $mustShow $notInput $topNode
+            AddEntry $t $topNode $node $mustShow $notInput
         }
     }
     if {$mustShow || [llength $paramData(needed)]} {
@@ -117,7 +117,7 @@ proc DIYMakeFrames {windowId} {
 	[list $canId configure -scrollregion {0 0 %w %h}]
 }
 
-proc AddEntry {winId topNode node mustShow notInput args} {
+proc AddEntry {winId topNode node mustShow notInput} {
     global iconImages msgs paramMetadata readMany
     if {$notInput==-1} {
 	set dataLocn targetData
@@ -130,24 +130,22 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     upvar \#0 $widgetLocn outNames
 
     set compName [GetCompProperty $topNode Caption $node]
-    set levels [concat $args [split [string range $compName 1 end] /]]
-    if {[llength $args]} {
-	set compName /[lindex $args 0]$compName
-    } else {
-	set levels [concat [list {}] $levels]
-    }
+    set levels [split $compName /]
+    if {$notInput>-1} {
+	set compName /$topNode$compName
+	set levels [concat $topNode [lrange $levels 1 end]]
+	set readMany($compName) [expr {$notInput==0}]
+    } ;# otherwise it has been set by the PEST interface GUI
     if {[string match SUBMODEL [GetCompProperty $topNode Class $node]]} {
         set suppliedData($compName) {}
         return
     }
-    set nodeDims [GetCompProperty $topNode Dims $node]
-    if {$notInput>-1} {
-	set readMany($compName) [expr {$notInput==0}]
-    } ;# otherwise it has been set by the PEST interface GUI
+	
 #ShowMess debug info "Creating compname $compName" ok
     # bit of voodoo...get table relating numerical indices of node to enumerated
     # types (from model) and use to translate array bounds. Do this first because
     # there will be null entries in the table for vm model levels.
+    set nodeDims [GetCompProperty $topNode Dims $node]
     set trans [GetCompProperty $topNode Trans $node]
     if {$readMany($compName)} {
         set nodeDims [linsert $nodeDims 0 TIME]
@@ -1766,11 +1764,12 @@ proc ExistCheck {topNode path level notInput source} {
 # the required top level path.
 
 proc ChooseByInspection {topNode oldObj type} {
+# types are file parameter, output measurement or submodel
     global helperTable classTable paramData
 
     set parent [grab current]
-    set t [PutItThere .newParamTgt $parent] ;# window id used to bring clix here
-    wm protocol .newParamTgt WM_DELETE_WINDOW \
+    set t [PutItThere .new[NameToTag $type] $parent] ;# window id used to bring clix here
+    wm protocol $t WM_DELETE_WINDOW \
 	[list set paramData(newPath,done) none]
     wm title $t "$type for $oldObj values:" 
 

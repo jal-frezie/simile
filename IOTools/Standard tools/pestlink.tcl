@@ -958,10 +958,18 @@ namespace eval $keyValue {
         set usedHangers 0
         array unset outGrpData *,mems
         
+	set numInputs [llength $useNodes($winId,sliders)]
+	if {!$numInputs} {
+	    ShowMess "No PEST Inputs" warning "You have not specified any model parameters for PEST to estimate" ok
+	    return
+	}
         # Descend hierarchically through the frames to get the data? No, use kill menu
-        set runLength [LoadMeasurements $winId]
 
 	set numOutputs [llength $useNodes($winId,drivers)]
+	if {!$numOutputs} {
+	    ShowMess "No PEST Outputs" warning "You have not specified any model outputs for PEST to attempt to match with measurements" ok
+	    return
+	}
         if {$useNodes($winId,preds)} {
             incr numOutputs
             lappend spitLists($useNodes($winId,ptim)) \
@@ -971,7 +979,7 @@ namespace eval $keyValue {
         } else {
             set mode estimation
         }
-
+        set runLength [LoadMeasurements $winId]
         set lastPt [lindex $ptList end]
         if {[info exists useEndTime]} {
             if {$runLength<$lastPt} {

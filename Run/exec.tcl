@@ -325,7 +325,7 @@ proc GetCCompProperty {topNode prop args} {
 			    Type,cIdx 1 Type,names \
 			    {VALUELESS REAL INTEGER FLAG EXTERNAL} \
 			    Eval,cIdx 2 Eval,names \
-			    {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST}]
+			    {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST LIMIT}]
 	    set numericVal [c_getvalue $topNode $node $propData($prop,cIdx)]
 	    if {![string is integer -strict $numericVal]} {
 		return $numericVal

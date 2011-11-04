@@ -51,13 +51,24 @@ namespace eval ::$keyValue {
 	set universe {}
 	set context [GetState $winId] ;# caption path of submodel to go at top
 	set chop [string length $context]
-	set incValues [string first .newParamTgt $winId] ;# not param data move
+	set doPops 0
+	switch -glob $winId { ;# check if relocating param or measurement data
+	    .newfile* {
+		set typesToShow {INPUT TABLE SPLIT}
+	    } .newsub* {
+		set typesToShow {SPLIT}
+	    } .newout* {
+		set typesToShow {DERIVED SPLIT}
+	    } default {
+		set doPops [PrefValue custom(compValPop) compValPop]
+		set typesToShow {DERIVED INPUT TABLE SPLIT GHOST LIMIT}
+	    }
+	}
         foreach component [GetObjectList] {
 	    set fullCapt [GetCaptionPathFromId $component]
 	    if {(![string length $context] || \
 		    ![string first $context $fullCapt]) && \
-		  ($incValues || [lsearch {INPUT TABLE SPLIT} \
-				      [GetModelEval $component]]>=0)} {
+		    [lsearch $typesToShow [GetModelEval $component]]>=0} {
 		lappend universe [list $component [string range $fullCapt \
 						      $chop end]]
 	    }
@@ -147,7 +158,7 @@ namespace eval ::$keyValue {
 #	    [namespace code "OnElementClick $winId"]
 #        $tableframe.table bindText <Button-1> \
 #	    [namespace code "OnElementClick $winId"]
-        if {$incValues && [PrefValue custom(compValPop) compValPop]} {
+        if {$doPops} {
 #	    bind $tableframe.table <Enter> \
 #	        [list QueuePopup [namespace code DoInspPopup] \
 #		     $winId %X %Y %x %y]
