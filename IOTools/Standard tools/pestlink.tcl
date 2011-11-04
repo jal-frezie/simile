@@ -704,7 +704,11 @@ namespace eval $keyValue {
             $outId.c.canvas see $f
         } else {
             lappend targetData(needed) $title
-            AddEntry $outId $myNode $node 1 -1
+            set mess [AddEntry $outId $myNode $node 1 -1]
+	    if {[string length $mess]} {
+		$useNodes($winId,output).intro configure -text $mess
+		return {}
+	    }
 	    set targetData($title) {} ;# in case used before with different reqs
 	    lappend useNodes($winId,drivers) $title
             
