@@ -528,8 +528,7 @@ namespace eval $keyValue {
         }
         set levels [split $title /]
         if {$nest} {
-            set f [MakeSubFrames $inpId $inpId.c.canvas.frame \
-                    $levels [namespace current] 0]
+            set f [MakeSubFrames $inpId $inpId.c.canvas.frame $levels {} 0]
             if {[winfo exists $f]} {
                 $inpId.c.canvas see $f
                 return $f
@@ -792,8 +791,7 @@ namespace eval $keyValue {
         variable useNodes
         set inpId $useNodes($winId,input)
         set levels [split $title /]
-        set f [MakeSubFrames {} $inpId.c.canvas.frame \
-                $levels [namespace current] 0]
+        set f [MakeSubFrames {} $inpId.c.canvas.frame $levels {} 0]
         Prune $inpId $f
 	set index [lsearch $useNodes($winId,sliders) $title]
 	set useNodes($winId,sliders) \
