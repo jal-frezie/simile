@@ -358,20 +358,22 @@ proc AddWidgetPopup {X Y args} {
 
     }
     PostPopup $X $Y
-    
+    set empty yes
     foreach key $args colour {#ffffc0 #c0ffc0 #ffe0c0} {
-	if {![string length $key]} break ;# no more args
 	if {[info exists msgs($key)]} {
 	    set message $msgs($key)
 	} else {
 	    #	    regsub -all % $key %% message ;# err, too late now
 	    set message $key
 	}
-    
-	AddPopupMessage $message $colour
+	if {![string is space $message]} {    
+	    AddPopupMessage $message $colour
+	    set empty no
+	}
 #    pack [message .popup.message -aspect 400 \
 #            -text $message -bg \#ffffc0] -fill x -expand true
     }
+    if {$empty} RemovePopup
 }
 
 proc AddMenuPopup {widget list y X Y new} {
