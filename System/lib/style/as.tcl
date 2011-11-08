@@ -454,8 +454,14 @@ proc style::as::MouseWheel {wFired X Y D {shifted 0}} {
 	    set view [expr {$shifted ? "xview" : "yview"}]
 	    # Walking up to find the proper widget handles cases like
 	    # embedded widgets in a canvas
-	    while {[catch {$w $view scroll $delta units}]
-		   && [winfo toplevel $w] ne $w} {
+	    while {[winfo toplevel $w] ne $w} { ;# JAT: toplevels dont scroll
+		if {![catch {$w $view} span]} {
+		    if {[lindex $span 1]-[lindex $span 0]<1} {
+# JAT: do not scroll if window shows all
+			$w $view scroll $delta units
+		    }
+		    break
+		}
 		set w [winfo parent $w]
 	    }
 	}
