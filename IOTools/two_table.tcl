@@ -190,10 +190,13 @@ namespace eval $keyValue {
         
         set oldState [GetState $winId]
         initialize $winId
-        set displayList($winId,paths) [lindex $oldState 0]
+        set displayList($winId,oldPaths) [lindex $oldState 0]
+        set displayList($winId,paths) {}
         set displayList($winId,ids) {}
         set displayList($winId,transes) {}
-	foreach varCapt $displayList($winId,paths) {
+	foreach varCapt $displayList($winId,oldPaths) {
+            if {![llength $varCapt]} continue ;# check not legacy deleted
+	    lappend displayList($winId,paths) $varCapt
 	    set id [GetIdFromCaptionPath $varCapt]
 	    lappend displayList($winId,ids) $id
 	    lappend displayList($winId,transes) [GetTransTable $id]
@@ -308,11 +311,11 @@ namespace eval $keyValue {
         
         set ind [lsearch $displayList($winId,paths) $var]
         set displayList($winId,paths) \
-	    [lreplace $displayList($winId,paths) $ind $ind {}]
+	    [lreplace $displayList($winId,paths) $ind $ind]
         set displayList($winId,ids) \
-	    [lreplace $displayList($winId,ids) $ind $ind {}]
+	    [lreplace $displayList($winId,ids) $ind $ind]
         set displayList($winId,transes) \
-	    [lreplace $displayList($winId,transes) $ind $ind {}]
+	    [lreplace $displayList($winId,transes) $ind $ind]
         foreach entry [array names dataStore $winId,$ind,*] {
             unset dataStore($entry)
         }
@@ -416,17 +419,15 @@ namespace eval $keyValue {
 	    }
 	}
         foreach varCapt $displayList($winId,paths) {
-            if {[llength $varCapt]} { ;# check not deleted
-                set varId [lindex $displayList($winId,ids) $varIndex]
-		set values [lindex [GetModelValue $varId] 0]
-		if {[llength $values]} {
+	    set varId [lindex $displayList($winId,ids) $varIndex]
+	    set values [lindex [GetModelValue $varId] 0]
+	    if {[llength $values]} {
 # do not add empty lists they make finding dataless variables harder
-		    set trans [lindex $displayList($winId,transes) $varIndex]
-		    set dataStore($winId,$varIndex,$tCur) \
-                        [TransEnums $trans $values]
-		}
+		set trans [lindex $displayList($winId,transes) $varIndex]
+		set dataStore($winId,$varIndex,$tCur) \
+		    [TransEnums $trans $values]
+	    }
                 
-            }
             incr varIndex
         }
         if {$displayUpdate($winId) || !$tStep} {
@@ -566,14 +567,12 @@ namespace eval $keyValue {
 	    set dummyTime $lastDisplay($winId)
 	}
         foreach varCapt $displayList($winId,paths) {
-            if {[llength $varCapt]} { ;# check not deleted
-		if {![llength [array names dataStore $winId,$varIndex,*]]} {
+	    if {![llength [array names dataStore $winId,$varIndex,*]]} {
 # component is selected for tabulation but no values recorded --
 # insert empty value for existing or current time so header appears.
-		    lappend dummied $varIndex
-		    set dataStore($winId,$varIndex,$dummyTime) [list " "]
-		}
-            }
+		lappend dummied $varIndex
+		set dataStore($winId,$varIndex,$dummyTime) [list " "]
+	    }
             incr varIndex
         }
 
