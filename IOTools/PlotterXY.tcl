@@ -282,8 +282,10 @@ namespace eval ::$keyValue {
         get_Yvalues $w
         get_Xvalues $w
         
+	set seq [incr plot($w,ordinal)]
+	set plot($w,time$seq) $time
         if {$plot($w,CurrentOnly)} {
-	    set expired [expr {[incr plot($w,ordinal)]-$plot($w,CurrentOnly)}]
+	    set expired [expr {$seq-$plot($w,CurrentOnly)}]
             $w.canvas delete trace$expired
         }
         #redraw axis and graph if necessary; otherwise just extend plots
@@ -328,443 +330,460 @@ namespace eval ::$keyValue {
         
         # create canvas for graph
         canvas $w.canvas \
-                -width [expr $plot($w,xborder_left)+$plot($w,xlength)+ \
-                $plot($w,xborder_right)] \
-                -height [expr $plot($w,yborder_bottom)+$plot($w,ylength)+ \
-                $plot($w,yborder_top)] \
-                -bg $plot($w,canvas_colour) -relief solid
+	    -width [expr $plot($w,xborder_left)+$plot($w,xlength)+ \
+			$plot($w,xborder_right)] \
+	    -height [expr $plot($w,yborder_bottom)+$plot($w,ylength)+ \
+			 $plot($w,yborder_top)] \
+	    -bg $plot($w,canvas_colour) -relief solid
+	$w.canvas bind graph <Enter> [namespace code [list TracePopup $w %X %Y]]
+	$w.canvas bind graph <Leave> RemovePopup
 	MakeCanvasAnnotatable $w.canvas
         pack $w.canvas -fill both -expand true -side bottom
     }
-    
-    proc AddVariable { winId } {
-        global ::graphtools::plot
-        
-        #set xm [expr $plot($winId,xborder_left)+60]
-        #set ym [expr $plot($winId,yborder_top)+20]
-        #$winId.canvas create text $xm $ym -tags prompt -width 100 -justify center\
-        -text "Select the x axis variable by clicking on a variable in the Explorer window\
+	
+	proc AddVariable { winId } {
+	    global ::graphtools::plot
+	    
+	    #set xm [expr $plot($winId,xborder_left)+60]
+	    #set ym [expr $plot($winId,yborder_top)+20]
+	    #$winId.canvas create text $xm $ym -tags prompt -width 100 -justify center\
+		-text "Select the x axis variable by clicking on a variable in the Explorer window\
                 or a Model Diagram."
-        $winId.mess config -text "Select x variable: click on a variable in \
+	    $winId.mess config -text "Select x variable: click on a variable in \
                 the Explorer window or a Model Diagram."
-        
-        set plot($winId,state) xcoord
-        GrabClicks $winId
-    }
-    
-    proc RemoveVariable { winId } {
-        global ::graphtools::plot
-        
-        set xm [expr $plot($winId,xborder_left)+60]
-        set ym [expr $plot($winId,yborder_top)+20]
-        $winId.canvas create text $xm $ym -tags prompt -width 100 -justify center\
+	    
+	    set plot($winId,state) xcoord
+	    GrabClicks $winId
+	}
+	
+	proc RemoveVariable { winId } {
+	    global ::graphtools::plot
+	    
+	    set xm [expr $plot($winId,xborder_left)+60]
+	    set ym [expr $plot($winId,yborder_top)+20]
+	    $winId.canvas create text $xm $ym -tags prompt -width 100 -justify center\
                 -text "Click  in legend area on the variable you want to remove."
-        #    set plot($winId,Ylabels) [lreplace $plot($winId,Ylabels) $index $index]
-        #tk_messageBox -message "plot($w,Ylabels) $plot($w,Ylabels)" -type ok
-        #    set plot($winId,Yvars) [lreplace $plot($winId,Yvars) $index $index]
-        #    drawGraphpad $winId
-    }
-    
-    proc Settings {w} {
-        # copy the values of the variables to be edited to temp, but namespace accessible, variables
-        variable DrawLines $::graphtools::plot($w,DrawLines)
-        variable DrawPoints $::graphtools::plot($w,DrawPoints)
-        variable CurrentOnly $::graphtools::plot($w,CurrentOnly)
-        
-        
-        set dlg [Dialog .plotxyprop -parent $w -title "XY Plotter properties" \
-                -modal local -default 0 -cancel 1]
-        $dlg add -name ok; # buttons 0
-        $dlg add -name cancel
-        
-        set chkF [frame [GetFrame $dlg].checkbuttons -relief groove]
-        
-        pack [LabelFrame $chkF.drawlinesF -text "Draw lines between points"] -fill x
-        pack [checkbutton $chkF.drawlinesF.cbutton -variable [namespace current]::DrawLines] -side right
-        pack [LabelFrame $chkF.drawpointsF -text "Draw points"] -fill x
-        pack [checkbutton $chkF.drawpointsF.cbutton -variable [namespace current]::DrawPoints] -side right
-        pack [LabelFrame $chkF.currentOnlyF -text "Persistence (0 for indefinite)"] -fill x
-        pack [entry $chkF.currentOnlyF.cbutton -textvariable [namespace current]::CurrentOnly] -side right
-        
-        pack $chkF -padx 10
-        
-        # copy the values from the temp values to those to be edited if OK clicked
-        if {[$dlg draw] == 0} {
-            # OK button was clicked
-            set ::graphtools::plot($w,DrawLines) $DrawLines
-            set ::graphtools::plot($w,DrawPoints) $DrawPoints
-            set ::graphtools::plot($w,CurrentOnly) $CurrentOnly
-            UpdateState $w
-        }
-        #ShowMess debug info "$::graphtools::plot($w,DrawLines) $::graphtools::plot($w,DrawPoints)" ok
-        
-        destroy $dlg
-    }
-    
-    proc PrepareSaveString {w} {
-	set ::graphtools::plot($w,stringInfo) [ListNotes [GetCanvas $w]]
-	UpdateState $w
-    }
+	    #    set plot($winId,Ylabels) [lreplace $plot($winId,Ylabels) $index $index]
+	    #tk_messageBox -message "plot($w,Ylabels) $plot($w,Ylabels)" -type ok
+	    #    set plot($winId,Yvars) [lreplace $plot($winId,Yvars) $index $index]
+	    #    drawGraphpad $winId
+	}
+	
+	proc Settings {w} {
+	    # copy the values of the variables to be edited to temp, but namespace accessible, variables
+	    variable DrawLines $::graphtools::plot($w,DrawLines)
+	    variable DrawPoints $::graphtools::plot($w,DrawPoints)
+	    variable CurrentOnly $::graphtools::plot($w,CurrentOnly)
+	    
+	    
+	    set dlg [Dialog .plotxyprop -parent $w -title "XY Plotter properties" \
+			 -modal local -default 0 -cancel 1]
+	    $dlg add -name ok; # buttons 0
+	    $dlg add -name cancel
+	    
+	    set chkF [frame [GetFrame $dlg].checkbuttons -relief groove]
+	    
+	    pack [LabelFrame $chkF.drawlinesF -text "Draw lines between points"] -fill x
+	    pack [checkbutton $chkF.drawlinesF.cbutton -variable [namespace current]::DrawLines] -side right
+	    pack [LabelFrame $chkF.drawpointsF -text "Draw points"] -fill x
+	    pack [checkbutton $chkF.drawpointsF.cbutton -variable [namespace current]::DrawPoints] -side right
+	    pack [LabelFrame $chkF.currentOnlyF -text "Persistence (0 for indefinite)"] -fill x
+	    pack [entry $chkF.currentOnlyF.cbutton -textvariable [namespace current]::CurrentOnly] -side right
+	    
+	    pack $chkF -padx 10
+	    
+	    # copy the values from the temp values to those to be edited if OK clicked
+	    if {[$dlg draw] == 0} {
+		# OK button was clicked
+		set ::graphtools::plot($w,DrawLines) $DrawLines
+		set ::graphtools::plot($w,DrawPoints) $DrawPoints
+		set ::graphtools::plot($w,CurrentOnly) $CurrentOnly
+		UpdateState $w
+	    }
+	    #ShowMess debug info "$::graphtools::plot($w,DrawLines) $::graphtools::plot($w,DrawPoints)" ok
+	    
+	    destroy $dlg
+	}
+	
+	proc PrepareSaveString {w} {
+	    set ::graphtools::plot($w,stringInfo) [ListNotes [GetCanvas $w]]
+	    UpdateState $w
+	}
 
-    ### Draw everything except the actual data points.
-    proc drawGraphpad {w} {
-        global ::graphtools::plot
-        
-	# save text
-	set notes [ListNotes $w.canvas]
-        ### rub out previous graph
-        $w.canvas delete all
-        
-        ### Convenience variables
-        set x0 $plot($w,xborder_left)
-        set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
-        set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]
-        set y1 $plot($w,yborder_top)
-        
-        ### Make the graph area
-        $w.canvas create rectangle $x0 $y0 $x1 $y1 \
+	### Draw everything except the actual data points.
+	proc drawGraphpad {w} {
+	    global ::graphtools::plot
+	    
+	    # save text
+	    set notes [ListNotes $w.canvas]
+	    ### rub out previous graph
+	    $w.canvas delete all
+	    
+	    ### Convenience variables
+	    set x0 $plot($w,xborder_left)
+	    set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
+	    set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]
+	    set y1 $plot($w,yborder_top)
+	    
+	    ### Make the graph area
+	    $w.canvas create rectangle $x0 $y0 $x1 $y1 \
                 -fill $plot($w,grapharea_colour) \
                 -outline {} -tags {scalable grapharea}
-        
-        ### Draw the X axis
-        $w.canvas create line $x0 $y0 $x1 $y0 \
+	    
+	    ### Draw the X axis
+	    $w.canvas create line $x0 $y0 $x1 $y0 \
                 -tags {axis_line scalable markable xslidable}
-        draw_Xaxis $w
-        
-        ### Draw the Y axis
-        $w.canvas create line $x0 $y0 $x0 $y1 \
+	    draw_Xaxis $w
+	    
+	    ### Draw the Y axis
+	    $w.canvas create line $x0 $y0 $x0 $y1 \
                 -tags {axis_line scalable markable yslidable}
-        draw_Yaxis $w
-        
-        
-        ### Draw the top and right edges of the graph area
-        
-        if {$plot($w,topright)} {
-            $w.canvas create line $x0 $y1 $x1 $y1 \
+	    draw_Yaxis $w
+	    
+	    
+	    ### Draw the top and right edges of the graph area
+	    
+	    if {$plot($w,topright)} {
+		$w.canvas create line $x0 $y1 $x1 $y1 \
                     -tags {scalable topright}
-            $w.canvas create line $x1 $y0 $x1 $y1 \
+		$w.canvas create line $x1 $y0 $x1 $y1 \
                     -tags {scalable topright}
-        }
-        
-        ### Label the two axes
-        $w.canvas create text [expr $x0+$plot($w,xlength)/2.0] \
-	    [expr $y0+$plot($w,yborder_bottom)-5] \
-	    -text $plot($w,XaxisLabel) -anchor s \
-	    -tags {movable scalable xaxis_label markable toplevel}
-	$w.canvas create text 5 [expr $y0-$plot($w,ylength)/2.0] \
-	    -text [lindex $plot($w,Ylabels) 0] -anchor w \
-	    -tags {movable scalable xaxis_label markable toplevel}
-       
-        # legend vars only not elements of arrays
-	# for now, legend nothing
-#        set nYlabel [llength $plot($w,Ylabels)]
-#        set j 0
-#        set k 0
-#        for {set i 0} {$i<$nYlabel} {incr i} {
-#            set x [expr $plot($w,x_Ylabels)+$k*$plot($w,xstep_Ylabels)]
-#            set y [expr $plot($w,y_Ylabels)+$j*$plot($w,ystep_Ylabels)]
-#            set xa [expr $x-15]
-#            set xb [expr $x-2]
-#            set ya [expr $y+8]
-#            set vartag {}
-#            append vartag var $i
-#            $w.canvas create line $xa $ya $xb $ya \
-#                    -fill [lindex $plot($w,YColours) $i] \
-#                    -width 2 \
-#                    -tags [list $vartag axis_label markable toplevel]
-#            $w.canvas create text $x $y \
-#                    -text [lindex $plot($w,Ylabels) $i] \
-#                    -anchor nw \
-#                    -tags [list $vartag axis_label markable toplevel]
-#            incr j
-#            if {$j==2} {
-#                incr k
-#                set j 0
-#            }
-#        }
-        
-        ### Apply graticule and values to axis.
-        # drawGraticule $w $Xintercept $Yintercept
-        
-        $w.canvas raise toplevel
-        
-        ### Bindings
-        #$w.canvas bind axis_line <Double-1> \
-        [namespace code "settings_axis $w"]
-        $w.canvas bind all <Button-1> \
+	    }
+	    
+	    ### Label the two axes
+	    $w.canvas create text [expr $x0+$plot($w,xlength)/2.0] \
+		[expr $y0+$plot($w,yborder_bottom)-5] \
+		-text $plot($w,XaxisLabel) -anchor s \
+		-tags {movable scalable xaxis_label markable toplevel}
+	    $w.canvas create text 5 [expr $y0-$plot($w,ylength)/2.0] \
+		-text [lindex $plot($w,Ylabels) 0] -anchor w \
+		-tags {movable scalable xaxis_label markable toplevel}
+	    
+	    # legend vars only not elements of arrays
+	    # for now, legend nothing
+	    #        set nYlabel [llength $plot($w,Ylabels)]
+	    #        set j 0
+	    #        set k 0
+	    #        for {set i 0} {$i<$nYlabel} {incr i} {
+	    #            set x [expr $plot($w,x_Ylabels)+$k*$plot($w,xstep_Ylabels)]
+	    #            set y [expr $plot($w,y_Ylabels)+$j*$plot($w,ystep_Ylabels)]
+	    #            set xa [expr $x-15]
+	    #            set xb [expr $x-2]
+	    #            set ya [expr $y+8]
+	    #            set vartag {}
+	    #            append vartag var $i
+	    #            $w.canvas create line $xa $ya $xb $ya \
+		#                    -fill [lindex $plot($w,YColours) $i] \
+		#                    -width 2 \
+		#                    -tags [list $vartag axis_label markable toplevel]
+	    #            $w.canvas create text $x $y \
+		#                    -text [lindex $plot($w,Ylabels) $i] \
+		#                    -anchor nw \
+		#                    -tags [list $vartag axis_label markable toplevel]
+	    #            incr j
+	    #            if {$j==2} {
+	    #                incr k
+	    #                set j 0
+	    #            }
+	    #        }
+	    
+	    ### Apply graticule and values to axis.
+	    # drawGraticule $w $Xintercept $Yintercept
+	    
+	    $w.canvas raise toplevel
+	    
+	    ### Bindings
+	    #$w.canvas bind axis_line <Double-1> \
+		[namespace code "settings_axis $w"]
+	    $w.canvas bind all <Button-1> \
                 [namespace code "CanvasMark $w %x %y %W"]
-        $w.canvas bind movable <B1-Motion> \
+	    $w.canvas bind movable <B1-Motion> \
                 [namespace code "CanvasDrag %x %y %W"]
-        #$w.canvas bind xaxis_movable <B1-Motion> \
-        [namespace code "Xstretch $w %W %x %y %w %h"]
-        #$w.canvas bind xslidable <B1-Motion> \
-        [namespace code "Xslide $w %W %x %y; draw_Xaxis $w "]
-        ##    $w.canvas bind all <B1-Motion> \
-        ##            [namespace code "Ystretch $w %W %x %y %w %h"]
-        #$w.canvas bind yaxis_movable <B1-Motion> \
-        [namespace code "Ystretch $w %W %x %y %w %h"]
-        #$w.canvas bind yslidable <B1-Motion> \
-        [namespace code "Yslide $w %W %x %y; draw_Yaxis $w "]
-        #    $w.canvas bind xslidable <ButtonRelease-1> \
-        #                    [namespace code "Reset_Xaxis $w"]; # event gets lost
-        #$w.canvas bind yaxis_movable <ButtonRelease-1> \
-        [namespace code "draw_Yaxis $w"]
-        #$w.canvas bind xaxis_movable <ButtonRelease-1> \
-        [namespace code "draw_Xaxis $w"]
-        
-# whatever this is supposed to do, it fails to, even if nYlabel set
-#        for {set i 0} {$i<$nYlabel} {incr i} {
-#            set vartag {}
-#            append vartag var $i
-#            $w.canvas bind $vartag <B1-Motion> \
-#                    [namespace code "Ylabel_move %W %x %y"]
-#        }
-#        $w.canvas bind Ylabel
-        
-        
-        #$w.canvas bind graph <Motion> [namespace code ring_bell]
-        
-        bind $w <Configure> [namespace code "resize $w %W %x %y %w %h"]
-        bind $w.canvas <Configure> [namespace code "resize $w %W %x %y %w %h"]
-        
-        ################################################################################
-        #         $w.canvas bind xslidable <Enter> \
-        #                 [namespace code "$w.canvas configure -cursor sb_h_double_arrow"]
-        #         $w.canvas bind yslidable <Enter> \
-        #                 [namespace code "$w.canvas configure -cursor sb_v_double_arrow"]
-        #         $w.canvas bind yaxis_movable <Enter> \
-        #                 [namespace code "$w.canvas configure -cursor fleur"]
-        #         $w.canvas bind xaxis_movable <Enter> \
-        #                 [namespace code "$w.canvas configure -cursor fleur"]
-        #         $w.canvas bind all <Leave> \
-        #                 [namespace code "$w.canvas configure -cursor arrow"]
-        ################################################################################
-	RestoreNotesFromList $w.canvas $notes
-    }
-    
-    proc Reset_Xaxis {w} {
-        global ::graphtools::plot
-        
-        # reset slide
-        set canvas($w.canvas,x) [get_x $w 0 $plot($w,Tscale)]
-        set x [get_x $w $plot($w,Xmin_axis) $plot($w,Tscale)]
-        Xslide $w $w.canvas $x 0
-        
-        # reset stretch
-        
-        
-    }
-    
-    proc ring_bell {} {
-        bell
-    }
-    
-    proc resize {w win x y width height} {
-        global ::graphtools::plot
-        
-        if {[string match Canvas [winfo class $win]]} {
-            set x0 $plot($w,xborder_left)
-            set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
-            set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]
-            set y1 $plot($w,yborder_top)
-            
-            set old_width $plot($w,xlength)
-            set old_height $plot($w,ylength)
-            
-            set new_width [expr $width-$plot($w,xborder_left)- \
-                    $plot($w,xborder_right)]
-            set new_height [expr $height-$plot($w,yborder_top)- \
-                    $plot($w,yborder_bottom)]
-            
-            set width_diff [expr $new_width-$old_width]
-            set height_diff [expr $new_height-$old_height]
-            
-            set Xmult [expr 1.0*$new_width/$old_width]
-            set Ymult [expr 1.0*$new_height/$old_height]
-            
-            $win scale scalable $x0 $y1 $Xmult $Ymult
-            
-            set plot($w,xlength) [expr $plot($w,xlength)+$width_diff]
-            set plot($w,ylength) [expr $plot($w,ylength)+$height_diff]
-            
-            set xlabel [expr $plot($w,xborder_left)+$plot($w,xlength)/2.0]
-            set ylabel [expr $plot($w,yborder_top)+$plot($w,ylength) \
-                    +$plot($w,yborder_bottom)-5]
-            $w.canvas coords xaxis_label $xlabel $ylabel
-            
-            set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]; #jmm
-            set x2 [expr $x1+5]; # todo 2000 seems a bit big jmm
-            
-            set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]; #jmm
-            set y2 [expr $y0+5]
-        }
-    }
-    
-    ### apply graticule and grid to graph
-    proc drawGraticule {w Xintercept Yintercept} {
-        global ::graphtools::plot
-        
-        # distance between each graticule.
-        set Xgraticule  [expr ($plot($w,Width)  - 2*$plot($w,Xborder)) / double($plot($w,AxisDivisions))]
-        set Ygraticule  [expr ($plot($w,Height) - 2*$plot($w,Yborder)) / double($plot($w,AxisDivisions))]
-        
-        # value per division ( set to 0.1 if a division = 0)
-        set Xdivision [expr (abs($plot($w,Xmax))+abs($plot($w,Xmin)))  / double($plot($w,AxisDivisions))]
-        set Ydivision [expr (abs($plot($w,Ymax))+abs($plot($w,Ymin)))  / double($plot($w,AxisDivisions))]
-        
-        # draw values and grid lines
-        set i [expr -1*$plot($w,AxisDivisions)]
-        while {$i<= $plot($w,AxisDivisions)} {
-            set x [expr floor( $Xintercept + $i * $Xgraticule) ]
-            set y [expr floor( $Yintercept - $i * $Ygraticule) ]
-            
-            # draw Y axis values and vertical grid lines
-            if {($x <= [expr $plot($w,Width)-$plot($w,Xborder)]) && ($x >= $plot($w,Xborder)) } {
-                set dec [decimalPlaces [expr $i*$Xdivision]]
-                if {$plot($w,grid)=="on"} {
-                    $w.canvas create line $x $plot($w,Yborder) $x [expr $plot($w,Height)-$plot($w,Yborder)] -width 1 -fill gray -tags graph
-                }
-                $w.canvas create text $x [expr $Yintercept+10] -text [format $dec [expr $i*$Xdivision]] -tags graph
-            }
-            # draw X axis values and horizontal grid lines
-            if {($y <= [expr $plot($w,Height)-$plot($w,Yborder)]) && ($y >= $plot($w,Yborder)) } {
-                set dec [decimalPlaces [expr $i*$Ydivision]]
-                if {$plot($w,grid)=="on"} {
-                    $w.canvas create line $plot($w,Xborder) $y [expr $plot($w,Width)-$plot($w,Xborder)] $y  -width 1 -fill gray -tags graph
-                }
-                $w.canvas create text [expr $Xintercept-15] $y -text [format $dec [expr $i*$Ydivision]] -tags graph
-            }
-            incr i
-        }
-    }
-    
-    
-    ############################################################################
-    ######         DYNAMIC BIT
-    ############################################################################
-    
-    
-    
-    ##########################################################################
-    # proc plot_YY	Plots all the Y variables, by calling...
-    # proc plot_Y	Plots one Y variable, which calls...
-    # proc drawPoint	Plots one point (with a line from the previous point)
-    #
-    # This should be seen as a general-purpose mechanism for iterating over
-    # all variables currently loaded into the helper and, for each variable,
-    # picking up its current and previous values.   The values may be scalars
-    # or a list of values, nested if the variable is in nested multiple-instance
-    # submodels.   In the latter case, the 'plot_Y' procedure recurses over all
-    # levels.
-    #
-    # This is designed for displays which *require* the previous value (e.g. a
-    # graph which must draw a line from the previous point).   It is *not*
-    # suitable for displays which make use only of the current value (e.g.
-    # the lollipop display), since processing only continues if it knows that
-    # there is a previous value.   It is easy to modify this code to make
-    # another general-purpose mechanism for when you do just want to process
-    # the current value.
-    
-    proc plot_YY {w} {
-        global ::graphtools::plot
-        global ::graphtools::YYold
-        global ::graphtools::YYnew
-        global ::graphtools::Told
-        global ::graphtools::Tnew
-        
-        set Trange [expr {1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)}]
-        set Yrange [expr {1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)}]
-        set plot($w,Tscale) [expr {$Trange/$plot($w,xlength)}]
-        set plot($w,Yscale) [expr {$Yrange/$plot($w,ylength)}]
-        
-        set iplot 0
-        for  {set i 0} {$i < [llength $YYnew($w)]} {incr i} {
-	    if {[llength [lindex $YYold($w) $i]]} {
-		set Ynew [lindex [lindex $YYnew($w) $i] 1]
-		set Yold [lindex [lindex $YYold($w) $i] 1]
-		set Xnew [lindex [lindex $Tnew($w) $i] 1]
-		set Xold [lindex [lindex $Told($w) $i] 1]
-		plot_Y $w $iplot $Xold $Yold $Xnew $Ynew
+	    #$w.canvas bind xaxis_movable <B1-Motion> \
+		[namespace code "Xstretch $w %W %x %y %w %h"]
+	    #$w.canvas bind xslidable <B1-Motion> \
+		[namespace code "Xslide $w %W %x %y; draw_Xaxis $w "]
+	    ##    $w.canvas bind all <B1-Motion> \
+		##            [namespace code "Ystretch $w %W %x %y %w %h"]
+	    #$w.canvas bind yaxis_movable <B1-Motion> \
+		[namespace code "Ystretch $w %W %x %y %w %h"]
+	    #$w.canvas bind yslidable <B1-Motion> \
+		[namespace code "Yslide $w %W %x %y; draw_Yaxis $w "]
+	    #    $w.canvas bind xslidable <ButtonRelease-1> \
+		#                    [namespace code "Reset_Xaxis $w"]; # event gets lost
+	    #$w.canvas bind yaxis_movable <ButtonRelease-1> \
+		[namespace code "draw_Yaxis $w"]
+	    #$w.canvas bind xaxis_movable <ButtonRelease-1> \
+		[namespace code "draw_Xaxis $w"]
+	    
+	    # whatever this is supposed to do, it fails to, even if nYlabel set
+	    #        for {set i 0} {$i<$nYlabel} {incr i} {
+	    #            set vartag {}
+	    #            append vartag var $i
+	    #            $w.canvas bind $vartag <B1-Motion> \
+		#                    [namespace code "Ylabel_move %W %x %y"]
+	    #        }
+	    #        $w.canvas bind Ylabel
+	    
+	    
+	    #$w.canvas bind graph <Motion> [namespace code ring_bell]
+	    
+	    bind $w <Configure> [namespace code "resize $w %W %x %y %w %h"]
+	    bind $w.canvas <Configure> [namespace code "resize $w %W %x %y %w %h"]
+	    
+	    ################################################################################
+	    #         $w.canvas bind xslidable <Enter> \
+		#                 [namespace code "$w.canvas configure -cursor sb_h_double_arrow"]
+	    #         $w.canvas bind yslidable <Enter> \
+		#                 [namespace code "$w.canvas configure -cursor sb_v_double_arrow"]
+	    #         $w.canvas bind yaxis_movable <Enter> \
+		#                 [namespace code "$w.canvas configure -cursor fleur"]
+	    #         $w.canvas bind xaxis_movable <Enter> \
+		#                 [namespace code "$w.canvas configure -cursor fleur"]
+	    #         $w.canvas bind all <Leave> \
+		#                 [namespace code "$w.canvas configure -cursor arrow"]
+	    ################################################################################
+	    RestoreNotesFromList $w.canvas $notes
+	}
+	
+	proc Reset_Xaxis {w} {
+	    global ::graphtools::plot
+	    
+	    # reset slide
+	    set canvas($w.canvas,x) [get_x $w 0 $plot($w,Tscale)]
+	    set x [get_x $w $plot($w,Xmin_axis) $plot($w,Tscale)]
+	    Xslide $w $w.canvas $x 0
+	    
+	    # reset stretch
+	    
+	    
+	}
+	
+	proc ring_bell {} {
+	    bell
+	}
+	
+	proc resize {w win x y width height} {
+	    global ::graphtools::plot
+	    
+	    if {[string match Canvas [winfo class $win]]} {
+		set x0 $plot($w,xborder_left)
+		set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
+		set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]
+		set y1 $plot($w,yborder_top)
+		
+		set old_width $plot($w,xlength)
+		set old_height $plot($w,ylength)
+		
+		set new_width [expr $width-$plot($w,xborder_left)- \
+				   $plot($w,xborder_right)]
+		set new_height [expr $height-$plot($w,yborder_top)- \
+				    $plot($w,yborder_bottom)]
+		
+		set width_diff [expr $new_width-$old_width]
+		set height_diff [expr $new_height-$old_height]
+		
+		set Xmult [expr 1.0*$new_width/$old_width]
+		set Ymult [expr 1.0*$new_height/$old_height]
+		
+		$win scale scalable $x0 $y1 $Xmult $Ymult
+		
+		set plot($w,xlength) [expr $plot($w,xlength)+$width_diff]
+		set plot($w,ylength) [expr $plot($w,ylength)+$height_diff]
+		
+		set xlabel [expr $plot($w,xborder_left)+$plot($w,xlength)/2.0]
+		set ylabel [expr $plot($w,yborder_top)+$plot($w,ylength) \
+				+$plot($w,yborder_bottom)-5]
+		$w.canvas coords xaxis_label $xlabel $ylabel
+		
+		set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]; #jmm
+		set x2 [expr $x1+5]; # todo 2000 seems a bit big jmm
+		
+		set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]; #jmm
+		set y2 [expr $y0+5]
 	    }
-	    incr iplot
-        }
-        
-################################################################################
-#             foreach {node Ynew} $YYnew($w) {node Yold} $YYold($w) \
-#                     {node Xnew} $Tnew($w) {node Xold} $Told($w) {
-#             plot_Y $w $iplot $Xold $Yold $Xnew $Ynew
-#             incr iplot
-#         }
-################################################################################
-################################################################################
-# set iplot 0
-# foreach Ynew $YYnew($w) {
-#     #puts "plot_YY Ynew $Ynew"
-#     set node [lindex $Ynew 0]
-#     foreach Yold $YYold($w) {
-#         if {$node==[lindex $Yold 0]} {
-#             plot_Y $w $iplot $Told($w) $Yold $Tnew($w) $Ynew
-#             incr iplot; #each var gets an id NOT each element here
-#         }
-#     }
-# }
-# ###############################################################################
-################################################################################
-}
-###############################################################################
-    
-    proc plot_Y {w iplot Told Yold Tnew Ynew} {
-        global ::graphtools::plot
-        
-#ShowMess debug info "plt_Y_in Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
-        if {[llength $Ynew]==1} then {
-	    if {[dodgyValue $Tnew] || [dodgyValue $Ynew]} {
-		set xm [expr $plot($w,xborder_left)+60]
-		set ym [expr $plot($w,yborder_top)+60]
-		$w.canvas create text $xm $ym -tags prompt -width 100 \
-		    -justify center -text [tr. "Some values resulting from maths errors have not been plotted"]
+	}
+	
+	### apply graticule and grid to graph
+	proc drawGraticule {w Xintercept Yintercept} {
+	    global ::graphtools::plot
+	    
+	    # distance between each graticule.
+	    set Xgraticule  [expr ($plot($w,Width)  - 2*$plot($w,Xborder)) / double($plot($w,AxisDivisions))]
+	    set Ygraticule  [expr ($plot($w,Height) - 2*$plot($w,Yborder)) / double($plot($w,AxisDivisions))]
+	    
+	    # value per division ( set to 0.1 if a division = 0)
+	    set Xdivision [expr (abs($plot($w,Xmax))+abs($plot($w,Xmin)))  / double($plot($w,AxisDivisions))]
+	    set Ydivision [expr (abs($plot($w,Ymax))+abs($plot($w,Ymin)))  / double($plot($w,AxisDivisions))]
+	    
+	    # draw values and grid lines
+	    set i [expr -1*$plot($w,AxisDivisions)]
+	    while {$i<= $plot($w,AxisDivisions)} {
+		set x [expr floor( $Xintercept + $i * $Xgraticule) ]
+		set y [expr floor( $Yintercept - $i * $Ygraticule) ]
+		
+		# draw Y axis values and vertical grid lines
+		if {($x <= [expr $plot($w,Width)-$plot($w,Xborder)]) && ($x >= $plot($w,Xborder)) } {
+		    set dec [decimalPlaces [expr $i*$Xdivision]]
+		    if {$plot($w,grid)=="on"} {
+			$w.canvas create line $x $plot($w,Yborder) $x [expr $plot($w,Height)-$plot($w,Yborder)] -width 1 -fill gray -tags graph
+		    }
+		    $w.canvas create text $x [expr $Yintercept+10] -text [format $dec [expr $i*$Xdivision]] -tags graph
+		}
+		# draw X axis values and horizontal grid lines
+		if {($y <= [expr $plot($w,Height)-$plot($w,Yborder)]) && ($y >= $plot($w,Yborder)) } {
+		    set dec [decimalPlaces [expr $i*$Ydivision]]
+		    if {$plot($w,grid)=="on"} {
+			$w.canvas create line $plot($w,Xborder) $y [expr $plot($w,Width)-$plot($w,Xborder)] $y  -width 1 -fill gray -tags graph
+		    }
+		    $w.canvas create text [expr $Xintercept-15] $y -text [format $dec [expr $i*$Ydivision]] -tags graph
+		}
+		incr i
+	    }
+	}
+	
+	
+	############################################################################
+	######         DYNAMIC BIT
+	############################################################################
+	
+	
+	
+	##########################################################################
+	# proc plot_YY	Plots all the Y variables, by calling...
+	# proc plot_Y	Plots one Y variable, which calls...
+	# proc drawPoint	Plots one point (with a line from the previous point)
+	#
+	# This should be seen as a general-purpose mechanism for iterating over
+	# all variables currently loaded into the helper and, for each variable,
+	# picking up its current and previous values.   The values may be scalars
+	# or a list of values, nested if the variable is in nested multiple-instance
+	# submodels.   In the latter case, the 'plot_Y' procedure recurses over all
+	# levels.
+	#
+	# This is designed for displays which *require* the previous value (e.g. a
+	# graph which must draw a line from the previous point).   It is *not*
+	# suitable for displays which make use only of the current value (e.g.
+	# the lollipop display), since processing only continues if it knows that
+	# there is a previous value.   It is easy to modify this code to make
+	# another general-purpose mechanism for when you do just want to process
+	# the current value.
+	
+	proc plot_YY {w} {
+	    global ::graphtools::plot
+	    global ::graphtools::YYold
+	    global ::graphtools::YYnew
+	    global ::graphtools::Told
+	    global ::graphtools::Tnew
+	    
+	    set Trange [expr {1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)}]
+	    set Yrange [expr {1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)}]
+	    set plot($w,Tscale) [expr {$Trange/$plot($w,xlength)}]
+	    set plot($w,Yscale) [expr {$Yrange/$plot($w,ylength)}]
+	    
+	    set iplot 0
+	    for  {set i 0} {$i < [llength $YYnew($w)]} {incr i} {
+		if {[llength [lindex $YYold($w) $i]]} {
+		    set Ynew [lindex [lindex $YYnew($w) $i] 1]
+		    set Yold [lindex [lindex $YYold($w) $i] 1]
+		    set Xnew [lindex [lindex $Tnew($w) $i] 1]
+		    set Xold [lindex [lindex $Told($w) $i] 1]
+		    plot_Y $w $iplot $Xold $Yold $Xnew $Ynew {}
+		}
+		incr iplot
+	    }
+	    
+	    ################################################################################
+	    #             foreach {node Ynew} $YYnew($w) {node Yold} $YYold($w) \
+		#                     {node Xnew} $Tnew($w) {node Xold} $Told($w) {
+	    #             plot_Y $w $iplot $Xold $Yold $Xnew $Ynew
+	    #             incr iplot
+	    #         }
+	    ################################################################################
+	    ################################################################################
+	    # set iplot 0
+	    # foreach Ynew $YYnew($w) {
+	    #     #puts "plot_YY Ynew $Ynew"
+	    #     set node [lindex $Ynew 0]
+	    #     foreach Yold $YYold($w) {
+	    #         if {$node==[lindex $Yold 0]} {
+	    #             plot_Y $w $iplot $Told($w) $Yold $Tnew($w) $Ynew
+	    #             incr iplot; #each var gets an id NOT each element here
+	    #         }
+	    #     }
+	    # }
+	    # ###############################################################################
+	    ################################################################################
+	}
+	###############################################################################
+	
+	proc plot_Y {w iplot Told Yold Tnew Ynew id} {
+	    global ::graphtools::plot
+	    
+	    #ShowMess debug info "plt_Y_in Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
+	    if {[llength $Ynew]==1} then {
+		if {[dodgyValue $Tnew] || [dodgyValue $Ynew]} {
+		    set xm [expr $plot($w,xborder_left)+60]
+		    set ym [expr $plot($w,yborder_top)+60]
+		    $w.canvas create text $xm $ym -tags prompt -width 100 \
+			-justify center -text [tr. "Some values resulting from maths errors have not been plotted"]
+		} else {
+		    set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,9))}]]
+		    adjustLimits $w $Tnew $Ynew
+		    #ShowMess debug info "drawPoint Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
+		    drawPoint $w $Told $Yold $Tnew $Ynew $colour $id
+		}
 	    } else {
-		set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,9))}]]
-		adjustLimits $w $Tnew $Ynew
-#ShowMess debug info "drawPoint Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
-		drawPoint $w $Told $Yold $Tnew $Ynew $colour
-	    }
-        } else {
-	    array set allYOld $Yold
-	    array set allTOld $Told
-	    array set allYNew $Ynew
-	    array set allTNew $Tnew
-	    foreach {i YnewV} $Ynew {
-		set TnewV $allTNew($i)
-		if {[info exists allYOld($i)]} {
-		    set YoldV $allYOld($i)
-		    set ToldV $allTOld($i)
-		    plot_Y $w [expr $iplot+$i] $ToldV $YoldV $TnewV $YnewV
+		array set allYOld $Yold
+		array set allTOld $Told
+		array set allYNew $Ynew
+		array set allTNew $Tnew
+		foreach {i YnewV} $Ynew {
+		    set TnewV $allTNew($i)
+		    if {[info exists allYOld($i)]} {
+			set YoldV $allYOld($i)
+			set ToldV $allTOld($i)
+			plot_Y $w [expr $iplot+$i] $ToldV $YoldV $TnewV $YnewV \
+			    [concat $id [list $i]]
+		    }
 		}
 	    }
-        }
-    }
+	}
 	
-    
-    
-    # Connect two points on the graph
-    proc drawPoint { w X0 Y0 X1 Y1 Colour } {
-        global ::graphtools::plot
-        
-        set x0 [get_x $w $X0 $plot($w,Tscale)]
-        set x1 [get_x $w $X1 $plot($w,Tscale)]
-        set y0 [get_y $w $Y0 $plot($w,Yscale)]
-        set y1 [get_y $w $Y1 $plot($w,Yscale)]
+	proc TracePopup {w X Y} {
+	    global ::graphtools::plot
+	    
+	    set tags [[GetCanvas $w] itemcget current -tags]
+	    set timePt [string range [lsearch -inline $tags trace*] 5 end]
+	    set idxPt [split [lsearch -inline $tags indices*] ,]
+	    PostPopup $X $Y
+	    set msg "Plot for value "
+	    if {[llength $idxPt]>1} {
+		append msg "with indices [join [lrange $idxPt 1 end] ,] "
+	    }
+	    append msg "at time $plot($w,time$timePt)"
+	    AddPopupMessage $msg \#ffffc0
+	}
+	
+	# Connect two points on the graph
+	proc drawPoint { w X0 Y0 X1 Y1 Colour id } {
+	    global ::graphtools::plot
+	    
+	    set x0 [get_x $w $X0 $plot($w,Tscale)]
+	    set x1 [get_x $w $X1 $plot($w,Tscale)]
+	    set y0 [get_y $w $Y0 $plot($w,Yscale)]
+	    set y1 [get_y $w $Y1 $plot($w,Yscale)]
         
 	set cTag trace$plot($w,ordinal)
+	set iTag [join [concat indices $id] ,]
         if $plot($w,DrawLines) {
             $w.canvas create line $x0 $y0 $x1 $y1 -fill $Colour \
-		-tags [list graph scalable xaxis_item yaxis_item $cTag]
+		-tags [list graph scalable xaxis_item yaxis_item $cTag $iTag]
             
         }
         if $plot($w,DrawPoints) {
             $w.canvas create text $x1 $y1 -text X -fill $Colour \
-		-tags [list graph scalable xaxis_item yaxis_item $cTag]
+		-tags [list graph scalable xaxis_item yaxis_item $cTag $iTag]
             
         }
     }
