@@ -893,7 +893,7 @@ proc prune {target metaTxt idCount} {
     return [expr !$status]
 }
 
-proc init_pop {metaTxt crNode ptCount channelId maker} {
+proc init_pop {metaTxt crNode ptCount channelId maker name} {
     upvar 1 $metaTxt meta
     set lastIndx [expr $ptCount+int([max 0 $crNode])]
     while {$ptCount<$lastIndx} {
@@ -906,7 +906,7 @@ proc init_pop {metaTxt crNode ptCount channelId maker} {
 #	    ${byrecspointer}::submodel1maker submodel1<$loop>
 #	    set submodel1pointer ${byrecspointer}::submodel1<$loop>
 	    # fantasy cmd replacing above:
-	    set submodelptr [eval [list $maker] [HexPtr]]
+	    set submodelptr [eval [list $maker] $name<$ptCount>]
 	    set ${submodelptr}::instanceid $ptCount
 	    set ${submodelptr}::new_instance 1
 	} ;# end(cond,Instance exists)

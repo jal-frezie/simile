@@ -851,7 +851,7 @@ make_create_proc([L, ParentPtr, MMPtr, Index, Name, Indent, Used],
 	(L = tcl, !,
 	    append_atoms(Name, maker, ProcName),
 	    make_struct_reference(tcl, ParentPtr, ProcName, CurrentName),
-	    append(BaseArgs, [CurrentName], AllArgs);
+	    append(BaseArgs, [CurrentName, Name], AllArgs);
 	AllArgs = BaseArgs),
 	make_procedure_call_chars(L, AllArgs, CallInitStr),
 	name(CallInit, CallInitStr),
