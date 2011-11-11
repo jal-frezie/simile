@@ -871,12 +871,6 @@ proc loses {prob phase} {
 proc delete_list {list_id} {
 }
 
-# makes things that look like pointers for tcl
-set ptrCount 0
-proc HexPtr {} {
-    return [format ptr%08x [incr ::ptrCount]]
-}
-
 # When there are multiple models, prune will be called with some reference
 # to the source namespace. For now we add that inside the proc...
 
