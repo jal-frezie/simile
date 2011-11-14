@@ -2167,6 +2167,7 @@ proc TtkLikeDialogue {dlg args} {
 
     ttk::label $f.icon 
     if {$options(-icon) ne ""} {
+	package require BWidget
 	$f.icon configure -image [Bitmap::get $options(-icon)] ;# from BWidget
     }
     ttk::label $f.message -textvariable ${dlg}(-message) \

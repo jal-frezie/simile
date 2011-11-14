@@ -58,6 +58,10 @@ eval font create EquationFont [font actual TkTextFont]
 set eqnSize [expr {[font configure EquationFont -size]*5/4}]
 font configure EquationFont -size $eqnSize
 
+# Now add the focus level to the toolbutton style so we can see when one is 
+# selected by keyboard traversal
+ttk::style layout Toolbutton [ttk::style layout TButton]
+
 source ../Run/window.tcl
 source ../Run/shapes.tcl
 source ../Run/forms.tcl

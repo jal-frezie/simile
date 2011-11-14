@@ -86,7 +86,9 @@ proc FileParamDialogue {topNode topWin mustShow} {
 # supports the 'see' command which allows it to be automatically
 # scrolled to show a particular sub-widget, while the canvas version
 # would need a lot of pi^H^Hmessing about with yview to achieve
-# this. So hang on to bwidget for the time being.
+# this. So hang on to bwidget for the time being. On the other hand, widget
+# traversal is buggy in BWidget, so unless actually using 'see', choose the
+# DIY version.
 
 # Note that in neither case does BindMouseWheel do anything useful, because
 # for some reason the subframes stop the event getting to the top frame or
@@ -94,6 +96,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
 # -in anything...
 
 proc MakeFrames {windowId} {
+    package require BWidget
     ScrolledWindow $windowId.c
     set canId [ScrollableFrame $windowId.c.canvas -constrainedwidth true]
     $windowId.c setwidget $canId
@@ -111,9 +114,9 @@ proc DIYMakeFrames {windowId} {
     pack $canId -fill both -expand 1
     pack $windowId.c -side top -fill both -expand 1
     set sf [$canId create window 0 0 -anchor nw \
-		-window [frame $windowId.sliderframe]]
+		-window [frame $windowId.c.canvas.frame]]
     bind $canId <Configure> [list $canId itemconfigure $sf -width %w]
-    bind $windowId.sliderframe <Configure> \
+    bind $windowId.c.canvas.frame <Configure> \
 	[list $canId configure -scrollregion {0 0 %w %h}]
 }
 
@@ -177,6 +180,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
     $slot configure -bg $lbg
 
     pack $slot -before $fellow -side bottom -fill x -expand on
+    raise $slot $fellow ;# for keyboard traversal
     pack [label $slot.l1 -text [lindex $levels end] -fg red -bg $lbg \
 	      -width 12] -side left
 #    pack [label $slot.l2 -text ($dimList) -fg red] -side left
@@ -202,13 +206,6 @@ proc AddEntry {winId topNode node mustShow notInput} {
     BindPopup $slot.l1 $desc $comment
 #    BindPopup $slot.l2 "$comment"
             
-    ::ttk::button $slot.b -style style$holder -image $iconImages(edit) \
-       -command [namespace code [list GetFromTable $winId $topNode \
-				     $compName $notInput]]
-    BindPopup $slot.b [tr. "Get values from file"]
-    if {[llength $nodeDims]>1} {
-	pack $slot.b -side right
-    }
     #       pack [entry $slot.e -textvariable paramData($compName)]
     # Using entries played merry hell with very long arrays -- texts work better
     pack [::ttk::entry $slot.e -width 1] -side left -fill x -expand on
@@ -222,17 +219,23 @@ proc AddEntry {winId topNode node mustShow notInput} {
         set suppliedData($compName) {}
     }
     if {[string match normal [$slot.e cget -state]]} {
-        pack [::ttk::button $slot.cross -style style$holder \
-		  -image $iconImages(cross) \
-		  -command [namespace code [list RevertData $winId \
-						$compName $notInput]]] \
-	    -side right
-        BindPopup $slot.cross [tr. "Revert to old values"]
         pack [::ttk::button $slot.tick -style style$holder \
 		  -image $iconImages(tick) \
 		  -command [namespace code [list AcceptData $topNode $compName \
-						$notInput 1]]] -side right
+						$notInput 1]]] -side left
         BindPopup $slot.tick [tr. "Accept these values"]
+        pack [::ttk::button $slot.cross -style style$holder \
+		  -image $iconImages(cross) \
+		  -command [namespace code [list RevertData $winId $compName \
+						$notInput]]] -side left
+        BindPopup $slot.cross [tr. "Revert to old values"]
+    }
+    if {[llength $nodeDims]>1} {
+	::ttk::button $slot.b -style style$holder -image $iconImages(edit) \
+	    -command [namespace code [list GetFromTable $winId $topNode \
+					  $compName $notInput]]
+	BindPopup $slot.b [tr. "Get values from file"]
+	pack $slot.b -side right
     }
     set outNames($compName) $slot
     # note whether we need to enter a parameter here...
@@ -333,6 +336,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 # parent always contains header frame, which is packed at top
 		pack $nextLevel -before $fellow -side bottom \
 		    -fill x -expand true -padx 2 -pady 2
+		raise $nextLevel $fellow ;# for keyboard traversal
 	    } else {
 		set level [tr. "TOP LEVEL"]
 		pack $nextLevel -side bottom \
@@ -362,6 +366,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		    -side right
 		BindPopup $nextLevel.head.open \
 		    [format [tr. {Load values for submodel "%1$s"}] $level]
+		lower $nextLevel.head.open
 	    }
             if {[string equal fileparams $ns]} {
                 pack [::ttk::button $nextLevel.head.clear -style $bStyle \
@@ -370,6 +375,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		    -side right
                 BindPopup $nextLevel.head.clear \
 		    [tr. "Clear values in this submodel"]
+		lower $nextLevel.head.clear
             }
             pack [label $nextLevel.head.label -text $level:]
 #	    $nextLevel configure -text $level: -labelanchor n

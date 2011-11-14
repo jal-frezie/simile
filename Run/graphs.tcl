@@ -15,7 +15,7 @@
 #	ylow, yhigh, yspan, [pt1, pt2 ... ptn])
 
 if {![info exists simplify]} {
-package require BWidget
+#package require BWidget
 }
 proc odbcdriverFromExt { ext } {
     # e.g. [odbcdriverFromExt .xls] -> Microsoft Excel Driver (*.xls)
