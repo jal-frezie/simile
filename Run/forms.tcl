@@ -55,6 +55,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $notesf.commentlabel -padx 2 -pady 4 -anchor w
     # ScrolledWindow causes crash under Linux so replaced with ordinary frame
     #    frame $t.commentsSW
+    package require BWidget
     ScrolledWindow $notesf.commentsSW
     text $notesf.commentsSW.comment -height 4 -width 40 -relief sunken -bd 2 -highlightthickness 0 -wrap word
     bind $notesf.commentsSW.comment <Return> {expr 1}
