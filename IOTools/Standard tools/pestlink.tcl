@@ -158,6 +158,7 @@ namespace eval $keyValue {
         pack [label $df.outputs.prnum -textvariable \
                 [namespace current]::runData($myNode,curPred)] -side left
         # Commentary window
+	package require BWidget
         ScrolledWindow $df.c
         set canId $df.c.text
         text $canId -height 4
