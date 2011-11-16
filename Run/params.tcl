@@ -96,7 +96,6 @@ proc FileParamDialogue {topNode topWin mustShow} {
 # -in anything...
 
 proc MakeFrames {windowId} {
-    package require BWidget
     ScrolledWindow $windowId.c
     set canId [ScrollableFrame $windowId.c.canvas -constrainedwidth true]
     $windowId.c setwidget $canId

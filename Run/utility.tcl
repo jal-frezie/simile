@@ -867,14 +867,6 @@ proc UnderlineUniquely {mu} {
     }
 }
 
-# BWidget should be removed in favour of native Tk commands and the
-# Tile widget set, which look better. For the time it is still needed
-# for the ScrolledWindow/ScrollableFrame pair in MakeFrames in params.tcl, and
-# the drag'n'drop column headings in graphs.tcl, as well as in a few
-# other places round the app.
-
-#package require BWidget
-
 # not good enough, must respond to getframe too
 proc TitleFrame {args} {
     eval ttk::labelframe $args
