@@ -143,6 +143,11 @@ enabling the channel ID to be got from it */
 	Var = index(_), !,
 	    NewVar = make_inter(Var, index),
 	    Recurse = 0; */
+	Var = dies_of(input(Location, PathExp, Link, Units)), !,
+	% Reference already moved to spare node by instance_of, just need to
+	% fix units now
+	    NewVar = input(Location, PathExp, Link, boolean),
+	    Recurse = 1;
 	Var =.. [TimeFn, TimeArg],
 	    member(TimeFn, [time, dt]), member(TimeArg, [0, '']), !,
 	    NewVar =.. [TimeFn, Step], % do here rather than pass sm time to m_i

@@ -534,18 +534,20 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % wait till we replace instantiation with something based on converting
 % captions to unique c++ variable names.
 
-process_expr(sub(InputPairs, Refs), OldVar, NewVar, Recurse) :-
-	member(OldVar-RefNode, [dies_of(Var)-VisNode, latency(Var)-VisNode,
-				Var-Node]), 
+process_expr(sub(InputPairs, Refs), OldVar, NewExpr, Recurse) :-
+	member(OldVar-NewExpr-RefNode,
+	       [dies_of(Var)-dies_of(NewVar)-VisNode,
+		latency(Var)-NewVar-VisNode,
+		Var-NewVar-Node]), 
 	get_solo_list_depth(Var, _),
 	(member(input_pair(Var, Node, OutVar, NewVar), InputPairs),
 	    get_host(Node, VisNode),
 	    is_instance(_, RefNode, _, OutVar, _, Ref),
 	    member(Ref, Refs), !;
-	NewVar = Var),
+	NewExpr = Var),
 	    Recurse = 0;
-	(build_table_ref(table_const(1), OldVar, NewVar);
-	  member(OldVar-NewVar, [channel_is(Ch)-channel_is(latency(Ch)),
+	(build_table_ref(table_const(1), OldVar, NewExpr);
+	  member(OldVar-NewExpr, [channel_is(Ch)-channel_is(latency(Ch)),
 		traffic(Ch)-ceil(Ch-latency(Ch))]),
 	  atom(Ch)),
 	    Recurse = 1.
