@@ -1192,21 +1192,11 @@ set_properties(Wid, Model) :-
 	    
 	    ((abs(NewFatness - Fatness) =< 0.005;
 	      Fatness > 1, NewFatness > 0.995), !;
-	    FatFactor is Fatness/NewFatness,
-		FatTrans = [0,0, FatFactor, FatFactor],
-		get_shape(Model, internal_extent, Extent),
-		translate(Extent, FatTrans, NewExtent),
-		change_shape(Model, internal_extent, NewExtent),
-%		adjust_toplevel_windows(Model, NewExtent),
-		refatten_toplevels(Model, FatFactor),
-		event'><'move_boxes(Model, FatTrans),
-		event'><'resnap(Model, 0),
-		(member(RerouteType, [flow, influence]),
-		find_all_comps(Model, Linkage),
-		appears(Linkage),
-		find_type(Linkage, RerouteType),
-		update_link_route(Linkage),
-		fail; true)),
+		FatFactor is Fatness/NewFatness,
+		start_progress_dialogue(Win),
+		reassure_user(pl_refatten),
+		refatten(Model, FatFactor),
+		finish_progress_dialogue),
 
 	    /* Changes in fatness require redrawing submodel's
 	    toplevel windows; this plus nature, count and visibility require
@@ -1215,11 +1205,7 @@ set_properties(Wid, Model) :-
 	     [Colour, Image, ImgPos, Nature],
 	      FatFactor = 1, UseCount = Count, NewHide = Hide), !;
 	    NewHide = Hide, !,
-		(\+ FatFactor = 1,
-		    find_all_comps(Model, TopComp),
-		    redisplay_border(TopComp),
-		    fail;
-		redisplay_border(Model));
+		redisplay_border(Model);
 	    redisplay(Model)),
 
 	    (Separate = NewSeparate, !;
@@ -1247,6 +1233,33 @@ change_enum_type(Node, ArgAtom) :-
 	add_parameter(Node, 0, enum_types, NewEnumTypes),
 	finish_move(Node, 1).
 
+refatten(Model, FatFactor) :-
+	FatTrans = [0,0, FatFactor, FatFactor],
+	get_shape(Model, internal_extent, Extent),
+	translate(Extent, FatTrans, NewExtent),
+	change_shape(Model, internal_extent, NewExtent),
+%		adjust_toplevel_windows(Model, NewExtent),
+	refatten_toplevels(Model, FatFactor),
+	event'>
+	<'move_boxes(Model, FatTrans),
+	event'><'resnap(Model, 0),
+	(member(RerouteType, [flow, influence]),
+	    find_all_comps(Model, Linkage),
+	    appears(Linkage),
+	    find_type(Linkage, RerouteType),
+	    update_link_route(Linkage),
+	    fail;
+	  find_all_comps(Model, Submodel),
+	    (find_type(Submodel, submodel),
+		m_update'><'fatness_for(Submodel, SubFat),
+		SubFat > 1.005,
+		refatten(Submodel, SubFat),
+		fail;
+	      true),
+	    redisplay_border(Submodel),
+	    fail;
+	  true).
+	
 flip_innards(Node_name, Action) :-
 	get_shape(Node_name, internal_extent, [IL, IT, IR, IB]),
 	(Action = flip_h,

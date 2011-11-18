@@ -1666,6 +1666,9 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 	    member(include=Inc, ExternCode),
 	    member(libraries=Libs, ExternCode);
 	Proc = none, Inc = none, Libs = []),
+	fatness_for(Submodel, Fat).
+
+fatness_for(Submodel, Fat) :-
 	Submodel has_graphical_attribute bounding_box of [LB, _, RB, _],
 	Submodel has_graphical_attribute internal_extent of [LI, _, RI, _],
 	Fat is 1.0*(RB-LB)/(RI-LI).
