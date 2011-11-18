@@ -46,7 +46,6 @@ namespace eval ::graphtools {
 proc ::graphtools::MakeToolBar {w toolbarItems} {
     pack [ttk::separator $w.abovebbox -orient horizontal] -fill x -side top
     set f [frame $w.bbframe  -relief raised]
-    package require BWidget
 # next line for bwidget version
     set bbox [ButtonBox $f.buttonBox -spacing 0 -padx 1 -pady 1]
     # build the toolbar  from the toolbarItems list

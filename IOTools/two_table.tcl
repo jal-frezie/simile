@@ -74,7 +74,6 @@ global tcl_platform
 ################################################################################
 
 namespace eval $keyValue {
-#    package require BWidget
     namespace import ::DisplayFormat::*
 
     variable displayFormat; # array of list $formatName $decimalplaces $ShowNegInRed
