@@ -256,9 +256,9 @@ proc ClickObj { x y winId X Y action} {
             #   ModeSelect select
         }
         if {[string match $equationbar(current_action) click]} {
-	    SafeEqnBarEdit $winid
-#	    update ;# allow abandon to trigger save query if needed
-# do explicitly cos this lets doubleclick through
+	    if {[SafeEqnBarEdit $winid]} { ;# unclick event lost due to dialogue
+		prolog [list tk_unclick( $xco , $yco )]
+	    }
             set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
             if {![string match <none> $oldEqn]} {
                 set label "[file tail [BlankCrs $context]] = "
@@ -308,6 +308,7 @@ proc InsertQuoted {field string} {
 }
 
 # make sure modeller really wanted to discard any previous edit
+# returns whether or not dialogue was displayed
 proc SafeEqnBarEdit {winId} {
     global equationbar
     set bar $winId.toolSlot.eqnbar
@@ -323,8 +324,10 @@ proc SafeEqnBarEdit {winId} {
             } else {
 		restore_equation $winId $bar ;# avoids asking again
 	    }
+	    return yes
         }
     }
+    return no
 }
 
 # This is called when an operatio may have brought into view an area of canvas
