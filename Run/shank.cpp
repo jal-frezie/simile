@@ -1545,7 +1545,6 @@ int ModelServer::NodeNumFromCapt(char* seeknode) {
   enum_type_data* types[32];
 
   for (count = 1; nodecount>count; ++count) {
-    if (nodedata[count].eval == GHOST) continue;
     make_full_caption(count, test, dims, types);
 	  
     if (!strcmp(seeknode, test)) {
@@ -1830,24 +1829,42 @@ caption fits the start of what we are after (after trimming the portion found
 from the search string, less the submodel itself -- note it may be an issue
 that the submodel name is searched for in both models ) */
 
-int nodeModelAndId(ModelServer* seekType, char* seeknode,
-		   ModelServer** tgtModel) {
-  int count;
-  char test[255];
+char* ModelServer::nodeModelAndId(char* seeknode) {
+  int count, gcount, lcount, spare;
+  char test[255], *tail;
   int dims[32];
   enum_type_data* types[32];
+  node_data_line* bottomLine;
+  ghost_ref_data* gpair;
 
-  for (count = 1; seekType->nodecount>count; ++count) {
-    if (seekType->nodedata[count].eval == GHOST) continue;
-    seekType->make_full_caption(count, test, dims, types);
+  //sprintf(globMess, "Looking for %s", seeknode);
+  //showMess(globMess);
+  for (count = 1; nodecount>count; ++count) {
+    make_full_caption(count, test, dims, types);
+    //sprintf(globMess, "Got base %s", test);
+    //showMess(globMess);
 	  
     if (!strcmp(seeknode, test)) {
-      *tgtModel = seekType;
-      return(count);
+      return(nodedata[count].name);
+    }
+    
+    if (strstr(seeknode, test) != seeknode) continue;
+    // test is initial substring
+    tail = seeknode + strlen(test);
+    if (*tail != '/') continue;
+    tail += 1;
+    for (gcount=0;nodedata[count].ghost_count>gcount;++gcount) {
+      gpair = nodedata[count].ghost_ref_ptrs + gcount;
+      lcount = getinfo(gpair->base, &spare);
+      //sprintf(globMess, "Got ghost %s", nodedata[lcount].strings[0]);
+      //showMess(globMess);
+      if (!strcmp(tail, nodedata[lcount].strings[0])) {
+	return(gpair->ghost);
+      }
     }
   }
   /* Node with given caption not found... */
-  return -1;
+  return NULL;
 }
 
 char *falseTxt = (char*)"false";
@@ -2109,13 +2126,7 @@ char* myexit(void* modelType, void* modelHandle) {
 }
 
 char* getNodeId(void* modelType, char* capt) {
-  ModelServer* tgtModel;
   int tgtIndex;
 
-  tgtIndex = nodeModelAndId((ModelFor5D*)modelType, capt, &tgtModel);
-  if (tgtIndex != -1) {
-    return tgtModel->nodedata[tgtIndex].name;
-  } else {
-    return NULL;
-  }
+  return ((ModelServer*)modelType)->nodeModelAndId(capt);
 }

@@ -1193,8 +1193,8 @@ set_properties(Wid, Model) :-
 	    ((abs(NewFatness - Fatness) =< 0.005;
 	      Fatness > 1, NewFatness > 0.995), !;
 		FatFactor is Fatness/NewFatness,
-		start_progress_dialogue(Win),
-		reassure_user(pl_refatten),
+		start_progress_dialogue(Wid),
+		reassure_user(pl_refatten, []),
 		refatten(Model, FatFactor),
 		finish_progress_dialogue),
 
@@ -1240,8 +1240,7 @@ refatten(Model, FatFactor) :-
 	change_shape(Model, internal_extent, NewExtent),
 %		adjust_toplevel_windows(Model, NewExtent),
 	refatten_toplevels(Model, FatFactor),
-	event'>
-	<'move_boxes(Model, FatTrans),
+	event'><'move_boxes(Model, FatTrans),
 	event'><'resnap(Model, 0),
 	(member(RerouteType, [flow, influence]),
 	    find_all_comps(Model, Linkage),

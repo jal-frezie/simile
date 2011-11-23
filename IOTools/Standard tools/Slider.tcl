@@ -70,7 +70,9 @@ namespace eval slide139 {
     proc click {winId node caption} {
         set fullCapt [GetCaptionPathFromId $node]
         if {[string equal SUBMODEL [GetModelClass $node]]} {
-            AddAllVariablesInSubmodel $winId $fullCapt
+            if {[AddAllVariablesInSubmodel $winId $fullCapt]} {
+		ReleaseClicks $winId
+	    }
         } elseif {[llength [InsertSlider $winId $node $fullCapt 1]]} {
             $winId.intro configure -text {}
             ReleaseClicks $winId
@@ -105,9 +107,10 @@ namespace eval slide139 {
         }
         if {[info exists done]} {
             $winId.intro configure -text {}
-            ReleaseClicks $winId
+            return yes
         } else {
             $winId.intro configure -text "There are no more parameters in this model which can be set by sliders, check boxes or pulldown lists. Note that these tools cannot be used on multidimensional parameters."
+	    return no
 	}
     }
     proc InsertSlider {winId node title nest} {
@@ -115,6 +118,7 @@ namespace eval slide139 {
 
 	set sliderDoes($title,node) $node
         set parmType [GetModelEval $node]
+puts $parmType
         set fixed [lsearch {INPUT TABLE} $parmType]
         if {$fixed==-1} {
             return {}

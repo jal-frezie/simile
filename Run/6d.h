@@ -277,6 +277,9 @@ class ModelServer
   //! decodes 'graph id' property of node, returning relevant data line
   node_data_line* md_nodlin_from_id(int);
 
+  //! gets node ids from full caption, including ghost node ids
+  char* nodeModelAndId(char*);
+
   // Virtual callback functions: clients use a class that inherits ModelServer
   // and implements these, and the server calls them
 
