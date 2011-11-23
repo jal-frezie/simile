@@ -117,8 +117,10 @@ namespace eval slide139 {
 	global widgetSeln sliderDoes
 
 	set sliderDoes($title,node) $node
+	if {[RunningInC $::myNode]} {
+	    set node [GetModelBase $node] ;# ghosts not listed in debug mode
+	}
         set parmType [GetModelEval $node]
-puts $parmType
         set fixed [lsearch {INPUT TABLE} $parmType]
         if {$fixed==-1} {
             return {}

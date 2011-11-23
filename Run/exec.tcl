@@ -310,7 +310,7 @@ proc GetCCompProperty {topNode prop args} {
     set node [lindex $args 0]
     set set [lrange $args 1 end]
     # first do cases that don't need any other data
-    set numberWangs Caption|MinVal|MaxVal|Trans|Spec|Desc|Comment
+    set numberWangs Caption|MinVal|MaxVal|Trans|Spec|Desc|Comment|Base
     switch -regexp $prop [list \
 	Objects {
 	    return [lrange [listobjects \
@@ -358,7 +358,7 @@ proc GetCCompProperty {topNode prop args} {
 		return [c_getvalue $topNode $node 3]
 	    }
 	} $numberWangs {
-	    set dataWang [lindex {5 6 8 12 13 14 15} \
+	    set dataWang [lindex {5 6 8 12 13 14 15 16} \
 			      [lsearch [split $numberWangs |] $prop]]
 	    return [c_getvalue $topNode $node $dataWang]
 	} IdFromCapt {

@@ -203,6 +203,11 @@ proc GetModelEval { node } {
     return [GetCompProperty $myNode Eval $node]
 }
 
+proc GetModelBase { node } {
+    global myNode
+    return [GetCompProperty $myNode Base $node]
+}
+
 proc GetModelDims { node } {
     global myNode
     return [GetCompProperty $myNode Dims $node]

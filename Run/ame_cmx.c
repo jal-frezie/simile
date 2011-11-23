@@ -233,6 +233,10 @@ FINDABLE int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
       resultPtr = Tcl_NewIntObj(data_line->eval);
     break;
 
+  case GETINTERNALID:
+    resultPtr = Tcl_NewStringObj(data_line->name, -1);
+    break;
+
   case GETMIN:
     resultPtr = Tcl_NewDoubleObj(data_line->min);
     break;
