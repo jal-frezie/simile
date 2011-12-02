@@ -19,8 +19,11 @@ proc TransEnums {transList vals} {
     if {[llength $vals]==1} {
 	return [EnquoteIfNonNumeric [TransValue $curLevel $vals]]
     } else {
-	set indxCount [llength [lindex $vals 0]]
-	set argTrans [lrange $transList $indxCount end]
+# speed: if no defns, just return arg
+	if {[lsearch -regexp $transList .] == -1} {return $vals}
+# multiple indices per value no longer used
+#	set indxCount [llength [lindex $vals 0]]
+	set argTrans [lrange $transList 1 end]
 	set result {}
 	foreach {index subVals} $vals {
 	    lappend result [TransValue $curLevel $index] \

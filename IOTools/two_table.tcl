@@ -417,9 +417,11 @@ namespace eval $keyValue {
 		unset dataStore($entry)
 	    }
 	}
+#puts "start display at [clock milliseconds]"
         foreach varCapt $displayList($winId,paths) {
 	    set varId [lindex $displayList($winId,ids) $varIndex]
 	    set values [lindex [GetModelValue $varId] 0]
+#puts "got values at [clock milliseconds]"
 	    if {[llength $values]} {
 # do not add empty lists they make finding dataless variables harder
 		set trans [lindex $displayList($winId,transes) $varIndex]
@@ -429,6 +431,7 @@ namespace eval $keyValue {
                 
             incr varIndex
         }
+#puts "loaded datastore at [clock milliseconds]"
         if {$displayUpdate($winId) || !$tStep} {
             set xScrollPosn [$winId.t xview]
             set yScrollPosn [$winId.t yview]
@@ -481,6 +484,22 @@ namespace eval $keyValue {
     }
 
     proc SaveToNamedFile {winId filename args} {
+	variable curRows
+	variable curCols
+
+	set listVersion [lrepeat $curRows [lrepeat $curCols {}]]
+	foreach {idxPair val} [array get ::data$winId] {
+	    lset listVersion [split $idxPair ,] $val
+	}
+	set fileId [open $filename w]
+	foreach line $listVersion {
+	    puts $fileId [join $line ,]
+	}
+	close $fileId
+    }
+
+# old version needs table widget to be displaying the data
+    proc OldSaveToNamedFile {winId filename args} {
         global custom
         set rsep [$winId.t cget -rowseparator]
         set csep [$winId.t cget -colseparator]
@@ -540,6 +559,8 @@ namespace eval $keyValue {
     ################################################################################
     
     proc Reconbobulate {winId} {
+	global data$winId
+
         variable dataStore
         variable orientList
         variable displayList
@@ -552,6 +573,9 @@ namespace eval $keyValue {
         variable colNames
         variable rowIds
         variable colIds
+
+	variable curRows
+	variable curCols
         
         if {[info exists rowNames]} {unset rowNames}
         if {[info exists colNames]} {unset colNames}
@@ -588,22 +612,24 @@ namespace eval $keyValue {
             }
         }
         
-        #puts "Data transferred to 2-d table mirror array"
+#puts "Data transferred to 2-d table mirror array at [clock milliseconds]"
 #	ShowMess debug info "Table has [llength [array names rowNames]] rows and [llength [array names colNames]] columns" ok
 	set lineMax 10000
 	set boxMax 1000000
-	if {[llength [array names rowNames]]>$lineMax} {
+	set rowCount [llength [array names rowNames]]
+	set colCount [llength [array names colNames]]
+	if {$rowCount>$lineMax} {
 	    set scaryFact tooManyRows
         }
-	if {[llength [array names colNames]]>$lineMax} {
+	if {$colCount>$lineMax} {
 	    set scaryFact tooManyColumns
         }
-	if {[llength [array names colNames]]*[llength [array names rowNames]]>$boxMax} {
+	if {$rowCount*$colCount>$boxMax} {
 	    set scaryFact tooManyCells
 	    set lineMax $boxMax
         }
 	if {[info exists scaryFact]} {
-	    $winId.t configure -state normal
+	    $winId.t configure -state normal -variable spare$winId
 	    $winId.t set 0,0 "$::msgs(tableWimpOut)\n$::msgs($scaryFact) $lineMax"
 	    $winId.t width 0 48
 	    $winId.t height 0 2
@@ -611,7 +637,8 @@ namespace eval $keyValue {
 	    if {![info exists editMode($winId)]} {
 		$winId.t configure -state disabled
 	    }
-	    return
+	} else {
+	    $winId.t configure -state normal -variable data$winId
 	}
 
         set curHeaderRows 0
@@ -636,24 +663,30 @@ namespace eval $keyValue {
         set levels [expr $curHeaderRows+$curHeaderCols]
         if {!$curHeaderRows} {set curHeaderRows 1}
         if {!$curHeaderCols} {set curHeaderCols 1}
+	set curRows [expr $curHeaderRows+$rowCount]
+	set curCols [expr $curHeaderCols+$colCount]
         
-        #puts "Header rows and columns counted"
+#puts "Header rows and columns sorted at [clock milliseconds]"
         
-        unset ::data$winId
-        foreach {span old} [$winId.t spans] {
-            $winId.t spans $span 0,0
-        }
+        unset data$winId
+ 	if {![info exists scaryFact]} {
+	    foreach {span old} [$winId.t spans] {
+		$winId.t spans $span 0,0
+	    }
+
 # Following is faster but flickers too much
 #	destroy $winId.t
 #	CreateTable $winId
-        $winId.t config -rows $curHeaderRows -cols $curHeaderCols \
-                -titlerows $curHeaderRows -titlecols $curHeaderCols
+	    $winId.t config  -rows $curRows -cols $curCols \
+		-titlerows $curHeaderRows -titlecols $curHeaderCols
+	    $winId.t configure -state normal
+	}
+
         set rowsTop 0
         set colsTop 0
         set hideTime [string match none [lindex $orientList($winId) 0]]
         set level $hideTime
         
-        $winId.t configure -state normal
         while {$level-$hideTime < $levels} {
             switch $level {
                 0 {set topCapt Time}
@@ -664,38 +697,43 @@ namespace eval $keyValue {
             if {$level<4} {set orient [lindex $orientList($winId) $level]}
             if {[string match rows $orient]} {
                 set tgtSq [expr $curHeaderRows-1],$rowsTop
-                set oldCapt [$winId.t get $tgtSq]
+                set oldCapt [lindex [array get data$winId $tgtSq] 1]
                 if {[llength $oldCapt]} {
-                    $winId.t set $tgtSq "$topCapt \\ $oldCapt"
+                    set data${winId}($tgtSq) "$topCapt \\ $oldCapt"
                 } else {
-                    $winId.t set $tgtSq $topCapt
+		    set data${winId}($tgtSq) $topCapt
                 }
                 incr rowsTop
             } else {
                 set tgtSq $colsTop,[expr $curHeaderCols-1]
-                set oldCapt [$winId.t get $tgtSq]
+#                set oldCapt [$winId.t get $tgtSq]
+                set oldCapt [lindex [array get data$winId $tgtSq] 1]
                 if {[llength $oldCapt]} {
-                    $winId.t set $tgtSq "$oldCapt \\ $topCapt"
+#                    $winId.t set $tgtSq "$oldCapt \\ $topCapt"
+                    set data${winId}($tgtSq) "$oldCapt \\ $topCapt"
                 } else {
-                    $winId.t set $tgtSq $topCapt
+#                    $winId.t set $tgtSq $topCapt
+		    set data${winId}($tgtSq) $topCapt
                 }
                 incr colsTop
             }
             $winId.t tag cell base $tgtSq
             incr level
         }
-        if {[info exists tgtSq]} {
-            set rcolWidth [string length [$winId.t get $tgtSq]]
-            if {$rcolWidth>10} {
-                $winId.t width [expr $curHeaderCols-1] $rcolWidth
-            }
-            $winId.t tag raise base
-            $winId.t tag config base -fg black
-        }
-        if {$curHeaderRows>1 && $curHeaderCols>1} {
-            $winId.t spans 0,0 [expr $curHeaderRows-2],[expr $curHeaderCols-2]
-        }
-        #puts "Meta-headers inserted"
+	if {![info exists scaryFact]} {
+	    if {[info exists tgtSq]} {
+		set rcolWidth [string length [$winId.t get $tgtSq]]
+		if {$rcolWidth>10} {
+		    $winId.t width [expr $curHeaderCols-1] $rcolWidth
+		}
+		$winId.t tag raise base
+		$winId.t tag config base -fg black
+	    }
+	    if {$curHeaderRows>1 && $curHeaderCols>1} {
+		$winId.t spans 0,0 [expr $curHeaderRows-2],[expr $curHeaderCols-2]
+	    }
+	}
+#puts "Meta-headers inserted at [clock milliseconds]"
         set timeSide [lindex $orientList($winId) 0]
         set lineToShow 0
         set translateSide [lindex $orientList($winId) 1]
@@ -715,13 +753,14 @@ namespace eval $keyValue {
             set rowIds($winId,$item) $count
             #            $winId.t insert rows end
             # changed to preserve widths/heights
-            $winId.t config -rows [expr [$winId.t cget -rows]+1]
             set headerCol 0
             foreach headerElt $item {
                 if {[string match $headerElt $lastEntry($headerCol)]} {
                     # header same as prev line so span it over
-                    $winId.t spans $lastLine($headerCol),$headerCol \
+                    if {![info exists scaryFact]} {
+			$winId.t spans $lastLine($headerCol),$headerCol \
                             [expr $count-$lastLine($headerCol)],0
+		    }
                 } else {
                     set lastEntry($headerCol) $headerElt
                     set lastEntry([expr $headerCol+1]) none
@@ -740,13 +779,13 @@ namespace eval $keyValue {
                             $headerElt==$timeToShow} {
                     set lineToShow $count
                 }
-                $winId.t set $count,$headerCol \
+                set data${winId}($count,$headerCol) \
                         [lindex [split $headerElt /] end]
                 incr headerCol
             }
             incr count
         }
-        #puts "Column headers inserted"
+#puts "Column headers inserted at [clock milliseconds]"
         set lastEntry(0) none
         set count $curHeaderCols
         foreach entry [array names colIds $winId,*] {
@@ -756,14 +795,14 @@ namespace eval $keyValue {
             set colIds($winId,$item) $count
             #            $winId.t insert cols end
             # changed to preserve widths/heights
-            $winId.t config -cols [expr [$winId.t cget -cols]+1]
-            
             set headerRow 0
             foreach headerElt $item {
                 if {[string match $headerElt $lastEntry($headerRow)]} {
                     # header same as prev line so span it over
-                    $winId.t spans $headerRow,$lastLine($headerRow) \
+		    if {![info exists scaryFact]} {
+			$winId.t spans $headerRow,$lastLine($headerRow) \
                             0,[expr $count-$lastLine($headerRow)]
+		    }
                 } else {
                     set lastEntry($headerRow) $headerElt
                     set lastEntry([expr $headerRow+1]) none
@@ -780,7 +819,7 @@ namespace eval $keyValue {
                                 $headerElt==$timeToShow} {
                         set lineToShow $count
                     }
-                    $winId.t set $headerRow,$count \
+                    set data${winId}($headerRow,$count) \
                             [lindex [split $headerElt /] end]
                 }
                 incr headerRow
@@ -788,19 +827,22 @@ namespace eval $keyValue {
             incr count
         }
         #puts "vnps $varNamePosns($winId)"
-        #puts "row headers inserted"
+        puts "row headers inserted at [clock milliseconds]"
+	#puts "table now looks like [array get ::data$winId]"
 	
 	RestoreFromMirror $winId
-        switch $timeSide {
-            rows {
-                $winId.t see $lineToShow,0
-            } cols {
-                $winId.t see 0,$lineToShow
-            }
-        }
-        if {![info exists editMode($winId)]} {
-            $winId.t configure -state disabled
-        }
+	if {![info exists scaryFact]} {
+	    switch $timeSide {
+		rows {
+		    $winId.t see $lineToShow,0
+		} cols {
+		    $winId.t see 0,$lineToShow
+		}
+	    }
+	    if {![info exists editMode($winId)]} {
+		$winId.t configure -state disabled
+	    }
+	}
 # now remove dummy values added to ensure appearance of useful headers
 	foreach varIndex $dummied {
 	    array unset dataStore $winId,$varIndex,$dummyTime
@@ -819,7 +861,7 @@ namespace eval $keyValue {
             set rowHead $rowIds($winId,[lindex $headers 0])
             set colHead $colIds($winId,[lindex $headers 1])
 	    set cellFormat $displayFormat($winId,$cellFormatKey($winId,$value))
-            $winId.t set $rowHead,$colHead \
+            set ::data${winId}($rowHead,$colHead) \
 		[FormatValue $winId $values($value) [lindex $cellFormat 0] \
 		     [lindex $cellFormat 1]]
             if {[lindex $cellFormat 2]==1 & $values($value)<0} {

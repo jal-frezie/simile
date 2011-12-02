@@ -1849,6 +1849,8 @@ menu .openrecent -tearoff 0
 
 proc FillReopen {winId} {
     global custom
+
+    if {[string equal .hi $winId]} return ;# models canot open here anyway
     .openrecent delete 0 end
     set posted {}
     foreach hottie $custom(hotlist) {
