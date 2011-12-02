@@ -422,13 +422,25 @@ proc GStick {c zone y} {
     if {![CheckFloaty $graph($t,lowy) $graph($t,highy) $graph($t,lowx) $graph($t,highx)]} {
         return
     }
+    set wrapLine [string equal [tr. Wraparound] $graph($t,outOpt)]
     set y [max 0 [min $graph($t,height) $y]]
-    if {$zone >= 0 && $zone < [llength $graph($t,points)]} {
+    set pts [expr {[llength $graph($t,points)]-1}]
+    if {$zone >= 0 && $zone <= $pts} {
         set graph($t,points) [lreplace $graph($t,points) $zone $zone $y]
-        if {$zone != 0} {
+        if {$zone == 0} {
+	    if {$wrapLine} {
+		lset graph($t,points) $pts $y
+		AddLine $c $pts
+	    }
+	} else {
             AddLine $c $zone
         }
-        if {$zone != [expr [llength $graph($t,points)] - 1]} {
+        if {$zone == $pts} {
+	    if {$wrapLine} {
+		lset graph($t,points) 0 $y
+		AddLine $c 1
+	    }
+	} else {
             AddLine $c [expr $zone + 1]
         }
     }
