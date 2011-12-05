@@ -179,12 +179,17 @@ proc AddHelperSublist {fm title ct} {
 			       Plotter SliderControl TableViewer} $posn]
 		set helperTable($classIdx) $newHelperClass
 	    }
-	    $m add command -label [tr. $action] \
-		-command [list CreateHelperWindow $newHelperClass $action]
+	    lappend entries [list $newHelperClass $action [tr. $action]]
 	    unset newHelperClass
 	}
     }
-    foreach subDir [glob -nocomplain *] {
+    if {[info exists entries]} {
+	foreach pair [lsort -nocase -index 2 $entries] {
+	    $m add command -label [lindex $pair 2] \
+		-command [concat CreateHelperWindow [lrange $pair 0 1]]
+	}
+    }
+    foreach subDir [lsort -nocase [glob -nocomplain *]] {
         if [file isdirectory $subDir] {
             cd $subDir
             if {[string equal abort [AddHelperSublist $m $subDir $nct]]} {
