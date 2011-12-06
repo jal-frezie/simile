@@ -19,12 +19,12 @@ class similescript::$newHelperClass {
     } {
 	set curFolder [GetPathChoice .csv [GetNode]]
 	set ::msgs(logs_$this) [format [tr. {Current folder: %1$s}] $curFolder]
-        set toolbarItems \
+        set useNodes(removeImg) \
+	    [image create photo -file "../Images/Toolbar/remove.gif"]
+	set toolbarItems \
                 [list [list new.gif "Clear" [namespace code "Clear $winId"]] \
                 [list add.gif "Add variables" \
                 [code $this AddVariable]] \
-                [list remove.gif "Remove a variable" \
-                [code $this RemoveVariable]] \
                 [list slider.gif "Add all variables" \
                 [code $this AddAllVariables /]]]
         ::graphtools::MakeToolBar $winId $toolbarItems
@@ -86,11 +86,6 @@ class similescript::$newHelperClass {
         $modelInst GrabClicks $this
     }
     
-    method RemoveVariable {} {
-        tk_popup $winId.logvars \
-                [winfo pointerx $winId] [winfo pointery $winId]
-    }
-    
     method InsertLogEntry {title nest} {
         set levels [split $title /]
         if {$nest} {
@@ -111,20 +106,32 @@ class similescript::$newHelperClass {
 		-command [code $this Remove $title]
 	lappend useNodes(logged) $title
 	pack [label $f.caption -text [lindex $levels end]: -bg $lbg] -side left
+	pack [::ttk::button $f.remove -image $useNodes(removeImg) \
+		  -command [code $this Remove $title]] -side right
 	UpdateFile $title [$modelInst GetCurrentTime]
 	return yes
     }
 
+    method Remove {title} {
+        set levels [split $title /]
+        set f [MakeSubFrames {} $winId.c.canvas.frame $levels {} 0]
+        pest20050803::Prune $winId $f
+	set index [lsearch $useNodes(logged) $title]
+	close $useNodes($title.stm)
+	unset useNodes($title.stm)
+	set useNodes(logged) \
+	    [lreplace $useNodes(logged) $index $index]
+    }
+    
     method SetSavePath {} {
 	set newFolder [tk_chooseDirectory -title [tr. {Folder for log files:}] \
 			   -initialdir $curFolder -parent $winId]
-	if {[string length $newFolder] && \
-		![string equal $curFolder $newFolder]} {
-	    CloseAllFiles
-	    set curFolder $newFolder
-	    if {![file isdir $curFolder]} {
-		file mkdir  $curFolder
-	    }
+	if {![string length $newFolder] || \
+		[string equal $curFolder $newFolder]} return
+	CloseAllFiles
+	set curFolder $newFolder
+	if {![file isdir $curFolder]} {
+	    file mkdir  $curFolder
 	}
 	set ::msgs(logs_$this) [format [tr. {Current folder: %1$s}] $curFolder]
 	Display [$modelInst GetCurrentTime] 1 1 ;# write current vals
