@@ -17,8 +17,6 @@ class similescript::$newHelperClass {
 # perverse extra body because base class constructor has args
 	Helper::constructor $modelInst $winTitle
     } {
-	set curFolder [GetPathChoice .csv [GetNode]]
-	set ::msgs(logs_$this) [format [tr. {Current folder: %1$s}] $curFolder]
         set useNodes(removeImg) \
 	    [image create photo -file "../Images/Toolbar/remove.gif"]
 	set toolbarItems \
@@ -37,13 +35,16 @@ class similescript::$newHelperClass {
 	BindPopup $f.head.label logs_$this
 	BindPopup $f.head.save [tr. {Choose folder for logs}]
 	
-	menu $winId.logvars -tearoff 0
-
 	if {[string length $state]} { ;# we are restoring 
-	    set State $state ;# keep it local
-	    Display 0 0 0
+	    #puts $state
+	    package require xml
+	    set hsfParser [::xml::parser -ignorewhitespace true \
+				-elementstartcommand [code $this StartElement] \
+				-characterdatacommand [code $this Stuff]]
+	    $hsfParser parse $state
 	} else {
 	    # new instance so request data from model
+	    SetSavePathTo [GetPathChoice .csv [GetNode]]
 	    pack [message $winId.message \
 		      -text "Use + button to add components for logging"]
 	}
@@ -78,6 +79,16 @@ class similescript::$newHelperClass {
 	}	    
     }
 
+    public method PrepareSaveString {} {
+	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[$this info class]\">\n"
+	append State "<target_dir mode=\"absolute\">$curFolder</target_dir>\n"
+	append State <components>\n
+	foreach item $useNodes(logged) {
+	    append State <component>$item</component>\n
+	}
+	append State </components>\n</hsf>\n
+    }
+	
 # end of methods called by simile
 # start of methods defined in this helper
     method AddVariable {} {
@@ -102,8 +113,7 @@ class similescript::$newHelperClass {
             set f $winId
 	    set lbg blue
         }
-	$winId.logvars add command -label $title \
-		-command [code $this Remove $title]
+
 	lappend useNodes(logged) $title
 	pack [label $f.caption -text [lindex $levels end]: -bg $lbg] -side left
 	pack [::ttk::button $f.remove -image $useNodes(removeImg) \
@@ -128,13 +138,19 @@ class similescript::$newHelperClass {
 			   -initialdir $curFolder -parent $winId]
 	if {![string length $newFolder] || \
 		[string equal $curFolder $newFolder]} return
+	SetSavePathTo $newFolder
+    }
+
+    method SetSavePathTo {newFolder} {
 	CloseAllFiles
 	set curFolder $newFolder
 	if {![file isdir $curFolder]} {
-	    file mkdir  $curFolder
+	    file mkdir $curFolder
 	}
 	set ::msgs(logs_$this) [format [tr. {Current folder: %1$s}] $curFolder]
-	Display [$modelInst GetCurrentTime] 1 1 ;# write current vals
+	if {[info exists useNodes(logged)]} {
+	    Display [$modelInst GetCurrentTime] 1 1 ;# write current vals
+	}
     }
 
     method UpdateFile {path time} {
@@ -169,6 +185,21 @@ class similescript::$newHelperClass {
 	foreach stmName [array names useNodes *.stm] {
 	    close $useNodes($stmName)
 	    unset useNodes($stmName)
+	}
+    }
+
+    # for parsing XML status
+    method StartElement {name attList args} {
+	set useNodes(inElt) $name
+    }
+
+    method Stuff {contents} {
+	switch $useNodes(inElt) {
+	    target_dir {
+		SetSavePathTo $contents
+	    } component {
+		InsertLogEntry $contents 1
+	    }
 	}
     }
 }
