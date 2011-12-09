@@ -1536,7 +1536,7 @@ int ModelServer::param_item_from_id(FileParamData** start, int paramId) {
   }
 }
 
-// New version of nodeModelAndId returns number
+/* New version of nodeModelAndId returns number
 // -- who knows, maybe one day it will work intelligently?
 int ModelServer::NodeNumFromCapt(char* seeknode) {
   int count;
@@ -1551,10 +1551,10 @@ int ModelServer::NodeNumFromCapt(char* seeknode) {
       return(count);
     }
   }
-  /* Node with given caption not found... */
+  // Node with given caption not found...
   return -1;
 }
-
+*/
 int ModelServer::member_param_item(FileParamData** start, int* parentPath) {
   node_data_line* nLine;
 
@@ -1848,6 +1848,10 @@ char* ModelServer::nodeModelAndId(char* seeknode) {
       return(nodedata[count].name);
     }
     
+    /* rest is dedicated to finding ghost nodes, which should only be tried 
+       if base is not found, if at all, so have put in new loop */
+  }
+  for (count = 1; nodecount>count; ++count) {
     if (strstr(seeknode, test) != seeknode) continue;
     // test is initial substring
     tail = seeknode + strlen(test);
