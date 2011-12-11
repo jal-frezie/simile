@@ -2007,7 +2007,7 @@ public:
   }
 
   BOOLEAN interact_gui(void* ref, int action, double modelTime) {
-    fivedee_interact_gui(ref, action, modelTime);
+    return fivedee_interact_gui(ref, action, modelTime);
   }
   
   void showMess(const char* toShow) {
