@@ -489,6 +489,7 @@ namespace eval $keyValue {
 
 	set listVersion [lrepeat $curRows [lrepeat $curCols {}]]
 	foreach {idxPair val} [array get ::data$winId] {
+	    if {[string equal active $idxPair]} continue
 	    lset listVersion [split $idxPair ,] $val
 	}
 	set fileId [open $filename w]
@@ -827,7 +828,7 @@ namespace eval $keyValue {
             incr count
         }
         #puts "vnps $varNamePosns($winId)"
-        puts "row headers inserted at [clock milliseconds]"
+        #puts "row headers inserted at [clock milliseconds]"
 	#puts "table now looks like [array get ::data$winId]"
 	
 	RestoreFromMirror $winId
