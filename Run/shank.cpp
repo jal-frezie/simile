@@ -1851,7 +1851,8 @@ char* ModelServer::nodeModelAndId(char* seeknode) {
     /* rest is dedicated to finding ghost nodes, which should only be tried 
        if base is not found, if at all, so have put in new loop */
   }
-  for (count = 1; nodecount>count; ++count) {
+  for (count = 0; nodecount>count; ++count) {
+    make_full_caption(count, test, dims, types);
     if (strstr(seeknode, test) != seeknode) continue;
     // test is initial substring
     tail = seeknode + strlen(test);

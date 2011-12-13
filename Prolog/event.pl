@@ -855,9 +855,8 @@ doubleclick_on(Edit_thing) :-
 	    /* above fails if cancelled; if dialogue OK, then object is
 	    complete. check here that the dims have changed */
 	    find_node_with_data(Edit_thing, Base, NewControlThing),
-	    (is_parameter(NewControlThing, WasP), !;
-		redisplay_border(Edit_thing)),
-	    (get_av_pair(NewControlThing, 0, units, OldUnits), !,
+	    (is_parameter(NewControlThing, WasP),
+	     get_av_pair(NewControlThing, 0, units, OldUnits), !,
 		NewDims = none;
 	    NewDims = dims),
 	    spread_colour(Base, NewDims),

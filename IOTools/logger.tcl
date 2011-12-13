@@ -7,6 +7,7 @@ class similescript::$newHelperClass {
     inherit Helper
 
     variable curFolder
+    variable toSeparateFiles
     variable useNodes
 
     proc Identify {} {
@@ -19,12 +20,17 @@ class similescript::$newHelperClass {
     } {
         set useNodes(removeImg) \
 	    [image create photo -file "../Images/Toolbar/remove.gif"]
+        set useNodes(multiFileImg) \
+	    [image create photo -file "../Images/Toolbar/multi.gif"]
+	set ::msgs(filemode_$this) "Save as columns in one file"
 	set toolbarItems \
                 [list [list new.gif "Clear" [namespace code "Clear $winId"]] \
                 [list add.gif "Add variables" \
                 [code $this AddVariable]] \
                 [list slider.gif "Add all variables" \
-                [code $this AddAllVariables /]]]
+                [code $this AddAllVariables /]] \
+                [list table.gif filemode_$this \
+                [code $this ColumnMode]]]
         ::graphtools::MakeToolBar $winId $toolbarItems
         MakeFrames $winId
 	set f [MakeSubFrames $winId $winId.c.canvas.frame {{} {}} {} 0]
@@ -45,6 +51,7 @@ class similescript::$newHelperClass {
 	} else {
 	    # new instance so request data from model
 	    SetSavePathTo [GetPathChoice .csv [GetNode]]
+	    set toSeparateFiles yes
 	    pack [message $winId.message \
 		      -text "Use + button to add components for logging"]
 	}
@@ -74,14 +81,19 @@ class similescript::$newHelperClass {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
-	foreach path $useNodes(logged) {
-	    UpdateFile $path $time
-	}	    
+	if {$toSeparateFiles} {
+	    foreach path $useNodes(logged) {
+		UpdateFile $path $time
+	    }
+	} else {
+	    UpdateCombined $time
+	}
     }
 
     public method PrepareSaveString {} {
 	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[$this info class]\">\n"
 	append State "<target_dir mode=\"absolute\">$curFolder</target_dir>\n"
+	append State "<to_separate_files whether=\"$toSeparateFiles\"/>\n"
 	append State <components>\n
 	foreach item $useNodes(logged) {
 	    append State <component>$item</component>\n
@@ -160,17 +172,25 @@ class similescript::$newHelperClass {
 	    set useNodes($path.stm) [set out [open $name w]]
 	    
 # code to write indices lifted from snap tool
-	    set nst 0
-	    set v1 $val
-	    while {[llength $v1]>1} {
-		incr nst
-		set v1 [lindex $v1 1]
-	    }
-	    set lh time
-	    for {set idx 1} {$idx<=$nst} {incr idx} {
-		puts -nonewline $out $lh
-		set lh {}
-		PutIndNo $out -$idx $val
+
+# old version put index at each level in a separate row
+#	    set nst 0
+#	    set v1 $val
+#	    while {[llength $v1]>1} {
+#		incr nst
+#		set v1 [lindex $v1 1]
+#	    }
+#	    for {set idx 1} {$idx<=$nst} {incr idx} {
+#		if {$idx==$nst} {
+#		    puts -nonewline $out "Time \ "
+#		}
+#		puts -nonewline $out "Index $idx"
+#		PutIndNo $out -$idx $val
+#		puts $out {}
+#	    }
+	    if {[llength $val]>1} {
+		puts -nonewline $out Time
+		PutIndexCombos $out $val {}
 		puts $out {}
 	    }
 	} else {
@@ -181,16 +201,75 @@ class similescript::$newHelperClass {
 	puts $out {}
     }
 
+    method UpdateCombined {time} {
+	if {[info exists useNodes(common_stm)]} {
+	} else {
+	    set useNodes(common_stm) [open [file join $curFolder log.csv] w]
+	    puts -nonewline $useNodes(common_stm) Time
+	    foreach path $useNodes(logged) {
+		PutIndexCombos $useNodes(common_stm) \
+		    [lindex [$modelInst GetValue $path] 0] \
+		    [file tail $path]
+	    }
+	puts $useNodes(common_stm) {}
+	}
+	puts -nonewline $useNodes(common_stm) $time
+	foreach path $useNodes(logged) {
+	    PutValsOnly $useNodes(common_stm) \
+		[lindex [$modelInst GetValue $path] 0]
+	}
+	puts $useNodes(common_stm) {}
+    }
+
+    method PutIndexCombos {stm val gone} {
+	if {[llength $val]>1} {
+	    foreach {idx elt} $val {
+		PutIndexCombos $stm $elt \
+		    [join [concat [split $gone .] [list $idx]] .]
+	    }
+	} else {
+	    puts -nonewline $stm ,$gone
+	}
+    }
+
     method CloseAllFiles {} {
 	foreach stmName [array names useNodes *.stm] {
 	    close $useNodes($stmName)
 	    unset useNodes($stmName)
 	}
+	if {[info exists useNodes(common_stm)]} {
+	    close $useNodes(common_stm)
+	}
+    }
+
+    method ColumnMode {} {
+	$winId.bbframe.buttonBox itemconfigure 3 \
+	    -image $useNodes(multiFileImg) \
+	    -command [code $this MultiFileMode]
+	set ::msgs(filemode_$this) "Save as separate files"
+	CloseAllFiles
+	set toSeparateFiles no
+    }
+
+    method MultiFileMode {} {
+	$winId.bbframe.buttonBox itemconfigure 3 \
+	    -image $::iconImages(table) \
+	    -command [code $this ColumnMode]
+	set ::msgs(filemode_$this) "Save as columns in one file"
+	CloseAllFiles
+	set toSeparateFiles yes
     }
 
     # for parsing XML status
     method StartElement {name attList args} {
 	set useNodes(inElt) $name
+	switch [lindex $attList 0] {
+	    whether { ;# to separate files
+		if {![lindex $attList 1]} {
+		    ColumnMode
+		}
+	    }
+	}
     }
 
     method Stuff {contents} {
