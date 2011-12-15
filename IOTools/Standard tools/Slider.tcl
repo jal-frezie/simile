@@ -424,7 +424,8 @@ namespace eval slide139 {
     proc Open {winId smPath} {
         global helperTable whichParamsAffected
 
-	set smPath [string range $smPath 1 end]/ ;# submodels in toplevel style
+	set smPath [string range $smPath 1 end] ;# submodels in toplevel style
+	# (MergeParams will fix if .spf saved by this tool)
 	set topNode [$helperTable($winId,whichInstance) GetNode]
         set metaFile [ChooseFile params.spf  [tr. "Load parameters from:"] \
 			  0 $topNode]
@@ -437,7 +438,7 @@ namespace eval slide139 {
         global helperTable widgetSeln simtmpdir env
 
         #puts "Saving submodel $smPath inputs"
-	set smPath [string range $smPath 1 end]/ ;# submodels in toplevel style
+	set smPath [string range $smPath 1 end]/ ;# submodels in relative style
 	set topNode [$helperTable($winId,whichInstance) GetNode]
         set metaFile [ChooseFile inputs.spf  [tr. "Save input values as:"] \
 			  1 $topNode]

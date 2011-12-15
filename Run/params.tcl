@@ -1523,10 +1523,20 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	    if {[catch {
 		set multiT [mime::initialize -file $oldPath]
 		set paramState(origVersion) [mime::getheader $multiT Simile-Version]
+		set paramState(whatFrom) [mime::getheader $multiT Simile-Origin]
+		if {[string equal input-param-tool $paramState(whatFrom)]} {
+# due to a historical accident, the caption paths in these do not have a
+# leading slash -- so add a trailing one to the target submodel.
+# From v6 on, these too will be XML
+		    append smPath /
+		}
+# puts "origin was $paramState(whatFrom), target sm now $smPath"
 		set mimeSquirter [NetOpen $metaFile w]
 		fconfigure $mimeSquirter -translation binary
-		mime::getbody $multiT -command SquirtMime -blocksize 256}]
+		mime::getbody $multiT -command SquirtMime -blocksize 256} crypt]
 	    } {
+		# really trying to load a pre-MIME version...?
+		puts "assuming v3x spf because: $crypt"
 		set metaFile $oldPath
 		set paramState(origVersion) 0.0
 	    }
