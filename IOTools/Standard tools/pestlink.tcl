@@ -1172,11 +1172,12 @@ $numOutputs"
         }
         
         set oldDir [pwd]
+	set sysDir $::env(SYSDIR)
         if {[string match windows $tcl_platform(platform)]} {
-            set oldDir [file attributes $oldDir -shortname]
+            set sysDir [file attributes $sysDir -shortname]
         }
         puts $control {* model command line}
-        set ourWish \"[file join [file dirname $oldDir] System bin relay$archExtn$execExtn]\"
+        set ourWish \"[file join $sysDir bin relay$archExtn$execExtn]\"
         puts $control [file nativename $ourWish]
         puts $control {* model input/output}
         puts $control {model.tpl model.inp}
