@@ -10,7 +10,7 @@
   references to other files. They may refer to the whole model or a submodel.
 }
 \usage{
-consult.parameter.metafile(instance.handle,param.file)
+consult.parameter.metafile(instance.handle,param.file,target.submodel="")
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -19,6 +19,9 @@ The handle returned by create.model() identifying the model instance.
 }
   \item{param.file}{
 Location of the parameter metafile.
+}
+  \item{target.submodel}{
+Pathname of the submodel into which the parameters are to be loaded. Default is the top level.
 }
 }
 \details{
@@ -48,5 +51,9 @@ Jasper Taylor
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+\donttest{
+% requires Simile installation plus saved executable model so cannot be
+% auto tested
 consult.parameter.metafile(instance.handle, "../data/base_vals.spf")
+}
 }

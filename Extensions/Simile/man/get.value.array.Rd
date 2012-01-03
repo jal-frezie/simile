@@ -10,7 +10,7 @@
 }
 \usage{
 %- maybe also 'usage' for other objects documented here.
-get.value.array(instance.handle, value.name)
+get.value.array(instance.handle, value.name, as.enum.types)
 }
 \arguments{
   \item{instance.handle}{
@@ -19,12 +19,16 @@ get.value.array(instance.handle, value.name)
   \item{value.name}{
     Caption path to the model component whose values are required
   }
+  \item{as.enum.types}{
+    Logical: whether to supply values as character strings, using
+    enumerated type names if applicable. Default is false: values are numerical.
+  }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 }
 \value{
-  A numerical value or array of numerical values, from the model
+  A value or array of values, from the model
 
 
 %%  ~Describe the value returned
@@ -40,16 +44,24 @@ get.value.array(instance.handle, value.name)
 Jasper Taylor
 }
 \note{
-%%  ~~further notes~~
+  %%  ~~further notes~~
+  Will not work on components inside variable-membership submodels. For
+  these you should use get.value.list instead, as R's list structure is
+  more appropriate than the array structure when not all values exist.
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
 %% ~~objects to See Also as \code{\link{help}}, ~~~
+  \code{\link{get.value.list}}
 }
 \examples{
-get.value.array(instance.handle,"/sector/output")
+\donttest{
+% requires Simile installation plus saved executable model so cannot be
+% auto tested
+get.value.array(instance.handle,"/sector/output", FALSE)
  [1]  0.8414710  0.9092974  0.1411200 -0.7568025 -0.9589243 -0.2794155
  [7]  0.6569866  0.9893582  0.4121185 -0.5440211
+}
 }

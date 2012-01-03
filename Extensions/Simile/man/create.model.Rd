@@ -45,5 +45,9 @@ Jasper Taylor
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+\donttest{
+% requires Simile installation plus saved executable model so cannot be
+% auto tested
 instance.handle <- create.model(model.handle)
+}
 }

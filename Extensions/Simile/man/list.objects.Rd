@@ -41,10 +41,13 @@ Jasper Taylor
 %% q~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-> list.objects(model.handle)
-[1] "/sector"           "/sector/output"    "/sector/flow1"    
-[4] "/sector/variation"
-> 
+\donttest{
+% requires Simile installation plus saved executable model so cannot be
+% auto tested
+list.objects(model.handle)
+# [1] "/sector"           "/sector/output"    "/sector/flow1"    
+# [4] "/sector/variation"
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

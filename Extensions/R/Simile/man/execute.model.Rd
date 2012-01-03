@@ -72,7 +72,3 @@ Jasper Taylor
 \seealso{
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
-\examples{
-execute.model(instance.handle, "Runge-Kutta", 0, 100, 1e-6, 0)
-  [1] 0 100
-}

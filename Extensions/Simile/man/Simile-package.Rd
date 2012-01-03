@@ -48,4 +48,82 @@ Simile modelling environment: simulistics.com
 }
 \examples{
 %% ~~ simple examples of the most important functions ~~
+\donttest{
+% requires Simile installation plus saved executable model so cannot be
+% auto tested
+require("Simile")
+path.to.installation <- tcl("tk_chooseDirectory", "-title",
+"Folder where Simile is installed:")
+use.simile.at(path.to.installation)
+
+exec.extn <- as.character(tcl("info","sharedlibextension"))
+path.to.spiro <- tcl("tk_getOpenFile",
+                     "-title", "Compiled binary for Spiro example:",
+                     "-initialfile", paste("spiro",exec.extn,sep=""))
+mHandle <- load.model(path.to.spiro)
+objs <- list.objects(mHandle)
+
+for (obj in objs) {
+  print(c(obj, get.model.property(mHandle, obj, "Class")))
+}
+
+iHandle <- create.model(mHandle)
+set.model.step(iHandle, 1, 1)
+
+# now we are going to parameterize it using a state file for the slider helper
+# -- to make this work we add / to end of destination submodel name
+# and load the mime library, which is needed for this type of file.
+# This must be done before initializing model to avoid error messages
+tcl("package","require","mime")
+pFile  <- tcl("file", "join", path.to.installation, "Examples", "dancer.spf")
+consult.parameter.metafile(iHandle, pFile, "/")
+
+# also the file from the distribution has no value for "Wheel outside?"
+# so we set this boolean directly
+pHandle <- create.param.array(iHandle, "/start/Wheel outside?")
+set.model.parameter(pHandle, 0)
+
+# initialize the model, including default slider values
+reset.model(iHandle, 0, "EULER", -2)
+
+# unfortunately this overwrites time series values with their defaults from
+# the model code, so we will get the default pattern even though we loaded
+# 'dancer' -- display it anyway
+
+xs <- list(get.value.list(iHandle, "/runs/x"))
+ys <- list(get.value.list(iHandle, "/runs/y"))
+for (count in 1:1739) {
+  execute.model(iHandle, "EULER", count-1, count, 0, 0)
+  xs[[count+1]] <- get.value.list(iHandle, "/runs/x")
+  ys[[count+1]] <- get.value.list(iHandle, "/runs/y")
+}
+xs <- mapply(c,xs)
+ys <- mapply(c,ys)
+plot(xs, ys, type="l")
+print("View default pattern -- now try to plot dancer")
+scan(nmax=0) # hit cr to continue
+
+# load parameters again (except wheel outside which defaults FALSE)
+consult.parameter.metafile(iHandle, pFile, "/")
+
+# apply reset at level 0 to propagate input values
+reset.model(iHandle, 0, "EULER", 0)
+
+xs <- list(get.value.list(iHandle, "/runs/x"))
+ys <- list(get.value.list(iHandle, "/runs/y"))
+for (count in 1:419) {
+  execute.model(iHandle, "EULER", count-1, count, 0, 0)
+  xs[[count+1]] <- get.value.list(iHandle, "/runs/x")
+  ys[[count+1]] <- get.value.list(iHandle, "/runs/y")
+}
+xs <- mapply(c,xs)
+ys <- mapply(c,ys)
+plot(xs, ys, type="l")
+
+print("OK, but that's not how it looks on Simile is it? Try this...")
+scan(nmax=0) # hit cr to continue
+xs <- aperm(xs, c(2,1))
+ys <- aperm(ys, c(2,1))
+plot(xs, ys, type="l")
+}
 }

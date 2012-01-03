@@ -65,5 +65,9 @@ Jasper Taylor
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+\donttest{
+% requires Simile installation plus saved executable model so cannot be
+% auto tested
 reset.model(instance.handle, 0, "Euler", -2)
+}
 }

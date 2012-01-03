@@ -2,7 +2,7 @@
 # ...like this:
 proc UseSimileAt {path} {
     global env tcl_platform SIMILE_PATH
-    set SIMILE_PATH $path
+    set SIMILE_PATH [file normalize $path]
 
 # From simile.tcl --  sets libraries to 32 or 64 bit version per Tcl bitness
 # (right version must be installed, wrong one can be too)
@@ -81,6 +81,16 @@ proc RunningInC {args} {
     return 1 ;# we always are
 }
 
+# report queries to console and take default action
+proc Query {act level topic win opts} {
+    set response [lindex $opts 0]
+    puts "Simile problem occurred."
+    puts "Identification: $act"
+    puts "Severity level: $level"
+    puts "Action taken: $response"
+    return $response
+}
+
 # from exec.tcl -- workaround for hideous old stuff in params.tcl
 proc c_setparamarray {topNode tgtNode} {
     set ::param_id($tgtNode) [c_createparamarray $::cbInstanceId $tgtNode]
@@ -126,7 +136,7 @@ proc ConsultParameterMetafile {instanceHandle fileLocn {targetSubmodel {}}} {
 	set ::readMany(/$topNode$component) \
 	    [string equal INPUT [GetModelProperty $mHandle $component Eval]]
     }
-    ZapParams $topNode $targetSubmodel $fileLocn
+    ZapParams $topNode $targetSubmodel [file normalize $fileLocn]
 }
 ## End of parameter loading accessories 
 
@@ -186,12 +196,54 @@ proc CreateModel {mHandle} {
     return $iHandle
 }
 
-proc GetPairedValues {iHandle outputNode} {
+proc GetPairedValues {iHandle outputNode {asEnumType yes}} {
     set bloc [handle_data dummyMHandle $iHandle \
 		  [getnodeid $::modelTypes($iHandle) $outputNode]]
     set result [extract_list $bloc 16777216]
     free_data_handle $bloc
+    if {$asEnumType} {
+	set types [GetModelProperty $::modelTypes($iHandle) $outputNode Trans]
+	set result [TransEnums $types $result yes]
+    }
     return $result
+}
+
+# lifted from v5.9
+proc TransEnums {transList vals fromNums} {
+    set curLevel [lindex $transList 0]
+    if {[llength $vals]==1} {
+	return [TransValue $curLevel $vals $fromNums]
+    } else {
+# speed: if no defns, just return arg
+	if {[lsearch -regexp $transList .] == -1} {return $vals}
+	set argTrans [lrange $transList 1 end]
+	set result {}
+	foreach {index subVals} $vals {
+	    lappend result [TransValue $curLevel $index $fromNums] \
+		[TransEnums $argTrans $subVals $fromNums]
+	}
+	return $result
+    }
+}
+
+proc TransValue {curLevel val fromNums} {
+    if {[llength $curLevel]} {
+	if {$fromNums} {
+	    return [lindex $curLevel $val]
+	} else {
+	    set poss [lsearch $curLevel $val]
+	    if {$poss == -1} {
+		if {[string equal false [lindex $trans 0]]} {
+		    error [format [tr. {Data value %1$s is not a member of type boolean, pick one of %2$s.}] $head $trans]
+		} else {
+		    error [format [tr. {Data value %1%s is not a member of type %2$s, pick one of %3$s.}] $head [lindex $trans 0] [lrange $trans 1 end]]
+		}
+	    }
+	    return $poss
+	}
+    } else {
+	return $val
+    }
 }
 
 proc ListObjPaths {mHandle} {
@@ -205,6 +257,7 @@ proc CreateParamArray {iHandle path} {
     set mHandle $::modelTypes($iHandle)
     set aHandle [c_createparamarray $iHandle \
 		     [set id [getnodeid $mHandle $path]]]
+    set ::modelInstances($aHandle) $iHandle
     set ::cachedDims($aHandle) [lrange [getvalue $mHandle $id 0] 0 end-1]
     return $aHandle
 }
@@ -257,8 +310,17 @@ proc SharpenList {flatList dims} {
     return $result
 }
 
-proc SetParamArrayFromFlatList {aHandle content dims} {
-    SetParamArrayFromList $aHandle [lindex [SharpenList $content $dims] 0]
+proc SetParamArrayFromFlatList {aHandle content {dims {}} {asEnumType yes}} {
+    if {$asEnumType} {
+	set types [GetModelProperty $::modelType($::modelInstance($aHandle)) \
+		       $outputNode Trans]
+	set content [TransEnums $types $content no]
+    }
+    if {![llength $dims]} {
+	newc_setparamelement $aHandle {} $content
+    } else {
+	SetParamArrayFromList $aHandle [lindex [SharpenList $content $dims] 0]
+    }
 }
 
 proc IntMethodID {intMethod} {

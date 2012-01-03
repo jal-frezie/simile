@@ -46,5 +46,8 @@ Absolute or realtive path to top directory of Simile installation
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
-use.simile.at("c:/Program files (x86)/Simile5.8")
+\donttest{
+% requires Simile installation so cannot be auto tested
+use.simile.at("c:/Program files/Simile5.9")
+}
 }

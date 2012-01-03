@@ -1,25 +1,26 @@
-use.simile.at <- function(path) {
+use.simile.at <- function(path.to.installation) {
   tcl("set", "::loadedFromR", 1) # lets Tcl client know R is using it
   tcl("source", file.path(.find.package(package = "Simile"), "exec",
                         "client5d.tcl"))
-  tcl("UseSimileAt", path)
+  tcl("UseSimileAt", path.to.installation)
 }
 
-load.model <- function(model.file) {
-  tcl("loadmodel", model.file, "R")
+load.model <- function(path.to.binary) {
+  tcl("loadmodel", path.to.binary, "R")
 }
 
 list.objects <- function(model.handle) {
   as.character(tcl("ListObjPaths", model.handle))
 }
 
-get.model.property <- function(model.handle, obj, action) {
-  tcl.result <- tcl("GetModelProperty", model.handle, obj, action)
-  if (any(c("Dims")==action)) {
+get.model.property <- function(model.handle, caption.path, requested.property) {
+  tcl.result <- tcl("GetModelProperty", model.handle, caption.path,
+                    requested.property)
+  if (any(c("Dims")==requested.property)) {
 # may be more integer cases
     with.trailing.zero <- as.integer(tcl.result)
     with.trailing.zero[-length(with.trailing.zero)] # removes it
-  } else if (any(c("MinVal","MaxVal")==action)) {
+  } else if (any(c("MinVal","MaxVal")==requested.property)) {
 # may be more integer cases
     as.real(tcl.result)
   } else {
@@ -31,56 +32,90 @@ create.model <- function(model.handle) {
   tcl("CreateModel", model.handle)
 }
 
-set.model.step <- function(instance.handle, step.level, step.duration) {
-  tcl("c_setstepmodel", instance.handle, step.duration, step.level)
+set.model.step <- function(instance.handle, step.index, step.size) {
+  tcl("c_setstepmodel", instance.handle, step.size, step.index)
 }
 
 create.param.array <- function(instance.handle, param.name) {
   tcl("CreateParamArray", instance.handle, param.name)
 }
 
-set.model.parameter <- function(param.handle, values) {
-  tcl("SetParamArrayFromFlatList", param.handle, values, dim(values))
+set.model.parameter <- function(param.handle, data, as.enum.types = FALSE) {
+  tcl("SetParamArrayFromFlatList", param.handle, data, dim(data), as.enum.types)
 }
 
-consult.parameter.metafile <- function(instance.handle, param.file) {
-  tcl("ConsultParameterMetafile", instance.handle, param.file)
+consult.parameter.metafile <- function(instance.handle, param.file,
+                                       target.submodel = "") {
+  tcl("ConsultParameterMetafile", instance.handle, param.file, target.submodel)
 }
 
-reset.model <- function(instance.handle, t0, integration.method, depth) {
-  tcl("ResetModel", instance.handle, t0, integration.method, depth)
+reset.model <- function(instance.handle, starting.time, integration.method,
+                 depth) {
+  tcl("ResetModel", instance.handle, starting.time, integration.method,
+                 depth)
 }
 
-execute.model <- function(instance.handle, integration.method, from, to,
-                          error.limit, event.pauses) {
-  tcl("ExecuteModel", instance.handle, integration.method, from, to,
-                          error.limit, event.pauses)
+execute.model <- function(instance.handle, integration.method, start.time,
+                 finish.time, error.limit, pause.on.event) {
+  tcl("ExecuteModel", instance.handle, integration.method, start.time,
+                 finish.time, error.limit, pause.on.event)
 }
 
 #
-tcl.paired.to.array <- function(paired, dims) {
-  result <- rep(NA, times=prod(dims)) # sets all
-  dim(result) <- dims
-  subDims <- dims[-1] # removes first element
-  for (posn in 1:dims[1]) {
-    idx <- 2*posn-1
-    member <- tcl("lindex", paired, idx)
-    if (length(subDims)) {
-      result[posn,] <- tcl.paired.to.array(member, subDims)
+tcl.paired.to.list <- function(paired, as.enum.types) {
+  length <- as.integer(tcl("llength", paired))
+  if (length==1) {
+    if (as.enum.types) {
+      as.character(paired)
     } else {
-      result[posn] <- as.real(member)
+      as.real(paired)
     }
+  } else {
+    result <- list() # sets none
+    for (posn in seq(1,length,by=2)) {
+      index <- tcl("lindex", paired, posn-1)
+      if (as.enum.types) {
+        index <- as.character(index)
+      } else {
+        index <- as.integer(index)
+      }    
+      result[[index]] <- tcl.paired.to.list(tcl("lindex", paired, posn),
+                                            as.enum.types)
+    }
+    result
   }
-  result
 }
 
-get.value.array <- function(instance.handle, value.name) {
-  paired <- tcl("GetPairedValues", instance.handle, value.name)
-  i.m.list <- tcl("array", "get", "::modelTypes", instance.handle)
-  dims <- get.model.property(tcl("lindex", i.m.list, 1), value.name, "Dims")
+tcl.paired.to.array <- function(paired, dims, as.enum.types) {
+  # note indices in value from model are ignored, so may be enumerated type
   if (length(dims)) {
-    tcl.paired.to.array(paired, dims)
+    result <- {}
+    subDims <- dims[-1] # removes first element
+    for (posn in 1:dims[1]) {
+      idx <- 2*posn-1
+      member <- tcl("lindex", paired, idx)
+      result <- c(result, tcl.paired.to.array(member, subDims, as.enum.types))
+    }
+    result
+  } else if (as.enum.types) {
+    as.character(paired)
   } else {
     as.real(paired)
   }
+}
+
+get.value.list <- function(instance.handle, value.name, as.enum.types = FALSE) {
+  paired <- tcl("GetPairedValues", instance.handle, value.name, as.enum.types)
+  tcl.paired.to.list(paired, as.enum.types)
+}
+
+get.value.array <- function(instance.handle, value.name, as.enum.types = FALSE) {
+  i.m.list <- tcl("array", "get", "::modelTypes", instance.handle)
+  dims <- get.model.property(tcl("lindex", i.m.list, 1), value.name, "Dims")
+  if (any(is.na(dims))) {
+    stop("This value is in a variable-membership submodel --
+use get.value.list instead")
+  }
+  paired <- tcl("GetPairedValues", instance.handle, value.name, as.enum.types)
+  array(tcl.paired.to.array(paired, dims, as.enum.types),dim=rev(dims))
 }

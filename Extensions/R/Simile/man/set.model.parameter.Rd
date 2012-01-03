@@ -9,7 +9,7 @@ A model parameter may be a single value or an array of values. This
 function allows it to be set.
 }
 \usage{
-set.model.parameter(param.handle,data)
+set.model.parameter(param.handle,data, as.enum.types)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -21,6 +21,10 @@ send the data.
 The data to be used in the model, either a single value or an array with
 the appropriate dimensions
 }
+  \item{as.enum.types}{
+    Logical: whether the values are supplied using
+    enumerated type names if applicable. Default is false: values are numerical.
+  }
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
@@ -49,5 +53,9 @@ Jasper Taylor
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+\donttest{
+% requires Simile installation plus saved executable model so cannot be
+% auto tested
 set.model.parameter(param.handle, array(c(4,4,3,4,2,5,5,2,1,5), c(2,5)))
+}
 }

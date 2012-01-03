@@ -52,5 +52,9 @@ Jasper Taylor
 %% ~~objects to See Also as \code{\link{help}}, ~~~
 }
 \examples{
+\donttest{
+% requires Simile installation plus saved executable model so cannot be
+% auto tested
 set.model.step(instance.handle, 1, 0.1)
+}
 }
