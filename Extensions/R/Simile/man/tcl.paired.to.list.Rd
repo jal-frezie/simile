@@ -21,9 +21,6 @@ tcl.paired.to.list(paired, as.enum.types)
     strings, otherwise they are numeric
   }
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
   A numerical value or nested list of numerical values, from the Tcl value or array
 
@@ -34,14 +31,8 @@ tcl.paired.to.list(paired, as.enum.types)
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
 \author{
 Jasper Taylor
-}
-\note{
-%%  ~~further notes~~
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
@@ -51,7 +42,7 @@ Jasper Taylor
   \code{\link{tcl.paired.to.array}}
 }
 \examples{
-tcl.paired.to.list("1 {1 7 2 4} 2 {1 8} 3 {2 1}", FALSE)
+Simile:::tcl.paired.to.list("1 {1 7 2 4} 2 {1 8} 3 {2 1}", FALSE)
 # [[1]]
 # [[1]][[1]]
 # [1] 7

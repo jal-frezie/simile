@@ -30,22 +30,19 @@ An executable instance can be parameterized either by loading a Simile
 parameter metafile with consult.parameter.metafile(), or directly from R
 arrays with create.param.array() and set.model.parameter(). The
 functions set.model.step(), reset.model() and execute.model() control
-execution. Use get.value.array() to get the values from any model
-component as an R array. 
+execution. get.model.time() returns the time at which execution
+finished. Use get.value.array() to get the values from any model
+component as an R array, or get.value.list() to get them as an R list. 
 }
 \author{
   Simulistics Ltd
 }
 \references{
-Simile modelling environment: simulistics.com
+Simile modelling environment: http://simulistics.com
 }
 %% ~~ Optionally other standard keywords, one per line, from file KEYWORDS in ~~
 %% ~~ the R documentation directory ~~
 \keyword{ model }
-\seealso{
-%% ~~ Optional links to other man pages, e.g. ~~
-%% ~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
-}
 \examples{
 %% ~~ simple examples of the most important functions ~~
 \donttest{
@@ -81,10 +78,10 @@ consult.parameter.metafile(iHandle, pFile, "/")
 # also the file from the distribution has no value for "Wheel outside?"
 # so we set this boolean directly
 pHandle <- create.param.array(iHandle, "/start/Wheel outside?")
-set.model.parameter(pHandle, 0)
+set.model.parameter(pHandle, FALSE)
 
 # initialize the model, including default slider values
-reset.model(iHandle, 0, "EULER", -2)
+reset.model(iHandle, -2)
 
 # unfortunately this overwrites time series values with their defaults from
 # the model code, so we will get the default pattern even though we loaded
@@ -93,7 +90,7 @@ reset.model(iHandle, 0, "EULER", -2)
 xs <- list(get.value.list(iHandle, "/runs/x"))
 ys <- list(get.value.list(iHandle, "/runs/y"))
 for (count in 1:1739) {
-  execute.model(iHandle, "EULER", count-1, count, 0, 0)
+  execute.model(iHandle, count)
   xs[[count+1]] <- get.value.list(iHandle, "/runs/x")
   ys[[count+1]] <- get.value.list(iHandle, "/runs/y")
 }
@@ -107,12 +104,12 @@ scan(nmax=0) # hit cr to continue
 consult.parameter.metafile(iHandle, pFile, "/")
 
 # apply reset at level 0 to propagate input values
-reset.model(iHandle, 0, "EULER", 0)
+reset.model(iHandle, 0)
 
 xs <- list(get.value.list(iHandle, "/runs/x"))
 ys <- list(get.value.list(iHandle, "/runs/y"))
 for (count in 1:419) {
-  execute.model(iHandle, "EULER", count-1, count, 0, 0)
+  execute.model(iHandle, count)
   xs[[count+1]] <- get.value.list(iHandle, "/runs/x")
   ys[[count+1]] <- get.value.list(iHandle, "/runs/y")
 }

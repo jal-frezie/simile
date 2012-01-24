@@ -21,9 +21,6 @@ The handle returned by create.model() identifying the model instance.
 Caption path to the model component whose value is to be specified
 }
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
   A handle to the location that has been created.
 %%  ~Describe the value returned
@@ -32,21 +29,12 @@ Caption path to the model component whose value is to be specified
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
 \author{
 Jasper Taylor
-}
-\note{
-%%  ~~further notes~~
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
 \donttest{
 % requires Simile installation plus saved executable model so cannot be

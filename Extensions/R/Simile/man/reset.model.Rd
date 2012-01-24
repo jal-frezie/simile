@@ -10,18 +10,11 @@ the parameters are changed, and in order to run it again with new values
 for random constants.
 }
 \usage{
-reset.model(instance.handle, starting.time, integration.method, depth)}
+reset.model(instance.handle, depth, integration.method, starting.time)}
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{instance.handle}{
     The handle returned by create.model(), identifying an executable model instance.
-  }
-  \item{starting.time}{
-    Value for model time after resetting. Used for indexing time series,
-    time plots etc in the model.
-  }
-  \item{integration.method}{
-    One of "Euler" or "Runge-Kutta", the latter being 4th-order
   }
   \item{depth}{
     Simile does a sort of 'lazy execution', with values being left
@@ -37,10 +30,15 @@ reset.model(instance.handle, starting.time, integration.method, depth)}
       time step}
     }
   }
+  \item{integration.method}{
+    One of "Euler" or "Runge-Kutta", the latter being 4th-order. Default
+    is "Euler".
+  }
+  \item{starting.time}{
+    Value for model time after resetting. Used for indexing time series,
+    time plots etc in the model. Default is 0. 
+  }
 } 
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
   None
 %%  ~Describe the value returned
@@ -49,25 +47,16 @@ reset.model(instance.handle, starting.time, integration.method, depth)}
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
 \author{
 Jasper Taylor
-}
-\note{
-%%  ~~further notes~~
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
 \donttest{
 % requires Simile installation plus saved executable model so cannot be
 % auto tested
-reset.model(instance.handle, 0, "Euler", -2)
+reset.model(instance.handle, -2)
 }
 }

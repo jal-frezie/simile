@@ -32,9 +32,6 @@ get.model.property(model.handle,caption.path,requested.property)
   }
 }
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
   Form of returned value depends on the requested.property as described
   above.
@@ -59,21 +56,12 @@ preset member count.
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
 \author{
 Jasper Taylor
-}
-\note{
-%%  ~~further notes~~
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
 \donttest{
 % requires Simile installation plus saved executable model so cannot be

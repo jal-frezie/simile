@@ -18,9 +18,6 @@ load.model(path.to.binary)
 %%     ~~Describe \code{path.to.installation} here~~
 }
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
   Handle to be used for querying or instantiating model, as a Tcl object
 %%  ~Describe the value returned
@@ -29,20 +26,11 @@ load.model(path.to.binary)
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
 \author{
 Jasper Taylor}
-\note{
-%%  ~~further notes~~
-}
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
 \donttest{
 % requires Simile installation plus saved executable model so cannot be

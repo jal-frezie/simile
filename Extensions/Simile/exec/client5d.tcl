@@ -196,7 +196,7 @@ proc CreateModel {mHandle} {
     return $iHandle
 }
 
-proc GetPairedValues {iHandle outputNode {asEnumType yes}} {
+proc GetPairedValues {iHandle outputNode asEnumType} {
     set bloc [handle_data dummyMHandle $iHandle \
 		  [getnodeid $::modelTypes($iHandle) $outputNode]]
     set result [extract_list $bloc 16777216]
@@ -258,6 +258,7 @@ proc CreateParamArray {iHandle path} {
     set aHandle [c_createparamarray $iHandle \
 		     [set id [getnodeid $mHandle $path]]]
     set ::modelInstances($aHandle) $iHandle
+    set ::componentPaths($aHandle) $path
     set ::cachedDims($aHandle) [lrange [getvalue $mHandle $id 0] 0 end-1]
     return $aHandle
 }
@@ -310,10 +311,10 @@ proc SharpenList {flatList dims} {
     return $result
 }
 
-proc SetParamArrayFromFlatList {aHandle content {dims {}} {asEnumType yes}} {
+proc SetParamArrayFromFlatList {aHandle content asEnumType {dims {}}} {
     if {$asEnumType} {
-	set types [GetModelProperty $::modelType($::modelInstance($aHandle)) \
-		       $outputNode Trans]
+	set types [GetModelProperty $::modelTypes($::modelInstances($aHandle)) \
+		       $::componentPaths($aHandle) Trans]
 	set content [TransEnums $types $content no]
     }
     if {![llength $dims]} {
@@ -328,11 +329,18 @@ proc IntMethodID {intMethod} {
 }
 
 proc ResetModel {iHandle t0 intMethod depth} {
+    set ::currentTimes($iHandle) $t0
     c_resetmodel $::modelTypes($iHandle) $iHandle $t0 \
 	[IntMethodID $intMethod] $depth
 }
 
 proc ExecuteModel {iHandle intMethod from to errLim evtPause} {
-    c_executemodel $::modelTypes($iHandle) $iHandle [IntMethodID $intMethod] \
-	$from $to $errLim $evtPause
+    set result [c_executemodel $::modelTypes($iHandle) $iHandle \
+		    [IntMethodID $intMethod] $from $to $errLim $evtPause]
+    set ::currentTimes($iHandle) [lindex $result 1]
+    return [lindex $result 0]
+}
+
+proc GetModelTime {iHandle} {
+  return $::currentTimes($iHandle)
 }

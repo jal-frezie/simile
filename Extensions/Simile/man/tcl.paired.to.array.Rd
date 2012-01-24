@@ -24,9 +24,6 @@ tcl.paired.to.array(paired, dims, as.enum.types)
     they are numeric
   }
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
   A numerical value or array of numerical values, from the Tcl value or array
 
@@ -37,14 +34,15 @@ tcl.paired.to.array(paired, dims, as.enum.types)
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
 \author{
 Jasper Taylor
 }
 \note{
 %%  ~~further notes~~
+Note that the dimensions of the array returned will be in the opposite
+order from those supplied in the 'dims' argument. This is because
+Simile's convention is to list the outermost dimension first, whereas
+R's is to list the outermost dimension last.
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
@@ -54,9 +52,9 @@ Jasper Taylor
   \code{\link{tcl.paired.to.list}}
 }
 \examples{
-tcl.paired.to.array("1 {1 7 2 4} 2 {1 8 2 6} 3 {1 9 2 1}", c(3,2), FALSE)
-#     [,1] [,2]
-#[1,]    7    4
-#[2,]    8    6
-#[3,]    9    1
+Simile:::tcl.paired.to.array("1 {1 7 2 4} 2 {1 8 2 6} 3 {1 9 2 1}",
+c(3,2), FALSE)
+#     [,1] [,2] [,3]
+#[1,]    7    8    9
+#[2,]    4    6    1
 }

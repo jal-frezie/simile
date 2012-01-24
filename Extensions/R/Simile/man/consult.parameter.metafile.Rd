@@ -24,9 +24,6 @@ Location of the parameter metafile.
 Pathname of the submodel into which the parameters are to be loaded. Default is the top level.
 }
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
   None
 %%  ~Describe the value returned
@@ -35,21 +32,12 @@ Pathname of the submodel into which the parameters are to be loaded. Default is 
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
 \author{
 Jasper Taylor
-}
-\note{
-%%  ~~further notes~~
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
 \donttest{
 % requires Simile installation plus saved executable model so cannot be

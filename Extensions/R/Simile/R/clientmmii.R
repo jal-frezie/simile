@@ -41,7 +41,7 @@ create.param.array <- function(instance.handle, param.name) {
 }
 
 set.model.parameter <- function(param.handle, data, as.enum.types = FALSE) {
-  tcl("SetParamArrayFromFlatList", param.handle, data, dim(data), as.enum.types)
+  tcl("SetParamArrayFromFlatList", param.handle, data, as.enum.types, dim(data))
 }
 
 consult.parameter.metafile <- function(instance.handle, param.file,
@@ -49,19 +49,25 @@ consult.parameter.metafile <- function(instance.handle, param.file,
   tcl("ConsultParameterMetafile", instance.handle, param.file, target.submodel)
 }
 
-reset.model <- function(instance.handle, starting.time, integration.method,
-                 depth) {
-  tcl("ResetModel", instance.handle, starting.time, integration.method,
-                 depth)
+reset.model <- function(instance.handle, depth, integration.method = "Euler",
+                        starting.time = 0) {
+  tcl("ResetModel", instance.handle, starting.time, integration.method, depth)
 }
 
-execute.model <- function(instance.handle, integration.method, start.time,
-                 finish.time, error.limit, pause.on.event) {
-  tcl("ExecuteModel", instance.handle, integration.method, start.time,
-                 finish.time, error.limit, pause.on.event)
+execute.model <- function(instance.handle, finish.time,
+                          integration.method = "Euler", start.time = NA,
+                          error.limit = 0, pause.on.event = FALSE) {
+  if (is.na(start.time)) {
+    start.time <- get.model.time(instance.handle)
+  }
+  as.integer(tcl("ExecuteModel", instance.handle, integration.method,
+                 start.time, finish.time, error.limit, pause.on.event))
 }
 
-#
+get.model.time <- function(instance.handle) {
+  tcl("GetModelTime", instance.handle)
+}
+
 tcl.paired.to.list <- function(paired, as.enum.types) {
   length <- as.integer(tcl("llength", paired))
   if (length==1) {
@@ -96,7 +102,7 @@ tcl.paired.to.array <- function(paired, dims, as.enum.types) {
       member <- tcl("lindex", paired, idx)
       result <- c(result, tcl.paired.to.array(member, subDims, as.enum.types))
     }
-    result
+    array(result,dim=rev(dims))
   } else if (as.enum.types) {
     as.character(paired)
   } else {
@@ -117,5 +123,5 @@ get.value.array <- function(instance.handle, value.name, as.enum.types = FALSE) 
 use get.value.list instead")
   }
   paired <- tcl("GetPairedValues", instance.handle, value.name, as.enum.types)
-  array(tcl.paired.to.array(paired, dims, as.enum.types),dim=rev(dims))
+  tcl.paired.to.array(paired, dims, as.enum.types)
 }

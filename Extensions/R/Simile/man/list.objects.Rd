@@ -20,26 +20,14 @@ list.objects(model.handle)
     Model handle created when calling load.model()
 }
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
 List of component paths as described above, in tree traversal order}
-\references{
-%% ~put references to the literature/web site here ~
-}
 \author{
 Jasper Taylor
-}
-\note{
-%%  ~~further notes~~
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{
-%% q~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
 \donttest{
 % requires Simile installation plus saved executable model so cannot be

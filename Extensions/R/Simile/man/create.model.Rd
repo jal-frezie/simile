@@ -17,9 +17,6 @@ create.model(model.handle)
 The handle returned by load.model() identifying the model type.
 }
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
   A handle to a new instance of the model, which will have its own
   component values, parameter values and execution settings
@@ -29,21 +26,12 @@ The handle returned by load.model() identifying the model type.
 %%  \item{comp2 }{Description of 'comp2'}
 %% ...
 }
-\references{
-%% ~put references to the literature/web site here ~
-}
 \author{
 Jasper Taylor
-}
-\note{
-%%  ~~further notes~~
 }
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
-\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-}
 \examples{
 \donttest{
 % requires Simile installation plus saved executable model so cannot be

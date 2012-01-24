@@ -1516,6 +1516,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     set metaFile [file join $simtmpdir temp_in.spf]
     set ::bermudaTriangle {}
     set paramState(origVersion) [RevertXMLParams $oldPath $metaFile $topNode $smPath]
+    set smPath [string trimright $smPath /] ;# in case any added for slider spf
     switch -- $paramState(origVersion) {
 	-1 { ;# User aborted because XML full of unusable bytearrays
 	    return 0
@@ -1638,7 +1639,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 			-file [lindex $paramState($restoredComp) 0]
 		}
                 set suppliedData($restoredComp) \
-                        [LoadTableData $paramState($restoredComp) $startLine 1]
+		    [LoadTableData $paramState($restoredComp) $startLine 1]
                 set whichParamsAffected($restoredComp) 1
                 set msgs(param_source_$restoredComp) \
 		    [format $msgs(metafile_ref) $VFile $oldPath]
@@ -1932,7 +1933,7 @@ proc GetFromTable {parent topNode compName startLine} {
     set tablCapt [string range $compName [string first / $compName 1] end]
     set newSource [equationDoTable [winfo toplevel $parent] $topNode $tablCapt \
 		       ($paramMetadata($compName,dimList)) \
-		       [expr {!$readMany($compName)}] [expr {$startLine!=-1}]]
+		       [expr {!$readMany($compName)}] [expr {$startLine==0}]]
 
 # If loading data for PEST there is no parent dialogue so do not keep grab
     if {$startLine==-1} {
