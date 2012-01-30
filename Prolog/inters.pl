@@ -1491,6 +1491,7 @@ operator(/, 1, [1,1]).
 parameters to real (and because everything does) */
 operator(^, real, [real, real]).
 operator(is, cond_spec, [int, int]).
+operator(is, cond_spec, [a(T), a(T)]).
 operator(==, boolean, [Any, Any]) :- value(Any).
 operator('!=', boolean, [Any, Any]) :- value(Any).
 operator(<, boolean, [Any, Any]) :- value(Any).
