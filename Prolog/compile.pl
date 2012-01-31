@@ -1924,8 +1924,8 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 		assignment if using an id-based condition, and move the
 		condition evaluation outside that loop...*/
 		(append(Slower, [Now | Faster], SubPasses),
-		    append(IdOpens, [TestCond,
-				     _Cls | NoIdConds], Now),
+		    append(IdOpens, [TestLoop, TestCond, _Cls | IdCloses], Now),
+		    append(IdOpens, IdCloses, NoIdConds),
 		    TestCond = make(_, IdConds-_, _,_,
 					  [assign(arr(Zn, TcVar, _), IdExpr)]),
 		    member(can_find_id(IdCond), IdConds),
@@ -1947,9 +1947,9 @@ order_deeper_assignments(Phase, Path, Later, All, OrderedAssign, Left) :-
 		    replace_subexps(IdExpr, compile, indices_direct,
 				    [Ptr | Inds], top_down, _, IxExpr),
 		    IdRef = arr('', IdVar, []),
-		    append(IdOpens, [make(none,[]-_,_,_,
-					  [assign(IdRef, IxExpr)])
-					| SmLoop], Next),
+		    Next = [TestLoop,
+			    make(none,[]-_,_,_, [assign(IdRef, IxExpr)])
+			   | SmLoop],
 		    append(OuterLoops, Next, UseLoops),
 		    (N = pra_bound(PraPtr, PraName),
 			append_atoms(PraName, made, MadeBound),
