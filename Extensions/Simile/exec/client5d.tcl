@@ -30,6 +30,7 @@ proc UseSimileAt {path} {
     set oldWD [pwd]
     cd $SIMILE_PATH/Examples
     package require Ame_dll
+    randseed [clock seconds]
     cd $oldWD
 
     package require Unpacker
