@@ -608,8 +608,8 @@ proc CheckForETDuplicates {new} {
 
     if {![info exists enumTypeMPEntry] || ![string length $enumTypeMPEntry]} {
 	set query [list no_et_member $new]
-    } elseif {[string equal NULL $enumTypeMPEntry]} {
-	set query [list bad_et_member $new]
+    } elseif {[lsearch {NULL novalue none noitem} $enumTypeMPEntry]>-1} {
+	set query [list bad_et_member $new $enumTypeMPEntry]
     } else {
 	set def [GetFromProlog tk_get_info({},'$enumTypeMPEntry',is_unit)]
 	if {![string equal none $def]} {

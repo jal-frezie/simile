@@ -634,7 +634,7 @@ set msgs(dodgy_lib_message) [tr. {The compiler will only recognize shared librar
 set msgs(no_et_member_title) [tr. {No %1$s name}]
 set msgs(no_et_member_message) [tr. {You must enter a name for the new %1$s in the box.}]
 set msgs(bad_et_member_title) [tr. {Bad %1$s name}]
-set msgs(bad_et_member_message) [tr. {NULL is reserved for the value of a variable when it is not equal to any member of its type.}]
+set msgs(bad_et_member_message) [tr. {"%2$s" is reserved for the value of a variable when it is not equal to any member of its type, or is not defined by the model.}]
 set msgs(member_is_unit_title) [tr. {Unit name given for %1$s}]
 set msgs(member_is_unit_message) [tr. {You cannot have a %1$s called %2$s because this name corresponds to a physical unit.}]
 set msgs(member_is_unit_detail) [tr. {The unit's definition is %3$s}]

@@ -230,6 +230,7 @@ namespace eval ::$keyValue {
  variable xColsStart
  variable yColsStart
  variable xColsEnd
+
  variable yColsEnd
  variable b_columns
  variable b_backFaces
@@ -352,6 +353,12 @@ proc display {winId time step remainder} {
 }
 # END proc display {winId time step remainder} 
 ##################################################
+
+proc GetCanvas {winId} {
+    variable myCanvas
+
+    return $myCanvas
+}
 
 # END AME specific code.
 ##################################################
