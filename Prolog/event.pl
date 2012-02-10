@@ -732,31 +732,36 @@ change_name(RenamedNode, Name) :-
 	    add_parameter(ArcWithName, 2, name, Name)),
 	(status_affects(RenamedNode, OtherGhost),
 	    update_captions(OtherGhost),
-	    presence_affects(OtherGhost, Reference),
-	    implicit_function(Reference, DownFunc),
-	    setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^
-		  (InputSpec = input_link(id(OtherGhost,P1,P2), P3,P4,P5,P6),
-		      m_update'><'get_all_links(DownFunc, continuous, P0, InputSpec)),
-		   InputSpecs),
-	    get_av_pair(OtherGhost, 2, role, Roles),
-	    get_av_pair(DownFunc, 0, value, Eqn),
-	    m_update'><'already_used_in(InputSpecs, AllUsed),
-		/* but what about names already used in other links? Should
-		replace_subexps first then use old names then set vars */
-	    all(event, update_role, [build(Roles), unify(InputSpecs),
-				     unify(AllUsed), build(NewRoles)]),
-	    replace_subexps(Eqn, event, swap_def_params,
-			    [Roles, NewRoles], top_down, _, NewEqn),
-	    add_parameter(DownFunc, 0, value, NewEqn),
-	    get_av_pair(DownFunc, 0, spec, OldSpec),
-	    name(OldSpec, OldStr),
-	    ame_gen'><'update_substrings(OldStr, Roles, NewRoles, NewStr),
-	    name(NewSpec, NewStr),
-	    add_parameter(DownFunc, 0, spec, NewSpec),
-	    add_parameter(OtherGhost, 2, role, NewRoles),
+	    update_default_refs_in_eqns(OtherGhost),
 	    fail;
-	 update_captions(RenamedNode)).
+	 true).
 
+update_default_refs_in_eqns(OtherGhost) :-
+	presence_affects(OtherGhost, Reference),
+	implicit_function(Reference, DownFunc),
+	setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^
+	     (InputSpec = input_link(id(OtherGhost,P1,P2), P3,P4,P5,P6),
+		 m_update'><'get_all_links(DownFunc,continuous,P0,InputSpec)),
+	      InputSpecs),
+	get_av_pair(OtherGhost, 2, role, Roles),
+	get_av_pair(DownFunc, 0, value, Eqn),
+	m_update'><'already_used_in(InputSpecs, AllUsed),
+	/* but what about names already used in other links? Should
+	replace_subexps first then use old names then set vars */
+	all(event, update_role, [build(Roles), unify(InputSpecs),
+				 unify(AllUsed), build(NewRoles)]),
+	replace_subexps(Eqn, event, swap_def_params,
+			[Roles, NewRoles], top_down, _, NewEqn),
+	add_parameter(DownFunc, 0, value, NewEqn),
+	get_av_pair(DownFunc, 0, spec, OldSpec),
+	name(OldSpec, OldStr),
+	ame_gen'><'update_substrings(OldStr, Roles, NewRoles, NewStr),
+	name(NewSpec, NewStr),
+	add_parameter(DownFunc, 0, spec, NewSpec),
+	add_parameter(OtherGhost, 2, role, NewRoles),
+	fail;
+	true.
+	
 update_role(use(P1, P2, Ref, P3), InputSpecs, AllUsed,
 	    use(P1, P2, NewRef, P3)) :-
 	\+ Ref = usr(_),
@@ -2057,6 +2062,8 @@ reghost(Ghost, Base) :-
 
 change_ghosthood(Node) :-
 /*	make_links_follow(Node), */
+	status_affects(Node, OutLink),
+	update_default_refs_in_eqns(OutLink),
 	spread_colour(Node, dims).	    
 
 delete_by_dlg(Target) :-
