@@ -533,6 +533,9 @@ set msgs(bad_cond_spec_form_message) [tr. {You have used the operator 'is' in a 
 set msgs(expr_denotes_list_title) $msgs(bad_eqn_title)
 set msgs(expr_denotes_list_message) [tr. {The expression evaluates to a list, or array of lists. A model variable cannot represent a list.}]
 
+set msgs(expr_denotes_per_record_array_title) $msgs(bad_eqn_title)
+set msgs(expr_denotes_per_record_array_message) [tr. {The expression evaluates to an array whose size depends on the number of records in a file. A model variable cannot represent a variable-sized array.}]
+
 set msgs(misplaced_cond_spec_title) $msgs(bad_eqn_title)
 set msgs(misplaced_cond_spec_message) [tr. {You have used one of the forms for looking up submodel instances, but this component is not an existence condition.}]
 

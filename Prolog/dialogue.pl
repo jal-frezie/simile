@@ -601,15 +601,7 @@ check_exp(Eqn_st, Function, InterInputs, Base, Dims,
 	get_term(Eqn_st, Equation, ParseError),
 	    (ParseError = [], !,
 		test_eqn(Equation, Function, IndxCount, InterInputs, 
-			 Base, Dims, ParamList, TestError),
-		(\+ TestError = [],
-		    Error = TestError;
-		 Base == cond_spec,
-		    \+ instance'><'is_lookup_cond(Equation, _),
-		    Error = bad_cond_spec_form;
-		 member(var, Dims), !,
-		    Error = expr_denotes_list;
-		 Error = []);
+			 Base, Dims, ParamList, Error);
 	    Error = bad_syntax('Equation', ParseError)).
 
 /* test_eqn: replaces the old parse_eqn. Because make_intermediates 
@@ -679,8 +671,15 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	    nth(N, PLoops, set(_, loop(Bound,_))),
 	    var(Bound),
 	    ParseError = cannot_set_dims(N, Param);
+	    Type == cond_spec,
+	    \+ instance'><'is_lookup_cond(Equation, _),
+	    ParseError = bad_cond_spec_form;
 	    %sicstus_format_to_chars("Dimension ~d of explicit intermediate variable ~w cannot be determined from its definition", [N, Param], ParseError);
-	  get_dims_from_loops(Loops, Dims, _))).
+	  get_dims_from_loops(Loops, Dims, _),
+		 (member(var, Dims), !,
+		    ParseError = expr_denotes_list;
+		 \+ member(records, Dims), !;
+		    ParseError = expr_denotes_per_record_array))).
 	/* real_dims_only(XDims, Dims).
 	Hack alert. The term representing the dest context has indices
 	(   so index(n) will work) but no loops, so we don't need to add it
