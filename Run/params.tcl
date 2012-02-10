@@ -1035,11 +1035,11 @@ namespace eval fileparams {
 	    set dataLocn targetData
 	    set widgetLocn targetNames
 	    set smPath [string range $smPath 1 end]
-	    set defFile [GetExecTitle $topNode].smf
+	    set defExtn .smf
 	} else {
 	    set dataLocn paramData
 	    set widgetLocn widgetNames
-	    set defFile [GetExecTitle $topNode].spf
+	    set defExtn .spf
 	}
 	upvar \#0 $dataLocn suppliedData
 	upvar \#0 $widgetLocn outNames
@@ -1053,9 +1053,9 @@ namespace eval fileparams {
 		return
 	    }
 	}
-	set title [format [tr. {Save %1$s parameters as:}] \
-		       [LevelForTitle $smPath]]
-        set metaFile [ChooseFile $defFile $title 1 $topNode]
+	set defBase [LevelForTitle $smPath]
+	set title [format [tr. {Save "%1$s" parameters as:}] $defBase]
+        set metaFile [ChooseFile $defBase$defExtn $title 1 $topNode]
 	ClearSubParamRefs $smPath ;# old spfs below this are superseded
         if {[llength $metaFile]} {
 	    set SimileProject(fileparam,$smPath/) $metaFile
@@ -1267,9 +1267,9 @@ namespace eval fileparams {
 	    set titlePath $smPath
 	    set extn .spf
 	}
-	set title [format [tr. {Load %1$s measurements from:}] \
-		       [LevelForTitle $titlePath]]
-	set metaFile [ChooseFile [GetExecTitle $topNode]$extn $title 0 $topNode]
+	set defBase [LevelForTitle $titlePath]
+	set title [format [tr. {Load "%1$s" measurements from:}] $defBase]
+	set metaFile [ChooseFile $defBase$extn $title 0 $topNode]
         if {[llength $metaFile]} {
             MergeParams $topNode $smPath $metaFile $notInput 1
             
@@ -1304,7 +1304,7 @@ proc IsRecordCount {compName} {
 proc LevelForTitle {path} {
     set levels [split $path /]
     catch {set levels [lreplace $levels 1 1 [GetExecTitle [lindex $levels 1]]]}
-    return \"[lindex $levels end]\"
+    return [lindex $levels end]
 }
 
 if {![info exists simplify]} {
