@@ -32,7 +32,9 @@ proc FileParamDialogue {topNode topWin mustShow} {
 		    }
 		}
             }
-        }
+        } else {
+	    unset paramData($curVal)
+	}
     }
     set t [PutItThere .fpdialogue $topWin]
     wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
@@ -1319,6 +1321,10 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     array set parseStatus [list oldPath $oldPath topNode $topNode \
 			       smPath $smPath submodel {} valNesting 0]
     $parseStatus(spfParser) reset
+#    set logFile [tk_getSaveFile]
+#    if {[string length $logFile]} {
+#	set parseStatus(logStm) [open $logFile w]
+#    }
     set pStr [open $oldPath r]
     set dada [read $pStr]
     close $pStr
@@ -1329,6 +1335,9 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     fconfigure $parseStatus(outStr) -encoding utf-8
     set broke [catch {$parseStatus(spfParser) parse $dada} feedback]
     close $parseStatus(outStr)
+    if {[info exists parseStatus(logStm)]} {
+	close $parseStatus(logStm)
+    }
     if {$broke} {
 #	if {[info exists parseStatus(simV)]} { ;# parsing at least started
 # ... have already found xml header so I should hope so
@@ -1350,6 +1359,13 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     }
 }
 
+proc LogXMLAction {str} {
+    global parseStatus
+    if {[info exists parseStatus(logStm)]} {
+	puts $parseStatus(logStm) $str
+    }
+}
+
 proc StartElement {name attList args} {
     global parseStatus
 #    puts "Started a $name, atts -$attList-, args -$args-"
@@ -1357,6 +1373,7 @@ proc StartElement {name attList args} {
     set attVals(irow) [set attVals(icol) position_in_data_area] ;# ditto
     array set attVals $attList
     if {[info exists attVals(label)]} {
+	set logLabel [BlankCrs $attVals(label)]
 	set attVals(label) [StripNewCrs $attVals(label)]
 	set path $parseStatus(submodel)/$attVals(label)
 	if {[info exists attVals(comment)]} {
@@ -1364,19 +1381,26 @@ proc StartElement {name attList args} {
 		[RestoreOldCrs $attVals(comment)]
 # add comments before lines for reporting (simile cannot read resulting temp_in)
 #	    puts $parseStatus(outStr) "\n# [RestoreCrs $attVals(comment)]"
+	    set logComment [BlankCrs $attVals(comment)]
+	} else {
+	    set logComment {} ;# for reporting
 	}
     }
     switch $name {
 	submodel {
 	    if {[string equal top $attVals(label)]} return;
 	    append parseStatus(submodel) /$attVals(label)
+	    LogXMLAction $logLabel,submodel,starts
 	} single_value {
 	    puts $parseStatus(outStr) $path=literal=$attVals(val)
+	    LogXMLAction $logLabel,$attVals(val),$logComment
 	} multi_value {
 	    set parseStatus(literal,0) $attVals(label)
+	    set parseStatus(literal,l) $logLabel
 	    set parseStatus(literal,1) {}
+	    set parseStatus(literal,c) $logComment
 	    set parseStatus(valNesting) 1
-	} values {
+	} values { ;# for multidimensional literal
 	    lappend parseStatus(literal,$parseStatus(valNesting)) \
 		$attVals(index)
 	    set parseStatus(literal,[incr parseStatus(valNesting)]) {}
@@ -1391,8 +1415,10 @@ proc StartElement {name attList args} {
 	    puts -nonewline $parseStatus(outStr) $path=reference=
 	    set parseStatus(translateExtras) \
 		[list $attVals(filename) $attVals(data_column)]
+	    LogXMLAction "$logLabel,from column $attVals(data_column) in file $attVals(filename),$logComment"
 	} csv_grid {
 	    puts $parseStatus(outStr) $path=reference=[list $attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose) $attVals(irow) $attVals(icol)]
+	    LogXMLAction "$logLabel,from grid in file $attVals(filename),$logComment"
 	} image {
 	    puts $parseStatus(outStr) $path=reference=[list $attVals(filename) ,image $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(blackval) $attVals(whiteval) $attVals(transpval) $attVals(use) $attVals(xpose)]
 	} geotiff {
@@ -1423,13 +1449,17 @@ proc FinishElement {name args} {
 #    puts "Finished a $name, args -$args-"
     switch $name {
 	submodel {
-	    set lastSlash [expr [string last / $parseStatus(submodel)]-1]
+	    set lastSlash [string last / $parseStatus(submodel)]
+	    set ending [string range $parseStatus(submodel) \
+			    [incr lastSlash] end]
 	    set parseStatus(submodel) [string range $parseStatus(submodel) \
-					    0 $lastSlash]
+					   0 [incr lastSlash -2]]
+	    LogXMLAction $ending,submodel,ends
 	} multi_value {
 #puts "writing $parseStatus(submodel)/[lindex $vp 0]=literal=[lindex $vp 1]"
 	    puts $parseStatus(outStr) \
 		$parseStatus(submodel)/$parseStatus(literal,0)=literal=$parseStatus(literal,1)
+	    LogXMLAction $parseStatus(literal,l),$parseStatus(literal,1),$parseStatus(literal,c)
 	} values {
 	    set oldList $parseStatus(literal,$parseStatus(valNesting))
 	    unset parseStatus(literal,$parseStatus(valNesting))
