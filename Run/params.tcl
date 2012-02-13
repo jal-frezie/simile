@@ -691,11 +691,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
     
     set thisTrans [lindex $trans 0]
     if {![llength $dims]} { ;# no more dims, this should be a single value
-        switch [llength $list] {
-            0 {
-                FPError [tr. "Empty list supplied instead of value"] \
-		    $subs $errorData
-            } 1 {
+        if {[llength $list]} {
                 if {![string last ,NOW [string toupper $subs] 3]} {
 		    # setting current value for var param
                     set idAndSubs $tgt[string range $subs 4 end]
@@ -714,10 +710,9 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 			return -1 ;# should be 0 if a comp
 		    }
                 }
-            } default {
-                FPError [format [tr. {Array %1$s supplied instead of scalar}] \
-			     $list] $subs $errorData
-            }
+	} else {
+                FPError [tr. "Empty list supplied instead of value"] \
+		    $subs $errorData
         }
 	return {}
     }
@@ -923,11 +918,14 @@ proc EnumTypeToNumber {topNode tgt head trans when useCppArray subs errorData} {
 		if {[string equal false [lindex $trans 0]]} {
 		    FPError [format [tr. {Data value %1$s is not a member of type boolean, pick one of %2$s.}] $head $trans] $subs $errorData
 		} else {
-		    FPError [format [tr. {Data value %1%s is not a member of type %2$s, pick one of %3$s.}] $head [lindex $trans 0] [lrange $trans 1 end]] $subs $errorData
+		    FPError [format [tr. {Data value %1$s is not a member of type %2$s, pick one of %3$s.}] $head [lindex $trans 0] [lrange $trans 1 end]] $subs $errorData
 		}
 		return 0
 	    } 
 	    set head $poss
+	} elseif {[llength $head]>1} {
+	    FPError [format [tr. {Array %1$s supplied instead of scalar}] \
+			 $head] $subs $errorData
 	} elseif {![Numeric $head]} {
 	    FPError [format [tr. {Data value %1$s is not a number.}] $head] \
 		$subs $errorData
