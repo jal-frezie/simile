@@ -913,7 +913,7 @@ proc EnumTypeToNumber {topNode tgt head trans when useCppArray subs errorData} {
         }
     } else {
 	if {[string compare {} $trans]} {
-	    set poss [lsearch $trans [lindex $head 0]]
+	    set poss [lsearch $trans $head]
 	    if {$poss == -1} {
 		if {[string equal false [lindex $trans 0]]} {
 		    FPError [format [tr. {Data value %1$s is not a member of type boolean, pick one of %2$s.}] $head $trans] $subs $errorData
@@ -1212,7 +1212,7 @@ namespace eval fileparams {
 		}
 		set msgs(param_source_$compName) \
 		    [format $msgs(metafile_ref) $relName $metaFile]
-	    } elseif {[llength $outData($compName)]==1} {
+	    } elseif {fmod([llength $outData($compName)],2)==1} {
 		puts $pStr "$indent<single_value $genericAVs val=[Entitize $outData($compName)]/>"
 		set msgs(param_source_$compName) \
 		    [format $msgs(metafile_lit) $metaFile]
@@ -1675,24 +1675,26 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 		set paramMetadata($restoredComp,saveReference) 1
             } else {
                 set trans [GetCompProperty $topNode Trans $node]
-                if {!$startLine || ($startLine==-1 && 
+                if {!$startLine || ($startLine==-1 && \
 				    $readMany($restoredComp))} {
 		    set trans [lreplace $trans 0 0 time \
 				   [linsert [lindex $trans 0] 0 timePt]]
 		    # allow special time points and values to be recognized
-                 }
-                if {[SensibleValue $trans $suppliedData($restoredComp)]>0} {
+		}
+                set litPosn [SensibleValue $trans $suppliedData($restoredComp)]
+		if {[lindex $litPosn 0]>0} {
                     set whichParamsAffected($restoredComp) 1
                     set msgs(param_source_$restoredComp) \
 			[format $msgs(metafile_lit) $oldPath]
 		    set paramMetadata($restoredComp,saveBinary) 0
 		    set paramMetadata($restoredComp,saveReference) 0
                 } else {
-		    if {![llength $trans]} {
-			set trans numerical
+		    set choices [lindex $trans [llength $litPosn]-1]
+		    if {![llength $choices]} {
+			set choices numerical
 		    }
                     set act [list bad_v3x_param $suppliedData($restoredComp) \
-				 $restoredComp $trans]
+				 $restoredComp [lrange $litPosn 1 end] $choices]
                     set suppliedData($restoredComp) {}
 		    switch [Query $act warning spf {} abort] {
 			abort {
@@ -1706,7 +1708,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
             if {$interactive} {
                 #$widgetNames($restoredComp).e
                 FillIfSmall $outNames($restoredComp).e \
-                        $suppliedData($restoredComp)
+		    $suppliedData($restoredComp)
             }
         }
     }
@@ -1716,7 +1718,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
         file delete $metaFile
     }
     if {$anyGood} {
-#puts "setting SimileProject(fileparam,$smPath/) to $SimileProject(fileparam,$smPath/)"
+	#puts "setting SimileProject(fileparam,$smPath/) to $SimileProject(fileparam,$smPath/)"
         set SimileProject(fileparam,$smPath/) $oldPath
     }
 }
@@ -1742,7 +1744,7 @@ proc ExistCheck {topNode path level notInput source} {
 		set lostAtSea 1
 	    } else {
 		set restoredComp $found[string range $restoredComp \
-					     [string length $lost] end]
+					    [string length $lost] end]
 	    }
         }
     }
@@ -1808,7 +1810,7 @@ proc ExistCheck {topNode path level notInput source} {
 # the required top level path.
 
 proc ChooseByInspection {topNode oldObj type} {
-# types are file parameter, output measurement or submodel
+    # types are file parameter, output measurement or submodel
     global helperTable classTable paramData
 
     set parent [grab current]
@@ -1817,7 +1819,7 @@ proc ChooseByInspection {topNode oldObj type} {
 	[list set paramData(newPath,done) none]
     wm title $t "$type for $oldObj values:" 
 
-# go through gymnastix to put a Model Inspector in ths window
+    # go through gymnastix to put a Model Inspector in ths window
     set ::myNode $topNode ;# for inspector helper
     set ::RunEnv::CurrentContainer $t
     set hlp [UniqueId helper]
@@ -1829,7 +1831,7 @@ proc ChooseByInspection {topNode oldObj type} {
     grab $t
     tkwait variable paramData(newPath,done)
     grab release $t
-        
+    
     PackItUp $t
     if {[string length $parent]} {
 	grab $parent
@@ -1885,14 +1887,16 @@ proc ReferenceWorks {compName} {
 
 proc SensibleValue {trans list} {
     set curLevel [lindex $trans 0]
-    if {[llength $list]==1} {
-        return [VarType [lindex $list 0] $curLevel]
+    if {[llength $trans]==1} {
+        return [VarType $list $curLevel]
     } else {
-        for {set idx 0} {$idx < [llength $list]} {incr idx 2} {
-            if {[lsearch {1 2} [VarType [lindex $list $idx] $curLevel]] == -1 \
-                        || ![SensibleValue [lrange $trans 1 end] \
-                        [lindex $list [expr $idx+1]]]} {
-                return 0
+        foreach {idx val} $list {
+            if {[lsearch {1 2} [VarType $idx $curLevel]] == -1} {
+		return [list -1 $idx] ;# error this level -- bad index
+	    }
+	    set deeperRes [SensibleValue [lrange $trans 1 end] $val]
+	    if {[lindex $deeperRes 0]<=0} {
+                return [linsert $deeperRes 1 $idx]
             }
         }
         return 4

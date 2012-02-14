@@ -43,8 +43,8 @@ proc TransValue {curLevel val} {
 
 proc PrettifyValList {ugly args} {
 #puts "Trying to tidy up $ugly"
-    if {[llength $ugly]==1} {
-	set result [lindex $ugly 0]
+    if {fmod([llength $ugly],2)==1} { ;# dont mind even length ET mem mangling
+	set result $ugly
     } else {
 	set result {}
 	foreach {indx val} $ugly {
@@ -67,7 +67,7 @@ proc UglifyValList {pretty} {
 # Something should go in around here to deal with the fact that user input is
 # not necessarily a list
     set midlin [regsub -all {: ([^\#\{\}]+)( \#|\}|$)} $pretty \
-		    {: {"\1"}\2}]
+		    {: {\1}\2}]
 #puts "midlin $midlin"
     set ugly [regsub -all {\#([^:]+):} $midlin {{\1}}]
 #puts "ugly $ugly"
@@ -76,23 +76,13 @@ proc UglifyValList {pretty} {
 
 proc NormalizeQuotes {table} {
     if {[llength $table]==1} {
-	return [DequoteNumeric $table]
+	return $table
     } else {
 	set result {}
 	foreach entry $table {
 	    lappend result [NormalizeQuotes $entry]
 	}
 	return $result
-    }
-}
-
-proc DequoteNumeric {val} {
-    set paramKeys {restart use_last use_closest interpolate}
-    if {[llength $val]==1 && ([string is double [lindex $val 0]] || \
-				  [lsearch $paramKeys [lindex $val 0]]>-1)} {
-	return [lindex $val 0]
-    } else {
-	return $val
     }
 }
 

@@ -302,21 +302,6 @@ proc CanvasBindPopup {canvas widget keywd} {
 # args are not used -- when binding to a table wigdet we cannot avoid getting
 # the item name on the end of the call
 
-proc Prettify {value} {
-    if {[llength $value]==1} {
-        return $value
-    } else {
-
-        set newValue {}
-        while {[llength $value]} {
-            lappend newValue [join [list [lindex $value 0] \
-                    [Prettify [lindex $value 1]]] :]
-            set value [lrange $value 2 end]
-        }
-        return $newValue
-    }
-}
-
 proc ExDestroyHelpers {node} {
     global helperTable
     if {[info exists helperTable($node,whichRunEnv)]} {
