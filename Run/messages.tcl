@@ -672,7 +672,7 @@ set msgs(failed_param_reference_title)  [tr. {Missing parameter data file}]
 set msgs(failed_param_reference_message) [tr. {The parameterization file contains a reference to data file "%1$s" for the parameter values for the component %2$s. This reference specifies the file path "%3$s" relative to the location of the parameterization file itself, so the file is being sought in the directory "%4$s", where no file of this name exists.}]
 set msgs(failed_param_reference_detail) $msgs(failed_dir_reference_detail)
 set msgs(bad_v3x_param_title) [tr. {Bad parameter information}]
-set msgs(bad_v3x_param_message) [tr. {Parameterization file contained the entry %1$s for component %2$s. The value at indices %3$s does not start with the name of an existing file, nor is it an allowed value for this component, which are %4$s.}]
+set msgs(bad_v3x_param_message) [tr. {Parameterization file contained the entry %1$s for component %2$s. The value at indices "%3$s" does not start with the name of an existing file, nor is it an allowed value for this component, which are %4$s.}]
 set msgs(bad_v3x_param_detail) $msgs(failed_dir_reference_detail)
 set msgs(unused_param_title) [tr. {Some parameter values unused}]
 set msgs(unused_param_message) [tr. {The %1$s contains parameter values for the %2$s "%3$s", which does not exist in the target model "%4$s".}]

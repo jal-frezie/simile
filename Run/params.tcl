@@ -1240,8 +1240,8 @@ namespace eval fileparams {
 
     proc WriteLiteralParam {pStr data indent} {
 	foreach {idx val} $data {
-	    if {[llength $val]==1} {
-		puts $pStr "$indent<value index=[Entitize $idx] value=[Entitize [lindex $val 0]]/>"
+	    if {fmod([llength $val],2)==1} {
+		puts $pStr "$indent<value index=[Entitize $idx] value=[Entitize $val]/>"
 	    } else {
 		puts $pStr "$indent<values index=[Entitize $idx]>"
 		WriteLiteralParam $pStr $val "  $indent"
@@ -1407,7 +1407,7 @@ proc StartElement {name attList args} {
 		lappend parseStatus(translateExtras) $attVals(val)
 	    } else {
 		lappend parseStatus(literal,$parseStatus(valNesting)) \
-		    $attVals(index) [EnquoteIfNotElement $attVals(value)]
+		    $attVals(index) $attVals(value)
 	    }
 	} csv_columns {
 	    puts -nonewline $parseStatus(outStr) $path=reference=
