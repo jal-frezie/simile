@@ -121,6 +121,7 @@ ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 ifeq ($(MY_CPU),x86_64)
 	TCLDIR = /c/Tcl
+	SWIPLDIR = "/c/Program files/swipl"
 	TCLREF = $(TCLDIR)
 	GCCCMD = x86_64-w64-mingw32-gcc
 	GPPCMD = x86_64-w64-mingw32-g++
@@ -185,12 +186,14 @@ $(EXECDIR)/xssimile$(EXECEXTN): $(PROLOG_FILES)  Prolog/smain.pl \
 	cd Prolog; swipl --goal=main --stand_alone=true \
 		-o ../$(EXECDIR)/$(PROLOGSTATE) -c smain.pl; cd ..
 $(EXECDIR)/struct_db$(SHAREDLIBEXTN): Prolog/struct_db.c
-# for old SWI
-#	cd Prolog; gcc -I/usr/lib/swi-prolog/include -D__SWI_PROLOG__ \
-#		$(MAKEPIC) $(MAKESL) \
-#		-o ../$(EXECDIR)/struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
+# for old SWI, or if building with mingw when swipl built with msvc
+#	cd Prolog; gcc -c -I$(SWIPLDIR)/include -D__SWI_PROLOG__ \
+#		$(MAKEPIC) struct_db.c; \
+#		gcc $(MAKESL) -o ../$(EXECDIR)/struct_db$(SHAREDLIBEXTN) \
+#		struct_db.o $(SWIPLDIR)/bin/swipl.dll; cd ..
 # for new SWI
-	cd Prolog; swipl-ld -cc-options,$(MAKEPIC) -ld-options,$(MAKESL) \
+	cd Prolog; swipl-ld -cc-options,$(MAKEPIC) \
+		-ld-options,$(MAKESL) \
 		-o struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
 #endif
 #ifeq ($(PROLOG),GNU)

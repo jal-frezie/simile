@@ -386,7 +386,7 @@ update_equation(Function, InterInputs,
 	sicstus_atom_chars(Desc, Desc_st),
 	sicstus_atom_chars(Comment, Cmt_st),
 	purge(Eqn_st, "\\", OrigSt),
-	sicstus_atom_chars(OldEqn, OrigSt),
+	sicstus_atom_chars(OldEqn, OrigSt), % crash here if eqn too big
 
 	warn_dimless_scaler(NewUnits),
 	(FinalComplaint = [], !,

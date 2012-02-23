@@ -2064,6 +2064,7 @@ change_ghosthood(Node) :-
 /*	make_links_follow(Node), */
 	status_affects(Node, OutLink),
 	update_default_refs_in_eqns(OutLink),
+	fail;
 	spread_colour(Node, dims).	    
 
 delete_by_dlg(Target) :-

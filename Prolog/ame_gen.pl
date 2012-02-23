@@ -53,8 +53,21 @@ get_term(String, Term, Error) :-
 		     make_nice_error_message(Proper_String, Bug, Error)),
 	(Error = [], !;
 	    name(Term, String)).
+/* read_term_from_codes crashes GNU if term is large -- doing it via file works
+better but I don't bother as there are many more crashes down the line
 
-/* make_nice_error_message: converts Prolog's syntax_error exception into
+	state'><'use_temp_dir(TempDir),
+	append_atoms(TempDir, '/temp_io.pl', TempFile),
+	open_native(TempFile, write, Stream2),
+	sicstus_write_chars(Stream2, Proper_String), nl(Stream2),
+	close(Stream2),
+
+	open_native(TempFile, read, Stream3),
+	read_term(Stream3, Term, [end_of_term(eof)]),
+        close(Stream3),
+	output'><'my_delete_file(TempFile).
+
+make_nice_error_message: converts Prolog's syntax_error exception into
 something readable. Prolog itself can do this with the print_message function,
 but this always raises an exception, otherwise I could just call it using
 with_output_to_chars. It's not perfect anyway, so I have consulted perror/1
