@@ -263,7 +263,8 @@ menu_handle(Win, file, new) :-
 	remove_model(Win, Parent),
 	finish_move(Parent, 0),
 	set_save_status(Win, safe),
-% inserting next two lines prevents undoing/redoing through clear
+% inserting next two lines prevents undoing/redoing through clear action
+% but fails to disable undo key
 %	caption_for(Parent, Name),
 %	new_autosave(Parent, Name),
 	update_captions(Parent).
