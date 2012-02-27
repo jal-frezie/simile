@@ -1439,7 +1439,7 @@ do_save(Win, Model, New_name) :-
 	    abs_path_name(Model, root, NewPoint),
 	    (NewPoint = Point, !;
 	    append_atoms([Dir, '/', NewPoint], NewSaveDir),
-		output'><'safe_tcl_eval(['file copy -force',
+		output'><'safe_tcl_eval(['file rename -force',
 					 br(SaveDir), br(NewSaveDir)], _));
 	true),
 	update_captions(Model),
