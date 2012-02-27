@@ -225,6 +225,7 @@ update_equation(Function, InterInputs,
 	check_exp(Eqn_st, Function, InterInputs, EqnBase, EqnDims,
 		  IndxCount, ParamList, Result, ParseError),
 	(ParamsAllowed = 0,
+	    nonvar(ParamList),
 	    member(ParamName, ParamList), !,
 	    EqnError = bad_link_use(ParamName);
 	 EqnError = ParseError),

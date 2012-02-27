@@ -913,6 +913,9 @@ proc EnumTypeToNumber {topNode tgt head trans when useCppArray subs errorData} {
         }
     } else {
 	if {[string compare {} $trans]} {
+	    if {[llength $head]==1} {
+		set head [lindex $head 0]
+	    } ;# remove quotes or curlies
 	    set poss [lsearch $trans $head]
 	    if {$poss == -1} {
 		if {[string equal false [lindex $trans 0]]} {
