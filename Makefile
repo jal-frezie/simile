@@ -194,7 +194,7 @@ $(EXECDIR)/struct_db$(SHAREDLIBEXTN): Prolog/struct_db.c
 # for new SWI
 	cd Prolog; swipl-ld -cc-options,$(MAKEPIC) \
 		-ld-options,$(MAKESL) \
-		-o struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
+		-o ../$(EXECDIR)/struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
 #endif
 #ifeq ($(PROLOG),GNU)
 $(EXECDIR)/xgsimile$(EXECEXTN): \
