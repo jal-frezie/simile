@@ -219,6 +219,7 @@ proc LoadPosns {winId} {
 }
 
 proc DrawShapes {winId solids tag} {
+    global cornerPts
     variable viewVector
 
     set insts {}
@@ -226,6 +227,7 @@ proc DrawShapes {winId solids tag} {
 #ShowMess debug info $object3d ok
 	switch [lindex $object3d 0] {
 	    line {
+		# format is "line popupTxt startPt endPt thickness colour"
 		set startMap [project $winId [lindex $object3d 2]]
 		set endMap [project $winId [lindex $object3d 3]]
 		set startx [lindex $startMap 0]
@@ -238,7 +240,36 @@ proc DrawShapes {winId solids tag} {
 		    -width [lindex $object3d 4] -fill [lindex $object3d 5]] \
 			   [expr ([lindex $startMap 2]+[lindex $endMap 2])/2] \
 				   [lindex $object3d 1]]
-	    } sphere {
+	    } ellipse {
+		# format is "ellipse popupTxt centrePt borderPt1 borderPt2
+		# thickness outlineColour fillColour
+		set ctr [project $winId [lindex $object3d 2]]
+		set bdr1 [project $winId [lindex $object3d 3]]
+		set bdr2 [project $winId [lindex $object3d 4]]
+		set cx [lindex $ctr 0]
+		set cy [lindex $ctr 1]
+		set l1 [lindex $bdr1 0]
+		set t1 [lindex $bdr1 1]
+		set l2 [lindex $bdr2 0]
+		set t2 [lindex $bdr2 1]
+
+		set ptList [list $l1 $t1]
+		for {set roll 1} {$roll<4*$cornerPts} {incr roll} {
+		    set theta [expr {3.14159*$roll/$cornerPts/2}]
+		    set co [expr {cos($theta)}]
+		    set si [expr {sin($theta)}]
+		    
+		    lappend ptList [expr {$cx+($l1-$cx)*$co+($l2-$cx)*$si}]
+		    lappend ptList [expr {$cy+($t1-$cy)*$co+($t2-$cy)*$si}]
+		}
+		lappend ptList $l1 $t1
+		lappend insts [list [concat \
+		$winId.c create poly $ptList -tag $tag \
+		     -width [lindex $object3d 5] -outline [lindex $object3d 6] \
+					 -fill [lindex $object3d 7]] \
+				   [lindex $ctr 2] [lindex $object3d 1]]
+			       
+ 	    } sphere {
 		set middle [project $winId [lindex $object3d 2]]
 		set midx [lindex $middle 0]
 		set midy [lindex $middle 1]

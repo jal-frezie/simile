@@ -41,6 +41,7 @@ itcl::class similescript::$newHelperClass {
 	bind $winId.c <Configure> "$this WindowSizeChanged"
 	if {[string length $state]} { ;# we are restoring 
 	    set State $state ;# keep it local
+	    update
 	    Display 0 0 0
 	} else {
 	    # new instance so request data from model
