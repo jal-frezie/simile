@@ -21,7 +21,7 @@ for {set pt 1} {$pt < $cornerPts} {incr pt} {
     lappend arcPts [expr 1-(1+$expansion)*cos($faceAngle*$pt)]
 }
 lappend arcPts [expr 1-$expansion*(1-[lindex $arcPts end])/[lindex $arcPts 0]]
-puts $arcPts
+
 proc GetPoints {lo rad} {
     global arcPts
     foreach pt $arcPts {

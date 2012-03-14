@@ -61,9 +61,9 @@ OPT =
 TCLDIR = /usr
 else
 BITEXTN = 
-OPT = -m32
+OPT =
 # build on included tcl -- deprecated but needed for selectable bitness
-TCLDIR = "/home/jaspert/Documents/My Simile files/Source/System"
+TCLDIR = /usr
 endif
 SYSDIR = System$(BITEXTN)
 
