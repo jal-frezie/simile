@@ -1620,22 +1620,21 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 
     menu $fm.sub5 -tearoff 0
     $fm add cascade -label [tr. "Highlight back"] -menu $fm.sub5
-    $fm.sub5 add radio -command "SetHalo $c back 0" -label [tr. "Bases only"] \
-	-variable rads(back) -value 0
-    $fm.sub5 add radio -command "SetHalo $c back 1" -label [tr. "One function"] \
-	-variable rads(back) -value 1
-    $fm.sub5 add radio -command "SetHalo $c back 2" -label [tr. "Two functions"] \
-	-variable rads(back) -value 2
-    UnderlineUniquely $fm.sub5
 
     menu $fm.sub6 -tearoff 0
     $fm add cascade -label [tr. "Highlight forward"] -menu $fm.sub6
-    $fm.sub6 add radio -command "SetHalo $c fwd 0" -label [tr. "Ghosts only"] \
-	-variable rads(fwd) -value 0
-    $fm.sub6 add radio -command "SetHalo $c fwd 1" -label [tr. "One function"] \
-	-variable rads(fwd) -value 1
-    $fm.sub6 add radio -command "SetHalo $c fwd 2" -label [tr. "Two functions"] \
-	-variable rads(fwd) -value 2
+
+    set levelCapts [list "Bases only" "One level" "Two levels" "Three levels"]
+    for {set levels 0} {$levels<4} {incr levels} {
+	$fm.sub5 add radio -command "SetHalo $c back $levels" \
+	    -label [tr. [lindex $levelCapts $levels]] \
+	    -variable rads(back) -value $levels
+	$fm.sub6 add radio -command "SetHalo $c fwd $levels" \
+	    -label [tr. [lindex $levelCapts $levels]] \
+	    -variable rads(fwd) -value $levels
+    }
+    $fm.sub6 entryconfigure 0 -label [tr. "Ghosts only"]
+    UnderlineUniquely $fm.sub5
     UnderlineUniquely $fm.sub6
 
     if {$isTopLevel} {

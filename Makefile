@@ -26,7 +26,7 @@ PLATFORM = $(shell uname -s)
 
 # Prolog implementation to use -- GNU for Windows releases, GNU otherwise
 # (currently GNU for everything)
-PROLOG = SWI
+PROLOG = GNU
 
 ifeq ($(MONTHS_TO_RUN),0)
 	EXP_TICKS = 0

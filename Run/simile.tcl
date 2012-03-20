@@ -1,5 +1,5 @@
 #set simplify 1 ;# avoid loading anything awkward
-set use_system_tcltk 1 ;# use separately installed tcltk and tools
+#set use_system_tcltk 1 ;# use separately installed tcltk and tools
 #!/home/jaspert/Simile/System/bin/wish
 # Simile source code file: Run/simile.tcl
 #
