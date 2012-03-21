@@ -595,9 +595,7 @@ as well to stop rand_vars being changed in the R-K subphase */
 	tk_update_infobox(pl_loop, []),
 	(member(Start, Functions),
 	    Start = make(LoopEnd, Conds-_, EndPath, _,_),
-	    member(make(_MadeFor, RealConds-_, _P,_,_), Conds),
-				% _P outside loop if doing in_prec so skip check
-	    member(later(Loop2), RealConds),
+	    member(later(Loop2), Conds),
 	    Loop2 = make(LoopStart, _, StartPath, [_,_, Step | _], _),
 	    all(compile, remove_non_loopers,
 		[build([EndPath, StartPath]), build([PureEnd, PureStart])]),
@@ -1571,7 +1569,7 @@ connect_params(AllInsts, AllInters, Insts, Inters) :-
 	    MatchPath == CommonPath,
 	    suffix(CommonPathPlus, OrigPathPlus),
 	    remove_non_loopers(CommonPathPlus, CommonPath), !,
-	    (CommonPath = OrigPath, /* comment out to disable */ !,
+	    (CommonPath = Path, /* comment out to disable */ !,
 		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
 				     Acts) | LeftInsts];
 	    ChangedInsts = [make(Tgt, [made_for(Tgt, Param) | MoreConds],

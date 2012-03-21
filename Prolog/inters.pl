@@ -384,7 +384,7 @@ make_intermediates(
 	\+ contains_something(random, Source, _), !,
 	    NewInters = PrevInters,
 	    Setups = [],
-	    refer_inter(Inter, DestPath, BuildingArrays,
+	    refer_inter(Inter, DestPath, DestPath, BuildingArrays,
 			Units, SourceContext, Args, SourceRef);
 
 	/* first case: a reference to another variable. If we are referring to
@@ -714,7 +714,7 @@ make_intermediates(
 	    WhatMade = PayloadName,
 	    merge_lists([Inter, Outer], OldInters, NewInters),
 	    FinalInter = Outer),
-*/	refer_inter(FinalInter, InterPath, BuildingArrays,
+*/	refer_inter(FinalInter, DestPath, InterPath, BuildingArrays,
 		    Units, SourceContext, Args, SourceRef));	  
 
 	/* third case: a numerical value. Usable in any context.  */
@@ -1247,22 +1247,21 @@ dissociate(Wrapper, Arg, Arg) :-
 	
 refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 		     Units-Dims),
-	    DestPath, BuildLoops, Units, SourceContext, Args, SourceRef) :-
+	    DestPath, InterPath, BuildLoops, Units, SourceContext, Args, SourceRef) :-
 	    (Source = last(_), !,
 		Args = [Name]; /* bit of a hack...since
 	    we use the total from the previous time step we don't need to
 	    worry about accessing elements that haven't yet been set, and not
 	    using made_at(...) should prevent it being removed as an idler */
 	    member(Source, [in_preceding(_), in_progenitor(_)]), !,
-		Args = [made_at(cleared(Name), [SourceContext]),
+		Args = [made_at(cleared(Name), SourceContext),
  				% array must be cleared before first use
- 			made_at(later(lastvalue(Name)),
-				[cond_section(nomatch) | DestPath])];
+ 			made_at(later(lastvalue(Name)), DestPath)];
 				% access before setting in same loop
 	    Args = [made_at(Name, SourceContext)]),
-	    copy_term(DestPath, SourcePath),
+	    copy_term(InterPath, SourcePath),
 	    (Source = in_progenitor(_),
-	        DestPath = [sm(BitOfAHack, _,_,_) | _],
+	        InterPath = [sm(BitOfAHack, _,_,_) | _],
 	        atom(BitOfAHack), !, % undefined and irrelevant when parsing
 	        append_atoms(BitOfAHack, progen, SourcePtr),
 		SourceRef = choose(nonnull(arr('', SourcePtr, [])),
