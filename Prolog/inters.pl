@@ -1249,9 +1249,6 @@ refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 	(Source = in_preceding(_) ->
 	    trim_one_multi_instance(DestPath, InterPath);
 	  InterPath = DestPath),
-	suffix([MultiInst | DestTail], DestPath),
-	indices_for(MultiInst, [_Some | _], _),
-	get_model(DestTail, InterPath),
 	(Source = last(_), !,
 	    Args = [Name]; /* bit of a hack...since
 	we use the total from the previous time step we don't need to
