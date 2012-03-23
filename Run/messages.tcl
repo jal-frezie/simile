@@ -385,6 +385,9 @@ set msgs(missing_graph_or_table_data_detail) [tr. {Use the Graph and Table butto
 set msgs(cannot_combine_argument_dimensions_title) [tr. {Argument dimensions incompatible}]
 set msgs(cannot_combine_argument_dimensions_message) [tr. {Simile cannot work out what dimensions the result of "%1$s" should have -- the dimensions of the arguments are incompatible.}]
 
+set msgs(no_preceding_instance_title) [tr. {Function has no value here}]
+set msgs(no_preceding_instance_message) [tr. {This equation uses the "in_preceding(...)" function, but the component is not inside any multi-instance submodel so there is no preceding instance.}]
+
 set msgs(mismatched_units_title) [tr. {Argument types incompatible}]
 set msgs(mismatched_units_message) [tr. {The arguments of the function "%1$s" in the term "%2$s" have the following types: %3$s. These cannot be matched to the expected argument types for this function, which are %4$s.}]
 

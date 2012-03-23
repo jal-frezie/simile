@@ -384,7 +384,7 @@ make_intermediates(
 	\+ contains_something(random, Source, _), !,
 	    NewInters = PrevInters,
 	    Setups = [],
-	    refer_inter(Inter, DestPath, DestPath, BuildingArrays,
+	    refer_inter(Inter, DestPath, BuildingArrays,
 			Units, SourceContext, Args, SourceRef);
 
 	/* first case: a reference to another variable. If we are referring to
@@ -506,9 +506,7 @@ make_intermediates(
 
 	copy_term(DestPath, TotalPath),
 	(member(Functor, [in_preceding]), !,
-	    suffix([MultiInst | DestTail], DestPath),
-	    indices_for(MultiInst, [_Some | _], _),
-	    get_model(DestTail, InterPath),
+	    trim_one_multi_instance(DestPath, InterPath),
 	    copy_term(InterPath, OuterPath), % Use to read stuff out
 	    append(Exited, OuterPath, TotalPath);
 	InterPath = DestPath,
@@ -714,7 +712,7 @@ make_intermediates(
 	    WhatMade = PayloadName,
 	    merge_lists([Inter, Outer], OldInters, NewInters),
 	    FinalInter = Outer),
-*/	refer_inter(FinalInter, DestPath, InterPath, BuildingArrays,
+*/	refer_inter(FinalInter, DestPath, BuildingArrays,
 		    Units, SourceContext, Args, SourceRef));	  
 
 	/* third case: a numerical value. Usable in any context.  */
@@ -1247,33 +1245,39 @@ dissociate(Wrapper, Arg, Arg) :-
 	
 refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 		     Units-Dims),
-	    DestPath, InterPath, BuildLoops, Units, SourceContext, Args, SourceRef) :-
-	    (Source = last(_), !,
-		Args = [Name]; /* bit of a hack...since
-	    we use the total from the previous time step we don't need to
-	    worry about accessing elements that haven't yet been set, and not
-	    using made_at(...) should prevent it being removed as an idler */
-	    member(Source, [in_preceding(_), in_progenitor(_)]), !,
-		Args = [made_at(cleared(Name), SourceContext),
+	    DestPath, BuildLoops, Units, SourceContext, Args, SourceRef) :-
+	(Source = in_preceding(_) ->
+	    trim_one_multi_instance(DestPath, InterPath);
+	  InterPath = DestPath),
+	suffix([MultiInst | DestTail], DestPath),
+	indices_for(MultiInst, [_Some | _], _),
+	get_model(DestTail, InterPath),
+	(Source = last(_), !,
+	    Args = [Name]; /* bit of a hack...since
+	we use the total from the previous time step we don't need to
+	worry about accessing elements that haven't yet been set, and not
+	using made_at(...) should prevent it being removed as an idler */
+	  member(Source, [in_preceding(_), in_progenitor(_)]), !,
+	    Args = [made_at(cleared(Name), SourceContext),
  				% array must be cleared before first use
- 			made_at(later(lastvalue(Name)), DestPath)];
+		    made_at(later(lastvalue(Name)), DestPath)];
 				% access before setting in same loop
 	    Args = [made_at(Name, SourceContext)]),
-	    copy_term(InterPath, SourcePath),
-	    (Source = in_progenitor(_),
-	        InterPath = [sm(BitOfAHack, _,_,_) | _],
-	        atom(BitOfAHack), !, % undefined and irrelevant when parsing
-	        append_atoms(BitOfAHack, progen, SourcePtr),
-		SourceRef = choose(nonnull(arr('', SourcePtr, [])),
-				   arr(SourcePtr, Name, IntInds), 0);
-	      pointer_from(SourcePath, SourcePtr),
-		SourceRef = arr(SourcePtr, Name, IntInds)),
-	    make_inds_for(Dims, IntLoops, IntInds),
-	    copy_term(ParamLoops, SourceLoops),
-	    /* order of parts exchanged simply cos it made it work */
-	    append(SourceLoops, SpareLoops, IntLoops),
-	    suffix(SpareLoops, BuildLoops),
-	    append(SourceLoops, SourcePath, SourceContext).
+	copy_term(InterPath, SourcePath),
+	(Source = in_progenitor(_),
+	    InterPath = [sm(BitOfAHack, _,_,_) | _],
+	    atom(BitOfAHack), !, % undefined and irrelevant when parsing
+	    append_atoms(BitOfAHack, progen, SourcePtr),
+	    SourceRef = choose(nonnull(arr('', SourcePtr, [])),
+			       arr(SourcePtr, Name, IntInds), 0);
+	  pointer_from(SourcePath, SourcePtr),
+	    SourceRef = arr(SourcePtr, Name, IntInds)),
+	make_inds_for(Dims, IntLoops, IntInds),
+	copy_term(ParamLoops, SourceLoops),
+	/* order of parts exchanged simply cos it made it work */
+	append(SourceLoops, SpareLoops, IntLoops),
+	suffix(SpareLoops, BuildLoops),
+	append(SourceLoops, SourcePath, SourceContext).
 
 prevent_inappropriate_reuse(Explicit, instance(Type, I, Replaces, Name, Dims),
 			    instance(Type, I, NewReplaces, Name, Dims)) :-
@@ -1281,6 +1285,12 @@ prevent_inappropriate_reuse(Explicit, instance(Type, I, Replaces, Name, Dims),
 			top_down, [_Swap1 | _], _), !,
 	NewReplaces = 'n/a';
 	NewReplaces = Replaces.
+
+trim_one_multi_instance(DestPath, InterPath) :-
+	suffix([MultiInst | DestTail], DestPath),
+	indices_for(MultiInst, [_Some | _], _), !,
+	get_model(DestTail, InterPath);
+	throw(no_preceding_instance).
 
 swap_vars(switch(Take, Add), Tgt, Add, 0) :-
 	nonvar(Tgt), Tgt = Take.
