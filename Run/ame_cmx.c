@@ -556,6 +556,27 @@ FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
   }
 }
 
+FINDABLE int setintervalCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  int error;
+  void* fpHandle;
+  double *time;
+
+  if (argc != 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id interval");
+
+    return TCL_ERROR;
+  }
+  
+  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  if (time=get_interval_ptr(fpHandle))
+    return Tcl_GetDoubleFromObj(interp, argv[2], time);
+  else {
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to set interval size for this node", -1));
+    return TCL_ERROR;
+  }
+}
+
 FINDABLE int settimepointarrayCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
@@ -1618,6 +1639,9 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "newc_setfillmethod", setfillCmd,
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "newc_setinterval", setintervalCmd,
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "newc_settimepointelement", 

@@ -298,6 +298,12 @@ if {[info exists masterId]} { ;# we are in separate interp
 
 	return [thread::send $masterId [info level 0]]
     }
+
+    proc InDays {args} {
+	global masterId
+
+	return [thread::send $masterId [info level 0]]
+    }
 }
 
 proc RunningInC {myNode} {
@@ -395,6 +401,7 @@ proc c_setparamarray {topNode tgtNode} {
 # right exec thread, so strip it off here
 foreach oldCProc {setparamelement settimepointelement settimepointarray \
 		      cleartimeseries setwraparoundtime setfillmethod \
+		      setinterval \
 		      setrecordlist settimepointrecords markevtparamactive \
 		      setparamall getparamall settimepointall gettimepointall} {
     proc c_$oldCProc {args} {

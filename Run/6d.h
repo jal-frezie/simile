@@ -80,6 +80,9 @@ class VarParamData : public FileParamData {
   //! Specifies how to set parameter values at times between specified points
   int fillMethod;
 
+  //! Unit size for indices of time series entries
+  double seriesIdxUnits;
+
   //! valid for time series events only: 0 means no activity
   //! 1 means used and needs resetting
   //! 2 means set but not yet used

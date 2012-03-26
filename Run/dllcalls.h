@@ -263,6 +263,7 @@ EXTDEC int param_array_size(void*);
 EXTDEC int clear_time_point_elts(void*);
 EXTDEC double* get_wrap_ptr(void*);
 EXTDEC int* get_fill_ptr(void*);
+EXTDEC double* get_interval_ptr(void*);
 EXTDEC int create_time_point(void*, double);
 EXTDEC void* find_next_timept_space(void*, double*);
 EXTDEC void mark_values_active(void*);

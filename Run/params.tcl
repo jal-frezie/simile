@@ -746,11 +746,12 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 	if {[string equal DERIVED [GetCompProperty $topNode Eval $tgt]]} {
 	    set specialPts {} ;# loading measurements for PEST
 	} elseif {[string equal EVENT [GetCompProperty $topNode Class $tgt]]} {
-	    set specialPts NOW
+	    set specialPts [list NOW INTERVAL]
 	} else {
-	    set specialPts [list NOW OTHERS]
+	    set specialPts [list NOW INTERVAL OTHERS]
 	    SetFillMethod $topNode $useCppArray $tgt use_last ;# and fill method
 	}
+	SetInterval $topNode $useCppArray $tgt unit 1
     
         foreach arrayPt [array names sub] {
             if {[set pt [lsearch $specialPts [string toupper $arrayPt]]]>-1} {
@@ -776,17 +777,34 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 	    if {[lsearch $specialPts OTHERS]>-1} {
 		set noMtd [catch {SetFillMethod $topNode $useCppArray $tgt \
 				      $sub($arrayPt)} badFill]
-		if {$pt==1} { ;# fill method expected
+		if {$pt==2} { ;# fill method expected
 		    if {$noMtd} {
 			FPError $badFill $subs,[list $arrayPt] $errorData
 		    }
 		    continue
-		} elseif {!$noMtd} { ;# fill method found but expected
+		} elseif {!$noMtd} { ;# fill method found but not expected
 		    FPError [format [tr. {Fill method "%1$s" must be preceded by OTHERS.}] $sub($arrayPt)] $subs,[list $arrayPt] $errorData
 		    set redoStep {}
 		}
 	    }
+# do same for interval (units for time series index)
+	    if {[Numeric $sub($arrayPt)]} { ;# save time by not going Prolog
+		set TSI 0
+	    } else {
+		set TSI [InDays $sub($arrayPt)]
+	    }
 
+	    if {$pt==1} { ;# units for time series index expected
+		if {!$TSI} {
+		    FPError [format [tr. {Found "%1$s" instead of units expression with dimensions of time}] $sub($arrayPt)] $subs,[list $arrayPt] $errorData
+		} else {
+		    SetInterval $topNode $useCppArray $tgt $sub($arrayPt) $TSI
+		}
+		continue
+	    } elseif {$TSI} { ;# found but not expected
+		FPError [format [tr. {Time series index units "%1$s" must be preceded by keyword INTERVAL.}] $sub($arrayPt)] $subs,[list $arrayPt] $errorData
+		set redoStep {}
+	    }
 	    set redoStep [JoinSteps $redoStep \
 			      [ListToArray $topNode $tgt $subs,$arrayPt $trans \
 				   [lrange $dims 1 end] $sub($arrayPt) $when \
@@ -794,7 +812,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         }
         return $redoStep
     }
-
+    
     # Not time points: check the indices are good
     foreach {indx sublist} $list {
         # was array set sub $list...above would allow us to check that all indices were
@@ -1153,6 +1171,9 @@ namespace eval fileparams {
 		    if {![string equal use_last $fillMtd]} {
 			puts -nonewline $pStr " fill_method=\"$fillMtd\""
 		    }
+		}
+		if {[set uftsi [SetInterval $topNode $inC $nodeId]]!=1} {
+		    puts -nonewline $pStr " interval=[Entitize $uftsi]"
 		}
 		puts $pStr ">"
 		set dimCount 0
@@ -1912,7 +1933,7 @@ proc SensibleValue {trans list} {
 proc VarType {testVar types} {
 #puts "checking $testVar is of $types"
     if {[string equal time $types]} {
-	if {[lsearch {NOW OTHERS} [string toupper $testVar]]!=-1} {
+	if {[lsearch {NOW OTHERS INTERVAL} [string toupper $testVar]]!=-1} {
 	    return 1
 	} elseif {[Numeric $testVar]} {
 	    return 2
@@ -1932,6 +1953,8 @@ proc VarType {testVar types} {
         return 2
     } elseif {[Numeric $testVar]} {
         return 3
+    } elseif {[InDays $testVar]} {
+	return 1
     }
     return 0
 }

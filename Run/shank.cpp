@@ -607,12 +607,13 @@ VarParamData::~VarParamData() {
   ClearTimePtElements();
 }
 
-double VarParamData::update_from_points(BOOLEAN dir, double now) {
+double VarParamData::update_from_points(BOOLEAN dir, double nowInDays) {
   listTimePoint *loBound, *hiBound;
   int hiWraps = 0, oldWraps = wraps;
-  double interFract;
+  double now, interFract;
   node_data_line* ndRef = myModelExec->modelSpec->nodedata + nodeNum;
   
+  now = nowInDays/seriesIdxUnits;
   loBound = curTimePoint;
   if (loBound)
     hiBound = roll_forward(loBound, &hiWraps);
@@ -650,7 +651,7 @@ double VarParamData::update_from_points(BOOLEAN dir, double now) {
 					       hiBound->dataPtr, 
 					       dataPtr.dimSpecs, 
 					       interFract);
-      return now;
+      return now*seriesIdxUnits;
     }
     if (interFract>0.5) { // fillMethod is USE_CLOSEST
       loBound = hiBound;
@@ -672,7 +673,7 @@ double VarParamData::update_from_points(BOOLEAN dir, double now) {
     dataPtr.contents = copy_bloc_data(loBound->dataPtr, dataPtr.dimSpecs);
     active=1;
   }
-  return now;
+  return now*seriesIdxUnits;
 }
 
 BOOLEAN VarParamData::create_time_point(double time) {
@@ -1680,6 +1681,15 @@ int* get_fill_ptr(void* fpHandle) {
 //    return NULL; // no data structure for this elt
 //  }
   return &arrSlot->fillMethod;
+}
+
+double* get_interval_ptr(void* fpHandle) {
+  VarParamData* arrSlot = (VarParamData*)fpHandle;
+
+//  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
+//    return NULL; // no data structure for this elt
+//  }
+  return &arrSlot->seriesIdxUnits;
 }
 
 int create_time_point(void* fpHandle, double time) {

@@ -734,9 +734,10 @@ proc ResetTimeSeries {topNode} {
 # the data to be written and look at the next one...see update_from_points in
 # shank.cpp...
 
-proc UpdateTimeSeries {topNode newTime} {
+proc UpdateTimeSeries {topNode newTimeInDays} {
     global setFromSeries paramData comboTypes
     set inC [RunningInC $topNode]
+    set newTime [expr {$newTimeInDays/$paramData(timePointInterval,$node)}]
     foreach list [array names setFromSeries $topNode,*,times] {
 	set ptCount [llength $setFromSeries($list)]
 	set node [lindex [split $list ,] 1]
@@ -1405,3 +1406,17 @@ proc SetFillMethod {topNode inC where {what {}}} {
     }
 }
 
+proc SetInterval {topNode inC where {what {}} {howLong {}}} {
+    global paramData
+
+    if {[string length $what]} {
+	set paramData(uftsi,$where) $what
+	if {$inC} {
+	    eval c_setinterval $topNode $where $howLong
+	} else {
+	    set paramData(timePointInterval,$where) $howLong
+	}
+    } else {
+	return $paramData(uftsi,$where)
+    }
+}

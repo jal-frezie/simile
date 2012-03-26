@@ -247,8 +247,8 @@ namespace eval runcontrol33857 {
 
     proc AlterUnit {node newUnit} {
 	global runState
-	set timeFactor [expr {[SecondsInA $runState($node,timeUnit)]/ \
-				  [SecondsInA $newUnit]}]
+	set timeFactor [expr {[InDays $runState($node,timeUnit)]/ \
+				  [InDays $newUnit]}]
 	set runState($node,timeUnit) $newUnit
 	foreach var {currentTime execTime expected_end} {
 	    set runState($node,$var) [format %.8g [expr {$runState($node,$var)*$timeFactor}]]
@@ -366,7 +366,7 @@ namespace eval runcontrol33857 {
 
         # This loop sets the array of dts in the model
         set sendvars($node,unitLength) \
-	    [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
+	    [expr {[InDays $runState($node,timeUnit)]}]
         set newBalls [expr ![string equal $runState($node,timeUnit) \
                       $runState($node,oldUnit)]]
         set runState($node,oldUnit) $runState($node,timeUnit)

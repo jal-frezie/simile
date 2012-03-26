@@ -1153,8 +1153,7 @@ proc StartRun {node} {
 
 #        }
 # above is done by reset phase
-	set sendvars($node,unitLength) \
-	    [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
+	set sendvars($node,unitLength) [InDays $runState($node,timeUnit)]
         for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
             if {![info exists runState($node,prev_update$phase)]} {
                 set runState($node,update$phase) 0.1
@@ -1296,20 +1295,13 @@ proc StartNow {node action} {
     $widget.upper.topbuttons.$action invoke
 }
 
-proc SecondsInA {time} {
-    switch $time {
-	second {return 1.0}
-	minute {return 60.0}
-	hour {return 3600.0}
-	day {return 86400.0}
-	unit {return 86400.0}
-	week {return 604800.0}
-	month {return 2628000.0}
-	year {return 31536000.0}
-	Ma {return 31536000000000.0}
+proc InDays {timeUnit} {
+    if {[string equal unit $timeUnit]} {
+	return 1.0
     }
+    return [GetFromProlog tk_in_days('$timeUnit')]
 }
-    
+
 proc TellHelperItsGone {helperWin captionPath} {
 # for compatibility, call a helper proc and if the helper doesn't have it
 # delete it
