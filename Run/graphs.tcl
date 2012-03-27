@@ -568,6 +568,7 @@ proc AbleArrows {db t} {
 #####################################################################
 # TABLE LOADING
 #####################################################################
+set commonTimes [list second minute hour day week month year]
 proc equationDoTable {parent mdl tgt dims startLine continuous} {
     global table_entry iconImages tcl_platform
     
@@ -853,9 +854,14 @@ proc equationDoTable {parent mdl tgt dims startLine continuous} {
     # OK, Cancel and Help buttons
     frame .table.fbuttons
     if {$continuous} {
-        pack [TitleFrame .table.fbuttons.wrapf -text [tr. "Other times: "]] \
+        pack [TitleFrame .table.fbuttons.wrapf -text [tr. "Time options: "]] \
                 -padx 4 -pady 4 -expand true -fill x
         set wrapf [GetFrame .table.fbuttons.wrapf]
+        pack [label $wrapf.um -text [tr. "Units for indices:"]]
+        pack [::ttk::combobox $wrapf.uc -textvariable table_entry(uftsi) \
+		  -width 10 -values [concat unit $::commonTimes] \
+		  -state normal]
+	set table_entry(uftsi) unit
         pack [label $wrapf.bm -text [tr. "Between points:"]]
         pack [::ttk::combobox $wrapf.bc -textvariable table_entry(others) \
                 -width 10 -values $table_entry(between_txts) \
@@ -873,7 +879,7 @@ proc equationDoTable {parent mdl tgt dims startLine continuous} {
             set table_entry(oldWrapPt) {}
         }
         if {[string equal others [string tolower \
-                    [lindex $table_entry(values) end-1]]]} {
+				      [lindex $table_entry(values) end-1]]]} {
             set table_entry(oldOthers) \
 		[lindex $table_entry(between_txts) \
 		     [lsearch $table_entry(between_keys) \
@@ -883,9 +889,18 @@ proc equationDoTable {parent mdl tgt dims startLine continuous} {
         } else {
             set table_entry(oldOthers) {}
         }
+        if {[string equal interval [string tolower \
+					[lindex $table_entry(values) end-1]]]} {
+            set table_entry(oldUftsi) [lindex $table_entry(values) end]
+	    set table_entry(uftsi) $table_entry(oldUftsi)
+            set table_entry(values) [lrange $table_entry(values) 0 end-2]
+        } else {
+            set table_entry(oldUftsi) {}
+        }
     } else {
 	array unset table_entry others
 	array unset table_entry wrapPt
+	array unset table_entry uftsi
     }
     if {![string equal .equation $parent]} {
         pack [checkbutton .table.fbuttons.keepvals -var table_entry(bytes) \
@@ -1008,6 +1023,11 @@ proc equationDoTable {parent mdl tgt dims startLine continuous} {
     grab release $t
     PackItUp $t
     grab $parent
+    if {[info exists table_entry(uftsi)] && [llength $table_entry(uftsi)] && \
+	    ![string equal unit $table_entry(uftsi)] && \
+	    ![string equal interval [lindex $table_entry(values) end-1]]} {
+        lappend table_entry(values) interval $table_entry(uftsi)
+    }
     if {[info exists table_entry(others)] && [llength $table_entry(others)] && \
                 ![string equal others [lindex $table_entry(values) end-1]]} {
         lappend table_entry(values) others \
@@ -1087,7 +1107,9 @@ proc DoneTableData {startLine} {
     if {([info exists table_entry(wrapPt)] && \
 	     ![string equal $table_entry(wrapPt) $table_entry(oldWrapPt)] || \
 	     [info exists table_entry(others)] && \
-	     ![string equal $table_entry(others) $table_entry(oldOthers)]) && \
+	     ![string equal $table_entry(others) $table_entry(oldOthers)] || \
+	     [info exists table_entry(uftsi)] && \
+	     ![string equal $table_entry(uftsi) $table_entry(oldUftsi)]) && \
 	    !$table_entry(source)} {
         set table_entry(source) 0.5
     }
@@ -1118,6 +1140,12 @@ proc AcquireTableData {redo startLine} {
             # handle as table_entry(others) and table_entry(indices) inserted
             set tableSpec [concat [list $table_entry(fileName) \
                     $table_entry(dataField)] $table_entry(indices)]
+            if {[info exists table_entry(uftsi)] && \
+		    [llength $table_entry(uftsi)] && \
+		    ![string equal unit $table_entry(uftsi)]} {
+                set tableSpec [linsert $tableSpec 2 \
+                        ,interval:$table_entry(uftsi)]
+            }
             if {[info exists table_entry(others)] && \
                         [llength $table_entry(others)]} {
                 set tableSpec [linsert $tableSpec 2 \
@@ -1549,7 +1577,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
         return $tableSpec
     } default {
 # tableSpec should be:
-# fileName dataHeader ?dbtableId? ?wrapTime? ?fillMethod? indHeaders...
+# fileName dataHeader ?dbtableId? ?wrapTime? ?fillMethod? ?tpiUnits? indHeaders...
 	set indexStart 2
 	if {[string match ,dbtable:* [lindex $tableSpec 2]]} {
 	    regexp ,dbtable:(.*) [lindex $tableSpec 2] match dbtable
@@ -1562,6 +1590,10 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	}
 	if {[string match ,others:* [lindex $tableSpec $indexStart]]} {
 	    set fillMtd [string range [lindex $tableSpec $indexStart] 8 end]
+	    incr indexStart
+	}
+	if {[string match ,interval:* [lindex $tableSpec $indexStart]]} {
+	    set tpiUnit [string range [lindex $tableSpec $indexStart] 10 end]
 	    incr indexStart
 	}
         # csv handled by existing code other extensions handled with ODBC
@@ -1671,6 +1703,9 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
     }
     set result [ArrayToList paramArray]
     if {$addSpecials} {
+        if {[info exists tpiUnit]} {
+            lappend result interval $tpiUnit
+        }
         if {[info exists fillMtd]} {
             lappend result others $fillMtd
         }

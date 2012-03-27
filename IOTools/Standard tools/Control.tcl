@@ -155,7 +155,7 @@ namespace eval runcontrol33857 {
 		  -width $captWidth -anchor w] -side left -anchor nw
         ::ttk::menubutton $rsf.unitselection.pulldown
         set timeUnitMenu [menu $rsf.unitselection.pulldown.menu -tearoff 0]
-        foreach unit {unit second minute hour day week month year Ma} {
+        foreach unit [concat unit $::commonTimes] {
 	    $timeUnitMenu add command -label $unit \
 		-command [namespace code [list AlterUnit $node $unit]]
         }
