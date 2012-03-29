@@ -737,10 +737,10 @@ proc ResetTimeSeries {topNode} {
 proc UpdateTimeSeries {topNode newTimeInDays} {
     global setFromSeries paramData comboTypes
     set inC [RunningInC $topNode]
-    set newTime [expr {$newTimeInDays/$paramData(timePointInterval,$node)}]
     foreach list [array names setFromSeries $topNode,*,times] {
 	set ptCount [llength $setFromSeries($list)]
 	set node [lindex [split $list ,] 1]
+	set newTime [expr {$newTimeInDays/$paramData(timePointInterval,$node)}]
 	if {[string equal EVENT [GetTclCompProperty $topNode Class $node]]} {
 	    set fillMethod none
 	} else {

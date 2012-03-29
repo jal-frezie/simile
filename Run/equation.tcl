@@ -127,9 +127,9 @@ proc create_equation {parent purpose comp indices enum_types} {
     set keys [list < > ( ) \[ \] custom AC \
 		  = ^ , / and dummy if dummy \
 		  7 8 9 * or dummy then dummy \
-		  4 5 6 - not dummy elseif dummy \
-		  1 2 3 + xor dummy else dummy \
-		  0 .  <- -> [tr. DEL] dummy [tr. SPACE] dummy]
+		  4 5 6 - not dummy else dummy \
+		  1 2 3 + xor dummy [tr. SPACE] dummy \
+		  0 .  <- -> [tr. DEL] dummy [tr. NEWLINE] dummy]
     if {[string equal windows $tcl_platform(platform)]} {
 	set buttWidth 4
     } else {
@@ -149,7 +149,7 @@ proc create_equation {parent purpose comp indices enum_types} {
 		$bid configure -bg \#a0a0a0 -activebackground \#a0a0a0
 	    } elseif {[string match AC $act]} {
 		$bid configure -bg orange -activebackground orange
-	    } elseif {[lsearch -exact {<- -> SPACE DEL} $act]>-1} {
+	    } elseif {[lsearch -exact {<- -> SPACE DEL NEWLINE} $act]>-1} {
 		$bid configure -bg grey -activebackground grey
 	    }
         }
@@ -1023,6 +1023,8 @@ proc HitKey { winId char } {
 	    event generate $winId <Key-Left>
 	} SPACE {
 	    event generate $winId <Key-space>
+	} NEWLINE {
+	    event generate $winId <Key-Return>
 	} \{ {
 	    event generate $winId <Key-braceleft>
 	} \} {
