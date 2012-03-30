@@ -1610,11 +1610,11 @@ array (see combine_dims in module dialogue).
 I have now swapped them back on the basis that (a) if a modeller wants
 the whole shallower array duplicated they can DIY with an explicit
 makearray, and that the user guide (which I can't be bothered
-changing) describes it the former way...*/
+changing) describes it the former way...
 
 combine_paths(C1, C2, C) :-
 	permutation([C1, C2], [C, []]), !;
-	/* next two lines (and last) had H and T swapped */
+	% next two lines (and last) had H and T swapped
 	append(H1, T1, C1),
 	    append(H2, T2, C2),
 	    (T1 = T2, T = T2;
@@ -1624,6 +1624,39 @@ combine_paths(C1, C2, C) :-
 	    \+ T = [], !,
 	    combine_paths(H1, H2, H),
 	    append(H, T, C).
+
+2012: have to redo above so it cannot unify submodel opens where the
+parent pointers are distinct */
+
+combine_paths(C1, C2, C) :-
+	permutation([C1, C2], [C, []]), !;
+	% next two lines (and last) had H and T swapped
+	append(H1, T1, C1),
+	    append(H2, T2, C2),
+	    (all(inters, same_context, [build(T1), build(T2)]), T = T2;
+	    \+ ((member(Loop, T1); member(Loop, T2)),
+		   loops(Loop)),
+		merge_contexts(T1, T2, T)),
+	    \+ T = [], !,
+	    combine_paths(H1, H2, H),
+	    append(H, T, C).
+
+merge_contexts([], L, L).
+
+merge_contexts([J | K], L, M) :-
+	merge_contexts(K, L, N),
+	(member(H, N),
+	    same_context(H, J), !,
+	    M = N;
+	M = [J | N]).
+
+same_context(C1, C2) :-
+	\+ (C1 = sm(_, P1, _, _),
+	       C2 = sm(_, P2, _, _),
+	       \+ P1 == P2),
+	C1 = C2.
+
+% slightly different version for args of element()
 
 special_combine_paths(Datum, Index, Delayed, Joint) :-
 	break_at_last_loop(Index, IInside, ILoop, IOutside),
