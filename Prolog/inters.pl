@@ -320,6 +320,7 @@ free_params(switch(Fixed, Var), Arg, ArgVar, 0) :-
 	    nth(N, Var, ArgVar);
 	ArgVar = Arg).
 
+/*
 import_path_for(Dims, Path, ArcI, Lvl0, Ptr0, LvlN, PtrN, LocalLoops, Inds) :-
 	append(Outer, [var | Inner], Dims), !,
 	    (suffix([sm(Name, _,_, vm_loop(_,_,_,_)) | InnerPath], Path), !;
@@ -335,7 +336,7 @@ import_path_for(Dims, Path, ArcI, Lvl0, Ptr0, LvlN, PtrN, LocalLoops, Inds) :-
 	    PtrN = Ptr0,
 	    make_inds_for(Dims, LocalLoops, Inds).
 
-/* make_intermediates: This introduces variables for any intermediate results
+make_intermediates: This introduces variables for any intermediate results
 required while evaluating a variable. The process is explained in great detail
 in exec_contexts.txt. Meantime, here is the list of arguments: */
 
@@ -357,7 +358,7 @@ make_intermediates(
 		  context for place_in(...) and setting the dimensions of
 		  intermediate results */
     Step, /* Time step for the current submodel, to be copied into any new
-		  instructions generated. */
+		  instructions generated. 'dummy' if just checking syntax */
     Used, /* A list of variable names for the target language that have been
                   used so far */
 
@@ -1651,8 +1652,9 @@ merge_contexts([J | K], L, M) :-
 	M = [J | N]).
 
 same_context(C1, C2) :-
-	\+ (C1 = sm(_, P1, _, _),
-	       C2 = sm(_, P2, _, _),
+	\+ (C1 = sm(_, P1, _, L),
+	       C2 = sm(_, P2, _, L),
+	       \+ L = rm_loop(_,_,_), % pointers meaningless -- syntax check
 	       \+ P1 == P2),
 	C1 = C2.
 

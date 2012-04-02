@@ -1537,7 +1537,7 @@ int ModelServer::param_item_from_id(FileParamData** start, int paramId) {
   }
 }
 
-/* New version of nodeModelAndId returns number
+// New version of nodeModelAndId returns number
 // -- who knows, maybe one day it will work intelligently?
 int ModelServer::NodeNumFromCapt(char* seeknode) {
   int count;
@@ -1555,7 +1555,7 @@ int ModelServer::NodeNumFromCapt(char* seeknode) {
   // Node with given caption not found...
   return -1;
 }
-*/
+
 int ModelServer::member_param_item(FileParamData** start, int* parentPath) {
   node_data_line* nLine;
 

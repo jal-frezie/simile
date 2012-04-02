@@ -194,7 +194,8 @@ class ExecutingModel
   //! Find local data structure for a fixed parameter by serial number
   FileParamData* FileParamForNodeNum(int);
 
-  //! reset the model instance -- args are integration method and action
+  //! reset the model instance -- args are initial model time,
+  //! integration method and action
 
   //! Actions are: -2 = initialize
   //! -1 == reload fixed parameters
@@ -202,7 +203,8 @@ class ExecutingModel
   //! +ve: re-evaluate derived variables for that time step
   excpData* ResetInstance(double, int, int);
 
-  //! Execute the model -- args are int. method, start/end times and error limit
+  //! Execute the model -- args are int. method, start time,
+  // pointer to end time, error limit and whether to pause on events
 
   //! End time passed as pointer; value overwritten if model stopped early
   //! Error limit controls adaptive timestep variation, 0 turns it off
