@@ -863,7 +863,7 @@ namespace eval $keyValue {
             set colHead $colIds($winId,[lindex $headers 1])
 	    set cellFormat $displayFormat($winId,$cellFormatKey($winId,$value))
             set ::data${winId}($rowHead,$colHead) \
-		[FormatValue $winId $values($value) [lindex $cellFormat 0] \
+		[FormatValue $values($value) [lindex $cellFormat 0] \
 		     [lindex $cellFormat 1]]
             if {[lindex $cellFormat 2]==1 & $values($value)<0} {
                 $winId.t tag cell red $rowHead,$colHead
@@ -987,14 +987,17 @@ namespace eval $keyValue {
     proc colProc col { if {$col>0 && $col%2} { return OddCol } }
     
     # FormatValue replaces VarPrecRender which is now DisplayFormat::General
-    proc FormatValue {winId val format prec} {
+    proc FormatValue {val format prec} {
         # if a c model is built with Windows math libraries, the numerical
         # values might not format as floats. Watch out for this problemette
         # and just return them as they are if it happens
+	if {![string is double -strict $val]} {
+	    return $val
+	}
         set format [regsub -all { } $format {}]; # spaces removed from format name to make a proc name
         switch $format {
             #General { General $val $prec}
-            default { $format $val $prec}
+            default { return [$format $val $prec]}
         }
     }
     
