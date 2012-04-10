@@ -8,6 +8,9 @@
 #define HINSTANCE void*
 #endif
 
+//! Identifies of a component in either model class or model instance
+typedef unsigned short int HCOMP;
+
 class ModelServer;
 
 class ExecutingModel;
@@ -27,7 +30,7 @@ class FileParamData
   FileParamData* next;
 
   //! index number of the component within the model
-  int nodeNum;
+  HCOMP nodeId;
 
   //! This contains the current values for the parameter
   nodeValues dataPtr;
@@ -38,7 +41,7 @@ class FileParamData
   //! (0) ModelServer instance to which to apply these values
   //! (1) Line index of model component which gets the values in that instance
   //! (2) Dimension list in model format, passed for convenience
-  FileParamData(ExecutingModel*, int, int*);
+  FileParamData(ExecutingModel*, HCOMP, int*);
 
   //! Destructor: simple
   ~FileParamData();
@@ -96,7 +99,7 @@ class VarParamData : public FileParamData {
  public: // public methods
 
 //! constructor: same as for parent but declared cos it has args
-  VarParamData(ExecutingModel*, int, int*);
+  VarParamData(ExecutingModel*, HCOMP, int*);
 
   //! Destructor 
 
@@ -189,10 +192,10 @@ class ExecutingModel
   int SetStep(int, double);
 
   //! Create local data structure for a fixed parameter by serial number
-  FileParamData* UseArrayForParams(int);
+  FileParamData* UseArrayForParams(HCOMP);
 
   //! Find local data structure for a fixed parameter by serial number
-  FileParamData* FileParamForNodeNum(int);
+  FileParamData* FileParamForNodeNum(HCOMP);
 
   //! reset the model instance -- args are initial model time,
   //! integration method and action
@@ -211,7 +214,7 @@ class ExecutingModel
   excpData* ExecuteInstance(int, double, double*, double, BOOLEAN);
 
   //! get results from model by node serial number in general c format
-  nodeValues* GetRawValues(int);
+  nodeValues* GetRawValues(HCOMP);
 
   //! allow model to access parameter data; client should not call this
   void GetValuePointer(void*, int, int, int*);
@@ -268,13 +271,13 @@ class ModelServer
   int getinfo(char*, int*);
 
   //! Gets an integer property (arg2 = GETCLASS, GETTYPE, GETEVAL) for node
-  int GetProperty(int, int);
+  int GetProperty(HCOMP, int);
 
   //! Gets a node string property (arg2 = 0:name, 1:spec, 2:desc, 3:comment)
   char* GetMetadataText(int, int);
 
   //! Gets node serial number from its full caption
-  int NodeNumFromCapt(char*);
+  HCOMP CompFromCapt(char*);
 
   //! Gets file parameter object (either sort) from param node's serial number
   int param_item_from_id(FileParamData**, int);

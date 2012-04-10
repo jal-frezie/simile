@@ -492,7 +492,7 @@ void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
 //! data in a char*, rather than a nodeValue structure, because the
 //! dimSpecs are the same for all the time points of a parameter. All
 //! members are private because all its operations are done by methods
-//! of the FileParamdata class.
+//! of the FileParamData class.
 
 class listTimePoint {
   friend class VarParamData;
@@ -527,14 +527,14 @@ class listTimePoint {
 
 // class for keeping track of arrays associated with parameters
 
-FileParamData::FileParamData(ExecutingModel* instToUse, int newNodeNum,
+FileParamData::FileParamData(ExecutingModel* instToUse, HCOMP newNodeId,
 			     int* fullDims) {
   int sparePath[32];
 
   myModelExec = instToUse;
-  nodeNum = newNodeNum;
+  nodeId = newNodeId;
   translate_dims(fullDims, sparePath, dataPtr.dimSpecs, 
-		 myModelExec->modelSpec->nodedata[nodeNum].datatype, TRUE);
+		 myModelExec->modelSpec->nodedata[nodeId].datatype, TRUE);
   dataPtr.contents = init_space(dataPtr.dimSpecs);
   //    dataPtr.contents = new char[sparePath[0]];
   // now insert it into the list (at beginning)
@@ -564,7 +564,7 @@ void FileParamData::extract_elt(void* tgt, double forT, int* indxs) {
 
     insertionPt = locate_elt(dataPtr.contents, 0, dataPtr.dimSpecs, indxs);
     if (!insertionPt) return; // record pointers not yet made
-    nodeLine = myModelExec->modelSpec->nodedata + nodeNum;
+    nodeLine = myModelExec->modelSpec->nodedata + nodeId;
 
     if (myModelExec->resetting<-1 && nodeLine->eval == INPUT)
       if (!((VarParamData*)this)->GetTimePtDataSpace(forT)) 
@@ -591,7 +591,7 @@ void FileParamData::extract_elt(void* tgt, double forT, int* indxs) {
 // end of FileParamData class
 
 // start of VarParamData class
-VarParamData::VarParamData(ExecutingModel* instToUse, int newNodeNum,
+VarParamData::VarParamData(ExecutingModel* instToUse, HCOMP newNodeNum,
 			   int* fullDims) 
   : FileParamData(instToUse, newNodeNum, fullDims) {
   timePoints = NULL;
@@ -611,7 +611,7 @@ double VarParamData::update_from_points(BOOLEAN dir, double nowInDays) {
   listTimePoint *loBound, *hiBound;
   int hiWraps = 0, oldWraps = wraps;
   double now, interFract;
-  node_data_line* ndRef = myModelExec->modelSpec->nodedata + nodeNum;
+  node_data_line* ndRef = myModelExec->modelSpec->nodedata + nodeId;
   
   now = nowInDays/seriesIdxUnits;
   loBound = curTimePoint;
@@ -768,7 +768,7 @@ void VarParamData::back_copy_vars(double t0) {
   
   if (!GetTimePtDataSpace(t0)) {
     free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-    fromModel = myModelExec->GetRawValues(nodeNum);
+    fromModel = myModelExec->GetRawValues(nodeId);
     dataPtr.contents = fromModel->contents;
 //    sprintf(globMess, "dims %d %d backcopied %d records 1st %lf", 
 //	    dataPtr.dimSpecs[0], dataPtr.dimSpecs[1], ((sizeAndPtr*)dataPtr.contents)->size,
@@ -1264,7 +1264,7 @@ void ExecutingModel::advance_time (int phase, double fraction) {
   }
   
 // new version: is member of model-execution class and takes numerical node id
-nodeValues* ExecutingModel::GetRawValues(int nodeId) {
+nodeValues* ExecutingModel::GetRawValues(HCOMP nodeId) {
   int sparePath[32], fullDims[32], indices[32];
   char spareCapt[255], *insertionPt;
   enum_type_data *spareTypes[32]; // might need for reading files
@@ -1314,7 +1314,7 @@ BOOLEAN ExecutingModel::check_gui(double model_time, int this_op) {
   return result;
 }
 
-FileParamData* ExecutingModel::UseArrayForParams(int nodeNum) {
+FileParamData* ExecutingModel::UseArrayForParams(HCOMP nodeNum) {
   int fullDims[32];
   char spareCapt[255];
   enum_type_data *spareTypes[32]; // might need for reading files
@@ -1496,7 +1496,7 @@ int ModelServer::getinfo(char* node_id, int* gLine) {
     return -1;
   }
 
-int ModelServer::GetProperty(int line, int propertyId) {
+int ModelServer::GetProperty(HCOMP line, int propertyId) {
   switch (propertyId) {
     case GETTYPE:
       return nodedata[line].datatype;
@@ -1529,7 +1529,7 @@ char* ModelServer::GetMetadataText(int line, int propertyId) {
 int ModelServer::param_item_from_id(FileParamData** start, int paramId) {
   if (!*start) {
     return 0;
-  } else if (nodedata[(*start)->nodeNum].graph==paramId)
+  } else if (nodedata[(*start)->nodeId].graph==paramId)
     return 1;
   else {
     *start = (*start)->next;
@@ -1539,7 +1539,7 @@ int ModelServer::param_item_from_id(FileParamData** start, int paramId) {
 
 // New version of nodeModelAndId returns number
 // -- who knows, maybe one day it will work intelligently?
-int ModelServer::NodeNumFromCapt(char* seeknode) {
+HCOMP ModelServer::CompFromCapt(char* seeknode) {
   int count;
   char test[255];
   int dims[32];
@@ -1549,11 +1549,11 @@ int ModelServer::NodeNumFromCapt(char* seeknode) {
     make_full_caption(count, test, dims, types);
 	  
     if (!strcmp(seeknode, test)) {
-      return(count);
+      return (HCOMP)(count);
     }
   }
   // Node with given caption not found...
-  return -1;
+  return 0;
 }
 
 int ModelServer::member_param_item(FileParamData** start, int* parentPath) {
@@ -1562,7 +1562,7 @@ int ModelServer::member_param_item(FileParamData** start, int* parentPath) {
   if (!*start)
     return 0; // no children found
   else {
-    nLine = nodedata + (*start)->nodeNum;
+    nLine = nodedata + (*start)->nodeId;
     if (nLine->eval == TABLE) { // and fixed, is child?
       int count = -1;
       while (parentPath[++count])
@@ -1600,10 +1600,10 @@ void ExecutingModel::SetdT(int phase, double starttime) {
     }
 }
 
-FileParamData* ExecutingModel::FileParamForNodeNum(int seekNodeNum) {
+FileParamData* ExecutingModel::FileParamForNodeNum(HCOMP seekNodeId) {
   FileParamData* check = param_array_base;
   while (check) {
-    if (check->nodeNum == seekNodeNum)
+    if (check->nodeId == seekNodeId)
       return check;
     check = check->next;
   }
