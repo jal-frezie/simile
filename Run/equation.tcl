@@ -223,7 +223,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     radiobutton $mainf.slider.radio1 -text "[tr. $topType]: " \
 	-variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
-    if {[lsearch $purpose {init_val_for rules_for}]>=0} {
+    if {[lsearch {init_val_for rules_for} $purpose]>=0} {
 # do not allow variable parameter for initial values...derrr
 	$mainf.slider.radio1 configure -state disabled
     }
