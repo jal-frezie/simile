@@ -41,8 +41,8 @@ kickoff(Vnum) :-
 	set_edition(E),
 
 	name(TempDir, TempStr),
-	backup'><'retractall(use_temp_dir(_)),
-	backup'><'assert(use_temp_dir(TempDir)),
+	retractall(use_temp_dir(_)),
+	assert(use_temp_dir(TempDir)),
 
 	set_mode(none),
 	inters'><'read_library_funx(LibFuns),

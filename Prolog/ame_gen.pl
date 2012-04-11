@@ -352,7 +352,9 @@ find_ghosts(Base, Ghost) :-
       	    (sequence(Base, Ghost); sequence(Ghost, Base));
 	\+ sequence(_, Base),
 	sequence(Base, Ghost));
-	ghost_link(_Link, Base, Ghost).
+	ghost_link(Link, Base, Ghost),
+	Link is_connector from _ to Ghost.
+				% make sure only one solution per B/G pair
 
 /* test for whether node is an input parameter, i.e., something
 	that would normally have a function, but without any kind of
