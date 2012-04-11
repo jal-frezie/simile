@@ -1110,7 +1110,7 @@ proc DoneTableData {startLine} {
 	     ![string equal $table_entry(others) $table_entry(oldOthers)] || \
 	     [info exists table_entry(uftsi)] && \
 	     ![string equal $table_entry(uftsi) $table_entry(oldUftsi)]) && \
-	    !$table_entry(source)} {
+	     $table_entry(source)<=0} {
         set table_entry(source) 0.5
     }
     AcquireTableData $table_entry(source) $startLine
