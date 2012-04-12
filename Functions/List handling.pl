@@ -34,3 +34,16 @@ ordinals(EnumType) --> [res]=makearray(
 
 for_members_of_type(EnumType, [Vals]) -->
     element([Vals], ordinals(EnumType)).
+
+% interpolate(X,Xarray,Yarray): result is the value of Y obtained by interpolation between the
+% tabulated values of Xarray and Yarray, using input X.
+interpolate(X,Xarray,Yarray) --> 
+    array_position_of_lower_x = sum(if Xarray<X then 1 else 0),
+    lower_array_position = max(1, min(count(Xarray)-1,
+				      array_position_of_lower_x)),
+    xlower =  element(Xarray,lower_array_position),
+    xhigher = element(Xarray,lower_array_position+1),
+    ylower =  element(Yarray,lower_array_position),
+    yhigher = element(Yarray,lower_array_position+1),  
+    if X<xlower then ylower elseif X>xhigher then yhigher
+        else ylower+(X-xlower)*(yhigher-ylower)/(xhigher-xlower).
