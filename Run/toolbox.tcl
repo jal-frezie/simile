@@ -2145,14 +2145,16 @@ proc restore_equation {winId bar} {
 ##############################    Formula bar    #############################
 
 proc RecordPathChoice {fileType chosenFile context} {
-    global chosenPaths custom
+    global chosenPaths custom simtmpdir
     
+    set tgtDir [file dirname $chosenFile]
+    if {[string equal $simtmpdir $tgtDir]} return ;# preselected
     if {[string equal .sml $fileType]} { ;# we are opening a model file
 	set custom(hotlist) [linsert $custom(hotlist) 0 $chosenFile]
 	array unset chosenPaths *,$context
     }
     set chosenPaths($fileType,$context) \
-	[set chosenPaths(latest,$context) [file dirname $chosenFile]]
+	[set chosenPaths(latest,$context) $tgtDir]
 }
 
 proc GetPathChoice {fileType context} {

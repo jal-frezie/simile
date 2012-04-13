@@ -113,10 +113,9 @@ proc ChooseFile { preferred title canbenew context} {
     
 #    cd $prevDir
 #puts "Recording path for $context"
-	if {[string length $chosenFile] && ![string equal .pl $fileType]} {
-# Prolog file may be temp for XML trade
-	    do_in_editor RecordPathChoice $fileType $chosenFile $context
-	}
+    if {[string length $chosenFile]} {
+	do_in_editor RecordPathChoice $fileType $chosenFile $context
+    }
     return $chosenFile
 }
 
