@@ -415,11 +415,11 @@ proc purge {list toGo} {
     return $done
 }
 
-proc ZapParams {topNode smPath metaFile} {
+proc ZapParams {topNode smPath metaFile makePartOfProject} {
     global whichParamsAffected
     
     array unset whichParamsAffected
-    MergeParams $topNode /$topNode$smPath $metaFile 0 0
+    MergeParams $topNode /$topNode$smPath $metaFile 0 0 $makePartOfProject
     AcceptAll $topNode [array names whichParamsAffected] 1 -1
 }
 
@@ -1548,7 +1548,7 @@ proc StripNewCrs {txt} {
     return [StripCrs $txt]
 }
 
-proc MergeParams {topNode smPath oldPath notInput interactive} {
+proc MergeParams {topNode smPath oldPath notInput interactive {anyGood 1}} {
     global readMany paramState mimeSquirter simtmpdir whichParamsAffected msgs \
 	paramMetadata
     global SimileProject
@@ -1596,7 +1596,6 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	}
     }
     # If neither of the above, XML file successfully converted
-    set anyGood 1
     set pStr [NetOpen $metaFile r]
     if {$paramState(origVersion)>=5.0} { ;# converted from xml so will be...
 	fconfigure $pStr -encoding utf-8

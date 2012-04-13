@@ -1417,7 +1417,7 @@ $numOutputs"
                 
                 # load the PEST-generated .spf file
                 ZapParams $topNode {} \
-                        [file nativename [file join $simtmpdir model.inp]]
+                        [file nativename [file join $simtmpdir model.inp]] 0
                 
                 set widget $runState($topNode,helperId).nb.rcf
                 $widget.upper.topbuttons.reset invoke

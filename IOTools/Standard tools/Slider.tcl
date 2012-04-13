@@ -430,7 +430,7 @@ namespace eval slide139 {
         set metaFile [ChooseFile params.spf  [tr. "Load parameters from:"] \
 			  0 $topNode]
         if {[llength $metaFile]} {
-            ZapParams $topNode $smPath $metaFile
+            ZapParams $topNode $smPath $metaFile 1
         }
     }
     
