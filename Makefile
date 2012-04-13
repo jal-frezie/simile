@@ -91,17 +91,17 @@ ifeq ($(PLATFORM),Darwin)
 #	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
 ifeq ($(MY_CPU),x86_64)
-	FLAGS = $(OPT)
+	FLAGS = $(OPT) -mmacosx-version-min=10.4
 	TCLFW = /System/Library/Frameworks
 else
-	FLAGS = $(OPT) -arch i386
+	FLAGS = $(OPT) -arch i386 -mmacosx-version-min=10.4
 	TCLFW = /Library/Frameworks
 endif
-	ARCHEXTN = _ppc
+	ARCHEXTN = _mac
 # build for everything unless I am on Barbie
-	ifneq ($(OSNUMBER),7.9.0)
-		FLAGS = $(OPT) -mmacosx-version-min=10.4
-	        ARCHEXTN = _mac
+	ifeq ($(OSNUMBER),8.11.0)
+		FLAGS = $(OPT)
+	        ARCHEXTN = _ppc
 	endif
 	EXECEXTN = $(ARCHEXTN)
 	MAKEPIC = -fPIC
