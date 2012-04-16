@@ -38,6 +38,9 @@ itcl::class similescript::$newHelperClass {
 	pack $winId.elv -side right -fill y
 	pack $winId.c -fill both -expand true
 	
+#	set ::frameCount 10000
+#	package require img::window
+
 	bind $winId.c <Configure> "$this WindowSizeChanged"
 	if {[string length $state]} { ;# we are restoring 
 	    set State $state ;# keep it local
@@ -45,26 +48,45 @@ itcl::class similescript::$newHelperClass {
 	    Display 0 0 0
 	} else {
 	    # new instance so request data from model
+	    set State {}
 	    pack [message $winId.message \
-		      -text "Click on model component for 3-D graph"]
+		      -text "Click on model component for shafts"]
 	    $modelInst GrabClicks $this
 	}
     }
 
     public method Click {path} {
-	set State [list $path [$modelInst GetMinValue $path] \
-		       [$modelInst GetMaxValue $path]]
-	destroy $winId.message
-	$modelInst ReleaseClicks
-	Display 0 0 0
+	if {[llength $State]} {
+	    lappend State $path [$modelInst GetMinValue $path] \
+		[$modelInst GetMaxValue $path]
+	    destroy $winId.message
+	    $modelInst ReleaseClicks
+	    Display 0 0 0
+	} else {
+	    set State [list $path [$modelInst GetMinValue $path] \
+			   [$modelInst GetMaxValue $path]]
+	    $winId.message configure -text \
+		"Now click on model component for discs"
+	}
     }
 
     public method Display {time dispInt step} {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
-	if {![string length $State]} return
+	if {[llength $State]<6} return
+	$winId.c delete -withtag graph
 	set allvals [lindex [$modelInst GetValue [lindex $State 0]] 0]	
+	foreach {foo bar} $allvals {
+	    lappend bars [list line "index: $foo" \
+			      "[lindex $bar 1] [lindex $bar 3] [lindex $bar 5]" \
+			      "[lindex $bar 7] [lindex $bar 9] [lindex $bar 11]" \
+			      4 green4]
+	}
+	if {[info exists bars]} {
+	    ::gen3d1::DrawShapes $winId $bars graph
+	}
+	set allvals [lindex [$modelInst GetValue [lindex $State 3]] 0]	
 	foreach {foo bar} $allvals {
 	    lappend bars [list ellipse "index: $foo" \
 			      "[lindex $bar 1] [lindex $bar 3] [lindex $bar 5]" \
@@ -72,10 +94,13 @@ itcl::class similescript::$newHelperClass {
 			      "[lindex $bar 13] [lindex $bar 15] [lindex $bar 17]" \
 			  1 black green]
 	}
-	$winId.c delete -withtag graph
 	if {[info exists bars]} {
 	    ::gen3d1::DrawShapes $winId $bars graph
 	}
+#	update
+#	set img [image create photo -format window -data $winId]
+#	set hi8dump [file join $::simtmpdir temp_out[incr ::frameCount].bmp]
+#	$img write $hi8dump -format bmp
     }
 
     public method TweakScale {which where} {

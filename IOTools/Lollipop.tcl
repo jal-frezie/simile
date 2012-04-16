@@ -53,12 +53,12 @@ proc initialize {winId} {
 #Grid is always displayed so only define it once
     set grid {}
     for {set x -50} {$x <= 50} {incr x 10} {
-	lappend grid [list line {} "$x -50 $base" "$x 50 $base" 1 red]\
+	lappend grid [list line {} "$x -50 $base" "$x 50 $base" 0 red]\
 	    [list text "X posn" "$x -60 $base" [expr $x+50] red] \
 	    [list text "X posn" "$x 60 $base" [expr $x+50] red]
     }
     for {set y -50} {$y <= 50} {incr y 10} {
-	lappend grid [list line {} "-50 $y $base" "50 $y $base" 1 red]\
+	lappend grid [list line {} "-50 $y $base" "50 $y $base" 0 red]\
 	    [list text "Y posn" "-60 $y $base" [expr $y+50] blue] \
 	    [list text "Y posn" "60 $y $base" [expr $y+50] blue]
     }
@@ -234,10 +234,17 @@ proc DrawShapes {winId solids tag} {
 		set starty [lindex $startMap 1]
 		set endx [lindex $endMap 0]
 		set endy [lindex $endMap 1]
+		set squareOnX [expr {pow($endx-$startx,2)}]
+		set squareOnY [expr {pow($endy-$starty,2)}]
+		if {$squareOnX+$squareOnY==0} continue
+		set width [expr {0.002*[lindex $object3d 4]*\
+				     ($viewVector($winId,X)*$squareOnY + \
+				      $viewVector($winId,Y)*$squareOnX)/ \
+				     ($squareOnX+$squareOnY)}]
 #ShowMess debug info "$startMap $endMap" ok
 		lappend insts [list [list \
 		$winId.c create line $startx $starty $endx $endy -tag $tag \
-		    -width [lindex $object3d 4] -fill [lindex $object3d 5]] \
+		    -width $width -fill [lindex $object3d 5]] \
 			   [expr ([lindex $startMap 2]+[lindex $endMap 2])/2] \
 				   [lindex $object3d 1]]
 	    } ellipse {
