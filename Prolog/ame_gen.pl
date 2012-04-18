@@ -88,7 +88,8 @@ make_nice_error_message(Eat, ThrowUp, ErrorAtom) :-
 	connect_bits(BitsAfter, WindDown, _), !;
 	ThrowUp = error(syntax_error(RawAtom), _FailedOp), /* gnu */
 	    name(RawAtom, RawString),
-	    append(SrcStr, [58 | T1], RawString), % break at 1st :
+	    append(SrcStr, [58 | T1], RawString), 
+	    \+ T1 = [47 | _], % break at 1st : not preceding a /
 	    append(LineNoStr, [32,40,99,104,97,114,58 | T2], T1),
 	    append(CharNoStr, [41,32 | DescStr], T2), !,
 	    all(user, name, [build([_Source, LineNo, CharNo, Desc]),
@@ -227,7 +228,7 @@ double_backslashes(Str, Dtr) :-
 
 bite_off_number(String, Num, Left) :-
 	(append(Safe, [Black, White | _], String),
-	    (Black = [46],
+	    (Black = 46,
 		member(White, "\n\r\t "); % end of a macro expansion (unicode?)
 	      member(Black, "{\\} \n\r")), !;
 	    String = Safe),
