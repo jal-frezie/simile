@@ -280,11 +280,13 @@ proc DrawShapes {winId solids tag} {
 		set middle [project $winId [lindex $object3d 2]]
 		set midx [lindex $middle 0]
 		set midy [lindex $middle 1]
-		set rad [expr $viewVector($winId,Y)*[lindex $object3d 3]/150.0]
+		set radX [expr $viewVector($winId,X)*[lindex $object3d 3]/150.0]
+		set radY [expr $viewVector($winId,Y)*[lindex $object3d 3]/150.0]
 		lappend insts [list [list \
-		$winId.c create oval [expr $midx-$rad] [expr $midy-$rad] \
-		     [expr $midx+$rad] [expr $midy+$rad] -tag $tag \
-		     -width [lindex $object3d 4] -fill [lindex $object3d 5]] \
+		$winId.c create oval [expr $midx-$radX] [expr $midy-$radY] \
+		     [expr $midx+$radX] [expr $midy+$radY] -tag $tag \
+		     -width [lindex $object3d 4] -fill [lindex $object3d 5] \
+					-stipple [lindex $object3d 6]] \
 				   [lindex $middle 2] \
 				   [lindex $object3d 1]]
 			       

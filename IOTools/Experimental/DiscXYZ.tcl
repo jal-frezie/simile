@@ -50,23 +50,27 @@ itcl::class similescript::$newHelperClass {
 	    # new instance so request data from model
 	    set State {}
 	    pack [message $winId.message \
-		      -text "Click on model component for shafts"]
+		      -text "Click on model component for sphere"]
 	    $modelInst GrabClicks $this
 	}
     }
 
     public method Click {path} {
-	if {[llength $State]} {
-	    lappend State $path [$modelInst GetMinValue $path] \
-		[$modelInst GetMaxValue $path]
-	    destroy $winId.message
-	    $modelInst ReleaseClicks
-	    Display 0 0 0
-	} else {
-	    set State [list $path [$modelInst GetMinValue $path] \
-			   [$modelInst GetMaxValue $path]]
-	    $winId.message configure -text \
-		"Now click on model component for discs"
+	lappend State $path [$modelInst GetMinValue $path] \
+	    [$modelInst GetMaxValue $path]
+	
+	switch [llength $State] {
+	    3 {
+		$winId.message configure -text \
+		    "Now click on model component for shafts"
+	    } 6 {
+		$winId.message configure -text \
+		    "Now click on model component for discs"
+	    } 9 {
+		destroy $winId.message
+		$modelInst ReleaseClicks
+		Display 0 0 0
+	    }
 	}
     }
 
@@ -74,19 +78,21 @@ itcl::class similescript::$newHelperClass {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
-	if {[llength $State]<6} return
+	if {[llength $State]<9} return
 	$winId.c delete -withtag graph
-	set allvals [lindex [$modelInst GetValue [lindex $State 0]] 0]	
+	set root [lindex [$modelInst GetValue [lindex $State 0]] 0]
+	if {[llength $root]} {
+	    set bars [list [list sphere Root [list 0 0 -$root] \
+			    $root 1 brown4 gray25]]
+	}
+	set allvals [lindex [$modelInst GetValue [lindex $State 3]] 0]	
 	foreach {foo bar} $allvals {
 	    lappend bars [list line "index: $foo" \
 			      "[lindex $bar 1] [lindex $bar 3] [lindex $bar 5]" \
 			      "[lindex $bar 7] [lindex $bar 9] [lindex $bar 11]" \
 			      4 green4]
 	}
-	if {[info exists bars]} {
-	    ::gen3d1::DrawShapes $winId $bars graph
-	}
-	set allvals [lindex [$modelInst GetValue [lindex $State 3]] 0]	
+	set allvals [lindex [$modelInst GetValue [lindex $State 6]] 0]	
 	foreach {foo bar} $allvals {
 	    lappend bars [list ellipse "index: $foo" \
 			      "[lindex $bar 1] [lindex $bar 3] [lindex $bar 5]" \
