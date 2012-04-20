@@ -303,7 +303,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 # you cannot 'and' the submodel id tag with the background tag
 # so 'or' it with the inverse
 	$w addtag target_and_background withtag $stackOn
-	$w addtag not_background all
+	$w addtag not_background withtag $stackOn
 	$w dtag /background/ not_background
 	$w dtag not_background target_and_background
     }
@@ -1079,7 +1079,7 @@ proc InjectGraphics {c canvasFile} {
     # its previous size which we saved. The xview and yview cmds here work around
     # a tcl bug that if the scrollregion is smaller than the window it may not all
     # be displayed.
-    $c delete withtag /base/ ;# these will be re-created
+    # $c delete withtag /base/ ;# these may be deleted and re-created
     update idletasks
     CanvasSee $c [lindex [$c find all] end] \
 	[expr $window_info($c,width)/2] [expr $window_info($c,height)/2]
