@@ -12,7 +12,7 @@ proc identify {} {
 proc initialize {winId} {
     variable useNodes
     variable trunks
-    variable base
+
     namespace import -force ::maptools2::*
     set toolbarItems [list \
 			  [list new.gif "Clear" \
@@ -24,7 +24,6 @@ proc initialize {winId} {
     
     ::graphtools::MakeToolBar $winId $toolbarItems
     pack [message $winId.intro -aspect 800] -fill x
-    variable grid
     variable viewVector
     set pi 3.14
     array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
@@ -51,24 +50,7 @@ proc initialize {winId} {
                 [namespace code " WindowSizeChanged $winId"]
 
 #Grid is always displayed so only define it once
-    set grid {}
-    for {set x -50} {$x <= 50} {incr x 10} {
-	lappend grid [list line {} "$x -50 $base" "$x 50 $base" 0 red]\
-	    [list text "X posn" "$x -60 $base" [expr $x+50] red] \
-	    [list text "X posn" "$x 60 $base" [expr $x+50] red]
-    }
-    for {set y -50} {$y <= 50} {incr y 10} {
-	lappend grid [list line {} "-50 $y $base" "50 $y $base" 0 red]\
-	    [list text "Y posn" "-60 $y $base" [expr $y+50] blue] \
-	    [list text "Y posn" "60 $y $base" [expr $y+50] blue]
-    }
-    for {set z 10} {$z <= 50} {incr z 10} {
-	set zposn [expr $base+2*$z]
-	lappend grid [list text "Z posn" "-50 -50 $zposn" $z black] \
-	    [list text "Z posn" "-50 50 $zposn" $z black] \
-	    [list text "Z posn" "50 50 $zposn" $z black] \
-	    [list text "Z posn" "50 -50 $zposn" $z black]
-    }
+    DefineGrid 0 100
 
     SetState $winId initial
     set useNodes($winId,selected) {}
@@ -372,6 +354,30 @@ proc WindowSizeChanged {winId} {
 	    DrawShapes $winId $grid grid
 	}
 	ShowKey $winId
+    }
+}
+
+proc DefineGrid {LoZ HiZ} {
+    variable base
+    variable grid
+
+    set grid {}
+    for {set x -50} {$x <= 50} {incr x 10} {
+	lappend grid [list line {} "$x -50 $base" "$x 50 $base" 0 red]\
+	    [list text "X posn" "$x -60 $base" [expr $x+50] red] \
+	    [list text "X posn" "$x 60 $base" [expr $x+50] red]
+    }
+    for {set y -50} {$y <= 50} {incr y 10} {
+	lappend grid [list line {} "-50 $y $base" "50 $y $base" 0 red]\
+	    [list text "Y posn" "-60 $y $base" [expr $y+50] blue] \
+	    [list text "Y posn" "60 $y $base" [expr $y+50] blue]
+    }
+    for {set z $LoZ} {$z <= $HiZ} {incr z 20} {
+	set zposn [expr $base+$z]
+	lappend grid [list text "Z posn" "-50 -50 $zposn" $z black] \
+	    [list text "Z posn" "-50 50 $zposn" $z black] \
+	    [list text "Z posn" "50 50 $zposn" $z black] \
+	    [list text "Z posn" "50 -50 $zposn" $z black]
     }
 }
 }

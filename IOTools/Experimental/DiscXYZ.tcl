@@ -14,7 +14,10 @@ itcl::class similescript::$newHelperClass {
 	Helper::constructor $modelInst $winTitle
     } {
 	variable ::gen3d1::viewVector
+
 	set pi 3.14
+	set ::gen3d1::base 0
+	::gen3d1::DefineGrid -40 40
 	array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
 				  $winId,cos_angle 1 $winId,cos_elevation 1 \
 				  $winId,sin_angle -0.3 $winId,sin_elevation 0.5]
@@ -75,15 +78,23 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method Display {time dispInt step} {
+	variable ::gen3d1::grid
+	variable ::gen3d1::viewVector
+
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
 	if {[llength $State]<9} return
 	$winId.c delete -withtag graph
 	set root [lindex [$modelInst GetValue [lindex $State 0]] 0]
-	if {[llength $root]} {
-	    set bars [list [list sphere Root [list 0 0 -$root] \
-			    $root 1 brown4 gray25]]
+	set bars {}
+	if {$viewVector($winId,elevation)>=0} {
+	    if {[llength $root]} {
+		::gen3d1::DrawShapes $winId \
+		    [list [list sphere Root [list 0 0 -$root] \
+			       $root 1 brown4 gray25]] graph
+	    }
+	    ::gen3d1::DrawShapes $winId $grid graph
 	}
 	set allvals [lindex [$modelInst GetValue [lindex $State 3]] 0]	
 	foreach {foo bar} $allvals {
@@ -100,8 +111,14 @@ itcl::class similescript::$newHelperClass {
 			      "[lindex $bar 13] [lindex $bar 15] [lindex $bar 17]" \
 			  1 black green]
 	}
-	if {[info exists bars]} {
-	    ::gen3d1::DrawShapes $winId $bars graph
+	::gen3d1::DrawShapes $winId $bars graph
+	if {$viewVector($winId,elevation)<0} {
+	    ::gen3d1::DrawShapes $winId $grid graph
+	    if {[llength $root]} {
+		::gen3d1::DrawShapes $winId \
+		    [list [list sphere Root [list 0 0 -$root] \
+			       $root 1 brown4 gray25]] graph
+	    }
 	}
 #	update
 #	set img [image create photo -format window -data $winId]
