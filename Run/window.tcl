@@ -2533,8 +2533,13 @@ proc exit_simile {} {
     set cache [file join $custom(prefDir) .recent]
     set cacheStream [NetOpen $cache w]
     fconfigure $cacheStream -encoding utf-8
+    set cwd [file normalize [pwd]/dummy]
     foreach oldFile $custom(hotlist) {
-        puts $cacheStream $oldFile
+# experimental: save relative to prefdir
+	if {![string match windows $tcl_platform(platform)]} {
+	    set oldFile [::fileutil::fullnormalize $oldFile]
+	}
+        puts $cacheStream [::fileutil::relative $custom(prefDir) $oldFile]
     }
     close $cacheStream
 # remove eqn dialogue layout, it might be wrong when we restart

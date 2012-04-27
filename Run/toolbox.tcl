@@ -853,12 +853,21 @@ proc ControlDraw {prologVersion} {
 # other instances of Simile (unless stealth mode chosen)
     StartComms 1
 
+    package require fileutil
+    if {![string match windows $tcl_platform(platform)]} {
+	set custom(prefDir) [::fileutil::fullnormalize $custom(prefDir)]
+    }
+
     set custom(hotlist) {}
     set cache [file join $custom(prefDir) .recent]
     if {[file exists $cache]} {
         set cacheStream [NetOpen $cache r]
 	fconfigure $cacheStream -encoding utf-8
         while {[gets $cacheStream oldFile]>0} {
+	    if {[string equal relative [file pathtype $oldFile]]} {
+		set oldFile [file normalize \
+				 [file join $custom(prefDir) $oldFile]]
+	    }
             if {[file exists $oldFile] && \
                         [lsearch $custom(hotlist) $oldFile]==-1} {
                 lappend custom(hotlist) $oldFile
@@ -1634,6 +1643,7 @@ proc SaveProjectFile {topNode path tgt} {
 	    }
 	}
     }
+    set tgtDir [file dirname $tgt]
     if {[info exists helperTable($topNode,stateName)]} {
 # old method: include helper state in saved model, just because we could...
 #	if {![string equal $path \
@@ -1641,14 +1651,14 @@ proc SaveProjectFile {topNode path tgt} {
 #	    file copy -force $helperTable($topNode,stateName) $path
 #	}
         set SimileProject(nameOfHelperStateFile) \
-	    [Relativize $tgt $helperTable($topNode,stateName)]
+	    [::fileutil::relative $tgtDir $helperTable($topNode,stateName)]
     }
     # shf file name loaded
     
     set spfList [array get ::SimileProject fileparam,/${topNode}/*]
     foreach {varName spfPath} $spfList {
 	set smPart [Submodelize $varName]
-	set relPath [Relativize $tgt $spfPath]
+	set relPath [::fileutil::relative $tgtDir $spfPath]
 	set pmData "Reference to parameter metafile $relPath"
 	if {[llength $smPart]} {
 	    append pmData " for [string range $smPart 1 end]"

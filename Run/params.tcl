@@ -1203,7 +1203,7 @@ namespace eval fileparams {
 		set msgs(param_source_$compName) \
 		    [format $msgs(metafile_bin) $metaFile]
 	    } elseif {[ReferenceWorks $compName]} {
-		set relName [Relativize $metaFile \
+		set relName [::fileutil::relative [file dirname $metaFile] \
 				 [lindex $paramState($compName) 0]]
 		switch -exact [lindex $paramState($compName) 1] {
 		    ,image {

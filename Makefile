@@ -57,18 +57,20 @@ GPPCMD = g++
 
 ifeq ($(MY_CPU),x86_64)
 BITEXTN = 64
-OPT =
 TCLDIR = /usr
 else
 BITEXTN = 
-OPT =
 # build on included tcl -- deprecated but needed for selectable bitness
-TCLDIR = /usr
+TCLDIR = "/home/jaspert/Documents/My Simile files/Source/System"
 endif
 SYSDIR = System$(BITEXTN)
 
 # Default case: Linux
-FLAGS = $(OPT)
+ifeq ($(MY_CPU),x86_64)
+	FLAGS = $(OPT)
+else
+	FLAGS = $(OPT) -m32
+endif
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
 MAKESL = -shared
