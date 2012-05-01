@@ -859,7 +859,12 @@ proc ControlDraw {prologVersion} {
     }
 
     set custom(hotlist) {}
-    set cache [file join $custom(prefDir) .recent]
+# v6: switch to keeping paths relative to dereferenced prefdir. I don't want
+# older versions failing to read this then emptying it, so move the file...
+    set cache [file join $custom(prefDir) .recent6]
+    if {![file exists $cache]} {
+	set cache [file join $custom(prefDir) .recent]
+    }
     if {[file exists $cache]} {
         set cacheStream [NetOpen $cache r]
 	fconfigure $cacheStream -encoding utf-8

@@ -2530,7 +2530,7 @@ proc ClearWindow {winId} {
 proc exit_simile {} {
     global custom tcl_platform execThread
     
-    set cache [file join $custom(prefDir) .recent]
+    set cache [file join $custom(prefDir) .recent6]
     set cacheStream [NetOpen $cache w]
     fconfigure $cacheStream -encoding utf-8
     set cwd [file normalize [pwd]/dummy]
