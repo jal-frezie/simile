@@ -734,7 +734,7 @@ change_name(RenamedNode, Name) :-
 	    update_captions(OtherGhost),
 	    update_default_refs_in_eqns(OtherGhost),
 	    fail;
-	 true).
+	 update_captions(RenamedNode)).
 
 update_default_refs_in_eqns(OtherGhost) :-
 	presence_affects(OtherGhost, Reference),
