@@ -1311,7 +1311,7 @@ remove_model(Win, Parent) :-
 	    redraw_window(Win);
 	start_progress_dialogue(Win),
 	reassure_user(pl_trimin, []),
-	cutout(Parent, no);
+	cutoff(Parent);
 	(contains(Parent, Junk),
 	    \+ Junk = Parent,
 	    off(Junk),
@@ -1326,6 +1326,13 @@ remove_model(Win, Parent) :-
 	abs_path_name(Parent, root, DeleteDir),
 	output'><'trim_tree(LocalDir, DeleteDir).
 
+% creates variables outside model where influences came out from it
+cutoff(Parent) :-
+	find_all_comps(Parent, Child),
+	sever_links(Child, Parent),
+	fail.
+		
+% creates variables inside model where influences came into it
 cutout(Parent, SelnOnly) :-
 	find_all_links(Parent, Child),
 	\+ (SelnOnly = yes, \+ event'><'doomed(Child)),
