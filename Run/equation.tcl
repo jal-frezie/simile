@@ -1052,6 +1052,7 @@ proc functionClick {tree x y boxname} {
     # Take the item the user clicked on
     if {[string first .et_top_level. $fn]==0} { ;# do for type and members
 	$boxname insert [$boxname index insert] \"[$tree item $fn -text]\"
+	focus $boxname
     } elseif {[llength [$tree children $fn]]} {
 	$tree item $fn -open [expr {![$tree item $fn -open]}]
     } else {
