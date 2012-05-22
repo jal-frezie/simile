@@ -967,22 +967,17 @@ proc GetFindText {canvas} {
     wm resizable $t 0 0
     TitleFrame .findentry.follow -text "Follow influences "
     set follow [GetFrame .findentry.follow]
-    if {[llength [GetFromProlog tk_get_info('$canvas',selection,any)]]} {
-	set traceFns normal
-    } else {
-	set traceFns disabled
-    }
     pack [ttk::label $follow.to -text [tr. Components...]] -anchor w
     pack [ttk::label $follow.from -text [tr. ...selection]] \
 	-side bottom -anchor e
     pack [ttk::button $follow.back -text [tr. "influencing"] \
-	      -command "set find(done) 10" -state $traceFns] \
+	      -command "set find(done) 10"] \
 	-padx 2 -pady 4 -side left
     pack [ttk::button $follow.forward -text [tr. "influenced by"] \
-	      -command "set find(done) 12" -state $traceFns] \
+	      -command "set find(done) 12"] \
 	-padx 2 -pady 4 -side right
     pack [ttk::button $follow.here -text [tr. "equivalent to"] \
-	      -command "set find(done) 11" -state $traceFns] \
+	      -command "set find(done) 11"] \
 	-padx 2 -pady 4
     pack .findentry.follow -anchor nw -fill both
 

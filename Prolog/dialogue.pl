@@ -62,7 +62,7 @@ interactively_parse(Part) :-
 	(get_av_pair(Part, 0, table_data, TableSpec), !;
 	    TableSpec = ''),
 	(find_type(ClickedObj, state), !,
-	    extract_rule_forms(Part, Rules);
+	    extract_rule_forms(Part, Input_list, Rules);
 	  Rules = []),
 	handle_eqn_interaction(Part, Input_list, TableSpec, Rules),
 	    retractall(def_unit_and_index_type_list_are(_,_)).
@@ -74,11 +74,13 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 	      asserta(table_data_is(TableSpec))), % needed in parser
 	    update_equation(Part, Input_list, Result_list, Effect),
 	    retractall(table_data_is(_TableSpec)),  
-		((Effect = new_effect_accepted(Cause, NewSpec, NewVal),
-		    safe_tcl_eval(['RedoChangeOfCause'], _);
-		  Effect = rule_list_accepted(Cause, NewSpec, NewVal,
-					      _,_,_,_,_,_,_)), !,
-		    update_rules(Rules, Cause-NewSpec-NewVal, NewRules);
+		((Effect = new_effect_accepted(Cause, NewSpec, NewVal, ArrSpec),
+		    ArrSpec = Units-Dims,
+		    safe_tcl_eval(['RedoChangeOfCause', Units, br(Dims)], _);
+		  Effect = rule_list_accepted(Cause, NewSpec, NewVal, ArrSpec,
+					      _,_,_,_,_,_)), !,
+		    update_rules(Rules, Cause-NewSpec-NewVal-ArrSpec,
+				 NewRules);
 		  NewRules = Rules),
 	      (Effect = input_list_changed_to(NewInputList), !,
 		  fill_inputs(NewInputList);
@@ -99,10 +101,10 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 		    TableAttr = ''), /* no tables/graphs found */
 		add_parameter(AffectedNode, 0, table_data, TableAttr),
 		add_parameter(AffectedNode, 0, uses_local_fns, UserFnList);
-	      Effect = rule_list_accepted(_,_,_, Is_P,  NewArrSpec, MinVal, MaxVal,
+	      Effect = rule_list_accepted(_,_,_,_, Is_P, MinVal, MaxVal,
 					  Desc, Comment, NewInputs),
 		update_parameterhood(Part, Is_P, AffectedNode),
-	        add_rule_specs_and_vals(AffectedNode, NewRules)),
+	        add_rule_specs_and_vals(AffectedNode, NewRules, NewArrSpec)),
 		% decide how to save specs and values -- merge with above
 	      
 		add_parameter(AffectedNode, 0, units, NewArrSpec),
@@ -119,28 +121,48 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 index_types(ind_spec(_Name, _Posn, Ind, _Link), Type) :-
 	inters'><'type_ind(Ind, Type).
 
-update_rules(Old, C-S-V, [C-S-V | Left]) :-
-	select(C-_S-_V, Old, Left), !;
+update_rules(Old, C-S-V-D, [C-S-V-D | Left]) :-
+	select(C-_S-_V-_D, Old, Left), !;
 	Left = Old.
 
-extract_rule_forms(Part, Rules) :-
+extract_rule_forms(Part, InputList, Rules) :-
 	get_av_pair(Part, 0, spec, SpecList),
 	get_av_pair(Part, 0, value, ValueList), !,
-	convert_rule_format(SpecList, ValueList, Rules);
+	convert_rule_format(SpecList, ValueList, Rules),
+	all(dialogue, initialize_dims,
+	    [build(Rules), unify(Part), unify(InputList)]);
 	Rules = [].
 
-add_rule_specs_and_vals(Node, Rules) :-
-	convert_rule_format(SpecList, ValueList, Rules),
+initialize_dims(_C-_S-Equation-GotUnits, Fn, InterInputs) :-
+	def_unit_and_index_type_list_are(_, IndxCount),
+	test_eqn(Equation, Fn, IndxCount, InterInputs,
+		 Type, Dims, _ParamList, ParseError),
+	(ParseError = [], !,
+	    GotUnits = Type-Dims;
+	  GotUnits = any-[]).
+
+add_rule_specs_and_vals(Node, Rules, CommonUnits) :-
+	purge(Rules, [_C-_S-''-_D], RulesWithEfx),
+	convert_rule_format(SpecList, ValueList, RulesWithEfx),
+	combine_dims(RulesWithEfx, CommonBase-CommonDims),
+	build_array(CommonBase, CommonDims, CommonUnits),
 	add_parameter(Node, 0, value, ValueList),
 	add_parameter(Node, 0, spec, SpecList).
-	
-convert_rule_format([], [], []).
-convert_rule_format(Spec, Value, Rules) :-
-	select(C-S, Spec, MoreSpec),
-	select(C-V, Value, MoreValue),
-	select(C-S-V, Rules, MoreRules),
-	convert_rule_format(MoreSpec, MoreValue, MoreRules).
 
+combine_dims([], any-[]).
+combine_dims([_C-_S-_V-(Base-Dims) | RuleList], CommonType-CommonDims) :-
+	combine_dims(RuleList, Gen-SoFar),
+	inters'><'value(Any),
+	inters'><'try_units(Any, [Any, Any], [Base, Gen], CommonType),
+	inters'><'longest_path([Dims, SoFar], CommonDims).	
+	
+convert_rule_format(Spec, Value, Rules) :-
+	Spec = '', Value = '', Rules = [];
+	Rules = [C-S-V-_D | MoreR],
+	(Spec = (S on C), Value = (V on C),
+	  MoreR = [];
+	Spec = (S on C, MoreS), Value = (V on C, MoreV),
+	    convert_rule_format(MoreS, MoreV, MoreR)), !.
 	
 /* update_equation/5: This makes sure that if the user has entered a
 new destination name or units for an existing variable they are added
@@ -222,8 +244,13 @@ update_equation(Function, InterInputs,
 	  ParamAllowances = [[-1,1,0], [0,1,0], [1,0,0], [2,0,0]]),
 	member([Is_P, ParamsAllowed, _EventInsAllowed], ParamAllowances),
 	get_term(Unit_st, Units, UnitFormError),
-	check_exp(Eqn_st, Function, InterInputs, EqnBase, EqnDims,
-		  IndxCount, ParamList, Result, ParseError),
+	get_term(Eqn_st, Result, EqnFormError),
+	(Result = '', !,
+	    ParseError = [];
+	  EqnFormError = [], !,
+	    test_eqn(Result, Function, IndxCount, InterInputs,
+		      EqnBase, EqnDims, ParamList, ParseError);
+	  ParseError = bad_syntax('Equation', EqnFormError)),
 	(ParamsAllowed = 0,
 	    nonvar(ParamList),
 	    member(ParamName, ParamList), !,
@@ -254,7 +281,7 @@ update_equation(Function, InterInputs,
 	(Complaint5 = [], !,
 	(Unit_st = "", Eqn_st = "", Min_st = "", Max_st = "",
 	    /* If no eqn, bounds or units supplied, assume real */
-	    (Is_P > 0, NewArrSpec = 1; NewArrSpec = ''), UnitError = [], !;
+	    (Is_P > 0, NewArrSpec = 1; NewArrSpec = ''), TypeError = [], !;
 	/* If units but no eqn or limits supplied, accept any */
 /*	MinBase = any, EqnBase = any, MaxBase = any, var(TypeBase), !,
 	    NewUnits = Units,
@@ -272,48 +299,29 @@ update_equation(Function, InterInputs,
 	on_exception(_PropError, propagate_units(min(Max, max(Min, Result)),
 						any, [any, any, any],
 			[EqnBase, MinBase, MaxBase], RawBase),
-		     UnitError = minmax_wrong(EqnBase)),
-	(nonvar(UnitError);
+		     TypeError = minmax_wrong(EqnBase)),
+	(nonvar(TypeError);
 	    /* First, check that the equation can have the units
 	       given, or set given units to the default units for the
 	       equation if there are none. */
 	  \+ UnitFormError = [],
-	    UnitError = bad_syntax('Units', UnitFormError);
-	  promote_unit(RawBase, ComboBase),
-	    \+ member(ComboBase, [const_int, const_ratio]),
-		% variables cannot have constant units even if constant
-	    (\+ member(Units, ['', any]), !,
-	      (Units = int, ComboBase = 1,
-		  NewUnits = 1;
-		% num constant changed from int to float -- allow
-	      NewUnits = Units); % otherwise if units were given, use them
-	    nonvar(TypeBase), \+ TypeBase = any,
-		(\+ TypeBase = 1; ComboBase = int), !,
-	      NewUnits = TypeBase; % interesting default units, use them
-	    NewUnits = ComboBase), % last resort, use units from eqn
+	    TypeError = bad_syntax('Units', UnitFormError);
+
 	    ((InterInputs = [], % If there are no incoming influences...
 	      (EqnBase = 1; % ...and the equation evaluates to a dimensionless
 		  promote_unit(EqnBase, real)); % quantity,
 	      use_units_in(Function, 'No')), % or else if math checking is off,
 		CheckLevel = 1; % allow it to have any given physical units
 	      CheckLevel = 2), % otherwise dimensions must match
-	    check_unit(ComboBase, NewUnits, CheckLevel, EqnToUnitError)),
-	    (\+ EqnToUnitError == [],
-		UnitError = EqnToUnitError;
-	    /* Next check that the value's units,however they were
-	       specified, are appropriate for this component */
-	
-	      build_array(NewUnits, EqnDims, NewArrSpec),
-		(var(TypeDims), !,
-		    [Test, Target] = [NewUnits, TypeBase];
-		 Test = NewArrSpec,
-		    build_array(TypeBase, TypeDims, Target)),
-		(TypeBase = any, !,
-		    Strict = 0;
-		 TypeBase = 1, !,
-		    Strict = 1; % allow original physical units
-		 Strict = 2),
-		check_unit(Test, Target, Strict, UnitError))),
+	    appropriate_units(Units, TypeBase, RawBase, CheckLevel,
+			      NewUnits, TypeError))),
+
+	    build_array(NewUnits, EqnDims, NewArrSpec),
+	    (\+ var(TypeDims),
+		\+ EqnDims = TypeDims,
+		build_array(TypeBase, TypeDims, Target),
+		UnitError = mismatched_arrays(Target, TypeDims, EqnDims);
+	      UnitError = TypeError),
 
 /* Pre-5.4 version which conflated these tasks together
             ((nonvar(TypeBase);
@@ -400,38 +408,51 @@ update_equation(Function, InterInputs,
 	 Effect = user_advice_generated(FinalComplaint)).
 
 % new trigger selected for a state-change rule -- has 5 elts
-update_equation(Function, InterInputs, [Eqn_st, Evt_st, _Unit_st,
+update_equation(Function, InterInputs, [Eqn_st, Evt_st, Unit_st,
 					_Min_st, _Max_st],
 		Effect) :-
 	name(EvtId, Evt_st),
 	def_unit_and_index_type_list_are(_, IndxCount),
-	check_exp(Eqn_st, Function, InterInputs, _EqnBase, _EqnDims,
-		  IndxCount, _ParamList, Result, ParseError),
+	get_term(Eqn_st, Result, EqnFormError),
+	(Result = '', !,
+	    EqnBase = any,
+	    ParseError = [];
+	  EqnFormError = [], !,
+	    test_eqn(Result, Function, IndxCount, InterInputs,
+		      EqnBase, EqnDims, _ParamList, ParseError);
+	  ParseError = bad_syntax('Rule outcome', EqnFormError)),
 	(ParseError = [], !,
+	    get_term(Unit_st, GivenUnits, UnitParseError),
+	    (UnitParseError = [], !,
+		appropriate_units(GivenUnits, any, EqnBase, 2,
+				  NewUnits, FinalError);
+	      FinalError = UnitParseError);
+	  FinalError = ParseError),
+
+	(FinalError = [], !,
 	    purge(Eqn_st, "\\", OrigSt),
 	    sicstus_atom_chars(OldEqn, OrigSt),
-	    Effect = new_effect_accepted(EvtId, OldEqn, Result);
-	 Effect = user_advice_generated(ParseError)).
+	    Effect = new_effect_accepted(EvtId, OldEqn, Result,
+					 NewUnits-EqnDims);
+	 Effect = user_advice_generated(FinalError)).
 
 % OK to rule dialogue -- has 8 elts
 update_equation(Function, Inputs, [Eqn_st, Evt_st, Unit_st, Is_P_st,
 				   Desc_st, Cmt_st, Min_st, Max_st], Effect) :-
 	update_equation(Function, Inputs, [Eqn_st, Evt_st, Unit_st,
 					   Min_st, Max_st], SubEffect),
-	(SubEffect = new_effect_accepted(EvtId, OldEqn, Result), !,
-	    get_term(Unit_st, NewArrSpec, ParseError),
+	(SubEffect = new_effect_accepted(EvtId, OldEqn, Result, NewUnits), !,
 	    name(Is_P, Is_P_st),
 	    name(MinVal, Min_st),
 	    name(MaxVal, Max_st),
 	    name(Desc, Desc_st),
 	    name(Comment, Cmt_st),
+
 % have to check the other stuff some time but later
-	    (ParseError = [], !,
-		purge(Eqn_st, "\\", OrigSt),
-		sicstus_atom_chars(OldEqn, OrigSt),
-		Effect = rule_list_accepted(EvtId, OldEqn, Result, Is_P, NewArrSpec,
+	    purge(Eqn_st, "\\", OrigSt),
+	    sicstus_atom_chars(OldEqn, OrigSt),
+	    Effect = rule_list_accepted(EvtId, OldEqn, Result, NewUnits, Is_P,
 					MinVal, MaxVal, Desc, Comment, Inputs);
-	      Effect = user_advice_generated(ParseError));
 	  Effect = SubEffect).
 
 warn_dimless_scaler(NewUnits) :-
@@ -439,7 +460,35 @@ warn_dimless_scaler(NewUnits) :-
 % flag up dimensionless conversions; here is not really the place, but...
 	(\+ TargetDims = 1; ScaleFactor = 1.0;
 	query(is_scale_factor(NewUnits, ScaleFactor),
-	      warning, top, [ok], ok)), !; true.
+	    warning, top, [ok], ok)), !; true.
+
+appropriate_units(Units, TypeBase, RawBase, CheckLevel,
+                  NewUnits, TypeError) :-
+	promote_unit(RawBase, ComboBase),
+	\+ member(ComboBase, [const_int, const_ratio]),
+		% variables cannot have constant units even if constant
+	(\+ member(Units, ['', any]), !,
+	    (Units = int, ComboBase = 1,
+	        NewUnits = 1;
+		% num constant changed from int to float -- allow
+	      NewUnits = Units); % otherwise if units were given, use them
+	    nonvar(TypeBase), \+ TypeBase = any,
+		(\+ TypeBase = 1; ComboBase = int), !,
+	      NewUnits = TypeBase; % interesting default units, use them
+	    NewUnits = ComboBase), % last resort, use units from eqn
+	check_unit(ComboBase, NewUnits, CheckLevel, EqnToUnitError),
+	
+	(\+ EqnToUnitError == [],
+	    TypeError = EqnToUnitError;
+	    /* Next check that the value's units,however they were
+	       specified, are appropriate for this component */
+	
+	    (TypeBase = any, !,
+	        Strict = 0;
+	      TypeBase = 1, !,
+	        Strict = 1;	% allow original physical units
+	      Strict = 2),
+	    check_unit(NewUnits, TypeBase, Strict, TypeError)).
 
 /* This fails if the brackets are right */
 check_param_brackets(ShowParam, New_param, Current_unit, Complaint) :-
@@ -591,20 +640,6 @@ check_bound(Eqn_st, FieldName, Function, Needed,
 		true);
 	    Error = bad_syntax(FieldName, ParseError)).
 	
-check_exp(Eqn_st, Function, InterInputs, Base, Dims,
-	  IndxCount, ParamList, Equation, Error) :-
-	Eqn_st = [], !,
-	    Base = any,
-	    Dims = [],
-	    ParamList = [],
-	    Equation = '',
-	    Error = [];
-	get_term(Eqn_st, Equation, ParseError),
-	    (ParseError = [], !,
-		test_eqn(Equation, Function, IndxCount, InterInputs, 
-			 Base, Dims, ParamList, Error);
-	    Error = bad_syntax('Equation', ParseError)).
-
 /* test_eqn: replaces the old parse_eqn. Because make_intermediates 
 now
 includes full type checking, it can be used to make sure the 

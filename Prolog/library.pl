@@ -15,13 +15,13 @@ sicstus_use_module( [library(lists),
 % models are saved in terms of calls to predicates defined in construction:, 
 % thus keeping the abstract syntax away from the user.
 
-ame_save( File, Model, Date, SelOnly, MakeCompat) :-
+ame_save( File, Model, Date, SelOnly, _MakeCompat) :-
 	(setof(Sub, (Model has_part Sub, go_with(Sub, SelOnly)), Models), !;
 	       Models = []),
 	(SelOnly = yes,
 	    Models = [UseAsParent],
 	    \+ draw'><'get_highlit_obj(0, UseAsParent), !,
-	    ame_save(File, UseAsParent, Date, SelOnly, MakeCompat);
+	    ame_save(File, UseAsParent, Date, SelOnly, _);
 	(backup'><'is_toplevel(Model),
 	    SelOnly = no,
 	    setof(A-V, Model has_class_refinement A of V, Props);
@@ -33,32 +33,23 @@ ame_save( File, Model, Date, SelOnly, MakeCompat) :-
 	output'><'windowize(File, WFile),
 	on_exception(_, open_native(WFile, write, Stream), 
 	fail), !,
-	(MakeCompat = no, !,
-	    V = 9.99; % look forward to a time when...   
-	  state'><'version_is(VStr),
-	    name(SimV, VStr),
-	    V is SimV + 4,
-	    ame_gen'><'assert(by_record_brackets(curly)),
-	    reassure_user(pl_convert_from, ['5.5']),
-	    adjust_to_10(Model)), % write non-5.5 format for now (remove for v6)
+	state'><'version_is(VStr),
+	name(SimV, VStr),
+	V is SimV + 4,
 	(reassure_user(writing_root, []),
 	state'><'edition_is(Edition),
-	write_with_breaks(Stream, source(program='AME', version=V,
+	export_with_breaks(Stream, source(program='AME', version=V,
 					 edition=Edition, date=Date)),
 	nl(Stream),
-	write_with_breaks( Stream, roots( Models )),
+	export_with_breaks( Stream, roots( Models )),
 	nl(Stream),
-	write_with_breaks( Stream, properties(Props)),
+	export_with_breaks( Stream, properties(Props)),
 	nl(Stream),
 	reassure_user(writing_node, []),
 	save_nodes( Models, Stream, SelOnly, ArcsUsed ),
 	nl(Stream),
 	reassure_user(writing_arc, []),
 	save_arcs( ArcsUsed, Stream),
-	(MakeCompat = no, !;    
-	   ame_gen'><'retractall(by_record_brackets(_)),
-	    reassure_user(pl_convert_to, ['5.5']),
-	    adjust_to_10(Model)), % return model to 5.5 format (remove for v6)
 	close( Stream ), !;
 	fail)).
 
@@ -77,7 +68,13 @@ save_nodes( [Node|Nodes], Stream, SelOnly, AllArcsUsed ) :-
 		   Children ),
 	append( Children, Nodes, NewNodes ),
 	save_nodes( NewNodes, Stream, SelOnly, ArcsUsed ),
-	merge_lists( NewArcsUsed, ArcsUsed, AllArcsUsed ).
+	any_setof(ArcMem, arcmem(NewArcsUsed, ArcMem), ArcMems),
+	save_nodes( ArcMems, Stream, SelOnly, BranchArcsUsed ),
+	append( [NewArcsUsed, BranchArcsUsed, ArcsUsed], AllArcsUsed ).
+
+arcmem(ArcSets, Node) :-
+	member(Arc-_-_, ArcSets),
+	Arc has_part Node.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_links - write out a data structure representing links in a module
@@ -87,7 +84,7 @@ save_links( Node, Stream, SelOnly ) :-
 	setof(From-To, (member(From-To, AllLinks),
 			   go_with(From, SelOnly), go_with(To, SelOnly)),
 	      Links), !,
-	write_with_breaks( Stream, links( Node, Links ));
+	export_with_breaks( Stream, links( Node, Links ));
 	true.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -102,7 +99,7 @@ save_refs( Node, Stream, SelOnly ) :-
 	all(library, check_ref_entry,
 	    [unify(Node), build(Refs), unify(SelOnly), incr(0),
 	     build(SaveRefs)]),
-	write_with_breaks( Stream, references( Node, SaveRefs )), !;
+	export_with_breaks( Stream, references( Node, SaveRefs )), !;
 	true.
 
 check_ref_entry(Node, Ref, SelOnly, Count, SaveRef) :-
@@ -137,13 +134,12 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 	any_setof( Attribute=Value,
 		   Node has_graphical_attribute Attribute of Value,
 		   GraphicalAttributeValuePairs ),
-	write_with_breaks( Stream,
+	export_with_breaks( Stream,
 		    node( Node, Class, Children,
 			  ClassRefinements, /* ModelRefinements, */
 			GraphicalAttributeValuePairs)), 
-	any_setof( Arc-Start-End,
-		   (( Arc is_connector from Node to End, Node = Start;
-		     Arc is_connector from Start to Node, Node = End ),
+	any_setof( Arc-Start-Node,
+		   (Arc is_connector from Start to Node,
 		       go_with(Arc, SelOnly)),
 		   ArcsUsed ).
 
@@ -179,14 +175,21 @@ save_arcs( [], _ ).
 save_arcs( [Arc-Start-End|Arcs], Stream ) :-
 	Arc has_type Type,
 	!, % green cut
+	any_setof( Child,
+		   Arc has_part Child,
+		   Children ),
 	any_setof( Attribute=Value,
 		   Arc has_attribute Attribute of Value,
 		   AttributeValuePairs ),
 	any_setof( GAttribute=GValue,
 		   Arc has_graphical_attribute GAttribute of GValue,
 		   GraphicalAttributeValuePairs ),
-	write_with_breaks( Stream, arc( Arc, Start, End, Type, AttributeValuePairs,
-			GraphicalAttributeValuePairs)),
+	export_with_breaks(Stream,
+			   arc(Arc, Start, End, Type,
+			       [children=Children | AttributeValuePairs],
+			       GraphicalAttributeValuePairs)),
+	% children should be separate arg but need to get through load
+	% in earlier versions
 	save_arcs( Arcs, Stream ).
 
 /* Line is written character by character in the hope that this will prevent
@@ -248,18 +251,32 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	        Header = source(_,version=V,date=Date), E=standard;
 	        Header = source(_,version=V), E=standard, Date=old), !,
 	    SimileV is V-4.0, % were there integer versions??
-	    read(Stream, Term);
+	    (V >= 10.0, !, % file is UTF-8
+		inters'><'swallow_to_chars(Stream, U8Contents),
+		tcltk'><'all_utf8_to_ttfn(U8Contents, Contents),
+		state'><'use_temp_dir(TempDir),
+		append_atoms(TempDir, '/temp_io.pl', TempFile),
+		open_native(TempFile, write, Stream2),
+		sicstus_write_chars(Stream2, Contents),
+		close(Stream2),
+		open_native(TempFile, read, Stm);
+	      Stm = Stream),
+	    read(Stm, Term);
 	Term = Header,
 	    Date=old,
 	    E = standard,
-	    SimileV = -1), 
+	    SimileV = -1,
+	    Stm = Stream), 
 	(Parent = node00000,
 	    \+ (_ has_part Other, \+ Other = Parent), !,
 	    % do not bother with renaming if opening first and only model */
 	    InitBindings = copy;   
 	InitBindings = []),
-	store_term( Term, Stream, Parent, InitBindings, Translated, [] ),
-	close( Stream ),
+	store_term( Term, Stm, Parent, InitBindings, Translated, [] ),
+	close( Stm ),
+	(V >= 10.0, !,
+	    output'><'my_delete_file(TempFile);
+	  true),
 
 	(state'><'get_edition_and_limit(Edn, StopAt),
 	(HasCode=no;
@@ -544,6 +561,19 @@ adjust_to_9_8(Parent) :-
 
 adjust_to_10(Parent) :-
 	update_per_record_bracket_style(Parent);
+	% move bowtie posn info from flow to fn
+	contains(Parent, Flow),
+	    Flow is_of_sort has_bowtie,
+	    implicit_function(Flow, ImpFn),
+	    \+ ImpFn has_graphical_attribute along of Bowtie,
+	    Flow no_longer_has_graphical_attribute curve of [Kink, Bowtie],
+	    Flow has_new_graphical_attribute curve of [Kink, 1000],
+	    ImpFn has_new_graphical_attribute along of Bowtie,
+	    fail;
+	contains(Parent, Submodel),
+	    Submodel no_longer_has_class_refinement desc of Desc,
+	    Submodel has_new_class_refinement description of Desc,
+	    fail;
 	true.
 
 floatify_large_ints([H | T], [NH | NT], Hit) :- !,

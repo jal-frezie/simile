@@ -233,7 +233,7 @@ the user any numeric values except universal constants in MKS!
 */
 
 instance_of( function, Node, Path, Instances, Refs) :-
-	_ is_connector from Node to Result,
+	get_host(Node, Result),
 	\+ is_ghost(Result),
 	find_type(Result, RType),
 	Node has_class_refinement value of GroundExpr,
@@ -340,10 +340,11 @@ that of the continuation flow in the direction of this node if not.
 
 Working out the continuation direction is now done when processing the function node, so just use this value. */
 
-instance_of(flow, Arc, _, [instance(flow, Arc, _, Value, Units)],
+instance_of(Pipe, Arc, _, [instance(Pipe, Arc, _, Value, Units)],
 	    [instance(function, Function, _, Value, Units)]) :-
-	FuncLink is_connector from _ to Arc,
-	initiates(FuncLink, Function).
+	member(Pipe, [flow, squirt]),
+	Arc has_part Function,
+	find_type(Function, function).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Loss object needs a boolean reflecting whether it actually happens
@@ -364,7 +365,7 @@ condition, creation and loss nodes. Type is as function. */
 
 instance_of(Type, Node, _, Inst, Ref) :-
 	member(Type, [variable, condition, creation, alarm, 
-		      event, squirt, state]),
+		      event, state]),
 	(member(Node, [B, A]),
 	    Arc is_connector from A to B, !,
 	    initiates(Arc, F),

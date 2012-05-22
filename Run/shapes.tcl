@@ -1529,7 +1529,7 @@ proc FindCaption {canvas} {
 proc NextCaption {canvas} {
     global window_info find
     if {[info exists find(now,$canvas)]} {
-	prolog tk_do_colours($find(now,$canvas),off)
+	prolog tk_do_colours($find(now,$canvas),base)
     } else {
 	MenuSelect $canvas edit unselall
     }
@@ -1546,7 +1546,7 @@ proc NextCaption {canvas} {
 	CanvasSee $canvas $this [expr $window_info($canvas,width)/2] \
 	    [expr $window_info($canvas,height)/2]
         set find(now,$canvas) $this
-	prolog tk_do_colours($find(now,$canvas),on)
+	prolog tk_do_colours($find(now,$canvas),seln)
 #        FlashSymbol $canvas $find(now,$canvas) orange orange
         #	HandleObjClick $canvas $this clicktext $tgtX $tgtY
         #	ReleaseObj $canvas $tgtX $tgtY

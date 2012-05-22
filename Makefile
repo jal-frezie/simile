@@ -184,19 +184,19 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl code.pl compile.pl database.pl \
 # Prolog is not Sicstus
 #ifeq ($(PROLOG),SWI)
 $(EXECDIR)/xssimile$(EXECEXTN): $(PROLOG_FILES)  Prolog/smain.pl \
-		$(EXECDIR)/struct_db$(SHAREDLIBEXTN)
+		Prolog/struct_db$(SHAREDLIBEXTN)
 	cd Prolog; swipl --goal=main --stand_alone=true \
 		-o ../$(EXECDIR)/$(PROLOGSTATE) -c smain.pl; cd ..
-$(EXECDIR)/struct_db$(SHAREDLIBEXTN): Prolog/struct_db.c
+Prolog/struct_db$(SHAREDLIBEXTN): Prolog/struct_db.c
 # for old SWI, or if building with mingw when swipl built with msvc
 #	cd Prolog; gcc -c -I$(SWIPLDIR)/include -D__SWI_PROLOG__ \
 #		$(MAKEPIC) struct_db.c; \
-#		gcc $(MAKESL) -o ../$(EXECDIR)/struct_db$(SHAREDLIBEXTN) \
+#		gcc $(MAKESL) -o struct_db$(SHAREDLIBEXTN) \
 #		struct_db.o $(SWIPLDIR)/bin/swipl.dll; cd ..
 # for new SWI
 	cd Prolog; swipl-ld -cc-options,$(MAKEPIC) \
 		-ld-options,$(MAKESL) \
-		-o ../$(EXECDIR)/struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
+		-o struct_db$(SHAREDLIBEXTN) struct_db.c; cd ..
 #endif
 #ifeq ($(PROLOG),GNU)
 $(EXECDIR)/xgsimile$(EXECEXTN): \

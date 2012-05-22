@@ -7,6 +7,7 @@
 :- foreign(add_iext(term, term, term, term, term)).
 :- foreign(add_capt_off(term, term, term)).
 :- foreign(add_centre(term, term, term)).
+:- foreign(add_along(term, term)).
 :- foreign(set_hidden(term, term)).
 :- foreign(create_arc(term)). 
 :- foreign(add_link(term, term, term)). 
@@ -20,6 +21,7 @@
 :- foreign(remove_bbox(term)).
 :- foreign(remove_iext(term)).
 :- foreign(remove_centre(term)).
+:- foreign(remove_along(term)).
 :- foreign(remove_capt_off(term)).
 :- foreign(delete_arc(term)). 
 :- foreign(remove_link(term, term, term)). 
@@ -41,6 +43,7 @@
 :- foreign(find_iext(term, term)).
 :- foreign(find_capt_off(term, term)).
 :- foreign(find_centre(term, term)).
+:- foreign(find_along(term, term)).
 :- foreign(is_hidden(term)).
 :- foreign(get_node_and_next_ptr(term, term, term)).
 :- foreign(get_arc_and_next_ptr(term, term, term)).

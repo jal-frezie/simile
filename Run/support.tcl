@@ -406,12 +406,12 @@ proc stage_incr {ns_extras step v span gId} {
 # t1 = initial rate of change (used when redoing step with different dt)
 # t2 = last increment (used to undo step)
 # t3 = estimate of next initial increment
-    if {[glob_element dts 0]<0} {
+    if {[glob_element ts 0]<0} {
         set dv [step_incr $step $t1]
     } else {
         set dv [step_incr $step $v]
     }
-    switch -- [expr int([glob_element dts 0])] {
+    switch -- [expr int([glob_element ts 0])] {
         0 { ;# Euler
             set t1 $v
             set t2 $dv
@@ -534,19 +534,19 @@ proc TclResetModel {node t0 doingRK topPhase} {
 
     set myNode $node
     if {$topPhase <= 0} {
-	set dts(0) $doingRK
+	set ts(0) $doingRK
         for {set tweakPhase 1} {$tweakPhase <= $phasecount} {incr tweakPhase} {
             set ts($tweakPhase) $t0
             set dts($tweakPhase) [expr $steps($tweakPhase)]
         }
     }
     set adapt_maxerr 0 ;# just so it is defined at first comparison
-    do_model evalmodel $topPhase
+    do_model evalmodel [set dts(0) $topPhase]
     return 1
 }
 
 proc TclExecuteModel {node howInt start end errLim} {
-    global dts steps phasecount adapt adapt_maxerr
+    global ts dts steps phasecount adapt adapt_maxerr
 #    if {[string equal cancel [ShowMess debug info "XM from $start to $end" okcancel]]} {
 #	error cancelled
 #    }
@@ -574,18 +574,18 @@ proc TclExecuteModel {node howInt start end errLim} {
 	    if {[string equal Euler $howInt]} {
                 if {$firstPass} {
 		    set recover 0.5
- 		    set dts(0) 0
+ 		    set ts(0) 0
                 } else {
-                    set dts(0) -1
+                    set ts(0) -1
                 }
                 AdvanceTime $node $bigPhase 1
 		do_model updatemodel $bigPhase
 	    } else {
                 if {$firstPass} {
 		    set recover 0.0625
-                    set dts(0) 1
+                    set ts(0) 1
                 } else {
-                    set dts(0) -2
+                    set ts(0) -2
                 }
                 do_model updatemodel $bigPhase
 		RKUpdate $node $bigPhase
@@ -598,11 +598,11 @@ proc TclExecuteModel {node howInt start end errLim} {
 # before the final rate calculation, and allow threshold detection to
 # increase it to the amount by which the threshold is crossed.
                 set adapt_maxerr 0
-		do_model evalmodel [expr {$phasecount+1}]
+		do_model evalmodel [set dts(0) [expr {$phasecount+1}]]
 # get the model to generate its error estimate
 # previous point for zeroing maxerr
                 if {$adapt_maxerr<=$errLim} { ;# no point if already over
-		    set dts(0) 10
+		    set ts(0) 10
 		    do_model updatemodel $bigPhase
 		} else {
 		    set adapt(culprit) event
@@ -633,7 +633,7 @@ proc TclExecuteModel {node howInt start end errLim} {
                 } ;# timestep too short or not
             } ;# error limit exists
         } ;# made progress
-	do_model evalmodel $bigPhase
+	do_model evalmodel [set dts(0) $bigPhase]
     }
     if {[CheckGUI $node $end ext]} {
 	return [list 0 $xtime]
@@ -663,19 +663,20 @@ proc PhaseFor {current step soFar} {
 }
 
 proc RKUpdate {node phase} {
-    global dts
+    global ts dts
+    set dts(0) $phase
     AdvanceTime $node $phase 0.5
-    set dts(0) 2
+    set ts(0) 2
     do_model evalmodel $phase
     do_model updatemodel $phase
-    set dts(0) 3
+    set ts(0) 3
     do_model evalmodel $phase
     do_model updatemodel $phase
     AdvanceTime $node $phase 0.5
-    set dts(0) 4
+    set ts(0) 4
     do_model evalmodel $phase
     do_model updatemodel $phase
-    set dts(0) 1
+    set ts(0) 1
 }
     
 proc SetDTs {phase current} {
@@ -852,13 +853,13 @@ proc UpdateTimeSeries {topNode newTimeInDays} {
 }
 
 proc loses {prob phase} {
-    global dts
-    if {$prob <= 0 || $dts(0)==-1} {
+    global ts dts
+    if {$prob <= 0 || $ts(0)==-1} {
 	return 0
     } elseif {$prob >= 1} {
 	return 1
     } else {
-	set kills_per_step [expr $dts(0)?4:1]
+	set kills_per_step [expr $ts(0)?4:1]
 	return [expr [ame_rand 0 1] > \
 		    pow(1-$prob, $dts($phase)/$kills_per_step)]
     }

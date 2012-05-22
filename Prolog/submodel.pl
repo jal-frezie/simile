@@ -3,7 +3,7 @@
 **** manipulating models 						    ****
 *******************************************************************************/
 
-sicstus_module(submodel, [encapsulate/2, unencapsulate/3]).
+sicstus_module(submodel, [encapsulate/3, unencapsulate/3]).
 
 sicstus_use_module( [ame_gen,m_class,utility,library(lists)] ).
 
@@ -14,39 +14,44 @@ sicstus_use_module( [ame_gen,m_class,utility,library(lists)] ).
 % tree - ie with the same parent. If the arcs listed are flows, then it is
 % assumed that the flow valve is inside the component
 
-encapsulate( ListOfThings, NewNode ) :-
+encapsulate(Parent, ListOfThings, NewNode ) :-
 	ListOfThings = [], !;
-	all_same_parent( ListOfThings, _,_,_,_ ),
-	move_components(ListOfThings, NewNode).
+	move_components(Parent, ListOfThings, NewNode).
 
 /* Puts Migrants in new submodel. The list of migrants contains all boxes included
 in the boundary, and all flows whose bowties are included. This routine does what
 is necessary to break cross-border flows into separate externam and internal parts,
 but ignores links other than flows or influences. */
 
-move_components(Migrants, California) :-
-	member(Flow, Migrants),
-		((Flow is_part_of OldParent,
-			Flow is_no_longer_part_of OldParent,
-			Flow is_also_part_of California,
-			fail);
-		Flow is_connector from Source to Dest,
+move_components(OldParent, Migrants, California) :-
+	member(Migrant, Migrants),
+	((Migrant is_part_of OldParent,
+	        Migrant is_no_longer_part_of OldParent,
+	        Migrant is_also_part_of California,
+	        fail);
+/* No arcs in migrants any more		    
+		Migrant is_connector from Source to Dest,
 		(\+ member(Source, Migrants),
-			add_section(California, source, in, Flow, Dest, Source),
+			add_section(California, source, in, Migrant, Dest, Source),
 			fail;
 		\+ member(Dest, Migrants),
-			add_section(California, sink, in, Flow, Source, Dest),
+			add_section(California, sink, in, Migrant, Source, Dest),
 			fail);
-		((Arc is_connector from Flow to End,
-			Fix = sink;
-		Arc is_connector from End to Flow,
-			Fix = source),
+*/
+	    ((Arc is_connector from Migrant to End,
+	            Fix = sink;
+	        Arc is_connector from End to Migrant,
+	      Fix = source),
 		\+ member(End, Migrants),
-		\+ member(Arc, Migrants),
-			\+ (Arc has_type influence,
-			    make_branch(Arc, California)),
-			add_section(California, Fix, out, Arc, Flow, End),
-			fail));
+%		\+ member(Arc, Migrants),
+		\+ (Arc has_type influence,
+		       make_branch(Arc, California)),
+		add_section(California, Fix, out, Arc, Migrant, End, NewSect),
+		Stowaway is_part_of Arc,
+		member(Stowaway, Migrants),
+		Stowaway is_no_longer_part_of Arc,
+		Stowaway is_also_part_of NewSect,
+		fail));
 	true.
 
 make_branch(Arc, California) :-
@@ -72,7 +77,7 @@ add_null_value_if_needed(Arc) :-
 	(BaseFn has_class_refinement value of _Val, !;
 	    BaseFn has_new_class_refinement value of '').
 	
-add_section(California, Direction, Keep, Flow, NearEnd, FarEnd) :-
+add_section(California, Direction, Keep, Flow, NearEnd, FarEnd, NewFlow) :-
 	/* If a flow has multiple sections the bowtie is drawn on the one
 	whose implicit function has a value, except if none have in which case
 	it goes on the section at the source end. If dividing a flow with no
@@ -108,8 +113,7 @@ add_section(California, Direction, Keep, Flow, NearEnd, FarEnd) :-
 	    switch_start_equivalences(Flow, NewFlow),
 	    Flow now_follows NewFlow),
 	copy_local_attributes(Flow, NewFlow),
-	change_references(OldEnd, Flow, NewFlow),
-	m_update'><'add_implicit_function(NewFlow, _NewFunc).
+	change_references(OldEnd, Flow, NewFlow).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % unencapsulate/2 does the opposite of the above, but only returns a list of 

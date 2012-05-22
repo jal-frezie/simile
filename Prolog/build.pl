@@ -82,12 +82,7 @@ node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
 	(member(OldClass, [source, sink]), !, Class = cloud;
 	    Class = OldClass),                  % Remove obsolete types
 	RealNode has_new_class Class,		% add the info
-	(Bindings = copy, !,
-	    foreach(Child, Children, Child is_new_part_of Node),
-	    NewBindings = copy;
-	all(build, gen_equiv_nodes,
-	        [build(Children), unify(RealNode), build(MidBindings)]),
-	    append( MidBindings, Bindings, NewBindings )),
+	add_children(Bindings, RealNode, Children, NewBindings),
 /*	( setof( Child-RealChild, 
 			( member( Child, Children ),
 		 	  RealChild is_new_part_of RealNode ),
@@ -96,9 +91,60 @@ node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
 */	foreach( CAttribute=CValue, ClassRefinements,
 		RealNode has_new_class_refinement CAttribute of CValue ),
 /* no model refinements restored */
-	foreach( GAttribute=GValue, GraphicalInfo,    
+        (Class = border,
+	    append(B4, [centre=Ctr | Rfter], GraphicalInfo), !, % v5 style
+	    Sm has_part RealNode,
+	    Sm has_graphical_attribute internal_extent of Box,
+	    event'><'get_posn_around(Ctr, Box, Theta),
+	    append(B4, [along=Theta | Rfter], V6Graph);
+	  V6Graph = GraphicalInfo),
+	foreach( GAttribute=GValue, V6Graph,    
 		RealNode has_new_graphical_attribute GAttribute of GValue ).
 	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% arc inserts a new arc and any info known about it. 
+% 2011 (v6): arcs can now have children
+
+arc( Arc, Start, End, Type, ExtdAttributeValuePairs,
+		GraphicalInfo, _, Bindings, NewBindings ) :-
+	(ExtdAttributeValuePairs = [children=Children | AttributeValuePairs], !;
+	  Children = [],
+	    AttributeValuePairs = ExtdAttributeValuePairs),
+	(Bindings = copy, MidBindings = copy, Arc=RealArc,
+	    RealStart = Start, RealEnd = End;
+	\+ member( Arc-_AnyArc, Bindings ),
+	    member( Start-RealStart, Bindings ),
+	    member( End-RealEnd, Bindings ),
+	    MidBindings = [Arc-RealArc|Bindings],
+	    (is_connector(Arc, _), !;
+	    RealArc = Arc)),
+	% Convert to v6: arc is from implicit function
+	(RealEnd is_connector _, !,
+	    RealStart is_part_of Parent,
+	    RealStart is_no_longer_part_of Parent,
+	    RealStart is_also_part_of RealEnd,
+	    NewBindings = MidBindings;
+	  % Convert to v6: arc is influence from flow
+	  (RealStart is_connector _, !,
+	        RealStart has_part ImpFn,
+	        ImpFn has_class function,
+	        RealArc is_new_connector from ImpFn to RealEnd;
+	      RealArc is_new_connector from RealStart to RealEnd),
+	    add_children(MidBindings, RealArc, Children, NewBindings),
+	    foreach( Attribute=Value, AttributeValuePairs,
+		     RealArc has_new_attribute Attribute of Value ),
+	    foreach( GAttribute=GValue, GraphicalInfo,
+		     RealArc has_new_graphical_attribute GAttribute of GValue ),
+	    RealArc has_new_type Type).
+
+add_children(Bindings, Parent, Children, NewBindings) :-
+	Bindings = copy, !,
+	    foreach(Child, Children, Child is_new_part_of Parent),
+	    NewBindings = copy;
+	all(build, gen_equiv_nodes,
+	        [build(Children), unify(Parent), build(MoreBindings)]),
+	    append( MoreBindings, Bindings, NewBindings ).
+
 /* If a node with the same id as that being added does not already exist, the
 new Id is kept, because (a) it makes canvas translation more efficient, and (b)
 it makes it not crash, by avoiding circles. */
@@ -106,27 +152,6 @@ gen_equiv_nodes(Node, Parent, Node-NewN) :-
     (Node is_part_of _, !; 
 	NewN = Node),
     NewN is_new_part_of Parent.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% arc inserts a new arc and any info known about it. 
-
-arc( Arc, Start, End, Type, AttributeValuePairs,
-		GraphicalInfo, _, Bindings, NewBindings ) :-
-	(Bindings = copy, NewBindings = copy, Arc=RealArc,
-	    RealArc is_new_connector from Start to End;
-	\+ member( Arc-_AnyArc, Bindings ),
-	    member( Start-RealStart, Bindings ),
-	    member( End-RealEnd, Bindings ),
-	    NewBindings = [Arc-RealArc|Bindings],
-	    (is_connector(Arc, _), !,
-		RealArc is_new_connector from RealStart to RealEnd;
-	    RealArc = Arc,
-	        RealArc is_new_connector from RealStart to RealEnd)),
-	foreach( Attribute=Value, AttributeValuePairs,
-			RealArc has_new_attribute Attribute of Value ),
-	foreach( GAttribute=GValue, GraphicalInfo,
-		RealArc has_new_graphical_attribute GAttribute of GValue ),
-	RealArc has_new_type Type.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % links takes a node name and a list of link_equivalences and renames them to

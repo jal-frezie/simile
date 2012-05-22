@@ -26,6 +26,8 @@ sicstus_module(ame_gen,
 
 sicstus_use_module([library(lists), sp_only, utility, text, m_class]).
 
+:- op(500, xfy, is_of_sort).
+
 /* Full syntax error text currently not displayed because it is too
 distressing to users. Not sure why I use open_chars_stream and
 read_term rather than read_from_chars...oh yes it's because there is
@@ -273,20 +275,23 @@ nonum(N) :- \+ member(N, "0123456789").
 	
 
 get_host(Object, Visible) :-
-	Object = Visible, \+ implicit_function(_, Visible);
+	Object = Visible, \+ Visible has_class function;
 	implicit_function(Visible, Object).
 
 appears(Object) :-
 	(Drawable = bounding_box; Drawable = curve; Drawable = centre),
 	Object has_graphical_attribute Drawable of _,
-	\+ implicit_function(_, Object),
 	\+ border_node(Object),
+	\+ implicit_function(_, Object),
 	\+ (Object is_connector from Node to Self,
 		implicit_function(Self, Node)).
 
 implicit_function(Exp_node, Imp_node) :-
-	Arc is_connector from Imp_node to Exp_node,
-	Arc has_type influence,
+	(Arc is_connector from Imp_node to Exp_node,
+	    Arc has_type influence,
+	    Exp_node is_of_sort has_function;
+	  Exp_node has_part Imp_node,
+	    Exp_node is_of_sort line),
 	Imp_node has_class function.
 
 border_node(Object) :-
@@ -299,8 +304,6 @@ border_node(Object) :-
 	
 interface for ghost property to rest of program. To test for ghosthood, use 'is_ghost' -- this returns the start and finish of a ghost link. To find the 'real' node for a given node, use find_base -- if the given node is real, it will be returned. Ghost_link can be used to determine the display status of links, and find_ghosts will return all the ghosts
 of a given base node. (Ghost relationship only exists between an absolute base node and its ghosts -- ghost-to-ghost links should be done away with!) */
-
-:- op(500, xfy, is_of_sort).
 
 is_ghost(Ghost) :-
 	made_ghost_by(Ghost, _Link).
@@ -503,7 +506,7 @@ Works but buggers up GNU prolog (do after loading?) */
 
 :- op(800, yfx, ['||', or, xor]).
 
-:- op(850, xfy, [?, :, then, else, elseif]).
+:- op(850, xfy, [?, :, then, else, elseif, on]).
 
 :- op(900, fx, [if]).
 
@@ -914,20 +917,23 @@ find_type(Obj, Type) :-
 /* This needs some go-faster stripes! */
 Link draws_inside Parent :-
 	nonvar(Link), !,
-	home_to_node(Link, Node),
-	Parent has_part Node;
+	home_to_node(Link, Parent);
+	\+ Parent is_of_sort line,
 	Parent has_part Node,
 	chain_from_node(Node, Link).
 
 home_to_node(Link, Node) :-
 	Link is_connector from _ to Next,
-	(home_to_node(Next, Node), !;
-	    Next = Node).
+	Parent has_part Next,
+	(Parent is_of_sort line,
+	    home_to_node(Parent, Node), !;
+	  Node = Parent).
 
 chain_from_node(Node, Link) :-
 	Last is_connector from _ to Node,
 	(Link = Last;
-	    chain_from_node(Last, Link)).
+	    Last has_part Child,
+	    chain_from_node(Child, Link)).
 
 /* Previous version; didn't work well when both args specified,
 and too flash anyway...
@@ -941,8 +947,16 @@ and too flash anyway...
 */
 
 find_all_comps(Parent, Comp) :-
-	Parent has_part Comp;
-	Comp draws_inside Parent.
+	Parent has_part Comp,
+	\+ Parent is_of_sort line;
+	var(Comp),
+	Link draws_inside Parent,
+	(Link has_part Comp;
+	    Comp = Link);
+	nonvar(Comp),
+	(Link has_part Comp;
+	    Comp = Link),
+	Link draws_inside Parent.
 
 :- op(450, xf, is_primitive).
 

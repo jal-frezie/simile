@@ -53,8 +53,8 @@ Arc is_new_connector from Source to Dest :-
 	Arc is_also_connector from Source to Dest.
 
 Arc is_also_connector from Source to Dest :-
-	(Source is_part_of _; Source is_connector from _ to _),
-	(Dest is_part_of _; Dest is_connector from _ to _),
+	Source is_part_of _,
+	Dest is_part_of _,
 	assert_model( connection( Dest, Source, Arc )).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -156,12 +156,11 @@ Node has_link_equivalences Links :-
 	setof(Link, has_link_equivalence(Node, Link), Links).
 
 has_link_equivalence(Node, Prev-Subs) :-
-	(Subs is_connector from Node to Far, Inner = Prev;
-	    Prev is_connector from Far to Node, Inner = Subs),
+	(Subs is_connector from Node to _, Inner = Prev, Bdr = End;
+	    Prev is_connector from _ to Node, Inner = Subs, Bdr = Start),
 	Subs follows Prev,
-	Inner is_connector from _Start to End,
-	% works because cross-border link never finishes on link
-	End is_part_of Node.
+	Inner is_connector from Start to End,
+	Bdr is_part_of Node.
 
 :- op(500, xfy, no_longer_has_link_equivalences).
 

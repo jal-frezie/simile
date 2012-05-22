@@ -7,7 +7,8 @@ interface of the application. It responds by:
 * Calling the model maintenance module to add information to the model
 * Making calls to the screen drawing module (new image, or redraw)
 */
-sicstus_module(event, [get_info/4,context_find/3,get_params/2,bar_edit_menu/1,
+sicstus_module(event, [get_info/4, context_find/3, get_params/2, get_triggers/2,
+		       bar_edit_menu/1,
 		       click_obj/4, click_text/4, click/3, do_colours/2,
 		       insert_variable/5,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
@@ -18,13 +19,6 @@ sicstus_module(event, [get_info/4,context_find/3,get_params/2,bar_edit_menu/1,
 sicstus_use_module([sp_only, forms, m_update, image, draw,
 		    state, backup, submodel, ame_gen, utility,
 		    library(lists), library(ordsets)]).
-
-eqn_for(Comp, Eqn) :-
-	find_node_with_data(Comp, _, Func),
-	(get_av_pair(Func, 0, spec, Eqn), atom(Eqn), \+ Eqn = [], !;
-	 get_av_pair(Func, 0, value, EqnExpr),
-	    sicstus_write_to_chars(EqnExpr, EqnStr),
-	    name(Eqn, EqnStr)).
 
 units_for(Comp, UnitStr) :-
 	(find_node_with_data(Comp, _, Func),
@@ -59,13 +53,16 @@ value_propagates(Dir, From, To, Link) :-
 	(UseComp = Base; find_ghosts(Base, UseComp)),
 	(Dir = none,
 	    To = UseComp;
-	  (Dir = out,
-	      m_class'><'connects(Link, UseComp, Next),
+	  implicit_function(UseComp, Fn),
+	    (Dir = out,
+	      (m_class'><'UseComp is_connector _ -> StartsInfs = Fn;
+		  StartsInfs = UseComp),
+	      m_class'><'connects(Link, StartsInfs, Next),
 	      find_type(Next, function),
 	      get_host(Next, To);
-	   Dir = in,
-	      implicit_function(UseComp, Fn),
-	      m_class'><'connects(Link, To, Fn)),
+	    Dir = in,
+	      m_class'><'connects(Link, StartsInfs, Fn),
+	      get_host(StartsInfs, To)),
 	    find_type(Link, influence)).
 
 multi_prop(Dir, From, To, Count) :-
@@ -99,10 +96,11 @@ get_info(_Wid, selection, Dir, Ends) :-
 	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = '').
 	
 get_info(_Wid, Comp, eqn, Eqn) :-
-	(Comp is_of_sort has_function,
-	    (eqn_for(Comp, Eqn), !;
-		Eqn = '');
-	 Eqn = '<none>').
+	pick_equation(Comp, Eqn);
+	Eqn = '<none>'.
+
+get_info(_Wid, Comp, type, Type) :-
+	find_type(Comp, Type).
 
 get_info(Wid, Comp, context, DescAtm) :-
 	find_type(Comp, LType),
@@ -166,8 +164,7 @@ context_find(Wid, Query, Target) :-
 	find_all_comps(Sub, Comp),
 	appears(Comp), %     check draws_at as well
 	(Target = description,
-	    (get_info(Wid, Comp, desc, Field);
-	    get_info(Wid, Comp, description, Field);
+	    (get_info(Wid, Comp, description, Field);
 	    get_info(Wid, Comp, comment, Field));
 	 Target = equation,
 	    get_info(Wid, Comp, eqn, Field),
@@ -210,6 +207,12 @@ get_params(_, Comp) :-
 	output'><'get_from_list(Params, Table),
 	callback(br(Table)).
 
+get_triggers(_, Comp) :-
+	find_node_with_data(Comp, _, Part),
+	list_evt_captions(Part, EvtCapts),
+	output'><'safe_list(EvtCapts, EvtCaptList),
+	callback(EvtCaptList).
+	
 :- dynamic(min_size_is/1).
 :- dynamic(max_size_is/1).
 :- dynamic(clicked_obj_is/1).
@@ -425,7 +428,7 @@ insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
 	add_at_point(Xpt, Ypt, New_obj, Parent, NewNode),
 	redisplay(NewNode),
 	give_focus(NewNode),
-	do_colours(NewNode, on),
+	do_colours(NewNode, seln),
 	select_text(Wid, NewNode),
 	(setof(NewLook, presence_affects(NewNode, NewLook), NewLooks), !;
 	    NewLooks = []),
@@ -514,14 +517,14 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	CD = 1, !,
 	    /* object is not selected, if it is, clear it and stop */
 	    \+ (deselectable(Moving_obj),
-		   do_colours(Moving_obj, off)),
-	    do_colours(Moving_obj, on);
+		   do_colours(Moving_obj, base)),
+	    do_colours(Moving_obj, seln);
 	/* Control not down: Object already selected */
 	deselectable(Moving_obj), !;
 	/* Object not selected; clear current, then select */    
 	(new_selection(Moving_obj);
 	    \+ is_toplevel(Moving_obj),
-	    do_colours(Moving_obj, on))),
+	    do_colours(Moving_obj, seln))),
 	
 	(get_highlit_obj(0, Moving_obj),
 	    (% align(Moving_obj),
@@ -544,15 +547,15 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 		EndBox = Finish;
 	    MovingEnd = moving_start,
 		EndBox = Start),
-	    border_node(EndBox),
-	    get_shape(EndBox, centre, EndPoint),
-	    near(EndPoint, [Xpt, Ypt, Xpt, Ypt]), !,
+	    get_drawing_form(EndBox, border, [EX, EY, EX, EY]),
+	    near([EX, EY], [Xpt, Ypt, Xpt, Ypt]), !,
 	    advance_phase_to(MovingEnd);
 	Moving_obj is_of_sort has_bowtie,
 	    get_link_route(Moving_obj, Point_list),
 	    image'><'closest_centre([Xpt, Ypt], Point_list, _Miss, _CPt, Posn),
 	    (bowtie_section(Moving_obj, Moving_obj),
-		get_shape(Moving_obj, curve, [_Kink, OldPosn]),
+		implicit_function(Moving_obj, Fn),
+		get_shape(Fn, along, OldPosn),
 		abs(Posn-OldPosn)<100, !,
 		advance_phase_to(moving_bowtie);
 	    % save accidentally moving it by clicking on route
@@ -609,7 +612,7 @@ cloud_to_comp(Poss_start) :-
 	add_parameter(Poss_start, 0, name, Name),
 	insert_variable(Parent, Xpt, Ypt, compartment, Poss_start),
 	give_focus(Poss_start),
-	do_colours(Poss_start, on),
+	do_colours(Poss_start, seln),
 	find_current(Wid),
 	select_text(Wid, Poss_start).
 
@@ -653,7 +656,11 @@ because it might have started at the wrong place). */
 do_linear(Ltype, Start_thing) :-
 	(can_start(Ltype, Start_thing), !,
 		highlight(Start_thing, 1),
-		set_line_start_obj(Start_thing),
+		(Ltype = influence, Start_thing is_of_sort has_bowtie,
+		    (implicit_function(Start_thing, Fn);
+			add_implicit_function(Start_thing, Fn)), !,
+		    set_line_start_obj(Fn);
+		  set_line_start_obj(Start_thing)),
 		advance_phase_to(action_choice);
 	highlight(Start_thing, 0),
 		advance_phase_to(barge)).
@@ -1220,14 +1227,14 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	inside_shape(Parent, [Xin, Yin], EType, ParentBox),
 	\+ inside_shape(Parent, [Xout, Yout], EType, ParentBox),
 	/* Snap to border */
-	crossing_point(Parent, [Xc, Yc], [Xout, Yout], EType, ParentBox,
-			0, NewEndPt),
-	
+%	crossing_point([Xc, Yc], [Xout, Yout], EType, ParentBox,
+%			0, NewEndPt),
+	get_posn_around([Xout, Yout], ParentBox, Theta),
 	(Phase = moving_start,
-	    change_shape(Start, centre, NewEndPt),
+	    change_shape(Start, along, Theta),
 	    m_class'><'Moving_obj follows Prev;
 	Phase = moving_finish,
-	    change_shape(Finish, centre, NewEndPt),
+	    change_shape(Finish, along, Theta),
 	    Prev = Moving_obj),
 	(m_class'><'Other follows Prev,
 	    move_link(Other),
@@ -1334,14 +1341,15 @@ tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	make_links_follow(Link),
 	fail; true.
 */
-tweak_link_connections(Obj, OldInterns) :-
-	get_shape(Obj, internal_extent, NewInterns),
-	add_boxes_to_translation([0,0,1,1], OldInterns, NewInterns, UseTrans),
+tweak_link_connections(Obj, _OldInterns) :-
+%	get_shape(Obj, internal_extent, NewInterns),
+%	add_boxes_to_translation([0,0,1,1], OldInterns, NewInterns, UseTrans),
 	(find_all_comps(Obj, Comp),
 	    border_node(Comp),
+	    /* border node posn now parametric so no change needed
 	    get_shape(Comp, centre, OldCtr),
 	    translate(OldCtr, UseTrans, NewCtr),
-	    change_shape(Comp, centre, NewCtr),
+	    change_shape(Comp, centre, NewCtr), */
 	    member(Comp, [From, To]),
 	    m_class'><'Link is_connector from From to To,
 	    move_link(Link),
@@ -1406,11 +1414,11 @@ turquoise: drags and deletes
 dark green: deletes
 light green: changes status */
 
-do_colours(Obj, Way) :-
+do_colours(Obj, Where) :-
 	tk_get_pref(deleteEndToEnd, E2E),
-	(Way = on,
+	(Where = seln,
 	    highlight_deletes(Obj, E2E);
-	Way = off,
+	Where = base,
 	    normalize_deletes(Obj, E2E)).
 
 /* lit_by: As well as the selection, there are other highlit components
@@ -1446,8 +1454,8 @@ highlight_deletes(Target, E2E) :-
 	\+ get_highlit_obj(_, Ghost),
 	highlight(Ghost, 2),
 	fail; 
-	recursive_highlight(Target, on, base,  E2E);
-	recursive_highlight(Target, off, seln,  E2E);
+	recursive_highlight(Target, from, base,  E2E);
+	recursive_highlight(Target, to, seln,  E2E);
 	true.
 
 normalize_deletes(Target, E2E) :-
@@ -1455,8 +1463,8 @@ normalize_deletes(Target, E2E) :-
 	    get_highlit_obj(2, Ghost),
 	    normalize(Ghost),
 	    fail;
-	recursive_highlight(Target, on, seln,  E2E);
-	recursive_highlight(Target, off, base,  E2E);
+	recursive_highlight(Target, from, seln,  E2E);
+	recursive_highlight(Target, to, base,  E2E);
 	lit_by(Base, Target),
 	    doomed(Base),
 	    highlight(Target, 2), fail;
@@ -1485,36 +1493,36 @@ recursive_highlight(Target, Way, Where, E2E) :-
 	    Also = Target),
 	find_all_links(Also, Linked),
 	% new bit to stop redoing what has already been done
-	    (at_def_con(Linked, Where) -> Way = on; Way = off),
+	    (at_def_con(Linked, Where) -> Way = (from); Way = (to)),
 	    \+ has_outer_equiv(_, Also, Linked),
 	    recursive_highlight(Linked, Way, Where, E2E).
 
 adjust_link_backwards(Target, Way, Also, Where) :-
 	m_class'><'Target follows Prev,
-	(Way = off,
-	    change_delete_status(Prev, off, Where);
-	 Way = on,
+	(Way = (to),
+	    change_delete_status(Prev, to, Where);
+	 Way = (from),
 	    \+ (m_class'><'Other follows Prev,
 		   at_def_con(Other, Where)),
-	    change_delete_status(Prev, on, Where)),
+	    change_delete_status(Prev, from, Where)),
 	 (Also = Prev; adjust_link_backwards(Prev, Way, Also, Where)).
 	
 adjust_link_forwards(Target, Way, Also, Where) :-
 	m_class'><'Next follows Target,
-	(Way = on,
-	    change_delete_status(Next, on, Where);
-	 Way = off,
+	(Way = (from),
+	    change_delete_status(Next, from, Where);
+	 Way = (to),
 	    m_class'><'connects(Next, _, Mid),
 	    get_host(Mid, Finish),
-	    match_delete_status([Finish], off, Where),
-	    change_delete_status(Next, off, Where)),
+	    match_delete_status([Finish], to, Where),
+	    change_delete_status(Next, from, Where)),
 	(Also = Next; adjust_link_forwards(Next, Way, Also, Where)).
 	
 change_delete_status(Target, Way, FromWhere) :-
 	(\+ at_def_con(Target, FromWhere), !,
-	    Way = off,
+	    Way = (to),
 	    to_def_con(Target, FromWhere);
-	Way = on,
+	Way = (from),
 	    highlight(Target, 1)).
 
 bring_dependents_into_line(Followers, FromWhere) :-
@@ -1554,7 +1562,7 @@ keep_only_if_links_stay(Damage, Where) :-
 match_delete_status(Ends, Way, Where) :-
 	member(End, Ends),
 	(Where = seln; \+ depends_on_links(End)),
-	\+ at_def_con(End, Where), !, Way = on;
+	\+ at_def_con(End, Where), !, Way = (from);
 	true.
 
 local_ends(Link, Start, Finish) :-
@@ -1622,17 +1630,18 @@ sort_for_finish(Target, Ltype, Xpt, Ypt) :-
 	(get_phase(dragging), !;
 	    advance_phase_to(dragging)),
         get_nearest_equivalent_link(Ltype, OrigStart, Target, Start),
-	(find_type(Target, submodel),
+	    get_host(Start, VisStart),
+	    (find_type(Target, submodel),
 	/* This requirement dropped for flows, see above */
 		(find_all_comps(Target, Baby),
-			can_finish(Ltype, Start, Baby),
-			\+ contains(Baby, Start), !;
+		    can_finish(Ltype, VisStart, Baby),
+		    \+ contains(Baby, Start), !;
 		member(Ltype, [flow, squirt])),
 		set_current_coords(Xpt, Ypt), /* for new terminator if dropped here */
 		extend_line_to(Start, Ltype, Target, [Xpt, Ypt]);
 	Drawn = false),
 
-	(can_finish(Ltype, Start, Target), !,
+	(can_finish(Ltype, VisStart, Target), !,
 	    set_line_finish_obj(Target),
 	    highlight(OrigStart, 1),
 	    highlight(Target, 2),
@@ -1761,7 +1770,7 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	\+ (get_overlaps(Parent, [NewBox], Obstacle), \+ Obstacle = Submodel),
 	
 	/* Check that everything that was in the model is still in it */
-	\+ (find_all_comps(Submodel, Inside),
+	\+ (m_class'><'Submodel has_part Inside,
 	       \+ border_node(Inside),
 	       get_drawing_form(Inside, _, InBox),
 	       \+ fits_inside(InBox, NewExtent))),
@@ -1849,7 +1858,7 @@ select_bagged(Rect, Model, Last) :-
 %	 \+ (get_shape(Caught, bounding_box, Outer),
 %		fits_inside(Rect, Outer)),
 	    \+ deselectable(Caught),
-	    do_colours(Caught, on),
+	    do_colours(Caught, seln),
 	    fail);
 	\+ Last = up,
 	    get_shape(Model, internal_extent, Inner),
@@ -2014,20 +2023,19 @@ reuse_route(New_obj, LastArc) :-
 	    Route = [LastPt, MidPt | Tail],
 	    suffix([FirstPt], [MidPt | Tail]),
 	    asserta(new_route_for(NewArc, MidPt)),
-	    (border_node(Start),
-		(clear_shape(Start, centre), fail; % in case rerouting
-		    set_shape(Start, centre, FirstPt)),
+	    member(CrossPt-End, [FirstPt-Start, LastPt-Finish]),
+	    border_node(End),
+		get_shape(Node, internal_extent, Box),
+	        get_posn_around(CrossPt, Box, Theta),
+		(clear_shape(End, along), fail; % in case rerouting
+		    set_shape(End, along, Theta)),
 		fail;
-	    border_node(Finish),
-		(clear_shape(Finish, centre), fail; % in case rerouting
-		    set_shape(Finish, centre, LastPt)),
-		fail);
         retract(new_route_for(NewArc, MPt)),
 	    /* Arcs need points at ends of other arcs to draw, so draw after */
 %	    set_shape(NewArc, course, Route),
 %	    update_bowtie(NewArc, Route),
 	    (member(New_obj, [flow, squirt]),
-		CPt = [550,550];
+		CPt = [550,1000];
 		% First is posn of kink, 2nd is posn of bowtie /1000
 	      \+ member(New_obj, [flow, squirt]),
 		get_end_pt(NewArc, start, _, Spt, _),
@@ -2043,7 +2051,7 @@ reuse_route(New_obj, LastArc) :-
 	    New_obj is_class_of_sort has_bowtie,
 		NewArc = BowtieArc),
 	    give_focus(NewArc),
-	    do_colours(NewArc, on),
+	    do_colours(NewArc, seln),
 	    select_text(Wid, NewArc),
 	    fail;
 	 true).
@@ -2051,6 +2059,10 @@ reuse_route(New_obj, LastArc) :-
 relativize_centre([SX, SY], [FX, FY], [MX, MY], [CX, CY]) :-
 		CX is MX-(SX+FX)/2,
 		CY is MY-(SY+FY)/2.
+
+get_posn_around([X, Y], Box, Theta) :-
+	middle(Box, [MX, MY]),
+	Theta is round(1000*atan2(Y-MY, X-MX)/6.28319) mod 1000.
 
 ghost_type(Start, Type, Base) :-
 	get_line_start_obj(Start),
@@ -2081,7 +2093,7 @@ delete_by_dlg(Target) :-
 	remove_highlights,
 	% cached to reduce load on interface...
 	tk_get_pref(deleteEndToEnd, E2E),
-	recursive_highlight(Target, on, base, E2E);
+	recursive_highlight(Target, from, base, E2E);
 	contains(Top, Target),
 	is_toplevel(Top),
 	delete_net(Top).
@@ -2283,26 +2295,27 @@ attempt_new_component(Parent, Box) :-
 	name(DefFill, DefFillStr),
 	add_parameter(Node_name, 0, fill_colour, DefFill),
 /* List components inside the box */
-	get_inclusions(Parent, Box, Contents),
+	get_inclusions(Parent, Box, Include),
 
+/* cann no longer happen as only flows with ends inside are checked
 	(setof(CrossingFlow, just_crosses(CrossingFlow, Contents), Exclude), !,
 	    purge(Exclude, Contents, Include);
 	  Include = Contents),
 	    
-	/* Undisplay arcs that will not exist after the operation...*/
+	Undisplay arcs that will not exist after the operation...*/
 	(one_end_in(Include, Arc), 
 		off(Arc), 
 		clear_shape(Arc, _),
 		fail;
 	true),
-	encapsulate(Include, Node_name),
+	encapsulate(Parent, Include, Node_name),
 	set_shape(Node_name, internal_extent, [0,0,W,H]),
 	add_to_translation([0, 0, 1, 1], Node_name, Node_trans),
 	relate_graphics(Node_name, Node_trans),
 	redisplay_border(Node_name),
 	find_current(Wid),
 	give_focus(Node_name),
-	do_colours(Node_name, on),
+	do_colours(Node_name, seln),
 	select_text(Wid, Node_name).
 
 just_crosses(Flow, Contents) :-

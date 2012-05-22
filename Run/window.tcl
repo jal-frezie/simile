@@ -264,7 +264,6 @@ proc ClickObj { x y winId X Y action} {
                 set label "[file tail [BlankCrs $context]] = "
                 $bar.label configure -text $label
                 set equationbar($winid,node) $node
-                set equationbar($winid,initText) [StripCrs $oldEqn]
 # converts CRs to \n -- use BlankCrs for spaces (non reversible)
                 set equationbar(current_action) null
 		AddInputs $winid $bar
@@ -295,12 +294,57 @@ proc ClickObj { x y winId X Y action} {
 			}
 		    }
 		}
+		set type [GetFromProlog tk_get_info('$winId',$node,type)]
+		if {[string equal state $type]} { ;# load the event combobox
+		    set evts [GetFromProlog tk_get_triggers('$winId',$node)]
+		    $bar.events configure -values $evts
+		    # display string for first empty or 'red' effect
+		    $bar.events current 0
+		    pack $bar.events -side left -before $bar.equation
+		    set equationbar(curEvt) [$bar.events get]
+		    set equationbar($winid,initText) [StripCrs [GetRuleEfct \
+								    $oldEqn]]
+		} else {
+		    set equationbar($winid,initText) [StripCrs $oldEqn]
+		    array unset equationbar curEvt
+		    $bar.events configure -values {}
+		    pack forget $bar.events
+		}
                 SetEqnButtonState $bar normal
                 restore_equation $winid $bar
             }
         }
         ### End equation bar
     }
+}
+
+proc SwitchEvent {winId bar} {
+    global equationbar
+
+    accept_equation $winId $bar.equation
+# now the eqn bar is already up but we need to update the value that was just
+# entered, and cancel the switch if Prolog has objected to our new one...
+    
+    set node $equationbar($winId,node)
+    set newEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
+#puts "string equal [$bar.equation get] [GetRuleEfct $newEqn]"
+#puts $equationbar(current_action)
+    if {[string equal [$bar.equation get] [GetRuleEfct $newEqn]]} {
+	# update new local effect
+	set equationbar(curEvt) [$bar.events get]
+	set equationbar($winId,initText) [GetRuleEfct $newEqn]
+    } else {
+	# prolog did not use new string, an error must have occurred
+	$bar.events set $equationbar(curEvt) ;# reverse user selection
+    }
+    restore_equation $winId $bar
+}
+
+proc GetRuleEfct {pairList} {
+    global equationbar
+
+    set pair [lsearch -index 0 -inline -exact $pairList $equationbar(curEvt)]
+    return [lindex $pair 1]
 }
 
 proc InsertQuoted {field string} {
@@ -1880,6 +1924,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     pack $eb.label -side left
     
     global equation msgs
+    # create but only pack while state being edited
+    ::ttk::combobox $eb.events -width 8 -font EquationFont -state readonly
+    bind $eb.events <<ComboboxSelected>> [list SwitchEvent $winid $eb]
+
 #    ComboBox $eb.equation -editable 1 -state disabled -width 40
     ::ttk::combobox $eb.equation -state disabled -width 32 -font EquationFont \
 	-values $equation(prevs)

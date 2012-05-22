@@ -6,9 +6,9 @@ identical to that in which they are used. Where this is the case, the calls from
 use goals that start with "tk_" to make the diffreence clear.
 */
 
-sicstus_module(input, [tk_make_desktop_node/0,
-		       tk_undo/2, tk_redo/2, tk_get_info/3,
-		       tk_get_params/2, tk_bar_edit_menu/1, tk_click_obj/6,
+sicstus_module(input, [tk_make_desktop_node/0, tk_undo/2, tk_redo/2,
+		       tk_get_info/3, tk_get_params/2, tk_get_triggers/2,
+		       tk_bar_edit_menu/1, tk_click_obj/6,
 		       tk_click/4, tk_doubleclick/4, tk_unclick/2, tk_drag/2,
 		       tk_menu/3, tk_menu_select/2, tk_mode_select/1,
 		       tk_context_find/3, tk_resize_top_win/3, tk_visible/5,
@@ -43,6 +43,9 @@ tk_get_info(Wid, Comp, What) :-
 
 tk_get_params(Wid, Comp) :-
 	get_params(Wid, Comp).
+
+tk_get_triggers(Wid, Comp) :-
+	get_triggers(Wid, Comp).
 
 :- dynamic(log_interaction/0).
 

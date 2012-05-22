@@ -8,7 +8,7 @@ itself is only addressed from within the database module.
 */
 
 sicstus_module(m_update,
-	       [get_av_pair/4, add_parameter/4, get_desc_and_comment/4,
+	       [list_evt_captions/2, get_av_pair/4, add_parameter/4,
 		list_index_meanings/2, list_local_index_meanings/2,
 		get_input_info/2,get_link_source_data/7, find_node_with_data/3,
 		valid_input/3, check_unit/4,
@@ -20,7 +20,7 @@ sicstus_module(m_update,
 		build_array/3, analyze_array/3, get_all_enum_types/2,
 		get_solo_list_depth/2, delete_implicit_node/1, 
 		add_implicit_function/2, default_units/3, units_match_context/4,
-		get_exogenous_node/2, find_all_links/2, find_all_links/3,
+		get_exogenous_node/2, find_all_links/2,
 		make_node/3, one_end_in/2, new_line/5,
 		presence_affects/2, status_affects/2,
 		can_start/2, can_finish/3, continues_in/2, continues_from/2,
@@ -65,18 +65,6 @@ get_av_pair(Object, Class, Attribute, Value) :-
 	Class = 1, Object has_model_refinement Attribute of Value;
 	Class = 2, Object has_attribute Attribute of Value.
 
-get_desc_and_comment(VisNode, Description, Comment, Default) :-
-	(VisNode is_of_sort box,
-	    CommentAttr = 0;
-	 VisNode is_of_sort line,
-	    CommentAttr = 2),
-	(get_av_pair(VisNode, CommentAttr, description, Description); 
-	    \+ get_av_pair(VisNode, CommentAttr, description, Description),
-	    Description = Default),
-	(get_av_pair(VisNode, CommentAttr, comment, Comment);
-	    \+ get_av_pair(VisNode, CommentAttr, comment, Comment),
-	    Comment = Default).
-
 /* get_exogenous_node: finds a node in a model that cannot be calculated without
 access to the outside of the model */
 
@@ -113,6 +101,14 @@ Note that this will have to add instance parameters to the list in some cases wh
 dealing with multiple instances. */
 
 :- dynamic(input_links_were/1).
+
+list_evt_captions(Part, EvtCapts) :-
+	setof(DiscIn,
+	      P1^(m_update'><'get_all_links(Part, discrete, P1, DiscIn)),
+	      EvtLinks), !,
+	    all(user, arg, [unify(2), build(EvtLinks), build(EvtRoles)]),
+	    all(user, arg, [unify(1), build(EvtRoles), build(EvtCapts)]), !;
+	EvtCapts = [].
 
 get_input_info(Function, Input_list) :-
 	(setof(Link_entry,
@@ -329,8 +325,8 @@ get_unit_conversion(Remote, Local,
 	(instance'><'counts_as_outside(Local), !,
 		LocalEnv has_part Local;
 	LocalEnv = Local),
-	RemoteModel has_part RemoteEnv,
-	LocalModel has_part LocalEnv,
+	find_all_comps(RemoteModel, RemoteEnv),
+	find_all_comps(LocalModel, LocalEnv),
 	get_chain(RemoteModel, LocalModel, _, Exited, Entered),
 	reverse(Exited, BiggestFirst),
 	(/* Do not display parameter for input without role reference if there
@@ -647,14 +643,17 @@ variable or a flow. This also copies parent's role references for new submodels.
 add_implicit_function(Exp_node, Node_name) :-
 	state'><'get_style(sd),
 	Exp_node is_of_sort has_function, !,
-		find_all_comps(Parent, Exp_node),
+	    (Exp_node is_of_sort line, !,
+		make_node(Exp_node, function, Node_name),
+		Node_name has_new_graphical_attribute along of 550;
+	    find_all_comps(Parent, Exp_node),
 		make_node(Parent, function, Node_name),
-		new_line(influence, [], Node_name, Exp_node, _),
-		(default_units(Exp_node, Base, Dims),
-		    nonvar(Base),
-		    build_array(Base, Dims, Units),
-		    Node_name has_new_class_refinement units of Units, !;
-		 true);
+		new_line(influence, [], Node_name, Exp_node, _)),
+	    (default_units(Exp_node, Base, Dims),
+		nonvar(Base),
+		build_array(Base, Dims, Units),
+		Node_name has_new_class_refinement units of Units, !;
+	     true);
 	Exp_node has_class submodel,
 	Parent has_part Exp_node,
 	Parent has_model_refinement references of ParentRefs, !,
@@ -784,7 +783,7 @@ change_class(Object, Old, New) :-
 	Object has_new_class New,
 	true.
 
-/* find_all_links: recursion has been removed as the routine that calls it now recurses */
+/* find_all_links: recursion has been removed as the routine that calls it now recurses
 find_all_links(End, VisLink) :-
 	find_all_links(End, VisLink, _Where).
 
@@ -799,6 +798,16 @@ return_relevant(End, Mid, Link, VisLink) :-
 	implicit_function(Mid, End), !,
 		fail;
 	VisLink = Link.
+*/
+
+find_all_links(Comp, Link) :-
+	implicit_function(Comp, Terminus), !,
+	    select(Relevant, [Comp, Terminus], [Spare]),
+	    select(Relevant, [Src, Dest], Far),
+	    Link is_connector from Src to Dest,
+	    \+ Far = Spare; % not the link from the fn
+	  member(Comp, [Src, Dest]),
+	    Link is_connector from Src to Dest.
 
 /* can_start/2: This takes a linear type (flow, influence) and a point at which it might start. If there is a box object at that point which might constitute a start for that linear, returns it, otherwise fails.  */
 
@@ -1331,9 +1340,11 @@ status_affects(Item, Affected) :-
 	(Base = Item;
 	    find_ghosts(Item, Base)),
 	(Affected = Base;
-	initiates(Affected, Base),
+	  (InfSource = Base;
+	      Base is_of_sort line, implicit_function(Base, InfSource)),
+	    initiates(Affected, InfSource),
 	    find_type(Affected, influence)),
-	\+ Affected = Item;
+	  \+ Affected = Item;
 	find_type(Item, relation), /* for parameter name updates */
 	    connects(Item, Base, Assoc),
 	    (Start=Base, Finish=Assoc; Start=Assoc, Finish=Base),
@@ -1426,12 +1437,15 @@ fast_delete(Dead) :-
 		remove_floater(Out)).
 
 superfast_delete(Dead) :-
-	Dead has_part AlsoDead,
-	    superfast_delete(AlsoDead),
-	    oblitterfry(AlsoDead),
-	    state'><'shows_model(Win, AlsoDead),
-	    draw'><'delete_window(Win),
-	    fail;
+	(Dead has_part AlsoDead;
+	    member(Dead, [E1, E2]),
+	    Link is_connector from E1 to E2,
+	    Link has_part AlsoDead),
+	  superfast_delete(AlsoDead),
+	  oblitterfry(AlsoDead),
+	  state'><'shows_model(Win, AlsoDead),
+	  draw'><'delete_window(Win),
+	  fail;
 	state'><'forget_highlit_obj(_, Dead).
 
 do_delete(Kill_obj) :-
@@ -1533,6 +1547,7 @@ remove_floater(Node) :-
 	_ is_connector from _ to Node;
 	Node has_class C,
 	    \+ member(C, [variable, cloud, border, function]);
+	Node has_class_refinement value of _;
 	Node has_class_refinement min_val of _;
 	is_parameter(Node, 2)), !;
 	draw'><'off(Node),
@@ -1650,7 +1665,7 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 	    member(type=Nature, Multi), !;
 	Nature = generated),
 	time_step_for(Submodel, 'Default', Step),
-	(Submodel has_class_refinement desc of Desc, !;
+	(Submodel has_class_refinement description of Desc, !;
 	Desc = ''),
 	(Submodel has_class_refinement comment of Comment, !;
 	Comment = ''),
@@ -1698,7 +1713,7 @@ use_units_in(root, 'No').
 use_units_in(Model, Do) :-
 	Model has_class_refinement eqn_units of Local, !,
 	    Do = Local;	  
-	Parent has_part Model,
+	find_all_comps(Parent, Model),
 	    use_units_in(Parent, Do).
 
 /* make_ghost establishes a ghost relationship -- Ghost becomes a ghost of Base.

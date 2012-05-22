@@ -7,6 +7,7 @@ sicstus_module( utility, [wake/0, genint/2, rt_portray/1, trim_float/2,
 			  y_or_n/1, any_setof/3,foreach/3, wrap/3,
 			  all/3, unify_all/2, get_precedence/2,
 			  replace_in_list/4, write_with_breaks/2,
+			  export_with_breaks/2,
 			  writelist/1,writelisttofile/2,
 			  do_writing/2, open_native/3,
 			  delall/3, append_atoms/2, append_atoms/3,
@@ -213,6 +214,13 @@ replace_in_list( C1, [X|L1s], C2, [X|L2s] ) :-
 
 write_with_breaks(Stream, Term) :-
 	write_term(Stream, Term, [quoted(true), portrayed(true)]),
+	write(Stream, '.'),
+	nl(Stream).
+
+export_with_breaks(Stream, Term) :-
+	sicstus_writeq_to_chars(Term, TtfnStr),
+	all_ttfn_to_utf8(TtfnStr, Utf8Str),
+	sicstus_write_chars(Stream, Utf8Str),
 	write(Stream, '.'),
 	nl(Stream).
 

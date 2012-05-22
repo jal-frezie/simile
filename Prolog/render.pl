@@ -138,12 +138,12 @@ render( L, for_start, [Name,End,Step], Indent, [For_Start]) :-
 	make_assignment(L, Name, 1, Init),
 	refer_value(L, Name, NameRef),
 	make_increment_expr(L, Name, Step, Incr),
-	(L = c, Template = "~*sfor ( ~s; ~w; ~s ) {";
-	L = tcl, Template = "~*sfor {~s} {~w} {~s} {"),
+	(L = c, Template = "for ( ~s; ~w; ~s ) {";
+	L = tcl, Template = "for {~s} {~w} {~s} {"),
 	(Step > 0, !, Test = (End >= NameRef);
 	    Test = (NameRef >= End)),
-	sicstus_format_to_chars( Template,
-		   [Indent," ",Init, Test, Incr], StartChars ),
+	format_indented(Indent, Template,
+		   [Init, Test, Incr], StartChars ),
 	name( For_Start, StartChars ).
 
 /* start of a procedure */
@@ -151,12 +151,11 @@ render( L, procedure_start, Call, Indent, [Proc_Start]) :-
 	Call =.. [call, RetType, Proc_name | Args],
 	make_param_string(L, Args, Arg_string),
 	(L = c,
-		sicstus_format_to_chars( "~*s~w ~w (~s) {", 
-				[Indent," ",RetType,Proc_name, Arg_string],
-				 StartChars );
+	    format_indented(Indent, "~w ~w (~s) {",
+			    [RetType,Proc_name, Arg_string], StartChars);
 	L = tcl,
-		sicstus_format_to_chars( "~*sproc ~w  {~s} {", 
-				[Indent," ",Proc_name, Arg_string], StartChars )),
+	    format_indented(Indent, "proc ~w  {~s} {", 
+			    [Proc_name, Arg_string], StartChars)),
 	name( Proc_Start, StartChars ).
 
 /* Bits common to all model classes: public-access con- and destructor. */
@@ -164,9 +163,9 @@ render(c, public_cons_dest,
        instance(submodel, _, xrefs(model(_, Subs), _,_), _,
 		ClassName-_), Indent, PubConDe) :-
 	InIndent is Indent+4,
-	sicstus_format_to_chars( "~*spublic:", [Indent," "], PubStr),
-	sicstus_format_to_chars( "~*s~w () {", [InIndent," ",ClassName], ConsHd),
-	sicstus_format_to_chars( "~*s~~~w () {", [InIndent," ",ClassName], DestHd),
+	format_indented(Indent, "public:", [], PubStr),
+	format_indented(InIndent, "~w () {", [ClassName], ConsHd),
+	format_indented(InIndent, "~~~w () {", [ClassName], DestHd),
 	all(render, make_cons_dest,
 	    [build(Subs), append(ConLines, []), append(DeLines, [])]),
 	render(c, end(procedure), structor, InIndent, [EndStr]),
@@ -281,6 +280,11 @@ render(c, release_space, [Var, _Count, _Used], Indent, [Line]) :-
 	sicstus_format_to_chars("~*sdelete [] ~a;", [Indent, " ", Var],
 				LineStr),
 	name(Line, LineStr).
+
+format_indented(Indent, Spec, Vars, Str) :-
+	list_of(32, Indent, Leader),
+	append("~s", Spec, LedSpec),
+	sicstus_format_to_chars(LedSpec, [Leader | Vars], Str).
 
 % excrete: replacement for render which writes directly to pipe and
 % does not clutter the atom table
@@ -679,9 +683,6 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 	    Max = Muckle),
 
 	    /* Now do what needs with the enumerated types */
-	    (InstType = submodel, /* do not include types for externals */
-	        DescAttr = desc, !;
-	      DescAttr = description),
 	    (BaseName has_class_refinement enum_types of TypeList, !;
 		TypeList = []),
 	    length(TypeList, ETCount),
@@ -714,7 +715,7 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 	    all(render, make_runtime_string,
 		[unify([L, Name, Used]),
 		 build([VisName, BaseName, VisName, VisName]),
-		 build([name, spec, DescAttr, comment]),
+		 build([name, spec, description, comment]),
 		 build(StringPtrs), unify(Stream)]),
 	    % if tcl, put in name itself to find when debugging
 	    (L = tcl -> append(StringPtrs, [Name], AllStrPtrs);
@@ -1289,6 +1290,9 @@ the next few lines in place, and math_protect asserted, AME will do the same.
 	member(Op, [round, floor, ceil]), !,
 	    Expr =.. [Op | VArgs],
 	    combine(L, int, [Expr], Atom);
+%        member(Op-Arr, [cur_phase-ts, cur_step-dts]), !,
+%            make_indexed_reference(L, Arr, [0], IndxRef),
+%            refer_value(L, IndxRef, Atom);
 	(member(Op, [and, ',', '&&']), !,
 		(L = c,
 			TargetOp = (&&);

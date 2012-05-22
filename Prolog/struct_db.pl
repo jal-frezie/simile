@@ -12,6 +12,7 @@ foreign_resource(struct_db,
 		     add_iext, remove_iext, find_iext,
 		     add_capt_off, remove_capt_off, find_capt_off,
 		     add_centre, remove_centre, find_centre,
+		     add_along, remove_along, find_along,
 		     set_hidden, is_hidden]).
 
 foreign(empty_tree, empty_tree(-integer)).
@@ -62,5 +63,8 @@ foreign(find_capt_off, find_capt_off(+string, -integer, -integer)).
 foreign(add_centre, add_centre(+string, +integer, +integer)).
 foreign(remove_centre, remove_centre(+string)).
 foreign(find_centre, find_centre(+string, -integer, -integer)).
+foreign(add_along, add_along(+string, +integer)).
+foreign(remove_along, remove_along(+string)).
+foreign(find_along, find_along(+string, -integer)).
 foreign(set_hidden, set_hidden(+string, +integer)).
 foreign(is_hidden, is_hidden(+string)).

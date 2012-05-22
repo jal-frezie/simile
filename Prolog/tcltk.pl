@@ -117,7 +117,7 @@ decode_command(WTorA, Chars) :-
 	    atomic(WTorA), Term = WTorA), !, 
         sicstus_write_to_chars(Term, Chars).
 decode_command(WTorA, Chars) :-
-	WTorA = writeq(Term), !, 
+	WTorA = writeq(Term), !, % not used and probably not working
         sicstus_writeq_to_chars(Term, Chars).
 decode_command(_X, []).
 

@@ -80,9 +80,9 @@ assert_model(P) :-
 	assert(update_add(P))).
 
 my_assert(P) :-
-%	assert(P).
+	assert(P).
 %	tcl_assert(P).
-	c_assert(P).
+%	c_assert(P).
 	
 tcl_assert(P) :-
 	P =.. [Funt | Args],
@@ -119,8 +119,10 @@ c_assert(P) :-
 	    Pts = [OX,OY],
 	    add_capt_off(Obj, OX, OY);
 	 GAttr = centre,
-	    Pts = [CX, CY],
-	    add_centre(Obj, CX, CY);
+	    Pts = [OX,OY],
+	    add_centre(Obj, OX, OY);
+	 GAttr = along,
+	    add_along(Obj, Pts);
 	 GAttr = hide_contents,
 	    (\+ Pts = 1, !; set_hidden(Obj, 1)));
 %	 safe_tcl_eval([puts, br(write(failed_assert(P)))], _)), !;
@@ -131,9 +133,9 @@ retract_model(P) :-
 	retract_from_current(P).
 
 my_retract(P) :-
-%	retract(P).
+	retract(P).
 %	tcl_retract(P).
-	c_retract(P).
+%	c_retract(P).
 
 tcl_retract(P) :-
 	tcl_call(P, Funt, MatchStr),
@@ -171,6 +173,8 @@ c_retract(P) :-
 		remove_capt_off(Obj);
 	    GAttr = centre,
 		remove_centre(Obj);
+	    GAttr = along,
+		remove_along(Obj);
 	    GAttr = hide_contents,
 		set_hidden(Obj, 0));
 	retract(P).
@@ -185,9 +189,9 @@ retractall_model(P) :-
 	true.
 
 query_model(P) :-
-%	call(P).
+	call(P).
 %	tcl_call(P, _Funt, _Strs).
-	c_call(P).
+%	c_call(P).
 
 tcl_call(P, Funt, MatchStr) :-
 	P =.. [Funt | Args],
@@ -238,6 +242,8 @@ c_call(P) :-
 		find_capt_off(Obj, Pts);
 	    GAttr = centre,
 		find_centre(Obj, Pts);
+	    GAttr = along,
+		find_along(Obj, Pts);
 	    GAttr = hide_contents,
 		is_hidden(Obj),
 		Pts = 1);
@@ -254,6 +260,7 @@ descendent(Node, Desc) :-
 	descendent(Child, Desc).
 
 find_child(Parent, Child) :-
+	atom(Parent),
 	get_child_list_pointer(Parent, Ptr),
 	comps_from_pointer(Ptr, Child).
 

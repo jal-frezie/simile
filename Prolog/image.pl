@@ -25,7 +25,7 @@ sicstus_module(image,
        draws_complete/1, check_complete/1, test_complete/1,
        get_inclusions/3, get_overlaps/3, draws_at/3, right_section/2,
         find_new_box/5, line_dir_change_radius_is/1,
-       multiple_draw/2, update_bowtie/2, get_bowtie/2, get_bowtie/3,
+       multiple_draw/2, update_bowtie/2, get_bowtie/2,
        adjust_bowtie/2, adjust_kink/2, adjust_spline/2,
        get_caption_anchor/2, end_coords/3,
        update_text_position/3, make_header/2,
@@ -132,10 +132,11 @@ fits_inside([L, T, R, B], [BigL, BigT, BigR, BigB]) :-
     L > BigL + Border, R < BigR - Border, T > BigT + Border, B < BigB - Border.
 
 in_box(Parent, Comp, Outer) :-
-    find_all_comps(Parent, Comp),
-    get_host(Comp, Decider),
-    get_drawing_form(Decider, _, Inner),
-    fits_inside(Inner, Outer).
+	find_all_comps(Parent, Comp),
+	Comp is_model_class,
+	get_host(Comp, Decider),
+	get_drawing_form(Decider, _, Inner),
+	fits_inside(Inner, Outer).
 
 get_inclusions(Parent, Box, Included) :-
     setof(Component, in_box(Parent, Component, Box), Included), !;
@@ -288,7 +289,7 @@ crossing_point(Parent, [X1, Y1], [RX2, RY2], Class, [L, T, R, B], Warp, Exit) :-
     get_box_crossing([X1, Y1], [X2, Y2], [L, T, R, B], [Xx, Yx]),
     Xoff is X2-X1,
     Yoff is Y2-Y1,
-    (member(Class, [flow, compartment, channel, state]), !,
+    (member(Class, [flow, function, compartment, channel, state]), !,
         Exit = [Xx, Yx];
     Class = variable, !,
         /* assume line starts at centre */
@@ -405,13 +406,27 @@ get_drawing_form(Comp, Style, BBox) :-
     Style = text, !,
         get_shape(Comp, centre, C),
         append(C, C, BBox);
-    (Style = submodel, !,
+    Style = submodel, !,
         get_shape(Comp, bounding_box, BBox);
     get_shape(Comp, centre, [Xpt, Ypt]),
-	(border_node(Comp), !,
-	    BBox = [Xpt, Ypt, Xpt, Ypt];
 	get_box_size(Comp, Style, Cur_size),
-	    make_bounding_box(Style, Xpt, Ypt, Cur_size, BBox)))).
+	make_bounding_box(Style, Xpt, Ypt, Cur_size, BBox);
+    border_node(Comp), !,
+	Submodel has_part Comp,
+	get_shape(Comp, along, Theta),
+	around_border(Submodel, in, Theta, C),
+	append(C, C, BBox)).
+
+around_border(Sm, Context, Theta, C) :-
+	Angular is 6.28319*Theta/1000,
+	(Context = in,
+	    get_shape(Sm, internal_extent, SBox);
+	  Context = out,
+	    get_shape(Sm, bounding_box, SBox)),
+	middle(SBox, [MX, MY]),
+	RX is MX + cos(Angular),
+	RY is MY + sin(Angular),
+	crossing_point(Sm, [MX, MY], [RX, RY], submodel, SBox, 0, C).
 
 /* draws_at/3: returns if a component or link can be drawn at a certain depth,
 i.e., if it has a deep enough display depth and so do others on which it
@@ -500,9 +515,10 @@ adjust_bowtie(Comp, Point) :-
     closest_centre(Point, Point_list, Miss, _ClosePt, Posn),
     line_dir_change_radius_is(Dither),
     Miss < Dither,
-    get_shape(Comp, curve, [Kink, _OldPosn]),
+    implicit_function(Comp, Fn),
+    get_shape(Fn, along, _OldPosn),
 %    abs(Posn-OldPosn)<100, save accidentally moving it by clicking on route
-    change_shape(Comp, curve, [Kink, Posn]).
+    change_shape(Fn, along, Posn).
 
 adjust_kink(Comp, [X, Y]) :-
     find_type(Comp, Type),
@@ -606,21 +622,20 @@ slice(Posn, LowSide, HiSide, N) :-
 */
 
 get_end_pt(Link, End, Type, Pt, Box) :-
-	Link is_connector from Start to Fn,
+	Link is_connector from Start to Fin,	
 	(End = start,
-	    Node = Start,
+	    get_host(Start, Node),
 	    Check = (Link follows Other),
 	    PrevPt = PrevEnd;
 	 End = finish,
-	    get_host(Fn, Node),
+	    get_host(Fin, Node),
 	    Check = (Other follows Link),
 	    PrevPt = PrevStart),
 	(call(Check),
 	    find_type(Node, submodel), !,
-	    add_to_translation([0,0,1,1], Node, Trans),
 	    Other is_connector from PrevStart to PrevEnd,
-	    get_shape(PrevPt, centre, InPt),
-	    untranslate(InPt, Trans, Pt),
+	    get_shape(PrevPt, along, Theta),
+	    around_border(Node, out, Theta, Pt),
 	    append(Pt, Pt, Box);
 	get_drawing_form(Node, Type, Box),
 	    middle(Box, Pt)).
@@ -695,13 +710,12 @@ update_bowtie(_Link, _Route).
 get_bowtie(Link, Bowtie) :-
     Link is_of_sort has_bowtie,
     get_link_route(Link, Route),
-    get_bowtie(Link, Route, Bowtie).
-
-get_bowtie(Link, Route, Bowtie) :-
     find_type(Link, LType),
     LType is_class_of_sort has_bowtie,
     get_bowtie_size(Link, Bowtie_size),
-    get_shape(Link, curve, [_, TiePosn]),
+    (implicit_function(Link, Tap), !;
+	add_implicit_function(Link, Tap)),
+    get_shape(Tap, along, TiePosn),
     get_middle_segment(LType, Route, Bowtie_size, TiePosn, Bowtie).
 
 get_hierarchy(Link, End, [Pt | Rest], Recurse) :-
@@ -786,8 +800,7 @@ test_complete(Item) :-
             initiates(InInf, Surrogate),
             checks_out_locally(Surrogate) */ );
     Item is_of_sort has_function,
-        (FromFunction is_connector from _ to Item,
-            FromFunction has_type influence;
+        (implicit_function(Item, _ItemFn);
         Item has_class_refinement units of Units,
             analyze_array(Units, Base, _Dims),
             member(Base, [boolean, a(_)]);
@@ -856,11 +869,14 @@ checks_out_locally(Func) :-
     Func has_class_refinement units of Units,
     analyze_array(Units, Base, Dims),
     units_match_context(Func, Base, Dims, []),
-    (get_host(Func, Vis),
-	find_type(Vis, state), !,
-	% value is [evt1-val1, evt2-val2...] so include evts in check
-	utility'><'all(image, sieve_events,
-		    [build(Expr), unify(Func), build(HasConts)]);
+    get_host(Func, Vis),
+    (find_type(Vis, state), !,
+	% value is [evt1-val1, evt2-val2...] so use val parts only
+	% utility'><'all(image, sieve_events,
+	% 	       [build(Expr), unify(Func), build(HasConts)]);
+	% New value format: val1 on event1, val2 on evt2, etc
+	list_evt_captions(Func, EvtCapts),
+	sieve_all_events(Expr, Func, EvtCapts, HasConts);
       HasConts = Expr),
     replace_subexps(HasConts, image, pick_var, Func, top_down, Pairs, _),
     (setof(Source, valid_input(Func, continuous, Source), Sources), !;
@@ -871,9 +887,11 @@ checks_out_locally(Func) :-
 pick_var(_, V, _, 0) :-
     get_solo_list_depth(V, _).
 
-sieve_events(Evt-Outcome, Fn, Outcome) :-
-	m_update'><'get_all_links(Fn, discrete, _,
-		      input_link(_, role_texts(Evt, _,_,_), _,_,_)).
+sieve_all_events(Pairs, Fn, EvtCapts, [Outcome | Tail]) :-
+	Pairs = (Outcome on Evt, More),
+	    select(Evt, EvtCapts, Left), 
+	    sieve_all_events(More, Fn, Left, Tail);
+	  Pairs = (Outcome on Evt), EvtCapts = [Evt], Tail = [].
 
 /* pair_off is true if every variable in the expression represents a role of some link to the function, and every link to the function has at least one variable representing some role it has. Later we may keep the unit error and pop it up when the user mouses over to see why the node is red... */
 
@@ -934,10 +952,11 @@ get_termination_zone([Obj | Rest], Dir, Top, Area, CompType, Centre) :-
         Area = [X, Y, X, Y],
         CompType = point,
         Centre = [X, Y];
-    get_drawing_form(Obj, DrawType, Area),
+    get_host(Obj, VisObj),
+    get_drawing_form(VisObj, DrawType, Area),
     find_all_comps(Top, Obj),
 
-    (Obj has_type squirt, !,
+    (VisObj has_type squirt, !,
         CompType = variable;
     CompType = DrawType),
     (CompType = submodel,

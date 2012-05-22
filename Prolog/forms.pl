@@ -2,7 +2,7 @@
 -----------
 Code for putting up dialogue boxes, progress boxes, etc */
 
-sicstus_module(forms, [pick_equation/2, do_equation_dialog/2,
+sicstus_module(forms, [pick_equation/2, eqn_for/2, do_equation_dialog/2,
 		       do_disag_dialog/4, do_relation_dialog/8,
 		       do_text_item_dialog/5,
 		       get_load_file/2, get_save_file/2,
@@ -13,12 +13,25 @@ sicstus_module(forms, [pick_equation/2, do_equation_dialog/2,
 sicstus_use_module([library(lists),
 		    output, m_update, ame_gen, sp_only, utility]).
 
-pick_equation(Part, Equation) :-
-	(get_av_pair(Part, 0, spec, Equation),
-	    atom(Equation), \+ Equation = [],
-	    /* do not use old string version */ !;
-	get_av_pair(Part, 0, value, Equation), !;
-		Equation = '').
+pick_equation(Comp, Eqn) :-
+	find_type(Comp, state),
+	    find_node_with_data(Comp, _, Func),
+	    get_av_pair(Func, 0, spec, PairList), !,
+	    expand_spec(PairList, Eqn);
+	Comp is_of_sort has_function,
+	    (eqn_for(Comp, Eqn), !;
+		Eqn = '').
+
+eqn_for(Comp, Eqn) :-
+	find_node_with_data(Comp, _, Func),
+	(get_av_pair(Func, 0, spec, Eqn), atom(Eqn), \+ Eqn = [], !;
+	 get_av_pair(Func, 0, value, EqnExpr),
+	    sicstus_write_to_chars(EqnExpr, EqnStr),
+	    name(Eqn, EqnStr)).
+
+expand_spec(B on A, [[A, B]]).
+expand_spec((B on A, MoreSpec), [[A, B] | MorePairs]) :-
+	expand_spec(MoreSpec, MorePairs).
 
 /* the equation dialogue will only exit when a coherent set of 
 inputs have been 
@@ -41,7 +54,7 @@ do_equation_dialog(Win, Part) :-
 	list_index_meanings(Part, ISpecs),
 	all(forms, index_names_and_sizes, [build(ISpecs), build(IndexList),
 					      build(_Sz)]),
-	pick_equation(Part, Equation),
+	pick_equation(ClickedObj, Equation),
 	(get_av_pair(Part, 0, units, Units), !,
 	    analyze_array(Units, Base, Dims);
 	Base = '',
@@ -60,32 +73,33 @@ do_equation_dialog(Win, Part) :-
 		    [build(TableTypes), unify(ClickedObj), build(TableTrans)]),
 		dialogue'><'reverse_engineer(Values, TableTrans, 1, TableVals));
 	TableList = '', TableTrans = '', TableVals = '{}'),
-	get_desc_and_comment(ClickedObj, Desc, Comment, ''),
+
+	(ClickedObj is_of_sort line -> AttType = 2; AttType = 0),
+	(get_av_pair(ClickedObj, AttType, description, Desc), !; Desc = ''),
+	(get_av_pair(ClickedObj, AttType, comment, Comment), !; Comment = ''),
+
 	(get_av_pair(Part, 0, min_val, Min), !;
 		get_default_lower_limit(Part, Min)),
 	(get_av_pair(Part, 0, max_val, Max), !;
 		get_default_upper_limit(Part, Max)),
 	/* Node is an input parameter if a ghost whose base has no
 		associated function */
-	get_all_enum_types(Part, ETList),
+	find_all_comps(Parent, Part),
+	get_all_enum_types(Parent, ETList),
 	is_parameter(ClickedObj, Is_P),
 	
 	create_equation(Win, TitleForm, Caption, IndexList, ETList),
 	(TitleForm = rules_for, !,
-	    (setof(DiscIn,
-		   P1^(m_update'><'get_all_links(Part, discrete, P1, DiscIn)),
-		   EvtCapts),
-		all(forms, list_evt_efct_pairs,
-		    [unify(Equation), build(EvtCapts), append(ToPass, [])]), !;
-	      ToPass = []);
+	    list_evt_captions(Part, EvtCapts),
+	    all(forms, list_evt_efct_pairs,
+		[unify(Equation), build(EvtCapts), append(ToPass, [])]);
 	  ToPass = Equation),
 	fill_equation(ToPass, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_table(Part, TableList, TableVals), % calls interaction from tcl
 	destroy_equation.
 
-list_evt_efct_pairs(AVList, input_link(_, role_texts(Capt, _,_,_), _,_,_),
-		    [Capt, Efct]) :-
-	member(Capt-Efct, AVList), !;
+list_evt_efct_pairs(AVList, Capt, [Capt, Efct]) :-
+	member([Capt, Efct], AVList), !;
 	Efct = ''.
 
 index_names_and_sizes(ind_spec(Name, Posn, Dim, _Link), Meaning, Dim) :-

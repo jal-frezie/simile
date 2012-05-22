@@ -2104,7 +2104,7 @@ proc accept_equation {winId text} {
     set node $equationbar($winId,node)
     prolog [list tk_click_obj('$winId.canvas',  doubleclick, 0 , 0 , $node, 0)]
     set equationbar($winId,initText) $equationbar(equation)
-    focus $winId.canvas
+#    focus $winId.canvas
 }
 
 proc AddInputs {winId bar} {
@@ -2152,6 +2152,7 @@ proc restore_equation {winId bar} {
 #    $bar.equation configure -text $equationbar($winId,initText)
     $bar.equation configure -validate none
     $bar.equation delete 0 end
+    set evts [$bar.events cget -values]
     $bar.equation insert 0 $equationbar($winId,initText)
     $bar.equation configure -validate key
     focus $bar.equation

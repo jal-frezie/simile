@@ -1466,6 +1466,8 @@ operator(choose, real, [boolean, real, real]).
 operator(choose, boolean, [boolean, boolean, boolean]).
 operator(happens, boolean, [Any]) :- value(Any).
 operator(rand, real, [real, real]).
+operator(cur_phase, real, []).
+operator(cur_step, real, []).
 
 /* These are handled by the parser but have special buttons to include them so
 we do not want them in the function list -- they only appear here so the right
@@ -1767,7 +1769,8 @@ changeable(_, Subexp, _, 0) :-
 	random(_, Subexp, _, 0);
 	nonvar(Subexp),
 	Subexp =.. [Functor | _],
-	member(Functor, [time, dt, last, loses]).
+	(member(Functor, [time, dt, cur_phase, cur_step, last, loses]);
+		sample(Functor)).
 
 /* do_once is the opposite: value must stay the same even if the args change,
 though the modeller has probably erred if they do -- except for init_time,

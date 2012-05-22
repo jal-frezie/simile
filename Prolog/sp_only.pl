@@ -1,7 +1,7 @@
 % actually, anything other than gnu-prolog
 
 :- module(sp_only, ['><'/2, sicstus_read_from_chars/2, sicstus_write_to_chars/2,
-		    sicstus_format_to_chars/3,
+		    sicstus_writeq_to_chars/2, sicstus_format_to_chars/3, 
 		    sicstus_write_chars/1, sicstus_write_chars/2,
 		    sicstus_atom_chars/2, wind_up/0,
 		    read_term_from_codes/3, print_to_codes/2, number_atom/2,
@@ -28,9 +28,12 @@ sicstus_write_to_chars(Term, Result) :-
         write_to_chars(Term, Result).
 
 sicstus_writeq_to_chars(Term, Result) :-
-        write_term_to_chars(Term, Result, [quoted(true), numbervars(false),
-					   portrayed(true)]).
-
+%        write_term_to_chars(Term, Result, [quoted(true), numbervars(false),
+%					   portrayed(true)]).
+% above not in swi so do below instead
+	with_output_to_chars(write_term(Term, [quoted(true), numbervars(false),
+					       portrayed(true)]), Result).
+	
 sicstus_format_to_chars(Template, [V1 | Vars], Result) :-
 	format_to_chars(Template, [V1 | Vars], Result).
 

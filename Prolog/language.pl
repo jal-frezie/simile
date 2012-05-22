@@ -912,10 +912,11 @@ make_evaluation_routine(
 	    this goes num -> chars -> atom -> chars -> atom
 	    print_to_codes(TermStr, Expr),
 	    sicstus_atom_chars(Term, TermStr); */
-	member(Expr-Arr, [time(P)-ts, ind_time(P)-ts, dt(P)-dts]),
+	member(Expr-Arr-Idx, [time(P)-ts-P, ind_time(P)-ts-P, dt(P)-dts-P,
+			      cur_step-dts-0, cur_phase-ts-0]),
 	    (Language = c,
-		make_indexed_reference(Language, Arr, [P], Term);
-	    make_procedure_call_chars(Language, [glob_element, Arr, P],
+		make_indexed_reference(Language, Arr, [Idx], Term);
+	    make_procedure_call_chars(Language, [glob_element, Arr, Idx],
 				      TimeElmtStr),
 		name(Term, TimeElmtStr)), !;
 	Expr = assign(Tgt, SubExpr), !,

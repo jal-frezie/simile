@@ -121,7 +121,7 @@ PlAtom rootAtom;
 typedef struct node_t {
   PlAtom id_atom;
   PlAtom nclass;
-  unsigned short parent;
+  PlAtom parent;
   id_list *children;
   id_list *arcs_to;
   id_list *arcs_from;
@@ -135,8 +135,9 @@ typedef struct node_t {
 typedef struct arc_t {
   PlAtom id_atom;
   PlAtom aclass;
-  PlAtom dest;
-  PlAtom source;
+  id_list *children;
+  unsigned short dest;
+  unsigned short source;
   unsigned short prev;
   id_list *subs;
   id_list *arcs_to;
@@ -172,7 +173,7 @@ FORPROL empty_tree(PlTerm root, PlTerm ushrtmx) {
   }
   roots = NULL;
   term_to_chars(root, &rootAtom);
-  return Pl_Un_Integer(USHRT_MAX, ushrtmx);
+  return Pl_Un_Integer(sizeof(arc), ushrtmx);
 }
 
 id_list* alloc_id_list() {
@@ -255,28 +256,34 @@ FORPROL create_node(PlTerm newnode) {
   childNode->ib = INT_MIN;
   childNode->hide = EXISTS;
   childNode->offy = INT_MIN;
+  childNode->cx = INT_MIN;
   childNode->cy = INT_MIN;
   SUCCEED;
 }
   
 FORPROL add_to_tree(PlTerm parent, PlTerm child) {
-  PlAtom parentAtom;
+  PlAtom spareAtom;
   unsigned short parentNum;
-  node *childNode, *parentNode;
+  node *childNode;
+  id_list **childList;
   const char* childStr;
   const char* parentStr;
 
-  childStr = term_to_chars(child, &parentAtom);
-  parentStr = term_to_chars(parent, &parentAtom);
+  childStr = term_to_chars(child, &spareAtom);
   childNode = &(nodes[get_node_number(childStr)]);
+  parentStr = term_to_chars(parent, &(childNode->parent));
 
-  if (parentAtom != rootAtom) {
-    childNode->parent = get_node_number(parentStr);
-    parentNode = &(nodes[childNode->parent]);
-    add_node_to_list(&(parentNode->children), childStr);
-  } else {
-    childNode->parent = USHRT_MAX;
+  if (childNode->parent == rootAtom) {
     add_node_to_list(&roots, childStr);
+  } else {
+    if (is_arc(parentStr)) {
+      parentNum = get_arc_number(parentStr);
+      childList = &((arcs+parentNum)->children);
+    } else {
+      parentNum = get_node_number(parentStr);
+      childList = &((nodes+parentNum)->children);
+    }
+    add_node_to_list(childList, childStr);
   }
   SUCCEED;
 }
@@ -344,6 +351,15 @@ FORPROL add_centre(PlTerm parent, PlTerm cx, PlTerm cy) {
   SUCCEED;
 }
 
+FORPROL add_along(PlTerm parent, PlTerm along) {
+  node *parentNode;
+
+  parentNode = node_from_term(parent);
+  PL_get_integer(along, &(parentNode->cx));
+  parentNode->cy = INT_MIN;
+  SUCCEED;
+}
+
 FORPROL set_hidden(PlTerm parent, PlTerm whether) {
   unsigned char* hid_reg;
   int whetherInt;
@@ -366,6 +382,7 @@ FORPROL create_arc(PlTerm newlink) {
   newArc->aclass = 0;
   newArc->prev = USHRT_MAX;
   newArc->subs = NULL;
+  newArc->children = NULL;
   newArc->arcs_to = NULL;
   newArc->arcs_from = NULL;
   newArc->yb = INT_MIN;
@@ -383,18 +400,12 @@ FORPROL add_link(PlTerm dest, PlTerm source, PlTerm link) {
   linkName = term_to_chars(link, &spareAtom);
   newArc = &(arcs[get_arc_number(linkName)]);
 
-  endName = term_to_chars(dest, &(newArc->dest));
-  if (is_arc(endName))
-    end_pts = &(arcs[get_arc_number(endName)].arcs_to);
-  else 
-    end_pts = &(nodes[get_node_number(endName)].arcs_to);
+  newArc->dest = get_node_number(term_to_chars(dest, &spareAtom));
+  end_pts = &(nodes[newArc->dest].arcs_to);
   add_arc_to_list(end_pts, linkName);
 
-  endName = term_to_chars(source, &(newArc->source));
-  if (is_arc(endName))
-    end_pts = &(arcs[get_arc_number(endName)].arcs_from);
-  else 
-    end_pts = &(nodes[get_node_number(endName)].arcs_from);
+  newArc->source = get_node_number(term_to_chars(source, &spareAtom));
+  end_pts = &(nodes[newArc->source].arcs_from);
   add_arc_to_list(end_pts, linkName);
   SUCCEED;
 }
@@ -440,8 +451,9 @@ FORPROL delete_node(PlTerm oldcomp) {
 }
 
 FORPROL remove_from_tree(PlTerm parent, PlTerm child) {
-  node* parentNode;
   PlAtom parentAtom;
+  unsigned short parentNum;
+  id_list **childList;
   const char* parentStr;
   const char* childStr;
 
@@ -449,11 +461,17 @@ FORPROL remove_from_tree(PlTerm parent, PlTerm child) {
   childStr = term_to_chars(child, &parentAtom);
   parentStr = term_to_chars(parent, &parentAtom);
 
-  if (parentAtom != rootAtom) {
-    parentNode = &(nodes[get_node_number(parentStr)]);
-    remove_node_from_list(&(parentNode->children), childStr);
-  } else {
+  if (parentAtom == rootAtom) {
     remove_node_from_list(&roots, childStr);
+  } else {
+    if (is_arc(parentStr)) {
+      parentNum = get_arc_number(parentStr);
+      childList = &((arcs+parentNum)->children);
+    } else {
+      parentNum = get_node_number(parentStr);
+      childList = &((nodes+parentNum)->children);
+    }
+    remove_node_from_list(childList, childStr);
   }
   SUCCEED;
 }
@@ -474,8 +492,13 @@ FORPROL remove_iext(PlTerm parent) {
 }
   
 FORPROL remove_centre(PlTerm parent) {
+  node_from_term(parent)->cx = INT_MIN;
   node_from_term(parent)->cy = INT_MIN;
   SUCCEED;
+}
+  
+FORPROL remove_along(PlTerm parent) {
+  return remove_centre(parent);
 }
   
 FORPROL remove_capt_off(PlTerm parent) {
@@ -559,9 +582,7 @@ FORPROL find_parent(PlTerm child, PlTerm parent) {
   childNode = &(nodes[get_node_number(childStr)]);
   if (!node_exists(childNode)) 
     FAIL;
-  if (childNode->parent == USHRT_MAX)
-    return Pl_Un_Atom(rootAtom, parent);
-  return Pl_Un_Atom(nodes[childNode->parent].id_atom, parent);
+  return Pl_Un_Atom(childNode->parent, parent);
 }
 
 FORPROL find_bbox(PlTerm child, PlTerm result) {
@@ -639,6 +660,24 @@ FORPROL find_centre(PlTerm child, PlTerm result) {
   return list_vect_ints(childNode->cx, childNode->cy, result);
 }
 
+FORPROL find_along(PlTerm child, PlTerm result) {
+  node* childNode;
+  const char* nodeStr;
+  PlAtom spareAtom;
+
+  nodeStr = term_to_chars(child, &spareAtom);
+  if (!is_node(nodeStr))
+    FAIL;
+  childNode = &(nodes[get_node_number(nodeStr)]);
+  if (!node_exists(childNode)) 
+    FAIL;
+  if (childNode->cx == INT_MIN)
+    FAIL;
+  if (childNode->cy != INT_MIN)
+    FAIL;
+  return Pl_Un_Integer(childNode->cx, result);
+}
+
 FORPROL is_hidden(PlTerm parent) {
   node* parentNode;
   const char* parentStr;
@@ -703,6 +742,8 @@ FORPROL get_child_list_pointer(PlTerm parent, PlTerm ptr) {
   else {
     if (is_node(parentStr))
       result = nodes[get_node_number(parentStr)].children;
+    else if (is_arc(parentStr))
+      result = arcs[get_arc_number(parentStr)].children;
     else
       result = NULL;
   }
@@ -762,9 +803,9 @@ FORPROL find_ends(PlTerm link, PlTerm source, PlTerm dest) {
   thisLink = &(arcs[get_arc_number(linkName)]);
   if (!arc_exists(thisLink)) 
     FAIL;
-  if (!Pl_Un_Atom(thisLink->source, source)) 
+  if (!Pl_Un_Atom(nodes[thisLink->source].id_atom, source)) 
     FAIL;
-  if (!Pl_Un_Atom(thisLink->dest, dest)) 
+  if (!Pl_Un_Atom(nodes[thisLink->dest].id_atom, dest)) 
     FAIL;
   SUCCEED;
 }
@@ -919,6 +960,7 @@ install_t install() {
   PL_register_foreign("add_iext", 5, add_iext, 0);
   PL_register_foreign("add_capt_off", 3, add_capt_off, 0);
   PL_register_foreign("add_centre", 3, add_centre, 0);
+  PL_register_foreign("add_along", 2, add_along, 0);
   PL_register_foreign("set_hidden", 2, set_hidden, 0);
   PL_register_foreign("create_arc", 1, create_arc, 0);
   PL_register_foreign("add_link", 3, add_link, 0);
@@ -932,6 +974,7 @@ install_t install() {
   PL_register_foreign("remove_bbox", 1, remove_bbox, 0);
   PL_register_foreign("remove_iext", 1, remove_iext, 0);
   PL_register_foreign("remove_centre", 1, remove_centre, 0);
+  PL_register_foreign("remove_along", 1, remove_along, 0);
   PL_register_foreign("remove_capt_off", 1, remove_capt_off, 0);
   PL_register_foreign("delete_arc", 1, delete_arc, 0);
   PL_register_foreign("remove_link", 3, remove_link, 0);
@@ -953,6 +996,7 @@ install_t install() {
   PL_register_foreign("find_iext", 2, find_iext, 0);
   PL_register_foreign("find_capt_off", 2, find_capt_off, 0);
   PL_register_foreign("find_centre", 2, find_centre, 0);
+  PL_register_foreign("find_along", 2, find_along, 0);
   PL_register_foreign("is_hidden", 1, is_hidden, 0);
   PL_register_foreign("get_node_and_next_ptr", 3, get_node_and_next_ptr, 0);
   PL_register_foreign("get_arc_and_next_ptr", 3, get_arc_and_next_ptr, 0);

@@ -85,7 +85,9 @@ Node is_no_longer_part_of Parent :-
 Class is_model_class :-
 	Class is_root.
 Class1 is_model_class :-
-	Class1 is_part_of Class2,
+	Class1 is_part_of Class3,
+	(Class2 = Class3;
+	    query_model(connection(Class2, _, Class3))),
 	Class2 is_model_class.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -198,7 +198,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 			     find_all_comps(Parent, Mover)), Movers),
 	    (member(Mover, Lighters),
 	        Mover is_of_sort box,
-		event'><'do_colours(Mover, on),
+		event'><'do_colours(Mover, seln),
 		fail;
 	    member(Mover, Movers),
 	        Mover is_of_sort box,
@@ -600,8 +600,9 @@ menu_handle(Win, edit, reroute) :-
 	get_edit_model(Win, Model, _),
 	/* Get selected links top-down, flows first */
 	(setof(Rerouter, (contains(Model, Rerouter),
-			    Rerouter is_of_sort line,
-			    event'><'doomed(Rerouter)), Rerouters), !,
+			     Rerouter is_of_sort line,
+			     appears(Rerouter),
+			     event'><'doomed(Rerouter)), Rerouters), !,
 	    reroute_sections(Rerouters);
 	true),
 	finish_move(Model, 0),
@@ -824,10 +825,10 @@ select_all_in(Model, Way) :-
 	    \+ event'><'at_def_con(Bit, Way),
 	    \+ Bit = Model,
 	    (Way = seln,
-		event'><'do_colours(Bit, on);
+		event'><'do_colours(Bit, seln);
 	    Way = base,
 		get_highlit_obj(0, Bit),
-		event'><'do_colours(Bit, off)),
+		event'><'do_colours(Bit, base)),
 	    fail;
 	event'><'set_selection_abilities(Model).
 
@@ -841,7 +842,7 @@ invert_seln_in(Model) :-
 		    \+ (appears(Bit), Bit is_of_sort box))),
 	      NewSel),
 	member(Node, NewSel),
-	    event'><'do_colours(Node, on),
+	    event'><'do_colours(Node, seln),
 	    fail;
 	event'><'set_selection_abilities(Model)).
 /*
@@ -971,10 +972,12 @@ display_submodels(Isub,[Submodel|Submodels]):-
 	    name(Path, PathStr);
 	  Path=AbsPath 
 	),
-	(get_av_pair(Submodel, 0, desc, SubmodelDesc)  ; 
-		\+ get_av_pair(Submodel, 0, desc, SubmodelDesc), SubmodelDesc = null),
+	(get_av_pair(Submodel, 0, description, SubmodelDesc)  ; 
+		\+ get_av_pair(Submodel, 0, description, SubmodelDesc),
+	    SubmodelDesc = null),
 	(get_av_pair(Submodel, 0, comment, SubmodelComment)  ; 
-		\+ get_av_pair(Submodel, 0, comment, SubmodelComment), SubmodelComment = null),
+		\+ get_av_pair(Submodel, 0, comment, SubmodelComment),
+	    SubmodelComment = null),
 	(get_av_pair(Submodel, 0, step, TimeStepIndex)  ; 
 		\+ get_av_pair(Submodel, 0, step, TimeStepIndex), TimeStepIndex = null),
 	(get_av_pair(Submodel, 0, enum_types, EnumTypes)  ; 
@@ -1155,7 +1158,7 @@ set_properties(Wid, Model) :-
 	    (NewStep = 'Default', !,
 		add_parameter(Model, 0, step, '');
 	    add_parameter(Model, 0, step, NewStep)),
-	    add_parameter(Model, 0, desc, NewDesc),
+	    add_parameter(Model, 0, description, NewDesc),
 	    add_parameter(Model, 0, comment, NewComment),
 	    (NewFix = 'Default', !,
 		add_parameter(Model, 0, eqn_units, '');
@@ -1341,7 +1344,8 @@ cutout(Parent, SelnOnly) :-
 		
 change_size(TopNode, Type) :-
 	contains(TopNode, Obj),
-	draw_style_for(Obj, Type),
+	(draw_style_for(Obj, Type);
+	    Type = submodel, find_type(Obj, border)),
 	event'><'make_links_follow(Obj),
 	redisplay_border(Obj),
 	fail.

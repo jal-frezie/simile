@@ -6,13 +6,10 @@
 # This file contains procedures for the equation dialogue.
 #
 proc create_equation {parent purpose comp indices enum_types} {
-    global equation equationbar tcl_platform iconImages window_info custom
+    global equation tcl_platform iconImages window_info custom
 
     ### Formula bar section
-    if {[string compare $equationbar(current_action) click]==0} then {
-        return
-    }
-    if {[string compare $equationbar(current_action) tick]==0} then {
+    if {[lsearch {click tick} $::equationbar(current_action)]>=0} {
         return
     }
     ResetEqnBar [winfo parent $parent]
@@ -422,9 +419,9 @@ proc ChangeEvtSeln {} {
 }
 
 # This is called from Prolog if the effect equation is OK
-proc RedoChangeOfCause {} {
+proc RedoChangeOfCause {updatedUnits mult} {
     global equation
-
+    
     set en $equation(actzone).text
     set ev $equation(actzone).evts
     lset equation(rule_efx) $equation(last_cause) $equation(last_efct)
@@ -433,6 +430,15 @@ proc RedoChangeOfCause {} {
     set equation(last_cause) $equation(cur_cause)
     $ev selection clear 0 end
     $ev selection set $equation(last_cause)
+
+    set equation(units) [RealForUnity $updatedUnits]
+    if {[llength $mult]} {
+        set emult [join $mult ,]
+    } else {
+        set emult none
+    }
+    set widget [GetFrame $equation(main).main.main]
+    $widget.slider.cur_dims configure -text $emult
 }
 
 proc fill_equation {current_equation units mult isParam desc comment min max} {
@@ -449,10 +455,7 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
 
     
     ### Formula bar section
-    if {[string compare $equationbar(current_action) click]==0} then {
-        return
-    }
-    if {[string compare $equationbar(current_action) tick]==0} then {
+    if {[lsearch {click tick} $equationbar(current_action)]>=0} {
         return
     }
     ### End formula bar section
@@ -501,18 +504,23 @@ proc interact_equation {} {
     global equation equationbar tcl_platform
     
     ### Formula bar section
-    if {[string compare $equationbar(current_action) click]==0} then {
-        return
-    }
-    if {[string compare $equationbar(current_action) tick]==0} then {
-        set equationbar(current_action) click
-        return [list $equationbar(equation) \
-                $equationbar(units) \
-                $equationbar(isParam) \
-                $equationbar(desc) \
-                $equationbar(comment) \
-                $equationbar(min) \
-                $equationbar(max)]
+    switch $equationbar(current_action) {
+	click {
+	    return
+	} tick {
+	    set equationbar(current_action) click
+	    set result [list $equationbar(equation) \
+			    $equationbar(units) \
+			    $equationbar(isParam) \
+			    $equationbar(desc) \
+			    $equationbar(comment) \
+			    $equationbar(min) \
+			    $equationbar(max)]
+	    if {[info exists equationbar(curEvt)]} {
+		return [linsert $result 1 $equationbar(curEvt)]
+	    }
+	    return $result
+	}
     }
     ### End formula bar section
 
@@ -530,9 +538,10 @@ proc interact_equation {} {
     grab $t
     tkwait variable equation(done)
     grab release $t
+
+    set units [UnityForReal $equation(units)]
     switch $equation(done) {
         1 {
-            set units [UnityForReal $equation(units)]
 	    if {[winfo exists $equation(actzone).evts]} {
 # entering rules -- individual items already passed back (case 4 below)
 # but have to pass current pair in case modified
@@ -570,13 +579,10 @@ proc interact_equation {} {
 }
 
 proc destroy_equation {} {
-    global equation equationbar custom tcl_platform
+    global equation custom tcl_platform
     
     ### Formula bar section
-    if {[string compare $equationbar(current_action) click]==0} then {
-        return
-    }
-    if {[string compare $equationbar(current_action) tick]==0} then {
+    if {[lsearch {click tick} $::equationbar(current_action)]>=0} {
         return
     }
     ### End formula bar section
@@ -673,13 +679,9 @@ proc FloatifyBigInts {vals} {
 
 proc fill_inputs { triples } {
     global equation
-    global equationbar
     
     ### Formula bar section
-    if {[string compare $equationbar(current_action) click]==0} then {
-        return
-    }
-    if {[string compare $equationbar(current_action) tick]==0} then {
+    if {[lsearch {click tick} $::equationbar(current_action)]>=0} {
         return
     }
     ### End formula bar section
