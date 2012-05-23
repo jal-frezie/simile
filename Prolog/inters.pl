@@ -1580,7 +1580,7 @@ type_ind(Ind, Type) :-
 	var(Ind), !; % for self-referencing explicit inter
 	(integer(Ind); Ind = glob(_,_);
 	    Ind = pop; Ind = records; Ind = pra_bound(_,_)), Type = int;
-	Ind = '"boolean"', Type = boolean;
+	Ind = boolean, Type = boolean;
 	Type = a(Ind).
 
 make_choose_form([LastElt], _,_, LastElt) :- !.

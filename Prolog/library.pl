@@ -577,17 +577,19 @@ adjust_to_10(Parent) :-
 	    fail;
 	% no quotes round enumerated type specifiers in dimensions
 	contains(Parent, Submodel),
-	    Submodel no_longer_has_class_refinement multiplication_spec of MS,
-	    select(count=DimList, MS, MoreMS), % all have count
+	    Submodel has_class_refinement multiplication_spec of MS,
+	    select(count=DimList, MS, MoreMS), % not all have count
 	    all(library, dequote_ET, [build(DimList), build(NewDL)]),
-	    Submodel has_new_class_refinement multiplication_spec
+	    Submodel has_changed_class_refinement multiplication_spec
 	            of [count=NewDL | MoreMS],
 	    fail;
 	contains(Parent, Function),
 	    Function no_longer_has_class_refinement units of U,
 	    m_update'><'analyze_array(U, Base, DimList),
+	    (Base = a(Qtd) -> dequote_ET(Qtd, DQtd), NewB = a(DQtd);
+		NewB = Base),
 	    all(library, dequote_ET, [build(DimList), build(NewDL)]),
-	    m_update'><'build_array(Base, NewDL, NewU),
+	    m_update'><'build_array(NewB, NewDL, NewU),
 	    Function has_new_class_refinement units of NewU,
 	    fail;
 	true.

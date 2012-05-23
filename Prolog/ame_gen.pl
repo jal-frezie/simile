@@ -699,11 +699,10 @@ resolve_enum_type(Ref, Model, Value, Units, ETSpec) :-
 	    TypeList = []),
 	(nth0(Posn, TypeList, TypeName-TypeMems),
 	    (Ref = TypeName; nth(Value, TypeMems, Ref)),
-	    append_atoms(['"', TypeName, '"'], TypeRef),
 	    (number(Value),
-		Units=a(TypeRef);
+		Units=a(TypeName);
 	    length(TypeMems, Value),
-		Units=n(TypeRef)),
+		Units=n(TypeName)),
 	    ETSpec is -10-Posn, !;
 	(Model = st(Tgt), !; Tgt = Model),
 	find_all_comps(Parent, Tgt),
