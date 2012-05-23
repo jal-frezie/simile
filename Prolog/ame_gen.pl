@@ -13,7 +13,7 @@ sicstus_module(ame_gen,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
 		bowtie_section/2, find_reference/3, query/5, announce/2,
 		substitute_in_expr/4, replace_subexps/7, replace_all_subexps/7,
-		get_actual_size/5, get_actual_sizes/5,
+		get_actual_size/6, get_actual_sizes/6,
 		enum_type_ref/5, enum_type_ref/6,
 		get_node_size/2, get_node_size/4,
 		is_population/1, by_record/1, is_conditional/1, get_all_dims/2,
@@ -619,9 +619,9 @@ numbers of submodel instances, and translates those that can be translated,
 stripping out those which cannot, or which correspond to non-disaggregated
 submodels. */
 
-get_actual_size(Node, Sub, Nums, Sizes, [Units]) :-
+get_actual_size(Node, Sub, ETStyle, Nums, Sizes, [Units]) :-
 	(Sub = none, !, Nums = [], Sizes = [], Units = any;
-	enum_type_ref(Sub, Node, Num, Unit, _),
+	enum_type_ref(Sub, Node, ETStyle, Num, Unit, _),
 	    Nums = [Num],
 	    Sizes = [Sub],
 	    Units = Unit;
@@ -643,16 +643,19 @@ get_actual_size(Node, Sub, Nums, Sizes, [Units]) :-
 			Sizes = [UseSize]);
 		    Err = submodel_name_recurs(ModName));
 		Err = absent_submodel(ModName));
-       dequote(Sub, _BareSub), % enquoted: syntax error if not unit or e_t
+	  (ETStyle = quoted, 	% enquoted: syntax error if not unit or e_t
+	      dequote(Sub, _BareSub);
+	    ETStyle = bare,
+	      atom(Sub)),
 	    caption_for(Node, Capt),
 	    Err = absent_enum_type(Sub, Capt)),
 	(var(Err), !;
 	raise_exception(Err)).
 
-get_actual_sizes(Node, Subs, Nums, Sizes, Units) :-
+get_actual_sizes(Node, Subs, ETStyle, Nums, Sizes, Units) :-
 	all(ame_gen, get_actual_size,
-	    [unify(Node), build(Subs), append(Nums, []), append(Sizes, []),
-	     append(Units, [])]).
+	    [unify(Node), build(Subs), unify(ETStyle),
+	     append(Nums, []), append(Sizes, []), append(Units, [])]).
 
 name_matches(Node, Top, Name) :-
 	contains(Top, Node),
@@ -660,7 +663,7 @@ name_matches(Node, Top, Name) :-
 	caption_for(Node, Name).
 
 enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
-	enum_type_ref(Ref, Model, quoted, Value, Units, ETSpec).
+	enum_type_ref(Ref, Model, bare, Value, Units, ETSpec).
 enum_type_ref(Ref, Model, ETStyle, Value, Units, ETSpec) :-
 % also handles physical unit identifiers, which stand for 1 of that unit
 	(integer(Ref),
@@ -714,7 +717,7 @@ get_node_size(Source, Size) :-
 get_node_size(Source, SizeN, Size, Units) :-
 	Source has_class_refinement multiplication_spec of Multi,
 	member(count=Dim, Multi), !,
-	get_actual_sizes(Source, Dim, SizeN, Size, Units),
+	get_actual_sizes(Source, Dim, bare, SizeN, Size, Units),
 	(\+ member(var, Size), !;
 	caption_for(Source, Capt),
 	    raise_exception(submodel_size_variable(Capt)));

@@ -905,8 +905,8 @@ spread_dims(Node) :-
 	    dialogue'><'check_param_usage(IList, [], Xs, IList, []),
 	    Err = [],
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
-	    (get_actual_sizes(Node, FoundArray, _, Array, _),
-		get_actual_sizes(Node, GivenArray, _, Array, _), !,
+	    (get_actual_sizes(Node, FoundArray, bare, _, Array, _),
+		get_actual_sizes(Node, GivenArray, bare, _, Array, _), !,
 		UseArray = GivenArray;
 		UseArray = FoundArray,
 		SpecChanged = dims),

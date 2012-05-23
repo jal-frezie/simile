@@ -570,11 +570,34 @@ adjust_to_10(Parent) :-
 	    Flow has_new_graphical_attribute curve of [Kink, 1000],
 	    ImpFn has_new_graphical_attribute along of Bowtie,
 	    fail;
+	% always use 'description', never 'desc'
 	contains(Parent, Submodel),
 	    Submodel no_longer_has_class_refinement desc of Desc,
 	    Submodel has_new_class_refinement description of Desc,
 	    fail;
+	% no quotes round enumerated type specifiers in dimensions
+	contains(Parent, Submodel),
+	    Submodel no_longer_has_class_refinement multiplication_spec of MS,
+	    select(count=DimList, MS, MoreMS), % all have count
+	    all(library, dequote_ET, [build(DimList), build(NewDL)]),
+	    Submodel has_new_class_refinement multiplication_spec
+	            of [count=NewDL | MoreMS],
+	    fail;
+	contains(Parent, Function),
+	    Function no_longer_has_class_refinement units of U,
+	    m_update'><'analyze_array(U, Base, DimList),
+	    all(library, dequote_ET, [build(DimList), build(NewDL)]),
+	    m_update'><'build_array(Base, NewDL, NewU),
+	    Function has_new_class_refinement units of NewU,
+	    fail;
 	true.
+
+dequote_ET(Qat, UQat) :-
+	atom(Qat), !,
+	name(Qat, Qstr),
+	append([34 | UQstr], [34], Qstr),
+	name(UQat, UQstr);
+	UQat = Qat.
 
 floatify_large_ints([H | T], [NH | NT], Hit) :- !,
         floatify_large_ints(H, NH, Hit),

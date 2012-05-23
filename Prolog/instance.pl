@@ -420,7 +420,7 @@ generate_input_pair(Node, IType, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
 	RefExp = Ref,
 
 	analyze_array(SourceUnits, FarUnits, FarDims),
-	get_actual_sizes(Node, FarDims, _,_,_),
+	get_actual_sizes(Node, FarDims, bare, _,_,_),
 	analyze_array(ArcUnits, BaseUnits, _),
 	RelatedRef = input(SourceLocation, RefExp, Relation, ArcUnits),
 	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef),
@@ -477,7 +477,7 @@ language */
 get_units(Node, Type, Dims) :-
 	(Node has_class_refinement units of Unit, !; Unit = 1),
 	analyze_array(Unit, Type, Number),
-	get_actual_sizes(Node, Number, _, Dims, _).
+	get_actual_sizes(Node, Number, bare, _, Dims, _).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* Puts references to connecting flows into compartment definition; note that flows
