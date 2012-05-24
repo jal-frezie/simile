@@ -926,82 +926,94 @@ $tb1.b43 configure -state $useSpaceAbility
             set mainframe $helperTable($currentNode,whichRunEnv)
 #            set tempFile [file join $simtmpdir temp_out.shf]
 #            set stream [NetOpen $tempFile w]
-            set metaList {}
+#            set metaList {}
 
-            set mreId $helperTable($currentNode,whichRunEnv)
+            set metaStream [NetOpen $saveName w]
+	    set mreId $helperTable($currentNode,whichRunEnv)
+
             # save skeleton mre config
-            lappend metaList "[winfo x $mreId] [winfo y $mreId] \
-                    [winfo width $mreId] [winfo height $mreId]"
-            lappend metaList "[[GetFrame $mainframe].mainpw sash coord 0]"
-            lappend metaList "[[GetFrame $mainframe].mainpw.controlPane.panedwindow sash coord 0]"
-            SaveChildrenConfig $dp0 [string length $dp0.]
+#            lappend metaList "[winfo x $mreId] [winfo y $mreId] \
+#                    [winfo width $mreId] [winfo height $mreId]"
+#            lappend metaList "[[GetFrame $mainframe].mainpw sash coord 0]"
+#            lappend metaList "[[GetFrame $mainframe].mainpw.controlPane.panedwindow sash coord 0]"
+	    puts $metaStream {<?xml version="1.0"?>}
+	    puts $metaStream {<?xml-stylesheet type="text/xsl" href="shf1.xsl"?>}
+	    puts $metaStream "<shf simile_version=\"$::env(SIMILE_VERSION)\">"
+	    puts $metaStream "<external x=\"[winfo x $mreId]\" y=\"[winfo y $mreId]\" \
+w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
+	    puts $metaStream "<std_tool_layout left_panel_width=\"[lindex [[GetFrame $mainframe].mainpw sash coord 0] 0]\" run_control_height=\"[lindex [[GetFrame $mainframe].mainpw.controlPane.panedwindow sash coord 0] 1]\"/>"
+
+            SaveChildrenConfig $dp0 {}
             
-#            close $stream
-            MimifySHF $metaList $saveName mre
+	    puts $metaStream "</shf>"
+            close $metaStream
 	    do_in_editor AttackGlobalVariable helperTable \
 		($currentNode,stateName) $saveName
 	    PreserveSetup 0
 	}
     }
     
-    proc SaveChildrenConfig {page loss} {
-	upvar 1 metaList metaList
+    proc SaveChildrenConfig {page indent} {
+	upvar 1 metaStream metaStream
 	switch [winfo class $page] {
 	    Panedwindow {
-		SavePanedwindowConfig $page $loss
+		SavePanedwindowConfig $page $indent
 	    }
 	    TNotebook {
-		SaveNotebookConfig $page $loss
+		SaveNotebookConfig $page $indent
 	    }
 	    default {
 		#lappend metaList "Unhandled Notebook page child: $child"
 		if {[string equal container [winfo name $page]]} {
-		    SaveContainer $page $loss
+		    SaveContainer $page $indent
 		} else {
 		    foreach child [winfo children $page]  {
-			SaveChildrenConfig $child $loss
+			SaveChildrenConfig $child $indent
                     }
                 }
 	    }
 	}
     }
 
-    proc SaveNotebookConfig {notebook loss} {
-	upvar 1 metaList metaList
+    proc SaveNotebookConfig {notebook indent} {
+	upvar 1 metaStream metaStream
 
-        set nb [string range $notebook $loss end]
-        lappend metaList "notebook $nb"
+        puts $metaStream "$indent<notebook>"
         foreach page [$notebook tabs] {
             set pagecaption [$notebook tab $page -text]
-            regsub -all " " $pagecaption _ noSpcpagecaption
-	    set pageId [string range [winfo name $page] 1 end]
-            lappend metaList "page $nb $pageId $noSpcpagecaption"
-	    SaveChildrenConfig $page $loss
+            puts $metaStream "  $indent<page caption=\"$pagecaption\">"
+	    SaveChildrenConfig $page "    $indent"
+	    puts $metaStream "  $indent</page>"
         }
+        puts $metaStream "$indent</notebook>"	
     }
     
-    proc SavePanedwindowConfig {panedwindow loss} {
-	upvar 1 metaList metaList
+    proc SavePanedwindowConfig {panedwindow indent} {
+	upvar 1 metaStream metaStream
 
-        lappend metaList "panedwindow [string range $panedwindow $loss end] [$panedwindow cget -orient]"
+        puts $metaStream "$indent<panedwindow orient=\"[$panedwindow cget -orient]\">"
+	set sashCount -1
         foreach pane [$panedwindow panes] {
-            lappend metaList "pane [string range $pane $loss end]"
-	    SaveChildrenConfig $pane $loss
-	}
-        for {set index 0} {$index < [expr [llength [$panedwindow panes]]-1]} \
-	    {incr index} {
-		lappend metaList "sash [string range [winfo parent $pane] $loss end] $index [$panedwindow sash coord $index]"
+            puts $metaStream "  $indent<pane>"
+	    SaveChildrenConfig $pane "    $indent"
+            puts $metaStream "  $indent</pane>"
+
+	    if {$sashCount>-1} {
+		set sashPt [$panedwindow sash coord $sashCount]
+		puts $metaStream "  $indent<sash index=\"$sashCount\" xposn=\"[lindex $sashPt 0]\" yposn=\"[lindex $sashPt 1]\"/>"
 	    }
+	    incr sashCount
+	}
+        puts $metaStream "$indent</panedwindow>"	
     }
     
-    proc SaveContainer {winId loss} {
+    proc SaveContainer {winId indent} {
         global helperTable
-	upvar 1 metaList metaList
+	upvar 1 metaStream metaStream
 
 	set inst $helperTable($winId,whichInstance)
         set helperId [$inst info class]
-        lappend metaList "container [string range [winfo parent $winId] $loss end]"
-        lappend metaList [namespace tail $helperId]
+        puts $metaStream "$indent <container type=\"[namespace tail $helperId]\">"
         # substitute <cr>s so entry goes on one line
         # not a toplevel #lappend metaList [StripCrs [wm title $winId]]
         # not a toplevel #lappend metaList [wm geometry $winId]
@@ -1015,7 +1027,10 @@ $tb1.b43 configure -state $useSpaceAbility
 #	    }
 #	}
 	$inst PrepareSaveString
-	lappend metaList [$inst cget -State]
+	puts $metaStream "  $indent<!\[CDATA\["
+	puts $metaStream [$inst cget -State]
+	puts $metaStream "  $indent\]\]>"
+	puts $metaStream "$indent</container>"
     }
     
     proc LoadView {} {
@@ -1027,7 +1042,129 @@ $tb1.b43 configure -state $useSpaceAbility
         }
     }
     
+    if {![info exists simplify]} {
+	package require xml
+	variable parseStatus
+	set parseStatus(shfParser) \
+	    [::xml::parser -ignorewhitespace true \
+		 -elementstartcommand [namespace code StartElement] \
+		 -elementendcommand [namespace code FinishElement] \
+		 -characterdatacommand [namespace code LoadCharData]]
+    }
     proc LoadSHF {currentNode oldPath} {
+	variable parseStatus
+	variable dp0
+
+	set pStr [open $oldPath r]
+	set dada [read $pStr]
+	close $pStr
+	if {[string first {<?xml version=} $dada]} { ;# is not 0
+	    LoadOldStyleSHF $currentNode $oldPath
+	    return 0 ;# catch pre-XML .spf before it crashes parser
+	}
+	if {![EmptyDisplays]} {
+	    return
+	}
+	set parseStatus(currentNode) $currentNode
+	
+	if {[catch {$parseStatus(shfParser) parse $dada} feedback]} {
+	    Query [list xml_parse_fail $::errorInfo [array get parseStatus]] \
+		error shf {} ok
+	}
+    }
+
+    proc StartElement {name attList args} {
+	global helperTable
+        variable parseStatus
+
+	array set attVals $attList
+	set win $helperTable($parseStatus(currentNode),whichRunEnv)
+        switch $name {
+	    shf {
+		set parseStatus(simV) $attVals(simile_version)
+	    } external {
+		set x $attVals(x)
+		set y $attVals(y)
+		set width $attVals(w)
+		set height $attVals(h)
+		if {$x>=0 && $x+$width<[winfo screenwidth $win] && \
+			$y>=0 && $y+$height<[winfo screenheight $win]} {
+		    wm geometry $win ${width}x${height}+${x}+${y}
+		} else {
+		    wm geometry $win ${width}x${height}
+		}
+	    } std_tool_layout {
+		set topFrame [GetFrame $win].mainpw 
+		$topFrame sash place 0 $attVals(left_panel_width) 1
+		$topFrame.controlPane.panedwindow sash place 0 \
+		    1 $attVals(run_control_height)
+		set parseStatus(currentPath) $topFrame.mainDisplayPane
+	    } notebook {
+		set path $parseStatus(currentPath).notebook
+		::ttk::notebook $path
+		bind $path <<NotebookTabChanged>> \
+		    [list ::RunEnv::PageRaiseCmd $path]
+        
+		KoreanClick $path 1 {}
+		bind $path <Double-1> "::RunEnv::EditTabLabel %W"
+		bind $path <Button-3> "::RunEnv::EditTabLabel %W"
+		pack $path -fill both -expand yes
+		set parseStatus(currentPath) $path
+	    } page {
+		set pageId [frame [UniqueId $parseStatus(currentPath).fpage \
+				       [$parseStatus(currentPath) tabs]]]
+		$parseStatus(currentPath) add $pageId -text $attVals(caption)
+		bind $pageId <Button-1> "+::RunEnv::SetCurrentContainer %W"
+		bind $pageId <Button-3> \
+		    "+::RunEnv::SetCurrentContainer %W; 
+                    tk_popup .pageContextMenu %X %Y"
+		set parseStatus(currentPath) $pageId
+	    } panedwindow {
+		set pwId $parseStatus(currentPath).panedwindow
+		panedwindow $pwId -orient $attVals(orient)
+		$parseStatus(currentPath) configure -highlightthickness 0
+		pack $pwId  -expand yes -fill both
+		set parseStatus(currentPath) $pwId
+	    } pane {
+		set paneId [UniqueId $parseStatus(currentPath).pane \
+				[$parseStatus(currentPath) panes]]
+		set parseStatus(currentPath) [AddPane $paneId]
+	    } sash {
+		# the page this pane is in must be raised and update called!
+		# or $panedwindow sash place won't work
+		set pageId [FindParentNotebookPage $parseStatus(currentPath)]
+		if {[string length $pageId]} {
+		    [winfo parent $pageId] select $pageId
+		}
+		update idletasks
+		$parseStatus(currentPath) sash place $attVals(index) \
+		    $attVals(xposn) $attVals(yposn)
+	    } container {
+		set parseStatus(hType) $attVals(type)
+	    } default {
+		puts "unhandled type $name"
+	    }
+	}
+    }
+
+    proc FinishElement {name} {
+	variable parseStatus
+
+	if {[lsearch {notebook page panedwindow pane} $name]>=0} {
+	    set parseStatus(currentPath) \
+		[winfo parent $parseStatus(currentPath)]
+	}
+    }
+
+    proc LoadCharData {oldStatus} {
+	variable parseStatus
+	variable CurrentContainer
+
+	set CurrentContainer $parseStatus(currentPath)
+	ReinstateHelper $parseStatus(simV) $oldStatus $parseStatus(hType) {}
+    }
+
+    proc LoadOldStyleSHF {currentNode oldPath} {
         global helperTable errorInfo
         variable dp0 
 
