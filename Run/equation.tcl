@@ -594,13 +594,19 @@ proc destroy_equation {} {
 	    file attributes $layoutDir -hidden true
 	}
     }
-    set layoutStream [NetOpen [file join $layoutDir equation] w]
-    puts $layoutStream [string equal zoomed [wm state $equation(top)]]
-    puts $layoutStream [wm geometry $equation(top)]
+    set lStm [NetOpen [file join $layoutDir equation] w]
+    puts $lStm [string equal zoomed [wm state $equation(top)]]
+    puts $lStm [wm geometry $equation(top)]
 
-    RunEnv::SaveChildrenConfig $equation(top).notebook 0 ;# creates metaList
-    puts $layoutStream [join $metaList \n]
-    close $layoutStream
+    foreach {parent count} {main 1 main.middle 2 params 1} {
+	for {set i 0} {$i<$count} {incr i} {
+	    set pw $equation(top).notebook.$parent
+	    catch {puts $lStm "sash $pw $i [$pw sash coord $i]"}
+	}
+    }
+#    RunEnv::SaveChildrenConfig $equation(top).notebook 0 ;# creates metaList
+#    puts $layoutStream [join $metaList \n]
+    close $lStm
     PackItUp $equation(top)
 }
 
