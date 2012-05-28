@@ -645,8 +645,7 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, [Units]) :-
 		Err = absent_submodel(ModName));
 	  (ETStyle = quoted, 	% enquoted: syntax error if not unit or e_t
 	      dequote(Sub, _BareSub);
-	    ETStyle = bare,
-	      atom(Sub)),
+	    ETStyle = bare),
 	    caption_for(Node, Capt),
 	    Err = absent_enum_type(Sub, Capt)),
 	(var(Err), !;
