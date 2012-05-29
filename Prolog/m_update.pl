@@ -246,7 +246,7 @@ list_local_index_meanings(Submodel, Meanings) :-
 	append_atoms(['"', BareCaption, '"'], Caption),
 	(is_population(Submodel), !,
 		LocalDims = [pop];
-	by_record(Submodel), !,
+	(by_record(Submodel); from_value(Submodel)), !,
 		LocalDims = [records];
 	get_node_size(Submodel, LocalDims)),
 	list_node_index_meanings(Caption, 
@@ -1662,7 +1662,7 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 	    all(m_update, dequote_atom, [build(QCount), build(Count)]);
 	Count=[]),
 	(Submodel has_class_refinement multiplication_spec of Multi,
-	    member(type=Nature, Multi), !;
+	    member(type=Nature, Multi), \+ Nature = derived, !;
 	Nature = generated),
 	time_step_for(Submodel, 'Default', Step),
 	(Submodel has_class_refinement description of Desc, !;

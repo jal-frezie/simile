@@ -360,7 +360,7 @@ bits and pieces */
 	(
 % File writing starts here
 	send_to_dest(Stream, ['#include <support1.cpp>']),
-	dialogue'><'tk_update_infobox(pl_expr, []),
+	tk_update_infobox(pl_expr, []),
 	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_),
 				     _,_), [], [], TopStep, Phases, [], Used,
 			    ExtIncs, Inters, ReevaluateForm),
@@ -761,7 +761,7 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 		append(['START_VM' | VmBounds], ['END_VM'], NewDims));
 	append(Tree, [Level], DeepTree),
 	    StartCases = 1,
-	    (by_record(Node), !,
+	    ((by_record(Node); from_value(Node)), !,
 		['RECORDS'] =  NewDims;
 	    Posn = NewDims)),
 	(Loc = xrefs(Model, _,_),
@@ -1232,19 +1232,29 @@ nodes.
 	Level = [sm(_,_,_, fm_loop(Globs,_,_)) | _Loops],
 	% its the _Loops that have the bounds!
 	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
-            (by_record(SmName), !,
-		append_atoms(Name, made, NMade),
-	        SmInters =[instance(internal, inter(Path, _,_), _, NMade,
-				    int-[])],
-		get_dims_from_loops(Path, _, UseInds),
+	    get_dims_from_loops(Path, _, UseInds),
+            ((by_record(SmName),
+	            append_atoms(Name, made, NMade),
+	            SmInters = [instance(internal, inter(Path, _,_), _, NMade,
+					 int-[])],
+	            CFn =.. [collect, MadeCount, Name, IdxN | UseInds],
+	            XFns = [CFn, AFn],
+	            StartConds = [on_step],
+	            StartStep = -1;
+	          from_value(SmName),
+	            member(instance(function, n_made(SmName), _,
+				    elt(_, NMade, _), _), ParentFns),
+	            SmInters = [],
+	            XFns = [AFn],
+	            StartConds = [NMade],
+	            StartStep = Step), !,
 		length(UseInds, IdxN),
 		MadeCount = arr(Ptr, NMade, []),
-		CFn =.. [collect, MadeCount, Name, IdxN | UseInds],
-		AFn = assign_array(Ptr, Name, 1),
+		AFn = assign_array(Ptr, Name, NMade, 1),
 		Specials = [make(enumerate(Name), [startable(Name)], Path, Step,
-				 [CFn, AFn]),
-			    make(startable(Name), [on_step], Path, -1,
-				 [assign_array(Ptr, Name, -1)])];
+				 XFns),
+			    make(startable(Name), StartConds, Path, StartStep,
+				 [assign_array(Ptr, Name, NMade, -1)])];
 	     [SmInters, Specials] = [[], []]),
 	    BaseSides = []),
 	extract_assignments(Instance, LocalPath, LocalTree, Step, MaxStep,
@@ -2360,11 +2370,13 @@ name_components( _, [], _, []).
 
 name_components(Language, [instance(_Type, Node, _, elt(_, Var, _), _)
 			  | Compartments], Used, Graphs) :-
-	(member(Node, [st(Host), hist(Host)]), !,
+	(member(Node, [st(Host), hist(Host), n_made(Host)]), !,
 	    caption_for(Host, CompName),
 	    append_atoms(CompName, '_extras', Name);
 	  caption_for(Node, Name)),
-	generate_name( Language, Name, Var, Used),
+	(Node = n_made(Host), !,
+	    append_atoms(CompName, made, Var); % use name reserved by submodel
+	  generate_name( Language, Name, Var, Used)),
 %	make_code_atom(Name, Var, Used),
 	(Node has_class_refinement table_data of
 	[file='/graph/', data=[YLow, YHigh, YSpan],

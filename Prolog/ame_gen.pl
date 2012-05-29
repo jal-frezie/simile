@@ -16,8 +16,8 @@ sicstus_module(ame_gen,
 		get_actual_size/6, get_actual_sizes/6,
 		enum_type_ref/5, enum_type_ref/6,
 		get_node_size/2, get_node_size/4,
-		is_population/1, by_record/1, is_conditional/1, get_all_dims/2,
-		variable_size/1, list_links/2,
+		is_population/1, by_record/1, from_value/1, is_conditional/1,
+		get_all_dims/2, variable_size/1, list_links/2,
 		get_link_exits/2, get_chain/5, contains/2, contains/3,
 		purge/3, upper/2, lower/2, mybagof/3,
 		list_of/3, abs_path_for/2, caption_for/2, find_name_host/2,
@@ -643,7 +643,23 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, [Units]) :-
 			Sizes = [UseSize]);
 		    Err = submodel_name_recurs(ModName));
 		Err = absent_submodel(ModName));
-	  (ETStyle = quoted, 	% enquoted: syntax error if not unit or e_t
+	Sub = value(CompName),
+	    (contains(Top, Node),
+		setof(Value, (contains(Top, Value),
+				 caption_for(Value, CompName),
+				 Value is_of_sort has_function), Sources),
+		(Sources = [UniqSource], !,
+		    implicit_function(UniqSource, UniqFn),
+		    UniqFn has_class_refinement units of U,
+		    (inters'><'promote_unit(U, int),
+			Nums = [value(UniqSource)],
+			Sizes = [Sub],
+			Units = int;
+		      Err = bad_source_units(CompName, U));
+		Err = source_name_recurs(CompName));
+	      Err = absent_source(CompName));
+			     
+	    (ETStyle = quoted, % enquoted: syntax error if not unit or e_t
 	      dequote(Sub, _BareSub);
 	    ETStyle = bare),
 	    caption_for(Node, Capt),
@@ -824,6 +840,10 @@ is_population(Node) :-
 by_record(Node) :-
 	Node has_class_refinement multiplication_spec of Spec,
 	member(type=records, Spec).
+
+from_value(Node) :-
+	Node has_class_refinement multiplication_spec of Spec,
+	member(type=derived, Spec).
 
 is_conditional(Node) :-
 	Link is_connector from _ to Node,

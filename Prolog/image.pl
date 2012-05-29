@@ -476,7 +476,9 @@ of random pile. */
 
 multiple_draw(VComp, Num) :-
     find_base(VComp, Comp),
-    (by_record(Comp), !,
+    (from_value(Comp), !,
+        Num = -3;
+    by_record(Comp), !,
         Num = -2;
     is_population(Comp), !,
         Num = -1;

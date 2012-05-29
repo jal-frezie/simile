@@ -26,7 +26,7 @@ is_instance(Type, Node, Inputs, Value, Units, Instance) :-
 careful when looping through it. */
 
 instantiate_all(Parent, Model) :-
-	instantiate_trees([Parent], [Instance], [], TreeRefs),
+	instantiate_trees([Parent], [Instance], [], [], TreeRefs),
 	(setof(Channel, (find_all_comps(Parent, Channel),
 			      counts_as_outside(Channel)), Channels),
 	    instantiate_nodes(Channels, TopFns, [], TreeRefs, _Refs);
@@ -41,8 +41,9 @@ instantiate(Parent, model(ModelInstance, Submodels ), Path, FullSet) :-
 			      \+ Submodel has_class_refinement separate of 1,
 			      appears(Submodel)), LowerNodes ), !; 
 		LowerNodes = []),
-	instantiate_trees(LowerNodes, Submodels, Path, TreeRefs),
-	instantiate_nodes(TopNodes, ModelInstance, Path, TreeRefs, FullSet),
+	instantiate_trees(LowerNodes, Submodels, XConts, Path, TreeRefs),
+	instantiate_nodes(TopNodes, NConts, Path, TreeRefs, FullSet),
+	append(XConts, NConts, ModelInstance),
 	!.
 
 /* contents does the trick whereby immigration and creation channel nodes are placed outside their submodels. */
@@ -75,9 +76,9 @@ instantiate_nodes([Node|Nodes], New_instances, Path, ResultIn, ResultOut) :-
 	    append(Instances, OtherInstances, New_instances)),
 	instantiate_nodes(Nodes, OtherInstances, Path, MidResult, ResultOut).
 
-instantiate_trees([], [], _, []).
+instantiate_trees([], [], [], _, []).
 
-instantiate_trees([Node|Nodes], [Instance|Instances], Path, ResultOut) :-
+instantiate_trees([Node|Nodes], [Instance|Instances], Count, Path, ResultOut) :-
 	get_node_size(Node, Multiple),
 	pointer_from(Path, HiPtr),
 	path_section_for(Node, Name, Multiple, NewBit, HiPtr, _),
@@ -96,11 +97,20 @@ instantiate_trees([Node|Nodes], [Instance|Instances], Path, ResultOut) :-
 	is_instance(submodel, Node, 
 			xrefs(Submodel, BaseRefs, AssocRefs), 
 			Name, _-Multiple, Instance),
-	instantiate_trees(Nodes, Instances, Path, ResultIn),
-	LocalRefs = [Instance | Results],
+	instantiate_trees(Nodes, Instances, Counts, Path, ResultIn),
+	(get_actual_sizes(Node, Multiple, bare, [value(Deref)], _,_), !,
+				% single reference only for now
+	    SetFn = instance(function, n_made(Node),
+			     input(in_hierarchy, ValMention, none, int),
+			     elt(Path, _, int-[]), int-[]),
+	    Count = [SetFn | Counts],
+	    ValRef = instance(_, Deref, _, ValMention, _),
+	    LocalRefs = [SetFn, ValRef, Instance | Results];
+	  Count = Counts,
+	    LocalRefs = [Instance | Results]),
 	merge_lists(LocalRefs, ResultIn, ResultOut), !.
 
-instantiate_trees(_, _, _, _) :-
+instantiate_trees(_, _, _,_, _) :-
 	raise_exception('Lost it for some unknown reason during instantiation.').
 
 /* This substitutes the link used to refer to a relation (the one connected
@@ -584,7 +594,7 @@ path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
 		SmSpec = vm_loop(pop, IndxCount, [],_);
 	    SmSpec = vm_loop(_Bounds, IndxCount, _Loops, _)),
 	    Level = [sm(Context, HiPtr, LoPtr, SmSpec)];
-	(by_record(SmName), !,
+	((by_record(SmName); from_value(SmName)), !,
 	    SmSizes = [pra_bound(HiPtr, Context)];
 	 all(ame_gen, enum_type_ref, [build(SmDims), unify(SmName),
 				     build(SmSizes), build(_), build(_)])),

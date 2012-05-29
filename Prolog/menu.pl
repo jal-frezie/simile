@@ -1189,8 +1189,12 @@ set_properties(Wid, Model) :-
 		    (nonvar(Gax);
 		    member(Dodgy, Sizes),
 			\+ (integer(Dodgy), Dodgy > 1),
+			\+ Dodgy = value(_), % do at run time
 			query(bad_sm_dim(Dodgy), error, model_dims, [ok], _);
-		    Spec = [count=UseCount]));
+		    (member(value(_), Sizes), !,
+			TypeMem = [type=derived];
+			TypeMem = []),
+		    Spec = [count=UseCount | TypeMem]));
 	    member(NewNature, [population, records]),
 		Spec = [type=NewNature]),
 	    (var(Spec);

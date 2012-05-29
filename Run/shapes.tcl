@@ -262,10 +262,11 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     set dots [expr !$stack] ;# conditional
     set pile [expr $stack==-1] ;# population
     set wedge [expr $stack==-2] ;# per-record
+    set wings [expr $stack==-3] ;# from value
     if {$dots} {
         set stack 4
     }
-    if {$wedge} {
+    if {$wedge || $wings} {
 	set stack 1
     }
     if {$pile} {
@@ -359,6 +360,19 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     if {$wedge} {
 	$w create line $ml $v6 $ml $mt [expr $ml+$cornerRad/4] $mt \
 	    [expr {$ml+$cornerRad/8}] [expr {($mt+$v6)/2}] \
+	    -width $width -tag /new_bd/
+    }
+    if {$wings} {
+	set mm [expr {($mt+$mb)/2}]
+	$w create line [expr {$ml-$cornerRad}] [expr {$mm-$cornerRad}] \
+	    [expr {$ml-$cornerRad}] [expr {$mm+$cornerRad}] \
+	    -width $width -tag /new_bd/
+	$w create line [expr {$mr+$cornerRad}] [expr {$mm-$cornerRad}] \
+	    [expr {$mr+$cornerRad}] [expr {$mm+$cornerRad}] \
+	    -width $width -tag /new_bd/
+	$w create line [expr {$ml-$cornerRad}] $mm $ml $mm \
+	    -width $width -tag /new_bd/
+	$w create line [expr {$mr+$cornerRad}] $mm $mr $mm \
 	    -width $width -tag /new_bd/
     }
     foreach tag [concat $tagSet /background/] {

@@ -84,7 +84,7 @@ make_cons_dest(instance(Type, Sym, _, Name, _), ConLines, DeLines) :-
 	    name(ConLine, ConLineStr),
 	    ConLines = [ConLine],
 	    render(c, procedure_call, delete_list(Name), 8, DeLines);
-	by_record(Sym), !,
+	(by_record(Sym); from_value(Sym)), !,
 	    render(c, assign_space, Name= [_, Name,_,_, [0]], 8, ConLines),
 	    render(c, release_space, [Name,_,_], 8, DeLines); 
 /*	Type = external, !,
@@ -231,7 +231,8 @@ loop is in a different namespace... */
 render(tcl, class_declaration,
        instance(NodeType, SymbolicName, _, Name, _), Indent, Decl) :-
 	NodeType = submodel, !,
-	    ((variable_size(SymbolicName); by_record(SymbolicName)), !,
+	    ((variable_size(SymbolicName); by_record(SymbolicName);
+	      from_value(SymbolicName)), !,
 		append_atoms(Name, maker, ProcName),
 		render(tcl, procedure_start,
 		       call(_, ProcName, [_, instance]), Indent, Opens),
@@ -422,7 +423,9 @@ strings_direct(L, data_declaration,
 		Indent, Stream) :-
 	(NodeType = submodel, !,
 	    NameIn = NameBase,
-	    ((variable_size(SymbolicName); by_record(SymbolicName)), !,
+	    ((variable_size(SymbolicName);
+	      by_record(SymbolicName);
+	      from_value(SymbolicName)), !,
 			/* variable length submodel - declare a pointer */
 		declare_pointer(L, NameBase, Name),
 		UseDims = [];
@@ -581,7 +584,7 @@ generate_case_entry(L, Match, Inst, Stream) :-
 	make_indexed_reference(L, Name, Subs, Item))),
 	
 	refer(L, Item, ItemRef),
-	(by_record(BaseName), !,
+	((by_record(BaseName); from_value(BaseName)), !,
 	    % if dims is REQ_COUNT, point to made count and return
 	    resolve_pointer(L, dims, DimPtr),
 	    make_procedure_call_chars(L, [requests_record_count, DimPtr], CStr),

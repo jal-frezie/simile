@@ -340,10 +340,9 @@ initialization of the instance, then slip in the close after it. All this would 
 unnecessary if the thing were designed so it could call itself on parts of the
 program. I blame Geraint....*/
 
-do_assignment(L, [assign_array(Parent, Name, Init) | Clauses], Indent,
+do_assignment(L, [assign_array(Parent, Name, Made, Init) | Clauses], Indent,
 	      Used, Stream) :-
 	make_struct_reference(L, Parent, Name, Dest),
-	append_atoms(Name, made, Made),
 	make_struct_reference(L, Parent, Made, Count),
 	refer_value(L, Count, CountRef),
 	(Init = -1, !,
