@@ -575,10 +575,10 @@ namespace eval ::$keyValue {
 		set old_width $plot($w,xlength)
 		set old_height $plot($w,ylength)
 		
-		set new_width [expr $width-$plot($w,xborder_left)- \
-				   $plot($w,xborder_right)]
-		set new_height [expr $height-$plot($w,yborder_top)- \
-				    $plot($w,yborder_bottom)]
+		set new_width [expr {max($width-$plot($w,xborder_left)- \
+				   $plot($w,xborder_right),2)}]
+		set new_height [expr {max($height-$plot($w,yborder_top)- \
+				    $plot($w,yborder_bottom),2)}]
 		
 		set width_diff [expr $new_width-$old_width]
 		set height_diff [expr $new_height-$old_height]
