@@ -376,7 +376,7 @@ redo with snap object
     }
     
     public method MergeParams {filepath {smPath {}}} {
-        do_for_node $modelNode ZapParams $modelNode $smPath $filepath
+        do_for_node $modelNode ZapParams $modelNode $smPath $filepath 0
     }
     
     public method SetTimeUnits {units} {
@@ -495,7 +495,10 @@ redo with snap object
     }
 
     public method GetValue {path} {
-        return [do_for_node $modelNode GetModelValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
+	set node [do_for_node $modelNode GetIdFromCaptionPath $path]
+	set trans [GetCompProperty $modelNode Trans $node]
+        set numerics [do_for_node $modelNode GetModelValue $node]
+	return [TransEnums $trans $numerics]
     }
     
     public method RequestValues {args} {
@@ -513,6 +516,9 @@ redo with snap object
     
     public method SetValue {path value} {
         set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
+	set trans [GetCompProperty $modelNode Trans $nodeId]
+	set value [UntransVal [lindex $trans end] $value data]
+
         switch -- [$this GetModelEval $path] {
             INPUT {
 		PlaceInArray $modelNode $nodeId $value 0 [RunningInC $modelNode]
@@ -521,7 +527,6 @@ redo with snap object
                         do_for_node $modelNode set ::checkStates($nodeId) $value
                     }
                     ENUM(*) {
-                        set trans [GetTransTable $nodeId]
                         set comboChoices($nodeId) $defVal
                     }
                     default {

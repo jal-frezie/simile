@@ -1422,7 +1422,8 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 		Step = 0, Wait = [on_reset]);
 	 member(Is_P, [1,3]),
 	    Tgt = update(Dest),
-	    (Type = function, Step = SmStep, Wait = [init(Dest), time];
+	    (Type = function, Step = SmStep, Wait = [init(Dest), on_step];
+		% last wait was time but made R-K results look wrong
 	    Type = init_function, Step = 0, Wait = [on_reset])), !,
 	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Node),
 				     build(Dims), build(_), build(_)]),

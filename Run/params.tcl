@@ -572,7 +572,7 @@ proc AcceptData {topNode compName notInput complain} {
 	if {$complain==2 && ![string length $newData]} {
 	    # accept empty field for saving data
 	    set result {} ;# handle as error
-	} elseif {[catch {ListToArray $topNode $node {} $trans $recordDims \
+	} elseif {[catch {ListToArray $topNode $node {} {} $trans $recordDims \
                         $newData $readMany($compName) \
 			$useCppArray $errorData} result]} {
 	    if {[string equal aborted $result]} {
@@ -627,7 +627,8 @@ proc rsearch {list tgt} {
     }
 }
 
-proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
+proc ListToArray {topNode tgt subs numSubs trans dims \
+		      list when useCppArray errorData} {
 #ShowMess debug info  "Go! tgt $tgt subs $subs trans $trans dims $dims list $list cpp $useCppArray" ok
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
@@ -694,7 +695,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
         if {[llength $list]} {
                 if {![string last ,NOW [string toupper $subs] 3]} {
 		    # setting current value for var param
-                    set idAndSubs $tgt[string range $subs 4 end]
+                    set idAndSubs $tgt[string range $numSubs 4 end]
 		    if {[string match ENUM(*) \
 			     [GetCompProperty $topNode Type $tgt]]} {
 			set comboTypes($idAndSubs) $list
@@ -705,8 +706,8 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 		    }
 		} else {
 		    # setting value for fixed param or time point
-                    if {[EnumTypeToNumber $topNode $tgt$subs $list $thisTrans \
-			     $when $useCppArray $subs $errorData]} {
+                    if {[EnumTypeToNumber $topNode $tgt$numSubs $list \
+			     $thisTrans $when $useCppArray $subs $errorData]} {
 			return -1 ;# should be 0 if a comp
 		    }
                 }
@@ -806,7 +807,8 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 		set redoStep {}
 	    }
 	    set redoStep [JoinSteps $redoStep \
-			      [ListToArray $topNode $tgt $subs,$arrayPt $trans \
+			      [ListToArray $topNode $tgt $subs,$arrayPt \
+				   $numSubs,$arrayPt $trans \
 				   [lrange $dims 1 end] $sub($arrayPt) $when \
 				   $useCppArray $errorData]]
         }
@@ -817,20 +819,10 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
     foreach {indx sublist} $list {
         # was array set sub $list...above would allow us to check that all indices were
         # the right type if we could be bothered...OK then...
-	if {[string compare {} $thisTrans]} {
-            set poss [lsearch $thisTrans $indx]
-            if {$poss == -1} {
-                FPError [format [tr. {The entry "%1$s" appears where an index value of type %2$s is expected. This must be one of %3$s.}] $indx [lindex $thisTrans 0] [lrange $thisTrans 1 end]] \
-		    $subs $errorData
-		set redoStep {}
-            }
-        } elseif {![string is integer -strict $indx]} {
-            FPError [format [tr. {The entry "%1$s" appears where an index value of type integer is needed.}] $indx] $subs $errorData
+	if {[catch {UntransVal $thisTrans $indx index} poss]} {
+	    FPError $poss $subs $errorData
 	    set redoStep {}
-        } elseif {$indx<=0} {
-            FPError [format [tr. {Index value %1$s is zero or negative.}] $indx] $subs $errorData
-	    set redoStep {}
-        }
+	} ;# seems we do not need actual position!?
         if {[info exists sub($indx)]} {
             FPError [format [tr. {Index value %1$s appears more than once.}] $indx] $subs $errorData
 	    set redoStep {}
@@ -874,7 +866,7 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 	    }
 	} else { ;# use old system for Tcl
 	    set recordNode [lindex $nextDim 1]
-	    EnumTypeToNumber $topNode $recordNode$subs $last {} $when \
+	    EnumTypeToNumber $topNode $recordNode$numSubs $last {} $when \
 		     $useCppArray $subs $errorData ;# cannot fail
 	}
 
@@ -905,7 +897,8 @@ proc ListToArray {topNode tgt subs trans dims list when useCppArray errorData} {
 	    set redoStep {}
         } else {
 	    set redoStep [JoinSteps $redoStep \
-			      [ListToArray $topNode $tgt $subs,$arrayPt \
+			      [ListToArray $topNode $tgt $subs,$indx \
+				   $numSubs,$arrayPt \
 				   [lrange $trans 1 end] [lrange $dims 1 end] \
 				   $sub($indx) $when $useCppArray $errorData]]
 	}
@@ -930,21 +923,11 @@ proc EnumTypeToNumber {topNode tgt head trans when useCppArray subs errorData} {
 	    tcl_cleartimeseries $topNode $tgt
         }
     } else {
-	if {[string compare {} $trans]} {
-	    if {[llength $head]==1} {
-		set head [lindex $head 0]
-	    } ;# remove quotes or curlies
-	    set poss [lsearch $trans $head]
-	    if {$poss == -1} {
-		if {[string equal false [lindex $trans 0]]} {
-		    FPError [format [tr. {Data value %1$s is not a member of type boolean, pick one of %2$s.}] $head $trans] $subs $errorData
-		} else {
-		    FPError [format [tr. {Data value %1$s is not a member of type %2$s, pick one of %3$s.}] $head [lindex $trans 0] [lrange $trans 1 end]] $subs $errorData
-		}
-		return 0
-	    } 
-	    set head $poss
-	} elseif {[llength $head]>1} {
+	if {[catch {UntransVal $trans $head data} head]} {
+	    FPError $head $subs $errorData
+	    return 0
+	}
+	if {[llength $head]>1} {
 	    FPError [format [tr. {Array %1$s supplied instead of scalar}] \
 			 $head] $subs $errorData
 	} elseif {![Numeric $head]} {
