@@ -384,6 +384,9 @@ namespace eval runcontrol33857 {
                 SetStep $node [expr $tick*$sendvars($node,unitLength)] \
 		    $setPhase
                 set redoPhase($node) $setPhase
+		if {$setPhase==$phases} {
+		    incr redoPhase($node) ;# only do RK substep
+		}
                 #	    ShowMess debug info "Twiddling $redoPhase($node)" ok
             }
         }

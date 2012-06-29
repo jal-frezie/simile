@@ -684,7 +684,7 @@ units_match_context(Node, Base, Dims, Whinge) :-
 		    Whinge = [];		   % pass back default
 		 analyze_array(EndUnits, EndType, EndWraps),
 		    (EndType = 1, !,
-			Base = EndType, % plead igronance
+			member(Base, [int, EndType]), % plead igronance
 			Dims = EndWraps,
 			Whinge = [];
 		     default_tick_is(Tick),

@@ -661,7 +661,7 @@ make_intermediates(
 	    conditions since we need only do it once even though it changes */
 	(Functor = at_phase,
 	    (var(Ph), SetTime = Step; SetTime=Ph), !,
-	    substitute(time, Depends, on_step, KeepDeps);
+	    KeepDeps = [on_step | Depends]; % on_step forces time to be step
 	SetTime = Step, 
 	    (Functor = count, !,
 		purge(Depends, OldArgs, KeepDeps);

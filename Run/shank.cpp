@@ -977,6 +977,16 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   int tweak_phase, err;
 
   loadedInst->userStop.excpNo = 0;
+  switch (how_int) {
+  case EULER:
+    SetdT(0,0);
+    break;
+  case RUNGE_KUTTA:
+    SetdT(0,1);
+  } // was -1,0 to stop loss, but now we want it cos it happens next step
+  for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
+    SetdT( tweak_phase,steps[tweak_phase]);
+  }
   if (top_phase<=0) {
     resetting = top_phase;
     last_op = 0;
@@ -985,22 +995,14 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
       lts[tweak_phase]=init_time;
       took[tweak_phase]=0;
       SetdT( -tweak_phase,init_time);
-      SetdT( tweak_phase,steps[tweak_phase]);
     }
-    switch (how_int) {
-    case EULER:
-      SetdT(0,0);
-      break;
-    case RUNGE_KUTTA:
-      SetdT(0,1);
-    } // was -1,0 to stop loss, but now we want it cos it happens next step
     thisTsPosn = init_time;
     seriesEvtSign = 0;
     if (varParamArrayBase)
       nextSeriesEvt = varParamArrayBase->ResetTimeSeries(init_time, top_phase);
-    freq = steps[modelSpec->phases];
     loadedInst->event_prev_sign = loadedInst->event_cur_sign = 0;
   }
+  freq = steps[modelSpec->phases];
   
   err=loadedInst->do_evalmodel(top_phase);
   if (err)
@@ -1022,7 +1024,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   double xtime, aim_for, recover, evtError, newFreq, minFreq;
   int big_phase, err;
   BOOLEAN made_step, first_pass;
-    // sprintf(globMess, "xm %d %lf-%lf at %lf", how_int, start, *end, errlim);
+    // printf("xm %d %lf-%lf at %lf\n", how_int, start, *end, errlim);
     // showMess(globMess);
     // temporary arrangement until we move this function into the instance
   excpData* userDefStop = &(loadedInst->userStop);

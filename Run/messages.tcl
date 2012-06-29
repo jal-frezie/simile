@@ -255,6 +255,7 @@ set msgs(pl_loop) [tr. {Checking consistency of same-time-step loops}]
 set msgs(pl_order) [tr. {Ordering model execution assignments}]
 set msgs(pl_code) [tr. {Generating code for model execution}]
 set msgs(pl_xref) [tr. {Cross-referencing effects and conditions}]
+set msgs(pl_locn) [tr. {Doing submodel %1$s, level %2$s}]
 
 set msgs(prolog_ref_fail) [tr. {This operation cannot proceed because the program failed to find a %1$s called %2$s}]
 # arg 1 is a component, e.g., submodel
