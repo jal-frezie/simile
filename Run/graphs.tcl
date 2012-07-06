@@ -1417,6 +1417,14 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
     #set mode [lindex $tableSpec 1]
     
     # end JMM ODBC
+
+    foreach {keyWd tgtVar} \
+	{dbtable dbtable wrap wrapPt others fillMtd interval tpiUnit} {
+	    if {[regexp ,$keyWd:(.*) [lindex $tableSpec 2] match $tgtVar]} {
+		set tableSpec [lreplace $tableSpec 2 2]
+	    }
+	}
+
     switch -exact [lindex $tableSpec 1] {
     ,grid {
         set rowList {}
@@ -1578,24 +1586,6 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
     } default {
 # tableSpec should be:
 # fileName dataHeader ?dbtableId? ?wrapTime? ?fillMethod? ?tpiUnits? indHeaders...
-	set indexStart 2
-	if {[string match ,dbtable:* [lindex $tableSpec 2]]} {
-	    regexp ,dbtable:(.*) [lindex $tableSpec 2] match dbtable
-	    incr indexStart
-	}
-	if {[string match ,wrap:* [lindex $tableSpec 2]]} {
-	    # its a special point
-	    set wrapPt [string range [lindex $tableSpec 2] 6 end]
-	    incr indexStart
-	}
-	if {[string match ,others:* [lindex $tableSpec $indexStart]]} {
-	    set fillMtd [string range [lindex $tableSpec $indexStart] 8 end]
-	    incr indexStart
-	}
-	if {[string match ,interval:* [lindex $tableSpec $indexStart]]} {
-	    set tpiUnit [string range [lindex $tableSpec $indexStart] 10 end]
-	    incr indexStart
-	}
         # csv handled by existing code other extensions handled with ODBC
         #ShowMess debug info "Loading table with data $tableSpec; ext $ext" ok
         if { $ext == {.csv} } {
@@ -1604,7 +1594,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    set headerList [TrimFields [split $headerLine ,]]
 	    #ShowMess debug info "Headers are $headerList" ok
 	    
-	    foreach headerIndex [lrange $tableSpec $indexStart end] {
+	    foreach headerIndex [lrange $tableSpec 2 end] {
 		set indexColumn  [lsearch -exact $headerList $headerIndex]
 		if {$indexColumn==-1} {
 		    Query [concat no_info_col index [lrange $tableSpec 0 0] \
@@ -1673,7 +1663,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    #ShowMess debug info "$connectString dbtable $dbtable field $field"  ok
 	    set datalist [db "select `$field` from `$dbtable`"]
 	    set indexArgs {}
-	    foreach headerIndex [lrange $tableSpec $indexStart end] {
+	    foreach headerIndex [lrange $tableSpec 2 end] {
 		lappend indexArgs ${headerIndex}elt \
 		    [db "select `$headerIndex` from `$dbtable`"]
 	    }

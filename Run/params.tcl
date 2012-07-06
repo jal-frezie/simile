@@ -1118,6 +1118,7 @@ namespace eval fileparams {
 	puts $pStr $indent<variables>
 	upvar 1 $outerData outData
 	upvar 1 $outerWidgets outWidgets
+	set inC [RunningInC $topNode]
 	foreach compName [array names outData $smPath/*] {
 	    if {[IsRecordCount $compName]} continue
 	    set compTail [string range $compName [string length $smPath] end]
@@ -1144,7 +1145,6 @@ namespace eval fileparams {
 		set type [GetCompProperty $topNode Type $nodeId]
 		puts -nonewline $pStr \
 		    "$indent<byte_array $genericAVs type=[Entitize $type]"
-		set inC [RunningInC $topNode]
 		if {[set wrapTime [SetWrapTime $topNode $inC $nodeId]]} {
 		    puts -nonewline $pStr " wrap_time=[Entitize $wrapTime]"
 		}
@@ -1186,37 +1186,58 @@ namespace eval fileparams {
 		set msgs(param_source_$compName) \
 		    [format $msgs(metafile_bin) $metaFile]
 	    } elseif {[ReferenceWorks $compName]} {
+		set typePairs [list csv_columns ,image image ,gdal geotiff \
+				   ,grid csv_grid]
+		set ident [lindex $paramState($compName) 1]
+		set mark [lsearch $typePairs $ident]
+		set eltType [lindex $typePairs [incr mark]]
 		set relName [::fileutil::relative [file dirname $metaFile] \
 				 [lindex $paramState($compName) 0]]
-		switch -exact [lindex $paramState($compName) 1] {
+		puts -nonewline $pStr "$indent<$eltType $genericAVs filename=[Entitize $relName]"
+		switch -exact $ident {
 		    ,image {
-			puts -nonewline $pStr "$indent<image $genericAVs filename=[Entitize $relName]"
 			foreach att {rowmin rowmax colmin colmax blackval whiteval transpval use xpose} val [lrange $paramState($compName) 2 10] {
 			    puts -nonewline $pStr " $att=[Entitize $val]"
 			}
-			puts $pStr />
+			puts $pStr >
 		    } ,gdal {
-			puts -nonewline $pStr "$indent<geotiff $genericAVs filename=[Entitize $relName]"
 			foreach att {rowmin rowmax colmin colmax xpose} val [lrange $paramState($compName) 2 6] {
 			    puts -nonewline $pStr " $att=[Entitize $val]"
 			}
-			puts $pStr />
+			puts $pStr >
 		    } ,grid {
-			puts -nonewline $pStr "$indent<csv_grid $genericAVs filename=[Entitize $relName]"
 			foreach val [lrange $paramState($compName) 2 8] \
 			    att {rowmin rowmax colmin colmax xpose irow icol} {
 				puts -nonewline $pStr " $att=[Entitize $val]"
 			    }
-			puts $pStr />
+			puts $pStr >
 		    } default {
-			puts $pStr "$indent<csv_columns $genericAVs filename=[Entitize $relName] data_column=[Entitize [lindex $paramState($compName) 1]]>"
+			puts $pStr " data_column=[Entitize $ident]>"
 			set dimCount 0
 			foreach dim [lrange $paramState($compName) 2 end] {
 			    puts $pStr "$indent<value index=\"[incr dimCount]\" val=[Entitize $dim]/>"
 			}
-			puts $pStr $indent</csv_columns>
 		    }
 		}
+# insert bit copied from haveBytes case above with different output
+# -- could probably be more efficient
+		if {[set wrapTime [SetWrapTime $topNode $inC $nodeId]]} {
+		    puts $pStr "$indent<series_control field=\"wrap\" value=[Entitize $wrapTime]/>"
+		}
+		if {![string equal EVENT \
+			  [GetCompProperty $topNode Class $nodeId]]} {
+		    set fillMtd [SetFillMethod $topNode $inC $nodeId]
+		    if {![string equal use_last $fillMtd]} {
+			puts $pStr "$indent<series_control field=\"others\" value=\"$fillMtd\"/>"
+		    }
+		}
+		set uftsi [SetInterval $topNode $inC $nodeId]
+		if {[lsearch {1 unit} $uftsi]==-1} {
+		    puts $pStr "$indent<series_control field=\"interval\" value=[Entitize $uftsi]/>"
+		}
+
+		puts $pStr $indent</$eltType>
+
 		set msgs(param_source_$compName) \
 		    [format $msgs(metafile_ref) $relName $metaFile]
 	    } elseif {fmod([llength $outData($compName)],2)==1} {
@@ -1417,17 +1438,19 @@ proc StartElement {name attList args} {
 		    $attVals(index) $attVals(value)
 	    }
 	} csv_columns {
-	    puts -nonewline $parseStatus(outStr) $path=reference=
-	    set parseStatus(translateExtras) \
-		[list $attVals(filename) $attVals(data_column)]
+	    puts -nonewline $parseStatus(outStr) $path=reference=[list $attVals(filename) $attVals(data_column)]
+	    set parseStatus(translateExtras) {}
 	    LogXMLAction "$logLabel,from column $attVals(data_column) in file $attVals(filename),$logComment"
 	} csv_grid {
-	    puts $parseStatus(outStr) $path=reference=[list $attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose) $attVals(irow) $attVals(icol)]
+	    puts -nonewline $parseStatus(outStr) $path=reference=[list $attVals(filename) ,grid]
+	    set parseStatus(translateExtras) [list $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose) $attVals(irow) $attVals(icol)]
 	    LogXMLAction "$logLabel,from grid in file $attVals(filename),$logComment"
 	} image {
-	    puts $parseStatus(outStr) $path=reference=[list $attVals(filename) ,image $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(blackval) $attVals(whiteval) $attVals(transpval) $attVals(use) $attVals(xpose)]
+	    puts -nonewline $parseStatus(outStr) $path=reference=[list $attVals(filename) ,image]
+	    set parseStatus(translateExtras) [list $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(blackval) $attVals(whiteval) $attVals(transpval) $attVals(use) $attVals(xpose)]
 	} geotiff {
-	    puts $parseStatus(outStr) $path=reference=[list $attVals(filename) ,gdal $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose)]
+	    puts -nonewline $parseStatus(outStr) $path=reference=[list $attVals(filename) ,gdal]
+	    set parseStatus(translateExtras) [list $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose)]
 	} byte_array {
 	    set parseStatus(loadByteArray) $attVals(label) 
 	    set parseStatus(translateExtras) $attVals(type)
@@ -1440,6 +1463,9 @@ proc StartElement {name attList args} {
 		    [lsearch {X USE_CLOSEST INTERPOLATE} $attVals(fill_method)]
 	    }
 	    # No need to put anything in the old-style file
+	} series_control {
+	    puts -nonewline $parseStatus(outStr) \
+		" ,$attVals(field):$attVals(value)"
 	} submodels - variables {
 	} spf {
 	    set parseStatus(simV) $attVals(simile_version)
@@ -1470,11 +1496,10 @@ proc FinishElement {name args} {
 	    unset parseStatus(literal,$parseStatus(valNesting))
 	    incr parseStatus(valNesting) -1
 	    lappend parseStatus(literal,$parseStatus(valNesting)) $oldList
-	} csv_columns {
-	    puts $parseStatus(outStr) $parseStatus(translateExtras)
+	} csv_columns - csv_grid - image - geotiff {
+	    puts $parseStatus(outStr) " $parseStatus(translateExtras)"
 	    unset parseStatus(translateExtras)
-	} single_value - csv_grid - image - geotiff - value - variables - \
-	    submodels - spf {
+	} single_value - value - series_control - variables - submodels - spf {
 	} byte_array {
 	    unset parseStatus(loadByteArray)
 	    unset parseStatus(translateExtras)
