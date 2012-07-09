@@ -30,6 +30,7 @@ namespace eval ::polygon375 {
         variable useNodes
         set useNodes($winId,editMode) 0
 	set useNodes($winId,orient) h
+        set useNodes($winId,imgs) 0
 	LoadTools
         
         set useNodes($winId,min) 0
@@ -98,6 +99,7 @@ namespace eval ::polygon375 {
 # defaults for things perhaps added in newer version than created saved state
         set useNodes($winId,editMode) 0
         set useNodes($winId,orient) h
+        set useNodes($winId,imgs) 0
         set useNodes($winId,bw) 1
         set useNodes($winId,cbord) black
  	LoadTools
