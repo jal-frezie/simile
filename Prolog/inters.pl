@@ -1,8 +1,10 @@
 sicstus_module(inters, [final_assignment/12, make_intermediates/12,
-			expand_library/3, macro_expansion/2, function/4,
+			expand_library/3,
+			macro_expansion/2, fragment_expansion/5, function/4,
 			promote_unit/2, promote_arg/3, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
-			inherently_bound/1, make_inds_for/3, pointer_from/2]).
+			inherently_bound/1, make_inds_for/3, pointer_from/2,
+			with_capt/3]).
 
 sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
@@ -156,6 +158,7 @@ enabling the channel ID to be got from it */
 	    Recurse = 1.
 
 :- dynamic(macro_expansion/2).
+:- dynamic(fragment_expansion/5).
 
 expand_library(DestRef, Var, NewVar) :-
 	shed_dummy_args(Var, Fn),
@@ -202,23 +205,86 @@ read_library_funx(Done) :-
 			       choose(Bool, ThenCl, if IfCl)))),
 %	assert(macro_expansion('Built-in', (choose(Bool, ThenCl, ElseCl) -->
 %					       (Bool?ThenCl'><'ElseCl)))),
-	read_func_tree('../Functions/', '../Functions', yes, BuiltIns),
+	read_func_tree('../Functions/', '../Functions', 'Built-in', BuiltIns),
 
 	backup'><'use_pref_dir(UserStuff),
 	append_atoms(UserStuff, '/Functions/', UserFns),
-	read_func_tree(UserFns, UserFns, no, Local),
+	read_func_tree(UserFns, UserFns, 'Local', Local),
 	append(BuiltIns, Local, Done).
 
 read_func_tree(TopDir, AllDirs, BuiltIn, Done) :-
 	name(AllDirs, AllDirsStr),
-	    suffix(".pl", AllDirsStr),
-	    read_func_file(AllDirs, TopDir, BuiltIn, Done);
+	    (suffix(".pl", AllDirsStr),
+		read_func_file(AllDirs, TopDir, BuiltIn, Done);
+	      suffix(".sml", AllDirsStr),
+		load_fragment_macro(AllDirs, TopDir, BuiltIn, Done)), !;
 	append_atoms([AllDirs, /, *], DeepTpt), % avoid start-comment sequence
 	    output'><'list_matching_files(DeepTpt, DeepDirs),
 	    all(inters, read_func_tree, [unify(TopDir), build(DeepDirs),
 					 unify(BuiltIn), append(Done, [])]).
 
-read_func_file(File, Context, IsBuiltIn, Done) :-
+load_fragment_macro(AllDirs, Context, Category, [FnEntry]) :-
+	name(AllDirs, AllDirsStr),
+	append(Rootname, ".sml", AllDirsStr),
+ 	% parse the file name for metatdata
+	[Sl, Cm, Pt] = "/,.",
+	split_into_list(Rootname, Sl, Levels),
+	suffix([Tail], Levels),
+
+	% create relative path for listings
+	name(Context, ContextStr),
+	append(ContextStr, RelFile, Rootname),
+	append(Nesting, [Sl | Tail], RelFile),
+
+	split_into_list(Tail, Cm, [FunctorStr, Returns | Args]),
+	name(Functor, FunctorStr),
+	split_into_list(Returns, Pt, [OutNodeStr | OutHooks]),
+	name(OutNode, OutNodeStr),
+	( % first case: output field and therefore arg fields have suffixes
+	  % giving units etc e.g., recipro,recip.r,value.r.sml
+	all(inters, match_to_pl_vars,
+	     [build(OutHooks), unify(V),
+	      build([OutGT | _]), build([_OutURef | _OutDimRefs])]), !,
+	    all(inters, split_into_list, [build(Args), unify(Pt),
+					  build(Splists)]),
+	    all(inters, convert_formal_params,
+		[build(Splists), unify(V), build(Params), build(ArgTypes)]),
+				% export guide types
+	    dialogue'><'make_arg_list(ArgTypes, String),
+	    sicstus_format_to_chars("{~a {~s}} fragment ~a (~s) returns ~a",
+				    [Category, Nesting, Functor, String, OutGT],
+				    FnChars);
+	  % 2nd case: only names included e.g., recipro,recip,value.sml
+	    all(user, name, [build(Params), build(Args)]),
+	    sicstus_format_to_chars("{~a {~s}} fragment ~a",
+				    [Category, Nesting, Functor],
+				    FnChars)),
+	    
+	name(FnEntry, FnChars),
+%	m_update'><'make_blind_toplevel(AllDirs, TopLevel), 
+	assert(fragment_expansion(Category, AllDirs, Functor, OutNode, Params)).
+
+split_into_list(Joined, Link, Separated) :-
+	append(One, [Link | Many], Joined), !,
+	split_into_list(Many, Link, Multi),
+	Separated = [One | Multi];
+	Separated = [Joined].
+
+match_to_pl_vars(GridRef, Map, GuideType, Tile) :-
+	nth0(Y, "abinr", Row),
+		nth0(Y, [all, boolean, int, ordinal, real], GuideType),
+	append([Row], Col, GridRef),
+	(Col = [], !; % no digit means type unconnected with others
+	  name(X, Col),  % deprecated for numbers but cross platform
+	    nth0(Y, Map, RowVars),
+	    nth0(X, RowVars, Tile)).
+
+convert_formal_params([VPNameStr | GRs], V, VPName, VPType) :-
+	name(VPName, VPNameStr),
+	all(inters, match_to_pl_vars,
+	[build(GRs), unify(V), build([VPType | _]), build([_UTile | _DTiles])]).
+					     
+read_func_file(File, Context, BuiltIn, Done) :-
 	open_native(File, read, Stream),
 	swallow_to_chars(Stream, U8Contents),
 	tcltk'><'all_utf8_to_ttfn(U8Contents, Contents),
@@ -235,7 +301,7 @@ read_func_file(File, Context, IsBuiltIn, Done) :-
 	append(ContextStr, NameStr, Base),
 	name(Name, NameStr),
 	open_native(TempFile, read, Stream3),
-	read_funcs(Name, Stream3, EuContents, IsBuiltIn, Done),
+	read_funcs(Name, Stream3, EuContents, BuiltIn, Done),
 	output'><'my_delete_file(TempFile).
 
 swallow_to_chars(Stream, Contents) :-
@@ -246,46 +312,41 @@ swallow_to_chars(Stream, Contents) :-
 	  swallow_to_chars(Stream, Tail),
 	    Contents = [C | Tail]).
 
-read_funcs(File, Stream, Text, IsBuiltIn, Done) :-
+read_funcs(File, Stream, Text, Category, Done) :-
 	catch(read_term(Stream, Line, [variable_names(VPrs)]), WrongUDF,
 		     make_nice_error_message(Text, WrongUDF, Bug)),
 	(nonvar(Bug), !,
 	    query(user_fn_misparse(File, Bug), warning, user_defns, [ok], _),
-	    read_funcs(File, Stream, Text, IsBuiltIn, Done);
+	    read_funcs(File, Stream, Text, Category, Done);
 	 Line == end_of_file, !,
 	    close(Stream),
 	    Done = [];
 	all(user, call, [build(VPrs)]),
-	(IsBuiltIn = yes,
-	    Category = 'Built-in';
-	IsBuiltIn = no,
-	    Category = WhereFound),
 	(Line = (Macro --> Defn),
-	    WhereFound = 'Macros',
 	    add_macro(Category, Macro=Defn, Op),
-	    append_atoms(['{', Category, ' {', File, '}} ', Op], FnEntry);
+	    append_atoms(['{', Category, ' {', File, '}} ', macro, ' ', Op],
+			 FnEntry);
 	(Line = sample(Functor, ReturnType, ArgTypes),
 	        assert(sample(Functor));
 	 Line = function(Functor, ReturnType, ArgTypes)),
-	    WhereFound = 'Procedures',
 	    assert(function(Category, Functor, ReturnType, ArgTypes)),
 	    assert(use_tcl_proc_for(Functor)), !,
 	    dialogue'><'spell_out([ReturnType | ArgTypes], 1),
 	    dialogue'><'make_arg_list(ArgTypes, String),
-	    sicstus_format_to_chars("{~a {~a}} ~a (~s) returns ~w",
+	    sicstus_format_to_chars("{~a {~a}} procedure ~a (~s) returns ~w",
 		[Category, File, Functor, String, ReturnType], FnChars),
 	    name(FnEntry, FnChars)),
-	    read_funcs(File, Stream, Text, IsBuiltIn, More),
+	    read_funcs(File, Stream, Text, Category, More),
 	    (File = 'Hidden', Done = More;
 		\+ File = 'Hidden', Done = [FnEntry | More]);
 	member(Line, [baseline(_,_), unit_definition(_,_), longhand(_,_)]), !,
 	    % use asserta so user-supplied definitions override system ones
 	    units'><'asserta(Line),
-	    read_funcs(File, Stream, Text, IsBuiltIn, Done);
+	    read_funcs(File, Stream, Text, Category, Done);
 	  Line =.. [LFunctor | LArgs],
 	    query(bad_user_fn_format(File, Line, LFunctor, LArgs), warning,
 		  user_defns, [ok], _),
-	    read_funcs(File, Stream, Text, IsBuiltIn, Done)).
+	    read_funcs(File, Stream, Text, Category, Done)).
 
 add_macro(Category, Macro=Defn, Op) :-
 	% Only allow free vars in function template -- fix them all then
@@ -524,15 +585,12 @@ make_intermediates(
 	    generate_name(c, PayloadNameBase, PayloadName, Used),
 	    IncrAct = cond_assign(arr(TotalPtr, PayloadName, FillInds),
 				  IncrementRef, PayloadRef, IncrOp, FillRef),
-	    make_all_intermediates([Epsilon, Payload], SubId,
+	    make_subexps([Epsilon, Payload], SubId,
 				   [TotalName | Target],
 				   TotalPath, SubSwap, PrevInters, NowBuilding,
 				   Step, Used, [TXUnits, ArgUnits], OldInters,
-				   PLPartResults),
-	    (combine_subexp_results(TotalPath, PLPartResults, [],
-				   SubContext, OldSetups, OldArgs,
-				   [IncrementRef, PayloadRef]), !;
-	    throw(cannot_combine_argument_dimensions(Source)))),
+				   _, [], SubContext, OldSetups, OldArgs,
+				   [IncrementRef, PayloadRef])),
 	get_model_and_loops(SubContext, TotalPath, _, SubLoops, _),
 
 	/* choose a location for Total where it will be visible in the
@@ -1118,19 +1176,36 @@ Now one that uses a special conditional level */
 		name(Op, OpStr),
 		lower(OpStr, LopStr),
 		name(Lop, LopStr),
-		ValRef =.. [Lop | ResultList]),
-	    make_all_intermediates(SourceList, SubId, Target, DestPath,
-				   BackSwap, PrevInters, BuildingArrays, Step,
-				   Used, UnitList, NewInters, PartResultList),
-	/* Now...if there are contexts in which all these things can be
-	evaluated, return results based on them. New for 5.5: avoid polluting
-	the dest_path with pointer instantiations that break inter building */
-	    copy_term(DestPath, GuidePath),
-	    (combine_subexp_results(GuidePath, PartResultList, FunctionContext,
-				SourceContext, Setups, SubArgs, ResultList), !;
-	    throw(cannot_combine_argument_dimensions(Source))),
-		(ValRef =.. [Lop, _, _],
-		 member(Lop, [*, /]),
+		ValRef =.. [Lop | ResultList],
+		(fragment_expansion(_, FragFile, Lop, FragOut, ArgTpts), !,
+				% (fragment-defined function:),
+		    m_update'><'make_blind_level(SubId, FragFile, RefNode);
+		  true)),
+	    (\+ RefNode = SubId; RefNode = SubId), % = in other cases
+	    make_subexps(SourceList, RefNode, Target, DestPath,
+	                 BackSwap, PrevInters, BuildingArrays, Step,
+			 Used, UnitList, NewInters,
+			 ArgTpts, FunctionContext, ExecContext,
+			 Setups, SubArgs, ResultList),
+	    (nonvar(FragOut), !, % fragment-defined function: parsing, since
+		% these are replaced in instantiation during code build
+		SourceRef = FragOut, % placeholder
+		with_capt(OutNode, RefNode, FragOut),
+		m_update'><'get_av_pair(OutNode, 0, units, OutArrSpec),
+		m_update'><'analyze_array(OutArrSpec, Units, OutDims),
+		make_inds_for(OutDims, OutLoops, _),
+		get_model_and_loops(ExecContext, DestPath, _,
+				    ExecLoops, ExecBase),
+		append(ExecLoops, BuildingArrays, FragLoops),
+		get_dims_from_loops(FragLoops, ExecDims, _),
+		m_update'><'add_parameter(RefNode, 0, multiplication_spec,
+					  [count=ExecDims]),
+		append([ExecLoops, OutLoops, ExecBase], SourceContext);
+	      SourceContext = ExecContext),
+		       
+	    (nonvar(FragOut), !; % units and sourceref done
+	      ValRef =.. [Lop, _, _],
+		member(Lop, [*, /]),
 		    \+ (member(MathWouldBeSilly, UnitList),
 			   inherently_bound(MathWouldBeSilly)),
 		    select(One, UnitList, [Other]), % == permutation
@@ -1194,6 +1269,10 @@ Now one that uses a special conditional level */
 		    [unify(this_step), build(SubArgs), build(Args)]);
 	    Args = SubArgs);
 	throw(undecipherable_operand(Source, SubId)).
+
+with_capt(Found, Sm, Capt) :-
+	find_all_comps(Sm, Found),
+	caption_for(Found, Capt).
 
 decode_number(Source, SubId, Step, SourceRef, Units) :-
 	get_actual_size(SubId, Source, quoted, [SrcNum], [SrcType], [SrcUnits]),
@@ -1347,6 +1426,14 @@ promote_arg(Lo, Hi, Phys) :-
 	    get_conversion(1, Med, Phys, N),
 	    1 is N, !;
 	Hi = Med).
+
+/* this one interprets the unit specs in fragment names (more later?) */
+describes_unit(Spec, Actual) :-
+	Spec = all;
+	promote_unit(Actual, Fits),
+	(Spec = Fits;
+	  Spec = ordinal,
+	    member(Fits, [boolean, a(_ET0), n(_ET1), int])).
 
 /* Operators and functions. These should be applied in a way that allows
 an integer to be treated as a real -- if an arg is real, so is result
@@ -1695,7 +1782,72 @@ longest_path([Path | Rest], Longest) :-
 	(suffix(Path, Long), !, Longest = Long;
 	    suffix(Long, Path), Longest = Path).
 
-/* think about using all for this -- only cumulative inters is hard */
+% Old make_all_intermediates and combine_subexp_results functions
+% together -- note that for functions in general, DestPath was
+% copy_termed before passing to combine_whatever because of pointer
+% instantiation problems. Might need to reinstate...
+
+make_subexps([],_,_,_,_, I, _,_,_, [], I, [], FC, FC, [], [], []).
+
+make_subexps([Source | Components], SubId, Target, DestPath,
+	     Swaps, PrevInters, BuildingArrays, Step, Used,
+	     [Unit | UnitList], NewInters,
+	     [Name | MoreATs], FunctionContext, NewContext,
+	     NewSetup, NewArgs, [NewRef | Comps]) :-
+	(nonvar(Name), % Supply actual node name in fragment instance
+	    (setof(InComp, with_capt(InComp, SubId, Name), [VisDestId]) ->
+		m_update'><'add_implicit_function(VisDestId, DestId);
+	      throw(input_name_deref_fail));
+	  var(Name),
+	    DestId = SubId),
+% terms must be done in right order to match right submodels in instantiation
+	make_intermediates(Source, DestId, Target, 
+			   DestPath, Swaps, PrevInters, BuildingArrays, 
+			   Step, Used, Unit, LastInters,
+			   part_result(SourceContext, Setup, Args, NewRef)),
+	make_subexps(Components, SubId, Target, DestPath, Swaps,
+		     LastInters, BuildingArrays, Step, Used,
+		     UnitList, NewInters,
+		     MoreATs, FunctionContext, 
+		     OldContext, OldSetup, OldArgs, Comps),
+/* Old version: got dims from metadata
+	(nonvar(ADs),
+	    reverse(ADs, InnerFirst),
+	    (\+ describes_unit(AG, Unit),
+		throw(mismatched_units(macro, Source, Unit, AG));
+	      promote_unit(Unit, AU),
+		value(AU));   % this needs retried if next input higher
+	  var(ADs),
+	    ADs = []),
+	...now, if a named input, read dims from it */
+	(nonvar(Name),
+	    m_update'><'get_av_pair(VisDestId, 0, units, OldU),
+	    m_update'><'analyze_array(OldU, _OldUnits, NeededDims),
+	    length(NeededDims, N),
+	    length(NeededLoops, N),
+	    get_model_and_loops(SourceContext, DestPath, _, Loops, Model),
+	    (append(SpareLoops, NeededLoops, Loops), !;
+		throw(fragment_arg_needs_more_dims)),
+	    append(SpareLoops, Model, UseContext),
+	    % now set up input node
+	    get_dims_from_loops(NeededLoops, UsingDims, _),
+	    m_update'><'build_array(Unit, UsingDims, NewU),
+	    /* pick_elt_from(Source, SpareLoops, SourceElt),
+				% wrap in element(..)
+	    m_update'><'add_parameter(DestId, 0, value, SourceElt),
+	    would be wrong because params have been substituted --
+	    add a keyword instead */
+	    FormParam = formal_parameter(SpareLoops, BuildingArrays),
+	    m_update'><'add_parameter(DestId, 0, value, FormParam),
+	    m_update'><'add_parameter(DestId, 0, units, NewU),
+	    event'><'spread_colour(VisDestId, dims);
+	  UseContext = SourceContext),
+	(combine_contexts(UseContext, OldContext, DestPath, NewContext), !;
+	    throw(cannot_combine_argument_dimensions([Source | Components]))),
+	append(OldSetup, Setup, NewSetup),
+	append(OldArgs, Args, NewArgs).
+
+	/* think about using all for this -- only cumulative inters is hard
 make_all_intermediates([],_,_,_,_, I, _,_,_, [], I, []).
 
 make_all_intermediates([Source | Components], SubId, Target, DestPath,
@@ -1710,27 +1862,29 @@ make_all_intermediates([Source | Components], SubId, Target, DestPath,
 
 
 
-/* combine_subexp_results: Takes a list of sets of possible contexts (and
+combine_subexp_results: Takes a list of sets of possible contexts (and
 other result information) and tries to make a single context for all of them.
 
 Functions that must be evaluated at setup must get their own temporary
 variables, so they are not allowed here. It may be that the whole
 expression gets evaluated only at init time in which case this is unnecessary,
-but there is no way to tell yet. */
+but there is no way to tell yet.
 
-combine_subexp_results(_, [], FunctionContext, FunctionContext, [], [], []).
+combine_subexp_results(_, [], [], FunctionContext, FunctionContext, [], [], []).
 
 combine_subexp_results(DestPath,
 		       [part_result(SourceContext, Setup, Args, NewRef)
-		       | ResultList], FunctionContext,
+		       | ResultList], [data(_,_, AU, ADs) | MoreATs],
+		       FunctionContext,
 		       NewContext, NewSetup, NewArgs,
 		       [NewRef | Comps]) :-
-	combine_subexp_results(DestPath, ResultList, FunctionContext, 
+	combine_subexp_results(DestPath, ResultList, MoreATs, FunctionContext, 
 			     OldContext, OldSetup, OldArgs, Comps),
-	combine_contexts(SourceContext, OldContext, DestPath, NewContext),
+	(\+ ADs = [], !; ADs = []), % set to [] if var
+	combine_contexts(SourceContext, OldContext, DestPath, ADs, NewContext),
 	append(OldSetup, Setup, NewSetup),
 	append(OldArgs, Args, NewArgs).
-        /* cannot merge because paths in made_ins must be kept separate */
+        cannot merge because paths in made_ins must be kept separate */
 
 change_constituent(switch(All, Bit, NewBit), Old, New, 0) :-
 	Old = Bit, !,

@@ -1991,7 +1991,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	    }
 	    set box $lname
 	}
-	set component [lindex $funk 1]
+	set component [lindex $funk 2]
 	set wParen $component\(\)
 	if {[catch {$box index $wParen}]} {
 	    $box add command -label $wParen \

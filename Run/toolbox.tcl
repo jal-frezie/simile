@@ -221,21 +221,25 @@ proc CheckFnsFresh {L progDir id userFnList} {
     }
     foreach func $userFnList {
         set functor [lindex [split $func /] 0] ;# remove arity
-        set posn [lsearch $equation(fnDefs) "{Macros *} $functor"]
-        if {$posn == -1} {
-            set posn [lsearch $equation(fnDefs) \
-                    "{Procedures *} $functor * returns *"]
+        set fnLine [lsearch -inline $equation(fnDefs) "{Local *} * $functor"]
+        if {![llength $fnLine]} {
+            set fnLine [lsearch -inline $equation(fnDefs) \
+                    "{Local *} * $functor * returns *"]
         }
-        if {$posn == -1} {
-            return [list 4 $func <unknown>] ;# missing function declaration
-            # should never happen because we read them when starting up
-        } else {
-            set fnSpec [lindex [lindex $equation(fnDefs) $posn] 0]
+
+	if {[llength $fnLine]} {
+            set fnSpec [lindex $fnLine 0]
             set fnBase $custom(prefDir)/Functions/[lindex $fnSpec 1]
-            if {[file mtime ${fnBase}.pl]>$date} {
+	    if {[string equal fragment [lindex $fnLine 1]]} {
+		set defnFile [lindex [glob ${fnBase}/${functor},*.sml] 0]
+		# use glob because metadata part of name not known
+	    } else {
+		set defnFile ${fnBase}.pl
+	    }
+            if {[file mtime $defnFile]>$date} {
                 set stat [max $stat 2] ;# Declaration out of date
             }
-            if {[string equal Procedures [lindex $fnSpec 0]]} {
+            if {[string equal procedure [lindex $fnLine 2]]} {
                 set file ${fnBase}$procXtn
                 if {![file exists $file]} {
                     return [list 3 $func $file] ;# Missing or misplaced definition
@@ -249,6 +253,9 @@ proc CheckFnsFresh {L progDir id userFnList} {
                     }
                 }
             }
+	} else {
+            return [list 4 $func <unknown>] ;# missing function declaration
+            # should never happen because we read them when starting up
         }
     }
     return [concat $stat $files]

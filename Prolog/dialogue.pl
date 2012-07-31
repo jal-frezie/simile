@@ -25,7 +25,7 @@ atomize_function(FnAtom) :-
 	inters'><'builtin(Category, Functor, ResultSort, ArgSorts),
 	spell_out([ResultSort | ArgSorts], 1),
 	make_arg_list(ArgSorts, String),
-	sicstus_format_to_chars("{Built-in {~a}} ~a (~s) returns ~w",
+	sicstus_format_to_chars("{Built-in {~a}} internal ~a (~s) returns ~w",
 			[Category, Functor, String, ResultSort], FnChars),
 	name(FnAtom, FnChars).
 
@@ -524,7 +524,8 @@ table_ref(got(Datta, Tabs), Ref, DumFn, Recurse) :-
 	length(Args, Arity),
 	    (function(Cat, Functor, _R, TptArgs);
 		macro_expansion(Cat, (Fn --> _Defn)),
-		Fn =.. [Functor | TptArgs]),
+		Fn =.. [Functor | TptArgs];
+		fragment_expansion(Cat, _File, Functor, _RetVal, TptArgs)),
 	    \+ Cat = 'Built-in',
 	    length(TptArgs, Arity),
 	    (Args = [''], UseArity = 0;
@@ -693,6 +694,9 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 		this by setting it to 'dummy'. */
 	
 	DummyDest = [sm(_,_,_, fm_loop(IndxSzs, IndxSzs, _))],
+	% remove old function fragment submodels --
+	% these will be re-created
+	m_update'><'superfast_delete(Fn),
 	on_exception(ParseExcp,
 		     (make_intermediates(FullExpr, Fn, ['/dest/'],
 		                        DummyDest, _, [],

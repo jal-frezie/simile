@@ -36,11 +36,12 @@ instantiate_all(Parent, Model) :-
 instantiate(Parent, model(ModelInstance, Submodels ), Path, FullSet) :-
 	(setof( Primitive, contents(Parent, Primitive), TopNodes ), !; 
 		TopNodes = []),
-	(setof( Submodel, (Parent has_part Submodel,
-			      Submodel has_class submodel,
-			      \+ Submodel has_class_refinement separate of 1,
-			      appears(Submodel)), LowerNodes ), !; 
-		LowerNodes = []),
+	(setof(Submodel, Child^(Parent has_part Child,
+				(Submodel = Child;
+				    Child has_class function, % submodel is
+				    Child has_part Submodel), % function defn
+				Submodel has_class submodel), LowerNodes), !; 
+	    LowerNodes = []),
 	instantiate_trees(LowerNodes, Submodels, XConts, Path, TreeRefs),
 	instantiate_nodes(TopNodes, NConts, Path, TreeRefs, FullSet),
 	append(XConts, NConts, ModelInstance),
@@ -247,7 +248,14 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	\+ is_ghost(Result),
 	find_type(Result, RType),
 	Node has_class_refinement value of GroundExpr,
+	get_units(Node, Base, Units),
 
+	(GroundExpr = formal_parameter(_SL, _BA), !,
+	    % everything for this has been done when instantiating the function
+	    % containing he fragment call and left for us here in a reference
+	    is_instance(function, Node, _, elt(Path, _, Base-Units), Base-Units,
+			Instance),
+	    Instances = [Instance];
 	(setof(InputPair,
 	       generate_input_pair(Node, continuous, InputPair),
 	       InputPairs ), !;
@@ -258,8 +266,9 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	    EvtPairs = []),
 	(RType = state -> append(InputPairs, EvtPairs, AllowedInExp);
 	    AllowedInExp = InputPairs),
+	list_fragments_for_use(Node, FragSMs),
 	replace_subexps(GroundExpr, instance, process_expr,
-			sub(AllowedInExp, Refs), top_down,
+			sub(AllowedInExp, FragSMs, Refs), top_down,
 			Switched, SubbedExpr),
 
 	(member(RType, [creation, compartment]), !,
@@ -331,12 +340,11 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	    raise_exception(bad_parameter(Capt, Sub));
 	suffix(EndRefs, Refs),
 	    length(Refs, _Fix)),
-	get_units(Node, Base, Units),
 	(FType = limit, !;
 	  MagBase = Base,
 	    Instances = [Instance]),
 	is_instance(FType, Node, FinalExpr, elt(Path, _, MagBase-Units),
-		    MagBase-Units, Instance).
+		    MagBase-Units, Instance)).
 	     
 /* Note if the function lacks a value it may not be the user's fault; it might be
 an unnecessary virtual function generated in the SD view. 
@@ -545,7 +553,7 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % wait till we replace instantiation with something based on converting
 % captions to unique c++ variable names.
 
-process_expr(sub(InputPairs, Refs), OldVar, NewExpr, Recurse) :-
+process_expr(sub(InputPairs, FragSMs, Refs), OldVar, NewExpr, Recurse) :-
 	member(OldVar-NewExpr-RefNode,
 	       [dies_of(Var)-dies_of(NewVar)-VisNode,
 		latency(Var)-NewVar-VisNode,
@@ -561,14 +569,64 @@ process_expr(sub(InputPairs, Refs), OldVar, NewExpr, Recurse) :-
 	  member(OldVar-NewExpr, [channel_is(Ch)-channel_is(latency(Ch)),
 		traffic(Ch)-ceil(Ch-latency(Ch))]),
 	  atom(Ch)),
-	    Recurse = 1.
+	    Recurse = 1;
+	% model fragment defined function
+	OldVar =.. [Fnct | Args],
+	    % return a reference to the output in the submodel
+	    fragment_expansion(_,_, Fnct, RetCapt, ArgData),
+	    member(frags(FragSm, UsedYet), FragSMs), var(UsedYet), !,
+	    UsedYet = yes,
+	    with_capt(OutNode, FragSm, RetCapt),
+	    is_instance(_, OutNode, _, ToMatch, _, Ref),
+	    member(Ref, Refs),
+
+	    % now recurse to make references for the arguments
+	    all(instance, process_references,
+		[build(Args), build(ArgData), unify(FragSm),
+		 unify(sub(InputPairs, BuildArrs, Refs))]),
+
+	    OutNode has_class_refinement units of Multis,
+	    % submodel dimensions should be got later from rel path
+	    pick_elt_from(input(in_hierarchy, ToMatch, none, Multis), BuildArrs,
+			  NewExpr, place_in),
+	    Recurse = 0. % that's all the recursion we need
 
 build_table_ref(Table, table, Table).
 
 build_table_ref(Table, TableFn, RefTable) :-
 	TableFn =.. [table, Ind1 | IndN], ShortTableFn =.. [table | IndN],
 	build_table_ref(element(Table,Ind1), ShortTableFn, RefTable).
-		
+
+process_references(Arg, ArgCapt, FragSm,
+		   sub(InPairs, BuildArrs, Refs)) :-
+	with_capt(ArgNode, FragSm, ArgCapt),
+	list_fragments_for_use(ArgNode, SubFrags),
+	replace_subexps(Arg, instance, process_expr,
+			sub(InPairs, SubFrags, Refs), top_down, _Sw, DoneArg),
+	get_av_pair(ArgNode, 0, value, formal_parameter(SpareLoops, BuildArrs)),
+	regenerate_makearrays(DoneArg, BuildArrs, DoneArgArr),
+	append(BuildArrs, SpareLoops, AllLoops),
+	pick_elt_from(DoneArgArr, AllLoops, DoneArgArrElt, index),
+	is_instance(function, ArgNode, DoneArgArrElt, _, _, ToUse),
+	member(ToUse, Refs).
+		  
+list_fragments_for_use(FnNode, FragSMs) :-
+	(setof(frags(Sm, _), FnNode has_part Sm, FragSMs), !; FragSMs = []).
+
+% rough and ready
+pick_elt_from(Source, SpareLoops, SourceElt, LoopType) :-
+	SpareLoops = [], SourceElt = Source;
+	SpareLoops = [_First | Rest],
+	    pick_elt_from(Source, Rest, Arr, LoopType),
+	    length(SpareLoops, L),
+	    Index =.. [LoopType, L],
+	    SourceElt = element(Arr, Index).
+
+regenerate_makearrays(Expr, [], Expr).
+regenerate_makearrays(Expr, [set(_I, loop(N, _U)) | OuterLoops],
+		      makearray(OuterExpr, N)) :-
+	regenerate_makearrays(Expr, OuterLoops, OuterExpr).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* because all taps have functions in the SD view, a valid one must also have
 a value 

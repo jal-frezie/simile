@@ -83,10 +83,10 @@ proc create_equation {parent purpose comp indices enum_types} {
             }
             set box $lname
         }
-        set component $box.[lindex $funk 1]
+        set component $box.[lindex $funk 2]
         if {![$lbf exists $component]} {
             $lbf insert $box end -id $component \
-                    -image $iconImages(function) -text [lrange $funk 1 end]
+                    -image $iconImages(function) -text [lrange $funk 2 end]
         }
     }
     $lbf insert {} end -id .et_top_level \

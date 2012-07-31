@@ -39,6 +39,7 @@ set msgs(influence_abbrev) [tr. {i}]
 set msgs(relation_abbrev) [tr. {role}]
 set msgs(border_abbrev) [tr. {bdr}]
 set msgs(desktop_abbrev) [tr. {Desktop}]
+set msgs(fragment_abbrev) [tr. {frag}]
 
 # simile basics -- actions
 set msgs(reroute) [tr. {Reroute}]

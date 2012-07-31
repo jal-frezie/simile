@@ -32,7 +32,7 @@ sicstus_module(m_update,
 		make_ghost/3, get_possible_start/2]).
 
 sicstus_use_module([library(lists),
-		sp_only, units, utility, ame_gen, m_class, text]).
+		sp_only, units, utility, state, ame_gen, m_class, text]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                                                                         %%%
@@ -641,7 +641,7 @@ in, currently a function if the mode is system dynamics and the new node is a
 variable or a flow. This also copies parent's role references for new submodels.*/
 
 add_implicit_function(Exp_node, Node_name) :-
-	state'><'get_style(sd),
+	get_style(sd),
 	Exp_node is_of_sort has_function, !,
 	    (Exp_node is_of_sort line, !,
 		make_node(Exp_node, function, Node_name),
@@ -684,7 +684,7 @@ units_match_context(Node, Base, Dims, Whinge) :-
 		    Whinge = [];		   % pass back default
 		 analyze_array(EndUnits, EndType, EndWraps),
 		    (EndType = 1, !,
-			member(Base, [int, EndType]), % plead igronance
+			member(Base, [EndType, int]), % plead igronance
 			Dims = EndWraps,
 			Whinge = [];
 		     default_tick_is(Tick),
@@ -877,7 +877,7 @@ parameters when initializing compartments. However compartments cannot influence
 other compartments. */
 
 can_connect(Arc, Node1, Node2) :-
-	(state'><'get_style(sd), !,
+	(get_style(sd), !,
 	    ConnectTable =
 	[[flow,
 	  [[[compartment, cloud], [compartment, cloud]]]],
@@ -1426,7 +1426,7 @@ start point, allowing it to be used for end-to-end deletes. */
 
 fast_delete(Dead) :-
 	delete_implicit_node(Dead),
-	state'><'shows_model(Win,Dead),
+	shows_model(Win,Dead),
 	    draw'><'delete_window(Win),
 	    fail;
 	oblitterfry(Dead);
@@ -1443,10 +1443,10 @@ superfast_delete(Dead) :-
 	    Link has_part AlsoDead),
 	  superfast_delete(AlsoDead),
 	  oblitterfry(AlsoDead),
-	  state'><'shows_model(Win, AlsoDead),
+	  shows_model(Win, AlsoDead),
 	  draw'><'delete_window(Win),
 	  fail;
-	state'><'forget_highlit_obj(_, Dead).
+	forget_highlit_obj(_, Dead).
 
 do_delete(Kill_obj) :-
 	delete_implicit_node(Kill_obj),
@@ -1639,7 +1639,7 @@ oldd_new_line_between(Line_type, Start, Finish, Top_link) :-
 
 unique_name_for_new(Parent, Type, Name) :-
 	(get_abbrev(Type, Abbrev), !; Type = Abbrev),
-	utility'><'unique_name(Abbrev, Name, _),
+	unique_name(Abbrev, Name, _),
 	\+ (Type is_class_of_sort line,
 	       Part has_attribute name of Name,
 	       Part draws_inside Parent;
@@ -1789,6 +1789,21 @@ get_action_point(Top, End, Point) :-
         next_section_of(Top, Next),
             get_action_point(Next, End, Point).
 
+% load a model fragment from a file without a graphical window
+make_blind_level(Root, File, Parent) :-
+	make_node(Root, fragment, Parent), % generates fragment-type name
+	change_class(Parent, _, submodel),
+	use_temp_dir(LocalDir),
+	Parent has_class_refinement name of Name,
+	append_atoms([LocalDir, '/', Name], TargetDir),
+        forms'><'start_progress_dialogue('.'),
+        forms'><'reassure_user(decode_mime, []),
+	output'><'load_file(Parent, TargetDir, File, CheckedStr),
+	append_atoms(TargetDir, '/model.pl', PrologData),
+	substitute(0, CheckedStr, 95, SafeCheckedStr),
+	name(Checked, SafeCheckedStr),
+	library'><'ame_merge(Parent, PrologData, _FileV, Checked, _Translated),
+	forms'><'finish_progress_dialogue.
 /* Procedure to draw first model window */
 
 make_desktop(Desktop, Canvas_name) :-
@@ -1800,7 +1815,7 @@ make_desktop_node(Desktop, Canvas_name) :-
 	change_class(Desktop, _, submodel),
 	Desktop has_class_refinement name of ModelName,
 	state'><'set_initial_box_sizes(Desktop),
-        state'><'get_initial_window_size(X, Y),
+        get_initial_window_size(X, Y),
         image'><'set_shape(Desktop, internal_extent, [0, 0, X, Y]),
         image'><'set_shape(Desktop, bounding_box, [0, 0, X, Y]),
 	output'><'safe_tcl_eval(['CanvasDefBG'], BGColStr),
