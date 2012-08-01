@@ -938,9 +938,11 @@ void fill_raw_values(InstanceOfModel* smHandle, int tree[],
     *insertionPt += sizeof(sizeAndPtr);
     *dim_place = dimty;
     // now overwrite dim to look like normal array, recurse, and put back
-    *use_dims=count;
-    fill_raw_values(smHandle, tree, use_dims, dims, dim_place, &newBlk);
-    *use_dims=RECORDS;
+    if (count) { // 0 would not be interpreted as an array dim
+      *use_dims=count;
+      fill_raw_values(smHandle, tree, use_dims, dims, dim_place, &newBlk);
+      *use_dims=RECORDS;
+    }
     break;
   default: /* value is a dimension of the array we are accessing */
     count = *dim_place; // save block size in case we need it again
