@@ -2290,8 +2290,8 @@ unfinished_submodels([make(_,_, PathPlus, [_,_, FoundPhase | _], _) | Waiting],
 get_next_evaluation(Assignments, Step, Remainder, Next) :-
 	select(Next, Assignments, Remainder),
 	not_yet_ordered(Next),
-	Next = make(_, Conds-_, _IPath, [Phase, _, Step | _], _),
-	\+ (member(Sticker, Conds),
+	Next = make(_, Conds-_, _IPath, [Phase,_, Step | _], _),
+	\+ ((member(Sticker, Conds); member(earlier(Sticker), Conds)),
 	       Sticker = make(_,_,_, [Phase | _], _),
 	       not_yet_ordered(Sticker)).
 	% remove_non_loopers(IPath, Path).
