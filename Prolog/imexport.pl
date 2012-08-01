@@ -73,7 +73,7 @@ expand_jollies(Chars, AllGood) :-
 	Chars = AllGood.
 
 xml_equiv(Char, Jolly) :-
-	nth0(Posn, "&\"\'<>\n", Char),
+	nth0(Posn, "&\"'<>\n", Char),
 	nth0(Posn, ["&amp;", "&quot;", "&apos;", "&lt;", "&gt;", " "],
 	     % BOTCH ALERT: nl replaced by space cos webflow cannot cope
 	     % with &#10;

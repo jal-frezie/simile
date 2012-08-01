@@ -161,7 +161,7 @@ unjustified. I don't want to process anything in single quotes for
 instance... */
 
 make_legible_for_prolog(String, NewString) :-
-	[BS, Sq, Dq, Sp, Pt, Po, Pc, Xm, Eq] = "\\\'\" .()!=",
+	[BS, Sq, Dq, Sp, Pt, Po, Pc, Xm, Eq] = "\\'\" .()!=",
 	Nums = "0123456789",
 	append(Prefix, ToTweak, String),
 	/* Do not process anything in single quotes except backslashes

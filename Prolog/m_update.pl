@@ -1799,10 +1799,14 @@ make_blind_level(Root, File, Parent) :-
         forms'><'start_progress_dialogue('.'),
         forms'><'reassure_user(decode_mime, []),
 	output'><'load_file(Parent, TargetDir, File, CheckedStr),
-	append_atoms(TargetDir, '/model.pl', PrologData),
 	substitute(0, CheckedStr, 95, SafeCheckedStr),
 	name(Checked, SafeCheckedStr),
-	library'><'ame_merge(Parent, PrologData, _FileV, Checked, _Translated),
+	(member(Checked, [no, yes]) ->
+	    append_atoms(TargetDir, '/model.pl', PrologData),
+	    AllowBig = Checked;
+	  PrologData = File,
+	    AllowBig = yes), % prolog decls only saved by enterprise edn
+	library'><'ame_merge(Parent, PrologData, _FileV, AllowBig, _Tr),
 	forms'><'finish_progress_dialogue.
 /* Procedure to draw first model window */
 
