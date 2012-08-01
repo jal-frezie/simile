@@ -307,7 +307,7 @@ proc EditAsTable {t canvas} {
                 [expr $graph($t,lowx)+$range*$index/($size-1.0)] \
                 [PointToYValue $t [lindex $graph($t,points) $index]]
     }
-    if {[EditListAsTable $t table]} {
+    if {[EditListAsTable $t Value 1 table]} {
         foreach {index y} $table {
             set zone [expr round(($size-1.0)*($index-$graph($t,lowx))/$range)]
             GStick $canvas $zone [YValueToPoint $t $y]
@@ -918,7 +918,7 @@ proc equationDoTable {parent mdl tgt dims startLine continuous} {
     button .table.fbuttons.load -text [tr. Reload] -width 10 \
             -command [list AcquireTableData 1 $startLine]
     button .table.fbuttons.edit -text [tr. View/Edit] -width 10 \
-            -command [list EditTableData $startLine $arrayDims]
+            -command [list EditTableData $startLine $tgt $arrayDims]
     button .table.fbuttons.ok -text [tr. OK] -width 10 \
             -command [list DoneTableData $startLine]
     button .table.fbuttons.cancel -text [tr. Cancel] -width 10 \
@@ -1084,7 +1084,7 @@ foreach comboboxEng [list "Use last" "Use closest" "Interpolate"] {
 # array dims are now passed to this -- for now we only use them to scale the
 # data in a gdal file but we could use them to get the table helper to display
 # a table with the right dims in other cases!
-proc EditTableData {startLine dims} {
+proc EditTableData {startLine capt dims} {
     global table_entry
     AcquireTableData 0 $startLine
     upvar 0 table_entry(values) values
@@ -1094,7 +1094,7 @@ proc EditTableData {startLine dims} {
             set values [NumberElements [ReadGdalRefToList $values \
                     [lindex $dims 0] [lindex $dims 1]]]
         }
-        if {[EditListAsTable .table values]} {
+        if {[EditListAsTable .table $capt $startLine values]} {
             set table_entry(source) 1
         } elseif {[info exists oldValues]} {
             set values $oldValues
@@ -1196,7 +1196,7 @@ proc AcquireTableData {redo startLine} {
     }
 }
 
-proc EditListAsTable {parent valueArray} {
+proc EditListAsTable {parent caption startLine valueArray} {
     global table_viewer
     PutItThere .table_edit $parent
     set t .table_edit.helperzone
@@ -1217,9 +1217,17 @@ proc EditListAsTable {parent valueArray} {
     ${viewerId}::initialize $t
     
     upvar 1 $valueArray values
-    set ${viewerId}::dataStore($t,0,0.0) $values
     set ${viewerId}::displayList($t) eqn_table
-    set ${viewerId}::orientList($t) {none cols rows cols}
+    set ${viewerId}::displayList($t,paths) [list $caption]
+    if {$startLine} {
+	set ${viewerId}::dataStore($t,0,0.0) $values
+	set ${viewerId}::orientList($t) {none cols rows cols}
+    } else {
+	foreach {idx val} $values {
+	    set ${viewerId}::dataStore($t,0,$idx) $val
+	}
+	set ${viewerId}::orientList($t) {rows cols cols cols}
+    }
     set ${viewerId}::displayFormat($t,0) {General 4 0}
     ${viewerId}::Reconbobulate $t
     
