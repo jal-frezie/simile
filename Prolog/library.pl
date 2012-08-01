@@ -147,17 +147,20 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 
 go_with(Comp, SelOnly) :-
 	SelOnly = no, !;
-	Comp has_part Inner,
-	    go_with(Inner, SelOnly), !;
-	draw'><'get_highlit_obj(0, Comp),
-	    \+ connects_leaver(Comp), !;
+	(Comp has_part Inner; Inner = Comp),
+	    draw'><'get_highlit_obj(0, Inner),
+	    \+ connects_leaver(Inner), !;
 	\+ appears(Comp),
 	(Comp is_connector from Start to Finish,
 	    member(Use, [Start, Finish]),
 	    appears(Use);
 	 Use is_connector from Comp to _;
 	 Use is_connector from _ to Comp),
-	go_with(Use, SelOnly), !.
+	    go_with(Use, SelOnly), !;
+	contains(Fn, Comp),	% comp in function-defining fragment
+	    \+ Fn = Comp,
+	    find_type(Fn, function),
+	    go_with(Fn, SelOnly).
 
 % Not sure why this needs to be tested -- arcs are only blue if both ends are!
 connects_leaver(Arc) :-
