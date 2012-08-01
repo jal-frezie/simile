@@ -102,7 +102,7 @@ instantiate_trees([Node|Nodes], [Instance|Instances], Count, Path, ResultOut) :-
 	(get_actual_sizes(Node, Multiple, bare, [value(Deref)], _,_), !,
 				% single reference only for now
 	    SetFn = instance(function, n_made(Node),
-			     input(in_hierarchy, ValMention, none, int),
+			     max(0, input(in_hierarchy, ValMention, none, int)),
 			     elt(Path, _, int-[]), int-[]),
 	    Count = [SetFn | Counts],
 	    ValRef = instance(_, Deref, _, ValMention, _),
