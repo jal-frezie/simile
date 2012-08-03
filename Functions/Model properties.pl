@@ -1,5 +1,7 @@
 at_init(Exp) --> at_phase(0,Exp).
 iterations(Alarm) --> st=sofar(if Alarm then 0 else st+1),st.
+/*
+These have been replaced by a network-defined version
 
 const_delay(val,time) -->
 	count_through = round(10.0*time(0)),
@@ -20,7 +22,7 @@ var_delay(val,time) -->
 			   else last(element([array],place_in(1))),
 			1000),
 	element([array],ptr).
-
+*/
 parent('') -->
     at_init(in_progenitor(index(1))).
 parent(dummy) -->

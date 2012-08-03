@@ -738,6 +738,10 @@ set msgs(unhandled_tcl_error_message) [tr. {Simile encountered an unexpected pro
 set msgs(unhandled_tcl_error_full) {The error was:
 %2$s}
 
+set msgs(too_much_data_title) [tr. {Too much data}]
+set msgs(too_much_data_message) [tr. {You have entered too much data into this dialogue. The limit is about 8000 characters.}]
+set msgs(too_much_data_detail) [tr. {Hints: Use references to external documentation rather than very long comments. Put data values in parameter files rather than in equations. Express mathematical relationships in general rather than specific (if-then-elseif...) terms.}]
+
 set msgs(type_error_title) [tr. {Simile error}]
 set msgs(type_error_message) [tr. {An unhandled error occurred in the Prolog engine.}]
 set msgs(type_error_detail) [tr. {Please contact your software supplier.}]
