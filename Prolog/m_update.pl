@@ -1508,7 +1508,7 @@ make_new_end_node(Submodel, DeadLink, Dir,
 	find_all_comps(Model, OldEnd),
 	(find_type(OldEnd, submodel),
 	    make_node(Model, NodeType, NewEnd);
-	image'><'clear_shape(OldEnd, centre),
+	image'><'clear_shape(OldEnd, along),
 	    change_class(OldEnd, border, NodeType),
 	    NewEnd = OldEnd),
 	/* make sure its name is unique to the submodel -- currently not done,
