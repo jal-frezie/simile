@@ -1459,10 +1459,10 @@ sever_links(Kill_obj, End) :-
 	(continues_in(Kill_obj, End), NewEnd = start;
 	    continues_from(Kill_obj, End), NewEnd = finish),
 	caption_for(Start, NewCapt),
-	min_def_and_max_for(Start, SMinVal, SDefVal, SMaxVal),
+	% min_def_and_max_for(Start, SMinVal, SDefVal, SMaxVal),
 	get_link_source_data(Kill_obj, End, _, SUnit, none, _,_),
 	(make_new_end_node(End, Kill_obj, NewEnd,
-			   NewCapt, SUnit, SMinVal, SDefVal, SMaxVal);
+			   NewCapt, SUnit);
 	    remove_equivs(Kill_obj-_));
 /*	continues_from(Kill_obj, End),
 	    caption_for(Start, NewCapt),
@@ -1471,7 +1471,7 @@ sever_links(Kill_obj, End) :-
 			       NewCapt, _, FMinVal, FDefVal, FMaxVal);
 	    remove_equivs(_-Kill_obj)));
 */	true.
-	    
+/*	    
 min_def_and_max_for(VisNode, MinVal, DefVal, MaxVal) :-
 	find_node_with_data(VisNode, _, Node),
 	(get_av_pair(Node, 0, min_val, MinVal),
@@ -1480,10 +1480,9 @@ min_def_and_max_for(VisNode, MinVal, DefVal, MaxVal) :-
 	    number(DefVal), !; true),
 	(get_av_pair(Node, 0, max_val, MaxVal),
 	    number(MaxVal), !; true).
+*/
 
-
-make_new_end_node(Submodel, DeadLink, Dir,
-		  NewInputName, NewUnit, NewMinVal, NewDefVal, NewMaxVal) :-
+make_new_end_node(Submodel, DeadLink, Dir, NewInputName, NewUnit) :-
 	find_type(DeadLink, LinkType),
 	member(go(LinkType, Dir, NodeType),
 	       [go(influence, start, variable),
@@ -1520,12 +1519,14 @@ make_new_end_node(Submodel, DeadLink, Dir,
 	add_parameter(NewEnd, 0, name, NewInputName),
 	(var(NewUnit), !;
 	    add_parameter(NewEnd, 0, units, NewUnit)),
+/* Not sure why we transferred val, min and max to floater -- last two
+cause it to persist in v5.x and first does same in v6.0
 	(var(NewMinVal), !;
 	    add_parameter(NewEnd, 0, min_val, NewMinVal)),
 	(var(NewDefVal), !;
 	    add_parameter(NewEnd, 0, value, NewDefVal)),
 	(var(NewMaxVal), !;
-	    add_parameter(NewEnd, 0, max_val, NewMaxVal)),
+	    add_parameter(NewEnd, 0, max_val, NewMaxVal)), */
 	event'><'insert_variable(Model, X, Y, NodeType, NewEnd),
 
 	/* Next bit is continually retried to delete all spare nodes */
