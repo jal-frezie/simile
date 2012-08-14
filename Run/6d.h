@@ -4,6 +4,11 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #ifdef WIN32
+#ifdef SHARELIB
+#define CPPEXTDEC __declspec(dllexport)
+#else
+#define CPPEXTDEC __declspec(dllimport)
+#endif
 #else
 #define HINSTANCE void*
 #endif
@@ -11,14 +16,14 @@
 //! Identifies of a component in either model class or model instance
 typedef unsigned short int HCOMP;
 
-class ModelServer;
+class CPPEXTDEC ModelServer;
 
-class ExecutingModel;
+class CPPEXTDEC ExecutingModel;
 
 class listTimePoint;
 
 //! Data to be associated with a file parameter component in the model
-class FileParamData
+class CPPEXTDEC FileParamData
 {
  protected: // protected member items -- note Doxygen will not talk about these
 
@@ -52,7 +57,7 @@ class FileParamData
 };
 
 //! This is same as above but includes all extras for managing time points
-class VarParamData : public FileParamData {
+class CPPEXTDEC VarParamData : public FileParamData {
   // private attributes
 
   //! Start of a linked list of values to apply at time points
