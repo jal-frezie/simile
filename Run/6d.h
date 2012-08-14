@@ -11,6 +11,7 @@
 #endif
 #else
 #define HINSTANCE void*
+#define CPPEXTDEC
 #endif
 
 //! Identifies of a component in either model class or model instance
