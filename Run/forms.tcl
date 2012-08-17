@@ -2302,7 +2302,8 @@ proc Query {specifics icon helpRef parent opts} {
 # (in case Mac version siezes)
     set oldGrab [grab current]
     if {[string equal abandon $key] && \
-	    [string equal [tr. None] [PrefValue custom(quickExit) quickExit]]} {
+	    [string equal [tr. {Full dialogue}] \
+		 [PrefValue custom(quickExit) quickExit]]} {
 	set dialogues(done) more
     } else {
 	tkwait visibility .shortDlg

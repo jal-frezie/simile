@@ -361,8 +361,15 @@ proc SafeEqnBarEdit {winId} {
 #puts [list [$bar.equation get] is $equationbar($winId,initText)]
         if {![string eq [$bar.equation get] $equationbar($winId,initText)]} {
 	    set capt [string range [$bar.label cget -text] 0 end-3]
-	    set choix [Query [list save_eqn_bar $capt] question top \
-			   $winId {yes no}]
+	    switch [PrefValue custom(leaveEqnBar) leaveEqnBar] \
+		[tr. {Apply change}] {
+		    set choix yes
+		} [tr. {Abandon change}] {
+		    set choix no
+		} default {
+		    set choix [Query [list save_eqn_bar $capt] question top \
+				   $winId {yes no}]
+		}
             if {[string equal yes $choix]} {
                 accept_equation $winId $bar.equation
             } else {

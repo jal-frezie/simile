@@ -183,8 +183,9 @@ proc Pref_Dialog {} {
             set canvasF $canvasTF
             set recentTF [TitleFrame $sf.recentTF -text [tr. "Recently used files:"]]
             set recentF $recentTF
-            set abandonTF [TitleFrame $sf.abandonTF -text [tr. "Show quick exit option:"]]
+            set abandonTF [TitleFrame $sf.abandonTF -text [tr. "For unsaved changes:"]]
             set abandonF $abandonTF
+	    pack [frame $abandonF.line2] -side bottom -fill x -expand 1
         set rf [frame $notebook.run]
         $notebook add $rf -text [tr. Run]
             set oneWinTF [TitleFrame $rf.oneWinTF -text [tr. "Run time environment:"]]
@@ -239,6 +240,7 @@ proc Pref_Dialog {} {
                 saveExtras {set frame $canvasF}
                 recentCount {set frame $recentF}
 		quickExit {set frame $abandonF}
+		leaveEqnBar {set frame $abandonF.line2}
                 helperManager {set frame $oneWinF}
                 popupPrecision {set frame $precisF}
                 snapPrecision {set frame $precisF}

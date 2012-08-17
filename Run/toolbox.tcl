@@ -910,7 +910,8 @@ proc ControlDraw {prologVersion} {
 		  [list custom(bigButtons) bigButtons OFF [tr. "Use large buttons"]] \
 		  [list custom(saveExtras) saveExtras [list CHOICE [tr. "Canvas file"] [tr. "Model file only"]] [tr. "Save models as..."]] \
 		  [list custom(recentCount) recentCount {10 0 200} [tr. "Entries on recently used file list"]] \
-		  [list custom(quickExit) quickExit [list CHOICE [tr. "None"] [tr. "Abandon"]] [tr. "Quick exit option..."]] \
+		  [list custom(quickExit) quickExit [list CHOICE [tr. "Full dialogue"] [tr. "Short dialogue"]] [tr. "Closing model..."]] \
+		  [list custom(leaveEqnBar) leaveEqnBar [list CHOICE [tr. "Apply change"] [tr. "Abandon change"] [tr. "Ask what to do"]] [tr. "Leaving equation bar..."]] \
 		  [list custom(gridSnap) gridSnap OFF [tr. "Snap to grid"]] \
 		  [list custom(quickDrag) quickDrag OFF  [tr. "Quick drag"]] \
 		  [list custom(myButton) myButton \u03bc [tr. "Custom keypad button"]] \

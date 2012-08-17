@@ -1177,7 +1177,11 @@ Now one that uses a special conditional level */
 		lower(OpStr, LopStr),
 		name(Lop, LopStr),
 		ValRef =.. [Lop | ResultList],
-		(fragment_expansion(_, FragFile, Lop, FragOut, ArgTpts), !,
+		((length(ArgTpts, Arity); WrongArity = 1),
+		    fragment_expansion(_, FragFile, Lop, FragOut, ArgTpts),
+		    (WrongArity = 0;
+			length(ArgTpts, FnArity),
+			throw(wrong_no_of_args(Source, Op, Arity, FnArity))), !,
 				% (fragment-defined function:),
 		    m_update'><'make_blind_level(SubId, FragFile, RefNode);
 		  true)),
