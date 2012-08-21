@@ -564,9 +564,13 @@ adjust_to_9_8(Parent) :-
 
 adjust_to_10(Parent) :-
 	update_per_record_bracket_style(Parent);
-	% move bowtie posn info from flow to fn
 	contains(Parent, Flow),
+	% all sections to have same caption
 	    Flow is_of_sort has_bowtie,
+	    bowtie_section(Flow, HasName),
+	    caption_for(HasName, Capt),
+	    Flow has_changed_attribute name to Capt,
+	% move bowtie posn info from flow to fn
 	    implicit_function(Flow, ImpFn),
 	    \+ ImpFn has_graphical_attribute along of Bowtie,
 	    Flow no_longer_has_graphical_attribute curve of [Kink, Bowtie],

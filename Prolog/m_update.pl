@@ -1182,8 +1182,10 @@ link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
 	get_action_point(Top_arc, Terminator, Last_new_arc),
 %%% If flows, check whether bowties still exist and reroute/delete influences
         (New_obj = flow,
-	    find_base(Top_arc, BowtieArc),
+	    bowtie_section(Top_arc, BowtieArc),
+	    caption_for(BowtieArc, BowtieCapt),
 	    (sequence(SimpleArc, BowtieArc); sequence(BowtieArc, SimpleArc)),
+	    SimpleArc has_changed_attribute name to BowtieCapt,
 	    implicit_function(SimpleArc, OldFn),
 	    NoUse is_connector from _ to OldFn,
 	    event'><'delete_by_dlg(NoUse),
