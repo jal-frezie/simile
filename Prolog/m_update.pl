@@ -972,7 +972,7 @@ get_submodel_interface(Model, flow, Dir, Link,
 	    sequence(Link, Tap);
 	 ControlDir = in,
 	    Tap = Link),
-	\+ is_ghost(Tap),
+	bowtie_section(Tap, Tap),
 	implicit_function(Tap, Valve),
 	get_spec_units(Valve, FlowUnits),
 	/* cannot use caption_for because we want this links name, not that
