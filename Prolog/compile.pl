@@ -1899,11 +1899,16 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 	    check-member feature */
 	    % \+ (number(TestPhase), TestPhase < Phase),
 	    /* Do not go into an alarmed submodel unless I can get the whole
-	    thing done in this pass */
+	    thing done in this pass
 	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, Alarm)),
 		   nonvar(Alarm),
 		   \+ (member(AlarmSubPass, SubPasses),
 			  member(make(Alarm, _,_,_,_), AlarmSubPass))),
+	    ...allow if alarm loop in shorter time step, as follows: */
+	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, Alarm)),
+		   member(make(Alarm, _,_, [_,_, AlP, AlDone | _], _), All),
+		   var(AlDone),
+		   AlP <= Phase),
 			    
 	    /* OK, have I just done an existence test for it? */
 	    (number(TestPhase),
