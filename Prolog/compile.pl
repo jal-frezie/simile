@@ -1057,7 +1057,7 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 	retractall(macro_expansion(in(Path), _)).
 
 all_targets(model(Functions, Submodels), Tgts) :-
-	purge([instance(variable, _,_,_,_)], Functions, LocalFns),
+	purge(Functions, [instance(variable, _,_,_,_)], LocalFns),
 	% variables removed because they include ghosts from outside
 	all(user, arg, [unify(4), build(LocalFns), build(LocalElts)]),
 	all(user, arg, [unify(2), build(LocalElts), build(LocalTgts)]),
@@ -1890,9 +1890,9 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		append(HighPasses, [SubPass], SubPasses)),		     
 
 	    /* go to a level where I can do something (note test for
-	    having done something was on what is outstanding, as there may
-	not actually have been any new commands generated -- if this causes
-	a problem, add a 'nop' command) */
+	    having done something was on what is outstanding, as there may not
+	actually have been any new commands generated, but now the whole
+	instructions are returned at this point) */
 	    \+ SubPass = [],
 			     
 	    /* If this line uncommented, do not do anything that would use the
