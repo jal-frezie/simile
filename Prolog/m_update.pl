@@ -1064,10 +1064,10 @@ make_connection(Model, Type, Dir, ExternalSection,
 		  ((Dir = out,
 		     find_all_comps(Parent, OutputSection);
 		  Dir = in,
-		     find_all_comps(Model, OutputSection)),
-		    check_output(Type, Dir, Model, DestCapt, Properties,
-				 InputSection, OutputSection)), Outputs),
-	    all(m_update, link_ends,
+		    find_all_comps(Model, OutputSection)),
+		      check_output(Type, Dir, Model, DestCapt, Properties,
+				   OutputSection)), Outputs),
+	      all(m_update, link_ends,
 		[unify(Type), unify(InputSection),
 		 build(Outputs), build(_TopArcs)]),
 	    menu'><'reroute_sections([InputSection | Outputs]),
@@ -1084,23 +1084,18 @@ check_input(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 	    caption_for(BorderSection, SourceCapt);
 	initiates(BorderSection, Source),
 	    caption_for(Source, SourceCapt)),
-	(Type = flow, !,
+	(Type = flow,
 	    Dest is_of_sort cloud,
-	    appears(Dest);
+	    appears(Dest); % submodel cut out if outward
 	Dir = in,
 	    Dest = Model,
-	    (Type = influence;
+	    (Type = flow; Type = influence;
 		Type = relation,
 		caption_for(BorderSection, Properties));
 	Dir = out,
-	    (Type = influence,
-		Dest has_class border,
-		\+ appears(Dest);
-	    Type = relation,
-		\+ appears(Dest))).
+	    Dest has_class border).
 	
-check_output(Type, Dir, Model, SourceCapt, Properties, InputSection,
-	     BorderSection) :-
+check_output(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 	BorderSection has_type Type,
 	BorderSection is_connector from Dest to _,
 	(Type = flow,
@@ -1111,20 +1106,22 @@ check_output(Type, Dir, Model, SourceCapt, Properties, InputSection,
 	    caption_for(Dest, SourceCapt);
 	terminates(BorderSection, Source),
 	    caption_for(Source, SourceCapt)),
-	(Type = flow, !,
+	(Type = flow,
 	    Dest is_of_sort cloud,
-	    appears(Dest);
-	Type = influence,
+	    appears(Dest); % submodel cut out if inward
+	  Type = influence,
 	    (Dest has_class variable,
 		is_parameter(Dest, 1);
-	    AlreadyDone is_connector from Dest to _,
-		sequence(InputSection, AlreadyDone));
-	Type = relation,
-	    (Dir = in,
-		\+ appears(Dest);
+% should be handled as 'Found' case
+%		AlreadyDone is_connector from Dest to _,
+%		sequence(InputSection, AlreadyDone);
+	      true);
+	  Type = relation,
 	    Dir = out,
-		Dest = Model,
-		caption_for(BorderSection, Properties))).	
+	    Dest = Model, !,
+	    caption_for(BorderSection, Properties);
+	  Dir = in,
+	    Dest has_class border).	
 
 add_new_line_between(Type, Start, Finish, TopLink) :-
 	contains(Top, Start, Out),
@@ -1550,7 +1547,6 @@ remove_floater(Node) :-
 	_ is_connector from _ to Node;
 	Node has_class C,
 	    \+ member(C, [variable, cloud, border, function]);
-	Node has_class_refinement value of _;
 	Node has_class_refinement min_val of _;
 	is_parameter(Node, 2)), !;
 	draw'><'off(Node),
