@@ -1906,9 +1906,10 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 			  member(make(Alarm, _,_,_,_), AlarmSubPass))),
 	    ...allow if alarm loop in shorter time step, as follows: */
 	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, Alarm)),
+		   nonvar(Alarm),
 		   member(make(Alarm, _,_, [_,_, AlP, AlDone | _], _), All),
 		   var(AlDone),
-		   AlP <= Phase),
+		   AlP =< Phase),
 			    
 	    /* OK, have I just done an existence test for it? */
 	    (number(TestPhase),

@@ -139,6 +139,10 @@ proc ChooseText {choice ifTrue ifFalse} {
 # takes two file names (NOT dirs) and returns the second relative to the first
 
 # using fileutil instead for now
+proc Relativize  {current remote} {
+    return [::fileutil::relative [file dirname $current] $remote]
+}
+
 #proc Relativize {current remote} {
 #    #	ShowMess debug info "relativizing $current $remote" ok
 #    set currentList [file split $current]
@@ -158,9 +162,9 @@ proc ChooseText {choice ifTrue ifFalse} {
 #}
 
 # reverses the above
-#proc Relate {startPt offset} {
-#    return [file join [file dirname $startPt] $offset]
-#}
+proc Relate {startPt offset} {
+    return [file join [file dirname $startPt] $offset]
+}
 
 # This deals with the quirk of Netware file systems that if the user has
 # read/write access to a file it cannot be opened readonly, or something...
