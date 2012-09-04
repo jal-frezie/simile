@@ -1865,8 +1865,8 @@ order_assignments(Phase, Path, RawAssign, All, OrderedAssign) :-
 	       member(later(Hanger), Conds),
 	       not_yet_ordered(Hanger),
 	       Hanger = make(_,_, CPath, _,_),
-	       remove_non_loopers(CPath, UCPath),
-	       suffix(Path, UCPath)).
+%	       remove_non_loopers(CPath, UCPath),
+	       suffix(Path, CPath)).
 
 	
 order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
