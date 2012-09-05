@@ -1061,6 +1061,8 @@ proc GetTclCompProperty {topNode prop args} {
 		    lappend transList [lrange $usedET 1 end]
 		} elseif {[string equal FLAG $vType]} {
 		    lappend transList [list false true]
+		} else {
+		    lappend transList {}
 		}
 		return $transList
 	    }
