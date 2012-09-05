@@ -90,7 +90,7 @@ go_forward(Model) :-
 	    saved_state(Model, last, Current), !,
 	    % playing a session and no outstanding undos, so read session file
 	    retract(running_session(Model, Stm, IdMap)),
-	    get_ring_point(Current),
+	    get_ring_point(Model, Current),
 	    retractall(saved_state(Model, Current, _)),
 	    run_move_from_file(Model, Stm, Current, IdMap, NewIdMap),
 	    (NewIdMap = done, !;
@@ -125,12 +125,12 @@ finish_move(EditedModel, ChangeExec) :-
 	(ChangeExec = 0;
 	  ChangeExec = 1,
 	    output'><'tk_alter_model(Model)),
-	get_ring_point(Current),
+	get_ring_point(Model, Current),
 	record_changes(Model, Current),
 	update_autosave(Model, Current, yes),
 	set_edit_abilities(Model).
 
-get_ring_point(Current) :-
+get_ring_point(Model, Current) :-
 	retract(saved_state(Model, first, First)),
 	retract(saved_state(Model, last, _)),
 	retract(saved_state(Model, current, Current)),
@@ -277,7 +277,7 @@ repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps) :-
 	ActSpec = pause,
 	    NewIdSwaps = IdSwaps;
 	(ActSpec = []; ActSpec = [_|_]),
-	    get_ring_point(Current),
+	    get_ring_point(Model, Current),
 	    retractall(saved_state(Model, Current, _)),
 	    enact_from_file(Model, Current, IdSwaps, NewIdSwaps, ActSpec, no).
 
