@@ -346,7 +346,7 @@ do_assignment(L, [assign_array(Parent, Name, Made, Init) | Clauses], Indent,
 	make_struct_reference(L, Parent, Made, Count),
 	refer_value(L, Count, CountRef),
 	(Init = -1, !,
-	    excrete(L, release_space, [Dest, CountRef, Used], Indent, Stream);
+	    excrete(L, release_space, [Dest, Used], Indent, Stream);
 	 excrete(L, assign_space, Dest=[Parent, Name, [], Used, [CountRef]],
 		Indent, Stream)),
 	do_assign_list(L, Clauses, Indent, Used, Stream).

@@ -86,7 +86,7 @@ make_cons_dest(instance(Type, Sym, _, Name, _), ConLines, DeLines) :-
 	    render(c, procedure_call, delete_list(Name), 8, DeLines);
 	(by_record(Sym); from_value(Sym)), !,
 	    render(c, assign_space, Name= [_, Name,_,_, [0]], 8, ConLines),
-	    render(c, release_space, [Name,_,_], 8, DeLines); 
+	    render(c, release_space, [Name,_], 8, DeLines); 
 /*	Type = external, !,
 	    Nm = elt(_, Name, _),
 	    make_constant_string(c, Sym, SymC),
@@ -277,7 +277,7 @@ render(c, assign_space, Dest=[_, Name, _,_, Dims], Indent, [Result]) :-
 	name(Result, ResultStr).
 
 % needs render cos is used in destructor
-render(c, release_space, [Var, _Count, _Used], Indent, [Line]) :-
+render(c, release_space, [Var, _Used], Indent, [Line]) :-
 	sicstus_format_to_chars("~*sdelete [] ~a;", [Indent, " ", Var],
 				LineStr),
 	name(Line, LineStr).
@@ -500,15 +500,21 @@ strings_direct(L, procedure_call, DataFunc, Indent, Stream) :-
 strings_direct(c, procedure_defn, [ReturnType, Fn], Indent, Stream) :-
 	format(Stream, "~*s~a ~w;\n", [Indent, " ", ReturnType, Fn]).
 
-strings_direct(tcl, release_space, [Dest, Dim, Used], Indent, Stream) :-
+strings_direct(tcl, release_space, [Dest, Used], Indent, Stream) :-
 	language'><'declare(tcl, XIndex, loop, int, Used, Indent, Stream),
 	DeepIndent is Indent+4,
-	excrete(tcl, for_start, [XIndex, Dim, 1], Indent, Stream),
+%	excrete(tcl, for_start, [XIndex, Dim, 1], Indent, Stream),
+	excrete(tcl, assignment, XIndex=1, Indent, Stream),
 	refer_value(tcl, XIndex, XIndexRef),
 	make_indexed_namespace(tcl, Dest, [XIndexRef], NewDest),
+	make_procedure_call_chars(tcl, [info, exists, NewDest], ExtTestStr),	
+	name(ExtTest, ExtTestStr),
+	excrete(tcl, while_start, ExtTest, Indent, Stream),
 	resolve_pointer(tcl, NewDest, Zap),
 	format(Stream, "~*snamespace delete ~a\n", [DeepIndent, " ", Zap]),
-	excrete(tcl, end(for), XIndex, Indent, Stream).
+	excrete(tcl, procedure_call, incr(XIndex), DeepIndent, Stream),
+%	excrete(tcl, end(for), XIndex, Indent, Stream).
+	excrete(tcl, end(while), XIndex, Indent, Stream).
 
 strings_direct(L, cond_events, [Cond, Procs, Args], Indent, Stream) :-
 	excrete(L, if_start, Cond, Indent, Stream),
