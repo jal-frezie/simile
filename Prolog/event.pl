@@ -1579,9 +1579,9 @@ move_link(Obj) :-
 
 make_any_links_follow(Obj) :-
 	find_all_comps(Parent, Obj),
-	m_class'><'Parent has_link_equivalences EqList,
 	find_all_links(Obj, Link),
 	move_link(Link),
+	m_class'><'Parent has_link_equivalences EqList,
 	member(Bef-Aft, EqList),
 	select(Link, [Bef, Aft], [Other]),
 	move_link(Other),
