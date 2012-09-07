@@ -1477,8 +1477,9 @@ recursive_highlight(Target, Way, Where, E2E) :-
 	    change_delete_status(Target, Way, Where),
 	    Also = Target;
 	E2E = 1,
-	    m_class'><'connects(Target, Start, Mid),
-	    get_host(Mid, Finish),
+	    m_class'><'connects(Target, VStart, VFinish),
+	    get_host(VStart, Start), % if a bowtie we need flow status
+	    get_host(VFinish, Finish),
 	    match_delete_status([Start, Finish], Way, Where),
 	    change_delete_status(Target, Way, Where),
 	    (Also = Target;
