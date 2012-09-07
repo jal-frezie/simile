@@ -1515,7 +1515,7 @@ adjust_link_forwards(Target, Way, Also, Where) :-
 	    m_class'><'connects(Next, _, Mid),
 	    get_host(Mid, Finish),
 	    match_delete_status([Finish], to, Where),
-	    change_delete_status(Next, from, Where)),
+	    change_delete_status(Next, to, Where)),
 	(Also = Next; adjust_link_forwards(Next, Way, Also, Where)).
 	
 change_delete_status(Target, Way, FromWhere) :-
