@@ -481,8 +481,14 @@ proc DrawPie { w x1 y1 x2 y2 pievalues piesum } {
         set r [expr {$plot($w,LabelDistance)+$plot($w,length)/2}]
         set x [expr {$r*cos($LabelAngle*3.14159/180.0)+$plot($w,cx)}]
         set y [expr {-1.0*$r*sin($LabelAngle*3.14159/180.0)+$plot($w,cy)}]
-        $w.canvas create arc $x1 $y1 $x2 $x2 \
-                -fill $colour -start $StartAngle -extent $Angle -tags "scalable slice"
+	if {$StartAngle==0 && $Angle==360} { # arc cannot draw full oval
+	    
+	    $w.canvas create oval $x1 $y1 $x2 $x2 -fill $colour \
+		-tags "scalable slice"
+	} else {
+	    $w.canvas create arc $x1 $y1 $x2 $x2 -fill $colour \
+		-start $StartAngle -extent $Angle -tags "scalable slice"
+	}
         $w.canvas create text $x $y -text [lindex $plot($w,Ylabels) $iplot] -tag label
         incr iplot
         set StartAngle [expr {$StartAngle+$Angle}]
