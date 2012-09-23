@@ -59,32 +59,6 @@ proc TransValue {curLevel val} {
     }
 }
 
-proc UntransVal {trans mem type} {
-    if {[string compare {} $trans]} {
-	if {[llength $mem]==1} {
-	    set mem [lindex $mem 0]
-	} ;# remove quotes or curlies
-	set poss [lsearch $trans $mem]
-	if {$poss == -1} {
-	    if {[string equal {false true} $trans] && \
-		    [string equal data $type]} {
-		set trans [linsert $trans 0 boolean]
-	    }
-	    error [format [tr. {The entry "%1$s" appears where some %4$s value of type %2$s is expected. This must be one of %3$s.}] $mem [lindex $trans 0] [lrange $trans 1 end] $type] 
-	} else {
-	    return $poss
-	}
-    } 
-    if {[string equal index $type]} {
-	if {![string is integer -strict $mem]} {
-	    error [format [tr. {The entry "%1$s" appears where an index value of type integer is needed.}] $mem]
-	} elseif {$mem<=0} {
-	    error [format [tr. {Index value %1$s is zero or negative.}] $mem]
-	}
-    }
-    return $mem
-}
-
 proc PrettifyValList {ugly args} {
 #puts "Trying to tidy up $ugly"
     if {fmod([llength $ugly],2)==1} { ;# dont mind even length ET mem mangling
