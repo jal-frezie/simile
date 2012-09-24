@@ -2069,7 +2069,7 @@ ghost_type(Start, Type, Base) :-
 	get_line_start_obj(Start),
 	find_base(Start, Base),
 	find_type(Base,StartType),
-	Type = StartType.
+	(Type = StartType; Type = cloud, StartType = compartment).
 
 /* event-level interface to ghost creation. This identifies a
 node's current ghost state, if it is a ghost it unghosts it,

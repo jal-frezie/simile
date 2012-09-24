@@ -323,7 +323,7 @@ ghost_link(Link, Base, Ghost) :-
 ghost relationships, i.e., a visible one other than a submodel. */
 
 influence_makes_ghost(Component) :-
-	Component is_of_sort has_function,
+	Component is_of_sort can_be_ghost,
 	appears(Component).
 
 find_base(Ghost, Base) :-
@@ -344,7 +344,7 @@ bowtie_section(Sect, BowtieSect) :-
 	BowtieSect = Base.
 
 made_ghost_by(Ghost, Link) :-
-	Ghost is_of_sort has_function,
+	Ghost is_of_sort can_be_ghost,
 	Link is_connector from NextUp to Ghost,
 	Link has_type influence,
 	\+ NextUp has_class function.
@@ -1006,7 +1006,8 @@ Obj is_class_of_sort Class :-
 		squirt-[line, has_function, has_bowtie, discrete],
 		influence-[line, curved, captionless],
 		relation-[line, curved],
-		cloud-[cloud, regular_box, box, captionless, no_properties],
+		cloud-[cloud, regular_box, box, captionless, no_properties,
+		       can_be_ghost],
 		text-[box],
 		alarm-[regular_box, box, rectangle, channel, has_function,
 			   boolean_value],
