@@ -123,7 +123,7 @@ arc( Arc, Start, End, Type, ExtdAttributeValuePairs,
 	    RealStart is_part_of Parent,
 	    RealStart is_no_longer_part_of Parent,
 	    RealStart is_also_part_of RealEnd,
-	    NewBindings = MidBindings;
+	    NewBindings = Bindings; % no arc added
 	  % Convert to v6: arc is influence from flow
 	  (RealStart is_connector _, !,
 	        RealStart has_part ImpFn,

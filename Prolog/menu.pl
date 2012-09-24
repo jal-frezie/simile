@@ -1533,8 +1533,9 @@ save_isolated(Name, Part, Date, SelnOnly, MakeCompat) :-
 	Part = Model,
 	    TempSels = []),
 */	assert(suspend_display),
-	( % cutout(Part, SelnOnly);
-	    % save with border links as these must be same in reusable modules
+	(cutout(Part, SelnOnly);
+	    % comment out above to save with border links
+	    % if these must be same in reusable modules
 	ame_save(Name, Part, Date, SelnOnly, MakeCompat),
 	    Done = 1;
 	true),
