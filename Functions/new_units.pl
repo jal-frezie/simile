@@ -32,9 +32,9 @@ unit_definition(pint,	gal/8).
 
 unit_definition(min,	s*60).
 longhand(minute, min).
-unit_definition(h,	min*60).
-longhand(hour, h).
-unit_definition(day,	h*24).
+unit_definition(hr,	min*60).
+longhand(hour, hr).
+unit_definition(day,	hr*24).
 unit_definition(week,	day*7).
 unit_definition(month,	year/12).
 unit_definition(year,	day*365). % not quite right

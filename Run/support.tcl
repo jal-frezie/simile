@@ -260,8 +260,7 @@ proc BringParameter {array node inds} {
     }
 }
 
-proc ListToArray {topNode tgt subs numSubs trans dims \
-		      list when useCppArray errorData} {
+proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 #ShowMess debug info  "Go! tgt $tgt subs $subs trans $trans dims $dims list $list cpp $useCppArray" ok
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
@@ -331,7 +330,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims \
 		set idAndSubs $tgt[string range $numSubs 4 end]
 		if {[catch {EnumTypeToNumber $topNode $idAndSubs $list \
 				$thisTrans 0 $useCppArray} woops]} {
-		    return [AddErrorTo {} $woops $subs $errorData]
+		    return [AddErrorTo {} $woops $subs]
 		} else {
 		    return 1
 		}
@@ -339,13 +338,13 @@ proc ListToArray {topNode tgt subs numSubs trans dims \
 		# setting value for fixed param or time point
 		if {[catch {EnumTypeToNumber $topNode $tgt$numSubs $list \
 				$thisTrans $when $useCppArray} woops]} {
-		    return [AddErrorTo {} $woops $subs $errorData]
+		    return [AddErrorTo {} $woops $subs]
 		} else {
 		    return -1 ;# should be 0 if a comp
 		}
 	    }
 	} else {
-	    return [AddErrorTo {} missing_param_data $subs $errorData]
+	    return [AddErrorTo {} missing_param_data $subs]
         }
     }
 
@@ -353,11 +352,10 @@ proc ListToArray {topNode tgt subs numSubs trans dims \
         #puts "setting paramData($tgt) to $headNum"
         set userDims [join $dims { x }]
 	return [AddErrorTo {} [list scalar_instead_of_array $list $userDims] \
-		    $subs $errorData]
+		    $subs]
     }
     if {[llength $list]%2} {
-	return [AddErrorTo {} odd_index_at_end $subs,[list [lindex $list end]] \
-		    $errorData]
+	return [AddErrorTo {} odd_index_at_end $subs,[list [lindex $list end]]]
     }
     
     set redoStep 1
@@ -404,7 +402,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims \
             } elseif {![string is double -strict $indx]} {
                 set redoStep [AddErrorTo $redoStep \
 				  [list bad_time_point_index $specialPts] \
-				  $nextSubs $errorData]
+				  $nextSubs]
             } elseif {[string equal RESTART [string toupper $subList]]} {
 		SetWrapTime $topNode $useCppArray $tgt $indx
 		continue
@@ -418,40 +416,38 @@ proc ListToArray {topNode tgt subs numSubs trans dims \
 				      $subList} badFill]
 		if {$pt==2} { ;# fill method expected
 		    if {$noMtd} {
-			set redoStep [AddErrorTo $redoStep $badFill $nextSubs \
-					  $errorData
+			set redoStep [AddErrorTo $redoStep $badFill $nextSubs]
 		    }
 		    continue
 		} elseif {!$noMtd} { ;# fill method found but not expected
 		    set redoStep [AddErrorTo $redoStep \
 				      [list misplaced_fill_method $subList] \
-				      $nextSubs $errorData
+				      $nextSubs]
 		}
 	    }
-# do same for interval (units for time series index)
+# do same for interval (units for time series index) -- trying to call Prolog 
+# from here can only lead to trouble
 	    if {[string is double -strict $subList]} { ;# save time by not going Prolog
 		set TSI 0
 	    } else {
-		set TSI [InDays $subList]
+		set TSI [lsearch {{} s second min minute hr hour day week month year} $subList] ;# not [InDays $subList]
 	    }
 
-	    if {$pt==1} { ;# units for time series index expected
-		if {!$TSI} {
-		    set redoStep [AddErrorTo $redoStep \
-				      [list bad_uftsi $subList] $nextSubs $errorData
-		} else {
-		    SetInterval $topNode $useCppArray $tgt $subList $TSI
-		}
+	    if {$pt==1} { 
+# units for time series index expected -- we cannot go Prolog to parse
+# them from here, so raise an "error" which will try to parse them
+# before alerting the modeller
+		set redoStep [AddErrorTo $redoStep [list check_uftsi $subList] \
+				  $nextSubs]
 		continue
-	    } elseif {$TSI} { ;# found but not expected
+	    } elseif {$TSI>0} { ;# found but not expected
 		set redoStep [AddErrorTo $redoStep \
-				  [list misplaced_uftsi $subList] $nextSubs $errorData]
+				  [list misplaced_uftsi $subList] $nextSubs]
 	    }
 	    set redoStep [JoinSteps $redoStep \
 			      [ListToArray $topNode $tgt $subs,$indx \
-				   $numSubs,$indx $trans \
-				   [lrange $dims 1 end] $subList $when \
-				   $useCppArray $errorData]]
+				   $numSubs,$indx $trans [lrange $dims 1 end] \
+				   $subList $when $useCppArray]]
         }
         return $redoStep
     }
@@ -461,15 +457,15 @@ proc ListToArray {topNode tgt subs numSubs trans dims \
         # was array set sub $list...above would allow us to check that all indices were
         # the right type if we could be bothered...OK then...
 	if {[catch {UntransVal $thisTrans $indx index} poss]} {
-	    set redoStep [AddErrorTo $redoStep $poss $subs $errorData]
+	    set redoStep [AddErrorTo $redoStep $poss $subs]
 	} ;# seems we do not need actual position!?
         if {[info exists sub($indx)]} {
 	    set redoStep [AddErrorTo $redoStep \
-			      [list repeated_index $indx] $subs $errorData]
+			      [list repeated_index $indx] $subs]
         }
         set sub($indx) $sublist
     }
-    if {![string equal {} $redoStep]} { ;# do not proceed with bad time step
+    if {$redoStep != 1} { ;# do not proceed with bad time step
 	return $redoStep
     }
 
@@ -480,7 +476,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims \
         # number of elements, one the same or smaller will be missing!
         set last [array size sub]
         if {!$last} {
-	    set redoStep [AddErrorTo $redoStep record_count_undefined $subs $errorData]
+	    set redoStep [AddErrorTo $redoStep record_count_undefined $subs]
         }
         
 	# Record counts do not need to be set in Tcl
@@ -532,16 +528,40 @@ proc ListToArray {topNode tgt subs numSubs trans dims \
 	set newSubs $subs,[list $indx]
         if {![info exists sub($indx)]} {
             #puts "No $indx in [array names sub]"
-            set redoStep [AddErrorTo $redoStep gap_in_data $newSubs $errorData]
+            set redoStep [AddErrorTo $redoStep gap_in_data $newSubs]
         } else {
 	    set redoStep [JoinSteps $redoStep \
 			      [ListToArray $topNode $tgt $subs,$indx \
 				   $numSubs,$arrayPt \
 				   [lrange $trans 1 end] [lrange $dims 1 end] \
-				   $sub($indx) $when $useCppArray $errorData]]
+				   $sub($indx) $when $useCppArray]]
 	}
     }
     return $redoStep
+}
+
+proc DoNotPassTcl {topNode node dims tableSpec} {
+#puts "dims $dims spec $tableSpec"
+    if {[string equal REAL [GetCCompProperty $topNode Type $node]]} {
+	set gdalType GDT_Float64
+    } else {
+	set gdalType GDT_Int32
+    }
+
+    package require gdal
+    set hg [gdal_open_read_only [lindex $tableSpec 0]]
+    set hdl [gdal_get_raster_band $hg 1]
+    set dataRows [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]]
+    set dataCols [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]]
+    set fillRows [lindex $dims 0]
+    set fillCols [lindex $dims 1]
+    set bytesFromGdal [gdal_get_raster_data $hdl \
+		     [expr [lindex $tableSpec 4]-1] \
+		     [expr [lindex $tableSpec 2]-1] \
+		     $dataCols $dataRows $gdalType $fillCols $fillRows]
+    gdal_close $hg
+    
+    c_setparamall $topNode $node $bytesFromGdal [list $fillRows $fillCols]
 }
 
 proc JoinSteps {stepA stepB} {
@@ -559,8 +579,8 @@ proc JoinSteps {stepA stepB} {
 	}
 }
 
-proc AddErrorTo {old woops subs errorData} {
-    set error [list [concat [lindex $woops 0] [list $subs] $errorData \
+proc AddErrorTo {old woops subs} {
+    set error [list [concat [lindex $woops 0] [list $subs] \
 			 [lrange $woops 1 end]]]
     return [JoinSteps $old $error]
 }
@@ -612,14 +632,8 @@ proc EnumTypeToNumber {topNode tgt head trans when useCppArray} {
 }
 
 #proc FPError {occurrence inds errorData} {
-#    if {![llength $errorData]} {
+#    if {![llength]} {
 #	error aborted ;# quick way out
-#    }
-#    if {[llength $inds]} {
-#	set where [format [tr. { at indices %1$s}] [string range $inds 1 end]]
-#	# exclude leading ,
-#    } else {
-#	set where {}
 #    }
 #    set query [concat param_load_fail $errorData [list $where $occurrence]]
 #    if {[string equal abort [ExecQuery $query warning spf {} abort]]} {

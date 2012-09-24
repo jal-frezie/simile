@@ -552,10 +552,10 @@ proc AcceptData {topNode compName notInput complain} {
 		Query pest_measurements_missing warning pest_setup {} ok
 		return
 	    }
-	    set whatMaking target
+	    set making target
 	    set useCppArray 0
 	} else {
-	    set whatMaking parameter
+	    set making parameter
         }
 	if {$useCppArray} {
 	    #puts "c_setparamarray b $node"
@@ -563,28 +563,43 @@ proc AcceptData {topNode compName notInput complain} {
 	} else {
 	    tcl_setparamarray $topNode $node
 	}
-	if {$complain>0} {
-	    set errorData [list [lindex {none load check} $complain] \
-			       $whatMaking $compLocal]
-	} else {
-	    set errorData {}
-	}
 	if {$complain==2 && ![string length $newData]} {
 	    # accept empty field for saving data
 	    set result {} ;# handle as error
 	} else {
 	    set result [ListToArray $topNode $node {} {} $trans $recordDims \
-			    $newData $readMany($compName) \
-			    $useCppArray $errorData]
+			    $newData $readMany($compName) $useCppArray]
 	    if {![string is integer -strict $result]} { # list of errors
-		if {![llength $errorData]} {
-		    set boredom abort
-		} else {
-		    foreach errorSpec $result {
-			set boredom [Query $errorSpec warning spf {} abort]
-			if {[string equal abort $boredom]} {
+		set action [lindex {none load check} $complain]
+		foreach errorSpec $result {
+		    if {[string equal check_uftsi [lindex $errorSpec 0]]} {
+			set txtUftsi [lindex $errorSpec 2]
+			set numUftsi [InDays $txtUftsi]
+			if {$numUftsi} {
+			    SetInterval $topNode $useCppArray $node \
+				$txtUftsi $numUftsi
 			    continue
+			} else {
+			    lset errorSpec 0 bad_uftsi
 			}
+		    }
+		    if {$complain<=0} {
+			set boredom abort
+			break
+		    } else {
+			set inds [lindex $errorSpec 1]
+			if {[llength $inds]} {
+			    set where [format [tr. { at indices %1$s}] \
+					   [string range $inds 1 end]]
+			    # exclude leading ,
+			} else {
+			    set where {}
+			}
+			set fullError [concat [lrange $errorSpec 0 0] $action \
+					   [list $making $compLocal $where] \
+					   [lrange $errorSpec 2 end]]
+			set boredom [Query $fullError warning spf {} abort]
+			if {[string equal abort $boredom]} break
 		    }
 		}
 	    }
@@ -602,6 +617,9 @@ proc AcceptData {topNode compName notInput complain} {
 		return 0
 	    }
         } else { ;# all went well
+	    if {![string is integer -strict $result]} { # errs were check_uftsis
+		set result -1 ;# ...so reload time series
+	    }
 	    if {[info exists entryChanged]} {
 		set suppliedData($compName) $newData
 	    }
@@ -1700,28 +1718,4 @@ proc GetFromTable {parent topNode compName startLine} {
 	    set msgs(comment_$compName) $table_entry(comment)
 	}
     }
-}
-
-proc DoNotPassTcl {topNode node dims tableSpec} {
-#puts "dims $dims spec $tableSpec"
-    if {[string equal REAL [GetCompProperty $topNode Type $node]]} {
-	set gdalType GDT_Float64
-    } else {
-	set gdalType GDT_Int32
-    }
-
-    package require gdal
-    set hg [gdal_open_read_only [lindex $tableSpec 0]]
-    set hdl [gdal_get_raster_band $hg 1]
-    set dataRows [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]]
-    set dataCols [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]]
-    set fillRows [lindex $dims 0]
-    set fillCols [lindex $dims 1]
-    set bytesFromGdal [gdal_get_raster_data $hdl \
-		     [expr [lindex $tableSpec 4]-1] \
-		     [expr [lindex $tableSpec 2]-1] \
-		     $dataCols $dataRows $gdalType $fillCols $fillRows]
-    gdal_close $hg
-    
-    c_setparamall $topNode $node $bytesFromGdal [list $fillRows $fillCols]
 }

@@ -683,10 +683,72 @@ set msgs(unused_param_title) [tr. {Some parameter values unused}]
 set msgs(unused_param_message) [tr. {The %1$s contains parameter values for the %2$s "%3$s", which does not exist in the target model "%4$s".}]
 set msgs(unused_param_detail) [tr. {Do you want to ignore these values and continue loading the %1$s?}]
 set msgs(unused_param_full) [tr. {You may also choose to select another %2$s which will get these values instead of "%3$s", for instance if it has been renamed since saving the parameters.}]
+
 set msgs(param_load_fail_title) [tr. {Problem %1$sing %2$s value}]
-set msgs(param_load_fail_message) [tr. {While attempting to %1$s the %2$s value "%3$s"%4$s the following problem occurred: %5$s}]
+set msgs(param_load_fail_message) [tr. {While attempting to %1$s the %2$s value "%3$s"%4$s, }]
 # %4$s is " at indices x,y,z..." or empty
 set msgs(param_load_fail_detail) [tr. {Do you want to stop this operation, or skip this field and continue %1$sing the %2$ss?}]
+
+set msgs(bad_enum_type_mem_title) $msgs(param_load_fail_title)
+set msgs(bad_enum_type_mem_message) $msgs(param_load_fail_message)[tr. {the entry "%5$s" appears where some %8$s value of type %6$s is expected. This must be one of %7$s.}]
+set msgs(bad_enum_type_mem_detail) $msgs(param_load_fail_detail)
+
+set msgs(zero_or_negative_index_title) $msgs(param_load_fail_title)
+set msgs(zero_or_negative_index_message) $msgs(param_load_fail_message)[tr. {the index value %5$s appears which is zero or negative.}]
+set msgs(zero_or_negative_index_detail) $msgs(param_load_fail_detail)
+
+set msgs(non_integer_index_title) $msgs(param_load_fail_title)
+set msgs(non_integer_index_message) $msgs(param_load_fail_message)[tr. {the entry "%5$s" appears where an index value of type integer is needed.}]
+set msgs(non_integer_index_detail) $msgs(param_load_fail_detail)
+
+set msgs(unwanted_param_array_title) $msgs(param_load_fail_title)
+set msgs(unwanted_param_array_message) $msgs(param_load_fail_message)[tr. {the array "%5$s" appears where a single data point is needed.}]
+set msgs(unwanted_param_array_detail) $msgs(param_load_fail_detail)
+
+set msgs(data_not_number_title) $msgs(param_load_fail_title)
+set msgs(data_not_number_message) $msgs(param_load_fail_message)[tr. {the data value "%5$s" appears instead of a numerical value.}]
+set msgs(data_not_number_detail) $msgs(param_load_fail_detail)
+
+set msgs(missing_param_data_title) $msgs(param_load_fail_title)
+set msgs(missing_param_data_message) $msgs(param_load_fail_message)[tr. {there is an empty list where there should be a data point.}]
+set msgs(missing_param_data_detail) $msgs(param_load_fail_detail)
+
+set msgs(scalar_instead_of_array_title) $msgs(param_load_fail_title)
+set msgs(scalar_instead_of_array_message) $msgs(param_load_fail_message)[tr. {a single data point "%5$s" appears where there should be an array of dimensions %6$s}]
+set msgs(scalar_instead_of_array_detail) $msgs(param_load_fail_detail)
+
+set msgs(odd_index_at_end_title) $msgs(param_load_fail_title)
+set msgs(odd_index_at_end_message) $msgs(param_load_fail_message)[tr. {there are an odd number of entries instead of alternating index and value entries.}]
+set msgs(odd_index_at_end_detail) $msgs(param_load_fail_detail)
+
+set msgs(bad_time_point_index_title) $msgs(param_load_fail_title)
+set msgs(bad_time_point_index_message) $msgs(param_load_fail_message)[tr. {a time point index appears which is not a numerical value or one of the special points %5$s}]
+set msgs(bad_time_point_index_detail) $msgs(param_load_fail_detail)
+
+set msgs(misplaced_fill_method_title) $msgs(param_load_fail_title)
+set msgs(misplaced_fill_method_message) $msgs(param_load_fail_message)[tr. {the fill method "%5$s" appears, but is not preceded by the keyword "OTHERS".}]
+set msgs(misplaced_fill_method_detail) $msgs(param_load_fail_detail)
+
+set msgs(bad_uftsi_title) $msgs(param_load_fail_title)
+set msgs(bad_uftsi_message) $msgs(param_load_fail_message)[tr. {the data point "%5$s" is given as the units for the time series indices. This should be a units expression with dimensions of time.}]
+set msgs(bad_uftsi_detail) $msgs(param_load_fail_detail)
+
+set msgs(misplaced_uftsi_title) $msgs(param_load_fail_title)
+set msgs(misplaced_uftsi_message) $msgs(param_load_fail_message)[tr. {the expression "%5$s" appears to be for time series index units, but is not preceded by the keyword "INTERVAL".}]
+set msgs(misplaced_uftsi_detail) $msgs(param_load_fail_detail)
+
+set msgs(repeated_index_title) $msgs(param_load_fail_title)
+set msgs(repeated_index_message) $msgs(param_load_fail_message)[tr. {index value "%5$s" appears more than once.}]
+set msgs(repeated_index_detail) $msgs(param_load_fail_detail)
+
+set msgs(record_count_undefined_title) $msgs(param_load_fail_title)
+set msgs(record_count_undefined_message) $msgs(param_load_fail_message)[tr. {a per-record submodel containing only variable parameters must have time series values for at least one member.}]
+set msgs(record_count_undefined_detail) $msgs(param_load_fail_detail)
+
+set msgs(gap_in_data_title) $msgs(param_load_fail_title)
+set msgs(gap_in_data_message) $msgs(param_load_fail_message)[tr. {the index and value are missing.}]
+set msgs(gap_in_data_detail) $msgs(param_load_fail_detail)
+
 
 set msgs(number_needed_title) [tr. {Numeric value required}]
 set msgs(number_needed_message) [tr. {This operation could not be completed because a numeric value must be placed in the entry field that currently contains this text: %1$s}]
