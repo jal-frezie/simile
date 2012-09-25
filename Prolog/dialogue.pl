@@ -693,7 +693,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 		are not making code we can use the time step field to tell it
 		this by setting it to 'dummy'. */
 	
-	DummyDest = [sm(_,_,_, fm_loop(IndxSzs, IndxSzs, _))],
+	DummyDest = [sm(_,_,_, fm_loop(IndxSzs, IndxSzs, _,_))],
 	% remove old function fragment submodels --
 	% these will be re-created
 	m_update'><'superfast_delete(Fn),

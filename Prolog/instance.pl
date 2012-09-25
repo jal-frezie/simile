@@ -658,4 +658,4 @@ path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
 				     build(SmSizes), build(_), build(_)])),
 	    make_inds_for(SmSizes, SmPath, SmInds),
 	    Level = [sm(Context, HiPtr, LoPtr,
-			fm_loop(SmInds, IndxCount,_)) | SmPath]).
+			fm_loop(SmInds, IndxCount,_,_)) | SmPath]).

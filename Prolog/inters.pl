@@ -1652,7 +1652,7 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 indices_for(set(_, loop(_,_)), [], []).
 
 indices_for(sm(_,_, Ptr, Spec), Inds, Dims) :-
-	Spec = fm_loop(Inds, Dims,_);
+	Spec = fm_loop(Inds, Dims,_,_);
 	Spec = vm_loop(N, Dims,_,_),
 	(N == pop, !,
 	    Inds = [ind(Ptr, pop)];	  
@@ -2012,7 +2012,7 @@ get_dims_from_loops([], [], []).
 get_dims_from_loops(Loops, Dims, Inds) :-
 	append(InnerLoops, [Loop], Loops),
 	(Loop = sm(_,_,_, VLoop),
-	\+ VLoop = fm_loop(_,_,_), !,
+	\+ VLoop = fm_loop(_,_,_,_), !,
 	    Dims = [var | RDims],
 	    Inds = [none | RInds];
 	Loop = set(Ind, loop(Dim,_)), !,

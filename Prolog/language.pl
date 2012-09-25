@@ -93,8 +93,9 @@ do_assignment(L, [open_index(glob(Loop, Inds), Bound) | Clauses],
 explicitly (using element(...)), so it can contain any expression, even a
 graph. */
 
-do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs,_, Alarm))
-		 | Clauses], Indent, Used, Stream) :-
+do_assignment(L, [start_submodel(Name, Top, Pointer,
+				 fm_loop(IndExprs,_, Alarm, _)) | Clauses],
+	      Indent, Used, Stream) :-
 
 	/* some of this belongs in the next disjunction */
 
@@ -808,8 +809,10 @@ make_section_cond(L, VMPtrs, PassTest) :-
 make_new_base_cond(L, new_context(Ptr, Phase), LocCond) :-
 	refer_value(L, phase, PhaseRef),
 	combine(L, >=, [Phase, PhaseRef], PhaseTest),
+	(Ptr = all, !,
+	    LocCond = PhaseTest;
 	make_new_check(L, Ptr, FlagTest),
-	combine(L, '&&', [PhaseTest, FlagTest], LocCond).
+	    combine(L, '&&', [PhaseTest, FlagTest], LocCond)).
 
 /* This gets a bit sophisticated now. If the name is free, it
 generates one from namebase and inserts a declaration, also adding a

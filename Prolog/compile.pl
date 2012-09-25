@@ -1026,7 +1026,7 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 			    xrefs(model(Functions, Submodels), _,_), _,_),
 	(select(instance(alarm,_,_,elt(_, Al,_),_), Functions, NoAlarm),
 	    select(instance(al_function,_,_,elt(_, Al,_),_), NoAlarm, ForAlarm),
-	    Path = [sm(_,_,_, fm_loop(_,_, Al))|_], !,
+	    Path = [sm(_,_,_, fm_loop(_,_, Al, _))|_], !,
 	    % now make alarm depend on everything in its submodel
 	    % so the whole thing gets done in one pass
 	    all_targets(model(ForAlarm, Submodels), AlConds),
@@ -1229,7 +1229,7 @@ nodes.
 			     Path, Step, [reset_list(Ptr, Name)]),
 			make(init_list(Name), [], Path, Step,
 			     [assign(arr(Ptr, Name, []), 0)])];
-	Level = [sm(_,_,_, fm_loop(Globs,_,_)) | _Loops],
+	Level = [sm(_,_,_, fm_loop(Globs,_,_,_)) | _Loops],
 	% its the _Loops that have the bounds!
 	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
 	    get_dims_from_loops(Path, _, UseInds),
@@ -1905,7 +1905,7 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		   \+ (member(AlarmSubPass, SubPasses),
 			  member(make(Alarm, _,_,_,_), AlarmSubPass))),
 	    ...allow if alarm loop in shorter time step, as follows: */
-	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, Alarm)),
+	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, Alarm, _)),
 		   nonvar(Alarm),
 		   member(make(Alarm, _,_, [_,_, AlP, AlDone | _], _), All),
 		   var(AlDone),
@@ -2019,8 +2019,13 @@ the time step level is as large as the level in which it is
 enumerated, or if that is true of any of its ancestors if they are
 enumerated on a smaller time step than it */
 
-ptr_to_last_vm(Path, Relevant, [new_context(Ptr, Phase) | MorePtrs]) :-
-	suffix([sm(_,_, Ptr, vm_loop(_,_,_,Phase)) | Deeper], Path),
+ptr_to_last_vm(Path, Relevant, [new_context(Chk, Phase) | MorePtrs]) :-
+	suffix([sm(_,_, Ptr, Loop) | Deeper], Path),
+	(Loop = vm_loop(_,_,_,Phase),
+	    Chk = Ptr;
+	  Loop = fm_loop(_,_,_,Phase),
+	    nonvar(Phase),
+	    Chk = all),
 	Phase > Relevant, !,
 	ptr_to_last_vm(Deeper, Phase, MorePtrs).
 ptr_to_last_vm(_,_, []).
@@ -2086,11 +2091,15 @@ here we instantiate the 4th arg of vm_loop to the phase in all the paths... */
 insert_enum_phases(_, []).
 
 insert_enum_phases(VmSpecPairs, [Path | MorePaths]) :-
-	(suffix([sm(Name, _,_, vm_loop(_,_, BPaths, Phase)) | Head], Path), !,
-	    member(vm_spec_pair(Name, Phase), VmSpecPairs), % should be there
-	    (var(BPaths) -> ToDo = [Head | MorePaths];
-		append([Head | BPaths], MorePaths, ToDo));
-	  ToDo = MorePaths),
+	(suffix([sm(Name, _,_, Loop) | Head], Path),
+	    (Loop = vm_loop(_,_, BPaths, Phase), !,
+		member(vm_spec_pair(Name, Phase), VmSpecPairs), % must be there
+		(var(BPaths) -> ToDo = [Head | MorePaths];
+		    append([Head | BPaths], MorePaths, ToDo));
+	    Loop = fm_loop(_,_,_, Phase),
+	    member(vm_spec_pair(Name, Phase), VmSpecPairs), !, % might be there
+		ToDo = [Head | MorePaths]);
+	    ToDo = MorePaths),
 	insert_enum_phases(VmSpecPairs, ToDo).
 	
 /* This one just inserts the shortest time step into any undecided phases.
@@ -2386,7 +2395,7 @@ variables used are made before we open it) */
 
 open_separately(Level) :-
 	loops(Level);
-	Level = sm(_,_,_, fm_loop(Inds, _, Alarm)),
+	Level = sm(_,_,_, fm_loop(Inds, _, Alarm, _)),
 	(member(I, Inds),
 	\+ I = glob(_,_);
 	    nonvar(Alarm)).
