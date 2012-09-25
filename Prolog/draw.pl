@@ -488,6 +488,9 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    (Comp is_of_sort discrete, !,
 		Num is DNum+100;
 	    Num=DNum),
+	    (Style=state, !,
+	       DCmd = compartment;
+	    DCmd = Style),
 	    
 	    (Style = submodel, !,
 		get_colour(Comp, FillColour, FillImage, ImgPos),
@@ -504,9 +507,6 @@ display_in(Wid, Comp, Depth, Trans) :-
 				  FillColour, FillImage, ImgPos, Ox, Oy,
 				  BgColour, InFat, Colour_scheme, Comp);
 	    (Style is_class_of_sort box; Style = channel), !,
-	    (Style=state, !,
-	       DCmd = compartment;
-	    DCmd = Style),
 	    Draw_command =.. [DCmd, Wid, Screen_list, Num, Fatness,
 				  Density, Colour_scheme, [Comp]],
 		call(Draw_command);
