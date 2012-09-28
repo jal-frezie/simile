@@ -881,7 +881,7 @@ proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
 		    line {
 			$w itemconfigure $object -stipple $density
 		    }
-		    rectangle|arc|polygon {
+		    rectangle|arc|oval|polygon {
 			$w itemconfigure $object -outlinestipple $density \
 			    -stipple $density
 		    }
