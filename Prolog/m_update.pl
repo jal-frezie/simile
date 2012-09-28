@@ -1377,7 +1377,7 @@ status_affects(Item, Affected) :-
 /* Do not start on links already continued or uncontinuable */
 start_full(Type, Link) :-
 	old_cloud(Link);
-	connects_ghost_flow(Type, Link);
+	% connects_ghost_flow(Type, Link);
 	find_type(Link, Type),
 	\+ (continues_in(Link, Node),
 		\+ (Node has_link_equivalences Equiv_list,

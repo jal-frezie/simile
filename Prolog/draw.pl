@@ -182,9 +182,10 @@ shift_model(Wid, Obj, Vect) :-
 update_link_route(Link) :-
 	find_type(Link, Type),
 	(Type is_class_of_sort captionless;
-	 Type is_class_of_sort has_bowtie,
-	    find_base(Link, Base),
-	    \+ Base = Link;
+% need to redisplay all flow sections so meters move
+%	 Type is_class_of_sort has_bowtie,
+%	    find_base(Link, Base),
+%	    \+ Base = Link;
 	 Type = relation,
 	    \+ get_boundary_end(Link, true)), !,
 	reroute_display(Link);
@@ -546,7 +547,7 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	call(Draw_command),
 	((get_drawing_form(Link, LType, Bowtie),
 	  density_for(Link, Density),
-	  Density = {},
+	  % Density = {},
 	        untranslate(Bowtie, Trans, Screen_bowtie),
 		(LType = flow, !,
 		    bowtie(Wid, Screen_bowtie, RelFatness,

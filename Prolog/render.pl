@@ -705,10 +705,10 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 		excrete(L, variable_declaration, ['enum_type_data', MetaPtr,
 					     [ETCount], ETPtrs], 0, Stream)),
 	    % same thing for ghost references
-	    (setof(ConstPair,
-		  Ghost^Base^(BaseName has_part Ghost,
-			      is_ghost(Ghost),
-			      find_base(Ghost, Base),
+	    wake, (setof(ConstPair,
+		  Ghost^Base^(find_all_comps(BaseName, Ghost),
+			      % is_ghost(Ghost), do flow sections
+			      find_base(Ghost, Base), \+ Base = Ghost,
 			      all(render, make_constant_string,
 				  [unify(L), build([Ghost, Base]),
 				   build(ConstPair)])), GBList), !,

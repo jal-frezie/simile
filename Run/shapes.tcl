@@ -545,9 +545,9 @@ proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
     set arrowRad [expr $features/10]
     eval {$w create line} $mptz {-arrow last -arrowshape \
 		[list $arrowRad [expr 1.5*$arrowRad] $arrowRad] -smooth false \
-		-width $width -tag "$tagSet realwidth($width) has_info"}
+		-width $width -tag "$tagSet realwidth($width) no_stipple has_info"}
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] \
-		   [expr 2*$arrowRad] "$tagSet startblob"
+		   [expr 2*$arrowRad] "$tagSet no_stipple startblob"
     set stackDepth 1
     while {$stackDepth < $stack} {
         set stackDistance [expr {$stackDepth*$features/25}]
@@ -557,7 +557,7 @@ proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
 	}
 	eval {$w create line} $levelLine {-width [expr {$features/50}] -tag \
 					      [list $tagSet size_on_this \
-						   realwidth($width)]}
+						   realwidth($width) no_stipple]}
         incr stackDepth
     }
     ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
@@ -865,23 +865,26 @@ proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
 	}
 	if {[string equal dashed $density]} {
 	    $w itemconfigure $object -dash {-}
-	} elseif {[string equal aqua [tk windowingsystem]]} {
+	} elseif  {![string match *no_stipple* [$w gettags $object]]} {
+	    if {[string equal aqua [tk windowingsystem]]} {
 # stippling doesn't work, and crashes PostScript generation, so dash instead
-	    if {[lsearch {line rectangle arc polygon} [$w type $object]]>-1} {
-		if {[llength $density]} {
-                    $w itemconfigure $object -dash {1 3}
-                } else {
-		    $w itemconfigure $object -dash {}
+		if {[lsearch {line rectangle arc polygon} \
+			 [$w type $object]]>-1} {
+		    if {[llength $density]} {
+			$w itemconfigure $object -dash {1 3}
+		    } else {
+			$w itemconfigure $object -dash {}
+		    }
 		}
-	    }
-	} else {
-	    switch -regexp [$w type $object] {
-		line {
-		    $w itemconfigure $object -stipple $density
-		}
-		rectangle|arc|polygon {
-		    $w itemconfigure $object -outlinestipple $density \
-			-stipple $density
+	    } else {
+		switch -regexp [$w type $object] {
+		    line {
+			$w itemconfigure $object -stipple $density
+		    }
+		    rectangle|arc|polygon {
+			$w itemconfigure $object -outlinestipple $density \
+			    -stipple $density
+		    }
 		}
 	    }
         }

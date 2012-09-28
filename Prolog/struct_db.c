@@ -140,8 +140,8 @@ typedef struct arc_t {
   unsigned short source;
   unsigned short prev;
   id_list *subs;
-  id_list *arcs_to;
-  id_list *arcs_from;
+  //  id_list *arcs_to;
+  //  id_list *arcs_from;
   int offx, offy;
   int xk, yb;
 } arc;
@@ -383,8 +383,8 @@ FORPROL create_arc(PlTerm newlink) {
   newArc->prev = USHRT_MAX;
   newArc->subs = NULL;
   newArc->children = NULL;
-  newArc->arcs_to = NULL;
-  newArc->arcs_from = NULL;
+  //  newArc->arcs_to = NULL;
+  //  newArc->arcs_from = NULL;
   newArc->yb = INT_MIN;
   newArc->offy = INT_MIN;
   SUCCEED;
@@ -526,16 +526,16 @@ FORPROL remove_link(PlTerm dest, PlTerm source, PlTerm link) {
 
   linkName = term_to_chars(link, &spareAtom);
   endName = term_to_chars(dest, &spareAtom);
-  if (is_arc(endName))
-    end_pts = &(arcs[get_arc_number(endName)].arcs_to);
-  else 
+  //  if (is_arc(endName))
+  //    end_pts = &(arcs[get_arc_number(endName)].arcs_to);
+  //  else 
     end_pts = &(nodes[get_node_number(endName)].arcs_to);
   remove_arc_from_list(end_pts, linkName);
 
   endName = term_to_chars(source, &spareAtom);
-  if (is_arc(endName))
-    end_pts = &(arcs[get_arc_number(endName)].arcs_from);
-  else 
+  //  if (is_arc(endName))
+  //    end_pts = &(arcs[get_arc_number(endName)].arcs_from);
+  //  else 
     end_pts = &(nodes[get_node_number(endName)].arcs_from);
   remove_arc_from_list(end_pts, linkName);
   SUCCEED;
@@ -853,9 +853,10 @@ FORPROL get_in_list_pointer(PlTerm dest, PlTerm inPtr) {
   PlAtom spareAtom;
 
   destName = term_to_chars(dest, &spareAtom);
-  if (is_arc(destName))
-    ptr = arcs[get_arc_number(destName)].arcs_to;
-  else if (is_node(destName))
+    //if (is_arc(destName))
+    //  ptr = arcs[get_arc_number(destName)].arcs_to;
+    //else   
+  if (is_node(destName))
     ptr = nodes[get_node_number(destName)].arcs_to;
   else
     ptr = NULL;
@@ -889,9 +890,10 @@ FORPROL get_out_list_pointer(PlTerm src, PlTerm inPtr) {
   PlAtom spareAtom;
 
   srcName = term_to_chars(src, &spareAtom);
-  if (is_arc(srcName))
-    ptr = arcs[get_arc_number(srcName)].arcs_from;
-  else if (is_node(srcName))
+    //if (is_arc(srcName))
+    //  ptr = arcs[get_arc_number(srcName)].arcs_from;
+    //else 
+  if (is_node(srcName))
     ptr = nodes[get_node_number(srcName)].arcs_from;
   else
     ptr = NULL;

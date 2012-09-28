@@ -348,9 +348,13 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	     
 /* Note if the function lacks a value it may not be the user's fault; it might be
 an unnecessary virtual function generated in the SD view. 
-So leave it out. */
+So leave it out. However it may also be the fn of a ghost, so should get its
+host's value */
 
-instance_of(function, _, _, [], []).
+instance_of(function, Node, _, Inst, Ref) :-
+	get_host(Node, Result),
+	Ref = [instance(variable, Result, _, Value, Dims)],
+	Inst = [instance(variable, Node, _, Value, Dims)].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* flows have the value of the node connected to the bowtie if there is one, and 

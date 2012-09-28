@@ -553,7 +553,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	Moving_obj is_of_sort has_bowtie,
 	    get_link_route(Moving_obj, Point_list),
 	    image'><'closest_centre([Xpt, Ypt], Point_list, _Miss, _CPt, Posn),
-	    (bowtie_section(Moving_obj, Moving_obj),
+	    (% bowtie_section(Moving_obj, Moving_obj),
 		implicit_function(Moving_obj, Fn),
 		get_shape(Fn, along, OldPosn),
 		abs(Posn-OldPosn)<100, !,
