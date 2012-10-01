@@ -189,7 +189,7 @@ save_arcs( [Arc-Start-End|Arcs], Stream ) :-
 		   GraphicalAttributeValuePairs ),
 	export_with_breaks(Stream,
 			   arc(Arc, Start, End, Type,
-			       [children=Children | AttributeValuePairs],
+			       [attached=Children | AttributeValuePairs],
 			       GraphicalAttributeValuePairs)),
 	% children should be separate arg but need to get through load
 	% in earlier versions

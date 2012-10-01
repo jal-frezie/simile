@@ -107,7 +107,8 @@ node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
 
 arc( Arc, Start, End, Type, ExtdAttributeValuePairs,
 		GraphicalInfo, _, Bindings, NewBindings ) :-
-	(ExtdAttributeValuePairs = [children=Children | AttributeValuePairs], !;
+	(ExtdAttributeValuePairs = [SubsName=Children | AttributeValuePairs],
+	    member(SubsName, [attached, children]), !; % was latter in prototype
 	  Children = [],
 	    AttributeValuePairs = ExtdAttributeValuePairs),
 	(Bindings = copy, MidBindings = copy, Arc=RealArc,
