@@ -710,13 +710,11 @@ parallel(S1, F1, S2, F2, Warp, M) :-
 update_bowtie(_Link, _Route).
 
 get_bowtie(Link, Bowtie) :-
-    Link is_of_sort has_bowtie,
-    get_link_route(Link, Route),
     find_type(Link, LType),
     LType is_class_of_sort has_bowtie,
+    get_link_route(Link, Route),
     get_bowtie_size(Link, Bowtie_size),
-    (implicit_function(Link, Tap), !;
-	add_implicit_function(Link, Tap)),
+    Link has_part Tap,
     get_shape(Tap, along, TiePosn),
     get_middle_segment(LType, Route, Bowtie_size, TiePosn, Bowtie).
 
