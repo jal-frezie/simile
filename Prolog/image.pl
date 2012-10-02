@@ -1174,6 +1174,9 @@ curve_route(Type, [X1, Y1], [X3, Y3], [X2, Y2]) :-
 get_linear(Acw_pt, Cw_pt, Acw_gap, Front_gap, Cw_gap, Mid_pt) :-
     Mid_pt is (Acw_pt*(Front_gap - Cw_gap) + Cw_pt*(Front_gap - Acw_gap)) / (2*Front_gap - Cw_gap - Acw_gap).
 
+/* this version treats each segment as of equal length re whether it
+gets bowtie
+
 get_middle_segment(Type, List, Size, Posn, Bowtie) :-
     length(List, L),
     Half_length is (L - 1)*Posn//1000,
@@ -1181,6 +1184,26 @@ get_middle_segment(Type, List, Size, Posn, Bowtie) :-
     append(_, [St, Fi | Rest], List),
     length(Rest, Half_length), !,
     tie_middle(Type, St, Fi, Size, Fract, Bowtie).
+
+this tries to get length of whole flow */
+get_middle_segment(Type, List, Size, Posn, Bowtie) :-
+	find_on_flow(List, Posn, 0, _, [X1, Y1, X2, Y2], Fract),
+	tie_middle(Type, [X2, Y2], [X1, Y1], Size, Fract, Bowtie).
+
+find_on_flow([_Start], Posn, Total, PosnAlong, _, _) :-
+	PosnAlong is (1000-Posn)*Total/1000.
+
+find_on_flow([[X1, Y1], [X2, Y2] | Left], Posn, Passed,
+	     PosnAlong, SegWithBowtie, Fract) :-
+	SegSize is max(abs(Y2-Y1), abs(X2-X1)),
+	NewPassed is Passed+SegSize,
+	find_on_flow([[X2, Y2] | Left], Posn, NewPassed,
+		     PosnAlong, SegWithBowtie, Fract),
+	FractThisSeg is (PosnAlong-Passed)/(NewPassed-Passed),
+	(FractThisSeg >= 0, FractThisSeg < 1, !,
+	    SegWithBowtie = [X1, Y1, X2, Y2],
+	    Fract = FractThisSeg;
+	  true).
 
 /* tie_middle puts bowtie on a section of flow, oriented crosswise to the axis along which the flow has greatest extent */
 

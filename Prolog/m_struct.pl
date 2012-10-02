@@ -71,7 +71,7 @@ Node is_also_part_of Parent :-
 :- op(500, xfy, is_no_longer_part_of).
 
 Node is_no_longer_part_of Parent :-
-	retractall_model( subsystem( Parent, Node )).
+	retract_model( subsystem( Parent, Node )).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ABSTRACTION BOUNDARY ENDS HERE

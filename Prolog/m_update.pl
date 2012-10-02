@@ -1544,11 +1544,12 @@ swap_pairs([M1-M2 | R1], [M2-M1 | R2]) :-
 
 remove_floater(Node) :-
 	(_ is_connector from Node to _;
-	_ is_connector from _ to Node;
-	Node has_class C,
+	  _ is_connector from _ to Node;
+	  implicit_function(_Arc, Node);
+	    Node has_class C,
 	    \+ member(C, [variable, cloud, border, function]);
-	Node has_class_refinement min_val of _;
-	is_parameter(Node, 2)), !;
+	  Node has_class_refinement min_val of _;
+	  is_parameter(Node, 2)), !;
 	draw'><'off(Node),
 	oblitterfry(Node).
 

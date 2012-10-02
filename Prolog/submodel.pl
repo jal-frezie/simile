@@ -148,19 +148,22 @@ make_link_spec(_, [], []).
 make_link_spec(Submodel, Equivs, [Link | NewLinks]) :-
 
 	(select(Start-Mid, Equivs, Inter_equivs), 
-	select(Mid-Finish, Inter_equivs, Others),
-		Dead = [Start, Mid, Finish];
-	select(Start-Finish, Equivs, Others),
-		Dead = [Start, Finish]), !,
+	select(Mid-Link, Inter_equivs, Others),
+		Dead = [Start, Mid]; % only with straight-through links
+	select(Start-Link, Equivs, Others),
+		Dead = [Start]), !,
 
+	% change for v6: rather than deleting and re-creating, make the
+	% following section start from the origin...
 	(Start is_connector from Origin to _,
-	    Finish is_connector from _ to Destination, !,
-	    Link is_new_connector from Origin to Destination,
-	    copy_local_attributes(Finish, Link),
+	    Link is_connector from MidPt to Destination, !,
+	    Link has_changed_termination start from MidPt to Origin,
+	    % Link is_new_connector from Origin to Destination,
+	    % copy_local_attributes(Finish, Link),
 	    copy_start_equivalences(Start, Link),
-	    switch_finish_equivalences(Finish, Link),
+	    % switch_finish_equivalences(Finish, Link),
 	    change_references(Origin, Start, Link),
-	    change_references(Destination, Finish, Link),
+	    % change_references(Destination, Finish, Link),
 	    Gone = Dead;
 	/* keep going if there is a bad equivalence */
 	Gone = []),
@@ -168,7 +171,9 @@ make_link_spec(Submodel, Equivs, [Link | NewLinks]) :-
 	(member(OldLink, Gone),
 	/* Don't kill link if it has other equivalences */
 	    \+ member(OldLink-_, Others),
-	    (_ has_changed_termination _ from OldLink to Link,
+	    (Attached is_part_of OldLink,
+		Attached is_no_longer_part_of OldLink,
+		Attached is_also_part_of Link,
 		fail;
 	    kill_equivalences(OldLink)),
 	    OldLink is_connector from Post1 to Post2,
@@ -190,7 +195,7 @@ Harsh but fair. */
 scrap_spare_functions(Link) :-
 	Link is_of_sort has_bowtie, state'><'get_style(sd),
 		pick_best_function(Link, Grain),
-		(_ is_connector from Chaff to Link,
+		(Chaff is_part_of Link,
 			\+ Chaff = Grain,
 			(_ has_changed_termination finish from Chaff to Grain,
 				fail;
@@ -199,9 +204,9 @@ scrap_spare_functions(Link) :-
 	true.
 
 pick_best_function(Flow, Best) :-
-	_ is_connector from Best to Flow,
+	Best is_part_of Flow,
 	(Best has_class_refinement value of _;
-	\+ (_ is_connector from Other to Flow,
+	\+ (Other is_part_of Flow,
 		Other has_class_refinement value of _)),
 	!.
 

@@ -53,8 +53,8 @@ Arc is_new_connector from Source to Dest :-
 	Arc is_also_connector from Source to Dest.
 
 Arc is_also_connector from Source to Dest :-
-	Source is_part_of Parent,
-	Dest is_part_of Parent,
+	parent_of(Source, Parent),
+	parent_of(Dest, Parent),
 	assert_model( connection( Dest, Source, Arc )).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -104,8 +104,8 @@ Arc has_changed_termination End from OldEnd to NewEnd :-
 	member(End-NewFinish-NewStart-OldEnd-FarEnd,
 	       [start-OldFinish-NewEnd-OldStart-OldFinish,
 		finish-NewEnd-OldStart-OldFinish-OldStart]),
-	FarEnd is_part_of Parent,
-	NewEnd is_part_of Parent,
+	parent_of(FarEnd, Parent),
+	parent_of(NewEnd, Parent),
 	assert_model(connection(NewFinish, NewStart, Arc)).
 
 Arc has_changed_termination End to NewEnd :-
@@ -208,6 +208,12 @@ Arc is_no_longer_connector :-
 	retract_model(is_arc(Arc)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+parent_of(Node, Parent) :-
+	Node is_part_of NodeOrArc,
+	(NodeOrArc is_connector from End to _, !,
+	    End is_part_of Parent;
+	  Parent = NodeOrArc). % nodes in links but no links to/from links
+
 % connects( Arc, Node1, Node2 ) if Arc connects Node1 and Node2, factoring out
 % compound components
 
