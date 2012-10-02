@@ -53,8 +53,8 @@ Arc is_new_connector from Source to Dest :-
 	Arc is_also_connector from Source to Dest.
 
 Arc is_also_connector from Source to Dest :-
-	Source is_part_of _,
-	Dest is_part_of _,
+	Source is_part_of Parent,
+	Dest is_part_of Parent,
 	assert_model( connection( Dest, Source, Arc )).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -100,10 +100,12 @@ Arc no_longer_has_attribute Attribute :-
 :- op( 500, xfy, has_changed_termination).
 
 Arc has_changed_termination End from OldEnd to NewEnd :-
-	(NewEnd is_connector from _ to _; NewEnd is_part_of _),
-	(End = start, OldStart = OldEnd, NewStart = NewEnd, NewFinish = OldFinish;
-	End = finish, OldStart = NewStart, NewEnd = NewFinish, OldEnd = OldFinish),
 	retract_model(connection(OldFinish, OldStart, Arc)),
+	member(End-NewFinish-NewStart-OldEnd-FarEnd,
+	       [start-OldFinish-NewEnd-OldStart-OldFinish,
+		finish-NewEnd-OldStart-OldFinish-OldStart]),
+	FarEnd is_part_of Parent,
+	NewEnd is_part_of Parent,
 	assert_model(connection(NewFinish, NewStart, Arc)).
 
 Arc has_changed_termination End to NewEnd :-

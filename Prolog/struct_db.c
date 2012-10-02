@@ -204,14 +204,6 @@ void add_to_list(id_list** tgt, short int newId) {
   *tgt = newItem;
 }
 
-void add_node_to_list(id_list** tgt, const char* newId) {
-  add_to_list(tgt, get_node_number(newId));
-}
-
-void add_arc_to_list(id_list** tgt, const char* newId) {
-  add_to_list(tgt, get_arc_number(newId));
-}
-
 void remove_from_list(id_list** tgt, short int oldId) {
   id_list *here;
 
@@ -263,18 +255,17 @@ FORPROL create_node(PlTerm newnode) {
   
 FORPROL add_to_tree(PlTerm parent, PlTerm child) {
   PlAtom spareAtom;
-  unsigned short parentNum;
+  unsigned short parentNum, childNum;
   node *childNode;
   id_list **childList;
-  const char* childStr;
   const char* parentStr;
 
-  childStr = term_to_chars(child, &spareAtom);
-  childNode = &(nodes[get_node_number(childStr)]);
+  childNum = get_node_number(term_to_chars(child, &spareAtom));
+  childNode = &(nodes[childNum]);
   parentStr = term_to_chars(parent, &(childNode->parent));
 
   if (childNode->parent == rootAtom) {
-    add_node_to_list(&roots, childStr);
+    add_to_list(&roots, childNum);
   } else {
     if (is_arc(parentStr)) {
       parentNum = get_arc_number(parentStr);
@@ -283,7 +274,7 @@ FORPROL add_to_tree(PlTerm parent, PlTerm child) {
       parentNum = get_node_number(parentStr);
       childList = &((nodes+parentNum)->children);
     }
-    add_node_to_list(childList, childStr);
+    add_to_list(childList, childNum);
   }
   SUCCEED;
 }
@@ -394,32 +385,32 @@ FORPROL add_link(PlTerm dest, PlTerm source, PlTerm link) {
   arc *newArc;
   id_list** end_pts;
   const char* endName;
-  const char* linkName;
+  unsigned short linkNum;
   PlAtom spareAtom;
 
-  linkName = term_to_chars(link, &spareAtom);
-  newArc = &(arcs[get_arc_number(linkName)]);
+  linkNum = get_arc_number(term_to_chars(link, &spareAtom));
+  newArc = &(arcs[linkNum]);
 
   newArc->dest = get_node_number(term_to_chars(dest, &spareAtom));
   end_pts = &(nodes[newArc->dest].arcs_to);
-  add_arc_to_list(end_pts, linkName);
+  add_to_list(end_pts, linkNum);
 
   newArc->source = get_node_number(term_to_chars(source, &spareAtom));
   end_pts = &(nodes[newArc->source].arcs_from);
-  add_arc_to_list(end_pts, linkName);
+  add_to_list(end_pts, linkNum);
   SUCCEED;
 }
 
 FORPROL add_continuation(PlTerm before, PlTerm after) {
   arc *Arc;
-  const char* afterName;
+  unsigned short afterNum;
   PlAtom spareAtom;
 
-  afterName = term_to_chars(after, &spareAtom);
-  Arc = &(arcs[get_arc_number(afterName)]);
+  afterNum = get_arc_number(term_to_chars(after, &spareAtom));
+  Arc = &(arcs[afterNum]);
   Arc->prev = get_arc_number(term_to_chars(before, &spareAtom));
   Arc = &(arcs[Arc->prev]);
-  add_arc_to_list(&(Arc->subs), afterName);
+  add_to_list(&(Arc->subs), afterNum);
   SUCCEED;
 }
 

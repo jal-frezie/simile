@@ -46,11 +46,11 @@ move_components(OldParent, Migrants, California) :-
 %		\+ member(Arc, Migrants),
 		\+ (Arc has_type influence,
 		       make_branch(Arc, California)),
-		add_section(California, Fix, out, Arc, Migrant, End, NewSect),
-		Stowaway is_part_of Arc,
-		member(Stowaway, Migrants),
-		Stowaway is_no_longer_part_of Arc,
-		Stowaway is_also_part_of NewSect,
+		((Stowaway is_part_of Arc,
+		member(Stowaway, Migrants)) -> % bowtie was bagged
+		    Keep = in;
+		  Keep = out),
+		add_section(California, Fix, Keep, Arc, Migrant, End, _NewSect),
 		fail));
 	true.
 
@@ -113,7 +113,8 @@ add_section(California, Direction, Keep, Flow, NearEnd, FarEnd, NewFlow) :-
 	    switch_start_equivalences(Flow, NewFlow),
 	    Flow now_follows NewFlow),
 	copy_local_attributes(Flow, NewFlow),
-	change_references(OldEnd, Flow, NewFlow).
+	change_references(OldEnd, Flow, NewFlow),
+	m_update'><'add_implicit_function(NewFlow, _).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % unencapsulate/2 does the opposite of the above, but only returns a list of 
