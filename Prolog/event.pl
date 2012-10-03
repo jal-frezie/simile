@@ -1476,22 +1476,19 @@ recursive_highlight(Target, Way, Where, E2E) :-
 	(Target is_of_sort box, !,
 	    change_delete_status(Target, Way, Where),
 	    Also = Target;
-	E2E = 1,
-	    m_class'><'connects(Target, VStart, VFinish),
+	(E2E = 1,
+	    m_class'><'connects(Target, VStart, VFinish);
+	E2E = 0,
+	    m_class'><'Target is_connector from VStart to VFinish),
 	    get_host(VStart, Start), % if a bowtie we need flow status
+	    \+ Start = VFinish,
 	    get_host(VFinish, Finish),
 	    match_delete_status([Start, Finish], Way, Where),
 	    change_delete_status(Target, Way, Where),
 	    (Also = Target;
-	    adjust_link_backwards(Target, Way, Also, Where);
-	    adjust_link_forwards(Target, Way, Also, Where);
-	    bring_dependents_into_line([Start, Finish], Where), fail);
-	E2E = 0,
-	    local_ends(Target, Start, Finish),
-	    match_delete_status([Start, Finish], Way, Where),
-	    change_delete_status(Target, Way, Where),
-	    bring_dependents_into_line([Start, Finish], Where),
-	    Also = Target),
+	    E2E = 1, adjust_link_backwards(Target, Way, Also, Where);
+	    E2E = 1, adjust_link_forwards(Target, Way, Also, Where);
+	    bring_dependents_into_line([Start, Finish], Where), fail)),
 	find_all_links(Also, Linked),
 	% new bit to stop redoing what has already been done
 	    (at_def_con(Linked, Where) -> Way = (from); Way = (to)),
