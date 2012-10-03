@@ -3,7 +3,7 @@
 **** manipulating models 						    ****
 *******************************************************************************/
 
-sicstus_module(submodel, [encapsulate/3, unencapsulate/3]).
+sicstus_module(submodel, [encapsulate/3, decapsulate/3]).
 
 sicstus_use_module( [ame_gen,m_class,utility,library(lists)] ).
 
@@ -117,12 +117,12 @@ add_section(California, Direction, Keep, Flow, NearEnd, FarEnd, NewFlow) :-
 	m_update'><'add_implicit_function(NewFlow, _).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% unencapsulate/2 does the opposite of the above, but only returns a list of 
+% decapsulate/2 does the opposite of the above, but only returns a list of 
 % nodes. The new arcs have the attributes of both the arcs they replace, with
 % those ffrom the one nearest the destination taking precedence. Input/output
 % and source/sink nodes are thrown away, even if they were visible.
 
-unencapsulate(Node, Contents, ToReroute) :-
+decapsulate(Node, Contents, ToReroute) :-
 	(Node has_link_equivalences Equivs, !;
 	    Equivs = []),
 	(setof(OutputLink, is_output_link(Node, Equivs, OutputLink),
@@ -197,7 +197,7 @@ scrap_spare_functions(Link) :-
 		pick_best_function(Link, Grain),
 		(Chaff is_part_of Link,
 			\+ Chaff = Grain,
-			(_ has_changed_termination finish from Chaff to Grain,
+			(_ has_changed_termination _Either from Chaff to Grain,
 				fail;
 			m_update'><'oblitterfry(Chaff),
 				fail));

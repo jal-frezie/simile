@@ -100,10 +100,10 @@ Arc no_longer_has_attribute Attribute :-
 :- op( 500, xfy, has_changed_termination).
 
 Arc has_changed_termination End from OldEnd to NewEnd :-
-	retract_model(connection(OldFinish, OldStart, Arc)),
 	member(End-NewFinish-NewStart-OldEnd-FarEnd,
 	       [start-OldFinish-NewEnd-OldStart-OldFinish,
 		finish-NewEnd-OldStart-OldFinish-OldStart]),
+	retract_model(connection(OldFinish, OldStart, Arc)),
 	parent_of(FarEnd, Parent),
 	parent_of(NewEnd, Parent),
 	assert_model(connection(NewFinish, NewStart, Arc)).

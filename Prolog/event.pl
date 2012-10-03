@@ -2430,7 +2430,7 @@ dissolve_component(Node) :-
 	(has_outer_equiv(Inner, Node, Outer),
 		/* demolition process will delete section nearest source so off this */
 		off(Inner), off(Outer), fail;
-	unencapsulate(Node, Orphan_nodes, MovedLinks)),
+	decapsulate(Node, Orphan_nodes, MovedLinks)),
 	    /* Now everything from the dead submodel must be redisplayed
 	    because its fatness will have changed to match the new parent */
 	(member(OrphanNode, Orphan_nodes),
