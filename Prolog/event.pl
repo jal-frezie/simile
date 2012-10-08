@@ -1480,9 +1480,9 @@ recursive_highlight(Target, Way, Where, E2E) :-
 	    m_class'><'connects(Target, VStart, VFinish);
 	E2E = 0,
 	    m_class'><'Target is_connector from VStart to VFinish),
-	    get_host(VStart, Start), % if a bowtie we need flow status
+	    get_visible(VStart, Start), % if a bowtie we need flow status
 	    \+ Start = VFinish,
-	    get_host(VFinish, Finish),
+	    get_visible(VFinish, Finish),
 	    match_delete_status([Start, Finish], Way, Where),
 	    change_delete_status(Target, Way, Where),
 	    (Also = Target;
@@ -1492,8 +1492,17 @@ recursive_highlight(Target, Way, Where, E2E) :-
 	find_all_links(Also, Linked),
 	% new bit to stop redoing what has already been done
 	    (at_def_con(Linked, Where) -> Way = (from); Way = (to)),
-	    \+ has_outer_equiv(_, Also, Linked),
+	    (E2E = 1,
+		\+ has_outer_equiv(_, Also, Linked);
+	     E2E = 0,
+		(has_outer_equiv(LinkedToo, Also, Linked),
+		    recursive_highlight(LinkedToo, Way, Where, E2E),
+		    fail; true)),
 	    recursive_highlight(Linked, Way, Where, E2E).
+
+get_visible(Invis, Vis) :-
+	get_host(Invis, Maybe),
+	(appears(Maybe), !, Vis=Maybe; find_all_comps(Vis, Maybe)).
 
 adjust_link_backwards(Target, Way, Also, Where) :-
 	m_class'><'Target follows Prev,
@@ -1559,7 +1568,7 @@ keep_only_if_links_stay(Damage, Where) :-
 
 match_delete_status(Ends, Way, Where) :-
 	member(End, Ends),
-	(Where = seln; \+ depends_on_links(End)),
+	\+ depends_on_links(End),
 	\+ at_def_con(End, Where), !, Way = (from);
 	true.
 

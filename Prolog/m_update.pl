@@ -802,7 +802,7 @@ return_relevant(End, Mid, Link, VisLink) :-
 
 find_all_links(Comp, Link) :-
 	implicit_function(Comp, Terminus), !,
-	    select(Relevant, [Comp, Terminus], [Spare]),
+	    select(Relevant, [Comp, Terminus], Spare),
 	    select(Relevant, [Src, Dest], Far),
 	    Link is_connector from Src to Dest,
 	    \+ Far = Spare; % not the link from the fn
