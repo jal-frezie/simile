@@ -102,6 +102,7 @@ proc c_setparamarray {topNode tgtNode} {
 # right exec thread, so strip it off here
 foreach oldCProc {setparamelement settimepointelement settimepointarray \
 		      cleartimeseries setwraparoundtime setfillmethod \
+		      setinterval \
 		      setrecordlist settimepointrecords markevtparamactive \
 		      setparamall getparamall settimepointall gettimepointall} {
     proc c_$oldCProc {args} {
@@ -137,7 +138,7 @@ proc ConsultParameterMetafile {instanceHandle fileLocn {targetSubmodel {}}} {
 	set ::readMany(/$topNode$component) \
 	    [string equal INPUT [GetModelProperty $mHandle $component Eval]]
     }
-    ZapParams $topNode $targetSubmodel [file normalize $fileLocn]
+    ZapParams $topNode $targetSubmodel [file normalize $fileLocn] 0
 }
 ## End of parameter loading accessories 
 
@@ -187,6 +188,14 @@ proc GetCCompProperty {model_id prop node} {
 			 ] ;# must be list to substitute last case
 }
 
+proc CreateTimeSeriesStructs {mHandle iHandle} {
+    foreach component [ListObjPaths $mHandle] {
+	if {[string equal INPUT [GetModelProperty $mHandle $component Eval]]} {
+	    CreateParamArray $iHandle $component
+	}
+    }
+}
+
 proc CreateModel {mHandle} {
     set iHandle [c_createmodel $mHandle]
     set ::modelTypes($iHandle) $mHandle
@@ -194,6 +203,8 @@ proc CreateModel {mHandle} {
     for {set st 1} {$st<8} {incr st} {
 	c_setstepmodel $iHandle 0.1 $st
     }
+    CreateTimeSeriesStructs $mHandle $iHandle
+# create structures for time series parameters
     return $iHandle
 }
 
