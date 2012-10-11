@@ -752,7 +752,8 @@ deal_with_rest( [], PreviousLength, Parent, Bindings, AllBindings, Terms ) :-
 	    deal_with_rest(Terms, NewLength, Parent, Bindings, AllBindings,[]);
 	(build'><'missing(Comp),
 	    query(lost_component(Comp, Terms), warning, top, [ok], _);
-	query(bad_model_format(Terms), warning, top, [ok], _))).
+	query(bad_model_format(Terms), warning, top, [ok], _)),
+	    AllBindings = Bindings).
 
 deal_with_rest( [Term|Terms], Length, Parent, Bindings, AllBindings, Rest ) :-
 	Term =.. TermList,
