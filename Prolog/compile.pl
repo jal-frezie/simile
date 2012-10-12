@@ -1547,8 +1547,8 @@ unite_event_contexts([elt(Path, _,_) | Others], Test, Act) :-
 	unite_event_contexts(Others, Test, OldAct),
 	inters'><'combine_contexts(Path, OldAct, Test, Act).
 
-choosify([], prev(0)).
-choosify([Evt-Cons | Rest], choose(happens(Evt), Cons, IfNot)) :-
+choosify(Cons on Evt, choose(happens(Evt), Cons, prev(0))).
+choosify((Cons on Evt, Rest), choose(happens(Evt), Cons, IfNot)) :-
 	choosify(Rest, IfNot).
 
 /* Now...when using a variable in the equation I have been putting

@@ -964,7 +964,9 @@ make_evaluation_routine(
 	    make_pointer(Language, SStruct, VStruct),
 	    append(EarlyArgs, [VStruct], VArgs),
 	    make_evaluation_routine(Language, Trigger, VTrigger),
-	    combine(Language, check_limit, [VTrigger | VArgs], Term);
+	    make_procedure_call_chars(Language, [check_limit, VTrigger | VArgs],
+				      TermStr),
+	    name(Term, TermStr);
 	Expr =.. [Op | Args],
 	    make_evaluation_routine_all(Language, Args, VArgs),
 	    combine(Language, Op, VArgs, Term)).
