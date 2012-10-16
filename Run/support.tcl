@@ -851,19 +851,19 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 
     set go 0 ;# save time by preventing useless firing
     switch -regexp -- $phase {
-	0||1 { ;# resetting model, do not use saved data
+	0|1 { ;# resetting model, do not use saved data
 	    set extras(t1) $trigger ;# for prediction next step
 	} 2 { ;# next 3 are R-K substeps
 	    set extras(t2) $trigger
 	} 3 {
 	    set extras(t2) [expr {($extras(t2)+$trigger)/2}]
-	} 5||6||10||11 {
+	} 5|6|10|11 {
 	    set old $extras(t1)
-	    if {$trigger>$old && (action & 2)} {
+	    if {$trigger>$old && ($action & 2)} {
 		set heading_out 1
 		set to_limit [expr {$upper-$trigger}]
 		set rate [expr {$trigger-$old}]
-	    } elseif {$trigger<$old && (action & 1)} {
+	    } elseif {$trigger<$old && ($action & 1)} {
 		set heading_out -1
 		set to_limit [expr {$trigger-$lower}]
 		set rate [expr {$old-$trigger}]
@@ -877,7 +877,7 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 		if {$go} { ;# firing
 		    set event(predict) [glob_element ts $step]
 		    # in case it causes another event immediately
-		    set event(cur_sign) "" ;# but do not say which
+		    set event(cur_sign) {} ;# but do not say which
 		}
 		set extras(t1) $trigger ;# for prediction next step
 	    }
@@ -992,8 +992,8 @@ proc TclResetModel {node t0 doingRK topPhase} {
             set ts($tweakPhase) $t0
             set dts($tweakPhase) [expr $steps($tweakPhase)]
         }
-	set event(prev_sign) 0
-	set event(cur_sign) 0
+	set event(prev_sign) {}
+	set event(cur_sign) {}
     }
     set adapt(curFreq) [expr $steps($phasecount)]
     set adapt_maxerr 0 ;# just so it is defined at first comparison
@@ -1024,16 +1024,17 @@ proc TclExecuteModel {node howInt start end errLim} {
 	}
         while {!$madeStep} {
 	    # aim for next predicted event if closer than end
-puts "freq $freq end $end nextSeries $event(nextSeries) prev_sign $event(prev_sign)"
+#puts "freq $freq end $end nextSeries $event(nextSeries) prev_sign $event(prev_sign)"
 	    set aim_for $end
 	    if {$event(nextSeries)!=$xtime && \
 		    ($aim_for-$event(nextSeries))/$freq>0} {
 		set aim_for $event(nextSeries)
 	    }
-	    if {$event(prev_sign) && $(aim_for-$event(prev_sign))/$freq>0} {
-		set aim_for $event(prev_sign)
+            if {[string length $event(prev_sign)] && \
+		    ($aim_for-$event(predict))/$freq>0} {
+		set aim_for $event(predict)
 	    } else {
-		set event(prev_sign) 0 ;# cancel event if stopping short
+		set event(prev_sign) {} ;# cancel event if stopping short
 	    }
 	    
             # stretch interval to hit end if necssary
@@ -1079,12 +1080,12 @@ puts "freq $freq end $end nextSeries $event(nextSeries) prev_sign $event(prev_si
 		set adapt(culprit) 0 ;# in c: userDefStop->targetId
 		set ts(0) [expr {10+($howInt eq "RUNGE_KUTTA")}]
 # do not record vals for later prediction
-		set event(cur_sign) 0
+		set event(cur_sign) {}
 		set event(predict) $xtime
 # only interested in interpolation not slight overshoot
 		do_model evalmodel [set dts(0) [expr {$phasecount+1}]]
 #  event error is time by which new prediction earlier or later
-		if {$event(cur_sign)} {
+		if {[string length $event(cur_sign)]} {
 		    set evtError [expr {abs($event(predict)-$xtime)}]
 		}
 # now, if this error is too great, we wish to shorten the step
@@ -1141,7 +1142,7 @@ puts "freq $freq end $end nextSeries $event(nextSeries) prev_sign $event(prev_si
 	
 	set ts(0) [expr {5+($howInt eq "RUNGE_KUTTA")}]
 # now limit events will actually affect the model
-	set event(cur_sign) 0
+set event(cur_sign) {}
 	set event(predict) [expr {$xtime + 1.0625*$freq}] ;# max for next step
 # limit of period of interest
 	do_model evalmodel [set dts(0) $bigPhase]
