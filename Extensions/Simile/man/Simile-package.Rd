@@ -13,8 +13,8 @@ models saved by Simile.
 \tabular{ll}{
 Package: \tab Simile\cr
 Type: \tab Package\cr
-Version: \tab 1.1\cr
-Date: \tab 2012-10-01\cr
+Version: \tab 1.2\cr
+Date: \tab 2012-10-11\cr
 License: \tab Unrestricted\cr
 LazyLoad: \tab yes\cr
 }
@@ -32,7 +32,9 @@ arrays with create.param.array() and set.model.parameter(). The
 functions set.model.step(), reset.model() and execute.model() control
 execution. get.model.time() returns the time at which execution
 finished. Use get.value.array() to get the values from any model
-component as an R array, or get.value.list() to get them as an R list. 
+component as an R array, or get.value.list() to get them as an R list.
+
+This version works with Simile versions 5.94 on.
 }
 \author{
   Simulistics Ltd
