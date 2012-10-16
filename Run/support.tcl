@@ -1024,8 +1024,10 @@ proc TclExecuteModel {node howInt start end errLim} {
 	}
         while {!$madeStep} {
 	    # aim for next predicted event if closer than end
-	    set aim_for end
-	    if {$(aim_for-$event(nextSeries))/$freq>0} {
+puts "freq $freq end $end nextSeries $event(nextSeries) prev_sign $event(prev_sign)"
+	    set aim_for $end
+	    if {$event(nextSeries)!=$xtime && \
+		    ($aim_for-$event(nextSeries))/$freq>0} {
 		set aim_for $event(nextSeries)
 	    }
 	    if {$event(prev_sign) && $(aim_for-$event(prev_sign))/$freq>0} {
@@ -1035,7 +1037,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 	    }
 	    
             # stretch interval to hit end if necssary
-            if {$xtime/$freq+1.0625>$end/$freq} {
+            if {$xtime/$freq+1.0625>$aim_for/$freq} {
                 set freq [expr $aim_for-$xtime]
 		if {$freq/$minFreq<1} {
 		    set freq $minFreq
@@ -1254,7 +1256,7 @@ proc UpdateTimeSeries {topNode newTimeInDays} {
     set firstSeriesEvt $newTimeInDays
     foreach list [array names setFromSeries $topNode,*,times] {
 	set seriesEvt [UpdateFromPoints $list $topNode $newTimeInDays]
-	if {$seriesEvt < $firstSeriesEvt} {
+	if {$firstSeriesEvt==$newTimeInDays || $seriesEvt<$firstSeriesEvt} {
 	    set firstSeriesEvt $seriesEvt
 	}
     }
@@ -1376,10 +1378,9 @@ proc UpdateFromPoints {list topNode newTimeInDays} {
 		    set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
 		    PlaceInArray $topNode $tgtIndex $paramData($tsValue) 0 $inC
 		}
-		return [expr {$newTime*$paramData(timePointInterval,$node)}]
 	    }
 	}
-# will get here only if no new data is loaded at this point
+    return [expr {$newTime*$paramData(timePointInterval,$node)}]
 }
 
 proc loses {prob phase} {
