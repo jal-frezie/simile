@@ -224,7 +224,7 @@ proc ExecuteModel {myNode howInt start finish errLim evtPause} {
 	    TclExecuteModel $myNode $howInt $start $finish $errLim
 	}
     } errList]} {
-	error "errList might not be a list" $::errorInfo
+	# error "errList might not be a list" $::errorInfo
 	InteractGUI $myNode [lindex $errList 3] 2
 	return [list [ExplainError $myNode $errList $::errorInfo] \
 		[lindex $errList 3]]
