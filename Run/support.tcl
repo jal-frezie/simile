@@ -850,14 +850,15 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
     set phase [expr {int([glob_element ts 0])}]
 
     set go 0 ;# save time by preventing useless firing
-    switch -regexp -- $phase {
-	0|1 { ;# resetting model, do not use saved data
+#puts "trigger $trigger phase $phase extras [array get extras]"
+    switch -- $phase {
+	0 - 1 { ;# resetting model, do not use saved data
 	    set extras(t1) $trigger ;# for prediction next step
 	} 2 { ;# next 3 are R-K substeps
 	    set extras(t2) $trigger
 	} 3 {
 	    set extras(t2) [expr {($extras(t2)+$trigger)/2}]
-	} 5|6|10|11 {
+	} 5 - 6 - 10 - 11 {
 	    set old $extras(t1)
 	    if {$trigger>$old && ($action & 2)} {
 		set heading_out 1
@@ -881,7 +882,6 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 		}
 		set extras(t1) $trigger ;# for prediction next step
 	    }
-
 	    if {!$go && $heading_out} { ;# make prediction for this event
 		if {$phase==6 || $phase==11} { ;# ok approximate to quadratic
 		    later
@@ -994,6 +994,7 @@ proc TclResetModel {node t0 doingRK topPhase} {
         }
 	set event(prev_sign) {}
 	set event(cur_sign) {}
+	set event(predict) {} ;# just for debugging
     }
     set adapt(curFreq) [expr $steps($phasecount)]
     set adapt_maxerr 0 ;# just so it is defined at first comparison
@@ -1024,7 +1025,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 	}
         while {!$madeStep} {
 	    # aim for next predicted event if closer than end
-#puts "freq $freq end $end nextSeries $event(nextSeries) prev_sign $event(prev_sign)"
+#puts "freq $freq end $end nextSeries $event(nextSeries) prev_sign $event(prev_sign) predict $event(predict)"
 	    set aim_for $end
 	    if {$event(nextSeries)!=$xtime && \
 		    ($aim_for-$event(nextSeries))/$freq>0} {
@@ -1094,7 +1095,8 @@ proc TclExecuteModel {node howInt start end errLim} {
 		if {$evtError>$errLim} {
 		    set newFreq [expr {$event(predict)-($xtime-$freq)}]
 		    if {$newFreq/$minFreq<1} {
-			set newFreq $minFreq [expr {($xtime-$freq)+$minFreq}]
+			set newFreq $minFreq 
+			set event(predict) [expr {($xtime-$freq)+$minFreq}]
 		    }
 # this is now the prediction (or absence thereof) to use
 		    set event(prev_sign) $event(cur_sign)
