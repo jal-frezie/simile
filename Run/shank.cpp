@@ -1172,11 +1172,17 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     SetdT(0, 5+(how_int==RUNGE_KUTTA)); 
     // now limit events will actually affect the model
     loadedInst->event_cur_sign = 0;
+//    loadedInst->event_prev_sign = 0; // use to check if a limit event fires
     loadedInst->event_predict = xtime + 1.0625*freq; // max for next step 
     // limit of period of interest
     if (userDefStop->excpNo=loadedInst->do_evalmodel(big_phase)) break;
     //      (*advancemodel)(id, big_phase);
-    
+//    if (loadedInst->event_prev_sign) {
+      //if so, run eval again in subphase to set up new predictions
+//      SetdT(0, (how_int==RUNGE_KUTTA)); 
+//      if (userDefStop->excpNo=loadedInst->do_evalmodel(modelSpec->phases+1)) 
+//	break;
+//    }
     loadedInst->event_prev_sign = loadedInst->event_cur_sign;
     if (userDefStop->targetId) {
       // -- bodge -- make sure trigger moves out of limit

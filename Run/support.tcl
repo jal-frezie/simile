@@ -82,6 +82,7 @@ proc ExplainError {myNode errList origError} {
 	default {set operation "doing $what for"}
     }
 #	advancemodel {set operation "advancing the time point for"}
+    set target something
     if {[string is integer -strict $dest]} { ;# graph id
 	foreach {n record} [array get ::nodedata] {
 	    if {[lindex $record 9]==$dest} {
@@ -97,8 +98,6 @@ proc ExplainError {myNode errList origError} {
 # Probably never, due to base index range checking
 	}
 	set target [lindex $targetList 0]
-    } else {
-	set target something
     }
 
     switch -glob -- $whoopsie {
@@ -850,7 +849,7 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
     set phase [expr {int([glob_element ts 0])}]
 
     set go 0 ;# save time by preventing useless firing
-#puts "trigger $trigger phase $phase extras [array get extras]"
+#puts "trigger $trigger phase $phase old_pred $event(prev_sign) extras [array get extras]"
     switch -- $phase {
 	0 - 1 { ;# resetting model, do not use saved data
 	    set extras(t1) $trigger ;# for prediction next step
@@ -873,21 +872,23 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 	    }
 
 	    if {$phase==5 || $phase==6} { ;# doing actual rate step
-		set go [expr {($heading_out && $to_limit<0) || \
+		set go [expr {($heading_out && $to_limit<=0) || \
 				  [string equal $event(prev_sign) $ns_extras]}]
-		if {$go} { ;# firing
-		    set event(predict) [glob_element ts $step]
-		    # in case it causes another event immediately
-		    set event(cur_sign) {} ;# but do not say which
-		}
+#		if {$go} { ;# firing
+#		    set event(predict) [glob_element ts $step]
+#		    # in case it causes another event immediately
+#		    set event(cur_sign) none ;# but do not say which
+#		}
 		set extras(t1) $trigger ;# for prediction next step
 	    }
+#puts "go $go h_o $heading_out"
 	    if {!$go && $heading_out} { ;# make prediction for this event
 		if {$phase==6 || $phase==11} { ;# ok approximate to quadratic
 		    later
 		} else { ;# phase is 5 or 10, do linear extrap
 		    set prediction [expr {[glob_element ts $step] + [glob_element dts $step]*$to_limit/$rate}]
 		}
+#puts "predicted $prediction horizon $event(predict)"
 		if {$prediction<$event(predict)} {
 		    set event(predict) $prediction
 		    set event(cur_sign) $ns_extras
@@ -897,7 +898,8 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
     }
 
     if {$go} {
-	# prepare a user-defined stop without raising an error yet
+	set event(prev_sign) $ns_extras ;# tell exec loop something happened
+	# TO DO: prepare a user-defined stop without raising an error yet
 	return $heading_out
     } else {
 	return 0
@@ -1007,14 +1009,19 @@ proc TclExecuteModel {node howInt start end errLim} {
 #    if {[string equal cancel [ShowMess debug info "XM from $start to $end" okcancel]]} {
 #	error cancelled
 #    }
+    set intMtd [string equal Runge-Kutta $howInt]
     set freq $adapt(curFreq)
     set xtime $start
-    if {$errLim && $errLim<1e-6*$steps($phasecount)} {
+    if {$errLim} {
 	set minFreq $errLim
+	set lookAhead $errLim
     } else {
+	set minFreq 1
+	set lookAhead [expr {$steps($phasecount)/2}]
+    }
+    if {$minFreq>1e-6*$steps($phasecount)} {
 	set minFreq [expr {1e-6*$steps($phasecount)}]
     }
-
     while {($end-$xtime)*$freq>0} { ;# freq only affects sign
 	set madeStep 0
 	set firstPass 1
@@ -1025,7 +1032,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 	}
         while {!$madeStep} {
 	    # aim for next predicted event if closer than end
-#puts "freq $freq end $end nextSeries $event(nextSeries) prev_sign $event(prev_sign) predict $event(predict)"
+#puts "freq $freq end $end xtime $xtime nextSeries $event(nextSeries) prev_sign $event(prev_sign) predict $event(predict)"
 	    set aim_for $end
 	    if {$event(nextSeries)!=$xtime && \
 		    ($aim_for-$event(nextSeries))/$freq>0} {
@@ -1050,7 +1057,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 	    SetDTs $bigPhase $xtime
 
 #	    do_model advancemodel $bigPhase
-	    if {[string equal Euler $howInt]} {
+	    if {$intMtd==0} {
                 if {$firstPass} {
 		    set recover 0.5
  		    set ts(0) 0
@@ -1070,6 +1077,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 		RKUpdate $node $bigPhase
 	    }
             set firstPass 0
+            set event(prev_sign) {} ;# use to check if a limit event fires 
             if {!$errLim} {
                 set madeStep 1
 		set freq $steps($phasecount)
@@ -1079,11 +1087,11 @@ proc TclExecuteModel {node howInt start end errLim} {
 # increase it to the amount by which the threshold is crossed.
 		set evtError 0
 		set adapt(culprit) 0 ;# in c: userDefStop->targetId
-		set ts(0) [expr {10+($howInt eq "RUNGE_KUTTA")}]
+		set ts(0) [expr {10+$intMtd}]
 # do not record vals for later prediction
 		set event(cur_sign) {}
-		set event(predict) $xtime
-# only interested in interpolation not slight overshoot
+		set event(predict) $xtime+$lookAhead
+# ALLOW slight overshoot it reduces boundary errors
 		do_model evalmodel [set dts(0) [expr {$phasecount+1}]]
 #  event error is time by which new prediction earlier or later
 		if {[string length $event(cur_sign)]} {
@@ -1098,8 +1106,6 @@ proc TclExecuteModel {node howInt start end errLim} {
 			set newFreq $minFreq 
 			set event(predict) [expr {($xtime-$freq)+$minFreq}]
 		    }
-# this is now the prediction (or absence thereof) to use
-		    set event(prev_sign) $event(cur_sign)
 		}
 # Now, type 10/11 act will not actually fire events so we can check for
 # continuous errors too
@@ -1120,7 +1126,6 @@ proc TclExecuteModel {node howInt start end errLim} {
                         AdvanceTime $node $bigPhase -1 ;# back to the start
                         set xtime [expr $xtime-$freq]
 			set freq $newFreq
-                        incr adapt(doublings)
                         set bigPhase [PhaseFor $xtime $freq $phasecount]
                     } else {
                         # reached max freq limit; could be compartment or event
@@ -1138,16 +1143,23 @@ proc TclExecuteModel {node howInt start end errLim} {
 			    set freq [expr {$steps($phasecount)}]
 			}
                     } ;# lengthen time step
+# this is now the prediction (or absence thereof) to use
+		    set event(prev_sign) $event(cur_sign)
                 } ;# timestep too short or not
             } ;# error limit exists
         } ;# made progress
 	
-	set ts(0) [expr {5+($howInt eq "RUNGE_KUTTA")}]
+	set ts(0) [expr {5+$intMtd}]
 # now limit events will actually affect the model
-set event(cur_sign) {}
+        set event(cur_sign) {}
 	set event(predict) [expr {$xtime + 1.0625*$freq}] ;# max for next step
 # limit of period of interest
 	do_model evalmodel [set dts(0) $bigPhase]
+	if {[string length $event(prev_sign)]} {
+# if so, run eval again in subphase to set up new predictions
+	    set ts(0) $intMtd
+	    do_model evalmodel [set dts(0) [expr {$phasecount+1}]]
+	}
 	set event(prev_sign) $event(cur_sign)
 # now pause on event if doing so
     } ;# finished executing

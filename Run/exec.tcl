@@ -94,7 +94,6 @@ proc ExecuteTo {node current pause unitLength display foci \
     set actDone 0 ;# nothing so far
     set forward [expr {$pause>$current}]
     set scaled_current [expr {$current*$unitLength}]
-    set adapt(doublings) 0 ;# only relevant for tcl
     if {$display} {
 	set lastDisp [expr int($current/$display)]
     }
@@ -225,9 +224,9 @@ proc ExecuteModel {myNode howInt start finish errLim evtPause} {
 	}
     } errList]} {
 	# error "errList might not be a list" $::errorInfo
+	set severity [ExplainError $myNode $errList $::errorInfo]
 	InteractGUI $myNode [lindex $errList 3] 2
-	return [list [ExplainError $myNode $errList $::errorInfo] \
-		[lindex $errList 3]]
+	return [list $severity [lindex $errList 3]]
 # This will also need to raise an exception so we can retrieve stop time etc
 #    } elseif {$errList==-1} {
 #        start_in_editor BuildProblem "Execution notice" info "Model execution has been paused at a discontinuity which could not be dealt with by adaptive step size control." execution
