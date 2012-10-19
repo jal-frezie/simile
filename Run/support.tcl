@@ -849,7 +849,7 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
     set phase [expr {int([glob_element ts 0])}]
 
     set go 0 ;# save time by preventing useless firing
-#puts "trigger $trigger phase $phase old_pred $event(prev_sign) extras [array get extras]"
+#puts "trigger $trigger phase $phase old_pred $event(predict) extras [array get extras]"
     switch -- $phase {
 	0 - 1 { ;# resetting model, do not use saved data
 	    set extras(t1) $trigger ;# for prediction next step
@@ -871,39 +871,32 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 		set heading_out 0
 	    }
 
-	    if {$phase==5 || $phase==6} { ;# doing actual rate step
-		set go [expr {($heading_out && $to_limit<=0) || \
-				  [string equal $event(prev_sign) $ns_extras]}]
-#		if {$go} { ;# firing
-#		    set event(predict) [glob_element ts $step]
-#		    # in case it causes another event immediately
-#		    set event(cur_sign) none ;# but do not say which
-#		}
-		set extras(t1) $trigger ;# for prediction next step
-	    }
-#puts "go $go h_o $heading_out"
-	    if {!$go && $heading_out} { ;# make prediction for this event
+	    set forReal [expr {$phase==5 || $phase==6}]
+	    if {$heading_out} { ;# make prediction for this event
 		if {$phase==6 || $phase==11} { ;# ok approximate to quadratic
 		    later
 		} else { ;# phase is 5 or 10, do linear extrap
 		    set prediction [expr {[glob_element ts $step] + [glob_element dts $step]*$to_limit/$rate}]
 		}
-#puts "predicted $prediction horizon $event(predict)"
-		if {$prediction<$event(predict)} {
+	    
+		if {$forReal && $to_limit<$event(errLim)} { ;# do event
+		    set event(culprit) $graphId ;# for pause-on-event reporting
+		    return $heading_out ;# culprit is actual event
+		} elseif {$prediction<$event(predict)} {
 		    set event(predict) $prediction
-		    set event(cur_sign) $ns_extras
+		    if {!$forReal} { ;# culprit is predicted event
+			set event(culprit) $graphId ;# for error reporting
+		    }
 		}
+#puts "prediction $prediction culprit $event(culprit)"
+	    }
+	    if {$forReal} {
+		set extras(t1) $trigger ;# for prediction next step
+# (keep previous one if event fired, because value outside limit breaks it)
 	    }
 	}
     }
-
-    if {$go} {
-	set event(prev_sign) $ns_extras ;# tell exec loop something happened
-	# TO DO: prepare a user-defined stop without raising an error yet
-	return $heading_out
-    } else {
-	return 0
-    }
+    return 0
 }
 	
 		    
@@ -992,19 +985,17 @@ proc TclResetModel {node t0 doingRK topPhase} {
 	set ts(0) $doingRK
         for {set tweakPhase 1} {$tweakPhase <= $phasecount} {incr tweakPhase} {
             set ts($tweakPhase) $t0
-            set dts($tweakPhase) [expr $steps($tweakPhase)]
+            set dts($tweakPhase) $steps($tweakPhase)
         }
-	set event(prev_sign) {}
-	set event(cur_sign) {}
-	set event(predict) {} ;# just for debugging
+	set event(predict) [expr {$t0+$steps($phasecount)}] ;# just initialize
     }
-    set adapt(curFreq) [expr $steps($phasecount)]
+    set adapt(curFreq) $steps($phasecount)
     set adapt_maxerr 0 ;# just so it is defined at first comparison
     do_model evalmodel [set dts(0) $topPhase]
     return 1
 }
 
-proc TclExecuteModel {node howInt start end errLim} {
+proc TclExecuteModel {node howInt start end errLim evtPause} {
     global ts dts steps phasecount adapt adapt_maxerr event
 #    if {[string equal cancel [ShowMess debug info "XM from $start to $end" okcancel]]} {
 #	error cancelled
@@ -1014,15 +1005,15 @@ proc TclExecuteModel {node howInt start end errLim} {
     set xtime $start
     if {$errLim} {
 	set minFreq $errLim
-	set lookAhead $errLim
+	set event(errLim) $errLim
     } else {
 	set minFreq 1
-	set lookAhead [expr {$steps($phasecount)/2}]
+	set event(errLim) [expr {$steps($phasecount)/2}]
     }
     if {$minFreq>1e-6*$steps($phasecount)} {
 	set minFreq [expr {1e-6*$steps($phasecount)}]
     }
-    while {($end-$xtime)*$freq>0} { ;# freq only affects sign
+    while {($end-$xtime)/$freq>0} { ;# freq only affects sign
 	set madeStep 0
 	set firstPass 1
 	set bigPhase [PhaseFor $xtime $freq $phasecount]
@@ -1032,17 +1023,14 @@ proc TclExecuteModel {node howInt start end errLim} {
 	}
         while {!$madeStep} {
 	    # aim for next predicted event if closer than end
-#puts "freq $freq end $end xtime $xtime nextSeries $event(nextSeries) prev_sign $event(prev_sign) predict $event(predict)"
+#puts "freq $freq end $end xtime $xtime predict $event(predict)"
 	    set aim_for $end
 	    if {$event(nextSeries)!=$xtime && \
 		    ($aim_for-$event(nextSeries))/$freq>0} {
 		set aim_for $event(nextSeries)
 	    }
-            if {[string length $event(prev_sign)] && \
-		    ($aim_for-$event(predict))/$freq>0} {
+            if {($aim_for-$event(predict))/$freq>0} {
 		set aim_for $event(predict)
-	    } else {
-		set event(prev_sign) {} ;# cancel event if stopping short
 	    }
 	    
             # stretch interval to hit end if necssary
@@ -1077,93 +1065,84 @@ proc TclExecuteModel {node howInt start end errLim} {
 		RKUpdate $node $bigPhase
 	    }
             set firstPass 0
-            set event(prev_sign) {} ;# use to check if a limit event fires 
-            if {!$errLim} {
-                set madeStep 1
-		set freq $steps($phasecount)
-            } else {
+            set event(culprit) 0 ;# use to check if a limit event fires 
+            if {!$errLim} break ;# from while {!$madeStep} loop
+
 # tweak to allow events to be placed precisely in time. Clear maxerr
 # before the final rate calculation, and allow threshold detection to
 # increase it to the amount by which the threshold is crossed.
-		set evtError 0
-		set adapt(culprit) 0 ;# in c: userDefStop->targetId
-		set ts(0) [expr {10+$intMtd}]
-# do not record vals for later prediction
-		set event(cur_sign) {}
-		set event(predict) $xtime+$lookAhead
-# ALLOW slight overshoot it reduces boundary errors
-		do_model evalmodel [set dts(0) [expr {$phasecount+1}]]
-#  event error is time by which new prediction earlier or later
-		if {[string length $event(cur_sign)]} {
-		    set evtError [expr {abs($event(predict)-$xtime)}]
-		}
+	    set evtError 0
+	    set ts(0) [expr {10+$intMtd}]
+	    set event(predict) [expr {$xtime+$freq}] ;# horizon not important
+	    do_model evalmodel [set dts(0) [expr {$phasecount+1}]]
+#  event error is time by which new prediction earlier
+	    set evtError [expr {$xtime-$event(predict)}]
 # now, if this error is too great, we wish to shorten the step
 # -- no need to undo anything -- and try again
-		set newFreq 0
-		if {$evtError>$errLim} {
-		    set newFreq [expr {$event(predict)-($xtime-$freq)}]
-		    if {$newFreq/$minFreq<1} {
-			set newFreq $minFreq 
-			set event(predict) [expr {($xtime-$freq)+$minFreq}]
-		    }
+	    set newFreq $freq
+	    if {$evtError>$errLim} {
+		set newFreq [expr {$event(predict)-($xtime-$freq)}]
+		if {$newFreq/$minFreq<1} {
+		    set newFreq $minFreq 
 		}
+	    }
 # Now, type 10/11 act will not actually fire events so we can check for
 # continuous errors too
-		set adapt_maxerr 0
-		do_model updatemodel $bigPhase ;# ts(0) still 10/11
+	    set adapt_maxerr 0
+	    set adapt(culprit) $event(culprit) ;# in c: userDefStop->targetId
+	    do_model updatemodel $bigPhase ;# ts(0) still 10/11
 
 #puts "time $xtime max error $adapt_maxerr doublings $adapt(doublings)"
-                if {$adapt_maxerr>$errLim} {
-                
-		    if {!$newFreq || $newFreq/$freq>0.5} {
-			set newFreq $freq/2
-		    }
+	    if {$adapt_maxerr>$errLim} {               
+		if {$newFreq/$freq>0.5} {
+		    set newFreq $freq/2
 		}
+	    }
 
-		if {$newFreq} { 
-		    # error too great; put comps back and try shorter
-		    if {$freq/$minFreq > 1} {
-                        AdvanceTime $node $bigPhase -1 ;# back to the start
-                        set xtime [expr $xtime-$freq]
-			set freq $newFreq
-                        set bigPhase [PhaseFor $xtime $freq $phasecount]
-                    } else {
-                        # reached max freq limit; could be compartment or event
-                        error [list tcl_model_err evalmodel $adapt(culprit) \
-				   $xtime $bigPhase discontinuity]
-                    }
-                } else {
-                    set madeStep 1
-                    if {$freq!=$steps($phasecount) && \
-			    $adapt_maxerr<$errLim*$recover} {
-                        # low error; try longer next time if poss
-			if {$freq/$steps($phasecount) < 0.5} {
-			    set freq [expr {2*$freq}]
-			} else {
-			    set freq [expr {$steps($phasecount)}]
-			}
-                    } ;# lengthen time step
-# this is now the prediction (or absence thereof) to use
-		    set event(prev_sign) $event(cur_sign)
-                } ;# timestep too short or not
-            } ;# error limit exists
-        } ;# made progress
+	    if {$newFreq/$freq<1} { 
+		# error too great; put comps back and try shorter
+		if {$freq/$minFreq > 1} {
+		    AdvanceTime $node $bigPhase -1 ;# back to the start
+		    set xtime [expr $xtime-$freq]
+		    set freq $newFreq
+		    set bigPhase [PhaseFor $xtime $freq $phasecount]
+		} else {
+		    # reached max freq limit; could be compartment or event
+		    error [list tcl_model_err evalmodel $adapt(culprit) \
+			       $xtime $bigPhase discontinuity]
+		}
+	    } else {
+		set madeStep 1
+		if {$freq!=$steps($phasecount) && \
+			$adapt_maxerr<$errLim*$recover} {
+		    # low error; try longer next time if poss
+		    if {$freq/$steps($phasecount) < 0.5} {
+			set freq [expr {2*$freq}]
+		    } else {
+			set freq [expr {$steps($phasecount)}]
+		    }
+		} ;# lengthen time step
+	    } ;# timestep too short or not
+	    set adapt(curFreq) $freq
+	} ;# made progress
 	
 	set ts(0) [expr {5+$intMtd}]
 # now limit events will actually affect the model
-        set event(cur_sign) {}
+        set event(culprit) 0 ;# will be what actually fired
 	set event(predict) [expr {$xtime + 1.0625*$freq}] ;# max for next step
 # limit of period of interest
 	do_model evalmodel [set dts(0) $bigPhase]
-	if {[string length $event(prev_sign)]} {
+#	if {[string length $event(prev_sign)]} {
 # if so, run eval again in subphase to set up new predictions
-	    set ts(0) $intMtd
-	    do_model evalmodel [set dts(0) [expr {$phasecount+1}]]
-	}
-	set event(prev_sign) $event(cur_sign)
+#	    set ts(0) $intMtd
+#	    do_model evalmodel [set dts(0) [expr {$phasecount+1}]]
+#	}
 # now pause on event if doing so
+	if {$evtPause && $event(culprit)} {
+	    error [list tcl_model_err evalmodel $event(culprit) \
+		       $xtime $bigPhase event]
+	}
     } ;# finished executing
-    set adapt(curFreq) $freq
     if {[CheckGUI $node $end ext]} {
 	return [list 0 $xtime]
     }

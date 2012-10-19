@@ -220,7 +220,7 @@ proc ExecuteModel {myNode howInt start finish errLim evtPause} {
 		[expr ![string equal Euler $howInt]] \
 		$start $finish $errLim $evtPause
 	} else {
-	    TclExecuteModel $myNode $howInt $start $finish $errLim
+	    TclExecuteModel $myNode $howInt $start $finish $errLim $evtPause
 	}
     } errList]} {
 	# error "errList might not be a list" $::errorInfo
