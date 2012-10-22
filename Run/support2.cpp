@@ -19,9 +19,6 @@ static void exit_sighandler(int x){
 
 // now however it is a class method
 int AME_model::do_evalmodel(int phase) {
-  int error;
-  curInst = this;
-
   // Dont want a crash while running model to terminate Simile, so add 
    // handler. This has to be done on reset cos using the handler in some OS
    // causes it to be unset, and a reset can restart a crashed model.
@@ -30,21 +27,21 @@ int AME_model::do_evalmodel(int phase) {
   }
 
   dts[0] = phase; // so external code can access it
-  error = setjmp(env);
-  if (error) {
-    return -error;
+  if (userStop.excpNo = -setjmp(env)) {
+    return 1;
   } else {
-    try {
+// InternalStop not used so no need for try/catch layer
+//    try {
       evalmodel(phase);
-    }
-    catch (int error) {
-      return error;
-    }
-    catch (InternalStop notice) {
+//    }
+//    catch (int error) {
+//      return error;
+//    }
+//    catch (InternalStop notice) {
       // used if stop_on_id throws exception
-      userStop.targetId = notice.lineNo;
-      userStop.excpNo = notice.userCode;
-    }
+//      userStop.targetId = notice.lineNo;
+//      userStop.excpNo = notice.userCode;
+//    }
     return userStop.excpNo;
   }
 }
@@ -152,10 +149,9 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 				  int action, int graphId, 
 				  int step, diffs* extras) {
   double old, to_limit, rate, prediction;
-  BOOLEAN heading_out, go;
+  BOOLEAN heading_out, for_real;
   int phase = int(ts[0]);
 
-  go = 0; // save time by preventing useless firing
   switch (phase) {
   case 0: case 1: // resetting model, do not use saved data
     extras->t1 = trigger; // for prediction next step
@@ -183,17 +179,8 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
     } else
       heading_out = 0;
     
-    if (phase==5 || phase==6) { // doing actual rate step
-      go = (heading_out && to_limit < 0) || 
-	event_prev_sign==extras; // fire if predicted
-      if (go) { // firing
-	event_predict = ts[step]; // in case it causes another event immediately
-	event_cur_sign = (diffs*)-1; // but do not say which
-      }
-      extras->t1 = trigger; // for prediction next step
-    }
-
-    if (!go && heading_out) { // make prediction for this event
+    for_real = (phase==5 || phase==6);
+    if (heading_out) { // make prediction for this event
       if (phase==6 || phase==11) { // ok approximate to quadratic
 	// printf("old %f mid %f new %f\n", old, extras->t2, trigger);
 	double a,b,det;
@@ -216,34 +203,19 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       } else // phase is 5 or 10, do linear extrap
 	prediction = ts[step] + dts[step]*to_limit/rate;
 
-      if (prediction<event_predict) {
+      if (for_real && to_limit < event_errlim) { // do event
+	userStop.targetId = graphId; // for pause-on-event reporting
+	return heading_out; // culprit is actual event
+      } else if (prediction<event_predict) {
 	event_predict = prediction;
-	event_cur_sign = extras;
-      } 
-    } 
+	// if (!for_real) // for error reporting
+	  // userStop.targetId = graphId; // culprit is predicted event
+      }
+    }
+    if (for_real) 
+      extras->t1 = trigger; // for prediction next step
   }
-
-  if (go) {
-    userStop.targetId = graphId;
-    /* system for shortening time step after double events: questionable
-       if (event_prev_sign) {
-       if (event_prev_sign != extras) {
-       // this is 2nd event at this point: 1st was predicted or has occurred
-       // so post anonymous prediction for short time in future
-       prediction =  ts[step] + dts[step]*pow(2,-16);
-       if (prediction<event_predict) {
-       event_predict = prediction;
-       event_cur_sign = (diffs*)1; // v unlikely to exist
-       } 
-       } 
-       } else { // no event was predicted, record this for double evt detection
-       event_prev_sign = extras;
-       }
-    */	  
-
-    return heading_out;
-  } else
-    return 0;
+  return 0;
 }
 
 /* This is called only when we create the type, to return model constants */

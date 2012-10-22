@@ -848,7 +848,6 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
     upvar \#0 $ns_extras extras
     set phase [expr {int([glob_element ts 0])}]
 
-    set go 0 ;# save time by preventing useless firing
 #puts "trigger $trigger phase $phase old_pred $event(predict) extras [array get extras]"
     switch -- $phase {
 	0 - 1 { ;# resetting model, do not use saved data
@@ -1101,7 +1100,7 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 
 	    if {$newFreq/$freq<1} { 
 		# error too great; put comps back and try shorter
-		if {$freq/$minFreq > 1} {
+		if {$freq/$minFreq > 1} { ;# not already short as we can go
 		    AdvanceTime $node $bigPhase -1 ;# back to the start
 		    set xtime [expr $xtime-$freq]
 		    set freq $newFreq

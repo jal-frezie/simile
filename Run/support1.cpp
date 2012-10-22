@@ -26,7 +26,7 @@ stat_check_type* stat_check;
 show_model_mess_type* suppShowMess;
 
 // excpData userStop;
-
+/*
 struct InternalStop
 {
   int lineNo;
@@ -37,7 +37,7 @@ struct InternalStop
     userCode = c;
   }
 };
-
+*/
 int InstanceOfModel::stop_on_id(int lineId, int code) {
   // this stops execution immediately
   //  throw InternalStop(lineId,code);
