@@ -393,29 +393,34 @@ namespace eval slide139 {
     proc SliderEvent {node indices scale} {
 	global myNode
 
-	SetArrayIfUsed $node 0 $indices [$scale get]
-	MarkEvtParamActive $myNode $node [RunningInC $myNode]
+	set sub [join [concat [list {} NOW] $indices] ,]
+#	SetArrayIfUsed $node 0 $indices [$scale get]
+#	MarkEvtParamActive $myNode $node [RunningInC $myNode]
+	ListToArray $myNode $node $sub $sub {} {} [$scale get] 1 \
+	    [RunningInC $myNode]
     }
 
     proc SetArrayIfUsed {node fixed indices value} {
         global paramData runState myNode
-	set sub [join [concat $node $indices] ,]
+	set sub [join [concat [list {}] $indices] ,]
         if {$fixed} {
 	    set ledColour [$runState($myNode,cnvs) itemcget 1 -fill]
 	    if {[lsearch {yellow green blue} $ledColour]>-1} return
 	    set runState($myNode,reloadParams) -1
 # bug: command is called when slider created, generating spurious reset request
             if {![RunningInC $myNode]} {
-                set paramData($sub) $value
+                set paramData($node$sub) $value
             }
         }
-	PlaceInArray $myNode $sub $value 0 [RunningInC $myNode]
+#	PlaceInArray $myNode $sub $value 0 [RunningInC $myNode]
+	ListToArray $myNode $node $sub $sub {} {} $value 0 [RunningInC $myNode]
     }
     
     proc SetChoiceNumber {cbox node fixed choice args} {
 	set sub [join [concat [list $node] $args] ,]
 	$cbox configure -text $choice
-	SetArrayIfUsed $node $fixed $args [expr {[${cbox}menu index $choice]+1}]
+	SetArrayIfUsed $node $fixed $args $choice \
+	    [expr {[${cbox}menu index $choice]+1}]
     }
     
     # If we load a file containing slider values, we only want to set the sliders
