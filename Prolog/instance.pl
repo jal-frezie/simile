@@ -126,7 +126,8 @@ make_base_refs(Node, [Link | R1], [base(Base, Link, _) | R2]) :-
 
 instantiate_node(Node, Class, Instances, Path, Old_instances, New_instances) :-
 	(instance_of( Class, Node, Path, Instances, Refs), !;
-	raise_exception(instantiation_failure(Node))),
+	  caption_for(Node, Capt),
+	    raise_exception(instantiation_failure(Capt))),
 	merge_lists(Instances, Old_instances, Mid_instances),
 	merge_lists(Refs, Mid_instances, New_instances).
 	

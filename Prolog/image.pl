@@ -887,11 +887,12 @@ checks_out_locally(Func) :-
 pick_var(_, V, _, 0) :-
     get_solo_list_depth(V, _).
 
-sieve_all_events(Pairs, Fn, EvtCapts, [Outcome | Tail]) :-
+sieve_all_events(Pairs, Fn, EvtCapts, Compound) :-
 	Pairs = (Outcome on Evt, More),
 	    select(Evt, EvtCapts, Left), 
-	    sieve_all_events(More, Fn, Left, Tail);
-	  Pairs = (Outcome on Evt), EvtCapts = [Evt], Tail = [].
+	    sieve_all_events(More, Fn, Left, Tail),
+	    Compound = (Outcome,Tail);
+	  Pairs = (Compound on Evt), EvtCapts = [Evt].
 
 /* pair_off is true if every variable in the expression represents a role of some link to the function, and every link to the function has at least one variable representing some role it has. Later we may keep the unit error and pop it up when the user mouses over to see why the node is red... */
 

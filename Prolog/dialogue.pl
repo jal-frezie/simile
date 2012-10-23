@@ -126,12 +126,19 @@ update_rules(Old, C-S-V-D, [C-S-V-D | Left]) :-
 	Left = Old.
 
 extract_rule_forms(Part, InputList, Rules) :-
-	get_av_pair(Part, 0, spec, SpecList),
-	get_av_pair(Part, 0, value, ValueList), !,
-	convert_rule_format(SpecList, ValueList, Rules),
-	all(dialogue, initialize_dims,
-	    [build(Rules), unify(Part), unify(InputList)]);
-	Rules = [].
+	(get_av_pair(Part, 0, spec, SpecList),
+	    get_av_pair(Part, 0, value, ValueList), !,
+	    convert_rule_format(SpecList, ValueList, OldRules),
+	    all(dialogue, initialize_dims,
+		[build(OldRules), unify(Part), unify(InputList)]);
+	  OldRules = []),
+	list_evt_captions(Part, Triggers),
+	select_current_triggers(OldRules, Triggers, Rules).
+
+select_current_triggers(_, [], []).
+select_current_triggers(Old, [T1 | Triggers], [T1-S-V-D | Rules]) :-
+	(member(T1-S-V-D, Old), !; S = "", V = '', D = any-[]),
+	select_current_triggers(Old, Triggers, Rules).
 
 initialize_dims(_C-_S-Equation-GotUnits, Fn, InterInputs) :-
 	def_unit_and_index_type_list_are(_, IndxCount),
