@@ -297,6 +297,7 @@ proc ClickObj { x y winId X Y action} {
 		set type [GetFromProlog tk_get_info('$winId',$node,type)]
 		if {[string equal state $type]} { ;# load the event combobox
 		    set evts [GetFromProlog tk_get_triggers('$winId',$node)]
+		    if {![llength $evts]} return ;# no equation to enter
 		    $bar.events configure -values $evts
 		    # display string for first empty or 'red' effect
 		    $bar.events current 0
