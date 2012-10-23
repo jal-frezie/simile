@@ -304,7 +304,9 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	      all(user, arg, [unify(2), build(EvtPairs), build(EvtNodes)]),
 		all(user, arg, [unify(3), build(EvtPairs), build(EvtNames)]),
 		all(user, arg, [unify(4), build(EvtPairs), build(EvtArgs)]),
-		build_sum(EvtArgs, EvtTrigger),
+		(build_sum(EvtArgs, EvtTrigger), !;
+		    caption_for(Node, Capt),
+		    raise_exception(no_antecedents_for_derived(Capt))),
 		all(instance, is_instance, 
 		    [build(_Type), build(EvtNodes), build(_Load),
 		     build(EvtNames), build(_Dims), build(EvtRefs)]),
