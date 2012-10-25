@@ -1016,13 +1016,14 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 	set madeStep 0
 	set firstPass 1
 	set bigPhase [PhaseFor $xtime $freq $phasecount]
+	set weePhase [expr {$phasecount+1}]
 # that is the biggest phase we will try to run, we may not succeed
 	if {[CheckGUI $node $xtime ph$bigPhase]} {
 	    return [list 0 $xtime]
 	}
         while {!$madeStep} {
 	    # aim for next predicted event if closer than end
-#puts "freq $freq end $end xtime $xtime predict $event(predict)"
+puts "freq $freq end $end xtime $xtime series $event(nextSeries) predict $event(predict)"
 	    set aim_for $end
 	    if {$event(nextSeries)!=$xtime && \
 		    ($aim_for-$event(nextSeries))/$freq>0} {
@@ -1048,20 +1049,22 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
                 if {$firstPass} {
 		    set recover 0.5
  		    set ts(0) 0
+		    do_model updatemodel $bigPhase
                 } else {
                     set ts(0) -1
+		    do_model updatemodel $weePhase
                 }
                 AdvanceTime $node $bigPhase 1 ;# sets event(nextSeries)
-		do_model updatemodel $bigPhase
 	    } else {
                 if {$firstPass} {
 		    set recover 0.0625
                     set ts(0) 1
+		    do_model updatemodel $bigPhase
                 } else {
                     set ts(0) -2
+		    do_model updatemodel $weePhase
                 }
-                do_model updatemodel $bigPhase
-		RKUpdate $node $bigPhase
+		RKUpdate $node
 	    }
             set firstPass 0
             set event(culprit) 0 ;# use to check if a limit event fires 
@@ -1073,7 +1076,7 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 	    set evtError 0
 	    set ts(0) [expr {10+$intMtd}]
 	    set event(predict) [expr {$xtime+$freq}] ;# horizon not important
-	    do_model evalmodel [set dts(0) [expr {$phasecount+1}]]
+	    do_model evalmodel [set dts(0) $weePhase]
 #  event error is time by which new prediction earlier
 	    set evtError [expr {$xtime-$event(predict)}]
 # now, if this error is too great, we wish to shorten the step
@@ -1089,9 +1092,9 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 # continuous errors too
 	    set adapt_maxerr 0
 	    set adapt(culprit) $event(culprit) ;# in c: userDefStop->targetId
-	    do_model updatemodel $bigPhase ;# ts(0) still 10/11
+	    do_model updatemodel $weePhase ;# ts(0) still 10/11
 
-#puts "time $xtime max error $adapt_maxerr doublings $adapt(doublings)"
+puts "adapt error $adapt_maxerr event error $evtError"
 	    if {$adapt_maxerr>$errLim} {               
 		if {$newFreq/$freq>0.5} {
 		    set newFreq $freq/2
@@ -1169,20 +1172,22 @@ proc PhaseFor {current step soFar} {
     }
 }
 
-proc RKUpdate {node phase} {
-    global ts dts
-    set dts(0) $phase
-    AdvanceTime $node $phase 0.5
+proc RKUpdate {node} {
+    global ts dts phasecount
+
+    set weePhase [expr $phasecount+1]
+    set dts(0) $weePhase
+    AdvanceTime $node $phasecount 0.5
     set ts(0) 2
-    do_model evalmodel $phase
-    do_model updatemodel $phase
+    do_model evalmodel $weePhase
+    do_model updatemodel $weePhase
     set ts(0) 3
-    do_model evalmodel $phase
-    do_model updatemodel $phase
-    AdvanceTime $node $phase 0.5
+    do_model evalmodel $weePhase
+    do_model updatemodel $weePhase
+    AdvanceTime $node $phasecount 0.5
     set ts(0) 4
-    do_model evalmodel $phase
-    do_model updatemodel $phase
+    do_model evalmodel $weePhase
+    do_model updatemodel $weePhase
     set ts(0) 1
 }
     

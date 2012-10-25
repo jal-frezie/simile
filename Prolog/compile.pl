@@ -544,7 +544,8 @@ invent_ptr_names(L, LinkName, BaseSm, Node, Used, Ptrs) :-
 
 mark_update_insts(Act, Add) :-
 	Act = make(_,_,_, [update | _], [assign(SV, Src)]),
-	    member(Src, [SV, SV+stage_incr(_,_,_,_,_)]), !,
+	    member(Src, [SV, SV+stage_incr(_,_,_,_,_), % compartment updates
+			 choose(happens(_),_,_)]), !, % state change
 	    Add = [Act];
 	Act = make(_,_,_, [eval | _], _),
 	    Add = [].
@@ -588,6 +589,8 @@ Previously only did steps up to shortest-1, but need to do shortest
 as well to stop rand_vars being changed in the R-K subphase */
         sort_assignments(Functions, Steps, no),
 	RKStep is Steps+1,
+	all(compile, mark_unstepped,
+	    [build(Updates), unify(RKStep), append(_Marked, []), unify(no)]),
 	update_antes_to_step(Updates, RKStep),
 	all(compile, mark_unstepped, [build(Functions), unify(Steps),
 				      append(_Normal, []), unify(yes)]),
@@ -1509,7 +1512,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    choosify(ActEqn, ChooseForm),
 	    GroundEqn = (magnitude=TriggerEqn, ChooseForm),
 	    AllActs = [Expr],
-	    UseList = RefList;
+	    UseList = [on_step | RefList];
 	  (SourceEqn = with_phase(SmStep, EvtElts, GroundEqn),
 	      all(user, arg, [unify(2), build(EvtElts), build(EvtConds)]);
 	    EvtConds = [],

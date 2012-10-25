@@ -1018,7 +1018,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 					  double* end, double errlim,
 					  BOOLEAN pause_on_events) {
   double xtime, aim_for, recover, evtError, newFreq, minFreq;
-  int big_phase;
+  int big_phase, wee_phase;
   BOOLEAN made_step, first_pass;
     // printf("xm %d %lf-%lf at %lf\n", how_int, start, *end, errlim);
     // showMess(globMess);
@@ -1041,6 +1041,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     made_step = 0;
     first_pass = 1;
     big_phase = phase_for(xtime, freq, modelSpec->phases);
+    wee_phase = modelSpec->phases+1;
     // that is the biggest phase we will try to run, we may not succeed
     if (check_gui(xtime, big_phase)) {
       userDefStop->excpNo = -100; // should not conflict with os signals
@@ -1073,20 +1074,22 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	if (first_pass) {
 	  recover = 0.5;
 	  SetdT(0,0);
+	  loadedInst->updatemodel(big_phase);
 	} else {
 	  SetdT(0,-1);
+	  loadedInst->updatemodel(wee_phase);
 	}
 	advance_time(big_phase, 1); // sets nextSeriesEvt
-	loadedInst->updatemodel(big_phase);
 	break;
       case RUNGE_KUTTA:
 	if (first_pass) {
-	  SetdT(0,1);
 	  recover = 0.0625;
+	  SetdT(0,1);
+	  loadedInst->updatemodel(big_phase);
 	} else {
 	  SetdT(0,-2);
+	  loadedInst->updatemodel(wee_phase);
 	}
-	loadedInst->updatemodel(big_phase);
 	rk_update(); // returns if any err so excpNo kept
 	break;
       }
@@ -1101,7 +1104,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       evtError = 0; // errlim*recover;
       SetdT(0, 10+(how_int==RUNGE_KUTTA)); 
       loadedInst->event_predict = xtime+freq; //  horizon not important
-      if (loadedInst->do_evalmodel(modelSpec->phases+1))
+      if (loadedInst->do_evalmodel(wee_phase))
 	break; // from inner loop
       // event error is time by which new prediction earlier or later
       evtError = xtime-loadedInst->event_predict;
@@ -1117,7 +1120,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       // Now, type 10/11 act will not actually fire events so we can check for
       // continuous errors too
       loadedInst->adapt_maxerr = 0;
-      loadedInst->updatemodel(big_phase); // ts[0] still 10
+      loadedInst->updatemodel(wee_phase); // ts[0] still 10
 	  
       if (loadedInst->adapt_maxerr>errlim) {
 	if (!newFreq || newFreq/freq>0.5) // from event error
@@ -1159,7 +1162,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 //    if (loadedInst->event_prev_sign) {
       //if so, run eval again in subphase to set up new predictions
 //      SetdT(0, (how_int==RUNGE_KUTTA)); 
-//      if (userDefStop->excpNo=loadedInst->do_evalmodel(modelSpec->phases+1)) 
+//      if (userDefStop->excpNo=loadedInst->do_evalmodel(wee_phase)) 
 //	break;
 //    }
     if (pause_on_events && userDefStop->targetId) {
@@ -1207,14 +1210,14 @@ int ExecutingModel::rk_update() {
     advance_time(phases, 0.5);
     SetdT( 0,2);
     if (id->do_evalmodel(wee_phase)) return 1;
-    id->updatemodel(phases);
+    id->updatemodel(wee_phase);
     SetdT( 0,3);
     if (id->do_evalmodel(wee_phase)) return 1;
-    id->updatemodel(phases);
+    id->updatemodel(wee_phase);
     advance_time(phases, 0.5);
     SetdT( 0,4);
     if (id->do_evalmodel(wee_phase)) return 1;
-    id->updatemodel(phases);
+    id->updatemodel(wee_phase);
     SetdT( 0,1);
     return 0;
   }
