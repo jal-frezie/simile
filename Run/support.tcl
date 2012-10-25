@@ -873,7 +873,25 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 	    set forReal [expr {$phase==5 || $phase==6}]
 	    if {$heading_out} { ;# make prediction for this event
 		if {$phase==6 || $phase==11} { ;# ok approximate to quadratic
-		    later
+		    set a [expr {-$heading_out*2*($trigger-2*$extras(t2)+$old)/pow([glob_element dts $step],2)}]
+		    if {$a==0} { ;# it is linear
+			set prediction [expr {[glob_element ts $step] + [glob_element dts $step]*$to_limit/$rate}]
+		    } else {
+			set b [expr {-$heading_out*(3*$trigger-4*$extras(t2)+$old)/[glob_element dts $step]}]
+
+			# that is the eqn for the curve. Determinant:
+			set det [expr {pow($b,2)-4*$a*$to_limit}]
+			if {$det<=0} {return 0} ;# no misses or grazes
+			set det [expr {pow($det,0.5)}]
+			if {$to_limit*[glob_element dts $step]*$a<0} {
+			    # outside limit XOR going backwards
+			    set prediction [expr {[glob_element ts $step] + \
+						      (-$b-$det)/(2*$a)}]
+			} else { ;# take later root
+			    set prediction [expr {[glob_element ts $step] + \
+						      (-$b+$det)/(2*$a)}]
+			}
+		    }
 		} else { ;# phase is 5 or 10, do linear extrap
 		    set prediction [expr {[glob_element ts $step] + [glob_element dts $step]*$to_limit/$rate}]
 		}
@@ -1023,7 +1041,7 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 	}
         while {!$madeStep} {
 	    # aim for next predicted event if closer than end
-puts "freq $freq end $end xtime $xtime series $event(nextSeries) predict $event(predict)"
+#puts "freq $freq end $end xtime $xtime series $event(nextSeries) predict $event(predict)"
 	    set aim_for $end
 	    if {$event(nextSeries)!=$xtime && \
 		    ($aim_for-$event(nextSeries))/$freq>0} {
@@ -1094,7 +1112,7 @@ puts "freq $freq end $end xtime $xtime series $event(nextSeries) predict $event(
 	    set adapt(culprit) $event(culprit) ;# in c: userDefStop->targetId
 	    do_model updatemodel $weePhase ;# ts(0) still 10/11
 
-puts "adapt error $adapt_maxerr event error $evtError"
+#puts "adapt error $adapt_maxerr event error $evtError"
 	    if {$adapt_maxerr>$errLim} {               
 		if {$newFreq/$freq>0.5} {
 		    set newFreq $freq/2
