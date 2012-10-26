@@ -1505,23 +1505,24 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 		Twk2 = [assign(CDest, CDest+Val) | Twk1]), !,
 %	    AllActs = [cond_event(TriggerExpr, Expr, Twk2)],
 %	    append(EvtConds, RefList, UseList);
-	    AllActs = [Expr | Twk2],
+	    Extras = [make(tipped(Made), [Made], Path, UseStep, Twk2) | Setups],
 	    UseList = RefList;
 	  Type = state_fn, !,
 	    SourceEqn = event(ActEqn, TriggerEqn, (0->0)),
 	    choosify(ActEqn, ChooseForm),
 	    GroundEqn = (magnitude=TriggerEqn, ChooseForm),
-	    AllActs = [Expr],
+	    Extras = Setups,
 	    UseList = [on_step | RefList];
 	  (SourceEqn = with_phase(SmStep, EvtElts, GroundEqn),
 	      all(user, arg, [unify(2), build(EvtElts), build(EvtConds)]);
 	    EvtConds = [],
 	      GroundEqn = SourceEqn),
-	    AllActs = [Expr]), !,
+	    Extras = Setups), !,
+	    
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
 			 SmStep, UseStep, Used, [Expr], Setups, Path, RefList,
 			 AllInters),
-	connect_params([make(Made, UseList, Path, UseStep, AllActs) | Setups],
+	connect_params([make(Made, UseList, Path, UseStep, [Expr]) | Extras],
 		       AllInters, Actions, Inters);
 	Actions = [],
 	Inters = []),

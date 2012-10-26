@@ -1086,7 +1086,10 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 	    }
             set firstPass 0
             set event(culprit) 0 ;# use to check if a limit event fires 
-            if {!$errLim} break ;# from while {!$madeStep} loop
+            if {!$errLim} {
+		set freq $steps($phasecount) ;# no need to keep short step
+		break ;# from while {!$madeStep} loop
+	    }
 
 # tweak to allow events to be placed precisely in time. Clear maxerr
 # before the final rate calculation, and allow threshold detection to
@@ -1143,7 +1146,6 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 		    }
 		} ;# lengthen time step
 	    } ;# timestep too short or not
-	    set adapt(curFreq) $freq
 	} ;# made progress
 	
 	set ts(0) [expr {5+$intMtd}]
@@ -1163,6 +1165,7 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 		       $xtime $bigPhase event]
 	}
     } ;# finished executing
+    set adapt(curFreq) $freq
     if {[CheckGUI $node $end ext]} {
 	return [list 0 $xtime]
     }

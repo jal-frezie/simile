@@ -1034,7 +1034,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     minFreq = 1;
     loadedInst->event_errlim = steps[modelSpec->phases]/2;
   }
-  if (minFreq<1e-6*steps[modelSpec->phases]) 
+  if (minFreq>1e-6*steps[modelSpec->phases]) 
     minFreq = 1e-6*steps[modelSpec->phases];
 
   while ((*end-xtime)/steps[1]>0) { // step only affects sign
@@ -1051,7 +1051,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     while(!made_step) {
       // aim for next predicted event if closer than end
       // printf("Freq %f; end %f; e_p %f xt %f\n", 
-      //   	       freq, *end, loadedInst->event_predict, xtime);
+      // 	     freq, *end, loadedInst->event_predict, xtime);
       aim_for = *end;
       if (seriesEvtSign && (aim_for-nextSeriesEvt)/freq>0) 
 	aim_for = nextSeriesEvt;
@@ -1096,7 +1096,10 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       if (userDefStop->excpNo) break; // from inner loop
       first_pass = 0;
       userDefStop->targetId = 0;
-      if (!errlim) break; // from while(!made_step) loop
+      if (!errlim) {
+	freq = steps[modelSpec->phases]; // no need to keep short step
+	break;
+      } // from while(!made_step) loop
 
       /* tweak to allow events to be placed precisely in time. Clear maxerr
 	 before the final rate calculation, and allow threshold detection 
@@ -1150,12 +1153,12 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	} // lengthen time step
       } // timestep too short or not
     } // made progress
-    //      printf("Moved forward %f units\n", freq);
+    // printf("Moved forward %f units\n", freq);
     if (userDefStop->excpNo) break; // from outer loop
     SetdT(0, 5+(how_int==RUNGE_KUTTA)); 
     // now limit events will actually affect the model
     userDefStop->targetId = 0; // will be what actually fired
-    loadedInst->event_predict = xtime + 1.0625*freq; // max for next step 
+    loadedInst->event_predict = xtime + 1.125*freq; // > max for next step 
     // limit of period of interest
     if (loadedInst->do_evalmodel(big_phase)) break;
     //      (*advancemodel)(id, big_phase);
