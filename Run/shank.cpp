@@ -607,7 +607,7 @@ VarParamData::~VarParamData() {
   ClearTimePtElements();
 }
 
-double VarParamData::update_from_points(BOOLEAN dir, double nowInDays) {
+double VarParamData::update_from_points(double nowInDays, double next) {
   listTimePoint *loBound, *hiBound;
   int hiWraps = 0, oldWraps = wraps;
   double now, interFract;
@@ -620,7 +620,7 @@ double VarParamData::update_from_points(BOOLEAN dir, double nowInDays) {
   else
     hiBound = timePoints; // first point
   
-  if (dir) {
+  if (next>=nowInDays) {
     while (hiBound && now>=hiBound->when+hiWraps*wrapAroundPoint) {
       loBound = hiBound;
       wraps = hiWraps;
@@ -651,7 +651,7 @@ double VarParamData::update_from_points(BOOLEAN dir, double nowInDays) {
 					       hiBound->dataPtr, 
 					       dataPtr.dimSpecs, 
 					       interFract);
-      return now*seriesIdxUnits;
+      return next; // nothing has changed it yet
     }
     if (interFract>0.5) { // fillMethod is USE_CLOSEST
       loBound = hiBound;
@@ -662,10 +662,8 @@ double VarParamData::update_from_points(BOOLEAN dir, double nowInDays) {
     if (active)
       if (!--active) // don't trust lazy evaluation
 	zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-    if (hiBound) { // return time at which event will next happen
-      myModelExec->seriesEvtSign = ndRef->graph;
-      now = hiBound->when+hiWraps*wrapAroundPoint;
-    }
+    if (hiBound) // return time at which event will next happen
+      next = (hiBound->when+hiWraps*wrapAroundPoint)/seriesIdxUnits;
   }
   if (loBound && (loBound!=curTimePoint || wraps!=oldWraps)) {
     curTimePoint = loBound;
@@ -673,7 +671,10 @@ double VarParamData::update_from_points(BOOLEAN dir, double nowInDays) {
     dataPtr.contents = copy_bloc_data(loBound->dataPtr, dataPtr.dimSpecs);
     active=1;
   }
-  return now*seriesIdxUnits;
+  if (ndRef->compclass == EVENT && active)
+    myModelExec->seriesEvtSign = ndRef->graph;
+
+  return next;
 }
 
 BOOLEAN VarParamData::create_time_point(double time) {
@@ -786,7 +787,7 @@ double VarParamData::ResetTimeSeries(double init_time, int topPhase) {
   wraps = 0;
   if (topPhase <= -2)
     active = 0;
-  next_evt = update_from_points(TRUE, init_time);
+  next_evt = update_from_points(init_time, init_time);
 
   if (nextVP) {
     next_evt_sofar = nextVP->ResetTimeSeries(init_time, topPhase);  
@@ -796,16 +797,13 @@ double VarParamData::ResetTimeSeries(double init_time, int topPhase) {
   return next_evt; 
 }
 
-double VarParamData::UpdateTimeSeries(double now, BOOLEAN forward) {
+double VarParamData::UpdateTimeSeries(double now, double horizon) {
   double next_evt_sofar, next_evt;
 
-  next_evt = update_from_points(forward, now);
+  next_evt = update_from_points(now, horizon);
 
   if (nextVP)  {
-    next_evt_sofar = nextVP->UpdateTimeSeries(now, forward);  
-    if (next_evt_sofar != now && 
-	(next_evt == now || forward==(next_evt_sofar < next_evt)))
-      next_evt = next_evt_sofar;
+    next_evt = nextVP->UpdateTimeSeries(now, next_evt);  
   }
   return next_evt; 
 }    
@@ -1007,6 +1005,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   
   if (loadedInst->do_evalmodel(top_phase))
     return &(loadedInst->userStop);
+  (loadedInst->userStop).targetId = 0;
   // reset successful: now do back copy if needed
   if (top_phase<-1 && varParamArrayBase) {
     varParamArrayBase->back_copy_vars(init_time); // does all
@@ -1029,10 +1028,8 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   xtime = start;
   if (errlim) {
     minFreq = errlim;
-    loadedInst->event_errlim = errlim;
   } else {
     minFreq = 1;
-    loadedInst->event_errlim = steps[modelSpec->phases]/2;
   }
   if (minFreq>1e-6*steps[modelSpec->phases]) 
     minFreq = 1e-6*steps[modelSpec->phases];
@@ -1048,12 +1045,22 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       *end = xtime;
       return userDefStop;
     }
+    // call update purely to drive events
+    if (userDefStop->targetId || seriesEvtSign) { 
+      // an event is waiting to take effect
+      // set_dts(big_phase, xtime); no need, mode 10/11 stops move
+      SetdT(0, 10+(how_int==RUNGE_KUTTA)); 
+      loadedInst->updatemodel(big_phase);
+      SetdT(0, (how_int==RUNGE_KUTTA)); // start prediction cycle
+      if (loadedInst->do_evalmodel(big_phase)) break;
+    }
+
     while(!made_step) {
       // aim for next predicted event if closer than end
-      // printf("Freq %f; end %f; e_p %f xt %f\n", 
-      // 	     freq, *end, loadedInst->event_predict, xtime);
+      // printf("Freq %f; end %f; series %f; e_p %f xt %f\n", 
+      // freq, *end, nextSeriesEvt, loadedInst->event_predict, xtime);
       aim_for = *end;
-      if (seriesEvtSign && (aim_for-nextSeriesEvt)/freq>0) 
+      if (first_pass && (aim_for-nextSeriesEvt)/freq>0) 
 	aim_for = nextSeriesEvt;
       if ((aim_for-loadedInst->event_predict)/freq>0) 
 	aim_for = loadedInst->event_predict;
@@ -1074,22 +1081,20 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	if (first_pass) {
 	  recover = 0.5;
 	  SetdT(0,0);
-	  loadedInst->updatemodel(big_phase);
 	} else {
 	  SetdT(0,-1);
-	  loadedInst->updatemodel(wee_phase);
 	}
+	loadedInst->updatemodel(wee_phase);
 	advance_time(big_phase, 1); // sets nextSeriesEvt
 	break;
       case RUNGE_KUTTA:
 	if (first_pass) {
 	  recover = 0.0625;
 	  SetdT(0,1);
-	  loadedInst->updatemodel(big_phase);
 	} else {
 	  SetdT(0,-2);
-	  loadedInst->updatemodel(wee_phase);
 	}
+	loadedInst->updatemodel(wee_phase);
 	rk_update(); // returns if any err so excpNo kept
 	break;
       }
@@ -1171,8 +1176,8 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     if (pause_on_events && userDefStop->targetId) {
       // -- bodge -- make sure trigger moves out of limit
       // freq = steps[modelSpec->phases]; // reset freq too
-	userDefStop->excpNo = -98;
-	break;
+      userDefStop->excpNo = -98;
+      break;
       //	printf("Event %d at %f\n", userDefStop->targetId, xtime);
     }
   } // finished executing
@@ -1248,10 +1253,10 @@ void ExecutingModel::advance_time (int phase, double fraction) {
     // time value is chosen to work with RK so series pt should do the same
     series_pt = lts[modelSpec->phases];
     seriesEvtSign = 0;
+    nextSeriesEvt = ((series_pt > thisTsPosn)?1:-1)*INFINITY;
     if (varParamArrayBase) 
-      nextSeriesEvt = varParamArrayBase->UpdateTimeSeries(series_pt, series_pt > thisTsPosn);
-    else
-      nextSeriesEvt = series_pt;
+      nextSeriesEvt = varParamArrayBase->UpdateTimeSeries(series_pt, 
+							  nextSeriesEvt);
     thisTsPosn = series_pt;
   }
   

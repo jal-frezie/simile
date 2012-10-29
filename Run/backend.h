@@ -39,7 +39,7 @@ public:
   //  virtual ~InstanceOfModel() {}
   // Above stops memory leak in Windows but causes crash in Linux
   excpData userStop;
-  double adapt_maxerr, event_predict, event_errlim;
+  double adapt_maxerr, event_predict;
   // diffs *event_cur_sign, *event_prev_sign;
   // above saves identity of predicted events as pointer to their structure
   ExecutingModel* partner;

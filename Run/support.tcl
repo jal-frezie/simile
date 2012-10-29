@@ -826,7 +826,7 @@ proc stage_incr {ns_extras step v span gId} {
             set result [expr [set t2 $dv]-$last_incr]
         } -2 { ;# undoes previous change R-K
             set result [expr [expr [set t1 $dv]/2.0]-$t2]
-        } 10 { ;# does not change compartment, just checks for errors
+        } 10 - 11 { ;# does not change compartment, just checks for errors
 #            if {$dv} {
 	    set errMagn [expr {abs($dv-$t3)*100/$span}]
 #puts "p10 pred_change $extras(pred_change) dv $dv errMagn $errMagn"
@@ -848,7 +848,7 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
     upvar \#0 $ns_extras extras
     set phase [expr {int([glob_element ts 0])}]
 
-#puts "trigger $trigger phase $phase old_pred $event(predict) extras [array get extras]"
+#puts "cmd [info level 0] phase $phase extras [array get extras]"
     switch -- $phase {
 	0 - 1 { ;# resetting model, do not use saved data
 	    set extras(t1) $trigger ;# for prediction next step
@@ -869,8 +869,11 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 	    } else {
 		set heading_out 0
 	    }
-
 	    set forReal [expr {$phase==5 || $phase==6}]
+	    if {$forReal} {
+		set extras(t1) $trigger ;# for prediction next step
+# (will be redone if event fired, because value outside limit breaks it)
+	    }
 	    if {$heading_out} { ;# make prediction for this event
 		if {$phase==6 || $phase==11} { ;# ok approximate to quadratic
 		    set a [expr {-$heading_out*2*($trigger-2*$extras(t2)+$old)/pow([glob_element dts $step],2)}]
@@ -881,35 +884,32 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 
 			# that is the eqn for the curve. Determinant:
 			set det [expr {pow($b,2)-4*$a*$to_limit}]
-			if {$det<=0} {return 0} ;# no misses or grazes
+			if {$det<0} {return 0} ;# value turns round before limit
 			set det [expr {pow($det,0.5)}]
-			if {$to_limit*[glob_element dts $step]*$a<0} {
-			    # outside limit XOR going backwards
+			if {$to_limit*[glob_element dts $step]>0} {
+			    # inside limit XOR going backwards
 			    set prediction [expr {[glob_element ts $step] + \
 						      (-$b-$det)/(2*$a)}]
 			} else { ;# take later root
 			    set prediction [expr {[glob_element ts $step] + \
 						      (-$b+$det)/(2*$a)}]
 			}
+#puts "t [glob_element ts $step] dt [glob_element dts $step] old $old t2 $extras(t2) trigger $trigger a $a b $b det $det pred $prediction"
 		    }
 		} else { ;# phase is 5 or 10, do linear extrap
 		    set prediction [expr {[glob_element ts $step] + [glob_element dts $step]*$to_limit/$rate}]
 		}
 	    
-		if {$forReal && $to_limit<$event(errLim)} { ;# do event
+		if {$forReal && $to_limit<=0} { ;# do event
 		    set event(culprit) $graphId ;# for pause-on-event reporting
 		    return $heading_out ;# culprit is actual event
 		} elseif {$prediction<$event(predict)} {
 		    set event(predict) $prediction
-		    if {!$forReal} { ;# culprit is predicted event
-			set event(culprit) $graphId ;# for error reporting
-		    }
+#		    if {!$forReal} { ;# culprit is predicted event
+#			set event(culprit) $graphId ;# for error reporting
+#		    }
 		}
 #puts "prediction $prediction culprit $event(culprit)"
-	    }
-	    if {$forReal} {
-		set extras(t1) $trigger ;# for prediction next step
-# (keep previous one if event fired, because value outside limit breaks it)
 	    }
 	}
     }
@@ -1009,6 +1009,7 @@ proc TclResetModel {node t0 doingRK topPhase} {
     set adapt(curFreq) $steps($phasecount)
     set adapt_maxerr 0 ;# just so it is defined at first comparison
     do_model evalmodel [set dts(0) $topPhase]
+    set event(culprit) 0
     return 1
 }
 
@@ -1018,14 +1019,12 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 #	error cancelled
 #    }
     set intMtd [string equal Runge-Kutta $howInt]
-    set freq $adapt(curFreq)
+    upvar #0 adapt(curFreq) freq
     set xtime $start
     if {$errLim} {
 	set minFreq $errLim
-	set event(errLim) $errLim
     } else {
 	set minFreq 1
-	set event(errLim) [expr {$steps($phasecount)/2}]
     }
     if {$minFreq>1e-6*$steps($phasecount)} {
 	set minFreq [expr {1e-6*$steps($phasecount)}]
@@ -1038,13 +1037,21 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 # that is the biggest phase we will try to run, we may not succeed
 	if {[CheckGUI $node $xtime ph$bigPhase]} {
 	    return [list 0 $xtime]
+}
+# call update purely to drive events
+	if {$event(culprit) || $event(seriesSign)} {
+# an event is waiting to take effect
+	    set ts(0) [expr {10+$intMtd}] ;# no change due to flows
+	    do_model updatemodel $bigPhase
+	    set ts(0) $intMtd ;# start prediction cycle
+	    do_model evalmodel $bigPhase
 	}
+
         while {!$madeStep} {
 	    # aim for next predicted event if closer than end
 #puts "freq $freq end $end xtime $xtime series $event(nextSeries) predict $event(predict)"
 	    set aim_for $end
-	    if {$event(nextSeries)!=$xtime && \
-		    ($aim_for-$event(nextSeries))/$freq>0} {
+	    if {$firstPass && ($aim_for-$event(nextSeries))/$freq>0} {
 		set aim_for $event(nextSeries)
 	    }
             if {($aim_for-$event(predict))/$freq>0} {
@@ -1067,21 +1074,19 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
                 if {$firstPass} {
 		    set recover 0.5
  		    set ts(0) 0
-		    do_model updatemodel $bigPhase
                 } else {
                     set ts(0) -1
-		    do_model updatemodel $weePhase
                 }
+		do_model updatemodel $weePhase
                 AdvanceTime $node $bigPhase 1 ;# sets event(nextSeries)
 	    } else {
                 if {$firstPass} {
 		    set recover 0.0625
                     set ts(0) 1
-		    do_model updatemodel $bigPhase
                 } else {
                     set ts(0) -2
-		    do_model updatemodel $weePhase
                 }
+		do_model updatemodel $weePhase
 		RKUpdate $node
 	    }
             set firstPass 0
@@ -1118,7 +1123,7 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 #puts "adapt error $adapt_maxerr event error $evtError"
 	    if {$adapt_maxerr>$errLim} {               
 		if {$newFreq/$freq>0.5} {
-		    set newFreq $freq/2
+		    set newFreq [expr {$freq/2}]
 		}
 	    }
 
@@ -1165,7 +1170,6 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 		       $xtime $bigPhase event]
 	}
     } ;# finished executing
-    set adapt(curFreq) $freq
     if {[CheckGUI $node $end ext]} {
 	return [list 0 $xtime]
     }
@@ -1226,7 +1230,6 @@ proc AdvanceTime {node phase fraction} {
     }
 #    set seriesPt [expr $ts($phasecount)+$dts($phasecount)*$fraction/2]
     set ::event(nextSeries) [UpdateTimeSeries $node $ts($phasecount)]
-    set setFromSeries($node,current) $ts($phasecount)
 }
 
 # try to minimize effort at runtime -- list timepoints for each node...
@@ -1256,6 +1259,7 @@ proc InitTimeSeries {topNode} {
 
 proc ResetTimeSeries {topNode} {
     global setFromSeries
+    set ::event(seriesSign) 0
     foreach pt [array names setFromSeries $topNode,*,next] {
 	set setFromSeries($pt) -1
 	set node [lindex [split $pt ,] 1]
@@ -1269,20 +1273,19 @@ proc ResetTimeSeries {topNode} {
 # the data to be written and look at the next one...see update_from_points in
 # shank.cpp...
 
-proc UpdateTimeSeries {topNode newTimeInDays} {
+proc UpdateTimeSeries {topNode now} {
     global setFromSeries
-
-    set firstSeriesEvt $newTimeInDays
+#puts "$setFromSeries($topNode,current) to $now"
+    set ::event(seriesSign) 0
+    set seriesEvt [expr {$now>=$setFromSeries($topNode,current)?Inf:-Inf}]
     foreach list [array names setFromSeries $topNode,*,times] {
-	set seriesEvt [UpdateFromPoints $list $topNode $newTimeInDays]
-	if {$firstSeriesEvt==$newTimeInDays || $seriesEvt<$firstSeriesEvt} {
-	    set firstSeriesEvt $seriesEvt
-	}
+	set seriesEvt [UpdateFromPoints $list $topNode $now $seriesEvt]
     }
-    return $firstSeriesEvt
+    set setFromSeries($topNode,current) $now
+    return $seriesEvt
 }
 
-proc UpdateFromPoints {list topNode newTimeInDays} {
+proc UpdateFromPoints {list topNode newTimeInDays next} {
     global setFromSeries paramData
 
     set inC [RunningInC $topNode]
@@ -1315,7 +1318,7 @@ proc UpdateFromPoints {list topNode newTimeInDays} {
 #		set hiBound 0 ;# first point
 #	    }
 
-	    if {$newTime>=$setFromSeries($topNode,current)} {
+	    if {$next>=$newTimeInDays} {
 		while {$hiBound>-1 && $newTime>=[lindex $setFromSeries($list) $hiBound]+$hiWraps*$paramData(wrapAroundPoint,$node)} {
 		    set loBound $hiBound
 		    set loWraps $hiWraps
@@ -1363,7 +1366,7 @@ proc UpdateFromPoints {list topNode newTimeInDays} {
 		    set tgtIndex [join [lreplace [split $loValue ,] 1 1] ,]
 		    PlaceInArray $topNode $tgtIndex $midValue 0 $inC
 		}
-		    return $newTimeInDays
+		    return $next ;# nothing has changed it yet
 		}
 		if {$interFract>0.5} { ;# fillMethod is USE_CLOSEST
 		    set loBound $hiBound
@@ -1378,7 +1381,7 @@ proc UpdateFromPoints {list topNode newTimeInDays} {
 		    }
 		}
 		if {$hiBound>-1} {
-		    set newTime [expr {[lindex $setFromSeries($list) $hiBound]+$hiWraps*$paramData(wrapAroundPoint,$node)}]
+		    set next [expr {([lindex $setFromSeries($list) $hiBound]+$hiWraps*$paramData(wrapAroundPoint,$node))/$paramData(timePointInterval,$node)}]
 		}
 	    }
 
@@ -1399,7 +1402,10 @@ proc UpdateFromPoints {list topNode newTimeInDays} {
 		}
 	    }
 	}
-    return [expr {$newTime*$paramData(timePointInterval,$node)}]
+    if {$fillMethod eq "none" && $active} {
+	set ::event(seriesSign) [GetTclCompProperty $topNode Graph $node]
+    }
+    return $next
 }
 
 proc loses {prob phase} {

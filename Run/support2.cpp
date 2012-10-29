@@ -149,8 +149,8 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 				  int action, int graphId, 
 				  int step, diffs* extras) {
   double old, to_limit, rate, prediction;
-  BOOLEAN heading_out, for_real;
-  int phase = int(ts[0]);
+  BOOLEAN for_real;
+  int heading_out, phase = int(ts[0]);
 
   switch (phase) {
   case 0: case 1: // resetting model, do not use saved data
@@ -180,6 +180,8 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       heading_out = 0;
     
     for_real = (phase==5 || phase==6);
+    if (for_real) 
+      extras->t1 = trigger; // for prediction next step
     if (heading_out) { // make prediction for this event
       if (phase==6 || phase==11) { // ok approximate to quadratic
 	// printf("old %f mid %f new %f\n", old, extras->t2, trigger);
@@ -195,7 +197,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 	  if (det<=0) return 0; // no misses or grazes
 	  det = pow(det,0.5);
 	  // printf("a %f b %f c %f det %f\n", a, b, to_limit, det);
-	  if (to_limit*dts[step]*a<0) // outside limit XOR going backwards
+	  if (to_limit*dts[step]>0) // inside limit XOR going backwards
 	    prediction = ts[step] + (-b - det)/(2*a);
 	  else // take later root
 	    prediction = ts[step] + (-b + det)/(2*a);
@@ -203,7 +205,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       } else // phase is 5 or 10, do linear extrap
 	prediction = ts[step] + dts[step]*to_limit/rate;
 
-      if (for_real && to_limit < event_errlim) { // do event
+      if (for_real && to_limit <= 0) { // do event
 	userStop.targetId = graphId; // for pause-on-event reporting
 	return heading_out; // culprit is actual event
       } else if (prediction<event_predict) {
@@ -212,8 +214,6 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 	  // userStop.targetId = graphId; // culprit is predicted event
       }
     }
-    if (for_real) 
-      extras->t1 = trigger; // for prediction next step
   }
   return 0;
 }

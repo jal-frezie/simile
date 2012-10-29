@@ -100,7 +100,7 @@ class CPPEXTDEC VarParamData : public FileParamData {
  protected: // protected methods
 
   listTimePoint* roll_forward(listTimePoint*, int*);
-  double update_from_points(int, double); // overrides FileParamData version
+  double update_from_points(double, double); // overrides FileParamData version
 
  public: // public methods
 
@@ -140,7 +140,7 @@ class CPPEXTDEC VarParamData : public FileParamData {
   //! Set up current data from time points for time and direction 
   //! Arguments are time and dir (TRUE=forward), 
   //! result is time of next event (now if none)
-  double UpdateTimeSeries(double, BOOLEAN);
+  double UpdateTimeSeries(double, double);
 };
 
 //! Class for model instances
