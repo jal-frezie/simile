@@ -543,9 +543,10 @@ invent_ptr_names(L, LinkName, BaseSm, Node, Used, Ptrs) :-
 	    Ptrs = [Ptr | MorePtrs].
 
 mark_update_insts(Act, Add) :-
-	Act = make(_,_,_, [update | _], [assign(SV, Src)]),
-	    member(Src, [SV, SV+stage_incr(_,_,_,_,_), % compartment updates
-			 choose(happens(_),_,_)]), !, % state change
+	Act = make(Efct, _,_, [update | _], [assign(SV, Src)]),
+	    (member(Src, [SV, SV+stage_incr(_,_,_,_,_), % compartment updates
+			 choose(happens(_),_,_)]);
+	      Efct = tipped(_Sq)), !,		% state change
 	    Add = [Act];
 	Act = make(_,_,_, [eval | _], _),
 	    Add = [].
