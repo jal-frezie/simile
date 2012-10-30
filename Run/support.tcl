@@ -1381,7 +1381,7 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 		    }
 		}
 		if {$hiBound>-1} {
-		    set next [expr {([lindex $setFromSeries($list) $hiBound]+$hiWraps*$paramData(wrapAroundPoint,$node))/$paramData(timePointInterval,$node)}]
+		    set next [expr {([lindex $setFromSeries($list) $hiBound]+$hiWraps*$paramData(wrapAroundPoint,$node))*$paramData(timePointInterval,$node)}]
 		}
 	    }
 

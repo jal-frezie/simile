@@ -663,7 +663,7 @@ double VarParamData::update_from_points(double nowInDays, double next) {
       if (!--active) // don't trust lazy evaluation
 	zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
     if (hiBound) // return time at which event will next happen
-      next = (hiBound->when+hiWraps*wrapAroundPoint)/seriesIdxUnits;
+      next = (hiBound->when+hiWraps*wrapAroundPoint)*seriesIdxUnits;
   }
   if (loBound && (loBound!=curTimePoint || wraps!=oldWraps)) {
     curTimePoint = loBound;
