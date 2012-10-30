@@ -569,7 +569,7 @@ proc AbleArrows {db t} {
 # TABLE LOADING
 #####################################################################
 set commonTimes [list second minute hour day week month year]
-proc equationDoTable {parent mdl tgt dims startLine continuous} {
+proc equationDoTable {parent mdl tgt dims dlgStyle} {
     global table_entry iconImages tcl_platform
     
     PutItThere .table $parent
@@ -853,7 +853,9 @@ proc equationDoTable {parent mdl tgt dims startLine continuous} {
     #
     # OK, Cancel and Help buttons
     frame .table.fbuttons
-    if {$continuous} {
+    set startLine [expr {[lsearch {fixed result} $dlgStyle]>-1}]
+# 0 for times, 1 for array indices
+    if {!$startLine} {
         pack [TitleFrame .table.fbuttons.wrapf -text [tr. "Time options: "]] \
                 -padx 4 -pady 4 -expand true -fill x
         set wrapf [GetFrame .table.fbuttons.wrapf]
@@ -862,21 +864,25 @@ proc equationDoTable {parent mdl tgt dims startLine continuous} {
 		  -width 10 -values [concat unit $::commonTimes] \
 		  -state normal]
 	set table_entry(uftsi) unit
-        pack [label $wrapf.bm -text [tr. "Between points:"]]
-        pack [::ttk::combobox $wrapf.bc -textvariable table_entry(others) \
-                -width 10 -values $table_entry(between_txts) \
-                -state readonly]
-	set table_entry(others) [lindex $table_entry(between_txts) 0]
-        pack [label $wrapf.wm -text [tr. "Wraparound at:"]]
-        pack [entry $wrapf.we -width 1 -textvariable table_entry(wrapPt)] \
+	if {$dlgStyle eq "continuous"} {
+	    pack [label $wrapf.bm -text [tr. "Between points:"]]
+	    pack [::ttk::combobox $wrapf.bc -textvariable table_entry(others) \
+		      -width 10 -values $table_entry(between_txts) \
+		      -state readonly]
+	    set table_entry(others) [lindex $table_entry(between_txts) 0]
+	}
+	if {!($dlgStyle eq "measure")} {
+	    pack [label $wrapf.wm -text [tr. "Wraparound at:"]]
+	    pack [entry $wrapf.we -width 1 -textvariable table_entry(wrapPt)] \
                 -expand true -fill x
-        if {[string equal restart [string tolower \
-                    [lindex $table_entry(values) end]]]} {
-            set table_entry(oldWrapPt) [lindex $table_entry(values) end-1]
-            set table_entry(wrapPt) $table_entry(oldWrapPt)
-            set table_entry(values) [lrange $table_entry(values) 0 end-2]
-        } else {
-            set table_entry(oldWrapPt) {}
+	    if {[string equal restart [string tolower \
+					   [lindex $table_entry(values) end]]]} {
+		set table_entry(oldWrapPt) [lindex $table_entry(values) end-1]
+		set table_entry(wrapPt) $table_entry(oldWrapPt)
+		set table_entry(values) [lrange $table_entry(values) 0 end-2]
+	    } else {
+		set table_entry(oldWrapPt) {}
+	    }
         }
         if {[string equal others [string tolower \
 				      [lindex $table_entry(values) end-1]]]} {

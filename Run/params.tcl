@@ -140,7 +140,8 @@ proc AddEntry {winId topNode node mustShow notInput} {
 	set levels [concat $topNode [lrange $levels 1 end]]
 	set readMany($compName) [expr {$notInput==0}]
     } ;# otherwise it has been set by the PEST interface GUI
-    if {[string match SUBMODEL [GetCompProperty $topNode Class $node]]} {
+    set compClass [GetCompProperty $topNode Class $node]
+    if {$compClass eq "SUBMODEL"} {
         set suppliedData($compName) {}
         return
     }
@@ -232,9 +233,18 @@ proc AddEntry {winId topNode node mustShow notInput} {
         BindPopup $slot.cross [tr. "Revert to old values"]
     }
     if {[llength $nodeDims]>1} {
+# T   nI   rM
+# r   -1    0
+# m   -1    1
+# f    1    0
+# c    0    1
+# d    0    1    EVT
+	set dlgStyle [lindex {result measure discrete continuous fixed} \
+			  [expr {2*$notInput+$readMany($compName) \
+				 -($compClass eq "EVENT")+2}]]
 	::ttk::button $slot.b -style style$holder -image $iconImages(edit) \
 	    -command [namespace code [list GetFromTable $winId $topNode \
-					  $compName $notInput]]
+					  $compName $dlgStyle]]
 	BindPopup $slot.b [tr. "Get values from file"]
 	pack $slot.b -side right
     }
@@ -1655,11 +1665,11 @@ proc VarType {testVar types} {
     return 0
 }
 
-proc GetFromTable {parent topNode compName startLine} {
-    global paramState readMany table_entry msgs paramMetadata \
+proc GetFromTable {parent topNode compName dlgStyle} {
+    global paramState table_entry msgs paramMetadata \
 	widgetNames whichParamsAffected
 
-    if {$startLine==-1} {
+    if {$dlgStyle eq "result" || $dlgStyle eq "measure"} {
 	set dataLocn targetData
 	set widgetLocn targetNames
     } else {
@@ -1686,11 +1696,10 @@ proc GetFromTable {parent topNode compName startLine} {
 # trim off model name from caption cos it is ugly
     set tablCapt [string range $compName [string first / $compName 1] end]
     set newSource [equationDoTable [winfo toplevel $parent] $topNode $tablCapt \
-		       ($paramMetadata($compName,dimList)) \
-		       [expr {!$readMany($compName)}] [expr {$startLine==0}]]
+		       ($paramMetadata($compName,dimList)) $dlgStyle]
 
 # If loading data for PEST there is no parent dialogue so do not keep grab
-    if {$startLine==-1} {
+    if {$dlgStyle eq "result" || $dlgStyle eq "measure"} {
 	grab release [winfo toplevel $parent]
     }
     if {$newSource>0} {
