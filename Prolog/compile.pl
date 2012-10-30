@@ -1506,7 +1506,8 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 		Twk2 = [assign(CDest, CDest+Val) | Twk1]), !,
 %	    AllActs = [cond_event(TriggerExpr, Expr, Twk2)],
 %	    append(EvtConds, RefList, UseList);
-	    Extras = [make(tipped(Made), [Made], Path, UseStep, Twk2) | Setups],
+	    Extras = [make(tipped(Made), [on_step, Made], Path, UseStep, Twk2)
+		     | Setups],
 	    UseList = RefList;
 	  Type = state_fn, !,
 	    SourceEqn = event(ActEqn, TriggerEqn, (0->0)),
