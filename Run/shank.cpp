@@ -1025,6 +1025,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   excpData* userDefStop = &(loadedInst->userStop);
 
   resetting = 0;
+  userDefStop->excpNo = 0;
   xtime = start;
   if (errlim) {
     minFreq = errlim;
@@ -1077,7 +1078,6 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       
       switch (how_int) {
       case EULER:
-	userDefStop->excpNo = 0;
 	if (first_pass) {
 	  recover = 0.5;
 	  SetdT(0,0);

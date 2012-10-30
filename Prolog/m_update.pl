@@ -297,7 +297,8 @@ valid_input(Real, SourceType, InputLink) :-
 	(GhostVar = BaseVar;
 	find_ghosts(BaseVar, GhostVar)),
 	implicit_function(GhostVar, AlsoUsed),
-	InputLink is_connector from Source to AlsoUsed,
+	InputLink is_connector from _ to AlsoUsed,
+	initiates(InputLink, Source),
 	(SourceType = continuous,
 	    \+ Source is_of_sort discrete; % event values not to be used
 	  SourceType = discrete,
