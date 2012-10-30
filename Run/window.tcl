@@ -1733,14 +1733,16 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     # the command procedure has to know what the old pushedbutton was
     # so it can unpress it, so they cannot use that
     
-    set lookers [list compartment variable flow influence submodel relation \
-		     creation immigration reproduction loss \
-		     condition alarm text]
+# add state event squirt separator3 before creation for v5
+    set lookers [list compartment variable flow influence separator1 \
+		      submodel relation separator2 \
+		      creation immigration reproduction loss condition alarm \
+		     separator4 text]
     if {[info exists ::do_events]} {
-	set lookers \
-	    [linsert [linsert [linsert $lookers 3 squirt] 2 event] 1 state]
+	set lookers [linsert $lookers 8 state event squirt separator3]
     }
     foreach itemType $lookers {
+	if {[string match separator* $itemType]} continue
 	$fm1 add radiobutton -label [tr. [string totitle $itemType]] \
 	    -command "ItemSelect $itemType" \
             -variable MIpushedbutton -value $itemType
@@ -1882,14 +1884,6 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set tb [::ttk::frame $winid.toolSlot.toolbar -class Toolbar]
     pack [ttk::separator $tb.afterSeparator -orient horizontal] \
 	-fill x -side bottom
-# add state event squirt separator3 before creation for v5
-    set lookers [list compartment variable flow influence separator1 \
-		      submodel relation separator2 \
-		      creation immigration reproduction loss condition alarm \
-		     separator4 text]
-    if {[info exists ::do_events]} {
-	set lookers [linsert $lookers 8 state event squirt separator3]
-    }
     foreach mode $lookers {
         if {[string match separator* $mode]} {
             
@@ -1900,17 +1894,18 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
                 -variable MIpushedbutton -value $mode -image $testImg -style Toolbutton]
             pack $bt -side left -padx 2 -pady 2
             BindPopup $bt add_$mode
-            bind $bt <ButtonRelease-1> "DragComponentIn $c $bt %X %Y"
+            bind $bt <ButtonRelease-1> "DragComponentIn $c $bt %X %Y yes"
         }
     }
     pack [ttk::separator $tb.spacer -orient vertical] -fill y -side left
     
     foreach mode {select move ghost snap} {
         set testImg [image create photo -file $buttonImages/${mode}.gif]
-        pack [::ttk::button $tb.$mode -image $testImg -command "ModeSelect $mode" -style Toolbutton] \
-            -side left -padx 2 -pady 2
-	FixDisabledImgBug $tb.$mode
-        BindPopup $tb.$mode $mode
+        set bt [::ttk::button $tb.$mode -image $testImg -command "ModeSelect $mode" -style Toolbutton]
+	pack $bt -side left -padx 2 -pady 2
+	FixDisabledImgBug $bt
+        BindPopup $bt $mode
+	bind $bt <ButtonRelease-1> "DragComponentIn $c $bt %X %Y no"
     }
     if {![HaveValues $topNode]} {
         $tb.snap configure -state disabled
@@ -2253,7 +2248,7 @@ proc RaiseAny {node win} {
 # # character in colour spec is escaped purely for the benefit of the Emacs
 # tcl mode parser
 
-proc DragComponentIn {winId button x y} {
+proc DragComponentIn {winId button x y addOne} {
     global looks equationbar
     set whatToAdd [winfo name $button]
     #    set top [winfo parent $winId]
@@ -2267,11 +2262,18 @@ proc DragComponentIn {winId button x y} {
     set x [expr $x-[winfo rootx $winId]]
     set y [expr $y-[winfo rooty $winId]]
     
-    if {$x<0 || $x>[winfo width $winId] || $y<0 || $y>[winfo height $winId]} {
-        # not in canvas, ignore
+    if {$x<0 || $x>[winfo width $winId] || \
+	    $y<-[winfo y $winId] || $y>[winfo height $winId]} {
+        # not in canvas or parent, ignore
         return
     }
-    
+    if {$y<0} {
+        # in parent but not in canvas, select clicked button
+	$button invoke
+        return
+    }
+    if {!$addOne} return
+
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
     set xco [Unscale $winId $canx]
