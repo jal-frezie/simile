@@ -1490,19 +1490,22 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  Type = magnitude, !, % no derived events yet but same
 	    SourceEqn = event(ActEqn, TriggerEqn, (From->To)),
 	    (Unit = boolean -> Inactive = '"false"' ; Inactive = 0),
-	    GroundEqn = (magnitude=TriggerEqn,
-			    choose(magnitude '!=' 0, ActEqn, Inactive)),
+	    SourceItem = trigger_magnitude(''),
+	    GroundEqn = (SourceItem=TriggerEqn,
+			    choose(SourceItem '!=' 0, ActEqn, Inactive)),
 	    % trigger is just a sum of references so building is simple
 %	    final_assignment(TriggerEqn, Node,
 %			     elt([], current_event_magnitude, X), Swaps,
 %			     UseStep, Used, [TriggerExpr], [], _Path, EvtConds,
 %			     []),
-	    Val = arr(SquirtPtr, _, _), % and its submodel pointer
+	    Val = arr(SquirtPtr, _, SqtInds), % and its submodel pointer
 	    (From = 0, Twk1 = [];
-	      From = elt(_, BSrc, _), CSrc = arr(SquirtPtr, BSrc, []),
+	      From = elt(_, BSrc, _),
+		CSrc = arr(SquirtPtr, BSrc, SqtInds),
 		Twk1 = [assign(CSrc, CSrc-Val)]),
 	    (To = 0, Twk2 = Twk1;
-	      To = elt(_, BDest, _), CDest = arr(SquirtPtr, BDest, []),
+	      To = elt(_, BDest, _), 
+		CDest = arr(SquirtPtr, BDest, SqtInds),
 		Twk2 = [assign(CDest, CDest+Val) | Twk1]), !,
 %	    AllActs = [cond_event(TriggerExpr, Expr, Twk2)],
 %	    append(EvtConds, RefList, UseList);

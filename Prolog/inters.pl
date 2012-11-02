@@ -1,5 +1,5 @@
 sicstus_module(inters, [final_assignment/12, make_intermediates/12,
-			expand_library/3,
+			expand_library/3, units_for_trigger_mag/2,
 			macro_expansion/2, fragment_expansion/5, function/4,
 			promote_unit/2, promote_arg/3, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
@@ -1044,8 +1044,10 @@ Now one that uses a special conditional level */
 	    Param = Ref,
 %		member(instance(internal, inter(_,_, Loops), Param,_, _-Dims),
 %		       PrevInters),
-		m_update'><'get_solo_list_depth(Ref, DimExp),
-		m_update'><'analyze_array(DimExp, any, RefDims),
+		(Ref = trigger_magnitude(_), !,
+		    units_for_trigger_mag(SubId, _RefUnits-RefDims);
+		  m_update'><'get_solo_list_depth(Ref, DimExp),
+		    m_update'><'analyze_array(DimExp, any, RefDims)),
 		make_inds_for(RefDims, Loops, _),
 		append(Loops, BuildingArrays, Access),
 		get_dims_from_loops(Access, Dims, _)), /* building code */
@@ -1081,7 +1083,15 @@ Now one that uses a special conditional level */
 	    NewInters = [],
 	    SourceContext = [],
 	    Setups = [],
-	    SourceRef = 1;	    
+	    SourceRef = 1;
+
+	Source = trigger_magnitude(_),
+	Step = dummy, !, % is always explicit inter when building code
+	    units_for_trigger_mag(SubId, Units-Dims),
+	    NewInters = [],
+	    make_inds_for(Dims, SourceContext, _),
+	    Setups = [],
+	    SourceRef = 1;
 
 	\+ atom(Source),
 	    (individuates_instances(_, Source, _, _), !,
@@ -1136,7 +1146,7 @@ Now one that uses a special conditional level */
 		ResultList = [RDiffs, RChange],
 		RUnits = real,
 		ValRef = stage_incr(RDiffs, Step, RChange, Span, GraphId);
-	      Source = check_limit(ActEqn, Lower, Upper, Flags, Step, Diffs),
+	    Source = check_limit(ActEqn, Lower, Upper, Flags, Step, Diffs),
 		SourceList = [ActEqn, Diffs],
 		Arg_template = [real, diffs],
 		ResultList = [RActEqn, RDiffs],
@@ -1153,19 +1163,6 @@ Now one that uses a special conditional level */
 		member(units=RUnits, TableData),
 		member(bounds=Arg_template, TableData),
 		ValRef = table(ResultList);
-	    /* Source = rand(Lo, Hi), deal with horrible legacy case
-		-- removed cos rand_var now defined in terms of rand
-	        SourceList = [rand_var(Lo, Hi)],
-		RUnits = real,
-		Arg_template = [real],
-		[ValRef] = ResultList; */
-	    Source = trigger_magnitude(MagU),
-		(Step = dummy, % trigger inter not defined so avoid using
-		    SourceList = [0],
-		    ArgList = [int], % just to match units of above
-		    RUnits = MagU;
-		  SourceList = [magnitude]), !,
-		    [ValRef] = ResultList;
 	    Source =.. [Op | ArgListForm],
 		(ArgListForm = [''], !, ArgList = [];
 		    ArgList = ArgListForm),
@@ -1320,6 +1317,22 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	operator(MxOp, RUnits, AUnits)),
 	name(MxOp, MxOpStr),
 	lower(MxOpStr, OpStr).
+
+units_for_trigger_mag(Fn, MagUnits) :-
+	setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits),
+	% check dimensions the same
+	all(m_update, analyze_array,
+	    [build(EvtUnits), build(EvtBases), unify(EvtDims)]),
+	length(EvtBases, NEvts),
+	value(Any),
+	list_of(Any, NEvts, Anies),
+	try_units(Any, Anies, EvtBases, MagBase),
+	\+ MagBase = boolean,
+	MagUnits = MagBase-EvtDims.
+
+units_for_evt_antecedents(Fn, EvtUnit) :-
+	m_update'><'get_all_links(Fn, discrete, _,
+	     input_link(_,_,_,_, EvtUnit)).
 
 dissociate(Wrapper, made_at(Arg, Level), made_at(NewArg, Level)) :-
 	NewArg =.. [Wrapper, Arg].
