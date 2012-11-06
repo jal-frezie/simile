@@ -626,7 +626,9 @@ make_intermediates(
 			 in_preceding, in_progenitor, at_phase]), !,
 	    InitVal = 0,
 	    IncrExpr = IncrementRef,
-	    Units = ArgUnits,
+	    (UseSource = trigger_magnitude('') ->
+		units_for_trigger_mag(SubId, Units-_RefDims);
+	      Units = ArgUnits),
 	    ReadyContext = ClearContext;
 	member(Functor, [with_least, with_greatest]), !,
 	    append(NowBuilding, DestPath, ReadyContext),
@@ -1327,8 +1329,8 @@ units_for_trigger_mag(Fn, MagUnits) :-
 	value(Any),
 	list_of(Any, NEvts, Anies),
 	try_units(Any, Anies, EvtBases, MagBase),
-	\+ MagBase = boolean,
-	MagUnits = MagBase-EvtDims.
+	(MagBase = boolean -> ReferMagBase = int; ReferMagBase = MagBase),
+	MagUnits = ReferMagBase-EvtDims.
 
 units_for_evt_antecedents(Fn, EvtUnit) :-
 	m_update'><'get_all_links(Fn, discrete, _,
