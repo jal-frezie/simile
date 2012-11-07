@@ -320,7 +320,10 @@ update_equation(Function, InterInputs,
 	      use_units_in(Function, 'No')), % or else if math checking is off,
 		CheckLevel = 1; % allow it to have any given physical units
 	      CheckLevel = 2), % otherwise dimensions must match
-	    appropriate_units(Units, TypeBase, RawBase, CheckLevel,
+	    (MinMaxNeeded = 1 -> % limit event -- boolean if 1 bound, int if 2
+		(member('', [Min, Max]) -> CompBase=boolean; CompBase=int);
+		CompBase = RawBase),		
+	    appropriate_units(Units, TypeBase, CompBase, CheckLevel,
 			      NewUnits, TypeError))),
 
 	    build_array(NewUnits, EqnDims, NewArrSpec),

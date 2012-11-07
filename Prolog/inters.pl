@@ -1326,9 +1326,11 @@ units_for_trigger_mag(Fn, MagUnits) :-
 	all(m_update, analyze_array,
 	    [build(EvtUnits), build(EvtBases), unify(EvtDims)]),
 	length(EvtBases, NEvts),
-	value(Any),
+	(value(Any),
 	list_of(Any, NEvts, Anies),
-	try_units(Any, Anies, EvtBases, MagBase),
+	try_units(Any, Anies, EvtBases, MagBase), !;
+	    caption_for(Fn, Capt),
+	    throw(mixed_trigger_units(Capt, EvtUnits))),
 	(MagBase = boolean -> ReferMagBase = int; ReferMagBase = MagBase),
 	MagUnits = ReferMagBase-EvtDims.
 
