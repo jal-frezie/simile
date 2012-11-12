@@ -1,5 +1,5 @@
 sicstus_module(inters, [final_assignment/12, make_intermediates/12,
-			expand_library/3, units_for_trigger_mag/2,
+			expand_library/3,
 			macro_expansion/2, fragment_expansion/5, function/4,
 			promote_unit/2, promote_arg/3, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
@@ -1324,7 +1324,7 @@ units_for_trigger_mag(Fn, MagUnits) :-
 	setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits),
 	% check dimensions the same
 	all(m_update, analyze_array,
-	    [build(EvtUnits), build(EvtBases), unify(EvtDims)]),
+	    [build(EvtUnits), build(EvtBases), build(_EvtDims)]),
 	length(EvtBases, NEvts),
 	(value(Any),
 	list_of(Any, NEvts, Anies),
@@ -1332,7 +1332,7 @@ units_for_trigger_mag(Fn, MagUnits) :-
 	    caption_for(Fn, Capt),
 	    throw(mixed_trigger_units(Capt, EvtUnits))),
 	(MagBase = boolean -> ReferMagBase = int; ReferMagBase = MagBase),
-	MagUnits = ReferMagBase-EvtDims.
+	MagUnits = ReferMagBase-[]. % triggers now summed or howmanytrued
 
 units_for_evt_antecedents(Fn, EvtUnit) :-
 	m_update'><'get_all_links(Fn, discrete, _,

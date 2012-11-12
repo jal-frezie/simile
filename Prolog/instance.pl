@@ -411,9 +411,16 @@ is_lookup_cond(GroundExpr, UseExpr) :-
 	 GroundExpr = any(index(1) is UseExpr)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-build_sum([Solo], Solo).
-build_sum([First | Rest], First++Run) :-
+build_sum([Solo], SoloArr) :- sum_over_dims(Solo, SoloArr).
+build_sum([First | Rest], FirstArr++Run) :-
+	sum_over_dims(First, FirstArr),
 	build_sum(Rest, Run).
+
+sum_over_dims(IP, SD) :-
+	IP = input(_,_,_, Units),
+	analyze_array(Units, Base, Dims),
+	(Base = boolean -> Num = (if IP then 1 else 0); Num = IP),
+	sum_dims(Dims, Num, SD).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 squirt_names_and_refs(Comp, Names, Refs) :-
