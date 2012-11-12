@@ -639,7 +639,10 @@ get_end_pt(Link, End, Type, Pt, Box) :-
 	    get_shape(PrevPt, along, Theta),
 	    around_border(Node, out, Theta, Pt),
 	    append(Pt, Pt, Box);
-	get_drawing_form(Node, Type, Box),
+	get_drawing_form(Node, DrawType, Box),
+	    (Node has_type squirt, !,
+		Type = variable;
+	      Type = DrawType),
 	    middle(Box, Pt)).
 
 warp_factor_for(Link, WarpFactor) :-
