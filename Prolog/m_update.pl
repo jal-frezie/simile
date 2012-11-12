@@ -299,10 +299,11 @@ valid_input(Real, SourceType, InputLink) :-
 	implicit_function(GhostVar, AlsoUsed),
 	InputLink is_connector from _ to AlsoUsed,
 	initiates(InputLink, Source),
+	get_host(Source, VisSource), % for flows/squirts with links from fn
 	(SourceType = continuous,
-	    \+ Source is_of_sort discrete; % event values not to be used
+	    \+ VisSource is_of_sort discrete; % event values not to be used
 	  SourceType = discrete,
-	    Source is_of_sort discrete). % event values to be used
+	    VisSource is_of_sort discrete). % event values to be used
 
 /* This generates the extra array nestings due to submodels that are exited between a
 link's source and its destination. Note that if the destination is a creation or
