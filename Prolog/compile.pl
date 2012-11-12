@@ -1515,7 +1515,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  Type = state_fn, !,
 	    SourceEqn = event(ActEqn, TriggerEqn, (0->0)),
 	    choosify(ActEqn, ChooseForm),
-	    GroundEqn = (magnitude=TriggerEqn, ChooseForm),
+	    GroundEqn = (trigger_magnitude('')=TriggerEqn, ChooseForm),
 	    Extras = Setups,
 	    UseList = [on_step | RefList];
 	  (SourceEqn = with_phase(SmStep, EvtElts, GroundEqn),
