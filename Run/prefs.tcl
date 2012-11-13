@@ -194,8 +194,10 @@ proc Pref_Dialog {} {
             set manyWinF $manyWinTF
             set precisTF [TitleFrame $rf.precisTF -text [tr. "Numeric display precision (0 for default):"]]
             set precisF $precisTF
+            set occurrenceTF [TitleFrame $rf.occurrenceTF -text [tr. "Occurrences during execution"]]
+            set occurrenceF $occurrenceTF
        # $notebook select View
-        pack $initWinTF $displayTF $gridTF $popupTF $eqListTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $precisTF $compTF \
+        pack $initWinTF $displayTF $gridTF $popupTF $eqListTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $precisTF $occurrenceTF $compTF \
                 $canvasTF $recentTF $abandonTF $notebook -fill x -padx 4 -pady 4
         set bbox [frame $dlg.bbox] 
         pack [::ttk::button $bbox.bok -text [tr. OK] -underline 0 -width 8  \
@@ -244,6 +246,7 @@ proc Pref_Dialog {} {
                 helperManager {set frame $oneWinF}
                 popupPrecision {set frame $precisF}
                 snapPrecision {set frame $precisF}
+                showPauseInfo {set frame $occurrenceF}
                 runControlPosition {set frame $manyWinF}
                 slidersPosition {set frame $manyWinF}
                 default {set frame $displayTF}

@@ -924,6 +924,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(popupPrecision) popupPrecision {0 0 16} [tr. "Value popups"]] \
 		  [list custom(snapPrecision) snapPrecision {0 0 16} [tr. "Snapshots"]] \
 		  [list custom(runControlPosition) runControlPosition "+0-20" [tr. "Position of run control"]] \
+		  [list custom(showPauseInfo) showPauseInfo [list CHOICE [tr. "In log tab only"] [tr. "In dialogue interactions"]] [tr. "Show info about pauses"]] \
 		  [list custom(slidersPosition) slidersPosition "+0+0" [tr. "Position of sliders"]] \
 		  [list custom(hackBreak) hackBreak OFF [tr. "Pause to edit C++ code?"]] \
 		  [list custom(compChoice) compChoice \
@@ -1563,9 +1564,14 @@ proc FinishExec {win} {
     $helperTable(RunControl)::AbortFromMenu $node
 }
 
-proc ExecQuery {args} {
-    if {![info exists ::hideQuery]} {
-	return [eval Query $args]
+proc ExecQuery {specifics icon helpRef parent opts} {
+    if {[PrefValue custom(showPauseInfo) showPauseInfo] eq \
+	    [tr. "In log tab only"] && \
+	    $icon eq "info" || [info exists ::hideQuery]} {
+	return ok
+# rely on log entry
+    } else {
+	return [Query $specifics $icon $helpRef $parent $opts]
     }
 }
 

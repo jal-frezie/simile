@@ -228,6 +228,13 @@ namespace eval runcontrol33857 {
 	if {[info exists ::do_events]} {
 	    pack $rsf.pauses -pady 4 -expand on -fill both
 	}
+        $t.nb add [frame $t.nb.log] -text [tr. "Log"]
+        set log $t.nb.log
+	pack [scrollbar $log.scroll -orient vert -command "$log.text yview"] \
+	    -side right -fill y
+	pack [text $log.text -yscrollcommand "$log.scroll set" -state disabled \
+		  -height 10] -fill both
+
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
         #        set sendvars($node,timeUnit) unit
@@ -536,10 +543,10 @@ namespace eval runcontrol33857 {
 	    set maxErr 0
 	}
 	if {[string equal start $sendvars($node,currentMode)]} {
-	    set modelAct [ExecuteTo $node \
-		     $current $pause $sendvars($node,unitLength) $display \
-		     [ListFoci $node] $runState($node,intMethod) $maxErr \
-			     $runState($node,evtpause)]
+	    set modelAct \
+		[ExecuteTo $node $current $pause $sendvars($node,unitLength) \
+		     $display [ListFoci $node] $runState($node,intMethod) \
+		     $maxErr $runState($node,evtpause)]
 	    if {[string equal start $sendvars($node,currentMode)]} {
 		set sendvars($node,currentMode) $modelAct
 	    }

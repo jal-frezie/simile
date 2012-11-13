@@ -159,13 +159,15 @@ proc ExplainError {myNode errList origError} {
     }
     switch -- $severity {
 	-1 {
-	    ExecQuery [list model_crash $operation $target $action $timing \
-		       $problem $origError] warning top {} ok
+	    set specifics [list model_crash $operation $target $action $timing \
+		       $problem $origError]
 	} 0 {
-	    ExecQuery [list model_pause $operation $target $action $timing \
-		       $problem] info top {} ok
+	    set specifics [list model_pause $operation $target $action $timing \
+		       $problem]
 	}
     }
+    ExecQuery $specifics info top {} ok
+    AddLogEntry $myNode $specifics
     # do it after idle so this process is not hung till user responds
 #    RaiseModelWindow $myNode
     return $severity

@@ -1295,6 +1295,17 @@ proc StartNow {node action} {
     $widget.upper.topbuttons.$action invoke
 }
 
+proc AddLogEntry {node text} {
+    global runState
+
+    set widget $runState($node,helperId).nb.log.text
+    $widget configure -state normal
+    $widget insert end $text
+    $widget insert end \n
+    $widget see end
+    $widget configure -state disabled
+}
+
 proc InDays {timeUnit} {
     if {[string equal unit $timeUnit]} {
 	return 1.0
