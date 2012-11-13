@@ -480,8 +480,9 @@ namespace eval runcontrol33857 {
 	    set $param $val
 	}
 	set forward [expr $exec>0]
-	if {abs($current + $exec - $runState($node,expected_end)) > 1e-12 || \
+	if {abs($current + $exec - $runState($node,expected_end)) > 1e-6 || \
 		![info exists runState($node,run_length)]} {
+# check if fields edited
 	    SetupBar $node $current [expr $current + $exec]
 	}
 	do_in_editor RecordRunParams $node
@@ -567,7 +568,7 @@ namespace eval runcontrol33857 {
 		set runState($node,modelRunning) 2
 	    }
 	} else {
-	    if {abs($current-$finish)<1e-12} { ;# allow for floating point drift
+	    if {abs($current-$finish)<1e-6} { ;# allow for min freq overshoot
 		set exec $runState($node,run_length)
 		SetupBar $node $finish [expr $finish+$exec]
 	    } else {
