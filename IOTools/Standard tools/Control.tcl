@@ -489,6 +489,12 @@ namespace eval runcontrol33857 {
 	    set current $runState($node,resetTo)
 	    set exec $runState($node,run_length)
 	    SetupBar $node $current [expr $current + $exec]
+
+	    set log $runState($node,helperId).nb.log.text
+	    $log configure -state normal
+	    $log delete 1.0 end
+	    $log configure -state disabled
+	    
 	    if {[info exists runState($node,reloadParams)]} {
 		set redoPhase($node) $runState($node,reloadParams)
 		unset runState($node,reloadParams)
