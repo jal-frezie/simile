@@ -83,21 +83,23 @@ proc ExplainError {myNode errList origError} {
     }
 #	advancemodel {set operation "advancing the time point for"}
     set target something
-    if {[string is integer -strict $dest]} { ;# graph id
+    if {[string is integer -strict $dest]} { ;# graph id (tcl only for now)
 	foreach {n record} [array get ::nodedata] {
 	    if {[lindex $record 9]==$dest} {
 		set target "[GetFullCaption $record] (node [lindex $record 0])"
 		break;
 	    }
 	}
-    } elseif {![string equal none $dest]} {
-	set targetList [DescribeComponent $myNode $dest]
+    } elseif {[string first :: $dest]>-1} { ;# a Tcl namespace hierarchy
+	set target [DescribeComponent $myNode $dest]
 	if {![namespace exists [join [lrange [split $dest :] 0 end-2] :]]} {
 	    set whoopsie dest_missing
 # Just remind me, when does this happen? 
 # Probably never, due to base index range checking
 	}
-	set target [lindex $targetList 0]
+#	set target [lindex $targetList 0]
+    } elseif {![string equal none $dest]} { ;# caption extracted by c++ error handling
+	set target $dest
     }
 
     switch -glob -- $whoopsie {
