@@ -681,7 +681,7 @@ proc GetShortVals {topNode plName limit} {
 	    ReleaseHandle $topNode $hdl
 	}
     } else {
-	set text [lindex [GetCompProperty $topNode Value $plName] 0]
+	set text [lindex [GetCompExecData $topNode Value $plName] 0]
 	set count [ShrinkValueList text $limit]
     }
     catch {GetCompProperty $topNode Type $plName} iType
@@ -784,7 +784,7 @@ proc UpdateSnap {w label submodels topNode node} {
     MakeSnapText $w
     pack $w.text -expand yes -fill both
 
-    set rawVals [GetCompProperty $topNode Value $node]
+    set rawVals [GetCompExecData $topNode Value $node]
     if {[string equal novalue $rawVals]} {
 	return 1
     }

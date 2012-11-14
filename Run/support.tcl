@@ -374,13 +374,9 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 	SetWrapTime $topNode $useCppArray $tgt 0 ;# clear old wraparound point
 # do not allow OTHERS if an event series
 
-	if {$useCppArray} {
-	    set tgtEval [GetCCompProperty $topNode Eval $tgt]
-	    set tgtClass [GetCCompProperty $topNode Class $tgt]
-	} else {
-	    set tgtEval [GetTclCompProperty $topNode Eval $tgt]
-	    set tgtClass [GetTclCompProperty $topNode Class $tgt]
-	}
+	set tgtEval [GetCompProperty $topNode Eval $tgt]
+	set tgtClass [GetCompProperty $topNode Class $tgt]
+
 	if {[string equal DERIVED $tgtEval]} {
 	    set specialPts {} ;# loading measurements for PEST
 	} elseif {[string equal EVENT $tgtClass]} {
@@ -1566,6 +1562,18 @@ proc stop {code} {
     stop_on_id 0 $code
 }
 
+proc GetCompProperty {topNode prop args} {
+    global runState
+       
+    if {[RunningInC $topNode]} {
+	set result [eval GetCCompProperty $topNode $prop $args]
+    } else {
+	set result [eval GetTclCompProperty $topNode $prop $args]
+    }
+#puts "result $result"
+    return $result
+}
+
 proc GetTclCompProperty {topNode prop args} {
     global nodecount nodedata phasecount steps
     set node [lindex $args 0]
@@ -1656,8 +1664,16 @@ proc GetTclCompProperty {topNode prop args} {
 	    if {![string equal NULL $targetVar]} {
 		return [set ::$targetVar]
 	    }
-	} Value {
-	    return [tcl_insert $node [lindex $set 0]]
+	}
+    }
+}
+
+proc GetTclCompExecData {topNode prop args} {
+    set node [lindex $args 0]
+    set incoming [lrange $args 1 end]
+    switch -regexp $prop {
+	Value {
+	    return [tcl_insert $node [lindex $incoming 0]]
 	} default {
 	    error "Property $prop not available in debug mode"
 	}

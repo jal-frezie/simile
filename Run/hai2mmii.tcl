@@ -120,13 +120,11 @@ proc TransBounds {transList vals} {
 }
 	    
 proc GetModelTime {} {
-    global myNode
-    return [GetCompProperty $myNode CurrentTime]
+    return $::runState($::myNode,currentTime)
 }
 
 proc GetModelEndTime {} {
-    global myNode
-    return [GetCompProperty $myNode EndTime]
+    return [expr {[GetModelTime]+$::runState($::myNode,execTime)}]
 }
 
 # Something like this which just gets model structure we want to be
@@ -165,7 +163,7 @@ proc GetModelValue { node } {
 
 proc SetModelValue { node newVals } {
     global myNode
-    return [GetCompProperty $myNode Value $node $newVals]
+    return [GetCompExecData $myNode Value $node $newVals]
 }
 
 proc GetBinaryModelValue { node args } {
@@ -179,7 +177,7 @@ proc GetBinaryModelValue { node args } {
 	}
     }
     AddToWatched $node
-    return [eval GetCompProperty $myNode Binary $node $args]
+    return [eval GetCompExecData $myNode Binary $node $args]
 }
 
 proc ListDistinctModelValues { node } {
@@ -192,7 +190,7 @@ proc ListDistinctModelValues { node } {
 	}
     }
 # do not add to watched list, this is only needed during setup
-    return [eval GetCompProperty $myNode Distinct $node]
+    return [eval GetCompExecData $myNode Distinct $node]
 }
 
 proc GetModelGraph {node} {
@@ -309,42 +307,30 @@ proc ProdFromHelper {winId node caption} {
     }
 }
 
-proc GetCompProperty {topNode prop args} {
+proc GetCompExecData {topNode prop args} {
     global runState
-    switch -regexp $prop {
-	CurrentTime {
-	    return $runState($topNode,currentTime)
-	} EndTime {
-	    return [expr $runState($topNode,currentTime) + \
-			$runState($topNode,execTime)]
-	}
-    }
        
     if {[RunningInC $topNode]} {
-	if {[lsearch {Value Binary Distinct} $prop]>-1} {
-	    if {$runState($topNode,modelRunning)<=2} {
-		WarnNoData $topNode
-		return nodata
-	    }
-	    if {[catch {GetHandle $topNode [lindex $args 0]} hdl]} {
-		return novalue
-	    }
-	    switch -regexp $prop {
-		Value {
-		    set result [list [extract_list $hdl 16777216]]
-		} Binary {
-		    set result [eval extract_binary [list $hdl] \
-				    [lrange $args 1 end]]
-		} Distinct {
-		    set result [distinct_values $hdl]
-		}
-	    }
-	    ReleaseHandle $topNode $hdl
-	} else {
-	    set result [eval GetCCompProperty $topNode $prop $args]
+	if {$runState($topNode,modelRunning)<=2} {
+	    WarnNoData $topNode
+	    return nodata
 	}
+	if {[catch {GetHandle $topNode [lindex $args 0]} hdl]} {
+	    return novalue
+	}
+	switch -regexp $prop {
+	    Value {
+		set result [list [extract_list $hdl 16777216]]
+	    } Binary {
+		set result [eval extract_binary [list $hdl] \
+				[lrange $args 1 end]]
+	    } Distinct {
+		set result [distinct_values $hdl]
+	    }
+	}
+	ReleaseHandle $topNode $hdl
     } else {
-	set result [eval GetTclCompProperty $topNode $prop $args]
+	set result [eval GetTclCompExecData $topNode $prop $args]
     }
 #puts "result $result"
     return $result
