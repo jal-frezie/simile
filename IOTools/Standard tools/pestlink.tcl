@@ -1100,10 +1100,11 @@ puts $template "</spf>"
 		set dims [GetModelDims $node]
 #                puts -nonewline $instruct "\\$node at $brkPt is\\ "
                 if {[string equal what [lindex $pair 1]]} { ;# prediction
-		    set warns [AddChoppers predict $brkPt $instruct {} $dims 1]
+		    set warns [AddChoppers predict $brkPt $instruct \
+				   $node $dims 1]
                     set runData($myNode,predictTag) o$usedHangers
                 } else {
-                    set warns [AddChoppers $node $brkPt $instruct {} $dims \
+                    set warns [AddChoppers $node $brkPt $instruct $node $dims \
 				   [lindex $pair 1]]
                 }
                 puts $instruct {}
@@ -1568,7 +1569,7 @@ $numOutputs"
 #                puts -nonewline $str " "
             }
         } else {
-	    puts $str "\\$node$subs at $brkPt is\\ !o[incr usedHangers]!"
+	    puts $str "\\$subs at $brkPt is\\ !o[incr usedHangers]!"
 #            puts -nonewline $str !o[incr usedHangers]!
             lappend outGrpData($node,mems) o$usedHangers=$data
         }
