@@ -603,7 +603,9 @@ process_expr(sub(InputPairs, FragSMs, Refs), OldVar, NewExpr, Recurse) :-
 	    % submodel dimensions should be got later from rel path
 	    pick_elt_from(input(in_hierarchy, ToMatch, none, Multis), BuildArrs,
 			  NewExpr, place_in),
-	    Recurse = 0. % that's all the recursion we need
+	    Recurse = 0;
+	expand_library(OldVar, NewExpr),
+	    Recurse = 1. % that's all the recursion we need
 
 build_table_ref(Table, table, Table).
 

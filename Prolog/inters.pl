@@ -1,5 +1,5 @@
 sicstus_module(inters, [final_assignment/12, make_intermediates/12,
-			expand_library/3,
+			expand_library/2,
 			macro_expansion/2, fragment_expansion/5, function/4,
 			promote_unit/2, promote_arg/3, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
@@ -154,13 +154,17 @@ enabling the channel ID to be got from it */
 	    member(TimeFn, [time, dt]), member(TimeArg, [0, '']), !,
 	    NewVar =.. [TimeFn, Step], % do here rather than pass sm time to m_i
 	    Recurse = 0;
-	expand_library(DestRef, Var, NewVar),
+	Var = prev(N),
+	    (N < 1,
+		NewVar = DestRef;
+	    M is N-1,
+		NewVar = last(prev(M))), !,
 	    Recurse = 1.
 
 :- dynamic(macro_expansion/2).
 :- dynamic(fragment_expansion/5).
 
-expand_library(DestRef, Var, NewVar) :-
+expand_library(Var, NewVar) :-
 	shed_dummy_args(Var, Fn),
 	Fn =.. [Op | Args],
 	length(Args, Arity),
@@ -175,14 +179,7 @@ expand_library(DestRef, Var, NewVar) :-
 		throw(wrong_format_of_args(Var, Op, Args, GoodArgs));
 	    MacroMatch = bad_arity,
 		length(GoodArgs, FnArity),
-		throw(wrong_no_of_args(Var, Op, Arity, FnArity))));
-	Var = prev(N),
-	    ((\+ integer(N); N < 0; N > 31),
-		throw(bad_index_number(N, prev, 32));
-	    N < 1,
-		NewVar = DestRef;
-	    M is N-1,
-		NewVar = last(prev(M))), !.	  
+		throw(wrong_no_of_args(Var, Op, Arity, FnArity)))).	  
 	/* These have just been moved to macro_expansions so if statements can
 	    be used in other macros
 	do_once(_, Var, ToDo, _),

@@ -815,7 +815,12 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, IndXpr),
 	    DoneExpr = element(ListExpr, IndXpr)),
 	    Recurse = 0;
-	expand_library('/dest/', Param, DoneExpr),
+	Param = prev(N),
+	    ((\+ integer(N); N < 0; N > 31),
+		throw(bad_index_number(N, prev, 32));
+	    DoneExpr = '/dest/'),
+	    Recurse = 1;
+	  expand_library(Param, DoneExpr),
 	    Recurse = 1.
 
 collapse_params(_, param(arr(_, Param, _), _,_,_,_), Param, 0).
