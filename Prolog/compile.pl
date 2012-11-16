@@ -1443,7 +1443,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Collects = [make(Tgt, Wait, Path, Step, [CollectFn])];
 	  Type = state_fn,
 	    Collects = [make(init(Tgt), [on_reset], Path, 0,
-			     [assign(Val, 0)])];
+			     [assign(Val, OnInit)])];
 	  Collects = []),
 	((Is_P < 1,
 	    (Type = init_function, !,
@@ -1514,7 +1514,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    UseList = RefList;
 	  Type = state_fn, !,
 	    SourceEqn = event(ActEqn, TriggerEqn, (0->0)),
-	    choosify(ActEqn, ChooseForm),
+	    choosify(ActEqn, ChooseForm, OnInit),
 	    GroundEqn = (trigger_magnitude('')=TriggerEqn, ChooseForm),
 	    Extras = Setups,
 	    UseList = [on_step | RefList];
@@ -1556,9 +1556,16 @@ unite_event_contexts([elt(Path, _,_) | Others], Test, Act) :-
 	unite_event_contexts(Others, Test, OldAct),
 	inters'><'combine_contexts(Path, OldAct, Test, Act).
 
-choosify(Cons on Evt, choose(happens(Evt), Cons, prev(0))).
-choosify((Cons on Evt, Rest), choose(happens(Evt), Cons, IfNot)) :-
-	choosify(Rest, IfNot).
+choosify(Pairs, Choice, Init) :-
+	(Pairs = (Cons on Evt, Rest), !,
+	    choosify(Rest, Default, Init);
+	  Pairs = (Cons on Evt),
+	    Default = prev(0)),
+	(Evt = 'reset...', !,
+	    Init = Cons,
+	    Choice = Default;
+	  Choice = choose(happens(Evt), Cons, Default)).
+	
 
 /* Now...when using a variable in the equation I have been putting
 'made_at' in the conditions, the idea being that I have to exit any

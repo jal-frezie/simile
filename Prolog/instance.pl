@@ -568,7 +568,8 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % captions to unique c++ variable names.
 
 process_expr(sub(InputPairs, FragSMs, Refs), OldVar, NewExpr, Recurse) :-
-	member(OldVar-NewExpr-RefNode,
+	\+ OldVar = 'reset...', % identifies initial value of state
+	    member(OldVar-NewExpr-RefNode,
 	       [dies_of(Var)-dies_of(NewVar)-VisNode,
 		latency(Var)-NewVar-VisNode,
 		Var-NewVar-Node]), 

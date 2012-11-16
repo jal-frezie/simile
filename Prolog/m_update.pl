@@ -102,7 +102,7 @@ dealing with multiple instances. */
 
 :- dynamic(input_links_were/1).
 
-list_evt_captions(Part, EvtCapts) :-
+list_evt_captions(Part, ['reset...' | EvtCapts]) :-
 	setof(DiscIn,
 	      P1^(m_update'><'get_all_links(Part, discrete, P1, DiscIn)),
 	      EvtLinks), !,
