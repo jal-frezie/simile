@@ -815,6 +815,12 @@ make_intermediates(
 	    /* re-use of population data structures means values can change
 	    if creation counts do */
 	    Args = [on_reset];
+	Source = is_new_instance(_), !,
+	    (suffix([sm(_, _, Ptr, vm_loop(_,_,_,_)) | _], DestPath), !,
+		SourceRef = is_new_instance(Ptr);
+	      SourceRef = (phase<=0)),
+	    Units = boolean,
+	    Args = [on_step];
 	(Source =.. [Op, N],
 	    name(Op, OpStr),
 	    lower(OpStr, LopStr),
@@ -1496,6 +1502,7 @@ builtin('Model properties', in_progenitor, any, [any]).
 builtin('Model properties', prev, given_units, [const_int]).
 builtin('Model properties', trigger_magnitude, given_units, [none]).
 builtin('Model properties', ready, int, [any]).
+builtin('Model properties', is_new_instance, boolean, [none]).
 builtin('List handling', makearray, array_of_any, [any, const_int]).
 builtin('List handling', place_in, int, [const_int]).
 builtin('List handling', tweakarray, array_of_any, [any, const_int, int]).

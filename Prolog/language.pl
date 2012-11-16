@@ -909,6 +909,8 @@ make_evaluation_routine(
 	Expr = ind(Ptr, Count), !,
 	    make_struct_reference(Language, Ptr, instanceid, IndSet),
 	    get_element_ref(Language, IndSet, Count, Term);
+	Expr = is_new_instance(Ptr), !,
+	    make_new_check(Language, Ptr, Term);
 	number(Expr), !,
 	    Term=Expr; /* I think not...
 	    this goes num -> chars -> atom -> chars -> atom
