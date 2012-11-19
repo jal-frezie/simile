@@ -419,7 +419,7 @@ build_sum([First | Rest], FirstArr++Run) :-
 sum_over_dims(IP, SD) :-
 	IP = input(_,_,_, Units),
 	analyze_array(Units, Base, Dims),
-	(Base = boolean -> Num = (if IP then 1 else 0); Num = IP),
+	(Base = boolean -> Num = choose(IP,1,0); Num = IP),
 	sum_dims(Dims, Num, SD).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

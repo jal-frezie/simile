@@ -294,7 +294,20 @@ proc ClickObj { x y winId X Y action} {
 			}
 		    }
 		}
+		array unset equationbar curEvt
+		array unset equationbar haveMinMax
+		$bar.events configure -values {}
+		pack forget $bar.events
+		$bar.min delete 0 end
+		pack forget $bar.minlabel
+		pack forget $bar.min
+		array unset equationbar min_entry
+		$bar.max delete 0 end
+		pack forget $bar.maxlabel
+		pack forget $bar.max
+		array unset equationbar max_entry
 		set type [GetFromProlog tk_get_info('$winId',$node,type)]
+                SetEqnButtonState $bar normal
 		if {[string equal state $type]} { ;# load the event combobox
 		    set evts [GetFromProlog tk_get_triggers('$winId',$node)]
 		    if {![llength $evts]} return ;# no equation to enter
@@ -307,11 +320,17 @@ proc ClickObj { x y winId X Y action} {
 								    $oldEqn]]
 		} else {
 		    set equationbar($winid,initText) [StripCrs $oldEqn]
-		    array unset equationbar curEvt
-		    $bar.events configure -values {}
-		    pack forget $bar.events
+		    if {$type eq "limit"} {
+			$bar.max insert 0 \
+			    [GetFromProlog tk_get_info('$winId',$node,max_val)]
+			pack $bar.max -side left -after $bar.equation
+			pack $bar.maxlabel -side left -after $bar.equation
+			$bar.min insert 0 \
+			    [GetFromProlog tk_get_info('$winId',$node,min_val)]
+			pack $bar.min -side left -after $bar.equation
+			pack $bar.minlabel -side left -after $bar.equation
+		    }
 		}
-                SetEqnButtonState $bar normal
                 restore_equation $winid $bar
             }
         }
@@ -358,7 +377,7 @@ proc SafeEqnBarEdit {winId} {
     global equationbar
     set bar $winId.toolSlot.eqnbar
     if {[string equal normal [$bar.equation cget -state]]} {
-	$bar.equation configure -state disabled ;# do not do twice
+	SetEqnButtonState $bar disabled ;# do not do twice
 #puts [list [$bar.equation get] is $equationbar($winId,initText)]
         if {![string eq [$bar.equation get] $equationbar($winId,initText)]} {
 	    set capt [string range [$bar.label cget -text] 0 end-3]
@@ -918,7 +937,7 @@ proc AddCmdAndAccel {winId menuName item command {state normal}} {
 proc NotEditingText {winName} {
     set editingCapt [expr [llength [$winName.canvas focus]] \
             && [string match [focus] $winName.canvas]]
-    set editingEqn [string match [focus] $winName.toolSlot.eqnbar.equation]
+    set editingEqn [string match $winName.toolSlot.eqnbar.* [focus]]
     return [expr !$editingCapt && !$editingEqn]
 }
 
@@ -1931,6 +1950,12 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     # create but only pack while state being edited
     ::ttk::combobox $eb.events -width 8 -font EquationFont -state readonly
     bind $eb.events <<ComboboxSelected>> [list SwitchEvent $winid $eb]
+    ::ttk::label $eb.minlabel -anchor w -text from:
+    ::ttk::entry $eb.min -width 6 -font EquationFont \
+	-textvariable equationbar(min_entry)
+    ::ttk::label $eb.maxlabel -anchor w -text to:
+    ::ttk::entry $eb.max -width 6 -font EquationFont \
+     	-textvariable equationbar(max_entry)
 
 #    ComboBox $eb.equation -editable 1 -state disabled -width 40
     ::ttk::combobox $eb.equation -state disabled -width 32 -font EquationFont \
@@ -1939,6 +1964,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     bind $eb.equation <Return> [list EnterEqn $winid $eb.equation]
     bind $eb.equation <FocusIn> "EmbraceEqn $winid"
     bind $eb.equation <FocusOut> "AbandonEqn $winid"
+    bind $eb.min <FocusIn> "EmbraceEqn $winid"
+    bind $eb.min <FocusOut> "AbandonEqn $winid"
+    bind $eb.max <FocusIn> "EmbraceEqn $winid"
+    bind $eb.max <FocusOut> "AbandonEqn $winid"
     bind $eb.equation <Button-1> "after 10 FlashOnClick 0 %W"
 
     frame $eb.padding1 -width 3

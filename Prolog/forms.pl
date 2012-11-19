@@ -14,16 +14,15 @@ sicstus_use_module([library(lists),
 		    output, m_update, ame_gen, sp_only, utility]).
 
 pick_equation(Comp, Eqn) :-
-	find_type(Comp, state),
-	    find_node_with_data(Comp, _, Func),
+	find_node_with_data(Comp, _, Func),
+	(find_type(Comp, state),
 	    get_av_pair(Func, 0, spec, PairList), !,
 	    expand_spec(PairList, Eqn);
 	Comp is_of_sort has_function,
-	    (eqn_for(Comp, Eqn), !;
-		Eqn = '').
+	    (eqn_for(Func, Eqn), !;
+		Eqn = '')).
 
-eqn_for(Comp, Eqn) :-
-	find_node_with_data(Comp, _, Func),
+eqn_for(Func, Eqn) :-
 	(get_av_pair(Func, 0, spec, Eqn), atom(Eqn), \+ Eqn = [], !;
 	 get_av_pair(Func, 0, value, EqnExpr),
 	    sicstus_write_to_chars(EqnExpr, EqnStr),

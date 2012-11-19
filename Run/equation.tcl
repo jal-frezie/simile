@@ -509,6 +509,12 @@ proc interact_equation {} {
 	    return
 	} tick {
 	    set equationbar(current_action) click
+	    if {[info exists equationbar(min_entry)]} {
+		set equationbar(min) $equationbar(min_entry)
+	    }
+	    if {[info exists equationbar(max_entry)]} {
+		set equationbar(max) $equationbar(max_entry)
+	    }
 	    set result [list $equationbar(equation) \
 			    $equationbar(units) \
 			    $equationbar(isParam) \

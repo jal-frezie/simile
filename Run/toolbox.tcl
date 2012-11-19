@@ -2066,7 +2066,7 @@ proc ResetEqnBar {winid} {
 }
 
 proc SetEqnButtonState {bar newState} {
-    foreach eqnButton {equation tick cross inputs function} {
+    foreach eqnButton {equation min max tick cross inputs function} {
         $bar.$eqnButton configure -state $newState
     }
 }

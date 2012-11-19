@@ -99,8 +99,11 @@ get_info(_Wid, Comp, eqn, Eqn) :-
 	pick_equation(Comp, Eqn);
 	Eqn = '<none>'.
 
-get_info(_Wid, Comp, type, Type) :-
-	find_type(Comp, Type).
+get_info(_Wid, Comp, type, SubType) :-
+	find_type(Comp, Type),
+	((Type = event, is_parameter(Comp, 1)) -> % a limit event
+	    SubType = limit;
+	  SubType = Type).
 
 get_info(Wid, Comp, context, DescAtm) :-
 	find_type(Comp, LType),
@@ -112,8 +115,17 @@ get_info(Wid, Comp, context, DescAtm) :-
 
 	(LType = submodel,
 	    image'><'quick_file(Comp, Middle);
-	eqn_for(Comp, MiddleAtm),
-	    name(MiddleAtm, Middle);
+	find_node_with_data(Comp, _, Fn),
+	    eqn_for(Fn, MiddleAtm),
+	    name(MiddleAtm, Mid0),
+	    ((LType = event, is_parameter(Comp, 1)) -> % a limit event
+		(get_av_pair(Fn, 0, min_val, Min) ->
+		    sicstus_format_to_chars("~s from ~w", [Mid0, Min], Mid1);
+		  Mid1 = Mid0),
+		(get_av_pair(Fn, 0, max_val, Max) ->
+		    sicstus_format_to_chars("~s to ~w", [Mid1, Max], Middle);
+		  Middle = Mid1);
+		Middle = Mid0);
 	ghost_link(Comp, _,_),
 	    Middle = "ghost link";
 	name(LType, Middle)), !,
@@ -151,11 +163,10 @@ get_info(_, Name, is_unit, Def) :-
 get_info(_, Comp, Field, Pop) :-
 	% catch-all clause to get any attribute value
 	(find_type(Comp, relation), !,
-	    find_name_host(Comp, Func);
-	 find_type(Comp, flow), !,
-	    bowtie_section(Comp, Func);
-	find_base(Comp, Func)),
-	get_av_pair(Func, _, Field, Pop).
+	    find_name_host(Comp, Base);
+	 find_node_with_data(Comp, Base, Fn)),
+	(member(Field, [min_val, max_val]) -> Tgt = Fn; Tgt = Base), 
+	get_av_pair(Tgt, _, Field, Pop).
 
 context_find(Wid, Query, Target) :-
 	callback('{}'),
