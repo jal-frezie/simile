@@ -50,6 +50,7 @@
 #define SPLIT           4
 #define GHOST           5
 #define LIMIT           6
+#define RECALL          7
 
 /* special dimensions */
 #define RECORDS        -1

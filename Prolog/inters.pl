@@ -1501,6 +1501,7 @@ builtin('Model properties', in_preceding, any, [any]).
 builtin('Model properties', in_progenitor, any, [any]).
 builtin('Model properties', prev, given_units, [const_int]).
 builtin('Model properties', trigger_magnitude, given_units, [none]).
+builtin('Model properties', after, int, [real, int]).
 builtin('Model properties', ready, int, [any]).
 builtin('Model properties', is_new_instance, boolean, [none]).
 builtin('List handling', makearray, array_of_any, [any, const_int]).

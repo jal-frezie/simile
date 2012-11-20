@@ -609,7 +609,7 @@ generate_case_entry(L, Match, Inst, Stream) :-
 	excrete(L, case_end, Match, 8, Stream).
 
 generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
-	Inst = instance(InstType, BaseName, _, NameIn, Unit-_),
+	Inst = instance(InstType, BaseName, Expr, NameIn, Unit-_),
 	(NameIn = elt(_, Name, _), !;
 	    Name = NameIn),
 	( /* InstType = external, !, Type = 'EXTERNAL',
@@ -639,7 +639,9 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 		/* limits for GNU integers; Sicstus can go further */
 	    Type = 'REAL',
 	        [Wee, Muckle] = [-1.0e100, 1.0e100]),
-	    DefEval = 'DERIVED'),
+	    (Expr = event(after(_T, _V), _TM, (0->0)) ->
+		DefEval = 'RECALL';
+	      DefEval = 'DERIVED')),
 
 	get_host(BaseName, VisName),
 	is_parameter(BaseName, PType),

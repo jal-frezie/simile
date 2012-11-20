@@ -387,13 +387,22 @@ do_assignment(L, [cond_assign(Dest, Tested, Payload, Op, SoFar) | Clauses],
 			Used, Temps, Results).
 */
 do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
-	(SpecialOp =.. [collect, DestSpec, TgtRef | Args],
+	((SpecialOp =.. [collect, DestSpec, TgtRef | Args];
+	  SpecialOp =.. [deliver, DestSpec, Cargo, TgtRef | Args]),
 	    nth(CollectId, Used, TgtRef), !,
 	    make_scalar(L, DestSpec, Dest),
 	    refer(L, Dest, DestRef),
  	    make_evaluation_routine_all(L, Args, Inds),
- 	    CallSpec =.. [collect, DestRef, CollectId | Inds];
-	SpecialOp = call_ext_code(ProcName, CurSmPtr, ArgCodes),
+ 	    (var(Cargo) ->
+		CallSpec =.. [collect, DestRef, CollectId | Inds];
+	      make_evaluation_routine(L, Cargo, SrcExp),
+		CallSpec =.. [deliver, DestRef, SrcExp, CollectId | Inds]);
+	  SpecialOp = schedule(Cond, TgtRef, Delay), !,
+		make_evaluation_routine(L, Cond, CondRef),
+	        nth(CollectId, Used, TgtRef),
+		make_evaluation_routine(L, Delay, DelayRef),
+		CallSpec = schedule(CondRef, CollectId, DelayRef);
+	  SpecialOp = call_ext_code(ProcName, CurSmPtr, ArgCodes),
 	    all(render, msr_with_ptrs,
 		[unify(L), unify(CurSmPtr), build(ArgCodes), build(XArgs)]),
 	    CallSpec =.. [ProcName | XArgs];

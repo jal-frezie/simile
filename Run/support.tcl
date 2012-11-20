@@ -396,7 +396,9 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 #					 $indx] $subs $errorData
 #		}
 		if {!$pt} { ;# NOW: mark param active so it clears after event
-		    MarkEvtParamActive $topNode $tgt $useCppArray
+# active is set to 2 because the param updater will be called before the model
+# collects the parameter, and must clear the value the following time
+		    MarkEvtParamActive $topNode $tgt $useCppArray 2
 		}
             } elseif {![string is double -strict $indx]} {
                 set redoStep [AddErrorTo $redoStep \
@@ -1237,7 +1239,8 @@ proc InitTimeSeries {topNode} {
     global setFromSeries paramData
     array unset setFromSeries
     foreach node [GetTclCompProperty $topNode Objects] {
-	if {[string match INPUT [GetTclCompProperty $topNode Eval $node]]} {
+	if {[lsearch {INPUT RECALL} [GetTclCompProperty $topNode Eval $node]] \
+		> -1} {
 #puts "node $node timePts [array names paramData $node,*]"
 	    foreach timePt [array names paramData $node,*] {
 		set ${node}([lindex [split $timePt ,] 1]) 1
@@ -1402,7 +1405,7 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 		}
 	    }
 	}
-    if {$fillMethod eq "none" && $active} {
+    if {$fillMethod eq "none" && $setFromSeries($topNode,$node,active)} {
 	set ::event(seriesSign) [GetTclCompProperty $topNode Graph $node]
     }
     return $next
@@ -1947,13 +1950,11 @@ proc PlaceInArray {topNode where what when inC} {
     }
 }
 
-proc MarkEvtParamActive {topNode node inC} {
-# active is set to 2 because the param updater will be called before the model
-# collects the parameter, and must clear the value the following time
+proc MarkEvtParamActive {topNode node inC level} {
     if {$inC} {
 	c_markevtparamactive $topNode $node
     } else {
-	set ::setFromSeries($topNode,$node,active) 2
+	set ::setFromSeries($topNode,$node,active) $level
     }
 }
 
