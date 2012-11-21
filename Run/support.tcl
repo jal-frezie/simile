@@ -163,12 +163,14 @@ proc ExplainError {myNode errList origError} {
 	-1 {
 	    set specifics [list model_crash $operation $target $action $timing \
 		       $problem $origError]
+	    set icon warning
 	} 0 {
 	    set specifics [list model_pause $operation $target $action $timing \
 		       $problem]
+	    set icon info
 	}
     }
-    ExecQuery $specifics info top {} ok
+    ExecQuery $specifics $icon top {} ok
     AddLogEntry $myNode $specifics
     # do it after idle so this process is not hung till user responds
 #    RaiseModelWindow $myNode
@@ -252,15 +254,53 @@ proc collect {tgt index count args} {
     }
 }
 
-proc BringParameter {array node inds} {
+proc deliver {tgt newVal index count args} {
+    global paramLocns
+    set val [BringParameter $paramLocns($index,arr) $paramLocns($index,nod) \
+		  $args $newVal]
+    if {[llength $val]} {
+# Check that input source exists, it will not if model is being initialized
+	set $tgt $val
+    }
+}
+
+proc BringParameter {array node inds {newVal {}}} {
 #puts "looking for $array\($sub\)"
     upvar \#0 $array inputSrc
     for {set ind1 0} {$ind1<=[llength $inds]} {incr ind1} {
 	set sub [join [concat $node [lrange $inds $ind1 end]] ,]
 	if {[info exists inputSrc($sub)]} {
-	    return $inputSrc($sub)
+	    set oldVal $inputSrc($sub)
+	}
+	if {[llength $newVal]} {
+	    set inputSrc($sub) $newVal
+	} ;# possible funny with multi-d event delays
+    }
+    if {[info exists oldVal]} {
+	return $oldVal
+    }
+    return {}
+}
+
+proc schedule {check index delay} {
+    global paramLocns
+
+    set node $paramLocns($index,nod)
+    if {$check} {
+	set future [expr {$::ts($::phasecount)+$delay}]
+	upvar \#0 $paramLocns($index,arr) loaded
+	upvar \#0 setFromSeries($::myNode,$node,times) plan
+	foreach curName [array names loaded $node*] {
+	    set current [split $curName ,]
+	    set ::paramData([join [concat [lrange $current 0 0] [list $future] \
+			      [lrange $current 1 end]] ,]) $loaded($curName)
+	}
+	lappend plan $future 
+	if {[llength $plan]>1 && [lindex $plan end]<[lindex $plan end-1]} {
+	    set plan [lsort -real -unique $plan]
 	}
     }
+    tcl_zeroparam $node
 }
 
 proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
@@ -1226,7 +1266,7 @@ proc SetDTs {phase current} {
 }
 
 proc AdvanceTime {node phase fraction} {
-    global ts dts phasecount setFromSeries
+    global ts dts phasecount
     for {set tweakPhase $phase} {$tweakPhase<=$phasecount} {incr tweakPhase} {
 	set ts($tweakPhase) [expr $ts($tweakPhase)+$dts($tweakPhase)*$fraction]
     }
@@ -1239,8 +1279,13 @@ proc InitTimeSeries {topNode} {
     global setFromSeries paramData
     array unset setFromSeries
     foreach node [GetTclCompProperty $topNode Objects] {
-	if {[lsearch {INPUT RECALL} [GetTclCompProperty $topNode Eval $node]] \
-		> -1} {
+	set evalN [lsearch {INPUT RECALL} \
+		       [GetTclCompProperty $topNode Eval $node]]
+	if {$evalN > -1} {
+	    if {$evalN==1} {
+		set paramData(wrapAroundPoint,$node) 0
+		set setFromSeries($topNode,$node,isDelay) 1
+	    }
 #puts "node $node timePts [array names paramData $node,*]"
 	    foreach timePt [array names paramData $node,*] {
 		set ${node}([lindex [split $timePt ,] 1]) 1
@@ -1267,6 +1312,10 @@ proc ResetTimeSeries {topNode} {
 	set setFromSeries($pt) -1
 	set node [lindex [split $pt ,] 1]
 	set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
+	if {[info exists setFromSeries($topNode,$node,isDelay)]} {
+	    # unset any outstanding points
+	    array unset ::paramData $node,*
+	}
     }
     set setFromSeries($topNode,current) 0
 }
@@ -1295,8 +1344,8 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 	set ptCount [llength $setFromSeries($list)]
 	set node [lindex [split $list ,] 1]
 	set newTime [expr {$newTimeInDays/$paramData(timePointInterval,$node)}]
-	if {[string equal EVENT [GetTclCompProperty $topNode Class $node]]} {
-	    set fillMethod none
+    if {[lsearch {EVENT SQUIRT} [GetTclCompProperty $topNode Class $node]]>-1} {
+	set fillMethod none
 	} else {
 	    set fillMethod [string tolower [SetFillMethod $topNode $inC $node]]
 	}
@@ -1406,7 +1455,7 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 	    }
 	}
     if {$fillMethod eq "none" && $setFromSeries($topNode,$node,active)} {
-	set ::event(seriesSign) [GetTclCompProperty $topNode Graph $node]
+	set ::event(seriesSign) [getinfo $node 8]
     }
     return $next
 }

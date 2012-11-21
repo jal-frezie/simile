@@ -58,10 +58,10 @@ namespace eval ::$keyValue {
 	    } .newsub* {
 		set typesToShow {SPLIT}
 	    } .newout* {
-		set typesToShow {DERIVED SPLIT}
+		set typesToShow {RECALL DERIVED SPLIT}
 	    } default {
 		set doPops [PrefValue custom(compValPop) compValPop]
-		set typesToShow {DERIVED INPUT TABLE SPLIT GHOST LIMIT}
+		set typesToShow {RECALL DERIVED INPUT TABLE SPLIT GHOST LIMIT}
 	    }
 	}
         foreach component [GetObjectList] {

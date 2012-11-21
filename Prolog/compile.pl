@@ -1442,7 +1442,9 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    vars_only(Inds, VarInds),
 	    length(VarInds, Count),
 	    (Is_P = 4 ->
-		Collects = []; % inds will be used later in deliver()
+		Collects = [make(Tgt, [on_reset], Path, 0,
+				 [assign(Val, Inactive)])];
+				% inds will be used later in deliver()
 	      CollectFn =.. [collect, arr(DestPtr, Dest, LocalInds), Dest,
 			       Count | VarInds],
 		Collects = [make(Tgt, Wait, Path, Step, [CollectFn])]);
