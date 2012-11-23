@@ -1431,7 +1431,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    (Type = function, Step = SmStep, Wait = [init(Dest), on_step];
 		% last wait was time but made R-K results look wrong
 	    Type = init_function, Step = 0, Wait = [on_reset];
-	    Type = magnitude)), !, % make VarInds for deliver() later
+	    Type = magnitude, Step = SmStep, Wait = [Dest])), !,
 	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Node),
 				     build(Dims), build(_), build(_)]),
 	    pointer_from(DestPath, DestPtr),
@@ -1442,12 +1442,11 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    vars_only(Inds, VarInds),
 	    length(VarInds, Count),
 	    (Is_P = 4 ->
-		Collects = [make(Tgt, [on_reset], Path, 0,
-				 [assign(Val, Inactive)])];
-				% inds will be used later in deliver()
-	      CollectFn =.. [collect, arr(DestPtr, Dest, LocalInds), Dest,
+		CollectDir = deliver;
+	      CollectDir = collect),
+	    CollectFn =.. [CollectDir, arr(DestPtr, Dest, LocalInds), Dest,
 			       Count | VarInds],
-		Collects = [make(Tgt, Wait, Path, Step, [CollectFn])]);
+	    Collects = [make(Tgt, Wait, Path, Step, [CollectFn])];
 	  Type = state_fn,
 	    Collects = [make(init(Tgt), [on_reset], Path, 0,
 			     [assign(Val, OnInit)])];
@@ -1532,15 +1531,10 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Extras = Setups), !,
 	    
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
-			 SmStep, UseStep, Used, [Move], Setups, Path, RefList,
+			 SmStep, UseStep, Used, [Expr], Setups, Path, RefList,
 			 AllInters),
-	Move = assign(Val, Fn), % dig out the result
-	    (Is_P = 4 ->
-		Fn = choose(TrgExp, after(Delay, Exp), _),
-		Expr =.. [deliver, arr(DestPtr, Dest, LocalInds), Exp, Dest,
-			  Count | VarInds];
-	      Expr = Move),
-	connect_params([make(Made, UseList, Path, UseStep, [Expr]) | Extras],
+	Expr = assign(Val, Fn), % dig out the result
+	connect_params([make(Made, UseList, Path, UseStep, [Move]) | Extras],
 		       AllInters, Actions, Inters);
 	Actions = [],
 	Inters = []),
@@ -1557,13 +1551,17 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  (member(Type, [compartment, creation, immigration, reproduction]);
 	        member(Is_P, [1, 3]);
 	        Is_P = 2, Type = init_function), !,
+	    Move = Expr,
 	    Linkers = [make(Dest, [init(Dest), update(Dest), tweaked(Dest)],
 			    DestPath, SmStep, []),
 		       make(tweaked(Dest), EvtConds, DestPath, SmStep, [])];
 	  Is_P = 4, !,
+	    Fn = choose(TrgExp, after(Delay, Src), _),
+	    Move = assign(Val, Src),
 	    Linkers = [make(saved(Dest), [Dest], [], SmStep,
 			    [schedule(TrgExp, Dest, Delay)])];
-	  Linkers = []),
+	  Move = Expr,
+	    Linkers = []),
 	append([Collects, Actions, Linkers], Assignments).
 
 unite_event_contexts([], Test, Test).

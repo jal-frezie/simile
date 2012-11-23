@@ -221,14 +221,15 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 /* This is called only when we create the type, to return model constants */
 FINDABLE EXPORT getcount_type get_count;
 FINDABLE EXPORT int get_count(void* ame_rand_ptr, 
-		       void* graphpoint_ptr, 
-		       void* release_graph_data_ptr, 
-		       void* compare_instance_status_ptr, 
-		       void* model_requests_file_param_ptr, 
-		       void* stat_check_ptr,
-		       void* showMess_ptr,
-		       void* graph_ptr, 
-		       int* phases, node_data_line** data_ptr) {
+			      void* graphpoint_ptr, 
+			      void* release_graph_data_ptr, 
+			      void* compare_instance_status_ptr, 
+			      void* model_requests_file_param_ptr, 
+			      void* schedule_ptr,
+			      void* stat_check_ptr,
+			      void* showMess_ptr,
+			      void* graph_ptr, 
+			      int* phases, node_data_line** data_ptr) {
   /* Stub is giving us function pointers to save us using the linker... */
   ame_rand_ref = (ame_rand_type*)ame_rand_ptr;
   graphpoint_ref = (graphpoint_type*)graphpoint_ptr;
@@ -237,6 +238,7 @@ FINDABLE EXPORT int get_count(void* ame_rand_ptr,
     (compare_instance_status_type*)compare_instance_status_ptr;
   model_requests_file_param = 
     (model_requests_file_param_type*)model_requests_file_param_ptr;
+  schedule_for = (schedule_type*)schedule_ptr;
   /*  fetch_instance_ref = (fetch_instance_type*)fetch_instance_ptr;
   update_submodel_ref = (update_submodel_type*)update_submodel_ptr;
   advance_submodel_ref = (advance_submodel_type*)advance_submodel_ptr;

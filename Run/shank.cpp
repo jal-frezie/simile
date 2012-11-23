@@ -102,6 +102,7 @@ int max(int a, int b) {
 
 stat_check_type stat_check;
 model_requests_file_param_type handle_model_param_request;
+schedule_type schedule;
 
 char globMess[256];
 
@@ -555,12 +556,15 @@ FileParamData::FileParamData(ExecutingModel* instToUse, HCOMP newNodeId,
   
 // These last two are actually called by the model code to get data
 
-void FileParamData::extract_elt(void* tgt, double forT, int* indxs) {
+void FileParamData::extract_elt(void* tgt, double forT, 
+				BOOLEAN up, int* indxs) {
     // do not do it if this is a variable parameter and we are initializing --
     // array not yet set so let model keep default value...in fact, save it in
     // the array for later
-    void* insertionPt;
-    node_data_line* nodeLine;
+  void *insertionPt; 
+  char *sparePt;
+  node_data_line* nodeLine;
+  int dataSize;
 
     insertionPt = locate_elt(dataPtr.contents, 0, dataPtr.dimSpecs, indxs);
     if (!insertionPt) return; // record pointers not yet made
@@ -572,7 +576,16 @@ void FileParamData::extract_elt(void* tgt, double forT, int* indxs) {
     // back copy now done in blocks afterwards to make record spaces, but
     // avoid forward copying first
     // memcpy(insertionPt, tgt, size_for_type());
-    memcpy(tgt, insertionPt, size_for_data_type(nodeLine->datatype));
+    dataSize = size_for_data_type(nodeLine->datatype);
+    if (up) {
+      sparePt = new char[dataSize];
+      memcpy(sparePt, tgt, dataSize);
+    }
+    memcpy(tgt, insertionPt, dataSize);
+    if (up) {
+      memcpy(insertionPt, sparePt, dataSize);
+      delete sparePt;
+    }
   }
 
   void FileParamData::extract_record_count(void* tgt, int ic, int* indxs) {
@@ -607,6 +620,14 @@ VarParamData::~VarParamData() {
   ClearTimePtElements();
 }
 
+void VarParamData::schedule_point(BOOLEAN check, double now) {
+  listTimePoint* newPt;
+  if (check)
+    if (newPt = create_time_point(now)) // assignment
+      newPt->dataPtr = copy_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+  zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+}
+
 double VarParamData::update_from_points(double nowInDays, double next) {
   listTimePoint *loBound, *hiBound;
   int hiWraps = 0, oldWraps = wraps;
@@ -619,7 +640,6 @@ double VarParamData::update_from_points(double nowInDays, double next) {
     hiBound = roll_forward(loBound, &hiWraps);
   else
     hiBound = timePoints; // first point
-  
   if (next>=nowInDays) {
     while (hiBound && now>=hiBound->when+hiWraps*wrapAroundPoint) {
       loBound = hiBound;
@@ -658,7 +678,7 @@ double VarParamData::update_from_points(double nowInDays, double next) {
       wraps = hiWraps;
     }
   }
-  if (ndRef->compclass == EVENT) {
+  if (ndRef->compclass == EVENT || ndRef->compclass == SQUIRT) {
     if (active)
       if (!--active) // don't trust lazy evaluation
 	zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
@@ -671,18 +691,18 @@ double VarParamData::update_from_points(double nowInDays, double next) {
     dataPtr.contents = copy_bloc_data(loBound->dataPtr, dataPtr.dimSpecs);
     active=1;
   }
-  if (ndRef->compclass == EVENT && active)
+  if ((ndRef->compclass == EVENT || ndRef->compclass == SQUIRT) && active)
     myModelExec->seriesEvtSign = ndRef->graph;
 
   return next;
 }
 
-BOOLEAN VarParamData::create_time_point(double time) {
+listTimePoint* VarParamData::create_time_point(double time) {
   listTimePoint *lastTimePt, *thisTimePt, *nextTimePt;
   if (timePoints && timePoints->when<=time) {
     lastTimePt = timePoints->find_last_pt(time);
     if (lastTimePt->when==time) {
-      return FALSE; // a point already exists at this time
+      return NULL; // a point already exists at this time
     } else { // lastTimePt is earlier than new one
       nextTimePt = lastTimePt->next;
       thisTimePt = new listTimePoint(time, dataPtr.dimSpecs);
@@ -706,7 +726,7 @@ BOOLEAN VarParamData::create_time_point(double time) {
     thisTimePt->last = NULL;
     timePoints = thisTimePt;
   }
-  return TRUE; // new point has been created
+  return thisTimePt; // new point has been created
 }
 
 // only used for saving byte array, so obsolescent
@@ -786,7 +806,7 @@ double VarParamData::ResetTimeSeries(double init_time, int topPhase) {
   curTimePoint = NULL;
   wraps = 0;
   if (topPhase <= -2)
-    active = 0;
+    active = 1; // this will cause any current event data to be zeroed
   next_evt = update_from_points(init_time, init_time);
 
   if (nextVP) {
@@ -1312,27 +1332,28 @@ BOOLEAN ExecutingModel::check_gui(double model_time, int this_op) {
 }
 
 FileParamData* ExecutingModel::UseArrayForParams(HCOMP nodeNum) {
-  int fullDims[32];
+  int fullDims[32], evalProp;
   char spareCapt[255];
   enum_type_data *spareTypes[32]; // might need for reading files
 
   // use searchinfo because we want the ET dims translated to numbers
   modelSpec->SearchInfo(nodeNum, spareCapt, fullDims, spareTypes);
   // make the appropriate kind of file parameter
-  if (modelSpec->GetProperty(nodeNum, GETEVAL) == INPUT)
+  evalProp = modelSpec->GetProperty(nodeNum, GETEVAL);
+  if (evalProp == INPUT || evalProp == RECALL)
     return new VarParamData(this, nodeNum, fullDims);
   else
     return new FileParamData(this, nodeNum, fullDims);
 }
 
-void ExecutingModel::GetValuePointer(void* modelSlot, int paramId,
+void ExecutingModel::GetValuePointer(void* modelSlot, int paramId, BOOLEAN up,
 				     int ic, int* indxs) {
   FileParamData* paramArrayItem;
 
   paramArrayItem = param_array_base;
   if (modelSpec->param_item_from_id(&paramArrayItem, paramId))
-    paramArrayItem->extract_elt(modelSlot, thisTsPosn, indxs);
-  else {
+    paramArrayItem->extract_elt(modelSlot, thisTsPosn, up, indxs);
+  else if (!up) {
     // couldn't find id, try to find a member parameter
     // first get its nodeline
     node_data_line *nodeLine;
@@ -1348,6 +1369,14 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId,
   // sprintf(globMess, "Think we got %d (%lf)", *(int*)modelSlot, *(double*)modelSlot);
   // showMess(globMess);
 
+}
+
+void ExecutingModel::schedule(int paramId, BOOLEAN check, double delay) {
+  FileParamData* paramArrayItem;
+
+  paramArrayItem = param_array_base;
+  if (modelSpec->param_item_from_id(&paramArrayItem, paramId))
+    ((VarParamData*)paramArrayItem)->schedule_point(check, delay+thisTsPosn);
 }
 
 // Implementation of class ModelServer
@@ -1381,6 +1410,7 @@ showMess(globMess); */
 			 (void*)release_graph_data, 
 			 (void*)compare_instance_status, 
 			 (void*)handle_model_param_request, 
+			 (void*)schedule, 
 			 (void*)stat_check,
 			 (void*)showModelMess,
 			 (void*)&c_graphdata,
@@ -1822,11 +1852,15 @@ void set_bloc_element(char* ptData, int* ptDims, int* indxs, double value) {
   }
 }
 
-void handle_model_param_request(void* instId, void* modelSlot,
-		       int paramId, int ic, int* indxs) {
+void handle_model_param_request(void* instId, void* modelSlot, int paramId, 
+				BOOLEAN up, int ic, int* indxs) {
 //  sprintf(globMess, "h_m_p_t to location %lx for exmod %lx node %d count %d indx0 %d indx1 %d", (long)modelSlot, (long)instId, paramId, ic, indxs[0], indxs[1]);
 //  showMess(globMess);
-  ((ExecutingModel*)instId)->GetValuePointer(modelSlot, paramId, ic, indxs);
+  ((ExecutingModel*)instId)->GetValuePointer(modelSlot, paramId, up, ic, indxs);
+}
+
+void schedule(void* instId, int paramId, BOOLEAN check, double delay) {
+  ((ExecutingModel*)instId)->schedule(paramId, check, delay);
 }
 
 /* This finds node ids from captions globally. It runs through a model

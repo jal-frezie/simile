@@ -53,7 +53,7 @@ class CPPEXTDEC FileParamData
   ~FileParamData();
 
  public:
-  void extract_elt(void*, double, int*);
+  void extract_elt(void*, double, BOOLEAN, int*);
   void extract_record_count(void*, int, int*);
 };
 
@@ -114,7 +114,7 @@ class CPPEXTDEC VarParamData : public FileParamData {
   ~VarParamData();
 
   //! Add a time point at the specified time; returns whether new
-  BOOLEAN create_time_point(double);
+  listTimePoint* create_time_point(double);
 
   //! Data space for next point after given time, or NULL if after last
   char* FindNextTimePtSpace(double*);
@@ -136,6 +136,10 @@ class CPPEXTDEC VarParamData : public FileParamData {
   //! action, otherwise
   //! the uninitialized current data space would be copied over them
   void back_copy_vars(double);
+
+  //! delayed derived events use this to insert time points with their values
+  //! Argument is time at which delayed event will occur
+  void schedule_point(BOOLEAN, double);
 
   //! Set up current data from time points for time and direction 
   //! Arguments are time and dir (TRUE=forward), 
@@ -223,7 +227,10 @@ class ExecutingModel
   nodeValues* GetRawValues(HCOMP);
 
   //! allow model to access parameter data; client should not call this
-  void GetValuePointer(void*, int, int, int*);
+  void GetValuePointer(void*, int, int, BOOLEAN, int*);
+
+  //! allow model to create time seris point; client should not call this
+  void schedule(int, BOOLEAN, double);
 
   // allow model to update client during execution; client should not call
   BOOLEAN do_gui_check(double, int);

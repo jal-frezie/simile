@@ -55,6 +55,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
 		tcl_setparamarray $topNode $node
 	    }
 	    SetInterval $topNode $useCppArray $node day 1
+	    SetWrapTime $topNode $useCppArray $node 0
 	    continue
 	}
         if {$notInput != -1} {

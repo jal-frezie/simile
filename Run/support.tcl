@@ -246,40 +246,34 @@ proc MakeContext {topNode levels} {
 
 proc collect {tgt index count args} {
     global paramLocns
-    set val [BringParameter $paramLocns($index,arr) $paramLocns($index,nod) \
-		  $args]
-    if {[llength $val]} {
-# Check that input source exists, it will not if model is being initialized
-	set $tgt $val
-    }
+    set val [BringParameter $tgt $paramLocns($index,arr) \
+		 $paramLocns($index,nod) $args 0]
 }
 
-proc deliver {tgt newVal index count args} {
+proc deliver {tgt index count args} {
     global paramLocns
-    set val [BringParameter $paramLocns($index,arr) $paramLocns($index,nod) \
-		  $args $newVal]
-    if {[llength $val]} {
-# Check that input source exists, it will not if model is being initialized
-	set $tgt $val
-    }
+    set val [BringParameter $tgt $paramLocns($index,arr) \
+		 $paramLocns($index,nod) $args 1]
 }
 
-proc BringParameter {array node inds {newVal {}}} {
+proc BringParameter {tgt array node inds up} {
 #puts "looking for $array\($sub\)"
     upvar \#0 $array inputSrc
+    set tmp [set $tgt]
     for {set ind1 0} {$ind1<=[llength $inds]} {incr ind1} {
 	set sub [join [concat $node [lrange $inds $ind1 end]] ,]
+# Check that input source exists, it will not if model is being initialized
 	if {[info exists inputSrc($sub)]} {
-	    set oldVal $inputSrc($sub)
+	    set $tgt $inputSrc($sub)
+	    if {$up} {
+		set inputSrc($sub) $tmp
+	    }
+	    return
 	}
-	if {[llength $newVal]} {
-	    set inputSrc($sub) $newVal
-	} ;# possible funny with multi-d event delays
     }
-    if {[info exists oldVal]} {
-	return $oldVal
+    if {$up} {
+	set inputSrc($sub) $tmp
     }
-    return {}
 }
 
 proc schedule {check index delay} {

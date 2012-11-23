@@ -13,6 +13,7 @@ graphpoint_type* graphpoint_ref;
 release_graph_data_type* release_graph_data_ref;
 compare_instance_status_type* compare_instance_status;
 model_requests_file_param_type* model_requests_file_param;
+schedule_type* schedule_for;
 /* fetch_instance_type* fetch_instance_ref;
 update_submodel_type* update_submodel_ref;
 advance_submodel_type* advance_submodel_ref;
@@ -205,11 +206,29 @@ void InstanceOfModel::collect (void* dest, int record_id, int id_count, ...) {
   }
   va_end(argptr);
 
-  (*model_requests_file_param)(partner, dest, record_id, id_count, curIndices);
-  // time value is dummy, there because we share the function definition
-  // with the client side, which uses it
+  (*model_requests_file_param)(partner, dest, record_id, 
+			       FALSE, id_count, curIndices);
 }
    
+void InstanceOfModel::deliver (void* dest, int record_id, int id_count, ...) {
+  va_list argptr;
+  int curIndices[32];
+  int length;
+
+  va_start(argptr, id_count);
+  for (length=0; length<id_count; length++) {
+    curIndices[length] = va_arg(argptr, int);
+  }
+  va_end(argptr);
+
+  (*model_requests_file_param)(partner, dest, record_id, 
+			       TRUE, id_count, curIndices);
+}
+   
+void InstanceOfModel::schedule (BOOLEAN check, int record_id, double delay) {
+  (*schedule_for)(partner, record_id, check, delay);
+}
+
 template <class SMClass>
 BOOLEAN prune (SMClass **metaptr, int id_count, ...) {
   int status = 1, length;

@@ -387,16 +387,13 @@ do_assignment(L, [cond_assign(Dest, Tested, Payload, Op, SoFar) | Clauses],
 			Used, Temps, Results).
 */
 do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
-	((SpecialOp =.. [collect, DestSpec, TgtRef | Args];
-	  SpecialOp =.. [deliver, DestSpec, Cargo, TgtRef | Args]),
+	(SpecialOp =.. [Move, DestSpec, TgtRef | Args],
+	    member(Move, [collect, deliver]),
 	    nth(CollectId, Used, TgtRef), !,
 	    make_scalar(L, DestSpec, Dest),
 	    refer(L, Dest, DestRef),
  	    make_evaluation_routine_all(L, Args, Inds),
- 	    (var(Cargo) ->
-		CallSpec =.. [collect, DestRef, CollectId | Inds];
-	      make_evaluation_routine(L, Cargo, SrcExp),
-		CallSpec =.. [deliver, DestRef, SrcExp, CollectId | Inds]);
+ 	    CallSpec =.. [Move, DestRef, CollectId | Inds];
 	  SpecialOp = schedule(Cond, TgtRef, Delay), !,
 	    make_evaluation_routine(L, Cond, CondRef),
 	    make_expr(L, CondRef, CondExpr),
