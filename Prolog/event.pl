@@ -914,23 +914,33 @@ spread_dims(Node) :-
 	    (get_av_pair(Obj, 0, table_data, TD) ->
 	        dialogue'><'retract(table_data_is(TD)); true),
 	    dialogue'><'check_param_usage(IList, [], Xs, IList, []),
-	    Err = [],
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
-	    (get_actual_sizes(Node, FoundArray, bare, _, Array, _),
-		get_actual_sizes(Node, GivenArray, bare, _, Array, _), !,
-		UseArray = GivenArray;
-		UseArray = FoundArray,
-		SpecChanged = dims),
-	    (Type = real, !, Base = 1; Base = Type),
-	    (use_units_in(Obj, 'No'),
-		CheckLevel = 1;
-	    CheckLevel = 2),
-	    (check_unit(Base, GivenBase, CheckLevel, []), !,
-		UseBase = GivenBase;
-	    UseBase = Base,
-		SpecChanged = units),
-	    update_links_and_vars(IList);
-	true),
+	    (Err = [],
+		(get_actual_sizes(Node, FoundArray, bare, _, Array, _),
+		    get_actual_sizes(Node, GivenArray, bare, _, Array, _), !,
+		    UseArray = GivenArray;
+		  UseArray = FoundArray,
+		    SpecChanged = dims),
+		(Type = real, !, Base = 1; Base = Type),
+		(use_units_in(Obj, 'No'),
+		    CheckLevel = 1;
+		  CheckLevel = 2),
+		(check_unit(Base, GivenBase, CheckLevel, []), !,
+		    UseBase = GivenBase;
+		  UseBase = Base,
+		    SpecChanged = units),
+		update_links_and_vars(IList);
+	      \+ GivenBase = any,
+		value_propagates(out, Node, Next, _Link),
+		multi_prop(out, Next, Node, 5),		
+% if eqn does not parse following unit change, see if it is in a loop
+% (limit search to 6 levels). If so, and this has not already been done,
+% set units to 'any' and keep propagating, in the hope that they will
+% all work once the whole loop has been done.
+		SpecChanged = units,
+		UseBase = any,
+		UseArray = GivenArray);
+	  true),
 	(SpecChanged = none;
 	build_array(UseBase, UseArray, NewUnits),
 	    add_parameter(Obj, 0, units, NewUnits)), !;

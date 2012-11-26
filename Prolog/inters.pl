@@ -1214,16 +1214,18 @@ Now one that uses a special conditional level */
 		member(Lop, [*, /]),
 		    \+ (member(MathWouldBeSilly, UnitList),
 			   inherently_bound(MathWouldBeSilly)),
-		    select(One, UnitList, [Other]), % == permutation
-		    \+ promote_arg(One, 1, _),
-		    (promote_arg(Other, 1, _),
-			(UnitList == [Other, One], Lop = (/),
-			    Units = 1/One;
-			 Units = One),
-			SourceRef = ValRef;
-		    TattyUnits =.. [Lop | UnitList],
-			sort_units(TattyUnits, Units, ConvFactor),
-			SourceRef = ConvFactor*ValRef), !;
+		    (member(any, UnitList),
+			Units = any;
+		      select(One, UnitList, [Other]), % == permutation
+			\+ promote_arg(One, 1, _),
+			(promote_arg(Other, 1, _),
+			    (UnitList == [Other, One], Lop = (/),
+				Units = 1/One;
+				Units = One),
+			    SourceRef = ValRef;
+			  TattyUnits =.. [Lop | UnitList],
+			    sort_units(TattyUnits, Units, ConvFactor),
+			    SourceRef = ConvFactor*ValRef)), !;
 		ValRef = Arg1++Arg2,
 		    /* Used for compartment increments -- no need to parse
 		    these, and conversion is done during instantiation (since
@@ -1261,8 +1263,7 @@ Now one that uses a special conditional level */
 					   UnitList, Arg_template));
 		 fn_or_op(Lop, _, RUnits, WrongLen),
 		    length(WrongLen, FnArity),
-		    throw(wrong_no_of_args(Source, Op,
-						     Arity, FnArity));
+		    throw(wrong_no_of_args(Source, Op, Arity, FnArity));
 		 m_class'><'SubId has_class_refinement uses_local_fns of UserFns,
 		    member(Op/Arity, UserFns),
 		    throw(lost_user_defined_fn(Source, Op, Arity));
@@ -1443,12 +1444,14 @@ uses_as(int, real).
 promote_arg(Lo, Hi, Phys) :-
 	var(Lo), !, Phys = Lo;
 	promote_unit(Lo, Tpt),
-	(Tpt = real, Med = 1;
+	(Lo = any; % match to any physical unit
+	    Tpt = real, Med = 1;
 	    Med = Tpt),
 	(Hi = real,
-	    (nonvar(Phys); var(Phys), Phys = Med),
-	    get_conversion(1, Med, Phys, N),
-	    1 is N, !;
+	    (Phys = Med; \+ Phys = Med),
+	    (var(Phys); % only anies so far
+	      get_conversion(1, Med, Phys, N),
+		1 is N), !;
 	Hi = Med).
 
 /* this one interprets the unit specs in fragment names (more later?) */
