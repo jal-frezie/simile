@@ -1442,11 +1442,15 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    vars_only(Inds, VarInds),
 	    length(VarInds, Count),
 	    (Is_P = 4 ->
-		CollectMakes = Dest;
-	      CollectMakes = Tgt),
+		CollectMakes = Dest,
+		Inits = [make(init(Dest), [on_reset], Path, 0,
+			     [assign(Val, Inactive)])];
+	      CollectMakes = Tgt,
+		Inits = []),
 	    CollectFn =.. [collect, arr(DestPtr, Dest, LocalInds), Dest,
 			       Count | VarInds],
-	    Collects = [make(CollectMakes, Wait, Path, Step, [CollectFn])];
+	    Collects = [make(CollectMakes, Wait, Path, Step, [CollectFn]) |
+		       Inits];
 	  Type = state_fn,
 	    Collects = [make(init(Tgt), [on_reset], Path, 0,
 			     [assign(Val, OnInit)])];

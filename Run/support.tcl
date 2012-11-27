@@ -259,7 +259,9 @@ proc deliver {tgt index count args} {
 proc BringParameter {tgt array node inds up} {
 #puts "looking for $array\($sub\)"
     upvar \#0 $array inputSrc
-    set tmp [set $tgt]
+    if {$up} {
+	set tmp [set $tgt]
+    }
     for {set ind1 0} {$ind1<=[llength $inds]} {incr ind1} {
 	set sub [join [concat $node [lrange $inds $ind1 end]] ,]
 # Check that input source exists, it will not if model is being initialized
