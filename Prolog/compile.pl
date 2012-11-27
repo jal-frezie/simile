@@ -1431,7 +1431,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    (Type = function, Step = SmStep, Wait = [init(Dest), on_step];
 		% last wait was time but made R-K results look wrong
 	    Type = init_function, Step = 0, Wait = [on_reset];
-	    Type = magnitude, Step = SmStep, Wait = [Dest])), !,
+	    Type = magnitude, Step = SmStep, Wait = [on_step])), !,
 	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Node),
 				     build(Dims), build(_), build(_)]),
 	    pointer_from(DestPath, DestPtr),
@@ -1442,11 +1442,11 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    vars_only(Inds, VarInds),
 	    length(VarInds, Count),
 	    (Is_P = 4 ->
-		CollectDir = deliver;
-	      CollectDir = collect),
-	    CollectFn =.. [CollectDir, arr(DestPtr, Dest, LocalInds), Dest,
+		CollectMakes = Dest;
+	      CollectMakes = Tgt),
+	    CollectFn =.. [collect, arr(DestPtr, Dest, LocalInds), Dest,
 			       Count | VarInds],
-	    Collects = [make(Tgt, Wait, Path, Step, [CollectFn])];
+	    Collects = [make(CollectMakes, Wait, Path, Step, [CollectFn])];
 	  Type = state_fn,
 	    Collects = [make(init(Tgt), [on_reset], Path, 0,
 			     [assign(Val, OnInit)])];
@@ -1463,7 +1463,9 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	      member(Type, [function, loss, limit]),
 		UseList = RefList;
 	      member(Type, [magnitude, state_fn])), !,
-		Made = Dest,
+		(Is_P = 4 ->
+		    Made = for_next_time(Dest);
+		  Made = Dest),
 		UseStep = SmStep),
 	    SourceEqn = Source;
 	(Is_P = 1, apply_minmax(Node, Source, SourceEqn);
@@ -1515,7 +1517,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 		Twk2 = [assign(CDest, CDest+Val) | Twk1]), !,
 %	    AllActs = [cond_event(TriggerExpr, Expr, Twk2)],
 %	    append(EvtConds, RefList, UseList);
-	    Extras = [make(tipped(Made), [on_step, Made], Path, UseStep, Twk2)
+	    Extras = [make(tipped(Dest), [on_step, Made], Path, UseStep, Twk2)
 		     | Setups],
 	    UseList = RefList;
 	  Type = state_fn, !,
@@ -1558,7 +1560,10 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  Is_P = 4, !,
 	    Fn = choose(TrgExp, after(Delay, Src), _),
 	    Move = assign(Val, Src),
-	    Linkers = [make(saved(Dest), [Dest], [], SmStep,
+	    DeliverFn =.. [deliver, arr(DestPtr, Dest, LocalInds), Dest,
+			       Count | VarInds],
+	    Linkers = [make(Tgt, [Dest], Path, Step, [DeliverFn]),
+		       make(saved(Dest), [Tgt], [], SmStep,
 			    [schedule(TrgExp, Dest, Delay)])];
 	  Move = Expr,
 	    Linkers = []),
