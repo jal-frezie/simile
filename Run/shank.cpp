@@ -805,6 +805,10 @@ double VarParamData::ResetTimeSeries(double init_time, int topPhase) {
 
   curTimePoint = NULL;
   wraps = 0;
+
+  if (myModelExec->modelSpec->GetProperty(nodeId, GETEVAL) == RECALL)
+    ClearTimePtElements();
+
   if (topPhase <= -2)
     active = 1; // this will cause any current event data to be zeroed
   next_evt = update_from_points(init_time, init_time);
