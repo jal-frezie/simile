@@ -620,15 +620,14 @@ VarParamData::~VarParamData() {
   ClearTimePtElements();
 }
 
-void VarParamData::schedule_point(BOOLEAN check, double now, double* expect) {
-  listTimePoint* newPt;
+BOOLEAN VarParamData::schedule_point(BOOLEAN check, double now) {
+  listTimePoint* newPt = NULL;
   if (check)
     if (newPt = create_time_point(now)) { // assignment
       newPt->dataPtr = copy_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-      if (now<*expect)
-	*expect = now;
     }
   zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+  return newPt!=NULL;
 }
 
 double VarParamData::update_from_points(double nowInDays, double next) {
@@ -1380,11 +1379,17 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId, BOOLEAN up,
 
 void ExecutingModel::schedule(int paramId, BOOLEAN check, double delay) {
   FileParamData* paramArrayItem;
+  double tSched;
 
   paramArrayItem = param_array_base;
-  if (modelSpec->param_item_from_id(&paramArrayItem, paramId))
-    ((VarParamData*)paramArrayItem)->schedule_point(check, delay+thisTsPosn,
-						    &nextSeriesEvt);
+  if (modelSpec->param_item_from_id(&paramArrayItem, paramId)) {
+    tSched = delay+thisTsPosn;
+    if (((VarParamData*)paramArrayItem)->schedule_point(check, tSched) && 
+	tSched<=nextSeriesEvt) {
+      nextSeriesEvt = tSched;
+      seriesEvtSign = paramId;
+    }
+  }
 }
 
 // Implementation of class ModelServer

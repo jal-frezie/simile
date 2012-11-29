@@ -140,8 +140,8 @@ class CPPEXTDEC VarParamData : public FileParamData {
   //! delayed derived events use this to insert time points with their values
   //! Argument 1 is incoming event value 
   //! Argument 2 is time at which delayed event will occur
-  //! Argument 3 is pointer to time at which next series event is expected
-  void schedule_point(BOOLEAN, double, double*);
+  //! Result TRUE if new point created
+  BOOLEAN schedule_point(BOOLEAN, double);
 
   //! Set up current data from time points for time and direction 
   //! Arguments are time and dir (TRUE=forward), 
