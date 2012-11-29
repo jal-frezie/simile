@@ -620,11 +620,14 @@ VarParamData::~VarParamData() {
   ClearTimePtElements();
 }
 
-void VarParamData::schedule_point(BOOLEAN check, double now) {
+void VarParamData::schedule_point(BOOLEAN check, double now, double* expect) {
   listTimePoint* newPt;
   if (check)
-    if (newPt = create_time_point(now)) // assignment
+    if (newPt = create_time_point(now)) { // assignment
       newPt->dataPtr = copy_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+      if (now<*expect)
+	*expect = now;
+    }
   zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
 }
 
@@ -1380,7 +1383,8 @@ void ExecutingModel::schedule(int paramId, BOOLEAN check, double delay) {
 
   paramArrayItem = param_array_base;
   if (modelSpec->param_item_from_id(&paramArrayItem, paramId))
-    ((VarParamData*)paramArrayItem)->schedule_point(check, delay+thisTsPosn);
+    ((VarParamData*)paramArrayItem)->schedule_point(check, delay+thisTsPosn,
+						    &nextSeriesEvt);
 }
 
 // Implementation of class ModelServer
