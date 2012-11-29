@@ -1080,7 +1080,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       SetdT(0, 10+(how_int==RUNGE_KUTTA)); 
       loadedInst->updatemodel(big_phase);
       SetdT(0, (how_int==RUNGE_KUTTA)); // start prediction cycle
-      if (loadedInst->do_evalmodel(big_phase)) break;
+      if (loadedInst->do_evalmodel(wee_phase)) break;
     }
 
     while(!made_step) {
