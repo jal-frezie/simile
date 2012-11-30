@@ -633,7 +633,7 @@ BOOLEAN VarParamData::schedule_point(BOOLEAN check, double now) {
 double VarParamData::update_from_points(double nowInDays, double next) {
   listTimePoint *loBound, *hiBound;
   int hiWraps = 0, oldWraps = wraps;
-  double now, interFract;
+  double now, later, interFract;
   node_data_line* ndRef = myModelExec->modelSpec->nodedata + nodeId;
   
   now = nowInDays/seriesIdxUnits;
@@ -684,8 +684,11 @@ double VarParamData::update_from_points(double nowInDays, double next) {
     if (active)
       if (!--active) // don't trust lazy evaluation
 	zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-    if (hiBound) // return time at which event will next happen
-      next = (hiBound->when+hiWraps*wrapAroundPoint)*seriesIdxUnits;
+    if (hiBound) { // return time at which event will next happen
+      later = (hiBound->when+hiWraps*wrapAroundPoint)*seriesIdxUnits;
+      if (later<next)
+	next = later;
+    }
   }
   if (loBound && (loBound!=curTimePoint || wraps!=oldWraps)) {
     curTimePoint = loBound;

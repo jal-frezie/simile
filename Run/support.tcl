@@ -279,7 +279,7 @@ proc BringParameter {tgt array node inds up} {
 }
 
 proc schedule {check index delay} {
-    global paramLocns
+    global paramLocns event
 
     set node $paramLocns($index,nod)
     if {$check} {
@@ -294,6 +294,10 @@ proc schedule {check index delay} {
 	lappend plan $future 
 	if {[llength $plan]>1 && [lindex $plan end]<[lindex $plan end-1]} {
 	    set plan [lsort -real -unique $plan]
+	}
+	if {$future < $event(nextSeries)} {
+	    set event(nextSeries) $future
+	    set event(seriesSign) $index
 	}
     }
     tcl_zeroparam $node
@@ -1082,7 +1086,7 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 	    set ts(0) [expr {10+$intMtd}] ;# no change due to flows
 	    do_model updatemodel $bigPhase
 	    set ts(0) $intMtd ;# start prediction cycle
-	    do_model evalmodel $bigPhase
+	    do_model evalmodel $weePhase
 	}
 
         while {!$madeStep} {
@@ -1429,7 +1433,10 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 		    }
 		}
 		if {$hiBound>-1} {
-		    set next [expr {([lindex $setFromSeries($list) $hiBound]+$hiWraps*$paramData(wrapAroundPoint,$node))*$paramData(timePointInterval,$node)}]
+		    set later [expr {([lindex $setFromSeries($list) $hiBound]+$hiWraps*$paramData(wrapAroundPoint,$node))*$paramData(timePointInterval,$node)}]
+		    if {$later<$next} {
+			set next $later
+		    }
 		}
 	    }
 
