@@ -1453,7 +1453,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Collects = [make(CollectMakes, Wait, Path, Step, [CollectFn]) |
 		       Inits];
 	  Type = state_fn,
-	    Collects = [make(init(Tgt), [on_reset], Path, 0,
+	    Collects = [make(init(Dest), [on_reset], Path, 0,
 			     [assign(Val, OnInit)])];
 	  Collects = []),
 	(((Is_P < 1; Is_P = 4),
