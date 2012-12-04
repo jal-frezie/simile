@@ -1029,8 +1029,9 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 	Instance = instance(submodel, Id,
 			    xrefs(model(Functions, Submodels), _,_), _,_),
 	(select(instance(alarm,_,_,elt(_, Al,_),_), Functions, NoAlarm),
-	    select(instance(al_function,_,_,elt(_, Al,_),_), NoAlarm, ForAlarm),
-	    Path = [sm(_,_,_, fm_loop(_,_, Al, _))|_], !,
+	    select(instance(al_function,_, al_spec(_,_, EvtExp),
+			    elt(_, Al,_), _), NoAlarm, ForAlarm),
+	    Path = [sm(_,_,_, fm_loop(_,_, al_action(Al, EvtExp), _)) | _], !,
 	    % now make alarm depend on everything in its submodel
 	    % so the whole thing gets done in one pass
 	    all_targets(model(ForAlarm, Submodels), AlConds),
@@ -1532,8 +1533,10 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    UseList = [on_step | RefList];
 	  (SourceEqn = with_phase(SmStep, EvtElts, GroundEqn),
 	      all(user, arg, [unify(2), build(EvtElts), build(EvtConds)]);
+	    SourceEqn = al_spec(LoopExit, EvtConds, LoopStart),
+	      GroundEqn = choose(LoopExit,EvtConds,EvtConds);
 	    EvtConds = [],
-	      GroundEqn = SourceEqn),
+	      GroundEqn = SourceEqn), % EvtConds unused as of 4/12/12
 	    Extras = Setups), !,
 	    
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
@@ -1569,6 +1572,9 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Linkers = [make(Tgt, [Dest], Path, Step, [DeliverFn]),
 		       make(saved(Dest), [Tgt], [], SmStep,
 			    [schedule(TrgExp, Dest, Delay)])];
+	  Type = al_function,
+	    Fn = choose(LoopExitExpr, LoopStart, LoopStart),
+	    Move = assign(Val, LoopExitExpr);
 	  Move = Expr,
 	    Linkers = []),
 	append([Collects, Actions, Linkers], Assignments).

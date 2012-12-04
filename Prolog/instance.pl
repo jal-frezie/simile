@@ -264,7 +264,15 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	(setof(EvtPair,
 	       generate_input_pair(Node, discrete, EvtPair),
 	       EvtPairs), !;
-	    EvtPairs = []),
+	 EvtPairs = []),
+	 all(user, arg, [unify(4), build(EvtPairs), build(EvtArgs)]),
+	 all(user, arg, [unify(2), build(EvtPairs), build(EvtNodes)]),
+	 all(user, arg, [unify(3), build(EvtPairs), build(EvtNames)]),
+	 all(instance, is_instance, 
+	     [build(_Type), build(EvtNodes), build(_Load),
+	      build(EvtNames), build(_Dims), build(EvtRefs)]),
+	 (build_sum(EvtArgs, EvtTrigger), !;
+	   EvtTrigger = '"true"'),
 	(RType = state -> append(InputPairs, EvtPairs, AllowedInExp);
 	    AllowedInExp = InputPairs),
 	list_fragments_for_use(Node, FragSMs),
@@ -301,15 +309,9 @@ instance_of( function, Node, Path, Instances, Refs) :-
 			    DiffSt),
 		Instances = [DiffSt, Instance];
 % derived event or state: make magnitude expression
-	      all(user, arg, [unify(2), build(EvtPairs), build(EvtNodes)]),
-		all(user, arg, [unify(3), build(EvtPairs), build(EvtNames)]),
-		all(user, arg, [unify(4), build(EvtPairs), build(EvtArgs)]),
-		(build_sum(EvtArgs, EvtTrigger), !;
-		    caption_for(Node, Capt),
-		    raise_exception(no_antecedents_for_derived(Capt))),
-		all(instance, is_instance, 
-		    [build(_Type), build(EvtNodes), build(_Load),
-		     build(EvtNames), build(_Dims), build(EvtRefs)]),
+	     (EvtPairs = [_|_], !;
+	       caption_for(Node, Capt),
+	         raise_exception(no_antecedents_for_derived(Capt))),
 		(RType = squirt, !,
 		    connects(Result, Source, Dest),
 		    (find_type(Dest, compartment), !,
@@ -333,9 +335,11 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	    /* Try alternative way of enumerating instances */
 	    FType = id_function;
 	  (RType = alarm, !,
-	    FType = al_function;
-	  FType = function),
-	    FinalExpr = SubbedExpr),
+	    FType = al_function,
+	    FinalExpr = al_spec(SubbedExpr, EvtTrigger, _Later),
+	    EndRefs = EvtRefs;
+	  FType = function,
+	    FinalExpr = SubbedExpr)),
 
 	(member(var_pair(_, Sub), Switched),
 	    get_solo_list_depth(Sub, _), !,
