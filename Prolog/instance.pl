@@ -333,7 +333,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	  RType = condition,
 	    (is_lookup_cond(SubbedExpr, CondExpr), !,
 	    /* Try alternative way of enumerating instances */
-	        Void = soloarr(0),
+	        Void = 0,
 	        FType = id_function;
 	      CondExpr = SubbedExpr,
 	        Void = '"false"',
