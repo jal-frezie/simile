@@ -272,7 +272,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	     [build(_Type), build(EvtNodes), build(_Load),
 	      build(EvtNames), build(_Dims), build(EvtRefs)]),
 	 (build_sum(EvtArgs, EvtTrigger), !;
-	   EvtTrigger = '"true"'),
+	   EvtTrigger = 1),
 	(RType = state -> append(InputPairs, EvtPairs, AllowedInExp);
 	    AllowedInExp = InputPairs),
 	list_fragments_for_use(Node, FragSMs),
@@ -331,9 +331,15 @@ instance_of( function, Node, Path, Instances, Refs) :-
 		  FinalExpr = event(SubbedExpr, EvtTrigger, (0->0)),
 		    EndRefs = EvtRefs));
 	  RType = condition,
-	    is_lookup_cond(SubbedExpr, FinalExpr), !,
+	    EndRefs = EvtRefs, 
+	    (is_lookup_cond(SubbedExpr, CondExpr), !,
 	    /* Try alternative way of enumerating instances */
-	    FType = id_function;
+	        (EvtTrigger = 1 ->
+		    FinalExpr = CondExpr;
+		  FinalExpr = (EvtTrigger '!=' 0 and CondExpr)),
+	        FType = id_function;
+	      FinalExpr = (EvtTrigger '!=' 0 and SubbedExpr),
+	        FType = function);
 	  (RType = alarm, !,
 	    FType = al_function,
 	    FinalExpr = al_spec(SubbedExpr, EvtTrigger, _Later),
@@ -410,9 +416,9 @@ instance_of(Type, Node, _, Inst, Ref) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 is_lookup_cond(GroundExpr, UseExpr) :-
-	(GroundExpr = (index(1) is UseId),
-	    UseExpr = soloarr(UseId); % cheat to allow single-element arr
-	 GroundExpr = any(index(1) is UseExpr)).
+	GroundExpr = (index(1) is UseId),
+	   UseExpr = soloarr(UseId); % cheat to allow single-element arr
+	 GroundExpr = any(index(1) is UseExpr).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 build_sum([Solo], SoloArr) :- sum_over_dims(Solo, SoloArr).
