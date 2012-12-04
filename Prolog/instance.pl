@@ -331,15 +331,18 @@ instance_of( function, Node, Path, Instances, Refs) :-
 		  FinalExpr = event(SubbedExpr, EvtTrigger, (0->0)),
 		    EndRefs = EvtRefs));
 	  RType = condition,
-	    EndRefs = EvtRefs, 
 	    (is_lookup_cond(SubbedExpr, CondExpr), !,
 	    /* Try alternative way of enumerating instances */
-	        (EvtTrigger = 1 ->
-		    FinalExpr = CondExpr;
-		  FinalExpr = (EvtTrigger '!=' 0 and CondExpr)),
+	        Void = soloarr(0),
 	        FType = id_function;
-	      FinalExpr = (EvtTrigger '!=' 0 and SubbedExpr),
-	        FType = function);
+	      CondExpr = SubbedExpr,
+	        Void = '"false"',
+	        FType = function),
+	    (EvtTrigger = 1 ->
+	        FinalExpr = CondExpr;
+	      EndRefs = EvtRefs, 
+	        FinalExpr = (trigger_magnitude('')=EvtTrigger,
+			     choose(EvtTrigger '!=' 0, CondExpr, Void)));
 	  (RType = alarm, !,
 	    FType = al_function,
 	    FinalExpr = al_spec(SubbedExpr, EvtTrigger, _Later),
