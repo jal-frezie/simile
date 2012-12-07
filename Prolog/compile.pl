@@ -1415,7 +1415,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Do not make an assignment if we are expecting one on init/reset
 	    from outside */
 	(member(Type, [event, magnitude, limit, series, state_fn]), !,
-	     (Source = event(after(_T, _V), _TM, (0->0)), !,
+	     (Source = event(after(_T, _V), _TM), !,
 		Is_P = 4;       % a derived event with time series delay
 	    Is_P = 0);
 	  is_parameter(Node, Norm_P),
@@ -1501,7 +1501,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    GroundEqn = check_limit(ActEqn, Lower, Upper, Flags),
 	    AllActs = [Expr]; */
 	  Type = magnitude, !, % no derived events yet but same
-	    SourceEqn = event(ActEqn, TriggerEqn, (From->To)),
+	    SourceEqn = event(ActEqn, TriggerEqn),
 	    (Unit = boolean -> Inactive = '"false"' ; Inactive = 0),
 	    SourceItem = trigger_magnitude(''),
 	    GroundEqn = (SourceItem=TriggerEqn,
@@ -1511,22 +1511,13 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 %			     elt([], current_event_magnitude, X), Swaps,
 %			     UseStep, Used, [TriggerExpr], [], _Path, EvtConds,
 %			     []),
-	    Val = arr(SquirtPtr, _, SqtInds), % and its submodel pointer
-	    (From = 0, Twk1 = [];
-	      From = elt(_, BSrc, _),
-		CSrc = arr(SquirtPtr, BSrc, SqtInds),
-		Twk1 = [assign(CSrc, CSrc-Val)]),
-	    (To = 0, Twk2 = Twk1;
-	      To = elt(_, BDest, _), 
-		CDest = arr(SquirtPtr, BDest, SqtInds),
-		Twk2 = [assign(CDest, CDest+Val) | Twk1]), !,
+%	    Val = arr(SquirtPtr, _, SqtInds), !, % and its submodel pointer
 %	    AllActs = [cond_event(TriggerExpr, Expr, Twk2)],
 %	    append(EvtConds, RefList, UseList);
-	    Extras = [make(tipped(Dest), [on_step, Made], Path, UseStep, Twk2)
-		     | Setups],
+	    Extras = Setups,
 	    UseList = RefList;
 	  Type = state_fn, !,
-	    SourceEqn = event(ActEqn, TriggerEqn, (0->0)),
+	    SourceEqn = event(ActEqn, TriggerEqn),
 	    choosify(ActEqn, ChooseForm, OnInit),
 	    GroundEqn = (trigger_magnitude('')=TriggerEqn, ChooseForm),
 	    Extras = Setups,
@@ -1547,6 +1538,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 		       AllInters, Actions, Inters);
 	Actions = [],
 	Inters = []),
+	Set = make(Dest, [init(Dest), update(Dest)], DestPath, SmStep, []),
 	(Type = limit, !,
 %	    Expr = assign(_D, choose(Test1, _Y, _N)),
 %	    Test1 =.. [_Ineq, Val, _Bound],
@@ -1557,13 +1549,11 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    % pass value because consequent event may care whether we are minned
 	    % or maxed (or cannoned into oblivion by an upstream squirt)
 	    % but mostly cos it is easier
-	  (member(Type, [compartment, creation, immigration, reproduction]);
+	  (member(Type, [creation, immigration, reproduction]);
 	        member(Is_P, [1, 3]);
 	        Is_P = 2, Type = init_function), !,
 	    Move = Expr,
-	    Linkers = [make(Dest, [init(Dest), update(Dest), tweaked(Dest)],
-			    DestPath, SmStep, []),
-		       make(tweaked(Dest), EvtConds, DestPath, SmStep, [])];
+	    Linkers = [Set];
 	  Is_P = 4, !,
 	    Fn = choose(TrgExp, after(Delay, Src), _),
 	    Move = assign(Val, Src),
@@ -1575,6 +1565,12 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  Type = al_function,
 	    Fn = choose(LoopExitExpr, LoopStart, LoopStart),
 	    Move = assign(Val, LoopExitExpr);
+	  Type = compartment,
+	    Fn = ValRef+FChange+QChange,
+	    Move = assign(Val, ValRef+FChange),
+	    (QChange = 0, !, Linkers = [Set];
+	     Linkers = [make(tipped(Dest), [on_step], Path, SmStep,
+			    [assign(Val, ValRef+QChange)]), Set]);
 	  Move = Expr,
 	    Linkers = []),
 	append([Collects, Actions, Linkers], Assignments).

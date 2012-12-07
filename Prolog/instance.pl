@@ -64,18 +64,10 @@ counts_as_outside(Node) :-
 	get_host(Node, VisNode),
 	VisNode is_of_sort value_outside.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-instantiate_nodes([], [], _, R, R).
-
-instantiate_nodes([Node|Nodes], New_instances, Path, ResultIn, ResultOut) :-
-	(Node has_class Class; Node has_type Class),
-	
-	(Class = cloud, !,
-	    New_instances = OtherInstances,
-	    MidResult = ResultIn;
-	    instantiate_node(Node, Class, Instances, Path, ResultIn,
-			     MidResult),
-	    append(Instances, OtherInstances, New_instances)),
-	instantiate_nodes(Nodes, OtherInstances, Path, MidResult, ResultOut).
+instantiate_nodes(Nodes, New_instances, Path, RefsIn, RefsOut) :-
+	all(instance, instantiate_node,
+	    [build(Nodes), append(New_instances, []), unify(Path),
+	     merge_lists(RefsOut, RefsIn)]).
 
 instantiate_trees([], [], [], _, []).
 
@@ -124,13 +116,18 @@ make_base_refs(Node, [Link | R1], [base(Base, Link, _) | R2]) :-
 	Link is_connector from Base to _,
 	make_base_refs(Node, R1, R2).
 
-instantiate_node(Node, Class, Instances, Path, Old_instances, New_instances) :-
-	(instance_of( Class, Node, Path, Instances, Refs), !;
+instantiate_node(Node, Instances, Path, All) :-
+	(Node has_class Class; Node has_type Class),
+	(instance_of( Class, Node, Path, Instances, Refs), !,
+	    append(Instances, Refs, All);
 	  caption_for(Node, Capt),
-	    raise_exception(instantiation_failure(Capt))),
-	merge_lists(Instances, Old_instances, Mid_instances),
-	merge_lists(Refs, Mid_instances, New_instances).
+	    raise_exception(instantiation_failure(Capt))).
 	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/* Easiest first... */
+
+instance_of(cloud, _, _, [], []) :- !.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* Ghosts are treated like variables, see later. */
 
@@ -172,15 +169,8 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	(\+ PType = 1, !;
 	    choose_default_value(Node, Base, PType, Default)),
 	FuncRef = instance(init_function, F, Default, Home, Base-Units),
-	squirt_names_and_refs(Node, SqtNames, SqtRefs),
-	((setof( Arc, flows(flow, in, Node, Arc), InArcs),
-	  bind_and_build_term(Node, InArcs, Base, Units, In, In_refs);
-	  In_refs = []),
-	(setof( Arc, flows(flow, out, Node, Arc), OutArcs),
-	    bind_and_build_term(Node, OutArcs, Base, Units, Out, Out_refs),
-	    (In_refs = [], Change = -Out; Change = In++(-Out));
-	    Out_refs = [], \+ In_refs = [], Change = In),
-	    append([In_refs, Out_refs, SqtRefs], Refs),
+	change_due_to(flow, Node, Base, Units, FChange, FRefs),
+	change_due_to(squirt, Node, Base, Units, QChange, QRefs),
 	/* apply_minmax(F, Home+Step*(In-Out), UpdateExpr),
 	compartments will be updated in a separate procedure from flows
 	so ordering will not be done -- otherwise the above would be
@@ -191,12 +181,10 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	    Span is Max-Min;
 	  Span = 100),
 	is_instance(internal, st(Node), none, Diffs, diffs-Units, DiffSt),
-	Expr = with_phase(Step, SqtNames,
-			  Home++stage_incr(Diffs, Step, Change, Span)),
-	    Local = [DiffSt, Instance];
-	    % flowless compartment -- hpefully rare
-	    [Refs, Local, Expr] = [SqtRefs, [Instance],
-				   with_phase(Step, SqtNames, Home)]),
+	Expr = with_phase(Step, [],
+		Home++stage_incr(Diffs, Step, FChange, Span)++QChange),
+	append(FRefs, QRefs, Refs),
+	Local = [DiffSt, Instance],
 	is_instance(compartment, Node, Expr, Home, Base-Units, Instance).
 
 /* Immigration and reproduction nodes behave like compartments with an
@@ -312,24 +300,8 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	     (EvtPairs = [_|_], !;
 	       caption_for(Node, Capt),
 	         raise_exception(no_antecedents_for_derived(Capt))),
-		(RType = squirt, !,
-		    connects(Result, Source, Dest),
-		    (find_type(Dest, compartment), !,
-			MidRefs = [instance(compartment, Dest, _, DestName, _)
-				  | EvtRefs],
-			DestEntry = DestName;
-		      MidRefs = EvtRefs,
-			DestEntry = 0),
-		    (find_type(Source, compartment), !,
-			EndRefs = [instance(compartment, Source, _, SourceName,
-					  _) | MidRefs],
-			SourceEntry = SourceName;
-		      EndRefs = MidRefs,
-			SourceEntry = 0),
-		    FinalExpr = event(SubbedExpr, EvtTrigger,
-				       (SourceEntry->DestEntry));
-		  FinalExpr = event(SubbedExpr, EvtTrigger, (0->0)),
-		    EndRefs = EvtRefs));
+	     FinalExpr = event(SubbedExpr, EvtTrigger),
+	     EndRefs = EvtRefs);
 	  RType = condition,
 	    (is_lookup_cond(SubbedExpr, CondExpr), !,
 	    /* Try alternative way of enumerating instances */
@@ -436,22 +408,39 @@ sum_over_dims(IP, SD) :-
 	sum_dims(Dims, Num, SD).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-squirt_names_and_refs(Comp, Names, Refs) :-
-	(setof(SqtArc,
-	       Dir^LocalArc^(member(Dir, [in, out]),
-			     flows(squirt, Dir, Comp, LocalArc),
-			     find_name_host(LocalArc, SqtArc)), SqtArcs), !;
-	    SqtArcs = []),
-	all(instance, is_instance,
-	    [unify(squirt), build(SqtArcs), build(_Load), build(Names),
-	     build(_Type), build(Refs)]).
+%squirt_names_and_refs(Comp, Names, Refs) :-
+%	(setof(SqtArc,
+%	       Dir^LocalArc^(member(Dir, [in, out]),
+%			     flows([squirt], Dir, Comp, LocalArc),
+%			     find_name_host(LocalArc, SqtArc)), SqtArcs), !;
+%	    SqtArcs = []),
+%	all(instance, is_instance,
+%	    [unify(squirt), build(SqtArcs), build(_Load), build(Names),
+%	     build(_Type), build(Refs)]).
+%	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+change_due_to(Type, Node, Base, Units, Change, Refs) :-
+	(setof( Arc, flows([Type], in, Node, Arc), InArcs),
+	    bind_and_build_term(Node, InArcs, Base, Units, In, In_refs),
+	    Change = HaveInps;
+	  In_refs = [],
+	    Change = NoInps),
+	(setof( Arc, flows([Type], out, Node, Arc), OutArcs),
+	    bind_and_build_term(Node, OutArcs, Base, Units, Out, Out_refs),
+	    HaveInps = In++(-Out),
+	    NoInps = -Out;
+	  Out_refs = [],
+	    HaveInps = In,
+	    NoInps = 0),
+	append(In_refs, Out_refs, Refs).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-flows(Type, Dir, Comp, Flow) :-
+flows(Types, Dir, Comp, Flow) :-
 	(Tgt = Comp; find_ghosts(Comp, Tgt)),
 	(Dir = in, Dest = Tgt; Dir = out, Src = Tgt),
 	Flow is_connector from Src to Dest,
-	find_type(Flow, Type).
+	find_type(Flow, Type),
+	member(Type, Types).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* generate_input_pair is used in setof so should be cut free */
@@ -554,7 +543,8 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 	is_instance(_, Controller, _, BaseVar, _, Ref),
 	default_tick_is(Tick),
 	standard_name(NodeBase, TrimBase),
-	try_conversion(Var, ArcUnits, TrimBase/Tick, Term).
+	(Arc has_type squirt -> ConvTo = TrimBase; ConvTo = TrimBase/Tick),
+	try_conversion(Var, ArcUnits, ConvTo, Term).
 
 bind_and_build_term(Node, [Arc|Arcs], Base, Dims, NewTerm, Refs) :-
 	bind_and_build_term(Node, [Arc], Base, Dims, Term1, [Ref]),
