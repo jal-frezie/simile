@@ -186,6 +186,16 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	    set st [expr $mt-2*$rad]
 	    eval {$w create poly $ml $st $hm $st $ml $vm} $generic
 	    eval {$w create line $ml $st $hm $st $ml $vm $ml $st} $generic
+	} 3 {
+	    set sl [expr $ml+$rad/2]
+	    set sr [expr $mr-$rad/2]
+	    set st [expr $mt-2*$rad]
+	    set sb [expr $mb+2*$rad]
+
+	    eval {$w create line $sl $st $sr $st} $generic
+	    eval {$w create line $hm $st $hm $mt} $generic
+	    eval {$w create line $hm $mb $hm $sb} $generic
+	    eval {$w create line $sl $sb $sr $sb} $generic
 	}
     }
 	    

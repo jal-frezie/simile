@@ -487,7 +487,8 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    is_parameter(BComp, P),
 	    DNum is MNum+10*max(0, P),
 	    (Comp is_of_sort discrete, !,
-		Num is DNum+100;
+	        (P = 1 -> Num is DNum+120;
+		Num is DNum+100);
 	    Num=DNum),
 	    (Style=state, !,
 	       DCmd = compartment;

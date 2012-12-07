@@ -917,8 +917,8 @@ proc ControlDraw {prologVersion} {
 		  [list custom(myButton) myButton \u03bc [tr. "Custom keypad button"]] \
 		  [list custom(defBackground) defBackground [list CHOICE [tr. "White"] [tr. "Black"] [tr. "Clear"]] [tr. "Default background"]] \
 		  [list custom(flowRouting) flowRouting ON [tr. "Kink flows"]] \
-		  [list custom(infRouting) infRouting {10 -100 100} [tr. "Curve influences"]] \
-		  [list custom(roleRouting) roleRouting {10 -100 100} [tr. "Curve role arrows"]] \
+		  [list custom(infRouting) infRouting {20 -100 100} [tr. "Curve influences"]] \
+		  [list custom(roleRouting) roleRouting {20 -100 100} [tr. "Curve role arrows"]] \
 		  [list custom(deleteEndToEnd) deleteEndToEnd ON [tr. "Select links end-to-end"]] \
 		  [list custom(helperManager) helperManager ON [tr. "Use single window manager"]] \
 		  [list custom(popupPrecision) popupPrecision {0 0 16} [tr. "Value popups"]] \
