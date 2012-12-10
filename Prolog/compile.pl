@@ -1540,6 +1540,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	Inters = []),
 	Set = make(Dest, [init(Dest), update(Dest)], DestPath, SmStep, []),
 	(Type = limit, !,
+	    Move = Expr,
 %	    Expr = assign(_D, choose(Test1, _Y, _N)),
 %	    Test1 =.. [_Ineq, Val, _Bound],
 				% dig out the inter
