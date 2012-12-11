@@ -219,7 +219,7 @@ proc NewCaptionIfAvail {topNode dest inds in_code} {
 #	    }
 #	}
 #    }
-    return $in_code
+    return [concat [list $in_code] $inds] ;# no matching node for caption/ETs
 }
 
 proc MakeContext {topNode levels} {
