@@ -116,7 +116,7 @@ namespace eval runcontrol33857 {
         frame $rcf.editBoxes
         foreach {name capt var} {exec {Execute for:} execTime \
                     current {Current time:} currentTime \
-                    disp {Display interval:} displayInt} {
+                    disp {Display each} displayInt} {
             frame $rcf.editBoxes.$name
             label $rcf.editBoxes.$name.capt -text [tr. $capt] \
 		-width $captWidth -anchor w
@@ -129,6 +129,11 @@ namespace eval runcontrol33857 {
             pack $rcf.editBoxes.$name.unit -side left
             pack $rcf.editBoxes.$name  -anchor nw -pady 2 -fill x
         }
+	set squeezed $rcf.editBoxes.disp.capt
+	pack [ttk::checkbutton $rcf.editBoxes.disp.evts -text [tr. {event;}] \
+		  -variable runState($node,dispEvts)] -side left \
+	    -after $squeezed
+	$squeezed config -width 10
         pack $rcf.editBoxes -side top -pady 2 -expand on -fill both
 	set runState($node,timeReached) $runState($node,currentTime)
         pack [frame $rcf.edit] -pady 2 -expand on -fill both
