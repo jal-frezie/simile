@@ -356,14 +356,34 @@ void get_tcl_value_pointer(void* modelPtr, void* tgt, int paramId,
   }
 }
 */
-Tcl_Obj* make_exec_error(Tcl_Interp* interp, const char* phase, 
-			 const char* tgt,  double time, int step, 
-			 char* complaint) {
+void get_string_for_error(char *spare, int error) {
+  if (error == -101) {
+    sprintf(spare, "abort request from the user");
+  } else if (error == -99) {
+    sprintf(spare, "discontinuity");
+  } else if (error == -98) {
+    sprintf(spare, "event");
+  } else if (error < 0) {
+    sprintf(spare, "Illegal operation signal %d", -error);
+  } else {
+    sprintf(spare, "User-defined interruption code %d", error);
+  }
+}
+
+Tcl_Obj* make_exec_error(Tcl_Interp* interp, int excpNo, const char* phase, 
+			 const char* tgt,  double time, int step) {
+  char complaint[256];
   Tcl_Obj* errList;
 
   errList=Tcl_NewListObj(0, NULL);
-  Tcl_ListObjAppendElement(interp, errList, 
-			   Tcl_NewStringObj("tcl_model_err", -1));
+  get_string_for_error(complaint, excpNo);
+
+  if (excpNo = -98) // event exits inner loop
+    Tcl_ListObjAppendElement(interp, errList, Tcl_NewIntObj(-1));
+  else 
+    Tcl_ListObjAppendElement(interp, errList, 
+			     Tcl_NewStringObj("tcl_model_err", -1));
+
   Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(phase, -1));
   Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(tgt, -1));
   Tcl_ListObjAppendElement(interp, errList, Tcl_NewDoubleObj(time));
@@ -903,20 +923,6 @@ FINDABLE int gettimepointallCmd(ClientData clientData, Tcl_Interp *interp,
   }
 }
 
-void get_string_for_error(char* spare, int error) {
-  if (error == -101) {
-    sprintf(spare, "abort request from the user");
-  } else if (error == -99) {
-    sprintf(spare, "discontinuity");
-  } else if (error == -98) {
-    sprintf(spare, "event");
-  } else if (error < 0) {
-    sprintf(spare, "Illegal operation signal %d", -error);
-  } else {
-    sprintf(spare, "User-defined interruption code %d", error);
-  }
-}
-
 const char* name_in_line(void* modelType, int lineId) {
     node_data_line *nodeLine;
 
@@ -931,7 +937,6 @@ const char* name_in_line(void* modelType, int lineId) {
 
 FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-  char spare[256];
   int how_int, phase, error;
   excpData* errorBlk;
   void* modelType;
@@ -963,11 +968,11 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
   errorBlk = reset(modelType, modelHandle, t0, how_int, phase);
 
   if (errorBlk) {
-    get_string_for_error(spare, errorBlk->excpNo);
-    Tcl_SetObjResult(interp, make_exec_error(interp, "resetmodel", 
+    Tcl_SetObjResult(interp, make_exec_error(interp, errorBlk->excpNo,
+					     "resetmodel", 
 					     name_in_line(modelType, 
 							  errorBlk->targetId), 
-					     t0, phase, spare));
+					     t0, phase));
     return TCL_ERROR;
   } else {
     return TCL_OK;
@@ -1023,20 +1028,17 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
 		     errlim, evt_pause);
   error = 1; //i.e., no error
   if (errorBlk) {
-    switch (errorBlk->excpNo) {
-    case -100:
+    if (errorBlk->excpNo == -100) { // model paused by GUI
       error = 0;
-      break;
-      //    case -99:
-      //error = -1;
-      //break;
-    default:
-      get_string_for_error(spare, errorBlk->excpNo);
-      Tcl_SetObjResult(interp, make_exec_error(interp, "evalmodel", 
-					       name_in_line(modelType, 
-							    errorBlk->targetId),
-					       endtime, 1, spare));
-      return TCL_ERROR;
+    } else {
+      Tcl_SetObjResult(interp, make_exec_error(interp, errorBlk->excpNo,
+					     "evalmodel", 
+					     name_in_line(modelType, 
+							  errorBlk->targetId),
+					     endtime, 1));
+      if (errorBlk->excpNo != -98) 
+	return TCL_ERROR;
+      return TCL_OK;
     }
   }
   working = Tcl_NewIntObj(error);

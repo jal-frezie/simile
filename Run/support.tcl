@@ -66,15 +66,12 @@ proc tcl_insert {node newVs} {
     return novalue
 }
 proc ExplainError {myNode errList origError} {
-    if {![string match tcl_model_err* $errList]} {
-	error "Unexpected problem in Tcl model execution" $origError
-    }
     set severity -1
-    set what [lindex $errList 1]
-    set dest [lindex $errList 2]
-    set mtime [lindex $errList 3]
-    set mstep [lindex $errList 4]
-    set whoopsie [lindex $errList 5]
+    set what [lindex $errList 0]
+    set dest [lindex $errList 1]
+    set mtime [lindex $errList 2]
+    set mstep [lindex $errList 3]
+    set whoopsie [lindex $errList 4]
     switch $what {
 	evalmodel {set operation "calculating the value of"}
 	updatemodel {set operation "updating the state"}
@@ -1208,8 +1205,9 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 #	}
 # now pause on event if doing so
 	if {$evtPause && $event(culprit)} {
-	    error [list tcl_model_err evalmodel $event(culprit) \
-		       $xtime $bigPhase event]
+	    return [list -1 evalmodel $event(culprit) $xtime $bigPhase event]
+#	    error [list tcl_model_err evalmodel $event(culprit) \
+#		       $xtime $bigPhase event]
 	}
     } ;# finished executing
     if {[CheckGUI $node $end ext]} {
