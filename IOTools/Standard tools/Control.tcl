@@ -129,9 +129,10 @@ namespace eval runcontrol33857 {
             pack $rcf.editBoxes.$name.unit -side left
             pack $rcf.editBoxes.$name  -anchor nw -pady 2 -fill x
         }
+	set runState($node,evtDisp) 0
 	set squeezed $rcf.editBoxes.disp.capt
 	pack [ttk::checkbutton $rcf.editBoxes.disp.evts -text [tr. {event;}] \
-		  -variable runState($node,dispEvts)] -side left \
+		  -variable runState($node,evtDisp)] -side left \
 	    -after $squeezed
 	$squeezed config -width 10
         pack $rcf.editBoxes -side top -pady 2 -expand on -fill both
@@ -558,7 +559,7 @@ namespace eval runcontrol33857 {
 	    set modelAct \
 		[ExecuteTo $node $current $pause $sendvars($node,unitLength) \
 		     $display [ListFoci $node] $runState($node,intMethod) \
-		     $maxErr $runState($node,evtpause)]
+		     $maxErr $runState($node,evtpause) $runState($node,evtDisp)]
 	    if {[string equal start $sendvars($node,currentMode)]} {
 		set sendvars($node,currentMode) $modelAct
 	    }

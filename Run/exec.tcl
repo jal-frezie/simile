@@ -87,46 +87,58 @@ proc update_executable {node lang} {
 }
 
 proc ExecuteTo {node current pause unitLength display foci \
-		    intMethod maxErr evtPause} {
+		    intMethod maxErr evtMsg evtDisp} {
     global dispDone actDone
 
     set dispDone 0
     set actDone 0 ;# nothing so far
-    set forward [expr {$pause>$current}]
+    set forward [expr {($pause>$current)*2-1}] ;# 1 for forward, -1 for back
     set scaled_current [expr {$current*$unitLength}]
     if {$display} {
 	set lastDisp [expr int($current/$display)]
     }
     set currentMode start
+    set evtPause [expr {$evtMsg || $evtDisp}]
+    set timedDisp 1
     set payload {}
     while {[lsearch {exit stop} $currentMode]==-1} {
 	if {$display} {
-	    set nextDisp [expr 1.0*$display*[incr lastDisp \
-						 [expr $forward*2-1]]]
+	    if {$timedDisp} {
+		set nextDisp [expr 1.0*$display*[incr lastDisp $forward]]
 # ensure display updated at end of run -- make optional?
-	    if {($nextDisp>$pause) == $forward} {
-		set nextDisp $pause
+		if {($nextDisp-$pause)*$forward>0} {
+		    set nextDisp $pause
+		}
+		set scaled_next [expr {$nextDisp*$unitLength}]
 	    }
-	    set current $nextDisp ;# INCREMENT IS HERE
 	} else {
 	    set nextDisp [expr 2*$pause-$current]
-	    set current $pause ;# INCREMENT IS HERE
+	    set scaled_next [expr {$pause*$unitLength}]
 	}
-	set scaled_next [expr {$current*$unitLength}]
-	set howAndWhen [ExecuteModel $node $intMethod \
-			    $scaled_current $scaled_next $maxErr $evtPause]
+	set howAndWhen [ExecuteModel $node $intMethod $scaled_current \
+			    $scaled_next $maxErr $evtPause]
+	set scaled_current [lindex $howAndWhen 1]
+	set current [expr {$scaled_current/$unitLength}]
+	set displayNow 0
 	switch -- [lindex $howAndWhen 0] {
 	    -1 {
 		set currentMode exit
 	    } 0 {
-		set current [expr {[lindex $howAndWhen 1]/$unitLength}]
 		set currentMode stop
+	    } 2 { ;# event
+		if {$evtDisp} {
+		    set displayNow 1
+		}
+		if {$evtMsg} {
+		    set currentMode stop
+		}
 	    }
 	} ;# default: keep going
 #	if {![info exists runState($node,cnvs)]} {
 #	    return $currentMode ;# run control window killed?
 #	}
-	if {abs($current-$nextDisp)<1e-12 && \
+	set timedDisp [expr {($current-$nextDisp)*$forward > -1e-12}]
+	if {($timedDisp || $displayNow) && \
 		![string equal exit $currentMode]} {
 	    set oldPayload $payload
 	    set payload {}
@@ -148,14 +160,13 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    # now it is done, previous one must have finished, if any
 	    FreeAll $oldPayload
 	}
-	set scaled_current $scaled_next
-	if {$current==$pause} {
+	if {($current-$pause)*$forward>=0} {
 	    set currentMode stop
-	    InteractGUI $node $scaled_next 1
-# above is required to leave right time in progress display if not finishing
-# on display interval boundary
 	}
     }
+    InteractGUI $node $scaled_current 1
+# above is required to leave right time in progress display if not finishing
+# on display interval boundary
     waitForDisps
     FreeAll $payload
     return $currentMode
@@ -231,6 +242,8 @@ proc ExecuteModel {myNode howInt start finish errLim evtPause} {
 	}
     } elseif {[lindex $errList 0]>-1} { ;# requires no message
 	return $errList
+    } elseif {[lindex $errList 5] eq "event"} {
+	return [list 2 [lindex $errList 3]]
     }
     set severity [ExplainError $myNode [lrange $errList 1 end] $::errorInfo]
     InteractGUI $myNode [lindex $errList 3] 2
