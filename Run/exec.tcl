@@ -96,10 +96,10 @@ proc ExecuteTo {node current pause unitLength display foci \
     set scaled_current [expr {$current*$unitLength}]
     if {$display} {
 	set lastDisp [expr int($current/$display)]
+	set timedDisp 1
     }
     set currentMode start
     set evtPause [expr {$evtMsg || $evtDisp}]
-    set timedDisp 1
     set payload {}
     while {[lsearch {exit stop} $currentMode]==-1} {
 	if {$display} {
@@ -118,7 +118,6 @@ proc ExecuteTo {node current pause unitLength display foci \
 	set howAndWhen [ExecuteModel $node $intMethod $scaled_current \
 			    $scaled_next $maxErr $evtPause]
 	set scaled_current [lindex $howAndWhen 1]
-	set current [expr {$scaled_current/$unitLength}]
 	set displayNow 0
 	switch -- [lindex $howAndWhen 0] {
 	    -1 {
@@ -130,16 +129,19 @@ proc ExecuteTo {node current pause unitLength display foci \
 		    set displayNow 1
 		}
 		if {$evtMsg} {
+		    ExplainError $node [lrange $scaled_current 1 end] unused
 		    set currentMode stop
 		}
+		set scaled_current [lindex $scaled_current 3]
 	    }
 	} ;# default: keep going
+	set current [expr {$scaled_current/$unitLength}]
 #	if {![info exists runState($node,cnvs)]} {
 #	    return $currentMode ;# run control window killed?
 #	}
 	set timedDisp [expr {($current-$nextDisp)*$forward > -1e-12}]
 	if {($timedDisp || $displayNow) && \
-		![string equal exit $currentMode]} {
+		![string equal exit $currentMode]} { ;# do a display update
 	    set oldPayload $payload
 	    set payload {}
 	    foreach point $foci {
@@ -243,7 +245,7 @@ proc ExecuteModel {myNode howInt start finish errLim evtPause} {
     } elseif {[lindex $errList 0]>-1} { ;# requires no message
 	return $errList
     } elseif {[lindex $errList 5] eq "event"} {
-	return [list 2 [lindex $errList 3]]
+	return [list 2 $errList]
     }
     set severity [ExplainError $myNode [lrange $errList 1 end] $::errorInfo]
     InteractGUI $myNode [lindex $errList 3] 2
