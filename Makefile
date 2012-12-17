@@ -23,6 +23,9 @@ REL_EXP = 0
 
 # What kind of system are we on
 PLATFORM = $(shell uname -s)
+ifndef MY_CPU
+	MY_CPU=$(shell uname -m)
+endif
 
 # Prolog implementation to use -- GNU for Windows releases, GNU otherwise
 # (currently GNU for everything)
@@ -36,6 +39,7 @@ ifeq ($(PLATFORM),Darwin)
 else
 	DATESPEC = -d `date -d "$(MONTHS_TO_RUN) months" +%Y-%m-01`
 endif
+
 EXP_TICKS = $(shell date $(DATESPEC) +%s)
 endif
 
