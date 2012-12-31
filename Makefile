@@ -154,7 +154,6 @@ endif
 # to be used after CDing to Run -- assume all refs are from a subdirectory
 	TCLINC = $(TCLREF)/include/tcl$(MAJ).$(MIN)
 	USETCL = -DUSE_TCL_STUBS -I$(TCLINC) -L$(TCLREF)/lib $(TCLREF)/lib/tclstub$(VERS).lib
-	LOCALIZE_TCL_REFS =  ls # placebo command
 	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = _win
