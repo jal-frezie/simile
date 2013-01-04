@@ -712,6 +712,10 @@ proc LoadIconImages {} {
 		[image create photo -file "../Images/Toolbar/${fn}.gif"]
 	}
     }
+    foreach icon {info question warning error} {
+	set iconImages($icon) \
+	    [image create photo -file "../Images/Icons/dialog-$icon.png"]
+    }
 }
 
 proc BlankCrs {withCrs} {

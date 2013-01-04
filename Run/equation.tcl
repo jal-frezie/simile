@@ -323,17 +323,18 @@ proc create_equation {parent purpose comp indices enum_types} {
             $influencesf.captions.d -side left -fill x -expand true
     pack $influencesf.captions -fill x
     
-    frame $influencesf.lists
-    scrollbar $influencesf.lists.yscroll -orient v \
-            -command [list $influencesf.lists.f yview]
-    pack $influencesf.lists.yscroll -side right -fill y
-    ScrollableFrame $influencesf.lists.f -constrainedwidth true \
-            -yscrollcommand [list AdjustCanvas $influencesf.lists f y]
+    DIYMakeFrames $influencesf
+#    frame $influencesf.lists
+#    scrollbar $influencesf.lists.yscroll -orient v \
+#            -command [list $influencesf.lists.f yview]
+#    pack $influencesf.lists.yscroll -side right -fill y
+#    ScrollableFrame $influencesf.lists.f -constrainedwidth true \
+#            -yscrollcommand [list AdjustCanvas $influencesf.lists f y]
     
-    pack $influencesf.lists.f -fill x -expand true
-    pack $influencesf.lists -side top -fill x -expand true
+#    pack $influencesf.lists.f -fill x -expand true
+#    pack $influencesf.lists -side top -fill x -expand true
     
-    set canId [$influencesf.lists.f getframe]
+    set canId $influencesf.c.canvas.frame
     frame $canId.plist -bd 2 -relief sunken
     frame $canId.ilist -bd 2 -relief sunken
     frame $canId.dlist -bd 2 -relief sunken
@@ -703,7 +704,7 @@ proc fill_inputs { triples } {
     set paramList [GetFrame $equation(main).middle.params]
     set lbp $paramList.list.ilist
     set widget [GetFrame $equation(params).bottom.influences]
-    set scroller [$widget.lists.f getframe]
+    set scroller $widget.c.canvas.frame
     # Initialize variables and display  list
     foreach ipFrame {plist ilist dlist} {
         foreach ipEntry [winfo children $scroller.$ipFrame] {
@@ -763,7 +764,7 @@ proc fill_inputs { triples } {
 	 }
     } else {
         set showLines [max 3 [min 8 $line]]
-        $widget.lists.f configure -height \
+        $widget.c.canvas.frame configure -height \
                 [expr $showLines*[winfo reqheight $p]+8]
 #        update
 # Above was necessary so the window appeared fully on-screen, or something, but

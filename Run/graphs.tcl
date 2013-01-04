@@ -585,8 +585,9 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     pack $fc.instructions -side top -padx 2 -pady 2
     TitleFrame $fc.fdata -text [tr. "Data file "]
     set fdata [GetFrame $fc.fdata]
-    set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
-    $dfile xview end
+    set dfile [ttk::entry $fdata.dfile -textvariable table_entry(fileName)]
+# xview end not working (8.5.11) so xview moveto 1 instead
+    $dfile xview moveto 1
     bind $dfile <Return> "LoadDataFile columns 0 $mdl"
     KoreanClick $dfile 1 {}
     bind $dfile <Double-1> "LoadDataFile columns 0 $mdl"
@@ -607,8 +608,10 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     # end new frame December 2008 for the choice of data table in a database JMM
     TitleFrame $fc.fheads -text [tr. "Table column headings"]
     set fheads [GetFrame $fc.fheads]
-    set lheads [ListBox $fheads.lheads -dragenabled true -dropenabled true \
-            -selectmode single -dropcmd DeleteIndex \
+#    set lheads [ListBox $fheads.lheads -dragenabled true -dropenabled true \
+#            -selectmode single -dropcmd DeleteIndex \
+#            -yscrollcommand [list AdjustCanvas $fheads lheads y]]
+    set lheads [listbox $fheads.lheads -selectmode single \
             -yscrollcommand [list AdjustCanvas $fheads lheads y]]
     scrollbar $fheads.yscroll -orient v -command [list $fheads.lheads yview]
     pack $fheads.yscroll -side right -fill y
@@ -616,9 +619,10 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     frame $fc.select
     TitleFrame $fc.select.idxs -text [tr. "Use as indices"]
     set fidx [GetFrame $fc.select.idxs]
-    set lidx [ListBox $fidx.lidx -dragenabled true -dropenabled true \
-            -selectmode single \
-            -dropcmd AddIndex]
+#    set lidx [ListBox $fidx.lidx -dragenabled true -dropenabled true \
+#            -selectmode single \
+#            -dropcmd AddIndex]
+    set lidx [listbox $fidx.lidx -selectmode single]
     pack $lheads  -expand true -fill both
     pack $fc.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
     pack $lidx -expand true -fill both -anchor w
@@ -627,10 +631,10 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     
     TitleFrame $fc.select.data -text [tr. "Use as data"]
     set didx [GetFrame $fc.select.data]
-    set dhead [Entry $didx.dhead \
-            -textvariable table_entry(dataField) \
-            -dropenabled true -droptypes LISTBOX_ITEM \
-            -dropcmd ChooseDataHeader]
+    set dhead [ttk::entry $didx.dhead \
+		   -textvariable table_entry(dataField)]
+#            -dropenabled true -droptypes LISTBOX_ITEM \
+#            -dropcmd ChooseDataHeader
     KoreanClick $lheads 1 {}
     bind $lheads <Double-1> [list PutInDataField $lheads $dhead]
     pack $dhead -side top -expand true -fill x
@@ -643,8 +647,8 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     pack $fg.instructions -side top -padx 2 -pady 2
     TitleFrame $fg.fdata -text [tr. "Data file "]
     set fdata [GetFrame $fg.fdata]
-    set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
-    $dfile xview end
+    set dfile [ttk::entry $fdata.dfile -textvariable table_entry(fileName)]
+    $dfile xview moveto 1
     bind $dfile <Return> "LoadDataFile grid 0 $mdl"
     KoreanClick $dfile 1 {}
     bind $dfile <Double-1> "LoadDataFile grid 0 $mdl"
@@ -676,18 +680,18 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     pack [label $flim.xcapt.idx -text [tr. "Column index from:"]] \
             -expand true -fill x
     
-    pack [Entry $flim.yval.lo -textvariable table_entry(row1)] \
+    pack [ttk::entry $flim.yval.lo -textvariable table_entry(row1)] \
             -expand true -fill x
-    pack [Entry $flim.yval.hi -textvariable table_entry(rown)] \
+    pack [ttk::entry $flim.yval.hi -textvariable table_entry(rown)] \
             -expand true -fill x
     pack [ttk::combobox $flim.yval.idx -width 16 -state readonly \
 	      -textvariable table_entry(irow) -values $table_entry(irow_txts)] \
 	-expand true -fill x
     set table_entry(irow) [lindex $table_entry(irow_txts) 0]
 # in case not used before
-    pack [Entry $flim.xval.lo -textvariable table_entry(col1)] \
+    pack [ttk::entry $flim.xval.lo -textvariable table_entry(col1)] \
             -expand true -fill x
-    pack [Entry $flim.xval.hi -textvariable table_entry(coln)] \
+    pack [ttk::entry $flim.xval.hi -textvariable table_entry(coln)] \
             -expand true -fill x
     pack [ttk::combobox $flim.xval.idx -width 16 -state readonly \
 	      -textvariable table_entry(icol) -values $table_entry(icol_txts)] \
@@ -701,8 +705,8 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     pack $fi.instructions -side top -padx 2 -pady 2
     TitleFrame $fi.fdata -text [tr. "Image file "]
     set fdata [GetFrame $fi.fdata]
-    set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
-    $dfile xview end
+    set dfile [ttk::entry $fdata.dfile -textvariable table_entry(fileName)]
+    $dfile xview moveto 1
     bind $dfile <Return> "LoadDataFile image 0 $mdl"
     KoreanClick $dfile 1 {}
     bind $dfile <Double-1> "LoadDataFile image 0 $mdl"
@@ -731,13 +735,13 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     pack [label $flim.xcapt.hi -text [tr. "Finish at X position:"]] \
             -expand true -fill x
     
-    pack [Entry $flim.yval.lo -textvariable table_entry(row1)] \
+    pack [ttk::entry $flim.yval.lo -textvariable table_entry(row1)] \
             -expand true -fill x
-    pack [Entry $flim.yval.hi -textvariable table_entry(rown)] \
+    pack [ttk::entry $flim.yval.hi -textvariable table_entry(rown)] \
             -expand true -fill x
-    pack [Entry $flim.xval.lo -textvariable table_entry(col1)] \
+    pack [ttk::entry $flim.xval.lo -textvariable table_entry(col1)] \
             -expand true -fill x
-    pack [Entry $flim.xval.hi -textvariable table_entry(coln)] \
+    pack [ttk::entry $flim.xval.hi -textvariable table_entry(coln)] \
             -expand true -fill x
     pack $fi.limits -fill both -expand true
     
@@ -746,18 +750,18 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     set fbounds [frame $fterp.bounds]
     pack [label $fbounds.bklabel -text [tr. "Value for black:"]] \
             -side left -expand true -fill x
-    pack [Entry $fbounds.bkentry -textvariable table_entry(blkval)] \
+    pack [ttk::entry $fbounds.bkentry -textvariable table_entry(blkval)] \
             -side left -expand true -fill x
     pack [label $fbounds.wtlabel -text [tr. "Value for white:"]] \
             -side left -expand true -fill x
-    pack [Entry $fbounds.wtentry -textvariable table_entry(whtval)] \
+    pack [ttk::entry $fbounds.wtentry -textvariable table_entry(whtval)] \
             -side left -expand true -fill x
     pack $fbounds
     
     set fcols [frame $fterp.cols]
     pack [label $fcols.trlabel -text [tr. "Value for clear:"]] \
             -side left -expand true -fill x
-    pack [Entry $fcols.trentry -textvariable table_entry(trnval)] \
+    pack [ttk::entry $fcols.trentry -textvariable table_entry(trnval)] \
             -side left -expand true -fill x
     pack [label $fcols.clabel -text [tr. "For other colours:"]] \
             -side left -expand true -fill x
@@ -772,8 +776,8 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     pack $ft.instructions -side top -padx 2 -pady 2
     TitleFrame $ft.fdata -text [tr. "Data file "]
     set fdata [GetFrame $ft.fdata]
-    set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
-    $dfile xview end
+    set dfile [ttk::entry $fdata.dfile -textvariable table_entry(fileName)]
+    $dfile xview moveto 1
     bind $dfile <Return> "LoadDataFile gdal 0 $mdl"
     KoreanClick $dfile 1 {}
     bind $dfile <Double-1> "LoadDataFile gdal 0 $mdl"
@@ -802,13 +806,13 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     pack [label $flim.xcapt.hi -text [tr. "Finish at column:"]] \
             -expand true -fill x
     
-    pack [Entry $flim.yval.lo -textvariable table_entry(row1)] \
+    pack [ttk::entry $flim.yval.lo -textvariable table_entry(row1)] \
             -expand true -fill x
-    pack [Entry $flim.yval.hi -textvariable table_entry(rown)] \
+    pack [ttk::entry $flim.yval.hi -textvariable table_entry(rown)] \
             -expand true -fill x
-    pack [Entry $flim.xval.lo -textvariable table_entry(col1)] \
+    pack [ttk::entry $flim.xval.lo -textvariable table_entry(col1)] \
             -expand true -fill x
-    pack [Entry $flim.xval.hi -textvariable table_entry(coln)] \
+    pack [ttk::entry $flim.xval.hi -textvariable table_entry(coln)] \
             -expand true -fill x
     pack $ft.limits -fill both -expand true
     
@@ -988,7 +992,7 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
                 set i 1
                 foreach idx $table_entry(indices) {
                     if {![string match ,* $idx]} { ;# this is wrap or db info
-                        $lidx insert end id$i -text $idx
+                        $lidx insert end $idx
                     }
                     incr i
                 }
@@ -1010,7 +1014,7 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
 	    set i 1
 	    foreach idx $table_entry(indices) {
 		if {![string match ,* $idx]} { ;# this is wrap or db info
-		    $lidx insert end id$i -text $idx
+		    $lidx insert end $idx
 		}
 		incr i
 	    }
@@ -1049,7 +1053,7 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
 
 proc PutInDataField {source dest} {
     $dest delete 0 end
-    $dest insert 0 [$source itemcget [$source selection get] -text]
+    $dest insert 0 [$source get [$source curselection]]
 }
 
 proc TagToName {tag} {
@@ -1136,10 +1140,7 @@ proc AcquireTableData {redo startLine} {
                 return
             }
             set lidx [GetFrame $pane.select.idxs].lidx
-            set idcs {}
-            foreach itm [$lidx items] {
-                lappend idcs [$lidx itemcget $itm -text]
-            }
+            set idcs [$lidx get 0 end]
             set table_entry(indices) $idcs
             # jmm need to add table_entry(dbtable) to the tableSpec for ODBC sources with tables
             # BUT indices may be empty and so, effectively no list item
@@ -1262,7 +1263,7 @@ proc LoadDataFile {mode query mdl} {
     set fc .table.notebook.columns
     set fheads [GetFrame $fc.fheads]
     set ftable [GetFrame $fc.ftable]
-    $fheads.lheads delete [$fheads.lheads items]
+    $fheads.lheads delete 0 end
     $ftable.tablecb configure -values {}
     set tablecb $ftable.tablecb
     $tablecb set {}
@@ -1302,7 +1303,7 @@ proc LoadDataFile {mode query mdl} {
             return 0
         }
     }
-    [GetFrame .table.notebook.$mode.fdata].dfile xview end
+    [GetFrame .table.notebook.$mode.fdata].dfile xview moveto 1
     
     if {[string equal gdal $mode]} {
         close $stream
@@ -1321,7 +1322,7 @@ proc LoadDataFile {mode query mdl} {
                 if {$ext == {.csv}} {
                         set i 1
                         foreach hd [split $firstLine ,] {
-                            $fheads.lheads insert end hd$i -text [string trim $hd]
+                            $fheads.lheads insert end [string trim $hd]
                             incr i
                         }
                     } else {
@@ -1379,12 +1380,12 @@ proc LoadDataFile {mode query mdl} {
         
     }
     set fidx [GetFrame $fc.select.idxs]; ######################
-    $fidx.lidx delete [$fidx.lidx items]
+    $fidx.lidx delete 0 end
     return 1
 }
 
 proc DoOnDataBaseColumnsLoaded { connectString tablecb fheads } {
-    $fheads.lheads delete [$fheads.lheads items]
+    $fheads.lheads delete 0 end
     
     database db $connectString
     set fields [db columns [$tablecb get]]; #table name
@@ -1394,7 +1395,7 @@ proc DoOnDataBaseColumnsLoaded { connectString tablecb fheads } {
     #ShowMess debug info "fields $fields" ok
     foreach field $fields {
         # just the column name
-        $fheads.lheads insert end hd$i -text [lindex $field 3]
+        $fheads.lheads insert end [lindex $field 3]
         incr i
     }
 }
