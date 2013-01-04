@@ -65,9 +65,11 @@ set eqnSize [expr {[font configure EquationFont -size]*5/4}]
 font configure EquationFont -size $eqnSize
 
 # Now add the focus level to the toolbutton style so we can see when one is 
-# selected by keyboard traversal
-ttk::style layout Toolbutton [ttk::style layout TButton]
-
+# selected by keyboard traversal (on Mac this is unnecessary and makes the 
+# buttons the wrong shape)
+if {[tk windowingsystem] ne "aqua"} {
+    ttk::style layout Toolbutton [ttk::style layout TButton]
+}
 source ../Run/window.tcl
 source ../Run/shapes.tcl
 source ../Run/forms.tcl

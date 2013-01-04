@@ -1104,7 +1104,7 @@ proc DoRegDialog {dtId} {
         foreach egFile [glob [pwd]/../Examples/*] {
             # next condition only matters in development environment
             if {![file isdirectory $egFile]} {
-                file copy -force $egFile $custom(prefDir)/Examples
+                catch {file copy -force $egFile $custom(prefDir)/Examples}
             }
         }
         if {![llength $custom(hotlist)]} {
