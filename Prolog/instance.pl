@@ -490,7 +490,10 @@ apply_minmax(Node, BaseExpr, UpdateExpr) :-
 choose_default_value(Node, Base, PType, Default) :-
 	PType = 2, !,
 	    Default = use_param_state;
-	Node has_class_refinement value of Default, !;
+	Node has_class_refinement value of Eqn, !,
+	% need to do this to expand macros etc
+	replace_subexps(Eqn, instance, process_expr, sub([], [], []), top_down,
+			_Switched, Default);
 	Base = a(_), !,
 	    Default = 1;
 	Base = boolean, !,
