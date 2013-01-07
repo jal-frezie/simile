@@ -378,7 +378,7 @@ Tcl_Obj* make_exec_error(Tcl_Interp* interp, int excpNo, const char* phase,
   errList=Tcl_NewListObj(0, NULL);
   get_string_for_error(complaint, excpNo);
 
-  if (excpNo = -98) // event exits inner loop
+  if (excpNo == -98) // event exits inner loop
     Tcl_ListObjAppendElement(interp, errList, Tcl_NewIntObj(-1));
   else 
     Tcl_ListObjAppendElement(interp, errList, 

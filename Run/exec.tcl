@@ -214,7 +214,12 @@ proc ResetModel {myNode howInt initTime redo} {
 	    TclResetModel $myNode $initTime $readyForRK $redo
 	}
     } errList]} {
-	ExplainError $myNode $errList $::errorInfo
+	if {[string match tcl_model_err* $errList]} {
+	    set severity [ExplainError $myNode [lrange $errList 1 end] \
+			  $::errorInfo]
+	} else {
+	    error "Unexpected problem in Tcl model initialization" $::errorInfo
+	}
 	set done 0
     } else {
 	set done 1
@@ -237,7 +242,7 @@ proc ExecuteModel {myNode howInt start finish errLim evtPause} {
 	}
     } errList]} {
 	if {[string match tcl_model_err* $errList]} {
-	    set severity [ExplainError $myNode [lrange $errList 1 end] 
+	    set severity [ExplainError $myNode [lrange $errList 1 end] \
 			  $::errorInfo]
 	} else {
 	    error "Unexpected problem in Tcl model execution" $::errorInfo

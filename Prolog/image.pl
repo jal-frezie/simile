@@ -1203,7 +1203,9 @@ find_on_flow([[X1, Y1], [X2, Y2] | Left], Posn, Passed,
 	NewPassed is Passed+SegSize,
 	find_on_flow([[X2, Y2] | Left], Posn, NewPassed,
 		     PosnAlong, SegWithBowtie, Fract),
-	FractThisSeg is (PosnAlong-Passed)/(NewPassed-Passed),
+	(NewPassed = Passed, !,
+	 FractThisSeg is PosnAlong-Passed;
+	 FractThisSeg is (PosnAlong-Passed)/(NewPassed-Passed)),
 	(FractThisSeg >= 0, FractThisSeg < 1, !,
 	    SegWithBowtie = [X1, Y1, X2, Y2],
 	    Fract = FractThisSeg;
