@@ -1310,13 +1310,11 @@ remove_model(Win, Parent) :-
 	(is_toplevel(Parent), !,
 	    close_exec(Parent),
 	    superfast_delete(Parent),
-	    add_parameter(Parent, 0, step, ''),
-	    add_parameter(Parent, 0, multiplication_spec, ''),
-	    add_parameter(Parent, 0, comment, ''),
-	    add_parameter(Parent, 0, fill_colour, ''),
-	    add_parameter(Parent, 0, fill_image, ''),
-	    add_parameter(Parent, 0, enum_types, ''),
-	    redraw_window(Win);
+	    (member(ToClear, [step, multiplication_spec, description, comment,
+			      fill_colour, fill_image, enum_types, eqn_units]),
+	        add_parameter(Parent, 0, ToClear, ''),
+	        fail;
+	    redraw_window(Win));
 	start_progress_dialogue(Win),
 	reassure_user(pl_trimin, []),
 	cutoff(Parent);

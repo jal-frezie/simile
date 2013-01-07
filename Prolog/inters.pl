@@ -1022,8 +1022,8 @@ Now one that uses a special conditional level */
 		% special case -- count or name of ET can refer to last elt
 	      Int = n(AnET), NeedType = a(AnET)),
 		TryIndxRef = IndxRef;
-	     promote_arg(Int, real, _),
-		promote_arg(NeedType, real, _),
+	     promote_arg(Int, 1, _),
+		promote_arg(NeedType, 1, _),
 		TryIndxRef = simile_int(IndxRef)), !,% for legacy cases
 	    ((NeedType = boolean,
 				% first index is 1 in model, 0 in code
@@ -1430,7 +1430,7 @@ promote_unit(Lo, Hi) :-
 	promote_unit(Med, Hi).
 
 uses_as(any, Type) :-
-	member(Type, [boolean, a(_ET0), n(_ET1)]).
+	member(Type, [boolean, a(_ET0), n(_ET1), real]).
 uses_as(boolean, cond_spec).
 /* above was commented out, but seems to belong
 -- probably so as not to allow cond_specs to use outside conditions
@@ -1438,8 +1438,8 @@ if taking out again fix spread_dims as well as eqn checking */
 uses_as(n(_ET), const_int).
 uses_as(const_int, int).
 uses_as(const_int, const_ratio).
-uses_as(const_ratio, real).
-uses_as(int, real).
+uses_as(const_ratio, 1).
+uses_as(int, 1).
 
 promote_arg(Lo, Hi, Phys) :-
 	var(Lo), !, Phys = Lo;
