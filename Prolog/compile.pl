@@ -1452,9 +1452,6 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 			       Count | VarInds],
 	    Collects = [make(CollectMakes, Wait, Path, Step, [CollectFn]) |
 		       Inits];
-	  Type = state_fn,
-	    Collects = [make(init(Dest), [on_reset], Path, 0,
-			     [assign(Val, OnInit)])];
 	  Collects = []),
 	(((Is_P < 1; Is_P = 4),
 	    (Type = init_function, !,
@@ -1519,7 +1516,8 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  Type = state_fn, !,
 	    SourceEqn = event(ActEqn, TriggerEqn),
 	    choosify(ActEqn, ChooseForm, OnInit),
-	    GroundEqn = (trigger_magnitude('')=TriggerEqn, ChooseForm),
+	    GroundEqn = (trigger_magnitude('')=TriggerEqn,
+			 choose('"true"', OnInit, ChooseForm)),
 	    Extras = Setups,
 	    UseList = [on_step | RefList];
 	  (SourceEqn = with_phase(SmStep, EvtElts, GroundEqn),
@@ -1531,16 +1529,15 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Extras = Setups), !,
 	    
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
-			 SmStep, UseStep, Used, [Expr], Setups, Path, RefList,
-			 AllInters),
-	Expr = assign(Val, Fn), % dig out the result
-	connect_params([make(Made, UseList, Path, UseStep, [Move]) | Extras],
-		       AllInters, Actions, Inters);
+			 SmStep, UseStep, Used, [assign(Val, Fn)],
+			 Setups, Path, RefList, AllInters),
+	connect_params([make(Made, UseList, Path, UseStep, [assign(Val, Move)])
+		       | Extras], AllInters, Actions, Inters);
 	Actions = [],
 	Inters = []),
 	Set = make(Dest, [init(Dest), update(Dest)], DestPath, SmStep, []),
 	(Type = limit, !,
-	    Move = Expr,
+	    Move = Fn,
 %	    Expr = assign(_D, choose(Test1, _Y, _N)),
 %	    Test1 =.. [_Ineq, Val, _Bound],
 				% dig out the inter
@@ -1553,11 +1550,11 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  (member(Type, [creation, immigration, reproduction]);
 	        member(Is_P, [1, 3]);
 	        Is_P = 2, Type = init_function), !,
-	    Move = Expr,
+	    Move = Fn,
 	    Linkers = [Set];
 	  Is_P = 4, !,
 	    Fn = choose(TrgExp, after(Delay, Src), _),
-	    Move = assign(Val, Src),
+	    Move = Src,
 	    DeliverFn =.. [deliver, arr(DestPtr, Dest, LocalInds), Dest,
 			       Count | VarInds],
 	    Linkers = [make(Tgt, [Dest], Path, Step, [DeliverFn]),
@@ -1565,14 +1562,19 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 			    [schedule(TrgExp, Dest, Delay)])];
 	  Type = al_function,
 	    Fn = choose(LoopExitExpr, LoopStart, LoopStart),
-	    Move = assign(Val, LoopExitExpr);
+	    Move = LoopExitExpr;
 	  Type = compartment,
 	    Fn = ValRef+FChange+QChange,
-	    Move = assign(Val, ValRef+FChange),
+	    Move = ValRef+FChange,
 	    (QChange = 0, !, Linkers = [Set];
 	     Linkers = [make(tipped(Dest), [on_step], Path, SmStep,
 			    [assign(Val, ValRef+QChange)]), Set]);
-	  Move = Expr,
+	  Type = state_fn,
+	    Fn = choose(1, OnInitEqn, ChangeEqn),
+	    Move = ChangeEqn,
+	    Linkers = [make(init(Dest), [on_reset], Path, 0,
+			    [assign(Val, OnInitEqn)])];
+	  Move = Fn,
 	    Linkers = []),
 	append([Collects, Actions, Linkers], Assignments).
 
