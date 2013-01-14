@@ -112,22 +112,6 @@ foreach oldCProc {setparamelement settimepointelement settimepointarray \
     }
 }
 
-proc GetCompProperty {topNode prop node} {
-    global cbModelId
-
-    switch -regexp $prop [list \
-	IdFromCapt {
-	    # node is actually caption in this case
-	    if {[catch {getnodeid $cbModelId $node} res]} {
-		set res nomatch
-	    } 
-	} default {
-	    set res [GetCCompProperty $cbModelId $prop $node]
-	}
-			 ]
-    return $res
-}
-
 # here is the scripting command to do it
 proc ConsultParameterMetafile {instanceHandle fileLocn {targetSubmodel {}}} {
     set mHandle $::modelTypes($instanceHandle)
@@ -144,10 +128,19 @@ proc ConsultParameterMetafile {instanceHandle fileLocn {targetSubmodel {}}} {
 
 proc GetModelProperty {model_id path prop} {
     set node [getnodeid $model_id $path]
-    GetCCompProperty $model_id $prop $node
+    return [GetCCompPropById $model_id $prop $node]
 }
 
-proc GetCCompProperty {model_id prop node} {
+proc GetCompProperty {topNode prop node} {
+# now only needed for v5.x
+    return [GetCCompPropById $::cbModelId $prop $node]
+}
+
+proc GetCCompProperty {topNode prop node} {
+    return [GetCCompPropById $::cbModelId $prop $node]
+}
+
+proc GetCCompPropById {model_id prop node} {
     set numberWangs Caption|MinVal|MaxVal|Trans|Spec|Desc|Comment
     switch -regexp $prop [list \
 	Class|Type|Eval {
@@ -184,6 +177,12 @@ proc GetCCompProperty {model_id prop node} {
 	    set dataWang [lindex {5 6 8 12 13 14 15} \
 			      [lsearch [split $numberWangs |] $prop]]
 	    return [getvalue $model_id $node $dataWang]
+	} IdFromCapt {
+	    # node is actually caption in this case
+	    if {[catch {getnodeid $model_id $node} res]} {
+		set res nomatch
+	    } 
+	    return $res
 	}
 			 ] ;# must be list to substitute last case
 }

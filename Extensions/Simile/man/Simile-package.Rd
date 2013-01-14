@@ -110,9 +110,9 @@ for (count in 1:419) {
 }
 xs <- mapply(c,xs)
 ys <- mapply(c,ys)
-print("OK, but that's not how it looks on Simile is it? Try this...")
 plot(xs, ys, type="l")
 
+print("OK, but that's not how it looks on Simile is it? Try this...")
 xs <- aperm(xs, c(2,1))
 ys <- aperm(ys, c(2,1))
 plot(xs, ys, type="l")

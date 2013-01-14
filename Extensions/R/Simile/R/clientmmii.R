@@ -22,7 +22,7 @@ get.model.property <- function(model.handle, caption.path, requested.property) {
     with.trailing.zero[-length(with.trailing.zero)] # removes it
   } else if (any(c("MinVal","MaxVal")==requested.property)) {
 # may be more integer cases
-    as.real(tcl.result)
+    as.double(tcl.result)
   } else {
     as.character(tcl.result)
   }
@@ -74,7 +74,7 @@ tcl.paired.to.list <- function(paired, as.enum.types) {
     if (as.enum.types) {
       as.character(paired)
     } else {
-      as.real(paired)
+      as.double(paired)
     }
   } else {
     result <- list() # sets none
@@ -106,7 +106,7 @@ tcl.paired.to.array <- function(paired, dims, as.enum.types) {
   } else if (as.enum.types) {
     as.character(paired)
   } else {
-    as.real(paired)
+    as.double(paired)
   }
 }
 
