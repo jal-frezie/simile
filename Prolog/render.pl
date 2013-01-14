@@ -85,7 +85,7 @@ make_cons_dest(instance(Type, Sym, _, Name, _), ConLines, DeLines) :-
 	    ConLines = [ConLine],
 	    render(c, procedure_call, delete_list(Name), 8, DeLines);
 	(by_record(Sym); from_value(Sym)), !,
-	    render(c, assign_space, Name= [_, Name,_,_, [0]], 8, ConLines),
+	    render(c, assign_space, Name= [_, Name,_,_, [1]], 8, ConLines),
 	    render(c, release_space, [Name,_], 8, DeLines); 
 /*	Type = external, !,
 	    Nm = elt(_, Name, _),
