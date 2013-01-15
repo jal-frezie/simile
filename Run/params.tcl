@@ -125,7 +125,7 @@ proc DIYMakeFrames {windowId} {
     pack [scrollbar $windowId.c.yscroll -orient vertical \
 	      -command [list $canId yview]] -side right -fill y
     pack $canId -fill both -expand 1
-    pack $windowId.c -side top -fill x -expand 1
+    pack $windowId.c -side top -fill both -expand 1
     set sf [$canId create window 0 0 -anchor nw \
 		-window [frame $windowId.c.canvas.frame]]
     bind $canId <Configure> [list $canId itemconfigure $sf -width %w]
