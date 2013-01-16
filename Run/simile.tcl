@@ -70,6 +70,9 @@ if {[info exists tcl_platform(pointerSize)]} {
 set env(SYSDIR) [file join $SIMILE_PATH System]
 if {$tclBitness==64} {
     append env(SYSDIR) 64
+    if {$tcl_platform(os) eq "Darwin"} {
+	set use_system_tcltk 1
+    }
 }
 set execDir [file join $env(SYSDIR) bin]
 set libDir [file join $env(SYSDIR) lib]
@@ -524,7 +527,7 @@ switch $tcl_platform(platform) {
 }
 
 if {[string equal swi_interp $env(prologId)]} {
-    set PROLOG_CMD {swipl -f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}
+    set PROLOG_CMD {swipl -L1g -f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}
 } else {
     set PROLOG_CMD \"$tgt$archExtn$execExtn\"
 }
