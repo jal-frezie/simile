@@ -570,6 +570,7 @@ proc AbleArrows {db t} {
 #####################################################################
 set commonTimes [list second minute hour day week month year]
 proc equationDoTable {parent mdl tgt dims dlgStyle} {
+    package require tkdnd 2.4
     global table_entry iconImages tcl_platform
     
     PutItThere .table $parent
@@ -623,6 +624,9 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
 #            -selectmode single \
 #            -dropcmd AddIndex]
     set lidx [listbox $fidx.lidx -selectmode single]
+    tkdnd::drop_target register $lidx DND_Text
+    bind $lidx <<DropPosition>> {TrackDropCoords %X %Y move}
+    bind $lidx <<Drop>> {InsertElement %W %D move}
     pack $lheads  -expand true -fill both
     pack $fc.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
     pack $lidx -expand true -fill both -anchor w
@@ -635,6 +639,9 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
 		   -textvariable table_entry(dataField)]
 #            -dropenabled true -droptypes LISTBOX_ITEM \
 #            -dropcmd ChooseDataHeader
+    tkdnd::drop_target register $dhead DND_Text
+    bind $dhead <<DropPosition>> {TrackDropCoords %X %Y move}
+    bind $dhead <<Drop>> {ReplaceText %W %D move}
     KoreanClick $lheads 1 {}
     bind $lheads <Double-1> [list PutInDataField $lheads $dhead]
     pack $dhead -side top -expand true -fill x
@@ -916,11 +923,15 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
         pack [checkbutton .table.fbuttons.keepvals -var table_entry(bytes) \
                 -text [tr. "Include values in scenario files"] -wrap 200 \
                 -command "set table_entry(source) 1"] -padx 4 -pady 4
-# comments section : new for 5.6
+# comments section : new for 5.6 : should be scrollable!
 	pack [text .table.commentt -height 4] -side bottom -fill x -expand 1
 	if {[info exists table_entry(comment)]} {
 	    .table.commentt insert end $table_entry(comment)
 	}
+	tkdnd::drop_target register .table.commentt DND_Text
+	bind .table.commentt <<DropPosition>> {TrackDropCoords %X %Y copy}
+	bind .table.commentt <<Drop>> {InsertText %W %D copy}
+	
 	label .table.commentl -text [tr. "Comments regarding values:"]
 	pack .table.commentl -side bottom
     }
@@ -1049,6 +1060,32 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
         lappend table_entry(values) $table_entry(wrapPt) restart
     }
     return $table_entry(done)
+}
+
+proc TrackDropCoords {x y act} {
+    array set ::dropPosn [list x $x y $y]
+    return $act
+}
+
+proc InsertElement {win data act} {
+    set localY [expr {$::dropPosn(y)-[winfo rooty $win]}]
+    $win insert end mark
+    $win insert [$win nearest $localY] $data
+    $win delete end
+    return $act
+}
+
+proc ReplaceText {win data act} {
+    $win delete 0 end
+    $win insert end $data
+    return $act
+}
+
+proc InsertText {win data act} {
+    set localX [expr {$::dropPosn(x)-[winfo rootx $win]}]
+    set localY [expr {$::dropPosn(y)-[winfo rooty $win]}]
+    $win insert @$localX,$localY $data
+    return $act
 }
 
 proc PutInDataField {source dest} {
