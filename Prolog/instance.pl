@@ -342,7 +342,8 @@ host's value */
 instance_of(function, Node, _, Inst, Ref) :-
 	get_host(Node, Result),
 	Ref = [instance(variable, Result, _, Value, Dims)],
-	Inst = [instance(variable, Node, _, Value, Dims)].
+	Inst = [instance(variable, Node, _, Value, Dims)];
+	Ref = [], Inst = [].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* flows have the value of the node connected to the bowtie if there is one, and 
