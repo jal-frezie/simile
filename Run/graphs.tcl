@@ -614,6 +614,8 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
 #            -yscrollcommand [list AdjustCanvas $fheads lheads y]]
     set lheads [listbox $fheads.lheads -selectmode single \
             -yscrollcommand [list AdjustCanvas $fheads lheads y]]
+    tkdnd::drag_source register $lheads DND_Text
+    bind $lheads <<DragInitCmd>> {DragElementOut %W %X %Y}
     scrollbar $fheads.yscroll -orient v -command [list $fheads.lheads yview]
     pack $fheads.yscroll -side right -fill y
     
@@ -627,6 +629,9 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     tkdnd::drop_target register $lidx DND_Text
     bind $lidx <<DropPosition>> {TrackDropCoords %X %Y move}
     bind $lidx <<Drop>> {InsertElement %W %D move}
+    tkdnd::drag_source register $lidx DND_Text
+    bind $lidx <<DragInitCmd>> {DragElementOut %W %X %Y}
+    bind $lidx <<DragEndCmd>> {RemoveExtractedElt %W}
     pack $lheads  -expand true -fill both
     pack $fc.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
     pack $lidx -expand true -fill both -anchor w
@@ -1086,6 +1091,17 @@ proc InsertText {win data act} {
     set localY [expr {$::dropPosn(y)-[winfo rooty $win]}]
     $win insert @$localX,$localY $data
     return $act
+}
+
+proc DragElementOut {wid x y} {
+    set localX [expr {$x-[winfo rootx $wid]}]
+    set localY [expr {$y-[winfo rooty $wid]}]
+    $wid activate @$localX,$localY
+    return [list move DND_Text [$wid get active]]
+}
+
+proc RemoveExtractedElt {wid} {
+    $wid delete active
 }
 
 proc PutInDataField {source dest} {
