@@ -61,6 +61,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack [text $cmtf.comment -height 4 -width 40 -relief sunken -wrap word \
 	      -highlightthickness 0 -bd 2 -yscrollcommand [list $cmtf.y set]] \
 	-fill both -expand 1
+    AllowTextDrags $cmtf.comment
     bind $cmtf.comment <Return> {expr 1}
     $cmtf.comment insert 1.0 $comment
     pack $cmtf -padx 2 -pady 2 -fill both -expand true

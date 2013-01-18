@@ -259,6 +259,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     set en [text $equation(actzone).text -height 4 -width 64 \
 		-relief sunken -bd 2 -highlightthickness 0 -font EquationFont \
 		-yscrollcommand "$equation(actzone).scroll set"]
+    AllowTextDrags $en
 
     scrollbar $equation(actzone).scroll -orient vert -command "$en yview"
     pack $equation(actzone).scroll -side right -fill y
@@ -359,8 +360,9 @@ proc create_equation {parent purpose comp indices enum_types} {
     label $docF.cmtlabel -text [tr. Comments]:
     pack $docF.cmtlabel -side top
     pack [set frm [frame $docF.cmtFrame]] -fill both -expand true
-    text $frm.text -height 3 -width 40 -wrap word -relief sunken -bd 2 -highlightthickness 0 \
-            -yscrollcommand "$frm.scrly set"
+    text $frm.text -height 3 -width 40 -wrap word -relief sunken -bd 2 \
+	-highlightthickness 0 -yscrollcommand "$frm.scrly set"
+    AllowTextDrags $frm.text
     scrollbar $frm.scrly -orient vert -command "$frm.text yview"
     pack $frm.text -side left -fill both -expand true
     pack $frm.scrly -side right -fill y
