@@ -570,7 +570,6 @@ proc AbleArrows {db t} {
 #####################################################################
 set commonTimes [list second minute hour day week month year]
 proc equationDoTable {parent mdl tgt dims dlgStyle} {
-    package require tkdnd 2.4
     global table_entry iconImages tcl_platform
     
     PutItThere .table $parent
@@ -933,9 +932,7 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
 	if {[info exists table_entry(comment)]} {
 	    .table.commentt insert end $table_entry(comment)
 	}
-	tkdnd::drop_target register .table.commentt DND_Text
-	bind .table.commentt <<DropPosition>> {TrackDropCoords %X %Y copy}
-	bind .table.commentt <<Drop>> {InsertText %W %D copy}
+	AllowTextDrags .table.commentt
 	
 	label .table.commentl -text [tr. "Comments regarding values:"]
 	pack .table.commentl -side bottom
@@ -1084,6 +1081,14 @@ proc ReplaceText {win data act} {
     $win delete 0 end
     $win insert end $data
     return $act
+}
+
+
+proc AllowTextDrags {txt} {
+    tkdnd::drop_target register $txt DND_Text
+    bind $txt <<DropPosition>> {TrackDropCoords %X %Y copy}
+    bind $txt <<Drop>> {InsertText %W %D copy}
+# do not allow drag out of text widgets because dragging sweeps a selection
 }
 
 proc InsertText {win data act} {

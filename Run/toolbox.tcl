@@ -10,10 +10,14 @@ if {![info exists simplify]} {
 # Tile widget set, which look better. For the time it is still needed
 # for the ScrolledWindow/ScrollableFrame pair in MakeFrames in params.tcl, and
 # the drag'n'drop column headings in graphs.tcl, as well as in a few
-# other places round the app.
+# other places round the app. Not any more...
 
-package require BWidget
+#package require BWidget
 #catch {namespace import BWidget::*}
+
+# support drag'n'drop text exchange with other apps
+package require tkdnd 2.4
+
 if {[info tclversion]>=8.5} {
 # use our own
 #    package require ttk::dialog

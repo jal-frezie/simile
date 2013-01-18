@@ -55,12 +55,15 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $notesf.commentlabel -padx 2 -pady 4 -anchor w
     # ScrolledWindow causes crash under Linux so replaced with ordinary frame
     #    frame $t.commentsSW
-    ScrolledWindow $notesf.commentsSW
-    text $notesf.commentsSW.comment -height 4 -width 40 -relief sunken -bd 2 -highlightthickness 0 -wrap word
-    bind $notesf.commentsSW.comment <Return> {expr 1}
-    $notesf.commentsSW setwidget $notesf.commentsSW.comment
-    $notesf.commentsSW.comment insert 1.0 $comment
-    pack $notesf.commentsSW -padx 2 -pady 2 -fill both -expand true
+    set cmtf [frame $notesf.commentsSW]
+    pack [scrollbar $cmtf.y -orient v -command [list $cmtf.comment yview]] \
+	-side right -fill y
+    pack [text $cmtf.comment -height 4 -width 40 -relief sunken -wrap word \
+	      -highlightthickness 0 -bd 2 -yscrollcommand [list $cmtf.y set]] \
+	-fill both -expand 1
+    bind $cmtf.comment <Return> {expr 1}
+    $cmtf.comment insert 1.0 $comment
+    pack $cmtf -padx 2 -pady 2 -fill both -expand true
     pack $t.simple.notes -side bottom -padx 4 -pady 4 -fill both -expand true
 
     frame $t.simple.left
@@ -1635,7 +1638,7 @@ proc ShowExpiryImminent {expTime left} {
     }
     
     set labf1 [frame .expiry.labf1]
-    pack [label $labf1.img -image [Bitmap::get warning]] -side left
+    pack [label $labf1.img -image $::iconImages(warning)] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     if {$left<0} {
@@ -2047,7 +2050,7 @@ proc NotifyOverLimit {win edn limit} {
     }
     
     set labf1 [frame .notify.labf1]
-    pack [label $labf1.img -image [Bitmap::get warning]] -side left
+    pack [label $labf1.img -image $::iconImages(warning)] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [label $labf1.lab2 -text "The $edn edition is limited to $limit functions. \n\
@@ -2162,7 +2165,7 @@ proc TtkLikeDialogue {dlg args} {
 
     ttk::label $f.icon 
     if {$options(-icon) ne ""} {
-	$f.icon configure -image [Bitmap::get $options(-icon)] ;# from BWidget
+	$f.icon configure -image $::iconImages($options(-icon))
     }
     ttk::label $f.message -textvariable ${dlg}(-message) \
     	-font TkCaptionFont -wraplength 400 -anchor w -justify left
@@ -2415,8 +2418,7 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
     }
 
     set labf1 [frame $ProbWin.labf1]
-    pack [label $labf1.img -image [Bitmap::get $errLevel]] \
-	-side left 
+    pack [label $labf1.img -image $::iconImages($errLevel)] -side left 
 #    pack [label $labf1.lab1 -text "Warning:" \
 #            -font {-weight bold -family helvetica -size 10}] -side left
     pack [scrollbar $labf1.yscroll -orient v \

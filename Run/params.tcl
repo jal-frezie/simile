@@ -108,16 +108,16 @@ proc FileParamDialogue {topNode topWin mustShow} {
 # for some reason the subframes stop the event getting to the top frame or
 # canvas. However, style::as will do the job provided you do not pack anything
 # -in anything...
-
-proc MakeFrames {windowId} {
-    ScrolledWindow $windowId.c
-    set canId [ScrollableFrame $windowId.c.canvas -constrainedwidth true]
-    $windowId.c setwidget $canId
-
-    pack $windowId.c -side top -fill both -expand true
-    return [$canId getframe]
-}
-
+# 
+# proc MakeFrames {windowId} {
+#     ScrolledWindow $windowId.c
+#     set canId [ScrollableFrame $windowId.c.canvas -constrainedwidth true]
+#     $windowId.c setwidget $canId
+# 
+#     pack $windowId.c -side top -fill both -expand true
+#     return [$canId getframe]
+# }
+# 
 proc DIYMakeFrames {windowId} {
     frame $windowId.c
     set canId [canvas $windowId.c.canvas \
