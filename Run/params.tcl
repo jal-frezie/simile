@@ -127,10 +127,11 @@ proc DIYMakeFrames {windowId} {
     pack $canId -fill both -expand 1
     pack $windowId.c -side top -fill both -expand 1
     set sf [$canId create window 0 0 -anchor nw \
-		-window [frame $windowId.c.canvas.frame]]
+		-window [frame $canId.frame]]
     bind $canId <Configure> [list $canId itemconfigure $sf -width %w]
-    bind $windowId.c.canvas.frame <Configure> \
+    bind $canId.frame <Configure> \
 	[list $canId configure -scrollregion {0 0 %w %h}]
+    return $canId.frame
 }
 
 proc AddEntry {winId topNode node mustShow notInput} {

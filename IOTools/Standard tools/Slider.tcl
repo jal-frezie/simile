@@ -30,7 +30,7 @@ namespace eval slide139 {
         ::graphtools::MakeToolBar $winId $toolbarItems
         pack [message $winId.intro -aspect 800] -fill x
         
-        set ::topSFrame($winId) [MakeFrames $winId]
+        set ::topSFrame($winId) [DIYMakeFrames $winId]
         SetState $winId {}
         set geom [PrefValue custom(slidersPosition) slidersPosition]
         #        catch {wm geometry $winId $geom}
