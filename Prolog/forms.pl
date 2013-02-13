@@ -3,7 +3,7 @@
 Code for putting up dialogue boxes, progress boxes, etc */
 
 sicstus_module(forms, [pick_equation/2, eqn_for/2, do_equation_dialog/2,
-		       do_disag_dialog/4, do_relation_dialog/8,
+		       do_disag_dialog/4, do_relation_dialog/9,
 		       do_text_item_dialog/5,
 		       get_load_file/2, get_save_file/2,
 		       get_program_file/3, get_import_file/3,
@@ -122,10 +122,10 @@ do_disag_dialog(Win, Model, P_list, New_P_List) :-
 	tk_do_disag_dialog(Win, Capt, P_list, New_P_Strs),
 	strings_to_atoms(New_P_Strs, New_P_List).
 
-do_relation_dialog(Win, Relation, Type, State, OldComment,
+do_relation_dialog(Win, Relation, Type, Fields, State, OldComment,
 		   OKd, NewStat, NewComment) :-
 	caption_for(Relation, Capt),
-	tk_do_relation_dialog(Win, Capt, Type, State, OldComment,
+	tk_do_relation_dialog(Win, Capt, Type, Fields, State, OldComment,
 			      OKdStr, NewStr, NewCommentStr),
 	strings_to_atoms([OKdStr, NewCommentStr | NewStr],
 			 [OKd, NewComment | NewStat]).

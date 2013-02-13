@@ -834,16 +834,41 @@ doubleclick_on(Edit_thing) :-
 		build([ghost_link, influence, variable, flow, compartment,
 		       submodel, caption, text, sections]), build(Depths)]),
 	    redraw_window(NewWin);
-	(Edit_type = relation, Attrs = [exclusive, can_lookup];
-	    Edit_type = influence, Attrs = [use_sofar]), !,
-	    find_name_host(Edit_thing, ControlThing),
+	 find_name_host(Edit_thing, ControlThing),
+	(Edit_type = relation, Attrs = [exclusive, can_lookup],
+	 [RoleMsgs, RoleStats] = [[], []];
+	 Edit_type = influence,
+		% list enablement of relation roles for influence
+	 m_class'><'terminates(ControlThing, Fn),
+	 setof(Role-Ref,
+	       Rn^Ru^Sl^get_link_source_data(ControlThing, Fn, Rn, Ru, Role, Ref, Sl),
+	       RoleRefPairs),
+	 (RoleRefPairs = [_P1, _P2 | _], !,% at least one role besides none
+	  (get_av_pair(ControlThing, 2, suppressed_roles, Suppd), !;
+	   Suppd = []),
+	  all(event, role_ref_to_msg, [build(RoleRefPairs), build(RoleMsgs)]),
+	  all(event, role_ref_to_stat,
+	      [build(RoleRefPairs), unify(Suppd), build(RoleStats)]);
+	  [RoleMsgs, RoleStats] = [[], []]),
+	 Attrs = [use_sofar]), !,
 	    all(event, get_refinement_or_0,
 		[unify(ControlThing), unify(2), build(Attrs), build(OldVals)]),
 	    (get_av_pair(ControlThing, 2, comment, OldComment), !;
 		OldComment = ''),
-	    do_relation_dialog(Wid, ControlThing, Edit_type, OldVals,
-			       OldComment, OKd, NewVals, NewComment),
+	 append(Attrs, RoleMsgs, Msgs),
+	 append(OldVals, RoleStats, OldStats),
+	    do_relation_dialog(Wid, ControlThing, Edit_type, Msgs, OldStats,
+			       OldComment, OKd, NewStats, NewComment),
 	    (OKd == 1, !,
+	        length(OldVals, NVals),
+	        length(NewVals, NVals),
+	        append(NewVals, NewChecks, NewStats),
+	        all(event, role_ref_to_stat,
+		    [build(RoleRefPairs), unify(NewSuppd), build(NewChecks)]),
+	        length(NewSuppd, NSuppd), !,
+	        (NSuppd = 0 -> UseSuppd = ''; UseSuppd = NewSuppd),
+	        add_parameter(ControlThing, 2, suppressed_roles, UseSuppd),
+		    
 		all(m_update, add_parameter,
 		    [unify(ControlThing), unify(2), build(Attrs),
 		     build(NewVals)]),
@@ -885,7 +910,18 @@ doubleclick_on(Edit_thing) :-
 	    spread_colour(Base, NewDims),
 	    find_all_comps(Parent, Base),
 	    update_runnable(Parent)).
-	
+
+role_ref_to_msg(Role-Ref, Message) :-
+	Ref = none ->
+	 Message = without_role;
+	 caption_for(Role, Capt),
+	 Message = [with_role, Capt].
+
+role_ref_to_stat(_-Ref, Suppd, Status) :-
+	Status = 0,
+	member(Ref, Suppd), !;
+	Status = 1.
+
 get_refinement_or_0(ControlThing, AttSort, Attr, OldExc) :-
 	get_av_pair(ControlThing, AttSort, Attr, OldExc), !;
 	OldExc = 0.

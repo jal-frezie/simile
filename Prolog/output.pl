@@ -35,7 +35,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_scrub_run/2, tk_kill_helpers/1,
 	update_tk_variable/3, tk_clear_graph/1, handle_tk_events/0, 
 	tk_update_sim_display/3, my_file_exists/1, my_delete_file/1,
-	tk_do_disag_dialog/4, tk_do_relation_dialog/8, tk_do_text_item_dialog/5,
+	tk_do_disag_dialog/4, tk_do_relation_dialog/9, tk_do_text_item_dialog/5,
 			get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2,
 	check_directory/1, windowize/2,
@@ -549,11 +549,12 @@ safe_list(Bad, Good) :-
 	    argify(BadChars, GoodChars),
 	    Good = chars(GoodChars).
 
-tk_do_relation_dialog(Win, Caption, Type, State, OldComment,
+tk_do_relation_dialog(Win, Caption, Type, Fields, State, OldComment,
 		      OKd, NewState, NewComment) :-
+	bracketize(Fields, FieldList),
 	bracketize(State, StateList),
-	safe_tcl_eval(['RelationCheck', Win, br(write(Caption)),
-			  Type, StateList, br(write(OldComment))],
+	safe_tcl_eval(['RelationCheck', Win, br(write(Caption)), Type,
+			  FieldList, StateList, br(write(OldComment))],
 		 New_P_string),
 	chop_list(New_P_string, [OKd, NewComment | NewState]).
 

@@ -299,6 +299,250 @@ $(SCRIPT): Interp/script.c Interp/script.rc
 $(RELAY): Run/relay.c
 	cd Run; $(GCCCMD) $(FLAGS) -o ../$(RELAY) relay.c; cd ..
 
+ifeq ($(PLATFORM),GNU/Linux)
+# install used for packaging for distributions
+INSTALL_TGT = /usr/lib/simile-6.0
+install:
+	mkdir -p $(DESTDIR)$(INSTALL_TGT); \
+	tar cf $(DESTDIR)$(INSTALL_TGT)/payload.tar \
+		Examples/BallBerry4a.shf \
+		Examples/BallBerry4a.sml \
+		Examples/control.shf \
+		Examples/control.sml \
+		Examples/forest.shf \
+		Examples/forest.sml \
+		Examples/forestV4FP.spf \
+		Examples/forestV4FPb.spf \
+		Examples/forestV4FP.sml \
+		Examples/forestV4IP.sml \
+		Examples/spiro.shf \
+		Examples/spiro.sml \
+		Examples/bat.spf \
+		Examples/dancer.spf \
+		Extensions/Scripting.tcl \
+		Functions/Arithmetic.pl \
+		Functions/Hidden.pl \
+		Functions/List\ handling.pl \
+		Functions/Model\ properties.pl \
+		Functions/Statistics.pl \
+		Functions/Trigonometry.pl \
+		Functions/new_units.pl \
+		Functions/procs.cpp \
+		Functions/procs.tcl \
+		Help/data/* \
+		Help/diagrams/* \
+		Help/elements/* \
+		Help/equations/* \
+		Help/files/* \
+		Help/index.htm \
+		Help/new/index.htm \
+		Help/run/* \
+		Help/scripting/* \
+		Help/start/* \
+		Help/submodels/* \
+		Images/Control/pause.gif \
+		Images/Control/play.gif \
+		Images/Control/stop.gif \
+		Images/HelpAboutUpper.gif \
+		Images/Icons/* \
+		Images/Welcome.gif \
+		Images/alarm.cnv \
+		Images/bigsimile.gif \
+		Images/cond.cnv \
+		Images/creation.cnv \
+		Images/dribble.xbm \
+		Images/ghost.mask.xbm \
+		Images/ghost.xbm \
+		Images/immig.cnv \
+		Images/loss.cnv \
+		Images/repro.cnv \
+		Images/weegraph.xbm \
+		Images/Eqnbar/cross.gif \
+		Images/Eqnbar/function.gif \
+		Images/Eqnbar/inputs.gif \
+		Images/Eqnbar/tick.gif \
+		Images/Toolbar/Large/Initial.gif \
+		Images/Toolbar/Large/alarm.gif \
+		Images/Toolbar/Large/compartment.gif \
+		Images/Toolbar/Large/condition.gif \
+		Images/Toolbar/Large/copy.gif \
+		Images/Toolbar/Large/creation.gif \
+		Images/Toolbar/Large/delete.gif \
+		Images/Toolbar/Large/event.gif \
+		Images/Toolbar/Large/find.gif \
+		Images/Toolbar/Large/findmore.gif \
+		Images/Toolbar/Large/flip_h.gif \
+		Images/Toolbar/Large/flip_v.gif \
+		Images/Toolbar/Large/flow.gif \
+		Images/Toolbar/Large/ghost.gif \
+		Images/Toolbar/Large/graph.gif \
+		Images/Toolbar/Large/immigration.gif \
+		Images/Toolbar/Large/influence.gif \
+		Images/Toolbar/Large/loss.gif \
+		Images/Toolbar/Large/move.gif \
+		Images/Toolbar/Large/new.gif \
+		Images/Toolbar/Large/open.gif \
+		Images/Toolbar/Large/print.gif \
+		Images/Toolbar/Large/redo.gif \
+		Images/Toolbar/Large/relation.gif \
+		Images/Toolbar/Large/reproduction.gif \
+		Images/Toolbar/Large/rerun.gif \
+		Images/Toolbar/Large/runenv.gif \
+		Images/Toolbar/Large/save.gif \
+		Images/Toolbar/Large/select.gif \
+		Images/Toolbar/Large/snap.gif \
+		Images/Toolbar/Large/squirt.gif \
+		Images/Toolbar/Large/state.gif \
+		Images/Toolbar/Large/submodel.gif \
+		Images/Toolbar/Large/text.gif \
+		Images/Toolbar/Large/tog_grid.gif \
+		Images/Toolbar/Large/undo.gif \
+		Images/Toolbar/Large/variable.gif \
+		Images/Toolbar/Large/zoomfit.gif \
+		Images/Toolbar/Large/zoomin.gif \
+		Images/Toolbar/Large/zoomout.gif \
+		Images/Toolbar/Large/zoomsel.gif \
+		Images/Toolbar/Large/reel.gif \
+		Images/Toolbar/add.gif \
+		Images/Toolbar/alarm.gif \
+		Images/Toolbar/clear.gif \
+		Images/Toolbar/colourrcontr.gif \
+		Images/Toolbar/colourrexp.gif \
+		Images/Toolbar/compartment.gif \
+		Images/Toolbar/condition.gif \
+		Images/Toolbar/copy.gif \
+		Images/Toolbar/copyc.gif \
+		Images/Toolbar/creation.gif \
+		Images/Toolbar/cut.gif \
+		Images/Toolbar/delete.gif \
+		Images/Toolbar/display.gif \
+		Images/Toolbar/edit.gif \
+		Images/Toolbar/event.gif \
+		Images/Toolbar/find.gif \
+		Images/Toolbar/findmore.gif \
+		Images/Toolbar/flip_h.gif \
+		Images/Toolbar/flip_v.gif \
+		Images/Toolbar/flow.gif \
+		Images/Toolbar/ghost.gif \
+		Images/Toolbar/graph.gif \
+		Images/Toolbar/greater.gif \
+		Images/Toolbar/immigration.gif \
+		Images/Toolbar/influence.gif \
+		Images/Toolbar/less.gif \
+		Images/Toolbar/loss.gif \
+		Images/Toolbar/lprec.gif \
+		Images/Toolbar/mainwin.gif \
+		Images/Toolbar/move.gif \
+		Images/Toolbar/mprec.gif \
+		Images/Toolbar/new.gif \
+		Images/Toolbar/noreel.gif \
+		Images/Toolbar/notebook.gif \
+		Images/Toolbar/notebookpage.gif \
+		Images/Toolbar/open.gif \
+		Images/Toolbar/paste.gif \
+		Images/Toolbar/pause.gif \
+		Images/Toolbar/print.gif \
+		Images/Toolbar/property.gif \
+		Images/Toolbar/redo.gif \
+		Images/Toolbar/reel.gif \
+		Images/Toolbar/refresh.gif \
+		Images/Toolbar/relation.gif \
+		Images/Toolbar/remove.gif \
+		Images/Toolbar/reproduction.gif \
+		Images/Toolbar/rerun.gif \
+		Images/Toolbar/runenv.gif \
+		Images/Toolbar/save.gif \
+		Images/Toolbar/select.gif \
+		Images/Toolbar/slider.gif \
+		Images/Toolbar/snap.gif \
+		Images/Toolbar/splithoriz.gif \
+		Images/Toolbar/splitvert.gif \
+		Images/Toolbar/squirt.gif \
+		Images/Toolbar/state.gif \
+		Images/Toolbar/submodel.gif \
+		Images/Toolbar/table.gif \
+		Images/Toolbar/text.gif \
+		Images/Toolbar/tog_grid.gif \
+		Images/Toolbar/undo.gif \
+		Images/Toolbar/variable.gif \
+		Images/Toolbar/zap.gif \
+		Images/Toolbar/zoomfit.gif \
+		Images/Toolbar/zoomin.gif \
+		Images/Toolbar/zoomout.gif \
+		Images/Toolbar/zoomsel.gif \
+		Images/Toolbar/reel.gif \
+		Images/Toolbar/noreel.gif \
+		IOTools/DisplayFormats.tcl \
+		IOTools/Grid5.tcl \
+		IOTools/Lollipop.tcl \
+		IOTools/New3d.tcl \
+		IOTools/Plotter.tcl \
+		IOTools/PlotterXY.tcl \
+		IOTools/Polygons.tcl \
+		IOTools/Setrand.tcl \
+		IOTools/Timeplot.tcl \
+		IOTools/canvasnotes.tcl \
+		IOTools/dxf.tcl \
+		IOTools/graphtools.tcl \
+		IOTools/maps2.tcl \
+		IOTools/threedtools.tcl \
+		IOTools/timeprofiles.tcl \
+		IOTools/Standard\ tools/Control.tcl \
+		IOTools/Standard\ tools/Sketch.tcl \
+		IOTools/Standard\ tools/Slider.tcl \
+		IOTools/Standard\ tools/TileInspector.tcl \
+		IOTools/Standard\ tools/pestlink.tcl \
+		IOTools/two_table.tcl \
+		Licence.txt \
+		README \
+		Run/6d.h \
+		Run/backend.h \
+		Run/dllcalls.h \
+		Run/equation.tcl \
+		Run/exec.tcl \
+		Run/forms.tcl \
+		Run/graphs.tcl \
+		Run/hai2mmii.tcl \
+		Run/language.tcl \
+		Run/toolbox.tcl \
+		Run/userinfo.txt \
+		Run/messages.tcl \
+		Run/mre.tcl \
+		Run/params.tcl \
+		Run/prefs.tcl \
+		Run/prolog.tcl \
+		Run/runmodel.tcl \
+		Run/shank.cpp \
+		Run/shapes.tcl \
+		Run/simile.tcl \
+		Run/simile128.ico \
+		Run/simile16.ico \
+		Run/simile32.ico \
+		Run/simile64.ico \
+		Run/support.tcl \
+		Run/support1.cpp \
+		Run/support2.cpp \
+		Run/utility.tcl \
+		Run/window.tcl \
+		Run/simdoc32.ico \
+		Run/Simile.desktop \
+		System$(BITEXTN)/bin/relay \
+		System$(BITEXTN)/bin/simile \
+		System$(BITEXTN)/bin/xgsimile \
+		System$(BITEXTN)/lib/SimileAutoObj/SimileAutoObj.itcl \
+		System$(BITEXTN)/lib/SimileAutoObj/pkgIndex.tcl \
+		System$(BITEXTN)/lib/Stubs/pkgIndex.tcl \
+		System$(BITEXTN)/lib/Stubs/libame_dll8.5.so \
+		System$(BITEXTN)/lib/Stubs/libunpacker8.5.so \
+		System$(BITEXTN)/lib/lib5d.so; \
+	cd $(DESTDIR)$(INSTALL_TGT); \
+	tar xf payload.tar; \
+	rm payload.tar; cd -; \
+	mkdir -p $(DESTDIR)/usr/bin; \
+	cd $(DESTDIR)/usr/bin; \
+	ln -s $(DESTDIR)$(INSTALL_TGT)/System$(BITEXTN)/bin/simile; cd -
+endif
+
 # call clean after changing license info in this file
 clean:
 	rm $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(RELAY) \

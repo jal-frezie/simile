@@ -892,13 +892,13 @@ proc TextCheckAndSet {parent title state} {
     return $results
 }
 
-proc RelationCheck {parent title type state init_comment} {
-    global relation tcl_platform
+proc RelationCheck {parent title type entries state init_comment} {
+    global msgs relation tcl_platform
     
     set t [PutItThere .relcheck $parent]
     wm resizable $t 0 0
     wm protocol $t WM_DELETE_WINDOW {set relation(done) 0}
-    wm title $t [format $::msgs(props_title) [BlankCrs $title]]
+    wm title $t [format $msgs(props_title) [BlankCrs $title]]
     frame .relcheck.top
     TitleFrame .relcheck.top.left \
 	-text [format [tr. {%1$s options:}] [string toupper $type]]
@@ -906,24 +906,17 @@ proc RelationCheck {parent title type state init_comment} {
     
     switch $type {
         influence {
-            set entries {"Use destination values made in same time step" use_sofar}
 	    set helpPage elements/influence.htm
         } relation {
-            set entries {"Exclusive role" exclusive \
-			     "Allow base instance lookup" can_lookup}
 	    set helpPage submodels/association/dialogue.htm
         } default {
-	    set entries {}
 	    set helpPage index.htm
 	}
     }
-    foreach {text attr} $entries {
-        pack [checkbutton $f.$attr -text [tr. $text] -wraplength 160 \
+    foreach attr $entries {
+	set capt [format $msgs([lindex $attr 0]) [lrange $attr 1 end]]
+        pack [checkbutton $f.$attr -text $capt -wraplength 160 \
                 -variable relation($attr) -offvalue 0 -onvalue 1] -anchor w
-# TRANSLATOR: $text is one of:
-# "Use values made in same time step"
-# "Exclusive role"
-# "Allow base instance lookup"
         set relation($attr) [lindex $state 0]
         set state [lrange $state 1 end]
         if {$relation($attr)==-1} {
@@ -955,7 +948,7 @@ proc RelationCheck {parent title type state init_comment} {
     set newComment [string trimright [$f.comment get 1.0 end]]
     PackItUp .relcheck
     set results [list $relation(done) $newComment]
-    foreach {text attr} $entries {
+    foreach attr $entries {
         lappend results $relation($attr)
     }
     return $results

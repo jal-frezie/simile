@@ -127,8 +127,13 @@ get_all_links(Function, SrcType, ids(RemoteNode, Relation),
 	    Function has_class submodel,
 	    Link is_connector from _ to Function),
 	Link has_type influence,
+	find_name_host(Link, LinkWithAttrs),
+	(get_av_pair(LinkWithAttrs, 2, suppressed_roles, SuppArg) ->
+	 Supps = SuppArg; Supps = []),
+
 	get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
 		Relation, Index, SourceLocn),
+	\+ member(Index, Supps),
 	check_ET_consistency(RemoteUnit, RemoteNode, Function),
 	use_destination(Link, RemoteUnit, 
 			Index, LocalName, Local_unit),

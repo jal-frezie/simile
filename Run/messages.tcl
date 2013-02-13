@@ -213,6 +213,13 @@ set msgs(list_multi_sm) [tr. {Submodel "%1$s" is a fixed_membership multi-instan
 set msgs(props_title) [tr. {Properties of "%1$s" - Simile}]
 set msgs(exec_title) [tr. {Execution of "%1$s" - Simile}]
 
+# checkbuttons in link properties
+set msgs(use_sofar) [tr. {Use destination values made in same time step}]
+set msgs(exclusive) [tr. {Exclusive role}]
+set msgs(can_lookup) [tr. {Allow base instance lookup}]
+set msgs(without_role) [tr. {Include array/list of all source values}]
+set msgs(with_role) [tr. {Include source value(s) corresponding with role "%1$s"}]
+
 # parameter sources
 set msgs(metafile_ref) [tr. {Loaded from file "%1$s" according to reference in file "%2$s"}]
 set msgs(metafile_lit) [tr. {Literal data in "%1$s"}]

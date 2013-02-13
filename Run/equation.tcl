@@ -260,6 +260,7 @@ proc create_equation {parent purpose comp indices enum_types} {
 		-relief sunken -bd 2 -highlightthickness 0 -font EquationFont \
 		-yscrollcommand "$equation(actzone).scroll set"]
     AllowTextDrags $en
+# risky choice, it may encourage modellers to enter very large equations
 
     scrollbar $equation(actzone).scroll -orient vert -command "$en yview"
     pack $equation(actzone).scroll -side right -fill y
