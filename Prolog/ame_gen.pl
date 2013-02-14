@@ -923,14 +923,14 @@ caption_for(Comp, ID) :-
 
 find_name_host(CompVisSrc, NameSource) :-
 	equivalent_arcs(CompVisSrc, NameSource),
-	NameSource draws_inside TopModel,
-	\+ (sequence(Other, NameSource),
-		Other draws_inside HigherModel,
-		\+ contains(TopModel, HigherModel);
-	sequence(NameSource, Other),
-		Other draws_inside LevelModel,
-		contains(LevelModel, TopModel)).
-
+	(CompVisSrc has_type relation,
+	% name source is section in highest submodel level
+	 NameSource draws_inside TopModel,
+	 \+ (equivalent_arcs(CompVisSrc, Better),
+	     \+ contains(TopModel, Better));
+	CompVisSrc has_type influence,
+	 \+ sequence(NameSource, _)).
+	
 find_type(Obj, Type) :-
 	Obj has_class Type;
 	Obj has_type Type.

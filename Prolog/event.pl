@@ -834,7 +834,7 @@ doubleclick_on(Edit_thing) :-
 		build([ghost_link, influence, variable, flow, compartment,
 		       submodel, caption, text, sections]), build(Depths)]),
 	    redraw_window(NewWin);
-	 find_name_host(Edit_thing, ControlThing),
+	 setof(Distinct, find_name_host(Edit_thing, Distinct), [ControlThing]),
 	(Edit_type = relation, Attrs = [exclusive, can_lookup],
 	 [RoleMsgs, RoleStats] = [[], []];
 	 Edit_type = influence,
@@ -863,11 +863,13 @@ doubleclick_on(Edit_thing) :-
 	        length(OldVals, NVals),
 	        length(NewVals, NVals),
 	        append(NewVals, NewChecks, NewStats),
-	        all(event, role_ref_to_stat,
+	        (all(event, role_ref_to_stat,
 		    [build(RoleRefPairs), unify(NewSuppd), build(NewChecks)]),
-	        length(NewSuppd, NSuppd), !,
-	        (NSuppd = 0 -> UseSuppd = ''; UseSuppd = NewSuppd),
-	        add_parameter(ControlThing, 2, suppressed_roles, UseSuppd),
+		 % fails if single ref not checked
+		 nonvar(NewSuppd),
+		 length(NewSuppd, _NSuppd), !;
+		 NewSuppd = ''),
+	        add_parameter(ControlThing, 2, suppressed_roles, NewSuppd),
 		    
 		all(m_update, add_parameter,
 		    [unify(ControlThing), unify(2), build(Attrs),
