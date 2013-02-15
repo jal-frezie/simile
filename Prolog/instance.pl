@@ -220,8 +220,12 @@ instance_of(Type, Node, Path,
 	is_instance(internal, st(Node), none, Diffs, diffs-[], DiffSt),
 	Arc is_connector from _ to Node,
 	initiates(Arc, Function),
+	(generate_input_pair(Function, discrete, _EvtPair) ->
+	 % channel is event -- just add magnitude
+	 Updater = Home+Struct;
+	 % channel is coninuous -- increment compartment style
 	Updater = with_phase(Step, [],
-			     Home+stage_incr(Diffs, Step, Struct, 100)).
+			     Home+stage_incr(Diffs, Step, Struct, 100))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* functions do not have any unit translations built into them, as it is assumed
@@ -318,6 +322,12 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	  (RType = alarm, !,
 	    FType = al_function,
 	    FinalExpr = al_spec(SubbedExpr, EvtTrigger, _Later),
+	    EndRefs = EvtRefs;
+	   member(RType, [immigration, reproduction]),
+	    \+ EvtTrigger = 1, !,
+	    FType = function,
+	    FinalExpr = (trigger_magnitude('')=EvtTrigger,
+			     choose(EvtTrigger '!=' 0, SubbedExpr, 0)),
 	    EndRefs = EvtRefs;
 	  FType = function,
 	    FinalExpr = SubbedExpr)),

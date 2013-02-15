@@ -898,7 +898,8 @@ can_connect(Arc, Node1, Node2) :-
 	    [variable, flow, compartment, state, event, squirt,
 	     alarm, condition, creation, immigration, reproduction, loss]],
 	   [[event, squirt],
-	    [event, squirt, state, alarm, condition]]]],
+	    [event, squirt, state, alarm, condition,
+	     immigration, reproduction, loss]]]],
 	 [relation, [[[submodel], [submodel]]]]];
 	    
 	ConnectTable =
