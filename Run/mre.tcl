@@ -1067,7 +1067,8 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 	}
 	set parseStatus(currentNode) $currentNode
 	
-	if {[catch {$parseStatus(shfParser) parse $dada} feedback]} {
+	if {[catch {$parseStatus(shfParser) parse [DefuseXmlBombs $dada]} \
+		 feedback]} {
 	    Query [list xml_parse_fail $::errorInfo [array get parseStatus]] \
 		error shf {} ok
 	}

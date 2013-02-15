@@ -1071,7 +1071,8 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     }
     set parseStatus(outStr) [open $newPath w]
     fconfigure $parseStatus(outStr) -encoding utf-8
-    set broke [catch {$parseStatus(spfParser) parse $dada} feedback]
+    set broke [catch {$parseStatus(spfParser) parse [DefuseXmlBombs $dada]} \
+		   feedback]
     close $parseStatus(outStr)
     if {[info exists parseStatus(logStm)]} {
 	close $parseStatus(logStm)
@@ -1095,6 +1096,12 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
 	    return -1;
 	}
     }
+}
+
+# alters "<?xml-stylesheet...>" line to avoid buggy parser restriction
+proc DefuseXmlBombs {xmlData} {
+    set bombLocn [string first xml- $xmlData]
+    return [string replace $xmlData $bombLocn $bombLocn]
 }
 
 proc LogXMLAction {str} {
