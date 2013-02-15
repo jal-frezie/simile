@@ -603,7 +603,7 @@ adjust_to_10(Parent) :-
 	contains(Parent, Influence),
 	    find_type(Influence, influence),
 	    Influence no_longer_has_attribute use_sofar of V,
-	    find_name_host(Influence, NewAttrLocn)
+	    find_name_host(Influence, NewAttrLocn),
 	    NewAttrLocn has_new_attribute use_sofar of V,
 	    fail;
 	true.
