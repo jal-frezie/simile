@@ -377,9 +377,8 @@ instance_of(loss, Node, Path,
 	Arc is_connector from _ to Node,
 	initiates(Arc, Function),
 	(generate_input_pair(Function, discrete, _), !,
-	 Expr = (rand(0,1)<Home);
-	 Expr = with_phase(Step, [], loses(Home, Step))).
-		      .
+	    Expr = (rand(0,1)<Home);
+	  Expr = with_phase(Step, [], loses(Home, Step))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* variables don't have any expressions of their own, they just have values which
