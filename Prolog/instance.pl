@@ -323,7 +323,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	    FType = al_function,
 	    FinalExpr = al_spec(SubbedExpr, EvtTrigger, _Later),
 	    EndRefs = EvtRefs;
-	   member(RType, [immigration, reproduction]),
+	   member(RType, [immigration, reproduction, loss]),
 	    \+ EvtTrigger = 1, !,
 	    FType = function,
 	    FinalExpr = (trigger_magnitude('')=EvtTrigger,
@@ -371,13 +371,15 @@ instance_of(Pipe, Arc, _, [instance(Pipe, Arc, _, Value, Units)],
 % Loss object needs a boolean reflecting whether it actually happens
 
 instance_of(loss, Node, Path,
-	    [instance(loss, Node,
-		      with_phase(Step, [], loses(Home, Step)),
-		      elt(Path, _, boolean-[]), boolean-[])],
+	    [instance(loss, Node, Expr, elt(Path, _, boolean-[]), boolean-[])],
 	    [instance(function, Function, _, Home, _)]) :-
 	Home = elt(Path, _, _-[]),
 	Arc is_connector from _ to Node,
-	initiates(Arc, Function).
+	initiates(Arc, Function),
+	(generate_input_pair(Function, discrete, _), !,
+	 Expr = (rand(0,1)<Home);
+	 Expr = with_phase(Step, [], loses(Home, Step))).
+		      .
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* variables don't have any expressions of their own, they just have values which
