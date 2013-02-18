@@ -1,0 +1,18 @@
+12/28/2008, Carlos A. R. de Souza
+
+This subset of icons is part of the Tango Icon project. They can be 
+distributed under the Creative Commons License.
+
+The Tango icon theme was created by these people:
+
+Ulisse Perusin <uli.peru@gmail.com>
+Steven Garrity <sgarrity@silverorange.com>
+Lapo Calamandrei <calamandrei@gmail.com>
+Ryan Collier <rcollier@novell.com>
+Rodney Dawes <dobey@novell.com>
+Andreas Nilsson <nisses.mail@home.se>
+Tuomas Kuosmanen <tigert@tigert.com>
+Garrett LeSage <garrett@novell.com>
+Jakub Steiner <jimmac@novell.com>
+
+Note: Neither the Tango Icon project nor its authors are affiliated with this project.
