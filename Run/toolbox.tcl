@@ -12,7 +12,7 @@ if {![info exists simplify]} {
 # the drag'n'drop column headings in graphs.tcl, as well as in a few
 # other places round the app. Like ButtonBoxes in IO tools...
 
-package require BWidget
+#package require BWidget
 #catch {namespace import BWidget::*}
 
 # support drag'n'drop text exchange with other apps

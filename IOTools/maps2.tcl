@@ -232,7 +232,7 @@ namespace eval ::maptools2 {
         if $useNodes($winId,editMode)==1 {
             set useNodes($winId,editMode) 0
             pack forget $winId.msg
-	    $winId.bbframe.buttonBox itemconfigure 5 -state normal -relief raised
+	    ::graphtools::SetButtonState $winId edit flat
 	    $cnv bind swatch <ButtonPress> {}
 #            for  {set j 0} {$j <= $useNodes($winId,nswatches)} {incr j} {
 #                $winId.legend.pop$j configure -borderwidth 0
@@ -248,7 +248,7 @@ namespace eval ::maptools2 {
                     'paint' polygons."
 	    pack $winId.msg -side bottom -fill x
 
-	    $winId.bbframe.buttonBox itemconfigure 5 -state active -relief sunken
+	    ::graphtools::SetButtonState $winId edit sunken
             #  bind mouse click to get the value to assign from the colour clicked upon
 	    $cnv bind swatch <ButtonPress> \
 		[namespace code "CnvGetNewVal $ParentSpc $winId %x %y"]

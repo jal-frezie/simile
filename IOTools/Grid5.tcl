@@ -75,9 +75,9 @@ namespace eval grid005 {
 		 [list greater.gif "Increase range" [namespace code "IncreaseRange $winId"] ]\
 		 [list pause.gif " Freeze " [namespace code "ToggleFreeze $winId"]]]
         ::graphtools::MakeToolBar $winId $toolbarItems
-	$winId.bbframe.buttonBox itemconfigure zoomin -state disabled
-	$winId.bbframe.buttonBox itemconfigure zoomout -state disabled
-	$winId.bbframe.buttonBox itemconfigure edit -state disabled
+	::graphtools::SetButtonState $winId zoomin disabled
+	::graphtools::SetButtonState $winId zoomout disabled
+	::graphtools::SetButtonState $winId edit disabled
     }
     
     proc AddVariable {winId} {
@@ -208,8 +208,7 @@ namespace eval grid005 {
 # now disable these instead
 		    if {$useNodes($winId,ETCount)} {
 			foreach notForET {less greater} {
-			    $winId.bbframe.buttonBox itemconfigure $notForET \
-				-state disable
+			    ::graphtools::SetButtonState $winId $notForET disabled
 			}
 		    }
 #		    if {![info exists useNodes($winId,values)]} {
@@ -333,12 +332,12 @@ namespace eval grid005 {
 	} else {
 	    set mult [expr {int(380/$n)}]
 	}
-	$winId.bbframe.buttonBox itemconfigure zoomin -state normal
+	::graphtools::SetButtonState $winId zoomin normal
 	if {$mult<2} {
 	    set mult 1
-	    $winId.bbframe.buttonBox itemconfigure zoomout -state disable
+	    ::graphtools::SetButtonState $winId zoomout disabled
 	} else {
-	    $winId.bbframe.buttonBox itemconfigure zoomout -state normal
+	    ::graphtools::SetButtonState $winId zoomout normal
 	} 
         set useNodes($winId,mult) $mult
         set xwidth [expr {$mult*$useNodes($winId,ncol)}]
@@ -362,7 +361,7 @@ namespace eval grid005 {
 #        $winId.c configure -scrollregion [$winId.c bbox all]
         $winId.c configure -scroll "0 0 $xwidth $yheight"
 	if {[lsearch {INPUT TABLE} [GetModelEval $display1]]>-1} {
-	    $winId.bbframe.buttonBox itemconfigure edit -state normal
+	    ::graphtools::SetButtonState $winId edit normal
 	}
     }
     
@@ -370,10 +369,12 @@ namespace eval grid005 {
         variable useNodes
         if {$useNodes($winId,freeze)} {
             set useNodes($winId,freeze) false
-            $winId.bbframe.buttonBox itemconfigure end -relief flat; #disable the add var button
+	    ::graphtools::SetButtonState $winId pause flat
+#            $winId.bbframe.buttonBox itemconfigure end -relief flat; #disable the add var button
         } else  {
             set useNodes($winId,freeze) true
-            $winId.bbframe.buttonBox itemconfigure end -relief sunken; #disable the add var button
+	    ::graphtools::SetButtonState $winId pause sunken
+#            $winId.bbframe.buttonBox itemconfigure end -relief sunken; #disable the add var button
         }
     }
     
@@ -398,11 +399,13 @@ namespace eval grid005 {
     }
 
     proc Settings {winId} {
+	global gridprops
+
         variable useNodes
         variable min
         variable max
-        set dlg [Dialog .gridprop -parent [winfo toplevel $winId] -modal local \
-		     -title "Grid display properties" -default 0 -cancel 1]
+	set dlg [PutItThere .gridprop [winfo toplevel $winId]]
+	wm title $dlg [tr. {Grid display properties}]
         
         # copy display parameters to temp values
         # colours are stored by frames used as example colour swatch (eg $coloursF.lowcolourF.colF)
@@ -413,7 +416,7 @@ namespace eval grid005 {
 	pack [set t [::ttk::notebook $dlg.notebook]] -fill both -expand true
 	$t add [set fd [frame $t.disp]] -text "Display"
         set coloursF [labelframe $fd.colours -text "Colour scale"]
-        pack [LabelFrame $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
+        pack [ttk::labelframe $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
 	if {$useNodes($winId,colourMapTweaked)} {
 	    DefaultColours $winId
 	}
@@ -422,13 +425,13 @@ namespace eval grid005 {
                 -command [namespace code "Recolour $winId bot $coloursF.lowcolourF.colF"]] -side right
         pack $coloursF.lowcolourF.colF -side right -padx 10
         
-        pack [LabelFrame $coloursF.midcolourF -text "Middle colour"] -fill x -padx 10
+        pack [ttk::labelframe $coloursF.midcolourF -text "Middle colour"] -fill x -padx 10
         frame $coloursF.midcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cmid)
         pack [button $coloursF.midcolourF.cbutton -text "..." \
                 -command [namespace code "Recolour $winId mid $coloursF.midcolourF.colF"]] -side right
         pack $coloursF.midcolourF.colF -side right -padx 10
         
-        pack [LabelFrame $coloursF.topcolourF -text "High colour"] -fill x -padx 10
+        pack [ttk::labelframe $coloursF.topcolourF -text "High colour"] -fill x -padx 10
         frame $coloursF.topcolourF.colF -width 20 -height 15 -bg $useNodes($winId,ctop)
         pack [button $coloursF.topcolourF.cbutton -text "..." \
                 -command [namespace code "Recolour $winId top $coloursF.topcolourF.colF"]] -side right
@@ -441,9 +444,9 @@ namespace eval grid005 {
         set rangeF [labelframe $fd.range -text "Scale range"]
         pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,dataMin)"] -fill x  -padx 10
         pack [label $rangeF.datamaxL -text "Data max. so far: $useNodes($winId,dataMax)"] -fill x  -padx 10
-        pack [LabelFrame $rangeF.minF -text "Min"] -fill x  -padx 10 -pady 5
+        pack [ttk::labelframe $rangeF.minF -text "Min"] -fill x  -padx 10 -pady 5
         pack [entry $rangeF.minF.entry -textvar [namespace current]::min($winId) -width 20] -side right -padx 10
-        pack [LabelFrame $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
+        pack [ttk::labelframe $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
         pack [entry $rangeF.maxF.entry -textvar [namespace current]::max($winId) -width 20] -side right -padx 10
         pack $rangeF -padx 10 -pady 10
         
@@ -483,11 +486,20 @@ namespace eval grid005 {
 	    $actionF.cb configure -state disabled
 	}
 
-        $dlg add -name ok \
-                -command [namespace code "OnClickSettingOkBtn $winId $coloursF $rangeF $dlg"]; # buttons 0
-        $dlg add -name cancel -command "$dlg enddialog 1"
-        $dlg draw; # waits for a button to be clicked. Button command must call $dlg enddialog _result_
-        destroy $dlg
+	pack [frame $dlg.btnfr]
+	pack [button $dlg.btnfr.ok -text [tr. OK] \
+		  -command "set gridprops(xdone) 1"] -side right
+	pack [button $dlg.btnfr.cancel -text [tr. Cancel] \
+		  -command "set gridprops(xdone) 0"] -side right
+	LetItShow $dlg
+	grab $dlg
+	tkwait variable gridprops(xdone)
+	grab release $dlg
+	if {$gridprops(xdone)} {
+# transfer data back to variables
+	    OnClickSettingOkBtn $winId $coloursF $rangeF $dlg
+	}
+	PackItUp $dlg
     }
     
     proc GetImg {winId} {
@@ -591,7 +603,6 @@ namespace eval grid005 {
             focus $rangeF.maxF.entry
             return
         }
-        $dlg enddialog 0
 	if {!$useNodes($winId,colourMapTweaked)} {
 	    SetColours useNodes $winId
 	}
@@ -735,10 +746,10 @@ namespace eval grid005 {
             set useNodes($winId,mult) $next
         }
         if {$useNodes($winId,mult)==1} {
-            $winId.bbframe.buttonBox itemconfigure zoomout -state disable
+	    ::graphtools::SetButtonState $winId zoomout disabled
             # disable zoom out button
         } else {
-            $winId.bbframe.buttonBox itemconfigure zoomout -state normal
+	    ::graphtools::SetButtonState $winId zoomout normal
         }
         
         $winId.c configure -scroll "0 0 \

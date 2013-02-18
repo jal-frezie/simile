@@ -94,14 +94,12 @@ namespace eval canvasnotes20070919 {
     }
 
     proc Properties {} {
+	global textprops
 	variable whatNotes
 
-	Dialog .annotationprop -title "Annotation properties" \
-	    -parent [winfo parent $whatNotes(canvas)] -modal local \
-	    -default 0 -cancel 1
-        .annotationprop add -name ok ;# buttons 0
-        .annotationprop add -name cancel
-	set dlg [GetFrame .annotationprop]
+	set dlg [PutItThere .annotationprop [winfo toplevel $whatNotes(canvas)]]
+	wm title $dlg "Annotation properties"
+
 	pack [set txtFrame [labelframe $dlg.txtframe -text Text]]
 	pack [text $txtFrame.text -width 40 -height 4] -fill both -expand 1
 	set oldText [$whatNotes(canvas) itemcget $whatNotes(text) -text]
@@ -118,7 +116,18 @@ namespace eval canvasnotes20070919 {
 	$txtFrame.scale set [expr {abs([font actual $font -size])}]
 	pack [button $txtFrame.colour -text "Set colour" \
 		  -command [namespace code ChangeColour]] -padx 10 -pady 10
-	TweakText [.annotationprop draw]
+
+	pack [frame $dlg.btnfr]
+	pack [button $dlg.btnfr.ok -text [tr. OK] \
+		  -command "set textprops(xdone) 1"] -side right
+	pack [button $dlg.btnfr.cancel -text [tr. Cancel] \
+		  -command "set textprops(xdone) 0"] -side right
+	LetItShow $dlg
+	grab $dlg
+	tkwait variable textprops(xdone)
+	grab release $dlg
+	TweakText $textprops(xdone)
+	PackItUp $dlg
 	destroy .annotationprop
     }
 
@@ -130,7 +139,7 @@ namespace eval canvasnotes20070919 {
     proc TweakText {btn} {
 	variable whatNotes
 
-	if {!$btn} { ;# ok
+	if {$btn} { ;# ok
 	    set dlg [GetFrame .annotationprop]
 	    $whatNotes(canvas) itemconfigure $whatNotes(text) -text \
 		[$dlg.txtframe.text get 1.0 end] -fill $whatNotes(col) \

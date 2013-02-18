@@ -32,8 +32,8 @@ class similescript::$newHelperClass {
                 [list table.gif filemode_$this \
                 [code $this ColumnMode]]]
         ::graphtools::MakeToolBar $winId $toolbarItems
-        MakeFrames $winId
-	set f [MakeSubFrames $winId $winId.c.canvas.frame {{} {}} {} 0]
+        set frameZone [DIYMakeFrames $winId]
+	set f [MakeSubFrames $winId $frameZone {{} {}} {} 0]
 	set f [join [lrange [split $f .] 0 end-1] .] ;# remove last level
 	pack [::ttk::button $f.head.save -image $::iconImages(save) \
 		  -command [code $this SetSavePath]] \
@@ -243,7 +243,7 @@ class similescript::$newHelperClass {
     }
 
     method ColumnMode {} {
-	$winId.bbframe.buttonBox itemconfigure 3 \
+	$winId.bbframe.table configure \
 	    -image $useNodes(multiFileImg) \
 	    -command [code $this MultiFileMode]
 	set ::msgs(filemode_$this) "Save as separate files"
@@ -252,7 +252,7 @@ class similescript::$newHelperClass {
     }
 
     method MultiFileMode {} {
-	$winId.bbframe.buttonBox itemconfigure 3 \
+	$winId.bbframe.table configure \
 	    -image $::iconImages(table) \
 	    -command [code $this ColumnMode]
 	set ::msgs(filemode_$this) "Save as columns in one file"

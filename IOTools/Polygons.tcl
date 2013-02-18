@@ -496,11 +496,11 @@ namespace eval ::polygon375 {
         variable max
 	variable displayUpdate
 	global ${winId}l5
+	global polyProps
 
         set ${winId}l5 $displayUpdate($winId)
-	set dlg [Dialog .polyprop -parent [winfo toplevel $winId] \
-		     -title "Polygon display properties" \
-		     -modal local -default 0 -cancel 1]
+	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
+	wm title $dlg [tr. "Polygon display properties"]
         
         # copy display parameters to temp values
         # colours are stored by frames used as example colour swatch (eg $coloursF.lowcolourF.colF)
@@ -508,20 +508,20 @@ namespace eval ::polygon375 {
         set max($winId) $useNodes($winId,max)
         
         #create widgets
-        set coloursF [labelframe [GetFrame $dlg].colours -text "Colour scale"]
-        pack [LabelFrame $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
+        set coloursF [labelframe $dlg.colours -text "Colour scale"]
+        pack [ttk::labelframe $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
         frame $coloursF.lowcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cbot)
         pack [button $coloursF.lowcolourF.cbutton -text "..." \
                 -command [namespace code "Recolour $winId bot $coloursF.lowcolourF.colF"]] -side right
         pack $coloursF.lowcolourF.colF -side right -padx 10
         
-        pack [LabelFrame $coloursF.midcolourF -text "Middle colour"] -fill x -padx 10
+        pack [ttk::labelframe $coloursF.midcolourF -text "Middle colour"] -fill x -padx 10
         frame $coloursF.midcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cmid)
         pack [button $coloursF.midcolourF.cbutton -text "..." \
                 -command [namespace code "Recolour $winId mid $coloursF.midcolourF.colF"]] -side right
         pack $coloursF.midcolourF.colF -side right -padx 10
         
-        pack [LabelFrame $coloursF.topcolourF -text "High colour"] -fill x -padx 10
+        pack [ttk::labelframe $coloursF.topcolourF -text "High colour"] -fill x -padx 10
         frame $coloursF.topcolourF.colF -width 20 -height 15 -bg $useNodes($winId,ctop)
         pack [button $coloursF.topcolourF.cbutton -text "..." \
                 -command [namespace code "Recolour $winId top $coloursF.topcolourF.colF"]] -side right
@@ -529,38 +529,48 @@ namespace eval ::polygon375 {
         
         pack $coloursF -padx 10 -pady 10 -fill x
         
-        set borderF [labelframe [GetFrame $dlg].border -text "Borders"]
-        pack [LabelFrame $borderF.widF -text "Width"] -fill x  -padx 10 -pady 5
+        set borderF [labelframe $dlg.border -text "Borders"]
+        pack [ttk::labelframe $borderF.widF -text "Width"] -fill x  -padx 10 -pady 5
         pack [entry $borderF.widF.entry -textvar [namespace current]::useNodes($winId,bw) -width 20] -side left -padx 10
-        pack [LabelFrame $borderF.colourF -text "Colour"] -fill x -padx 10
+        pack [ttk::labelframe $borderF.colourF -text "Colour"] -fill x -padx 10
         frame $borderF.colourF.colF -width 20 -height 15 -bg $useNodes($winId,cbord)
         pack [button $borderF.colourF.cbutton -text "..." \
                 -command [namespace code "Recolour $winId bord $borderF.colourF.colF"]] -side right
         pack $borderF.colourF.colF -side right -padx 10
         pack $borderF -padx 10 -pady 10
         
-        set rangeF [labelframe [GetFrame $dlg].range -text "Scale range"]
+        set rangeF [labelframe $dlg.range -text "Scale range"]
         pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,datamin)"] -fill x  -padx 10
         pack [label $rangeF.datamaxL -text "Data max. so far: $useNodes($winId,datamax)"] -fill x  -padx 10
-        pack [LabelFrame $rangeF.minF -text "Min"] -fill x  -padx 10 -pady 5
+        pack [ttk::labelframe $rangeF.minF -text "Min"] -fill x  -padx 10 -pady 5
         pack [entry $rangeF.minF.entry -textvar [namespace current]::min($winId) -width 20] -side right -padx 10
-        pack [LabelFrame $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
+        pack [ttk::labelframe $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
         pack [entry $rangeF.maxF.entry -textvar [namespace current]::max($winId) -width 20] -side right -padx 10
         pack $rangeF -padx 10 -pady 10
-        pack [checkbutton [GetFrame $dlg].update -variable ${winId}l5 \
+        pack [checkbutton $dlg.update -variable ${winId}l5 \
 		  -text "Update at display intervals"]
         
-        set oriF [labelframe [GetFrame $dlg].orient -text "Orientation"]
+        set oriF [labelframe $dlg.orient -text "Orientation"]
 	pack [radiobutton $oriF.h -text Horizontal -var [namespace current]::useNodes($winId,orient) -value h] -side left
 	pack [radiobutton $oriF.v -text Vertical -var [namespace current]::useNodes($winId,orient) -value v] -side right
         pack $oriF -padx 10 -pady 10 -fill x
         
-        $dlg add -name ok \
-                -command [namespace code "OnClickSettingOkBtn $winId $coloursF $rangeF $dlg"]; # buttons 0
-        $dlg add -name cancel -command "$dlg enddialog 1"
-        $dlg draw; # waits for a button to be clicked. Button command must call $dlg enddialog _result_
+	pack [frame $dlg.btnfr]
+	pack [button $dlg.btnfr.ok -text [tr. OK] \
+		  -command "set polyProps(xdone) 1"] -side right
+	pack [button $dlg.btnfr.cancel -text [tr. Cancel] \
+		  -command "set polyProps(xdone) 0"] -side right
+	LetItShow $dlg
+	grab $dlg
+	tkwait variable polyProps(xdone)
+	grab release $dlg
+	    # copy the values from the temp values to those to be edited if OK clicked
+	if {$polyProps(xdone)} {
+ 		# OK button was clicked
+	    OnClickSettingOkBtn $winId $coloursF $rangeF $dlg
+	}
+	PackItUp $dlg
 	set displayUpdate($winId) [set ${winId}l5]
-        destroy $dlg
     }
     
     proc OnClickSettingOkBtn {winId coloursF rangeF dlg} {
@@ -591,7 +601,6 @@ namespace eval ::polygon375 {
         }
         set useNodes($winId,range) [expr {$max($winId)-$min($winId)}]
         recolour_scale [namespace current] $winId
-        $dlg enddialog 0
         PrepareSaveString $winId
 	
         display $winId 0 0 0

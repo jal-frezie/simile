@@ -129,7 +129,7 @@ namespace eval $keyValue {
         }
         if {[info exists editMode($winId)]} {
             foreach surplus {clear add remove refresh} {
-                $winId.bbframe.buttonBox itemconfigure $surplus -state disabled
+                ::graphtools::SetButtonState $winId $surplus disabled
             }
 	    set editMode($winId,tweaked) 0
         }

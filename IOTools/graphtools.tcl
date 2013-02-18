@@ -47,32 +47,42 @@ proc ::graphtools::MakeToolBar {w toolbarItems} {
     pack [ttk::separator $w.abovebbox -orient horizontal] -fill x -side top
     set f [frame $w.bbframe  -relief raised]
 # next line for bwidget version
-    set bbox [ButtonBox $f.buttonBox -spacing 0 -padx 1 -pady 1]
+#    set bbox [ButtonBox $f.buttonBox -spacing 0 -padx 1 -pady 1]
+# replacement:
+#    set bbox  [::ttk::frame $f.buttonBox -class Toolbar]
     # build the toolbar  from the toolbarItems list
     foreach item $toolbarItems {
         set gif [lindex $item 0 ]
         set helptext [lindex $item 1]
         set command [lindex $item 2]
-        set newButton \
-	    [$bbox add -name [file rootname $gif] -highlightthickness 0 \
-		 -image [image create photo  -file "../Images/Toolbar/$gif"] \
-		 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
-		 -command $command]
+# next line for bwidget version
+#        set newButton \
+#	    [$bbox add -name [file rootname $gif] -highlightthickness 0 \
+#		 -image [image create photo  -file "../Images/Toolbar/$gif"] \
+#		 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
+#		 -command $command]
 # non-bwidget version which works but needs all the clients changed
 # to set button abilities by name instead of number (which they should anyway)
-#	set newButton \
-#	    [button $f.$[file rootname $gif] -highlightthickness 0 \
-#		 -image [image create photo  -file "../Images/Toolbar/$gif"] \
-#		 -takefocus 0 -relief flat -borderwidth 1 -padx 1 -pady 1 \
-#		 -command $command]
-#	pack $newButton -side left
+	set newButton \
+	    [button $f.[file rootname $gif] -highlightthickness 0 \
+		 -image [image create photo  -file "../Images/Toolbar/$gif"] \
+		 -takefocus 0 -relief flat -borderwidth 1 -padx 1 -pady 1 \
+		 -command $command]
+	pack $newButton -side left
 	BindPopup $newButton $helptext
     }
     pack $f -side top -fill x
-    pack $bbox -side left -anchor w
-    pack [Separator $w.belowbbox -orient horizontal] -fill x -side top
-    
+#    pack $bbox -side left -anchor w
+    pack [ttk::separator $w.belowbbox -orient horizontal] -fill x -side top
 }
+
+proc ::graphtools::SetButtonState {bar button newState} {
+    if {[lsearch {raised flat sunken} $newState]>-1} {
+	$bar.bbframe.$button configure -relief $newState
+    } else {
+	$bar.bbframe.$button configure -state $newState
+    }
+} 
 
 proc ::graphtools::UpdateState {winId} {
     global ::graphtools::plot

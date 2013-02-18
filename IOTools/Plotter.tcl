@@ -313,10 +313,8 @@ namespace eval ::$keyValue {
         set AutoAxisScaling $::graphtools::plot($w,AutoAxisScaling)
         set DrawLegend $::graphtools::plot($w,DrawLegend)
         
-        set dlg [Dialog .plotxyprop -parent $w -title "Plotter properties" \
-                -modal local -default 0 -cancel 1]
-        $dlg add -name ok; # buttons 0
-        $dlg add -name cancel
+        set dlg [PutItThere .plotxyprop $w]
+        wm title $dlg [tr. "Plotter properties"]
         
         # Create entry boxes
 ################################################################################
@@ -341,22 +339,32 @@ namespace eval ::$keyValue {
 #         pack $entryF -side top
 ################################################################################
         
-        set chkF [frame [GetFrame $dlg].checkbuttons -relief groove -width 300]
-        #pack [LabelFrame $chkF.automaticScalingF -text "Automatic scaling"] -fill x
+        set chkF [frame $dlg.checkbuttons -relief groove -width 300]
+        #pack [ttk::labelframe $chkF.automaticScalingF -text "Automatic scaling"] -fill x
         #pack [checkbutton $chkF.automaticScalingF.cbutton -variable [namespace current]::AutoAxisScaling] -side right
-        pack [LabelFrame $chkF.fewXAxisTicksF -text "Few x-axis ticks"] -fill x
+        pack [ttk::labelframe $chkF.fewXAxisTicksF -text "Few x-axis ticks"] -fill x
         pack [checkbutton $chkF.fewXAxisTicksF.cbutton -variable [namespace current]::FewXAxisTicks] -side right
 ################################################################################
-#         pack [LabelFrame $chkF.idArrayElementsF -text "Different colours for each element of arrays"] -fill x
+#         pack [ttk::labelframe $chkF.idArrayElementsF -text "Different colours for each element of arrays"] -fill x
 #         pack [checkbutton $chkF.idArrayElementsF.cbutton -variable [namespace current]::IdArrayElements] -side right
 ################################################################################
-        pack [LabelFrame $chkF.legendF -text "Draw legend"] -fill x
+        pack [ttk::labelframe $chkF.legendF -text "Draw legend"] -fill x
         pack [checkbutton $chkF.legendF.cbutton -variable [namespace current]::DrawLegend] -side right
         
         pack $chkF -padx 10
         
+	pack [frame $dlg.btnfr]
+	pack [button $dlg.btnfr.ok -text [tr. OK] \
+		  -command "set ::graphtools::plot(xdone) 1"] -side right
+	pack [button $dlg.btnfr.cancel -text [tr. Cancel] \
+		  -command "set ::graphtools::plot(xdone) 0"] -side right
+	LetItShow $dlg
+	grab $dlg
+	tkwait variable ::graphtools::plot(xdone)
+	grab release $dlg
+	PackItUp $dlg
         # copy the values from the temp values to those to be edited if OK clicked
-        if {[$dlg draw] == 0} {
+        if {$::graphtools::plot(xdone)} {
             # OK button was clicked
             
             # redraw the x-axis according to FewXAxisTicks must be done only when FewXAxisTicks
@@ -402,7 +410,6 @@ namespace eval ::$keyValue {
             
             UpdateState $w
         }
-        destroy $dlg
     }
     
     proc PrepareSaveString {w} {

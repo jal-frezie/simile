@@ -282,6 +282,7 @@ namespace eval ::$keyValue {
         get_Yvalues $w
         get_Xvalues $w
         
+# remove plots that are over persistence limit -- currently counts in displays
 	set seq [incr plot($w,ordinal)]
 	set plot($w,time$seq) $time
         if {$plot($w,CurrentOnly)} {
@@ -376,33 +377,38 @@ namespace eval ::$keyValue {
 	    variable CurrentOnly $::graphtools::plot($w,CurrentOnly)
 	    
 	    
-	    set dlg [Dialog .plotxyprop -parent $w -title "XY Plotter properties" \
-			 -modal local -default 0 -cancel 1]
-	    $dlg add -name ok; # buttons 0
-	    $dlg add -name cancel
+	    set dlg [PutItThere .plotxyprop $w]
+	    wm title $dlg [tr. "XY Plotter properties"]
 	    
 	    set chkF [frame [GetFrame $dlg].checkbuttons -relief groove]
 	    
-	    pack [LabelFrame $chkF.drawlinesF -text "Draw lines between points"] -fill x
+	    pack [ttk::labelframe $chkF.drawlinesF -text "Draw lines between points"] -fill x
 	    pack [checkbutton $chkF.drawlinesF.cbutton -variable [namespace current]::DrawLines] -side right
-	    pack [LabelFrame $chkF.drawpointsF -text "Draw points"] -fill x
+	    pack [ttk::labelframe $chkF.drawpointsF -text "Draw points"] -fill x
 	    pack [checkbutton $chkF.drawpointsF.cbutton -variable [namespace current]::DrawPoints] -side right
-	    pack [LabelFrame $chkF.currentOnlyF -text "Persistence (0 for indefinite)"] -fill x
+	    pack [ttk::labelframe $chkF.currentOnlyF -text "Persistence (0 for indefinite)"] -fill x
 	    pack [entry $chkF.currentOnlyF.cbutton -textvariable [namespace current]::CurrentOnly] -side right
 	    
 	    pack $chkF -padx 10
 	    
+	    pack [frame $dlg.btnfr]
+	    pack [button $dlg.btnfr.ok -text [tr. OK] \
+		      -command "set ::graphtools::plot(xdone) 1"] -side right
+	    pack [button $dlg.btnfr.cancel -text [tr. Cancel] \
+		      -command "set ::graphtools::plot(xdone) 0"] -side right
+	    LetItShow $dlg
+	    grab $dlg
+	    tkwait variable ::graphtools::plot(xdone)
+	    grab release $dlg
+	    PackItUp $dlg
 	    # copy the values from the temp values to those to be edited if OK clicked
-	    if {[$dlg draw] == 0} {
-		# OK button was clicked
+	    if {$::graphtools::plot(xdone)} {
+ 		# OK button was clicked
 		set ::graphtools::plot($w,DrawLines) $DrawLines
 		set ::graphtools::plot($w,DrawPoints) $DrawPoints
 		set ::graphtools::plot($w,CurrentOnly) $CurrentOnly
 		UpdateState $w
 	    }
-	    #ShowMess debug info "$::graphtools::plot($w,DrawLines) $::graphtools::plot($w,DrawPoints)" ok
-	    
-	    destroy $dlg
 	}
 	
 	proc PrepareSaveString {w} {
