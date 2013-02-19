@@ -370,9 +370,9 @@ iterate_to_crossing([X1, Y1], [X2, Y2], Class, [L, T, R, B], Exit) :-
 */
 
 get_box_crossing([X1, Y1], [X2, Y2], [L, T, R, B], [Xx, Yx]) :-
-    (0.0 is float(X2-X1), !, Xfract = 1;
+    (0.0 is float(X2-X1), !, Xfract = Yfract; % ignore it
         Xfract is max((R - X1)/(X2 - X1), (X1 - L)/(X1 - X2))),
-    (0.0 is float(Y2-Y1), !, Yfract = 1;
+    (0.0 is float(Y2-Y1), !, Yfract = Xfract; % hope one is non-null
         Yfract is max((B - Y1)/(Y2 - Y1), (Y1 - T)/(Y1 - Y2))),
     Fract is min(Xfract, Yfract),
     Xx is X1 + Fract*(X2 - X1),
