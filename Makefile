@@ -72,10 +72,12 @@ endif
 SYSDIR = System$(BITEXTN)
 
 # Default case: Linux
+FLAGS = $(OPT) -m32
 ifeq ($(MY_CPU),x86_64)
 	FLAGS = $(OPT)
-else
-	FLAGS = $(OPT) -m32
+endif
+ifeq ($(MY_CPU),armv7l) # 32-bit but -m32 unrecognized
+	FLAGS = $(OPT)
 endif
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
@@ -87,10 +89,11 @@ VERS = $(MAJ).$(MIN)
 EXECDIR = $(SYSDIR)/bin
 LIBDIR = $(SYSDIR)/lib
 SLDIR = $(LIBDIR)
-USETCL = -DUSE_TCL_STUBS -I$(TCLREF)/include/tcl$(VERS) -L$(TCLREF)/lib -ltclstub$(VERS)
+# Builds against Tcl included in distribution
+# USETCL = -DUSE_TCL_STUBS -I$(TCLREF)/include/tcl$(VERS) -L$(TCLREF)/lib -ltclstub$(VERS)
 
 # Next builds against system Tcl for Prolog debugging with Sicstus/dll
-# USETCL = -DUSE_TCL_STUBS -I/usr/include/tcl$(VERS) -L/usr/lib/tcl$(VERS) -ltclstub$(VERS)
+USETCL = -DUSE_TCL_STUBS -I/usr/include/tcl$(VERS) -L/usr/lib/tcl$(VERS) -ltclstub$(VERS)
 LOCALIZE_TCL_REFS = ls # placebo command
 CHECK_LOCAL_LIBS = -Wl,-rpath,'../$(LIBDIR)'
 SHAREDLIBEXTN = .so

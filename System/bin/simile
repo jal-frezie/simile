@@ -31,10 +31,10 @@ BINDIR=`dirname "$TOP"`;
 SYSDIR=`dirname "$BINDIR"`;
 SIMDIR=`dirname "$SYSDIR"`;
 # next two lines needed if tk included in distribution
-export LD_LIBRARY_PATH="$SYSDIR/lib"
+# export LD_LIBRARY_PATH="$SYSDIR/lib"
 # TCL_LIBRARY="$LD_LIBRARY_PATH/tcl8.5"
 # export TCL_LIBRARY
 # start included tk
-"$BINDIR/wish" "$SIMDIR/Run/simile.tcl" $1
+# "$BINDIR/wish" "$SIMDIR/Run/simile.tcl" $1
 # start system tk
-# wish8.5 "$SIMDIR/Run/simile.tcl" $1
+wish8.5 "$SIMDIR/Run/simile.tcl" $1
