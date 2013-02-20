@@ -213,7 +213,14 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 	// if (!for_real) // for error reporting
 	  // userStop.targetId = graphId; // culprit is predicted event
       }
-    }
+    } else if (dts[0]<=0 || !extras->t3) 
+      // resetting or in a new instance -- fire if out of range
+      if (trigger>=upper) 
+	return extras->t3 = 1;
+      else if (trigger<=lower)
+	return extras->t3 = -1;
+      else
+	extras->t3 = 10; // indicate no longer new instance
   }
   return 0;
 }

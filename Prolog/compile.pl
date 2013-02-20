@@ -1557,7 +1557,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Move = Src,
 	    DeliverFn =.. [deliver, arr(DestPtr, Dest, LocalInds), Dest,
 			       Count | VarInds],
-	    Linkers = [make(Tgt, [Dest], Path, Step, [DeliverFn]),
+	    Linkers = [make(Tgt, [Made], Path, Step, [DeliverFn]),
 		       make(saved(Dest), [Tgt], [], SmStep,
 			    [schedule(TrgExp, Dest, Delay)])];
 	  Type = al_function,

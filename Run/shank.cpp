@@ -1005,13 +1005,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
 					int top_phase) {
   int tweak_phase;
 
-  switch (how_int) {
-  case EULER:
-    SetdT(0,0);
-    break;
-  case RUNGE_KUTTA:
-    SetdT(0,1);
-  } // was -1,0 to stop loss, but now we want it cos it happens next step
+  SetdT(0, 5+(how_int==RUNGE_KUTTA)); // start prediction cycle
   for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
     SetdT( tweak_phase,steps[tweak_phase]);
   }

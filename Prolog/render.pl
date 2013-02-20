@@ -639,7 +639,7 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 		/* limits for GNU integers; Sicstus can go further */
 	    Type = 'REAL',
 	        [Wee, Muckle] = [-1.0e100, 1.0e100]),
-	    (Expr = event(after(_T, _V), _TM, (0->0)) ->
+	    (Expr = event(after(_T, _V), _TM) ->
 		DefEval = 'RECALL';
 	      DefEval = 'DERIVED')),
 
