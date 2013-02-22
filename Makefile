@@ -508,7 +508,7 @@ install:
 		Run/hai2mmii.tcl \
 		Run/language.tcl \
 		Run/toolbox.tcl \
-		Run/userinfo.txt \
+		Run/userinfo.tpl \
 		Run/messages.tcl \
 		Run/mre.tcl \
 		Run/params.tcl \
@@ -540,6 +540,7 @@ install:
 		System$(BITEXTN)/lib/lib5d.so; \
 	cd $(DESTDIR)$(INSTALL_TGT); \
 	tar xf payload.tar; \
+	mv Run/userinfo.tpl Run/userinfo.txt; \
 	rm payload.tar; cd -; \
 	mkdir -p $(DESTDIR)/usr/bin; \
 	cd $(DESTDIR)/usr/bin; \
