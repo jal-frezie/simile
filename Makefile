@@ -332,17 +332,17 @@ install:
 		Functions/new_units.pl \
 		Functions/procs.cpp \
 		Functions/procs.tcl \
-		Help/data/* \
-		Help/diagrams/* \
-		Help/elements/* \
-		Help/equations/* \
-		Help/files/* \
-		Help/index.htm \
-		Help/new/index.htm \
-		Help/run/* \
-		Help/scripting/* \
-		Help/start/* \
-		Help/submodels/* \
+		help/data/* \
+		help/diagrams/* \
+		help/elements/* \
+		help/equations/* \
+		help/files/* \
+		help/index.htm \
+		help/new/index.htm \
+		help/run/* \
+		help/scripting/* \
+		help/start/* \
+		help/submodels/* \
 		Images/Control/pause.gif \
 		Images/Control/play.gif \
 		Images/Control/stop.gif \
