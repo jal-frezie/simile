@@ -1396,6 +1396,7 @@ proc DoLocalCmd {win item} {
 	empty {EmptyWindow $win}
 	import_xml {TradeXML $win 0}
 	export_xml {TradeXML $win 1}
+	extra_run {ExtraRun $win}
     }
 }
 
@@ -1737,6 +1738,11 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
                     -command "MenuSelect $c code run_tcl" \
                     -accelerator "$accKey+D"
     AddAccelerator $winid model "Debug" "<$accSym-d>"
+# Not as low-hanging a fruit as I thought!
+#    $fm add command -label [tr. "Extra run instance"] -state $execEntryState \
+#                    -command "MenuSelect $c local extra_run" \
+#                    -accelerator "$accKey+E"
+#    AddAccelerator $winid model "Extra run instance" "<$accSym-e>"
 #Model now aborted by closing run control
 #    $fm add command -label [tr. "Abort execution"] -state $execEntryState \
 #                    -command "FinishExec $c"

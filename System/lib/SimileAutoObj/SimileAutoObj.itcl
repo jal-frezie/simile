@@ -22,10 +22,19 @@ if {![info exists window_info]} {
     set argv {-stealth}
     source "[file dirname [info script]]/../../../Run/simile.tcl"
     
-    rename exit ::renamed::exit
-    proc exit {} {
-        prolog tk_kill_everything(_)
-    }
+# The following was done to allow Simile's normal quit procedure to be
+# followed when the script executed the 'exit' command. It is now
+# unnecessary, since model execution runs in a separate thread rather
+# than a separate application and therefore exits automatically as
+# soon as the parent thread does. It is also useless since dialogues
+# are short-circuited during scripting so there is no opportunity to
+# save an altered model (not that scripts can alter them) anyway.
+
+#     rename exit ::renamed::exit
+#     proc exit {} {
+#         catch {prolog tk_kill_everything(_)}
+# 	puts $::errorInfo
+#     }
     
 # This section no longer required, because:
 # (a) ShowMessage is now used only for debugging, not for user interaction -- 
