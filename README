@@ -1,0 +1,45 @@
+Simile Version 5.8 for Linux
+============================
+
+Before you start:
+-----------------
+You need to have the GNU c++ compiler installed. Your Linux distribution will 
+include a package for this; it will be called g++ or gcc-c++.
+
+To start the program:
+---------------------
+execute Simile/System/bin/simile
+or if you have a 64-bit version
+execute Simile/System64/bin/simile
+
+This script can be referenced by a symbolic link, but not moved to
+another directory
+
+License code:
+-------------
+When you run Simile for the first time, you will be prompted for your
+name and organization, and also the license code you got from
+Simulistics (unless it is an evaluation version). The name and
+organization must match those you supplied to Simulistics when buying
+Simile. Important: this information is case and whitespace sensitive!
+
+Memory requirement:
+-------------------
+256MB available in main memory or swap space. Simile will attempt to run 
+with less memory, but this will limit the size of model you can build.
+
+Libraries:
+----------
+Simile requires the following GNU libraries to be installed:
+libc.so.6 (GLIBC 2.6 or higher)
+libm.so.6
+libgcc_s.so.1
+libdl.so.2
+
+These are included in all distributions based on the gcc 3.x and 4.x
+compilers. Older distributions may not be up to date; either update
+them or ask Simulistics to build copies of the executables for the
+older libraries.
+
+Happy Modelling
+Simulistics Ltd
