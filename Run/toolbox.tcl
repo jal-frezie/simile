@@ -1036,8 +1036,8 @@ proc InitExecThread {node} {
     } else {
 	$execInterp($node,id) eval \
 	    [list source [file join $SIMILE_PATH Run exec.tcl]]
-	foreach callbackCmd {AbortCheck InteractGUI ShiftDisplays ExecQuery \
-			     TransEnums} {
+	foreach callbackCmd {AbortCheck InteractGUI ShiftDisplays \
+				 AddLogEntry ExecQuery TransEnums InDays} {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd
 	}
     }
