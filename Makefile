@@ -224,7 +224,7 @@ endif
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
-$(SHIM): Run/ame_cmx.c Run/dllcalls.h
+$(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(FLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
 		ame_cmx.c $(USETCL) -L../$(LIBDIR) -l5d$(ARCHEXTN) \
 		$(CHECK_LOCAL_LIBS); cd ..; \
