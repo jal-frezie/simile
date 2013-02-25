@@ -545,7 +545,7 @@ install:
 	rm payload.tar; cd -; \
 	mkdir -p $(DESTDIR)/usr/bin; \
 	cd $(DESTDIR)/usr/bin; \
-	ln -s ../../$(INSTALL_TGT)/System$(BITEXTN)/bin/simile; cd -
+	ln -s ../..$(INSTALL_TGT)/System$(BITEXTN)/bin/simile; cd -
 endif
 
 # call clean after changing license info in this file
