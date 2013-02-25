@@ -87,8 +87,8 @@ MIN = 5
 VERS = $(MAJ).$(MIN)
 
 EXECDIR = $(SYSDIR)/bin
-LIBDIR = $(SYSDIR)/lib
-SLDIR = $(LIBDIR)
+RESDIR = $(SYSDIR)/lib
+SLDIR = $(RESDIR)
 # Builds against Tcl included in distribution
 # USETCL = -DUSE_TCL_STUBS -I$(TCLREF)/include/tcl$(VERS) -L$(TCLREF)/lib -ltclstub$(VERS)
 
@@ -173,7 +173,7 @@ ifeq ($(PROLOG),GNU)
 	PROLOG_DB = $(EXECDIR)/struct_db$(ARCHEXTN).o
 endif
 
-STUBS_DIR = $(LIBDIR)/Stubs
+STUBS_DIR = $(RESDIR)/Stubs
 SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN)
 UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(VERS)$(SHAREDLIBEXTN)
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
@@ -226,7 +226,7 @@ endif
 
 $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(FLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
-		ame_cmx.c $(USETCL) -L../$(LIBDIR) -l5d$(ARCHEXTN) \
+		ame_cmx.c $(USETCL) -L../$(RESDIR) -l5d$(ARCHEXTN) \
 		$(CHECK_LOCAL_LIBS); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 
@@ -243,10 +243,10 @@ $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. $(MAKEPIC) $(MAKESL) \
 		-Wl,--out-implib,lib5d$(ARCHEXTN).a -o $(SHANK) shank.cpp; \
 		mv $(SHANK) ../$(SLDIR); \
-		mv lib5d$(ARCHEXTN).a ../$(LIBDIR); cd ..
+		mv lib5d$(ARCHEXTN).a ../$(RESDIR); cd ..
 
 # Unix: not needed for Linux as it can build at run time
-$(LIBDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
+$(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) $(FLAGS) -I. $(MAKEPIC) $(MAKESL) \
 		-o ../$(SLDIR)/$(SHANK) shank.cpp; cd ..
 
@@ -270,7 +270,7 @@ $(INSTLIB): Run/install_adv.cpp Makefile
 	cd Run; $(GPPCMD) -static-libgcc -m32 $(FLAGS) $(DEFNS) \
 		-I/c/MsiIntel.SDK/include $(MAKEPIC) $(MAKESL) \
 		-o ../$(INSTLIB) install_adv.cpp /c/MsiIntel.SDK/lib/msi.lib \
-		-L../$(LIBDIR) -lcrypto -lssl; cd ..
+		-L../$(RESDIR) -lcrypto -lssl; cd ..
 
 # the rc objects from windres are ommitted from linking below becaise they
 # do strange things to dll dependencies causing c000007b errors
