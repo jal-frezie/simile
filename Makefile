@@ -95,7 +95,7 @@ SLDIR = $(LIBDIR)
 # Next builds against system Tcl for Prolog debugging with Sicstus/dll
 USETCL = -DUSE_TCL_STUBS -I/usr/include/tcl$(VERS) -L/usr/lib/tcl$(VERS) -ltclstub$(VERS)
 LOCALIZE_TCL_REFS = ls # placebo command
-CHECK_LOCAL_LIBS = -Wl,-rpath,'../$(LIBDIR)'
+CHECK_LOCAL_LIBS = -Wl,-rpath,'$$ORIGIN/..'
 SHAREDLIBEXTN = .so
 
 ifeq ($(PLATFORM),Darwin)
