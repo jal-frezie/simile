@@ -304,7 +304,8 @@ $(RELAY): Run/relay.c
 
 ifeq ($(PLATFORM),GNU/Linux)
 # install used for packaging for distributions
-INSTALL_TGT = /usr/lib/simile-6.0
+LIBDIR = /usr/lib # overridden by rpm build on Fedora 64-bit
+INSTALL_TGT = $(LIBDIR)/simile-6.0
 install:
 	mkdir -p $(DESTDIR)$(INSTALL_TGT); \
 	tar cf $(DESTDIR)$(INSTALL_TGT)/payload.tar \
@@ -544,7 +545,7 @@ install:
 	rm payload.tar; cd -; \
 	mkdir -p $(DESTDIR)/usr/bin; \
 	cd $(DESTDIR)/usr/bin; \
-	ln -s $(DESTDIR)$(INSTALL_TGT)/System$(BITEXTN)/bin/simile; cd -
+	ln -s ../../$(INSTALL_TGT)/System$(BITEXTN)/bin/simile; cd -
 endif
 
 # call clean after changing license info in this file
