@@ -1,6 +1,6 @@
-#set simplify 1 ;# avoid loading anything awkward
+#!/usr/bin/wish
 set use_system_tcltk 1 ;# use separately installed tcltk and tools
-#!/home/jaspert/Simile/System/bin/wish
+#set simplify 1 ;# avoid loading anything awkward
 # Simile source code file: Run/simile.tcl
 #
 # (c) Simulistics Ltd. 2001-2011

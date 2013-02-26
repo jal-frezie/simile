@@ -1,8 +1,3 @@
-#!/bin/wish
-# NB change the line above to suit your UNIX system.
-# Windows will ignore it.
-
-
 set keyValue "threeDoodle98"
 namespace eval ::$keyValue {
 
