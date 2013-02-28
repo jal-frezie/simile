@@ -848,10 +848,6 @@ proc ControlDraw {prologVersion} {
         set guess_free [expr [clock clicks]-$go]
         set simtmpdir $custom(prefDir)/sim$guess_free
     }
-
-    if {![file exists $custom(prefDir)]} {
-        file mkdir $custom(prefDir)
-    }
     file mkdir $simtmpdir
 
     set UserStream [NetOpen $custom(prefDir)/.version w]
