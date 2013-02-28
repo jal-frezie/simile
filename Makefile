@@ -69,9 +69,9 @@ BITEXTN =
 TCLDIR = System
 TCLREF = ../$(TCLDIR)
 endif
-SYSDIR = System$(BITEXTN)
 
 # Default case: Linux
+SYSDIR = System
 FLAGS = $(OPT) -m32
 ifeq ($(MY_CPU),x86_64)
 	FLAGS = $(OPT)
@@ -99,6 +99,7 @@ CHECK_LOCAL_LIBS = -Wl,-rpath,'$$ORIGIN/..'
 SHAREDLIBEXTN = .so
 
 ifeq ($(PLATFORM),Darwin)
+	SYSDIR = System$(BITEXTN)
 #	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
 ifeq ($(MY_CPU),x86_64)
@@ -130,6 +131,7 @@ endif
 
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
+	SYSDIR = System$(BITEXTN)
 ifeq ($(MY_CPU),x86_64)
 	TCLDIR = /c/Tcl
 	SWIPLDIR = "/c/Program files/swipl"
@@ -530,22 +532,22 @@ install:
 		Run/window.tcl \
 		Run/simdoc32.ico \
 		Run/Simile.desktop \
-		System$(BITEXTN)/bin/relay \
-		System$(BITEXTN)/bin/simile \
-		System$(BITEXTN)/bin/xgsimile \
-		System$(BITEXTN)/lib/SimileAutoObj/SimileAutoObj.itcl \
-		System$(BITEXTN)/lib/SimileAutoObj/pkgIndex.tcl \
-		System$(BITEXTN)/lib/Stubs/pkgIndex.tcl \
-		System$(BITEXTN)/lib/Stubs/libame_dll8.5.so \
-		System$(BITEXTN)/lib/Stubs/libunpacker8.5.so \
-		System$(BITEXTN)/lib/lib5d.so; \
+		$(SYSDIR)/bin/relay \
+		$(SYSDIR)/bin/simile \
+		$(SYSDIR)/bin/xgsimile \
+		$(SYSDIR)/lib/SimileAutoObj/SimileAutoObj.itcl \
+		$(SYSDIR)/lib/SimileAutoObj/pkgIndex.tcl \
+		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
+		$(SYSDIR)/lib/Stubs/libame_dll8.5.so \
+		$(SYSDIR)/lib/Stubs/libunpacker8.5.so \
+		$(SYSDIR)/lib/lib5d.so; \
 	cd $(DESTDIR)$(INSTALL_TGT); \
 	tar xf payload.tar; \
 	mv Run/userinfo.tpl Run/userinfo.txt; \
 	rm payload.tar; cd -; \
 	mkdir -p $(DESTDIR)/usr/bin; \
 	cd $(DESTDIR)/usr/bin; \
-	ln -s ../..$(INSTALL_TGT)/System$(BITEXTN)/bin/simile; cd -
+	ln -s ../..$(INSTALL_TGT)/$(SYSDIR)/bin/simile; cd -
 endif
 
 # call clean after changing license info in this file

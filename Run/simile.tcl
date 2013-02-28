@@ -55,6 +55,10 @@ if {[info exists embed_args]} {
     }
 }
 
+if {![file exists $custom(prefDir)]} {
+    file mkdir $custom(prefDir)
+}
+
 # replace /./ in path with / to avoid confusing file dirname
 regsub -all /\\./ [info script] / scriptCmd
 
@@ -68,7 +72,7 @@ if {[info exists tcl_platform(pointerSize)]} {
     set tclBitness [expr {8*$tcl_platform(pointerSize)}]
 }
 set env(SYSDIR) [file join $SIMILE_PATH System]
-if {$tclBitness==64} {
+if {$tcl_platform(os) ne "Linux" && $tclBitness==64} {
     append env(SYSDIR) 64
     if {$tcl_platform(os) eq "Darwin"} {
 	set use_system_tcltk 1
@@ -132,11 +136,18 @@ set savedCredentials [list prologId interfaceId install_time license_code \
 # 	catch {set env($regEntry) [registry get $regKey $regEntry]}
 #     }
 # } else {
-    set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
-    foreach regEntry $savedCredentials {
-	gets $UserStream env($regEntry)
-    }
-    close $UserStream
+
+set creds [file join $custom(prefDir) userinfo.txt]
+if {![file exists $creds]} {
+    file copy -force [file join $SIMILE_PATH Run userinfo.txt] $creds
+}
+
+set UserStream [open $creds r]
+foreach regEntry $savedCredentials {
+    gets $UserStream env($regEntry)
+}
+close $UserStream
+
 # }
 # set env(prologId) gnu ;# goodbye forever Sicstus
 if {[info exists prolog_in_console]} {
