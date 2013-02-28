@@ -1278,14 +1278,14 @@ proc ContextSensitiveHelp {context page} {
     switch [tk windowingsystem] {
         win32 {
             package require winhelp
-            winhelp $context ../Help/simile_book.chm $page
+            winhelp $context ../help/simile_book.chm $page
         } aqua {
 # try Snow Leopard location first
-	    if {[catch {exec open -a "HelpViewer.app" ../Help/$page}]} {
-		exec open -a "Help Viewer.app" ../Help/$page
+	    if {[catch {exec open -a "HelpViewer.app" ../help/$page}]} {
+		exec open -a "Help Viewer.app" ../help/$page
 	    }
         } x11 {
-            set url file://[file dirname [pwd]]/Help/$page
+            set url file://[file dirname [pwd]]/help/$page
             if {![info exists env(BROWSER)]} {
                 foreach possBrowser {firefox mozilla netscape konqueror lynx} {
                     set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
@@ -1491,7 +1491,7 @@ proc ErrorHelp {diagnostic} {
 
 proc GetHelp {} {
     global SIMILE_PATH diagno help
-    cd $SIMILE_PATH/Help
+    cd $SIMILE_PATH/help
     ContextSensitiveHelp .diag \
             $help([lindex $diagno(keys) [.diag.topicsf.l curselection]])
 }
