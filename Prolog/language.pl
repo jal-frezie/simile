@@ -558,40 +558,24 @@ submodel instances where these can't always be done at init time, I leave an
 initialized when their parents are, this causes the tests to be done and the
 inits to be included. */
 
-do_assignment(L, [new_member(ParentPtr, Name, InitVar) | Clauses],
+do_assignment(L, [new_member(ParentPtr, Name, InitVars) | Clauses],
 	      Indent, Used, Stream) :-
-	Indent1 is Indent + 4,
-
+	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, count, Count),
 	append_atoms(Name, pointer, Pointer),
 	append_atoms(Name, meta, MetaPointer),
 	resolve_pointer(L, MetaPointer, MPTarget),
+	make_struct_reference(L, ParentPtr, Name, StartPtr), 
 	make_struct_reference(L, ParentPtr, Count, Index), 
 	refer_value(L, Index, RefIndex),
 
-	UseElementRef = RefIndex,
-	make_struct_reference(L, ParentPtr, InitVar, CompVal),
-	refer_value(L, CompVal, CompValRef),
-
+	append_atoms(Type, '*', MType),
+	declare(L, Pointer, _, Type, Used, Indent, Stream),
+	declare(L, MetaPointer, _, MType, Used, Indent, Stream),
+	excrete(L, make_reference, MetaPointer=StartPtr, Indent, Stream),
 	/* Now loop on compartment to create submodel */
-	excrete(L, while_start, CompValRef>=1, Indent, Stream),
-	make_expr(L, CompValRef-1, NewCompVal),
-	excrete(L, assignment, CompVal=NewCompVal, Indent1, Stream),
-	excrete(L, increment_by, [Index, 1], Indent1, Stream),
-	excrete(L, assign_space, Pointer=[ParentPtr, Name, [UseElementRef],
-					  _, []], Indent1, Stream),
-	nth(ChannelN, Used, InitVar), !,
-	excrete(L, procedure_call, init_pop_member(Pointer, RefIndex,
-						  ChannelN), Indent1, Stream),
-	%move_base_ptrs(L, Pointer, save, Indent1, [0], _, Stream),
-	/* this now set to 0 in i_p_m*/
-
-	/* End of submodel loop; insert into list and do next */
-	refer_value(L, Pointer, PointerRef),
-	excrete(L, assignment, MPTarget=PointerRef, Indent1, Stream),
-	make_struct_reference(L, Pointer, next, OnPointer),
-	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream),
-	excrete(L, end(while), 'New instances', Indent, Stream),
+	all(language, add_for_channel,
+	    [build(InitVars), unify([L, Index, Pointer, ParentPtr, MetaPointer, MPTarget, Name, RefIndex, Indent, Used, Stream])]),
 
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 
@@ -659,8 +643,9 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 /* OK, now for mortality. This will have to be called before immigration or reproduction because any new individuals might not yet have values for their loss nodes. It used to be done as part of the reproduction loop but had to be separated now there can be many reproduction channels. However, all loss channels are equivalent, so there only needs to
 be one of these loops; the instruction has a list of the appropriate nodes. */
 
-do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
+do_assignment(L, [lose(ParentPtr, Name, LossNodes, Initial) | Clauses],
 	      Indent, Used, Stream) :-
+	(Initial = 0, LossNodes = [] -> true; % nothing to do
 	Indent1 is Indent + 4,
 	Indent2 is Indent1 + 4,
 
@@ -687,7 +672,9 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
 
 	/* Conditional to avoid offing new individuals  -- they have
 	not been initialized yet */
-	make_struct_reference(L, Pointer, new_instance, NewInstance),
+	(Initial = 1 ->
+	    make_struct_reference(L, Pointer, new_instance, NewInstance),
+	    excrete(L, assignment, NewInstance=0, Indent1, Stream); true),
 	
 	/* Next remove shagged-out individuals, node is a variable, and move
 		on to next instance */
@@ -695,7 +682,6 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
 		probability preprocessing here too */
 
 	make_struct_reference(L, Pointer, 'next', OnPointer),
-	excrete(L, assignment, NewInstance=0, Indent1, Stream),
 	(setof(LossVal, get_term_refs(L, Pointer, LossNodes, LossVal),
 	       LossTerms), !,
 	    build_disjunction(L, LossTerms, IsDead),
@@ -708,7 +694,7 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
 	    excrete(L, make_reference, MetaPointer=OnPointer, Indent2, Stream),
 	    excrete(L, end(cond), IsDead, Indent1, Stream);
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream)),    
-	excrete(L, end(while), MPTargetRef, Indent, Stream),
+	excrete(L, end(while), MPTargetRef, Indent, Stream)),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 
 /* This is a fairly horrrible clause that puts in what is done when a new submodel
@@ -868,6 +854,32 @@ make_create_proc([L, ParentPtr, MMPtr, Index, Name, Indent, Used],
 	make_procedure_call_chars(L, AllArgs, CallInitStr),
 	name(CallInit, CallInitStr),
 	excrete(L, assignment, Index=CallInit, Indent, Stream).
+
+% Add all instances associated with a channel
+add_for_channel(InitVar, [L, Index, Pointer, ParentPtr, MetaPointer, MPTarget, Name, RefIndex, Indent, Used, Stream]) :-
+	Indent1 is Indent + 4,
+
+	/* Now loop on compartment to create submodel */
+	make_struct_reference(L, ParentPtr, InitVar, CompVal),
+	refer_value(L, CompVal, CompValRef),
+	excrete(L, while_start, CompValRef>=1, Indent, Stream),
+	make_expr(L, CompValRef-1, NewCompVal),
+	excrete(L, assignment, CompVal=NewCompVal, Indent1, Stream),
+	excrete(L, increment_by, [Index, 1], Indent1, Stream),
+	excrete(L, assign_space, Pointer=[ParentPtr, Name, [RefIndex],
+					  _, []], Indent1, Stream),
+	nth(ChannelN, Used, InitVar), !,
+	excrete(L, procedure_call, init_pop_member(Pointer, RefIndex,
+						  ChannelN), Indent1, Stream),
+	%move_base_ptrs(L, Pointer, save, Indent1, [0], _, Stream),
+	/* this now set to 0 in i_p_m*/
+
+	/* End of submodel loop; insert into list and do next */
+	refer_value(L, Pointer, PointerRef),
+	excrete(L, assignment, MPTarget=PointerRef, Indent1, Stream),
+	make_struct_reference(L, Pointer, next, OnPointer),
+	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream),
+	excrete(L, end(while), 'New instances', Indent, Stream).
 
 /* special clause for use from membership setter, which passes its list match
 test instead of a list of local cond nodes...*/

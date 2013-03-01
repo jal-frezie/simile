@@ -306,8 +306,9 @@ $(RELAY): Run/relay.c
 
 ifeq ($(PLATFORM),GNU/Linux)
 # install used for packaging for distributions
-LIBDIR = /usr/lib # overridden by rpm build on Fedora 64-bit
-INSTALL_TGT=$(LIBDIR)/simile-6.0
+LIBDIR = /usr/lib
+# overridden by rpm build on Fedora 64-bit
+INSTALL_TGT = $(LIBDIR)/simile-6.0
 install:
 	mkdir -p $(DESTDIR)$(INSTALL_TGT); \
 	tar cf $(DESTDIR)$(INSTALL_TGT)/payload.tar \

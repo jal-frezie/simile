@@ -1156,42 +1156,68 @@ nodes.
 				       ParentFns)), Creators), !;
 		Creators = []),
 	    
-	    (setof(LossBox, S^X^U^member(instance(loss, S,X,
+	    (setof(LossBox, S^X^U^(member(instance(loss, S,X,
 						  elt(_, LossBox, _), U),
-					 Functions), Losses), !;
+					 Functions),
+				   \+ X = (rand(0,1)<_)), Losses), !;
 	      Losses = []),
+	    (setof(LossBox, S^X^U^member(instance(loss, S, rand(0,1)<X,
+						  elt(_, LossBox, _), U),
+					 Functions), EvtLosses), !;
+	      EvtLosses = []),
+	    (setof(ImmigBox, InitName^X^U^(SmName has_part InitName,
+				member(instance(immigration, InitName, X,
+						elt(_, ImmigBox, _), U),
+				       ParentFns),
+				\+ X = _+_), Immigrators), !;
+		Immigrators = []),
+	    (setof(ImmigBox, InitName^X^U^(SmName has_part InitName,
+				member(instance(immigration, InitName,
+						elt(_, ImmigBox, _)+X,
+						elt(_, ImmigBox, _), U),
+				       ParentFns)), EvtImmigrators), !;
+		EvtImmigrators = []),
 	    
-	    CreateRules = [make(culled(Name),
-				[init_list(Name), on_step | BasesEnumerated],
-				Path, Step, [lose(Ptr, Name, Losses)]),
+	    CreateRules = [make(evt_culled(Name),
+				[evt_settled(Name) | EvtLosses],
+				Path, Step, [lose(Ptr, Name, EvtLosses, 0)]),
+			   make(culled(Name),
+				[init_list(Name)],
+				Path, Step, [lose(Ptr, Name, Losses, 1)]),
 			   make(created(Name),
 				[culled(Name) | Creators], Path, 0,
-				[init_mems(Ptr, Name, create(Creators))])],
+				[init_mems(Ptr, Name, create(Creators))]),
+			   make(evt_settled(Name),
+				[init_list(Name) | EvtImmigrators],
+				Path, Step,
+				[new_member(Ptr, Name, EvtImmigrators)]),
+			   make(settled(Name), [culled(Name)], Path, Step,
+				[new_member(Ptr, Name, Immigrators)])],
 	    % relegate to 0 as membership may have changed during run
 	    (setof(ReproRule, maker_for(SmName, Functions, Name, Path, Step,
 					Ptr, reproduction, ReproRule),
 		   ReproRules), !; 
 		ReproRules = []),	    
-	    (setof(ImRule, maker_for(SmName, ParentFns, Name, Path, Step,
-				     Ptr, immigration, ImRule),
-		   ImmigRules), !; 
-		ImmigRules = []),
+%	    (setof(ImRule, maker_for(SmName, ParentFns, Name, Path, Step,
+%				     Ptr, immigration, ImRule),
+%		   ImmigRules), !; 
+%		ImmigRules = []),
 	    all(compile, unfinished_in,
 		[build(ReproRules), build(ReproConds)]),
-	    all(compile, unfinished_in,
-	        [build(ImmigRules), build(ImmigConds)]),
-	    append(ReproConds, ImmigConds, NewMemConds),
+%	    all(compile, unfinished_in,
+%	        [build(ImmigRules), build(ImmigConds)]),
+%	    append(ReproConds, ImmigConds, NewMemConds),
 	    /* Something that will be done in the initialization procedure, to make sure we don't try to create any before we can run this procedure */
 	    append([[make(can_enter(Name),
-			  [culled(Name), created(Name) | NewMemConds],
+			  [created(Name), settled(Name) | ReproConds],
 			  Path, Step, []),
 		     % need culled and created to get in right step
-		    make(enumerate(Name), [can_enter(Name)],
-			 LocalPath, Step, []),
+		    make(enumerate(Name), [evt_culled(Name), can_enter(Name),
+					   on_step], LocalPath, Step, []),
 		    make(startable(Name), [init_list(Name)], Path, Step, []),
 		    make(init_list(Name), [], Path, Step,
 			 [assign(arr(Ptr, Name, []), 0)])],
-		    CreateRules, ImmigRules, ReproRules], Specials);  
+		    CreateRules, /* ImmigRules, */ ReproRules], Specials);  
 
 	/* For variable-membership submodels we must not run the generate step
 	    before the bases are enumerated because running it prevents the
