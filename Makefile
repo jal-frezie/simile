@@ -553,5 +553,5 @@ endif
 
 # call clean after changing license info in this file
 clean:
-	rm $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(RELAY) \
+	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(RELAY) \
 	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT) \

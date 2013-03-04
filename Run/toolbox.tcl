@@ -978,9 +978,9 @@ proc InitExecThread {node} {
     global execThread execInterp SIMILE_PATH simplify
 
     set useThreads [expr {[info exists ::tcl_platform(threaded)] && \
-			      ![info exists simplify]}]
+			      ![info exists simplify] && \
+			      ![catch {package require Thread}]}]
     if {$useThreads} {
-	package require Thread
 	set execThread($node,id) [thread::create]
 # puts "Created thread $execThread($node,id) for $node from [thread::id]"
     } else {
