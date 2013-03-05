@@ -560,22 +560,15 @@ inits to be included. */
 
 do_assignment(L, [new_member(ParentPtr, Name, InitVars) | Clauses],
 	      Indent, Used, Stream) :-
-	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, count, Count),
-	append_atoms(Name, pointer, Pointer),
 	append_atoms(Name, meta, MetaPointer),
 	resolve_pointer(L, MetaPointer, MPTarget),
-	make_struct_reference(L, ParentPtr, Name, StartPtr), 
 	make_struct_reference(L, ParentPtr, Count, Index), 
 	refer_value(L, Index, RefIndex),
 
-	append_atoms(Type, '*', MType),
-	declare(L, Pointer, _, Type, Used, Indent, Stream),
-	declare(L, MetaPointer, _, MType, Used, Indent, Stream),
-	excrete(L, make_reference, MetaPointer=StartPtr, Indent, Stream),
 	/* Now loop on compartment to create submodel */
 	all(language, add_for_channel,
-	    [build(InitVars), unify([L, Index, Pointer, ParentPtr, MetaPointer, MPTarget, Name, RefIndex, Indent, Used, Stream])]),
+	    [build(InitVars), unify([L, Index, ParentPtr, ParentPtr, MetaPointer, MPTarget, Name, RefIndex, Indent, Used, Stream])]),
 
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 
@@ -588,7 +581,6 @@ it in a local variable, but this way is conceptually simpler, which is everythin
 do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 	      Indent, Used, Stream) :-
 	Indent1 is Indent + 4,
-	Indent2 is Indent1 + 4,
 
 	/* Now stick in a loop */
 	make_struct_reference(L, ParentPtr, Name, SubmodelStartPtr),
@@ -611,27 +603,8 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 	make_new_check(L, Pointer, ParentNewRef),
 	combine(L, !, [ParentNewRef], ParentOld),
 	excrete(L, if_start, ParentOld, Indent1, Stream),
-	
-	make_struct_reference(L, Pointer, ReproName, Repro),
-	refer_value(L, Repro, ReproRef),
-	excrete(L, while_start, ReproRef>=1, Indent1, Stream),
-	make_expr(L, ReproRef-1, NewRepro),
-	/* cannot use decrement because quantity is floating point */
-	excrete(L, assignment, Repro=NewRepro, Indent2, Stream),
 
-	/* Now make context for new individual */
-	excrete(L, increment_by, [Index, 1], Indent2, Stream),
-	excrete(L, assign_space, MPTarget=[ParentPtr, Name, [RefIndex],
-					   _, []], Indent2, Stream),
-	nth(ChannelN, Used, ReproName), !,
-	excrete(L, procedure_call, init_pop_member(MPTarget, RefIndex, 
-						   ChannelN), Indent2, Stream),
-	move_base_ptrs(L, MPTarget, save, Indent1, [Pointer], _, Stream),
-
-	/* End of submodel loop; insert into list and do next */
-	make_struct_reference(L, MPTarget, next, OnMeta),
-	excrete(L, make_reference, MetaPointer=OnMeta, Indent2, Stream),
-	excrete(L, end(while), Repro, Indent1, Stream),
+	add_for_channel(ReproName, [L,Index,Pointer,ParentPtr,MetaPointer,MPTarget,Name,RefIndex,Indent1,Used,Stream]),
 	excrete(L, end(cond), ParentOld, Indent1, Stream),
 	make_struct_reference(L, Pointer, next, OnPointer),
 	refer_value(L, OnPointer, OnPointerRef),
@@ -860,25 +833,23 @@ add_for_channel(InitVar, [L, Index, Pointer, ParentPtr, MetaPointer, MPTarget, N
 	Indent1 is Indent + 4,
 
 	/* Now loop on compartment to create submodel */
-	make_struct_reference(L, ParentPtr, InitVar, CompVal),
+	make_struct_reference(L, Pointer, InitVar, CompVal),
 	refer_value(L, CompVal, CompValRef),
 	excrete(L, while_start, CompValRef>=1, Indent, Stream),
 	make_expr(L, CompValRef-1, NewCompVal),
 	excrete(L, assignment, CompVal=NewCompVal, Indent1, Stream),
 	excrete(L, increment_by, [Index, 1], Indent1, Stream),
-	excrete(L, assign_space, Pointer=[ParentPtr, Name, [RefIndex],
+	excrete(L, assign_space, MPTarget=[ParentPtr, Name, [RefIndex],
 					  _, []], Indent1, Stream),
 	nth(ChannelN, Used, InitVar), !,
-	excrete(L, procedure_call, init_pop_member(Pointer, RefIndex,
+	excrete(L, procedure_call, init_pop_member(MPTarget, RefIndex,
 						  ChannelN), Indent1, Stream),
-	%move_base_ptrs(L, Pointer, save, Indent1, [0], _, Stream),
-	/* this now set to 0 in i_p_m*/
+	((Pointer = ParentPtr) -> true; % immigrate: progen set to 0 in i_p_m
+	  move_base_ptrs(L, MPTarget, save, Indent1, [Pointer], _, Stream)),
 
 	/* End of submodel loop; insert into list and do next */
-	refer_value(L, Pointer, PointerRef),
-	excrete(L, assignment, MPTarget=PointerRef, Indent1, Stream),
-	make_struct_reference(L, Pointer, next, OnPointer),
-	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream),
+	make_struct_reference(L, MPTarget, next, OnMeta),
+	excrete(L, make_reference, MetaPointer=OnMeta, Indent1, Stream),
 	excrete(L, end(while), 'New instances', Indent, Stream).
 
 /* special clause for use from membership setter, which passes its list match

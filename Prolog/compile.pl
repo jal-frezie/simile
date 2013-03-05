@@ -1182,7 +1182,7 @@ nodes.
 				[evt_settled(Name) | EvtLosses],
 				Path, Step, [lose(Ptr, Name, EvtLosses, 0)]),
 			   make(culled(Name),
-				[init_list(Name)],
+				[init_list(Name), on_step],
 				Path, Step, [lose(Ptr, Name, Losses, 1)]),
 			   make(created(Name),
 				[culled(Name) | Creators], Path, 0,
@@ -1319,7 +1319,7 @@ maker_for(SmName, Fns, Name, Path, Step, Ptr, Channel, Rule) :-
 	member(instance(Channel, InitName, _X, elt(_, InitSpec, _), _U), Fns),
 	% first rule stops latency being used before instances created
 	member(Rule, [make(InitSpec, [Effect], Path, Step, []),
-	  make(Effect, [culled(Name)], Path, Step, [Action])]).
+	  make(Effect, [culled(Name), on_step], Path, Step, [Action])]).
 
 list_params_from(BaseStr, N, Assigns, List) :-
 	sicstus_write_to_chars(N, NStr),
