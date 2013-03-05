@@ -1177,6 +1177,10 @@ nodes.
 						elt(_, ImmigBox, _), U),
 				       ParentFns)), EvtImmigrators), !;
 		EvtImmigrators = []),
+	    (setof(ReproBox, S^X^U^(member(instance(reproduction, S,X,
+						elt(_, ReproBox, _), U),
+				       Functions)), Reproducers), !;
+		Reproducers = []),
 	    
 	    CreateRules = [make(evt_culled(Name),
 				[evt_settled(Name) | EvtLosses],
@@ -1192,24 +1196,26 @@ nodes.
 				Path, Step,
 				[new_member(Ptr, Name, EvtImmigrators)]),
 			   make(settled(Name), [culled(Name)], Path, Step,
-				[new_member(Ptr, Name, Immigrators)])],
+				[new_member(Ptr, Name, Immigrators)]),
+			   make(bred(Name), [culled(Name)], Path, Step,
+				[reproduce(Ptr, Name, Reproducers)])],
 	    % relegate to 0 as membership may have changed during run
-	    (setof(ReproRule, maker_for(SmName, Functions, Name, Path, Step,
-					Ptr, reproduction, ReproRule),
-		   ReproRules), !; 
-		ReproRules = []),	    
+%	    (setof(ReproRule, maker_for(SmName, Functions, Name, Path, Step,
+%					Ptr, reproduction, ReproRule),
+%		   ReproRules), !; 
+%		ReproRules = []),	    
 %	    (setof(ImRule, maker_for(SmName, ParentFns, Name, Path, Step,
 %				     Ptr, immigration, ImRule),
 %		   ImmigRules), !; 
 %		ImmigRules = []),
-	    all(compile, unfinished_in,
-		[build(ReproRules), build(ReproConds)]),
+%	    all(compile, unfinished_in,
+%		[build(ReproRules), build(ReproConds)]),
 %	    all(compile, unfinished_in,
 %	        [build(ImmigRules), build(ImmigConds)]),
 %	    append(ReproConds, ImmigConds, NewMemConds),
 	    /* Something that will be done in the initialization procedure, to make sure we don't try to create any before we can run this procedure */
 	    append([[make(can_enter(Name),
-			  [created(Name), settled(Name) | ReproConds],
+			  [created(Name), settled(Name), bred(Name)],
 			  Path, Step, []),
 		     % need culled and created to get in right step
 		    make(enumerate(Name), [evt_culled(Name), can_enter(Name),
@@ -1217,7 +1223,7 @@ nodes.
 		    make(startable(Name), [init_list(Name)], Path, Step, []),
 		    make(init_list(Name), [], Path, Step,
 			 [assign(arr(Ptr, Name, []), 0)])],
-		    CreateRules, /* ImmigRules, */ ReproRules], Specials);  
+		    CreateRules /*, ImmigRules, ReproRules*/], Specials);  
 
 	/* For variable-membership submodels we must not run the generate step
 	    before the bases are enumerated because running it prevents the
@@ -1309,6 +1315,7 @@ nodes.
 	    append(Specials, AssignList0, AssignList)),
 	append(FnInters, SmInters, Inters).
 
+/*
 maker_for(SmName, Fns, Name, Path, Step, Ptr, Channel, Rule) :-
 	member([Channel, EffectFr, ActFr],
 	       [[immigration, settled, new_member],
@@ -1320,6 +1327,7 @@ maker_for(SmName, Fns, Name, Path, Step, Ptr, Channel, Rule) :-
 	% first rule stops latency being used before instances created
 	member(Rule, [make(InitSpec, [Effect], Path, Step, []),
 	  make(Effect, [culled(Name), on_step], Path, Step, [Action])]).
+*/
 
 list_params_from(BaseStr, N, Assigns, List) :-
 	sicstus_write_to_chars(N, NStr),

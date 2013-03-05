@@ -578,7 +578,7 @@ This could be avoided by peeking at the reproduction compartment then decrementi
 it in a local variable, but this way is conceptually simpler, which is everything.
 */
 
-do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
+do_assignment(L, [reproduce(ParentPtr, Name, ReproNames) | Clauses],
 	      Indent, Used, Stream) :-
 	Indent1 is Indent + 4,
 
@@ -604,7 +604,8 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 	combine(L, !, [ParentNewRef], ParentOld),
 	excrete(L, if_start, ParentOld, Indent1, Stream),
 
-	add_for_channel(ReproName, [L,Index,Pointer,ParentPtr,MetaPointer,MPTarget,Name,RefIndex,Indent1,Used,Stream]),
+	all(language, add_for_channel,
+	    [build(ReproNames), unify([L,Index,Pointer,ParentPtr,MetaPointer,MPTarget,Name,RefIndex,Indent1,Used,Stream])]),
 	excrete(L, end(cond), ParentOld, Indent1, Stream),
 	make_struct_reference(L, Pointer, next, OnPointer),
 	refer_value(L, OnPointer, OnPointerRef),
