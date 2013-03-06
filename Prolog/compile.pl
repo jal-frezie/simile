@@ -1179,11 +1179,17 @@ nodes.
 		EvtImmigrators = []),
 	    (setof(ReproBox, S^X^U^(member(instance(reproduction, S,X,
 						elt(_, ReproBox, _), U),
-				       Functions)), Reproducers), !;
+				       Functions),
+				    \+ X = _+_), Reproducers), !;
 		Reproducers = []),
+	    (setof(ReproBox, S^X^U^(member(instance(reproduction, S,
+						    elt(_, ReproBox, _)+X,
+						    elt(_, ReproBox, _), U),
+					   Functions)), EvtReproducers), !;
+		EvtReproducers = []),
 	    
 	    CreateRules = [make(evt_culled(Name),
-				[evt_settled(Name) | EvtLosses],
+				[evt_bred(Name) | EvtLosses],
 				Path, Step, [lose(Ptr, Name, EvtLosses, 0)]),
 			   make(culled(Name),
 				[init_list(Name), on_step],
@@ -1197,7 +1203,11 @@ nodes.
 				[new_member(Ptr, Name, EvtImmigrators)]),
 			   make(settled(Name), [culled(Name)], Path, Step,
 				[new_member(Ptr, Name, Immigrators)]),
-			   make(bred(Name), [culled(Name)], Path, Step,
+			   make(evt_bred(Name),
+				[evt_settled(Name) | EvtReproducers],
+				LocalPath, Step,
+				[reproduce(Ptr, Name, EvtReproducers)]),
+			   make(bred(Name), [culled(Name)], LocalPath, Step,
 				[reproduce(Ptr, Name, Reproducers)])],
 	    % relegate to 0 as membership may have changed during run
 %	    (setof(ReproRule, maker_for(SmName, Functions, Name, Path, Step,
@@ -1215,7 +1225,7 @@ nodes.
 %	    append(ReproConds, ImmigConds, NewMemConds),
 	    /* Something that will be done in the initialization procedure, to make sure we don't try to create any before we can run this procedure */
 	    append([[make(can_enter(Name),
-			  [created(Name), settled(Name), bred(Name)],
+			  [created(Name), settled(Name)],
 			  Path, Step, []),
 		     % need culled and created to get in right step
 		    make(enumerate(Name), [evt_culled(Name), can_enter(Name),

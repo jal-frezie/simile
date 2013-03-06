@@ -423,7 +423,13 @@ strings_direct(L, data_declaration,
 		Indent, Stream) :-
 	(NodeType = submodel, !,
 	    NameIn = NameBase,
-	    ((variable_size(SymbolicName);
+	    ((variable_size(SymbolicName),
+	      (is_population(SymbolicName) ->
+	        append_atoms(NameBase, meta, NameMeta),
+	        declare_pointer(L, NameMeta, NamePtd),
+	        declare_pointer(L, NamePtd, NamePtdPtd),
+	        strings_direct(L, variable_declaration, [Type, NamePtdPtd, []],
+			       Indent, Stream); true);
 	      by_record(SymbolicName);
 	      from_value(SymbolicName)), !,
 			/* variable length submodel - declare a pointer */
@@ -544,18 +550,18 @@ do_base_pointers(L, base(instance(submodel,_, xrefs(_, Parent, _,_),_, Type-_),
 		       _, [Ptr | Ptrs]), [[Type, BasePtd, []] | Rest]) :-
 	declare_pointer(L, Ptr, BasePtd),
 	do_base_pointers(L, base(Parent, _, Ptrs), Rest).
-*/
+
 do_loop_pointers(L, SmName, Type, Name, Late) :-
 
-/*	append_atoms(Name, pointer, Ptr),
-	declare_pointer(L, Ptr, Ptd), */
+	append_atoms(Name, pointer, Ptr),
+	declare_pointer(L, Ptr, Ptd),
 	(variable_size(SmName), !,
 	    append_atoms(Name, meta, Meta),
 	    declare_pointer(L, Meta, MetaPtd),
 	    declare_pointer(L, MetaPtd, MetaPtdPtd),
 	    append_atoms(Name, cond, Cond),
 	    Late = [[int, Cond, []], [Type, MetaPtdPtd, []]];
-	Late = []).
+	Late = []). */
 
 squarify_dims([], '').
 squarify_dims([D | More], Atom) :-

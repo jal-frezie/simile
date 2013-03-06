@@ -527,15 +527,16 @@ do_assignment(L, [init_mems(ParentPtr, Name, create(InitVars)) | Clauses],
 	append_atoms(Name, count, Count),
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, Pointer),
-	append_atoms(Name, meta, MetaPointer),
+	append_atoms(Name, meta, MetaPointerName),
+	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer), 
 	resolve_pointer(L, MetaPointer, MPTarget),
 	refer_value(L, MPTarget, MPTargetRef),
 	make_struct_reference(L, ParentPtr, Name, StartPtr), 
 	make_struct_reference(L, ParentPtr, Count, Index), 
 
-	append_atoms(Type, '*', MType),
+%	append_atoms(Type, '*', MType),
 	declare(L, Pointer, _, Type, Used, Indent, Stream),
-	declare(L, MetaPointer, _, MType, Used, Indent, Stream),
+%	declare(L, MetaPointer, _, MType, Used, Indent, Stream),
 /*	excrete(L, variable_declaration, [Type, Pointer, []], Indent, Stream),
 	excrete(L, variable_declaration, [MType, MetaPointer, []], Indent,
 		Stream),
@@ -561,7 +562,8 @@ inits to be included. */
 do_assignment(L, [new_member(ParentPtr, Name, InitVars) | Clauses],
 	      Indent, Used, Stream) :-
 	append_atoms(Name, count, Count),
-	append_atoms(Name, meta, MetaPointer),
+	append_atoms(Name, meta, MetaPointerName),
+	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer), 
 	resolve_pointer(L, MetaPointer, MPTarget),
 	make_struct_reference(L, ParentPtr, Count, Index), 
 	refer_value(L, Index, RefIndex),
@@ -582,35 +584,24 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproNames) | Clauses],
 	      Indent, Used, Stream) :-
 	Indent1 is Indent + 4,
 
-	/* Now stick in a loop */
-	make_struct_reference(L, ParentPtr, Name, SubmodelStartPtr),
-	refer_value(L, SubmodelStartPtr, SubmodelStartPtrRef),
 	append_atoms(Name, count, Count),
 	append_atoms(Name, pointer, Pointer),
-	append_atoms(Name, meta, MetaPointer),
+	append_atoms(Name, meta, MetaPointerName),
+	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer), 
 	resolve_pointer(L, MetaPointer, MPTarget),
 	make_struct_reference(L, ParentPtr, Count, Index), 
 	refer_value(L, Index, RefIndex),
 
-	/* Set pointer to first model in list, and dive into loop */
-	excrete(L, assignment, Pointer=SubmodelStartPtrRef, Indent, Stream),
-	refer_value(L, Pointer, PointerRef),
-	ptr_compare(L, PointerRef, 0, NotDone),
-	excrete(L, while_start, NotDone, Indent, Stream),
-
 	/* Conditional to avoid reproduction with new individuals  -- they have
-	not been initialized yet */
+	not been initialized yet -- no longer needed as they are initialized in
+	the loop
 	make_new_check(L, Pointer, ParentNewRef),
 	combine(L, !, [ParentNewRef], ParentOld),
-	excrete(L, if_start, ParentOld, Indent1, Stream),
+	excrete(L, if_start, ParentOld, Indent1, Stream), */
 
 	all(language, add_for_channel,
 	    [build(ReproNames), unify([L,Index,Pointer,ParentPtr,MetaPointer,MPTarget,Name,RefIndex,Indent1,Used,Stream])]),
-	excrete(L, end(cond), ParentOld, Indent1, Stream),
-	make_struct_reference(L, Pointer, next, OnPointer),
-	refer_value(L, OnPointer, OnPointerRef),
-	excrete(L, assignment, Pointer=OnPointerRef, Indent1, Stream),
-	excrete(L, end(while), PointerRef, Indent, Stream),
+%	excrete(L, end(cond), ParentOld, Indent1, Stream),
 
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 
@@ -628,10 +619,11 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes, Initial) | Clauses],
 
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, Pointer),
-	append_atoms(Name, meta, MetaPointer),
-	append_atoms(Type, '*', MType),
+	append_atoms(Name, meta, MetaPointerName),
+	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer), 
+%	append_atoms(Type, '*', MType),
 	declare(L, Pointer, _, Type, Used, Indent, Stream),
-	declare(L, MetaPointer, _, MType, Used, Indent, Stream),
+%	declare(L, MetaPointer, _, MType, Used, Indent, Stream),
 /*	excrete(L, variable_declaration, [Type, Pointer, []], Indent, Stream),
 	excrete(L, variable_declaration, [MType, MetaPointer, []], Indent,
 		Stream),
