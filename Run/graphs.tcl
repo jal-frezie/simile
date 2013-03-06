@@ -573,6 +573,7 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     global table_entry iconImages tcl_platform
     
     PutItThere .table $parent
+    set haveDND [llength [package provide tkdnd]]
     wm title .table "Table data for [BlankCrs "$tgt $dims"]"
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
     set table_entry(source) -1
@@ -608,29 +609,35 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     # end new frame December 2008 for the choice of data table in a database JMM
     TitleFrame $fc.fheads -text [tr. "Table column headings"]
     set fheads [GetFrame $fc.fheads]
-#    set lheads [ListBox $fheads.lheads -dragenabled true -dropenabled true \
-#            -selectmode single -dropcmd DeleteIndex \
-#            -yscrollcommand [list AdjustCanvas $fheads lheads y]]
-    set lheads [listbox $fheads.lheads -selectmode single \
-            -yscrollcommand [list AdjustCanvas $fheads lheads y]]
-    tkdnd::drag_source register $lheads DND_Text
-    bind $lheads <<DragInitCmd>> {DragElementOut %W %X %Y}
+    if {$haveDND} {
+	set lheads [listbox $fheads.lheads -selectmode single \
+			-yscrollcommand [list AdjustCanvas $fheads lheads y]]
+	tkdnd::drag_source register $lheads DND_Text
+	bind $lheads <<DragInitCmd>> {DragElementOut %W %X %Y}
+    } else {
+	set lheads [ListBox $fheads.lheads -dragenabled true -dropenabled true \
+		    -selectmode single -dropcmd DeleteIndex \
+		    -yscrollcommand [list AdjustCanvas $fheads lheads y]]
+    }
     scrollbar $fheads.yscroll -orient v -command [list $fheads.lheads yview]
     pack $fheads.yscroll -side right -fill y
     
     frame $fc.select
     TitleFrame $fc.select.idxs -text [tr. "Use as indices"]
     set fidx [GetFrame $fc.select.idxs]
-#    set lidx [ListBox $fidx.lidx -dragenabled true -dropenabled true \
-#            -selectmode single \
-#            -dropcmd AddIndex]
-    set lidx [listbox $fidx.lidx -selectmode single]
-    tkdnd::drop_target register $lidx DND_Text
-    bind $lidx <<DropPosition>> {TrackDropCoords %X %Y move}
-    bind $lidx <<Drop>> {InsertElement %W %D move}
-    tkdnd::drag_source register $lidx DND_Text
-    bind $lidx <<DragInitCmd>> {DragElementOut %W %X %Y}
-    bind $lidx <<DragEndCmd>> {RemoveExtractedElt %W}
+    if {$haveDND} {
+	set lidx [listbox $fidx.lidx -selectmode single]
+	tkdnd::drop_target register $lidx DND_Text
+	bind $lidx <<DropPosition>> {TrackDropCoords %X %Y move}
+	bind $lidx <<Drop>> {InsertElement %W %D move}
+	tkdnd::drag_source register $lidx DND_Text
+	bind $lidx <<DragInitCmd>> {DragElementOut %W %X %Y}
+	bind $lidx <<DragEndCmd>> {RemoveExtractedElt %W}
+    } else {
+	set lidx [ListBox $fidx.lidx -dragenabled true -dropenabled true \
+		  -selectmode single \
+		  -dropcmd AddIndex]
+    }
     pack $lheads  -expand true -fill both
     pack $fc.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
     pack $lidx -expand true -fill both -anchor w
@@ -639,13 +646,18 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     
     TitleFrame $fc.select.data -text [tr. "Use as data"]
     set didx [GetFrame $fc.select.data]
-    set dhead [ttk::entry $didx.dhead \
+    if {$haveDND} {
+	set dhead [ttk::entry $didx.dhead \
 		   -textvariable table_entry(dataField)]
-#            -dropenabled true -droptypes LISTBOX_ITEM \
-#            -dropcmd ChooseDataHeader
-    tkdnd::drop_target register $dhead DND_Text
-    bind $dhead <<DropPosition>> {TrackDropCoords %X %Y move}
-    bind $dhead <<Drop>> {ReplaceText %W %D move}
+	tkdnd::drop_target register $dhead DND_Text
+	bind $dhead <<DropPosition>> {TrackDropCoords %X %Y move}
+	bind $dhead <<Drop>> {ReplaceText %W %D move}
+    } else {
+	set dhead [Entry $didx.dhead \
+		       -textvariable table_entry(dataField) \
+		       -dropenabled true -droptypes LISTBOX_ITEM \
+		       -dropcmd ChooseDataHeader]
+    }
     KoreanClick $lheads 1 {}
     bind $lheads <Double-1> [list PutInDataField $lheads $dhead]
     pack $dhead -side top -expand true -fill x
@@ -1085,6 +1097,8 @@ proc ReplaceText {win data act} {
 
 
 proc AllowTextDrags {txt} {
+    if {![llength [package provide tkdnd]]} return
+
     tkdnd::drop_target register $txt DND_Text
     bind $txt <<DropPosition>> {TrackDropCoords %X %Y copy}
     bind $txt <<Drop>> {InsertText %W %D copy}
@@ -1198,7 +1212,15 @@ proc AcquireTableData {redo startLine} {
                 return
             }
             set lidx [GetFrame $pane.select.idxs].lidx
-            set idcs [$lidx get 0 end]
+	    if {[llength [package provide tkdnd]]} {
+		set idcs [$lidx get 0 end]
+	    } else {
+		set idcs {}
+		foreach itm [$lidx items] {
+		    lappend idcs [$lidx itemcget $itm -text]
+		    
+		}
+	    }
             set table_entry(indices) $idcs
             # jmm need to add table_entry(dbtable) to the tableSpec for ODBC sources with tables
             # BUT indices may be empty and so, effectively no list item
@@ -1318,10 +1340,16 @@ proc LoadDataFile {mode query mdl} {
     global table_entry
     #ShowMess debug info "LoadDataFile $mode $query $mdl" ok
     #    wm title .table "Create table from file $table_entry(fileName)"
+
+    set haveDND [llength [package provide tkdnd]]
     set fc .table.notebook.columns
     set fheads [GetFrame $fc.fheads]
     set ftable [GetFrame $fc.ftable]
-    $fheads.lheads delete 0 end
+    if {$haveDND} {
+	$fheads.lheads delete 0 end
+    } else {
+	$fheads.lheads delete [$fheads.lheads items]
+    }
     $ftable.tablecb configure -values {}
     set tablecb $ftable.tablecb
     $tablecb set {}
@@ -1380,7 +1408,11 @@ proc LoadDataFile {mode query mdl} {
                 if {$ext == {.csv}} {
                         set i 1
                         foreach hd [split $firstLine ,] {
-                            $fheads.lheads insert end [string trim $hd]
+                            if {$haveDND} {
+				$fheads.lheads insert end [string trim $hd]
+			    } else {
+				$fheads.lheads insert end hd$i -text [string trim $hd]
+			    }
                             incr i
                         }
                     } else {
@@ -1438,13 +1470,22 @@ proc LoadDataFile {mode query mdl} {
         
     }
     set fidx [GetFrame $fc.select.idxs]; ######################
-    $fidx.lidx delete 0 end
+    if {$haveDND} {
+	$fidx.lidx delete 0 end
+    } else {
+	$fidx.lidx delete [$fidx.lidx items]
+    }
     return 1
 }
 
 proc DoOnDataBaseColumnsLoaded { connectString tablecb fheads } {
-    $fheads.lheads delete 0 end
-    
+    set haveDND [llength [package provide tkdnd]]
+
+    if {$haveDND} {
+	$fheads.lheads delete 0 end
+    } else {
+	$fheads.lheads delete [$fheads.lheads items]
+    }
     database db $connectString
     set fields [db columns [$tablecb get]]; #table name
     
@@ -1453,7 +1494,11 @@ proc DoOnDataBaseColumnsLoaded { connectString tablecb fheads } {
     #ShowMess debug info "fields $fields" ok
     foreach field $fields {
         # just the column name
-        $fheads.lheads insert end [lindex $field 3]
+	if {$haveDND} {
+	    $fheads.lheads insert end [lindex $field 3]
+	} else {
+	    $fheads.lheads insert end hd$i -text [lindex $field 3]
+	}
         incr i
     }
 }

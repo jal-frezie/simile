@@ -16,7 +16,10 @@ if {![info exists simplify]} {
 #catch {namespace import BWidget::*}
 
 # support drag'n'drop text exchange with other apps
-package require tkdnd 2.4
+    if {[catch {package require tkdnd 2.4}]} {
+	package require BWidget
+	namespace import BWidget::*
+    }
 
 if {[info tclversion]>=8.5} {
 # use our own
