@@ -1545,8 +1545,14 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    SourceEqn = event(ActEqn, TriggerEqn),
 	    (Unit = boolean -> Inactive = '"false"' ; Inactive = 0),
 	    SourceItem = trigger_magnitude(''),
-	    GroundEqn = (SourceItem=TriggerEqn,
-			    choose(SourceItem '!=' 0, ActEqn, Inactive)),
+	    (ActEqn = after(Wait, Eqn, Pipe) ->
+	        GroundEqn = (SourceItem=TriggerEqn,
+			     delay_for(Pipe, Wait,
+				       choose(SourceItem '!=' 0, Eqn,
+						    Inactive), SmStep));
+	      GroundEqn = (SourceItem=TriggerEqn,
+			   choose(SourceItem '!=' 0, ActEqn, Inactive))),
+			   
 	    % trigger is just a sum of references so building is simple
 %	    final_assignment(TriggerEqn, Node,
 %			     elt([], current_event_magnitude, X), Swaps,

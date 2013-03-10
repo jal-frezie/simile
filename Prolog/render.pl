@@ -1161,6 +1161,10 @@ type_for_unit(Unit, Type) :-
 	    Type = 'BOOLEAN';
 	member(Unit, [const_int, a(_ET0), n(_ET1)]), !,
 	    Type = int;
+	Unit = class_template(Class, Case),
+	    type_for_unit(Case, Low),
+	    sicstus_format_to_chars("~a<~a>", [Class, Low], Result_string),
+	    name(Type, Result_string);
 	Type = Unit.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

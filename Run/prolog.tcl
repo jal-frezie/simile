@@ -93,6 +93,7 @@ proc do_tail {header args} {
     global errorInfo
     set oldDir [pwd]
     if {[catch $args retVal]} {
+	puts $retVal
 	Query [list unhandled_tcl_error $retVal $errorInfo] error top {} ok
         cd $oldDir
 	set response error:$retVal

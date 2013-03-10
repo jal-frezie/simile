@@ -304,7 +304,16 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	     (EvtPairs = [_|_], !;
 	       caption_for(Node, Capt),
 	         raise_exception(no_antecedents_for_derived(Capt))),
-	     FinalExpr = event(SubbedExpr, EvtTrigger),
+
+	     (SubbedExpr = after(Wait, Eqn) -> % delay
+	      PipeUnits = class_template(delay, _ArgUs)-Units,
+	      % _ArgUs is unified with calculated units of arg by declaration
+	      % of delay_for function in make_intermediates
+	      Pipe = elt(Path, _, PipeUnits),
+	      is_instance(internal, pipe(Node), none, Pipe, PipeUnits, DiffSt),
+	      FinalExpr = event(after(Wait, Eqn, Pipe), EvtTrigger),
+	      Instances = [DiffSt, Instance];
+	     FinalExpr = event(SubbedExpr, EvtTrigger)),
 	     EndRefs = EvtRefs);
 	  RType = condition,
 	    (is_lookup_cond(SubbedExpr, CondExpr), !,
@@ -338,11 +347,12 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	    raise_exception(bad_parameter(Capt, Sub));
 	suffix(EndRefs, Refs),
 	    length(Refs, _Fix)),
-	(FType = limit, !;
-	  MagBase = Base,
+	(nonvar(Instances), !;
 	    Instances = [Instance]),
-	is_instance(FType, Node, FinalExpr, elt(Path, _, MagBase-Units),
-		    MagBase-Units, Instance)).
+	 (nonvar(MagBase), !;
+ 	  MagBase = Base),
+	 is_instance(FType, Node, FinalExpr, elt(Path, _, MagBase-Units),
+		     MagBase-Units, Instance)).
 	     
 /* Note if the function lacks a value it may not be the user's fault; it might be
 an unnecessary virtual function generated in the SD view. 

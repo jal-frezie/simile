@@ -229,6 +229,33 @@ void InstanceOfModel::schedule (BOOLEAN check, int record_id, double delay) {
   (*schedule_for)(partner, record_id, check, delay);
 }
 
+template <class modeldata> 
+void delay<modeldata>::insert (double when, modeldata what) {
+  series<modeldata> **where;
+  where = &head;
+  while (*where && (*where)->timepoint<when) 
+    where = &(*where)->next;
+  *where = new series<modeldata>(when, what, *where);
+}
+
+template <class modeldata> 
+modeldata delay<modeldata>::retract (double when, BOOLEAN clear) {
+  modeldata unload;
+  series<modeldata> *where;
+  
+  where = head;
+  unload = 0;
+  while (where && where->timepoint <= when) {
+    unload = where->payload;
+    where = where->next;
+    if (clear) {
+      delete head;
+      head = where;
+    }
+  }
+  return unload;
+}
+
 template <class SMClass>
 BOOLEAN prune (SMClass **metaptr, int id_count, ...) {
   int status = 1, length;

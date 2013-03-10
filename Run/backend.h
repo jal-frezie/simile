@@ -30,6 +30,44 @@ public:
   double t1, t2, t3;
 };
 
+template <class modeldata> class delay;
+
+template <class modeldata> class series {
+  friend class delay<modeldata>;
+
+  double timepoint;
+  modeldata payload;
+  series *next;
+
+  series(double when, modeldata what, series *where) {
+    timepoint = when;
+    payload = what; // addapt if it's ever to be an array
+    next = where;
+  }
+};
+
+template <class modeldata> class delay {
+  friend class series<modeldata>;
+  series<modeldata> *head;
+
+ public:
+  delay () {
+    head = NULL;
+  }
+
+  ~delay () {
+    series<modeldata> *where;
+    while (where) {
+      where = head->next;
+      delete head;
+    }
+  }
+
+  void insert (double when, modeldata what);
+
+  modeldata retract (double when, BOOLEAN clear);
+};
+
 class submodeltype {
 public:
   virtual void* get_pointer(int id, int** dims) = 0;
@@ -60,6 +98,8 @@ public:
   // support functions called by model code
   double stage_incr (diffs*, int, double, double, int);
   int check_limit(double, double, double, int, int, int, diffs*);
+  template <class modeldata> 
+    modeldata delay_for(delay<modeldata>*, double, modeldata, int);
   int loses(double, int);
   void collect(void*, int, int, ...);
   void deliver(void*, int, int, ...);

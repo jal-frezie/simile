@@ -1,5 +1,4 @@
 #!/usr/bin/wish
-set use_system_tcltk 1 ;# use separately installed tcltk and tools
 #set simplify 1 ;# avoid loading anything awkward
 # Simile source code file: Run/simile.tcl
 #
@@ -66,17 +65,21 @@ regsub -all /\\./ [info script] / scriptCmd
 # Awkward: you want to normalize to get rid of ..'s in path, but that also
 # resolves any pointers except for the complete argument, which can stop the
 # development version starting
-set SIMILE_PATH [file normalize [file dirname [file dirname $scriptCmd]]]
+
 set tclBitness [expr {8*$tcl_platform(wordSize)}]
 if {[info exists tcl_platform(pointerSize)]} {
     set tclBitness [expr {8*$tcl_platform(pointerSize)}]
 }
+set use_system_tcltk 0 ;# use separately installed tcltk and tools
+if {$tcl_platform(os) ne "Linux" || \
+	$tcl_platform(os) eq "Darwin" && $tclBitness==64} {
+    set use_system_tcltk 1
+}
+
+set SIMILE_PATH [file normalize [file dirname [file dirname $scriptCmd]]]
 set env(SYSDIR) [file join $SIMILE_PATH System]
 if {$tcl_platform(os) ne "Linux" && $tclBitness==64} {
     append env(SYSDIR) 64
-    if {$tcl_platform(os) eq "Darwin"} {
-	set use_system_tcltk 1
-    }
 }
 set execDir [file join $env(SYSDIR) bin]
 set libDir [file join $env(SYSDIR) lib]

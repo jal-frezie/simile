@@ -488,7 +488,8 @@ make_intermediates(
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
 	        (([Var | _] = Target; 	% it cannot be a condition of itself,
-		  Units == diffs), !,    % or its structure if a compartment
+		  Units == diffs;	% or its structure if a compartment
+		  Units = class_template(delay, _)), !, % or delay
 		    Args = LookupWaits;
 		Args = [made_at(Var, ParamContext) | LookupWaits])),
 	        /* note that for the time being the made_at condition is thrown
@@ -1158,7 +1159,12 @@ Now one that uses a special conditional level */
 		RUnits = int,
 		ValRef = check_limit(RActEqn, Lower, Upper, Flags, GraphId,
 				     Step, RDiffs);
-	    Source =.. [table | SourceList],
+/*	    Source = delay_for(Pipe, WaitEqn, ValEqn, Step),
+		SourceList = [WaitEqn, ValEqn, Pipe],
+		Arg_template = [real, RUnits, class_template(delay, _)],
+		ResultList = [RWaitEqn, RValEqn, RPipe],
+		ValRef = delay_for(RPipe, RWaitEqn, RValEqn, Step);
+*/	    Source =.. [table | SourceList],
 	    Step = dummy,
 		\+ SourceList = [''], /* let checker handle empty args */
 	        (SourceList = [_|_], !;
@@ -1504,7 +1510,6 @@ builtin('Model properties', in_preceding, any, [any]).
 builtin('Model properties', in_progenitor, any, [any]).
 builtin('Model properties', prev, given_units, [const_int]).
 builtin('Model properties', trigger_magnitude, given_units, [none]).
-builtin('Model properties', after, int, [real, int]).
 builtin('Model properties', ready, int, [any]).
 builtin('Model properties', is_new_instance, boolean, [none]).
 builtin('List handling', makearray, array_of_any, [any, const_int]).
@@ -1567,6 +1572,7 @@ builtin('Model properties', first, boolean, [int]).
 builtin('Model properties', dies_of, boolean, [boolean]).
 builtin('Model properties', dies_of, boolean, [real]).
 builtin('Model properties', latency, real, [real]).
+builtin('Model properties', after, Any, [real, Any]) :- value(Any).
 
 /* These are recognized by the parser but is not part of the equation
 language -- they and the operators are hidden */
@@ -1584,6 +1590,8 @@ operator(happens, boolean, [Any]) :- value(Any).
 operator(rand, real, [real, real]).
 operator(cur_phase, real, []).
 operator(cur_step, real, []).
+operator(delay_for, Any, [class_template(delay, Any), real, Any, int]) :-
+	value(Any).
 
 /* These are handled by the parser but have special buttons to include them so
 we do not want them in the function list -- they only appear here so the right

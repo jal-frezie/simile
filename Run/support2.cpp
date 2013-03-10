@@ -225,6 +225,19 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
   return 0;
 }
 
+template <class modeldata> 
+modeldata InstanceOfModel::delay_for(delay<modeldata>* extras, double wait, 
+				     modeldata payload, int step) {
+  int phase = int(ts[0]);
+  BOOLEAN for_real = (phase==5 || phase==6);
+  double time = ts[step];
+
+  if (for_real && payload)
+    extras->insert(time+wait, payload);
+
+  return extras->retract(time, for_real);
+}
+
 /* This is called only when we create the type, to return model constants */
 FINDABLE EXPORT getcount_type get_count;
 FINDABLE EXPORT int get_count(void* ame_rand_ptr, 
