@@ -827,7 +827,7 @@ double VarParamData::ResetTimeSeries(double init_time, int topPhase) {
 }
 
 double VarParamData::UpdateTimeSeries(double now, double horizon) {
-  double next_evt_sofar, next_evt;
+  double next_evt;
 
   next_evt = update_from_points(now, horizon);
 

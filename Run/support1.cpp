@@ -239,7 +239,8 @@ void delay<modeldata>::insert (double when, modeldata what) {
 }
 
 template <class modeldata> 
-modeldata delay<modeldata>::retract (double when, BOOLEAN clear) {
+modeldata delay<modeldata>::retract (double when, BOOLEAN clear, 
+				     double *expect) {
   modeldata unload;
   series<modeldata> *where;
   
@@ -253,6 +254,8 @@ modeldata delay<modeldata>::retract (double when, BOOLEAN clear) {
       head = where;
     }
   }
+  if (where && where->timepoint<*expect)
+    *expect = where->timepoint; // set prediction
   return unload;
 }
 

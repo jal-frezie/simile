@@ -65,7 +65,7 @@ template <class modeldata> class delay {
 
   void insert (double when, modeldata what);
 
-  modeldata retract (double when, BOOLEAN clear);
+  modeldata retract (double when, BOOLEAN clear, double *expect);
 };
 
 class submodeltype {

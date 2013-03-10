@@ -235,7 +235,7 @@ modeldata InstanceOfModel::delay_for(delay<modeldata>* extras, double wait,
   if (for_real && payload)
     extras->insert(time+wait, payload);
 
-  return extras->retract(time, for_real);
+  return extras->retract(time, for_real, &event_predict);
 }
 
 /* This is called only when we create the type, to return model constants */
