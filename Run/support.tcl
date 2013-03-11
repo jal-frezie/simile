@@ -300,6 +300,49 @@ proc schedule {check index delay} {
     tcl_zeroparam $node
 }
 
+proc insert_to_pipe {ns_extras when what} {
+    upvar \#0 $ns_extras extras
+
+    lappend extras ;# make empty list if no exist
+    set where [llength $extras]
+    while {$where>0 && [lindex $extras $where-2]>$when} {
+	incr where -2
+    }
+    set extras [linsert $extras $where $when $what]
+}
+    
+proc retract_from_pipe {ns_extras when clear} {
+    global event
+    upvar \#0 $ns_extras extras
+
+    lappend extras ;# make empty list if no exist
+    set where 0
+    set unload 0
+    while {$where<[llength $extras] && [lindex $extras $where]<$when} {
+	set unload [lindex $extras [incr where]]
+	incr where
+    }
+    if {$where<[llength $extras] && [lindex $extras $where]<$event(predict)} {
+	set event(predict) [lindex $extras $where]
+    }
+    if {$clear} {
+	set extras [lreplace $extras 0 $where-1]
+    }
+    return $unload
+}	
+    
+proc delay_for {ns_extras wait payload ph} {
+    global phasecount
+
+    set phase [expr {int([glob_element ts 0])}]
+    set forReal [expr {$phase==5 || $phase==6}]
+    set now [glob_element ts $phasecount]
+    if {$forReal && $payload} {
+	insert_to_pipe $ns_extras [expr {$now + $wait}] $payload
+    }
+    return [retract_from_pipe $ns_extras $now $forReal] 
+}
+
 proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 #ShowMess debug info  "Go! tgt $tgt subs $subs trans $trans dims $dims list $list cpp $useCppArray" ok
     # skip over any vm arrays, their indices will not appear

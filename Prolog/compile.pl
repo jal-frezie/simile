@@ -2489,7 +2489,7 @@ name_components( _, [], _, []).
 
 name_components(Language, [instance(_Type, Node, _, elt(_, Var, _), _)
 			  | Compartments], Used, Graphs) :-
-	(member(Node, [st(Host), hist(Host), n_made(Host)]), !,
+	(member(Node, [st(Host), hist(Host), n_made(Host), pipe(Host)]), !,
 	    caption_for(Host, CompName),
 	    append_atoms(CompName, '_extras', Name);
 	  caption_for(Node, Name)),

@@ -953,7 +953,9 @@ make_evaluation_routine(
 	    make_scalar(Language, Struct, SStruct),
 	    make_pointer(Language, SStruct, VStruct),
 	    make_evaluation_routine_all(Language, Args, VArgs),
-	    combine(Language, delay_for, [VStruct | VArgs], Term);
+	    make_procedure_call_chars(Language, [delay_for, VStruct | VArgs],
+				      TermStr),
+	    name(Term, TermStr);
 	Expr =.. [Op | Args],
 	    make_evaluation_routine_all(Language, Args, VArgs),
 	    combine(Language, Op, VArgs, Term)).
