@@ -1159,12 +1159,7 @@ Now one that uses a special conditional level */
 		RUnits = int,
 		ValRef = check_limit(RActEqn, Lower, Upper, Flags, GraphId,
 				     Step, RDiffs);
-/*	    Source = delay_for(Pipe, WaitEqn, ValEqn, Step),
-		SourceList = [WaitEqn, ValEqn, Pipe],
-		Arg_template = [real, RUnits, class_template(delay, _)],
-		ResultList = [RWaitEqn, RValEqn, RPipe],
-		ValRef = delay_for(RPipe, RWaitEqn, RValEqn, Step);
-*/	    Source =.. [table | SourceList],
+	    Source =.. [table | SourceList],
 	    Step = dummy,
 		\+ SourceList = [''], /* let checker handle empty args */
 	        (SourceList = [_|_], !;

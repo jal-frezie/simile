@@ -1,12 +1,11 @@
 // Declaration for procedure types found in the model dll by the shank
 typedef int getcount_type(void*, void*, void* ,void*,
 			  void*, void*, void*, void*,
-			  void*, int*, node_data_line**);
+			  int*, node_data_line**);
 typedef double getversion_type(void);
 typedef InstanceOfModel* createmodel_type(ExecutingModel*);
 typedef void model_requests_file_param_type(void*, void*, int, 
 					    BOOLEAN, int, int*);
-typedef void schedule_type(void*, int, BOOLEAN, double);
 
 //typedef int setstep_type(InstanceOfModel*, double, int);
 //typedef void updatemodel_type(InstanceOfModel*, int);
@@ -102,8 +101,6 @@ public:
     modeldata delay_for(delay<modeldata>*, double, modeldata, int);
   int loses(double, int);
   void collect(void*, int, int, ...);
-  void deliver(void*, int, int, ...);
-  void schedule(int, BOOLEAN, double);
   int stop_on_id(int, int);
   int stop(int);
 };

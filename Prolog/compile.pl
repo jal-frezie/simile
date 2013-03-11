@@ -1459,9 +1459,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Do not make an assignment if we are expecting one on init/reset
 	    from outside */
 	(member(Type, [event, magnitude, limit, series, state_fn]), !,
-	     (Source = event(after(_T, _V), _TM), !,
-		Is_P = 4;       % a derived event with time series delay
-	    Is_P = 0);
+	    Is_P = 0;
 	  is_parameter(Node, Norm_P),
 	    (Norm_P = 2, \+ Node has_class_refinement param_type of file, !,
 		Is_P = 3;	% a time series event
@@ -1471,7 +1469,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    (Type = function, Tgt = Dest, Step = -1, Wait = [on_step];
 	    Type = init_function, Tgt = init(Dest),
 		Step = 0, Wait = [on_reset]);
-	 member(Is_P, [1,3,4]),
+	 member(Is_P, [1,3]),
 	    Tgt = update(Dest),
 	    (Type = function, Step = SmStep, Wait = [init(Dest), on_step];
 		% last wait was time but made R-K results look wrong
@@ -1486,18 +1484,11 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    append(SmInds, LocalInds, Inds),
 	    vars_only(Inds, VarInds),
 	    length(VarInds, Count),
-	    (Is_P = 4 ->
-		CollectMakes = Dest,
-		Inits = [make(init(Dest), [on_reset], Path, 0,
-			     [assign(Val, Inactive)])];
-	      CollectMakes = Tgt,
-		Inits = []),
 	    CollectFn =.. [collect, arr(DestPtr, Dest, LocalInds), Dest,
 			       Count | VarInds],
-	    Collects = [make(CollectMakes, Wait, Path, Step, [CollectFn]) |
-		       Inits];
+	    Collects = [make(Tgt, Wait, Path, Step, [CollectFn])];
 	  Collects = []),
-	(((Is_P < 1; Is_P = 4),
+	((Is_P < 1,
 	    (Type = init_function, !,
 		UseList = [on_reset | RefList],
 		Made = init(Dest),
@@ -1509,9 +1500,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	      member(Type, [function, loss, limit]),
 		UseList = RefList;
 	      member(Type, [magnitude, state_fn])), !,
-		(Is_P = 4 ->
-		    Made = for_next_time(Dest);
-		  Made = Dest),
+		Made = Dest,
 		UseStep = SmStep),
 	    SourceEqn = Source;
 	(Is_P = 1, apply_minmax(Node, Source, SourceEqn);
@@ -1602,14 +1591,6 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	        Is_P = 2, Type = init_function), !,
 	    Move = Fn,
 	    Linkers = [Set];
-	  Is_P = 4, !,
-	    Fn = choose(TrgExp, after(Delay, Src), _),
-	    Move = Src,
-	    DeliverFn =.. [deliver, arr(DestPtr, Dest, LocalInds), Dest,
-			       Count | VarInds],
-	    Linkers = [make(Tgt, [Made], Path, Step, [DeliverFn]),
-		       make(saved(Dest), [Tgt], [], SmStep,
-			    [schedule(TrgExp, Dest, Delay)])];
 	  Type = al_function,
 	    Fn = choose(LoopExitExpr, LoopStart, LoopStart),
 	    Move = LoopExitExpr;

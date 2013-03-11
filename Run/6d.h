@@ -137,12 +137,6 @@ class CPPEXTDEC VarParamData : public FileParamData {
   //! the uninitialized current data space would be copied over them
   void back_copy_vars(double);
 
-  //! delayed derived events use this to insert time points with their values
-  //! Argument 1 is incoming event value 
-  //! Argument 2 is time at which delayed event will occur
-  //! Result TRUE if new point created
-  BOOLEAN schedule_point(BOOLEAN, double);
-
   //! Set up current data from time points for time and direction 
   //! Arguments are time and dir (TRUE=forward), 
   //! result is time of next event (now if none)
@@ -230,9 +224,6 @@ class ExecutingModel
 
   //! allow model to access parameter data; client should not call this
   void GetValuePointer(void*, int, int, BOOLEAN, int*);
-
-  //! allow model to create time seris point; client should not call this
-  void schedule(int, BOOLEAN, double);
 
   // allow model to update client during execution; client should not call
   BOOLEAN do_gui_check(double, int);

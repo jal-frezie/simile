@@ -102,7 +102,6 @@ int max(int a, int b) {
 
 stat_check_type stat_check;
 model_requests_file_param_type handle_model_param_request;
-schedule_type schedule;
 
 char globMess[256];
 
@@ -618,16 +617,6 @@ VarParamData::VarParamData(ExecutingModel* instToUse, HCOMP newNodeNum,
 
 VarParamData::~VarParamData() {
   ClearTimePtElements();
-}
-
-BOOLEAN VarParamData::schedule_point(BOOLEAN check, double now) {
-  listTimePoint* newPt = NULL;
-  if (check)
-    if (newPt = create_time_point(now)) { // assignment
-      newPt->dataPtr = copy_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-    }
-  zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-  return newPt!=NULL;
 }
 
 double VarParamData::update_from_points(double nowInDays, double next) {
@@ -1374,21 +1363,6 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId, BOOLEAN up,
 
 }
 
-void ExecutingModel::schedule(int paramId, BOOLEAN check, double delay) {
-  FileParamData* paramArrayItem;
-  double tSched;
-
-  paramArrayItem = param_array_base;
-  if (modelSpec->param_item_from_id(&paramArrayItem, paramId)) {
-    tSched = delay+thisTsPosn;
-    if (((VarParamData*)paramArrayItem)->schedule_point(check, tSched) && 
-	tSched<=nextSeriesEvt) {
-      nextSeriesEvt = tSched;
-      seriesEvtSign = paramId;
-    }
-  }
-}
-
 // Implementation of class ModelServer
 ModelServer::ModelServer(char* fileName, char** complaint) {
     handle = LOAD_DLL(fileName);
@@ -1420,7 +1394,6 @@ showMess(globMess); */
 			 (void*)release_graph_data, 
 			 (void*)compare_instance_status, 
 			 (void*)handle_model_param_request, 
-			 (void*)schedule, 
 			 (void*)stat_check,
 			 (void*)showModelMess,
 			 (void*)&c_graphdata,
@@ -1867,10 +1840,6 @@ void handle_model_param_request(void* instId, void* modelSlot, int paramId,
 //  sprintf(globMess, "h_m_p_t to location %lx for exmod %lx node %d count %d indx0 %d indx1 %d", (long)modelSlot, (long)instId, paramId, ic, indxs[0], indxs[1]);
 //  showMess(globMess);
   ((ExecutingModel*)instId)->GetValuePointer(modelSlot, paramId, up, ic, indxs);
-}
-
-void schedule(void* instId, int paramId, BOOLEAN check, double delay) {
-  ((ExecutingModel*)instId)->schedule(paramId, check, delay);
 }
 
 /* This finds node ids from captions globally. It runs through a model

@@ -47,17 +47,6 @@ proc FileParamDialogue {topNode topWin mustShow} {
     set useCppArray [RunningInC $topNode]
     foreach node $allNodes {
         set notInput [FirstIndexCheck $topNode $node]
-	if {$notInput == 2} {
-# delayed derived event, create time series space but do not (?) allow input
-	    if {$useCppArray} {
-		c_setparamarray $topNode $node
-	    } else {
-		tcl_setparamarray $topNode $node
-	    }
-	    SetInterval $topNode $useCppArray $node day 1
-	    SetWrapTime $topNode $useCppArray $node 0
-	    continue
-	}
         if {$notInput != -1} {
             AddEntry $t $topNode $node $mustShow $notInput
         }
@@ -1604,7 +1593,7 @@ proc TrimDTFromPath {fullCapt} {
 }
 
 proc FirstIndexCheck {topNode node} {
-    return [lsearch {INPUT TABLE RECALL} [GetCompProperty $topNode Eval $node]]
+    return [lsearch {INPUT TABLE} [GetCompProperty $topNode Eval $node]]
 }
 
 proc DataInScenario {compName} {
