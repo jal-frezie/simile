@@ -331,7 +331,7 @@ proc retract_from_pipe {ns_extras when clear} {
     return $unload
 }	
     
-proc delay_for {ns_extras wait payload ph} {
+proc delay_for {ns_extras wait payload} {
     global phasecount
 
     set phase [expr {int([glob_element ts 0])}]

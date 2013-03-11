@@ -1536,9 +1536,8 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    SourceItem = trigger_magnitude(''),
 	    (ActEqn = after(Wait, Eqn, Pipe) ->
 	        GroundEqn = (SourceItem=TriggerEqn,
-			     delay_for(Pipe, Wait,
-				       choose(SourceItem '!=' 0, Eqn,
-						    Inactive), SmStep));
+			     delay_for(Pipe, Wait, choose(SourceItem '!=' 0,
+							  Eqn, Inactive)));
 	      GroundEqn = (SourceItem=TriggerEqn,
 			   choose(SourceItem '!=' 0, ActEqn, Inactive))),
 			   

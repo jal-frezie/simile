@@ -227,10 +227,10 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 
 template <class modeldata> 
 modeldata InstanceOfModel::delay_for(delay<modeldata>* extras, double wait, 
-				     modeldata payload, int step) {
+				     modeldata payload) {
   int phase = int(ts[0]);
   BOOLEAN for_real = (phase==5 || phase==6);
-  double time = ts[step];
+  double time = ts[phasecount];
 
   if (for_real && payload)
     extras->insert(time+wait, payload);

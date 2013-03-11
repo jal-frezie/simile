@@ -98,7 +98,7 @@ public:
   double stage_incr (diffs*, int, double, double, int);
   int check_limit(double, double, double, int, int, int, diffs*);
   template <class modeldata> 
-    modeldata delay_for(delay<modeldata>*, double, modeldata, int);
+    modeldata delay_for(delay<modeldata>*, double, modeldata);
   int loses(double, int);
   void collect(void*, int, int, ...);
   int stop_on_id(int, int);
