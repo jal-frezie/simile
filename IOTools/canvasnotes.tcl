@@ -27,6 +27,12 @@ namespace eval canvasnotes20070919 {
 	if {[string length $props]} {
 	    $cm add command -label "Properties..." -command $props
 	}
+
+# As a service that can be done here, protect canvas from mousewheel
+# if not meant to be scrolled
+	if {![llength [$c cget -yscrollcommand]]} {
+	    $c configure -yscrollcommand [list Unscroll $c y]
+	}
     }
 
     proc StickMenuHere {c X Y x y} {

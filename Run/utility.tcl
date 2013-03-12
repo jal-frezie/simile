@@ -916,3 +916,12 @@ proc KoreanClick {widget buttonNo cmd} {
 	bind $widget <Button-$buttonNo> $cmd
     }
 }
+
+# procedure to bind to a window's scroll action if we don't want it scrolling
+# due to axxidental mousewheel turns
+proc Unscroll {w dim t b} {
+# only way to find out if it has moved
+    if {abs([$w canvas$dim 0])>1} {
+	$w ${dim}view moveto 0
+    }
+}
