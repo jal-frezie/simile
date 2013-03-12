@@ -421,7 +421,11 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	    make_scalar(L, SoFar, ScalarSoFar),
 	    make_pointer(L, ScalarSoFar, SoFarPtr),
 	    append_atoms(assign_if_, Op, Functor),
-	    CallSpec =.. [Functor, TestedExpr, PayloadExpr, SoFarPtr, DestPtr]),
+	    CallSpec =.. [Functor, TestedExpr, PayloadExpr, SoFarPtr, DestPtr];
+	SpecialOp =.. [insert_to_pipe | Args], !,
+	    make_evaluation_routine_all(L, Args, VArgs),
+	    all(render, make_expr, [unify(L), build(VArgs), build(ArgExps)]),
+	    CallSpec =.. [insert_to_pipe | ArgExps]),
 	excrete(L, procedure_call, CallSpec, Indent, Stream),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 % have to render after instantiating CollectId
@@ -949,13 +953,9 @@ make_evaluation_routine(
 	    make_procedure_call_chars(Language, [check_limit, XTrigger | VArgs],
 				      TermStr),
 	    name(Term, TermStr);
-	Expr =.. [delay_for, Struct | Args], !,
+	Expr = ref_to(Struct), !,
 	    make_scalar(Language, Struct, SStruct),
-	    make_pointer(Language, SStruct, VStruct),
-	    make_evaluation_routine_all(Language, Args, VArgs),
-	    make_procedure_call_chars(Language, [delay_for, VStruct | VArgs],
-				      TermStr),
-	    name(Term, TermStr);
+	    make_pointer(Language, SStruct, Term);
 	Expr =.. [Op | Args],
 	    make_evaluation_routine_all(Language, Args, VArgs),
 	    combine(Language, Op, VArgs, Term)).

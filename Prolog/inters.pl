@@ -1638,12 +1638,14 @@ operator(or, boolean, [boolean, boolean]).
 operator(xor, boolean, [boolean, boolean]).
 operator(not, boolean, [boolean]).
 
+% following for functions that need tcl procedures inside expressions
 use_tcl_proc_for(min).
 use_tcl_proc_for(max).
 use_tcl_proc_for(following).
 use_tcl_proc_for(preceding).
 use_tcl_proc_for(first).
 use_tcl_proc_for(loses). % internal function decides loss from probability
+use_tcl_proc_for(retract_from_pipe).
 
 value(Any) :-
 	member(Any, [boolean, int, real, a(_Enum)]).

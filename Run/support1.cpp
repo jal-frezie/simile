@@ -210,17 +210,31 @@ void InstanceOfModel::collect (void* dest, int record_id, int id_count, ...) {
 }
    
 template <class modeldata> 
-void delay<modeldata>::insert (double when, modeldata what) {
-  series<modeldata> **where;
-  where = &head;
-  while (*where && (*where)->timepoint<when) 
-    where = &(*where)->next;
-  *where = new series<modeldata>(when, what, *where);
+void delay<modeldata>::empty () {
+  series<modeldata> *where;
+  
+  while (head) {
+    where = head ->next;
+    delete head;
+    head = where;
+  }
 }
 
 template <class modeldata> 
-modeldata delay<modeldata>::retract (double when, BOOLEAN clear, 
-				     double *expect) {
+void delay<modeldata>::insert (double when, modeldata what, double *expect) {
+  series<modeldata> **where;
+  if (what) {
+    where = &head;
+    while (*where && (*where)->timepoint<when) 
+      where = &(*where)->next;
+    *where = new series<modeldata>(when, what, *where);
+  }
+  if (head && head->timepoint<*expect)
+    *expect = head->timepoint; // set prediction
+}
+
+template <class modeldata> 
+modeldata delay<modeldata>::retract (double when, BOOLEAN clear) {
   modeldata unload;
   series<modeldata> *where;
   
@@ -234,8 +248,6 @@ modeldata delay<modeldata>::retract (double when, BOOLEAN clear,
       head = where;
     }
   }
-  if (where && where->timepoint<*expect)
-    *expect = where->timepoint; // set prediction
   return unload;
 }
 

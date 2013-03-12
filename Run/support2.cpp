@@ -226,16 +226,27 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 }
 
 template <class modeldata> 
-modeldata InstanceOfModel::delay_for(delay<modeldata>* extras, double wait, 
-				     modeldata payload) {
+modeldata InstanceOfModel::retract_from_pipe(delay<modeldata>* extras) {
   int phase = int(ts[0]);
   BOOLEAN for_real = (phase==5 || phase==6);
   double time = ts[phasecount];
 
-  if (for_real && payload)
-    extras->insert(time+wait, payload);
+  if (dts[0]>0)
+    return extras->retract(time, for_real);
+  else
+    extras->empty();
+  return 0;
+}
 
-  return extras->retract(time, for_real, &event_predict);
+template <class modeldata> 
+void InstanceOfModel::insert_to_pipe(delay<modeldata>* extras, 
+					  double wait, 
+					  modeldata payload) {
+  int phase = int(ts[0]);
+  BOOLEAN for_real = (phase==5 || phase==6);
+  double time = ts[phasecount];
+
+  extras->insert(time+wait, for_real?payload:0, &event_predict);
 }
 
 /* This is called only when we create the type, to return model constants */

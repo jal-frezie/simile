@@ -62,9 +62,9 @@ template <class modeldata> class delay {
     }
   }
 
-  void insert (double when, modeldata what);
-
-  modeldata retract (double when, BOOLEAN clear, double *expect);
+  void empty ();
+  void insert (double when, modeldata what, double *expect);
+  modeldata retract (double when, BOOLEAN clear);
 };
 
 class submodeltype {
@@ -98,7 +98,9 @@ public:
   double stage_incr (diffs*, int, double, double, int);
   int check_limit(double, double, double, int, int, int, diffs*);
   template <class modeldata> 
-    modeldata delay_for(delay<modeldata>*, double, modeldata);
+    modeldata retract_from_pipe(delay<modeldata>*);
+  template <class modeldata> 
+    void insert_to_pipe(delay<modeldata>*, double, modeldata);
   int loses(double, int);
   void collect(void*, int, int, ...);
   int stop_on_id(int, int);

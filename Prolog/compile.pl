@@ -1500,7 +1500,6 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	      member(Type, [function, loss, limit]),
 		UseList = RefList;
 	      member(Type, [magnitude, state_fn])), !,
-		Made = Dest,
 		UseStep = SmStep),
 	    SourceEqn = Source;
 	(Is_P = 1, apply_minmax(Node, Source, SourceEqn);
@@ -1535,47 +1534,39 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    (Unit = boolean -> Inactive = '"false"' ; Inactive = 0),
 	    SourceItem = trigger_magnitude(''),
 	    (ActEqn = after(Wait, Eqn, Pipe) ->
-	        GroundEqn = (SourceItem=TriggerEqn,
-			     delay_for(Pipe, Wait, choose(SourceItem '!=' 0,
+	        Made = for_next_time(Dest),
+	        UseList = [Dest | RefList],
+	        GroundEqn = delay_for(Pipe, Wait, (SourceItem=TriggerEqn,
+						   choose(SourceItem '!=' 0,
 							  Eqn, Inactive)));
+	    UseList = RefList,
 	      GroundEqn = (SourceItem=TriggerEqn,
-			   choose(SourceItem '!=' 0, ActEqn, Inactive))),
-			   
-	    % trigger is just a sum of references so building is simple
-%	    final_assignment(TriggerEqn, Node,
-%			     elt([], current_event_magnitude, X), Swaps,
-%			     UseStep, Used, [TriggerExpr], [], _Path, EvtConds,
-%			     []),
-%	    Val = arr(SquirtPtr, _, SqtInds), !, % and its submodel pointer
-%	    AllActs = [cond_event(TriggerExpr, Expr, Twk2)],
-%	    append(EvtConds, RefList, UseList);
-	    Extras = Setups,
-	    UseList = RefList;
+			     choose(SourceItem '!=' 0, ActEqn, Inactive)));
+	  
 	  Type = state_fn, !,
 	    SourceEqn = event(ActEqn, TriggerEqn),
 	    choosify(ActEqn, ChooseForm, OnInit),
 	    GroundEqn = (trigger_magnitude('')=TriggerEqn,
 			 choose('"true"', OnInit, ChooseForm)),
-	    Extras = Setups,
 	    UseList = [on_step | RefList];
 	  (SourceEqn = with_phase(SmStep, EvtElts, GroundEqn),
 	      all(user, arg, [unify(2), build(EvtElts), build(EvtConds)]);
 	    SourceEqn = al_spec(LoopExit, EvtConds, LoopStart),
 	      GroundEqn = choose(LoopExit,EvtConds,EvtConds);
 	    EvtConds = [],
-	      GroundEqn = SourceEqn), % EvtConds unused as of 4/12/12
-	    Extras = Setups), !,
+	      GroundEqn = SourceEqn)), !, % EvtConds unused as of 4/12/12
 	    
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
 			 SmStep, UseStep, Used, [assign(Val, Fn)],
 			 Setups, Path, RefList, AllInters),
-	connect_params([make(Made, UseList, Path, UseStep, [assign(Val, Move)])
-		       | Extras], AllInters, Actions, Inters);
+	(nonvar(Made), !; Made = Dest),
+	connect_params([make(Made, UseList, Path, UseStep, [Act]) | Setups],
+	                AllInters, Actions, Inters);
 	Actions = [],
 	Inters = []),
 	Set = make(Dest, [init(Dest), update(Dest)], DestPath, SmStep, []),
 	(Type = limit, !,
-	    Move = Fn,
+	    Act = assign(Val, Fn),
 %	    Expr = assign(_D, choose(Test1, _Y, _N)),
 %	    Test1 =.. [_Ineq, Val, _Bound],
 				% dig out the inter
@@ -1588,23 +1579,28 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  (member(Type, [creation, immigration, reproduction]);
 	        member(Is_P, [1, 3]);
 	        Is_P = 2, Type = init_function), !,
-	    Move = Fn,
+	    Act = assign(Val, Fn),
 	    Linkers = [Set];
 	  Type = al_function,
 	    Fn = choose(LoopExitExpr, LoopStart, LoopStart),
-	    Move = LoopExitExpr;
+	    Act = assign(Val, LoopExitExpr);
 	  Type = compartment,
 	    Fn = ValRef+FChange+QChange,
-	    Move = ValRef+FChange,
+	    Act = assign(Val, ValRef+FChange),
 	    (QChange = 0, !, Linkers = [Set];
 	     Linkers = [make(tipped(Dest), [on_step], Path, SmStep,
 			    [assign(Val, ValRef+QChange)]), Set]);
 	  Type = state_fn,
 	    Fn = choose(1, OnInitEqn, ChangeEqn),
-	    Move = ChangeEqn,
+	    Act = assign(Val, ChangeEqn),
 	    Linkers = [make(init(Dest), [on_reset], Path, 0,
 			    [assign(Val, OnInitEqn)])];
-	  Move = Fn,
+	  Type = magnitude,
+	    Fn = delay_for(PipeExp, WaitExp, ValExp),
+	    Act = insert_to_pipe(ref_to(PipeExp), WaitExp, ValExp),
+	    Linkers = [make(Dest, [on_step], Path, SmStep,
+			   [assign(Val, retract_from_pipe(ref_to(PipeExp)))])];
+	  Act = assign(Val, Fn),
 	    Linkers = []),
 	append([Collects, Actions, Linkers], Assignments).
 
