@@ -215,9 +215,9 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       }
     } else if (dts[0]<=0 || !extras->t3) 
       // resetting or in a new instance -- fire if out of range
-      if (trigger>=upper) 
+      if (trigger>=upper && (action & CHECK_UPPER)) 
 	return extras->t3 = 1;
-      else if (trigger<=lower)
+      else if (trigger<=lower && (action & CHECK_LOWER))
 	return extras->t3 = -1;
       else
 	extras->t3 = 10; // indicate no longer new instance
@@ -226,13 +226,19 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 }
 
 template <class modeldata> 
-modeldata InstanceOfModel::retract_from_pipe(delay<modeldata>* extras) {
+modeldata InstanceOfModel::retract_from_pipe(delay<modeldata>* extras,
+					     int graphId) {
   int phase = int(ts[0]);
   BOOLEAN for_real = (phase==5 || phase==6);
   double time = ts[phasecount];
+  modeldata ret;
 
-  if (dts[0]>0)
-    return extras->retract(time, for_real);
+  if (dts[0]>0) {
+    ret = extras->retract(time, for_real);
+    if (ret && for_real)
+      userStop.targetId = graphId;
+    return ret;
+  }
   else
     extras->empty();
   return 0;

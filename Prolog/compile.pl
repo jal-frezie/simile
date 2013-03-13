@@ -1599,7 +1599,8 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Fn = delay_for(PipeExp, WaitExp, ValExp),
 	    Act = insert_to_pipe(ref_to(PipeExp), WaitExp, ValExp),
 	    Linkers = [make(Dest, [on_step], Path, SmStep,
-			   [assign(Val, retract_from_pipe(ref_to(PipeExp)))])];
+			   [assign(Val, retract_from_pipe(ref_to(PipeExp),
+							  graph_id(Dest)))])];
 	  Act = assign(Val, Fn),
 	    Linkers = []),
 	append([Collects, Actions, Linkers], Assignments).

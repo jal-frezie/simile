@@ -1120,14 +1120,14 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 	if {[CheckGUI $node $xtime ph$bigPhase]} {
 	    return [list 0 $xtime]
 }
-# call update purely to drive events
-	if {$event(culprit) || $event(seriesSign)} {
+# call update purely to drive events...and last() etc
+#	if {$event(culprit) || $event(seriesSign)} {
 # an event is waiting to take effect
 	    set ts(0) [expr {10+$intMtd}] ;# no change due to flows
-	    do_model updatemodel $weePhase
+	    do_model updatemodel $bigPhase
 	    set ts(0) $intMtd ;# start prediction cycle
-	    do_model evalmodel $weePhase
-	}
+	    do_model evalmodel $bigPhase
+#	}
 
         while {!$madeStep} {
 	    # aim for next predicted event if closer than end
@@ -1159,7 +1159,7 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
                 } else {
                     set ts(0) -1
                 }
-		do_model updatemodel $bigPhase
+		do_model updatemodel $weePhase
                 AdvanceTime $node $bigPhase 1 ;# sets event(nextSeries)
 	    } else {
                 if {$firstPass} {
@@ -1168,7 +1168,7 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
                 } else {
                     set ts(0) -2
                 }
-		do_model updatemodel $bigPhase
+		do_model updatemodel $weePhase
 		RKUpdate $node
 	    }
             set firstPass 0

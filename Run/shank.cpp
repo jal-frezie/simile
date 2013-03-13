@@ -1063,7 +1063,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       // an event is waiting to take effect
       // set_dts(big_phase, xtime); no need, mode 10/11 stops move
       SetdT(0, 10+(how_int==RUNGE_KUTTA)); 
-      loadedInst->updatemodel(wee_phase);
+      loadedInst->updatemodel(big_phase);
       SetdT(0, (how_int==RUNGE_KUTTA)); // start prediction cycle
       if (loadedInst->do_evalmodel(wee_phase)) break;
     }
@@ -1096,7 +1096,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	} else {
 	  SetdT(0,-1);
 	}
-	loadedInst->updatemodel(big_phase);
+	loadedInst->updatemodel(wee_phase);
 	advance_time(big_phase, 1); // sets nextSeriesEvt
 	break;
       case RUNGE_KUTTA:
@@ -1106,7 +1106,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	} else {
 	  SetdT(0,-2);
 	}
-	loadedInst->updatemodel(big_phase);
+	loadedInst->updatemodel(wee_phase);
 	rk_update(); // returns if any err so excpNo kept
 	break;
       }

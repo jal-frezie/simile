@@ -103,7 +103,8 @@ do_assignment(L, [start_submodel(Name, Top, Pointer,
 	append_atoms(Name, pointer, PointerForm),
 	declare(L, Pointer, PointerForm, Type, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
-	make_evaluation_routine_all(L, IndExprs, RefIndices),
+	all(language, make_evaluation_routine,
+	    [unify(L), build(IndExprs), unify(Used), build(RefIndices)]),
 	all(render, make_expr,
 	    [unify(L), build(RefIndices), build(RefExprs)]),
 	excrete(L, enter_context, Pointer=[Top, Name, RefExprs], 
@@ -112,7 +113,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer,
 	    Alarm = al_action(DoneCond, TryCond),
 	    make_struct_reference(L, Pointer, DoneCond, AlarmVar),
 	    excrete(L, assignment, AlarmVar=1, Indent, Stream),
-	    make_evaluation_routine(L, TryCond, TryRef),
+	    make_evaluation_routine(L, TryCond, Used, TryRef),
 	    excrete(L, while_start, TryRef, Indent, Stream),
 	    Indent1 is Indent + 4,
 	    (do_assign_list(L, MyLoop, Indent1, Used, Stream),
@@ -204,7 +205,8 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 	append_atoms(Name, pointer, PointerForm),
 	declare(L, Pointer, PointerForm, Type, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
-	make_evaluation_routine_all(L, LocalIndices, RefIndices),
+	all(language, make_evaluation_routine,
+	    [unify(L), build(LocalIndices), unify(Used), build(RefIndices)]),
 	make_struct_reference(L, Pointer, next, OnPointer),
 	refer_value(L, OnPointer, OnPointerRef),
 
@@ -392,9 +394,10 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	(SpecialOp =.. [Move, DestSpec, TgtRef | Args],
 	    Move = collect,
 	    nth(CollectId, Used, TgtRef), !,
-	    make_scalar(L, DestSpec, Dest),
+	    make_scalar(L, DestSpec, Used, Dest),
 	    refer(L, Dest, DestRef),
- 	    make_evaluation_routine_all(L, Args, Inds),
+	    all(language, make_evaluation_routine,
+		[unify(L), build(Args), unify(Used), build(Inds)]),
  	    CallSpec =.. [Move, DestRef, CollectId | Inds];
 	  SpecialOp = call_ext_code(ProcName, CurSmPtr, ArgCodes),
 	    all(render, msr_with_ptrs,
@@ -412,18 +415,19 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	SpecialOp = search_from(ArcInd, _, TopRef),
 	    CallSpec = search_from(myClassPtr, ArcInd, TopRef);
 */      SpecialOp = cond_assign(Dest, Tested, Payload, Op, SoFar),
-	    make_scalar(L, Dest, ScalarDest),
+	    make_scalar(L, Dest, Used, ScalarDest),
 	    make_pointer(L, ScalarDest, DestPtr),
-	    make_evaluation_routine(L, Tested, TestedTerm),
+	    make_evaluation_routine(L, Tested, Used, TestedTerm),
 	    make_expr(L, TestedTerm, TestedExpr),
-	    make_evaluation_routine(L, Payload, PayloadTerm),
+	    make_evaluation_routine(L, Payload, Used, PayloadTerm),
 	    make_expr(L, PayloadTerm, PayloadExpr),
-	    make_scalar(L, SoFar, ScalarSoFar),
+	    make_scalar(L, SoFar, Used, ScalarSoFar),
 	    make_pointer(L, ScalarSoFar, SoFarPtr),
 	    append_atoms(assign_if_, Op, Functor),
 	    CallSpec =.. [Functor, TestedExpr, PayloadExpr, SoFarPtr, DestPtr];
 	SpecialOp =.. [insert_to_pipe | Args], !,
-	    make_evaluation_routine_all(L, Args, VArgs),
+	    all(language, make_evaluation_routine,
+		[unify(L), build(Args), unify(Used), build(VArgs)]),
 	    all(render, make_expr, [unify(L), build(VArgs), build(ArgExps)]),
 	    CallSpec =.. [insert_to_pipe | ArgExps]),
 	excrete(L, procedure_call, CallSpec, Indent, Stream),
@@ -449,7 +453,7 @@ do_assignment(L, [check_cond(Cond) | Clauses], Indent,
 	      Used, Stream) :-
 	InnerIndent is Indent+4,
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
-	(make_evaluation_routine(L, Cond, CondXpr),
+	(make_evaluation_routine(L, Cond, Used, CondXpr),
 	    excrete(L, if_start, CondXpr, Indent, Stream),
 	    do_assign_list(L, MyLoop, InnerIndent, Used, Stream),
 	    excrete(L, end(cond), CondXpr, Indent, Stream),
@@ -708,8 +712,8 @@ we only make the three lines that insert the submodel instance into its linked l
 that evaluates an expression in the model */
 
 do_assignment(L, [assign(Dest, Source) | Clauses], Indent, Used, Stream) :-
-	make_scalar(L, Dest, ScalarDest),
-	make_evaluation_routine(L, Source, Term),
+	make_scalar(L, Dest, Used, ScalarDest),
+	make_evaluation_routine(L, Source, Used, Term),
 	make_expr(L, Term, Expr),
 	excrete(L, assignment, ScalarDest=Expr, Indent, Stream),
 
@@ -879,6 +883,7 @@ make_evaluation_routine(
 	/* Externally defined arguments */
 	Language, /* programming language to generate */
 	GExpr, /* What we are trying to evaluate */
+	Used, % list of constants to get numbers from names
 	/* Results, i.e., arguments defined here */
 	Term /* the expression that evaluates to the destination
 		in current state; -ve = in preambles, +ve = in postambles, 
@@ -887,7 +892,7 @@ make_evaluation_routine(
 	(GExpr = glob(_SpareLoop, Expr), % took element of madearray
 	    \+ list(Expr), !;
 	  Expr = GExpr),
-	(make_scalar(Language, Expr, LocalExpr), !,
+	(make_scalar(Language, Expr, Used, LocalExpr), !,
 	    refer_value(Language, LocalExpr, Term);
 	Expr = ind(Ptr, Count), !,
 	    make_struct_reference(Language, Ptr, instanceid, IndSet),
@@ -907,8 +912,8 @@ make_evaluation_routine(
 				      TimeElmtStr),
 		name(Term, TimeElmtStr)), !;
 	Expr = assign(Tgt, SubExpr), !,
-	    make_scalar(Language, Tgt, Dest),
-	    make_evaluation_routine(Language, SubExpr, Source),
+	    make_scalar(Language, Tgt, Used, Dest),
+	    make_evaluation_routine(Language, SubExpr, Used, Source),
 	    make_expr(Language, Source, SourceExp),
 	    make_assignment(Language, Dest, SourceExp, AssignStr),
 	    command_substitute(Language, AssignStr, TermStr),
@@ -917,9 +922,9 @@ make_evaluation_routine(
 	    (Language = c, Functor = '(int)';
 	     Language = tcl, Functor = int),
 	    IntExpr =.. [Functor, SubExpr],
-	    make_evaluation_routine(Language, IntExpr, Term);
+	    make_evaluation_routine(Language, IntExpr, Used, Term);
 	Expr = graph(GraphId, XAxis), !,
-	    make_evaluation_routine(Language, XAxis, GraphTerm),
+	    make_evaluation_routine(Language, XAxis, Used, GraphTerm),
 	    make_expr(Language, GraphTerm, GraphExpr),
 	    /* Keep tcl working till it uses c++ graph access */
 	    make_procedure_call_chars(Language,
@@ -928,16 +933,16 @@ make_evaluation_routine(
 /* End of graph clause */
 	    name(Term, Content_chars);
 	Expr = stop_on_id(GraphId, Ident), !, 
-	    make_evaluation_routine(Language, Ident, XIdent),
+	    make_evaluation_routine(Language, Ident, Used, XIdent),
 	    make_expr(Language, XIdent, VIdent),
 	    make_procedure_call_chars(Language, [stop_on_id, GraphId, VIdent],
 				      Content_chars),
 	    name(Term, Content_chars);
 	Expr = stage_incr(Struct, Step, Delta, Span, GraphId), !, 
-	    make_scalar(Language, Struct, SStruct),
+	    make_scalar(Language, Struct, Used, SStruct),
 	    make_pointer(Language, SStruct, VStruct),
-	    make_evaluation_routine_all(Language, [Step, Delta],
-					[VStep, XDelta]),
+	    make_evaluation_routine(Language, Step, Used, VStep),
+	    make_evaluation_routine(Language, Delta, Used, XDelta),
 	    make_expr(Language, XDelta, VDelta),
 	    make_procedure_call_chars(Language, [stage_incr, VStruct, VStep,
 						 VDelta, Span, GraphId],
@@ -945,19 +950,22 @@ make_evaluation_routine(
 	    name(Term, Content_chars);
 	Expr =.. [check_limit, Trigger | Args], !,
 	    append(EarlyArgs, [Struct], Args),
-	    make_scalar(Language, Struct, SStruct),
+	    make_scalar(Language, Struct, Used, SStruct),
 	    make_pointer(Language, SStruct, VStruct),
 	    append(EarlyArgs, [VStruct], VArgs),
-	    make_evaluation_routine(Language, Trigger, VTrigger),
+	    make_evaluation_routine(Language, Trigger, Used, VTrigger),
 	    make_expr(Language, VTrigger, XTrigger),
 	    make_procedure_call_chars(Language, [check_limit, XTrigger | VArgs],
 				      TermStr),
 	    name(Term, TermStr);
 	Expr = ref_to(Struct), !,
-	    make_scalar(Language, Struct, SStruct),
+	    make_scalar(Language, Struct, Used, SStruct),
 	    make_pointer(Language, SStruct, Term);
+	Expr = graph_id(Comp),
+	    nth(Term, Used, Comp);
 	Expr =.. [Op | Args],
-	    make_evaluation_routine_all(Language, Args, VArgs),
+	    all(language, make_evaluation_routine,
+		[unify(Language), build(Args), unify(Used), build(VArgs)]),
 	    combine(Language, Op, VArgs, Term)).
 
 /* make_evaluation_routine_all/many: Same as above, but takes a list of terms rather
@@ -966,18 +974,13 @@ which are rendered usable by the stuff in the preamble. Eventually this will hav
 to be upgraded to behave properly when the arguments have incompatible source
 contexts. */
 
-make_evaluation_routine_all(_, [], []).
-
-make_evaluation_routine_all(Language, [Expr | Args], [VArg | VArgs]) :-
-	make_evaluation_routine(Language, Expr, VArg),
-	make_evaluation_routine_all(Language, Args, VArgs).
-
-make_scalar(L, Param, FullLocalExpr) :-
+make_scalar(L, Param, Used, FullLocalExpr) :-
 	(Param = arr(Ptr, Var, Inds),
 	    make_struct_reference(L, Ptr, Var, LocalExpr);
 	Param = glob(LocalExpr, Inds),
 	    Var = ''), !,
-	make_evaluation_routine_all(L, Inds, ITerms),
+	all(language, make_evaluation_routine,
+	    [unify(L), build(Inds), unify(Used), build(ITerms)]),
  	all(language, aim_at_array, [unify(L), build(ITerms), build(ATerms)]),
 	all(render, make_expr, [unify(L), build(ATerms), build(IExprs)]),
 	( /* Var = import(Type, _, Level, _, TopPtr, _,_, ArcIndex),

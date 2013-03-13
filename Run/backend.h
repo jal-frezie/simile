@@ -98,7 +98,7 @@ public:
   double stage_incr (diffs*, int, double, double, int);
   int check_limit(double, double, double, int, int, int, diffs*);
   template <class modeldata> 
-    modeldata retract_from_pipe(delay<modeldata>*);
+    modeldata retract_from_pipe(delay<modeldata>*, int);
   template <class modeldata> 
     void insert_to_pipe(delay<modeldata>*, double, modeldata);
   int loses(double, int);
