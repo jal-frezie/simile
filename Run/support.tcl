@@ -321,7 +321,8 @@ proc insert_to_pipe {ns_extras when what} {
     }
 }
     
-proc retract_from_pipe {ns_extras} {
+proc retract_from_pipe {ns_extras id} {
+    global event
     upvar \#0 $ns_extras extras
 
     if {[glob_element dts 0]<=0} {
@@ -339,6 +340,9 @@ proc retract_from_pipe {ns_extras} {
     set clear [expr {$phase==5 || $phase==6}]
     if {$clear} {
 	set extras [lreplace $extras 0 $where-1]
+	if {$unload} {
+	    set event(culprit) $id
+	}
     }
     return $unload
 }	
