@@ -932,6 +932,9 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
     global event
 
     upvar \#0 $ns_extras extras
+    if {![info exists extras]} { ;# new instance
+	array set extras {t1 0 t2 0 t3 0}
+    }
     set phase [expr {int([glob_element ts 0])}]
 
 #puts "cmd [info level 0] phase $phase extras [array get extras]"
@@ -943,24 +946,49 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 	} 3 {
 	    set extras(t2) [expr {($extras(t2)+$trigger)/2}]
 	} 5 - 6 - 10 - 11 {
+	    set heading_out 0
+	    set out 0
 	    set old $extras(t1)
-	    if {$trigger>$old && ($action & 2)} {
-		set heading_out 1
-		set to_limit [expr {$upper-$trigger}]
-		set rate [expr {$trigger-$old}]
-	    } elseif {$trigger<$old && ($action & 1)} {
-		set heading_out -1
-		set to_limit [expr {$trigger-$lower}]
-		set rate [expr {$old-$trigger}]
-	    } else {
-		set heading_out 0
+	    if {$action & 1} {
+		if {$trigger<$old} {
+		    set heading_out -1
+		    set to_limit [expr {$trigger-$lower}]
+		    set rate [expr {$old-$trigger}]
+		}
+		if {$trigger<$lower} {
+		    set out -1
+		}
 	    }
+	    if {$action & 2} {
+		if {$trigger>$old} {
+		    set heading_out 1
+		    set to_limit [expr {$upper-$trigger}]
+		    set rate [expr {$trigger-$old}]
+		}
+		if {$trigger>$upper} {
+		    set out 1
+		}
+	    }
+
+# ok...if for_real, I need to update the last 'out' value and return
+# the new value if it has changed, ot zero otherwise. If heading out,
+# but not already fired (including this pass) I need to make a
+# prediction (to be treated as an overshoot if out).
+    
 	    set forReal [expr {$phase==5 || $phase==6}]
 	    if {$forReal} {
 		set extras(t1) $trigger ;# for prediction next step
-# (will be redone if event fired, because value outside limit breaks it)
-	    }
-	    if {$heading_out} { ;# make prediction for this event
+		if {$out} {
+		    if {$out != $extras(t3)} {
+			set event(culprit) $graphId 
+			return [set extras(t3) $out]
+		    }
+		} else {
+		    set extras(t3) 0
+		}
+	    }	    
+	    if {$heading_out && $extras(t3) != $heading_out} { 
+		# make prediction for this event
 		if {$phase==6 || $phase==11} { ;# ok approximate to quadratic
 		    set a [expr {-$heading_out*2*($trigger-2*$extras(t2)+$old)/pow([glob_element dts $step],2)}]
 		    if {$a==0} { ;# it is linear
@@ -986,16 +1014,9 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 		    set prediction [expr {[glob_element ts $step] + [glob_element dts $step]*$to_limit/$rate}]
 		}
 	    
-		if {$forReal && $to_limit<=0} { ;# do event
-		    set event(culprit) $graphId ;# for pause-on-event reporting
-		    return $heading_out ;# culprit is actual event
-		} elseif {$prediction<$event(predict)} {
+		if {$heading_out && $prediction<$event(predict)} {
 		    set event(predict) $prediction
-#		    if {!$forReal} { ;# culprit is predicted event
-#			set event(culprit) $graphId ;# for error reporting
-#		    }
 		}
-#puts "prediction $prediction culprit $event(culprit)"
 	    }
 	}
     }

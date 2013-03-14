@@ -150,7 +150,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 				  int step, diffs* extras) {
   double old, to_limit, rate, prediction;
   BOOLEAN for_real;
-  int heading_out, phase = int(ts[0]);
+  int out, heading_out, phase = int(ts[0]);
 
   switch (phase) {
   case 0: case 1: // resetting model, do not use saved data
@@ -167,23 +167,49 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
   case 6: // setting model rates for real -- R-K
   case 10: // error checking -- euler
   case 11: // error checking -- R-K
+    heading_out = out = 0;
     old = extras->t1;
-    if (trigger>old && (action & CHECK_UPPER)) {
-      heading_out = 1;
-      to_limit = upper-trigger;
-      rate = trigger-old;
-    } else if (trigger<old && (action & CHECK_LOWER)) {
-      heading_out = -1;
-      to_limit = trigger-lower;
-      rate = old-trigger;
-    } else
-      heading_out = 0;
+    if (action & CHECK_LOWER) {
+      if (trigger<old) {
+	heading_out = -1;
+	to_limit = trigger-lower;
+	rate = old-trigger;
+      }
+      if (trigger<=lower)
+	out = -1;
+    }
+    if (action & CHECK_UPPER) {
+      if (trigger>old) {
+	heading_out = 1;
+	to_limit = upper-trigger;
+	rate = trigger-old;
+      }
+      if (trigger>=upper)
+	out = 1;
+    }
+
+    /* ok...if for_real, I need to update the last 'out' value and
+       return the new value if it has changed, ot zero otherwise. If
+       heading out, but not already fired (including this pass) I need
+       to make a prediction (to be treated as an overshoot if out).
+    */
     
+
     for_real = (phase==5 || phase==6);
-    if (for_real) 
+    if (for_real) {
       extras->t1 = trigger; // for prediction next step
-    if (heading_out) { // make prediction for this event
+      if (out) {
+	if (out != extras->t3) { 
+	  userStop.targetId = graphId; // for pause-on-event reporting
+	  return extras->t3 = out;
+	}
+      } else
+	extras->t3 = 0;
+    }
+    if (heading_out && extras->t3 != heading_out) { 
+      // make prediction for this event
       if (phase==6 || phase==11) { // ok approximate to quadratic
+	// (yes I know should be 4th-order poly but have you seen the formula!)
 	// printf("old %f mid %f new %f\n", old, extras->t2, trigger);
 	double a,b,det;
 	a=-heading_out*2*(trigger-2*extras->t2+old)/pow(dts[step],2);
@@ -205,22 +231,9 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       } else // phase is 5 or 10, do linear extrap
 	prediction = ts[step] + dts[step]*to_limit/rate;
 
-      if (for_real && to_limit <= 0) { // do event
-	userStop.targetId = graphId; // for pause-on-event reporting
-	return heading_out; // culprit is actual event
-      } else if (prediction<event_predict) {
+      if (prediction<event_predict)
 	event_predict = prediction;
-	// if (!for_real) // for error reporting
-	  // userStop.targetId = graphId; // culprit is predicted event
-      }
-    } else if (dts[0]<=0 || !extras->t3) 
-      // resetting or in a new instance -- fire if out of range
-      if (trigger>=upper && (action & CHECK_UPPER)) 
-	return extras->t3 = 1;
-      else if (trigger<=lower && (action & CHECK_LOWER))
-	return extras->t3 = -1;
-      else
-	extras->t3 = 10; // indicate no longer new instance
+    }
   }
   return 0;
 }
