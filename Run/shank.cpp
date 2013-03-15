@@ -1363,8 +1363,43 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId, BOOLEAN up,
 
 }
 
+int entitled(char* clientEdn, char* modelIdent) {
+  char modelEdn[16];
+  time_t modelTime;
+  int modelCompCount, maxCompCount;
+  char* whereToLook, whereToStop;
+
+  sscanf(strstr(modelIdent, "size="), "size=%d", &modelCompCount);
+  if (modelCompCount<=25)
+    return 0; // it's small fry
+
+  sscanf(strstr(modelIdent, "date="), "date=%ld", &modelTime);
+  whereToLook = strstr(modelIdent, "edition=")+8;
+  if (!strncmp(clientEdn, whereToLook, 8) && difftime(time(NULL), modelTime)<60)
+    return 0; // model generated recently by same edition -- OK
+  if (!strncmp(clientEdn, "enterprise", 10) || 
+      !strncmp(whereToLook, "enterprise", 10))
+    return 0; // that will do nicely, sir
+
+  if (!strncmp(clientEdn, "evaluation", 10) || 
+      !strncmp(whereToLook, "evaluation", 10))
+    return -1; // too big for import/export by evaluation edn
+
+  if (modelCompCount<=50)
+    return 0; // teaching edn ok
+
+  if (!strncmp(clientEdn, "teaching", 8) || 
+      !strncmp(whereToLook, "teaching", 8))
+    return -1; // too big for import/export by teaching edn
+
+  if (!strncmp(clientEdn, whereToLook, 8))
+    return 0; // model big but both are standard (or some other!?) edn
+
+  return -1; // one edition is not one we have created
+}
+  
 // Implementation of class ModelServer
-ModelServer::ModelServer(char* fileName, char** complaint) {
+ModelServer::ModelServer(char* fileName, char* clientEdn, char** complaint) {
     handle = LOAD_DLL(fileName);
     if (!handle) {
       *complaint = strdup(WHAT_WENT_WRONG());
@@ -1397,8 +1432,13 @@ showMess(globMess); */
 			 (void*)stat_check,
 			 (void*)showModelMess,
 			 (void*)&c_graphdata,
-			 &phases, &nodedata);
-
+			 &identStr, &phases, &nodedata);
+    // Now check if this client is entitled to run it
+    if (entitled(clientEdn, identStr)) {
+      *complaint = new char[256];
+      sprintf(*complaint, "%s edition cannot use this model", clientEdn);
+      return;
+    }
     createmodel = (void*)FIND_FUNCTION(handle, "do_createmodel");
   }
 
@@ -2018,7 +2058,8 @@ void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
 // by proc_pointers_for_shank
 class ModelFor5D: public ModelServer {
 public:
-  ModelFor5D(char* fileName, char** complaint):ModelServer(fileName, complaint)
+  ModelFor5D(char* fileName, char* hostEdn, char** complaint) : 
+    ModelServer(fileName, hostEdn, complaint)
   {
   }
 
@@ -2039,11 +2080,11 @@ public:
 // Now here are the procedures which a 5-D client (such as Simile) will call
 
 // This one creates a new kind of model from the saved executable
-char* load_model(char* fileName, char* nodeName, void** modelType) {
+char* load_model(char* fileName, char* hostEdn, void** modelType) {
   ModelFor5D* newModel;
   char* complaint;
 
-  newModel = new ModelFor5D(fileName, &complaint);
+  newModel = new ModelFor5D(fileName, hostEdn, &complaint);
   if (complaint) {
     delete newModel; // will unload dll if one has been loaded
     return complaint;

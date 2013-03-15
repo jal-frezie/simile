@@ -245,6 +245,8 @@ class ModelServer
   int phases;
   //! Pointer to start of list of graph data objects
   graph_data_type* c_graphdata;
+  //! Model's identifier
+  char* identStr;
   //! Number of components in model
   int nodecount;
   //! Array of info structures for components
@@ -256,7 +258,7 @@ class ModelServer
   
  public:// public methods
   //! Constructor takes shared lib filename and pointer to string for error mess
-  ModelServer(char*, char**);
+  ModelServer(char*, char*, char**);
   ~ModelServer();
   
   //! Creates a model instance of this type

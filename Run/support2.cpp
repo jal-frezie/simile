@@ -283,7 +283,9 @@ FINDABLE EXPORT int get_count(void* ame_rand_ptr,
 			      void* stat_check_ptr,
 			      void* showMess_ptr,
 			      void* graph_ptr, 
-			      int* phases, node_data_line** data_ptr) {
+			      char** identStr,
+			      int* phases, 
+			      node_data_line** data_ptr) {
   /* Stub is giving us function pointers to save us using the linker... */
   ame_rand_ref = (ame_rand_type*)ame_rand_ptr;
   graphpoint_ref = (graphpoint_type*)graphpoint_ptr;
@@ -306,6 +308,7 @@ FINDABLE EXPORT int get_count(void* ame_rand_ptr,
   graph_data_pointer = (graph_data_type**)graph_ptr;
 
   /* ...and we are telling stub... */
+  *identStr = simile_identifier;
   *phases = phasecount;
   *data_ptr = nodedata;
 /*  *arc_count = (sizeof inputArcs)/sizeof(char*)-1; // don't include filler

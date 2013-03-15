@@ -1,7 +1,7 @@
 // Declaration for procedure types found in the model dll by the shank
 typedef int getcount_type(void*, void*, void* ,void*,
 			  void*, void*, void*, void*,
-			  int*, node_data_line**);
+			  char**, int*, node_data_line**);
 typedef double getversion_type(void);
 typedef InstanceOfModel* createmodel_type(ExecutingModel*);
 typedef void model_requests_file_param_type(void*, void*, int, 

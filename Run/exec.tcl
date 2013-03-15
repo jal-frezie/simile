@@ -51,7 +51,7 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 	if {![file exists $progFile]} {
 	    return 0
 	}
-	set new_model_id [loadmodel $progFile $node]
+	set new_model_id [loadmodel $progFile $env(user,edn)]
 	set model_id $new_model_id
         #        set model_id [loadmodel $nameBase[info sharedlibextension] $node]
         set model_ids($node) $new_model_id
