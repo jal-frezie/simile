@@ -247,12 +247,6 @@ proc collect {tgt index count args} {
 		 $paramLocns($index,nod) $args 0]
 }
 
-proc deliver {tgt index count args} {
-    global paramLocns
-    set val [BringParameter $tgt $paramLocns($index,arr) \
-		 $paramLocns($index,nod) $args 1]
-}
-
 proc BringParameter {tgt array node inds up} {
 #puts "looking for $array\($sub\)"
     upvar \#0 $array inputSrc
@@ -273,31 +267,6 @@ proc BringParameter {tgt array node inds up} {
     if {$up} {
 	set inputSrc($sub) $tmp
     }
-}
-
-proc schedule {check index delay} {
-    global paramLocns event
-
-    set node $paramLocns($index,nod)
-    if {$check} {
-	set future [expr {$::ts($::phasecount)+$delay}]
-	upvar \#0 $paramLocns($index,arr) loaded
-	upvar \#0 setFromSeries($::myNode,$node,times) plan
-	foreach curName [array names loaded $node*] {
-	    set current [split $curName ,]
-	    set ::paramData([join [concat [lrange $current 0 0] [list $future] \
-			      [lrange $current 1 end]] ,]) $loaded($curName)
-	}
-	lappend plan $future 
-	if {[llength $plan]>1 && [lindex $plan end]<[lindex $plan end-1]} {
-	    set plan [lsort -real -unique $plan]
-	}
-	if {$future < $event(nextSeries)} {
-	    set event(nextSeries) $future
-	    set event(seriesSign) $index
-	}
-    }
-    tcl_zeroparam $node
 }
 
 proc insert_to_pipe {ns_extras when what} {
@@ -932,9 +901,6 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
     global event
 
     upvar \#0 $ns_extras extras
-    if {![info exists extras]} { ;# new instance
-	array set extras {t1 0 t2 0 t3 0}
-    }
     set phase [expr {int([glob_element ts 0])}]
 
 #puts "cmd [info level 0] phase $phase extras [array get extras]"
@@ -945,17 +911,22 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 	    set extras(t2) $trigger
 	} 3 {
 	    set extras(t2) [expr {($extras(t2)+$trigger)/2}]
-	} 5 - 6 - 10 - 11 {
+	} 5 - 6 - 9 - 10 - 11 {
 	    set heading_out 0
 	    set out 0
-	    set old $extras(t1)
+	    if {$phase == 9} {
+		set old $trigger ;# no heading or rate
+		set extras(t3) 0
+	    } else {
+		set old $extras(t1)
+	    }
 	    if {$action & 1} {
 		if {$trigger<$old} {
 		    set heading_out -1
 		    set to_limit [expr {$trigger-$lower}]
 		    set rate [expr {$old-$trigger}]
 		}
-		if {$trigger<$lower} {
+		if {$trigger<=$lower} {
 		    set out -1
 		}
 	    }
@@ -965,7 +936,7 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 		    set to_limit [expr {$upper-$trigger}]
 		    set rate [expr {$trigger-$old}]
 		}
-		if {$trigger>$upper} {
+		if {$trigger>=$upper} {
 		    set out 1
 		}
 	    }
@@ -975,7 +946,7 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 # but not already fired (including this pass) I need to make a
 # prediction (to be treated as an overshoot if out).
     
-	    set forReal [expr {$phase==5 || $phase==6}]
+	    set forReal [expr {$phase==5 || $phase==6 || $phase==9}]
 	    if {$forReal} {
 		set extras(t1) $trigger ;# for prediction next step
 		if {$out} {
@@ -1106,7 +1077,7 @@ proc TclResetModel {node t0 doingRK topPhase} {
 
     set myNode $node
     if {$topPhase <= 0} {
-	set ts(0) $doingRK
+	set ts(0) 9 ;# start prediction cycle
         for {set tweakPhase 1} {$tweakPhase <= $phasecount} {incr tweakPhase} {
             set ts($tweakPhase) $t0
             set dts($tweakPhase) $steps($tweakPhase)
@@ -1117,6 +1088,7 @@ proc TclResetModel {node t0 doingRK topPhase} {
     set adapt_maxerr 0 ;# just so it is defined at first comparison
     do_model evalmodel [set dts(0) $topPhase]
     set event(culprit) 0
+    set event(seriesSign) -1
     return 1
 }
 
@@ -1146,13 +1118,13 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 	    return [list 0 $xtime]
 }
 # call update purely to drive events...and last() etc
-#	if {$event(culprit) || $event(seriesSign)} {
+	if {$event(culprit) || $event(seriesSign)} {
 # an event is waiting to take effect
 	    set ts(0) [expr {10+$intMtd}] ;# no change due to flows
 	    do_model updatemodel $bigPhase
 	    set ts(0) $intMtd ;# start prediction cycle
 	    do_model evalmodel $bigPhase
-#	}
+	}
 
         while {!$madeStep} {
 	    # aim for next predicted event if closer than end

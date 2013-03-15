@@ -165,10 +165,15 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
     break;
   case 5: // setting model rates for real -- euler
   case 6: // setting model rates for real -- R-K
+  case 9: // setting model rates for real on reset -- no integration
   case 10: // error checking -- euler
   case 11: // error checking -- R-K
     heading_out = out = 0;
-    old = extras->t1;
+    if (phase==9) {
+      old = trigger; // no heading or rate
+      extras->t3 = 0; // ignore previous activation state
+    } else
+      old = extras->t1;
     if (action & CHECK_LOWER) {
       if (trigger<old) {
 	heading_out = -1;
@@ -195,7 +200,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
     */
     
 
-    for_real = (phase==5 || phase==6);
+    for_real = (phase==5 || phase==6 || phase==9);
     if (for_real) {
       extras->t1 = trigger; // for prediction next step
       if (out) {

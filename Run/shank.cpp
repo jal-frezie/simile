@@ -994,7 +994,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
 					int top_phase) {
   int tweak_phase;
 
-  SetdT(0, 5+(how_int==RUNGE_KUTTA)); // start prediction cycle
+  SetdT(0, 9); // start prediction cycle
   for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
     SetdT( tweak_phase,steps[tweak_phase]);
   }
@@ -1008,7 +1008,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
       SetdT( -tweak_phase,init_time);
     }
     thisTsPosn = init_time;
-    seriesEvtSign = 0;
+    seriesEvtSign = -1; // run state changes first exec for init events
     if (varParamArrayBase)
       nextSeriesEvt = varParamArrayBase->ResetTimeSeries(init_time, top_phase);
   }
