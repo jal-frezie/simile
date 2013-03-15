@@ -1956,7 +1956,8 @@ changeable(_, Subexp, _, 0) :-
 	random(_, Subexp, _, 0);
 	nonvar(Subexp),
 	Subexp =.. [Functor | _],
-	(member(Functor, [time, dt, cur_phase, cur_step, last, loses]);
+	(member(Functor, [time, dt, cur_phase, cur_step, last, loses,
+			  check_limit]);
 		sample(Functor)).
 
 /* do_once is the opposite: value must stay the same even if the args change,
