@@ -1507,11 +1507,6 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     #set fm1 [menu $fm.sub0 -tearoff 0]
 #    $fm1 add command -label [tr. "Spreadsheet..."] \
 #            -command "MenuSelect $c file import_ss"
-    if {[string equal enterprise $::userinfo(edn)]} {
-	set sourceExps normal
-    } else {
-	set sourceExps disabled
-    }  
     $fm add cascade -label [tr. "Import"] -menu $fm.sub0
     set fm0 [menu $fm.sub0 -tearoff 0]
     # XML im/export via web service is local; replace with file to use built-in
@@ -1526,9 +1521,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm2 add command -label [tr. "XML Model Description"] \
             -command "MenuSelect $c local export_xml"
     $fm2 add command -label [tr. "C++ code"] \
-            -command "MenuSelect $c code build_c" -state $sourceExps
+            -command "MenuSelect $c code build_c"
     $fm2 add command -label [tr. "Compiled binary"] \
-	-command "MenuSelect $c code compile_c" -state $sourceExps
+	-command "MenuSelect $c code compile_c"
     $fm2 add command -label [tr. "PostScript graphics"] \
             -command "ExportPostscript $c"
     if {[info exists ::support_sessions]} {
