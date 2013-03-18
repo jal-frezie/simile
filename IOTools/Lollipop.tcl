@@ -14,6 +14,7 @@ proc initialize {winId} {
     variable trunks
 
     namespace import -force ::maptools2::*
+    namespace import -force ::canvasnotes20070919::*
     set toolbarItems [list \
 			  [list new.gif "Clear" \
 			       [namespace code "detach $winId"]] \
@@ -34,6 +35,7 @@ proc initialize {winId} {
 	-command [namespace code "TweakScale $winId elevation"]
     $winId.elv set 0.5
     canvas $winId.c -width 1 -height 1 -bg white
+    MakeCanvasAnnotatable $winId.c
     frame $winId.buttons -relief raised -bd 1
     pack [label $winId.buttons.anglab -text "View angle:"] -side left
     scale $winId.buttons.ang -orient h -from -$pi -to $pi \
@@ -124,6 +126,7 @@ proc SaveState {winId} {
     foreach node $useNodes($winId,selected) {
 	lappend state [GetCaptionPathFromId $node]
     }
+    lappend state /annotation/ [ListNotes [GetCanvas $winId]]
     SetState $winId $state
 }
 
@@ -134,6 +137,11 @@ proc Restore {winId} {
     if {[string match displaying [lindex $state 0]]} {
 	$winId.buttons.ang set [lindex $state 1]
 	foreach node [lrange $state 3 end] {
+	    if {$node eq "/annotation/"} {
+		# next entry (currently always last) is note date
+		RestoreNotesFromList [GetCanvas $winId] [lindex $state end]
+		break
+	    }
 	    lappend useNodes($winId,selected) [GetIdFromCaptionPath $node]
 	    lappend useNodes($winId,captions) [lindex [split $node /] end]
 	}
@@ -345,7 +353,7 @@ proc WindowSizeChanged {winId} {
     set viewVector($winId,X) [winfo width $winId.c]
     set viewVector($winId,Y) [winfo height $winId.c]
     if {[winfo viewable $winId.c]} {
-	$winId.c delete all
+	$winId.c delete trunks key grid
 	if {$viewVector($winId,elevation)>=0} {
 	    DrawShapes $winId $grid grid
 	}
@@ -354,6 +362,7 @@ proc WindowSizeChanged {winId} {
 	    DrawShapes $winId $grid grid
 	}
 	ShowKey $winId
+	$winId.c raise annotation
     }
 }
 

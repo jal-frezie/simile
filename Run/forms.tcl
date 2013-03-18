@@ -1026,7 +1026,7 @@ proc GetFindText {canvas} {
 proc DoUserDialogue {} {
     global env userinfo
     set t [PutItThere .userdata {}]
-    wm title $t "Enter your details"
+    wm title $t [tr. "Enter your details (not required for evaluation edition)"]
     pack [label $t.mess -text "Please enter your name, organization and license code if required."]
     pack [frame $t.name] -fill x
     pack [label $t.name.mess -text Name:] -side left
@@ -1035,14 +1035,10 @@ proc DoUserDialogue {} {
     pack [label $t.corp.mess -text Organization:] -side left
     pack [entry $t.corp.entry -width 40 -text userinfo(corp)] -side right
     pack [frame $t.code] -fill x
-    if {![string equal evaluation $env(user,edn)]} {
-	pack [label $t.code.mess -text "License code:"] -side left
-	pack [entry $t.code.entry -width 40 -text userinfo(license_code)] \
-	    -side right
-    } else {
-	set userinfo(license_code) "<none needed>"
-    }
-    pack [message $t.mess2 -aspect 1000 -text "Now carefully read the following End User License Agreement, and click 'ACCEPT' to indicate that you have read and understood it and that you agree to the terms set out in it. Note that this version of the Agreement is new to Simile v4.6."]
+    pack [label $t.code.mess -text "License code:"] -side left
+    pack [entry $t.code.entry -width 40 -text userinfo(license_code)] \
+	-side right
+    pack [message $t.mess2 -aspect 1000 -text [tr. "Now carefully read the following End User License Agreement, and click 'ACCEPT' to indicate that you have read and understood it and that you agree to the terms set out in it."]]
     pack [frame $t.agree -bd 4 -relief groove] -fill x
     pack [scrollbar $t.agree.y -orient v -command "$t.agree.t yview"] \
 	-side right -fill y
@@ -1066,13 +1062,8 @@ proc DoUserDialogue {} {
 	if {$userinfo(entrydone)} {
 	    set env(licensee_name) [$t.name.entry get]
 	    set env(licensee_corp) [$t.corp.entry get]
-	    if {![string equal evaluation $env(user,edn)]} {
-		set env(license_code) [$t.code.entry get]
-		if {![c_testlicense]} {
-		    Query bad_license_code error license {} ok
-		    unset userinfo(entrydone)
-		}
-	    }
+	    set env(license_code) [$t.code.entry get]
+	    c_testlicense
 	}
     }
     wm deiconify .splash

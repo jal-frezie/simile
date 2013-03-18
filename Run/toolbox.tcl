@@ -358,7 +358,7 @@ proc load_dll {topNode lang progDir id node incs} {
 	InitExecThread $node
     }
     if {[catch {ex_load_dll $topNode $lang [GetUsableName $progDir] $id \
-		    $node $incs} new_model_id]} {
+		    $::userinfo(edn) $incs} new_model_id]} {
 	if {[PrefValue custom(hackBreak) hackBreak]} {
 	    Query [list new_exec_needed $::errorInfo] info top {} {ok}
 	}
@@ -799,6 +799,8 @@ proc ControlDraw {prologVersion} {
 	    puts $UserStream $userinfo(corp)
 	    puts $UserStream $userinfo(Version)
 	    close $UserStream
+	} else {
+	    c_testlicense
 	}
     }
     loadcommands
