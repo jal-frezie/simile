@@ -1023,21 +1023,40 @@ proc GetFindText {canvas} {
     }
 }
 
+# to stop more than 5 chars going in each half of the licence field
+# and auto tab between them
+proc LimitChars {field result} {
+    switch [string length $result] {
+	0 - 1 - 2 - 3 - 4 {
+	} 5 {
+	    if {[$field index insert]>=4} {
+		event generate $field <Key-Tab>
+	    }
+	} default {
+	    return 0
+	}
+    }
+    return 1
+}
+
 proc DoUserDialogue {} {
-    global env userinfo
+    global userinfo
     set t [PutItThere .userdata {}]
     wm title $t [tr. "Enter your details (not required for evaluation edition)"]
     pack [label $t.mess -text "Please enter your name, organization and license code if required."]
-    pack [frame $t.name] -fill x
-    pack [label $t.name.mess -text Name:] -side left
-    pack [entry $t.name.entry -width 40 -text userinfo(name)] -side right
-    pack [frame $t.corp] -fill x
-    pack [label $t.corp.mess -text Organization:] -side left
-    pack [entry $t.corp.entry -width 40 -text userinfo(corp)] -side right
-    pack [frame $t.code] -fill x
-    pack [label $t.code.mess -text "License code:"] -side left
-    pack [entry $t.code.entry -width 40 -text userinfo(license_code)] \
-	-side right
+    pack [frame $t.head]
+
+    grid [label $t.head.nmess -text Name:] [entry $t.head.nentry -width 40] -sticky w
+    grid [label $t.head.cmess -text Organization:] [entry $t.head.centry -width 40] -sticky w
+    grid [label $t.head.lmess -text "License code:"] [frame $t.head.lfield] -sticky w
+
+    pack [entry $t.head.lfield.entryl -width 5 -validate key \
+	      -validatecommand [list LimitChars %W %P]] -side left
+    pack [label $t.head.lfield.hyphen -text {-}] -side left
+    pack [entry $t.head.lfield.entryr -width 5 -validate key \
+	      -validatecommand [list LimitChars %W %P]] -side left
+    pack [label $t.head.lfield.free -text [tr. {(not required for evaluation edition)}]] -side left -fill x
+
     pack [message $t.mess2 -aspect 1000 -text [tr. "Now carefully read the following End User License Agreement, and click 'ACCEPT' to indicate that you have read and understood it and that you agree to the terms set out in it."]]
     pack [frame $t.agree -bd 4 -relief groove] -fill x
     pack [scrollbar $t.agree.y -orient v -command "$t.agree.t yview"] \
@@ -1055,15 +1074,14 @@ proc DoUserDialogue {} {
     
     LetItShow $t
     grab $t
-    focus $t.name.entry
+    focus $t.head.nentry
     wm withdraw .splash
     while {![info exists userinfo(entrydone)]} {
 	tkwait variable userinfo(entrydone)
 	if {$userinfo(entrydone)} {
-	    set env(licensee_name) [$t.name.entry get]
-	    set env(licensee_corp) [$t.corp.entry get]
-	    set env(license_code) [$t.code.entry get]
-	    c_testlicense
+	    set userinfo(name) [$t.head.nentry get]
+	    set userinfo(corp) [$t.head.centry get]
+	    set userinfo(license_code) [format %5s-%5s [$t.head.lfield.entryl get] [$t.head.lfield.entryr get]]
 	}
     }
     wm deiconify .splash

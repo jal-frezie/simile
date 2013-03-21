@@ -33,3 +33,24 @@ foreach comp {ame_dll unpacker} {
 	package ifneeded [string totitle $comp] $MAJ.$MIN [list load $shareLib]
     }
 }
+
+# Other non-auto-installable cross-platform TclTk extensions also go here...
+# tkdnd
+#
+# Tcl package index file
+#
+switch [info sharedlibextension] {
+    .dylib {
+package ifneeded tkdnd 2.4 \
+  "source \{$dir/tkdnd.tcl\} ; \
+   tkdnd::initialise \{$dir\} libtkdnd2.4.dylib tkdnd"
+    } .dll {
+package ifneeded tkdnd 2.6 \
+  "source \{$dir/tkdnd.tcl\} ; \
+   tkdnd::initialise \{$dir\} tkdnd26.dll tkdnd"
+    } .so {
+package ifneeded tkdnd 2.6 \
+  "source \{$dir/tkdnd.tcl\} ; \
+   tkdnd::initialise \{$dir\} libtkdnd2.6.so tkdnd"
+    }
+}

@@ -31,23 +31,7 @@ endif
 # (currently GNU for everything)
 PROLOG = GNU
 
-ifeq ($(MONTHS_TO_RUN),0)
-	EXP_TICKS = 0
-else
-ifeq ($(PLATFORM),Darwin)
-	DATESPEC = -v+$(MONTHS_TO_RUN)m -v1d -v0H -v0M -v0S
-else
-	DATESPEC = -d `date -d "$(MONTHS_TO_RUN) months" +%Y-%m-01`
-endif
-
-EXP_TICKS = $(shell date $(DATESPEC) +%s)
-endif
-
-DEFNS=-DSIM_FINAL_EXPIRY=$(EXP_TICKS) -DSIM_DAYS_AFTER_INSTALL=$(REL_EXP) -DSIM_$(EDN)
-
-ifeq ($(LICENSED),1)
-	DEFNS += -DSIM_LICENSED
-endif
+DEFNS=-DSIM_BUILT=$(shell date $(DATESPEC) +%s)
 
 # set the following as required for your system,
 # some execs may be on the path
@@ -103,7 +87,7 @@ ifeq ($(PLATFORM),Darwin)
 #	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
 ifeq ($(MY_CPU),x86_64)
-	FLAGS = $(OPT) -mmacosx-version-min=10.4
+	FLAGS = $(OPT) -mmacosx-version-min=10.6
 	TCLFW = /System/Library/Frameworks
 else
 	FLAGS = $(OPT) -arch i386 -mmacosx-version-min=10.4

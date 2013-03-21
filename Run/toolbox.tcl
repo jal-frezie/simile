@@ -767,6 +767,7 @@ proc ControlDraw {prologVersion} {
     }
 
     if {[string match windows $tcl_platform(platform)]} {
+	c_testlicense
 	if {[catch {set userinfo(name) $env(licensee_name)}]} {
 	    set userinfo(name) {}
 	}
@@ -786,7 +787,7 @@ proc ControlDraw {prologVersion} {
 	    set env(license_code) $userinfo(license_code)
 	    set installTime [clock seconds]
 	    set env(install_time) "$installTime :: [clock format $installTime -gmt true]"
-
+	    c_testlicense
 	    if {[catch {open [file join $custom(prefDir) userinfo.txt] w} \
 		     UserStream]} {
 		error "Simile failed to create a file to keep the user authorization data. If you are using the Mac version, be sure to copy the application to a folder on your hard disk before attempting to run it. See the README for details. The error was: $UserStream"
@@ -803,41 +804,27 @@ proc ControlDraw {prologVersion} {
 	    c_testlicense
 	}
     }
+
     loadcommands
+
     if {![info exists userinfo(name)]} { ;# settings directory has come to grief
 	set userinfo(name) $env(licensee_name)
 	set userinfo(corp) $env(licensee_corp)
     }
     array set userinfo [list name $userinfo(name) corp $userinfo(corp) \
-			    final_expiry $env(user,final_expiry) \
-			    days_after_install $env(user,days_after_install) \
-			    edn $env(user,edn)]
-    # substitutes for license entries if we want to avoid loading stub
-    #set userinfo(final_expiry) 0
-    #set userinfo(days_after_install) 0
-    #set userinfo(edn) standard
+			    built $env(user,built) edn $env(user,edn)]
     
     # eezi-hack implementation of time limit: to do this anything like
     # properly, have stub dll check unix time against clock time
     
-    set day [expr 24*60*60]
-    if {$userinfo(final_expiry)} {
-        set expTime $userinfo(final_expiry)
-    }
-    if {$userinfo(days_after_install)} {
-        set installTime [lindex $env(install_time) 0]
-        set relExpTime [expr $installTime+$userinfo(days_after_install)*$day]
-        if {$userinfo(final_expiry)} {
-            set expTime [min $expTime $relExpTime]
-        } else {
-            set expTime $relExpTime
-        }
-    }
-    if {[info exists expTime]} {
+    set baseTime [clock scan [clock format $userinfo(built) -format %Y-%m-01]]
+    array set duration {evaluation "9 months" teaching "21 months"}
+    if {[info exists duration($userinfo(edn))]} {
+	set expTime [clock scan $duration($userinfo(edn)) -base $baseTime]
         set userinfo(exp_time) $expTime
         set toGo [expr $expTime-[clock seconds]]
 
-	if {$toGo<7*$day} {
+	if {$toGo<7*24*60*60} {
             #       ShowMess "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
             ShowExpiryImminent $expTime $toGo
         }
@@ -1262,7 +1249,7 @@ proc LoadFile {topNode tree tgt} {
 					      Authentication-Code]} foo
 #puts "Code result $foo"
 			if {[info exists codes]} {
-			    check_auth_code $boddledy [string trimright $codes]
+			    check_auth_code $boddledy [string trim $codes]
 			    set CodeChecked yes
                         }
 			SaveMimeBit $boddledy $tree$oldPath

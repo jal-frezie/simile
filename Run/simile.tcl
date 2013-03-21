@@ -140,9 +140,10 @@ set savedCredentials [list prologId interfaceId install_time license_code \
 #     }
 # } else {
 
+set installedCreds [file join $SIMILE_PATH Run userinfo.txt]
 set creds [file join $custom(prefDir) userinfo.txt]
-if {![file exists $creds]} {
-    file copy -force [file join $SIMILE_PATH Run userinfo.txt] $creds
+if {![file exists $creds] || [file mtime $installedCreds]>[file mtime $creds]} {
+    file copy -force $installedCreds $creds
 }
 
 set UserStream [open $creds r]
@@ -370,7 +371,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 6.0
-set sendvars(simP) {a2}
+set sendvars(simP) {}
 
 if {$env(SIMILE_VERSION)>=6.0} {
     set do_events 1 ;# include event symbols
@@ -471,8 +472,9 @@ for {set y 0} {$y < $sphYdiam} {incr y 4} {
     .splash.c create rectangle 0p $y ${r}p [expr {$y+2}] \
 	-outline {} -fill $shade
 }
+set year [clock format [file mtime $SIMILE_PATH/Run/simile.tcl] -format %Y]
 .splash.c create image 36p 28p -image $splash
-set graph(anality) "\ua9 [tr. {Copyright Simulistics Ltd.}] 2001-2011"
+set graph(anality) "\ua9 [tr. {Copyright Simulistics Ltd.}] 2001-$year"
 .splash.c create text 395.0p 45.0p -font $graph(font) -fill \#99cc99 -anchor e \
     -text $graph(anality)
 .splash.c create text 250.0p 225.0p -font $graph(megafont) -fill #660066 \

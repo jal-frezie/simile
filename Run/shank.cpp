@@ -1413,10 +1413,11 @@ ModelServer::ModelServer(char* fileName, char* clientEdn, char** complaint) {
       sprintf(*complaint, "the shared object is probably not a Simile model");
       return;
     }
-    if (fabs(((getversion_type*)getversion)()-atof(SIMILE_VERSION))>0.00001) {
+    // Version number is AME version = simile version + 4
+    if (fabs(((getversion_type*)getversion)()-4-atof(SIMILE_VERSION))>0.00001) {
       *complaint = new char[256];
       sprintf(*complaint, "client is for version %s but model is %.1f", 
-	      SIMILE_VERSION, ((getversion_type*)getversion)());
+	      SIMILE_VERSION, ((getversion_type*)getversion)()-4);
       return;
     }
 /* sprintf(globMess, "Loaded %ld", handle);
