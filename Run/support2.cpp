@@ -30,19 +30,21 @@ int AME_model::do_evalmodel(int phase) {
   if (userStop.excpNo = -setjmp(env)) {
     return 1;
   } else {
-// InternalStop not used so no need for try/catch layer
-//    try {
+    // abort request from user will raise exception
+    try {
       evalmodel(phase);
-//    }
-//    catch (int error) {
-//      return error;
-//    }
+    }
+    catch (int error) {
+      userStop.excpNo = error;
+      return 1;
+    }
+// InternalStop not used so no need for try/catch layer
 //    catch (InternalStop notice) {
       // used if stop_on_id throws exception
 //      userStop.targetId = notice.lineNo;
 //      userStop.excpNo = notice.userCode;
 //    }
-    return userStop.excpNo;
+    return userStop.excpNo; // nonzero if something has paused it
   }
 }
 
