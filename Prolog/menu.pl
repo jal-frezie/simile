@@ -1085,7 +1085,7 @@ write_eqn_term(Submodel, Entry, MinMax, InFlows, OutFlows) :-
 	find_all_comps(Submodel, Component),
 	(find_type(Component, function),
 	    implicit_function(VisNode, Component),
-	    pick_equation(Component, Eqn),
+	    pick_equation(VisNode, Eqn),
 	    \+ Eqn = ''; 
 	find_type(Component, variable),
 	    VisNode = Component,
