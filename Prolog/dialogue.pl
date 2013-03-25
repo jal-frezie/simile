@@ -271,7 +271,7 @@ update_equation(Function, InterInputs,
 	(Is_P = 1, find_type(Ev, event), !, % limit-type
 	    MinMaxNeeded = 1; % at least
 	  Is_P = 1, \+ inherently_bound(Units),
-	    \+ inherently_bound(EqnBase), !, MinMaxNeeded = 2;
+	    (var(EqnBase); \+ inherently_bound(EqnBase)), !, MinMaxNeeded = 2;
 	  MinMaxNeeded = 0),
 	text'><'expand_message(minval, [], TrMin),
 	text'><'expand_message(maxval, [], TrMax),
