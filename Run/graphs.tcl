@@ -959,7 +959,7 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     button .table.fbuttons.cancel -text [tr. Cancel] -width 10 \
             -command "set table_entry(done) 0"
     button .table.fbuttons.help -text [tr. Help] -width 10 \
-            -command {ContextSensitiveHelp .table equations/table.htm}
+            -command {ContextSensitiveHelp .table data/table.htm}
     pack .table.fbuttons.load -side top -padx 4 -pady 4
     pack .table.fbuttons.edit -side top -padx 4 -pady 4
     pack .table.fbuttons.ok -side top -padx 4 -pady 4

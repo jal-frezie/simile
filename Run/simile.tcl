@@ -71,7 +71,7 @@ if {[info exists tcl_platform(pointerSize)]} {
     set tclBitness [expr {8*$tcl_platform(pointerSize)}]
 }
 set use_system_tcltk 0 ;# use separately installed tcltk and tools
-if {$tcl_platform(os) ne "Linux" || \
+if {$tcl_platform(os) eq "Linux" || \
 	$tcl_platform(os) eq "Darwin" && $tclBitness==64} {
     set use_system_tcltk 1
 }
@@ -83,7 +83,7 @@ if {$tcl_platform(os) ne "Linux" && $tclBitness==64} {
 }
 set execDir [file join $env(SYSDIR) bin]
 set libDir [file join $env(SYSDIR) lib]
-if {[info exists use_system_tcltk]} {
+if {$use_system_tcltk} {
     lappend auto_path [file join $libDir Stubs]
 # special Simile things that cannot be found in standard TclTk
 } elseif {[info exists prolog_in_console]} {
