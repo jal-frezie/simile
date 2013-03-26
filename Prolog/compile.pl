@@ -255,7 +255,7 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	caption_for(Submodel, OuterText),
 	caption_for(SmChannel, InnerText),
 	Wrinkle = misplaced_channel(InnerText, OuterText);
-	variable_size(Submodel),
+	(variable_size(Submodel); from_value(Submodel)),
 	contains(Submodel, Param),
 	appears(Param),
 	is_parameter(Param, N),

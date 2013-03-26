@@ -56,7 +56,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, Used,
 	    pointer_from(DestPath, DestPtr),
 	    get_dims_from_loops(SourceLoops, _, Inds),
 	 NewFormula = [assign(arr(DestPtr, Target, Inds), ScaledF)],
-	add_extra_dependencies(Context, DestPath, Formula, Args, Prereqs)).
+	add_extra_dependencies(Context, DestPath, Args, Prereqs)).
 
 report(Comp, Prob) :-
 	find_all_comps(Parent, Comp),
@@ -489,6 +489,7 @@ make_intermediates(
 		the appropriate looping level in remove_idlers */
 	        (([Var | _] = Target; 	% it cannot be a condition of itself,
 		  Units == diffs;	% or its structure if a compartment
+		  nonvar(Units),
 		  Units = class_template(delay, _)), !, % or delay
 		    Args = LookupWaits;
 		Args = [made_at(Var, ParamContext) | LookupWaits])),
@@ -665,8 +666,7 @@ make_intermediates(
 	append(BuildInds, NewInds, SrcInds),
 	ClearRef = arr(SourcePtr, TotalName, SrcInds),
 
-	add_extra_dependencies(WriteContext, DestPath, IncrExpr, OldArgs,
-			       Depends),
+	add_extra_dependencies(WriteContext, DestPath, OldArgs, Depends),
 	append(SourceLoops, InterPath, InterContext),
 	append([SourceLoops, NowBuilding, InterPath], ClearContext),
 
@@ -822,7 +822,7 @@ make_intermediates(
 	      SourceRef = (phase<=0)),
 	    Units = boolean,
 	    Args = [on_step];
-	(Source =.. [Op, N],
+	Source =.. [Op, N],
 	    name(Op, OpStr),
 	    lower(OpStr, LopStr),
 	    name(TRef, LopStr),
@@ -833,8 +833,10 @@ make_intermediates(
 		throw(bad_index_number(N, Op, 8))),
 	    SourceRef =.. [TRef, TArg],
 	    default_tick_is(OrigUnits),
-	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !;
-	Source = keep(SourceRef), !;
+	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !,
+	    Args = [time];
+	Source = keep(SourceRef), !,
+	    Args = [];
 	(Source = place_in(IndN), !,
 	    reverse(BuildingArrays, BackBA),
 	    all(inters, building_dims_and_indices,
@@ -859,7 +861,7 @@ make_intermediates(
 		IndRef = glob(_LoopName, _)),
 	    (Units = boolean, !,
 		SourceRef = IndRef-1;
-	     SourceRef = IndRef)), % first index is 1 in model, 0 in code
+	     SourceRef = IndRef), % first index is 1 in model, 0 in code
 	    Args = []),
 	SourceContext = DestPath,
 	Setups = [],
@@ -1036,7 +1038,7 @@ Now one that uses a special conditional level */
 	    throw(redundant_array(Source))),
 	    
 	    append(ASetups, ISetups, Setups),
-	    add_extra_dependencies(IContext, DestPath, IndxRef, IArgs, IWaits),
+	    add_extra_dependencies(IContext, DestPath, IArgs, IWaits),
 	    append(AArgs, IWaits, Args),
 	    longest_path([ABase, IBase], EltBase),
  	    append(TailLoops, ItemLoops, EltLoops),
@@ -1099,7 +1101,7 @@ Now one that uses a special conditional level */
 	    Setups = [],
 	    SourceRef = 1;
 
-	\+ atom(Source),
+	Source =.. [Op | ArgListForm], % was \+ atom(Source)
 	    (individuates_instances(_, Source, _, _), !,
 		FunctionContext = DestPath;
 	    FunctionContext = []),
@@ -1169,7 +1171,7 @@ Now one that uses a special conditional level */
 		member(units=RUnits, TableData),
 		member(bounds=Arg_template, TableData),
 		ValRef = table(ResultList);
-	    Source =.. [Op | ArgListForm],
+	    % Source =.. [Op | ArgListForm], (done)
 		(ArgListForm = [''], !, ArgList = [];
 		    ArgList = ArgListForm),
 		length(ArgList, Arity),
@@ -1193,7 +1195,9 @@ Now one that uses a special conditional level */
 	                 BackSwap, PrevInters, BuildingArrays, Step,
 			 Used, UnitList, NewInters,
 			 ArgTpts, FunctionContext, ExecContext,
-			 Setups, SubArgs, ResultList),
+			 Setups, CompArgs, ResultList),
+	    (changeable(_, Op, _, _) -> SubArgs = [time | CompArgs];
+	     SubArgs = CompArgs),
 	    (nonvar(FragOut), !, % fragment-defined function: parsing, since
 		% these are replaced in instantiation during code build
 		SourceRef = FragOut, % placeholder
@@ -1927,20 +1931,13 @@ change_constituent(switch(All, Bit, NewBit), Old, New, 0) :-
 just_inputs(All, param(arr(_, Name, _), _,_,_,_), _, 0) :-
 	member(Name, All).
 	    
-add_extra_dependencies(OldCon, NewCon, Source, VarList, FullList) :-
+add_extra_dependencies(OldCon, NewCon, VarList, FullList) :-
 /* Now if I come out of any generated submodels, add a dependency on the generator
 function...similarly a dependemcy on time for any population submodels */
 
         (setof(Sm, has_extras(OldCon, NewCon, Sm), Exited); Exited = []),
 	wait_for_submodels(Exited, WaitList),
-
-/* Also, if the expression contains reference to the current time or time interval
-it cannot be evaluated at init time, so treat these as references to a compartment
-called 'time' (reserved word) */
-
-	(contains_something(changeable, Source, _), !,
-	    append(WaitList, [time | VarList], FullList);
-	append(WaitList, VarList, FullList)).
+	append(WaitList, VarList, FullList).
 
 contains_something(Property, Expr, Backgnd) :-
 	replace_subexps(Expr, inters, Property, Backgnd, top_down, [_ | _], _).
