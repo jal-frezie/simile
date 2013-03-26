@@ -516,9 +516,6 @@ redo with snap object
     
     public method SetValue {path value} {
         set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
-	set trans [GetCompProperty $modelNode Trans $nodeId]
-	set value [UntransVal [lindex $trans end] $value data]
-
         switch -- [$this GetModelEval $path] {
             INPUT {
 		PlaceInArray $modelNode $nodeId $value 0 [RunningInC $modelNode]
