@@ -80,18 +80,20 @@ proc Pref_Add { prefs } {
 		}
 	    }
 	    default {
-		set nNums [scan $default {%d %d %d} def lo hi]
-		if {$nNums==0} {
+		if {[string is integer -strict [lindex $default 0]]} {
+		    set nNums [scan $default {%f %f %f} def lo hi]
+		    if {![string is double -strict $value]} {
+			PrefValueSet $resName $def
+		    } elseif {$nNums>1 && $value<$lo} {
+			PrefValueSet $resName $lo
+		    } elseif {$nNums>2 && $value>$hi} {
+			PrefValueSet $resName $hi
+		    }
+		} else {
 		    # This is a string
 		    if {$value=={}} {
 			PrefValueSet $resName $default
 		    }
-		} elseif {![string is double -strict $value]} {
-		    PrefValueSet $resName $def
-		} elseif {$nNums>1 && $value<$lo} {
-		    PrefValueSet $resName $lo
-		} elseif {$nNums>2 && $value>$hi} {
-		    PrefValueSet $resName $hi
 		}
 	    }
 	}
