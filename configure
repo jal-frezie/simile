@@ -1,0 +1,3 @@
+cd Extensions/tkdnd2.6
+./configure
+cd -
