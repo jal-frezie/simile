@@ -800,9 +800,6 @@ double VarParamData::ResetTimeSeries(double init_time, int topPhase) {
   curTimePoint = NULL;
   wraps = 0;
 
-  if (myModelExec->modelSpec->GetProperty(nodeId, GETEVAL) == RECALL)
-    ClearTimePtElements();
-
   if (topPhase <= -2)
     active = 1; // this will cause any current event data to be zeroed
   next_evt = update_from_points(init_time, INFINITY);
@@ -1015,9 +1012,9 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   loadedInst->event_predict = init_time+steps[1]; // just initialize  
   freq = steps[modelSpec->phases];
 
+  (loadedInst->userStop).targetId = 0;
   if (loadedInst->do_evalmodel(top_phase))
     return &(loadedInst->userStop);
-  (loadedInst->userStop).targetId = 0;
   // reset successful: now do back copy if needed
   if (top_phase<-1 && varParamArrayBase) {
     varParamArrayBase->back_copy_vars(init_time); // does all
@@ -1332,7 +1329,7 @@ FileParamData* ExecutingModel::UseArrayForParams(HCOMP nodeNum) {
   modelSpec->SearchInfo(nodeNum, spareCapt, fullDims, spareTypes);
   // make the appropriate kind of file parameter
   evalProp = modelSpec->GetProperty(nodeNum, GETEVAL);
-  if (evalProp == INPUT || evalProp == RECALL)
+  if (evalProp == INPUT)
     return new VarParamData(this, nodeNum, fullDims);
   else
     return new FileParamData(this, nodeNum, fullDims);

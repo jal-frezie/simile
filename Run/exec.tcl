@@ -162,7 +162,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    # now it is done, previous one must have finished, if any
 	    FreeAll $oldPayload
 	}
-	if {($current-$pause)*$forward>=0} {
+	if {($current-$pause)*$forward > -1e-12} {
 	    set currentMode stop
 	}
     }

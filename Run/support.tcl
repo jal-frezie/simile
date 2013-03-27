@@ -1076,8 +1076,12 @@ proc TclResetModel {node t0 doingRK topPhase} {
     global myNode ts dts steps phasecount adapt adapt_maxerr event
 
     set myNode $node
+    set ts(0) 9 ;# start prediction cycle
     if {$topPhase <= 0} {
-	set ts(0) 9 ;# start prediction cycle
+	if {$topPhase <= -1} {
+	    InitTimeSeries $node
+	}
+	ResetTimeSeries $node
         for {set tweakPhase 1} {$tweakPhase <= $phasecount} {incr tweakPhase} {
             set ts($tweakPhase) $t0
             set dts($tweakPhase) $steps($tweakPhase)
@@ -1086,10 +1090,10 @@ proc TclResetModel {node t0 doingRK topPhase} {
     }
     set adapt(curFreq) $steps($phasecount)
     set adapt_maxerr 0 ;# just so it is defined at first comparison
-    do_model evalmodel [set dts(0) $topPhase]
+    UpdateTimeSeries $node $t0
     set event(culprit) 0
+    do_model evalmodel [set dts(0) $topPhase]
     set event(nextSeries) [expr {$adapt(curFreq)>0?Inf:-Inf}]
-    set event(seriesSign) 0
     return 1
 }
 
@@ -1318,13 +1322,9 @@ proc InitTimeSeries {topNode} {
     global setFromSeries paramData
     array unset setFromSeries
     foreach node [GetTclCompProperty $topNode Objects] {
-	set evalN [lsearch {INPUT RECALL} \
+	set evalN [lsearch {INPUT} \
 		       [GetTclCompProperty $topNode Eval $node]]
 	if {$evalN > -1} {
-	    if {$evalN==1} {
-		set paramData(wrapAroundPoint,$node) 0
-		set setFromSeries($topNode,$node,isDelay) 1
-	    }
 #puts "node $node timePts [array names paramData $node,*]"
 	    foreach timePt [array names paramData $node,*] {
 		set ${node}([lindex [split $timePt ,] 1]) 1
@@ -1345,15 +1345,10 @@ proc InitTimeSeries {topNode} {
 
 proc ResetTimeSeries {topNode} {
     global setFromSeries
-    set ::event(seriesSign) 0
     foreach pt [array names setFromSeries $topNode,*,next] {
 	set setFromSeries($pt) -1
 	set node [lindex [split $pt ,] 1]
 	set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
-	if {[info exists setFromSeries($topNode,$node,isDelay)]} {
-	    # unset any outstanding points
-	    array unset ::paramData $node,*
-	}
     }
     set setFromSeries($topNode,current) 0
 }
