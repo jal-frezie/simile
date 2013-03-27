@@ -419,8 +419,7 @@ namespace eval slide139 {
     proc SetChoiceNumber {cbox node fixed choice args} {
 	set sub [join [concat [list $node] $args] ,]
 	$cbox configure -text $choice
-	SetArrayIfUsed $node $fixed $args $choice \
-	    [expr {[${cbox}menu index $choice]+1}]
+	SetArrayIfUsed $node $fixed $args [expr {[${cbox}menu index $choice]+1}]
     }
     
     # If we load a file containing slider values, we only want to set the sliders

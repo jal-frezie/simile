@@ -996,7 +996,7 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 	
 		    
 proc do_model {what mstep} {
-#puts "do_model $what $mtime $mstep"
+#puts [info level 0]
     if {[catch {eval ::AME_model<>::${what} $mstep}]} {
 	RaiseTclExecError $what $mstep
     }
@@ -1088,7 +1088,8 @@ proc TclResetModel {node t0 doingRK topPhase} {
     set adapt_maxerr 0 ;# just so it is defined at first comparison
     do_model evalmodel [set dts(0) $topPhase]
     set event(culprit) 0
-    set event(seriesSign) -1
+    set event(nextSeries) [expr {$adapt(curFreq)>0?Inf:-Inf}]
+    set event(seriesSign) 0
     return 1
 }
 
@@ -1340,7 +1341,6 @@ proc InitTimeSeries {topNode} {
 	}
     }
     set setFromSeries($topNode,current) 0
-    set ::event(nextSeries) 0
 }
 
 proc ResetTimeSeries {topNode} {

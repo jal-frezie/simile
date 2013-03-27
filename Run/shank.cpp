@@ -805,11 +805,11 @@ double VarParamData::ResetTimeSeries(double init_time, int topPhase) {
 
   if (topPhase <= -2)
     active = 1; // this will cause any current event data to be zeroed
-  next_evt = update_from_points(init_time, init_time);
+  next_evt = update_from_points(init_time, INFINITY);
 
   if (nextVP) {
     next_evt_sofar = nextVP->ResetTimeSeries(init_time, topPhase);  
-    if (next_evt_sofar != 0 && (next_evt == 0 || next_evt_sofar < next_evt))
+    if ((next_evt_sofar-init_time)/(next_evt-init_time) < 1)
       next_evt = next_evt_sofar;
   }
   return next_evt; 
@@ -1008,13 +1008,13 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
       SetdT( -tweak_phase,init_time);
     }
     thisTsPosn = init_time;
-    seriesEvtSign = -1; // run state changes first exec for init events
+    seriesEvtSign = 0;
     if (varParamArrayBase)
       nextSeriesEvt = varParamArrayBase->ResetTimeSeries(init_time, top_phase);
   }
+  loadedInst->event_predict = init_time+steps[1]; // just initialize  
   freq = steps[modelSpec->phases];
-  loadedInst->event_predict = init_time+steps[1]; // just initialize
-  
+
   if (loadedInst->do_evalmodel(top_phase))
     return &(loadedInst->userStop);
   (loadedInst->userStop).targetId = 0;
