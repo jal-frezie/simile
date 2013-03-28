@@ -944,7 +944,7 @@ set help(g++) run/index.htm
 set help(top) index.htm
 set help(license) index.htm
 set help(execution) run/index.htm
-set help(circular) elements/influence.htm#circular
+set help(circular) concepts/sd/influence.htm#circular
 set help(fill_equation) equations/dialogue.htm
 set help(user_defns) equations/macro.htm
 set help(ext_code) submodels/external_code.htm
@@ -971,18 +971,18 @@ set url(start/step5.htm) {Step 5}
 set url(start/step6.htm) {Step 6}
 set url(start/step7.htm) {Step 7}
 set url(start/step8.htm) {Step 8}
-set url(elements/index.htm) {Model Diagram Elements}
-set url(elements/compartment.htm) {Compartment}
-set url(elements/flow.htm) {Flow arrow}
-set url(elements/variable.htm) {Variable}
-set url(elements/influence.htm) {Influence}
-set url(elements/submodel.htm) {Submodel}
-set url(elements/initialiser.htm) {Initialisation}
-set url(elements/migrator.htm) {Migration}
-set url(elements/reproducer.htm) {Reproduction}
-set url(elements/exterminator.htm) {Extermination}
-set url(elements/role.htm) {Role arrow}
-set url(elements/condition.htm) {Condition}
+set url(concepts/index.htm) {Model Diagram Elements}
+set url(concepts/sd/compartment.htm) {Compartment}
+set url(concepts/sd/flow.htm) {Flow arrow}
+set url(concepts/sd/variable.htm) {Variable}
+set url(concepts/sd/influence.htm) {Influence}
+set url(concepts/object/submodel.htm) {Submodel}
+set url(concepts/object/creation.htm) {Initialisation}
+set url(concepts/object/immigration.htm) {Migration}
+set url(concepts/object/reproduction.htm) {Reproduction}
+set url(concepts/object/loss.htm) {Extermination}
+set url(concepts/object/role.htm) {Role arrow}
+set url(concepts/object/condition.htm) {Condition}
 set url(diagrams/index.htm) {Working with Model Diagrams}
 set url(diagrams/node.htm) {Adding node-type elements}
 set url(diagrams/arrow.htm) {Adding arrow-type elements}

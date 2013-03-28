@@ -269,7 +269,7 @@ proc EditValueComment {topFrame compName} {
 	set oldComment {}
     }
     set roll [RelationCheck $topFrame "value for $compName" \
-		  param_value {} $oldComment]
+		  param_value {} {} $oldComment]
     if {[lindex $roll 0]} {
 	set oldComment [lindex $roll 1]
     }

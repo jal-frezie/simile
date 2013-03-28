@@ -906,19 +906,18 @@ proc RelationCheck {parent title type entries state init_comment} {
     
     switch $type {
         influence {
-	    set helpPage elements/influence.htm
+	    set helpPage concepts/sd/influence.htm
         } relation {
 	    set helpPage submodels/association/dialogue.htm
         } default {
 	    set helpPage index.htm
 	}
     }
-    foreach attr $entries {
+    foreach attr $entries val $state {
 	set capt [format $msgs([lindex $attr 0]) [lrange $attr 1 end]]
         pack [checkbutton $f.$attr -text $capt -wraplength 160 \
                 -variable relation($attr) -offvalue 0 -onvalue 1] -anchor w
-        set relation($attr) [lindex $state 0]
-        set state [lrange $state 1 end]
+        set relation($attr) $val
         if {$relation($attr)==-1} {
             $f.$attr configure -state disabled
         }
