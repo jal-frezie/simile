@@ -1338,7 +1338,9 @@ proc WindowDetail {window category level redraw} {
 # feedback window allowing progress reports on long activities.
 
 proc MenuSelect { window button item } {
-    SafeEqnBarEdit [winfo parent $window] ;# use latest edit
+    if {$window ne "dummy"} {
+	SafeEqnBarEdit [winfo parent $window] ;# use latest edit
+    }
     switch $button {
 	local {
 	    DoLocalCmd $window $item
