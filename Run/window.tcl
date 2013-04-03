@@ -801,9 +801,10 @@ proc AddGrid {c onCol wl wt wr wb} {
     }
 }
 
+set inCocoa [string match CG* [winfo server .]]
 proc FixDisabledImgBug {ttkButton} {
 # Only do for Cocoa so disabled images greyed elsewhere
-    if {[string match CG* [winfo server .]]} {
+    if {$::inCocoa} {
 	set origImg [$ttkButton cget -image]
 	$ttkButton config -image [list $origImg disabled $origImg]
     }
@@ -1819,14 +1820,18 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 #
 # Window menu not finished (needs to work in exec windows)
     $topm add cascade -label [tr. Window] -menu .windowchoice
-
-        set fm [menu $topm.help -tearoff 0]
+    if {$::inCocoa} {
+	set helpMenuW myhelp
+    } else {
+	set helpMenuW help
+    }
+        set fm [menu $topm.$helpMenuW -tearoff 0]
         $topm add cascade -label [tr. Help] -menu $fm
-    if ![string match aqua [tk windowingsystem]] {
         $fm add command -label [tr. Contents] -command "ContextSensitiveHelp $winid index.htm" \
                 -accelerator "F1"
-        AddAccelerator $winid help Contents "<F1>"
+        AddAccelerator $winid $helpMenuW Contents "<F1>"
 #        $fm add command -label Huh? -command {ShowMess debug info $errorInfo ok}
+    if ![string match aqua [tk windowingsystem]] {
         $fm add command -label [tr. About...] -command [list ShowAbout $winid]
     } else {
 	#$topm.help itemconfig 0 -accelerator "F1"

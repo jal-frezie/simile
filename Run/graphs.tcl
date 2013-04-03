@@ -659,7 +659,7 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
 		       -dropcmd ChooseDataHeader]
     }
     KoreanClick $lheads 1 {}
-    bind $lheads <Double-1> [list PutInDataField $lheads $dhead]
+    bind $lheads <Double-1> [list PutInDataField $lheads $dhead $haveDND]
     pack $dhead -side top -expand true -fill x
     pack $fc.select.data -expand true -fill x -anchor w \
             -padx 2 -pady 2
@@ -1123,9 +1123,13 @@ proc RemoveExtractedElt {wid} {
     $wid delete active
 }
 
-proc PutInDataField {source dest} {
+proc PutInDataField {source dest haveDND} {
     $dest delete 0 end
-    $dest insert 0 [$source get [$source curselection]]
+    if {$haveDND} {
+	$dest insert 0 [$source get [$source curselection]]
+    } else {
+	$dest insert 0 [$source itemcget [$source selection get] -text]
+    }
 }
 
 proc TagToName {tag} {

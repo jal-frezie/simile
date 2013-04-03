@@ -89,6 +89,11 @@ namespace eval RunEnv {
             wm title $mreId [format $::msgs(exec_title) [GetExecTitle $node]]
             set currentNode $node
             bind $mreId <FocusIn> [namespace code "InMreFor $node"]
+	    if {$::inCocoa} {
+		set helpMenuW myhelp
+	    } else {
+		set helpMenuW help
+	    }
             set descmenu {
                 "File" all file 0 {
                     {command "New configuration"    {} "Remove all display configuration" {} -command {::RunEnv::InitializeDisplays} }
@@ -122,9 +127,6 @@ namespace eval RunEnv {
                     {command "Remove"    {} "Remove display or container" {} -command {::RunEnv::DeleteHelperCurrentContainer}}
                     {command "Clear all"    {} "Clear all saved data from displays" {} -command {ClearView} }
                 }
-                "Help" all help 0 {
-                    {command "Contents..." {} "View the help file contents" {} -command ::RunEnv::ShowMreHelp}
-                }
             }
             
 #            set mainframe [MainFrame $mreId.mainframe -width 200m -height 150m \
@@ -136,6 +138,8 @@ namespace eval RunEnv {
 	    menu $mreMenu
 	    foreach {header tags id tear spec} $descmenu {
 		set sub [menu $mreMenu.$id -tearoff $tear]
+		$mreMenu add cascade -label [tr. $header] -menu $sub
+# TRANSLATOR: These are: File, Edit, Help
 		set pops {}
 		foreach item $spec {
 		    if {[llength $item]>1} {
@@ -149,8 +153,6 @@ namespace eval RunEnv {
 		    }
 		}
 		UnderlineUniquely $sub
-		$mreMenu add cascade -label [tr. $header] -menu $sub
-# TRANSLATOR: These are: File, Edit, Help
 		MenuBindPopup $sub $pops
 	    }
             set mainframe [GetFrame $mreId]
@@ -188,8 +190,12 @@ namespace eval RunEnv {
             
             #from runmodel.tcl AddHelperSublist
 	    #            set mreMenu [winfo parent [$mainframe getmenu help]]
-            $mreMenu insert 2 cascade -label [tr. "Add"] -menu .helpers.sub2
-	    $mreMenu insert 3 cascade -label [tr. "Window"] -menu .windowchoice
+            $mreMenu add cascade -label [tr. "Add"] -menu .helpers.sub2
+	    $mreMenu add cascade -label [tr. "Window"] -menu .windowchoice
+
+	    set helpMenu [menu $mreMenu.$helpMenuW -tearoff 0]
+	    $mreMenu add cascade -label Help -menu $helpMenu
+	    $helpMenu add command -label Contents... -command [namespace code ShowMreHelp]
 	    UnderlineUniquely $mreMenu
 
             # Add a PanedWindow for the hierrachical/run control view and main display window

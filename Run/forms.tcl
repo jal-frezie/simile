@@ -1289,8 +1289,7 @@ proc ContextSensitiveHelp {context page} {
             winhelp $context ../help/simile_book.chm $page
         } aqua {
 # try Snow Leopard location first
-	    set helpPage [file join [file dirname $env(SYSDIR)] Simile.help \
-			      Contents Resources English.lproj pgs $page]
+	    set helpPage [file join [file dirname $env(SYSDIR)] help $page]
 	    if {[catch {exec open -a "HelpViewer.app" $helpPage}]} {
 		exec open -a "Help Viewer.app" $helpPage
 	    }
