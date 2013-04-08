@@ -131,6 +131,9 @@ itcl::class similescript::ModelWindow {
     }
     
     public method LoadParams {filepath {smPath {}}} {
+	if {![file exists $filepath]} {
+	    error "Could not find file $filepath"
+	}
         do_for_node $modelNode set ::projectParams($smPath) $filepath
     }
 }
