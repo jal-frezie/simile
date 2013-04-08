@@ -503,6 +503,7 @@ install:
 		Run/prefs.tcl \
 		Run/prolog.tcl \
 		Run/runmodel.tcl \
+		Run/setup.tcl \
 		Run/shank.cpp \
 		Run/shapes.tcl \
 		Run/simile.tcl \
