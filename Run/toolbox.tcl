@@ -1572,7 +1572,8 @@ proc ExecQuery {specifics icon helpRef parent opts} {
 
 proc OpenAll {win} {
     MenuSelect $win file open
-    if {$::window_info($win,is_top_level)} {
+    if {$::window_info($win,is_top_level) && \
+	    ![info exists ::SimileAutoObjLoaded]} {
 	RunIfPackage
     }
 }

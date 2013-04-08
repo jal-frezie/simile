@@ -1818,7 +1818,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 #        $fm entryconfigure "Inspect elements" -state normal
 #    }
 #
-# Window menu not finished (needs to work in exec windows)
+# Help menu must be called help in Carbon or else we get two 'Help' pulldowns, but not in 
+# Cocoa or else we get a spurious 'Simile Help' entry
     $topm add cascade -label [tr. Window] -menu .windowchoice
     if {$::inCocoa} {
 	set helpMenuW myhelp
