@@ -465,6 +465,7 @@ install:
 		Images/Toolbar/noreel.gif \
 		IOTools/DisplayFormats.tcl \
 		IOTools/Grid5.tcl \
+		IOTools/Logger.tcl \
 		IOTools/Lollipop.tcl \
 		IOTools/New3d.tcl \
 		IOTools/Plotter.tcl \
