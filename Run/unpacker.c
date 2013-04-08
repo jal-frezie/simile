@@ -232,7 +232,7 @@ char* licenseRight (Tcl_Interp *interp) {
     expected = Tcl_GetStringResult(interp);
     if (!strncmp(offered, expected, 5) && !strncmp(offered+6, expected+5, 5)) {
       //  Tcl_AppendResult(interp, " not ", offered, " is license code", NULL);
-      //  return -1;
+      //  return "evaluation";
       return editions[edn_id];
     }
   }

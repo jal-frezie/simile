@@ -1,6 +1,6 @@
 use.simile.at <- function(path.to.installation) {
   tcl("set", "::loadedFromR", 1) # lets Tcl client know R is using it
-  tcl("source", file.path(.find.package(package = "Simile"), "exec",
+  tcl("source", file.path(find.package(package = "Simile"), "exec",
                         "client5d.tcl"))
   tcl("UseSimileAt", path.to.installation)
 }

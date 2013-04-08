@@ -1,29 +1,12 @@
 # This should be replaced with a Tcl command to load Simile from a certain path
 # ...like this:
 proc UseSimileAt {path} {
-    global env tcl_platform SIMILE_PATH
+    global env tcl_platform auto_path custom SIMILE_PATH
     set SIMILE_PATH [file normalize $path]
 
-# From simile.tcl --  sets libraries to 32 or 64 bit version per Tcl bitness
-# (right version must be installed, wrong one can be too)
-    set tclBitness [expr {8*$tcl_platform(wordSize)}]
-    if {[info exists tcl_platform(pointerSize)]} {
-	set tclBitness [expr {8*$tcl_platform(pointerSize)}]
-    }
-    set env(SYSDIR) [file join $SIMILE_PATH System]
-    if {$tclBitness==64} {
-	append env(SYSDIR) 64
-    }
-    set ::auto_path [list $env(SYSDIR)/lib]
-    append env(PATH) ";[file nativename $env(SYSDIR)/bin]" ;# for Windows
+    source [file join $SIMILE_PATH Run setup.tcl]
 
-    set savedCredentials [list prologId interfaceId install_time license_code \
-			      licensee_name licensee_corp]
-    set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
-    foreach regEntry $savedCredentials {
-	gets $UserStream env($regEntry)
-    }
-    close $UserStream
+    append env(PATH) ";[file nativename $env(SYSDIR)/bin]" ;# for Windows
 
 # for Ame_dll to load the 5-D sharelib on Mac (and Linux for 5.9 on) 
 # the wd has to be right relative to it
@@ -35,27 +18,12 @@ proc UseSimileAt {path} {
 
     package require Unpacker
     package require Trf
-    loadcommands ;# for unpacker
+    c_testlicense ;# sets edition 
+    loadcommands ;# for unpacker -- edition checked here
 
 ## Start of stuff needed to load and execute Simile code for reading .spfs
-
-    switch $tcl_platform(os) {
-	"Windows NT" {
-	    if {[info exists ::loadedFromR]} {
-		set docsDir . ;# home dir already includes "Documents"
-	    } elseif {$tcl_platform(osVersion)>=6.0} {
-		set docsDir Documents
-	    } else {
-		set docsDir "My Documents"
-	    }
-	    set tail [file join $docsDir "My Simile files"]
-	} Darwin {
-	    set tail Simile
-	} default {
-	    set tail .simile
-	}
-    }
-    set ::simtmpdir [file join $env(HOME) $tail]
+    set ::simtmpdir [file join $custom(prefDir) cl5d]
+    file mkdir $::simtmpdir 
 
 # No messages should be displayed so translation not needed
     proc tr. {en} {return $en}
