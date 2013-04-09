@@ -429,6 +429,9 @@ set msgs(undecipherable_operand_message) [tr. {%1$s does not stand for a number 
 set msgs(submodel_name_recurs_title) [tr. {Problem getting number}]
 set msgs(submodel_name_recurs_message) [tr. {Cannot resolve reference to size of %1$s. There are multiple submodels of this name.}]
 
+set msgs(self_reference_title) [tr. {Problem getting number}]
+set msgs(self_reference_message) [tr. {Self-reference to size of %1$s.}]
+
 set msgs(absent_submodel_title) [tr. {Problem getting number}]
 set msgs(absent_submodel_message) [tr. {Cannot resolve reference to size of %1$s. There is no submodel of this name.}]
 

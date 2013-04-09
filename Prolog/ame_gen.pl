@@ -631,6 +631,8 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, [Units]) :-
 	    (setof(SizeSource, name_matches(SizeSource, Top, ModName),
 		   Sources), !,
 		(Sources = [Source], !,
+		    \+ (Source = Node,
+			raise_exception(self_reference(ModName))),
 		    get_node_size(Source, RealN, RealSize, AllUnits),
 		    (var(Ind), !,
 			Nums = RealN,

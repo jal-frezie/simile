@@ -324,12 +324,13 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     set icount {}
     if [string compare $disaggregate(icount) 1] {
         foreach newIndex [split $disaggregate(icount) ,] {
-#            if {[string is double $newIndex] || \
-#                        [string match size(*) $newIndex]} {
+            if {[string is double $newIndex]} {
                 lappend icount $newIndex
-#            } else {
-#                lappend icount \"$newIndex\"
-#            }
+	    } elseif {[string first \( $newIndex]>=1} { ;# arg is atom, enquote
+		lappend icount [string map {( (' ) ')}  $newIndex]
+	    } else { ;# index is atom
+		lappend icount \'$newIndex\'
+            }
         }
         set icount [join $icount ,]
     }
