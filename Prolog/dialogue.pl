@@ -315,8 +315,8 @@ update_equation(Function, InterInputs,
 	    TypeError = bad_syntax('Units', UnitFormError);
 
 	    ((InterInputs = [], % If there are no incoming influences...
-	      (EqnBase = 1; % ...and the equation evaluates to a dimensionless
-		  promote_unit(EqnBase, real)); % quantity,
+	      (EqnBase = real; % ...and the equation evaluates to
+		  promote_unit(EqnBase, 1)); %  a dimensionless quantity,
 	      use_units_in(Function, 'No')), % or else if math checking is off,
 		CheckLevel = 1; % allow it to have any given physical units
 	      CheckLevel = 2), % otherwise dimensions must match
@@ -481,6 +481,10 @@ appropriate_units(Units, TypeBase, RawBase, CheckLevel,
 	    (Units = int, ComboBase = 1,
 	        NewUnits = 1;
 		% num constant changed from int to float -- allow
+	     member(Units, [1, int]),
+	        units'><'get_conversion(_, ComboBase, ComboBase, _),
+	        NewUnits = ComboBase;
+	        % physical units supplied for numerical -- allow
 	      NewUnits = Units); % otherwise if units were given, use them
 	    nonvar(TypeBase), \+ TypeBase = any,
 		(\+ TypeBase = 1; ComboBase = int), !,

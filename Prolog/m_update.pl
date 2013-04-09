@@ -671,10 +671,10 @@ add_implicit_function(Exp_node, Node_name) :-
 
 default_units(Node, Base, Dims) :-
 	get_host(Node, Form),
-	(Sort = rate,
-	    units_match_context(Node, Base, Dims, []);
-	member(Sort-Base, [rate-1, level-1, cond_value-cond_spec,
-			    boolean_value-boolean])),
+	(Sort = transfer,
+	    units_from_context(Node, Base, Dims, []);
+	member(Sort-Base, [rate-(1/day), transfer-1, level-1,
+			   cond_value-cond_spec, boolean_value-boolean])),
 	Form is_of_sort Sort,
 	(\+ Form is_of_sort channel;
 	    Dims = []), !.
@@ -683,26 +683,32 @@ default_units(Node, Base, Dims) :-
 error message (Whinge) is currently never used, except to make the
 predicate fail if it is not []... */
 
-units_match_context(Node, Base, Dims, Whinge) :-
+units_from_context(Node, Base, Dims, Whinge) :-
 	get_host(Node, Form),
-	(Form is_of_sort rate,
-	    endpoint_units(Form, EndUnits, ConsistencyWhinge), !,
-	    (ConsistencyWhinge = [], !,
-		(var(EndUnits), !, % no compartments to match
-		    Whinge = [];		   % pass back default
-		 analyze_array(EndUnits, EndType, EndWraps),
-		    (EndType = 1, !,
-			member(Base, [EndType, int]), % plead igronance
-			Dims = EndWraps,
-			Whinge = [];
-		     default_tick_is(Tick),
-			standard_name(EndType, EndTypeStd),
-			build_array(EndTypeStd/Tick, EndWraps, DefUnits),
-			(Base = EndTypeStd/Tick, Dims = EndWraps, !;
+	(Form is_of_sort transfer,
+	    endpoint_units(Form, EndUnits, Whinge), !,
+	    (\+ Whinge = [], !;
+		(var(EndUnits), !;		   % pass back default
+		 analyze_array(EndUnits, EndType, Dims),
+		    (Form is_of_sort rate -> default_tick_is(Tick); Tick=1),
+		    standard_name(EndType, EndTypeStd),
+		    Base = EndTypeStd/Tick));
+	 Whinge = []).		% not a flow so no constraint.
+	
+units_match_context(Node, Base, Dims, Whinge) :-
+	units_from_context(Node, EndType, EndWraps, ConsistencyWhinge),
+	(ConsistencyWhinge = [], !,
+	    (var(EndWraps), !,	 % no compartments to match
+	         Whinge = [];	 % pass back default
+	         (EndType = 1, !,
+		      member(Base, [EndType, int]), % plead igronance
+		      Dims = EndWraps,
+		      Whinge = [];
+		    (build_array(EndType, EndWraps, DefUnits),
+			(Base = EndType, Dims = EndWraps, !;
 			    build_array(Base, Dims, Units),
-			    check_unit(DefUnits, Units, 2, Whinge))));
-		Whinge = ConsistencyWhinge);
-	    Whinge = []). % not a flow so no constraint.
+			    check_unit(DefUnits, Units, 2, Whinge)))));
+		Whinge = ConsistencyWhinge).
 	
 convert_refs([], _, []).
 
