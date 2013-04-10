@@ -315,8 +315,8 @@ update_equation(Function, InterInputs,
 	    TypeError = bad_syntax('Units', UnitFormError);
 
 	    ((InterInputs = [], % If there are no incoming influences...
-	      (EqnBase = 1; % ...and the equation evaluates to
-		  promote_unit(EqnBase, real)); %  a dimensionless quantity,
+	      (EqnBase = real; % ...and the equation evaluates to
+		  promote_unit(EqnBase, 1)); %  a dimensionless quantity,
 	      use_units_in(Function, 'No')), % or else if math checking is off,
 		CheckLevel = 1; % allow it to have any given physical units
 	      CheckLevel = 2), % otherwise dimensions must match
