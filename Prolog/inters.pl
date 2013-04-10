@@ -1450,7 +1450,8 @@ promote_arg(Lo, Hi, Phys) :-
 	var(Lo), !, Phys = Lo;
 	promote_unit(Lo, Tpt),
 	(Lo = any; % match to any physical unit
-	    Tpt = real, Med = 1;
+	    %Tpt = real, Med = 1; forces result dimensionless --
+				% might need to be backtracked, but all() cuts
 	    Med = Tpt),
 	(Hi = real,
 	    (Phys = Med; \+ Phys = Med),
