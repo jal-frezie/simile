@@ -1443,8 +1443,8 @@ if taking out again fix spread_dims as well as eqn checking */
 uses_as(n(_ET), const_int).
 uses_as(const_int, int).
 uses_as(const_int, const_ratio).
-uses_as(const_ratio, 1).
-uses_as(int, 1).
+uses_as(const_ratio, real).
+uses_as(int, real).
 
 promote_arg(Lo, Hi, Phys) :-
 	var(Lo), !, Phys = Lo;

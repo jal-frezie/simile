@@ -1959,10 +1959,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     # create but only pack while state being edited
     ::ttk::combobox $eb.events -width 8 -font EquationFont -state readonly
     bind $eb.events <<ComboboxSelected>> [list SwitchEvent $winid $eb]
-    ::ttk::label $eb.minlabel -anchor w -text from:
+    ::ttk::label $eb.minlabel -anchor w -text below:
     ::ttk::entry $eb.min -width 6 -font EquationFont \
 	-textvariable equationbar(min_entry)
-    ::ttk::label $eb.maxlabel -anchor w -text to:
+    ::ttk::label $eb.maxlabel -anchor w -text above:
     ::ttk::entry $eb.max -width 6 -font EquationFont \
      	-textvariable equationbar(max_entry)
 

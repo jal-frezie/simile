@@ -201,9 +201,10 @@ proc AddEntry {winId topNode node mustShow notInput} {
     # popup in the model window -- it's in window.tcl, procedure AddEqnPopup --
     # look for the calls to Prolog proc tk_get_info
     #set desc [do_in_editor GetFromProlog tk_get_info('$winId',$node,desc)]
+    set dimReqs [GetFromProlog tk_get_info(dummy,$node,units)]
     set userDesc [GetFromProlog tk_get_info(dummy,$node,description)]
     set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
-    set desc "[lindex $levels end] ($dimList)"
+    set desc "[lindex $levels end] ($dimReqs)"
     if {![string equal {} $userDesc]} {
 	append desc { -- } $userDesc
     }

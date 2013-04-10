@@ -120,10 +120,10 @@ get_info(Wid, Comp, context, DescAtm) :-
 	    name(MiddleAtm, Mid0),
 	    ((LType = event, is_parameter(Comp, 1)) -> % a limit event
 		(get_av_pair(Fn, 0, min_val, Min) ->
-		    sicstus_format_to_chars("~s from ~w", [Mid0, Min], Mid1);
+		    sicstus_format_to_chars("~s below ~w", [Mid0, Min], Mid1);
 		  Mid1 = Mid0),
 		(get_av_pair(Fn, 0, max_val, Max) ->
-		    sicstus_format_to_chars("~s to ~w", [Mid1, Max], Middle);
+		    sicstus_format_to_chars("~s above ~w", [Mid1, Max], Middle);
 		  Middle = Mid1);
 		Middle = Mid0);
 	ghost_link(Comp, _,_),
@@ -155,6 +155,10 @@ get_info(Wid, Comp, context, DescAtm) :-
 	    append(Part1, Middle, Desc);
 	append([Part1, Middle, " (", Suffix, ")"], Desc)),
 	name(DescAtm, Desc).
+
+get_info(_Wid, Comp, units, Unit) :-
+	units_for(Comp, UnitStr),
+	name(Unit, UnitStr), !.
 
 get_info(_, Name, is_unit, Def) :-
 	(units'><'defined_as_unit(Name, Def), !;
