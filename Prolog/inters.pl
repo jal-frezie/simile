@@ -31,8 +31,8 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, Used,
 	only occurs if unit management turned on since entering equation */
 	get_dims_from_loops(SourceLoops, _, SourceInds),
 	(m_update'><'use_units_in(Sm, 'Yes'),
-	    \+ Units = 1,
-	    \+ promote_unit(Units, real),
+	    \+ Units = real,
+	    \+ promote_unit(Units, 1),
 	    \+ promote_unit(Units, XUnits),
 	    (get_conversion(Formula, Units, XUnits, ScaledF);
 		report(Sm, wrong_derived_units(Units))), !;
