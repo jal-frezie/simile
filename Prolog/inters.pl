@@ -1291,7 +1291,8 @@ with_capt(Found, Sm, Capt) :-
 
 decode_number(Source, SubId, Step, SourceRef, Units) :-
 	get_actual_size(SubId, Source, quoted, [SrcNum], [SrcType], [SrcUnits]),
-	remove_physical_units_if_disabled(SubId, SrcUnits, Units),
+	(SrcNum = 0 -> GenUnits = real; GenUnits = SrcUnits),
+	remove_physical_units_if_disabled(SubId, GenUnits, Units),
 	(Step = dummy, !,
 	    (Units = n(SourceRef), !; % enum type dims of makearray etc
 	    SourceRef = SrcType);
