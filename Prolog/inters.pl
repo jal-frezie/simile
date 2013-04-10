@@ -1262,8 +1262,11 @@ Now one that uses a special conditional level */
 		     fn_or_op(Lop, MxOp, RUnits, Arg_template),
 		     SourceRef =.. [MxOp | ResultList]),
 		    /* first, check my units are right... */
+	            retractall(trying_units(_,_)),
+	            assert(trying_units(Lop, Arg_template)),
 		    try_units(RUnits, Arg_template, UnitList, Units);
-		 fn_or_op(Lop, _, RUnits, Arg_template),
+		 % complain about last set of units tried, = most general?
+	         retract(trying_units(Lop, Arg_template)),
 		    throw(mismatched_units(Lop, Source,
 					   UnitList, Arg_template));
 		 fn_or_op(Lop, _, RUnits, WrongLen),
@@ -1443,8 +1446,8 @@ if taking out again fix spread_dims as well as eqn checking */
 uses_as(n(_ET), const_int).
 uses_as(const_int, int).
 uses_as(const_int, const_ratio).
-uses_as(const_ratio, real).
-uses_as(int, real).
+uses_as(const_ratio, 1).
+uses_as(int, 1).
 
 promote_arg(Lo, Hi, Phys) :-
 	var(Lo), !, Phys = Lo;
@@ -1582,10 +1585,10 @@ language -- they and the operators are hidden */
 % above now done by parser to insert graph id to identify discontinuity posn
 operator(loses, boolean, [real, const_int]).
 operator(loses, boolean, [boolean, const_int]).
+operator(choose, boolean, [boolean, boolean, boolean]).
 operator(choose, int, [boolean, int, int]).
 operator(choose, a(T), [boolean, a(T), a(T)]).
 operator(choose, real, [boolean, real, real]).
-operator(choose, boolean, [boolean, boolean, boolean]).
 operator(happens, boolean, [Any]) :- value(Any).
 operator(rand, real, [real, real]).
 operator(cur_phase, real, []).
@@ -1653,7 +1656,7 @@ use_tcl_proc_for(loses). % internal function decides loss from probability
 use_tcl_proc_for(retract_from_pipe).
 
 value(Any) :-
-	member(Any, [boolean, int, real, a(_Enum)]).
+	member(Any, [boolean, int, a(_Enum), real]).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* add_zeros has the mind-numbingly monotonous task of shifting
 all the array elements along one so that wooly-minded treehuggers can address
