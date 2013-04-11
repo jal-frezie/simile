@@ -142,6 +142,7 @@ Arc has_changed_attribute Attribute to NewValue :-
 :- op(500, xfy, no_longer_follows).
 
 After now_follows Before :-
+	(retract_model(continues(_, After)), fail; true),
 	assert_model(continues(Before, After)).
 
 After follows Before :-
