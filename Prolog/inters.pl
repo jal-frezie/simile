@@ -638,7 +638,7 @@ make_intermediates(
 		[RUnits | ArgTemplate] = [cond_spec, cond_spec];
 	     member(Functor, [any, all]), !,
 		[RUnits | ArgTemplate] = [boolean, boolean];	
-		[RUnits | ArgTemplate] = [int, int]),
+		[RUnits | ArgTemplate] = [real, real]),
 	    append(NowBuilding, DestPath, ReadyContext),
 	    propagate_units(Source, RUnits, ArgTemplate, [ArgUnits], Units)),
 	get_dims_from_loops(TailLoops, TotalDims, LoopInds),
