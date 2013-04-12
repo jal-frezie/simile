@@ -57,8 +57,8 @@ namespace eval $keyValue {
         pack [message $outId.intro -aspect 800] -fill x
         pack [message $resId.intro -aspect 800] -fill x
         
-        MakeFrames $inpId; Clear $winId
-        MakeFrames $outId; ClearOut $winId
+        DIYMakeFrames $inpId; Clear $winId
+        DIYMakeFrames $outId; ClearOut $winId
         
         pack [checkbutton $inpId.gather -text "Use current data as estimates" \
                 -variable ::[namespace current]::useNodes($winId,gathering) \
@@ -158,10 +158,12 @@ namespace eval $keyValue {
         pack [label $df.outputs.prnum -textvariable \
                 [namespace current]::runData($myNode,curPred)] -side left
         # Commentary window
-        ScrolledWindow $df.c
+        frame $df.c
         set canId $df.c.text
-        text $canId -height 4
-        $df.c setwidget $canId
+        text $canId -height 4 -yscrollcommand [list $df.c.yscroll set]
+        pack [scrollbar $df.c.yscroll -orient v -command [list $canId yview]] \
+	    -side right -fill y
+	pack $canId -fill both -expand 1
         pack $df.c -side top -fill both -expand true
         
         pack [button $resId.b -text "Save a PEST file" -state disabled \
