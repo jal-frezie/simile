@@ -451,7 +451,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 		if {!$pt} { ;# NOW: mark param active so it clears after event
 # active is set to 2 because the param updater will be called before the model
 # collects the parameter, and must clear the value the following time
-		    MarkEvtParamActive $topNode $tgt $useCppArray 2
+		    MarkEvtParamActive $topNode $tgt $useCppArray
 		}
             } elseif {![string is double -strict $indx]} {
                 set redoStep [AddErrorTo $redoStep \
@@ -1382,14 +1382,11 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 	} else {
 	    set fillMethod [string tolower [SetFillMethod $topNode $inC $node]]
 	}
-	if {$ptCount} {
-	    #puts "node $node times $setFromSeries($list) next $setFromSeries($topNode,$node,next) newTime $newTime"
-
 	    set loWraps $setFromSeries($topNode,$node,wraps)
 	    set hiWraps $loWraps
 
 	    set loBound $setFromSeries($topNode,$node,next)
-#	    if ($loBound>-1) {
+	    if ($loBound>-1) {
 		set hiBound [expr $loBound+1]
 		if {$hiBound >= $ptCount} {
 		    if {$paramData(wrapAroundPoint,$node)} {
@@ -1399,9 +1396,11 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 			set hiBound -1
 		    }
 		}
-#	    } else {
-#		set hiBound 0 ;# first point
-#	    }
+	    } elseif {$ptCount} {
+		set hiBound 0 ;# first point
+	    } else {
+		set hiBound -1
+	    }
 
 	    if {$next>=$newTimeInDays} {
 		while {$hiBound>-1 && $newTime>=[lindex $setFromSeries($list) $hiBound]+$hiWraps*$paramData(wrapAroundPoint,$node)} {
@@ -1461,7 +1460,7 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 	    if {[string equal none $fillMethod]} {
 		if {$setFromSeries($topNode,$node,active)} {
 		    incr setFromSeries($topNode,$node,active) -1
-		    if !$setFromSeries($topNode,$node,active) {
+		    if {!$setFromSeries($topNode,$node,active)} {
 			tcl_zeroparam $node
 		    }
 		}
@@ -1489,7 +1488,6 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 		    PlaceInArray $topNode $tgtIndex $paramData($tsValue) 0 $inC
 		}
 	    }
-	}
     if {$fillMethod eq "none" && $setFromSeries($topNode,$node,active)} {
 	set ::event(seriesSign) [getinfo $node 8]
     }
@@ -2035,11 +2033,11 @@ proc PlaceInArray {topNode where what when inC} {
     }
 }
 
-proc MarkEvtParamActive {topNode node inC level} {
+proc MarkEvtParamActive {topNode node inC} {
     if {$inC} {
 	c_markevtparamactive $topNode $node
     } else {
-	set ::setFromSeries($topNode,$node,active) $level
+	set ::setFromSeries($topNode,$node,active) 2
     }
 }
 

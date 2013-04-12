@@ -395,7 +395,7 @@ namespace eval slide139 {
 
 	set sub [join [concat [list {} NOW] $indices] ,]
 #	SetArrayIfUsed $node 0 $indices [$scale get]
-#	MarkEvtParamActive $myNode $node [RunningInC $myNode]
+	MarkEvtParamActive $myNode $node [RunningInC $myNode]
 	ListToArray $myNode $node $sub $sub {} {} [$scale get] 1 \
 	    [RunningInC $myNode]
     }
