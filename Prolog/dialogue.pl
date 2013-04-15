@@ -253,6 +253,7 @@ update_equation(Function, InterInputs,
 	get_term(Unit_st, Units, UnitFormError),
 	get_term(Eqn_st, Result, EqnFormError),
 	(Result = '', !,
+	    ParamList = [],
 	    ParseError = [];
 	  EqnFormError = [], !,
 	    test_eqn(Result, Function, IndxCount, InterInputs,
