@@ -853,7 +853,7 @@ namespace eval grid005 {
 	    } else { # get approx value from raw data
 		if {![binary scan $useNodes($winId,rawBinary) \
 			  x${cell}H2 hexo]} return
-		set numValue [expr $useNodes($winId,min)+0x$hexo*(1+$useNodes($winId,range))/256]
+		set numValue [expr $useNodes($winId,min)+0x$hexo*($useNodes($winId,range))/255]
 		set value [TransValue $useNodes($winId,dataETs) $numValue]
 #puts "dot $hexo min $useNodes($winId,min) range $useNodes($winId,range)"
 		.popup.message config -text "Col,row=($col,$row)\nValue=$value approx"
