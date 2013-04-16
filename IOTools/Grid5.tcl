@@ -29,7 +29,6 @@ namespace eval grid005 {
         LoadTools
 	DefaultColours $winId
 	set useNodes($winId,editMode) 0
-        set useNodes($winId,nswatches) 32
         set useNodes($winId,integer) 0
         set useNodes($winId,freeze) false
         set useNodes($winId,min) 0
