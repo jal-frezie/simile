@@ -270,7 +270,9 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	Fn has_class_refinement value of Val,
 	instance'><'is_lookup_cond(Val, _),
 	list_index_meanings(Submodel, [ind_spec(_,_,_, Link) | _]),
-	\+ (Link = none; Link has_attribute can_lookup of 1),
+	\+ (Link = none;
+	    find_name_host(Link, HostLink),
+	    HostLink has_attribute can_lookup of 1),
 	caption_for(Link, LinkText),
 	caption_for(Submodel, OuterText),
 	Wrinkle = lookup_not_allowed(OuterText, LinkText);
