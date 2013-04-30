@@ -532,7 +532,7 @@ namespace eval $keyValue {
         if {$nest} {
             set f [MakeSubFrames $inpId $inpId.c.canvas.frame $levels {} 0]
             if {[winfo exists $f]} {
-                $inpId.c.canvas see $f
+                ScrollToSee $inpId.c.canvas $f
                 return $f
             } else {
                 pack [frame $f] -fill x -expand true
@@ -702,7 +702,7 @@ namespace eval $keyValue {
         set f [MakeSubFrames $myNode $outId.c.canvas.frame \
                 [split $title /] [namespace current] 0]
         if {[winfo exists $f]} {
-            $outId.c.canvas see $f
+            ScrollToSee $outId.c.canvas $f
         } else {
             lappend targetData(needed) $title
             set mess [AddEntry $outId $myNode $node 1 -1]

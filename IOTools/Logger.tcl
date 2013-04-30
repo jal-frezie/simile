@@ -114,7 +114,7 @@ class similescript::$newHelperClass {
         if {$nest} {
             set f [MakeSubFrames $winId $winId.c.canvas.frame $levels {} 0]
             if {[winfo exists $f]} {
-                $winId.c.canvas see $f
+                ScrollToSee $winId.c.canvas $f
                 return $f
             } else {
                 pack [frame $f] -fill x -expand true

@@ -123,6 +123,20 @@ proc DIYMakeFrames {windowId} {
     return $canId.frame
 }
 
+# with a normal scrollable widget you can 'see' an embedded widget, but this 
+# does not work on canvas. So here we do it in a roundabout way...
+
+proc ScrollToSee {canvas w} {
+    set current [winfo rooty $w]
+    set goesTo [winfo rooty $canvas]
+    set cbox [$canvas cget -scrollregion]
+    set height [expr {0.0+[lindex $cbox 3]-[lindex $cbox 1]}] ;# make float
+    set move [expr {($current-$goesTo)/$height}] ;# +ve move makes rooty lower
+    set start [lindex [$canvas yview] 0]
+    $canvas yview moveto [expr {$start+$move}]
+#puts "current $current goesTo $goesTo cbox $cbox height $height move $move start $start"
+}
+
 proc AddEntry {winId topNode node mustShow notInput} {
     global iconImages msgs paramMetadata readMany
     if {$notInput==-1} {

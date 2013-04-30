@@ -157,7 +157,7 @@ namespace eval slide139 {
             set f [MakeSubFrames $winId $::topSFrame($winId) \
                     $levels [namespace current] 0]
             if {[winfo exists $f]} {
-                $winId.c.canvas see $f
+		ScrollToSee $winId.c.canvas $f
                 return already_up
             } else {
                 pack [frame $f] -fill x -expand true
