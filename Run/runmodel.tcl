@@ -577,6 +577,7 @@ proc TellAllHelpers {node payload fun args} {
 	if {[string equal $node [$inst GetNode]]} {
 	    set helperTable(beingCalled) $inst
 	    if {[catch {eval $inst $fun $args} HelpErr]} {
+		puts $::errorInfo
 		Query [list iotool_run_fail [[$inst info class]::Identify] \
 			   $fun $::errorInfo [$inst cget -State]] \
 		    warning helpers {} ok

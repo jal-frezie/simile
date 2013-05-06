@@ -848,6 +848,7 @@ proc FlashOnClick {inText win} {
     if {$inText} {
 	FlashMatchingBracket $inText $win 0 [$win get insert]
     } else {
+	if {[$win selection present]} return
 	set start [$win index insert]
 	FlashMatchingBracket $inText $win $start \
 	    [string index [$win get] $start]
