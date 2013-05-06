@@ -115,6 +115,9 @@ proc ExplainError {myNode errList origError} {
 	    set code [lindex $whoopsie end]
 	    set problem "there was a user-defined interruption: $code"
 	    set severity 0
+	} "abort request from the user" {
+	    set problem "the user chose to abort a long operation"
+	    set severity 0
 	} discontinuity {
 	    set problem "there was a discontinuity which could not be dealt with by adaptive step size control"
 	    set severity 0
@@ -135,7 +138,7 @@ proc ExplainError {myNode errList origError} {
 	    set problem "there was a math error: $whoopsie"
 	} default {
 	    # could not get cause of error, raise again as general problem
-	    set problem "there was an $whoopsie"
+	    set problem "there was a $whoopsie"
 	}
     }
     
