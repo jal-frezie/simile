@@ -242,7 +242,7 @@ proc ExecuteModel {myNode howInt start finish errLim evtPause} {
 	}
     } errList]} {
 	if {[string match tcl_model_err* $errList]} {
-	    set severity [ExplainError $myNode [lrange $errList 1 end] \
+#	    set severity [ExplainError $myNode [lrange $errList 1 end] \
 			  $::errorInfo]
 	} else {
 	    error "Unexpected problem in Tcl model execution" $::errorInfo
