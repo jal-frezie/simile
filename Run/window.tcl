@@ -2145,6 +2145,7 @@ proc autocomplete {win action pt value change valuelist} {
 		set selend [expr {$origin+[string length $pop]}]
 		$win selection range $close $selend
 		$win icursor $selend
+		focus $win ;# prevent problems with state trigger pulldown
 	    }
 	}
     }
