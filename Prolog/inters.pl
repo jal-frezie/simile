@@ -1334,7 +1334,9 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	lower(MxOpStr, OpStr).
 
 units_for_trigger_mag(Fn, MagUnits) :-
-	setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits),
+	(setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits), !;
+	    caption_for(Fn, Capt),
+	    throw(no_triggering_events(Capt))),
 	% check dimensions the same
 	all(m_update, analyze_array,
 	    [build(EvtUnits), build(EvtBases), build(_EvtDims)]),
