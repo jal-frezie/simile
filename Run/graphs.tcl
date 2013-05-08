@@ -1113,14 +1113,15 @@ proc InsertText {win data act} {
 }
 
 proc DragElementOut {wid x y} {
-    set localX [expr {$x-[winfo rootx $wid]}]
-    set localY [expr {$y-[winfo rooty $wid]}]
-    $wid activate @$localX,$localY
-    return [list move DND_Text [$wid get active]]
+#    set localX [expr {$x-[winfo rootx $wid]}]
+#    set localY [expr {$y-[winfo rooty $wid]}]
+#    $wid activate @$localX,$localY 
+# above gets it wrong sometimes...should already be active from click?
+    return [list move DND_Text [$wid get [$wid curselection]]]
 }
 
 proc RemoveExtractedElt {wid} {
-    $wid delete active
+    $wid delete [$wid curselection]
 }
 
 proc PutInDataField {source dest haveDND} {
