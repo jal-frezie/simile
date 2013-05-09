@@ -500,8 +500,8 @@ redo with snap object
     public method GetValue {path} {
 	set node [do_for_node $modelNode GetIdFromCaptionPath $path]
 	set trans [GetCompProperty $modelNode Trans $node]
-        set numerics [do_for_node $modelNode GetModelValue $node]
-	return [TransEnums $trans $numerics]
+        set numerics [lindex [do_for_node $modelNode GetModelValue $node] 0]
+	return [list [TransEnums $trans $numerics]]
     }
     
     public method RequestValues {args} {
