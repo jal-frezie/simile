@@ -425,6 +425,7 @@ install:
 		Images/Toolbar/mainwin.gif \
 		Images/Toolbar/move.gif \
 		Images/Toolbar/mprec.gif \
+		Images/Toolbar/multi.gif \
 		Images/Toolbar/new.gif \
 		Images/Toolbar/noreel.gif \
 		Images/Toolbar/notebook.gif \

@@ -24,7 +24,7 @@ class similescript::$newHelperClass {
 	    [image create photo -file "../Images/Toolbar/multi.gif"]
 	set ::msgs(filemode_$this) "Save as columns in one file"
 	set toolbarItems \
-                [list [list new.gif "Clear" [namespace code "Clear $winId"]] \
+                [list [list new.gif "Clear" [code $this Clear]] \
                 [list add.gif "Add variables" \
                 [code $this AddVariable]] \
                 [list slider.gif "Add all variables" \
@@ -32,6 +32,7 @@ class similescript::$newHelperClass {
                 [list table.gif filemode_$this \
                 [code $this ColumnMode]]]
         ::graphtools::MakeToolBar $winId $toolbarItems
+	set useNodes(logged) {}
         set frameZone [DIYMakeFrames $winId]
 	set f [MakeSubFrames $winId $frameZone {{} {}} {} 0]
 	set f [join [lrange [split $f .] 0 end-1] .] ;# remove last level
@@ -50,8 +51,8 @@ class similescript::$newHelperClass {
 	    $hsfParser parse $state
 	} else {
 	    # new instance so request data from model
-	    SetSavePathTo [GetPathChoice .csv [GetNode]]
 	    set toSeparateFiles yes
+	    SetSavePathTo [GetPathChoice .csv [GetNode]]
 	    pack [message $winId.message \
 		      -text "Use + button to add components for logging"]
 	}
@@ -65,7 +66,7 @@ class similescript::$newHelperClass {
         switch [GetState $winId] {
             adding_inputs {
                 if {[string equal SUBMODEL [$modelInst GetModelClass $path]]} {
-                    set success [AddAllVariables $winId $fullCapt]
+                    set success [AddAllVariables $path]
                 } else {
                     set success [InsertLogEntry $path 1]
                 }
@@ -134,6 +135,15 @@ class similescript::$newHelperClass {
 	return yes
     }
 
+    method AddAllVariables {prefix} {
+        foreach node [GetObjectList] {
+            set title [GetCaptionPathFromId $node]
+            if {[string first $prefix $title]==0} {
+		InsertLogEntry $title 1
+            }
+	}
+    }
+
     method Remove {title} {
         set levels [split $title /]
         set f [MakeSubFrames {} $winId.c.canvas.frame $levels {} 0]
@@ -145,6 +155,12 @@ class similescript::$newHelperClass {
 	    [lreplace $useNodes(logged) $index $index]
     }
     
+    method Clear {} {
+	foreach title $useNodes(logged) {
+	    Remove $title
+	}
+    }
+
     method SetSavePath {} {
 	set newFolder [tk_chooseDirectory -title [tr. {Folder for log files:}] \
 			   -initialdir $curFolder -parent $winId]
@@ -160,7 +176,7 @@ class similescript::$newHelperClass {
 	    file mkdir $curFolder
 	}
 	set ::msgs(logs_$this) [format [tr. {Current folder: %1$s}] $curFolder]
-	if {[info exists useNodes(logged)]} {
+	if {[llength useNodes(logged)]} {
 	    Display [$modelInst GetCurrentTime] 1 1 ;# write current vals
 	}
     }
