@@ -1055,15 +1055,16 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       *end = xtime;
       return userDefStop;
     }
-    // call update purely to drive events
-    if (userDefStop->targetId || seriesEvtSign) { 
+    // call update purely to drive events...and last() etc
+    // -- removed because last was unwanted and rest seemed unnecessary
+    // if (userDefStop->targetId || seriesEvtSign) { 
       // an event is waiting to take effect
       // set_dts(big_phase, xtime); no need, mode 10/11 stops move
-      SetdT(0, 10+(how_int==RUNGE_KUTTA)); 
-      loadedInst->updatemodel(big_phase);
-      SetdT(0, (how_int==RUNGE_KUTTA)); // start prediction cycle
-      if (loadedInst->do_evalmodel(wee_phase)) break;
-    }
+      // SetdT(0, 10+(how_int==RUNGE_KUTTA)); 
+      // loadedInst->updatemodel(big_phase);
+      // SetdT(0, (how_int==RUNGE_KUTTA)); // start prediction cycle
+      // if (loadedInst->do_evalmodel(wee_phase)) break;
+    // }
 
     while(!made_step) {
       // aim for next predicted event if closer than end
@@ -1093,7 +1094,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	} else {
 	  SetdT(0,-1);
 	}
-	loadedInst->updatemodel(wee_phase);
+	loadedInst->updatemodel(big_phase);
 	advance_time(big_phase, 1); // sets nextSeriesEvt
 	break;
       case RUNGE_KUTTA:
@@ -1103,7 +1104,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	} else {
 	  SetdT(0,-2);
 	}
-	loadedInst->updatemodel(wee_phase);
+	loadedInst->updatemodel(big_phase);
 	rk_update(); // returns if any err so excpNo kept
 	break;
       }

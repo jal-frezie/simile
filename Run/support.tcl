@@ -1126,13 +1126,14 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 	    return [list 0 $xtime]
 }
 # call update purely to drive events...and last() etc
-	if {$event(culprit) || $event(seriesSign)} {
+# -- removed because last was unwanted and rest seemed unnecessary
+#	if {$event(culprit) || $event(seriesSign)} {
 # an event is waiting to take effect
-	    set ts(0) [expr {10+$intMtd}] ;# no change due to flows
-	    do_model updatemodel $bigPhase
-	    set ts(0) $intMtd ;# start prediction cycle
-	    do_model evalmodel $bigPhase
-	}
+#	    set ts(0) [expr {10+$intMtd}] ;# no change due to flows
+#	    do_model updatemodel $bigPhase
+#	    set ts(0) $intMtd ;# start prediction cycle
+#	    do_model evalmodel $bigPhase
+#	}
 
         while {!$madeStep} {
 	    # aim for next predicted event if closer than end
@@ -1164,7 +1165,7 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
                 } else {
                     set ts(0) -1
                 }
-		do_model updatemodel $weePhase
+		do_model updatemodel $bigPhase
                 AdvanceTime $node $bigPhase 1 ;# sets event(nextSeries)
 	    } else {
                 if {$firstPass} {
@@ -1173,7 +1174,7 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
                 } else {
                     set ts(0) -2
                 }
-		do_model updatemodel $weePhase
+		do_model updatemodel $bigPhase
 		RKUpdate $node
 	    }
             set firstPass 0
@@ -1243,7 +1244,7 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 	set ts(0) [expr {5+$intMtd}]
 # now limit events will actually affect the model
         set event(culprit) 0 ;# will be what actually fired
-	set event(predict) [expr {$xtime + 1.0625*$freq}] ;# max for next step
+	set event(predict) [expr {$xtime + 1.125*$freq}] ;# > max for next step
 # limit of period of interest
 	do_model evalmodel [set dts(0) $bigPhase]
 #	if {[string length $event(prev_sign)]} {
