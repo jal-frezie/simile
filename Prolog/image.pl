@@ -120,7 +120,7 @@ inside_shape(Parent, [X, Y], Class, [L, T, R, B]) :-
         get_submodel_corner_radius(Parent, [L, T, R, B], Radius),
         Xmiss is max(0, max(L + Radius - X, X + Radius - R)),
         Ymiss is max(0, max(T + Radius - Y, Y + Radius - B)),
-        Xmiss*Xmiss + Ymiss*Ymiss < Radius*Radius), !.
+        Xmiss*Xmiss + Ymiss*Ymiss =< Radius*Radius), !.
 
 inside_range([X1, Y1], [X2, Y2], R) :-
     Xd is X1 - X2,
