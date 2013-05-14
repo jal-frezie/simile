@@ -869,12 +869,10 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     if {[info exists needsETs]} {
         $t tab $t.image -state disabled
         $t tab $t.gdal -state disabled
-    } elseif {![info exists dimsFromData]} {
-        if {[llength $arrayDims]!=2} {
-            $t tab $t.grid -state disabled
-            $t tab $t.image -state disabled
-            $t tab $t.gdal -state disabled
-        }
+    } elseif {[llength $arrayDims]!=2} {
+	$t tab $t.grid -state disabled
+	$t tab $t.image -state disabled
+	$t tab $t.gdal -state disabled
     }
     
     #
@@ -950,6 +948,8 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
 	pack .table.commentl -side bottom
     }
     
+    button .table.fbuttons.clear -text [tr. Clear] -width 10 \
+            -command [list ClearTableData]
     button .table.fbuttons.load -text [tr. Reload] -width 10 \
             -command [list AcquireTableData 1 $startLine]
     button .table.fbuttons.edit -text [tr. View/Edit] -width 10 \
@@ -960,6 +960,7 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
             -command "set table_entry(done) 0"
     button .table.fbuttons.help -text [tr. Help] -width 10 \
             -command {ContextSensitiveHelp .table data/table.htm}
+    pack .table.fbuttons.clear -side top -padx 4 -pady 4
     pack .table.fbuttons.load -side top -padx 4 -pady 4
     pack .table.fbuttons.edit -side top -padx 4 -pady 4
     pack .table.fbuttons.ok -side top -padx 4 -pady 4
@@ -1206,6 +1207,16 @@ proc DoneTableData {startLine} {
 	    [string trimright [.table.commentt get 1.0 end]]
     }
     set table_entry(done) $table_entry(source)
+}
+
+proc ClearTableData {} {
+    global table_entry
+
+    set table_entry(fileName) {}
+    set table_entry(dataField) {}
+    set table_entry(values) {}
+
+    set table_entry(source) 0
 }
 
 proc AcquireTableData {redo startLine} {

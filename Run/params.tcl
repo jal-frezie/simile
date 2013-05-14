@@ -232,23 +232,24 @@ proc AddEntry {winId topNode node mustShow notInput} {
     bind $slot.e <Return> [list $slot.tick invoke]
     KoreanClick $slot.e 1 {}
     bind $slot.e <Double-1> [list EditValueComment $topFrame $compName]
+
+    ::ttk::button $slot.tick -style style$holder \
+	-image $iconImages(tick) \
+	-command [namespace code [list AcceptData $topNode $compName \
+				      $notInput 1]]
+    BindPopup $slot.tick [tr. "Accept these values"]
+    ::ttk::button $slot.cross -style style$holder \
+	-image $iconImages(cross) \
+	-command [namespace code [list RevertData $winId $compName \
+				      $notInput]]
+    BindPopup $slot.cross [tr. "Revert to old values"]
+
     if {[info exists suppliedData($compName)]} {
         FillIfSmall $slot.e $suppliedData($compName)
     } else {
         set suppliedData($compName) {}
     }
-    if {[string match normal [$slot.e cget -state]]} {
-        pack [::ttk::button $slot.tick -style style$holder \
-		  -image $iconImages(tick) \
-		  -command [namespace code [list AcceptData $topNode $compName \
-						$notInput 1]]] -side left
-        BindPopup $slot.tick [tr. "Accept these values"]
-        pack [::ttk::button $slot.cross -style style$holder \
-		  -image $iconImages(cross) \
-		  -command [namespace code [list RevertData $winId $compName \
-						$notInput]]] -side left
-        BindPopup $slot.cross [tr. "Revert to old values"]
-    }
+
     if {[llength $nodeDims]>1} {
 # T   nI   rM
 # r   -1    0
@@ -273,6 +274,16 @@ proc AddEntry {winId topNode node mustShow notInput} {
         }
     } else {
         AcceptData $topNode $compName $notInput 0
+    }
+}
+
+proc AbleHandEditControls {slot} {
+    if {[string match normal [$slot.e cget -state]]} {
+        pack $slot.tick -side left
+        pack $slot.cross -side left
+    } else {
+        pack forget $slot.tick -side left
+        pack forget $slot.cross -side left
     }
 }
 
@@ -713,6 +724,7 @@ proc FillIfSmall {entry text} {
     if {$shrunken} {
         $entry configure -state disabled
     }
+    AbleHandEditControls [winfo parent $entry]
 }
 
 proc ClearSubParamRefs {smPath} {
@@ -738,6 +750,7 @@ namespace eval fileparams {
             set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0
 	    array unset paramState $compName
+	    AbleHandEditControls $widgetNames($compName)
         }
     }
     
@@ -1261,6 +1274,7 @@ proc LoadBase64CharData {encoded} {
 	FillIfSmall $widgetNames($compName).e \
 	    [concat $paramData($compName)]
 	$widgetNames($compName).e configure -state disabled
+	AbleHandEditControls $widgetNames($compName)
     }
 #    set whichParamsAffected($compName) 1
 }
