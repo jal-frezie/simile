@@ -311,6 +311,7 @@ if {[info exists masterId]} { ;# we are in separate interp
 	proc $straight {args} {
 	    global masterId
 
+	    waitForDisps
 	    return [thread::send $masterId [info level 0]]
 	}
     }

@@ -541,19 +541,25 @@ proc UpdateIfFreezy {} {
 proc ShiftDisplays {node payload current display} {
     global helperTable runState sendvars
 
-    $helperTable(RunControl)::UpdateBar $node $current blue
-    UpdateIfFreezy
-    set result [TellAllHelpers $node $payload Display $current $display 1]
-
-    if {$runState($node,splimit)} {
-	set minStep [expr {1000/$runState($node,speedLimit)}]
-	set extraDelay [expr {$minStep-([clock clicks -milliseconds]-$runState(pacer))}]
-	after $extraDelay [list set sendvars($node,busy) 1]
-	set sendvars($node,busy) 0
-	vwait sendvars($node,busy)
+    if {[catch {
+	$helperTable(RunControl)::UpdateBar $node $current blue
+	UpdateIfFreezy
+	set result [TellAllHelpers $node $payload Display $current $display 1]
+	
+	if {$runState($node,splimit)} {
+	    set minStep [expr {1000/$runState($node,speedLimit)}]
+	    set extraDelay [expr {$minStep-([clock clicks -milliseconds]-$runState(pacer))}]
+	    after $extraDelay [list set sendvars($node,busy) 1]
+	    set sendvars($node,busy) 0
+	    vwait sendvars($node,busy)
+	    set runState(pacer) [clock clicks -milliseconds]
+	}
+    }]} {
+	puts $::errorInfo
+	return 1
+    } else {
+	return $result
     }
-    set runState(pacer) [clock clicks -milliseconds]
-    return $result
 }
 
 proc TellAllHelpers {node payload fun args} {

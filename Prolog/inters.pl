@@ -827,10 +827,11 @@ make_intermediates(
 	    lower(OpStr, LopStr),
 	    name(TRef, LopStr),
 	    member(TRef, [time, dt]), % ind_time removed
+	    (Step = dummy -> MaxStep = 7; MaxStep = Step),
 	    ((N=0; N = ''), TArg = Step;
 		% now done in insert_paths so only needed here for parsing
-		integer(N), N>=0, N<8, TArg = N;
-		throw(bad_index_number(N, Op, 8))),
+		integer(N), N>=0, N=<MaxStep, TArg = N;
+		throw(bad_index_number(N, Op, MaxStep))),
 	    SourceRef =.. [TRef, TArg],
 	    default_tick_is(OrigUnits),
 	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !,
