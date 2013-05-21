@@ -115,7 +115,6 @@ build_instances(Language, DestDir, Parent, TopNode,
 				  unify([abort]), unify(more)]), fail;
 	    throw(aborted));
 	Parent has_model_refinement c_new of 0, !,
-	    Parent has_changed_model_refinement c_new of 1,
 	    ChangeTop = 1,
 	    LocalFnsUsed = [],
 	    LocalExtLibs = [];
@@ -156,7 +155,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 		    % delete old code, including c++ v1 as 1 may mean last
 		    % build was tcl, or get sought after save/restore
 		    all(compile, delete_prog, [unify(CheckDir),
-			build(['.tcl', '1.cpp', '.dll', '1.so', '.dylib'])]),
+			build(['.tcl', '1.cpp'])]),
 		    (Language = c, Extn = '.cpp';
 		     Language = tcl, Extn = '.tcl'),
 		    tk_update_infobox(pl_inst, []),
@@ -1941,7 +1940,8 @@ order_assignments(Phase, Path, RawAssign, All, OrderedAssign) :-
 	       not_yet_ordered(Hanger),
 	       Hanger = make(_,_, CPath, _,_),
 %	       remove_non_loopers(CPath, UCPath),
-	       suffix(Path, CPath)).
+	       suffix(Path, CPath)),
+	!. % cut added to prevent crash in swipl debugger, should be green
 
 	
 order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
@@ -1980,7 +1980,7 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		   \+ (member(AlarmSubPass, SubPasses),
 			  member(make(Alarm, _,_,_,_), AlarmSubPass))),
 	    ...allow if alarm loop in shorter time step, as follows: */
-	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, Alarm, _)),
+	    \+ (SmLevel = sm(_,_,_, fm_loop(_,_, al_action(Alarm, _), _)),
 		   nonvar(Alarm),
 		   member(make(Alarm, _,_, [_,_, AlP, AlDone | _], _), All),
 		   var(AlDone),
@@ -2287,8 +2287,12 @@ order_all(Step, Undone, All, Done) :-
 %	Ready = [];
 %	Ready = [All].
 %
+% select existence_tested and alarm instructions as these need special ordering
 select_ext_tests(All, XTests) :-
-	All = make(existence_tested(_), _,_,_,_), !,
+	(All = make(existence_tested(_), _,_,_,_);
+	  All = make(Al, _, [sm(_,_,_, fm_loop(_,_, Alarm, _)) | _], _,_),
+	    nonvar(Alarm),
+	    Alarm = al_action(Al, _)), !,
 	XTests = [All];
 	XTests = [].
 
