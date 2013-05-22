@@ -145,13 +145,16 @@ t3 = estimate of next initial increment
   };
 };
 
+BOOLEAN RealPhase(int phase) {
+  return phase==5 || phase==6 || phase==9;
+}
+
 #define   CHECK_LOWER   1
 #define   CHECK_UPPER   2
 int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 				  int action, int graphId, 
 				  int step, diffs* extras) {
   double old, to_limit, rate, prediction;
-  BOOLEAN for_real;
   int out, heading_out, phase = int(ts[0]);
 
   switch (phase) {
@@ -201,9 +204,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
        to make a prediction (to be treated as an overshoot if out).
     */
     
-
-    for_real = (phase==5 || phase==6 || phase==9);
-    if (for_real) {
+    if (RealPhase(phase)) {
       extras->t1 = trigger; // for prediction next step
       if (out) {
 	if (out != extras->t3) { 
@@ -250,8 +251,8 @@ template <class modeldata>
 modeldata InstanceOfModel::retract_from_pipe(delay<modeldata>* extras,
 					     int graphId) {
   int phase = int(ts[0]);
-  BOOLEAN for_real = (phase==5 || phase==6);
   double time = ts[phasecount];
+  BOOLEAN for_real = RealPhase(phase);
   modeldata ret;
 
   if (dts[0]>0) {
@@ -270,10 +271,9 @@ void InstanceOfModel::insert_to_pipe(delay<modeldata>* extras,
 					  double wait, 
 					  modeldata payload) {
   int phase = int(ts[0]);
-  BOOLEAN for_real = (phase==5 || phase==6);
   double time = ts[phasecount];
 
-  extras->insert(time+wait, for_real?payload:0, &event_predict);
+  extras->insert(time+wait, RealPhase(phase)?payload:0, &event_predict);
 }
 
 /* This is called only when we create the type, to return model constants */

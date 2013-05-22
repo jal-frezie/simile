@@ -277,8 +277,7 @@ proc insert_to_pipe {ns_extras when what} {
     upvar \#0 $ns_extras extras
 
     set phase [expr {int([glob_element ts 0])}]
-    set forReal [expr {$phase==5 || $phase==6}]
-    if {$forReal && $what} {
+    if {[RealPhase $phase] && $what} {
 	set then [expr {$when+[glob_element ts $::phasecount]}]
 	set where [llength $extras]
 	while {$where>0 && [lindex $extras $where-2]>$then} {
@@ -309,8 +308,7 @@ proc retract_from_pipe {ns_extras id} {
 	incr where
     }
     set phase [expr {int([glob_element ts 0])}]
-    set clear [expr {$phase==5 || $phase==6}]
-    if {$clear} {
+    if {[RealPhase $phase]} {
 	set extras [lreplace $extras 0 $where-1]
 	if {$unload} {
 	    set event(culprit) $id
@@ -949,8 +947,7 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 # but not already fired (including this pass) I need to make a
 # prediction (to be treated as an overshoot if out).
     
-	    set forReal [expr {$phase==5 || $phase==6 || $phase==9}]
-	    if {$forReal} {
+	    if {[RealPhase $phase]} {
 		set extras(t1) $trigger ;# for prediction next step
 		if {$out} {
 		    if {$out != $extras(t3)} {
@@ -997,7 +994,10 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
     return 0
 }
 	
-		    
+proc RealPhase {phase} {
+    return [expr {[lsearch {5 6 9} $phase]>=0}]
+}
+
 proc do_model {what mstep} {
 #puts [info level 0]
     if {[catch {eval ::AME_model<>::${what} $mstep}]} {
