@@ -1054,7 +1054,9 @@ Now one that uses a special conditional level */
 %		member(instance(internal, inter(_,_, Loops), Param,_, _-Dims),
 %		       PrevInters),
 		(Ref = trigger_magnitude(_), !,
-		    units_for_trigger_mag(SubId, _RefUnits-RefDims);
+		    %units_for_trigger_mag(SubId, _RefUnits-RefDims);
+		    % no need to raise error if t_m not used in eqn
+		    RefDims = [];
 		  m_update'><'get_solo_list_depth(Ref, DimExp),
 		    m_update'><'analyze_array(DimExp, any, RefDims)),
 		make_inds_for(RefDims, Loops, _),
