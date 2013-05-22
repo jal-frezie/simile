@@ -466,7 +466,7 @@ from these for those which havent. */
 
 need_same_dims(Item, Affected) :-
 	(initiates(Affected, Item); terminates(Affected, Item)),
-	    find_type(Affected, flow).
+	Affected is_of_sort transfer.
 
 end_with_units(Flow, EndUnits) :-
 	% returns units for matching to adjoining flows

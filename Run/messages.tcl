@@ -401,6 +401,9 @@ set msgs(no_preceding_instance_message) [tr. {This equation uses the "in_precedi
 set msgs(mismatched_units_title) [tr. {Argument types incompatible}]
 set msgs(mismatched_units_message) [tr. {The arguments of the function "%1$s" in the term "%2$s" have the following types: %3$s. These cannot be matched to the expected argument types for this function, which are %4$s.}]
 
+set msgs(mixed_trigger_units_title) [tr. {Trigger types incompatible}]
+set msgs(mixed_trigger_units_message) [tr. {The events that trigger the derived event "%1$s" have the following types: %2$s. These cannot be combined to produce a trigger magnitude that can be used in the event's equation.}]
+
 set msgs(cannot_set_dims_title) [tr. {Not enough info}]
 set msgs(cannot_set_dims_message) [tr. {The equation does not provide enough information to allow the size of dimension %1$s of explicit intermediate result %2$s to be determined.}]
 
