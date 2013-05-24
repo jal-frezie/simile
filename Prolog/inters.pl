@@ -2013,8 +2013,10 @@ enumerate instructions.  */
 wait_for_submodels([], []).
 
 wait_for_submodels([Level | AlsoExited], Waits) :-
-	(member(Level, [sm(Model, _,_, vm_loop(_,_,_,_)), % variable membership
-			set(_, loop(pra_bound(_, Model), _))]), !, % by record
+	((member(Level, [sm(Model, _,_, vm_loop(_,_,_,_)), % variable membership
+			set(_, loop(pra_bound(_, Model), _))]); % by record
+	  Level = sm(Model, _,_, fm_loop(_,_,al_action(Al, _), _)),
+	      nonvar(Al)), !, % alarm submodel
 	    Waits = [enumerate(Model) | Others];
 	Waits = Others),
 	wait_for_submodels(AlsoExited, Others).

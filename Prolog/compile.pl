@@ -1032,6 +1032,9 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 		    ExtIncs, Inters, AssignList) :-
 	Instance = instance(submodel, Id,
 			    xrefs(model(Functions, Submodels), _,_), _,_),
+	/* Alarm submodels now marked in e_s_a
+	Alarm fns must now be evalled in 1st pass
+	and no exports done till after so below should not be needed
 	(select(instance(alarm,_,_,elt(_, Al,_),_), Functions, NoAlarm),
 	    select(instance(al_function,_, al_spec(_,_, EvtExp),
 			    elt(_, Al,_), _), NoAlarm, ForAlarm),
@@ -1040,12 +1043,12 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 	    % so the whole thing gets done in one pass
 	    all_targets(model(ForAlarm, Submodels), AlConds),
 	    AlDelay = [make(all_for(Al), AlConds, Path, Step, [])];
-	  AlDelay = []),
+	  AlDelay = []), */
 /*	(setof(ParamUpdate,
 	       input_params_in(Functions, Path, Step, ParamUpdate),
 	       ParamUpdates), !;
-	ParamUpdates = []),
-*/	(Id has_class_refinement enum_types of ETS, !,
+	ParamUpdates = []), */
+	(Id has_class_refinement enum_types of ETS, !,
 	    all(compile, make_et_spec, [unify(Id), build(ETS), build(ETS0)]);
 	    ETS0 = []),
 % Add submodel-local function definitions to database
@@ -1055,7 +1058,7 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 	all(compile, get_assignment,
 	    [build(Functions),
 	     unify(Path), unify(Step), unify(Swaps),
-	     unify(Used), append(Inters0, []), append(AssignList0, AlDelay)]),
+	     unify(Used), append(Inters0, []), append(AssignList0, [])]),
 	all(compile, extract_submodel_assignment,
 	    [build(Submodels),
 	     unify(Functions), unify(Path), unify(Tree),
@@ -1280,7 +1283,7 @@ nodes.
 			     Path, Step, [reset_list(Ptr, Name)]),
 			make(init_list(Name), [], Path, Step,
 			     [assign(arr(Ptr, Name, []), 0)])];
-	Level = [sm(_,_,_, fm_loop(Globs,_,_,_)) | _Loops],
+	Level = [sm(_,_,_, fm_loop(Globs, _, AlAct, _)) | _Loops],
 	% its the _Loops that have the bounds!
 	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
 	    get_dims_from_loops(Path, _, UseInds),
@@ -1302,10 +1305,15 @@ nodes.
 		length(UseInds, IdxN),
 		MadeCount = arr(Ptr, NMade, []),
 		AFn = assign_array(Ptr, Name, NMade, 1),
-		Specials = [make(enumerate(Name), [startable(Name)], Path, Step,
-				 XFns),
+		Specials = [make(enumerate(Name), [startable(Name)],
+				 Path, Step, XFns),
 			    make(startable(Name), StartConds, Path, StartStep,
 				 [assign_array(Ptr, Name, NMade, -1)])];
+	     member(instance(al_function,_, al_spec(_,_, EvtExp),
+			    elt(_, Al,_), _), Functions), !,
+	        AlAct = al_action(Al, EvtExp),
+	        SmInters = [],
+	     	Specials = [make(enumerate(Name), [Al], Path, Step, [])];
 	     [SmInters, Specials] = [[], []]),
 	    BaseSides = []),
 	extract_assignments(Instance, LocalPath, LocalTree, Step, MaxStep,
@@ -1499,9 +1507,9 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 		UseStep = 0;
 	    (Type = id_function,
 		UseList = [can_find_id(Node) | RefList];
-	      Type = al_function,
-		UseList = [all_for(Dest) | RefList];
-	      member(Type, [function, loss, limit]),
+%	      Type = al_function,
+%		UseList = [all_for(Dest) | RefList];
+	      member(Type, [function, al_function, loss, limit]),
 		UseList = RefList;
 	      member(Type, [magnitude, state_fn])), !,
 		UseStep = SmStep),

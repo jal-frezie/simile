@@ -331,6 +331,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	  (RType = alarm, !,
 	    FType = al_function,
 	    FinalExpr = al_spec(SubbedExpr, EvtTrigger, _Later),
+	    Path = [sm(_,_,_, fm_loop(_,_, al_action(Name, EvtTrigger), _)) | _],
 	    EndRefs = EvtRefs;
 	   member(RType, [immigration, reproduction, loss]),
 	    \+ EvtTrigger = 1, !,
@@ -351,7 +352,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	    Instances = [Instance]),
 	 (nonvar(MagBase), !;
  	  MagBase = Base),
-	 is_instance(FType, Node, FinalExpr, elt(Path, _, MagBase-Units),
+	 is_instance(FType, Node, FinalExpr, elt(Path, Name, MagBase-Units),
 		     MagBase-Units, Instance)).
 	     
 /* Note if the function lacks a value it may not be the user's fault; it might be
