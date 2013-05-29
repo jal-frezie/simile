@@ -290,9 +290,11 @@ $(RELAY): Run/relay.c
 
 ifeq ($(PLATFORM),GNU/Linux)
 # install used for packaging for distributions
+SHAREDIR = /usr/share
+INSTALL_TGT = $(SHAREDIR)/simile-6.0
 LIBDIR = /usr/lib
 # overridden by rpm build on Fedora 64-bit
-INSTALL_TGT = $(LIBDIR)/simile-6.0
+EXEC_TGT = $(LIBDIR)/simile-6.0
 install:
 	mkdir -p $(DESTDIR)$(INSTALL_TGT); \
 	tar cf $(DESTDIR)$(INSTALL_TGT)/payload.tar \
@@ -335,7 +337,8 @@ install:
 		Images/Control/play.gif \
 		Images/Control/stop.gif \
 		Images/HelpAboutUpper.gif \
-		Images/Icons/* \
+		Images/Icons/*.png \
+		Images/Icons/License.txt \
 		Images/Welcome.gif \
 		Images/alarm.cnv \
 		Images/bigsimile.gif \
@@ -519,7 +522,13 @@ install:
 		Run/utility.tcl \
 		Run/window.tcl \
 		Run/simdoc32.ico \
-		Run/Simile.desktop \
+		Run/Simile.desktop; \
+	cd $(DESTDIR)$(INSTALL_TGT); \
+	tar xf payload.tar; \
+	mv Run/userinfo.tpl Run/userinfo.txt; \
+	rm payload.tar; cd -; \
+	mkdir -p $(DESTDIR)$(EXEC_TGT); \
+	tar cf $(DESTDIR)$(EXEC_TGT)/payload.tar \
 		$(SYSDIR)/bin/relay \
 		$(SYSDIR)/bin/simile \
 		$(SYSDIR)/bin/xgsimile \
@@ -529,13 +538,19 @@ install:
 		$(SYSDIR)/lib/Stubs/libame_dll8.5.so \
 		$(SYSDIR)/lib/Stubs/libunpacker8.5.so \
 		$(SYSDIR)/lib/lib5d.so; \
-	cd $(DESTDIR)$(INSTALL_TGT); \
+	cd $(DESTDIR)$(EXEC_TGT); \
+	ln -s $(DESTDIR)$(INSTALL_TGT)/Examples; \
+	ln -s $(DESTDIR)$(INSTALL_TGT)/Extensions; \
+	ln -s $(DESTDIR)$(INSTALL_TGT)/Functions; \
+	ln -s $(DESTDIR)$(INSTALL_TGT)/help; \
+	ln -s $(DESTDIR)$(INSTALL_TGT)/Images; \
+	ln -s $(DESTDIR)$(INSTALL_TGT)/IOTools; \
+	ln -s $(DESTDIR)$(INSTALL_TGT)/Run; \
 	tar xf payload.tar; \
-	mv Run/userinfo.tpl Run/userinfo.txt; \
 	rm payload.tar; cd -; \
 	mkdir -p $(DESTDIR)/usr/bin; \
 	cd $(DESTDIR)/usr/bin; \
-	ln -s ../..$(INSTALL_TGT)/$(SYSDIR)/bin/simile; cd -
+	ln -s ../..$(EXEC_TGT)/$(SYSDIR)/bin/simile; cd -
 endif
 
 # call clean after changing license info in this file

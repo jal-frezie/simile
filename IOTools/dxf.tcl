@@ -1,5 +1,3 @@
-#!/usr/bin/wish -f
-
 # Program: dxf (an autocad's dxf to tk's canvas converter)
 # Author:  Tuan T. Doan
 # Date:    4/20/93

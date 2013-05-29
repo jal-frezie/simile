@@ -44,6 +44,10 @@ if {[string equal aqua [tk windowingsystem]]} {
     set menuFont TkMenuFont
     set niceSize 9
 }
+# OK, let Simile join every other app out there and look silly when dpi != 96
+# (when scaling is 4/3) -- might add after testing Windows/MacOS
+# set niceSize [expr {round($niceSize*[tk scaling])}]
+
 # This normalizes fonts of older widgets to look like Tile widgets
 option add *Button.font TkDefaultFont widgetDefault
 option add *Radiobutton.font TkDefaultFont widgetDefault

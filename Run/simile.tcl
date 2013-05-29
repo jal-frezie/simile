@@ -1,4 +1,3 @@
-#!/usr/bin/wish
 #set simplify 1 ;# avoid loading anything awkward
 # Simile source code file: Run/simile.tcl
 #
