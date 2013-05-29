@@ -1,4 +1,4 @@
-#!./wish -f
+#!/usr/bin/wish -f
 
 # Program: dxf (an autocad's dxf to tk's canvas converter)
 # Author:  Tuan T. Doan
