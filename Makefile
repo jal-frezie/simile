@@ -539,13 +539,13 @@ install:
 		$(SYSDIR)/lib/Stubs/libunpacker8.5.so \
 		$(SYSDIR)/lib/lib5d.so; \
 	cd $(DESTDIR)$(EXEC_TGT); \
-	ln -s $(DESTDIR)$(INSTALL_TGT)/Examples; \
-	ln -s $(DESTDIR)$(INSTALL_TGT)/Extensions; \
-	ln -s $(DESTDIR)$(INSTALL_TGT)/Functions; \
-	ln -s $(DESTDIR)$(INSTALL_TGT)/help; \
-	ln -s $(DESTDIR)$(INSTALL_TGT)/Images; \
-	ln -s $(DESTDIR)$(INSTALL_TGT)/IOTools; \
-	ln -s $(DESTDIR)$(INSTALL_TGT)/Run; \
+	ln -s ../../..$(INSTALL_TGT)/Examples; \
+	ln -s ../../..$(INSTALL_TGT)/Extensions; \
+	ln -s ../../..$(INSTALL_TGT)/Functions; \
+	ln -s ../../..$(INSTALL_TGT)/help; \
+	ln -s ../../..$(INSTALL_TGT)/Images; \
+	ln -s ../../..$(INSTALL_TGT)/IOTools; \
+	ln -s ../../..$(INSTALL_TGT)/Run; \
 	tar xf payload.tar; \
 	rm payload.tar; cd -; \
 	mkdir -p $(DESTDIR)/usr/bin; \
