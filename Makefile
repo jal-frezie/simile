@@ -56,12 +56,14 @@ endif
 
 # Default case: Linux
 SYSDIR = System
-FLAGS = $(OPT) -m32
 ifeq ($(MY_CPU),x86_64)
-	FLAGS = $(OPT)
-endif
+	CFLAGS += $(OPT)
+else
 ifeq ($(MY_CPU),armv7l) # 32-bit but -m32 unrecognized
-	FLAGS = $(OPT)
+	CFLAGS += $(OPT)
+else
+	CFLAGS += $(OPT) -m32
+endif
 endif
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
@@ -87,16 +89,16 @@ ifeq ($(PLATFORM),Darwin)
 #	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
 ifeq ($(MY_CPU),x86_64)
-	FLAGS = $(OPT) -mmacosx-version-min=10.6
+	CFLAGS = $(OPT) -mmacosx-version-min=10.6
 	TCLFW = /System/Library/Frameworks
 else
-	FLAGS = $(OPT) -arch i386 -mmacosx-version-min=10.4
+	CFLAGS = $(OPT) -arch i386 -mmacosx-version-min=10.4
 	TCLFW = /Library/Frameworks
 endif
 	ARCHEXTN = _mac
 # build for everything unless I am on Barbie
 	ifeq ($(OSNUMBER),8.11.0)
-		FLAGS = $(OPT)
+		CFLAGS = $(OPT)
 	        ARCHEXTN = _ppc
 	endif
 	EXECEXTN = $(ARCHEXTN)
@@ -132,7 +134,7 @@ else
 	INSTLIB = Run/install.dll
 # must be 32-bit because installer is
 endif
-	FLAGS = $(OPT)
+	CFLAGS = $(OPT)
 	SHAREDLIBPREFX = 
 	MAKEPIC = 
 	MAKESL = -shared
@@ -211,13 +213,13 @@ endif
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
 $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/dllcalls.h
-	cd Run; $(GCCCMD) $(FLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
+	cd Run; $(GCCCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
 		ame_cmx.c $(USETCL) -L../$(RESDIR) -l5d$(ARCHEXTN) \
 		$(CHECK_LOCAL_LIBS); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 
 $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
-	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. $(MAKEPIC) $(MAKESL) \
+	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. $(MAKEPIC) $(MAKESL) \
 		-o ../$(UNPK) unpacker.c $(USETCL); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(UNPK)
 
@@ -226,26 +228,26 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
 # Windows: idiosyncratic stuff allows dynamic linker to work
 # (even with gcc 4.5.0)
 $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
-	cd Run; $(GPPCMD) -DSHARELIB $(FLAGS) -I. $(MAKEPIC) $(MAKESL) \
+	cd Run; $(GPPCMD) -DSHARELIB $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) \
 		-Wl,--out-implib,lib5d$(ARCHEXTN).a -o $(SHANK) shank.cpp; \
 		mv $(SHANK) ../$(SLDIR); \
 		mv lib5d$(ARCHEXTN).a ../$(RESDIR); cd ..
 
 # Unix: not needed for Linux as it can build at run time
 $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
-	cd Run; $(GPPCMD) $(FLAGS) -I. $(MAKEPIC) $(MAKESL) \
+	cd Run; $(GPPCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) \
 		-o ../$(SLDIR)/$(SHANK) shank.cpp; cd ..
 
 # Build a .dll to check licence code during Windows installation
 # Version for GPInstall by QSC
 #Run/install.dll: Run/install.c Makefile
-#	cd Run; $(GCCCMD) $(FLAGS) $(DEFNS) -I. -I../System/include $(MAKESL) \
+#	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. -I../System/include $(MAKESL) \
 #		-o install.dll install.c -L../System/lib -lcrypto -lssl; \
 #		cd ..
 # Version for MakeMSI
 #Run/install.dll: Run/install_msi.cpp Run/install_msi.rc Makefile
 #	cd Run; windres -i install_msi.rc -o resource_msi.o; \
-#		$(GPPCMD) $(FLAGS) $(DEFNS) -I../System/include \
+#		$(GPPCMD) $(CFLAGS) $(DEFNS) -I../System/include \
 #		-I/c/MsiIntel.SDK/include $(MAKESL) -o install.dll \
 #		install_msi.c resource_msi.o /c/MsiIntel.SDK/lib/msi.lib \
 #		-L../System/lib -lcrypto -lssl; cd ..
@@ -253,7 +255,7 @@ $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 # -static-libgcc is neeeded because this also used for 64bit install (and 32bit
 # install on 64bit systems) where 32bit libraries maybe missing
 $(INSTLIB): Run/install_adv.cpp Makefile
-	cd Run; $(GPPCMD) -static-libgcc -m32 $(FLAGS) $(DEFNS) \
+	cd Run; $(GPPCMD) -static-libgcc -m32 $(CFLAGS) $(DEFNS) \
 		-I/c/MsiIntel.SDK/include $(MAKEPIC) $(MAKESL) \
 		-o ../$(INSTLIB) install_adv.cpp /c/MsiIntel.SDK/lib/msi.lib \
 		-L../$(RESDIR) -lcrypto -lssl; cd ..
@@ -262,13 +264,13 @@ $(INSTLIB): Run/install_adv.cpp Makefile
 # do strange things to dll dependencies causing c000007b errors
 $(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile.rc
 	cd Interp; $(RESCMD) -o rc.o Simile.rc; \
-	$(GCCCMD) $(FLAGS) -I$(TCLINC) -o ../$(EXECDIR)/Simile.exe Simile.c \
+	$(GCCCMD) $(CFLAGS) -I$(TCLINC) -o ../$(EXECDIR)/Simile.exe Simile.c \
 		$(TCLREF)/lib/tcl$(VERS).lib $(TCLREF)/lib/tk$(VERS).lib \
 		-mwindows; cd ..
 
 $(SCRIPT): Interp/script.c Interp/script.rc
 	cd Interp; $(RESCMD) -o scriptrc.o script.rc; \
-	$(GCCCMD) $(FLAGS) -I$(TCLINC) -o ../$(SCRIPT) script.c \
+	$(GCCCMD) $(CFLAGS) -I$(TCLINC) -o ../$(SCRIPT) script.c \
 		$(TCLREF)/lib/tcl$(VERS).lib $(TCLREF)/lib/tk$(VERS).lib \
 		-mwindows; cd ..
 #else
@@ -286,7 +288,7 @@ $(SCRIPT): Interp/script.c Interp/script.rc
 #endif
 
 $(RELAY): Run/relay.c
-	cd Run; $(GCCCMD) $(FLAGS) -o ../$(RELAY) relay.c; cd ..
+	cd Run; $(GCCCMD) $(CFLAGS) -o ../$(RELAY) relay.c; cd ..
 
 ifeq ($(PLATFORM),GNU/Linux)
 # install used for packaging for distributions
