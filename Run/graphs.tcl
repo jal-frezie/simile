@@ -191,14 +191,17 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     label $resolution.detail -text [tr. "X axis resolution:"]
     pack $resolution.detail
     set db [frame $resolution.detailbox]
-    #    button $resolution.detailbox.less -text [tr. Less] -command "CoarseX $grid"
-    ArrowButton $resolution.detailbox.arrowleft -type button -dir \
+# ArrowButtons reverted as they are BWidgets
+    ::ttk::button $resolution.detailbox.less -text [tr. Less] -width 0 \
+	-command "CoarseX $db $grid"
+    #    ArrowButton $resolution.detailbox.arrowleft -type button -dir \
             left -command "CoarseX $db $grid" -width 25 -height 25 -clean 2
-    pack $resolution.detailbox.arrowleft -side left
-    #    button $resolution.detailbox.more -text [tr. More] -command "FineX $grid"
-    ArrowButton $resolution.detailbox.arrowright -type button -dir right \
+    pack $resolution.detailbox.less -side left
+    ::ttk::button $resolution.detailbox.more -text [tr. More] -width 0 \
+	-command "FineX $db $grid"
+    #    ArrowButton $resolution.detailbox.arrowright -type button -dir right \
             -command "FineX $db $grid" -width 25 -height 25 -clean 2
-    pack $resolution.detailbox.arrowright -side left
+    pack $resolution.detailbox.more -side left
     pack $resolution.detailbox
     pack $resolution -pady 8 -padx 4 -fill both
     pack $right -fill both
@@ -553,16 +556,16 @@ proc AbleArrows {db t} {
     global graph
 
     if {[llength $graph($t,points)]%2} {
-	$db.arrowleft configure -state normal
+	$db.less configure -state normal
     } else {
-	$db.arrowleft configure -state disabled
+	$db.less configure -state disabled
     }
     if {$graph($t,increment) < 2.0 || \
 	    [string equal equation $graph($t,mode)] && \
 	    [llength $graph($t,points)]>120} {
-	$db.arrowright configure -state disabled
+	$db.more configure -state disabled
     } else {
-	$db.arrowright configure -state normal
+	$db.more configure -state normal
     }
 }
 #####################################################################

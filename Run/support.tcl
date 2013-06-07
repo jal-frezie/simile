@@ -1505,9 +1505,14 @@ proc loses {prob phase} {
     } elseif {$prob >= 1} {
 	return 1
     } else {
-	set kills_per_step [expr $ts(0)?4:1]
-	return [expr [ame_rand 0 1] > \
-		    pow(1-$prob, $dts($phase)/$kills_per_step)]
+# kills_per_step was intended to make sure that for R-K the same
+# proportion get killed in four passes as in a single pass for
+# Euler. As of 5.7 we make sure the loss process only happens once per
+# time step.
+#	set kills_per_step [expr $ts(0)?4:1]
+#	return [expr [ame_rand 0 1] > \
+#		    pow(1-$prob, $dts($phase)/$kills_per_step)]
+	return [expr [ame_rand 0 1] > pow(1-$prob, $dts($phase))]
     }
 }
 
