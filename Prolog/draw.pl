@@ -548,7 +548,7 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	call(Draw_command),
 	((get_drawing_form(Link, LType, Bowtie),
 	  density_for(Link, Density),
-	  % Density = {},
+	  Density = {}, % prevent ghost controls on non-master sections
 	        untranslate(Bowtie, Trans, Screen_bowtie),
 		(LType = flow, !,
 		    bowtie(Wid, Screen_bowtie, RelFatness,

@@ -1421,7 +1421,7 @@ old_cloud(Link) :-
 
 connects_ghost_flow(Type, Link) :-
 	Type = influence,
-	find_type(Link, flow),
+	Link is_of_sort transfer,
 	\+ bowtie_section(Link, Link).
 
 remove_equivs(DeadPair) :-
