@@ -65,8 +65,10 @@ exit_two_click_op :-
 synchronize_graphics(LostExtents, Redrawn) :-
 	all(draw, adjust_submodel_internals, [build(LostExtents)]),
 	all(draw, redisplay_border, [build(Redrawn)]),
-	all(event, make_any_links_follow, [build(Redrawn)]).
-	    % needed because link database entries do not change when ends moved
+	all(event, make_any_links_follow, [build(Redrawn)]),
+	all(user, arg, [unify(1), build(LostExtents), build(Submodels)]),
+	all(event, tweak_link_connections, [build(Submodels), unify(dummy)]).
+	% needed because link database entries do not change when ends moved
 
 go_back(Model) :-
 	(exit_two_click_op, !;
