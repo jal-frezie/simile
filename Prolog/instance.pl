@@ -373,8 +373,8 @@ that of the continuation flow in the direction of this node if not.
 Working out the continuation direction is now done when processing the function node, so just use this value. */
 
 instance_of(Pipe, Arc, _, [instance(Pipe, Arc, _, Value, Units)],
-	    [instance(function, Function, _, Value, Units)]) :-
-	member(Pipe, [flow, squirt]),
+	    [instance(Ctrl, Function, _, Value, Units)]) :-
+	member(Pipe-Ctrl, [flow-function, squirt-magnitude]),
 	Arc has_part Function,
 	find_type(Function, function).
 
