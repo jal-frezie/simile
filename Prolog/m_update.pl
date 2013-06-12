@@ -136,7 +136,7 @@ get_all_links(Function, SrcType, ids(RemoteNode, Relation),
 	\+ member(Index, Supps),
 	check_ET_consistency(RemoteUnit, RemoteNode, Function),
 	use_destination(Link, RemoteUnit, 
-			Index, LocalName, Local_unit),
+			Index, SourceLocn, LocalName, Local_unit),
 	find_all_comps(DestBox, Function),
 	rel_path_name(RemoteNode, DestBox, Relation, SourceLocn, RemoteName).
 
@@ -343,6 +343,14 @@ get_unit_conversion(Remote, Local,
 	    relation_of_source(Exited, Entered, SourceLocation),
 	    Relation = DefRel,
 	    Index = none;
+	 % this disjunct should give us a role that gets values from
+	 % all instances of the current submodel
+	RemoteModel = LocalModel,
+	    get_all_dims(LocalModel, Subs),
+	    \+ Subs = [],
+	    SourceLocation = up_hierarchy,
+	    Relation = none,
+	    Index = none;
 	suffix([Base | ReallyExited], BiggestFirst),
 	    member(Assoc, Entered),
 	    connects(Relation, Base, Assoc),
@@ -381,9 +389,9 @@ is_exclusive_role(Role) :-
 	RoleWithAttrs has_attribute exclusive of 1.
 
 use_destination(Link, RemoteUnit, 
-		RelationIndex, LocalName, LocalUnit) :-
+		RelationIndex, SourceLocn, LocalName, LocalUnit) :-
 	Link has_attribute role of DestData,
-	member(use(RelationIndex, _, PrevRep, GivenUnit), 
+	member(use(RelationIndex, SourceLocn, PrevRep, GivenUnit), 
 			DestData),
 	(PrevRep = usr(PrevName); PrevRep = PrevName), !,
 	add_brackets(Inter_name, _, PrevName),
@@ -513,8 +521,6 @@ link_uses(List, Name) :-
 	ground(BrName),
 	add_brackets(Name, _, BrName).
 
-insert_existing_names(_, N, N).
-
 generate_new_name(input_link(_, RoleTexts, Local_name, Remote_unit, _), Used) :-
 	nonvar(Local_name), !;
 	name_from_role_texts(RoleTexts, Used, Inter_name),
@@ -527,6 +533,8 @@ name_from_role_texts(role_texts(Path, RelId, Dir, RelnCapt), Used, Name) :-
 	name(Tail, TailStr),
 	(Dir = in_hierarchy,
 	    Remote_name = Tail;
+	  Dir = up_hierarchy,
+	    append_atoms(all_, Tail, Remote_name);
 	  RelId = '/none/',
 	    append_atoms(every_, Tail, Remote_name);
 	  Dir = in_base,

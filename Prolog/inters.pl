@@ -89,7 +89,12 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	    copy_term(RealPathForm, RealPath),
 
 	    pointer_from(RealPath, SmPtr),
-	    (Link = none,
+	    (Location = up_hierarchy, % use values from all instances -- need to
+	     % stop loops matching by changing representation of bound
+		Wait = true,
+	        RealPath = [sm(Name, A, B, C) | D],
+	        Path = [sm(outside(Name), A, B, C) | D]; 
+	     Link = none,
 		Wait = true,
 		Path = RealPath;
 	    member(path_substitution(Base, Assoc, Link), Swaps),
@@ -1712,7 +1717,7 @@ revert_bound(n(Type), Type) :- !.
 /* might do better to get submodel and use g_a_s to convert */
 type_ind(Ind, Type) :-
 	var(Ind), !; % for self-referencing explicit inter
-	(integer(Ind); Ind = glob(_,_);
+	(integer(Ind); Ind = glob(_,_); Ind = _+0;
 	    Ind = pop; Ind = records; Ind = pra_bound(_,_)), Type = int;
 	Ind = boolean, Type = boolean;
 	Type = a(Ind).
@@ -2013,11 +2018,12 @@ enumerate instructions.  */
 wait_for_submodels([], []).
 
 wait_for_submodels([Level | AlsoExited], Waits) :-
-	((member(Level, [sm(Model, _,_, vm_loop(_,_,_,_)), % variable membership
-			set(_, loop(pra_bound(_, Model), _))]); % by record
-	  Level = sm(Model, _,_, fm_loop(_,_,al_action(Al, _), _)),
+	((member(Level, [sm(MM, _,_, vm_loop(_,_,_,_)), % variable membership
+			set(_, loop(pra_bound(_, MM), _))]); % by record
+	  Level = sm(MM, _,_, fm_loop(_,_,al_action(Al, _), _)),
 	      nonvar(Al)), !, % alarm submodel
-	    Waits = [enumerate(Model) | Others];
+	    (MM = outside(Model) -> true; MM = Model),
+	 Waits = [enumerate(Model) | Others];
 	Waits = Others),
 	wait_for_submodels(AlsoExited, Others).
 
@@ -2070,8 +2076,10 @@ loops(cond_section(_)).
 
 get_model_and_loops(Context, Dest, Path, Loops, Base) :-
 	get_model(Context, Path),
-	append(Loops, Base, Context),
-	get_model(Dest, Base), !.
+	append(LLoops, Base, Context),
+	get_model(Dest, Base),
+	(append(A, [sm(outside(M), B, C, D) | E], LLoops) ->
+	    append(A, [sm(M, B, C, D) | E], Loops); Loops = LLoops), !.
 
 get_model(Context, Path) :-
 	suffix(Path, Context),
