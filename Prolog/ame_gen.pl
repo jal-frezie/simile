@@ -161,7 +161,8 @@ unjustified. I don't want to process anything in single quotes for
 instance... */
 
 make_legible_for_prolog(String, NewString) :-
-	[BS, Sq, Dq, Sp, Pt, Po, Pc, Xm, Eq] = "\\'\" .()!=",
+	[NL, BS, Sq, Dq, Sp, Pt, Po, Pc, Xm, Eq, Ct, Fs, Ak] =
+	    "\n\\'\" .()!=%/*",
 	Nums = "0123456789",
 	append(Prefix, ToTweak, String),
 	/* Do not process anything in single quotes except backslashes
@@ -174,6 +175,15 @@ make_legible_for_prolog(String, NewString) :-
 	    things into list format */
 	ToTweak = [BS | Suffix],
 	    Tweaked = [];
+	% Percent sign starts a comment so eject rest of line, to ensure
+	% single-quotes etc. in macro defn comments don't confuse it 
+	ToTweak = [Ct | AfterPercent],
+	    suffix([NL | Suffix], AfterPercent),
+	    Tweaked = [NL];
+	% Comments enclosed in /*...*/ act like whitespace
+	ToTweak = [Fs, Ak | AfterCmtStart],
+	    suffix([Ak, Fs | Suffix], AfterCmtStart),
+	    Tweaked = [NL];
 	/* Put single quotes round things that look like Prolog atoms/vars
 	    (cos variable_names doesnt work on functors/operators) */
 	ToTweak = [StartsVar | Rest],
