@@ -36,7 +36,7 @@ instantiate_all(Parent, Model) :-
 instantiate(Parent, model(ModelInstance, Submodels ), Path, FullSet) :-
 	(setof( Primitive, contents(Parent, Primitive), TopNodes ), !; 
 		TopNodes = []),
-	(setof(Submodel, Child^(Parent has_part Child,
+	(setof(Submodel, Child^(find_all_comps(Parent, Child),
 				(Submodel = Child;
 				    Child has_class function, % submodel is
 				    Child has_part Submodel), % function defn

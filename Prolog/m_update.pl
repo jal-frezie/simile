@@ -746,6 +746,7 @@ oblitterfry(Node) :-
 delete_implicit_node(Exp_node) :-
 	implicit_function(Exp_node, Imp_node),
 	unghost(Imp_node),
+	superfast_delete(Imp_node), % should purge any function fragments
 	oblitterfry(Imp_node), fail;
 	true.
 
