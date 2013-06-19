@@ -1670,8 +1670,8 @@ unique_name_for_new(Parent, Type, Name) :-
 	       Part has_class_refinement name of Name,
 	       Parent has_part Part), !.
 
-get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
-			    Desc, Comment, EnumSpecs, Proc, Inc, Libs,
+get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Interp, Fat, Count,
+			    Step, Desc, Comment, EnumSpecs, Proc, Inc, Libs,
 			    Fix, Hide, Separate]) :-
 	(Submodel has_class_refinement fill_colour of Colour,
 	    \+ Colour = clear, !;
@@ -1680,13 +1680,15 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 	    Image = none),
 	(Submodel has_class_refinement image_posn of ImgPos, !;
 	    ImgPos = none),
-	(Submodel has_class_refinement multiplication_spec of Multi,
-	    member(count=QCount, Multi), !,
+	(Submodel has_class_refinement multiplication_spec of Multi, !;
+	 Multi = []),
+	(member(count=QCount, Multi), !,
 	    all(m_update, dequote_atom, [build(QCount), build(Count)]);
 	Count=[]),
-	(Submodel has_class_refinement multiplication_spec of Multi,
-	    member(type=Nature, Multi), \+ Nature = derived, !;
+	(member(type=Nature, Multi), \+ Nature = derived, !;
 	Nature = generated),
+	(member(interpretation=Interp, Multi), !;
+	Interp = none),
 	time_step_for(Submodel, 'Default', Step),
 	(Submodel has_class_refinement description of Desc, !;
 	Desc = ''),

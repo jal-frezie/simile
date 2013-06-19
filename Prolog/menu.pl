@@ -1143,11 +1143,12 @@ set_properties(Wid, Model) :-
 	get_disag_params(Model, P_list),
 	do_disag_dialog(Wid, Model, P_list, New_P_list),
 	(New_P_list = '', !; /* dialogue was cancelled */
-	New_P_list = [NewColour, NewImage, NewImgPos, NewNature, NewFatness,
+	New_P_list = [NewColour, NewImage, NewImgPos,
+		      NewNature, NewFatness,
 		      NewCount, NewStep, NewDesc, NewComment, NewFix, NewHide,
 		      NewSeparate, NewProc, NewInc, NewLibs, NewEnumSpecs],
-	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, _Step,
-		      _D, _C, _E, _Proc, _Inc, _Libs, _Fix, Hide, Separate],
+	    P_list = [Colour, Image, ImgPos, Nature, Interp, Fatness, Count,
+		      _S, _D, _C, _E, _Proc, _Inc, _Libs, _Fix, Hide, Separate],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;

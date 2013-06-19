@@ -6,20 +6,21 @@
 # This file contains procedures for all dialogues except the equation,
 # preferences and customise dialogues.
 #
-proc Disaggregate {parent title colour image imgpos type fatness icount step \
-            desc comment enumLists xproc xinc xlibs eqnunit hide separate} {
+proc Disaggregate {parent title colour image imgpos type interp \
+		       fatness icount step desc comment enumLists \
+		       xproc xinc xlibs eqnunit hide separate} {
     global disaggregate tcl_platform window_info
 
     set mdl $window_info($parent,top_node)
-    foreach varName {colour image imgpos type fatness \
+    foreach varName {colour image imgpos type interp fatness \
                 icount xproc xinc xlibs eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
     }
-    if [llength $icount]>0 {
-        set disaggregate(icount) [join $icount ,]
-    } else  {
-        set disaggregate(icount) 1
-    }
+#    if [llength $icount]>0 {
+#        set disaggregate(icount) [join $icount ,]
+#    } else  {
+#        set disaggregate(icount) 1
+#    }
     #puts $disaggregate(icount)
     foreach stepId [list {Initialize only} {New params only} {Reset only} \
 			1st 2nd 3rd 4th 5th 6th 7th] {
@@ -70,23 +71,33 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     frame $t.simple.left
     
     TitleFrame $t.simple.left.count \
-	-text [tr. "Control of number of instances:"]
-    set countf [GetFrame $t.simple.left.count]
-    
-    ttk::frame $countf.radio
-    foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
-        ttk::radiobutton $countf.radio.$rbutton \
-	    -text [tr. [lindex $rbutton 1]] -value [lindex $rbutton 0] \
-	    -variable disaggregate(type) -command "SetHighlights $countf"
-# TRANSLATOR: These are the second strings in each pair of braces after rbutton
-        pack $countf.radio.$rbutton -anchor w
+	-text [tr. "Instances:"]
+    set disaggregate(countf) [GetFrame $t.simple.left.count]
+    foreach interpType {Single {Fixed array} {For data records} \
+			    Population {Rectangular grid} \
+			    {Hexagonal grid} {Polygon map}} {
+	lappend disaggregate(labels) [tr. $interpType]
     }
-    pack $countf.radio -anchor w -side left
+    pack [ttk::combobox $disaggregate(countf).mb -state readonly \
+	      -textvariable disaggregate(cbxv) -values $disaggregate(labels)] \
+	-anchor w -side left -padx 4 -pady 4
+    bind $disaggregate(countf).mb <<ComboboxSelected>> SetupDisagExtras
     
-    ::ttk::entry $countf.value -textvariable disaggregate(icount) -width 10
-    pack $countf.value -side left -anchor s -pady 4 -fill x -expand 1
+#    ttk::frame $countf.radio
+#    foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
+#        ttk::radiobutton $countf.radio.$rbutton \
+#	    -text [tr. [lindex $rbutton 1]] -value [lindex $rbutton 0] \
+#	    -variable disaggregate(type) -command "SetHighlights $countf"
+## TRANSLATOR: These are the second strings in each pair of braces after rbutton
+#        pack $countf.radio.$rbutton -anchor w
+#    }
+#    pack $countf.radio -anchor w -side left
+    
+    label $disaggregate(countf).detail -width 10
+    pack $disaggregate(countf).detail -side left -anchor s \
+	-pady 4 -fill x -expand 1
     pack $t.simple.left.count -padx 4 -pady 4 -fill both -expand true
-    bind $countf.value <Return> $okCmd
+    ShowDisagSetup ;# Set current type
     
     TitleFrame $t.simple.left.colour -text [tr. "Background shade:"]
     set colourf [GetFrame $t.simple.left.colour]
@@ -288,7 +299,6 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack [button $publicatf.removeb -text "Remove Publication"] -side left
     pack $t.metadata.publications -padx 4 -pady 4 -fill both -expand 1
 
-    SetHighlights $countf
     $t select 0
     pack $t -fill both -expand true
 
@@ -321,19 +331,6 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     }
     PackItUp $tt
 
-    set icount {}
-    if [string compare $disaggregate(icount) 1] {
-        foreach newIndex [split $disaggregate(icount) ,] {
-            if {[string is double $newIndex]} {
-                lappend icount $newIndex
-	    } elseif {[string first \( $newIndex]>=1} { ;# arg is atom, enquote
-		lappend icount [string map {( (' ) ')}  $newIndex]
-	    } else { ;# index is atom
-		lappend icount \'$newIndex\'
-            }
-        }
-        set icount [join $icount ,]
-    }
     if {$disaggregate(done)} {
 	set stepIndx [lsearch $stepNames $disaggregate(step)]
 	if {$stepIndx == -1} {
@@ -348,7 +345,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
         }
         set result [list $disaggregate(colour) $disaggregate(image) \
                 $disaggregate(imgpos) $disaggregate(type) \
-                $disaggregate(fatness) $icount \
+                $disaggregate(fatness) $disaggregate(icount) \
                 $step $disaggregate(desc) $disaggregate(comment) \
                 $disaggregate(eqnunit) $disaggregate(hide) \
                 $disaggregate(separate) $disaggregate(xproc) \
@@ -468,6 +465,113 @@ proc ExtCodeSetup {mdl} {
     PackItUp $t
     grab .disaggregation
 }    
+
+proc SetupDisagExtras {} {
+    global disaggregate
+
+    set selIdx [lsearch [$disaggregate(countf).mb cget -values] \
+		    $disaggregate(cbxv)]
+    set t [PutItThere .disagExtra .disaggregation]
+    wm resizable $t 0 0
+    wm protocol $t WM_DELETE_WINDOW {set disaggregate(exdone) 0}
+    wm title $t [format [tr. "Extra info for %s"] \
+		     $disaggregate(cbxv)]
+    pack [ttk::label .disagExtra.l -wraplength 400]
+    switch $selIdx {0 {
+	.disagExtra.l configure -text [tr. {Single-instance submodel. This can denote a functionally distinct part of the parent model, or denote the set of components to which some other special feature applies, e.g., a different time step.}]
+    } 1 {
+	.disagExtra.l configure -text [tr. {Single- or multi-dimensional array of instances. Dimensions can be either numerical, or the names of enumerated types where there is one element for each member of the type. Enter the dimension(s) below, with commas between them if more than one.}]
+	set disaggregate(newdims) [join $disaggregate(icount) ,]
+	pack [ttk::entry .disagExtra.e -textvariable disaggregate(newdims)]
+    } 2 {
+	.disagExtra.l configure -text [tr. {Submodel with one instance per value of a file parameter. It must contain at least one file parameter variable to set its membership.}]
+    } 3 {
+	.disagExtra.l configure -text [tr. {Population submodel. Membership is controlled by the population channel symbols. It must contain at least one creation or immigration channel for the population to have some members.}]
+    } 4 {
+    } 5 {
+    } 6 {
+    }
+    }
+    frame .disagExtra.bottom
+    pack [button .disagExtra.bottom.bdone -text [tr. OK] -width 10 \
+	      -command {set disaggregate(exdone) 1}] -side left -padx 4 -pady 4
+    pack [button .disagExtra.bottom.bc -text [tr. Cancel] -width 10 \
+	      -command {set disaggregate(exdone) 0}] -side right -padx 4 -pady 4
+    pack .disagExtra.bottom -side left
+    LetItShow $t
+    grab $t
+    tkwait variable disaggregate(exdone)
+    grab release $t
+    PackItUp $t
+    if {$disaggregate(exdone)} {
+	set disaggregate(interp) none
+	set disaggregate(icount) {}
+	switch $selIdx {0 {
+	    set disaggregate(type) generated
+	} 1 {
+	    set disaggregate(type) generated
+	    set disaggregate(interp) none
+	    set disaggregate(icount) {}
+	    foreach newIndex [split $disaggregate(newdims) ,] {
+		if {[string is double $newIndex]} {
+		    lappend disaggregate(icount) $newIndex
+		} elseif {[string first \( $newIndex]>=1} { 
+		    # arg is atom, enquote
+		    lappend disaggregate(icount) \
+			[string map {( (' ) ')}  $newIndex]
+		} else { ;# index is atom
+		    lappend disaggregate(icount) \'$newIndex\'
+		}
+	    }
+	    set disaggregate(icount) [join $disaggregate(icount) ,]
+	} 2 {
+	    set disaggregate(type) records
+	} 3 {
+	    set disaggregate(type) population
+	}
+    }
+    ShowDisagSetup
+    }
+}
+
+proc ShowDisagSetup {} {
+    global disaggregate
+
+    set sides {}
+    set interp $disaggregate(interp)
+    switch $interp {
+	hex_grid* {
+	    set interpIdx 5
+	    set sides [string range $interp \
+			   [string first \( $interp]+1 end-1]
+	} poly_map {
+	    set interpIdx 6
+	    set sides {}
+	} rect_grid {
+	    set interpIdx 4
+	    set sides [join [split $disaggregate(icount) ,] x]
+	} default {
+    # get from type and value only
+	    switch $disaggregate(type) {
+		generated {
+		    if {[llength $disaggregate(icount)]} {
+			set interpIdx 1
+			set sides [join [split $disaggregate(icount) ,] x]
+		    } else {
+			set interpIdx 0
+		    }
+		} records {
+		    set interpIdx 2
+		} population {
+		    set interpIdx 3
+		}
+	    }
+	}
+    }
+    set disaggregate(cbxv) [lindex [$disaggregate(countf).mb cget -values] \
+				$interpIdx]
+    $disaggregate(countf).detail configure -text $sides
+}
 
 proc ChangeIncFile {incFileTxt mdl} {
     set newFile [ChooseFile external.cpp [tr. "External source/header file:"] \
@@ -788,19 +892,6 @@ proc PutSize {img} {
     }
     # set them so I can read later
     $img config -width $width -height $height
-}
-
-proc SetHighlights {t} {
-    global disaggregate
-    
-    switch -regexp $disaggregate(type) {
-        none|population|records {
-            $t.value configure -state disabled
-        }
-        simple|generated {
-            $t.value configure -state normal
-        }
-    }
 }
 
 set progressBoxCount 0

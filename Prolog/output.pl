@@ -517,9 +517,9 @@ tk_update_sim_display(Win, Current, Left) :-
 	safe_tcl_eval(['UpdateTimes', Win, Current, Left], _).
 	
 tk_do_disag_dialog(Win, Caption,
-		   [Colour, Image, ImgPos, Type, Fatness, CountList, Step,
-		    Desc, Comment, EnumSpecs, Proc, Inc, LibList | Choices],
-		   ResultList) :-
+		   [Colour, Image, ImgPos, Type, Interp, Fatness, CountList,
+		    Step, Desc, Comment, EnumSpecs, Proc, Inc,
+		    LibList | Choices], ResultList) :-
 	name(Caption, CaptStr),
 	argify(CaptStr, CaptArg),
 	safe_list(CountList, Count),
@@ -528,8 +528,8 @@ tk_do_disag_dialog(Win, Caption,
 % Q&D fix for bad enum type chars
 	safe_list(EnumSpecs, EnumLists),
 	safe_tcl_eval(['Disaggregate', Win, chars(CaptArg), Colour, Image,
-		       ImgPos, Type, Fatness, Count, Step, br(write(Desc)),
-		       br(write(Comment)), EnumLists,
+		       ImgPos, Type, br(write(Interp)), Fatness, Count,
+		       Step, br(write(Desc)), br(write(Comment)), EnumLists,
 		       br(write(Proc)), br(write(Inc)), Libs | Choices],
 		      New_P_string),
 	chop_list(New_P_string, ResultListN),

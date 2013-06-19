@@ -1041,6 +1041,9 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 	    Path = [sm(_,_,_, fm_loop(_,_, al_action(Al, EvtExp), _)) | _], !,
 	    % now make alarm depend on everything in its submodel
 	    % so the whole thing gets done in one pass
+%% Having removed this, some alarm submodels do not work because the alarm
+%% gets updated before some component that checks it for initial condition
+%% Does it therefore need restoring?
 	    all_targets(model(ForAlarm, Submodels), AlConds),
 	    AlDelay = [make(all_for(Al), AlConds, Path, Step, [])];
 	  AlDelay = []), */
