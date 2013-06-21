@@ -615,12 +615,13 @@ process_expr(sub(InputPairs, FragSMs, Refs), OldVar, NewExpr, Recurse) :-
 	  atom(Ch)),
 	    Recurse = 1;
 	% model fragment defined function
-	OldVar =.. [Fnct | Args],
+	OldVar =.. [Fnct | ArgsOrDummy],
+	    (ArgsOrDummy = [''] -> Args = []; Args = ArgsOrDummy),
 	    % return a reference to the output in the submodel
 	    fragment_expansion(_,_, Fnct, RetCapt, ArgData),
 	    member(frags(FragSm, UsedYet), FragSMs), var(UsedYet), !,
 	    UsedYet = yes,
-	    with_capt(OutNode, FragSm, RetCapt),
+	    with_capt(OutNode, _, FragSm, RetCapt),
 	    is_instance(_, OutNode, _, ToMatch, _, Ref),
 	    member(Ref, Refs),
 
@@ -645,7 +646,7 @@ build_table_ref(Table, TableFn, RefTable) :-
 
 process_references(Arg, ArgCapt, FragSm,
 		   sub(InPairs, BuildArrs, Refs)) :-
-	with_capt(ArgNode, FragSm, ArgCapt),
+	with_capt(ArgNode, _, FragSm, ArgCapt),
 	list_fragments_for_use(ArgNode, SubFrags),
 	replace_subexps(Arg, instance, process_expr,
 			sub(InPairs, SubFrags, Refs), top_down, _Sw, DoneArg),

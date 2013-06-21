@@ -4,7 +4,7 @@ sicstus_module(inters, [final_assignment/12, make_intermediates/12,
 			promote_unit/2, promote_arg/3, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
 			inherently_bound/1, make_inds_for/3, pointer_from/2,
-			with_capt/3]).
+			with_capt/4]).
 
 sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
@@ -1209,21 +1209,19 @@ Now one that uses a special conditional level */
 	    (nonvar(FragOut), !, % fragment-defined function: parsing, since
 		% these are replaced in instantiation during code build
 		SourceRef = FragOut, % placeholder
-		with_capt(OutNode, RefNode, FragOut),
-		m_update'><'get_av_pair(OutNode, 0, units, OutArrSpec),
-		m_update'><'analyze_array(OutArrSpec, Units, OutDims),
-		make_inds_for(OutDims, OutLoops, _),
-		get_model_and_loops(ExecContext, DestPath, _,
+		with_capt(OutNode, SmLoops, RefNode, FragOut),
+	        m_update'><'get_av_pair(OutNode, 0, units, OutArrSpec),
+	        m_update'><'analyze_array(OutArrSpec, Units, OutDims),
+	        make_inds_for(OutDims, OutLoops, _),
+	        get_model_and_loops(ExecContext, DestPath, _,
 				    ExecLoops, ExecBase),
 		append(ExecLoops, BuildingArrays, FragLoops),
 		get_dims_from_loops(FragLoops, ExecDims, _),
 		m_update'><'add_parameter(RefNode, 0, multiplication_spec,
 					  [count=ExecDims]),
-		append([ExecLoops, OutLoops, ExecBase], SourceContext);
-	      SourceContext = ExecContext),
-		       
-	    (nonvar(FragOut), !; % units and sourceref done
-	      ValRef =.. [Lop, _, _],
+		append([ExecLoops, OutLoops, SmLoops, ExecBase], SourceContext);
+	      SourceContext = ExecContext,
+	        ValRef =.. [Lop, _, _],
 		member(Lop, [*, /]),
 		    \+ (member(MathWouldBeSilly, UnitList),
 			   inherently_bound(MathWouldBeSilly)),
@@ -1293,9 +1291,15 @@ Now one that uses a special conditional level */
 	    Args = SubArgs);
 	throw(undecipherable_operand(Source, SubId)).
 
-with_capt(Found, Sm, Capt) :-
-	find_all_comps(Sm, Found),
-	caption_for(Found, Capt).
+with_capt(Found, Loops, Sm, Capt) :-
+	caption_for(Sm, Capt), !,
+	    Found = Sm,
+	    Loops = [];
+	  find_all_comps(Sm, Inside),
+	    with_capt(Found, SubLoops, Inside, Capt),
+	    get_node_size(Sm, Dims),
+	    instance:path_section_for(Sm, _, Dims, Level, _,_),
+	    append(SubLoops, Level, Loops).
 
 decode_number(Source, SubId, Step, SourceRef, Units) :-
 	get_actual_size(SubId, Source, quoted, [SrcNum], [SrcType], [SrcUnits]),
@@ -1847,7 +1851,8 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	     [Name | MoreATs], FunctionContext, NewContext,
 	     NewSetup, NewArgs, [NewRef | Comps]) :-
 	(nonvar(Name), % Supply actual node name in fragment instance
-	    (setof(InComp, with_capt(InComp, SubId, Name), [VisDestId]) ->
+	 % Should use 2nd arg for dim matching somehow
+	    (setof(InComp, with_capt(InComp, _, SubId, Name), [VisDestId]) ->
 		m_update'><'add_implicit_function(VisDestId, DestId);
 	      throw(input_name_deref_fail));
 	  var(Name),
