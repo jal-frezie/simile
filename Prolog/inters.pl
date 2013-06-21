@@ -1221,7 +1221,7 @@ Now one that uses a special conditional level */
 					  [count=ExecDims]),
 		append([ExecLoops, OutLoops, SmLoops, ExecBase], SourceContext);
 	      SourceContext = ExecContext,
-	        ValRef =.. [Lop, _, _],
+	        (ValRef =.. [Lop, _, _],
 		member(Lop, [*, /]),
 		    \+ (member(MathWouldBeSilly, UnitList),
 			   inherently_bound(MathWouldBeSilly)),
@@ -1281,7 +1281,7 @@ Now one that uses a special conditional level */
 		 m_class'><'SubId has_class_refinement uses_local_fns of UserFns,
 		    member(Op/Arity, UserFns),
 		    throw(lost_user_defined_fn(Source, Op, Arity));
-		 throw(no_such_function(Source, Op))),
+		 throw(no_such_function(Source, Op)))),
 	    (Source = sofar(_), !,
 		all(inters, dissociate,
 		    [unify(later), build(SubArgs), build(Args)]);
@@ -1298,7 +1298,7 @@ with_capt(Found, Loops, Sm, Capt) :-
 	  find_all_comps(Sm, Inside),
 	    with_capt(Found, SubLoops, Inside, Capt),
 	    get_node_size(Sm, Dims),
-	    instance:path_section_for(Sm, _, Dims, Level, _,_),
+	    instance'><'path_section_for(Sm, _, Dims, Level, _,_),
 	    append(SubLoops, Level, Loops).
 
 decode_number(Source, SubId, Step, SourceRef, Units) :-
