@@ -729,6 +729,10 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 
 expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	      Param, DoneExpr, Recurse) :-
+	% start by checking if param is in a special role for a ready-made
+	% complex submodel type -- substitute with function on general role
+	expand_special_role(Param, AllInputs, DoneExpr), !,
+	    Recurse = 1;
 	(get_solo_list_depth(Param, Depth),
 	/* when making dummy links for explicit intermediate results, check
 	the 1st field (influence id) is a free var, and if so, use the

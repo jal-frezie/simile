@@ -16,6 +16,7 @@ sicstus_module(m_update,
 		get_submodel_interface/5, load_submodel_interface/4,
 		load_references/2, save_references/2, link_ends/4,
 		update_links_and_vars/1,
+		in_rect_with_dims/3, source_locn_name/2,
 		name_from_role_texts/3, sort_for_link/4, abs_path_name/3,
 		build_array/3, analyze_array/3, get_all_enum_types/2,
 		get_solo_list_depth/2, delete_implicit_node/1, 
@@ -346,11 +347,15 @@ get_unit_conversion(Remote, Local,
 	 % this disjunct should give us a role that gets values from
 	 % all instances of the current submodel
 	RemoteModel = LocalModel,
-	    get_all_dims(LocalModel, Subs),
-	    \+ Subs = [],
-	    SourceLocation = up_hierarchy,
-	    Relation = none,
-	    Index = none;
+	    (in_rect_with_dims(LocalModel, _, _),
+	        Subs = [var],
+	        SourceLocation = in_8_nbrs,
+	        Index = -2;
+	      get_all_dims(LocalModel, Subs),
+	        \+ Subs = [],
+	        SourceLocation = up_hierarchy,
+	        Index = -1),
+	    Relation = none;
 	suffix([Base | ReallyExited], BiggestFirst),
 	    member(Assoc, Entered),
 	    connects(Relation, Base, Assoc),
@@ -374,6 +379,15 @@ get_unit_conversion(Remote, Local,
 		all(ame_gen, get_all_dims,
 		    [build([Assoc | ReallyExited]), append(Subs, [])])),
 	    SourceLocation = in_assoc).
+
+in_rect_with_dims(SubId, R, C) :-
+	contains(Rect, SubId),
+	m_update'><'get_av_pair(Rect, 0, multiplication_spec, M),
+	member(interpretation=rect_grid(R, C), M).
+
+source_locn_name(Idx, Name) :-
+	Posn is -Idx,
+	nth(Posn, [up_hierarchy, in_8_nbrs], Name).
 
 relation_of_source(Exited, Entered, SourceLocation) :-
 	member(Far, Exited), member(Near, Entered),
@@ -535,6 +549,8 @@ name_from_role_texts(role_texts(Path, RelId, Dir, RelnCapt), Used, Name) :-
 	    Remote_name = Tail;
 	  Dir = up_hierarchy,
 	    append_atoms(all_, Tail, Remote_name);
+	  Dir = in_8_nbrs,
+	    append_atoms(from_8_nbrs_, Tail, Remote_name);
 	  RelId = '/none/',
 	    append_atoms(every_, Tail, Remote_name);
 	  Dir = in_base,

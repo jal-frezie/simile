@@ -345,6 +345,7 @@ proc Disaggregate {parent title colour image imgpos type interp \
         }
         set result [list $disaggregate(colour) $disaggregate(image) \
                 $disaggregate(imgpos) $disaggregate(type) \
+			$disaggregate(interp) \
                 $disaggregate(fatness) $disaggregate(icount) \
                 $step $disaggregate(desc) $disaggregate(comment) \
                 $disaggregate(eqnunit) $disaggregate(hide) \
@@ -488,6 +489,16 @@ proc SetupDisagExtras {} {
     } 3 {
 	.disagExtra.l configure -text [tr. {Population submodel. Membership is controlled by the population channel symbols. It must contain at least one creation or immigration channel for the population to have some members.}]
     } 4 {
+	.disagExtra.l configure -text [tr. {Submodel representing a rectangular grid. Both dimensions must be numerical.
+To access values from neighbouring squares in an equation, open the properties dialoge of an incoming influence and select "Use values from all neighbours", or heighbours to a particular direction, as appropriate.}]
+	pack [frame .disagExtra.dims]
+	pack [ttk::label .disagExtra.dims.rows -text [tr. Rows:]] -side left
+	pack [ttk::entry .disagExtra.dims.y -textvariable disaggregate(y)] \
+	    -side left
+	pack [ttk::entry .disagExtra.dims.x -textvariable disaggregate(x)] \
+	    -side right
+	pack [ttk::label .disagExtra.dims.cols -text [tr. Columns:]] \
+	    -side right
     } 5 {
     } 6 {
     }
@@ -528,6 +539,11 @@ proc SetupDisagExtras {} {
 	    set disaggregate(type) records
 	} 3 {
 	    set disaggregate(type) population
+	} 4 {
+	    set disaggregate(type) generated
+	    set disaggregate(interp) \
+		rect_grid($disaggregate(y),$disaggregate(x))
+	    set disaggregate(icount) [expr {$disaggregate(y)*$disaggregate(x)}]
 	}
     }
     ShowDisagSetup
@@ -539,7 +555,7 @@ proc ShowDisagSetup {} {
 
     set sides {}
     set interp $disaggregate(interp)
-    switch $interp {
+    switch -glob $interp {
 	hex_grid* {
 	    set interpIdx 5
 	    set sides [string range $interp \
@@ -547,9 +563,10 @@ proc ShowDisagSetup {} {
 	} poly_map {
 	    set interpIdx 6
 	    set sides {}
-	} rect_grid {
+	} rect_grid* {
 	    set interpIdx 4
-	    set sides [join [split $disaggregate(icount) ,] x]
+	    scan $disaggregate(interp) rect_grid(%d,%d) y x
+	    set sides ${y}x${x}
 	} default {
     # get from type and value only
 	    switch $disaggregate(type) {

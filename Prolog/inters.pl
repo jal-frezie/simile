@@ -1,5 +1,5 @@
 sicstus_module(inters, [final_assignment/12, make_intermediates/12,
-			expand_library/2,
+			expand_library/2, expand_special_role/3,
 			macro_expansion/2, fragment_expansion/5, function/4,
 			promote_unit/2, promote_arg/3, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
@@ -89,7 +89,9 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	    copy_term(RealPathForm, RealPath),
 
 	    pointer_from(RealPath, SmPtr),
-	    (Location = up_hierarchy, % use values from all instances -- need to
+	    ((Location = up_hierarchy;
+	     Location = in_8_nbrs, BackSwap = frag_filter(nbr8_1d_ids)),
+				% use values from all instances -- need to
 	     % stop loops matching by changing representation of bound
 		Wait = true,
 	        RealPath = [sm(Name, A, B, C) | D],
@@ -197,7 +199,18 @@ expand_library(Var, NewVar) :-
 	    NewVar = (ThenCl:(Bool?IfCl));
 	Var = choose(Bool, V1, V2), !,
 	    NewVar = (Bool?V1:V2). */
-	    
+
+expand_special_role(Param, LinkSpecs, element(UseParam, Fn)) :-
+	member(SpecialSpec-GeneralSpec,
+	       [input_link(id(Arc,_,Role),_,Param,_,_)- % parse time
+		input_link(id(Arc,_,UseRole),_,UseParam,_,_),
+		input_pair(Param, Arc,_, input(Role, _,_,_))- % build time
+		input_pair(UseParam, Arc,_, input(UseRole, _,_,_))]),
+	member(SpecialSpec, LinkSpecs),
+	member(Role-UseRole-Fn,
+	       [in_8_nbrs-up_hierarchy-nbr8_1d_ids('')]), % add more here
+	member(GeneralSpec, LinkSpecs).
+
 read_library_funx(Done) :-
 	retractall(macro_expansion(_Cat, _Line)),
 	% in case I ship it after a run
@@ -1302,6 +1315,11 @@ with_capt(Found, Loops, Sm, Capt) :-
 	    append(SubLoops, Level, Loops).
 
 decode_number(Source, SubId, Step, SourceRef, Units) :-
+	(Source = row_count(''), SourceRef = R;
+	 Source = column_count(''), SourceRef = C), !,
+	  (m_update'><'in_rect_with_dims(SubId, R, C),
+	   Units = int;
+	  throw(not_in_rectangle(Source)));
 	get_actual_size(SubId, Source, quoted, [SrcNum], [SrcType], [SrcUnits]),
 	(Source = 0.0 -> GenUnits = real; GenUnits = SrcUnits),
 	remove_physical_units_if_disabled(SubId, GenUnits, Units),

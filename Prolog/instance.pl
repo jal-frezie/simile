@@ -597,6 +597,10 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % captions to unique c++ variable names.
 
 process_expr(sub(InputPairs, FragSMs, Refs), OldVar, NewExpr, Recurse) :-
+	% start by checking if param is in a special role for a ready-made
+	% complex submodel type -- substitute with function on general role
+	expand_special_role(OldVar, InputPairs, NewExpr), !,
+	    Recurse = 1;
 	\+ OldVar = 'reset...', % identifies initial value of state
 	    member(OldVar-NewExpr-RefNode,
 	       [dies_of(Var)-dies_of(NewVar)-VisNode,

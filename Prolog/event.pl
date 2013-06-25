@@ -918,10 +918,13 @@ doubleclick_on(Edit_thing) :-
 	    update_runnable(Parent)).
 
 role_ref_to_msg(Role-Ref, Message) :-
-	Ref = none ->
+	Ref = none,
 	 Message = without_role;
-	 caption_for(Role, Capt),
-	 Message = [with_role, Capt].
+	integer(Ref),
+	 (Ref < 0 ->
+	    source_locn_name(Ref, Message);
+	  caption_for(Role, Capt),
+	 Message = [with_role, Capt]).
 
 role_ref_to_stat(_-Ref, Suppd, Status) :-
 	Status = 0,

@@ -1144,10 +1144,10 @@ set_properties(Wid, Model) :-
 	do_disag_dialog(Wid, Model, P_list, New_P_list),
 	(New_P_list = '', !; /* dialogue was cancelled */
 	New_P_list = [NewColour, NewImage, NewImgPos,
-		      NewNature, NewFatness,
+		      NewNature, NewInterp, NewFatness,
 		      NewCount, NewStep, NewDesc, NewComment, NewFix, NewHide,
 		      NewSeparate, NewProc, NewInc, NewLibs, NewEnumSpecs],
-	    P_list = [Colour, Image, ImgPos, Nature, Interp, Fatness, Count,
+	    P_list = [Colour, Image, ImgPos, Nature, _I, Fatness, Count,
 		      _S, _D, _C, _E, _Proc, _Inc, _Libs, _Fix, Hide, Separate],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
@@ -1195,7 +1195,11 @@ set_properties(Wid, Model) :-
 		    (member(value(_), Sizes), !,
 			TypeMem = [type=derived];
 			TypeMem = []),
-		    Spec = [count=UseCount | TypeMem]));
+		     (NewInterp = none -> XtraMems = TypeMem;
+		      name(NewInterp, NIStr),
+		      get_term(NIStr, NITerm, Error),
+		      XtraMems = [interpretation=NITerm | TypeMem]),
+		    Spec = [count=UseCount | XtraMems]));
 	    member(NewNature, [population, records]),
 		Spec = [type=NewNature]),
 	    (var(Spec);
