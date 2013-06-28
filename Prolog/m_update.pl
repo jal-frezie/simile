@@ -136,8 +136,10 @@ get_all_links(Function, SrcType, ids(RemoteNode, Relation),
 		Relation, Index, SourceLocn),
 	\+ member(Index, Supps),
 	check_ET_consistency(RemoteUnit, RemoteNode, Function),
-	use_destination(Link, RemoteUnit, 
-			Index, SourceLocn, LocalName, Local_unit),
+	(use_destination(Link, RemoteUnit, 
+			 Index, SourceLocn, LocalName, Local_unit) -> true;
+	  \+ SrcType = identified,
+	    Local_unit = RemoteUnit),
 	find_all_comps(DestBox, Function),
 	rel_path_name(RemoteNode, DestBox, Relation, SourceLocn, RemoteName).
 
@@ -306,7 +308,7 @@ valid_input(Real, SourceType, InputLink) :-
 	InputLink is_connector from _ to AlsoUsed,
 	initiates(InputLink, Source),
 	get_host(Source, VisSource), % for flows/squirts with links from fn
-	(SourceType = continuous,
+	(member(SourceType, [continuous, identified]),
 	    \+ VisSource is_of_sort discrete; % event values not to be used
 	  SourceType = discrete,
 	    VisSource is_of_sort discrete). % event values to be used
@@ -416,8 +418,9 @@ use_destination(Link, RemoteUnit,
 	from actual units is possible */
 	(check_unit(RBaseUnit, LBaseUnit, 2, []), !,
 	    build_array(LBaseUnit, Subs, LocalUnit);
-	LocalUnit = RemoteUnit);
-	LocalUnit = RemoteUnit.
+	LocalUnit = RemoteUnit) /* next line would allow role not foreseen
+				   when entering eqn, disabled for 6.1 ;
+	LocalUnit = RemoteUnit */ .
 
 add_brackets(Name, array(Unit, _), [Name2]) :- !, 
 	add_brackets(Name, Unit, Name2).

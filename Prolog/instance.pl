@@ -250,7 +250,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 			Instance),
 	    Instances = [Instance];
 	(setof(InputPair,
-	       generate_input_pair(Node, continuous, InputPair),
+	       generate_input_pair(Node, identified, InputPair),
 	       InputPairs ), !;
 	    InputPairs = []),
 	(setof(EvtPair,
