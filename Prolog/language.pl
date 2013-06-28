@@ -208,7 +208,6 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 	all(language, make_evaluation_routine,
 	    [unify(L), build(LocalIndices), unify(Used), build(RefIndices)]),
 	make_struct_reference(L, Pointer, next, OnPointer),
-	refer_value(L, OnPointer, OnPointerRef),
 
 	append_atoms(Name, meta, Meta),
 	resolve_pointer(L, Meta, MPTarget),
@@ -257,7 +256,9 @@ failed through to make sure all later temporary variables get declared. */
 	    Indent2 is Indent1+4;
 	 \+ number(Phase),
 	    Indent2 = Indent1),
-	excrete(L, assignment, MPTarget=OnPointerRef, Indent2, Stream),
+        % cut instance out of linked list
+	% refer_value(L, OnPointer, OnPointerRef),
+	% excrete(L, assignment, MPTarget=OnPointerRef, Indent2, Stream),
 	/* CheckElse, StepOver, CheckEnd */
 	(number(Phase),
 	    excrete(L, else_clause, MemberCheckRef, Indent1, Stream),
@@ -685,14 +686,18 @@ we only make the three lines that insert the submodel instance into its linked l
 	  TestVal = 0),
 	    excrete(L, if_start, TestVal, Indent, Stream),
 	    Indent1 is Indent+4),
-
+	Indent2 is Indent1+4,
+	% only insert in linked list if new -- old ones not removed
+	make_new_check(L, Pointer, IsNew),
+	excrete(L, if_start, IsNew, Indent1, Stream),
 	make_struct_reference(L, Pointer, next, OnPointer),
 	append_atoms(Name, meta, MetaPointer),
 	resolve_pointer(L, MetaPointer, MPTarget),
 	refer_value(L, MPTarget, MPTargetRef),
 	refer_value(L, Pointer, PointerRef),
-	excrete(L, assignment, OnPointer=MPTargetRef, Indent1, Stream),
-	excrete(L, assignment, MPTarget=PointerRef, Indent1, Stream),
+	excrete(L, assignment, OnPointer=MPTargetRef, Indent2, Stream),
+	excrete(L, assignment, MPTarget=PointerRef, Indent2, Stream),
+	excrete(L, end(cond), IsNew, Indent1, Stream),
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream),
 	
 	(do_assign_list(L, Clauses, Indent1, Used, Stream),
@@ -702,6 +707,12 @@ we only make the three lines that insert the submodel instance into its linked l
 	the 'else' clause and other condition go in the postamble. */
 	(Source == 1, !;
 	    excrete(L, else_clause, TestVal, Indent, Stream),
+	    excrete(L, if_start, IsNew, Indent1, Stream),
+	    excrete(L, else_clause, IsNew, Indent1, Stream),
+	    % cut instance out of linked list
+	    refer_value(L, OnPointer, OnPointerRef),
+	    excrete(L, assignment, MPTarget=OnPointerRef, Indent2, Stream),
+	    excrete(L, end(cond), IsNew, Indent1, Stream),
 	    excrete(L, release_memory, Pointer, Indent1, Stream),
 	    excrete(L, end(cond), TestVal, Indent, Stream),
 	    fail);

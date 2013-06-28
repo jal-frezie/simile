@@ -72,6 +72,19 @@ public:
   virtual void* get_pointer(int id, int** dims) = 0;
 };
 
+// Binary search tree node with pointer to submodel instance
+class bstree_node {
+ public:
+  bstree_node () {
+    parent = left = right = NULL;
+    data = NULL;
+  }
+
+  bstree_node *parent, *left, *right;
+  int level;
+  submodeltype* data;
+};
+
 // abstract base class for submodels, with extractor virtual function --
 // these are actually made in the model code itself
 class InstanceOfModel : public submodeltype {
