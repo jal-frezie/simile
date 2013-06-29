@@ -846,6 +846,7 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     switch $dims {
         "(defined by values)" {
             set needsETs 1
+            set dimsFromData 1
         } "(data determines dimensions)" {
             set dimsFromData 1
         } default {
@@ -869,13 +870,14 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
             }
         }
     }
-    if {[info exists needsETs]} {
-        $t tab $t.image -state disabled
-        $t tab $t.gdal -state disabled
-    } elseif {[llength $arrayDims]!=2} {
+    if {[llength $arrayDims]!=2 && ![info exists dimsFromData]} {
+# array cannot be 2-d so only columns allowed
 	$t tab $t.grid -state disabled
 	$t tab $t.image -state disabled
 	$t tab $t.gdal -state disabled
+    } elseif {[info exists needsETs]} {
+        $t tab $t.image -state disabled
+        $t tab $t.gdal -state disabled
     }
     
     #
