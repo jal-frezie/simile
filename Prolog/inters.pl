@@ -1204,7 +1204,7 @@ Now one that uses a special conditional level */
 		name(Lop, LopStr),
 		ValRef =.. [Lop | ResultList],
 		((length(ArgTpts, Arity); WrongArity = 1),
-		    fragment_expansion(_, FragFile, Lop, FragOut, ArgTpts),
+		    fragment_expansion(_, FragFile, Op, FragOut, ArgTpts),
 		    (WrongArity = 0;
 			length(ArgTpts, FnArity),
 			throw(wrong_no_of_args(Source, Op, Arity, FnArity))), !,
