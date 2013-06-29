@@ -174,7 +174,9 @@ links( Node, Links, _, Bindings, Bindings ) :-
 	\+ (member(In-Out, NewLinks),
 	       member(WaitFor, [In, Out]),
 	       \+ WaitFor is_connector _),
-	NewNode has_new_link_equivalences NewLinks, !;
+	NewNode has_new_link_equivalences NewLinks,
+	% check all links nodes etc were real -- order not guaranteed same
+	NewNode has_link_equivalences _TestLinks, !;
 	retractall(missing(_)),
 	member(MissingIn-MissingOut, Links),
 	member(Missing, [MissingIn, MissingOut]),

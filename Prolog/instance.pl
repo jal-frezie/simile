@@ -626,15 +626,15 @@ process_expr(sub(InputPairs, FragSMs, Refs), OldVar, NewExpr, Recurse) :-
 	    member(frags(FragSm, UsedYet), FragSMs), var(UsedYet), !,
 	    UsedYet = yes,
 	    with_capt(OutNode, _, FragSm, RetCapt),
+	    OutNode has_class_refinement units of Multis,
 	    is_instance(_, OutNode, _, ToMatch, _, Ref),
-	    member(Ref, Refs),
+	    member(Ref, Refs), !,
 
 	    % now recurse to make references for the arguments
 	    all(instance, process_references,
 		[build(Args), build(ArgData), unify(FragSm),
 		 unify(sub(InputPairs, BuildArrs, Refs))]),
 
-	    OutNode has_class_refinement units of Multis,
 	    % submodel dimensions should be got later from rel path
 	    pick_elt_from(input(in_hierarchy, ToMatch, none, Multis), BuildArrs,
 			  NewExpr, place_in),
