@@ -118,18 +118,17 @@ endif
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	SYSDIR = System$(BITEXTN)
-ifeq ($(MY_CPU),x86_64)
-	TCLDIR = /c/Tcl
-	SWIPLDIR = "/c/Program files/swipl"
+	TCLDIR = /usr/local$(BITEXTN)
+# the MSYS way
 	TCLREF = $(TCLDIR)
+ifeq ($(MY_CPU),x86_64)
+	SWIPLDIR = "/c/Program files/swipl"
 	GCCCMD = x86_64-w64-mingw32-gcc
 	GPPCMD = x86_64-w64-mingw32-g++
 	RESCMD = x86_64-w64-mingw32-windres
 else
 #	TCLDIR = "/c/Program files (x86)/Tcl"
 # Actually, use local TclTk as above dir not exist on 32bit machines --
-	TCLDIR = $(SYSDIR)
-	TCLREF = ../$(TCLDIR)
 	RESCMD = windres
 	INSTLIB = Run/install.dll
 # must be 32-bit because installer is
@@ -143,8 +142,9 @@ endif
 #
 	SLDIR = $(EXECDIR)
 # to be used after CDing to Run -- assume all refs are from a subdirectory
-	TCLINC = $(TCLREF)/include/tcl$(MAJ).$(MIN)
-	USETCL = -DUSE_TCL_STUBS -I$(TCLINC) -L$(TCLREF)/lib $(TCLREF)/lib/tclstub$(VERS).lib
+	TCLINC = $(TCLREF)/include
+	USETCL = -DUSE_TCL_STUBS -I$(TCLINC) -L$(TCLREF)/lib -ltclstub$(VERS)
+	USETK = -DUSE_TK_STUBS -ltkstub$(VERS)
 	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = _win
@@ -264,15 +264,13 @@ $(INSTLIB): Run/install_adv.cpp Makefile
 # do strange things to dll dependencies causing c000007b errors
 $(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile.rc
 	cd Interp; $(RESCMD) -o rc.o Simile.rc; \
-	$(GCCCMD) $(CFLAGS) -I$(TCLINC) -o ../$(EXECDIR)/Simile.exe Simile.c \
-		$(TCLREF)/lib/tcl$(VERS).lib $(TCLREF)/lib/tk$(VERS).lib \
-		-mwindows; cd ..
+	$(GCCCMD) $(CFLAGS) -o ../$(EXECDIR)/Simile.exe Simile.c -I$(TCLINC) \
+		-L$(TCLREF)/lib -ltcl$(VERS) -ltk$(VERS) -mwindows; cd ..
 
 $(SCRIPT): Interp/script.c Interp/script.rc
 	cd Interp; $(RESCMD) -o scriptrc.o script.rc; \
-	$(GCCCMD) $(CFLAGS) -I$(TCLINC) -o ../$(SCRIPT) script.c \
-		$(TCLREF)/lib/tcl$(VERS).lib $(TCLREF)/lib/tk$(VERS).lib \
-		-mwindows; cd ..
+	$(GCCCMD) $(CFLAGS) -I$(TCLINC) -o ../$(SCRIPT) script.c -I$(TCLINC) \
+		-L$(TCLREF)/lib -ltcl$(VERS) -ltk$(VERS) -mwindows; cd ..
 #else
 
 # CYGWIN and non-Windows
