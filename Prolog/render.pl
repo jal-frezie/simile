@@ -435,10 +435,10 @@ strings_direct(L, data_declaration,
 			/* variable length submodel - declare a pointer */
 		declare_pointer(L, NameBase, Name),
 		% create a root bstree node for it
-	        append_atoms(NameBase, root, NameRoot),
-	        declare_pointer(L, NameRoot, NameRootPtd),
-	        strings_direct(L, variable_declaration,
-			       [bstree_node, NameRootPtd, []], Indent, Stream),
+	        % append_atoms(NameBase, root, NameRoot),
+	        % declare_pointer(L, NameRoot, NameRootPtd),
+	        % strings_direct(L, variable_declaration,
+		% 	       [bstree_node, NameRootPtd, []], Indent, Stream),
 		UseDims = [];
 	    Name = NameBase,
 		/* get_node_size(SymbolicName, UseDims) */ UseDims = Dims);
