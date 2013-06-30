@@ -69,7 +69,9 @@ proc Disaggregate {parent title colour image imgpos type interp \
     pack $t.simple.notes -side bottom -padx 4 -pady 4 -fill both -expand true
 
     frame $t.simple.left
-    
+    set new 0
+
+    if {$new} {
     TitleFrame $t.simple.left.count \
 	-text [tr. "Instances:"]
     set disaggregate(countf) [GetFrame $t.simple.left.count]
@@ -82,22 +84,31 @@ proc Disaggregate {parent title colour image imgpos type interp \
 	      -textvariable disaggregate(cbxv) -values $disaggregate(labels)] \
 	-anchor w -side left -padx 4 -pady 4
     bind $disaggregate(countf).mb <<ComboboxSelected>> SetupDisagExtras
-    
-#    ttk::frame $countf.radio
-#    foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
-#        ttk::radiobutton $countf.radio.$rbutton \
-#	    -text [tr. [lindex $rbutton 1]] -value [lindex $rbutton 0] \
-#	    -variable disaggregate(type) -command "SetHighlights $countf"
-## TRANSLATOR: These are the second strings in each pair of braces after rbutton
-#        pack $countf.radio.$rbutton -anchor w
-#    }
-#    pack $countf.radio -anchor w -side left
-    
     label $disaggregate(countf).detail -width 10
     pack $disaggregate(countf).detail -side left -anchor s \
 	-pady 4 -fill x -expand 1
-    pack $t.simple.left.count -padx 4 -pady 4 -fill both -expand true
     ShowDisagSetup ;# Set current type
+
+    } else {
+    TitleFrame $t.simple.left.count \
+	-text [tr. "Control of number of instances:"]
+    set countf [GetFrame $t.simple.left.count]
+
+    ttk::frame $countf.radio
+    foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
+        ttk::radiobutton $countf.radio.$rbutton \
+	    -text [tr. [lindex $rbutton 1]] -value [lindex $rbutton 0] \
+	    -variable disaggregate(type) -command "SetHighlights $countf"
+# TRANSLATOR: These are the second strings in each pair of braces after rbutton
+        pack $countf.radio.$rbutton -anchor w
+    }
+    pack $countf.radio -anchor w -side left
+    ::ttk::entry $countf.value -textvariable disaggregate(icount) -width 10
+    pack $countf.value -side left -anchor s -pady 4 -fill x -expand 1
+    bind $countf.value <Return> $okCmd
+    }
+
+    pack $t.simple.left.count -padx 4 -pady 4 -fill both -expand true
     
     TitleFrame $t.simple.left.colour -text [tr. "Background shade:"]
     set colourf [GetFrame $t.simple.left.colour]
@@ -330,6 +341,21 @@ proc Disaggregate {parent title colour image imgpos type interp \
 	set disaggregate(xlibs) {}
     }
     PackItUp $tt
+
+    if {!$new} {
+    set icount {}
+    if [string compare $disaggregate(icount) 1] {
+        foreach newIndex [split $disaggregate(icount) ,] {
+            if {[string is double $newIndex] || \
+                        [string match size(*) $newIndex]} {
+                lappend icount $newIndex
+            } else {
+                lappend icount \"$newIndex\"
+            }
+        }
+        set icount [join $icount ,]
+    }
+    }
 
     if {$disaggregate(done)} {
 	set stepIndx [lsearch $stepNames $disaggregate(step)]
@@ -909,6 +935,19 @@ proc PutSize {img} {
     }
     # set them so I can read later
     $img config -width $width -height $height
+}
+
+proc SetHighlights {t} {
+    global disaggregate
+    
+    switch -regexp $disaggregate(type) {
+        none|population|records {
+            $t.value configure -state disabled
+        }
+        simple|generated {
+            $t.value configure -state normal
+        }
+    }
 }
 
 set progressBoxCount 0

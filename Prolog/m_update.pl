@@ -353,7 +353,7 @@ get_unit_conversion(Remote, Local,
 	        Subs = [var],
 	        SourceLocation = in_8_nbrs,
 	        Index = -2;
-	      get_all_dims(LocalModel, Subs),
+	      fail, get_all_dims(LocalModel, Subs), % disabled for 6.0p1
 	        \+ Subs = [],
 	        SourceLocation = up_hierarchy,
 	        Index = -1),
