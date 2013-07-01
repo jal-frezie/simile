@@ -519,7 +519,12 @@ declare_submodel_structures(Language, [Instance | Instances], Used, Graphs) :-
 	Instance = instance(submodel, Node, xrefs(Model, Bases, _), 
 		Name, Type-_),
 	caption_for(Node, Capt),
-	generate_name(Language, Capt, Name, Used, [type, made]),
+	(is_population(Node) ->
+	    Spares = [type, made, meta, count];
+	  variable_size(Node) ->
+	    Spares = [type, made, meta];
+	  Spares = [type, made]),
+	generate_name(Language, Capt, Name, Used, Spares),
 	append_atoms(Name, type, Type),
 	make_assoc_loop_names(Language, Node, Used, Bases),
 	declare_structure(Language, Model, Used, HeadGraphs),
