@@ -175,21 +175,26 @@ namespace eval slide139 {
                 -command [namespace code [list Remove $winId $title]]
         if {$useDim==-1} {
             set defVal [GetDefVal $initVal -1 0]
-	    if {[string equal EVENT $class]} {
+	    if {![set live [expr {$class ne "EVENT"}]]} {
 		set holder [winfo parent $f]
 		pack [::ttk::button $f.zap -style style$holder \
-			  -image $::iconImages(zap)] -side right
+			  -image $::iconImages(zap) \
+			  -command [namespace code \
+					[list SliderEvent $node {}]]] \
+		    -side right
 		BindPopup $f.zap [tr. {Trigger an event now with this magnitude}]
 	    }
             switch -glob $type {
                 FLAG {
                     pack [checkbutton $f.check -text [lindex $levels end] \
 			      -offvalue 0 -onvalue 1 -relief ridge \
-			      -variable widgetSeln($node) -command \
-			      [namespace code [list WidgetSelnToC \
-						   $node $fixed]]]
+			      -variable widgetSeln($node)]
                     set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
                     BindPopup $f.check "$comment"
+		    if {$live} {
+			$f.check configure -command \
+			    [namespace code [list WidgetSelnToC $node $fixed]]
+		    }
 		} ENUM(*) {
 #		    ComboBox $f.combo -values $possVals -editable 0 \
 #			-text [lindex $possVals [expr $defVal-1]] \
@@ -198,8 +203,8 @@ namespace eval slide139 {
                     set bxMenu [menu $f.combomenu -tearoff 0]
                     foreach choice $possVals {
                         $bxMenu add command -label $choice -command \
-                                [namespace code [list SetChoiceNumber $f.combo \
-                                $node $fixed $choice]]
+			    [namespace code [list SetChoiceNumber $f.combo \
+						 $node $fixed $choice $live]]
                     }
                     ::ttk::menubutton $f.combo -menu $bxMenu
                     $bxMenu invoke [expr $defVal-1]
@@ -211,26 +216,23 @@ namespace eval slide139 {
 			-tickinterval $gap -resolution $spacing \
 			-bg $lbg -troughcolor $dbg -activebackground $fbg \
 			-variable widgetSeln($node)
-		    if {[string equal EVENT $class]} {
-			$f.zap configure -command \
-			  [namespace code [list SliderEvent $node {} $f.scale]]
-		    } else {
-			$f.scale configure -command [namespace code \
-					  [list SetArrayIfUsed $node $fixed {}]]
-		    }
                     pack $f.scale -side right -fill x -expand true
                     pack [label $f.caption -text [lindex $levels end] \
 			      -bg $lbg -width 12]
                         
                     pack [entry $f.entry -textvariable widgetSeln($node) \
 			      -width 8] -padx 1 -pady 1
-                    bind $f.entry <KeyRelease> \
+		    if {$live} {
+			$f.scale configure -command [namespace code \
+					  [list SetArrayIfUsed $node $fixed {}]]
+			bind $f.entry <KeyRelease> \
                             [namespace code [list WidgetSelnToC $node $fixed]]
+		    }
                 }
 	    }
 	    set widgetSeln($node) $defVal
             set allVals $defVal
-        } else {
+	    } else {
             #	    set useTrans [lindex $trans $useDim]
 	    if {[string equal EVENT $class]} {
 		set holder [winfo parent $f]
@@ -287,8 +289,9 @@ namespace eval slide139 {
                         set bxMenu [menu $f.elt$index.cmenu -tearoff 0]
                         foreach choice $possVals {
                             $bxMenu add command -label $choice -command \
-                                    [namespace code [list SetChoiceNumber \
-                                    $f.elt$index.c $node $fixed $choice $index]]
+				[namespace code [list SetChoiceNumber \
+						     $f.elt$index.c $node \
+						     $fixed $choice 1 $index]]
                             
                         }
                         ::ttk::menubutton $f.elt$index.c -menu $bxMenu
@@ -390,14 +393,15 @@ namespace eval slide139 {
         SetArrayIfUsed $node $fixed $args $widgetSeln($sub)
     }
     
-    proc SliderEvent {node indices scale} {
+    proc SliderEvent {node indices} {
 	global myNode
 
-	set sub [join [concat [list {} NOW] $indices] ,]
+#	set sub [join [concat [list {} NOW] $indices] ,]
 #	SetArrayIfUsed $node 0 $indices [$scale get]
 	MarkEvtParamActive $myNode $node [RunningInC $myNode]
-	ListToArray $myNode $node $sub $sub {} {} [$scale get] 1 \
-	    [RunningInC $myNode]
+#	ListToArray $myNode $node $sub $sub {} {} [$scale get] 1 \
+#	    [RunningInC $myNode]
+	eval [list WidgetSelnToC $node 0] $indices
     }
 
     proc SetArrayIfUsed {node fixed indices value} {
@@ -416,10 +420,14 @@ namespace eval slide139 {
 	ListToArray $myNode $node $sub $sub {} {} $value 0 [RunningInC $myNode]
     }
     
-    proc SetChoiceNumber {cbox node fixed choice args} {
+    proc SetChoiceNumber {cbox node fixed choice live args} {
+	global widgetSeln
 	set sub [join [concat [list $node] $args] ,]
+	set widgetSeln($sub) [expr {[${cbox}menu index $choice]+1}]
 	$cbox configure -text $choice
-	SetArrayIfUsed $node $fixed $args [expr {[${cbox}menu index $choice]+1}]
+	if {$live} {
+	    SetArrayIfUsed $node $fixed $args $widgetSeln($sub)
+	}
     }
     
     # If we load a file containing slider values, we only want to set the sliders

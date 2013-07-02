@@ -13,8 +13,8 @@ models saved by Simile.
 \tabular{ll}{
 Package: \tab Simile\cr
 Type: \tab Package\cr
-Version: \tab 1.2\cr
-Date: \tab 2012-10-11\cr
+Version: \tab 1.3\cr
+Date: \tab 2013-06-01\cr
 License: \tab Unrestricted\cr
 LazyLoad: \tab yes\cr
 }
