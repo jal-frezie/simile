@@ -303,6 +303,7 @@ click(Xpt, Ypt, CD) :-
 	check_snap,
 	find_current(Wid),
 	Wid shows_model Parent,
+	save_params([0,0,1,1], 0, Parent),
 	(get_phase(targetting),
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
@@ -310,7 +311,6 @@ click(Xpt, Ypt, CD) :-
 	    menu'><'set_cursor_for(Mode),
 	    drag(Xpt, Ypt);
 	get_phase(peruse),
-	    save_params([0,0,1,1], 0, Parent),
 	    set_original_click(Xpt, Ypt),
 	    click_in(Wid, [Xpt, Ypt], [0, 0, 1, 1], 0, Parent, CD)).
 
@@ -2085,13 +2085,14 @@ tie_ends(New_obj, Start_thing, Terminator) :-
 /* Clever bit: reuse route of the rubberband link for the newly added one */
 reuse_route(New_obj, LastArc) :-
         find_current(Wid),
-	Wid shows_model Parent,
+%	Wid shows_model Parent,
 	find_base(LastArc, BowtieArc),
         ((NewArc = LastArc; m_class'><'sequence(NewArc, LastArc)),
 	    find_all_comps(Node, NewArc),
-	    get_incomplete(Node-ScreenRoute),
-	    translate_between(Parent, Node, _D, Trans),
-	    translate(ScreenRoute, Trans, Route),
+%	    get_incomplete(Node-ScreenRoute),
+%	    translate_between(Parent, Node, _D, Trans),
+%	    translate(ScreenRoute, Trans, Route),
+	    get_incomplete(Node-Route),
 	    local_ends(NewArc, Start, Finish),	    
 	    Route = [LastPt, MidPt | Tail],
 	    suffix([FirstPt], [MidPt | Tail]),

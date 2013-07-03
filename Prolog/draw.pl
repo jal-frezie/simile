@@ -569,20 +569,25 @@ find_fatness([_,_,FatX,FatY], Fatness) :-
 	Fatness is 100/sqrt(FatX*FatY).
 
 draw_incomplete(Line_type) :-
-	get_incomplete(_Parent-Draw_coords),
-	find_current(Window_id),
-	get_translation(Trans),
+	get_incomplete(Parent-Draw_coords),
+	contains(Backgnd, Parent),
+%	find_current(Window_id),
+%	get_translation(Trans),
+	Window_id shows_model Backgnd,
+	translate_between(Backgnd, Parent, _D, Trans),
+	untranslate(Draw_coords, Trans, ScreenCoords),
 	find_fatness(Trans, Fatness),
 	use_style_for(Line_type, Draw_type),
-	Draw_command =.. [Draw_type, Window_id, Draw_coords, 1,
+	Draw_command =.. [Draw_type, Window_id, ScreenCoords, 1,
 			  Fatness, incomplete, [unfinished_line]],
 	call(Draw_command),
 	fail;
 	true.
 
 remove_old_incomplete :-
-	find_current(Window_id),
-	kill_featured(Window_id, unfinished_line).
+	Window_id shows_model _,
+	kill_featured(Window_id, unfinished_line),
+	fail; true.
 
 draw_rubberband(Style) :-
 	get_incomplete(Box),
@@ -627,32 +632,37 @@ draw_links(Type, Top, Up_list, Down_list) :-
 	/* assume that there is always something to draw */
 	find_current(Wid),
 	Wid shows_model Backgnd,
-	translate_between(Backgnd, Top, _D, Trans),
-/*	remove_old_incomplete, (done on drag now to avoid cluttering target */
-	untranslate(Route, Trans, Screen_route),
-	add_incomplete(Top-Screen_route),
 	(var(Rest), !; 
-		last(Screen_route, In), 
-		draw_up_links(Type, Rest, out, Trans, Last, In)),
+		last(Route, In), 
+		draw_up_links(Type, Rest, out, Backgnd, Last, In)),
 	(var(Rest2), !; 
-		Screen_route = [Out | _], 
-		draw_up_links(Type, Rest2, in, Trans, Last2, Out)),
+		Route = [Out | _], 
+		draw_up_links(Type, Rest2, in, Backgnd, Last2, Out)),
+%	(translate_between(Backgnd, Top, _D, Trans) ->
+/*	remove_old_incomplete, (done on drag now to avoid cluttering target */
+%	    untranslate(Route, Trans, Screen_route),
+%	    add_incomplete(Top-Screen_route);
+%	  true),
+	add_incomplete(Top-Route),
 	draw_incomplete(Type).
 
 draw_up_links(_, [], _,_,_,_).
 
-draw_up_links(Type, [Node | Rest], Dir, Trans, Prev, Point) :-
-	add_to_translation(Trans, Prev, New_trans),
+draw_up_links(Type, [Node | Rest], Dir, Backgnd, Prev, Point) :-
+	add_to_translation([0,0,1,1], Prev, New_trans),
 	translate(Point, New_trans, Border_point),
 	(atom(Node), !,
 		route_part_link(Type, Dir, [Node | Rest], Border_point, Route);
 	(Dir = in, shape_route(Type, Border_point, Node, Route);
 	Dir = out, shape_route(Type, Node, Border_point, Route))),
-	untranslate(Route, New_trans, Screen_route),
-	add_incomplete(Prev-Screen_route),
-	(Dir = in, Screen_route = [Next | _];
-	Dir = out, last(Screen_route, Next)),
-	draw_up_links(Type, Rest, Dir, New_trans, Node, Next).
+%	(translate_between(Backgnd, Prev, _D, Trans) ->
+%	 untranslate(Route, Trans, Screen_route),
+%	add_incomplete(Prev-Screen_route);
+%	 true),
+	add_incomplete(Prev-Route),
+	(Dir = in, Route = [Next | _];
+	Dir = out, last(Route, Next)),
+	draw_up_links(Type, Rest, Dir, Backgnd, Node, Next).
 
 /*
 show_invisible_links(Links) :-
