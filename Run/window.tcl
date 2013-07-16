@@ -331,6 +331,9 @@ proc ClickObj { x y winId X Y action} {
 			pack $bar.minlabel -side left -after $bar.equation
 		    }
 		}
+# next two will be null throughout unless type is limit
+		set equationbar($winid,initMax) [$bar.max get]
+		set equationbar($winid,initMin) [$bar.min get]
                 restore_equation $winid $bar
             }
         }
@@ -379,7 +382,9 @@ proc SafeEqnBarEdit {winId} {
     if {[string equal normal [$bar.equation cget -state]]} {
 	SetEqnButtonState $bar disabled ;# do not do twice
 #puts [list [$bar.equation get] is $equationbar($winId,initText)]
-        if {![string eq [$bar.equation get] $equationbar($winId,initText)]} {
+        if {[$bar.equation get] ne $equationbar($winId,initText) || \
+	    [$bar.max get] ne $equationbar($winId,initMax) || \
+	    [$bar.min get] ne $equationbar($winId,initMin)} {
 	    set capt [string range [$bar.label cget -text] 0 end-3]
 	    switch [PrefValue custom(leaveEqnBar) leaveEqnBar] \
 		[tr. {Apply change}] {
