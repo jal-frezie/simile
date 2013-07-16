@@ -296,7 +296,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 		SoughtExpr = check_limit(SubbedExpr, Lower, Upper, Flags,
 					 Step, Diffs),
 		FinalExpr = with_phase(Step, [], SoughtExpr),
-		MagBase = int,
+		(Flags = 3 -> MagBase = int; MagBase = boolean),
 		is_instance(internal, hist(Node), none, Diffs, diffs-Units,
 			    DiffSt),
 		Instances = [DiffSt, Instance];
