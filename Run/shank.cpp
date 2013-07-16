@@ -1055,16 +1055,23 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       *end = xtime;
       return userDefStop;
     }
-    // call update purely to drive events...and last() etc
-    // -- removed because last was unwanted and rest seemed unnecessary
-    // if (userDefStop->targetId || seriesEvtSign) { 
+
+    // If an event has happened and changed a state variable, we need
+    // an extra update to make it actually change, followed by a
+    // propagate to get the model consistent, so derivatives of
+    // changed states come out right...so far, works but last() set
+    // 2wice
+
+    if (userDefStop->targetId || seriesEvtSign) { 
       // an event is waiting to take effect
       // set_dts(big_phase, xtime); no need, mode 10/11 stops move
-      // SetdT(0, 10+(how_int==RUNGE_KUTTA)); 
-      // loadedInst->updatemodel(big_phase);
-      // SetdT(0, (how_int==RUNGE_KUTTA)); // start prediction cycle
-      // if (loadedInst->do_evalmodel(wee_phase)) break;
-    // }
+      advance_time(big_phase, 0); // unsets event(nextSeries)
+      SetdT(0, 10+(how_int==RUNGE_KUTTA)); 
+      loadedInst->updatemodel(big_phase); // b_p needed to apply squirt
+      SetdT(0, (how_int==RUNGE_KUTTA)); // start prediction cycle
+      if (loadedInst->do_evalmodel(big_phase)) break;
+      // b_p needed to cancel series event
+    }
 
     while(!made_step) {
       // aim for next predicted event if closer than end

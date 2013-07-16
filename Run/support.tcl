@@ -1125,15 +1125,20 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 	if {[CheckGUI $node $xtime ph$bigPhase]} {
 	    return [list 0 $xtime]
 }
-# call update purely to drive events...and last() etc
-# -- removed because last was unwanted and rest seemed unnecessary
-#	if {$event(culprit) || $event(seriesSign)} {
+
+# If an event has happened and changed a state variable, we need an extra
+# update to make it actually change, followed by a propagate to get the 
+# model consistent, so derivatives of changed states come out right...
+# so far, works but last() set 2wice
+	if {$event(culprit) || $event(seriesSign)} {
 # an event is waiting to take effect
-#	    set ts(0) [expr {10+$intMtd}] ;# no change due to flows
-#	    do_model updatemodel $bigPhase
-#	    set ts(0) $intMtd ;# start prediction cycle
-#	    do_model evalmodel $bigPhase
-#	}
+	    # SetDTs $bigPhase $xtime ;# no need, mode 10/11 stops move
+	    AdvanceTime $node $bigPhase 0 ;# unsets event(nextSeries)
+	    set ts(0) [expr {10+$intMtd}]
+	    do_model updatemodel $bigPhase ;# bP needed to apply squirt
+	    set ts(0) $intMtd ;# start prediction cycle
+	    do_model evalmodel $bigPhase ;# bP needed to cancel series event
+	}
 
         while {!$madeStep} {
 	    # aim for next predicted event if closer than end
@@ -1398,6 +1403,7 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 			incr hiWraps
 		    } else {
 			set hiBound -1
+
 		    }
 		}
 	    } elseif {$ptCount} {
