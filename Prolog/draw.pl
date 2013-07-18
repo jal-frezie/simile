@@ -571,8 +571,8 @@ find_fatness([_,_,FatX,FatY], Fatness) :-
 draw_incomplete(Line_type) :-
 	get_incomplete(Parent-Draw_coords),
 	contains(Backgnd, Parent),
-%	find_current(Window_id),
-%	get_translation(Trans),
+	find_current(Window_id),
+% comment out above line to show incompletes in all windows
 	Window_id shows_model Backgnd,
 	translate_between(Backgnd, Parent, _D, Trans),
 	untranslate(Draw_coords, Trans, ScreenCoords),
