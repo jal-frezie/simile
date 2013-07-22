@@ -16,11 +16,12 @@ proc Disaggregate {parent title colour image imgpos type interp \
                 icount xproc xinc xlibs eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
     }
-#    if [llength $icount]>0 {
-#        set disaggregate(icount) [join $icount ,]
-#    } else  {
-#        set disaggregate(icount) 1
-#    }
+# next 5 lines not needed for version with special submodels?
+    if [llength $icount]>0 {
+        set disaggregate(icount) [join $icount ,]
+    } else  {
+        set disaggregate(icount) 1
+    }
     #puts $disaggregate(icount)
     foreach stepId [list {Initialize only} {New params only} {Reset only} \
 			1st 2nd 3rd 4th 5th 6th 7th] {
