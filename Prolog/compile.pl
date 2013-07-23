@@ -2028,7 +2028,7 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		reverse(BLoops, AllLoops),
 		all(compile, get_pass_ends,
 		    [build([D1, D1 | AllLoops]), build([D2, D2 | OpenLoops]),
-		     build(LastStep)]),
+		     build(LastStepTail)]),
 		all(inters, indices_for,
 		    [build(AllLoops), append(LoopInds, []), append(_Ts, [])]),
 		append(LoopInds, LocalInds, Inds),
@@ -2044,14 +2044,29 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		    member(can_find_id(IdCond), IdConds),
 		    /* check condition is for this level...oh sod it */
 		    /* find last looping construct */
-		    (append(OuterLoops, [make(_,_,_,_,
-					      [open_index(IdRef, N)])
+		    (append(OuterLoops, [make(_,_,_,_, ExLoop)
 					| SmLoop], OpenLoops),
-			member(SmLoop,
-			   [[make(_,_,_,_, [start_submodel(_,_,_,_)])],[]]), !;
-		    find_all_comps(AssocModel, IdCond),
-		    caption_for(AssocModel, IdCapt),	
-		    raise_exception(bad_instance_lookup(IdCapt))),
+		        (ExLoop = [open_index(IdRef, Bound)],
+			    member(SmLoop,
+				   [[make(_,_,_,_, [start_submodel(_,_,_,_)])],
+				    []]),
+			    LookupAct = make(none, []-_, _,_,
+					     [assign(IdRef, IxExpr)]),
+			    (Bound = pra_bound(PraPtr, PraName),
+			        append_atoms(PraName, made, MadeBound),
+			      UpBound = arr(PraPtr, MadeBound, []);
+			        UpBound = Bound),
+			    ExistTest = (IxExpr>0 && IxExpr<=UpBound),
+			    LastStep = LastStepTail;
+			  ExLoop = [start_submodel(N,T,BP, vm_loop(_,_,_,_))],
+			    SmLoop = [],
+			    get_pass_ends(sm(N,T,BP, vm_retrieve(IxExpr)),
+					  LookupAct, LookupEnd),
+			    ExistTest = 1,
+			    LastStep = [LookupEnd | LastStepTail]), !;
+		      find_all_comps(AssocModel, IdCond),
+		        caption_for(AssocModel, IdCapt),	
+		        raise_exception(bad_instance_lookup(IdCapt))),
 		    append_atoms(Submodel, cond, IdVar),
 		    /* OK Normally a reference to index(n) in a vm submodel
 		    gets turned to an element of instanceid, but this will not
@@ -2060,17 +2075,12 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		    replace_subexps(IdExpr, compile, indices_direct,
 				    [Ptr | Inds], top_down, _, IxExpr),
 		    IdRef = arr('', IdVar, []),
-		    Next = [TestLoop,
-			    make(none,[]-_,_,_, [assign(IdRef, IxExpr)])
-			   | SmLoop],
+		    Next = [TestLoop, LookupAct | SmLoop],
 		    append(OuterLoops, Next, UseLoops),
-		    (N = pra_bound(PraPtr, PraName),
-			append_atoms(PraName, made, MadeBound),
-			UpBound = arr(PraPtr, MadeBound, []);
-		    UpBound = N),
-		    append(Slower, [[make(_, IdConds-_, _,_, [assign(arr(Zn, TcVar, []), IxExpr>0&&IxExpr<=UpBound)]) | NoIdConds] | Faster], UseSubPasses), !;
+		    append(Slower, [[make(_, IdConds-_, _,_, [assign(arr(Zn, TcVar, []), ExistTest)]) | NoIdConds] | Faster], UseSubPasses), !;
 		UseLoops = OpenLoops,
-		    UseSubPasses = SubPasses),
+		    UseSubPasses = SubPasses,
+		    LastStep = LastStepTail),
 				    
 		get_base_ptrs(BLoops, _, BasePtrs),
 		extract_action(Outer, [bound_gen_loop(ParentPtr, Submodel)]),

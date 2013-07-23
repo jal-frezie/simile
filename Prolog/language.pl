@@ -89,20 +89,18 @@ do_assignment(L, [open_index(glob(Loop, Inds), Bound) | Clauses],
 	    fail;
 	do_assign_list(L, Later, Indent, Used, Stream)).
 
-/* Start fixed membership submodel. Note that we may have selected an index
+/* Start submodel. Note that we may have selected an index
 explicitly (using element(...)), so it can contain any expression, even a
 graph. */
 
-do_assignment(L, [start_submodel(Name, Top, Pointer,
-				 fm_loop(IndExprs,_, Alarm, _)) | Clauses],
+do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	      Indent, Used, Stream) :-
-
-	/* some of this belongs in the next disjunction */
-
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, PointerForm),
 	declare(L, Pointer, PointerForm, Type, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
+
+	((LoopSpec = fm_loop(IndExprs,_, Alarm, _),
 	all(language, make_evaluation_routine,
 	    [unify(L), build(IndExprs), unify(Used), build(RefIndices)]),
 	all(render, make_expr,
@@ -116,84 +114,65 @@ do_assignment(L, [start_submodel(Name, Top, Pointer,
 	    make_evaluation_routine(L, TryCond, Used, TryRef),
 	    excrete(L, while_start, TryRef, Indent, Stream),
 	    Indent1 is Indent + 4,
-	    (do_assign_list(L, MyLoop, Indent1, Used, Stream),
-		refer_value(L, AlarmVar, AlarmRef),
-		excrete(L, if_start, AlarmRef, Indent1, Stream),
-		Indent2 is Indent1 + 4,
-		excrete(L, break, _, Indent2, Stream),
-		excrete(L, end(cond), AlarmRef, Indent1, Stream),
-		excrete(L, end(while), alarm, Indent, Stream),
-		fail;
-	    do_assign_list(L, Later, Indent, Used, Stream));
+	    do_assign_list(L, MyLoop, Indent1, Used, Stream),
+	    refer_value(L, AlarmVar, AlarmRef),
+	    excrete(L, if_start, AlarmRef, Indent1, Stream),
+	    Indent2 is Indent1 + 4,
+	    excrete(L, break, _, Indent2, Stream),
+	    excrete(L, end(cond), AlarmRef, Indent1, Stream),
+	    excrete(L, end(while), alarm, Indent, Stream);
 	var(Alarm),
 	    % if no alarm loop this does not start new context
 	    do_assign_list(L, MyLoop, Indent, Used, Stream),
-	    do_assign_list(L, Later, Indent, Used, Stream)).
-
-/* start non-generating vm  submodel loop;	still need to
-add context for associated submodels if it is
-variable length, otherwise add the loops to explicitly
-hunt through them */
-
-do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
-	      Indent, Used, Stream) :-
-	/* some of this belongs in the next disjunction */
-
-	/* LoopSpec = rm_loop(ArcIndex, Level, IExprs), !,
-	    check_local_var(L, Pointer, externpointer, 'void*', Used, Temps1),
-	    refer_value(L, Pointer, PointerRef),
-
-	    length(IExprs, IndCount),
-	    make_procedure_call_chars(L, [arrange_indices, IndCount | IExprs],
-				      AIStr),
-	    name(ArrInds, AIStr),
-	    make_procedure_call_chars(L, [import_ptr, Level, Top,
-					  ArcIndex, ArrInds], LXStr),
-	    name(StartPtrRef, LXStr),
-
-	    % finish same: move pointer to next instance in chain
-	    make_procedure_call_chars(L, [advance_ptr, myClassPtr, PointerRef],
-				      AdvanceStr),
-	    name(OnPointerRef, AdvanceStr),
-	    LoadBaseRefs = []; */
-
+	    KeepContext = yes);
 	LoopSpec = vm_loop(Dims, _, BaseLoops, _),
-	append_atoms(Name, 'type*', Type),
-	append_atoms(Name, pointer, PointerForm),
-        (Dims == pop, !,
+        (Dims == pop ->
 	    append_atoms(Name, progen, ParentPtr),
 	    BasePtrs = [ParentPtr],
 	    Names = [Name];
-	all(compile, get_base_ptrs,
-	    [build(BaseLoops), append(Names, []), append(BasePtrs, [])])), !,
-	declare(L, Pointer, PointerForm, Type, Used, Indent, Stream),
-	get_rest_of_my_loop(Clauses, MyLoop, Later),
+	  (get_ground_part(BaseLoops, GndBaseLoops) -> true;
+	   GndBaseLoops = BaseLoops),
+				% quick and dirty fix, should be gnd anyway
+	    all(compile, get_base_ptrs, [build(GndBaseLoops), append(Names, []),
+					 append(BasePtrs, [])])),
 	refer_value(L, Pointer, PointerRef),
 %	all(language, declare,
 %	    [unify(L), build(BasePtrs), unify(bad), build(Types),
 %	     unify(Used), unify(Indent), unify(Stream)]),
-	(make_struct_reference(L, Top, Name, StartPointer),
-	    refer_value(L, StartPointer, StartPtrRef),
+	make_struct_reference(L, Top, Name, StartPointer),
+	refer_value(L, StartPointer, StartPtrRef),
 
-	    /* finish same: move pointer to next instance in chain */
-	    make_struct_reference(L, Pointer, next, OnPointer),
-	    refer_value(L, OnPointer, OnPointerRef),
-	    excrete(L, assignment, Pointer=StartPtrRef, Indent, Stream),
-	    ptr_compare(L, PointerRef, 0, PtrNonNull),
-	    excrete(L, while_start, PtrNonNull, Indent, Stream),
-	    Indent1 is Indent+4,
-	    all(language, declare_ptrs,
-		[build(Names), build(Types), build(BasePtrs),
-		 unify([L, Indent1, Stream])]),
-	    move_base_ptrs(L, Pointer, restore, Indent1,
-			   BasePtrs, Types, Stream),
-	    do_assign_list(L, MyLoop, Indent1, Used, Stream),
-	    excrete(L, assignment, Pointer=OnPointerRef, Indent1, Stream),
-	    excrete(L, end(while), Pointer, Indent, Stream),
-	    fail;
-	do_assign_list(L, Later, Indent, Used, Stream)).
+	/* finish same: move pointer to next instance in chain */
+	make_struct_reference(L, Pointer, next, OnPointer),
+	refer_value(L, OnPointer, OnPointerRef),
+	excrete(L, assignment, Pointer=StartPtrRef, Indent, Stream),
+	ptr_compare(L, PointerRef, 0, PtrNonNull),
+	excrete(L, while_start, PtrNonNull, Indent, Stream),
+	Indent1 is Indent+4,
+	all(language, declare_ptrs,
+	    [build(Names), build(Types), build(BasePtrs),
+	     unify([L, Indent1, Stream])]),
+	move_base_ptrs(L, Pointer, restore, Indent1,
+		       BasePtrs, Types, Stream),
+	do_assign_list(L, MyLoop, Indent1, Used, Stream),
+	excrete(L, assignment, Pointer=OnPointerRef, Indent1, Stream),
+	excrete(L, end(while), Pointer, Indent, Stream);
+	LoopSpec = vm_retrieve(VmIndex),
+	  make_evaluation_routine(L, VmIndex, Used, VmUseIndex),
+	  make_struct_reference(L, Top, Name, StartPointer),
+	  refer_value(L, StartPointer, StartPtrRef),
+	  excrete(L, assignment, Pointer = locate(StartPtrRef, VmUseIndex),
+		  Indent, Stream),
+	  refer_value(L, Pointer, PointerRef),
+	  excrete(L, if_start, PointerRef, Indent, Stream),
+	  Indent1 is Indent + 4,
+	  do_assign_list(L, MyLoop, Indent1, Used, Stream),
+	  excrete(L, end(cond), StartPtrRef, Indent, Stream)),
+	ground(KeepContext); true),
+	do_assign_list(L, Later, Indent, Used, Stream).
 
-/* Start a submodel loop with a generate/test pair inside. This happens once per time step for variable membership models apart from populations. Each possible instance of the model is either generated or pulled out of the list, for testing later. If the phase is 'new' then previously existing instances are skipped over. */
+
+	/* Start a submodel loop with a generate/test pair inside. This happens once per time step for variable membership models apart from populations. Each possible instance of the model is either generated or pulled out of the list, for testing later. If the phase is 'new' then previously existing instances are skipped over. */
 
 do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 			   BasePtrs) | Clauses],

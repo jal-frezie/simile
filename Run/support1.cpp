@@ -277,6 +277,13 @@ BOOLEAN prune (SMClass **metaptr, int id_count, ...) {
 }
 
 template <class SMClass>
+SMClass* locate (SMClass* ptr, int soughtIndex) {
+  while (ptr && ptr->instanceid[0] != soughtIndex)
+    ptr = ptr->next;
+  return ptr;
+}
+
+template <class SMClass>
 int init_pop (SMClass*** meta, double crNode, int ptCount, int channelId) {
   SMClass* submodelptr;
   int lastIndx;

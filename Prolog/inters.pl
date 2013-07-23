@@ -397,21 +397,6 @@ free_params(switch(Fixed, Var), Arg, ArgVar, 0) :-
 	ArgVar = Arg).
 
 /*
-import_path_for(Dims, Path, ArcI, Lvl0, Ptr0, LvlN, PtrN, LocalLoops, Inds) :-
-	append(Outer, [var | Inner], Dims), !,
-	    (suffix([sm(Name, _,_, vm_loop(_,_,_,_)) | InnerPath], Path), !;
-		Name = none, InnerPath = []),
-	    Lvl1 is Lvl0 + 1,
-	    make_inds_for(Outer, OutLoops, OutInds),
-	    import_path_for(Inner, InnerPath, ArcI, Lvl1, Ptr1,
-			    LvlN, PtrN, InnerLoops, Inds),
-	    append(InnerLoops, [sm(Name, Ptr0, Ptr1,
-				   rm_loop(ArcI, Lvl0, OutInds)) | OutLoops],
-		   LocalLoops);
-	LvlN = Lvl0,
-	    PtrN = Ptr0,
-	    make_inds_for(Dims, LocalLoops, Inds).
-
 make_intermediates: This introduces variables for any intermediate results
 required while evaluating a variable. The process is explained in great detail
 in exec_contexts.txt. Meantime, here is the list of arguments: */
@@ -630,7 +615,7 @@ make_intermediates(
 	so lets work that out... */
 	(Functor = count,
 	    IncrExpr = FillRef+1,
-	    (nonvar(SumLoop), SumLoop = set(_, loop(SourceRef,_)),
+	    (nonvar(SumLoop), SumLoop = [set(_, loop(SourceRef,_))],
 		(integer(SourceRef),
 		    Units = const_int;
 		atom(SourceRef), \+ SourceRef = records,
@@ -1030,10 +1015,13 @@ Now one that uses a special conditional level */
 			part_result(AContext, ASetups, AArgs, SourceRef)),
 	    get_model_and_loops(IContext, DestPath, _, ILoops, IBase),
 	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
- 	    (break_at_last_loop(ALoops, TailLoops,
- 	                       set(IntIndxRef, loop(Limit,_)), ItemLoops);
+ 	    (break_at_last_loop(ALoops, TailLoops, [PickedLevel], ItemLoops),
+	     (PickedLevel = set(IntIndxRef, loop(Limit,_)),
+	         RetrieveLoops = [],
+	         type_ind(Limit, XpectType);
+	       PickedLevel = sm(N, UP, DP, vm_loop(_, [XpectType | _],_,_)),
+	         RetrieveLoops = [sm(N, UP, DP, vm_retrieve(IntIndxRef))]);
 		throw(only_works_on_array(element, Array))),
-	    type_ind(Limit, XpectType),
 	    (NeedType = XpectType;
 	      % bodge: if building code, bounds have been made integer, so
 	      % accept boolean or ET as index
@@ -1060,7 +1048,7 @@ Now one that uses a special conditional level */
 	    add_extra_dependencies(IContext, DestPath, IArgs, IWaits),
 	    append(AArgs, IWaits, Args),
 	    longest_path([ABase, IBase], EltBase),
- 	    append(TailLoops, ItemLoops, EltLoops),
+ 	    append([TailLoops, RetrieveLoops, ItemLoops], EltLoops),
  	    (special_combine_paths(EltLoops, ILoops, [], ResultLoops), !;
 		throw(cannot_combine_argument_dimensions(Source))),
  	    append(ResultLoops, EltBase, SourceContext);
@@ -1817,7 +1805,7 @@ merge_contexts([J | K], L, M) :-
 same_context(C1, C2) :-
 	\+ (C1 = sm(_, P1, _, L),
 	       C2 = sm(_, P2, _, L),
-	       \+ L = rm_loop(_,_,_), % pointers meaningless -- syntax check
+	       \+ L = vm_loop(_,_,_,_), % pointers meaningless -- syntax check
 	       \+ P1 == P2),
 	C1 = C2.
 
@@ -1825,17 +1813,29 @@ same_context(C1, C2) :-
 
 special_combine_paths(Datum, Index, Delayed, Joint) :-
 	break_at_last_loop(Index, IInside, ILoop, IOutside),
-	break_at_last_loop(Datum, DInside, DLoop, DOutside), !,
+	break_at_last_loop(Datum, DInside, DLoop, DOutside),
+	\+ DLoop = [sm(_,_,_, vm_retrieve(_)) | _], !,
 	    DLoop = ILoop,
 	    append(DOutside, Delayed, AllDelayed),
  	    special_combine_paths(DInside, IInside, AllDelayed, InJoint),
 	    append(InJoint, [ILoop | IOutside], Joint);
 	append([Datum, Delayed, Index], Joint).
 	
+%break_at_last_loop(SubLoops, TailLoops, SumLoop, ItemLoops) :-
+%	append(TailLoops, [SumLoop | ItemLoops], SubLoops),
+%	loops(SumLoop),
+%	\+ (member(OtherLoop, ItemLoops), loops(OtherLoop)).
+
 break_at_last_loop(SubLoops, TailLoops, SumLoop, ItemLoops) :-
-	append(TailLoops, [SumLoop | ItemLoops], SubLoops),
-	loops(SumLoop),
-	\+ (member(OtherLoop, ItemLoops), loops(OtherLoop)).
+	append(AllLoops, ItemLoops, SubLoops),
+	\+ (member(OtherLoop, ItemLoops), loops(OtherLoop)),
+	append(TailLoops, SumLoop, AllLoops),
+	(SumLoop = [Iterator];
+	 append([sm(_,_,_, vm_retrieve(_)) | Opens], [Iterator], SumLoop),
+	 \+ (member(OtherLoop, Opens),
+	     loops(OtherLoop),
+	     \+ OtherLoop = sm(_,_,_, vm_retrieve(_)))),
+	loops(Iterator).
 
 /* Combine contexts. Takes a source context, a context in which a number
 of other sources are being assigned to the destination and a dest
@@ -2070,7 +2070,7 @@ make_inds_for([], [], []).
 
 make_inds_for([Bound | RB], Sets, [Ind | RI]) :-
 	(Bound == var, !,
-	    Level = sm(_,_,_, rm_loop(_,_,_));
+	    Level = sm(_,_,_, vm_loop(_,_,_,_));
 	Level = set(Ind, loop(Bound,_))),
 	make_inds_for(RB, RX, RI),
 	append(RX, [Level], Sets).
@@ -2094,7 +2094,7 @@ building_dims_and_indices(set(I, loop(_,L)), L, I).
 
 loops(set(_, loop(_,_))).
 loops(sm(_,_,_, vm_loop(_,_,_,_))).
-loops(sm(_,_,_, rm_loop(_,_,_))).
+loops(sm(_,_,_, vm_retrieve(_))).
 loops(cond_section(_)).
 
 get_model_and_loops(Context, Dest, Path, Loops, Base) :-
