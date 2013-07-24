@@ -1093,10 +1093,9 @@ proc TclResetModel {node t0 doingRK topPhase} {
     }
     set adapt(curFreq) $steps($phasecount)
     set adapt_maxerr 0 ;# just so it is defined at first comparison
-    UpdateTimeSeries $node $t0
+    set event(nextSeries) [UpdateTimeSeries $node $t0]
     set event(culprit) 0
     do_model evalmodel [set dts(0) $topPhase]
-    set event(nextSeries) [expr {$adapt(curFreq)>0?Inf:-Inf}]
     return 1
 }
 
