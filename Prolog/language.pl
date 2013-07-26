@@ -742,7 +742,8 @@ move_base_ptrs(L, Pointer, Action, Indent,
 	    right type -- the array in which the assoc model
 	    stores them is type (void *) */
 	    (L = c,
-	        sicstus_format_to_chars("(~a)~a", [Type, Target], CastTgtStr),
+	        sicstus_format_to_chars("static_cast<~a>(~a)", [Type, Target],
+					CastTgtStr),
 		name(CastTgt, CastTgtStr);
 	    L = tcl,
 	        refer_value(L, Target, CastTgt)),

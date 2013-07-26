@@ -205,6 +205,8 @@ render(c, class_declaration, Instance, Indent, ClassDecl) :-
 	(nonvar(SymbolicName),
 	    (SymbolicName = root,
 		Abstract = 'InstanceOfModel';
+	      variable_size(SymbolicName),
+	        Abstract = vm_submodeltype;
 	      Abstract = submodeltype), !,
 	    sicstus_format_to_chars( "~*sclass ~w : public ~a {",
 			 [Indent, " ", Name, Abstract], HeaderStr),

@@ -72,6 +72,11 @@ public:
   virtual void* get_pointer(int id, int** dims) = 0;
 };
 
+class vm_submodeltype : public submodeltype {
+public:
+  BOOLEAN new_instance;
+};
+
 // Binary search tree node with pointer to submodel instance
 class bstree_node {
  public:

@@ -651,7 +651,7 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 	    (is_population(SymbolicName), !,
 		DummyCompDims = [1],
 		DeclsOnly = [instance(internal, baseptrs,_,
-					baseptrs, 'void*'-[1]),
+					baseptrs, 'submodeltype*'-[1]),
 			     instance(system, _,_, channelId, int-[])];
 	    length(Bounds, IdCount),
 		DummyCompDims = [IdCount],
@@ -661,11 +661,10 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 		    for multiple associations.
 		    ..good job I can get away with making them void... */
 		    DeclsOnly = [instance(internal, baseptrs,_,
-					baseptrs, 'void*'-[PtrCount])];
+					baseptrs, 'submodeltype*'-[PtrCount])];
 			DeclsOnly = [])),
 	    Extras = [instance(system, next, _, next, PtrType-[]),
-		      instance(system, ids,_, instanceid, int-DummyCompDims),
-		      instance(system, isnew, _, new_instance, 'BOOLEAN'-[])];
+		      instance(system, ids,_, instanceid, int-DummyCompDims)];
 	Extras = [],
 	    DeclsOnly = []),
 	extract_instances(Model, RealDecls),
@@ -764,7 +763,7 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 		a number from -10 down indicating the data structure in the
 	        executable corresponding to the actual enumerated type. */
 	(Type = submodel,
-	    StartCases = 4,
+	    StartCases = 3,
 	    append(Tree, [Level, -1], DeepTree),
 	    (is_population(Node), !,
 		['MEMBERS'] = NewDims;
