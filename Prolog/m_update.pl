@@ -600,13 +600,19 @@ sort_for_link([Link | OtherLinks], Target, Right, Wrong) :-
 need to be able to specify which of an association's base models' indices to
 use as index(1). What this does is change the order of an association
 submodel's references to make the given role first, then change references
-in incoming links and submodels to reflect that change. */
+in incoming links and submodels to reflect that change.
 
-make_role_first(Role) :-
-	terminates(Role, Model),
+Note the references are to the sections of the links that actually
+connect to the submodel, not the section that has the can_lookup
+attribute (which is the argument). */
+
+make_role_first(ContRole) :-
+	terminates(ContRole, Model),
+	(Role = ContRole; sequence(ContRole, Role)),
+	Role is_connector from _ to Model,
 	(terminates(OtherRole, Model), % un-flag any other relations
 	    find_type(OtherRole, relation),
-	    \+ OtherRole = Role,
+	    \+ OtherRole = ContRole,
 	    find_name_host(OtherRole, OtherRole), % only proceed for host
 	    add_parameter(OtherRole, 2, can_lookup, 0),
 	    fail;
