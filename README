@@ -1,19 +1,21 @@
-Simile Version 5.8 for Linux
+Simile Version 6.0 for Linux
 ============================
 
 Before you start:
 -----------------
-You need to have the GNU c++ compiler installed. Your Linux distribution will 
-include a package for this; it will be called g++ or gcc-c++.
+Simile v6 is distributed as packages compatible with the RPM and DEB
+package management systems. Be sure you have the right package for
+your system. It should use the dependencies mechanism to pull in
+everything else it requires, including the GNU c++ compiler.
 
 To start the program:
 ---------------------
-execute Simile/System/bin/simile
-or if you have a 64-bit version
-execute Simile/System64/bin/simile
+Type 'simile' to the command line.
 
-This script can be referenced by a symbolic link, but not moved to
-another directory
+On Debian-based systems, e.g., Ubuntu, you can link to the desktop
+launcher /usr/share/simile-6.0/Run/Simile.desktop for an icon you can
+click on to launch Simile.
+
 
 License code:
 -------------
@@ -31,12 +33,12 @@ with less memory, but this will limit the size of model you can build.
 Libraries:
 ----------
 Simile requires the following GNU libraries to be installed:
-libc.so.6 (GLIBC 2.6 or higher)
+libc.so.6 (GLIBC 2.13 or higher)
 libm.so.6
 libgcc_s.so.1
 libdl.so.2
 
-These are included in all distributions based on the gcc 3.x and 4.x
+These are included in all distributions based on the gcc 4.x
 compilers. Older distributions may not be up to date; either update
 them or ask Simulistics to build copies of the executables for the
 older libraries.
