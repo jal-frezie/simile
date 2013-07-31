@@ -525,6 +525,8 @@ install:
 	tar xf payload.tar; \
 	mv Run/userinfo.tpl Run/userinfo.txt; \
 	rm payload.tar; cd -; \
+	mkdir -p $(DESTDIR)$(SHAREDIR)/man/man1; \
+	cp simile.1 $(DESTDIR)$(SHAREDIR)/man/man1; \
 	mkdir -p $(DESTDIR)$(EXEC_TGT); \
 	tar cf $(DESTDIR)$(EXEC_TGT)/payload.tar \
 		$(SYSDIR)/bin/relay \
@@ -536,8 +538,6 @@ install:
 		$(SYSDIR)/lib/Stubs/libame_dll8.5.so \
 		$(SYSDIR)/lib/Stubs/libunpacker8.5.so \
 		$(SYSDIR)/lib/lib5d.so; \
-	mkdir -p $(SHAREDIR)/man/man1; \
-	cp simile.1 $(SHAREDIR)/man/man1; \
 	cd $(DESTDIR)$(EXEC_TGT); \
 	ln -s ../../..$(INSTALL_TGT)/Examples; \
 	ln -s ../../..$(INSTALL_TGT)/Extensions; \
