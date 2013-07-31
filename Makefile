@@ -338,7 +338,6 @@ install:
 		Images/Control/stop.gif \
 		Images/HelpAboutUpper.gif \
 		Images/Icons/*.png \
-		Images/Icons/License.txt \
 		Images/Welcome.gif \
 		Images/alarm.cnv \
 		Images/bigsimile.gif \
@@ -538,6 +537,8 @@ install:
 		$(SYSDIR)/lib/Stubs/libame_dll8.5.so \
 		$(SYSDIR)/lib/Stubs/libunpacker8.5.so \
 		$(SYSDIR)/lib/lib5d.so; \
+	mkdir -p $(SHAREDIR)/man/man1
+	cp simile.1 $(SHAREDIR)/man/man1
 	cd $(DESTDIR)$(EXEC_TGT); \
 	ln -s ../../..$(INSTALL_TGT)/Examples; \
 	ln -s ../../..$(INSTALL_TGT)/Extensions; \
