@@ -2038,9 +2038,10 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		(append(Slower, [Now | Faster], SubPasses),
 		    append(IdOpens, [TestLoop, TestCond, _Cls | IdCloses], Now),
 		    append(IdOpens, IdCloses, NoIdConds),
-		    TestCond = make(_, IdConds-_, _,_,
+		    TestCond = make(TestTgt, IdConds-_, _,_,
 					  [assign(arr(Zn, TcVar, _), IdExpr)]),
 		    member(can_find_id(IdCond), IdConds),
+		    \+ TestTgt = none, % make sure not already done
 		    /* check condition is for this level...oh sod it */
 		    /* find last looping construct */
 		    (append(OuterLoops, [make(_,_,_,_, ExLoop)
@@ -2076,7 +2077,7 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		    IdRef = arr('', IdVar, []),
 		    Next = [TestLoop, LookupAct | SmLoop],
 		    append(OuterLoops, Next, UseLoops),
-		    append(Slower, [[make(_, IdConds-_, _,_, [assign(arr(Zn, TcVar, []), ExistTest)]) | NoIdConds] | Faster], UseSubPasses), !;
+		    append(Slower, [[make(none, IdConds-_, _,_, [assign(arr(Zn, TcVar, []), ExistTest)]) | NoIdConds] | Faster], UseSubPasses), !;
 		UseLoops = OpenLoops,
 		    UseSubPasses = SubPasses,
 		    LastStep = LastStepTail),
