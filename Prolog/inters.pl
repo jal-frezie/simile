@@ -1045,8 +1045,9 @@ Now one that uses a special conditional level */
 	    throw(redundant_array(Source))),
 	    
 	    append(ASetups, ISetups, Setups),
+	    add_extra_dependencies(AContext, DestPath, AArgs, AWaits),
 	    add_extra_dependencies(IContext, DestPath, IArgs, IWaits),
-	    append(AArgs, IWaits, Args),
+	    append(AWaits, IWaits, Args),
 	    longest_path([ABase, IBase], EltBase),
  	    append([TailLoops, RetrieveLoops, ItemLoops], EltLoops),
  	    (special_combine_paths(EltLoops, ILoops, [], ResultLoops), !;
