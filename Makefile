@@ -488,7 +488,6 @@ install:
 		IOTools/Standard\ tools/TileInspector.tcl \
 		IOTools/Standard\ tools/pestlink.tcl \
 		IOTools/two_table.tcl \
-		Licence.txt \
 		README \
 		Run/6d.h \
 		Run/backend.h \
