@@ -1210,7 +1210,7 @@ proc DoUserDialogue {} {
     pack [scrollbar $t.agree.y -orient v -command "$t.agree.t yview"] \
 	-side right -fill y
     pack [text $t.agree.t -wrap word -yscrollcommand "$t.agree.y set"] -fill x
-    set licStr [NetOpen ../Licence.txt r]
+    set licStr [NetOpen ../eula.txt r]
     $t.agree.t insert end [read $licStr]
     close $licStr
     $t.agree.t config -state disabled
