@@ -343,7 +343,9 @@ proc Disaggregate {parent title colour image imgpos type interp \
     }
     PackItUp $tt
 
-    if {!$new} {
+    if {$new} {
+	set icount $disaggregate(icount)
+    } else {
     set icount {}
     if [string compare $disaggregate(icount) 1] {
         foreach newIndex [split $disaggregate(icount) ,] {
@@ -373,7 +375,7 @@ proc Disaggregate {parent title colour image imgpos type interp \
         set result [list $disaggregate(colour) $disaggregate(image) \
                 $disaggregate(imgpos) $disaggregate(type) \
 			$disaggregate(interp) \
-                $disaggregate(fatness) $disaggregate(icount) \
+                $disaggregate(fatness) $icount \
                 $step $disaggregate(desc) $disaggregate(comment) \
                 $disaggregate(eqnunit) $disaggregate(hide) \
                 $disaggregate(separate) $disaggregate(xproc) \

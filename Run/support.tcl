@@ -901,6 +901,8 @@ proc stage_incr {ns_extras step v span gId} {
 proc check_limit {trigger lower upper action graphId step ns_extras} {
     global event
 
+    set limit_fuzz 1e-12
+    # allow use of predictions with small (e.g., rounding-only) errors
     upvar \#0 $ns_extras extras
     set phase [expr {int([glob_element ts 0])}]
 
@@ -927,7 +929,7 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 		    set to_limit [expr {$trigger-$lower}]
 		    set rate [expr {$old-$trigger}]
 		}
-		if {$trigger<=$lower} {
+		if {$trigger<=$lower+$limit_fuzz} {
 		    set out -1
 		}
 	    }
@@ -937,7 +939,7 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 		    set to_limit [expr {$upper-$trigger}]
 		    set rate [expr {$trigger-$old}]
 		}
-		if {$trigger>=$upper} {
+		if {$trigger>=$upper-$limit_fuzz} {
 		    set out 1
 		}
 	    }
@@ -1089,7 +1091,8 @@ proc TclResetModel {node t0 doingRK topPhase} {
             set ts($tweakPhase) $t0
             set dts($tweakPhase) $steps($tweakPhase)
         }
-	set event(predict) [expr {$t0+$steps($phasecount)}] ;# just initialize
+	set event(predict) [expr {$t0+1e-6*$steps($phasecount)}]
+# simulate effect of 'resetting' in c++
     }
     set adapt(curFreq) $steps($phasecount)
     set adapt_maxerr 0 ;# just so it is defined at first comparison
@@ -1123,7 +1126,7 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 # that is the biggest phase we will try to run, we may not succeed
 	if {[CheckGUI $node $xtime ph$bigPhase]} {
 	    return [list 0 $xtime]
-}
+	}
 
 # If an event has happened and changed a state variable, we need an extra
 # update to make it actually change, followed by a propagate to get the 
@@ -1131,12 +1134,18 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 # so far, works but last() set 2wice
 	if {$event(culprit) || $event(seriesSign)} {
 # an event is waiting to take effect
-	    # SetDTs $bigPhase $xtime ;# no need, mode 10/11 stops move
+	    SetDTs $bigPhase $xtime ;# zero explicit ref to dt() in model
 	    AdvanceTime $node $bigPhase 0 ;# unsets event(nextSeries)
 	    set ts(0) [expr {10+$intMtd}]
 	    do_model updatemodel $bigPhase ;# bP needed to apply squirt
 	    set ts(0) $intMtd ;# start prediction cycle
 	    do_model evalmodel $bigPhase ;# bP needed to cancel series event
+	    if {!$errLim} {
+		set event(nextSeries) [expr {$xtime+$minFreq}]
+# have just done an event -- set a finish time very close so limit
+# events will be re-predicted before they happen. Not needed if
+# adaptive as it then goes back for missed ones
+	    }
 	}
 
         while {!$madeStep} {

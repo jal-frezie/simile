@@ -1035,7 +1035,6 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     // temporary arrangement until we move this function into the instance
   excpData* userDefStop = &(loadedInst->userStop);
 
-  resetting = 0;
   userDefStop->excpNo = 0;
   xtime = start;
   if (errlim) {
@@ -1066,14 +1065,23 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 
     if (userDefStop->targetId || seriesEvtSign) { 
       // an event is waiting to take effect
-      // set_dts(big_phase, xtime); no need, mode 10/11 stops move
+      set_dts(big_phase, xtime); // zero explicit ref to dt() in model
+      resetting = big_phase;
       advance_time(big_phase, 0); // unsets event(nextSeries)
       SetdT(0, 10+(how_int==RUNGE_KUTTA)); 
       loadedInst->updatemodel(big_phase); // b_p needed to apply squirt
       SetdT(0, (how_int==RUNGE_KUTTA)); // start prediction cycle
       if (loadedInst->do_evalmodel(big_phase)) break;
       // b_p needed to cancel series event
-    }
+      // now make sure next bit happens
+      resetting = 0;
+    } 
+    if (resetting < 1 && !errlim)
+      // resetting or have just done an event -- set a finish time very close 
+      // so limit events will be re-predicted before they happen.
+      // Not needed if adaptive as it then goes back for missed ones
+      nextSeriesEvt = xtime+minFreq;
+    resetting = big_phase;
 
     while(!made_step) {
       // aim for next predicted event if closer than end
@@ -1272,7 +1280,7 @@ void ExecutingModel::advance_time (int phase, double fraction) {
     // time value is chosen to work with RK so series pt should do the same
     series_pt = lts[modelSpec->phases];
     seriesEvtSign = 0;
-    nextSeriesEvt = ((series_pt > thisTsPosn)?1:-1)*INFINITY;
+    nextSeriesEvt = ((series_pt >= thisTsPosn)?1:-1)*INFINITY;
     if (varParamArrayBase) 
       nextSeriesEvt = varParamArrayBase->UpdateTimeSeries(series_pt, 
 							  nextSeriesEvt);

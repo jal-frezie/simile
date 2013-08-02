@@ -151,12 +151,13 @@ BOOLEAN RealPhase(int phase) {
 
 #define   CHECK_LOWER   1
 #define   CHECK_UPPER   2
+#define   LIMIT_FUZZ    1e-12
+// allow use of predictions with small (e.g., rounding-only) errors
 int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 				  int action, int graphId, 
 				  int step, diffs* extras) {
   double old, to_limit, rate, prediction;
   int out, heading_out, phase = int(ts[0]);
-
   switch (phase) {
   case 0: case 1: // resetting model, do not use saved data
     extras->t1 = trigger; // for prediction next step
@@ -185,7 +186,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 	to_limit = trigger-lower;
 	rate = old-trigger;
       }
-      if (trigger<=lower)
+      if (trigger<lower+LIMIT_FUZZ)
 	out = -1;
     }
     if (action & CHECK_UPPER) {
@@ -194,7 +195,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 	to_limit = upper-trigger;
 	rate = trigger-old;
       }
-      if (trigger>=upper)
+      if (trigger>=upper-LIMIT_FUZZ)
 	out = 1;
     }
 
