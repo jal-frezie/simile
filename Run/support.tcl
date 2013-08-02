@@ -954,7 +954,8 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 		if {$out} {
 		    if {$out != $extras(t3)} {
 			set event(culprit) $graphId 
-			return [set extras(t3) $out]
+			return [expr {[set extras(t3) $out]*($action==1?-1:1)}]
+# if doing lower bound only, result should be boolean so return 1 not -1
 		    }
 		} else {
 		    set extras(t3) 0

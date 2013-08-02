@@ -210,8 +210,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       if (out) {
 	if (out != extras->t3) { 
 	  userStop.targetId = graphId; // for pause-on-event reporting
-	  extras->t3 = out;
-	  return out;
+	  return (extras->t3 = out);
 	}
       } else
 	extras->t3 = 0;
