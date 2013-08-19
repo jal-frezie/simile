@@ -1313,9 +1313,9 @@ nodes.
 		MadeCount = arr(Ptr, NMade, []),
 		AFn = assign_array(Ptr, Name, NMade, 1),
 		Specials = [make(enumerate(Name), [startable(Name)],
-				 Path, Step, XFns),
+				 Path, Step, []),
 			    make(startable(Name), StartConds, Path, StartStep,
-				 [assign_array(Ptr, Name, NMade, -1)])];
+				 [assign_array(Ptr, Name, NMade, -1) | XFns])];
 	     member(instance(al_function,_, al_spec(_,_, EvtExp),
 			    elt(_, Al,_), _), Functions), !,
 	        AlAct = al_action(Al, EvtExp),

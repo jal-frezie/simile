@@ -350,7 +350,8 @@ proc Disaggregate {parent title colour image imgpos type interp \
     if [string compare $disaggregate(icount) 1] {
         foreach newIndex [split $disaggregate(icount) ,] {
             if {[string is double $newIndex] || \
-                        [string match size(*) $newIndex]} {
+                        [string match size(*) $newIndex] || \
+                        [string match value(*) $newIndex]} {
                 lappend icount $newIndex
             } else {
                 lappend icount \"$newIndex\"

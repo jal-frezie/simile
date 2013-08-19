@@ -301,18 +301,20 @@ click: Handles mouse clicks in a model window.
 */
 click(Xpt, Ypt, CD) :-
 	check_snap,
+	Trans = [0, 0, 1, 1],
+	Depth = 0,
 	find_current(Wid),
 	Wid shows_model Parent,
-	save_params([0,0,1,1], 0, Parent),
 	(get_phase(targetting),
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
 	    get_mode(Mode),
 	    menu'><'set_cursor_for(Mode),
+	    (multi_level_mode -> save_params(Trans, Depth, Parent); true),
 	    drag(Xpt, Ypt);
 	get_phase(peruse),
 	    set_original_click(Xpt, Ypt),
-	    click_in(Wid, [Xpt, Ypt], [0, 0, 1, 1], 0, Parent, CD)).
+	    click_in(Wid, [Xpt, Ypt], Trans, Depth, Parent, CD)).
 
 /* check we are in same model we started in */
 check_same_desktop(Parent) :-
