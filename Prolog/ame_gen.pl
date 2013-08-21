@@ -18,7 +18,7 @@ sicstus_module(ame_gen,
 		get_node_size/2, get_node_size/4,
 		is_population/1, by_record/1, from_value/1, is_conditional/1,
 		get_all_dims/2, variable_size/1, list_links/2,
-		get_link_exits/2, get_chain/5, contains/2, contains/3,
+		get_chain/5, contains/2, contains/3,
 		purge/3, upper/2, lower/2, mybagof/3,
 		list_of/3, abs_path_for/2, caption_for/2, find_name_host/2,
 		find_type/2, find_all_comps/2, draws_inside/2,
@@ -782,14 +782,6 @@ purge_data(P, Pure) :-
 		purge_data(Rest, Pure);
 	Pure = P,
 	    retract(purging(Unwanted)).
-
-get_link_exits([], []).
-
-get_link_exits([Link | Rest], [exits(Link, Exits) | LaterStarts]) :-
-	Link is_connector from Source to _,
-	terminates(Link, Dest),
-	get_chain(Source, Dest, _, Exits, _),
-	get_link_exits(Rest, LaterStarts).
 
 get_chain(Start, Finish, Top, Up_list, Down_list) :-
 	contains(Finish, Start, Up_list), !,

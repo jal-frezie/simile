@@ -260,9 +260,20 @@ list_local_index_meanings(Submodel, Meanings) :-
 	list_node_index_meanings(Caption, 
 			LocalDims, Group1),
 	list_links(Submodel, Links),
-	get_link_exits(Links, Starts),
+	all(m_update, get_link_exits, [build(Links), build(Starts)]),
 	list_link_index_meanings(Caption, Starts, Group2),
 	append(Group1, Group2, Meanings).
+
+get_link_exits(Link, exits(Link, Exits)) :-
+	list_exits_smallest_first(Link, Exits).
+
+list_exits_smallest_first(Link, Exits) :-
+	Link is_connector from Go to _,
+	(Go has_class submodel -> Here = [Go];
+	 Here = []),
+	(sequence(Prev, Link) -> list_exits_smallest_first(Prev, There);
+	 There = []),
+	append(There, Here, Exits).
 
 list_link_index_meanings(_, [], []).
 
@@ -358,7 +369,9 @@ get_unit_conversion(Remote, Local,
 	        SourceLocation = up_hierarchy,
 	        Index = -1),
 	    Relation = none;
-	suffix([Base | ReallyExited], BiggestFirst),
+	(suffix([Base | ReallyExited], BiggestFirst);
+	   Base = RemoteModel,
+	    ReallyExited = []),
 	    member(Assoc, Entered),
 	    connects(Relation, Base, Assoc),
 	    Relation has_type relation,

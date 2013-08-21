@@ -535,12 +535,13 @@ make_assoc_loop_names(_,_,_, []).
 
 make_assoc_loop_names(L, Node, Used, [base(BaseSm, Link, Ptrs) | Bases]) :-
 	caption_for(Link, LinkName),
+	Ptrs = [_|_], % prevent empty in_list if re-entrant satellite
 	invent_ptr_names(L, LinkName, BaseSm, Node, Used, Ptrs),
 	make_assoc_loop_names(L, Node, Used, Bases).
 
 invent_ptr_names(L, LinkName, BaseSm, Node, Used, Ptrs) :-
-	contains(BaseSm, Node), !,
-	    Ptrs = []; % 19/12/02: does this ever happen...?
+	contains(BaseSm, Node),
+	    Ptrs = [], !; % 19/12/02: does this ever happen...?
             % 12/04/11: I'm pretty confident it does not
 	    % 03/05/11: Yes it does, it's the boundary for the recursion
 	caption_for(BaseSm, BaseCapt),
@@ -1430,8 +1431,8 @@ convert_base_specs(enumerate(Model), startable(Model)).
 % the tree to point to the given node.
 
 make_branch(Tree, Tip, OldBranch, NewBranch) :-
-	contains(Fork, Tip, List),
-	append(OldBranch, [ForkInst | _], Tree),
+	contains(Fork, Tip, List), List = [_|_],
+	append(OldBranch, [ForkInst | _], Tree), OldBranch = [_|_],
 	ForkInst = instance(_, Fork, xrefs(model(_Funx, Subs), _,_), _,_), !,
 	nodes_to_levels(List, Subs, NewBranch).
 
