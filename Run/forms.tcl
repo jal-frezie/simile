@@ -16,11 +16,14 @@ proc Disaggregate {parent title colour image imgpos type interp \
                 icount xproc xinc xlibs eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
     }
-# next 5 lines not needed for version with special submodels?
-    if [llength $icount]>0 {
-        set disaggregate(icount) [join $icount ,]
-    } else  {
-        set disaggregate(icount) 1
+    set new 0
+
+    if {!$new} {
+	if [llength $icount]>0 {
+	    set disaggregate(icount) [join $icount ,]
+	} else  {
+	    set disaggregate(icount) 1
+	}
     }
     #puts $disaggregate(icount)
     foreach stepId [list {Initialize only} {New params only} {Reset only} \
@@ -70,8 +73,6 @@ proc Disaggregate {parent title colour image imgpos type interp \
     pack $t.simple.notes -side bottom -padx 4 -pady 4 -fill both -expand true
 
     frame $t.simple.left
-    set new 0
-
     if {$new} {
     TitleFrame $t.simple.left.count \
 	-text [tr. "Instances:"]

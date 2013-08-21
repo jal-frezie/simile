@@ -1404,8 +1404,28 @@ proc DoLocalCmd {win item} {
 	empty {EmptyWindow $win}
 	import_xml {TradeXML $win 0}
 	export_xml {TradeXML $win 1}
+	export_svg {ExportSVG $win}
 	extra_run {ExtraRun $win}
     }
+}
+
+proc ExportSVG {win} {
+    package require can2svg
+    set node $::window_info($win,top_node)
+
+    set tgt [ChooseFile [GetExecTitle $node].svg \
+		 [tr. "Export code to:"] 1 $node]
+# SVG does not like -ve coords so shift to origin
+    foreach {l t r b} [$win cget -scrollregion] break
+    set xpos [$win xview]
+    set ypos [$win yview]
+    $win configure -scrollregion [list 0 0 [expr $r-$l] [expr $b-$t]]
+    $win move all [expr -$l] [expr -$t]
+    can2svg::canvas2file $win $tgt
+    $win move all $l $t
+    $win configure -scrollregion [list $l $t $r $b]
+    $win yview moveto [lindex $ypos 0]
+    $win xview moveto [lindex $xpos 0]
 }
 
 # This one added to remove file parameters when clearing model
@@ -1528,6 +1548,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c file export_prolog"
     $fm2 add command -label [tr. "XML Model Description"] \
             -command "MenuSelect $c local export_xml"
+    $fm2 add command -label [tr. "SVG Image"] \
+            -command "MenuSelect $c local export_svg"
     $fm2 add command -label [tr. "C++ code"] \
             -command "MenuSelect $c code build_c"
     $fm2 add command -label [tr. "Compiled binary"] \
