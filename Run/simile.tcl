@@ -192,8 +192,8 @@ if {[string match Darwin $tcl_platform(os)]} {
     if {![file exists $checkFor] && [info exists custom(prefDir)]} {
         set checkFor [file join $custom(prefDir) handover.txt]
     } 
-    if {[file exists $checkFor]} {
-        set strm [open $checkFor r]
+    if {[file exists $checkFor] && [file tail $env(OPEN_MODEL)] ne "-stealth"} {
+	puts $env(OPEN_MODEL)
         set tellProc [gets $strm]
         set tellProc [gets $strm] ;# second line is last command passed
         close $strm
