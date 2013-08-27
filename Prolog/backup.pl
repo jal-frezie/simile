@@ -206,7 +206,7 @@ point_act(Model, Slot, Fwd, Act) :-
 	  Fwd = no, select(Go, [add(Fact), remove(Fact)], [Act])).
 	
 into_save_file(Model, ActList) :-
-	\+ autosave_suspended(Model), !,
+	autosave_suspended(Model), !;
 	(retract(translation_info(Model, TransInfo)), !,	    
 	    append(TransInfo, ActList, FullList);
 	FullList = ActList),
