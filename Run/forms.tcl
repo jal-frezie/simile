@@ -1474,8 +1474,6 @@ proc ContextSensitiveHelp {context page} {
 # Provide multipart/form-data for http
 
  package provide form-data 1.0
- package require mime
-
  namespace eval form-data {}
 
  proc form-data::compose {partv {type multipart/form-data}} {

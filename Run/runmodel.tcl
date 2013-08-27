@@ -358,10 +358,6 @@ proc SaveView {} {
     }
 }
 
-if {![info exists simplify]} {
-package require mime
-}
-
 proc MimifySHF {inString outFile origin} {
     global env
     set PartType "application/x-simile"

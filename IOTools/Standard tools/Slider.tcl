@@ -200,14 +200,18 @@ namespace eval slide139 {
 #			-text [lindex $possVals [expr $defVal-1]] \
 #			-textvariable comboTypes($node) \
 #			-modifycmd [namespace code [list SetChoiceNumber $f.combo $node $fixed]]
-                    set bxMenu [menu $f.combomenu -tearoff 0]
-                    foreach choice $possVals {
-                        $bxMenu add command -label $choice -command \
-			    [namespace code [list SetChoiceNumber $f.combo \
-						 $node $fixed $choice $live]]
-                    }
-                    ::ttk::menubutton $f.combo -menu $bxMenu
-                    $bxMenu invoke [expr $defVal-1]
+#                    set bxMenu [menu $f.combomenu -tearoff 0]
+#                    foreach choice $possVals {
+#                        $bxMenu add command -label $choice -command \
+#			    [namespace code [list SetChoiceNumber $f.combo \
+#						 $node $fixed $choice $live]]
+#                    }
+#                    ::ttk::menubutton $f.combo -menu $bxMenu
+#                    $bxMenu invoke [expr $defVal-1]
+		    ttk::combobox $f.combo -values $possVals -state readonly
+		    $f.combo current [expr $defVal-1]
+		    bind $f.combo <<ComboboxSelected>> [namespace code \
+			[list SetChoiceNumber $f.combo $node $fixed $live]]
                     pack $f.combo -side right -fill x -expand true
                     pack [label $f.caption -text [lindex $levels end] -width 12]
                 } default {
@@ -286,16 +290,23 @@ namespace eval slide139 {
 #			    -textvariable comboTypes($node,$index) \
 #			    -modifycmd [namespace code [list SetChoiceNumber \
 #							    $f.elt$index.c $node $fixed $index]]
-                        set bxMenu [menu $f.elt$index.cmenu -tearoff 0]
-                        foreach choice $possVals {
-                            $bxMenu add command -label $choice -command \
-				[namespace code [list SetChoiceNumber \
-						     $f.elt$index.c $node \
-						     $fixed $choice 1 $index]]
-                            
-                        }
-                        ::ttk::menubutton $f.elt$index.c -menu $bxMenu
-                        $bxMenu invoke [expr $defVal-1]
+#                        set bxMenu [menu $f.elt$index.cmenu -tearoff 0]
+#                        foreach choice $possVals {
+#                            $bxMenu add command -label $choice -command \
+#				[namespace code [list SetChoiceNumber \
+#						     $f.elt$index.c $node \
+#						     $fixed $choice 1 $index]]
+#                            
+#                        }
+#                        ::ttk::menubutton $f.elt$index.c -menu $bxMenu
+#                        $bxMenu invoke [expr $defVal-1]
+			ttk::combobox $f.elt$index.c -values $possVals \
+			    -state readonly
+			$f.elt$index.c current [expr $defVal-1]
+			bind $f.elt$index.c <<ComboboxSelected>> \
+			    [namespace code [list SetChoiceNumber \
+						 $f.elt$index.c \
+						 $node $fixed 1 $index]]
                         pack $f.elt$index.c -side right -fill x -expand true
                         pack [label $f.elt$index.id -text $slTitle -width 10] \
                                 -side left
@@ -420,11 +431,10 @@ namespace eval slide139 {
 	ListToArray $myNode $node $sub $sub {} {} $value 0 [RunningInC $myNode]
     }
     
-    proc SetChoiceNumber {cbox node fixed choice live args} {
+    proc SetChoiceNumber {cbox node fixed live args} {
 	global widgetSeln
 	set sub [join [concat [list $node] $args] ,]
-	set widgetSeln($sub) [expr {[${cbox}menu index $choice]+1}]
-	$cbox configure -text $choice
+	set widgetSeln($sub) [expr {[$cbox current]+1}]
 	if {$live} {
 	    SetArrayIfUsed $node $fixed $args $widgetSeln($sub)
 	}
@@ -548,8 +558,9 @@ namespace eval slide139 {
     }
     
     proc ShowNthChoice {combi numbi} {
-	set newTxt [${combi}menu entrycget [expr {$numbi-1}] -label]
-	$combi configure -text $newTxt
+#	set newTxt [${combi}menu entrycget [expr {$numbi-1}] -label]
+#	$combi configure -text $newTxt
+	$combi current [expr {$numbi-1}]
     }
     
     # purpose of display proc here is only to stop compartment sliders

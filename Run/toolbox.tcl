@@ -20,6 +20,7 @@ if {![info exists simplify]} {
 	package require BWidget
 	namespace import BWidget::*
     }
+    package require mime
 
 if {[info tclversion]>=8.5} {
 # use our own
@@ -1448,7 +1449,7 @@ proc GetParts {top tree noPkg} {
 proc ConvertSSxml {node} {
     global simtmpdir SIMILE_PATH
     package require xslt
-    package require mime
+
     if {![string length [package provide Trf]} {
 	puts "Warning -- using Mime in fallback mode: $errorInfo"
     }
