@@ -796,7 +796,11 @@ proc PutItThere {t parent} {
 # Added functionality to move window to the centre of its parent, or
 # the screen if it has none
 
-proc LetItShow {t} {
+proc LetItShow {t {doneVar {}}} {
+    if {[string length $doneVar] && [info exists ::SimileAutoObjLoaded]} {
+	set $doneVar 1
+	return
+    }
     update idletasks
 #puts "$t: viewable [winfo viewable $t]; state [wm state $t]"
     if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
@@ -822,6 +826,13 @@ proc LetItShow {t} {
     set left [max 0 [min [expr $scw-$fillw] [expr $tgtx+($tgtw-$fillw)/2]]]
     set top [max 0 [min [expr $sch-$fillh] [expr $tgty+($tgth-$fillh)/2]]]
     wm geometry $t $sgnx$left$sgny$top
+    if {[string length $doneVar]} {
+# have variable that gets set on exit, if scripting just set it
+# otherwise do interaction here
+	grab $t
+	tkwait variable $doneVar
+	grab release $t
+    }
     return [winfo viewable $t]
 }
 

@@ -1351,11 +1351,8 @@ proc EditListAsTable {parent caption startLine valueArray} {
     ${viewerId}::Reconbobulate $t
     
     focus .table_edit
-    LetItShow .table_edit
-    grab .table_edit
-    tkwait variable table_viewer(done)
+    LetItShow .table_edit table_viewer(done)
 #    ${viewerId}::EditCellIs $t.t 0 0 ;# get final edit
-    grab release .table_edit
     if {![set ${viewerId}::editMode($t,tweaked)]} {
         set table_viewer(done) 0 ;# treat OK as Cancel if no change
     }

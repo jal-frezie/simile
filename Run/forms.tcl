@@ -330,10 +330,7 @@ proc Disaggregate {parent title colour image imgpos type interp \
     
 #    pack $t.simple -anchor nw -fill both; # -expand 1 -fill both
     
-    LetItShow $tt
-    grab $tt
-    tkwait variable disaggregate(done)
-    grab release $tt
+    LetItShow $tt disaggregate(done)
     set disaggregate(desc) [string trimright [$notesf.desc.text get]]
     set disaggregate(comment) [string trimright \
 				   [$notesf.commentsSW.comment get 1.0 end]]
@@ -426,10 +423,7 @@ proc AddPub {mdl} {
 	      -command "set disaggregate(pdone) 1"] -side right
     pack [button $t.btnfr.cancel -text [tr. Cancel] \
 	      -command "set disaggregate(pdone) 0"] -side right
-    LetItShow $t
-    grab $t
-    tkwait variable disaggregate(pdone)
-    grab release $t
+    LetItShow $t disaggregate(pdone)
 #    if {$disaggregate(xdone)} {
 # transfer data back to variables
 #	set disaggregate(xproc) [[GetFrame $t.procnamfr].ent get]
@@ -484,10 +478,7 @@ proc ExtCodeSetup {mdl} {
 	      -command "set disaggregate(xdone) 1"] -side right
     pack [button $t.btnfr.cancel -text [tr. Cancel] \
 	      -command "set disaggregate(xdone) 0"] -side right
-    LetItShow $t
-    grab $t
-    tkwait variable disaggregate(xdone)
-    grab release $t
+    LetItShow $t disaggregate(xdone)
     if {$disaggregate(xdone)} {
 # transfer data back to variables
 	set disaggregate(xproc) [[GetFrame $t.procnamfr].ent get]
@@ -540,10 +531,7 @@ To access values from neighbouring squares in an equation, open the properties d
     pack [button .disagExtra.bottom.bc -text [tr. Cancel] -width 10 \
 	      -command {set disaggregate(exdone) 0}] -side right -padx 4 -pady 4
     pack .disagExtra.bottom -side left
-    LetItShow $t
-    grab $t
-    tkwait variable disaggregate(exdone)
-    grab release $t
+    LetItShow $t disaggregate(exdone)
     PackItUp $t
     if {$disaggregate(exdone)} {
 	set disaggregate(interp) none
@@ -1035,10 +1023,7 @@ proc TextCheckAndSet {parent title state} {
 	      -command {set text_props(done) 0}] -padx 4 -pady 4
     pack .relcheck.bottom -side left
 
-    LetItShow $t
-    grab $t
-    tkwait variable text_props(done)
-    grab release $t
+    LetItShow $t text_props(done)
     PackItUp $t
     set results $text_props(done)
     lappend results $text_props(rel_size) $text_props(columns)
@@ -1093,10 +1078,7 @@ proc RelationCheck {parent title type entries state init_comment} {
     $f.comment insert 1.0 $init_comment
     pack .relcheck.bottom
     
-    LetItShow .relcheck
-    grab .relcheck
-    tkwait variable relation(done)
-    grab release .relcheck
+    LetItShow .relcheck relation(done)
     set newComment [string trimright [$f.comment get 1.0 end]]
     PackItUp .relcheck
     set results [list $relation(done) $newComment]
@@ -1162,11 +1144,8 @@ proc GetFindText {canvas} {
 	      -command "ContextSensitiveHelp .findentry diagrams/search.htm"] \
 	-padx 2 -pady 4 -side left
     
-    LetItShow .findentry
-    grab .findentry
     focus $ft.e
-    tkwait variable find(done)
-    grab release .findentry
+    LetItShow .findentry find(done)
     set result [$ft.e get]
     PackItUp .findentry
     if {$find(done)==1} {
@@ -1641,11 +1620,8 @@ proc ErrorHelp {diagnostic} {
             pack .diag.topicsf -fill both -expand on  -padx 4 -pady 4
         }
     }
-    LetItShow .diag
-    grab .diag
-    tkwait variable diagno(done)
+    LetItShow .diag diagno(done)
     unset diagno(done)
-    grab release .diag
     PackItUp .diag
 }
 
@@ -2235,10 +2211,7 @@ proc NotifyOverLimit {win edn limit} {
     set sheight [winfo screenheight .notify]
     set swidth [winfo screenwidth .notify]
     wm geometry .notify +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
-    LetItShow .notify
-    grab .notify
-    tkwait variable ack
-    grab release .notify
+    LetItShow .notify ack
     PackItUp .notify
 }
 

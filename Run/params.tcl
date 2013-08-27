@@ -70,10 +70,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
         pack [frame $bfrm.rpad] -side left -fill x -expand true
         raise .fpdialogue
         set paramData(complete) 0
-        LetItShow $t
-        grab $t
-        tkwait variable paramData(done)
-        grab release $t
+        LetItShow $t paramData(done)
         
     } else {
         # Dialogue not needed because data OK so return good
@@ -1595,11 +1592,7 @@ proc ChooseByInspection {topNode oldObj type} {
     set runClass $classTable(run,$topNode)
     similescript::$helperId $hlp $runClass Variables {}
 
-    LetItShow $t
-    grab $t
-    tkwait variable paramData(newPath,done)
-    grab release $t
-    
+    LetItShow $t paramData(newPath,done)
     PackItUp $t
     if {[string length $parent]} {
 	grab $parent
