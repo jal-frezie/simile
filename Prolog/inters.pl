@@ -1819,7 +1819,7 @@ special_combine_paths(Datum, Index, Delayed, Joint) :-
 	    DLoop = ILoop,
 	    append(DOutside, Delayed, AllDelayed),
  	    special_combine_paths(DInside, IInside, AllDelayed, InJoint),
-	    append(InJoint, [ILoop | IOutside], Joint);
+	    append([InJoint, ILoop, IOutside], Joint);
 	append([Datum, Delayed, Index], Joint).
 	
 %break_at_last_loop(SubLoops, TailLoops, SumLoop, ItemLoops) :-

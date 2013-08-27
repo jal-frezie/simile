@@ -347,7 +347,8 @@ get_unit_conversion(Remote, Local,
 		LocalEnv has_part Local;
 	LocalEnv = Local),
 	find_all_comps(RemoteModel, RemoteEnv),
-	find_all_comps(LocalModel, LocalEnv),
+	(LocalEnv = as_if_in(LocalModel), !;
+	  find_all_comps(LocalModel, LocalEnv)),
 	get_chain(RemoteModel, LocalModel, _, Exited, Entered),
 	reverse(Exited, BiggestFirst),
 	(/* Do not display parameter for input without role reference if there
@@ -360,7 +361,15 @@ get_unit_conversion(Remote, Local,
 	 % this disjunct should give us a role that gets values from
 	 % all instances of the current submodel
 	RemoteModel = LocalModel,
-	    (in_rect_with_dims(LocalModel, _, _),
+	    (% experimental: behave as if in hierarchical satellite
+	     fail, connects(HierRelation, RemoteModel, HierSat),
+	        contains(LocalModel, HierSat),
+	        Subs = [var],
+	        Index = -3, % assume there is only one
+	        SourceLocation = in_all_bases,
+	        get_unit_conversion(Remote, as_if_in(HierSat), [], HierRelation,
+				    _, in_base);
+	     in_rect_with_dims(LocalModel, _, _),
 	        Subs = [var],
 	        SourceLocation = in_8_nbrs,
 	        Index = -2;
@@ -381,8 +390,12 @@ get_unit_conversion(Remote, Local,
 	    find_reference(LocalModel, Index, IndexRelation),
 	    all(ame_gen, get_all_dims, [build(ReallyExited), append(Subs, [])]),
 	    SourceLocation = in_base;
-	suffix([Assoc | ReallyExited], BiggestFirst),
-	    member(Base, Entered),
+	 suffix([Assoc | ReallyExited], BiggestFirst),
+	    (member(Base, Entered);
+	     % do not allow data by role from hierarchical satellite because
+	     % current made_in() system cannot cope
+	      fail, Base = LocalModel,
+	        Entered = []),
 	    connects(Relation, Base, Assoc),
 	    Relation has_type relation,
 	    Relation is_connector from Base to _,
@@ -567,6 +580,8 @@ name_from_role_texts(role_texts(Path, RelId, Dir, RelnCapt), Used, Name) :-
 	    append_atoms(all_, Tail, Remote_name);
 	  Dir = in_8_nbrs,
 	    append_atoms(from_8_nbrs_, Tail, Remote_name);
+	  Dir = in_all_bases,
+	    append_atoms(Tail, '_from_base', Remote_name);
 	  RelId = '/none/',
 	    append_atoms(every_, Tail, Remote_name);
 	  Dir = in_base,

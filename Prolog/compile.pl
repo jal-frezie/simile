@@ -1426,9 +1426,11 @@ get_swaps_and_waits(Tree, [base(Assoc, Link, Ptrs) | Rest], Dir,
 convert_base_specs(time, on_reset).
 convert_base_specs(enumerate(Model), startable(Model)).
 
-% This takes a tree, being a list of nested component instances innermost first,
-% and a node id, and creates the lists that must be removed and added to convert
-% the tree to point to the given node.
+% This takes a tree, being a list of nested component instances
+% innermost first, and a node id, and creates the lists that must be
+% removed and added to convert the tree to point to the given node.
+% Lists must have at least one member so it works in the case of a
+% pure hierarchical role arrow
 
 make_branch(Tree, Tip, OldBranch, NewBranch) :-
 	contains(Fork, Tip, List), List = [_|_],

@@ -72,6 +72,7 @@ namespace eval runcontrol33857 {
 	    set runState($node,timeUnit) unit
 	}
         set runState($node,oldUnit) $runState($node,timeUnit)
+        set runState($node,newUnit) $runState($node,timeUnit)
         if {[string match $t [winfo toplevel $t]]} {
 #            wm title $t "Run control"; # $t isn't a toplevel under MRE
             set geom [PrefValue custom(runControlPosition) runControlPosition]
@@ -159,31 +160,39 @@ namespace eval runcontrol33857 {
         pack [frame $rsf.unitselection] -pady 2 -fill x
         pack [label $rsf.unitselection.caption -text [tr. "Time units:"] \
 		  -width $captWidth -anchor w] -side left -anchor nw
-        ::ttk::menubutton $rsf.unitselection.pulldown
-        set timeUnitMenu [menu $rsf.unitselection.pulldown.menu -tearoff 0]
-        foreach unit [concat unit $::commonTimes] {
-	    $timeUnitMenu add command -label $unit \
-		-command [namespace code [list AlterUnit $node $unit]]
-        }
-        $rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 12 \
-              -textvariable runState($node,timeUnit)
+#        ::ttk::menubutton $rsf.unitselection.pulldown
+#        set timeUnitMenu [menu $rsf.unitselection.pulldown.menu -tearoff 0]
+#        foreach unit [concat unit $::commonTimes] {
+#	    $timeUnitMenu add command -label $unit \
+#		-command [namespace code [list AlterUnit $node $unit]]
+#        }
+#        $rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 12 \
+#              -textvariable runState($node,timeUnit)
+	set unitCB $rsf.unitselection.pulldown
+	::ttk::combobox $unitCB -state readonly \
+	    -values [concat unit $::commonTimes] \
+	    -textvariable runState($node,newUnit)
+	bind $unitCB <<ComboboxSelected>> \
+	    [namespace code [list AlterUnit $node]]
         pack $rsf.unitselection.pulldown -side left -anchor nw
         
         pack [frame $rsf.integration] -pady 2 -fill x
         pack [label $rsf.integration.caption -text [tr. "Integration method:"] \
 		  -width $captWidth -anchor w] -side left -anchor nw
-        ::ttk::menubutton $rsf.integration.pulldown
-        set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0]
-        foreach method {Euler Runge-Kutta} {
+#        ::ttk::menubutton $rsf.integration.pulldown
+#        set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0]
+#        foreach method {Euler Runge-Kutta} {
 # TRANSLATOR: these methods need translation
-	    $intMethodMenu add command -label [tr. $method] \
-		-command [namespace code [list UpdateIntMethod $intMethodMenu \
-					      $node $method]]
-        }
-        $rsf.integration.pulldown configure -menu $intMethodMenu -width 12 \
-	    -text [tr. $runState($node,intMethod)] ;# TRANSLATOR done
-        pack $rsf.integration.pulldown -side left -anchor nw
-        
+#	    $intMethodMenu add command -label [tr. $method] \
+#		-command [namespace code [list UpdateIntMethod $intMethodMenu \
+#					      $node $method]]
+#        }
+#        $rsf.integration.pulldown configure -menu $intMethodMenu -width 12 \
+#	    -text [tr. $runState($node,intMethod)] ;# TRANSLATOR done
+        pack [::ttk::combobox $rsf.integration.pulldown -state readonly \
+	       -values [list Euler Runge-Kutta] \
+	       -textvariable runState($node,intMethod)] -side left -anchor nw
+
 # This is done in SwapDistVar
 #        set sendvars($node,captList) {}
 #        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
@@ -251,15 +260,16 @@ namespace eval runcontrol33857 {
 	set sendvars($node,busy) 0
     }
     
-    proc UpdateIntMethod {menu node method} {
-	global runState
-	
-	[winfo parent $menu] configure -text [tr. $method] ;# TRANSLATOR done
-	set runState($node,intMethod) $method
-    }
+#    proc UpdateIntMethod {menu node method} {
+#	global runState
+#	
+#	[winfo parent $menu] configure -text [tr. $method] ;# TRANSLATOR done
+#	set runState($node,intMethod) $method
+#    }
 
-    proc AlterUnit {node newUnit} {
+    proc AlterUnit {node} {
 	global runState
+	set newUnit $runState($node,newUnit)
 	set timeFactor [expr {[InDays $runState($node,timeUnit)]/ \
 				  [InDays $newUnit]}]
 	set runState($node,timeUnit) $newUnit
