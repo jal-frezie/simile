@@ -298,6 +298,7 @@ EXEC_TGT = $(LIBDIR)/simile-6.0
 install:
 	mkdir -p $(DESTDIR)$(INSTALL_TGT); \
 	tar cf $(DESTDIR)$(INSTALL_TGT)/payload.tar \
+		eula.txt \
 		Examples/BallBerry4a.shf \
 		Examples/BallBerry4a.sml \
 		Examples/control.shf \
