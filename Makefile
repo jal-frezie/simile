@@ -534,6 +534,9 @@ install:
 		$(SYSDIR)/bin/xgsimile \
 		$(SYSDIR)/lib/SimileAutoObj/SimileAutoObj.itcl \
 		$(SYSDIR)/lib/SimileAutoObj/pkgIndex.tcl \
+		$(SYSDIR)/lib/Stubs/can2svg/can2svg.tcl \
+		$(SYSDIR)/lib/Stubs/can2svg/pkgIndex.tcl \
+		$(SYSDIR)/lib/Stubs/can2svg/uriencode.tcl \
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/libame_dll8.5.so \
 		$(SYSDIR)/lib/Stubs/libunpacker8.5.so \

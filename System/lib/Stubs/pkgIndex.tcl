@@ -35,5 +35,3 @@ foreach comp {ame_dll unpacker} {
 }
 
 # Other non-auto-installable cross-platform TclTk extensions do not go here...
-package ifneeded can2svg 0.3 [list source [file join $dir can2svg.tcl]]
-package ifneeded uriencode 1.0 [list source [file join $dir uriencode.tcl]]

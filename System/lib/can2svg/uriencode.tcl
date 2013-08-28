@@ -4,7 +4,7 @@
 # extend the uri package to deal with URN (RFC 2141)
 # see http://www.normos.org/ietf/rfc/rfc2141.txt
 #
-# $Id: uriencode.tcl,v 1.1 2013/08/21 14:58:53 u45169214 Exp $
+# $Id: uriencode.tcl,v 1.1 2013/08/28 07:52:26 u45169214 Exp $
 
 package require uri::urn
 
