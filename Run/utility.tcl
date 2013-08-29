@@ -798,7 +798,8 @@ proc PutItThere {t parent} {
 
 proc LetItShow {t {doneVar {}}} {
     if {[string length $doneVar] && [info exists ::SimileAutoObjLoaded]} {
-	set $doneVar 1
+	puts [wm title $t]
+	set ::$doneVar 1
 	return
     }
     update idletasks
