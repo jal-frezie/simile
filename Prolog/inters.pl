@@ -100,7 +100,7 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		Wait = true,
 		Path = RealPath;
 	    member(path_substitution(Base, Assoc, Link), Swaps),
-		(Location = in_base,
+		(Location = in_base, wake,
 		    Wait = true,
 /* precaution removed because it only works when getting stuff from looked-up
 		    model, actually you cannot get stuff from elsewhere in
@@ -116,7 +116,7 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		    pointer_from(Top, Ptr),
 		    pointer_to(Assoc, Ptr),
 		    append([Deeper, Assoc, Top], Path),
-		    BackSwap = values_from_base(_LookupWait);
+		    BackSwap = values_from_base(Top);
 		Location = in_assoc,
 		    Wait = true,
 		    append(Assoc, Top, AssocPath),
@@ -484,18 +484,19 @@ make_intermediates(
 		this before using it, just dont do it at init time */
 		Args = [time];
 	    swap_back(SourceContext, TermSwap, ParamContext, _),
-		(TermSwap = values_from_base(LookupWait),
-		    nonvar(LookupWait), !,
-		    LookupWaits = [LookupWait];
-		LookupWaits = []),
+		(TermSwap = values_from_base(ReadyContext),
+		 % ReadyContext ensures values not used until base model exited,
+				% in case assoc is a child of base
+		    nonvar(ReadyContext), !;
+		ReadyContext = ParamContext),
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
 	        (([Var | _] = Target; 	% it cannot be a condition of itself,
 		  Units == diffs;	% or its structure if a compartment
 		  nonvar(Units),
 		  Units = class_template(delay, _)), !, % or delay
-		    Args = LookupWaits;
-		Args = [made_at(Var, ParamContext) | LookupWaits])),
+		    Args = [];
+		Args = [made_at(Var, ReadyContext)])),
 	        /* note that for the time being the made_at condition is thrown
 	           away */
 	    Setups = [],
