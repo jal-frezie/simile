@@ -90,7 +90,7 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 
 	    pointer_from(RealPath, SmPtr),
 	    ((Location = up_hierarchy;
-	     Location = in_8_nbrs, BackSwap = frag_filter(nbr8_1d_ids)),
+	     Location = in_8_nbrs, BackSwap = frag_filter(nbr8_2d_ids)),
 				% use values from all instances -- need to
 	     % stop loops matching by changing representation of bound
 		Wait = true,
@@ -200,7 +200,7 @@ expand_library(Var, NewVar) :-
 	Var = choose(Bool, V1, V2), !,
 	    NewVar = (Bool?V1:V2). */
 
-expand_special_role(Param, LinkSpecs, element(UseParam, Fn)) :-
+expand_special_role(Param, LinkSpecs, Fn) :-
 	member(SpecialSpec-GeneralSpec,
 	       [input_link(id(Arc,_,Role),_,Param,_,_)- % parse time
 		input_link(id(Arc,_,UseRole),_,UseParam,_,_),
@@ -208,7 +208,7 @@ expand_special_role(Param, LinkSpecs, element(UseParam, Fn)) :-
 		input_pair(UseParam, Arc,_, input(UseRole, _,_,_))]),
 	member(SpecialSpec, LinkSpecs),
 	member(Role-UseRole-Fn,
-	       [in_8_nbrs-up_hierarchy-nbr8_1d_ids('')]), % add more here
+	       [in_8_nbrs-up_hierarchy-in_8_nbrs(UseParam)]), % add more here
 	member(GeneralSpec, LinkSpecs).
 
 read_library_funx(Done) :-
@@ -1308,7 +1308,7 @@ decode_number(Source, SubId, Step, SourceRef, Units) :-
 	(Source = row_count(''), SourceRef = R;
 	 Source = column_count(''), SourceRef = C), !,
 	  (m_update'><'in_rect_with_dims(SubId, R, C),
-	   Units = int;
+	   Units = const_int;
 	  throw(not_in_rectangle(Source)));
 	get_actual_size(SubId, Source, quoted, [SrcNum], [SrcType], [SrcUnits]),
 	(Source = 0.0 -> GenUnits = real; GenUnits = SrcUnits),

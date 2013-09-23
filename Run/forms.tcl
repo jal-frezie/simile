@@ -347,13 +347,14 @@ proc Disaggregate {parent title colour image imgpos type interp \
     set icount {}
     if [string compare $disaggregate(icount) 1] {
         foreach newIndex [split $disaggregate(icount) ,] {
-            if {[string is double $newIndex] || \
-                        [string match size(*) $newIndex] || \
-                        [string match value(*) $newIndex]} {
+#            if {[string is double $newIndex] || \
+#                        [string match size(*) $newIndex] || \
+#                        [string match value(*) $newIndex]} {
                 lappend icount $newIndex
-            } else {
-                lappend icount \"$newIndex\"
-            }
+#            } else {
+#                lappend icount \"$newIndex\"
+# enquoting removed as gave error with enum type -- only time used?
+#            }
         }
         set icount [join $icount ,]
     }
@@ -562,7 +563,7 @@ To access values from neighbouring squares in an equation, open the properties d
 	    set disaggregate(type) generated
 	    set disaggregate(interp) \
 		rect_grid($disaggregate(y),$disaggregate(x))
-	    set disaggregate(icount) [expr {$disaggregate(y)*$disaggregate(x)}]
+	    set disaggregate(icount) $disaggregate(y),$disaggregate(x)
 	}
     }
     ShowDisagSetup
