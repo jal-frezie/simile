@@ -26,7 +26,8 @@ namespace eval grid005 {
     proc initialize {winId} {
         variable useNodes
 
-        LoadTools
+        array unset useNodes $winId,*
+	LoadTools
 	DefaultColours $winId
 	set useNodes($winId,editMode) 0
         set useNodes($winId,integer) 0
@@ -101,8 +102,10 @@ namespace eval grid005 {
     }
     
     proc Restore {winId} {
-        LoadTools
         variable useNodes
+
+        array unset useNodes $winId,*
+        LoadTools
         set useNodes($winId,editMode) 0
         set useNodes($winId,orient) h
         set useNodes($winId,imgs) 0
