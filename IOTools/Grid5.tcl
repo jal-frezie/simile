@@ -82,7 +82,7 @@ namespace eval grid005 {
     proc AddVariable {winId} {
 	set ms $winId.msg
         $ms configure -text \
-    "Click on the variable containing the positions or IDs of the columns."
+    "Click on the variable whose values are to be displayed on the grid."
         GrabClicks $winId
         pack $ms
 #        $winId.bbframe.buttonBox itemconfigure 0 -state disable; #disable the add var button
@@ -111,6 +111,12 @@ namespace eval grid005 {
 # looks like "displaying %s %s colourmap %s %s %s aspect %d %g %g magnification %d"
 	set useNodes($winId,color) [GetIdFromCaptionPath [lindex $state 1]]
 	set useNodes($winId,colvals) [GetIdFromCaptionPath [lindex $state 2]]
+	set useNodes($winId,tgtDims) [GetModelDims $useNodes($winId,color)]
+	if {[IsTwoDee $winId $useNodes($winId,tgtDims)]} {
+	    set useNodes($winId,colvals) USE_INDICES
+	} else {
+	    NumDistinct $winId $useNodes($winId,colvals)
+	}
 	set mapBase [lsearch $state colourmap]
 	if {$mapBase > -1} {
 	    foreach colourPt {cbot cmid ctop} {
@@ -157,10 +163,9 @@ namespace eval grid005 {
         
         AddToolbar $winId
 #        $winId.bbframe.buttonBox itemconfigure 0 -state disable
-	NumDistinct $winId $useNodes($winId,colvals)
         set useNodes($winId,dataMin) 1e100
         set useNodes($winId,dataMax) -1e100
-        InitialiseGrid $winId $useNodes($winId,color)
+        InitialiseGrid $winId
         if {[info exists annot]} {
 	    RestoreNotesFromList $winId.c $annot
 	}
@@ -180,41 +185,31 @@ namespace eval grid005 {
             set state [GetState $winId]
             switch $state {
                 display0 {
-                    NumDistinct $winId $node
-		    set useNodes($winId,colvals) $node
-		    $ms configure -text "Grid currently has $useNodes($winId,ncol) columns and $useNodes($winId,nrow) rows. Now click on the variable to be displayed."
-                    SetState $winId display1
-                } display1 {
-                    pack forget $ms
-                    ReleaseClicks $winId
                     set useNodes($winId,color) $node
 		    SetColourMap useNodes $winId $node
-		    SetColours useNodes $winId
-                    catch {wm title $winId $caption}
-                    InitialiseGrid $winId $node
-                    PrepareSaveString $winId
-#                    destroy $winId.intro
-#                    set NToolButtons [$winId.bbframe.buttonBox index last]
-#                    for {set i 1} {$i<=$NToolButtons} {incr i} {
-#			if {!$useNodes($winId,ETCount) || \
-#				[lsearch {4 6 7} $i]==-1} {
-#			    $winId.bbframe.buttonBox itemconfigure $i \
-#				-state normal
-#			}
-#		    }
-
-# above enabled all toolbar buttons except, in case of enum type, scaling
-# now disable these instead
 		    if {$useNodes($winId,ETCount)} {
 			foreach notForET {less greater} {
 			    ::graphtools::SetButtonState $winId $notForET disabled
 			}
 		    }
+                    catch {wm title $winId $caption}
+		    SetColours useNodes $winId
+		    set useNodes($winId,tgtDims) [GetModelDims $node]
+		    if {[IsTwoDee $winId $useNodes($winId,tgtDims)]} {
+			set useNodes($winId,colvals) USE_INDICES
+			FinishClicking $winId
+		    } else {
+			$winId.msg configure -text "Now click on a variable giving the column IDs."
+			SetState $winId display1
+		    }
+                } display1 {
+                    NumDistinct $winId $node
+		    set useNodes($winId,colvals) $node
+		    FinishClicking $winId
 #		    if {![info exists useNodes($winId,values)]} {
 #disable the edit mode as we do not know the model indices...we do now
 #			$winId.bbframe.buttonBox itemconfigure 5 -state disable
 #		    }
-                    raise $winId
                 }
             }
         } else {
@@ -223,6 +218,33 @@ namespace eval grid005 {
         }
     }
     
+    proc FinishClicking {winId} {
+	ReleaseClicks $winId
+	pack forget $winId.msg
+
+	InitialiseGrid $winId
+	PrepareSaveString $winId
+
+	raise $winId
+    }
+
+    proc IsTwoDee {winId dimList} {
+	variable useNodes
+	
+	foreach dim $dimList {
+	    if {[string is integer -strict $dim]} {
+		foreach space [list useNodes($winId,nrow) \
+				   useNodes($winId,ncol) terminator] {
+		    if {![info exists $space]} {
+			set $space $dim
+			break
+		    }
+		}
+	    }
+	}
+	return [expr {[info exists terminator] && !$terminator}]
+    }
+
     proc NumDistinct {winId testNode} {
 	variable useNodes
 
@@ -278,9 +300,9 @@ namespace eval grid005 {
         variable useNodes
         if {[string match [lindex [GetState $winId] 0] displaying] && \
                     !$useNodes($winId,freeze)} then {
-	    if {!$time} { ;# wrong, should only be done on reset
-		NumDistinct $winId $useNodes($winId,colvals)
-	    }
+#	    if {!$time} { ;# wrong, should only be done on reset if at all
+#		NumDistinct $winId $useNodes($winId,colvals)
+#	    }
             DrawGrid6 $winId $useNodes($winId,color)
             FillCanvas $winId
 	    if {[info exists useNodes($winId,regSave)]} {
@@ -291,10 +313,10 @@ namespace eval grid005 {
         }
     }
     
-    proc InitialiseGrid {winId display1} {
+    proc InitialiseGrid {winId} {
 	variable useNodes
         
-	set useNodes($winId,tgtDims) [GetModelDims $display1]
+	set display1 $useNodes($winId,color)
         set useNodes($winId,hiddenMap) [image create photo]
         DrawGrid6 $winId $display1
 # This must now be done before we create the canvas because otherwise the
@@ -633,61 +655,71 @@ namespace eval grid005 {
     proc DrawGrid5 {winId node} {
         variable useNodes
         
-        set values [Flatten [lindex [GetModelValue $node] 0]]
-        set useNodes($winId,values) $values
-        
-        set ncell [llength $values]
-        
         # Data must be from a singly-nested fixed membership model,
         # or an indexless conditional model inside one
         # Note: tried to optimise (e.g. by use of holding variables for array
         # elements), since this is the time-critical part.
         
+	set ncol $useNodes($winId,ncol)
+	set nrow $useNodes($winId,nrow)
+
         set allData {}
-        set min $useNodes($winId,min)
-	set max $useNodes($winId,max)
-        set range [expr {$max-$min}]
+	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
+	    set allData [lrepeat $nrow [lrepeat $ncol grey]]
+
+	    foreach {y row} [lindex [GetModelValue $node] 0] {
+		foreach {x celval} $row {
+		    lset allData [list $y $x] [ForGrid $winId $celval]
+		}
+	    }
+	} else {
+	    set values [Flatten [lindex [GetModelValue $node] 0]]
+	    set useNodes($winId,values) $values
         
-        set ncol $useNodes($winId,ncol)
-        set nrow $useNodes($winId,nrow)
-        set nswatches $useNodes($winId,nswatches)
-        
-        for {set row 1} {$row<=$nrow} {incr row} {
-            set rowData($row) {}
-            for {set col 1} {$col<=$ncol} {incr col} {
-                set cell [expr ($row-1)*$ncol+$col-1]
-                set celval [lindex [lindex $values $cell] 1]
-                set length [llength $celval]
+	    for {set row 1} {$row<=$nrow} {incr row} {
+		set rowData($row) {}
+		for {set col 1} {$col<=$ncol} {incr col} {
+		    set cell [expr ($row-1)*$ncol+$col-1]
+		    set celval [lindex [lindex $values $cell] 1]
+		    set length [llength $celval]
                 
-                if {$length} {
-                    if {$length>1} {set celval [lindex $celval 1]}
-		    if {$celval<$useNodes($winId,dataMin)} {
-			set useNodes($winId,dataMin) $celval
-		    }
-		    if {$celval>$useNodes($winId,dataMax)} {
-			set useNodes($winId,dataMax) $celval
-		    }
-		    if {$celval<=$min} {
-			set icolour 0
-		    } elseif {$celval>=$max} {
-			set icolour $nswatches
+		    if {$length} {
+			lappend rowData($row) [ForGrid $winId $celval]
 		    } else {
-			set icolour \
-			    [expr {int($nswatches*($celval-$min)/$range)}]
+			lappend rowData($row) grey
 		    }
-                    lappend rowData($row) $useNodes($winId,c$icolour)
-                } else {
-                    lappend rowData($row) grey
-                }
-            }
-        }
-        
-        for {set row $nrow} {$row>=1} {incr row -1} {
-            lappend allData $rowData($row)
+		}
+	    }
+	    for {set row $nrow} {$row>=1} {incr row -1} {
+		lappend allData $rowData($row)
+	    }
         }
         
         $useNodes($winId,hiddenMap) put $allData
-	set useNodes($winId,range) $range
+    }
+
+    proc ForGrid {winId celval} {
+        variable useNodes
+	
+        set min $useNodes($winId,min)
+	set max $useNodes($winId,max)
+        set range [expr {$max-$min}]
+	set nswatches $useNodes($winId,nswatches)
+        
+	if {$celval<$useNodes($winId,dataMin)} {
+	    set useNodes($winId,dataMin) $celval
+	}
+	if {$celval>$useNodes($winId,dataMax)} {
+	    set useNodes($winId,dataMax) $celval
+	}
+	if {$celval<=$min} {
+	    set icolour 0
+	} elseif {$celval>=$max} {
+	    set icolour $nswatches
+	} else {
+	    set icolour [expr {int($nswatches*($celval-$min)/$range)}]
+	}
+	return $useNodes($winId,c$icolour)
     }
 
     proc DrawGrid6 {winId node} {
@@ -696,7 +728,8 @@ namespace eval grid005 {
 
 # do not use image mode for inputs cos we will want to edit them...
 # hah, just fixed it so we can anyway
-	if {[catch {GetBinaryModelValue $node $useNodes($winId,min) \
+	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
+		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
 			$useNodes($winId,max)} useNodes($winId,rawBinary)]} {
 	    DrawGrid5 $winId $node
 	    return
