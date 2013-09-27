@@ -912,10 +912,10 @@ namespace eval grid005 {
         set col [expr int(1+([$winId.c canvasx $x])/$useNodes($winId,mult))]
         set row [expr int(1+$nrow-([$winId.c canvasy $y])/$useNodes($winId,mult))]
         if {$row>0&&$row<=$nrow&&$col>0&&$col<=$ncol} {
-            set cell [expr ($row-1)*$ncol+$col-1]
 	    if {[info exists useNodes($winId,values)]} {
-		set idx [lindex [lindex $useNodes($winId,values) $cell] 0]
+		set idx [lindex $useNodes($winId,values,$row,$col) 0]
 	    } else {
+		set cell [expr ($row-1)*$ncol+$col-1]
 		set idx [lindex [FindIndices $useNodes($winId,tgtDims) $cell] 1]
 	    }
 	    PokeValue $useNodes($winId,color) $idx $newVal
