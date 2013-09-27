@@ -662,25 +662,28 @@ namespace eval grid005 {
         
 	set ncol $useNodes($winId,ncol)
 	set nrow $useNodes($winId,nrow)
-puts $nrow,$ncol
         set allData {}
+	array unset useNodes $winId,values,*
+	set useNodes($winId,values) 1
 	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
 	    set allData [lrepeat $nrow [lrepeat $ncol grey]]
 
 	    foreach {y row} [lindex [GetModelValue $node] 0] {
 		foreach {x celval} $row {
-		    lset allData [list $y-1 $x-1] [ForGrid $winId $celval]
+		    lset allData [list $nrow-$y $x-1] [ForGrid $winId $celval]
+		    set useNodes($winId,values,$y,$x) \
+			[list [list $y $x] $celval]
 		}
 	    }
 	} else {
 	    set values [Flatten [lindex [GetModelValue $node] 0]]
-	    set useNodes($winId,values) $values
         
 	    for {set row 1} {$row<=$nrow} {incr row} {
 		set rowData($row) {}
 		for {set col 1} {$col<=$ncol} {incr col} {
 		    set cell [expr ($row-1)*$ncol+$col-1]
 		    set celval [lindex [lindex $values $cell] 1]
+		    set useNodes($winId,values,$row,$col) [lindex $values $cell]
 		    set length [llength $celval]
                 
 		    if {$length} {
@@ -874,15 +877,19 @@ puts $nrow,$ncol
                         -fill x -expand true
                 raise .popup
             }
-            set cell [expr ($row-1)*$ncol+$col-1]
 	    if {[info exists useNodes($winId,values)]} {
-		set vLine [lindex $useNodes($winId,values) $cell]
-		set value [TransValue $useNodes($winId,dataETs) \
-			       [lindex $vLine 1]]
-		set index [join [TransEnums $useNodes($winId,allETs) \
-				     [lindex $vLine 0]] ,]
+		if {[catch {set vLine $useNodes($winId,values,$row,$col)}]} {
+		    set value none
+		    set index none
+		} else  {
+		    set value [TransValue $useNodes($winId,dataETs) \
+				   [lindex $vLine 1]]
+		    set index [join [TransEnums $useNodes($winId,allETs) \
+					 [lindex $vLine 0]] ,]
+		}
 		.popup.message config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
 	    } else { # get approx value from raw data
+		set cell [expr ($row-1)*$ncol+$col-1]
 		if {![binary scan $useNodes($winId,rawBinary) \
 			  x${cell}H2 hexo]} return
 		set numValue [expr $useNodes($winId,min)+0x$hexo*($useNodes($winId,range))/255]
