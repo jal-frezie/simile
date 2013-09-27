@@ -662,14 +662,14 @@ namespace eval grid005 {
         
 	set ncol $useNodes($winId,ncol)
 	set nrow $useNodes($winId,nrow)
-
+puts $nrow,$ncol
         set allData {}
 	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
 	    set allData [lrepeat $nrow [lrepeat $ncol grey]]
 
 	    foreach {y row} [lindex [GetModelValue $node] 0] {
 		foreach {x celval} $row {
-		    lset allData [list $y $x] [ForGrid $winId $celval]
+		    lset allData [list $y-1 $x-1] [ForGrid $winId $celval]
 		}
 	    }
 	} else {
