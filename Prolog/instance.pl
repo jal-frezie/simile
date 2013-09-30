@@ -4,7 +4,7 @@
 *******************************************************************************/
 
 sicstus_module(instance, [instantiate_all/2, apply_minmax/3,
-			  path_section_for/6] ).
+			  is_lookup_cond/2, path_section_for/6] ).
 
 sicstus_use_module([sp_only, m_class, inters, ame_gen, units, utility, m_update,
 	       library(lists),library(ordsets)]).

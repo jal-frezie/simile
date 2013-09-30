@@ -1264,8 +1264,7 @@ nodes.
 	    all(ame_gen, enum_type_ref, [build(Dims), unify(SmName),
 					 build(Sizes), build(_), build(_)]),
 	    Level = [sm(_,_,_, vm_loop(Sizes, _, BaseSides, _))],
-	    (setof(CondBox, member(instance(condition,_, function,
-			elt(_, CondBox, _),_), Functions), Conds), !,
+	    (setof(CondBox, cond_test_in(CondBox, Functions), Conds), !,
 		TestExpr = Conds;
 	    /* dummy generator node for other variable membership submodels */
 	    member(instance(condition,_, id_function,
@@ -1345,6 +1344,10 @@ nodes.
 	    append(Specials, AssignList0, AssignList)),
 	append(FnInters, SmInters, Inters).
 
+cond_test_in(CondBox, Functions) :-
+	member(instance(condition,_, function,
+			elt(_, CondBox, _),_), Functions),
+	\+ is_lookup_cond(CondBox, _).
 /*
 maker_for(SmName, Fns, Name, Path, Step, Ptr, Channel, Rule) :-
 	member([Channel, EffectFr, ActFr],
