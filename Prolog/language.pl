@@ -631,7 +631,7 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes, Initial) | Clauses],
 	make_struct_reference(L, Pointer, 'next', OnPointer),
 	(setof(LossVal, get_term_refs(L, Pointer, LossNodes, LossVal),
 	       LossTerms), !,
-	    build_disjunction(L, LossTerms, IsDead),
+	    build_junction(LossTerms, '||', IsDead),
 
 	    excrete(L, if_start, IsDead, Indent1, Stream),
 	    refer_value(L, OnPointer, OnPointerRef),
@@ -661,7 +661,7 @@ we only make the three lines that insert the submodel instance into its linked l
 	    % clause for dummy generator
 	    Indent1 = Indent;
 	 (setof(GenVal, get_term_refs(L, Pointer, Source, GenVal), GenVals),
-	     build_disjunction(L, GenVals, TestVal), !;
+	     build_junction(GenVals, '&&', TestVal), !;
 	  TestVal = 0),
 	    excrete(L, if_start, TestVal, Indent, Stream),
 	    Indent1 is Indent+4),
@@ -756,7 +756,7 @@ make_section_cond(L, VMPtrs, PassTest) :-
 	    PassTest = PhaseRef;
 	all(language, make_new_base_cond,
 	    [unify(L), build(VMPtrs), build(LocaleTests)]),
-	    build_disjunction(L, LocaleTests, NewTest),
+	    build_junction(LocaleTests, '||', NewTest),
 	    combine(L, ?, [NewTest, -2:PhaseRef], PassTest)).
 	    
 	
@@ -840,11 +840,10 @@ add_for_channel(InitVar, [L, Index, Pointer, ParentPtr, MetaPointer, MPTarget, N
 /* special clause for use from membership setter, which passes its list match
 test instead of a list of local cond nodes...*/
 
-build_disjunction(_, [Item], Item).
+build_junction([Item], _, Item).
 
-build_disjunction(L, [Item1, Item2 | Rest], Dis) :-
-	build_disjunction(L, [Item2 | Rest], Others),
-	(L = c; L = tcl), Op = ('||'),
+build_junction([Item1, Item2 | Rest], Op, Dis) :-
+	build_junction([Item2 | Rest], Op, Others),
 	Dis =.. [Op, Others, Item1].
 
 /* This makes the expression for an individual's probability of dying
