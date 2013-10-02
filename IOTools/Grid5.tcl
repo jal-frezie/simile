@@ -113,11 +113,12 @@ namespace eval grid005 {
 	set state [GetState $winId]
 # looks like "displaying %s %s colourmap %s %s %s aspect %d %g %g magnification %d"
 	set useNodes($winId,color) [GetIdFromCaptionPath [lindex $state 1]]
-	set useNodes($winId,colvals) [GetIdFromCaptionPath [lindex $state 2]]
 	set useNodes($winId,tgtDims) [GetModelDims $useNodes($winId,color)]
 	if {[IsTwoDee $winId $useNodes($winId,tgtDims)]} {
 	    set useNodes($winId,colvals) USE_INDICES
 	} else {
+	    set useNodes($winId,colvals) \
+		[GetIdFromCaptionPath [lindex $state 2]]
 	    NumDistinct $winId $useNodes($winId,colvals)
 	}
 	set mapBase [lsearch $state colourmap]
