@@ -16,7 +16,7 @@ proc Disaggregate {parent title colour image imgpos type interp \
                 icount xproc xinc xlibs eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
     }
-    set new 0
+    set new 1
 
     if {!$new} {
 	if [llength $icount]>0 {
@@ -523,6 +523,16 @@ To access values from neighbouring squares in an equation, open the properties d
 	pack [ttk::label .disagExtra.dims.cols -text [tr. Columns:]] \
 	    -side right
     } 5 {
+	.disagExtra.l configure -text [tr. {Submodel representing a hexagonal grid. Both dimensions must be numerical.
+Hexagons cover a roughly rectangular area and have horizontal edges at top and bottom. To fit them together, the tops of hexagons in even numbered columns are level with the centres of those in odd numbered columns.}]
+	pack [frame .disagExtra.dims]
+	pack [ttk::label .disagExtra.dims.rows -text [tr. Rows:]] -side left
+	pack [ttk::entry .disagExtra.dims.y -textvariable disaggregate(y)] \
+	    -side left
+	pack [ttk::entry .disagExtra.dims.x -textvariable disaggregate(x)] \
+	    -side right
+	pack [ttk::label .disagExtra.dims.cols -text [tr. Columns:]] \
+	    -side right
     } 6 {
     }
     }
@@ -564,6 +574,11 @@ To access values from neighbouring squares in an equation, open the properties d
 	    set disaggregate(interp) \
 		rect_grid($disaggregate(y),$disaggregate(x))
 	    set disaggregate(icount) $disaggregate(y),$disaggregate(x)
+	} 5 {
+	    set disaggregate(type) generated
+	    set disaggregate(interp) \
+		hex_grid($disaggregate(y),$disaggregate(x))
+	    set disaggregate(icount) $disaggregate(y),$disaggregate(x)
 	}
     }
     ShowDisagSetup
@@ -586,6 +601,10 @@ proc ShowDisagSetup {} {
 	} rect_grid* {
 	    set interpIdx 4
 	    scan $disaggregate(interp) rect_grid(%d,%d) y x
+	    set sides ${y}x${x}
+	} hex_grid* {
+	    set interpIdx 5
+	    scan $disaggregate(interp) hex_grid(%d,%d) y x
 	    set sides ${y}x${x}
 	} default {
     # get from type and value only

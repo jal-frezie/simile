@@ -90,7 +90,8 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 
 	    pointer_from(RealPath, SmPtr),
 	    ((Location = up_hierarchy;
-	     Location = in_8_nbrs, BackSwap = frag_filter(nbr8_2d_ids)),
+	     Location = in_8_nbrs, BackSwap = frag_filter(nbr8_2d_ids);
+	     Location = in_6_nbrs, BackSwap = frag_filter(nbr6_2d_ids)),
 				% use values from all instances -- need to
 	     % stop loops matching by changing representation of bound
 		Wait = true,
@@ -208,7 +209,8 @@ expand_special_role(Param, LinkSpecs, Fn) :-
 		input_pair(UseParam, Arc,_, input(UseRole, _,_,_))]),
 	member(SpecialSpec, LinkSpecs),
 	member(Role-UseRole-Fn,
-	       [in_8_nbrs-up_hierarchy-in_8_nbrs(UseParam)]), % add more here
+	       [in_8_nbrs-up_hierarchy-in_8_nbrs(UseParam),
+	       in_6_nbrs-up_hierarchy-in_6_nbrs(UseParam)]), % add more here
 	member(GeneralSpec, LinkSpecs).
 
 read_library_funx(Done) :-
@@ -1307,9 +1309,11 @@ with_capt(Found, Loops, Sm, Capt) :-
 decode_number(Source, SubId, Step, SourceRef, Units) :-
 	(Source = row_count(''), SourceRef = R;
 	 Source = column_count(''), SourceRef = C), !,
-	  (m_update'><'in_rect_with_dims(SubId, R, C),
+	  (contains(RectId, SubId),
+	   m_update'><'ready_type(RectId, RType),
+	   member(RType, [rect_grid(R, C), hex_grid(R, C)]),
 	   Units = const_int;
-	  throw(not_in_rectangle(Source)));
+	  throw(not_in_grid(Source)));
 	get_actual_size(SubId, Source, quoted, [SrcNum], [SrcType], [SrcUnits]),
 	(Source = 0.0 -> GenUnits = real; GenUnits = SrcUnits),
 	remove_physical_units_if_disabled(SubId, GenUnits, Units),
@@ -1644,6 +1648,7 @@ operator(*, const_int, [const_int, const_int]).
 operator(*, int, [int, int]).
 operator(*, 1, [1,1]).
 operator(//, int, [int, int]).
+operator('%', int, [int, int]).
 operator(/, const_ratio, [const_int, const_int]).
 operator(/, 1, [1,1]).
 
