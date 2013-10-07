@@ -558,8 +558,8 @@ proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
 		-width $width -tag "$tagSet realwidth($width) no_stipple has_info"}
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] \
 		   [expr 2*$arrowRad] "$tagSet no_stipple startblob"
-    set stackDepth 1
-    while {$stackDepth < $stack} {
+    set stackDepth 2
+    while {$stackDepth <= $stack} {
         set stackDistance [expr {$stackDepth*$features/25}]
 	set levelLine {}
 	foreach pt $mptz {
