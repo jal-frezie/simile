@@ -2,7 +2,7 @@ set keyValue "threeDoodle98"
 namespace eval ::$keyValue {
 
  variable helperNamespace [ namespace current ]
- variable thdVersion "v1.1 1730 19th March 2009"
+ variable thdVersion "v1.2 1145 14th October 2013"
  
 # Version 1.1 restores from its saved state when told to do so, and works in a
 # non-toplevel window. See CVS for further version info.
@@ -593,9 +593,9 @@ namespace eval data {
       if [info exists myDebug ] {
          $myDebug insert 1.0 "proc ReadData: f_highX=$f_highX f_lowX=$f_lowX f_highY=$f_highY f_lowY=$f_lowY\n"
       }   
-
-      set f_xInterval [ expr ($f_highX - $f_lowX) ]
-      set f_yInterval [ expr ($f_highY - $f_lowY) ]
+# JAT: make float to avoid tcl integer arithmetic
+      set f_xInterval [ expr (0.0+$f_highX - $f_lowX) ]
+      set f_yInterval [ expr (0.0+$f_highY - $f_lowY) ]
       if { $f_minXInterval == -1 } {
          # Then this is the first pass.
          set f_minXInterval $f_xInterval
@@ -662,11 +662,13 @@ namespace eval data {
       # So, first work out the extent of the x,y values, and spread them over a
       # reasonable sized grid.
       
+    if {[info exists myDebug]} {
+	$myDebug insert 1.0 "proc ReadData: xin $f_xInterval sql $sorted_quadlist\n"
+    }
       if { $f_xInterval != 0 } {
          # NB string compare returns 0 on success.
-         for { set i 0 } { $i < [llength $sorted_quadlist] } { incr i } {
+         foreach quad $sorted_quadlist {
             # $myDebug insert 1.0 "Converting data\n"
-            set quad [lindex $sorted_quadlist $i]
             set f_x [lindex $quad 0]
             set f_y [lindex $quad 1]
             set f_colour [lindex $quad 2]
@@ -690,16 +692,19 @@ namespace eval data {
             # OK, we should have INTEGER xindex, yindex.
             set index "$xindex,$yindex"
 
-            set a_ZValues($index) [ lappend a_ZValues($index) $f_height ]
+            lappend a_ZValues($index) $f_height
 
-            set a_rawColourData($index) [ lappend a_rawColourData($index) $f_colour ]
+            lappend a_rawColourData($index) $f_colour
             
-            set a_Id($index) [ lappend a_Id($index) $f_Id ]
+            lappend a_Id($index) $f_Id
             
          }
          # END while {[string compare $quadlist ""]}
       }
       # END if { $f_xInterval != 0 }
+    if {[info exists myDebug]} {
+	$myDebug insert 1.0 "proc ReadData: heights [array get a_ZValues]\n"
+    }
    }
    # END proc ReadData {winId xs ys cs hs}
    #########################
@@ -915,29 +920,34 @@ namespace eval graphics {
     upvar $l_quadDisplay l_qDisp
       # foreach poly $l_qDisp 
       for { set index [expr [llength $l_qDisp] - 1] } { $index>=0 } { incr index -1 } {
+         set poly [lindex $l_qDisp $index]
+         set quadColour [lindex $poly 8 ]
          # VERY irritatingly, this doesn't work...
          #$myCanvas create polygon $poly -fill green -outline black
-         # ... which means I have to resort to this mess...
+# JAT: but this does:
+	  set polyId [eval {$myCanvas create polygon} [lrange $poly 0 7] \
+			  {-fill $quadColour -outline black -width 1}]
+         # ... which means I have to resort to this mess...(JAT: not)
          # (which BTW is a bitch to debug)
          # This code creates variables called x0,y0,x1,x2...etc and
          # extracts values from the list $poly
-         set poly [lindex $l_qDisp $index]
-         for { set i 0 } { $i < 4 } { incr i } {
-            set varName [format "x%s" $i]
-            set ${varName} [lindex $poly [expr 2*$i] ]
+#         for { set i 0 } { $i < 4 } { incr i } {
+#            set varName [format "x%s" $i]
+#            set ${varName} [lindex $poly [expr 2*$i] ]
             
-            set varName [format "y%s" $i]
-            set ${varName} [lindex $poly [expr (2*$i)+1] ]
-         }
-         set quadColour [lindex $poly 8 ]
+#            set varName [format "y%s" $i]
+#            set ${varName} [lindex $poly [expr (2*$i)+1] ]
+#         }
          set taglist [concat [lindex $poly 9]]
-         set polyId [$myCanvas create polygon $x0 $y0 $x1 $y1 $x2 $y2 $x3 $y3 \
-                        -fill $quadColour -outline black -width 1]
+#         set polyId [$myCanvas create polygon $x0 $y0 $x1 $y1 $x2 $y2 $x3 $y3 \
+#                        -fill $quadColour -outline black -width 1]
 #         $myDebug insert 1.0 "Adding taglist [lindex $poly 9]\n"
          foreach tag $taglist {
             $myCanvas addtag $tag withtag $polyId 
-#            $myDebug insert 1.0 "Adding tag $tag\n"
          }
+	  if {[info exists myDebug]} {
+	      $myDebug insert 1.0 "coords [$myCanvas coords $polyId] other [$myCanvas itemconfigure $polyId]\n"
+	  }
       }
       # END foreach poly $l_qDisp
    }
@@ -1161,11 +1171,11 @@ namespace eval graphics {
       
       # Plonk this new quad into the display list.
       # Surface
-      set link_display [ lappend link_display \
-         "$d_x1 $d_y1 $d_x2 $d_y2 $d_x3 $d_y3 $d_x4 $d_y4 $quadColour {$first surfaceQuad}" ] 
+      lappend link_display \
+         "$d_x1 $d_y1 $d_x2 $d_y2 $d_x3 $d_y3 $d_x4 $d_y4 $quadColour {$first surfaceQuad}"
       # Floor
-      set link_display [ lappend link_display \
-         "$d_x1z0 $d_y1z0 $d_x2z0 $d_y2z0 $d_x3z0 $d_y3z0 $d_x4z0 $d_y4z0 grey {$first floor}" ] 
+      lappend link_display \
+         "$d_x1z0 $d_y1z0 $d_x2z0 $d_y2z0 $d_x3z0 $d_y3z0 $d_x4z0 $d_y4z0 grey {$first floor}"
    }
    
    proc setUpColumnsVertices { winId upX upY upX_count upY_count l_display stack_index prevHeight } {
@@ -1259,30 +1269,30 @@ namespace eval graphics {
       # Front sides
       # Version 0.0.95 - ensure that the sides need to be drawn,
       if { $d_y2 != $d_y2z0 } {
-         set link_display [ lappend link_display \
+         lappend link_display \
             "$d_x1 $d_y1 $d_x2 $d_y2 $d_x2z0 $d_y2z0 $d_x1z0 $d_y1z0 \
-            ${quadColour}${dark} {side $first}" ] 
+            ${quadColour}${dark} {side $first}"
       }
       if { $d_y2 != $d_y2z0 } {
-         set link_display [ lappend link_display \
+         lappend link_display \
             "$d_x1 $d_y1 $d_x4 $d_y4 $d_x4z0 $d_y4z0 $d_x1z0 $d_y1z0 \
-            ${quadColour}${dark} {side $first}" ] 
+            ${quadColour}${dark} {side $first}"
       }
       # "Top"
-      set link_display [ lappend link_display \
+      lappend link_display \
          "$d_x1 $d_y1 $d_x2 $d_y2 $d_x3 $d_y3 $d_x4 $d_y4 \
-         ${quadColour} {top $first}" ] 
+         ${quadColour} {top $first}"
       
       # Back Sides. These need to be drawn if there are substantial
       # negative value columns, for that hollow look you'll like 8l
       if { $b_backFaces } {
-         set link_display [ lappend link_display \
+         lappend link_display \
             "$d_x3 $d_y3 $d_x2 $d_y2 $d_x2z0 $d_y2z0 $d_x3z0 $d_y3z0 \
-            ${quadColour}${vdark} {side $first}" ] 
+            ${quadColour}${vdark} {side $first}"
          
-         set link_display [ lappend link_display \
+         lappend link_display \
             "$d_x4 $d_y4 $d_x3 $d_y3 $d_x3z0 $d_y3z0 $d_x4z0 $d_y4z0 \
-            ${quadColour}${vdark} {side $first}" ] 
+            ${quadColour}${vdark} {side $first}"
       }
       # END if { $b_backFaces }
 
@@ -1718,9 +1728,10 @@ namespace eval graphics {
       }   
       # Effectively, "for each instance positioned on this column,
       #                 set corresponing elements"
-      for { set i 0 } { $i < [llength $Id] } { incr i } {
-         set a_newCs([lindex $Id $i]) [lindex $a_rawColourData($index) $i]
-         set a_newZs([lindex $Id $i]) [lindex $a_ZValues($index) $i]
+      foreach {ithId ithAr ithZv} \
+	{$Id $a_rawColourData($index) $a_ZValues($index)} {
+         set a_newCs($ithId) $ithAr
+         set a_newZs($ithId) $ithZv
       }
 
       # copy back - why am i doing this? A mystery!
