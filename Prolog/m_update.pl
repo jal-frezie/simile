@@ -131,10 +131,13 @@ get_all_links(Function, SrcType, ids(RemoteNode, Relation),
 	find_name_host(Link, LinkWithAttrs),
 	(get_av_pair(LinkWithAttrs, 2, suppressed_roles, SuppArg) ->
 	 Supps = SuppArg; Supps = []),
+	(get_av_pair(LinkWithAttrs, 2, enabled_roles, EnabArg) ->
+	 Enabs = EnabArg; Enabs = []),
 
 	get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
 		Relation, Index, SourceLocn),
-	\+ member(Index, Supps),
+	(integer(Index), Index<0 -> member(Index, Enabs);
+	 \+ member(Index, Supps)),
 	check_ET_consistency(RemoteUnit, RemoteNode, Function),
 	(use_destination(Link, RemoteUnit, 
 			 Index, SourceLocn, LocalName, Local_unit) -> true;
@@ -354,10 +357,10 @@ get_unit_conversion(Remote, Local,
 	(/* Do not display parameter for input without role reference if there
 	is a reference...as of v5.7, do -- but use in_base or in_assoc as
 	appropriate (keep link id of none). */
-	all(ame_gen, get_all_dims, [build(BiggestFirst), append(Subs, [])]),
+	Index = none,
+	    all(ame_gen, get_all_dims, [build(BiggestFirst), append(Subs, [])]),
 	    relation_of_source(Exited, Entered, SourceLocation),
-	    Relation = DefRel,
-	    Index = none;
+	    Relation = DefRel;
 	 % this disjunct should give us a role that gets values from
 	 % all instances of the current submodel
 	RemoteModel = LocalModel,

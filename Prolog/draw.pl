@@ -535,9 +535,13 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	untranslate(Coord_list, Trans, Screen_coords),
 	find_fatness(Trans, RelFatness),
 	get_flash(Link, Colour_scheme),
-        (Type = flow ->
+        (Type = flow,
 	    multiple_draw(Link, Num);
-	    Num = 1),
+	  Type = influence,
+	    m_class'><'Link has_attribute enabled_roles of EnabList,
+	    member(-1, EnabList),
+	    Num = 4; % or however many insts current submodel has
+	  Num = 1), !,
 	(Type = influence,
 	    find_name_host(Link, ControlThing),
 	    m_class'><'ControlThing has_attribute use_sofar of 1, !,

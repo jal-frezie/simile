@@ -15,6 +15,7 @@
 set pi 3.14159
 set cornerPts 6
 set faceAngle [expr $pi/2/$cornerPts]
+set splinePts [expr {2*$cornerPts+1}]
 
 set expansion [expr (1 - cos($faceAngle/2))/2]
 for {set pt 1} {$pt < $cornerPts} {incr pt} {
@@ -513,20 +514,27 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     ResetColours $w submodel {} $colourScheme [lindex $tagSet 0]
 }
 
-proc PutThinArrow { w ptz fatness density colourScheme tagSet} {
+proc PutThinArrow { w ptz stack fatness density colourScheme tagSet} {
     # Have to use eval because points are packed in a list -- what a language
     set width [GetLineSize $w influence $fatness]
     set features [GetObjectSize $w influence $fatness]
     set mptz [ScaleList $w $ptz]
     eval {$w create line} $mptz {-arrow last \
                 -arrowshape [list [expr $features/6] [expr $features/5] \
-                [expr $features/16]] -smooth true -width $width \
-                -tag "$tagSet realwidth($width) has_info"}
+                [expr $features/16]] -smooth true -splinesteps $::splinePts \
+		-width $width -tag "$tagSet realwidth($width) has_info"}
     
     # next few lines put blob with diameter equal to width of
     # arrowhead at start of line
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr $features/10] \
             "$tagSet startblob"
+# now experimental bit to draw extra lines around middle to indicate stack
+    if {$stack>1} {
+	foreach level {-2 -1 1 2} {
+	    eval {$w create line} [CurveStackEnds $mptz [expr {3*$level*$width}]] \
+	    {-width $width -tag "$tagSet stackdecor($level)"}
+	}
+    }
     ResetColours $w influence $density $colourScheme [lindex $tagSet 0]
 }
 
@@ -538,7 +546,7 @@ proc PutRelation { w ptz fatness colourScheme tagSet} {
     set mptz [ScaleList $w $ptz]
     eval {$w create line} $mptz {-arrow last \
                 -arrowshape [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] \
-                -smooth true -width $width \
+                -smooth true -splinesteps $::splinePts -width $width \
 				     -tag "$tagSet realwidth($width) has_info"}
     # next few lines put blob with diameter equal to width of arrowhead at start of
     # line
@@ -694,11 +702,38 @@ proc MoveLine {w id ptz} {
             set xn [lindex $mptz [expr [llength $mptz] - 2]]
             set yn [lindex $mptz end]
             $w coords $item $xn $yn $xn $yn
+	} elseif {[regexp {stackdecor\(([0-9\-]+)\)} $taglist tag level]>0} {
+	    set distOff [expr {3*$level*[$w itemcget $item -width]}]
+            $w coords $item [CurveStackEnds $mptz $distOff]
         } elseif {[string match line [$w type $item]] && \
                     ![string match *bowtie* $taglist]} {
             eval "$w coords $item" $mptz
         }
     }
+}
+
+proc CurveStackEnds {mptz distOff} {
+    global splinePts
+    set fc1 [expr {$splinePts-2}]
+    set fc3 [expr {$splinePts+2}]
+    set fc4 [expr {$splinePts*2}]
+    set fc8 [expr {$splinePts*4}]
+
+    set x1 [expr {($fc3*[lindex $mptz 0] + $fc4*[lindex $mptz 2] + \
+		      $fc1*[lindex $mptz 4])/$fc8}]
+    set y1 [expr {($fc3*[lindex $mptz 1] + $fc4*[lindex $mptz 3] + \
+		      $fc1*[lindex $mptz 5])/$fc8}]
+    set x2 [expr {($fc1*[lindex $mptz 0] + $fc4*[lindex $mptz 2] + \
+		      $fc3*[lindex $mptz 4])/$fc8}]
+    set y2 [expr {($fc1*[lindex $mptz 1] + $fc4*[lindex $mptz 3] + \
+		      $fc3*[lindex $mptz 5])/$fc8}]
+    set xtent [expr {$x2-$x1}]
+    set ytent [expr {$y2-$y1}]
+    set len [expr {sqrt($xtent*$xtent + $ytent*$ytent)}]
+    set xOff [expr {$distOff*$ytent/$len}]
+    set yOff [expr {-$distOff*$xtent/$len}]
+    return [list [expr {$x1+$xOff}] [expr {$y1+$yOff}] \
+		[expr {$x2+$xOff}] [expr {$y2+$yOff}]]
 }
 
 proc MoveBowtie {w id ptz} {
@@ -1917,10 +1952,10 @@ proc DoGraphics {box type middlex middley size captAnchor} {
             set b [expr $middley + 3*$size/10]
 	    PutShape $box.canvas $l $t $r $b condition 100 normal \
 		"sample targetable"
-        } influence {PutThinArrow $box.canvas "30 $middley $middlex \
+        } influence {PutThinArrow $box.canvas 1 "30 $middley $middlex \
                     [expr $middley-30] [expr 2*$middlex - 30] $middley" \
                     100 {} normal "sample"
-        } ghost_link {PutThinArrow $box.canvas "30 $middley $middlex \
+        } ghost_link {PutThinArrow $box.canvas 1 "30 $middley $middlex \
                     [expr $middley-30] [expr 2*$middlex - 30] $middley" \
                     100 gray50 normal "sample"
         } relation {

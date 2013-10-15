@@ -248,19 +248,19 @@ flow(Wid, Coords, Stack, Fatness, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutFatArrow', Wid, br(Singleton_list), Stack,
 		      Fatness, Colour_scheme, br(Features)], _).
 
-influence(Wid, Coords, _Stack, Fatness, Colour_scheme, Features) :-
+influence(Wid, Coords, Stack, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
+	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list), Stack,
 		       Fatness, {}, Colour_scheme, br(Features)], _).
 
-broken_influence(Wid, Coords, _Stack, Fatness, Colour_scheme, Features) :-
+broken_influence(Wid, Coords, Stack, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
+	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list), Stack,
 		       Fatness, dashed, Colour_scheme, br(Features)], _).
 
-ghost_link(Wid, Coords, _Stack, Fatness, Colour_scheme, Features) :-
+ghost_link(Wid, Coords, Stack, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
+	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list), Stack,
 		       Fatness, gray50, Colour_scheme, br(Features)], _).
 
 relation(Wid, Coords, _Stack, Fatness, Colour_scheme, Features) :-

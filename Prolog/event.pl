@@ -852,9 +852,11 @@ doubleclick_on(Edit_thing) :-
 	 (RoleRefPairs = [_P1, _P2 | _], !,% at least one role besides none
 	  (get_av_pair(ControlThing, 2, suppressed_roles, Suppd), !;
 	   Suppd = []),
+	  (get_av_pair(ControlThing, 2, enabled_roles, Enabd), !;
+	   Enabd = []),
 	  all(event, role_ref_to_msg, [build(RoleRefPairs), build(RoleMsgs)]),
-	  all(event, role_ref_to_stat,
-	      [build(RoleRefPairs), unify(Suppd), build(RoleStats)]);
+	  all(event, role_ref_to_stat, [build(RoleRefPairs), unify(Suppd),
+					unify(Enabd), build(RoleStats)]);
 	  [RoleMsgs, RoleStats] = [[], []]),
 	 Attrs = [use_sofar]), !,
 	    all(event, get_refinement_or_0,
@@ -869,13 +871,18 @@ doubleclick_on(Edit_thing) :-
 	        length(OldVals, NVals),
 	        length(NewVals, NVals),
 	        append(NewVals, NewChecks, NewStats),
-	        (all(event, role_ref_to_stat,
-		    [build(RoleRefPairs), unify(NewSuppd), build(NewChecks)]),
+	        all(event, role_ref_to_stat,
+		    [build(RoleRefPairs), unify(NewSuppd),
+		     unify(NewEnabd), build(NewChecks)]),
 		 % fails if single ref not checked
-		 nonvar(NewSuppd),
-		 length(NewSuppd, _NSuppd), !;
+		 (nonvar(NewSuppd),
+		  length(NewSuppd, _NSuppd), !;
 		 NewSuppd = ''),
 	        add_parameter(ControlThing, 2, suppressed_roles, NewSuppd),
+		 (nonvar(NewEnabd),
+		  length(NewEnabd, _NEnabd), !;
+		 NewEnabd = ''),
+	        add_parameter(ControlThing, 2, enabled_roles, NewEnabd),
 		    
 		all(m_update, add_parameter,
 		    [unify(ControlThing), unify(2), build(Attrs),
@@ -928,10 +935,14 @@ role_ref_to_msg(Role-Ref, Message) :-
 	  caption_for(Role, Capt),
 	 Message = [with_role, Capt]).
 
-role_ref_to_stat(_-Ref, Suppd, Status) :-
-	Status = 0,
+role_ref_to_stat(_-Ref, Suppd, Enabd, Status) :-
+	(integer(Ref), Ref<0 -> 
+	(Status = 1,
+	member(Ref, Enabd), !;
+	Status = 0);
+	(Status = 0,
 	member(Ref, Suppd), !;
-	Status = 1.
+	Status = 1)).
 
 get_refinement_or_0(ControlThing, AttSort, Attr, OldExc) :-
 	get_av_pair(ControlThing, AttSort, Attr, OldExc), !;
