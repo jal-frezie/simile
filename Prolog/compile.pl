@@ -644,7 +644,7 @@ the model node data table and the extractor case statements */
 
 generate_main_decls(L, Instance, Finish, Stream) :-
 	Instance = instance(submodel, SymbolicName, 
-			xrefs(Model, Bases, _), _, ModelType-_),
+			xrefs(Model, Bases, _), Name, ModelType-_),
 	(variable_size(SymbolicName), !,
 	    /* Declare the type with 'compartment' to hold instance numbers */
 	    list_local_index_meanings(SymbolicName, Bounds),
@@ -668,9 +668,13 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 		      instance(system, ids,_, instanceid, int-DummyCompDims)];
 	Extras = [],
 	    DeclsOnly = []),
+	(builtin_nbr_refs(SymbolicName, _) ->
+	    template_type(nbrlist, Name, NbrListType),
+	    NbrDecls = [instance(internal, nbrs, _, nbrs, NbrListType-[])];
+	  NbrDecls = []),
 	extract_instances(Model, RealDecls),
 	append(Extras, RealDecls, SubInstances),
-	append(DeclsOnly, SubInstances, KitchenSink),
+	append([DeclsOnly, NbrDecls, SubInstances], KitchenSink),
 	render(L, class_declaration, Instance, 0, ThisDecl),
 
 	refer_value(L, id, IdRef),
@@ -1126,6 +1130,7 @@ extract_submodel_assignment(Instance, ParentFns,
 	append([Swaps, InSwaps, OutSwaps], NewSwaps),
 	append(CurrentBaseMembershipsSet, LastLocalMembershipUsed,
 	       BasesEnumerated),
+	(builtin_nbr_refs(SmName, LoopCode); LoopCode = []),
 	
 /* Now add the special instructions for more exotic types of submodels. The new_member
 instruction is generated immediately after the pointer initialization (i.e., to run in
@@ -1263,7 +1268,8 @@ nodes.
 	    versions (not that they were...) */
 	    all(ame_gen, enum_type_ref, [build(Dims), unify(SmName),
 					 build(Sizes), build(_), build(_)]),
-	    Level = [sm(_,_,_, vm_loop(Sizes, _, BaseSides, _))],
+	    (LoopCode = [] -> VmCode = Sizes; VmCode = LoopCode),
+	    Level = [sm(_,_,_, vm_loop(VmCode, _, BaseSides, _))],
 	    (setof(CondBox, cond_test_in(CondBox, Functions), Conds), !,
 		TestExpr = Conds;
 	    /* dummy generator node for other variable membership submodels */
@@ -1281,8 +1287,8 @@ nodes.
 			     [existence_tested(Name), can_enter(Name)],
 			     LocalPath, Step, []),
 			make(existence_tested(Name),
-			     [earlier(can_enter(Name)) | Conds],
-			     LocalPath, Step, [test(Name, NewPtr, TestExpr)]),
+			     [earlier(can_enter(Name)) | Conds], LocalPath,
+			     Step, [test(Name, NewPtr, TestExpr, LoopCode)]),
 			make(can_enter(Name),
 			     [startable(Name) | BasesEnumerated], Path, Step,
 			     []),
@@ -1321,6 +1327,13 @@ nodes.
 	        AlAct = al_action(Al, EvtExp),
 	        SmInters = [],
 	     	Specials = [make(enumerate(Name), [Al], Path, Step, [])];
+	     member(LoopCode-Shp,
+		    [rect_grid(Rows, Cols)-1, hex_grid(Rows, Cols)-2]), !,
+	        SmInters = [],
+	        make_inds_for([Rows, Cols], GridLoops, Inds),
+		prefix([sm(_,_, LPtr, _) | GridLoops], LocalPath),
+	     	Specials = [make(enumerate(Name), [], LocalPath, -2,
+			      [list_fixed_nbrs(LPtr, Shp, Rows, Cols, Inds)])];
 	     [SmInters, Specials] = [[], []]),
 	    BaseSides = []),
 	extract_assignments(Instance, LocalPath, LocalTree, Step, MaxStep,
@@ -2021,7 +2034,8 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		/* and add extra loops that go around generate statement --
 		record test phase to use in later new instance tests */
 		SmLevel = sm(Submodel, ParentPtr, Ptr,
-			     vm_loop(Dims,_, MoreLoops, _)),
+			     vm_loop(LoopCode,_, MoreLoops, _)),
+	        decode_loop(LoopCode, _ReadyType, Dims),
 		ptr_to_last_vm(Path, -2, ParentNew),
 		make_inds_for(Dims, Sets, LocalInds),
 		% check for new base instances removed in 5.9 -- if one is
@@ -2089,7 +2103,8 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		    LastStep = LastStepTail),
 				    
 		get_base_ptrs(BLoops, _, BasePtrs),
-		extract_action(Outer, [bound_gen_loop(ParentPtr, Submodel)]),
+		extract_action(Outer,
+			       [bound_gen_loop(ParentPtr, Submodel, LoopCode)]),
 		extract_action(GenStep, [generate(Submodel, ParentPtr,
 				Ptr, GenCond, VMPtrs, Inds, BasePtrs)]),
 		SmNew = [new_context(Ptr, TestPhase)],
@@ -2120,6 +2135,12 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 indices_direct([MPtr | Inds], ind(IPtr, N), Ind, 0) :-
 	MPtr == IPtr,
 	nth0(N, Inds, Ind).
+
+decode_loop(LoopCode, ReadyType, Dims) :-
+	LoopCode =.. [ReadyType | Dims],
+	    \+ ReadyType = '.', !;
+	  ReadyType = simple,
+	    Dims = LoopCode.
 
 /* we will need to initialize a submodel's contents if it is new and
 the time step level is as large as the level in which it is

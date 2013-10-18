@@ -525,7 +525,7 @@ To access values from neighbouring squares in an equation, open the properties d
     } 5 {
 	.disagExtra.l configure -text [tr. {Submodel representing a hexagonal grid. Both dimensions must be numerical.
 Hexagons cover a roughly rectangular area and have horizontal edges at top and bottom. To fit them together, the tops of hexagons in even numbered columns are level with the centres of those in odd numbered columns.}]
-	pack [frame .disagExtra.dims]
+ 	pack [frame .disagExtra.dims]
 	pack [ttk::label .disagExtra.dims.rows -text [tr. Rows:]] -side left
 	pack [ttk::entry .disagExtra.dims.y -textvariable disaggregate(y)] \
 	    -side left
@@ -591,11 +591,7 @@ proc ShowDisagSetup {} {
     set sides {}
     set interp $disaggregate(interp)
     switch -glob $interp {
-	hex_grid* {
-	    set interpIdx 5
-	    set sides [string range $interp \
-			   [string first \( $interp]+1 end-1]
-	} poly_map {
+	poly_map {
 	    set interpIdx 6
 	    set sides {}
 	} rect_grid* {

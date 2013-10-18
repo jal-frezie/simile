@@ -88,20 +88,24 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	    make_inds_for(Dims, LocalLoops, Inds),
 	    copy_term(RealPathForm, RealPath),
 
-	    pointer_from(RealPath, SmPtr),
-	    ((Location = up_hierarchy;
-	     Location = in_8_nbrs, BackSwap = frag_filter(nbr8_2d_ids);
-	     Location = in_6_nbrs, BackSwap = frag_filter(nbr6_2d_ids)),
+	    ((Location = up_hierarchy,
+	        Path = [sm(outside(Name), A, B, C) | D];
+	      member(Location, [in_8_nbrs, in_6_nbrs]),
+	        Path = [sm(Name, B, _, nbrs), sm(Name, A, B, C) | D]),
 				% use values from all instances -- need to
 	     % stop loops matching by changing representation of bound
 		Wait = true,
 	        RealPath = [sm(Name, A, B, C) | D],
-	        Path = [sm(outside(Name), A, B, C) | D]; 
+	        pointer_from(Path, SmPtr);
+	     % the last bit will stop these roles being used in same eqn as
+	     % assoc roles, which may be sensible
 	     Link = none,
+	        pointer_from(RealPath, SmPtr),
 		Wait = true,
 		Path = RealPath;
 	    member(path_substitution(Base, Assoc, Link), Swaps),
-		(Location = in_base, wake,
+	        pointer_from(RealPath, SmPtr),
+		(Location = in_base,
 		    Wait = true,
 /* precaution removed because it only works when getting stuff from looked-up
 		    model, actually you cannot get stuff from elsewhere in
@@ -201,6 +205,7 @@ expand_library(Var, NewVar) :-
 	Var = choose(Bool, V1, V2), !,
 	    NewVar = (Bool?V1:V2). */
 
+% not used for now, we will loop over nbr list 
 expand_special_role(Param, LinkSpecs, Fn) :-
 	member(SpecialSpec-GeneralSpec,
 	       [input_link(id(Arc,_,Role),_,Param,_,_)- % parse time
@@ -210,7 +215,7 @@ expand_special_role(Param, LinkSpecs, Fn) :-
 	member(SpecialSpec, LinkSpecs),
 	member(Role-UseRole-Fn,
 	       [in_8_nbrs-up_hierarchy-in_8_nbrs(UseParam),
-	       in_6_nbrs-up_hierarchy-in_6_nbrs(UseParam)]), % add more here
+		in_6_nbrs-up_hierarchy-in_6_nbrs(UseParam)]), % add more here
 	member(GeneralSpec, LinkSpecs).
 
 read_library_funx(Done) :-
@@ -727,7 +732,8 @@ make_intermediates(
 	    (var(Ph), SetTime = Step; SetTime=Ph), !,
 	    KeepDeps = [on_step | Depends]; % on_step forces time to be step
 	SetTime = Step, 
-	    (Functor = count, !,
+	    (Functor = count, Units = const_int, !,
+	     % do not purge if counting vm or they may not be enumerated
 		purge(Depends, OldArgs, KeepDeps);
 	    KeepDeps = Depends)),
         (member(Functor, [make_inter, at_phase /*, last, 
@@ -2102,6 +2108,7 @@ building_dims_and_indices(set(I, loop(_,L)), L, I).
 loops(set(_, loop(_,_))).
 loops(sm(_,_,_, vm_loop(_,_,_,_))).
 loops(sm(_,_,_, vm_retrieve(_))).
+loops(sm(_,_,_, nbrs)).
 loops(cond_section(_)).
 
 get_model_and_loops(Context, Dest, Path, Loops, Base) :-

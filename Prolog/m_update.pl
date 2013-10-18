@@ -136,8 +136,8 @@ get_all_links(Function, SrcType, ids(RemoteNode, Relation),
 
 	get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
 		Relation, Index, SourceLocn),
-	(integer(Index), Index<0 -> member(Index, Enabs);
-	 \+ member(Index, Supps)),
+ 	(integer(Index), Index<0 -> member(Index, Enabs);
+	\+ member(Index, Supps)),
 	check_ET_consistency(RemoteUnit, RemoteNode, Function),
 	(use_destination(Link, RemoteUnit, 
 			 Index, SourceLocn, LocalName, Local_unit) -> true;
@@ -372,11 +372,11 @@ get_unit_conversion(Remote, Local,
 	        SourceLocation = in_all_bases,
 	        get_unit_conversion(Remote, as_if_in(HierSat), [], HierRelation,
 				    _, in_base);
-	     ready_type(LocalModel, rect_grid(_, _)),
+	     ready_type(LocalModel, rect_grid(_,_)),
 	        Subs = [var],
 	        SourceLocation = in_8_nbrs,
 	        Index = -2;
-	     ready_type(LocalModel, hex_grid(_, _)),
+	     ready_type(LocalModel, hex_grid(_,_)),
 	        Subs = [var],
 	        SourceLocation = in_6_nbrs,
 	        Index = -3;

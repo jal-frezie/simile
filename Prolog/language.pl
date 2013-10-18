@@ -4,7 +4,7 @@
 **** being the starting point.                                              ****
 *******************************************************************************/
 
-sicstus_module( language, [do_assign_list/5] ).
+sicstus_module( language, [do_assign_list/5, template_type/3] ).
 
 sicstus_use_module( [sp_only, render,m_class,utility,
 		ame_gen,units,text,library(lists)] ).
@@ -12,8 +12,7 @@ sicstus_use_module( [sp_only, render,m_class,utility,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 make_new_check(L, Pointer, NewTest) :-
-	make_struct_reference(L, Pointer, new_instance, NewTestVar),
-	refer_value(L, NewTestVar, NewTest).
+	make_struct_reference(L, Pointer, new_instance, _, NewTest).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -21,13 +20,13 @@ fill_instance_ids(c, _N, _Pointer, [], _Indent, _).
 
 fill_instance_ids(c, N, Pointer, [RefIndex | RefIndices], Indent, Stream) :-
 	make_indexed_reference(c, instanceid, [N], IArray),
-	make_struct_reference(c, Pointer, IArray, ISlot),
+	make_struct_reference(c, Pointer, IArray, ISlot, _),
 	excrete(c, assignment, ISlot=RefIndex, Indent, Stream),
 	NPlus is N+1,
 	fill_instance_ids(c, NPlus, Pointer, RefIndices, Indent, Stream).
 
 fill_instance_ids(tcl, _, Pointer, RefIndices, Indent, Stream) :-
-	make_struct_reference(tcl, Pointer, instanceid, Target),
+	make_struct_reference(tcl, Pointer, instanceid, Target, _),
 	make_procedure_call_chars(tcl, [concat | RefIndices], NewRefStr),
 	name(NewRef, NewRefStr),
 	excrete(tcl, assignment, Target=NewRef, Indent, Stream).
@@ -79,8 +78,7 @@ do_assignment(L, [open_index(glob(Loop, Inds), Bound) | Clauses],
         (make_indexed_reference(L, Loop, Inds, Count),
 	    (Bound = pra_bound(Ptr, Name),
 		append_atoms(Name, made, MadeBound),
-		make_struct_reference(L, Ptr, MadeBound, UseBound),
-		refer_value(L, UseBound, UseBoundRef);
+		make_struct_reference(L, Ptr, MadeBound, _, UseBoundRef);
 	     \+ Bound = pra_bound(Ptr, Name),
 		UseBoundRef = Bound),
 	    excrete(L, for_start, [Count, UseBoundRef, 1], Indent, Stream),
@@ -109,13 +107,12 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 		Indent, Stream),
 	(nonvar(Alarm),
 	    Alarm = al_action(DoneCond, TryCond),
-	    make_struct_reference(L, Pointer, DoneCond, AlarmVar),
+	    make_struct_reference(L, Pointer, DoneCond, AlarmVar, AlarmRef),
 	    excrete(L, assignment, AlarmVar=1, Indent, Stream),
 	    make_evaluation_routine(L, TryCond, Used, TryRef),
 	    excrete(L, while_start, TryRef, Indent, Stream),
 	    Indent1 is Indent + 4,
 	    do_assign_list(L, MyLoop, Indent1, Used, Stream),
-	    refer_value(L, AlarmVar, AlarmRef),
 	    excrete(L, if_start, AlarmRef, Indent1, Stream),
 	    Indent2 is Indent1 + 4,
 	    excrete(L, break, _, Indent2, Stream),
@@ -135,32 +132,44 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 				% quick and dirty fix, should be gnd anyway
 	    all(compile, get_base_ptrs, [build(GndBaseLoops), append(Names, []),
 					 append(BasePtrs, [])])),
-	refer_value(L, Pointer, PointerRef),
+	  refer_value(L, Pointer, PointerRef),
 %	all(language, declare,
 %	    [unify(L), build(BasePtrs), unify(bad), build(Types),
 %	     unify(Used), unify(Indent), unify(Stream)]),
-	make_struct_reference(L, Top, Name, StartPointer),
-	refer_value(L, StartPointer, StartPtrRef),
+	  make_struct_reference(L, Top, Name, _, StartPtrRef),
 
 	/* finish same: move pointer to next instance in chain */
-	make_struct_reference(L, Pointer, next, OnPointer),
-	refer_value(L, OnPointer, OnPointerRef),
-	excrete(L, assignment, Pointer=StartPtrRef, Indent, Stream),
-	ptr_compare(L, PointerRef, 0, PtrNonNull),
-	excrete(L, while_start, PtrNonNull, Indent, Stream),
-	Indent1 is Indent+4,
-	all(language, declare_ptrs,
-	    [build(Names), build(Types), build(BasePtrs),
-	     unify([L, Indent1, Stream])]),
-	move_base_ptrs(L, Pointer, restore, Indent1,
-		       BasePtrs, Types, Stream),
-	do_assign_list(L, MyLoop, Indent1, Used, Stream),
-	excrete(L, assignment, Pointer=OnPointerRef, Indent1, Stream),
-	excrete(L, end(while), Pointer, Indent, Stream);
+	  make_struct_reference(L, Pointer, next, OnPointer, OnPointerRef),
+	  excrete(L, assignment, Pointer=StartPtrRef, Indent, Stream),
+	  ptr_compare(L, PointerRef, 0, PtrNonNull),
+	  excrete(L, while_start, PtrNonNull, Indent, Stream),
+	  Indent1 is Indent+4,
+	  all(language, declare_ptrs,
+	      [build(Names), build(Types), build(BasePtrs),
+	       unify([L, Indent1, Stream])]),
+	  move_base_ptrs(L, Pointer, restore, Indent1,
+			 BasePtrs, Types, Stream),
+	  do_assign_list(L, MyLoop, Indent1, Used, Stream),
+	  excrete(L, assignment, Pointer=OnPointerRef, Indent1, Stream),
+	  excrete(L, end(while), Pointer, Indent, Stream);
+	LoopSpec = nbrs,
+	  template_type(nbrlist, Name, NbrsType),
+	  declare(L, NbrsPointer, nbrpointer, NbrsType, Used, Indent, Stream),
+	  refer_value(L, NbrsPointer, NbrsPointerRef),
+	  make_struct_reference(L, NbrsPointer, next, OnPointer, OnPointerRef),
+	  make_struct_reference(L, Top, nbrs, _, NbrsStartRef),
+	  excrete(L, assignment, NbrsPointer=NbrsStartRef, Indent, Stream),
+	  ptr_compare(L, NbrsPointerRef, 0, PtrNonNull),
+	  excrete(L, while_start, PtrNonNull, Indent, Stream),
+	  Indent1 is Indent+4,
+	  make_struct_reference(L, NbrsPointer, payload, _ForUse, ForUseRef),
+	  excrete(L, assignment, Pointer=ForUseRef, Indent1, Stream),
+	  do_assign_list(L, MyLoop, Indent1, Used, Stream),
+	  excrete(L, assignment, NbrsPointer=OnPointerRef, Indent1, Stream),
+	  excrete(L, end(while), NbrsPointer, Indent, Stream);
 	LoopSpec = vm_retrieve(VmIndex),
 	  make_evaluation_routine(L, VmIndex, Used, VmUseIndex),
-	  make_struct_reference(L, Top, Name, StartPointer),
-	  refer_value(L, StartPointer, StartPtrRef),
+	  make_struct_reference(L, Top, Name, _, StartPtrRef),
 	  excrete(L, assignment, Pointer = locate(StartPtrRef, VmUseIndex),
 		  Indent, Stream),
 	  refer_value(L, Pointer, PointerRef),
@@ -186,13 +195,13 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
 	all(language, make_evaluation_routine,
 	    [unify(L), build(LocalIndices), unify(Used), build(RefIndices)]),
-	make_struct_reference(L, Pointer, next, OnPointer),
+	make_struct_reference(L, Pointer, next, OnPointer, _),
 
 	append_atoms(Name, meta, Meta),
 	resolve_pointer(L, Meta, MPTarget),
 	refer_value(L, MPTarget, MPTargetRef),
 
-	make_struct_reference(L, Pointer, new_instance, NewInstance),
+	make_struct_reference(L, Pointer, new_instance, NewInstance, _),
 
 	refer_value(L, this, ThisRef),
 	excrete(L, procedure_call, abort_check(ThisRef), Indent, Stream),
@@ -223,7 +232,6 @@ failed through to make sure all later temporary variables get declared. */
 	    excrete(L, assignment, MemberCheck=MemberCheckExpr, Indent,
 		    Stream);
 	 \+ number(Phase)),
-	
 	excrete(L, if_start, CallPrune, Indent, Stream),
 	excrete(L, open_context, Pointer=[Top, Name, MPTargetRef],
 		Indent1, Stream),
@@ -273,21 +281,38 @@ failed through to make sure all later temporary variables get declared. */
 
 	do_assign_list(L, Later, Indent, Used, Stream).
 
-do_assignment(L, [bound_gen_loop(Top, Name) | Clauses],
+do_assignment(L, [bound_gen_loop(Top, Name, Ready) | Clauses],
 	      Indent, Used, Stream) :-
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
-	(make_struct_reference(L, Top, Name, SubPointer),
+	(make_struct_reference(L, Top, Name, SubPointer, _),
 % what is this for? Matches dummy index for base-instance-lookup
 	    append_atoms(Name, cond, IdRef),
 	    excrete(L, variable_declaration, [int, IdRef, []], Indent, Stream),
 
+	    append_atoms(Name, 'type*', Type),
 	    append_atoms(Name, 'type**', MType),
 	    append_atoms(Name, meta, Meta),
 	    excrete(L, variable_declaration, [MType, Meta, []], Indent, Stream),
 
 	    excrete(L, make_reference, Meta=SubPointer, Indent, Stream),
-
-	    do_assign_list(L, MyLoop, Indent, Used, Stream),
+% Now some stuff for ready-made associations
+	    (member(Ready, [rect_grid(Out, In), hex_grid(Out, In)]) ->
+	        excrete(L, variable_declaration,
+			[int, trailPt, []], Indent, Stream),
+	        MyLoop = [open_index(IndO, Out), open_index(IndI, In) | Core],
+				% get outer dimension
+	        append(Body, [LastClose], Core),
+	        TrailSize is In+2,
+	        excrete(L, variable_declaration,
+			[Type, trail, [TrailSize], [0]], Indent, Stream),
+	        make_expr(L, In+IndO-IndI, TrailPtExpr),
+	        aim_at_array(L, NotIdx, (trailPt+1)'%'TrailSize),
+	        append([[open_index(IndO, Out), open_index(IndI, In),
+			 assign(glob(trailPt, []), TrailPtExpr)], Body,
+			[assign(glob(trail, [NotIdx]), 0), LastClose]],
+		       MyLoopPlus);
+	      MyLoopPlus = MyLoop),
+	    do_assign_list(L, MyLoopPlus, Indent, Used, Stream),
 	/* And here's the stuff that goes at the end of the loop... */
 	    resolve_pointer(L, Meta, MPTarget),
 	    refer_value(L, MPTarget, MPTargetRef),
@@ -301,7 +326,7 @@ program. So it needs its own clause... */
 
 do_assignment(L, [reset_list(Ptr, Name) | Clauses],
 	      Indent, Used, Stream) :-
-	make_struct_reference(L, Ptr, Name, Ref),
+	make_struct_reference(L, Ptr, Name, Ref, _),
 	(L = c,
 	    excrete(L, procedure_call, delete_list(Ref), Indent, Stream);
 	L = tcl),
@@ -327,9 +352,8 @@ program. I blame Geraint....*/
 
 do_assignment(L, [assign_array(Parent, Name, Made, Init) | Clauses], Indent,
 	      Used, Stream) :-
-	make_struct_reference(L, Parent, Name, Dest),
-	make_struct_reference(L, Parent, Made, Count),
-	refer_value(L, Count, CountRef),
+	make_struct_reference(L, Parent, Name, Dest, _),
+	make_struct_reference(L, Parent, Made, _, CountRef),
 	(Init = -1, !,
 	    excrete(L, release_space, [Dest, Used], Indent, Stream);
 	 excrete(L, assign_space, Dest=[Parent, Name, [], Used, [CountRef]],
@@ -409,7 +433,11 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	    all(language, make_evaluation_routine,
 		[unify(L), build(Args), unify(Used), build(VArgs)]),
 	    all(render, make_expr, [unify(L), build(VArgs), build(ArgExps)]),
-	    CallSpec =.. [insert_to_pipe | ArgExps]),
+	    CallSpec =.. [insert_to_pipe | ArgExps];
+	 SpecialOp = list_fixed_nbrs(Ptr, Shp, CB, RB, Inds), !,
+	     all(language, make_evaluation_routine,
+		 [unify(L), build(Inds), unify(Used), build([CX, RX])]),
+	     CallSpec = make_fixed_nbr_list(Ptr, Shp, CB, RB, CX, RX)),
 	excrete(L, procedure_call, CallSpec, Indent, Stream),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 % have to render after instantiating CollectId
@@ -509,11 +537,11 @@ do_assignment(L, [init_mems(ParentPtr, Name, create(InitVars)) | Clauses],
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, Pointer),
 	append_atoms(Name, meta, MetaPointerName),
-	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer), 
+	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer, _), 
 	resolve_pointer(L, MetaPointer, MPTarget),
 	refer_value(L, MPTarget, MPTargetRef),
-	make_struct_reference(L, ParentPtr, Name, StartPtr), 
-	make_struct_reference(L, ParentPtr, Count, Index), 
+	make_struct_reference(L, ParentPtr, Name, StartPtr, _), 
+	make_struct_reference(L, ParentPtr, Count, Index, _), 
 
 %	append_atoms(Type, '*', MType),
 	declare(L, Pointer, _, Type, Used, Indent, Stream),
@@ -544,10 +572,9 @@ do_assignment(L, [new_member(ParentPtr, Name, InitVars) | Clauses],
 	      Indent, Used, Stream) :-
 	append_atoms(Name, count, Count),
 	append_atoms(Name, meta, MetaPointerName),
-	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer), 
+	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer, _),
 	resolve_pointer(L, MetaPointer, MPTarget),
-	make_struct_reference(L, ParentPtr, Count, Index), 
-	refer_value(L, Index, RefIndex),
+	make_struct_reference(L, ParentPtr, Count, Index, RefIndex),
 
 	/* Now loop on compartment to create submodel */
 	all(language, add_for_channel,
@@ -568,10 +595,9 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproNames) | Clauses],
 	append_atoms(Name, count, Count),
 	append_atoms(Name, pointer, Pointer),
 	append_atoms(Name, meta, MetaPointerName),
-	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer), 
+	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer, _),
 	resolve_pointer(L, MetaPointer, MPTarget),
-	make_struct_reference(L, ParentPtr, Count, Index), 
-	refer_value(L, Index, RefIndex),
+	make_struct_reference(L, ParentPtr, Count, Index, RefIndex),
 
 	/* Conditional to avoid reproduction with new individuals  -- they have
 	not been initialized yet -- no longer needed as they are initialized in
@@ -596,12 +622,12 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes, Initial) | Clauses],
 	Indent2 is Indent1 + 4,
 
 	/* Now stick in a loop */
-	make_struct_reference(L, ParentPtr, Name, SubmodelStartPtr), 
+	make_struct_reference(L, ParentPtr, Name, SubmodelStartPtr, _), 
 
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, Pointer),
 	append_atoms(Name, meta, MetaPointerName),
-	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer), 
+	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer, _), 
 %	append_atoms(Type, '*', MType),
 	declare(L, Pointer, _, Type, Used, Indent, Stream),
 %	declare(L, MetaPointer, _, MType, Used, Indent, Stream),
@@ -611,7 +637,7 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes, Initial) | Clauses],
 	Set pointer to first model in list, and dive into loop */
 	excrete(L, make_reference, MetaPointer=SubmodelStartPtr, Indent,Stream),
 	resolve_pointer(L, MetaPointer, MPTarget),
-	refer_value(L, MPTarget, MPTargetRef),
+ 	refer_value(L, MPTarget, MPTargetRef),
 	ptr_compare(L, MPTargetRef, 0, NotDone),
 	excrete(L, while_start, NotDone, Indent, Stream),
 	excrete(L, open_context, Pointer=[ParentPtr, Name, MPTargetRef],
@@ -620,7 +646,7 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes, Initial) | Clauses],
 	/* Conditional to avoid offing new individuals  -- they have
 	not been initialized yet */
 	(Initial = 1 ->
-	    make_struct_reference(L, Pointer, new_instance, NewInstance),
+	    make_struct_reference(L, Pointer, new_instance, NewInstance, _),
 	    excrete(L, assignment, NewInstance=0, Indent1, Stream); true),
 	
 	/* Next remove shagged-out individuals, node is a variable, and move
@@ -628,13 +654,12 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes, Initial) | Clauses],
 	/* Now dig out the variable names for the loss nodes...add
 		probability preprocessing here too */
 
-	make_struct_reference(L, Pointer, 'next', OnPointer),
+	make_struct_reference(L, Pointer, 'next', OnPointer, OnPointerRef),
 	(setof(LossVal, get_term_refs(L, Pointer, LossNodes, LossVal),
 	       LossTerms), !,
 	    build_junction(LossTerms, '||', IsDead),
 
 	    excrete(L, if_start, IsDead, Indent1, Stream),
-	    refer_value(L, OnPointer, OnPointerRef),
 	    excrete(L, assignment, MPTarget=OnPointerRef, Indent2, Stream),
 	    excrete(L, release_memory, Pointer, Indent2, Stream),
 	    excrete(L, else_clause, IsDead, Indent1, Stream),
@@ -649,7 +674,7 @@ instance is generated; if the instance fails to exist, it terminates building it
 so the end of the last if clause is left on the postambles. Should be less
 horrible now it no longer includes the evaluation of the test! */
 
-do_assignment(L, [test(Name, Pointer, Source) | Clauses],
+do_assignment(L, [test(Name, Pointer, Source, Ready) | Clauses],
 		Indent, Used, Stream) :-
 	
 /* Some variable membership models will contain 'dummy' generator clauses to
@@ -661,7 +686,7 @@ we only make the three lines that insert the submodel instance into its linked l
 	    % clause for dummy generator
 	    Indent1 = Indent;
 	 (setof(GenVal, get_term_refs(L, Pointer, Source, GenVal), GenVals),
-	     build_junction(GenVals, '&&', TestVal), !;
+	     build_junction(GenVals,  '&&', TestVal), !;
 	  TestVal = 0),
 	    excrete(L, if_start, TestVal, Indent, Stream),
 	    Indent1 is Indent+4),
@@ -669,14 +694,24 @@ we only make the three lines that insert the submodel instance into its linked l
 	% only insert in linked list if new -- old ones not removed
 	make_new_check(L, Pointer, IsNew),
 	excrete(L, if_start, IsNew, Indent1, Stream),
-	make_struct_reference(L, Pointer, next, OnPointer),
+	make_struct_reference(L, Pointer, next, OnPointer, OnPointerRef),
 	append_atoms(Name, meta, MetaPointer),
 	resolve_pointer(L, MetaPointer, MPTarget),
 	refer_value(L, MPTarget, MPTargetRef),
 	refer_value(L, Pointer, PointerRef),
 	excrete(L, assignment, OnPointer=MPTargetRef, Indent2, Stream),
 	excrete(L, assignment, MPTarget=PointerRef, Indent2, Stream),
-	excrete(L, end(cond), IsNew, Indent1, Stream),
+	(member(Ready-Shp, [rect_grid(Out, In)-1, hex_grid(Out, In)-2]) ->
+	    make_struct_reference(L, Pointer, nbrs, NbrPointer, _NbrPointerRef),
+	    excrete(L, assignment, NbrPointer=0, Indent2, Stream),
+	    excrete(L, else_clause, IsNew, Indent1, Stream),
+	    excrete(L, procedure_call, delete_list(NbrPointer),
+		    Indent2, Stream),
+	    excrete(L, end(cond), IsNew, Indent1, Stream),
+	    TS is In+2,
+	    excrete(L, procedure_call, fill_nbr_ptrs(Pointer, trail, trailPt,
+						     Shp, TS), Indent1, Stream);
+	  excrete(L, end(cond), IsNew, Indent1, Stream)),
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream),
 	
 	(do_assign_list(L, Clauses, Indent1, Used, Stream),
@@ -689,10 +724,13 @@ we only make the three lines that insert the submodel instance into its linked l
 	    excrete(L, if_start, IsNew, Indent1, Stream),
 	    excrete(L, else_clause, IsNew, Indent1, Stream),
 	    % cut instance out of linked list
-	    refer_value(L, OnPointer, OnPointerRef),
 	    excrete(L, assignment, MPTarget=OnPointerRef, Indent2, Stream),
 	    excrete(L, end(cond), IsNew, Indent1, Stream),
 	    excrete(L, release_memory, Pointer, Indent1, Stream),
+	    (nonvar(TS) ->
+	        make_indexed_reference(L, trail, [trailPt '%' TS], TrailSpot),
+	        excrete(L, assignment, TrailSpot=0, Indent1, Stream);
+	      true),
 	    excrete(L, end(cond), TestVal, Indent, Stream),
 	    fail);
 	true). % all remaining clauses are inside condition group
@@ -709,9 +747,12 @@ do_assignment(L, [assign(Dest, Source) | Clauses], Indent, Used, Stream) :-
 
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 
+template_type(TptName, Specific, TptPtr) :-
+	append_atoms([TptName, ' <', Specific, 'type> *'], TptPtr).
+
 starts_a_level(Inst) :-
 	member(Inst, [open_index(_,_), start_submodel(_,_,_,_),
-		      generate(_,_,_,_,_,_,_), bound_gen_loop(_,_),
+		      generate(_,_,_,_,_,_,_), bound_gen_loop(_,_,_),
 		      check_phase(_,_), check_cond(_)]).
 
 get_rest_of_my_loop(More, MyLoop, Later) :-
@@ -731,7 +772,7 @@ move_base_ptrs(_,_,_,_, [],[],_).
 move_base_ptrs(L, Pointer, Action, Indent,
 	       [Ptr | Ptrs], [Type | Types], Stream) :-
 	length(Ptrs, Count),
-	make_struct_reference(L, Pointer, baseptrs, SafeArray),
+	make_struct_reference(L, Pointer, baseptrs, SafeArray, _),
 	make_indexed_reference(L, SafeArray, [Count], Target),
 	(Action = save,
 	    refer_value(L, Ptr, PtrRef),
@@ -793,20 +834,18 @@ get_term_refs(_,_, Test, Test) :-
 
 get_term_refs(L, Pointer, LossNodes, DeadRef) :-
 	member(LossVal, LossNodes),
-	make_struct_reference(L, Pointer, LossVal, IsDead),
-	refer_value(L, IsDead, DeadRef).
+	make_struct_reference(L, Pointer, LossVal, _, DeadRef).
 
 make_create_proc([L, ParentPtr, MMPtr, Index, Name, Indent, Used],
 	    InitVar, Stream) :-
-	make_struct_reference(L, ParentPtr, InitVar, CompVal),
-	refer_value(L, CompVal, CompValRef),
+	make_struct_reference(L, ParentPtr, InitVar, _, CompValRef),
 	refer_value(L, Index, RefIndex),
 	nth(ChannelN, Used, InitVar), !,
 	BaseArgs = [init_pop, MMPtr, CompValRef, RefIndex, ChannelN],
 	/* no function templates in tcl so pass class id explicitly */
 	(L = tcl, !,
 	    append_atoms(Name, maker, ProcName),
-	    make_struct_reference(tcl, ParentPtr, ProcName, CurrentName),
+	    make_struct_reference(tcl, ParentPtr, ProcName, CurrentName, _),
 	    append(BaseArgs, [CurrentName, Name], AllArgs);
 	AllArgs = BaseArgs),
 	make_procedure_call_chars(L, AllArgs, CallInitStr),
@@ -818,8 +857,7 @@ add_for_channel(InitVar, [L, Index, Pointer, ParentPtr, MetaPointer, MPTarget, N
 	Indent1 is Indent + 4,
 
 	/* Now loop on compartment to create submodel */
-	make_struct_reference(L, Pointer, InitVar, CompVal),
-	refer_value(L, CompVal, CompValRef),
+	make_struct_reference(L, Pointer, InitVar, CompVal, CompValRef),
 	excrete(L, while_start, CompValRef>=1, Indent, Stream),
 	make_expr(L, CompValRef-1, NewCompVal),
 	excrete(L, assignment, CompVal=NewCompVal, Indent1, Stream),
@@ -833,7 +871,7 @@ add_for_channel(InitVar, [L, Index, Pointer, ParentPtr, MetaPointer, MPTarget, N
 	  move_base_ptrs(L, MPTarget, save, Indent1, [Pointer], _, Stream)),
 
 	/* End of submodel loop; insert into list and do next */
-	make_struct_reference(L, MPTarget, next, OnMeta),
+	make_struct_reference(L, MPTarget, next, OnMeta, _),
 	excrete(L, make_reference, MetaPointer=OnMeta, Indent1, Stream),
 	excrete(L, end(while), 'New instances', Indent, Stream).
 
@@ -885,7 +923,7 @@ make_evaluation_routine(
 	(make_scalar(Language, Expr, Used, LocalExpr), !,
 	    refer_value(Language, LocalExpr, Term);
 	Expr = ind(Ptr, Count), !,
-	    make_struct_reference(Language, Ptr, instanceid, IndSet),
+	    make_struct_reference(Language, Ptr, instanceid, IndSet, _),
 	    get_element_ref(Language, IndSet, Count, Term);
 	Expr = is_new_instance(Ptr), !,
 	    make_new_check(Language, Ptr, Term);
@@ -966,7 +1004,7 @@ contexts. */
 
 make_scalar(L, Param, Used, FullLocalExpr) :-
 	(Param = arr(Ptr, Var, Inds),
-	    make_struct_reference(L, Ptr, Var, LocalExpr);
+	    make_struct_reference(L, Ptr, Var, LocalExpr, _);
 	Param = glob(LocalExpr, Inds),
 	    Var = ''), !,
 	all(language, make_evaluation_routine,
@@ -986,5 +1024,6 @@ make_scalar(L, Param, Used, FullLocalExpr) :-
 	    name(FullLocalExpr, LXStr); */
 	make_indexed_reference(L, LocalExpr, IExprs, FullLocalExpr)).
 
+aim_at_array(c, Index+1, Index) :- !.
 aim_at_array(c, Index, Index-1) :- !.
 aim_at_array(_, Index, Index).

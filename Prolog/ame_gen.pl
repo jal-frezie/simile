@@ -17,6 +17,7 @@ sicstus_module(ame_gen,
 		enum_type_ref/5, enum_type_ref/6,
 		get_node_size/2, get_node_size/4,
 		is_population/1, by_record/1, from_value/1, is_conditional/1,
+		builtin_nbr_refs/2,
 		get_all_dims/2, variable_size/1, list_links/2,
 		get_chain/5, contains/2, contains/3,
 		purge/3, upper/2, lower/2, mybagof/3,
@@ -226,7 +227,9 @@ make_legible_for_prolog(String, NewString) :-
 	ToTweak = [Xm, Eq | Suffix],
 	    Tweaked = " '!=' ";
 	ToTweak = [Xm | Suffix],
-	    Tweaked = "not "), !,
+	    Tweaked = "not ";
+	ToTweak = [Ct | Suffix],
+	    Tweaked = "'%'"), !,
 	make_legible_for_prolog(Suffix, NewSuffix),
 	append(Tweaked, NewSuffix, Fixed),	
 	append(Prefix, Fixed, NewString);	
@@ -857,6 +860,10 @@ is_conditional(Node) :-
 	terminates(Link, Node), !; /* all assoc models are vm */
 	Node has_part Query,
 	find_type(Query, condition).
+
+builtin_nbr_refs(Node, Interp) :-
+	Node has_class_refinement multiplication_spec of Spec,
+	member(interpretation=Interp, Spec).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 substitute_in_expr(Tail, Lambda,SubExpr, SubbedExpr) :-

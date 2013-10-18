@@ -7,7 +7,7 @@
 sicstus_module( render, [render/5, excrete/5, make_assignment/4, render_all/5, 
 		get_empty_list/2,
 		refer_value/3, refer/3, make_expr/3, make_increment_expr/4,
-		make_struct_reference/4, make_indexed_reference/4,
+		make_struct_reference/5, make_indexed_reference/4,
 		ptr_compare/4,
 		combine/4, make_arg_string/3, 
 		make_pointer/3, resolve_pointer/3, 
@@ -78,7 +78,7 @@ ptr_compare(L, Ptr1, Ptr2, Expr) :-
 
 make_cons_dest(instance(Type, Sym, _, Name, _), ConLines, DeLines) :-
 	Type = submodel,
-	variable_size(Sym), !,
+	(Sym = nbr_list; variable_size(Sym)), !,
 	    make_assignment(c, Name, 0, SubConLine),
 	    append(["        ", SubConLine, ";"], ConLineStr),
 	    name(ConLine, ConLineStr),
@@ -160,14 +160,17 @@ render( L, procedure_start, Call, Indent, [Proc_Start]) :-
 
 /* Bits common to all model classes: public-access con- and destructor. */
 render(c, public_cons_dest,
-       instance(submodel, _, xrefs(model(_, Subs), _,_), _,
+       instance(submodel, Node, xrefs(model(_, Subs), _,_), _,
 		ClassName-_), Indent, PubConDe) :-
 	InIndent is Indent+4,
 	format_indented(Indent, "public:", [], PubStr),
 	format_indented(InIndent, "~w () {", [ClassName], ConsHd),
 	format_indented(InIndent, "~~~w () {", [ClassName], DestHd),
+	(builtin_nbr_refs(Node, _) ->
+	     UseSubs = [instance(submodel, nbr_list, _, nbrs, _) | Subs];
+	   UseSubs = Subs),
 	all(render, make_cons_dest,
-	    [build(Subs), append(ConLines, []), append(DeLines, [])]),
+	    [build(UseSubs), append(ConLines, []), append(DeLines, [])]),
 	render(c, end(procedure), structor, InIndent, [EndStr]),
 	name(Pub, PubStr),
 	name(Cons, ConsHd),
@@ -1093,6 +1096,11 @@ make_struct_reference(tcl, Struct, Var, Result) :-
 	Format = "${~w}::~w"),
 	sicstus_format_to_chars(Format, [Struct, Var], ResultStr),
 	    name(Result, ResultStr).
+
+% 5-arg version shortens code
+make_struct_reference(L, Struct, Var, Result, ValRef) :-
+	make_struct_reference(L, Struct, Var, Result),
+	refer_value(L, Result, ValRef).
 
 % this variant makes pointers to members if name is ptr(x) --
 % used for building arg lists for external procedures

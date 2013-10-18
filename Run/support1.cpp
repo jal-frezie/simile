@@ -189,6 +189,65 @@ void delete_list (SMClass *ptr) {
     ptr = next_ptr;
   }
 }
+
+template <class GridSMClass>
+class nbrlist {
+public:
+  GridSMClass *payload;
+  int instanceid[1];
+  nbrlist *next;
+};
+
+template <class GridSMClass>
+void fill_nbr_ptrs (GridSMClass* parent, GridSMClass* trail[], 
+		    int trailPt, int shape, int trailLen) {
+  int off;
+
+  for (off=-1; off<3; ++off) {
+    GridSMClass* cur_nbr = trail[(trailPt+off)%trailLen];
+    if (cur_nbr) {
+      nbrlist <GridSMClass> *tempIntSat = new nbrlist <GridSMClass>;
+      tempIntSat->instanceid[0] = 7-off;
+      tempIntSat->payload = cur_nbr;
+      tempIntSat->next = parent->nbrs;
+      parent->nbrs = tempIntSat;
+      
+      tempIntSat = new nbrlist <GridSMClass>;
+      tempIntSat->instanceid[0] = fmod(off+4,4)+1;
+      tempIntSat->payload = parent;
+      tempIntSat->next = cur_nbr->nbrs;
+      cur_nbr->nbrs = tempIntSat;
+    }  // if (cur_nbr)
+  } // for off,
+  trail[trailPt%trailLen] = parent;
+}
+
+template <class GridSMClass>
+void make_fixed_nbr_list (GridSMClass* parent, int shape, int rows, int columns,
+			  int rowId, int columnId) {
+  int offs[3][8][2] = {{{1,1}, {1,0}, {1,-1}, {0,1}, 
+			{-1,1}, {-1,0}, {-1,-1}, {0,-1}},
+		       {{1,1}, {1,0}, {1,-1}, {0,1}, {-1,0}, {0,-1}},
+		       {{1,0}, {0,1}, {-1,1}, {-1,0}, {-1,-1}, {0,-1}}},
+    seq, oRow, oCol; 
+  if (shape==1 || columnId%2==1) // rectangular or hex and odd column (hill)
+    --shape;
+  // order of addition is chosen to match what happens with vm grid
+  parent->nbrs = NULL;
+  for (seq = 9-2*shape; seq>=0; --seq) {
+    oRow = offs[shape][seq][0];
+    oCol = offs[shape][seq][1];
+    if (rowId+oRow>0 && rowId+oRow<=rows && 
+	columnId+oCol>0 && columnId+oCol<=columns) {
+      nbrlist <GridSMClass> *tempIntSat = new nbrlist <GridSMClass>;
+      tempIntSat->instanceid[0] = seq+1;
+      tempIntSat->payload = parent+columns*oRow+oCol;
+      tempIntSat->next = parent->nbrs;
+      parent->nbrs = tempIntSat;
+    }
+  }
+}
+
 /*
 double glob_element (double* arrptr, int phase) {
   return arrptr[phase];
