@@ -88,14 +88,17 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	    make_inds_for(Dims, LocalLoops, Inds),
 	    copy_term(RealPathForm, RealPath),
 
-	    ((Location = up_hierarchy,
-	        Path = [sm(outside(Name), A, B, C) | D];
-	      member(Location, [in_8_nbrs, in_6_nbrs]),
-	        Path = [sm(Name, B, _, nbrs), sm(Name, A, B, C) | D]),
+	    (RealPath = [sm(Name, A, B, C) | Rest],
+	        (Location = up_hierarchy,
+		    Path = [sm(outside(Name), A, B, C) | Rest];
 				% use values from all instances -- need to
 	     % stop loops matching by changing representation of bound
+		  member(Location, [in_8_nbrs, in_6_nbrs]),
+		    Path = [sm(Name, B, _, nbrs), sm(Name, A, B, C) | Rest],
+		    suffix(Top, Rest), Top = [sm(_,_,_,_) | _],
+	            BackSwap = values_from_base(Top)), !,
+				% wait till all set before use
 		Wait = true,
-	        RealPath = [sm(Name, A, B, C) | D],
 	        pointer_from(Path, SmPtr);
 	     % the last bit will stop these roles being used in same eqn as
 	     % assoc roles, which may be sensible

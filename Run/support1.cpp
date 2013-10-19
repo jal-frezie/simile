@@ -234,7 +234,7 @@ void make_fixed_nbr_list (GridSMClass* parent, int shape, int rows, int columns,
     --shape;
   // order of addition is chosen to match what happens with vm grid
   parent->nbrs = NULL;
-  for (seq = 9-2*shape; seq>=0; --seq) {
+  for (seq = 7-2*(shape>0); seq>=0; --seq) {
     oRow = offs[shape][seq][0];
     oCol = offs[shape][seq][1];
     if (rowId+oRow>0 && rowId+oRow<=rows && 
