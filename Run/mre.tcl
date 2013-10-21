@@ -86,6 +86,7 @@ namespace eval RunEnv {
             toplevel $mreId -width 200m -height 150m
 # following is the answer to all those pesky bgerrors on stdout
 #	    pack [button $mreId.reveal -text "Reveal all" -command {puts $errorInfo}]
+	    wm iconphoto $mreId graphoto
             wm title $mreId [format $::msgs(exec_title) [GetExecTitle $node]]
             set currentNode $node
             bind $mreId <FocusIn> [namespace code "InMreFor $node"]
@@ -232,9 +233,9 @@ namespace eval RunEnv {
             # input slider helper is automatically created if needed when model is run
             
             wm geometry $mreId ${width}x${height}
-            if {[string match unix $tcl_platform(platform)]} {
-                wm iconbitmap $mreId @../Images/dribble.xbm
-            }; # on Windows uses default icon set in Runmodel.tcl
+#            if {[string match unix $tcl_platform(platform)]} {
+#                wm iconbitmap $mreId @../Images/dribble.xbm
+#            }; # on Windows uses default icon set in Runmodel.tcl
             wm protocol $mreId WM_DELETE_WINDOW ::RunEnv::WindUp
             return $mreId
         } ; # if .mre exists

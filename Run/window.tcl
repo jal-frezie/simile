@@ -655,11 +655,12 @@ proc ModelWindow {winName} {
 	wm state $winName withdrawn
     }
 
-    switch $tcl_platform(platform) {
-        windows { wm iconbitmap $winName \
-		      -default ${SIMILE_PATH}/Run/simile16.ico }
-        unix { wm iconbitmap $winName @${SIMILE_PATH}/Images/dribble.xbm}
-    }
+#    switch $tcl_platform(platform) {
+#        windows { wm iconbitmap $winName \
+#		      -default ${SIMILE_PATH}/Run/simile16.ico }
+#        unix { wm iconbitmap $winName @${SIMILE_PATH}/Images/dribble.xbm}
+#    }
+    wm iconphoto $winName splash
     # Create a scrollable canvas
     set c [canvas $winName.canvas -bg white -confine 1 \
 	       -xscrollcommand "AdjustCanvas $winName toolSlot x" \
