@@ -194,7 +194,7 @@ template <class GridSMClass>
 class nbrlist {
 public:
   GridSMClass *payload;
-  int instanceid[1];
+//   int instanceid[1];
   nbrlist *next;
 };
 
@@ -203,17 +203,17 @@ void fill_nbr_ptrs (GridSMClass* parent, GridSMClass* trail[],
 		    int trailPt, int shape, int trailLen) {
   int off;
 
-  for (off=-1; off<3; ++off) {
+  for (off=-1; off<3; off+=shape) {
     GridSMClass* cur_nbr = trail[(trailPt+off)%trailLen];
     if (cur_nbr) {
       nbrlist <GridSMClass> *tempIntSat = new nbrlist <GridSMClass>;
-      tempIntSat->instanceid[0] = 7-off;
+//       tempIntSat->instanceid[0] = 7-off;
       tempIntSat->payload = cur_nbr;
       tempIntSat->next = parent->nbrs;
       parent->nbrs = tempIntSat;
       
       tempIntSat = new nbrlist <GridSMClass>;
-      tempIntSat->instanceid[0] = fmod(off+4,4)+1;
+//       tempIntSat->instanceid[0] = fmod(off+4,4)+1;
       tempIntSat->payload = parent;
       tempIntSat->next = cur_nbr->nbrs;
       cur_nbr->nbrs = tempIntSat;
@@ -240,7 +240,7 @@ void make_fixed_nbr_list (GridSMClass* parent, int shape, int rows, int columns,
     if (rowId+oRow>0 && rowId+oRow<=rows && 
 	columnId+oCol>0 && columnId+oCol<=columns) {
       nbrlist <GridSMClass> *tempIntSat = new nbrlist <GridSMClass>;
-      tempIntSat->instanceid[0] = seq+1;
+//       tempIntSat->instanceid[0] = seq+1;
       tempIntSat->payload = parent+columns*oRow+oCol;
       tempIntSat->next = parent->nbrs;
       parent->nbrs = tempIntSat;

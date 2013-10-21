@@ -709,8 +709,12 @@ we only make the three lines that insert the submodel instance into its linked l
 		    Indent2, Stream),
 	    excrete(L, end(cond), IsNew, Indent1, Stream),
 	    TS is In+2,
-	    excrete(L, procedure_call, fill_nbr_ptrs(Pointer, trail, trailPt,
-						     Shp, TS), Indent1, Stream);
+	    (Shp = 2 ->
+	        make_evaluation_routine(L, 1+ind(Pointer,1)'%'2, Used, Spacing);
+	      Spacing = Shp),
+	    excrete(L, procedure_call,
+		    fill_nbr_ptrs(Pointer, trail, trailPt, Spacing, TS),
+		    Indent1, Stream);
 	  excrete(L, end(cond), IsNew, Indent1, Stream)),
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream),
 	
