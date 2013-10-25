@@ -70,6 +70,7 @@ namespace eval RunEnv {
         variable dp0;    # display pane
         variable dp0s;    # display panes for all models
         variable toolbars; # list of toolbar items
+	variable addMenuLocn ;# menu gets replaced when layer helper in use
         variable width
         variable height
         variable currentNode
@@ -191,8 +192,13 @@ namespace eval RunEnv {
             
             #from runmodel.tcl AddHelperSublist
 	    #            set mreMenu [winfo parent [$mainframe getmenu help]]
-            $mreMenu add cascade -label [tr. "Add"] -menu .helpers.sub2
 	    $mreMenu add cascade -label [tr. "Window"] -menu .windowchoice
+# we will be messing about with Add menu so insert it before Window
+# after saving its position
+	    set addMenuLocn [$mreMenu index last]
+            $mreMenu insert $addMenuLocn cascade -label [tr. "Add"] \
+		-menu .helpers.sub2
+
 
 	    set helpMenu [menu $mreMenu.$helpMenuW -tearoff 0]
 	    $mreMenu add cascade -label Help -menu $helpMenu
@@ -698,6 +704,7 @@ namespace eval RunEnv {
         variable CurrentContainer
         variable CurrentContainers
 	variable dp0
+	variable addMenuLocn
 
 #puts "SetCurrentContainer $win"
         set mainframe $helperTable($currentNode,whichRunEnv)
@@ -705,6 +712,7 @@ namespace eval RunEnv {
         set pw [winfo parent $win]
         #ShowMess debug info "RunEnv::SetCurrentContainer pw $pw" ok
 	set tb1 [GetFrame $mainframe].tbar
+	$mreMenu delete $addMenuLocn
         if {[winfo exists $win.container]} {
             if {[string equal $dp0 $win]} {
                 $tb1.b20 configure -state disabled
@@ -722,6 +730,17 @@ namespace eval RunEnv {
 	    set copyAbility normal
 
 	    set inst $helperTable($win.container,whichInstance)
+# now reset add menu in case 
+	    if {[catch {$inst info function CustomizeAddMenu}]} {
+		set useSpaceAbility disabled
+		$mreMenu insert $addMenuLocn cascade -label [tr. "Add"] \
+		    -menu .helpers.sub2
+	    } else {
+		set useSpaceAbility [$inst CustomizeAddMenu $mreMenu \
+					 $addMenuLocn]
+	    }
+		
+		
 	    if {[catch {$inst info function CopyToClipboard}]} {
 		set exportAbility disabled
 	    } else {
@@ -736,13 +755,15 @@ namespace eval RunEnv {
 	    $tb1.b20 configure -state normal
 	    $tb1.b21 configure -state normal
 	    set useSpaceAbility normal
+	    $mreMenu insert $addMenuLocn cascade -label [tr. "Add"] \
+		-menu .helpers.sub2
 	    set copyAbility disabled
 	    set exportAbility disabled
 	    set printAbility disabled
 	}
-	$mreMenu entryconfigure [tr. Add] -state $useSpaceAbility
+	$mreMenu entryconfigure $addMenuLocn -state $useSpaceAbility
 # Now work around what looks like a bug in Cocoa Tk
-	set addMenu [$mreMenu entrycget [tr. Add] -menu]
+	set addMenu [$mreMenu entrycget $addMenuLocn -menu]
 	set adds [$addMenu index last]
 	for {set add 0} {$add<=$adds} {incr add} {
 	    $addMenu entryconfigure $add -state $useSpaceAbility
@@ -822,6 +843,13 @@ $tb1.b43 configure -state $useSpaceAbility
         return $allChildren
     }
     
+    proc AddToLayerTool {layerType} {
+	global helperTable
+	variable CurrentContainer
+
+	set inst $helperTable($CurrentContainer.container,whichInstance)
+	$inst NewLayer ::similescript::$layerType
+    }
     proc CreateDisplayPageContextMenu {} {
         if  {![winfo exists .pageContextMenu]} {
             set m [menu .pageContextMenu -tearoff 0]

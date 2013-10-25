@@ -18,6 +18,7 @@ source ../Run/mre.tcl
 proc MakeHelperMenu {} {
     global custom tcl_platform SIMILE_PATH
     set fm [menu .helpers -tearoff 0]
+    set lm [menu .layers -tearoff 0]
 
     $fm add command -label "Load" -command LoadView
     $fm add command -label "Save" -command SaveView
@@ -26,7 +27,7 @@ proc MakeHelperMenu {} {
     $fm add command -label "Parameters..." -command MessCurrentFileParams
     set oldDir [pwd]
     cd $SIMILE_PATH/IOTools
-    AddHelperSublist $fm "Add tool" 2
+    AddHelperSublist $fm $lm "Add tool" 2
     set ioDir [file join $custom(prefDir) IOTools]
 #do_in_editor puts "locals in $ioDir"
 # test for version file tells us if user dir is same as installation dir --
@@ -34,8 +35,8 @@ proc MakeHelperMenu {} {
 # If it is, do not load IO tools again as redefinition errors will arise
     if {[file exists $ioDir] && ![file exists ../version]} {
 	cd $ioDir
-	AddHelperSublist $fm.sub2 "Local" l
-    }
+	AddHelperSublist $fm.sub2 $lm.sub2 helper "Local" l
+     }
     cd $oldDir
     MakeScriptHelpers
 }
@@ -100,10 +101,11 @@ proc ClassFromKey {kv} {
 # will load them into one, so they should still use [namespace code ...] to
 # make callbacks.
 
-proc AddHelperSublist {fm title ct} {
+proc AddHelperSublist {fm lm title ct} {
     global helperTable
 #puts "Adding helpers in [pwd]"
     set m [menu $fm.sub$ct -tearoff 0]
+    set l [menu $lm.sub$ct -tearoff 0]
     set nct 0
     set helperList [glob -nocomplain *.tcl]
     foreach helperApp [lsort $helperList] {
@@ -179,20 +181,30 @@ proc AddHelperSublist {fm title ct} {
 			       Plotter SliderControl TableViewer} $posn]
 		set helperTable($classIdx) $newHelperClass
 	    }
-	    lappend entries [list $newHelperClass $action [tr. $action]]
+	    lappend fentries [list $newHelperClass $action [tr. $action]]
 	    unset newHelperClass
+	} elseif {[info exists newLayerClass]} {
+	    set action [similescript::${newLayerClass}::Identify]
+	    lappend lentries [list $newLayerClass $action [tr. $action]]
+	    unset newLayerClass
 	}
     }
-    if {[info exists entries]} {
-	foreach pair [lsort -nocase -index 2 $entries] {
+    if {[info exists fentries]} {
+	foreach pair [lsort -nocase -index 2 $fentries] {
 	    $m add command -label [lindex $pair 2] \
 		-command [concat CreateHelperWindow [lrange $pair 0 1]]
+	}
+    }
+    if {[info exists lentries]} {
+	foreach pair [lsort -nocase -index 2 $lentries] {
+	    $l add command -label [lindex $pair 2] \
+		-command [concat CreateHelperLayer [lrange $pair 0 1]]
 	}
     }
     foreach subDir [lsort -nocase [glob -nocomplain *]] {
         if [file isdirectory $subDir] {
             cd $subDir
-            if {[string equal abort [AddHelperSublist $m $subDir $nct]]} {
+            if {[string equal abort [AddHelperSublist $m $l $subDir $nct]]} {
 		return abort
 	    }
             cd ..
@@ -203,6 +215,11 @@ proc AddHelperSublist {fm title ct} {
 	destroy $m
     } else {
 	$fm add cascade -label $title -menu $m
+    }
+    if {[string equal none [$l index 0]]} {
+	destroy $l
+    } else {
+	$lm add cascade -label $title -menu $l
     }
 }
 
@@ -236,6 +253,15 @@ proc CreateHelperWindow {helperId helperTitle {state {}}} {
     }
     return $inst
 #rest should be done by constructor
+}
+
+proc CreateHelperLayer {layerId layerTitle} {
+# this should be passed to the currently focussed layer tool
+    if {[PrefValue custom(helperManager) helperManager]} {
+	::RunEnv::AddToLayerTool $layerId
+    } else {
+# something
+    }
 }
 
 # This is only called by old-style helpers now

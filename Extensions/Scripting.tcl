@@ -197,6 +197,59 @@ itcl::class similescript::Snap {
     }
 }
     
+itcl::class similescript::Layer {
+    public variable State {}
+    public variable winId;    # canvas 
+    variable modelInst
+    
+    constructor {modelWindow mainCanvas} {
+	global helperTable
+
+	set modelInst $modelWindow
+	set winId $mainCanvas
+	set helperTable($this,foci) {}
+     }
+
+    destructor {
+	#ShowMess debug info "Killing $winId" ok
+	global helperTable
+
+	if {[string equal $this [$modelInst HasClicks]]} {
+	    $modelInst ReleaseClicks
+	}
+	unset helperTable($this,foci)
+	bind $winId <Destroy> {} ;# prevent destructor calling itself when...
+	# (done by base destructor)	    destroy $winId
+    }
+
+    public method GetNode {} {
+	return [$modelInst cget -modelNode]
+    }
+
+    # All derived classes must reimplement with correct keyvalue
+    public method KeyValue {} {
+        return abstractLayer
+    }
+# only old-style helpers have keyvalues, but this is needed for some reason
+
+    # likewise
+    public method Identify {} {
+        return abstractLayerTitle
+    }
+
+# This is optional, some helpers do not store earlier values
+    public method Clear {} {
+    }
+
+# This is optional, some helpers do not distinguish data from different runs
+    public method Reset {} {
+    }
+
+# This is optional, some helpers may keep their state permanently up to date
+    public method PrepareSaveString {} {
+    }
+}
+
 itcl::class similescript::Helper {
     inherit HelperController
     public variable State {}
