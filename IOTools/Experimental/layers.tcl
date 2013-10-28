@@ -88,6 +88,13 @@ itcl::class similescript::$newHelperClass {
 	set planes [lreplace $planes $oldIdx $oldIdx]
 	$winId.add delete $serialActive [incr serialActive]
     }
+
+    public method EditCurrent {} {
+	set oldIdx end-[expr {$serialActive/2}]
+puts "Attacking #$oldIdx of $planes"
+	[lindex $planes $oldIdx] Settings
+    }
+
     public method Click {path} {
     }
 
@@ -96,7 +103,7 @@ itcl::class similescript::$newHelperClass {
 # dispInt is time to next display call
 # step is a spare parameter
 	foreach plane $planes {
-	    $plane::Display $time $dispInt $step
+	    $plane Display $time $dispInt $step
 	}
     }
 
