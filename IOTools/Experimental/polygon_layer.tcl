@@ -47,7 +47,7 @@ itcl::class similescript::$newLayerClass {
     }
 
     destructor {
-	$winId delete $this.main
+	$winId delete [namespace tail $this].main
     }
 
     public method AddVariable {} {
@@ -96,7 +96,7 @@ itcl::class similescript::$newLayerClass {
     }
 
     public method ReTile {} {
-	$winId delete $this.main
+	$winId delete [namespace tail $this].main
 	DoForXYData {} AddPolygon \
 	    [lindex [$modelInst GetValue $useNodes($winId,color)] 0] \
 	    [lindex [$modelInst GetValue $useNodes($winId,xcoord)] 0] \
@@ -254,7 +254,7 @@ itcl::class similescript::$newLayerClass {
 	set newColour [ColourFor $winId $key]
 	$winId create polygon $outlist -outline $useNodes($winId,cbord) \
 	    -width $useNodes($winId,bw) -fill $newColour \
-	    -tag [list $this.main [IdToTag $inds]]
+	    -tag [list [namespace tail $this].main [IdToTag $inds]]
     }
 
      public method ColourFor {winId value} {
@@ -279,11 +279,12 @@ itcl::class similescript::$newLayerClass {
 	foreach id $ids {
 	    lappend result [format %06d $id]
 	}
-	return ${this}BLK[join $result ,]
+	return $[namespace tail $this]BLK[join $result ,]
     }
 
     public method TagToId {tags} {
-	set end [expr [string first ${this}BLK $tags]+[string length $this]+3]
+	set myTag $[namespace tail $this]
+	set end [expr [string first $myTag $tags]+[string length $myTag]]
 	set idTag [lindex [string range $tags $end end] 0]
 	foreach val [split $idTag ,] {
 	    scan $val %06d index

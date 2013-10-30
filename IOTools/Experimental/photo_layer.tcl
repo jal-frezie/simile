@@ -41,14 +41,15 @@ itcl::class similescript::$newLayerClass {
 	set tmpImg [GrowImage $this.original \
 	    [expr {[$this.original cget -width]*[lindex $State 2]*$xzoom}] \
 	    [expr {[$this.original cget -height]*[lindex $State 3]*$yzoom}]]
+	set myTag [namespace tail $this].main
 	if {[catch {$this.derived blank}]} { ;# not yet exist
 	    image create photo $this.derived
 	    $winId create image $stickIt -anchor nw -image $this.derived \
-		-tag $this.main
+						 -tag $myTag
 	} else {
-	    $winId coords [$winId find -withtag $this.main] $stickIt
+	    $winId coords [$winId find withtag $myTag] $stickIt
 	}
-	$this.derived copy $tmpImg
+	$this.derived copy $tmpImg -shrink
     }
 
     public method GetTitle {} {

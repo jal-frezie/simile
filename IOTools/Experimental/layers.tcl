@@ -6,6 +6,7 @@ itcl::class similescript::$newHelperClass {
     inherit Helper
 
     variable planes
+    variable transform
     variable serialActive
 
     proc Identify {} {
@@ -35,8 +36,23 @@ itcl::class similescript::$newHelperClass {
 	$winId.edit add command -label [tr. "Properties..."] \
 	    -command [list $this EditCurrent]
 
-	pack [canvas $winId.c] -fill both -expand true
-	# add sliders
+        set toolbarItems [list \
+                [list zoomin.gif "Zoom in" "$this Zoom 2 2"] \
+                [list zoomout.gif "Zoom out" "$this Zoom 0.5 0.5"] \
+                [list zoomfit.gif "Zoom to fit" "$this Fit"]]
+        ::graphtools::MakeToolBar $winId $toolbarItems
+
+# now create the canvas and sliders
+	pack [set vp [frame $winId.viewport]] -fill both -expand true
+        scrollbar $vp.xsc -orient horizontal -command [list $vp.c xview]
+        pack $vp.xsc -side bottom -fill x
+        scrollbar $vp.ysc -orient vertical -command [list $vp.c yview]
+        pack $vp.ysc -side right -fill y
+        canvas $vp.c -xscrollcommand [list $vp.xsc set] \
+	    -yscrollcommand [list $vp.ysc set] -bg beige
+	::canvasnotes20070919::MakeCanvasAnnotatable $vp.c
+        pack $vp.c -fill both -expand true
+
 	set planes {}
 	if {[string length $state]} { ;# we are restoring 
 	    set State $state ;# keep it local
@@ -48,6 +64,7 @@ itcl::class similescript::$newHelperClass {
 	    foreach {layerType layerState} [lrange $state 4 end] {
 		NewLayer $layerType $layerState
 	    }
+	    $vp.c configure -scrollregion [$vp.c bbox all]
 	} else {
 	    # new instance so request data from model
 	    pack [message $winId.message \
@@ -73,12 +90,39 @@ itcl::class similescript::$newHelperClass {
 	
     public method NewLayer {type {state {}}} {
 	set id [UniqueId layer]
-	set layerObj [$type $id $modelInst $winId.c 1 1 $state]
+	set cnv $winId.viewport.c
+	set layerObj [$type $id $modelInst $cnv \
+			  $transform(zoomx) $transform(zoomy) $state]
+	$cnv configure -scrollregion [$cnv bbox all]
 	pack forget $winId.message
 	set planes [linsert $planes end-[expr {$serialActive/2}] $layerObj]
 	$winId.add insert $serialActive cascade -label [$layerObj GetTitle] \
 	    -menu $winId.edit
 	$winId.add insert $serialActive cascade -label [tr. "New layer here"] \
+	    -menu .layers.sub2
+    }
+
+    public method MoveCurrentToTop {} {
+	set oldIdx end-[expr {$serialActive/2}]
+	set layerObj [lindex $planes $oldIdx]
+	$winId.viewport.c raise $layerObj.main
+	set planes [linsert [lreplace $planes $oldIdx $oldIdx] end $layerObj]
+	$winId.add delete $serialActive [incr serialActive]
+	$winId.add insert 0 cascade -label [$layerObj GetTitle] \
+	    -menu $winId.edit
+	$winId.add insert 0 cascade -label [tr. "New layer here"] \
+	    -menu .layers.sub2
+    }
+
+    public method MoveCurrentToBottom {} {
+	set oldIdx end-[expr {$serialActive/2}]
+	set layerObj [lindex $planes $oldIdx]
+	$winId.viewport.c lower $layerObj.main
+	set planes [linsert [lreplace $planes $oldIdx $oldIdx] 0 $layerObj]
+	$winId.add delete $serialActive [incr serialActive]
+	$winId.add add cascade -label [$layerObj GetTitle] \
+	    -menu $winId.edit
+	$winId.add add cascade -label [tr. "New layer here"] \
 	    -menu .layers.sub2
     }
 
@@ -91,7 +135,6 @@ itcl::class similescript::$newHelperClass {
 
     public method EditCurrent {} {
 	set oldIdx end-[expr {$serialActive/2}]
-puts "Attacking #$oldIdx of $planes"
 	[lindex $planes $oldIdx] Settings
     }
 
@@ -113,5 +156,42 @@ puts "Attacking #$oldIdx of $planes"
 	    $layer PrepareSaveString
 	    lappend State [$layer info class] [$layer cget -State]
 	}
+    }
+
+    public method Zoom {fx fy} {
+	set id $winId.viewport.c
+# first, find where canvas point at middle ends up
+	set xfroml [expr {[winfo width $id]/2}]
+	set yfromt [expr {[winfo height $id]/2}]
+	set middleX [expr {$fx*[$id canvasx $xfroml]}]
+	set middleY [expr {$fy*[$id canvasx $yfromt]}]
+# update zoom state
+	set transform(zoomx) [expr {$fx*$transform(zoomx)}]
+	set transform(zoomy) [expr {$fy*$transform(zoomy)}]
+# throw a scale command at everything on the canvas
+	$id scale all 0 0 $fx $fy
+# then contact indiviual layers to sort out stuff like line widths
+	foreach layer $planes {
+	    $layer ZoomTo $transform(zoomx) $transform(zoomy) 
+	}
+# finally scroll so old middle is still in middle
+	set sr [$id bbox all]
+	$id configure -scrollregion $sr
+	foreach {l t r b} $sr {}
+	set newMidX [expr {(($middleX-$xfroml)-$l)/($r-$l)}]
+	set newMidY [expr {(($middleY-$yfromt)-$t)/($t-$b)}]
+	$id xview moveto $newMidX
+	$id yview moveto $newMidY
+    }
+
+    public method Fit {} {
+	set id $winId.viewport.c
+	foreach {l t r b} [$id bbox all] {}
+	set scale [expr {[winfo width $id]/(0.0+$r-$l)}]
+	set vscale [expr {[winfo height $id]/(0.0+$b-$t)}]
+	if {$vscale<$scale} {
+	    set scale $vscale
+	}
+	Zoom $scale $scale
     }
 }
