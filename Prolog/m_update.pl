@@ -386,13 +386,17 @@ get_unit_conversion(Remote, Local,
 	        Index = -1),
 	    Relation = none;
 	(suffix([Base | ReallyExited], BiggestFirst);
-	   Base = RemoteModel,
-	    ReallyExited = []),
+	  contains(Base, RemoteModel, ReallyExited),
+	    \+ member(Base, BiggestFirst)),
+	 % second clause of above disjunction is for when the assoc
+	 % model is a submodel of the base -- do we ever need this now
+	 % we have the 'every...' role? I suppose if it's vm...
 	    member(Assoc, Entered),
 	    connects(Relation, Base, Assoc),
 	    Relation has_type relation,
 	    Relation is_connector from Base to _,
 	    IndexRelation is_connector from _ to Assoc,
+	    IndexRelation has_type relation,
 	    (IndexRelation = Relation; sequence(Relation, IndexRelation)),
 	    find_reference(LocalModel, Index, IndexRelation),
 	    all(ame_gen, get_all_dims, [build(ReallyExited), append(Subs, [])]),
