@@ -2056,11 +2056,10 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		assignment if using an id-based condition, and move the
 		condition evaluation outside that loop...*/
 		(append(Slower, [Now | Faster], SubPasses),
-		    append(IdOpens, [TestLoop, TestCond, _Cls | IdCloses], Now),
-		    append(IdOpens, IdCloses, NoIdConds),
+		    append(IdOpens, [TestCond, _Cls | NoIdConds], Now),
 		    TestCond = make(TestTgt, IdConds-_, _,_,
 					  [assign(arr(Zn, TcVar, _), IdExpr)]),
-		    member(can_find_id(IdCond), IdConds),
+		    wake, member(can_find_id(IdCond), IdConds),
 		    \+ TestTgt = none, % make sure not already done
 		    /* check condition is for this level...oh sod it */
 		    /* find last looping construct */
@@ -2095,7 +2094,7 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		    replace_subexps(IdExpr, compile, indices_direct,
 				    [Ptr | Inds], top_down, _, IxExpr),
 		    IdRef = arr('', IdVar, []),
-		    Next = [TestLoop, LookupAct | SmLoop],
+		    append(IdOpens, [LookupAct | SmLoop], Next),
 		    append(OuterLoops, Next, UseLoops),
 		    append(Slower, [[make(none, IdConds-_, _,_, [assign(arr(Zn, TcVar, []), ExistTest)]) | NoIdConds] | Faster], UseSubPasses), !;
 		UseLoops = OpenLoops,

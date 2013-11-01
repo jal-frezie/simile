@@ -33,7 +33,7 @@ itcl::class similescript::$newLayerClass {
 	    set useNodes($winId,max) 100
 	    set useNodes($winId,datamin) 1e100
 	    set useNodes($winId,datamax) 1e-100
-	    set useNodes($winId,bw) {}
+	    set useNodes($winId,bw) 1
 	    
 	    set useNodes($winId,cbot) black
 	    set useNodes($winId,cmid) green

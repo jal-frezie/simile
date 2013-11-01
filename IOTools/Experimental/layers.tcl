@@ -66,6 +66,7 @@ itcl::class similescript::$newHelperClass {
 	    }
 	    $vp.c configure -scrollregion [$vp.c bbox all]
 	} else {
+	    array set transform {offx 0 offy 0 zoomx 1 zoomy 1}
 	    # new instance so request data from model
 	    pack [message $winId.message \
 		      -text "Select a plane display tool from the Layers menu"]
