@@ -5,6 +5,7 @@ set newLayerClass Polygon20131026
 itcl::class similescript::$newLayerClass {
     inherit Layer
     variable useNodes
+    variable transform
 
     proc Identify {} {
 	return "Polygon map"
@@ -15,6 +16,7 @@ itcl::class similescript::$newLayerClass {
 	Layer::constructor $modelInst $mainCanvas
     } {
 	namespace import -force ::maptools2::*
+	array set transform [list xzoom $xzoom yzoom $yzoom]
 	if {[string length $state]} { ;# we are restoring 
 	    regsub -all /WIN/ $state $winId restoreString
 	    array set useNodes $restoreString
@@ -112,12 +114,16 @@ itcl::class similescript::$newLayerClass {
 	}
     }
 
+    public method ZoomTo {xzoom yzoom} {
+	array set transform [list xzoom $xzoom yzoom $yzoom]
+# will adjust line widths
+    }
+
     public method PrepareSaveString {} {
 	regsub -all $winId [array get useNodes $winId,*] /WIN/ State
     }
 
     public method Settings {} {
-        set ${winId}l5 $useNodes($winId,displayUpdate)
 	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
 	wm title $dlg [tr. "Polygon display properties"]
 	wm protocol $dlg WM_DELETE_WINDOW "set polyProps(xdone) 0"
@@ -163,8 +169,8 @@ itcl::class similescript::$newLayerClass {
 	pack [ttk::button $rangeF.apply -text [tr. Apply] \
 		  -command [list $this AdjRange $rangeF]]
         pack $rangeF -padx 10 -pady 10
-        pack [checkbutton $dlg.update -variable ${winId}l5 \
-		  -text "Update at display intervals"]
+        pack [checkbutton $dlg.update -text "Update at display intervals" \
+		  -variable [itcl::scope useNodes($winId,displayUpdate)]]
         
         set oriF [labelframe $dlg.orient -text "Orientation"]
 	pack [radiobutton $oriF.h -text Horizontal -var [itcl::scope useNodes($winId,orient)] -value h] -side left
@@ -173,7 +179,6 @@ itcl::class similescript::$newLayerClass {
         
 	LetItShow $dlg polyProps(xdone)
 	PackItUp $dlg
-	set useNodes($winId,displayUpdate) [set ${winId}l5]
     }
     
     public method AdjRange {rangeF} {
@@ -249,7 +254,8 @@ itcl::class similescript::$newLayerClass {
 
     public method AddPolygon {inds key xverts yverts} {
 	foreach {xind xval} $xverts {yind yval} $yverts {
-	    lappend outlist $xval $yval
+	    lappend outlist \
+		[expr $transform(xzoom)*$xval] [expr $transform(yzoom)*$yval]
 	}
 	set newColour [ColourFor $winId $key]
 	$winId create polygon $outlist -outline $useNodes($winId,cbord) \

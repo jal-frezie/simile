@@ -57,7 +57,7 @@ set savedCredentials [list prologId interfaceId install_time license_code \
 
 set installedCreds [file join $SIMILE_PATH Run userinfo.txt]
 set creds [file join $custom(prefDir) userinfo.txt]
-if {![file exists $creds] || [file mtime $installedCreds]>[file mtime $creds]} {
+if {![file exists $creds] || [file atime $installedCreds]>[file atime $creds]} {
     file copy -force $installedCreds $creds
 }
 
