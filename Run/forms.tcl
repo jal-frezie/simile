@@ -74,23 +74,25 @@ proc Disaggregate {parent title colour image imgpos type interp \
 
     frame $t.simple.left
     if {$new} {
-    TitleFrame $t.simple.left.count \
-	-text [tr. "Instances:"]
-    set disaggregate(countf) [GetFrame $t.simple.left.count]
-    foreach interpType {Single {Fixed array} {For data records} \
-			    Population {Rectangular grid} \
-			    {Hexagonal grid} {Polygon map}} {
-	lappend disaggregate(labels) [tr. $interpType]
-    }
-    pack [ttk::combobox $disaggregate(countf).mb -state readonly \
+	TitleFrame $t.simple.left.count \
+	    -text [tr. "Instances:"]
+	set disaggregate(countf) [GetFrame $t.simple.left.count]
+	foreach interpType {Single {Fixed array} {For data records} \
+				Population {Rectangular grid} \
+			    {Hexagonal grid}} {
+	    lappend disaggregate(labels) [tr. $interpType]
+	}
+	pack [ttk::combobox $disaggregate(countf).mb -state readonly \
 	      -textvariable disaggregate(cbxv) -values $disaggregate(labels)] \
-	-anchor w -side left -padx 4 -pady 4
-    bind $disaggregate(countf).mb <<ComboboxSelected>> SetupDisagExtras
-    label $disaggregate(countf).detail -width 10
-    pack $disaggregate(countf).detail -side left -anchor s \
-	-pady 4 -fill x -expand 1
-    ShowDisagSetup ;# Set current type
-
+	    -anchor w -side left -padx 4 -pady 4
+	
+	set exFrame [frame $disaggregate(countf).detail]
+	pack $exFrame -side left -anchor s -pady 4 -fill both -expand 1
+	pack [ttk::label $exFrame.l -wraplength 400]
+	ShowDisagSetup ;# Set current type
+	bind $disaggregate(countf).mb <<ComboboxSelected>> \
+	    [list SetupDisagExtras $exFrame]
+	SetupDisagExtras $exFrame
     } else {
     TitleFrame $t.simple.left.count \
 	-text [tr. "Control of number of instances:"]
@@ -339,6 +341,7 @@ proc Disaggregate {parent title colour image imgpos type interp \
 	set disaggregate(xinc) none
 	set disaggregate(xlibs) {}
     }
+    UpdateDisagInfo
     PackItUp $tt
 
     if {$new} {
@@ -490,64 +493,76 @@ proc ExtCodeSetup {mdl} {
     grab .disaggregation
 }    
 
-proc SetupDisagExtras {} {
+proc SetupDisagExtras {exFrame} {
     global disaggregate
 
     set selIdx [lsearch [$disaggregate(countf).mb cget -values] \
 		    $disaggregate(cbxv)]
-    set t [PutItThere .disagExtra .disaggregation]
-    wm resizable $t 0 0
-    wm protocol $t WM_DELETE_WINDOW {set disaggregate(exdone) 0}
-    wm title $t [format [tr. "Extra info for %s"] \
-		     $disaggregate(cbxv)]
-    pack [ttk::label .disagExtra.l -wraplength 400]
+# converted this to a panel in the main dialogue
+#    set t [PutItThere .disagExtra .disaggregation]
+#    wm resizable $t 0 0
+#    wm protocol $t WM_DELETE_WINDOW {set disaggregate(exdone) 0}
+#    wm title $t [format [tr. "Extra info for %s"] \
+#		     $disaggregate(cbxv)]
+#    pack [ttk::label .disagExtra.l -wraplength 400]
+    if {[winfo exists $exFrame.dims]} {
+	destroy $exFrame.dims
+    }
     switch $selIdx {0 {
-	.disagExtra.l configure -text [tr. {Single-instance submodel. This can denote a functionally distinct part of the parent model, or denote the set of components to which some other special feature applies, e.g., a different time step.}]
+	$exFrame.l configure -text [tr. {Single-instance submodel. This can denote a functionally distinct part of the parent model, or denote the set of components to which some other special feature applies, e.g., a different time step.}]
     } 1 {
-	.disagExtra.l configure -text [tr. {Single- or multi-dimensional array of instances. Dimensions can be either numerical, or the names of enumerated types where there is one element for each member of the type. Enter the dimension(s) below, with commas between them if more than one.}]
+	$exFrame.l configure -text [tr. {Single- or multi-dimensional array of instances. Dimensions can be either numerical, or the names of enumerated types where there is one element for each member of the type. Enter the dimension(s) below, with commas between them if more than one.}]
 	set disaggregate(newdims) [join $disaggregate(icount) ,]
-	pack [ttk::entry .disagExtra.e -textvariable disaggregate(newdims)]
+	pack [ttk::entry $exFrame.dims -textvariable disaggregate(newdims)]
     } 2 {
-	.disagExtra.l configure -text [tr. {Submodel with one instance per value of a file parameter. It must contain at least one file parameter variable to set its membership.}]
+	$exFrame.l configure -text [tr. {Submodel with one instance per value of a file parameter. It must contain at least one file parameter variable to set its membership.}]
     } 3 {
-	.disagExtra.l configure -text [tr. {Population submodel. Membership is controlled by the population channel symbols. It must contain at least one creation or immigration channel for the population to have some members.}]
+	$exFrame.l configure -text [tr. {Population submodel. Membership is controlled by the population channel symbols. It must contain at least one creation or immigration channel for the population to have some members.}]
     } 4 {
-	.disagExtra.l configure -text [tr. {Submodel representing a rectangular grid. Both dimensions must be numerical.
+	$exFrame.l configure -text [tr. {Submodel representing a rectangular grid. Both dimensions must be numerical.
 To access values from neighbouring squares in an equation, open the properties dialoge of an incoming influence and select "Use values from all neighbours", or heighbours to a particular direction, as appropriate.}]
-	pack [frame .disagExtra.dims]
-	pack [ttk::label .disagExtra.dims.rows -text [tr. Rows:]] -side left
-	pack [ttk::entry .disagExtra.dims.y -textvariable disaggregate(y)] \
+	pack [frame $exFrame.dims]
+	pack [ttk::label $exFrame.dims.rows -text [tr. Rows:]] -side left
+	pack [ttk::entry $exFrame.dims.y -textvariable disaggregate(y)] \
 	    -side left
-	pack [ttk::entry .disagExtra.dims.x -textvariable disaggregate(x)] \
+	pack [ttk::entry $exFrame.dims.x -textvariable disaggregate(x)] \
 	    -side right
-	pack [ttk::label .disagExtra.dims.cols -text [tr. Columns:]] \
+	pack [ttk::label $exFrame.dims.cols -text [tr. Columns:]] \
 	    -side right
     } 5 {
-	.disagExtra.l configure -text [tr. {Submodel representing a hexagonal grid. Both dimensions must be numerical.
+	$exFrame.l configure -text [tr. {Submodel representing a hexagonal grid. Both dimensions must be numerical.
 Hexagons cover a roughly rectangular area and have horizontal edges at top and bottom. To fit them together, the tops of hexagons in even numbered columns are level with the centres of those in odd numbered columns.}]
- 	pack [frame .disagExtra.dims]
-	pack [ttk::label .disagExtra.dims.rows -text [tr. Rows:]] -side left
-	pack [ttk::entry .disagExtra.dims.y -textvariable disaggregate(y)] \
+ 	pack [frame $exFrame.dims]
+	pack [ttk::label $exFrame.dims.rows -text [tr. Rows:]] -side left
+	pack [ttk::entry $exFrame.dims.y -textvariable disaggregate(y)] \
 	    -side left
-	pack [ttk::entry .disagExtra.dims.x -textvariable disaggregate(x)] \
+	pack [ttk::entry $exFrame.dims.x -textvariable disaggregate(x)] \
 	    -side right
-	pack [ttk::label .disagExtra.dims.cols -text [tr. Columns:]] \
+	pack [ttk::label $exFrame.dims.cols -text [tr. Columns:]] \
 	    -side right
     } 6 {
     }
     }
-    frame .disagExtra.bottom
-    pack [button .disagExtra.bottom.bdone -text [tr. OK] -width 10 \
-	      -command {set disaggregate(exdone) 1}] -side left -padx 4 -pady 4
-    pack [button .disagExtra.bottom.bc -text [tr. Cancel] -width 10 \
-	      -command {set disaggregate(exdone) 0}] -side right -padx 4 -pady 4
-    pack .disagExtra.bottom -side left
-    LetItShow $t disaggregate(exdone)
-    PackItUp $t
-    if {$disaggregate(exdone)} {
-	set disaggregate(interp) none
-	set disaggregate(icount) {}
-	switch $selIdx {0 {
+}
+#    frame $exFrame.bottom
+#    pack [button $exFrame.bottom.bdone -text [tr. OK] -width 10 \
+#	      -command {set disaggregate(exdone) 1}] -side left -padx 4 -pady 4
+#    pack [button $exFrame.bottom.bc -text [tr. Cancel] -width 10 \
+#	      -command {set disaggregate(exdone) 0}] -side right -padx 4 -pady 4
+#    pack $exFrame.bottom -side left
+#    LetItShow $t disaggregate(exdone)
+#    PackItUp $t
+#    if {$disaggregate(exdone)} {...}
+
+proc UpdateDisagInfo {} {
+    global disaggregate
+
+    set selIdx [lsearch [$disaggregate(countf).mb cget -values] \
+		    $disaggregate(cbxv)]
+    set disaggregate(interp) none
+    set disaggregate(icount) {}
+    switch $selIdx {
+	0 {
 	    set disaggregate(type) generated
 	} 1 {
 	    set disaggregate(type) generated
@@ -581,8 +596,7 @@ Hexagons cover a roughly rectangular area and have horizontal edges at top and b
 	    set disaggregate(icount) $disaggregate(y),$disaggregate(x)
 	}
     }
-    ShowDisagSetup
-    }
+#    ShowDisagSetup
 }
 
 proc ShowDisagSetup {} {
@@ -590,18 +604,18 @@ proc ShowDisagSetup {} {
 
     set sides {}
     set interp $disaggregate(interp)
+    array set disaggregate [list x {} y {}]
     switch -glob $interp {
-	poly_map {
-	    set interpIdx 6
-	    set sides {}
-	} rect_grid* {
+	rect_grid* {
 	    set interpIdx 4
 	    scan $disaggregate(interp) rect_grid(%d,%d) y x
 	    set sides ${y}x${x}
+	    array set disaggregate [list x $x y $y]
 	} hex_grid* {
 	    set interpIdx 5
 	    scan $disaggregate(interp) hex_grid(%d,%d) y x
 	    set sides ${y}x${x}
+	    array set disaggregate [list x $x y $y]
 	} default {
     # get from type and value only
 	    switch $disaggregate(type) {
@@ -622,7 +636,7 @@ proc ShowDisagSetup {} {
     }
     set disaggregate(cbxv) [lindex [$disaggregate(countf).mb cget -values] \
 				$interpIdx]
-    $disaggregate(countf).detail configure -text $sides
+#    $disaggregate(countf).detail configure -text $sides
 }
 
 proc ChangeIncFile {incFileTxt mdl} {
