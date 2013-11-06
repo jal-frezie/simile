@@ -91,14 +91,15 @@ node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
 */	foreach( CAttribute=CValue, ClassRefinements,
 		RealNode has_new_class_refinement CAttribute of CValue ),
 /* no model refinements restored */
-        (Class = border,
+/* try putting this in the adjust_to cascade...
+   (Class = border,
 	    append(B4, [centre=Ctr | Rfter], GraphicalInfo), !, % v5 style
 	    Sm has_part RealNode,
 	    Sm has_graphical_attribute internal_extent of Box,
 	    event'><'get_posn_around(Ctr, Box, Theta),
 	    append(B4, [along=Theta | Rfter], V6Graph);
-	  V6Graph = GraphicalInfo),
-	foreach( GAttribute=GValue, V6Graph,    
+	  V6Graph = GraphicalInfo), */
+	foreach( GAttribute=GValue, GraphicalInfo,    
 		RealNode has_new_graphical_attribute GAttribute of GValue ).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

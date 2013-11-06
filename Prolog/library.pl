@@ -610,6 +610,14 @@ adjust_to_10(Parent) :-
 	    find_name_host(Influence, NewAttrLocn),
 	    NewAttrLocn has_new_attribute use_sofar of V,
 	    fail;
+        contains(Parent, Sm),
+	    Sm has_graphical_attribute internal_extent of Box,
+            Sm has_part Crossing,
+            find_type(Crossing, border),
+            Crossing no_longer_has_graphical_attribute centre of Ctr,
+	    event'><'get_posn_around(Ctr, Box, Theta),
+            Crossing has_new_graphical_attribute along of Theta,
+            fail;
 	true.
 
 dequote_ET(Qat, UQat) :-
