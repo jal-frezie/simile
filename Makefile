@@ -289,12 +289,13 @@ $(RELAY): Run/relay.c
 	cd Run; $(GCCCMD) $(CFLAGS) -o ../$(RELAY) relay.c; cd ..
 
 ifeq ($(PLATFORM),GNU/Linux)
+MINREL = 1
 # install used for packaging for distributions
 SHAREDIR = /usr/share
-INSTALL_TGT = $(SHAREDIR)/simile-6.0
+INSTALL_TGT = $(SHAREDIR)/simile-6.$(MINREL)
 LIBDIR = /usr/lib
 # overridden by rpm build on Fedora 64-bit
-EXEC_TGT = $(LIBDIR)/simile-6.0
+EXEC_TGT = $(LIBDIR)/simile-6.$(MINREL)
 install:
 	mkdir -p $(DESTDIR)$(INSTALL_TGT); \
 	tar cf $(DESTDIR)$(INSTALL_TGT)/payload.tar \
