@@ -42,7 +42,7 @@ void crash (Tcl_Interp *interp, const char *cause) {
   // fat chance, we have no Tk in the exec interpreter
   Tcl_VarEval(interp, "ShowMessage {Authorization failure} error {Bad ", cause, " authorization. Simile will now exit.} ok", NULL);
   Tcl_Exit(-1);
-  strcpy(NULL, "deadbeef"); // that should screw it up nicely
+  strcpy((char*)4, "deadbeef"); // that should screw it up nicely
 }	 
 
 int my_md5(Tcl_Interp *interp, Tcl_Obj* text) {

@@ -202,8 +202,9 @@ template <class GridSMClass>
 void fill_nbr_ptrs (GridSMClass* parent, GridSMClass* trail[], 
 		    int trailPt, int shape, int trailLen) {
   int off;
-
-  for (off=-1; off<3; off+=shape) {
+  // shape is 0 for rect, 1 for hex odd row (to right), 2 for even row
+  for (off=-1; off<3; ++off) {
+    if (off==4-2*shape) continue;
     GridSMClass* cur_nbr = trail[(trailPt+off)%trailLen];
     if (cur_nbr) {
       nbrlist <GridSMClass> *tempIntSat = new nbrlist <GridSMClass>;
@@ -225,18 +226,17 @@ void fill_nbr_ptrs (GridSMClass* parent, GridSMClass* trail[],
 template <class GridSMClass>
 void make_fixed_nbr_list (GridSMClass* parent, int shape, int rows, int columns,
 			  int rowId, int columnId) {
-  int offs[3][8][2] = {{{1,1}, {1,0}, {1,-1}, {0,1}, 
+  int offs[8][2] = {{1,1}, {1,0}, {1,-1}, {0,1}, 
 			{-1,1}, {-1,0}, {-1,-1}, {0,-1}},
-		       {{1,1}, {1,0}, {1,-1}, {0,1}, {-1,0}, {0,-1}},
-		       {{1,0}, {0,1}, {-1,1}, {-1,0}, {-1,-1}, {0,-1}}},
     seq, oRow, oCol; 
-  if (shape==1 || columnId%2==1) // rectangular or hex and odd column (hill)
-    --shape;
+  if (shape==1 || rowId%2==1) 
+    --shape; // shape now as in last proc
   // order of addition is chosen to match what happens with vm grid
   parent->nbrs = NULL;
-  for (seq = 7-2*(shape>0); seq>=0; --seq) {
-    oRow = offs[shape][seq][0];
-    oCol = offs[shape][seq][1];
+  for (seq = 7; seq>=0; --seq) {
+    if (seq%4 == 4-2*shape) continue;
+    oRow = offs[seq][0];
+    oCol = offs[seq][1];
     if (rowId+oRow>0 && rowId+oRow<=rows && 
 	columnId+oCol>0 && columnId+oCol<=columns) {
       nbrlist <GridSMClass> *tempIntSat = new nbrlist <GridSMClass>;

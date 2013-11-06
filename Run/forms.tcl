@@ -531,7 +531,7 @@ To access values from neighbouring squares in an equation, open the properties d
 	    -side right
     } 5 {
 	$exFrame.l configure -text [tr. {Submodel representing a hexagonal grid. Both dimensions must be numerical.
-Hexagons cover a roughly rectangular area and have horizontal edges at top and bottom. To fit them together, the tops of hexagons in even numbered columns are level with the centres of those in odd numbered columns.}]
+Hexagons cover a roughly rectangular area and have vertical edges to left and right. To fit them together, the left sides of hexagons in odd numbered rows are vertically aligned with the centres of those in even numbered rows.}]
  	pack [frame $exFrame.dims]
 	pack [ttk::label $exFrame.dims.rows -text [tr. Rows:]] -side left
 	pack [ttk::entry $exFrame.dims.y -textvariable disaggregate(y)] \
