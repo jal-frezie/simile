@@ -28,7 +28,7 @@ itcl::class similescript::$newLayerClass {
     }
 
     destructor {
-	$winId delete $this.main
+	$winId delete [namespace tail $this].main
     }
 
     public method AddVariable {} {

@@ -64,7 +64,11 @@ itcl::class similescript::$newHelperClass {
 	    foreach {layerType layerState} [lrange $state 4 end] {
 		NewLayer $layerType $layerState
 	    }
-	    $vp.c configure -scrollregion [$vp.c bbox all]
+	    set bounds [$vp.c bbox all]
+	    $vp.c configure -scrollregion $bounds
+	    foreach {l t r b} $bounds {}
+	    $vp.c xview moveto [expr {($transform(offx)-$l)*1.0/($r-$l)}]
+	    $vp.c yview moveto [expr {($transform(offy)-$t)*1.0/($b-$t)}]
 	} else {
 	    array set transform {offx 0 offy 0 zoomx 1 zoomy 1}
 	    # new instance so request data from model
@@ -153,7 +157,9 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method PrepareSaveString {} {
-	set State {0 0 1 1} ;# offset and zoom
+	set id $winId.viewport.c
+	set State [list [$id canvasx 0] [$id canvasy 0] \
+		       $transform(zoomx) $transform(zoomy)] ;# offset and zoom
 	foreach layer $planes {
 	    $layer PrepareSaveString
 	    lappend State [$layer info class] [$layer cget -State]
