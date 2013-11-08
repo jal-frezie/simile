@@ -87,7 +87,6 @@ itcl::class similescript::$newLayerClass {
 # nothing to do at display time -- it's a photo
 	if {$useNodes(state) eq "displaying"} {
 	    $winId delete [namespace tail $this].main
-	    $winId addtag positioned all
 	    DoForRXYData {} DrawAnimal \
 		[lindex [$modelInst GetValue $useNodes(size)] 0] \
 		[lindex [$modelInst GetValue $useNodes(dir)] 0] \
@@ -116,22 +115,26 @@ itcl::class similescript::$newLayerClass {
 	set c $winId
 	eval $useNodes(cmds)
 	foreach {hotx hoty} $hotspot {} ;# sets them
-	$winId addtag unpositioned all
-	$winId dtag positioned unpositioned
 
+	set compx [expr sin($dir)]
+	set compy [expr cos($dir)]
 	foreach newItem [$winId find withtag unpositioned] {
 	    set newCoords {}
 	    foreach {x y} [$winId coords $newItem] {
 		set absx [expr $x-$hotx]
 		set absy [expr $y-$hoty]
-		set compx [expr sin($dir)]
-		set compy [expr cos($dir)]
 		lappend newCoords [expr {$transform(xzoom)*((-$compx*$absx-$compy*$absy)*$key+$xposn)}] [expr {$transform(yzoom)*(($compy*$absx-$compx*$absy)*$key+$yposn)}] 
 	    }
 	    $winId coords $newItem $newCoords
 	}
+# simple version with no rotation about 2x as fast
+#	set xscale [expr {$key*$transform(xzoom)}]
+#	set xbase [expr {($xposn-$key*$hotx)*$transform(xzoom)/(1-$xscale)}]
+#	set yscale [expr {$key*$transform(yzoom)}]
+#	set ybase [expr {($yposn-$key*$hoty)*$transform(yzoom)/(1-$yscale)}]
+#	$winId scale unpositioned $xbase $ybase $xscale $yscale
+# also try keeping data and moving individuals?
 	$winId addtag [namespace tail $this].main withtag unpositioned
-	$winId addtag positioned withtag unpositioned
 	$winId dtag all unpositioned
     }
 

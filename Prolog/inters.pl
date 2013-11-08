@@ -1018,7 +1018,7 @@ Now one that uses a special conditional level */
 		 build(NotCondSetups)]),
 	    append([ASetups, CondSetups, NotCondSetups], Setups);
 	    
-        Source = element(Array, Indx), !,
+        Source = element(Array, Indx), !, wake,
 	    make_intermediates(Indx, SubId, Target, DestPath, BackSwap,
 			PrevInters, BuildingArrays, Step, Used, Int, MidInters,
 			part_result(IContext, ISetups, IArgs, IndxRef)),
@@ -1031,8 +1031,12 @@ Now one that uses a special conditional level */
 	     (PickedLevel = set(IntIndxRef, loop(Limit,_)),
 	         RetrieveLoops = [],
 	         type_ind(Limit, XpectType);
-	       PickedLevel = sm(N, UP, DP, vm_loop(_, [XpectType | _],_,_)),
-	         RetrieveLoops = [sm(N, UP, DP, vm_retrieve(IntIndxRef))]);
+	       PickedLevel = sm(N, UP, DP, VMForm),
+	         (VMForm = vm_loop(_, [XpectType | _],_,_),
+		     LN = N;
+		  VMForm = nbrs, XpectType = int, % might make it compass pts?
+		     LN = nbrs),
+	         RetrieveLoops = [sm(N, UP, DP, vm_retrieve(LN, IntIndxRef))]);
 		throw(only_works_on_array(element, Array))),
 	    (NeedType = XpectType;
 	      % bodge: if building code, bounds have been made integer, so
@@ -1830,7 +1834,7 @@ same_context(C1, C2) :-
 special_combine_paths(Datum, Index, Delayed, Joint) :-
 	break_at_last_loop(Index, IInside, ILoop, IOutside),
 	break_at_last_loop(Datum, DInside, DLoop, DOutside),
-	\+ DLoop = [sm(_,_,_, vm_retrieve(_)) | _], !,
+	\+ DLoop = [sm(_,_,_, vm_retrieve(_,_)) | _], !,
 	    DLoop = ILoop,
 	    append(DOutside, Delayed, AllDelayed),
  	    special_combine_paths(DInside, IInside, AllDelayed, InJoint),
@@ -1847,10 +1851,10 @@ break_at_last_loop(SubLoops, TailLoops, SumLoop, ItemLoops) :-
 	\+ (member(OtherLoop, ItemLoops), loops(OtherLoop)),
 	append(TailLoops, SumLoop, AllLoops),
 	(SumLoop = [Iterator];
-	 append([sm(_,_,_, vm_retrieve(_)) | Opens], [Iterator], SumLoop),
+	 append([sm(_,_,_, vm_retrieve(_,_)) | Opens], [Iterator], SumLoop),
 	 \+ (member(OtherLoop, Opens),
 	     loops(OtherLoop),
-	     \+ OtherLoop = sm(_,_,_, vm_retrieve(_)))),
+	     \+ OtherLoop = sm(_,_,_, vm_retrieve(_,_)))),
 	loops(Iterator).
 
 /* Combine contexts. Takes a source context, a context in which a number
@@ -2110,7 +2114,7 @@ building_dims_and_indices(set(I, loop(_,L)), L, I).
 
 loops(set(_, loop(_,_))).
 loops(sm(_,_,_, vm_loop(_,_,_,_))).
-loops(sm(_,_,_, vm_retrieve(_))).
+loops(sm(_,_,_, vm_retrieve(_,_))).
 loops(sm(_,_,_, nbrs)).
 loops(cond_section(_)).
 

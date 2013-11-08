@@ -2079,8 +2079,9 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 			    LastStep = LastStepTail;
 			  ExLoop = [start_submodel(N,T,BP, vm_loop(_,_,_,_))],
 			    SmLoop = [],
-			    get_pass_ends(sm(N,T,BP, vm_retrieve(IxExpr)),
+			    get_pass_ends(sm(N,T,BP, vm_retrieve(N, IxExpr)),
 					  LookupAct, LookupEnd),
+			 % need xtra case here for nbrs?
 			    ExistTest = 1,
 			    LastStep = [LookupEnd | LastStepTail]), !;
 		      find_all_comps(AssocModel, IdCond),

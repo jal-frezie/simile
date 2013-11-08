@@ -194,31 +194,33 @@ template <class GridSMClass>
 class nbrlist {
 public:
   GridSMClass *payload;
-//   int instanceid[1];
+  int instanceid[1];
   nbrlist *next;
 };
 
 template <class GridSMClass>
 void fill_nbr_ptrs (GridSMClass* parent, GridSMClass* trail[], 
 		    int trailPt, int shape, int trailLen) {
-  int off;
+  int off, idx;
   // shape is 0 for rect, 1 for hex odd row (to right), 2 for even row
+  idx = shape?6:8;
   for (off=-1; off<3; ++off) {
     if (off==4-2*shape) continue;
     GridSMClass* cur_nbr = trail[(trailPt+off)%trailLen];
     if (cur_nbr) {
       nbrlist <GridSMClass> *tempIntSat = new nbrlist <GridSMClass>;
-//       tempIntSat->instanceid[0] = 7-off;
+      tempIntSat->instanceid[0] = idx;
       tempIntSat->payload = cur_nbr;
       tempIntSat->next = parent->nbrs;
       parent->nbrs = tempIntSat;
       
       tempIntSat = new nbrlist <GridSMClass>;
-//       tempIntSat->instanceid[0] = fmod(off+4,4)+1;
+      tempIntSat->instanceid[0] = (11-idx)%(shape?4:3)+1; // don't ask
       tempIntSat->payload = parent;
       tempIntSat->next = cur_nbr->nbrs;
       cur_nbr->nbrs = tempIntSat;
     }  // if (cur_nbr)
+    --idx;
   } // for off,
   trail[trailPt%trailLen] = parent;
 }
@@ -228,11 +230,12 @@ void make_fixed_nbr_list (GridSMClass* parent, int shape, int rows, int columns,
 			  int rowId, int columnId) {
   int offs[8][2] = {{1,1}, {1,0}, {1,-1}, {0,1}, 
 			{-1,1}, {-1,0}, {-1,-1}, {0,-1}},
-    seq, oRow, oCol; 
+    seq, idx, oRow, oCol; 
   if (shape==1 || rowId%2==1) 
     --shape; // shape now as in last proc
   // order of addition is chosen to match what happens with vm grid
   parent->nbrs = NULL;
+  idx = shape?6:8;
   for (seq = 7; seq>=0; --seq) {
     if (seq%4 == 4-2*shape) continue;
     oRow = offs[seq][0];
@@ -240,11 +243,12 @@ void make_fixed_nbr_list (GridSMClass* parent, int shape, int rows, int columns,
     if (rowId+oRow>0 && rowId+oRow<=rows && 
 	columnId+oCol>0 && columnId+oCol<=columns) {
       nbrlist <GridSMClass> *tempIntSat = new nbrlist <GridSMClass>;
-//       tempIntSat->instanceid[0] = seq+1;
+      tempIntSat->instanceid[0] = idx;
       tempIntSat->payload = parent+columns*oRow+oCol;
       tempIntSat->next = parent->nbrs;
       parent->nbrs = tempIntSat;
     }
+    --idx;
   }
 }
 
@@ -340,6 +344,15 @@ SMClass* locate (SMClass* ptr, int soughtIndex) {
   while (ptr && ptr->instanceid[0] != soughtIndex)
     ptr = ptr->next;
   return ptr;
+}
+
+template <class SMClass>
+SMClass* locate (nbrlist <SMClass> *ptr, int soughtIndex) {
+  while (ptr && ptr->instanceid[0] != soughtIndex)
+    ptr = ptr->next;
+  if (ptr)
+    return ptr->payload;
+  return NULL;
 }
 
 template <class SMClass>
