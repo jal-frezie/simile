@@ -255,7 +255,7 @@ itcl::class similescript::$newLayerClass {
     public method AddPolygon {inds key xverts yverts} {
 	foreach {xind xval} $xverts {yind yval} $yverts {
 	    lappend outlist \
-		[expr $transform(xzoom)*$xval] [expr $transform(yzoom)*$yval]
+		[expr $transform(xzoom)*$xval] [expr -$transform(yzoom)*$yval]
 	}
 	set newColour [ColourFor $winId $key]
 	$winId create polygon $outlist -outline $useNodes($winId,cbord) \

@@ -44,7 +44,7 @@ itcl::class similescript::$newLayerClass {
 	set myTag [namespace tail $this].main
 	if {[catch {$this.derived blank}]} { ;# not yet exist
 	    image create photo $this.derived
-	    $winId create image $stickIt -anchor nw -image $this.derived \
+	    $winId create image $stickIt -anchor sw -image $this.derived \
 						 -tag $myTag
 	} else {
 	    $winId coords [$winId find withtag $myTag] $stickIt

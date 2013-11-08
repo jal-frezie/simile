@@ -123,7 +123,7 @@ itcl::class similescript::$newLayerClass {
 	    foreach {x y} [$winId coords $newItem] {
 		set absx [expr $x-$hotx]
 		set absy [expr $y-$hoty]
-		lappend newCoords [expr {$transform(xzoom)*((-$compx*$absx-$compy*$absy)*$key+$xposn)}] [expr {$transform(yzoom)*(($compy*$absx-$compx*$absy)*$key+$yposn)}] 
+		lappend newCoords [expr {$transform(xzoom)*((-$compx*$absx-$compy*$absy)*$key+$xposn)}] [expr {-$transform(yzoom)*(($compy*$absx-$compx*$absy)*$key+$yposn)}] 
 	    }
 	    $winId coords $newItem $newCoords
 	}
