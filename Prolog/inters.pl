@@ -1034,7 +1034,11 @@ Now one that uses a special conditional level */
 	       PickedLevel = sm(N, UP, DP, VMForm),
 	         (VMForm = vm_loop(_, [XpectType | _],_,_),
 		     LN = N;
-		  VMForm = nbrs, XpectType = int, % might make it compass pts?
+		  VMForm = nbrs,
+		     contains(Grid, SubId),
+		     m_update'><'ready_type(Grid, GType),
+		     member(GType-XpectType, [rect_grid(R,C)-a(rect_nbr),
+					      hex_grid(R,C)-a(hex_nbr)]),
 		     LN = nbrs),
 	         RetrieveLoops = [sm(N, UP, DP, vm_retrieve(LN, IntIndxRef))]);
 		throw(only_works_on_array(element, Array))),

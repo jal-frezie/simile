@@ -40,6 +40,8 @@
 #define FLAG            -3
 #define OWNSIZED        -4
 #define SPARSEARRAY     -5
+#define HEX_NBR         -8
+#define RECT_NBR        -9
 #define ENUM_BASE       -10
 
 /* source of value */

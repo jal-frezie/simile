@@ -712,6 +712,13 @@ enum_type_ref(Ref, Model, ETStyle, Value, Units, ETSpec) :-
 	    BareRef = Ref),
 	(nth0(Value, [false, true], BareRef),
 	    Units = boolean;
+	  contains(Grid, Model),
+	    Grid has_class_refinement multiplication_spec of MS,
+	    member(interpretation=Form, MS),
+	    member(Form-Pts-Units-ETSpec,
+		   [rect_grid(R,C)-[ne,n,nw,e,se,s,sw,w]-a(rect_nbr)-'RECT_NBR',
+		    hex_grid(R,C)-['1h','11h','3h','5h','7h','9h']-a(hex_nbr)-'HEX_NBR']),
+	    nth(Value, Pts, BareRef);
 	[BareRef, Value, Units, ETSpec] = [boolean, 2, n(boolean), 'FLAG'];
 	BareRef = 'NULL',
 	    Value = 0,
