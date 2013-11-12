@@ -2059,42 +2059,40 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		    append(IdOpens, [TestCond, _Cls | NoIdConds], Now),
 		    TestCond = make(TestTgt, IdConds-_, _,_,
 					  [assign(arr(Zn, TcVar, _), IdExpr)]),
-		    wake, member(can_find_id(IdCond), IdConds),
-		    \+ TestTgt = none, % make sure not already done
-		    /* check condition is for this level...oh sod it */
-		    /* find last looping construct */
-		    (append(OuterLoops, [make(_,_,_,_, ExLoop)
-					| SmLoop], OpenLoops),
-		        (ExLoop = [open_index(IdRef, Bound)],
-			    member(SmLoop,
-				   [[make(_,_,_,_, [start_submodel(_,_,_,_)])],
-				    []]),
-			    LookupAct = make(none, []-_, _,_,
-					     [assign(IdRef, IxExpr)]),
-			    (Bound = pra_bound(PraPtr, PraName),
-			        append_atoms(PraName, made, MadeBound),
-			      UpBound = arr(PraPtr, MadeBound, []);
-			        UpBound = Bound),
-			    ExistTest = (IxExpr>0 && IxExpr<=UpBound),
-			    LastStep = LastStepTail;
-			  ExLoop = [start_submodel(N,T,BP, vm_loop(_,_,_,_))],
-			    SmLoop = [],
-			    get_pass_ends(sm(N,T,BP, vm_retrieve(N, IxExpr)),
-					  LookupAct, LookupEnd),
-			 % need xtra case here for nbrs?
-			    ExistTest = 1,
-			    LastStep = [LookupEnd | LastStepTail]), !;
-		      find_all_comps(AssocModel, IdCond),
-		        caption_for(AssocModel, IdCapt),	
-		        raise_exception(bad_instance_lookup(IdCapt))),
-		    append_atoms(Submodel, cond, IdVar),
+		    member(can_find_id(IdCond), IdConds), wake,
 		    /* OK Normally a reference to index(n) in a vm submodel
 		    gets turned to an element of instanceid, but this will not
 		    yet have been filled when assigning the cond, so replace
 		    with direct references to loop inds */
 		    replace_subexps(IdExpr, compile, indices_direct,
 				    [Ptr | Inds], top_down, _, IxExpr),
-		    IdRef = arr('', IdVar, []),
+		    \+ TestTgt = none, % make sure not already done
+		    /* check condition is for this level...oh sod it */
+		    count_and_list_lookups(IxExpr, Count, Lookups),
+		    /* find last looping construct */
+		    (append(MainLoops, SmLoop, OpenLoops),
+		     append(OuterLoops, ShortedLoops, MainLoops),
+		        (length(ShortedLoops, Count),
+			    member(SmLoop,
+				   [[make(_,_,_,_, [start_submodel(_,_,_,_)])],
+				    []]),
+			    append_atoms(Submodel, cond, IdVar),
+			    assign_and_test_limit(IdVar, ShortedLoops, Lookups,
+						  Instructs, ExistTest),
+			    LookupAct = make(none, []-_, _,_, Instructs),
+			    length(SpareFinishes, Count),
+			    append(SpareFinishes, LastStep, [_ | LastStepTail]);
+			  ShortedLoops = [make(_,_,_,_, [start_submodel(N,T,BP, vm_loop(_,_,_,_))])],
+			 % looking up instance in a vm model
+			    SmLoop = [],
+			    get_pass_ends(sm(N,T,BP, vm_retrieve(N, Count, Lookups)),
+					  LookupAct, LookupEnd),
+			 % need xtra case here for nbrs? doubt
+			    ExistTest = 1,
+			    LastStep = [LookupEnd | LastStepTail]), !;
+		      find_all_comps(AssocModel, IdCond),
+		        caption_for(AssocModel, IdCapt),	
+		        raise_exception(bad_instance_lookup(IdCapt))),
 		    append(IdOpens, [LookupAct | SmLoop], Next),
 		    append(OuterLoops, Next, UseLoops),
 		    append(Slower, [[make(none, IdConds-_, _,_, [assign(arr(Zn, TcVar, []), ExistTest)]) | NoIdConds] | Faster], UseSubPasses), !;
@@ -2103,8 +2101,8 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		    LastStep = LastStepTail),
 				    
 		get_base_ptrs(BLoops, _, BasePtrs),
-		extract_action(Outer,
-			       [bound_gen_loop(ParentPtr, Submodel, LoopCode)]),
+		extract_action(Outer, [bound_gen_loop(ParentPtr, Submodel,
+						      LoopCode, Count)]),
 		extract_action(GenStep, [generate(Submodel, ParentPtr,
 				Ptr, GenCond, VMPtrs, Inds, BasePtrs)]),
 		SmNew = [new_context(Ptr, TestPhase)],
@@ -2131,6 +2129,26 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 	    append([FirstStep, CondPass, LastStep, NewOrdered],
 		   OrderedAssign), !;
 	OrderedAssign = []).
+
+count_and_list_lookups(Eqn, N, Eqns) :- wake,
+	Eqn = choose(1, First, More), !,
+	    count_and_list_lookups(More, M, Rest),
+	    N is M+1,
+	    Eqns = [First | Rest];
+	  N = 1,
+	    Eqns = [Eqn].
+
+assign_and_test_limit(_, [], [], [], 1).
+assign_and_test_limit(IdVar, [make(_,_,_,_, [open_index(IdRef, Bound)]) | R1],
+		      [IxExpr | R2], [assign(IdRef, IxExpr) | R3],
+		      IxExpr>0 && IxExpr<=UpBound && R4) :-
+	(Bound = pra_bound(PraPtr, PraName),
+	    append_atoms(PraName, made, MadeBound),
+	    UpBound = arr(PraPtr, MadeBound, []);
+	  UpBound = Bound),
+	length([x | R1], CIdx), 
+	IdRef = arr('', IdVar, [CIdx]),
+	assign_and_test_limit(IdVar, R1, R2, R3, R4).
 
 indices_direct([MPtr | Inds], ind(IPtr, N), Ind, 0) :-
 	MPtr == IPtr,

@@ -1683,6 +1683,7 @@ operator(>=, boolean, [Any, Any]) :- value(Any).
 operator(<>, boolean, [Any, Any]) :- value(Any).
 
 operator('&&', boolean, [boolean, boolean]).
+operator('&&', cond_spec, [cond_spec, cond_spec]).
 operator('||', boolean, [boolean, boolean]).
 operator(',', boolean, [boolean, boolean]).
 operator(';', boolean, [boolean, boolean]).

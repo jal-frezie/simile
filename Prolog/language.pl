@@ -167,11 +167,12 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	  do_assign_list(L, MyLoop, Indent1, Used, Stream),
 	  excrete(L, assignment, NbrsPointer=OnPointerRef, Indent1, Stream),
 	  excrete(L, end(while), NbrsPointer, Indent, Stream);
-	LoopSpec = vm_retrieve(List, VmIndex),
-	  make_evaluation_routine(L, VmIndex, Used, VmUseIndex),
+	LoopSpec = vm_retrieve(List, Count, VmIndices),
+	  all(language, make_evaluation_routine,
+	      [unify(L), build(VmIndices), unify(Used), build(VmUseIndices)]),
 	  make_struct_reference(L, Top, List, _, StartPtrRef),
-	  excrete(L, assignment, Pointer = locate(StartPtrRef, VmUseIndex),
-		  Indent, Stream),
+	  LocateCall =.. [locate, StartPtrRef, Count | VmUseIndices],
+	  excrete(L, assignment, Pointer = LocateCall, Indent, Stream),
 	  refer_value(L, Pointer, PointerRef),
 	  excrete(L, if_start, PointerRef, Indent, Stream),
 	  Indent1 is Indent + 4,
@@ -281,13 +282,14 @@ failed through to make sure all later temporary variables get declared. */
 
 	do_assign_list(L, Later, Indent, Used, Stream).
 
-do_assignment(L, [bound_gen_loop(Top, Name, Ready) | Clauses],
+do_assignment(L, [bound_gen_loop(Top, Name, Ready, CondCount) | Clauses],
 	      Indent, Used, Stream) :-
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
 	(make_struct_reference(L, Top, Name, SubPointer, _),
 % what is this for? Matches dummy index for base-instance-lookup
 	    append_atoms(Name, cond, IdRef),
-	    excrete(L, variable_declaration, [int, IdRef, []], Indent, Stream),
+	    excrete(L, variable_declaration, [int, IdRef, [CondCount]],
+		    Indent, Stream),
 
 	    append_atoms(Name, 'type*', Type),
 	    append_atoms(Name, 'type**', MType),
@@ -756,7 +758,7 @@ template_type(TptName, Specific, TptPtr) :-
 
 starts_a_level(Inst) :-
 	member(Inst, [open_index(_,_), start_submodel(_,_,_,_),
-		      generate(_,_,_,_,_,_,_), bound_gen_loop(_,_,_),
+		      generate(_,_,_,_,_,_,_), bound_gen_loop(_,_,_,_),
 		      check_phase(_,_), check_cond(_)]).
 
 get_rest_of_my_loop(More, MyLoop, Later) :-

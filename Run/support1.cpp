@@ -347,6 +347,24 @@ SMClass* locate (SMClass* ptr, int soughtIndex) {
 }
 
 template <class SMClass>
+SMClass* locate (SMClass* ptr, int id_count, ...) {
+  int length;
+  va_list argptr;
+  int *curIndices;
+
+  curIndices = new int[id_count];
+  va_start(argptr, id_count);
+  for (length=0; length<id_count; length++) {
+    curIndices[length] = va_arg(argptr, int);
+  }
+  va_end(argptr);
+   
+  while (ptr && compare_instance_status(ptr->instanceid, curIndices, id_count))
+    ptr = ptr->next;
+  return ptr;
+}
+
+template <class SMClass>
 SMClass* locate (nbrlist <SMClass> *ptr, int soughtIndex) {
   while (ptr && ptr->instanceid[0] != soughtIndex)
     ptr = ptr->next;

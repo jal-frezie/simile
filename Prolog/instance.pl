@@ -414,9 +414,18 @@ instance_of(Type, Node, _, Inst, Ref) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 is_lookup_cond(GroundExpr, UseExpr) :-
-	GroundExpr = (index(1) is UseId),
-	   UseExpr = soloarr(UseId); % cheat to allow single-element arr
-	 GroundExpr = any(index(1) is UseExpr).
+%	GroundExpr = (index(1) is UseId),
+%	   UseExpr = soloarr(UseId); % cheat to allow single-element arr
+%	 GroundExpr = any(index(1) is UseExpr).
+	(GroundExpr = any(IsConjunct), UseExpr = Cascade;
+	 GroundExpr = IsConjunct, UseExpr = soloarr(Cascade)), !,
+	havify(IsConjunct, _C, Cascade).
+
+% use of 'choose' is arbitrary, it has the right unit tolerance
+havify(index(1) is Val, 1, Val).
+havify(index(N) is Val && Inner, N, choose('"true"', Val, Inners)) :-
+	M is N-1,
+	havify(Inner, M, Inners).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 build_sum([Solo], SoloArr) :- sum_over_dims(Solo, SoloArr).
