@@ -1018,10 +1018,10 @@ Now one that uses a special conditional level */
 		 build(NotCondSetups)]),
 	    append([ASetups, CondSetups, NotCondSetups], Setups);
 	    
-        Source = element(Array, Indx), !, wake,
-	    make_intermediates(Indx, SubId, Target, DestPath, BackSwap,
-			PrevInters, BuildingArrays, Step, Used, Int, MidInters,
-			part_result(IContext, ISetups, IArgs, IndxRef)),
+        Source =.. [element, Array | Indxs], !, wake,
+	    make_subexps(Indxs, SubId, Target, DestPath, BackSwap,
+			PrevInters, BuildingArrays, Step, Used, Ints, MidInters,
+			_F, [], IContext, ISetups, IArgs, IndxRefs),
 	    make_intermediates(Array, SubId, Target, DestPath, BackSwap,
 			MidInters, BuildingArrays, Step, Used,Units, NewInters,
 			part_result(AContext, ASetups, AArgs, SourceRef)),
@@ -1029,11 +1029,15 @@ Now one that uses a special conditional level */
 	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
  	    (break_at_last_loop(ALoops, TailLoops, [PickedLevel], ItemLoops),
 	     (PickedLevel = set(IntIndxRef, loop(Limit,_)),
+	         % assume one index for now
 	         RetrieveLoops = [],
 	         PtrInit = [],
-	         type_ind(Limit, XpectType);
+	         type_ind(Limit, XpectType),
+	         [IndxRefs,Ints,IntIndxRef] = [[IndxRef], [Int], [IntIndxRef]],
+	         match_index_units(XpectType, IndxRef, Int, IntIndxRef,
+				   Step, Array);
 	       PickedLevel = sm(N, UP, DP, VMForm),
-	         (VMForm = vm_loop(_, [XpectType | _],_,_),
+	         (VMForm = vm_loop(_, XpectTypes,_,_),
 		     LN = N,
 		     PtrInit = [sm(N, UP, DP, vm_loop(start_only, _,_,_))];
 		  VMForm = nbrs,
@@ -1043,30 +1047,13 @@ Now one that uses a special conditional level */
 					      hex_grid(R,C)-a(hex_nbr)]),
 		     LN = nbrs,
 		     PtrInit = []),
+	         length(Indxs, Count),
 	         RetrieveLoops = [sm(N, UP, DP,
-				     vm_retrieve(LN, 1, [IntIndxRef]))]);
+				     vm_retrieve(LN, Count, IntIndxRefs))],
+	         all(inters, match_index_units,
+		     [build(XpectTypes), build(IndxRefs), build(Ints),
+		      build(IntIndxRefs), unify(Step), unify(Array)]));
 		throw(only_works_on_array(element, Array))),
-	    (NeedType = XpectType;
-	      % bodge: if building code, bounds have been made integer, so
-	      % accept boolean or ET as index
-	     \+ Step = dummy, member(NeedType, [boolean, a(_ET)]);
-		% but if next disjunction fails in both these cases...
-	     throw(needs_index_of_type(element, Array, XpectType, Indx, Int))),
-	    ((promote_unit(Int, NeedType);
-		% special case -- count or name of ET can refer to last elt
-	      Int = n(AnET), NeedType = a(AnET)),
-		TryIndxRef = IndxRef;
-	     promote_arg(Int, 1, _),
-		promote_arg(NeedType, 1, _),
-		TryIndxRef = simile_int(IndxRef)), !,% for legacy cases
-	    ((NeedType = boolean,
-				% first index is 1 in model, 0 in code
-	          UseIndxRef = TryIndxRef+1;
-	      UseIndxRef = TryIndxRef),
-		member(IntIndxRef, [UseIndxRef, glob(_, UseIndxRef)]), !;
-	    % only reason this might fail is if taking element of a made array;
-	    % too awkward to fix so just say don't be silly
-	    throw(redundant_array(Source))),
 	    
 	    append(ASetups, ISetups, Setups),
 	    add_extra_dependencies(AContext, DestPath, AArgs, AWaits),
@@ -1350,7 +1337,32 @@ remove_physical_units_if_disabled(SubId, SrcUnits, Units) :-
 	    get_conversion(_, SrcUnits, SrcUnits, _), !,
 	    Units = 1;
 	standard_name(SrcUnits, Units)).
-/*
+
+match_index_units(XpectType, IndxRef, Int, IntIndxRef, Step, Array) :-
+	(NeedType = XpectType;
+            % bodge: if building code, bounds have been made integer, so
+	    % accept boolean or ET as index
+	  \+ Step = dummy, member(NeedType, [boolean, a(_ET)]);
+	    % but if next disjunction fails in both these cases...
+	    throw(needs_index_of_type(element, Array, XpectType,
+				      IndxRef, Int))),
+	((promote_unit(Int, NeedType);
+		% special case -- count or name of ET can refer to last elt
+	      Int = n(AnET), NeedType = a(AnET)),
+		TryIndxRef = IndxRef;
+	     promote_arg(Int, 1, _),
+		promote_arg(NeedType, 1, _),
+		TryIndxRef = simile_int(IndxRef)), !,% for legacy cases
+	((NeedType = boolean,
+		% first index is 1 in model, 0 in code
+	        UseIndxRef = TryIndxRef+1;
+	      UseIndxRef = TryIndxRef),
+	  member(IntIndxRef, [UseIndxRef, glob(_, UseIndxRef)]));
+	    % only reason this might fail is if taking element of a made array;
+	    % too awkward to fix so just say do not be silly
+	throw(redundant_array(Array)).
+
+	    /*
 unmake_enum_units(SrcUnits, Units) :-
 	SrcUnits = n(Type),
 	    \+ Type = boolean,
