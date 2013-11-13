@@ -347,8 +347,9 @@ SMClass* locate (SMClass* ptr, int soughtIndex) {
 }
 
 template <class SMClass>
-SMClass* locate (SMClass* ptr, int id_count, ...) {
-  int length;
+BOOLEAN locate (SMClass **metaptr, int id_count, ...) {
+  int status = 1, length;
+  SMClass *submodelptr;
   va_list argptr;
   int *curIndices;
 
@@ -359,9 +360,15 @@ SMClass* locate (SMClass* ptr, int id_count, ...) {
   }
   va_end(argptr);
    
-  while (ptr && compare_instance_status(ptr->instanceid, curIndices, id_count))
-    ptr = ptr->next;
-  return ptr;
+  while (*metaptr && 
+	 (status = (*compare_instance_status)((*metaptr)->instanceid,
+				   curIndices, id_count)) == -1) {
+    submodelptr = *metaptr;
+    *metaptr = submodelptr->next;
+    // delete submodelptr;
+  };
+  delete curIndices;
+  return !status;
 }
 
 template <class SMClass>

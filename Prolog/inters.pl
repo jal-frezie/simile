@@ -1030,17 +1030,21 @@ Now one that uses a special conditional level */
  	    (break_at_last_loop(ALoops, TailLoops, [PickedLevel], ItemLoops),
 	     (PickedLevel = set(IntIndxRef, loop(Limit,_)),
 	         RetrieveLoops = [],
+	         PtrInit = [],
 	         type_ind(Limit, XpectType);
 	       PickedLevel = sm(N, UP, DP, VMForm),
 	         (VMForm = vm_loop(_, [XpectType | _],_,_),
-		     LN = N;
+		     LN = N,
+		     PtrInit = [sm(N, UP, DP, vm_loop(start_only, _,_,_))];
 		  VMForm = nbrs,
 		     contains(Grid, SubId),
 		     m_update'><'ready_type(Grid, GType),
 		     member(GType-XpectType, [rect_grid(R,C)-a(rect_nbr),
 					      hex_grid(R,C)-a(hex_nbr)]),
-		     LN = nbrs),
-	         RetrieveLoops = [sm(N, UP, DP, vm_retrieve(LN, IntIndxRef))]);
+		     LN = nbrs,
+		     PtrInit = []),
+	         RetrieveLoops = [sm(N, UP, DP,
+				     vm_retrieve(LN, 1, [IntIndxRef]))]);
 		throw(only_works_on_array(element, Array))),
 	    (NeedType = XpectType;
 	      % bodge: if building code, bounds have been made integer, so
@@ -1072,7 +1076,7 @@ Now one that uses a special conditional level */
  	    append([TailLoops, RetrieveLoops, ItemLoops], EltLoops),
  	    (special_combine_paths(EltLoops, ILoops, [], ResultLoops), !;
 		throw(cannot_combine_argument_dimensions(Source))),
- 	    append(ResultLoops, EltBase, SourceContext);
+ 	    append([ResultLoops, PtrInit, EltBase], SourceContext);
 	
 	Source = (Param=SubExp,Rest), !,
 	    (Param = param(arr(_, Ref, _), UseUnit, LoopSlot,_,_), !;
@@ -1839,7 +1843,7 @@ same_context(C1, C2) :-
 special_combine_paths(Datum, Index, Delayed, Joint) :-
 	break_at_last_loop(Index, IInside, ILoop, IOutside),
 	break_at_last_loop(Datum, DInside, DLoop, DOutside),
-	\+ DLoop = [sm(_,_,_, vm_retrieve(_,_)) | _], !,
+	\+ DLoop = [sm(_,_,_, vm_retrieve(_,_,_)) | _], !,
 	    DLoop = ILoop,
 	    append(DOutside, Delayed, AllDelayed),
  	    special_combine_paths(DInside, IInside, AllDelayed, InJoint),
@@ -1856,10 +1860,10 @@ break_at_last_loop(SubLoops, TailLoops, SumLoop, ItemLoops) :-
 	\+ (member(OtherLoop, ItemLoops), loops(OtherLoop)),
 	append(TailLoops, SumLoop, AllLoops),
 	(SumLoop = [Iterator];
-	 append([sm(_,_,_, vm_retrieve(_,_)) | Opens], [Iterator], SumLoop),
+	 append([sm(_,_,_, vm_retrieve(_,_,_)) | Opens], [Iterator], SumLoop),
 	 \+ (member(OtherLoop, Opens),
 	     loops(OtherLoop),
-	     \+ OtherLoop = sm(_,_,_, vm_retrieve(_,_)))),
+	     \+ OtherLoop = sm(_,_,_, vm_retrieve(_,_,_)))),
 	loops(Iterator).
 
 /* Combine contexts. Takes a source context, a context in which a number
@@ -2118,8 +2122,8 @@ get_dims_from_loops(Loops, Dims, Inds) :-
 building_dims_and_indices(set(I, loop(_,L)), L, I).
 
 loops(set(_, loop(_,_))).
-loops(sm(_,_,_, vm_loop(_,_,_,_))).
-loops(sm(_,_,_, vm_retrieve(_,_))).
+loops(sm(_,_,_, vm_loop(Dims,_,_,_))) :- \+ Dims == start_only.
+loops(sm(_,_,_, vm_retrieve(_,_,_))).
 loops(sm(_,_,_, nbrs)).
 loops(cond_section(_)).
 

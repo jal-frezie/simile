@@ -2080,20 +2080,22 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 			    assign_and_test_limit(IdVar, ShortedLoops, Lookups,
 						  Instructs, ExistTest),
 			    LookupAct = make(none, []-_, _,_, Instructs),
+			    append(IdOpens, [LookupAct | SmLoop], Next),
 			    length(SpareFinishes, Count),
 			    append(SpareFinishes, LastStep, [_ | LastStepTail]);
 			  ShortedLoops = [make(_,_,_,_, [start_submodel(N,T,BP, vm_loop(_,_,_,_))])],
-			 % looking up instance in a vm model
+			 % looking up instance in a vm model -- open as simple
 			    SmLoop = [],
 			    get_pass_ends(sm(N,T,BP, vm_retrieve(N, Count, Lookups)),
-					  LookupAct, LookupEnd),
+					  LookupLoop, LookupEnd),
+			    StartLookup = make(_,_,_,_, [start_submodel(N,T,BP,vm_loop(start_only, _,_,_))]),
 			 % need xtra case here for nbrs? doubt
 			    ExistTest = 1,
-			    LastStep = [LookupEnd | LastStepTail]), !;
+			    append([StartLookup | IdOpens], [LookupLoop], Next),
+			    LastStep = [LookupEnd, LookupEnd | LastStepTail]), !;
 		      find_all_comps(AssocModel, IdCond),
 		        caption_for(AssocModel, IdCapt),	
 		        raise_exception(bad_instance_lookup(IdCapt))),
-		    append(IdOpens, [LookupAct | SmLoop], Next),
 		    append(OuterLoops, Next, UseLoops),
 		    append(Slower, [[make(none, IdConds-_, _,_, [assign(arr(Zn, TcVar, []), ExistTest)]) | NoIdConds] | Faster], UseSubPasses), !;
 		UseLoops = OpenLoops,
@@ -2130,7 +2132,7 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		   OrderedAssign), !;
 	OrderedAssign = []).
 
-count_and_list_lookups(Eqn, N, Eqns) :- wake,
+count_and_list_lookups(Eqn, N, Eqns) :-
 	Eqn = choose(1, First, More), !,
 	    count_and_list_lookups(More, M, Rest),
 	    N is M+1,
