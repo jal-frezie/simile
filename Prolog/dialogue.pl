@@ -748,7 +748,8 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 		    make_inds_for(Dims, PLoops, Inds),
 		    (member(Link-ETforIdx, [id(_,_, in_6_nbrs)-a(hex_nbr),
 					    id(_,_, in_8_nbrs)-a(rect_nbr)]) ->
-		     PLoops = [sm(_,_,_, vm_loop(_, [ETforIdx | _], _,_)) | _];
+		     suffix([sm(_,_,_, vm_loop(_, [ETforIdx | _], _,_)) | _],
+			   PLoops);
 		     true);
 	        (Param = '/dest/', !,
 		        get_ground_part(LRefs, GRefs),

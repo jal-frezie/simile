@@ -480,6 +480,7 @@ make_intermediates(
 
 	    (\+ var(Units),
 	    member(Units, [n(Type), a(Type)]),
+	    \+ member(Type, [rect_nbr, hex_nbr]),
 	    \+ ame_gen'><'resolve_enum_type(_, SubId, _, Units, _), !,
 		throw(no_local_defn_for_type(Type, SubId));
 		
@@ -1033,7 +1034,7 @@ Now one that uses a special conditional level */
 	         RetrieveLoops = [],
 	         PtrInit = [],
 	         type_ind(Limit, XpectType),
-	         [IndxRefs,Ints,IntIndxRef] = [[IndxRef], [Int], [IntIndxRef]],
+	         [IndxRefs,Ints,IntIndxRefs] = [[IndxRef], [Int], [IntIndxRef]],
 	         match_index_units(XpectType, IndxRef, Int, IntIndxRef,
 				   Step, Array);
 	       PickedLevel = sm(N, UP, DP, VMForm),
