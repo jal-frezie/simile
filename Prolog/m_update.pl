@@ -352,7 +352,7 @@ get_unit_conversion(Remote, Local,
 	find_all_comps(RemoteModel, RemoteEnv),
 	(LocalEnv = as_if_in(LocalModel), !;
 	  find_all_comps(LocalModel, LocalEnv)),
-	get_chain(RemoteModel, LocalModel, _, Exited, Entered),
+	get_chain(RemoteModel, LocalModel, TopModel, Exited, Entered),
 	reverse(Exited, BiggestFirst),
 	(/* Do not display parameter for input without role reference if there
 	is a reference...as of v5.7, do -- but use in_base or in_assoc as
@@ -363,7 +363,8 @@ get_unit_conversion(Remote, Local,
 	    Relation = DefRel;
 	 % this disjunct should give us a role that gets values from
 	 % all instances of the current submodel
-	RemoteModel = LocalModel,
+	% RemoteModel = LocalModel,
+	 % (allow cross-border if within right type of submodel?
 	    (% experimental: behave as if in hierarchical satellite
 	     fail, connects(HierRelation, RemoteModel, HierSat),
 	        contains(LocalModel, HierSat),
@@ -372,15 +373,15 @@ get_unit_conversion(Remote, Local,
 	        SourceLocation = in_all_bases,
 	        get_unit_conversion(Remote, as_if_in(HierSat), [], HierRelation,
 				    _, in_base);
-	     ready_type(LocalModel, rect_grid(_,_)),
+	     ready_type(TopModel, rect_grid(_,_)),
 	        Subs = [var],
 	        SourceLocation = in_8_nbrs,
 	        Index = -2;
-	     ready_type(LocalModel, hex_grid(_,_)),
+	     ready_type(TopModel, hex_grid(_,_)),
 	        Subs = [var],
 	        SourceLocation = in_6_nbrs,
 	        Index = -3;
-	      get_all_dims(LocalModel, Subs), % disabled for 6.0p1
+	      get_all_dims(TopModel, Subs), % disabled for 6.0p1
 	        \+ Subs = [],
 	        SourceLocation = up_hierarchy,
 	        Index = -1),

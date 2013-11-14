@@ -42,7 +42,7 @@
 #define SPARSEARRAY     -5
 #define HEX_NBR         -8
 #define RECT_NBR        -9
-#define ENUM_BASE       -10
+#define ENUM_BASE       -8
 
 /* source of value */
 #define EXOGENOUS       0
