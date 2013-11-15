@@ -141,7 +141,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	/* finish same: move pointer to next instance in chain */
 	  make_struct_reference(L, Pointer, next, OnPointer, OnPointerRef),
 	  excrete(L, assignment, Pointer=StartPtrRef, Indent, Stream),
-	  (Dims = start_only -> % will use locate to go through list
+	  (Dims == start_only -> % will use locate to go through list
 	   do_assign_list(L, MyLoop, Indent, Used, Stream);
 	   ptr_compare(L, PointerRef, 0, PtrNonNull),
 	   excrete(L, while_start, PtrNonNull, Indent, Stream),
@@ -169,7 +169,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	  do_assign_list(L, MyLoop, Indent1, Used, Stream),
 	  excrete(L, assignment, NbrsPointer=OnPointerRef, Indent1, Stream),
 	  excrete(L, end(while), NbrsPointer, Indent, Stream);
-	LoopSpec = vm_retrieve(List, Count, VmIndices), wake,
+	LoopSpec = vm_retrieve(List, Count, VmIndices),
 	  all(language, make_evaluation_routine,
 	      [unify(L), build(VmIndices), unify(Used), build(VmUseIndices)]),
 	  (List = nbrs -> % fall back on old system

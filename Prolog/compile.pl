@@ -2059,7 +2059,7 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		    append(IdOpens, [TestCond, _Cls | NoIdConds], Now),
 		    TestCond = make(TestTgt, IdConds-_, _,_,
 					  [assign(arr(Zn, TcVar, _), IdExpr)]),
-		    member(can_find_id(IdCond), IdConds), wake,
+		    member(can_find_id(IdCond), IdConds),
 		    /* OK Normally a reference to index(n) in a vm submodel
 		    gets turned to an element of instanceid, but this will not
 		    yet have been filled when assigning the cond, so replace

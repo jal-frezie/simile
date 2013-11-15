@@ -653,7 +653,7 @@ make_intermediates(
 		[RUnits | ArgTemplate] = [cond_spec, cond_spec];
 	     member(Functor, [any, all]), !,
 		[RUnits | ArgTemplate] = [boolean, boolean];	
-		[RUnits | ArgTemplate] = [real, real]),
+		[RUnits | ArgTemplate] = [int, int]),
 	    append(NowBuilding, DestPath, ReadyContext),
 	    propagate_units(Source, RUnits, ArgTemplate, [ArgUnits], Units)),
 	get_dims_from_loops(TailLoops, TotalDims, LoopInds),
@@ -1019,7 +1019,7 @@ Now one that uses a special conditional level */
 		 build(NotCondSetups)]),
 	    append([ASetups, CondSetups, NotCondSetups], Setups);
 	    
-        Source =.. [element, Array | Indxs], !, wake,
+        Source =.. [element, Array | Indxs], !,
 	    make_subexps(Indxs, SubId, Target, DestPath, BackSwap,
 			PrevInters, BuildingArrays, Step, Used, Ints, MidInters,
 			_F, [], IContext, ISetups, IArgs, IndxRefs),

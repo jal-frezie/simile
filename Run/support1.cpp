@@ -215,7 +215,7 @@ void fill_nbr_ptrs (GridSMClass* parent, GridSMClass* trail[],
       parent->nbrs = tempIntSat;
       
       tempIntSat = new nbrlist <GridSMClass>;
-      tempIntSat->instanceid[0] = (11-idx)%(shape?4:3)+1; // don't ask
+      tempIntSat->instanceid[0] = (11-idx)%(shape?3:4)+1; // don't ask
       tempIntSat->payload = parent;
       tempIntSat->next = cur_nbr->nbrs;
       cur_nbr->nbrs = tempIntSat;
