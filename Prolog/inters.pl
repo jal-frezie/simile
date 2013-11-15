@@ -653,7 +653,7 @@ make_intermediates(
 		[RUnits | ArgTemplate] = [cond_spec, cond_spec];
 	     member(Functor, [any, all]), !,
 		[RUnits | ArgTemplate] = [boolean, boolean];	
-		[RUnits | ArgTemplate] = [int, int]),
+		[RUnits | ArgTemplate] = [real, real]),
 	    append(NowBuilding, DestPath, ReadyContext),
 	    propagate_units(Source, RUnits, ArgTemplate, [ArgUnits], Units)),
 	get_dims_from_loops(TailLoops, TotalDims, LoopInds),
@@ -991,7 +991,7 @@ Now one that uses a special conditional level */
 	    generate_name(prolog, state, InterRef, Used),
 	    make_intermediates(make_inter(Multi, InterRef),
 			       SubId, Target, DestPath, BackSwap,
-		    PrevInters, BuildingArrays, Step, Used, Int, MidInters,
+		    PrevInters, BuildingArrays, Step, Used, _U, MidInters,
 		    part_result(SourceContext, FullSetups, Args, SourceRef)),
 	    member(AuntSally, MidInters),
 	    AuntSally = instance(internal, _, InterRef, InterEfct, _-[Size|_]),
@@ -1020,6 +1020,7 @@ Now one that uses a special conditional level */
 	    append([ASetups, CondSetups, NotCondSetups], Setups);
 	    
         Source =.. [element, Array | Indxs], !,
+	    length(Indxs, Count),
 	    make_subexps(Indxs, SubId, Target, DestPath, BackSwap,
 			PrevInters, BuildingArrays, Step, Used, Ints, MidInters,
 			_F, [], IContext, ISetups, IArgs, IndxRefs),
@@ -1028,40 +1029,36 @@ Now one that uses a special conditional level */
 			part_result(AContext, ASetups, AArgs, SourceRef)),
 	    get_model_and_loops(IContext, DestPath, _, ILoops, IBase),
 	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
- 	    (break_at_last_loop(ALoops, TailLoops, [PickedLevel], ItemLoops),
-	     (PickedLevel = set(IntIndxRef, loop(Limit,_)),
-	         % assume one index for now
-	         RetrieveLoops = [],
-	         PtrInit = [],
-	         type_ind(Limit, XpectType),
-	         [IndxRefs,Ints,IntIndxRefs] = [[IndxRef], [Int], [IntIndxRef]],
-	         match_index_units(XpectType, IndxRef, Int, IntIndxRef,
-				   Step, Array);
-	       PickedLevel = sm(N, UP, DP, VMForm),
+	    % for now, do not allow vm models except on their own
+ 	    ((break_at_last_loop(ALoops, TailLoops, [PickedLevel], ItemLoops),
+	         PickedLevel = sm(N, UP, DP, VMForm),
 	         (VMForm = vm_loop(_, XpectTypes,_,_),
 		     LN = N,
 		     PtrInit = [sm(N, UP, DP, vm_loop(start_only, _,_,_))];
 		  VMForm = nbrs,
 		     contains(Grid, SubId),
 		     m_update'><'ready_type(Grid, GType),
-		     member(GType-XpectType, [rect_grid(R,C)-a(rect_nbr),
-					      hex_grid(R,C)-a(hex_nbr)]),
+		     member(GType-XpectTypes, [rect_grid(R,C)-[a(rect_nbr)],
+					      hex_grid(R,C)-[a(hex_nbr)]]),
 		     LN = nbrs,
 		     PtrInit = []),
-	         length(Indxs, Count),
 	         RetrieveLoops = [sm(N, UP, DP,
 				     vm_retrieve(LN, Count, IntIndxRefs))],
-	         all(inters, match_index_units,
-		     [build(XpectTypes), build(IndxRefs), build(Ints),
-		      build(IntIndxRefs), unify(Step), unify(Array)]));
-		throw(only_works_on_array(element, Array))),
+	         append([TailLoops, RetrieveLoops, ItemLoops], EltLoops);
+	     select_loops_from(ALoops, IntIndxRefs, Limits, EltLoops),
+	         length(Limits, Count),
+	         PtrInit = [],
+	         all(inters, type_ind, [build(Limits), build(XpectTypes)])),
+	       all(inters, match_index_units,
+		   [build(XpectTypes), build(IndxRefs), build(Ints),
+		    build(IntIndxRefs), unify(Step), unify(Array)]);
+	     throw(only_works_on_array(element, Array))),
 	    
 	    append(ASetups, ISetups, Setups),
 	    add_extra_dependencies(AContext, DestPath, AArgs, AWaits),
 	    add_extra_dependencies(IContext, DestPath, IArgs, IWaits),
 	    append(AWaits, IWaits, Args),
 	    longest_path([ABase, IBase], EltBase),
- 	    append([TailLoops, RetrieveLoops, ItemLoops], EltLoops),
  	    (special_combine_paths(EltLoops, ILoops, [], ResultLoops), !;
 		throw(cannot_combine_argument_dimensions(Source))),
  	    append([ResultLoops, PtrInit, EltBase], SourceContext);
@@ -1304,6 +1301,14 @@ Now one that uses a special conditional level */
 		    [unify(this_step), build(SubArgs), build(Args)]);
 	    Args = SubArgs);
 	throw(undecipherable_operand(Source, SubId)).
+
+select_loops_from(ALoops, [], [], ALoops).
+select_loops_from(ALoops, [IntIndxRef | MoreIIRs], [Limit | MoreLs],
+		  LeftLoops) :-
+	break_at_last_loop(ALoops, TailLoops, [set(IntIndxRef, loop(Limit,_))],
+			   ItemLoops),
+	select_loops_from(TailLoops, MoreIIRs, MoreLs, HeadLoops),
+	append(HeadLoops, ItemLoops, LeftLoops).
 
 with_capt(Found, Loops, Sm, Capt) :-
 	caption_for(Sm, Capt), !,
