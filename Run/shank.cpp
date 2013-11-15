@@ -264,7 +264,8 @@ class DllLossage {
 */
   
 BOOLEAN is_base_type(int dim) {
-  return dim==VALUELESS||dim==REAL||dim==INTEGER||dim==FLAG||dim<=ENUM_BASE;
+  return dim==VALUELESS||dim==REAL||dim==INTEGER||dim==FLAG||
+    dim==RECT_NBR||dim==HEX_NBR||dim<=ENUM_BASE;
 }
 
 int size_for_data_type(int dtype) { // only works if is_base_type
@@ -1951,9 +1952,15 @@ char* ModelServer::nodeModelAndId(char* seeknode) {
 char *falseTxt = (char*)"false";
 char *trueTxt = (char*)"true";
 char *booleanMems[2] = {falseTxt, trueTxt};
+char rectkey_txt[] = "rectkey", ne_txt[] = "ne", n_txt[] = "n", nw_txt[] = "nw", e_txt[] = "e", se_txt[] = "se", s_txt[] = "s", sw_txt[] = "sw", w_txt[] = "w";
+char* rectkey_mems[8] = {ne_txt,n_txt,nw_txt,e_txt,se_txt,s_txt,sw_txt,w_txt};
+char hexkey_txt[] = "hexkey", h1_txt[] = "1h", h11_txt[] = "11h", h3_txt[] = "3h", h5_txt[] = "5h", h7_txt[] = "7h", h9_txt[] = "9h";
+char* hexkey_mems[6] = {h1_txt, h11_txt, h3_txt, h5_txt, h7_txt, h9_txt};
 enum_type_data noType = {0, NULL, NULL}, 
   boolDataType = {1, falseTxt, &trueTxt},
-  boolDimType = {2, "boolean", (char**)booleanMems};
+  boolDimType = {2, "boolean", (char**)booleanMems},
+  hexkeyType = {6, hexkey_txt, hexkey_mems},
+  rectkeyType = {8, rectkey_txt, rectkey_mems};
 
 node_data_line* ModelServer::SearchInfo(int lineNum, char* caption, 
 			   int* dims, enum_type_data** usedTypes) {
@@ -1980,6 +1987,12 @@ node_data_line* ModelServer::SearchInfo(int lineNum, char* caption,
       } else if (dims[dimCount] == FLAG) {
 	usedTypes[usedCount++] = &boolDimType;
 	dims[dimCount] = 2;
+      } else if (dims[dimCount] == RECT_NBR) {
+	usedTypes[usedCount++] = &hexkeyType;
+	dims[dimCount] = 8;
+      } else if (dims[dimCount] == HEX_NBR) {
+	usedTypes[usedCount++] = &hexkeyType;
+	dims[dimCount] = 6;
       } else if (dims[dimCount]==START_VM || 
 		 dims[dimCount]==END_VM) {
       } else {
@@ -1996,6 +2009,10 @@ node_data_line* ModelServer::SearchInfo(int lineNum, char* caption,
       usedTypes[usedCount++] = thisType;
     } else if (bottomLine->datatype == FLAG) {
       usedTypes[usedCount++] = &boolDataType;
+    } else if (bottomLine->datatype == RECT_NBR) {
+      usedTypes[usedCount++] = &rectkeyType;
+    } else if (bottomLine->datatype == HEX_NBR) {
+      usedTypes[usedCount++] = &hexkeyType;
     } else {
       usedTypes[usedCount++] = &noType;
     }

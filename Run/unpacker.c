@@ -255,7 +255,8 @@ FINDABLE int testlicenseCmd(ClientData clientData, Tcl_Interp *interp,
 // stuff to do with unpacking the general C format for model values follows:
 
 BOOLEAN unp_base_type(int dim) {
-  return dim==VALUELESS||dim==REAL||dim==INTEGER||dim==FLAG||dim<=ENUM_BASE;
+  return dim==VALUELESS||dim==REAL||dim==INTEGER||dim==FLAG||
+    dim==RECT_NBR||dim==HEX_NBR||dim<=ENUM_BASE;
 }
 
 void extend_list(Tcl_Obj *localObj, int index, Tcl_Obj *localSubObj, int dir) {
