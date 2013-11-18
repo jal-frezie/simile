@@ -96,7 +96,7 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		  member(Location, [in_8_nbrs, in_6_nbrs]),
 		    Path = [sm(Name, B, _, nbrs), sm(Name, A, B, C) | Rest],
 		    suffix(Top, Rest), Top = [sm(_,_,_,_) | _],
-	            BackSwap = values_from_base(Top)), !,
+	            BackSwap = values_from_base), !,
 				% wait till all set before use
 		Wait = true,
 	        pointer_from(Path, SmPtr);
@@ -118,13 +118,14 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		    (\+ m_class'><'LinkWithAttrs has_attribute can_lookup of 1, !;
 			Assoc = [sm(OneSided, _,_,_) | _],
 			LookupWait = enumerate(OneSided)),  */
-		    suffix(BaseFrag, Base), /* longest first */
+		    ensure_separate(Base, Assoc, SepBase),
+		    suffix(BaseFrag, SepBase), /* longest first */
 		    append(BaseSide, Top, RealPath),
 		    append(Deeper, BaseFrag, BaseSide), !,
 		    pointer_from(Top, Ptr),
 		    pointer_to(Assoc, Ptr),
 		    append([Deeper, Assoc, Top], Path),
-		    BackSwap = values_from_base(Top);
+		    BackSwap = values_from_base;
 		Location = in_assoc,
 		    Wait = true,
 		    append(Assoc, Top, AssocPath),
@@ -175,6 +176,16 @@ enabling the channel ID to be got from it */
 	    M is N-1,
 		NewVar = last(prev(M))), !,
 	    Recurse = 1.
+
+ensure_separate(Base, Assoc, SepBase) :-
+	append(InBase, [Top], Base),
+	append(InAssoc, [Top], Assoc) ->
+	(Top = sm(Name, PO, PI, LS) ->
+	    NewTop = sm(outside(Name), PO, PI, LS);
+	  NewTop = Top),
+	ensure_separate(InBase, InAssoc, InSepBase),
+	append(InSepBase, [NewTop], SepBase);
+	SepBase = Base.
 
 :- dynamic(macro_expansion/2).
 :- dynamic(fragment_expansion/5).
@@ -495,11 +506,6 @@ make_intermediates(
 		this before using it, just dont do it at init time */
 		Args = [time];
 	    swap_back(SourceContext, TermSwap, ParamContext, _),
-		(TermSwap = values_from_base(ReadyContext),
-		 % ReadyContext ensures values not used until base model exited,
-				% in case assoc is a child of base
-		    nonvar(ReadyContext), !;
-		ReadyContext = ParamContext),
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
 	        (([Var | _] = Target; 	% it cannot be a condition of itself,
@@ -507,7 +513,7 @@ make_intermediates(
 		  nonvar(Units),
 		  Units = class_template(delay, _)), !, % or delay
 		    Args = [];
-		Args = [made_at(Var, ReadyContext)])),
+		Args = [made_at(Var, ParamContext)])),
 	        /* note that for the time being the made_at condition is thrown
 	           away */
 	    Setups = [],
@@ -862,7 +868,7 @@ make_intermediates(
 	    reverse(DestPath, BackDP),
 	    all(inters, indices_for,
 		[build(BackDP), append(DestInds, []), append(DestDims, [])]),
-	    BackSwap = values_from_base(_)), % jam context swap 
+	    BackSwap = values_from_base), % jam context swap 
 	(integer(IndN), !;
 	    throw(bad_index_number(IndN, index, 32))),
 	    length(DestInds, AvailInds),

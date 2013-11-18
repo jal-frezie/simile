@@ -325,9 +325,12 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV >= 5.8, !;
 	reassure_user(updating_v, ['5.8']),
 	    adjust_to_9_8(Parent)),
-	(SimileV >= 5.99, !; % only for cut/copy for now
+	(SimileV >= 6.0, !;
 	  reassure_user(pl_convert_from, ['5.x']),
 	    adjust_to_10(Parent)),
+	(SimileV >= 6.1, !;
+	  reassure_user(updating_v, ['5.x']),
+	    adjust_to_10_1(Parent)),
 	state'><'version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
@@ -620,6 +623,16 @@ adjust_to_10(Parent) :-
             fail;
 	true.
 
+adjust_to_10_1(Parent) :-
+% should probably have been done in 6.0 -- legacy dimensionless flows no longer
+% parse (though they build) so replace them with new default
+	contains(Parent, Flow),
+	    Flow is_of_sort has_bowtie,
+	    implicit_function(Flow, ImpFn),
+	    ImpFn has_changed_class_refinement units from 1 to 1/day,
+	    fail;
+	true.
+	
 dequote_ET(Qat, UQat) :-
 	atom(Qat), !,
 	name(Qat, Qstr),
