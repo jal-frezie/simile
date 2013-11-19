@@ -58,5 +58,8 @@ itcl::class similescript::$newLayerClass {
 
     public method Display {time dispInt step} {
 # nothing to do at display time -- it's a photo
+	if {[string equal displaying $useNodes($winId,state)]} {
+	    $winId raise [namespace tail $this].main
+	}
     }
 }

@@ -513,7 +513,12 @@ make_intermediates(
 		  nonvar(Units),
 		  Units = class_template(delay, _)), !, % or delay
 		    Args = [];
-		Args = [made_at(Var, ParamContext)])),
+		(suffix([sm(_,_,_, nbrs), _Host | ParamTail], ParamContext) ->
+		 % nbr list allows us to look forward in submodel array so be
+		 % sure to restart loops before using values from it
+		    get_model(ParamTail, ReadyContext);
+		  ReadyContext = ParamContext),
+		 Args = [made_at(Var, ReadyContext)])),
 	        /* note that for the time being the made_at condition is thrown
 	           away */
 	    Setups = [],

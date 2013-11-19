@@ -1,14 +1,14 @@
 # This is a dead simple helper designed to test the object-oriented helper app
 # interface.
 
-set newLayerClass Polygon20131026
+set newLayerClass RectGrid20131119
 itcl::class similescript::$newLayerClass {
     inherit Layer
     variable useNodes
     variable transform
 
     proc Identify {} {
-	return "Polygon map"
+	return "Grid map"
     }
 
     constructor {modelInst mainCanvas xzoom yzoom {state {}}} {
@@ -17,14 +17,21 @@ itcl::class similescript::$newLayerClass {
     } {
 	namespace import -force ::maptools2::*
 	array set transform [list xzoom $xzoom yzoom $yzoom]
+	image create photo $this.original 
 	if {[string length $state]} { ;# we are restoring 
-	    regsub -all /WIN/ $state $winId restoreString
-	    array set useNodes $restoreString
+	    foreach {att val} $state {
+		set useNodes($winId,$att) $val
+	    }
+	    array set useNodes $state
 	    if {$useNodes($winId,state) eq "displaying"} {
-		ReTile
+		Display 0 0 0
 		return
 	    }
 	} else {
+	    set useNodes($winId,xoff) 0
+	    set useNodes($winId,yoff) 0
+	    set useNodes($winId,xscale) 1
+	    set useNodes($winId,yscale) 1
 	    set useNodes($winId,title) [Identify]
 	    set useNodes($winId,editMode) 0
 	    set useNodes($winId,orient) h
@@ -38,12 +45,8 @@ itcl::class similescript::$newLayerClass {
 	    set useNodes($winId,bw) 1
 	    
 	    set useNodes($winId,cbot) black
-	    set useNodes($winId,cmid) green
+	    set useNodes($winId,cmid) red
 	    set useNodes($winId,ctop) white
-	    set useNodes($winId,cbord) black
-	    
-	    set useNodes($winId,scalex) 1.0
-	    set useNodes($winId,scaley) 1.0
 	}
 	AddVariable
     }
@@ -54,10 +57,9 @@ itcl::class similescript::$newLayerClass {
 
     public method AddVariable {} {
 	set useNodes($winId,ms) [$winId create text 0 0 -anchor nw -text \
-				     [tr. "Click on the array value \
-                    representing the X coordinates of the polygon vertices."]]
+				     [tr. "Click on the variable whose values are to be displayed on the grid."]]
 	$modelInst GrabClicks $this
-	set useNodes($winId,state) xcoord
+	set useNodes($winId,state) display0
     }
 
     public method Click {path} {
@@ -66,25 +68,22 @@ itcl::class similescript::$newLayerClass {
         # of the model diagram
         if {[string compare $testResult novalue]} {
             switch $useNodes($winId,state) {
-		xcoord {
-		    $winId itemconfigure $useNodes($winId,ms) -text "Now click on the value representing the Y coordinates."
-		    set useNodes($winId,xcoord) $path
-		    set useNodes($winId,state) ycoord
-		} ycoord {
-		    $winId itemconfigure $useNodes($winId,ms) -text "Now select a value to determine the colour of the polygons."
-		    set useNodes($winId,ycoord) $path
-		    set useNodes($winId,state) sizeval
-		}
-		sizeval {
-		    $winId delete $useNodes($winId,ms)
-		    $modelInst ReleaseClicks
-		    set useNodes($winId,color) $path
-		    set useNodes($winId,title) "[file tail $path] (polygon diagram)"
+		display0 {
+                    set useNodes($winId,color) $path
 		    SetColourMap useNodes $winId [GetIdFromCaptionPath $path]
 		    SetColours useNodes $winId
-		    set useNodes($winId,state) displaying
-		    unset useNodes($winId,ms)
-		    ReTile
+		    set useNodes($winId,tgtDims) [$modelInst GetModelDims $path]
+		    if {[IsTwoDee $winId $useNodes($winId,tgtDims)]} {
+			set useNodes($winId,colvals) USE_INDICES
+			FinishClicking
+		    } else {
+			$winId itemconfigure $ useNodes($winId,ms)-text "Now click on a variable giving the column IDs."
+			set useNodes($winId,state) display1
+		    }
+		} display1 {
+                    NumDistinct $winId $path
+		    set useNodes($winId,colvals) $node
+		    FinishClicking
 		}
 	    }
 	} else {
@@ -93,35 +92,130 @@ itcl::class similescript::$newLayerClass {
         }
     }
    
+    public method FinishClicking {} {
+	$winId delete $useNodes($winId,ms)
+	unset useNodes($winId,ms)
+	$modelInst ReleaseClicks
+	pack forget $winId.msg
+	set useNodes($winId,state) displaying
+	Display 0 0 0
+    }
+
     public method GetTitle {} {
 	return $useNodes($winId,title)
     }
 
-    public method ReTile {} {
-	$winId delete [namespace tail $this].main
-	DoForXYData {} AddPolygon \
-	    [lindex [$modelInst GetValue $useNodes($winId,color)] 0] \
-	    [lindex [$modelInst GetValue $useNodes($winId,xcoord)] 0] \
-	    [lindex [$modelInst GetValue $useNodes($winId,ycoord)] 0]
+    public method IsTwoDee {winId dimList} {
+	variable useNodes
+	
+	foreach dim $dimList {
+	    if {[string is integer -strict $dim]} {
+		foreach space [list useNodes($winId,nrow) \
+				   useNodes($winId,ncol) terminator] {
+		    if {![info exists $space]} {
+			set $space $dim
+			break
+		    }
+		}
+	    }
+	}
+	return [expr {[info exists terminator] && !$terminator}]
+    }
+
+    public method NumDistinct {winId testPath} {
+	variable useNodes
+        variable colvals
+
+	if {![catch {$modelInst ListDistinctValues $testPath} vList]} {
+	    set useNodes($winId,ncol) [llength [lrange $vList 1 end]]
+	    set useNodes($winId,nrow) \
+		[expr {[lindex $vList 0]/$useNodes($winId,ncol)}]
+	} else {
+	    DoForData {} CollectVals [lindex [$modelInst GetValue $testPath] 0]
+	    if {[info exists colvals()]} {
+		unset colvals()
+	    }
+	    set useNodes($winId,ncol) [array size colvals]
+	    set useNodes($winId,nrow) \
+		[expr {[llength $columns]/$useNodes($winId,ncol)}]
+	}
+    }
+
+    public method CollectVals {val} {
+	variable colvals
+
+	array set colvals($val) 1
     }
 
     public method Display {time dispInt step} {
-# nothing to do at display time -- it's a photo
 	if {[string equal displaying $useNodes($winId,state)] && \
 		$useNodes($winId,displayUpdate)} {
-	    DoForData {} ColourPolygon \
-		[lindex [$modelInst GetValue $useNodes($winId,color)] 0]
+            DrawGrid8
+# will update visible part of canvas if whole scrollregion not displayed
+	    ZoomTo $transform(xzoom) $transform(yzoom)
+	    $winId raise [namespace tail $this].main
 	}
-	$winId raise [namespace tail $this].main
     }
+
+    public method DrawGrid8 {} {
+# do not use image mode for inputs cos we will want to edit them...
+# hah, just fixed it so we can anyway
+	set node [GetIdFromCaptionPath $useNodes($winId,color)]
+	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
+		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
+			$useNodes($winId,max)} rawBinary]} {
+	    DrawGrid7
+	    return
+	}
+#puts "Binary is of size [string bytelength $rawBinary]"
+	set rows $useNodes($winId,nrow)
+	set cols $useNodes($winId,ncol)
+	set bitCols [expr 4*int(($cols+3)/4)]
+	set fullSize [expr 1078+$bitCols*$rows]
+	set bmpData [binary format a2is2iiiissiiiiii \
+		 BM $fullSize {0 0} 1078 40 $cols $rows 1 8 0 0 0 0 0 0]
+	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
+	    set colourIndex [expr $rgbQuad*($useNodes($winId,nswatches)+1)/256]
+	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
+	    append bmpData [binary format H2H2H2c \
+				[string range $colourStr 9 12] \
+				[string range $colourStr 5 8] \
+				[string range $colourStr 1 4] 0]
+	}
+	set filling [string repeat 0 [expr $bitCols-$cols]]
+	if {[string length $filling]} {
+	    for {set row 0} {$row<$rows} {incr row} {
+		append bmpData [string range $rawBinary \
+		        [expr $row*$cols] [expr $row*$cols+$cols-1]] $filling
+	    }
+	} else {
+	    append bmpData $rawBinary
+	}
+	$this.original configure -data $bmpData
+	PutSize $this.original
+   }
 
     public method ZoomTo {xzoom yzoom} {
 	array set transform [list xzoom $xzoom yzoom $yzoom]
 # will adjust line widths
+	set stickIt [list [expr {$useNodes($winId,xoff)*$xzoom}] \
+			 [expr {-$useNodes($winId,yoff)*$yzoom}]]
+	set tmpImg [GrowImage $this.original \
+	    [expr {[$this.original cget -width]*$useNodes($winId,xscale)*$xzoom}] \
+	    [expr {[$this.original cget -height]*$useNodes($winId,yscale)*$yzoom}]]
+	set myTag [namespace tail $this].main
+	if {[catch {$this.derived blank}]} { ;# not yet exist
+	    image create photo $this.derived
+	    $winId create image $stickIt -anchor sw -image $this.derived \
+						 -tag $myTag
+	} else {
+	    $winId coords [$winId find withtag $myTag] $stickIt
+	}
+	$this.derived copy $tmpImg -shrink
     }
 
     public method PrepareSaveString {} {
-	regsub -all $winId [array get useNodes $winId,*] /WIN/ State
+	regsub -all $winId, [array get useNodes] {} State
     }
 
     public method Settings {} {
@@ -148,16 +242,21 @@ itcl::class similescript::$newLayerClass {
         }
         pack $coloursF -padx 10 -pady 10 -fill x
         
-        set borderF [labelframe $dlg.border -text "Borders"]
-        pack [ttk::labelframe $borderF.widF -text "Width"] -fill x  -padx 10 -pady 5
-        pack [entry $borderF.widF.entry -textvar [itcl::scope useNodes($winId,bw)] -width 20] -side left -padx 10
-        pack [ttk::labelframe $borderF.colourF -text "Colour"] -fill x -padx 10
-        frame $borderF.colourF.colF -width 20 -height 15 -bg $useNodes($winId,cbord)
-        pack [button $borderF.colourF.cbutton -text "..." \
-		  -command [list $this Recolour bord $borderF.colourF.colF]] -side right
-        pack $borderF.colourF.colF -side right -padx 10
-        pack $borderF -padx 10 -pady 10
-        
+	set rg [labelframe $dlg.relgeom -text "Offset and scaling"]
+	grid [label $rg.lxo -text [tr. {X offset:}]] \
+	    [ttk::entry $rg.exo -width 8 \
+		 -textvar [itcl::scope useNodes($winId,xoff)]] \
+	    [label $rg.lyo -text [tr. {Y offset:}]] \
+	    [ttk::entry $rg.eyo -width 8 \
+		 -textvar [itcl::scope useNodes($winId,yoff)]]
+	grid [label $rg.lxs -text [tr. {X scale:}]] \
+	    [ttk::entry $rg.exs -width 8 \
+		 -textvar [itcl::scope useNodes($winId,xscale)]] \
+	    [label $rg.lys -text [tr. {Y scale:}]] \
+	    [ttk::entry $rg.eys -width 8 \
+		 -textvar [itcl::scope useNodes($winId,yscale)]]
+	pack $rg -fill x
+
         set rangeF [labelframe $dlg.range -text "Scale range"]
         pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,datamin)"] -fill x  -padx 10
         pack [label $rangeF.datamaxL -text "Data max. so far: $useNodes($winId,datamax)"] -fill x  -padx 10
@@ -229,39 +328,6 @@ itcl::class similescript::$newLayerClass {
 		DoForData [concat $inds $ind] $proc $val
 	    }
 	}
-    }
-
-    public method ColourPolygon {inds key} {
-	if {$key<$useNodes($winId,datamin)} {
-	    set useNodes($winId,datamin) $key
-	}
-	if {$key>$useNodes($winId,datamax)} {
-	    set useNodes($winId,datamax) $key
-	}
-
-	set newColour [ColourFor $winId $key]
-	$winId itemconfigure [IdToTag $inds] -fill $newColour
-    }
-
-    public method DoForXYData {inds proc key argx argy} {
-	if {[llength $key]==1} {
-	    $proc $inds $key $argx $argy
-	} else {
-	    foreach {ind val} $key {spare1 x} $argx {spare2 y} $argy {
-		DoForXYData [concat $inds $ind] $proc $val $x $y
-	    }
-	}
-    }
-
-    public method AddPolygon {inds key xverts yverts} {
-	foreach {xind xval} $xverts {yind yval} $yverts {
-	    lappend outlist \
-		[expr $transform(xzoom)*$xval] [expr -$transform(yzoom)*$yval]
-	}
-	set newColour [ColourFor $winId $key]
-	$winId create polygon $outlist -outline $useNodes($winId,cbord) \
-	    -width $useNodes($winId,bw) -fill $newColour \
-	    -tag [list [namespace tail $this].main [IdToTag $inds]]
     }
 
      public method ColourFor {winId value} {

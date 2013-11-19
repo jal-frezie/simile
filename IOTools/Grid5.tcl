@@ -806,11 +806,12 @@ namespace eval grid005 {
         #	puts $visible
 	variable useNodes
 
-        if {[string match h $axis]} {
-            FillCanvas $winId
-        }
         eval {$winId.${axis}scroll set} $args
         reposn_scale [namespace current] $winId
+	if {$axis eq "v" && ![info exists useNodes($winId,groJob)]} {
+	    set useNodes($winId,groJob) \
+		[after 10 [namespace code [list FillCanvas $winId]]]
+	}
     }
     
     proc FillCanvas {winId} {
@@ -820,6 +821,7 @@ namespace eval grid005 {
 #	if {![winfo viewable $winId.c]} return
 # was this to make it go faster or avoid some heinous Tk bug?
 # removed 1/9/09 so grid not out-of-date when restored to view
+	array unset useNodes $winId,groJob
 	set mult $useNodes($winId,mult) ;# shorthand
         set visible [concat [$winId.c xview] [$winId.c yview]]
         set dataL [expr [lindex $visible 0]*$useNodes($winId,ncol)]
@@ -968,3 +970,4 @@ namespace eval grid005 {
     }
 } ;
 # end of namespace
+# VUK887468
