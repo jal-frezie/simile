@@ -260,7 +260,7 @@ namespace eval ::polygon375 {
 	$exampleWidget configure -bg $useNodes($winId,c$whichCol)
 	if {![string equal bord $whichCol]} {
 	    SetColours useNodes $winId
-	    recolour_scale [namespace current] $winId
+	    recolour_scale $::helperTable($winId,whichInstance) $winId
 	}
         PrepareSaveString $winId
 #        ColourScale useNodes $winId
@@ -312,6 +312,7 @@ namespace eval ::polygon375 {
     }
     
     proc DoFrame {winId} {
+        variable useNodes ;# upvarred in recolour_scale
         pack [set vp [frame $winId.viewport]] -fill both -expand true
         scrollbar $vp.xsc -orient horizontal -command [list $vp.c xview]
         pack $vp.xsc -side bottom -fill x
@@ -323,9 +324,9 @@ namespace eval ::polygon375 {
 	    -bg beige -scrollregion {0 0 10 10}
 	MakeCanvasAnnotatable $vp.c
         pack $vp.c -fill both -expand true
-	recolour_scale [namespace current] $winId
+	recolour_scale $::helperTable($winId,whichInstance) $winId
 	bind $vp.c <Configure> \
-	    [namespace code "recolour_scale [namespace current] $winId"]
+	    [namespace code "recolour_scale $::helperTable($winId,whichInstance) $winId"]
     }
 
     proc ScrollMe {winId way args} {
@@ -461,7 +462,7 @@ namespace eval ::polygon375 {
 		    useNodes($winId,min) useNodes($winId,max) s1 s2 s3 s4 s5
 		set useNodes($winId,range) \
 		    [expr {$useNodes($winId,max)-$useNodes($winId,min)}]
-		recolour_scale [namespace current] $winId
+		recolour_scale $::helperTable($winId,whichInstance) $winId
 		Repaint $winId $hs
 	    }
 	    update
@@ -600,7 +601,7 @@ namespace eval ::polygon375 {
             return
         }
         set useNodes($winId,range) [expr {$max($winId)-$min($winId)}]
-        recolour_scale [namespace current] $winId
+        recolour_scale $::helperTable($winId,whichInstance) $winId
         PrepareSaveString $winId
 	
         display $winId 0 0 0
@@ -695,7 +696,7 @@ namespace eval ::polygon375 {
 	set id $winId.viewport.c
         $id scale map [$id canvasx 325] [$id canvasy 230] $fx $fy
         $id configure -scrollregion [$id bbox map]
-	recolour_scale [namespace current] $winId
+	recolour_scale $::helperTable($winId,whichInstance) $winId
     }
     
     # new version in map tools

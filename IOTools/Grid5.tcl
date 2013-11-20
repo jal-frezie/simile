@@ -380,9 +380,9 @@ namespace eval grid005 {
         set useNodes($winId,visibleMap) [image create photo]
         $winId.c create image 0 0 -image $useNodes($winId,visibleMap) \
 	    -anchor nw -tag map
-	recolour_scale [namespace current] $winId ;# do here for scrollers
+	recolour_scale $::helperTable($winId,whichInstance) $winId ;# do here for scrollers
 	bind $winId.c <Configure> \
-	    [namespace code "recolour_scale [namespace current] $winId"]
+	    [namespace code "recolour_scale $::helperTable($winId,whichInstance) $winId"]
 #        $winId.c configure -scrollregion [$winId.c bbox all]
         $winId.c configure -scroll "0 0 $xwidth $yheight"
 	if {[lsearch {INPUT TABLE} [GetModelEval $display1]]>-1} {
@@ -408,7 +408,7 @@ namespace eval grid005 {
         set useNodes($winId,min) [expr {$useNodes($winId,min)*10}]
         set useNodes($winId,max) [expr {$useNodes($winId,max)*10}]
 #        SetColours useNodes $winId
-        recolour_scale [namespace current] $winId
+        recolour_scale $::helperTable($winId,whichInstance) $winId
         PrepareSaveString $winId
         display $winId 0 0 0
     }
@@ -418,7 +418,7 @@ namespace eval grid005 {
         set useNodes($winId,min) [expr {0.1*$useNodes($winId,min)}]
         set useNodes($winId,max) [expr {0.1*$useNodes($winId,max)}]
 #        SetColours useNodes $winId
-        recolour_scale [namespace current] $winId
+        recolour_scale $::helperTable($winId,whichInstance) $winId
         PrepareSaveString $winId
         display $winId 0 0 0
     }
@@ -631,7 +631,7 @@ namespace eval grid005 {
 	if {!$useNodes($winId,colourMapTweaked)} {
 	    SetColours useNodes $winId
 	}
-        recolour_scale [namespace current] $winId
+        recolour_scale $::helperTable($winId,whichInstance) $winId
         PrepareSaveString $winId
         display $winId 0 0 0
     }
@@ -798,7 +798,7 @@ namespace eval grid005 {
         $winId.c xview moveto [expr $xmiddle-([lindex $view 1]-[lindex $view 0])/2]
         set view [$winId.c yview]
         $winId.c yview moveto [expr $ymiddle-([lindex $view 1]-[lindex $view 0])/2]
-        recolour_scale [namespace current] $winId
+        recolour_scale $::helperTable($winId,whichInstance) $winId
         PrepareSaveString $winId
     }
     

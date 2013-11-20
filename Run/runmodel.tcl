@@ -169,6 +169,12 @@ proc AddHelperSublist {fm lm title ct} {
 			::[KeyValue]::PrepareSaveString $winId
 		    }
 		}
+		# botch to get swatch drawing compatible old/new style
+		public method GetSwatchColour {swId} {
+		    variable ::[KeyValue]::useNodes
+		    ::maptools2::SetSwatchColour ::$this $winId $swId
+		}
+
 	    }
 	    unset keyValue
 	}

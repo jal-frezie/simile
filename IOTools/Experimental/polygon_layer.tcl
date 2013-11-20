@@ -4,7 +4,7 @@
 set newLayerClass Polygon20131026
 itcl::class similescript::$newLayerClass {
     inherit Layer
-    variable useNodes
+    public variable useNodes
     variable transform
 
     proc Identify {} {
@@ -27,7 +27,7 @@ itcl::class similescript::$newLayerClass {
 	} else {
 	    set useNodes($winId,title) [Identify]
 	    set useNodes($winId,editMode) 0
-	    set useNodes($winId,orient) h
+	    set useNodes($winId,orient) n
 	    set useNodes($winId,imgs) 0
 	    set useNodes($winId,displayUpdate) 1
 	    
@@ -50,6 +50,10 @@ itcl::class similescript::$newLayerClass {
 
     destructor {
 	$winId delete [namespace tail $this].main
+    }
+
+    public method GetCanvas {} {
+	return $winId
     }
 
     public method AddVariable {} {
@@ -173,15 +177,24 @@ itcl::class similescript::$newLayerClass {
         pack [checkbutton $dlg.update -text "Update at display intervals" \
 		  -variable [itcl::scope useNodes($winId,displayUpdate)]]
         
-        set oriF [labelframe $dlg.orient -text "Orientation"]
-	pack [radiobutton $oriF.h -text Horizontal -var [itcl::scope useNodes($winId,orient)] -value h] -side left
-	pack [radiobutton $oriF.v -text Vertical -var [itcl::scope useNodes($winId,orient)] -value v] -side right
+        set oriF [labelframe $dlg.orient -text "Legend position:"]
+	foreach legendPosn {l t r b n} desc {Left Top Right Bottom None} {
+	    radiobutton $oriF.$legendPosn -text $desc -value $legendPosn \
+		-var [itcl::scope useNodes($winId,orient)]
+	}
+	grid x $oriF.t
+	grid $oriF.l $oriF.n $oriF.r
+	grid x $oriF.b
         pack $oriF -padx 10 -pady 10 -fill x
         
 	LetItShow $dlg polyProps(xdone)
 	PackItUp $dlg
     }
-    
+
+    public method LegendPosn {} {
+	return $useNodes($winId,orient)
+    }
+
     public method AdjRange {rangeF} {
 	set min [$rangeF.minF.entry get]
 	set max [$rangeF.maxF.entry get]
@@ -201,6 +214,11 @@ itcl::class similescript::$newLayerClass {
         set useNodes($winId,range) [expr {$max-$min}]
 	SetColours useNodes $winId
 	Display 0 0 0
+	recolour_scale ::$this $winId
+    }
+
+    public method GetSwatchColour {swId} {
+	::maptools2::SetSwatchColour ::$this $winId $swId
     }
 
     public method Recolour {whichCol exampleWidget} {

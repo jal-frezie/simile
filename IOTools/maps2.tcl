@@ -107,10 +107,10 @@ namespace eval ::maptools2 {
     }
     
     proc recolour_scale {parentSpc winId} {
-        variable ${parentSpc}::useNodes
-        
-	set cnv [${parentSpc}::GetCanvas $winId]
+	upvar 1 useNodes useNodes
+
         #ShowMess debug info "recolour_scale " ok
+	set cnv [$parentSpc GetCanvas]
         $cnv delete colour_scale
 #        if {$useNodes($winId,nrow)>$useNodes($winId,ncol)} then {
 #            set n $useNodes($winId,nrow)
@@ -180,14 +180,14 @@ namespace eval ::maptools2 {
 			 [TransValue $useNodes($winId,dataETs) $newVal] \
 			 (doubleclick to change)]
 	    $cnv bind $polyId <Double-Button-1> \
-		[namespace code "SetSwatchColour $parentSpc $winId $icolour"]
+		"$parentSpc GetSwatchColour $icolour"
         }
         $cnv raise annotation
 	$cnv raise caption
     }
     
     proc SetSwatchColour { parentSpc winId icolour } {
-        variable ${parentSpc}::useNodes
+        upvar 1 useNodes useNodes
 
 	if {$useNodes($winId,imgs)} {
 	    set newCol [ChooseFile value.gif [tr. {Image for this value:}] \
@@ -204,7 +204,7 @@ namespace eval ::maptools2 {
 	recolour_scale $parentSpc $winId
 	set useNodes($winId,colourMapTweaked) 1
 	#	    ${parentSpc}::UpdateState $winId
-	${parentSpc}::display $winId 0 0 0
+	$parentSpc Display 0 0 0
     }
     
     proc reposn_scale {parentSpc winId} {

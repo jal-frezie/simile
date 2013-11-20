@@ -248,6 +248,12 @@ itcl::class similescript::Layer {
 # This is optional, some helpers may keep their state permanently up to date
     public method PrepareSaveString {} {
     }
+
+# default is no legend
+    public method LegendPosn {} {
+	return n
+    }
+
 }
 
 itcl::class similescript::Helper {
