@@ -314,7 +314,7 @@ entry .hidden_e
 pack .hidden_e
 
 # Here because needed for splash screen
-proc GrowImage {fCol mw mh} {
+proc OldGrowImage {fCol mw mh} {
     set srcWidth [$fCol cget -width]
     set srcHeight [$fCol cget -height]
 #    puts "Growing from $srcWidth $srcHeight to $mw $mh"
@@ -339,6 +339,52 @@ proc GrowImage {fCol mw mh} {
     spare2 config -width $srcWidth
     spare2 config -height $srcHeight
     return spare2
+}
+
+proc GrowImage {fCol mw mh} {
+    set srcWidth [$fCol cget -width]
+    set srcHeight [$fCol cget -height]
+    # Resize X and Y axes separately to avoid making too large an
+    # intermediate image
+    set xrat [ChooseIntegerRatio [expr {$mw/0.9/$srcWidth}] 0.9]
+    set yrat [ChooseIntegerRatio [expr {$mh/0.9/$srcHeight}] 0.9]
+    # puts "Growing from $srcWidth $srcHeight to $mw $mh rats $xrat $yrat"
+    image create photo spare1
+    image create photo spare2
+    image create photo spare3
+    spare3 blank
+
+    set rows [expr {1+$mh/100}]
+    set cols [expr {1+$mw/100}]
+    set srcRow [expr {($srcHeight+$rows-1)/$rows}]
+    set srcCol [expr {($srcWidth+$cols-1)/$cols}]
+    for {set row 0} {$row<$rows} {incr row} {
+	set st [expr {$row*$srcHeight/$rows}]
+	set mt [expr {$st*$mh/$srcHeight}]
+	for {set col 0} {$col<$cols} {incr col} {
+	    set sl [expr {$col*$srcWidth/$cols}]
+	    set ml [expr {$sl*$mw/$srcWidth}]
+	    # last sl will always be srcWidth-srcRow, likewise st
+# puts "src area $sl $st [expr {$sl+$srcCol}] \
+# 		[expr {$st+$srcRow}]"
+	    spare1 copy $fCol -from $sl $st [expr {$sl+$srcCol}] \
+		[expr {$st+$srcRow}] -zoom [lindex $xrat 0] 1 -shrink
+	    spare2 copy spare1 -zoom 1 [lindex $yrat 0] -subsample [lindex $xrat 1] 1 -shrink
+	    spare3 copy spare2 -to $ml $mt -subsample 1 [lindex $yrat 1]
+	}    
+    }
+    image delete spare1
+    image delete spare2
+    # copying does not update image's size parameter -- do it by hand
+    # set srcWidth [expr $srcWidth*[lindex $xrat 0]/[lindex $xrat 1]]
+    # set srcHeight [expr $srcHeight*[lindex $yrat 0]/[lindex $yrat 1]]
+    # spare3 config -width $srcWidth
+    # spare3 config -height $srcHeight
+    # spare3 config -width $mw -height $mh
+    set mWidth [expr {$ml + $srcCol*[lindex $xrat 0]/[lindex $xrat 1]}]
+    set mHeight [expr {$mt + $srcRow*[lindex $yrat 0]/[lindex $yrat 1]}]
+    spare3 config -width $mWidth -height $mHeight
+    return spare3
 }
 
 set sphXdiam [expr {int(400*[tk scaling])}]

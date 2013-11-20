@@ -22,7 +22,6 @@ itcl::class similescript::$newLayerClass {
 	    foreach {att val} $state {
 		set useNodes($winId,$att) $val
 	    }
-	    array set useNodes $state
 	    if {$useNodes($winId,state) eq "displaying"} {
 		Display 0 0 0
 		return
@@ -201,8 +200,8 @@ itcl::class similescript::$newLayerClass {
 	set stickIt [list [expr {$useNodes($winId,xoff)*$xzoom}] \
 			 [expr {-$useNodes($winId,yoff)*$yzoom}]]
 	set tmpImg [GrowImage $this.original \
-	    [expr {[$this.original cget -width]*$useNodes($winId,xscale)*$xzoom}] \
-	    [expr {[$this.original cget -height]*$useNodes($winId,yscale)*$yzoom}]]
+	    [expr {round([$this.original cget -width]*$useNodes($winId,xscale)*$xzoom)}] \
+	    [expr {round([$this.original cget -height]*$useNodes($winId,yscale)*$yzoom)}]]
 	set myTag [namespace tail $this].main
 	if {[catch {$this.derived blank}]} { ;# not yet exist
 	    image create photo $this.derived
