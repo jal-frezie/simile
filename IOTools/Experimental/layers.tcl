@@ -44,9 +44,11 @@ itcl::class similescript::$newHelperClass {
 
 # now create the canvas and sliders
 	pack [set vp [frame $winId.viewport]] -fill both -expand true
-        scrollbar $vp.xsc -orient horizontal -command [list $vp.c xview]
+        scrollbar $vp.xsc -orient horizontal \
+	    -command [list $this LegendFollows xview]
         pack $vp.xsc -side bottom -fill x
-        scrollbar $vp.ysc -orient vertical -command [list $vp.c yview]
+        scrollbar $vp.ysc -orient vertical \
+	    -command [list $this LegendFollows yview]
         pack $vp.ysc -side right -fill y
         canvas $vp.c -xscrollcommand [list $vp.xsc set] \
 	    -yscrollcommand [list $vp.ysc set] -bg beige
@@ -70,12 +72,34 @@ itcl::class similescript::$newHelperClass {
 		$vp.c xview moveto [expr {($transform(offx)-$l)*1.0/($r-$l)}]
 		$vp.c yview moveto [expr {($transform(offy)-$t)*1.0/($b-$t)}]
 	    }
+	    update
+	    PosnLegends
 	} else {
 	    array set transform {offx 0 offy 0 zoomx 1 zoomy 1}
 	    # new instance so request data from model
 	    pack [message $winId.message \
 		      -text "Select a plane display tool from the Layers menu"]
 	}
+    }
+
+    public method LegendFollows {side moveTo newFr} {
+	# puts [info level 0]
+	set cnv $winId.viewport.c
+	foreach {l t r b} [$cnv cget -scrollregion] {}
+	if {$side eq "yview"} {
+	    set mag [expr {$b-$t}]
+	    set tail {0 $motn}
+	} else {
+	    set mag [expr {$r-$l}]
+	    set tail {$motn 0}
+	}
+	foreach {lo hi} [$cnv $side] {}
+	if {$newFr < 0 || $newFr > 1+$lo-$hi} return ;# over limit
+	set motn [expr {$mag*($newFr-$lo)}]
+	foreach layer $planes {
+	    eval {$cnv move $layer.legend} $tail
+	}
+	$cnv $side moveto $newFr
     }
 
     public method CustomizeAddMenu {bar entry} {
@@ -93,12 +117,16 @@ itcl::class similescript::$newHelperClass {
 	    set serialActive $chng
 	}
     }
-	
+
+    public method GetCanvas {} {
+	return $winId.viewport.c
+    }
+
     public method NewLayer {type {state {}}} {
 	set id [UniqueId layer]
-	set cnv $winId.viewport.c
-	set layerObj [$type $id $modelInst $cnv \
+	set layerObj [$type $id $modelInst $this \
 			  $transform(zoomx) $transform(zoomy) $state]
+	set cnv $winId.viewport.c
 	$cnv configure -scrollregion [$cnv bbox all]
 	pack forget $winId.message
 	set planes [linsert $planes end-[expr {$serialActive/2}] $layerObj]
@@ -155,6 +183,9 @@ itcl::class similescript::$newHelperClass {
 	foreach plane $planes {
 	    $plane Display $time $dispInt $step
 	}
+	foreach plane $planes {
+	    $winId.viewport.c raise $plane.legend
+	}
     }
 
     public method PrepareSaveString {} {
@@ -172,23 +203,27 @@ itcl::class similescript::$newHelperClass {
 # first, find where canvas point at middle ends up
 	set xfroml [expr {[winfo width $id]/2}]
 	set yfromt [expr {[winfo height $id]/2}]
-	set middleX [expr {$fx*[$id canvasx $xfroml]}]
-	set middleY [expr {$fy*[$id canvasx $yfromt]}]
+	set oldMidX [$id canvasx $xfroml]
+	set oldMidY [$id canvasy $yfromt]
+	set middleX [expr {$fx*$oldMidX}]
+	set middleY [expr {$fy*$oldMidY}]
 # update zoom state
 	set transform(zoomx) [expr {$fx*$transform(zoomx)}]
 	set transform(zoomy) [expr {$fy*$transform(zoomy)}]
 # throw a scale command at everything on the canvas
-	$id scale all 0 0 $fx $fy
 # then contact indiviual layers to sort out stuff like line widths
 	foreach layer $planes {
+	    $id scale $layer.main 0 0 $fx $fy
 	    $layer ZoomTo $transform(zoomx) $transform(zoomy) 
+	    $id move $layer.legend \
+		[expr {$middleX-$oldMidX}] [expr {$middleY-$oldMidY}]
 	}
 # finally scroll so old middle is still in middle
 	set sr [$id bbox all]
 	$id configure -scrollregion $sr
 	foreach {l t r b} $sr {}
 	set newMidX [expr {(($middleX-$xfroml)-$l)/($r-$l)}]
-	set newMidY [expr {(($middleY-$yfromt)-$t)/($t-$b)}]
+	set newMidY [expr {(($middleY-$yfromt)-$t)/($b-$t)}]
 	$id xview moveto $newMidX
 	$id yview moveto $newMidY
     }
@@ -202,5 +237,63 @@ itcl::class similescript::$newHelperClass {
 	    set scale $vscale
 	}
 	Zoom $scale $scale
+    }
+
+    public method PosnLegends {} {
+# all legends must be positioned at once because changing one may change posns
+# of others
+	set id $winId.viewport.c
+
+	set l 0
+	set t 0
+	set r 0
+	set b 0
+	set w [winfo width $id]
+	set h [winfo height $id]
+
+	foreach plane $planes {
+	    $id delete $plane.legend
+	    set side [$plane GetNewLegendSide]
+# right...legend will be drawn bottom or right across full width/height
+# ..now we have to shove it to its alloted posn
+	    if {$side eq "n"} continue
+	    $id itemconfigure caption -text [$plane GetTitle]
+	    switch -regexp $side {
+		l|r {
+		    set py $t
+		    set sx 1
+		    set sy [expr {1.0*($h+$b-$t)/$h}]
+		    if {$side eq "l"} {
+			set px [expr {$l+50-$w}]
+		    } else {
+			set px $r
+		    }
+		} t|b {
+		    set px $l
+		    set sy 1
+		    set sx [expr {1.0*($w+$r-$l)/$w}]
+		    if {$side eq "t"} {
+			set py [expr {$t+50-$h}]
+		    } else {
+			set py $b
+		    }
+		}
+	    }
+	    $id addtag $plane.legend withtag colour_scale
+	    $id dtag colour_scale
+	    $id addtag $plane.legend withtag caption
+	    $id dtag caption
+	    $id move $plane.legend $px $py
+	    $id scale $plane.legend [$id canvasx $l] [$id canvasy $t] $sx $sy
+
+	    switch -regexp $side {
+		l|t {
+		    set $side [expr {[set $side]+50}]
+		} r|b {
+		    set $side [expr {[set $side]-50}]
+		}
+	    }
+	}
+	set transform(aperture) [list $l $t $r $b]
     }
 }

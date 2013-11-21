@@ -11,9 +11,9 @@ itcl::class similescript::$newLayerClass {
 	return "Polygon map"
     }
 
-    constructor {modelInst mainCanvas xzoom yzoom {state {}}} {
+    constructor {modelInst layerTool xzoom yzoom {state {}}} {
 # perverse extra body because base class constructor has args
-	Layer::constructor $modelInst $mainCanvas
+	Layer::constructor $modelInst $layerTool
     } {
 	namespace import -force ::maptools2::*
 	array set transform [list xzoom $xzoom yzoom $yzoom]
@@ -50,6 +50,7 @@ itcl::class similescript::$newLayerClass {
 
     destructor {
 	$winId delete [namespace tail $this].main
+	$winId delete [namespace tail $this].legend
     }
 
     public method GetCanvas {} {
@@ -180,7 +181,7 @@ itcl::class similescript::$newLayerClass {
         set oriF [labelframe $dlg.orient -text "Legend position:"]
 	foreach legendPosn {l t r b n} desc {Left Top Right Bottom None} {
 	    radiobutton $oriF.$legendPosn -text $desc -value $legendPosn \
-		-var [itcl::scope useNodes($winId,orient)]
+		-var [itcl::scope useNodes($winId,legendSide)]
 	}
 	grid x $oriF.t
 	grid $oriF.l $oriF.n $oriF.r
@@ -214,11 +215,26 @@ itcl::class similescript::$newLayerClass {
         set useNodes($winId,range) [expr {$max-$min}]
 	SetColours useNodes $winId
 	Display 0 0 0
-	recolour_scale ::$this $winId
+	switch -regexp $useNodes($winId,legendSide) {
+	    l|r {
+		set useNodes($winId,orient) v
+	    } t|b {
+		set useNodes($winId,orient) h
+	    }
+	}
+	# now a callback to layer manager to draw and posn it
+	$host PosnLegends
     }
 
     public method GetSwatchColour {swId} {
 	::maptools2::SetSwatchColour ::$this $winId $swId
+    }
+
+    public method GetNewLegendSide {} {
+	if {$useNodes($winId,legendSide) ne "n"} {
+	    recolour_scale ::$this $winId
+	}
+	return $useNodes($winId,legendSide)
     }
 
     public method Recolour {whichCol exampleWidget} {

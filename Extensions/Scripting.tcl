@@ -199,14 +199,16 @@ itcl::class similescript::Snap {
     
 itcl::class similescript::Layer {
     public variable State {}
+    public variable host;
     public variable winId;    # canvas 
     variable modelInst
     
-    constructor {modelWindow mainCanvas} {
+    constructor {modelWindow layerTool} {
 	global helperTable
 
 	set modelInst $modelWindow
-	set winId $mainCanvas
+	set host $layerTool
+	set winId [$host GetCanvas]
 	set helperTable($this,foci) {}
      }
 
@@ -250,7 +252,7 @@ itcl::class similescript::Layer {
     }
 
 # default is no legend
-    public method LegendPosn {} {
+    public method GetNewLegendSide {} {
 	return n
     }
 
