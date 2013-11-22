@@ -54,6 +54,10 @@ itcl::class similescript::$newLayerClass {
 	$winId delete [namespace tail $this].main
     }
 
+    public method GetCanvas {} {
+	return $winId
+    }
+
     public method AddVariable {} {
 	set useNodes($winId,ms) [$winId create text 0 0 -anchor nw -text \
 				     [tr. "Click on the variable whose values are to be displayed on the grid."]]
@@ -274,7 +278,7 @@ itcl::class similescript::$newLayerClass {
         set oriF [labelframe $dlg.orient -text "Legend position:"]
 	foreach legendPosn {l t r b n} desc {Left Top Right Bottom None} {
 	    radiobutton $oriF.$legendPosn -text $desc -value $legendPosn \
-		-var [itcl::scope useNodes($winId,orient)]
+		-var [itcl::scope useNodes($winId,legendSide)]
 	}
 	grid x $oriF.t
 	grid $oriF.l $oriF.n $oriF.r
@@ -285,10 +289,6 @@ itcl::class similescript::$newLayerClass {
 	PackItUp $dlg
     }
     
-    public method LegendPosn {} {
-	return $useNodes($winId,orient)
-    }
-
     public method AdjRange {rangeF} {
 	set min [$rangeF.minF.entry get]
 	set max [$rangeF.maxF.entry get]
@@ -308,6 +308,26 @@ itcl::class similescript::$newLayerClass {
         set useNodes($winId,range) [expr {$max-$min}]
 	SetColours useNodes $winId
 	Display 0 0 0
+	switch -regexp $useNodes($winId,legendSide) {
+	    l|r {
+		set useNodes($winId,orient) v
+	    } t|b {
+		set useNodes($winId,orient) h
+	    }
+	}
+	# now a callback to layer manager to draw and posn it
+	$host PosnLegends
+    }
+
+    public method GetSwatchColour {swId} {
+	::maptools2::SetSwatchColour ::$this $winId $swId
+    }
+
+    public method GetNewLegendSide {} {
+	if {$useNodes($winId,legendSide) ne "n"} {
+	    recolour_scale ::$this $winId
+	}
+	return $useNodes($winId,legendSide)
     }
 
     public method Recolour {whichCol exampleWidget} {

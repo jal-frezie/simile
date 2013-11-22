@@ -45,14 +45,15 @@ itcl::class similescript::$newHelperClass {
 # now create the canvas and sliders
 	pack [set vp [frame $winId.viewport]] -fill both -expand true
         scrollbar $vp.xsc -orient horizontal \
-	    -command [list $this LegendFollows xview]
+	    -command [list $vp.c xview]
         pack $vp.xsc -side bottom -fill x
         scrollbar $vp.ysc -orient vertical \
-	    -command [list $this LegendFollows yview]
+	    -command [list $vp.c yview]
         pack $vp.ysc -side right -fill y
-        canvas $vp.c -xscrollcommand [list $vp.xsc set] \
-	    -yscrollcommand [list $vp.ysc set] -bg beige
+        canvas $vp.c -xscrollcommand [list $this SetWithLegends x] \
+	    -yscrollcommand [list $this SetWithLegends y] -bg beige
 	::canvasnotes20070919::MakeCanvasAnnotatable $vp.c
+	bind $vp.c <Configure> [list $this PosnLegends]
         pack $vp.c -fill both -expand true
 
 	set planes {}
@@ -79,6 +80,27 @@ itcl::class similescript::$newHelperClass {
 	    # new instance so request data from model
 	    pack [message $winId.message \
 		      -text "Select a plane display tool from the Layers menu"]
+	}
+    }
+
+    public method SetWithLegends {axis newLo newHi} {
+	set vp $winId.viewport
+	foreach {lo hi} [$vp.${axis}sc get] {}
+	$vp.${axis}sc set $newLo $newHi
+	if {abs($newLo+$hi-$lo-$newHi)>1e-6} return
+	# scrollregion changed, zoom proc takes care of legends
+
+	foreach {l t r b} [$vp.c cget -scrollregion] {}
+	if {$axis eq "y"} {
+	    set mag [expr {$b-$t}]
+	    set tail {0 $motn}
+	} else {
+	    set mag [expr {$r-$l}]
+	    set tail {$motn 0}
+	}	    
+	set motn [expr {$mag*($newLo-$lo)}]
+	foreach layer $planes {
+	    eval {$vp.c move $layer.legend} $tail
 	}
     }
 
@@ -230,7 +252,10 @@ itcl::class similescript::$newHelperClass {
 
     public method Fit {} {
 	set id $winId.viewport.c
-	foreach {l t r b} [$id bbox all] {}
+	foreach plane $planes {
+	    lappend mains $plane.main
+	}
+	foreach {l t r b} [eval {$id bbox} $mains] {}
 	set scale [expr {[winfo width $id]/(0.0+$r-$l)}]
 	set vscale [expr {[winfo height $id]/(0.0+$b-$t)}]
 	if {$vscale<$scale} {

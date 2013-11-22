@@ -192,10 +192,6 @@ itcl::class similescript::$newLayerClass {
 	PackItUp $dlg
     }
 
-    public method LegendPosn {} {
-	return $useNodes($winId,orient)
-    }
-
     public method AdjRange {rangeF} {
 	set min [$rangeF.minF.entry get]
 	set max [$rangeF.maxF.entry get]
