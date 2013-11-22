@@ -1539,6 +1539,42 @@ proc loses {prob phase} {
 proc delete_list {list_id} {
 }
 
+proc nbrlistmaker {seq} {
+    namespace eval $seq {
+	variable payload
+	variable next
+	variable instanceid
+	return [namespace current]
+    } ;# end(namespace,$seq)
+} ;# end(procedure,nbrlistmaker)
+
+proc fill_nbr_ptrs {parentTxt trailTxt trailPt shape trailLen} {
+    upvar 1 $parentTxt parent
+    upvar 1 $trailTxt trail
+
+    set idx [expr {$shape?6:8}]
+    for {set off -1} {$off<3} {incr off} {
+	if {$off==4-2*$shape} continue
+	set cur_nbr $trail([expr {($trailPt+$off)%$trailLen}])
+	if {$cur_nbr ne "NULL"} {
+	    set tempIntSat [nbrlistmaker $parent.Nbrlist<$idx>]
+	    set ${tempIntSat}::instanceid(1) $idx
+	    set ${tempIntSat}::payload $cur_nbr
+	    set ${tempIntSat}::next [set ${parent}::nbrs]
+	    set ${parent}::nbrs ${tempIntSat}
+
+	    set remIdx [expr {(11-$idx)%($shape?3:4)+1}] ;# don't ask
+	    set tempIntSat [nbrlistmaker $cur_nbr.Nbrlist<$remIdx>]
+	    set ${tempIntSat}::instanceid(1) $remIdx
+	    set ${tempIntSat}::payload $parent
+	    set ${tempIntSat}::next [set ${cur_nbr}::nbrs]
+	    set ${cur_nbr}::nbrs ${tempIntSat}
+	}
+	incr idx -1
+    }
+    set trail([expr {$trailPt%$trailLen}]) $parent
+}
+
 # When there are multiple models, prune will be called with some reference
 # to the source namespace. For now we add that inside the proc...
 

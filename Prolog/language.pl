@@ -313,13 +313,14 @@ do_assignment(L, [bound_gen_loop(Top, Name, Ready, CondCount) | Clauses],
 				% get outer dimension
 	        append(Body, [LastClose], Core),
 	        TrailSize is In+2,
+	        list_of('NULL', TrailSize, TrailInit), % pesky Tcl
 	        excrete(L, variable_declaration,
-			[Type, trail, [TrailSize], [0]], Indent, Stream),
-	        make_expr(L, Out+IndI-IndO, TrailPtExpr),
-	        aim_at_array(L, NotIdx, (trailPt+1)'%'TrailSize),
+			[Type, trail, [TrailSize], TrailInit], Indent, Stream),
+	        refer_value(L, trailPt, TrailPtRef),
+	        aim_at_array(L, NotIdx, (TrailPtRef+1)'%'TrailSize),
 	        append([[open_index(IndO, Out), open_index(IndI, In),
-			 assign(glob(trailPt, []), TrailPtExpr)], Body,
-			[assign(glob(trail, [NotIdx]), 0), LastClose]],
+			 assign(glob(trailPt, []), Out+IndI-IndO)], Body,
+			[assign(glob(trail, [NotIdx]), 'NULL'), LastClose]],
 		       MyLoopPlus);
 	      MyLoopPlus = MyLoop),
 	    do_assign_list(L, MyLoopPlus, Indent, Used, Stream),
@@ -720,10 +721,12 @@ we only make the three lines that insert the submodel instance into its linked l
 	    excrete(L, end(cond), IsNew, Indent1, Stream),
 	    TS is In+2,
 	    (Shp = 2 ->
-	        make_evaluation_routine(L, 1+ind(Pointer,0)'%'2, Used, Spacing);
-	      Spacing = 0),
+	        make_evaluation_routine(L, 1+ind(Pointer,0)'%'2, Used, Spacing),
+	        make_expr(L, Spacing, SpacingEx);
+	      SpacingEx = 0),
+	    refer_value(L, trailPt, TrailPtRef),
 	    excrete(L, procedure_call,
-		    fill_nbr_ptrs(Pointer, trail, trailPt, Spacing, TS),
+		    fill_nbr_ptrs(Pointer, trail, TrailPtRef, SpacingEx, TS),
 		    Indent1, Stream);
 	  excrete(L, end(cond), IsNew, Indent1, Stream)),
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream),
@@ -742,8 +745,9 @@ we only make the three lines that insert the submodel instance into its linked l
 	    excrete(L, end(cond), IsNew, Indent1, Stream),
 	    excrete(L, release_memory, Pointer, Indent1, Stream),
 	    (nonvar(TS) ->
-	        make_indexed_reference(L, trail, [trailPt '%' TS], TrailSpot),
-	        excrete(L, assignment, TrailSpot=0, Indent1, Stream);
+	        make_expr(L, TrailPtRef '%' TS, TrailIdx),
+	        make_indexed_reference(L, trail, [TrailIdx], TrailSpot),
+	        excrete(L, assignment, TrailSpot='NULL', Indent1, Stream);
 	      true),
 	    excrete(L, end(cond), TestVal, Indent, Stream),
 	    fail);

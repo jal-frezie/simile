@@ -67,7 +67,7 @@ itcl::class similescript::$newHelperClass {
 	    foreach {layerType layerState} [lrange $state 4 end] {
 		NewLayer $layerType $layerState
 	    }
-	    set bounds [$vp.c bbox all]
+	    set bounds  [BboxForGroup $vp.c main]
 	    $vp.c configure -scrollregion $bounds
 	    foreach {l t r b} $bounds {
 		$vp.c xview moveto [expr {($transform(offx)-$l)*1.0/($r-$l)}]
@@ -149,7 +149,7 @@ itcl::class similescript::$newHelperClass {
 	set layerObj [$type $id $modelInst $this \
 			  $transform(zoomx) $transform(zoomy) $state]
 	set cnv $winId.viewport.c
-	$cnv configure -scrollregion [$cnv bbox all]
+	$cnv configure -scrollregion [$cnv bbox $layerObj.main]
 	pack forget $winId.message
 	set planes [linsert $planes end-[expr {$serialActive/2}] $layerObj]
 	$winId.add insert $serialActive cascade -label [$layerObj GetTitle] \
@@ -223,8 +223,10 @@ itcl::class similescript::$newHelperClass {
     public method Zoom {fx fy} {
 	set id $winId.viewport.c
 # first, find where canvas point at middle ends up
-	set xfroml [expr {[winfo width $id]/2}]
-	set yfromt [expr {[winfo height $id]/2}]
+	set ww [winfo width $id]
+	set wh [winfo height $id]
+	set xfroml [expr {$ww/2}]
+	set yfromt [expr {$wh/2}]
 	set oldMidX [$id canvasx $xfroml]
 	set oldMidY [$id canvasy $yfromt]
 	set middleX [expr {$fx*$oldMidX}]
@@ -241,9 +243,18 @@ itcl::class similescript::$newHelperClass {
 		[expr {$middleX-$oldMidX}] [expr {$middleY-$oldMidY}]
 	}
 # finally scroll so old middle is still in middle
-	set sr [$id bbox all]
-	$id configure -scrollregion $sr
-	foreach {l t r b} $sr {}
+	foreach {l t r b} [BboxForGroup $id main] {}
+
+	set bord [expr {$middleX-$xfroml}]
+	if {$bord<$l} {set l $bord}
+	set bord [expr {$middleY-$yfromt}]
+	if {$bord<$t} {set t $bord}
+	set bord [expr {$middleX+$xfroml}]
+	if {$bord>$r} {set r $bord}
+	set bord [expr {$middleY+$yfromt}]
+	if {$bord>$b} {set b $bord}
+	$id config -scrollregion [list $l $t $r $b]
+
 	set newMidX [expr {(($middleX-$xfroml)-$l)/($r-$l)}]
 	set newMidY [expr {(($middleY-$yfromt)-$t)/($b-$t)}]
 	$id xview moveto $newMidX
@@ -252,16 +263,20 @@ itcl::class similescript::$newHelperClass {
 
     public method Fit {} {
 	set id $winId.viewport.c
-	foreach plane $planes {
-	    lappend mains $plane.main
-	}
-	foreach {l t r b} [eval {$id bbox} $mains] {}
+	foreach {l t r b} [BboxForGroup $id main] {}
 	set scale [expr {[winfo width $id]/(0.0+$r-$l)}]
 	set vscale [expr {[winfo height $id]/(0.0+$b-$t)}]
 	if {$vscale<$scale} {
 	    set scale $vscale
 	}
 	Zoom $scale $scale
+    }
+
+    method BboxForGroup {id style} {
+	foreach plane $planes {
+	    lappend mains $plane.$style
+	}
+	return [eval {$id bbox} $mains]
     }
 
     public method PosnLegends {} {
