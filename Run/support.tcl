@@ -1591,6 +1591,18 @@ proc prune {target metaTxt idCount} {
     return [expr !$status]
 }
 
+proc locate {metaTxt idCount args} {
+    upvar 1 $metaTxt meta
+    set status 1
+    while {[string compare $meta 0] && \
+                [set status [compare_instance_status \
+                [set submodelptr $meta]::instanceid \
+                $args $idCount]]==-1} {
+        set meta [set ${submodelptr}::next]
+    }
+    return [expr !$status]
+}
+
 proc init_pop {metaTxt crNode ptCount channelId maker name} {
     upvar 1 $metaTxt meta
     set lastIndx [expr $ptCount+int([max 0 $crNode])]

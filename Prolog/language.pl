@@ -175,8 +175,10 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	  (List = nbrs -> % fall back on old system
 	      make_struct_reference(L, Top, List, _, StartPtrRef),
 	      VmUseIndices = [VmUseIndex],
-	      excrete(L, assignment, Pointer = locate(StartPtrRef, VmUseIndex),
-		      Indent, Stream),
+	      make_procedure_call_chars(L, [locate, StartPtrRef, VmUseIndex],
+					LocateCallStr),
+	      name(LocateCall, LocateCallStr),
+	      excrete(L, assignment, Pointer = LocateCall, Indent, Stream),
 	      refer_value(L, Pointer, ToTest);
 	    make_pointer(L, Pointer, PointerPtr),
 	      make_procedure_call_chars(L, [locate, PointerPtr, Count
