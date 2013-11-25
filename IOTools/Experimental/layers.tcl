@@ -39,7 +39,9 @@ itcl::class similescript::$newHelperClass {
         set toolbarItems [list \
                 [list zoomin.gif "Zoom in" "$this Zoom 2 2"] \
                 [list zoomout.gif "Zoom out" "$this Zoom 0.5 0.5"] \
-                [list zoomfit.gif "Zoom to fit" "$this Fit"]]
+                [list zoomfit.gif "Zoom to fit" "$this Fit"] \
+		[list text.gif "Add text" \
+		     [list ::canvasnotes20070919::DialogInMiddle $winId]]]
         ::graphtools::MakeToolBar $winId $toolbarItems
 
 # now create the canvas and sliders
@@ -144,6 +146,15 @@ itcl::class similescript::$newHelperClass {
 	return $winId.viewport.c
     }
 
+    public method Print {} {
+	PrintRandomCanvas [GetCanvas]
+    }
+    public method CopyToClipboard {} {
+	# if {[string match windows $tcl_platform(platform)]} {
+	    CopyCanvasToWindowsClipboard [GetCanvas] 0
+	# }
+    }
+
     public method NewLayer {type {state {}}} {
 	set id [UniqueId layer]
 	set layerObj [$type $id $modelInst $this \
@@ -208,6 +219,7 @@ itcl::class similescript::$newHelperClass {
 	foreach plane $planes {
 	    $winId.viewport.c raise $plane.legend
 	}
+	$winId.viewport.c raise annotation
     }
 
     public method PrepareSaveString {} {
@@ -242,6 +254,7 @@ itcl::class similescript::$newHelperClass {
 	    $id move $layer.legend \
 		[expr {$middleX-$oldMidX}] [expr {$middleY-$oldMidY}]
 	}
+	$id scale annotation 0 0 $fx $fy
 # finally scroll so old middle is still in middle
 	foreach {l t r b} [BboxForGroup $id main] {}
 

@@ -1788,18 +1788,29 @@ time_step_for(Model, TopStep, Step) :-
 	Model has_class_refinement step of Step, !;
 	Step = TopStep.
 
-enum_types_for(Submodel, EnumSpecs) :-
+enum_types_for(Submodel, EnumSpecsInc) :-
 	(Submodel has_class_refinement enum_types of EnumTypes,
 	    all(menu, separate_type_from_mems,
 		[build(EnumSpecs), build(EnumTypes)]), !;
-	 EnumSpecs = []).
+	 EnumSpecs = []),
+	(ready_type(Submodel, RT) ->
+	   member(RT-XType, [rect_grid(R,C)-[rect_nbr,ne,n,nw,e,se,s,sw,w],
+		hex_grid(R,C)-[hex_nbr,'1h','11h','3h','5h','7h','9h']]),
+	   EnumSpecsInc = [XType | EnumSpecs];
+	 EnumSpecsInc = EnumSpecs).
 
 get_all_enum_types(root, []).
 get_all_enum_types(Node, TypeList) :-
 	enum_types_for(Node, LevelList),
 	Parent has_part Node,
 	get_all_enum_types(Parent, HigherList),
-	append(LevelList, HigherList, TypeList).
+	merge_defns(LevelList, HigherList, TypeList).
+
+merge_defns([], Defns, Defns).
+merge_defns([[Type | Mems] | More], Defns, [[Type | Mems] | AllDefns]) :-
+	select([Type | _], Defns, KeptDefns) ->
+	    merge_defns(More, KeptDefns, AllDefns);
+	  merge_defns(More, Defns, AllDefns).
 	
 use_units_in(root, 'No').
 use_units_in(Model, Do) :-
