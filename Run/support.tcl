@@ -1575,6 +1575,32 @@ proc fill_nbr_ptrs {parentTxt trailTxt trailPt shape trailLen} {
     set trail([expr {$trailPt%$trailLen}]) $parent
 }
 
+proc make_fixed_nbr_list {parentTxt shape rows columns rowId columnId} {
+    upvar 1 $parentTxt parent
+
+    set offs {{1 1} {1 0} {1 -1} {0 1} {-1 1} {-1 0} {-1 -1} {0 -1}}
+    if {$shape==1 || $rowId%2==1} {
+	incr shape -1 ;# shape now as in last proc
+    }
+# order of addition is chosen to match what happens with vm grid
+    set ${parent}::nbrs 0
+    set idx [expr {$shape?6:8}]
+    for {set seq 7} {$seq>=0} {incr seq -1} {
+	if {$seq%4 == 4-2*$shape} continue
+	set oRow [expr {$rowId+[lindex $offs $seq 0]}]
+	set oCol [expr {$colId+[lindex $offs $seq 1]}]
+	if {$oRow>0 && $oRow<=$rows && $oCol>0 && $oCol<=$columns} {
+	    set tempIntSat [nbrlistmaker ${parent}::Nbrlist<$idx>]
+	    set ${tempIntSat}::instanceid $idx
+	    set remote [string range $parent 0 [string last < $parent]-1]
+	    set ${tempIntSat}::payload $remote<[list $oRow $oCol]>
+	    set ${tempIntSat}::next [set ${parent}::nbrs]
+	    set ${parent}::nbrs ${tempIntSat}
+	}
+	incr idx -1
+    }
+}
+
 # When there are multiple models, prune will be called with some reference
 # to the source namespace. For now we add that inside the proc...
 
@@ -1594,10 +1620,10 @@ proc prune {target metaTxt idCount} {
 proc locate {metaTxt idCount args} {
     upvar 1 $metaTxt meta
     set status 1
-    while {[string compare $meta 0] && \
-                [set status [compare_instance_status \
-                [set submodelptr $meta]::instanceid \
-                $args $idCount]]==-1} {
+    while {$meta ne 0 && \
+	       [set status [compare_instance_status \
+				[set submodelptr $meta]::instanceid \
+				$args $idCount]]==-1} {
         set meta [set ${submodelptr}::next]
     }
     return [expr !$status]
