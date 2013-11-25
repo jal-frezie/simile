@@ -372,12 +372,16 @@ BOOLEAN locate (SMClass **metaptr, int id_count, ...) {
 }
 
 template <class SMClass>
-SMClass* locate (nbrlist <SMClass> *ptr, int soughtIndex) {
-  while (ptr && ptr->instanceid[0] != soughtIndex)
+BOOLEAN locate_nbr (nbrlist <SMClass> *ptr, SMClass **metaptr, 
+		    int soughtIndex) {
+  while (ptr) {
+    if (ptr->instanceid[0] == soughtIndex) {
+       *metaptr = ptr->payload;
+       return 1;
+    }
     ptr = ptr->next;
-  if (ptr)
-    return ptr->payload;
-  return NULL;
+  }
+  return 0;
 }
 
 template <class SMClass>

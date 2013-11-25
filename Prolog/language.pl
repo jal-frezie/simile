@@ -172,18 +172,15 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	LoopSpec = vm_retrieve(List, Count, VmIndices),
 	  all(language, make_evaluation_routine,
 	      [unify(L), build(VmIndices), unify(Used), build(VmUseIndices)]),
+	  make_pointer(L, Pointer, PointerPtr),
 	  (List = nbrs -> % fall back on old system
 	      make_struct_reference(L, Top, List, _, StartPtrRef),
 	      VmUseIndices = [VmUseIndex],
-	      make_procedure_call_chars(L, [locate, StartPtrRef, VmUseIndex],
-					LocateCallStr),
-	      name(LocateCall, LocateCallStr),
-	      excrete(L, assignment, Pointer = LocateCall, Indent, Stream),
-	      refer_value(L, Pointer, ToTest);
-	    make_pointer(L, Pointer, PointerPtr),
-	      make_procedure_call_chars(L, [locate, PointerPtr, Count
-					   | VmUseIndices], LocateCallStr),
-	      name(ToTest, LocateCallStr)),
+	      make_procedure_call_chars(L, [locate_nbr, StartPtrRef, PointerPtr,
+					    VmUseIndex], LocateCallStr);
+	    make_procedure_call_chars(L, [locate, PointerPtr, Count
+					   | VmUseIndices], LocateCallStr)),
+	  name(ToTest, LocateCallStr),
 	  excrete(L, if_start, ToTest, Indent, Stream),
 	  Indent1 is Indent + 4,
 	  do_assign_list(L, MyLoop, Indent1, Used, Stream),

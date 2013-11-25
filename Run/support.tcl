@@ -1557,15 +1557,15 @@ proc fill_nbr_ptrs {parentTxt trailTxt trailPt shape trailLen} {
 	if {$off==4-2*$shape} continue
 	set cur_nbr $trail([expr {($trailPt+$off)%$trailLen}])
 	if {$cur_nbr ne "NULL"} {
-	    set tempIntSat [nbrlistmaker $parent.Nbrlist<$idx>]
-	    set ${tempIntSat}::instanceid(1) $idx
+	    set tempIntSat [nbrlistmaker ${parent}::Nbrlist<$idx>]
+	    set ${tempIntSat}::instanceid $idx
 	    set ${tempIntSat}::payload $cur_nbr
 	    set ${tempIntSat}::next [set ${parent}::nbrs]
 	    set ${parent}::nbrs ${tempIntSat}
 
 	    set remIdx [expr {(11-$idx)%($shape?3:4)+1}] ;# don't ask
-	    set tempIntSat [nbrlistmaker $cur_nbr.Nbrlist<$remIdx>]
-	    set ${tempIntSat}::instanceid(1) $remIdx
+	    set tempIntSat [nbrlistmaker ${cur_nbr}::Nbrlist<$remIdx>]
+	    set ${tempIntSat}::instanceid $remIdx
 	    set ${tempIntSat}::payload $parent
 	    set ${tempIntSat}::next [set ${cur_nbr}::nbrs]
 	    set ${cur_nbr}::nbrs ${tempIntSat}
@@ -1601,6 +1601,18 @@ proc locate {metaTxt idCount args} {
         set meta [set ${submodelptr}::next]
     }
     return [expr !$status]
+}
+
+proc locate_nbr {ptr metaTxt soughtIndex} {
+    upvar 1 $metaTxt metaptr
+    while {$ptr ne 0} {
+	if {[set ${ptr}::instanceid] == $soughtIndex} {
+	    set metaptr [set ${ptr}::payload]
+	    return 1
+	}
+	set ptr [set ${ptr}::next]
+    }
+    return 0
 }
 
 proc init_pop {metaTxt crNode ptCount channelId maker name} {
