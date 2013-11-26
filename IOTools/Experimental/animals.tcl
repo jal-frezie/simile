@@ -6,6 +6,7 @@ itcl::class similescript::$newLayerClass {
     inherit Layer
     variable useNodes
     variable transform
+    variable temp
 
     proc Identify {} {
 	return "Moving individuals"
@@ -16,6 +17,9 @@ itcl::class similescript::$newLayerClass {
 	Layer::constructor $modelInst $mainCanvas
     } {
 	array set transform [list xzoom $xzoom yzoom $yzoom]
+	$winId bind [namespace tail $this].main <Enter> \
+	    "QueuePopup AddWidgetPopup %X %Y \[$this CurrentPopup\]"
+	$winId bind [namespace tail $this].main <Leave> RemovePopup
 	if {[string length $state]} { ;# we are restoring 
 	    array set useNodes $state
 	    if {$useNodes(state) eq "displaying"} {
@@ -31,6 +35,22 @@ itcl::class similescript::$newLayerClass {
 	$winId delete [namespace tail $this].main
     }
 
+    method CurrentPopup {} {
+	set ind [TagToId [$winId gettags current]]
+	return "Index: $ind \
+x: [SeekValue $ind $temp(xcoord)] y: [SeekValue $ind $temp(ycoord)] \
+Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
+    }
+
+    method SeekValue {inds vals} {
+	if {$inds eq ""} {
+	    return $vals
+	} else {
+	    return [SeekValue [lrange $inds 1 end] \
+			[lindex $vals [lsearch $vals [lindex $inds 0]]+1]]
+	}
+    }
+	    
     public method AddVariable {} {
 	set cnvFile [ChooseFile animal.cnv "Image for individuals:" 0 \
 			       [GetNode]]
@@ -87,12 +107,12 @@ itcl::class similescript::$newLayerClass {
 # nothing to do at display time -- it's a photo
 	if {$useNodes(state) eq "displaying"} {
 	    $winId delete [namespace tail $this].main
-	    DoForRXYData {} DrawAnimal \
-		[lindex [$modelInst GetValue $useNodes(size)] 0] \
-		[lindex [$modelInst GetValue $useNodes(dir)] 0] \
-		[lindex [$modelInst GetValue $useNodes(xcoord)] 0] \
-		[lindex [$modelInst GetValue $useNodes(ycoord)] 0]
-	    $winId dtag all positioned
+	    foreach aspect {size dir xcoord ycoord} {
+		set temp($aspect) \
+		    [lindex [$modelInst GetValue $useNodes($aspect)] 0]
+	    }
+	    DoForRXYData {} DrawAnimal $temp(size) $temp(dir) \
+		$temp(xcoord) $temp(ycoord)
 	}
     }
 
@@ -135,7 +155,8 @@ itcl::class similescript::$newLayerClass {
 #	$winId scale unpositioned $xbase $ybase $xscale $yscale
 # also try keeping data and moving individuals?
 	$winId addtag [namespace tail $this].main withtag unpositioned
-	$winId dtag all unpositioned
+	$winId addtag [IdToTag $inds] withtag unpositioned
+	$winId dtag unpositioned
     }
 
     public method ZoomTo {xzoom yzoom} {

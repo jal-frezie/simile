@@ -115,7 +115,7 @@ itcl::class similescript::$newLayerClass {
 	set indices [TagToId [$winId gettags current]]
 	set value [TransValue $useNodes($winId,dataETs) \
 		       [SeekValue [split $indices ,] $useNodes(temp,curValues)]]
-	return "Index $indices Value $value"
+	return "Index: $indices Value: $value"
     }
 
     public method ReTile {} {
