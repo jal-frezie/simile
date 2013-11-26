@@ -531,8 +531,8 @@ proc PutThinArrow { w ptz stack fatness density colourScheme tagSet} {
             "$tagSet startblob"
 # now experimental bit to draw extra lines around middle to indicate stack
     if {$stack>1} {
-	foreach level {-2 -1 1 2} {
-	    eval {$w create line} [CurveStackEnds $mptz [expr {3*$level*$width}]] \
+	foreach level {-9 -3 3 9} {
+	    eval {$w create line} [CurveStackEnds $mptz [expr {$level*$width/2.0}]] \
 	    {-width $width -tag "$tagSet stackdecor($level)"}
 	}
     }
@@ -704,7 +704,7 @@ proc MoveLine {w id ptz} {
             set yn [lindex $mptz end]
             $w coords $item $xn $yn $xn $yn
 	} elseif {[regexp {stackdecor\(([0-9\-]+)\)} $taglist tag level]>0} {
-	    set distOff [expr {3*$level*[$w itemcget $item -width]}]
+	    set distOff [expr {$level*[$w itemcget $item -width]/2.0}]
             $w coords $item [CurveStackEnds $mptz $distOff]
         } elseif {[string match line [$w type $item]] && \
                     ![string match *bowtie* $taglist]} {
@@ -731,10 +731,10 @@ proc CurveStackEnds {mptz distOff} {
     set xtent [expr {$x2-$x1}]
     set ytent [expr {$y2-$y1}]
     set len [expr {sqrt($xtent*$xtent + $ytent*$ytent)}]
-    set xOff [expr {$distOff*$ytent/$len}]
-    set yOff [expr {-$distOff*$xtent/$len}]
-    return [list [expr {$x1+$xOff}] [expr {$y1+$yOff}] \
-		[expr {$x2+$xOff}] [expr {$y2+$yOff}]]
+    set xOff [expr {$ytent/$len}]
+    set yOff [expr {-$xtent/$len}]
+    return [list [expr {$x1+($distOff+3)*$xOff}] [expr {$y1+($distOff+3)*$yOff}] \
+		[expr {$x2+($distOff-3)*$xOff}] [expr {$y2+($distOff-3)*$yOff}]]
 }
 
 proc MoveBowtie {w id ptz} {

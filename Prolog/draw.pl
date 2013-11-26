@@ -539,7 +539,8 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	    multiple_draw(Link, Num);
 	  Type = influence,
 	    m_class'><'Link has_attribute enabled_roles of EnabList,
-	    member(-1, EnabList),
+	    member(RIdx, EnabList),
+	    member(RIdx, [-1, -2, -3]),
 	    Num = 4; % or however many insts current submodel has
 	  Num = 1), !,
 	(Type = influence,
