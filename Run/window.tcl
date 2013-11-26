@@ -49,26 +49,26 @@ proc FindObj { winId x y } {
 }
 
 # New to 4.8: get nodular component overlaps from GUI, in a list
+# This would be worth fixing with tag logic if still used)
+# proc FindAllObjs {winId l t r b} {
+#     set box [ScaleRect $winId $l $t $r $b]
+#     $winId addtag /no_collide/ all
+#     eval {$winId addtag /on_target/ overlapping} $box
+#     $winId dtag size_on_this /no_collide/
+#     $winId dtag /no_collide/ /on_target/
+#     set bitz [$winId find withtag /on_target/]
+#     $winId dtag /no_collide/
+#     $winId dtag /on_target/
 
-proc FindAllObjs {winId l t r b} {
-    set box [ScaleRect $winId $l $t $r $b]
-    $winId addtag /no_collide/ all
-    eval {$winId addtag /on_target/ overlapping} $box
-    $winId dtag size_on_this /no_collide/
-    $winId dtag /no_collide/ /on_target/
-    set bitz [$winId find withtag /on_target/]
-    $winId dtag /no_collide/
-    $winId dtag /on_target/
-
-    set proggles {}
-    foreach bit $bitz {
-	set plName [ExtractPrologName $winId $bit]
-	if {[lsearch $proggles $plName]==-1} {
-	    lappend $proggles $plName
-	}
-    }    
-    return $proggles
-}
+#     set proggles {}
+#     foreach bit $bitz {
+# 	set plName [ExtractPrologName $winId $bit]
+# 	if {[lsearch $proggles $plName]==-1} {
+# 	    lappend $proggles $plName
+# 	}
+#     }    
+#     return $proggles
+# }
 
 # canvasTLDistance returns the offset of a canvas coordinate from its top
 # left corner. If you are going to use @x,y to refer to a point in a canvas

@@ -102,20 +102,42 @@ itcl::class similescript::$newLayerClass {
 	return $useNodes($winId,title)
     }
 
+    method SeekValue {inds vals} {
+	if {$inds eq ""} {
+	    return $vals
+	} else {
+	    return [SeekValue [lrange $inds 1 end] \
+			[lindex $vals [lsearch $vals [lindex $inds 0]]+1]]
+	}
+    }
+	    
+    public method CurrentPopup {} {
+	set indices [TagToId [$winId gettags current]]
+	set value [TransValue $useNodes($winId,dataETs) \
+		       [SeekValue [split $indices ,] $useNodes(temp,curValues)]]
+	return "Index $indices Value $value"
+    }
+
     public method ReTile {} {
-	$winId delete [namespace tail $this].main
-	DoForXYData {} AddPolygon \
-	    [lindex [$modelInst GetValue $useNodes($winId,color)] 0] \
+	set myTag [namespace tail $this].main
+	$winId delete $myTag
+	set useNodes(temp,curValues) \
+	    [lindex [$modelInst GetValue $useNodes($winId,color)] 0]
+	DoForXYData {} AddPolygon $useNodes(temp,curValues) \
 	    [lindex [$modelInst GetValue $useNodes($winId,xcoord)] 0] \
 	    [lindex [$modelInst GetValue $useNodes($winId,ycoord)] 0]
+	$winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %X %Y \
+					\[$this CurrentPopup\]"
+	$winId bind $myTag <Leave> RemovePopup
     }
 
     public method Display {time dispInt step} {
 # nothing to do at display time -- it's a photo
 	if {[string equal displaying $useNodes($winId,state)] && \
 		$useNodes($winId,displayUpdate)} {
-	    DoForData {} ColourPolygon \
+	    set useNodes(temp,curValues) \
 		[lindex [$modelInst GetValue $useNodes($winId,color)] 0]
+	    DoForData {} ColourPolygon $useNodes(temp,curValues)
 	}
 	$winId raise [namespace tail $this].main
     }
@@ -270,7 +292,10 @@ itcl::class similescript::$newLayerClass {
 	}
 
 	set newColour [ColourFor $winId $key]
-	$winId itemconfigure [IdToTag $inds] -fill $newColour
+	set tgt [$winId find withtag [IdToTag $inds]] ;# faster?
+	$winId itemconfigure $tgt -fill $newColour
+#	CanvasBindPopup $winId $tgt [list Index $inds Value \
+#			 [TransValue $useNodes($winId,dataETs) $key]]
     }
 
     public method DoForXYData {inds proc key argx argy} {
@@ -320,7 +345,7 @@ itcl::class similescript::$newLayerClass {
     }
 
     public method TagToId {tags} {
-	set myTag $[namespace tail $this]
+	set myTag $[namespace tail $this]BLK
 	set end [expr [string first $myTag $tags]+[string length $myTag]]
 	set idTag [lindex [string range $tags $end end] 0]
 	foreach val [split $idTag ,] {

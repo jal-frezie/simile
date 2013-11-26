@@ -92,17 +92,18 @@ itcl::class similescript::$newHelperClass {
 	if {abs($newLo+$hi-$lo-$newHi)>1e-6} return
 	# scrollregion changed, zoom proc takes care of legends
 
-	foreach {l t r b} [$vp.c cget -scrollregion] {}
-	if {$axis eq "y"} {
-	    set mag [expr {$b-$t}]
-	    set tail {0 $motn}
-	} else {
-	    set mag [expr {$r-$l}]
-	    set tail {$motn 0}
-	}	    
-	set motn [expr {$mag*($newLo-$lo)}]
-	foreach layer $planes {
-	    eval {$vp.c move $layer.legend} $tail
+	foreach {l t r b} [$vp.c cget -scrollregion] {
+	    if {$axis eq "y"} {
+		set mag [expr {$b-$t}]
+		set tail {0 $motn}
+	    } else {
+		set mag [expr {$r-$l}]
+		set tail {$motn 0}
+	    }	    
+	    set motn [expr {$mag*($newLo-$lo)}]
+	    foreach layer $planes {
+		eval {$vp.c move $layer.legend} $tail
+	    }
 	}
     }
 
@@ -296,6 +297,7 @@ itcl::class similescript::$newHelperClass {
 # all legends must be positioned at once because changing one may change posns
 # of others
 	set id $winId.viewport.c
+	set legendWidth 40
 
 	set l 0
 	set t 0
@@ -317,7 +319,7 @@ itcl::class similescript::$newHelperClass {
 		    set sx 1
 		    set sy [expr {1.0*($h+$b-$t)/$h}]
 		    if {$side eq "l"} {
-			set px [expr {$l+50-$w}]
+			set px [expr {$l+$legendWidth-$w}]
 		    } else {
 			set px $r
 		    }
@@ -326,7 +328,7 @@ itcl::class similescript::$newHelperClass {
 		    set sy 1
 		    set sx [expr {1.0*($w+$r-$l)/$w}]
 		    if {$side eq "t"} {
-			set py [expr {$t+50-$h}]
+			set py [expr {$t+$legendWidth-$h}]
 		    } else {
 			set py $b
 		    }
@@ -341,9 +343,9 @@ itcl::class similescript::$newHelperClass {
 
 	    switch -regexp $side {
 		l|t {
-		    set $side [expr {[set $side]+50}]
+		    set $side [expr {[set $side]+$legendWidth}]
 		} r|b {
-		    set $side [expr {[set $side]-50}]
+		    set $side [expr {[set $side]-$legendWidth}]
 		}
 	    }
 	}

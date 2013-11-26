@@ -313,11 +313,12 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	$w addtag target_and_background withtag /base/
     } else {
 # you cannot 'and' the submodel id tag with the background tag
-# so 'or' it with the inverse
-	$w addtag target_and_background withtag $stackOn
-	$w addtag not_background withtag $stackOn
-	$w dtag /background/ not_background
-	$w dtag not_background target_and_background
+# so 'or' it with the inverse...oh yes you can
+#	$w addtag target_and_background withtag $stackOn
+#	$w addtag not_background withtag $stackOn
+#	$w dtag /background/ not_background
+#	$w dtag not_background target_and_background
+	$w addtag target_and_background withtag $stackOn&&/background/
     }
     
     if {[string equal clear $fillColour]} {

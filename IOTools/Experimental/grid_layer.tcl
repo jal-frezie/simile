@@ -33,7 +33,7 @@ itcl::class similescript::$newLayerClass {
 	    set useNodes($winId,yscale) 1
 	    set useNodes($winId,title) [Identify]
 	    set useNodes($winId,editMode) 0
-	    set useNodes($winId,orient) n
+	    set useNodes($winId,legendSide) n
 	    set useNodes($winId,imgs) 0
 	    set useNodes($winId,displayUpdate) 1
 	    
@@ -163,6 +163,8 @@ itcl::class similescript::$newLayerClass {
     public method DrawGrid8 {} {
 # do not use image mode for inputs cos we will want to edit them...
 # hah, just fixed it so we can anyway
+	set useNodes(temp,curValues) \
+	    [lindex [$modelInst GetValue $useNodes($winId,color)] 0]
 	set node [GetIdFromCaptionPath $useNodes($winId,color)]
 	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
 		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
@@ -196,7 +198,88 @@ itcl::class similescript::$newLayerClass {
 	}
 	$this.original configure -data $bmpData
 	PutSize $this.original
-   }
+    }
+
+    public method DrawGrid7 {} {
+	set ncol $useNodes($winId,ncol)
+	set nrow $useNodes($winId,nrow)
+        set allData {}
+	array unset useNodes $winId,values,*
+	set useNodes($winId,values) 1
+	set data $useNodes(temp,curValues)
+	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
+	    set allData [lrepeat $nrow [lrepeat $ncol grey]]
+
+	    foreach {y row} $data {
+		foreach {x celval} $row {
+		    lset allData [list $nrow-$y $x-1] [ForGrid $celval]
+		    set useNodes($winId,values,$y,$x) \
+			[list [list $y $x] $celval]
+		}
+	    }
+	} else {
+	    set values [Flatten $data]
+        
+	    for {set row 1} {$row<=$nrow} {incr row} {
+		set rowData($row) {}
+		for {set col 1} {$col<=$ncol} {incr col} {
+		    set cell [expr ($row-1)*$ncol+$col-1]
+		    set celval [lindex [lindex $values $cell] 1]
+		    set useNodes($winId,values,$row,$col) [lindex $values $cell]
+		    set length [llength $celval]
+                
+		    if {$length} {
+			lappend rowData($row) [ForGrid $celval]
+		    } else {
+			lappend rowData($row) grey
+		    }
+		}
+	    }
+	    for {set row $nrow} {$row>=1} {incr row -1} {
+		lappend allData $rowData($row)
+	    }
+        }
+	$this.original put $allData
+	PutSize $this.original
+    }
+
+    public method ForGrid {celval} {
+        set min $useNodes($winId,min)
+	set max $useNodes($winId,max)
+        set range [expr {$max-$min}]
+	set nswatches $useNodes($winId,nswatches)
+        
+	if {$celval<$useNodes($winId,datamin)} {
+	    set useNodes($winId,datamin) $celval
+	}
+	if {$celval>$useNodes($winId,datamax)} {
+	    set useNodes($winId,datamax) $celval
+	}
+	if {$celval<=$min} {
+	    set icolour 0
+	} elseif {$celval>=$max} {
+	    set icolour $nswatches
+	} else {
+	    set icolour [expr {int($nswatches*($celval-$min)/$range)}]
+	}
+	return $useNodes($winId,c$icolour)
+    }
+
+    method SeekValue {inds vals} {
+	if {$inds eq ""} {
+	    return $vals
+	} else {
+	    return [SeekValue [lrange $inds 1 end] \
+			[lindex $vals [lsearch $vals [lindex $inds 0]]+1]]
+	}
+    }
+	    
+    method CurrentPopup {x y} {
+	set col [expr int(1+([$winId canvasx $x]/$transform(xzoom)-$useNodes($winId,xoff))/$useNodes($winId,xscale))]
+	set row [expr int(1+(-[$winId canvasy $y]/$transform(yzoom)-$useNodes($winId,yoff))/$useNodes($winId,yscale))]
+	set value [SeekValue [list $row $col] $useNodes(temp,curValues)]
+	return "Index $row,$col Value $value"
+    }
 
     public method ZoomTo {xzoom yzoom} {
 	array set transform [list xzoom $xzoom yzoom $yzoom]
@@ -211,6 +294,12 @@ itcl::class similescript::$newLayerClass {
 	    image create photo $this.derived
 	    $winId create image $stickIt -anchor sw -image $this.derived \
 						 -tag $myTag
+	    $winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %X %Y \
+					\[$this CurrentPopup %x %y\]"
+	    $winId bind $myTag <Motion> "QueuePopup AddWidgetPopup %X %Y \
+					\[$this CurrentPopup %x %y\]"
+	    $winId bind $myTag <Leave> RemovePopup
+	    
 	} else {
 	    $winId coords [$winId find withtag $myTag] $stickIt
 	}
