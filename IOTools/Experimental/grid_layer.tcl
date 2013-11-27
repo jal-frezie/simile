@@ -208,7 +208,7 @@ itcl::class similescript::$newLayerClass {
 	set useNodes($winId,values) 1
 	set data $useNodes(temp,curValues)
 	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
-	    set allData [lrepeat $nrow [lrepeat $ncol grey]]
+#	    set allData [lrepeat $nrow [lrepeat $ncol gray]]
 
 	    foreach {y row} $data {
 		foreach {x celval} $row {
@@ -312,7 +312,7 @@ itcl::class similescript::$newLayerClass {
 
     public method Settings {} {
 	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
-	wm title $dlg [tr. "Polygon display properties"]
+	wm title $dlg [tr. "Grid display properties"]
 	wm protocol $dlg WM_DELETE_WINDOW "set polyProps(xdone) 0"
         
         # copy display parameters to temp values
