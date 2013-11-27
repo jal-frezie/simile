@@ -27,7 +27,7 @@ itcl::class similescript::$newLayerClass {
 	} else {
 	    set useNodes($winId,title) [Identify]
 	    set useNodes($winId,editMode) 0
-	    set useNodes($winId,orient) n
+	    set useNodes($winId,legendSide) n
 	    set useNodes($winId,imgs) 0
 	    set useNodes($winId,displayUpdate) 1
 	    
@@ -59,10 +59,9 @@ itcl::class similescript::$newLayerClass {
 
     public method AddVariable {} {
 	set useNodes($winId,ms) [$winId create text 0 0 -anchor nw -text \
-				     [tr. "Click on the array value \
-                    representing the X coordinates of the polygon vertices."]]
+				     [tr. "Click on a value to determine the colour of the polygons."]]
 	$modelInst GrabClicks $this
-	set useNodes($winId,state) xcoord
+	set useNodes($winId,state) sizeval
     }
 
     public method Click {path} {
@@ -71,25 +70,27 @@ itcl::class similescript::$newLayerClass {
         # of the model diagram
         if {[string compare $testResult novalue]} {
             switch $useNodes($winId,state) {
+		sizeval {
+		    $winId itemconfigure $useNodes($winId,ms) -text "Now select the array value \
+                    representing the X coordinates of the polygon vertices."
+		    set useNodes($winId,color) $path
+		    set useNodes($winId,title) "[file tail $path] (polygon diagram)"
+		    set parentPath [join [lrange [split $path /] 0 end-1] /]
+		    if {[$modelInst GetModelEval $parentPath] eq "HONEYCOMB"} {
+			set useNodes($winId,xcoord) HEX_CTRS
+			FinishClicking
+		    } else {
+			set useNodes($winId,state) xcoord
+		    }
+		}
 		xcoord {
 		    $winId itemconfigure $useNodes($winId,ms) -text "Now click on the value representing the Y coordinates."
 		    set useNodes($winId,xcoord) $path
 		    set useNodes($winId,state) ycoord
 		} ycoord {
-		    $winId itemconfigure $useNodes($winId,ms) -text "Now select a value to determine the colour of the polygons."
 		    set useNodes($winId,ycoord) $path
 		    set useNodes($winId,state) sizeval
-		}
-		sizeval {
-		    $winId delete $useNodes($winId,ms)
-		    $modelInst ReleaseClicks
-		    set useNodes($winId,color) $path
-		    set useNodes($winId,title) "[file tail $path] (polygon diagram)"
-		    SetColourMap useNodes $winId [GetIdFromCaptionPath $path]
-		    SetColours useNodes $winId
-		    set useNodes($winId,state) displaying
-		    unset useNodes($winId,ms)
-		    ReTile
+		    FinishClicking
 		}
 	    }
 	} else {
@@ -98,6 +99,17 @@ itcl::class similescript::$newLayerClass {
         }
     }
    
+    method FinishClicking {} {
+	$winId delete $useNodes($winId,ms)
+	$modelInst ReleaseClicks
+	SetColourMap useNodes $winId \
+	    [GetIdFromCaptionPath $useNodes($winId,color)]
+	SetColours useNodes $winId
+	set useNodes($winId,state) displaying
+	unset useNodes($winId,ms)
+	ReTile
+    }
+
     public method GetTitle {} {
 	return $useNodes($winId,title)
     }
@@ -123,9 +135,13 @@ itcl::class similescript::$newLayerClass {
 	$winId delete $myTag
 	set useNodes(temp,curValues) \
 	    [lindex [$modelInst GetValue $useNodes($winId,color)] 0]
-	DoForXYData {} AddPolygon $useNodes(temp,curValues) \
-	    [lindex [$modelInst GetValue $useNodes($winId,xcoord)] 0] \
-	    [lindex [$modelInst GetValue $useNodes($winId,ycoord)] 0]
+	if {$useNodes($winId,xcoord) eq "HEX_CTRS"} {
+	    DoForData {} AddPolygon $useNodes(temp,curValues)
+	} else {
+	    DoForXYData {} AddPolygon $useNodes(temp,curValues) \
+		[lindex [$modelInst GetValue $useNodes($winId,ycoord)] 0] \
+		[lindex [$modelInst GetValue $useNodes($winId,xcoord)] 0]
+	}
 	$winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %X %Y \
 					\[$this CurrentPopup\]"
 	$winId bind $myTag <Leave> RemovePopup
@@ -308,8 +324,23 @@ itcl::class similescript::$newLayerClass {
 	}
     }
 
-    public method AddPolygon {inds key xverts yverts} {
-	foreach {xind xval} $xverts {yind yval} $yverts {
+    method VerticesFromInds {row col} {
+	set hex_centre_y [expr {1.5*$row}]
+	set hex_centre_x [expr {1.7320508*($col+($row%2)/2.0)}]
+	foreach yoff {1 0.5 -0.5 -1 -0.5 0.5} xoff {0 0.5 0.5 0 -0.5 -0.5} {
+# indices not used, just added for compatibility with model data
+	    lappend yval 0 [expr {$hex_centre_y+$yoff}]
+	    lappend xval 0 [expr {$hex_centre_x+1.7320508*$xoff}]
+	}
+	return [list $yval $xval]
+    }
+
+    public method AddPolygon {inds key args} {
+	if {$args eq {}} {
+	    set args [eval VerticesFromInds $inds]
+	}
+	foreach {yverts xverts} $args {}
+	foreach {yind yval} $yverts {xind xval} $xverts {
 	    lappend outlist \
 		[expr $transform(xzoom)*$xval] [expr -$transform(yzoom)*$yval]
 	}

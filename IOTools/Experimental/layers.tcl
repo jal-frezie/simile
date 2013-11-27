@@ -238,6 +238,9 @@ itcl::class similescript::$newHelperClass {
 # first, find where canvas point at middle ends up
 	set ww [winfo width $id]
 	set wh [winfo height $id]
+#	if {[$id cget -scrollregion] eq {}} {
+#	    $id config -scrollregion [list 0 0 $ww $wh]
+#	}
 	set xfroml [expr {$ww/2}]
 	set yfromt [expr {$wh/2}]
 	set oldMidX [$id canvasx $xfroml]
@@ -257,18 +260,20 @@ itcl::class similescript::$newHelperClass {
 	}
 	$id scale annotation 0 0 $fx $fy
 # finally scroll so old middle is still in middle
-	foreach {l t r b} [BboxForGroup $id main] {}
-
-	set bord [expr {$middleX-$xfroml}]
-	if {$bord<$l} {set l $bord}
-	set bord [expr {$middleY-$yfromt}]
-	if {$bord<$t} {set t $bord}
-	set bord [expr {$middleX+$xfroml}]
-	if {$bord>$r} {set r $bord}
-	set bord [expr {$middleY+$yfromt}]
-	if {$bord>$b} {set b $bord}
+# 	foreach {l t r b} [BboxForGroup $id main] {}
+ 	foreach side {l t r b} edge [$id cget -scrollregion] \
+	    z [list $fx $fy $fx $fy] {
+		set $side [expr {$z*$edge}]
+	    }
+	if {$r-$l<$ww} {
+	    set l [expr {($l+$r-$ww)/2}]
+	    set r [expr {$l+$ww}]
+	}
+	if {$b-$t<$wh} {
+	    set t [expr {($t+$b-$wh)/2}]
+	    set b [expr {$t+$wh}]
+	}
 	$id config -scrollregion [list $l $t $r $b]
-
 	set newMidX [expr {(($middleX-$xfroml)-$l)/($r-$l)}]
 	set newMidY [expr {(($middleY-$yfromt)-$t)/($b-$t)}]
 	$id xview moveto $newMidX
@@ -278,12 +283,14 @@ itcl::class similescript::$newHelperClass {
     public method Fit {} {
 	set id $winId.viewport.c
 	foreach {l t r b} [BboxForGroup $id main] {}
+	$id config -scrollregion [list $l $t $r $b]
 	set scale [expr {[winfo width $id]/(0.0+$r-$l)}]
 	set vscale [expr {[winfo height $id]/(0.0+$b-$t)}]
 	if {$vscale<$scale} {
 	    set scale $vscale
 	}
 	Zoom $scale $scale
+	PosnLegends
     }
 
     method BboxForGroup {id style} {

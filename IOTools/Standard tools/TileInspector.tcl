@@ -54,14 +54,15 @@ namespace eval ::$keyValue {
 	set doPops 0
 	switch -glob $winId { ;# check if relocating param or measurement data
 	    .newfile* {
-		set typesToShow {INPUT TABLE SPLIT}
+		set typesToShow {INPUT TABLE BLOCK POPULATION GRID HONEYCOMB}
 	    } .newsub* {
-		set typesToShow {SPLIT}
+		set typesToShow {BLOCK POPULATION GRID HONEYCOMB}
 	    } .newout* {
-		set typesToShow {RECALL DERIVED SPLIT}
+		set typesToShow {RECALL DERIVED BLOCK POPULATION GRID HONEYCOMB}
 	    } default {
 		set doPops [PrefValue custom(compValPop) compValPop]
-		set typesToShow {RECALL DERIVED INPUT TABLE SPLIT GHOST LIMIT}
+		set typesToShow {RECALL DERIVED INPUT TABLE GHOST LIMIT \
+				     BLOCK POPULATION GRID HONEYCOMB}
 	    }
 	}
         foreach component [GetObjectList] {

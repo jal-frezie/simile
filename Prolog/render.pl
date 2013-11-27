@@ -641,7 +641,12 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 	        [Wee, Muckle] = [0, 0],
 	        (by_record(BaseName), !,
 		    DefEval = 'TABLE';
-		    DefEval = 'SPLIT');
+		 is_population(BaseName), !,
+		    DefEval = 'POPULATION';
+		 m_update'><'ready_type(BaseName, BaseType), !,
+		    member(BaseType-DefEval,
+			   [rect_grid(_,_)-'GRID', hex_grid(_,_)-'HONEYCOMB']);
+		    DefEval = 'BLOCK');
 	    (member(Unit, [boolean, cond_spec]), Type = 'FLAG',
 	        [Wee, Muckle] = [0, 1];
 	    Unit = a(Enum), !, Type = Posn,
@@ -748,7 +753,7 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 		/* make a value lookup entry for each node with this value */
 	    NodeData = [[VisName, Type, ETCount, MetaPtr, GBCount, GRefPtr,
 			 Eval, CappedDims, NewPath, GraphPointer,
-			 AllStrPtrs, Min, Max, Class, Name]];
+			 Min, Max, Class, AllStrPtrs]];
 	/* No need to handle ghosts and link terminators */
 	NodeData = []).
 
@@ -982,15 +987,15 @@ make_arg_string(L, [Arg | Rest], Arg_string) :-
 		append(String, [32 | Tail], Arg_string)), !. /* green */
 
 build_constant(Language, [String, Type, ETCount, ETArrPtr, GBCount, GBArrPtr,
-			  Eval, Dims, Array, GraphPtr, Captions, Min, Max,
-			  Class, _Comment], Chars) :-
-	make_list_chars(Language, Dims, DimsString),
-	make_list_chars(Language, Array, ArrayString),
+			  Eval, Dims, Array, GraphPtr, Min, Max,
+			  Class, Captions], Chars) :-
 	make_constant_string(Language, String, Arg1),
+	make_list_chars(Language, Dims, DimsString),
+	name(Arg2, DimsString),
+	make_list_chars(Language, Array, ArrayString),
+	name(Arg3, ArrayString),
 %	make_constant_string(Language, Caption, Arg5),
 	make_list_chars(Language, Captions, PtrString),
-	name(Arg2, DimsString),
-	name(Arg3, ArrayString),
 	name(Arg5, PtrString),
 	make_list_chars(Language, [Arg1, Type, ETCount, ETArrPtr,
 				   GBCount, GBArrPtr, Eval,

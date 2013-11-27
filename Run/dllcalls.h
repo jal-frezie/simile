@@ -49,10 +49,13 @@
 #define DERIVED         1
 #define TABLE           2
 #define INPUT           3
-#define SPLIT           4
-#define GHOST           5
-#define LIMIT           6
-#define RECALL          7
+#define GHOST           4
+#define LIMIT           5
+#define RECALL          6
+#define BLOCK           7
+#define POPULATION      8
+#define GRID            9
+#define HONEYCOMB       10
 
 /* special dimensions */
 #define RECORDS        -1
