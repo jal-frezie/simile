@@ -763,8 +763,12 @@ set msgs(record_count_undefined_message) $msgs(param_load_fail_message)[tr. {a p
 set msgs(record_count_undefined_detail) $msgs(param_load_fail_detail)
 
 set msgs(gap_in_data_title) $msgs(param_load_fail_title)
-set msgs(gap_in_data_message) $msgs(param_load_fail_message)[tr. {the index and value are missing.}]
+set msgs(gap_in_data_message) $msgs(param_load_fail_message)[tr. { the index and value are missing.}]
 set msgs(gap_in_data_detail) $msgs(param_load_fail_detail)
+
+set msgs(missing_array_title) $msgs(param_load_fail_title)
+set msgs(missing_array_message) $msgs(param_load_fail_message)[tr. { there are no indices or values.}]
+set msgs(missing_array_detail) $msgs(param_load_fail_detail)
 
 
 set msgs(number_needed_title) [tr. {Numeric value required}]

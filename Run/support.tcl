@@ -578,6 +578,10 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
     } else {
         set last $nextDim
     }
+    # just post one error if no vals at all to save time
+    if {![array exists sub]} {
+	return [AddErrorTo $redoStep missing_array $subs]
+    }
     for {set arrayPt 1} {$arrayPt <= $last} {incr arrayPt} {
         set indx [NumberToEnumType $arrayPt $thisTrans]
 	set newSubs $subs,[list $indx]
