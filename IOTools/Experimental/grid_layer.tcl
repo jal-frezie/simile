@@ -31,6 +31,7 @@ itcl::class similescript::$newLayerClass {
 	    set useNodes($winId,yoff) 0
 	    set useNodes($winId,xscale) 1
 	    set useNodes($winId,yscale) 1
+	    set useNodes($winId,hex) 0
 	    set useNodes($winId,title) [Identify]
 	    set useNodes($winId,editMode) 0
 	    set useNodes($winId,legendSide) n
@@ -59,8 +60,12 @@ itcl::class similescript::$newLayerClass {
     }
 
     public method AddVariable {} {
-	set useNodes($winId,ms) [$winId create text 0 0 -anchor nw -text \
-				     [tr. "Click on the variable whose values are to be displayed on the grid."]]
+	set vx [$winId canvasx 0]
+	set vy [$winId canvasy 0]
+	label $winId.ms -bg white -text \
+	    [tr. "Click on the variable whose values are to be displayed on the grid."]
+	$winId create window $vx $vy -window $winId.ms -anchor nw \
+	    -tag [namespace tail $this].legend
 	$modelInst GrabClicks $this
 	set useNodes($winId,state) display0
     }
@@ -79,12 +84,15 @@ itcl::class similescript::$newLayerClass {
 		    if {[IsTwoDee $winId $useNodes($winId,tgtDims)]} {
 			set useNodes($winId,colvals) USE_INDICES
 			set parentPath [join [lrange [split $path /] 0 end-1] /]
-			set useNodes($winId,hex) \
-			    [expr {[$modelInst GetModelEval $parentPath] eq \
-				       "HONEYCOMB"}]
+			if {[$modelInst GetModelEval $parentPath] eq \
+				"HONEYCOMB"} {
+			    set useNodes($winId,hex) 1
+			    set useNodes($winId,xscale) 1.7320508
+			    set useNodes($winId,yscale) 1.5
+			}
 			FinishClicking
 		    } else {
-			$winId itemconfigure $ useNodes($winId,ms)-text "Now click on a variable giving the column IDs."
+			$winId.ms configure -text "Now click on a variable giving the column IDs."
 			set useNodes($winId,state) display1
 		    }
 		} display1 {
@@ -94,16 +102,15 @@ itcl::class similescript::$newLayerClass {
 		}
 	    }
 	} else {
-            $ms configure -text \
+            $winId.ms configure -text \
 		"This component does not have a value; please choose a compartment, variable or flow."
         }
     }
    
     public method FinishClicking {} {
-	$winId delete $useNodes($winId,ms)
-	unset useNodes($winId,ms)
+	$winId delete [namespace tail $this].legend
+	destroy $winId.ms
 	$modelInst ReleaseClicks
-	pack forget $winId.msg
 	set useNodes($winId,state) displaying
 	Display 0 0 0
     }

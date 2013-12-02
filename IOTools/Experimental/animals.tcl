@@ -58,9 +58,12 @@ Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
 	set stm [open $cnvFile r]
 	set useNodes(cmds) [read $stm]
 	close $stm
-	set useNodes(ms) [$winId create text 0 0 -anchor nw -text \
-				     [tr. "Click on the array value \
-                    representing the X coordinates of the individuals."]]
+	set vx [$winId canvasx 0]
+	set vy [$winId canvasy 0]
+	label $winId.ms -bg white -text \
+	    [tr. "Click on the variable whose values are to be displayed on the grid."]
+	$winId create window $vx $vy -window $winId.ms -anchor nw \
+	    -tag [namespace tail $this].legend
 	$modelInst GrabClicks $this
 	set useNodes(state) xcoord
     }
@@ -72,29 +75,29 @@ Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
         if {[string compare $testResult novalue]} {
             switch $useNodes(state) {
 		xcoord {
-		    $winId itemconfigure $useNodes(ms) -text "Now click on the value representing the Y coordinates."
+		    $winId.ms configure -text "Now click on the value representing the Y coordinates."
 		    set useNodes(xcoord) $path
 		    set useNodes(state) ycoord
 		} ycoord {
-		    $winId itemconfigure $useNodes(ms) -text "Now select a value to determine the size of the animals."
+		    $winId.ms configure -text "Now select a value to determine the size of the animals."
 		    set useNodes(ycoord) $path
 		    set useNodes(state) sizeval
 		} sizeval {
-		    $winId itemconfigure $useNodes(ms) -text "Now select a value to determine their direction of movement."
+		    $winId.ms configure -text "Now select a value to determine their direction of movement."
 		    set useNodes(size) $path
 		    set useNodes(title) "[file tail $path] (moving $useNodes(title))"
 		    set useNodes(state) dirval
 		} dirval {
-		    $winId delete $useNodes(ms)
+                    $winId delete [namespace tail $this].legend
+	            destroy $winId.ms
 		    $modelInst ReleaseClicks
 		    set useNodes(dir) $path
 		    set useNodes(state) displaying
-		    unset useNodes(ms)
 		    Display 0 0 0
 		}
 	    }
 	} else {
-            $ms configure -text \
+            $winIdms configure -text \
 		"This component does not have a value; please choose a compartment, variable or flow."
         }
     }

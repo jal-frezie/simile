@@ -17,6 +17,7 @@ itcl::class similescript::$newLayerClass {
     } {
 	namespace import -force ::maptools2::*
 	array set transform [list xzoom $xzoom yzoom $yzoom]
+	set useNodes($winId,stipple) none
 	if {[string length $state]} { ;# we are restoring 
 	    regsub -all /WIN/ $state $winId restoreString
 	    array set useNodes $restoreString
@@ -58,8 +59,13 @@ itcl::class similescript::$newLayerClass {
     }
 
     public method AddVariable {} {
-	set useNodes($winId,ms) [$winId create text 0 0 -anchor nw -text \
-				     [tr. "Click on a value to determine the colour of the polygons."]]
+	
+	set vx [$winId canvasx 0]
+	set vy [$winId canvasy 0]
+	label $winId.ms -bg white -text \
+	    [tr. "Click on a value to determine the colour of the polygons."]
+	$winId create window $vx $vy -window $winId.ms -anchor nw \
+	    -tag [namespace tail $this].legend
 	$modelInst GrabClicks $this
 	set useNodes($winId,state) sizeval
     }
@@ -71,7 +77,7 @@ itcl::class similescript::$newLayerClass {
         if {[string compare $testResult novalue]} {
             switch $useNodes($winId,state) {
 		sizeval {
-		    $winId itemconfigure $useNodes($winId,ms) -text "Now select the array value \
+		    $winId.ms configure -text "Now select the array value \
                     representing the X coordinates of the polygon vertices."
 		    set useNodes($winId,color) $path
 		    set useNodes($winId,title) "[file tail $path] (polygon diagram)"
@@ -84,7 +90,7 @@ itcl::class similescript::$newLayerClass {
 		    }
 		}
 		xcoord {
-		    $winId itemconfigure $useNodes($winId,ms) -text "Now click on the value representing the Y coordinates."
+		    $winId.ms configure -text "Now click on the value representing the Y coordinates."
 		    set useNodes($winId,xcoord) $path
 		    set useNodes($winId,state) ycoord
 		} ycoord {
@@ -94,19 +100,19 @@ itcl::class similescript::$newLayerClass {
 		}
 	    }
 	} else {
-            $ms configure -text \
+            $winId.ms configure -text \
 		"This component does not have a value; please choose a compartment, variable or flow."
         }
     }
    
     method FinishClicking {} {
-	$winId delete $useNodes($winId,ms)
+	$winId delete [namespace tail $this].legend
+	destroy $winId.ms
 	$modelInst ReleaseClicks
 	SetColourMap useNodes $winId \
 	    [GetIdFromCaptionPath $useNodes($winId,color)]
 	SetColours useNodes $winId
 	set useNodes($winId,state) displaying
-	unset useNodes($winId,ms)
 	ReTile
     }
 
@@ -145,6 +151,7 @@ itcl::class similescript::$newLayerClass {
 	$winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %X %Y \
 					\[$this CurrentPopup\]"
 	$winId bind $myTag <Leave> RemovePopup
+	$this Restipple
     }
 
     public method Display {time dispInt step} {
@@ -190,6 +197,13 @@ itcl::class similescript::$newLayerClass {
 	    pack $coloursF.${ptId}colourF.colF -side right -padx 10
         }
         pack $coloursF -padx 10 -pady 10 -fill x
+        
+        set stippleF [labelframe $dlg.stipple -text "Stipple pattern"]
+	pack [ttk::combobox $dlg.stipple.cbox \
+		  -values {none gray75 gray50 gray25 gray12} \
+		  -textvar [itcl::scope useNodes($winId,stipple)]] 
+	bind $dlg.stipple.cbox <<ComboboxSelected>> [list $this Restipple]
+        pack $stippleF -padx 10 -pady 10 -fill x
         
         set borderF [labelframe $dlg.border -text "Borders"]
         pack [ttk::labelframe $borderF.widF -text "Width"] -fill x  -padx 10 -pady 5
@@ -367,6 +381,15 @@ itcl::class similescript::$newLayerClass {
 #puts "Colour for $value is $colNum (range $useNodes($winId,range))"
     }
     
+    method Restipple {} {
+	if {$useNodes($winId,stipple) eq "none"} {
+	    $winId itemconfig [namespace tail $this].main -stipple {}
+	} else {
+	    $winId itemconfig [namespace tail $this].main \
+		-stipple $useNodes($winId,stipple)
+	}
+    }
+
     public method IdToTag {ids} {
 	set result {}
 	foreach id $ids {
