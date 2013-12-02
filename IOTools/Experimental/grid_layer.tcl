@@ -78,6 +78,10 @@ itcl::class similescript::$newLayerClass {
 		    set useNodes($winId,tgtDims) [$modelInst GetModelDims $path]
 		    if {[IsTwoDee $winId $useNodes($winId,tgtDims)]} {
 			set useNodes($winId,colvals) USE_INDICES
+			set parentPath [join [lrange [split $path /] 0 end-1] /]
+			set useNodes($winId,hex) \
+			    [expr {[$modelInst GetModelEval $parentPath] eq \
+				       "HONEYCOMB"}]
 			FinishClicking
 		    } else {
 			$winId itemconfigure $ useNodes($winId,ms)-text "Now click on a variable giving the column IDs."
@@ -166,7 +170,8 @@ itcl::class similescript::$newLayerClass {
 	set useNodes(temp,curValues) \
 	    [lindex [$modelInst GetValue $useNodes($winId,color)] 0]
 	set node [GetIdFromCaptionPath $useNodes($winId,color)]
-	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
+	if {$useNodes($winId,hex) || \
+		[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
 		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
 			$useNodes($winId,max)} rawBinary]} {
 	    DrawGrid7
@@ -203,29 +208,38 @@ itcl::class similescript::$newLayerClass {
     public method DrawGrid7 {} {
 	set ncol $useNodes($winId,ncol)
 	set nrow $useNodes($winId,nrow)
-        set allData {}
-	array unset useNodes $winId,values,*
-	set useNodes($winId,values) 1
 	set data $useNodes(temp,curValues)
 	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
-#	    set allData [lrepeat $nrow [lrepeat $ncol gray]]
-
+	    set colShift -1
+	    if {$useNodes($winId,hex)} {
+		incr colShift $ncol
+	    }
+	    $this.original blank
 	    foreach {y row} $data {
+		set tgtRow [expr {$nrow-$y}]
 		foreach {x celval} $row {
-		    lset allData [list $nrow-$y $x-1] [ForGrid $celval]
-		    set useNodes($winId,values,$y,$x) \
-			[list [list $y $x] $celval]
+		    $this.original put [ForGrid $celval] \
+			-to [incr x $colShift] $tgtRow
+		}
+		if {$useNodes($winId,hex)} {
+		    set xShift [expr {$y%2}]
+		    $this.original copy $this.original -from $ncol $tgtRow \
+			[expr {2*$ncol}] [expr {$tgtRow+1}] \
+			-to $xShift $tgtRow -zoom 2 1 -compositingrule set
 		}
 	    }
+	    $this.original config -height $nrow \
+		-width [expr {$useNodes($winId,hex)?2*$ncol+1:$ncol}] \
+		
 	} else {
 	    set values [Flatten $data]
         
+	    set allData {}
 	    for {set row 1} {$row<=$nrow} {incr row} {
 		set rowData($row) {}
 		for {set col 1} {$col<=$ncol} {incr col} {
 		    set cell [expr ($row-1)*$ncol+$col-1]
 		    set celval [lindex [lindex $values $cell] 1]
-		    set useNodes($winId,values,$row,$col) [lindex $values $cell]
 		    set length [llength $celval]
                 
 		    if {$length} {
@@ -238,9 +252,9 @@ itcl::class similescript::$newLayerClass {
 	    for {set row $nrow} {$row>=1} {incr row -1} {
 		lappend allData $rowData($row)
 	    }
+	    $this.original put $allData
+	    PutSize $this.original
         }
-	$this.original put $allData
-	PutSize $this.original
     }
 
     public method ForGrid {celval} {
@@ -287,7 +301,7 @@ itcl::class similescript::$newLayerClass {
 	set stickIt [list [expr {$useNodes($winId,xoff)*$xzoom}] \
 			 [expr {-$useNodes($winId,yoff)*$yzoom}]]
 	set tmpImg [GrowImage $this.original \
-	    [expr {round([$this.original cget -width]*$useNodes($winId,xscale)*$xzoom)}] \
+	    [expr {round([$this.original cget -width]*$useNodes($winId,xscale)*$xzoom)/(1+$useNodes($winId,hex))}] \
 	    [expr {round([$this.original cget -height]*$useNodes($winId,yscale)*$yzoom)}]]
 	set myTag [namespace tail $this].main
 	if {[catch {$this.derived blank}]} { ;# not yet exist

@@ -367,8 +367,10 @@ proc GrowImage {fCol mw mh} {
 	    # last sl will always be srcWidth-srcRow, likewise st
 # puts "src area $sl $st [expr {$sl+$srcCol}] \
 # 		[expr {$st+$srcRow}]"
+	    spare1 blank
 	    spare1 copy $fCol -from $sl $st [expr {$sl+$srcCol}] \
 		[expr {$st+$srcRow}] -zoom [lindex $xrat 0] 1 -shrink
+	    spare2 blank
 	    spare2 copy spare1 -zoom 1 [lindex $yrat 0] -subsample [lindex $xrat 1] 1 -shrink
 	    spare3 copy spare2 -to $ml $mt -subsample 1 [lindex $yrat 1]
 	}    

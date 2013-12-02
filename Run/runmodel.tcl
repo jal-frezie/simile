@@ -35,7 +35,7 @@ proc MakeHelperMenu {} {
 # If it is, do not load IO tools again as redefinition errors will arise
     if {[file exists $ioDir] && ![file exists ../version]} {
 	cd $ioDir
-	AddHelperSublist $fm.sub2 $lm.sub2 helper "Local" l
+	AddHelperSublist $fm.sub2 $lm.sub2 "Local" l
      }
     cd $oldDir
     MakeScriptHelpers

@@ -62,22 +62,23 @@ itcl::class similescript::$newHelperClass {
 	if {[string length $state]} { ;# we are restoring 
 	    set State $state ;# keep it local
 	    # local version probably NOT want to be XML...unlike saved...
-	    foreach geomer {offx offy zoomx zoomy} val $state {
+	    foreach geomer {offx offy zoomx zoomy bounds} val $state {
 		set transform($geomer) $val
 	    }
+	    $vp.c configure -scrollregion $transform(bounds)
 	    set serialActive 0
-	    foreach {layerType layerState} [lrange $state 4 end] {
+	    foreach {layerType layerState} [lrange $state 5 end] {
 		NewLayer $layerType $layerState
 	    }
-	    set bounds  [BboxForGroup $vp.c main]
-	    $vp.c configure -scrollregion $bounds
-	    foreach {l t r b} $bounds {
+	    foreach {l t r b} $transform(bounds) {
 		$vp.c xview moveto [expr {($transform(offx)-$l)*1.0/($r-$l)}]
 		$vp.c yview moveto [expr {($transform(offy)-$t)*1.0/($b-$t)}]
 	    }
 	    update
 	    PosnLegends
 	} else {
+	    $vp.c config -scrollregion \
+		[list 0 0 [winfo width $winId] [winfo height $winId]]
 	    array set transform {offx 0 offy 0 zoomx 1 zoomy 1}
 	    # new instance so request data from model
 	    pack [message $winId.message \
@@ -161,7 +162,6 @@ itcl::class similescript::$newHelperClass {
 	set layerObj [$type $id $modelInst $this \
 			  $transform(zoomx) $transform(zoomy) $state]
 	set cnv $winId.viewport.c
-	$cnv configure -scrollregion [$cnv bbox $layerObj.main]
 	pack forget $winId.message
 	set planes [linsert $planes end-[expr {$serialActive/2}] $layerObj]
 	$winId.add insert $serialActive cascade -label [$layerObj GetTitle] \
@@ -226,7 +226,8 @@ itcl::class similescript::$newHelperClass {
     public method PrepareSaveString {} {
 	set id $winId.viewport.c
 	set State [list [$id canvasx 0] [$id canvasy 0] \
-		       $transform(zoomx) $transform(zoomy)] ;# offset and zoom
+		       $transform(zoomx) $transform(zoomy) \
+		       [$id cget -scrollregion]] ;# offset zoom and bounds
 	foreach layer $planes {
 	    $layer PrepareSaveString
 	    lappend State [$layer info class] [$layer cget -State]
