@@ -199,6 +199,30 @@ itcl::class similescript::$newHelperClass {
 	    -menu .layers.sub2
     }
 
+    public method MoveUpALevel {} {
+	set oldIdx [expr {[llength $planes]-1-$serialActive/2}]
+	set layerObj [lindex $planes $oldIdx]
+	set planes [linsert [lreplace $planes $oldIdx $oldIdx] $oldIdx+1 \
+			$layerObj]
+	set subbedObj [lindex $planes $oldIdx]
+	$winId.viewport.c raise $layerObj.main $subbedObj.main
+	$winId.add entryconfig $serialActive -label [$subbedObj GetTitle]
+	$winId.add entryconfig [expr {$serialActive-2}] \
+	    -label [$layerObj GetTitle]
+    }
+
+    public method MoveDownALevel {} {
+	set oldIdx [expr {[llength $planes]-1-$serialActive/2}]
+	set layerObj [lindex $planes $oldIdx]
+	set planes [linsert [lreplace $planes $oldIdx $oldIdx] $oldIdx-1 \
+			$layerObj]
+	set subbedObj [lindex $planes $oldIdx]
+	$winId.viewport.c lower $layerObj.main $subbedObj.main
+	$winId.add entryconfig $serialActive -label [$subbedObj GetTitle]
+	$winId.add entryconfig [expr {$serialActive+2}] \
+	    -label [$layerObj GetTitle]
+    }
+
     public method DeleteCurrent {} {
 	set oldIdx end-[expr {$serialActive/2}]
 	itcl::delete object [lindex $planes $oldIdx]
