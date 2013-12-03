@@ -65,7 +65,7 @@ itcl::class similescript::$newLayerClass {
 	label $winId.ms -bg white -text \
 	    [tr. "Click on a value to determine the colour of the polygons."]
 	$winId create window $vx $vy -window $winId.ms -anchor nw \
-	    -tag [namespace tail $this].legend
+	    -tag instruct
 	$modelInst GrabClicks $this
 	set useNodes($winId,state) sizeval
     }
@@ -90,7 +90,7 @@ itcl::class similescript::$newLayerClass {
 		    }
 		}
 		xcoord {
-		    $winId.ms configure -text "Now click on the value representing the Y coordinates."
+		    $winId.ms configure -text "Now click on the value representing the Y coordinatesl."
 		    set useNodes($winId,xcoord) $path
 		    set useNodes($winId,state) ycoord
 		} ycoord {
@@ -106,7 +106,7 @@ itcl::class similescript::$newLayerClass {
     }
    
     method FinishClicking {} {
-	$winId delete [namespace tail $this].legend
+	$winId delete instruct
 	destroy $winId.ms
 	$modelInst ReleaseClicks
 	SetColourMap useNodes $winId \
@@ -160,9 +160,25 @@ itcl::class similescript::$newLayerClass {
 		$useNodes($winId,displayUpdate)} {
 	    set useNodes(temp,curValues) \
 		[lindex [$modelInst GetValue $useNodes($winId,color)] 0]
-	    DoForData {} ColourPolygon $useNodes(temp,curValues)
+#	    DoForData {} ColourPolygon $useNodes(temp,curValues)
+# very slow because needs to search for every polygon by tag
+	    foreach tgt [$winId find withtag [namespace tail $this].main] \
+		key [Flatten2D $useNodes(temp,curValues)] {
+		    $winId itemconfigure $tgt -fill [ColourFor $winId $key]
+		}
 	}
 	$winId raise [namespace tail $this].main
+    }
+
+    method Flatten2D {tree} {
+	if {[llength $tree]==1} {
+	    return $tree
+	} else {
+	    foreach {ind subtree} $tree {
+		eval {lappend vine} [Flatten2D $subtree] ;# fastest?
+	    }
+	    return $vine
+	}
     }
 
     public method ZoomTo {xzoom yzoom} {
@@ -322,7 +338,7 @@ itcl::class similescript::$newLayerClass {
 	}
 
 	set newColour [ColourFor $winId $key]
-	set tgt [$winId find withtag [IdToTag $inds]] ;# faster?
+	set tgt [$winId find withtag [IdToTag $inds]] ;# faster? er, no
 	$winId itemconfigure $tgt -fill $newColour
 #	CanvasBindPopup $winId $tgt [list Index $inds Value \
 #			 [TransValue $useNodes($winId,dataETs) $key]]

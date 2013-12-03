@@ -65,7 +65,7 @@ itcl::class similescript::$newLayerClass {
 	label $winId.ms -bg white -text \
 	    [tr. "Click on the variable whose values are to be displayed on the grid."]
 	$winId create window $vx $vy -window $winId.ms -anchor nw \
-	    -tag [namespace tail $this].legend
+	    -tag instruct
 	$modelInst GrabClicks $this
 	set useNodes($winId,state) display0
     }
@@ -108,7 +108,7 @@ itcl::class similescript::$newLayerClass {
     }
    
     public method FinishClicking {} {
-	$winId delete [namespace tail $this].legend
+	$winId delete instruct
 	destroy $winId.ms
 	$modelInst ReleaseClicks
 	set useNodes($winId,state) displaying

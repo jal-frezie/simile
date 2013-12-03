@@ -77,8 +77,6 @@ itcl::class similescript::$newHelperClass {
 	    update
 	    PosnLegends
 	} else {
-	    $vp.c config -scrollregion \
-		[list 0 0 [winfo width $winId] [winfo height $winId]]
 	    array set transform {offx 0 offy 0 zoomx 1 zoomy 1}
 	    # new instance so request data from model
 	    pack [message $winId.message \
@@ -105,6 +103,7 @@ itcl::class similescript::$newHelperClass {
 	    foreach layer $planes {
 		eval {$vp.c move $layer.legend} $tail
 	    }
+	    eval {$vp.c move instruct} $tail	    
 	}
     }
 
@@ -125,6 +124,7 @@ itcl::class similescript::$newHelperClass {
 	foreach layer $planes {
 	    eval {$cnv move $layer.legend} $tail
 	}
+	eval {$cnv move instruct} $tail
 	$cnv $side moveto $newFr
     }
 
@@ -250,6 +250,7 @@ itcl::class similescript::$newHelperClass {
 	    $winId.viewport.c raise $plane.legend
 	}
 	$winId.viewport.c raise annotation
+	$winId.viewport.c raise instruct
     }
 
     public method PrepareSaveString {} {
@@ -288,6 +289,7 @@ itcl::class similescript::$newHelperClass {
 	    $id move $layer.legend \
 		[expr {$middleX-$oldMidX}] [expr {$middleY-$oldMidY}]
 	}
+	$id move instruct [expr {$middleX-$oldMidX}] [expr {$middleY-$oldMidY}]
 	$id scale annotation 0 0 $fx $fy
 # finally scroll so old middle is still in middle
 # 	foreach {l t r b} [BboxForGroup $id main] {}
@@ -342,6 +344,9 @@ itcl::class similescript::$newHelperClass {
 	set b 0
 	set w [winfo width $id]
 	set h [winfo height $id]
+	if {![llength [$id cget -scrollregion]]} {
+	    $id configure -scrollregion [list 0 -$h $w 0]
+	}
 
 	foreach plane $planes {
 	    $id delete $plane.legend
