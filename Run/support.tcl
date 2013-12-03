@@ -1592,7 +1592,7 @@ proc make_fixed_nbr_list {parentTxt shape rows columns rowId columnId} {
     for {set seq 7} {$seq>=0} {incr seq -1} {
 	if {$seq%4 == 4-2*$shape} continue
 	set oRow [expr {$rowId+[lindex $offs $seq 0]}]
-	set oCol [expr {$colId+[lindex $offs $seq 1]}]
+	set oCol [expr {$columnId+[lindex $offs $seq 1]}]
 	if {$oRow>0 && $oRow<=$rows && $oCol>0 && $oCol<=$columns} {
 	    set tempIntSat [nbrlistmaker ${parent}::Nbrlist<$idx>]
 	    set ${tempIntSat}::instanceid $idx
