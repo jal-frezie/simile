@@ -1916,7 +1916,7 @@ char* ModelServer::nodeModelAndId(char* seeknode) {
 
   //sprintf(globMess, "Looking for %s", seeknode);
   //showMess(globMess);
-  for (count = 1; nodecount>count; ++count) {
+  for (count = 0; nodecount>count; ++count) {
     make_full_caption(count, test, dims, types);
     //sprintf(globMess, "Got base %s", test);
     //showMess(globMess);
