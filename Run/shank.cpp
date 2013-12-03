@@ -1988,7 +1988,7 @@ node_data_line* ModelServer::SearchInfo(int lineNum, char* caption,
 	usedTypes[usedCount++] = &boolDimType;
 	dims[dimCount] = 2;
       } else if (dims[dimCount] == RECT_NBR) {
-	usedTypes[usedCount++] = &hexkeyType;
+	usedTypes[usedCount++] = &rectkeyType;
 	dims[dimCount] = 8;
       } else if (dims[dimCount] == HEX_NBR) {
 	usedTypes[usedCount++] = &hexkeyType;
