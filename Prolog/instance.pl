@@ -423,7 +423,7 @@ is_lookup_cond(GroundExpr, UseExpr) :-
 
 % use of 'choose' is arbitrary, it has the right unit tolerance
 havify(index(1) is Val, 1, Val).
-havify(index(N) is Val && Inner, N, choose('"true"', Val, Inners)) :-
+havify(index(N) is Val and Inner, N, choose('"true"', Val, Inners)) :-
 	M is N-1,
 	havify(Inner, M, Inners).
 

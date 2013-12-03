@@ -664,7 +664,7 @@ make_intermediates(
 		[RUnits | ArgTemplate] = [cond_spec, cond_spec];
 	     member(Functor, [any, all]), !,
 		[RUnits | ArgTemplate] = [boolean, boolean];	
-		[RUnits | ArgTemplate] = [real, real]),
+		[RUnits | ArgTemplate] = [int, int]),
 	    append(NowBuilding, DestPath, ReadyContext),
 	    propagate_units(Source, RUnits, ArgTemplate, [ArgUnits], Units)),
 	get_dims_from_loops(TailLoops, TotalDims, LoopInds),
@@ -1716,11 +1716,11 @@ operator(>=, boolean, [Any, Any]) :- value(Any).
 operator(<>, boolean, [Any, Any]) :- value(Any).
 
 operator('&&', boolean, [boolean, boolean]).
-operator('&&', cond_spec, [cond_spec, cond_spec]).
 operator('||', boolean, [boolean, boolean]).
 operator(',', boolean, [boolean, boolean]).
 operator(';', boolean, [boolean, boolean]).
 operator(and, boolean, [boolean, boolean]).
+operator(and, cond_spec, [cond_spec, cond_spec]).
 operator(or, boolean, [boolean, boolean]).
 operator(xor, boolean, [boolean, boolean]).
 operator(not, boolean, [boolean]).
