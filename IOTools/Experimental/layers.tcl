@@ -161,9 +161,14 @@ itcl::class similescript::$newHelperClass {
 	set id [UniqueId layer]
 	set layerObj [$type $id $modelInst $this \
 			  $transform(zoomx) $transform(zoomy) $state]
-	set cnv $winId.viewport.c
 	pack forget $winId.message
-	set planes [linsert $planes end-[expr {$serialActive/2}] $layerObj]
+	set putBelow [expr {[llength $planes]-$serialActive/2}]
+# cannot use 'end' cos it means different things for lindex and linsert!
+	set aboveNew [lindex $planes $putBelow]
+	if {$state eq {} && $aboveNew ne {}} {
+	    $winId.viewport.c lower $layerObj.main $aboveNew.main
+	}
+	set planes [linsert $planes $putBelow $layerObj]
 	$winId.add insert $serialActive cascade -label [$layerObj GetTitle] \
 	    -menu $winId.edit
 	$winId.add insert $serialActive cascade -label [tr. "New layer here"] \

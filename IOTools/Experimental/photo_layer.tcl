@@ -19,15 +19,21 @@ itcl::class similescript::$newLayerClass {
 	    set State $state ;# keep it local
 	    # format of state is offx offy zoomx zoomy pngdata
 	    image create photo $this.orig -data [lindex $State 5]
+	    PutSize $this.orig
 	} else {
 	    # new instance so request data from model
 	    set photoFile [ChooseFile aerial.gif "Image for base photo:" 0 \
 			       [GetNode]]
 	    image create photo $this.orig -file $photoFile
-	    set State [list 0 0 1 1 [file tail $photoFile] \
+	    PutSize $this.orig
+# scale down image if would be very large
+	    set scale 1.0
+	    while {[$this.orig cget -width]*$xzoom*$scale>1000} {
+		set scale [expr {$scale/10}]
+	    }
+	    set State [list 0 0 $scale $scale [file tail $photoFile] \
 			   [$this.orig data -format png]]
 	}
-	PutSize $this.orig
 #	puts [$this.orig configure]
 	ZoomTo $xzoom $yzoom
     }
@@ -39,18 +45,18 @@ itcl::class similescript::$newLayerClass {
 
     public method ZoomTo {xzoom yzoom} {
 	array set transform [list xzoom $xzoom yzoom $yzoom]
-	set stickIt [list [expr {[lindex $State 0]*$xzoom}] \
-			 [expr {[lindex $State 1]*$yzoom}]]
+	set stickX [expr {[lindex $State 0]*$xzoom}]
+	set stickY [expr {[lindex $State 1]*$yzoom}]
 	set tmpImg [GrowImage $this.orig \
-	    [expr {int([$this.orig cget -width]*[lindex $State 2]*$xzoom)}] \
-	    [expr {int([$this.orig cget -height]*[lindex $State 3]*$yzoom)}]]
+			[expr {int([$this.orig cget -width]*[lindex $State 2]*$xzoom)}] \
+			[expr {int([$this.orig cget -height]*[lindex $State 3]*$yzoom)}]]
 	set myTag [namespace tail $this].main
 	if {[catch {$this.derived blank}]} { ;# not yet exist
 	    image create photo $this.derived
-	    $winId create image $stickIt -anchor sw -image $this.derived \
-						 -tag $myTag
+	    $winId create image $stickX $stickY -anchor sw -tag $myTag \
+						 -image $this.derived
 	} else {
-	    $winId coords [$winId find withtag $myTag] $stickIt
+	    $winId coords [$winId find withtag $myTag] [list $stickX $stickY]
 	}
 	$this.derived copy $tmpImg -shrink
     }
