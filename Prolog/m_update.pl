@@ -1794,8 +1794,8 @@ enum_types_for(Submodel, EnumSpecsInc) :-
 		[build(EnumSpecs), build(EnumTypes)]), !;
 	 EnumSpecs = []),
 	(ready_type(Submodel, RT) ->
-	   member(RT-XType, [rect_grid(R,C)-[rect_nbr,ne,n,nw,e,se,s,sw,w],
-		hex_grid(R,C)-[hex_nbr,'1h','11h','3h','5h','7h','9h']]),
+	   member(RT-XType, [rect_grid(R,C)-[rect_nbr,sw,s,se,w,e,nw,n,ne],
+		hex_grid(R,C)-[hex_nbr,'7h','5h','9h','3h','11h','1h']]),
 	   EnumSpecsInc = [XType | EnumSpecs];
 	 EnumSpecsInc = EnumSpecs).
 

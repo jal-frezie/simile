@@ -716,8 +716,8 @@ enum_type_ref(Ref, Model, ETStyle, Value, Units, ETSpec) :-
 	    Grid has_class_refinement multiplication_spec of MS,
 	    member(interpretation=Form, MS),
 	    (member(Form-Pts-Units-ETSpec,
-		   [rect_grid(R,C)-[ne,n,nw,e,se,s,sw,w]-a(rect_nbr)-'RECT_NBR',
-		    hex_grid(R,C)-['1h','11h','3h','5h','7h','9h']-a(hex_nbr)-'HEX_NBR']),
+		   [rect_grid(R,C)-[sw,s,se,w,e,nw,n,ne]-a(rect_nbr)-'RECT_NBR',
+		    hex_grid(R,C)-['7h','5h','9h','3h','11h','1h']-a(hex_nbr)-'HEX_NBR']),
 	        nth(Value, Pts, BareRef);
 	     member(Form-BareRef-Value-Units-ETSpec,
 		    [rect_grid(R,C)-rect_nbr-8-n(rect_nbr)-'RECT_NBR',

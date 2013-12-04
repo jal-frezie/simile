@@ -1557,23 +1557,20 @@ proc fill_nbr_ptrs {parentTxt trailTxt trailPt shape trailLen} {
     upvar 1 $trailTxt trail
 
 # shape is 0 for rect, 1 for hex odd row (to right), 2 for even row
-# old system, idxs are in list order
-#   set idx [expr {$shape?6:8}]
-    for {set off -1} {$off<3} {incr off} {
+    set idx 0
+# nbr refs are added to the list in order, but bottom up so list has them
+# in reverse order -- hence search can break if too-low index found...
+    for {set off 0} {$off<4} {incr off} {
 	if {$off==4-2*$shape} continue
-	set cur_nbr $trail([expr {($trailPt+$off)%$trailLen}])
+	incr idx
+	set cur_nbr $trail([expr {($trailPt+($off==3?-1:$off))%$trailLen}])
 	if {$cur_nbr ne "NULL"} {
-# new system, idxs are in neighbour index order
-	    set idx [expr {2*abs($off)-$off+($off<4-2*$shape)}]
 	    set tempIntSat [nbrlistmaker ${parent}::Nbrlist<$idx>]
 	    set ${tempIntSat}::instanceid $idx
 	    set ${tempIntSat}::payload $cur_nbr
 	    set ${tempIntSat}::next [set ${parent}::nbrs]
 	    set ${parent}::nbrs ${tempIntSat}
 
-# old system
-# 	    set remIdx [expr {(11-$idx)%($shape?3:4)+1}] ;# don't ask
-# new system
 	    set remIdx [expr {($shape?7:9)-$idx}]
 	    set tempIntSat [nbrlistmaker ${cur_nbr}::Nbrlist<$remIdx>]
 	    set ${tempIntSat}::instanceid $remIdx
@@ -1581,8 +1578,6 @@ proc fill_nbr_ptrs {parentTxt trailTxt trailPt shape trailLen} {
 	    set ${tempIntSat}::next [set ${cur_nbr}::nbrs]
 	    set ${cur_nbr}::nbrs ${tempIntSat}
 	}
-# old system
-# 	incr idx -1
     }
     set trail([expr {$trailPt%$trailLen}]) $parent
 }
@@ -1590,26 +1585,27 @@ proc fill_nbr_ptrs {parentTxt trailTxt trailPt shape trailLen} {
 proc make_fixed_nbr_list {parentTxt shape rows columns rowId columnId} {
     upvar 1 $parentTxt parent
 
-    set offs {{1 1} {1 0} {1 -1} {0 1} {-1 1} {-1 0} {-1 -1} {0 -1}}
     if {$shape==1 || $rowId%2==1} {
 	incr shape -1 ;# shape now as in last proc
     }
-# order of addition is chosen to match what happens with vm grid
+# order of addition is chosen to match what happens above with vm grid
     set ${parent}::nbrs 0
-    set idx [expr {$shape?6:8}]
-    for {set seq 7} {$seq>=0} {incr seq -1} {
-	if {$seq%4 == 4-2*$shape} continue
-	set oRow [expr {$rowId+[lindex $offs $seq 0]}]
-	set oCol [expr {$columnId+[lindex $offs $seq 1]}]
-	if {$oRow>0 && $oRow<=$rows && $oCol>0 && $oCol<=$columns} {
-	    set tempIntSat [nbrlistmaker ${parent}::Nbrlist<$idx>]
-	    set ${tempIntSat}::instanceid $idx
-	    set remote [string range $parent 0 [string last < $parent]-1]
-	    set ${tempIntSat}::payload $remote<[list $oRow $oCol]>
-	    set ${tempIntSat}::next [set ${parent}::nbrs]
-	    set ${parent}::nbrs ${tempIntSat}
+    set idx 0
+    for {set rowOff -1} {$rowOff<=1} {incr rowOff} {
+	for {set colOff -1} {$colOff<=1} {incr colOff} {
+	    if {$colOff*(2*$shape-3) == abs($rowOff)} continue
+	    incr idx
+	    set oRow [expr {$rowId+$rowOff}]
+	    set oCol [expr {$columnId+$colOff}]
+	    if {$oRow>0 && $oRow<=$rows && $oCol>0 && $oCol<=$columns} {
+		set tempIntSat [nbrlistmaker ${parent}::Nbrlist<$idx>]
+		set ${tempIntSat}::instanceid $idx
+		set remote [string range $parent 0 [string last < $parent]-1]
+		set ${tempIntSat}::payload $remote<[list $oRow $oCol]>
+		set ${tempIntSat}::next [set ${parent}::nbrs]
+		set ${parent}::nbrs ${tempIntSat}
+	    }
 	}
-	incr idx -1
     }
 }
 
