@@ -1556,25 +1556,33 @@ proc fill_nbr_ptrs {parentTxt trailTxt trailPt shape trailLen} {
     upvar 1 $parentTxt parent
     upvar 1 $trailTxt trail
 
-    set idx [expr {$shape?6:8}]
+# shape is 0 for rect, 1 for hex odd row (to right), 2 for even row
+# old system, idxs are in list order
+#   set idx [expr {$shape?6:8}]
     for {set off -1} {$off<3} {incr off} {
 	if {$off==4-2*$shape} continue
 	set cur_nbr $trail([expr {($trailPt+$off)%$trailLen}])
 	if {$cur_nbr ne "NULL"} {
+# new system, idxs are in neighbour index order
+	    set idx [expr {2*abs($off)-$off+($off<4-2*$shape)}]
 	    set tempIntSat [nbrlistmaker ${parent}::Nbrlist<$idx>]
 	    set ${tempIntSat}::instanceid $idx
 	    set ${tempIntSat}::payload $cur_nbr
 	    set ${tempIntSat}::next [set ${parent}::nbrs]
 	    set ${parent}::nbrs ${tempIntSat}
 
-	    set remIdx [expr {(11-$idx)%($shape?3:4)+1}] ;# don't ask
+# old system
+# 	    set remIdx [expr {(11-$idx)%($shape?3:4)+1}] ;# don't ask
+# new system
+	    set remIdx [expr {($shape?7:9)-$idx}]
 	    set tempIntSat [nbrlistmaker ${cur_nbr}::Nbrlist<$remIdx>]
 	    set ${tempIntSat}::instanceid $remIdx
 	    set ${tempIntSat}::payload $parent
 	    set ${tempIntSat}::next [set ${cur_nbr}::nbrs]
 	    set ${cur_nbr}::nbrs ${tempIntSat}
 	}
-	incr idx -1
+# old system
+# 	incr idx -1
     }
     set trail([expr {$trailPt%$trailLen}]) $parent
 }

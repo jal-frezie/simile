@@ -78,6 +78,7 @@ itcl::class similescript::$newLayerClass {
             switch $useNodes($winId,state) {
 		display0 {
                     set useNodes($winId,color) $path
+		    set useNodes($winId,title) "[file tail $path] (polygon diagram)"
 		    SetColourMap useNodes $winId [GetIdFromCaptionPath $path]
 		    SetColours useNodes $winId
 		    set useNodes($winId,tgtDims) [$modelInst GetModelDims $path]

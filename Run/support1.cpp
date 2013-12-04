@@ -203,24 +203,31 @@ void fill_nbr_ptrs (GridSMClass* parent, GridSMClass* trail[],
 		    int trailPt, int shape, int trailLen) {
   int off, idx;
   // shape is 0 for rect, 1 for hex odd row (to right), 2 for even row
-  idx = shape?6:8;
+  // old system, idxs are in list order
+  //  idx = shape?6:8;
   for (off=-1; off<3; ++off) {
     if (off==4-2*shape) continue;
     GridSMClass* cur_nbr = trail[(trailPt+off)%trailLen];
     if (cur_nbr) {
       nbrlist <GridSMClass> *tempIntSat = new nbrlist <GridSMClass>;
+      // new system, idxs are in neighbour index order
+      idx = 2*abs(off)-off+(off<4-2*shape);
       tempIntSat->instanceid[0] = idx;
       tempIntSat->payload = cur_nbr;
       tempIntSat->next = parent->nbrs;
       parent->nbrs = tempIntSat;
       
       tempIntSat = new nbrlist <GridSMClass>;
-      tempIntSat->instanceid[0] = (11-idx)%(shape?3:4)+1; // don't ask
+      // old system
+  // tempIntSat->instanceid[0] = (11-idx)%(shape?3:4)+1; // don't ask
+      // new system
+      tempIntSat->instanceid[0] = (shape?7:9)-idx;
       tempIntSat->payload = parent;
       tempIntSat->next = cur_nbr->nbrs;
       cur_nbr->nbrs = tempIntSat;
     }  // if (cur_nbr)
-    --idx;
+    // old system
+  // --idx;
   } // for off,
   trail[trailPt%trailLen] = parent;
 }
