@@ -674,8 +674,8 @@ proc CountValues {text} {
         return 1
     } else {
         set tot 0
-        for {set n 1} {$n<$len} {incr n 2} {
-            incr tot [CountValues [lindex $text $n]]
+	foreach {n v} $text {
+            incr tot [CountValues $v]
         }
         return $tot
     }

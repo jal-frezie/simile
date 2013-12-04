@@ -850,9 +850,13 @@ proc UpdateSnap {w label submodels topNode node} {
     $w.text insert end "[clock format [clock seconds]]\n"
     $w.text insert end "Maxlevel=$runState(nst$w)\n"
     # check size
-    set hdl [GetHandle $topNode $node]
-    set count [count_values $hdl]
-    ReleaseHandle $topNode $hdl
+    if {[RunningInC $topNode]} {
+	set hdl [GetHandle $topNode $node]
+	set count [count_values $hdl]
+	ReleaseHandle $topNode $hdl
+    } else {
+	set count [CountValues $runState(val$w)]
+    }
     if {$count>=262144} {
 	$w.text insert end [tr. {There are too many values to display, but you can still save them to file or log them.}]\n
 	return 0
