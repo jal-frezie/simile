@@ -659,14 +659,18 @@ make_intermediates(
 	    append(NowBuilding, DestPath, ReadyContext),
 	    IncrExpr =.. [Functor, Epsilon, Payload], % either arg can vary
 	    Units = ArgUnits;
-	IncrExpr =.. [IncrOp, IncrementRef, FillRef],
+	IncrExpr =.. [IncrOp, IncrementRef, FillRef], wake,
 	    (Functor = any, ArgUnits = cond_spec, !,
 		[RUnits | ArgTemplate] = [cond_spec, cond_spec];
-	     member(Functor, [any, all]), !,
-		[RUnits | ArgTemplate] = [boolean, boolean];	
-		[RUnits | ArgTemplate] = [int, int]),
+	      fn_or_op(IncrOp, _, RUnits, [RUnits | ArgTemplate])),
 	    append(NowBuilding, DestPath, ReadyContext),
-	    propagate_units(Source, RUnits, ArgTemplate, [ArgUnits], Units)),
+	    		    /* first, check my units are right... */
+	    retractall(trying_units(_)),
+	    assert(trying_units(ArgTemplate)),
+	    try_units(RUnits, ArgTemplate, [ArgUnits], Units);
+		 % complain about last set of units tried, = most general?
+	    retract(trying_units(ArgTemplate)),
+	    throw(mismatched_units(Functor, Source, ArgUnits, ArgTemplate))),
 	get_dims_from_loops(TailLoops, TotalDims, LoopInds),
 
 	/* get limit values for least and greatest -- should use limits.h
