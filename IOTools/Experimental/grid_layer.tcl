@@ -98,7 +98,7 @@ itcl::class similescript::$newLayerClass {
 		    }
 		} display1 {
                     NumDistinct $winId $path
-		    set useNodes($winId,colvals) $node
+		    set useNodes($winId,colvals) $path ;# not that it gets used
 		    FinishClicking
 		}
 	    }
@@ -121,8 +121,6 @@ itcl::class similescript::$newLayerClass {
     }
 
     public method IsTwoDee {winId dimList} {
-	variable useNodes
-	
 	foreach dim $dimList {
 	    if {[string is integer -strict $dim]} {
 		foreach space [list useNodes($winId,nrow) \
@@ -138,28 +136,19 @@ itcl::class similescript::$newLayerClass {
     }
 
     public method NumDistinct {winId testPath} {
-	variable useNodes
-        variable colvals
-
-	if {![catch {$modelInst ListDistinctValues $testPath} vList]} {
+	set node [GetIdFromCaptionPath $testPath]
+	if {![catch {ListDistinctModelValues $node} vList]} {
 	    set useNodes($winId,ncol) [llength [lrange $vList 1 end]]
 	    set useNodes($winId,nrow) \
 		[expr {[lindex $vList 0]/$useNodes($winId,ncol)}]
 	} else {
-	    DoForData {} CollectVals [lindex [$modelInst GetValue $testPath] 0]
-	    if {[info exists colvals()]} {
-		unset colvals()
-	    }
+	    set count [DoForData [lindex [$modelInst GetValue $testPath] 0] \
+			   colvals]
 	    set useNodes($winId,ncol) [array size colvals]
 	    set useNodes($winId,nrow) \
-		[expr {[llength $columns]/$useNodes($winId,ncol)}]
+		[expr {$count/$useNodes($winId,ncol)}]
+# puts "prang $vList col $useNodes($winId,ncol) row $useNodes($winId,nrow)"
 	}
-    }
-
-    public method CollectVals {val} {
-	variable colvals
-
-	array set colvals($val) 1
     }
 
     public method Display {time dispInt step} {
@@ -459,18 +448,21 @@ itcl::class similescript::$newLayerClass {
 	Display 0 0 0
     }
 
-    public method DoForData {inds proc key} {
+    public method DoForData {key return} {
+	upvar 1 $return dest
 	if {[llength $key]==1} {
-	    $proc $inds $key
+	    set dest($key) 1
+	    return 1
 	} else {
+	    set tot 0
 	    foreach {ind val} $key {
-		DoForData [concat $inds $ind] $proc $val
+		incr tot [DoForData $val dest]
 	    }
+	    return $tot
 	}
     }
 
      public method ColourFor {winId value} {
-        variable useNodes
         if {[string match nil $value]} {
             set newColour gray
         } elseif {$value<=$useNodes($winId,min)} {
