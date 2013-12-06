@@ -268,8 +268,10 @@ list_local_index_meanings(Submodel, Meanings) :-
 	append(Group1, Group2, Meanings).
 
 get_link_exits(Link, exits(Link, Exits)) :-
-	list_exits_smallest_first(Link, Exits).
-
+	Link is_connector from Source to _,
+	terminates(Link, Dest),
+	get_chain(Source, Dest, _, Exits, _).
+/*
 list_exits_smallest_first(Link, Exits) :-
 	Link is_connector from Go to _,
 	(Go has_class submodel -> Here = [Go];
@@ -277,7 +279,7 @@ list_exits_smallest_first(Link, Exits) :-
 	(sequence(Prev, Link) -> list_exits_smallest_first(Prev, There);
 	 There = []),
 	append(There, Here, Exits).
-
+*/
 list_link_index_meanings(_, [], []).
 
 list_link_index_meanings(DestCapt, [exits(_, []) | Rest], Meanings) :-
