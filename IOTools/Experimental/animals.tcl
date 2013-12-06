@@ -56,12 +56,15 @@ Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
 			       [GetNode]]
 	set useNodes(title) [file rootname [file tail $cnvFile]]s
 	set stm [open $cnvFile r]
-	set useNodes(cmds) [read $stm]
+	regsub -line -all {^\$c create .*$} [read $stm] {& -tag unpositioned} \
+            useNodes(cmds)
 	close $stm
+# now adjust each command to tag the item
+
 	set vx [$winId canvasx 0]
 	set vy [$winId canvasy 0]
 	label $winId.ms -bg white -text \
-	    [tr. "Click on the variable whose values are the X coordinates of the pictograms."]
+	    [tr. "Click on the value representing the X coordinates of the individuals."]
 	$winId create window $vx $vy -window $winId.ms -anchor nw \
 	    -tag instruct
 	$modelInst GrabClicks $this
