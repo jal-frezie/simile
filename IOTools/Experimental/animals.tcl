@@ -61,7 +61,7 @@ Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
 	set vx [$winId canvasx 0]
 	set vy [$winId canvasy 0]
 	label $winId.ms -bg white -text \
-	    [tr. "Click on the variable whose values are to be displayed on the grid."]
+	    [tr. "Click on the variable whose values are the X coordinates of the pictograms."]
 	$winId create window $vx $vy -window $winId.ms -anchor nw \
 	    -tag instruct
 	$modelInst GrabClicks $this
