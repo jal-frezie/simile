@@ -1077,11 +1077,14 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       // now make sure next bit happens
       resetting = 0;
     } 
-    if (resetting < 1 && !errlim)
+    //    if (resetting < 1 && !errlim)
       // resetting or have just done an event -- set a finish time very close 
       // so limit events will be re-predicted before they happen.
       // Not needed if adaptive as it then goes back for missed ones
-      nextSeriesEvt = xtime+minFreq;
+      // -- feature removed as having a few slightly larger errors with 
+      // closely-spaced events is not as bad as always getting an extra step 
+      // at 1e-7 after resetting -- see mmc_twingrid.sml
+      // nextSeriesEvt = xtime+minFreq;
     resetting = big_phase;
 
     while(!made_step) {

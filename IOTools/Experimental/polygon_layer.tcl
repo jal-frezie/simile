@@ -124,8 +124,8 @@ itcl::class similescript::$newLayerClass {
 	if {$inds eq ""} {
 	    return $vals
 	} else {
-	    return [SeekValue [lrange $inds 1 end] \
-			[lindex $vals [lsearch $vals [lindex $inds 0]]+1]]
+	    array set indexed $vals
+	    return [SeekValue [lrange $inds 1 end] $indexed([lindex $inds 0])]
 	}
     }
 	    
