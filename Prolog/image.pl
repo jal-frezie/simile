@@ -1179,7 +1179,7 @@ get_linear(Acw_pt, Cw_pt, Acw_gap, Front_gap, Cw_gap, Mid_pt) :-
     Mid_pt is (Acw_pt*(Front_gap - Cw_gap) + Cw_pt*(Front_gap - Acw_gap)) / (2*Front_gap - Cw_gap - Acw_gap).
 
 /* this version treats each segment as of equal length re whether it
-gets bowtie
+gets bowtie */
 
 get_middle_segment(Type, List, Size, Posn, Bowtie) :-
     length(List, L),
@@ -1189,7 +1189,12 @@ get_middle_segment(Type, List, Size, Posn, Bowtie) :-
     length(Rest, Half_length), !,
     tie_middle(Type, St, Fi, Size, Fract, Bowtie).
 
-this tries to get length of whole flow */
+/* this tries to get length of whole flow. I have gone back to the
+ * above because (a) it seems more sane for the bowtie to keep its
+ * position relative to its segment than to the whole flow, and (b)
+ * when dragging the bowtie, the position it is dragged to is
+ * calculated in that form.
+   
 get_middle_segment(Type, List, Size, Posn, Bowtie) :-
 	find_on_flow(List, Posn, 0, _, [X1, Y1, X2, Y2], Fract),
 	tie_middle(Type, [X2, Y2], [X1, Y1], Size, Fract, Bowtie).
@@ -1210,7 +1215,7 @@ find_on_flow([[X1, Y1], [X2, Y2] | Left], Posn, Passed,
 	    SegWithBowtie = [X1, Y1, X2, Y2],
 	    Fract = FractThisSeg;
 	  true).
-
+*/
 /* tie_middle puts bowtie on a section of flow, oriented crosswise to the axis along which the flow has greatest extent */
 
 tie_middle(Type, [X2, Y2], [X1, Y1], Len, Fract, [NL, NT, NR, NB]) :-

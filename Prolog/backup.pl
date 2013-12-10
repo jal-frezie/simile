@@ -409,7 +409,8 @@ mentions_graphics(Action, Comp) :-
 	(Action = remove(Term);
 	  Action = add(Term)),
 	(Term = graphical_info(Comp, _Attr1, _Val1);
-	  Term = node_refinement(Fn, _Att2r, _Val2),
+	  (Term = node_refinement(Fn, _Att2r, _Val2);
+	   Term = graphical_info(Fn, along, _Val2)), % bowtie fn 'along' flow
 	    get_host(Fn, Comp);
 	  Term = arc_info(Comp, complete, _Val3)).
 % things that make submodel conditional still not handled

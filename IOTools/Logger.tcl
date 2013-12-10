@@ -18,10 +18,11 @@ class similescript::$newHelperClass {
 # perverse extra body because base class constructor has args
 	Helper::constructor $modelInst $winTitle
     } {
+	global SIMILE_PATH
         set useNodes(removeImg) \
-	    [image create photo -file "../Images/Toolbar/remove.gif"]
+	    [image create photo -file "$SIMILE_PATH/Images/Toolbar/remove.gif"]
         set useNodes(multiFileImg) \
-	    [image create photo -file "../Images/Toolbar/multi.gif"]
+	    [image create photo -file "$SIMILE_PATH/Images/Toolbar/multi.gif"]
 	set ::msgs(filemode_$this) "Save as columns in one file"
 	set toolbarItems \
                 [list [list new.gif "Clear" [code $this Clear]] \
