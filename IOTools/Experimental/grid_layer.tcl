@@ -288,6 +288,8 @@ itcl::class similescript::$newLayerClass {
     method CurrentPopup {x y} {
 	set col [expr int(1+([$winId canvasx $x]/$transform(xzoom)-$useNodes($winId,xoff))/$useNodes($winId,xscale))]
 	set row [expr int(1+(-[$winId canvasy $y]/$transform(yzoom)-$useNodes($winId,yoff))/$useNodes($winId,yscale))]
+	set col [min [max $col 1] $useNodes($winId,ncol)]
+	set row [min [max $row 1] $useNodes($winId,nrow)]
 	set value [SeekValue [list $row $col] $useNodes(temp,curValues)]
 	return "Index $row,$col Value $value"
     }
