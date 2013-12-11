@@ -356,11 +356,12 @@ get_unit_conversion(Remote, Local,
 	  find_all_comps(LocalModel, LocalEnv)),
 	get_chain(RemoteModel, LocalModel, TopModel, Exited, Entered),
 	reverse(Exited, BiggestFirst),
+	all(ame_gen, get_all_dims, [build(BiggestFirst), append(DefSubs, [])]),
 	(/* Do not display parameter for input without role reference if there
 	is a reference...as of v5.7, do -- but use in_base or in_assoc as
 	appropriate (keep link id of none). */
 	Index = none,
-	    all(ame_gen, get_all_dims, [build(BiggestFirst), append(Subs, [])]),
+	    Subs = DefSubs,
 	    relation_of_source(Exited, Entered, SourceLocation),
 	    Relation = DefRel;
 	 % this disjunct should give us a role that gets values from
@@ -375,14 +376,13 @@ get_unit_conversion(Remote, Local,
 	        SourceLocation = in_all_bases,
 	        get_unit_conversion(Remote, as_if_in(HierSat), [], HierRelation,
 				    _, in_base);
-	     ready_type(TopModel, rect_grid(_,_)),
-	        Subs = [var],
+	     (ready_type(TopModel, rect_grid(_,_)),
 	        SourceLocation = in_8_nbrs,
 	        Index = -2;
 	     ready_type(TopModel, hex_grid(_,_)),
-	        Subs = [var],
 	        SourceLocation = in_6_nbrs,
-	        Index = -3;
+	        Index = -3),
+	     Subs = [var | DefSubs];
 	      get_all_dims(TopModel, Subs), % disabled for 6.0p1
 	        \+ Subs = [],
 	        SourceLocation = up_hierarchy,

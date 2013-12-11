@@ -88,13 +88,20 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	    make_inds_for(Dims, LocalLoops, Inds),
 	    copy_term(RealPathForm, RealPath),
 
-	    (RealPath = [sm(Name, A, B, C) | Rest],
+% for special roles, change or augment the part of the path common to the
+% dest and source, which should be the model with special properties
+	    (DestRef = elt(DestPathForm, _,_),
+	        suffix(CommonForm, DestPathForm),
+	        append(Tail, Common, RealPath),
+	        \+ (\+ Common = CommonForm), % check they unify but do not do it
+	        Common = [sm(Name, A, B, C) | Rest],
 	        (Location = up_hierarchy,
-		    Path = [sm(outside(Name), A, B, C) | Rest];
+		    append(Tail, [sm(outside(Name), A, B, C) | Rest], Path);
 				% use values from all instances -- need to
 	     % stop loops matching by changing representation of bound
 		  member(Location, [in_8_nbrs, in_6_nbrs]),
-		    Path = [sm(Name, B, _, nbrs), sm(Name, A, B, C) | Rest],
+		    append(Tail, [sm(Name, D, B, nbrs),
+				  sm(Name, A, D, C) | Rest], Path),
 		    suffix(Top, Rest), Top = [sm(_,_,_,_) | _],
 	            BackSwap = values_from_base), !,
 				% wait till all set before use
