@@ -1096,7 +1096,7 @@ proc TclResetModel {node t0 doingRK topPhase} {
             set ts($tweakPhase) $t0
             set dts($tweakPhase) $steps($tweakPhase)
         }
-	set event(predict) [expr {$t0+1e-6*$steps($phasecount)}]
+	set event(predict) [expr {$t0+Inf*$steps($phasecount)}]
 # simulate effect of 'resetting' in c++
     }
     set adapt(curFreq) $steps($phasecount)
@@ -1539,8 +1539,15 @@ proc loses {prob phase} {
 # submodel instances from the list supplied, but since (a) it would also
 # need the parent namespace and (b) they tend to get reused anyway in
 # tcl, I have not bothered.
-
+# Decided to create it anyway in the vain hope of finding double-free errors
+# in the c++
 proc delete_list {list_id} {
+    while {$list_id ne 0} {
+	set next_ptr [set ${list_id}::next]
+	puts "Remove $list_id"
+	namespace delete $list_id
+	set list_id $next_ptr
+    }
 }
 
 proc nbrlistmaker {seq} {
@@ -1555,9 +1562,9 @@ proc nbrlistmaker {seq} {
 proc fill_nbr_ptrs {parentTxt trailTxt trailPt shape trailLen} {
     upvar 1 $parentTxt parent
     upvar 1 $trailTxt trail
-
 # shape is 0 for rect, 1 for hex odd row (to right), 2 for even row
     set idx 0
+    set ${parent}::nbrs 0
 # nbr refs are added to the list in order, but bottom up so list has them
 # in reverse order -- hence search can break if too-low index found...
     for {set off 0} {$off<4} {incr off} {
@@ -1818,6 +1825,12 @@ proc GetTclCompProperty {topNode prop args} {
 		} elseif {[string equal FLAG $aDim]} {
 		    lset dimRefs $count 2
 		    lappend transList [list boolean false true]
+		} elseif {[string equal HEX_NBR $aDim]} {
+		    lset dimRefs $count 6
+		    lappend transList {}
+		} elseif {[string equal RECT_NBR $aDim]} {
+		    lset dimRefs $count 8
+		    lappend transList {}
 		} else {
 		    lappend transList {}
 		}

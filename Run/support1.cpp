@@ -202,6 +202,7 @@ template <class GridSMClass>
 void fill_nbr_ptrs (GridSMClass* parent, GridSMClass* trail[], 
 		    int trailPt, int shape, int trailLen) {
   int off, idx = 0;
+  parent->nbrs = 0; // in case altering membership
   // shape is 0 for rect, 1 for hex odd row (to right), 2 for even row
   // nbr refs are added to the list in order, but bottom up so list has them
   // in reverse order -- hence search can break if too-low index found...

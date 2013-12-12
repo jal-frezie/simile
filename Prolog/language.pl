@@ -712,10 +712,9 @@ we only make the three lines that insert the submodel instance into its linked l
 	excrete(L, assignment, OnPointer=MPTargetRef, Indent2, Stream),
 	excrete(L, assignment, MPTarget=PointerRef, Indent2, Stream),
 	(member(Ready-Shp, [rect_grid(Out, In)-1, hex_grid(Out, In)-2]) ->
-	    make_struct_reference(L, Pointer, nbrs, NbrPointer, _NbrPointerRef),
-	    excrete(L, assignment, NbrPointer=0, Indent2, Stream),
+	    make_struct_reference(L, Pointer, nbrs, _NbrPointer, NbrPointerRef),
 	    excrete(L, else_clause, IsNew, Indent1, Stream),
-	    excrete(L, procedure_call, delete_list(NbrPointer),
+	    excrete(L, procedure_call, delete_list(NbrPointerRef),
 		    Indent2, Stream),
 	    excrete(L, end(cond), IsNew, Indent1, Stream),
 	    TS is In+2,
