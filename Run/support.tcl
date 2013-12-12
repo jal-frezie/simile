@@ -1544,7 +1544,6 @@ proc loses {prob phase} {
 proc delete_list {list_id} {
     while {$list_id ne 0} {
 	set next_ptr [set ${list_id}::next]
-	puts "Remove $list_id"
 	namespace delete $list_id
 	set list_id $next_ptr
     }

@@ -105,18 +105,18 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		    suffix(Top, Rest), Top = [sm(_,_,_,_) | _],
 	            BackSwap = values_from_base), !,
 				% wait till all set before use
-		Wait = true,
+		Wait = [enumerate(Name)],
 	        pointer_from(Path, SmPtr);
 	     % the last bit will stop these roles being used in same eqn as
 	     % assoc roles, which may be sensible
 	     Link = none,
 	        pointer_from(RealPath, SmPtr),
-		Wait = true,
+		Wait = [],
 		Path = RealPath;
 	    member(path_substitution(Base, Assoc, Link), Swaps),
 	        pointer_from(RealPath, SmPtr),
+	        Wait = [],
 		(Location = in_base,
-		    Wait = true,
 /* precaution removed because it only works when getting stuff from looked-up
 		    model, actually you cannot get stuff from elsewhere in
 		assoc model either, and it caused...shall we say...difficulties
@@ -134,7 +134,6 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		    append([Deeper, Assoc, Top], Path),
 		    BackSwap = values_from_base;
 		Location = in_assoc,
-		    Wait = true,
 		    append(Assoc, Top, AssocPath),
 		    append(Deeper, AssocPath, RealPath),
 		    append([Deeper, Base, Top], Path),
@@ -508,10 +507,6 @@ make_intermediates(
 			    
 	    SourceRef = arr(_, Var, _),
 	    SourceLoops = SourceContext,
-	    (var(Wait), !,
-		/* we are in the argument of last(...) so no need to wait for
-		this before using it, just dont do it at init time */
-		Args = [time];
 	    swap_back(SourceContext, TermSwap, ParamContext, _),
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
@@ -525,7 +520,7 @@ make_intermediates(
 		 % sure to restart loops before using values from it
 		    get_model(ParamTail, ReadyContext);
 		  ReadyContext = ParamContext),
-		 Args = [made_at(Var, ReadyContext)])),
+		 Args = [made_at(Var, ReadyContext) | Wait]),
 	        /* note that for the time being the made_at condition is thrown
 	           away */
 	    Setups = [],
