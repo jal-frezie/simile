@@ -30,6 +30,7 @@ itcl::class similescript::$newLayerClass {
 	    set useNodes($winId,editMode) 0
 	    set useNodes($winId,legendSide) n
 	    set useNodes($winId,imgs) 0
+	    set useNodes($winId,displayRetile) 0
 	    set useNodes($winId,displayUpdate) 1
 	    
 	    set useNodes($winId,min) 0
@@ -160,6 +161,10 @@ itcl::class similescript::$newLayerClass {
 		$useNodes($winId,displayUpdate)} {
 	    set useNodes(temp,curValues) \
 		[lindex [$modelInst GetValue $useNodes($winId,color)] 0]
+	    if {$useNodes($winId,displayRetile)} {
+		ReTile
+		return
+	    }
 #	    DoForData {} ColourPolygon $useNodes(temp,curValues)
 # very slow because needs to search for every polygon by tag
 	    foreach tgt [$winId find withtag [namespace tail $this].main] \
@@ -243,6 +248,8 @@ itcl::class similescript::$newLayerClass {
 	pack [ttk::button $rangeF.apply -text [tr. Apply] \
 		  -command [list $this AdjRange $rangeF]]
         pack $rangeF -padx 10 -pady 10
+        pack [checkbutton $dlg.retile -text "Re-tile at display intervals" \
+		  -variable [itcl::scope useNodes($winId,displayRetile)]]
         pack [checkbutton $dlg.update -text "Update at display intervals" \
 		  -variable [itcl::scope useNodes($winId,displayUpdate)]]
         

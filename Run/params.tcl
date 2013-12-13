@@ -1290,7 +1290,7 @@ proc StripNewCrs {txt} {
     return [StripCrs $txt]
 }
 
-proc MergeParams {topNode smPath oldPath notInput interactive {anyGood 1}} {
+proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
     global readMany paramState mimeSquirter simtmpdir whichParamsAffected msgs \
 	paramMetadata
     global SimileProject
@@ -1306,6 +1306,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {anyGood 1}} {
     upvar \#0 $widgetLocn outNames
     
     #do_in_editor puts "MergeParams $topNode $smPath $oldPath $interactive"
+    set anyGood 0
     set oldDir [pwd]
     set metaFile [file join $simtmpdir temp_in.spf]
     set ::bermudaTriangle {}
@@ -1363,7 +1364,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {anyGood 1}} {
         set move [ExistCheck $topNode $restoredComp $smPath $notInput file]
         switch $move {
             break {
-		set anyGood 0
+		set noneBad 0
 		break
 	    }
             continue {continue}
@@ -1375,6 +1376,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {anyGood 1}} {
 	    # change back now in case .spf filename is relative (possible
 	    # if merging params from script)
 	    cd $oldDir
+	    set anyGood 1
 	    if {$notInput>-1} {
 		set restoredComp /$topNode$restoredComp
 	    }
@@ -1463,7 +1465,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {anyGood 1}} {
                     set suppliedData($restoredComp) {}
 		    switch [Query $act warning spf {} abort] {
 			abort {
-			    set anyGood 0
+			    set noneBad 0
 			    break
 			}
 			more {continue}
@@ -1482,7 +1484,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {anyGood 1}} {
     if {$paramState(origVersion)>=4.0} {
         file delete $metaFile
     }
-    if {$anyGood} {
+    if {$anyGood && $noneBad} {
 	#puts "setting SimileProject(fileparam,$smPath/) to $SimileProject(fileparam,$smPath/)"
         set SimileProject(fileparam,$smPath/) $oldPath
     }

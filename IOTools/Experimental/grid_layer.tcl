@@ -53,6 +53,7 @@ itcl::class similescript::$newLayerClass {
 
     destructor {
 	$winId delete [namespace tail $this].main
+	$winId delete [namespace tail $this].legend
     }
 
     public method GetCanvas {} {
@@ -78,7 +79,7 @@ itcl::class similescript::$newLayerClass {
             switch $useNodes($winId,state) {
 		display0 {
                     set useNodes($winId,color) $path
-		    set useNodes($winId,title) "[file tail $path] (polygon diagram)"
+		    set useNodes($winId,title) "[file tail $path] (rectangular grid diagram)"
 		    SetColourMap useNodes $winId [GetIdFromCaptionPath $path]
 		    SetColours useNodes $winId
 		    set useNodes($winId,tgtDims) [$modelInst GetModelDims $path]

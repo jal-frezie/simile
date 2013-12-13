@@ -762,7 +762,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	        length(Dims, L),
 	        list_of(x, L, DimB),
 	        append(DimB, _, DimL),
-	        DoneExpr = param(arr(_, Param, Inds), Type, PLoops, _, true);
+	        DoneExpr = param(arr(_, Param, Inds), Type, PLoops, _, []);
 	    raise_exception(undefined_parameter(Param)));
 	Param = (ExpInt=Defn), !, % '=' subexp not arg of ',' --
 	% complain now or missing parameter error may be raised instead
@@ -796,7 +796,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 		raise_exception(undefined_parameter(FPar));
 	    var(Used), !,
 		raise_exception(unused_inter(ExpInt));
-	    DoneExpr = (param(arr(_,ExpInt,_), Type, Loops,_,_)=DefnExpr,
+	    DoneExpr = (param(arr(_,ExpInt,_), Type, Loops,_,[])=DefnExpr,
 			   UseExpr));
 	Param =.. [Cumulative | Items],
 	    member(Cumulative, [sum, product, least, greatest,
