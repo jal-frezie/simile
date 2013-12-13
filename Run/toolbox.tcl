@@ -1591,7 +1591,7 @@ proc RunIfPackage {} {
 }
 
 proc OpenProjectFile {path} {
-    global loadingProject runState
+    global loadingProject runState helperTable
     set pFile [file join $path model.spj]
     set projectF [NetOpen $pFile r]
     #gets $projectF SimileProjectData
@@ -1625,11 +1625,14 @@ proc OpenProjectFile {path} {
 	update
         if {$runState($topNode,modelRunning)>=3 && \
 		[info exists SimileProject(nameOfHelperStateFile)]} {
+	    set helperTable($topNode,stateName) \
+		[file normalize [file join $baseDir \
+				     $SimileProject(nameOfHelperStateFile)]]
             set command [ChooseText \
 			     [PrefValue custom(helperManager) helperManager] \
 			     ::RunEnv::LoadSHF CreateView]
-            $command $topNode \
-		[file join $baseDir $SimileProject(nameOfHelperStateFile)]
+            $command $topNode $helperTable($topNode,stateName)
+	    ::RunEnv::PreserveSetup 0
         }
     }
 }

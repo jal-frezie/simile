@@ -1209,7 +1209,6 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 	set origin [lindex $SHFContents 0]
 	set origVersion [lindex $SHFContents 1]
 	set metaList [lrange  $SHFContents 2 end]
-        set helperTable($currentNode,stateName) $oldPath
        
         if {[string equal mre $origin]} {
             LoadViewFile $currentNode $metaList $origVersion
@@ -1263,7 +1262,6 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 #        close $stream
 # allow helper windows to configure themselves
 	update
-	PreserveSetup 0
     }
     
     proc LoadViewFile {currentNode metaList origVersion} {
