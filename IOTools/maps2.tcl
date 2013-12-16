@@ -122,8 +122,8 @@ namespace eval ::maptools2 {
 	    $cnv create text 0 0 -anchor c -tag caption -text "Awaiting info"
 	}
 	if {[string equal v $useNodes($winId,orient)]} {
-	    set leftSc [$cnv canvasy 0]
-	    set rightSc [$cnv canvasy [winfo height $cnv]]
+	    set leftSc [$cnv canvasy [winfo height $cnv]]
+	    set rightSc [$cnv canvasy 0]
 	    set bottomSc [$cnv canvasx [winfo width $cnv]]
 	} else {
 	    set leftSc [$cnv canvasx 0]
@@ -140,24 +140,26 @@ namespace eval ::maptools2 {
 	    $cnv coords caption [expr $bottomSc-30] [expr ($leftSc+$rightSc)/2]
 	    $cnv itemconfigure caption -width 1
 #        UpdateCaption useNodes $winId
-	    $cnv create text [expr $bottomSc-10] [expr $leftSc+47] \
-                -text $useNodes($winId,min) -anchor s -tag colour_scale
-	    $cnv create text [expr $bottomSc-10] [expr $rightSc-48] \
-                -text $useNodes($winId,max) -anchor n -tag colour_scale
+	    $cnv create text $midSc [expr $leftSc-48] \
+                -text $useNodes($winId,min) -anchor n -tag colour_scale
+	    $cnv create text $midSc [expr $rightSc+47] \
+                -text $useNodes($winId,max) -anchor s -tag colour_scale
+	    set xmin [expr $leftSc-50]
+	    set xmax [expr $rightSc+50]
 	} else {
 	    $cnv create rect $leftSc $topSc $rightSc $bottomSc \
 		-outline {} -fill [$cnv cget -bg] -tag {colour_scale scale_base}
 	    $cnv coords caption [expr ($leftSc+$rightSc)/2] [expr $bottomSc-30]
 	    $cnv itemconfigure caption -width 0 ;# = whatever it takes
 #        UpdateCaption useNodes $winId
-	    $cnv create text [expr $leftSc+47] [expr $bottomSc-10] \
+	    $cnv create text [expr $leftSc+47] $midSc \
                 -text $useNodes($winId,min) -anchor e -tag colour_scale
-	    $cnv create text [expr $rightSc-48] [expr $bottomSc-10] \
+	    $cnv create text [expr $rightSc-48] $midSc \
                 -text $useNodes($winId,max) -anchor w -tag colour_scale
+	    set xmin [expr $leftSc+50]
+	    set xmax [expr $rightSc-50]
 	}
         set useNodes($winId,range) [expr $useNodes($winId,max)-$useNodes($winId,min)]
-        set xmin [expr $leftSc+50]
-        set xmax [expr $rightSc-50]
         set xincr [expr {($xmax-$xmin)/($useNodes($winId,nswatches)+1)}]
         for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
             set x0 [expr {$xmin+$icolour*$xincr}]
