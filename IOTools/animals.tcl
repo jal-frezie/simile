@@ -52,8 +52,7 @@ Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
     }
 	    
     public method AddVariable {} {
-	set cnvFile [ChooseFile animal.cnv "Image for individuals:" 0 \
-			       [GetNode]]
+	set cnvFile [ChooseFile animal.cnv "Image for individuals:" 0 [GetNode]]
 	set useNodes(title) [file rootname [file tail $cnvFile]]s
 	set stm [open $cnvFile r]
 	regsub -line -all {^\$c create .*$} [read $stm] {& -tag unpositioned} \
@@ -137,19 +136,52 @@ Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
 	}
     }
 
+    public method ToRadians {axis} {
+        if {[string is double -strict $axis]} {
+            return $axis
+        } elseif {[set ct [lsearch {e ne n nw w sw s se} \
+                                   [lindex $axis 0]]]>-1} {
+            return [expr {$ct*6.283/8}]
+        } elseif {[set ct [lsearch {3h 2h 1h 12h 11h 10h 9h 8h 7h 6h 5h 4h} \
+                                   [lindex $axis 0]]]>-1} {
+            return [expr {$ct*6.283/12}]
+        } else {
+            error "Unrecognized axis $axis"
+        }
+    }
+
     public method DrawAnimal {inds key dir xposn yposn} {
 	set c $winId
 	eval $useNodes(cmds)
 	foreach {hotx hoty} $hotspot {} ;# sets them
-
-	set compx [expr sin($dir)]
-	set compy [expr cos($dir)]
+        set dir [expr {[ToRadians $dir]-[ToRadians $axis]}]
+	set compx [expr cos($dir)]
+	set compy [expr sin($dir)]
 	foreach newItem [$winId find withtag unpositioned] {
+	    set oldCoords {}
 	    set newCoords {}
+            set type [$winId type $newItem]
 	    foreach {x y} [$winId coords $newItem] {
-		set absx [expr $x-$hotx]
-		set absy [expr $y-$hoty]
-		lappend newCoords [expr {$transform(xzoom)*((-$compx*$absx-$compy*$absy)*$key+$xposn)}] [expr {-$transform(yzoom)*(($compy*$absx-$compx*$absy)*$key+$yposn)}] 
+		set absx [expr ($x-$hotx)/$scale]
+		set absy [expr ($y-$hoty)/$scale]
+		lappend oldCoords $absx $absy
+		lappend newCoords [expr {$transform(xzoom)*(($compx*$absx+$compy*$absy)*$key+$xposn)}] [expr {-$transform(yzoom)*(($compy*$absx-$compx*$absy)*$key+$yposn)}] 
+	    }
+            if {[lsearch {arc oval} $type] > -1} {
+                if {$type eq "arc"} {
+                    $winId itemconfig $newItem -start [expr {[$winId itemcget $newItem -start]+$dir*360/6.283}]
+                }
+                foreach {l t r b} $oldCoords {}
+                set hypo [expr {($b-$t)**2+($r-$l)**2}]
+                set aspect [expr {($b-$t)**2/$hypo}]
+                foreach {l t r b} $newCoords {}
+                set cx [expr {($l+$r)/2}]
+                set cy [expr {($t+$b)/2}]
+                set hypo [expr {($b-$t)**2+($r-$l)**2}]
+                set xtent [expr {sqrt((1-$aspect)*$hypo)/2}]
+                set ytent [expr {sqrt($aspect*$hypo)/2}]
+                set newCoords [list [expr {$cx-$xtent}] [expr {$cy-$ytent}] \
+		   [expr {$cx+$xtent}] [expr {$cy+$ytent}]]
 	    }
 	    $winId coords $newItem $newCoords
 	}
