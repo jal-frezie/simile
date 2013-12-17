@@ -314,6 +314,8 @@ install:
 		Examples/spiro.sml \
 		Examples/bat.spf \
 		Examples/dancer.spf \
+		Examples/ant.cnv \
+		Examples/mouse.cnv \
 		Extensions/Scripting.tcl \
 		Functions/Arithmetic.pl \
 		Functions/Hidden.pl \
@@ -484,6 +486,11 @@ install:
 		IOTools/maps2.tcl \
 		IOTools/threedtools.tcl \
 		IOTools/timeprofiles.tcl \
+		IOTools/layers.tcl \
+		IOTools/grid_layer.tcl \
+		IOTools/polygon_layer.tcl \
+		IOTools/photo_layer.tcl \
+		IOTools/animals.tcl \
 		IOTools/Standard\ tools/Control.tcl \
 		IOTools/Standard\ tools/Sketch.tcl \
 		IOTools/Standard\ tools/Slider.tcl \
