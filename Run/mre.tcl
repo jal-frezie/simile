@@ -764,7 +764,7 @@ namespace eval RunEnv {
 	}
 	$mreMenu entryconfigure $addMenuLocn -state $AddAbility
 # Now work around what looks like a bug in Cocoa Tk
-	set addMenu [$mreMenu entrycget $addMenuLocn -menu]
+	set addMenu .helpers.sub2
 	set adds [$addMenu index last]
 	for {set add 0} {$add<=$adds} {incr add} {
 	    $addMenu entryconfigure $add -state $useSpaceAbility

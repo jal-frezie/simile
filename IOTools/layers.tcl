@@ -141,6 +141,7 @@ itcl::class similescript::$newHelperClass {
 	
 	if {$chng ne "none"} {
 	    set serialActive $chng
+	    ::RunEnv::PreserveSetup 1 ;# assume state will be updated
 	}
     }
 
