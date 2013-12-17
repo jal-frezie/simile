@@ -37,9 +37,7 @@ itcl::class similescript::$newLayerClass {
 
     method CurrentPopup {} {
 	set ind [TagToId [$winId gettags current]]
-	return "Index: $ind \
-x: [SeekValue $ind $temp(xcoord)] y: [SeekValue $ind $temp(ycoord)] \
-Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
+	return "Index: $ind x: [SeekValue $ind $temp(xcoord)] y: [SeekValue $ind $temp(ycoord)] Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
     }
 
     method SeekValue {inds vals} {
@@ -55,8 +53,8 @@ Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
 	set cnvFile [ChooseFile animal.cnv "Image for individuals:" 0 [GetNode]]
 	set useNodes(title) [file rootname [file tail $cnvFile]]s
 	set stm [open $cnvFile r]
-	regsub -line -all {^\$c create .*$} [read $stm] {& -tag unpositioned} \
-            useNodes(cmds)
+	set useNodes(cmds) [subst -novariables [regsub -line -all {^\$c create .*$} [read $stm] {& -tag unpositioned}]]
+# subst allows eg tk_chooseColor to be done just once
 	close $stm
 # now adjust each command to tag the item
 
