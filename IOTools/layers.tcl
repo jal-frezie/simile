@@ -232,7 +232,6 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method EditCurrent {} {
-	puts [info level 0]
 	set oldIdx end-[expr {$serialActive/2}]
 	[lindex $planes $oldIdx] Settings
     }
