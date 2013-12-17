@@ -712,7 +712,8 @@ enum_type_ref(Ref, Model, ETStyle, Value, Units, ETSpec) :-
 	    BareRef = Ref),
 	(nth0(Value, [false, true], BareRef),
 	    Units = boolean;
-	  contains(Grid, Model),
+	  contains(Project, Model),
+	  contains(Project, Grid),
 	    Grid has_class_refinement multiplication_spec of MS,
 	    member(interpretation=Form, MS),
 	    (member(Form-Pts-Units-ETSpec,

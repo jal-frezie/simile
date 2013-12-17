@@ -733,12 +733,11 @@ namespace eval RunEnv {
 	    set inst $helperTable($win.container,whichInstance)
 # now reset add menu in case 
 	    if {[catch {$inst info function CustomizeAddMenu}]} {
-		set useSpaceAbility disabled
+		set AddAbility disabled
 		$mreMenu insert $addMenuLocn cascade -label [tr. "Add"] \
 		    -menu .helpers.sub2
 	    } else {
-		set useSpaceAbility [$inst CustomizeAddMenu $mreMenu \
-					 $addMenuLocn]
+		set AddAbility [$inst CustomizeAddMenu $mreMenu $addMenuLocn]
 	    }
 		
 		
@@ -755,6 +754,7 @@ namespace eval RunEnv {
 	} else {
 	    $tb1.b20 configure -state normal
 	    $tb1.b21 configure -state normal
+	    set AddAbility normal
 	    set useSpaceAbility normal
 	    $mreMenu insert $addMenuLocn cascade -label [tr. "Add"] \
 		-menu .helpers.sub2
@@ -762,7 +762,7 @@ namespace eval RunEnv {
 	    set exportAbility disabled
 	    set printAbility disabled
 	}
-	$mreMenu entryconfigure $addMenuLocn -state $useSpaceAbility
+	$mreMenu entryconfigure $addMenuLocn -state $AddAbility
 # Now work around what looks like a bug in Cocoa Tk
 	set addMenu [$mreMenu entrycget $addMenuLocn -menu]
 	set adds [$addMenu index last]
