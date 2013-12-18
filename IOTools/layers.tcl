@@ -8,6 +8,7 @@ itcl::class similescript::$newHelperClass {
     variable planes
     variable transform
     variable serialActive
+    variable working
 
     proc Identify {} {
 	return "Multi-layer 2-D display"
@@ -19,9 +20,9 @@ itcl::class similescript::$newHelperClass {
     } {
 	# menu
 	menu $winId.add -tearoff 0
+	bind $winId.add <<MenuSelect>> [list $this LayerReady %W]
 	$winId.add add cascade -label [tr. "New layer here"] \
 	    -menu .layers.sub2
-	bind $winId.add <<MenuSelect>> [list $this LayerReady]
 	menu $winId.edit -tearoff 0
 	$winId.edit add command -label [tr. "Move to top"] \
 	    -command [list $this MoveCurrentToTop]
@@ -133,12 +134,10 @@ itcl::class similescript::$newHelperClass {
 	return normal
     }
 
-    public method LayerReady {} {
-#	set chng [$winId.add index active]
-# The above does not work, because TclTk is rapidly crumbling to dust.
-# Here is a workaround...
-	set chng $::tk::Priv(activeItem)
-	
+    public method LayerReady {callr} {
+# note it is necessary to pass the calling widget id as it will be a clone of
+# $winId.add for arcane reasons known only to the developers of Tk
+	set chng [$callr index active]
 	if {$chng ne "none"} {
 	    set serialActive $chng
 	    ::RunEnv::PreserveSetup 1 ;# assume state will be updated
