@@ -646,6 +646,11 @@ make_intermediates(
 	(Functor = count,
 	    IncrExpr = FillRef+1,
 	    (nonvar(SumLoop), SumLoop = [set(_, loop(SourceRef, Units))],
+ 		(nonvar(Units); % enum type is provided only when building
+		 integer(SourceRef),
+ 		    Units = const_int;
+ 		atom(SourceRef), \+ SourceRef = records,
+ 		    Units = n(SourceRef)),
 		UsingDim = true;
 	    Units = int,
 		append(NowBuilding, DestPath, ReadyContext)), !,
