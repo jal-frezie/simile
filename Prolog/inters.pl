@@ -84,8 +84,13 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	    [Location, Link, Type]=[in_hierarchy, none, SourceType]),
 	PathExp = elt(RealPathForm, Ref, SourceType-DimTypes), !,
 	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm),
-					 build(Dims), build(_), build(_)]),
+					 build(Dims), build(Nm), build(_)]),
 	    make_inds_for(Dims, LocalLoops, Inds),
+	    reverse(Nm, Mn),
+	    all(inters, building_dims_and_indices,
+		[build(LocalLoops), build(Mn), build(Inds)]),
+	    % in case its size is used to make an array in which place_in()
+	    % must have ET units
 	    copy_term(RealPathForm, RealPath),
 
 % for special roles, change or augment the part of the path common to the
@@ -640,11 +645,7 @@ make_intermediates(
 	so lets work that out... */
 	(Functor = count,
 	    IncrExpr = FillRef+1,
-	    (nonvar(SumLoop), SumLoop = [set(_, loop(SourceRef,_))],
-		(integer(SourceRef),
-		    Units = const_int;
-		atom(SourceRef), \+ SourceRef = records,
-		    Units = n(SourceRef)),
+	    (nonvar(SumLoop), SumLoop = [set(_, loop(SourceRef, Units))],
 		UsingDim = true;
 	    Units = int,
 		append(NowBuilding, DestPath, ReadyContext)), !,
@@ -661,7 +662,7 @@ make_intermediates(
 	    append(NowBuilding, DestPath, ReadyContext),
 	    IncrExpr =.. [Functor, Epsilon, Payload], % either arg can vary
 	    Units = ArgUnits;
-	IncrExpr =.. [IncrOp, IncrementRef, FillRef], wake,
+	IncrExpr =.. [IncrOp, IncrementRef, FillRef],
 	    (Functor = any, ArgUnits = cond_spec, !,
 		[RUnits | ArgTemplate] = [cond_spec, cond_spec];
 	      fn_or_op(IncrOp, _, RUnits, [RUnits | ArgTemplate])),
@@ -922,7 +923,7 @@ make_intermediates(
 	    suffix([LocalLoop], SzLoops), !,
 	    NowBuilding = [LocalLoop | BuildingArrays];
 	((Source = makearray(Element, Dim); Source = soloarr(Element), Dim=1),
-	    ((catch(DimNum is float(Dim), _, fail),
+	 ((catch(DimNum is float(Dim), _, fail),
 	          DimVal is round(DimNum), %allow idx to be float if = to an int
 	          DimNum is float(DimVal),
 	          IndxUnits = int;	% it is integer now
