@@ -369,7 +369,7 @@ update_equation(Function, InterInputs,
 		(on_exception(Hiccup,
 			      get_actual_sizes(Function, EqnDims, MultInts,
 					       quoted, _V, _U),
-			      name(Hiccup, Complaint6)),
+			      Complaint6 = Hiccup),
 		    member(Dim, MultInts),
 		    (nonvar(Complaint6);
 		    Dim = var, !,
