@@ -685,7 +685,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	    get_ground_part(DimL, DimDG),
 	    length(DimDG, LenD),
 	    length(DimDV, LenD),
-	    make_inds_for(DimDV, DLoops, _),
+	    make_inds_for(DimDV, _, DLoops, _),
 	    length(ExpInters, _), !, /* close list end */
 
 	/* hack alert: We are using the parser to get the dimensions of the
@@ -745,7 +745,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 /*		    (units'><'get_conversion(_, Base, Base, _), !,
 		        Type = real;
 		    Type = Base), */
-		    make_inds_for(Dims, PLoops, Inds),
+		    make_inds_for(Dims, _, PLoops, Inds),
 		    (member(Link-ETforIdx, [id(_,_, in_6_nbrs)-a(hex_nbr),
 					    id(_,_, in_8_nbrs)-a(rect_nbr)]) ->
 		     suffix([sm(_,_,_, vm_loop(_, [ETforIdx | _], _,_)) | _],
@@ -755,7 +755,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 		        get_ground_part(LRefs, GRefs),
 		        length(GRefs, L);
 		    m_update'><'analyze_array(Depth, any, Dims),
-	                make_inds_for(Dims, PLoops, Inds)),
+	                make_inds_for(Dims, _, PLoops, Inds)),
 	            Type-PLoops = Loops,
 	            Units = param_history(_Defn, 1)),
 	        /* pass dims up the recursion loop */

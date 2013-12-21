@@ -19,7 +19,6 @@ binome_var(prob,throws) --> at_phase(binome(prob,throws)).
 hypergeom_const(pop, seln1, seln2) --> at_init(hypergeom(pop, seln1, seln2)).
 hypergeom_var(pop, seln1, seln2) --> at_phase(hypergeom(pop, seln1, seln2)).
 
-/*
 colin(List) --> 
 	[st0]=makearray(if first(place_in(1)) then 0 else
 		       element(sofar([st0])+List,preceding(place_in(1))),
@@ -29,15 +28,16 @@ colin(List) -->
 		      else element(sofar([st]),preceding(place_in(1))),
 		       count(List)),
     element([st],count(List)).
-*/
+
 with_colin({Distribution},{Payload}) -->
 	with_greatest(if {Distribution}>0
 		     then pow(rand_var(0,1),1/{Distribution})
 		     else 0, {Payload}).
 
+/*
 colin(List) -->
 	with_colin(List, makearray(place_in(1),count(List))).
-
+*/
 quantize(v) --> out = (
 			tot = last(1.0*tot-1*out)+v*dt(''), round(tot)
 		      ), out/dt('').

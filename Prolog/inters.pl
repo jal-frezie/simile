@@ -3,7 +3,7 @@ sicstus_module(inters, [final_assignment/12, make_intermediates/12,
 			macro_expansion/2, fragment_expansion/5, function/4,
 			promote_unit/2, promote_arg/3, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
-			inherently_bound/1, make_inds_for/3, pointer_from/2,
+			inherently_bound/1, make_inds_for/4, pointer_from/2,
 			with_capt/4]).
 
 sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
@@ -85,11 +85,8 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	PathExp = elt(RealPathForm, Ref, SourceType-DimTypes), !,
 	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm),
 					 build(Dims), build(Nm), build(_)]),
-	    make_inds_for(Dims, LocalLoops, Inds),
-	    reverse(Nm, Mn),
-	    all(inters, building_dims_and_indices,
-		[build(LocalLoops), build(Mn), build(Inds)]),
-	    % in case its size is used to make an array in which place_in()
+	    make_inds_for(Dims, Nm, LocalLoops, Inds),
+	    % Nm in case its size is used to make an array in which place_in()
 	    % must have ET units
 	    copy_term(RealPathForm, RealPath),
 
@@ -700,7 +697,7 @@ wake,
 	get_dims_from_loops(NowBuilding, BuildDims, BuildInds),
 	append(BuildDims, TotalDims, InterDims),
 	append(BuildInds, LoopInds, FillInds),
-	make_inds_for(TotalDims, SourceLoops, NewInds),
+	make_inds_for(TotalDims, _, SourceLoops, NewInds),
 	FillRef = arr(TotalPtr, TotalName, FillInds),
 	append(BuildInds, NewInds, SrcInds),
 	ClearRef = arr(SourcePtr, TotalName, SrcInds),
@@ -832,7 +829,7 @@ wake,
 		Units = OrigUnits;
 	    Units = int);
 	add_zeros(Source, SubId, Step, BoundArray, ConstBounds, Units)), !,
-	    make_inds_for(ConstBounds, SourceContext, Inds),
+	    make_inds_for(ConstBounds, _, SourceContext, Inds),
 	    generate_name(c, array, ArrayName, Used),
 	    SourceRef = arr('', ArrayName, Inds),
 	    Target = [InnerTgt | _],
@@ -879,9 +876,7 @@ wake,
 	Source = keep(SourceRef), !,
 	    Args = [];
 	(Source = place_in(IndN), !,
-	    reverse(BuildingArrays, BackBA),
-	    all(inters, building_dims_and_indices,
-	        [build(BackBA), build(DestBounds), build(DestInds)]),
+	    make_inds_for(_, DestBounds, BuildingArrays, DestInds),
 	    all(inters, members_of_type, [build(DestBounds), build(DestDims)]);
 	  Source = index(IndN), !,
 	    reverse(DestPath, BackDP),
@@ -949,7 +944,7 @@ wake,
 %	        DimSetups = [],
 %	        MidInters = PrevInters,
 	        NowBuilding = BuildingArrays,
-	        Dun = int), !,
+	        Dun = const_int), !,
 	    ((\+ number(DimVal); DimVal > 1; Source = soloarr(_)), !;
 		throw(bad_array_size(Source, DimVal))),
 	    LocalLoop = set(LocalInd, loop(DimVal, Dun))),
@@ -1096,7 +1091,7 @@ Now one that uses a special conditional level */
 		    RefDims = [];
 		  m_update'><'get_solo_list_depth(Ref, DimExp),
 		    m_update'><'analyze_array(DimExp, any, RefDims)),
-		make_inds_for(RefDims, Loops, _),
+		make_inds_for(RefDims, _, Loops, _),
 		append(Loops, BuildingArrays, Access),
 		get_dims_from_loops(Access, Dims, _)), /* building code */
 	    InitInters = [instance(internal, inter(_,_, Loops), Ref,_, _-Dims)
@@ -1137,7 +1132,7 @@ Now one that uses a special conditional level */
 	Step = dummy, !, % is always explicit inter when building code
 	    units_for_trigger_mag(SubId, Units-Dims),
 	    NewInters = [],
-	    make_inds_for(Dims, SourceContext, _),
+	    make_inds_for(Dims, _, SourceContext, _),
 	    Setups = [],
 	    SourceRef = 1;
 
@@ -1244,7 +1239,7 @@ Now one that uses a special conditional level */
 		with_capt(OutNode, SmLoops, RefNode, FragOut),
 	        m_update'><'get_av_pair(OutNode, 0, units, OutArrSpec),
 	        m_update'><'analyze_array(OutArrSpec, Units, OutDims),
-	        make_inds_for(OutDims, OutLoops, _),
+	        make_inds_for(OutDims, _, OutLoops, _),
 	        get_model_and_loops(ExecContext, DestPath, _,
 				    ExecLoops, ExecBase),
 		append(ExecLoops, BuildingArrays, FragLoops),
@@ -1475,7 +1470,7 @@ refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 			       arr(SourcePtr, Name, IntInds), 0);
 	  pointer_from(SourcePath, SourcePtr),
 	    SourceRef = arr(SourcePtr, Name, IntInds)),
-	make_inds_for(Dims, IntLoops, IntInds),
+	make_inds_for(Dims, _, IntLoops, IntInds),
 	copy_term(ParamLoops, SourceLoops),
 	/* order of parts exchanged simply cos it made it work */
 	append(SourceLoops, SpareLoops, IntLoops),
@@ -2140,13 +2135,13 @@ pointer_to(Path, Ptr) :-
 	suffix([sm(_, Ptr, _,_) | Tops], Path),
 	\+ member(sm(_,_,_,_), Tops), !.
 
-make_inds_for([], [], []).
+make_inds_for([], [], [], []).
 
-make_inds_for([Bound | RB], Sets, [Ind | RI]) :-
+make_inds_for([Bound | RB], [Dim | RD], Sets, [Ind | RI]) :-
 	(Bound == var, !,
 	    Level = sm(_,_,_, vm_loop(_,_,_,_));
-	Level = set(Ind, loop(Bound,_))),
-	make_inds_for(RB, RX, RI),
+	Level = set(Ind, loop(Bound, Dim))),
+	make_inds_for(RB, RD, RX, RI),
 	append(RX, [Level], Sets).
 	    
 get_dims_from_loops([], [], []).
@@ -2163,8 +2158,6 @@ get_dims_from_loops(Loops, Dims, Inds) :-
 	Dims = RDims,
 	    Inds = RInds),
 	get_dims_from_loops(InnerLoops, RDims, RInds).
-
-building_dims_and_indices(set(I, loop(_,L)), L, I).
 
 loops(set(_, loop(_,_))).
 loops(sm(_,_,_, vm_loop(Dims,_,_,_))) :- \+ Dims == start_only.

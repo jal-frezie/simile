@@ -716,7 +716,7 @@ path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
 	((by_record(SmName); from_value(SmName)), !,
 	    SmSizes = [pra_bound(HiPtr, Context)];
 	 all(ame_gen, enum_type_ref, [build(SmDims), unify(SmName),
-				     build(SmSizes), build(_), build(_)])),
-	    make_inds_for(SmSizes, SmPath, SmInds),
+				     build(SmSizes), build(SmBds), build(_)])),
+	    make_inds_for(SmSizes, SmBds, SmPath, SmInds),
 	    Level = [sm(Context, HiPtr, LoPtr,
 			fm_loop(SmInds, IndxCount,_,_)) | SmPath]).

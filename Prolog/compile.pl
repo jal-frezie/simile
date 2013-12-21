@@ -1330,7 +1330,7 @@ nodes.
 	     member(LoopCode-Shp,
 		    [rect_grid(Rows, Cols)-1, hex_grid(Rows, Cols)-2]), !,
 	        SmInters = [],
-	        make_inds_for([Rows, Cols], GridLoops, Inds),
+	        make_inds_for([Rows, Cols], _, GridLoops, Inds),
 		prefix([sm(_,_, LPtr, _) | GridLoops], LocalPath),
 	     	Specials = [make(enumerate(Name), [], LocalPath, -2,
 			      [list_fixed_nbrs(LPtr, Shp, Rows, Cols, Inds)])];
@@ -1517,7 +1517,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 				     build(Dims), build(_), build(_)]),
 	    pointer_from(DestPath, DestPtr),
 	    get_dims_from_loops(DestPath, _, SmInds),
-	    make_inds_for(Dims, LocalPath, LocalInds),
+	    make_inds_for(Dims, _, LocalPath, LocalInds),
 	    append(LocalPath, DestPath, Path),
 	    append(SmInds, LocalInds, Inds),
 	    vars_only(Inds, VarInds),
@@ -2037,7 +2037,7 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 			     vm_loop(LoopCode,_, MoreLoops, _)),
 	        decode_loop(LoopCode, _ReadyType, Dims),
 		ptr_to_last_vm(Path, -2, ParentNew),
-		make_inds_for(Dims, Sets, LocalInds),
+		make_inds_for(Dims, _, Sets, LocalInds),
 		% check for new base instances removed in 5.9 -- if one is
 		% new, the assoc instance must be, since it is enumerated
 		% at least as often as the base models
