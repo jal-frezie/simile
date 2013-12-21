@@ -617,7 +617,8 @@ make_intermediates(
 	    generate_name(c, PayloadNameBase, PayloadName, Used),
 	    IncrAct = cond_assign(arr(TotalPtr, PayloadName, FillInds),
 				  IncrementRef, PayloadRef, IncrOp, FillRef),
-	    make_subexps([Epsilon, Payload], SubId,
+wake,
+	 make_subexps([Epsilon, Payload], SubId,
 				   [TotalName | Target],
 				   TotalPath, SubSwap, PrevInters, NowBuilding,
 				   Step, Used, [TXUnits, ArgUnits], OldInters,
@@ -880,7 +881,8 @@ make_intermediates(
 	(Source = place_in(IndN), !,
 	    reverse(BuildingArrays, BackBA),
 	    all(inters, building_dims_and_indices,
-	        [build(BackBA), build(DestDims), build(DestInds)]);
+	        [build(BackBA), build(DestBounds), build(DestInds)]),
+	    all(inters, members_of_type, [build(DestBounds), build(DestDims)]);
 	  Source = index(IndN), !,
 	    reverse(DestPath, BackDP),
 	    all(inters, indices_for,
@@ -931,16 +933,12 @@ make_intermediates(
 	 ((catch(DimNum is float(Dim), _, fail),
 	          DimVal is round(DimNum), %allow idx to be float if = to an int
 	          DimNum is float(DimVal),
-	          IndxUnits = int;	% it is integer now
+	          Dun = int;	% it is integer now
 	        make_intermediates(Dim, SubId, [dum], DestPath,_, PrevInters,
 				   BuildingArrays, Step, Used, Dun, MidInters,
 				   part_result([], [], _, DimVal)),
 	        promote_unit(Dun, const_int)), !; % will be integer later
 		  throw(bad_index_number(Dim, makearray, 16777215))),
-	        (Dun = n(Type),
-		    (Type = boolean, IndxUnits = boolean;
-			IndxUnits = a(Type));
-		    IndxUnits = int), !,
 	        NowBuilding = [LocalLoop | BuildingArrays],
 	        length(BuildingArrays, BDept),
 	        append_atoms(arraybuild, BDept, BuildName),
@@ -951,10 +949,10 @@ make_intermediates(
 %	        DimSetups = [],
 %	        MidInters = PrevInters,
 	        NowBuilding = BuildingArrays,
-	        IndxUnits = int), !,
+	        Dun = int), !,
 	    ((\+ number(DimVal); DimVal > 1; Source = soloarr(_)), !;
 		throw(bad_array_size(Source, DimVal))),
-	    LocalLoop = set(LocalInd, loop(DimVal, IndxUnits))),
+	    LocalLoop = set(LocalInd, loop(DimVal, Dun))),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
 			PrevInters, NowBuilding, Step, Used, Units, NewInters,
 			part_result(EltContext, Setups, Args, SourceRef)),
@@ -1409,6 +1407,12 @@ raise_units(Base, Num, Units) :-
 	    Num > 0, Next is Num-1, Do = (*)),
 	raise_units(Base, Next, Mid),
 	Units =.. [Do, Mid, Base].
+
+members_of_type(Dun, IndxUnits) :-
+	Dun = n(Type),
+	 (Type = boolean, IndxUnits = boolean;
+	  IndxUnits = a(Type)), !;
+	 IndxUnits = int.
 
 fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	var(Op), MxOp = Op, !;
