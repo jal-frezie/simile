@@ -614,7 +614,6 @@ make_intermediates(
 	    generate_name(c, PayloadNameBase, PayloadName, Used),
 	    IncrAct = cond_assign(arr(TotalPtr, PayloadName, FillInds),
 				  IncrementRef, PayloadRef, IncrOp, FillRef),
-wake,
 	 make_subexps([Epsilon, Payload], SubId,
 				   [TotalName | Target],
 				   TotalPath, SubSwap, PrevInters, NowBuilding,
@@ -917,7 +916,7 @@ wake,
 	    % do not leave this to general handler because it will complain
 	    % if arguments contain place_in(...)
 	(Source = makearray(Element,count(Reps)),
-	    fail, % not yet tested enough for release
+	    fail, % hangs if element contains place_in() cos local_loop is vm
 	    make_intermediates(Reps, SubId, [dum], DestPath,_, PrevInters,
 			       BuildingArrays, Step, Used, Dun, MidInters,
 			       part_result(Counted, [], _, DimVal)),
