@@ -330,8 +330,8 @@ instance_of( function, Node, Path, Instances, Refs) :-
 			     choose(EvtTrigger '!=' 0, CondExpr, Void)));
 	  (RType = alarm, !,
 	    FType = al_function,
-	    FinalExpr = al_spec(SubbedExpr, EvtTrigger, _Later),
-	    Path = [sm(_,_,_, fm_loop(_,_, al_action(Name, EvtTrigger), _)) | _],
+	    FinalExpr = al_spec(SubbedExpr, EvtTrigger, Later),
+	    Path = [sm(_,_,_, fm_loop(_,_, al_action(Name, Later), _)) | _],
 	    EndRefs = EvtRefs;
 	   member(RType, [immigration, reproduction, loss]),
 	    \+ EvtTrigger = 1, !,

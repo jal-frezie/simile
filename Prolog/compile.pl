@@ -1590,6 +1590,8 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  (SourceEqn = with_phase(SmStep, EvtElts, GroundEqn),
 	      all(user, arg, [unify(2), build(EvtElts), build(EvtConds)]);
 	    SourceEqn = al_spec(LoopExit, EvtConds, LoopStart),
+	   % choose(..) is just a handy fn that allows a boolean and
+	   % something of any type to be passed to the maker
 	      GroundEqn = choose(LoopExit,EvtConds,EvtConds);
 	    EvtConds = [],
 	      GroundEqn = SourceEqn)), !, % EvtConds unused as of 4/12/12
@@ -1621,6 +1623,8 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Linkers = [Set];
 	  Type = al_function,
 	    Fn = choose(LoopExitExpr, LoopStart, LoopStart),
+	    suffix(Path, DestPath), % because LoopStart evaluated when opening
+				% alarm submodel, before alarm condition done?
 	    Act = assign(Val, LoopExitExpr);
 	  Type = compartment,
 	    Fn = ValRef+FChange+QChange,
