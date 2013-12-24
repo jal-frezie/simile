@@ -1084,10 +1084,9 @@ Now one that uses a special conditional level */
 	    Param = Ref,
 %		member(instance(internal, inter(_,_, Loops), Param,_, _-Dims),
 %		       PrevInters),
-		(Ref = trigger_magnitude(_), !,
-		    %units_for_trigger_mag(SubId, _RefUnits-RefDims);
+		(Ref = trigger_magnitude(''), !,
+		    units_for_trigger_mag(SubId, _RefUnits-RefDims);
 		    % no need to raise error if t_m not used in eqn
-		    RefDims = [];
 		  m_update'><'get_solo_list_depth(Ref, DimExp),
 		    m_update'><'analyze_array(DimExp, any, RefDims)),
 		make_inds_for(RefDims, _, Loops, _),
@@ -1127,7 +1126,7 @@ Now one that uses a special conditional level */
 	    Setups = [],
 	    SourceRef = 1;
 
-	Source = trigger_magnitude(_),
+	Source = trigger_magnitude(''),
 	Step = dummy, !, % is always explicit inter when building code
 	    units_for_trigger_mag(SubId, Units-Dims),
 	    NewInters = [],
@@ -1423,7 +1422,18 @@ units_for_trigger_mag(Fn, MagUnits) :-
 	    throw(no_triggering_events(Capt))),
 	% check dimensions the same
 	all(m_update, analyze_array,
-	    [build(EvtUnits), build(EvtBases), build(_EvtDims)]),
+	    [build(EvtUnits), build(EvtBases), build(EvtDimses)]),
+	all(user, prefix, [build(EvtDimses), unify(EvtDims)]),
+	length(EvtDims, EDLen),
+	% limit mag dims to those of event
+	
+	(m_class'><'Fn has_class_refinement units of Mu,
+	    m_update'><'analyze_array(Mu, _, Ct),
+	    length(Ct, TrigMax);
+	 TrigMax = 0),
+	ResLen is min(EDLen, TrigMax),
+	length(TDims, ResLen),
+	prefix(TDims, EvtDims),
 	length(EvtBases, NEvts),
 	(value(Any),
 	list_of(Any, NEvts, Anies),
@@ -1431,7 +1441,7 @@ units_for_trigger_mag(Fn, MagUnits) :-
 	    caption_for(Fn, Capt),
 	    throw(mixed_trigger_units(Capt, EvtUnits))),
 	(MagBase = boolean -> ReferMagBase = int; ReferMagBase = MagBase),
-	MagUnits = ReferMagBase-[]. % triggers now summed or howmanytrued
+	MagUnits = ReferMagBase-TDims. % triggers now summed or howmanytrued
 
 units_for_evt_antecedents(Fn, EvtUnit) :-
 	m_update'><'get_all_links(Fn, discrete, _,

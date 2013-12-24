@@ -3,7 +3,7 @@
 **** of a model class that is actually converted into runnable code.        ****
 *******************************************************************************/
 
-sicstus_module(instance, [instantiate_all/2, apply_minmax/3,
+sicstus_module(instance, [instantiate_all/2, apply_minmax/3, sum_over_dims/3,
 			  is_lookup_cond/2, path_section_for/6] ).
 
 sicstus_use_module([sp_only, m_class, inters, ame_gen, units, utility, m_update,
@@ -263,7 +263,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	 all(instance, is_instance, 
 	     [build(_Type), build(EvtNodes), build(_Load),
 	      build(EvtNames), build(_Dims), build(EvtRefs)]),
-	 (build_sum(EvtArgs, EvtTrigger), !;
+	 (build_sum(EvtArgs, Units, EvtTrigger), !;
 	   EvtTrigger = 1),
 	(RType = state -> append(InputPairs, EvtPairs, AllowedInExp);
 	    AllowedInExp = InputPairs),
@@ -428,16 +428,20 @@ havify(index(N) is Val and Inner, N, choose('"true"', Val, Inners)) :-
 	havify(Inner, M, Inners).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-build_sum([Solo], SoloArr) :- sum_over_dims(Solo, SoloArr).
-build_sum([First | Rest], FirstArr++Run) :-
-	sum_over_dims(First, FirstArr),
-	build_sum(Rest, Run).
+build_sum([Solo], Units, SoloArr) :-
+	sum_over_dims(Solo, Units, SoloArr).
+build_sum([First | Rest], Units, FirstArr++Run) :-
+	sum_over_dims(First, Units, FirstArr),
+	build_sum(Rest, Units, Run).
 
-sum_over_dims(IP, SD) :-
+sum_over_dims(IP, ResDims, SD) :-
 	IP = input(_,_,_, Units),
 	analyze_array(Units, Base, Dims),
+	(append(SummableDims, ResDims, Dims);
+	 append(Dims, _RepDims, ResDims), SummableDims = [];
+	throw(trigger_vs_event_dims_mismatch)), !,
 	(Base = boolean -> Num = choose(IP,1,0); Num = IP),
-	sum_dims(Dims, Num, SD).
+	sum_dims(SummableDims, Num, SD).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %squirt_names_and_refs(Comp, Names, Refs) :-

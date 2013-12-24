@@ -1583,7 +1583,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  
 	  Type = state_fn, !,
 	    SourceEqn = event(ActEqn, TriggerEqn),
-	    choosify(ActEqn, ChooseForm, OnInit),
+	    choosify(ActEqn, DimTypes, ChooseForm, OnInit),
 	    GroundEqn = (trigger_magnitude('')=TriggerEqn,
 			 choose('"true"', OnInit, ChooseForm)),
 	    UseList = [on_step | RefList];
@@ -1652,15 +1652,16 @@ unite_event_contexts([elt(Path, _,_) | Others], Test, Act) :-
 	unite_event_contexts(Others, Test, OldAct),
 	inters'><'combine_contexts(Path, OldAct, Test, Act).
 
-choosify(Pairs, Choice, Init) :-
+choosify(Pairs, Dims, Choice, Init) :-
 	(Pairs = (Cons on Evt, Rest), !,
-	    choosify(Rest, Default, Init);
+	    choosify(Rest, Dims, Default, Init);
 	  Pairs = (Cons on Evt),
 	    Default = prev(0)),
 	(Evt = 'reset...', !,
 	    Init = Cons,
 	    Choice = Default;
-	  Choice = choose(happens(Evt), Cons, Default)).
+	 sum_over_dims(Evt, Dims, EvtSum),
+	  Choice = choose(happens(EvtSum), Cons, Default)).
 	
 
 /* Now...when using a variable in the equation I have been putting
