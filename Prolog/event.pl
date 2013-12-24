@@ -857,7 +857,7 @@ doubleclick_on(Edit_thing) :-
 	  all(event, role_ref_to_msg, [build(RoleRefPairs), build(RoleMsgs)]),
 	  all(event, role_ref_to_stat, [build(RoleRefPairs), unify(Suppd),
 					unify(Enabd), build(RoleStats)]);
-	  [RoleMsgs, RoleStats] = [[], []]),
+	  [RoleMsgs, RoleStats] = [[], []]), % lone role not offered for abling
 	 Attrs = [use_sofar]), !,
 	    all(event, get_refinement_or_0,
 		[unify(ControlThing), unify(2), build(Attrs), build(OldVals)]),
@@ -871,9 +871,10 @@ doubleclick_on(Edit_thing) :-
 	        length(OldVals, NVals),
 	        length(NewVals, NVals),
 	        append(NewVals, NewChecks, NewStats),
-	        all(event, role_ref_to_stat,
+	        (NewChecks = [], !; % lone role not offered for abling
+		all(event, role_ref_to_stat,
 		    [build(RoleRefPairs), unify(NewSuppd),
-		     unify(NewEnabd), build(NewChecks)]),
+		     unify(NewEnabd), build(NewChecks)])),
 		 % fails if single ref not checked
 		 (nonvar(NewSuppd),
 		  length(NewSuppd, _NSuppd), !;
