@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.1 2013/08/28 07:52:26 u45169214 Exp $
+# $Id: can2svg.tcl,v 1.2 2013/12/29 15:01:58 u45169214 Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -237,9 +237,17 @@ proc can2svg::svgasxmllist {cmd args} {
     
     # Figure out if we've got a spline.
     set haveSpline 0
-    if {[info exists optA(-smooth)] && ($optA(-smooth) != "0") &&  \
-      [info exists optA(-splinesteps)] && ($optA(-splinesteps) > 2)} {
-        set haveSpline 1
+    if {[info exists optA(-smooth)] && ($optA(-smooth) != false)} {
+        #tk_messageBox -message "optA(-smooth)]: $optA(-smooth)]/n \
+          optA: [array get optA]"
+    }
+#     if {[info exists optA(-smooth)] && ($optA(-smooth) != "0") &&  \
+#       [info exists optA(-splinesteps)] && ($optA(-splinesteps) > 2)} {
+#         set haveSpline 1
+#     }
+    #&&  [info exists optA(-splinesteps)] && ($optA(-splinesteps) > 2) # not dumped by canvas
+    if {[info exists optA(-smooth)] && ($optA(-smooth) != false)} {
+        set haveSpline true
     }
     if {[info exists optA(-fill)]} {
         set fillValue $optA(-fill)
@@ -488,10 +496,11 @@ proc can2svg::CoordsToAttr {type coo opts svgElementVar} {
     
     # Figure out if we've got a spline.
     set haveSpline 0
-    if {[info exists optA(-smooth)] && ($optA(-smooth) != "0") &&  \
-      [info exists optA(-splinesteps)] && ($optA(-splinesteps) > 2)} {
-        set haveSpline 1
+    #&&  [info exists optA(-splinesteps)] && ($optA(-splinesteps) > 2) # not dumped by canvas
+    if {[info exists optA(-smooth)] && ($optA(-smooth) != false)} {
+        set haveSpline true
     }
+
     set attr {}
 
     switch -- $type {
