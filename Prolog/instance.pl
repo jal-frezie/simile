@@ -435,7 +435,8 @@ build_sum([First | Rest], Units, FirstArr++Run) :-
 	build_sum(Rest, Units, Run).
 
 sum_over_dims(IP, ResDims, SD) :-
-	IP = input(_,_,_, Units),
+	(IP = sofar(input(_,_,_, Units)); IP = input(_,_,_, Units)),
+				% in case of dashed influence
 	analyze_array(Units, Base, Dims),
 	(append(SummableDims, ResDims, Dims);
 	 append(Dims, _RepDims, ResDims), SummableDims = [];
