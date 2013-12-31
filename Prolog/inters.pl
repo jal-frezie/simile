@@ -105,7 +105,7 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		    append(Tail, [sm(Name, D, B, nbrs),
 				  sm(Name, A, D, C) | Rest], Path),
 		    suffix(Top, Rest), Top = [sm(_,_,_,_) | _],
-	            BackSwap = values_from_base), !,
+	            BackSwap = values_from_base(Top)), !,
 				% wait till all set before use
 		Wait = [enumerate(Name)],
 	        pointer_from(Path, SmPtr);
@@ -127,14 +127,14 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		    (\+ m_class'><'LinkWithAttrs has_attribute can_lookup of 1, !;
 			Assoc = [sm(OneSided, _,_,_) | _],
 			LookupWait = enumerate(OneSided)),  */
-		    ensure_separate(Base, Assoc, SepBase),
-		    suffix(BaseFrag, SepBase), /* longest first */
+		    % ensure_separate(Base, Assoc, SepBase),
+		    suffix(BaseFrag, Base), /* longest first */
 		    append(BaseSide, Top, RealPath),
 		    append(Deeper, BaseFrag, BaseSide), !,
 		    pointer_from(Top, Ptr),
 		    pointer_to(Assoc, Ptr),
 		    append([Deeper, Assoc, Top], Path),
-		    BackSwap = values_from_base;
+		    BackSwap = values_from_base(Top);
 		Location = in_assoc,
 		    append(Assoc, Top, AssocPath),
 		    append(Deeper, AssocPath, RealPath),
@@ -185,6 +185,7 @@ enabling the channel ID to be got from it */
 		NewVar = last(prev(M))), !,
 	    Recurse = 1.
 
+/* now done as before by returning top submodel context with values_from_base
 ensure_separate(Base, Assoc, SepBase) :-
 	append(InBase, [Top], Base),
 	append(InAssoc, [Top], Assoc) ->
@@ -194,7 +195,7 @@ ensure_separate(Base, Assoc, SepBase) :-
 	ensure_separate(InBase, InAssoc, InSepBase),
 	append(InSepBase, [NewTop], SepBase);
 	SepBase = Base.
-
+*/
 :- dynamic(macro_expansion/2).
 :- dynamic(fragment_expansion/5).
 
@@ -517,10 +518,14 @@ make_intermediates(
 		  nonvar(Units),
 		  Units = class_template(delay, _)), !, % or delay
 		    Args = [];
-		(suffix([sm(_,_,_, nbrs), _Host | ParamTail], ParamContext) ->
+		(suffix([sm(_,_,_, nbrs), _Host | ParamTail], ParamContext), !,
 		 % nbr list allows us to look forward in submodel array so be
 		 % sure to restart loops before using values from it
 		    get_model(ParamTail, ReadyContext);
+ 		  TermSwap = values_from_base(ReadyContext),
+ 		 % ReadyContext ensures values not used until base model exited,
+ 				% in case assoc is a child of base
+ 		    nonvar(ReadyContext), !;
 		  ReadyContext = ParamContext),
 		 Args = [made_at(Var, ReadyContext) | Wait]),
 	        /* note that for the time being the made_at condition is thrown
@@ -881,7 +886,7 @@ make_intermediates(
 	    reverse(DestPath, BackDP),
 	    all(inters, indices_for,
 		[build(BackDP), append(DestInds, []), append(DestDims, [])]),
-	    BackSwap = values_from_base), % jam context swap 
+	    BackSwap = values_from_base(_)), % jam context swap 
 	(integer(IndN), !;
 	    throw(bad_index_number(IndN, index, 32))),
 	    length(DestInds, AvailInds),
