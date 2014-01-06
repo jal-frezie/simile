@@ -1052,8 +1052,13 @@ Now one that uses a special conditional level */
 	    % for now, do not allow vm models except on their own
  	    ((break_at_last_loop(ALoops, TailLoops, [PickedLevel], ItemLoops),
 	         PickedLevel = sm(N, UP, DP, VMForm),
-	         (VMForm = vm_loop(_, XpectTypes,_,_),
+	         (VMForm = vm_loop(_, XpectTypes,_,_), wake,
 		     LN = N,
+		     length(XpectTypes, ArgsReqd),
+		     (ArgsReqd = Count, !;
+		       throw(wrong_no_of_args(Source, element,
+					      Count, ArgsReqd))),
+		  % will not be picked up at parse time as no vm indices given
 		     PtrInit = [sm(N, UP, DP, vm_loop(start_only, _,_,_))];
 		  VMForm = nbrs,
 		     contains(Grid, SubId),
