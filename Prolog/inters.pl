@@ -868,7 +868,7 @@ make_intermediates(
 	    lower(OpStr, LopStr),
 	    name(TRef, LopStr),
 	    member(TRef, [time, dt]), % ind_time removed
-	    (Step = dummy -> MaxStep = 7; MaxStep = Step),
+	    (Step = dummy -> MaxStep = 7; MaxStep is max(1,Step)),
 	    ((N=0; N = ''), TArg = Step;
 		% now done in insert_paths so only needed here for parsing
 		integer(N), N>=0, N=<MaxStep, TArg = N;
