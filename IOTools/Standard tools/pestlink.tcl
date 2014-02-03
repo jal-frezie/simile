@@ -576,8 +576,8 @@ namespace eval $keyValue {
                     -side left
         }
 # min and max limits restricted cos pest is single precision
-        set ::minForOpt($node) [max [GetMinValue $node] -1e10]
-        set ::maxForOpt($node) [min [GetMaxValue $node] 1e10]
+        set ::minForOpt($node) [expr {max([GetMinValue $node], -1e10)}]
+        set ::maxForOpt($node) [expr {min([GetMaxValue $node], 1e10)}]
         set ::initialEstimate($node) \
                 [expr ($::minForOpt($node)+$::maxForOpt($node))/2]
         pack [entry $f.est -textvariable initialEstimate($node) -width 8] \

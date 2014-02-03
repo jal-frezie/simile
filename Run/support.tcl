@@ -291,32 +291,7 @@ proc insert_to_pipe {ns_extras when what} {
 	set event(predict) [lindex $extras 0]
     }
 }
-    
-proc retract_from_pipe {ns_extras id} {
-    global event
-    upvar \#0 $ns_extras extras
-
-    if {[glob_element dts 0]<=0} {
-	set extras {}
-	return 0
-    }
-    set now [glob_element ts $::phasecount]
-    set where 0
-    set unload 0
-    while {$where<[llength $extras] && [lindex $extras $where]<=$now} {
-	set unload [lindex $extras [incr where]]
-	incr where
-    }
-    set phase [expr {int([glob_element ts 0])}]
-    if {[RealPhase $phase]} {
-	set extras [lreplace $extras 0 $where-1]
-	if {$unload} {
-	    set event(culprit) $id
-	}
-    }
-    return $unload
-}	
-    
+   
 proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 #ShowMess debug info  "Go! tgt $tgt subs $subs trans $trans dims $dims list $list cpp $useCppArray" ok
     # skip over any vm arrays, their indices will not appear
@@ -1517,24 +1492,6 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
     return $next
 }
 
-proc loses {prob phase} {
-    global ts dts
-    if {$prob <= 0 || $ts(0)==-1} {
-	return 0
-    } elseif {$prob >= 1} {
-	return 1
-    } else {
-# kills_per_step was intended to make sure that for R-K the same
-# proportion get killed in four passes as in a single pass for
-# Euler. As of 5.7 we make sure the loss process only happens once per
-# time step.
-#	set kills_per_step [expr $ts(0)?4:1]
-#	return [expr [ame_rand 0 1] > \
-#		    pow(1-$prob, $dts($phase)/$kills_per_step)]
-	return [expr [ame_rand 0 1] > pow(1-$prob, $dts($phase))]
-    }
-}
-
 # delete_list is a dummy procedure. What it should do is clear the
 # submodel instances from the list supplied, but since (a) it would also
 # need the parent namespace and (b) they tend to get reused anyway in
@@ -1657,7 +1614,7 @@ proc locate_nbr {ptr metaTxt soughtIndex} {
 
 proc init_pop {metaTxt crNode ptCount channelId maker name} {
     upvar 1 $metaTxt meta
-    set lastIndx [expr $ptCount+int([max 0 $crNode])]
+    set lastIndx [expr $ptCount+int(max(0, $crNode))]
     while {$ptCount<$lastIndx} {
 	incr ptCount
 	if {[prune $ptCount meta 1]} {
@@ -1758,11 +1715,6 @@ proc assign_if_min {sample payload runner pick} {
 	set pickV $payload
     }
 }
-
-proc ame_rand {lowBound highBound} {
-    return [expr $lowBound +[random01]*($highBound - $lowBound)]
-}
-
 
 proc stop_on_id {compId code} {
     error "User-defined interruption code $code"
@@ -2111,27 +2063,15 @@ proc glob_element {arrptr phase} {
 }
 
 # utility procs needed in both interps
-
-proc min {first last} {
-    return [expr $first<$last?$first:$last]
-}
-
-proc max {first last} {
-    return [expr $first>$last?$first:$last]
-}
-
-proc following {lo} {
-    return [expr $lo+1] ;# fn will accept floats so better work with them
-}
-
-proc preceding {lo} {
-    return [expr $lo-1] ;# fn will accept floats so better work with them
-}
-
-proc first {lo} {
-    return [expr $lo==1] ;# fn will accept floats so better work with them
-}
-
+#
+#proc min {first last} {
+#    return [expr $first<$last?$first:$last]
+#}
+#
+#proc max {first last} {
+#    return [expr $first>$last?$first:$last]
+#}
+#
 proc res {value} {
     global fromEditor
     set fromEditor [list res $value]
@@ -2213,3 +2153,64 @@ proc SetInterval {topNode inC where {what {}} {howLong {}}} {
 	return $paramData(uftsi,$where)
     }
 }
+
+# functions that can appear in expressions in debug mode
+proc tcl::mathfunc::loses {prob phase} {
+    global ts dts
+    if {$prob <= 0 || $ts(0)==-1} {
+	return 0
+    } elseif {$prob >= 1} {
+	return 1
+    } else {
+# kills_per_step was intended to make sure that for R-K the same
+# proportion get killed in four passes as in a single pass for
+# Euler. As of 5.7 we make sure the loss process only happens once per
+# time step.
+#	set kills_per_step [expr $ts(0)?4:1]
+#	return [expr [ame_rand 0 1] > \
+#		    pow(1-$prob, $dts($phase)/$kills_per_step)]
+	return [expr {ame_rand(0, 1) > pow(1-$prob, $dts($phase))}]
+    }
+}
+
+proc tcl::mathfunc::ame_rand {lowBound highBound} {
+    return [expr $lowBound +[random01]*($highBound - $lowBound)]
+}
+
+proc tcl::mathfunc::following {lo} {
+    return [expr $lo+1] ;# fn will accept floats so better work with them
+}
+
+proc tcl::mathfunc::preceding {lo} {
+    return [expr $lo-1] ;# fn will accept floats so better work with them
+}
+
+proc tcl::mathfunc::first {lo} {
+    return [expr $lo==1] ;# fn will accept floats so better work with them
+}
+    
+proc tcl::mathfunc::retract_from_pipe {ns_extras id} {
+    global event
+    upvar \#0 $ns_extras extras
+
+    if {[glob_element dts 0]<=0} {
+	set extras {}
+	return 0
+    }
+    set now [glob_element ts $::phasecount]
+    set where 0
+    set unload 0
+    while {$where<[llength $extras] && [lindex $extras $where]<=$now} {
+	set unload [lindex $extras [incr where]]
+	incr where
+    }
+    set phase [expr {int([glob_element ts 0])}]
+    if {[RealPhase $phase]} {
+	set extras [lreplace $extras 0 $where-1]
+	if {$unload} {
+	    set event(culprit) $id
+	}
+    }
+    return $unload
+}	
+ 

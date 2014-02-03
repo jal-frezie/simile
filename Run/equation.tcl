@@ -766,7 +766,7 @@ proc fill_inputs { triples } {
 # 'hide' does not work on the Mac and 'forget' errors if already forgotten
 	 }
     } else {
-        set showLines [max 3 [min 8 $line]]
+        set showLines [expr {max(3, min(8, $line))}]
         $widget.c.canvas.frame configure -height \
                 [expr $showLines*[winfo reqheight $p]+8]
 #        update

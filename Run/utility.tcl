@@ -746,14 +746,14 @@ proc RestoreCrs {noCrs} {
     return $withCrs
 }
 
-proc min {first last} {
-    return [expr $first<$last?$first:$last]
-}
-
-proc max {first last} {
-    return [expr $first>$last?$first:$last]
-}
-
+#proc min {first last} {
+#    return [expr $first<$last?$first:$last]
+#}
+#
+#proc max {first last} {
+#    return [expr $first>$last?$first:$last]
+#}
+#
 # "string is double" returns TRUE for {} so use this instead
 proc Numeric {str} {
     return [string is double -strict $str]
@@ -824,8 +824,8 @@ proc LetItShow {t {doneVar {}}} {
     }
     set fillw [winfo reqwidth $t]
     set fillh [winfo reqheight $t]
-    set left [max 0 [min [expr $scw-$fillw] [expr $tgtx+($tgtw-$fillw)/2]]]
-    set top [max 0 [min [expr $sch-$fillh] [expr $tgty+($tgth-$fillh)/2]]]
+    set left [expr {max(0, min($scw-$fillw, $tgtx+($tgtw-$fillw)/2))}]
+    set top [expr {max(0, min($sch-$fillh, $tgty+($tgth-$fillh)/2))}]
     wm geometry $t $sgnx$left$sgny$top
     if {[string length $doneVar]} {
 # have variable that gets set on exit, if scripting just set it

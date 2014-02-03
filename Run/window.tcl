@@ -568,8 +568,8 @@ proc ChangeRegion {w l t r b} {
 #    set vcomp [expr {[Unscale $w $vh]/($b - $t)}]
 #    set comp [expr $hcomp>$vcomp?$hcomp:$vcomp]
 # these ensure new region at least as big as window
-    set hSpare [max [expr {([Unscale $w $vw]+$l-$r)/2}] 0]
-    set vSpare [max [expr {([Unscale $w $vh]+$t-$b)/2}] 0]
+    set hSpare [expr {max(([Unscale $w $vw]+$l-$r)/2,0)}]
+    set vSpare [expr {max(([Unscale $w $vh]+$t-$b)/2,0)}]
     set newReg [ScaleList $w [list [expr {$l-$hSpare}] [expr {$t-$vSpare}] \
 				  [expr {$r+$hSpare}] [expr {$b+$vSpare}]]]
     $w configure -scrollregion $newReg

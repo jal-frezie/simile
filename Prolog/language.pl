@@ -758,8 +758,8 @@ that evaluates an expression in the model */
 do_assignment(L, [assign(Dest, Source) | Clauses], Indent, Used, Stream) :-
 	make_scalar(L, Dest, Used, ScalarDest),
 	make_evaluation_routine(L, Source, Used, Term),
-	make_expr(L, Term, Expr),
-	excrete(L, assignment, ScalarDest=Expr, Indent, Stream),
+%	make_expr(L, Term, Expr),
+	excrete(L, assignment, ScalarDest=Term, Indent, Stream),
 
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 

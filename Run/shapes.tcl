@@ -78,7 +78,7 @@ proc PutShape {c l t r b file fatness colourScheme title} {
     set fileName [lindex $nameList $point]
     
     source "../Images/$fileName.cnv"
-    set growth [max 0.001 [expr ($r-$l)/30.0]]
+    set growth [expr {max(0.001,($r-$l)/30.0)}]
 # use Inner...we don't need hourglass and the refresh may allow customization
 # dialogue to get its threads in a twist
     InnerZoomImage $c unscaled $growth
@@ -476,7 +476,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	set interval [expr [PrefValue custom(gridH) gridH]*$inFat/100.0]
 	for {set x [expr $origX+$interval*ceil(($l+1-$origX)/$interval)]} \
 	    {$x<$r} {set x [expr $x+$interval]} {
-		set fromEdge [max [expr $l+$plRad-$x] [expr $x+$plRad-$r]]
+		set fromEdge [expr {max($l+$plRad-$x,$x+$plRad-$r)}]
 		if {$fromEdge>0} {
 		    set inStep [expr $plRad - sqrt($plRad*$plRad - $fromEdge*$fromEdge)]
 		} else {
@@ -491,7 +491,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	set interval [expr [PrefValue custom(gridV) gridV]*$inFat/100.0]
 	for {set y [expr $origY+$interval*ceil(($t+1-$origY)/$interval)]} \
 	    {$y<$b} {set y [expr $y+$interval]} {
-		set fromEdge [max [expr $t+$plRad-$y] [expr $y+$plRad-$b]]
+		set fromEdge [expr {max($t+$plRad-$y,$y+$plRad-$b)}]
 		if {$fromEdge>0} {
 		    set inStep [expr $plRad - sqrt($plRad*$plRad - $fromEdge*$fromEdge)]
 		} else {
@@ -654,14 +654,14 @@ proc MyTile {dest pos dw dh l t r b src w h} {
 	    set osl [expr ($dw-$w)/2] ;# left of source on dest
 	    set ost [expr ($dh-$h)/2] ;# top of source on dest
 	    
-	    set sl [max 0 $l-$osl] ;# left of source area to copy
-	    set st [max 0 $t-$ost]
-	    set sr [min $w $r-$osl]
-	    set sb [min $h $b-$ost]
+	    set sl [expr {max( 0, $l-$osl)}] ;# left of source area to copy
+	    set st [expr {max( 0, $t-$ost)}]
+	    set sr [expr {min( $w, $r-$osl)}]
+	    set sb [expr {min( $h, $b-$ost)}]
 
 	    if {$sl<=$sr && $st<=$sb} {
-		set dl [max $l $osl]
-		set dt [max $t $ost]
+		set dl [expr {max($l,$osl)}]
+		set dt [expr {max($t,$ost)}]
 		$dest copy $src -from $sl $st $sr $sb -to $dl $dt
 	    }
 	} Scaled {

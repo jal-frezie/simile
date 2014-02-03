@@ -145,7 +145,7 @@ namespace eval slide139 {
                         [GetMaxValue $node] 0 min max gap s1 s2 s3 s4
                 if {[string match INTEGER $type]} {
                     set spacing 1
-		    set gap [max $gap $spacing]
+		    set gap [expr {max($gap, $spacing)}]
                 } else {
                     set spacing [expr $gap/100.0]
                 }

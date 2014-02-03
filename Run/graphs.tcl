@@ -437,7 +437,7 @@ proc GStick {c zone y} {
         return
     }
     set wrapLine [string equal [tr. Wraparound] $graph($t,outOpt)]
-    set y [max 0 [min $graph($t,height) $y]]
+    set y [expr {max( 0, min( $graph($t,height), $y))}]
     set pts [expr {[llength $graph($t,points)]-1}]
     if {$zone >= 0 && $zone <= $pts} {
         set graph($t,points) [lreplace $graph($t,points) $zone $zone $y]

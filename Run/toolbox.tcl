@@ -250,8 +250,8 @@ proc CheckFnsFresh {L progDir id userFnList} {
 	    } else {
 		set defnFile ${fnBase}.pl
 	    }
-            if {[file mtime $defnFile]>$date} {
-                set stat [max $stat 2] ;# Declaration out of date
+            if {[file mtime $defnFile]>$date && $stat<2} {
+                set stat 2 ;# Declaration out of date
             }
             if {[string equal procedure [lindex $fnLine 2]]} {
                 set file ${fnBase}$procXtn
@@ -261,8 +261,9 @@ proc CheckFnsFresh {L progDir id userFnList} {
                     if {[lsearch $files $file]==-1} {
                         lappend files $file
                     }
-                    if {[file mtime $file]>$date && ![string equal tcl $L]} {
-                        set stat [max $stat 2] ;# Definition out of date
+                    if {[file mtime $file]>$date && ![string equal tcl $L] && \
+			    $stat<2} {
+                        set stat 2 ;# Definition out of date
                         # no problem with tcl definitions, included at run time
                     }
                 }

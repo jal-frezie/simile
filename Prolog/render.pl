@@ -338,7 +338,9 @@ strings_direct(tcl, clear_memory, instance(submodel,_,_, Name, _-Dims), Indent,
 strings_direct(L, assignment, Dest=Source, Indent, Stream) :-
 	list_of(32, Indent, Leader),
 	(L = c, Fmt = "~s~a = ~w;\n";
-	    L = tcl, Fmt = "~sset ~a ~w\n"),
+	    L = tcl,
+	      (atomic(Source) -> Fmt = "~sset ~a ~w\n";
+	        Fmt = "~sset ~a [expr {~w}]\n")),
 	format(Stream, Fmt, [Leader, Dest, Source]).
 
 strings_direct(L, open_context, Pointer=[_, _, MPTargetRef], Indent1, Stream) :-
@@ -1206,119 +1208,7 @@ make_expr_all(Language, [Expr0 | Expr], [Result0 | Result]) :-
 	make_expr_all(Language, Expr, Result).
 
 combine( L, Op, VArgs, Atom) :-
-	make_expr_all(L, VArgs, VArgExprs),
-	(
-/*	Op = (?), L = tcl, !,
-	    VArgs = [VCond, VTrue'><'VFalse],
-	    sicstus_format_to_chars("[if {~w} {expr ~w} else {expr ~w}]",
-			    [VCond, VTrue, VFalse], CharList);
-	    
-Yes, horrible, nasty, ugly, repugnant, grotesque Tcl has the a?b'><'c format but,
-mindbogglingly stupidly, evaluates the non-chosen half, and, worse, complains
-about undefined array elements in it. Blooaaargh!!
-
-	Op = choose, !,
-		(L = c,
-			sicstus_format_to_chars("(~w?~w:~w)", VArgs, CharList);
-		L = tcl,
-			sicstus_format_to_chars("[if {~w} {expr ~w} else {expr ~w}]",
-					VArgs, CharList));
-	  
-Or so I thought. As it happens, if the programmer isn't a complete
-moron, he writes 'expr {a?b'><'c}' rather than 'expr a?b'><'c', thus
-ensuring only the true half is evaluated. */
-	
-	Op = choose, !,
-	  (L = c,
-	      sicstus_format_to_chars("(~w?~w:~w)", VArgs, CharList);
-	   L = tcl,
-	      sicstus_format_to_chars("[expr {~w?~w:~w}]", VArgs, CharList));
-/*
-What follows is even worse; it allows conditionals to be entered in the 
-if-then-elseif-else format, though I can't see why anyone would want to.
-
-Since this causes problems anyway (due to inters and contexts) it's all
-obsolete. A stopgap conversion to a?b:c format is in place, pending the
-incorporation of the actual conditionality into program generation
-
-	Op = if,
-		(L = c,
-			sicstus_format_to_chars("(~w)", VArgs, CharList);
-		L = tcl,
-			sicstus_format_to_chars("[if ~w]",
-					VArgs, CharList));
-
-	Op = elseif,
-		(L = c,
-			sicstus_format_to_chars("~w:(~w)", VArgs, CharList);
-		L = tcl,
-			sicstus_format_to_chars("{expr ~w} else {if ~w}",
-					VArgs, CharList));
-
-	Op = then,
-		(L = c,
-			sicstus_format_to_chars("~w?~w", VArgs, CharList);
-		L = tcl,
-			sicstus_format_to_chars("{~w} ~w",
-					VArgs, CharList));
-
-	Op = else,
-		(L = c,
-			sicstus_format_to_chars("~w:~w", VArgs, CharList);
-		L = tcl,
-			sicstus_format_to_chars("{expr ~w} else {expr ~w}",
-					VArgs, CharList));
-			
-furthermore, Tcl lacks the min and max operators although there are perfectly
-good ones in c... Now, 4/8/98 sees new Tcl interpretations of Boolean relations, to
-aid lazy evaluation as is done for Choose... */
-
-	Op = rand,
-		(L = tcl; L = c),
-			make_procedure_call_chars(L, [ame_rand | VArgExprs], CharList);
-	Op = happens, VArgExprs = [Test], !,
-	    sicstus_write_to_chars(Test, CharList);	
-        Op = nonnull, VArgExprs = [Test], !,
-            (L = c,
-		sicstus_write_to_chars(Test, CharList);
-	     L = tcl,
-		sicstus_format_to_chars("[string compare NULL ~w]", Test,
-					CharList));
-	L = tcl,
-		(inters'><'use_tcl_proc_for(Op),
-			make_procedure_call_chars(L, [Op | VArgExprs], CharList);
-		member(Op, [and, ',', '&&']),
-			sicstus_format_to_chars("[if {~w} then {expr ~w} else {expr 0}]",
-					VArgs, CharList);				
-		member(Op, [or, ';', '||']),
-			sicstus_format_to_chars("[if {~w} then {expr 1} else {expr ~w}]",
-					VArgs, CharList))),
-
-	!, name(Atom, CharList);
-
-/* Heres a sticky botch...some models are written for modelling environments that
-quietly stick in a huge but finite value when you, say, divide by zero. With 
-the next few lines in place, and math_protect asserted, AME will do the same.
-
-	state'><'math_protect,
-	(Op = (/),
-		VArgs = [Nom, Div],
-		Test = '==0',
-		Atom = double(Nom)/NewDiv;
-	Op = (//),
-		VArgs = [Nom, Div],
-		Test = '==0',
-		Atom = int(Nom)/int(NewDiv);
-	(Op = log; Op = log10),
-		VArgs = [Div],
-		Test = '<=0',
-		Atom =.. [Op, NewDiv]), !,
-			sicstus_format_to_chars("((~w)~w?1e-100:(~w))", [Div, Test, Div],
-					NewDivName),
-			name(NewDiv, NewDivName);
-
-   Enough of these; I might need to do pow(a,b) and perhaps others too.
-   Now to exorcise the demon of integer division... */
+%   Now to exorcise the demon of integer division...
 	Op = (/), !,
 	    VArgs = [Nom, Div],
 	    (L = c, !,
@@ -1333,13 +1223,19 @@ the next few lines in place, and math_protect asserted, AME will do the same.
 %        member(Op-Arr, [cur_phase-ts, cur_step-dts]), !,
 %            make_indexed_reference(L, Arr, [0], IndxRef),
 %            refer_value(L, IndxRef, Atom);
+	Op = choose,
+	    VArgs = [Test, IfT, IfF], !,
+	    Atom = (Test?IfT:IfF);
+	Op = happens, VArgs = [Atom];
+	Op = nonnull, (L = c, VArgs = [Atom];
+		       L = tcl, VArgs = [Test], Atom = (Test ne '"NULL"'));
 	(member(Op, [and, ',', '&&']), !,
-		(L = c,
+		((L = c; L = tcl),
 			TargetOp = (&&);
 		L = basic,
 			TargetOp = 'AND');
 	member(Op, [or, ';', '||']), !,
-		(L = c,
+		((L = c; L = tcl),
 			TargetOp = ('||');
 		L = basic,
 			TargetOp = 'OR');
@@ -1373,6 +1269,8 @@ the next few lines in place, and math_protect asserted, AME will do the same.
 		TargetOp = atan;
 	Op = abs, L = c, !,
 	        TargetOp = myabs;
+	Op = rand, !,
+	        TargetOp = ame_rand;
 	TargetOp = Op),
 		Atom =.. [TargetOp | VArgs].
 

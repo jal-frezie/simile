@@ -35,10 +35,10 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 	# This won't catch defns in subdirectories
 	set funs [file join [file dirname $env(SYSDIR)] Functions *.tcl]
 	foreach fnFile [glob -nocomplain $funs] {
-	    source $fnFile
+	    namespace eval ::tcl::mathfunc [list source $fnFile]
 	}
 	foreach fnFile $incs {
-	    source $fnFile
+	    namespace eval ::tcl::mathfunc [list source $fnFile]
 	}
 	source $model_prog($topNode)
 	if {![catch {IdentField $simile_identifier version} buildV]} {

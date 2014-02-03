@@ -375,7 +375,7 @@ read_funcs(File, Stream, Text, Category, Done) :-
 	        assert(sample(Functor));
 	 Line = function(Functor, ReturnType, ArgTypes)),
 	    assert(function(Category, Functor, ReturnType, ArgTypes)),
-	    assert(use_tcl_proc_for(Functor)), !,
+	    % assert(use_tcl_proc_for(Functor)), !, [can now use in exprs]
 	    dialogue'><'spell_out([ReturnType | ArgTypes], 1),
 	    dialogue'><'make_arg_list(ArgTypes, String),
 	    sicstus_format_to_chars("{~a {~a}} procedure ~a (~s) returns ~w",
@@ -1590,7 +1590,6 @@ caught by the parser before this list is checked so they will not be
 put into the target program. */
 
 :- dynamic(function/4).
-:- dynamic(use_tcl_proc_for/1).
 :- dynamic(sample/1).
 
 /* These are implemented by the parser. Note the units are descriptive since
@@ -1754,15 +1753,6 @@ operator(and, cond_spec, [cond_spec, cond_spec]).
 operator(or, boolean, [boolean, boolean]).
 operator(xor, boolean, [boolean, boolean]).
 operator(not, boolean, [boolean]).
-
-% following for functions that need tcl procedures inside expressions
-use_tcl_proc_for(min).
-use_tcl_proc_for(max).
-use_tcl_proc_for(following).
-use_tcl_proc_for(preceding).
-use_tcl_proc_for(first).
-use_tcl_proc_for(loses). % internal function decides loss from probability
-use_tcl_proc_for(retract_from_pipe).
 
 value(Any) :-
 	member(Any, [boolean, int, a(_Enum), real]).
