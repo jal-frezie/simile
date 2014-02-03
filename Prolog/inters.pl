@@ -932,7 +932,7 @@ make_intermediates(
 	 ((catch(DimNum is float(Dim), _, fail),
 	          DimVal is round(DimNum), %allow idx to be float if = to an int
 	          DimNum is float(DimVal),
-	          Dun = int;	% it is integer now
+	          Dun = const_int;	% it is integer now
 	        make_intermediates(Dim, SubId, [dum], DestPath,_, PrevInters,
 				   BuildingArrays, Step, Used, Dun, MidInters,
 				   part_result([], [], _, DimVal)),
@@ -1052,7 +1052,7 @@ Now one that uses a special conditional level */
 	    % for now, do not allow vm models except on their own
  	    ((break_at_last_loop(ALoops, TailLoops, [PickedLevel], ItemLoops),
 	         PickedLevel = sm(N, UP, DP, VMForm),
-	         (VMForm = vm_loop(_, XpectTypes,_,_), wake,
+	         (VMForm = vm_loop(_, XpectTypes,_,_),
 		     LN = N,
 		     length(XpectTypes, ArgsReqd),
 		     (ArgsReqd = Count, !;
