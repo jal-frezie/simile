@@ -657,9 +657,10 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 	        executable corresponding to the actual enumerated type. */
 		Wee = 1,
 		enum_type_ref(Enum, BaseName, Muckle, _, Posn);
-	    member(Unit, [const_int, int]), !, Type = 'INTEGER',
+	    member(Unit, [const_int, int, n(Enum)]), !, Type = 'INTEGER',
 	        [Wee, Muckle] = [-268435455, 268435455];
-		/* limits for GNU integers; Sicstus can go further */
+		/* limits for GNU integers; Sicstus can go further --
+		so can 64-bit versions */
 	    Type = 'REAL',
 	        [Wee, Muckle] = [-1.0e100, 1.0e100]),
 	    DefEval = 'DERIVED'),
