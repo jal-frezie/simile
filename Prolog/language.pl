@@ -106,7 +106,9 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	excrete(L, enter_context, Pointer=[Top, Name, RefExprs], 
 		Indent, Stream),
 	(nonvar(Alarm),
-	    Alarm = al_action(DoneCond, TryCond),
+	  Alarm = al_action(DoneCond, TryCond),
+	  member(assign(arr(Pointer, DoneCond, _), _), MyLoop) ->
+	    % only add alarm loop if assigning condition in this pass
 	    make_struct_reference(L, Pointer, DoneCond, AlarmVar, AlarmRef),
 	    excrete(L, assignment, AlarmVar=1, Indent, Stream),
 	    make_evaluation_routine(L, TryCond, Used, TryRef),
@@ -118,8 +120,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	    excrete(L, break, _, Indent2, Stream),
 	    excrete(L, end(cond), AlarmRef, Indent1, Stream),
 	    excrete(L, end(while), alarm, Indent, Stream);
-	var(Alarm),
-	    % if no alarm loop this does not start new context
+	% if no alarm loop this does not start new context
 	    do_assign_list(L, MyLoop, Indent, Used, Stream),
 	    KeepContext = yes);
 	LoopSpec = vm_loop(Dims, _, BaseLoops, _),
