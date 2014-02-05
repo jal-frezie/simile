@@ -654,6 +654,7 @@ warp_factor_for(Link, WarpFactor) :-
 get_link_route(Link, Route) :-
 	get_end_pt(Link, start, SType, [SX, SY], SBox),
 	get_end_pt(Link, finish, FType, [FX, FY], FBox),
+	\+ [SX, SY] = [FX, FY], % fail if implicit function link
 	find_all_comps(Parent, Link),
 	warp_factor_for(Link, WarpFactor), % clockwise round start
 
