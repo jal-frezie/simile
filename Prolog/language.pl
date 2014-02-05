@@ -599,12 +599,11 @@ This could be avoided by peeking at the reproduction compartment then decrementi
 it in a local variable, but this way is conceptually simpler, which is everything.
 */
 
-do_assignment(L, [reproduce(ParentPtr, Name, ReproNames) | Clauses],
+do_assignment(L, [reproduce(ParentPtr, Pointer, Name, ReproNames) | Clauses],
 	      Indent, Used, Stream) :-
 	Indent1 is Indent + 4,
 
 	append_atoms(Name, count, Count),
-	append_atoms(Name, pointer, Pointer),
 	append_atoms(Name, meta, MetaPointerName),
 	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer, _),
 	resolve_pointer(L, MetaPointer, MPTarget),

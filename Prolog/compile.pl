@@ -1226,9 +1226,9 @@ nodes.
 			   make(evt_bred(Name),
 				[evt_settled(Name) | EvtReproducers],
 				LocalPath, Step,
-				[reproduce(Ptr, Name, EvtReproducers)]),
+				[reproduce(Ptr, NewPtr, Name, EvtReproducers)]),
 			   make(bred(Name), [culled(Name)], LocalPath, Step,
-				[reproduce(Ptr, Name, Reproducers)])],
+				[reproduce(Ptr, NewPtr, Name, Reproducers)])],
 	    % relegate to 0 as membership may have changed during run
 %	    (setof(ReproRule, maker_for(SmName, Functions, Name, Path, Step,
 %					Ptr, reproduction, ReproRule),
