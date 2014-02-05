@@ -1285,12 +1285,14 @@ link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
 	    Refs = [local(Top_arc)],
 	    initiates(Top_arc, Base),
 	    (Base has_model_refinement references of BRefList,
-		append(BRefList, Refs, BNewList),
+		merge_lists(BRefList, Refs, BNewList),
+	     % merge handles the very unusual case that we deleted a relation
+	     % with the same arc id earlier this session (also below)
 		Base has_changed_model_refinement references of BNewList;
 	      Base has_new_model_refinement references of Refs),
 	    terminates(Top_arc, Assoc),
 	    (Assoc has_model_refinement references of RefList,
-		append(RefList, Refs, NewList),
+		merge_lists(RefList, Refs, NewList),
 		Assoc has_changed_model_refinement references of NewList;
 	      Assoc has_new_model_refinement references of Refs),
 	    OldObj is_connector from _ to Assoc,
