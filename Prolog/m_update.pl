@@ -1282,19 +1282,21 @@ link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
 	    event'><'delete_by_dlg(NoUse),
 	    fail;
 	  New_obj = relation, % make sure arrow for lookup still lowest index
-	    Refs = [local(Top_arc)],
+	    Ref = local(Top_arc),
 	    initiates(Top_arc, Base),
 	    (Base has_model_refinement references of BRefList,
-		merge_lists(BRefList, Refs, BNewList),
-	     % merge handles the very unusual case that we deleted a relation
-	     % with the same arc id earlier this session (also below)
+	        substitute(Ref, BRefList, obsolete, SBRefList),
+		append(SBRefList, [Ref], BNewList),
+	     % subst handles the very unusual case that we deleted a relation
+	     % with the same arc id earlier this session -- same for assoc
 		Base has_changed_model_refinement references of BNewList;
-	      Base has_new_model_refinement references of Refs),
+	      Base has_new_model_refinement references of [Ref]),
 	    terminates(Top_arc, Assoc),
 	    (Assoc has_model_refinement references of RefList,
-		merge_lists(RefList, Refs, NewList),
+	        substitute(Ref, RefList, obsolete, SRefList),
+		append(SRefList, [Ref], NewList),
 		Assoc has_changed_model_refinement references of NewList;
-	      Assoc has_new_model_refinement references of Refs),
+	      Assoc has_new_model_refinement references of [Ref]),
 	    OldObj is_connector from _ to Assoc,
 	    find_type(OldObj, relation),
 	    find_name_host(OldObj, OldHost),
