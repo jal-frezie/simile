@@ -1010,6 +1010,9 @@ proc InitExecThread {node} {
 		vwait execThread($node,reply)
 		# can process events and incoming messages
 		if {[lindex $execThread($node,reply) 0]} {
+# get rid of MRE now, easier than trying to unset 'busy'
+		    ScrubRun $node 1
+		    ExDestroyHelpers $node
 		    error "Mishap in execution thread" \
 			[lindex $execThread($node,reply) 2]
 		} else {
