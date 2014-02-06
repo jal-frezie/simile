@@ -435,6 +435,12 @@ set msgs(undecipherable_operand_message) [tr. {%1$s does not stand for a number 
 set msgs(submodel_name_recurs_title) [tr. {Problem getting number}]
 set msgs(submodel_name_recurs_message) [tr. {Cannot resolve reference to size of %1$s. There are multiple submodels of this name.}]
 
+set msgs(no_such_dimension_title) [tr. {Problem getting number}]
+set msgs(no_such_dimension_message) [tr. {Model "%1$s" does not have a dimension number %2$s}]
+
+set msgs(not_single_fixed_dimension_title) [tr. {Problem getting number}]
+set msgs(not_single_fixed_dimension_message) [tr. {Expression "%1$s" cannot be used as a single fixed value; its values are %2$s}]
+
 set msgs(self_reference_title) [tr. {Problem getting number}]
 set msgs(self_reference_message) [tr. {Self-reference to size of %1$s.}]
 

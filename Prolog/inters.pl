@@ -1352,8 +1352,10 @@ decode_number(Source, SubId, Step, SourceRef, Units) :-
 	   member(RType, [rect_grid(R, C), hex_grid(R, C)]),
 	   Units = const_int;
 	  throw(not_in_grid(Source)));
-	get_actual_size(SubId, Source, quoted, [SrcNum], [SrcType], [SrcUnits]),
-	(Source = 0.0 -> GenUnits = real; GenUnits = SrcUnits),
+	get_actual_size(SubId, Source, quoted, SrcNums, SrcTypes, SrcUnits),
+	(SrcNums = [SrcNum], SrcTypes = [SrcType], SrcUnits = [SrcUnit], !;
+	  throw(not_single_fixed_dimension(Source, SrcNums))),
+	(Source = 0.0 -> GenUnits = real; GenUnits = SrcUnit),
 	remove_physical_units_if_disabled(SubId, GenUnits, Units),
 	(Step = dummy, !,
 	    (Units = n(SourceRef), !; % enum type dims of makearray etc

@@ -634,12 +634,12 @@ numbers of submodel instances, and translates those that can be translated,
 stripping out those which cannot, or which correspond to non-disaggregated
 submodels. */
 
-get_actual_size(Node, Sub, ETStyle, Nums, Sizes, [Units]) :-
-	(Sub = none, !, Nums = [], Sizes = [], Units = any;
+get_actual_size(Node, Sub, ETStyle, Nums, Sizes, Units) :-
+	(Sub = none, !, Nums = [], Sizes = [], Units = [any];
 	enum_type_ref(Sub, Node, ETStyle, Num, Unit, _),
 	    Nums = [Num],
 	    Sizes = [Sub],
-	    Units = Unit;
+	    Units = [Unit];
 	(Sub = size(ModName); Sub = size(ModName, Ind)),
 	    contains(Top, Node),
 	    backup'><'is_toplevel(Top),
@@ -652,12 +652,14 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, [Units]) :-
 		    (var(Ind), !,
 			Nums = RealN,
 			Sizes = RealSize,
-		        [Units] = AllUnits;
+		        Units = AllUnits;
 		    nth(Ind, RealN, UseN),
 		    nth(Ind, RealSize, UseSize),
-		    nth(Ind, AllUnits, Units),
+		    nth(Ind, AllUnits, UseUnit),
 			Nums = [UseN],
-			Sizes = [UseSize]);
+			Sizes = [UseSize],
+		        Units = [UseUnit];
+		     Err = no_such_dimension(ModName, Ind));
 		    Err = submodel_name_recurs(ModName));
 		Err = absent_submodel(ModName));
 	Sub = value(CompName),
@@ -671,7 +673,7 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, [Units]) :-
 		    (inters'><'promote_unit(U, int),
 			Nums = [value(UniqSource)],
 			Sizes = [Sub],
-			Units = int;
+			Units = [int];
 		      Err = bad_source_units(CompName, U));
 		Err = source_name_recurs(CompName));
 	      Err = absent_source(CompName));
@@ -763,7 +765,8 @@ get_node_size(Source, SizeN, Size, Units) :-
 	(\+ member(var, Size), !;
 	caption_for(Source, Capt),
 	    raise_exception(submodel_size_variable(Capt)));
-	Size = [].
+	SizeN = [],
+	  Size = [].
 
 /* This returns all the array bounds associated with a submodel in the
 canonical order, i.e., those accessed by the highest index numbers first. */
