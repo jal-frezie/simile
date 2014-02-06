@@ -649,7 +649,13 @@ in incoming links and submodels to reflect that change.
 
 Note the references are to the sections of the links that actually
 connect to the submodel, not the section that has the can_lookup
-attribute (which is the argument). */
+attribute (which is the argument).
+
+Note also, due to the icy grip of history, the role with the _last_
+reference is the one that can be looked up! Since we add new
+references at the end (to avoid changing meanings of old ones) we have
+to call this when new roles are added. Could probably improve it to
+get rid of the "obsolete"s too... */
 
 make_role_first(ContRole) :-
 	terminates(ContRole, Model),
