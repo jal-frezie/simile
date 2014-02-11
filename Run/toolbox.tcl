@@ -587,9 +587,7 @@ proc UpdateExecution {node action} {
     Rerun [FindNodeTopWin $node].canvas [string equal start $action]
 }
 
-if {[info tclversion] > 8.5} {
-    set itclVers 4.0b4
-} elseif {[info tclversion] > 8.4} {
+if {[info tclversion] > 8.4} {
     set itclVers 3.4
 } else {
     set itclVers 3.3

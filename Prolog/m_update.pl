@@ -385,8 +385,9 @@ get_unit_conversion(Remote, Local,
 	        SourceLocation = in_6_nbrs,
 	        Index = -3),
 	     Subs = [var | DefSubs];
-	      get_all_dims(TopModel, Subs), % disabled for 6.0p1
-	        \+ Subs = [],
+	      get_all_dims(TopModel, XSubs), % disabled for 6.0p1
+	        \+ XSubs = [],
+	        append(XSubs, DefSubs, Subs),
 	        SourceLocation = up_hierarchy,
 	        Index = -1),
 	    Relation = none;

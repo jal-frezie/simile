@@ -98,16 +98,16 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	        \+ (\+ Common = CommonForm), % check they unify but do not do it
 	        Common = [sm(Name, A, B, C) | Rest],
 	        (Location = up_hierarchy,
-		    append(Tail, [sm(outside(Name), A, B, C) | Rest], Path);
+		    append(Tail, [sm(outside(Name), A, B, C) | Rest], Path),
+		    Wait = [];
 				% use values from all instances -- need to
 	     % stop loops matching by changing representation of bound
 		  member(Location, [in_8_nbrs, in_6_nbrs]),
 		    append(Tail, [sm(Name, D, B, nbrs),
 				  sm(Name, A, D, C) | Rest], Path),
 		    suffix(Top, Rest), Top = [sm(_,_,_,_) | _],
+		    Wait = [enumerate(Name)], % wait till all set before use
 	            BackSwap = values_from_base(Top)), !,
-				% wait till all set before use
-		Wait = [enumerate(Name)],
 	        pointer_from(Path, SmPtr);
 	     % the last bit will stop these roles being used in same eqn as
 	     % assoc roles, which may be sensible

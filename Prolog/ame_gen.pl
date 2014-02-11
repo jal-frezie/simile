@@ -245,7 +245,8 @@ bite_off_number(String, Num, Left) :-
 	(append(Safe, [Black, White | _], String),
 	    (Black = 46,
 		member(White, "\n\r\t "); % end of a macro expansion (unicode?)
-	      member(Black, "{\\} \n\r")), !;
+	      member(Black, "{\\} \n\r");
+	     length(Safe, 255)), !; % max length for a number
 	    String = Safe),
 	output'><'safe_tcl_eval(['EatNumber', br(chars(Safe))], RList),
 	append(Num, [32 | SzStr], RList),
