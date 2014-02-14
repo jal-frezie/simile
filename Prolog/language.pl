@@ -143,7 +143,8 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	  make_struct_reference(L, Pointer, next, OnPointer, OnPointerRef),
 	  excrete(L, assignment, Pointer=StartPtrRef, Indent, Stream),
 	  (Dims == start_only -> % will use locate to go through list
-	   do_assign_list(L, MyLoop, Indent, Used, Stream);
+	   do_assign_list(L, MyLoop, Indent, Used, Stream),
+	   KeepContext = yes;
 	   ptr_compare(L, PointerRef, 0, PtrNonNull),
 	   excrete(L, while_start, PtrNonNull, Indent, Stream),
 	   Indent1 is Indent+4,

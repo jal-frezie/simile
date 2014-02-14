@@ -1055,7 +1055,7 @@ Now one that uses a special conditional level */
 	         (VMForm = vm_loop(_, XpectTypes,_,_),
 		     LN = N,
 		     (length(XpectTypes, Count), !;
-		     length(XpectTypes, ArgsReqd),
+		       length(XpectTypes, ArgsReqd),
 		       throw(wrong_no_of_args(Source, element,
 					      Count, ArgsReqd))),
 		  % will not be picked up at parse time as no vm indices given
