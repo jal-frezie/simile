@@ -22,7 +22,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, Used,
 					      Formula))), Prob,
 		     report(Sm, Prob)),
 
-	get_model_and_loops(SourceContext, DestPath, _, SourceLoops, _),
+	get_model_and_loops(SourceContext, DestPath, SourceLoops, _),
 	append(SourceLoops, DestPath, BaseContext),
 	(swap_back(BaseContext, BackSwap, FContext, no_dim), !;
 	throw(cannot_make_context(Target, BaseContext, BackSwap))),
@@ -625,13 +625,14 @@ make_intermediates(
 				   Step, Used, [TXUnits, ArgUnits], OldInters,
 				   _, [], SubContext, OldSetups, OldArgs,
 				   [IncrementRef, PayloadRef])),
-	get_model_and_loops(SubContext, TotalPath, _, SubLoops, _),
+	get_model_and_loops(SubContext, TotalPath, SubLoops, _),
 
 	/* choose a location for Total where it will be visible in the
 	destination path .... need to make sure it does not contain any
 	of the pointer references from the source */
 	swap_back(TotalPath, SubSwap, WritePath, MadeDim),
-	append([SubLoops, NowBuilding, WritePath], WriteContext),
+	flatten(SubLoops, FlatLoops),
+	append([FlatLoops, NowBuilding, WritePath], WriteContext),
 
 	pointer_from(OuterPath, TotalPtr),
 	pointer_from(InterPath, SourcePtr),
@@ -925,7 +926,7 @@ make_intermediates(
 	    make_intermediates(Reps, SubId, [dum], DestPath,_, PrevInters,
 			       BuildingArrays, Step, Used, Dun, MidInters,
 			       part_result(Counted, [], _, DimVal)),
-	    get_model_and_loops(Counted, DestPath, _, SzLoops, _),
+	    get_model_and_loops(Counted, DestPath, SzLoops, _),
 	    suffix([LocalLoop], SzLoops), !,
 	    NowBuilding = [LocalLoop | BuildingArrays];
 	((Source = makearray(Element, Dim); Source = soloarr(Element), Dim=1),
@@ -956,7 +957,7 @@ make_intermediates(
 			PrevInters, NowBuilding, Step, Used, Units, NewInters,
 			part_result(EltContext, Setups, Args, SourceRef)),
 %	    append(DimSetups, EltSetups, Setups),
-	    get_model_and_loops(EltContext, DestPath, _, EltLoops, EltBase),
+	    get_model_and_loops(EltContext, DestPath, EltLoops, EltBase),
 	    append(EltLoops, [LocalLoop | EltBase], SourceContext);
 
 /* This should work like current version of statearray(), i.e.,
@@ -1018,7 +1019,7 @@ Now one that uses a special conditional level */
 	    make_intermediates(Action, SubId, Target, DestPath, BackSwap,
 		    MidInters, BuildingArrays, Step, Used, AUnits, LateInters,
 		    part_result(AContext, ASetups, AArgs, ARef)),
-	    get_model_and_loops(AContext, DestPath, _, [], _),
+	    get_model_and_loops(AContext, DestPath, [], _),
 	    
 	    all(inters, add_condition_to_context,
 		[build(FullSetups),
@@ -1047,8 +1048,8 @@ Now one that uses a special conditional level */
 	    make_intermediates(Array, SubId, Target, DestPath, BackSwap,
 			MidInters, BuildingArrays, Step, Used,Units, NewInters,
 			part_result(AContext, ASetups, AArgs, SourceRef)),
-	    get_model_and_loops(IContext, DestPath, _, ILoops, IBase),
-	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
+	    get_model_and_loops(IContext, DestPath, ILoops, IBase),
+	    get_model_and_loops(AContext, DestPath, ALoops, ABase),
 	    % for now, do not allow vm models except on their own
  	    ((break_at_last_loop(ALoops, TailLoops, [PickedLevel], ItemLoops),
 	         PickedLevel = sm(N, UP, DP, VMForm),
@@ -1108,7 +1109,7 @@ Now one that uses a special conditional level */
 			DestPath, BackSwap, InitInters, BuildingArrays, 
 			Step, Used, DefUnit, MidInters,
 			part_result(XIContext, SubSetups, _,_)),
-	    get_model_and_loops(XIContext, DestPath,_, XILoops,_),
+	    get_model_and_loops(XIContext, DestPath, XILoops,_),
 	    suffix(XILoops, LoopSlot),
 	    /* If we know what the parameter units are by now, use them */
 	    (nonvar(UseUnit), !;
@@ -1127,6 +1128,16 @@ Now one that uses a special conditional level */
 		throw(wrong_param_units(Param, UseUnit, DefUnit))),!,
 	    append(SubSetups, ExSetups, Setups);	  
 
+	Source = flatten(SubExp),
+	    make_intermediates(SubExp, SubId, Target, 
+			DestPath, BackSwap, PrevInters, BuildingArrays, 
+			Step, Used, Units, NewInters,
+			part_result(FlatContext, ExSetups, Args, SourceRef)), !,
+	    (append(ArrayPayload, Grouped, FlatContext),
+	     Grouped = [sm(_,_,_, vm_loop(_,_,_,_)) | _],
+	     append(ArrayPayload, [Grouped], SourceContext);
+	    throw(no_list_to_flatten(SubExp)));
+	    
 	Source = ready(ToDoFirst), % keep deps but return TRUE
 	    replace_subexps(ToDoFirst, inters, just_inputs, Args, _,_,_),
 	    length(Args, _L), !,
@@ -1248,8 +1259,7 @@ Now one that uses a special conditional level */
 	        m_update'><'get_av_pair(OutNode, 0, units, OutArrSpec),
 	        m_update'><'analyze_array(OutArrSpec, Units, OutDims),
 	        make_inds_for(OutDims, _, OutLoops, _),
-	        get_model_and_loops(ExecContext, DestPath, _,
-				    ExecLoops, ExecBase),
+	        get_model_and_loops(ExecContext, DestPath, ExecLoops, ExecBase),
 		append(ExecLoops, BuildingArrays, FragLoops),
 		get_dims_from_loops(FragLoops, ExecDims, _),
 		m_update'><'add_parameter(RefNode, 0, multiplication_spec,
@@ -1628,6 +1638,7 @@ builtin('List handling', place_in, int, [const_int]).
 builtin('List handling', tweakarray, array_of_any, [any, const_int, int]).
 builtin('List handling', statearray, array_of_any, [int, any, array_of_any]).
 builtin('List handling', element, any, [array_of_any, int]).
+builtin('List handling', flatten, list_of_any, [nested_list_of_any]).
 builtin('Model properties', size, int, [submodel_name]).
 builtin('Model properties', size, int, [submodel_name, const_int]).
 builtin('List handling', least, numeric, [array_or_list_of_numerics]).
@@ -1923,8 +1934,8 @@ context, and returns a context in which the new source can be assigned
 as well. */
 
 combine_contexts(NS, PS, D, CS) :-
-	get_model_and_loops(NS, D, _, NL, NP),
-	get_model_and_loops(PS, D, _, PL, PP),
+	get_model_and_loops(NS, D, NL, NP),
+	get_model_and_loops(PS, D, PL, PP),
 	longest_path([NP, PP], CP),
 	combine_paths(NL, PL, CL),
 	append(CL, CP, CS).
@@ -1980,7 +1991,7 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	    m_update'><'analyze_array(OldU, _OldUnits, NeededDims),
 	    length(NeededDims, N),
 	    length(NeededLoops, N),
-	    get_model_and_loops(SourceContext, DestPath, _, Loops, Model),
+	    get_model_and_loops(SourceContext, DestPath, Loops, Model),
 	    (append(SpareLoops, NeededLoops, Loops), !;
 		throw(fragment_arg_needs_more_dims)),
 	    append(SpareLoops, Model, UseContext),
@@ -2159,14 +2170,13 @@ get_dims_from_loops([], [], []).
 
 get_dims_from_loops(Loops, Dims, Inds) :-
 	append(InnerLoops, [Loop], Loops),
-	(Loop = sm(_,_,_, VLoop),
-	\+ VLoop = fm_loop(_,_,_,_), !,
-	    Dims = [var | RDims],
-	    Inds = [none | RInds];
-	Loop = set(Ind, loop(Dim,_)), !,
+	(Loop = set(Ind, loop(Dim,_)), !,
 	    Dims = [Dim | RDims],
 	    Inds = [Ind | RInds];
-	Dims = RDims,
+	 loops(Loop), !, % any other looping construct we might invent
+	    Dims = [var | RDims],
+	    Inds = [none | RInds];
+	 Dims = RDims,
 	    Inds = RInds),
 	get_dims_from_loops(InnerLoops, RDims, RInds).
 
@@ -2175,9 +2185,9 @@ loops(sm(_,_,_, vm_loop(Dims,_,_,_))) :- \+ Dims == start_only.
 loops(sm(_,_,_, vm_retrieve(_,_,_))).
 loops(sm(_,_,_, nbrs)).
 loops(cond_section(_)).
+loops([sm(_,_,_,_)|_]). % a flattened list
 
-get_model_and_loops(Context, Dest, Path, Loops, Base) :-
-	get_model(Context, Path),
+get_model_and_loops(Context, Dest, Loops, Base) :-
 	append(LLoops, Base, Context),
 	get_model(Dest, Base),
 	(append(A, [sm(outside(M), B, C, D) | E], LLoops) ->

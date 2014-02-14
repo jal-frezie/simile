@@ -703,7 +703,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 		                        DummyDest, _, [],
 					[], dummy, _, Type, _I,
 					part_result(Context, _,_,_)),
-		     inters'><'get_model_and_loops(Context, DummyDest, _,
+		     inters'><'get_model_and_loops(Context, DummyDest,
 						   Loops, _)),
 	(replace_subexps(ParseExcp, dialogue, collapse_params,
 			 _, top_down, _, ParseError);
