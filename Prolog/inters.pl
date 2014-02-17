@@ -1132,10 +1132,12 @@ Now one that uses a special conditional level */
 	    make_intermediates(SubExp, SubId, Target, 
 			DestPath, BackSwap, PrevInters, BuildingArrays, 
 			Step, Used, Units, NewInters,
-			part_result(FlatContext, ExSetups, Args, SourceRef)), !,
-	    (append(ArrayPayload, Grouped, FlatContext),
+			part_result(Context, ExSetups, Args, SourceRef)), !,
+% get_model_and_loops? Currently wraps bits of DestPath!
+	    get_model_and_loops(Context, DestPath, FlatLoops, FlatBase),
+	    (append(ArrayPayload, Grouped, FlatLoops),
 	     Grouped = [sm(_,_,_, vm_loop(_,_,_,_)) | _],
-	     append(ArrayPayload, [Grouped], SourceContext);
+	     append(ArrayPayload, [Grouped | FlatBase], SourceContext);
 	    throw(no_list_to_flatten(SubExp)));
 	    
 	Source = ready(ToDoFirst), % keep deps but return TRUE
