@@ -540,6 +540,8 @@ namespace eval ::$keyValue {
 	if {[llength [lindex $trTab end]]} {
 	    set nearestval [expr {int($nearestval)}]
 	}
+	set runNo [expr {[lindex $id 0]+1}]
+	set id [lrange $id 1 end]
 	foreach num [concat $id [list $nearestval]] key $trTab {
 	    lappend trVals [TransValue $key $num]
 	}
@@ -561,7 +563,7 @@ namespace eval ::$keyValue {
 #         if {![winfo exists .popup]} {
 #             toplevel .popup -width 1 -height 1 -bd 2 -relief raised
 #             wm overrideredirect .popup 1 
-	AddPopupMessage "$caption \n\
+	AddPopupMessage "$caption, run $runNo\n\
                 x     : $nearesttime\n\
                 y     : [lindex $trVals end]\n\
                 last y: $lastval" \#ffffc0
@@ -801,6 +803,7 @@ namespace eval ::$keyValue {
         if {[llength $Ynew]==1} then {
             set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,$NColours))}]]
             #puts "plot_Y iplot $iplot; lindex $plot($w,YColours) $iplot [lindex $plot($w,YColours) $iplot]"
+	    set id [linsert $id 0 $iplot]
 	    set ident [join $id ,]
 	    if {[dodgyValue $Ynew]} {
 		set xm [expr $plot($w,xborder_left)+60]
