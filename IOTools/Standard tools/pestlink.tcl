@@ -1559,7 +1559,8 @@ $numOutputs"
         
 	set wobbles {}
         if {[llength $data]!=1} {
-            foreach {n val} $data {
+	    array set bucket $data
+            foreach n [lsort -real [array names bucket]] {
 		if {$n>[lindex $dims 0]} {
 		    lappend wobbles [format $::msgs(too_many_pest_pts) $subs]
 		    break
@@ -1567,7 +1568,7 @@ $numOutputs"
 #                puts -nonewline $str "\\\#$n:\\ "
                 set wobbles [concat $wobbles \
 				 [AddChoppers $node $brkPt $str $subs.$n \
-				      [lrange $dims 1 end] $val]]
+				      [lrange $dims 1 end] $bucket($n)]]
 #                puts -nonewline $str " "
             }
         } else {
