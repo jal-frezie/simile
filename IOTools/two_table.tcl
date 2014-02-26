@@ -964,7 +964,7 @@ namespace eval $keyValue {
         variable cellFormatKey
         
         if {[llength $index]} {
-            set nextAxis [lindex $orientList($winId) [min $depth 3]]
+            set nextAxis [lindex $orientList($winId) [expr {min($depth,3)}]]
             lappend ${nextAxis}List $index
             incr depth
         }

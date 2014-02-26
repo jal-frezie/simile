@@ -23,3 +23,7 @@ hex_vertices_x --> hex_centre_x('') + 1.7320508*[0,0.5,0.5,0,-0.5,-0.5].
 hex_vertices_y --> hex_centre_y('') + [1,0.5,-0.5,-1,-0.5,0.5].
 
 % in_6_nbrs([[x]]) --> element(makearray(element(makearray(element(element([[x]],place_in(1)),fmod(place_in(2)-1,column_count(''))+1),column_count('')),ceil(place_in(1)/column_count(''))),94),nbr6_2d_ids('')).
+
+% Sexual reproduction
+gamete([gene]) --> element([gene],floor(rand(1,3))).
+zygote([gene_m], [gene_f]) --> [gamete([gene_m]),gamete([gene_f])].

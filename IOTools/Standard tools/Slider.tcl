@@ -266,7 +266,8 @@ namespace eval slide139 {
                         if {![winfo exists $row]} {
                             pack [frame $row]
                             pack [label $row.low -text $index] -side left
-                            pack [label $row.high -text [min 10*$line $count]] \
+                            pack [label $row.high 
+				  -text [expr {min(10*$line,$count)}]] \
                                     -side right
                         }
                         pack [checkbutton $row.elt$index -borderwidth 1 \
