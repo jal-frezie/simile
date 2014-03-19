@@ -861,8 +861,8 @@ FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
   
   if (count=param_array_size(fpHandle)) { // assignment
     holder = Tcl_GetByteArrayFromObj(argv[2], &num_bytes);
-    sprintf(globMess, "Total data %d bytes, each point %d", num_bytes, count);
-    showMess(globMess);
+    // sprintf(globMess, "Total data %d bytes, each point %d", num_bytes, count);
+    // showMess(globMess);
     while (squirtPtr<num_bytes) {
 // Needs new system
       seekTime = *(double*)(holder+squirtPtr);
@@ -870,8 +870,8 @@ FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
 	return TCL_ERROR;
       }
-      sprintf(globMess, "Adding datum at time %lf", seekTime);
-      showMess(globMess);
+      // sprintf(globMess, "Adding datum at time %lf", seekTime);
+      // showMess(globMess);
       if (get_timepoint_ptr_and_dims(fpHandle, seekTime, &ptBytes, &dims)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("This never happens", -1));
 	return TCL_ERROR;
@@ -879,9 +879,9 @@ FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
       // assume above works as we have just created it
       squirtPtr += sizeof(double);
       memcpy(ptBytes, holder+squirtPtr, count);
-      sprintf(globMess, "Inserted %d if int, %lf if double, dims %d", 
-	      *(int*)ptBytes, *(double*)ptBytes, *dims);
-      showMess(globMess);
+      // sprintf(globMess, "Inserted %d if int, %lf if double, dims %d", 
+	 //      *(int*)ptBytes, *(double*)ptBytes, *dims);
+      // showMess(globMess);
       
       squirtPtr += count;
     }
