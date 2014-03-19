@@ -1187,7 +1187,10 @@ proc StartElement {name attList args} {
 	} byte_array {
 	    set parseStatus(loadByteArray) $attVals(label) 
 	    set parseStatus(translateExtras) $attVals(type)
-	    array set parseStatus {wrapTime 0 fillMtd USE_LAST}
+	    array set parseStatus {interval 1 wrapTime 0 fillMtd USE_LAST}
+	    if {[info exists attVals(interval)]} {
+		set parseStatus(interval) [InDays $attVals(interval)]
+	    }
 	    if {[info exists attVals(wrap_time)]} {
 		set parseStatus(wrapTime) $attVals(wrap_time)
 	    } 
@@ -1262,7 +1265,8 @@ proc LoadBase64CharData {encoded} {
     set decoded [base64 -mode decode -- $encoded]
     set paramData($compName) \
 	[concat {scenario ,bytes} $parseStatus(translateExtras) \
-	 [list  $parseStatus(wrapTime)  $parseStatus(fillMtd) $decoded]]
+	 [list $parseStatus(interval) $parseStatus(wrapTime) \
+	      $parseStatus(fillMtd) $decoded]]
 # will now load when loading other data, or not if Tcl
     set msgs(param_source_$compName) [format $msgs(metafile_bin) \
 					  $parseStatus(oldPath)]

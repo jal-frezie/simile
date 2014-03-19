@@ -516,8 +516,7 @@ class listTimePoint {
 
   listTimePoint* find_last_pt(double time) {
     if (next) {
-      /* sprintf(globMess, "seeking after %lf for %lf", when, time);
-      showMess(globMess); */
+      printf("seeking after %lf for %lf\n", when, time);
       if (next->when<=time) {
 	return next->find_last_pt(time);
       }
@@ -632,6 +631,7 @@ double VarParamData::update_from_points(double nowInDays, double next) {
     hiBound = roll_forward(loBound, &hiWraps);
   else
     hiBound = timePoints; // first point
+  printf("now %lf, lobound %p,hibound %p, times %lf,\n", now,loBound,hiBound,hiBound->when);
   if (next>=nowInDays) {
     while (hiBound && now>=hiBound->when+hiWraps*wrapAroundPoint) {
       loBound = hiBound;
@@ -759,6 +759,7 @@ char* VarParamData::FindNextTimePtSpace(double* last_time) {
   }
 
   listTimePoint* VarParamData::roll_forward(listTimePoint *bound, int *newWraps) {
+    printf("roll from %lf\n", bound->when);
     bound = bound->next;
     if (!bound && wrapAroundPoint>0.0) {
       *newWraps = wraps+1;

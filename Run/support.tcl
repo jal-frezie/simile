@@ -303,6 +303,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1} {
 	    if {$when} {
 		c_settimepointall $topNode $tgt [lindex $list end]
+		SetInterval $topNode $useCppArray $tgt unit [lindex $list end-3]
 		SetWrapTime $topNode $useCppArray $tgt [lindex $list end-2]
 		SetFillMethod $topNode $useCppArray $tgt [lindex $list end-1]
 	    } else {
