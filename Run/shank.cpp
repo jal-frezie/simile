@@ -727,7 +727,9 @@ listTimePoint* VarParamData::create_time_point(double time) {
 char* VarParamData::FindNextTimePtSpace(double* last_time) {
   listTimePoint* seek = timePoints->find_last_pt(*last_time);
 
-  if (seek = seek->next) { // assignment
+  if (seek->when <= *last_time)
+    seek = seek->next;
+  if (seek) {
     *last_time = seek->when;
     return seek->dataPtr;
   }
