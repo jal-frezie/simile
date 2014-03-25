@@ -966,6 +966,9 @@ proc ColourExists {col} {
 }
 
 proc CanvasDefBG {} {
+    if {$::headless} {
+	return \#d9d9d9
+    }
     switch [PrefValue custom(defBackground) defBackground] \
 	[list [tr. {White}] {
 	    return white
@@ -2342,9 +2345,3 @@ proc LoadModelLooks {w state} {
 		$looks($top,$type,objectsize) $looks($top,$type,captanchor)]
     }
 }
-
-button .b
-set looks(buttonColor) [Desystematize [.b cget -bg]]
-set looks(windowColor) white
-destroy .b
-

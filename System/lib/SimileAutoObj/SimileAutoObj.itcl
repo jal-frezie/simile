@@ -7,7 +7,8 @@ package provide SimileAutoObj 1.1
 
 package require Itcl
 
-package require Tk
+# Attempting to make it work without Tk -- next line failed to load it anyway
+# package require Tk
 
 if {[string match windows $tcl_platform(platform)]} {
 # removed until I can get hold of a 64-bit version

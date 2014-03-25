@@ -9,8 +9,6 @@
 # interpreter in a non-blocking pipe. Commands are then passed between
 # the two along the pipe.
 
-wm protocol . WM_DELETE_WINDOW {close $plPipe(stream); destroy .}
-
 set plPipe(debug) 0
 if $plPipe(debug) {
     set plPipe(debug_log) [file join $env(HOME) .simile log]

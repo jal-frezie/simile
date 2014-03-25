@@ -807,7 +807,6 @@ proc AddGrid {c onCol wl wt wr wb} {
     }
 }
 
-set inCocoa [string match CG* [winfo server .]]
 proc FixDisabledImgBug {ttkButton} {
 # Only do for Cocoa so disabled images greyed elsewhere
     if {$::inCocoa} {
@@ -1133,8 +1132,6 @@ proc AddEqnPopup {node x y winId X Y} {
 #
 
 # Canvas chapter (of Welch)
-
-event add <<Del>> <Delete> <BackSpace>
 # Bindings for canvas Text items
 
 proc CanvasEditBind { c } {
@@ -1345,7 +1342,7 @@ proc WindowDetail {window category level redraw} {
 # feedback window allowing progress reports on long activities.
 
 proc MenuSelect { window button item } {
-    if {$window ne "dummy"} {
+    if {[string first dummy $window]} {
 	SafeEqnBarEdit [winfo parent $window] ;# use latest edit
     }
     switch $button {

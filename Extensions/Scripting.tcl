@@ -18,6 +18,7 @@ itcl::class similescript::ModelWindow {
         #tk_messageBox -message "ModelWin constructor"
 	set modelNode [lindex $fromProlog 0]
 	set modelCanvas [lindex $fromProlog 1]
+	set ::window_info($modelCanvas,top_node) $modelNode ;# in case headless
 #        Hide ;# default is to show
 #        UseMRE false
 # can't have creation of model windows overwriting users' preferences!!
@@ -29,7 +30,7 @@ itcl::class similescript::ModelWindow {
         }
         #tk_messageBox -message "model win destructor"
         #Exit
-#        MenuClose [GetModelWindow].canvas
+#        MenuClose $modelCanvas
 # following replaces above...
 	KillNodeInProlog $modelCanvas
     }
@@ -44,12 +45,16 @@ itcl::class similescript::ModelWindow {
     
     public method UseMRE {bool} {
         # IS THIS GOING TO HAVE A TYPE PROBLEM???
+	# JAT: er, no
+	if {$::headless} {
+	    return "Tk not loaded -- no graphics"
+	}
 	PrefValueSet helperManager $bool
     }
     
     # File Menu
     public method New {} {
-        MenuSelect [GetModelWindow].canvas file new
+        MenuSelect $modelCanvas file new
         if {[info exists model]} {
             unset model
         }
@@ -60,7 +65,7 @@ itcl::class similescript::ModelWindow {
         #    $this FileNew"
         #}
         #$c local open_all
-        MenuSelect [GetModelWindow].canvas local open_all
+        MenuSelect $modelCanvas local open_all
         #set model $modelFile
     }
     
@@ -68,12 +73,12 @@ itcl::class similescript::ModelWindow {
         if {[info exists model]} {
             $this New
         }
-        Reopen [GetModelWindow].canvas $modelFile reopen
+        Reopen $modelCanvas $modelFile reopen
         set model $modelFile
     }
     
     public method Print {} {
-        MenuSelect PrintNow [GetModelWindow].canvas
+        MenuSelect PrintNow $modelCanvas
     }
     
     public method ListEnumTypes {} {
@@ -107,12 +112,18 @@ itcl::class similescript::ModelWindow {
         }
     }
     
+    # added for building models on web server -- do not document
+    public method BuildShareLib {shlibFile} {
+	set ::preSelect $shlibFile
+        MenuSelect $modelCanvas code compile_c
+    }
+
     # Model Menu
     public method Run {} {
 	global botches
         # builds the model with CPP and returns a run control command/object
         #RemoveRunControl
-        MenuSelect [GetModelWindow].canvas code run_c
+        MenuSelect $modelCanvas code run_c
         #set rc [similescript::RunControl ::runControl $this]
         #return $rc
 	set botches(modelJustRun) $this
@@ -121,13 +132,13 @@ itcl::class similescript::ModelWindow {
     public method Debug {} {
         # builds the model with Tcl and returns a run control command/object
         #RemoveRunControl
-        MenuSelect [GetModelWindow].canvas code run_tcl
+        MenuSelect $modelCanvas code run_tcl
         #set rc [similescript::RunControl ::runControl $this]
         #return $rc
     }
     
     public method ListEquations {} {
-        MenuSelect [GetModelWindow].canvas file list_eqns
+        MenuSelect $modelCanvas file list_eqns
     }
     
     public method LoadParams {filepath {smPath {}}} {

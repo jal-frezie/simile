@@ -892,7 +892,7 @@ proc UpdateColour {parent f} {
     }
 }
 
-if {![info exists simplify]} {
+if {!$::headless && ![info exists simplify]} {
 # try to be choosy rather than support everything
     if {[catch {
 	if {[info tclversion]<8.6} {
@@ -977,7 +977,7 @@ set progressBoxCount 0
 proc OpenProgressBox {winId} {
     global progressBoxCount
 
-    if {!$progressBoxCount} {
+    if {!$::headless && !$progressBoxCount} {
 	PutItThere .progress $winId
 	wm title .progress [tr. "Progress with current operation"]
 	wm protocol .progress WM_DELETE_WINDOW {set done 1}
@@ -999,14 +999,19 @@ proc OpenProgressBox {winId} {
 proc FillProgressBox {key lits} {
     global msgs
 
-    .progress.message configure -text [eval [list format $msgs($key)] $lits]
-    update
+    set word [eval [list format $msgs($key)] $lits]
+    if {$::headless} {
+	puts "Progress message: $word"
+    } else {
+	.progress.message configure -text [eval [list format $msgs($key)] $lits]
+	update
+    }
 }
 
 proc CloseProgressBox {} {
     global progressBoxCount
 
-    if {![incr progressBoxCount -1]} {
+    if {!$::headless && ![incr progressBoxCount -1]} {
 	grab release .progress
 	PackItUp .progress
     }
@@ -1016,7 +1021,7 @@ proc CloseProgressBox {} {
 proc ResetProgressBox {} {
     global progressBoxCount
 
-    if {[winfo exists .progress]} {
+    if {!$::headless && [winfo exists .progress]} {
 	CloseProgressBox
     }
     set progressBoxCount 0
@@ -2404,11 +2409,6 @@ proc Query {specifics icon helpRef parent opts} {
     global dialogues
 
     set defButton [lindex $opts 0]
-    if {[info exists ::SimileAutoObjLoaded] || [winfo exists .shortDlg]} {
-# Scripted execution or dialogue already displayed: return with no fuss
-	puts $specifics
-	return $defButton
-    }
     set defCapt $::msgs(${defButton}_button)
     switch $defButton {
 	ok {set moreCapt [tr. "More info..."]}
@@ -2445,6 +2445,25 @@ proc Query {specifics icon helpRef parent opts} {
 	}
     }
 
+    if {$::headless} {
+	foreach txtBit {title message detail full} {
+	    if {[info exists $txtBit]} {
+		puts [set $txtBit]
+	    }
+	}
+	puts -nonewline "([join $opts /]): "
+	flush stdout
+	gets stdin resp
+	if {$resp eq {}} {
+	    set resp $defButton
+	} 
+	return $resp
+    } elseif {[info exists ::SimileAutoObjLoaded] || [winfo exists .shortDlg]} {
+# Scripted execution or dialogue already displayed: return with no fuss
+# (headless should get response from command line?)
+	puts $specifics
+	return $defButton
+    }
     if {[winfo exists .splash]} {
 	wm withdraw .splash ;# ensure mess is not obscured by splash screen
     }

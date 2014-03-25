@@ -134,7 +134,7 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		    pointer_from(Top, Ptr),
 		    pointer_to(Assoc, Ptr),
 		    append([Deeper, Assoc, Top], Path),
-		    BackSwap = values_from_base(Top);
+		    BackSwap = values_from_base(Path);
 		Location = in_assoc,
 		    append(Assoc, Top, AssocPath),
 		    append(Deeper, AssocPath, RealPath),

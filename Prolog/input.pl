@@ -6,7 +6,7 @@ identical to that in which they are used. Where this is the case, the calls from
 use goals that start with "tk_" to make the diffreence clear.
 */
 
-sicstus_module(input, [tk_make_desktop_node/0, tk_undo/2, tk_redo/2,
+sicstus_module(input, [tk_make_desktop_node/1, tk_undo/2, tk_redo/2,
 		       tk_get_info/3, tk_get_params/2, tk_get_triggers/2,
 		       tk_bar_edit_menu/1, tk_click_obj/6,
 		       tk_click/4, tk_doubleclick/4, tk_unclick/2, tk_drag/2,
@@ -22,7 +22,9 @@ sicstus_module(input, [tk_make_desktop_node/0, tk_undo/2, tk_redo/2,
 sicstus_use_module([library(lists), backup, event, menu, sp_only, utility]).
 
 
-tk_make_desktop_node :-
+tk_make_desktop_node(Headless) :-
+	(Headless = 0;
+	 utility'><'unique_name(dummy, Canvas_name)), !,
         m_update'><'make_desktop_node(Desktop, Canvas_name),
 	draw'><'callback(br([Desktop, Canvas_name])).
 

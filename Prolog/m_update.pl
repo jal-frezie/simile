@@ -1944,9 +1944,13 @@ make_desktop_node(Desktop, Canvas_name) :-
 	name(BGCol, BGColStr),
 	Desktop has_new_class_refinement fill_colour of BGCol,
 	backup'><'new_autosave(Desktop, ModelName),
-	InitDepths=[0,32,32,32,32,32,32,32,showAll],
-        event'><'new_window_for(Desktop, Desktop, Canvas_name, InitDepths, 1),
-        all(state, set_display_depth, [unify(Canvas_name),
-            build([ghost_link, influence, variable, flow, compartment,
-                   submodel, caption, text, sections]), build(InitDepths)]),
-        draw'><'redraw_window(Canvas_name).
+	(nonvar(Canvas_name),			% headless
+	 create_window(Canvas_name, Desktop),
+	 (suspend_display; assert(suspend_display)), !;
+	 InitDepths=[0,32,32,32,32,32,32,32,showAll],
+	 event'><'new_window_for(Desktop, Desktop, Canvas_name, InitDepths, 1),
+	 all(state, set_display_depth,
+	     [unify(Canvas_name),
+	      build([ghost_link, influence, variable, flow, compartment,
+		     submodel, caption, text, sections]), build(InitDepths)]),
+	 draw'><'redraw_window(Canvas_name)).

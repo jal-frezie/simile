@@ -56,12 +56,13 @@ kickoff(Vnum) :-
 	name(OpenModel, OpenStr),
 	    menu'><'stick_model_in(Canvas, Desktop, OpenModel, open_toplevel);
 	true), !,
-	user'><'any_tcl_eval(['FixSize', Canvas], 1, _),
+	(utility'><'append_atoms(dummy, _, Canvas), !, Headless = 1;
+	 user'><'any_tcl_eval(['FixSize', Canvas], 1, _)),
 	(var(Base), !;
         append(Base, ".sml", OpenFiloidStr),
 	    name(OpenModel, OpenFiloidStr),
 	    backup'><'check_autosave(Desktop, OpenModel, copy, Done),
-	    (Done = 0;
+	    (Done = 0; nonvar(Headless);
 		draw'><'redraw_window(Canvas))).
 
 :- dynamic(model_in/2).
@@ -114,6 +115,7 @@ kill_windows :-
 :- op(500, xfy, shows_model).
 
 Win shows_model Model :-
+	(nonvar(Win), !; \+ suspend_display), % don't get wins if headless
 	model_in(Win, Model).
 
 :- dynamic(display_depth/3).

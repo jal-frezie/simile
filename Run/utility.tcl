@@ -89,25 +89,25 @@ proc ChooseFile { preferred title canbenew context} {
     set typeList [list [list $desc $typeList] [list [tr. {All files}] *]]
     set currentDir [do_in_editor GetPathChoice $fileType $context]
 #puts "Got path for $context"
-    set switches [list -title $title -defaultextension $fileType \
-		      -filetypes $typeList \
-		      -initialdir $currentDir]
-    set active [focus]
-    if {[llength $active] && ![string equal aqua [tk windowingsystem]]} {
-	# Problems on Aqua if parent is itself modal
-	lappend switches -parent [winfo toplevel $active]
-    }
-    if {$canbenew} {
-        set cmd tk_getSaveFile
-	lappend switches  -initialfile $preferred
-    } else {
-        set cmd tk_getOpenFile
-    }
-#ShowMess debug info "will eval $cmd $switches" ok
     if {[info exists preSelect]} {
 	set chosenFile $preSelect
 	unset preSelect
     } else {
+	set switches [list -title $title -defaultextension $fileType \
+			  -filetypes $typeList \
+			  -initialdir $currentDir]
+	set active [focus]
+	if {[llength $active] && ![string equal aqua [tk windowingsystem]]} {
+	    # Problems on Aqua if parent is itself modal
+	    lappend switches -parent [winfo toplevel $active]
+	}
+	if {$canbenew} {
+	    set cmd tk_getSaveFile
+	    lappend switches  -initialfile $preferred
+	} else {
+	    set cmd tk_getOpenFile
+	}
+#ShowMess debug info "will eval $cmd $switches" ok
 	set chosenFile [eval $cmd $switches]
     }
     

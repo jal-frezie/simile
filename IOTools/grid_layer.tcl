@@ -291,7 +291,12 @@ itcl::class similescript::$newLayerClass {
 	set row [expr int(1+(-[$winId canvasy $y]/$transform(yzoom)-$useNodes($winId,yoff))/$useNodes($winId,yscale))]
 	set col [expr {min(max($col, 1), $useNodes($winId,ncol))}]
 	set row [expr {min(max($row, 1), $useNodes($winId,nrow))}]
-	set value [SeekValue [list $row $col] $useNodes(temp,curValues)]
+	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
+	    set inds [list $row $col]
+	} else {
+	    set inds [expr {$useNodes($winId,ncol)*($row-1)+$col}]
+	}
+	set value [SeekValue $inds $useNodes(temp,curValues)]
 	return "Index $row,$col Value $value"
     }
 

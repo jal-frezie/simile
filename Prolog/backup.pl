@@ -116,9 +116,11 @@ purge_graphics(Model, Prev, LostExtents, Redrawn) :-
 
 finish_move(EditedModel, ChangeExec) :-
 	\+ anything_done, !;
-	m_update'><'contains(Model, EditedModel),
-	Win shows_model Model,
-	set_save_status(Win, risky),
+	(m_update'><'contains(Model, EditedModel),
+	 Win shows_model Model,
+	 set_save_status(Win, risky),
+	 fail;
+	 true), % set for all windows showing it -- or none
 	(ChangeExec = 0;
 	 ChangeExec = 1,
 	    m_update'><'add_parameter(EditedModel, 1, c_new, 0)),

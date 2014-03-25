@@ -5,6 +5,8 @@
 #
 # This file loads all procedures, and sets up the model building environment.
 #
+package require mime
+if {!$headless} {
 if {![info exists simplify]} {
 # BWidget should be removed in favour of native Tk commands and the
 # Tile widget set, which look better. For the time it is still needed
@@ -20,7 +22,6 @@ if {![info exists simplify]} {
 	package require BWidget
 	namespace import BWidget::*
     }
-    package require mime
 
 if {[info tclversion]>=8.5} {
 # use our own
@@ -82,6 +83,35 @@ font configure EquationFont -size $eqnSize
 if {[tk windowingsystem] ne "aqua"} {
     ttk::style layout Toolbutton [ttk::style layout TButton]
 }
+set inCocoa [string match CG* [winfo server .]]
+
+event add <<Del>> <Delete> <BackSpace>
+
+# Test new Windows printing technology -- see file for credits/licence
+if {[string match windows $tcl_platform(platform)]} {
+    #    set tempDir [file attributes $tempDir -shortname]
+    #    set tempDir [file join [file dirname $tempDir] [file tail $tempDir]]
+    
+    #   pkg_mkIndex ../System/lib/Extras
+    source $libDir/Extras/prntcanv.tcl
+    source $libDir/Extras/prntproc.tcl ;# needed for eqn listings
+    
+    # Make Simile a DDE server under Windows. Jonathan autotesting
+    # Must be after the sourcing or Simile fails
+    package require dde 1
+# after idle speeds startup with tcltk 8.5
+    after idle dde servername Simile
+} elseif {[string match Linux $tcl_platform(os)]} {
+    # avoid loading buggy Trf if ActiveTcl present on system
+    # package ifneeded Trf 2.1 {}
+    bind Text <Control-Key-v> [list event generate %W <<Paste>>]
+}
+
+menu .openrecent -tearoff 0
+
+wm protocol . WM_DELETE_WINDOW {close $plPipe(stream); destroy .}
+
+} ;# headless
 source ../Run/window.tcl
 source ../Run/shapes.tcl
 source ../Run/forms.tcl
@@ -103,26 +133,6 @@ source ../Run/messages.tcl
 #   }
 #    }
 #}
-
-# Test new Windows printing technology -- see file for credits/licence
-if {[string match windows $tcl_platform(platform)]} {
-    #    set tempDir [file attributes $tempDir -shortname]
-    #    set tempDir [file join [file dirname $tempDir] [file tail $tempDir]]
-    
-    #   pkg_mkIndex ../System/lib/Extras
-    source $libDir/Extras/prntcanv.tcl
-    source $libDir/Extras/prntproc.tcl ;# needed for eqn listings
-    
-    # Make Simile a DDE server under Windows. Jonathan autotesting
-    # Must be after the sourcing or Simile fails
-    package require dde 1
-# after idle speeds startup with tcltk 8.5
-    after idle dde servername Simile
-} elseif {[string match Linux $tcl_platform(os)]} {
-    # avoid loading buggy Trf if ActiveTcl present on system
-    # package ifneeded Trf 2.1 {}
-    bind Text <Control-Key-v> [list event generate %W <<Paste>>]
-}
 
 set equationbar(current_action) null
 
@@ -365,7 +375,7 @@ proc load_dll {topNode lang progDir id node incs} {
     }
     if {[catch {ex_load_dll $topNode $lang [GetUsableName $progDir] $id \
 		    $::userinfo(edn) $incs} new_model_id]} {
-	if {[PrefValue custom(hackBreak) hackBreak]} {
+	if {!$::headless && [PrefValue custom(hackBreak) hackBreak]} {
 	    Query [list new_exec_needed $::errorInfo] info top {} {ok}
 	}
 	return 0
@@ -389,9 +399,13 @@ proc ReuseSourceCode {workingDir currentKey} {
 proc compile_c {workingDir extLibs complain} {
     global sendvars tcl_platform env SIMILE_PATH
 
-    CheckCompilerLocation
-    if {[PrefValue custom(hackBreak) hackBreak]} {
-	Query [list hack_break $workingDir] question top {} ok
+    if {$::headless} {
+	set useComp [tr. Default]
+    } else {
+	set useComp [CheckCompilerLocation]
+	if {!$::headless && [PrefValue custom(hackBreak) hackBreak]} {
+	    Query [list hack_break $workingDir] question top {} ok
+	}
     }
     set shLibExt [info sharedlibextension]
     set lDirs {}
@@ -418,7 +432,6 @@ proc compile_c {workingDir extLibs complain} {
     set TOOLDIR [file join $SIMILE_PATH Run]
     #set TCL [file dirname [file dirname [info library]]]
     #ShowMess debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
-    set useComp [PrefValue custom(compChoice) compChoice]
     if {[catch {switch $tcl_platform(platform) {
         unix {
 	    if {[string equal Darwin $tcl_platform(os)]} {
@@ -684,7 +697,13 @@ proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo openModel simtmpdir
     global regularActs tclBitness
 
-    LoadIconImages
+    if {!$::headless} {
+	button .b
+	set ::looks(buttonColor) [Desystematize [.b cget -bg]]
+	set ::looks(windowColor) white
+	destroy .b
+	LoadIconImages
+    }
     # Defaults to use if debugging
 #    if {![info exists env(SIMILE_VERSION)]} {
 #        set env(SIMILE_VERSION) 4.6
@@ -699,8 +718,8 @@ proc ControlDraw {prologVersion} {
     
     # set up to compile stub and models with same bitness as tcltk
     set sendvars(arflags) [list -Wno-trigraphs] ;# [list -O3]
-    if {![string equal [tr. Default] \
-	  [PrefValue custom(compChoice) compChoice]]} {
+    if {!$::headless && ![string equal [tr. Default] \
+			    [PrefValue custom(compChoice) compChoice]]} {
 # using local compiler, check if we have to tell it our bitnesss
 	set gccBitness 32
 	catch {exec g++ -v} gppInfo
@@ -896,6 +915,8 @@ proc ControlDraw {prologVersion} {
     } else {
 	set compOptions [list CHOICE [tr. GNU]]
     }
+    LoadModelWindowExtensions
+    if {!$::headless} {
     Pref_Init $custom(prefDir)/.prefs
     Pref_Add [list [list custom(winPosn) winPosn [list CHOICE [tr. "Where it was last time"]  [tr. "OS default position"]]  [tr. "Place initial window:"]] \
 		  [list custom(initNavbar) initNavbar ON [tr. "Tool bar"]] \
@@ -937,7 +958,6 @@ proc ControlDraw {prologVersion} {
 		  [list custom(eqListComments) eqListComments ON [tr. "Comments"]] \
 		 ]
     CheckCompilerLocation
-    LoadModelWindowExtensions
     MakeHelperMenu
 
     set regularActs "ListWindows .windowchoice"
@@ -946,6 +966,12 @@ proc ControlDraw {prologVersion} {
 	tickle
     }
     
+    # Base window has menu to display on Mac when no model windows open
+    menu .hitop
+    frame .hi
+    . config -menu .hitop	
+    AddMainMenu .hi _ 0 1 {}
+    } ;# headless
     # Bogosity alert -- setting an env var to {} causes it to stay
     # (or be) unset (in windows) otherwise lappend env(OPEN_MODEL)
     # would do here...
@@ -959,12 +985,6 @@ proc ControlDraw {prologVersion} {
 # if there are any logfiles from unsaved models, pick one
     }
     
-    # Base window has menu to display on Mac when no model windows open
-    menu .hitop
-    frame .hi
-    . config -menu .hitop	
-    AddMainMenu .hi _ 0 1 {}
-
     # Take the opportunity to pass the temp directory name etc to Prolog
     return [list $sendvars(simV) [brainwash $simtmpdir] \
             $openModel $userinfo(edn)]
@@ -1040,7 +1060,7 @@ proc InitExecThread {node} {
     if {[catch {load_c_stub_1 $node $::auto_path}]} {
 	if {[string match Linux $::tcl_platform(os)]} {
 # try rebuilding 5d dll if in Linux -- c++ libraries may have changed!
-	    if {[PrefValue custom(hackBreak) hackBreak]} {
+	    if {!$::headless && [PrefValue custom(hackBreak) hackBreak]} {
 		Query [list new_exec_needed "Updating 5-d library"] \
 		    info top {} {ok}
 	    }
@@ -1055,6 +1075,7 @@ proc InitExecThread {node} {
 
 proc CheckCompilerLocation {} {
     global tcl_platform custom env
+    if {$::headless} return ;# and hope for the best
     if {![string match Linux $tcl_platform(os)]} {
         if {[string mat [tr. Microsoft] [PrefValue custom(compChoice) compChoice]]} {
             set compiler cl.exe
@@ -1095,6 +1116,7 @@ proc CheckCompilerLocation {} {
             }
         }
     }
+    return $custom(compChoice)
 }
 
 # After the initial model has been loaded we don't want to allow the window
@@ -1182,7 +1204,8 @@ proc SaveFile {topNode tree tgt {noPkg 0}} {
 			   -string $runState($topNode,runParams)]
 	    lappend projectInfo "Model execution parameters"
 	}
-	if {[PrefValue custom(hackBreak) hackBreak] && !$noPkg} {
+	if {!$::headless && [PrefValue custom(hackBreak) hackBreak] && \
+		!$noPkg} {
 	    set resp [Query [list pkg_contents [join $projectInfo \n]] info \
 			  top {} {ok cancel}]
 	    if {![string equal ok $resp]} {
@@ -1579,8 +1602,8 @@ proc ExecQuery {specifics icon helpRef parent opts} {
 
 proc OpenAll {win} {
     MenuSelect $win file open
-    if {$::window_info($win,is_top_level) && \
-	    ![info exists ::SimileAutoObjLoaded]} {
+    if {![info exists ::SimileAutoObjLoaded] && \
+	    $::window_info($win,is_top_level)} {
 	RunIfPackage
     }
 }
@@ -1851,7 +1874,7 @@ proc UniqueId {base {used {}}} {
 proc MakeNodeInProlog {newInstance} {
     global classTable fromProlog
 
-    prolog tk_make_desktop_node
+    prolog tk_make_desktop_node($::headless)
 # secret run instance for use by system helpers
     set newRunInstance [UniqueId modelRun]
     similescript::RunControl $newRunInstance $newInstance
@@ -1875,14 +1898,12 @@ proc MakeDesktopNode {} {
 proc Reopen {canvas oldFile op} {
     global custom userinfo welcomeDone preSelect
     
-    if [winfo exists .register] {
+    if {!$::headless && [winfo exists .register]} {
         set userinfo(done) $welcomeDone
     }
     set preSelect $oldFile
     OpenAll $canvas
 }
-
-menu .openrecent -tearoff 0
 
 proc FillReopen {winId} {
     global custom
@@ -1947,6 +1968,7 @@ proc UpdateAbility {c what where which whether} {
 proc ToggleIOToolMenu {node} {
     global window_info custom tcl_platform
     
+    if {$::headless} return
     foreach win [array names window_info *,top_node] {
         if {[string equal $node $window_info($win)]} {
             set c [string range $win 0 end-9]

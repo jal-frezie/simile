@@ -57,7 +57,7 @@ proc ChooseIntegerRatio {fraction accu} {
     }
 }
 	
-set defScaling [tk scaling]
+set headless [catch {set defScaling [tk scaling]}]
 # set env(prologId) gnu ;# goodbye forever Sicstus
 if {[info exists prolog_in_console]} {
     set SIMILE_PATH [file dirname [pwd]] ;# otherwise it is relative
@@ -160,15 +160,6 @@ if {[string match Darwin $tcl_platform(os)]} {
         }
     }
             
-# Scaling affects some metrics but not all, so squash it FTTB
-# to ensure consistency (do now cos about to put up dialogues)
-
-# Fixed in 5.4 by explicitly making it apply to everything.
-# Silly val for testing: 3.0
-# Make conversion easier: pick nice ratio
-    set scalRat [ChooseIntegerRatio $defScaling 0.9]
-    tk scaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
-
 # These are needed for platforms where they would other wise be a fixed number
 # of pixels (i.e., -ve size), e.g., X
 #    button .b
@@ -192,7 +183,7 @@ if {[string match Darwin $tcl_platform(os)]} {
     if {![file exists $checkFor] && [info exists custom(prefDir)]} {
         set checkFor [file join $custom(prefDir) handover.txt]
     } 
-    if {[file exists $checkFor] && $argv ne "-stealth"} {
+    if {[file exists $checkFor] && $argv ne "-stealth" && !$headless} {
         set strm [open $checkFor r]
         set tellProc [gets $strm]
         set tellProc [gets $strm] ;# second line is last command passed
@@ -261,7 +252,8 @@ switch $tcl_platform(platform) {
 #	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
 	set graph(origin) 2
     } unix {
-	tk appname $oldProc ;# in case starting it from SimileAutoObj
+# looks obsolete, removed in case starting headless
+#	tk appname $oldProc ;# in case starting it from SimileAutoObj
 # library path now set in launcher script
 #   set env(LD_LIBRARY_PATH) \
 #       $env(SP_PATH)/library:[file dirname [info library]]
@@ -309,9 +301,6 @@ if {$env(SIMILE_VERSION)>=6.0} {
 # here.
 
 # of course, none of these apply if using the scripting interface.
-
-entry .hidden_e
-pack .hidden_e
 
 # Here because needed for splash screen
 proc OldGrowImage {fCol mw mh} {
@@ -391,6 +380,22 @@ proc GrowImage {fCol mw mh} {
     return spare3
 }
 
+source $SIMILE_PATH/Run/language.tcl
+LoadTrans
+
+if {!$headless} {
+# Scaling affects some metrics but not all, so squash it FTTB
+# to ensure consistency (do now cos about to put up dialogues)
+
+# Fixed in 5.4 by explicitly making it apply to everything.
+# Silly val for testing: 3.0
+# Make conversion easier: pick nice ratio
+set scalRat [ChooseIntegerRatio $defScaling 0.9]
+tk scaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
+
+entry .hidden_e
+pack .hidden_e
+
 set sphXdiam [expr {int(400*[tk scaling])}]
 set sphYdiam [expr {int(316*[tk scaling])}]
 set iconDiam [expr {int(30*[tk scaling])}]
@@ -403,8 +408,6 @@ if {[string equal Linux $tcl_platform(os)]} {
 }
 
 # first put up the splash screen
-source $SIMILE_PATH/Run/language.tcl
-LoadTrans
 image create photo graphoto -width 24 -height 24
 graphoto read [file join $SIMILE_PATH Images Toolbar Large graph.gif]
 image create photo splash -width 90 -height 90
@@ -461,6 +464,7 @@ tk scaling $defScaling
 
 wm withdraw . ;# already withdrawn if not Linux
 # after 5000 ;# pause to admire
+} ;# matches if {!$headless}
 
 # This is the folder that AME should start looking for model
 # files in -- must be an existing subfolder of the installation folder

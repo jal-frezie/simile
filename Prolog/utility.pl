@@ -281,10 +281,14 @@ delall(All, Target, Left) :-
 	Left = [].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+% finally cooked one up in which any one arg can be variable
 append_atoms(A1, A2, A) :-
-	name(A1, S1), name(A2, S2), append(S1, S2, S12), name(A12, S12),
-	A = A12.
+	(select([VA, VS], [[A1, S1], [A2, S2], [A, S]],
+	       [[FA1, FS1], [FA2, FS2]]),
+	atomic(FA1), atomic(FA2), !;
+	 throw('append_atoms called with more than one free arg')),
+	name(FA1, FS1), name(FA2, FS2), append(S1, S2, S),
+	name(VA, VS).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % append_atoms/2 appends a list of atoms
