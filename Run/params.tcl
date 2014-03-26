@@ -208,19 +208,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
         set msgs(comment_$compName) $msgs(ncfv)
     }
     #Show description and comments
-    # Look at the code that gets the information for the variable's
-    # popup in the model window -- it's in window.tcl, procedure AddEqnPopup --
-    # look for the calls to Prolog proc tk_get_info
-    #set desc [do_in_editor GetFromProlog tk_get_info('$winId',$node,desc)]
-    set dimReqs [GetFromProlog tk_get_info(dummy,$node,units)]
-    set userDesc [GetFromProlog tk_get_info(dummy,$node,description)]
-    set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
-    set desc "[lindex $levels end] ($dimReqs)"
-    if {![string equal {} $userDesc]} {
-	append desc { -- } $userDesc
-    }
-    BindPopup $slot.l1 $desc $comment
-#    BindPopup $slot.l2 "$comment"
+    ParamLabelPopup $slot.l1 $node [lindex $levels end]
             
     #       pack [entry $slot.e -textvariable paramData($compName)]
     # Using entries played merry hell with very long arrays -- texts work better
@@ -421,10 +409,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 
 	    set node [IdFromTail $topNode $path 0]
 # take advantage to have header pop submodel comment
-	    set msgs(comment_$path) \
-		[GetFromProlog tk_get_info(dummy,$node,comment)]
-	    BindPopup $nextLevel.head.label \
-		[GetFromProlog tk_get_info(dummy,$node,desc)] comment_$path
+	    ParamLabelPopup $nextLevel.head.label $node $level
 	    set fColour [GetFromProlog tk_get_info(dummy,$node,colour)]
 	    if {[lsearch {white clear} $fColour]<0} {
 		$nextLevel configure -bg $fColour
@@ -438,6 +423,22 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
         return [AddSubFrames $topNode $clientId $nextLevel $hierarchy \
 		    $ns $nextPt]
     }
+}
+
+proc ParamLabelPopup {label node capt} {
+    # Look at the code that gets the information for the variable's
+    # popup in the model window -- it's in window.tcl, procedure AddEqnPopup --
+    # look for the calls to Prolog proc tk_get_info
+    #set desc [do_in_editor GetFromProlog tk_get_info('$winId',$node,desc)]
+    set dimReqs [GetFromProlog tk_get_info(dummy,$node,units)]
+    set userDesc [GetFromProlog tk_get_info(dummy,$node,description)]
+    set comment [do_in_editor GetFromProlog tk_get_info(dummy,$node,comment)]
+    set desc "$capt ($dimReqs)"
+    if {![string equal {} $userDesc]} {
+	append desc { -- } $userDesc
+    }
+    BindPopup $label $desc $comment
+#    BindPopup $slot.l2 "$comment"
 }
 
 proc purge {list toGo} {

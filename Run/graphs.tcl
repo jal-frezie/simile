@@ -1646,7 +1646,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		    } else {
 			set xInd [expr $colCount+$colInd-$xfirst]
 		    }
-		    if {$yInd==1} {
+		    if {$yInd==$rowCount} {
 			lappend colList $xInd
 		    }
 		    set cell [lindex $usePts $colInd]
@@ -1668,6 +1668,13 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
         set rowList {}
         set colList {}
 	set transpose [expr {[string equal 1 [lindex $tableSpec 10]]}]
+	if {$transpose} {
+	    set rowCount 1
+	    set colCount $lineCount
+	} else {
+	    set rowCount $lineCount
+	    set colCount 1
+	}
 	set rown [image height tableImage]
 	set coln [image width tableImage]
 	foreach {bd v} [eval SubEndRefs $rown $coln [lrange $tableSpec 2 5]] {
@@ -1676,23 +1683,23 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 
         for {set rowInd [expr $yfirst-1]} {$rowInd<=$ylast-1} {incr rowInd} {
 	    if {$yflip} {
-		set yInd [expr $lineCount+$rowInd-$yfirst+1]
+		set yInd [expr $rowCount+$rowInd-$yfirst+1]
 	    } else {
-		set yInd [expr $lineCount+$ylast-$rowInd-1]
+		set yInd [expr $rowCount+$ylast-$rowInd-1]
 	    }
 	    lappend rowList $yInd
 	    for {set colInd [expr $xfirst-1]} {$colInd<$xlast} {incr colInd} {
 		if {$xflip} {
-		    set xInd [expr $xlast-$colInd]
+		    set xInd [expr $colCount+$xlast-$colInd-1]
 		} else {
-		    set xInd [expr 2+$colInd-$xfirst]
+		    set xInd [expr $colCount+$colInd-$xfirst+1]
 		}
 		if {$transpose} {
 		    set subscriptList [list top $xInd $yInd]
 		} else {
 		    set subscriptList [list top $yInd $xInd]
 		}
-		if {$yInd==1} {
+		if {$yInd==$rowCount} {
 		    lappend colList $xInd
 		}
 		if {[tableImage transparency get $colInd $rowInd]} {
