@@ -1116,7 +1116,7 @@ proc CheckCompilerLocation {} {
             }
         }
     }
-    return $custom(compChoice)
+    return [PrefValue custom(compChoice) compChoice]
 }
 
 # After the initial model has been loaded we don't want to allow the window
