@@ -20,7 +20,7 @@ proc KeepLooking {} {
     while {![info exists prologExit]} {
 	if {[eof $plPipe(stream)]} {
 	    ClosePipe
-	    set prologExit 1
+	    set prologExit -2
 	} elseif {[gets $plPipe(stream) noCrs] >= 0} {
 	    regsub -all \\\\u000a $noCrs \n line
 #	    puts [concat < $line]
@@ -129,7 +129,7 @@ proc ClosePipe {} {
     if {$plPipe(debug)} {
 	close $plPipe(debug_stream)
     }
-    destroy .
+    exit
 }
 
 set env(MAX_ATOM) 65536
