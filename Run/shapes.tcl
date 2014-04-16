@@ -70,7 +70,7 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     ResetColours $w compartment $density $colourScheme [lindex $tagSet 0]
 }
 
-proc PutShape {c l t r b file fatness colourScheme title} {
+proc PutShape {w l t r b file fatness colourScheme title} {
     global window_info
     set nameList {condition cond creation creation \
                 immigration immig reproduction repro loss loss alarm alarm}
@@ -81,14 +81,14 @@ proc PutShape {c l t r b file fatness colourScheme title} {
     set growth [expr {max(0.001,($r-$l)/30.0)}]
 # use Inner...we don't need hourglass and the refresh may allow customization
 # dialogue to get its threads in a twist
-    InnerZoomImage $c unscaled $growth
-    $c move unscaled [expr ($l+$r)/2] [expr ($t+$b)/2]
-    InnerZoomImage $c unscaled $window_info($c,scale)
-    $c addtag $title withtag unscaled
-    $c addtag has_info withtag unscaled
-    $c dtag unscaled
+    InnerZoomImage $w unscaled $growth
+    $w move unscaled [expr ($l+$r)/2] [expr ($t+$b)/2]
+    InnerZoomImage $w unscaled $window_info($c,scale)
+    $w addtag $title withtag unscaled
+    $w addtag has_info withtag unscaled
+    $w dtag unscaled
     
-    ResetColours $c channel {} $colourScheme [lindex $title 0]
+    ResetColours $w channel {} $colourScheme [lindex $title 0]
 }
 
 proc PutHexagon { w l t r b stack fatness density colourScheme tagSet} {
@@ -1051,6 +1051,10 @@ proc WriteDesc {canvas canvasFile date args} {
 #	}
     }
     close $stream
+# Also include an SVG version in the same directory, so model diagram can be
+# displayed in browser after uploading to web
+    set ::preSelect [file rootname $canvasFile].svg
+    ExportSVG $canvas
 }
 
 proc MakeImage {c base inst w h args} {

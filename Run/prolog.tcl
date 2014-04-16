@@ -23,7 +23,7 @@ proc KeepLooking {} {
 	    set prologExit -2
 	} elseif {[gets $plPipe(stream) noCrs] >= 0} {
 	    regsub -all \\\\u000a $noCrs \n line
-#	    puts [concat < $line]
+#	    puts [concat [string repeat -- $plPipe(recur)] pl: $line <br>]
 	    if {$plPipe(debug)} {
 		puts $plPipe(debug_stream) [concat < $line]
 	    }
@@ -31,6 +31,7 @@ proc KeepLooking {} {
 		DebugMess "Could not parse $line : $mess"
 		send_pl_cmd result:-1
 	    } elseif {[string match exit $cmd]} {
+		incr plPipe(recur) -1
 		set prologExit 1
 	    } elseif {[string match fail $cmd]} {
 		set prologExit 0
@@ -65,6 +66,7 @@ proc prolog {plCmd} {
     global plPipe window_info
     set oldStack $plPipe(stack)
     set plPipe(stack) [AddCurrentToPipe $oldStack]
+    incr plPipe(recur)
     send_pl_cmd call:$plCmd
     set plOutcome [KeepLooking]
     set plPipe(stack) $oldStack
@@ -107,7 +109,7 @@ proc do_tail {header args} {
 proc send_pl_cmd {withCrs} {
     global plPipe
     set plCmd [string map [list \n \\n \r \\r] $withCrs]
-#    puts [concat > $plCmd]
+#    puts [concat [string repeat -- $plPipe(recur)] tk: $plCmd <br>]
     if {$plPipe(debug)} {
 	puts $plPipe(debug_stream) [concat > $plCmd]
     }
@@ -120,6 +122,7 @@ proc send_pl_cmd {withCrs} {
 proc ClosePipe {} {
     global plPipe simtmpdir
     if {[catch {close $plPipe(stream)} spew]} {
+	puts $spew
         destroy .splash ;# banner will hide error mesg if not yet withdrawn
 	ShowMess "Prolog process exited" error $spew ok
     }
@@ -162,5 +165,6 @@ while {![string match ready $spraf]} {
     }
 }
 set plPipe(stack) [list "Prolog initialization"]
+set plPipe(recur) 0
 KeepLooking
 set plPipe(stack) {}

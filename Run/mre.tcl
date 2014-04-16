@@ -305,16 +305,18 @@ namespace eval RunEnv {
         #based on equationRight
         #ShowMess debug info "TabRight tabId $tabId; label [$notebook itemcget $tabId -text]" ok
         catch {destroy .notebookTabTextEdit}
-        Dialog .notebookTabTextEdit -parent [winfo toplevel $notebook] \
-		-cancel 1 -title {Edit tab label} -transient true
-        .notebookTabTextEdit add -text OK; # draw result 0
-        .notebookTabTextEdit add -text Cancel; # draw result 1
-        set ebox [entry .notebookTabTextEdit.ebox -width 20 -textvariable ::RunEnv::TabEditText]
-        pack $ebox -pady 10 -padx 10
-        bind $ebox <Return> {.notebookTabTextEdit invoke 0}
-        $ebox selection range 0 end
-        focus $ebox
-	if {[.notebookTabTextEdit draw] == 0} then {
+
+	set t [PutItThere .notebookTabTextEdit .notebook]
+	wm title $t [tr. "Edit tab label"]
+	pack [entry $t.ebox -width 20 -textvariable ::RunEnv::TabEditText]
+	pack [frame $t.bframe]
+	pack [button $t.bframe.ok -text [tr. OK]\
+		  -command "set helperTable(pdone) 1"] -side right
+	pack [button $t.bframe.cancel -text [tr. Cancel]\
+		  -command "set helperTable(pdone) 0"] -side right
+	LetItShow $t helperTable(pdone)
+	PackItUp $t
+	if {$helperTable(pdone)} then {
             # OK button selected
             $notebook tab current -text $TabEditText
         }

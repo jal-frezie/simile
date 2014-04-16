@@ -1364,6 +1364,11 @@ proc GetParts {top tree noPkg} {
                     set Description "Simile canvas description"
                     set style attachment
                 }
+                model.svg {
+                    set PartType "application/x-simile"
+                    set Description "Simile diagram"
+                    set style attachment
+                }
                 #*.spf {
 # .spfs contain relative paths so are referenced, not moved into the tree
 # (note exra hashes because match string cannot be commented out)
