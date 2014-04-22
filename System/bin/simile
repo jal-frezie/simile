@@ -37,4 +37,4 @@ SIMDIR=`dirname "$SYSDIR"`;
 # start included tk
 # "$BINDIR/wish" "$SIMDIR/Run/simile.tcl" $1
 # start system tk
-wish8.5 "$SIMDIR/Run/simile.tcl" $1
+wish "$SIMDIR/Run/simile.tcl" $1

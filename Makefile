@@ -68,9 +68,7 @@ endif
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
 MAKESL = -shared
-MAJ = 8
-MIN = 5
-VERS = $(MAJ).$(MIN)
+VERS = $(shell echo "puts [info tclversion]" | tclsh)
 
 EXECDIR = $(SYSDIR)/bin
 RESDIR = $(SYSDIR)/lib
