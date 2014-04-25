@@ -176,6 +176,7 @@ get_outer_bound(Node, Parent, Edge, Bound) :-
 
 contains_box(Parent, Box) :-
     find_all_comps(Parent, Comp),
+    \+ Comp is_of_sort has_bowtie, % in case doing size headless
     get_drawing_form(Comp, _, Box).
 
 unite_boxes([], _, Bound, Bound).

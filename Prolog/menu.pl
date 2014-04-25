@@ -262,7 +262,7 @@ menu_handle(Win, file, new) :-
 	check_deletable(Win, Parent),
 	remove_model(Win, Parent),
 	finish_move(Parent, 0),
-	set_save_status(Win, safe),
+	set_save_status(Parent, safe),
 % inserting next two lines prevents undoing/redoing through clear action
 % but fails to disable undo key
 %	caption_for(Parent, Name),
@@ -1302,7 +1302,7 @@ flip_innards(Node_name, Action) :-
 
 check_deletable(Win, Parent) :-
 	(\+ find_all_comps(Parent, _), !;
-	    get_save_status(Win, safe), !;
+	    get_save_status(Parent, safe), !;
 	    backup'><'autosave_suspended(Parent), !;
 	    ok_to_delete(Win, Parent)).
 
@@ -1466,7 +1466,7 @@ do_save(Win, Model, New_name) :-
 	update_captions(Model),
 	clear_autosave(Model, Name),
 	update_ability(Model, save, file, 'Save', 0),
-	mark_model_danger(Model, safe)),
+	set_save_status(Model, safe)),
         finish_progress_dialogue, !. /* do not finish progress box 2wice */
 
 too_big_for_edn(Model) :-
@@ -1548,13 +1548,6 @@ save_isolated(Name, Part, Date, SelnOnly, MakeCompat) :-
 	restart_move,
 	retract(suspend_display),
 	nonvar(Done). /* fails if save failed */
-
-
-mark_model_danger(Model, Danger) :-
-	Win shows_model Model,
-		set_save_status(Win, Danger),
-		fail;
-	true.
 
 get_default_export_name(Model, Extn, Export) :-
 	[Slash] = "/", [Dot] = ".",

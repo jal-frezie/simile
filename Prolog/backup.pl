@@ -117,10 +117,9 @@ purge_graphics(Model, Prev, LostExtents, Redrawn) :-
 finish_move(EditedModel, ChangeExec) :-
 	\+ anything_done, !;
 	(m_update'><'contains(Model, EditedModel),
-	 Win shows_model Model,
-	 set_save_status(Win, risky),
+	 set_save_status(Model, risky),
 	 fail;
-	 true), % set for all windows showing it -- or none
+	 true),
 	(ChangeExec = 0;
 	 ChangeExec = 1,
 	    m_update'><'add_parameter(EditedModel, 1, c_new, 0)),
@@ -449,8 +448,7 @@ new_autosave(Desktop, ModelName) :-
         assert(translation_info(Desktop, [top_level_is(Desktop)])).
 	
 check_autosave(Model, Name, IdSwaps, Tweaked) :-
-	Win shows_model Model,
-	set_save_status(Win, safe),
+	set_save_status(Model, safe),
 	draw'><'update_ability(Model, undo, edit, 'Undo', 0),
 	draw'><'update_ability(Model, redo, edit, 'Redo', 0),
 	draw'><'update_ability(Model, save, file, 'Save', 0),
@@ -467,7 +465,7 @@ check_autosave(Model, Name, IdSwaps, Tweaked) :-
 		restore_save_file(Model, Load, UseIdSwaps),
 		Tweaked = 1,
 		set_edit_abilities(Model),
-		set_save_status(Win, risky),
+		set_save_status(Model, risky),
 		retractall(autosave_file_is(Model, _)),
 		assert(autosave_file_is(Model, AutoName));
 	     output'><'my_delete_file(AutoName),

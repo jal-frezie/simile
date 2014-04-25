@@ -1249,8 +1249,7 @@ link_backwards(Top, TopLink, Type, Chain) :-
 	(Next has_type Type, !,
 	    OnLink = Next,
 	    OnLink is_connector from _ to Old,
-	    (find_type(Old, border), !,
-		Bdr = Old;
+	    (find_type(Old, border), !;
 	    make_border_node(Type, Top, Bdr),
 		OnLink has_changed_termination finish from Old to Bdr,
 		remove_floater(Old));
@@ -1424,17 +1423,6 @@ presence_affects(Item, AffectedBase) :-
 	find_base(Affected, AffectedBase);
 	ghost_link(Item, Base, Ghost),
 	    member(AffectedBase, [Base, Ghost]).
-
-delete_obsolete_modes([], _, []).
-
-delete_obsolete_modes([use(N, Dir, Local, Units) | R1], DeadRef, NewList) :-
-	delete_obsolete_modes(R1, DeadRef, R2),
-	(((N = none; N < DeadRef), !,
-	  NewN = N;
-	 N > DeadRef, !,
-	  NewN is N-1),
-	 NewList = [use(N, Dir, Local, Units) | R2];
-	NewList = R2).
 
 /* Nodes whose completion status may be affected by a change in status
 of the given item -- ghost should be converted to base before calling */
@@ -1671,8 +1659,8 @@ remove_border_nodes(LineType, Finish, Start) :-
 	Local is_connector from OldStart to OldEnd,
 	\+ border_node(InputNode),
 	stick_on_edge(Local, Far, Other, LineType, InputNode),
-	\+ _somethingElse is_connector from InputNode to _,
-	\+ _somethingElse is_connector from _ to InputNode,
+	\+ _ is_connector from InputNode to _,
+	\+ _ is_connector from _ to InputNode,
 	draw'><'off(InputNode),
 	fast_delete(InputNode),
 	fail.

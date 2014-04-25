@@ -77,6 +77,7 @@ proc PutShape {w l t r b file fatness colourScheme title} {
     set point [expr [lsearch $nameList $file] + 1]
     set fileName [lindex $nameList $point]
     
+    set c $w
     source "../Images/$fileName.cnv"
     set growth [expr {max(0.001,($r-$l)/30.0)}]
 # use Inner...we don't need hourglass and the refresh may allow customization

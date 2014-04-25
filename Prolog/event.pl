@@ -319,12 +319,12 @@ click(Xpt, Ypt, CD) :-
 /* check we are in same model we started in */
 check_same_desktop(Parent) :-
 	get_line_start_obj(StartNode),
-	    contains(Top, StartNode),
+	(contains(Top, StartNode),
 	    is_toplevel(Top),
 	    contains(Top, Parent);
 	normalize(StartNode),
 	    advance_phase_to(peruse),
-	    fail.
+	    fail).
 
 save_params(Trans, Depth, Parent) :-
 	set_translation(Trans),
@@ -712,8 +712,8 @@ finish_old_edit(NextEdit) :-
 		(Text = '' -> Name = ' '; Name = Text),
 		caption_for(RenamedNode, OldName),
 		/* If name has changed check new one is usable and update it if so */
-		(Name = OldName, !;
 		find_all_comps(Parent, RenamedNode),
+		(Name = OldName, !;
 		    /* If name exists in submodel or contains dir chars,
 		    block the update show message and highlight the node again */
 		    (cannot_call_in(RenamedNode, Parent, Name),
@@ -909,6 +909,7 @@ doubleclick_on(Edit_thing) :-
 		set_shape(Edit_thing, caption_offset, NewVals),
 		(redisplay(Edit_thing),
 		    fail;
+		 find_all_comps(Parent, Edit_thing),
 		  finish_move(Parent, 1));
 	    OKd == 0);
 	Edit_type is_class_of_sort has_function, !,
@@ -1037,7 +1038,7 @@ new_window_for(Submodel, TopNode, Canvas_name, InitDepths, IsTopLevel) :-
 		[Colour | Images], Scale, InitDepths, IsTopLevel),
 	create_window(Canvas_name, Submodel),
 	make_current(Canvas_name),
-	set_save_status(Canvas_name, safe).
+	set_save_status(Submodel, safe).
 
 /* This version always created a window at least the size of the initial
 window, always zooming in so that the original contents of the submodel
@@ -1280,10 +1281,10 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	get_mode(select), /* was move */
 	get_phase(Phase),
 	local_ends(Moving_obj, Start, Finish),
-	(Phase = moving_start, Inner_move = start,
+	(Phase = moving_start,
 	    (continues_from(Moving_obj, Box), !;
 		Box = Start);
-	Phase = moving_finish, Inner_move = finish,
+	Phase = moving_finish,
 	    (continues_in(Moving_obj, Box), !;
 		Box = Finish)),
 	find_type(Box, EType),
@@ -1291,11 +1292,8 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	find_all_comps(Parent, Moving_obj),
 
 	(Parent = Box, !,
-	    get_shape(Parent, internal_extent, ParentBox),
-	    subtract_from_translation([0,0,1,1], Box, Trans);
-	get_drawing_form(Box, _, ParentBox),
-	    (\+ EType = submodel;
-		add_to_translation([0,0,1,1], Box, Trans))),
+	    get_shape(Parent, internal_extent, ParentBox);
+	get_drawing_form(Box, _, ParentBox)),
 	    
 	middle(ParentBox, [Xc, Yc]),
 	/* allow leeway of 10% for dragging round border */
@@ -1320,21 +1318,6 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	    move_link(Other),
 	    fail;
 	move_link(Prev)),
-/*	
-	(EType = submodel,
-	    (Phase = moving_start,
-	        moving_endpoint(Moving_obj, moving_start, Root),
-	        translate(NewEndPt, Trans, RootEndPt),
-	        ExtraEndPt = NewEndPt;  
-	    Phase = moving_finish,
-	        Root = Moving_obj,
-	        RootEndPt = NewEndPt,
-	        translate(RootEndPt, Trans, ExtraEndPt)),
-	    (moving_endpoint(Root, moving_finish, ExtraObj),
-		tweak_endpoint(ExtraObj, start, ExtraEndPt),
-		fail;
-	    tweak_endpoint(Root, finish, RootEndPt));
-	tweak_endpoint(Moving_obj, Inner_move, NewEndPt)),*/
 	move_something.
 
 % Ghosting drag: should perhaps reuse sort_for_finish for some of this work...

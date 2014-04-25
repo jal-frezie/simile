@@ -254,9 +254,9 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	open_native( File, read, Stream),
 	reassure_user(reading_file, []),
 	read( Stream, Header ),
-	((Header = source(_,version=V,edition=E,date=Date);
-	        Header = source(_,version=V,date=Date), E=standard;
-	        Header = source(_,version=V), E=standard, Date=old), !,
+	((Header = source(_,version=V,edition=E,date=_);
+	        Header = source(_,version=V,date=_), E=standard;
+	        Header = source(_,version=V), E=standard), !,
 	    SimileV is V-4.0, % were there integer versions??
 	    (V >= 10.0, !, % file is UTF-8
 		inters'><'swallow_to_chars(Stream, U8Contents),
@@ -270,7 +270,6 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	      Stm = Stream),
 	    read(Stm, Term);
 	Term = Header,
-	    Date=old,
 	    E = standard,
 	    SimileV = -1,
 	    Stm = Stream), 
@@ -360,7 +359,7 @@ adjust_to_4 :-
 
 adjust_to_4 :-
 	Compartment has_class compartment,
-	\+ (Link is_connector from Function to Compartment,
+	\+ (_Link is_connector from Function to Compartment,
 		Function has_class function), !,
 	Parent has_part Compartment,
 	Function is_new_part_of Parent,
@@ -579,7 +578,7 @@ adjust_to_10(Parent) :-
 	    Flow has_changed_attribute name to Capt,
 	% move bowtie posn info from flow to fn
 	    implicit_function(Flow, ImpFn),
-	    \+ ImpFn has_graphical_attribute along of Bowtie,
+	    \+ ImpFn has_graphical_attribute along of _Bowtie,
 	    Flow no_longer_has_graphical_attribute curve of [Kink, Bowtie],
 	    Flow has_new_graphical_attribute curve of [Kink, 1000],
 	    ImpFn has_new_graphical_attribute along of Bowtie,
@@ -686,7 +685,7 @@ update_per_record_bracket_style(Parent) :- % should do all then fail
 
 replace_substrings(Lose, Start, Gain, Result) :-
 	append(Lose, Tail, Half),
-	\+ append(Head, Half, Gain), % subbing inadvisable and maybe unnecessary
+	\+ suffix(Half, Gain), % subbing inadvisable and maybe unnecessary
 	append(Head, Half, Start), !,
 	append(Gain, Tail, NewHalf),
 	append(Head, NewHalf, Mid),

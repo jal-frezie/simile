@@ -310,8 +310,8 @@ unpack_term(Str, Term) :-
 :- dynamic(update_add/1).
 
 anything_done :-
-	update_remove(P);
-	update_add(P).
+	update_remove(_P);
+	update_add(_P).
 
 fetch_update(DP) :-
 	retract(update_remove(P)),

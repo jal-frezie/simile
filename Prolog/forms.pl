@@ -64,14 +64,13 @@ do_equation_dialog(Win, Part) :-
 				    units=TUnits, bounds=Bounds | _R]), !,
 	    (FilePath = '/graph/', !,
 		append([FilePath | DataField], [Bounds | Indices], TableList),
-		TableTrans = [[], []],
 		TableVals = br(Values);
 	    TableList = [FilePath, DataField | Indices],
 		append(Bounds, [TUnits], TableTypes), 
 		all(event, insert_mem_list,
 		    [build(TableTypes), unify(ClickedObj), build(TableTrans)]),
 		dialogue'><'reverse_engineer(Values, TableTrans, 1, TableVals));
-	TableList = '', TableTrans = '', TableVals = '{}'),
+	TableList = '', TableVals = '{}'),
 
 	(ClickedObj is_of_sort line -> AttType = 2; AttType = 0),
 	(get_av_pair(ClickedObj, AttType, description, Desc), !; Desc = ''),

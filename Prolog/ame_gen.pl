@@ -801,7 +801,7 @@ purge_data(P, Pure) :-
 	select(Found, P, Rest), !,
 		purge_data(Rest, Pure);
 	Pure = P,
-	    retract(purging(Unwanted)).
+	    retract(purging(_Unwanted)).
 
 get_chain(Start, Finish, Top, Up_list, Down_list) :-
 	contains(Finish, Start, Up_list), !,

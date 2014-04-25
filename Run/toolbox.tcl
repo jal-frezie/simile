@@ -1893,7 +1893,7 @@ proc MakeNodeInProlog {newInstance} {
 # GUI tells Simile to make a new desktop
 proc MakeDesktopNode {} {
     global classTable
-    if ($::headless) {return {none dummy}} ;# called in Simile initialization
+    if {[info exists ::SimileAutoObjLoaded]} {return {none dummy}} ;# called in Simile initialization
     set newInstance [UniqueId modelWin]
     similescript::ModelWindow $newInstance
     set node [$newInstance cget -modelNode]

@@ -1060,9 +1060,6 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 	       input_params_in(Functions, Path, Step, ParamUpdate),
 	       ParamUpdates), !;
 	ParamUpdates = []), */
-	(Id has_class_refinement enum_types of ETS, !,
-	    all(compile, make_et_spec, [unify(Id), build(ETS), build(ETS0)]);
-	    ETS0 = []),
 % Add submodel-local function definitions to database
 	(Id has_class_refinement function_defns of FnDefs, !; FnDefs = []),
 	all(inters, add_macro, [unify(in(Path)), build(FnDefs), build(_Ops)]),
@@ -1139,7 +1136,6 @@ with dedicated instructions for reproduction and loss nodes. The latter all go i
 instruction because they will not require individual initialization routines. */
 
         (is_population(SmName), !,
-	    BaseSides = [],
 	    append_atoms(Name, count, Count),
 	    Level = [sm(_,_,_, vm_loop(_,_,_, SetMems))],
 	    GenInters = % some now in special population class
@@ -1334,8 +1330,7 @@ nodes.
 		prefix([sm(_,_, LPtr, _) | GridLoops], LocalPath),
 	     	Specials = [make(enumerate(Name), [], LocalPath, -2,
 			      [list_fixed_nbrs(LPtr, Shp, Rows, Cols, Inds)])];
-	     [SmInters, Specials] = [[], []]),
-	    BaseSides = []),
+	     [SmInters, Specials] = [[], []])),
 	extract_assignments(Instance, LocalPath, LocalTree, Step, MaxStep,
 			    NewSwaps, Used, SubIncludes, FnInters, AssignList0),
 /* Now add an extra instruction if this needs an external proc */
@@ -1587,14 +1582,12 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    GroundEqn = (trigger_magnitude('')=TriggerEqn,
 			 choose('"true"', OnInit, ChooseForm)),
 	    UseList = [on_step | RefList];
-	  (SourceEqn = with_phase(SmStep, EvtElts, GroundEqn),
-	      all(user, arg, [unify(2), build(EvtElts), build(EvtConds)]);
-	    SourceEqn = al_spec(LoopExit, EvtConds, LoopStart),
+	  (SourceEqn = with_phase(SmStep, _EvtElts, GroundEqn);
+	    SourceEqn = al_spec(LoopExit, _EvtConds, LoopStart),
 	   % choose(..) is just a handy fn that allows a boolean and
 	   % something of any type to be passed to the maker
 	      GroundEqn = choose(LoopExit,EvtConds,EvtConds);
-	    EvtConds = [],
-	      GroundEqn = SourceEqn)), !, % EvtConds unused as of 4/12/12
+	    GroundEqn = SourceEqn)), !,
 	    
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
 			 SmStep, UseStep, Used, [assign(Val, Fn)],
@@ -1836,7 +1829,7 @@ goes_this_step(make(_, Conds-_, _, [_, DefP, NewP | _],_), Step, Fix) :-
 cond_goes(Cond, [Step, Fix]) :-
 	(Cond = on_reset, Step >= 0;
 	% Cond = time, Step >= DefP; 'time' never helps it get sorted!
-	Cond = earlier(Act); % wrapper means ignore step
+	Cond = earlier(_Act); % wrapper means ignore step
 	Cond = can_find_id(_Node); % dummy to do with one-sided enumeration
 	member(Cond, [Act, later(Act), this_step(Act)]),
 	goes_this_step(Act, Step, Fix)), !.
@@ -1963,9 +1956,9 @@ allowing there to be more than two. */
 
 order_assignments(Phase, Path, RawAssign, All, OrderedAssign) :-
 	RawAssign = make_level(_Cur, Items, _Subs),
-	(Path = [sm(Capt, _,_,_) | _];
-	    Path = [set(_, loop(Capt, _)) | _];
-	    Path = [], Capt = top),
+	% (Path = [sm(Capt, _,_,_) | _];
+	%     Path = [set(_, loop(Capt, _)) | _];
+	%     Path = [], Capt = top),
 	% tk_update_infobox(pl_locn, [Capt, Phase]),
 	order_phase(Phase, Path, Items, All, ThisPhase, []),
 	order_deeper_assignments(Phase, Path, RawAssign, All, DeepAssign),
