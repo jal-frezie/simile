@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.2 2014/05/12 09:56:58 u45169214 Exp $
+# $Id: can2svg.tcl,v 1.3 2014/05/12 11:11:26 u45169214 Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -395,8 +395,6 @@ proc can2svg::svgasxmllist {cmd args} {
             } else {
                 set theFont $defaultFont
             }
-            set ascent [font metrics $theFont -ascent]
-            set lineSpace [font metrics $theFont -linespace]
             if {[info exists optA(-text)]} {
                 set chdata $optA(-text)
                 
@@ -433,8 +431,9 @@ proc can2svg::svgasxmllist {cmd args} {
             }                                        
             
             set xbase [lindex $coo 0]
-	    foreach {xanch ybase}  \
-              [GetTextSVGCoords $coo $anchor $chdata $theFont $nlines] {}
+            set ybase [lindex $coo 1]
+	    foreach {xanch dy}  \
+              [GetTextSVGCoords $anchor $chdata $theFont $nlines] {}
             
             set attr [list "x" $xbase "y" $ybase "text-anchor" $xanch]
             if {[string length $idAttr] > 0} {
@@ -442,7 +441,6 @@ proc can2svg::svgasxmllist {cmd args} {
             }
             set attr [concat $attr [MakeAttrList \
               $type $opts $argsA(-usestyleattribute)]]
-            set dy 0
             if {$nlines > 1} {
                 
                 # Use the 'tspan' trick here.
@@ -450,7 +448,7 @@ proc can2svg::svgasxmllist {cmd args} {
                 foreach line [split $chdata "\n"] {
                     lappend subList [MakeXMLList "tspan"  \
                       -attrlist [list "x" $xbase "dy" $dy] -chdata $line]
-                    set dy $lineSpace
+                    set dy 1.4em
                 }
                 lappend xmlLL [MakeXMLList $elem -attrlist $attr \
                   -subtags $subList]
@@ -1113,60 +1111,56 @@ proc can2svg::ImageCoordsToAttrBU {coo opts} {
 #       the canvas text item.
 #
 # Arguments:
-#       coo         {x y}
 #       anchor
 #       chdata      character data, newlines included.
 #       
 # Results:
 #       raw xml data of the marker def element.
 
-proc can2svg::GetTextSVGCoords {coo anchor chdata theFont nlines} {
+proc can2svg::GetTextSVGCoords {anchor chdata theFont nlines} {
     
-    foreach {x y} $coo break
 # JAT: Rework to avoid need to interrogate Tk for font data
-    set ascent [font metrics $theFont -ascent]
-    set lineSpace [font metrics $theFont -linespace]
 
     switch -- $anchor {
         nw {
             set xanch start
-            set ybase [expr $y + $ascent]
+            set dy 1em
         }
         w {
             set xanch start
-            set ybase [expr $y - $nlines*$lineSpace/2.0 + $ascent]
+            set dy [expr {1-$nlines*0.7}]em
         }
         sw {
             set xanch start
-            set ybase [expr $y - $nlines*$lineSpace + $ascent]
+            set dy [expr {1-$nlines*1.4}]em
         }
         s {
             set xanch middle
-            set ybase [expr $y - $nlines*$lineSpace + $ascent]
+            set dy [expr {1-$nlines*1.4}]em
         }
         se {
             set xanch end
-            set ybase [expr $y - $nlines*$lineSpace + $ascent]
+            set dy [expr {1-$nlines*1.4}]em
         }
         e {
             set xanch end
-            set ybase [expr $y - $nlines*$lineSpace/2.0 + $ascent]
+            set dy [expr {1-$nlines*0.7}]em
         }
         ne {
             set xanch end
-            set ybase [expr $y + $ascent]
+            set dy 1em
         } 
         n {
             set xanch middle
-            set ybase [expr $y + $ascent]
+            set dy 1em
         }
         center {
             set xanch middle
-            set ybase [expr $y - $nlines*$lineSpace/2.0 + $ascent]
+            set dy [expr {1-$nlines*0.7}]em
         }
     }
     
-    return [list $xanch $ybase]
+    return [list $xanch $dy]
 }
 
 # can2svg::ParseSplineToPath --
