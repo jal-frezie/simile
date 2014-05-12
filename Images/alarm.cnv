@@ -1,8 +1,3 @@
-# box
-$c create rect -15 -15 15 15 -outline {} -tag unscaled
-$c create line -15 -15 -15 15 15 15 15 -15 -15 -15 \
-	-tag "unscaled size_on_this realwidth(1.0)"
-
 $c create arc -12 -12 12 12 -style arc -extent 180 \
 	-tag "unscaled realwidth(2.0)"
 $c create arc -12 -12 12 12 -style arc -start 180 -extent 180 \

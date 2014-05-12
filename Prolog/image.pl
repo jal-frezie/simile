@@ -670,7 +670,7 @@ get_link_route(Link, Route) :-
 	    Route = [Pn, [MX, MY], P0];
 	SBox = [SL, ST, SR, SB],
 	    FBox = [FL, FT, FR, FB],
-	    (draw'><'tk_get_pref(flowRouting, 0),
+	    (\+ suspend_display, draw'><'tk_get_pref(flowRouting, 0),
 		RWarp = WarpFactor,
 		SPt = [SX, SY],
 		FPt = [FX, FY];

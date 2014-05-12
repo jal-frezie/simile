@@ -118,6 +118,12 @@ itcl::class similescript::ModelWindow {
         MenuSelect $modelCanvas code compile_c
     }
 
+    # added for diaplaying models on web server -- do not document
+    public method BuildSVGDiagram {shlibFile} {
+	set ::preSelect $shlibFile
+	ExportSVGDirect $modelNode
+    }
+
     # Model Menu
     public method Run {} {
 	global botches

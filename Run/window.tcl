@@ -599,16 +599,6 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     set window_info($c,height) [expr $wb - $wt]
     if {[set window_info($c,is_top_level) $isTopLevel]} {
 	set window_info($c,topCapt) {}
-	set lookers [list generic compartment channel text \
-			      variable function submodel flow influence \
-			 ghost_link relation]
-	if {[info exists ::do_events]} {
-	    lappend lookers event state squirt
-	}
-	foreach nodeType $lookers {
-	    # add event squirt state to above
-	    ResetLooks $topNode $nodeType
-	}
     } else {
 	set window_info($c,topCapt) $window_info(lastClickCapt)
     }
@@ -1408,6 +1398,7 @@ proc DoLocalCmd {win item} {
 }
 
 proc ExportSVG {win} {
+    global window_info
     package require can2svg
     set node $::window_info($win,top_node)
 
@@ -1424,6 +1415,26 @@ proc ExportSVG {win} {
     $win configure -scrollregion [list $l $t $r $b]
     $win yview moveto [lindex $ypos 0]
     $win xview moveto [lindex $xpos 0]
+}
+
+proc ExportSVGDirect {node} {
+    global window_info
+    package require can2svg
+
+    set tgt [ChooseFile [GetExecTitle $node].svg \
+		 [tr. "Export code to:"] 1 $node]
+
+# Real men don't need Tk to generate SVG from models in Prolog...
+    set window_info(ToSVG,top_node) $node
+    set window_info(ToSVG,scale) 1.0
+    set ::svgXML {}
+    array unset ::can2svg::defsArrowMarkerArr ::can2svg::defsStipplePatternArr
+    prolog tcl_export_svg($node)
+    set svgStm [NetOpen $tgt w]
+    puts $svgStm [can2svg::makedocument 800 600 $::svgXML]
+    close $svgStm
+    unset window_info(ToSVG,scale)
+    unset window_info(ToSVG,top_node)
 }
 
 # This one added to remove file parameters when clearing model

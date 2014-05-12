@@ -48,8 +48,10 @@ proc ScaleRect {w l t r b} {
 proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
+    set fCol $::looks($::window_info($w,top_node),compartment,fill)
     set width [GetLineSize $w compartment $fatness]
-    $w create rect $ml $mt $mr $mb -outline {} -tag "$tagSet has_info"
+    $w create rectangle $ml $mt $mr $mb -outline {} -fill $fCol \
+	-tag "$tagSet has_info"
     set stackDepth 0
     $w create line $mr $mt $ml $mt $ml $mb -width $width \
             -tag "$tagSet size_on_this realwidth($width)"
@@ -72,12 +74,18 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
 
 proc PutShape {w l t r b file fatness colourScheme title} {
     global window_info
+    set fCol $::looks($::window_info($w,top_node),channel,fill)
     set nameList {condition cond creation creation \
                 immigration immig reproduction repro loss loss alarm alarm}
     set point [expr [lsearch $nameList $file] + 1]
     set fileName [lindex $nameList $point]
     
     set c $w
+    # box
+    $c create rectangle -15 -15 15 15 -outline {} -fill $fCol -tag unscaled
+    $c create line -15 -15 -15 15 15 15 15 -15 -15 -15 \
+	-tag "unscaled size_on_this realwidth(1.0)"
+
     source "../Images/$fileName.cnv"
     set growth [expr {max(0.001,($r-$l)/30.0)}]
 # use Inner...we don't need hourglass and the refresh may allow customization
@@ -94,6 +102,7 @@ proc PutShape {w l t r b file fatness colourScheme title} {
 
 proc PutHexagon { w l t r b stack fatness density colourScheme tagSet} {
     
+    set fCol $::looks($::window_info($w,top_node),function,fill)
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     
     set my [expr ($mt + $mb)/2]
@@ -101,19 +110,18 @@ proc PutHexagon { w l t r b stack fatness density colourScheme tagSet} {
     set m25 [expr (3*$ml + $mr)/4]
     
     set width [GetLineSize $w function $fatness]
-    $w create poly $mr $my $m75 $mt $m25 $mt $ml $my $m25 $mb $m75 $mb \
-            -width $width -tag "$tagSet size_on_this realwidth($width)"
+    $w create polygon $mr $my $m75 $mt $m25 $mt $ml $my $m25 $mb $m75 $mb \
+	-width $width -fill $fCol -tag "$tagSet size_on_this realwidth($width)"
     ResetColours $w function $density $colourScheme [lindex $tagSet 0]
 }
 
 
 proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
     set width [GetLineSize $w flow $fatness]
-    
-    set poly [$w create poly 0 0 0 0 -tag "$tagSet bowtie has_info"]
-    set line [$w create line 0 0 0 0 -width $width \
-	       -tag "$tagSet bowtie realwidth($width)"]
-    PositionBowtie $w [list $l $t $r $b] [list $poly $line]
+    set fCol $::looks($::window_info($w,top_node),flow,fill)
+    set bounds [PositionBowtie $w [list $l $t $r $b]]
+    $w create polygon $bounds -fill $fCol -tag "$tagSet bowtie has_info"
+    $w create line $bounds -width $width -tag "$tagSet bowtie realwidth($width)"
     ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
@@ -129,7 +137,7 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
 
 proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set width [GetLineSize $w variable $fatness]
-    
+    set fCol $::looks($::window_info($w,top_node),variable,fill)
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set rad [expr ($mr-$ml)/2]
     set hm [expr $ml+$rad]
@@ -153,19 +161,19 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	set ot [expr $vm-$outer]
 	set or [expr $hm+$outer]
 	set ob [expr $vm+$outer]
-	eval {$w create oval $ol $ot $or $ob -outline {}} $generic
+	eval {$w create oval $ol $ot $or $ob -outline {} -fill $fCol} $generic
 #	scan [GetPoints $ol $outer] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
 #	scan [GetPoints $ot $outer] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
 #	scan [GetPoints $or (-$outer)] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
 #	scan [GetPoints $ob (-$outer)] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
 	
-#	eval {$w create poly $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3 -outline {}} $generic
+#	eval {$w create polygon $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3 -outline {}} $generic
 	DrawBlob $w $hm $vm [expr 2*($rad+$width/2)/5] "$tagSet has_info"
     } else {
 #    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
 
-	eval {$w create poly $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {}} $generic
-	eval {$w create poly $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {}} $generic
+	eval {$w create polygon $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {} -fill $fCol} $generic
+	eval {$w create polygon $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {} -fill $fCol} $generic
 	eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
 		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
 		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
@@ -186,7 +194,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	    eval {$w create line $sr $st $sr $sb} $generic
 	} 2 {
 	    set st [expr $mt-2*$rad]
-	    eval {$w create poly $ml $st $hm $st $ml $vm} $generic
+	    eval {$w create polygon $ml $st $hm $st $ml $vm -fill $fCol} $generic
 	    eval {$w create line $ml $st $hm $st $ml $vm $ml $st} $generic
 	} 3 {
 	    set sl [expr $ml+$rad/2]
@@ -219,17 +227,18 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 
 proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
     set width [GetLineSize $w flow $fatness]
+    set fCol $::looks($::window_info($w,top_node),flow,fill)
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     
     set mtb13 [expr ($mb + 2*$mt)/3]
     set arcTags [concat $tagSet [list size_on_this realwidth($width)]]
     $w create oval $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -outline {} \
-            -tag $tagSet
+             -fill $fCol -tag $tagSet
     $w create oval [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -outline {} \
-            -tag $tagSet
+             -fill $fCol -tag $tagSet
     $w create oval [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
-            [expr (2*$mb + $mt)/3] -outline {} -tag $tagSet
+            [expr (2*$mb + $mt)/3] -outline {}  -fill $fCol -tag $tagSet
     $w create arc $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -width $width \
             -style arc -start 120 -extent 210 -tag $arcTags
     $w create arc [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -width $width \
@@ -461,7 +470,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 #    }
 
 #    MakeSubmodelGrid $w $l $t $r $b $fatness $origX $origY $bgColour
-    if {[string equal incomplete $colourScheme] || !$inFat} {
+    if {[string equal incomplete $colourScheme] || !$inFat || $w eq "ToSVG"} {
 #	set window_info($w,temporary) $i
     } else {
 	set plRad [expr $cornerRad/$window_info($w,scale)]
@@ -739,27 +748,23 @@ proc CurveStackEnds {mptz distOff} {
 }
 
 proc MoveBowtie {w id ptz} {
+    set bounds [PositionBowtie $w $ptz]
     foreach item [$w find withtag $id] {
         set taglist [$w gettags $item]
         if {[string match *bowtie* $taglist]} {
-            lappend bits $item
+	    $w coords $item $bounds
 	}
-    }
-    if {[info exists bits]} {
-	PositionBowtie $w $ptz $bits
     }
 }
 
-proc PositionBowtie {w ptz items} {
+proc PositionBowtie {w ptz} {
     scan [ScaleList $w $ptz] {%f %f %f %f} ml mt mr mb
     if {($mb - $mt) > ($mr - $ml)} {
         set bounds "$ml $mt $mr $mt $ml $mb $mr $mb $ml $mt"
     } else {
         set bounds "$ml $mt $ml $mb $mr $mt $mr $mb $ml $mt"
     }
-    foreach item $items {
-	eval {$w coords $item} $bounds
-    }
+    return $bounds
 }
 
 proc DrawBlob {w startX startY size tags} {
@@ -801,7 +806,7 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
     } else {
 	set txtbg {}
     }
-    set backBox [$w create rect 0 0 1 1 -outline {} -fill $txtbg \
+    set backBox [$w create rectangle 0 0 1 1 -outline {} -fill $txtbg \
 		     -tag "$tagSet /${type}_text/"]
     $w dtag $backBox editable
     $w dtag $backBox currently_editable
@@ -952,10 +957,12 @@ proc FillSymbol { w name color } {
 proc ResetColours { w type density colourScheme name } {
     global looks window_info
     
-    set n $window_info($w,top_node)
-    ColorSymbol $w $name $type $density $colourScheme
-    set fillColor $looks($n,$type,fill)
-    FillSymbol $w $name $fillColor
+#    set n $window_info($w,top_node)
+    if {!$::headless} {
+	ColorSymbol $w $name $type $density $colourScheme
+    }
+#    set fillColor $looks($n,$type,fill)
+#    FillSymbol $w $name $fillColor
 }
 
 proc ColourExists {col} {
@@ -1864,12 +1871,18 @@ proc LoadLooks {t n object} {
 # }
 #
 proc ExtractFontData {font} {
-    set family [font actual $font -family]
-    set weight [font actual $font -weight]
-    set style [font actual $font -slant]
-    set textsize [font actual $font -size]
+    if {[catch {array set fontAttrs $font}]} {
+	set family [font actual $font -family]
+	set weight [font actual $font -weight]
+	set style [font actual $font -slant]
+	set textsize [font actual $font -size]
     #ShowMess debug info "ExtractFontData [list $family $weight $style $textsize]" ok
-    return [list $family $weight $style $textsize]
+	return [list $family $weight $style $textsize]
+    } else {
+	# already a new style one, do not pass Tk in case headless
+	return [list $fontAttrs(-family) $fontAttrs(-weight) \
+		    $fontAttrs(-slant) $fontAttrs(-size)]
+    }
 }
 
 proc CopyLooks {t n object nta} {
@@ -2349,4 +2362,8 @@ proc LoadModelLooks {w state} {
 	prolog [format "tk_set_new_size(%s,%s,%d,%s)" $top $type \
 		$looks($top,$type,objectsize) $looks($top,$type,captanchor)]
     }
+}
+
+proc ToSVG {args} {
+    append ::svgXML "\t[can2svg::can2svg $args]\n"
 }

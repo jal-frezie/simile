@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.1 2013/08/28 07:52:26 u45169214 Exp $
+# $Id: can2svg.tcl,v 1.2 2014/05/12 09:56:58 u45169214 Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -275,16 +275,19 @@ proc can2svg::svgasxmllist {cmd args} {
     
     # If we need a marker (arrow head) need to make that first.
     if {[info exists optA(-arrow)] && ![string equal $optA(-arrow) "none"]} {
+	set arrowScaleArgs 1
+	if {[info exists optA(-width)]} {
+	    set arrowScaleArgs $optA(-width)
+	}
         if {[info exists optA(-arrowshape)]} {
-            
-            # Make a key of the arrowshape list into the array.
-            regsub -all -- $wsp_ $optA(-arrowshape) _ shapeKey
-            set arrowKey ${fillValue}_${shapeKey}
-            set arrowShape $optA(-arrowshape)
-        } else {
-            set arrowKey ${fillValue}
-            set arrowShape {8 10 3}
-        }
+	    lappend arrowScaleArgs $optA(-arrowshape)
+	}
+	set arrowShape [eval ScaleArrow $arrowScaleArgs]
+	
+	# Make a key of the arrowshape list into the array.
+	regsub -all -- $wsp_ $arrowShape _ shapeKey
+	set arrowKey ${fillValue}_${shapeKey}
+
         if {!$argsA(-reusedefs) || \
           ![info exists defsArrowMarkerArr($arrowKey)]} {
             set defsArrowMarkerArr($arrowKey)  \
@@ -429,10 +432,11 @@ proc can2svg::svgasxmllist {cmd args} {
                 set anchor $optA(-anchor)
             }                                        
             
-            foreach {xbase ybase}  \
+            set xbase [lindex $coo 0]
+	    foreach {xanch ybase}  \
               [GetTextSVGCoords $coo $anchor $chdata $theFont $nlines] {}
             
-            set attr [list "x" $xbase "y" $ybase]
+            set attr [list "x" $xbase "y" $ybase "text-anchor" $xanch]
             if {[string length $idAttr] > 0} {
                 set attr [concat $attr $idAttr]
             }
@@ -778,14 +782,16 @@ proc can2svg::MakeStyleList {type opts args} {
     
     # If any arrow specify its marker def url key.
     if {[info exists arrowValue]} {
-        if {[info exists arrowShape]} {        
-            foreach {a b c} $arrowShape break
-            set arrowIdKey "arrowMarkerDef_${fillCol}_${a}_${b}_${c}"
-            set arrowIdKeyLast "arrowMarkerLastDef_${fillCol}_${a}_${b}_${c}"
-        } else {
-            set arrowIdKey "arrowMarkerDef_${fillCol}"
-            set arrowIdKeyLast $arrowIdKey
-        }
+	set arrowScaleArgs 1
+	if {[info exists styleArr(stroke-width)]} {
+	    set arrowScaleArgs $styleArr(stroke-width)
+	}
+        if {[info exists arrowShape]} {
+	    lappend arrowScaleArgs $arrowShape
+	}
+	set arrowSizeRef [join [eval ScaleArrow $arrowScaleArgs] _]
+	set arrowIdKey arrowMarkerDef_${fillCol}_$arrowSizeRef
+	set arrowIdKeyLast arrowMarkerLastDef_${fillCol}_$arrowSizeRef
         
         switch -- $arrowValue {
             first {
@@ -859,12 +865,11 @@ proc can2svg::FormatColorName {value} {
         return $value
     }
 
-    switch -- $value {
-        black - white - red - green - blue {
+    switch -glob -- $value {
+        black - white - red - green - blue - \#* {
             set col $value
         }
         default {
-        
             # winfo rgb . white -> 65535 65535 65535
             foreach rgb [winfo rgb . $value] {
                 lappend rgbx [expr $rgb >> 8]
@@ -1118,66 +1123,50 @@ proc can2svg::ImageCoordsToAttrBU {coo opts} {
 proc can2svg::GetTextSVGCoords {coo anchor chdata theFont nlines} {
     
     foreach {x y} $coo break
+# JAT: Rework to avoid need to interrogate Tk for font data
     set ascent [font metrics $theFont -ascent]
     set lineSpace [font metrics $theFont -linespace]
 
-    # If not anchored to the west it gets more complicated.
-    if {![string match $anchor "*w*"]} {
-        
-        # Need to figure out the extent of the text.
-        if {$nlines <= 1} {
-            set textWidth [font measure $theFont $chdata]
-        } else {
-            set textWidth 0
-            foreach line [split $chdata "\n"] {
-                set lineWidth [font measure $theFont $line]
-                if {$lineWidth > $textWidth} {
-                    set textWidth $lineWidth
-                }
-            }
-        }
-    }
-    
     switch -- $anchor {
         nw {
-            set xbase $x
+            set xanch start
             set ybase [expr $y + $ascent]
         }
         w {
-            set xbase $x
+            set xanch start
             set ybase [expr $y - $nlines*$lineSpace/2.0 + $ascent]
         }
         sw {
-            set xbase $x
+            set xanch start
             set ybase [expr $y - $nlines*$lineSpace + $ascent]
         }
         s {
-            set xbase [expr $x - $textWidth/2.0]
+            set xanch middle
             set ybase [expr $y - $nlines*$lineSpace + $ascent]
         }
         se {
-            set xbase [expr $x - $textWidth]
+            set xanch end
             set ybase [expr $y - $nlines*$lineSpace + $ascent]
         }
         e {
-            set xbase [expr $x - $textWidth]
+            set xanch end
             set ybase [expr $y - $nlines*$lineSpace/2.0 + $ascent]
         }
         ne {
-            set xbase [expr $x - $textWidth]
+            set xanch end
             set ybase [expr $y + $ascent]
         } 
         n {
-            set xbase [expr $x - $textWidth/2.0]
+            set xanch middle
             set ybase [expr $y + $ascent]
         }
         center {
-            set xbase [expr $x - $textWidth/2.0]
+            set xanch middle
             set ybase [expr $y - $nlines*$lineSpace/2.0 + $ascent]
         }
     }
     
-    return [list $xbase $ybase]
+    return [list $xanch $ybase]
 }
 
 # can2svg::ParseSplineToPath --
@@ -1259,6 +1248,17 @@ proc can2svg::ParseSplineToPath {type coo} {
         }
     }
     return $data
+}
+
+# can2svg::ScaleArrow --
+# JAT: divide arrow size by line width because SVG arrows are specified in
+# multiples of line width (canvas arrow size is independent of width)
+
+proc can2svg::ScaleArrow {lineWidth {shape {8 10 3}}} {
+    foreach metric $shape {
+	lappend scaled [expr {1.0*$metric/$lineWidth}]
+    }
+    return $scaled
 }
 
 # can2svg::MakeArrowMarker --

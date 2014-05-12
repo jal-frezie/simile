@@ -17,7 +17,7 @@ sicstus_module(input, [tk_make_desktop_node/1, tk_undo/2, tk_redo/2,
 		       tk_run_settings_tweaked/1, tk_off_window/2,
 		       tk_certain_death_node/1, tk_kill_everything/1,
 		       tk_set_new_size/4, tk_change_size/4, tk_do_colours/2,
-		       tk_in_days/1]).
+		       tcl_export_svg/1, tk_in_days/1]).
 
 sicstus_use_module([library(lists), backup, event, menu, sp_only, utility]).
 
@@ -168,6 +168,12 @@ tk_certain_death_node(Wid) :-
 
 tk_do_colours(Node, Way) :-
 	do_colours(Node, Way).
+
+tcl_export_svg(Node) :-
+        ame_gen'><'find_all_comps(Node, Component),
+        draw'><'display('ToSVG', Component, 0, [0, 0, 1, 1], 1),
+        fail;
+        true.
 
 tk_append_to_log(Model, Action) :-
 	append_to_log(Model, Action).

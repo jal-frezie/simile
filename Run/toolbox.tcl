@@ -111,7 +111,11 @@ menu .openrecent -tearoff 0
 
 wm protocol . WM_DELETE_WINDOW {close $plPipe(stream); destroy .}
 
+} else { ;# headless
+# still need some display metrics for making SVG
+    set niceSize 9
 } ;# headless
+
 source ../Run/window.tcl
 source ../Run/shapes.tcl
 source ../Run/forms.tcl
@@ -695,12 +699,14 @@ proc StartComms {firstTime} {
 
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo openModel simtmpdir
-    global regularActs tclBitness
+    global regularActs tclBitness looks
 
-    if {!$::headless} {
+    if {$::headless} {
+	set looks(buttonColor) \#d9d9d9
+    } else {
 	button .b
-	set ::looks(buttonColor) [Desystematize [.b cget -bg]]
-	set ::looks(windowColor) white
+	set looks(buttonColor) [Desystematize [.b cget -bg]]
+	set looks(windowColor) white
 	destroy .b
 	LoadIconImages
     }
@@ -1884,6 +1890,18 @@ proc MakeNodeInProlog {newInstance} {
     set newRunInstance [UniqueId modelRun]
     similescript::RunControl $newRunInstance $newInstance
     set node [lindex $fromProlog 0]
+
+    set lookers [list generic compartment channel text \
+		     variable function submodel flow influence \
+		     ghost_link relation]
+    if {[info exists ::do_events]} {
+	lappend lookers event state squirt
+    }
+    foreach nodeType $lookers {
+	# add event squirt state to above
+	ResetLooks $node $nodeType
+    }
+
     set classTable(run,$node) $newRunInstance
 #this didn't work so stomp it
     $newRunInstance configure -modelNode $node
