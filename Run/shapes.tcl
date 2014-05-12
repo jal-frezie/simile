@@ -1061,8 +1061,9 @@ proc WriteDesc {canvas canvasFile date args} {
     close $stream
 # Also include an SVG version in the same directory, so model diagram can be
 # displayed in browser after uploading to web
-    set ::preSelect [file rootname $canvasFile].svg
-    ExportSVG $canvas
+# (no longer needed because headless script can now build it!)
+#    set ::preSelect [file rootname $canvasFile].svg
+#    ExportSVG $canvas
 }
 
 proc MakeImage {c base inst w h args} {

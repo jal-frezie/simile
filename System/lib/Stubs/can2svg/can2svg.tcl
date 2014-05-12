@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.3 2014/05/12 11:11:26 u45169214 Exp $
+# $Id: can2svg.tcl,v 1.4 2014/05/12 16:53:41 u45169214 Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -243,9 +243,7 @@ proc can2svg::svgasxmllist {cmd args} {
     }
     if {[info exists optA(-fill)]} {
         set fillValue $optA(-fill)
-        if {![regexp {#[0-9]+} $fillValue]} {
-            set fillValue [FormatColorName $fillValue]
-        }
+	set fillValue [FormatColorName $fillValue]
     } else {
         set fillValue black
     }
@@ -433,9 +431,9 @@ proc can2svg::svgasxmllist {cmd args} {
             set xbase [lindex $coo 0]
             set ybase [lindex $coo 1]
 	    foreach {xanch dy}  \
-              [GetTextSVGCoords $anchor $chdata $theFont $nlines] {}
+              [GetTextSVGCoords $anchor $nlines] {}
             
-            set attr [list "x" $xbase "y" $ybase "text-anchor" $xanch]
+            set attr [list "x" $xbase "y" $ybase "text-anchor" $xanch "dy" $dy]
             if {[string length $idAttr] > 0} {
                 set attr [concat $attr $idAttr]
             }
@@ -445,6 +443,7 @@ proc can2svg::svgasxmllist {cmd args} {
                 
                 # Use the 'tspan' trick here.
                 set subList {}
+		set dy 0
                 foreach line [split $chdata "\n"] {
                     lappend subList [MakeXMLList "tspan"  \
                       -attrlist [list "x" $xbase "dy" $dy] -chdata $line]
@@ -743,9 +742,7 @@ proc can2svg::MakeStyleList {type opts args} {
             -fill {
                 
                 # Need to translate names to hex spec.
-                if {![regexp {#[0-9]+} $value]} {
-                    set value [FormatColorName $value]
-                }
+		set value [FormatColorName $value]
                 set fillCol $value                
                 if {[string equal $type "line"]} {
                     set styleArr(stroke) [MapEmptyToNone $value]
@@ -773,7 +770,9 @@ proc can2svg::MakeStyleList {type opts args} {
                 set stippleValue $value
             }
             -width {
-                set styleArr(stroke-width) $value
+		if {$value > 1} {
+		    set styleArr(stroke-width) $value
+		}
             }
         }
     }
@@ -864,10 +863,12 @@ proc can2svg::FormatColorName {value} {
     }
 
     switch -glob -- $value {
-        black - white - red - green - blue - \#* {
+        black - white - red - green - blue - \#?????? {
             set col $value
-        }
-        default {
+        } \#???????????? {
+	    # JAT: 48-bit colour spec, SVG no like, trim to 24
+	    set col [string range $value 0 2][string range $value 5 6][string range $value 9 10]
+        } default {
             # winfo rgb . white -> 65535 65535 65535
             foreach rgb [winfo rgb . $value] {
                 lappend rgbx [expr $rgb >> 8]
@@ -888,7 +889,7 @@ proc can2svg::FormatColorName {value} {
 # Results:
 #       flat style array
 
-proc can2svg::MakeFontStyleList {fontDesc} {    
+proc can2svg::TkMakeFontStyleList {fontDesc} {    
 
     # MICK Modify - break a named font into its component fields
     set font [lindex $fontDesc 0]
@@ -927,6 +928,43 @@ proc can2svg::MakeFontStyleList {fontDesc} {
     return [array get styleArr]
 }
 
+#JAT: Version for Simile fonts not using Tk
+proc can2svg::MakeFontStyleList {fontDesc} { 
+    foreach {option val} $fontDesc {
+	switch -- $option {
+	    -family {
+		set styleArr(font-family) $val
+	    } -size {
+		if {$val > 0} {
+		    # points
+		    set funit pt
+		} else {
+		    # pixels (actually user units)
+		    set funit px
+		}
+		set styleArr(font-size) "[expr abs($val)]$funit"
+	    } -slant {
+		if {$val eq "italic"} {
+		    set styleArr(font-style) italic
+		}
+	    } -weight {
+		if {$val eq "bold"} {
+		    set styleArr(font-weight) bold
+		}
+	    } -underline {
+		if {$val} {
+		    set styleArr(text-decoration) underline
+		}
+		
+	    } -overstrike {
+		if {$val} {
+		    set styleArr(text-decoration) overline
+		}
+	    }
+	}
+    }	
+    return [array get styleArr]
+}
 # can2svg::SplitWrappedLines --
 # 
 # MICK O'DONNELL: added code to split wrapped lines
@@ -1117,7 +1155,7 @@ proc can2svg::ImageCoordsToAttrBU {coo opts} {
 # Results:
 #       raw xml data of the marker def element.
 
-proc can2svg::GetTextSVGCoords {anchor chdata theFont nlines} {
+proc can2svg::GetTextSVGCoords {anchor nlines} {
     
 # JAT: Rework to avoid need to interrogate Tk for font data
 

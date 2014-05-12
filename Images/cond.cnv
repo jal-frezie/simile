@@ -1,4 +1,4 @@
-$c create text 0 0 -text {?} -anchor c -tag "unscaled realwidth(300)" \
-	-font -Adobe-Helvetica-Bold-R-Normal--*-120-*-*-*-*-*-*
+$c create text 0 0 -text {?} -anchor center -tag "unscaled realwidth(300)" \
+	-font "-family helvetica -weight bold -slant roman -size 120"
 # query
 
