@@ -80,23 +80,23 @@ proc PutShape {w l t r b file fatness colourScheme title} {
     set point [expr [lsearch $nameList $file] + 1]
     set fileName [lindex $nameList $point]
     
-    set c $w
+# If exporting SVG, start a group with the appropriate transform
+    set xoff [expr {$window_info($w,scale)*($l+$r)/2}]
+    set yoff [expr {$window_info($w,scale)*($t+$b)/2}]
+    set scale [expr {max(0.001,($r-$l)/30.0)*$window_info($w,scale)}]
+    StartGroup $w $xoff $yoff $scale
     # box
-    $c create rectangle -15 -15 15 15 -outline {} -fill $fCol -tags unscaled
-    $c create line -15 -15 -15 15 15 15 15 -15 -15 -15 \
+    $w create rectangle -15 -15 15 15 -outline {} -fill $fCol -tags unscaled
+    $w create line -15 -15 -15 15 15 15 15 -15 -15 -15 \
 	-tags "unscaled size_on_this realwidth(1.0)"
 
+    set c $w
     source "../Images/$fileName.cnv"
-    set growth [expr {max(0.001,($r-$l)/30.0)}]
 # use Inner...we don't need hourglass and the refresh may allow customization
 # dialogue to get its threads in a twist
-    InnerZoomImage $w unscaled $growth
-    $w move unscaled [expr ($l+$r)/2] [expr ($t+$b)/2]
-    InnerZoomImage $w unscaled $window_info($c,scale)
     $w addtag $title withtag unscaled
     $w addtag has_info withtag unscaled
-    $w dtag unscaled
-    
+    EndGroup $w $xoff $yoff $scale    
     ResetColours $w channel {} $colourScheme [lindex $title 0]
 }
 
@@ -2362,6 +2362,23 @@ proc LoadModelLooks {w state} {
 	if {[string equal normal $type]} continue
 	prolog [format "tk_set_new_size(%s,%s,%d,%s)" $top $type \
 		$looks($top,$type,objectsize) $looks($top,$type,captanchor)]
+    }
+}
+
+proc StartGroup {w xoff yoff scale} {
+    if {$w eq "ToSVG"} {
+	append ::svgXML \
+	    "\t<g transform=\"translate($xoff,$yoff) scale($scale)\">\n"
+    }
+}
+
+proc EndGroup {w xoff yoff scale} {
+    if {$w eq "ToSVG"} {
+	append ::svgXML "\t</g>\n"
+    } else {
+	InnerZoomImage $w unscaled $scale
+	$w move unscaled $xoff $yoff
+	$w dtag unscaled
     }
 }
 
