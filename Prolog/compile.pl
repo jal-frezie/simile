@@ -1591,10 +1591,10 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
 			 SmStep, UseStep, Used, [assign(Val, Fn)],
-			 Setups, Path, RefList, AllInters),
+			 Setups, Path, RefList, Inters),
 	(nonvar(Made), !; Made = Dest),
 	connect_params([make(Made, UseList, Path, UseStep, [Act]) | Setups],
-	                AllInters, Actions, Inters);
+	                Actions);
 	Actions = [],
 	Inters = []),
 	Set = make(Dest, [init(Dest), update(Dest)], DestPath, SmStep, []),
@@ -1676,7 +1676,7 @@ Actually I found an example where it didn't work fine (gridspread) so
 have put it back for now. Inheritance workaround is to do all the
 processing in the relation model. */
 
-connect_params(AllInsts, AllInters, Insts, Inters) :-
+connect_params(AllInsts, Insts) :-
 	select(make(Tgt, Conds, PathPlus, Step, Acts), AllInsts, LeftInsts),
 	select(made_at(Param, OrigPathPlus), Conds, MoreConds), !,
 	    remove_non_loopers(PathPlus, Path),
@@ -1693,10 +1693,8 @@ connect_params(AllInsts, AllInters, Insts, Inters) :-
 				 PathPlus, Step, Acts),
 		     make(made_for(Tgt, Param), [Param], CommonPathPlus, Step,
 			  []) | LeftInsts]),
-	    LeftInters = AllInters,
-	    connect_params(ChangedInsts, LeftInters, Insts, Inters);
-	Insts = AllInsts,
-	    Inters = AllInters.
+	    connect_params(ChangedInsts, Insts);
+	Insts = AllInsts.
 
 /* (was) in a Geraint stylee -- may need speeding up */
 get_common_path(Path, OrigPath, CommonPath) :-

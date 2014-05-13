@@ -947,7 +947,7 @@ make_intermediates(
 	    make_choose_form(Source, keep(LocalInd), 1, Element),
 	        length(Source, DimVal),
 %	        DimSetups = [],
-%	        MidInters = PrevInters,
+	        MidInters = PrevInters,
 	        NowBuilding = BuildingArrays,
 	        Dun = const_int), !,
 	    ((\+ number(DimVal); DimVal > 1; Source = soloarr(_)), !;
