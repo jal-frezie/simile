@@ -153,7 +153,8 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 %	    member(instance(internal, inter(_,_, Loops), NewVar,_, _),
 %		   InterInputs),
 %	    Recurse = 0;
-	Var = channel_is(input(Location, elt(RealPathForm, Ref, _), Link, _)),
+	Var = channel_is(input(in_hierarchy, 
+			       elt(RealPathForm, Ref, _), Link, _)),
 	/* Outrageous hack -- for channel nodes of an ancestor
 submodel, the link parameter is set to 'outside' if they count as
 outside, so in this case we add the submodel level for their submodel,
@@ -169,7 +170,7 @@ enabling the channel ID to be got from it */
 	Var = index(_), !,
 	    NewVar = make_inter(Var, index),
 	    Recurse = 0; */
-	Var = dies_of(input(Location, PathExp, Link, Units)), !,
+	Var = dies_of(input(Location, PathExp, Link, _Units)), !,
 	% Reference already moved to spare node by instance_of, just need to
 	% fix units now
 	    NewVar = input(Location, PathExp, Link, boolean),
@@ -639,7 +640,7 @@ make_intermediates(
 
 	(var(MadeDim), !, /* Summing over something other than a bunch of
 	                  assoc models */
- 	    (break_at_last_loop(SubLoops, TailLoops, SumLoop, ItemLoops);
+ 	    (break_at_last_loop(SubLoops, TailLoops, SumLoop, _ItemLoops);
 		Source =.. [Fn, Arg],
 		throw(needs_array_or_list(Fn, Arg)));
 	TailLoops = SubLoops),
@@ -837,7 +838,6 @@ make_intermediates(
 	    make_inds_for(ConstBounds, _, SourceContext, Inds),
 	    generate_name(c, array, ArrayName, Used),
 	    SourceRef = arr('', ArrayName, Inds),
-	    Target = [InnerTgt | _],
 	    NewInters = [instance(constant, Target, BoundArray, ArrayName,
 				  Units-ConstBounds) | PrevInters], !,
 	    Setups = [],
@@ -924,8 +924,8 @@ make_intermediates(
 	(Source = makearray(Element,count(Reps)),
 	    fail, % hangs if element contains place_in() cos local_loop is vm
 	    make_intermediates(Reps, SubId, [dum], DestPath,_, PrevInters,
-			       BuildingArrays, Step, Used, Dun, MidInters,
-			       part_result(Counted, [], _, DimVal)),
+			       BuildingArrays, Step, Used, _Dun, MidInters,
+			       part_result(Counted, [], _, _DimVal)),
 	    get_model_and_loops(Counted, DestPath, SzLoops, _),
 	    suffix([LocalLoop], SzLoops), !,
 	    NowBuilding = [LocalLoop | BuildingArrays];
@@ -954,7 +954,7 @@ make_intermediates(
 		throw(bad_array_size(Source, DimVal))),
 	    LocalLoop = set(LocalInd, loop(DimVal, Dun))),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
-			PrevInters, NowBuilding, Step, Used, Units, NewInters,
+			MidInters, NowBuilding, Step, Used, Units, NewInters,
 			part_result(EltContext, Setups, Args, SourceRef)),
 %	    append(DimSetups, EltSetups, Setups),
 	    get_model_and_loops(EltContext, DestPath, EltLoops, EltBase),
@@ -1132,7 +1132,7 @@ Now one that uses a special conditional level */
 	    make_intermediates(SubExp, SubId, Target, 
 			DestPath, BackSwap, PrevInters, BuildingArrays, 
 			Step, Used, Units, NewInters,
-			part_result(Context, ExSetups, Args, SourceRef)), !,
+			part_result(Context, Setups, Args, SourceRef)), !,
 % get_model_and_loops? Currently wraps bits of DestPath!
 	    get_model_and_loops(Context, DestPath, FlatLoops, FlatBase),
 	    (append(ArrayPayload, Grouped, FlatLoops),

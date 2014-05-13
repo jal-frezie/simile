@@ -972,16 +972,14 @@ display_submodels(Isub,[Submodel|Submodels]):-
 	    name(Path, PathStr);
 	  Path=AbsPath 
 	),
-	(get_av_pair(Submodel, 0, description, SubmodelDesc)  ; 
-		\+ get_av_pair(Submodel, 0, description, SubmodelDesc),
-	    SubmodelDesc = null),
-	(get_av_pair(Submodel, 0, comment, SubmodelComment)  ; 
-		\+ get_av_pair(Submodel, 0, comment, SubmodelComment),
-	    SubmodelComment = null),
-	(get_av_pair(Submodel, 0, step, TimeStepIndex)  ; 
-		\+ get_av_pair(Submodel, 0, step, TimeStepIndex), TimeStepIndex = null),
-	(get_av_pair(Submodel, 0, enum_types, EnumTypes)  ; 
-		\+ get_av_pair(Submodel, 0, enum_types, EnumTypes), EnumTypes = null),
+%	(get_av_pair(Submodel, 0, description, SubmodelDesc)  -> true;
+%	    SubmodelDesc = null),
+%	(get_av_pair(Submodel, 0, comment, SubmodelComment)  -> true;
+%	    SubmodelComment = null),
+	(get_av_pair(Submodel, 0, step, TimeStepIndex)  -> true; 
+		TimeStepIndex = null),
+%	(get_av_pair(Submodel, 0, enum_types, EnumTypes)  -> true; 
+%		EnumTypes = null),
         submodel_type(Submodel,SMType),
 	tk_equationlisting_addsubmodel(Submodel,Isub,Path,TimeStepIndex,SMType),
 	mysetof((Entry,MinMax,InFlows,OutFlows),write_eqn_term(Submodel,Entry,MinMax,InFlows,OutFlows),Entries),

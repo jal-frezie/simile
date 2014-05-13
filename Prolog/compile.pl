@@ -1583,7 +1583,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 			 choose('"true"', OnInit, ChooseForm)),
 	    UseList = [on_step | RefList];
 	  (SourceEqn = with_phase(SmStep, _EvtElts, GroundEqn);
-	    SourceEqn = al_spec(LoopExit, _EvtConds, LoopStart),
+	    SourceEqn = al_spec(LoopExit, EvtConds, LoopStart),
 	   % choose(..) is just a handy fn that allows a boolean and
 	   % something of any type to be passed to the maker
 	      GroundEqn = choose(LoopExit,EvtConds,EvtConds);
