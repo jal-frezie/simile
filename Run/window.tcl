@@ -808,8 +808,16 @@ proc FixDisabledImgBug {ttkButton} {
 # following is pulled from tclers wiki
 proc Gradient {rgb {window .} {swing 0}} {
 
-        foreach {r g b} [winfo rgb $window $rgb] {break}
-
+# do not use Tk if colour format already has values
+    switch -glob -- $rgb {
+	\#???????????? {
+	    scan $rgb \#%4x%4x%4x r g b
+	} \#?????? {
+	    scan $rgb \#%2x%2x%2x r g b
+	} default {
+	    foreach {r g b} [winfo rgb $window $rgb] {break}
+	}
+    }
         ### Figure out color depth and number of bytes to use in
         ### the final result.
         if {($r > 255) || ($g > 255) || ($b > 255)} {
@@ -1430,8 +1438,10 @@ proc ExportSVGDirect {node} {
     set ::svgXML {}
     array unset ::can2svg::defsArrowMarkerArr ::can2svg::defsStipplePatternArr
     prolog tcl_export_svg($node)
+    foreach {l t r b} $::fromProlog {}
     set svgStm [NetOpen $tgt w]
-    puts $svgStm [can2svg::makedocument 1200 800 $::svgXML]
+    puts $svgStm [can2svg::makedocument 1200 800 \
+		      [list $l $t [expr $r-$l] [expr $b-$t]] $::svgXML]
     close $svgStm
     unset window_info(ToSVG,scale)
     unset window_info(ToSVG,top_node)

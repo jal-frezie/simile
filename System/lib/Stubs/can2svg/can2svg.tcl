@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.4 2014/05/12 16:53:41 u45169214 Exp $
+# $Id: can2svg.tcl,v 1.5 2014/05/13 09:38:36 u45169214 Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -1417,12 +1417,16 @@ proc can2svg::NormalizeRectCoords {coo} {
 # Results:
 #   
 
-proc can2svg::makedocument {width height xml} {
+proc can2svg::makedocument {width height reg xml} {
     
     set pre "<?xml version='1.0'?>\n\
       <!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\
       \"Graphics/SVG/1.1/DTD/svg11.dtd\">"
-    set svgStart "<svg width='$width' height='$height' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'>"
+    set svgStart "<svg width='$width' height='$height'"
+    if {$reg ne ""} {
+	append svgStart " viewBox=\"$reg\""
+    }
+    append svgStart " version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'>"
     set svgEnd "</svg>"
     return "${pre}\n${svgStart}\n${xml}${svgEnd}"
 }
@@ -1477,7 +1481,7 @@ proc can2svg::canvas2file {wcan path args} {
         set cmd [concat "create" $type $co $opcmd]
         append xml "\t[eval {can2svg $cmd} $args]\n"        
     }
-    puts $fd [makedocument $argsA(-width) $argsA(-height) $xml]
+    puts $fd [makedocument $argsA(-width) $argsA(-height) "" $xml]
     close $fd
 }
 
