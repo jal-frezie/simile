@@ -1,2 +1,2 @@
 $c create line 0 -12 8 2 0 12 -8 2 0 -12 -smooth true \
-	-tag "unscaled realwidth(2.5)"
+	-width 2.5 -tags "$title unscaled realwidth(2.5)"

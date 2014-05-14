@@ -1,2 +1,2 @@
-$c create line -10 0 -5 -5 0 0 -smooth true -tag "unscaled realwidth(2.5)"
-$c create line 10 0 5 -5 0 0 -smooth true -tag "unscaled realwidth(2.5)"
+$c create line -10 0 -5 -5 0 0 -smooth true -width 2.5 -tags "$title unscaled realwidth(2.5)"
+$c create line 10 0 5 -5 0 0 -smooth true -width 2.5 -tags "$title unscaled realwidth(2.5)"

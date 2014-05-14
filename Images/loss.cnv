@@ -1,4 +1,4 @@
-$c create line 13 -9 13 2 2 2 -smooth true -tag "unscaled realwidth(2.5)"
-$c create line 13 -8 6 -8 6 -11 -smooth true -tag "unscaled realwidth(2.5)"
-$c create line 3 2 3 -5 0 -5 -smooth true -tag "unscaled realwidth(2.5)"
-$c create line 8 -13 -13 8 -capstyle round -tag "unscaled realwidth(2.5)"
+$c create line 13 -9 13 2 2 2 -width 2.5 -smooth true -tags "$title unscaled realwidth(2.5)"
+$c create line 13 -8 6 -8 6 -11 -width 2.5 -smooth true -tags "$title unscaled realwidth(2.5)"
+$c create line 3 2 3 -5 0 -5 -width 2.5 -smooth true -tags "$title unscaled realwidth(2.5)"
+$c create line 8 -13 -13 8 -width 2.5 -capstyle round -tags "$title unscaled realwidth(2.5)"

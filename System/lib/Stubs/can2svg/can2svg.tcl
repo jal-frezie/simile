@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.5 2014/05/13 09:38:36 u45169214 Exp $
+# $Id: can2svg.tcl,v 1.6 2014/05/14 08:52:55 u45169214 Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -238,7 +238,7 @@ proc can2svg::svgasxmllist {cmd args} {
     # Figure out if we've got a spline.
     set haveSpline 0
     if {[info exists optA(-smooth)] && ($optA(-smooth) != "0") &&  \
-      [info exists optA(-splinesteps)] && ($optA(-splinesteps) > 2)} {
+      !([info exists optA(-splinesteps)] && ($optA(-splinesteps) <= 2))} {
         set haveSpline 1
     }
     if {[info exists optA(-fill)]} {
@@ -490,7 +490,7 @@ proc can2svg::CoordsToAttr {type coo opts svgElementVar} {
     # Figure out if we've got a spline.
     set haveSpline 0
     if {[info exists optA(-smooth)] && ($optA(-smooth) != "0") &&  \
-      [info exists optA(-splinesteps)] && ($optA(-splinesteps) > 2)} {
+      !([info exists optA(-splinesteps)] && ($optA(-splinesteps) <= 2))} {
         set haveSpline 1
     }
     set attr {}

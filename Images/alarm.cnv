@@ -1,24 +1,24 @@
 $c create arc -12 -12 12 12 -style arc -extent 180 \
-	-tag "unscaled realwidth(2.0)"
+	-width 2 -tags "$title unscaled realwidth(2.0)"
 $c create arc -12 -12 12 12 -style arc -start 180 -extent 180 \
-	-tag "unscaled realwidth(2.0)"
+	-width 2 -tags "$title unscaled realwidth(2.0)"
 # clock face
-$c create line -6 10 -8 14 -tag "unscaled realwidth(2.0)"
-$c create line 6 10 8 14 -tag "unscaled realwidth(2.0)"
+$c create line -6 10 -8 14 -width 2 -tags "$title unscaled realwidth(2.0)"
+$c create line 6 10 8 14 -width 2 -tags "$title unscaled realwidth(2.0)"
 # legs
-$c create line 0 0 0 -10 -tag "unscaled realwidth(2.0)"
+$c create line 0 0 0 -10 -width 2 -tags "$title unscaled realwidth(2.0)"
 # big hand
-$c create line 0 0 -8 4 -tag "unscaled realwidth(3.0)"
+$c create line 0 0 -8 4 -width 3 -tags "$title unscaled realwidth(3.0)"
 # little hand
-$c create line 12 -4 4 -12 -tag "unscaled realwidth(2.0)"
+$c create line 12 -4 4 -12 -width 2 -tags "$title unscaled realwidth(2.0)"
 # base of left bell
 $c create line 12 -4 14 -8 8 -14 4 -12 -smooth true \
-	-tag "unscaled realwidth(2.0)"
+	-width 2 -tags "$title unscaled realwidth(2.0)"
 # top of left bell
-$c create line -12 -4 -4 -12 -tag "unscaled realwidth(2.0)"
+$c create line -12 -4 -4 -12 -width 2 -tags "$title unscaled realwidth(2.0)"
 # base of right bell
 $c create line -12 -4 -14 -8 -8 -14 -4 -12 -smooth true \
-	-tag "unscaled realwidth(2.0)"
+	-width 2 -tags "$title unscaled realwidth(2.0)"
 # top of right bell
-$c create line 0 0 0 0 -capstyle round -tag "unscaled realwidth(4.0)"
+$c create line 0 0 0 0 -capstyle round -width 4 -tags "$title unscaled realwidth(4.0)"
 # hub for hands

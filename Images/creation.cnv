@@ -1,9 +1,9 @@
-$c create line -13 5 13 5 -tag "unscaled realwidth(2.5)"
+$c create line -13 5 13 5 -width 2.5 -tags "$title unscaled realwidth(2.5)"
 
 # following replaced by smooth line cos arcs don't stipple
 # $c create arc -10 -2 10 18 -start 15 -extent 150 -style arc
-$c create line -10 5 0 -7 10 5 -smooth true -tag "unscaled realwidth(2.5)"
+$c create line -10 5 0 -7 10 5 -smooth true -width 2.5 -tags "$title unscaled realwidth(2.5)"
 
-$c create line -8 -1 -12 -5 -tag "unscaled realwidth(2.5)"
-$c create line 0 -4 0 -10 -tag "unscaled realwidth(2.5)"
-$c create line 8 -2 12 -6 -tag "unscaled realwidth(2.5)"
+$c create line -8 -1 -12 -5 -width 2.5 -tags "$title unscaled realwidth(2.5)"
+$c create line 0 -4 0 -10 -width 2.5 -tags "$title unscaled realwidth(2.5)"
+$c create line 8 -2 12 -6 -width 2.5 -tags "$title unscaled realwidth(2.5)"
