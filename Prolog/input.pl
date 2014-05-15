@@ -173,8 +173,8 @@ tcl_export_svg(Node) :-
         ame_gen'><'find_all_comps(Node, Component),
         draw'><'display('ToSVG', Component, 0, [0, 0, 1, 1], 1),
         fail;
-        resize_canvas_for(Node),
-        m_update'><'get_shape(Node, internal_extent, Frame),
+        menu'><'resize_canvas_for(Node),
+        image'><'get_shape(Node, internal_extent, Frame),
         draw'><'callback(br(Frame)).
 
 tk_append_to_log(Model, Action) :-

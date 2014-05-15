@@ -764,7 +764,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	        append(DimB, _, DimL),
 	        DoneExpr = param(arr(_, Param, Inds), Type, PLoops, _, []);
 	    raise_exception(undefined_parameter(Param)));
-	Param = (ExpInt=Defn), !, % '=' subexp not arg of ',' --
+	Param = (_ExpInt=_Defn), !, % '=' subexp not arg of ',' --
 	% complain now or missing parameter error may be raised instead
 	    throw(wrong_format_of_args(Param, =, (a=b), (a=b,c)));
 	Param = (ExpInt=Defn,Use),

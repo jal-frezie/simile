@@ -454,7 +454,7 @@ adjust_to_8(Trans) :-
 	    Comp has_class_refinement TclBound of TermInUtf8;
 	 Fixing = arc,
 	    Comp has_attribute TclBound of TermInUtf8),
-	replace_subexps(TermInUtf8, user, reEncode, _, top_down,
+	replace_subexps(TermInUtf8, tcltk, reEncode, _, top_down,
 			_VPs, TermInTtfn),
 	\+ TermInTtfn = TermInUtf8 ,
 	(Fixing = node,

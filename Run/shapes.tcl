@@ -977,7 +977,7 @@ proc ResetColours { w type density colourScheme name } {
 }
 
 proc ColourExists {col} {
-    if {[catch {winfo rgb . $col}]} {
+    if {!$::headless && [catch {winfo rgb . $col}]} {
 	return 0
     } else {
 	return 1
