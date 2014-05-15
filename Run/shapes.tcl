@@ -45,6 +45,13 @@ proc ScaleRect {w l t r b} {
     return [list [Scale $w $l] [Scale $w $t] [Scale $w $r] [Scale $w $b]]
 }
 
+proc ShiftAll {shift args} {
+    foreach arg $args {
+	lappend res [expr {$arg+$shift}]
+    }
+    return $res
+}
+
 proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
@@ -83,7 +90,7 @@ proc PutShape {w l t r b file fatness colourScheme title} {
 # If exporting SVG, start a group with the appropriate transform
     set xoff [expr {$window_info($w,scale)*($l+$r)/2}]
     set yoff [expr {$window_info($w,scale)*($t+$b)/2}]
-    set scale [expr {max(0.001,($r-$l)/30.0)*$window_info($w,scale)}]
+    set scale [expr {($r-$l)*$window_info($w,scale)/30.0}]
     StartGroup $w $xoff $yoff $scale
     # box
     $w create rectangle -15 -15 15 15 -outline {} -fill $fCol -tags unscaled
@@ -401,18 +408,20 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     }
     set tabs 0
     while {$tabs < $back} {
-	if {$tabs} {
-	    $w dtag /new_bd/ /encs/
-	    $w move /new_bd/ $backSpacing $backSpacing
+	set offs [expr {$tabs*$backSpacing}]
+	$w create arc [ShiftAll $offs $ml $ib $il $mb] -start 180 -extent 45 \
+	    -style arc -width $width -tags "/new_bd/"
+	$w create line [ShiftAll $offs $ml $v7 $ml $v6] \
+	    -width $width -tags "/new_bd/"
+	$w create arc [ShiftAll $offs $ml $mt $il $it] -start 90 -extent 90 \
+	    -style arc -width $width -tags "/new_bd/"
+	$w create line [ShiftAll $offs $h6 $mt $h7 $mt] \
+	    -width $width -tags "/new_bd/"
+	$w create arc [ShiftAll $offs $ir $mt $mr $it] -start 45 -extent 45 \
+	    -style arc -width $width -tags "/new_bd/"
+	if {!$tabs} {
+	    $w addtag /encs/ withtag /new_bd/
 	}
-	$w create arc $ml $ib $il $mb -start 180 -extent 45 \
-	    -style arc -width $width -tags "/new_bd/ /encs/"
-	$w create line $ml $v7 $ml $v6 -width $width -tags "/new_bd/ /encs/"
-	$w create arc $ml $mt $il $it -start 90 -extent 90 \
-	    -style arc -width $width -tags "/new_bd/ /encs/"
-	$w create line $h6 $mt $h7 $mt -width $width -tags "/new_bd/ /encs/"
-	$w create arc $ir $mt $mr $it -start 45 -extent 45 \
-	    -style arc -width $width -tags "/new_bd/ /encs/"
         incr tabs
     }
     set tabs 0
@@ -435,20 +444,23 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
             set mr [expr $mr + $stackSpacing]
             set mb [expr $mb + $stackSpacing]
         } else {
-	    if {$tabs} {
-		$w dtag /new_br/ /encs/
-		$w move /new_br/ $stackSpacing $stackSpacing
+	    set offs [expr {$tabs*$stackSpacing}]
+	    $w create arc [ShiftAll $offs $ml $ib $il $mb] \
+		-start 225 -extent 45 \
+		-style arc -width $width -tags "/new_br/"
+	    $w create line [ShiftAll $offs $mr $v7 $mr $v6] \
+		-width $width -tags "/new_br/"
+	    $w create arc [ShiftAll $offs $mr $mb $ir $ib] \
+		-start 270 -extent 90 \
+		-style arc -width $width -tags "/new_br/"
+	    $w create line [ShiftAll $offs $h6 $mb $h7 $mb] \
+		-width $width -tags "/new_br/"
+	    $w create arc [ShiftAll $offs $ir $mt $mr $it] \
+		-start 0 -extent 45 \
+		-style arc -width $width -tags "/new_br/"
+	    if {!$tabs} {
+		$w addtag /encs/ withtag /new_br/
 	    }
-	    $w create arc $ml $ib $il $mb -start 225 -extent 45 \
-		-style arc -width $width -tags "/new_br/ /encs/"
-	    $w create line $mr $v7 $mr $v6 -width $width \
-			   -tags "/new_br/ /encs/"
-	    $w create arc $mr $mb $ir $ib -start 270 -extent 90 \
-		-style arc -width $width -tags "/new_br/ /encs/"
-	    $w create line $h6 $mb $h7 $mb -width $width \
-			   -tags "/new_br/ /encs/"
-	    $w create arc $ir $mt $mr $it -start 0 -extent 45 \
-		-style arc -width $width -tags "/new_br/ /encs/"
         }
         incr tabs
     }

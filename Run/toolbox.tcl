@@ -1054,8 +1054,12 @@ proc InitExecThread {node} {
     if {$useThreads} {
 	thread::send $execThread($node,id) [list set masterId [thread::id]]
 	thread::send $execThread($node,id) \
+	    [list source [file join $SIMILE_PATH Run support.tcl]]
+	thread::send $execThread($node,id) \
 	    [list source [file join $SIMILE_PATH Run exec.tcl]]
     } else {
+	$execInterp($node,id) eval \
+	    [list source [file join $SIMILE_PATH Run support.tcl]]
 	$execInterp($node,id) eval \
 	    [list source [file join $SIMILE_PATH Run exec.tcl]]
 	foreach callbackCmd {AbortCheck InteractGUI ShiftDisplays \

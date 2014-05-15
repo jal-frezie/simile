@@ -7,7 +7,8 @@
 # Tk-specific bits, but much easier just to pass it -- the Tk bits do
 # no harm
 
-source [file join [file dirname $env(SYSDIR)] Run support.tcl]
+# Do not include tcl support -- debug not needed in client5d, R or SimiLive
+# source [file join [file dirname $env(SYSDIR)] Run support.tcl]
 
 proc load_c_stub_1 {node ap} {
     set ::auto_path $ap
@@ -401,6 +402,472 @@ proc c_getvalue {topNode node action} {
 #proc getinfo {topNode node field} {
 #    getinfo $node $field
 #}
+
+proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
+#ShowMess debug info  "Go! tgt $tgt subs $subs trans $trans dims $dims list $list cpp $useCppArray" ok
+    # skip over any vm arrays, their indices will not appear
+    # in calls for values, but keep the translation list in sync
+    # ... string match stops cleanly at end of list
+#    global comboTypes
+    
+    if {[string equal ,bytes [lindex $list 1]]} {
+	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1} {
+	    if {$when} {
+		c_settimepointall $topNode $tgt [lindex $list end]
+		SetInterval $topNode $useCppArray $tgt unit [lindex $list end-3]
+		SetWrapTime $topNode $useCppArray $tgt [lindex $list end-2]
+		SetFillMethod $topNode $useCppArray $tgt [lindex $list end-1]
+	    } else {
+		c_setparamall $topNode $tgt [lindex $list end] \
+		    [lrange $list 3 end-3]
+	    }
+	    return -1 ;# do nothing more, the data has now been loaded to c
+	} else {
+	    # DO THE fallback thing (inefficient placeholder version)
+	    if {[string equal REAL [lindex $list 2]]} {
+		set fieldChar d
+		set fieldSize 8
+	    } else {
+		set fieldChar i
+		set fieldSize 4
+	    }
+	    set offset 0
+	    set newList [NumberElements \
+			     [DoByteArrayToList $fieldChar $fieldSize \
+				  [lrange $list 3 end-3] [lindex $list end]]]
+	    if {$when} {
+		lappend newList [lindex $list end-2] restart \
+		    others [lindex $list end-1]
+	    }
+	    set list $newList
+	}
+    } elseif {[string equal ,gdal [lindex $list 1]]} {
+	# transposition not yet handled
+	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1 && !$when} {
+	    DoNotPassTcl $topNode $tgt $dims $list
+	    return -1 ;# typical fixed parameter
+	} else {
+	    set list [concat [NumberElements [ReadGdalRefToList $list \
+						  [lindex $dims 0] \
+						  [lindex $dims 1]] \
+				  [expr {!$when}]] [lrange $list 7 end]]
+	}
+    }
+# do not do this, ve no longer allow params in VM submodels...
+    while {[set specialId [lsearch {START_VM MEMBERS} [lindex $dims 0]]]!=-1} {
+        if {$specialId} {
+            set dims [lrange $dims 1 end]
+            set trans [lrange $trans 1 end]
+        } else {
+            set endGap [lsearch $dims END_VM]
+            set dims [lreplace $dims 0 $endGap]
+            set trans [lrange $trans [expr $endGap-1] end]
+        }
+    }
+    set nextDim [lindex $dims 0]
+    
+    set thisTrans [lindex $trans 0]
+    if {![llength $dims]} { ;# no more dims, this should be a single value
+        if {[llength $list]} {
+	    if {![string last ,NOW [string toupper $subs] 3]} {
+		# setting current value for var param
+		set idAndSubs $tgt[string range $numSubs 4 end]
+		if {[catch {EnumTypeToNumber $topNode $idAndSubs $list \
+				$thisTrans 0 $useCppArray} woops]} {
+		    return [AddErrorTo {} $woops $subs]
+		} else {
+		    return 1
+		}
+	    } else {
+		# setting value for fixed param or time point
+		if {[catch {EnumTypeToNumber $topNode $tgt$numSubs $list \
+				$thisTrans $when $useCppArray} woops]} {
+		    return [AddErrorTo {} $woops $subs]
+		} else {
+		    return -1 ;# should be 0 if a comp
+		}
+	    }
+	} else {
+	    return [AddErrorTo {} missing_param_data $subs]
+        }
+    }
+
+    if {[llength $list]==1} {
+        #puts "setting paramData($tgt) to $headNum"
+        set userDims [join $dims { x }]
+	return [AddErrorTo {} [list scalar_instead_of_array $list $userDims] \
+		    $subs]
+    }
+    if {[llength $list]%2} {
+	return [AddErrorTo {} odd_index_at_end $subs,[list [lindex $list end]]]
+    }
+    
+    set redoStep 1
+    #puts "dims remaining $dims"
+    if {[string match TIME $nextDim]} {
+        # If time, we can have as many or as few vals as we want, and
+        # they can be any number, although negative ones may not take
+        # effect at start of simulation.
+	# array set sub $list ;# was this faster?
+
+        # Next call removes old time series data from the system (no throws)
+        EnumTypeToNumber $topNode $tgt {} {} 1 $useCppArray
+	SetWrapTime $topNode $useCppArray $tgt 0 ;# clear old wraparound point
+# do not allow OTHERS if an event series
+
+	set tgtEval [GetCompProperty $topNode Eval $tgt]
+	set tgtClass [GetCompProperty $topNode Class $tgt]
+
+	if {[string equal DERIVED $tgtEval]} {
+	    set specialPts {} ;# loading measurements for PEST
+	} elseif {[string equal EVENT $tgtClass]} {
+	    set specialPts [list NOW INTERVAL]
+	} else {
+	    set specialPts [list NOW INTERVAL OTHERS]
+	    SetFillMethod $topNode $useCppArray $tgt use_last ;# and fill method
+	}
+	SetInterval $topNode $useCppArray $tgt unit 1
+    
+        foreach {indx subList} $list {
+	    set nextSubs $subs,[list $indx]
+            if {[set pt [lsearch $specialPts [string toupper $indx]]]>-1} {
+# Following never happens, TIME is always outermost dimension
+#		if {[llength $subs]} {
+#		    FPError [format [tr. {"%1$s" must be outermost index.}] \
+#					 $indx] $subs $errorData
+#		}
+		if {!$pt} { ;# NOW: mark param active so it clears after event
+# active is set to 2 because the param updater will be called before the model
+# collects the parameter, and must clear the value the following time
+		    MarkEvtParamActive $topNode $tgt $useCppArray
+		}
+            } elseif {![string is double -strict $indx]} {
+                set redoStep [AddErrorTo $redoStep \
+				  [list bad_time_point_index $specialPts] \
+				  $nextSubs]
+            } elseif {[string equal RESTART [string toupper $subList]]} {
+		SetWrapTime $topNode $useCppArray $tgt $indx
+		continue
+	    } elseif {$useCppArray} {
+# If there are values other than NOW, do an init step
+                c_settimepointarray $topNode $tgt $indx
+            }
+# check for fill method if one might be appropriate
+	    if {[lsearch $specialPts OTHERS]>-1} {
+		set noMtd [catch {SetFillMethod $topNode $useCppArray $tgt \
+				      $subList} badFill]
+		if {$pt==2} { ;# fill method expected
+		    if {$noMtd} {
+			set redoStep [AddErrorTo $redoStep $badFill $nextSubs]
+		    }
+		    continue
+		} elseif {!$noMtd} { ;# fill method found but not expected
+		    set redoStep [AddErrorTo $redoStep \
+				      [list misplaced_fill_method $subList] \
+				      $nextSubs]
+		}
+	    }
+# do same for interval (units for time series index) -- trying to call Prolog 
+# from here can only lead to trouble
+	    if {[string is double -strict $subList]} { ;# save time by not going Prolog
+		set TSI 0
+	    } else {
+		set TSI [lsearch {{} s second min minute hr hour day week month year} $subList] ;# not [InDays $subList]
+	    }
+
+	    if {$pt==1} { 
+# units for time series index expected -- we cannot go Prolog to parse
+# them from here, so raise an "error" which will try to parse them
+# before alerting the modeller
+		set redoStep [AddErrorTo $redoStep [list check_uftsi $subList] \
+				  $nextSubs]
+		continue
+	    } elseif {$TSI>0} { ;# found but not expected
+		set redoStep [AddErrorTo $redoStep \
+				  [list misplaced_uftsi $subList] $nextSubs]
+	    }
+	    set redoStep [JoinSteps $redoStep \
+			      [ListToArray $topNode $tgt $subs,$indx \
+				   $numSubs,$indx $trans [lrange $dims 1 end] \
+				   $subList $when $useCppArray]]
+        }
+        return $redoStep
+    }
+    
+    # Not time points: check the indices are good
+    foreach {indx sublist} $list {
+        # was array set sub $list...above would allow us to check that all indices were
+        # the right type if we could be bothered...OK then...
+	if {[catch {UntransVal $thisTrans $indx index} poss]} {
+	    set redoStep [AddErrorTo $redoStep $poss $subs]
+	} ;# seems we do not need actual position!?
+        if {[info exists sub($indx)]} {
+	    set redoStep [AddErrorTo $redoStep \
+			      [list repeated_index $indx] $subs]
+        }
+        set sub($indx) $sublist
+    }
+    if {$redoStep != 1} { ;# do not proceed with bad time step
+	return $redoStep
+    }
+
+    if {[llength $nextDim]==2 && \
+                [string match RECORDS [lindex $nextDim 0]]} {
+        # by-record submodel; check up to biggest. OK hows this for branez...use
+        # the number of elements, because if there is an element larger than the
+        # number of elements, one the same or smaller will be missing!
+        set last [array size sub]
+        if {!$last} {
+	    set redoStep [AddErrorTo $redoStep record_count_undefined $subs]
+        }
+        
+	# Record counts do not need to be set in Tcl
+        if {$useCppArray} {
+	    if {$when} {
+		set map [split $subs ,]
+		c_settimepointrecords $topNode $tgt [lrange $map 2 end] \
+		    [lindex $map 1] $last
+		# if {[catch {c_settimepointrecords $tgt [lrange $map 2 end] \
+		# 		[lindex $map 1] $last} err]} {
+		#     FPError $err $subs $errorData
+		#     set redoStep {}
+		# } 
+	    } else {
+		c_setrecordlist $topNode $tgt [lrange [split $subs ,] 1 end] \
+		    $last
+		# if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
+		# 				      1 end] $last} err]} {
+		#     FPError $err $subs $errorData
+		#     set redoStep {}
+		# } 
+	    }
+	} else { ;# use old system for Tcl
+	    set recordNode [lindex $nextDim 1]
+	    EnumTypeToNumber $topNode $recordNode$numSubs $last {} $when \
+		     $useCppArray ;# cannot fail
+	}
+
+# Hopefully, with the universal data structure, once we have set the
+# record count for the outer submodel level, we will be able to access
+# its contents as if they were a fixed membership array, so this
+# should be redundant
+#            foreach nested [lrange $dims 1 end] {
+#                if {[llength $nested]==2 && \
+#                            [string match RECORDS [lindex $nested 0]]} {
+##puts "c_setrecordlist [lindex $nested 1] $outers $last"
+#                    c_setrecordlist [lindex $nested 1] $outers $last
+#                }
+#            }
+# So should this
+#        EnumTypeToNumber paramData [lindex $nextDim 1]$subs $last \
+#                {} $useCppArray
+        # probably wouldn't have worked anyway for time series
+    } else {
+        set last $nextDim
+    }
+    # just post one error if no vals at all to save time
+    if {![array exists sub]} {
+	return [AddErrorTo $redoStep missing_array $subs]
+    }
+    for {set arrayPt 1} {$arrayPt <= $last} {incr arrayPt} {
+        set indx [NumberToEnumType $arrayPt $thisTrans]
+	set newSubs $subs,[list $indx]
+        if {![info exists sub($indx)]} {
+            #puts "No $indx in [array names sub]"
+            set redoStep [AddErrorTo $redoStep gap_in_data $newSubs]
+        } else {
+	    set redoStep [JoinSteps $redoStep \
+			      [ListToArray $topNode $tgt $subs,$indx \
+				   $numSubs,$arrayPt \
+				   [lrange $trans 1 end] [lrange $dims 1 end] \
+				   $sub($indx) $when $useCppArray]]
+	}
+    }
+    return $redoStep
+}
+
+proc DoNotPassTcl {topNode node dims tableSpec} {
+#puts "dims $dims spec $tableSpec"
+    if {[string equal REAL [GetCCompProperty $topNode Type $node]]} {
+	set gdalType GDT_Float64
+    } else {
+	set gdalType GDT_Int32
+    }
+
+    package require gdal
+    set hg [gdal_open_read_only [lindex $tableSpec 0]]
+    set hdl [gdal_get_raster_band $hg 1]
+    set dataRows [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]]
+    set dataCols [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]]
+    set fillRows [lindex $dims 0]
+    set fillCols [lindex $dims 1]
+    set bytesFromGdal [gdal_get_raster_data $hdl \
+		     [expr [lindex $tableSpec 4]-1] \
+		     [expr [lindex $tableSpec 2]-1] \
+		     $dataCols $dataRows $gdalType $fillCols $fillRows]
+    gdal_close $hg
+    
+    c_setparamall $topNode $node $bytesFromGdal [list $fillRows $fillCols]
+}
+
+proc JoinSteps {stepA stepB} {
+    switch \
+	[string is integer -strict $stepA],[string is integer -strict $stepB] {
+	    0,0 {
+		return [concat $stepA $stepB]
+	    } 0,1 {
+		return $stepA
+	    } 1,0 {
+		return $stepB
+	    } 1,1 {
+		return [expr {$stepA<$stepB?$stepA:$stepB}]
+	    }
+	}
+}
+
+proc AddErrorTo {old woops subs} {
+    set error [list [concat [lindex $woops 0] [list $subs] \
+			 [lrange $woops 1 end]]]
+    return [JoinSteps $old $error]
+}
+
+proc UntransVal {trans mem type} {
+    if {[string compare {} $trans]} {
+	if {[llength $mem]==1} {
+	    set mem [lindex $mem 0]
+	} ;# remove quotes or curlies
+	set poss [lsearch $trans $mem]
+	if {$poss == -1} {
+	    if {[string equal {false true} $trans] && \
+		    [string equal data $type]} {
+		set trans [linsert $trans 0 boolean]
+	    }
+	    error [list bad_enum_type_mem $mem [lindex $trans 0] [lrange $trans 1 end] $type] 
+	} else {
+	    return $poss
+	}
+    } 
+    if {[string equal index $type]} {
+	if {![string is integer -strict $mem]} {
+	    error [list non_integer_index $mem]
+	} elseif {$mem<=0} {
+	    error [list zero_or_negative_index $mem]
+	}
+    }
+    return $mem
+}
+
+proc EnumTypeToNumber {topNode tgt head trans when useCppArray} {
+    if {![llength $head]} {
+        # empty head, signal to clear out old values
+        if {$useCppArray} {
+            c_cleartimeseries $topNode $tgt
+        } else {
+	    tcl_cleartimeseries $topNode $tgt
+        }
+    } else {
+	set head [UntransVal $trans $head data]
+	if {[llength $head]>1} {
+	    error [list unwanted_param_array $head]
+	} elseif {![string is double -strict $head]} {
+	    error [list data_not_number $head]
+	}
+	PlaceInArray $topNode $tgt $head $when $useCppArray
+    }
+    #puts "just went set paramData($tgt) $paramData($tgt)"
+}
+
+########################### stuff for both languages below ###############
+proc PlaceInArray {topNode where what when inC} {
+    #puts "PlaceInArray $where $what $inC"
+    set map [split $where ,]
+    if {$inC} {
+	if {$when} {
+	    c_settimepointelement $topNode [lindex $map 0] \
+		[lrange $map 2 end] [lindex $map 1] $what
+	} else {
+	    c_setparamelement $topNode [lindex $map 0] \
+		[lrange $map 1 end] $what
+	}
+    } else {
+	if {$when} {
+	    tcl_settimepointelement [lindex $map 0] [lrange $map 1 end] $what
+	} else {
+	    tcl_setparamelement [lindex $map 0] [lrange $map 1 end] $what
+	}
+    }
+}
+
+proc MarkEvtParamActive {topNode node inC} {
+    if {$inC} {
+	c_markevtparamactive $topNode $node
+    } else {
+	set ::setFromSeries($topNode,$node,active) 2
+    }
+}
+
+proc SetWrapTime {topNode inC where args} {
+    global paramData
+    if {$inC} {
+	eval c_setwraparoundtime $topNode $where $args
+    } else {
+	eval set paramData(wrapAroundPoint,$where) $args
+    }
+}
+
+# this one takes numerical for c and textual for tcl
+proc SetFillMethod {topNode inC where {what {}}} {
+    global paramData
+
+    set fillMtds {use_last use_closest interpolate}
+    if {[string length $what]} {
+	if {[set which [lsearch $fillMtds [string tolower $what]]]<0} {
+	    error "bad fill method: $what"
+	}
+    } else {
+	set which {}
+    }
+    if {$inC} {
+	lindex $fillMtds [eval c_setfillmethod $topNode $where $which]
+    } else {
+	eval set paramData(fillMethod,$where) [string toupper $what]
+    }
+}
+
+proc SetInterval {topNode inC where {what {}} {howLong {}}} {
+    global paramData
+
+    if {[string length $what]} {
+	set paramData(uftsi,$where) $what
+	if {$inC} {
+	    eval c_setinterval $topNode $where $howLong
+	} else {
+	    set paramData(timePointInterval,$where) $howLong
+	}
+    } else {
+	return $paramData(uftsi,$where)
+    }
+}
+
+#proc FPError {occurrence inds errorData} {
+#    if {![llength]} {
+#	error aborted ;# quick way out
+#    }
+#    set query [concat param_load_fail $errorData [list $where $occurrence]]
+#    if {[string equal abort [ExecQuery $query warning spf {} abort]]} {
+#	error aborted
+#    } else {
+#	return {} ;# in hope ListParamArray will return same
+#    }
+#}
+
+proc NumberToEnumType {idx trans} {
+    if {[llength $trans]} {
+        return [lindex $trans $idx]
+    } else {
+        return $idx
+    }
+}
 
 proc c_setparamarray {topNode tgtNode} {
     global instance_id param_id
