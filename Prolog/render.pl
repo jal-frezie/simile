@@ -789,8 +789,8 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 	        atomic(FullStr), !;
           Field = spec,
 	     Node has_class_refinement value of Term,
-             sicstus_format_to_chars("~w", [Term], FullstrStr),
-             sicstus_atom_chars(Fullstr, FullstrStr)),
+             sicstus_format_to_chars("~w", [Term], FullStrStr),
+             sicstus_atom_chars(FullStr, FullStrStr)),
 	templatify(L, FullStr, Ptr, Decl),
 	    append_atoms([Name, '_', Field], PtrTag),
 	    generate_name(L, PtrTag, Ptr, Used),
