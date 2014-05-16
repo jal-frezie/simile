@@ -786,7 +786,11 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 		append_atoms([CaptionHead, '/', LocalStr], FullStr);
 		FullStr = LocalStr);
 	  Node has_class_refinement Field of FullStr,
-	        atomic(FullStr)),
+	        atomic(FullStr), !;
+          Field = spec,
+	     Node has_class_refinement value of Term,
+             sicstus_format_to_chars("~w", [Term], FullstrStr),
+             sicstus_atom_chars(Fullstr, FullstrStr)),
 	templatify(L, FullStr, Ptr, Decl),
 	    append_atoms([Name, '_', Field], PtrTag),
 	    generate_name(L, PtrTag, Ptr, Used),
