@@ -93,9 +93,10 @@ proc PutShape {w l t r b file fatness colourScheme title} {
     set scale [expr {($r-$l)*$window_info($w,scale)/30.0}]
     StartGroup $w $xoff $yoff $scale
     # box
-    $w create rectangle -15 -15 15 15 -outline {} -fill $fCol -tags unscaled
+    $w create rectangle -15 -15 15 15 -outline {} -fill $fCol \
+	-tags "unscaled $title"
     $w create line -15 -15 -15 15 15 15 15 -15 -15 -15 \
-	-tags "unscaled size_on_this realwidth(1.0)"
+	-tags "unscaled $title size_on_this realwidth(1.0)"
 
     set c $w
     source "../Images/$fileName.cnv"
