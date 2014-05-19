@@ -14,6 +14,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 			tk_append_callback/1,
 	tk_make_desktop/2, get_file_name/5, list_matching_files/2,
 	enable_text_editing_in/1, disable_text_editing_in/1, select_text/2,
+	start_drawing_group/1, finish_drawing_group/1,
 	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
 	submodel/13, bowtie/6, flow/6, influence/6, broken_influence/6,
 			ghost_link/6, relation/6, text/8,
@@ -207,6 +208,12 @@ disable_text_editing_in(Wid) :-
 
 select_text(Wid, Node) :-
 	safe_tcl_eval(['SelectText', Wid, Node], _).
+
+start_drawing_group(Wid) :-
+	safe_tcl_eval(['StartGroup', Wid, 0, 0, 1], _).
+
+finish_drawing_group(Wid) :-
+	safe_tcl_eval(['EndGroup', Wid, 0, 0, 1], _).
 
 compartment(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutRectangle', Wid, L, T, R, B, Num, Fatness, Density, 

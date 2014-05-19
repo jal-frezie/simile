@@ -249,11 +249,13 @@ display(Window_id, Comp, Depth, Trans, Recurse) :-
 	New_depth is Depth + 1,
 	draws_at(Window_id, submodel, New_depth), !,
 	    add_to_translation(Trans, Comp, Subtrans),
+	    start_drawing_group(Window_id),
 	    (find_all_comps(Comp, Subcomp),
 		display(Window_id, Subcomp, New_depth, Subtrans,
 			Recurse),
 		fail;
-	    update_tk);
+	    finish_drawing_group(Window_id),
+	        update_tk);
 	true);
 	Comp is_of_sort line,
 	    display_link_in(Window_id, Comp, Depth, Trans)),
