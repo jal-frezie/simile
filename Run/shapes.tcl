@@ -2379,8 +2379,14 @@ proc LoadModelLooks {w state} {
 
 proc StartGroup {w xoff yoff scale} {
     if {$w eq "ToSVG"} {
-	append ::svgXML \
-	    "\t<g transform=\"translate($xoff,$yoff) scale($scale)\">\n"
+	append ::svgXML "\t<g"
+	if {$xoff != 0 || $yoff != 0} {
+	    append ::svgXML " transform=\"translate($xoff,$yoff)"
+	}
+	if {$scale != 1} {
+	    append ::svgXML " scale($scale)"
+	}
+	append ::svgXML "\">\n"
     }
 }
 
@@ -2388,8 +2394,12 @@ proc EndGroup {w xoff yoff scale} {
     if {$w eq "ToSVG"} {
 	append ::svgXML "\t</g>\n"
     } else {
-	InnerZoomImage $w unscaled $scale
-	$w move unscaled $xoff $yoff
+	if {$scale != 1} {
+	    InnerZoomImage $w unscaled $scale
+	}
+	if {$xoff != 0 || $yoff != 0} {
+	    $w move unscaled $xoff $yoff
+	}
 	$w dtag unscaled
     }
 }
