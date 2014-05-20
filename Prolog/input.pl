@@ -169,10 +169,18 @@ tk_certain_death_node(Wid) :-
 tk_do_colours(Node, Way) :-
 	do_colours(Node, Way).
 
+bound_all_boxes([B], B).
+bound_all_boxes([[L1, T1, R1, B1] | More], [L, T, R, B]) :-
+    bound_all_boxes(More, [L2, T2, R2, B2]),
+    L is min(L1-10, L2),
+    T is min(T1-10, T2),
+    R is max(R1+10, R2),
+    B is max(B1+10, B2).
+
 tcl_export_svg(Node) :-
         draw'><'display('ToSVG', Node, -1, _, 1),
-        menu'><'resize_canvas_for(Node),
-        image'><'get_shape(Node, internal_extent, Frame),
+        setof(Box, image'><'contains_box(Node, Box), Boxes),
+        bound_all_boxes(Boxes, Frame),
         draw'><'callback(br(Frame)).
 
 tk_append_to_log(Model, Action) :-
