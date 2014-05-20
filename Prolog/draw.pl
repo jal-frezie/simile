@@ -232,7 +232,6 @@ redisplay_border(Comp) :-
 	true.
 
 display(Window_id, Comp, Depth, Trans, Recurse) :-
-        start_drawing_group(Window_id),
 	(find_type(Comp, text), !,
 	    draws_at(Window_id, text, Depth),
 	    get_shape(Comp, centre, [X,Y]),
@@ -249,19 +248,21 @@ display(Window_id, Comp, Depth, Trans, Recurse) :-
 	\+ get_shape(Comp, hide_contents, 1),
 	New_depth is Depth + 1,
 	draws_at(Window_id, submodel, New_depth), !,
-	    add_to_translation(Trans, Comp, Subtrans),
+	    (New_depth = 0 -> Subtrans = [0, 0, 1, 1];
+	      add_to_translation(Trans, Comp, Subtrans)),
 	    (find_all_comps(Comp, Subcomp),
-		display(Window_id, Subcomp, New_depth, Subtrans,
-			Recurse),
+	      (start_drawing_group(Window_id),
+		display(Window_id, Subcomp, New_depth, Subtrans, Recurse),
 		fail;
-	    update_tk);
+	      finish_drawing_group(Window_id),
+	        fail);
+	      update_tk);
 	true);
 	Comp is_of_sort line,
 	    display_link_in(Window_id, Comp, Depth, Trans)),
 	(get_highlit_obj(N, Comp), !,
 	    highlight(Comp, N);
-	true),
-        finish_drawing_group(Window_id).
+	true).
 
 /* highlight not only redraws the component in any of a number of styles, it also
 records its id in the GUI state database so it can be manipulated independently of
@@ -398,9 +399,7 @@ redraw_window(Wid) :-
 	Wid shows_model Model,
 	clear_display(Wid),
 	update_tk,
-	find_all_comps(Model, Component),
-	display(Wid, Component, 0, [0, 0, 1, 1], 1),
-	fail.
+	display(Wid, Model, -1, _, 1).
 
 /* Having drawn the components, succeed and don't come back...*/
 redraw_window(_) :- !.
@@ -476,6 +475,7 @@ get_flash(Comp, Colour_scheme) :-
 
 display_in(Wid, Comp, Depth, Trans) :-
 	(appears(Comp),
+	Depth >= 0,
 	get_drawing_form(Comp, Style, BBox),
 	draws_at(Wid, Style, Depth), !,
 	    (Style = channel, !,

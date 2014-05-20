@@ -2380,14 +2380,12 @@ proc LoadModelLooks {w state} {
 proc StartGroup {w xoff yoff scale} {
     if {$w eq "ToSVG"} {
 	append ::svgXML "\t<g"
-	if {$xoff != 0 || $yoff != 0} {
-	    append ::svgXML " transform=\"translate($xoff,$yoff)"
+	if {$xoff != 0 || $yoff != 0 || $scale != 1} {
+	    append ::svgXML " transform=\"translate($xoff,$yoff) scale($scale)\""
 	}
-	if {$scale != 1} {
-	    append ::svgXML " scale($scale)"
-	}
-	append ::svgXML "\">\n"
+	append ::svgXML ">\n"
     }
+    return 0
 }
 
 proc EndGroup {w xoff yoff scale} {
@@ -2402,6 +2400,7 @@ proc EndGroup {w xoff yoff scale} {
 	}
 	$w dtag unscaled
     }
+    return 0
 }
 
 proc ToSVG {args} {
