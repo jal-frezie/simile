@@ -1,0 +1,35 @@
+#!/usr/bin/tclsh
+foreach local {sPath sHome mdl shLib} val $argv {
+    set $local $val
+}
+puts "Here [pwd] args $argv<br>"
+catch {
+    puts [exec cat /tmp/error-output.txt]
+    file delete /tmp/error-output.txt
+}
+lappend auto_path [file join $sPath System lib]
+if {![file exists $sHome]} {
+    file mkdir $sHome
+    file copy /var/www/tmplate/.simile $sHome
+}
+set env(HOME) $sHome
+catch {file delete [file join $sHome $shLib]}
+catch {file delete [file join $sHome .simile Desktop1.smx]}
+if {[catch {
+    package require SimileAutoObj
+
+    similescript::ModelWindow modelWin
+    modelWin Open $mdl
+}]} {
+    puts $errorInfo
+}
+
+if {[catch {
+    modelWin BuildShareLib [file join $sHome $shLib]
+}]} {
+    puts $errorInfo
+}
+
+# now export the svg over the original model
+modelWin BuildSVGDiagram $mdl.svg
+prolog tk_kill_everything(_)
