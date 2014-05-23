@@ -646,7 +646,7 @@ add_at_point(Xpt, Ypt, New_obj, Parent, Comp_name) :-
 /* as above, but if there is no room it tries to add it nearby rather than failing and complaining */
 
 insert_variable(Submodel, BestX, BestY, New_obj, Comp_name) :-
-	check_translation(Submodel),
+%	check_translation(Submodel),
 	get_shape(Submodel, internal_extent, [L, T, R, B]),
 	MaxDist is max(max(BestX - L, R - BestX), max(BestY - T, B - BestY)),
 	snap_to_grid([10,10], [Step, _]),

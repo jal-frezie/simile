@@ -31,7 +31,7 @@ sicstus_module(image,
        update_text_position/3, make_header/2,
        get_end_pt/5, get_link_route/2, shape_route/4, route_link/4,
        route_interior_part_link/5, route_part_link/5,
-       route_parent_child_link/5, check_translation/1,
+       route_parent_child_link/5,
        translate_between/4, translate/3, rel_translate/3,
        untranslate/3, add_to_translation/3, add_boxes_to_translation/4,
        subtract_from_translation/3]).
@@ -1226,12 +1226,6 @@ tie_middle(Type, [X2, Y2], [X1, Y1], Len, Fract, [NL, NT, NR, NB]) :-
     (abs(Y1-Y2) < abs(X1-X2), !,
         make_bounding_box(Type, XMid, YMid, Len, [NL, NT, NR, NB]);
     make_bounding_box(Type, YMid, XMid, Len, [NT, NL, NB, NR])).
-
-check_translation(Submodel) :-
-    Wid shows_model TopModel,
-    translate_between(TopModel, Submodel, _, Trans),
-    make_current(Wid),
-    set_translation(Trans).
 
 translate_between(Model, Model, 0, [0,0,1,1]).
 

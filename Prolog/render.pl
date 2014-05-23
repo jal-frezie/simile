@@ -249,8 +249,8 @@ render(tcl, class_declaration,
 		Closes = [ExitMaker, CloseNS | ProcCloses],
 		refer_value(tcl, instance, Target);
 	    get_node_size(SymbolicName, What, _,_),
-		make_array_assignment(tcl, Indent, What, _,
-				      NewIndent, _, Indices, Opens, ArrCloses),
+		make_array_assignment(tcl, Indent, What, _,_,_,
+				      Indices, Opens, ArrCloses),
 		Closes = [CloseNS | ArrCloses],
 		make_indexed_namespace(tcl, Name, Indices, Target)),
 	    declare_namespace(Target, Indent, ClassDecl),
@@ -410,10 +410,8 @@ strings_direct(L, variable_declaration, [Unit, Name, Dims | Init],
 /* if var is a char string, it will not be nested so no curlies will be added,
 and the rules for breaking lines are like tcl's (need a \ at end) so... */
 	        (Unit = char, !,
-		    PrepStyle = tcl,
-		    DeepIndent = 0;
-		PrepStyle = L,
-		    DeepIndent is Indent + 4),    
+		    PrepStyle = tcl;
+		PrepStyle = L),    
 		(Dims = void, Counts = [''];
 %		all(render, boost, [build(Dims), build(Counts)]),
                 Counts = Dims),
@@ -657,7 +655,7 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 	        executable corresponding to the actual enumerated type. */
 		Wee = 1,
 		enum_type_ref(Enum, BaseName, Muckle, _, Posn);
-	    member(Unit, [const_int, int, n(Enum)]), !, Type = 'INTEGER',
+	    member(Unit, [const_int, int, n(_Enum)]), !, Type = 'INTEGER',
 	        [Wee, Muckle] = [-268435455, 268435455];
 		/* limits for GNU integers; Sicstus can go further --
 		so can 64-bit versions */
@@ -1023,7 +1021,7 @@ make_constant_list(L, [Const | Rest], [Line | Lines]) :-
 make_constant_string(L, String, Atom) :-
 	name(String, Chars),
 	(L = tcl,
-		((member(Naughty, [10,32,34]); member(Naughty, Chars)), !,
+		((member(Naughty, [10,32,34]), member(Naughty, Chars)), !,
 			append([123 | Chars], [125], Const);
 		Const = Chars);
 	L = c,

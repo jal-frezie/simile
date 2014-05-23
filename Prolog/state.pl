@@ -115,7 +115,7 @@ kill_windows :-
 :- op(500, xfy, shows_model).
 
 Win shows_model Model :-
-	(nonvar(Win), !; \+ suspend_display), % don't get wins if headless
+	\+ suspend_display, % don't get wins if headless
 	model_in(Win, Model).
 
 :- dynamic(display_depth/3).

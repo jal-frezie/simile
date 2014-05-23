@@ -76,11 +76,10 @@ do_assignment(L, [open_index(glob(Loop, Inds), Bound) | Clauses],
 %	declare(L, _Feature, bound, int, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
         (make_indexed_reference(L, Loop, Inds, Count),
-	    (Bound = pra_bound(Ptr, Name),
-		append_atoms(Name, made, MadeBound),
-		make_struct_reference(L, Ptr, MadeBound, _, UseBoundRef);
-	     \+ Bound = pra_bound(Ptr, Name),
-		UseBoundRef = Bound),
+	    (Bound = pra_bound(Ptr, Name) ->
+	        append_atoms(Name, made, MadeBound),
+	        make_struct_reference(L, Ptr, MadeBound, _, UseBoundRef);
+	     UseBoundRef = Bound),
 	    excrete(L, for_start, [Count, UseBoundRef, 1], Indent, Stream),
 	    do_assign_list(L, MyLoop, NewIndent, Used, Stream),
 	    excrete(L, end(for), Count, Indent, Stream),
@@ -140,7 +139,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	  make_struct_reference(L, Top, Name, _, StartPtrRef),
 
 	/* finish same: move pointer to next instance in chain */
-	  make_struct_reference(L, Pointer, next, OnPointer, OnPointerRef),
+	  make_struct_reference(L, Pointer, next, _OnPointer, OnPointerRef),
 	  excrete(L, assignment, Pointer=StartPtrRef, Indent, Stream),
 	  (Dims == start_only -> % will use locate to go through list
 	   do_assign_list(L, MyLoop, Indent, Used, Stream),
@@ -160,7 +159,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	  template_type(nbrlist, Name, NbrsType),
 	  declare(L, NbrsPointer, nbrpointer, NbrsType, Used, Indent, Stream),
 	  refer_value(L, NbrsPointer, NbrsPointerRef),
-	  make_struct_reference(L, NbrsPointer, next, OnPointer, OnPointerRef),
+	  make_struct_reference(L, NbrsPointer, next, _OnPointer, OnPointerRef),
 	  make_struct_reference(L, Top, nbrs, _, NbrsStartRef),
 	  excrete(L, assignment, NbrsPointer=NbrsStartRef, Indent, Stream),
 	  ptr_compare(L, NbrsPointerRef, 0, PtrNonNull),
@@ -1022,24 +1021,12 @@ contexts. */
 make_scalar(L, Param, Used, FullLocalExpr) :-
 	(Param = arr(Ptr, Var, Inds),
 	    make_struct_reference(L, Ptr, Var, LocalExpr, _);
-	Param = glob(LocalExpr, Inds),
-	    Var = ''), !,
+	Param = glob(LocalExpr, Inds)), !,
 	all(language, make_evaluation_routine,
 	    [unify(L), build(Inds), unify(Used), build(ITerms)]),
  	all(language, aim_at_array, [unify(L), build(ITerms), build(ATerms)]),
 	all(render, make_expr, [unify(L), build(ATerms), build(IExprs)]),
-	( /* Var = import(Type, _, Level, _, TopPtr, _,_, ArcIndex),
-	    (Type = a(_ET),
-		ImportCmd = import_int;
-	    append_atoms('import_', Type, ImportCmd)), !,
-	    length(IExprs, IndCount),
-	    make_procedure_call_chars(L, [arrange_indices, IndCount | IExprs],
-				      AIStr),
-	    name(ArrInds, AIStr),
-	    make_procedure_call_chars(L, [ImportCmd, Level, TopPtr,
-					  ArcIndex, ArrInds], LXStr),
-	    name(FullLocalExpr, LXStr); */
-	make_indexed_reference(L, LocalExpr, IExprs, FullLocalExpr)).
+	make_indexed_reference(L, LocalExpr, IExprs, FullLocalExpr).
 
 aim_at_array(c, Index+1, Index) :- !.
 aim_at_array(c, Index, Index-1) :- !.
