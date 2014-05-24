@@ -1,0 +1,13 @@
+$c create poly 150.0 100.0 250.0 150.0 150.0 200.0 -outline black -fill gray -width 2.0
+$c create oval 69.0 94.0 181.0 206.0 -outline {} -fill gray
+$c create arc 69.0 94.0 181.0 206.0 -extent 240.0 -start 60.0 -style arc -width 2.0
+$c create line 69.0 150.0 50.0 150.0 50.0 115.0 40.0 200.0 -smooth true -width 2.0
+$c create oval 245.0 145.0 255.0 155.0 -fill black
+$c create arc 185.0 92.0 217.0 124.0 -extent 120.0 -start 180.0 -style chord -fill pink -width 2.0
+$c create arc 185.0 177.0 217.0 209.0 -extent 120.0 -start 60.0 -style chord -fill pink -width 2.0
+$c create oval 217.0 137.0 223.0 143.0 -fill black
+$c create oval 217.0 157.0 223.0 163.0 -fill black
+
+set hotspot {150 150}
+set scale 20
+set axis 0
