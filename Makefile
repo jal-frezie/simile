@@ -135,7 +135,7 @@ endif
 	SHAREDLIBPREFX = 
 	MAKEPIC = 
 	MAKESL = -shared
-	VERS = $(MAJ)$(MIN)
+	VERS = $(shell echo "puts [string map {. {}} [info tclversion]]" | tclsh)
 #	VERS = 86
 #
 	SLDIR = $(EXECDIR)
@@ -256,7 +256,7 @@ $(INSTLIB): Run/install_adv.cpp Makefile
 	cd Run; $(GPPCMD) -static-libgcc -m32 $(CFLAGS) $(DEFNS) \
 		-I/c/MsiIntel.SDK/include $(MAKEPIC) $(MAKESL) \
 		-o ../$(INSTLIB) install_adv.cpp /c/MsiIntel.SDK/lib/msi.lib \
-		-L../$(RESDIR) -lcrypto -lssl; cd ..
+		-lcrypto -lssl; cd ..
 
 # the rc objects from windres are ommitted from linking below becaise they
 # do strange things to dll dependencies causing c000007b errors
