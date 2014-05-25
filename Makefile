@@ -324,6 +324,7 @@ install:
 		Functions/new_units.pl \
 		Functions/procs.cpp \
 		Functions/procs.tcl \
+		help/concepts/* \
 		help/data/* \
 		help/diagrams/* \
 		help/elements/* \
