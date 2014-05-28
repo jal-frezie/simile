@@ -86,12 +86,11 @@ ifeq ($(PLATFORM),Darwin)
 	SYSDIR = System$(BITEXTN)
 #	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
+	TCLFW = /System/Library/Frameworks
 ifeq ($(MY_CPU),x86_64)
 	CFLAGS = $(OPT) -mmacosx-version-min=10.6
-	TCLFW = /System/Library/Frameworks
 else
 	CFLAGS = $(OPT) -arch i386 -mmacosx-version-min=10.4
-	TCLFW = /Library/Frameworks
 endif
 	ARCHEXTN = _mac
 # build for everything unless I am on Barbie
@@ -103,7 +102,7 @@ endif
 	MAKEPIC = -fPIC
 	MAKESL = -dynamiclib
 # make sure Current is set to right version
-	USETCL =  -DUSE_TCL_STUBS -F$(TCLFW) -framework Tcl -I$(TCLFW)/Tcl.framework/Headers -L$(TCLFW)/Tcl.framework -ltclstub$(VERS)
+	USETCL =  -DUSE_TCL_STUBS -framework Tcl -ltclstub$(VERS)
 	LOCALIZE_TCL_REFS = install_name_tool -change \
 		$(TCLFW)/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl
@@ -252,10 +251,10 @@ $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 # Version for Advanced Installer
 # -static-libgcc is neeeded because this also used for 64bit install (and 32bit
 # install on 64bit systems) where 32bit libraries maybe missing
-$(INSTLIB): Run/install_adv.cpp Makefile
-	cd Run; $(GPPCMD) -static-libgcc -m32 $(CFLAGS) $(DEFNS) \
+$(INSTLIB): Run/install_adv.c Makefile
+	cd Run; $(GCCCMD) -static-libgcc -m32 $(CFLAGS) $(DEFNS) \
 		-I/c/MsiIntel.SDK/include $(MAKEPIC) $(MAKESL) \
-		-o ../$(INSTLIB) install_adv.cpp /c/MsiIntel.SDK/lib/msi.lib \
+		-o ../$(INSTLIB) install_adv.c /c/MsiIntel.SDK/lib/msi.lib \
 		-lcrypto -lssl; cd ..
 
 # the rc objects from windres are ommitted from linking below becaise they
