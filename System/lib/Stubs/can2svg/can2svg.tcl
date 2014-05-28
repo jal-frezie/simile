@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.6 2014/05/14 08:52:55 u45169214 Exp $
+# $Id: can2svg.tcl,v 1.7 2014/05/28 10:33:29 u45169214 Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -770,6 +770,7 @@ proc can2svg::MakeStyleList {type opts args} {
                 set stippleValue $value
             }
             -width {
+		set widthValue $value
 		if {$value > 1} {
 		    set styleArr(stroke-width) $value
 		}
@@ -780,8 +781,8 @@ proc can2svg::MakeStyleList {type opts args} {
     # If any arrow specify its marker def url key.
     if {[info exists arrowValue]} {
 	set arrowScaleArgs 1
-	if {[info exists styleArr(stroke-width)]} {
-	    set arrowScaleArgs $styleArr(stroke-width)
+	if {[info exists widthValue]} {
+	    set arrowScaleArgs $widthValue
 	}
         if {[info exists arrowShape]} {
 	    lappend arrowScaleArgs $arrowShape

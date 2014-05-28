@@ -498,6 +498,9 @@ proc compile_c {workingDir extLibs complain} {
 		    puts $batSt "copy \"[file nativename [file join \
                          $GCCLIBDIR crt*.o]]\" ."
 		}
+	    } else {
+# Do not supply a path, modeller should add it to their environment
+		# puts $batSt "set PATH=c:\\mingw\\bin;%PATH%"
 	    }
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
 		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o \
