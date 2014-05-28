@@ -3,9 +3,12 @@
 <title>Running the model</title>
 <link rel="stylesheet" href="dist/themes/default/style.css" />
 <link href="css/humanity/jquery-ui-1.10.4.custom.css" rel="stylesheet" />
+<link href="css/xcharts.min.css" rel="stylesheet" />
 <script src="js/jquery-1.10.2.js"></script>
 <script src="js/jquery-ui-1.10.4.custom.js"></script>
 <script src="dist/jstree.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="js/xcharts.min.js"></script>
 <style>
 #tabs li .ui-icon-close { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
 </style>
@@ -79,8 +82,8 @@ tabs.delegate( "span.ui-icon-close", "click", function() {
 		
 
 		
-		$( "#progressbar" ).progressbar({
-			value: 20
+		$( "#progress" ).progressbar({
+			value: 0
 		});
 		
 
@@ -175,12 +178,17 @@ $.get('report.php', function(data) {
 }
 
 function hoverIn(evt) {
-  var tags = evt.target.getAttribute("id");
+  var tags = null;
+  var blob = evt.target;
+  while (tags == null) {
+    tags = blob.getAttribute("id");
+    blob = blob.parentNode;
+  }
   var prolog = tags.match(/arc\d\d\d\d\d|node\d\d\d\d\d/);
 //  var currentLine = model_json.find(function (e) {
 //		     return e.id == prolog;
 // 		     });
-  tooltip_q.firstChild.data = "Equation will go here";
+  tooltip_q.firstChild.data = model_json[prolog].equation;
   tooltip_v.firstChild.data = values_json[prolog];
 // above will break function if it doesn't work
 
@@ -226,20 +234,129 @@ function SvgDiagZoom(factor) {
   ModDiag.setAttribute("height",factor*ModDiag.getAttribute("height"));
 }
 
-function model_action(act) {
+var savedStart;
+function model_reset() {
 $.ajax({
   type: "POST",
   url: "model_exec.php",
-  data: { "act": act, "runlength": $("#rl").val(), "current": $("#ct").val(),
-		     "logstep": $("#le").val(), "step": $("#ts").val() }
+  data: { "act": "Reset", "runlength":$("#rl").val(), "current":$("#ct").val(),
+		     "step":$("#ts").val() }
 })
   .done(function( newTime ) {
+    if (savedStart != null) {
+      $("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
+		     -savedStart);
+    }
     $("#ct").val(newTime);
+    $( "#progress" ).progressbar({ value: 0 });
     $.get('report.php', function(data) {
 		     values_json = JSON.parse(data);
 		     });
   });
 }
+
+function model_step(current, start, end) {
+  if (current >= end || savedStart != null) {
+// we are done, reset progress bar and update values
+    $.get('report.php', function(data) {
+		     values_json = JSON.parse(data);
+		     });
+    goImage = document.getElementById("button_op");
+    goImage.src = "images/play.gif";
+    goImage.parentNode.onclick = function () { model_exec(); };
+    if (current < end) {
+      savedStart = start;
+      return;
+    }
+    newRemain = end - start;
+    newProgress = 0;
+    savedStart = null;
+  } else {
+    interval = Math.min(end-current,parseFloat($("#le").val()));
+    newCurrent = current+interval;
+    newRemain = end-newCurrent;
+    $.ajax({
+      type: "POST",
+      url: "model_exec.php",
+      data: { "act": "Execute", "runlength":interval, "current":current,
+		     "step":$("#ts").val() }
+    })
+      .done(function() {
+         model_step(newCurrent, start, end);
+    });
+    $("#ct").val(newCurrent);
+    newProgress = 100*(newCurrent-start)/(end-start);
+  }
+  $("#rl").val(newRemain);
+  $( "#progress" ).progressbar({
+		     value: newProgress
+  });
+}
+
+function model_pause() {
+  savedStart = -999;
+}
+
+function model_exec() {
+  goImage = document.getElementById("button_op");
+  goImage.src = "images/pause.gif";
+  now = parseFloat($("#ct").val());
+  if (savedStart == null) {
+    start = now;
+  } else {
+    start = savedStart;
+    savedStart = null;
+  }
+  goImage.parentNode.onclick = function () { model_pause(); };
+  model_step(now, start, now+parseFloat($("#rl").val()));
+}
+
+// placeholder graph plot
+
+var pgplot_data = {
+  "xScale": "time",
+  "yScale": "linear",
+  "type": "line",
+  "main": [
+    {
+      "className": ".pizza",
+      "data": [
+        {
+          "x": "2012-11-05",
+          "y": 1
+        },
+        {
+          "x": "2012-11-06",
+          "y": 6
+        },
+        {
+          "x": "2012-11-07",
+          "y": 13
+        },
+        {
+          "x": "2012-11-08",
+          "y": -3
+        },
+        {
+          "x": "2012-11-09",
+          "y": -4
+        },
+        {
+          "x": "2012-11-10",
+          "y": 9
+        },
+        {
+          "x": "2012-11-11",
+          "y": 6
+        }
+      ]
+    }
+  ]
+};
+var pgplot_opts = {
+  "dataFormatX": function (x) { return d3.time.format('%Y-%m-%d').parse(x); },
+  "tickFormatX": function (x) { return d3.time.format('%A')(x); }
+};
 
 // actual addTab function: adds new tab using the input from the form above
 var helperTitles = {"plot":"Plotter","table":"Data table"},
@@ -252,7 +369,9 @@ function new_helper(type) {
   li = $( tabTemplate.replace( /#\{href\}/g, "#" + id ).replace( /#\{label\}/g, label ) ),
   tabContentHtml = "Tab contents -- testing";
   tabs.find( ".ui-tabs-nav" ).append( li );
-  tabs.append( "<div id='" + id + "'><p>" + tabContentHtml + "</p></div>" );
+  tabs.append( "<figure style='height: 800px;' id='" + id + "'></figure>" );
+// insert placeholder graph
+  myChart = new xChart('line', pgplot_data, '#' + id, pgplot_opts);
   tabs.tabs( "refresh" );
   tabs.tabs("option", "active", tabs.children().length - 2);
 }
@@ -264,8 +383,11 @@ function new_helper(type) {
 <div style="position:absolute;left:0px;width:320px;">
 <table border="2"> 
 <tr><td colspan="2">
-<button type="button" onclick="model_action('Reset')">Reset</button>
-<button type="button" onclick="model_action('Execute')">Execute</button>
+<button type="button" onclick="model_reset()">
+<img src="images/stop.gif"></button>
+<button type="button" onclick="model_exec()">
+<img id="button_op" src="images/play.gif"></button>
+<div id="progress" style="width:60%;float:right"></div>
 <tr><td>Execute for: </td><td><input id="rl" type="text" name="runlength" 
 				     size="8" value=<?php echo $runlength;?>> 
     unit</td></tr>
@@ -286,7 +408,7 @@ for($x=0;$x<$arrlength;$x++)
     $nicePath = escapeNasties($path);
 // all nodes will go in data structure...?
     unset($mdlLine);
-    $mdlLine["id"] = doTcl("getnodeid [set mH] " . $nicePath);
+    $id = doTcl("getnodeid [set mH] " . $nicePath);
     $tailDiv = strrpos($nicePath, '/');
     $parentPath = substr($nicePath, 0, $tailDiv);
     if (strlen($parentPath)) {
@@ -301,14 +423,22 @@ for($x=0;$x<$arrlength;$x++)
 	      . ' Spec');
     $mdlLine["comment"] = doTcl("GetModelProperty [set mH] " . $nicePath
 	      . ' Comment');
-    $mdlArr[] = $mdlLine;
+    $mdlArr[$id] = $mdlLine;
   };
 echo "
 </div>
 <script>
 var model_json = " . json_encode($mdlArr);?>;
+
+var treeData = [], treeLine;
+for (var id in model_json) {
+   treeLine = model_json[id];
+   treeLine.id = id;
+   treeData.push(treeLine);
+}
+
 $('#explorer').jstree({ 'core' : {
-    'data' : model_json
+    'data' : treeData
 } });
 </script>
 <div id="tabs" style="margin-left:320px;">
