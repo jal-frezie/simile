@@ -240,7 +240,7 @@ $.ajax({
   type: "POST",
   url: "model_exec.php",
   data: { "act": "Reset", "runlength":$("#rl").val(), "current":$("#ct").val(),
-		     "step":$("#ts").val() }
+		     "step":$("#ts").val(), note:""}
 })
   .done(function( newTime ) {
     if (savedStart != null) {
@@ -255,7 +255,7 @@ $.ajax({
   });
 }
 
-function model_step(current, start, end) {
+function model_step(current, start, end, note) {
   if (current >= end || savedStart != null) {
 // we are done, reset progress bar and update values
     $.get('report.php', function(data) {
@@ -279,10 +279,11 @@ function model_step(current, start, end) {
       type: "POST",
       url: "model_exec.php",
       data: { "act": "Execute", "runlength":interval, "current":current,
-		     "step":$("#ts").val() }
+		     "step":$("#ts").val(), "note":note }
     })
-      .done(function() {
-         model_step(newCurrent, start, end);
+      .done(function(newVals) {
+         update_helpers(newCurrent, JSON.parse(newVals));
+         model_step(newCurrent, start, end, note);
     });
     $("#ct").val(newCurrent);
     newProgress = 100*(newCurrent-start)/(end-start);
@@ -308,7 +309,20 @@ function model_exec() {
     savedStart = null;
   }
   goImage.parentNode.onclick = function () { model_pause(); };
-  model_step(now, start, now+parseFloat($("#rl").val()));
+  model_step(now, start, now+parseFloat($("#rl").val()), ofInterest());
+}
+
+function ofInterest() {
+// list the paths of all the nodes currently being displayed by tools
+  result = [];
+  for (i=0; i<currentHelpers.length; i++) {
+    if (currentHelpers[i].status == "displaying") {
+      for (j=0; j<currentHelpers[i].tgts.length; j++) {
+        result[currentHelpers[i].tgts[j]] = 1;
+      }
+    }
+  }
+  return Object.getOwnPropertyNames(result).join();
 }
 
 // placeholder graph plot
@@ -320,42 +334,13 @@ var pgplot_data = {
   "main": [
     {
       "className": ".pizza",
-      "data": [
-        {
-          "x": "2012-11-05",
-          "y": 1
-        },
-        {
-          "x": "2012-11-06",
-          "y": 6
-        },
-        {
-          "x": "2012-11-07",
-          "y": 13
-        },
-        {
-          "x": "2012-11-08",
-          "y": -3
-        },
-        {
-          "x": "2012-11-09",
-          "y": -4
-        },
-        {
-          "x": "2012-11-10",
-          "y": 9
-        },
-        {
-          "x": "2012-11-11",
-          "y": 6
-        }
-      ]
+      "data": []
     }
   ]
 };
 var pgplot_opts = {
-  "dataFormatX": function (x) { return d3.time.format('%Y-%m-%d').parse(x); },
-  "tickFormatX": function (x) { return d3.time.format('%A')(x); }
+  "dataFormatX": function (x) { return d3.time.format('%j').parse(x); },
+  "tickFormatX": function (x) { return d3.time.format('%x')(x); }
 };
 
 // actual addTab function: adds new tab using the input from the form above
@@ -363,16 +348,23 @@ var helperTitles = {"plot":"Plotter","table":"Data table"},
   tabTemplate = "<li><a href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
   tabCounter = 2;
 
+var currentHelpers = [];
+var currentHelper = null;
 function new_helper(type) {
   var label = helperTitles[type];
   id = "tabs-" + tabCounter++,
   li = $( tabTemplate.replace( /#\{href\}/g, "#" + id ).replace( /#\{label\}/g, label ) ),
   tabContentHtml = "Tab contents -- testing";
   tabs.find( ".ui-tabs-nav" ).append( li );
-  tabs.append( "<figure style='height: 800px;' id='" + id + "'></figure>" );
+  tabs.append( "<div id='" + id + "'></div>" );
+// "<span id='" + id + "_msg>Click on a component in the Explorer pane or the Model Diagram.</span>\
+// <figure style='height: 800px;' id='" + id + "_plot'></figure>\
+// </div>" );
 // insert placeholder graph
-  myChart = new xChart('line', pgplot_data, '#' + id, pgplot_opts);
+//   myChart = new xChart('line', pgplot_data, '#' + id + "_plot", pgplot_opts);
   tabs.tabs( "refresh" );
+  currentHelper = new PlotValAgainstTime(id);
+  currentHelpers.push(currentHelper);
   tabs.tabs("option", "active", tabs.children().length - 2);
 }
 </script>
@@ -437,9 +429,60 @@ for (var id in model_json) {
    treeData.push(treeLine);
 }
 
-$('#explorer').jstree({ 'core' : {
+$('#explorer')
+  // listen for event
+  .on('changed.jstree', function (e, data) {
+//    $('#' + currentHelper).html('Node: ' + data.node.id);
+   select_for_helper( data.node.id );
+  })
+  // create the instance
+  .jstree({ 'core' : {
     'data' : treeData
 } });
+
+function update_helpers(time, latest) {
+  for (i=0; i<currentHelpers.length; i++) {
+    currentHelpers[i].display(time, latest);
+  }
+}
+
+function select_for_helper(compId) {
+  if (currentHelper != null) {
+    currentHelper.acceptClick(compId);
+  }
+}
+
+// eventually this will inherit from a generic display tool class
+function PlotValAgainstTime (port) {
+  this.port = port;
+  this.tgts = [];
+  this.status = "initializing";
+// OK now add the message to the new tab
+  $('#' + port).html("Click on a component in the Explorer pane or the Model Diagram.");
+}
+
+PlotValAgainstTime.prototype.acceptClick = function (compId) {
+  if (this.status == "initializing") {
+    this.status = "displaying";
+    this.tgts[0] = compId;
+    plotId = this.port + "_plot";
+    this.graphData = jQuery.extend(true,{},pgplot_data);
+    origPt = {"x":$("#ct").val(),"y":parseFloat(values_json[compId])};
+    this.graphData.main[0].data.push(origPt);
+    $('#' + this.port).html("<figure style='height: 800px;' id='" + plotId + "'></figure>");
+    this.myChart = new xChart('line', this.graphData, '#' + plotId, pgplot_opts); 
+  }
+}
+
+PlotValAgainstTime.prototype.display = function (time, latest) {
+  if (this.status == "displaying") {
+    newPt = {"x":time.toString(),"y":parseFloat(latest[this.tgts[0]])};
+//alert("Plotting: " + JSON.stringify(newPt));
+    this.graphData.main[0].data.push(newPt);
+    this.myChart.setData(this.graphData);
+  }
+}
+
 </script>
 <div id="tabs" style="margin-left:320px;">
 <ul>
