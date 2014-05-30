@@ -176,14 +176,19 @@ proc CreateModel {mHandle} {
 }
 
 proc GetPairedValues {iHandle outputNode asEnumType} {
-    set bloc [handle_data dummyMHandle $iHandle \
-		  [getnodeid $::modelTypes($iHandle) $outputNode]]
-    set result [extract_list $bloc 16777216]
-    free_data_handle $bloc
+    set result [GetValuesById $iHandle \
+		    [getnodeid $::modelTypes($iHandle) $outputNode]]
     if {$asEnumType} {
 	set types [GetModelProperty $::modelTypes($iHandle) $outputNode Trans]
 	set result [TransEnums $types $result yes]
     }
+    return $result
+}
+
+proc GetValuesById {iHandle outputId} {
+    set bloc [handle_data dummyMHandle $iHandle $outputId]
+    set result [extract_list $bloc 16777216]
+    free_data_handle $bloc
     return $result
 }
 
