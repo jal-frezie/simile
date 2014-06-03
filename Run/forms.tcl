@@ -2445,6 +2445,17 @@ proc Query {specifics icon helpRef parent opts} {
 	}
     }
 
+    if {[info exists ::SimileAutoObjLoaded] || [winfo exists .shortDlg]} {
+# Scripted execution or dialogue already displayed: return with no fuss
+# (headless should get response from command line?)
+# ...unless it's an error, in which case, throw and stop script.
+	if {$icon eq "error"} {
+	    error $specifics
+	} else {
+	    puts $specifics
+	    return $defButton
+	}
+    }
     if {$::headless} {
 	foreach txtBit {title message detail full} {
 	    if {[info exists $txtBit]} {
@@ -2458,12 +2469,7 @@ proc Query {specifics icon helpRef parent opts} {
 	    set resp $defButton
 	} 
 	return $resp
-    } elseif {[info exists ::SimileAutoObjLoaded] || [winfo exists .shortDlg]} {
-# Scripted execution or dialogue already displayed: return with no fuss
-# (headless should get response from command line?)
-	puts $specifics
-	return $defButton
-    }
+    } 
     if {[winfo exists .splash]} {
 	wm withdraw .splash ;# ensure mess is not obscured by splash screen
     }

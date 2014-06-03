@@ -486,18 +486,27 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 #	set window_info($w,temporary) $i
     } else {
 	set plRad [expr $cornerRad/$window_info($w,scale)]
-	set nCol [Gradient $bgColour $w]
-	set gTagSet "$tagSet /background/ /grid/"
-	if {$custom(showgrids,$w)} {
+	if {$w eq "ToSVG"} {
+	    set swing 5
 	    set gStat normal
+	    set hInterval 15
+	    set vInterval 15
 	} else {
-	    set gStat hidden
+	    set swing 0 ;# use preference
+	    if {$custom(showgrids,$w)} {
+		set gStat normal
+	    } else {
+		set gStat hidden
+	    }
+	    set hInterval [expr [PrefValue custom(gridH) gridH]*$inFat/100.0]
+	    set vInterval [expr [PrefValue custom(gridV) gridV]*$inFat/100.0]
 	}
+	set nCol [Gradient $bgColour $w $swing]
+	set gTagSet "$tagSet /background/ /grid/"
 
 	set flags {-state $gStat -width 0 -fill $nCol -tags $gTagSet}
-	set interval [expr [PrefValue custom(gridH) gridH]*$inFat/100.0]
-	for {set x [expr $origX+$interval*ceil(($l+1-$origX)/$interval)]} \
-	    {$x<$r} {set x [expr $x+$interval]} {
+	for {set x [expr $origX+$hInterval*ceil(($l+1-$origX)/$hInterval)]} \
+	    {$x<$r} {set x [expr $x+$hInterval]} {
 		set fromEdge [expr {max($l+$plRad-$x,$x+$plRad-$r)}]
 		if {$fromEdge>0} {
 		    set inStep [expr $plRad - sqrt($plRad*$plRad - $fromEdge*$fromEdge)]
@@ -510,9 +519,9 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		$w raise $line $stackOn
 		set stackOn $line
 	    }			    
-	set interval [expr [PrefValue custom(gridV) gridV]*$inFat/100.0]
-	for {set y [expr $origY+$interval*ceil(($t+1-$origY)/$interval)]} \
-	    {$y<$b} {set y [expr $y+$interval]} {
+
+	for {set y [expr $origY+$vInterval*ceil(($t+1-$origY)/$vInterval)]} \
+	    {$y<$b} {set y [expr $y+$vInterval]} {
 		set fromEdge [expr {max($t+$plRad-$y,$y+$plRad-$b)}]
 		if {$fromEdge>0} {
 		    set inStep [expr $plRad - sqrt($plRad*$plRad - $fromEdge*$fromEdge)]

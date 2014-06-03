@@ -814,6 +814,11 @@ proc Gradient {rgb {window .} {swing 0}} {
 	    scan $rgb \#%4x%4x%4x r g b
 	} \#?????? {
 	    scan $rgb \#%2x%2x%2x r g b
+	} black - white - red - green - blue {
+	    foreach {compo onin} \
+		{r {red white} g {green white} b {blue white}} {
+		    set $compo [expr {255*([lsearch $onin $rgb]>-1)}]
+		}
 	} default {
 	    foreach {r g b} [winfo rgb $window $rgb] {break}
 	}
