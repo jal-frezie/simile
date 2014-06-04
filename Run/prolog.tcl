@@ -30,18 +30,21 @@ proc KeepLooking {} {
 	    if {[catch {set cmd [lindex $line 0]} mess]} {
 		DebugMess "Could not parse $line : $mess"
 		send_pl_cmd result:-1
-	    } elseif {[string match exit $cmd]} {
-		incr plPipe(recur) -1
-		set prologExit 1
-	    } elseif {[string match fail $cmd]} {
-		set prologExit 0
-	    } elseif {[string match send_tcl_cmd $cmd]} {
-		eval do_tail $line
-	    } elseif {[lsearch "debug_c" $cmd]!=-1} {
-		DebugMess $line
 	    } else {
-		DebugMess $line
-		set prologExit -1
+		switch $cmd {
+		    exit {
+			incr plPipe(recur) -1
+			set prologExit 1
+		    } fail {
+			set prologExit 0
+		    } send_tcl_cmd {
+			eval do_tail $line
+		    } slipup {
+			error [lreplace $line 0 0 slip-up]
+		    } default {
+			error $line
+		    }
+		}
 	    }
 	}
     }
@@ -94,9 +97,13 @@ proc do_tail {header args} {
     set oldDir [pwd]
     if {[catch $args retVal]} {
 	puts $retVal
-	Query [list unhandled_tcl_error $retVal $errorInfo] error top {} ok
         cd $oldDir
-	set response error:$retVal
+        if {[lindex $retVal 0] eq "slip-up"} {
+	    set response slipup:[lrange $retVal 1 end]
+	} else {
+	    Query [list unhandled_tcl_error $retVal $errorInfo] error top {} ok
+	    set response error:$errorInfo
+	}
     } elseif {[string length $retVal]>=8388608} {
 	Query too_much_data error top {} ok
 	set response result: ;# emulate a cancel

@@ -726,8 +726,11 @@ proc JoinSteps {stepA stepB} {
 }
 
 proc AddErrorTo {old woops subs} {
-    set error [list [concat [lindex $woops 0] [list $subs] \
-			 [lrange $woops 1 end]]]
+    if {[catch {lrange $woops 1 end} tailList]} { ;# error msg is not a list
+	set error [list [concat $woops [list $subs]]]
+    } else {
+	set error [list [concat [lindex $woops 0] [list $subs] $tailList]]
+    }
     return [JoinSteps $old $error]
 }
 

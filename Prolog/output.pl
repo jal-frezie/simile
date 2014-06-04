@@ -46,7 +46,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
 
 safe_tcl_eval(Cmd, Result) :-
-	user'><'any_tcl_eval(Cmd, 0, Result).
+	user'><'any_tcl_eval(Cmd, 1, Result).
 /********safe_tcl_eval(Cmd, Result) :-
 	user'><'tcl_eval(['FilterErrors' | Cmd], Result),
 	(Result = "-1",

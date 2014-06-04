@@ -51,7 +51,7 @@ consult.parameter.metafile <- function(instance.handle, param.file,
 
 reset.model <- function(instance.handle, depth, integration.method = "Euler",
                         starting.time = 0) {
-  tcl("ResetModel", instance.handle, starting.time, integration.method, depth)
+  tcl("DoResetModel", instance.handle, starting.time, integration.method, depth)
 }
 
 execute.model <- function(instance.handle, finish.time,
@@ -60,7 +60,7 @@ execute.model <- function(instance.handle, finish.time,
   if (is.na(start.time)) {
     start.time <- get.model.time(instance.handle)
   }
-  as.integer(tcl("ExecuteModel", instance.handle, integration.method,
+  as.integer(tcl("DoExecuteModel", instance.handle, integration.method,
                  start.time, finish.time, error.limit, pause.on.event))
 }
 

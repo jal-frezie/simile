@@ -30,7 +30,7 @@ proc UseSimileAt {path} {
 
     uplevel \#0 {
 	source $SIMILE_PATH/Run/utility.tcl
-	source $SIMILE_PATH/Run/support.tcl
+	source $SIMILE_PATH/Run/exec.tcl
 	set simplify 1
 	source $SIMILE_PATH/Run/graphs.tcl ;# for loading tabular data
 	unset simplify
@@ -45,11 +45,6 @@ set msgs(metafile_lit)  {}
 set msgs(metafile_bin)  {}
 set msgs(direct_ref) {}
 
-## called but not supplied
-proc RunningInC {args} {
-    return 1 ;# we always are
-}
-
 # report queries to console and take default action
 proc Query {act level topic win opts} {
     set response [lindex $opts 0]
@@ -60,31 +55,11 @@ proc Query {act level topic win opts} {
     return $response
 }
 
-# from exec.tcl -- workaround for hideous old stuff in params.tcl
-proc c_setparamarray {topNode tgtNode} {
-    set ::param_id($tgtNode) [c_createparamarray $::cbInstanceId $tgtNode]
-}
-
-# Old versions of these (identifying parameters by target node id) are passed
-# to the exec thread. These calls now also have the top node to identify the
-# right exec thread, so strip it off here
-foreach oldCProc {setparamelement settimepointelement settimepointarray \
-		      cleartimeseries setwraparoundtime setfillmethod \
-		      setinterval \
-		      setrecordlist settimepointrecords markevtparamactive \
-		      setparamall getparamall settimepointall gettimepointall} {
-    proc c_$oldCProc {args} {
-	set cmd [info level 0]
-	return [eval [list new[lindex $cmd 0] $::param_id([lindex $cmd 2])] \
-		    [lrange $cmd 3 end]] ;# elt 1 (2nd) is top node
-    }
-}
-
 # here is the scripting command to do it
 proc ConsultParameterMetafile {instanceHandle fileLocn {targetSubmodel {}}} {
     set mHandle $::modelTypes($instanceHandle)
     set ::cbModelId $mHandle
-    set ::cbInstanceId $instanceHandle
+    set ::instance_id $instanceHandle
     set topNode [lindex [listobjects $mHandle] 0]
     foreach component [ListObjPaths $mHandle] {
 	set ::readMany(/$topNode$component) \
@@ -94,65 +69,25 @@ proc ConsultParameterMetafile {instanceHandle fileLocn {targetSubmodel {}}} {
 }
 ## End of parameter loading accessories 
 
-proc GetModelProperty {model_id path prop} {
-    set node [getnodeid $model_id $path]
-    return [GetCCompPropById $model_id $prop $node]
+# now we need something similar to set the value of a single parameter
+proc SetParameter {accessHandle value} {
+    set ::param_id(dummy) $accessHandle
+    set mHandle $::modelTypes($::modelInstances($accessHandle))
+    set path $::componentPaths($accessHandle)
+    set trans [GetModelProperty $mHandle $path Trans]
+    set dims $::cachedDims($accessHandle) ;# needs subbing for per-rec?
+    set times [string equal INPUT [GetModelProperty $mHandle $path Eval]]
+    return [ListToArray DUMMY dummy {} {} $trans $dims $value $times 1]
 }
 
-proc GetCompProperty {topNode prop node} {
-# now only needed for v5.x
-    return [GetCCompPropById $::cbModelId $prop $node]
+proc GetModelProperty {modelId path prop} {
+    set node [getnodeid $modelId $path]
+    set ::model_id $modelId
+    return [GetCCompProperty DUMMY $prop $node]
 }
 
-proc GetCCompProperty {topNode prop node} {
-    return [GetCCompPropById $::cbModelId $prop $node]
-}
-
-proc GetCCompPropById {model_id prop node} {
-    set numberWangs Caption|MinVal|MaxVal|Trans|Spec|Desc|Comment
-    switch -regexp $prop [list \
-	Class|Type|Eval {
-	    array set propData [list Class,cIdx 11 Class,names \
-			      {SUBMODEL VARIABLE COMPARTMENT FLOW CONDITION \
-			       CREATION REPRODUCTION IMMIGRATION LOSS ALARM \
-			       EVENT SQUIRT STATE} \
-			    Type,cIdx 1 Type,names \
-			    {VALUELESS REAL INTEGER FLAG EXTERNAL} \
-			    Eval,cIdx 2 Eval,names \
-			    {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST}]
-	    set numericVal [getvalue $model_id $node $propData($prop,cIdx)]
-	    if {![string is integer -strict $numericVal]} {
-		return $numericVal
-	    }
-	    if {[string equal Type $prop] && $numericVal>=10} {
-		return ENUM([expr $numericVal-10])
-	    } else {
-		return [lindex $propData($prop,names) $numericVal]
-	    }
-	} Dims {
-	    set specials {RECORDS MEMBERS SEPARATE START_VM END_VM}
-	    set fullList [getvalue $model_id $node 0]
-	    
-	    set idx 0
-	    foreach elt $fullList {
-		if {$elt<0} {
-		    lset fullList $idx [lindex $specials [expr -$elt-1]]
-		}
-		incr idx
-	    }
-	    return $fullList
-	} $numberWangs {
-	    set dataWang [lindex {5 6 8 12 13 14 15} \
-			      [lsearch [split $numberWangs |] $prop]]
-	    return [getvalue $model_id $node $dataWang]
-	} IdFromCapt {
-	    # node is actually caption in this case
-	    if {[catch {getnodeid $model_id $node} res]} {
-		set res nomatch
-	    } 
-	    return $res
-	}
-			 ] ;# must be list to substitute last case
+proc GetCompProperty {topNode prop args} {
+    return [eval GetCCompProperty DUMMY $prop $args]
 }
 
 proc CreateTimeSeriesStructs {mHandle iHandle} {
@@ -192,7 +127,7 @@ proc GetValuesById {iHandle outputId} {
     return $result
 }
 
-# lifted from v5.9
+# lifted from hai2mmii.tcl v5.9
 proc TransEnums {transList vals fromNums} {
     set curLevel [lindex $transList 0]
     if {[llength $vals]==1} {
@@ -312,15 +247,17 @@ proc IntMethodID {intMethod} {
     lsearch {euler runge-kutta} [string tolower $intMethod]
 }
 
-proc ResetModel {iHandle t0 intMethod depth} {
+proc DoResetModel {iHandle t0 intMethod depth} {
+    set ::instance_id $iHandle
+    set ::model_id $::modelTypes($iHandle)
     set ::currentTimes($iHandle) $t0
-    c_resetmodel $::modelTypes($iHandle) $iHandle $t0 \
-	[IntMethodID $intMethod] $depth
+    return [ResetModel dummy $intMethod $t0 $depth]
 }
 
-proc ExecuteModel {iHandle intMethod from to errLim evtPause} {
-    set result [c_executemodel $::modelTypes($iHandle) $iHandle \
-		    [IntMethodID $intMethod] $from $to $errLim $evtPause]
+proc DoExecuteModel {iHandle intMethod from to errLim evtPause} {
+    set ::instance_id $iHandle
+    set ::model_id $::modelTypes($iHandle)
+    set result [ExecuteModel dummy $intMethod $from $to $errLim $evtPause]
     set ::currentTimes($iHandle) [lindex $result 1]
     return [lindex $result 0]
 }

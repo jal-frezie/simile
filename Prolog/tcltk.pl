@@ -8,8 +8,7 @@ any_tcl_eval(Cmd, Except, Result) :-
         decode_command(Cmd, BrokenString),
 	remove_crs(BrokenString, TtfnString),
 	all_ttfn_to_utf8(TtfnString, String),
-	append("send_tcl_cmd ", String, PlString),
-	sicstus_write_chars(PlString), nl,
+	format("send_tcl_cmd ~s", [String]), nl,
 	flush_output,
 	wait_for_tcl(Except, Response),
 	Result = Response.
@@ -136,6 +135,9 @@ wait_for_tcl(Except, Result) :-
 	    fail;
 	append("result:", Joined, TclStr),
 	    restore_crs(Result, Joined);
+	append("slipup:", ZwipStr, TclStr),
+	    name(ZwipAtom, ZwipStr),
+	    raise_exception(slipup(ZwipAtom));
 	append("error:", ResultBase, TclStr),
 	    name(ResultAtom, ResultBase),
 	    (Except = 1, !,
@@ -149,7 +151,9 @@ do_cmd(TermStr) :-
 	(call(Cmd),
 	    write(exit);
 	write(fail))),
-	format("~w calling ~s", [PlError, TermStr])), !,
+	(PlError = slipup(Note) ->
+	 format("slipup ~a", [Note]);
+	 format("~w calling ~s", [PlError, TermStr]))), !,
 	nl, flush_output.
 
 /* cannot use all because of variable length source */
