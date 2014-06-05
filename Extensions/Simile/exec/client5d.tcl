@@ -55,6 +55,14 @@ proc Query {act level topic win opts} {
     return $response
 }
 
+# ignore GUI updates by default
+proc AbortCheck {nodeId} {
+    return 0
+}
+proc InteractGUI {nodeId time mode} {
+    return 0
+}
+
 # here is the scripting command to do it
 proc ConsultParameterMetafile {instanceHandle fileLocn {targetSubmodel {}}} {
     set mHandle $::modelTypes($instanceHandle)
@@ -77,6 +85,9 @@ proc SetParameter {accessHandle value} {
     set trans [GetModelProperty $mHandle $path Trans]
     set dims $::cachedDims($accessHandle) ;# needs subbing for per-rec?
     set times [string equal INPUT [GetModelProperty $mHandle $path Eval]]
+    if {$times} {
+        set dims [linsert $dims 0 TIME]
+    }
     return [ListToArray DUMMY dummy {} {} $trans $dims $value $times 1]
 }
 
@@ -99,6 +110,7 @@ proc CreateTimeSeriesStructs {mHandle iHandle} {
 }
 
 proc CreateModel {mHandle} {
+    set ::nodeId C5
     set iHandle [c_createmodel $mHandle]
     set ::modelTypes($iHandle) $mHandle
 # infinite loop result if run without setting time step so create defaults
