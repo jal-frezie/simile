@@ -139,6 +139,19 @@ proc GetValuesById {iHandle outputId} {
     return $result
 }
 
+proc GetJsonValues {iHandle outputNode} {
+    return [GetJsonValuesById $iHandle \
+		[getnodeid $::modelTypes($iHandle) $outputNode]]
+# if we need enums transed, do in php or javascript
+}
+
+proc GetJsonValuesById {iHandle outputId} {
+    set bloc [handle_data dummyMHandle $iHandle $outputId]
+    set result [extract_json $bloc 16777216]
+    free_data_handle $bloc
+    return $result
+}
+
 # lifted from hai2mmii.tcl v5.9
 proc TransEnums {transList vals fromNums} {
     set curLevel [lindex $transList 0]

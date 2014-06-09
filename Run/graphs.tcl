@@ -857,9 +857,9 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     switch $dims {
         "(defined by values)" {
             set needsETs 1
-            set dimsFromData 1
-        } "(data determines dimensions)" {
-            set dimsFromData 1
+            set dimtyFromData 1
+        } "(data determines dimensionality)" {
+            set dimtyFromData 1
         } default {
             foreach {dimVal sep} [string range $dims 1 end-1] { ;# dequote
                 #puts "arrayType -$dimVal- sep -$sep-"
@@ -868,8 +868,9 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
                     if {![Numeric $dimVal]} {
                         if {[lsearch {TIME RECORDS} $dimVal]==-1} {
                             set needsETs 1
-                        } else {
-                            set dimsFromData 1
+#                        } else {
+#                            set dimsFromData 1
+# time series and per-record set dims not dimty from data
                         }
                     }
                 } else {
@@ -881,7 +882,7 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
             }
         }
     }
-    if {[llength $arrayDims]!=2 && ![info exists dimsFromData]} {
+    if {[llength $arrayDims]!=2 && ![info exists dimtyFromData]} {
 # array cannot be 2-d so only columns allowed
 	$t tab $t.grid -state disabled
 	$t tab $t.image -state disabled

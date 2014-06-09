@@ -276,12 +276,29 @@ void extend_list(Tcl_Obj *localObj, int index, Tcl_Obj *localSubObj, int dir) {
   }
 }
 
+Tcl_Obj* extend_string(Tcl_Obj *localObj, int index, Tcl_Obj *localSubObj, int dir) {
+  Tcl_Obj* localNewObj = Tcl_NewIntObj(index);
+  Tcl_AppendToObj(localNewObj, ":", 1);
+  Tcl_AppendObjToObj(localNewObj, localSubObj);
+  if (!Tcl_GetCharLength(localObj))
+    return localNewObj;
+  else if (dir>=0) {
+     Tcl_AppendToObj(localObj, ",", 1);
+     Tcl_AppendObjToObj(localObj, localNewObj);
+     return localObj;
+  } else {
+     Tcl_AppendToObj(localNewObj, ",", 1);
+     Tcl_AppendObjToObj(localNewObj, localObj);
+     return localNewObj;
+  }
+}
+
 /* next two call convert_to_tcl, which calls them, so declare in advance */
-Tcl_Obj* convert_to_tcl(int*, int*, char*, int*);
+Tcl_Obj* convert_to_tcl(int*, int*, char*, int*, BOOLEAN);
 
 Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices, 
 			     int* subBlocks, int *members, char** block,
-			     int* toGet) {
+			     int* toGet, BOOLEAN jsonic) {
   Tcl_Obj *localObj, *localSubObj;
   int count, dir;
 
@@ -289,7 +306,7 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
   if (depth==dimty) {
     if (*members) {
       *block += dimty*sizeof(int);
-      localObj = convert_to_tcl(dims, subBlocks, *block, toGet);
+      localObj = convert_to_tcl(dims, subBlocks, *block, toGet, jsonic);
       if (dir>0) {
 	*block += subBlocks[0];
       } else {
@@ -303,20 +320,32 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
     localObj = Tcl_NewListObj(0, NULL);
     while (*members && *toGet) {
       for (count=0; count<depth; ++count) {
-	if (((int*)*block)[count]!=indices[count]) return(localObj);
+	if (((int*)*block)[count]!=indices[count]) goto nomorematching;
       }
       indices[depth] = ((int*)*block)[depth];
       localSubObj = append_list_members(dimty, depth+1, dims, indices,
-					subBlocks, members, block, toGet);
+					subBlocks, members, block, toGet, 
+					jsonic);
 
-      extend_list(localObj, indices[depth], localSubObj, dir);
+      if (jsonic) {
+	if (Tcl_GetCharLength(localSubObj))
+	  localObj = extend_string(localObj, indices[depth], localSubObj, dir);
+      } else
+	extend_list(localObj, indices[depth], localSubObj, dir);
+    }
+  nomorematching:
+    if (jsonic && Tcl_GetCharLength(localObj)) {
+      localSubObj = Tcl_NewStringObj("{", 1);
+      Tcl_AppendObjToObj(localSubObj, localObj);
+      Tcl_AppendToObj(localSubObj, "}", 1);
+      return localSubObj;
     }
   }
   return(localObj);
 }
 
 Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks, 
-			      char* block, int* count) {
+			      char* block, int* count, BOOLEAN jsonic) {
   Tcl_Obj *localObj, *localSubObj;
   int offset, start, end, dir;
   
@@ -330,26 +359,38 @@ Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks,
   for (offset = start; offset != end; offset += dir) {
     if (!*count) break;
     localSubObj = convert_to_tcl(dims, subBlocks, block+offset*subBlocks[0],
-				 count);
-    extend_list(localObj, offset+1, localSubObj, dir);
+				 count, jsonic);
+    if (jsonic) {
+      if (Tcl_GetCharLength(localSubObj))
+	localObj = extend_string(localObj, offset+1, localSubObj, dir);
+    } else
+      extend_list(localObj, offset+1, localSubObj, dir);
+  }
+  if (jsonic) {
+    localSubObj = Tcl_NewStringObj("{", 1);
+    Tcl_AppendObjToObj(localSubObj, localObj);
+    Tcl_AppendToObj(localSubObj, "}", 1);
+    return localSubObj;
   }
   return localObj;
 }
   
-Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block, int* count) {
+Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block, int* count,
+			BOOLEAN jsonic) {
   Tcl_Obj *localObj;
   int membership, *indices;
   char *newBlock;
 
   if (dims[0] > 0) { // it's an array bound
-    localObj = append_array_members(dims[0], dims+1, subBlocks+1, block, count);
+    localObj = append_array_members(dims[0], dims+1, subBlocks+1, block, 
+				    count, jsonic);
   } else {
     switch (dims[0]) {
     case OWNSIZED:
       membership = ((sizeAndPtr*)block)->size;
       newBlock = ((sizeAndPtr*)block)->ptr;
       localObj = append_array_members(membership, dims+1, subBlocks+1, 
-				      newBlock, count);
+				      newBlock, count, jsonic);
       break;
     case SPARSEARRAY: 
       // need clevers to nest indices; see old stuff
@@ -361,11 +402,14 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block, int* count) {
 	block = block+(membership-1)*(dims[1]*sizeof(int)+subBlocks[1]);
       }
       localObj = append_list_members(dims[1], 0, dims+2, indices, subBlocks+1,
-				     &membership, &block, count);
+				     &membership, &block, count, jsonic);
       free(indices);
       break;
     case VALUELESS:
-      localObj = Tcl_NewStringObj("sm", -1);
+      if (jsonic)
+	localObj = Tcl_NewStringObj("\"sm\"", -1);
+      else
+	localObj = Tcl_NewStringObj("sm", -1);
       *count -= *count>0?1:-1;
       break;
     case REAL:
@@ -388,7 +432,7 @@ void make_sub_block_sizes(int *dims, int *sizes) {
   int usedDims = 1;
   switch (dims[0]) {
   case SPARSEARRAY:
-    usedDims = 2;
+    usedDims = 2; // and fall through
   case OWNSIZED:
     make_sub_block_sizes(dims+usedDims, sizes+1);
     sizes[0] = sizeof(sizeAndPtr);
@@ -436,7 +480,7 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
   int subBlocks[32];
   make_sub_block_sizes(c_result->dimSpecs, subBlocks);
   resultPtr = convert_to_tcl(c_result->dimSpecs, subBlocks, c_result->contents,
-			     &count);
+			     &count, clientData != NULL);
   Tcl_SetObjResult(interp, resultPtr);
   return TCL_OK;
 }
@@ -730,7 +774,10 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_CreateObjCommand(interp, "check_auth_code", CheckAuthCodeCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "extract_list", extractListCmd, (ClientData)NULL,
+  Tcl_CreateObjCommand(interp, "extract_list", extractListCmd, (ClientData)0,
+		       (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "extract_json", extractListCmd, (ClientData)1,
 		       (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "extract_binary", extractBinCmd, 
