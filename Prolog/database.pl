@@ -257,7 +257,10 @@ find_all_children(Parent, Child) :-
 descendent(Node, Desc) :-
 	Desc = Node;
 	find_child(Node, Child),
-	descendent(Child, Desc).
+	descendent(Child, Desc);
+	find_arc_to(Node, Arc),
+	find_child(Arc, Attach),
+	descendent(Attach, Desc).
 
 find_child(Parent, Child) :-
 	atom(Parent),
