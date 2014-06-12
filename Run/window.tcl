@@ -1446,7 +1446,8 @@ proc ExportSVGDirect {node} {
     foreach {l t r b} $::fromProlog {}
     set svgStm [NetOpen $tgt w]
     puts $svgStm [can2svg::makedocument 1200 800 \
-		      [list $l $t [expr $r-$l] [expr $b-$t]] $::svgXML]
+		      [list [expr $l-50] [expr $t-50] \
+			   [expr 100+$r-$l] [expr 100+$b-$t]] $::svgXML]
     close $svgStm
     unset window_info(ToSVG,scale)
     unset window_info(ToSVG,top_node)

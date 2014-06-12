@@ -2229,11 +2229,11 @@ proc ResetLooks {c type} {
     set looks($c,$type,outline) black
     set looks($c,$type,fill) $looks(buttonColor)
     set looks($c,$type,text) black
-    set looks($c,$type,select) blue3
-    set looks($c,$type,highlight) green4
-    set looks($c,$type,target) green2
+    set looks($c,$type,select) \#0000cd
+    set looks($c,$type,highlight) \#008b00
+    set looks($c,$type,target) \#00ee00
 #    set looks($type,affect) green2
-    set looks($c,$type,incomplete) red3
+    set looks($c,$type,incomplete) \#cd0000
     
     set looks($c,$type,objectsize) 50
     set looks($c,$type,lines) 1
