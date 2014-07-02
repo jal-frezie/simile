@@ -379,7 +379,7 @@ proc load_dll {topNode lang progDir id node incs} {
     }
     if {[catch {ex_load_dll $topNode $lang [GetUsableName $progDir] $id \
 		    $::userinfo(edn) $incs} new_model_id]} {
-	if {!$::headless && [PrefValue custom(hackBreak) hackBreak]} {
+	if {[PrefValue custom(hackBreak) hackBreak]} {
 	    Query [list new_exec_needed $::errorInfo] info top {} {ok}
 	}
 	return 0

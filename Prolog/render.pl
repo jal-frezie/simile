@@ -1021,9 +1021,7 @@ make_constant_list(L, [Const | Rest], [Line | Lines]) :-
 make_constant_string(L, String, Atom) :-
 	name(String, Chars),
 	(L = tcl,
-		((member(Naughty, [10,32,34]), member(Naughty, Chars)), !,
-			append([123 | Chars], [125], Const);
-		Const = Chars);
+	     argify(Chars, Const);
 	L = c,
 	    all(render, escape_string_breaks,
 		[build(Chars), append(StraightChars, [])]),

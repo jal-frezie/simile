@@ -435,7 +435,6 @@ proc AddPub {mdl} {
 #	set disaggregate(xlibs) [${LibListFr}.box get 0 end]
 #    }
     PackItUp $t
-    grab .disaggregatopn
 }
 
 proc AbleSetup {mathf} {
@@ -490,7 +489,6 @@ proc ExtCodeSetup {mdl} {
 	set disaggregate(xlibs) [${LibListFr}.box get 0 end]
     }
     PackItUp $t
-    grab .disaggregation
 }    
 
 proc SetupDisagExtras {exFrame} {
@@ -1207,7 +1205,7 @@ proc LimitChars {field result} {
 
 proc DoUserDialogue {} {
     global userinfo
-    set t [PutItThere .userdata {}]
+    set t [PutItThere .userdata .splash]
     wm title $t [tr. "Enter your details (not required for evaluation edition)"]
     pack [label $t.mess -text "Please enter your name, organization and license code if required."]
     pack [frame $t.head]
@@ -1238,20 +1236,15 @@ proc DoUserDialogue {} {
     pack [button $t.buttons.ex -text "DO NOT ACCEPT" \
 	      -command "set userinfo(entrydone) 0"] -side right
     
-    LetItShow $t
-    grab $t
+    LetItShow $t userinfo(entrydone)
     focus $t.head.nentry
     wm withdraw .splash
-    while {![info exists userinfo(entrydone)]} {
-	tkwait variable userinfo(entrydone)
-	if {$userinfo(entrydone)} {
-	    set userinfo(name) [$t.head.nentry get]
-	    set userinfo(corp) [$t.head.centry get]
-	    set userinfo(license_code) [format %5s-%5s [$t.head.lfield.entryl get] [$t.head.lfield.entryr get]]
-	}
+    if {$userinfo(entrydone)} {
+	set userinfo(name) [$t.head.nentry get]
+	set userinfo(corp) [$t.head.centry get]
+	set userinfo(license_code) [format %5s-%5s [$t.head.lfield.entryl get] [$t.head.lfield.entryr get]]
     }
     wm deiconify .splash
-    grab release $t
     PackItUp $t
     return $userinfo(entrydone)
 }
@@ -1398,9 +1391,8 @@ proc DoRegDialog {dtId} {
     pack [label .register.checkframe.l -text "Do not show this welcome screen again"] \
             -side left
     #    pack [button .register.ok -text OK -width 10 -default active -command {set userinfo(done) $welcomeDone}]
-    LetItShow .register
+    LetItShow .register userinfo(done)
     
-    grab .register
     bind $www1 <Button-1> {ContextSensitiveHelp .register start/index.htm}
 # Removed ALD 25Feb2005 - non-functional at present due to missing Help pages
 #    bind $www2 <Button-1> {ContextSensitiveHelp .register examples/index.htm}
@@ -1415,7 +1407,6 @@ proc DoRegDialog {dtId} {
         set f 0
     }
     wm geometry .register +[expr $d+($a-$g)/2]+[expr $f+($s-$h)/2]
-    tkwait variable userinfo(done)
     
     set UserStream [NetOpen $custom(prefDir)/.version w]
     puts $UserStream $userinfo(name)
@@ -1438,8 +1429,6 @@ proc DoRegDialog {dtId} {
             set userinfo(done) 1
         }
     }
-    
-    grab release .register
     PackItUp .register
 }
 
@@ -1776,11 +1765,7 @@ proc ShowAbout {winId} {
     pack [button .about.b -text [tr. OK] -width 10 -default active \
             -command "set sendvars(doneAbout) 1"] -pady 2
     pack [label .about.l16]
-    wm geometry .about +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-250]
-    grab .about
-    
-    tkwait variable sendvars(doneAbout)
-    grab release .about
+    LetItShow .about sendvars(doneAbout)
     PackItUp .about
 }
 
@@ -2487,16 +2472,12 @@ proc Query {specifics icon helpRef parent opts} {
     eval $mBoxCmd
 
 # (in case Mac version siezes)
-    set oldGrab [grab current]
     if {[string equal abandon $key] && \
 	    [string equal [tr. {Full dialogue}] \
 		 [PrefValue custom(quickExit) quickExit]]} {
 	set dialogues(done) more
     } else {
-	tkwait visibility .shortDlg
-	grab .shortDlg
-	tkwait variable dialogues(done)
-	grab release .shortDlg
+	LetItShow .shortDlg dialogues(done)
     }
     if {[string equal more $dialogues(done)]} {
 	if {![string equal abort $defButton]} { ;# add more detail now
@@ -2516,9 +2497,6 @@ proc Query {specifics icon helpRef parent opts} {
     destroy .shortDlg
     unset dialogues(done)
 
-    if {[string length $oldGrab]} {
-	grab $oldGrab
-    }
     focus -force $oldFocus
 #    update idletasks
     return $result
@@ -2656,12 +2634,9 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
 #    set sheight [winfo screenheight $ProbWin]
 #    set swidth [winfo screenwidth $ProbWin]
 #    wm geometry $ProbWin +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
-    LetItShow $ProbWin
-#    update
     focus $ProbWin.labf1.lab2
-    grab $ProbWin
-    tkwait variable dialogues(ack)
-    grab release $ProbWin
+    LetItShow $ProbWin dialogues(ack)
+#    update
     PackItUp $ProbWin
     return [lindex $opts $dialogues(ack)]
 }

@@ -830,9 +830,14 @@ proc LetItShow {t {doneVar {}}} {
     if {[string length $doneVar]} {
 # have variable that gets set on exit, if scripting just set it
 # otherwise do interaction here
+        set oldGrab [grab current]
 	grab $t
 	tkwait variable $doneVar
-	grab release $t
+        if {[string length $oldGrab]} {
+	    grab $oldGrab
+	} else {
+	    grab release $t
+	}
     }
     return [winfo viewable $t]
 }
