@@ -98,7 +98,7 @@ proc do_tail {header args} {
     if {[catch $args retVal]} {
 	puts $retVal
         cd $oldDir
-        if {[lindex $retVal 0] eq "slip-up"} {
+        if {[string equal -length 7 slip-up $retVal]} {
 	    set response slipup:[lrange $retVal 1 end]
 	} else {
 	    Query [list unhandled_tcl_error $retVal $errorInfo] error top {} ok

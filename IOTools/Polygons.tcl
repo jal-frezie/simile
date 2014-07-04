@@ -680,9 +680,9 @@ namespace eval ::polygon375 {
     proc SaveShapes {winId} {
 	variable useNodes
 
-	if {![llength \
-		  [ChooseFile polys.bgx [tr. "Save polygon boundaries as:"] 1 \
-		       [$::helperTable($winId,whichInstance) GetNode]]]} return
+	set file [ChooseFile polys.bgx [tr. "Save polygon boundaries as:"] 1 \
+		       [$::helperTable($winId,whichInstance) GetNode]]
+	if {![llength $file]} return
 	set strm [open $file w]
 	puts $strm [concat [GetModelValue $useNodes($winId,xcoord)] \
 				[GetModelValue $useNodes($winId,ycoord)]]
