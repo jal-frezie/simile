@@ -2131,10 +2131,18 @@ relativize_centre([SX, SY], [FX, FY], [MX, MY], [CX, CY]) :-
 		CX is MX-(SX+FX)/2,
 		CY is MY-(SY+FY)/2.
 
+
 get_posn_around([X, Y], Box, Theta) :-
 	middle(Box, [MX, MY]),
 	Theta is round(1000*atan2(Y-MY, X-MX)/6.28319) mod 1000.
 
+/* New version that preserves position along side -- needs work
+get_posn_around([X, Y], [L, T, R, B], Theta) :-
+	XFr is (X-L)/(R-L),
+        YFr is (Y-B)/(T-B),
+        (YFr > XFr -> Theta is 375+250*(YFr+XFr);
+            Theta is round(1375-250*(YFr+XFr)) mod 1000).
+*/
 ghost_type(Start, Type, Base) :-
 	get_line_start_obj(Start),
 	find_base(Start, Base),

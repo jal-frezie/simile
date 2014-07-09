@@ -419,14 +419,23 @@ get_drawing_form(Comp, Style, BBox) :-
 	append(C, C, BBox)).
 
 around_border(Sm, Context, Theta, C) :-
-	Angular is 6.28319*Theta/1000,
 	(Context = in,
 	    get_shape(Sm, internal_extent, SBox);
 	  Context = out,
 	    get_shape(Sm, bounding_box, SBox)),
 	middle(SBox, [MX, MY]),
+	Angular is 6.28319*Theta/1000,
 	RX is MX + cos(Angular),
 	RY is MY + sin(Angular),
+/* New version preserving position around border -- works but generator 
+not ready
+        SBox = [L, T, R, B],
+        Fract = Theta/250,
+        RX is min(R, max((Fract-0.5)*L+(1.5-Fract)*R, max(L, 
+            (Fract-2.5)*R+(3.5-Fract)*L))),
+        RY is min((Fract+0.5)*B+(0.5-Fract)*T, min(B, max((Fract-1.5)*T+
+            (2.5-Fract)*B, max(T, (Fract-3.5)*B+(4.5-Fract)*T)))),
+*/
 	crossing_point(Sm, [MX, MY], [RX, RY], submodel, SBox, 0, C).
 
 /* draws_at/3: returns if a component or link can be drawn at a certain depth,
