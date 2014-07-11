@@ -1935,14 +1935,17 @@ proc ArrayGetSorted {arrayPtr} {
     set result {}
     upvar 1 $arrayPtr arrayName
     set nameList [array names arrayName ?*]
-    # puts "About to sort $nameList"
     if {[string is double -strict [lindex [lindex $nameList 0] end]]} {
         set order real
     } else {
         set order ascii ;# index is enumerated type
     }
-    foreach name [lsort -$order -index end $nameList] {
-        lappend result $name $arrayName($name)
+    set sorted [lsort -$order -index end $nameList]
+    foreach name $sorted {
+# for some reason, tcl8.6 slows to a crawl if you append these two in the
+# same statement...when bug reporting is working again I'll report it
+        lappend result $name
+        lappend result $arrayName($name)
     }
     return $result
 }

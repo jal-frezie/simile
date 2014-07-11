@@ -247,8 +247,9 @@ switch $tcl_platform(platform) {
 # This is needed for dll interface with tcl later than 8.0p2
 	dde servername $oldProc
 #	set env(TCL_LIBRARY) [info library]
-# Now, win95 etc needs the tcltk binaries in the path
-	append env(PATH) ";[file nativename $execDir]"
+# Now, win95 etc needed the tcltk binaries in the path
+# 	append env(PATH) ";[file nativename $execDir]"
+	
 #	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
 	set graph(origin) 2
     } unix {
@@ -268,7 +269,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 6.1
-set sendvars(simP) {p3}
+set sendvars(simP) {p4}
 
 if {$env(SIMILE_VERSION)>=6.0} {
     set do_events 1 ;# include event symbols

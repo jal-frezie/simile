@@ -939,6 +939,5 @@ proc ExScrubRun {node times} {
         }
         unset model_id
     }
-
 }
 

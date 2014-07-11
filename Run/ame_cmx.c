@@ -1614,10 +1614,10 @@ FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   char pkgName[16];
 
-  proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess);
   sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
   /* Use the Tcl Stubs mechanism */
   Tcl_InitStubs(interp, pkgName, 0);
+  proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess); 
   Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
@@ -1639,10 +1639,10 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   
   Tcl_CreateObjCommand(interp, "newc_cleartimeseries", cleartimeseriesCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  /*
-  Tcl_CreateObjCommand(interp, "c_savetimepoint", savetimepointCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  */
+  
+  //  Tcl_CreateObjCommand(interp, "c_savetimepoint", savetimepointCmd, 
+  //		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
   Tcl_CreateObjCommand(interp, "newc_setparamelement", setparamelementCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   

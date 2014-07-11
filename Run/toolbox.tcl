@@ -479,26 +479,31 @@ proc compile_c {workingDir extLibs complain} {
 	    set vistaFix 0
 	    set batSt [open runmingw.bat w]
 	    set mingwIncs {}
-		if {[string equal [tr. Default] $useComp]} {
+	    if {[string equal [tr. Default] $useComp]} {
+		set mingwVers 4.8.1
 		set mingwIncs -I\"[file nativename $env(SYSDIR)/include/mingw]\"
 		puts $batSt "set PATH=[file nativename \
                         [file join $env(SYSDIR) bin]]"
-		if {[string equal {Windows NT} $tcl_platform(os)] && \
-			$tcl_platform(osVersion)>=6.0 && \
+		    # One day Vista fixup will be removed, because either:
+		    # (a) people have stopped using Vista, or
+		    # (b) newer mingw gcc works on it anyway
+		    # Today is not that day
+		    if {[string equal {Windows NT} $tcl_platform(os)] && \
+			$tcl_platform(osVersion)==6.0 && \
 			$::tclBitness==32} {
 # extra paths etc for Vista might make it more fragile so avoid if not needed
 # -- assume a separately installed compiler will be set up right and not need
 # them
 		    set LIBDIR [file join $env(SYSDIR) lib]
-		    set GCCLIBDIR  [file join $LIBDIR gcc mingw32 3.4.2]
+		    set GCCLIBDIR  [file join $LIBDIR gcc mingw32 $mingwVers]
 		    puts $batSt "set PATH=[file nativename [file join \
-                        $env(SYSDIR) libexec gcc mingw32 3.4.2]];%PATH%"
+                        $env(SYSDIR) libexec gcc mingw32 $mingwVers]];%PATH%"
 		    puts $batSt "copy \"[file nativename [file join \
-                        $GCCLIBDIR dllcrt*.o]]\" ."
+                        $LIBDIR dllcrt*.o]]\" ."
 		    puts $batSt "copy \"[file nativename [file join \
                          $GCCLIBDIR crt*.o]]\" ."
 		}
-	    } else {
+		} else {
 # Do not supply a path, modeller should add it to their environment
 		# puts $batSt "set PATH=c:\\mingw\\bin;%PATH%"
 	    }
@@ -607,7 +612,9 @@ proc UpdateExecution {node action} {
     Rerun [FindNodeTopWin $node].canvas [string equal start $action]
 }
 
-if {[info tclversion] > 8.4} {
+if {[info tclversion] > 8.5 && $tcl_platform(platform) eq "windows"} {
+    set itclVers 4.0
+} elseif {[info tclversion] > 8.4} {
     set itclVers 3.4
 } else {
     set itclVers 3.3
