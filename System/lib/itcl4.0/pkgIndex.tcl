@@ -8,5 +8,8 @@ switch [info sharedlibextension] {
     } .so {
 	package ifneeded Itcl 4.0b3 [list load [file join $dir \
 						    "libitcl4.0b3.so"] itcl]
+    } .dll {
+        package ifneeded Itcl 4.0b7 [list load [file join $dir \
+						    "itcl40b7.dll"] itcl]
     }
 }

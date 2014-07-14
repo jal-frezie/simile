@@ -478,48 +478,47 @@ proc compile_c {workingDir extLibs complain} {
 		[list [tr. GNU]|[tr. Default] {
 	    set vistaFix 0
 	    set batSt [open runmingw.bat w]
-	    set mingwIncs {}
 	    if {[string equal [tr. Default] $useComp]} {
-		set mingwVers 4.8.1
-		set mingwIncs -I\"[file nativename $env(SYSDIR)/include/mingw]\"
 		puts $batSt "set PATH=[file nativename \
                         [file join $env(SYSDIR) bin]]"
 		    # One day Vista fixup will be removed, because either:
 		    # (a) people have stopped using Vista, or
 		    # (b) newer mingw gcc works on it anyway
 		    # Today is not that day
-		    if {[string equal {Windows NT} $tcl_platform(os)] && \
+		if {[string equal {Windows NT} $tcl_platform(os)] && \
 			$tcl_platform(osVersion)==6.0 && \
 			$::tclBitness==32} {
 # extra paths etc for Vista might make it more fragile so avoid if not needed
 # -- assume a separately installed compiler will be set up right and not need
 # them
 		    set LIBDIR [file join $env(SYSDIR) lib]
-		    set GCCLIBDIR  [file join $LIBDIR gcc mingw32 $mingwVers]
+		    set compLocn [file join gcc mingw32 4.8.1]
 		    puts $batSt "set PATH=[file nativename [file join \
-                        $env(SYSDIR) libexec gcc mingw32 $mingwVers]];%PATH%"
+                            $env(SYSDIR) libexec $compLocn]];%PATH%"
 		    puts $batSt "copy \"[file nativename [file join \
-                        $LIBDIR dllcrt*.o]]\" ."
+                            $LIBDIR dllcrt*.o]]\" ."
 		    puts $batSt "copy \"[file nativename [file join \
-                         $GCCLIBDIR crt*.o]]\" ."
+                            $env(SYSDIR) lib $compLocn crt*.o]]\" ."
 		}
-		} else {
+	    } else {
 # Do not supply a path, modeller should add it to their environment
 		# puts $batSt "set PATH=c:\\mingw\\bin;%PATH%"
 	    }
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
 		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o \
                         -I\"[file nativename $TOOLDIR]\" \
-                        -I\"[file nativename [file join $env(SYSDIR) include mingw]]\" \
-                        -I\"[file nativename [file join \
-                            $GCCLIBDIR include]]\" model.cpp"
+                        -I\"[file nativename [file join $env(SYSDIR) mingw32 \
+                                include]]\" \
+                        -I\"[file nativename [file join $LIBDIR \
+                            $compLocn include]]\" model.cpp"
 		set libOpt1 -L\"[file nativename $LIBDIR]\"
-		set libOpt2 -L\"[file nativename [file join $GCCLIBDIR]]\"
+		set libOpt2 -L\"[file nativename \
+				     [file join $LIBDIR $compLocn]]\"
 		puts $batSt "g++ -shared -o $TARGET \
                         $libOpt1 $libOpt2 objtmp.o [concat $lDirs $lFiles]"
 	    } else {
 		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o \
-                        -I\"[file nativename $TOOLDIR]\" $mingwIncs model.cpp"
+                        -I\"[file nativename $TOOLDIR]\" model.cpp"
 #        puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtmp.o"
 		puts $batSt [concat [list g++ -shared -o $TARGET objtmp.o] \
 				 $lDirs $lFiles]
