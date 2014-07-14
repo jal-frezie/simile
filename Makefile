@@ -115,8 +115,9 @@ endif
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	SYSDIR = System$(BITEXTN)
-	TCLDIR = /usr/local$(BITEXTN)
+#	TCLDIR = /usr/local$(BITEXTN)
 # the MSYS way
+	TCLDIR = "$(shell pwd)/$(SYSDIR)"
 	TCLREF = $(TCLDIR)
 ifeq ($(MY_CPU),x86_64)
 	SWIPLDIR = "/c/Program files/swipl"
@@ -134,14 +135,18 @@ endif
 	SHAREDLIBPREFX = 
 	MAKEPIC = 
 	MAKESL = -shared
-	VERS = $(shell echo "puts [string map {. {}} [info tclversion]]" | tclsh)
-#	VERS = 86
-#
+	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh85)
+	VERS = $(subst .,,$(VERSION))
+
 	SLDIR = $(EXECDIR)
 # to be used after CDing to Run -- assume all refs are from a subdirectory
-	TCLINC = $(TCLREF)/include
+	TCLINC = $(TCLREF)/include/tcl$(VERSION)
+# for linking with stubs
 	USETCL = -DUSE_TCL_STUBS -I$(TCLINC) -L$(TCLREF)/lib -ltclstub$(VERS)
 	USETK = -DUSE_TK_STUBS -ltkstub$(VERS)
+# for direct linking
+#	USETCL = -I$(TCLINC) -L$(TCLREF)/lib -ltcl$(VERS)
+#	USETK = -ltk$(VERS)
 	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = .dll
 	ARCHEXTN = _win
