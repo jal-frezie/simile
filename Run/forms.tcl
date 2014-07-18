@@ -1714,17 +1714,16 @@ proc ShowAbout {winId} {
             -font "-family helvetica -size $fsSize"] -side left
     switch [tk windowingsystem] {
         win32 {
-	    if {[string equal [tr. GNU] \
-		     [PrefValue custom(compChoice) compChoice]]} {
-		set gppcmd g++
-	    } else {
-		set gppcmd [file join $::execDir g++]
-		# bundled location for default choice
-	    }
+	    set gppVers [exec [file join $::execDir g++] -dumpversion]
             pack [label $platform.g++ \
-		      -text "MinGW g++: [exec $gppcmd -dumpversion]" \
+		      -text "MinGW g++: $gppVers" \
 		      -font "-family helvetica -size $fsSize"] -side left
-        }
+        } aqua {
+	    set gppVers [exec [file join $::execDir g++] -dumpversion]
+            pack [label $platform.g++ \
+		      -text "XCode g++: $gppVers" \
+		      -font "-family helvetica -size $fsSize"] -side left
+	}
     }
     pack $platform
     if [info exists userinfo(exp_time)] {

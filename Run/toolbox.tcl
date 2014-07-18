@@ -1112,7 +1112,12 @@ proc CheckCompilerLocation {} {
     }
 
     if {[string mat [tr. GNU] [PrefValue custom(compChoice) compChoice]]} {
-        set compiler g++
+        set compiler gcc
+	# This is hacky. If I check for g++ in Windows I will find the
+	# bundled version since it is in the same dir as the Simile
+	# executable. There is no bundled gcc (waste of space) but any
+	# separate g++ installation would include gcc, so check for
+	# that instead.
         set possDirs {{}}
     }
     if {[info exists compiler]} {

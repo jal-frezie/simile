@@ -119,7 +119,14 @@ ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
 # the MSYS way
 	TCLDIR = "$(shell pwd)/$(SYSDIR)"
 	TCLREF = $(TCLDIR)
+	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh85)
+	VERS = $(subst .,,$(VERSION))
+	TCLINC = $(TCLREF)/include/tcl$(VERSION)
 ifeq ($(MY_CPU),x86_64)
+#	TCLDIR =  "/c/Program files/Tcl"
+	TCLDIR =  "/c/MinGW/msys/1.0/local"
+	TCLREF = $(TCLDIR)
+	TCLINC = $(TCLREF)/include
 	SWIPLDIR = "/c/Program files/swipl"
 	GCCCMD = x86_64-w64-mingw32-gcc
 	GPPCMD = x86_64-w64-mingw32-g++
@@ -135,12 +142,10 @@ endif
 	SHAREDLIBPREFX = 
 	MAKEPIC = 
 	MAKESL = -shared
-	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh85)
-	VERS = $(subst .,,$(VERSION))
+# This really just tests that tcldir is right
 
 	SLDIR = $(EXECDIR)
 # to be used after CDing to Run -- assume all refs are from a subdirectory
-	TCLINC = $(TCLREF)/include/tcl$(VERSION)
 # for linking with stubs
 	USETCL = -DUSE_TCL_STUBS -I$(TCLINC) -L$(TCLREF)/lib -ltclstub$(VERS)
 	USETK = -DUSE_TK_STUBS -ltkstub$(VERS)
@@ -325,6 +330,7 @@ install:
 		Functions/Model\ properties.pl \
 		Functions/Statistics.pl \
 		Functions/Trigonometry.pl \
+		Functions/Typed\ submodels.pl \
 		Functions/new_units.pl \
 		Functions/procs.cpp \
 		Functions/procs.tcl \
