@@ -256,6 +256,7 @@ class similescript::$newHelperClass {
 	}
 	if {[info exists useNodes(common_stm)]} {
 	    close $useNodes(common_stm)
+	    unset useNodes(common_stm)
 	}
     }
 
