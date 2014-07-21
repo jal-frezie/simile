@@ -1453,13 +1453,14 @@ proc ExportSVGDirect {node} {
     unset window_info(ToSVG,top_node)
 }
 
-# This one added to remove file parameters when clearing model
+# This one added to remove file parameters when clearing model...and .spf refs
 proc EmptyWindow {c} {
     global window_info paramData
 
     if {$window_info($c,is_top_level)} {
 	set nodeId $window_info($c,top_node)
 	array unset paramData /$nodeId/*
+	ClearSubParamRefs /$nodeId
     }
     prolog tk_menu('$c',file,new)
 }
