@@ -202,6 +202,27 @@ unicode_to_utf8(Char, [Key | String]) :-
 	    length(String, Length),
 	    fill_chars(String, Char).
 
+% v6 Prolog files also contain UTF-8 so cannot be read directly as terms.
+% Fortunately they can be read as text, translated, then the translation
+% opened as a stream from which rerms can be read...
+reopen_stream_internally_formatted(Utf8Stm, IntStm, EuContents) :-
+	swallow_to_chars(Utf8Stm, U8Contents), % closes stream
+	all_utf8_to_ttfn(U8Contents, Contents),
+	(var(EuContents) ->
+	    make_legible_for_prolog(Contents, EuContents),
+	    open_input_codes_stream(EuContents, IntStm);
+	  open_input_codes_stream(Contents, IntStm)).
+% temp file can cause NetworkDriveReadOvertakesWrite problem, avoid where poss
+%	state'><'use_temp_dir(TempDir),
+%	append_atoms(TempDir, '/temp_io.pl', TempFile),
+%	open_native(TempFile, write, Stream2),
+%	sicstus_write_chars(Stream2, Contents),
+%	close(Stream2),
+%	open_native(TempFile, read, Stm).
+
+close_internally_formatted_stream(Stm) :-
+	close_input_codes_stream(Stm).
+
 fill_chars([], _Char).
 
 fill_chars(St, Char) :-

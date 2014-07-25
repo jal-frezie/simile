@@ -332,23 +332,14 @@ convert_formal_params([VPNameStr | GRs], V, VPName, VPType) :-
 					     
 read_func_file(File, Context, BuiltIn, Done) :-
 	open_native(File, read, Stream),
-	swallow_to_chars(Stream, U8Contents),
-	tcltk'><'all_utf8_to_ttfn(U8Contents, Contents),
-	ame_gen'><'make_legible_for_prolog(Contents, EuContents),
-	state'><'use_temp_dir(TempDir),
-	append_atoms(TempDir, '/temp_io.pl', TempFile),
-	open_native(TempFile, write, Stream2),
-	sicstus_write_chars(Stream2, EuContents),
-	close(Stream2),
+	reopen_stream_internally_formatted(Stream, Stream3, EuContents),
 	
 	name(File, FileStr),
 	append(Base, ".pl", FileStr),
 	name(Context, ContextStr),
 	append(ContextStr, NameStr, Base),
 	name(Name, NameStr),
-	open_native(TempFile, read, Stream3),
-	read_funcs(Name, Stream3, EuContents, BuiltIn, Done),
-	output'><'my_delete_file(TempFile).
+	read_funcs(Name, Stream3, EuContents, BuiltIn, Done).
 
 swallow_to_chars(Stream, Contents) :-
 	get_code(Stream, C),
@@ -365,7 +356,7 @@ read_funcs(File, Stream, Text, Category, Done) :-
 	    query(user_fn_misparse(File, Bug), warning, user_defns, [ok], _),
 	    read_funcs(File, Stream, Text, Category, Done);
 	 Line == end_of_file, !,
-	    close(Stream),
+	    close_internally_formatted_stream(Stream),
 	    Done = [];
 	all(user, call, [build(VPrs)]),
 	(Line = (Macro --> Defn),
