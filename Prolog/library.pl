@@ -261,12 +261,15 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	    (V >= 10.0, !, % file is UTF-8
 		inters'><'swallow_to_chars(Stream, U8Contents),
 		tcltk'><'all_utf8_to_ttfn(U8Contents, Contents),
-		state'><'use_temp_dir(TempDir),
-		append_atoms(TempDir, '/temp_io.pl', TempFile),
-		open_native(TempFile, write, Stream2),
-		sicstus_write_chars(Stream2, Contents),
-		close(Stream2),
-		open_native(TempFile, read, Stm);
+% temp file can cause NetworkDriveReadOvertakesWrite problem, avoid where poss
+% (GNU only for now!)   
+%		state'><'use_temp_dir(TempDir),
+%		append_atoms(TempDir, '/temp_io.pl', TempFile),
+%		open_native(TempFile, write, Stream2),
+%		sicstus_write_chars(Stream2, Contents),
+%		close(Stream2),
+%		open_native(TempFile, read, Stm);
+                open_input_codes_stream(Contents, Stm);
 	      Stm = Stream),
 	    read(Stm, Term);
 	Term = Header,
@@ -279,10 +282,10 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	    InitBindings = copy;   
 	InitBindings = []),
 	store_term( Term, Stm, Parent, InitBindings, Translated, [] ),
-	close( Stm ),
 	(V >= 10.0, !,
-	    output'><'my_delete_file(TempFile);
-	  true),
+%	    output'><'my_delete_file(TempFile);
+	    close_input_codes_stream(Stm);
+	close( Stm )),
 
 	(state'><'get_edition_and_limit(Edn, StopAt),
 	(HasCode=no;
