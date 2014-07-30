@@ -5,6 +5,8 @@
 #include <limits.h>
 
 #ifdef _GNU_PROLOG
+//    #include <libxml/xmlreader.h>
+
     #include "gprolog.h"
     #define FORPROL Bool
     #define FAIL return(FALSE)
@@ -12,7 +14,8 @@
 
     #define PlAtom int
     #define NEW_ATOM Pl_Create_Atom
-#define PL_unify_pointer(t, p) Pl_Un_Positive((uintptr_t)(p), t)
+    #define TERMIFY(CH) Pl_Mk_Atom(Pl_Create_Allocate_Atom(CH))
+    #define PL_unify_pointer(t, p) Pl_Un_Positive((uintptr_t)(p), t)
 
 char* term_to_chars(PlTerm in, PlAtom* out) {
   *out = Pl_Rd_Atom(in);
@@ -60,6 +63,7 @@ PlBool list_vect_ints(intptr_t x, intptr_t y, PlTerm tgt)
     #define PlTerm term_t
     #define PlAtom atom_t
     #define NEW_ATOM PL_new_atom
+    #define TERMIFY(CH) PL_new_atom(strdup(CH))
 
     #define Pl_Un_Integer(n, t) PL_unify_integer(t, n)
     #define Pl_Un_Atom(a, t) PL_unify_atom(t, a)
@@ -942,6 +946,98 @@ FORPROL get_type(PlTerm cArc, PlTerm cClass) {
   return Pl_Un_Atom(thisArc->aclass, cClass);
 }
 
+/* Stuff for reading an xml file using libxml2 -- abandoned because it was too
+tricky getting it to build against the libraries in Windows and they would have
+bloated it anyway. Only works with GNU.
+
+PlAtom elementAtom, piAtom;
+
+PlTerm processNode(xmlTextReaderPtr reader) {
+  int ret, attrNum;
+  PlTerm level, eltArgs[3];
+  char scratch[1024];
+
+  ret = xmlTextReaderRead(reader);
+  if (ret)
+    ret = xmlTextReaderNodeType(reader);
+  else
+    ret = 15;
+
+  switch (ret) {
+  case 1: // an element; call again to get contents, 
+    level = Pl_Mk_List(NULL);
+    for (attrNum = xmlTextReaderAttributeCount(reader); attrNum>0; ) {
+      xmlTextReaderMoveToAttributeNo(reader, --attrNum);
+      eltArgs[0] =TERMIFY(xmlTextReaderConstName(reader));
+      eltArgs[1] = 
+	TERMIFY(xmlTextReaderConstValue(reader));
+
+      eltArgs[0] = Pl_Mk_Compound(Pl_Atom_Char('='), 2, eltArgs);
+      eltArgs[1] = level;
+
+      level = Pl_Mk_List(eltArgs);
+      xmlTextReaderMoveToElement(reader);
+    }
+
+    eltArgs[0] = 
+     TERMIFY(xmlTextReaderConstName(reader));
+    // attribute-value pairs
+    eltArgs[1] = level;
+    if (xmlTextReaderIsEmptyElement(reader))
+      eltArgs[2] = Pl_Mk_List(NULL);
+    else
+      eltArgs[2] = processNode(reader);
+    level = Pl_Mk_Compound(elementAtom, 3, eltArgs);
+
+    // then again for rest of list
+    break;
+  case 3: // a value: call again for rest of list and return
+    level =TERMIFY(xmlTextReaderConstValue(reader));
+    break;
+  case 7: // a meta-element
+    strcpy(scratch, xmlTextReaderConstName(reader));
+    strcat(scratch, " ");
+    strcat(scratch, xmlTextReaderConstValue(reader));
+    eltArgs[0] =TERMIFY(scratch);
+    level = Pl_Mk_Compound(piAtom, 1, eltArgs);
+
+    // then again for rest of list
+    break;
+  case 14: // was same as 3, try just ignoring it and getting next one
+    return processNode(reader); // looks like this was whitespace
+  case 15: // end: return empty list
+    return Pl_Mk_List(NULL);
+  }
+
+  eltArgs[0] = level;
+  eltArgs[1] = processNode(reader);
+  return Pl_Mk_List(eltArgs);
+}
+
+FORPROL xml_file_to_term(PlTerm fileNameTerm, PlTerm arising) {
+  PlAtom spareAtom;
+  PlTerm generated;
+  xmlTextReaderPtr reader;
+  int ret;
+  const char* filename;
+  
+  elementAtom = NEW_ATOM("element");
+  piAtom = NEW_ATOM("pi");
+  filename = term_to_chars(fileNameTerm, &spareAtom);
+  reader = xmlReaderForFile(filename, NULL, 0);
+  if (reader != NULL) {
+    generated = processNode(reader);
+    xmlFreeTextReader(reader);
+  } else {
+    fprintf(stderr, "Unable to open %s\n", filename);
+    FAIL;
+  }
+
+  xmlCleanupParser();
+  return Pl_Unif(arising, generated);
+}
+// End of libxml2 stuff
+*/
 #ifdef __SWI_PROLOG__
 install_t install() { 
   PL_register_foreign("empty_tree", 2, empty_tree, 0);
@@ -993,5 +1089,7 @@ install_t install() {
   PL_register_foreign("is_hidden", 1, is_hidden, 0);
   PL_register_foreign("get_node_and_next_ptr", 3, get_node_and_next_ptr, 0);
   PL_register_foreign("get_arc_and_next_ptr", 3, get_arc_and_next_ptr, 0);
+  //  Next only used in GNU to replicate SWI's SGML library
+  //  PL_register_foreign("xml_file_to_term", 2, xml_file_to_term, 0);
 }
 #endif

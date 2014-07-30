@@ -261,7 +261,9 @@ proc create_equation {parent purpose comp indices enum_types} {
 		-yscrollcommand "$equation(actzone).scroll set"]
     AllowTextDrags $en
 # risky choice, it may encourage modellers to enter very large equations
-
+    # Safer bet: use math input toool
+    bind $en <<Paste>> {CheckForMathInput %W}
+    
     scrollbar $equation(actzone).scroll -orient vert -command "$en yview"
     pack $equation(actzone).scroll -side right -fill y
     pack $en -side right -expand true -fill both
@@ -404,6 +406,53 @@ proc create_equation {parent purpose comp indices enum_types} {
 	$middleF sash place 0 170 0
 	$middleF sash place 1 340 0
     }
+}
+
+proc CheckForMathInput {en} {
+    package require twapi_clipboard
+    twapi::open_clipboard
+    # note that the id of any format can change over time
+    foreach fmt [twapi::get_clipboard_formats] {
+	if {[twapi::get_registered_clipboard_format_name $fmt] eq "MathML"} {
+	    set raw [twapi::read_clipboard $fmt]
+	}
+    }
+    if {![info exists raw]} return
+#    $en insert insert [XmlToGenericPl [utf16-to-u $raw]]
+    $en insert insert [utf16-to-u $raw]
+}
+
+proc utf16-to-u {u16str} {
+    set endCode [scan $u16str %c%c]
+    if {$endCode eq "255 254"} {
+	set endianity yes
+    } elseif {$endCode eq "254 255"} {
+	set endianity no
+    } else {
+	error "Bad header"
+    }
+    set cur 0
+    set need 0
+    while {[string length $u16str]>2} {
+	set u16str [string replace $u16str 0 1]
+	scan $u16str %c%c c0 c1
+	set num [expr {$c0+$c1+255*($endianity?$c1:$c0)}]
+
+	if {$num < 0xd800 || $num > 0xdfff} {
+	    append result [format %c $num]
+	} else {
+	    if {$num > 0xdbff && !$need} {
+		set cur 0
+	    } elseif {$num < 0xdc00} {
+		set need 1
+		set cur [expr {(($num & 0x3ff) << 10) + 0x10000}]
+	    } elseif {$num > 0xdbff} {
+		set cur [expr {$cur | ($num & 0x3ff)}]
+		append result [format %c $cur]
+	    }
+	}
+    }
+    return $result
 }
 
 # when the selection in the list of causes changes, we have to check with 
@@ -1146,3 +1195,57 @@ proc InsertFunction {boxname functor} {
     focus $boxname
 }
 
+proc StartPlElement {name attList args} {
+    global parseStatus
+
+    set pairs {}
+    foreach {att val} $attList {
+	lappend pairs $att=$val
+    }
+    if {$parseStatus(inList)} {
+	append parseStatus(plStr) ,
+    }
+    append parseStatus(plStr) "element($name,\[" [join $pairs ,] "\],\["
+    set parseStatus(inList) no
+}
+
+proc FinishPlElement {name args} {
+    global parseStatus
+
+    append parseStatus(plStr) "])"
+    set parseStatus(inList) yes
+}
+
+proc StuffPlElement {data} {
+    global parseStatus
+
+    append parseStatus(plStr) '$data'
+}
+
+proc LoadXML {win} {
+    global window_info
+    set node $::window_info($win,top_node)
+    set tgt [ChooseFile model.xml [tr. "Import XML from:"] 0 $node]
+
+    set parseStatus(pl) [::xml::parser -ignorewhitespace true \
+				-elementstartcommand StartPlElement \
+				-elementendcommand FinishPlElement \
+				-characterdatacommand StuffPlElement]
+    set pStr [open $tgt r]
+    set dada [read $pStr]
+    close $pStr
+    puts [XmlToGenericPl $dada]
+}
+
+proc XmlToGenericPl {dada} {
+    global parseStatus
+    package require xml
+
+    set parseStatus(pl) [::xml::parser -ignorewhitespace true \
+				-elementstartcommand StartPlElement \
+				-elementendcommand FinishPlElement \
+				-characterdatacommand StuffPlElement]
+    array set parseStatus {plStr {} inList no}
+    $parseStatus(pl) parse $dada
+    return $parseStatus(plStr)
+}

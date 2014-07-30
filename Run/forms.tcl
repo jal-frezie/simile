@@ -1259,8 +1259,14 @@ proc DoRegDialog {dtId} {
 #    if {[string equal SimileScript $whatCalled]} {
 #        return
 #    }
-    
-    if {$userinfo(Version)==$userinfo(oldVersion)} {
+
+    # OK, we used to show this dialogue when we had just loaded a new
+    # version.  Now, we want to show it when a new version is
+    # available...
+
+    set newVers [GetLatestVers]
+    if {$newVers == 0} {set newVers $userinfo(oldVersion)}
+    if {$newVers==$userinfo(oldVersion)} {
         if {$userinfo(done)} {
             return
         }
@@ -1343,6 +1349,17 @@ proc DoRegDialog {dtId} {
     set links [GetFrame .register.links]
     
     frame $links.m1
+    if {$newVers > $userinfo(oldVersion)} {
+	pack [frame $links.m0] -anchor w
+        pack [label $links.m0.left -text " * " -font {-family helvetica -size 12}] \
+                -anchor w -side left
+	pack [set www0 [label $links.m0.centre -text "Simile v$newVers" \
+                -font {-underline true -family helvetica -size 12} -fg blue \
+                -cursor hand2]] -anchor w -side left
+	pack [label $links.m0.right -text " is available" -font {-family helvetica -size 12}]\
+	    -anchor w -side left
+	bind $www0 <Button-1> {VisitUrl http://simulistics.com/products/simile.php}
+    }
     switch [tk windowingsystem] {
         win32 {
             pack [label $links.m1.left -text " *  Show " -font {-family helvetica -size 8}] \
@@ -1362,6 +1379,7 @@ proc DoRegDialog {dtId} {
                 -anchor w -side left
         }
     }
+    bind $www1 <Button-1> {ContextSensitiveHelp .register start/index.htm}
     pack $links.m1 -anchor w
 # Removed ALD 25Feb2005 - non-functional at present due to missing Help pages
 #    frame $links.m2
@@ -1393,7 +1411,6 @@ proc DoRegDialog {dtId} {
     #    pack [button .register.ok -text OK -width 10 -default active -command {set userinfo(done) $welcomeDone}]
     LetItShow .register userinfo(done)
     
-    bind $www1 <Button-1> {ContextSensitiveHelp .register start/index.htm}
 # Removed ALD 25Feb2005 - non-functional at present due to missing Help pages
 #    bind $www2 <Button-1> {ContextSensitiveHelp .register examples/index.htm}
     
@@ -1408,14 +1425,16 @@ proc DoRegDialog {dtId} {
     }
     wm geometry .register +[expr $d+($a-$g)/2]+[expr $f+($s-$h)/2]
     
-    set UserStream [NetOpen $custom(prefDir)/.version w]
-    puts $UserStream $userinfo(name)
-    puts $UserStream $userinfo(corp)
-    puts $UserStream $userinfo(Version)
-    puts $UserStream $userinfo(done)
-    close $UserStream
-    switch [tk windowingsystem] {
-        win32 {file attributes $custom(prefDir)/.version -hidden true}
+    if {$userinfo(done)} {
+	set UserStream [NetOpen $custom(prefDir)/.version w]
+	puts $UserStream $userinfo(name)
+	puts $UserStream $userinfo(corp)
+	puts $UserStream $newVers
+	puts $UserStream 1
+	close $UserStream
+	switch [tk windowingsystem] {
+	    win32 {file attributes $custom(prefDir)/.version -hidden true}
+	}
     }
     
     # this never happens with welcome version
@@ -1667,7 +1686,7 @@ proc VisitUrl {x} {
         } x11 {
             set url $x
             if {![info exists env(BROWSER)]} {
-                foreach possBrowser {mozilla netscape iexplorer lynx} {
+                foreach possBrowser {firefox konqueror mozilla netscape iexplorer lynx opera} {
                     set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
                     if {[llength $env(BROWSER)]} {
                         break
@@ -1734,6 +1753,10 @@ proc ShowAbout {winId} {
         pack [label $expf.lab2 -text $edate -font "-family helvetica -size $fsSize"] -side left
         pack $expf
     }
+    set curVers [GetLatestVers]
+    if {$curVers} {
+	pack [label .about.fr.lab3 -text [format [tr. {Latest available version is %1$s}] $curVers]]
+    }
     pack [label .about.fr.lab4 -text "[tr. {This product is registered to}]\
             $userinfo(name), $userinfo(corp)" \
             -font "-family helvetica -size $fsSize"]
@@ -1768,6 +1791,17 @@ proc ShowAbout {winId} {
     PackItUp .about
 }
 
+proc GetLatestVers {} {
+    package require http
+    set token [::http::geturl http://www.simulistics.com/cgi-bin/products/current-version.php -timeout 2500]
+    upvar #0 $token versReq
+    if {$versReq(status) eq "ok"} {
+	array set versInfo $versReq(body)
+	return $versInfo(simileVerNo)
+    } else {
+	return 0
+    }
+}
 # images must be global because if building a c++ program we may be in a different directory
 #set bwVers [package require BWidget]
 
@@ -1799,6 +1833,11 @@ proc ShowExpiryImminent {expTime left} {
             -font {-family helvetica -size 10}] -side left
     pack $labf1 -padx 8 -pady 2
     
+    set curVers [GetLatestVers]
+    if {$curVers} {
+	pack [label .expiry.lab2a -text [format [tr. {Latest available version is %1$s}] $curVers]]
+    }
+
     set labf2 [frame .expiry.labf2]
     pack [label $labf2.lab1 -text "Please visit" -font {-family helvetica -size 10}] -side left
     pack [set www [label $labf2.lab2 -text "www.simulistics.com" \

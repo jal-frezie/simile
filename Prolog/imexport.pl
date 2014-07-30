@@ -1,4 +1,5 @@
-sicstus_module(imexport, [convert_simileprolog_to_similexmlv3/2]).
+sicstus_module(imexport, [convert_simileprolog_to_similexmlv3/2,
+			  convert_similexmlv3_to_simileprolog/2]).
 sicstus_use_module([utility]).
 % ========================================= convert_simileprolog_to_similexmlv3
 
@@ -79,6 +80,30 @@ xml_equiv(Char, Jolly) :-
 	     % with &#10;
 	     Jolly).
 
+% ========================================= convert_similexmlv3_to_simileprolog
+:- dynamic([model/1]).
+
+convert_similexmlv3_to_simileprolog(FileIn,FileOut):-
+   abolish(model/1),
+   % xml_file_to_term(FileIn, Xml), % externals loaded in database.pl
+   assert(model(Xml)),
+   model([element(model,_,Es)]),
+   tell(FileOut),
+   convert_xml_elements(Es),
+   told.
+
+convert_xml_elements([]).
+convert_xml_elements([E|Es]):-
+   do_map(Simile_clause,E),
+   %writeq(Simile_clause),write('.'),nl,
+   write_term(Simile_clause,[quoted(true)]),write('.'),nl,
+   convert_xml_elements(Es).
+
+% These two clauses are to prevent backtracking through map/2
+% within the repeat-fail loop for reading in and processing each 
+% model clause.
+do_map(A,B):- map(top,A,B),!.
+
 % ######################## START OF SYMMETRICAL MAPPING SECTION ##########################
 
 % Note that there is quite a lot of scope for reducing the number of map/3 clauses, since quite
@@ -104,7 +129,7 @@ map(top,
         element(second,[],[Second]),
         element(time_zone,[],[Time_zone]),
         element(year,[],[Year])])])):-
-   term_to_atom(Vn,Va),
+   atom_number(Va, Vn),
    extract_date(D,[Day,Month,Day_number,Hour,Minute,Second,Time_zone,Year]).
 
 map(top,
@@ -135,17 +160,18 @@ map(top,
 
 % JAT -- following allowed nodegraphics element to be left out, but this failed
 % webflow reconversion
-%map(top,
-%  node(ID,Type,[],SpecsProlog,[]),
-%  element(node,[id=ID,type=Type],
-%    [element(nodespecs,[],SpecsXML)])):-
-%         map_list(node_arc,SpecsProlog,SpecsXML).
-%
+% However, since Webflow also leaves nodegraphics out, that is its problem
+map(top,
+  node(ID,Type,[],SpecsProlog,[]),
+  element(node,[id=ID,type=Type],
+    [element(nodespecs,[],SpecsXML)])):-
+         map_list(node_arc,SpecsProlog,SpecsXML).
+
 map(top,
   node(ID,Type,[],SpecsProlog,GraphicsProlog),
   element(node,[id=ID,type=Type],[element(nodespecs,[],SpecsXML),element(nodegraphics,[],GraphicsXML)])):-
      map_list(node_arc,SpecsProlog,SpecsXML),
-     map_list(node_arc,GraphicsProlog,GraphicsXML).
+     map_list(graph_node_arc,GraphicsProlog,GraphicsXML).
 
 map(top,
   node(ID,Type,SublistProlog,SpecsProlog,GraphicsProlog),
@@ -156,7 +182,7 @@ map(top,
          %mapsublist(SublistProlog,SublistXML),
          map_list(subnode,SublistProlog,SublistXML),
          map_list(node_arc,SpecsProlog,SpecsXML),
-         map_list(node_arc,GraphicsProlog,GraphicsXML).
+         map_list(graph_node_arc,GraphicsProlog,GraphicsXML).
 
 % JAT -- following allowed arcgraphics element to be left out, but this failed
 % webflow reconversion
@@ -172,7 +198,7 @@ map(top,
     [element(arcspecs,[],SpecsXML),
      element(arcgraphics,[],GraphicsXML)])):-
          map_list(node_arc,SpecsProlog,SpecsXML),
-         map_list(node_arc,GraphicsProlog,GraphicsXML).
+         map_list(graph_node_arc,GraphicsProlog,GraphicsXML).
 
 
 map(top,end_of_file,'').
@@ -242,13 +268,21 @@ map(ref_attribute,
 map(node_arc,A=V,XML):-
    map(av,A=V,XML).
 
+map(graph_node_arc,A=V,XML):-
+   map(graph_av,A=V,XML).
+
 map(property,A-V,XML):-
    map(av,A=V,XML).
 
    
 
 % ------------------------------------- AV (attribute-value, for properties, nodes and arcs)
-map(av,
+map(graph_av,
+  along=N,
+  element(along,[],[A])):-
+      atom_number(A,N).
+
+map(graph_av,
   bounding_box=[X1n,Y1n,X2n,Y2n],
   element(bounding_box,[],
     [element(coords,[x=X1a,y=Y1a],[]),
@@ -258,7 +292,7 @@ map(av,
       atom_number(X2a,X2n),
       atom_number(Y2a,Y2n).
 
-map(av,
+map(graph_av,
   bowtie=[X1n,Y1n,X2n,Y2n],
   element(bowtie,[],
     [element(coords,[x=X1a,y=Y1a],[]),
@@ -273,7 +307,7 @@ map(av,
   element(can_lookup,[],[A])):-
       atom_number(A,N).
 
-map(av,
+map(graph_av,
   caption_offset=[Xn,Yn],
   element(caption_offset,[],
     [element(coords,[x=Xa,y=Ya],[])])):-
@@ -281,7 +315,7 @@ map(av,
       atom_number(Ya,Yn).
 
 % Not in XSugar - legacy?
-map(av,
+map(graph_av,
   caption_offset=[Xn,Yn,P],
   element(caption_offset,[],
     [element(coords,[x=Xa,y=Ya],[]),
@@ -289,7 +323,7 @@ map(av,
       atom_number(Xa,Xn),
       atom_number(Ya,Yn).
 
-map(av,
+map(graph_av,
   centre=[Xn,Yn],
   element(centre,[],
     [element(coords,[x=Xa,y=Ya],[])])):-
@@ -308,11 +342,11 @@ map(av,
   complete=C,
   element(complete,[],[C])).
 
-map(av,
+map(graph_av,
   course='',
   element(course,[],[])).
 
-map(av,
+map(graph_av,
   course=[[X1n,Y1n],[X2n,Y2n]],
   element(course,[],
     [element(coords,[x=X1a,y=Y1a],[]),
@@ -322,7 +356,7 @@ map(av,
       atom_number(X2a,X2n),
       atom_number(Y2a,Y2n).
 
-map(av,
+map(graph_av,
   course=[[X1n,Y1n],[X2n,Y2n],[X3n,Y3n]],
   element(course,[],
     [element(coords,[x=X1a,y=Y1a],[]),
@@ -336,7 +370,7 @@ map(av,
       atom_number(Y3a,Y3n).
 
 % Legacy? - not in XSugar.
-map(av,
+map(graph_av,
   course=[[X1n,Y1n],[X2n,Y2n],[X3n,Y3n],[X4n,Y4n]],
   element(course,[],
     [element(coords,[x=X1a,y=Y1a],[]),
@@ -352,7 +386,7 @@ map(av,
       atom_number(X4a,X4n),
       atom_number(Y4a,Y4n).
 
-map(av,
+map(graph_av,
   curve=[Xn,Yn],
   element(curve,[],
     [element(coords,[x=Xa,y=Ya],[])])):-
@@ -429,7 +463,7 @@ map(av,
   image_posn=P,
   element(image_posn,[],[P])).
 
-map(av,
+map(graph_av,
   internal_extent=[X1n,Y1n,X2n,Y2n],
   element(internal_extent,[],
     [element(coords,[x=X1a,y=Y1a],[]),
@@ -443,7 +477,7 @@ map(av,
   last_membership=LM,
   element(last_membership,[],[LM])).
 
-map(av,
+map(graph_av,
   caption_offset=[Xn,Yn,P],
   element(caption_offset,[],
     [element(coords,[x=Xa,y=Ya],[]),
@@ -781,13 +815,7 @@ map(math,V,element('m:ci',[],[V])):-
 
 
 map(math,V,element('m:cn',[],[Vatom])):-
-   atom(Vatom),
-   term_to_atom(V,Vatom).
-
-map(math,V,element('m:cn',[],[Vatom])):-
-   number(V),
-   term_to_atom(V,Vatom).
-
+	atom_number(Vatom, V).
 
 % ------------------------------ if ... then ... elseif ... else
 
@@ -1214,7 +1242,13 @@ extract_date(Date,[Day,Month,Day_number,Hour,Minute,Second,Time_zone,Year]):-
    sub_atom(Date,24,4,_,Year).
 extract_date(Date,DateList):-
    pad_numbers(DateList,DateList1),
-   atom_concat(DateList1,' ',Date).
+   atom_join(DateList1,' ',Date).
+
+atom_join([Solo], _, Solo).
+atom_join([H|T], Link, Atom) :-
+	atom_join(T, Link, Tail),
+	atom_concat(H, Link, Head),
+	atom_concat(Head, Tail, Atom).
 
 pad_numbers([Day,Month,Day_number,Hour,Minute,Second,Time_zone,Year],[Day,Month,Day_number1,Hour1,Minute1,Second1,Time_zone,Year]):-
    pad_number(Day_number,Day_number1),
@@ -1233,5 +1267,6 @@ make_def_url(Opsim,DefURL):-
    atom_concat(Partial,'.htm',DefURL).
 
 handle_xml_parse_error(Mode, SimilePl, XmlPl) :-
+	told,
 	ame_gen'><'query(map_failure(Mode, SimilePl, XmlPl), error, top, [ok],
 			 _).

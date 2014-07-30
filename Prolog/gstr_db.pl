@@ -47,3 +47,5 @@
 :- foreign(is_hidden(term)).
 :- foreign(get_node_and_next_ptr(term, term, term)).
 :- foreign(get_arc_and_next_ptr(term, term, term)).
+
+% :- foreign(xml_file_to_term(term, term)).

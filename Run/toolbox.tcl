@@ -795,7 +795,7 @@ proc ControlDraw {prologVersion} {
         gets $UserStream userinfo(done)
         close $UserStream
     } else {
-        set userinfo(oldVersion) 0
+        set userinfo(oldVersion) $userinfo(Version)
         set userinfo(done) 0
     }
 #   ShowMess debug info "Got old version $userinfo(oldVersion)" ok
@@ -880,12 +880,13 @@ proc ControlDraw {prologVersion} {
     }
     file mkdir $simtmpdir
 
-    set UserStream [NetOpen $custom(prefDir)/.version w]
-    puts $UserStream $userinfo(name)
-    puts $UserStream $userinfo(corp)
-    puts $UserStream $userinfo(Version)
-    puts $UserStream $userinfo(done)
-    close $UserStream
+# Try leaving this to the form
+#     set UserStream [NetOpen $custom(prefDir)/.version w]
+#     puts $UserStream $userinfo(name)
+#     puts $UserStream $userinfo(corp)
+#     puts $UserStream $userinfo(Version)
+#     puts $UserStream $userinfo(done)
+#     close $UserStream
     
     set sendvars(running) 0
     
@@ -924,7 +925,7 @@ proc ControlDraw {prologVersion} {
     if {[string match windows $tcl_platform(platform)]} {
         set compOptions [list CHOICE [tr. Default] [tr. Microsoft] [tr. GNU]]
 	file attributes $simtmpdir -hidden true
-	file attributes $custom(prefDir)/.version -hidden true
+#	file attributes $custom(prefDir)/.version -hidden true
     } elseif {[string equal Darwin $tcl_platform(os)]} {
 	set compOptions [list CHOICE [tr. Default] [tr. GNU]]
     } else {

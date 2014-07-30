@@ -1403,7 +1403,7 @@ proc DoLocalCmd {win item} {
 	build_c {ExportCode $win build_c}
         insert {InsertModel $win}
 	empty {EmptyWindow $win}
-	import_xml {TradeXML $win 0}
+	import_xml {LoadXML $win} 
 	export_xml {TradeXML $win 1}
 	export_svg {ExportSVG $win}
 	extra_run {ExtraRun $win}

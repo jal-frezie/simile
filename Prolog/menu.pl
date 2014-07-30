@@ -539,23 +539,20 @@ menu_handle(Win, file, ExportType) :-
 		close(StmW);
 	    output'><'safe_tcl_eval(['file copy -force',
 				     br(Log), br(FileName)], _))).
-
-menu_handle(Win, file, export_xml) :-
+	
+menu_handle(Win, file, import_xml) :-
 	Win shows_model Model,
-	\+ too_big_for_edn(Model),
 	contains(TopModel, Model),
 	is_toplevel(TopModel),
+	get_import_file('model.xml', TopModel, XmlSrc),
 	use_pref_dir(Dir),
-	append_atoms(Dir, '/temp_out.pl', TempFile),
-	output'><'date_is(Date),
-        start_progress_dialogue(Win),
-	save_isolated(TempFile, Model, Date, no, yes),
-        finish_progress_dialogue,
-	get_default_export_name(Model, ".xml", DefName),
-	get_program_file(DefName, TopModel, FileName),
-	convert_simileprolog_to_similexmlv3(TempFile, FileName),
+	append_atoms(Dir, '/temp_in.pl', TempFile),
+	start_progress_dialogue(Win),
+	convert_similexmlv3_to_simileprolog(XmlSrc, TempFile),
+	stick_model_in(Win, Model, XmlSrc, open_toplevel),
+	finish_progress_dialogue,
 	output'><'my_delete_file(TempFile).
-	
+
 menu_handle(Win, edit, Component) :-
 	(Component is_class_of_sort box; Component is_class_of_sort line),
 	get_edit_model(Win, _Model, Node),

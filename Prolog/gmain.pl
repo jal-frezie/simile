@@ -204,7 +204,7 @@ unicode_to_utf8(Char, [Key | String]) :-
 
 % v6 Prolog files also contain UTF-8 so cannot be read directly as terms.
 % Fortunately they can be read as text, translated, then the translation
-% opened as a stream from which rerms can be read...
+% opened as a stream from which terms can be read...
 reopen_stream_internally_formatted(Utf8Stm, IntStm, EuContents) :-
 	swallow_to_chars(Utf8Stm, U8Contents), % closes stream
 	all_utf8_to_ttfn(U8Contents, Contents),

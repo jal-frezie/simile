@@ -41,12 +41,40 @@ local_wind_up :-
 unicode_to_utf8(C, [C]).
 utf8_to_unicode([C], C).
 
+% SWI could just use UTF-8 internally, but I also do some translation on
+% macro definitions, so still have to do the save/reopen...
+
+reopen_stream_internally_formatted(Utf8Stm, IntStm, EuContents) :-
+	inters:swallow_to_chars(Utf8Stm, U8Contents), % closes stream
+	tcltk:all_utf8_to_ttfn(U8Contents, Contents),
+
+	state:use_temp_dir(TempDir),
+	append_atoms(TempDir, '/temp_io.pl', TempFile),
+	open_native(TempFile, write, Stream2),
+	(var(EuContents) ->
+	    ame_gen:make_legible_for_prolog(Contents, EuContents),
+	    sicstus_write_chars(Stream2, EuContents);
+	 sicstus_write_chars(Stream2, Contents)),
+% temp file can cause NetworkDriveReadOvertakesWrite problem, avoid where poss
+	close(Stream2),
+	open_native(TempFile, read, IntStm).
+
+close_internally_formatted_stream(Stm) :-
+	close(Stm).
+
+% use sgml library to convert XMLv3 model specs to superficial Prolog syntax
+% -- GNU does this with its own libxml2 bindings
+:- use_module(library(sgml)).
+
+xml_file_to_term(FileIn, Xml) :-
+	load_structure(FileIn, Xml, [dialect(xml),space(sgml)]).
+
 % GNU-friendly notation for cross-module calls -- already an operator in swi
 % but precedence needs changing
 :- op(550, xfy, '><').
 
 % include tcltk -- we are using pipe interface
-:- 	use_module([library(lists), sp_only, tcltk, input, code]).
+:- 	use_module([library(lists), sp_only, tcltk, input, utility, code]).
 
 % actually converts to Unicode -- see above
 get_native(FileTtfn, FileNative) :-

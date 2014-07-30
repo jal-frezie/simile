@@ -332,7 +332,7 @@ convert_formal_params([VPNameStr | GRs], V, VPName, VPType) :-
 					     
 read_func_file(File, Context, BuiltIn, Done) :-
 	open_native(File, read, Stream),
-	reopen_stream_internally_formatted(Stream, Stream3, EuContents),
+	user'><'reopen_stream_internally_formatted(Stream, Stream3, EuContents),
 	
 	name(File, FileStr),
 	append(Base, ".pl", FileStr),

@@ -201,14 +201,15 @@ $(PROLOG_DB): Prolog/struct_db.c
 #		gcc $(MAKESL) -o struct_db$(SHAREDLIBEXTN) \
 #		struct_db.o $(SWIPLDIR)/bin/swipl.dll; cd ..
 # for new SWI
-	cd Prolog; swipl-ld -cc-options,$(MAKEPIC) \
-		-ld-options,$(MAKESL) \
-		-o ../$(PROLOG_DB) struct_db.c; cd ..
+	cd Prolog; swipl-ld -o ../$(PROLOG_DB) struct_db.c \
+		-cc-options,$(MAKEPIC) \
+		-ld-options,$(MAKESL); cd ..
+# note that libxml2 includes and libs are not needed
 endif
 ifeq ($(PROLOG),GNU)
 $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
-	gplc --no-top-level -o $(PROLOGSTATE) -L $(OPT) \
-		$(PROLOG_OBJ) $(PROLOG_DB)
+	gplc --no-top-level -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) \
+		-L '$(OPT)'
 $(PROLOG_OBJ): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
 	cd Prolog; gplc -o ../$(PROLOG_OBJ) -c gmain.pl; cd ..
 $(PROLOG_DB): Prolog/struct_db.c
