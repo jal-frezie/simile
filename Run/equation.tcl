@@ -1198,9 +1198,17 @@ proc InsertFunction {boxname functor} {
 proc StartPlElement {name attList args} {
     global parseStatus
 
+    array set tangentials $args
+    if {[info exists tangentials(-namespacedecls)]} {
+	array set parseStatus $tangentials(-namespacedecls)
+    }
+    if {[info exists tangentials(-namespace)]} {
+	set name '$parseStatus($tangentials(-namespace)):$name'
+    }
+
     set pairs {}
     foreach {att val} $attList {
-	lappend pairs $att=$val
+	lappend pairs "($att)='$val'"
     }
     if {$parseStatus(inList)} {
 	append parseStatus(plStr) ,
@@ -1222,23 +1230,12 @@ proc StuffPlElement {data} {
     append parseStatus(plStr) '$data'
 }
 
-proc LoadXML {win} {
-    global window_info
-    set node $::window_info($win,top_node)
-    set tgt [ChooseFile model.xml [tr. "Import XML from:"] 0 $node]
-
-    set parseStatus(pl) [::xml::parser -ignorewhitespace true \
-				-elementstartcommand StartPlElement \
-				-elementendcommand FinishPlElement \
-				-characterdatacommand StuffPlElement]
+proc ExmlToGenericPl {tgt} {
     set pStr [open $tgt r]
     set dada [read $pStr]
     close $pStr
-    puts [XmlToGenericPl $dada]
-}
-
-proc XmlToGenericPl {dada} {
     global parseStatus
+    array unset parseStatus
     package require xml
 
     set parseStatus(pl) [::xml::parser -ignorewhitespace true \
@@ -1247,5 +1244,6 @@ proc XmlToGenericPl {dada} {
 				-characterdatacommand StuffPlElement]
     array set parseStatus {plStr {} inList no}
     $parseStatus(pl) parse $dada
+    append parseStatus(plStr) . ;# allow prolog to read normally
     return $parseStatus(plStr)
 }

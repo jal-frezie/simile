@@ -33,12 +33,13 @@ proc KeepLooking {} {
 	    } else {
 		switch $cmd {
 		    exit {
-			incr plPipe(recur) -1
 			set prologExit 1
 		    } fail {
 			set prologExit 0
 		    } send_tcl_cmd {
+			incr plPipe(recur) 2
 			eval do_tail $line
+			incr plPipe(recur) -2
 		    } slipup {
 			error [lreplace $line 0 0 slip-up]
 		    } default {
@@ -67,29 +68,9 @@ proc DebugMess {Mess} {
 
 proc prolog {plCmd} {
     global plPipe window_info
-    set oldStack $plPipe(stack)
-    set plPipe(stack) [AddCurrentToPipe $oldStack]
-    incr plPipe(recur)
     send_pl_cmd call:$plCmd
     set plOutcome [KeepLooking]
-    set plPipe(stack) $oldStack
-    if {![string length $plPipe(stack)]} {
-	ResetProgressBox
-    }
     return $plOutcome
-}
-
-proc AddCurrentToPipe {stack} {
-    for {set l 1} {$l < [info level]} {incr l} {
-	lappend stack [info level $l]
-    }
-    return $stack
-}
-
-proc ShowStack {} {
-
-    global plPipe
-    ShowMess "Stack is..." info [AddCurrentToPipe $plPipe(stack)] ok
 }
 
 proc do_tail {header args} {
@@ -171,7 +152,5 @@ while {![string match ready $spraf]} {
 	}
     }
 }
-set plPipe(stack) [list "Prolog initialization"]
 set plPipe(recur) 0
 KeepLooking
-set plPipe(stack) {}

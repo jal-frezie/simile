@@ -41,6 +41,9 @@ local_wind_up :-
 unicode_to_utf8(C, [C]).
 utf8_to_unicode([C], C).
 
+open_chars_stream(Str, Stm) :-
+	open_codes_stream(Str, Stm).
+
 % SWI could just use UTF-8 internally, but I also do some translation on
 % macro definitions, so still have to do the save/reopen...
 

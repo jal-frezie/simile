@@ -30,7 +30,7 @@ _Module'><'Function :-
 :- include('utility.pl').
 :- include('ame_gen.pl').
 :- include('library.pl').
-:- include('imexport.pl').
+% :- include('imexport.pl').
 
 /* files needed to build programs */
 
@@ -107,7 +107,9 @@ append([H | T], L) :-
 atom_number(A, N) :- number_atom(N, A).
 
 term_to_atom(T, A) :-
-	write_to_atom(A, T).
+	var(A) ->
+	write_to_atom(A, T);
+	read_from_atom(A, T).
 
 /* Reimplemented from Sicstus libraries: */
 
@@ -210,8 +212,8 @@ reopen_stream_internally_formatted(Utf8Stm, IntStm, EuContents) :-
 	all_utf8_to_ttfn(U8Contents, Contents),
 	(var(EuContents) ->
 	    make_legible_for_prolog(Contents, EuContents),
-	    open_input_codes_stream(EuContents, IntStm);
-	  open_input_codes_stream(Contents, IntStm)).
+	    open_chars_stream(EuContents, IntStm);
+	  open_chars_stream(Contents, IntStm)).
 % temp file can cause NetworkDriveReadOvertakesWrite problem, avoid where poss
 %	state'><'use_temp_dir(TempDir),
 %	append_atoms(TempDir, '/temp_io.pl', TempFile),

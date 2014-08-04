@@ -1430,7 +1430,7 @@ proc DoRegDialog {dtId} {
 	puts $UserStream $userinfo(name)
 	puts $UserStream $userinfo(corp)
 	puts $UserStream $newVers
-	puts $UserStream 1
+	puts $UserStream 1 ;# not read as of v6.2
 	close $UserStream
 	switch [tk windowingsystem] {
 	    win32 {file attributes $custom(prefDir)/.version -hidden true}

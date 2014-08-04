@@ -13,7 +13,8 @@ sicstus_module(menu, [undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
 	kill_everything/1]).
 	
 sicstus_use_module([sp_only, forms, m_update, image, draw, 
-	state, backup, library, ame_gen, utility, imexport, m_class, text,
+	state, backup, library, ame_gen, utility, m_class, text,
+				% imexport,
 	library(lists), library(ordsets)]).
 
 undo_edit(Wid, Wids) :-
@@ -507,7 +508,7 @@ menu_handle(Win, file, ExportType) :-
 	    start_progress_dialogue(Win),
 	    save_isolated(FileName, Model, Date, no, yes),
 	    finish_progress_dialogue;
-	  ExportType = export_xml,
+/*	  ExportType = export_xml,
 	    use_pref_dir(Dir),
 	    append_atoms(Dir, '/temp_out.pl', TempFile),
 	    start_progress_dialogue(Win),
@@ -517,7 +518,7 @@ menu_handle(Win, file, ExportType) :-
 	    get_program_file(DefName, TopModel, FileName),
 	    convert_simileprolog_to_similexmlv3(TempFile, FileName),
 	    output'><'my_delete_file(TempFile);
-	  ExportType = export_session,
+*/	  ExportType = export_session,
 	    autosave_file_is(TopModel, Log),
 	    get_default_export_name(TopModel, ".ssn", DefName),
 	    get_program_file(DefName, TopModel, FileName),
@@ -539,7 +540,7 @@ menu_handle(Win, file, ExportType) :-
 		close(StmW);
 	    output'><'safe_tcl_eval(['file copy -force',
 				     br(Log), br(FileName)], _))).
-	
+/*	
 menu_handle(Win, file, import_xml) :-
 	Win shows_model Model,
 	contains(TopModel, Model),
@@ -548,11 +549,12 @@ menu_handle(Win, file, import_xml) :-
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/temp_in.pl', TempFile),
 	start_progress_dialogue(Win),
-	convert_similexmlv3_to_simileprolog(XmlSrc, TempFile),
-	stick_model_in(Win, Model, XmlSrc, open_toplevel),
+	catch(convert_similexmlv3_to_simileprolog(XmlSrc, TempFile),
+	      Loss, true),
+	(nonvar(Loss), !; stick_model_in(Win, Model, XmlSrc, open_toplevel)),
 	finish_progress_dialogue,
 	output'><'my_delete_file(TempFile).
-
+*/
 menu_handle(Win, edit, Component) :-
 	(Component is_class_of_sort box; Component is_class_of_sort line),
 	get_edit_model(Win, _Model, Node),

@@ -153,7 +153,7 @@ do_cmd(TermStr) :-
 	write(fail))),
 	(PlError = slipup(Note) ->
 	 format("slipup ~a", [Note]);
-	 format("~w calling ~s", [PlError, TermStr]))), !,
+	 format("{~w} calling ~s", [PlError, TermStr]))), !,
 	nl, flush_output.
 
 /* cannot use all because of variable length source */

@@ -1403,7 +1403,7 @@ proc DoLocalCmd {win item} {
 	build_c {ExportCode $win build_c}
         insert {InsertModel $win}
 	empty {EmptyWindow $win}
-	import_xml {LoadXML $win} 
+	import_xml {TradeXML $win 0}
 	export_xml {TradeXML $win 1}
 	export_svg {ExportSVG $win}
 	extra_run {ExtraRun $win}
@@ -1567,6 +1567,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     # convertor
     $fm0 add command -label [tr. "XML Model Description"] \
             -command "MenuSelect $c local import_xml"
+#    $fm0 add command -label [tr. "XML Model Description (local)"] \
+#            -command "MenuSelect $c file import_xml"
 
     $fm add cascade -label [tr. "Export"] -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
@@ -1574,6 +1576,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c file export_prolog"
     $fm2 add command -label [tr. "XML Model Description"] \
             -command "MenuSelect $c local export_xml"
+#    $fm2 add command -label [tr. "XML Model Description (local)"] \
+#            -command "MenuSelect $c file export_xml"
     $fm2 add command -label [tr. "SVG Image"] \
             -command "MenuSelect $c local export_svg"
     $fm2 add command -label [tr. "C++ code"] \

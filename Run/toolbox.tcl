@@ -792,7 +792,7 @@ proc ControlDraw {prologVersion} {
         gets $UserStream userinfo(name)
         gets $UserStream userinfo(corp)
         gets $UserStream userinfo(oldVersion)
-        gets $UserStream userinfo(done)
+        set userinfo(done) 1
         close $UserStream
     } else {
         set userinfo(oldVersion) $userinfo(Version)

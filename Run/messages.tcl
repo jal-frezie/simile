@@ -332,6 +332,9 @@ set msgs(linuxPrintFail_detail) [tr. {The result returned by the print command w
 %1$s}]
 set msgs(linuxPrintFail_full) [tr. {Please see the online help to find out more about setting up printing from Simile. Alternatively you can export the model diagram as a PostScript file (use the File...Export menu command) and then print that using another package.}]
 
+set msgs(map_failure_title) [tr. {Conversion failure}]
+set msgs(map_failure_message) [tr. {Failed to convert %1$s between Prolog-rendered XML object %3$s and Simile model description clause %2$s}]
+
 set msgs(overlap_title) [tr. {Failed to %1$s %2$s}]
 set msgs(overlap_message) [tr. {Cannot %1$s %2$s here due to overlaps.}]
 set msgs(overlap_full) [tr. {You can increase the amount of space available by reducing the "Relative scale" value in the Advanced section of the desktop or submodel properties.}]

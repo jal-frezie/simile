@@ -81,23 +81,23 @@ xml_equiv(Char, Jolly) :-
 	     Jolly).
 
 % ========================================= convert_similexmlv3_to_simileprolog
-:- dynamic([model/1]).
-
 convert_similexmlv3_to_simileprolog(FileIn,FileOut):-
-   abolish(model/1),
    % xml_file_to_term(FileIn, Xml), % externals loaded in database.pl
-   assert(model(Xml)),
-   model([element(model,_,Es)]),
-   tell(FileOut),
-   convert_xml_elements(Es),
-   told.
+   output'><'safe_tcl_eval(['ExmlToGenericPl', br(FileIn)], XmlStr),
+   % read_term_from_codes(XmlStr, Xml, []), % crashes GNU if big
+   open_chars_stream(XmlStr, Stm),
+   read_term(Stm, element(model, [], Es), []),
+   close_internally_formatted_stream(Stm),
+   open_native(FileOut, write, PlStm),
+   convert_xml_elements(PlStm, Es),
+   close(PlStm).
 
-convert_xml_elements([]).
-convert_xml_elements([E|Es]):-
+convert_xml_elements(_, []).
+convert_xml_elements(PlStm, [E|Es]):-
    do_map(Simile_clause,E),
    %writeq(Simile_clause),write('.'),nl,
-   write_term(Simile_clause,[quoted(true)]),write('.'),nl,
-   convert_xml_elements(Es).
+   write_term(PlStm, Simile_clause,[quoted(true)]),write(PlStm, '.'),nl(PlStm),
+   convert_xml_elements(PlStm, Es).
 
 % These two clauses are to prevent backtracking through map/2
 % within the repeat-fail loop for reading in and processing each 
@@ -218,9 +218,10 @@ map(subnode,
 
 map(link, 
    Arc1-Arc2, 
-   element(link,[arc1=Arc1,arc2=Arc2],[])):-
-      atom(Arc1),
-      atom(Arc2).
+    element(link,Pair,[])):-
+	permutation(Pair,[arc1=Arc1,arc2=Arc2]),
+	atom(Arc1),
+	atom(Arc2).
 
 
 
@@ -923,11 +924,12 @@ map(math,
 
 map(math,
    Expr,
-   element('m:apply',[],[element('m:csymbol',[encoding=text,definitionURL=DefURL],[Opsim])|ArgsXML])):-
+   element('m:apply',[],[element('m:csymbol',Props,[Opsim])|ArgsXML])):-wake,
       var(Expr),
+      permutation(Props, [encoding=text,definitionURL=DefURL]),
       map_list(math,ArgsSimFull,ArgsXML),
       % restore 0-ary operators
-      ((member(Opsim, [time, dt]), ArgsSimFull=[1]) ->
+      ((member(Opsim, [time, dt]), member(ArgsSimFull, [[], [0]])) ->
           ArgsSim = [''];
 	ArgsSim = ArgsSimFull),
       make_def_url(Opsim,DefURL),
@@ -1000,7 +1002,8 @@ map(math,
 % END OF MATHS
 % -----------------------------------------------------------------------------
 
-
+map(Mode, A, B) :-
+	handle_xml_parse_error(Mode, A, B).
 %map(Mode,A,A):-
 %   write('       *** ERROR *** Mode = '), write(Mode), write('Term = '),write(A),nl.
 
@@ -1015,12 +1018,9 @@ map(math,
 map_list(_,[],[]).
 
 map_list(Mode,[A|As],[B|Bs]):-
-  map(Mode,A,B),
+  map(Mode,A,B), !,
   %write(A),tab(2),write(B),nl,
   map_list(Mode,As,Bs).
-
-map_list(Mode,[A|B],C):-
-	handle_xml_parse_error(Mode, [A|B], C).
 
 
 
@@ -1060,9 +1060,9 @@ maptdlist([_|TDlist],As,Bs):-
 elseif_rule(
    E1 then E2 elseif Erest,
    [element('m:piece',[],[E2math,E1math])|Rest]):-
+      elseif_rule(Erest,Rest),
       map(math,E1,E1math),
-      map(math,E2,E2math),
-      elseif_rule(Erest,Rest).
+      map(math,E2,E2math).
 
 elseif_rule(
    E1 then E2 else C,
@@ -1267,6 +1267,7 @@ make_def_url(Opsim,DefURL):-
    atom_concat(Partial,'.htm',DefURL).
 
 handle_xml_parse_error(Mode, SimilePl, XmlPl) :-
-	told,
-	ame_gen'><'query(map_failure(Mode, SimilePl, XmlPl), error, top, [ok],
-			 _).
+	ame_gen'><'query(map_failure(Mode, SimilePl, XmlPl), error, top,
+			 [abort], Do),
+	(Do = more;
+	 throw(aborted)).
