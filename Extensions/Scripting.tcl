@@ -76,11 +76,12 @@ itcl::class similescript::ModelWindow {
         Reopen $modelCanvas $modelFile reopen
         set model $modelFile
     }
-    
-    public method Print {} {
-        MenuSelect PrintNow $modelCanvas
-    }
-    
+# disable -- there is little point printing from script as you cannot alter 
+# diagram
+#    public method Print {} {
+#        MenuSelect PrintNow $modelCanvas
+#    }
+#    
     public method ListEnumTypes {} {
 	GetFromProlog tk_get_info(dummy,$modelNode,enum_type_defns)
     }
