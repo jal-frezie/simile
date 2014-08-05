@@ -1028,9 +1028,10 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
 
 excpData* ExecutingModel::ExecuteInstance(int how_int, double start, 
 					  double* end, double errlim,
+					  BOOLEAN pause_out_of_range,
 					  BOOLEAN pause_on_events) {
   double xtime, aim_for, recover, evtError, newFreq, minFreq;
-  int big_phase, wee_phase;
+  int big_phase, wee_phase, keeper;
   BOOLEAN made_step, first_pass;
     // printf("xm %d %lf-%lf at %lf\n", how_int, start, *end, errlim);
     // showMess(globMess);
@@ -1211,6 +1212,22 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       userDefStop->excpNo = -98;
       break;
       //	printf("Event %d at %f\n", userDefStop->targetId, xtime);
+    }
+    if (pause_out_of_range) {
+      keeper = userDefStop->targetId; // incase event to finish next step
+      userDefStop->targetId = 0;
+      // calling update with phase 5/6 checks values within range
+      loadedInst->updatemodel(wee_phase);
+      if (userDefStop->targetId) {
+	if (userDefStop->targetId>0)
+	  userDefStop->excpNo = -97;
+	else {
+	  userDefStop->targetId =-userDefStop->targetId;
+	  userDefStop->excpNo = -96;
+	}
+	break;
+      }
+      userDefStop->targetId = keeper;
     }
   } // finished executing
   if (check_gui(*end, 0) && !userDefStop->excpNo)
@@ -2210,10 +2227,10 @@ excpData* reset(void* modelType, void* modelHandle, double t0, int how_int,
 
 excpData* execute(void* modelType, void* modelHandle, int how_int,
 		  double starttime, double* endtime, double errlim,
-		  BOOLEAN evt_pause) {
+		  BOOLEAN lmt_pause, BOOLEAN evt_pause) {
   return ((ExecutingModel*)modelHandle)->ExecuteInstance(how_int, starttime, 
 							 endtime, errlim,
-							 evt_pause);
+							 lmt_pause, evt_pause);
 }
 
 // This deletes a model instance and/or a class -- both when used in Simile

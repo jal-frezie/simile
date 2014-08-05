@@ -217,7 +217,7 @@ class ExecutingModel
 
   //! End time passed as pointer; value overwritten if model stopped early
   //! Error limit controls adaptive timestep variation, 0 turns it off
-  excpData* ExecuteInstance(int, double, double*, double, BOOLEAN);
+  excpData* ExecuteInstance(int, double, double*, double, BOOLEAN, BOOLEAN);
 
   //! get results from model by node serial number in general c format
   nodeValues* GetRawValues(HCOMP);

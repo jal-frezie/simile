@@ -124,6 +124,12 @@ proc ExplainError {myNode errList origError} {
 	} event {
 	    set problem "there was a limit event, producing a pause"
 	    set severity 0
+	} min {
+	    set problem "the compartment value went below its minimum"
+	    set severity 0
+	} max {
+	    set problem "the compartment value went above its maximum"
+	    set severity 0
 	} "Illegal operation signal *" {
 	    set code [lindex $whoopsie end]
 	    set which [lindex {SIGEOF SIGHUP SIGINT SIGQUIT SIGILL SIGTRAP 
@@ -425,7 +431,7 @@ proc old_stage_incr {ns_extras step v} {
     }
 }
 
-proc stage_incr {ns_extras step v span gId} {
+proc stage_incr {ns_comp ns_extras step v useLims min max gId} {
     global adapt adapt_maxerr
     upvar \#0 $ns_extras extras
     if {[info exists extras]} {
@@ -462,6 +468,18 @@ proc stage_incr {ns_extras step v span gId} {
             set t3 [expr (-$t1 + 2*$t3 + 2*$dv)/3]
             set t1 [expr $t1/[glob_element dts $step]]
             set result $mid
+	} 5 - 6 { ;# just signal if compartment has gone out of range
+	    upvar \#0 $ns_comp comp
+	    if {$useLims & 1} {
+		if {$comp < $min && $comp-$t2>=$min} {
+		    set adapt(culprit) -$gId
+		}
+	    } elseif {$useLims & 2} {
+		if {$comp > $max && $comp-$t2<=$max} {
+		    set adapt(culprit) $gId
+		}
+	    }
+	    set result 0
         } -1 { ;# undoes previous change Euler
             set last_incr $t2
             set t3 $dv
@@ -470,6 +488,11 @@ proc stage_incr {ns_extras step v span gId} {
             set result [expr [expr [set t1 $dv]/2.0]-$t2]
         } 10 - 11 { ;# does not change compartment, just checks for errors
 #            if {$dv} {
+	    if {$useLims==3} {
+		set span [expr {$max-$min}]
+	    } else {
+		set span 100
+	    }
 	    set errMagn [expr {abs($dv-$t3)*100/$span}]
 #puts "p10 pred_change $extras(pred_change) dv $dv errMagn $errMagn"
 	        if {$errMagn > $adapt_maxerr} {
@@ -689,7 +712,7 @@ proc TclResetModel {node t0 doingRK topPhase} {
     return 1
 }
 
-proc TclExecuteModel {node howInt start end errLim evtPause} {
+proc TclExecuteModel {node howInt start end errLim lmtPause evtPause} {
     global ts dts steps phasecount adapt adapt_maxerr event
 #    if {[string equal cancel [ShowMess debug info "XM from $start to $end" okcancel]]} {
 #	error cancelled
@@ -857,6 +880,20 @@ proc TclExecuteModel {node howInt start end errLim evtPause} {
 	    return [list -1 evalmodel $event(culprit) $xtime $bigPhase event]
 #	    error [list tcl_model_err evalmodel $event(culprit) \
 #		       $xtime $bigPhase event]
+	}
+# calling update with phase 5/6 checks values within range
+	if {$lmtPause} {
+	    set adapt(culprit) 0
+	    do_model updatemodel $weePhase
+	    if {$adapt(culprit)} {
+		set fail max
+		if {$adapt(culprit)<0} {
+		    set fail min
+		    set adapt(culprit) [expr {-$adapt(culprit)}]
+		}
+		return [list -1 updatemodel $adapt(culprit) $xtime $bigPhase \
+			    $fail]
+	    }
 	}
     } ;# finished executing
     if {[CheckGUI $node $end ext]} {

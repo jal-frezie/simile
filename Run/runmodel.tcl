@@ -1078,7 +1078,8 @@ proc RecordRunParams {node} {
 		       displayInt $runState($node,displayInt) \
 		       intMethod $runState($node,intMethod)]
     foreach {value checkstate} {errLimit adapt speedLimit splimit \
-				resetTo resetTo evtpause evtpause} {
+				    resetTo resetTo evtpause evtpause \
+				    lmtpause lmtpause} {
 	if {$runState($node,$checkstate)} {
 	    lappend runParams $value $runState($node,$value)
 	}
@@ -1103,7 +1104,7 @@ proc SetRunParams {node runParams} {
     # some old ones omitted timeUnit etc so set defaults
     foreach {feature value} \
 	{currentTime 0.0 timeUnit unit errLimit 0 speedLimit 0 \
-	     resetTo 0 evtpause 0} {
+	     resetTo 0 evtpause 0 lmtpause 0} {
 	set runState($node,$feature) $value
     }
     set runState($node,timeUnit) unit
@@ -1179,7 +1180,7 @@ proc StartRun {node} {
 	return 0
     }
     foreach {var defVal} {adapt 0 errLimit 1e-6 splimit 0 speedLimit 50 \
-			      resetTo 0 evtpause 0} {
+			      resetTo 0 evtpause 0 lmtpause 0} {
 	if {![info exists runState($node,$var)]} {
 	    set runState($node,$var) $defVal
 	}

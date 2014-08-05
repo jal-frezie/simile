@@ -561,7 +561,8 @@ namespace eval runcontrol33857 {
 	    set modelAct \
 		[ExecuteTo $node $current $pause $sendvars($node,unitLength) \
 		     $display [ListFoci $node] $runState($node,intMethod) \
-		     $maxErr $runState($node,evtpause) $runState($node,evtDisp)]
+		     $maxErr $runState($node,lmtpause) \
+		     $runState($node,evtpause) $runState($node,evtDisp)]
 	    if {[string equal start $sendvars($node,currentMode)]} {
 		set sendvars($node,currentMode) $modelAct
 	    }

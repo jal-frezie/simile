@@ -113,7 +113,7 @@ public:
   virtual void do_exitmodel () = 0;
 
   // support functions called by model code
-  double stage_incr (diffs*, int, double, double, int);
+  double stage_incr (double, diffs*, int, double, int, double, double, int);
   int check_limit(double, double, double, int, int, int, diffs*);
   template <class modeldata> 
     modeldata retract_from_pipe(delay<modeldata>*, int);

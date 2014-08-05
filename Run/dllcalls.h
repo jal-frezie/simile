@@ -299,7 +299,8 @@ EXTDEC node_data_line* nodlin_from_id(void*, int);
 EXTDEC void* fetch_top_instance(void*, void*);
 
 EXTDEC excpData* reset(void*, void*, double, int, int);
-EXTDEC excpData* execute(void*, void*, int, double, double*, double, BOOLEAN);
+EXTDEC excpData* execute(void*, void*, int, double, double*, double, 
+			 BOOLEAN, BOOLEAN);
 EXTDEC int setstep(void*, double, int);
 EXTDEC char* myexit(void*, void*);
 

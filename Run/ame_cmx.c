@@ -363,6 +363,10 @@ void get_string_for_error(char *spare, int error) {
     sprintf(spare, "discontinuity");
   } else if (error == -98) {
     sprintf(spare, "event");
+  } else if (error == -97) {
+    sprintf(spare, "max");
+  } else if (error == -96) {
+    sprintf(spare, "min");
   } else if (error < 0) {
     sprintf(spare, "Illegal operation signal %d", -error);
   } else {
@@ -378,7 +382,7 @@ Tcl_Obj* make_exec_error(Tcl_Interp* interp, int excpNo, const char* phase,
   errList=Tcl_NewListObj(0, NULL);
   get_string_for_error(complaint, excpNo);
 
-  if (excpNo == -98) // event exits inner loop
+  if (excpNo <= -96 && excpNo > -99) // event exits inner loop
     Tcl_ListObjAppendElement(interp, errList, Tcl_NewIntObj(-1));
   else 
     Tcl_ListObjAppendElement(interp, errList, 
@@ -992,15 +996,15 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
   double starttime, endtime, errlim;
-  BOOLEAN evt_pause;
+  BOOLEAN lmt_pause, evt_pause;
   int how_int, error;
   excpData* errorBlk;
   Tcl_Obj* working;
   void* modelType;
   void* modelHandle;
 
-  if (argc != 8) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id integration_method start_time end_time error_limit pause_on_events");
+  if (argc != 9) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id integration_method start_time end_time error_limit pause_out_of_range pause_on_events");
     return TCL_ERROR;
   }
   
@@ -1028,13 +1032,18 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
   
-  error = Tcl_GetBooleanFromObj(interp, argv[7], &evt_pause);
+  error = Tcl_GetBooleanFromObj(interp, argv[7], &lmt_pause);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetBooleanFromObj(interp, argv[8], &evt_pause);
   if (error != TCL_OK) {
     return error;
   }
   
   errorBlk = execute(modelType, modelHandle, how_int, starttime, &endtime, 
-		     errlim, evt_pause);
+		     errlim, lmt_pause, evt_pause);
   error = 1; //i.e., no error
   if (errorBlk) {
     if (errorBlk->excpNo == -100) { // model paused by GUI
@@ -1045,9 +1054,10 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
 					     name_in_line(modelType, 
 							  errorBlk->targetId),
 					     endtime, 1));
-      if (errorBlk->excpNo != -98) 
-	return TCL_ERROR;
-      return TCL_OK;
+      if (errorBlk->excpNo <= -96 && errorBlk->excpNo > -99) 
+// event exits inner loop
+	return TCL_OK;
+      return TCL_ERROR;
     }
   }
   working = Tcl_NewIntObj(error);

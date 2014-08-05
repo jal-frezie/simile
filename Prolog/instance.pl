@@ -176,13 +176,14 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	so ordering will not be done -- otherwise the above would be
 	Home+Step*last(In-Out) */
 	
-	(F has_class_refinement min_val of Min,
-	    F has_class_refinement max_val of Max, !,
-	    Span is Max-Min;
-	  Span = 100),
+	(F has_class_refinement min_val of Min ->
+	 KeyL = 1; KeyL = 0, Min = 0),
+	(F has_class_refinement max_val of Max ->
+	 Key is KeyL + 2; KeyL = Key, Max = 0),
 	is_instance(internal, st(Node), none, Diffs, diffs-Units, DiffSt),
 	Expr = with_phase(Step, [],
-		Home++stage_incr(Diffs, Step, FChange, Span)++QChange),
+		Home ++ stage_incr(Home, Diffs, Step, FChange, Key, Min, Max)
+			 ++ QChange),
 	append(FRefs, QRefs, Refs),
 	Local = [DiffSt, Instance],
 	is_instance(compartment, Node, Expr, Home, Base-Units, Instance).
@@ -224,8 +225,8 @@ instance_of(Type, Node, Path,
 	 % channel is event -- just add magnitude
 	 Updater = Home+Struct;  % this format identifies discrete immigrations
 	 % channel is coninuous -- increment compartment style
-	Updater = with_phase(Step, [],
-			     Home+stage_incr(Diffs, Step, Struct, 100))).
+	Updater = with_phase(Step, [], Home+stage_incr(Home, Diffs, Step,
+						       Struct, 0,0,0))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* functions do not have any unit translations built into them, as it is assumed

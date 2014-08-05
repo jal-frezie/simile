@@ -1196,12 +1196,14 @@ Now one that uses a special conditional level */
 		ResultList = [RVal],
 		RUnits = int,
 		ValRef = stop_on_id(GraphId, RVal);
-	    Source = stage_incr(Diffs, Step, Change, Span), % same again
-		SourceList = [Diffs, Change],
-		Arg_template = [diffs, real],
-		ResultList = [RDiffs, RChange],
+	    Source = stage_incr(Home, Diffs, Step, Change, Key, MinB, MaxB),
+				% same again
+		SourceList = [Home, Diffs, Change],
+		Arg_template = [real, diffs, real],
+		ResultList = [RHome, RDiffs, RChange],
 		RUnits = real,
-		ValRef = stage_incr(RDiffs, Step, RChange, Span, GraphId);
+		ValRef = stage_incr(RHome, RDiffs, Step, RChange,
+				     Key, MinB, MaxB, GraphId);
 	    Source = check_limit(ActEqn, Lower, Upper, Flags, Step, Diffs),
 		SourceList = [ActEqn, Diffs],
 		Arg_template = [real, diffs],

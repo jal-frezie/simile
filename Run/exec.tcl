@@ -88,7 +88,7 @@ proc update_executable {node lang} {
 }
 
 proc ExecuteTo {node current pause unitLength display foci \
-		    intMethod maxErr evtMsg evtDisp} {
+		    intMethod maxErr lmtPause evtMsg evtDisp} {
     global dispDone actDone
 
     set dispDone 0
@@ -117,7 +117,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    set scaled_next [expr {$pause*$unitLength}]
 	}
 	set howAndWhen [ExecuteModel $node $intMethod $scaled_current \
-			    $scaled_next $maxErr $evtPause]
+			    $scaled_next $maxErr $lmtPause $evtPause]
 	set scaled_current [lindex $howAndWhen 1]
 	set displayNow 0
 	switch -- [lindex $howAndWhen 0] {
@@ -134,6 +134,9 @@ proc ExecuteTo {node current pause unitLength display foci \
 		    set currentMode stop
 		}
 		set scaled_current [lindex $scaled_current 3]
+	    } 4 { ;# compartment out of range
+		ExplainError $node [lrange $scaled_current 1 end] unused
+		set currentMode stop
 	    }
 	} ;# default: keep going
 	set current [expr {$scaled_current/$unitLength}]
@@ -230,16 +233,17 @@ proc ResetModel {myNode howInt initTime redo} {
     return $done
 }
 
-proc ExecuteModel {myNode howInt start finish errLim evtPause} {
+proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
     global model_id instance_id
     if {[catch {
 	if {[string bytelength $model_id]} {
 #	    set model_id $myNode
 	    c_executemodel $model_id $instance_id \
 		[expr ![string equal Euler $howInt]] \
-		$start $finish $errLim $evtPause
+		$start $finish $errLim $lmtPause $evtPause
 	} else {
-	    TclExecuteModel $myNode $howInt $start $finish $errLim $evtPause
+	    TclExecuteModel $myNode $howInt $start $finish $errLim \
+		$lmtPause $evtPause
 	}
     } errList]} {
 	if {[string match tcl_model_err* $errList]} {

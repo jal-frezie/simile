@@ -96,10 +96,10 @@ int InstanceOfModel::loses (double prob, int phase) {
   }
 }
 
-double InstanceOfModel::stage_incr (diffs *extras, int step, 
-				    double v, double span, int graphId) {
-  double dv, result, errMagn;
-
+double InstanceOfModel::stage_incr (double comp, diffs *extras, int step, 
+				    double v, int useLims, 
+				    double min, double max, int graphId) {
+  double dv, span, result, errMagn;
   /*
 In this version, the three intermediate increments are kept in t1-t3 while
 building the full R-K increment. After this is complete they are assigned:
@@ -129,6 +129,12 @@ t3 = estimate of next initial increment
     extras->t3 = (-extras->t1 + 2*extras->t3 + 2*dv)/3;
     extras->t1 = extras->t1/dts[step];
     return result;
+  case 5: case 6:
+    if ((useLims & 1) && comp<min && comp-extras->t2>=min)
+      userStop.targetId = -graphId;
+    else if ((useLims & 2) && comp>max && comp-extras->t2<=max)
+      userStop.targetId = graphId;
+   return 0;
   case -1: // undoes previous change Euler
     result = extras->t2;
     extras->t3 = dv;
@@ -136,6 +142,10 @@ t3 = estimate of next initial increment
   case -2: // undoes previous change R-K
     return (extras->t1 = dv)/2 - extras->t2;
   case 10: case 11: // does not change compartment, just checks for errors
+    if (useLims==3)
+      span = max - min;
+    else
+      span = 100;
     errMagn = fabs(dv-extras->t3)*100/span;
     if (errMagn>adapt_maxerr) {
       userStop.targetId = graphId;
