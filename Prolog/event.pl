@@ -493,18 +493,17 @@ bar_edit_menu(Wid) :-
 	    -> Allow = 1; Allow = 0),
 	    update_ability(Model, none, 'edit.add', Header, Allow),
 	    fail;
-	update_ability(Model, none, edit, '{Create new}', CanCreate),
+	update_ability(Model, none, edit, '{Add/change component}', CanCreate),
 	update_ability(Comp, none, edit, 'Paste', Pastable),
 	(find_type(Point, cloud), !,
 	    CanAddComp = 1;
-	CanAddComp = CanAddNode),
-	update_ability(Model, none, 'edit.add', 'Compartment', CanAddComp),
-	update_ability(Model, none, 'edit.add', 'Variable', CanAddNode),
-	update_ability(Model, none, 'edit.add', 'Submodel', CanAddNode),
-	/* update_ability(Model, none, 'edit.add', 'Event', CanAddNode), */
-	update_ability(Model, none, 'edit.add', '{Membership control}',
-		       CanAddNode),
-	update_ability(Model, none, 'edit.add', '{Text box}', CanAddNode)).
+	  CanAddComp = CanAddNode),
+	all(draw, update_ability,
+	    [unify(Model), unify(none), unify('edit.add'),
+	     build(['Compartment', 'Variable', 'Submodel', 'State',
+		    'Event', 'Squirt', '{Membership control}', '{Text box}']),
+	     build([CanAddComp, CanAddNode, CanAddNode, CanAddNode,
+		    CanAddNode, CanAddNode, CanAddNode, CanAddNode])])).
 
 click_on(XY, Poss_start, CD) :-
 	doing_add(New_obj), !,

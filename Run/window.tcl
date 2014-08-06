@@ -1610,8 +1610,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 		-postcommand "prolog tk_bar_edit_menu('$c')"]
     $topm add cascade -label [tr. Edit] -menu $topm.edit
     
-    $fm add cascade -label [tr. "Create new"] -menu $fm.add
-    set ::menuPosns(edit,Create\ new) [$fm index last]
+    $fm add cascade -label [tr. "Add/change component"] -menu $fm.add
+    set ::menuPosns(edit,Add/change\ component) [$fm index last]
     set em1 [menu $fm.add -tearoff 0]
 # add state, event and squirt
     set lookers [list Compartment Variable Flow Influence Submodel]
@@ -1624,7 +1624,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     }
     AddCmdAndAccel $winid edit.add "Role arrow" "MenuSelect $c edit relation"
     $em1 add cascade -label [tr. "Membership control"] -menu $em1.sub
-    set ::menuPosns(edit.add,Membership\ control) [$fm index last]
+    set ::menuPosns(edit.add,Membership\ control) [$em1 index last]
     AddCmdAndAccel $winid edit.add "Text box" "MenuSelect $c edit text"
     set em2 [menu $em1.sub -tearoff 0]
     foreach type {Creation Immigration Reproduction Loss} {
