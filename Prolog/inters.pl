@@ -111,7 +111,8 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	        pointer_from(Path, SmPtr);
 	     % the last bit will stop these roles being used in same eqn as
 	     % assoc roles, which may be sensible
-	     Link = none,
+	     member(Link, [none, outside]),
+	     % outside just means value is outside population containing channel
 	        pointer_from(RealPath, SmPtr),
 		Wait = [],
 		Path = RealPath;
