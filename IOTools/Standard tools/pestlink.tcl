@@ -227,7 +227,7 @@ namespace eval $keyValue {
 	variable useNodes
 
 	set tabData [UglifyValList $useNodes($winId,predall)]
-	EditListAsTable $winId tabData
+	EditListAsTable $winId $useNodes($winId,pred) 0 tabData
     }
 
     proc SetButtonAct {winId what} {

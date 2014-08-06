@@ -1362,7 +1362,6 @@ proc EditListAsTable {parent caption startLine valueArray} {
     if {$table_viewer(done)} {
         set values [${viewerId}::ExtractEdits $t]
     }
-    grab $parent
     return $table_viewer(done)
 }
 
