@@ -986,6 +986,9 @@ ExecutingModel::ExecutingModel(ModelServer* newModelSpec, void* yourRef) {
 
 ExecutingModel::~ExecutingModel() {
   while (param_array_base) delete param_array_base;
+  // Above line is correct -- deleting a param item causes it to be snipped out
+  // of the list, so list head is NULL when all are snipped. Var params have
+  // their own list but are also included in all-param list...
   delete loadedInst;
 }
 

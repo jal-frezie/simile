@@ -293,10 +293,12 @@ itcl::class similescript::$newLayerClass {
 	set row [expr {min(max($row, 1), $useNodes($winId,nrow))}]
 	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
 	    set inds [list $row $col]
+	    set value [SeekValue $inds $useNodes(temp,curValues)]
 	} else {
 	    set inds [expr {$useNodes($winId,ncol)*($row-1)+$col}]
+	    set value [lindex \
+			   [lindex [Flatten $useNodes(temp,curValues)] $inds] 1]
 	}
-	set value [SeekValue $inds $useNodes(temp,curValues)]
 	return "Index $row,$col Value $value"
     }
 

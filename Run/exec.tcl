@@ -714,6 +714,41 @@ proc DoNotPassTcl {topNode node dims tableSpec} {
     c_setparamall $topNode $node $bytesFromGdal [list $fillRows $fillCols]
 }
 
+proc NumberElements {list {startNum 1}} {
+    if {[string equal $list [lindex $list 0]]} {
+	return $list
+    } else {
+	set result {}
+	set num [incr startNum -1]
+	foreach elt $list {
+	    if {[llength $elt]} {
+		lappend result [incr num] [NumberElements $elt 1]
+	    }
+	}
+	return $result
+    }
+}
+
+proc ReadGdalRefToList {tableSpec {y {}} {x {}}} {
+    package require gdal
+#puts "RGRTL $tableSpec $x $y"
+    set hg [gdal_open_read_only [lindex $tableSpec 0]]
+    set hdl [gdal_get_raster_band $hg 1]
+    set l [expr [lindex $tableSpec 4]-1]
+    set t [expr [lindex $tableSpec 2]-1]
+    set w [expr [lindex $tableSpec 5]-$l]
+    set h [expr [lindex $tableSpec 3]-$t]
+    if {![string is double -strict $x]} {
+	set x $w
+    }
+    if {![string is double -strict $y]} {
+	set y $h
+    }
+    set nValues [gdal_get_raster_values $hdl $l $t $w $h $x $y]    
+    gdal_close $hg
+    return $nValues
+}
+
 proc JoinSteps {stepA stepB} {
     switch \
 	[string is integer -strict $stepA],[string is integer -strict $stepB] {
