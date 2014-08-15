@@ -999,7 +999,7 @@ proc LogSnap {w vname tree topNode node} {
 proc StopLogging {w topNode node} {
     global runState iconImages
 
-    $w.bbframe.buttonBox itemconfigure 2 -image $iconImages(reel)
+    $w.bbframe.reel configure -image $iconImages(reel)
     close [lindex $runState(log$node) 1]
     unset runState(log$node)
 }
@@ -1007,7 +1007,7 @@ proc StopLogging {w topNode node} {
 proc StartLogging {w topNode node filename} {
     global runState iconImages
 
-    $w.bbframe.buttonBox itemconfigure 2 -image $iconImages(noreel)
+    $w.bbframe.reel configure -image $iconImages(noreel)
     set out [NetOpen $filename w]
     set lh time
     for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
