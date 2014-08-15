@@ -393,7 +393,8 @@ click_in(Wid, ActPt, Trans, Depth, Parent, _CD) :-
 	% Start adding a component to current submodel
 	finish_old_edit(none),
 	doing_add(New_obj),
-	save_params(Trans, Depth, Parent),
+	(new_selection(Parent); % new comp will be only one selected
+	save_params(Trans, Depth, Parent)),
 	snap_to_grid(ActPt, [Xpt, Ypt]),
 	set_start_coords(Xpt, Ypt),
 	set_current_coords(Xpt, Ypt),
@@ -661,7 +662,8 @@ insert_variable(Submodel, BestX, BestY, New_obj, Comp_name) :-
 
 deselectable(Obj) :-
 	get_highlit_obj(N, Obj),
-	(Obj is_of_sort line, !, N<2;
+	( % Obj is_of_sort line, !, N<2;
+	  % do not treat click on green line as on selection
 	    N<1).
 
 /* do_linear/3: this is executed when a click marks the initial point

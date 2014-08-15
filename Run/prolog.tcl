@@ -28,8 +28,9 @@ proc KeepLooking {} {
 		puts $plPipe(debug_stream) [concat < $line]
 	    }
 	    if {[catch {set cmd [lindex $line 0]} mess]} {
-		DebugMess "Could not parse $line : $mess"
-		send_pl_cmd result:-1
+		error $line
+#		DebugMess "Could not parse $line : $mess"
+#		send_pl_cmd result:-1
 	    } else {
 		switch $cmd {
 		    exit {

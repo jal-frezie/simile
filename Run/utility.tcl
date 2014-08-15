@@ -767,7 +767,7 @@ proc Numeric {str} {
 
 proc PutItThere {t parent} {
     global tcl_platform
-    toplevel .$t -bd 4
+    toplevel $t -bd 4
     if {[winfo exists $parent] && [string compare . $parent]} {
 	wm transient $t $parent
     } else {
