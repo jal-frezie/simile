@@ -64,7 +64,7 @@ namespace eval grid005 {
     proc AddToolbar {winId} {
         set toolbarItems \
 	    [list \
-		 [list save.gif "Save as GIF" [namespace code "SaveAsFile $winId"]]\
+		 [list save.gif "Save image" [namespace code "SaveAsFile $winId"]]\
 		 [list zoomin.gif "Zoom in" [namespace code "zoomio $winId 1.25"] ]\
 		 [list zoomout.gif "Zoom out" [namespace code "zoomio $winId 0.8"] ]\
 		 [list property.gif " Properties " [namespace code "Settings $winId"]]\

@@ -38,6 +38,8 @@ itcl::class similescript::$newHelperClass {
 	    -command [list $this EditCurrent]
 
         set toolbarItems [list \
+		[list save.gif "Save image" "$this SaveAsFile"] \
+		[list reel.gif "Save video" "$this SaveSequence"] \
                 [list zoomin.gif "Zoom in" "$this Zoom 2 2"] \
                 [list zoomout.gif "Zoom out" "$this Zoom 0.5 0.5"] \
                 [list zoomfit.gif "Zoom to fit" "$this Fit"] \
@@ -260,6 +262,19 @@ itcl::class similescript::$newHelperClass {
 	foreach layer $planes {
 	    $layer PrepareSaveString
 	    lappend State [$layer info class] [$layer cget -State]
+	}
+    }
+
+    public method SaveAsFile {} {
+	package require img::window
+
+	set id $winId.viewport.c
+        # should have dialog to set for options
+        set filename [ChooseFile image.gif [tr. "Save image as:"] 1 [GetNode]]
+        if {[string length $filename]} {
+	    set img [image create photo -format window -data $id]
+	    $img write $filename \
+		-format [string range [file extension $filename] 1 end]
 	}
     }
 
