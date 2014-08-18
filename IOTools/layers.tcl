@@ -252,6 +252,14 @@ itcl::class similescript::$newHelperClass {
 	}
 	$winId.viewport.c raise annotation
 	$winId.viewport.c raise instruct
+
+	if {[info exists working(frameNo)]} {
+	    set fmt [file extension $working(frameTpt)]
+	    set log [format %s%05d%s [file rootname $working(frameTpt)] \
+			 [incr working(frameNo)] $fmt]
+	    set img [image create photo -format window -data $winId.viewport.c]
+	    $img write $log -format [string range $fmt 1 end]
+	}
     }
 
     public method PrepareSaveString {} {
@@ -268,13 +276,30 @@ itcl::class similescript::$newHelperClass {
     public method SaveAsFile {} {
 	package require img::window
 
-	set id $winId.viewport.c
         # should have dialog to set for options
         set filename [ChooseFile image.gif [tr. "Save image as:"] 1 [GetNode]]
         if {[string length $filename]} {
-	    set img [image create photo -format window -data $id]
+	    set img [image create photo -format window -data $winId.viewport.c]
 	    $img write $filename \
 		-format [string range [file extension $filename] 1 end]
+	}
+    }
+
+    public method SaveSequence {} {
+	global iconImages
+	package require img::window
+
+	if {[info exists working(frameNo)]} {
+	    unset working(frameNo)
+	    $winId.bbframe.reel configure -image $iconImages(reel)
+	} else {
+	    set id $winId.viewport.c
+	    set working(frameTpt) \
+		[ChooseFile image.gif [tr. "Save image series as:"] 1 [GetNode]]
+	    if {[string length $working(frameTpt)]} {
+		set working(frameNo) 0
+		$winId.bbframe.reel configure -image $iconImages(noreel)
+	    }
 	}
     }
 
