@@ -1252,7 +1252,7 @@ proc LoadBase64CharData {encoded} {
 
     if {![info exists parseStatus(loadByteArray)]} return
     set relPath $parseStatus(submodel)/$parseStatus(loadByteArray)
-    set compName $parseStatus(smPath)$relPath
+#    set compName $parseStatus(smPath)$relPath
 
     set nodeId [ExistCheck $parseStatus(topNode) $relPath \
 		    $parseStatus(smPath) 0 metafile]
@@ -1260,7 +1260,8 @@ proc LoadBase64CharData {encoded} {
 	break {error aborted}
 	continue {return}
     }
-
+#puts "$compName replaced with $parseStatus(smPath)[lindex $nodeId 0]"
+    set compName $parseStatus(smPath)[lindex $nodeId 0]
 #    set nodeId [IdFromTail $parseStatus(topNode) $compName 0]
 #puts "got node $nodeId from $compName"
     set decoded [base64 -mode decode -- $encoded]
