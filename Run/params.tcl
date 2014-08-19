@@ -1251,7 +1251,7 @@ proc LoadBase64CharData {encoded} {
 	paramMetadata
 
     if {![info exists parseStatus(loadByteArray)]} return
-    set relPath $parseStatus(submodel)/$parseStatus(loadByteArray)
+    set relPath [RestoreCrs $parseStatus(submodel)/$parseStatus(loadByteArray)]
 #    set compName $parseStatus(smPath)$relPath
 
     set nodeId [ExistCheck $parseStatus(topNode) $relPath \
