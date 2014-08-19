@@ -86,10 +86,12 @@ proc create_equation {parent purpose comp indices enum_types} {
             set box $lname
         }
         set component $box.[lindex $funk 2]
-        if {![$lbf exists $component]} {
-            $lbf insert $box end -id $component \
-                    -image $iconImages(function) -text [lrange $funk 2 end]
+        if {[$lbf exists $component]} {
+# want the last (most general) defn of each fn, so delete earlier
+	    $lbf delete $component
         }
+	$lbf insert $box end -id $component \
+	    -image $iconImages(function) -text [lrange $funk 2 end]
     }
     $lbf insert {} end -id .et_top_level \
 	-text [tr. {Enum. type constants}] -image $iconImages(open)
