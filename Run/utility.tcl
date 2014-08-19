@@ -561,7 +561,7 @@ proc ShrinkValueList {outerList limit} {
 	}
     } elseif {[string equal ,bytes [lindex $list 1]]} {
 # in this case the list format is:
-# scenario ,bytes type idx1 ... idxn raw_data
+# scenario ,bytes type idx1 ... idxn uftsi restart others raw_data
 	if {[string equal REAL [lindex $list 2]]} {
 	    set fieldChar d
 	    set fieldSize 8
@@ -578,18 +578,18 @@ proc ShrinkValueList {outerList limit} {
 	set offset 0
 	if {$allVals<$manage} {
 	    set fullRange [DoByteArrayToList $fieldChar $fieldSize \
-			       [lrange $list 3 end-3] [lindex $list end]]
+			       [lrange $list 3 end-4] [lindex $list end]]
 	    set list [NumberElements $fullRange]
 	    return $allVals
 	}
-	set splitLevel [expr {[llength $list]-3}]
+	set splitLevel [expr {[llength $list]-4}]
 	set availAtLevel 1
 	while {$availAtLevel<$range} {
 	    set splitBound [lindex $list [incr splitLevel -1]]
 	    set availAtLevel [expr $availAtLevel*$splitBound]
 	}
 	set fatLines [expr int(1+$splitBound*$range/$availAtLevel)]
-	set bounds [concat $fatLines [lrange list [expr $splitLevel+1] end-3]]
+	set bounds [concat $fatLines [lrange $list [expr $splitLevel+1] end-4]]
 	set startRange [DoByteArrayToList $fieldChar $fieldSize $bounds \
 			    [lindex $list end]]
 	set offset [expr $fieldSize*($allVals - \
