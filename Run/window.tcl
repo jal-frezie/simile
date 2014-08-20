@@ -2477,7 +2477,8 @@ proc EmbraceEqn {winId} {
 
 proc AbandonEqn {winId} {
 # Only query save if new focus is a 'rival', otherwise no bother as the eqnbar
-# will get it back anyway
+# will get it back anyway...update needed before new focus can be queried
+    update
     set newFocus [focus]
     set eb $winId.toolSlot.eqnbar
     if {[string length $newFocus] && \

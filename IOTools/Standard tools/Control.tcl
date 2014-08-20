@@ -288,8 +288,9 @@ namespace eval runcontrol33857 {
 
     proc SetMode { node action } {
         variable sendvars
+	variable frames
 
-        set sendvars($node,currentMode) $action
+	set sendvars($node,currentMode) $action
 	if {!$sendvars($node,busy)} { ;# do action now
 	    switchMode $node
 	} else {
