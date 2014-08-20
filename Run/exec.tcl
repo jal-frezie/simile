@@ -312,7 +312,7 @@ if {[info exists masterId]} { ;# we are in separate interp
 	}
     }
 # these are straight copies
-    foreach straight {AddLogEntry ExecQuery TransEnums InDays} {
+    foreach straight {AddLogEntry ExecQuery TransEnums} { ;# InDays not needed
 	proc $straight {args} {
 	    global masterId
 
@@ -573,7 +573,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 	    }
 # do same for interval (units for time series index) -- trying to call Prolog 
 # from here can only lead to trouble
-	    if {[string is double -strict $subList]} { ;# save time by not going Prolog
+	    if {[string is double -strict $subList]} {
 		set TSI 0
 	    } else {
 		set TSI [lsearch {{} s second min minute hr hour day week month year} $subList] ;# not [InDays $subList]

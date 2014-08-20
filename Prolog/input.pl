@@ -186,7 +186,9 @@ tcl_export_svg(Node) :-
 tk_append_to_log(Model, Action) :-
 	append_to_log(Model, Action).
 
-tk_in_days(Unit) :-
-	(units'><'get_conversion(1, Unit, day, DX), D is DX, !; D=0),
+tk_in_days(UnitA) :-
+	sicstus_atom_chars(UnitA, UnitStr),
+	(ame_gen'><'get_term(UnitStr, Unit, []),
+	units'><'get_conversion(1, Unit, day, DX), D is DX, !; D=0),
 	draw'><'callback(D).
 	
