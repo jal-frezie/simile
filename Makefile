@@ -115,18 +115,11 @@ endif
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	SYSDIR = System$(BITEXTN)
-#	TCLDIR = /usr/local$(BITEXTN)
-# the MSYS way
-	TCLDIR = "$(shell pwd)/$(SYSDIR)"
-	TCLREF = $(TCLDIR)
 	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh85)
 	VERS = $(subst .,,$(VERSION))
-	TCLINC = $(TCLREF)/include/tcl$(VERSION)
 ifeq ($(MY_CPU),x86_64)
 #	TCLDIR =  "/c/Program files/Tcl"
-	TCLDIR =  "/c/MinGW/msys/1.0/local"
-	TCLREF = $(TCLDIR)
-	TCLINC = $(TCLREF)/include
+	TCLDIR =  /usr/local
 	SWIPLDIR = "/c/Program files/swipl"
 	GCCCMD = x86_64-w64-mingw32-gcc
 	GPPCMD = x86_64-w64-mingw32-g++
@@ -134,10 +127,13 @@ ifeq ($(MY_CPU),x86_64)
 else
 #	TCLDIR = "/c/Program files (x86)/Tcl"
 # Actually, use local TclTk as above dir not exist on 32bit machines --
+	TCLDIR = "$(shell pwd)/$(SYSDIR)"
 	RESCMD = windres
 	INSTLIB = Run/install.dll
 # must be 32-bit because installer is
 endif
+	TCLREF = $(TCLDIR)
+	TCLINC = $(TCLREF)/include/tcl$(VERSION)
 	CFLAGS = $(OPT)
 	SHAREDLIBPREFX = 
 	MAKEPIC = 
