@@ -362,8 +362,8 @@ bits and pieces */
 % File writing starts here
 	send_to_dest(Stream, ['#include <support1.cpp>']),
 	tk_update_infobox(pl_expr, []),
-	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_),
-				     _,_), [], [], TopStep, Phases, [], Used,
+	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_),_,_),
+			    [], [], TopStep, Phases, [], [], Used,
 			    ExtIncs, Inters, ReevaluateForm),
 	merge_inters(Inters, FullModel, AugmentedModel, Constants),
 	
@@ -1037,7 +1037,7 @@ extract_action(make(Effect, Conds-_,_,_, Actions), Actions) :-
 and functions within a submodel. It also creates the instructions that determine how
 many individuals in each population submodel within it are created each round. */
 
-extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
+extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, ExtInters, Used,
 		    ExtIncs, Inters, AssignList) :-
 	Instance = instance(submodel, Id,
 			    xrefs(model(Functions, Submodels), _,_), _,_),
@@ -1066,14 +1066,15 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, Used,
 
 	all(compile, get_assignment,
 	    [build(Functions),
-	     unify(Path), unify(Step), unify(Swaps),
-	     unify(Used), append(Inters0, []), append(AssignList0, [])]),
+	     unify(Path), unify(Step), unify(Swaps), unify(ExtInters),
+	     unify(Used), build(InterLists), append(AssignList0, [])]),
 	all(compile, extract_submodel_assignment,
 	    [build(Submodels),
-	     unify(Functions), unify(Path), unify(Tree),
+	     unify(Functions), unify(InterLists), unify(Path), unify(Tree),
 	     unify(Swaps), unify(Step), biggest(MaxStep, Step), unify(Used),
 	     merge_lists(ExtIncs, []),
-	     append(Inters, Inters0), append(AssignList, AssignList0)]),
+	     append(MoreInters, []), append(AssignList, AssignList0)]),
+	append([MoreInters | InterLists], Inters),
 % Remove submodel-local function definitions from database
 	retractall(macro_expansion(in(Path), _)).
 
@@ -1103,12 +1104,21 @@ make_et_fn(L, enum_type(Id, Type, Mems), ProcHeader) :-
 and generating any intermediate nodes that are needed. We then make a version
 of the full model augmented with the extra nodes. */
 
-extract_submodel_assignment(Instance, ParentFns,
+extract_submodel_assignment(Instance, ParentFns, ParentInters,
 			    Path, Tree, Swaps, TopStep, MaxStep, Used,
 			    ExtIncludes, Inters, AssignList) :-
 
 	Instance = instance(submodel, SmName, xrefs(Model, Bases, Assocs), 
 			    Name, _-Dims),
+	caption_for(SmName, SmCapt),
+	(nth(Ordinal, ParentFns, instance(ParentType, MyRaisonDetre, _,_,_)),
+	    member(ParentType, [function, magnitude, init_function]),
+	 % other types than these later
+	    caption_for(MyRaisonDetre, NameBase),
+	    append_atoms(NameBase, UniqueBit, SmCapt),
+	    append_atoms('.frag', _No, UniqueBit) ->
+	 nth(Ordinal, ParentInters, ExtInters);
+	 ExtInters = []),
 	time_step_for(SmName, TopStep, Step),
 
 	Model = model(Functions, _),
@@ -1332,7 +1342,8 @@ nodes.
 			      [list_fixed_nbrs(LPtr, Shp, Rows, Cols, Inds)])];
 	     [SmInters, Specials] = [[], []])),
 	extract_assignments(Instance, LocalPath, LocalTree, Step, MaxStep,
-			    NewSwaps, Used, SubIncludes, FnInters, AssignList0),
+			    NewSwaps, ExtInters, Used,
+			    SubIncludes, FnInters, AssignList0),
 /* Now add an extra instruction if this needs an external proc */
 	(SmName has_class_refinement external_code of ExtCode,
 	member(include=Inc, ExtCode),
@@ -1487,7 +1498,7 @@ list of 'make' functions which include information about how to order
 the actions corresponding to them.*/
 
 get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
-	       DestPath, SmStep, Swaps, Used, Inters, Assignments) :-
+	       DestPath, SmStep, Swaps, ExtInters, Used, Inters, Assignments) :-
 /* Only make assignments for functions, for now, and
 	    Do not make an assignment if we are expecting one on init/reset
 	    from outside */
@@ -1590,8 +1601,9 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    GroundEqn = SourceEqn)), !,
 	    
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
-			 SmStep, UseStep, Used, [assign(Val, Fn)],
-			 Setups, Path, RefList, Inters),
+			 SmStep, UseStep, ExtInters, Used, [assign(Val, Fn)],
+			 Setups, Path, RefList, AllInters),
+	 append(ExtInters, Inters, AllInters), % declare them only once
 	(nonvar(Made), !; Made = Dest),
 	connect_params([make(Made, UseList, Path, UseStep, [Act]) | Setups],
 	                Actions);

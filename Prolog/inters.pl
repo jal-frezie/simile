@@ -1,4 +1,4 @@
-sicstus_module(inters, [final_assignment/12, make_intermediates/12,
+sicstus_module(inters, [final_assignment/13, make_intermediates/12,
 			expand_library/2, expand_special_role/3,
 			macro_expansion/2, fragment_expansion/5, function/4,
 			promote_unit/2, promote_arg/3, propagate_units/5,
@@ -8,7 +8,7 @@ sicstus_module(inters, [final_assignment/12, make_intermediates/12,
 
 sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
-final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, Used, 
+final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used, 
                  NewFormula, Setups, Context, Prereqs, NewInters) :-
 	DestRef = elt(DestPathForm, Target, XUnits-Dims),
 	copy_term(DestPathForm, DestPath),
@@ -17,7 +17,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, Used,
 			       sub(Sm, DestRef, Swaps, SmStep),
 			       top_down, _, FullExp),
 	       make_intermediates(FullExp, Sm, [Target], DestPath, BackSwap,
-				  [], [], Step, Used, Units, AllInters,
+				  ExtInters, [], Step, Used, Units, AllInters,
 				  part_result(SourceContext, AllSetups, Args,
 					      Formula))), Prob,
 		     report(Sm, Prob)),
@@ -464,7 +464,9 @@ make_intermediates(
 	inters), which should all be different. */
 	/* Source = make_inter(Payload, Ref); */
 	% make_inter functor should force us to make one
-	Inter = instance(internal,_, Source, _,_),
+	Inter = instance(internal, inter(_, UseWhere, _), Source, _,_),
+	DestPath = [sm(TgtLangName, _,_,_) | _],
+	\+ \+ member(TgtLangName, UseWhere),
 	member(Inter, PrevInters),
 	\+ contains_something(random, Source, _), !,
 	    NewInters = PrevInters,
@@ -523,6 +525,10 @@ make_intermediates(
 		 Args = [made_at(Var, ReadyContext) | Wait]),
 	        /* note that for the time being the made_at condition is thrown
 	           away */
+	    (member(sm(TgtLangName, _,_,_), SourceLoops), !,
+	     all(inters, keep_name_in_context,
+		 [unify(TgtLangName), build(PrevInters)]);
+	     true),
 	    Setups = [],
 	    NewInters = PrevInters;
     /* Unable to merge this parameter's execution loop with what went before.
@@ -772,7 +778,7 @@ make_intermediates(
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
 % start of replacement section
-	Inter = instance(internal, inter(InterContext, InnerTgt, SourceLoops),
+	Inter = instance(internal, inter(InterContext, _UseWhere, SourceLoops),
 			      UseSource, TotalName, UseContextUnits-InterDims),
 	merge_lists([Inter], OldInters, MidInters),
 	(TXUnits = UseContextUnits, !;
@@ -1082,7 +1088,7 @@ Now one that uses a special conditional level */
 		throw(cannot_combine_argument_dimensions(Source))),
  	    append([ResultLoops, PtrInit, EltBase], SourceContext);
 	
-	Source = (Param=SubExp,Rest), !,
+	Source = (Param=SubExp,Rest), !, wake,
 	    (Param = param(arr(_, Ref, _), UseUnit, LoopSlot,_,_), !;
 		/* parsing */
 	    Param = Ref,
@@ -1111,10 +1117,9 @@ Now one that uses a special conditional level */
 		% variables cannot have constant units even if constant
 	    make_intermediates(Rest, SubId, Target, 
 			DestPath, BackSwap, MidInters, BuildingArrays, 
-			Step, Used, Units, MixedInters,
+			Step, Used, Units, NewInters,
 			part_result(SourceContext, ExSetups, Args, SourceRef)),
-	    all(inters, prevent_inappropriate_reuse,
-		[unify(Param), build(MixedInters), build(NewInters)]),
+	    all(inters, prevent_inappropriate_reuse, [build(NewInters)]),
 				% in case they use param
 	    (promote_arg(DefUnit, UseUnit,_FType);
 		% not sure how to make this happen
@@ -1463,7 +1468,8 @@ units_for_trigger_mag(Fn, MagUnits) :-
 	MagUnits = ReferMagBase-TDims. % triggers now summed or howmanytrued
 
 units_for_evt_antecedents(Fn, EvtUnit) :-
-	m_update'><'get_all_links(Fn, discrete, _,
+	contains(Evt, Fn), % in case input for frag-defined fn,
+	m_update'><'get_all_links(Evt, discrete, _,
 	     input_link(_,_,_,_, EvtUnit)).
 
 dissociate(Wrapper, made_at(Arg, Level), made_at(NewArg, Level)) :-
@@ -1472,12 +1478,12 @@ dissociate(Wrapper, Arg, Arg) :-
 	Arg =.. [Wrapper, _Cond];	% in case sofars/samesteps are nested
 	Arg = enumerate(_Parent). % need this even if not waiting for source
 	
-refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
+refer_inter(instance(internal, inter(OrigPath, _, ParamLoops), Source, Name,
 		     Units-Dims),
 	    DestPath, BuildLoops, Units, SourceContext, Args, SourceRef) :-
 	(Source = in_preceding(_) ->
-	    trim_one_multi_instance(DestPath, InterPath);
-	  InterPath = DestPath),
+	    trim_one_multi_instance(OrigPath, InterPath);
+	  InterPath = OrigPath),
 	(Source = last(_), !,
 	    Args = [Name]; /* bit of a hack...since
 	we use the total from the previous time step we don't need to
@@ -1504,13 +1510,19 @@ refer_inter(instance(internal, inter(_,_, ParamLoops), Source, Name,
 	append(SourceLoops, SpareLoops, IntLoops),
 	suffix(SpareLoops, BuildLoops),
 	append(SourceLoops, SourcePath, SourceContext).
-
+/*
 prevent_inappropriate_reuse(Explicit, instance(Type, I, Replaces, Name, Dims),
 			    instance(Type, I, NewReplaces, Name, Dims)) :-
 	replace_subexps(Replaces, inters, swap_vars, switch(Explicit, gone),
 			top_down, [_Swap1 | _], _), !,
 	NewReplaces = 'n/a';
 	NewReplaces = Replaces.
+*/
+prevent_inappropriate_reuse(instance(_, inter(_, UseWhere, _), _,_,_)) :-
+	length(UseWhere, _L), !.
+
+keep_name_in_context(TgtLangName, instance(_, inter(_, UseWhere, _), _,_,_)) :-
+	member(TgtLangName, UseWhere), !; true.
 
 trim_one_multi_instance(DestPath, InterPath) :-
 	suffix([MultiInst | DestTail], DestPath),

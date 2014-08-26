@@ -1897,8 +1897,11 @@ get_action_point(Top, End, Point) :-
 
 % load a model fragment from a file without a graphical window
 make_blind_level(Root, File, Parent) :-
-	make_node(Root, fragment, Parent), % generates fragment-type name
-	change_class(Parent, _, submodel),
+	caption_for(Root, RootCapt),
+	append_atoms(RootCapt, '.frag', CaptRoot),
+	unique_name(CaptRoot, Capt, _),
+	make_node(Root, submodel, Parent), % generates submodel-type name
+	add_parameter(Parent, 0, name, Capt),
 	use_temp_dir(LocalDir),
 	Parent has_class_refinement name of Name,
 	append_atoms([LocalDir, '/', Name], TargetDir),
