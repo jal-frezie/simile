@@ -491,6 +491,7 @@ install:
 		IOTools/graphtools.tcl \
 		IOTools/maps2.tcl \
 		IOTools/threedtools.tcl \
+		IOTools/textshow.tcl \
 		IOTools/timeprofiles.tcl \
 		IOTools/layers.tcl \
 		IOTools/grid_layer.tcl \

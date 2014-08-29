@@ -731,6 +731,7 @@ namespace eval ::$keyValue {
 		if {[dodgyValue $Tnew] || [dodgyValue $Ynew]} {
 		    set xm [expr $plot($w,xborder_left)+60]
 		    set ym [expr $plot($w,yborder_top)+60]
+		    $w.canvas delete prompt
 		    $w.canvas create text $xm $ym -tags prompt -width 100 \
 			-justify center -text [tr. "Some values resulting from maths errors have not been plotted"]
 		} else {
