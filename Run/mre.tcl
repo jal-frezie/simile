@@ -1065,9 +1065,9 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 #	    }
 #	}
 	$inst PrepareSaveString
-	puts $metaStream "  $indent<!\[CDATA\["
-	puts $metaStream [$inst cget -State]
-	puts $metaStream "  $indent\]\]>"
+	puts -nonewline $metaStream "  $indent<!\[CDATA\["
+	puts -nonewline $metaStream [$inst cget -State]
+	puts $metaStream "\]\]>"
 	puts $metaStream "$indent</container>"
     }
     

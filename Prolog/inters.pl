@@ -601,11 +601,12 @@ make_intermediates(
 
 	copy_term(DestPath, TotalPath),
 	(member(Functor, [in_preceding]), !,
-	    trim_one_multi_instance(DestPath, InterPath),
-	    copy_term(InterPath, OuterPath), % Use to read stuff out
+	    trim_one_multi_instance(DestPath, CompPath),
+	    copy_term(CompPath, OuterPath), % Use to read stuff out
 	    append(Exited, OuterPath, TotalPath);
-	InterPath = DestPath,
+	CompPath = DestPath,
 	    OuterPath = TotalPath),
+	copy_term(CompPath, InterPath),
 	(var(Payload), !,
 	    IncrAct = assign(FillRef, IncrExpr),
 	    TXUnits = Units,
@@ -707,7 +708,7 @@ make_intermediates(
 	ClearRef = arr(SourcePtr, TotalName, SrcInds),
 
 	add_extra_dependencies(WriteContext, DestPath, OldArgs, Depends),
-	append(SourceLoops, InterPath, InterContext),
+%	append(SourceLoops, InterPath, InterContext),
 	append([SourceLoops, NowBuilding, InterPath], ClearContext),
 
 	(UsingDim == true, !,
@@ -727,6 +728,7 @@ make_intermediates(
 	    (find_all_comps(ParentId, SubId),
 		is_population(ParentId), !;
 		throw(misplaced_progenitor_ref(Source))),
+	    Exited = [],
             ClearTime = on_reset, % harmless value (I hope)
 	    Clearing = [make(cleared(TotalName), [], [], Step, [])];
         Clearing = [make(clearing(TotalName), [this_step(WhatMade)],
@@ -778,7 +780,7 @@ make_intermediates(
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
 % start of replacement section
-	Inter = instance(internal, inter(InterContext, _UseWhere, SourceLoops),
+	Inter = instance(internal, inter(InterPath, _UseWhere, SourceLoops),
 			      UseSource, TotalName, UseContextUnits-InterDims),
 	merge_lists([Inter], OldInters, MidInters),
 	(TXUnits = UseContextUnits, !;
@@ -787,7 +789,7 @@ make_intermediates(
 	    WhatMade = TotalName,
 	    NewInters = MidInters,
 	    FinalInter = Inter;
-	  Outer = instance(internal, inter(InterContext, _, SourceLoops),
+	  Outer = instance(internal, inter(InterPath, _, SourceLoops),
 			      UseSource, PayloadName, Units-InterDims),
 	    WhatMade = PayloadName,
 	    merge_lists([Outer], MidInters, NewInters),
@@ -1088,7 +1090,7 @@ Now one that uses a special conditional level */
 		throw(cannot_combine_argument_dimensions(Source))),
  	    append([ResultLoops, PtrInit, EltBase], SourceContext);
 	
-	Source = (Param=SubExp,Rest), !, wake,
+	Source = (Param=SubExp,Rest), !,
 	    (Param = param(arr(_, Ref, _), UseUnit, LoopSlot,_,_), !;
 		/* parsing */
 	    Param = Ref,
@@ -1102,7 +1104,9 @@ Now one that uses a special conditional level */
 		make_inds_for(RefDims, _, Loops, _),
 		append(Loops, BuildingArrays, Access),
 		get_dims_from_loops(Access, Dims, _)), /* building code */
-	    InitInters = [instance(internal, inter(_,_, Loops), Ref,_, _-Dims)
+	    copy_term(DestPath, DPCopy),
+	    InitInters = [instance(internal, inter(DPCopy, _, Loops),
+				   Ref,_, _-Dims)
 			 | PrevInters],
 	    make_intermediates(make_inter(SubExp, Ref), SubId, Target, 
 			DestPath, BackSwap, InitInters, BuildingArrays, 
@@ -1202,13 +1206,13 @@ Now one that uses a special conditional level */
 		ResultList = [RVal],
 		RUnits = int,
 		ValRef = stop_on_id(GraphId, RVal);
-	    Source = stage_incr(Home, Diffs, Step, Change, Key, MinB, MaxB),
+	    Source = stage_incr(Diffs, Step, Change, Key, MinB, MaxB),
 				% same again
-		SourceList = [Home, Diffs, Change],
-		Arg_template = [real, diffs, real],
-		ResultList = [RHome, RDiffs, RChange],
+		SourceList = [Diffs, Change],
+		Arg_template = [diffs, real],
+		ResultList = [RDiffs, RChange],
 		RUnits = real,
-		ValRef = stage_incr(RHome, RDiffs, Step, RChange,
+		ValRef = stage_incr(RDiffs, Step, RChange,
 				     Key, MinB, MaxB, GraphId);
 	    Source = check_limit(ActEqn, Lower, Upper, Flags, Step, Diffs),
 		SourceList = [ActEqn, Diffs],
@@ -1239,7 +1243,7 @@ Now one that uses a special conditional level */
 		name(Lop, LopStr),
 		ValRef =.. [Lop | ResultList],
 		((length(ArgTpts, Arity); WrongArity = 1),
-		    fragment_expansion(_, FragFile, Op, FragOut, ArgTpts),
+		    fragment_expansion(_, FragFile, Op, FragOut, ArgTpts),wake,
 		    (WrongArity = 0;
 			length(ArgTpts, FnArity),
 			throw(wrong_no_of_args(Source, Op, Arity, FnArity))), !,
@@ -1257,7 +1261,7 @@ Now one that uses a special conditional level */
 	    (nonvar(FragOut), !, % fragment-defined function: parsing, since
 		% these are replaced in instantiation during code build
 		SourceRef = FragOut, % placeholder
-		with_capt(OutNode, SmLoops, RefNode, FragOut),
+		with_capt(OutNode, [sm(_,_,_,_) | SmLoops], RefNode, FragOut),
 	        m_update'><'get_av_pair(OutNode, 0, units, OutArrSpec),
 	        m_update'><'analyze_array(OutArrSpec, Units, OutDims),
 	        make_inds_for(OutDims, _, OutLoops, _),
@@ -1345,8 +1349,8 @@ select_loops_from(ALoops, [IntIndxRef | MoreIIRs], [Limit | MoreLs],
 			   ItemLoops),
 	select_loops_from(TailLoops, MoreIIRs, MoreLs, HeadLoops),
 	append(HeadLoops, ItemLoops, LeftLoops).
-
-with_capt(Found, Loops, Sm, Capt) :-
+/*
+with_capt_recurse(Found, Loops, Sm, Capt) :-
 	caption_for(Sm, Capt), !,
 	    Found = Sm,
 	    Loops = [];
@@ -1355,6 +1359,16 @@ with_capt(Found, Loops, Sm, Capt) :-
 	    get_node_size(Sm, Dims),
 	    instance'><'path_section_for(Sm, _, Dims, Level, _,_),
 	    append(SubLoops, Level, Loops).
+
+with_capt only looks in the submodel immediately below, which means that the
+I/O nodes of a fragment function have to be at the top level. Otherwise it may
+get confused by another instance of the same fragment inside the current one
+*/
+with_capt(Found, Loops, Sm, Capt) :-
+	    find_all_comps(Sm, Found),
+	    caption_for(Found, Capt), !,
+	    get_node_size(Sm, Dims),
+	    instance'><'path_section_for(Sm, _, Dims, Loops, _,_).
 
 decode_number(Source, SubId, Step, SourceRef, Units) :-
 	(Source = row_count(''), SourceRef = R;
@@ -1469,6 +1483,7 @@ units_for_trigger_mag(Fn, MagUnits) :-
 
 units_for_evt_antecedents(Fn, EvtUnit) :-
 	contains(Evt, Fn), % in case input for frag-defined fn,
+	find_type(Evt, function),
 	m_update'><'get_all_links(Evt, discrete, _,
 	     input_link(_,_,_,_, EvtUnit)).
 
@@ -1478,12 +1493,12 @@ dissociate(Wrapper, Arg, Arg) :-
 	Arg =.. [Wrapper, _Cond];	% in case sofars/samesteps are nested
 	Arg = enumerate(_Parent). % need this even if not waiting for source
 	
-refer_inter(instance(internal, inter(OrigPath, _, ParamLoops), Source, Name,
+refer_inter(instance(internal, inter(SourcePath, _, ParamLoops), Source, Name,
 		     Units-Dims),
 	    DestPath, BuildLoops, Units, SourceContext, Args, SourceRef) :-
-	(Source = in_preceding(_) ->
-	    trim_one_multi_instance(OrigPath, InterPath);
-	  InterPath = OrigPath),
+%	(Source = in_preceding(_) ->
+%	    trim_one_multi_instance(OrigPath, InterPath);
+%	  InterPath = OrigPath),
 	(Source = last(_), !,
 	    Args = [Name]; /* bit of a hack...since
 	we use the total from the previous time step we don't need to
@@ -1495,9 +1510,8 @@ refer_inter(instance(internal, inter(OrigPath, _, ParamLoops), Source, Name,
 		    made_at(later(lastvalue(Name)), DestPath)];
 				% access before setting in same loop
 	    Args = [made_at(Name, SourceContext)]),
-	copy_term(InterPath, SourcePath),
 	(Source = in_progenitor(_),
-	    InterPath = [sm(BitOfAHack, _,_,_) | _],
+	    SourcePath = [sm(BitOfAHack, _,_,_) | _],
 	    atom(BitOfAHack), !, % undefined and irrelevant when parsing
 	    append_atoms(BitOfAHack, progen, SourcePtr),
 	    SourceRef = choose(nonnull(arr('', SourcePtr, [])),
@@ -1518,10 +1532,12 @@ prevent_inappropriate_reuse(Explicit, instance(Type, I, Replaces, Name, Dims),
 	NewReplaces = 'n/a';
 	NewReplaces = Replaces.
 */
-prevent_inappropriate_reuse(instance(_, inter(_, UseWhere, _), _,_,_)) :-
-	length(UseWhere, _L), !.
+prevent_inappropriate_reuse(instance(_, ISpec, _,_,_)) :-
+	ISpec = inter(_, UseWhere, _),
+	length(UseWhere, _L), !; true.
 
-keep_name_in_context(TgtLangName, instance(_, inter(_, UseWhere, _), _,_,_)) :-
+keep_name_in_context(TgtLangName, instance(_, ISpec, _,_,_)) :-
+	ISpec = inter(_, UseWhere, _),
 	member(TgtLangName, UseWhere), !; true.
 
 trim_one_multi_instance(DestPath, InterPath) :-
@@ -1995,7 +2011,7 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	  var(ADs),
 	    ADs = []),
 	...now, if a named input, read dims from it */
-	(nonvar(Name),
+	(nonvar(Name) -> wake,
 	    m_update'><'get_av_pair(VisDestId, 0, units, OldU),
 	    m_update'><'analyze_array(OldU, _OldUnits, NeededDims),
 	    length(NeededDims, N),

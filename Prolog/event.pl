@@ -53,7 +53,7 @@ value_propagates(Dir, From, To, Link) :-
 	(UseComp = Base; find_ghosts(Base, UseComp)),
 	(Dir = none,
 	    To = UseComp;
-	  implicit_function(UseComp, Fn),
+	  (implicit_function(UseComp, Fn) -> true; Fn = UseComp),
 	    (Dir = out,
 	      (m_class'><'UseComp is_connector _ -> StartsInfs = Fn;
 		  StartsInfs = UseComp),

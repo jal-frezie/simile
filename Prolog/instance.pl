@@ -182,7 +182,7 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	 Key is KeyL + 2; KeyL = Key, Max = 0),
 	is_instance(internal, st(Node), none, Diffs, diffs-Units, DiffSt),
 	Expr = with_phase(Step, [],
-		Home ++ stage_incr(Home, Diffs, Step, FChange, Key, Min, Max)
+		Home ++ stage_incr(Diffs, Step, FChange, Key, Min, Max)
 			 ++ QChange),
 	append(FRefs, QRefs, Refs),
 	Local = [DiffSt, Instance],
@@ -225,7 +225,7 @@ instance_of(Type, Node, Path,
 	 % channel is event -- just add magnitude
 	 Updater = Home+Struct;  % this format identifies discrete immigrations
 	 % channel is coninuous -- increment compartment style
-	Updater = with_phase(Step, [], Home+stage_incr(Home, Diffs, Step,
+	Updater = with_phase(Step, [], Home+stage_incr(Diffs, Step,
 						       Struct, 0,0,0))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

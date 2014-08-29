@@ -554,7 +554,7 @@ invent_ptr_names(L, LinkName, BaseSm, Node, Used, Ptrs) :-
 
 mark_update_insts(Act, Add) :-
 	Act = make(Efct, _,_, [update | _], [assign(SV, Src)]),
-	    (member(Src, [SV, SV+stage_incr(_,_,_,_,_,_,_,_), 
+	    (member(Src, [SV, SV+stage_incr(_,_,_,_,_,_,_), 
 			 choose(happens(_),_,_)]); % compartment updates
 	      Efct = tipped(_Sq)), !,		% state change
 	    Add = [Act];
@@ -1628,7 +1628,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    Linkers = [Set];
 	  Type = al_function,
 	    Fn = choose(LoopExitExpr, LoopStart, LoopStart),
-	    suffix(Path, DestPath), % because LoopStart evaluated when opening
+	    suffix(DestPath, Path), % because LoopStart evaluated when opening
 				% alarm submodel, before alarm condition done?
 	    Act = assign(Val, LoopExitExpr);
 	  Type = compartment,

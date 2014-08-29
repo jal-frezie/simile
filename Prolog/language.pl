@@ -982,7 +982,7 @@ make_evaluation_routine(
 	    make_procedure_call_chars(Language, [stop_on_id, GraphId, VIdent],
 				      Content_chars),
 	    name(Term, Content_chars);
-	Expr = stage_incr(Home, Struct, Step, Delta, Key, Min, Max, GraphId), !,
+	Expr = Home+stage_incr(Struct, Step, Delta, Key, Min, Max, GraphId), !,
 	    make_scalar(Language, Home, Used, SHome),
 	    make_scalar(Language, Struct, Used, SStruct),
 	    make_pointer(Language, SStruct, VStruct),
@@ -992,7 +992,8 @@ make_evaluation_routine(
 	    make_procedure_call_chars(Language, [stage_incr, SHome, VStruct,
 						 VStep, VDelta, Key, Min, Max,
 						 GraphId], Content_chars),
-	    name(Term, Content_chars);
+	    name(Content, Content_chars),
+	    Term = SHome+Content;
 	Expr =.. [check_limit, Trigger | Args], !,
 	    append(EarlyArgs, [Struct], Args),
 	    make_scalar(Language, Struct, Used, SStruct),
