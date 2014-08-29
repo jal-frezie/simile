@@ -265,8 +265,8 @@ proc create_equation {parent purpose comp indices enum_types} {
 		-yscrollcommand "$equation(actzone).scroll set"]
     AllowTextDrags $en
 # risky choice, it may encourage modellers to enter very large equations
-    # Safer bet: use math input toool
-    bind $en <<Paste>> {CheckForMathInput %W}
+    # Safer bet: use math input toool. Problem, produces wrong kind of MathML
+    # bind $en <<Paste>> {CheckForMathInput %W}
     
     scrollbar $equation(actzone).scroll -orient vert -command "$en yview"
     pack $equation(actzone).scroll -side right -fill y

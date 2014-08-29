@@ -97,7 +97,7 @@ proc do_tail {header args} {
 
 proc send_pl_cmd {withCrs} {
     global plPipe
-    set plCmd [string map [list \n \\n \r \\r] $withCrs]
+    set plCmd [string map [list \n \\u000a \r \\r] $withCrs]
 #    puts [concat [string repeat -- $plPipe(recur)] tk: $plCmd <br>]
     if {$plPipe(debug)} {
 	puts $plPipe(debug_stream) [concat > $plCmd]

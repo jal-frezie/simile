@@ -2181,7 +2181,8 @@ proc accept_equation {winId text} {
     global equation
     global equationbar
     set equationbar(current_action) tick
-    set equationbar(equation) [string trimright [$text get]]
+    set equationbar(equation)  \
+	[string map [list \\n \n] [string trimright [$text get]]]
 # do if a combobox -- not now cos no cursor insert
 # (huh? Seems OK with ttk::combobox)
     set equation(prevs) [AddIfAbsent $equationbar(equation) $equation(prevs)]

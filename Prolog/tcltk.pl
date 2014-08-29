@@ -6,7 +6,7 @@ sicstus_use_module([library(lists), sp_only]).
 
 any_tcl_eval(Cmd, Except, Result) :-
         decode_command(Cmd, BrokenString),
-	remove_crs(BrokenString, TtfnString),
+	convert_crs(BrokenString, TtfnString),
 	all_ttfn_to_utf8(TtfnString, String),
 	format("send_tcl_cmd ~s", [String]), nl,
 	flush_output,
@@ -20,28 +20,16 @@ read_codes(Result) :-
         read_codes(More),
 	    Result = [C | More]).
 
-remove_crs([], []).
+/* Convert line breaks to \u00a, but string might actually include a
+\u00a so also convert \u to \u05c (add last bit later) */
 
-/* Convert line breaks to \u00a, but string might actually include a \u so also
-convert \ to \u05c (add last bit later) */
+convert_crs([], []).
 
-remove_crs([H | T], New) :-
-	[Cr, Esc, U, O, A] = "\n\\u0a",
-	(H = Cr, !,
-	    New = [Esc, U, O, O, O, A | T2];
-	New = [H | T2]),
-	remove_crs(T, T2).
-
-restore_crs([], []).
-
-restore_crs([Cr | R1], New) :-
-	(New = [Esc, N | R2],
-	    [Esc, N] = "\\n", !,
-	    [Cr] = "\n";
-	New = [Cr | R2]),
-	restore_crs(R1, R2).
-
-
+convert_crs([PossCr | T1], Without) :-
+	([PossCr, Esc, U, O, A] = "\n\\u0a",
+	Without = [Esc, U, O, O, O, A | T2], !;
+	Without = [PossCr | T2]),
+	convert_crs(T1, T2).
 
 
 /* Many thanks to this guy for supplying me with an earlier version of
@@ -134,7 +122,7 @@ wait_for_tcl(Except, Result) :-
 	    do_cmd(TermStr),
 	    fail;
 	append("result:", Joined, TclStr),
-	    restore_crs(Result, Joined);
+	    convert_crs(Result, Joined);
 	append("slipup:", ZwipStr, TclStr),
 	    name(ZwipAtom, ZwipStr),
 	    raise_exception(slipup(ZwipAtom));
