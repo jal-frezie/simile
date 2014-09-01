@@ -233,6 +233,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
         FillIfSmall $slot.e $suppliedData($compName)
     } else {
         set suppliedData($compName) {}
+	AbleHandEditControls $slot ;# they are not packed yet
     }
 
     if {[llength $nodeDims]>1} {
@@ -267,8 +268,8 @@ proc AbleHandEditControls {slot} {
         pack $slot.tick -side left
         pack $slot.cross -side left
     } else {
-        pack forget $slot.tick -side left
-        pack forget $slot.cross -side left
+        pack forget $slot.tick
+        pack forget $slot.cross
     }
 }
 
