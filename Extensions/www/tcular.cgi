@@ -1,4 +1,4 @@
-#!/usr/bin/tclsh
+#!/usr/bin/tclsh8.5
 foreach local {sPath sHome mdl shLib} val $argv {
     set $local $val
 }
@@ -15,21 +15,16 @@ if {![file exists $sHome]} {
 set env(HOME) $sHome
 catch {file delete [file join $sHome $shLib]}
 catch {file delete [file join $sHome .simile Desktop1.smx]}
+puts $auto_path<br>
 if {[catch {
     package require SimileAutoObj
 
     similescript::ModelWindow modelWin
     modelWin Open $mdl
-}]} {
-    puts $errorInfo
-}
-
-if {[catch {
     modelWin BuildShareLib [file join $sHome $shLib]
+# now export the svg over the original model
+    modelWin BuildSVGDiagram $mdl.svg
 }]} {
     puts $errorInfo
+    exit
 }
-
-# now export the svg over the original model
-modelWin BuildSVGDiagram $mdl.svg
-prolog tk_kill_everything(_)

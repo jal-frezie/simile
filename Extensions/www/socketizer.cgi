@@ -1,10 +1,11 @@
-#!/usr/bin/tclsh
+#!/usr/bin/tclsh8.5
 foreach local {sPath sHome mdl shLib} val $argv {
     set $local $val
 }
 
-source [file join [file dirname [info script]] client5d.tcl]
 set env(HOME) $sHome
+lappend auto_path [file join $sPath System lib] ;# ce qui compte...
+source [file join $sPath Extensions Simile exec client5d.tcl]
 
 
 # Stuff that needs doing only once
@@ -25,10 +26,19 @@ foreach obj $catalog {
 
 proc Server {channel clientaddr clientport} {
     gets $channel parrot
-    puts $channel [uplevel #0 $parrot]
+    if {[catch {uplevel #0 $parrot} resp]} {
+	puts $channel "ERROR: $::errorInfo"
+    } else {
+        puts $channel $resp
+    }
     close $channel
 }
 
 set typho [socket -server Server 0]
-puts [lindex [fconfigure $typho -sockname] end]
+# the php proc_open() will not return till the process finishes, so use file to send socket id
+set sockId [lindex [fconfigure $typho -sockname] end]
+set dmp [open ${mdl}.rdy w]
+puts $dmp $sockId
+close $dmp
+
 vwait forever
