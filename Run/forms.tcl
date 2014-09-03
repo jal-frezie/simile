@@ -1793,7 +1793,9 @@ proc ShowAbout {winId} {
 
 proc GetLatestVers {} {
     package require http
-    set token [::http::geturl http://www.simulistics.com/cgi-bin/products/current-version.php -timeout 2500]
+    if {[catch {::http::geturl http://www.simulistics.com/cgi-bin/products/current-version.php -timeout 2500} token]} {
+	return 0
+    }
     upvar #0 $token versReq
     if {$versReq(status) eq "ok"} {
 	array set versInfo $versReq(body)
