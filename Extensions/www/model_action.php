@@ -210,13 +210,13 @@ break;
 	     $endInt = $endPt;
 	 }
 	 doTcl("DoExecuteModel [set iH] Euler $current $endInt 0 0");
-	 for($x=0;$x<count($note);$x++) {
+	 for($x=1;$x<count($note);$x++) {
             $val = doTcl("GetJsonValuesById [set iH] " . $note[$x]);
 // if ExecuteMulti the time points are outer indices
             if ($_POST['act'] == "Execute") {
                $hlpArr[$note[$x]][$endInt] = $val;
 	    } else {
-               $hlpArr[$endInt][$note[$x]] = $val;
+               $hlpArr[$endInt][$note[$x]] = json_decode($val);
 	    }
       	 }
       }

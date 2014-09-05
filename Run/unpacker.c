@@ -277,9 +277,9 @@ void extend_list(Tcl_Obj *localObj, int index, Tcl_Obj *localSubObj, int dir) {
 }
 
 Tcl_Obj* extend_string(Tcl_Obj *localObj, int index, Tcl_Obj *localSubObj, int dir) {
-  Tcl_Obj* localNewObj = Tcl_NewStringObj("'",1);
+  Tcl_Obj* localNewObj = Tcl_NewStringObj("\"",1);
   Tcl_AppendObjToObj(localNewObj, Tcl_NewIntObj(index));
-  Tcl_AppendToObj(localNewObj, "':", 2);
+  Tcl_AppendToObj(localNewObj, "\":", 2);
   Tcl_AppendObjToObj(localNewObj, localSubObj);
   if (!Tcl_GetCharLength(localObj))
     return localNewObj;

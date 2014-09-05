@@ -157,6 +157,7 @@ function model_step(current, start, end, span, note) {
 	     "current":current, "step":$("#ts").val(), "log":log, "note":note}
     })
       .done(function(newVals) {
+//	  alert('Data returned ' + newVals);
 	block = JSON.parse(newVals);
         for (var timePt in block) {
           update_helpers(timePt, block[timePt]);
@@ -249,7 +250,7 @@ function new_helper(type) {
   } else if (type == "table") {
     currentHelper = new DataTable(id);
   } else {
-    currentHelper = new PlotValAgainstTime(id);
+    currentHelper = new PlotXY(id);
   }
   currentHelpers.push(currentHelper);
   tabs.tabs("option", "active", tabs.children().length - 2);
@@ -470,6 +471,72 @@ function PlotValAgainstTime (port) {
   $('#' + port).html("Click on a component in the Explorer pane or the Model Diagram.");
 }
 
+function flatten(head,ob) {
+    var result = {};
+    if (typeof (ob) == "object") {
+	for (var neck in ob) {
+	    var iny = flatten(head, ob[neck]);
+	    for (var item in iny) {
+		result[neck + ',' + item] = iny[item];
+	    }
+	}
+    } else {
+	result[head] = ob;
+    }
+    return result;
+}
+
+function PlotXY (port) {
+  this.port = port;
+  this.tgts = [];
+  this.status = "initializing";
+
+// OK now add the message to the new tab
+  $('#' + port).html("Click on a component to plot on the Y axis.");
+}
+
+PlotXY.prototype.acceptClick = function (compId) {
+  if (this.status == "initializing") {
+    this.tgts[0] = compId;
+    this.oldys = flatten(values_json[compId]);
+    $('#' + this.port).html("Click on a component to plot on the X axis.");
+    this.status = "getting_x";
+  } else {
+    this.status = "displaying";
+    this.tgts[1] = compId;
+    this.oldxs = flatten(values_json[compId]);
+
+    $('#' + this.port).html("Plot of " + model_json[this.tgts[0]].captpath +
+			   " against " + model_json[this.tgts[1]].captpath);
+    var svgElem = document.createElementNS (xmlns, "svg");
+    document.getElementById(this.port).appendChild(svgElem);
+    svgElem.setAttributeNS (null, "viewBox", "0 0 " + 800 + " " + 800);
+    svgElem.setAttributeNS (null, "width", 800);
+    svgElem.setAttributeNS (null, "height", 800);
+    svgElem.style.display = "block";
+
+    this.g = document.createElementNS (xmlns, "g");
+    svgElem.appendChild (this.g);
+//            g.setAttributeNS (null, 'transform', 'matrix(1,0,0,-1,0,300)');
+  }
+}
+    
+PlotXY.prototype.display = function (time, latest) {
+  if (this.status == "displaying") {
+      newys = flatten('t', latest[this.tgts[0]]);
+      newxs = flatten('t', latest[this.tgts[1]]);
+      for (var hdl in newys) {
+	  nlin = document.createElementNS (xmlns, "line");
+	  this.g.appendChild (nlin);
+	  nlin.setAttribute('y', [this.oldys[hdl], newys[hdl]]);
+	  nlin.setAttribute('x', [this.oldxs[hdl], newxs[hdl]]);
+          nlin.style.stroke = "black";
+      }
+      this.oldys = newys;
+      this.oldxs = newxs;
+  }
+}
+
 // PlotValueAgainstTime.prototype = new DisplayTool(this);
 // PlotValueAgainstTime.prototype.constructor = new PlotValueAgainstTime;
 PlotValAgainstTime.prototype.acceptClick = function (compId) {
@@ -595,6 +662,7 @@ $.post('model_action.php', {"act":"WaitSocket", "base":fileBase},
 });
 
 ////////////////////////////////////// PREPARE /////////////////////////////
+var xmlns = 'http://www.w3.org/2000/svg';
 var tooltip_grp;
 var tooltip_bd;
 var tooltip_qbg;
@@ -629,8 +697,8 @@ $.ajax({
     ModDiag.appendChild(tooltip_grp);
   });  
   // Create a path in SVG's namespace
-  tooltip_grp = document.createElementNS('http://www.w3.org/2000/svg','g');
-  tooltip_bd = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  tooltip_grp = document.createElementNS(xmlns,'g');
+  tooltip_bd = document.createElementNS(xmlns,'rect');
   tooltip_bd.setAttribute("x", "0");
   tooltip_bd.setAttribute("y", "0");
   tooltip_bd.setAttribute("width", "24");
@@ -640,7 +708,7 @@ $.ajax({
   tooltip_bd.style.stroke="black";
   tooltip_grp.appendChild(tooltip_bd);
   
-  tooltip_qbg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  tooltip_qbg = document.createElementNS(xmlns,'rect');
   tooltip_qbg.setAttribute("x", "0");
   tooltip_qbg.setAttribute("y", "0");
   tooltip_qbg.setAttribute("width", "24");
@@ -650,7 +718,7 @@ $.ajax({
   tooltip_qbg.style.stroke="none";
   tooltip_grp.appendChild(tooltip_qbg);
   
-  tooltip_vbg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  tooltip_vbg = document.createElementNS(xmlns,'rect');
   tooltip_vbg.setAttribute("x", "0");
   tooltip_vbg.setAttribute("y", "12");
   tooltip_vbg.setAttribute("width", "24");
@@ -660,7 +728,7 @@ $.ajax({
   tooltip_vbg.style.stroke="none";
   tooltip_grp.appendChild(tooltip_vbg);
   
-  tooltip_q = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+  tooltip_q = document.createElementNS(xmlns, 'text');
   tooltip_q.setAttribute("x","4");
   tooltip_q.setAttribute("y","0.8em");
   tooltip_q.setAttribute("style","font-family: Helvetica; font-size: 9pt;");
@@ -668,7 +736,7 @@ $.ajax({
   tooltip_q.appendChild(document.createTextNode(0));
   tooltip_grp.appendChild(tooltip_q);
   
-  tooltip_v = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+  tooltip_v = document.createElementNS(xmlns, 'text');
   tooltip_v.setAttribute("x","4");
   tooltip_v.setAttribute("y","1.8em");
   tooltip_v.setAttribute("style","font-family: Helvetica; font-size: 9pt;");
