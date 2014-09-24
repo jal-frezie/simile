@@ -156,6 +156,7 @@ function model_step(current, start, end, span, note) {
       data: {"port":svrPort,  "act":"ExecuteMulti", "runlength":interval, 
 	     "current":current, "step":$("#ts").val(), "log":log, "note":note}
     })
+
       .done(function(newVals) {
 //	  alert('Data returned ' + newVals);
 	block = JSON.parse(newVals);
@@ -498,25 +499,48 @@ function PlotXY (port) {
 PlotXY.prototype.acceptClick = function (compId) {
   if (this.status == "initializing") {
     this.tgts[0] = compId;
-    this.oldys = flatten(values_json[compId]);
-    $('#' + this.port).html("Click on a component to plot on the X axis.");
+    this.oldys = flatten('t', JSON.parse(values_json[compId]));
+    buttonFn = "select_for_helper('time')";
+    $('#' + this.port).html("Click on a component to plot on the X axis, or <button type='button' onclick=" + buttonFn + ">here</button> to plot against time.");
     this.status = "getting_x";
   } else {
     this.status = "displaying";
-    this.tgts[1] = compId;
-    this.oldxs = flatten(values_json[compId]);
-
+    if (compId == "time") {
+	this.oldt = parseFloat($("#ct").val());
+	this.xmin = this.oldt;
+	this.xmax = this.oldt + parseFloat($("#rl").val());
+	xAxisName = "time";
+    } else {
+	this.tgts[1] = compId;
+	this.oldxs = flatten('t', JSON.parse(values_json[compId]));
+	xAxisName = model_json[compId].captpath;
+    }
+    for (var hdl in this.oldys) {
+	if (compId != "time") {
+	    if (this.xmin == undefined || this.oldxs[hdl] < this.xmin) {
+		this.xmin = this.oldxs[hdl];
+            }
+	    if (this.xmax == undefined || this.oldxs[hdl] > this.xmax) {
+		this.xmax = this.oldxs[hdl];
+	    }
+	}
+	if (this.ymin == undefined || this.oldys[hdl] < this.ymin) {
+	    this.ymin = this.oldys[hdl];
+        }
+	if (this.ymax == undefined || this.oldys[hdl] > this.ymax) {
+	    this.ymax = this.oldys[hdl];
+	}
+    }
     $('#' + this.port).html("Plot of " + model_json[this.tgts[0]].captpath +
-			   " against " + model_json[this.tgts[1]].captpath);
+			   " against " + xAxisName);
     var svgElem = document.createElementNS (xmlns, "svg");
     document.getElementById(this.port).appendChild(svgElem);
-    svgElem.setAttributeNS (null, "viewBox", "0 0 " + 800 + " " + 800);
     svgElem.setAttributeNS (null, "width", 800);
     svgElem.setAttributeNS (null, "height", 800);
-    svgElem.style.display = "block";
 
-    this.g = document.createElementNS (xmlns, "g");
-    svgElem.appendChild (this.g);
+//    this.g = document.createElementNS (xmlns, "g");
+//    svgElem.appendChild (this.g);
+    this.g = svgElem;
 //            g.setAttributeNS (null, 'transform', 'matrix(1,0,0,-1,0,300)');
   }
 }
@@ -524,16 +548,52 @@ PlotXY.prototype.acceptClick = function (compId) {
 PlotXY.prototype.display = function (time, latest) {
   if (this.status == "displaying") {
       newys = flatten('t', latest[this.tgts[0]]);
-      newxs = flatten('t', latest[this.tgts[1]]);
+      if (this.tgts[1] != undefined) {
+	  newxs = flatten('t', latest[this.tgts[1]]);
+      }
       for (var hdl in newys) {
+//	  alert("Adding line from " + this.oldxs[hdl] + ", " + this.oldys[hdl]
+//		+ " to " + newxs[hdl] + ", " + newys[hdl]);
 	  nlin = document.createElementNS (xmlns, "line");
 	  this.g.appendChild (nlin);
-	  nlin.setAttribute('y', [this.oldys[hdl], newys[hdl]]);
-	  nlin.setAttribute('x', [this.oldxs[hdl], newxs[hdl]]);
+	  nlin.setAttribute('y1', this.oldys[hdl]);
+	  nlin.setAttribute('y2', newys[hdl]);
+	  if (this.tgts[1] == undefined) {
+	      nlin.setAttribute('x1', this.oldt);
+	      nlin.setAttribute('x2', time);
+	  } else {
+	      nlin.setAttribute('x1', this.oldxs[hdl]);
+	      nlin.setAttribute('x2', newxs[hdl]);
+	      if (newxs[hdl] < this.xmin) {
+		  this.xmin = newxs[hdl];
+              }
+	      if (newxs[hdl] > this.xmax) {
+		  this.xmax = newxs[hdl];
+	      }
+	  }
+	  if (newys[hdl] < this.ymin) {
+	      this.ymin = newys[hdl];
+          }
+	  if (newys[hdl] > this.ymax) {
+	      this.ymax = newys[hdl];
+	  }
           nlin.style.stroke = "black";
+          nlin.style.vectorEffect = "non-scaling-stroke";
       }
       this.oldys = newys;
-      this.oldxs = newxs;
+      if (this.tgts[1] == undefined) {
+	  this.oldt = time;
+	  if (time>this.xmax) {
+	      this.xmax = parseFloat($("#ct").val()) + parseFloat($("#rl").val());
+	  }
+      } else {
+	  this.oldxs = newxs;
+      }
+      vbStr = this.xmin + " " + this.ymin + " "
+	  + (this.xmax-this.xmin) + " " + (this.ymax-this.ymin);
+//      alert(vbStr);
+      this.g.setAttributeNS(null, "viewBox", vbStr);
+      this.g.setAttributeNS(null, "preserveAspectRatio", "none");
   }
 }
 
