@@ -556,8 +556,8 @@ PlotXY.prototype.display = function (time, latest) {
 //		+ " to " + newxs[hdl] + ", " + newys[hdl]);
 	  nlin = document.createElementNS (xmlns, "line");
 	  this.g.appendChild (nlin);
-	  nlin.setAttribute('y1', this.oldys[hdl]);
-	  nlin.setAttribute('y2', newys[hdl]);
+	  nlin.setAttribute('y1', -this.oldys[hdl]);
+	  nlin.setAttribute('y2', -newys[hdl]);
 	  if (this.tgts[1] == undefined) {
 	      nlin.setAttribute('x1', this.oldt);
 	      nlin.setAttribute('x2', time);
@@ -589,7 +589,7 @@ PlotXY.prototype.display = function (time, latest) {
       } else {
 	  this.oldxs = newxs;
       }
-      vbStr = this.xmin + " " + this.ymin + " "
+      vbStr = this.xmin + " " + (-this.ymax) + " "
 	  + (this.xmax-this.xmin) + " " + (this.ymax-this.ymin);
 //      alert(vbStr);
       this.g.setAttributeNS(null, "viewBox", vbStr);

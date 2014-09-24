@@ -209,7 +209,7 @@ break;
 	 if ($endInt > $endPt) {
 	     $endInt = $endPt;
 	 }
-	 doTcl("DoExecuteModel [set iH] Euler $current $endInt 0 0");
+	 doTcl("DoExecuteModel [set iH] Euler $t $endInt 0 0");
 	 for($x=1;$x<count($note);$x++) {
             $val = doTcl("GetJsonValuesById [set iH] " . $note[$x]);
 // if ExecuteMulti the time points are outer indices
