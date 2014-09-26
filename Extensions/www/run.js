@@ -496,6 +496,7 @@ function PlotXY (port) {
   $('#' + port).html("Click on a component to plot on the Y axis.");
 }
 
+var xyGlbsForD3 = {};
 PlotXY.prototype.acceptClick = function (compId) {
   if (this.status == "initializing") {
     this.tgts[0] = compId;
@@ -504,7 +505,27 @@ PlotXY.prototype.acceptClick = function (compId) {
     $('#' + this.port).html("Click on a component to plot on the X axis, or <button type='button' onclick=" + buttonFn + ">here</button> to plot against time.");
     this.status = "getting_x";
   } else {
-    this.status = "displaying";
+      this.status = "displaying";
+      
+      w = 800;
+      h = 800;
+      ngap = 40;
+
+    y = d3.scale.linear()
+	  .domain([100,-100])
+	  .range([0, h]);
+    x = d3.scale.linear()
+	  .domain([-100,100])
+	  .range([ngap, w+ngap]);
+    xAxis = d3.svg.axis()
+	  .scale(x)
+	  .tickSize(-h)
+	  .orient("bottom");
+    yAxis = d3.svg.axis()
+	  .scale(y)
+	  .tickSize(-w)
+	  .orient("left");
+
     if (compId == "time") {
 	this.oldt = parseFloat($("#ct").val());
 	this.xmin = this.oldt;
@@ -515,7 +536,14 @@ PlotXY.prototype.acceptClick = function (compId) {
 	this.oldxs = flatten('t', JSON.parse(values_json[compId]));
 	xAxisName = model_json[compId].captpath;
     }
-    for (var hdl in this.oldys) {
+      this.line = d3.svg.line()
+	  .y(function(d) {
+	      return y(d.y);
+	  })
+	  .x(function(d) {
+	      return x(d.x);
+	  });
+      for (var hdl in this.oldys) {
 	if (compId != "time") {
 	    if (this.xmin == undefined || this.oldxs[hdl] < this.xmin) {
 		this.xmin = this.oldxs[hdl];
@@ -533,19 +561,74 @@ PlotXY.prototype.acceptClick = function (compId) {
     }
     $('#' + this.port).html("Plot of " + model_json[this.tgts[0]].captpath +
 			   " against " + xAxisName);
-    var svgElem = document.createElementNS (xmlns, "svg");
-    document.getElementById(this.port).appendChild(svgElem);
-    svgElem.setAttributeNS (null, "width", 800);
-    svgElem.setAttributeNS (null, "height", 800);
+    this.svg = d3.select('#' + this.port).append("svg")
+      .attr("width",w+ngap).attr("height",h+ngap);
+    var xAxisGroup = this.svg.append("g")
+          .attr("id", this.port + "_xbar")
+	  .attr("class", "x axis")
+	  .attr("transform", "translate(0," + w + ")");
+    var yAxisGroup = this.svg.append("g")
+          .attr("id", this.port + "_ybar")
+	  .attr("class", "y axis")
+	  .attr("transform", "translate(" + ngap + ",0)");
+      var portStr = this.port;
+      zoom = d3.behavior.zoom()
+	  .on("zoom", function() {redraw.call(this, portStr) });
+      this.svg.append("rect")
+	  .attr("class", "pane")
+	  .attr("width", w+ngap)
+	  .attr("height", h+ngap)
+	  .call(zoom);
+      zoom.x(x);
+      zoom.y(y);
+      redraw(portStr);
 
-//    this.g = document.createElementNS (xmlns, "g");
-//    svgElem.appendChild (this.g);
-    this.g = svgElem;
-//            g.setAttributeNS (null, 'transform', 'matrix(1,0,0,-1,0,300)');
   }
 }
-    
+  
+function redraw (port) {
+    console.log(port);
+    d3.select('#' + port + "_ybar").call(yAxis);
+    d3.select('#' + port + "_xbar").call(xAxis);
+}
+
 PlotXY.prototype.display = function (time, latest) {
+  if (this.status == "displaying") {
+      idxs = [];
+      newys = flatten('t', latest[this.tgts[0]]);
+      if (this.tgts[1] != undefined) {
+	  newxs = flatten('t', latest[this.tgts[1]]);
+	  for (var hdl in newys) {
+	      idxs.push([{"y":this.oldys[hdl],"x":this.oldxs[hdl]},
+			 {"y":newys[hdl],"x":newxs[hdl]}]);
+	  }
+      } else {
+	  for (var hdl in newys) {
+	      idxs.push([{"y":this.oldys[hdl],"x":this.oldt},
+			 {"y":newys[hdl],"x":time}]);
+	  }
+      }
+      this.svg.append("g") // new group for this time step's data
+      .selectAll(".line")
+	  .data(idxs)
+	  .enter().append("path")
+	  .attr("class", "line")
+	  .style("stroke","blue")
+	  .attr("d", this.line);
+
+      this.oldys = newys;
+      if (this.tgts[1] == undefined) {
+	  this.oldt = time;
+	  if (time>this.xmax) {
+	      this.xmax = parseFloat($("#ct").val()) + parseFloat($("#rl").val());
+	  }
+      } else {
+	  this.oldxs = newxs;
+      }
+  }
+}
+
+PlotXY.prototype.olddisplay = function (time, latest) {
   if (this.status == "displaying") {
       newys = flatten('t', latest[this.tgts[0]]);
       if (this.tgts[1] != undefined) {

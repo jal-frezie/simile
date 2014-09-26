@@ -15,6 +15,17 @@
 <script src="//cdn.datatables.net/plug-ins/be7019ee387/api/page.jumpToData().js"></script>
 <style>
 #tabs li .ui-icon-close { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
+.axis path, .axis line {
+  fill: none;
+  stroke: #bbb;
+}
+
+rect.pane {
+  cursor: move;
+  fill: none;
+  pointer-events: all;
+}
+
 </style>
 <?php
 include_once "make_exec.php";
