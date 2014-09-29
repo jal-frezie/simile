@@ -536,7 +536,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	this.oldxs = flatten('t', JSON.parse(values_json[compId]));
 	xAxisName = model_json[compId].captpath;
     }
-      this.line = d3.svg.line()
+      line = d3.svg.line()
 	  .y(function(d) {
 	      return y(d.y);
 	  })
@@ -572,15 +572,36 @@ PlotXY.prototype.acceptClick = function (compId) {
 	  .attr("class", "y axis")
 	  .attr("transform", "translate(" + ngap + ",0)");
       var portStr = this.port;
-      zoom = d3.behavior.zoom()
-	  .on("zoom", function() {redraw.call(this, portStr) });
-      this.svg.append("rect")
+      zoomxaxis = d3.behavior.zoom()
+	  .x(x)
+	  .on("zoom", function() {redraw.call(this, portStr) })
+          .on("zoomend", resetAxes);
+      zoomyaxis = d3.behavior.zoom()
+          .y(y)
+	  .on("zoom", function() {redraw.call(this, portStr) })
+          .on("zoomend", resetAxes);
+      zoomport = d3.behavior.zoom()
+	  .x(x)
+          .y(y)
+	  .on("zoom", function() {redraw.call(this, portStr) })
+          .on("zoomend", resetAxes);
+      this.svg.append("rect") // x scale
 	  .attr("class", "pane")
+	  .attr("y",h)
 	  .attr("width", w+ngap)
-	  .attr("height", h+ngap)
-	  .call(zoom);
-      zoom.x(x);
-      zoom.y(y);
+	  .attr("height", ngap)
+	  .call(zoomxaxis);
+      this.svg.append("rect") // y scale
+	  .attr("class", "pane")
+	  .attr("width", ngap)
+	  .attr("height", h)
+	  .call(zoomyaxis);
+      this.svg.append("rect") // port
+	  .attr("class", "pane")
+          .attr("x", ngap)
+	  .attr("width", w)
+	  .attr("height", h)
+	  .call(zoomport);
       redraw(portStr);
 
   }
@@ -590,6 +611,14 @@ function redraw (port) {
     console.log(port);
     d3.select('#' + port + "_ybar").call(yAxis);
     d3.select('#' + port + "_xbar").call(xAxis);
+    d3.selectAll(".trace").attr("d", line);
+}
+
+function resetAxes () {
+// now reset zoom axes so next one is always relative
+    zoomxaxis.x(x);
+    zoomyaxis.y(y);
+    zoomport.x(x).y(y);
 }
 
 PlotXY.prototype.display = function (time, latest) {
@@ -609,12 +638,12 @@ PlotXY.prototype.display = function (time, latest) {
 	  }
       }
       this.svg.append("g") // new group for this time step's data
-      .selectAll(".line")
+      .selectAll(".line") // selects empty set?
 	  .data(idxs)
 	  .enter().append("path")
-	  .attr("class", "line")
+	  .attr("class", "trace")
 	  .style("stroke","blue")
-	  .attr("d", this.line);
+	  .attr("d", line);
 
       this.oldys = newys;
       if (this.tgts[1] == undefined) {
