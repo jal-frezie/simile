@@ -317,18 +317,18 @@ generate structure type declarations for them, starting with the most deeply
 nested. Data about submodel multiplicity is left in the main model. Start with c++ 
 keywords in list of things that cannot be used as variable names...*/
 
-	Keywords = [asm, auto, bad_cast,
+	Keywords = [and, asm, auto, bad_cast,
 		    bad_typeid, bool, break, case, catch, char, class,
 		    const, const_cast, continue, default, delete, do,
 		    double, dynamic_cast, else, enum, except, export,
 		    extern, false, far, finally, float, for, friend,
 		    goto, huge, if, inline, int, long, namespace, near, new,
-		    operator, private, protected, public, register,
+		    not, operator, private, protected, public, or, register,
 		    reinterpret_cast, return, short, signed, sizeof,
-		    static, static_cast, struct, switch, template,
+		    static, static_cast, struct, switch, template, then,
 		    this, throw, true, try, type_info, typedef,
 		    typeid, union, unsigned, using, virtual, void,
-		    volatile, while, xalloc],
+		    volatile, while, xalloc, xor],
 
 /* And there are also a few variable names that are sacred to the data
 extraction procedures, including 'tree' which is fairly
