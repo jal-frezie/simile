@@ -511,17 +511,17 @@ PlotXY.prototype.acceptClick = function (compId) {
       h = 800;
       ngap = 40;
 
-    y = d3.scale.linear()
-	  .domain([100,-100])
-	  .range([0, h]);
-    x = d3.scale.linear()
+    var x = d3.scale.linear()
 	  .domain([-100,100])
 	  .range([ngap, w+ngap]);
-    xAxis = d3.svg.axis()
+    var y = d3.scale.linear()
+	  .domain([100,-100])
+	  .range([0, h]);
+    var xAxis = d3.svg.axis()
 	  .scale(x)
 	  .tickSize(-h)
 	  .orient("bottom");
-    yAxis = d3.svg.axis()
+    var yAxis = d3.svg.axis()
 	  .scale(y)
 	  .tickSize(-w)
 	  .orient("left");
@@ -536,13 +536,14 @@ PlotXY.prototype.acceptClick = function (compId) {
 	this.oldxs = flatten('t', JSON.parse(values_json[compId]));
 	xAxisName = model_json[compId].captpath;
     }
-      line = d3.svg.line()
+    var gLine = d3.svg.line()
 	  .y(function(d) {
 	      return y(d.y);
 	  })
 	  .x(function(d) {
 	      return x(d.x);
 	  });
+      this.line = gLine;
       for (var hdl in this.oldys) {
 	if (compId != "time") {
 	    if (this.xmin == undefined || this.oldxs[hdl] < this.xmin) {
@@ -572,19 +573,22 @@ PlotXY.prototype.acceptClick = function (compId) {
 	  .attr("class", "y axis")
 	  .attr("transform", "translate(" + ngap + ",0)");
       var portStr = this.port;
-      zoomxaxis = d3.behavior.zoom()
+      var zoomFn = function() {redraw.call(this, portStr,yAxis,xAxis, gLine) };
+      var zoomendFn = function() {resetAxes.call(this, zoomxaxis, zoomyaxis,
+						 zoomport, x, y) };
+      var zoomxaxis = d3.behavior.zoom()
 	  .x(x)
-	  .on("zoom", function() {redraw.call(this, portStr) })
-          .on("zoomend", resetAxes);
-      zoomyaxis = d3.behavior.zoom()
+	  .on("zoom", zoomFn)
+          .on("zoomend", zoomendFn);
+      var zoomyaxis = d3.behavior.zoom()
           .y(y)
-	  .on("zoom", function() {redraw.call(this, portStr) })
-          .on("zoomend", resetAxes);
-      zoomport = d3.behavior.zoom()
+	  .on("zoom", zoomFn)
+          .on("zoomend", zoomendFn);
+      var zoomport = d3.behavior.zoom()
 	  .x(x)
           .y(y)
-	  .on("zoom", function() {redraw.call(this, portStr) })
-          .on("zoomend", resetAxes);
+	  .on("zoom", zoomFn)
+          .on("zoomend", zoomendFn);
       this.svg.append("rect") // x scale
 	  .attr("class", "pane")
 	  .attr("y",h)
@@ -602,19 +606,21 @@ PlotXY.prototype.acceptClick = function (compId) {
 	  .attr("width", w)
 	  .attr("height", h)
 	  .call(zoomport);
-      redraw(portStr);
+      redraw(portStr,yAxis,xAxis);
 
   }
 }
   
-function redraw (port) {
-    console.log(port);
+function redraw (port,yAxis,xAxis,line) {
     d3.select('#' + port + "_ybar").call(yAxis);
     d3.select('#' + port + "_xbar").call(xAxis);
-    d3.selectAll(".trace").attr("d", line);
+    d3.select('#' + port)
+	.selectAll(".step")
+	.selectAll(".trace")
+	.attr("d", line);
 }
 
-function resetAxes () {
+function resetAxes (zoomxaxis, zoomyaxis, zoomport, x, y) {
 // now reset zoom axes so next one is always relative
     zoomxaxis.x(x);
     zoomyaxis.y(y);
@@ -623,6 +629,7 @@ function resetAxes () {
 
 PlotXY.prototype.display = function (time, latest) {
   if (this.status == "displaying") {
+// OK now how big is it? 
       idxs = [];
       newys = flatten('t', latest[this.tgts[0]]);
       if (this.tgts[1] != undefined) {
@@ -637,13 +644,14 @@ PlotXY.prototype.display = function (time, latest) {
 			 {"y":newys[hdl],"x":time}]);
 	  }
       }
-      this.svg.append("g") // new group for this time step's data
-      .selectAll(".line") // selects empty set?
+      newGrp = this.svg.append("g")
+          .attr("class", "step"); // new group for this time step's data
+      newGrp.selectAll(".line") // selects empty set?
 	  .data(idxs)
 	  .enter().append("path")
 	  .attr("class", "trace")
 	  .style("stroke","blue")
-	  .attr("d", line);
+	  .attr("d", this.line);
 
       this.oldys = newys;
       if (this.tgts[1] == undefined) {
@@ -654,6 +662,9 @@ PlotXY.prototype.display = function (time, latest) {
       } else {
 	  this.oldxs = newxs;
       }
+//      bbox = newGrp.node().getBBox();
+//      console.log("Current bbox x,y,w,h = " + bbox.x + ", " + bbox.y + ", " +
+//		  bbox.width + ", " + bbox.height);
   }
 }
 
