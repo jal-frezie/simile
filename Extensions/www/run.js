@@ -511,21 +511,6 @@ PlotXY.prototype.acceptClick = function (compId) {
       h = 800;
       ngap = 40;
 
-    var x = d3.scale.linear()
-	  .domain([-100,100])
-	  .range([ngap, w+ngap]);
-    var y = d3.scale.linear()
-	  .domain([100,-100])
-	  .range([0, h]);
-    var xAxis = d3.svg.axis()
-	  .scale(x)
-	  .tickSize(-h)
-	  .orient("bottom");
-    var yAxis = d3.svg.axis()
-	  .scale(y)
-	  .tickSize(-w)
-	  .orient("left");
-
     if (compId == "time") {
 	this.oldt = parseFloat($("#ct").val());
 	this.xmin = this.oldt;
@@ -536,14 +521,6 @@ PlotXY.prototype.acceptClick = function (compId) {
 	this.oldxs = flatten('t', JSON.parse(values_json[compId]));
 	xAxisName = model_json[compId].captpath;
     }
-    var gLine = d3.svg.line()
-	  .y(function(d) {
-	      return y(d.y);
-	  })
-	  .x(function(d) {
-	      return x(d.x);
-	  });
-      this.line = gLine;
       for (var hdl in this.oldys) {
 	if (compId != "time") {
 	    if (this.xmin == undefined || this.oldxs[hdl] < this.xmin) {
@@ -560,6 +537,31 @@ PlotXY.prototype.acceptClick = function (compId) {
 	    this.ymax = this.oldys[hdl];
 	}
     }
+      var x = d3.scale.linear()
+	  .domain([this.xmin,this.xmax])
+	  .range([ngap, w+ngap]);
+    var y = d3.scale.linear()
+	  .domain([this.ymin,this.ymax])
+	  .range([0, h]);
+    var xAxis = d3.svg.axis()
+	  .scale(x)
+	  .tickSize(-h)
+	  .orient("bottom");
+    var yAxis = d3.svg.axis()
+	  .scale(y)
+	  .tickSize(-w)
+	  .orient("left");
+
+    var gLine = d3.svg.line()
+	  .y(function(d) {
+	      return y(d.y);
+	  })
+	  .x(function(d) {
+	      return x(d.x);
+	  });
+      this.lx = x;
+      this.ly = y;
+      this.line = gLine;
     $('#' + this.port).html("Plot of " + model_json[this.tgts[0]].captpath +
 			   " against " + xAxisName);
     this.svg = d3.select('#' + this.port).append("svg")
@@ -576,6 +578,8 @@ PlotXY.prototype.acceptClick = function (compId) {
       var zoomFn = function() {redraw.call(this, portStr,yAxis,xAxis, gLine) };
       var zoomendFn = function() {resetAxes.call(this, zoomxaxis, zoomyaxis,
 						 zoomport, x, y) };
+      this.zfn = zoomFn;
+      this.zefn = zoomendFn;
       var zoomxaxis = d3.behavior.zoom()
 	  .x(x)
 	  .on("zoom", zoomFn)
@@ -589,6 +593,8 @@ PlotXY.prototype.acceptClick = function (compId) {
           .y(y)
 	  .on("zoom", zoomFn)
           .on("zoomend", zoomendFn);
+      this.lzx = zoomxaxis;
+      this.lzy = zoomyaxis;
       this.svg.append("rect") // x scale
 	  .attr("class", "pane")
 	  .attr("y",h)
@@ -637,11 +643,17 @@ PlotXY.prototype.display = function (time, latest) {
 	  for (var hdl in newys) {
 	      idxs.push([{"y":this.oldys[hdl],"x":this.oldxs[hdl]},
 			 {"y":newys[hdl],"x":newxs[hdl]}]);
+	      this.ymin = Math.min(this.ymin,newys[hdl]);
+	      this.ymax = Math.max(this.ymax,newys[hdl]);
+	      this.xmin = Math.min(this.xmin,newxs[hdl]);
+	      this.xmax = Math.max(this.xmax,newxs[hdl]);
 	  }
       } else {
 	  for (var hdl in newys) {
 	      idxs.push([{"y":this.oldys[hdl],"x":this.oldt},
 			 {"y":newys[hdl],"x":time}]);
+	      this.ymin = Math.min(this.ymin,newys[hdl]);
+	      this.ymax = Math.max(this.ymax,newys[hdl]);
 	  }
       }
       newGrp = this.svg.append("g")
@@ -658,9 +670,28 @@ PlotXY.prototype.display = function (time, latest) {
 	  this.oldt = time;
 	  if (time>this.xmax) {
 	      this.xmax = parseFloat($("#ct").val()) + parseFloat($("#rl").val());
+//	      console.log("Boring x range out to " + this.xmax);
+// now I need to redraw
 	  }
       } else {
 	  this.oldxs = newxs;
+      }
+      squeezed = 0;
+      oldMinMax = this.lx.domain();
+//      console.log("Old domain was " + oldMinMax[0] + ", " + oldMinMax[1]);
+      if (this.xmin < oldMinMax[0] || this.xmax > oldMinMax[1]) {
+	  squeezed = 1;
+      }
+      oldMinMax = this.ly.domain();
+      if (this.ymin < oldMinMax[1] || this.ymax > oldMinMax[0]) {
+	  squeezed = 1;
+      }
+
+      if (squeezed) {
+	  this.lx.domain([this.xmin, this.xmax]);
+	  this.ly.domain([this.ymax, this.ymin]);
+	  this.zfn();
+	  this.zefn();
       }
 //      bbox = newGrp.node().getBBox();
 //      console.log("Current bbox x,y,w,h = " + bbox.x + ", " + bbox.y + ", " +
