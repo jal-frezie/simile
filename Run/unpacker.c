@@ -329,13 +329,13 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
 					jsonic);
 
       if (jsonic) {
-	if (Tcl_GetCharLength(localSubObj))
+	if (Tcl_GetCharLength(localSubObj) > 2)
 	  localObj = extend_string(localObj, indices[depth], localSubObj, dir);
       } else
 	extend_list(localObj, indices[depth], localSubObj, dir);
     }
   nomorematching:
-    if (jsonic && Tcl_GetCharLength(localObj)) {
+    if (jsonic) {
       localSubObj = Tcl_NewStringObj("{", 1);
       Tcl_AppendObjToObj(localSubObj, localObj);
       Tcl_AppendToObj(localSubObj, "}", 1);
