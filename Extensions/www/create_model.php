@@ -50,7 +50,7 @@ if (isset($_POST['dropbox_link'])) {
    } else {
      exit('Could not open translator');
    }
-} else {
+} elseif (is_uploaded_file($_FILES["notconfusing"]["tmp_name"])) {
    $allowedExts = array("sml", "pl");
    $extension = pathinfo($_FILES["notconfusing"]["name"],PATHINFO_EXTENSION);
    if ($_FILES["notconfusing"]["size"] > 20000000) { exit('File too big'); }
@@ -64,6 +64,8 @@ if (isset($_POST['dropbox_link'])) {
 //   echo "Upload: " . $_FILES["notconfusing"]["name"] . "<br>";
 //   echo "Type: " . $_FILES["notconfusing"]["type"] . "<br>";
 //   echo "Size: " . ($_FILES["notconfusing"]["size"] / 1024) . " kB<br>";
+} else {
+   exit('No model supplied!');
 }
 //echo "Temp file: " . $base . "<br>";
 CreateModelExec($base);

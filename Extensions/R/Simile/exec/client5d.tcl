@@ -279,10 +279,10 @@ proc DoResetModel {iHandle t0 intMethod depth} {
     return [ResetModel dummy $intMethod $t0 $depth]
 }
 
-proc DoExecuteModel {iHandle intMethod from to errLim evtPause} {
+proc DoExecuteModel {iHandle intMethod from to errLim pauses} {
     set ::instance_id $iHandle
     set ::model_id $::modelTypes($iHandle)
-    set result [ExecuteModel dummy $intMethod $from $to $errLim $evtPause]
+    set result [ExecuteModel dummy $intMethod $from $to $errLim $pauses $pauses]
     set ::currentTimes($iHandle) [lindex $result 1]
     return [lindex $result 0]
 }

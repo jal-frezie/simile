@@ -44,7 +44,7 @@ switch ($_POST['act']) {
 
    case "BuildShareLib":
 $shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
-$simileLocn = "/usr/lib/simile-6.1";
+$simileLocn = "/usr/lib/simile-6.2";
 $simileHome =  "/home/www-data";
 $tculargs = array($simileLocn, $simileHome, $_POST['base'], $shlibName);
 $descriptorspec = array(
@@ -87,7 +87,7 @@ break;
 
    case "CreateSocket":
 $shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
-$simileLocn = "/usr/lib/simile-6.1";
+$simileLocn = "/usr/lib/simile-6.2";
 $simileHome =  "/home/www-data";
 $tculargs = array($simileLocn, $simileHome, $_POST['base'], $shlibName);
 $descriptorspec = array(
@@ -210,7 +210,7 @@ break;
 	     $endInt = $endPt;
 	 }
 	 doTcl("DoExecuteModel [set iH] Euler $t $endInt 0 0");
-	 for($x=1;$x<count($note);$x++) {
+	 for($x=0;$x<count($note);$x++) {
             $val = doTcl("GetJsonValuesById [set iH] " . $note[$x]);
 // if ExecuteMulti the time points are outer indices
             if ($_POST['act'] == "Execute") {

@@ -329,7 +329,7 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
 					jsonic);
 
       if (jsonic) {
-	if (Tcl_GetCharLength(localSubObj) > 2)
+	if (Tcl_GetCharLength(localSubObj))
 	  localObj = extend_string(localObj, indices[depth], localSubObj, dir);
       } else
 	extend_list(localObj, indices[depth], localSubObj, dir);

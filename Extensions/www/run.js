@@ -123,7 +123,12 @@ $.ajax({
     $.post('model_action.php', { "port" : svrPort, "act":"Report"}, 
 	   function(data) {
 	       values_json = JSON.parse(data);
-               update_helpers(0, values_json);
+	       latest = {}
+	       oi = ofInterest();
+	       for (var i in oi) {
+		   latest[oi[i]] = JSON.parse(values_json[oi[i]]);
+	       }
+               update_helpers(0, latest);
 	   });
   });
 }
@@ -191,11 +196,11 @@ function model_exec() {
   goImage.parentNode.onclick = function () { model_pause(); };
   end = now+parseFloat($("#rl").val());
 //  calibrate_helpers(end);
-  model_step(now, start, end, 10, ofInterest());
+  model_step(now, start, end, 10, ofInterest().join());
 }
 
 function ofInterest() {
-// list the paths of all the nodes currently being displayed by tools
+// list the ids of all the nodes currently being displayed by tools
   result = [];
   for (i=0; i<currentHelpers.length; i++) {
     if (currentHelpers[i].status == "displaying") {
@@ -204,7 +209,13 @@ function ofInterest() {
       }
     }
   }
-  return Object.getOwnPropertyNames(result).join();
+//  return Object.getOwnPropertyNames(result);
+// includes "length" which we don't want
+  rList = [];
+  for (var slot in result) {
+      rList.push(slot);
+  }
+  return rList;
 }
 
 // placeholder graph plot
@@ -541,7 +552,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	  .domain([this.xmin,this.xmax])
 	  .range([ngap, w+ngap]);
     var y = d3.scale.linear()
-	  .domain([this.ymin,this.ymax])
+	  .domain([this.ymax,this.ymin])
 	  .range([0, h]);
     var xAxis = d3.svg.axis()
 	  .scale(x)
@@ -638,22 +649,41 @@ PlotXY.prototype.display = function (time, latest) {
 // OK now how big is it? 
       idxs = [];
       newys = flatten('t', latest[this.tgts[0]]);
+// console.log(" data is " + JSON.stringify(latest[this.tgts[0]]) + " flat " + JSON.stringify(newys));
       if (this.tgts[1] != undefined) {
 	  newxs = flatten('t', latest[this.tgts[1]]);
 	  for (var hdl in newys) {
 	      idxs.push([{"y":this.oldys[hdl],"x":this.oldxs[hdl]},
 			 {"y":newys[hdl],"x":newxs[hdl]}]);
-	      this.ymin = Math.min(this.ymin,newys[hdl]);
-	      this.ymax = Math.max(this.ymax,newys[hdl]);
-	      this.xmin = Math.min(this.xmin,newxs[hdl]);
-	      this.xmax = Math.max(this.xmax,newxs[hdl]);
+	      if (this.ymin == undefined) {
+		  this.ymin = this.ymax = newys[hdl];
+		  this.xmin = this.xmax = newxs[hdl];
+	      } else {
+		  this.ymin = Math.min(this.ymin,newys[hdl]);
+		  this.ymax = Math.max(this.ymax,newys[hdl]);
+		  this.xmin = Math.min(this.xmin,newxs[hdl]);
+		  this.xmax = Math.max(this.xmax,newxs[hdl]);
+	      }
 	  }
+	  this.oldxs = newxs;
       } else {
 	  for (var hdl in newys) {
 	      idxs.push([{"y":this.oldys[hdl],"x":this.oldt},
 			 {"y":newys[hdl],"x":time}]);
-	      this.ymin = Math.min(this.ymin,newys[hdl]);
-	      this.ymax = Math.max(this.ymax,newys[hdl]);
+	      oldymin = this.ymin;
+	      if (this.ymin == undefined) {
+		  this.ymin = this.ymax = newys[hdl];
+	      } else {
+		  this.ymin = Math.min(this.ymin,newys[hdl]);
+		  this.ymax = Math.max(this.ymax,newys[hdl]);
+	      }
+// console.log("ymin was " + oldymin + " checked " + newys[hdl] + " is " + this.ymin);
+	  }
+	  this.oldt = time;
+	  if (time>this.xmax) {
+	      this.xmax = parseFloat($("#ct").val()) + parseFloat($("#rl").val());
+//	      console.log("Boring x range out to " + this.xmax);
+// now I need to redraw
 	  }
       }
       newGrp = this.svg.append("g")
@@ -664,32 +694,31 @@ PlotXY.prototype.display = function (time, latest) {
 	  .attr("class", "trace")
 	  .style("stroke","blue")
 	  .attr("d", this.line);
-
       this.oldys = newys;
-      if (this.tgts[1] == undefined) {
-	  this.oldt = time;
-	  if (time>this.xmax) {
-	      this.xmax = parseFloat($("#ct").val()) + parseFloat($("#rl").val());
-//	      console.log("Boring x range out to " + this.xmax);
-// now I need to redraw
-	  }
-      } else {
-	  this.oldxs = newxs;
-      }
+
       squeezed = 0;
-      oldMinMax = this.lx.domain();
-//      console.log("Old domain was " + oldMinMax[0] + ", " + oldMinMax[1]);
-      if (this.xmin < oldMinMax[0] || this.xmax > oldMinMax[1]) {
+      XMinMax = this.lx.domain();
+      if (!(this.xmin >= XMinMax[0])) {
 	  squeezed = 1;
+	  XMinMax[0] = this.xmin;
       }
-      oldMinMax = this.ly.domain();
-      if (this.ymin < oldMinMax[1] || this.ymax > oldMinMax[0]) {
+      if (!(this.xmax <= XMinMax[1])) {
 	  squeezed = 1;
+	  XMinMax[1] = this.xmax;
+      }
+      YMinMax = this.ly.domain();
+      if (!(this.ymin >= YMinMax[1])) {
+	  squeezed = 1;
+	  YMinMax[1] = this.ymin;
+      }
+      if (!(this.ymax <= YMinMax[0])) {
+	  squeezed = 1;
+	  YMinMax[0] = this.ymax;
       }
 
       if (squeezed) {
-	  this.lx.domain([this.xmin, this.xmax]);
-	  this.ly.domain([this.ymax, this.ymin]);
+	  this.lx.domain(XMinMax);
+	  this.ly.domain(YMinMax);
 	  this.zfn();
 	  this.zefn();
       }
