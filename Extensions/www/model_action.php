@@ -169,6 +169,12 @@ break;
       echo json_encode($mdlArr);
       break;
 
+   case "LoadSPF":
+      if (file_exists($_POST['base'] . '.spf')) {
+         echo doTcl("ConsultParameterMetafile [set iH] " . $_POST['base'] . '.spf');
+      }
+      break;
+
    case "Parameterize":
 //      $goer = '{"/fixie":"56.7","/freeweel":"0 40 50 80"}';
       $sample =  str_replace(array('\\"'), array('"'), $_POST['data']);

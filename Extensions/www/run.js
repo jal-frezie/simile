@@ -805,6 +805,7 @@ PlotValAgainstTime.prototype.display = function (time, latest) {
 }
 
 function populateStructs() {
+
 // OK, now use AJAX to get a string of values
 
 $.post('model_action.php', { "port" : svrPort, "act":"Describe"}, 
@@ -847,8 +848,15 @@ $.post('model_action.php', { "port" : svrPort, "act":"Describe"},
 	   }
       });
 
-// should not do if there are unset parameters
-model_reset();
+// This will ultimately load the parameter file (if there is one) and
+// get a list of components that still need values, or have bad values,
+// for flagging in the parameter dialogue
+    $.post('model_action.php', { "port" : svrPort, "act":"LoadSPF", 
+				 "base" : fileBase}, 
+	   function(data) {
+	       console.log(data);
+	       model_reset();
+	   });
 }
 
 function loadParams() {

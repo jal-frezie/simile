@@ -1,0 +1,30 @@
+<html>
+<head>
+<title>Upload Simile model here</title>
+</head>
+<body>
+<form action="create_model.php" method="post"
+enctype="multipart/form-data">
+<h2>Simile model file</h2>
+Supply a full model file (.sml) or model declarations file (.pl) saved
+by Simile.<br>
+<input type="radio" name="model_src" value="file" checked="checked">Filename:
+<input type="file" name="model"><br>
+<input type="radio" name="model_src" value="url">URL:
+<input type="text" name="model_link">
+<br>
+<br>
+<h2>Parameter file</h2>
+If necessary, supply a saved parameter file (.spf) for the model. <br>
+<input type="radio" name="param_src" value="none" checked="checked">None<br>
+<input type="radio" name="param_src" value="file">Filename:
+<input type="file" name="params"><br>
+<input type="radio" name="param_src" value="url">URL:
+<input type="text" name="param_link">
+<br>
+
+<input type="submit" name="submit" value="Submit">
+</form>
+
+</body>
+</html> 

@@ -28,53 +28,69 @@ rect.pane {
 
 </style>
 <?php
-include_once "make_exec.php";
+// include_once "make_exec.php";
 
-if (isset($_POST['dropbox_link'])) {
-//   echo "Got model link:" . $_POST['dropbox_link'] . "<br>";
-   $base = tempnam('/tmp', 'dbx');
-   file_put_contents($base, file_get_contents($_POST['dropbox_link']));
-} elseif (isset($_POST['js_mod'])) {
-   $base = tempnam('/tmp', 'jsm');
-// on this system the double quotes in the original Javascript all
-// somehow get prepended with a backslash
-   $preproc = str_replace(array('\\"',':-'), array('\'',': -'), $_POST['js_mod']);
-// above " does not start string
-
-   $hole = popen('../cgi-bin/gconvert ' . $base, 'w');
-   if ($hole) {
-     fwrite($hole, $preproc);
-     if (pclose($hole) == -1) {
-       exit('Error in translation');
-     }
+switch ($_POST["model_src"]) {
+   case "file":
+   if (is_uploaded_file($_FILES["model"]["tmp_name"])) {
+      $allowedExts = array("sml", "pl");
+      $extension = pathinfo($_FILES["model"]["name"],PATHINFO_EXTENSION);
+      if ($_FILES["model"]["size"] > 20000000) { exit('Model file too big'); }
+      if (! in_array($extension, $allowedExts)) {
+         exit('Bad model file extension: ' . $extension);
+      }
+      if ($_FILES["model"]["error"] > 0) {
+         exit('Return code: ' . $_FILES["model"]["error"]);
+      }
+      $base = $_FILES["model"]["tmp_name"];
+//   echo "Upload: " . $_FILES["model"]["name"] . "<br>";
+//   echo "Type: " . $_FILES["model"]["type"] . "<br>";
+//   echo "Size: " . ($_FILES["model"]["size"] / 1024) . " kB<br>";
    } else {
-     exit('Could not open translator');
+      exit('No model supplied!');
    }
-} elseif (is_uploaded_file($_FILES["notconfusing"]["tmp_name"])) {
-   $allowedExts = array("sml", "pl");
-   $extension = pathinfo($_FILES["notconfusing"]["name"],PATHINFO_EXTENSION);
-   if ($_FILES["notconfusing"]["size"] > 20000000) { exit('File too big'); }
-   if (! in_array($extension, $allowedExts)) {
-      exit('Bad file extension: ' . $extension);
-   }
-   if ($_FILES["notconfusing"]["error"] > 0) {
-      exit('Return code: ' . $_FILES["notconfusing"]["error"]);
-   }
-   $base = $_FILES["notconfusing"]["tmp_name"];
-//   echo "Upload: " . $_FILES["notconfusing"]["name"] . "<br>";
-//   echo "Type: " . $_FILES["notconfusing"]["type"] . "<br>";
-//   echo "Size: " . ($_FILES["notconfusing"]["size"] / 1024) . " kB<br>";
-} else {
-   exit('No model supplied!');
+   break;
+
+   case "url":
+//   echo "Got model link:" . $_POST['model_link'] . "<br>";
+   $base = tempnam('/tmp', 'dbx');
+   file_put_contents($base, file_get_contents($_POST['model_link']));
+   break;
 }
-//echo "Temp file: " . $base . "<br>";
-CreateModelExec($base);
+switch ($_POST["param_src"]) {
+   case "file":
+   if (is_uploaded_file($_FILES["params"]["tmp_name"])) {
+      $allowedExts = array("spf");
+      $extension = pathinfo($_FILES["params"]["name"],PATHINFO_EXTENSION);
+      if ($_FILES["params"]["size"] > 20000000) { exit('Param file too big'); }
+      if (! in_array($extension, $allowedExts)) {
+         exit('Bad parameter file extension: ' . $extension);
+      }
+      if ($_FILES["params"]["error"] > 0) {
+         exit('Return code: ' . $_FILES["params"]["error"]);
+      }
+      copy($_FILES["params"]["tmp_name"], $base . ".spf");
+   } else {
+      exit('No parameter file supplied!');
+   }
+   break;
+
+   case "url":
+   file_put_contents($base . ".spf", file_get_contents($_POST['param_link']));
+   break;
+}
+
+// CreateModelExec($base);
+// OK, now set up _POST so I can inline model_action and get the
+// executable...
+$_POST["act"] = "BuildShareLib";
+$_POST["base"] = $base;
+include_once "model_action.php";
 
 // web site starts here
 echo "<script>\nvar fileBase = '$base';\n</script>";
-echo "<script src='run.js'></script>";
-
 ?> 
+<script src='run.js'></script>
 </head>
 <body onload="prepare()">
 <div id="Buttonbar">
