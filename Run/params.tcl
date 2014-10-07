@@ -506,6 +506,8 @@ proc AcceptData {topNode compName notInput complain} {
 	    # will do that later _if_ it is error free
 	    set dataChanged 1
 	    set entryChanged 1
+	} elseif {[string toupper [lindex $newData 0]] eq "NOW"} {
+	    set dataChanged 1
 	}
     } else {
 	upvar 0 suppliedData($compName) newData

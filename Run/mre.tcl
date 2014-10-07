@@ -1199,6 +1199,11 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 	variable parseStatus
 	variable CurrentContainer
 
+# Old saved states include a newline at start of data. New ones do not, with
+# the result that a backslash may be inserted for no very good reason
+	if {[string first [string range $oldStatus 0 0] "\\\n"]>=0} {
+	    set oldStatus [string range $oldStatus 1 end]
+	}
 	set CurrentContainer $parseStatus(currentPath)
 	ReinstateHelper $parseStatus(simV) $oldStatus $parseStatus(hType) {}
     }

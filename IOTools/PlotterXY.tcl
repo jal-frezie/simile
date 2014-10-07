@@ -278,13 +278,14 @@ namespace eval ::$keyValue {
     proc display {w time step remainder} {
         global ::graphtools::plot
         #    global ::graphtools::Xvalues
+	variable times
         
         get_Yvalues $w
         get_Xvalues $w
         
 # remove plots that are over persistence limit -- currently counts in displays
 	set seq [incr plot($w,ordinal)]
-	set plot($w,time$seq) $time
+	set times($w,$seq) $time
         if {$plot($w,CurrentOnly)} {
 	    set expired [expr {$seq-$plot($w,CurrentOnly)}]
             $w.canvas delete trace$expired
@@ -759,6 +760,7 @@ namespace eval ::$keyValue {
 	
 	proc TracePopup {w X Y} {
 	    global ::graphtools::plot
+	    variable times
 	    
 	    set tags [[GetCanvas $w] itemcget current -tags]
 	    set timePt [string range [lsearch -inline $tags trace*] 5 end]
@@ -768,7 +770,7 @@ namespace eval ::$keyValue {
 	    if {[llength $idxPt]>1} {
 		append msg "with indices [join [lrange $idxPt 1 end] ,] "
 	    }
-	    append msg "at time $plot($w,time$timePt)"
+	    append msg "at time $times($w,$timePt)"
 	    AddPopupMessage $msg \#ffffc0
 	}
 	
