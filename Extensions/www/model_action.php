@@ -25,7 +25,11 @@ function doTcl($cmd) {
    return substr($resp,0,-1);
 }
 
-header('Access-Control-Allow-Origin: *');
+if ($_POST['act'] != "BuildShareLibInLine") {
+   // only do for AJAX requests, produces warning if inline
+   header('Access-Control-Allow-Origin: *');
+}
+
 switch ($_POST['act']) {
    case "ConvertJSON":
    $base = tempnam('/tmp', 'jsm');
@@ -43,6 +47,7 @@ switch ($_POST['act']) {
    break;
 
    case "BuildShareLib":
+   case "BuildShareLibInLine":
 $shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
 $simileLocn = "/usr/lib/simile-6.2";
 $simileHome =  "/home/www-data";

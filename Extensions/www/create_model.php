@@ -28,7 +28,7 @@ rect.pane {
 
 </style>
 <?php
-// include_once "make_exec.php";
+// include_once "make_exec.php"; model_action now used
 
 switch ($_POST["model_src"]) {
    case "file":
@@ -83,7 +83,7 @@ switch ($_POST["param_src"]) {
 // CreateModelExec($base);
 // OK, now set up _POST so I can inline model_action and get the
 // executable...
-$_POST["act"] = "BuildShareLib";
+$_POST["act"] = "BuildShareLibInLine";
 $_POST["base"] = $base;
 include_once "model_action.php";
 
