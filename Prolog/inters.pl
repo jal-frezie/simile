@@ -1283,11 +1283,14 @@ Now one that uses a special conditional level */
 			(promote_arg(Other, 1, _),
 			    (UnitList == [Other, One], Lop = (/),
 				Units = 1/One;
-				Units = One),
-			    SourceRef = ValRef;
+				Units = One);
 			  TattyUnits =.. [Lop | UnitList],
-			    sort_units(TattyUnits, Units, ConvFactor),
-			    SourceRef = ConvFactor*ValRef)), !;
+			    sort_units(TattyUnits, NeatUnits, ConvFactor),
+			    Units = ConvFactor*NeatUnits),
+		     /* 2014: previously ConvFactor was applied to value, so
+			neither units nor value of x*y were product of x's and
+			y's...seems to work OK like this */
+		     SourceRef = ValRef), !;
 		ValRef = Arg1++Arg2,
 		    /* Used for compartment increments -- no need to parse
 		    these, and conversion is done during instantiation (since
@@ -2011,7 +2014,7 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	  var(ADs),
 	    ADs = []),
 	...now, if a named input, read dims from it */
-	(nonvar(Name) -> wake,
+	(nonvar(Name) ->
 	    m_update'><'get_av_pair(VisDestId, 0, units, OldU),
 	    m_update'><'analyze_array(OldU, _OldUnits, NeededDims),
 	    length(NeededDims, N),

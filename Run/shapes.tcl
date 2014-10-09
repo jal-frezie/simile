@@ -619,6 +619,9 @@ proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
 # necessary...
 
 proc FillSmImage {fCol layout smbg mw mh intRad} {
+    if {[catch {image type $fCol}]} {
+	set fCol splash
+    }
     if {[string equal Scaled $layout]} {
 	set fCol [GrowImage $fCol $mw $mh]
 	set layout Centred
