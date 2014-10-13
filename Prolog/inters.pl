@@ -1283,14 +1283,11 @@ Now one that uses a special conditional level */
 			(promote_arg(Other, 1, _),
 			    (UnitList == [Other, One], Lop = (/),
 				Units = 1/One;
-				Units = One);
+				Units = One),
+			    SourceRef = ValRef;
 			  TattyUnits =.. [Lop | UnitList],
-			    sort_units(TattyUnits, NeatUnits, ConvFactor),
-			    Units = ConvFactor*NeatUnits),
-		     /* 2014: previously ConvFactor was applied to value, so
-			neither units nor value of x*y were product of x's and
-			y's...seems to work OK like this */
-		     SourceRef = ValRef), !;
+			    sort_units(TattyUnits, Units, ConvFactor),
+			    SourceRef = ConvFactor*ValRef)), !;
 		ValRef = Arg1++Arg2,
 		    /* Used for compartment increments -- no need to parse
 		    these, and conversion is done during instantiation (since
@@ -1384,7 +1381,8 @@ decode_number(Source, SubId, Step, SourceRef, Units) :-
 	get_actual_size(SubId, Source, quoted, SrcNums, SrcTypes, SrcUnits),
 	(SrcNums = [SrcNum], SrcTypes = [SrcType], SrcUnits = [SrcUnit], !;
 	  throw(not_single_fixed_dimension(Source, SrcNums))),
-	(Source = 0.0 -> GenUnits = real; GenUnits = SrcUnit),
+	(member(Source, [0, 0.0]) -> GenUnits = real; GenUnits = SrcUnit),
+	% allow value of 0 to match any physical unit
 	remove_physical_units_if_disabled(SubId, GenUnits, Units),
 	(Step = dummy, !,
 	    (Units = n(SourceRef), !; % enum type dims of makearray etc
@@ -2014,7 +2012,7 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	  var(ADs),
 	    ADs = []),
 	...now, if a named input, read dims from it */
-	(nonvar(Name) ->
+	(nonvar(Name) -> wake,
 	    m_update'><'get_av_pair(VisDestId, 0, units, OldU),
 	    m_update'><'analyze_array(OldU, _OldUnits, NeededDims),
 	    length(NeededDims, N),

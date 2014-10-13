@@ -80,9 +80,9 @@ assert_model(P) :-
 	assert(update_add(P))).
 
 my_assert(P) :-
-%	assert(P).
+	assert(P).
 %	tcl_assert(P).
-	c_assert(P).
+%	c_assert(P).
 	
 tcl_assert(P) :-
 	P =.. [Funt | Args],
@@ -133,9 +133,9 @@ retract_model(P) :-
 	retract_from_current(P).
 
 my_retract(P) :-
-%	retract(P).
+	retract(P).
 %	tcl_retract(P).
-	c_retract(P).
+%	c_retract(P).
 
 tcl_retract(P) :-
 	tcl_call(P, Funt, MatchStr),
@@ -189,9 +189,9 @@ retractall_model(P) :-
 	true.
 
 query_model(P) :-
-%	call(P).
+	call(P).
 %	tcl_call(P, _Funt, _Strs).
-	c_call(P).
+%	c_call(P).
 
 tcl_call(P, Funt, MatchStr) :-
 	P =.. [Funt | Args],
@@ -321,3 +321,18 @@ fetch_update(DP) :-
 		DP = remove(P);
 	retract(update_add(P)),
 		DP = add(P).
+
+% include the following if building GNU without struct_db to ignore unused fns
+:- dynamic([empty_tree/2, create_node/1, add_to_tree/2, set_class/2,
+	    create_arc/1, add_link/3, set_type/2, add_continuation/2,
+	    add_bbox/5, add_curve/3, add_iext/5, add_capt_off/3, add_centre/3,
+	    add_along/2, set_hidden/2, delete_node/1, remove_from_tree/2,
+	    unset_class/1, delete_arc/1, remove_link/3, unset_type/1,
+	    remove_continuation/2, remove_curve/1, remove_bbox/1, remove_iext/1,
+	    remove_capt_off/1, remove_centre/1, remove_along/1, set_hidden/2,
+	    get_class/2, find_ends/3, get_type/2, find_curve/2, find_bbox/2,
+	    find_iext/2, find_capt_off/2, find_centre/2, find_along/2,
+	    is_hidden/1, find_prev/2, find_parent/2, get_child_list_pointer/2,
+	    get_in_list_pointer/2, get_out_list_pointer/2,
+	    get_next_list_pointer/2, get_node_and_next_ptr/3,
+	    get_arc_and_next_ptr/3]).
