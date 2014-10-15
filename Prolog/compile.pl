@@ -176,7 +176,12 @@ build_instances(Language, DestDir, Parent, TopNode,
 		  Tgt > 0,
 		  (Parent has_changed_model_refinement c_new of Tgt;
 		      Parent has_new_model_refinement c_new of Tgt),
-		    backup'><'finish_move(Parent, 0)))),
+		    % adjust old fn count to stop eqn limit warning here
+		    backup'><'(retract(counted_fns(OldCt)),
+			       assert(counted_fns(9999)),
+			       finish_move(Parent, 0),
+			       retract(counted_fns(_NewCt)),
+			       assert(counted_fns(OldCt)))))),
 	    load_executable(Language, CheckDir, Tgt, Parent, TopNode, Includes),
 	    KeepDir = 1;
 	ChangeNext = ChangeTop),

@@ -263,10 +263,11 @@ $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 # Version for Advanced Installer
 # -static-libgcc is neeeded because this also used for 64bit install (and 32bit
 # install on 64bit systems) where 32bit libraries maybe missing
+MSI = "/c/MsiIntel.sdk"
 $(INSTLIB): Run/install_adv.c Makefile
-	cd Run; $(GCCCMD) -static-libgcc -m32 $(CFLAGS) $(DEFNS) \
-		-I/c/MsiIntel.SDK/include $(MAKEPIC) $(MAKESL) \
-		-o ../$(INSTLIB) install_adv.c /c/MsiIntel.SDK/lib/msi.lib \
+	cd Run; $(GCCCMD) -static -m32 $(CFLAGS) $(DEFNS) \
+		-I$(MSI)/include $(MAKEPIC) $(MAKESL) \
+		-o ../$(INSTLIB) install_adv.c -L$(MSI)/lib -lmsi \
 		-lcrypto -lssl; cd ..
 
 # the rc objects from windres are ommitted from linking below becaise they

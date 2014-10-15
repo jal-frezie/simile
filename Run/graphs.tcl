@@ -1034,9 +1034,11 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
                 set table_entry(indices) [lrange $table_entry(data) 2 end]
                 set i 1
                 foreach idx $table_entry(indices) {
-                    if {![string match ,* $idx]} { ;# this is wrap or db info
+                    if {![string match ,* $idx]} { ;# this not wrap or db info
                         $lidx insert end $idx
-                    }
+                    } elseif {[string match ,dbtable:* $idx]} { ;# this db info
+			set table_entry(dbtable) [string range $idx 9 end]
+		    }
                     incr i
                 }
             }

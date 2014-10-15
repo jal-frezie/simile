@@ -93,7 +93,9 @@ proc UglifyValList {pretty} {
 }
 
 proc NormalizeQuotes {table} {
-    if {[llength $table]==1} {
+    if {[catch {llength $table} len]} {
+	return [list $table]
+    } elseif {$len==1} {
 	return $table
     } else {
 	set result {}
