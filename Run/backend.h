@@ -94,8 +94,9 @@ class bstree_node {
 // these are actually made in the model code itself
 class InstanceOfModel : public submodeltype {
 public:
-  //  virtual ~InstanceOfModel() {}
+  virtual ~InstanceOfModel() {}
   // Above stops memory leak in Windows but causes crash in Linux
+  // (reinstated 2014, no major Linux crashability or leakage noted since)
   excpData userStop;
   double adapt_maxerr, event_predict;
   // diffs *event_cur_sign, *event_prev_sign;

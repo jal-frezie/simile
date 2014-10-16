@@ -204,18 +204,18 @@ $(PROLOG_DB): Prolog/struct_db.c
 endif
 ifeq ($(PROLOG),GNU)
 # All-in-one without database
-$(PROLOGSTATE): $(PROLOG_FILES)
-	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) gmain.pl \
-		-L '$(OPT)'; cd ..
+# $(PROLOGSTATE): $(PROLOG_FILES)
+# 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) gmain.pl \
+# 		-L '$(OPT)'; cd ..
 # In separate steps with database
-# $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
-# 	gplc --no-top-level -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) \
-# 		-L '$(OPT)'
-# $(PROLOG_OBJ): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
-# 	cd Prolog; gplc -o ../$(PROLOG_OBJ) -c gmain.pl; cd ..
-# $(PROLOG_DB): Prolog/struct_db.c
-# 	cd Prolog; gplc -c -C '$(OPT) -D_GNU_PROLOG' \
-# 		-o ../$(PROLOG_DB) struct_db.c; cd ..
+$(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
+	gplc --no-top-level -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) \
+		-L '$(OPT)'
+$(PROLOG_OBJ): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
+	cd Prolog; gplc -o ../$(PROLOG_OBJ) -c gmain.pl; cd ..
+$(PROLOG_DB): Prolog/struct_db.c
+	cd Prolog; gplc -c -C '$(OPT) -D_GNU_PROLOG' \
+		-o ../$(PROLOG_DB) struct_db.c; cd ..
 endif
 
 #ifeq ($(UNAME),MINGW32_NT)

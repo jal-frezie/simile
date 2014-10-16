@@ -19,7 +19,7 @@ _Module'><'Function :-
 
 /* Files needed to load and save models */
 
-% :- include('gstr_db.pl').
+:- include('gstr_db.pl'). % comment out if not using structured database
 :- include('database.pl').
 :- include('text.pl').
 :- include('graphics.pl').
@@ -249,7 +249,7 @@ portray(T) :-
 main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database'><'clear_database, or not as the case may be */
-%	database'><'empty_tree,
+	database'><'empty_tree, % comment out if not using structured database
 	state'><'retractall(model_in(_,_)),
         nl, write(ready), nl,
 	current_prolog_flag(prolog_name, Vname),
