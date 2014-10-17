@@ -76,7 +76,8 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 	    retractall(table_data_is(_TableSpec)),  
 		((Effect = new_effect_accepted(Cause, NewSpec, NewVal, ArrSpec),
 		    ArrSpec = Units-Dims,
-		    safe_tcl_eval(['RedoChangeOfCause', Units, br(Dims)], _);
+		    safe_tcl_eval(['RedoChangeOfCause', br(write(Units)),
+				   br(Dims)], _);
 		  Effect = rule_list_accepted(Cause, NewSpec, NewVal, ArrSpec,
 					      _,_,_,_,_,_)), !,
 		    update_rules(Rules, Cause-NewSpec-NewVal-ArrSpec,
@@ -160,7 +161,7 @@ combine_dims([], any-[]).
 combine_dims([_C-_S-_V-(Base-Dims) | RuleList], CommonType-CommonDims) :-
 	combine_dims(RuleList, Gen-SoFar),
 	inters'><'value(Any),
-	inters'><'try_units(Any, [Any, Any], [Base, Gen], CommonType),
+	inters'><'try_units(Any, [Any, Any], [Base, Gen], CommonType, _Conv),
 	inters'><'longest_path([Dims, SoFar], CommonDims).	
 	
 convert_rule_format(Spec, Value, Rules) :-
@@ -303,11 +304,15 @@ update_equation(Function, InterInputs,
 		member(ComboType, [n(_), const_int]), ComboUnits = int;
 		ComboType = ComboUnits), */
 /* This is a very roundabout way of checking unit consistency of min/max
-	-- it works, but is pretty opaque */
+	-- it works, but is pretty opaque
 	on_exception(_PropError, propagate_units(min(Max, max(Min, Result)),
 						any, [any, any, any],
 			[EqnBase, MinBase, MaxBase], RawBase),
 		     TypeError = minmax_wrong(EqnBase)),
+...this makes a bit more sense... */
+	 ([MinBase, MaxBase] = [any, any], !;
+	  promote_unit(EqnBase, real), !;
+	  TypeError = minmax_wrong(EqnBase)),
 	(nonvar(TypeError);
 	    /* First, check that the equation can have the units
 	       given, or set given units to the default units for the
@@ -323,7 +328,7 @@ update_equation(Function, InterInputs,
 	      CheckLevel = 2), % otherwise dimensions must match
 	    (MinMaxNeeded = 1 -> % limit event -- boolean if 1 bound, int if 2
 		(member('', [Min, Max]) -> CompBase=boolean; CompBase=int);
-		CompBase = RawBase),		
+		CompBase = EqnBase),		
 	    appropriate_units(Units, TypeBase, CompBase, CheckLevel,
 			      NewUnits, TypeError))),
 
@@ -579,9 +584,9 @@ feed_items(Fn, [IndStr, ValStr | More], Table, Units, Dims, Sizes) :-
 	    raise_exception(Loss)),
 	nth(Posn, Table, Line),
 	get_table_part(Fn, ValStr, Line, NUnit, HiDims, HiSizes),
-	(promote_arg(NUnit, DUnit, _), !,
+	(promote_unit(NUnit, DUnit), !,
 	    Units = DUnit;
-	 promote_arg(DUnit, NUnit, _), !,
+	 promote_unit(DUnit, NUnit), !,
 	    Units = NUnit;
 	 raise_exception("Data units mismatch.")),
 	 (Dims = [IUnit | HiDims], !;

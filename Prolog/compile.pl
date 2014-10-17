@@ -1642,12 +1642,15 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    (QChange = 0, !, Linkers = [Set];
 	     Linkers = [make(tipped(Dest), [on_step], Path, SmStep,
 			    [assign(Val, ValRef+QChange)]), Set]);
-	  Type = state_fn,
-	    Fn = choose(1, OnInitEqn, ChangeEqn),
+	  Type = state_fn, wake,
+	    (Fn = choose(1, OnInitEqn, ChangeEqn);
+	     Fn = choose(1, OnInitUnscaled, ChangeUnscaled) * ScaleFactor,
+	        OnInitEqn = OnInitUnscaled * ScaleFactor,
+	        ChangeEqn = ChangeUnscaled * ScaleFactor),
 	    Act = assign(Val, ChangeEqn),
 	    Linkers = [make(init(Dest), [on_reset], Path, 0,
 			    [assign(Val, OnInitEqn)])];
-	  Type = magnitude,
+	  Type = magnitude, % poss ScaleFactor prob as above?
 	    Fn = delay_for(PipeExp, WaitExp, ValExp),
 	    Act = insert_to_pipe(ref_to(PipeExp), WaitExp, ValExp),
 	    Linkers = [make(Dest, [on_step], Path, SmStep,

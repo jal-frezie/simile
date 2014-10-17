@@ -431,7 +431,7 @@ havify(index(N) is Val and Inner, N, choose('"true"', Val, Inners)) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 build_sum([Solo], Units, SoloArr) :-
 	sum_over_dims(Solo, Units, SoloArr).
-build_sum([First | Rest], Units, FirstArr++Run) :-
+build_sum([First | Rest], Units, FirstArr+Run) :-
 	sum_over_dims(First, Units, FirstArr),
 	build_sum(Rest, Units, Run).
 

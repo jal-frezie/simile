@@ -95,10 +95,10 @@ been loaded. Others are in ame_gen.pl */
 :- op(500, fx, ['!']).
 
 main :-
-	/* gtrace,
-	first clear state from previous run (only matters in dev sys)
+	gtrace,
+	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
-%	database:empty_tree,
+	database:empty_tree,
 	state:retractall(model_in(_,_)),
         % swi: avoid prompt chars messing up the pipe interface
         prompt(_P, ''),

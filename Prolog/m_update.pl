@@ -503,7 +503,8 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	          Target_type = real),
 		(Severity = 0, !;
 		    /* Unit_base = Target_base, !; */
-		    inters'><'promote_arg(Unit_base, Target_type, Unit_type), !,
+		    inters'><'promote_arg(Unit_base, Target_type, Unit_type, 1),
+		 !,
 		    (Target_unit = 1, Target_name = real;
 			Target_name = Target_unit),
 		    (Severity = 1, !;

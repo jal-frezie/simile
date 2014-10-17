@@ -1,7 +1,7 @@
 sicstus_module(inters, [final_assignment/13, make_intermediates/12,
 			expand_library/2, expand_special_role/3,
 			macro_expansion/2, fragment_expansion/5, function/4,
-			promote_unit/2, promote_arg/3, propagate_units/5,
+			promote_unit/2,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
 			inherently_bound/1, make_inds_for/4, pointer_from/2,
 			with_capt/4]).
@@ -672,13 +672,16 @@ make_intermediates(
 	    Units = ArgUnits;
 	IncrExpr =.. [IncrOp, IncrementRef, FillRef],
 	    (Functor = any, ArgUnits = cond_spec, !,
-		[RUnits | ArgTemplate] = [cond_spec, cond_spec];
-	      fn_or_op(IncrOp, _, RUnits, [RUnits | ArgTemplate])),
+		[RUnits, ArgTemplate] = [cond_spec, cond_spec];
+	     member(Functor, [(*), (/), (^), pow]), % avoid physical units
+	        [RUnits, ArgTemplate] = [1, 1];
+	     fn_or_op(IncrOp, _, RUnits, [RUnits, ArgTemplate])),
 	    append(NowBuilding, DestPath, ReadyContext),
 	    		    /* first, check my units are right... */
 	    retractall(trying_units(_)),
 	    assert(trying_units(ArgTemplate)),
-	    try_units(RUnits, ArgTemplate, [ArgUnits], Units);
+	    promote_arg(ArgUnits, ArgTemplate, Phys, 1),
+	    physical_if_defined(RUnits, Phys, Units);
 		 % complain about last set of units tried, = most general?
 	    retract(trying_units(ArgTemplate)),
 	    throw(mismatched_units(Functor, Source, ArgUnits, ArgTemplate))),
@@ -1032,9 +1035,10 @@ Now one that uses a special conditional level */
 			part_result(SContext, SSetups, SArgs, SRef)),
 	    pointer_from(DestPath, Ptr),
 	    PartSetups = [make(poked(InterEfct), SArgs, SContext, Step,
-			       [assign(arr(Ptr, InterEfct, [ARef]), SRef)]) | SSetups],
+			       [assign(arr(Ptr, InterEfct, [ARef]), CSRef)]) | SSetups],
 	    value(Any),
-	    try_units(Any, [Any, Any], [AUnits, SUnits], Units),
+	    try_units(Any, [Any, Any], [AUnits, SUnits], Units, Conv),
+	    apply_scale_factor(Conv, SRef, CSRef),
 	    all(inters, add_condition_to_context,
 		[build(PartSetups), unify([SContext, AArgs,
 					   ARef>0 and ARef<=Size]),
@@ -1125,7 +1129,7 @@ Now one that uses a special conditional level */
 			part_result(SourceContext, ExSetups, Args, SourceRef)),
 	    all(inters, prevent_inappropriate_reuse, [build(NewInters)]),
 				% in case they use param
-	    (promote_arg(DefUnit, UseUnit,_FType);
+	    (promote_arg(DefUnit, UseUnit,_FType,_Conv);
 		% not sure how to make this happen
 		throw(wrong_param_units(Param, UseUnit, DefUnit))),!,
 	    append(SubSetups, ExSetups, Setups);	  
@@ -1279,8 +1283,8 @@ Now one that uses a special conditional level */
 		    (member(any, UnitList),
 			Units = any;
 		      select(One, UnitList, [Other]), % == permutation
-			\+ promote_arg(One, 1, _),
-			(promote_arg(Other, 1, _),
+			\+ promote_unit(One, 1), % succeeds only if unitless
+			(promote_unit(Other, 1),
 			    (UnitList == [Other, One], Lop = (/),
 				Units = 1/One;
 				Units = One),
@@ -1317,11 +1321,13 @@ Now one that uses a special conditional level */
 		     SourceRef = ValRef;
 		  nonvar(Lop),
 		     fn_or_op(Lop, MxOp, RUnits, Arg_template),
-		     SourceRef =.. [MxOp | ResultList]),
 		    /* first, check my units are right... */
 	            retractall(trying_units(_,_)),
 	            assert(trying_units(Lop, Arg_template)),
-		    try_units(RUnits, Arg_template, UnitList, Units);
+		    try_units(RUnits, Arg_template, UnitList, Units, Scales),
+		    all(inters, apply_scale_factor,
+			[build(Scales), build(ResultList), build(ScaledRs)]),
+		    SourceRef =.. [MxOp | ScaledRs]);
 		 % complain about last set of units tried, = most general?
 	         retract(trying_units(Lop, Arg_template)),
 		    throw(mismatched_units(Lop, Source,
@@ -1409,8 +1415,8 @@ match_index_units(XpectType, IndxRef, Int, IntIndxRef, Step, Array) :-
 		% special case -- count or name of ET can refer to last elt
 	      Int = n(AnET), NeedType = a(AnET)),
 		TryIndxRef = IndxRef;
-	     promote_arg(Int, 1, _),
-		promote_arg(NeedType, 1, _),
+	     promote_unit(Int, 1), % succeeds only if unitless
+		promote_unit(NeedType, 1),
 		TryIndxRef = simile_int(IndxRef)), !,% for legacy cases
 	((NeedType = boolean,
 		% first index is 1 in model, 0 in code
@@ -1440,6 +1446,10 @@ raise_units(Base, Num, Units) :-
 	raise_units(Base, Next, Mid),
 	Units =.. [Do, Mid, Base].
 
+apply_scale_factor(1, Val, Val) :- !.
+apply_scale_factor(Factor, Val, Factor*Val).
+% no need for cleverness, this will just go in the code...there are limits tho
+	
 members_of_type(Dun, IndxUnits) :-
 	Dun = n(Type),
 	 (Type = boolean, IndxUnits = boolean;
@@ -1476,7 +1486,7 @@ units_for_trigger_mag(Fn, MagUnits) :-
 	length(EvtBases, NEvts),
 	(value(Any),
 	list_of(Any, NEvts, Anies),
-	try_units(Any, Anies, EvtBases, MagBase), !;
+	try_units(Any, Anies, EvtBases, MagBase, _Convs), !;
 	    caption_for(Fn, Capt),
 	    throw(mixed_trigger_units(Capt, EvtUnits))),
 	(MagBase = boolean -> ReferMagBase = int; ReferMagBase = MagBase),
@@ -1562,20 +1572,29 @@ swap_back(BaseContext, BackSwap, Context, MadeDim) :-
 		MadeDim = new_dim), !;
 	Context = BaseContext.
 
-propagate_units(Source, Lowest, Want, Get, Result) :-
-	promote_unit(Lowest, In),
-	substitute(Lowest, Want, In, SettleFor),
-	try_units(In, SettleFor, Get, Result), !;
-	Source =.. [Lop | _],
-	throw(mismatched_units(Lop, Source, Get, Want)).
-	
+try_units(Result, Want, Get, Out, Conv) :-	
+	all(inters, promote_arg,
+	    [build(Get), build(Want), unify(In), build(Conv)]),
+	physical_if_defined(Result, In, Out).
 
-try_units(Result, Want, Get, Out) :-	
-	all(inters, promote_arg, [build(Get), build(Want), unify(In)]),
+physical_if_defined(Result, In, Out) :-
 	(Result = real,
 	    (nonvar(In), Out = In;
 	    Out = 1), !;
 	Out = Result). 
+
+promote_arg(Lo, Hi, Phys, Conv) :-
+	var(Lo), !, Phys = Lo, Conv = 1;
+	promote_unit(Lo, Tpt),
+	(Lo = any; % match to any physical unit
+	    %Tpt = real, Med = 1; forces result dimensionless --
+				% might need to be backtracked, but all() cuts
+	    Med = Tpt),
+	(Hi = real,
+	    (Phys = Med; \+ Phys = Med),
+	    (var(Phys), Conv = 1; % only anies so far
+	      get_conversion(1, Med, Phys, Conv)), !;
+	Hi = Med, Conv = 1).
 	
 promote_unit(Lo, Hi) :-
 	Lo = Hi;
@@ -1593,20 +1612,6 @@ uses_as(const_int, int).
 uses_as(const_int, const_ratio).
 uses_as(const_ratio, 1).
 uses_as(int, 1).
-
-promote_arg(Lo, Hi, Phys) :-
-	var(Lo), !, Phys = Lo;
-	promote_unit(Lo, Tpt),
-	(Lo = any; % match to any physical unit
-	    %Tpt = real, Med = 1; forces result dimensionless --
-				% might need to be backtracked, but all() cuts
-	    Med = Tpt),
-	(Hi = real,
-	    (Phys = Med; \+ Phys = Med),
-	    (var(Phys); % only anies so far
-	      get_conversion(1, Med, Phys, N),
-		1 is N), !;
-	Hi = Med).
 
 /* this one interprets the unit specs in fragment names (more later?) */
 describes_unit(Spec, Actual) :-
@@ -1816,11 +1821,14 @@ add_zeros(N, SubId, Step, RN, [], U) :-
 add_zeros_all([], _,_, [], [0 | _], any).
 
 add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
-	add_zeros(H, SubId, Step, NH, R, U1),
+	add_zeros(H, SubId, Step, NH, R, U0),
+	(U0 = real -> U1 = int; U1 = U0), % 0's in list not magic
 	add_zeros_all(T, SubId, Step, NT, [M | RR], UN),
 	(R = RR, !;
 	    throw(cannot_combine_argument_dimensions([H | T]))),
-	propagate_units(list_parts(H,T), any, [any, any], [U1, UN], U),
+	(select(U, [U1, UN], [UR]),
+	 promote_unit(UR, U), !; % can use p_u because units always numeric
+	throw(mismatched_units(list_parts, [[H], T], [U1, UN], compatible))),
 	N is M+1.
 
 /* Returns expressions for a model's indices, those for outer loops first */
