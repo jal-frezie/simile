@@ -268,7 +268,7 @@ switch $tcl_platform(platform) {
     }
 }
 
-set env(SIMILE_VERSION) 6.2
+set env(SIMILE_VERSION) 6.3
 set sendvars(simP) {}
 
 if {$env(SIMILE_VERSION)>=6.0} {
