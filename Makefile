@@ -299,7 +299,7 @@ $(RELAY): Run/relay.c
 	cd Run; $(GCCCMD) $(CFLAGS) -o ../$(RELAY) relay.c; cd ..
 
 ifeq ($(PLATFORM),GNU/Linux)
-MINREL = 2
+MINREL = 3
 # install used for packaging for distributions
 SHAREDIR = /usr/share
 INSTALL_TGT = $(SHAREDIR)/simile-6.$(MINREL)
