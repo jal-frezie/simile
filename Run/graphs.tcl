@@ -16,8 +16,10 @@
 
 proc odbcdriverFromExt { ext } {
     # e.g. [odbcdriverFromExt .xls] -> Microsoft Excel Driver (*.xls)
-    package require tclodbc; #jmm ODBC
-
+    if {[catch {package require tclodbc}]} { ; #jmm ODBC
+	Query [list no_odbc_interface] warning data_via_odbc {} ok
+	return {}
+    }
     set odbcdrivers [database drivers]
     set index [lsearch  -regexp $odbcdrivers ".*FileExtns=.*$ext.*"]
     if {$index == -1} {
