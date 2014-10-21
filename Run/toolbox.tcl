@@ -594,6 +594,7 @@ proc LoadProgram {node lang} {
 	SetRunParams $node $runState($node,runParams)
     }
     update_executable $node $lang
+    set runState($node,reloadParams) -2 ;# the initialize phase
     if {[StartRun $node]} {
         ToggleIOToolMenu $node
 	set myNode $node ;# cos new MRE will have focus
@@ -1980,7 +1981,6 @@ proc Rerun {winId go} {
         } else {
             set runType run_c
         }
-
         MenuSelect $winId code $runType
     } else {
         StartRun $node

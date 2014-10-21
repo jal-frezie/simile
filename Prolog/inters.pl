@@ -27,15 +27,17 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
 	(swap_back(BaseContext, BackSwap, FContext, no_dim), !;
 	throw(cannot_make_context(Target, BaseContext, BackSwap))),
 
-	/* If managing units, apply conversion; error message not brilliant but
-	only occurs if unit management turned on since entering equation */
+	/* If managing units, apply conversion; error message brilliant */
 	get_dims_from_loops(SourceLoops, _, SourceInds),
 	(m_update'><'use_units_in(Sm, 'Yes'),
 	    \+ Units = real,
 	    \+ promote_unit(Units, 1),
 	    \+ promote_unit(Units, XUnits),
 	    (get_conversion(Formula, Units, XUnits, ScaledF);
-		report(Sm, wrong_derived_units(Units))), !;
+	        check_and_report_units(Units, PhysDims, _),
+	        check_and_report_units(XUnits, XPhysDims, _),
+		report(Sm, mismatched_dimensions(XUnits, XPhysDims,
+						 Units, PhysDims))), !;
 	ScaledF=Formula),
 	/* now check for assignment from an idler. This will be eleminated. */
 	(ScaledF = Formula,
