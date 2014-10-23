@@ -8,7 +8,6 @@ sicstus_module( utility, [wake/0, genint/2, rt_portray/1, trim_float/2,
 			  all/3, unify_all/2, get_precedence/2,
 			  replace_in_list/4, write_with_breaks/2,
 			  export_with_breaks/2,
-			  writelist/1,writelisttofile/2,
 			  do_writing/2, open_native/3,
 			  delall/3, append_atoms/2, append_atoms/3,
 			  merge_lists/2, merge_lists/3, split_lists/3,
@@ -225,21 +224,7 @@ export_with_breaks(Stream, Term) :-
 	nl(Stream).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% write a list of atoms one per line
-
-writelist( [] ).
-writelist( [Atom|Atoms] ) :-
-	write( Atom ),
-	nl,
-	writelist( Atoms ).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% write a list of atoms one per line to a file
-
-writelisttofile( List , File) :-
-	open(File,write,Str),
-	do_writing(List,Str),
-	close(Str).
+% write a list of atoms one per line to a tcl variable
 
 do_writing([], _).
 
@@ -247,21 +232,6 @@ do_writing([Atom | Rest], Str) :-
 	write( Str, Atom ),
 	nl(Str),
 	do_writing( Rest, Str ).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% read the above
-
-readlistfromfile( List , File) :-
-	open_native(File,read,Str),
-	do_reading(List,Str),
-	close(Str).
-
-do_reading([Atom | Rest], Str) :-
-	read( Str, Atom ),
-	\+ Atom = end_of_file, !,
-	do_reading( Rest, Str ).
-
-do_reading([], _Str).
 
 /* Opening files is one of the few times Prolog talks directly to the OS, so we
 need to change its own ttfn encoding to utf8 */

@@ -158,15 +158,15 @@ all_utf8_to_ttfn(String, NewString) :-
 system... */
 
 /* cannot use all because of variable length source */
-all_ttfn_to_utf8([], []).
+all_ttfn_to_utf8([], []) :- !.
 
-all_ttfn_to_utf8([H|T], NewString) :-
-	append(Code, Rest, [H|T]),
+all_ttfn_to_utf8(Str, NewString) :-
+	append(Code, Rest, Str),
 	ttfn_to_unicode(Code, Char), !,
 	user'><'unicode_to_utf8(Char, Start),
 	all_ttfn_to_utf8(Rest, More),
 	append(Start, More, NewString);
-	write('Could not convert '), write([H|T]), write(' to unicode'), nl.
+	write('Could not convert '), write(Str), write(' to unicode'), nl.
 
 ttfn_to_unicode([H | String], Val) :-
 	[H] = "X", !,
