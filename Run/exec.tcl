@@ -41,7 +41,13 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 	foreach fnFile $incs {
 	    namespace eval ::tcl::mathfunc [list source $fnFile]
 	}
-	source $model_prog($topNode)
+#	source $model_prog($topNode)
+# File is utf-8 so rather than sourcing, read in and eval
+	set stm [open $model_prog($topNode) r]
+	fconfigure $stm -encoding utf-8
+	eval [read $stm]
+	close $stm
+
 	if {![catch {IdentField $simile_identifier version} buildV]} {
 	    return [expr $buildV==$env(SIMILE_VERSION)]
         } else {
