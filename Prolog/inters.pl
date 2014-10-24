@@ -1249,7 +1249,7 @@ Now one that uses a special conditional level */
 		name(Lop, LopStr),
 		ValRef =.. [Lop | ResultList],
 		((length(ArgTpts, Arity); WrongArity = 1),
-		    fragment_expansion(_, FragFile, Op, FragOut, ArgTpts),wake,
+		    fragment_expansion(_, FragFile, Op, FragOut, ArgTpts),
 		    (WrongArity = 0;
 			length(ArgTpts, FnArity),
 			throw(wrong_no_of_args(Source, Op, Arity, FnArity))), !,
@@ -2022,7 +2022,7 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	  var(ADs),
 	    ADs = []),
 	...now, if a named input, read dims from it */
-	(nonvar(Name) -> wake,
+	(nonvar(Name) ->
 	    m_update'><'get_av_pair(VisDestId, 0, units, OldU),
 	    m_update'><'analyze_array(OldU, _OldUnits, NeededDims),
 	    length(NeededDims, N),

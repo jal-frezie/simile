@@ -309,10 +309,12 @@ update_equation(Function, InterInputs,
 						any, [any, any, any],
 			[EqnBase, MinBase, MaxBase], RawBase),
 		     TypeError = minmax_wrong(EqnBase)),
-...this makes a bit more sense... */
-	 ([MinBase, MaxBase] = [any, any], !;
-	  promote_unit(EqnBase, real), !;
-	  TypeError = minmax_wrong(EqnBase)),
+   ...above procedure removed, what about this? */
+	(inters'><'value(MMVal),
+	 inters'><'try_units(MMVal, [MMVal, MMVal, MMVal],
+			     [EqnBase, MinBase, MaxBase], RawBase, _Convs);
+	 TypeError = minmax_wrong(EqnBase)),
+	 
 	(nonvar(TypeError);
 	    /* First, check that the equation can have the units
 	       given, or set given units to the default units for the
@@ -328,7 +330,7 @@ update_equation(Function, InterInputs,
 	      CheckLevel = 2), % otherwise dimensions must match
 	    (MinMaxNeeded = 1 -> % limit event -- boolean if 1 bound, int if 2
 		(member('', [Min, Max]) -> CompBase=boolean; CompBase=int);
-		CompBase = EqnBase),		
+		CompBase = RawBase),		
 	    appropriate_units(Units, TypeBase, CompBase, CheckLevel,
 			      NewUnits, TypeError))),
 
