@@ -10,15 +10,22 @@ source [file join $sPath Extensions Simile exec client5d.tcl]
 
 # Stuff that needs doing only once
 UseSimileAt $sPath
-set mH [loadmodel [file join $sHome $shLib] evaluation]
-set iH [CreateModel $mH]
-set hook {}
-set catalog [ListObjPaths $mH]
-foreach obj $catalog {
+
+proc InstallModelExec {shLib} {
+catch {
+ global mH iH aH catalog
+ set mH [loadmodel [file join $::sHome $shLib] evaluation]
+ set iH [CreateModel $mH]
+ set hook {}
+ set catalog [ListObjPaths $mH]
+ foreach obj $catalog {
     if {[lsearch {INPUT TABLE} [GetModelProperty $mH $obj Eval]]>-1} {
 	lappend hook $obj
 	set aH($obj) [CreateParamArray $iH $obj]
     }
+ }
+ llength $catalog} res
+ return $res
 }
 
 # now create a server that executes everything it gets at global scope 
@@ -34,6 +41,7 @@ proc Server {channel clientaddr clientport} {
     close $channel
 }
 
+InstallModelExec $shLib
 set typho [socket -server Server 0]
 # the php proc_open() will not return till the process finishes, so use file to send socket id
 set sockId [lindex [fconfigure $typho -sockname] end]

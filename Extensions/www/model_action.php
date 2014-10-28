@@ -119,6 +119,11 @@ break;
    unlink($rdyFile);
 break;
   
+   case "NewExec":
+   $shlibName = pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
+   echo doTcl("InstallModelExec " . $shlibName);
+   break;
+
    case "GetSVG":
 // put the svg in a variable so I can start thinking about how to replace it
       $svgStm = fopen($_POST['base'] . ".svg", "r");
