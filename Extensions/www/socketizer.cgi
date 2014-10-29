@@ -43,10 +43,14 @@ proc Server {channel clientaddr clientport} {
 
 InstallModelExec $shLib
 set typho [socket -server Server 0]
-# the php proc_open() will not return till the process finishes, so use file to send socket id
 set sockId [lindex [fconfigure $typho -sockname] end]
-set dmp [open ${mdl}.rdy w]
-puts $dmp $sockId
-close $dmp
 
+# OLD php: the php proc_open() will not return till the process finishes,
+# so use file to send socket id
+# set dmp [open ${mdl}.rdy w]
+# puts $dmp $sockId
+# close $dmp
+
+# SENSIBLE php: we can just echo the server ID
+puts $sockId
 vwait forever

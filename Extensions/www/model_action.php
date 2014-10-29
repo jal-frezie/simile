@@ -11,7 +11,7 @@ function demangle($bs) {
 }
 
 function doTcl($cmd) {
-   $fp = fsockopen("localhost", $_POST['port'], $errno, $errstr, 30);
+   $fp = fsockopen("localhost", $_POST['port']+0, $errno, $errstr, 30);
    if (!$fp) {
       echo "$errstr ($errno)<br />\n";
       return;
@@ -49,8 +49,8 @@ switch ($_POST['act']) {
    case "BuildShareLib":
    case "BuildShareLibInLine":
 $shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
-$simileLocn = "/usr/lib/simile-6.2";
-$simileHome =  "/home/www-data";
+$simileLocn = "/usr/lib64/simile-6.3";
+$simileHome =  "/tmp/upload";
 $tculargs = array($simileLocn, $simileHome, $_POST['base'], $shlibName);
 $descriptorspec = array(
    0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
@@ -84,7 +84,7 @@ $return_value = proc_close($process);
 if (! file_exists($simileHome . "/" . $shlibName)) {
    echo "Command returned $return_value<br>";
    echo "Output from build process was:<br>$pipe_contents";
-   echo "<br>Error messages:<br>" . file_get_contents('/tmp/error-output.txt');
+   echo "<br>Error messages:<br>" . file_get_contents('/tmp/upload/.simile/userinfo.txt');
    echo "<br>Directory contents:<br>" . var_dump(glob('/tmp/*'));
    exit('Failed to build executable');
 }
@@ -92,8 +92,8 @@ break;
 
    case "CreateSocket":
 $shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
-$simileLocn = "/usr/lib/simile-6.2";
-$simileHome =  "/home/www-data";
+$simileLocn = "/usr/lib64/simile-6.3";
+$simileHome =  "/tmp/upload";
 $tculargs = array($simileLocn, $simileHome, $_POST['base'], $shlibName);
 $descriptorspec = array(
    0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
@@ -104,14 +104,17 @@ $descriptorspec = array(
 $process = proc_open("../cgi-bin/socketizer.cgi " . implode($tculargs, " "), 
     $descriptorspec, $clPipes);
 if (! is_resource($process)) { exit('Failed to start test process'); }
-//$port = rtrim(fgets($clPipes[1]));
-//if (intval($port)) {
-//   echo $port;
-//} else {
-//   echo file_get_contents("/tmp/error-output.txt");
-//}
+
+// For sensible php: socket id is echoed
+$port = rtrim(fgets($clPipes[1]));
+if (intval($port)) {
+   echo $port;
+} else {
+   echo file_get_contents("/tmp/error-output.txt");
+}
 break;
 
+// for OLD php: do this to get socket instead
    case "WaitSocket":
    $rdyFile = $_POST['base'] . ".rdy";
    while (!file_exists($rdyFile)) sleep(1);
@@ -119,11 +122,6 @@ break;
    unlink($rdyFile);
 break;
   
-   case "NewExec":
-   $shlibName = pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
-   echo doTcl("InstallModelExec " . $shlibName);
-   break;
-
    case "GetSVG":
 // put the svg in a variable so I can start thinking about how to replace it
       $svgStm = fopen($_POST['base'] . ".svg", "r");

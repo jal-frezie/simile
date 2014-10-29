@@ -269,9 +269,14 @@ function new_helper(type) {
 }
 
 function update_helpers(time, latest) {
-  for (i=0; i<currentHelpers.length; i++) {
-    currentHelpers[i].display(time, latest);
-  }
+    for (var i=0; i<currentHelpers.length; ++i) {
+	try {
+	    currentHelpers[i].display(time, latest);
+	}
+	catch(err) {
+	    console.log(err);
+	}
+    }
 }
 
 function select_for_helper(compId) {
@@ -424,7 +429,7 @@ function DataTable (port) {
   this.varColIds = {};
 // OK now add the message to the new tab
   $('#' + port).html("<div id='buttonbar'>\
-<button type='button' onclick='currentHelper = " + this + "'>Tabulate</button>\
+<button type='button' onclick='currentHelper = currentHelpers[" + currentHelpers.length + "]'>Tabulate</button>\
 </div>\
 <table id='" + this.port + "_table'></table>");
 }
@@ -463,7 +468,7 @@ DataTable.prototype.display = function(time, latest) {
   }
   for (i=0;i<this.tgts.length;i++) {
     toZap = this.tgts[i];
-    newLine[toZap] = latest[toZap]
+    newLine[toZap] = JSON.stringify(latest[toZap])
   }
   this.t = $('#' + this.port + "_table").dataTable({"data":this.cumData,
 				       "columns":this.columns,
@@ -901,16 +906,19 @@ window.onunload = function(e) {
 // Start the socket -- fttb just hope it is ready when prepare is called
 var svrPort = 99999;
 $.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
-            function() {
-               alert("Guess what -- the model exec process just finished");
-});
-
-$.post('model_action.php', {"act":"WaitSocket", "base":fileBase}, 
             function(port) {
+//               alert("Guess what -- the model exec process just finished");
             	svrPort = port;
-                alert("Got socket " + port);
+                console.log("Got socket " + port);
             	populateStructs();
 });
+
+//$.post('model_action.php', {"act":"WaitSocket", "base":fileBase}, 
+//            function(port) {
+//            	svrPort = port;
+//                alert("Got socket " + port);
+//            	populateStructs();
+//});
 
 ////////////////////////////////////// PREPARE /////////////////////////////
 var xmlns = 'http://www.w3.org/2000/svg';
