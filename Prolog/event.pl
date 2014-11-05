@@ -83,7 +83,7 @@ build_suffix([H | T], Suffix) :-
 get_info(_Wid, Comp, enum_type_defns, ETDefns) :-
 	(find_type(Comp, submodel), !,
 	    % just get defns for this submodel level
-	    m_update'><'enum_types_for(Comp, ETDefns);
+	    m_update'><'enum_types_for(Comp, ETDefns, yes);
 	  % if not a submodel, get all applicable enum types
 	    find_all_comps(MotherShip, Comp),
 	    get_all_enum_types(MotherShip, ETDefns)).

@@ -1765,7 +1765,7 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Interp, Fat, Count,
 	Desc = ''),
 	(Submodel has_class_refinement comment of Comment, !;
 	Comment = ''),
-	enum_types_for(Submodel, EnumSpecs),
+	enum_types_for(Submodel, EnumSpecs, no),
 	(Submodel has_class_refinement eqn_units of Fix, !;
 	Fix = 'Default'),
 	(Submodel has_graphical_attribute hide_contents of Hide, !;
@@ -1792,12 +1792,12 @@ time_step_for(Model, TopStep, Step) :-
 	Model has_class_refinement step of Step, !;
 	Step = TopStep.
 
-enum_types_for(Submodel, EnumSpecsInc) :-
+enum_types_for(Submodel, EnumSpecsInc, IncludeRTs) :-
 	(Submodel has_class_refinement enum_types of EnumTypes,
 	    all(menu, separate_type_from_mems,
 		[build(EnumSpecs), build(EnumTypes)]), !;
 	 EnumSpecs = []),
-	(ready_type(Submodel, RT) ->
+	(ready_type(Submodel, RT), IncludeRTs = yes ->
 	   member(RT-XType, [rect_grid(R,C)-[rect_nbr,sw,s,se,w,e,nw,n,ne],
 		hex_grid(R,C)-[hex_nbr,'7h','5h','9h','3h','11h','1h']]),
 	   EnumSpecsInc = [XType | EnumSpecs];
@@ -1805,7 +1805,7 @@ enum_types_for(Submodel, EnumSpecsInc) :-
 
 get_all_enum_types(root, []).
 get_all_enum_types(Node, TypeList) :-
-	enum_types_for(Node, LevelList),
+	enum_types_for(Node, LevelList, yes),
 	Parent has_part Node,
 	get_all_enum_types(Parent, HigherList),
 	merge_defns(LevelList, HigherList, TypeList).
