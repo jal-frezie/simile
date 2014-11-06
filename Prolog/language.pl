@@ -986,6 +986,7 @@ make_evaluation_routine(
 	    make_scalar(Language, Home, Used, SHome),
 	    make_scalar(Language, Struct, Used, SStruct),
 	    make_pointer(Language, SStruct, VStruct),
+	    make_evaluation_routine(Language, Home, Used, VHome),
 	    make_evaluation_routine(Language, Step, Used, VStep),
 	    make_evaluation_routine(Language, Delta, Used, XDelta),
 	    make_expr(Language, XDelta, VDelta),
@@ -993,7 +994,7 @@ make_evaluation_routine(
 						 VStep, VDelta, Key, Min, Max,
 						 GraphId], Content_chars),
 	    name(Content, Content_chars),
-	    Term = SHome+Content;
+	    Term = VHome+Content;
 	Expr =.. [check_limit, Trigger | Args], !,
 	    append(EarlyArgs, [Struct], Args),
 	    make_scalar(Language, Struct, Used, SStruct),
