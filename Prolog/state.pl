@@ -54,7 +54,8 @@ kickoff(Vnum) :-
 	(OpenStr = [];
 	append(Base, ".smx", OpenStr);
 	name(OpenModel, OpenStr),
-	    menu'><'stick_model_in(Canvas, Desktop, OpenModel, open_toplevel);
+	    menu'><'stick_model_in(Canvas, Desktop, OpenModel, open_toplevel),
+	    user'><'any_tcl_eval(['RunIfPackage'], 1, _);
 	true), !,
 	(utility'><'append_atoms(dummy, _, Canvas), !, Headless = 1;
 	 user'><'any_tcl_eval(['FixSize', Canvas], 1, _)),
