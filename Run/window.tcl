@@ -913,7 +913,7 @@ proc AcceleratorState {winName menu item state} {
     if {[info exists accelerator($menu,$item)]} {
         if {[string match normal $state]} {
 	    set numItem $menuPosns($menu,$item)
-	    set action [${winName}top.$menu entrycget $numItem -command]
+	    set action [list ${winName}top.$menu invoke $numItem]
             bind $winName $accelerator($menu,$item) \
 		[list DoIfApplicable $winName $item $action]
         } else  {
@@ -954,10 +954,12 @@ proc DoIfApplicable {winName item action} {
 # if action is applicable to text, check text edit not in progress before
 # applying it to diagram -- not strictly true of Select All but emacsers may
 # use ctrl-A to go to beginning of line
-#puts $action
     if {[lsearch {Cut Copy Paste Delete "Select all"} $item]==-1 || \
 	    [NotEditingText $winName]} {
-	eval $action
+# 'after 100' is a total botch to prevent a problem on OSX whereby the Super
+# key highlights menu entries, so if it is used for accelerators this action 
+# can get tangled with dialogue boxes and cause a hang.
+	after 100 $action
     }
 }
 
