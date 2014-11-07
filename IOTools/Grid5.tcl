@@ -77,6 +77,7 @@ namespace eval grid005 {
         ::graphtools::MakeToolBar $winId $toolbarItems
 	::graphtools::SetButtonState $winId zoomin disabled
 	::graphtools::SetButtonState $winId zoomout disabled
+	::graphtools::SetButtonState $winId property disabled
 	::graphtools::SetButtonState $winId edit disabled
     }
     
@@ -385,6 +386,7 @@ namespace eval grid005 {
 	    [namespace code "recolour_scale $::helperTable($winId,whichInstance) $winId"]
 #        $winId.c configure -scrollregion [$winId.c bbox all]
         $winId.c configure -scroll "0 0 $xwidth $yheight"
+	::graphtools::SetButtonState $winId property normal
 	if {[lsearch {INPUT TABLE} [GetModelEval $display1]]>-1} {
 	    ::graphtools::SetButtonState $winId edit normal
 	}
