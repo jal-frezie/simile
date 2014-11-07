@@ -2323,7 +2323,7 @@ proc TtkLikeDialogue {dlg args} {
 	set D($option) $options($option)
     }
 
-    toplevel $dlg -class Dialog; wm withdraw $dlg
+#    toplevel $dlg -class Dialog; wm withdraw $dlg
 
     #
     # Determine default transient parent.
@@ -2342,9 +2342,11 @@ proc TtkLikeDialogue {dlg args} {
     #
     # Build dialog:
     #
-    if {$options(-parent) ne ""} {
-    	wm transient $dlg $options(-parent)
-    }
+ #   if {$options(-parent) ne ""} {
+ #   	wm transient $dlg $options(-parent)
+ #   }
+PutItThere $dlg $options(-parent)
+
     wm title $dlg $options(-title)
     wm protocol $dlg WM_DELETE_WINDOW { }
 
@@ -2541,6 +2543,7 @@ proc Query {specifics icon helpRef parent opts} {
 #    update idletasks
     return $result
 }
+
 
 proc AddMsgsToLog {} {
     global dialogues
