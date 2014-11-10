@@ -1186,7 +1186,7 @@ proc FixSize {c} {
 
     destroy .splash
     if {[string match $openModel {}]} {
-        DoRegDialog $win
+        DoWelcomeDialog $win
     }
 }
 

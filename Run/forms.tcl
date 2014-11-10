@@ -1249,7 +1249,7 @@ proc DoUserDialogue {} {
     return $userinfo(entrydone)
 }
 
-proc DoRegDialog {dtId} {
+proc DoWelcomeDialog {dtId} {
     global userinfo custom welcomeDone tcl_platform SimileAutoObjLoaded
     
     if {[info exists SimileAutoObjLoaded]} {
@@ -1266,10 +1266,8 @@ proc DoRegDialog {dtId} {
 
     set newVers [GetLatestVers]
     if {$newVers == 0} {set newVers $userinfo(oldVersion)}
-    if {$newVers==$userinfo(oldVersion)} {
-        if {$userinfo(done)} {
-            return
-        }
+    if {$newVers==$userinfo(oldVersion) && $userinfo(done)} {
+	return
     } else {
         file mkdir $custom(prefDir)/Examples
         foreach egFile [glob [pwd]/../Examples/*] {
