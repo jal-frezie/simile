@@ -1282,7 +1282,8 @@ proc LoadBase64CharData {encoded} {
 	$widgetNames($compName).e configure -state disabled
 	AbleHandEditControls $widgetNames($compName)
     }
-#    set whichParamsAffected($compName) 1
+    set whichParamsAffected($compName) 1 ;# re-enabled so works in client5d
+#...quick test shows no performance reduction elsewhere
 }
 
 proc RestoreOldCrs {txt} {
