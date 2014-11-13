@@ -720,6 +720,28 @@ proc DoNotPassTcl {topNode node dims tableSpec} {
     c_setparamall $topNode $node $bytesFromGdal [list $fillRows $fillCols]
 }
 
+# duplicate of procedure in utility.tcl
+proc DoByteArrayToList {fieldChar fieldSize bounds rawData} {
+    upvar 1 offset offset
+    if {[llength $bounds]==1} {
+	set fieldSpec @${offset}${fieldChar}${bounds}
+#puts $fieldSpec
+	if {![binary scan $rawData $fieldSpec spit]} {
+	    set spit {<scan failed>}
+	    puts "Failed to scan $rawData for $fieldSpec"
+	}
+	incr offset [expr $fieldSize*$bounds]
+    } else {
+	set subBounds [lrange $bounds 1 end]
+	set spit {}
+	for {set outer 0} {$outer<[lindex $bounds 0]} {incr outer} {
+	    lappend spit [DoByteArrayToList $fieldChar $fieldSize \
+			      $subBounds $rawData]
+	}
+    }
+    return $spit
+}
+
 proc NumberElements {list {startNum 1}} {
     if {[string equal $list [lindex $list 0]]} {
 	return $list
