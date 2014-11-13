@@ -310,7 +310,7 @@ update_equation(Function, InterInputs,
 			[EqnBase, MinBase, MaxBase], RawBase),
 		     TypeError = minmax_wrong(EqnBase)),
    ...above procedure removed, what about this? */
-	(inters'><'value(MMVal),
+	(promote_unit(any, MMVal),
 	 inters'><'try_units(MMVal, [MMVal, MMVal, MMVal],
 			     [EqnBase, MinBase, MaxBase], RawBase, _Convs);
 	 TypeError = minmax_wrong(EqnBase)),
