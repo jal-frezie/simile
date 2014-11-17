@@ -1,18 +1,11 @@
 var tabs;
 	$(function() {
 		
+	    $( "#button" ).button();
+	    $( "#radioset" ).buttonset();
+		
+	    tabs = $( "#tabs" ).tabs();
 
-		
-
-		
-		$( "#button" ).button();
-		$( "#radioset" ).buttonset();
-		
-
-		
-
-tabs = $( "#tabs" ).tabs();
-		
 // close icon: removing the tab on click
 tabs.delegate( "span.ui-icon-close", "click", function() {
   var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
@@ -476,18 +469,6 @@ DataTable.prototype.display = function(time, latest) {
   this.t.api().page.jumpToData( time, 0 );
 }
 
-// eventually this will inherit from a generic display tool class
-function PlotValAgainstTime (port) {
-// Call the parent constructor
-//   DisplayTool.call(this);
-
-  this.port = port;
-  this.tgts = [];
-  this.status = "initializing";
-// OK now add the message to the new tab
-  $('#' + port).html("Click on a component in the Explorer pane or the Model Diagram.");
-}
-
 function flatten(head,ob) {
     var result = {};
     if (typeof (ob) == "object") {
@@ -523,9 +504,11 @@ PlotXY.prototype.acceptClick = function (compId) {
   } else {
       this.status = "displaying";
       
-      w = 800;
+//      w = 800;
+      w = parseInt(d3.select('#' + this.port).style('width'), 10);
       h = 800;
-      ngap = 40;
+//      h = parseInt(d3.select('#tabs').style('height'), 10);
+     ngap = 40;
 
     if (compId == "time") {
 	this.oldt = parseFloat($("#ct").val());
@@ -578,14 +561,16 @@ PlotXY.prototype.acceptClick = function (compId) {
       this.lx = x;
       this.ly = y;
       this.line = gLine;
-    $('#' + this.port).html("Plot of " + model_json[this.tgts[0]].captpath +
-			   " against " + xAxisName);
+//    $('#' + this.port).html("Plot of " + model_json[this.tgts[0]].captpath +
+//			   " against " + xAxisName);
+    $('#' + this.port).html("");
+    $('#tabs a[href=#' + this.port + ']').text("Plot of " + model_json[this.tgts[0]].captpath + " against " + xAxisName);
     this.svg = d3.select('#' + this.port).append("svg")
       .attr("width",w+ngap).attr("height",h+ngap);
     var xAxisGroup = this.svg.append("g")
           .attr("id", this.port + "_xbar")
 	  .attr("class", "x axis")
-	  .attr("transform", "translate(0," + w + ")");
+	  .attr("transform", "translate(0," + h + ")");
     var yAxisGroup = this.svg.append("g")
           .attr("id", this.port + "_ybar")
 	  .attr("class", "y axis")
@@ -785,6 +770,19 @@ PlotXY.prototype.olddisplay = function (time, latest) {
   }
 }
 
+/*
+// eventually this will inherit from a generic display tool class
+function PlotValAgainstTime (port) {
+// Call the parent constructor
+//   DisplayTool.call(this);
+
+  this.port = port;
+  this.tgts = [];
+  this.status = "initializing";
+// OK now add the message to the new tab
+  $('#' + port).html("Click on a component in the Explorer pane or the Model Diagram.");
+}
+
 // PlotValueAgainstTime.prototype = new DisplayTool(this);
 // PlotValueAgainstTime.prototype.constructor = new PlotValueAgainstTime;
 PlotValAgainstTime.prototype.acceptClick = function (compId) {
@@ -808,7 +806,7 @@ PlotValAgainstTime.prototype.display = function (time, latest) {
     this.myChart.setData(this.graphData);
   }
 }
-
+*/
 function populateStructs() {
 
 // OK, now use AJAX to get a string of values
@@ -848,20 +846,20 @@ $.post('model_action.php', { "port" : svrPort, "act":"Describe"},
 		   'data' : treeData
 	      }
 		      });
-	   if (needInput) {
-	      new_helper("params");
-	   }
-      });
-
 // This will ultimately load the parameter file (if there is one) and
 // get a list of components that still need values, or have bad values,
 // for flagging in the parameter dialogue
-    $.post('model_action.php', { "port" : svrPort, "act":"LoadSPF", 
-				 "base" : fileBase}, 
-	   function(data) {
-	       console.log(data);
-	       model_reset();
-	   });
+	  $.post('model_action.php', { "port" : svrPort, "act":"LoadSPF", 
+				       "base" : fileBase}, 
+		 function(unfilled) {
+console.log("Params needed: " + needInput + ", missing: " + unfilled);
+		     if (needInput && JSON.parse(unfilled).length) {
+			 new_helper("params");
+		     }
+		     model_reset();
+		 });
+      });
+
 }
 
 function loadParams() {
