@@ -263,12 +263,12 @@ function new_helper(type) {
 
 function update_helpers(time, latest) {
     for (var i=0; i<currentHelpers.length; ++i) {
-	try {
+//	try {
 	    currentHelpers[i].display(time, latest);
-	}
-	catch(err) {
-	    console.log(err);
-	}
+//	}
+//	catch(err) {
+//	    console.log(err);
+//	}
     }
 }
 
@@ -460,7 +460,11 @@ DataTable.prototype.acceptClick = function (compId) {
     this.t.empty();
   }
   this.t = $('#' + this.port + "_table").dataTable({"data":this.cumData,
-				       "columns":this.columns});
+				       "columns":this.columns,
+        "scrollY": "800px",
+        "scrollCollapse": true,
+        "paging": false,
+        "jQueryUI": true});
 }
 
 DataTable.prototype.display = function(time, latest) {
@@ -477,8 +481,22 @@ DataTable.prototype.display = function(time, latest) {
   }
   this.t = $('#' + this.port + "_table").dataTable({"data":this.cumData,
 				       "columns":this.columns,
-				       "destroy":true});
-  this.t.api().page.jumpToData( time, 0 );
+				       "destroy":true,
+        "scrollY": "800px",
+        "scrollCollapse": true,
+        "paging": false,
+        "jQueryUI": true});
+//  this.t.api().page.jumpToData( time, 0 );
+// above selects page with data, but we want to scroll to it
+    var newRow = this.timeRowIds[time];
+    var scroller = this.t.fnSettings().nTable.parentNode;
+    var rowObj = this.t.api().row(newRow).node();
+    $(scroller).scrollTo(rowObj,1);
+// sorted -- next, make the bloody thing change size
+}
+
+DataTable.prototype.resize = function() {
+//    this.t.dataTable({"scrollY": parseInt(d3.select('#tabs').style('height'), 10)-120});
 }
 
 function flatten(head,ob) {

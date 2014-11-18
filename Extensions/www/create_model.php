@@ -8,11 +8,12 @@
 <link href="//cdn.datatables.net/1.10.0/css/jquery.dataTables.css" rel="stylesheet" />
 <script src="js/jquery-1.10.2.js"></script>
 <script src="js/jquery-ui-1.10.4.custom.js"></script>
+<script src="js/jquery.scrollTo-min.js?1.4.11"></script>
 <script src="dist/jstree.min.js"></script>
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <!-- script src="js/xcharts.min.js"></script -->
 <script src="//cdn.datatables.net/1.10.0/js/jquery.dataTables.js"></script>
-<script src="//cdn.datatables.net/plug-ins/be7019ee387/api/page.jumpToData().js"></script>
+<!-- script src="//cdn.datatables.net/plug-ins/be7019ee387/api/page.jumpToData().js"></script -->
 <style>
 * {
   margin: 0;
