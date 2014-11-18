@@ -179,7 +179,16 @@ break;
 
    case "LoadSPF":
       if (file_exists($_POST['base'] . '.spf')) {
-         echo doTcl("ConsultParameterMetafile [set iH] " . $_POST['base'] . '.spf');
+         doTcl("ConsultParameterMetafile [set iH] " . $_POST['base'] . '.spf');
+         $line1 = doTcl("join [set paramData(needed)] .");
+	 if (strlen($line1)) {
+            $missing = explode(".", $line1);
+	    echo json_encode($missing);
+	 } else {
+	    echo "[]";
+	 }
+      } else {
+         echo -1;
       }
       break;
 
@@ -188,7 +197,7 @@ break;
       $sample =  str_replace(array('\\"'), array('"'), $_POST['data']);
 //      echo $goer . '<===>' . $sample;
 //      break;
-//      $spew = [];
+      $spew = [];
       $updates = json_decode($sample);
       foreach ($updates as $idx => $pv) {
          $nicePath = escapeNasties($idx);

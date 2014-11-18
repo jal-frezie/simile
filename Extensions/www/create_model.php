@@ -10,10 +10,19 @@
 <script src="js/jquery-ui-1.10.4.custom.js"></script>
 <script src="dist/jstree.min.js"></script>
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-<script src="js/xcharts.min.js"></script>
+<!-- script src="js/xcharts.min.js"></script -->
 <script src="//cdn.datatables.net/1.10.0/js/jquery.dataTables.js"></script>
 <script src="//cdn.datatables.net/plug-ins/be7019ee387/api/page.jumpToData().js"></script>
 <style>
+* {
+  margin: 0;
+}
+html, body {
+  height: 100%;
+  overflow: hidden; /* windows in tab will be sized to notebook parent
+and thus be too big once tabs added causing unnecessary scrollbar */
+}
+
 #tabs li .ui-icon-close { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
 .axis path, .axis line {
   fill: none;
@@ -97,15 +106,15 @@ echo "<script>\nvar fileBase = '$base';\n</script>";
 <button onclick="new_helper('plot')"><img src="images/graph.gif"/></button>
 <button onclick="new_helper('table')"><img src="images/table.gif"/></button>
 <button onclick="new_helper('sliders')"><img src="images/slider.gif"/></button>
-<div>
+</div>
 <div style="position:absolute;left:0px;width:320px;">
 <table border="2"> 
 <tr><td colspan="2">
-<button type="button" onclick="model_reset()">
+<button type="button" style="width:20%" onclick="model_reset()">
 <img src="images/stop.gif"></button>
-<button type="button" onclick="model_exec()">
+<button type="button" style="width:20%" onclick="model_exec()">
 <img id="button_op" src="images/play.gif"></button>
-<div id="progress" style="width:60%;float:right"></div>
+<div id="progress" style="width:55%;float:right"></div>
 <tr><td>Execute for: </td><td><input id="rl" type="text" name="runlength" 
 				     size="8" value=100> 
     unit</td></tr>
@@ -119,17 +128,26 @@ echo "<script>\nvar fileBase = '$base';\n</script>";
 </table>
 <div id="explorer"></div>
 </div>
-<div id="tabs" style="margin-left:320px;">
+<div id="tabs" class="ui-layout-center" style="height:100%;margin-left:320px">
 <ul>
 <li><a href="#tabs-1">Model diagram</a></li>
 </ul>
-<div id="tabs-1">
+<div id="tabs-1" style="    position: absolute;
+    top: 2em;
+    bottom: 0;
+    left: 0;
+    right: 0;
+">
 <div>
 <button type="button" onclick="SvgDiagZoom(0.8)">Zoom Out</button>
 <button type="button" onclick="SvgDiagZoom(1.25)">Zoom In</button>
 </div>
-<div id="holds_svg" style="height:800px;overflow-x:auto;overflow-y:auto">
+<div id="holds_svg" style="position: absolute;
+    top: 3em;
+    bottom: 2em;
+    left: 0;
+    right: 0;
+    overflow-x:auto;overflow-y:auto">
 </div> 
 </div> 
-</div>
 </body>

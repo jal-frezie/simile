@@ -272,6 +272,18 @@ function update_helpers(time, latest) {
     }
 }
 
+window.onresize = function() {
+//    console.log('Window resized');
+    for (var i=0; i<currentHelpers.length; ++i) {
+	try {
+	    currentHelpers[i].resize();
+	}
+	catch(err) {
+	    console.log(err);
+	}
+    }
+}
+
 function select_for_helper(compId) {
   if (currentHelper != null) {
     currentHelper.acceptClick(compId);
@@ -504,11 +516,11 @@ PlotXY.prototype.acceptClick = function (compId) {
   } else {
       this.status = "displaying";
       
+      ngap = 40;
 //      w = 800;
-      w = parseInt(d3.select('#' + this.port).style('width'), 10);
-      h = 800;
-//      h = parseInt(d3.select('#tabs').style('height'), 10);
-     ngap = 40;
+      w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
+//      h = 800;
+      h = parseInt(d3.select('#tabs').style('height'), 10)-120;
 
     if (compId == "time") {
 	this.oldt = parseFloat($("#ct").val());
@@ -560,6 +572,8 @@ PlotXY.prototype.acceptClick = function (compId) {
 	  });
       this.lx = x;
       this.ly = y;
+      this.lxAxis = xAxis;
+      this.lyAxis = yAxis;
       this.line = gLine;
 //    $('#' + this.port).html("Plot of " + model_json[this.tgts[0]].captpath +
 //			   " against " + xAxisName);
@@ -632,6 +646,25 @@ function resetAxes (zoomxaxis, zoomyaxis, zoomport, x, y) {
     zoomxaxis.x(x);
     zoomyaxis.y(y);
     zoomport.x(x).y(y);
+}
+
+PlotXY.prototype.resize = function() {
+   if (this.status != "displaying") return;
+//   console.log('Tab width: ' + d3.select('#' + this.port).style('width'));
+//   console.log('Notebook height: ' + d3.select('#tabs').style('height'));
+    ngap = 40;
+//      w = 800;
+      w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
+//      h = 800;
+      h = parseInt(d3.select('#tabs').style('height'), 10)-120;
+    this.lx.range([ngap, w+ngap]);
+    this.ly.range([0, h]);
+    this.lxAxis.tickSize(-h);
+    this.lyAxis.tickSize(-w);
+    d3.select('#' + this.port + "_xbar")
+	.attr("transform", "translate(0," + h + ")");
+    this.svg.attr("width",w+ngap).attr("height",h+ngap);
+    this.zfn();
 }
 
 PlotXY.prototype.display = function (time, latest) {
