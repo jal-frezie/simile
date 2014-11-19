@@ -459,9 +459,10 @@ DataTable.prototype.acceptClick = function (compId) {
     this.t.fnDestroy();
     this.t.empty();
   }
+    h = parseInt(d3.select('#tabs').style('height'), 10)-2750;
   this.t = $('#' + this.port + "_table").dataTable({"data":this.cumData,
 				       "columns":this.columns,
-        "scrollY": "800px",
+        "scrollY": h,
         "scrollCollapse": true,
         "paging": false,
         "jQueryUI": true});
@@ -479,10 +480,11 @@ DataTable.prototype.display = function(time, latest) {
     toZap = this.tgts[i];
     newLine[toZap] = JSON.stringify(latest[toZap])
   }
+    h = parseInt(d3.select('#tabs').style('height'), 10)-275;
   this.t = $('#' + this.port + "_table").dataTable({"data":this.cumData,
 				       "columns":this.columns,
 				       "destroy":true,
-        "scrollY": "800px",
+        "scrollY": h,
         "scrollCollapse": true,
         "paging": false,
         "jQueryUI": true});
@@ -491,12 +493,16 @@ DataTable.prototype.display = function(time, latest) {
     var newRow = this.timeRowIds[time];
     var scroller = this.t.fnSettings().nTable.parentNode;
     var rowObj = this.t.api().row(newRow).node();
-    $(scroller).scrollTo(rowObj,1);
+console.log("outer: " + $(scroller).position().top + "' inner: " + $(rowObj).offset().top);
+//    $(scroller).scrollTo(rowObj,{offsetTop:400,duration:1});
+    $(scroller).animate({ scrollTop: $(rowObj).offset().top-$(scroller).offset().top-h/2})
+
 // sorted -- next, make the bloody thing change size
 }
 
 DataTable.prototype.resize = function() {
-//    this.t.dataTable({"scrollY": parseInt(d3.select('#tabs').style('height'), 10)-120});
+    this.t.fnSettings().oScroll.sY = parseInt(d3.select('#tabs').style('height'), 10)-275;
+    this.t.fnDraw();
 }
 
 function flatten(head,ob) {
