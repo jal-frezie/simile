@@ -546,7 +546,11 @@ PlotXY.prototype.acceptClick = function (compId) {
 //      h = 800;
       h = parseInt(d3.select('#tabs').style('height'), 10)-120;
 
-    if (compId == "time") {
+    if (compId == "clear") {
+	grps = this.svg.selectAll(".step");
+	grps.selectAll(".trace").remove();
+	grps.remove();
+    } else if (compId == "time") {
 	this.oldt = parseFloat($("#ct").val());
 	this.xmin = this.oldt;
 	this.xmax = this.oldt + parseFloat($("#rl").val());
@@ -599,9 +603,9 @@ PlotXY.prototype.acceptClick = function (compId) {
       this.lxAxis = xAxis;
       this.lyAxis = yAxis;
       this.line = gLine;
-//    $('#' + this.port).html("Plot of " + model_json[this.tgts[0]].captpath +
-//			   " against " + xAxisName);
-    $('#' + this.port).html("");
+    buttonFn = "select_for_helper('clear')";
+    $('#' + this.port).html("<div id='Buttonbar'><button onclick=" + buttonFn
+			    + "><img src='images/new.gif'/></button></div>");
     $('#tabs a[href=#' + this.port + ']').text("Plot of " + model_json[this.tgts[0]].captpath + " against " + xAxisName);
     this.svg = d3.select('#' + this.port).append("svg")
       .attr("width",w+ngap).attr("height",h+ngap);
@@ -940,7 +944,7 @@ function sendValues(parmBlock) {
     })
       .done(function(retsStr) {
 	  rets = JSON.parse(retsStr);
-          if (rets) {
+          if (rets != '') {
 	    alert(rets);
           } else {
 	    resetDepth = -1;
