@@ -339,9 +339,9 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 	min = model_json[id].min;
 	max = model_json[id].max;
 	input.insertAdjacentHTML('beforebegin', min);
-	input.setAttribute("min", min);
+	input.setAttribute("min", 100*min);
 	input.insertAdjacentHTML('afterend', max);
-	input.setAttribute("max", max);
+	input.setAttribute("max", 100*max);
 	cell = row.insertCell(1);
 	monitor = document.createElement("INPUT");
 	monitor.setAttribute("type", "text");
@@ -365,12 +365,12 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 
 function transfer(zapTgt, entry) {
 //    alert("zap " + zapTgt + " entry " + entry);
-    document.getElementById(entry).value = zapTgt.value;
+    document.getElementById(entry).value = zapTgt.value/100;
 }
 
 function toModel(zapTgt, id) {
     parmBlock = {};
-    parmBlock[model_json[id].captpath] = 'NOW ' + zapTgt.value;
+    parmBlock[model_json[id].captpath] = 'NOW ' + zapTgt.value/100;
     sendValues(parmBlock);
 }
 
