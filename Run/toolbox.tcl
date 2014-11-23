@@ -612,19 +612,20 @@ proc UpdateExecution {node action} {
     Rerun [FindNodeTopWin $node].canvas [string equal start $action]
 }
 
-if {[info tclversion] > 8.5 && $tcl_platform(platform) eq "windows"} {
-    set itclVers 4.0
-} elseif {[info tclversion] > 8.4} {
-    set itclVers 3.4
-} else {
-    set itclVers 3.3
-}
+#if {[info tclversion] > 8.5 && $tcl_platform(platform) eq "windows"} {
+#    set itclVers 4.0
+#} elseif {[info tclversion] > 8.4} {
+#    set itclVers 3.4
+#} else {
+#    set itclVers 3.3
+#}
+set itclVers [package require Itcl]
+
 # Not clear why this need only be set on MacOS, but it seems to work without on other platforms
 # so no sense in tinkering.  Probably because of different auto_path setting mechanisms.
 if [string match Darwin $tcl_platform(os)] {
   set env(ITCL_LIBRARY) $libDir/itcl$itclVers
 }
-package require Itcl $itclVers
 itcl::class ModelWindowExtn {
     variable winId
     constructor {awinId} {
@@ -801,7 +802,7 @@ proc ControlDraw {prologVersion} {
     }
 #   ShowMess debug info "Got old version $userinfo(oldVersion)" ok
 
-    if {[catch {package require Unpacker} dummy]} {
+    if {[catch {package require -exact Unpacker $env(SIMILE_VERSION)} dummy]} {
 	error "Could not find an unpacker for Simile -- $dummy"
     }
 

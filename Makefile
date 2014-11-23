@@ -165,8 +165,8 @@ ifeq ($(PROLOG),GNU)
 endif
 
 STUBS_DIR = $(RESDIR)/Stubs
-SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN)
-UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker$(VERS)$(SHAREDLIBEXTN)
+SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll6.$(MINREL)$(SHAREDLIBEXTN)
+UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker6.$(MINREL)$(SHAREDLIBEXTN)
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 RELAY =  $(EXECDIR)/relay$(EXECEXTN)
 
@@ -560,9 +560,9 @@ install:
 		$(SYSDIR)/lib/Stubs/can2svg/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/can2svg/uriencode.tcl \
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
-		$(SYSDIR)/lib/Stubs/libame_dll8.5.so \
-		$(SYSDIR)/lib/Stubs/libunpacker8.5.so \
-		$(SYSDIR)/lib/lib5d.so; \
+		$(SHIM) \
+		$(UNPK) \
+		$(EXECDIR)/$(SHANK); \
 	cd $(DESTDIR)$(EXEC_TGT); \
 	ln -s ../../..$(INSTALL_TGT)/Examples; \
 	ln -s ../../..$(INSTALL_TGT)/Extensions; \

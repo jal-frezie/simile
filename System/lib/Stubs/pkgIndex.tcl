@@ -14,7 +14,6 @@
 
 # All new for Simile 5.7: just offer what we have..,
 
-scan [info tclversion] "%d.%d" MAJ MIN
 set tail [info sharedlibextension]
 if {[string equal .dylib $tail]} {
     set tail _mac$tail
@@ -22,15 +21,18 @@ if {[string equal .dylib $tail]} {
 if {[string equal .dll $tail]} {
     set head {}
     set mid {}
+    set ins .
 } else {
     set head lib
     set mid .
+    set ins {}
 }
     
 foreach comp {ame_dll unpacker} {
-    set shareLib [file join $dir $head$comp$MAJ$mid$MIN$tail]
-    if {[file exists $shareLib]} {
-	package ifneeded [string totitle $comp] $MAJ.$MIN [list load $shareLib]
+    foreach shareLib [glob [file join $dir $head$comp*$tail]] {
+	set vers [string range $shareLib [string length [file join $dir $head$comp]] end-[string length $tail]]
+	set vers [string index $vers 0]$ins[string range $vers 1 end]
+	package ifneeded [string totitle $comp] $vers [list load $shareLib]
     }
 }
 

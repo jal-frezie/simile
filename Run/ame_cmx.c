@@ -1725,6 +1725,5 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   /*  Tcl_CreateObjCommand(interp, "c_set_connection_database", SetConnDBCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   */
-  // sprintf(pkgName + strlen(pkgName), ".%s.%d", simileVersion, FORUNIX);
-  return Tcl_PkgProvide(interp, "Ame_dll", pkgName);
+  return Tcl_PkgProvide(interp, "Ame_dll", simileVersion);
 }
