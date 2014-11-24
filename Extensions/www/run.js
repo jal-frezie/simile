@@ -5,7 +5,13 @@ var tabs;
 	    $( "#radioset" ).buttonset();
 		
 	    tabs = $( "#tabs" ).tabs();
-
+	    tabs.tabs({
+		activate: function( event, ui ) {
+		    if (ui.newPanel.selector != "#tabs-1") { // diagram
+			currentHelper = currentHelpers[$(ui.newPanel.selector)[0].id];
+		    }
+		}
+	    });
 // close icon: removing the tab on click
 tabs.delegate( "span.ui-icon-close", "click", function() {
   var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
@@ -435,10 +441,7 @@ function DataTable (port) {
   this.varColIds = {};
 // OK now add the message to the new tab
   myRef = 'currentHelpers["' + port + '"]'
-  $('#' + port).html("<div id='buttonbar'>\
-<button type='button' onclick='currentHelper = " + myRef + "'>Tabulate</button>\
-</div>\
-<table id='" + this.port + "_table'></table>");
+  $('#' + port).html("<table id='" + this.port + "_table'></table>");
 }
 
 // DataTable.prototype = new DisplayTool(this);
