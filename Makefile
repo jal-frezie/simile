@@ -562,7 +562,7 @@ install:
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
 		$(SHIM) \
 		$(UNPK) \
-		$(EXECDIR)/$(SHANK); \
+		$(SLDIR)/$(SHANK); \
 	cd $(DESTDIR)$(EXEC_TGT); \
 	ln -s ../../..$(INSTALL_TGT)/Examples; \
 	ln -s ../../..$(INSTALL_TGT)/Extensions; \
