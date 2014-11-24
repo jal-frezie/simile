@@ -552,21 +552,27 @@ PlotXY.prototype.acceptClick = function (compId) {
       h = parseInt(d3.select('#tabs').style('height'), 10)-120;
 
     if (compId == "clear") {
+	delete this.ymin;
+	delete this.ymax;
+	delete this.xmin;
+	delete this.xmax;
 	grps = this.svg.selectAll(".step");
 	grps.selectAll(".trace").remove();
 	grps.remove();
     } else if (compId == "time") {
 	this.oldt = parseFloat($("#ct").val());
-	this.xmin = this.oldt;
-	this.xmax = this.oldt + parseFloat($("#rl").val());
 	xAxisName = "time";
     } else {
 	this.tgts[1] = compId;
 	this.oldxs = flatten('t', JSON.parse(values_json[compId]));
 	xAxisName = model_json[compId].captpath;
     }
+      if (this.tgts[1] == undefined) { // x axis is time
+	this.xmin = this.oldt;
+	this.xmax = this.oldt + parseFloat($("#rl").val());
+      }
       for (var hdl in this.oldys) {
-	if (compId != "time") {
+	if (this.tgts[1] != undefined) {
 	    if (this.xmin == undefined || this.oldxs[hdl] < this.xmin) {
 		this.xmin = this.oldxs[hdl];
             }
@@ -581,7 +587,14 @@ PlotXY.prototype.acceptClick = function (compId) {
 	    this.ymax = this.oldys[hdl];
 	}
     }
-      var x = d3.scale.linear()
+// rest is initialization so if only clearing, we are done
+    if (compId == "clear") {
+	this.lx.domain([this.xmin,this.xmax]);
+	this.ly.domain([this.ymax,this.ymin]);
+	return
+    }
+
+    var x = d3.scale.linear()
 	  .domain([this.xmin,this.xmax])
 	  .range([ngap, w+ngap]);
     var y = d3.scale.linear()
@@ -735,8 +748,11 @@ PlotXY.prototype.display = function (time, latest) {
 	      }
 // console.log("ymin was " + oldymin + " checked " + newys[hdl] + " is " + this.ymin);
 	  }
-	  this.oldt = time;
-	  if (time>this.xmax) {
+	  this.oldt = parseFloat(time);
+	  if (this.oldt<this.xmin) {
+	      this.xmin = this.oldt;
+	  }
+	  if (this.oldt>this.xmax) {
 	      this.xmax = parseFloat($("#ct").val()) + parseFloat($("#rl").val());
 //	      console.log("Boring x range out to " + this.xmax);
 // now I need to redraw
