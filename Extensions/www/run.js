@@ -9,6 +9,7 @@ var tabs;
 // close icon: removing the tab on click
 tabs.delegate( "span.ui-icon-close", "click", function() {
   var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
+  delete currentHelpers[panelId];
   $( "#" + panelId ).remove();
   tabs.tabs( "refresh" );
 });
@@ -195,10 +196,10 @@ function model_exec() {
 function ofInterest() {
 // list the ids of all the nodes currently being displayed by tools
   result = [];
-  for (i=0; i<currentHelpers.length; i++) {
-    if (currentHelpers[i].status == "displaying") {
-      for (j=0; j<currentHelpers[i].tgts.length; j++) {
-        result[currentHelpers[i].tgts[j]] = 1;
+  for (var id in currentHelpers) {
+    if (currentHelpers[id].status == "displaying") {
+      for (j=0; j<currentHelpers[id].tgts.length; j++) {
+        result[currentHelpers[id].tgts[j]] = 1;
       }
     }
   }
@@ -243,7 +244,7 @@ function new_tab(label) {
   return(id);
 }
 
-var currentHelpers = [];
+var currentHelpers = {};
 var currentHelper = null;
 function new_helper(type) {
   var label = helperTitles[type];
@@ -257,14 +258,14 @@ function new_helper(type) {
   } else {
     currentHelper = new PlotXY(id);
   }
-  currentHelpers.push(currentHelper);
+  currentHelpers[id] = currentHelper;
   tabs.tabs("option", "active", tabs.children().length - 2);
 }
 
 function update_helpers(time, latest) {
-    for (var i=0; i<currentHelpers.length; ++i) {
+    for (var id in currentHelpers) {
 //	try {
-	    currentHelpers[i].display(time, latest);
+	    currentHelpers[id].display(time, latest);
 //	}
 //	catch(err) {
 //	    console.log(err);
@@ -274,9 +275,9 @@ function update_helpers(time, latest) {
 
 window.onresize = function() {
 //    console.log('Window resized');
-    for (var i=0; i<currentHelpers.length; ++i) {
+    for (var id in currentHelpers) {
 	try {
-	    currentHelpers[i].resize();
+	    currentHelpers[id].resize();
 	}
 	catch(err) {
 	    console.log(err);
@@ -433,8 +434,9 @@ function DataTable (port) {
   this.timeRowIds = {};
   this.varColIds = {};
 // OK now add the message to the new tab
+  myRef = 'currentHelpers["' + port + '"]'
   $('#' + port).html("<div id='buttonbar'>\
-<button type='button' onclick='currentHelper = currentHelpers[" + currentHelpers.length + "]'>Tabulate</button>\
+<button type='button' onclick='currentHelper = " + myRef + "'>Tabulate</button>\
 </div>\
 <table id='" + this.port + "_table'></table>");
 }
@@ -493,7 +495,7 @@ DataTable.prototype.display = function(time, latest) {
     var newRow = this.timeRowIds[time];
     var scroller = this.t.fnSettings().nTable.parentNode;
     var rowObj = this.t.api().row(newRow).node();
-console.log("outer: " + $(scroller).position().top + "' inner: " + $(rowObj).offset().top);
+// console.log("outer: " + $(scroller).position().top + "' inner: " + $(rowObj).offset().top);
 //    $(scroller).scrollTo(rowObj,{offsetTop:400,duration:1});
     $(scroller).animate({ scrollTop: $(rowObj).offset().top-$(scroller).offset().top-h/2})
 
