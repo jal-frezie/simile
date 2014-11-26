@@ -131,9 +131,12 @@ break;
       }
 // passed boilerplate to start of svg object -- insert this line
       echo preg_replace('/^<svg /', '$0id="mod_diag" ', $svgLine);
+// add a group round all the contents so they can be translated in Chromium
+      echo "<g>";
       while (!feof($svgStm)) {
         echo fgets($svgStm);
       }
+      echo "</g>";
       fclose($svgStm);
       break;
 

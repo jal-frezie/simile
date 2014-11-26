@@ -95,11 +95,13 @@ function addHoverAction(comp) {
   comp.addEventListener("mouseout", hoverOut);
 }
 
+/*
+Zoom now uses d3 sorcery
 function SvgDiagZoom(factor) {
   ModDiag.setAttribute("width",factor*ModDiag.getAttribute("width"));
   ModDiag.setAttribute("height",factor*ModDiag.getAttribute("height"));
 }
-
+*/
 var resetDepth = -2, savedStart;
 function model_reset() {
 $.ajax({
@@ -279,17 +281,22 @@ function update_helpers(time, latest) {
     }
 }
 
-window.onresize = function() {
+function resize_notebook() {
 //    console.log('Window resized');
+    var x = parseInt(d3.select('#tabs-1').style('width'));
+    var y = parseInt(d3.select('#tabs').style('height'));
+    ModDiag.setAttribute("width", x);
+    ModDiag.setAttribute("height",y-60);
     for (var id in currentHelpers) {
 	try {
-	    currentHelpers[id].resize();
+	    currentHelpers[id].resize(x,y);
 	}
 	catch(err) {
 	    console.log(err);
 	}
     }
 }
+window.onresize = function() {resize_notebook()};
 
 function select_for_helper(compId) {
   if (currentHelper != null) {
@@ -654,8 +661,6 @@ PlotXY.prototype.acceptClick = function (compId) {
           .y(y)
 	  .on("zoom", zoomFn)
           .on("zoomend", zoomendFn);
-      this.lzx = zoomxaxis;
-      this.lzy = zoomyaxis;
       this.svg.append("rect") // x scale
 	  .attr("class", "pane")
 	  .attr("y",h)
@@ -1013,6 +1018,7 @@ var model_json;
 var values_json;
 var fvParms;
 var timeUnit = "unit";
+var diag_zoom;
 function prepare() {
 $.ajax({
   type: "POST",
@@ -1020,9 +1026,17 @@ $.ajax({
   data: {"act" : "GetSVG",  "base" : fileBase}
 })
   .done (function(diagSVG) {
-    document.getElementById("holds_svg").innerHTML = diagSVG;
+      document.getElementById("holds_svg").innerHTML = diagSVG;
   
-    ModDiag = document.getElementById("mod_diag");
+      ModDiag = document.getElementById("mod_diag");
+      diag_zoom = d3.behavior.zoom()
+	  .on("zoom", function () {
+	       d3.select('#mod_diag').select('g')
+		  .attr("transform", "translate(" + d3.event.translate +
+			")scale(" + d3.event.scale + ")");
+	  });
+      d3.select('#mod_diag').attr("class","pane").call(diag_zoom);
+      resize_notebook();
     all = ModDiag.getElementsByTagName("*");
     for(var i = 0; i < all.length; i++) {
       var element = all[i];

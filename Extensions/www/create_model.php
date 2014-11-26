@@ -140,15 +140,10 @@ echo "<script>\nvar fileBase = '$base';\n</script>";
     right: 0;
 ">
 <div>
-<button type="button" onclick="SvgDiagZoom(0.8)">Zoom Out</button>
-<button type="button" onclick="SvgDiagZoom(1.25)">Zoom In</button>
+<!-- button type="button" onclick="SvgDiagZoom(0.8)">Zoom Out</button -->
+<!-- button type="button" onclick="SvgDiagZoom(1.25)">Zoom In</button -->
 </div>
-<div id="holds_svg" style="position: absolute;
-    top: 3em;
-    bottom: 2em;
-    left: 0;
-    right: 0;
-    overflow-x:auto;overflow-y:auto">
+<div id="holds_svg" style="position: absolute">
 </div> 
 </div> 
 </body>
