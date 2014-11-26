@@ -65,10 +65,9 @@ function hoverIn(evt) {
         if (ctm = ctm.inverse())
             uupos = uupos.matrixTransform(ctm);
 
-  var actionX = uupos.x + 10;
-  var actionY = uupos.y + 10;
   tooltip_grp.setAttributeNS(null,"transform",
-		     "translate(" + actionX + "," + actionY + ")");
+			     "translate(" + uupos.x + "," + uupos.y + ")scale("
+			     + tooltip_scale + ")");
   tooltip_bd.setAttributeNS(null,"visibility","visible");
   tooltip_qbg.setAttribute("visibility", "visible");
   tooltip_vbg.setAttribute("visibility", "visible");
@@ -281,12 +280,16 @@ function update_helpers(time, latest) {
     }
 }
 
+var tooltip_scale;
 function resize_notebook() {
 //    console.log('Window resized');
     var x = parseInt(d3.select('#tabs-1').style('width'));
     var y = parseInt(d3.select('#tabs').style('height'));
     ModDiag.setAttribute("width", x);
     ModDiag.setAttribute("height",y-60);
+// do something to scale tooltip_grp so popup is legible
+    tooltip_scale = Math.max(ModDiag.viewBox.baseVal.width/x, 
+			     ModDiag.viewBox.baseVal.height/y);
     for (var id in currentHelpers) {
 	try {
 	    currentHelpers[id].resize(x,y);
@@ -1052,8 +1055,8 @@ $.ajax({
   // Create a path in SVG's namespace
   tooltip_grp = document.createElementNS(xmlns,'g');
   tooltip_bd = document.createElementNS(xmlns,'rect');
-  tooltip_bd.setAttribute("x", "0");
-  tooltip_bd.setAttribute("y", "0");
+  tooltip_bd.setAttribute("x", "12");
+  tooltip_bd.setAttribute("y", "12");
   tooltip_bd.setAttribute("width", "24");
   tooltip_bd.setAttribute("height", "24");
   tooltip_bd.setAttribute("visibility", "hidden");
@@ -1062,8 +1065,8 @@ $.ajax({
   tooltip_grp.appendChild(tooltip_bd);
   
   tooltip_qbg = document.createElementNS(xmlns,'rect');
-  tooltip_qbg.setAttribute("x", "0");
-  tooltip_qbg.setAttribute("y", "0");
+  tooltip_qbg.setAttribute("x", "12");
+  tooltip_qbg.setAttribute("y", "12");
   tooltip_qbg.setAttribute("width", "24");
   tooltip_qbg.setAttribute("height", "12");
   tooltip_qbg.setAttribute("visibility", "hidden");
@@ -1072,8 +1075,8 @@ $.ajax({
   tooltip_grp.appendChild(tooltip_qbg);
   
   tooltip_vbg = document.createElementNS(xmlns,'rect');
-  tooltip_vbg.setAttribute("x", "0");
-  tooltip_vbg.setAttribute("y", "12");
+  tooltip_vbg.setAttribute("x", "12");
+  tooltip_vbg.setAttribute("y", "24");
   tooltip_vbg.setAttribute("width", "24");
   tooltip_vbg.setAttribute("height", "12");
   tooltip_vbg.setAttribute("visibility", "hidden");
@@ -1082,16 +1085,16 @@ $.ajax({
   tooltip_grp.appendChild(tooltip_vbg);
   
   tooltip_q = document.createElementNS(xmlns, 'text');
-  tooltip_q.setAttribute("x","4");
-  tooltip_q.setAttribute("y","0.8em");
+  tooltip_q.setAttribute("x","16");
+  tooltip_q.setAttribute("y","1.8em");
   tooltip_q.setAttribute("style","font-family: Helvetica; font-size: 9pt;");
   tooltip_q.setAttribute("visibility", "hidden");
   tooltip_q.appendChild(document.createTextNode(0));
   tooltip_grp.appendChild(tooltip_q);
   
   tooltip_v = document.createElementNS(xmlns, 'text');
-  tooltip_v.setAttribute("x","4");
-  tooltip_v.setAttribute("y","1.8em");
+  tooltip_v.setAttribute("x","16");
+  tooltip_v.setAttribute("y","2.8em");
   tooltip_v.setAttribute("style","font-family: Helvetica; font-size: 9pt;");
   tooltip_v.setAttribute("visibility", "hidden");
   var textNode_v = document.createTextNode(0);
