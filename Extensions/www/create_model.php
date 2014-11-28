@@ -12,7 +12,7 @@
 <script src="dist/jstree.min.js"></script>
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <!-- script src="js/xcharts.min.js"></script -->
-<script src="//cdn.datatables.net/1.10.0/js/jquery.dataTables.js"></script>
+<script src="//cdn.datatables.net/1.10.4/js/jquery.dataTables.js"></script>
 <!-- script src="//cdn.datatables.net/plug-ins/be7019ee387/api/page.jumpToData().js"></script -->
 <style>
 * {
@@ -108,8 +108,8 @@ echo "<script>\nvar fileBase = '$base';\n</script>";
 <button onclick="new_helper('table')"><img src="images/table.gif"/></button>
 <button onclick="new_helper('sliders')"><img src="images/slider.gif"/></button>
 </div>
-<div style="position:absolute;left:0px;width:320px;">
-<table border="2"> 
+<div id="Left" style="position:absolute;top:2em;bottom:0px;left:0px;width:320px">
+<table id="RunControl" border="2"> 
 <tr><td colspan="2">
 <button type="button" style="width:20%" onclick="model_reset()">
 <img src="images/stop.gif"></button>
@@ -127,7 +127,7 @@ echo "<script>\nvar fileBase = '$base';\n</script>";
 <tr><td>Time step: </td><td><input id="ts" type="text" name="step" size="8"
 		  value=0.1> unit</td></tr>
 </table>
-<div id="explorer"></div>
+<div id="explorer" style="overflow:auto"></div>
 </div>
 <div id="tabs" class="ui-layout-center" style="height:100%;margin-left:320px">
 <ul>

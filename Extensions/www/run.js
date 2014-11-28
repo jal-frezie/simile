@@ -287,6 +287,15 @@ function resize_notebook() {
     var y = parseInt(d3.select('#tabs').style('height'));
     ModDiag.setAttribute("width", x);
     ModDiag.setAttribute("height",y-60);
+
+// Get height of explorer pane right
+    var height = document.getElementById('Left').clientHeight;
+    var headheight = document.getElementById('RunControl').clientHeight;
+    var content = document.getElementById('explorer');
+    
+    var availableheight = (height - headheight);
+    content.style.height = availableheight + 'px';
+
 // do something to scale tooltip_grp so popup is legible
     tooltip_scale = Math.max(ModDiag.viewBox.baseVal.width/x, 
 			     ModDiag.viewBox.baseVal.height/y);
