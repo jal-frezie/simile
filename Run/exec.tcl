@@ -101,21 +101,21 @@ proc ExecuteTo {node current pause unitLength display foci \
     set scaled_current [expr {$current*$unitLength}]
     if {$display} {
 	set lastDisp [expr int($current/$display)]
-	set timedDisp 1
+#	set timedDisp 1
     }
     set currentMode start
     set evtPause [expr {$evtMsg || $evtDisp}]
     set payload {}
     while {[lsearch {exit stop} $currentMode]==-1} {
 	if {$display} {
-	    if {$timedDisp} {
+#	    if {$timedDisp} {
 		set nextDisp [expr 1.0*$display*[incr lastDisp $forward]]
 # ensure display updated at end of run -- make optional?
 		if {($nextDisp-$pause)*$forward>0} {
 		    set nextDisp $pause
 		}
 		set scaled_next [expr {$nextDisp*$unitLength}]
-	    }
+#	    }
 	} else {
 	    set nextDisp [expr 2*$pause-$current]
 	    set scaled_next [expr {$pause*$unitLength}]
@@ -148,7 +148,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 #	    return $currentMode ;# run control window killed?
 #	}
 	set timedDisp [expr {($current-$nextDisp)*$forward > -1e-12}]
-	if {($timedDisp || $displayNow) && \
+	if {($timedDisp || $displayNow || $currentMode ne "stop") && \
 		![string equal exit $currentMode]} { ;# do a display update
 	    set oldPayload $payload
 	    set payload {}
