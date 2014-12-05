@@ -1538,7 +1538,7 @@ save_isolated(Name, Part, Date, SelnOnly, MakeCompat) :-
 	    % if these must be same in reusable modules
 	ame_save(Name, Part, Date, SelnOnly, MakeCompat),
 	    Done = 1;
-	true),
+	finish_progress_dialogue),
 %	all(event, do_colours, [build(TempSels), unify(off)]),
 	/* restart_move will recreate any cross-border links removed by cutout.
 	If exiting, move will have been scrapped after old deletes */
