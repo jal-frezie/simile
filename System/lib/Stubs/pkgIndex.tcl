@@ -20,11 +20,9 @@ if {[string equal .dylib $tail]} {
 }
 if {[string equal .dll $tail]} {
     set head {}
-    set mid {}
     set ins .
 } else {
     set head lib
-    set mid .
     set ins {}
 }
     

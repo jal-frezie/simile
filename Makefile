@@ -1,22 +1,4 @@
-# These are the settings for the particular version we want to make
-# edition: evaluation, teaching, standard or enterprise
-ifndef EDN
-EDN = ENTERPRISE
-endif
-# (this now defined externally for scripting)
-
-ifeq ($(EDN), EVALUATION)
-# License code required to verify name/corp/edition: 0 for no
-	LICENSED = 0
-# date of final expiry: "hh:mm D M Y" or "" for permanent
-	MONTHS_TO_RUN = 9
-else
-	LICENSED = 1
-	MONTHS_TO_RUN = 0
-endif
-ifeq ($(EDN), TEACHING)
-	MONTHS_TO_RUN = 21
-endif
+MINREL = 3
 
 # days after install: 0 for no installation expiry
 REL_EXP = 0
@@ -69,6 +51,7 @@ SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
 MAKESL = -shared
 VERS = $(shell echo "puts [info tclversion]" | tclsh8.5)
+PT = .
 
 EXECDIR = $(SYSDIR)/bin
 RESDIR = $(SYSDIR)/lib
@@ -116,6 +99,7 @@ ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	SYSDIR = System$(BITEXTN)
 	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh85)
+	PT =
 	VERS = $(subst .,,$(VERSION))
 ifeq ($(MY_CPU),x86_64)
 #	TCLDIR =  "/c/Program files/Tcl"
@@ -165,8 +149,8 @@ ifeq ($(PROLOG),GNU)
 endif
 
 STUBS_DIR = $(RESDIR)/Stubs
-SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll6.$(MINREL)$(SHAREDLIBEXTN)
-UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker6.$(MINREL)$(SHAREDLIBEXTN)
+SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll6$(PT)$(MINREL)$(SHAREDLIBEXTN)
+UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker6$(PT)$(MINREL)$(SHAREDLIBEXTN)
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 RELAY =  $(EXECDIR)/relay$(EXECEXTN)
 
@@ -299,7 +283,6 @@ $(RELAY): Run/relay.c
 	cd Run; $(GCCCMD) $(CFLAGS) -o ../$(RELAY) relay.c; cd ..
 
 ifeq ($(PLATFORM),GNU/Linux)
-MINREL = 3
 # install used for packaging for distributions
 SHAREDIR = /usr/share
 INSTALL_TGT = $(SHAREDIR)/simile-6.$(MINREL)
