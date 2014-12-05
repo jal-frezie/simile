@@ -209,8 +209,9 @@ make_legible_for_prolog(String, NewString) :-
 	append(InQuotes, [Dq | Suffix], AfterQuote),
 	    append([Sq, Dq | InQuotes], [Dq, Sq], Tweaked);
 	/* If a number, parse it in Tcl as prologs are idiosyncratic */
-	ToTweak = [N | _],
-	    member(N, [Pt | Nums]),
+	member(ToTweak, [[N | _], [Pt, N | _]]),
+	    % 2014: decimal pt can only start a number if followed by digit
+	    member(N, Nums),
 	    bite_off_number(ToTweak, Tweaked, Suffix);
 	/* separate a unary operator from other symbols */
 	ToTweak = [M, N | Suffix],
