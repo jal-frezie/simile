@@ -40,8 +40,12 @@ start.time, error.limit, pause.on.event)}
     the time step is temporarily shortened and the model re-executed
     from the end of the last time step. Default is 0, in which case no
     adaptive step size variation is done.}
-  \item{pause.on.event}{Reserved for future Simile versions with
-    discrete event handling. Default is FALSE.}
+  \item{pause.on.event}{Controls whether execution should be paused in
+    the case of potentially interesting model occurrences. These are
+    limit events (discrete events triggered by the value of an
+    expression reaching a preset maximum or minimum), and compartment
+    over/underruns (the level of a compartment exceeding or underrunning
+    its specified maximum or minimum). Default is FALSE.}
 } 
 \value{
   Result code: value of system error (-ve), user-defined
@@ -58,3 +62,12 @@ Jasper Taylor
 
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
+\examples{
+\donttest{
+% requires Simile installation plus saved executable model so cannot be
+% auto tested
+for (count in 0:1738) {
+  execute.model(instance.handle, count+1, "Euler", count, 0, FALSE)
+}
+}
+}
