@@ -241,7 +241,7 @@ open_native(FileTtfn, Mode, Stream) :-
 	catch(open(FileNative, Mode, Stream), NonTtfnErrMess,
 	      (ame_gen'><'replace_subexps(NonTtfnErrMess, ame_gen, swap_matches,
 			       FileNative=FileTtfn, top_down, _, SubbedErr),
-		  throw(SubbedErr))).
+		  query(bad_access(SubbedErr), warning, top, [ok], not))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % delall deletes all occurrances of an element from a list 

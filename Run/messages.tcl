@@ -682,6 +682,11 @@ set msgs(read_image_failed_message) [tr. {Simile could not get an image from thi
 set msgs(read_image_failed_detail) [tr. {The reported problem was:
 %1$s}]
 
+set msgs(bad_access_title) [tr. {Problem opening file}]
+set msgs(bad_access_message) [tr. {Simile could not open this file.}]
+set msgs(bad_access_detail) [tr. {The reported problem was:
+%1$s}]
+
 set msgs(xml_parse_fail_title) [tr. {Failed to parse XML parameter metafile}]
 set msgs(xml_parse_fail_message) [tr. {The XML parser gave the following message: %1$s}]
 set msgs(xml_parse_fail_detail) [tr. {The parser status was:
