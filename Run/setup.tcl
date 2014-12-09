@@ -1,6 +1,8 @@
 # Location of Simile configuration folder
 if {[string equal windows $tcl_platform(platform)]} {
-    set homeDir [file attributes $env(HOME) -shortname] ;# is Ascii
+#    set homeDir [file attributes $env(HOME) -shortname] ;# is Ascii
+    set homeDir [string map [list %USERPROFILE% $env(USERPROFILE)] \
+		     [registry get {HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders} {Personal}]] ;# who cares if Ascii
 } else {
     set homeDir $env(HOME)
 }
