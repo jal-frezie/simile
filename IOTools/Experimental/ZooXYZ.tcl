@@ -49,6 +49,7 @@ itcl::class similescript::$newHelperClass {
 	menu $winId.m -tearoff 0
 	$winId.m add command -label "Sphere" -command "$this AddItem spheres"
 	$winId.m add command -label "Line" -command "$this AddItem lines"
+	$winId.m add command -label "Ellipse" -command "$this AddItem ellipses"
 	pack [::ttk::menubutton $winId.mb -text "Select new item type" \
 		  -menu $winId.m]
 	message $winId.ms
@@ -79,7 +80,19 @@ itcl::class similescript::$newHelperClass {
 			  {component "end Y positions"} \
 			  {component "end Z positions"} \
 			  {component "width values"} \
-			  {colour colour}}}
+			  {colour colour}}
+		 ellipses {{type "Select new item type"} \
+			  {component "centre X positions"} \
+			  {component "centre Y positions"} \
+			  {component "centre Z positions"} \
+			  {component "tip X positions"} \
+			  {component "tip Y positions"} \
+			  {component "tip Z positions"} \
+			  {component "side X positions"} \
+			  {component "side Y positions"} \
+			  {component "side Z positions"} \
+			  {colour outline} \
+			  {colour fill}}}
 	set template $all_templates($type)
 	MakeSelection $type
     }
@@ -120,6 +133,7 @@ itcl::class similescript::$newHelperClass {
 	if {[llength $pairs]==1} {
 	    return [list {} $pairs]
 	} else {
+	    set result {}
 	    foreach {i sub} $pairs {
 		foreach {is v} [Flatten $sub] {
 		    lappend result [linsert $is 0 $i] $v
@@ -136,8 +150,9 @@ itcl::class similescript::$newHelperClass {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
+	$winId.c delete -withtag graticule
 	$winId.c delete -withtag graph
-	::gen3d1::DrawShapes $winId $grid graph
+	::gen3d1::DrawShapes $winId $grid graticule
 
 	set stack {}
 	foreach instruct $State {
@@ -176,10 +191,31 @@ itcl::class similescript::$newHelperClass {
 				 [list $fx($iV) $fy($iV) $fz($iV)] $w($iV) \
 				 [lindex $instruct 8]]
 		    }
+		} ellipses {
+		    for {set i 1} {$i<10} {incr i} {
+			array set [lindex {0 cx cy cz tx ty tz sx sy sz} $i] \
+			    [Flatten [lindex [$modelInst GetValue \
+						  [lindex $instruct $i]] 0]]
+		    }
+		    foreach iV [array names cz] {
+			if {[llength $iV]} {
+			    set id "index: [join $iV ,]"
+			} else {
+			    set id [lindex $instruct 3]
+			}
+			lappend stack [list ellipse $id \
+					   [list $cx($iV) $cy($iV) $cz($iV)] \
+					   [list $tx($iV) $ty($iV) $tz($iV)] \
+					   [list $sx($iV) $sy($iV) $sz($iV)] \
+				 1 [lindex $instruct 10] [lindex $instruct 11]]
+		    }
 		}
 	    }
 	}
 	::gen3d1::DrawShapes $winId $stack graph
+# botch to make arabidopsis big enough to see
+#	$winId.c scale graph [expr {$viewVector($winId,X)/2.0}] \
+#	    [expr {$viewVector($winId,Y)/2.0}] 1000 1000
     }
 
     public method TweakScale {which where} {
