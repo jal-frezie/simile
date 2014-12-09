@@ -48,6 +48,7 @@ itcl::class similescript::$newHelperClass {
 	bind $winId.c <Configure> "$this WindowSizeChanged"
 	menu $winId.m -tearoff 0
 	$winId.m add command -label "Sphere" -command "$this AddItem spheres"
+	$winId.m add command -label "Line" -command "$this AddItem lines"
 	pack [::ttk::menubutton $winId.mb -text "Select new item type" \
 		  -menu $winId.m]
 	message $winId.ms
@@ -63,18 +64,29 @@ itcl::class similescript::$newHelperClass {
 
     public method AddItem {type} {
 	pack forget $winId.mb
-	set template [list [list type "Select new item type"] \
-			  [list component "X positions"] \
-			  [list component "Y positions"] \
-			  [list component "Z positions"] \
-			  [list component "size values"] \
-			  [list colour colour]]
+	array set all_templates \
+	    {spheres {{type "Select new item type"} \
+			  {component "X positions"} \
+			  {component "Y positions"} \
+			  {component "Z positions"} \
+			  {component "size values"} \
+			  {colour colour}} \
+		 lines {{type "Select new item type"} \
+			  {component "start X positions"} \
+			  {component "start Y positions"} \
+			  {component "start Z positions"} \
+			  {component "end X positions"} \
+			  {component "end Y positions"} \
+			  {component "end Z positions"} \
+			  {component "width values"} \
+			  {colour colour}}}
+	set template $all_templates($type)
 	MakeSelection $type
     }
 
     public method MakeSelection {selected} {
 	for {set i 0} {$i < [llength $template]} {incr i} {
-	    if {[llength [lindex $template $i]]>1} {
+	    if {[lsearch {type component colour} [lindex $template $i 0]]>-1} {
 		lset template $i $selected
 		break
 	    }
@@ -137,11 +149,33 @@ itcl::class similescript::$newHelperClass {
 						  [lindex $instruct $i]] 0]]
 		    }
 		    foreach iV [array names r] {
-			lappend stack [list sphere [lindex $instruct 4] \
-					   [list $x($iV) $y($iV) $z($iV)] $r($iV) \
-					   1 [lindex $instruct 5] gray50]
+			if {[llength $iV]} {
+			    set id "index: [join $iV ,]"
+			} else {
+			    set id [lindex $instruct 4]
+			}
+			lappend stack \
+			    [list sphere $id [list $x($iV) $y($iV) $z($iV)] \
+				 $r($iV) 1 [lindex $instruct 5] {}]
 		    }
 		    
+		} lines {
+		    for {set i 1} {$i<8} {incr i} {
+			array set [lindex {0 sx sy sz fx fy fz w} $i] \
+			    [Flatten [lindex [$modelInst GetValue \
+						  [lindex $instruct $i]] 0]]
+		    }
+		    foreach iV [array names w] {
+			if {[llength $iV]} {
+			    set id "index: [join $iV ,]"
+			} else {
+			    set id [lindex $instruct 7]
+			}
+			lappend stack \
+			    [list line $id [list $sx($iV) $sy($iV) $sz($iV)] \
+				 [list $fx($iV) $fy($iV) $fz($iV)] $w($iV) \
+				 [lindex $instruct 8]]
+		    }
 		}
 	    }
 	}
