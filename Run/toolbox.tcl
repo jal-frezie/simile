@@ -874,12 +874,8 @@ proc ControlDraw {prologVersion} {
 	}
     }
     
-    set simtmpdir $custom(prefDir)/sim
-    set go [clock clicks]
-    while {[file exists $simtmpdir]} {
-        set guess_free [expr [clock clicks]-$go]
-        set simtmpdir $custom(prefDir)/sim$guess_free
-    }
+    package require fileutil
+    set simtmpdir [file join [::fileutil::tempdir] sim[pid]]
     file mkdir $simtmpdir
 
 # Try leaving this to the form
@@ -896,7 +892,6 @@ proc ControlDraw {prologVersion} {
 # other instances of Simile (unless stealth mode chosen)
     StartComms 1
 
-    package require fileutil
     if {![string match windows $tcl_platform(platform)]} {
 	set custom(prefDir) [::fileutil::fullnormalize $custom(prefDir)]
     }
@@ -1005,7 +1000,7 @@ proc ControlDraw {prologVersion} {
     
     # Take the opportunity to pass the temp directory name etc to Prolog
     return [list $sendvars(simV) [brainwash $simtmpdir] \
-            $openModel $userinfo(edn)]
+		[brainwash $custom(prefDir)] $openModel $userinfo(edn)]
 }
 
 proc InitExecThread {node} {

@@ -10,7 +10,7 @@ sicstus_module(backup, [initialize_ring/1,
 			go_back/1, go_forward/1, make_auto_name/3,
 			new_autosave/2, clear_autosave/2, check_autosave/4,
 			scrub_autosave/1,
-			is_toplevel/1, use_pref_dir/1, append_to_log/2]).
+			is_toplevel/1, append_to_log/2]).
 
 sicstus_use_module([library(lists), sp_only, ame_gen, database,
 		    utility, state]).
@@ -499,8 +499,3 @@ make_auto_name(Name, NewExtn, AutoName) :-
 	BaseStr = NameStr), !,
 	append(BaseStr, NewExtn, AutoNameStr),
 	name(AutoName, AutoNameStr).
-
-use_pref_dir(Dir) :-
-	use_temp_dir(PDir),
-	output'><'safe_tcl_eval([file, dirname, br(PDir)], DirStr),
-	name(Dir, DirStr).

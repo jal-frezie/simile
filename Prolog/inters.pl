@@ -256,7 +256,7 @@ read_library_funx(Done) :-
 %					       (Bool?ThenCl'><'ElseCl)))),
 	read_func_tree('../Functions/', '../Functions', 'Built-in', BuiltIns),
 
-	backup'><'use_pref_dir(UserStuff),
+	state'><'use_pref_dir(UserStuff),
 	append_atoms(UserStuff, '/Functions/', UserFns),
 	read_func_tree(UserFns, UserFns, 'Local', Local),
 	append(BuiltIns, Local, Done).

@@ -7,7 +7,8 @@ available to the other modules that use it.
 */
 
 sicstus_module(state,
-	       [use_temp_dir/1, kickoff/1, get_initial_window_size/2,
+	       [use_temp_dir/1, use_pref_dir/1,
+		kickoff/1, get_initial_window_size/2,
 		create_window/2, destroy_window/1, clear_model_file/1,
 		set_model_file/2, get_model_file/2, get_edition_and_limit/2,
 		kill_windows/0, set_halo/3, get_halo/2,
@@ -30,11 +31,11 @@ sicstus_module(state,
 
 sicstus_use_module([library(lists), sp_only]).
 
-:- dynamic(use_temp_dir/1).
+:- dynamic(use_temp_dir/1, use_pref_dir/1).
 
 kickoff(Vnum) :-
 	user'><'any_tcl_eval(['ControlDraw', br(Vnum)], 1, EnvVars),
-	output'><'chop_list(EnvVars, [VStr, TempStr, OpenStr, EStr]),
+	output'><'chop_list(EnvVars, [VStr, TempStr, PrefStr, OpenStr, EStr]),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),
 	name(E, EStr),
@@ -43,6 +44,10 @@ kickoff(Vnum) :-
 	name(TempDir, TempStr),
 	retractall(use_temp_dir(_)),
 	assert(use_temp_dir(TempDir)),
+
+	name(PrefDir, PrefStr),
+	retractall(use_pref_dir(_)),
+	assert(use_pref_dir(PrefDir)),
 
 	set_mode(none),
 	inters'><'read_library_funx(LibFuns),
