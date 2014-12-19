@@ -84,7 +84,7 @@ $return_value = proc_close($process);
 if (! file_exists($simileHome . "/" . $shlibName)) {
    echo "Command returned $return_value<br>";
    echo "Output from build process was:<br>$pipe_contents";
-   echo "<br>Error messages:<br>" . file_get_contents('/tmp/upload/.simile/userinfo.txt');
+   echo "<br>Error messages:<br>" . file_get_contents('/tmp/error-output.txt');
    echo "<br>Directory contents:<br>" . var_dump(glob('/tmp/*'));
    exit('Failed to build executable');
 }

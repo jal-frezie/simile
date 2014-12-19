@@ -218,7 +218,7 @@ function ofInterest() {
   }
   return rList;
 }
-
+/*
 // placeholder graph plot
 
 var pgplot_data = {
@@ -236,9 +236,9 @@ var pgplot_opts = {
   "dataFormatX": function (x) { return d3.time.format('%j').parse(x); },
   "tickFormatX": function (x) { return d3.time.format('%x')(x); }
 };
-
+*/
 // actual addTab function: adds new tab using the input from the form above
-var helperTitles = {"plot":"Plotter","table":"Data table","sliders":"Input sliders","params":"File parameters"},
+var helperTitles = {"plot":"Plotter","table":"Data table","sliders":"Input sliders","params":"File parameters","shapes":"3-D shape viewer"},
   tabTemplate = "<li><a href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
   tabCounter = 2;
 
@@ -262,6 +262,8 @@ function new_helper(type) {
     currentHelper = new Sliders(id);
   } else if (type == "table") {
     currentHelper = new DataTable(id);
+  } else if (type == "shapes") {
+    currentHelper = new Shapes3D(id);
   } else {
     currentHelper = new PlotXY(id);
   }
@@ -542,6 +544,59 @@ function flatten(head,ob) {
 	result[head] = ob;
     }
     return result;
+}
+
+function Shapes3D (port) {
+  this.port = port;
+  this.tgts = [];
+  this.status = "initializing";
+//      w = 800;
+      w = parseInt(d3.select('#tabs').style('width'), 10)-50;
+//      h = 800;
+      h = parseInt(d3.select('#tabs').style('height'), 10)-120;
+
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera( 75, w/h, 0.1, 1000 );
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize( w, h );
+
+    $('#' + port).html("<div id='" + port + "_div'></div>");
+
+    document.getElementById(port + "_div").appendChild( renderer.domElement );
+
+    // CONTROLS
+    controls = new THREE.OrbitControls( camera, renderer.domElement );
+
+    var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+    // Create an array of materials to be used in a cube, one for each side
+    var cubeMaterialArray = [];
+    // order to add materials: x+,x-,y+,y-,z+,z-
+    cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xff3333 } ));
+    cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xff8800 } ));
+    cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xffff33 } ));
+    cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x33ff33 } ));
+    cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x3333ff } ));
+    cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x8833ff } ));
+    var cubeMaterials = new THREE.MeshFaceMaterial( cubeMaterialArray );
+    var cube = new THREE.Mesh( geometry, cubeMaterials );
+    scene.add( cube );
+    camera.position.z = 5;
+    var render = function () {
+	requestAnimationFrame( render );
+	cube.rotation.x += 0.1; cube.rotation.y += 0.1;
+	renderer.render(scene, camera);
+	controls.update();
+    };
+    render();
+}
+
+Shapes3D.prototype.acceptClick = function (compId) {
+}
+
+Shapes3D.prototype.display = function (time, latest) {
+}
+
+Shapes3D.prototype.resize = function () {
 }
 
 function PlotXY (port) {

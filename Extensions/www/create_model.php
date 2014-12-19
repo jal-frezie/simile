@@ -5,15 +5,17 @@
 <link rel="stylesheet" href="dist/themes/default/style.css" />
 <link href="css/humanity/jquery-ui-1.10.4.custom.css" rel="stylesheet" />
 <link href="css/xcharts.min.css" rel="stylesheet" />
-<link href="//cdn.datatables.net/1.10.0/css/jquery.dataTables.css" rel="stylesheet" />
+<link href="css/jquery.dataTables.css" rel="stylesheet" />
 <script src="js/jquery-1.10.2.js"></script>
 <script src="js/jquery-ui-1.10.4.custom.js"></script>
 <!-- script src="js/jquery.scrollTo-min.js?1.4.11"></script -->
 <script src="dist/jstree.min.js"></script>
-<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="js/d3.v3.min.js" charset="utf-8"></script>
 <!-- script src="js/xcharts.min.js"></script -->
-<script src="//cdn.datatables.net/1.10.4/js/jquery.dataTables.js"></script>
+<script src="js/jquery.dataTables.js"></script>
 <!-- script src="//cdn.datatables.net/plug-ins/be7019ee387/api/page.jumpToData().js"></script -->
+<script src="js/three.min.js"></script>
+<script src="js/OrbitControls.js"></script>
 <style>
 * {
   margin: 0;
@@ -107,6 +109,7 @@ echo "<script>\nvar fileBase = '$base';\n</script>";
 <button onclick="new_helper('plot')"><img src="images/graph.gif"/></button>
 <button onclick="new_helper('table')"><img src="images/table.gif"/></button>
 <button onclick="new_helper('sliders')"><img src="images/slider.gif"/></button>
+<button onclick="new_helper('shapes')"><img src="images/3d_objects.png"/></button>
 </div>
 <div id="Left" style="position:absolute;top:2em;bottom:0px;left:0px;width:320px">
 <table id="RunControl" border="2"> 

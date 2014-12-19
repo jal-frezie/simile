@@ -1,4 +1,4 @@
-#!/usr/bin/tclsh8.5
+#!/usr/bin/tclsh
 foreach local {sPath sHome mdl shLib} val $argv {
     set $local $val
 }
@@ -8,7 +8,7 @@ catch {
     file delete /tmp/error-output.txt
 }
 lappend auto_path [file join $sPath System lib]
-if {![file exists $sHome]} {
+if {![file exists [file join $sHome .simile userinfo.txt]]} {
     file mkdir $sHome
     file copy /var/www/tmplate/.simile $sHome
 }
@@ -23,6 +23,7 @@ if {[catch {
     modelWin Open $mdl
     modelWin BuildShareLib [file join $sHome $shLib]
 # now export the svg over the original model
+    puts "svg to $mdl.svg"
     modelWin BuildSVGDiagram $mdl.svg
 }]} {
     puts $errorInfo
