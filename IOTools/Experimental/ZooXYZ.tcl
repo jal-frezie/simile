@@ -14,11 +14,14 @@ itcl::class similescript::$newHelperClass {
 # perverse extra body because base class constructor has args
 	Helper::constructor $modelInst $winTitle
     } {
+	variable ::gen3d1::scaleVector
 	variable ::gen3d1::viewVector
 
 	set pi 3.14
-	set ::gen3d1::base 0
-	::gen3d1::DefineGrid -40 40
+	array set scaleVector [list $winId,xoff 0 $winId,xmag .15 \
+				   $winId,yoff 0 $winId,ymag .15 \
+				   $winId,zoff 0 $winId,zmag .15]
+	::gen3d1::DefineGrid $winId
 	array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
 				  $winId,cos_angle 1 $winId,cos_elevation 1 \
 				  $winId,sin_angle -0.3 $winId,sin_elevation 0.5]
@@ -152,9 +155,9 @@ itcl::class similescript::$newHelperClass {
 # step is a spare parameter
 	$winId.c delete -withtag graticule
 	$winId.c delete -withtag graph
-	::gen3d1::DrawShapes $winId $grid graticule
 
-	set stack {}
+	set lower {}
+	set upper {}
 	foreach instruct $State {
 	    switch [lindex $instruct 0] {
 		spheres {
@@ -169,9 +172,13 @@ itcl::class similescript::$newHelperClass {
 			} else {
 			    set id [lindex $instruct 4]
 			}
-			lappend stack \
-			    [list sphere $id [list $x($iV) $y($iV) $z($iV)] \
-				 $r($iV) 1 [lindex $instruct 5] {}]
+			set op [list sphere $id [list $x($iV) $y($iV) $z($iV)] \
+				 $r($iV) 1 [lindex $instruct 5] gray25]
+			if {$z($iV) < 0} {
+			    lappend lower $op
+			} else {
+			    lappend upper $op
+			}
 		    }
 		    
 		} lines {
@@ -186,10 +193,15 @@ itcl::class similescript::$newHelperClass {
 			} else {
 			    set id [lindex $instruct 7]
 			}
-			lappend stack \
+			set op \
 			    [list line $id [list $sx($iV) $sy($iV) $sz($iV)] \
 				 [list $fx($iV) $fy($iV) $fz($iV)] $w($iV) \
 				 [lindex $instruct 8]]
+			if {($sz($iV)+$fz($iV))/2 < 0} {
+			    lappend lower $op
+			} else {
+			    lappend upper $op
+			}
 		    }
 		} ellipses {
 		    for {set i 1} {$i<10} {incr i} {
@@ -203,19 +215,28 @@ itcl::class similescript::$newHelperClass {
 			} else {
 			    set id [lindex $instruct 3]
 			}
-			lappend stack [list ellipse $id \
-					   [list $cx($iV) $cy($iV) $cz($iV)] \
-					   [list $tx($iV) $ty($iV) $tz($iV)] \
-					   [list $sx($iV) $sy($iV) $sz($iV)] \
-				 1 [lindex $instruct 10] [lindex $instruct 11]]
+			set op [list ellipse $id \
+				    [list $cx($iV) $cy($iV) $cz($iV)] \
+				    [list $tx($iV) $ty($iV) $tz($iV)] \
+				    [list $sx($iV) $sy($iV) $sz($iV)] 1 \
+				    [lindex $instruct 10] [lindex $instruct 11]]
+			if {$cz($iV) < 0} {
+			    lappend lower $op
+			} else {
+			    lappend upper $op
+			}
 		    }
 		}
 	    }
 	}
-	::gen3d1::DrawShapes $winId $stack graph
-# botch to make arabidopsis big enough to see
-#	$winId.c scale graph [expr {$viewVector($winId,X)/2.0}] \
-#	    [expr {$viewVector($winId,Y)/2.0}] 1000 1000
+	if {$viewVector($winId,elevation) <= 0} {
+	    set spare $upper
+	    set upper $lower
+	    set lower $spare
+	}
+	::gen3d1::DrawShapes $winId $lower graph
+	::gen3d1::DrawGrid $winId graticule
+	::gen3d1::DrawShapes $winId $upper graph
     }
 
     public method TweakScale {which where} {

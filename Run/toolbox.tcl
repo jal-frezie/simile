@@ -923,7 +923,9 @@ proc ControlDraw {prologVersion} {
         set compOptions [list CHOICE [tr. Default] [tr. Microsoft] [tr. GNU]]
 	file attributes $simtmpdir -hidden true
 #	file attributes $custom(prefDir)/.version -hidden true
-    } elseif {[string equal Darwin $tcl_platform(os)]} {
+    } elseif {[string equal Darwin $tcl_platform(os)] && \
+		  [package vcompare 14.0.0 $tcl_platform(osVersion)] > 0} {
+# do not offer default on Yosemite or up cos bundled compiler does not work
 	set compOptions [list CHOICE [tr. Default] [tr. GNU]]
     } else {
 	set compOptions [list CHOICE [tr. GNU]]

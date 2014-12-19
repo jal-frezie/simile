@@ -12,16 +12,7 @@ if {[info exists embed_args]} {
 # 4.1 moved SimileUserDirectory for Windows -- check in old position and update
     set oldPrefs [file join $homeDir .simile]
     if {[string equal windows $tcl_platform(platform)]} {
-	if {[string equal "Windows NT" $tcl_platform(os)]} {
-	    if {[info exists ::loadedFromR]} {
-		set docsDir . ;# home dir already includes "Documents"
-	    } elseif {$tcl_platform(osVersion)>=6.0} {
-		set docsDir Documents
-	    } else {
-		set docsDir "My Documents"
-	    }
-	}
-        set custom(prefDir) [file join $homeDir $docsDir "My Simile files"]
+        set custom(prefDir) [file join $homeDir "My Simile files"]
 	if {[file exists $oldPrefs]} {
 	    if {![file exists $custom(prefDir)]} {
 		file mkdir $custom(prefDir)

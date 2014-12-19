@@ -3,7 +3,6 @@ set keyValue gen3d1
 namespace eval ::$keyValue {
     variable useNodes
     variable colours {\#00ff00 \#f1da7e \#36b694 \#ec9844 \#94a646 \#d9d095}
-    variable base -25
 
 proc identify {} {
 	return "Lollipop diagram"
@@ -25,6 +24,10 @@ proc initialize {winId} {
     
     ::graphtools::MakeToolBar $winId $toolbarItems
     pack [message $winId.intro -aspect 800] -fill x
+    variable scaleVector
+    array set scaleVector [list $winId,xoff 50 $winId,xmag 150.0 \
+			       $winId,yoff 50 $winId,ymag 150.0 \
+			       $winId,zoff 25 $winId,zmag 150.0]
     variable viewVector
     set pi 3.14
     array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
@@ -52,7 +55,7 @@ proc initialize {winId} {
                 [namespace code " WindowSizeChanged $winId"]
 
 #Grid is always displayed so only define it once
-    DefineGrid 0 100
+    DefineGrid $winId
 
     SetState $winId initial
     set useNodes($winId,selected) {}
@@ -145,7 +148,8 @@ proc Restore {winId} {
 	    lappend useNodes($winId,selected) [GetIdFromCaptionPath $node]
 	    lappend useNodes($winId,captions) [lindex [split $node /] end]
 	}
-	LoadPosns $winId
+	variable trunks
+	set trunks [LoadPosns $winId]
 	$winId.elv set [lindex $state 2]
     } else {
 	GrabClicks $winId
@@ -169,16 +173,15 @@ proc TweakScale {winId which where} {
 
 proc display {winId time step remainder} {
     variable trunks
-    LoadPosns $winId
+    set trunks [LoadPosns $winId]
     $winId.c delete -withtag trunks
     DrawShapes $winId $trunks trunks
 }
 
 proc LoadPosns {winId} {
     variable useNodes
-    variable trunks
     variable colours
-    variable base
+
     set col 0
     set trunks {}
     foreach {px py h} $useNodes($winId,selected) {
@@ -189,23 +192,28 @@ proc LoadPosns {winId} {
 #ShowMess debug info "List is $quadlist" ok
 	foreach {id data} $quadlist {
 	    if {![string match nil [lindex $data 0]]} {
-		set x [expr [lindex $data 0]-50]
-		set y [expr [lindex $data 1]-50]
-		set z [lindex $data 2]
+		foreach {x y z} $data {}
 		if {[llength $id]} {
 		    set pop "index: $id"
 		} else {
 		    set pop {}
 		}
-		lappend trunks [list line $pop "$x $y $base" \
-				    "$x $y [expr $base+$z]" 4 brown]
-		lappend trunks [list sphere $pop "$x $y [expr $base+3*$z/2]" \
+		lappend trunks [list line $pop "$x $y 0" \
+				    "$x $y $z" 4 brown]
+		lappend trunks [list sphere $pop "$x $y [expr 3*$z/2]" \
 				    [expr $z/2] 1 [lindex $colours $col]]
 	    }
 	}
 	incr col
 	if {$col==6} {set col 0}
     }
+    return $trunks
+}
+
+proc DrawGrid {winId tag} {
+    variable grid
+
+    DrawShapes $winId $grid($winId) $tag
 }
 
 proc DrawShapes {winId solids tag} {
@@ -267,11 +275,12 @@ proc DrawShapes {winId solids tag} {
 				   [lindex $ctr 2] [lindex $object3d 1]]
 			       
  	    } sphere {
+		variable scaleVector
 		set middle [project $winId [lindex $object3d 2]]
 		set midx [lindex $middle 0]
 		set midy [lindex $middle 1]
-		set radX [expr $viewVector($winId,X)*[lindex $object3d 3]/150.0]
-		set radY [expr $viewVector($winId,Y)*[lindex $object3d 3]/150.0]
+		set radX [expr $viewVector($winId,X)*[lindex $object3d 3]/$scaleVector($winId,xmag)]
+		set radY [expr $viewVector($winId,Y)*[lindex $object3d 3]/$scaleVector($winId,ymag)]
 		lappend insts [list [list \
 		$winId.c create oval [expr $midx-$radX] [expr $midy-$radY] \
 		     [expr $midx+$radX] [expr $midy+$radY] -tag $tag \
@@ -301,11 +310,23 @@ proc DrawShapes {winId solids tag} {
     }
 }
 
+proc applyScale {winId pt3d} {
+    variable scaleVector
+    return [list [expr {([lindex $pt3d 0]-$scaleVector($winId,xoff))/$scaleVector($winId,xmag)}] \
+		[expr {([lindex $pt3d 1]-$scaleVector($winId,yoff))/$scaleVector($winId,ymag)}] \
+		[expr {([lindex $pt3d 2]-$scaleVector($winId,zoff))/$scaleVector($winId,zmag)}]]
+}
+
+proc reverseScale {winId pt3d} {
+    variable scaleVector
+    return [list [expr {[lindex $pt3d 0]*$scaleVector($winId,xmag)+$scaleVector($winId,xoff)}] \
+		[expr {[lindex $pt3d 0]*$scaleVector($winId,xmag)+$scaleVector($winId,xoff)}] \
+		[expr {[lindex $pt3d 0]*$scaleVector($winId,xmag)+$scaleVector($winId,xoff)}]]
+}
+
 proc project {winId pt3d} {
     variable viewVector
-    set ptx [lindex $pt3d 0]
-    set pty [lindex $pt3d 1]
-    set ptz [lindex $pt3d 2]
+    foreach {ptx pty ptz} [applyScale $winId $pt3d] {}
 
     set multx $viewVector($winId,cos_angle)
     set multy $viewVector($winId,sin_angle)
@@ -316,8 +337,8 @@ proc project {winId pt3d} {
     set multx $viewVector($winId,cos_elevation)
     set multy $viewVector($winId,sin_elevation)
 
-    set scx [expr $viewVector($winId,X)*($rotx/150.0 + .5)]
-    set scy [expr $viewVector($winId,Y)*(($multx*$ptz - $multy*$roty)/-150.0 + .5)]
+    set scx [expr $viewVector($winId,X)*($rotx + .5)]
+    set scy [expr $viewVector($winId,Y)*($multy*$roty + .5 - $multx*$ptz)]
     set depth [expr -$multx*$roty - $multy*$ptz]
 
 #ShowMess debug info "pt3d $pt3d rots $rotx $roty cams $scx $scy $depth" ok
@@ -347,7 +368,6 @@ proc ShowKey {winId} {
 }
 
 proc WindowSizeChanged {winId} {
-    variable grid
     variable viewVector
     variable trunks
     set viewVector($winId,X) [winfo width $winId.c]
@@ -355,38 +375,60 @@ proc WindowSizeChanged {winId} {
     if {[winfo viewable $winId.c]} {
 	$winId.c delete trunks key grid
 	if {$viewVector($winId,elevation)>=0} {
-	    DrawShapes $winId $grid grid
+	    DrawGrid $winId grid
 	}
 	DrawShapes $winId $trunks trunks
 	if {$viewVector($winId,elevation)<0} {
-	    DrawShapes $winId $grid grid
+	    DrawGrid $winId grid
 	}
 	ShowKey $winId
 	$winId.c raise annotation
     }
 }
 
-proc DefineGrid {LoZ HiZ} {
-    variable base
+proc DefineGrid {winId} {
+    variable scaleVector
     variable grid
 
-    set grid {}
-    for {set x -50} {$x <= 50} {incr x 10} {
-	lappend grid [list line {} "$x -50 $base" "$x 50 $base" 0 red]\
-	    [list text "X posn" "$x -60 $base" [expr $x+50] red] \
-	    [list text "X posn" "$x 60 $base" [expr $x+50] red]
+    foreach {xh yh zh} [reverseScale $winId [list -.367 -.367 -.367]] {}
+    foreach {x0 y0 z0} [reverseScale $winId [list -.333 -.333 -.333]] {}
+    foreach {xn yn zn} [reverseScale $winId [list .333 .333 .333]] {}
+    foreach {xt yt zt} [reverseScale $winId [list .367 .367 .367]] {}
+    set grid($winId) {}
+    for {set x -5} {$x <= 5} {incr x} {
+	set num [format %-6g [expr {$x*2*$scaleVector($winId,xmag)/30 \
+				       +$scaleVector($winId,xoff)}]]
+	lappend grid($winId) \
+	    [list line {} "$num $y0 0" "$num $yn 0" 0 red] \
+	    [list text "X posn" "$num $yh 0" $num red] \
+	    [list text "X posn" "$num $yt 0" $num red]
     }
-    for {set y -50} {$y <= 50} {incr y 10} {
-	lappend grid [list line {} "-50 $y $base" "50 $y $base" 0 red]\
-	    [list text "Y posn" "-60 $y $base" [expr $y+50] blue] \
-	    [list text "Y posn" "60 $y $base" [expr $y+50] blue]
+#    for {set x -50} {$x <= 50} {incr x 10} {
+#	set num [format %6g [expr {$LoX+($HiX-$LoX)*($x+50)/100}]]
+#	lappend grid($winId) [list line {} "$x -50 $base" "$x 50 $base" 0 red] \
+#	    [list text "X posn" "$x -60 $base" $num red] \
+#	    [list text "X posn" "$x 60 $base" $num red]
+#    }
+    for {set y -5} {$y <= 5} {incr y} {
+	set num [format %-6g [expr {$y*2*$scaleVector($winId,ymag)/30 \
+				       +$scaleVector($winId,yoff)}]]
+	lappend grid($winId) \
+	    [list line {} "$x0 $num 0" "$xn $num 0" 0 red] \
+	    [list text "Y posn" "$xh $num 0" $num blue] \
+	    [list text "Y posn" "$xt $num 0" $num blue]
     }
-    for {set z $LoZ} {$z <= $HiZ} {incr z 20} {
-	set zposn [expr $base+$z]
-	lappend grid [list text "Z posn" "-50 -50 $zposn" $z black] \
-	    [list text "Z posn" "-50 50 $zposn" $z black] \
-	    [list text "Z posn" "50 50 $zposn" $z black] \
-	    [list text "Z posn" "50 -50 $zposn" $z black]
-    }
+#    for {set y -50} {$y <= 50} {incr y 10} {
+#	set num [format %6g [expr {$LoY+($HiY-$LoY)*($y+50)/100}]]
+#	lappend grid($winId) [list line {} "-50 $y $base" "50 $y $base" 0 red] \
+#	    [list text "Y posn" "-60 $y $base" $num blue] \
+#	    [list text "Y posn" "60 $y $base" $num blue]
+#    }
+    for {set z [expr {int($scaleVector($winId,zoff)/20.0-2.5)}]} {$z<=$scaleVector($winId,zoff)/20.0+2.5} {incr z} {
+	    set num [format %6g [expr {$z*2*$scaleVector($winId,zmag)/15}]]
+	    lappend grid($winId) [list text "Z posn" "$x0 $y0 $num" $num black] \
+		[list text "Z posn" "$x0 $yn $num" $num black] \
+		[list text "Z posn" "$xn $yn $num" $num black] \
+		[list text "Z posn" "$xn $y0 $num" $num black]
+	}
 }
 }
