@@ -1736,7 +1736,11 @@ proc ShowAbout {winId} {
 		      -text "MinGW g++: $gppVers" \
 		      -font "-family helvetica -size $fsSize"] -side left
         } aqua {
-	    set gppVers [exec [file join $::execDir g++] -dumpversion]
+	    if {[package vcompare 14.0.0 $tcl_platform(osVersion)] > 0} {
+		set gppVers [exec [file join $::execDir g++] -dumpversion]
+	    } else {
+		catch {exec g++ -dumpversion} gppVers
+	    }
             pack [label $platform.g++ \
 		      -text "XCode g++: $gppVers" \
 		      -font "-family helvetica -size $fsSize"] -side left
