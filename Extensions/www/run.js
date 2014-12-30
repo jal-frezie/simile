@@ -310,7 +310,7 @@ function resize_notebook() {
 	}
     }
 }
-// window.onresize = function() {resize_notebook()};
+window.onresize = function() {resize_notebook()};
 
 function select_for_helper(compId) {
   if (currentHelper != null) {
@@ -526,8 +526,8 @@ DataTable.prototype.display = function(time, latest) {
 // sorted -- next, make the bloody thing change size
 }
 
-DataTable.prototype.resize = function() {
-    this.t.fnSettings().oScroll.sY = parseInt(d3.select('#tabs').style('height'), 10)-275;
+DataTable.prototype.resize = function(x,y) {
+    this.t.fnSettings().oScroll.sY = y-275;
     this.t.fnDraw();
 }
 
@@ -551,7 +551,7 @@ function Shapes3D (port) {
     this.tgts = [];
     this.semantics = [];
     this.State = [];
-    this.showing = [];
+    this.showing = {};
   this.status = "displaying";
 //      w = 800;
       w = parseInt(d3.select('#tabs').style('width'), 10)-50;
@@ -583,21 +583,7 @@ function Shapes3D (port) {
 	light.position.set(0,250,0);
 	scene.add(light);
 	var ambientLight = new THREE.AmbientLight(0x111111);
-	// scene.add(ambientLight);
-	
-//     var geometry = new THREE.BoxGeometry( 100, 100, 100 );
-//     // Create an array of materials to be used in a cube, one for each side
-//     var cubeMaterialArray = [];
-//     // order to add materials: x+,x-,y+,y-,z+,z-
-//     cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xff3333 } ));
-//     cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xff8800 } ));
-//     cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xffff33 } ));
-//     cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x33ff33 } ));
-//     cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x3333ff } ));
-//     cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x8833ff } ));
-//     var cubeMaterials = new THREE.MeshFaceMaterial( cubeMaterialArray );
-//     var cube = new THREE.Mesh( geometry, cubeMaterials );
-//     scene.add( cube );
+	scene.add(ambientLight);
 	
 	///////////
 	// FLOOR //
@@ -626,6 +612,7 @@ function Shapes3D (port) {
     };
     render();
     this.scene = scene;
+    this.renderer = renderer;
 }
 
 function ShowMenuButton (that) {
@@ -733,10 +720,10 @@ Shapes3D.prototype.acceptClick = function (compId) {
 
 Shapes3D.prototype.display = function (time, latest) {
     // first remove old items
-    for (i=0;i<this.showing.length;++i) {
-	this.scene.remove(this.showing[i]);
+    for (var old in this.showing) {
+	this.scene.remove(this.showing[old]);
     }
-    this.showing = [];
+    this.showing = {};
 
     // now add new ones
     for (j=0; j<this.State.length; ++j) {
@@ -748,6 +735,7 @@ Shapes3D.prototype.display = function (time, latest) {
 		defns[["n","x","y","z","r"][i]] = flatten("s",latest[instruct[i]]);
 	    }
 	    nC = parseInt('0x' + instruct[5]);
+	    var sphereMaterial = new THREE.MeshLambertMaterial( {color: nC} ); 
 	    for (iV in defns.r) {
 		if (defns.r[iV] < 1) break;
 		// Sphere parameters: radius, segments along width, segments along height
@@ -755,10 +743,9 @@ Shapes3D.prototype.display = function (time, latest) {
 	// use a "lambert" material rather than "basic" for realistic lighting.
 		    //   (don't forget to add (at least one) light!)
 		    
-		var sphereMaterial = new THREE.MeshLambertMaterial( {color: nC} ); 
 		var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 		sphere.position.set(defns.x[iV], defns.z[iV], defns.y[iV]);
-		this.showing.push(sphere);
+		this.showing[iV] = sphere;
 		this.scene.add(sphere);
 	    }
 	    break;
@@ -768,7 +755,8 @@ Shapes3D.prototype.display = function (time, latest) {
     }
 }
 
-Shapes3D.prototype.resize = function () {
+Shapes3D.prototype.resize = function (x,y) {
+    this.renderer.setSize(x-50, y-120);
 }
 
 function PlotXY (port) {
@@ -938,15 +926,15 @@ function resetAxes (zoomxaxis, zoomyaxis, zoomport, x, y) {
     zoomport.x(x).y(y);
 }
 
-PlotXY.prototype.resize = function() {
+PlotXY.prototype.resize = function(x,y) {
    if (this.status != "displaying") return;
 //   console.log('Tab width: ' + d3.select('#' + this.port).style('width'));
 //   console.log('Notebook height: ' + d3.select('#tabs').style('height'));
     ngap = 40;
 //      w = 800;
-      w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
+      w = x-ngap;
 //      h = 800;
-      h = parseInt(d3.select('#tabs').style('height'), 10)-120;
+      h = y-120;
     this.lx.range([ngap, w+ngap]);
     this.ly.range([0, h]);
     this.lxAxis.tickSize(-h);
