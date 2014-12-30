@@ -3,19 +3,22 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Simile model execution</title>
 <link rel="stylesheet" href="dist/themes/default/style.css" />
-<link href="css/humanity/jquery-ui-1.10.4.custom.css" rel="stylesheet" />
+<link href=" jquery-ui.css" rel="stylesheet" />
 <link href="css/xcharts.min.css" rel="stylesheet" />
 <link href="css/jquery.dataTables.css" rel="stylesheet" />
-<script src="js/jquery-1.10.2.js"></script>
-<script src="js/jquery-ui-1.10.4.custom.js"></script>
+<link href="css/jquery.jui_dropdown.css" rel="stylesheet" />
+<script src="external/jquery/jquery.js"></script>
+<script src="jquery-ui.js"></script>
 <!-- script src="js/jquery.scrollTo-min.js?1.4.11"></script -->
 <script src="dist/jstree.min.js"></script>
 <script src="js/d3.v3.min.js" charset="utf-8"></script>
 <!-- script src="js/xcharts.min.js"></script -->
 <script src="js/jquery.dataTables.js"></script>
+<script src="js/jquery.jui_dropdown.js"></script>
 <!-- script src="//cdn.datatables.net/plug-ins/be7019ee387/api/page.jumpToData().js"></script -->
 <script src="js/three.min.js"></script>
 <script src="js/OrbitControls.js"></script>
+<script type="text/javascript" src="js/jscolor/jscolor.js"></script>
 <style>
 * {
   margin: 0;
@@ -38,6 +41,18 @@ rect.pane {
   pointer-events: all;
 }
 
+/* demo_dropdown 2 ---------------------------------------------------------- */
+.container2 {
+  margin: 20px 30px 10px 30px ;
+  display: inline-block;
+}
+ 
+.menu2 {
+  position: absolute;
+  width: 120px !important;
+  margin-top: 3px !important;
+}
+ 
 </style>
 <?php
 // include_once "make_exec.php"; model_action now used

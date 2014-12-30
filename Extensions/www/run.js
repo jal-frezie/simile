@@ -285,9 +285,9 @@ function update_helpers(time, latest) {
 var tooltip_scale;
 function resize_notebook() {
 //    console.log('Window resized');
-    var x = parseInt(d3.select('#tabs-1').style('width'));
+    var x = parseInt(d3.select('#tabs').style('width'));
     var y = parseInt(d3.select('#tabs').style('height'));
-    ModDiag.setAttribute("width", x);
+    ModDiag.setAttribute("width", x-60);
     ModDiag.setAttribute("height",y-60);
 
 // Get height of explorer pane right
@@ -310,7 +310,7 @@ function resize_notebook() {
 	}
     }
 }
-window.onresize = function() {resize_notebook()};
+// window.onresize = function() {resize_notebook()};
 
 function select_for_helper(compId) {
   if (currentHelper != null) {
@@ -548,8 +548,11 @@ function flatten(head,ob) {
 
 function Shapes3D (port) {
   this.port = port;
-  this.tgts = [];
-  this.status = "initializing";
+    this.tgts = [];
+    this.semantics = [];
+    this.State = [];
+    this.showing = [];
+  this.status = "displaying";
 //      w = 800;
       w = parseInt(d3.select('#tabs').style('width'), 10)-50;
 //      h = 800;
@@ -560,40 +563,209 @@ function Shapes3D (port) {
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize( w, h );
 
-    $('#' + port).html("<div id='" + port + "_div'></div>");
+    $('#' + port).html("<div id='demo_drop2'></div>\
+<div id='" + port + "_div'></div>");
+
+    ShowMenuButton(this);
+// demo dropdown 2 ---------------------------------------------------------
 
     document.getElementById(port + "_div").appendChild( renderer.domElement );
 
     // CONTROLS
     controls = new THREE.OrbitControls( camera, renderer.domElement );
 
-    var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-    // Create an array of materials to be used in a cube, one for each side
-    var cubeMaterialArray = [];
-    // order to add materials: x+,x-,y+,y-,z+,z-
-    cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xff3333 } ));
-    cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xff8800 } ));
-    cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xffff33 } ));
-    cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x33ff33 } ));
-    cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x3333ff } ));
-    cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x8833ff } ));
-    var cubeMaterials = new THREE.MeshFaceMaterial( cubeMaterialArray );
-    var cube = new THREE.Mesh( geometry, cubeMaterials );
-    scene.add( cube );
-    camera.position.z = 5;
+	///////////
+	// LIGHT //
+	///////////
+	
+	// create a light
+	var light = new THREE.PointLight(0xffffff);
+	light.position.set(0,250,0);
+	scene.add(light);
+	var ambientLight = new THREE.AmbientLight(0x111111);
+	// scene.add(ambientLight);
+	
+//     var geometry = new THREE.BoxGeometry( 100, 100, 100 );
+//     // Create an array of materials to be used in a cube, one for each side
+//     var cubeMaterialArray = [];
+//     // order to add materials: x+,x-,y+,y-,z+,z-
+//     cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xff3333 } ));
+//     cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xff8800 } ));
+//     cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0xffff33 } ));
+//     cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x33ff33 } ));
+//     cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x3333ff } ));
+//     cubeMaterialArray.push( new THREE.MeshBasicMaterial( { color: 0x8833ff } ));
+//     var cubeMaterials = new THREE.MeshFaceMaterial( cubeMaterialArray );
+//     var cube = new THREE.Mesh( geometry, cubeMaterials );
+//     scene.add( cube );
+	
+	///////////
+	// FLOOR //
+	///////////
+	
+	// note: 4x4 checkboard pattern scaled so that each square is 25 by 25 pixels.
+	var floorTexture = new THREE.ImageUtils.loadTexture( 'images/checkerboard.jpg' );
+	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
+	floorTexture.repeat.set( 10, 10 );
+	// DoubleSide: render texture on both sides of mesh
+	var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide } );
+	var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 1, 1);
+	var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+	floor.position.y = -0.5;
+	floor.rotation.x = Math.PI / 2;
+	scene.add(floor);
+	
+    camera.position.set(0,150,400);
+    camera.lookAt(scene.position);	
+
     var render = function () {
 	requestAnimationFrame( render );
-	cube.rotation.x += 0.1; cube.rotation.y += 0.1;
+	// cube.rotation.x += 0.1; cube.rotation.y += 0.1;
 	renderer.render(scene, camera);
 	controls.update();
     };
     render();
+    this.scene = scene;
+}
+
+function ShowMenuButton (that) {
+    $('#demo_drop2').html("\
+  <div id='launcher2_container'>\
+    <button id='launcher2'>Select new item type</button>\
+  </div>\
+  <ul id='menu2'>\
+    <li id='spheres'><a href='javascript:void(0);'>Sphere</a></li>\
+    <li id='lines'><a href='javascript:void(0);'>Line</a></li>\
+    <hr>\
+    <li id='ellipses'><a href='javascript:void(0);'>Ellipse</a></li>\
+  </ul>");
+    
+    $("#demo_drop2").jui_dropdown({
+    launcher_id: 'launcher2',
+    launcher_container_id: 'launcher2_container',
+    menu_id: 'menu2',
+    containerClass: 'container2',
+      menuClass: 'menu2',
+//    launcher_is_UI_button: false,
+      onSelect: function(event, data) {
+	  //      $("#result").text('index: ' + data.index + ' (id: ' + data.id + ')');
+	  AddItem(that, data.id);
+    }
+  });
+}
+
+function AddItem (that, type) {
+//    console.log('AI ' + JSON.stringify(that));
+    // next make this look more like ZooXYZ.tcl
+    var allTemplates = {"spheres":[["type","Select new item type"],
+				  ["component","X positions"],
+				  ["component","Y positions"],
+				  ["component","Z positions"],
+				  ["component","size values"],
+				  ["colour","colour"]],
+			"lines":[["type","Select new item type"],
+				["component","start X positions"],
+				["component","start Y positions"],
+				["component","start Z positions"],
+				["component","end X positions"],
+				["component","end Y positions"],
+				["component","end Z positions"],
+				["component","width values"],
+				["colour","colour"]],
+			"ellipses":[["type","Select new item type"],
+				   ["component","centre X positions"],
+				   ["component","centre Y positions"],
+				   ["component","centre Z positions"],
+				   ["component","tip X positions"],
+				   ["component","tip Y positions"],
+				   ["component","tip Z positions"],
+				   ["component","side X positions"],
+				   ["component","side Y positions"],
+				   ["component","side Z positions"],
+				   ["colour","outline"],
+				   ["colour","fill"]]};
+    that.template = allTemplates[type];
+    MakeSelection(that, type);
+}
+
+function MakeSelection (that, selected) {
+//    console.log('MS ' + JSON.stringify(that));
+    for (i=0;i<that.template.length;i++) {
+	if (["type","component","colour"].indexOf(that.template[i][0])>-1) {
+	    that.template[i] = selected;
+	    break;
+	}
+    }
+    i++;
+    if (i == that.template.length) { // finished
+	that.State.push(that.template);
+	ShowMenuButton(that);
+    } else {
+	switch (that.template[i][0]) {
+	case "component":
+	    $('#demo_drop2').text('Click on component with ' + that.template[i][1] + ' of ' + that.template[0]);
+	    break;
+	case "colour":
+	    $('#demo_drop2').text('Choose ' + that.template[i][1] + ' of ' + that.template[0] + ': '); // provide JSColor widget calling this back with colour
+	    clr = document.createElement('INPUT')
+	    // bind jscolor
+	    var col = new jscolor.color(clr);
+	    document.getElementById('demo_drop2').appendChild(clr);
+	    
+	    var btn = document.createElement('button');
+	    btn.innerHTML = 'OK';
+	    btn.onclick = function(){
+		MakeSelection(that, col.toString()); // no
+		return false;
+	    };
+	    document.getElementById('demo_drop2').appendChild(btn);
+	    break;
+	default:
+	    console.log("Worng datum type: " + that.template[i][0]);
+	}
+    }   
 }
 
 Shapes3D.prototype.acceptClick = function (compId) {
+    this.tgts.push(compId);
+    MakeSelection(this, compId);
 }
 
 Shapes3D.prototype.display = function (time, latest) {
+    // first remove old items
+    for (i=0;i<this.showing.length;++i) {
+	this.scene.remove(this.showing[i]);
+    }
+    this.showing = [];
+
+    // now add new ones
+    for (j=0; j<this.State.length; ++j) {
+	instruct = this.State[j];
+	switch (instruct[0]) {
+	case "spheres":
+	    defns = {};
+	    for (i=1;i<5;++i) {
+		defns[["n","x","y","z","r"][i]] = flatten("s",latest[instruct[i]]);
+	    }
+	    nC = parseInt('0x' + instruct[5]);
+	    for (iV in defns.r) {
+		if (defns.r[iV] < 1) break;
+		// Sphere parameters: radius, segments along width, segments along height
+		var sphereGeometry = new THREE.SphereGeometry( defns.r[iV], 32, 16 ); 
+	// use a "lambert" material rather than "basic" for realistic lighting.
+		    //   (don't forget to add (at least one) light!)
+		    
+		var sphereMaterial = new THREE.MeshLambertMaterial( {color: nC} ); 
+		var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+		sphere.position.set(defns.x[iV], defns.z[iV], defns.y[iV]);
+		this.showing.push(sphere);
+		this.scene.add(sphere);
+	    }
+	    break;
+	default:
+	    alert("Unrecognized item type: " + instruct[0]);
+	}
+    }
 }
 
 Shapes3D.prototype.resize = function () {
