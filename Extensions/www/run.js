@@ -672,19 +672,34 @@ function AddItem (that, type) {
 				   ["colour","outline"],
 				   ["colour","fill"]]};
     that.template = allTemplates[type];
+    that.newComps = [];
     MakeSelection(that, type);
 }
 
 function MakeSelection (that, selected) {
 //    console.log('MS ' + JSON.stringify(that));
     for (i=0;i<that.template.length;i++) {
-	if (["type","component","colour"].indexOf(that.template[i][0])>-1) {
+	code = ["type","component","colour"].indexOf(that.template[i][0]);
+	if (code>-1) {
+	    if (code == 1) { // component, put in list
+		that.newComps.push(selected);
+	    }
 	    that.template[i] = selected;
 	    break;
 	}
     }
     i++;
     if (i == that.template.length) { // finished
+	that.template[i] = {}; // new empty display object list
+	oldState = that.State;
+	that.State = [that.template]; // New items only
+	newData = {};
+	for (j=0; j<that.newComps.length; ++j) {
+	    nItm = that.newComps[j]
+	    newData[nItm] = JSON.parse(values_json[nItm]);
+	}
+	that.display(parseFloat($("#ct").val()),newData),
+	that.State = oldState;
 	that.State.push(that.template);
 	ShowMenuButton(that);
     } else {
@@ -719,33 +734,34 @@ Shapes3D.prototype.acceptClick = function (compId) {
 }
 
 Shapes3D.prototype.display = function (time, latest) {
-    // first remove old items
-    for (var old in this.showing) {
-	this.scene.remove(this.showing[old]);
-    }
-    this.showing = {};
-
     // now add new ones
     for (j=0; j<this.State.length; ++j) {
 	instruct = this.State[j];
 	switch (instruct[0]) {
 	case "spheres":
+	    // first remove old items
+	    for (var old in instruct[6]) {
+		this.scene.remove(instruct[6][old]);
+	    }
+	    instruct[6] = {};
+
 	    defns = {};
 	    for (i=1;i<5;++i) {
 		defns[["n","x","y","z","r"][i]] = flatten("s",latest[instruct[i]]);
 	    }
 	    nC = parseInt('0x' + instruct[5]);
 	    var sphereMaterial = new THREE.MeshLambertMaterial( {color: nC} ); 
+	    var sphereGeometry = new THREE.SphereGeometry(1.0, 32, 16 ); 
 	    for (iV in defns.r) {
 		if (defns.r[iV] < 1) break;
 		// Sphere parameters: radius, segments along width, segments along height
-		var sphereGeometry = new THREE.SphereGeometry( defns.r[iV], 32, 16 ); 
 	// use a "lambert" material rather than "basic" for realistic lighting.
 		    //   (don't forget to add (at least one) light!)
 		    
 		var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 		sphere.position.set(defns.x[iV], defns.z[iV], defns.y[iV]);
-		this.showing[iV] = sphere;
+		sphere.scale.set(defns.r[iV], defns.r[iV], defns.r[iV]);
+		instruct[6][iV] = sphere;
 		this.scene.add(sphere);
 	    }
 	    break;
