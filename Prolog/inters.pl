@@ -1184,19 +1184,20 @@ Now one that uses a special conditional level */
             append(_, [TopTgt], Target),
 	    nth(GraphId, Used, TopTgt), !,
 	    
-	    (Source = [_ | _], !,
+	    ( /* list: not needed, add_zeros and make_choose_form should handle
+	      Source = [_ | _], !,
 		length(Source, Enums),
 		RUnits = any,
 		list_of(RUnits, Enums, Arg_template),
-		    /* need type for bool/int */
+		    % need type for bool/int
 		SourceList = Source,
 		ValRef = ResultList;
-%	    Source = (Test?True'><'False), !,
-%		SourceList = [Test, True, False],
-%		RUnits = any,
-%	        Arg_template = [boolean, RUnits, RUnits],
-%		ResultList = [RTest, RTrue, RFalse],
-%		ValRef = (RTest?RTrue'><'RFalse);
+	    Source = (Test?True'><'False), !,
+		SourceList = [Test, True, False],
+		RUnits = any,
+	        Arg_template = [boolean, RUnits, RUnits],
+		ResultList = [RTest, RTrue, RFalse],
+		ValRef = (RTest?RTrue'><'RFalse); */
 	    Source = graph(Param), \+ Param = '',
 		(\+ Step = dummy;
 		dialogue'><'table_data_is(_);
@@ -1320,7 +1321,8 @@ Now one that uses a special conditional level */
 		     ValRef = default(_), SourceRef = 0),
 		    UnitList = [Units];
 		 (var(Lop),
-		     SourceRef = ValRef;
+		     SourceRef = ValRef,
+		     Units = RUnits;
 		  nonvar(Lop),
 		     fn_or_op(Lop, MxOp, RUnits, Arg_template),
 		    /* first, check my units are right... */
