@@ -594,7 +594,7 @@ function Shapes3D (port) {
 	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
 	floorTexture.repeat.set( 10, 10 );
 	// DoubleSide: render texture on both sides of mesh
-	var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide } );
+    var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide, opacity: 0.75 } );
 	var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 1, 1);
 	var floor = new THREE.Mesh(floorGeometry, floorMaterial);
 	floor.position.y = -0.5;
@@ -763,6 +763,32 @@ Shapes3D.prototype.display = function (time, latest) {
 		sphere.scale.set(defns.r[iV], defns.r[iV], defns.r[iV]);
 		instruct[6][iV] = sphere;
 		this.scene.add(sphere);
+	    }
+	    break;
+	case "lines":
+	    for (var old in instruct[9]) {
+		this.scene.remove(instruct[9][old]);
+	    }
+	    instruct[9] = {};
+
+	    defns = {};
+	    for (i=1;i<8;++i) {
+		defns[["n","sx","sy","sz","fx","fy","fz","w"][i]] = flatten("l",latest[instruct[i]]);
+	    }
+	    nC = parseInt('0x' + instruct[8]);
+	    for (iV in defns.w) {
+		if (defns.w[iV] < 1) break;
+
+		var lineMaterial = new THREE.LineBasicMaterial(
+		    {color: nC,	linewidth: defns.w[iV]} ); 
+		var lineGeometry = new THREE.Geometry();
+		lineGeometry.vertices.push(
+		    new THREE.Vector3(defns.sx[iV], defns.sz[iV], defns.sy[iV]),
+		    new THREE.Vector3(defns.fx[iV], defns.fz[iV], defns.fy[iV])
+		);
+		var line = new THREE.Line(lineGeometry, lineMaterial);
+		instruct[9][iV] = line;
+		this.scene.add(line);
 	    }
 	    break;
 	default:

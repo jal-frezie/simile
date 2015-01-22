@@ -3,12 +3,10 @@ foreach local {sPath sHome mdl shLib} val $argv {
     set $local $val
 }
 puts "Here [pwd] args $argv<br>"
-catch {
-    puts [exec cat /tmp/error-output.txt]
-    file delete /tmp/error-output.txt
-}
+exec echo {} > /tmp/error-output.txt
 lappend auto_path [file join $sPath System lib]
 if {![file exists [file join $sHome .simile userinfo.txt]]} {
+    file delete -force $sHome
     file mkdir $sHome
     file copy /var/www/tmplate/.simile $sHome
 }
