@@ -1173,6 +1173,8 @@ proc StartElement {name attList args} {
 	    } else {
 		lappend parseStatus(literal,$parseStatus(valNesting)) \
 		    $attVals(index) $attVals(value)
+		if {[info exists attVals(fraction)]} { ;# numeric uftsi
+		}
 	    }
 	} csv_columns {
 	    puts -nonewline $parseStatus(outStr) $path=reference=[list $attVals(filename) $attVals(data_column)]
@@ -1193,7 +1195,11 @@ proc StartElement {name attList args} {
 	    set parseStatus(translateExtras) $attVals(type)
 	    array set parseStatus {interval 1 wrapTime 0 fillMtd USE_LAST}
 	    if {[info exists attVals(interval)]} {
-		set parseStatus(interval) [InDays $attVals(interval)]
+		if {[info exists attVals(fraction)]} { ;# numeric uftsi
+		    set parseStatus(interval) $attVals(fraction)
+		} else {
+		    set parseStatus(interval) [InDays $attVals(interval)]
+		}
 	    }
 	    if {[info exists attVals(wrap_time)]} {
 		set parseStatus(wrapTime) $attVals(wrap_time)
