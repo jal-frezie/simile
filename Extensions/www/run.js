@@ -195,9 +195,10 @@ function model_exec() {
     savedStart = null;
   }
   goImage.parentNode.onclick = function () { model_pause(); };
-  end = now+parseFloat($("#rl").val());
+    end = now+parseFloat($("#rl").val());
+    span = $("#ue").val()
 //  calibrate_helpers(end);
-  model_step(now, start, end, 10, ofInterest().join());
+  model_step(now, start, end, span, ofInterest().join());
 }
 
 function ofInterest() {
@@ -600,7 +601,17 @@ function Shapes3D (port) {
 	floor.position.y = -0.5;
 	floor.rotation.x = Math.PI / 2;
 	scene.add(floor);
-	
+
+    // test some new shapes!
+    var circleGeom = new THREE.CircleGeometry(50,24);
+    var circleMat = new THREE.MeshBasicMaterial( {color : 0x0000ff});
+    var circleBack = new THREE.MeshBasicMaterial( {color : 0xffff00});
+    var circle = new THREE.Mesh(circleGeom, circleMat);
+    scene.add(circle);
+    var cback = new THREE.Mesh(circleGeom, circleBack);
+    cback.rotation.y = 3.14;
+    scene.add(cback);
+    
     camera.position.set(0,150,400);
     camera.lookAt(scene.position);	
 
@@ -663,14 +674,13 @@ function AddItem (that, type) {
 				   ["component","centre X positions"],
 				   ["component","centre Y positions"],
 				   ["component","centre Z positions"],
-				   ["component","tip X positions"],
-				   ["component","tip Y positions"],
-				   ["component","tip Z positions"],
-				   ["component","side X positions"],
-				   ["component","side Y positions"],
-				   ["component","side Z positions"],
-				   ["colour","outline"],
-				   ["colour","fill"]]};
+				   ["component","length of major radii"],
+				   ["component","eccentricities"],
+				   ["component","X rotations"],
+				   ["component","Y rotations"],
+				   ["component","Z rotations"],
+				   ["colour","front"],
+				   ["colour","back"]]};
     that.template = allTemplates[type];
     that.newComps = [];
     MakeSelection(that, type);
@@ -791,6 +801,43 @@ Shapes3D.prototype.display = function (time, latest) {
 		this.scene.add(line);
 	    }
 	    break;
+	case "ellipses":
+	    for (var old in instruct[11]) {
+		this.scene.remove(instruct[11][old]);
+	    }
+	    instruct[11] = {};
+
+	    defns = {};
+	    for (i=1;i<9;++i) {
+		defns[["n","cx","cy","cz","r","e","rx","ry","rz"][i]] =
+		    flatten("l",latest[instruct[i]]);
+	    }
+	    fC = parseInt('0x' + instruct[9]);
+	    bC = parseInt('0x' + instruct[10]);
+	    var circleGeom = new THREE.CircleGeometry(1,24);
+	    var circleMat = new THREE.MeshLambertMaterial( {color : fC});
+	    var circleBack = new THREE.MeshLambertMaterial( {color : bC});
+	    for (iV in defns.r) {
+		if (defns.r[iV] < 1) break;
+
+		var circle = new THREE.Mesh(circleGeom, circleMat);
+		circle.position.set(defns.cx[iV], defns.cz[iV], defns.cy[iV]);
+		circle.scale.set(defns.r[iV], defns.r[iV]/defns.e[iV], 1);
+		circle.rotation.set(-defns.rx[iV]-1.57, defns.ry[iV],
+				    -defns.rz[iV]);
+		instruct[11][iV + ",f"] = circle;
+		this.scene.add(circle);
+
+		circle = new THREE.Mesh(circleGeom, circleBack);
+		circle.position.set(defns.cx[iV], defns.cz[iV], defns.cy[iV]);
+		circle.scale.set(defns.r[iV], defns.r[iV]/defns.e[iV], 1);
+		circle.rotation.set(-defns.rx[iV]+1.57, -defns.ry[iV],
+				    defns.rz[iV]);
+		instruct[11][iV + ",b"] = circle;
+		this.scene.add(circle);
+	    }
+	    break;
+
 	default:
 	    alert("Unrecognized item type: " + instruct[0]);
 	}

@@ -4,7 +4,7 @@
 <title>Simile model execution</title>
 <link rel="stylesheet" href="dist/themes/default/style.css" />
 <link href=" jquery-ui.css" rel="stylesheet" />
-<link href="css/xcharts.min.css" rel="stylesheet" />
+<!-- link href="css/xcharts.min.css" rel="stylesheet" /-->
 <link href="css/jquery.dataTables.css" rel="stylesheet" />
 <link href="css/jquery.jui_dropdown.css" rel="stylesheet" />
 <script src="external/jquery/jquery.js"></script>
@@ -140,6 +140,8 @@ echo "<script>\nvar fileBase = '$base';\n</script>";
 <tr><td>Current time: </td><td><input id="ct" type="text" name="current" 
 				      size="8" value=0> 
     unit</td></tr>
+<tr><td>Update each </td><td><input id="ue" type="text" name="runstep" size="8"
+		value=10> unit</td></tr>
 <tr><td>Log each </td><td><input id="le" type="text" name="logstep" size="8"
 		value=1> unit</td></tr>
 <tr><td>Time step: </td><td><input id="ts" type="text" name="step" size="8"

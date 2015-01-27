@@ -1333,6 +1333,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 	    return 0
 	} 0 { ;# File failed to parse as XML, try older formats
 	    if {[catch {
+		package require mime ;# not done yet if in client5d
 		set multiT [mime::initialize -file $oldPath]
 		set paramState(origVersion) [mime::getheader $multiT Simile-Version]
 		set paramState(whatFrom) [mime::getheader $multiT Simile-Origin]
@@ -1348,7 +1349,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 		mime::getbody $multiT -command SquirtMime -blocksize 256} crypt]
 	    } {
 		# really trying to load a pre-MIME version...?
-		error "assuming v3x spf because: $crypt"
+		puts "assuming v3x spf because: $crypt"
 		set metaFile $oldPath
 		set paramState(origVersion) 0.0
 	    }
