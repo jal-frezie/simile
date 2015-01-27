@@ -315,7 +315,11 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
       }
       --*members;
     } else {
-      localObj = Tcl_NewListObj(0, NULL);
+      if (jsonic) {
+	localObj = Tcl_NewStringObj("{}", 2);
+      } else {
+	localObj = Tcl_NewListObj(0, NULL);
+      }
     }
   } else {
     localObj = Tcl_NewListObj(0, NULL);
