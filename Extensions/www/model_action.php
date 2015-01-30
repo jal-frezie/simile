@@ -81,7 +81,9 @@ fclose($pipes[1]);
 // proc_close in order to avoid a deadlock
 $return_value = proc_close($process);
 
-if (! file_exists($simileHome . "/" . $shlibName)) {
+if ( file_exists($simileHome . "/" . $shlibName)) {
+//   echo $pipe_contents
+} else {
    echo "Command returned $return_value<br>";
    echo "Output from build process was:<br>$pipe_contents";
    echo "<br>Error messages:<br>" . file_get_contents('/tmp/error-output.txt');
@@ -215,7 +217,7 @@ break;
 
    case "Reset":
       $current = 0;
-      $pop = doTcl("DoResetModel [set iH] $current Euler " . $_POST['note']);
+      $pop = doTcl("DoResetModel [set iH] $current " . $_POST['method'] . " " . $_POST['note']);
       echo $pop;
       break;
 
@@ -225,6 +227,7 @@ break;
       $current = $_POST['current'];
       $step = $_POST['step'];
       $log = $_POST['log'];
+      $method = $_POST['method'];
 
       doTcl("c_setstepmodel [set iH] $step 1");
       $note = explode(",",$_POST['note']);
@@ -235,7 +238,7 @@ break;
 	 if ($endInt > $endPt) {
 	     $endInt = $endPt;
 	 }
-	 doTcl("DoExecuteModel [set iH] Euler $t $endInt 0 0");
+	 doTcl("DoExecuteModel [set iH] $method $t $endInt 0 0");
 	 for($x=0;$x<count($note);$x++) {
             $val = doTcl("GetJsonValuesById [set iH] " . $note[$x]);
 // if ExecuteMulti the time points are outer indices

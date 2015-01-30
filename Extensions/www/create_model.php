@@ -112,10 +112,12 @@ switch ($_POST["param_src"]) {
 // executable...
 $_POST["act"] = "BuildShareLibInLine";
 $_POST["base"] = $base;
+// inline: creates executable and sets pipe_contents to run params
 include_once "model_action.php";
 
 // web site starts here
-echo "<script>\nvar fileBase = '$base';\n</script>";
+$rps = end(explode("\n", $pipe_contents));
+echo "<script>\nvar fileBase = '$base';\nvar pipeBits = $rps;\n</script>";
 ?> 
 <script src='run.js'></script>
 </head>
@@ -136,16 +138,16 @@ echo "<script>\nvar fileBase = '$base';\n</script>";
 <div id="progress" style="width:55%;float:right"></div>
 <tr><td>Execute for: </td><td><input id="rl" type="text" name="runlength" 
 				     size="8" value=100> 
-    unit</td></tr>
+    <label class=unit>unit</label></td></tr>
 <tr><td>Current time: </td><td><input id="ct" type="text" name="current" 
 				      size="8" value=0> 
-    unit</td></tr>
+    <label class=unit>unit</label></td></tr>
 <tr><td>Update each </td><td><input id="ue" type="text" name="runstep" size="8"
-		value=10> unit</td></tr>
+		value=10> <label class=unit>unit</label></td></tr>
 <tr><td>Log each </td><td><input id="le" type="text" name="logstep" size="8"
-		value=1> unit</td></tr>
+		value=1> <label class=unit>unit</label></td></tr>
 <tr><td>Time step: </td><td><input id="ts" type="text" name="step" size="8"
-		  value=0.1> unit</td></tr>
+		  value=0.1> <label class=unit>unit</label></td></tr>
 </table>
 <div id="explorer" style="overflow:auto"></div>
 </div>

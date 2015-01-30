@@ -106,8 +106,9 @@ function model_reset() {
 $.ajax({
   type: "POST",
   url: "model_action.php",
-  data: { "port" : svrPort, "act": "Reset", "runlength":$("#rl").val(), 
-	  "current":0, "step":$("#ts").val(), "note":resetDepth}
+  data: { "port":svrPort, "act":"Reset", "runlength":$("#rl").val()*timeUnit, 
+	  "current":0, "step":$("#ts").val()*timeUnit,
+	  "method":pipeBits.intMethod, "note":resetDepth}
 })
   .done(function( feedback ) {
     if (feedback != '1') {
@@ -159,15 +160,16 @@ function model_step(current, start, end, span, note) {
     $.ajax({
       type: "POST",
       url: "model_action.php",
-      data: {"port":svrPort,  "act":"ExecuteMulti", "runlength":interval, 
-	     "current":current, "step":$("#ts").val(), "log":log, "note":note}
+      data: {"port":svrPort,  "act":"ExecuteMulti", "runlength":interval*timeUnit, 
+	     "current":current*timeUnit, "step":$("#ts").val()*timeUnit,
+	     "method":pipeBits.intMethod, "log":log*timeUnit, "note":note}
     })
 
       .done(function(newVals) {
 //	  alert('Data returned ' + newVals);
 	block = JSON.parse(newVals);
         for (var timePt in block) {
-          update_helpers(timePt, block[timePt]);
+          update_helpers(timePt/timeUnit, block[timePt]);
 	}
         model_step(newCurrent, start, end, span, note);
     });
@@ -603,14 +605,39 @@ function Shapes3D (port) {
 	scene.add(floor);
 
     // test some new shapes!
+
+    var geometry = new THREE.CylinderGeometry( 5, 10, 50, 32 );
+    var material = new THREE.MeshLambertMaterial( {color: 0xffff00, 
+						transparent: true,
+						opacity: 0.8} );
+    var cylinder = new THREE.Mesh( geometry, material );
+    cylinder.rotation.set(1,0,1);
+//     scene.add( cylinder );
+    
     var circleGeom = new THREE.CircleGeometry(50,24);
-    var circleMat = new THREE.MeshBasicMaterial( {color : 0x0000ff});
-    var circleBack = new THREE.MeshBasicMaterial( {color : 0xffff00});
+    var circleMat = new THREE.MeshBasicMaterial( {color : 0x0000ff, 
+						transparent: true,
+						opacity: 0.5});
+    var circleBack = new THREE.MeshBasicMaterial( {color : 0xffff00, 
+						transparent: true,
+						opacity: 0.5});
+    var circleL = new THREE.MeshBasicMaterial( {color : 0xff0000, 
+						transparent: true,
+						opacity: 0.5});
+    var circleR = new THREE.MeshBasicMaterial( {color : 0x00ff00,
+						transparent: true,
+						opacity: 0.5});
     var circle = new THREE.Mesh(circleGeom, circleMat);
     scene.add(circle);
     var cback = new THREE.Mesh(circleGeom, circleBack);
     cback.rotation.y = 3.14;
     scene.add(cback);
+    var circl = new THREE.Mesh(circleGeom, circleL);
+    circl.rotation.y = -1.57;
+    scene.add(circl);
+    var cir = new THREE.Mesh(circleGeom, circleR);
+    cir.rotation.y = 1.57;
+    scene.add(cir);
     
     camera.position.set(0,150,400);
     camera.lookAt(scene.position);	
@@ -786,9 +813,12 @@ Shapes3D.prototype.display = function (time, latest) {
 		defns[["n","sx","sy","sz","fx","fy","fz","w"][i]] = flatten("l",latest[instruct[i]]);
 	    }
 	    nC = parseInt('0x' + instruct[8]);
+	    var lineGeometry = new THREE.CylinderGeometry(0.5,0.5,1.0);
+	    var lineMaterial = new THREE.MeshLambertMaterial( {color: nC} );
 	    for (iV in defns.w) {
 		if (defns.w[iV] < 1) break;
 
+	/* Old version: used lineGeometry, which lacks width in Windows
 		var lineMaterial = new THREE.LineBasicMaterial(
 		    {color: nC,	linewidth: defns.w[iV]} ); 
 		var lineGeometry = new THREE.Geometry();
@@ -797,6 +827,21 @@ Shapes3D.prototype.display = function (time, latest) {
 		    new THREE.Vector3(defns.fx[iV], defns.fz[iV], defns.fy[iV])
 		);
 		var line = new THREE.Line(lineGeometry, lineMaterial);
+
+	New version uses cylinders */
+		var line = new THREE.Mesh(lineGeometry, lineMaterial);
+		line.position.set((defns.fx[iV]+defns.sx[iV])/2,
+				  (defns.fz[iV]+defns.sz[iV])/2,
+				  (defns.fy[iV]+defns.sy[iV])/2);
+		xyExt = Math.pow(defns.fx[iV]-defns.sx[iV],2)+
+		    Math.pow(defns.fy[iV]-defns.sy[iV],2);
+		line.scale.set(defns.w[iV], Math.sqrt(xyExt +
+					 Math.pow(defns.fz[iV]-defns.sz[iV],2)),
+			       defns.w[iV]);
+		line.rotation.set(0,
+				  -Math.atan2(defns.fy[iV]-defns.sy[iV],
+					     defns.fx[iV]-defns.sx[iV]),
+				  -Math.atan2(Math.sqrt(xyExt), defns.fz[iV]-defns.sz[iV]));
 		instruct[9][iV] = line;
 		this.scene.add(line);
 	    }
@@ -823,16 +868,16 @@ Shapes3D.prototype.display = function (time, latest) {
 		var circle = new THREE.Mesh(circleGeom, circleMat);
 		circle.position.set(defns.cx[iV], defns.cz[iV], defns.cy[iV]);
 		circle.scale.set(defns.r[iV], defns.r[iV]/defns.e[iV], 1);
-		circle.rotation.set(-defns.rx[iV]-1.57, defns.ry[iV],
-				    -defns.rz[iV]);
+		circle.rotation.set(-defns.rx[iV]-1.57, -defns.ry[iV],
+				    -defns.rz[iV], 'XZY');
 		instruct[11][iV + ",f"] = circle;
 		this.scene.add(circle);
 
 		circle = new THREE.Mesh(circleGeom, circleBack);
 		circle.position.set(defns.cx[iV], defns.cz[iV], defns.cy[iV]);
 		circle.scale.set(defns.r[iV], defns.r[iV]/defns.e[iV], 1);
-		circle.rotation.set(-defns.rx[iV]+1.57, -defns.ry[iV],
-				    defns.rz[iV]);
+		circle.rotation.set(-defns.rx[iV]+1.57, defns.ry[iV],
+				    defns.rz[iV], 'XZY');
 		instruct[11][iV + ",b"] = circle;
 		this.scene.add(circle);
 	    }
@@ -1413,5 +1458,14 @@ $.ajax({
   var textNode_v = document.createTextNode(0);
   tooltip_v.appendChild(textNode_v);
   tooltip_grp.appendChild(tooltip_v);
-  
+
+    // Now stick the values in the run control
+    $("#rl").val(pipeBits.execTime);
+    $("#le").val(pipeBits.displayInt);
+    $("#ts").val(pipeBits.phaseList);
+
+    $(".unit").html(pipeBits.timeUnit);
+    timeLib = {"second":1/86400,"minute":1/1440,"hour":1/24,"day":1,"unit":1,
+	       "week":7,"month":365/12,"year":365};
+    timeUnit = timeLib[pipeBits.timeUnit];
 }

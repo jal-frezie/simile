@@ -23,6 +23,15 @@ if {[catch {
 # now export the svg over the original model
     puts "svg to $mdl.svg"
     modelWin BuildSVGDiagram $mdl.svg
+    # try returning the runParams if we have them...as json of course
+    set node [modelWin cget -modelNode]
+    if {[info exists runState($node,runParams)]} {
+	set rps \{
+	foreach {role val} $runState($node,runParams) {
+	    append rps \"$role\":\"$val\",
+	}
+	puts -nonewline [string replace $rps end end \}]
+    }
 }]} {
     puts $errorInfo
     exit
