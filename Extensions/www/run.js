@@ -106,7 +106,7 @@ function model_reset() {
 $.ajax({
   type: "POST",
   url: "model_action.php",
-  data: { "port":svrPort, "act":"Reset", "runlength":$("#rl").val()*timeUnit, 
+  data: { "base":fileBase, "act":"Reset", "runlength":$("#rl").val()*timeUnit, 
 	  "current":0, "step":$("#ts").val()*timeUnit,
 	  "method":pipeBits.intMethod, "note":resetDepth}
 })
@@ -122,7 +122,7 @@ $.ajax({
     }
     $("#ct").val(0);
     $( "#progress" ).progressbar({ value: 0 });
-    $.post('model_action.php', { "port" : svrPort, "act":"Report"}, 
+    $.post('model_action.php', { "base":fileBase, "act":"Report"}, 
 	   function(data) {
 	       values_json = JSON.parse(data);
 	       latest = {}
@@ -138,7 +138,7 @@ $.ajax({
 function model_step(current, start, end, span, note) {
   if (current >= end || savedStart != null) {
 // we are done, reset progress bar and update values
-    $.post('model_action.php', { "port" : svrPort, "act":"Report"}, 
+    $.post('model_action.php', { "base":fileBase, "act":"Report"}, 
 	   function(data) {
 	       values_json = JSON.parse(data);
 	   });
@@ -160,7 +160,7 @@ function model_step(current, start, end, span, note) {
     $.ajax({
       type: "POST",
       url: "model_action.php",
-      data: {"port":svrPort,  "act":"ExecuteMulti", "runlength":interval*timeUnit, 
+      data: {"base":fileBase,  "act":"ExecuteMulti", "runlength":interval*timeUnit, 
 	     "current":current*timeUnit, "step":$("#ts").val()*timeUnit,
 	     "method":pipeBits.intMethod, "log":log*timeUnit, "note":note}
     })
@@ -1259,11 +1259,14 @@ function populateStructs() {
 
 // OK, now use AJAX to get a string of values
 
-$.post('model_action.php', { "port" : svrPort, "act":"Describe"}, 
+$.post('model_action.php', { "base":fileBase, "act":"Describe"}, 
       function(data) {
 
-	   model_json = JSON.parse(data);
-
+	  try {
+	      model_json = JSON.parse(data);
+	  } catch(err) {
+	      console.log("Failed to parse: " + data);
+	  }
 // If there are file parameters, add a page to the tabbed notebook to display
 // them (make this a function as user may kill and re-create)
 // remove hook from tcl core when this is working
@@ -1297,8 +1300,7 @@ $.post('model_action.php', { "port" : svrPort, "act":"Describe"},
 // This will ultimately load the parameter file (if there is one) and
 // get a list of components that still need values, or have bad values,
 // for flagging in the parameter dialogue
-	  $.post('model_action.php', { "port" : svrPort, "act":"LoadSPF", 
-				       "base" : fileBase}, 
+	  $.post('model_action.php', {"act":"LoadSPF", "base" : fileBase}, 
 		 function(unfilled) {
 console.log("Params needed: " + needInput + ", missing: " + unfilled);
 		     if (needInput && JSON.parse(unfilled).length) {
@@ -1326,7 +1328,7 @@ function sendValues(parmBlock) {
   $.ajax({
     type: "POST",
     url: "model_action.php",
-      data: { "port" : svrPort, "act":"Parameterize", 
+      data: { "base":fileBase, "act":"Parameterize", 
 	      "data" : JSON.stringify(parmBlock)}
     })
       .done(function(retsStr) {
@@ -1346,19 +1348,26 @@ function sendValues(parmBlock) {
 //   return 'Warning: model state will be lost if you leave the site!';
 // };
 window.onunload = function(e) {
-    $.post('model_action.php', { "port" : svrPort, "act":"Exit", 
-				 "base":fileBase});
+    $.post('model_action.php', { "act":"Exit", "base":fileBase});
 };
-// Start the socket -- fttb just hope it is ready when prepare is called
-var svrPort = 99999;
+// Version using UNIX sockets -- add .uxs extension to model name base
 $.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
-            function(port) {
-//               alert("Guess what -- the model exec process just finished");
-            	svrPort = port;
-                console.log("Got socket " + port);
-            	populateStructs();
-});
+       function(spew) {
+	   console.log("Socket created: " + spew);
+           populateStructs();
+       });
 
+// Version using INET sockets -- ungainly and insecure
+// Start the socket -- fttb just hope it is ready when prepare is called
+//var svrPort = 99999;
+//$.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
+//            function(port) {
+////               alert("Guess what -- the model exec process just finished");
+//            	svrPort = port;
+//                console.log("Got socket " + port);
+//            	populateStructs();
+//});
+//
 //$.post('model_action.php', {"act":"WaitSocket", "base":fileBase}, 
 //            function(port) {
 //            	svrPort = port;

@@ -11,14 +11,17 @@ function demangle($bs) {
 }
 
 function doTcl($cmd) {
-   $fp = fsockopen("localhost", $_POST['port']+0, $errno, $errstr, 30);
+// Version using INET sockets -- ungainly and insecure
+//   $fp = fsockopen("localhost", $_POST['port']+0, $errno, $errstr, 30);
+// version using UNIX sockets -- it's all about the base
+   $fp = fsockopen("unix://" . $_POST['base'] . ".uxs", -1,
+       $errno, $errstr, 30);
    if (!$fp) {
-      echo "$errstr ($errno)<br />\n";
-      return;
+      exit("$errstr ($errno) " . sprintf('%o', fileperms($_POST['base'] . ".uxs")). "<br />\n");
    } else {
 //       echo $cmd . " ==> ";
       fwrite($fp, $cmd . "\n");
-      $resp = str_replace("\r", "", stream_get_contents($fp));
+      $resp = str_replace("\r", "", fgets($fp));
 //       echo $resp . "<br>\n";
       fclose($fp);
    }
@@ -107,13 +110,17 @@ $process = proc_open("../cgi-bin/socketizer.cgi " . implode($tculargs, " "),
     $descriptorspec, $clPipes);
 if (! is_resource($process)) { exit('Failed to start test process'); }
 
-// For sensible php: socket id is echoed
-$port = rtrim(fgets($clPipes[1]));
-if (intval($port)) {
-   echo $port;
-} else {
-   echo file_get_contents("/tmp/error-output.txt");
-}
+// UNIX sockets: id is temp filename so no return value needed or supplied
+echo "UNIX socket created";
+
+// Version using INET sockets -- ungainly and insecure
+// // For sensible php: socket id is echoed
+// $port = rtrim(fgets($clPipes[1]));
+// if (intval($port)) {
+//    echo $port;
+// } else {
+//    echo file_get_contents("/tmp/error-output.txt");
+// }
 break;
 
 // for OLD php: do this to get socket instead

@@ -28,29 +28,43 @@ catch {
  return $res
 }
 
+InstallModelExec $shLib
+
 # now create a server that executes everything it gets at global scope 
 # (add security later) and returns the response
 
-proc Server {channel clientaddr clientport} {
-    gets $channel parrot
+# Version using INET sockets -- ungainly and insecure
+#proc Server {channel clientaddr clientport} {
+#    gets $channel parrot
+#    if {[catch {uplevel #0 $parrot} resp]} {
+#	puts $channel "ERROR: $::errorInfo"
+#    } else {
+#        puts $channel $resp
+#    }
+#    close $channel
+#}
+#
+#set typho [socket -server Server 0]
+#set sockId [lindex [fconfigure $typho -sockname] end]
+#
+## OLD php: the php proc_open() will not return till the process finishes,
+## so use file to send socket id
+## set dmp [open ${mdl}.rdy w]
+## puts $dmp $sockId
+## close $dmp
+#
+## SENSIBLE php: we can just echo the server ID
+#puts $sockId
+#vwait forever
+
+# Version using UNIX sockets -- add .uxs extension to model name base
+set tpond [open "|/usr/bin/nc -Ulk ${mdl}.uxs" r+]
+while {![eof $tpond]} {
+    gets $tpond parrot
     if {[catch {uplevel #0 $parrot} resp]} {
-	puts $channel "ERROR: $::errorInfo"
+	puts $tpond "ERROR: $::errorInfo"
     } else {
-        puts $channel $resp
+        puts $tpond $resp
     }
-    close $channel
+    flush $tpond
 }
-
-InstallModelExec $shLib
-set typho [socket -server Server 0]
-set sockId [lindex [fconfigure $typho -sockname] end]
-
-# OLD php: the php proc_open() will not return till the process finishes,
-# so use file to send socket id
-# set dmp [open ${mdl}.rdy w]
-# puts $dmp $sockId
-# close $dmp
-
-# SENSIBLE php: we can just echo the server ID
-puts $sockId
-vwait forever
