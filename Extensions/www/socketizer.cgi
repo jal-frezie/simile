@@ -58,13 +58,30 @@ InstallModelExec $shLib
 #vwait forever
 
 # Version using UNIX sockets -- add .uxs extension to model name base
-set tpond [open "|/usr/bin/nc -Ulk ${mdl}.uxs" r+]
-while {![eof $tpond]} {
+# shell command version 
+# set tpond [open "|/usr/bin/nc -Ulk ${mdl}.uxs" r+]
+# while {![eof $tpond]} {
+#     gets $tpond parrot
+#     if {[catch {uplevel #0 $parrot} resp]} {
+# 	puts $tpond "ERROR: $::errorInfo"
+#     } else {
+#         puts $tpond $resp
+#     }
+#     flush $tpond
+# }
+# 
+# package version
+package require unix_sockets
+
+proc accept {tpond} {
     gets $tpond parrot
     if {[catch {uplevel #0 $parrot} resp]} {
 	puts $tpond "ERROR: $::errorInfo"
     } else {
         puts $tpond $resp
     }
-    flush $tpond
+    close $tpond
 }
+
+unix_sockets::listen ${mdl}.uxs accept
+vwait forever
