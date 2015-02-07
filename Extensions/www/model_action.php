@@ -21,7 +21,7 @@ function doTcl($cmd) {
    } else {
 //       echo $cmd . " ==> ";
       fwrite($fp, $cmd . "\n");
-      $resp = str_replace("\r", "", fgets($fp));
+      $resp = str_replace("\r", "", stream_get_contents($fp));
 //       echo $resp . "<br>\n";
       fclose($fp);
    }
@@ -37,7 +37,7 @@ switch ($_POST['act']) {
    case "ConvertJSON":
    $base = tempnam('/tmp', 'jsm');
 
-   $hole = popen('../cgi-bin/gconvert ' . $base, 'w');
+   $hole = popen('cgi-bin/gconvert ' . $base, 'w');
    if ($hole) {
      fwrite($hole, demangle($_POST['js_mod']));
      if (pclose($hole) == -1) {
@@ -52,8 +52,8 @@ switch ($_POST['act']) {
    case "BuildShareLib":
    case "BuildShareLibInLine":
 $shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
-$simileLocn = "/usr/lib64/simile-6.3";
-$simileHome =  "/tmp/upload";
+$simileLocn = "/kunden/homepages/20/d204715617/htdocs/Build/Simile";
+$simileHome =  "/kunden/homepages/20/d204715617/htdocs/similive/webuser";
 $tculargs = array($simileLocn, $simileHome, $_POST['base'], $shlibName);
 $descriptorspec = array(
    0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
@@ -61,7 +61,7 @@ $descriptorspec = array(
    2 => array("file", "/tmp/error-output.txt", "a") // stderr is a file to write to
 );
 
-$process = proc_open("../cgi-bin/tcular.cgi " . implode($tculargs, " "),
+$process = proc_open("cgi-bin/tcular.cgi " . implode($tculargs, " "),
     $descriptorspec, $pipes);
 if (! is_resource($process)) { exit('Failed to start build process'); }
 
@@ -97,8 +97,8 @@ break;
 
    case "CreateSocket":
 $shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
-$simileLocn = "/usr/lib64/simile-6.3";
-$simileHome =  "/tmp/upload";
+$simileLocn = "/kunden/homepages/20/d204715617/htdocs/Build/Simile";
+$simileHome =  "/kunden/homepages/20/d204715617/htdocs/similive/webuser";
 $tculargs = array($simileLocn, $simileHome, $_POST['base'], $shlibName);
 $descriptorspec = array(
    0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
@@ -106,7 +106,7 @@ $descriptorspec = array(
    2 => array("file", "/tmp/error-output.txt", "a") // stderr is a file to write to
 );
 
-$process = proc_open("../cgi-bin/socketizer.cgi " . implode($tculargs, " "), 
+$process = proc_open("cgi-bin/socketizer.cgi " . implode($tculargs, " "), 
     $descriptorspec, $clPipes);
 if (! is_resource($process)) { exit('Failed to start test process'); }
 
@@ -125,10 +125,11 @@ break;
 
 // for OLD php: do this to get socket instead
    case "WaitSocket":
-   $rdyFile = $_POST['base'] . ".rdy";
+   $rdyFile = $_POST['base'] . ".uxs";
    while (!file_exists($rdyFile)) sleep(1);
-   echo file_get_contents($rdyFile);
-   unlink($rdyFile);
+   echo 'UNIX socket';
+//   echo file_get_contents($rdyFile);
+//   unlink($rdyFile);
 break;
   
    case "GetSVG":
@@ -245,7 +246,11 @@ break;
 	 if ($endInt > $endPt) {
 	     $endInt = $endPt;
 	 }
-	 doTcl("DoExecuteModel [set iH] $method $t $endInt 0 0");
+	 $stop = doTcl("DoExecuteModel [set iH] $method $t $endInt 0 0");
+//	 if ($stop != $endInt) {
+//	     exit("Model stopped at " . $stop . " running to " . $endInt);
+// probably want to make another call to get error message
+//	 }
 	 for($x=0;$x<count($note);$x++) {
             $val = doTcl("GetJsonValuesById [set iH] " . $note[$x]);
 // if ExecuteMulti the time points are outer indices

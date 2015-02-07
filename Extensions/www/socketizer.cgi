@@ -1,4 +1,4 @@
-#!/usr/bin/tclsh
+#!/usr/bin/tclsh8.5
 foreach local {sPath sHome mdl shLib} val $argv {
     set $local $val
 }

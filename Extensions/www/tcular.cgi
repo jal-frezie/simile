@@ -1,4 +1,4 @@
-#!/usr/bin/tclsh
+#!/usr/bin/tclsh8.5
 foreach local {sPath sHome mdl shLib} val $argv {
     set $local $val
 }
@@ -31,8 +31,10 @@ if {[catch {
 	    append rps \"$role\":\"$val\",
 	}
 	puts -nonewline [string replace $rps end end \}]
+    } else {
+	puts -nonewline {{ "execTime": "100.0", "timeUnit": "unit", "displayInt": "1", "intMethod": "Euler", "phaseList": "0.1" }}
     }
 }]} {
     puts $errorInfo
-    exit
 }
+exit

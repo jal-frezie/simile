@@ -157,16 +157,17 @@ function model_step(current, start, end, span, note) {
     interval = Math.min(end-current,span);
     newCurrent = current+interval;
     newRemain = end-newCurrent;
+    execParms = {"base":fileBase,  "act":"ExecuteMulti", "runlength":interval*timeUnit, 
+	     "current":current*timeUnit, "step":$("#ts").val()*timeUnit,
+	     "method":pipeBits.intMethod, "log":log*timeUnit, "note":note};
+// console.log(JSON.stringify(execParms));
     $.ajax({
       type: "POST",
       url: "model_action.php",
-      data: {"base":fileBase,  "act":"ExecuteMulti", "runlength":interval*timeUnit, 
-	     "current":current*timeUnit, "step":$("#ts").val()*timeUnit,
-	     "method":pipeBits.intMethod, "log":log*timeUnit, "note":note}
-    })
+      data: execParms})
 
       .done(function(newVals) {
-//	  alert('Data returned ' + newVals);
+// 	console.log('Data returned ' + newVals);
 	block = JSON.parse(newVals);
         for (var timePt in block) {
           update_helpers(timePt/timeUnit, block[timePt]);
@@ -1354,7 +1355,7 @@ window.onunload = function(e) {
 $.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
        function(spew) {
 	   console.log("Socket created: " + spew);
-           populateStructs();
+//           populateStructs();
        });
 
 // Version using INET sockets -- ungainly and insecure
@@ -1368,12 +1369,12 @@ $.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
 //            	populateStructs();
 //});
 //
-//$.post('model_action.php', {"act":"WaitSocket", "base":fileBase}, 
-//            function(port) {
+$.post('model_action.php', {"act":"WaitSocket", "base":fileBase}, 
+            function(port) {
 //            	svrPort = port;
-//                alert("Got socket " + port);
-//            	populateStructs();
-//});
+                alert("Got socket " + port);
+            	populateStructs();
+});
 
 ////////////////////////////////////// PREPARE /////////////////////////////
 var xmlns = 'http://www.w3.org/2000/svg';
