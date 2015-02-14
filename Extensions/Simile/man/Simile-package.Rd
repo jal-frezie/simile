@@ -34,7 +34,7 @@ execution. get.model.time() returns the time at which execution
 finished. Use get.value.array() to get the values from any model
 component as an R array, or get.value.list() to get them as an R list.
 
-This version works with Simile versions 5.94 on.
+This version works with Simile versions 5.97 on.
 }
 \author{
   Simulistics Ltd
@@ -49,16 +49,24 @@ Simile modelling environment: http://simulistics.com
 %% ~~ simple examples of the most important functions ~~
 \donttest{
 % requires Simile installation plus saved executable model so cannot be
-% auto tested
-require("Simile")
-path.to.installation <- tcl("tk_chooseDirectory", "-title",
-"Folder where Simile is installed:")
-use.simile.at(path.to.installation)
+% auto tested. However, it gets tested anyway so use interactive() to
+% substitute dummy versions of the Simile interactions.
 
+require("Simile")
 exec.extn <- as.character(tcl("info","sharedlibextension"))
-path.to.spiro <- tcl("tk_getOpenFile",
-                     "-title", "Compiled binary for Spiro example:",
-                     "-initialfile", paste("spiro",exec.extn,sep=""))
+if (interactive()) {
+  path.to.installation <- tcl("tk_chooseDirectory", "-title",
+  		       "Folder where Simile is installed:")
+
+  path.to.spiro <- tcl("tk_getOpenFile",
+		       "-title", "Compiled binary for Spiro example:",		
+                       "-initialfile", paste("spiro",exec.extn,sep=""))
+} else { 
+  path.to.installation <- "dummy/path"
+  path.to.spiro <- "dummy.dll"
+}
+
+use.simile.at(path.to.installation)
 mHandle <- load.model(path.to.spiro)
 objs <- list.objects(mHandle)
 

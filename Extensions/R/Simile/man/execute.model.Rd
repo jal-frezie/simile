@@ -67,7 +67,7 @@ Jasper Taylor
 % requires Simile installation plus saved executable model so cannot be
 % auto tested
 for (count in 0:1738) {
-  execute.model(instance.handle, count+1, "Euler", count, 0, FALSE)
+  execute.model("dummy_ih", count+1, "Euler", count, 0, FALSE)
 }
 }
 }

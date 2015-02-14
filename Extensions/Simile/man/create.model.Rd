@@ -36,6 +36,6 @@ Jasper Taylor
 \donttest{
 % requires Simile installation plus saved executable model so cannot be
 % auto tested
-instance.handle <- create.model(model.handle)
+instance.handle <- create.model("dummy_mh")
 }
 }

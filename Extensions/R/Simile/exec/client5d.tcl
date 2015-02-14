@@ -63,6 +63,13 @@ proc InteractGUI {nodeId time mode} {
     return 0
 }
 
+# would be provided by Prolog in Simile
+proc InDays {unit} {
+    array set timeLib {second 1.0/86400 minute 1.0/1440 hour 1.0/24 day 1.0 \
+			   unit 1.0 week 7.0 month 365.0/12 year 365.0}
+    return [expr $timeLib($unit)]
+}
+
 # here is the scripting command to do it
 proc ConsultParameterMetafile {instanceHandle fileLocn {targetSubmodel {}}} {
     set mHandle $::modelTypes($instanceHandle)

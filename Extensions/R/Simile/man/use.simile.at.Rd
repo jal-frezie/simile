@@ -16,7 +16,7 @@ use.simile.at(path.to.installation)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{path.to.installation}{
-Absolute or realtive path to top directory of Simile installation
+Absolute or realtive path to top directory of Simile installation, e.g., "c:/Program files/Simile5.97" or "/usr/lib64/Simile-6.3"
   }
 }
 \value{
@@ -36,6 +36,6 @@ Absolute or realtive path to top directory of Simile installation
 \examples{
 \donttest{
 % requires Simile installation so cannot be auto tested
-use.simile.at("c:/Program files/Simile5.9")
+use.simile.at("dummy/path")
 }
 }

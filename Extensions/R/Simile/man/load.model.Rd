@@ -35,7 +35,7 @@ Jasper Taylor}
 \donttest{
 % requires Simile installation plus saved executable model so cannot be
 % auto tested
-model.handle <- load.model("~/My Simile files/Test/Scripting/mytest.dll")
+model.handle <- load.model("dummy.dll")
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

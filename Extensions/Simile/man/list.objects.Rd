@@ -32,7 +32,7 @@ Jasper Taylor
 \donttest{
 % requires Simile installation plus saved executable model so cannot be
 % auto tested
-list.objects(model.handle)
+list.objects("dummy_mh")
 # [1] "/sector"           "/sector/output"    "/sector/flow1"    
 # [4] "/sector/variation"
 }

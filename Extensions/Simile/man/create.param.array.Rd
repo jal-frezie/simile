@@ -39,6 +39,6 @@ Jasper Taylor
 \donttest{
 % requires Simile installation plus saved executable model so cannot be
 % auto tested
-param.handle <- create.param.array(instance.handle, "/submodel1/trees/larch")
+param.handle <- create.param.array("dummy_ih", "/submodel1/trees/larch")
 }
 }

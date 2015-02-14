@@ -42,6 +42,6 @@ Jasper Taylor
 \donttest{
 % requires Simile installation plus saved executable model so cannot be
 % auto tested
-consult.parameter.metafile(instance.handle, "../data/base_vals.spf")
+consult.parameter.metafile("dummy_ih", "../data/base_vals.spf")
 }
 }

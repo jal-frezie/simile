@@ -57,6 +57,6 @@ Jasper Taylor
 \donttest{
 % requires Simile installation plus saved executable model so cannot be
 % auto tested
-reset.model(instance.handle, -2)
+reset.model("dummy_ih", -2)
 }
 }

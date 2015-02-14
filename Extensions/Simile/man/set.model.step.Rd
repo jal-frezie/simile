@@ -43,6 +43,6 @@ Jasper Taylor
 \donttest{
 % requires Simile installation plus saved executable model so cannot be
 % auto tested
-set.model.step(instance.handle, 1, 0.1)
+set.model.step("dummy_ih", 1, 0.1)
 }
 }

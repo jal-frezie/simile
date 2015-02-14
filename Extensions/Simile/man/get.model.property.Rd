@@ -66,11 +66,10 @@ Jasper Taylor
 \donttest{
 % requires Simile installation plus saved executable model so cannot be
 % auto tested
-> get.model.property(model.handle,"/sector/output","Class")
+get.model.property("dummy_mh","/sector/output","Class")
 # [1] "COMPARTMENT"
-> get.model.property(model.handle,"/sector/output","Dims")
+get.model.property("dummy_mh","/sector/output","Dims")
 # [1] 2 5
->
 }
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the

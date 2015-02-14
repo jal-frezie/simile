@@ -44,6 +44,6 @@ Jasper Taylor
 \donttest{
 % requires Simile installation plus saved executable model so cannot be
 % auto tested
-set.model.parameter(param.handle, array(c(4,4,3,4,2,5,5,2,1,5), c(2,5)))
+set.model.parameter("dummy_ph", array(c(4,4,3,4,2,5,5,2,1,5), c(2,5)))
 }
 }

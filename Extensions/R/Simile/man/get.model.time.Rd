@@ -37,6 +37,6 @@ Jasper Taylor
 \donttest{
 % requires Simile installation plus saved executable model so cannot be
 % auto tested
-get.model.time(instance.handle)
+get.model.time("dummy_ih")
 }
 }
