@@ -34,9 +34,5 @@ Jasper Taylor
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \examples{
-\donttest{
-% requires Simile installation plus saved executable model so cannot be
-% auto tested
 get.model.time("dummy_ih")
-}
 }

@@ -33,9 +33,5 @@ Jasper Taylor
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \examples{
-\donttest{
-% requires Simile installation plus saved executable model so cannot be
-% auto tested
 instance.handle <- create.model("dummy_mh")
-}
 }

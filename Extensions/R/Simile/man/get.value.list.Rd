@@ -46,7 +46,6 @@ Jasper Taylor
   \code{\link{get.value.array}}
 }
 \examples{
-\donttest{
 get.value.list("dummy_ih", "/runs/x", "FALSE")
 # [[1]]
 # [1] 40.76668
@@ -59,5 +58,4 @@ get.value.list("dummy_ih", "/runs/x", "FALSE")
 # 
 # [[4]]
 # [1] 29.69413
-}
 }

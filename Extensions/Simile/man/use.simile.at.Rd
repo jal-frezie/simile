@@ -34,8 +34,5 @@ Absolute or realtive path to top directory of Simile installation, e.g., "c:/Pro
   Simulistics Ltd
 }
 \examples{
-\donttest{
-% requires Simile installation so cannot be auto tested
 use.simile.at("dummy/path")
-}
 }

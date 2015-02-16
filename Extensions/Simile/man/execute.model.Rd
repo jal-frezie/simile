@@ -63,11 +63,7 @@ Jasper Taylor
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \examples{
-\donttest{
-% requires Simile installation plus saved executable model so cannot be
-% auto tested
 for (count in 0:1738) {
   execute.model("dummy_ih", count+1, "Euler", count, 0, FALSE)
-}
 }
 }

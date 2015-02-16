@@ -18,9 +18,9 @@ itcl::class similescript::$newHelperClass {
 	variable ::gen3d1::viewVector
 
 	set pi 3.14
-	array set scaleVector [list $winId,xoff 0 $winId,xmag .15 \
-				   $winId,yoff 0 $winId,ymag .15 \
-				   $winId,zoff 0 $winId,zmag .15]
+	array set scaleVector [list $winId,xoff 0 $winId,xmag 150.0 \
+				   $winId,yoff 0 $winId,ymag 150.0 \
+				   $winId,zoff 0 $winId,zmag 150.0]
 	::gen3d1::DefineGrid $winId
 	array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
 				  $winId,cos_angle 1 $winId,cos_elevation 1 \
@@ -84,7 +84,7 @@ itcl::class similescript::$newHelperClass {
 			  {component "end Z positions"} \
 			  {component "width values"} \
 			  {colour colour}}
-		 ellipses {{type "Select new item type"} \
+		 oldellipses {{type "Select new item type"} \
 			  {component "centre X positions"} \
 			  {component "centre Y positions"} \
 			  {component "centre Z positions"} \
@@ -94,6 +94,17 @@ itcl::class similescript::$newHelperClass {
 			  {component "side X positions"} \
 			  {component "side Y positions"} \
 			  {component "side Z positions"} \
+			  {colour outline} \
+			  {colour fill}}
+		 ellipses {{type "Select new item type"} \
+			  {component "centre X positions"} \
+			  {component "centre Y positions"} \
+			  {component "centre Z positions"} \
+			  {component "Major radius"} \
+			  {component "Eccentricity"} \
+			  {component "X rotations"} \
+			  {component "Y rotations"} \
+			  {component "Z rotations"} \
 			  {colour outline} \
 			  {colour fill}}}
 	set template $all_templates($type)
@@ -203,7 +214,7 @@ itcl::class similescript::$newHelperClass {
 			    lappend upper $op
 			}
 		    }
-		} ellipses {
+		} oldellipses {
 		    for {set i 1} {$i<10} {incr i} {
 			array set [lindex {0 cx cy cz tx ty tz sx sy sz} $i] \
 			    [Flatten [lindex [$modelInst GetValue \
@@ -220,6 +231,36 @@ itcl::class similescript::$newHelperClass {
 				    [list $tx($iV) $ty($iV) $tz($iV)] \
 				    [list $sx($iV) $sy($iV) $sz($iV)] 1 \
 				    [lindex $instruct 10] [lindex $instruct 11]]
+			if {$cz($iV) < 0} {
+			    lappend lower $op
+			} else {
+			    lappend upper $op
+			}
+		    }
+		} ellipses {
+		    for {set i 1} {$i<9} {incr i} {
+			array set [lindex {0 cx cy cz mr ec rx ry rz} $i] \
+			    [Flatten [lindex [$modelInst GetValue \
+						  [lindex $instruct $i]] 0]]
+		    }
+		    foreach iV [array names cz] {
+			if {[llength $iV]} {
+			    set id "index: [join $iV ,]"
+			} else {
+			    set id [lindex $instruct 3]
+			}
+			set tx [expr {$cx($iV) + cos($ry($iV))*cos($rz($iV))*$mr($iV)}]
+			set ty [expr {$cy($iV) + cos($ry($iV))*sin($rz($iV))*$mr($iV)}]
+			set tz [expr {$cz($iV) + sin($ry($iV))*$mr($iV)}]
+			set mx [expr {$cx($iV) + (sin($rx($iV))*sin($ry($iV))*cos($rz($iV)) - cos($rx($iV))*sin($rz($iV)))*$mr($iV)/$ec($iV)}]
+			set my [expr {$cy($iV) + (cos($rx($iV))*cos($rz($iV)) + sin($rx($iV))*sin($ry($iV))*sin($rz($iV)))*$mr($iV)/$ec($iV)}]
+			set mz [expr {$cz($iV) + sin($rx($iV))*cos($ry($iV))*$mr($iV)/$ec($iV)}]	
+			# hmm perhaps we would be better off altering the camera angle
+			set op [list ellipse $id \
+				    [list $cx($iV) $cy($iV) $cz($iV)] \
+				    [list $tx $ty $tz] \
+				    [list $mx $my $mz] 1 \
+				    [lindex $instruct 9] [lindex $instruct 10]]
 			if {$cz($iV) < 0} {
 			    lappend lower $op
 			} else {

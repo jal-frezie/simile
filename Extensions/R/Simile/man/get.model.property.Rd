@@ -63,14 +63,10 @@ Jasper Taylor
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \examples{
-\donttest{
-% requires Simile installation plus saved executable model so cannot be
-% auto tested
 get.model.property("dummy_mh","/sector/output","Class")
 # [1] "COMPARTMENT"
 get.model.property("dummy_mh","/sector/output","Dims")
 # [1] 2 5
-}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

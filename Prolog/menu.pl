@@ -1543,7 +1543,7 @@ save_isolated(Name, Part, Date, SelnOnly, MakeCompat) :-
 	/* restart_move will recreate any cross-border links removed by cutout.
 	If exiting, move will have been scrapped after old deletes */
 	restart_move,
-	retract(suspend_display),
+	retract(suspend_display), !, % prevent retry from re-closing progressbox
 	nonvar(Done). /* fails if save failed */
 
 get_default_export_name(Model, Extn, Export) :-

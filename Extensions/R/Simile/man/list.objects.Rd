@@ -29,13 +29,9 @@ Jasper Taylor
 %% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \examples{
-\donttest{
-% requires Simile installation plus saved executable model so cannot be
-% auto tested
 list.objects("dummy_mh")
 # [1] "/sector"           "/sector/output"    "/sector/flow1"    
 # [4] "/sector/variation"
-}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

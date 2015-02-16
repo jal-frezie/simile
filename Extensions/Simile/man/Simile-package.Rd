@@ -47,11 +47,6 @@ Simile modelling environment: http://simulistics.com
 \keyword{ model }
 \examples{
 %% ~~ simple examples of the most important functions ~~
-\donttest{
-% requires Simile installation plus saved executable model so cannot be
-% auto tested. However, it gets tested anyway so use interactive() to
-% substitute dummy versions of the Simile interactions.
-
 require("Simile")
 exec.extn <- as.character(tcl("info","sharedlibextension"))
 if (interactive()) {
@@ -95,9 +90,12 @@ plot(xs, ys, type="l")
 
 # now we are going to parameterize it using a state file for the slider helper
 # -- to make this work we load the mime library, which is needed only because
-# the dancer.spf in Simile v5.94 is an older v4.x format file.
+# the dancer.spf in Simile v5.97 is an older v4.x format file. No need to load 
+# if testing, and will always be available if live because required for Simile.
 
-tcl("package","require","mime")
+if (!is.dummy(iHandle)) {
+   tcl("package","require","mime")
+}
 pFile  <- tcl("file", "join", path.to.installation, "Examples", "dancer.spf")
 consult.parameter.metafile(iHandle, pFile)
 
@@ -124,5 +122,4 @@ print("OK, but that's not how it looks on Simile is it? Try this...")
 xs <- aperm(xs, c(2,1))
 ys <- aperm(ys, c(2,1))
 plot(xs, ys, type="l")
-}
 }
