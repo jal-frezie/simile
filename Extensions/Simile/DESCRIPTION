@@ -1,9 +1,9 @@
 Package: Simile
 Type: Package
 Title: Interact with Simile Models
-Version: 1.3.2
+Version: 1.3.3
 Depends: tcltk
-Date: 2015-02-11
+Date: 2015-02-17
 Author: Simulistics Ltd
 Maintainer: Jasper Taylor <support@simulistics.com>
 Description: Allows a Simile model saved as a compiled binary to be

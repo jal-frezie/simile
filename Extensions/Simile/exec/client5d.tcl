@@ -63,11 +63,14 @@ proc InteractGUI {nodeId time mode} {
     return 0
 }
 
-# would be provided by Prolog in Simile
+# would be provided by Prolog in Simile, with 0 returned for bad defn
 proc InDays {unit} {
-    array set timeLib {second 1.0/86400 minute 1.0/1440 hour 1.0/24 day 1.0 \
-			   unit 1.0 week 7.0 month 365.0/12 year 365.0}
-    return [expr $timeLib($unit)]
+    if [catch {expr [string map {second 1.0/86400 minute 1.0/1440 hour 1.0/24 \
+				     day 1.0 unit 1.0 week 7.0 month 365.0/12 \
+				     year 365.0} $unit]} converted] {
+	return 0
+    }
+    return $converted
 }
 
 # here is the scripting command to do it
@@ -289,7 +292,14 @@ proc DoResetModel {iHandle t0 intMethod depth} {
 proc DoExecuteModel {iHandle intMethod from to errLim pauses} {
     set ::instance_id $iHandle
     set ::model_id $::modelTypes($iHandle)
-    set result [ExecuteModel dummy $intMethod $from $to $errLim $pauses $pauses]
+# now we have the problem that ExecuteModel got a required extra arg for 6.2
+# but we have no access to Simile version (save by trying outdated model!)
+# so do introspection...
+    set execCmd [list ExecuteModel dummy $intMethod $from $to $errLim $pauses]
+    if {[llength [info args ExecuteModel]]==7} {
+	lappend execCmd $pauses
+    }
+    set result [eval $execCmd]
     set ::currentTimes($iHandle) [lindex $result 1]
     return [lindex $result 0]
 }
