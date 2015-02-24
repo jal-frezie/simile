@@ -94,23 +94,53 @@ function addHoverAction(comp) {
   comp.addEventListener("mouseout", hoverOut);
 }
 
+function tclListOfDimty(stuff, n) {
+    if (n==0) {
+	return stuff;
+    }
+    if (!(stuff.constructor === Array)) {
+	return [tclListOfDimty(stuff, n-1)];
+    }
+    var result = [];
+    for (var i=0; i<stuff.length; ++i) {
+	result.push(tclListOfDimty(stuff[i],n-1));
+    }
+    return result;
+}
+
 function addTabFor(tclInst) {
-    convd = tclInst.textContent.trim().replace(/{/g,"[").replace(/}/g,"]")
-	.replace(/ +/g,"\", \"")
-    specArray = JSON.parse("[\""+convd+"\"]");
-    species = tclInst.attributes.type.textContent;
+    convd = tclInst.textContent.replace(/}*\s+{*/g,"\"$&\"")
+	.replace(/{/g,"[").replace(/}/g,"]").replace(/\s+/g,", ")
+    specArray = JSON.parse("["+convd.substr(3,convd.length-6)+"]");
+    species = tclInst.attributes.type.value;
 //    console.log("Helper key "+species+", state "+JSON.stringify(specArray));
 
     switch (species) {
 	case "plotter1_dot_25":
 	new_helper("plot");
-	captPath = specArray[specArray.indexOf("/WIN/,Yvars")+1];
+	captArr = specArray[specArray.indexOf("/WIN/,Yvars")+1];
+	captPath0 = tclListOfDimty(captArr,2)[0].join(" ");
+	console.log("Adding plot of " + captPath0);
 // now boringly find this by iteration
 	for (comp in model_json) {
-	    if (model_json[comp].captpath == captPath) break;
+	    if (model_json[comp].captpath == captPath0) break;
 	}
 	select_for_helper(model_json[comp].id);
 	select_for_helper("time");
+// add more if helper can display multiple plotz
+	break;
+
+	case "tabular11510":
+	new_helper("table");
+	captPaths = tclListOfDimty(specArray[0], 2);
+	for (var i=0; i<captPaths.length; ++i) {
+	    captPath = captPaths[i].join(" ");
+// now boringly find this by iteration
+	    for (comp in model_json) {
+		if (model_json[comp].captpath == captPath) break;
+	    }
+	    select_for_helper(model_json[comp].id);
+	}
 	break;
 
 	default:
