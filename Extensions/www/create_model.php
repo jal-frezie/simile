@@ -107,6 +107,29 @@ switch ($_POST["param_src"]) {
    break;
 }
 
+switch ($_POST["helper_src"]) {
+   case "file":
+   if (is_uploaded_file($_FILES["helpers"]["tmp_name"])) {
+      $allowedExts = array("shf");
+      $extension = pathinfo($_FILES["helpers"]["name"],PATHINFO_EXTENSION);
+      if ($_FILES["helpers"]["size"] > 20000000) { exit('Helper file too big'); }
+      if (! in_array($extension, $allowedExts)) {
+         exit('Bad helpereter file extension: ' . $extension);
+      }
+      if ($_FILES["helpers"]["error"] > 0) {
+         exit('Return code: ' . $_FILES["helpers"]["error"]);
+      }
+      copy($_FILES["helpers"]["tmp_name"], $base . ".shf");
+   } else {
+      exit('No helper setup file supplied!');
+   }
+   break;
+
+   case "url":
+   file_put_contents($base . ".shf", file_get_contents($_POST['helper_link']));
+   break;
+}
+
 // CreateModelExec($base);
 // OK, now set up _POST so I can inline model_action and get the
 // executable...

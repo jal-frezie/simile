@@ -94,6 +94,47 @@ function addHoverAction(comp) {
   comp.addEventListener("mouseout", hoverOut);
 }
 
+function addTabFor(tclInst) {
+    convd = tclInst.textContent.trim().replace(/{/g,"[").replace(/}/g,"]")
+	.replace(/ +/g,"\", \"")
+    specArray = JSON.parse("[\""+convd+"\"]");
+    species = tclInst.attributes.type.textContent;
+    console.log("Helper key "+species+", state "+JSON.stringify(specArray));
+
+    switch (species) {
+	case "plotter1_dot_25":
+	new_helper("plot");
+	captPath = specArray[specArray.indexOf("/WIN/,Yvars")+1];
+// now boringly find this by iteration
+	for (comp in model_json) {
+	    if (model_json[comp].captpath == captPath) break;
+	}
+	select_for_helper(model_json[comp].id);
+	select_for_helper("time");
+	break;
+    }
+}
+
+function createInitialHelpers() {
+// convert Simile XML-style helper setup into a set of tabs on the client
+
+// First get the XML from the server
+    $.ajax({
+	type: "POST",
+	url: "model_action.php",
+	data: { "base":fileBase, "act":"GetXMLHelperSetup"}
+    })
+	.done(function( returnedXML ) {   
+	    parser=new DOMParser();
+	    hlpDoc=parser.parseFromString(returnedXML,"text/xml");
+
+	    tclHelpers = $(hlpDoc).find("container");
+	    for (var i=0; i<tclHelpers.length; ++i) {
+		addTabFor(tclHelpers[i]);
+	    }
+	});
+}
+
 /*
 Zoom now uses d3 sorcery
 function SvgDiagZoom(factor) {
@@ -115,13 +156,13 @@ $.ajax({
       alert(feedback);
       return;
     }
-    resetDepth = 0;
     if (savedStart != null) {
       $("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
 		     -savedStart);
     }
     $("#ct").val(0);
     $( "#progress" ).progressbar({ value: 0 });
+
     $.post('model_action.php', { "base":fileBase, "act":"Report"}, 
 	   function(data) {
 	       values_json = JSON.parse(data);
@@ -131,6 +172,12 @@ $.ajax({
 		   latest[oi[i]] = JSON.parse(values_json[oi[i]]);
 	       }
                update_helpers(0, latest);
+// now, if this is initialization, then now is the time to set up the helpers
+// from the .shf, as they will not be expecting an immediate update
+	       if (resetDepth == -2) {
+		   createInitialHelpers();
+	       }
+	       resetDepth = 0;
 	   });
   });
 }
@@ -1372,7 +1419,7 @@ $.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
 $.post('model_action.php', {"act":"WaitSocket", "base":fileBase}, 
             function(port) {
 //            	svrPort = port;
-                alert("Got socket " + port);
+                console.log("Got socket " + port);
             	populateStructs();
 });
 

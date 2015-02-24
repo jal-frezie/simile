@@ -150,6 +150,13 @@ break;
       fclose($svgStm);
       break;
 
+   case "GetXMLHelperSetup":
+      $helperSet = $_POST['base'] . '.shf';
+      if (file_exists($helperSet)) {
+         echo str_replace("\r", "", file_get_contents($helperSet));
+      }
+      break;
+
    case "Describe":
    case "Report":
       $line1 = doTcl("join [set catalog] .");

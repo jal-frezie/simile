@@ -5,7 +5,7 @@ foreach local {sPath sHome mdl shLib} val $argv {
 
 set env(HOME) $sHome
 lappend auto_path [file join $sPath System lib] ;# ce qui compte...
-source [file join $sPath Extensions Simile exec client5d.tcl]
+source [file join $sPath Extensions R Simile exec client5d.tcl]
 
 
 # Stuff that needs doing only once
