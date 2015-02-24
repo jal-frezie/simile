@@ -4,7 +4,7 @@ var tabs;
 	    $( "#button" ).button();
 	    $( "#radioset" ).buttonset();
 		
-	    tabs = $( "#tabs" ).tabs();
+	    tabs = $( "#tabs" ).tabs({heightstyle:"fill"});
 	    tabs.tabs({
 		activate: function( event, ui ) {
 		    if (ui.newPanel.selector != "#tabs-1") { // diagram
@@ -99,7 +99,7 @@ function addTabFor(tclInst) {
 	.replace(/ +/g,"\", \"")
     specArray = JSON.parse("[\""+convd+"\"]");
     species = tclInst.attributes.type.textContent;
-    console.log("Helper key "+species+", state "+JSON.stringify(specArray));
+//    console.log("Helper key "+species+", state "+JSON.stringify(specArray));
 
     switch (species) {
 	case "plotter1_dot_25":
@@ -112,6 +112,9 @@ function addTabFor(tclInst) {
 	select_for_helper(model_json[comp].id);
 	select_for_helper("time");
 	break;
+
+	default:
+	console.log("Cannot emulate Tcl helper: " + species);
     }
 }
 
@@ -132,212 +135,219 @@ function createInitialHelpers() {
 	    for (var i=0; i<tclHelpers.length; ++i) {
 		addTabFor(tclHelpers[i]);
 	    }
+// resize in case rows of tabs have squeezed panes
+	    resize_notebook();
 	});
 }
 
 /*
-Zoom now uses d3 sorcery
-function SvgDiagZoom(factor) {
+  Zoom now uses d3 sorcery
+  function SvgDiagZoom(factor) {
   ModDiag.setAttribute("width",factor*ModDiag.getAttribute("width"));
   ModDiag.setAttribute("height",factor*ModDiag.getAttribute("height"));
-}
+  }
 */
 var resetDepth = -2, savedStart;
 function model_reset() {
-$.ajax({
-  type: "POST",
-  url: "model_action.php",
-  data: { "base":fileBase, "act":"Reset", "runlength":$("#rl").val()*timeUnit, 
-	  "current":0, "step":$("#ts").val()*timeUnit,
-	  "method":pipeBits.intMethod, "note":resetDepth}
-})
-  .done(function( feedback ) {
-    if (feedback != '1') {
-      alert(feedback);
-      return;
-    }
-    if (savedStart != null) {
-      $("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
-		     -savedStart);
-    }
-    $("#ct").val(0);
-    $( "#progress" ).progressbar({ value: 0 });
+    $.ajax({
+	type: "POST",
+	url: "model_action.php",
+	data: { "base":fileBase, "act":"Reset", "runlength":$("#rl").val()*timeUnit, 
+		"current":0, "step":$("#ts").val()*timeUnit,
+		"method":pipeBits.intMethod, "note":resetDepth}
+    })
+	.done(function( feedback ) {
+	    if (feedback != '1') {
+		alert(feedback);
+		return;
+	    }
+	    if (savedStart != null) {
+		$("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
+			     -savedStart);
+	    }
+	    $("#ct").val(0);
+	    $( "#progress" ).progressbar({ value: 0 });
 
-    $.post('model_action.php', { "base":fileBase, "act":"Report"}, 
-	   function(data) {
-	       values_json = JSON.parse(data);
-	       latest = {}
-	       oi = ofInterest();
-	       for (var i in oi) {
-		   latest[oi[i]] = JSON.parse(values_json[oi[i]]);
-	       }
-               update_helpers(0, latest);
-// now, if this is initialization, then now is the time to set up the helpers
-// from the .shf, as they will not be expecting an immediate update
-	       if (resetDepth == -2) {
-		   createInitialHelpers();
-	       }
-	       resetDepth = 0;
-	   });
-  });
+	    $.post('model_action.php', { "base":fileBase, "act":"Report"}, 
+		   function(data) {
+		       values_json = JSON.parse(data);
+		       latest = {}
+		       oi = ofInterest();
+		       for (var i in oi) {
+			   latest[oi[i]] = JSON.parse(values_json[oi[i]]);
+		       }
+		       update_helpers(0, latest);
+		       // now, if this is initialization, then now is the time to set up the helpers
+		       // from the .shf, as they will not be expecting an immediate update
+		       if (resetDepth == -2) {
+			   createInitialHelpers();
+		       }
+		       resetDepth = 0;
+		   });
+	});
 }
 
 function model_step(current, start, end, span, note) {
-  if (current >= end || savedStart != null) {
-// we are done, reset progress bar and update values
-    $.post('model_action.php', { "base":fileBase, "act":"Report"}, 
-	   function(data) {
-	       values_json = JSON.parse(data);
-	   });
-    goImage = document.getElementById("button_op");
-    goImage.src = "images/play.gif";
-    goImage.parentNode.onclick = function () { model_exec(); };
-    if (current < end) {
-      savedStart = start;
-      return;
-    }
-    newRemain = end - start;
-    newProgress = 0;
-    savedStart = null;
-  } else {
-    log = parseFloat($("#le").val());
-    interval = Math.min(end-current,span);
-    newCurrent = current+interval;
-    newRemain = end-newCurrent;
-    execParms = {"base":fileBase,  "act":"ExecuteMulti", "runlength":interval*timeUnit, 
-	     "current":current*timeUnit, "step":$("#ts").val()*timeUnit,
-	     "method":pipeBits.intMethod, "log":log*timeUnit, "note":note};
-// console.log(JSON.stringify(execParms));
-    $.ajax({
-      type: "POST",
-      url: "model_action.php",
-      data: execParms})
-
-      .done(function(newVals) {
-// 	console.log('Data returned ' + newVals);
-	block = JSON.parse(newVals);
-        for (var timePt in block) {
-          update_helpers(timePt/timeUnit, block[timePt]);
+    if (current >= end || savedStart != null) {
+	// we are done, reset progress bar and update values
+	$.post('model_action.php', { "base":fileBase, "act":"Report"}, 
+	       function(data) {
+		   values_json = JSON.parse(data);
+	       });
+	goImage = document.getElementById("button_op");
+	goImage.src = "images/play.gif";
+	goImage.parentNode.onclick = function () { model_exec(); };
+	if (current < end) {
+	    savedStart = start;
+	    return;
 	}
-        model_step(newCurrent, start, end, span, note);
+	newRemain = end - start;
+	newProgress = 0;
+	savedStart = null;
+    } else {
+	log = parseFloat($("#le").val());
+	interval = Math.min(end-current,span);
+	newCurrent = current+interval;
+	newRemain = end-newCurrent;
+	execParms = {"base":fileBase,  "act":"ExecuteMulti", "runlength":interval*timeUnit, 
+		     "current":current*timeUnit, "step":$("#ts").val()*timeUnit,
+		     "method":pipeBits.intMethod, "log":log*timeUnit, "note":note};
+	// console.log(JSON.stringify(execParms));
+	$.ajax({
+	    type: "POST",
+	    url: "model_action.php",
+	    data: execParms})
+
+	    .done(function(newVals) {
+		// 	console.log('Data returned ' + newVals);
+		block = JSON.parse(newVals);
+		for (var timePt in block) {
+		    update_helpers(timePt/timeUnit, block[timePt]);
+		}
+		model_step(newCurrent, start, end, span, note);
+	    });
+	$("#ct").val(newCurrent);
+	newProgress = 100*(newCurrent-start)/(end-start);
+    }
+    $("#rl").val(newRemain);
+    $( "#progress" ).progressbar({
+	value: newProgress
     });
-    $("#ct").val(newCurrent);
-    newProgress = 100*(newCurrent-start)/(end-start);
-  }
-  $("#rl").val(newRemain);
-  $( "#progress" ).progressbar({
-		     value: newProgress
-  });
 }
 
 function model_pause() {
-  savedStart = -999;
+    savedStart = -999;
 }
 
 function model_exec() {
-  goImage = document.getElementById("button_op");
-  goImage.src = "images/pause.gif";
-  now = parseFloat($("#ct").val());
-  if (savedStart == null) {
-    start = now;
-  } else {
-    start = savedStart;
-    savedStart = null;
-  }
-  goImage.parentNode.onclick = function () { model_pause(); };
+    goImage = document.getElementById("button_op");
+    goImage.src = "images/pause.gif";
+    now = parseFloat($("#ct").val());
+    if (savedStart == null) {
+	start = now;
+    } else {
+	start = savedStart;
+	savedStart = null;
+    }
+    goImage.parentNode.onclick = function () { model_pause(); };
     end = now+parseFloat($("#rl").val());
     span = $("#ue").val()
-//  calibrate_helpers(end);
-  model_step(now, start, end, span, ofInterest().join());
+    //  calibrate_helpers(end);
+    model_step(now, start, end, span, ofInterest().join());
 }
 
 function ofInterest() {
-// list the ids of all the nodes currently being displayed by tools
-  result = [];
-  for (var id in currentHelpers) {
-    if (currentHelpers[id].status == "displaying") {
-      for (j=0; j<currentHelpers[id].tgts.length; j++) {
-        result[currentHelpers[id].tgts[j]] = 1;
-      }
+    // list the ids of all the nodes currently being displayed by tools
+    result = [];
+    for (var id in currentHelpers) {
+	if (currentHelpers[id].status == "displaying") {
+	    for (j=0; j<currentHelpers[id].tgts.length; j++) {
+		result[currentHelpers[id].tgts[j]] = 1;
+	    }
+	}
     }
-  }
-//  return Object.getOwnPropertyNames(result);
-// includes "length" which we don't want
-  rList = [];
-  for (var slot in result) {
-      rList.push(slot);
-  }
-  return rList;
+    //  return Object.getOwnPropertyNames(result);
+    // includes "length" which we don't want
+    rList = [];
+    for (var slot in result) {
+	rList.push(slot);
+    }
+    return rList;
 }
 /*
 // placeholder graph plot
 
 var pgplot_data = {
-  "xScale": "time",
-  "yScale": "linear",
-  "type": "line",
-  "main": [
-    {
-      "className": ".pizza",
-      "data": []
-    }
-  ]
+"xScale": "time",
+"yScale": "linear",
+"type": "line",
+"main": [
+{
+"className": ".pizza",
+"data": []
+}
+]
 };
 var pgplot_opts = {
-  "dataFormatX": function (x) { return d3.time.format('%j').parse(x); },
-  "tickFormatX": function (x) { return d3.time.format('%x')(x); }
+"dataFormatX": function (x) { return d3.time.format('%j').parse(x); },
+"tickFormatX": function (x) { return d3.time.format('%x')(x); }
 };
 */
 // actual addTab function: adds new tab using the input from the form above
 var helperTitles = {"plot":"Plotter","table":"Data table","sliders":"Input sliders","params":"File parameters","shapes":"3-D shape viewer"},
-  tabTemplate = "<li><a href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
-  tabCounter = 2;
+tabTemplate = "<li><a href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
+tabCounter = 2;
 
 function new_tab(label) {
-  id = "tabs-" + tabCounter++,
-  li = $( tabTemplate.replace( /#\{href\}/g, "#" + id ).replace( /#\{label\}/g, label ) ),
-  tabs.find( ".ui-tabs-nav" ).append( li );
-  tabs.append( "<div id='" + id + "'></div>" );
-  tabs.tabs( "refresh" );
-  return(id);
+    id = "tabs-" + tabCounter++,
+    li = $( tabTemplate.replace( /#\{href\}/g, "#" + id ).replace( /#\{label\}/g, label ) ),
+    tabs.find( ".ui-tabs-nav" ).append( li );
+    tabs.append( "<div id='" + id + "'></div>" );
+    tabs.tabs( "refresh" );
+    return(id);
 }
 
 var currentHelpers = {};
 var currentHelper = null;
 function new_helper(type) {
-  var label = helperTitles[type];
-  id = new_tab(label);
-  if (type == "params") {
-    currentHelper = new FileParams(id);
-  } else if (type == "sliders") {
-    currentHelper = new Sliders(id);
-  } else if (type == "table") {
-    currentHelper = new DataTable(id);
-  } else if (type == "shapes") {
-    currentHelper = new Shapes3D(id);
-  } else {
-    currentHelper = new PlotXY(id);
-  }
-  currentHelpers[id] = currentHelper;
-  tabs.tabs("option", "active", tabs.children().length - 2);
+    var label = helperTitles[type];
+    id = new_tab(label);
+    if (type == "params") {
+	currentHelper = new FileParams(id);
+    } else if (type == "sliders") {
+	currentHelper = new Sliders(id);
+    } else if (type == "table") {
+	currentHelper = new DataTable(id);
+    } else if (type == "shapes") {
+	currentHelper = new Shapes3D(id);
+    } else {
+	currentHelper = new PlotXY(id);
+    }
+    currentHelpers[id] = currentHelper;
+    tabs.tabs("option", "active", tabs.children().length - 2);
 }
 
 function update_helpers(time, latest) {
     for (var id in currentHelpers) {
-//	try {
-	    currentHelpers[id].display(time, latest);
-//	}
-//	catch(err) {
-//	    console.log(err);
-//	}
+	//	try {
+	currentHelpers[id].display(time, latest);
+	//	}
+	//	catch(err) {
+	//	    console.log(err);
+	//	}
     }
+}
+
+function notebookPaneHeight() {
+    return $("#tabs").height()-$("#tabs").find("UL").height();
 }
 
 var tooltip_scale;
 function resize_notebook() {
 //    console.log('Window resized');
     var x = parseInt(d3.select('#tabs').style('width'));
-    var y = parseInt(d3.select('#tabs').style('height'));
+    var y = notebookPaneHeight();
+
     ModDiag.setAttribute("width", x-60);
     ModDiag.setAttribute("height",y-60);
 
@@ -536,7 +546,7 @@ DataTable.prototype.acceptClick = function (compId) {
     this.t.fnDestroy();
     this.t.empty();
   }
-    h = parseInt(d3.select('#tabs').style('height'), 10)-2750;
+    h = notebookPaneHeight()-275;
   this.t = $('#' + this.port + "_table").dataTable({"data":this.cumData,
 				       "columns":this.columns,
         "scrollY": h,
@@ -557,7 +567,7 @@ DataTable.prototype.display = function(time, latest) {
     toZap = this.tgts[i];
     newLine[toZap] = JSON.stringify(latest[toZap])
   }
-    h = parseInt(d3.select('#tabs').style('height'), 10)-275;
+    h = notebookPaneHeight()-275;
   this.t = $('#' + this.port + "_table").dataTable({"data":this.cumData,
 				       "columns":this.columns,
 				       "destroy":true,
@@ -607,7 +617,7 @@ function Shapes3D (port) {
 //      w = 800;
       w = parseInt(d3.select('#tabs').style('width'), 10)-50;
 //      h = 800;
-      h = parseInt(d3.select('#tabs').style('height'), 10)-120;
+      h = notebookPaneHeight()-120;
 
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera( 75, w/h, 0.1, 1000 );
@@ -965,7 +975,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 //      w = 800;
       w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
 //      h = 800;
-      h = parseInt(d3.select('#tabs').style('height'), 10)-120;
+      h = notebookPaneHeight()-120;
 
     if (compId == "clear") {
 	delete this.ymin;
