@@ -749,6 +749,7 @@ function ShowMenuButton (that) {
   <ul id='menu2'>\
     <li id='spheres'><a href='javascript:void(0);'>Sphere</a></li>\
     <li id='lines'><a href='javascript:void(0);'>Line</a></li>\
+    <li id='lollipops'><a href='javascript:void(0);'>Lollipop</a></li>\
     <hr>\
     <li id='ellipses'><a href='javascript:void(0);'>Ellipse</a></li>\
   </ul>");
@@ -785,6 +786,10 @@ function AddItem (that, type) {
 				["component","end Z positions"],
 				["component","width values"],
 				["colour","colour"]],
+			"lollipops":[["type","Select new item type"],
+				  ["component","X positions"],
+				  ["component","Y positions"],
+				  ["component","size values"]],
 			"ellipses":[["type","Select new item type"],
 				   ["component","centre X positions"],
 				   ["component","centre Y positions"],
@@ -859,6 +864,8 @@ Shapes3D.prototype.acceptClick = function (compId) {
 }
 
 Shapes3D.prototype.display = function (time, latest) {
+    lolliCount = 0;
+    lolliCols = [0x00ff00, 0xf1da7e, 0x36b694, 0xec9844, 0x94a646, 0xd9d095];
     // now add new ones
     for (j=0; j<this.State.length; ++j) {
 	instruct = this.State[j];
@@ -931,6 +938,41 @@ Shapes3D.prototype.display = function (time, latest) {
 					     defns.fx[iV]-defns.sx[iV]),
 				  -Math.atan2(Math.sqrt(xyExt), defns.fz[iV]-defns.sz[iV]));
 		instruct[9][iV] = line;
+		this.scene.add(line);
+	    }
+	    break;
+	case "lollipops":
+	    // first remove old items
+	    for (var old in instruct[4]) {
+		this.scene.remove(instruct[4][old]);
+	    }
+	    instruct[4] = {};
+
+	    defns = {};
+	    for (i=1;i<4;++i) {
+		defns[["n","x","y","h"][i]] = flatten("p",latest[instruct[i]]);
+	    }
+	    nC = lolliCols[lolliCount++];
+	    var sphereMaterial = new THREE.MeshLambertMaterial( {color: nC} ); 
+	    var sphereGeometry = new THREE.SphereGeometry(1.0, 32, 16 ); 
+	    var lineMaterial = new THREE.MeshLambertMaterial({color: 0x084000});
+	    var lineGeometry = new THREE.CylinderGeometry(0.5,0.5,1.0);
+	    for (iV in defns.h) {
+		if (defns.h[iV] < 1) break;
+		// Sphere parameters: radius, segments along width, segments along height
+	// use a "lambert" material rather than "basic" for realistic lighting.
+		    //   (don't forget to add (at least one) light!)
+		    
+		var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+		sphere.position.set(defns.x[iV], 3*defns.h[iV]/2, defns.y[iV]);
+		sphere.scale.set(defns.h[iV]/2, defns.h[iV]/2, defns.h[iV]/2);
+		instruct[4][iV+"s"] = sphere;
+		this.scene.add(sphere);
+
+		var line = new THREE.Mesh(lineGeometry, lineMaterial);
+		line.position.set(defns.x[iV], defns.h[iV]/2, defns.y[iV]);
+		line.scale.set(2, defns.h[iV], 2);
+		instruct[4][iV+"l"] = line;
 		this.scene.add(line);
 	    }
 	    break;
