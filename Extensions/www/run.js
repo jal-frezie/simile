@@ -143,6 +143,22 @@ function addTabFor(tclInst) {
 	}
 	break;
 
+	case "gen3d1": // lollipops
+	new_helper("shapes");
+	var i=3;
+	while (specArray[i] != "/annotation/") {
+	    AddItem(currentHelper, "lollipops");
+	    for (parm in {"x":0,"y":0,"h":0}) {
+		captPath = tclListOfDimty(specArray[i++],1).join(" ");
+		for (comp in model_json) {
+		    if (model_json[comp].captpath == captPath) break;
+		}
+		currentHelper.acceptClick(comp);
+	    }
+	    
+	}
+	break;
+
 	default:
 	console.log("Cannot emulate Tcl helper: " + species);
     }
@@ -685,12 +701,12 @@ function Shapes3D (port) {
 	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping; 
 	floorTexture.repeat.set( 10, 10 );
 	// DoubleSide: render texture on both sides of mesh
-    var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide, opacity: 0.75 } );
-	var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 1, 1);
-	var floor = new THREE.Mesh(floorGeometry, floorMaterial);
-	floor.position.y = -0.5;
-	floor.rotation.x = Math.PI / 2;
-	scene.add(floor);
+//    var floorMaterial = new THREE.MeshBasicMaterial( { map: floorTexture, side: THREE.DoubleSide, opacity: 0.75 } );
+//	var floorGeometry = new THREE.PlaneGeometry(1000, 1000, 1, 1);
+//	var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+//	floor.position.y = -0.5;
+//	floor.rotation.x = Math.PI / 2;
+//	scene.add(floor);
 
     // test some new shapes!
 
@@ -700,32 +716,25 @@ function Shapes3D (port) {
 						opacity: 0.8} );
     var cylinder = new THREE.Mesh( geometry, material );
     cylinder.rotation.set(1,0,1);
-//     scene.add( cylinder );
+//    scene.add( cylinder );
     
-    var circleGeom = new THREE.CircleGeometry(50,24);
-    var circleMat = new THREE.MeshBasicMaterial( {color : 0x0000ff, 
-						transparent: true,
-						opacity: 0.5});
-    var circleBack = new THREE.MeshBasicMaterial( {color : 0xffff00, 
-						transparent: true,
-						opacity: 0.5});
-    var circleL = new THREE.MeshBasicMaterial( {color : 0xff0000, 
-						transparent: true,
-						opacity: 0.5});
-    var circleR = new THREE.MeshBasicMaterial( {color : 0x00ff00,
-						transparent: true,
-						opacity: 0.5});
-    var circle = new THREE.Mesh(circleGeom, circleMat);
-    scene.add(circle);
-    var cback = new THREE.Mesh(circleGeom, circleBack);
-    cback.rotation.y = 3.14;
-    scene.add(cback);
-    var circl = new THREE.Mesh(circleGeom, circleL);
-    circl.rotation.y = -1.57;
-    scene.add(circl);
-    var cir = new THREE.Mesh(circleGeom, circleR);
-    cir.rotation.y = 1.57;
-    scene.add(cir);
+    var circleGeom = new THREE.CircleGeometry(500,24);
+    var baseCirc = [{"col":0xff0000,"rot":[0,0]},
+		    {"col":0x00ffff,"rot":[0,3.14]},
+		    {"col":0x00ff00,"rot":[0,1.57]},
+		    {"col":0xff00ff,"rot":[0,-1.57]},
+		    {"col":0x0000ff,"rot":[-1.57,0]},
+		    {"col":0xffff00,"rot":[1.57,0]}];
+		    
+    for (var i=0; i<baseCirc.length; ++i) {
+	var circleMat = new THREE.MeshBasicMaterial( {map: floorTexture,
+						      color : baseCirc[i].col, 
+						      transparent: true,
+						      opacity: 0.5});
+	var circle = new THREE.Mesh(circleGeom, circleMat);
+	circle.rotation.set(baseCirc[i].rot[0], baseCirc[i].rot[1], 0);
+	scene.add(circle);
+    }
     
     camera.position.set(0,150,400);
     camera.lookAt(scene.position);	
@@ -874,6 +883,7 @@ Shapes3D.prototype.display = function (time, latest) {
 	    // first remove old items
 	    for (var old in instruct[6]) {
 		this.scene.remove(instruct[6][old]);
+		delete(instruct[6][old]);
 	    }
 	    instruct[6] = {};
 
@@ -900,6 +910,7 @@ Shapes3D.prototype.display = function (time, latest) {
 	case "lines":
 	    for (var old in instruct[9]) {
 		this.scene.remove(instruct[9][old]);
+		delete(instruct[9][old]);
 	    }
 	    instruct[9] = {};
 
@@ -945,6 +956,7 @@ Shapes3D.prototype.display = function (time, latest) {
 	    // first remove old items
 	    for (var old in instruct[4]) {
 		this.scene.remove(instruct[4][old]);
+		delete(instruct[4][old]);
 	    }
 	    instruct[4] = {};
 
@@ -979,6 +991,7 @@ Shapes3D.prototype.display = function (time, latest) {
 	case "ellipses":
 	    for (var old in instruct[11]) {
 		this.scene.remove(instruct[11][old]);
+		delete(instruct[11][old]);
 	    }
 	    instruct[11] = {};
 
