@@ -1686,7 +1686,6 @@ proc OpenProjectFile {path} {
 			     [PrefValue custom(helperManager) helperManager] \
 			     ::RunEnv::LoadSHF CreateView]
             $command $topNode $helperTable($topNode,stateName)
-	    ::RunEnv::PreserveSetup 0
         }
     }
 }

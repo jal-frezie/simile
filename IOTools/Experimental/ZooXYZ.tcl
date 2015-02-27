@@ -105,8 +105,8 @@ itcl::class similescript::$newHelperClass {
 			  {component "X rotations"} \
 			  {component "Y rotations"} \
 			  {component "Z rotations"} \
-			  {colour outline} \
-			  {colour fill}}}
+			  {colour FRONT} \
+			  {colour BACK}}}
 	set template $all_templates($type)
 	MakeSelection $type
     }

@@ -247,7 +247,7 @@ proc DrawShapes {winId solids tag} {
 				   [lindex $object3d 1]]
 	    } ellipse {
 		# format is "ellipse popupTxt centrePt borderPt1 borderPt2
-		# thickness outlineColour fillColour
+		# thickness backColour frontColour
 		set ctr [project $winId [lindex $object3d 2]]
 		set bdr1 [project $winId [lindex $object3d 3]]
 		set bdr2 [project $winId [lindex $object3d 4]]
@@ -257,6 +257,11 @@ proc DrawShapes {winId solids tag} {
 		set t1 [lindex $bdr1 1]
 		set l2 [lindex $bdr2 0]
 		set t2 [lindex $bdr2 1]
+		if {($l1-$cx)*($t2-$cy)>($l2-$cx)*($t1-$cy)} {
+		    set fillColIdx 7
+		} else {
+		    set fillColIdx 6
+		}
 
 		set ptList [list $l1 $t1]
 		for {set roll 1} {$roll<4*$cornerPts} {incr roll} {
@@ -270,8 +275,8 @@ proc DrawShapes {winId solids tag} {
 		lappend ptList $l1 $t1
 		lappend insts [list [concat \
 		$winId.c create poly $ptList -tag $tag \
-		     -width [lindex $object3d 5] -outline [lindex $object3d 6] \
-					 -fill [lindex $object3d 7]] \
+		     -width [lindex $object3d 5] -outline black \
+					 -fill [lindex $object3d $fillColIdx]] \
 				   [lindex $ctr 2] [lindex $object3d 1]]
 			       
  	    } sphere {

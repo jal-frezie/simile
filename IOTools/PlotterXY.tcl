@@ -40,7 +40,7 @@ namespace eval ::$keyValue {
         variable ynodes
         variable xnodes
         
-        LoadTools
+	LoadTools
         InitPlotVars $w
         InitPlatformDependentPlotVars $w
         
@@ -59,6 +59,7 @@ namespace eval ::$keyValue {
     
     proc InitPlotVars {w} {
         global ::graphtools::plot
+	array unset plot $w,*
         set plot($w,nodeCount) 0
         
         set plot($w,xwindow_size) 0

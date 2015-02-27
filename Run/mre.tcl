@@ -1096,20 +1096,22 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 	set pStr [open $oldPath r]
 	set dada [read $pStr]
 	close $pStr
-	if {[string first {<?xml version=} $dada]} { ;# is not 0
-	    LoadOldStyleSHF $currentNode $oldPath
-	    return 0 ;# catch pre-XML .spf before it crashes parser
-	}
 	if {![EmptyDisplays]} {
 	    return
 	}
-	set parseStatus(currentNode) $currentNode
+	if {[string first {<?xml version=} $dada]} { ;# is not 0
+	    LoadOldStyleSHF $currentNode $oldPath
+	} else {
+	    set parseStatus(currentNode) $currentNode
 	
-	if {[catch {$parseStatus(shfParser) parse [DefuseXmlBombs $dada]} \
+	    if {[catch {$parseStatus(shfParser) parse [DefuseXmlBombs $dada]} \
 		 feedback]} {
-	    Query [list xml_parse_fail $::errorInfo [array get parseStatus]] \
-		error shf {} ok
+		Query [list xml_parse_fail $::errorInfo \
+			   [array get parseStatus]] error shf {} ok
+		return
+	    }
 	}
+	PreserveSetup 0
     }
 
     proc StartElement {name attList args} {
@@ -1261,8 +1263,7 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
                     ChildrenFocusParent $winId
                 }
             }
-            $dp0.notebook raise [lindex [$dp0.notebook tabs] 0]
-            
+            $dp0.notebook select [lindex [$dp0.notebook tabs] 0]
         } else  {
 	    Query not_an_shf error execution {} ok
         }

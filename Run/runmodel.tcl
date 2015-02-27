@@ -508,7 +508,6 @@ proc CreateView {node oldPath} {
 	    wm geometry [$inst cget -winId] $geometry
 	}
     }
-    close $stream
 }
 
 proc ReinstateHelper {origVersion oldStatus helperId helperTitle} {
