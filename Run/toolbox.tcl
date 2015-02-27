@@ -110,6 +110,9 @@ if {[string match windows $tcl_platform(platform)]} {
 menu .openrecent -tearoff 0
 
 wm protocol . WM_DELETE_WINDOW {close $plPipe(stream); destroy .}
+# now make CR fire a button that has been selected by tabbing
+bind Button <Return> {%W invoke}
+bind TButton <Return> {%W invoke}
 
 } else { ;# headless
 # still need some display metrics for making SVG

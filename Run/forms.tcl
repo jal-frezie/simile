@@ -2380,7 +2380,8 @@ PutItThere $dlg $options(-parent)
     }
 
     if {$options(-default) ne ""} {
-	bind $dlg <Return> [list $cmd.$options(-default) invoke]
+# global option invokes button with focus
+#	bind $dlg <Return> [list $cmd.$options(-default) invoke]
 	focus $cmd.$options(-default)
     }
     if {$options(-cancel) ne ""} {
@@ -2663,7 +2664,8 @@ proc ExpandQuery {specifics Title errLevel msg context parent opts} {
     pack [button $buttons.bn$defButton -text $defCapt -width 20 \
 	    -default active -command [list set dialogues(ack) [incr ack1]]] \
             -side left -padx 4 -pady 4
-    bind $ProbWin <Return> [list $buttons.bn$defButton invoke]
+# global option invokes button with focus
+#    bind $ProbWin <Return> [list $buttons.bn$defButton invoke]
     foreach extra [lrange $opts 1 end] {
         pack [button $buttons.bn$extra -text $::msgs(${extra}_button) \
 	      -width 20 -command [list set dialogues(ack) [incr ack1]]] \
