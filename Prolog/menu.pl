@@ -84,12 +84,14 @@ set_cursor_for(NewMode) :-
 stick_model_in(Win, Parent, Name, Mode) :-
 	Mode = open_toplevel,
 	(set_model_file(Parent, Name),
-	    is_toplevel(Parent),
+	    /* do not bother setting model name it only causes bother restoring
+            is_toplevel(Parent),
 	    get_default_export_name(Parent, "", DefName),
 	    find_all_comps(Root, Parent),
 	    event'><'list_captions(Root, Toplevels),
 	    add_parameter(Parent, 0, name, DefName),
 	    event'><'retitle_duplicate(Parent, Toplevels),
+            */
 	    fail);
 	use_temp_dir(LocalDir),
 	(event'><'list_captions(Parent, Used), !; true),
@@ -1451,9 +1453,11 @@ do_save(Win, Model, New_name) :-
 	(New_name = seln_only;
 	set_model_file(Model, Name),
 	(is_toplevel(Model), !,
+	    /* do not bother setting model name it only causes bother restoring
 	    get_default_export_name(Model, "", NodeName),
 	    add_parameter(Model, 0, name, NodeName),
-	    /* copy save dir to new path */
+
+	    copy save dir to new path */
 	    abs_path_name(Model, root, NewPoint),
 	    (NewPoint = Point, !;
 	    append_atoms([Dir, '/', NewPoint], NewSaveDir),
