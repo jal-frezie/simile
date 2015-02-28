@@ -262,9 +262,9 @@ break;
             $val = doTcl("GetJsonValuesById [set iH] " . $note[$x]);
 // if ExecuteMulti the time points are outer indices
             if ($_POST['act'] == "Execute") {
-               $hlpArr[$note[$x]][$endInt] = $val;
+               $hlpArr[$note[$x]]["".$endInt] = $val;
 	    } else {
-               $hlpArr[$endInt][$note[$x]] = json_decode($val);
+               $hlpArr["".$endInt][$note[$x]] = json_decode($val);
 	    }
       	 }
       }

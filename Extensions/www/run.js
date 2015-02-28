@@ -108,6 +108,14 @@ function tclListOfDimty(stuff, n) {
     return result;
 }
 
+function idFromCapt (capt) {
+    for (comp in model_json) {
+	if (model_json[comp].captpath == capt) {
+	    return model_json[comp].id;
+	}
+    }
+}
+
 function addTabFor(tclInst) {
     convd = tclInst.textContent.replace(/}*\s+{*/g,"\"$&\"")
 	.replace(/{/g,"[").replace(/}/g,"]").replace(/\s+/g,", ")
@@ -120,12 +128,9 @@ function addTabFor(tclInst) {
 	new_helper("plot");
 	captArr = specArray[specArray.indexOf("/WIN/,Yvars")+1];
 	captPath0 = tclListOfDimty(captArr,2)[0].join(" ");
-	console.log("Adding plot of " + captPath0);
+//	console.log("Adding plot of " + captPath0);
 // now boringly find this by iteration
-	for (comp in model_json) {
-	    if (model_json[comp].captpath == captPath0) break;
-	}
-	select_for_helper(model_json[comp].id);
+	select_for_helper(idFromCapt(captPath0));
 	select_for_helper("time");
 // add more if helper can display multiple plotz
 	break;
@@ -159,6 +164,41 @@ function addTabFor(tclInst) {
 	}
 	break;
 
+	case "slide139":
+	new_helper("sliders");
+	break;
+
+	case "plotterXY1_dot_0":
+	new_helper("plot");
+	captArr = specArray[specArray.indexOf("/WIN/,Yvars")+1];
+	captPath = tclListOfDimty(captArr,1).join(" ");
+//	console.log("Adding plot of " + captPath0);
+// now boringly find this by iteration
+	select_for_helper(idFromCapt(captPath));
+	captArr = specArray[specArray.indexOf("/WIN/,Xvars")+1];
+	captPath = tclListOfDimty(captArr,1).join(" ");
+//	console.log("Adding plot of " + captPath0);
+// now boringly find this by iteration
+	select_for_helper(idFromCapt(captPath));
+	break;
+
+	case "Shapes3D20141208":
+	new_helper("shapes");
+	currentHelper.State = specArray;
+// would be done, but must convert capt paths to node ids
+	for (var i=0; i<specArray.length;++i) {
+	    for (var j=0; j<specArray[i].length;++j) {
+		possCapt = tclListOfDimty(specArray[i][j], 1);
+		if (possCapt[0][0] == "/") { // its a capt path
+		    nodeId = idFromCapt(possCapt.join(" "));
+		    currentHelper.State[i][j] = nodeId;
+		    currentHelper.tgts.push(nodeId);
+		} else if (possCapt[0][0] == "#") { // it's a colour
+		    currentHelper.State[i][j] = possCapt[0].substr(1);
+		}
+	    }
+	}
+	break;
 	default:
 	console.log("Cannot emulate Tcl helper: " + species);
     }
@@ -222,7 +262,7 @@ function model_reset() {
 		       for (var i in oi) {
 			   latest[oi[i]] = JSON.parse(values_json[oi[i]]);
 		       }
-		       update_helpers(0, latest);
+		       update_helpers(0, latest, false);
 		       // now, if this is initialization, then now is the time to set up the helpers
 		       // from the .shf, as they will not be expecting an immediate update
 		       if (resetDepth == -2) {
@@ -266,11 +306,19 @@ function model_step(current, start, end, span, note) {
 
 	    .done(function(newVals) {
 		// 	console.log('Data returned ' + newVals);
-		block = JSON.parse(newVals);
-		for (var timePt in block) {
-		    update_helpers(timePt/timeUnit, block[timePt]);
-		}
+// now, process the values while fetching the next lot
 		model_step(newCurrent, start, end, span, note);
+
+		var execHistory = JSON.parse(newVals);
+		for (var timePt in execHistory) {
+		    var timeVal = parseFloat(timePt)/timeUnit;
+		    console.log("Displaying results for time " + timeVal);
+		    update_helpers(timeVal, execHistory[timePt], true);
+		    // for no very obvious reason the updates are
+		    // happening in the right order (at least with
+		    // positive timesteps) but nothing appears on the
+		    // screen till all are done -- need setTimeout.
+		}
 	    });
 	$("#ct").val(newCurrent);
 	newProgress = 100*(newCurrent-start)/(end-start);
@@ -373,10 +421,10 @@ function new_helper(type) {
     tabs.tabs("option", "active", tabs.children().length - 2);
 }
 
-function update_helpers(time, latest) {
+function update_helpers(time, latest, connect) {
     for (var id in currentHelpers) {
 	//	try {
-	currentHelpers[id].display(time, latest);
+	currentHelpers[id].display(time, latest, connect);
 	//	}
 	//	catch(err) {
 	//	    console.log(err);
@@ -527,7 +575,7 @@ function Sliders (port) {
   }
 }
 
-Sliders.prototype.display = function  (time, latest) {
+Sliders.prototype.display = function  (time, latest, connect) {
 }
 
 function FileParams (port) {
@@ -547,7 +595,7 @@ function FileParams (port) {
   }
 }
 
-FileParams.prototype.display = function  (time, latest) {
+FileParams.prototype.display = function  (time, latest, connect) {
 }
 
 // FileParams.prototype = new DisplayTool(this);
@@ -601,7 +649,7 @@ DataTable.prototype.acceptClick = function (compId) {
         "jQueryUI": true});
 }
 
-DataTable.prototype.display = function(time, latest) {
+DataTable.prototype.display = function(time, latest, connect) {
   if (time in this.timeRowIds) {
     newLine = this.cumData[this.timeRowIds[time]];
   } else {
@@ -656,7 +704,6 @@ function flatten(head,ob) {
 function Shapes3D (port) {
   this.port = port;
     this.tgts = [];
-    this.semantics = [];
     this.State = [];
     this.showing = {};
   this.status = "displaying";
@@ -689,7 +736,7 @@ function Shapes3D (port) {
 	var light = new THREE.PointLight(0xffffff);
 	light.position.set(0,250,0);
 	scene.add(light);
-	var ambientLight = new THREE.AmbientLight(0x111111);
+	var ambientLight = new THREE.AmbientLight(0x404040);
 	scene.add(ambientLight);
 	
 	///////////
@@ -872,7 +919,7 @@ Shapes3D.prototype.acceptClick = function (compId) {
     MakeSelection(this, compId);
 }
 
-Shapes3D.prototype.display = function (time, latest) {
+Shapes3D.prototype.display = function (time, latest, connect) {
     lolliCount = 0;
     lolliCols = [0x00ff00, 0xf1da7e, 0x36b694, 0xec9844, 0x94a646, 0xd9d095];
     // now add new ones
@@ -895,7 +942,7 @@ Shapes3D.prototype.display = function (time, latest) {
 	    var sphereMaterial = new THREE.MeshLambertMaterial( {color: nC} ); 
 	    var sphereGeometry = new THREE.SphereGeometry(1.0, 32, 16 ); 
 	    for (iV in defns.r) {
-		if (defns.r[iV] < 1) break;
+		if (defns.r[iV] < 1) continue;
 		// Sphere parameters: radius, segments along width, segments along height
 	// use a "lambert" material rather than "basic" for realistic lighting.
 		    //   (don't forget to add (at least one) light!)
@@ -922,7 +969,7 @@ Shapes3D.prototype.display = function (time, latest) {
 	    var lineGeometry = new THREE.CylinderGeometry(0.5,0.5,1.0);
 	    var lineMaterial = new THREE.MeshLambertMaterial( {color: nC} );
 	    for (iV in defns.w) {
-		if (defns.w[iV] < 1) break;
+		if (defns.w[iV] < 1) continue;
 
 	/* Old version: used lineGeometry, which lacks width in Windows
 		var lineMaterial = new THREE.LineBasicMaterial(
@@ -970,7 +1017,7 @@ Shapes3D.prototype.display = function (time, latest) {
 	    var lineMaterial = new THREE.MeshLambertMaterial({color: 0x084000});
 	    var lineGeometry = new THREE.CylinderGeometry(0.5,0.5,1.0);
 	    for (iV in defns.h) {
-		if (defns.h[iV] < 1) break;
+		if (defns.h[iV] < 1) continue;
 		// Sphere parameters: radius, segments along width, segments along height
 	// use a "lambert" material rather than "basic" for realistic lighting.
 		    //   (don't forget to add (at least one) light!)
@@ -1006,7 +1053,7 @@ Shapes3D.prototype.display = function (time, latest) {
 	    var circleMat = new THREE.MeshLambertMaterial( {color : fC});
 	    var circleBack = new THREE.MeshLambertMaterial( {color : bC});
 	    for (iV in defns.r) {
-		if (defns.r[iV] < 1) break;
+		if (defns.r[iV] < 1) continue;
 
 		var circle = new THREE.Mesh(circleGeom, circleMat);
 		circle.position.set(defns.cx[iV], defns.cz[iV], defns.cy[iV]);
@@ -1222,7 +1269,7 @@ PlotXY.prototype.resize = function(x,y) {
     this.zfn();
 }
 
-PlotXY.prototype.display = function (time, latest) {
+PlotXY.prototype.display = function (time, latest, connect) {
   if (this.status == "displaying") {
 // OK now how big is it? 
       idxs = [];
@@ -1231,8 +1278,10 @@ PlotXY.prototype.display = function (time, latest) {
       if (this.tgts[1] != undefined) {
 	  newxs = flatten('t', latest[this.tgts[1]]);
 	  for (var hdl in newys) {
-	      idxs.push([{"y":this.oldys[hdl],"x":this.oldxs[hdl]},
-			 {"y":newys[hdl],"x":newxs[hdl]}]);
+	      if (connect && this.oldys[hdl] != undefined) {
+		  idxs.push([{"y":this.oldys[hdl],"x":this.oldxs[hdl]},
+			     {"y":newys[hdl],"x":newxs[hdl]}]);
+	      }
 	      if (this.ymin == undefined) {
 		  this.ymin = this.ymax = newys[hdl];
 		  this.xmin = this.xmax = newxs[hdl];
@@ -1246,8 +1295,10 @@ PlotXY.prototype.display = function (time, latest) {
 	  this.oldxs = newxs;
       } else {
 	  for (var hdl in newys) {
-	      idxs.push([{"y":this.oldys[hdl],"x":this.oldt},
-			 {"y":newys[hdl],"x":time}]);
+	      if (connect && this.oldys[hdl] != undefined) {
+		  idxs.push([{"y":this.oldys[hdl],"x":this.oldt},
+			     {"y":newys[hdl],"x":time}]);
+	      }
 	      oldymin = this.ymin;
 	      if (this.ymin == undefined) {
 		  this.ymin = this.ymax = newys[hdl];
@@ -1267,14 +1318,16 @@ PlotXY.prototype.display = function (time, latest) {
 // now I need to redraw
 	  }
       }
-      newGrp = this.svg.append("g")
-          .attr("class", "step"); // new group for this time step's data
-      newGrp.selectAll(".line") // selects empty set?
-	  .data(idxs)
-	  .enter().append("path")
-	  .attr("class", "trace")
-	  .style("stroke","blue")
-	  .attr("d", this.line);
+      if (connect) {
+	  newGrp = this.svg.append("g")
+              .attr("class", "step"); // new group for this time step's data
+	  newGrp.selectAll(".line") // selects empty set?
+	      .data(idxs)
+	      .enter().append("path")
+	      .attr("class", "trace")
+	      .style("stroke","blue")
+	      .attr("d", this.line);
+      }
       this.oldys = newys;
 
       squeezed = 0;
