@@ -8,28 +8,44 @@ enctype="multipart/form-data">
 <h2>Simile model file</h2>
 Supply a full model file (.sml) or model declarations file (.pl) saved
 by Simile.<br>
-<input type="radio" name="model_src" value="file" checked="checked">Filename:
-<input type="file" name="model"><br>
-<input type="radio" name="model_src" value="url">URL:
-<input type="text" name="model_link">
+<input type="radio" name="model_src" value="file" checked
+     onclick="document.getElementById('model').disabled = false;
+	      document.getElementById('model_link').disabled = true">Filename:
+<input type="file" id="model" name="model" accept=".sml,.pl"><br>
+<input type="radio" name="model_src" value="url"
+     onclick="document.getElementById('model').disabled = true;
+	      document.getElementById('model_link').disabled = false">URL:
+<input type="text" id="model_link" name="model_link" disabled>
 <br>
 <br>
 <h2>Parameter file</h2>
 If necessary, supply a saved parameter file (.spf) for the model. <br>
-<input type="radio" name="param_src" value="none" checked="checked">None<br>
-<input type="radio" name="param_src" value="file">Filename:
-<input type="file" name="params"><br>
-<input type="radio" name="param_src" value="url">URL:
-<input type="text" name="param_link">
+<input type="radio" name="param_src" value="none" checked
+     onclick="document.getElementById('params').disabled = true;
+	      document.getElementById('param_link').disabled = true">None<br>
+<input type="radio" name="param_src" value="file"
+     onclick="document.getElementById('params').disabled = false;
+	      document.getElementById('param_link').disabled = true">Filename:
+<input type="file" id="params" name="params" accept=".spf" disabled><br>
+<input type="radio" name="param_src" value="url"
+     onclick="document.getElementById('params').disabled = true;
+	      document.getElementById('param_link').disabled = false">URL:
+<input type="text" id="param_link" name="param_link" disabled>
 <br>
 <br>
 <h2>Visualization setup</h2>
 If necessary, supply a helper setup file (.shf) for the model. <br>
-<input type="radio" name="helper_src" value="none" checked="checked">None<br>
-<input type="radio" name="helper_src" value="file">Filename:
-<input type="file" name="helpers"><br>
-<input type="radio" name="helper_src" value="url">URL:
-<input type="text" name="helper_link">
+<input type="radio" name="helper_src" value="none" checked
+     onclick="document.getElementById('helpers').disabled = true;
+	      document.getElementById('helper_link').disabled = true">None<br>
+<input type="radio" name="helper_src" value="file"
+     onclick="document.getElementById('helpers').disabled = false;
+	      document.getElementById('helper_link').disabled = true">Filename:
+<input type="file" id="helpers" name="helpers" accept=".shf" disabled><br>
+<input type="radio" name="helper_src" value="url"
+     onclick="document.getElementById('helpers').disabled = true;
+	      document.getElementById('helper_link').disabled = false">URL:
+<input type="text" id="helper_link" name="helper_link" disabled>
 <br>
 
 <input type="submit" name="submit" value="Submit">
