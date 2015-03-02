@@ -31,11 +31,16 @@ if {![info exists window_info]} {
 # are short-circuited during scripting so there is no opportunity to
 # save an altered model (not that scripts can alter them) anyway.
 
-#     rename exit ::renamed::exit
-#     proc exit {} {
-#         catch {prolog tk_kill_everything(_)}
-# 	puts $::errorInfo
-#     }
+# reinstated 2015 because the exit procedure tidies up temporary files
+# (important on a SimiLive website)
+
+     rename exit ::renamed::exit
+     proc exit {} {
+	 if {[catch {prolog tk_kill_everything(_)}]} {
+	     puts $::errorInfo
+	     ::renamed::exit
+	 }
+     }
     
 # This section no longer required, because:
 # (a) ShowMessage is now used only for debugging, not for user interaction -- 

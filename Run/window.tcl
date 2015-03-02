@@ -2629,7 +2629,9 @@ proc KillTransients {winId} {
 }
 
 proc MenuExit {topNode winId} {
-    SafeEqnBarEdit [winfo parent $winId]
+    if (!$::headless) {
+	SafeEqnBarEdit [winfo parent $winId]
+    }
     prolog tk_kill_everything($topNode)
 }
 
