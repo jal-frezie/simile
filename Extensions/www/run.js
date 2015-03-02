@@ -217,7 +217,7 @@ function createInitialHelpers() {
 	    parser=new DOMParser();
 	    hlpDoc=parser.parseFromString(returnedXML,"text/xml");
 	    if ($(hlpDoc).find("parsererror").length > 0) {
-		alert($(hlpDoc));
+		alert("Helper setup file failed to parse as XML");
 		return;
 	    }
 	    tclHelpers = $(hlpDoc).find("container");
@@ -1088,7 +1088,7 @@ Shapes3D.prototype.resize = function (x,y) {
 
 function PlotXY (port) {
   this.port = port;
-  this.tgts = [];
+  this.tgts = [[]];
   this.status = "initializing";
 
 // OK now add the message to the new tab
@@ -1098,7 +1098,7 @@ function PlotXY (port) {
 var xyGlbsForD3 = {};
 PlotXY.prototype.acceptClick = function (compId) {
   if (this.status == "initializing") {
-    this.tgts[0] = compId;
+    this.tgts[0].push(compId);
     this.oldys = flatten('t', JSON.parse(values_json[compId]));
     buttonFn = "select_for_helper('time')";
     $('#' + this.port).html("Click on a component to plot on the X axis, or <button type='button' onclick=" + buttonFn + ">here</button> to plot against time.");
@@ -1153,8 +1153,10 @@ PlotXY.prototype.acceptClick = function (compId) {
 	this.lx.domain([this.xmin,this.xmax]);
 	this.ly.domain([this.ymax,this.ymin]);
 	return
+    } else if (compId == "time") {
+// oldys must become an array as maybe more than one var...
+	this.oldys = [this.oldys]; // works in Chrome...
     }
-
     var x = d3.scale.linear()
 	  .domain([this.xmin,this.xmax])
 	  .range([ngap, w+ngap]);
@@ -1185,7 +1187,13 @@ PlotXY.prototype.acceptClick = function (compId) {
     buttonFn = "select_for_helper('clear')";
     $('#' + this.port).html("<div id='Buttonbar'><button onclick=" + buttonFn
 			    + "><img src='images/new.gif'/></button></div>");
-    $('#tabs a[href=#' + this.port + ']').text("Plot of " + model_json[this.tgts[0]].captpath + " against " + xAxisName);
+    if (compId == "time") {
+	buttonFn = "select_for_helper('add')";
+	$('#' + this.port).find('#Buttonbar')
+	    .append("<button onclick=" + buttonFn
+		    + "><img src='images/add.gif'/></button>");
+    }
+    $('#tabs a[href=#' + this.port + ']').text("Plot of " + model_json[this.tgts[0][0]].captpath + " against " + xAxisName);
     this.svg = d3.select('#' + this.port).append("svg")
       .attr("width",w+ngap).attr("height",h+ngap);
     var xAxisGroup = this.svg.append("g")
@@ -1276,9 +1284,9 @@ PlotXY.prototype.display = function (time, latest, connect) {
   if (this.status == "displaying") {
 // OK now how big is it? 
       idxs = [];
-      newys = flatten('t', latest[this.tgts[0]]);
 // console.log(" data is " + JSON.stringify(latest[this.tgts[0]]) + " flat " + JSON.stringify(newys));
       if (this.tgts[1] != undefined) {
+	  newys = flatten('t', latest[this.tgts[0][0]]);
 	  newxs = flatten('t', latest[this.tgts[1]]);
 	  for (var hdl in newys) {
 	      if (connect && this.oldys[hdl] != undefined) {
@@ -1295,21 +1303,26 @@ PlotXY.prototype.display = function (time, latest, connect) {
 		  this.xmax = Math.max(this.xmax,newxs[hdl]);
 	      }
 	  }
+	  this.oldys = newys;
 	  this.oldxs = newxs;
       } else {
-	  for (var hdl in newys) {
-	      if (connect && this.oldys[hdl] != undefined) {
-		  idxs.push([{"y":this.oldys[hdl],"x":this.oldt},
+	  for (var i=0; i<this.tgts[0].length; ++i) {
+	      newys = flatten('t', latest[this.tgts[0][i]]);
+	      for (var hdl in newys) {
+		  if (connect && this.oldys[i][hdl] != undefined) {
+		  idxs.push([{"y":this.oldys[i][hdl],"x":this.oldt},
 			     {"y":newys[hdl],"x":time}]);
-	      }
-	      oldymin = this.ymin;
-	      if (this.ymin == undefined) {
-		  this.ymin = this.ymax = newys[hdl];
-	      } else {
-		  this.ymin = Math.min(this.ymin,newys[hdl]);
-		  this.ymax = Math.max(this.ymax,newys[hdl]);
-	      }
+		  }
+		  oldymin = this.ymin;
+		  if (this.ymin == undefined) {
+		      this.ymin = this.ymax = newys[hdl];
+		  } else {
+		      this.ymin = Math.min(this.ymin,newys[hdl]);
+		      this.ymax = Math.max(this.ymax,newys[hdl]);
+		  }
 // console.log("ymin was " + oldymin + " checked " + newys[hdl] + " is " + this.ymin);
+	      }
+	      this.oldys[i] = newys;
 	  }
 	  this.oldt = parseFloat(time);
 	  if (this.oldt<this.xmin) {
@@ -1331,7 +1344,6 @@ PlotXY.prototype.display = function (time, latest, connect) {
 	      .style("stroke","blue")
 	      .attr("d", this.line);
       }
-      this.oldys = newys;
 
       squeezed = 0;
       XMinMax = this.lx.domain();
