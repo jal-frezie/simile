@@ -36,10 +36,9 @@ if {![info exists window_info]} {
 
      rename exit ::renamed::exit
      proc exit {} {
-	 if {[catch {prolog tk_kill_everything(_)}]} {
-	     puts $::errorInfo
-	     ::renamed::exit
-	 }
+	 catch {prolog tk_kill_everything(_)}
+	 # puts $::errorInfo
+	 ::renamed::exit ;# just to make sure
      }
     
 # This section no longer required, because:
