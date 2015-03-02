@@ -216,7 +216,10 @@ function createInitialHelpers() {
 	.done(function( returnedXML ) {   
 	    parser=new DOMParser();
 	    hlpDoc=parser.parseFromString(returnedXML,"text/xml");
-
+	    if ($(hlpDoc).find("parsererror").length > 0) {
+		alert($(hlpDoc));
+		return;
+	    }
 	    tclHelpers = $(hlpDoc).find("container");
 	    for (var i=0; i<tclHelpers.length; ++i) {
 		addTabFor(tclHelpers[i]);
