@@ -1459,7 +1459,7 @@ do_save(Win, Model, New_name) :-
 
 	    copy save dir to new path */
 	    abs_path_name(Model, root, NewPoint),
-	    (NewPoint = Point, !;
+	    (NewPoint = Point, !; % will be if we do not change name
 	    append_atoms([Dir, '/', NewPoint], NewSaveDir),
 		output'><'safe_tcl_eval(['file rename -force',
 					 br(SaveDir), br(NewSaveDir)], _));

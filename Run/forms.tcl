@@ -2481,7 +2481,9 @@ proc Query {specifics icon helpRef parent opts} {
 # ...unless it's an error, in which case, throw and stop script.
 	if {$icon eq "error" && \
 		[lsearch {unhandled_tcl_error too_much_data} $key]==-1} {
-	    error [list slip-up $specifics]
+	    error [list slip-up \
+		       [lindex $mBoxCmd [expr [lsearch $mBoxCmd -message]+1]]]
+
 	} else {
 	    puts $specifics
 	    return $defButton
