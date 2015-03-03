@@ -764,7 +764,7 @@ store_term( Term, Stream, Parent, Bindings, AllBindings, Rest ) :-
 
 read_skipping_junk(Stream, Term) :-
 	catch(read(Stream, Term), Spew,
-	      (query(declaration_misparse(Spew), info, top, [abort], more),
+	      (query(declaration_misparse(Spew), error, top, [abort], more),
 		  read_skipping_junk(Stream, Term))).
 
 % deal_with_rest does the same thing, but with a list of leftovers
