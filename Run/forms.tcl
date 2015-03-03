@@ -2457,6 +2457,9 @@ proc Query {specifics icon helpRef parent opts} {
 	    if {![string equal full $txtBit]} {
 		lappend mBoxCmd -$txtBit [set $txtBit]
 	    }
+	    if {$icon eq "error"} {
+		append txtNotes " *** " [set $txtBit]
+	    }
 	}
     }
     if {![info exists title]} {
@@ -2481,9 +2484,7 @@ proc Query {specifics icon helpRef parent opts} {
 # ...unless it's an error, in which case, throw and stop script.
 	if {$icon eq "error" && \
 		[lsearch {unhandled_tcl_error too_much_data} $key]==-1} {
-	    error [list slip-up \
-		       [lindex $mBoxCmd [expr [lsearch $mBoxCmd -message]+1]]]
-
+	    error [list slip-up $txtNotes]
 	} else {
 	    puts $specifics
 	    return $defButton
