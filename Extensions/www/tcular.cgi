@@ -2,7 +2,7 @@
 foreach local {sPath sHome mdl shLib} val $argv {
     set $local $val
 }
-puts "Here [pwd] args $argv<br>"
+# puts "Here [pwd] args $argv<br>"
 exec echo {} > /tmp/error-output.txt
 lappend auto_path [file join $sPath System lib]
 if {![file exists [file join $sHome .simile userinfo.txt]]} {
@@ -13,7 +13,7 @@ if {![file exists [file join $sHome .simile userinfo.txt]]} {
 set env(HOME) $sHome
 catch {file delete [file join $sHome $shLib]}
 catch {file delete [file join $sHome .simile Desktop1.smx]}
-puts $auto_path<br>
+# puts $auto_path<br>
 if {[catch {
     package require SimileAutoObj
 
@@ -35,6 +35,6 @@ if {[catch {
 	puts -nonewline {{ "execTime": "100.0", "timeUnit": "unit", "displayInt": "1", "intMethod": "Euler", "phaseList": "0.1" }}
     }
 }]} {
-    puts $errorInfo
+#    puts $errorInfo
 }
 exit
