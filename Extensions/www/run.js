@@ -213,7 +213,8 @@ function createInitialHelpers() {
 	url: "model_action.php",
 	data: { "base":fileBase, "act":"GetXMLHelperSetup"}
     })
-	.done(function( returnedXML ) {   
+	.done(function( returnedXML ) {
+	    if (returnedXML == '') return;
 	    parser=new DOMParser();
 	    hlpDoc=parser.parseFromString(returnedXML,"text/xml");
 	    if ($(hlpDoc).find("parsererror").length > 0) {
@@ -887,7 +888,7 @@ function MakeSelection (that, selected) {
 	    nItm = that.newComps[j]
 	    newData[nItm] = JSON.parse(values_json[nItm]);
 	}
-	that.display(parseFloat($("#ct").val()),newData),
+	that.display(parseFloat($("#ct").val()),newData,false),
 	that.State = oldState;
 	that.State.push(that.template);
 	ShowMenuButton(that);
@@ -1088,8 +1089,10 @@ Shapes3D.prototype.resize = function (x,y) {
 
 function PlotXY (port) {
   this.port = port;
-  this.tgts = [[]];
+  this.tgts = [];
+  this.yvals = [];
   this.oldys = [];
+    this.nrun = 0;
   this.status = "initializing";
 
 // OK now add the message to the new tab
@@ -1099,7 +1102,8 @@ function PlotXY (port) {
 var xyGlbsForD3 = {};
 PlotXY.prototype.acceptClick = function (compId) {
   if (this.status == "initializing") {
-    this.tgts[0].push(compId);
+    this.tgts.push(compId);
+    this.yvals.push(compId);
     addys = flatten('t', JSON.parse(values_json[compId]));
     buttonFn = "select_for_helper('time')";
     $('#' + this.port).html("Click on a component to plot on the X axis, or <button type='button' onclick=" + buttonFn + ">here</button> to plot against time.");
@@ -1123,26 +1127,30 @@ PlotXY.prototype.acceptClick = function (compId) {
 	grps = this.svg.selectAll(".step");
 	grps.selectAll(".trace").remove();
 	grps.remove();
+	this.nrun = 0;
     } else if (compId == "time") {
 	this.oldt = parseFloat($("#ct").val());
-	xAxisName = "time";
+	this.xval = 'time';
+	xAxisName = 'time';
     } else if (this.status == "adding") {
 	$('#' + this.port).find('#instruct').html(''); // delete message
-	this.tgts[0].push(compId);
+	this.tgts.push(compId);
+	this.yvals.push(compId);
 	addys = flatten('t', JSON.parse(values_json[compId]));
     } else {
-	this.tgts[1] = compId;
+	this.tgts.push(compId);
+	this.xval = compId;
 	this.oldxs = flatten('t', JSON.parse(values_json[compId]));
 	xAxisName = model_json[compId].captpath;
     }
       
-      if (this.tgts[1] == undefined && this.status != "adding") { 
+      if (this.xval == 'time' && this.status != "adding") { 
 // initialize bounds, x axis is time
 	this.xmin = this.oldt;
 	this.xmax = this.oldt + parseFloat($("#rl").val());
       }
       for (var hdl in addys) {
-	if (this.tgts[1] != undefined) {
+	if (this.xval != 'time') {
 	    if (this.xmin == undefined || this.oldxs[hdl] < this.xmin) {
 		this.xmin = this.oldxs[hdl];
             }
@@ -1162,7 +1170,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	this.lx.domain([this.xmin,this.xmax]);
 	this.ly.domain([this.ymax,this.ymin]);
 	return
-    } else if (this.tgts[1] == undefined) { // x axis is time
+    } else if (this.xval == 'time') { // x axis is time
 // oldys must become an array as maybe more than one var...
 	this.oldys.push(addys);
 	if (this.status == "adding") {
@@ -1211,7 +1219,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	    .append("<button onclick=" + buttonFn
 		    + "><img src='images/add.gif'/></button><div id='instruct'></div>");
     }
-    $('#tabs a[href=#' + this.port + ']').text("Plot of " + model_json[this.tgts[0][0]].captpath + " against " + xAxisName);
+    $('#tabs a[href=#' + this.port + ']').text("Plot of " + model_json[this.tgts[0]].captpath + " against " + xAxisName);
     this.svg = d3.select('#' + this.port).append("svg")
       .attr("width",w+ngap).attr("height",h+ngap);
     var xAxisGroup = this.svg.append("g")
@@ -1301,14 +1309,14 @@ PlotXY.prototype.resize = function(x,y) {
 PlotXY.prototype.display = function (time, latest, connect) {
   if (this.status == "displaying") {
 // OK now how big is it? 
-      idxs = [];
+      idxs = [[]];
 // console.log(" data is " + JSON.stringify(latest[this.tgts[0]]) + " flat " + JSON.stringify(newys));
-      if (this.tgts[1] != undefined) {
-	  newys = flatten('t', latest[this.tgts[0][0]]);
-	  newxs = flatten('t', latest[this.tgts[1]]);
+      if (this.xval != 'time') {
+	  newys = flatten('t', latest[this.yvals[0]]);
+	  newxs = flatten('t', latest[this.xval]);
 	  for (var hdl in newys) {
 	      if (connect && this.oldys[hdl] != undefined) {
-		  idxs.push([{"y":this.oldys[hdl],"x":this.oldxs[hdl]},
+		  idxs[0].push([{"y":this.oldys[hdl],"x":this.oldxs[hdl]},
 			     {"y":newys[hdl],"x":newxs[hdl]}]);
 	      }
 	      if (this.ymin == undefined) {
@@ -1324,11 +1332,12 @@ PlotXY.prototype.display = function (time, latest, connect) {
 	  this.oldys = newys;
 	  this.oldxs = newxs;
       } else {
-	  for (var i=0; i<this.tgts[0].length; ++i) {
-	      newys = flatten('t', latest[this.tgts[0][i]]);
+	  for (var i=0; i<this.yvals.length; ++i) {
+	      idxs[i] = [];
+	      newys = flatten('t', latest[this.yvals[i]]);
 	      for (var hdl in newys) {
 		  if (connect && this.oldys[i][hdl] != undefined) {
-		  idxs.push([{"y":this.oldys[i][hdl],"x":this.oldt},
+		  idxs[i].push([{"y":this.oldys[i][hdl],"x":this.oldt},
 			     {"y":newys[hdl],"x":time}]);
 		  }
 		  oldymin = this.ymin;
@@ -1353,14 +1362,19 @@ PlotXY.prototype.display = function (time, latest, connect) {
 	  }
       }
       if (connect) {
+	  for (i=0; i<idxs.length; ++i) {
+	  var col = "blue orange green brown purple red black DeepSkyBlue HotPink ForestGreen".split(" ")[this.nrun+i];
 	  newGrp = this.svg.append("g")
               .attr("class", "step"); // new group for this time step's data
 	  newGrp.selectAll(".line") // selects empty set?
-	      .data(idxs)
+	      .data(idxs[i])
 	      .enter().append("path")
 	      .attr("class", "trace")
-	      .style("stroke","blue")
+	      .style("stroke",col)
 	      .attr("d", this.line);
+	  }
+      } else {
+	  this.nrun += this.yvals.length;
       }
 
       squeezed = 0;
