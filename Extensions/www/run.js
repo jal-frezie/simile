@@ -1089,6 +1089,7 @@ Shapes3D.prototype.resize = function (x,y) {
 function PlotXY (port) {
   this.port = port;
   this.tgts = [[]];
+  this.oldys = [];
   this.status = "initializing";
 
 // OK now add the message to the new tab
@@ -1099,13 +1100,15 @@ var xyGlbsForD3 = {};
 PlotXY.prototype.acceptClick = function (compId) {
   if (this.status == "initializing") {
     this.tgts[0].push(compId);
-    this.oldys = flatten('t', JSON.parse(values_json[compId]));
+    addys = flatten('t', JSON.parse(values_json[compId]));
     buttonFn = "select_for_helper('time')";
     $('#' + this.port).html("Click on a component to plot on the X axis, or <button type='button' onclick=" + buttonFn + ">here</button> to plot against time.");
     this.status = "getting_x";
+  } else if (compId == "add") {
+      $('#' + this.port).find('#instruct')
+	    .html("Click on a component to plot on the Y axis.");
+      this.status = "adding";
   } else {
-      this.status = "displaying";
-      
       ngap = 40;
 //      w = 800;
       w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
@@ -1123,16 +1126,22 @@ PlotXY.prototype.acceptClick = function (compId) {
     } else if (compId == "time") {
 	this.oldt = parseFloat($("#ct").val());
 	xAxisName = "time";
+    } else if (this.status == "adding") {
+	$('#' + this.port).find('#instruct').html(''); // delete message
+	this.tgts[0].push(compId);
+	addys = flatten('t', JSON.parse(values_json[compId]));
     } else {
 	this.tgts[1] = compId;
 	this.oldxs = flatten('t', JSON.parse(values_json[compId]));
 	xAxisName = model_json[compId].captpath;
     }
-      if (this.tgts[1] == undefined) { // x axis is time
+      
+      if (this.tgts[1] == undefined && this.status != "adding") { 
+// initialize bounds, x axis is time
 	this.xmin = this.oldt;
 	this.xmax = this.oldt + parseFloat($("#rl").val());
       }
-      for (var hdl in this.oldys) {
+      for (var hdl in addys) {
 	if (this.tgts[1] != undefined) {
 	    if (this.xmin == undefined || this.oldxs[hdl] < this.xmin) {
 		this.xmin = this.oldxs[hdl];
@@ -1141,11 +1150,11 @@ PlotXY.prototype.acceptClick = function (compId) {
 		this.xmax = this.oldxs[hdl];
 	    }
 	}
-	if (this.ymin == undefined || this.oldys[hdl] < this.ymin) {
-	    this.ymin = this.oldys[hdl];
+	if (this.ymin == undefined || addys[hdl] < this.ymin) {
+	    this.ymin = addys[hdl];
         }
-	if (this.ymax == undefined || this.oldys[hdl] > this.ymax) {
-	    this.ymax = this.oldys[hdl];
+	if (this.ymax == undefined || addys[hdl] > this.ymax) {
+	    this.ymax = addys[hdl];
 	}
     }
 // rest is initialization so if only clearing, we are done
@@ -1153,10 +1162,19 @@ PlotXY.prototype.acceptClick = function (compId) {
 	this.lx.domain([this.xmin,this.xmax]);
 	this.ly.domain([this.ymax,this.ymin]);
 	return
-    } else if (compId == "time") {
+    } else if (this.tgts[1] == undefined) { // x axis is time
 // oldys must become an array as maybe more than one var...
-	this.oldys = [this.oldys]; // works in Chrome...
+	this.oldys.push(addys);
+	if (this.status == "adding") {
+	    this.status = "displaying";
+// adjust y axis for range of new addition, then we are done
+	    this.ly.domain([this.ymax,this.ymin]);
+	    return;
+	}
+    } else {
+	this.oldys = addys;
     }
+      this.status = "displaying";
     var x = d3.scale.linear()
 	  .domain([this.xmin,this.xmax])
 	  .range([ngap, w+ngap]);
@@ -1191,7 +1209,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	buttonFn = "select_for_helper('add')";
 	$('#' + this.port).find('#Buttonbar')
 	    .append("<button onclick=" + buttonFn
-		    + "><img src='images/add.gif'/></button>");
+		    + "><img src='images/add.gif'/></button><div id='instruct'></div>");
     }
     $('#tabs a[href=#' + this.port + ']').text("Plot of " + model_json[this.tgts[0][0]].captpath + " against " + xAxisName);
     this.svg = d3.select('#' + this.port).append("svg")
