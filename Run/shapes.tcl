@@ -219,12 +219,12 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set stackDepth 0
     while {$stackDepth < $stack} {
         set stackDistance [expr $stackDepth*$width*2]
-        set stackSide [eval {$w create line $h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
+        set stackSide [eval {$w create line} [ShiftAll $stackDistance \
+		$h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
                 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 \
-                $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10} $generic]
+	        $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10] $generic]
          if {$stackDepth} {
             $w lower $stackSide $p1
-            $w move $stackSide $stackDistance $stackDistance
             set p1 $stackSide
         }
         incr stackDepth
