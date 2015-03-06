@@ -487,6 +487,7 @@ install:
 		IOTools/polygon_layer.tcl \
 		IOTools/photo_layer.tcl \
 		IOTools/animals.tcl \
+		IOTools/ZooXYZ.tcl \
 		IOTools/Standard\ tools/Control.tcl \
 		IOTools/Standard\ tools/Sketch.tcl \
 		IOTools/Standard\ tools/Slider.tcl \

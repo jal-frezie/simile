@@ -2252,7 +2252,8 @@ proc RecordPathChoice {fileType chosenFile context} {
     set tgtDir [file dirname $chosenFile]
     if {[string equal $simtmpdir $tgtDir]} return ;# preselected
     if {[string equal .sml $fileType]} { ;# we are opening a model file
-	set custom(hotlist) [linsert $custom(hotlist) 0 $chosenFile]
+	set custom(hotlist) [linsert $custom(hotlist) 0 \
+				 [file normalize $chosenFile]]
 	array unset chosenPaths *,$context
     }
     set chosenPaths($fileType,$context) \
