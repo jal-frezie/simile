@@ -4,7 +4,7 @@
 *** being the starting point.                                              ****
 ******************************************************************************/
 
-sicstus_module( compile, [compile/3] ).
+sicstus_module( compile, [compile/4] ).
 
 sicstus_use_module( [library(ordsets),library(lists),
 		sp_only,instance,inters,language,render,m_class,utility,output,
@@ -22,7 +22,7 @@ sicstus_use_module( [library(ordsets),library(lists),
 
 :- dynamic(error_free/1).
 
-compile( Language, Parent, DestDir) :-
+compile( Language, Parent, DestDir, Action) :-
 /*	tk_scrub_run(Parent, 0),
 	(Language = tcl, !,
 	    unseparate(SeparateNodes);
@@ -32,8 +32,8 @@ compile( Language, Parent, DestDir) :-
 	submodel containing the destination whenever a link is added or
 	deleted so only to do these checks when needed */
 	asserta(error_free(build)),
-	catch(build_instances(Language, DestDir, Parent, Parent, 1, _,_,_,_),
-	      Err, 
+	catch(build_instances(Language, DestDir, Parent, Parent, 1, 
+			      _,_,_,_, Action), Err, 
 	      (Err = aborted, !; % no further message needed
 		  retractall(error_free(build)),
 % It really as the wrong thing to do to have the help reference as an
@@ -92,7 +92,8 @@ heirarchy of submodels, although this is no longer used as of v5.0. It
 may return one day... */
 
 build_instances(Language, DestDir, Parent, TopNode,
-		Step, ChangeNext, LocalFnsUsed, LocalExtLibs, KeepParents) :-
+		Step, ChangeNext, LocalFnsUsed, LocalExtLibs, 
+		KeepParents, Action) :-
 	caption_for(Parent, Name),
 	append_atoms([DestDir, '/', Name], CheckDir),
 	time_step_for(Parent, Step, MyStep),
@@ -120,7 +121,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 	    LocalExtLibs = [];
 	LocalFnsUsed = FnsUsed,
 	    LocalExtLibs = ExtLibs),
-
+% what follows should be separate fn
 	(( %Parent has_class_refinement separate of 1;
 	  error_free(build),
 	   backup'><'is_toplevel(Parent)), !,
@@ -144,6 +145,8 @@ build_instances(Language, DestDir, Parent, TopNode,
 
 	    (\+ ChangeTop == 1, % no change to model; reuse executable?
 		Stat = 0,
+		safe_tcl_eval(['ReuseShareLib', br(WCheckDir), Language, 
+			       OldTgt], "1"), % succeeds if old sharelib found
 		Tgt = OldTgt;
 	    
 		(\+ ChangeTop == 1, % no change to model; reuse source?
@@ -171,6 +174,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 		dialogue'><'tk_update_infobox(pl_comp, []),
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
+             Action = export_source, !;
 	     compile_c_program(CheckDir, ExtLibs, Fuss, Tgt),
 		 (Tgt = -1, !, fail;
 		  Tgt > 0,
@@ -182,7 +186,9 @@ build_instances(Language, DestDir, Parent, TopNode,
 			       finish_move(Parent, 0),
 			       retract(counted_fns(_NewCt)),
 			       assert(counted_fns(OldCt)))))),
-	    load_executable(Language, CheckDir, Tgt, Parent, TopNode, Includes),
+	    (\+ Action = prepare_exec, !;
+	     load_executable(Language, CheckDir, Tgt, Parent, 
+			     TopNode, Includes)),
 	    KeepDir = 1;
 	ChangeNext = ChangeTop),
 	/* delete dir if empty...*/
@@ -219,7 +225,7 @@ build_sub_instances(Language, DestDir, Parent, Node,
 	    [unify(Language), unify(DestDir), build(Submodels),
 	     unify(Node), unify(Step), unify(ChangeTop),
 	     merge_lists(LocalFnsUsed, []), merge_lists(LocalExtLibs,[]),
-	     unify(KeepDir)]).
+	     unify(KeepDir), unify(none)]).
 
 check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	find_all_comps(Submodel, VisEntity),

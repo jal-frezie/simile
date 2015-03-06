@@ -51,9 +51,9 @@ switch ($_POST['act']) {
 
    case "BuildShareLib":
    case "BuildShareLibInLine":
+   include 'config.php';
+
 $shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
-$simileLocn = "/kunden/homepages/20/d204715617/htdocs/Build/Simile";
-$simileHome =  "/kunden/homepages/20/d204715617/htdocs/similive/webuser";
 $tculargs = array($simileLocn, $simileHome, $_POST['base'], $shlibName);
 $descriptorspec = array(
    0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
@@ -61,7 +61,7 @@ $descriptorspec = array(
    2 => array("file", "/tmp/error-output.txt", "a") // stderr is a file to write to
 );
 
-$process = proc_open("cgi-bin/tcular.cgi " . implode($tculargs, " "),
+$process = proc_open($cgiRel . "/tcular.cgi " . implode($tculargs, " "),
     $descriptorspec, $pipes);
 if (! is_resource($process)) { exit('Failed to start build process'); }
 
@@ -89,16 +89,16 @@ if ( file_exists($simileHome . "/" . $shlibName)) {
 } else {
    echo "Command returned $return_value<br>";
    echo "Output from build process was:<br>";
-   echo str_replace("\n", '<br>', $pipe_contents);
+   echo str_replace("\n", "<br>\n", $pipe_contents);
    echo "<br>Error messages:<br>" . file_get_contents('/tmp/error-output.txt');
    exit('Failed to build executable');
 }
 break;
 
    case "CreateSocket":
+   include 'config.php';
+   
 $shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
-$simileLocn = "/kunden/homepages/20/d204715617/htdocs/Build/Simile";
-$simileHome =  "/kunden/homepages/20/d204715617/htdocs/similive/webuser";
 $tculargs = array($simileLocn, $simileHome, $_POST['base'], $shlibName);
 $descriptorspec = array(
    0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
@@ -106,7 +106,7 @@ $descriptorspec = array(
    2 => array("file", "/tmp/error-output.txt", "a") // stderr is a file to write to
 );
 
-$process = proc_open("cgi-bin/socketizer.cgi " . implode($tculargs, " "), 
+$process = proc_open($cgiRel . "/socketizer.cgi " . implode($tculargs, " "), 
     $descriptorspec, $clPipes);
 if (! is_resource($process)) { exit('Failed to start test process'); }
 

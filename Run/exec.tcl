@@ -54,6 +54,7 @@ proc ex_load_dll {topNode lang progDir id node incs} {
     } else {
 	set progFile [file join $progDir model${id}[info sharedlibextension]]
 	if {![file exists $progFile]} {
+	    puts "Shared library $progFile appears not to exist!"
 	    return 0
 	}
 	set new_model_id [loadmodel $progFile $node]

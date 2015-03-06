@@ -382,7 +382,8 @@ proc load_dll {topNode lang progDir id node incs} {
     }
     if {[catch {ex_load_dll $topNode $lang [GetUsableName $progDir] $id \
 		    $::userinfo(edn) $incs} new_model_id]} {
-	if {!$::headless && [PrefValue custom(hackBreak) hackBreak]} {
+	if {$::headless || [PrefValue custom(hackBreak) hackBreak]} {
+	    # if headless we just get inline text so show it anyway
 	    Query [list new_exec_needed $::errorInfo] info top {} {ok}
 	}
 	return 0
@@ -401,6 +402,15 @@ proc ReuseSourceCode {workingDir currentKey} {
     }
     cd $oldDir
     return $result
+}
+
+proc ReuseShareLib {workingDir lang currentKey} {
+    if {$lang eq "tcl"} {
+	set tail model.tcl
+    } else {
+	set tail model$currentKey[info sharedlibextension]
+    }
+    return [file exists [file join $workingDir $tail]]
 }
 
 proc compile_c {workingDir extLibs complain} {

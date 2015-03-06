@@ -325,8 +325,10 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	    adjust_to_10_1(Parent)),
 	state'><'version_is(MyVStr),
 	name(MyV, MyVStr),
-	(MyV >= floor(SimileV), !;
-	query(future_shock(SimileV), warning, top, [ok], _))).
+	(MyV > SimileV+0.001, !, % throw away code so no need to test load
+	    m_update'><'add_parameter(Parent, 1, c_new, 0);
+	  MyV >= floor(SimileV), !;
+	  query(future_shock(SimileV), warning, top, [ok], _))).
 
 count_functions(Model, N) :-
 	setof(Node, (contains(Model, Node), find_type(Node, function)), Nodes),

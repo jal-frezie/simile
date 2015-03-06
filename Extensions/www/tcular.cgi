@@ -1,8 +1,8 @@
-#!/usr/bin/tclsh8.5
+#!/usr/bin/tclsh
 foreach local {sPath sHome mdl shLib} val $argv {
     set $local $val
 }
-# puts "Here [pwd] args $argv<br>"
+puts "Here [pwd] args $argv<br>"
 exec echo {} > /tmp/error-output.txt
 lappend auto_path [file join $sPath System lib]
 if {![file exists [file join $sHome .simile userinfo.txt]]} {

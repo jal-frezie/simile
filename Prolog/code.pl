@@ -12,8 +12,10 @@ tk_interactively_parse(Node) :-
 
 tk_code(Model, CompOrBuild, Tgt) :-
 	(CompOrBuild = compile_c, % export shared library
+	    Action = export_sharelib,
 	    output'><'safe_tcl_eval([info, sharedlibextension], IdentStr);
 	 CompOrBuild = build_c, % export source code
+            Action = export_source,
 	    IdentStr = ".cpp"),
 	name(Ident, IdentStr),
 %	get_default_export_name(Model, IdentStr, DefN),
@@ -24,8 +26,8 @@ tk_code(Model, CompOrBuild, Tgt) :-
 	    CompDir = Temp;
 	abs_path_name(Base, root, Path),
 	    append_atoms([Temp, '/', Path], CompDir)),
-	(\+ rebuild_code(c, Model, CompDir), !;
-	(m_update'><'get_av_pair(Model, 1, c_new, Serial), !; Serial = 1),
+	(\+ rebuild_code(c, Model, CompDir, Action), !;
+	  (m_update'><'get_av_pair(Model, 1, c_new, Serial), !; Serial = 1),
 	    caption_for(Model, Capt),
 	    utility'><'append_atoms([CompDir, '/', Capt, '/model', Serial, Ident], Top),
 	    output'><'safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)).
@@ -35,7 +37,7 @@ tk_code(Node, RunCmd, _Dummy) :-
 	/* Compile the thing into whatever, load it */
 	use_temp_dir(Dir),
 	draw'><'scrub_run(Node, 0),
-	rebuild_code(Lang, Node, Dir),
+	rebuild_code(Lang, Node, Dir, prepare_exec),
 	    % if exceps happen here, catch in Tcl and return failure
 	    % on_exception(Whoops,
 	%		 output'><'prepare_execution(Node, Lang),
@@ -43,7 +45,8 @@ tk_code(Node, RunCmd, _Dummy) :-
 % 			 scrub_run(Node, 0))),
 	set_running_model(Node).
 
-rebuild_code(Lang, Node, ProgFileDir) :-
-	compile(Lang, Node, ProgFileDir);
+rebuild_code(Lang, Node, ProgFileDir, Action) :-
+        compile(Lang, Node, ProgFileDir, Action);
+        output'><'safe_tcl_eval([puts, rebuild_code_failed], _),
 	draw'><'scrub_run(Node, 0),
 	fail.
