@@ -245,7 +245,7 @@ break;
       $method = $_POST['method'];
 
       doTcl("c_setstepmodel [set iH] $step 1");
-      $note = explode(",",$_POST['note']);
+      $note = json_decode($_POST['note']);
       $endPt = $current + $runlength;
 
       for($t=$current;$t<$endPt;$t+=$log) {
@@ -259,12 +259,18 @@ break;
 // probably want to make another call to get error message
 //	 }
 	 for($x=0;$x<count($note);$x++) {
-            $val = doTcl("GetJsonValuesById [set iH] " . $note[$x]);
+	    if (is_object($note[$x])) { // it's a req for binary data
+	       $val = doTcl("GetBinaryValuesById [set iH] " . $note[$x]->node
+	           . " " . $note[$x]->bottom . " " . $note[$x]->top);
+	    } else {
+               $val = json_decode(doTcl("GetJsonValuesById [set iH] "
+	           . $note[$x]));
+	    }
 // if ExecuteMulti the time points are outer indices
             if ($_POST['act'] == "Execute") {
                $hlpArr[$note[$x]]["".$endInt] = $val;
 	    } else {
-               $hlpArr["".$endInt][$note[$x]] = json_decode($val);
+               $hlpArr["".$endInt][$x] = $val;
 	    }
       	 }
       }

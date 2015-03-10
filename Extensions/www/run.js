@@ -299,9 +299,10 @@ function model_step(current, start, end, span, note) {
 	interval = Math.min(end-current,span);
 	newCurrent = current+interval;
 	newRemain = end-newCurrent;
-	execParms = {"base":fileBase,  "act":"ExecuteMulti", "runlength":interval*timeUnit, 
-		     "current":current*timeUnit, "step":$("#ts").val()*timeUnit,
-		     "method":pipeBits.intMethod, "log":log*timeUnit, "note":note};
+	execParms = {"base":fileBase, "act":"ExecuteMulti",
+		     "runlength":interval*timeUnit, "current":current*timeUnit,
+		     "step":$("#ts").val()*timeUnit,"method":pipeBits.intMethod,
+		     "log":log*timeUnit, "note":JSON.stringify(note)};
 	// console.log(JSON.stringify(execParms));
 	$.ajax({
 	    type: "POST",
@@ -309,7 +310,7 @@ function model_step(current, start, end, span, note) {
 	    data: execParms})
 
 	    .done(function(newVals) {
-		// 	console.log('Data returned ' + newVals);
+		// console.log('Data returned ' + newVals);
 // now, process the values while fetching the next lot
 		model_step(newCurrent, start, end, span, note);
 
@@ -317,7 +318,16 @@ function model_step(current, start, end, span, note) {
 		for (var timePt in execHistory) {
 		    var timeVal = parseFloat(timePt)/timeUnit;
 		    console.log("Displaying results for time " + timeVal);
-		    update_helpers(timeVal, execHistory[timePt], true);
+		    allResults = {};
+		    for (var i=0; i<note.length;i++) {
+			if (note[i].constructor === Object) {
+			    resIndx = JSON.stringify(note[i]);
+			} else {
+			    resIndx = note[i];
+			}
+			allResults[resIndx] = execHistory[timePt][i];
+		    }
+		    update_helpers(timeVal, allResults, true);
 		    // for no very obvious reason the updates are
 		    // happening in the right order (at least with
 		    // positive timesteps) but nothing appears on the
@@ -351,7 +361,7 @@ function model_exec() {
     end = now+parseFloat($("#rl").val());
     span = $("#ue").val()
     //  calibrate_helpers(end);
-    model_step(now, start, end, span, ofInterest().join());
+    model_step(now, start, end, span, ofInterest());
 }
 
 function ofInterest() {
@@ -360,7 +370,7 @@ function ofInterest() {
     for (var id in currentHelpers) {
 	if (currentHelpers[id].status == "displaying") {
 	    for (j=0; j<currentHelpers[id].tgts.length; j++) {
-		result[currentHelpers[id].tgts[j]] = 1;
+		result[JSON.stringify(currentHelpers[id].tgts[j])] = 1;
 	    }
 	}
     }
@@ -368,7 +378,7 @@ function ofInterest() {
     // includes "length" which we don't want
     rList = [];
     for (var slot in result) {
-	rList.push(slot);
+	rList.push(JSON.parse(slot));
     }
     return rList;
 }
@@ -392,7 +402,9 @@ var pgplot_opts = {
 };
 */
 // actual addTab function: adds new tab using the input from the form above
-var helperTitles = {"plot":"Plotter","table":"Data table","sliders":"Input sliders","params":"File parameters","shapes":"3-D shape viewer"},
+var helperTitles = {"plot":"Plotter","table":"Data table",
+		    "sliders":"Input sliders","params":"File parameters",
+		    "shapes":"3-D shape viewer","grid":"Spatial grid"},
 tabTemplate = "<li><a href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
 tabCounter = 2;
 
@@ -418,8 +430,10 @@ function new_helper(type) {
 	currentHelper = new DataTable(id);
     } else if (type == "shapes") {
 	currentHelper = new Shapes3D(id);
-    } else {
+    } else if (type == "plot") {
 	currentHelper = new PlotXY(id);
+    } else if (type == "grid") {
+	currentHelper = new Grid5(id);
     }
     currentHelpers[id] = currentHelper;
     tabs.tabs("option", "active", tabs.children().length - 2);
@@ -1116,7 +1130,8 @@ PlotXY.prototype.acceptClick = function (compId) {
       ngap = 40;
 //      w = 800;
       w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
-//      h = 800;
+      //      h = 800
+      ;
       h = notebookPaneHeight()-120;
 
     if (compId == "clear") {
@@ -1459,6 +1474,89 @@ PlotXY.prototype.olddisplay = function (time, latest) {
       this.g.setAttributeNS(null, "viewBox", vbStr);
       this.g.setAttributeNS(null, "preserveAspectRatio", "none");
   }
+}
+
+function Grid5 (port) {
+    this.port = port;
+    this.tgts = [];
+    this.status = "initializing";
+    this.scaleGrp = d3.select('#' + port).append("svg")
+	.attr("width",800).attr("height",480).attr("id", port + "_diag")
+	.append("g");
+    diag_zoom = d3.behavior.zoom()
+	.on("zoom", function () {
+	    d3.select('#' + port + '_diag').select('g')
+		.attr("transform", "translate(" + d3.event.translate +
+		      ")scale(" + d3.event.scale + ")");
+	});
+    d3.select('#' + port + '_diag').attr("class","pane").call(diag_zoom);
+    resize_notebook();
+    this.scaleGrp.append("svg:image")
+	.attr("id", port + "_img")
+	.attr("width","49px")
+	.attr("height","49px")
+	.style("imageRendering","pixelated")
+	.attr("xlink:href", "data:image/bmp;base64,Qk2MHAAAAAAAADYAAAAoAAAAMQAAADEAAAABABgAAAAAAFYcAAASCwAAEgsAAAAAAAAAAAAA////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////7+/v39/fv7+/v7+/v7+/z8/P39/f7+/v///////////////////////////////////////wD////////////////////////////////////////////+/v78/Pz7+/v7+/v8/Pz+/v7////////////////////////////////////////////+/v78/Pz4+Pj19fXx8fHu7u7t7e3t7e3v7+/y8vL19fX5+fn8/Pz+/v7///////////////////////////8A/////////////////////////////////v7++/v79/f39PT08PDw7e3t7e3t8PDw9PT09/f3+/v7/v7+/////////////////////////////Pz89/f37+/v6Ojo4+Pj4ODg39/f3t7e3t7e39/f4eHh5OTk6urq8fHx+Pj4/f39////////////////////////AP////////////////////////////z8/Pf39+7u7ufn5+Li4uDg4N7e3t7e3uDg4OLi4ufn5+3t7fT09Pr6+v7+/v////////////7+/vr6+vHx8efn5+Dg4Nzc3M67tMiroMKcjcKcjsuzrM27ttnZ2dra2t3d3eHh4enp6fPz8/v7+////////////////////wD////////////////////////7+/vy8vLn5+fg4ODZ0cPVxanRsXrRsXrVxanZ0sTZ2dnb29vf39/k5OTt7e339/f9/f3////+/v75+fnu7u7j4+PKraK6hnGsYEGsYEGsYEOsYEesYEyrYFCrYFSuaGC8jovNu7va2trd3d3l5eXx8fH7+/v///////////////8A////////////////////+/v78fHx5OTk1r6UzplCzY0g1pok26Ep3KMs26Au2Z4w16dR172R2dXP29vb39/f6Ojo8vLy+vr6+fn57u7u18nDtXderGBCrmNFrWNGq2BGq2BKq2BQq2BVq2BZq2BcqmFgqmFjqmFntn+G08rM3Nzc5OTk8fHx/Pz8////////////AP////////////////z8/PLy8uDUv9CdQsyMJNecJ9+nKt2kK9yiLdqgL9mdMNebMtWZM9OXNNKYPtW5kdra2t3d3eTk5Ozs7O3t7c6ypbdxSb16T716T7t3T7l0T7lzT7l0T7l1Url2Xb17Xrt6Ybh2ZLJtbqtidahgdaxpetDCx9zc3OXl5fT09P39/f///////wD////////////+/v739/fj18LRlyzOjyjZnirfpirdoyvboS3any/YnTHWmjLUmDTTljTRlDTQkTbOjzjPoGLXz8bb29ve3t7Tuae8d0nAfU3AfU/BgE7Ji0nYpV/kwJHt17/16eDy49HOlVfQllLNklDLj07Gh0+5dWCnW36oYoXQwsfd3d3q6ur5+fn///////8A////////////+/v76d7I1Jou0ZQm1psu3qUq3KMs26Eu2Z4w2Jwx1poz1Jg00pY00ZM0z5E3zo85zIw6yoo90ZdE38yW0sS8uXJDu3VGv3xG1Jg56MBn9OPB////////////////////8ODTxolUyI1ZxYlXw4RVv39SvXxRq2Fvo1eL19LU4+Pj8/Pz/f39////AP////////////f399ioSdWZJNmjR+rAbPHUnvXguvLUoejAe96pUtWaONKVNNGSNc+QN82OOcuMO8mJPsiHQMaFQ8yNPtSbNatdN8B7MeO6Uu/ivfr6+v7+/v///////////////////////9atlMKFXcGCXb5+Wrt5V7h0VbdzValcb7SAp97e3u3t7fv7+////wD////////+/v7p1KjZoC/ovWvYtIDp5uL4+Pj////////////57t3owYjVm0TOkDjNjjrLizzJiT7HhkHGhEPDgUW6dD62bzPYni3TtHnc3Nzj4+Pu7u74+Pj+/v7////////////////////27uq6eFy7fGC4d161cVuxbFmvalmuaFmeTIDVy9Ho6Oj4+Pj///8A/////////f394LNZ7MR1vHYmwZp44+Pj9PT0/v7+////////////////8dq416BUyos8yIg/x4ZCxYNEwn9Fv3tIuXM9v3tBvHdM0ptM2s+929vb4eHh6+vr9vb2/f39////////////////////wYh7tXVjsm9grmldqmNaqGBap19bo1ZpvZe55eXl9/f3////AP////////ny4+q/ZsaDKbtyFb6LXd7e3uvr6/j4+P7+/v////////////////ThyNikY8eFQsWDRMJ+Rr97Sr56Rb97QrdxULRsU7JpVcqPVdjCpNra2t/f3+jo6PPz8/v7+/7+/v///////////8qcmLBuZa1oYqliYKRbXaNYXKJXXaFVXalon+Pj4/b29v///wD////////05snluGPGgBbHgx3BgTfa2trh4eHt7e339/f8/Pz////////////////37uHUn2LBfUe+ekrAfEa7dj+yaUyza1OxaFWvZFesYFi5c1fTspDa2trd3d3l5eXw8PD5+fn9/f3////////QqqqrZ2enYWSjWmGfU16cT12bTV2bTF6gVYTk5OT29vb///8A////////+vHd47NT0ZAb0JAgzY4tz7CP2tra4ODg6Ojo8fHx9vb2+Pj4+Pj49vb28vLy593QzpdgwX1Dt3A7rWI/s2pUsWdWrmNXq19ZqVxZp1hbrmNcypp82NTR29vb4eHh6+vr9fX1+/v7/v7+y6aopV9moVljnVJgmEpdlkdclUZdlERelT5z5+fn+Pj4////AP////////315Om6VdqdHticItidLNKZRtbCqtra2tzc3OHh4eTk5Ofn5+fn5+Xl5eHh4djMv8WQXcSESK9lN61hS65iVqxfWKpdWqhaWqZWW6RTXaFPXqZXX7x8adLBvNra2t7e3ubm5u/v7/X19b+UmZ9XZZtRYpZKX5JBW5A/W5A9XJA8XJpHgevr6/r6+v///wD////////+/Pjtw1/hqCDfpiPepivgqz3erVfcvJDb08jZ2dna2trb29vb29vZ0sfSq3rAfTasYCauYzG7dkaqXFeoWVmnV1qlVFujUlyhT12gS16eSV+eSWGeSWSuY2bGoZzX0tLb29vg4ODl5eWjZHGZT2KVSF+RQVyNOlmMOlmMOlmRPG2oZI3w8PD8/Pz///8A////////////996l6bUp5rAk5K4p5LE55bVN57pf575z58SK5smY4sOT265t051Tx4tDunUtsGYmqFs037+isWZcpVRgo1JgoU9hoExhnklinUhinUdjnUdlnEhonEZook9otHZ/zr3B2tra0cfJkERXk0lekENaiz1XiThViThVjDpglj6At4KV9vb2/v7+////AP////////////314/HIWuy6Jem1J+e0Mua2ROa4VOe7ZOi/b+i/deK2b9yrZtOcV8iLRLx4L7RvNOzd1P///+vTvqpdYqFOaJ9MZ55JZ51IZ51HZ5xGaJxGaZtGaptEappEappEaqNTcbV+k6VqgZBHWY5EWIo/VIY4UYU3UI07aJY+gJI0WdK0wfv7+////////wD////////////////558Dxxk3suibptivntTnmtkjmuFfmumLlumjgsWLaplvSmlLJjEO7eTbt39P////////////XrpSiUm6fTHCeSm6dSW2cSG2cR22bRWyaRGyZQ2uZQmuZQWyXPWmXPGibRWucS3eYSHmVQn6SPXuUPHeUOGeSM1SdTHD4+Pj+/v7///////8A////////////////////+OO48MZS67ko6LYw5rU85rZL5bdX5LZd365X2aRQ0plK27F/+vby////////////////////xJSwoVKAoE97nkx3nUl0nEdym0VwmkNvmUJumEFtmD9tljtpkzVdkjRWkjRUkjNTkTRTkTNRkTNRkjNUkjVe2LrK/v7+////////////AP////////////////////////vw2/LSh+y/T+i5ROa1QeW2TuS2WOGxWuXAgvTm0f///////////////////////////////8aXuqJViqBRgp5MfJxJeJtGdZpEc5lCcphAcZc+bpU6ZZQ3XZI0WJIzV5IzVpE0VpE0VpI0WJI1YLl/oP7+/v///////////////wD////////////////////////////////9+PD78eD68N/679778+b////////////////////////////////////////////////NpMWjV5GgUYieTIGcSHybRXiZQnSYQG+XPmuWPWiVOmSTNl6SM1qRM1mSM1qSNV6TNWa6gKL+/v7///////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////483hsHCnoVSPn06FnUp/m0Z5mUN1mEFxlz9vlz5slTlnkzdjkjRgkjVkkzZtyJq2////////////////////////////AP////////////////////////////////////////////////////////////////////////////////////////////////////////////r1+dKv0K9upaFTkJ5Nh5xJgZtGfJpDeZhBdpc+dJU7cZQ4cruCp/Hm7f///////////////////////////////wD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////izOHQqsq3fKy2eKe0daSzdKO/irLRqsfy5+////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////");
+}
+
+Grid5.prototype.resize = function (newx, newy) {
+}
+
+Grid5.prototype.acceptClick = function (nodeId) {
+    if (this.status == "initializing") {
+	this.status = "displaying";
+	this.tgts[0] = {"format":"binary","node":nodeId,"bottom":0,"top":100};
+    }
+}
+
+function conv(size) {
+    return String.fromCharCode(size&0xff, (size>>8)&0xff, (size>>16)&0xff, (size>>24)&0xff);
+}
+ 
+Grid5.prototype.display = function (time, latest, connect) {
+    // For now, just shove some randum data in it
+
+    arr = latest[JSON.stringify(this.tgts[0])];
+    dataLen = 10000; // it is base64
+    depth = 8;
+    hdr = depth <= 8 ? 54 + Math.pow(2, depth)*4 : 54;
+    // make a multiple of 3 so base64 data can be bolted on
+    offset = 3*Math.ceil(hdr/3);
+  height = Math.ceil(Math.sqrt(dataLen * 8/depth));
+   //BMP Header
+  data  = 'BM';                          // ID field
+  data += conv(offset + dataLen);     // BMP size
+  data += conv(0);                       // unused
+  data += conv(offset);                  // pixel data offset
+  
+  //DIB Header
+  data += conv(40);                      // DIB header length
+  data += conv(height);                  // image height
+  data += conv(height);                  // image width
+  data += String.fromCharCode(1, 0);     // colour panes
+  data += String.fromCharCode(depth, 0); // bits per pixel
+  data += conv(0);                       // compression method
+  data += conv(dataLen);              // size of the raw data
+  data += conv(2835);                    // horizontal print resolution
+  data += conv(2835);                    // vertical print resolution
+  data += conv(0);                       // colour palette, 0 == 2^n
+  data += conv(0);                       // important colours
+  //Grayscale tables for bit depths <= 8
+  if (depth <= 8) {
+    data += conv(0);
+    
+    for (var s = Math.floor(255/(Math.pow(2, depth)-1)), i = s; i < 256; i += s)  {
+      data += conv(i + i*256 + i*65536);
+    }
+  }
+    // fill to 3*n
+    while(data.length<offset) {
+	data += ' ';
+    }
+  
+    d3.select('#' + this.port + '_img')
+	.attr("width",height).attr("height",height)
+	.attr("xlink:href", 'data:image/bmp;base64,' + btoa(data) + arr);
 }
 
 /*

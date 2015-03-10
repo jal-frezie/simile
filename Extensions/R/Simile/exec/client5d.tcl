@@ -162,6 +162,16 @@ proc GetJsonValuesById {iHandle outputId} {
     return $result
 }
 
+# this gets data from the model as an array of 8-bit values, as used for
+# building bitmap images.
+proc GetBinaryValuesById  {iHandle outputNode minVal maxVal} {
+    set ::model_id $::modelTypes([set ::instance_id $iHandle])
+    set raw [GetHandle dummy $outputNode]
+    set cooked [extract_binary $raw $minVal $maxVal]
+    ReleaseHandle dummy $raw
+    return [base64 -mode encode -- $cooked]
+}
+
 # lifted from hai2mmii.tcl v5.9
 proc TransEnums {transList vals fromNums} {
     set curLevel [lindex $transList 0]

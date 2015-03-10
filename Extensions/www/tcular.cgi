@@ -23,17 +23,20 @@ if {[catch {
 # now export the svg over the original model
     puts "svg to $mdl.svg"
     modelWin BuildSVGDiagram $mdl.svg
+
     # try returning the runParams if we have them...as json of course
+    array set runParams {execTime 100.0 timeUnit unit displayInt 1 \
+			     intMethod Euler phaseList 0.1} ;# defaults
     set node [modelWin cget -modelNode]
-    if {[info exists runState($node,runParams)]} {
-	set rps \{
-	foreach {role val} $runState($node,runParams) {
-	    append rps \"$role\":\"$val\",
-	}
-	puts -nonewline [string replace $rps end end \}]
-    } else {
-	puts -nonewline {{ "execTime": "100.0", "timeUnit": "unit", "displayInt": "1", "intMethod": "Euler", "phaseList": "0.1" }}
+    if {[info exists runState($node,runParams)] && \
+	     [lindex $runState($node,runParams) 0] eq "execTime"} {
+	array set runParams $runState($node,runParams) ;# overwrite
     }
+    set rps \{
+    foreach {role val} [array get runParams] {
+	append rps \"$role\":\"$val\",
+    }
+    puts -nonewline [string replace $rps end end \}]
 }]} {
 #    puts $errorInfo
 }
