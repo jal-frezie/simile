@@ -1506,6 +1506,8 @@ Grid5.prototype.acceptClick = function (nodeId) {
     if (this.status == "initializing") {
 	this.status = "displaying";
 	this.tgts[0] = {"format":"binary","node":nodeId,"bottom":0,"top":100};
+	// only handle 2-d arrays for now
+	this.dims = model_json[nodeId].dims;
     }
 }
 
@@ -1513,16 +1515,56 @@ function conv(size) {
     return String.fromCharCode(size&0xff, (size>>8)&0xff, (size>>16)&0xff, (size>>24)&0xff);
 }
  
+function conv16(size) {
+    return String.fromCharCode(size&0xff, (size>>8)&0xff);
+}
+ 
 Grid5.prototype.display = function (time, latest, connect) {
+    // new version, tries to do GIF
+    height = this.dims[0];
+    width = this.dims[1];
+
+    // GIF header
+    data = 'GIF89a';
+    data += conv16(width);                  // image width
+    data += conv16(height);                  // image height
+
+    data += String.fromCharCode(0xf7, 0, 0);
+    // colour table, background colour, pixel aspect ratio
+
+    //Grayscale table
+    for (var i=0; i<256; ++i) {
+	data += String.fromCharCode(i, i, i);
+    }
+
+    data += String.fromCharCode(0x2c); // image descriptor
+    data += conv16(0);                  // NW corner position of image
+    data += conv16(0);                  // in logical screen
+    data += conv16(width);                  // image width
+    data += conv16(height);                  // image height
+
+    // OK, how many bytes is that so far? 790? so include no-local-colour-table
+    // and lzw-minimum-code-size bits to bring up to base64 char boundary
+    data += String.fromCharCode(0, 8);
+    
+    arr = latest[JSON.stringify(this.tgts[0])];
+    d3.select('#' + this.port + '_img')
+	.attr("width",width).attr("height",height)
+	.attr("xlink:href", 'data:image/gif;base64,' + btoa(data) + arr);
+}
+
+Grid5.prototype.displayBMP = function (time, latest, connect) {
     // For now, just shove some randum data in it
 
     arr = latest[JSON.stringify(this.tgts[0])];
-    dataLen = 10000; // it is base64
+    height = this.dims[0];
+    width = this.dims[1];
     depth = 8;
+    dataLen = width*height*depth/8;
     hdr = depth <= 8 ? 54 + Math.pow(2, depth)*4 : 54;
     // make a multiple of 3 so base64 data can be bolted on
     offset = 3*Math.ceil(hdr/3);
-  height = Math.ceil(Math.sqrt(dataLen * 8/depth));
+
    //BMP Header
   data  = 'BM';                          // ID field
   data += conv(offset + dataLen);     // BMP size
@@ -1531,8 +1573,8 @@ Grid5.prototype.display = function (time, latest, connect) {
   
   //DIB Header
   data += conv(40);                      // DIB header length
+  data += conv(width);                  // image width
   data += conv(height);                  // image height
-  data += conv(height);                  // image width
   data += String.fromCharCode(1, 0);     // colour panes
   data += String.fromCharCode(depth, 0); // bits per pixel
   data += conv(0);                       // compression method

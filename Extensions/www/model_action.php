@@ -189,6 +189,8 @@ break;
 	      doTcl("GetModelProperty [set mH] $nicePath MinVal");
           $mdlLine["max"] = 
 	      doTcl("GetModelProperty [set mH] $nicePath MaxVal");
+          $mdlLine["dims"] = 
+	      explode(" ", doTcl("GetModelProperty [set mH] $nicePath Dims"));
           $mdlArr[$id] = $mdlLine;
         } else {
            $mdlArr[$id] = doTcl("GetJsonValues [set iH] $nicePath");

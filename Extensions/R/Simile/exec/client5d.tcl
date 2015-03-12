@@ -162,16 +162,73 @@ proc GetJsonValuesById {iHandle outputId} {
     return $result
 }
 
-# this gets data from the model as an array of 8-bit values, as used for
-# building bitmap images.
+# this gets data from the model as an array of 8-bit values, then
+# lzw-encodes them and chops into 255-byte blocks as used for building
+# .gif images, then converting to base64 for transmission.
+
 proc GetBinaryValuesById  {iHandle outputNode minVal maxVal} {
     set ::model_id $::modelTypes([set ::instance_id $iHandle])
-    set raw [GetHandle dummy $outputNode]
+    set raw [GetHandle dummy $outputNode] ;# blob of 8-bit colours
     set cooked [extract_binary $raw $minVal $maxVal]
+    set stac [LZW::encode $cooked]
+    # list of 9+-bit codes now all a long string of 1s and 0s.
     ReleaseHandle dummy $raw
-    return [base64 -mode encode -- $cooked]
+
+    set blob [binary format b* $stac] ;# this is the actual data
+    # now we need to make a series of blocks of max size 256 bytes
+    while {[set len [string length $blob]]>0} {
+	if {$len > 254} {
+	    set len 254
+	}
+	append out [binary format c $len] [string range $blob 0 $len-1]
+	set blob [string range $blob $len end]
+    }
+    append out [binary format cc 0 0x3b]
+    return [base64 -mode encode -- $out]
 }
 
+# thanks to Rosetta for the following
+namespace eval LZW {
+    variable char2int
+    variable chars
+    for {set i 0} {$i < 256} {incr i} {
+        set char [binary format c $i]
+        set char2int($char) $i
+        lappend chars $char
+    }
+}
+ 
+proc LZW::encode {data} {
+    variable char2int
+    array set dict [array get char2int]
+ 
+    set w ""
+    # predefined codes for GIF style
+    set codeSize 9
+    set tooBig 512
+    set dict(gif_clr) 256
+    set dict(gif_end) 257
+    set result 000000001 ;# string reverse format %0${codeSize}b $dict(gif_clr)
+ 
+    foreach c [split $data ""] {
+        set wc $w$c
+        if {[info exists dict($wc)]} {
+            set w $wc
+        } else {
+            append result [string reverse [format %0${codeSize}b $dict($w)]]
+            set dict($wc) [array size dict]
+	    if {$dict($wc) >= $tooBig} {
+		set tooBig [expr {2*$tooBig}]
+		incr codeSize
+	    }
+            set w $c
+        }
+    }
+    append result [string reverse [format %0${codeSize}b $dict($w)]] \
+	[string reverse [format %0${codeSize}b $dict(gif_end)]]
+}
+
+# 
 # lifted from hai2mmii.tcl v5.9
 proc TransEnums {transList vals fromNums} {
     set curLevel [lindex $transList 0]
