@@ -206,14 +206,23 @@ proc LZW::encode {data} {
     set tooBig 512
     set dict(gif_clr) 256
     set dict(gif_end) 257
-    set blob 000000001 ;# string reverse format %0${codeSize}b $dict(gif_clr)
- 
+#    set blob 000000001 ;# string reverse format %0${codeSize}b $dict(gif_clr)
+    set tail $dict(gif_clr)
+    set tbits 9
+
     foreach c [split $data ""] {
         set wc $w$c
         if {[info exists dict($wc)]} {
             set w $wc
         } else {
-            append blob [string reverse [format %0${codeSize}b $dict($w)]]
+#            append blob [string reverse [format %0${codeSize}b $dict($w)]]
+	    incr tail [expr {$dict($w) << $tbits}]
+	    incr tbits $codeSize
+	    if {$tbits >= 16} {
+		append blob [binary format s $tail] ;# stack lowest 16
+		set tail [expr {$tail >> 16}]
+		incr tbits -16
+	    }
             set dict($wc) [array size dict]
 	    if {$dict($wc) == $tooBig} {
 		if {$codeSize == 12} {
@@ -225,7 +234,9 @@ proc LZW::encode {data} {
 		    set tooBig 512
 		    set dict(gif_clr) 256
 		    set dict(gif_end) 257
-		    append blob 000000001000 ;# == 256 in reversed 12-bit
+		    incr tail [expr {$dict(gif_clr) << $tbits}]
+		    incr tbits 12
+		    # append blob 000000001000 ;# == 256 in reversed 12-bit
 		} else {
 		    set tooBig [expr {2*$tooBig}]
 		    incr codeSize
@@ -233,17 +244,27 @@ proc LZW::encode {data} {
 		}
 	    }
             set w $c
+
+	    if {[string length $blob]>=250} {
+		# use bloc size of 250 so last one can be bigger with trailer
+		append result [binary format c 250] [string range $blob 0 249]
+		set blob [string range $blob 250 end]
+	    }
         }
-	if {[string length $blob]>2000} {
-	    # use bloc size of 250 so last one can be bigger with trailer
-	    append result [binary format c 250] [binary format b2000 $blob]
-	    set blob [string range $blob 2000 end]
-	}
     }
-    append blob [string reverse [format %0${codeSize}b $dict($w)]] \
-	[string reverse [format %0${codeSize}b $dict(gif_end)]]
-    append result [binary format c [string length $blob]] \
-	[binary format b* $blob]
+    
+    # end of data:
+    incr tail [expr {$dict($w) << $tbits}]
+    incr tbits $codeSize
+    incr tail [expr {$dict(gif_end) << $tbits}]
+    incr tbits $codeSize
+    
+    while {$tbits > 0} {
+	append blob [binary format c $tail] ;# stack lowest 8
+	set tail [expr {$tail >> 8}]
+	incr tbits -8
+    } ;# at most 6 more bytes
+    append result [binary format c [string length $blob]] $blob
     return $result		   
 }
 
