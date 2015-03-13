@@ -193,7 +193,7 @@ break;
 	      explode(" ", doTcl("GetModelProperty [set mH] $nicePath Dims"));
           $mdlArr[$id] = $mdlLine;
         } else {
-           $mdlArr[$id] = doTcl("GetJsonValues [set iH] $nicePath");
+           $mdlArr[$id] = doTcl("GetJsonValues [set iH] $nicePath 1024");
         }
       }
       echo json_encode($mdlArr);
@@ -266,7 +266,7 @@ break;
 	           . " " . $note[$x]->bottom . " " . $note[$x]->top);
 	    } else {
                $val = json_decode(doTcl("GetJsonValuesById [set iH] "
-	           . $note[$x]));
+	           . $note[$x] . 1048576));
 	    }
 // if ExecuteMulti the time points are outer indices
             if ($_POST['act'] == "Execute") {

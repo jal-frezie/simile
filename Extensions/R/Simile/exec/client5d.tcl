@@ -149,16 +149,23 @@ proc GetValuesById {iHandle outputId} {
     return $result
 }
 
-proc GetJsonValues {iHandle outputNode} {
+proc GetJsonValues {iHandle outputNode limit} {
     return [GetJsonValuesById $iHandle \
-		[getnodeid $::modelTypes($iHandle) $outputNode]]
+		[getnodeid $::modelTypes($iHandle) $outputNode] $limit]
 # if we need enums transed, do in php or javascript
 }
 
-proc GetJsonValuesById {iHandle outputId} {
-    set bloc [handle_data dummyMHandle $iHandle $outputId]
-    set result [extract_json $bloc 16777216]
-    free_data_handle $bloc
+proc GetJsonValuesById {iHandle outputId limit} {
+    set hdl [handle_data dummyMHandle $iHandle $outputId]
+    set count [count_values $hdl]
+    if {$count<$limit/5} {
+	set result [extract_json $hdl $count]
+    } else {
+	set tail [expr {$limit/10}]
+	set result [concat [extract_list $hdl $tail] \
+			[extract_list $hdl -$tail]]
+    }
+    free_data_handle $hdl
     return $result
 }
 
@@ -174,17 +181,8 @@ proc GetBinaryValuesById  {iHandle outputNode minVal maxVal} {
     # list of 9+-bit codes now all a long string of 1s and 0s.
     ReleaseHandle dummy $raw
 
-    set blob [binary format b* $stac] ;# this is the actual data
-    # now we need to make a series of blocks of max size 256 bytes
-    while {[set len [string length $blob]]>0} {
-	if {$len > 254} {
-	    set len 254
-	}
-	append out [binary format c $len] [string range $blob 0 $len-1]
-	set blob [string range $blob $len end]
-    }
-    append out [binary format cc 0 0x3b]
-    return [base64 -mode encode -- $out]
+    append stac [binary format cc 0 0x3b]
+    return [base64 -mode encode -- $stac]
 }
 
 # thanks to Rosetta for the following
@@ -208,24 +206,45 @@ proc LZW::encode {data} {
     set tooBig 512
     set dict(gif_clr) 256
     set dict(gif_end) 257
-    set result 000000001 ;# string reverse format %0${codeSize}b $dict(gif_clr)
+    set blob 000000001 ;# string reverse format %0${codeSize}b $dict(gif_clr)
  
     foreach c [split $data ""] {
         set wc $w$c
         if {[info exists dict($wc)]} {
             set w $wc
         } else {
-            append result [string reverse [format %0${codeSize}b $dict($w)]]
+            append blob [string reverse [format %0${codeSize}b $dict($w)]]
             set dict($wc) [array size dict]
-	    if {$dict($wc) >= $tooBig} {
-		set tooBig [expr {2*$tooBig}]
-		incr codeSize
+	    if {$dict($wc) == $tooBig} {
+		if {$codeSize == 12} {
+		    # once we have 4095 codes in the table we must reset
+		    # while we can still do so with a 12-bit code
+		    array unset dict
+		    array set dict [array get char2int]
+		    set codeSize 9
+		    set tooBig 512
+		    set dict(gif_clr) 256
+		    set dict(gif_end) 257
+		    append blob 000000001000 ;# == 256 in reversed 12-bit
+		} else {
+		    set tooBig [expr {2*$tooBig}]
+		    incr codeSize
+		    if {$codeSize == 12} {incr tooBig -1}
+		}
 	    }
             set w $c
         }
+	if {[string length $blob]>2000} {
+	    # use bloc size of 250 so last one can be bigger with trailer
+	    append result [binary format c 250] [binary format b2000 $blob]
+	    set blob [string range $blob 2000 end]
+	}
     }
-    append result [string reverse [format %0${codeSize}b $dict($w)]] \
+    append blob [string reverse [format %0${codeSize}b $dict($w)]] \
 	[string reverse [format %0${codeSize}b $dict(gif_end)]]
+    append result [binary format c [string length $blob]] \
+	[binary format b* $blob]
+    return $result		   
 }
 
 # 
