@@ -1476,15 +1476,22 @@ PlotXY.prototype.olddisplay = function (time, latest) {
   }
 }
 
+function AlterRange(that, factor) {
+    that.tgts[0].bottom = that.tgts[0].bottom * factor;
+    that.tgts[0].top = that.tgts[0].top * factor;
+}
+
 function Grid5 (port) {
     this.port = port;
     this.tgts = [];
     this.status = "initializing";
 
     bar = d3.select('#' + port).append("div").attr("id", port + "_Buttonbar");
-    bar.append("button").html("<img src='images/less.gif'/>");
-    bar.append("button").html("<img src='images/greater.gif'/>");
-    bar.append("div").attr("id", port + "_instruct");
+    bar.append("button").html("<img src='images/less.gif'/>")
+	.style('float','left').on('click', function() {AlterRange(that, 0.5) });
+    bar.append("button").html("<img src='images/greater.gif'/>")
+	.style('float','left').on('click', function() {AlterRange(that, 2.0) });
+    bar.append("div").attr("id", port + "_instruct").style('float','left');
     
     this.scaleGrp = d3.select('#' + port).append("svg")
 	.attr("width",800).attr("height",480).attr("id", port + "_diag")
@@ -1496,6 +1503,7 @@ function Grid5 (port) {
 		      ")scale(" + d3.event.scale + ")");
 	});
     d3.select('#' + port + '_diag').attr("class","pane").call(diag_zoom);
+    d3.select('#' + port + '_instruct').html("Select component with values to display in grid");
     this.scaleGrp.append("svg:image")
 	.attr("id", port + "_img")
 	.attr("width","49px")
@@ -1517,24 +1525,36 @@ Grid5.prototype.resize = function (x, y) {
 }
 
 Grid5.prototype.acceptClick = function (nodeId) {
-    if (this.status != "initializing") return;
+    if (this.status == "initializing") {
+	this.tgts[0] = {"format":"binary","node":nodeId,"bottom":0,"top":100};
+	dims = model_json[nodeId].dims;
 
+	if (dims.length == 3 && dims[0].isInteger && dims[1].isInteger) {
+	    height = this.dims[0];
+	    width = this.dims[1];
+	} else {
+	    d3.select('#' + this.port + '_instruct').html("Select component with values corresponding to grid columns");
+	    this.status = "setting_aspect";
+	    return;
+	}
+    } else if (this.status == "setting_aspect") {
+	// now we need to get the unique value count and the grid data, and
+	// draw once we have both...later...also how ro get n of values?
+	width = 100;
+	height = 100;
+    }
+    
     this.status = "displaying";
-    this.tgts[0] = {"format":"binary","node":nodeId,"bottom":0,"top":100};
-    // only handle 2-d arrays for now
-    this.dims = model_json[nodeId].dims;
-    // get the data...
+    d3.select('#' + this.port + '_instruct').html("");
     that = this; // no chance..
     // new version, tries to do GIF
-    height = this.dims[0];
-    width = this.dims[1];
-
     $.post('model_action.php', {"base":fileBase, "act":"Query",
 				"note":JSON.stringify(this.tgts[0])},
 	   function(gifTail) {
+	       arr = JSON.parse(gifTail);
 	       d3.select('#' + that.port + '_img')
 		   .attr("width",width).attr("height",height)
-		   .attr("xlink:href", that.headerGIF + gifTail);
+		   .attr("xlink:href", that.headerGIF + arr);
 	   });
 
     // GIF header
