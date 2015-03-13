@@ -266,7 +266,7 @@ break;
 	           . " " . $note[$x]->bottom . " " . $note[$x]->top);
 	    } else {
                $val = json_decode(doTcl("GetJsonValuesById [set iH] "
-	           . $note[$x] . 1048576));
+	           . $note[$x] . " " . 1048576));
 	    }
 // if ExecuteMulti the time points are outer indices
             if ($_POST['act'] == "Execute") {
@@ -278,6 +278,26 @@ break;
       }
       echo json_encode($hlpArr);
       break;
+
+   case "Query":
+// Get values from a component, can be list, binary or distinct
+      $base = $_POST['base'];
+      $req = json_decode($_POST['note']);
+      switch ($req->format) {
+         case "list":
+      	 $val = json_decode(doTcl("GetJsonValuesById [set iH] "
+	           . $req->node . " " . 1048576));
+         break;
+
+	 case "binary":
+	 $val = doTcl("GetBinaryValuesById [set iH] " . $req->node
+	           . " " . $req->bottom . " " . $req->top);
+	 break;
+// more later
+      }
+      echo json_encode($val);
+      break;
+		   
    case "Exit":
       $base = $_POST['base'];
       doTcl("file delete -force $base");

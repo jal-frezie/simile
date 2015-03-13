@@ -1523,10 +1523,19 @@ Grid5.prototype.acceptClick = function (nodeId) {
     this.tgts[0] = {"format":"binary","node":nodeId,"bottom":0,"top":100};
     // only handle 2-d arrays for now
     this.dims = model_json[nodeId].dims;
-
+    // get the data...
+    that = this; // no chance..
     // new version, tries to do GIF
     height = this.dims[0];
     width = this.dims[1];
+
+    $.post('model_action.php', {"base":fileBase, "act":"Query",
+				"note":JSON.stringify(this.tgts[0])},
+	   function(gifTail) {
+	       d3.select('#' + that.port + '_img')
+		   .attr("width",width).attr("height",height)
+		   .attr("xlink:href", that.headerGIF + gifTail);
+	   });
 
     // GIF header
     data = 'GIF89a';
