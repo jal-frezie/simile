@@ -169,6 +169,12 @@ proc GetJsonValuesById {iHandle outputId limit} {
     return $result
 }
 
+proc CountDistinctValuesById {iHandle outputId} {
+    set hdl [handle_data dummyMHandle $iHandle $outputId]
+    set typeList [distinct_values $hdl]
+    free_data_handle $hdl
+    return [llength $typeList]
+}
 # this gets data from the model as an array of 8-bit values, then
 # lzw-encodes them and chops into 255-byte blocks as used for building
 # .gif images, then converting to base64 for transmission.
