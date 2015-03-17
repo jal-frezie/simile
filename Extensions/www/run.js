@@ -109,8 +109,9 @@ function tclListOfDimty(stuff, n) {
 }
 
 function idFromCapt (capt) {
+// now boringly find this by iteration
     for (comp in model_json) {
-	if (model_json[comp].captpath == capt) {
+	if (model_json[comp].captpath.replace(/\\n|\\ /g," ") == capt) {
 	    return model_json[comp].id;
 	}
     }
@@ -140,11 +141,7 @@ function addTabFor(tclInst) {
 	captPaths = tclListOfDimty(specArray[0], 2);
 	for (var i=0; i<captPaths.length; ++i) {
 	    captPath = captPaths[i].join(" ");
-// now boringly find this by iteration
-	    for (comp in model_json) {
-		if (model_json[comp].captpath == captPath) break;
-	    }
-	    select_for_helper(model_json[comp].id);
+	    select_for_helper(idFromCapt(captPath));
 	}
 	break;
 
@@ -155,12 +152,8 @@ function addTabFor(tclInst) {
 	    AddItem(currentHelper, "lollipops");
 	    for (parm in {"x":0,"y":0,"h":0}) {
 		captPath = tclListOfDimty(specArray[i++],1).join(" ");
-		for (comp in model_json) {
-		    if (model_json[comp].captpath == captPath) break;
-		}
-		currentHelper.acceptClick(comp);
+		currentHelper.acceptClick(idFromCapt(captPath));
 	    }
-	    
 	}
 	break;
 
@@ -196,6 +189,35 @@ function addTabFor(tclInst) {
 		} else if (possCapt[0][0] == "#") { // it's a colour
 		    currentHelper.State[i][j] = possCapt[0].substr(1);
 		}
+	    }
+	}
+	break;
+
+    case "grid005":
+	new_helper("grid");
+	if (specArray[0] == "displaying") {
+	    var idx = specArray.indexOf("aspect");
+	    nswat = parseInt(specArray[idx+1]);
+	    currentHelper.minVal = specArray[idx+2];
+	    currentHelper.maxVal = specArray[idx+3];
+	    currentHelper.initScale =
+		parseInt(specArray[specArray.indexOf("magnification")+1]);
+	    idx = specArray.indexOf("swatches");
+	    if (idx >= 0) {
+		var cMap = ColorMapFromSwatches(specArray.slice(idx+1,
+								idx+nswat+2));
+	    } else {
+		idx = specArray.indexOf("colourmap");
+		var cMap = ColorMapFromPoints(nswat, specArray[idx+1],
+					      specArray[idx+2],
+					      specArray[idx+3]);
+	    }
+	    currentHelper.cMap = cMap;
+	    var captPath =  tclListOfDimty(specArray[1],1).join(" ");
+	    currentHelper.acceptClick(idFromCapt(captPath));
+	    if (currentHelper.status == "setting_aspect") {
+		captPath =  tclListOfDimty(specArray[2],1).join(" ");
+	    	currentHelper.acceptClick(idFromCapt(captPath));
 	    }
 	}
 	break;
@@ -239,18 +261,17 @@ function createInitialHelpers() {
 */
 var resetDepth = -2, savedStart;
 function model_reset() {
+    note = ofInterest();
     $.ajax({
 	type: "POST",
 	url: "model_action.php",
-	data: { "base":fileBase, "act":"Reset", "runlength":$("#rl").val()*timeUnit, 
+	data: { "base":fileBase, "act":"Reset",
+		"runlength":$("#rl").val()*timeUnit, 
 		"current":0, "step":$("#ts").val()*timeUnit,
-		"method":pipeBits.intMethod, "note":resetDepth}
+		"method":pipeBits.intMethod, "depth":resetDepth,
+		"note":JSON.stringify(note)}
     })
-	.done(function( feedback ) {
-	    if (feedback != '1') {
-		alert(feedback);
-		return;
-	    }
+	.done(function( initVals ) {
 	    if (savedStart != null) {
 		$("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
 			     -savedStart);
@@ -258,15 +279,21 @@ function model_reset() {
 	    $("#ct").val(0);
 	    $( "#progress" ).progressbar({ value: 0 });
 
+	    initState = JSON.parse(initVals);
+	    allResults = {};
+	    for (var i=0; i<note.length;i++) {
+		if (note[i].constructor === Object) {
+		    resIndx = JSON.stringify(note[i]);
+		} else {
+		    resIndx = note[i];
+		}
+		allResults[resIndx] = initState[i];
+	    }
+	    update_helpers(0, allResults, false);
+	    
 	    $.post('model_action.php', { "base":fileBase, "act":"Report"}, 
 		   function(data) {
 		       values_json = JSON.parse(data);
-		       latest = {}
-		       oi = ofInterest();
-		       for (var i in oi) {
-			   latest[oi[i]] = JSON.parse(values_json[oi[i]]);
-		       }
-		       update_helpers(0, latest, false);
 		       // now, if this is initialization, then now is the time to set up the helpers
 		       // from the .shf, as they will not be expecting an immediate update
 		       if (resetDepth == -2) {
@@ -1481,11 +1508,63 @@ function AlterRange(that, factor) {
     that.tgts[0].top = that.tgts[0].top * factor;
 }
 
+function ColorMapFromPoints (n, bot, mid, top) {
+    specials = ["black", "red", "green", "white"];
+
+    data = [];
+    for (var x=0; x<3; ++x) {
+	hiPt = [bot, mid, top][x];
+	var c = specials.indexOf(hiPt);
+	if (c > -1) {
+	    hiR = [0,255,0,255][c];
+	    hiG = [0,0,255,255][c];
+	    hiB = [0,0,0,255][c];
+	} else {
+	    hiR = parseInt(hiPt.substr(1,2),16);
+	    hiG = parseInt(hiPt.substr(3,2),16);
+	    hiB = parseInt(hiPt.substr(5,2),16);
+	}
+	if (x>0) {
+	    for (var j=0; j<128; ++j) {
+		fract = 1+2*Math.floor(n*(j+128*(x-1))/256)/(n-1)-x;
+
+		var r = Math.round(fract*hiR+(1-fract)*loR);
+		var g = Math.round(fract*hiG+(1-fract)*loG);
+		var b = Math.round(fract*hiB+(1-fract)*loB);
+		data += String.fromCharCode(r, g, b);
+	    }
+	}
+	loR = hiR;
+	loG = hiG;
+	loB = hiB;
+    }
+    return data;
+}
+function ColorMapFromSwatches (swList) {
+    var data = [];
+    for (var i=0; i<swList.length; ++i) {
+	var r = parseInt(swList[i].substr(1,2),16);
+	var g = parseInt(swList[i].substr(3,2),16);
+	var b = parseInt(swList[i].substr(5,2),16);
+	for (var j=Math.floor(i*256/swList.length);
+	     j<Math.floor((i+1)*256/swList.length); ++j) {
+	    data += String.fromCharCode(r, g, b);
+	}
+    }
+    return data;
+}
+
 function Grid5 (port) {
     this.port = port;
     this.tgts = [];
     this.status = "initializing";
 
+    this.cMap = ColorMapFromPoints(32, "black", "red", "white");
+    this.minVal = 0;
+    this.maxVal = 100;
+    this.initScale = 1;
+
+    var that = this;
     bar = d3.select('#' + port).append("div").attr("id", port + "_Buttonbar");
     bar.append("button").html("<img src='images/less.gif'/>")
 	.style('float','left').on('click', function() {AlterRange(that, 0.5) });
@@ -1496,13 +1575,13 @@ function Grid5 (port) {
     this.scaleGrp = d3.select('#' + port).append("svg")
 	.attr("width",800).attr("height",480).attr("id", port + "_diag")
 	.append("g");
-    diag_zoom = d3.behavior.zoom()
+    this.diagZoom = d3.behavior.zoom()
 	.on("zoom", function () {
 	    d3.select('#' + port + '_diag').select('g')
 		.attr("transform", "translate(" + d3.event.translate +
 		      ")scale(" + d3.event.scale + ")");
 	});
-    d3.select('#' + port + '_diag').attr("class","pane").call(diag_zoom);
+    d3.select('#' + port + '_diag').attr("class","pane").call(this.diagZoom);
     d3.select('#' + port + '_instruct').html("Select component with values to display in grid");
     this.scaleGrp.append("svg:image")
 	.attr("id", port + "_img")
@@ -1526,12 +1605,14 @@ Grid5.prototype.resize = function (x, y) {
 
 Grid5.prototype.acceptClick = function (nodeId) {
     if (this.status == "initializing") {
-	this.tgts[0] = {"format":"binary","node":nodeId,"bottom":0,"top":100};
+	this.tgts[0] = {"format":"binary","node":nodeId,
+			"bottom":this.minVal,"top":this.maxVal};
 	dims = model_json[nodeId].dims;
 
-	if (dims.length == 3 && dims[0].isInteger && dims[1].isInteger) {
-	    height = this.dims[0];
-	    width = this.dims[1];
+	if (dims.length == 3 && !isNaN(parseInt(dims[0])) 
+	    && !isNaN(parseInt(dims[1]))) {
+	    height = dims[0];
+	    width = dims[1];
 	} else {
 	    d3.select('#' + this.port + '_instruct').html("Select component with values corresponding to grid columns");
 	    this.status = "setting_aspect";
@@ -1540,13 +1621,16 @@ Grid5.prototype.acceptClick = function (nodeId) {
     } else if (this.status == "setting_aspect") {
 	// now we need to get the unique value count and the grid data, and
 	// draw once we have both...later...also how ro get n of values?
-	width = 100;
-	height = 100;
+	// width = 100;
+	// height = 100;
     }
     
     this.status = "displaying";
     d3.select('#' + this.port + '_instruct').html("");
-    that = this; // no chance..
+    this.diagZoom.translate([0,0]).scale(this.initScale);
+    grpAttr = "translate(0,0)scale("+this.initScale+","+this.initScale+")";
+    this.scaleGrp.attr("transform",grpAttr);
+    var that = this; // no chance..
     // new version, tries to do GIF
     $.post('model_action.php', {"base":fileBase, "act":"Query",
 				"note":JSON.stringify(this.tgts[0])},
@@ -1566,12 +1650,7 @@ Grid5.prototype.acceptClick = function (nodeId) {
     // colour table, background colour, pixel aspect ratio
 
     //black -> red -> white
-    for (var i=0; i<256; i+=2) {
-	data += String.fromCharCode(i, 0, 0);
-    }
-    for (var i=1; i<256; i+=2) {
-	data += String.fromCharCode(255, i, i);
-    }
+    data += this.cMap;
 
     data += String.fromCharCode(0x2c); // image descriptor
     data += conv16(0);                  // NW corner position of image
@@ -1598,7 +1677,6 @@ Grid5.prototype.display = function (time, latest, connect) {
     
     arr = latest[JSON.stringify(this.tgts[0])];
     d3.select('#' + this.port + '_img')
-	.attr("width",width).attr("height",height)
 	.attr("xlink:href", this.headerGIF + arr);
 }
 

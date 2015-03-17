@@ -178,7 +178,7 @@ break;
           $mdlLine["icon"] = "images/" 
 	      . doTcl("GetModelProperty [set mH] $nicePath Class") . ".gif";
           $mdlLine["text"] = substr($nicePath, $tailDiv+1);
-          $mdlLine["captpath"] = $path;
+          $mdlLine["captpath"] = $nicePath;
           $mdlLine["equation"] = 
 	      doTcl("GetModelProperty [set mH] $nicePath Spec");
           $mdlLine["comment"] = 
@@ -234,8 +234,20 @@ break;
 
    case "Reset":
       $current = 0;
-      $pop = doTcl("DoResetModel [set iH] $current " . $_POST['method'] . " " . $_POST['note']);
-      echo $pop;
+      $pop = doTcl("DoResetModel [set iH] $current " . $_POST['method'] . " "
+                   . $_POST['depth']);
+      $note = json_decode($_POST['note']);
+      for($x=0;$x<count($note);$x++) {
+         if (is_object($note[$x])) { // it's a req for binary data
+	    $val = doTcl("GetBinaryValuesById [set iH] " . $note[$x]->node
+	        . " " . $note[$x]->bottom . " " . $note[$x]->top);
+	 } else {
+            $val = json_decode(doTcl("GetJsonValuesById [set iH] "
+	        . $note[$x] . " " . 1048576));
+	 }
+	 $resArr[$x] = $val;
+      }
+      echo json_encode($resArr);
       break;
 
    case "Execute":
