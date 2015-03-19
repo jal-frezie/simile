@@ -1502,6 +1502,7 @@ PlotXY.prototype.olddisplay = function (time, latest) {
       this.g.setAttributeNS(null, "preserveAspectRatio", "none");
   }
 }
+var legenData = "+gADCBhAoICBAwgSKFjAoIGDBxAiSJhAoYKFCxgyaNjAoYOHDyBCiBhBooSJEyhSqFjBooWLFzBiyJhBo4aNGzhy6NjBo4ePH0CCCBlCpIiRI0iSKFnCpImTJ1CiSJlCpYqVK1iyaNnCpYuXL2DCiBlDpoyZM2jSqFnDpo2bN3DiyJlDp46dO3jy6NnDp4+fP4ACCRpEqJChQ4gSKVrEqJGjR5AiSZpEqZKlS5gyadrEqZOnT6BCiRpFqpSpU6hSqVrFqpWrV7BiyZpFq5atW7hy6drFq5evX8CCCRtGrJixY8iSKVvGrJmzZ9CiSZtGrZq1a9iyadvGrZv6t2/gwokbR66cuXPo0qlbx66du3fw4smbR6+evXv48unbx6+fv3//CESQQQgpxJBDEElEkUUYacSRRyCJRJJJKKnEkkswyUSTTTjpxJNPQAlFlFFIKcWUU1BJRZVVWGnFlVdgiUWWWWipxZZbcMlFl1146cWXX4AJRphhiCnGmGOQSUaZZZhpxplnoIlGmmmoqcaaa7DJRpttuOnGm2/ACUecccgpx5xz0ElHnXXYacedd+CJR5556KnHnnvwyUefffjpx59/AApY0EEJLdTQQxFNVNFFGW3U0UchjVTSSSmt1NJLMc1U00057dTTT0ENVdRRSS3V1FNRTfpV1VVZbdXVV2GNVdZZaa3V1ltxzVXXXXnt1ddfgQ1W2GGJLdbYY5FNVtllmW3W2WehjVbaaamt1tprsc1W22257dbbb8ENV9xxyS3X3HPRTVfdddlt19134Y1X3nnprdfee/HNV999+e3X338BDjRogYYimOiCjDr4aISSUljphZhquGmHnoIY6oikmnhqiqqy2OqLsMo4a4224pjrjrz6+GuQwhJZ7JHIKrlsk85CGe2U1Fp5bZbactntl+CKOW6Z5qKZ7prsuvlunPLSWe+d+Oq5b5/+AhrwgIQaeGiCijLY6IOQSjhphZZimOmGnHr4aYiikljqiaiq+rhqi67CGOuMtNp4a4668tjrj8AKOWyRxiKZ7JLMOvlslNJSWe2V2Gq5bZfeghnumOSaeW6a6rLZ7pvwyjlvnfbime+e/Pr5b6ACE1jogYgquGiDjkIY6YSUWnhphppy2OmHoIo4aommopjqiqy6+GqMstJY64246rhrj74CGeyQxBp5bJLKMtnsk9BKOW2V1mKZ7ZbcevltmOKSWe6Z6Kq5bpvuwhnvnPTaeW+e+vLZ758AE5TrtGYw2XlNYbYTm8N0ZzaJ+U5tFhOe2zRmPLl5THl2E5nz9GYy6flNZdYTnMu0ZziZeU9xNhOf43RmPsn5TH2WE5r7NGdrNPl5Tmn2E53T9Gc6qflPdVYTYNYKFruuJax2YWtY7soWsd6lrWLBa1vGihe3jiWvbiFrXt5KFr2+pax6gWtZ9goXs+4lrmbha1zOyhe5nqWvckFrX+aKFr/OJa1+oWta/koXtf6lrmoACwgAOw==";
 
 function AlterRange(that, factor) {
     that.tgts[0].bottom = that.tgts[0].bottom * factor;
@@ -1565,7 +1566,8 @@ function Grid5 (port) {
     this.initScale = 1;
 
     var that = this;
-    bar = d3.select('#' + port).append("div").attr("id", port + "_Buttonbar");
+    bar = d3.select('#' + port).append("div").attr("id", port + "_Buttonbar")
+        .style('width','100%');
     bar.append("button").html("<img src='images/less.gif'/>")
 	.style('float','left').on('click', function() {AlterRange(that, 0.5) });
     bar.append("button").html("<img src='images/greater.gif'/>")
@@ -1575,6 +1577,10 @@ function Grid5 (port) {
     this.scaleGrp = d3.select('#' + port).append("svg")
 	.attr("width",800).attr("height",480).attr("id", port + "_diag")
 	.append("g");
+    this.legend = document.createElement("img");
+    this.legend.style.width = "100%";
+    this.legend.style.height = "16px";
+    document.getElementById(port).appendChild(this.legend);
     this.diagZoom = d3.behavior.zoom()
 	.on("zoom", function () {
 	    d3.select('#' + port + '_diag').select('g')
@@ -1589,30 +1595,32 @@ function Grid5 (port) {
 	.attr("height","49px")
 	.style("imageRendering","pixelated")
 	.attr("xlink:href", "data:image/bmp;base64,Qk2MHAAAAAAAADYAAAAoAAAAMQAAADEAAAABABgAAAAAAFYcAAASCwAAEgsAAAAAAAAAAAAA////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////7+/v39/fv7+/v7+/v7+/z8/P39/f7+/v///////////////////////////////////////wD////////////////////////////////////////////+/v78/Pz7+/v7+/v8/Pz+/v7////////////////////////////////////////////+/v78/Pz4+Pj19fXx8fHu7u7t7e3t7e3v7+/y8vL19fX5+fn8/Pz+/v7///////////////////////////8A/////////////////////////////////v7++/v79/f39PT08PDw7e3t7e3t8PDw9PT09/f3+/v7/v7+/////////////////////////////Pz89/f37+/v6Ojo4+Pj4ODg39/f3t7e3t7e39/f4eHh5OTk6urq8fHx+Pj4/f39////////////////////////AP////////////////////////////z8/Pf39+7u7ufn5+Li4uDg4N7e3t7e3uDg4OLi4ufn5+3t7fT09Pr6+v7+/v////////////7+/vr6+vHx8efn5+Dg4Nzc3M67tMiroMKcjcKcjsuzrM27ttnZ2dra2t3d3eHh4enp6fPz8/v7+////////////////////wD////////////////////////7+/vy8vLn5+fg4ODZ0cPVxanRsXrRsXrVxanZ0sTZ2dnb29vf39/k5OTt7e339/f9/f3////+/v75+fnu7u7j4+PKraK6hnGsYEGsYEGsYEOsYEesYEyrYFCrYFSuaGC8jovNu7va2trd3d3l5eXx8fH7+/v///////////////8A////////////////////+/v78fHx5OTk1r6UzplCzY0g1pok26Ep3KMs26Au2Z4w16dR172R2dXP29vb39/f6Ojo8vLy+vr6+fn57u7u18nDtXderGBCrmNFrWNGq2BGq2BKq2BQq2BVq2BZq2BcqmFgqmFjqmFntn+G08rM3Nzc5OTk8fHx/Pz8////////////AP////////////////z8/PLy8uDUv9CdQsyMJNecJ9+nKt2kK9yiLdqgL9mdMNebMtWZM9OXNNKYPtW5kdra2t3d3eTk5Ozs7O3t7c6ypbdxSb16T716T7t3T7l0T7lzT7l0T7l1Url2Xb17Xrt6Ybh2ZLJtbqtidahgdaxpetDCx9zc3OXl5fT09P39/f///////wD////////////+/v739/fj18LRlyzOjyjZnirfpirdoyvboS3any/YnTHWmjLUmDTTljTRlDTQkTbOjzjPoGLXz8bb29ve3t7Tuae8d0nAfU3AfU/BgE7Ji0nYpV/kwJHt17/16eDy49HOlVfQllLNklDLj07Gh0+5dWCnW36oYoXQwsfd3d3q6ur5+fn///////8A////////////+/v76d7I1Jou0ZQm1psu3qUq3KMs26Eu2Z4w2Jwx1poz1Jg00pY00ZM0z5E3zo85zIw6yoo90ZdE38yW0sS8uXJDu3VGv3xG1Jg56MBn9OPB////////////////////8ODTxolUyI1ZxYlXw4RVv39SvXxRq2Fvo1eL19LU4+Pj8/Pz/f39////AP////////////f399ioSdWZJNmjR+rAbPHUnvXguvLUoejAe96pUtWaONKVNNGSNc+QN82OOcuMO8mJPsiHQMaFQ8yNPtSbNatdN8B7MeO6Uu/ivfr6+v7+/v///////////////////////9atlMKFXcGCXb5+Wrt5V7h0VbdzValcb7SAp97e3u3t7fv7+////wD////////+/v7p1KjZoC/ovWvYtIDp5uL4+Pj////////////57t3owYjVm0TOkDjNjjrLizzJiT7HhkHGhEPDgUW6dD62bzPYni3TtHnc3Nzj4+Pu7u74+Pj+/v7////////////////////27uq6eFy7fGC4d161cVuxbFmvalmuaFmeTIDVy9Ho6Oj4+Pj///8A/////////f394LNZ7MR1vHYmwZp44+Pj9PT0/v7+////////////////8dq416BUyos8yIg/x4ZCxYNEwn9Fv3tIuXM9v3tBvHdM0ptM2s+929vb4eHh6+vr9vb2/f39////////////////////wYh7tXVjsm9grmldqmNaqGBap19bo1ZpvZe55eXl9/f3////AP////////ny4+q/ZsaDKbtyFb6LXd7e3uvr6/j4+P7+/v////////////////ThyNikY8eFQsWDRMJ+Rr97Sr56Rb97QrdxULRsU7JpVcqPVdjCpNra2t/f3+jo6PPz8/v7+/7+/v///////////8qcmLBuZa1oYqliYKRbXaNYXKJXXaFVXalon+Pj4/b29v///wD////////05snluGPGgBbHgx3BgTfa2trh4eHt7e339/f8/Pz////////////////37uHUn2LBfUe+ekrAfEa7dj+yaUyza1OxaFWvZFesYFi5c1fTspDa2trd3d3l5eXw8PD5+fn9/f3////////QqqqrZ2enYWSjWmGfU16cT12bTV2bTF6gVYTk5OT29vb///8A////////+vHd47NT0ZAb0JAgzY4tz7CP2tra4ODg6Ojo8fHx9vb2+Pj4+Pj49vb28vLy593QzpdgwX1Dt3A7rWI/s2pUsWdWrmNXq19ZqVxZp1hbrmNcypp82NTR29vb4eHh6+vr9fX1+/v7/v7+y6aopV9moVljnVJgmEpdlkdclUZdlERelT5z5+fn+Pj4////AP////////315Om6VdqdHticItidLNKZRtbCqtra2tzc3OHh4eTk5Ofn5+fn5+Xl5eHh4djMv8WQXcSESK9lN61hS65iVqxfWKpdWqhaWqZWW6RTXaFPXqZXX7x8adLBvNra2t7e3ubm5u/v7/X19b+UmZ9XZZtRYpZKX5JBW5A/W5A9XJA8XJpHgevr6/r6+v///wD////////+/Pjtw1/hqCDfpiPepivgqz3erVfcvJDb08jZ2dna2trb29vb29vZ0sfSq3rAfTasYCauYzG7dkaqXFeoWVmnV1qlVFujUlyhT12gS16eSV+eSWGeSWSuY2bGoZzX0tLb29vg4ODl5eWjZHGZT2KVSF+RQVyNOlmMOlmMOlmRPG2oZI3w8PD8/Pz///8A////////////996l6bUp5rAk5K4p5LE55bVN57pf575z58SK5smY4sOT265t051Tx4tDunUtsGYmqFs037+isWZcpVRgo1JgoU9hoExhnklinUhinUdjnUdlnEhonEZook9otHZ/zr3B2tra0cfJkERXk0lekENaiz1XiThViThVjDpglj6At4KV9vb2/v7+////AP////////////314/HIWuy6Jem1J+e0Mua2ROa4VOe7ZOi/b+i/deK2b9yrZtOcV8iLRLx4L7RvNOzd1P///+vTvqpdYqFOaJ9MZ55JZ51IZ51HZ5xGaJxGaZtGaptEappEappEaqNTcbV+k6VqgZBHWY5EWIo/VIY4UYU3UI07aJY+gJI0WdK0wfv7+////////wD////////////////558Dxxk3suibptivntTnmtkjmuFfmumLlumjgsWLaplvSmlLJjEO7eTbt39P////////////XrpSiUm6fTHCeSm6dSW2cSG2cR22bRWyaRGyZQ2uZQmuZQWyXPWmXPGibRWucS3eYSHmVQn6SPXuUPHeUOGeSM1SdTHD4+Pj+/v7///////8A////////////////////+OO48MZS67ko6LYw5rU85rZL5bdX5LZd365X2aRQ0plK27F/+vby////////////////////xJSwoVKAoE97nkx3nUl0nEdym0VwmkNvmUJumEFtmD9tljtpkzVdkjRWkjRUkjNTkTRTkTNRkTNRkjNUkjVe2LrK/v7+////////////AP////////////////////////vw2/LSh+y/T+i5ROa1QeW2TuS2WOGxWuXAgvTm0f///////////////////////////////8aXuqJViqBRgp5MfJxJeJtGdZpEc5lCcphAcZc+bpU6ZZQ3XZI0WJIzV5IzVpE0VpE0VpI0WJI1YLl/oP7+/v///////////////wD////////////////////////////////9+PD78eD68N/679778+b////////////////////////////////////////////////NpMWjV5GgUYieTIGcSHybRXiZQnSYQG+XPmuWPWiVOmSTNl6SM1qRM1mSM1qSNV6TNWa6gKL+/v7///////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////483hsHCnoVSPn06FnUp/m0Z5mUN1mEFxlz9vlz5slTlnkzdjkjRgkjVkkzZtyJq2////////////////////////////AP////////////////////////////////////////////////////////////////////////////////////////////////////////////r1+dKv0K9upaFTkJ5Nh5xJgZtGfJpDeZhBdpc+dJU7cZQ4cruCp/Hm7f///////////////////////////////wD////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////izOHQqsq3fKy2eKe0daSzdKO/irLRqsfy5+////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////AP///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8A////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////");
+    resize_notebook();
 }
 
 Grid5.prototype.resize = function (x, y) {
-   if (this.status != "displaying") return;
+//   if (this.status != "displaying") return;
 //   console.log('Tab width: ' + d3.select('#' + this.port).style('width'));
 //   console.log('Notebook height: ' + d3.select('#tabs').style('height'));
     ngap = 40;
 //      w = 800;
       w = x-ngap;
 //      h = 800;
-      h = y-ngap;
+      h = y-48-ngap;
     d3.select('#' + this.port + '_diag').attr("width",w).attr("height",h);
 }
 
 Grid5.prototype.acceptClick = function (nodeId) {
+    var that = this; // no chance..
     if (this.status == "initializing") {
 	this.tgts[0] = {"format":"binary","node":nodeId,
 			"bottom":this.minVal,"top":this.maxVal};
 	dims = model_json[nodeId].dims;
-
+	this.height = dims[0];
+	
 	if (dims.length == 3 && !isNaN(parseInt(dims[0])) 
 	    && !isNaN(parseInt(dims[1]))) {
-	    height = dims[0];
-	    width = dims[1];
+	    this.width = dims[1];
 	} else {
 	    d3.select('#' + this.port + '_instruct').html("Select component with values corresponding to grid columns");
 	    this.status = "setting_aspect";
@@ -1621,48 +1629,83 @@ Grid5.prototype.acceptClick = function (nodeId) {
     } else if (this.status == "setting_aspect") {
 	// now we need to get the unique value count and the grid data, and
 	// draw once we have both...later...also how ro get n of values?
-	// width = 100;
-	// height = 100;
+// 	$.post('model_action.php',
+// 	       {"base":fileBase, "act":"Query",
+// 		"note":JSON.stringify({"node":nodeId, "format":"distinct"})},
+// 	       function(distCount) {
+// 		   that.width = parseInt(distCount);
+// 		   that.height = that.height/that.width;
+	// 	       });
+	note = [{"node":nodeId, "format":"distinct"}];
+    } else {
+	note = [];
     }
     
-    this.status = "displaying";
     d3.select('#' + this.port + '_instruct').html("");
     this.diagZoom.translate([0,0]).scale(this.initScale);
     grpAttr = "translate(0,0)scale("+this.initScale+","+this.initScale+")";
     this.scaleGrp.attr("transform",grpAttr);
-    var that = this; // no chance..
     // new version, tries to do GIF
+    note.push(this.tgts[0]);
     $.post('model_action.php', {"base":fileBase, "act":"Query",
-				"note":JSON.stringify(this.tgts[0])},
-	   function(gifTail) {
-	       arr = JSON.parse(gifTail);
+				"note":JSON.stringify(note)},
+	   function(resp) {
+	       responses = JSON.parse(resp);
+	       if (that.status == "setting_aspect") {
+		   that.width = parseInt(responses[0]);
+		   that.height = Math.floor(that.height/that.width);
+		   arrInd = 1;
+	       } else {
+		   arrInd = 0;
+	       }
+	       // GIF header
+	       data = 'GIF89a';
+	       data += conv16(that.width);                  // image width
+	       data += conv16(that.height);                  // image height
+	       
+	       data += String.fromCharCode(0xf7, 0, 0);
+	       // colour table, background colour, pixel aspect ratio
+	       
+	       //black -> red -> white
+	       data += that.cMap;
+	       
+	       data += String.fromCharCode(0x2c); // image descriptor
+	       data += conv16(0);                 // NW corner position of image
+	       data += conv16(0);                 // in logical screen
+	       data += conv16(that.width);                  // image width
+	       data += conv16(that.height);                  // image height
+	       
+    // OK, how many bytes is that so far? 790? so include no-local-colour-table
+    // and lzw-minimum-code-size bits to bring up to base64 char boundary
+	       data += String.fromCharCode(0, 8);
+	       that.headerGIF = 'data:image/gif;base64,' + btoa(data);
+
+	       that.status = "displaying";
 	       d3.select('#' + that.port + '_img')
-		   .attr("width",width).attr("height",height)
-		   .attr("xlink:href", that.headerGIF + arr);
+		   .attr("width",that.width).attr("height",that.height)
+		   .attr("xlink:href", that.headerGIF + responses[arrInd]);
 	   });
 
-    // GIF header
-    data = 'GIF89a';
-    data += conv16(width);                  // image width
-    data += conv16(height);                  // image height
+    headerData = 'GIF89a';
+    headerData += conv16(256);                  // image width
+    headerData += conv16(8);                  // image height
 
-    data += String.fromCharCode(0xf7, 0, 0);
+    headerData += String.fromCharCode(0xf7, 0, 0);
     // colour table, background colour, pixel aspect ratio
 
     //black -> red -> white
-    data += this.cMap;
+    headerData += this.cMap;
 
-    data += String.fromCharCode(0x2c); // image descriptor
-    data += conv16(0);                  // NW corner position of image
-    data += conv16(0);                  // in logical screen
-    data += conv16(width);                  // image width
-    data += conv16(height);                  // image height
+    headerData += String.fromCharCode(0x2c); // image descriptor
+    headerData += conv16(0);                  // NW corner position of image
+    headerData += conv16(0);                  // in logical screen
+    headerData += conv16(256);                  // image width
+    headerData += conv16(8);                  // image height
+    headerData += String.fromCharCode(0, 8);
 
-    // OK, how many bytes is that so far? 790? so include no-local-colour-table
-    // and lzw-minimum-code-size bits to bring up to base64 char boundary
-    data += String.fromCharCode(0, 8);
-    this.headerGIF = 'data:image/gif;base64,' + btoa(data);
-    resize_notebook();
+    this.legend.src = 'data:image/gif;base64,'
+	+ btoa(headerData) + legenData;
+    this.legend.alt = "Something has gone terrubly winf";
 }
 
 function conv(size) {

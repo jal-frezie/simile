@@ -173,7 +173,8 @@ proc CountDistinctValuesById {iHandle outputId} {
     set hdl [handle_data dummyMHandle $iHandle $outputId]
     set typeList [distinct_values $hdl]
     free_data_handle $hdl
-    return [llength $typeList]
+    # 1st result elt is total number of vals
+    return [llength [lrange $typeList 1 end]]
 }
 # this gets data from the model as an array of 8-bit values, then
 # lzw-encodes them and chops into 255-byte blocks as used for building

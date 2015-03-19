@@ -28,6 +28,26 @@ function doTcl($cmd) {
    return substr($resp,0,-1);
 }
 
+function do_query($req) {
+   switch ($req->format) {
+      case "list":
+      $val = json_decode(doTcl("GetJsonValuesById [set iH] "
+	           . $req->node . " " . 1048576));
+      break;
+
+      case "binary":
+      $val = doTcl("GetBinaryValuesById [set iH] " . $req->node
+	           . " " . $req->bottom . " " . $req->top);
+      break;
+
+      case "distinct":
+      $val = doTcl("CountDistinctValuesById [set iH] " . $req->node);
+      break;
+// more later
+   }
+   return $val;
+}
+
 if ($_POST['act'] != "BuildShareLibInLine") {
    // only do for AJAX requests, produces warning if inline
    header('Access-Control-Allow-Origin: *');
@@ -234,13 +254,13 @@ break;
 
    case "Reset":
       $current = 0;
+      $resArr = [];
       $pop = doTcl("DoResetModel [set iH] $current " . $_POST['method'] . " "
                    . $_POST['depth']);
       $note = json_decode($_POST['note']);
       for($x=0;$x<count($note);$x++) {
          if (is_object($note[$x])) { // it's a req for binary data
-	    $val = doTcl("GetBinaryValuesById [set iH] " . $note[$x]->node
-	        . " " . $note[$x]->bottom . " " . $note[$x]->top);
+	    $val = do_query($note[$x]);
 	 } else {
             $val = json_decode(doTcl("GetJsonValuesById [set iH] "
 	        . $note[$x] . " " . 1048576));
@@ -274,11 +294,10 @@ break;
 //	 }
 	 for($x=0;$x<count($note);$x++) {
 	    if (is_object($note[$x])) { // it's a req for binary data
-	       $val = doTcl("GetBinaryValuesById [set iH] " . $note[$x]->node
-	           . " " . $note[$x]->bottom . " " . $note[$x]->top);
+	       $val = do_query($note[$x]);
 	    } else {
                $val = json_decode(doTcl("GetJsonValuesById [set iH] "
-	           . $note[$x] . " " . 1048576));
+	        . $note[$x] . " " . 1048576));
 	    }
 // if ExecuteMulti the time points are outer indices
             if ($_POST['act'] == "Execute") {
@@ -295,19 +314,10 @@ break;
 // Get values from a component, can be list, binary or distinct
       $base = $_POST['base'];
       $req = json_decode($_POST['note']);
-      switch ($req->format) {
-         case "list":
-      	 $val = json_decode(doTcl("GetJsonValuesById [set iH] "
-	           . $req->node . " " . 1048576));
-         break;
-
-	 case "binary":
-	 $val = doTcl("GetBinaryValuesById [set iH] " . $req->node
-	           . " " . $req->bottom . " " . $req->top);
-	 break;
-// more later
+      for($x=0;$x<count($req);$x++) {
+      	 $respArr[$x] = do_query($req[$x]);
       }
-      echo json_encode($val);
+      echo json_encode($respArr);
       break;
 		   
    case "Exit":
