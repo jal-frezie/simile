@@ -101,7 +101,8 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	        Common = [sm(Name, A, B, C) | Rest],
 	        (Location = up_hierarchy,
 		    append(Tail, [sm(outside(Name), A, B, C) | Rest], Path),
-		    Wait = [];
+		    Wait = [],
+	            pointer_from(Path, SmPtr);
 				% use values from all instances -- need to
 	     % stop loops matching by changing representation of bound
 		  member(Location, [in_8_nbrs, in_6_nbrs]),
@@ -109,8 +110,15 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 				  sm(Name, A, D, C) | Rest], Path),
 		    suffix(Top, Rest), Top = [sm(_,_,_,_) | _],
 		    Wait = [enumerate(Name)], % wait till all set before use
-	            BackSwap = values_from_base(Top)), !,
-	        pointer_from(Path, SmPtr);
+	            BackSwap = values_from_base(Top),
+	            pointer_from(Path, SmPtr);
+		  Location = in_offspring,
+		    append(Tail, [sm(Name, A, _Fr, C) | Rest], Path),
+		    Wait = [],
+		    BackSwap = path_substitution([sm(Name, A, B, C)],
+		      [sm(Name, D, B, progen), sm(Name, A, D, C)], 
+		      pop),
+	            pointer_from(RealPath, SmPtr)), !;
 	     % the last bit will stop these roles being used in same eqn as
 	     % assoc roles, which may be sensible
 	     member(Link, [none, outside]),

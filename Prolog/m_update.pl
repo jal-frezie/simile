@@ -383,7 +383,11 @@ get_unit_conversion(Remote, Local,
 	        Index = -2;
 	     ready_type(TopModel, hex_grid(_,_)),
 	        SourceLocation = in_6_nbrs,
-	        Index = -3),
+	        Index = -3;
+	     % values from offspring in population: implemented but not working
+	     fail, is_population(TopModel),
+	        SourceLocation = in_offspring,
+	        Index = -4),
 	     Subs = [var | DefSubs];
 	      get_all_dims(TopModel, XSubs), % disabled for 6.0p1
 	        \+ XSubs = [],
@@ -431,7 +435,7 @@ ready_type(Rect, Type) :-
 
 source_locn_name(Idx, Name) :-
 	Posn is -Idx,
-	nth(Posn, [up_hierarchy, in_8_nbrs, in_6_nbrs], Name).
+	nth(Posn, [up_hierarchy, in_8_nbrs, in_6_nbrs, in_offspring], Name).
 
 relation_of_source(Exited, Entered, SourceLocation) :-
 	member(Far, Exited), member(Near, Entered),
@@ -599,6 +603,8 @@ name_from_role_texts(role_texts(Path, RelId, Dir, RelnCapt), Used, Name) :-
 	    append_atoms(from_8_nbrs_, Tail, Remote_name);
 	  Dir = in_6_nbrs,
 	    append_atoms(from_6_nbrs_, Tail, Remote_name);
+	  Dir = in_offspring,
+	    append_atoms(from_offspring_, Tail, Remote_name);
 	  Dir = in_all_bases,
 	    append_atoms(Tail, '_from_base', Remote_name);
 	  RelId = '/none/',

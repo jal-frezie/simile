@@ -172,6 +172,9 @@ itcl::class similescript::$newHelperClass {
 	foreach instruct $State {
 	    switch [lindex $instruct 0] {
 		spheres {
+		    foreach arr {x y z r} {
+			array unset $arr
+		    }
 		    for {set i 1} {$i<5} {incr i} {
 			array set [lindex {0 x y z r} $i] \
 			    [Flatten [lindex [$modelInst GetValue \
@@ -191,8 +194,10 @@ itcl::class similescript::$newHelperClass {
 			    lappend upper $op
 			}
 		    }
-		    
 		} lines {
+		    foreach arr {sx sy sz fx fy fz w} {
+			array unset $arr
+		    }
 		    for {set i 1} {$i<8} {incr i} {
 			array set [lindex {0 sx sy sz fx fy fz w} $i] \
 			    [Flatten [lindex [$modelInst GetValue \
@@ -215,6 +220,9 @@ itcl::class similescript::$newHelperClass {
 			}
 		    }
 		} oldellipses {
+		    foreach arr {cx cy cz tx ty tz sx sy sz} {
+			array unset $arr
+		    }
 		    for {set i 1} {$i<10} {incr i} {
 			array set [lindex {0 cx cy cz tx ty tz sx sy sz} $i] \
 			    [Flatten [lindex [$modelInst GetValue \
@@ -238,6 +246,9 @@ itcl::class similescript::$newHelperClass {
 			}
 		    }
 		} ellipses {
+		    foreach arr {cx cy cz mr ec rx ry rz} {
+			array unset $arr
+		    }
 		    for {set i 1} {$i<9} {incr i} {
 			array set [lindex {0 cx cy cz mr ec rx ry rz} $i] \
 			    [Flatten [lindex [$modelInst GetValue \

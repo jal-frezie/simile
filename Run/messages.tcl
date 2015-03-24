@@ -221,6 +221,7 @@ set msgs(without_role) [tr. {Include array/list of all source values}]
 set msgs(up_hierarchy) [tr. {Include array of values from all this submodel's instances}]
 set msgs(in_8_nbrs) [tr. {Include list of values from up to 8 grid squares sharing a side or corner with current square}]
 set msgs(in_6_nbrs) [tr. {Include list of values from up to 6 grid hexagons sharing a side with the current hexagon}]
+set msgs(in_offspring) [tr. {Include list of values from individuals which are the offspring of the current individual via any reproduction channel}]
 set msgs(with_role) [tr. {Include source value(s) corresponding with role "%1$s"}]
 
 # parameter sources

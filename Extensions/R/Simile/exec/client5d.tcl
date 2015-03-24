@@ -176,6 +176,7 @@ proc CountDistinctValuesById {iHandle outputId} {
     # 1st result elt is total number of vals
     return [llength [lrange $typeList 1 end]]
 }
+
 # this gets data from the model as an array of 8-bit values, then
 # lzw-encodes them and chops into 255-byte blocks as used for building
 # .gif images, then converting to base64 for transmission.
