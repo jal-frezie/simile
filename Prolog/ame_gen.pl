@@ -716,17 +716,20 @@ enum_type_ref(Ref, Model, ETStyle, Value, Units, ETSpec) :-
 	    BareRef = Ref),
 	(nth0(Value, [false, true], BareRef),
 	    Units = boolean;
-	  contains(Project, Model),
-	  contains(Project, Grid),
-	    Grid has_class_refinement multiplication_spec of MS,
-	    member(interpretation=Form, MS),
-	    (member(Form-Pts-Units-ETSpec,
-		   [rect_grid(R,C)-[sw,s,se,w,e,nw,n,ne]-a(rect_nbr)-'RECT_NBR',
-		    hex_grid(R,C)-['7h','5h','9h','3h','11h','1h']-a(hex_nbr)-'HEX_NBR']),
+	  (member(Form-Pts-Units-ETSpec,
+		  [rect_grid(R,C)-[sw,s,se,w,e,nw,n,ne]-a(rect_nbr)-'RECT_NBR',
+		   hex_grid(R,C)-['7h','5h','9h','3h','11h','1h']-a(hex_nbr)-'HEX_NBR']),
 	        nth(Value, Pts, BareRef);
 	     member(Form-BareRef-Value-Units-ETSpec,
 		    [rect_grid(R,C)-rect_nbr-8-n(rect_nbr)-'RECT_NBR',
-		     hex_grid(R,C)-hex_nbr-6-n(hex_nbr)-'HEX_NBR']));
+		     hex_grid(R,C)-hex_nbr-6-n(hex_nbr)-'HEX_NBR'])),
+% only try to find relevant grid type in model if needed
+% otherwise takes too long
+	    Grid has_class_refinement multiplication_spec of MS,
+	    member(interpretation=Form, MS),
+	    contains(Project, Grid),
+	    backup'><'is_toplevel(Project),
+	    contains(Project, Model);
 	[BareRef, Value, Units, ETSpec] = [boolean, 2, n(boolean), 'FLAG'];
 	BareRef = 'NULL',
 	    Value = 0,
