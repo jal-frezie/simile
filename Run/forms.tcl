@@ -1795,16 +1795,16 @@ proc ShowAbout {winId} {
 
 proc GetLatestVers {} {
     package require http
-    if {[catch {::http::geturl http://www.simulistics.com/cgi-bin/products/current-version.php -timeout 2500} token]} {
-	return 0
-    }
-    upvar #0 $token versReq
-    if {$versReq(status) eq "ok"} {
+# catch everything -- failure to connect, unexpected sign-in web page, etc.
+    if {[catch {
+	set token [::http::geturl http://www.simulistics.com/cgi-bin/products/current-version.php -timeout 2500]
+	upvar #0 $token versReq
 	array set versInfo $versReq(body)
-	return $versInfo(simileVerNo)
-    } else {
+	set latest $versInfo(simileVerNo)
+    } belch]} {
 	return 0
     }
+    return $latest
 }
 # images must be global because if building a c++ program we may be in a different directory
 #set bwVers [package require BWidget]
