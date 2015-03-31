@@ -245,11 +245,6 @@ proc CheckFnsFresh {L progDir id userFnList} {
     }
     set stat 0
     set files {}
-    if {[file exists $progFile]} {
-        set date [file mtime $progFile]
-    } else {
-        set date 0
-    }
     foreach func $userFnList {
         set functor [lindex [split $func /] 0] ;# remove arity
         set fnLine [lsearch -inline $equation(fnDefs) "{Local *} * $functor"]
@@ -267,7 +262,7 @@ proc CheckFnsFresh {L progDir id userFnList} {
 	    } else {
 		set defnFile ${fnBase}.pl
 	    }
-            if {[file mtime $defnFile]>$date && $stat<2} {
+            if {[Newer $defnFile $progFile m] && $stat<2} {
                 set stat 2 ;# Declaration out of date
             }
             if {[string equal procedure [lindex $fnLine 2]]} {
@@ -278,7 +273,7 @@ proc CheckFnsFresh {L progDir id userFnList} {
                     if {[lsearch $files $file]==-1} {
                         lappend files $file
                     }
-                    if {[file mtime $file]>$date && ![string equal tcl $L] && \
+                    if {[Newer $file $progFile m] && ![string equal tcl $L] && \
 			    $stat<2} {
                         set stat 2 ;# Definition out of date
                         # no problem with tcl definitions, included at run time

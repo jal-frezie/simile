@@ -48,10 +48,18 @@ set savedCredentials [list prologId interfaceId install_time license_code \
 #     }
 # } else {
 
+proc Newer {is than t} {
+    if {![file exists $than]} {
+	return 1
+    }
+    file stat $is foo
+    file stat $than bar
+    return [expr {$foo(${t}time) > $bar(${t}time)}]
+}
+
 set installedCreds [file join $SIMILE_PATH Run userinfo.txt]
 set creds [file join $custom(prefDir) userinfo.txt]
-if {![file exists $creds] || \
-	[file atime $installedCreds]>[file atime $creds]} {
+if {[Newer $installedCreds $creds c]} {
     file copy -force $installedCreds $creds
 }
 
