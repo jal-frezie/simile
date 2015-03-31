@@ -1473,6 +1473,7 @@ proc MyRaise {top} {
 # A top level window to contain the helpers
 # overrides mre.tcl Makemre
 proc Makemre { node } {
+    set ::myNode $node ;# may not get focus event to set this in Windows
     return [RunEnv::Create $node]
 }
 

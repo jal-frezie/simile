@@ -76,9 +76,7 @@ namespace eval runcontrol33857 {
         if {[string match $t [winfo toplevel $t]]} {
 #            wm title $t "Run control"; # $t isn't a toplevel under MRE
             set geom [PrefValue custom(runControlPosition) runControlPosition]
-            if {[string compare default $geom]} {
-                wm geometry $t $geom
-            }
+            catch {wm geometry $t $geom}
         }
         
         ::ttk::notebook $t.nb

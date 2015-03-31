@@ -605,7 +605,6 @@ proc LoadProgram {node lang} {
     set runState($node,reloadParams) -2 ;# the initialize phase
     if {[StartRun $node]} {
         ToggleIOToolMenu $node
-	set myNode $node ;# cos new MRE will have focus
     }
 }
 
