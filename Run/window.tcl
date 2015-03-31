@@ -2030,6 +2030,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	-values $equation(prevs)
     pack $eb.equation -side left -expand 1 -fill x
     bind $eb.equation <Return> [list EnterEqn $winid $eb.equation]
+    set tabAct {if {[AcceptAutoComp $eb.equation]} break}
+    bind $eb.equation <Tab> [subst -nocommands $tabAct]
     bind $eb.equation <FocusIn> "EmbraceEqn $winid"
     bind $eb.equation <FocusOut> "AbandonEqn $winid"
     bind $eb.min <FocusIn> "EmbraceEqn $winid"
@@ -2238,13 +2240,20 @@ proc ScrollCompletion {win hop} {
     }
 }
 
-proc EnterEqn {winid eb} {
+proc AcceptAutoComp {eb} {
     global equationbar
 
-# If there is an autocomplete active, 'enter' just accepts this
     if {[info exists equationbar(tails)]} {
 	$eb selection clear
 	array unset equationbar tails
+	return 1
+    }
+    return 0
+}
+
+proc EnterEqn {winid eb} {
+# If there is an autocomplete active, 'enter' just accepts this
+    if {[AcceptAutoComp $eb]} {
 	return
     }
     focus [winfo parent $eb].tick
