@@ -148,12 +148,17 @@ function addTabFor(tclInst) {
 	case "gen3d1": // lollipops
 	new_helper("shapes");
 	var i=3;
+	currentHelper.State = [];
 	while (specArray[i] != "/annotation/") {
-	    AddItem(currentHelper, "lollipops");
+	    currentLine = ["lollipops"];
 	    for (parm in {"x":0,"y":0,"h":0}) {
-		captPath = tclListOfDimty(specArray[i++],1).join(" ");
-		currentHelper.acceptClick(idFromCapt(captPath));
+		nId = idFromCapt(tclListOfDimty(specArray[i++],1).join(" "));
+		currentLine.push(nId);
+		currentHelper.tgts.push(nId);
+//		currentHelper.acceptClick(idFromCapt(captPath));
 	    }
+	    currentLine.push({});
+	    currentHelper.State.push(currentLine);
 	}
 	break;
 
@@ -828,7 +833,7 @@ function Shapes3D (port) {
 	scene.add(circle);
     }
     
-    camera.position.set(0,150,400);
+    camera.position.set(250,100,250);
     camera.lookAt(scene.position);	
 
     var render = function () {
@@ -922,17 +927,24 @@ function MakeSelection (that, selected) {
     i++;
     if (i == that.template.length) { // finished
 	that.template[i] = {}; // new empty display object list
-	oldState = that.State;
-	that.State = [that.template]; // New items only
-	newData = {};
-	for (j=0; j<that.newComps.length; ++j) {
-	    nItm = that.newComps[j]
-	    newData[nItm] = JSON.parse(values_json[nItm]);
-	}
-	that.display(parseFloat($("#ct").val()),newData,false),
-	that.State = oldState;
-	that.State.push(that.template);
-	ShowMenuButton(that);
+	$.post('model_action.php', {"base":fileBase, "act":"Query",
+				    "note":JSON.stringify(that.newComps)},
+	       function(newDataCode) {
+		   oldState = that.State;
+		   that.State = [that.template]; // New items only
+
+		   newDataArr = JSON.parse(newDataCode);
+		   newData = {};
+		   for (j=0; j<that.newComps.length; ++j) {
+		       nItm = that.newComps[j]
+		       newData[nItm] = newDataArr[j];
+		       // do not use popups they may be incomplete
+		   }
+		   that.display(parseFloat($("#ct").val()),newData,false),
+		   that.State = oldState;
+		   that.State.push(that.template);
+		   ShowMenuButton(that);
+	       });
     } else {
 	switch (that.template[i][0]) {
 	case "component":
@@ -2023,6 +2035,7 @@ $.ajax({
 
     // Now stick the values in the run control
     $("#rl").val(pipeBits.execTime);
+    $("#ue").val(pipeBits.displayInt);
     $("#le").val(pipeBits.displayInt);
     $("#ts").val(pipeBits.phaseList);
 

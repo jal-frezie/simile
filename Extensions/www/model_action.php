@@ -29,21 +29,26 @@ function doTcl($cmd) {
 }
 
 function do_query($req) {
-   switch ($req->format) {
-      case "list":
-      $val = json_decode(doTcl("GetJsonValuesById [set iH] "
-	           . $req->node . " " . 1048576));
-      break;
+   if (is_object($req)) {
+      switch ($req->format) {
+         case "list":
+         $val = json_decode(doTcl("GetJsonValuesById [set iH] "
+   	           . $req->node . " " . 1048576));
+         break;
 
-      case "binary":
-      $val = doTcl("GetBinaryValuesById [set iH] " . $req->node
-	           . " " . $req->bottom . " " . $req->top);
-      break;
+         case "binary":
+         $val = doTcl("GetBinaryValuesById [set iH] " . $req->node
+   	           . " " . $req->bottom . " " . $req->top);
+         break;
 
-      case "distinct":
-      $val = doTcl("CountDistinctValuesById [set iH] " . $req->node);
-      break;
+         case "distinct":
+         $val = doTcl("CountDistinctValuesById [set iH] " . $req->node);
+         break;
 // more later
+      }
+   } else {
+      $val = json_decode(doTcl("GetJsonValuesById [set iH] "
+	        . $req . " " . 1048576));
    }
    return $val;
 }
@@ -259,13 +264,7 @@ break;
                    . $_POST['depth']);
       $note = json_decode($_POST['note']);
       for($x=0;$x<count($note);$x++) {
-         if (is_object($note[$x])) { // it's a req for binary data
-	    $val = do_query($note[$x]);
-	 } else {
-            $val = json_decode(doTcl("GetJsonValuesById [set iH] "
-	        . $note[$x] . " " . 1048576));
-	 }
-	 $resArr[$x] = $val;
+	 $resArr[$x] = do_query($note[$x]);
       }
       echo json_encode($resArr);
       break;
@@ -293,12 +292,7 @@ break;
 // probably want to make another call to get error message
 //	 }
 	 for($x=0;$x<count($note);$x++) {
-	    if (is_object($note[$x])) { // it's a req for binary data
-	       $val = do_query($note[$x]);
-	    } else {
-               $val = json_decode(doTcl("GetJsonValuesById [set iH] "
-	        . $note[$x] . " " . 1048576));
-	    }
+	    $val = do_query($note[$x]);
 // if ExecuteMulti the time points are outer indices
             if ($_POST['act'] == "Execute") {
                $hlpArr[$note[$x]]["".$endInt] = $val;
