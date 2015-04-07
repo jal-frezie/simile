@@ -5,41 +5,34 @@
 # This allows the user to start the random number generator on a predictable
 # sequence
 
-# Deactivated -- rewrite in new style so setrand can have topnode arg
-#set keyValue setrand92383
+set newHelperClass setrand92383
+itcl::class similescript::$newHelperClass {
+    inherit Helper
 
-namespace eval ::setrand92383 {
-
-proc identify {} {
+    proc Identify {} {
 	return "Initialize pseudo-random"
-}
+    }
 
-proc initialize {winId} {
+    constructor {modelInst winTitle {state {}}} {
+# perverse extra body because base class constructor has args
+	Helper::constructor $modelInst $winTitle
+    } {
 	set ms [message $winId.intro -aspect 400 -text "Enter an integer value for the random number seed:"]
 	pack $ms -padx 4 -pady 4
-	set exit [namespace code "Done $winId"]
+	set exit [list $this Done]
 	set en [entry $winId.entry -textvariable [namespace current]::value]
 	bind $en <Return> $exit
 	pack $en -padx 4 -pady 4
 	set bt [button $winId.bt -text "Set seed" -default active -width 10 -command $exit]
 	pack $bt -padx 4 -pady 4
-}
-
-proc Done {winId} {
-	variable value
-	randseed $value
-#	kill_helper_window $winId
-}
-
-# No need to do anything to graph sketch when displays update
-    proc reset {winId} {
     }
 
-proc display {args} {
-}
+    public method Done {} {
+	variable value
+	$modelInst SeedRandoms $value
+    }
 
-proc Restore {winId} {
-    initialize $winId
-}
-
-} ;# end of namespace
+# No need to do anything when displays update
+    public method Display {time dispInt step} {
+    }
+} ;# end of helper class

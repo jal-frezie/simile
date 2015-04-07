@@ -14,10 +14,14 @@ proc load_c_stub_1 {node ap} {
     set ::auto_path $ap
     scan [info tclversion] {%d.%d} MAJ MIN
     package require -exact Ame_dll $::env(SIMILE_VERSION)
-    randseed [clock seconds]
+    SeedRandoms $node [clock seconds]
     # above was previously [clock scan now] but this had the disadvantage that
     # it immediately loaded a whole lot of on-demand parsing packages into the 
     # exec thread which aren't used anywhere else and sometimes cannot be found
+}
+
+proc SeedRandoms {node val} {
+    randseed $val
 }
 
 # load_dll adds a dll to the system. Trees are added bottom up, so model_id

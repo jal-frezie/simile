@@ -355,6 +355,10 @@ itcl::class similescript::Helper {
 # This is optional, some helpers may keep their state permanently up to date
     public method PrepareSaveString {} {
     }
+
+    public method Introspect {cmd} {
+	return [eval $cmd]
+    }
 }
 
 itcl::class similescript::OldStyleHelper {
@@ -553,6 +557,10 @@ redo with snap object
         }
     }
     
+    public method SeedRandoms {seedval} {
+	::SeedRandoms $modelNode $seedval
+    }
+
 # Methods for helper apps to call
     public method GrabClicks {helperInst} {
 	global helperTable

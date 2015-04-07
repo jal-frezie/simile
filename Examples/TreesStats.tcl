@@ -52,5 +52,18 @@ package require math::statistics
 ::math::statistics::min $NumTrees
 ::math::statistics::max $NumTrees
 puts "descriptive parameters: mean, minimum, maximum, number of data, standard deviation, variance"
-::math::statistics::basic-stats $NumTrees
+puts [::math::statistics::basic-stats $NumTrees]
 
+# now demonstrate that seeding the random generator produces reproducible 
+# results -- do run twice more, seeding generator each time
+for {set count 0} {$count<2} {incr count} {
+    runControl Reset
+    runControl SeedRandoms 1234
+    set NumTrees {}             
+    while {[runControl GetCurrentTime]<=300} {
+	runControl Start
+	lappend NumTrees [runControl GetValue "/Number of Trees"]
+    }
+    
+    puts [::math::statistics::basic-stats $NumTrees]
+}

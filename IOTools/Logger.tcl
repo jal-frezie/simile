@@ -6,8 +6,8 @@ set newHelperClass DataLogger20111205
 class similescript::$newHelperClass {
     inherit Helper
 
-    variable curFolder
-    variable toSeparateFiles
+    public variable curFolder
+    public variable toSeparateFiles
     variable useNodes
 
     proc Identify {} {
@@ -177,7 +177,7 @@ class similescript::$newHelperClass {
 	    file mkdir $curFolder
 	}
 	set ::msgs(logs_$this) [format [tr. {Current folder: %1$s}] $curFolder]
-	if {[llength useNodes(logged)]} {
+	if {[llength $useNodes(logged)]} {
 	    Display [$modelInst GetCurrentTime] 1 1 ;# write current vals
 	}
     }

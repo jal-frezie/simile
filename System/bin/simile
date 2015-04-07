@@ -1,40 +1,19 @@
-#!/bin/sh
-# script that finds its own arse, using both hands and a map if necessary,
-# and launches Simile from surrounding directories
-
-if expr "$0" : '.*/'; then
-    # program invoked by filename
-    OLDDIR=`pwd`
-    cd "`dirname "$0"`"
-    LOC=`pwd`/`basename "$0"`
-    cd "$OLDDIR"
-else
-    # program invoked by command: find target
-    LOC=`which $0`;
-fi
-
-LSLINE=`ls -l "$LOC"`
-LINK=`expr "$LSLINE" : '.* -> \(.*\)$'`
-
-if test -z "$LINK"; then
-    # target is not a symlink
-    TOP="$LOC";
-elif expr "$LINK" : '[/~]'; then
-    # symlink to absolute path
-    TOP="$LINK";
-else
-    # relative symlink
-    TOP=`dirname "$LOC"`/$LINK;
-fi
-
-BINDIR=`dirname "$TOP"`;
-SYSDIR=`dirname "$BINDIR"`;
-SIMDIR=`dirname "$SYSDIR"`;
-# next two lines needed if tk included in distribution
-# export LD_LIBRARY_PATH="$SYSDIR/lib"
-# TCL_LIBRARY="$LD_LIBRARY_PATH/tcl8.5"
-# export TCL_LIBRARY
-# start included tk
-# "$BINDIR/wish" "$SIMDIR/Run/simile.tcl" $1
-# start system tk
-wish "$SIMDIR/Run/simile.tcl" $1
+#!/usr/bin/tclsh
+set invoc [info script]
+if {[package vcompare [info tclversion] 8.5]==-1} { ;# too old, try newer
+   exec tclsh8.5 $invoc $argv &
+   exit
+}
+if {[string first / $invoc]==-1} { ;# it's a command
+    set invoc [exec which $invoc]
+}
+if {![catch {file link $invoc} tgt]} { ;# it's a link
+    if {[file pathtype $tgt] eq "relative"} {
+        set invoc [file join [file dirname $invoc] $tgt]
+    } else {
+      	set invoc $tgt
+    }
+}
+package require Tk
+source [file join [file dirname [file dirname [file dirname $invoc]]] \
+           Run simile.tcl]
