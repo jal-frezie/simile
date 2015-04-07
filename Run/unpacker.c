@@ -1,6 +1,5 @@
 // Definitions used in this code and the model code
 #include <signal.h> /* for killing stuck model execution */
-#include <stdint.h> // for uintptr_t
 #include <tcl.h>
 
 #ifdef WIN32
@@ -557,7 +556,6 @@ typedef struct convert_pt {
   int baseType;
   unsigned char** tgtPtr;
   double *valfor0, *valfor255;
-  Tcl_Obj* procRes;
 } convertParms;
 
 void convert_to_byte(void* values, int offset, convertParms* cbData) {
@@ -578,89 +576,6 @@ void convert_to_byte(void* values, int offset, convertParms* cbData) {
     (unsigned char)(thisVal<valfor0?0:(thisVal>=valfor255?255:
 				       (255*(thisVal-valfor0)/
 					(valfor255-valfor0))));
-}
-
-/* ----------- LZW stuff -------------- */
-typedef uint8_t byte;
-typedef uint16_t ushort;
- 
-#define M_CLR	256	/* clear table marker */
-#define M_EOD	257	/* end-of-data marker */
-#define M_NEW	258	/* new code index */
- 
-#define MAX_BITS 12
-/* encode and decode dictionary structures.
-   for encoding, entry at code index is a list of indices that follow current one,
-   i.e. if code 97 is 'a', code 387 is 'ab', and code 1022 is 'abc',
-   then dict[97].next['b'] = 387, dict[387].next['c'] = 1022, etc. */
-typedef struct {
-	ushort next[256];
-} lzw_enc_t;
- 
-typedef struct lzw_buildt {
-  int baseType;
-  double *valfor0, *valfor255;
-  Tcl_Obj* procRes;
-
-  int bits, next_shift;
-  unsigned char c;
-  ushort code, nc, next_code;
-  lzw_enc_t* d;
- 
-  byte *out;
-  int out_len, o_bits;
-  uint32_t tmp;
-} lzwBuild;
-
-void make_gif_body(void* values, int offset, lzwBuild* cbData) {
-  double valfor0, valfor255, thisVal;
-
-  valfor0 = *cbData->valfor0;
-  valfor255 = *cbData->valfor255;
-  if (cbData->baseType == REAL) 
-    thisVal = ((double*)values)[offset];
-  else 
-    thisVal = ((int*)values)[offset];
-
-  cbData->c =
-        (unsigned char)(thisVal<valfor0?0:(thisVal>=valfor255?255:
-				       (255*(thisVal-valfor0)/
-					(valfor255-valfor0))));
-  // next bit from Rosetta
-  inline void write_bits(ushort x) {
-    cbData->tmp = (cbData->tmp << cbData->bits) | x;
-    cbData->o_bits += cbData->bits;
-    //if (_len(out) <= cbData->out_len) _extend(out);
-    while (cbData->o_bits >= 8) {
-      cbData->o_bits -= 8;
-      //out[cbData->out_len++] = cbData->tmp >> cbData->o_bits;
-      cbData->tmp &= (1 << cbData->o_bits) - 1;
-    }
-  }
- 
-  if ((cbData->nc = cbData->d[cbData->code].next[cbData->c]))
-    cbData->code = cbData->nc;
-  else {
-    write_bits(cbData->code);
-    cbData->nc = cbData->d[cbData->code].next[cbData->c] = cbData->next_code++;
-    cbData->code = cbData->c;
-  }
- 
-  /* next new code would be too long for current table */
-  if (cbData->next_code == cbData->next_shift) {
-    /* either reset table back to 9 bits */
-    if (++cbData->bits > MAX_BITS) {
-      /* table clear marker must occur before bit reset */
-      write_bits(M_CLR);
-      
-      cbData->bits = 9;
-      cbData->next_shift = 512;
-      cbData->next_code = M_NEW;
-      _clear(cbData->d);
-    } else	/* or extend table */
-      _setsize(cbData->d, cbData->next_shift *= 2);
-  }
-
 }
 
 void move_to_double(double* values, int offset, double** tgtPtr) {
@@ -716,6 +631,12 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   int discCount;
 
   if (clientData) {
+    // listing distinct vals
+    if (argc != 2) {
+      Tcl_WrongNumArgs(interp, 1, argv, "data_handle");
+      return TCL_ERROR;
+    }
+  } else {
     if (argc != 4) {
       Tcl_WrongNumArgs(interp, 1, argv, "data_handle lower_limit upper_limit");
       return TCL_ERROR;
@@ -729,12 +650,6 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     error = Tcl_GetDoubleFromObj(interp, argv[3], &valfor255);
     if (error != TCL_OK) {
       return error;
-    }
-  } else {
-    // listing distinct vals
-    if (argc != 2) {
-      Tcl_WrongNumArgs(interp, 1, argv, "data_handle");
-      return TCL_ERROR;
     }
   }
 
@@ -752,36 +667,25 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   // this increments size once for each value
 
   resultPtr = Tcl_NewObj();
-  switch ((uintptr_t)clientData) {
-  case 0: // count distinct values
-    dDiscList = (double*)malloc(sizeof(double)*16);
-    discCount=0;
-
-    ((addSortedParms*)myClientData)->baseType = baseType; 
-    ((addSortedParms*)myClientData)->discCount = &discCount; 
-    ((addSortedParms*)myClientData)->dPtrDiscList = &dDiscList;
-    call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
-		      (valCallback*)addSorted, myClientData);
-
-    // if doing distinct vals, make tcl array of results and free space
-    // (new for 5.3; first val is total member count)
-
-    Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewIntObj(size));
-    for (count=0; count<discCount; ++count) {
-      spareObjPtr = Tcl_NewDoubleObj(dDiscList[count]);
-      Tcl_ListObjAppendElement(interp, resultPtr, spareObjPtr);
-    }
-    free(dDiscList);
-    break;
-
-  case 1: // get binary, convert to byte if span
+  if (!clientData) {
     if (valspan) {
       Tcl_SetByteArrayLength(resultPtr, size);
     } else { // no span: get values as floats
       Tcl_SetByteArrayLength(resultPtr, size*sizeof(double));
     }
     tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
+  } else {
+    dDiscList = (double*)malloc(sizeof(double)*16);
+  }
 
+  discCount=0;
+  if (clientData) {
+    ((addSortedParms*)myClientData)->baseType = baseType; 
+    ((addSortedParms*)myClientData)->discCount = &discCount; 
+    ((addSortedParms*)myClientData)->dPtrDiscList = &dDiscList;
+    call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
+		      (valCallback*)addSorted, myClientData);
+  } else {
     ((convertParms*)myClientData)->tgtPtr = &tgt; 
     // not sure why I must cast a pointer rather than the structure itself
     // must be passed every call so increment it
@@ -795,31 +699,18 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 	call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
 			  (valCallback*)move_to_double, &tgt);
     }
-    break;
-  case 2: // making GIF body, do not know final size
-    Tcl_SetByteArrayLength(resultPtr, 128);
-    lzwBuild convState;
-    convState->baseType = baseType; 
-    convState->valfor0 = &valfor0;
-    convState->valfor255 = &valfor255;
-    convState->procRes = resultPtr;
-
-    convState->bits = 9;
-    convState->next_shift = 512;
-    convState->code = M_CLR; // 1st code in output
-    convState->next_code = M_NEW;
-    convState->d = _new(lzw_enc_t, 512);
-
-    convState->out = _new(ushort, 4);
-    convState->out_len = 0;
-    convState->o_bits = 0;
-    convState->tmp = 0;
-
-    call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0, 
-			  (valCallback*)make_gif_body, convState);
-    break;
   }
 
+  // if doing distinct vals, make tcl array of results and free space
+  // (new for 5.3; first val is total member count)
+  if (clientData) {
+    Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewIntObj(size));
+    for (count=0; count<discCount; ++count) {
+      spareObjPtr = Tcl_NewDoubleObj(dDiscList[count]);
+      Tcl_ListObjAppendElement(interp, resultPtr, spareObjPtr);
+    }
+    free(dDiscList);
+  }
   Tcl_SetObjResult(interp, resultPtr);
   return TCL_OK;
 }
@@ -894,14 +785,11 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_CreateObjCommand(interp, "extract_json", extractListCmd, (ClientData)1,
 		       (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "distinct_values", extractBinCmd, 
-		       (ClientData)0, (Tcl_CmdDeleteProc *)NULL);
-  
   Tcl_CreateObjCommand(interp, "extract_binary", extractBinCmd, 
-		       (ClientData)1, (Tcl_CmdDeleteProc *)NULL);
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "extract_lzw", extractBinCmd, 
-		       (ClientData)2, (Tcl_CmdDeleteProc *)NULL);
+  Tcl_CreateObjCommand(interp, "distinct_values", extractBinCmd, 
+		       (ClientData)1, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "count_values", getValueCountCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
