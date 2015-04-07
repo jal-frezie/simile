@@ -268,8 +268,8 @@ switch $tcl_platform(platform) {
     }
 }
 
-set env(SIMILE_VERSION) 6.3
-set sendvars(simP) {p2}
+set env(SIMILE_VERSION) 6.4
+set sendvars(simP) {}
 
 if {$env(SIMILE_VERSION)>=6.0} {
     set do_events 1 ;# include event symbols

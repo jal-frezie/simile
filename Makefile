@@ -1,4 +1,4 @@
-MINREL = 3
+MINREL = 4
 
 # days after install: 0 for no installation expiry
 REL_EXP = 0
