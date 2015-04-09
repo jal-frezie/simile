@@ -86,7 +86,7 @@ namespace eval runcontrol33857 {
 	set frames($node,rcf) $rcf
         ttk::frame $rcf.upper -class Toolbar
         foreach mode {play pause stop} {
-            set ${mode}Img [image create photo -file ../Images/Control/${mode}.gif]
+            set ${mode}Img [image create photo -file $::SIMILE_PATH/Images/Control/${mode}.gif]
         }
         frame $rcf.upper.topbuttons
         ::ttk::button $rcf.upper.topbuttons.reset -image $stopImg -width 32 \

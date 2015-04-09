@@ -177,7 +177,7 @@ namespace eval RunEnv {
                     set gif [lindex $item 0]
                     set helptext [lindex $item 1]
                     set command [lindex $item 2]
-                    set newButton [::ttk::button $tb1.b$tbnum$i -style Toolbutton -image [image create photo  -file "../Images/Toolbar/$gif"] \
+                    set newButton [::ttk::button $tb1.b$tbnum$i -style Toolbutton -image [image create photo  -file "$::SIMILE_PATH/Images/Toolbar/$gif"] \
 				       -command $command]
 		    FixDisabledImgBug $newButton
                     pack $newButton -padx 1 -pady 1  -side left -anchor w
@@ -241,7 +241,7 @@ namespace eval RunEnv {
             
             wm geometry $mreId ${width}x${height}
 #            if {[string match unix $tcl_platform(platform)]} {
-#                wm iconbitmap $mreId @../Images/dribble.xbm
+#                wm iconbitmap $mreId @$::SIMILE_PATH/Images/dribble.xbm
 #            }; # on Windows uses default icon set in Runmodel.tcl
             wm protocol $mreId WM_DELETE_WINDOW ::RunEnv::WindUp
             return $mreId

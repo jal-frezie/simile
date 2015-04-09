@@ -58,14 +58,15 @@ proc ::graphtools::MakeToolBar {w toolbarItems} {
 # next line for bwidget version
 #        set newButton \
 #	    [$bbox add -name [file rootname $gif] -highlightthickness 0 \
-#		 -image [image create photo  -file "../Images/Toolbar/$gif"] \
+#		 -image [image create photo  -file "$::SIMILE_PATH/Images/Toolbar/$gif"] \
 #		 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
 #		 -command $command]
 # non-bwidget version which works but needs all the clients changed
 # to set button abilities by name instead of number (which they should anyway)
 	set newButton \
 	    [button $f.[file rootname $gif] -highlightthickness 0 \
-		 -image [image create photo  -file "../Images/Toolbar/$gif"] \
+		 -image [image create photo \
+			     -file "$::SIMILE_PATH/Images/Toolbar/$gif"] \
 		 -takefocus 0 -relief flat -borderwidth 1 -padx 1 -pady 1 \
 		 -command $command]
 	pack $newButton -side left

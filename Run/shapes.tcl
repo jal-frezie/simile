@@ -99,7 +99,7 @@ proc PutShape {w l t r b file fatness colourScheme title} {
 	-tags "unscaled $title size_on_this realwidth(1.0)"
 
     set c $w
-    source "../Images/$fileName.cnv"
+    source "$::SIMILE_PATH/Images/$fileName.cnv"
 # use Inner...we don't need hourglass and the refresh may allow customization
 # dialogue to get its threads in a twist
     $w addtag has_info withtag unscaled
@@ -1131,7 +1131,7 @@ proc ShiftImages {topDir way args} {
                     }
                     # prevent crasho if reading fails
 		    if {[string match none $fmt]} {
-			$image read ../Images/bigsimile.gif -shrink
+			$image read $::SIMILE_PATH/Images/bigsimile.gif -shrink
 			PutSize $image
 		    }
                 } out {
@@ -1155,7 +1155,8 @@ proc ShiftImages {topDir way args} {
 proc GetGhostCursor {} {
     global tcl_platform
     if {[string equal Linux $tcl_platform(os)]} {
-	return {@../Images/ghost.xbm ../Images/ghost.mask.xbm black white}
+	return {@$::SIMILE_PATH/Images/ghost.xbm \
+		    $::SIMILE_PATH/Images/ghost.mask.xbm black white}
     } else {
 	return gumby
     }

@@ -304,7 +304,7 @@ itcl::class similescript::Helper {
 		wm title $winId [Identify]
 	    }
 	    if {![string match windows $tcl_platform(platform)]} {
-		wm iconbitmap $winId @../Images/weegraph.xbm
+		wm iconbitmap $winId @$::SIMILE_PATH/Images/weegraph.xbm
 	    }
 	    wm protocol $winId WM_DELETE_WINDOW "itcl::delete object $this"
 	}

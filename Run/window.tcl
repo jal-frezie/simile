@@ -1506,7 +1506,7 @@ if {[string match "Darwin" $tcl_platform(os)]} {
 }
 
 proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
-    global custom pushedbutton tcl_platform runState iconImages msgs
+    global custom pushedbutton tcl_platform runState iconImages msgs SIMILE_PATH
     
     set c $winid.canvas
     set topm ${winid}top
@@ -1901,10 +1901,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set nb [::ttk::frame $winid.toolSlot.navbar -class Toolbar]
     pack [ttk::separator $nb.afterSeparator -orient horizontal] \
 	-fill x -side bottom
+    set buttonImages $SIMILE_PATH/Images/Toolbar
     if {[PrefValue custom(bigButtons) bigButtons]} {
-        set buttonImages ../Images/Toolbar/Large
-    } else {
-        set buttonImages ../Images/Toolbar
+        append buttonImages /Large
     }
     foreach navCmd {{new {local empty}} {open {local open_all}} \
                 {save {file save}}  {print {local print}} {separator1}\
@@ -2060,7 +2059,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     frame $eb.padding2 -width 3
     pack $eb.padding2 -side left
     
-    set image [image create photo -file "../Images/Eqnbar/inputs.gif"]
+    set image [image create photo -file "$SIMILE_PATH/Images/Eqnbar/inputs.gif"]
     ::ttk::menubutton $eb.inputs -state disabled -menu $eb.inputs.menu -image $image
     FixDisabledImgBug $eb.inputs
     pack $eb.inputs -side left
