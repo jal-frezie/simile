@@ -1277,7 +1277,8 @@ proc DoWelcomeDialog {dtId} {
             }
         }
         if {![llength $custom(hotlist)]} {
-            set custom(hotlist) [glob $custom(prefDir)/Examples/*.sml]
+            set custom(hotlist) [glob [file join \
+		    [file normalize $custom(prefDir)] Examples *.sml]]
         }
     }
     set t [PutItThere .register $dtId]

@@ -906,25 +906,26 @@ proc ControlDraw {prologVersion} {
     set custom(hotlist) {}
 # v6: switch to keeping paths relative to dereferenced prefdir. I don't want
 # older versions failing to read this then emptying it, so move the file...
-    set cache [file join $custom(prefDir) .recent6]
+# simplest way to de-relativize is with appropriate wd
+    set oldWD [pwd]
+    cd $custom(prefDir)
+    set cache .recent6
     if {![file exists $cache]} {
-	set cache [file join $custom(prefDir) .recent]
+	set cache .recent
     }
     if {[file exists $cache]} {
         set cacheStream [NetOpen $cache r]
 	fconfigure $cacheStream -encoding utf-8
         while {[gets $cacheStream oldFile]>0} {
-	    if {[string equal relative [file pathtype $oldFile]]} {
-		set oldFile [file normalize \
-				 [file join $custom(prefDir) $oldFile]]
-	    }
+	    set oldFile [file normalize $oldFile]
             if {[file exists $oldFile] && \
                         [lsearch $custom(hotlist) $oldFile]==-1} {
                 lappend custom(hotlist) $oldFile
             }
         }
-        close $cacheStream
     }
+    cd $oldWD
+    close $cacheStream
     
     if {[string match windows $tcl_platform(platform)]} {
         set compOptions [list CHOICE [tr. Default] [tr. Microsoft] [tr. GNU]]
