@@ -145,6 +145,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 
 	    (\+ ChangeTop == 1, % no change to model; reuse executable?
 		Stat = 0,
+		\+ Action = export_sharelib, % always build new if exporting?
 		safe_tcl_eval(['ReuseShareLib', br(WCheckDir), Language, 
 			       OldTgt], "1"), % succeeds if old sharelib found
 		Tgt = OldTgt;
