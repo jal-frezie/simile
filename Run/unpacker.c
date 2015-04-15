@@ -1,5 +1,6 @@
 // Definitions used in this code and the model code
 #include <signal.h> /* for killing stuck model execution */
+#include <stdint.h> // for uintptr_t etc
 #include <tcl.h>
 
 #ifdef WIN32
@@ -578,6 +579,109 @@ void convert_to_byte(void* values, int offset, convertParms* cbData) {
 					(valfor255-valfor0))));
 }
 
+typedef struct hash_entry_t {
+  uint16_t origin;
+  uint16_t code;
+  unsigned char ident;
+} hash_entry;
+
+typedef struct lzw_parm_t {
+  convertParms cbData;
+  Tcl_Obj* result;
+  hash_entry htable[5000];
+  uint16_t code, next_code;
+  int tail, tbits, codeSize, tooBig, inBloc;
+  char dump[257];
+} lzwParms;
+
+hash_entry* hash_lookup(lzwParms* encodeState, unsigned char id) {
+  hash_entry* locn;
+  locn = encodeState->htable + (847*encodeState->code+17*id)%5000;
+  while (locn->origin != 257 && (locn->origin != encodeState->code || 
+				 locn->ident != id))
+    if (locn == encodeState->htable + (5000 - 1)) 
+      locn = encodeState->htable;
+    else
+      locn += 1;
+  if (locn->origin == 257) {
+    locn->origin = encodeState->code;
+    locn->ident = id;
+  }
+  return locn;
+}
+
+write_bits(lzwParms* encodeState, uint16_t add) {
+  int curLen;
+  unsigned char *curTgt;
+
+  encodeState->tail += add << encodeState->tbits;
+  // printf("%d\n", tail);
+  encodeState->tbits += encodeState->codeSize;
+  while (encodeState->tbits >= 8) {
+    encodeState->dump[++encodeState->inBloc] = encodeState->tail & 255;
+    encodeState->tail = encodeState->tail >> 8;
+    encodeState->tbits -= 8;
+  }
+  if (add == 257 && encodeState->tbits) // end of output, bits left, sqeeze out
+    encodeState->dump[++encodeState->inBloc] = encodeState->tail & 255;
+  if (add == 257 || encodeState->inBloc > 250) {
+    // easiest way to stuff things on Tcl result is start filling bloc at 1
+    // then stick count in 0 and null-terminate?
+    encodeState->dump[0] = encodeState->inBloc;
+    encodeState->dump[++encodeState->inBloc] = 0;
+    // Tcl_AppendResult(encodeState->interp, "hello", NULL); // what?
+    Tcl_GetByteArrayFromObj(encodeState->result, &curLen);
+    curTgt = Tcl_SetByteArrayLength(encodeState->result, 
+				    curLen+encodeState->inBloc);
+    memcpy(curTgt + curLen, encodeState->dump, encodeState->inBloc);
+    encodeState->inBloc = 0;
+  }
+}
+
+void empty_table(lzwParms* encodeState) {
+  int i;
+  for (i=0; i<5000; i++) {
+    encodeState->htable[i].code = 0;
+    encodeState->htable[i].origin = 257;
+  }
+  // empty code table -- all ident values used so 257 origin means empty
+  encodeState->codeSize = 9;
+  encodeState->tooBig = 512;
+}
+
+void growLZW(void* values, int offset, lzwParms* encodeState) {
+  unsigned char c, *cptr;
+  uint16_t nc;
+
+  convertParms* nested;
+  cptr = &c;
+  nested =  &(encodeState->cbData);
+  nested->tgtPtr = &cptr;
+  convert_to_byte(values, offset, nested); // puts byte in c
+
+  hash_entry *hline;
+  hline = hash_lookup(encodeState, c); // hash table and current code in state
+  if (nc = hline->code) // assignment
+    encodeState->code = nc;
+  else {
+    write_bits(encodeState, encodeState->code);
+    hline->code = encodeState->next_code;
+    if (encodeState->next_code++ == encodeState->tooBig) {
+      if (encodeState->codeSize == 12) {
+	write_bits(encodeState, 256);
+	empty_table(encodeState);
+	encodeState->next_code = 258;
+      } else {
+	encodeState->tooBig *= 2;
+	++encodeState->codeSize;
+	if (encodeState->codeSize == 12)
+	  --encodeState->tooBig;
+      }
+    }
+    encodeState->code = c;
+  }
+}
+
 void move_to_double(double* values, int offset, double** tgtPtr) {
   *((*tgtPtr)++) = values[offset];
 }
@@ -629,14 +733,9 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 
   double *dDiscList;
   int discCount;
-
+  lzwParms *encState;
+    
   if (clientData) {
-    // listing distinct vals
-    if (argc != 2) {
-      Tcl_WrongNumArgs(interp, 1, argv, "data_handle");
-      return TCL_ERROR;
-    }
-  } else {
     if (argc != 4) {
       Tcl_WrongNumArgs(interp, 1, argv, "data_handle lower_limit upper_limit");
       return TCL_ERROR;
@@ -650,6 +749,12 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     error = Tcl_GetDoubleFromObj(interp, argv[3], &valfor255);
     if (error != TCL_OK) {
       return error;
+    }
+  } else {
+    // listing distinct vals
+    if (argc != 2) {
+      Tcl_WrongNumArgs(interp, 1, argv, "data_handle");
+      return TCL_ERROR;
     }
   }
 
@@ -667,25 +772,14 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
   // this increments size once for each value
 
   resultPtr = Tcl_NewObj();
-  if (!clientData) {
+  switch ((uintptr_t)clientData) {
+  case 1:
     if (valspan) {
       Tcl_SetByteArrayLength(resultPtr, size);
     } else { // no span: get values as floats
       Tcl_SetByteArrayLength(resultPtr, size*sizeof(double));
     }
     tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
-  } else {
-    dDiscList = (double*)malloc(sizeof(double)*16);
-  }
-
-  discCount=0;
-  if (clientData) {
-    ((addSortedParms*)myClientData)->baseType = baseType; 
-    ((addSortedParms*)myClientData)->discCount = &discCount; 
-    ((addSortedParms*)myClientData)->dPtrDiscList = &dDiscList;
-    call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
-		      (valCallback*)addSorted, myClientData);
-  } else {
     ((convertParms*)myClientData)->tgtPtr = &tgt; 
     // not sure why I must cast a pointer rather than the structure itself
     // must be passed every call so increment it
@@ -699,18 +793,45 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 	call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
 			  (valCallback*)move_to_double, &tgt);
     }
-  }
+    break;
 
+  case 0:
+    dDiscList = (double*)malloc(sizeof(double)*16);
+    discCount=0;
+    ((addSortedParms*)myClientData)->baseType = baseType; 
+    ((addSortedParms*)myClientData)->discCount = &discCount; 
+    ((addSortedParms*)myClientData)->dPtrDiscList = &dDiscList;
+    call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
+		      (valCallback*)addSorted, myClientData);
   // if doing distinct vals, make tcl array of results and free space
   // (new for 5.3; first val is total member count)
-  if (clientData) {
     Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewIntObj(size));
     for (count=0; count<discCount; ++count) {
       spareObjPtr = Tcl_NewDoubleObj(dDiscList[count]);
       Tcl_ListObjAppendElement(interp, resultPtr, spareObjPtr);
     }
     free(dDiscList);
+    break;
+
+  case 2:
+    encState = (lzwParms*)malloc(sizeof(lzwParms));
+    encState->cbData.baseType = baseType; 
+    encState->cbData.valfor0 = &valfor0;
+    encState->cbData.valfor255 = &valfor255;
+    encState->result = resultPtr;
+
+    empty_table(encState);
+    encState->code = 256; // next char will be 1st, this starts output
+    encState->next_code = 257; // resulting code never used
+    encState->tail = encState->tbits = encState->inBloc = 0;
+    call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
+		      (valCallback*)growLZW, encState);
+    write_bits(encState, encState->code);
+    write_bits(encState, 257);
+    free(encState);
+    break;
   }
+
   Tcl_SetObjResult(interp, resultPtr);
   return TCL_OK;
 }
@@ -785,11 +906,14 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_CreateObjCommand(interp, "extract_json", extractListCmd, (ClientData)1,
 		       (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "extract_binary", extractBinCmd, 
+  Tcl_CreateObjCommand(interp, "distinct_values", extractBinCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "distinct_values", extractBinCmd, 
+  Tcl_CreateObjCommand(interp, "extract_binary", extractBinCmd, 
 		       (ClientData)1, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "extract_gif_tail", extractBinCmd, 
+		       (ClientData)2, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "count_values", getValueCountCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
