@@ -217,6 +217,7 @@ function addTabFor(tclInst) {
 					      specArray[idx+2],
 					      specArray[idx+3]);
 	    }
+	    currentHelper.nswat = nswat;
 	    currentHelper.cMap = cMap;
 	    var captPath =  tclListOfDimty(specArray[1],1).join(" ");
 	    currentHelper.acceptClick(idFromCapt(captPath));
@@ -1521,6 +1522,19 @@ function AlterRange(that, factor) {
     that.tgts[0].top = that.tgts[0].top * factor;
 }
 
+function BytesFromHex (hex) {
+    if (hex.length > 12) {
+	R = parseInt(hex.substr(1,2),16);
+	G = parseInt(hex.substr(5,2),16);
+	B = parseInt(hex.substr(9,2),16);
+    } else {
+	R = parseInt(hex.substr(1,2),16);
+	G = parseInt(hex.substr(3,2),16);
+	B = parseInt(hex.substr(5,2),16);
+    }
+    return {"R":R,"G":G,"B":B};
+}
+
 function ColorMapFromPoints (n, bot, mid, top) {
     specials = ["black", "red", "green", "white"];
 
@@ -1529,39 +1543,31 @@ function ColorMapFromPoints (n, bot, mid, top) {
 	hiPt = [bot, mid, top][x];
 	var c = specials.indexOf(hiPt);
 	if (c > -1) {
-	    hiR = [0,255,0,255][c];
-	    hiG = [0,0,255,255][c];
-	    hiB = [0,0,0,255][c];
+	    hi = {R:[0,255,0,255][c],G:[0,0,255,255][c],B:[0,0,0,255][c]};
 	} else {
-	    hiR = parseInt(hiPt.substr(1,2),16);
-	    hiG = parseInt(hiPt.substr(3,2),16);
-	    hiB = parseInt(hiPt.substr(5,2),16);
+	    hi = BytesFromHex(hiPt);
 	}
 	if (x>0) {
 	    for (var j=0; j<128; ++j) {
 		fract = 1+2*Math.floor(n*(j+128*(x-1))/256)/(n-1)-x;
 
-		var r = Math.round(fract*hiR+(1-fract)*loR);
-		var g = Math.round(fract*hiG+(1-fract)*loG);
-		var b = Math.round(fract*hiB+(1-fract)*loB);
+		var r = Math.round(fract*hi.R+(1-fract)*lo.R);
+		var g = Math.round(fract*hi.G+(1-fract)*lo.G);
+		var b = Math.round(fract*hi.B+(1-fract)*lo.B);
 		data += String.fromCharCode(r, g, b);
 	    }
 	}
-	loR = hiR;
-	loG = hiG;
-	loB = hiB;
+	lo = hi;
     }
     return data;
 }
 function ColorMapFromSwatches (swList) {
     var data = [];
     for (var i=0; i<swList.length; ++i) {
-	var r = parseInt(swList[i].substr(1,2),16);
-	var g = parseInt(swList[i].substr(3,2),16);
-	var b = parseInt(swList[i].substr(5,2),16);
+	c = BytesFromHex(swList[i]);
 	for (var j=Math.floor(i*256/swList.length);
 	     j<Math.floor((i+1)*256/swList.length); ++j) {
-	    data += String.fromCharCode(r, g, b);
+	    data += String.fromCharCode(c.R, c.G, c.B);
 	}
     }
     return data;
@@ -1572,7 +1578,8 @@ function Grid5 (port) {
     this.tgts = [];
     this.status = "initializing";
 
-    this.cMap = ColorMapFromPoints(32, "black", "red", "white");
+    this.nswat = 32;
+    this.cMap = ColorMapFromPoints(this.nswat, "black", "red", "white");
     this.minVal = 0;
     this.maxVal = 100;
     this.initScale = 1;
@@ -1626,7 +1633,8 @@ Grid5.prototype.acceptClick = function (nodeId) {
     var that = this; // no chance..
     if (this.status == "initializing") {
 	this.tgts[0] = {"format":"binary","node":nodeId,
-			"bottom":this.minVal,"top":this.maxVal};
+			"bottom":this.minVal,"top":this.maxVal,
+			"nswat":this.nswat};
 	dims = model_json[nodeId].dims;
 	this.height = dims[0];
 	

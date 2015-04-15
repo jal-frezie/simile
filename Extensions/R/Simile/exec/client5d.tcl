@@ -180,102 +180,18 @@ proc CountDistinctValuesById {iHandle outputId} {
 # this gets data from the model as an array of 8-bit values, then
 # lzw-encodes them and chops into 255-byte blocks as used for building
 # .gif images, then converting to base64 for transmission.
+# Also rounds values to centre of nearest legend swatch so there are fewer
+# symbols and LZW works better
 
-proc GetBinaryValuesById  {iHandle outputNode minVal maxVal} {
+proc GetBinaryValuesById  {iHandle outputNode minVal maxVal nswat} {
     set ::model_id $::modelTypes([set ::instance_id $iHandle])
     set raw [GetHandle dummy $outputNode] ;# blob of 8-bit colours
-    set cooked [extract_binary $raw $minVal $maxVal]
-    set stac [LZW::encode $cooked]
-    # list of 9+-bit codes now all a long string of 1s and 0s.
+    set stac [extract_gif_tail $raw $minVal $maxVal]
     ReleaseHandle dummy $raw
 
     append stac [binary format cc 0 0x3b]
-    return [base64 -mode encode -- $stac]
+    return [base64 -mode encode -- $stac]    
 }
-
-# thanks to Rosetta for the following
-namespace eval LZW {
-    variable char2int
-    variable chars
-    for {set i 0} {$i < 256} {incr i} {
-        set char [binary format c $i]
-        set char2int($char) $i
-        lappend chars $char
-    }
-}
- 
-proc LZW::encode {data} {
-    variable char2int
-    array set dict [array get char2int]
- 
-    set w ""
-    # predefined codes for GIF style
-    set codeSize 9
-    set tooBig 512
-    set dict(gif_clr) 256
-    set dict(gif_end) 257
-#    set blob 000000001 ;# string reverse format %0${codeSize}b $dict(gif_clr)
-    set tail $dict(gif_clr)
-    set tbits 9
-
-    foreach c [split $data ""] {
-        set wc $w$c
-        if {[info exists dict($wc)]} {
-            set w $wc
-        } else {
-#            append blob [string reverse [format %0${codeSize}b $dict($w)]]
-	    incr tail [expr {$dict($w) << $tbits}]
-	    incr tbits $codeSize
-	    if {$tbits >= 16} {
-		append blob [binary format s $tail] ;# stack lowest 16
-		set tail [expr {$tail >> 16}]
-		incr tbits -16
-	    }
-            set dict($wc) [array size dict]
-	    if {$dict($wc) == $tooBig} {
-		if {$codeSize == 12} {
-		    # once we have 4095 codes in the table we must reset
-		    # while we can still do so with a 12-bit code
-		    array unset dict
-		    array set dict [array get char2int]
-		    set codeSize 9
-		    set tooBig 512
-		    set dict(gif_clr) 256
-		    set dict(gif_end) 257
-		    incr tail [expr {$dict(gif_clr) << $tbits}]
-		    incr tbits 12
-		    # append blob 000000001000 ;# == 256 in reversed 12-bit
-		} else {
-		    set tooBig [expr {2*$tooBig}]
-		    incr codeSize
-		    if {$codeSize == 12} {incr tooBig -1}
-		}
-	    }
-            set w $c
-
-	    if {[string length $blob]>=250} {
-		# use bloc size of 250 so last one can be bigger with trailer
-		append result [binary format c 250] [string range $blob 0 249]
-		set blob [string range $blob 250 end]
-	    }
-        }
-    }
-    
-    # end of data:
-    incr tail [expr {$dict($w) << $tbits}]
-    incr tbits $codeSize
-    incr tail [expr {$dict(gif_end) << $tbits}]
-    incr tbits $codeSize
-    
-    while {$tbits > 0} {
-	append blob [binary format c $tail] ;# stack lowest 8
-	set tail [expr {$tail >> 8}]
-	incr tbits -8
-    } ;# at most 6 more bytes
-    append result [binary format c [string length $blob]] $blob
-    return $result		   
-}
-
 # 
 # lifted from hai2mmii.tcl v5.9
 proc TransEnums {transList vals fromNums} {
