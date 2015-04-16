@@ -52,7 +52,6 @@ MAKEPIC = -fPIC
 MAKESL = -shared
 VERS = $(shell echo "puts [info tclversion]" | tclsh8.5)
 # 8.5 stubs work in 8.6 better than vice versa
-
 PT = .
 
 EXECDIR = $(SYSDIR)/bin
@@ -311,6 +310,10 @@ install:
 		Examples/dancer.spf \
 		Examples/ant.cnv \
 		Examples/mouse.cnv \
+		Examples/BoilerDataLogger.tcl \
+		Examples/TreesMultiRun.tcl \
+		Examples/TreesStats.tcl \
+		Examples/TreesTableHelper.tcl \
 		Extensions/Scripting.tcl \
 		Functions/Arithmetic.pl \
 		Functions/Hidden.pl \
