@@ -923,9 +923,9 @@ proc ControlDraw {prologVersion} {
                 lappend custom(hotlist) $oldFile
             }
         }
+	close $cacheStream
     }
     cd $oldWD
-    close $cacheStream
     
     if {[string match windows $tcl_platform(platform)]} {
         set compOptions [list CHOICE [tr. Default] [tr. Microsoft] [tr. GNU]]
