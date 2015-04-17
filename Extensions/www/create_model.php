@@ -151,6 +151,7 @@ echo "<script>\nvar fileBase = '$base';\nvar pipeBits = $rps;\n</script>";
 <button onclick="new_helper('sliders')"><img src="images/slider.gif"/></button>
 <button onclick="new_helper('shapes')"><img src="images/3d_objects.png"/></button>
 <button onclick="new_helper('grid')"><img src="images/grid.gif"/></button>
+<button onclick="new_helper('polys')"><img src="images/polys.png"/></button>
 </div>
 <div id="Left" style="position:absolute;top:2em;bottom:0px;left:0px;width:320px">
 <table id="RunControl" border="2"> 

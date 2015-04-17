@@ -198,6 +198,10 @@ function addTabFor(tclInst) {
 	}
 	break;
 
+    case "polygon375":
+	new_helper("polys");
+	break;
+
     case "grid005":
 	new_helper("grid");
 	if (specArray[0] == "displaying") {
@@ -437,7 +441,8 @@ var pgplot_opts = {
 // actual addTab function: adds new tab using the input from the form above
 var helperTitles = {"plot":"Plotter","table":"Data table",
 		    "sliders":"Input sliders","params":"File parameters",
-		    "shapes":"3-D shape viewer","grid":"Spatial grid"},
+		    "shapes":"3-D shape viewer","grid":"Spatial grid",
+		    "polys":"Polygon map"},
 tabTemplate = "<li><a href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
 tabCounter = 2;
 
@@ -467,6 +472,8 @@ function new_helper(type) {
 	currentHelper = new PlotXY(id);
     } else if (type == "grid") {
 	currentHelper = new Grid5(id);
+    } else if (type == "polys") {
+	currentHelper = new Polygon(id);
     }
     currentHelpers[id] = currentHelper;
     tabs.tabs("option", "active", tabs.children().length - 2);
@@ -1561,6 +1568,7 @@ function ColorMapFromPoints (n, bot, mid, top) {
     }
     return data;
 }
+
 function ColorMapFromSwatches (swList) {
     var data = [];
     for (var i=0; i<swList.length; ++i) {
@@ -1571,6 +1579,121 @@ function ColorMapFromSwatches (swList) {
 	}
     }
     return data;
+}
+
+function Polygon (port) {
+    this.port = port;
+    this.tgts = [];
+    this.status = "initializing";
+
+    this.nswat = 32;
+    this.cMap = ColorMapFromPoints(this.nswat, "black", "green", "white");
+    this.minVal = 0;
+    this.maxVal = 100;
+    this.initScale = 1;
+
+    bar = d3.select('#' + port).append("div").attr("id", port + "_Buttonbar")
+        .style('width','100%');
+    bar.append("button").html("<img src='images/less.gif'/>")
+	.style('float','left').on('click', function() {AlterRange(that, 0.5) });
+    bar.append("button").html("<img src='images/greater.gif'/>")
+	.style('float','left').on('click', function() {AlterRange(that, 2.0) });
+    bar.append("div").attr("id", port + "_instruct").style('float','left');
+    
+    this.scaleGrp = d3.select('#' + port).append("svg")
+	.attr("width",800).attr("height",480).attr("id", port + "_diag")
+	.append("g");
+    this.legend = document.createElement("img");
+    this.legend.style.width = "100%";
+    this.legend.style.height = "16px";
+    document.getElementById(port).appendChild(this.legend);
+    this.diagZoom = d3.behavior.zoom()
+	.on("zoom", function () {
+	    d3.select('#' + port + '_diag').select('g')
+		.attr("transform", "translate(" + d3.event.translate +
+		      ")scale(" + d3.event.scale + ")");
+	});
+    d3.select('#' + port + '_diag').attr("class","pane").call(this.diagZoom);
+    d3.select('#' + port + '_instruct').html("Select component with values to display as polygon colours");
+}
+
+Polygon.prototype.acceptClick = function (nodeId) {
+    var that = this; // no chance..
+    if (this.status == "initializing") {
+	this.tgts[0] = nodeId;
+	this.status = "getting_x_coords";
+	d3.select('#' + this.port + '_instruct').html("Select component with values for X coordinates of verices");
+    } else if (this.status == "getting_x_coords") {
+	this.xpts = nodeId; // not tgts[1] we lose interest having got them
+	this.status = "getting_y_coords";
+	d3.select('#' + this.port + '_instruct').html("Select component with values for Y coordinates of verices");
+    } else {
+    headerData = 'GIF89a';
+    headerData += conv16(256);                  // image width
+    headerData += conv16(8);                  // image height
+
+    headerData += String.fromCharCode(0xf7, 0, 0);
+    // colour table, background colour, pixel aspect ratio
+
+    //black -> red -> white
+    headerData += this.cMap;
+
+    headerData += String.fromCharCode(0x2c); // image descriptor
+    headerData += conv16(0);                  // NW corner position of image
+    headerData += conv16(0);                  // in logical screen
+    headerData += conv16(256);                  // image width
+    headerData += conv16(8);                  // image height
+    headerData += String.fromCharCode(0, 8);
+
+    this.legend.src = 'data:image/gif;base64,'
+	+ btoa(headerData) + legenData;
+    this.legend.alt = "Something has gone terrubly winf";
+
+	this.ypts = nodeId;
+	this.status = "displaying";
+	d3.select('#' + this.port + '_instruct').html("");
+
+	lookAt = [this.tgts[0],this.xpts,this.ypts];
+	$.post('model_action.php', {"base":fileBase, "act":"Query",
+				    "note":JSON.stringify(lookAt)},
+	   function(resp) {
+	       colScaler = 255/(that.maxVal-that.minVal); 
+	       responses = JSON.parse(resp);
+	       colours = flatten('m', responses[0]);
+	       for (var inds in colours) {
+		   indArr = inds.split(",");
+		   xObj = responses[1];
+		   yObj = responses[2];
+		   for (i=0; i<indArr.length-1; i++) { // last ind is 'm'
+		       xObj = xObj[indArr[i]];
+		       yObj = yObj[indArr[i]];
+		   }
+		   // now they should be straight arrays..not
+		   pts = "";
+		   for (var j in yObj) {
+		       pts = pts + xObj[j] + "," + yObj[j] + " ";
+		   }
+		   colFract = Math.floor((colours[inds]-that.minVal)*colScaler);
+
+		   // OK now add the poligonnn
+		   colSpec = "#";
+		   for (j=0;j<3;++j) {
+		       s = that.cMap.charCodeAt(3*colFract+j).toString(16);
+		       if (s.length<2)
+			   colSpec = colSpec + "0"; // pad
+		       colSpec = colSpec + s;
+		   }
+		   
+		   that.scaleGrp.append("polygon").attr("points",pts)
+		       .attr("fill",colSpec).attr("stroke","black")
+		       .attr("stroke-width",0);
+	       }
+	   });
+    } 
+}
+
+Polygon.prototype.display = function (time, latest, connect) {
+    // later
 }
 
 function Grid5 (port) {
@@ -1637,6 +1760,7 @@ Grid5.prototype.acceptClick = function (nodeId) {
 			"nswat":this.nswat};
 	dims = model_json[nodeId].dims;
 	this.height = dims[0];
+	this.hex = (model_json[model_json[nodeId].parent].eval == "HONEYCOMB");
 	
 	if (dims.length == 3 && !isNaN(parseInt(dims[0])) 
 	    && !isNaN(parseInt(dims[1]))) {
@@ -1688,22 +1812,35 @@ Grid5.prototype.acceptClick = function (nodeId) {
 	       
 	       //black -> red -> white
 	       data += that.cMap;
+
+	       // now add a graphix control xtn to declare 00 transparent
+	       data += String.fromCharCode(0x21, 0xf9, 0x04, 0x01,
+					   0,0,0,0);
+	       // right that's 789 bits and we have 11 to go making 800 --
+	       // nice and round but we want a multiple of 3 to hit a
+	       // base64 char boundary, so add a comment extn to do it
+	       data += String.fromCharCode(0x21, 0xfe, 9);
+	       data += "SimiLive!";
+	       data += String.fromCharCode(0);
 	       
 	       data += String.fromCharCode(0x2c); // image descriptor
 	       data += conv16(0);                 // NW corner position of image
 	       data += conv16(0);                 // in logical screen
 	       data += conv16(that.width);                  // image width
 	       data += conv16(that.height);                  // image height
+	       data += String.fromCharCode(0, 8); //  no-local-colour-table,
+	       // lzw-minimum-code-size
 	       
-    // OK, how many bytes is that so far? 790? so include no-local-colour-table
-    // and lzw-minimum-code-size bits to bring up to base64 char boundary
-	       data += String.fromCharCode(0, 8);
 	       that.headerGIF = 'data:image/gif;base64,' + btoa(data);
 
 	       that.status = "displaying";
 	       d3.select('#' + that.port + '_img')
 		   .attr("width",that.width).attr("height",that.height)
 		   .attr("xlink:href", that.headerGIF + responses[arrInd]);
+	       if (that.hex) {
+		   d3.select('#' + that.port + '_img')
+		       .attr("transform","scale(1.732,1.5)"); 
+	       }
 	   });
 
     headerData = 'GIF89a';
