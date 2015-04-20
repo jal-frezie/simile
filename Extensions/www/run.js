@@ -10,7 +10,7 @@ var tabs;
 		    if (ui.newPanel.selector != "#tabs-0") { // diagram
 			currentHelper = currentHelpers[$(ui.newPanel.selector)[0].id];
 		    } else {
-			currentHelper = undefined;
+			currentHelper = null;
 		    }
 		}
 	    });
@@ -849,18 +849,24 @@ function Shapes3D (port) {
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
+    this.updated = false;
 
     var animate = function () {
 	requestAnimationFrame( animate );
 	// cube.rotation.x += 0.1; cube.rotation.y += 0.1;
-	if ("tabs-" + $( "#tabs" ).tabs("option","active") == port)
-	    renderer.render(scene, camera);
+	// if ("tabs-" + $( "#tabs" ).tabs("option","active") == port)
+	if (currentHelper != null)
+	    if (currentHelper.port == port && currentHelper.updated) {
+		renderer.render(scene, camera);
+		currentHelper.updated = false;
+	    }
 	controls.update();
     };
-// ultimately we will want to only re-render if the camera angle has changed or
-// model data reloaded. Latter tricky as we seem unable to access global vars
-// in the callback -- pass via a DOM property?
-    // controls.addEventListener( 'change', waggle );
+    var waggle = function() {
+	if (currentHelper != null)
+	    currentHelper.updated = true;
+    };
+    controls.addEventListener( 'change', waggle );
     animate();
 }
 
@@ -1151,6 +1157,7 @@ Shapes3D.prototype.display = function (time, latest, connect) {
 	    alert("Unrecognized item type: " + instruct[0]);
 	}
     }
+    currentHelper.updated = true;
 }
 
 Shapes3D.prototype.resize = function (x,y) {
