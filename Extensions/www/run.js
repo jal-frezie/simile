@@ -7,8 +7,10 @@ var tabs;
 	    tabs = $( "#tabs" ).tabs({heightstyle:"fill"});
 	    tabs.tabs({
 		activate: function( event, ui ) {
-		    if (ui.newPanel.selector != "#tabs-1") { // diagram
+		    if (ui.newPanel.selector != "#tabs-0") { // diagram
 			currentHelper = currentHelpers[$(ui.newPanel.selector)[0].id];
+		    } else {
+			currentHelper = undefined;
 		    }
 		}
 	    });
@@ -444,7 +446,7 @@ var helperTitles = {"plot":"Plotter","table":"Data table",
 		    "shapes":"3-D shape viewer","grid":"Spatial grid",
 		    "polys":"Polygon map"},
 tabTemplate = "<li><a href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
-tabCounter = 2;
+tabCounter = 1;
 
 function new_tab(label) {
     id = "tabs-" + tabCounter++,
@@ -844,15 +846,22 @@ function Shapes3D (port) {
     camera.position.set(250,100,250);
     camera.lookAt(scene.position);	
 
-    var render = function () {
-	requestAnimationFrame( render );
+    this.scene = scene;
+    this.camera = camera;
+    this.renderer = renderer;
+
+    var animate = function () {
+	requestAnimationFrame( animate );
 	// cube.rotation.x += 0.1; cube.rotation.y += 0.1;
-	renderer.render(scene, camera);
+	if ("tabs-" + $( "#tabs" ).tabs("option","active") == port)
+	    renderer.render(scene, camera);
 	controls.update();
     };
-    render();
-    this.scene = scene;
-    this.renderer = renderer;
+// ultimately we will want to only re-render if the camera angle has changed or
+// model data reloaded. Latter tricky as we seem unable to access global vars
+// in the callback -- pass via a DOM property?
+    // controls.addEventListener( 'change', waggle );
+    animate();
 }
 
 function ShowMenuButton (that) {
@@ -1617,6 +1626,18 @@ function Polygon (port) {
     d3.select('#' + port + '_instruct').html("Select component with values to display as polygon colours");
 }
 
+function colorFrom(map, line) {
+    colSpec = "#";
+    for (j=0;j<3;++j) {
+	s = map.charCodeAt(3*line+j).toString(16);
+	if (s.length<2)
+	    colSpec = colSpec + "0"; // pad
+	colSpec = colSpec + s;
+    }
+
+    return colSpec;
+}
+
 Polygon.prototype.acceptClick = function (nodeId) {
     var that = this; // no chance..
     if (this.status == "initializing") {
@@ -1662,6 +1683,7 @@ Polygon.prototype.acceptClick = function (nodeId) {
 	       colours = flatten('m', responses[0]);
 	       for (var inds in colours) {
 		   indArr = inds.split(",");
+		   niceInds = indArr.join("_");
 		   xObj = responses[1];
 		   yObj = responses[2];
 		   for (i=0; i<indArr.length-1; i++) { // last ind is 'm'
@@ -1676,15 +1698,10 @@ Polygon.prototype.acceptClick = function (nodeId) {
 		   colFract = Math.floor((colours[inds]-that.minVal)*colScaler);
 
 		   // OK now add the poligonnn
-		   colSpec = "#";
-		   for (j=0;j<3;++j) {
-		       s = that.cMap.charCodeAt(3*colFract+j).toString(16);
-		       if (s.length<2)
-			   colSpec = colSpec + "0"; // pad
-		       colSpec = colSpec + s;
-		   }
-		   
-		   that.scaleGrp.append("polygon").attr("points",pts)
+
+		   colSpec = colorFrom(that.cMap, colFract);
+		   that.scaleGrp.append("polygon")
+		       .attr("id", that.port + niceInds).attr("points",pts)
 		       .attr("fill",colSpec).attr("stroke","black")
 		       .attr("stroke-width",0);
 	       }
@@ -1693,7 +1710,14 @@ Polygon.prototype.acceptClick = function (nodeId) {
 }
 
 Polygon.prototype.display = function (time, latest, connect) {
-    // later
+    newColours = flatten('m', latest[this.tgts[0]]);
+    colScaler = 255/(this.maxVal-this.minVal); 
+    for (inds in newColours) {
+	colFract = Math.floor((newColours[inds]-this.minVal)*colScaler);
+	colSpec = colorFrom(this.cMap, colFract);
+	niceInds = inds.split(",").join("_");
+	d3.select('#' + this.port + niceInds).attr("fill",colSpec);
+    }
 }
 
 function Grid5 (port) {

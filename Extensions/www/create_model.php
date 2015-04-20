@@ -178,9 +178,9 @@ echo "<script>\nvar fileBase = '$base';\nvar pipeBits = $rps;\n</script>";
 </div>
 <div id="tabs" class="ui-layout-center" style="height:100%;margin-left:320px">
 <ul>
-<li><a href="#tabs-1">Model diagram</a></li>
+<li><a href="#tabs-0">Model diagram</a></li>
 </ul>
-<div id="tabs-1">
+<div id="tabs-0">
 <div>
 <!-- button type="button" onclick="SvgDiagZoom(0.8)">Zoom Out</button -->
 <!-- button type="button" onclick="SvgDiagZoom(1.25)">Zoom In</button -->
