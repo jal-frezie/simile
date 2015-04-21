@@ -20,7 +20,7 @@ itcl::class similescript::$newHelperClass {
 	set ms [message $winId.intro -aspect 400 -text "Enter an integer value for the random number seed:"]
 	pack $ms -padx 4 -pady 4
 	set exit [list $this Done]
-	set en [entry $winId.entry -textvariable [namespace current]::value]
+	set en [entry $winId.entry]
 	bind $en <Return> $exit
 	pack $en -padx 4 -pady 4
 	set bt [button $winId.bt -text "Set seed" -default active -width 10 -command $exit]
@@ -28,8 +28,7 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method Done {} {
-	variable value
-	$modelInst SeedRandoms $value
+	$modelInst SeedRandoms [$winId.entry get]
     }
 
 # No need to do anything when displays update
