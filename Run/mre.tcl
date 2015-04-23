@@ -1201,11 +1201,13 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 	variable parseStatus
 	variable CurrentContainer
 
-# Old saved states include a newline at start of data. New ones do not, with
-# the result that a backslash may be inserted for no very good reason
-	if {[string first [string range $oldStatus 0 0] "\\\n"]>=0} {
-	    set oldStatus [string range $oldStatus 1 end]
-	}
+# curlies and backslashes that occur before 1st tcl-special char (whitespace
+# / or $) will have been escaped...bug in xml parser?
+	set normalizer \
+	    [lindex [regexp -inline -indices {[/$[:space:]]} $oldStatus] 0 0]
+# normalizer is 1st tcl-special char
+	set oldStatus [regsub -all {\\(.)} [string range $oldStatus 0 $normalizer-1] \\1][string range $oldStatus $normalizer end]
+
 	set CurrentContainer $parseStatus(currentPath)
 	ReinstateHelper $parseStatus(simV) $oldStatus $parseStatus(hType) {}
     }

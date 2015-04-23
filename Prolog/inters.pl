@@ -1399,8 +1399,9 @@ decode_number(Source, SubId, Step, SourceRef, Units) :-
 	get_actual_size(SubId, Source, quoted, SrcNums, SrcTypes, SrcUnits),
 	(SrcNums = [SrcNum], SrcTypes = [SrcType], SrcUnits = [SrcUnit], !;
 	  throw(not_single_fixed_dimension(Source, SrcNums))),
-	(member(Source, [0, 0.0]) -> GenUnits = real; GenUnits = SrcUnit),
-	% allow value of 0 to match any physical unit
+	(member(Source, [0, 0.0]), m_update'><'use_units_in(SubId, 'Yes') -> 
+	     GenUnits = real; GenUnits = SrcUnit),
+	% allow value of 0 to match any physical unit (still int if disabled)
 	remove_physical_units_if_disabled(SubId, GenUnits, Units),
 	(Step = dummy, !,
 	    (Units = n(SourceRef), !; % enum type dims of makearray etc

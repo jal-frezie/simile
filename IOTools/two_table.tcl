@@ -309,13 +309,14 @@ namespace eval $keyValue {
         variable orientList
         
         set ind [lsearch $displayList($winId,paths) $var]
+	set id [lindex $displayList($winId,ids) $ind]
         set displayList($winId,paths) \
 	    [lreplace $displayList($winId,paths) $ind $ind]
         set displayList($winId,ids) \
 	    [lreplace $displayList($winId,ids) $ind $ind]
         set displayList($winId,transes) \
 	    [lreplace $displayList($winId,transes) $ind $ind]
-        foreach entry [array names dataStore $winId,$ind,*] {
+        foreach entry [array names dataStore $winId,$id,*] {
             unset dataStore($entry)
         }
         set xScrollPosn [$winId.t xview]
@@ -364,7 +365,7 @@ namespace eval $keyValue {
             if {[GetModelTime]==$lastDisplay($winId)} {
 		set values [lindex [GetModelValue $varId] 0]
 		if {[llength $values]} {
-		    set dataStore($winId,$varIndex,$lastDisplay($winId)) \
+		    set dataStore($winId,$varId,$lastDisplay($winId)) \
 			[TransEnums $trans $values]
 		}
             }
@@ -425,7 +426,7 @@ namespace eval $keyValue {
 	    if {[llength $values]} {
 # do not add empty lists they make finding dataless variables harder
 		set trans [lindex $displayList($winId,transes) $varIndex]
-		set dataStore($winId,$varIndex,$tCur) \
+		set dataStore($winId,$varId,$tCur) \
 		    [TransEnums $trans $values]
 	    }
                 
@@ -591,11 +592,12 @@ namespace eval $keyValue {
 	    set dummyTime $lastDisplay($winId)
 	}
         foreach varCapt $displayList($winId,paths) {
-	    if {![llength [array names dataStore $winId,$varIndex,*]]} {
+	    set varId [lindex $displayList($winId,ids) $varIndex]
+	    if {![llength [array names dataStore $winId,$varId,*]]} {
 # component is selected for tabulation but no values recorded --
 # insert empty value for existing or current time so header appears.
-		lappend dummied $varIndex
-		set dataStore($winId,$varIndex,$dummyTime) [list " "]
+		lappend dummied $varId
+		set dataStore($winId,$varId,$dummyTime) [list " "]
 	    }
             incr varIndex
         }
@@ -603,13 +605,15 @@ namespace eval $keyValue {
         foreach valId [array names dataStore $winId,*,*] {
             set valDims [split $valId ,]
             set varId [lindex $valDims 1]
+	    set varIndex [lsearch $displayList($winId,ids) $varId]
             if {[string match none [lindex $orientList($winId) 0]]} {
                 if {[lindex $valDims 2]==$lastDisplay($winId)} {
-                    GrabIndices $winId 1 {} {} $varId $dataStore($valId) $varId
+                    GrabIndices $winId 1 {} {} $varIndex $dataStore($valId) \
+			$varIndex
                 }
             } else {
                 GrabIndices $winId 0 {} {} [lindex $valDims 2] \
-                        [list $varId $dataStore($valId)] $varId
+                        [list $varIndex $dataStore($valId)] $varIndex
             }
         }
         
@@ -845,8 +849,8 @@ namespace eval $keyValue {
 	    }
 	}
 # now remove dummy values added to ensure appearance of useful headers
-	foreach varIndex $dummied {
-	    array unset dataStore $winId,$varIndex,$dummyTime
+	foreach varId $dummied {
+	    array unset dataStore $winId,$varId,$dummyTime
 	}
     }
     
@@ -903,8 +907,8 @@ namespace eval $keyValue {
             }
             incr ${level}Pt
         }
-        #puts "subscript template: $subscriptTemplate"
-        #puts "rowIds [array get rowIds] colIds [array get colIds]"
+        puts "subscript template: $subscriptTemplate"
+        puts "rowIds [array get rowIds] colIds [array get colIds]"
         # next copy the 2-d table to an n-d array using these
         foreach value [array names values] {
 	    if {[string length $values($value)]} {
@@ -928,7 +932,7 @@ namespace eval $keyValue {
 #                }
 #            }
 #        }
-# puts "values: [array get values]"
+	puts "values: [array get values] newValues: [array get newValues]"
         return [ArrayToList newValues]
     }
     
@@ -1155,7 +1159,8 @@ namespace eval $keyValue {
 #		    EditCellIs $winId.t 0 0 ;# get final edit
 		    unset dataStore
 		    # need tweaking if time/var in use
-		    set dataStore($winId,0,0.0) [ExtractEdits $winId]
+		    # (removed, what to do now 2nd subscript is id not index)
+		    set dataStore($winId,dummyId,0.0) [ExtractEdits $winId]
 		}
 		set orientList($winId) $newOrients
 		Reconbobulate $winId

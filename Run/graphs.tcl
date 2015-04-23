@@ -1343,12 +1343,13 @@ proc EditListAsTable {parent caption startLine valueArray} {
     upvar 1 $valueArray values
     set ${viewerId}::displayList($t) eqn_table
     set ${viewerId}::displayList($t,paths) [list $caption]
+    set ${viewerId}::displayList($t,ids) [list dummyId]
     if {$startLine} {
-	set ${viewerId}::dataStore($t,0,0.0) $values
+	set ${viewerId}::dataStore($t,dummyId,0.0) $values
 	set ${viewerId}::orientList($t) {none cols rows cols}
     } else {
 	foreach {idx val} $values {
-	    set ${viewerId}::dataStore($t,0,$idx) $val
+	    set ${viewerId}::dataStore($t,dummyId,$idx) $val
 	}
 	set ${viewerId}::orientList($t) {rows cols cols cols}
     }
