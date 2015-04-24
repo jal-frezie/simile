@@ -907,8 +907,8 @@ namespace eval $keyValue {
             }
             incr ${level}Pt
         }
-        puts "subscript template: $subscriptTemplate"
-        puts "rowIds [array get rowIds] colIds [array get colIds]"
+        #puts "subscript template: $subscriptTemplate"
+        #puts "rowIds [array get rowIds] colIds [array get colIds]"
         # next copy the 2-d table to an n-d array using these
         foreach value [array names values] {
 	    if {[string length $values($value)]} {
@@ -932,7 +932,7 @@ namespace eval $keyValue {
 #                }
 #            }
 #        }
-	puts "values: [array get values] newValues: [array get newValues]"
+	#puts "values: [array get values] newValues: [array get newValues]"
         return [ArrayToList newValues]
     }
     

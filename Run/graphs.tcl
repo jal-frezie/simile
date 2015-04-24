@@ -1312,7 +1312,7 @@ proc AcquireTableData {redo startLine} {
                     $table_entry(col1) $table_entry(coln) $table_entry(xpose)]
         }
     }
-    if {$redo || ![string equal $tableSpec $table_entry(data)]} {
+    if {$redo>1 || ![string equal $tableSpec $table_entry(data)]} {
         #do_in_editor puts "Loading with $tableSpec not $table_entry(data)"
         set table_entry(values) [LoadTableData $tableSpec $startLine 0]
         set table_entry(source) 2
