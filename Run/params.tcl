@@ -866,7 +866,7 @@ namespace eval fileparams {
 	    }
 	    if {![string length [$outWidgets($compName).e get]]} {
 # visible entry is empty, probably cleared, so skip writing
-	    } elseif {[DataInScenario $compName} {
+	    } elseif {[DataInScenario $compName]} {
 		set type [GetCompProperty $topNode Type $nodeId]
 		puts -nonewline $pStr \
 		    "$indent<byte_array $genericAVs type=[Entitize $type]"
