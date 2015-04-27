@@ -769,9 +769,9 @@ FINDABLE int markevtparamactiveCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-  int count, error, indxs[32];
+  int error;
   void* fpHandle;
-  void *sourcePtr, *destPtr;
+  void *sourcePtr;
 
   if (argc != 4) {
     Tcl_WrongNumArgs(interp, 1, argv, "param_id data indices");
@@ -779,14 +779,13 @@ FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
   }
   
   memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
-  if ((error = ints_from_list(interp, argv[3], indxs)) != TCL_OK)
-    return error;
+  // if ((error = ints_from_list(interp, argv[3], indxs)) != TCL_OK)
+  //   return error;
 
-  sourcePtr = Tcl_GetByteArrayFromObj(argv[2], &count);
+  sourcePtr = Tcl_GetByteArrayFromObj(argv[2], NULL);
   
   // OK, clever stuff (probably in shank) to go here...
-  destPtr = get_param_data_space(fpHandle);
-  memcpy(destPtr, sourcePtr, count);
+  paste_param_data(fpHandle, sourcePtr);
   return TCL_OK;
 }
 
@@ -805,7 +804,7 @@ FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
   memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   count=param_array_size(fpHandle);
   holder = Tcl_SetByteArrayLength(Tcl_GetObjResult(interp), count);
-  memcpy(holder, get_param_data_space(fpHandle), count);
+  copy_param_data(holder, fpHandle);
   return TCL_OK;
 }
 

@@ -866,8 +866,7 @@ namespace eval fileparams {
 	    }
 	    if {![string length [$outWidgets($compName).e get]]} {
 # visible entry is empty, probably cleared, so skip writing
-	    } elseif {[DataInScenario $compName] && \
-		    ($haveBytes || $recordLevel==-1)} {
+	    } elseif {[DataInScenario $compName} {
 		set type [GetCompProperty $topNode Type $nodeId]
 		puts -nonewline $pStr \
 		    "$indent<byte_array $genericAVs type=[Entitize $type]"
@@ -888,11 +887,11 @@ namespace eval fileparams {
 		}
 		puts $pStr ">"
 		set dimCount 0
-		if {$recordLevel==-1} {
+#		if {$recordLevel==-1} {
 		    set dimList $nodeDims ;# remove vm ones or bug
-		} else {
-		    set dimList [lrange $outData($compName) 3 end-3]
-		}
+#		} else {
+#		    set dimList [lrange $outData($compName) 3 end-3]
+#		}
 		if {$readMany($compName)} { ;# add TIME as outermost dimension
 		    puts $pStr "  $indent<value index=\"[incr dimCount]\" val=\"TIME\"/>"
 		}

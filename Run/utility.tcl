@@ -562,6 +562,10 @@ proc ShrinkValueList {outerList limit} {
     } elseif {[string equal ,bytes [lindex $list 1]]} {
 # in this case the list format is:
 # scenario ,bytes type idx1 ... idxn uftsi restart others raw_data
+	if {[lsearch [lrange $list 3 end-4] RECORDS]>=0} {
+	    set list "Per-record data specified by byte array"
+	    return -1
+	}
 	if {[string equal REAL [lindex $list 2]]} {
 	    set fieldChar d
 	    set fieldSize 8
@@ -616,7 +620,7 @@ proc DoByteArrayToList {fieldChar fieldSize bounds rawData} {
 #puts $fieldSpec
 	if {![binary scan $rawData $fieldSpec spit]} {
 	    set spit {<scan failed>}
-	    puts "Failed to scan $rawData for $fieldSpec"
+	    error "Failed to scan $rawData for $fieldSpec"
 	}
 	incr offset [expr $fieldSize*$bounds]
     } else {

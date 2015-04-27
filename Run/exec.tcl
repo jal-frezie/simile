@@ -424,7 +424,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 #    global comboTypes
     
     if {[string equal ,bytes [lindex $list 1]]} {
-	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1} {
+	if {$useCppArray} {
 	    if {$when} {
 		c_settimepointall $topNode $tgt [lindex $list end]
 		SetInterval $topNode $useCppArray $tgt unit [lindex $list end-3]

@@ -1732,14 +1732,80 @@ void* get_param_data_space(void* fpHandle) {
   return ((FileParamData*)fpHandle)->dataPtr.contents;
 }
 			   
-int space_used(nodeValues* dataPtr) {
-  int *base;
-  // hope it evaluates left to right
-  return array_count(dataPtr->dimSpecs, &base)*size_for_data_type(*base);
+int space_used(int* dims, char* data, char** toFill) {
+  int *base, reps, count, total = 0;
+  sizeAndPtr* convenience;
+
+  reps = array_count(dims, &base);
+  if (is_base_type(*base)) {
+    reps *= size_for_data_type(*base);
+    if (toFill) {
+      memcpy(*toFill, data, reps);
+      *toFill += reps;
+    }
+    return reps;
+  } else { // assume its OWNSIZED
+    for (count=0; count<reps; ++count) {
+      convenience = (sizeAndPtr*)data + count;
+      //substitute OWNSIZED to create right size block then put back
+      *base = convenience->size;
+      total += sizeof(int);
+      if (toFill) {
+	memcpy(*toFill, &convenience->size, sizeof(int));
+	*toFill += sizeof(int);
+      }
+      total += space_used(base, convenience->ptr, toFill);
+    }
+    *base = OWNSIZED;
+    return total;
+  }
 }
 
 int param_array_size(void* fpHandle) {
-  return space_used(&((FileParamData*)fpHandle)->dataPtr);
+  nodeValues* nV;
+
+  nV = &((FileParamData*)fpHandle)->dataPtr;
+  return space_used(nV->dimSpecs, nV->contents, NULL);
+}
+
+void copy_param_data(char* holder, void* fpHandle) {
+  nodeValues* nV;
+
+  nV = &((FileParamData*)fpHandle)->dataPtr;
+  space_used(nV->dimSpecs, nV->contents, &holder);
+}
+
+char* restore_param(int* dims, char** src) {
+  int reps, *subDims, count;
+  sizeAndPtr* convenience;
+  char* newData;
+
+  reps = array_count(dims, &subDims);
+  if (is_base_type(*subDims)) {
+    count = reps*size_for_data_type(*subDims);
+    newData = new char[count];
+    memcpy(newData, *src, count);
+    *src += count;
+  } else { // assume its OWNSIZED
+    newData = new char[reps*sizeof(sizeAndPtr)];
+    for (count=0; count<reps; ++count) {
+       convenience = (sizeAndPtr*)newData + count;
+      //substitute OWNSIZED to create right size block then put back
+       *subDims = *(int*)(*src);
+       *src += sizeof(int);
+       convenience->size = *subDims;
+       convenience->ptr = restore_param(subDims, src);
+    }
+    *subDims = OWNSIZED;
+  }
+  return newData;
+}
+
+void paste_param_data(void* fpHandle, char* holder) {
+  nodeValues* nV;
+
+  nV = &((FileParamData*)fpHandle)->dataPtr;
+  nV->contents = restore_param(nV->dimSpecs, &holder);
 }
 
 int clear_time_point_elts(void* fpHandle) {
