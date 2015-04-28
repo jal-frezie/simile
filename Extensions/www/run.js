@@ -119,6 +119,10 @@ function idFromCapt (capt) {
     }
 }
 
+function oneAfter(array, term) {
+    return array[array.indexOf(term) + 1];
+}
+
 function addTabFor(tclInst) {
     convd = tclInst.textContent.replace(/}*\s+{*/g,"\"$&\"")
 	.replace(/{/g,"[").replace(/}/g,"]").replace(/\s+/g,", ")
@@ -202,6 +206,26 @@ function addTabFor(tclInst) {
 
     case "polygon375":
 	new_helper("polys");
+	swatArr = []
+	if (oneAfter(specArray, "/WIN/,colourMapTweaked")) {
+	    nswat = oneAfter(specArray, "/WIN/,nswatches");
+	    for (var i=0; i<=nswat; ++i) {
+		swatArr.push(oneAfter(specArray, "/WIN/,c" + i));
+	    }
+	    cMap = ColorMapFromSwatches(swatArr);	
+	} else {
+	    for (var anchor in {"bot":0,"mid":0,"top":0}) {
+		swatArr.push(oneAfter(specArray, "/WIN/,c" + anchor));
+		cMap = ColorMapFromPoints(nswat, swatArr[0],
+					  swatArr[1], swatArr[2]);
+	    }
+	}
+	currentHelper.nswat = nswat;
+	currentHelper.cMap = cMap;
+	for (var key in {"color":0,"xcoord":0,"ycoord":0}) {
+	    capt = tclListOfDimty(oneAfter(specArray, "/WIN/," + key), 1);
+	    select_for_helper(idFromCapt(capt.join(" ")));
+	}
 	break;
 
     case "grid005":
@@ -215,11 +239,11 @@ function addTabFor(tclInst) {
 		parseInt(specArray[specArray.indexOf("magnification")+1]);
 	    idx = specArray.indexOf("swatches");
 	    if (idx >= 0) {
-		var cMap = ColorMapFromSwatches(specArray.slice(idx+1,
+		cMap = ColorMapFromSwatches(specArray.slice(idx+1,
 								idx+nswat+2));
 	    } else {
 		idx = specArray.indexOf("colourmap");
-		var cMap = ColorMapFromPoints(nswat, specArray[idx+1],
+		cMap = ColorMapFromPoints(nswat, specArray[idx+1],
 					      specArray[idx+2],
 					      specArray[idx+3]);
 	    }
@@ -1714,6 +1738,18 @@ Polygon.prototype.acceptClick = function (nodeId) {
 	       }
 	   });
     } 
+}
+
+Polygon.prototype.resize = function (x, y) {
+//   if (this.status != "displaying") return;
+//   console.log('Tab width: ' + d3.select('#' + this.port).style('width'));
+//   console.log('Notebook height: ' + d3.select('#tabs').style('height'));
+    ngap = 40;
+//      w = 800;
+      w = x-ngap;
+//      h = 800;
+      h = y-48-ngap;
+    d3.select('#' + this.port + '_diag').attr("width",w).attr("height",h);
 }
 
 Polygon.prototype.display = function (time, latest, connect) {

@@ -186,9 +186,9 @@ break;
    case "Report":
       $line1 = doTcl("join [set catalog] .");
       $paths = explode(".", $line1);
-      $arrlength=count($paths);
+      $arrLength=count($paths);
 
-      for($x=0;$x<$arrlength;$x++) {
+      for($x=0;$x<$arrLength;$x++) {
         $path = $paths[$x];
         $nicePath = escapeNasties($path);
         $id = doTcl("getnodeid [set mH] $nicePath");
@@ -206,8 +206,9 @@ break;
           $mdlLine["captpath"] = $nicePath;
           $mdlLine["equation"] = 
 	      doTcl("GetModelProperty [set mH] $nicePath Spec");
-          $mdlLine["comment"] = 
-	      doTcl("GetModelProperty [set mH] $nicePath Comment");
+// Not used at the moment, and causes problems if comments contain Unicode
+//          $mdlLine["comment"] = 
+//	      doTcl("GetModelProperty [set mH] $nicePath Comment");
           $mdlLine["eval"] = 
 	      doTcl("GetModelProperty [set mH] $nicePath Eval");
           $mdlLine["min"] = 
@@ -218,7 +219,7 @@ break;
 	      explode(" ", doTcl("GetModelProperty [set mH] $nicePath Dims"));
           $mdlArr[$id] = $mdlLine;
         } else {
-           $mdlArr[$id] = doTcl("GetJsonValues [set iH] $nicePath 1024");
+          $mdlArr[$id] = doTcl("GetJsonValues [set iH] $nicePath 1024");
         }
       }
       echo json_encode($mdlArr);
