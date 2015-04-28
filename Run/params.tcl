@@ -1073,6 +1073,7 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     global parseStatus widgetNames errorInfo
 
     array unset parseStatus simV
+    set parseStatus(doneBinaries) 0
     array set parseStatus [list oldPath $oldPath topNode $topNode \
 			       smPath $smPath submodel {} valNesting 0]
     $parseStatus(spfParser) reset
@@ -1288,6 +1289,7 @@ proc LoadBase64CharData {encoded} {
 	AbleHandEditControls $widgetNames($compName)
     }
     set whichParamsAffected($compName) 1 ;# re-enabled so works in client5d
+    set parseStatus(doneBinary) 1
 #...quick test shows no performance reduction elsewhere
 }
 
@@ -1321,7 +1323,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
     upvar \#0 $widgetLocn outNames
     
     #do_in_editor puts "MergeParams $topNode $smPath $oldPath $interactive"
-    set anyGood 0
+    set anyGood [array size whichParamsAffected]
     set oldDir [pwd]
     set metaFile [file join $simtmpdir temp_in.spf]
     set ::bermudaTriangle {}
@@ -1392,7 +1394,6 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 	    # change back now in case .spf filename is relative (possible
 	    # if merging params from script)
 	    cd $oldDir
-	    set anyGood 1
 	    if {$notInput>-1} {
 		set restoredComp /$topNode$restoredComp
 	    }
@@ -1500,7 +1501,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
     if {$paramState(origVersion)>=4.0} {
         file delete $metaFile
     }
-    if {$anyGood && $noneBad} {
+    if {[array size whichParamsAffected]>$anyGood && $noneBad} {
 	#puts "setting SimileProject(fileparam,$smPath/) to $SimileProject(fileparam,$smPath/)"
         set SimileProject(fileparam,$smPath/) $oldPath
     }
