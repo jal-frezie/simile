@@ -1736,6 +1736,14 @@ Polygon.prototype.acceptClick = function (nodeId) {
 		       .attr("fill",colSpec).attr("stroke","black")
 		       .attr("stroke-width",0);
 	       }
+	       bbox = that.scaleGrp[0][0].getBBox();
+	       console.log(JSON.stringify(bbox));
+	       initScale = 800/bbox.width;
+	       that.diagZoom.translate([-initScale*bbox.x,-initScale*bbox.y])
+		   .scale(initScale);
+	       grpAttr = "translate("+-initScale*bbox.x+","+-initScale*bbox.y+
+		   ")scale("+initScale+","+initScale+")";
+	       that.scaleGrp.attr("transform",grpAttr);
 	   });
     } 
 }
