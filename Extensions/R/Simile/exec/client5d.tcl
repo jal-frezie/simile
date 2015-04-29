@@ -84,7 +84,7 @@ proc ConsultParameterMetafile {instanceHandle fileLocn {targetSubmodel {}}} {
 	set ::readMany(/$topNode$component) \
 	    [string equal INPUT $eval]
 	if {[string equal TABLE $eval]} {
-	    set ::paramData($topNode$component) {}
+	    set ::paramData(/$topNode$component) {}
 	    # placeholders needed for table submodels set per record
 	}
     }
