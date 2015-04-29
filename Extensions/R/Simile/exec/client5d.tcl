@@ -80,8 +80,13 @@ proc ConsultParameterMetafile {instanceHandle fileLocn {targetSubmodel {}}} {
     set ::instance_id $instanceHandle
     set topNode [lindex [listobjects $mHandle] 0]
     foreach component [ListObjPaths $mHandle] {
+	set eval [GetModelProperty $mHandle $component Eval]
 	set ::readMany(/$topNode$component) \
-	    [string equal INPUT [GetModelProperty $mHandle $component Eval]]
+	    [string equal INPUT $eval]
+	if {[string equal TABLE $eval]} {
+	    set ::paramData($topNode$component) {}
+	    # placeholders needed for table submodels set per record
+	}
     }
     ZapParams $topNode $targetSubmodel [file normalize $fileLocn] 0
 }
