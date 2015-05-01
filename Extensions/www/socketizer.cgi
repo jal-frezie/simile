@@ -21,7 +21,8 @@ catch {
  foreach obj $catalog {
     if {[lsearch {INPUT TABLE} [GetModelProperty $mH $obj Eval]]>-1} {
 	lappend hook $obj
-	set aH($obj) [CreateParamArray $iH $obj]
+	# Not needed if loading from .spf, and can mess up per-record
+	# set aH($obj) [CreateParamArray $iH $obj]
     }
  }
  llength $catalog} res
@@ -75,11 +76,16 @@ package require unix_sockets
 
 proc accept {tpond} {
     gets $tpond parrot
+    # set stm [open ${::mdl}.log a]
+    # puts $stm "> $parrot"
+    # flush $stm
     if {[catch {uplevel #0 $parrot} resp]} {
 	puts $tpond "ERROR: $::errorInfo"
     } else {
+	# puts $stm "< $resp"
         puts $tpond $resp
     }
+    # close $stm
     close $tpond
 }
 

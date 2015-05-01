@@ -222,6 +222,8 @@ function addTabFor(tclInst) {
 	}
 	currentHelper.nswat = nswat;
 	currentHelper.cMap = cMap;
+	currentHelper.bottom = oneAfter(specArray, "/WIN/,min");
+	currentHelper.top = oneAfter(specArray, "/WIN/,max");
 	for (var key in {"color":0,"xcoord":0,"ycoord":0}) {
 	    capt = tclListOfDimty(oneAfter(specArray, "/WIN/," + key), 1);
 	    select_for_helper(idFromCapt(capt.join(" ")));
@@ -380,7 +382,7 @@ function model_step(current, start, end, span, note) {
 		var execHistory = JSON.parse(newVals);
 		for (var timePt in execHistory) {
 		    var timeVal = parseFloat(timePt)/timeUnit;
-		    console.log("Displaying results for time " + timeVal);
+		    // console.log("Displaying results for time " + timeVal);
 		    allResults = {};
 		    for (var i=0; i<note.length;i++) {
 			if (note[i].constructor === Object) {
@@ -1565,8 +1567,8 @@ PlotXY.prototype.olddisplay = function (time, latest) {
 var legenData = "+gADCBhAoICBAwgSKFjAoIGDBxAiSJhAoYKFCxgyaNjAoYOHDyBCiBhBooSJEyhSqFjBooWLFzBiyJhBo4aNGzhy6NjBo4ePH0CCCBlCpIiRI0iSKFnCpImTJ1CiSJlCpYqVK1iyaNnCpYuXL2DCiBlDpoyZM2jSqFnDpo2bN3DiyJlDp46dO3jy6NnDp4+fP4ACCRpEqJChQ4gSKVrEqJGjR5AiSZpEqZKlS5gyadrEqZOnT6BCiRpFqpSpU6hSqVrFqpWrV7BiyZpFq5atW7hy6drFq5evX8CCCRtGrJixY8iSKVvGrJmzZ9CiSZtGrZq1a9iyadvGrZv6t2/gwokbR66cuXPo0qlbx66du3fw4smbR6+evXv48unbx6+fv3//CESQQQgpxJBDEElEkUUYacSRRyCJRJJJKKnEkkswyUSTTTjpxJNPQAlFlFFIKcWUU1BJRZVVWGnFlVdgiUWWWWipxZZbcMlFl1146cWXX4AJRphhiCnGmGOQSUaZZZhpxplnoIlGmmmoqcaaa7DJRpttuOnGm2/ACUecccgpx5xz0ElHnXXYacedd+CJR5556KnHnnvwyUefffjpx59/AApY0EEJLdTQQxFNVNFFGW3U0UchjVTSSSmt1NJLMc1U00057dTTT0ENVdRRSS3V1FNRTfpV1VVZbdXVV2GNVdZZaa3V1ltxzVXXXXnt1ddfgQ1W2GGJLdbYY5FNVtllmW3W2WehjVbaaamt1tprsc1W22257dbbb8ENV9xxyS3X3HPRTVfdddlt19134Y1X3nnprdfee/HNV999+e3X338BDjRogYYimOiCjDr4aISSUljphZhquGmHnoIY6oikmnhqiqqy2OqLsMo4a4224pjrjrz6+GuQwhJZ7JHIKrlsk85CGe2U1Fp5bZbactntl+CKOW6Z5qKZ7prsuvlunPLSWe+d+Oq5b5/+AhrwgIQaeGiCijLY6IOQSjhphZZimOmGnHr4aYiikljqiaiq+rhqi67CGOuMtNp4a4668tjrj8AKOWyRxiKZ7JLMOvlslNJSWe2V2Gq5bZfeghnumOSaeW6a6rLZ7pvwyjlvnfbime+e/Pr5b6ACE1jogYgquGiDjkIY6YSUWnhphppy2OmHoIo4aommopjqiqy6+GqMstJY64246rhrj74CGeyQxBp5bJLKMtnsk9BKOW2V1mKZ7ZbcevltmOKSWe6Z6Kq5bpvuwhnvnPTaeW+e+vLZ758AE5TrtGYw2XlNYbYTm8N0ZzaJ+U5tFhOe2zRmPLl5THl2E5nz9GYy6flNZdYTnMu0ZziZeU9xNhOf43RmPsn5TH2WE5r7NGdrNPl5Tmn2E53T9Gc6qflPdVYTYNYKFruuJax2YWtY7soWsd6lrWLBa1vGihe3jiWvbiFrXt5KFr2+pax6gWtZ9goXs+4lrmbha1zOyhe5nqWvckFrX+aKFr/OJa1+oWta/koXtf6lrmoACwgAOw==";
 
 function AlterRange(that, factor) {
-    that.tgts[0].bottom = that.tgts[0].bottom * factor;
-    that.tgts[0].top = that.tgts[0].top * factor;
+    that.bottom = that.bottom * factor;
+    that.top = that.top * factor;
 }
 
 function BytesFromHex (hex) {
@@ -1628,10 +1630,11 @@ function Polygon (port) {
 
     this.nswat = 32;
     this.cMap = ColorMapFromPoints(this.nswat, "black", "green", "white");
-    this.minVal = 0;
-    this.maxVal = 100;
+    this.bottom = 0;
+    this.top = 100;
     this.initScale = 1;
 
+    var that = this;
     bar = d3.select('#' + port).append("div").attr("id", port + "_Buttonbar")
         .style('width','100%');
     bar.append("button").html("<img src='images/less.gif'/>")
@@ -1643,10 +1646,6 @@ function Polygon (port) {
     this.scaleGrp = d3.select('#' + port).append("svg")
 	.attr("width",800).attr("height",480).attr("id", port + "_diag")
 	.append("g");
-    this.legend = document.createElement("img");
-    this.legend.style.width = "100%";
-    this.legend.style.height = "16px";
-    document.getElementById(port).appendChild(this.legend);
     this.diagZoom = d3.behavior.zoom()
 	.on("zoom", function () {
 	    d3.select('#' + port + '_diag').select('g')
@@ -1659,6 +1658,7 @@ function Polygon (port) {
 
 function colorFrom(map, line) {
     colSpec = "#";
+    line = Math.min(Math.max(line, 0), 255);
     for (j=0;j<3;++j) {
 	s = map.charCodeAt(3*line+j).toString(16);
 	if (s.length<2)
@@ -1697,6 +1697,23 @@ Polygon.prototype.acceptClick = function (nodeId) {
     headerData += conv16(8);                  // image height
     headerData += String.fromCharCode(0, 8);
 
+    keyDiv = document.createElement("div");
+    keyDiv.style.width = "100%";
+    this.lowLabel = document.createElement("label");
+    this.lowLabel.style.width = "4%";
+    this.lowLabel.innerHTML = "" + this.bottom;
+    this.legend = document.createElement("img");
+    this.legend.style.width = "90%";
+    this.legend.style.height = "16px";
+    this.legend.style.padding = "4px";
+    this.hiLabel = document.createElement("label");
+    this.hiLabel.style.width = "4%";
+    this.hiLabel.innerHTML = "" + this.top;
+
+    document.getElementById(this.port).appendChild(keyDiv);
+    keyDiv.appendChild(this.lowLabel);
+    keyDiv.appendChild(this.legend);
+    keyDiv.appendChild(this.hiLabel);
     this.legend.src = 'data:image/gif;base64,'
 	+ btoa(headerData) + legenData;
     this.legend.alt = "Something has gone terrubly winf";
@@ -1709,7 +1726,7 @@ Polygon.prototype.acceptClick = function (nodeId) {
 	$.post('model_action.php', {"base":fileBase, "act":"Query",
 				    "note":JSON.stringify(lookAt)},
 	   function(resp) {
-	       colScaler = 255/(that.maxVal-that.minVal); 
+	       colScaler = 255/(that.top-that.bottom); 
 	       responses = JSON.parse(resp);
 	       colours = flatten('m', responses[0]);
 	       for (var inds in colours) {
@@ -1726,7 +1743,7 @@ Polygon.prototype.acceptClick = function (nodeId) {
 		   for (var j in yObj) {
 		       pts = pts + xObj[j] + "," + yObj[j] + " ";
 		   }
-		   colFract = Math.floor((colours[inds]-that.minVal)*colScaler);
+		   colFract = Math.floor((colours[inds]-that.bottom)*colScaler);
 
 		   // OK now add the poligonnn
 
@@ -1737,7 +1754,7 @@ Polygon.prototype.acceptClick = function (nodeId) {
 		       .attr("stroke-width",0);
 	       }
 	       bbox = that.scaleGrp[0][0].getBBox();
-	       console.log(JSON.stringify(bbox));
+	       // console.log(JSON.stringify(bbox));
 	       initScale = 800/bbox.width;
 	       that.diagZoom.translate([-initScale*bbox.x,-initScale*bbox.y])
 		   .scale(initScale);
@@ -1756,15 +1773,15 @@ Polygon.prototype.resize = function (x, y) {
 //      w = 800;
       w = x-ngap;
 //      h = 800;
-      h = y-48-ngap;
+      h = y-60-ngap;
     d3.select('#' + this.port + '_diag').attr("width",w).attr("height",h);
 }
 
 Polygon.prototype.display = function (time, latest, connect) {
     newColours = flatten('m', latest[this.tgts[0]]);
-    colScaler = 255/(this.maxVal-this.minVal); 
+    colScaler = 255/(this.top-this.bottom); 
     for (inds in newColours) {
-	colFract = Math.floor((newColours[inds]-this.minVal)*colScaler);
+	colFract = Math.floor((newColours[inds]-this.bottom)*colScaler);
 	colSpec = colorFrom(this.cMap, colFract);
 	niceInds = inds.split(",").join("_");
 	d3.select('#' + this.port + niceInds).attr("fill",colSpec);
@@ -1786,18 +1803,14 @@ function Grid5 (port) {
     bar = d3.select('#' + port).append("div").attr("id", port + "_Buttonbar")
         .style('width','100%');
     bar.append("button").html("<img src='images/less.gif'/>")
-	.style('float','left').on('click', function() {AlterRange(that, 0.5) });
+	.style('float','left').on('click', function() {AlterRange(that.tgts[0], 0.5) });
     bar.append("button").html("<img src='images/greater.gif'/>")
-	.style('float','left').on('click', function() {AlterRange(that, 2.0) });
+	.style('float','left').on('click', function() {AlterRange(that.tgts[0], 2.0) });
     bar.append("div").attr("id", port + "_instruct").style('float','left');
     
     this.scaleGrp = d3.select('#' + port).append("svg")
 	.attr("width",800).attr("height",480).attr("id", port + "_diag")
 	.append("g");
-    this.legend = document.createElement("img");
-    this.legend.style.width = "100%";
-    this.legend.style.height = "16px";
-    document.getElementById(port).appendChild(this.legend);
     this.diagZoom = d3.behavior.zoom()
 	.on("zoom", function () {
 	    d3.select('#' + port + '_diag').select('g')
@@ -1823,7 +1836,7 @@ Grid5.prototype.resize = function (x, y) {
 //      w = 800;
       w = x-ngap;
 //      h = 800;
-      h = y-48-ngap;
+      h = y-60-ngap;
     d3.select('#' + this.port + '_diag').attr("width",w).attr("height",h);
 }
 
@@ -1935,6 +1948,23 @@ Grid5.prototype.acceptClick = function (nodeId) {
     headerData += conv16(8);                  // image height
     headerData += String.fromCharCode(0, 8);
 
+    keyDiv = document.createElement("div");
+    keyDiv.style.width = "100%";
+    this.lowLabel = document.createElement("label");
+    this.lowLabel.style.width = "4%";
+    this.lowLabel.innerHTML = "" + this.minVal;
+    this.legend = document.createElement("img");
+    this.legend.style.width = "90%";
+    this.legend.style.height = "16px";
+    this.legend.style.padding = "4px";
+    this.hiLabel = document.createElement("label");
+    this.hiLabel.style.width = "4%";
+    this.hiLabel.innerHTML = "" + this.maxVal;
+
+    document.getElementById(this.port).appendChild(keyDiv);
+    keyDiv.appendChild(this.lowLabel);
+    keyDiv.appendChild(this.legend);
+    keyDiv.appendChild(this.hiLabel);
     this.legend.src = 'data:image/gif;base64,'
 	+ btoa(headerData) + legenData;
     this.legend.alt = "Something has gone terrubly winf";
