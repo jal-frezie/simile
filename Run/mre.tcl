@@ -1112,6 +1112,7 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 	    }
 	}
 	PreserveSetup 0
+	set ::helperTable($currentNode,stateName) $oldPath
     }
 
     proc StartElement {name attList args} {

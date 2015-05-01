@@ -574,8 +574,8 @@ void convert_to_byte(void* values, int offset, convertParms* cbData) {
 //	  offset, values[offset]);
 //  showMess(globMess);
   *((*cbData->tgtPtr)++) =
-    (unsigned char)(thisVal<valfor0?0:(thisVal>=valfor255?255:
-				       (255*(thisVal-valfor0)/
+    (unsigned char)(thisVal<valfor0?1:(thisVal>=valfor255?255:
+				       (1+255*(thisVal-valfor0)/
 					(valfor255-valfor0))));
 }
 

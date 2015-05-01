@@ -1073,7 +1073,6 @@ proc RevertXMLParams {oldPath newPath topNode smPath} {
     global parseStatus widgetNames errorInfo
 
     array unset parseStatus simV
-    set parseStatus(doneBinaries) 0
     array set parseStatus [list oldPath $oldPath topNode $topNode \
 			       smPath $smPath submodel {} valNesting 0]
     $parseStatus(spfParser) reset
@@ -1289,7 +1288,6 @@ proc LoadBase64CharData {encoded} {
 	AbleHandEditControls $widgetNames($compName)
     }
     set whichParamsAffected($compName) 1 ;# re-enabled so works in client5d
-    set parseStatus(doneBinary) 1
 #...quick test shows no performance reduction elsewhere
 }
 
