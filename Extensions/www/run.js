@@ -222,8 +222,8 @@ function addTabFor(tclInst) {
 	}
 	currentHelper.nswat = nswat;
 	currentHelper.cMap = cMap;
-	currentHelper.bottom = oneAfter(specArray, "/WIN/,min");
-	currentHelper.top = oneAfter(specArray, "/WIN/,max");
+	currentHelper.bottom = parseFloat(oneAfter(specArray, "/WIN/,min"));
+	currentHelper.top = parseFloat(oneAfter(specArray, "/WIN/,max"));
 	for (var key in {"color":0,"xcoord":0,"ycoord":0}) {
 	    capt = tclListOfDimty(oneAfter(specArray, "/WIN/," + key), 1);
 	    select_for_helper(idFromCapt(capt.join(" ")));
@@ -235,8 +235,8 @@ function addTabFor(tclInst) {
 	if (specArray[0] == "displaying") {
 	    var idx = specArray.indexOf("aspect");
 	    nswat = parseInt(specArray[idx+1]);
-	    currentHelper.minVal = specArray[idx+2];
-	    currentHelper.maxVal = specArray[idx+3];
+	    currentHelper.minVal = parseFloat(specArray[idx+2]);
+	    currentHelper.maxVal = parseFloat(specArray[idx+3]);
 	    currentHelper.initScale =
 		parseInt(specArray[specArray.indexOf("magnification")+1]);
 	    idx = specArray.indexOf("swatches");
@@ -1703,14 +1703,14 @@ Polygon.prototype.acceptClick = function (nodeId) {
     keyDiv.style.width = "100%";
     this.lowLabel = document.createElement("label");
     this.lowLabel.style.width = "4%";
-    this.lowLabel.innerHTML = "" + this.bottom;
+    this.lowLabel.innerHTML = this.bottom.toPrecision(3);
     this.legend = document.createElement("img");
     this.legend.style.width = "90%";
     this.legend.style.height = "16px";
     this.legend.style.padding = "4px";
     this.hiLabel = document.createElement("label");
     this.hiLabel.style.width = "4%";
-    this.hiLabel.innerHTML = "" + this.top;
+    this.hiLabel.innerHTML = this.top.toPrecision(3);
 
     document.getElementById(this.port).appendChild(keyDiv);
     keyDiv.appendChild(this.lowLabel);
@@ -1960,14 +1960,14 @@ Grid5.prototype.acceptClick = function (nodeId) {
     keyDiv.style.width = "100%";
     this.lowLabel = document.createElement("label");
     this.lowLabel.style.width = "4%";
-    this.lowLabel.innerHTML = "" + this.minVal;
+    this.lowLabel.innerHTML = this.minVal.toPrecision(3);
     this.legend = document.createElement("img");
     this.legend.style.width = "90%";
     this.legend.style.height = "16px";
     this.legend.style.padding = "4px";
     this.hiLabel = document.createElement("label");
     this.hiLabel.style.width = "4%";
-    this.hiLabel.innerHTML = "" + this.maxVal;
+    this.hiLabel.innerHTML = this.maxVal.toPrecision(3);
 
     document.getElementById(this.port).appendChild(keyDiv);
     keyDiv.appendChild(this.lowLabel);
@@ -1991,8 +1991,8 @@ Grid5.prototype.display = function (time, latest, connect) {
     arr = latest[JSON.stringify(this.tgts[0])];
     d3.select('#' + this.port + '_img')
 	.attr("xlink:href", this.headerGIF + arr);
-    this.lowLabel.innerHTML = "" + this.tgts[0].bottom;
-    this.hiLabel.innerHTML = "" + this.tgts[0].top;
+    this.lowLabel.innerHTML = this.tgts[0].bottom.toPrecision(3);
+    this.hiLabel.innerHTML = this.tgts[0].top.toPrecision(3);
 }
 
 Grid5.prototype.displayBMP = function (time, latest, connect) {
