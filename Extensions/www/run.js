@@ -313,6 +313,7 @@ function model_reset() {
 	    if (savedStart != null) {
 		$("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
 			     -savedStart);
+		savedStart = null;
 	    }
 	    $("#ct").val(0);
 	    $( "#progress" ).progressbar({ value: 0 });
@@ -342,7 +343,7 @@ function model_reset() {
 	});
 }
 
-function model_step(current, start, end, span, note) {
+function model_step(current, start, end, span) {
     if (current >= end || savedStart != null) {
 	// we are done, reset progress bar and update values
 	$.post('model_action.php', { "base":fileBase, "act":"Report"}, 
@@ -364,6 +365,7 @@ function model_step(current, start, end, span, note) {
 	interval = Math.min(end-current,span);
 	newCurrent = current+interval;
 	newRemain = end-newCurrent;
+	note = ofInterest();
 	execParms = {"base":fileBase, "act":"ExecuteMulti",
 		     "runlength":interval*timeUnit, "current":current*timeUnit,
 		     "step":$("#ts").val()*timeUnit,"method":pipeBits.intMethod,
@@ -377,7 +379,7 @@ function model_step(current, start, end, span, note) {
 	    .done(function(newVals) {
 		// console.log('Data returned ' + newVals);
 // now, process the values while fetching the next lot
-		model_step(newCurrent, start, end, span, note);
+		model_step(newCurrent, start, end, span);
 
 		var execHistory = JSON.parse(newVals);
 		for (var timePt in execHistory) {
@@ -426,7 +428,7 @@ function model_exec() {
     end = now+parseFloat($("#rl").val());
     span = $("#ue").val()
     //  calibrate_helpers(end);
-    model_step(now, start, end, span, ofInterest());
+    model_step(now, start, end, span);
 }
 
 function ofInterest() {
@@ -1786,6 +1788,8 @@ Polygon.prototype.display = function (time, latest, connect) {
 	niceInds = inds.split(",").join("_");
 	d3.select('#' + this.port + niceInds).attr("fill",colSpec);
     }
+    this.lowLabel.innerHTML = "" + this.bottom;
+    this.hiLabel.innerHTML = "" + this.top;
 }
 
 function Grid5 (port) {
@@ -1983,6 +1987,8 @@ Grid5.prototype.display = function (time, latest, connect) {
     arr = latest[JSON.stringify(this.tgts[0])];
     d3.select('#' + this.port + '_img')
 	.attr("xlink:href", this.headerGIF + arr);
+    this.lowLabel.innerHTML = "" + this.tgts[0].bottom;
+    this.hiLabel.innerHTML = "" + this.tgts[0].top;
 }
 
 Grid5.prototype.displayBMP = function (time, latest, connect) {
