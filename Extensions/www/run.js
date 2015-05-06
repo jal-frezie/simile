@@ -8,7 +8,9 @@ var tabs;
 	    tabs.tabs({
 		activate: function( event, ui ) {
 		    if (ui.newPanel.selector != "#tabs-0") { // diagram
-			currentHelper = currentHelpers[$(ui.newPanel.selector)[0].id];
+			lastHelper = currentHelper =
+			    currentHelpers[$(ui.newPanel.selector)[0].id];
+			lastIndex = tabs.tabs("option","active");
 		    } else {
 			currentHelper = null;
 		    }
@@ -44,6 +46,20 @@ tabs.delegate( "span.ui-icon-close", "click", function() {
 			}
 		);
 	});
+
+function clickOn(evt) {
+    var tags = null;
+    var blob = evt.target;
+    while (tags == null) {
+	tags = blob.getAttribute("id");
+	blob = blob.parentNode;
+    }
+    var prolog = tags.match(/arc\d\d\d\d\d|node\d\d\d\d\d/);
+    if (lastHelper != null) {
+	lastHelper.acceptClick(prolog[0]);
+	$( "#tabs" ).tabs( "option", "active", lastIndex);
+    }
+}
 
 function hoverIn(evt) {
   var tags = null;
@@ -91,9 +107,10 @@ function hoverOut() {
   tooltip_v.setAttributeNS(null,"visibility","hidden");
 }
 
-function addHoverAction(comp) {
+function addEltAction(comp) {
   comp.addEventListener("mouseover", hoverIn);
   comp.addEventListener("mouseout", hoverOut);
+  comp.addEventListener("mousedown", clickOn);
 }
 
 function tclListOfDimty(stuff, n) {
@@ -487,6 +504,8 @@ function new_tab(label) {
 
 var currentHelpers = {};
 var currentHelper = null;
+var lastHelper = null;
+var lastIndex = null;
 function new_helper(type) {
     var label = helperTitles[type];
     id = new_tab(label);
@@ -505,8 +524,9 @@ function new_helper(type) {
     } else if (type == "polys") {
 	currentHelper = new Polygon(id);
     }
-    currentHelpers[id] = currentHelper;
-    tabs.tabs("option", "active", tabs.children().length - 2);
+    currentHelpers[id] = lastHelper = currentHelper;
+    lastIndex = tabs.children().length - 2;
+    tabs.tabs("option", "active", lastIndex);
 }
 
 function update_helpers(time, latest, connect) {
@@ -883,6 +903,7 @@ function Shapes3D (port) {
 	requestAnimationFrame( animate );
 	// cube.rotation.x += 0.1; cube.rotation.y += 0.1;
 	// if ("tabs-" + $( "#tabs" ).tabs("option","active") == port)
+	// above dodgy because tab id can change (eg if another deleted)
 	if (currentHelper != null)
 	    if (currentHelper.port == port && currentHelper.updated) {
 		renderer.render(scene, camera);
@@ -2239,7 +2260,7 @@ $.ajax({
       if (str != null) {
         var res = str.match(/\/background\//);
         if (res == null)		   
-          addHoverAction(element);
+          addEltAction(element);
       }
     }
     ModDiag.appendChild(tooltip_grp);
