@@ -3,12 +3,12 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Simile model execution</title>
 <link rel="stylesheet" href="dist/themes/default/style.css" />
-<link href=" jquery-ui.css" rel="stylesheet" />
+<link href=" jquery-ui.min.css" rel="stylesheet" />
 <!-- link href="css/xcharts.min.css" rel="stylesheet" /-->
 <link href="css/jquery.dataTables.css" rel="stylesheet" />
 <link href="css/jquery.jui_dropdown.css" rel="stylesheet" />
 <script src="external/jquery/jquery.js"></script>
-<script src="jquery-ui.js"></script>
+<script src="jquery-ui.min.js"></script>
 <!-- script src="js/jquery.scrollTo-min.js?1.4.11"></script -->
 <script src="dist/jstree.min.js"></script>
 <script src="js/d3.v3.min.js" charset="utf-8"></script>
@@ -133,14 +133,14 @@ switch ($_POST["helper_src"]) {
 // CreateModelExec($base);
 // OK, now set up _POST so I can inline model_action and get the
 // executable...
-$_POST["act"] = "BuildShareLibInLine";
-$_POST["base"] = $base;
+// $_POST["act"] = "BuildShareLibInLine";
+// $_POST["base"] = $base;
 // inline: creates executable and sets pipe_contents to run params
-include_once "model_action.php";
+// include_once "model_action.php";
 
 // web site starts here
 $rps = end(explode("\n", $pipe_contents));
-echo "<script>\nvar fileBase = '$base';\nvar pipeBits = $rps;\n</script>";
+echo "<script>\nvar fileBase = '$base';\n</script>";
 ?> 
 <script src='run.js'></script>
 </head>
@@ -188,4 +188,10 @@ echo "<script>\nvar fileBase = '$base';\nvar pipeBits = $rps;\n</script>";
 <div id="holds_svg" style="position: absolute">
 </div> 
 </div> 
+    <div id="WaitDialog"   class="hidden" style="text-align: center">
+        <img  src="images/ajax-loader.gif" />
+        <div style="margin-top: 10px; color: black">
+            <b>Please wait</b>
+        </div>
+    </div>
 </body>

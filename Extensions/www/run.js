@@ -304,7 +304,7 @@ function createInitialHelpers() {
 	    }
 // resize in case rows of tabs have squeezed panes
 	    resize_notebook();
-	});
+	}); // GetXMLHelperSetup
 }
 
 /*
@@ -354,10 +354,12 @@ function model_reset() {
 		       // from the .shf, as they will not be expecting an immediate update
 		       if (resetDepth == -2) {
 			   createInitialHelpers();
+		       // finally we are ready to roll, wait is over
+			   $("#WaitDialog").dialog("close");
 		       }
 		       resetDepth = 0;
-		   });
-	});
+		   }); // Report
+	}); // Reset
 }
 
 function model_step(current, start, end, span) {
@@ -366,7 +368,7 @@ function model_step(current, start, end, span) {
 	$.post('model_action.php', { "base":fileBase, "act":"Report"}, 
 	       function(data) {
 		   values_json = JSON.parse(data);
-	       });
+	       }); // Report
 	goImage = document.getElementById("button_op");
 	goImage.src = "images/play.gif";
 	goImage.parentNode.onclick = function () { model_exec(); };
@@ -417,7 +419,7 @@ function model_step(current, start, end, span) {
 		    // positive timesteps) but nothing appears on the
 		    // screen till all are done -- need setTimeout.
 		}
-	    });
+	    }); // ExecuteMulti
 	$("#ct").val(newCurrent);
 	newProgress = 100*(newCurrent-start)/(end-start);
     }
@@ -1016,7 +1018,7 @@ function MakeSelection (that, selected) {
 		   that.State = oldState;
 		   that.State.push(that.template);
 		   ShowMenuButton(that);
-	       });
+	       }); // Query
     } else {
 	switch (that.template[i][0]) {
 	case "component":
@@ -1786,7 +1788,7 @@ Polygon.prototype.acceptClick = function (nodeId) {
 	       grpAttr = "translate("+-initScale*bbox.x+","+-initScale*bbox.y+
 		   ")scale("+initScale+","+initScale+")";
 	       that.scaleGrp.attr("transform",grpAttr);
-	   });
+	   }); // Query
     } 
 }
 
@@ -1958,7 +1960,7 @@ Grid5.prototype.acceptClick = function (nodeId) {
 		   d3.select('#' + that.port + '_img')
 		       .attr("transform","scale(1.732,1.5)"); 
 	       }
-	   });
+	   }); // Query
 
     headerData = 'GIF89a';
     headerData += conv16(256);                  // image width
@@ -2158,8 +2160,8 @@ console.log("Params needed: " + needInput + ", missing: " + unfilled);
 			 new_helper("params");
 		     }
 		     model_reset();
-		 });
-      });
+		 }); // LoadSPF
+      }); // Describe
 
 }
 
@@ -2190,7 +2192,7 @@ function sendValues(parmBlock) {
 	    resetDepth = -1;
           }
 // enable model execution if not already (if all vals OK)
-    });
+    }); // Parameterize
 //    resetDepth = -1;
 // needed because setting in callback fn above seems oddly to be out of scope
 }
@@ -2201,31 +2203,8 @@ function sendValues(parmBlock) {
 window.onunload = function(e) {
     $.post('model_action.php', { "act":"Exit", "base":fileBase});
 };
-// Version using UNIX sockets -- add .uxs extension to model name base
-$.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
-       function(spew) {
-	   console.log("Socket created: " + spew);
-//           populateStructs();
-       });
 
-// Version using INET sockets -- ungainly and insecure
-// Start the socket -- fttb just hope it is ready when prepare is called
-//var svrPort = 99999;
-//$.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
-//            function(port) {
-////               alert("Guess what -- the model exec process just finished");
-//            	svrPort = port;
-//                console.log("Got socket " + port);
-//            	populateStructs();
-//});
-//
-$.post('model_action.php', {"act":"WaitSocket", "base":fileBase}, 
-            function(port) {
-//            	svrPort = port;
-                console.log("Got socket " + port);
-            	populateStructs();
-});
-
+var pipeBits;
 ////////////////////////////////////// PREPARE /////////////////////////////
 var xmlns = 'http://www.w3.org/2000/svg';
 var tooltip_grp;
@@ -2241,12 +2220,61 @@ var fvParms;
 var timeUnit = "unit";
 var diag_zoom;
 function prepare() {
-$.ajax({
-  type: "POST",
-  url: "model_action.php",
-  data: {"act" : "GetSVG",  "base" : fileBase}
-})
-  .done (function(diagSVG) {
+    // display the loading, please wait screen
+    $( "#WaitDialog" ).dialog({
+	autoOpen: true,
+	width: 400,
+	modal: true,
+    });
+    // remove the title bar
+    $(".ui-dialog-titlebar").hide();
+    
+$.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
+       function(execParms) {
+	   console.log("BSL returns " + execParms);
+	   pipeBits = JSON.parse(execParms);
+
+	   // Now stick the values in the run control
+	   $("#rl").val(pipeBits.execTime);
+	   $("#ue").val(pipeBits.displayInt);
+	   $("#le").val(pipeBits.displayInt);
+	   $("#ts").val(pipeBits.phaseList);
+	   
+	   $(".unit").html(pipeBits.timeUnit);
+	   timeLib = {"second":1/86400,"minute":1/1440,"hour":1/24,"day":1,
+		      "unit":1,"week":7,"month":365/12,"year":365};
+	   timeUnit = timeLib[pipeBits.timeUnit];
+
+	// Version using UNIX sockets -- add .uxs extension to model name base
+	   $.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
+		  function(spew) {
+		      console.log("Socket created: " + spew);
+		      //           populateStructs();
+		  }); // CreateSocket
+
+// Version using INET sockets -- ungainly and insecure
+// Start the socket -- fttb just hope it is ready when prepare is called
+//var svrPort = 99999;
+//$.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
+//            function(port) {
+////               alert("Guess what -- the model exec process just finished");
+//            	svrPort = port;
+//                console.log("Got socket " + port);
+//            	populateStructs();
+//});
+//
+	   $.post('model_action.php', {"act":"WaitSocket", "base":fileBase}, 
+		  function(port) {
+		      //            	svrPort = port;
+                      console.log("Got socket " + port);
+            	      populateStructs();
+		  }); // WaitSocket
+    $.ajax({
+	type: "POST",
+	url: "model_action.php",
+	data: {"act" : "GetSVG",  "base" : fileBase}
+    })
+    .done (function(diagSVG) {
       document.getElementById("holds_svg").innerHTML = diagSVG;
   
       ModDiag = document.getElementById("mod_diag");
@@ -2269,7 +2297,8 @@ $.ajax({
       }
     }
     ModDiag.appendChild(tooltip_grp);
-  });  
+  }); // GetSVG
+       }); // BuildShareLib
   // Create a path in SVG's namespace
   tooltip_grp = document.createElementNS(xmlns,'g');
   tooltip_bd = document.createElementNS(xmlns,'rect');
@@ -2318,15 +2347,4 @@ $.ajax({
   var textNode_v = document.createTextNode(0);
   tooltip_v.appendChild(textNode_v);
   tooltip_grp.appendChild(tooltip_v);
-
-    // Now stick the values in the run control
-    $("#rl").val(pipeBits.execTime);
-    $("#ue").val(pipeBits.displayInt);
-    $("#le").val(pipeBits.displayInt);
-    $("#ts").val(pipeBits.phaseList);
-
-    $(".unit").html(pipeBits.timeUnit);
-    timeLib = {"second":1/86400,"minute":1/1440,"hour":1/24,"day":1,"unit":1,
-	       "week":7,"month":365/12,"year":365};
-    timeUnit = timeLib[pipeBits.timeUnit];
 }

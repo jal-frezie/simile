@@ -110,7 +110,10 @@ fclose($pipes[1]);
 $return_value = proc_close($process);
 
 if ( file_exists($simileHome . "/" . $shlibName)) {
-//   echo $pipe_contents
+   if ($_POST['act'] == "BuildShareLib") {
+//  return last line of $pipe_contents for execution parameters
+       echo end(explode("\n", $pipe_contents));
+    }
 } else {
    echo "Command returned $return_value<br>";
    echo "Output from build process was:<br>";
