@@ -2101,6 +2101,7 @@ PlotValAgainstTime.prototype.display = function (time, latest) {
   }
 }
 */
+
 function populateStructs() {
 
 // OK, now use AJAX to get a string of values
@@ -2137,6 +2138,10 @@ $.post('model_action.php', { "base":fileBase, "act":"Describe"},
 	      .on('changed.jstree', function (e, data) {
 		   // $('#' + currentHelper).html('Node: ' + data.node.id);
 		   select_for_helper( data.node.id );
+	      })
+	      .on('hover_node.jstree',function(e,data){
+		  // console.log('Hovered ' + data.node.id);
+		  $("#"+data.node.id).prop('title', values_json[data.node.id]);
 	      })
 	   // create the instance
 	      .jstree({ 'core' : {
