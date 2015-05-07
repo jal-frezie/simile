@@ -139,7 +139,7 @@ switch ($_POST["helper_src"]) {
 // include_once "model_action.php";
 
 // web site starts here
-$rps = end(explode("\n", $pipe_contents));
+// $rps = end(explode("\n", $pipe_contents));
 echo "<script>\nvar fileBase = '$base';\n</script>";
 ?> 
 <script src='run.js'></script>
