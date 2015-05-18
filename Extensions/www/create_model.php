@@ -171,7 +171,7 @@ echo "<script>\nvar fileBase = '$base';\n</script>";
 		value=10> <label class=unit>unit</label></td></tr>
 <tr><td>Log each </td><td><input id="le" type="text" name="logstep" size="8"
 		value=1> <label class=unit>unit</label></td></tr>
-<tr><td>Time step: </td><td><input id="ts" type="text" name="step" size="8"
+<tr><td>Time step(s): </td><td><input id="ts" type="text" name="step" size="8"
 		  value=0.1> <label class=unit>unit</label></td></tr>
 </table>
 <div id="explorer" style="overflow:auto"></div>

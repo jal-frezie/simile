@@ -314,6 +314,16 @@ function createInitialHelpers() {
   ModDiag.setAttribute("height",factor*ModDiag.getAttribute("height"));
   }
 */
+
+function scaleTimes(tList, unit) {
+    tArr = tList.split(" ");
+    cArr = [];
+    for (i=0;i<tArr.length;++i) {
+	cArr.push(tArr[i]*unit);
+    }
+    return cArr.join(" ");
+}
+
 var resetDepth = -2, savedStart;
 function model_reset() {
     note = ofInterest();
@@ -322,7 +332,7 @@ function model_reset() {
 	url: "model_action.php",
 	data: { "base":fileBase, "act":"Reset",
 		"runlength":$("#rl").val()*timeUnit, 
-		"current":0, "step":$("#ts").val()*timeUnit,
+		"current":0, "step":scaleTimes($("#ts").val(),timeUnit),
 		"method":pipeBits.intMethod, "depth":resetDepth,
 		"note":JSON.stringify(note)}
     })
@@ -387,8 +397,9 @@ function model_step(current, start, end, span) {
 	note = ofInterest();
 	execParms = {"base":fileBase, "act":"ExecuteMulti",
 		     "runlength":interval*timeUnit, "current":current*timeUnit,
-		     "step":$("#ts").val()*timeUnit,"method":pipeBits.intMethod,
-		     "log":log*timeUnit, "note":JSON.stringify(note)};
+		     "step":scaleTimes($("#ts").val(),timeUnit),
+		     "method":pipeBits.intMethod,"log":log*timeUnit,
+		     "note":JSON.stringify(note)};
 	// console.log(JSON.stringify(execParms));
 	$.ajax({
 	    type: "POST",
@@ -1768,7 +1779,7 @@ Polygon.prototype.acceptClick = function (nodeId) {
 		   // now they should be straight arrays..not
 		   pts = "";
 		   for (var j in yObj) {
-		       pts = pts + xObj[j] + "," + yObj[j] + " ";
+		       pts = pts + xObj[j] + "," + -yObj[j] + " ";
 		   }
 		   colFract = Math.floor((colours[inds]-that.bottom)*colScaler);
 

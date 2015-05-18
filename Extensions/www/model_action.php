@@ -281,7 +281,10 @@ break;
       $log = $_POST['log'];
       $method = $_POST['method'];
 
-      doTcl("c_setstepmodel [set iH] $step 1");
+      $steps = explode(" ",$step);
+      for($x=0;$x<count($steps);$x++) {
+         doTcl("c_setstepmodel [set iH] $steps[$x] [expr $x+1]");
+      }
       $note = json_decode($_POST['note']);
       $endPt = $current + $runlength;
 
