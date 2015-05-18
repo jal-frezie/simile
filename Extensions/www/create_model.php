@@ -70,9 +70,10 @@ switch ($_POST["model_src"]) {
          exit('Return code: ' . $_FILES["model"]["error"]);
       }
       $base = $_FILES["model"]["tmp_name"];
-//   echo "Upload: " . $_FILES["model"]["name"] . "<br>";
-//   echo "Type: " . $_FILES["model"]["type"] . "<br>";
-//   echo "Size: " . ($_FILES["model"]["size"] / 1024) . " kB<br>";
+      copy($base, $base . ".sml"); // otherwise auto deleted before prepare()
+//    echo "Upload: " . $_FILES["model"]["name"] . "<br>";
+//    echo "Type: " . $_FILES["model"]["type"] . "<br>";
+//    echo "Size: " . ($_FILES["model"]["size"] / 1024) . " kB<br>";
    } else {
       exit('No model supplied!');
    }
@@ -81,7 +82,7 @@ switch ($_POST["model_src"]) {
    case "url":
 //   echo "Got model link:" . $_POST['model_link'] . "<br>";
    $base = tempnam('/tmp', 'dbx');
-   file_put_contents($base, file_get_contents($_POST['model_link']));
+   file_put_contents($base . ".sml", file_get_contents($_POST['model_link']));
    break;
 }
 switch ($_POST["param_src"]) {

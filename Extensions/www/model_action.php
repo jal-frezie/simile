@@ -113,6 +113,7 @@ if ( file_exists($simileHome . "/" . $shlibName)) {
    if ($_POST['act'] == "BuildShareLib") {
 //  return last line of $pipe_contents for execution parameters
        echo end(explode("\n", $pipe_contents));
+//       echo $pipe_contents; // whole lot for debugging purposes
     }
 } else {
    echo "Command returned $return_value<br>";

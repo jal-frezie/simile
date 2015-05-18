@@ -18,9 +18,9 @@ if {[catch {
     package require SimileAutoObj
 
     similescript::ModelWindow modelWin
-    modelWin Open $mdl
+    modelWin Open $mdl.sml
     modelWin BuildShareLib [file join $sHome $shLib]
-# now export the svg over the original model
+# now export the svg not over the original model
     puts "svg to $mdl.svg"
     modelWin BuildSVGDiagram $mdl.svg
 
