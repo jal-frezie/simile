@@ -53,6 +53,7 @@ function do_query($req) {
    return $val;
 }
 
+header('Content-Type: text/html; charset=utf-8');
 if ($_POST['act'] != "BuildShareLibInLine") {
    // only do for AJAX requests, produces warning if inline
    header('Access-Control-Allow-Origin: *');

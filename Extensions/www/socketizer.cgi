@@ -1,4 +1,5 @@
 #!/usr/bin/tclsh
+encoding system utf-8
 foreach local {sPath sHome mdl shLib} val $argv {
     set $local $val
 }
