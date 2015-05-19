@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.7 2014/05/28 10:33:29 u45169214 Exp $
+# $Id: can2svg.tcl,v 1.8 2015/05/19 09:34:41 u45169214 Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -1420,7 +1420,7 @@ proc can2svg::NormalizeRectCoords {coo} {
 
 proc can2svg::makedocument {width height reg xml} {
     
-    set pre "<?xml version='1.0'?>\n\
+    set pre "<?xml version='1.0' encoding='UTF-8'?>\n\
       <!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\
       \"Graphics/SVG/1.1/DTD/svg11.dtd\">"
     set svgStart "<svg width='$width' height='$height'"
