@@ -111,7 +111,7 @@ get_info(Wid, Comp, context, DescAtm) :-
 	    Part1 = "";
 	caption_for(Comp, Capt),
 	    name(Capt, CaptStr),
-	    append(CaptStr, " : ", Part1)),
+	    append(CaptStr, " . ", Part1)),
 
 	(LType = submodel,
 	    image'><'quick_file(Comp, Middle);

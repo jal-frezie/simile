@@ -1065,6 +1065,9 @@ proc AddEqnPopup {node x y winId X Y} {
         PostPopup $X $Y
         if {$doDesc} {
             set desc [GetFromProlog tk_get_info('$winId',$plName,context)]
+# Prolog ends nonename with . for uniqueness, replace with legible :
+	    set pt [string first . $desc]
+	    set desc [string replace $desc $pt $pt :]
 	    set userDesc [GetFromProlog tk_get_info(dummy,$plName,description)]
             if {[string equal {} $userDesc]} {
 		set userDesc [GetFromProlog tk_get_info(dummy,$plName,desc)]
@@ -1416,7 +1419,7 @@ proc ExportSVG {win} {
     global window_info
     package require can2svg
     set node $::window_info($win,top_node)
-
+    
     set tgt [ChooseFile [GetExecTitle $node].svg \
 		 [tr. "Export code to:"] 1 $node]
 # SVG does not like -ve coords so shift to origin

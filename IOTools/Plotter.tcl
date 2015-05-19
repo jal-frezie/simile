@@ -284,7 +284,8 @@ namespace eval ::$keyValue {
         #    [list " redraw " [namespace code "resetGraph $w"]]
         ::graphtools::MakeToolBar $w $toolbarItems
         
-        label $w.mess; # for instructions need to pack before use
+        label $w.mess -text "Click the + button to add traces" ; # for instructions need to pack before use
+	pack $w.mess -side top
         
         # create canvas for graph
         canvas $w.canvas -bg $plot($w,canvas_colour) -relief solid

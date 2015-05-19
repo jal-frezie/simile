@@ -1357,10 +1357,15 @@ proc TellHelperItsGone {helperWin captionPath} {
 }
 
 proc GetExecTitle {node} {
-	set mDesc [do_in_editor GetFromProlog tk_get_info(_,$node,context)]
-	set modelCapt [string range $mDesc 0 \
-			   [expr [string first { : } $mDesc]-1]]
-	return [BlankCrs $modelCapt]
+    set mDesc [do_in_editor GetFromProlog tk_get_info(_,$node,context)]
+    set divis [string first { . } $mDesc]
+    set modelCapt [string range $mDesc $divis+3 end-11] ;# ... (submodel)
+    if {$modelCapt eq "unsaved"} {
+	set modelCapt [string range $mDesc 0 $divis-1]
+    } else {
+	set modelCapt [file rootname $modelCapt]
+    }
+    return [BlankCrs $modelCapt]
 }
 
 proc AllTitles {} {
