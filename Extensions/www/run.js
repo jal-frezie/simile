@@ -838,7 +838,7 @@ function Shapes3D (port) {
     var renderer = new THREE.WebGLRenderer();
     renderer.setSize( w, h );
 
-    $('#' + port).html("<div id='demo_drop2'></div>\
+    $('#' + port).html("<div id='" + port + "_drop2'></div>\
 <div id='" + port + "_div'></div>");
 
     ShowMenuButton(this);
@@ -933,11 +933,14 @@ function Shapes3D (port) {
 }
 
 function ShowMenuButton (that) {
-    $('#demo_drop2').html("\
-  <div id='launcher2_container'>\
-    <button id='launcher2'>Select new item type</button>\
+    dropHandle = '#' + that.port + '_drop2';
+    launchHandle = that.port + '_launcher2';
+    menuHandle = that.port + '_menu2';
+    $(dropHandle).html("\
+  <div id='" + launchHandle + "_container'>\
+    <button id='" + launchHandle + "'>Select new item type</button>\
   </div>\
-  <ul id='menu2'>\
+  <ul id='" + menuHandle + "'>\
     <li id='spheres'><a href='javascript:void(0);'>Sphere</a></li>\
     <li id='lines'><a href='javascript:void(0);'>Line</a></li>\
     <li id='lollipops'><a href='javascript:void(0);'>Lollipop</a></li>\
@@ -945,10 +948,10 @@ function ShowMenuButton (that) {
     <li id='ellipses'><a href='javascript:void(0);'>Ellipse</a></li>\
   </ul>");
     
-    $("#demo_drop2").jui_dropdown({
-    launcher_id: 'launcher2',
-    launcher_container_id: 'launcher2_container',
-    menu_id: 'menu2',
+    $(dropHandle).jui_dropdown({
+    launcher_id: launchHandle,
+    launcher_container_id: launchHandle + '_container',
+    menu_id: menuHandle,
     containerClass: 'container2',
       menuClass: 'menu2',
 //    launcher_is_UI_button: false,
@@ -999,6 +1002,7 @@ function AddItem (that, type) {
 
 function MakeSelection (that, selected) {
 //    console.log('MS ' + JSON.stringify(that));
+    dropHandle = '#' + that.port + '_drop2';
     for (i=0;i<that.template.length;i++) {
 	code = ["type","component","colour"].indexOf(that.template[i][0]);
 	if (code>-1) {
@@ -1033,14 +1037,14 @@ function MakeSelection (that, selected) {
     } else {
 	switch (that.template[i][0]) {
 	case "component":
-	    $('#demo_drop2').text('Click on component with ' + that.template[i][1] + ' of ' + that.template[0]);
+	    $(dropHandle).text('Click on component with ' + that.template[i][1] + ' of ' + that.template[0]);
 	    break;
 	case "colour":
-	    $('#demo_drop2').text('Choose ' + that.template[i][1] + ' of ' + that.template[0] + ': '); // provide JSColor widget calling this back with colour
+	    $(dropHandle).text('Choose ' + that.template[i][1] + ' of ' + that.template[0] + ': '); // provide JSColor widget calling this back with colour
 	    clr = document.createElement('INPUT')
 	    // bind jscolor
 	    var col = new jscolor.color(clr);
-	    document.getElementById('demo_drop2').appendChild(clr);
+	    document.getElementById(that.port + '_drop2').appendChild(clr);
 	    
 	    var btn = document.createElement('button');
 	    btn.innerHTML = 'OK';
@@ -1048,7 +1052,7 @@ function MakeSelection (that, selected) {
 		MakeSelection(that, col.toString()); // no
 		return false;
 	    };
-	    document.getElementById('demo_drop2').appendChild(btn);
+	    document.getElementById(that.port + '_drop2').appendChild(btn);
 	    break;
 	default:
 	    console.log("Worng datum type: " + that.template[i][0]);
@@ -1339,12 +1343,12 @@ PlotXY.prototype.acceptClick = function (compId) {
 	  .orient("left");
 
     var gLine = d3.svg.line()
-	  .y(function(d) {
-	      return y(d.y);
-	  })
-	  .x(function(d) {
-	      return x(d.x);
-	  });
+	.y(function(d) {
+	    return y(d.y);
+	})
+	.x(function(d) {
+	    return x(d.x);
+	});
       this.lx = x;
       this.ly = y;
       this.lxAxis = xAxis;
@@ -1390,23 +1394,31 @@ PlotXY.prototype.acceptClick = function (compId) {
 	  .on("zoom", zoomFn)
           .on("zoomend", zoomendFn);
       this.svg.append("rect") // x scale
+          .attr("id", this.port + "_xscale")
 	  .attr("class", "pane")
 	  .attr("y",h)
 	  .attr("width", w+ngap)
 	  .attr("height", ngap)
 	  .call(zoomxaxis);
       this.svg.append("rect") // y scale
+          .attr("id", this.port + "_yscale")
 	  .attr("class", "pane")
 	  .attr("width", ngap)
 	  .attr("height", h)
 	  .call(zoomyaxis);
       this.svg.append("rect") // port
+          .attr("id", this.port + "_view")
 	  .attr("class", "pane")
           .attr("x", ngap)
 	  .attr("width", w)
 	  .attr("height", h)
 	  .call(zoomport);
       redraw(portStr,yAxis,xAxis);
+
+      this.ttdiv = d3.select('#' + this.port).append("div")   
+          .attr("id", this.port + "_tt")
+	  .attr("class", "tooltip")               
+	  .style("opacity", 0);
 
   }
 }
@@ -1444,9 +1456,19 @@ PlotXY.prototype.resize = function(x,y) {
 	.attr("transform", "translate(0," + h + ")");
     this.svg.attr("width",w+ngap).attr("height",h+ngap);
     this.zfn();
+    // now move the target areas for rescaling
+    d3.select('#' + this.port + "_xscale")
+	.attr("y",h)
+	.attr("width", w+ngap);
+    d3.select('#' + this.port + "_yscale")
+	.attr("height", h);
+    d3.select('#' + this.port + "_view")
+	.attr("width", w)
+	.attr("height", h);
 }
 
 PlotXY.prototype.display = function (time, latest, connect) {
+    var that = this; // for tooltip functions
   if (this.status == "displaying") {
 // OK now how big is it? 
       idxs = [[]];
@@ -1457,7 +1479,7 @@ PlotXY.prototype.display = function (time, latest, connect) {
 	  for (var hdl in newys) {
 	      if (connect && this.oldys[hdl] != undefined) {
 		  idxs[0].push([{"y":this.oldys[hdl],"x":this.oldxs[hdl]},
-			     {"y":newys[hdl],"x":newxs[hdl]}]);
+				{"y":newys[hdl],"x":newxs[hdl],"i":hdl}]);
 	      }
 	      if (this.ymin == undefined) {
 		  this.ymin = this.ymax = newys[hdl];
@@ -1478,7 +1500,7 @@ PlotXY.prototype.display = function (time, latest, connect) {
 	      for (var hdl in newys) {
 		  if (connect && this.oldys[i][hdl] != undefined) {
 		  idxs[i].push([{"y":this.oldys[i][hdl],"x":this.oldt},
-			     {"y":newys[hdl],"x":time}]);
+				{"y":newys[hdl],"x":time,"i":hdl}]);
 		  }
 		  oldymin = this.ymin;
 		  if (this.ymin == undefined) {
@@ -1503,15 +1525,30 @@ PlotXY.prototype.display = function (time, latest, connect) {
       }
       if (connect) {
 	  for (i=0; i<idxs.length; ++i) {
-	  var col = "blue orange green brown purple red black DeepSkyBlue HotPink ForestGreen".split(" ")[this.nrun+i];
-	  newGrp = this.svg.append("g")
-              .attr("class", "step"); // new group for this time step's data
-	  newGrp.selectAll(".line") // selects empty set?
-	      .data(idxs[i])
-	      .enter().append("path")
-	      .attr("class", "trace")
-	      .style("stroke",col)
-	      .attr("d", this.line);
+	      var col = "blue orange green brown purple red black DeepSkyBlue HotPink ForestGreen".split(" ")[this.nrun+i];
+	      newGrp = this.svg.append("g")
+		  .attr("class", "step"); // new group for this time step's data
+	      newGrp.selectAll(".line") // selects empty set?
+		  .data(idxs[i])
+		  .enter().append("path")
+		  .attr("class", "trace")
+		  .style("stroke",col)
+		  .attr("d", this.line)
+		  .on("mouseover", function(d) {
+		      i = d[1].i;
+		      that.ttdiv.transition()        
+			  .duration(200)      
+			  .style("opacity", .9);      
+		      that.ttdiv.html("Indices: " + i.substr(0,i.length-2))  
+			  .style("left", (d3.event.layerX + 10) + "px")     
+			  .style("top", (d3.event.layerY + 10) + "px");    
+		      console.log("Moused over a trace");
+		  })
+		  .on("mouseout", function(d) {       
+		      that.ttdiv.transition()        
+			  .duration(500)      
+			  .style("opacity", 0);   
+		  });
 	  }
       } else {
 	  this.nrun += this.yvals.length;

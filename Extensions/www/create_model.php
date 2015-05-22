@@ -53,6 +53,19 @@ rect.pane {
   margin-top: 3px !important;
 }
  
+div.tooltip {   
+  position: absolute;           
+  text-align: center;           
+  width: 60px;                  
+  height: 28px;                 
+  padding: 2px;             
+  font: 12px sans-serif;        
+  background: lightsteelblue;   
+  border: 0px;      
+  border-radius: 8px;           
+  pointer-events: none;         
+}
+
 </style>
 <?php
 // include_once "make_exec.php"; model_action now used
