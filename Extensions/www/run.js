@@ -1230,6 +1230,36 @@ Shapes3D.prototype.resize = function (x,y) {
     this.renderer.setSize(x-50, y-120);
 }
 
+function AdjustAxesFor(that, addys) {
+    for (var hdl in addys) {
+	if (that.xval != 'time') {
+	    if (that.xmin == undefined ||
+		that.oldxs[hdl] < that.xmin) {
+		that.xmin = that.oldxs[hdl];
+	    }
+	    if (that.xmax == undefined ||
+		that.oldxs[hdl] > that.xmax) {
+		that.xmax = that.oldxs[hdl];
+	    }
+	}
+	if (that.ymin == undefined || addys[hdl] < that.ymin) {
+	    that.ymin = addys[hdl];
+	}
+	if (that.ymax == undefined || addys[hdl] > that.ymax) {
+	    that.ymax = addys[hdl];
+	}
+    }
+    that.ly.domain([that.ymax,that.ymin]);
+    if (that.xval == 'time') {
+	// initialize bounds, x axis is time
+	that.xmin = that.oldt;
+	that.xmax = that.oldt + parseFloat($("#rl").val());
+    }
+    that.lx.domain([that.xmin,that.xmax]);
+    that.zfn();
+    that.zefn();
+}
+
 function PlotXY (port) {
   this.port = port;
   this.tgts = [];
@@ -1247,7 +1277,7 @@ PlotXY.prototype.acceptClick = function (compId) {
   if (this.status == "initializing") {
     this.tgts.push(compId);
     this.yvals.push(compId);
-    addys = flatten('t', JSON.parse(values_json[compId]));
+    //addys = flatten('t', JSON.parse(values_json[compId]));
     buttonFn = "select_for_helper('time')";
     $('#' + this.port).html("Click on a component to plot on the X axis, or <button type='button' onclick=" + buttonFn + ">here</button> to plot against time.");
     this.status = "getting_x";
@@ -1255,7 +1285,7 @@ PlotXY.prototype.acceptClick = function (compId) {
       $('#' + this.port).find('#instruct')
 	    .html("Click on a component to plot on the Y axis.");
       this.status = "adding";
-  } else {
+  } else { // no more clicks required
       ngap = 40;
 //      w = 800;
       w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
@@ -1272,6 +1302,13 @@ PlotXY.prototype.acceptClick = function (compId) {
 	grps.selectAll(".trace").remove();
 	grps.remove();
 	this.nrun = 0;
+	if (this.xval == "time") {
+	    curys = flatten("z",this.oldys);
+	} else {
+	    curys = this.oldys;
+	}
+	AdjustAxesFor(this, curys);
+	return
     } else if (compId == "time") {
 	this.oldt = parseFloat($("#ct").val());
 	this.xval = 'time';
@@ -1280,64 +1317,56 @@ PlotXY.prototype.acceptClick = function (compId) {
 	$('#' + this.port).find('#instruct').html(''); // delete message
 	this.tgts.push(compId);
 	this.yvals.push(compId);
-	addys = flatten('t', JSON.parse(values_json[compId]));
-    } else {
+	//addys = flatten('t', JSON.parse(values_json[compId]));
+    } else { // just added component for X axis
 	this.tgts.push(compId);
 	this.xval = compId;
-	this.oldxs = flatten('t', JSON.parse(values_json[compId]));
+	//this.oldxs = flatten('t', JSON.parse(values_json[compId]));
 	xAxisName = model_json[compId].captpath;
     }
-      
-      if (this.xval == 'time' && this.status != "adding") { 
-// initialize bounds, x axis is time
-	this.xmin = this.oldt;
-	this.xmax = this.oldt + parseFloat($("#rl").val());
+      totes = this.tgts.length;
+      if (this.xval == 'time') {
+	  newComps = this.tgts.slice(totes-1,totes);
+      } else {
+	  newComps = this.tgts.slice(totes-2,totes);
       }
-      for (var hdl in addys) {
-	if (this.xval != 'time') {
-	    if (this.xmin == undefined || this.oldxs[hdl] < this.xmin) {
-		this.xmin = this.oldxs[hdl];
-            }
-	    if (this.xmax == undefined || this.oldxs[hdl] > this.xmax) {
-		this.xmax = this.oldxs[hdl];
-	    }
-	}
-	if (this.ymin == undefined || addys[hdl] < this.ymin) {
-	    this.ymin = addys[hdl];
-        }
-	if (this.ymax == undefined || addys[hdl] > this.ymax) {
-	    this.ymax = addys[hdl];
-	}
-    }
-// rest is initialization so if only clearing, we are done
-    if (compId == "clear") {
-	this.lx.domain([this.xmin,this.xmax]);
-	this.ly.domain([this.ymax,this.ymin]);
-	return
-    } else if (this.xval == 'time') { // x axis is time
+      var that = this;
+      $.post('model_action.php', {"base":fileBase, "act":"Query",
+				  "note":JSON.stringify(newComps)},
+	     function(resp) {
+		 responses = JSON.parse(resp);
+		 addys = flatten('y', responses[0]);
+		 if (that.xval == 'time') {
 // oldys must become an array as maybe more than one var...
-	this.oldys.push(addys);
-	if (this.status == "adding") {
-	    this.status = "displaying";
+		     that.oldys.push(addys);
+		 } else {
+		     that.oldys = addys;
+		     that.oldxs = flatten('x', responses[1]);
+		 }
+		 AdjustAxesFor(that, addys);
+		 
+	     });
+		 
+      if (this.xval == 'time') { // x axis is time
+	  if (this.status == "adding") {
+	      this.status = "displaying";
 // adjust y axis for range of new addition, then we are done
-	    this.ly.domain([this.ymax,this.ymin]);
-	    return;
-	}
-    } else {
-	this.oldys = addys;
-    }
+	      return;
+	  }
+      }
       this.status = "displaying";
-    var x = d3.scale.linear()
-	  .domain([this.xmin,this.xmax])
+      
+      var x = d3.scale.linear()
+	  .domain([0,100]) // placeholders -- set by callback
 	  .range([ngap, w+ngap]);
-    var y = d3.scale.linear()
-	  .domain([this.ymax,this.ymin])
+      var y = d3.scale.linear()
+	  .domain([100,0])
 	  .range([0, h]);
-    var xAxis = d3.svg.axis()
+      var xAxis = d3.svg.axis()
 	  .scale(x)
 	  .tickSize(-h)
 	  .orient("bottom");
-    var yAxis = d3.svg.axis()
+      var yAxis = d3.svg.axis()
 	  .scale(y)
 	  .tickSize(-w)
 	  .orient("left");
@@ -1474,8 +1503,8 @@ PlotXY.prototype.display = function (time, latest, connect) {
       idxs = [[]];
 // console.log(" data is " + JSON.stringify(latest[this.tgts[0]]) + " flat " + JSON.stringify(newys));
       if (this.xval != 'time') {
-	  newys = flatten('t', latest[this.yvals[0]]);
-	  newxs = flatten('t', latest[this.xval]);
+	  newys = flatten('y', latest[this.yvals[0]]);
+	  newxs = flatten('x', latest[this.xval]);
 	  for (var hdl in newys) {
 	      if (connect && this.oldys[hdl] != undefined) {
 		  idxs[0].push([{"y":this.oldys[hdl],"x":this.oldxs[hdl]},
@@ -1496,7 +1525,7 @@ PlotXY.prototype.display = function (time, latest, connect) {
       } else {
 	  for (var i=0; i<this.yvals.length; ++i) {
 	      idxs[i] = [];
-	      newys = flatten('t', latest[this.yvals[i]]);
+	      newys = flatten('y', latest[this.yvals[i]]);
 	      for (var hdl in newys) {
 		  if (connect && this.oldys[i][hdl] != undefined) {
 		  idxs[i].push([{"y":this.oldys[i][hdl],"x":this.oldt},
