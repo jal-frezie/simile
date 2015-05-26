@@ -23,7 +23,10 @@ catch {
     if {[lsearch {INPUT TABLE} [GetModelProperty $mH $obj Eval]]>-1} {
 	lappend hook $obj
 	# Not needed if loading from .spf, and can mess up per-record
-	# set aH($obj) [CreateParamArray $iH $obj]
+	# -- but needed for sliders so add for solo time series
+	if {[llength [GetModelProperty $mH $obj Dims]]==1} { ;# [0]
+	    set aH($obj) [CreateParamArray $iH $obj]
+	}
     }
  }
  llength $catalog} res
