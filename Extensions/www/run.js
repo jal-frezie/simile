@@ -1335,13 +1335,13 @@ PlotXY.prototype.acceptClick = function (compId) {
 				  "note":JSON.stringify(newComps)},
 	     function(resp) {
 		 responses = JSON.parse(resp);
-		 addys = flatten('y', responses[0]);
+		 addys = flatten('t', responses[0]);
 		 if (that.xval == 'time') {
 // oldys must become an array as maybe more than one var...
 		     that.oldys.push(addys);
 		 } else {
 		     that.oldys = addys;
-		     that.oldxs = flatten('x', responses[1]);
+		     that.oldxs = flatten('t', responses[1]);
 		 }
 		 AdjustAxesFor(that, addys);
 		 
@@ -1503,12 +1503,13 @@ PlotXY.prototype.display = function (time, latest, connect) {
       idxs = [[]];
 // console.log(" data is " + JSON.stringify(latest[this.tgts[0]]) + " flat " + JSON.stringify(newys));
       if (this.xval != 'time') {
-	  newys = flatten('y', latest[this.yvals[0]]);
-	  newxs = flatten('x', latest[this.xval]);
+	  newys = flatten('t', latest[this.yvals[0]]);
+	  newxs = flatten('t', latest[this.xval]);
 	  for (var hdl in newys) {
 	      if (connect && this.oldys[hdl] != undefined) {
 		  idxs[0].push([{"y":this.oldys[hdl],"x":this.oldxs[hdl]},
-				{"y":newys[hdl],"x":newxs[hdl],"i":hdl}]);
+				{"y":newys[hdl],"x":newxs[hdl],
+				 "i":{"seq":time,"idxs":hdl,"run":this.nrun}}]);
 	      }
 	      if (this.ymin == undefined) {
 		  this.ymin = this.ymax = newys[hdl];
@@ -1525,11 +1526,13 @@ PlotXY.prototype.display = function (time, latest, connect) {
       } else {
 	  for (var i=0; i<this.yvals.length; ++i) {
 	      idxs[i] = [];
-	      newys = flatten('y', latest[this.yvals[i]]);
+	      newys = flatten('t', latest[this.yvals[i]]);
 	      for (var hdl in newys) {
 		  if (connect && this.oldys[i][hdl] != undefined) {
 		  idxs[i].push([{"y":this.oldys[i][hdl],"x":this.oldt},
-				{"y":newys[hdl],"x":time,"i":hdl}]);
+				{"y":newys[hdl],"x":time,
+				 "i":{"seq":this.yvals[i],"idxs":hdl,
+				      "run":this.nrun}}]);
 		  }
 		  oldymin = this.ymin;
 		  if (this.ymin == undefined) {
@@ -1564,14 +1567,13 @@ PlotXY.prototype.display = function (time, latest, connect) {
 		  .style("stroke",col)
 		  .attr("d", this.line)
 		  .on("mouseover", function(d) {
-		      i = d[1].i;
 		      that.ttdiv.transition()        
 			  .duration(200)      
 			  .style("opacity", .9);      
-		      that.ttdiv.html("Indices: " + i.substr(0,i.length-2))  
+		      that.ttdiv.html(JSON.stringify(d[1].i))  
 			  .style("left", (d3.event.layerX + 10) + "px")     
 			  .style("top", (d3.event.layerY + 10) + "px");    
-		      console.log("Moused over a trace");
+		      //console.log("Moused over a trace");
 		  })
 		  .on("mouseout", function(d) {       
 		      that.ttdiv.transition()        
