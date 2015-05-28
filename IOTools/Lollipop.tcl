@@ -195,7 +195,7 @@ proc Haul {winId btn x y} {
 	    set scaleVector($winId,zoff) [expr {$scaleVector($winId,zoff)+$scaleVector($winId,zmag)*$motny*$viewVector($winId,cos_elevation)}]
 	}
     }
-    WindowSizeChanged $winId
+    event generate $winId.c <Configure>
     set curPosn($winId,x) $x
     set curPosn($winId,y) $y
 }

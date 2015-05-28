@@ -49,6 +49,11 @@ itcl::class similescript::$newHelperClass {
 #	package require img::window
 
 	bind $winId.c <Configure> "$this WindowSizeChanged"
+# New Three.js-style drag controls
+	bind $winId.c <Button-3> \
+	    [list namespace eval ::gen3d1 "DropAnchor $winId r %x %y"]
+	bind $winId.c <B3-Motion> \
+	    [list namespace eval ::gen3d1 "Haul $winId r %x %y"]
 	menu $winId.m -tearoff 0
 	$winId.m add command -label "Sphere" -command "$this AddItem spheres"
 	$winId.m add command -label "Line" -command "$this AddItem lines"
