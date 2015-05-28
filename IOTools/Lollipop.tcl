@@ -53,7 +53,11 @@ proc initialize {winId} {
             
     bind $winId.c <Configure> \
                 [namespace code " WindowSizeChanged $winId"]
-
+# New Three.js-style drag controls
+    bind $winId.c <Button-3> \
+	[namespace code "DropAnchor $winId r %x %y"]
+    bind $winId.c <B3-Motion> \
+	[namespace code "Haul $winId r %x %y"]
 #Grid is always displayed so only define it once
     DefineGrid $winId
 
@@ -171,6 +175,32 @@ proc TweakScale {winId which where} {
     WindowSizeChanged $winId
 }
 
+proc DropAnchor {winId btn x y} {
+    variable curPosn
+    set curPosn($winId,x) $x
+    set curPosn($winId,y) $y
+}
+
+proc Haul {winId btn x y} {
+    variable curPosn
+    variable scaleVector
+    variable viewVector
+
+    set motnx [expr {1.0*($x-$curPosn($winId,x))/$viewVector($winId,X)}]
+    set motny [expr {1.0*($y-$curPosn($winId,y))/$viewVector($winId,Y)}]
+    switch $btn {
+	r {
+	    set scaleVector($winId,xoff) [expr {$scaleVector($winId,xoff)-$scaleVector($winId,xmag)*($motnx*$viewVector($winId,cos_angle)-$motny*$viewVector($winId,sin_angle)*$viewVector($winId,sin_elevation))}]
+	    set scaleVector($winId,yoff) [expr {$scaleVector($winId,yoff)+$scaleVector($winId,xmag)*($motnx*$viewVector($winId,sin_angle)+$motny*$viewVector($winId,cos_angle)*$viewVector($winId,sin_elevation))}]
+	    set scaleVector($winId,zoff) [expr {$scaleVector($winId,zoff)+$scaleVector($winId,zmag)*$motny*$viewVector($winId,cos_elevation)}]
+	}
+    }
+    WindowSizeChanged $winId
+    set curPosn($winId,x) $x
+    set curPosn($winId,y) $y
+}
+    
+    
 proc display {winId time step remainder} {
     variable trunks
     set trunks [LoadPosns $winId]
