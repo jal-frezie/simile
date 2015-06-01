@@ -1155,8 +1155,8 @@ proc ShiftImages {topDir way args} {
 proc GetGhostCursor {} {
     global tcl_platform
     if {[string equal Linux $tcl_platform(os)]} {
-	return {@$::SIMILE_PATH/Images/ghost.xbm \
-		    $::SIMILE_PATH/Images/ghost.mask.xbm black white}
+	return [list @$::SIMILE_PATH/Images/ghost.xbm \
+		    $::SIMILE_PATH/Images/ghost.mask.xbm black white]
     } else {
 	return gumby
     }
