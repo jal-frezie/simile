@@ -58,6 +58,10 @@ proc initialize {winId} {
 	[namespace code "DropAnchor $winId r %x %y"]
     bind $winId.c <B3-Motion> \
 	[namespace code "Haul $winId r %x %y"]
+    bind $winId.c <Button-4> \
+	[namespace code "Zoom $winId 0.8"]
+    bind $winId.c <Button-5> \
+	[namespace code "Zoom $winId 1.25"]
 #Grid is always displayed so only define it once
     DefineGrid $winId
 
@@ -199,7 +203,16 @@ proc Haul {winId btn x y} {
     set curPosn($winId,x) $x
     set curPosn($winId,y) $y
 }
-    
+
+proc Zoom {winId factor} {
+# use pointer location somehow?
+    variable scaleVector
+    foreach axis {x y z} {
+	set scaleVector($winId,${axis}mag) \
+	    [expr {$factor*$scaleVector($winId,${axis}mag)}]
+    }
+    event generate $winId.c <Configure>
+}    
     
 proc display {winId time step remainder} {
     variable trunks

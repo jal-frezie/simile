@@ -54,10 +54,15 @@ itcl::class similescript::$newHelperClass {
 	    [list namespace eval ::gen3d1 "DropAnchor $winId r %x %y"]
 	bind $winId.c <B3-Motion> \
 	    [list namespace eval ::gen3d1 "Haul $winId r %x %y"]
+	bind $winId.c <Button-4> \
+	    [list namespace eval ::gen3d1 "Zoom $winId 0.8"]
+	bind $winId.c <Button-5> \
+	    [list namespace eval ::gen3d1 "Zoom $winId 1.25"]
 	menu $winId.m -tearoff 0
 	$winId.m add command -label "Sphere" -command "$this AddItem spheres"
 	$winId.m add command -label "Line" -command "$this AddItem lines"
 	$winId.m add command -label "Ellipse" -command "$this AddItem ellipses"
+	$winId.m add command -label "Old Ellipse" -command "$this AddItem oldellipses"
 	pack [::ttk::menubutton $winId.mb -text "Select new item type" \
 		  -menu $winId.m]
 	message $winId.ms
