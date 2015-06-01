@@ -57,11 +57,11 @@ proc initialize {winId} {
     bind $winId.c <Button-3> \
 	[namespace code "DropAnchor $winId r %x %y"]
     bind $winId.c <B3-Motion> \
-	[namespace code "Haul $winId r %x %y"]
+	[namespace code "Haul $winId r %x %y 1"]
     bind $winId.c <Button-4> \
-	[namespace code "Zoom $winId 0.8"]
+	[namespace code "Zoom $winId 0.8 %x %y"]
     bind $winId.c <Button-5> \
-	[namespace code "Zoom $winId 1.25"]
+	[namespace code "Zoom $winId 1.25 %x %y"]
 #Grid is always displayed so only define it once
     DefineGrid $winId
 
@@ -185,7 +185,7 @@ proc DropAnchor {winId btn x y} {
     set curPosn($winId,y) $y
 }
 
-proc Haul {winId btn x y} {
+proc Haul {winId btn x y done} {
     variable curPosn
     variable scaleVector
     variable viewVector
@@ -199,19 +199,27 @@ proc Haul {winId btn x y} {
 	    set scaleVector($winId,zoff) [expr {$scaleVector($winId,zoff)+$scaleVector($winId,zmag)*$motny*$viewVector($winId,cos_elevation)}]
 	}
     }
-    event generate $winId.c <Configure>
+    if {$done} {
+	event generate $winId.c <Configure>
+    }
     set curPosn($winId,x) $x
     set curPosn($winId,y) $y
 }
 
-proc Zoom {winId factor} {
+proc Zoom {winId factor scx scy} {
 # use pointer location somehow?
     variable scaleVector
+    variable viewVector
+
+    set ctrx [expr {$viewVector($winId,X)/2}]
+    set ctry [expr {$viewVector($winId,Y)/2}]
+    DropAnchor $winId r $scx $scy
+    Haul $winId r $ctrx $ctry 0
     foreach axis {x y z} {
 	set scaleVector($winId,${axis}mag) \
 	    [expr {$factor*$scaleVector($winId,${axis}mag)}]
     }
-    event generate $winId.c <Configure>
+    Haul $winId r $scx $scy 1
 }    
     
 proc display {winId time step remainder} {

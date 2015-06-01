@@ -30,6 +30,7 @@ itcl::class similescript::$newHelperClass {
 	    -command "$this TweakScale elevation"
 	$winId.elv set 0.5
 	canvas $winId.c -width 1 -height 1 -bg white
+	::canvasnotes20070919::MakeCanvasAnnotatable $winId.c
 	frame $winId.buttons -relief raised -bd 1
 	button $winId.buttons.but_print -text "Print..." \
 	    -command "PrintNow $winId.c"
@@ -53,11 +54,11 @@ itcl::class similescript::$newHelperClass {
 	bind $winId.c <Button-3> \
 	    [list namespace eval ::gen3d1 "DropAnchor $winId r %x %y"]
 	bind $winId.c <B3-Motion> \
-	    [list namespace eval ::gen3d1 "Haul $winId r %x %y"]
+	    [list namespace eval ::gen3d1 "Haul $winId r %x %y 1"]
 	bind $winId.c <Button-4> \
-	    [list namespace eval ::gen3d1 "Zoom $winId 0.8"]
+	    [list namespace eval ::gen3d1 "Zoom $winId 0.8 %x %y"]
 	bind $winId.c <Button-5> \
-	    [list namespace eval ::gen3d1 "Zoom $winId 1.25"]
+	    [list namespace eval ::gen3d1 "Zoom $winId 1.25 %x %y"]
 	menu $winId.m -tearoff 0
 	$winId.m add command -label "Sphere" -command "$this AddItem spheres"
 	$winId.m add command -label "Line" -command "$this AddItem lines"
