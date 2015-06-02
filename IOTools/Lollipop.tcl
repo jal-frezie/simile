@@ -33,27 +33,31 @@ proc initialize {winId} {
     array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
 			      $winId,cos_angle 1 $winId,cos_elevation 1 \
 			      $winId,sin_angle -0.3 $winId,sin_elevation 0.5]
-    scale $winId.elv -orient v -from [expr $pi/2] -to [expr -$pi/2] \
-	-resolution 0.01 \
-	-command [namespace code "TweakScale $winId elevation"]
-    $winId.elv set 0.5
+#    scale $winId.elv -orient v -from [expr $pi/2] -to [expr -$pi/2] \
+#	-resolution 0.01 \
+#	-command [namespace code "TweakScale $winId elevation"]
+#    $winId.elv set 0.5
     canvas $winId.c -width 1 -height 1 -bg white
     MakeCanvasAnnotatable $winId.c
-    frame $winId.buttons -relief raised -bd 1
-    pack [label $winId.buttons.anglab -text "View angle:"] -side left
-    scale $winId.buttons.ang -orient h -from -$pi -to $pi \
-	-resolution 0.01 \
-	-command [namespace code "TweakScale $winId angle"]
-    $winId.buttons.ang set -0.3
-    pack $winId.buttons.ang -side left -fill x -expand true
-    pack [label $winId.buttons.elvlab -text "View\nelev."] -side right
-    pack $winId.buttons -side bottom -fill x
-    pack $winId.elv -side right -fill y
+#    frame $winId.buttons -relief raised -bd 1
+#    pack [label $winId.buttons.anglab -text "View angle:"] -side left
+#    scale $winId.buttons.ang -orient h -from -$pi -to $pi \
+#	-resolution 0.01 \
+#	-command [namespace code "TweakScale $winId angle"]
+#    $winId.buttons.ang set -0.3
+#    pack $winId.buttons.ang -side left -fill x -expand true
+#    pack [label $winId.buttons.elvlab -text "View\nelev."] -side right
+#    pack $winId.buttons -side bottom -fill x
+#    pack $winId.elv -side right -fill y
     pack $winId.c -fill both -expand true
             
     bind $winId.c <Configure> \
                 [namespace code " WindowSizeChanged $winId"]
 # New Three.js-style drag controls
+    bind $winId.c <Button-1> \
+	[namespace code "DropAnchor $winId l %x %y"]
+    bind $winId.c <B1-Motion> \
+	[namespace code "Haul $winId l %x %y 1"]
     bind $winId.c <Button-3> \
 	[namespace code "DropAnchor $winId r %x %y"]
     bind $winId.c <B3-Motion> \
@@ -146,7 +150,7 @@ proc Restore {winId} {
     set state [GetState $winId]
     initialize $winId
     if {[string match displaying [lindex $state 0]]} {
-	$winId.buttons.ang set [lindex $state 1]
+#	$winId.buttons.ang set [lindex $state 1]
 	foreach node [lrange $state 3 end] {
 	    if {$node eq "/annotation/"} {
 		# next entry (currently always last) is note date
@@ -158,27 +162,28 @@ proc Restore {winId} {
 	}
 	variable trunks
 	set trunks [LoadPosns $winId]
-	$winId.elv set [lindex $state 2]
+#	$winId.elv set [lindex $state 2]
+#	event generate $winId.c <Configure>
     } else {
 	GrabClicks $winId
     }
     SaveState $winId
 }
 
-proc TweakScale {winId which where} {
-    variable viewVector
-    set viewVector($winId,$which) $where
-    SaveState $winId
-
-    set viewVector($winId,cos_angle) [expr cos($viewVector($winId,angle))]
-    set viewVector($winId,sin_angle) [expr sin($viewVector($winId,angle))]
-    set viewVector($winId,cos_elevation) \
-	[expr cos($viewVector($winId,elevation))]
-    set viewVector($winId,sin_elevation) \
-	[expr sin($viewVector($winId,elevation))]
-    WindowSizeChanged $winId
-}
-
+#proc TweakScale {winId which where} {
+#    variable viewVector
+#    set viewVector($winId,$which) $where
+#    SaveState $winId
+#
+#    set viewVector($winId,cos_angle) [expr cos($viewVector($winId,angle))]
+#    set viewVector($winId,sin_angle) [expr sin($viewVector($winId,angle))]
+#    set viewVector($winId,cos_elevation) \
+#	[expr cos($viewVector($winId,elevation))]
+#    set viewVector($winId,sin_elevation) \
+#	[expr sin($viewVector($winId,elevation))]
+#    event generate $winId.c <Configure>
+#}
+#
 proc DropAnchor {winId btn x y} {
     variable curPosn
     set curPosn($winId,x) $x
@@ -193,14 +198,28 @@ proc Haul {winId btn x y done} {
     set motnx [expr {1.0*($x-$curPosn($winId,x))/$viewVector($winId,X)}]
     set motny [expr {1.0*($y-$curPosn($winId,y))/$viewVector($winId,Y)}]
     switch $btn {
-	r {
+	l {
+	    set viewVector($winId,elevation) \
+		[expr {$viewVector($winId,elevation)+$motny}]
+	    set viewVector($winId,angle) \
+		[expr {$viewVector($winId,angle)+$motnx}]
+	    set viewVector($winId,cos_angle) \
+		[expr cos($viewVector($winId,angle))]
+	    set viewVector($winId,sin_angle) \
+		[expr sin($viewVector($winId,angle))]
+	    set viewVector($winId,cos_elevation) \
+		[expr cos($viewVector($winId,elevation))]
+	    set viewVector($winId,sin_elevation) \
+		[expr sin($viewVector($winId,elevation))]
+	    event generate $winId.c <Configure>
+	} r {
 	    set scaleVector($winId,xoff) [expr {$scaleVector($winId,xoff)-$scaleVector($winId,xmag)*($motnx*$viewVector($winId,cos_angle)-$motny*$viewVector($winId,sin_angle)*$viewVector($winId,sin_elevation))}]
 	    set scaleVector($winId,yoff) [expr {$scaleVector($winId,yoff)+$scaleVector($winId,xmag)*($motnx*$viewVector($winId,sin_angle)+$motny*$viewVector($winId,cos_angle)*$viewVector($winId,sin_elevation))}]
 	    set scaleVector($winId,zoff) [expr {$scaleVector($winId,zoff)+$scaleVector($winId,zmag)*$motny*$viewVector($winId,cos_elevation)}]
+	    if {$done} {
+		event generate $winId.c <Configure>
+	    }
 	}
-    }
-    if {$done} {
-	event generate $winId.c <Configure>
     }
     set curPosn($winId,x) $x
     set curPosn($winId,y) $y
@@ -428,7 +447,7 @@ proc WindowSizeChanged {winId} {
     variable trunks
     set viewVector($winId,X) [winfo width $winId.c]
     set viewVector($winId,Y) [winfo height $winId.c]
-    if {[winfo viewable $winId.c]} {
+#    if {[winfo viewable $winId.c]} {
 	$winId.c delete trunks key grid
 	if {$viewVector($winId,elevation)>=0} {
 	    DrawGrid $winId grid
@@ -439,7 +458,7 @@ proc WindowSizeChanged {winId} {
 	}
 	ShowKey $winId
 	$winId.c raise annotation
-    }
+#    }
 }
 
 proc DefineGrid {winId} {

@@ -25,25 +25,25 @@ itcl::class similescript::$newHelperClass {
 	array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
 				  $winId,cos_angle 1 $winId,cos_elevation 1 \
 				  $winId,sin_angle -0.3 $winId,sin_elevation 0.5]
-	scale $winId.elv -orient v -from [expr $pi/2] -to [expr -$pi/2] \
-	    -resolution 0.01 \
-	    -command "$this TweakScale elevation"
-	$winId.elv set 0.5
+#	scale $winId.elv -orient v -from [expr $pi/2] -to [expr -$pi/2] \
+#	    -resolution 0.01 \
+#	    -command "$this TweakScale elevation"
+#	$winId.elv set 0.5
 	canvas $winId.c -width 1 -height 1 -bg white
 	::canvasnotes20070919::MakeCanvasAnnotatable $winId.c
 	frame $winId.buttons -relief raised -bd 1
 	button $winId.buttons.but_print -text "Print..." \
 	    -command "PrintNow $winId.c"
-	pack [label $winId.buttons.anglab -text "View angle:"] -side left
-	scale $winId.buttons.ang -orient h -from -$pi -to $pi \
-	    -resolution 0.01 \
-	    -command "$this TweakScale angle"
-	$winId.buttons.ang set -0.3
-	pack $winId.buttons.ang -side left -fill x -expand true
-	pack [label $winId.buttons.elvlab -text "View\nelev."] -side right
+#	pack [label $winId.buttons.anglab -text "View angle:"] -side left
+#	scale $winId.buttons.ang -orient h -from -$pi -to $pi \
+#	    -resolution 0.01 \
+#	    -command "$this TweakScale angle"
+#	$winId.buttons.ang set -0.3
+#	pack $winId.buttons.ang -side left -fill x -expand true
+#	pack [label $winId.buttons.elvlab -text "View\nelev."] -side right
 	pack $winId.buttons.but_print -side right
 	pack $winId.buttons -side bottom -fill x
-	pack $winId.elv -side right -fill y
+#	pack $winId.elv -side right -fill y
 	pack $winId.c -fill both -expand true
 	
 #	set ::frameCount 10000
@@ -51,6 +51,10 @@ itcl::class similescript::$newHelperClass {
 
 	bind $winId.c <Configure> "$this WindowSizeChanged"
 # New Three.js-style drag controls
+	bind $winId.c <Button-1> \
+	    [list namespace eval ::gen3d1 "DropAnchor $winId l %x %y"]
+	bind $winId.c <B1-Motion> \
+	    [list namespace eval ::gen3d1 "Haul $winId l %x %y 1"]
 	bind $winId.c <Button-3> \
 	    [list namespace eval ::gen3d1 "DropAnchor $winId r %x %y"]
 	bind $winId.c <B3-Motion> \
@@ -64,7 +68,7 @@ itcl::class similescript::$newHelperClass {
 	$winId.m add command -label "Line" -command "$this AddItem lines"
 	$winId.m add command -label "Ellipse" -command "$this AddItem ellipses"
 	$winId.m add command -label "Old Ellipse" -command "$this AddItem oldellipses"
-	pack [::ttk::menubutton $winId.mb -text "Select new item type" \
+	pack [::ttk::menubutton $winId.buttons.mb -text "Select new item type" \
 		  -menu $winId.m]
 	message $winId.ms
 	if {[string length $state]} { ;# we are restoring 
@@ -78,7 +82,7 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method AddItem {type} {
-	pack forget $winId.mb
+	pack forget $winId.buttons.mb
 	array set all_templates \
 	    {spheres {{type "Select new item type"} \
 			  {component "X positions"} \
@@ -133,7 +137,7 @@ itcl::class similescript::$newHelperClass {
 	if {$i == [llength $template]} { ;# finished
 	    lappend State $template
 	    pack forget $winId.ms
-	    pack $winId.mb
+	    pack $winId.buttons.mb
 	} else {
 	    switch [lindex $template $i 0] {
 		component {
