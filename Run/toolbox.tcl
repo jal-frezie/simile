@@ -1786,10 +1786,11 @@ proc UnOrReDo {curWin fwd} {
 proc ExportPostscript { winId } {
     global window_info
 
-    set psfile [ChooseFile image.ps [tr. "Name of postscript file"] 1 \
-		   $window_info($winId,top_node)]
+    set psfile [ChooseFile [GetExecTitle $window_info($winId,top_node)].ps \
+		    [tr. "Name of postscript file"] 1 \
+		    $window_info($winId,top_node)]
     # check for cancel
-    if {![string match */ $psfile]} {
+    if {$psfile ne ""} {
         
         # force .ps extension
         if {[string compare [file extension $psfile] .ps]} {

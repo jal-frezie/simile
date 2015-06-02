@@ -1604,7 +1604,7 @@ proc TradeXML {c exp} {
 	return
     }
     if {$exp} {
-	set destFile [ChooseFile model.xml \
+	set destFile [ChooseFile [GetExecTitle $mdl].xml \
 			 [tr. "XML model description to export:"] 1 $mdl]
 	if {![string length $destFile]} {return 0}
     } else {
