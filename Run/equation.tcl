@@ -780,7 +780,8 @@ proc fill_inputs { triples } {
         
         set p [entry $scroller.plist.p$line -bd 0 -relief flat \
                 -font TkDefaultFont -textvariable "equation(entry$line)"]
-        bind $p <Enter> [list QueuePopup AddWidgetPopup %X %Y $paramPopMsg]
+#       bind $p <Enter> [list QueuePopup AddWidgetPopup %X %Y $paramPopMsg]
+	BindPopup $p $paramPopMsg
 	KoreanClick $p 1 {}
         bind $p <Double-1> "equationDouble %W $en; focus $en"
         bind $p <FocusOut> "ListEditDone %W $line entry"
