@@ -654,7 +654,7 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 	cell.appendChild(monitor);
 
 	input.setAttribute("type", "range");
-	input.value = values_json[id];
+	input.value = values_json[id]*100;
 	transfer(input, uniq);
         cb = new Function("zap", "transfer(zap.target, '" + uniq + "');");
 	input.addEventListener("input", cb);
