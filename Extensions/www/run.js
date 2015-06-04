@@ -649,6 +649,17 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 	cell = row.insertCell(1);
 	monitor = document.createElement("INPUT");
 	monitor.setAttribute("type", "text");
+	monitor.onkeydown = function (e) {
+	    var evt = e || window.event;
+	    // "e" is the standard behavior (FF, Chrome, Safari, Opera),
+	    // while "window.event" (or "event") is IE's behavior
+	    if ( evt.keyCode === 13 ) {
+		id = evt.target.id.substr(4);
+		slider =  document.getElementById("rng_" +id);
+		slider.value = 100*evt.target.value;
+		toModel(slider, id);
+	    }
+	};
         uniq = 'mtr_' + id;
 	monitor.setAttribute("id", uniq);
 	cell.appendChild(monitor);
