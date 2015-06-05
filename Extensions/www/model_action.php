@@ -219,6 +219,8 @@ break;
 	      doTcl("GetModelProperty [set mH] [list $nicePath] MinVal");
           $mdlLine["max"] = 
 	      doTcl("GetModelProperty [set mH] [list $nicePath] MaxVal");
+          $mdlLine["units"] = 
+	      doTcl("GetModelProperty [set mH] [list $nicePath] Type");
           $mdlLine["dims"] = 
 	      explode(" ", doTcl("GetModelProperty [set mH] [list $nicePath] Dims"));
           $mdlArr[$id] = $mdlLine;

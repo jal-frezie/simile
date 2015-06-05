@@ -643,9 +643,14 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 	min = model_json[id].min;
 	max = model_json[id].max;
 	input.insertAdjacentHTML('beforebegin', min);
-	input.setAttribute("min", 100*min);
 	input.insertAdjacentHTML('afterend', max);
-	input.setAttribute("max", 100*max);
+	if (model_json[id].units == "REAL") {
+	    input.setAttribute("min", 0);
+	    input.setAttribute("max", 1000);
+	} else {
+	    input.setAttribute("min", min);
+	    input.setAttribute("max", max);
+	}
 	cell = row.insertCell(1);
 	monitor = document.createElement("INPUT");
 	monitor.setAttribute("type", "text");
@@ -655,8 +660,8 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 	    // while "window.event" (or "event") is IE's behavior
 	    if ( evt.keyCode === 13 ) {
 		id = evt.target.id.substr(4);
-		slider =  document.getElementById("rng_" +id);
-		slider.value = 100*evt.target.value;
+		slider = document.getElementById("rng_" +id);
+		SetSliderValue(slider, id, evt.target.value);
 		toModel(slider, id);
 	    }
 	};
@@ -665,8 +670,8 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 	cell.appendChild(monitor);
 
 	input.setAttribute("type", "range");
-	input.value = values_json[id]*100;
-	transfer(input, uniq);
+	SetSliderValue(input, id, values_json[id]);
+	monitor.value = values_json[id];
         cb = new Function("zap", "transfer(zap.target, '" + uniq + "');");
 	input.addEventListener("input", cb);
 	cb = new Function("zap", "toModel(zap.target, '" + id + "');");
@@ -678,14 +683,34 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
   }
 }      
 
+function GetSliderValue(widget) {
+    //    widget = document.getElementById("rng_" + id);
+    id = widget.id.substr(4);
+    if (model_json[id].units == "REAL") {
+	return ((1000-widget.value)*model_json[id].min +
+		widget.value*model_json[id].max)/1000;
+    } else {
+	return widget.value;
+    }
+}
+
+function SetSliderValue(widget, id, value) {
+    if (model_json[id].units == "REAL") {
+	widget.value = 1000*(value-model_json[id].min)
+	    /(model_json[id].max-model_json[id].min);
+    } else {
+	widget.value = value;
+    }
+}
+
 function transfer(zapTgt, entry) {
 //    alert("zap " + zapTgt + " entry " + entry);
-    document.getElementById(entry).value = zapTgt.value/100;
+    document.getElementById(entry).value = GetSliderValue(zapTgt);
 }
 
 function toModel(zapTgt, id) {
     parmBlock = {};
-    parmBlock[model_json[id].captpath] = 'NOW ' + zapTgt.value/100;
+    parmBlock[model_json[id].captpath] = 'NOW ' + GetSliderValue(zapTgt);
     sendValues(parmBlock);
 }
 
