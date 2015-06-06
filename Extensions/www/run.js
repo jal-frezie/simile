@@ -412,7 +412,8 @@ function model_step(current, start, end, span) {
 		model_step(newCurrent, start, end, span);
 
 		var execHistory = JSON.parse(newVals);
-		for (var timePt in execHistory) {
+		for (pt=0; pt<execHistory.length; pt++) {
+		    timePt = execHistory[pt].slice(-1)[0]; // last value
 		    var timeVal = parseFloat(timePt)/timeUnit;
 		    // console.log("Displaying results for time " + timeVal);
 		    allResults = {};
@@ -422,7 +423,7 @@ function model_step(current, start, end, span) {
 			} else {
 			    resIndx = note[i];
 			}
-			allResults[resIndx] = execHistory[timePt][i];
+			allResults[resIndx] = execHistory[pt][i];
 		    }
 		    update_helpers(timeVal, allResults, true);
 		    // for no very obvious reason the updates are

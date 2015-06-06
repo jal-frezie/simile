@@ -291,6 +291,7 @@ break;
       $note = json_decode($_POST['note']);
       $endPt = $current + $runlength;
 
+      $pt = 0;
       for($t=$current;$t<$endPt;$t+=$log) {
          $endInt = $t + $log;
 	 if ($endInt > $endPt) {
@@ -305,11 +306,17 @@ break;
 	    $val = do_query($note[$x]);
 // if ExecuteMulti the time points are outer indices
             if ($_POST['act'] == "Execute") {
-               $hlpArr[$note[$x]]["".$endInt] = $val;
+               $hlpArr[$note[$x]][$pt] = $val;
 	    } else {
-               $hlpArr["".$endInt][$x] = $val;
+               $hlpArr[$pt][$x] = $val;
 	    }
       	 }
+         if ($_POST['act'] == "Execute") {
+            $hlpArr['time'][$pt] = $endInt; // make separate array of times
+	 } else {
+            $hlpArr[$pt][$x] = $endInt; // time at end of each value array
+	 }
+	 $pt++;
       }
       echo json_encode($hlpArr);
       break;
