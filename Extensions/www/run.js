@@ -2074,6 +2074,7 @@ Grid5.prototype.acceptClick = function (nodeId) {
 	       that.status = "displaying";
 	       d3.select('#' + that.port + '_img')
 		   .attr("width",that.width).attr("height",that.height)
+		   .attr("transform","translate(0," + that.height + ")scale(1,-1)")
 		   .attr("xlink:href", that.headerGIF + responses[arrInd]);
 	       if (that.hex) {
 		   d3.select('#' + that.port + '_img')
