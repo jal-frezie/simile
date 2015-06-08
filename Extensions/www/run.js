@@ -1739,8 +1739,11 @@ function ColorMapFromPoints (n, bot, mid, top) {
 	}
 	if (x>0) {
 	    for (var j=0; j<128; ++j) {
-		fract = 1+2*Math.floor(n*(j+128*(x-1))/256)/(n-1)-x;
-
+		if (n==1) {
+		    fract = x-1;
+		} else {
+		    fract = 1+2*Math.floor(n*(j+128*(x-1))/256)/(n-1)-x;
+		}
 		var r = Math.round(fract*hi.R+(1-fract)*lo.R);
 		var g = Math.round(fract*hi.G+(1-fract)*lo.G);
 		var b = Math.round(fract*hi.B+(1-fract)*lo.B);
