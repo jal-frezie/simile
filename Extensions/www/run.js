@@ -151,12 +151,15 @@ function addTabFor(tclInst) {
 	case "plotter1_dot_25":
 	new_helper("plot");
 	captArr = specArray[specArray.indexOf("/WIN/,Yvars")+1];
-	captPath0 = tclListOfDimty(captArr,2)[0].join(" ");
-//	console.log("Adding plot of " + captPath0);
+	captPaths = tclListOfDimty(captArr,2);
+	for (x=0;x<captPaths.length;++x) {
+	    if (x>0) select_for_helper("add");
+	    captPathN = captPaths[x].join(" ");
+//	console.log("Adding plot of " + captPathN);
 // now boringly find this by iteration
-	select_for_helper(idFromCapt(captPath0));
-	select_for_helper("time");
-// add more if helper can display multiple plotz
+	    select_for_helper(idFromCapt(captPathN));
+	    if (x==0) select_for_helper("time");
+	}
 	break;
 
 	case "tabular11510":
