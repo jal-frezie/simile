@@ -130,7 +130,7 @@ function tclListOfDimty(stuff, n) {
 function idFromCapt (capt) {
 // now boringly find this by iteration
     for (comp in model_json) {
-	if (model_json[comp].captpath.replace(/\\n|\\ /g," ") == capt) {
+	if (model_json[comp].captpath.replace(/\s+/g," ") == capt) {
 	    return model_json[comp].id;
 	}
     }

@@ -1,6 +1,6 @@
 <?php
 function escapeNasties ($str) {
-   return addcslashes($str, "][{};#$\\");
+   return addcslashes($str, "][{};#$\\\ \n\r\t");
 }
 
 function demangle($bs) {
@@ -196,36 +196,37 @@ break;
       for($x=0;$x<$arrLength;$x++) {
         $path = $paths[$x];
         $nicePath = escapeNasties($path);
-        $id = doTcl("getnodeid [set mH] [list $nicePath]");
+        $id = doTcl("getnodeid [set mH] $nicePath");
         if ($_POST['act'] == "Describe") {
-          $tailDiv = strrpos($nicePath, '/');
-          $parentPath = substr($nicePath, 0, $tailDiv);
+          $tailDiv = strrpos($path, '/');
+          $parentPath = substr($path, 0, $tailDiv);
           if (strlen($parentPath)) {
-             $mdlLine["parent"] = doTcl("getnodeid [set mH] [list $parentPath]");
+	     $niceParent = escapeNasties($parentPath);
+             $mdlLine["parent"] = doTcl("getnodeid [set mH] $niceParent");
           } else {
              $mdlLine["parent"] = "#";
           }
           $mdlLine["icon"] = "images/" 
-	      . doTcl("GetModelProperty [set mH] [list $nicePath] Class") . ".gif";
-          $mdlLine["text"] = substr($nicePath, $tailDiv+1);
-          $mdlLine["captpath"] = $nicePath;
+	      . doTcl("GetModelProperty [set mH] $nicePath Class") . ".gif";
+          $mdlLine["text"] = substr($path, $tailDiv+1);
+          $mdlLine["captpath"] = $path;
           $mdlLine["equation"] = 
-	      doTcl("GetModelProperty [set mH] [list $nicePath] Spec");
+	      doTcl("GetModelProperty [set mH] $nicePath Spec");
           $mdlLine["comment"] = 
-	      doTcl("GetModelProperty [set mH] [list $nicePath] Comment");
+	      doTcl("GetModelProperty [set mH] $nicePath Comment");
           $mdlLine["eval"] = 
-	      doTcl("GetModelProperty [set mH] [list $nicePath] Eval");
+	      doTcl("GetModelProperty [set mH] $nicePath Eval");
           $mdlLine["min"] = 
-	      doTcl("GetModelProperty [set mH] [list $nicePath] MinVal");
+	      doTcl("GetModelProperty [set mH] $nicePath MinVal");
           $mdlLine["max"] = 
-	      doTcl("GetModelProperty [set mH] [list $nicePath] MaxVal");
+	      doTcl("GetModelProperty [set mH] $nicePath MaxVal");
           $mdlLine["units"] = 
-	      doTcl("GetModelProperty [set mH] [list $nicePath] Type");
+	      doTcl("GetModelProperty [set mH] $nicePath Type");
           $mdlLine["dims"] = 
-	      explode(" ", doTcl("GetModelProperty [set mH] [list $nicePath] Dims"));
+	      explode(" ", doTcl("GetModelProperty [set mH] $nicePath Dims"));
           $mdlArr[$id] = $mdlLine;
         } else {
-          $mdlArr[$id] = doTcl("GetJsonValues [set iH] [list $nicePath] 1024");
+          $mdlArr[$id] = doTcl("GetJsonValues [set iH] $nicePath 1024");
         }
       }
       echo json_encode($mdlArr);
@@ -255,7 +256,7 @@ break;
       $updates = json_decode($sample);
       foreach ($updates as $idx => $pv) {
          $nicePath = escapeNasties($idx);
-         $result = doTcl("SetParameter [set aH([list $nicePath])] [list $pv]");
+         $result = doTcl("SetParameter [set aH($nicePath)] [list $pv]");
          if ($result== '-1' || $result == '0' || $result == '1') {
          } else {
             $spew[] = $nicePath . "-->" . $result;
