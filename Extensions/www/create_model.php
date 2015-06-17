@@ -161,6 +161,7 @@ echo "<script>\nvar fileBase = '$base';\n</script>";
 <body onload="prepare()">
 <div id="Buttonbar">
 <button onclick="new_helper('plot')"><img src="images/graph.gif"/></button>
+<button onclick="new_helper('plotxy')"><img src="images/plotxy.gif"/></button>
 <button onclick="new_helper('table')"><img src="images/table.gif"/></button>
 <button onclick="new_helper('sliders')"><img src="images/slider.gif"/></button>
 <button onclick="new_helper('shapes')"><img src="images/3d_objects.png"/></button>

@@ -140,11 +140,10 @@ function oneAfter(array, term) {
     return array[array.indexOf(term) + 1];
 }
 
-function addTabFor(tclInst) {
-    convd = tclInst.textContent.replace(/}*\s+{*/g,"\"$&\"")
+function addTabFor(species, textContent) {
+    convd = textContent.replace(/}*\s+{*/g,"\"$&\"")
 	.replace(/{/g,"[").replace(/}/g,"]").replace(/\s+/g,", ")
     specArray = JSON.parse("["+convd.substr(3,convd.length-6)+"]");
-    species = tclInst.attributes.type.value;
 //    console.log("Helper key "+species+", state "+JSON.stringify(specArray));
 
     switch (species) {
@@ -158,7 +157,7 @@ function addTabFor(tclInst) {
 //	console.log("Adding plot of " + captPathN);
 // now boringly find this by iteration
 	    select_for_helper(idFromCapt(captPathN));
-	    if (x==0) select_for_helper("time");
+//	    if (x==0) select_for_helper("time");
 	}
 	break;
 
@@ -193,7 +192,7 @@ function addTabFor(tclInst) {
 	break;
 
 	case "plotterXY1_dot_0":
-	new_helper("plot");
+	new_helper("plotxy");
 	captArr = specArray[specArray.indexOf("/WIN/,Yvars")+1];
 	captPath = tclListOfDimty(captArr,1).join(" ");
 //	console.log("Adding plot of " + captPath0);
@@ -298,12 +297,22 @@ function createInitialHelpers() {
 	    parser=new DOMParser();
 	    hlpDoc=parser.parseFromString(returnedXML,"text/xml");
 	    if ($(hlpDoc).find("parsererror").length > 0) {
-		alert("Helper setup file failed to parse as XML");
+		// alert("Helper setup file failed to parse as XML");
+		// no problem, we can deal with v5 mime shfs...
+		b64Bloc = returnedXML.substr(returnedXML.search("\n\n")+2);
+		insList = atob(b64Bloc).split("\r\n");
+		for (i=0; i<insList.length; ++i) {
+		    if (insList[i].search("container")==0) {
+			addTabFor(insList[i+1].replace(/\./g, "_dot_"),
+				  "+++\"" + insList[i+2] + " ");
+		    }
+		}
 		return;
 	    }
 	    tclHelpers = $(hlpDoc).find("container");
 	    for (var i=0; i<tclHelpers.length; ++i) {
-		addTabFor(tclHelpers[i]);
+		addTabFor(tclHelpers[i].attributes.type.value,
+			  tclHelpers[i].textContent);
 	    }
 // resize in case rows of tabs have squeezed panes
 	    resize_notebook();
@@ -411,8 +420,11 @@ function model_step(current, start, end, span) {
 
 	    .done(function(newVals) {
 		// console.log('Data returned ' + newVals);
-// now, process the values while fetching the next lot
-		model_step(newCurrent, start, end, span);
+// now, process the values while fetching the next lot (after timeout in case
+// still processing last lot)
+		setTimeout(function () {
+		    model_step(newCurrent, start, end, span);
+		});
 
 		var execHistory = JSON.parse(newVals);
 		for (pt=0; pt<execHistory.length; pt++) {
@@ -428,7 +440,7 @@ function model_step(current, start, end, span) {
 			}
 			allResults[resIndx] = execHistory[pt][i];
 		    }
-		    update_helpers(timeVal, allResults, true);
+		    setTimeout(createfunc(timeVal, allResults, true), 0);
 		    // for no very obvious reason the updates are
 		    // happening in the right order (at least with
 		    // positive timesteps) but nothing appears on the
@@ -442,6 +454,10 @@ function model_step(current, start, end, span) {
     $( "#progress" ).progressbar({
 	value: newProgress
     });
+}
+
+function createfunc(timeVal, allResults, connect) {
+    return function () {update_helpers(timeVal, allResults, connect)};
 }
 
 function model_pause() {
@@ -534,8 +550,9 @@ function new_helper(type) {
 	currentHelper = new DataTable(id);
     } else if (type == "shapes") {
 	currentHelper = new Shapes3D(id);
-    } else if (type == "plot") {
+    } else if (type == "plot" || type == "plotxy") {
 	currentHelper = new PlotXY(id);
+	currentHelper.vers = type;
     } else if (type == "grid") {
 	currentHelper = new Grid5(id);
     } else if (type == "polys") {
@@ -547,6 +564,7 @@ function new_helper(type) {
 }
 
 function update_helpers(time, latest, connect) {
+    console.log("Updating for time " + time);
     for (var id in currentHelpers) {
 	//	try {
 	currentHelpers[id].display(time, latest, connect);
@@ -1318,9 +1336,13 @@ PlotXY.prototype.acceptClick = function (compId) {
     this.tgts.push(compId);
     this.yvals.push(compId);
     //addys = flatten('t', JSON.parse(values_json[compId]));
-    buttonFn = "select_for_helper('time')";
-    $('#' + this.port).html("Click on a component to plot on the X axis, or <button type='button' onclick=" + buttonFn + ">here</button> to plot against time.");
+    //buttonFn = "select_for_helper('time')";
     this.status = "getting_x";
+    if (this.vers == 'plotxy') {  
+	$('#' + this.port).html("Click on a component to plot on the X axis.");
+    } else {
+	select_for_helper('time')
+    }
   } else if (compId == "add") {
       $('#' + this.port).find('#instruct')
 	    .html("Click on a component to plot on the Y axis.");
