@@ -56,8 +56,8 @@ function clickOn(evt) {
     }
     var prolog = tags.match(/arc\d\d\d\d\d|node\d\d\d\d\d/);
     if (lastHelper != null) {
-	lastHelper.acceptClick(prolog[0]);
 	$( "#tabs" ).tabs( "option", "active", lastIndex);
+	lastHelper.acceptClick(prolog[0]);
     }
 }
 
