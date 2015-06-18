@@ -55,7 +55,9 @@ function clickOn(evt) {
 	blob = blob.parentNode;
     }
     var prolog = tags.match(/arc\d\d\d\d\d|node\d\d\d\d\d/);
-    if (lastHelper != null) {
+    if (lastHelper != null && lastHelper.status != "displaying") {
+	// data table status is displaying even when getting clicks
+	// so must use explorer for that
 	$( "#tabs" ).tabs( "option", "active", lastIndex);
 	lastHelper.acceptClick(prolog[0]);
     }
@@ -336,8 +338,12 @@ function scaleTimes(tList, unit) {
     return cArr.join(" ");
 }
 
-var resetDepth = -2, savedStart;
+var resetDepth = -2, savedStart = "stop";
 function model_reset() {
+    if (savedStart == "run") {
+	savedStart = "stop";
+	return; // exec loop will exit and call this again
+    }
     note = ofInterest();
     $.ajax({
 	type: "POST",
@@ -349,11 +355,11 @@ function model_reset() {
 		"note":JSON.stringify(note)}
     })
 	.done(function( initVals ) {
-	    if (savedStart != null) {
+	    if (isFinite(savedStart)) { // model has been paused before run end
 		$("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
 			     -savedStart);
-		savedStart = null;
 	    }
+	    savedStart = "stop";
 	    $("#ct").val(0);
 	    $( "#progress" ).progressbar({ value: 0 });
 
@@ -385,7 +391,7 @@ function model_reset() {
 }
 
 function model_step(current, start, end, span) {
-    if (current >= end || savedStart != null) {
+    if (current >= end || savedStart != "run") {
 	// we are done, reset progress bar and update values
 	$.post('model_action.php', { "base":fileBase, "act":"Report"}, 
 	       function(data) {
@@ -394,13 +400,18 @@ function model_step(current, start, end, span) {
 	goImage = document.getElementById("button_op");
 	goImage.src = "images/play.gif";
 	goImage.parentNode.onclick = function () { model_exec(); };
+	if (savedStart == "stop") { // reset selected during run
+	    savedStart = start;
+	    model_reset();
+	    return;
+	}
 	if (current < end) {
 	    savedStart = start;
 	    return;
 	}
 	newRemain = end - start;
 	newProgress = 0;
-	savedStart = null;
+	savedStart = "stop";
     } else {
 	log = parseFloat($("#le").val());
 	interval = Math.min(end-current,span);
@@ -461,19 +472,19 @@ function createfunc(timeVal, allResults, connect) {
 }
 
 function model_pause() {
-    savedStart = -999;
+    savedStart = "pause";
 }
 
 function model_exec() {
     goImage = document.getElementById("button_op");
     goImage.src = "images/pause.gif";
     now = parseFloat($("#ct").val());
-    if (savedStart == null) {
+    if (!isFinite(savedStart)) {
 	start = now;
     } else {
 	start = savedStart;
-	savedStart = null;
     }
+    savedStart = "run";
     goImage.parentNode.onclick = function () { model_pause(); };
     end = now+parseFloat($("#rl").val());
     span = $("#ue").val()
@@ -1323,11 +1334,17 @@ function PlotXY (port) {
   this.tgts = [];
   this.yvals = [];
   this.oldys = [];
-    this.nrun = 0;
+  this.nrun = 0;
   this.status = "initializing";
 
 // OK now add the message to the new tab
   $('#' + port).html("Click on a component to plot on the Y axis.");
+}
+
+function squeezeDigits(val) {
+    noExp = "" + val;
+    if (noExp.length<7) return noExp;
+    return val.toPrecision(2);
 }
 
 var xyGlbsForD3 = {};
@@ -1348,7 +1365,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	    .html("Click on a component to plot on the Y axis.");
       this.status = "adding";
   } else { // no more clicks required
-      ngap = 40;
+      ngap = 64;
 //      w = 800;
       w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
       //      h = 800
@@ -1427,10 +1444,12 @@ PlotXY.prototype.acceptClick = function (compId) {
       var xAxis = d3.svg.axis()
 	  .scale(x)
 	  .tickSize(-h)
+          .tickFormat(squeezeDigits)
 	  .orient("bottom");
       var yAxis = d3.svg.axis()
 	  .scale(y)
 	  .tickSize(-w)
+          .tickFormat(squeezeDigits)
 	  .orient("left");
 
     var gLine = d3.svg.line()
@@ -1534,7 +1553,7 @@ PlotXY.prototype.resize = function(x,y) {
    if (this.status != "displaying") return;
 //   console.log('Tab width: ' + d3.select('#' + this.port).style('width'));
 //   console.log('Notebook height: ' + d3.select('#tabs').style('height'));
-    ngap = 40;
+    ngap = 64;
 //      w = 800;
       w = x-ngap;
 //      h = 800;
@@ -1556,6 +1575,34 @@ PlotXY.prototype.resize = function(x,y) {
     d3.select('#' + this.port + "_view")
 	.attr("width", w)
 	.attr("height", h);
+}
+
+function hoverInTrace(that, d) {
+    that.ttdiv.transition()        
+	.duration(200)      
+	.style("opacity", .9);
+    forLines = "42px";
+    bloc = d[1].i;
+    if (isFinite(bloc.seq)) {
+	msg = "Time: " + bloc.seq;
+    } else {
+	msg = model_json[bloc.seq].text;
+    }
+    inds = bloc.idxs.substr(0,bloc.idxs.length-2);
+    if (inds.indexOf(",")>-1) {
+	msg += "<br>Indices: " + inds;
+    } else if (inds.length > 0) {
+	msg += "<br>Index: " + inds;
+    } else {
+	forLines = "28px";
+    }
+    msg += "<br>Run: " + (bloc.run+1);
+    that.ttdiv.html(msg)  
+	.style("left", (d3.event.layerX + 10) + "px")     
+	.style("top", (d3.event.layerY + 10) + "px")
+	.style("height", forLines);
+       
+    //console.log("Moused over a trace");
 }
 
 PlotXY.prototype.display = function (time, latest, connect) {
@@ -1619,23 +1666,35 @@ PlotXY.prototype.display = function (time, latest, connect) {
       }
       if (connect) {
 	  for (i=0; i<idxs.length; ++i) {
-	      var col = "blue orange green brown purple red black DeepSkyBlue HotPink ForestGreen".split(" ")[this.nrun+i];
+	      var col = "blue orange green brown purple red black DeepSkyBlue HotPink ForestGreen".split(" ")[this.yvals.length*this.nrun+i];
 	      newGrp = this.svg.append("g")
 		  .attr("class", "step"); // new group for this time step's data
 	      newGrp.selectAll(".line") // selects empty set?
 		  .data(idxs[i])
 		  .enter().append("path")
 		  .attr("class", "trace")
-		  .style("stroke",col)
+		  .attr("stroke-width",3)
+		  .attr("stroke","white")
 		  .attr("d", this.line)
 		  .on("mouseover", function(d) {
+		      hoverInTrace(that, d);
+		  })
+		  .on("mouseout", function(d) {       
 		      that.ttdiv.transition()        
-			  .duration(200)      
-			  .style("opacity", .9);      
-		      that.ttdiv.html(JSON.stringify(d[1].i))  
-			  .style("left", (d3.event.layerX + 10) + "px")     
-			  .style("top", (d3.event.layerY + 10) + "px");    
-		      //console.log("Moused over a trace");
+			  .duration(500)      
+			  .style("opacity", 0);   
+		  });
+	      newGrp2 = this.svg.append("g")
+		  .attr("class", "step"); // new group for this time step's data
+	      newGrp2.selectAll(".line") // selects empty set?
+		  .data(idxs[i])
+		  .enter().append("path")
+		  .attr("class", "trace")
+		  .attr("stroke-width",1)
+		  .attr("stroke",col)
+		  .attr("d", this.line)
+		  .on("mouseover", function(d) {
+		      hoverInTrace(that, d);
 		  })
 		  .on("mouseout", function(d) {       
 		      that.ttdiv.transition()        
@@ -1644,7 +1703,7 @@ PlotXY.prototype.display = function (time, latest, connect) {
 		  });
 	  }
       } else {
-	  this.nrun += this.yvals.length;
+	  ++this.nrun;
       }
 
       squeezed = 0;

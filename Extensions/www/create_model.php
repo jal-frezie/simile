@@ -56,7 +56,7 @@ rect.pane {
 div.tooltip {   
   position: absolute;           
   text-align: center;           
-  width: 60px;                  
+  width: 120px;                  
   height: 28px;                 
   padding: 2px;             
   font: 12px sans-serif;        
