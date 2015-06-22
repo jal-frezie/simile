@@ -93,6 +93,7 @@ function hoverIn(evt) {
 // 		     });
   tooltip_q.firstChild.data = model_json[prolog].equation;
     tooltip_v.firstChild.data = prettify(JSON.parse(values_json[prolog]), 0);
+  tooltip_c.firstChild.data = model_json[prolog].comment;
 // above will break function if it doesn't work
 
         var uupos = ModDiag.createSVGPoint();
@@ -108,22 +109,28 @@ function hoverIn(evt) {
   tooltip_bd.setAttributeNS(null,"visibility","visible");
   tooltip_qbg.setAttribute("visibility", "visible");
   tooltip_vbg.setAttribute("visibility", "visible");
+  tooltip_cbg.setAttribute("visibility", "visible");
   tooltip_q.setAttributeNS(null,"visibility","visible");
   tooltip_v.setAttributeNS(null,"visibility","visible");
+  tooltip_c.setAttributeNS(null,"visibility","visible");
 
   length = Math.max(tooltip_q.getComputedTextLength(),
-		     tooltip_v.getComputedTextLength());
+		     tooltip_v.getComputedTextLength(),
+		     tooltip_c.getComputedTextLength());
   tooltip_bd.setAttributeNS(null,"width",length+8);
   tooltip_qbg.setAttributeNS(null,"width",length+8);
   tooltip_vbg.setAttributeNS(null,"width",length+8);
+  tooltip_cbg.setAttributeNS(null,"width",length+8);
 }
 
 function hoverOut() {
   tooltip_bd.setAttributeNS(null,"visibility","hidden");
   tooltip_qbg.setAttribute("visibility", "hidden");
   tooltip_vbg.setAttribute("visibility", "hidden");
+  tooltip_cbg.setAttribute("visibility", "hidden");
   tooltip_q.setAttributeNS(null,"visibility","hidden");
   tooltip_v.setAttributeNS(null,"visibility","hidden");
+  tooltip_c.setAttributeNS(null,"visibility","hidden");
 }
 
 function addEltAction(comp) {
@@ -2445,8 +2452,10 @@ var tooltip_grp;
 var tooltip_bd;
 var tooltip_qbg;
 var tooltip_vbg;
+var tooltip_cbg;
 var tooltip_q;
 var tooltip_v;
+var tooltip_c;
 var ModDiag;
 var model_json;
 var values_json;
@@ -2539,7 +2548,7 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
   tooltip_bd.setAttribute("x", "12");
   tooltip_bd.setAttribute("y", "12");
   tooltip_bd.setAttribute("width", "24");
-  tooltip_bd.setAttribute("height", "24");
+  tooltip_bd.setAttribute("height", "36");
   tooltip_bd.setAttribute("visibility", "hidden");
   tooltip_bd.style.fill="none";
   tooltip_bd.style.stroke="black";
@@ -2565,6 +2574,16 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
   tooltip_vbg.style.stroke="none";
   tooltip_grp.appendChild(tooltip_vbg);
   
+  tooltip_cbg = document.createElementNS(xmlns,'rect');
+  tooltip_cbg.setAttribute("x", "12");
+  tooltip_cbg.setAttribute("y", "36");
+  tooltip_cbg.setAttribute("width", "24");
+  tooltip_cbg.setAttribute("height", "12");
+  tooltip_cbg.setAttribute("visibility", "hidden");
+  tooltip_cbg.style.fill="#ffe0e0";
+  tooltip_cbg.style.stroke="none";
+  tooltip_grp.appendChild(tooltip_cbg);
+  
   tooltip_q = document.createElementNS(xmlns, 'text');
   tooltip_q.setAttribute("x","16");
   tooltip_q.setAttribute("y","1.8em");
@@ -2581,4 +2600,12 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
   var textNode_v = document.createTextNode(0);
   tooltip_v.appendChild(textNode_v);
   tooltip_grp.appendChild(tooltip_v);
+  
+  tooltip_c = document.createElementNS(xmlns, 'text');
+  tooltip_c.setAttribute("x","16");
+  tooltip_c.setAttribute("y","2.8em");
+  tooltip_c.setAttribute("style","font-family: Helvetica; font-size: 9pt;");
+  tooltip_c.setAttribute("visibility", "hidden");
+  tooltip_c.appendChild(document.createTextNode(0));
+  tooltip_grp.appendChild(tooltip_c);
 }
