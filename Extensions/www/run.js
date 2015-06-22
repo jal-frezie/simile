@@ -194,15 +194,16 @@ function addTabFor(species, textContent) {
 	var i=3;
 	currentHelper.State = [];
 	while (specArray[i] != "/annotation/") {
-	    currentLine = ["lollipops"];
+	    template = ["lollipops"];
+	    newComps = [];
 	    for (parm in {"x":0,"y":0,"h":0}) {
 		nId = idFromCapt(tclListOfDimty(specArray[i++],1).join(" "));
-		currentLine.push(nId);
+		template.push(nId);
 		currentHelper.tgts.push(nId);
+		newComps.push(nId);
 //		currentHelper.acceptClick(idFromCapt(captPath));
 	    }
-	    currentLine.push({});
-	    currentHelper.State.push(currentLine);
+	    AddTemplateToScene(currentHelper, template, newComps);
 	}
 	break;
 
@@ -226,19 +227,25 @@ function addTabFor(species, textContent) {
 
 	case "Shapes3D20141208":
 	new_helper("shapes");
-	currentHelper.State = specArray;
+	currentHelper.State = [];
 // would be done, but must convert capt paths to node ids
 	for (var i=0; i<specArray.length;++i) {
+	    template = [];
+	    newComps = [];
 	    for (var j=0; j<specArray[i].length;++j) {
 		possCapt = tclListOfDimty(specArray[i][j], 1);
 		if (possCapt[0][0] == "/") { // its a capt path
 		    nodeId = idFromCapt(possCapt.join(" "));
-		    currentHelper.State[i][j] = nodeId;
+		    template[j] = nodeId;
+		    newComps.push(nodeId);
 		    currentHelper.tgts.push(nodeId);
 		} else if (possCapt[0][0] == "#") { // it's a colour
-		    currentHelper.State[i][j] = possCapt[0].substr(1);
+		    template[j] = possCapt[0].substr(1);
+		} else { // is shape identity
+		    template[j] = possCapt[0];
 		}
 	    }
+	    AddTemplateToScene(currentHelper, template, newComps);
 	}
 	break;
 
@@ -1086,6 +1093,27 @@ function AddItem (that, type) {
     MakeSelection(that, type);
 }
 
+function AddTemplateToScene (that, template, newComps) {
+    template.push({}); // new empty display object list
+    $.post('model_action.php', {"base":fileBase, "act":"Query",
+				"note":JSON.stringify(newComps)},
+	   function(newDataCode) {
+	       oldState = that.State;
+	       that.State = [template]; // New items only
+	       
+	       newDataArr = JSON.parse(newDataCode);
+	       newData = {};
+	       for (j=0; j<newComps.length; ++j) {
+		   nItm = newComps[j]
+		   newData[nItm] = newDataArr[j];
+		   // do not use popups they may be incomplete
+	       }
+	       that.display(parseFloat($("#ct").val()),newData,false),
+	       that.State = oldState;
+	       that.State.push(template);
+	   }); // Query
+}
+
 function MakeSelection (that, selected) {
 //    console.log('MS ' + JSON.stringify(that));
     dropHandle = '#' + that.port + '_drop2';
@@ -1101,25 +1129,8 @@ function MakeSelection (that, selected) {
     }
     i++;
     if (i == that.template.length) { // finished
-	that.template[i] = {}; // new empty display object list
-	$.post('model_action.php', {"base":fileBase, "act":"Query",
-				    "note":JSON.stringify(that.newComps)},
-	       function(newDataCode) {
-		   oldState = that.State;
-		   that.State = [that.template]; // New items only
-
-		   newDataArr = JSON.parse(newDataCode);
-		   newData = {};
-		   for (j=0; j<that.newComps.length; ++j) {
-		       nItm = that.newComps[j]
-		       newData[nItm] = newDataArr[j];
-		       // do not use popups they may be incomplete
-		   }
-		   that.display(parseFloat($("#ct").val()),newData,false),
-		   that.State = oldState;
-		   that.State.push(that.template);
-		   ShowMenuButton(that);
-	       }); // Query
+	AddTemplateToScene(that, that.template, that.newComps);
+	ShowMenuButton(that);
     } else {
 	switch (that.template[i][0]) {
 	case "component":
