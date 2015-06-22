@@ -167,8 +167,7 @@ proc GetJsonValuesById {iHandle outputId limit} {
 	set result [extract_json $hdl $count]
     } else {
 	set tail [expr {$limit/10}]
-	set result [concat [extract_list $hdl $tail] \
-			[extract_list $hdl -$tail]]
+	set result [string range [extract_json $hdl $tail] 0 end-1],[string range [extract_json $hdl -$tail] 1 end]
     }
     free_data_handle $hdl
     return $result

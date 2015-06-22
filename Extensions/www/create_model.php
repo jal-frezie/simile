@@ -35,6 +35,11 @@ and thus be too big once tabs added causing unnecessary scrollbar */
   stroke: #bbb;
 }
 
+.axis text {
+   font-family: sans-serif;
+   font-size: 12px;
+}
+
 rect.pane {
   cursor: move;
   fill: none;

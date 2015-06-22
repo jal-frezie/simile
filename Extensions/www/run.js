@@ -63,6 +63,23 @@ function clickOn(evt) {
     }
 }
 
+function prettify (data, sub) {
+    if (data.constructor === Object) {
+	var res = [];
+	for (var ind in data) {
+	    res.push("#" + ind + ": " + prettify(data[ind], 1));
+	}
+	if (sub)
+	    return "{" + res.join(" ") + "}";
+	else
+	    return res.join(" ");
+    } else if (isFinite(data)) {
+	return squeezeDigits(data, 10);
+    } else {
+	return data;
+    }
+}
+
 function hoverIn(evt) {
   var tags = null;
   var blob = evt.target;
@@ -75,7 +92,7 @@ function hoverIn(evt) {
 //		     return e.id == prolog;
 // 		     });
   tooltip_q.firstChild.data = model_json[prolog].equation;
-  tooltip_v.firstChild.data = values_json[prolog];
+    tooltip_v.firstChild.data = prettify(JSON.parse(values_json[prolog]), 0);
 // above will break function if it doesn't work
 
         var uupos = ModDiag.createSVGPoint();
@@ -703,8 +720,8 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 	cell.appendChild(monitor);
 
 	input.setAttribute("type", "range");
-	SetSliderValue(input, id, values_json[id]);
 	monitor.value = values_json[id];
+	SetSliderValue(input, id, monitor.value);
         cb = new Function("zap", "transfer(zap.target, '" + uniq + "');");
 	input.addEventListener("input", cb);
 	cb = new Function("zap", "toModel(zap.target, '" + id + "');");
@@ -1341,10 +1358,12 @@ function PlotXY (port) {
   $('#' + port).html("Click on a component to plot on the Y axis.");
 }
 
-function squeezeDigits(val) {
-    noExp = "" + val;
-    if (noExp.length<7) return noExp;
-    return val.toPrecision(2);
+function squeezeDigits(val, room) {
+    for (var p = room; p>1; --p) {
+	noExp = "" + parseFloat(val.toPrecision(p));
+	if (noExp.length<room) return noExp;
+    }
+    return val.toPrecision(room-5);
 }
 
 var xyGlbsForD3 = {};
@@ -1365,7 +1384,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	    .html("Click on a component to plot on the Y axis.");
       this.status = "adding";
   } else { // no more clicks required
-      ngap = 64;
+      ngap = 48;
 //      w = 800;
       w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
       //      h = 800
@@ -1444,12 +1463,12 @@ PlotXY.prototype.acceptClick = function (compId) {
       var xAxis = d3.svg.axis()
 	  .scale(x)
 	  .tickSize(-h)
-          .tickFormat(squeezeDigits)
+          .tickFormat(function(t) {return squeezeDigits(t, 7)})
 	  .orient("bottom");
       var yAxis = d3.svg.axis()
 	  .scale(y)
 	  .tickSize(-w)
-          .tickFormat(squeezeDigits)
+          .tickFormat(function(t) {return squeezeDigits(t, 7)})
 	  .orient("left");
 
     var gLine = d3.svg.line()
@@ -1553,7 +1572,7 @@ PlotXY.prototype.resize = function(x,y) {
    if (this.status != "displaying") return;
 //   console.log('Tab width: ' + d3.select('#' + this.port).style('width'));
 //   console.log('Notebook height: ' + d3.select('#tabs').style('height'));
-    ngap = 64;
+    ngap = 48;
 //      w = 800;
       w = x-ngap;
 //      h = 800;
