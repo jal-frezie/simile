@@ -1,0 +1,105 @@
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>SimiLive -- Run Simile models anywhere</title>
+	<link href="jquery-ui.css" rel="stylesheet">
+	<style>
+	body{
+	        color: #660066;
+		font: 100% "Trebuchet MS", sans-serif;
+		margin: 60px 60px 60px 60px;
+	}
+	.demoHeaders {
+		margin-top: 2em;
+	}
+	#dialog-link {
+		padding: .4em 1em .4em 20px;
+		text-decoration: none;
+		position: relative;
+	}
+	#dialog-link span.ui-icon {
+		margin: 0 5px 0 0;
+		position: absolute;
+		left: .2em;
+		top: 50%;
+		margin-top: -8px;
+	}
+	#icons {
+		margin: 0;
+		padding: 0;
+	}
+	#icons li {
+		margin: 2px;
+		position: relative;
+		padding: 4px 0;
+		cursor: pointer;
+		float: left;
+		list-style: none;
+	}
+	#icons span.ui-icon {
+		float: left;
+		margin: 0 4px;
+	}
+	.fakewindowcontain .ui-widget-overlay {
+		position: absolute;
+	}
+	select {
+		width: 200px;
+	}
+	</style>
+</head>
+<body>
+  <h1>SimiLive -- Run Simile Models Anywhere</h1>
+SimiLive is a new service
+from <a href=http://simulistics.com>Simulistics,</a> allowing models built
+in the <a href=http://simulistics.com/products/index.htm>Simile</a> modelling environment to be executed on a web
+browser. It provides a simple way to publish any model, including
+parameter data and visualization tool setup. The browser interface
+looks like Simile's model run environment, with the model diagram
+  available on the first tab.<p>
+    The model executes on the server, with results being sent to the
+    browser at regular simulation time intervals. Results for many
+    times can be downloaded in a single interaction, so the run
+    control has a extra field: "Log each..." lets you specify the time
+    interval between successive data points in a graph or table, while
+    "Update each..." refers to the length of simulation time for which
+    data is collected in a single server interaction.<p>
+  <img src=images/similive.jpg width=800px>
+<h2>Upload and run a model</h2>
+The <a href=model_load.html>Model Upload form</a> provides fields in
+which to upload a saved model, and optionally a scenario file and
+a visualization setup. <b>No registration required</b> -- if you
+have a Simile model which runs on the Evaluation edition, you can run
+it with SimiLive.
+<ul>
+  <li> The server behaves like Simile's evaluation edition -- if your model
+  has more than 25 equations, it must be built with the Enterprise
+    edition in order to load and run</li>
+  <li> The scenario file must include all the data rather than refer
+    to other files. If you have loaded data for some parameters from
+    other files, select "Include values in scenario file" for these
+    parameters before saving it.</li>
+  <li>The visualization setup can load the following I/O tools:
+    <ul>
+      <li>Plotter and XY Plotter</li>
+      <li>Data table</li>
+      <li>Grid and Polygon maps</li>
+      <li>Lollipop diagram</li>
+      <li>3-D Shape Viewer</li>
+    </ul>
+    The user can add further visualization tools while running the
+    model, using the buttons above the run control.</li>
+</ul>
+<h2>Create a link for model execution</h2>
+The model, scenario and visualization files are uploaded via a form,
+so it is possible to use hidden forms to create a direct link to
+execute any model. For examples see our <a href=demos>demos.</a> Also,
+the model pages in our
+<a href=http://simulistics.com/examples/catalogue/index.html>Model
+  Catalogue</a> now have buttons to execute the models in SimiLive,
+complete with the I/O tools specified where there is a helper setup file
+associated with the model.
+<p>
+  Enterprise edition customers will be able to set up model execution
+  on their own servers if desired.
+  </body>
