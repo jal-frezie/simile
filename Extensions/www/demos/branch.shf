@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="shf1.xsl"?>
+<shf simile_version="6.3">
+<external x="730" y="757"  w="780" h="580"/>
+<std_tool_layout left_panel_width="270" run_control_height="185"/>
+<notebook>
+  <page caption="Page 1">
+    <panedwindow orient="vertical">
+      <pane>
+         <container type="Shapes3D20141208">
+          <![CDATA[{lines /internode/x0 /internode/z0 /internode/y0 /internode/x1 /internode/z1 /internode/y1 /internode/size #d9a871}]]>
+        </container>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Page 2">
+    <panedwindow orient="vertical">
+      <pane>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Page 3">
+    <panedwindow orient="vertical">
+      <pane>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Page 4">
+    <panedwindow orient="vertical">
+      <pane>
+      </pane>
+    </panedwindow>
+  </page>
+</notebook>
+</shf>

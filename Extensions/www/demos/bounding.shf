@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="shf1.xsl"?>
+<shf simile_version="6.4">
+<external x="951" y="586"  w="966" h="719"/>
+<std_tool_layout left_panel_width="270" run_control_height="175"/>
+<notebook>
+  <page caption="Page 1">
+    <panedwindow orient="vertical">
+      <pane>
+         <container type="polygon375">
+          <![CDATA[/WIN/,range 100 /WIN/,nswatches 32 /WIN/,dataETs {} /WIN/,stringInfo {} /WIN/,c10 #00009fff0000 /WIN/,c11 #0000afff0000 /WIN/,c12 #0000bfff0000 /WIN/,integer 0 /WIN/,c13 #0000cfff0000 /WIN/,c14 #0000dfff0000 /WIN/,state displaying /WIN/,c15 #0000efff0000 /WIN/,sourcefile model /WIN/,c16 #0000ffff0000 /WIN/,c17 #0fffffff0fff /WIN/,c18 #1fffffff1fff /WIN/,allETs {{} {}} /WIN/,c19 #2fffffff2fff /WIN/,c20 #3fffffff3fff /WIN/,c21 #4fffffff4fff /WIN/,c22 #5fffffff5fff /WIN/,ycoord /submodel3/ParishBorder/Y /WIN/,c23 #6fffffff6fff /WIN/,c24 #7fffffff7fff /WIN/,orient h /WIN/,c25 #8fffffff8fff /WIN/,cbord black /WIN/,c26 #9fffffff9fff /WIN/,c27 #afffffffafff /WIN/,c28 #bfffffffbfff /WIN/,ctop white /WIN/,c30 #dfffffffdfff /WIN/,c29 #cfffffffcfff /WIN/,color /submodel3/Population/PDensity /WIN/,colourMapTweaked 0 /WIN/,c31 #efffffffefff /WIN/,c32 #ffffffffffff /WIN/,bw 1 /WIN/,c0 #000000000000 /WIN/,c1 #00000fff0000 /WIN/,c2 #00001fff0000 /WIN/,cmid green /WIN/,c3 #00002fff0000 /WIN/,datamin 2.9657142857142857 /WIN/,c4 #00003fff0000 /WIN/,c5 #00004fff0000 /WIN/,datamax 322.44897959183675 /WIN/,c6 #00005fff0000 /WIN/,c7 #00006fff0000 /WIN/,ETCount 0 /WIN/,c8 #00007fff0000 /WIN/,min 0 /WIN/,c9 #00008fff0000 /WIN/,max 500 /WIN/,xcoord /submodel3/ParishBorder/X /WIN/,scalex 0.0380590445281 /WIN/,cbot black /WIN/,scaley 0.0290087167211 /WIN/,imgs 0 /WIN/,editMode 0 /WIN/,stringInfo {}]]>
+        </container>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Page 2">
+    <panedwindow orient="vertical">
+      <pane>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Page 3">
+    <panedwindow orient="vertical">
+      <pane>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Page 4">
+    <panedwindow orient="vertical">
+      <pane>
+      </pane>
+    </panedwindow>
+  </page>
+</notebook>
+</shf>

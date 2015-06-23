@@ -837,8 +837,8 @@ function DataTable (port) {
   this.timeRowIds = {};
   this.varColIds = {};
 // OK now add the message to the new tab
-  myRef = 'currentHelpers["' + port + '"]'
-  $('#' + port).html("<table id='" + this.port + "_table'></table>");
+
+  $('#' + port).html("Click on components in the tree diagram to add their values to the table.<table id='" + this.port + "_table'></table>");
 }
 
 // DataTable.prototype = new DisplayTool(this);
@@ -2079,7 +2079,7 @@ function Grid5 (port) {
     
     this.scaleGrp = d3.select('#' + port).append("svg")
 	.attr("width",800).attr("height",480).attr("id", port + "_diag")
-	.append("g");
+	.attr("shape-rendering", "optimizeSpeed").append("g");
     this.diagZoom = d3.behavior.zoom()
 	.on("zoom", function () {
 	    d3.select('#' + port + '_diag').select('g')
@@ -2603,7 +2603,7 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
   
   tooltip_c = document.createElementNS(xmlns, 'text');
   tooltip_c.setAttribute("x","16");
-  tooltip_c.setAttribute("y","2.8em");
+  tooltip_c.setAttribute("y","3.8em");
   tooltip_c.setAttribute("style","font-family: Helvetica; font-size: 9pt;");
   tooltip_c.setAttribute("visibility", "hidden");
   tooltip_c.appendChild(document.createTextNode(0));

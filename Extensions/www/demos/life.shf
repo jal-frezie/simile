@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="shf1.xsl"?>
+<shf simile_version="6.4">
+<external x="656" y="274"  w="1174" h="995"/>
+<std_tool_layout left_panel_width="277" run_control_height="300"/>
+<notebook>
+  <page caption="Life">
+    <panedwindow orient="vertical">
+      <pane>
+         <container type="grid005">
+          <![CDATA[displaying /cell/live noitem colourmap black red white images 0 aspect 1 0 1 magnification 4 orient h annotation {}]]>
+        </container>
+      </pane>
+    </panedwindow>
+  </page>
+</notebook>
+</shf>

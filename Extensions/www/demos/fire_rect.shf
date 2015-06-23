@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="shf1.xsl"?>
+<shf simile_version="6.3">
+<external x="239" y="138"  w="1246" h="771"/>
+<std_tool_layout left_panel_width="270" run_control_height="185"/>
+<notebook>
+  <page caption="Page 1">
+    <panedwindow orient="vertical">
+      <pane>
+         <container type="grid005">
+          <![CDATA[displaying /Quads/show noitem swatches #ffa500 #00000fff0000 #00001fff0000 #00002fff0000 #00003fff0000 #00004fff0000 #00005fff0000 #00006fff0000 #00007fff0000 #00008fff0000 #00009fff0000 #0000afff0000 #0000bfff0000 #0000cfff0000 #0000dfff0000 #0000efff0000 #0000ffff0000 #0e1efd3c0787 #1c3cfa790f0f #2a5af7b61696 #3878f4f41e1e #4696f23125a5 #54b4ef6e2d2d #62d2ecab34b4 #70f0e9e93c3c #7f0ee72643c3 #8d2ce4634b4b #9b4ae1a052d2 #a968dede5a5a #b786dc1b61e1 #c5a4d9586969 #d3c2d69570f0 #e1e1d3d37878 images 0 aspect 32 0 100 magnification 3 orient h annotation {}]]>
+        </container>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Page 2">
+    <panedwindow orient="vertical">
+      <pane>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Page 3">
+    <panedwindow orient="vertical">
+      <pane>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Page 4">
+    <panedwindow orient="vertical">
+      <pane>
+      </pane>
+    </panedwindow>
+  </page>
+</notebook>
+</shf>

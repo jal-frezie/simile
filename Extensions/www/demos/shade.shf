@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="shf1.xsl"?>
+<shf simile_version="6.1">
+<external x="630" y="1340"  w="1020" h="717"/>
+<std_tool_layout left_panel_width="270" run_control_height="175"/>
+<notebook>
+  <page caption="Plant heights">
+    <panedwindow orient="vertical">
+      <pane>
+         <container type="gen3d1">
+          <![CDATA[
+displaying -0.30 0.50 /Tree/TXposn /Tree/TYposn /Tree/SIZE /Quadrat/Xposn /Quadrat/Yposn /Quadrat/Crop/LEAF /annotation/ {}
+          ]]>
+        </container>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Bloxx">
+    <panedwindow orient="vertical">
+      <pane>
+         <container type="threeDoodle98">
+          <![CDATA[
+displaying xcoord /Quadrat/Xposn ycoord /Quadrat/Yposn colorValue /Quadrat/Crop/SHADE sizeval /Quadrat/Crop/LEAF
+          ]]>
+        </container>
+      </pane>
+    </panedwindow>
+  </page>
+</notebook>
+</shf>

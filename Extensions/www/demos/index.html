@@ -1,0 +1,192 @@
+<head>
+  <meta charset="utf-8">
+  <title>SimiLive Demo Models</title>
+	<link href="jquery-ui.css" rel="stylesheet">
+	<style>
+	body{
+	        color: #660066;
+		font: 100% "Trebuchet MS", sans-serif;
+		margin: 60px 60px 60px 60px;
+	}
+	.demoHeaders {
+		margin-top: 2em;
+	}
+	#dialog-link {
+		padding: .4em 1em .4em 20px;
+		text-decoration: none;
+		position: relative;
+	}
+	#dialog-link span.ui-icon {
+		margin: 0 5px 0 0;
+		position: absolute;
+		left: .2em;
+		top: 50%;
+		margin-top: -8px;
+	}
+	#icons {
+		margin: 0;
+		padding: 0;
+	}
+	#icons li {
+		margin: 2px;
+		position: relative;
+		padding: 4px 0;
+		cursor: pointer;
+		float: left;
+		list-style: none;
+	}
+	#icons span.ui-icon {
+		float: left;
+		margin: 0 4px;
+	}
+	.fakewindowcontain .ui-widget-overlay {
+		position: absolute;
+	}
+	select {
+		width: 200px;
+	}
+	</style>
+</head>
+<body>
+<h1> SimiLive Demos</h1>
+A series of demonstration models illustrating the capabilities of the
+<a href="../index.html">SimiLive</a> visualization tools. If you have
+a model you would like to see here, let us know!
+<h2>3-D Views:</h2>
+<h3>Arabidopsis whole plant</h3>
+The model includes the photosynthesis process, the plant's circadian
+clock and the allocation of new material to roots and leaves. The 3-D
+view shows the growing plant, which does not emerge into view until
+around 150 hours after the start.
+<form action="../create_model.php" method="post"
+      enctype="multipart/form-data">
+  <input type="hidden" name="model_src" value="url">
+  <input type="hidden" name="model_link" value="demos/arabi.sml">
+  <input type="hidden" name="param_src" value="url">
+  <input type="hidden" name="param_link" value="demos/arabi.spf">
+  <input type="hidden" name="helper_src" value="url">
+  <input type="hidden" name="helper_link" value="demos/arabi.shf">
+  <input type="submit" name="submit" value="Arabidopsis Whole Plant">
+</form>
+
+<h3>Branching plant</h3>
+This is an L-systems model of plant stem or root growth. Each element
+of the stem has a certain probability of producing a new branch,
+leading to a very complex and lifelike pattern of growth. The stem
+also increases in thickness during growth.
+<form action="../create_model.php" method="post"
+      enctype="multipart/form-data">
+  <input type="hidden" name="model_src" value="url">
+  <input type="hidden" name="model_link" value="demos/branch.sml">
+  <input type="hidden" name="param_src" value="none">
+  <input type="hidden" name="helper_src" value="url">
+  <input type="hidden" name="helper_link" value="demos/branch.shf">
+  <input type="submit" name="submit" value="Branching plant">
+</form>
+
+<h3>Particle diffusion</h3>
+A model of what happens at a molecular level when a crystalline solid
+warms up and becomes liquid. Initially the molecules vibrate around
+their positions in the lattice, but as more energy is added, they
+start to move further and eventually the lattice shape disappears. The
+visualization tool shows molecules initially in opposite sides of the
+lattice in green and orange so the process can be followed.
+<form action="../create_model.php" method="post"
+      enctype="multipart/form-data">
+  <input type="hidden" name="model_src" value="url">
+  <input type="hidden" name="model_link" value="demos/diffusion.sml">
+  <input type="hidden" name="param_src" value="none">
+  <input type="hidden" name="helper_src" value="url">
+  <input type="hidden" name="helper_link" value="demos/diffusion.shf">
+  <input type="submit" name="submit" value="Particle diffusion">
+</form>
+
+<h3>Shading, agroforestry</h3>
+This is a simple model of competition for light in a cropping system
+where an annual crop is grown as an understorey to a sparsely forested
+area. The beige lollipops represent amount of annual crop in each grid
+square, while the green ones represent individual trees. The effect of
+competition for light is seen as the annual crop growing faster in the
+clearings.
+<form action="../create_model.php" method="post"
+      enctype="multipart/form-data">
+  <input type="hidden" name="model_src" value="url">
+  <input type="hidden" name="model_link" value="demos/shade.sml">
+  <input type="hidden" name="param_src" value="none">
+  <input type="hidden" name="helper_src" value="url">
+  <input type="hidden" name="helper_link" value="demos/shade.shf">
+  <input type="submit" name="submit" value="Shading, agroforestry">
+</form>
+
+<h2>Grid Views:</h2>
+<h3>Fire spread</h3>
+In this grid model, vegetation grows in each grid square at a regular
+rate, and the more there is, the more likely it is to burn if a spark
+appears or if a neighbouring square burns. When it burns the amount of
+vegetation is reduced, so a fire eventually burns out. Because in
+reality the fire burns much faster than the vegetation grows, the
+model pauses the growth process while fire is burning. The
+visualization has been set up to show squares progressing from black
+to green to beige as the vegetation increases, with squares currently
+alight shown in orange.
+<form action="../create_model.php" method="post"
+      enctype="multipart/form-data">
+  <input type="hidden" name="model_src" value="url">
+  <input type="hidden" name="model_link" value="demos/fire_rect.sml">
+  <input type="hidden" name="param_src" value="none">
+  <input type="hidden" name="helper_src" value="url">
+  <input type="hidden" name="helper_link" value="demos/fire_rect.shf">
+  <input type="submit" name="submit" value="Fire spread">
+</form>
+
+<h3>Game of Life</h3>
+Conway's Game of Life is a 2-D rectangular grid with simple rules for
+deciding whether a cell appears, persists or dies in each square
+according to whether its neighbours are populated. Simple initial
+patterns create complex series of configurations and usually settle
+down into stable patterns eventually, although many have been
+discovered with interesting properties.
+<form action="../create_model.php" method="post"
+      enctype="multipart/form-data">
+  <input type="hidden" name="model_src" value="url">
+  <input type="hidden" name="model_link" value="demos/life_file.sml">
+  <input type="hidden" name="param_src" value="url">
+  <input type="hidden" name="param_link" value="demos/life_allin1.spf">
+  <input type="hidden" name="helper_src" value="url">
+  <input type="hidden" name="helper_link" value="demos/life.shf">
+  <input type="submit" name="submit" value="Game of Life">
+</form>
+
+<h2>Polygon Views:</h2>
+<h3>Urban development</h3>
+A map of the boroughs of a city, showing population density. The model
+is chiefly concerned with waste management, including landfill, sewage
+and recycling.
+<form action="../create_model.php" method="post"
+      enctype="multipart/form-data">
+  <input type="hidden" name="model_src" value="url">
+  <input type="hidden" name="model_link" value="demos/oyoo_harare.sml">
+  <input type="hidden" name="param_src" value="url">
+  <input type="hidden" name="param_link" value="demos/oyoo_params_allin1.spf">
+  <input type="hidden" name="helper_src" value="url">
+  <input type="hidden" name="helper_link" value="demos/bounding.shf">
+  <input type="submit" name="submit" value="Urban development">
+</form>
+
+<h3>World natural capital</h3>
+A model of the effects of strategies for managing ecosystem services
+worldwide. The map shows the countries of the world, coloured
+according to the health of their ecosystems. Changing the inputs will
+affect not only how the ecosystems turn out, but also the consequences
+on living standards and population.
+<form action="../create_model.php" method="post"
+      enctype="multipart/form-data">
+  <input type="hidden" name="model_src" value="url">
+  <input type="hidden" name="model_link" value="demos/World_MIMES_GTi.sml">
+  <input type="hidden" name="param_src" value="url">
+  <input type="hidden" name="param_link" value="demos/World_allin1.spf">
+  <input type="hidden" name="helper_src" value="url">
+  <input type="hidden" name="helper_link" value="demos/World_MIMES.shf">
+  <input type="submit" name="submit" value="World natural capital">
+</form>
+</body>
