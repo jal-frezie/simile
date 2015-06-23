@@ -27,10 +27,13 @@ tk_code(Model, CompOrBuild, Tgt) :-
 	abs_path_name(Base, root, Path),
 	    append_atoms([Temp, '/', Path], CompDir)),
 	(\+ rebuild_code(c, Model, CompDir, Action), !;
-	  (m_update'><'get_av_pair(Model, 1, c_new, Serial), !; Serial = 1),
-	    caption_for(Model, Capt),
-	    utility'><'append_atoms([CompDir, '/', Capt, '/model', Serial, Ident], Top),
-	    output'><'safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)).
+	 (m_update'><'get_av_pair(Model, 1, c_new, Serial), !,
+	  (Serial = 0 -> Gen = ''; Gen = Serial); Gen = 1),
+	  caption_for(Model, Capt),
+	  
+	  utility'><'append_atoms([CompDir, '/', Capt, '/model', Gen, Ident],
+				  Top),
+	  output'><'safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)).
 
 tk_code(Node, RunCmd, _Dummy) :-
 	member([RunCmd, Lang], [[run_c, c], [run_tcl, tcl]]),
