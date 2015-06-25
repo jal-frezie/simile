@@ -2071,15 +2071,15 @@ function Grid5 (port) {
     var that = this;
     bar = d3.select('#' + port).append("div").attr("id", port + "_Buttonbar")
         .style('width','100%');
-    bar.append("button").html("<img src='images/less.gif'/>")
+    bar.append("button").html("<img title='Reduce range' src='images/less.gif'/>")
 	.style('float','left').on('click', function() {AlterRange(that.tgts[0], 0.5) });
-    bar.append("button").html("<img src='images/greater.gif'/>")
+    bar.append("button").html("<img title='Increase range' src='images/greater.gif'/>")
 	.style('float','left').on('click', function() {AlterRange(that.tgts[0], 2.0) });
     bar.append("div").attr("id", port + "_instruct").style('float','left');
     
     this.scaleGrp = d3.select('#' + port).append("svg")
 	.attr("width",800).attr("height",480).attr("id", port + "_diag")
-	.attr("shape-rendering", "optimizeSpeed").append("g");
+	.append("g");
     this.diagZoom = d3.behavior.zoom()
 	.on("zoom", function () {
 	    d3.select('#' + port + '_diag').select('g')
@@ -2092,9 +2092,7 @@ function Grid5 (port) {
 	.attr("id", port + "_img")
 	.attr("width","49px")
 	.attr("height","49px")
-	.style("imageRendering","pixelated")
 	.attr("xlink:href", "images/bigsimile.gif");
-    resize_notebook();
 }
 
 Grid5.prototype.resize = function (x, y) {
@@ -2233,13 +2231,17 @@ Grid5.prototype.acceptClick = function (nodeId) {
     this.hiLabel.style.width = "4%";
     this.hiLabel.innerHTML = this.maxVal.toPrecision(3);
 
-    document.getElementById(this.port).appendChild(keyDiv);
+    zone = document.getElementById(this.port);
+    zone.style.imageRendering = "pixelated";
+    zone.appendChild(keyDiv);
+    
     keyDiv.appendChild(this.lowLabel);
     keyDiv.appendChild(this.legend);
     keyDiv.appendChild(this.hiLabel);
     this.legend.src = 'data:image/gif;base64,'
 	+ btoa(headerData) + legenData;
     this.legend.alt = "Something has gone terrubly winf";
+    resize_notebook();
 }
 
 function conv(size) {
