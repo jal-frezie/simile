@@ -163,10 +163,10 @@ proc Restore {winId} {
 	variable trunks
 	set trunks [LoadPosns $winId]
 #	$winId.elv set [lindex $state 2]
-#	event generate $winId.c <Configure>
     } else {
 	GrabClicks $winId
     }
+    event generate $winId.c <Configure>
     SaveState $winId
 }
 
@@ -392,13 +392,6 @@ proc applyScale {winId pt3d} {
 		[expr {([lindex $pt3d 2]-$scaleVector($winId,zoff))/$scaleVector($winId,zmag)}]]
 }
 
-proc reverseScale {winId pt3d} {
-    variable scaleVector
-    return [list [expr {[lindex $pt3d 0]*$scaleVector($winId,xmag)+$scaleVector($winId,xoff)}] \
-		[expr {[lindex $pt3d 1]*$scaleVector($winId,ymag)+$scaleVector($winId,yoff)}] \
-		[expr {[lindex $pt3d 2]*$scaleVector($winId,zmag)+$scaleVector($winId,zoff)}]]
-}
-
 proc project {winId pt3d} {
     variable viewVector
     foreach {ptx pty ptz} [applyScale $winId $pt3d] {}
@@ -447,7 +440,7 @@ proc WindowSizeChanged {winId} {
     variable trunks
     set viewVector($winId,X) [winfo width $winId.c]
     set viewVector($winId,Y) [winfo height $winId.c]
-    if {[winfo viewable $winId.c]} {
+#    if {[winfo viewable $winId.c]} {
 	$winId.c delete trunks key grid
 	if {$viewVector($winId,elevation)>=0} {
 	    DrawGrid $winId grid
@@ -458,7 +451,7 @@ proc WindowSizeChanged {winId} {
 	}
 	ShowKey $winId
 	$winId.c raise annotation
-    }
+#    }
 }
 
 proc DefineGrid {winId {x0 -50} {xn 50} {xtic 10} \
@@ -473,19 +466,14 @@ proc DefineGrid {winId {x0 -50} {xn 50} {xtic 10} \
     set yt [expr {$yn+0.5*$ytic}]
     set grid($winId) {}
     for {set num [expr {$xtic*ceil($x0/$xtic)}]} {$num <= $xn} \
-	    {set num [expr {$num+$xtic}]} {  ;# maybe need format %-6g
+	    {set num [expr {$num+$xtic}]} {
 	set txt [format %-6g $num]
 	lappend grid($winId) \
 	    [list line {} "$num $y0 0" "$num $yn 0" 0 red] \
 	    [list text "X posn" "$num $yh 0" $txt red] \
 	    [list text "X posn" "$num $yt 0" $txt red]
     }
-#    for {set x -50} {$x <= 50} {incr x 10} {
-#	set num [format %6g [expr {$LoX+($HiX-$LoX)*($x+50)/100}]]
-#	lappend grid($winId) [list line {} "$x -50 $base" "$x 50 $base" 0 red] \
-#	    [list text "X posn" "$x -60 $base" $num red] \
-#	    [list text "X posn" "$x 60 $base" $num red]
-#    }
+
     for {set num [expr {$ytic*ceil($y0/$ytic)}]} {$num <= $yn} \
 	    {set num [expr {$num+$ytic}]} {
 	set txt [format %-6g $num]
@@ -494,12 +482,7 @@ proc DefineGrid {winId {x0 -50} {xn 50} {xtic 10} \
 	    [list text "Y posn" "$xh $num 0" $txt blue] \
 	    [list text "Y posn" "$xt $num 0" $txt blue]
     }
-#    for {set y -50} {$y <= 50} {incr y 10} {
-#	set num [format %6g [expr {$LoY+($HiY-$LoY)*($y+50)/100}]]
-#	lappend grid($winId) [list line {} "-50 $y $base" "50 $y $base" 0 red] \
-#	    [list text "Y posn" "-60 $y $base" $num blue] \
-#	    [list text "Y posn" "60 $y $base" $num blue]
-#    }
+
     for {set num [expr {$ztic*ceil($z0/$ztic)}]} {$num <= $zn} \
 	    {set num [expr {$num+$ztic}]} {
 	set txt [format %-6g $num]
