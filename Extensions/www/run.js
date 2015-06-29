@@ -922,6 +922,18 @@ function flatten(head,ob) {
     return result;
 }
 
+// requestAnim shim layer by Paul Irish
+window.requestAnimFrame = (function(){
+    return  window.requestAnimationFrame       ||
+	window.webkitRequestAnimationFrame ||
+	window.mozRequestAnimationFrame    ||
+	window.oRequestAnimationFrame      ||
+	window.msRequestAnimationFrame     ||
+	function(/* function */ callback, /* DOMElement */ element){
+	    window.setTimeout(callback, 1000 / 60);
+	};
+})();
+
 function Shapes3D (port) {
   this.port = port;
     this.tgts = [];
@@ -1013,7 +1025,7 @@ function Shapes3D (port) {
     this.updated = false;
 
     var animate = function () {
-	requestAnimationFrame( animate );
+	window.requestAnimFrame( animate );
 	// cube.rotation.x += 0.1; cube.rotation.y += 0.1;
 	// if ("tabs-" + $( "#tabs" ).tabs("option","active") == port)
 	// above dodgy because tab id can change (eg if another deleted)
@@ -2568,7 +2580,7 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
   
   tooltip_vbg = document.createElementNS(xmlns,'rect');
   tooltip_vbg.setAttribute("x", "12");
-  tooltip_vbg.setAttribute("y", "24");
+  tooltip_vbg.setAttribute("y", "36");
   tooltip_vbg.setAttribute("width", "24");
   tooltip_vbg.setAttribute("height", "12");
   tooltip_vbg.setAttribute("visibility", "hidden");
@@ -2578,11 +2590,11 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
   
   tooltip_cbg = document.createElementNS(xmlns,'rect');
   tooltip_cbg.setAttribute("x", "12");
-  tooltip_cbg.setAttribute("y", "36");
+  tooltip_cbg.setAttribute("y", "24");
   tooltip_cbg.setAttribute("width", "24");
   tooltip_cbg.setAttribute("height", "12");
   tooltip_cbg.setAttribute("visibility", "hidden");
-  tooltip_cbg.style.fill="#ffe0e0";
+  tooltip_cbg.style.fill="#ffe0c0";
   tooltip_cbg.style.stroke="none";
   tooltip_grp.appendChild(tooltip_cbg);
   
@@ -2596,7 +2608,7 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
   
   tooltip_v = document.createElementNS(xmlns, 'text');
   tooltip_v.setAttribute("x","16");
-  tooltip_v.setAttribute("y","2.8em");
+  tooltip_v.setAttribute("y","3.8em");
   tooltip_v.setAttribute("style","font-family: Helvetica; font-size: 9pt;");
   tooltip_v.setAttribute("visibility", "hidden");
   var textNode_v = document.createTextNode(0);
@@ -2605,7 +2617,7 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
   
   tooltip_c = document.createElementNS(xmlns, 'text');
   tooltip_c.setAttribute("x","16");
-  tooltip_c.setAttribute("y","3.8em");
+  tooltip_c.setAttribute("y","2.8em");
   tooltip_c.setAttribute("style","font-family: Helvetica; font-size: 9pt;");
   tooltip_c.setAttribute("visibility", "hidden");
   tooltip_c.appendChild(document.createTextNode(0));
