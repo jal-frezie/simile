@@ -49,8 +49,10 @@ declare_pointer(c, Var, Res) :-
 declare_pointer(tcl, Var, Var).
 
 resolve_pointer(c, Var, Res) :-
-	sicstus_format_to_chars("*~a", [Var], ResStr),
-	name(Res, ResStr).
+    (atomic(Var) -> 
+	sicstus_format_to_chars("*~a", [Var], ResStr);
+    sicstus_format_to_chars("*(~w)", [Var], ResStr)),
+    name(Res, ResStr).
 
 resolve_pointer(tcl, Var, Res) :-
 	refer_value(tcl, Var, Res).
@@ -577,7 +579,18 @@ squarify_dims([], '').
 squarify_dims([D | More], Atom) :-
 	squarify_dims(More, Tail),
 	append_atoms(['[', D, ']', Tail], Atom).
-	
+
+make_subscript_list(L, DimsPtr, DimCount, Subs) :-
+% This version does pointer arithmetic giving e.g., [*(*dims-2)][*(*dims-1)]
+% Therefore caller must fall back to step_list for tcl version...alternatively
+% could use explicit indices like [(*dims)[-2]][(*dims)[-1]] -- nicer for tcl
+% but some compilers might complain about those -ve subscripts
+    DimCount = 0 -> Subs = [];
+    resolve_pointer(L, DimsPtr-DimCount, Sub),
+    RemDimCount is DimCount - 1,
+    make_subscript_list(L, DimsPtr, RemDimCount, MoreSubs),
+    Subs = [Sub | MoreSubs].
+
 generate_all_case_entries(_,_, [], _).
 generate_all_case_entries(L, Match, [Inst | Insts], Stream) :-
 	generate_case_entry(L, Match, Inst, Stream),
@@ -597,10 +610,17 @@ generate_case_entry(L, Match, Inst, Stream) :-
 	(by_record(BaseName), !,
 	    DimCount = 1;
 	length(LocalDims, DimCount)),
-	refer_value(L, dims, DimsRef),
-	make_procedure_call_chars(L, [step_list, DimsRef, 2], SubStr),
-	name(Subscript, SubStr),
-	list_of(Subscript, DimCount, Subs),
+	(DimCount = 0 -> Subs = [];
+	 resolve_pointer(L, dims, DimsPtr),
+	 (L = c,
+	   excrete(L, increment_by, [DimsPtr, DimCount], 8, Stream),
+	   make_subscript_list(L, DimsPtr, DimCount, Subs);
+	  L = tcl,
+	   refer_value(L, dims, DimsRef),
+	   make_procedure_call_chars(L, [step_list, DimsRef, 2], SubStr),
+	   name(Subscript, SubStr),
+	   list_of(Subscript, DimCount, Subs))),
+
 	(InstType = submodel, !,
 	    make_indexed_namespace(L, Name, Subs, Item);
 	make_indexed_reference(L, Name, Subs, Item))),
@@ -608,12 +628,15 @@ generate_case_entry(L, Match, Inst, Stream) :-
 	refer(L, Item, ItemRef),
 	((by_record(BaseName); from_value(BaseName)), !,
 	    % if dims is REQ_COUNT, point to made count and return
-	    resolve_pointer(L, dims, DimPtr),
+	    (L = tcl, DimPtr = DimsPtr;
+	     L = c,  DimPtr = DimsPtr-1), % cos we already incremented it
 	    make_procedure_call_chars(L, [requests_record_count, DimPtr], CStr),
 	    name(Cond, CStr),
 	    excrete(L, if_start, Cond, 8, Stream),
 	    % advance dims past REQ_COUNT -- stops burrow_to iterating
-	    excrete(L, procedure_call, step_list(DimsRef, 2), 12, Stream),
+	    (L = tcl, excrete(L, procedure_call, step_list(DimsRef, 2),
+			      12, Stream);
+	    L = c, true),
 	    append_atoms(Name, made, MadeCount),
 	    make_indexed_reference(L, MadeCount, [], Count),
 	    refer(L, Count, CountRef),
@@ -1154,11 +1177,13 @@ uses the'set' construct instead. Only works forward. */
 refer_value(Language, Expr, Result) :-
 	Language = c, Result = Expr;
 	Language = tcl, 
-	    name(Expr, Str1),
-	    (cannot_be_dollared(Str1), !,
-		append(["[set ", Str1, "]"], Str2);
-	    Str2 = [36 | Str1]),
-	    name(Result, Str2).
+	(atomic(Str1),
+	 name(Expr, Str1),
+	 \+ cannot_be_dollared(Str1) ->
+	    Str2 = [36 | Str1];
+	 make_expr(Language, Expr, Ref),
+	    sicstus_format_to_chars("[set ~w]", Ref, Str2)),
+	name(Result, Str2).
 
 /* refer: for indirect references. Goes straight through in Tcl, but makes
 pointer in c. */

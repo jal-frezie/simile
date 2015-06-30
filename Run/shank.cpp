@@ -831,10 +831,8 @@ void* get_ptr(void* level, int** id_meta, int** dim_list) {
 
   while (**id_meta>0) { /* 0 means end of tree, -1 means vm level */
     lastDim = *dim_list;
-    // char globMess[255];
-    // sprintf(globMess, "gonna g_p id %d,%d... dims %d,%d",
-    //    **id_meta, *(*id_meta+1), **dim_list, *(*dim_list+1));
-    // suppShowMess(globMess);
+    // printf("gonna g_p id %d,%d... dims %d,%d\n",
+    //     **id_meta, *(*id_meta+1), **dim_list, *(*dim_list+1));
     level = ((submodeltype*)level)->get_pointer(step_list(id_meta),dim_list);
     // note that if it is a vm submodel, level is set to a metapointer
     // so we had better not recurse
@@ -898,10 +896,9 @@ void fill_raw_values(InstanceOfModel* smHandle, int tree[],
   void* model_val_ptr;
   char *newBlk;
   
-//  sprintf(globMess, "fill_raw: case %d %d, dims %d %d %d %d, off %d fill %d",
-//	  use_dims[0], use_dims[1], dims[0], dims[1], dims[2], dims[3], 
-//        dim_place - dims, (int)*insertionPt);
-//  showMess(globMess);
+  // printf("fill_raw: case %d %d, dims %d %d %d %d, off %d fill %p\n",
+// 	 use_dims[0], use_dims[1], dims[0], dims[1], dims[2], dims[3], 
+// 	 dim_place - dims, *insertionPt);
   
   switch (*use_dims) {
   case START_VM:
