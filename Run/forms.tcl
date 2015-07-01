@@ -2348,7 +2348,7 @@ proc TtkLikeDialogue {dlg args} {
  #   if {$options(-parent) ne ""} {
  #   	wm transient $dlg $options(-parent)
  #   }
-PutItThere $dlg $options(-parent)
+    PutItThere $dlg $options(-parent)
 
     wm title $dlg $options(-title)
     wm protocol $dlg WM_DELETE_WINDOW { }
@@ -2543,7 +2543,7 @@ proc Query {specifics icon helpRef parent opts} {
 	set result $dialogues(done)
     }
 #    ReplaceProgressBox
-    destroy .shortDlg
+    PackItUp .shortDlg
     unset dialogues(done)
 
     focus -force $oldFocus

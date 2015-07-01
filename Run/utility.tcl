@@ -782,7 +782,10 @@ proc PutItThere {t parent} {
 # was floatGrowProc but that crashed when messageboxes opened inside
 #	::tk::unsupported::MacWindowStyle style $t moveableModal {}
 	if {[string length $parent]} {
-	    AbleAllEntries $parent disabled
+#	    AbleAllEntries $parent disabled
+	    set ::concealedMenu($t) [[winfo toplevel $parent] cget -menu] 
+#	    puts "Saving $::concealedMenu($t) for $t"
+	    [winfo toplevel $parent] configure -menu [. cget -menu]
 	}
     }
     if {![string eq x11 [tk windowingsystem]]} {
@@ -849,12 +852,20 @@ proc LetItShow {t {doneVar {}}} {
 proc PackItUp {t} {
     global tcl_platform
     set parent [wm transient $t]
+    if {![winfo exists $parent]} {
+	set parent .
+    }
     destroy $t
 # The need for these lines was removed by a TkAqua patch applied 10 March 2005.
 # But the lines are still here, for the benefit of the sketch graph window 
-    if {[winfo exists $parent] && [string match Darwin $tcl_platform(os)]} {
+    if {[string match Darwin $tcl_platform(os)]} {
 	focus -force [winfo toplevel $parent]
-	AbleAllEntries $parent normal
+#	AbleAllEntries $parent normal
+#	puts "Restoring $::concealedMenu($t) for $t"
+	if {[winfo exists $::concealedMenu($t)]} {
+# setting menu empty allows crash if it is posted
+	    [winfo toplevel $parent] configure -menu $::concealedMenu($t)
+	}
 # Make menu updates happen before something else does same thing
 	update idletasks
     }
