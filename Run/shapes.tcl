@@ -2172,6 +2172,7 @@ proc ZotColor {t n role type} {
 	$role configure -activebackground $newColour
 	CopyLooks $t $n $type 0
 	ResetColours $t.canvas $type {} normal sample
+	FillSymbol $t.canvas sample $::looks($n,$type,fill)
     }
 }
 
