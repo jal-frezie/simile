@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.1 2013/08/28 07:52:26 u45169214 Exp $
+# $Id: can2svg.tcl,v 1.2 2015/07/01 14:13:26 u45169214 Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -238,14 +238,12 @@ proc can2svg::svgasxmllist {cmd args} {
     # Figure out if we've got a spline.
     set haveSpline 0
     if {[info exists optA(-smooth)] && ($optA(-smooth) != "0") &&  \
-      [info exists optA(-splinesteps)] && ($optA(-splinesteps) > 2)} {
+      !([info exists optA(-splinesteps)] && ($optA(-splinesteps) <= 2))} {
         set haveSpline 1
     }
     if {[info exists optA(-fill)]} {
         set fillValue $optA(-fill)
-        if {![regexp {#[0-9]+} $fillValue]} {
-            set fillValue [FormatColorName $fillValue]
-        }
+	set fillValue [FormatColorName $fillValue]
     } else {
         set fillValue black
     }
@@ -275,16 +273,19 @@ proc can2svg::svgasxmllist {cmd args} {
     
     # If we need a marker (arrow head) need to make that first.
     if {[info exists optA(-arrow)] && ![string equal $optA(-arrow) "none"]} {
+	set arrowScaleArgs 1
+	if {[info exists optA(-width)]} {
+	    set arrowScaleArgs $optA(-width)
+	}
         if {[info exists optA(-arrowshape)]} {
-            
-            # Make a key of the arrowshape list into the array.
-            regsub -all -- $wsp_ $optA(-arrowshape) _ shapeKey
-            set arrowKey ${fillValue}_${shapeKey}
-            set arrowShape $optA(-arrowshape)
-        } else {
-            set arrowKey ${fillValue}
-            set arrowShape {8 10 3}
-        }
+	    lappend arrowScaleArgs $optA(-arrowshape)
+	}
+	set arrowShape [eval ScaleArrow $arrowScaleArgs]
+	
+	# Make a key of the arrowshape list into the array.
+	regsub -all -- $wsp_ $arrowShape _ shapeKey
+	set arrowKey ${fillValue}_${shapeKey}
+
         if {!$argsA(-reusedefs) || \
           ![info exists defsArrowMarkerArr($arrowKey)]} {
             set defsArrowMarkerArr($arrowKey)  \
@@ -392,8 +393,6 @@ proc can2svg::svgasxmllist {cmd args} {
             } else {
                 set theFont $defaultFont
             }
-            set ascent [font metrics $theFont -ascent]
-            set lineSpace [font metrics $theFont -linespace]
             if {[info exists optA(-text)]} {
                 set chdata $optA(-text)
                 
@@ -429,24 +428,26 @@ proc can2svg::svgasxmllist {cmd args} {
                 set anchor $optA(-anchor)
             }                                        
             
-            foreach {xbase ybase}  \
-              [GetTextSVGCoords $coo $anchor $chdata $theFont $nlines] {}
+            set xbase [lindex $coo 0]
+            set ybase [lindex $coo 1]
+	    foreach {xanch dy}  \
+              [GetTextSVGCoords $anchor $nlines] {}
             
-            set attr [list "x" $xbase "y" $ybase]
+            set attr [list "x" $xbase "y" $ybase "text-anchor" $xanch "dy" $dy]
             if {[string length $idAttr] > 0} {
                 set attr [concat $attr $idAttr]
             }
             set attr [concat $attr [MakeAttrList \
               $type $opts $argsA(-usestyleattribute)]]
-            set dy 0
             if {$nlines > 1} {
                 
                 # Use the 'tspan' trick here.
                 set subList {}
+		set dy 0
                 foreach line [split $chdata "\n"] {
                     lappend subList [MakeXMLList "tspan"  \
                       -attrlist [list "x" $xbase "dy" $dy] -chdata $line]
-                    set dy $lineSpace
+                    set dy 1.4em
                 }
                 lappend xmlLL [MakeXMLList $elem -attrlist $attr \
                   -subtags $subList]
@@ -489,7 +490,7 @@ proc can2svg::CoordsToAttr {type coo opts svgElementVar} {
     # Figure out if we've got a spline.
     set haveSpline 0
     if {[info exists optA(-smooth)] && ($optA(-smooth) != "0") &&  \
-      [info exists optA(-splinesteps)] && ($optA(-splinesteps) > 2)} {
+      !([info exists optA(-splinesteps)] && ($optA(-splinesteps) <= 2))} {
         set haveSpline 1
     }
     set attr {}
@@ -741,9 +742,7 @@ proc can2svg::MakeStyleList {type opts args} {
             -fill {
                 
                 # Need to translate names to hex spec.
-                if {![regexp {#[0-9]+} $value]} {
-                    set value [FormatColorName $value]
-                }
+		set value [FormatColorName $value]
                 set fillCol $value                
                 if {[string equal $type "line"]} {
                     set styleArr(stroke) [MapEmptyToNone $value]
@@ -771,21 +770,26 @@ proc can2svg::MakeStyleList {type opts args} {
                 set stippleValue $value
             }
             -width {
-                set styleArr(stroke-width) $value
+		set widthValue $value
+		if {$value > 1} {
+		    set styleArr(stroke-width) $value
+		}
             }
         }
     }
     
     # If any arrow specify its marker def url key.
     if {[info exists arrowValue]} {
-        if {[info exists arrowShape]} {        
-            foreach {a b c} $arrowShape break
-            set arrowIdKey "arrowMarkerDef_${fillCol}_${a}_${b}_${c}"
-            set arrowIdKeyLast "arrowMarkerLastDef_${fillCol}_${a}_${b}_${c}"
-        } else {
-            set arrowIdKey "arrowMarkerDef_${fillCol}"
-            set arrowIdKeyLast $arrowIdKey
-        }
+	set arrowScaleArgs 1
+	if {[info exists widthValue]} {
+	    set arrowScaleArgs $widthValue
+	}
+        if {[info exists arrowShape]} {
+	    lappend arrowScaleArgs $arrowShape
+	}
+	set arrowSizeRef [join [eval ScaleArrow $arrowScaleArgs] _]
+	set arrowIdKey arrowMarkerDef_${fillCol}_$arrowSizeRef
+	set arrowIdKeyLast arrowMarkerLastDef_${fillCol}_$arrowSizeRef
         
         switch -- $arrowValue {
             first {
@@ -859,12 +863,13 @@ proc can2svg::FormatColorName {value} {
         return $value
     }
 
-    switch -- $value {
-        black - white - red - green - blue {
+    switch -glob -- $value {
+        black - white - red - green - blue - \#?????? {
             set col $value
-        }
-        default {
-        
+        } \#???????????? {
+	    # JAT: 48-bit colour spec, SVG no like, trim to 24
+	    set col [string range $value 0 2][string range $value 5 6][string range $value 9 10]
+        } default {
             # winfo rgb . white -> 65535 65535 65535
             foreach rgb [winfo rgb . $value] {
                 lappend rgbx [expr $rgb >> 8]
@@ -885,7 +890,7 @@ proc can2svg::FormatColorName {value} {
 # Results:
 #       flat style array
 
-proc can2svg::MakeFontStyleList {fontDesc} {    
+proc can2svg::TkMakeFontStyleList {fontDesc} {    
 
     # MICK Modify - break a named font into its component fields
     set font [lindex $fontDesc 0]
@@ -924,6 +929,43 @@ proc can2svg::MakeFontStyleList {fontDesc} {
     return [array get styleArr]
 }
 
+#JAT: Version for Simile fonts not using Tk
+proc can2svg::MakeFontStyleList {fontDesc} { 
+    foreach {option val} $fontDesc {
+	switch -- $option {
+	    -family {
+		set styleArr(font-family) $val
+	    } -size {
+		if {$val > 0} {
+		    # points
+		    set funit pt
+		} else {
+		    # pixels (actually user units)
+		    set funit px
+		}
+		set styleArr(font-size) "[expr abs($val)]$funit"
+	    } -slant {
+		if {$val eq "italic"} {
+		    set styleArr(font-style) italic
+		}
+	    } -weight {
+		if {$val eq "bold"} {
+		    set styleArr(font-weight) bold
+		}
+	    } -underline {
+		if {$val} {
+		    set styleArr(text-decoration) underline
+		}
+		
+	    } -overstrike {
+		if {$val} {
+		    set styleArr(text-decoration) overline
+		}
+	    }
+	}
+    }	
+    return [array get styleArr]
+}
 # can2svg::SplitWrappedLines --
 # 
 # MICK O'DONNELL: added code to split wrapped lines
@@ -1108,76 +1150,56 @@ proc can2svg::ImageCoordsToAttrBU {coo opts} {
 #       the canvas text item.
 #
 # Arguments:
-#       coo         {x y}
 #       anchor
 #       chdata      character data, newlines included.
 #       
 # Results:
 #       raw xml data of the marker def element.
 
-proc can2svg::GetTextSVGCoords {coo anchor chdata theFont nlines} {
+proc can2svg::GetTextSVGCoords {anchor nlines} {
     
-    foreach {x y} $coo break
-    set ascent [font metrics $theFont -ascent]
-    set lineSpace [font metrics $theFont -linespace]
+# JAT: Rework to avoid need to interrogate Tk for font data
 
-    # If not anchored to the west it gets more complicated.
-    if {![string match $anchor "*w*"]} {
-        
-        # Need to figure out the extent of the text.
-        if {$nlines <= 1} {
-            set textWidth [font measure $theFont $chdata]
-        } else {
-            set textWidth 0
-            foreach line [split $chdata "\n"] {
-                set lineWidth [font measure $theFont $line]
-                if {$lineWidth > $textWidth} {
-                    set textWidth $lineWidth
-                }
-            }
-        }
-    }
-    
     switch -- $anchor {
         nw {
-            set xbase $x
-            set ybase [expr $y + $ascent]
+            set xanch start
+            set dy 1em
         }
         w {
-            set xbase $x
-            set ybase [expr $y - $nlines*$lineSpace/2.0 + $ascent]
+            set xanch start
+            set dy [expr {1-$nlines*0.7}]em
         }
         sw {
-            set xbase $x
-            set ybase [expr $y - $nlines*$lineSpace + $ascent]
+            set xanch start
+            set dy [expr {1-$nlines*1.4}]em
         }
         s {
-            set xbase [expr $x - $textWidth/2.0]
-            set ybase [expr $y - $nlines*$lineSpace + $ascent]
+            set xanch middle
+            set dy [expr {1-$nlines*1.4}]em
         }
         se {
-            set xbase [expr $x - $textWidth]
-            set ybase [expr $y - $nlines*$lineSpace + $ascent]
+            set xanch end
+            set dy [expr {1-$nlines*1.4}]em
         }
         e {
-            set xbase [expr $x - $textWidth]
-            set ybase [expr $y - $nlines*$lineSpace/2.0 + $ascent]
+            set xanch end
+            set dy [expr {1-$nlines*0.7}]em
         }
         ne {
-            set xbase [expr $x - $textWidth]
-            set ybase [expr $y + $ascent]
+            set xanch end
+            set dy 1em
         } 
         n {
-            set xbase [expr $x - $textWidth/2.0]
-            set ybase [expr $y + $ascent]
+            set xanch middle
+            set dy 1em
         }
         center {
-            set xbase [expr $x - $textWidth/2.0]
-            set ybase [expr $y - $nlines*$lineSpace/2.0 + $ascent]
+            set xanch middle
+            set dy [expr {1-$nlines*0.7}]em
         }
     }
     
-    return [list $xbase $ybase]
+    return [list $xanch $dy]
 }
 
 # can2svg::ParseSplineToPath --
@@ -1259,6 +1281,17 @@ proc can2svg::ParseSplineToPath {type coo} {
         }
     }
     return $data
+}
+
+# can2svg::ScaleArrow --
+# JAT: divide arrow size by line width because SVG arrows are specified in
+# multiples of line width (canvas arrow size is independent of width)
+
+proc can2svg::ScaleArrow {lineWidth {shape {8 10 3}}} {
+    foreach metric $shape {
+	lappend scaled [expr {1.0*$metric/$lineWidth}]
+    }
+    return $scaled
 }
 
 # can2svg::MakeArrowMarker --
@@ -1385,12 +1418,16 @@ proc can2svg::NormalizeRectCoords {coo} {
 # Results:
 #   
 
-proc can2svg::makedocument {width height xml} {
+proc can2svg::makedocument {width height reg xml} {
     
-    set pre "<?xml version='1.0'?>\n\
+    set pre "<?xml version='1.0' encoding='UTF-8'?>\n\
       <!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\
       \"Graphics/SVG/1.1/DTD/svg11.dtd\">"
-    set svgStart "<svg width='$width' height='$height' version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'>"
+    set svgStart "<svg width='$width' height='$height'"
+    if {$reg ne ""} {
+	append svgStart " viewBox=\"$reg\""
+    }
+    append svgStart " version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'>"
     set svgEnd "</svg>"
     return "${pre}\n${svgStart}\n${xml}${svgEnd}"
 }
@@ -1445,7 +1482,7 @@ proc can2svg::canvas2file {wcan path args} {
         set cmd [concat "create" $type $co $opcmd]
         append xml "\t[eval {can2svg $cmd} $args]\n"        
     }
-    puts $fd [makedocument $argsA(-width) $argsA(-height) $xml]
+    puts $fd [makedocument $argsA(-width) $argsA(-height) "" $xml]
     close $fd
 }
 
