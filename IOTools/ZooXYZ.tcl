@@ -67,7 +67,7 @@ itcl::class similescript::$newHelperClass {
 	$winId.m add command -label "Sphere" -command "$this AddItem spheres"
 	$winId.m add command -label "Line" -command "$this AddItem lines"
 	$winId.m add command -label "Ellipse" -command "$this AddItem ellipses"
-	$winId.m add command -label "Old Ellipse" -command "$this AddItem oldellipses"
+	# $winId.m add command -label "Old Ellipse" -command "$this AddItem oldellipses"
 	pack [::ttk::menubutton $winId.buttons.mb -text "Select new item type" \
 		  -menu $winId.m]
 	message $winId.ms
