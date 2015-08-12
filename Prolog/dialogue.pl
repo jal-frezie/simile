@@ -393,6 +393,7 @@ update_equation(Function, InterInputs,
 	/* units cannot be const_int because we do not uet have the
 	technology to get values at build time */
 
+	(Complaint6 = [], \+ (Eqn_st = [], ParamsAllowed = 1) , !,
 	/* Now, is there a reference to a table or graph? If so, load the data 
 	for it. Otherwise ignore any data. This also lists user-defined
 	functions (macros and procedures) */
@@ -404,7 +405,6 @@ update_equation(Function, InterInputs,
 	/* table data is auto-generated so should be well formed.
 	Missing table will already have been picked up by parser */
 
-	(Complaint6 = [], \+ (Eqn_st = [], ParamsAllowed = 1) , !,
 	    check_param_usage(InterInputs, ParamsAllowed,
 			      ParamList, New_inputs, FinalComplaint);
 	New_inputs = InterInputs,
@@ -813,7 +813,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, DsDone),
 	    DoneExpr =.. [Cumulative | DsDone],
 	    SubL = [x | DimL];
-	(list(Param),
+	(is_list(Param),
 	    length(Param, N), 
 	    DParam =.. [do | Param], % conversion to fn avoids recursion
 	    length(DoneExpr, N),

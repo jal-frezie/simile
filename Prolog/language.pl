@@ -942,7 +942,7 @@ make_evaluation_routine(
 		0 = inside deepest loop */
 	) :-
 	(GExpr = glob(_SpareLoop, Expr), % took element of madearray
-	    \+ list(Expr), !;
+	    \+ is_list(Expr), !;
 	  Expr = GExpr),
 	(make_scalar(Language, Expr, Used, LocalExpr), !,
 	    refer_value(Language, LocalExpr, Term);

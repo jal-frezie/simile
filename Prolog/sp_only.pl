@@ -71,9 +71,6 @@ number_atom(N, A) :-
 gnu_round(N, IN) :-
 	IN is integer(round(N)).
 
-list(L) :-
-	member(L, [[], [_|_]]).
-
 /* Things that are used in the eqn language but cause gnu prolog to not
 load properly if they have already been declared. Fortunately, 'portray' is not called when something is actually used as an operator... */
 

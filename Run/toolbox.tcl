@@ -1669,7 +1669,6 @@ proc OpenProjectFile {path} {
     # unset it before doing anything clever in case it goes wrong
     unset loadingProject
     if {[info exists SimileProject(modelRunning)]} {
-	set win [FindNodeTopWin $topNode].canvas
 #puts "win $win topNode ÃÂ£topNode"
 	if {[info exists SimileProject(spfList)]} {
         # file params cannot be loaded until model is ready, so set this
@@ -1679,10 +1678,14 @@ proc OpenProjectFile {path} {
 		set ::projectParams($smPath) [file join $baseDir $spfRelPath]
 	    }
 	}
+	set tw [FindNodeTopWin $topNode]
+	# if undo enabled, a log has been applied, so do not rerun!
+	if {[$tw.toolSlot.navbar.undo cget -state] eq "normal"} return
+
         if {$SimileProject(running_c)} {
-            MenuSelect $win code run_c
+            MenuSelect $tw.canvas code run_c
         } else  {
-            MenuSelect $win code run_tcl
+            MenuSelect $tw.canvas code run_tcl
         }
 	update
         if {$runState($topNode,modelRunning)>=3 && \
