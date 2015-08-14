@@ -759,7 +759,7 @@ resolve_enum_type(Ref, Model, Value, Units, ETSpec) :-
 	    resolve_enum_type(Ref, Parent, Value, Units, InnerSpec),
 	    length(TypeList, Skipped),
 	    ETSpec is InnerSpec - Skipped).
-	
+
 get_node_size(Source, Size) :-
 	get_node_size(Source, _, Size, _).
 

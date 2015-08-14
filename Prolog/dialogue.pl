@@ -565,7 +565,7 @@ get_table_data(Function, Data, Table, Units, Dims, Sizes, Complaint) :-
 get_table_part(Function, Data, Table, Units, Dims, Sizes) :-
 	length(Data, Len), Len<255,
 	name(Num, Data),
-	enum_type_ref(Num, Function, bare, Table, Units, _),
+	enum_type_ref(Num, Function, quoted, Table, Units, _),
 	    Dims = [],
 	    Sizes = [];
 	output'><'chop_list(Data, Alternator),

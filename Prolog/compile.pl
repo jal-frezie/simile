@@ -2506,18 +2506,19 @@ pick_useful_instruction(All, Path, Next) :-
 	Priority = make(existence_tested(Name), _, TestPath, _,_),
 	member(Priority, All),
 	not_yet_ordered(Priority), !,
-	    select_for(TestPath, Priority, Next);
+	    select_for(TestPath, [Priority], Next);
 	true.
 
 /* select_for will return priority node or an action that leads to it. */
 
-select_for(Path, Priority, Next) :-
+select_for(Path, [Priority | Tail], Next) :-
 	Next = Priority;
 	order(Needed, Priority),
+	    \+ member(Needed, Tail),
 	    not_yet_ordered(Needed),
 	    Needed = make(_,_, GenPath, _,_),
 	    suffix(Path, GenPath),
-	    select_for(Path, Needed, Next).
+	    select_for(Path, [Needed, Priority | Tail], Next).
 
 not_yet_ordered(make(_,_,_, [_,_,_, IsOrdered | _], _)) :-
 	var(IsOrdered).

@@ -5,7 +5,7 @@
 		    sicstus_write_chars/1, sicstus_write_chars/2,
 		    sicstus_atom_chars/2, wind_up/0,
 		    read_term_from_codes/3, print_to_codes/2, number_atom/2,
-		    gnu_round/2, list/1, wrap_fixes/1]).
+		    gnu_round/2, wrap_fixes/1]).
 :- use_module([library(lists)]).
 
 /* ...and here is the first component of this port! GNU has no modules, so use

@@ -55,7 +55,8 @@ do_equation_dialog(Win, Part) :-
 					      build(_Sz)]),
 	pick_equation(ClickedObj, Equation),
 	(get_av_pair(Part, 0, units, Units), !,
-	    analyze_array(Units, Base, Dims);
+	    analyze_array(Units, RawBase, Dims),
+	    (single_enquote_et_if_dubious(RawBase, Base), !; Base = RawBase);
 	Base = '',
 	    Dims = []),
 	(get_av_pair(Part, 0, table_data, TableSpec),
@@ -95,6 +96,12 @@ do_equation_dialog(Win, Part) :-
 	fill_equation(ToPass, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_table(Part, TableList, TableVals), % calls interaction from tcl
 	destroy_equation.
+
+
+single_enquote_et_if_dubious(a(Atom), a(RuggedAtom)) :-
+    catch(read_term_from_atom(Atom, Atom, [end_of_term(eof)]), _, fail), !,
+        RuggedAtom = Atom;
+    append_atoms(['''', Atom, ''''], RuggedAtom).
 
 list_evt_efct_pairs(AVList, Capt, [Capt, Efct]) :-
 	member([Capt, Efct], AVList), !;

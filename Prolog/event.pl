@@ -210,7 +210,7 @@ insert_mem_list(Bound, Model, Trans) :-
 	get_av_pair(Model, 0, enum_types, Pairs),
 	    member(Type-Mems, Pairs),
 	    append_atoms(['"', Type, '"'], QType),
-	    member(Bound, [QType, a(QType)]), /* allow units to make trans */
+	    member(Bound, [QType, a(Type)]), /* allow units to make trans */
 	    Trans = [Type | Mems];
 	find_all_comps(Parent, Model),
 	    insert_mem_list(Bound, Parent, Trans);
