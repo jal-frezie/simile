@@ -585,7 +585,7 @@ proc AbleArrows {db t} {
 # TABLE LOADING
 #####################################################################
 set commonTimes [list second minute hour day week month year]
-proc equationDoTable {parent mdl tgt dims dlgStyle} {
+proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     global table_entry iconImages tcl_platform
     
     PutItThere .table $parent
@@ -860,7 +860,7 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
         "(defined by values)" {
             set needsETs 1
             set dimtyFromData 1
-        } "(data determines dimensionality)" {
+        } "(data determines dimensions)" {
             set dimtyFromData 1
         } default {
             foreach {dimVal sep} [string range $dims 1 end-1] { ;# dequote
@@ -970,9 +970,9 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
     button .table.fbuttons.clear -text [tr. Clear] -width 10 \
             -command [list ClearTableData]
     button .table.fbuttons.load -text [tr. Reload] -width 10 \
-            -command [list AcquireTableData 1 $startLine]
+            -command [list AcquireTableData 2 $startLine]
     button .table.fbuttons.edit -text [tr. View/Edit] -width 10 \
-            -command [list EditTableData $startLine $tgt $arrayDims]
+            -command [list EditTableData $startLine $tgt $arrayDims $trans]
     button .table.fbuttons.ok -text [tr. OK] -width 10 \
             -command [list DoneTableData $startLine]
     button .table.fbuttons.cancel -text [tr. Cancel] -width 10 \
@@ -1050,6 +1050,8 @@ proc equationDoTable {parent mdl tgt dims dlgStyle} {
         #	    return 0
         #	}
     } else {
+	set table_entry(fileName) {}
+	set table_entry(dataField) {}
         #        if {![string compare \
         #                    [GetDataFile "No data file yet specified"] {}]} {
         #            return 0
@@ -1193,10 +1195,16 @@ foreach comboboxEng [list "Use last" "Use closest" "Interpolate"] {
 # array dims are now passed to this -- for now we only use them to scale the
 # data in a gdal file but we could use them to get the table helper to display
 # a table with the right dims in other cases!
-proc EditTableData {startLine capt dims} {
+proc EditTableData {startLine capt dims trans} {
     global table_entry
-    AcquireTableData 0 $startLine
     upvar 0 table_entry(values) values
+
+    if {$table_entry(fileName) ne {}} {
+	AcquireTableData 0 $startLine
+    } elseif {$values eq {}} {
+	# No file data selected, fill table with empties unless values there
+	set values [NestedArray $dims $trans]
+    }
     if {[llength $values]} {
         if {[string equal ,gdal [lindex $values 1]]} {
             set oldValues $values
@@ -1208,6 +1216,24 @@ proc EditTableData {startLine capt dims} {
         } elseif {[info exists oldValues]} {
             set values $oldValues
         }
+    }
+}
+
+proc NestedArray {dims trans} {
+    if {[llength $dims]} {
+	set elt [NestedArray [lrange $dims 1 end] [lrange $trans 1 end]]
+	if {[llength [lindex $trans 0]]} {
+	    foreach mem [lrange [lindex $trans 0] 1 end] {
+		lappend result $mem $elt
+	    }
+	} else {
+	    for {set i 1} {$i <= [lindex $dims 0]} {incr i} {
+		lappend result $i $elt
+	    }
+	}
+	return $result
+    } else {
+	return <empty>
     }
 }
 

@@ -165,7 +165,7 @@ namespace eval $keyValue {
 	    -rowseparator \n -colseparator \t \
 	    -yscrollcommand [list AdjustCanvas $winId t y] \
 	    -xscrollcommand [list AdjustCanvas $winId f x] \
-	    -validatecommand [namespace code [list EditCellIs %W %r %c %s %S]] \
+	    -validatecommand [namespace code [list EditCellIs %W %r %c %S]] \
 	    -validate 1 -selecttitle true
         
         pack $winId.t -fill both -expand true
@@ -271,7 +271,7 @@ namespace eval $keyValue {
 
 # we keep the values array and update it when a cell is edited. This means
 # we do not lose precision when loading the edited array.
-    proc EditCellIs {t row col oldVal newVal} {
+    proc EditCellIs {t row col {newVal {}}} {
 	variable editMode
 	variable rowIds
 	variable colIds

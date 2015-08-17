@@ -248,7 +248,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
 				 -($compClass eq "EVENT")+2}]]
 	::ttk::button $slot.b -style style$holder -image $iconImages(edit) \
 	    -command [namespace code [list GetFromTable $winId $topNode \
-					  $compName $dlgStyle]]
+					  $compName $trans $dlgStyle]]
 	BindPopup $slot.b [tr. "Get values from file"]
 	pack $slot.b -side right
     }
@@ -1713,7 +1713,7 @@ proc VarType {testVar types} {
     return 0
 }
 
-proc GetFromTable {parent topNode compName dlgStyle} {
+proc GetFromTable {parent topNode compName trans dlgStyle} {
     global paramState table_entry msgs paramMetadata \
 	widgetNames whichParamsAffected
 
@@ -1744,7 +1744,7 @@ proc GetFromTable {parent topNode compName dlgStyle} {
 # trim off model name from caption cos it is ugly
     set tablCapt [string range $compName [string first / $compName 1] end]
     set newSource [equationDoTable [winfo toplevel $parent] $topNode $tablCapt \
-		       ($paramMetadata($compName,dimList)) $dlgStyle]
+		       ($paramMetadata($compName,dimList)) $trans $dlgStyle]
 
 # If loading data for PEST there is no parent dialogue so do not keep grab
     if {$dlgStyle eq "result" || $dlgStyle eq "measure"} {
