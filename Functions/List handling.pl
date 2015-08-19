@@ -11,8 +11,10 @@ rankings(ExL) --> [L] = ExL,
 
 howmanytrue(BoolList) --> sum(if BoolList then 1 else 0).
 
-firsttrue(BoolArr) --> [SelfCont] = BoolArr, [st]=makearray(
-	if not (first(place_in(1)) or
+firsttrue(BoolArr) --> firsttrueafter(BoolArr, '"NULL"').
+firsttrueafter(BoolArr, Start) --> [SelfCont] = BoolArr, [st]=makearray(
+	if place_in(1)==Start then '"NULL"'
+	elseif not (first(place_in(1)) or
 		element(sofar([st]),preceding(place_in(1))) == '"NULL"')
 	    then element(sofar([st]),preceding(place_in(1)))
 	elseif element([SelfCont],place_in(1)) then place_in(1)

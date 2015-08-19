@@ -304,8 +304,9 @@ namespace eval runcontrol33857 {
 	    set hideQuery 1
 	    ShareAction $node 10 ;# rest done on exit
 	} else {
-	    ScrubRun $node 1
-	    ExDestroyHelpers $node
+	    if {[ExDestroyHelpers $node]} {
+		ScrubRun $node 1
+	    }
 	}
     }
 

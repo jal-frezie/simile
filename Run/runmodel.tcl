@@ -337,11 +337,12 @@ proc CanvasBindPopup {canvas widget keywd} {
 proc ExDestroyHelpers {node} {
     global helperTable
     if {[info exists helperTable($node,whichRunEnv)]} {
-        ::RunEnv::Destroy $node
+        if {![::RunEnv::Destroy $node]} {return 0}
     } else {
         KillHelpers $node
     }
     set runState($node,modelRunning) 0
+    return 1
 }
 
 proc KillHelpers {node} {

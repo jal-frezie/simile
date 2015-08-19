@@ -650,7 +650,7 @@ namespace eval RunEnv {
 	KillTransients $mreId
         destroy .helpPopup
 	if {![EmptyDisplays]} {
-	    return
+	    return 0
 	}
 	PreserveSetup 0
 	ForgetHelperState
@@ -665,6 +665,7 @@ namespace eval RunEnv {
         }
         destroy $mreId
         unset helperTable($node,whichRunEnv)
+	return 1
     }
     
     proc Addpanedwindow {containerId orientation} {
