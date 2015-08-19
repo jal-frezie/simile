@@ -1701,7 +1701,10 @@ match to get it going again.
 
 Actually I found an example where it didn't work fine (gridspread) so
 have put it back for now. Inheritance workaround is to do all the
-processing in the relation model. */
+processing in the relation model.
+
+Issue: if there are multiple made_at conds for the same param, only one 
+made_for will need to be made, so add an integer to separate them */
 
 connect_params(AllInsts, Insts) :-
 	select(make(Tgt, Conds, PathPlus, Step, Acts), AllInsts, LeftInsts),
@@ -1716,10 +1719,11 @@ connect_params(AllInsts, Insts) :-
 	    (CommonPath = Path, /* comment out to disable */ !,
 		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
 				     Acts) | LeftInsts];
-	    ChangedInsts = [make(Tgt, [made_for(Tgt, Param) | MoreConds],
-				 PathPlus, Step, Acts),
-		     make(made_for(Tgt, Param), [Param], CommonPathPlus, Step,
-			  []) | LeftInsts]),
+	     length(AllInsts, N), % one greater each time
+	     ChangedInsts = [make(Tgt, [made_for(Tgt, Param, N) | MoreConds],
+				  PathPlus, Step, Acts),
+			     make(made_for(Tgt, Param, N), [Param],
+				  CommonPathPlus, Step, []) | LeftInsts]),
 	    connect_params(ChangedInsts, Insts);
 	Insts = AllInsts.
 
