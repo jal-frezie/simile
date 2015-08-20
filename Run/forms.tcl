@@ -1063,6 +1063,37 @@ proc TextCheckAndSet {parent title state} {
     return $results
 }
 
+proc GetDimOrTimePtList {parent title msg} {
+    global dotpl
+
+    set t [PutItThere .dotpl $parent]
+    wm resizable $t 0 0
+    wm protocol $t WM_DELETE_WINDOW {set text_props(done) 0}
+    wm title $t $title
+
+    pack [TitleFrame $t.txtframe -text Text] -padx 4 -pady 4 -fill x
+    set txtFrame [GetFrame $t.txtframe]
+    pack [ttk::label $txtFrame.mess -text $msg]
+    pack [ttk::entry $txtFrame.text -width 40] -fill both -expand 1
+
+    pack [set btnFrame [frame $t.btnfr]]
+    pack [ttk::button $btnFrame.ok -text [tr. OK] \
+	      -command "set dotpl(done) 1"] -side right
+    pack [ttk::button $btnFrame.cancel -text [tr. Cancel] \
+	      -command "set dotpl(done) 0"] -side right
+    LetItShow $t
+    grab $t
+    tkwait variable dotpl(done)
+    grab release $t
+    if {$dotpl(done)} {
+	set result [$txtFrame.text get]
+    } else {
+	set result {}
+    }
+    PackItUp $t
+    return $result
+}
+
 proc RelationCheck {parent title type entries state init_comment} {
     global msgs relation tcl_platform
     

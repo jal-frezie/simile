@@ -1252,7 +1252,7 @@ combine( L, Op, VArgs, Atom) :-
 	Op = choose,
 	    VArgs = [Test, IfT, IfF], !,
 	    Atom = (Test?IfT:IfF);
-	Op = happens, VArgs = [Atom];
+	member(Op, [happens, as_number]), VArgs = [Atom];
 	Op = nonnull, (L = c, VArgs = [Atom];
 		       L = tcl, VArgs = [Test], Atom = (Test ne '"NULL"'));
 	(member(Op, [and, ',', '&&']), !,

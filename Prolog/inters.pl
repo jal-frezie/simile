@@ -1735,6 +1735,8 @@ builtin('Model properties', preceding, a(T), [a(T)]).
 builtin('Model properties', preceding, int, [int]).
 builtin('Model properties', first, boolean, [a(_T)]).
 builtin('Model properties', first, boolean, [int]).
+builtin('Model properties', as_number, int, [boolean]).
+builtin('Model properties', as_number, int, [a(_T)]).
 builtin('Model properties', dies_of, boolean, [boolean]).
 builtin('Model properties', dies_of, boolean, [real]).
 builtin('Model properties', latency, real, [real]).

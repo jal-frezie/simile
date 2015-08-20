@@ -1203,6 +1203,19 @@ proc EditTableData {startLine capt dims trans} {
 	AcquireTableData 0 $startLine
     } elseif {$values eq {}} {
 	# No file data selected, fill table with empties unless values there
+	if {$dims eq {}} {
+	    set dims \
+		[GetDimOrTimePtList .table [tr. {Dimensions for new table}] \
+		   [tr. {Enter dimensions for new table, separated by commas:}]]
+	    if {$dims eq {}} return
+	    set dims [split $dims ,]
+	}
+	if {[lindex $dims 0] eq "TIME"} {
+	    set timePts \
+		[GetDimOrTimePtList .table [tr. {Time points for new table}] \
+		     [tr. {Enter time points for new table, separated by commas:}]]
+	    lset trans 0 [split t,$timePts ,]
+	}
 	set values [NestedArray $dims $trans]
     }
     if {[llength $values]} {

@@ -716,8 +716,12 @@ proc GetTable {parent topNode comp box} {
 #            set equation(table_data) [concat [list $table_entry(fileName) \
 #                    $table_entry(dataField)] \
 #                    $table_entry(indices)]
-#        }
-	set equation(table_data) $table_entry(data)
+	#        }
+	if {$table_entry(data) eq {} && $table_entry(values) ne {}} {
+	    set equation(table_data) {{} {}} ;# values entered in editor
+	} else {
+	    set equation(table_data) $table_entry(data)
+	}
 	if {[string equal ,gdal [lindex $table_entry(values) 1]]} {
 	    set equation(table_values) \
 		[NumberElements [ReadGdalRefToList $table_entry(values)]]
