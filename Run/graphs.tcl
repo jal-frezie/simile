@@ -1941,7 +1941,10 @@ proc TrimFields {dataLine} {
 
 proc EnquoteIfNonNumeric {item} {
 # ...and not already enquoted...
-    if {[Numeric $item] || ![string first \" $item]} {
+    if {[Numeric $item]} {
+	return [regsub {^(\s?-?)(\..*)} $item {\10\2}]
+	# insert 0 before decimal if no whole number part
+    } elseif {![string first \" $item]} {
         return $item
     } else {
         return \"[string trim $item]\"
