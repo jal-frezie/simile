@@ -900,14 +900,16 @@ namespace eval $keyValue {
                 if {$rowsPt+$colsPt+$nonePt+1==[llength $orientList($winId)]} {
                     append subscriptTemplate \
                             "\[lrange \$${level}Headers [set ${level}Pt] end\]"
-                } else {
+                } elseif {$rowsPt+$colsPt+$nonePt+1!=2} {
+		    # do not include index of variable id
                     append subscriptTemplate \
-                            "\[list \[lindex \$${level}Headers [set ${level}Pt]\]\] "
+                            "\[lrange \$${level}Headers [set ${level}Pt] [set ${level}Pt]\] "
                 }
             }
             incr ${level}Pt
         }
-        #puts "subscript template: $subscriptTemplate"
+        #puts "Orient list $orientList($winId)"
+	#puts "subscript template: $subscriptTemplate"
         #puts "rowIds [array get rowIds] colIds [array get colIds]"
         # next copy the 2-d table to an n-d array using these
         foreach value [array names values] {

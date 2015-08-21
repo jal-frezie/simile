@@ -1696,10 +1696,10 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		    set cell [lindex $usePts $colInd]
 		    if {[string length $cell]} {
 			if {$transpose} {
-			    set paramArray([list top $xInd $yInd]) \
+			    set paramArray([list $xInd $yInd]) \
 				[EnquoteIfNonNumeric $cell]
 			} else {
-			    set paramArray([list top $yInd $xInd]) \
+			    set paramArray([list $yInd $xInd]) \
 				[EnquoteIfNonNumeric $cell]
 			}
 		    }
@@ -1739,9 +1739,9 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		    set xInd [expr $colCount+$colInd-$xfirst+1]
 		}
 		if {$transpose} {
-		    set subscriptList [list top $xInd $yInd]
+		    set subscriptList [list $xInd $yInd]
 		} else {
-		    set subscriptList [list top $yInd $xInd]
+		    set subscriptList [list $yInd $xInd]
 		}
 		if {$yInd==$rowCount} {
 		    lappend colList $xInd
@@ -1842,7 +1842,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		} else {
 		    set potEntry [lindex $entryList $headerColumn]
 		    if {[llength $potEntry]} {
-			set paramArray([concat [list top] $arrayIndex]) \
+			set paramArray($arrayIndex) \
 			    [EnquoteIfNonNumeric $potEntry]
 		    }
 		}
@@ -1874,7 +1874,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		} else {
 		    set arrayIndex $lineCount
 		}
-		set paramArray([concat [list top] $arrayIndex]) \
+		set paramArray($arrayIndex) \
 		    [EnquoteIfNonNumeric $datum]
 		incr lineCount
 	    }]
@@ -1971,7 +1971,7 @@ proc ArrayToList {topArray} {
                     [lindex $indcol end] $val
         }
     }
-    return [lindex $values() 1]
+    return $values()
 }
 
 proc ArrayGetSorted {arrayPtr} {
