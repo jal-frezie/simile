@@ -57,17 +57,17 @@ int dummyunload(HINSTANCE unused) {
     #define WHAT_WENT_WRONG (char*)dlerror
     #define FIND_FUNCTION dlsym
 /* sig handler cos 64bit gcc code sigfpe's on 32bit machine */
-jmp_buf env;
+jmp_buf s_env;
 
 static void exit_sighandler(int x){
-  longjmp(env, x);
+  longjmp(s_env, x);
 }
 
 void* flopen(char* fileName) {
   int error;
 
   signal(SIGFPE,exit_sighandler);
-  error = setjmp(env);
+  error = setjmp(s_env);
   if (error) {
     return 0;
   } else {
@@ -80,10 +80,10 @@ void* flopen(char* fileName) {
  * Unix or Win64 (or Win32!) version: does not have min & max defined
  */
 
-int min(int a, int b) {
+int s_min(int a, int b) {
   return a<b?a:b;
 }
-int max(int a, int b) {
+int s_max(int a, int b) {
   return a>b?a:b;
 }
 
@@ -156,12 +156,12 @@ double graphpoint(double xval, graph_data_type* graphdata, int index) {
 	*/
 	if (use_graph_pointer->range > 3) {
 	  intersection = *(use_graph_pointer->points + 
-			   max(0,min(spaces,(int)round(interval))));
+			   s_max(0,s_min(spaces,(int)round(interval))));
 	} else {
-	  lower = max(0,min(spaces-1,(int)(interval)));
+	  lower = s_max(0,s_min(spaces-1,(int)(interval)));
 	  interval -= lower;
 	  left = use_graph_pointer->points + lower;
-	  right = use_graph_pointer->points + min(spaces,lower+1);
+	  right = use_graph_pointer->points + s_min(spaces,lower+1);
 	  intersection = interval*(*right) + (1-interval)*(*left);
 	}
 	return use_graph_pointer->ylow + 
@@ -214,7 +214,7 @@ double rand_fract() {
 }
 #endif
 
-double ame_rand(double lo, double hi) {
+double s_rand(double lo, double hi) {
     return  lo + (hi-lo)*rand_fract();
 }
 
@@ -1438,6 +1438,7 @@ ModelServer::ModelServer(char* fileName, char* clientEdn, char** complaint) {
       return;
     }
     getversion = (getversion_type*)FIND_FUNCTION(handle, "get_version");
+    // getversion = get_version;
     // this does nothing but return the version number, so it can be checked 
     // even if different versions change the args to getcount()
     if (getversion == NULL) {
@@ -1457,7 +1458,8 @@ showMess(globMess); */
     *complaint = NULL;
 
     getcount = (getcount_type*)FIND_FUNCTION(handle, "get_count");
-    nodecount = getcount(ame_rand, graphpoint, release_graph_data, 
+    // getcount = get_count;
+    nodecount = getcount(s_rand, graphpoint, release_graph_data, 
 			 compare_instance_status, handle_model_param_request, 
 			 stat_check, showModelMess,
 			 &c_graphdata, &identStr, &phases, &nodedata);
@@ -1468,6 +1470,7 @@ showMess(globMess); */
       return;
     }
     createmodel = (createmodel_type*)FIND_FUNCTION(handle, "do_createmodel");
+    // createmodel = do_createmodel;
   }
 
 ModelServer::~ModelServer() {

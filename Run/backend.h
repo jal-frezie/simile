@@ -128,3 +128,9 @@ typedef int getcount_type(ame_rand_type, graphpoint_type,
 			  show_model_mess_type,
 			  graph_data_type**, char**, int*, node_data_line**);
 typedef InstanceOfModel* createmodel_type(ExecutingModel*);
+
+FINDABLE EXPORT getversion_type get_version;
+FINDABLE EXPORT getcount_type get_count;
+// above should load all arg data types so no need to include below
+// but that doesnt seem to work...
+FINDABLE EXPORT createmodel_type do_createmodel;
