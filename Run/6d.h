@@ -238,7 +238,9 @@ class ModelServer
  protected: // protected attributes
   HINSTANCE handle;
   
-  void *getcount,  *getversion, *createmodel;
+  getversion_type *getversion;
+  getcount_type *getcount;
+  createmodel_type *createmodel;
   
  public: // public attributes
   //! Number of different time steps in model

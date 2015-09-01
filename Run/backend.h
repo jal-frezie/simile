@@ -1,19 +1,3 @@
-// Declaration for procedure types found in the model dll by the shank
-typedef int getcount_type(void*, void*, void* ,void*,
-			  void*, void*, void*, void*,
-			  char**, int*, node_data_line**);
-typedef double getversion_type(void);
-typedef InstanceOfModel* createmodel_type(ExecutingModel*);
-typedef void model_requests_file_param_type(void*, void*, int, 
-					    BOOLEAN, int, int*);
-
-//typedef int setstep_type(InstanceOfModel*, double, int);
-//typedef void updatemodel_type(InstanceOfModel*, int);
-//typedef void advancemodel_type(void*, int);
-//typedef int evalmodel_type(InstanceOfModel*, int);
-//typedef void* getpointer_type(void*, int**, int**);
-//typedef void exitmodel_type(InstanceOfModel*);
-
 // class definition and handling procedure for extra variables used in
 // complicated integration methods
 
@@ -92,6 +76,7 @@ class bstree_node {
 
 // abstract base class for submodels, with extractor virtual function --
 // these are actually made in the model code itself
+class ExecutingModel; // defined in 6d.h
 class InstanceOfModel : public submodeltype {
 public:
   virtual ~InstanceOfModel() {}
@@ -125,3 +110,21 @@ public:
   int stop_on_id(int, int);
   int stop(int);
 };
+// Declaration for procedure types found in the model dll by the shank
+typedef void model_requests_file_param_type(void*, void*, int, 
+					    BOOLEAN, int, int*);
+
+//typedef int setstep_type(InstanceOfModel*, double, int);
+//typedef void updatemodel_type(InstanceOfModel*, int);
+//typedef void advancemodel_type(void*, int);
+//typedef int evalmodel_type(InstanceOfModel*, int);
+//typedef void* getpointer_type(void*, int**, int**);
+//typedef void exitmodel_type(InstanceOfModel*);
+
+typedef double getversion_type(void);
+typedef int getcount_type(ame_rand_type, graphpoint_type,
+			  release_graph_data_type, compare_instance_status_type,
+			  model_requests_file_param_type, stat_check_type,
+			  show_model_mess_type,
+			  graph_data_type**, char**, int*, node_data_line**);
+typedef InstanceOfModel* createmodel_type(ExecutingModel*);

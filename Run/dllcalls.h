@@ -171,14 +171,14 @@ public:
        delete(next);
      }
    }
-}; /* end of enum data type decl */
-
-/* above to be phased out -- we now have... */
+}; // end of enum data type decl
+*/
+// above to be phased out -- we now have...
 typedef struct enum_type_data_t {
   int count;
   const char* name;
   char** members;
-} enum_type_data; /* end of enum type data type decl */
+} enum_type_data; // end of enum type data type decl
 
 typedef struct ghost_ref_data_t {
   char ghost[16];
@@ -246,14 +246,6 @@ typedef int stat_check_type(void*);
 typedef void show_model_mess_type(void*, const char*);
 
 #ifdef __cplusplus
-// Declaration for procedure types found in the model dll by the shank -- 
-// here because they are used in both the Model class and the backend, but not
-// in a 5-D client which knows no c++
-class InstanceOfModel;
-class ExecutingModel;
-
-typedef double getversion_type(void);
-typedef InstanceOfModel* createmodel_type(ExecutingModel*);
 #endif
 
 /* These are for passing procedure addresses in the shim to the shank */
@@ -268,7 +260,7 @@ EXTDEC void* get_param_data_space(void*);
 EXTDEC int param_array_size(void*);
 EXTDEC void copy_param_data(char*, void*);
 EXTDEC void paste_param_data(void*, char*);
-EXTDEC int clear_time_point_elts(void*);
+EXTDEC void clear_time_point_elts(void*);
 EXTDEC double* get_wrap_ptr(void*);
 EXTDEC int* get_fill_ptr(void*);
 EXTDEC double* get_interval_ptr(void*);
@@ -281,7 +273,7 @@ EXTDEC void mark_values_active(void*);
 //EXTDEC int set_time_point_elt(char*, double, double, int*);
 EXTDEC char* get_param_ptr_and_dims(void*, int**);
 EXTDEC int get_timepoint_ptr_and_dims(void*, double, char**, int**);
-EXTDEC void free_bloc_records(char*, int*);
+//EXTDEC void free_bloc_records(char*, int*);
 EXTDEC int set_bloc_record_count(char*, int*, int*, int);
 EXTDEC void set_bloc_element(char*, int*, int*, double);
 

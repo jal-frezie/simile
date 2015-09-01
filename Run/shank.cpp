@@ -109,6 +109,7 @@ int stat_check(void* id) {
     return FALSE;
 }
 
+
 show_model_mess_type showModelMess;
 void showModelMess(void* id, const char* content) {
   ((ExecutingModel*)id)->modelSpec->showMess(content);
@@ -967,7 +968,7 @@ class ModelServer;
 ExecutingModel::ExecutingModel(ModelServer* newModelSpec, void* yourRef) {
     modelSpec = newModelSpec;
     clientRef = yourRef;
-    loadedInst = ((createmodel_type*)modelSpec->createmodel)(this);
+    loadedInst = modelSpec->createmodel(this);
     //sprintf(globMess, "This is XM %lx of M %lx being created with IOM %lx", 
 //	    (long)this, (long)modelSpec, (long)loadedInst);
     //showMess(globMess);
@@ -1436,7 +1437,7 @@ ModelServer::ModelServer(char* fileName, char* clientEdn, char** complaint) {
       *complaint = strdup(WHAT_WENT_WRONG());
       return;
     }
-    getversion = (void*)FIND_FUNCTION(handle, "get_version");
+    getversion = (getversion_type*)FIND_FUNCTION(handle, "get_version");
     // this does nothing but return the version number, so it can be checked 
     // even if different versions change the args to getcount()
     if (getversion == NULL) {
@@ -1445,33 +1446,28 @@ ModelServer::ModelServer(char* fileName, char* clientEdn, char** complaint) {
       return;
     }
     // Version number is AME version = simile version + 4
-    if (fabs(((getversion_type*)getversion)()-4-atof(SIMILE_VERSION))>0.00001) {
+    if (fabs(getversion()-4-atof(SIMILE_VERSION))>0.00001) {
       *complaint = new char[256];
       sprintf(*complaint, "client is for version %s but model is %.1f", 
-	      SIMILE_VERSION, ((getversion_type*)getversion)()-4);
+	      SIMILE_VERSION, getversion()-4);
       return;
     }
 /* sprintf(globMess, "Loaded %ld", handle);
 showMess(globMess); */
     *complaint = NULL;
 
-    getcount = (void*)FIND_FUNCTION(handle, "get_count");
-    nodecount = ((getcount_type*)getcount)((void*)ame_rand, 
-			 (void*)graphpoint,
-			 (void*)release_graph_data, 
-			 (void*)compare_instance_status, 
-			 (void*)handle_model_param_request, 
-			 (void*)stat_check,
-			 (void*)showModelMess,
-			 (void*)&c_graphdata,
-			 &identStr, &phases, &nodedata);
+    getcount = (getcount_type*)FIND_FUNCTION(handle, "get_count");
+    nodecount = getcount(ame_rand, graphpoint, release_graph_data, 
+			 compare_instance_status, handle_model_param_request, 
+			 stat_check, showModelMess,
+			 &c_graphdata, &identStr, &phases, &nodedata);
     // Now check if this client is entitled to run it
     if (entitled(clientEdn, identStr)) {
       *complaint = new char[256];
       sprintf(*complaint, "%s edition cannot use this model", clientEdn);
       return;
     }
-    createmodel = (void*)FIND_FUNCTION(handle, "do_createmodel");
+    createmodel = (createmodel_type*)FIND_FUNCTION(handle, "do_createmodel");
   }
 
 ModelServer::~ModelServer() {
@@ -1805,7 +1801,7 @@ void paste_param_data(void* fpHandle, char* holder) {
   nV->contents = restore_param(nV->dimSpecs, &holder);
 }
 
-int clear_time_point_elts(void* fpHandle) {
+void clear_time_point_elts(void* fpHandle) {
   ((VarParamData*)fpHandle)->ClearTimePtElements();
 
 //  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
@@ -1851,7 +1847,7 @@ int create_time_point(void* fpHandle, double time) {
 }
 
 void* find_next_timept_space(void* fpHandle, double* last_time) {
-  ((VarParamData*)fpHandle)->FindNextTimePtSpace(last_time);
+  return ((VarParamData*)fpHandle)->FindNextTimePtSpace(last_time);
 }
 
 char* get_param_ptr_and_dims(void* fpHandle, int** dimSlot) {

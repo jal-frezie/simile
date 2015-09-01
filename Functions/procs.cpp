@@ -149,7 +149,7 @@ double simile_mod(double point, double span) {
   Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
   MA  02111-1307  USA
 
-/*------------------------------------------------------------*/
+  ------------------------------------------------------------*/
 static double			/* direct method for integer order */
 GammaDeviate_direct (unsigned long order)
 {

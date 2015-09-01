@@ -10,7 +10,7 @@ graph_data_type** graph_data_pointer;
 /* Pointers to functions in the stub: */
 ame_rand_type* ame_rand_ref;
 graphpoint_type* graphpoint_ref;
-release_graph_data_type* release_graph_data_ref;
+// release_graph_data_type* release_graph_data_ref;
 compare_instance_status_type* compare_instance_status;
 model_requests_file_param_type* model_requests_file_param;
 /* fetch_instance_type* fetch_instance_ref;
@@ -23,7 +23,7 @@ get_remote_value_type* get_remote_value;
 */
 
 stat_check_type* stat_check;
-show_model_mess_type* suppShowMess;
+// show_model_mess_type* suppShowMess;
 
 // excpData userStop;
 /*
@@ -49,7 +49,7 @@ int InstanceOfModel::stop_on_id(int lineId, int code) {
 InstanceOfModel* curInst;
 int stop(int code) { 
 // this one for use in procedurally user-defined functions
-  curInst->stop_on_id(0, code);
+  return curInst->stop_on_id(0, code);
 }
 
 int lazy = 16384;
@@ -114,11 +114,11 @@ void assign_if_min(CompareClass sample, PayloadClass payload,
 /* Pass on calls to stub functions made directly by built model */
 
 double ame_rand(double lo, double hi) {
-  return (*ame_rand_ref)(lo, hi);
+  return ame_rand_ref(lo, hi);
 }
 
 double graphpoint(double xval, int indx) {
-  return (*graphpoint_ref)(xval, *graph_data_pointer, indx);
+  return graphpoint_ref(xval, *graph_data_pointer, indx);
 }
 /*
 void release_graph_data(graph_data_type* graph) {
@@ -267,7 +267,7 @@ void InstanceOfModel::collect (void* dest, int record_id, int id_count, ...) {
   }
   va_end(argptr);
 
-  (*model_requests_file_param)(partner, dest, record_id, 
+  model_requests_file_param(partner, dest, record_id, 
 			       FALSE, id_count, curIndices);
 }
    
@@ -328,7 +328,7 @@ BOOLEAN prune (SMClass **metaptr, int id_count, ...) {
   va_end(argptr);
    
   while (*metaptr && 
-	 (status = (*compare_instance_status)((*metaptr)->instanceid,
+	 (status = compare_instance_status((*metaptr)->instanceid,
 				   curIndices, id_count)) == -1) {
     submodelptr = *metaptr;
     *metaptr = submodelptr->next;
@@ -579,7 +579,7 @@ void setup_enum_type_data(
    *enum_data_pointer = new enum_data_type(host, name, mem_count, array_data, 
 					   *enum_data_pointer);
 }
-
+*/
 /* Some c++ do not allow either abs to be overloaded with doubles, or fabs
    with ints, so translate to myabs which works for both */
 
