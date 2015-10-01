@@ -114,6 +114,15 @@ itcl::class similescript::ModelWindow {
     }
     
     # added for building models on web server -- do not document
+    public method ExportCppCode {cppFile} {
+	set ::preSelect $cppFile
+        if {[catch {MenuSelect $modelCanvas code build_c} spew]} {
+	    set missingFile [lindex [split $::errorInfo \n] 2 0 3]
+	    puts [glob [file join [file dirname $missingFile] *]]
+	}
+    }
+
+    # added for building models on web server -- do not document
     public method BuildShareLib {shlibFile} {
 	set ::preSelect $shlibFile
         MenuSelect $modelCanvas code compile_c
