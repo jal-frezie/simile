@@ -13,12 +13,10 @@ tk_interactively_parse(Node) :-
 tk_code(Model, CompOrBuild, Tgt) :-
 	(CompOrBuild = compile_c, % export shared library
 	    Action = export_sharelib,
-	    output'><'safe_tcl_eval([info, sharedlibextension], IdentStr),
-	    DefGen = 1;
+	    output'><'safe_tcl_eval([info, sharedlibextension], IdentStr);
 	 CompOrBuild = build_c, % export source code
             Action = export_source,
-	    IdentStr = ".cpp",
-	    DefGen = ''),
+	    IdentStr = ".cpp"),
 	name(Ident, IdentStr),
 %	get_default_export_name(Model, IdentStr, DefN),
 %	get_program_file(DefN, Model, Tgt),
@@ -30,7 +28,7 @@ tk_code(Model, CompOrBuild, Tgt) :-
 	    append_atoms([Temp, '/', Path], CompDir)),
 	(\+ rebuild_code(c, Model, CompDir, Action), !;
 	 (m_update'><'get_av_pair(Model, 1, c_new, Serial), !,
-	  (Serial = 0 -> Gen = ''; Gen = Serial); Gen = DefGen),
+	  (Serial = 0 -> Gen = ''; Gen = Serial); Gen = 1),
 	  caption_for(Model, Capt),
 	  
 	  utility'><'append_atoms([CompDir, '/', Capt, '/model', Gen, Ident],

@@ -160,7 +160,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 		    % build was tcl, or get sought after save/restore
 		    all(compile, delete_prog, [unify(CheckDir),
 			build(['.tcl', '1.cpp'])]),
-		    (Language = c, Extn = '.cpp';
+		    (Language = c, Extn = '1.cpp';
 		     Language = tcl, Extn = '.tcl'),
 		    tk_update_infobox(pl_inst, []),
 		    instantiate_all(Parent, Model),
