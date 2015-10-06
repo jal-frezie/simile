@@ -159,8 +159,8 @@ build_instances(Language, DestDir, Parent, TopNode,
 		    % delete old code, including c++ v1 as 1 may mean last
 		    % build was tcl, or get sought after save/restore
 		    all(compile, delete_prog, [unify(CheckDir),
-			build(['.tcl', '1.cpp'])]),
-		    (Language = c, Extn = '1.cpp';
+			build(['.tcl', '.cpp'])]),
+		    (Language = c, Extn = '.cpp';
 		     Language = tcl, Extn = '.tcl'),
 		    tk_update_infobox(pl_inst, []),
 		    instantiate_all(Parent, Model),
@@ -172,11 +172,12 @@ build_instances(Language, DestDir, Parent, TopNode,
 				 (reclose(Stream), raise_exception(Puke))),
 		    close(Stream),
 		    Fuss = 1),
-		dialogue'><'tk_update_infobox(pl_comp, []),
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
-             Action = export_source, !;
-	     compile_c_program(CheckDir, ExtLibs, Fuss, Tgt),
+              % must compile and link even if only exporting source to check
+	      % if reusing from previous Simile version
+		dialogue'><'tk_update_infobox(pl_comp, []),
+		compile_c_program(CheckDir, ExtLibs, Fuss, Tgt),
 		 (Tgt = -1, !, fail;
 		  Tgt > 0,
 		  (Parent has_changed_model_refinement c_new of Tgt;
