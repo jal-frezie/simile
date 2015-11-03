@@ -487,13 +487,15 @@ wot need them */
 insert_metadata(Language, FullModel, Used, Stream) :-
 	tk_update_infobox(pl_meta, []),
 	extract_instances(FullModel, RealDecls),
-	generate_metadata(Language, RealDecls, [], 1, Used, NodeData, Stream),
-	make_constant_list(Language, NodeData, StructText),
-	length(NodeData, NodeCount), /* only used in tcl */
+	(nth(Posn, RealDecls, Instance),
+	 generate_metadata(Language, Instance, [], Posn, Used, Stream),
+	 fail;
+	make_constant_list(Language, StructText),
+	length(StructText, NodeCount), /* only used in tcl */
 	excrete(Language, variable_declaration,
 		   [int, nodecount, [], NodeCount], 0, Stream),
 	excrete(Language, variable_declaration,
-		   [node_data_line, nodedata, void, StructText], 0, Stream).
+		   [node_data_line, nodedata, void, StructText], 0, Stream)).
 		  
 uses_ext_proc(Model, Proc) :-
         contains(Model, Submodel),
@@ -696,9 +698,9 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 	append(ClassStart, [submodel_decls | ClassEnd], MainClass),
 	send_to_dest(Stream, ClassStart),
 	Model = model(_Funx, Submodels),
-	all(compile, generate_main_decls,
-	    [unify(L), build(Submodels), unify(1), unify(Stream)]),
-	send_to_dest(Stream, ClassEnd),
+	(member(Submodel, Submodels),
+	 generate_main_decls(L, Submodel, 1, Stream); % fails
+	 send_to_dest(Stream, ClassEnd)),
 	all(compile, excrete,
 	    [unify(L), unify(data_declaration), build(KitchenSink),
 	     unify(4), unify(Stream)]),
@@ -718,9 +720,8 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 	% all(compile, make_event_proc,
 	%     [build(Evts), unify([L, SymbolicName, Stream])]),
 					 
-	(var(Finish), !,
-	    Finish = EndClass;
-	 send_to_dest(Stream, EndClass)).
+	(Finish = EndClass, !; % top-level call, include later stuff in class
+	 send_to_dest(Stream, EndClass), fail).
 
 /* All events are procedures, which call those of downstream events if
 the value is non-null. Additionally, some events (e.g., limits) may
@@ -765,9 +766,8 @@ make_event_proc(instance(_Type, _, Motion, elt(Home, Name, _), Unit-Dim),
 
 old_extract_action(make(_E,_C,_P,_S,A),A).
  */
-generate_metadata(_, [], _,_,_, [], _).
-generate_metadata(L, [Instance | Instances], Tree, Level,
-		     Used, NodeData, Stream) :-
+%generate_metadata(_, [], _,_,_, [], _).
+generate_metadata(L, Instance, Tree, Level, Used, Stream) :-
 	Instance = instance(Type, Node, Loc, _, _-CSizes),
 	(Type = submodel, !,
 	    list_local_index_meanings(Node, SmIndSpecs),
@@ -794,18 +794,15 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 	    ((by_record(Node); from_value(Node)), !,
 		['RECORDS'] =  NewDims;
 	    Posn = NewDims)),
+	generate_data_decls(L, NewDims, DeepTree, Instance, Used, Stream),
 	(Loc = xrefs(Model, _,_),
-	extract_instances(Model, RealDecls), !,
-	generate_metadata(L, RealDecls, DeepTree, StartCases,
-			     Used, DeepNodeData, Stream);
-	 /* Not a submodel */
-	    DeepNodeData = []),
-	generate_data_decls(L, NewDims, DeepTree, Instance,
-			    Used, LocalNodeData, Stream),
-	NewLevel is Level + 1,
-	generate_metadata(L, Instances, Tree, NewLevel,
-			     Used, MoreNodeData, Stream),
-	append([LocalNodeData, DeepNodeData, MoreNodeData], NodeData).
+	 extract_instances(Model, RealDecls), !,
+	 nth0(Inc, RealDecls, SubInst),
+	 SubLevel is StartCases + Inc,
+	 generate_metadata(L, SubInst, DeepTree, SubLevel,
+			   Used, Stream),
+	 fail; true).
+	%append([LocalNodeData, DeepNodeData, MoreNodeData], NodeData).
 	    
 extract_instances(model(Funx, Subz), Instances) :-
 	pick_types(Funx, [function, init_function, id_function, al_function,

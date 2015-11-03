@@ -11,9 +11,9 @@ sicstus_module( render, [render/5, excrete/5, make_assignment/4, render_all/5,
 		ptr_compare/4,
 		combine/4, make_arg_string/3, 
 		make_pointer/3, resolve_pointer/3, 
-		make_constant_list/3, get_element_ref/4,
+		make_constant_list/2, get_element_ref/4,
 		command_substitute/3, generate_all_case_entries/4,
-		generate_data_decls/7, make_procedure_call_chars/3] ).
+		generate_data_decls/6, make_procedure_call_chars/3] ).
 
 sicstus_use_module( [sp_only, m_class, utility, ame_gen, units, text,
 utility, library(lists)] ).
@@ -647,7 +647,7 @@ generate_case_entry(L, Match, Inst, Stream) :-
 	excrete(L, procedure_call, return(ItemRef), 8, Stream)),
 	excrete(L, case_end, Match, 8, Stream).
 
-generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
+generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 	Inst = instance(InstType, BaseName, _Expr, NameIn, Unit-_),
 	(NameIn = elt(_, Name, _), !;
 	    Name = NameIn),
@@ -775,11 +775,11 @@ generate_data_decls(L, Dims, Path, Inst, Used, NodeData, Stream) :-
 	    (L = tcl -> append(StringPtrs, [Name], AllStrPtrs);
 			       AllStrPtrs = StringPtrs),
 		/* make a value lookup entry for each node with this value */
-	    NodeData = [[VisName, Type, ETCount, MetaPtr, GBCount, GRefPtr,
-			 Eval, CappedDims, NewPath, GraphPointer,
-			 Min, Max, Class, AllStrPtrs]];
+	    assertz(node_data([VisName, Type, ETCount, MetaPtr, GBCount,
+			       GRefPtr, Eval, CappedDims, NewPath, GraphPointer,
+			       Min, Max, Class, AllStrPtrs]));
 	/* No need to handle ghosts and link terminators */
-	NodeData = []).
+	true).
 
 make_runtime_enum_data(L, Name-Mems, Used, [ETCount, NamePtr, ETPtr],
 		       Stream) :-
@@ -1018,28 +1018,28 @@ build_constant(Language, [String, Type, ETCount, ETArrPtr, GBCount, GBArrPtr,
 			  Eval, Dims, Array, GraphPtr, Min, Max,
 			  Class, Captions], Chars) :-
 	make_constant_string(Language, String, Arg1),
-	make_list_chars(Language, Dims, DimsString),
-	name(Arg2, DimsString),
-	make_list_chars(Language, Array, ArrayString),
-	name(Arg3, ArrayString),
-%	make_constant_string(Language, Caption, Arg5),
-	make_list_chars(Language, Captions, PtrString),
-	name(Arg5, PtrString),
-	make_list_chars(Language, [Arg1, Type, ETCount, ETArrPtr,
-				   GBCount, GBArrPtr, Eval,
-				   Arg2,Arg3, GraphPtr, Min, Max, Class, Arg5],
-			Chars).
+%	make_list_chars(Language, Dims, DimsString),
+%	name(Arg2, DimsString),
+%	make_list_chars(Language, Array, ArrayString),
+%	name(Arg3, ArrayString),
+
+%	make_list_chars(Language, Captions, PtrString),
+%	name(Arg5, PtrString),
+	make_list_chars(Language, [Arg1, Type, ETCount, ETArrPtr, GBCount,
+				   GBArrPtr, Eval, Dims, Array, GraphPtr,
+				   Min, Max, Class, Captions], Chars).
 /* 	render(Language, comment, Comment, 0, [CommentWd]),
 	name(CommentWd, CommentStr),
 Comment string removed because it interferes with list mode
 	append(BaseChars, [32 | CommentStr], Chars). */
 
-make_constant_list(_, [], []).
-
-make_constant_list(L, [Const | Rest], [Line | Lines]) :- 
+make_constant_list(L, [Line | Lines]) :-
+        retract(node_data(Const)), !,
 	build_constant(L, Const, String),
 	name(Line, String),
-	make_constant_list(L, Rest, Lines).
+	make_constant_list(L, Lines).
+
+make_constant_list(_, []).
 
 make_constant_string(L, String, Atom) :-
 	name(String, Chars),

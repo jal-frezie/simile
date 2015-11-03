@@ -46,10 +46,17 @@ ame_save( File, Model, Date, SelOnly, _MakeCompat) :-
 	export_with_breaks( Stream, properties(Props)),
 	nl(Stream),
 	reassure_user(writing_node, []),
-	save_nodes( Models, Stream, SelOnly, ArcsUsed ),
+	% Arc data is saved to a separate stream -- original intention
+	% was to allow the save process to try and fail each node to
+	% save memory, but just doing it this way had desired
+	% result. Note these predicates do not exist in swi-prolog so
+	% will have to be bodged using a temp file.
+	open_output_codes_stream(ArcData),
+	save_nodes( Models, Stream, SelOnly, ArcData ),
 	nl(Stream),
+	close_output_codes_stream(ArcData, ArcChars),
 	reassure_user(writing_arc, []),
-	save_arcs( ArcsUsed, Stream),
+	sicstus_write_chars(Stream, ArcChars),
 	close( Stream ), !;
 	fail)).
 
@@ -57,20 +64,20 @@ ame_save( File, Model, Date, SelOnly, _MakeCompat) :-
 % save_stream - does the work of ame_save/[12]. Arg [34] are "done" lists for
 % Nodes and Arcs respectively - don't do the same node twice.
 
-save_nodes( [], _,_, [] ).
+save_nodes( [], _,_,_ ).
 
-save_nodes( [Node|Nodes], Stream, SelOnly, AllArcsUsed ) :-
-	save_node( Node, Stream, SelOnly, NewArcsUsed ),
+save_nodes( [Node|Nodes], Stream, SelOnly, ArcData ) :-
+    save_node( Node, Stream, SelOnly, NewArcsUsed ),
+    save_arcs(NewArcsUsed, ArcData),
 	save_links( Node, Stream, SelOnly ),
 	save_refs( Node, Stream, SelOnly ),
 	any_setof( Child,
 		   (Node has_part Child, go_with(Child, SelOnly)),
 		   Children ),
 	append( Children, Nodes, NewNodes ),
-	save_nodes( NewNodes, Stream, SelOnly, ArcsUsed ),
+	save_nodes( NewNodes, Stream, SelOnly, ArcData),
 	any_setof(ArcMem, arcmem(NewArcsUsed, ArcMem), ArcMems),
-	save_nodes( ArcMems, Stream, SelOnly, BranchArcsUsed ),
-	append( [NewArcsUsed, BranchArcsUsed, ArcsUsed], AllArcsUsed ).
+	save_nodes( ArcMems, Stream, SelOnly, ArcData ).
 
 arcmem(ArcSets, Node) :-
 	member(Arc-_-_, ArcSets),

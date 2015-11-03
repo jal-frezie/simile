@@ -366,6 +366,11 @@ generate_name(L, Atom, UnusedName, Used, Spares) :-
 		LocalName = Atom),
 		alphanumeric_only(LocalName, L, Name), */
 	alphanumeric_only(Atom, L, Name),
+	% Use following to make c++ code more compact
+%	name(Name, String),
+%	(String = [_C] -> ShortName = Name;
+%	 append([C1 | _More], [Cn], String),
+%	name(ShortName, [C1, Cn])),
 	ensure_unused( Name, UnusedName, Used, Spares).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -377,6 +382,7 @@ generate_name(L, Atom, UnusedName, Used, Spares) :-
 ensure_unused(Name, NewName, Used, Spares) :-
 	nuke_if_grounded(NewName),
 	(Sig = ''; count_to(0, 100000, 1, N),
+%	(Sig = ''; repeat, random(0, 100000, N),
 	    number_atom(N, NA), append_atoms('_', NA, Sig)),
 	append_atoms(Name, Sig, NewName),
 	all(utility, append_atoms,

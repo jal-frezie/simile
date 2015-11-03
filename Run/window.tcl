@@ -1367,13 +1367,15 @@ proc MenuSelect { window button item } {
 		    set lang [string range $item 4 end]
 		}
 	    }
-	    if {[info exists extn]} {
-		set tgt [ChooseFile [GetExecTitle $node]$extn \
-			     [tr. "Export code to:"] 1 $node]
-		if {$tgt eq ""} return
-	    } else {
+	    # file name choice now done from Prolog since characters like
+	    # single-quote in path do not pass nicely this way
+#	    if {[info exists extn]} {
+#		set tgt [ChooseFile [GetExecTitle $node]$extn \
+#			     [tr. "Export code to:"] 1 $node]
+#		if {$tgt eq ""} return
+#	    } else {
 		set tgt dummy
-	    }
+#	    }
 	    OpenProgressBox $window
 	    set builtOK [prolog tk_code($node,$item,'$tgt')]
 	    CloseProgressBox

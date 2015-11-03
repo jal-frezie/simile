@@ -10,7 +10,7 @@ sicstus_use_module([library(lists),
 tk_interactively_parse(Node) :-
 	interactively_parse(Node).
 
-tk_code(Model, CompOrBuild, Tgt) :-
+tk_code(Model, CompOrBuild, _Tgt) :-
 	(CompOrBuild = compile_c, % export shared library
 	    Action = export_sharelib,
 	    output'><'safe_tcl_eval([info, sharedlibextension], IdentStr);
@@ -18,8 +18,9 @@ tk_code(Model, CompOrBuild, Tgt) :-
             Action = export_source,
 	    IdentStr = ".cpp"),
 	name(Ident, IdentStr),
-%	get_default_export_name(Model, IdentStr, DefN),
-%	get_program_file(DefN, Model, Tgt),
+	get_default_export_name(Model, IdentStr, DefN),
+	get_program_file(DefN, Model, Tgt),
+	\+ Tgt = '', % cancelled
 	use_temp_dir(Temp),
 	find_all_comps(Base, Model),
 	(Base = root,
