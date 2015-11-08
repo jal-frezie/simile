@@ -1055,6 +1055,7 @@ function ShowMenuButton (that) {
   <ul id='" + menuHandle + "'>\
     <li id='spheres'><a href='javascript:void(0);'>Sphere</a></li>\
     <li id='lines'><a href='javascript:void(0);'>Line</a></li>\
+    <li id='polygons'><a href='javascript:void(0);'>Polygon</a></li>\
     <li id='lollipops'><a href='javascript:void(0);'>Lollipop</a></li>\
     <hr>\
     <li id='ellipses'><a href='javascript:void(0);'>Ellipse</a></li>\
@@ -1092,6 +1093,12 @@ function AddItem (that, type) {
 				["component","end Z positions"],
 				["component","width values"],
 				["colour","colour"]],
+			"polygons":[["type","Select new item type"],
+				    ["component","X vertex position lists"],
+				    ["component","Y vertex position lists"],
+				    ["component","Z vertex position lists"],
+				    ["colour", "outline"],
+				    ["colour", "fill"]],
 			"lollipops":[["type","Select new item type"],
 				  ["component","X positions"],
 				  ["component","Y positions"],
@@ -1260,6 +1267,33 @@ Shapes3D.prototype.display = function (time, latest, connect) {
 		instruct[9][iV] = line;
 		this.scene.add(line);
 	    }
+	    break;
+	case "polygons":
+	    for (var old in instruct[7]) {
+		this.scene.remove(instruct[7][old]);
+		delete(instruct[7][old]);
+	    }
+
+	    defns = {};
+	    for (i=1;i<6;++i) {
+		defns[["n","xs","ys","zs","o", "f"][i]] = latest[instruct[i]);
+	    }
+	    nC = parseInt('0x' + instruct[5]);
+	    eC = parseInt('0x' + instruct[6]);
+	    var polyMaterial = new THREE.MeshLambertMaterial( {color: eC} ); 
+	    
+	    var polyGeometry = new THREE.Geometry();
+	    for face in defns[x] {
+		for vertex in face {
+		    newFace = new THREE.Face3(defns[x][face][vertex],
+					      defns[y][face][vertex],
+					      defns[z][face][vertex]));
+		newFace.color = nC;
+		polyGeometry.faces.push(newFace);
+	    }
+	    polys = new THREE.Mesh(polyGeometry, polyMaterial);
+	    this.scene.add(polys);
+	    instruct[7] = [polys];
 	    break;
 	case "lollipops":
 	    // first remove old items

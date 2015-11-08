@@ -66,6 +66,7 @@ itcl::class similescript::$newHelperClass {
 	menu $winId.m -tearoff 0
 	$winId.m add command -label "Sphere" -command "$this AddItem spheres"
 	$winId.m add command -label "Line" -command "$this AddItem lines"
+	$winId.m add command -label "Polygon" -command "$this AddItem polygons"
 	$winId.m add command -label "Ellipse" -command "$this AddItem ellipses"
 	# $winId.m add command -label "Old Ellipse" -command "$this AddItem oldellipses"
 	pack [::ttk::menubutton $winId.buttons.mb -text "Select new item type" \
@@ -99,6 +100,12 @@ itcl::class similescript::$newHelperClass {
 			  {component "end Z positions"} \
 			  {component "width values"} \
 			  {colour colour}}
+		 polygons {{type "Select new item type"} \
+			  {component "X vertex position lists"} \
+			  {component "Y vertex position lists"} \
+			  {component "Z vertex position lists"} \
+			  {colour outline} \
+			  {colour fill}}
 		 oldellipses {{type "Select new item type"} \
 			  {component "centre X positions"} \
 			  {component "centre Y positions"} \
@@ -233,6 +240,30 @@ itcl::class similescript::$newHelperClass {
 			} else {
 			    lappend upper $op
 			}
+		    }
+		} polygons {
+		    foreach arr {vx vy vz} {
+			array unset $arr
+		    }
+		    for {set i 1} {$i<4} {incr i} {
+			array set [lindex {0 vx vy vz} $i] \
+			    [lindex [$modelInst GetValue \
+					 [lindex $instruct $i]] 0]
+		    }
+		    foreach iV [array names vz] {
+			set op [list polygon $iV]
+			set allz 0
+			foreach {idx nx} $vx($iV) {idy ny} $vy($iV) \
+			    {idz nz} $vz($iV) {
+				lappend op [list $nx $ny $nz]
+				set allz [expr {$allz+$nz}]
+			    }
+			lappend op [lindex $instruct 4] [lindex $instruct 5]
+#			if {$allz < 0} {
+#			    lappend lower $op
+#			} else {
+			    lappend upper $op
+#			}
 		    }
 		} oldellipses {
 		    foreach arr {cx cy cz tx ty tz sx sy sz} {

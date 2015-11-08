@@ -495,8 +495,10 @@ tk_start_progress_dialogue(Win) :-
 	safe_tcl_eval(['OpenProgressBox', Win], _).
 
 tk_update_infobox(Key, Lits) :-
-	safe_list(Lits, LitList),
-	safe_tcl_eval(['FillProgressBox', Key, LitList], _).
+    safe_list(Lits, LitList),
+    statistics(atoms, [Used, Free]),
+    Usage is 100*Used/(Used+Free),
+    safe_tcl_eval(['FillProgressBox', Key, LitList, Usage], _).
 
 tk_finish_progress_dialogue :-
 	safe_tcl_eval(['CloseProgressBox'], _).

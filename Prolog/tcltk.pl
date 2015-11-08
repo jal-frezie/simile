@@ -9,7 +9,7 @@ any_tcl_eval(Cmd, Except, Result) :-
 	convert_crs(BrokenString, TtfnString),
 	all_ttfn_to_utf8(TtfnString, String),
 	format("send_tcl_cmd ~s", [String]), nl,
-	flush_output,
+	flush_output, fail;
 	wait_for_tcl(Except, Response),
 	Result = Response.
 

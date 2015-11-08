@@ -315,6 +315,20 @@ proc DrawShapes {winId solids tag} {
 		    -width $width -fill [lindex $object3d 5]] \
 			   [expr ([lindex $startMap 2]+[lindex $endMap 2])/2] \
 				   [lindex $object3d 1]]
+	    } polygon {
+		set ptList {}
+		set sumz 0
+		foreach pt [lrange $object3d 2 end-2] {
+		    set projd [project $winId $pt]
+		    lappend ptList [lrange $projd 0 1]
+		    set sumz [expr {$sumz+[lindex $projd 2]}]
+		}
+		set z [expr {$sumz/[llength $ptList]}]
+		lappend insts [list [concat $winId.c create poly \
+					 [eval concat $ptList] -tag $tag \
+					 -outline  [lindex $object3d end-1] \
+					 -fill [lindex $object3d end]] $z \
+				   [lindex $object3d 1]:$z]
 	    } ellipse {
 		# format is "ellipse popupTxt centrePt borderPt1 borderPt2
 		# thickness backColour frontColour

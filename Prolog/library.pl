@@ -761,6 +761,7 @@ store_term( Term, Stream, Parent, Bindings, AllBindings, Rest ) :-
 	Term =.. TermList,
 	append( TermList, [Parent,Bindings,NewBindings], NewTermList ),
 	NewTerm =.. NewTermList,
+	%reassure_user(reading_file, []),
 	call( build'><'NewTerm ),
 	!,
 	read_skipping_junk( Stream, NextTerm ),
