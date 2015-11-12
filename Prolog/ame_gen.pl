@@ -40,7 +40,7 @@ get_term(String, Term, Error) :-
 	String = [], !,
 		Term = '',
 		Error = [];
-	make_legible_for_prolog(String, Proper_String),
+	make_legible_for_prolog(String, Proper_String, false),
 %	append(ProcessedString, ".", Proper_string),
 /*	name(LooksLike, Proper_string), for debug 
 	open_chars_stream(Proper_string, Stream),
@@ -161,7 +161,7 @@ but that implied a certainty about what it had to do which was
 unjustified. I don't want to process anything in single quotes for
 instance... */
 
-make_legible_for_prolog(String, NewString) :-
+make_legible_for_prolog(String, NewString, CommentsAllowed) :-
 	[NL, BS, Sq, Dq, Sp, Pt, Po, Pc, Xm, Eq, Ct, Fs, Ak] =
 	    "\n\\'\" .()!=%/*",
 	Nums = "0123456789",
@@ -178,7 +178,7 @@ make_legible_for_prolog(String, NewString) :-
 	    Tweaked = [];
 	% Percent sign starts a comment so eject rest of line, to ensure
 	% single-quotes etc. in macro defn comments don't confuse it 
-	ToTweak = [Ct | AfterPercent],
+	CommentsAllowed, ToTweak = [Ct | AfterPercent],
 	    suffix([NL | Suffix], AfterPercent),
 	    Tweaked = [NL];
 	% Comments enclosed in /*...*/ act like whitespace
@@ -231,7 +231,7 @@ make_legible_for_prolog(String, NewString) :-
 	    Tweaked = "not ";
 	ToTweak = [Ct | Suffix],
 	    Tweaked = "'%'"), !,
-	make_legible_for_prolog(Suffix, NewSuffix),
+	make_legible_for_prolog(Suffix, NewSuffix, CommentsAllowed),
 	append(Tweaked, NewSuffix, Fixed),	
 	append(Prefix, Fixed, NewString);	
 	NewString = String.

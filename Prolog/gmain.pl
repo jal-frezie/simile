@@ -211,7 +211,7 @@ reopen_stream_internally_formatted(Utf8Stm, IntStm, EuContents) :-
 	swallow_to_chars(Utf8Stm, U8Contents), % closes stream
 	all_utf8_to_ttfn(U8Contents, Contents),
 	(var(EuContents) ->
-	    make_legible_for_prolog(Contents, EuContents),
+	    make_legible_for_prolog(Contents, EuContents, true),
 	    open_chars_stream(EuContents, IntStm);
 	  open_chars_stream(Contents, IntStm)).
 % temp file can cause NetworkDriveReadOvertakesWrite problem, avoid where poss

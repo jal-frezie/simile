@@ -1242,7 +1242,10 @@ combine( L, Op, VArgs, Atom) :-
 	    Atom = double(Nom)/Div);
 	Op = (//), !,
 	    VArgs = [Nom, Div],
-	    Atom = int(Nom)/int(Div);
+	    Atom = int(double(Nom)/Div);
+	L = tcl, Op = ('%'), !,
+	    VArgs = [Nom, Div],
+	    Atom = Nom-Div*int(double(Nom)/Div);
 	member(Op, [round, floor, ceil]), !,
 	    Expr =.. [Op | VArgs],
 	    combine(L, int, [Expr], Atom);

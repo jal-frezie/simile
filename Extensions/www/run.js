@@ -1276,7 +1276,7 @@ Shapes3D.prototype.display = function (time, latest, connect) {
 
 	    defns = {};
 	    for (i=1;i<6;++i) {
-		defns[["n","xs","ys","zs","o", "f"][i]] = latest[instruct[i]);
+		defns[["n","xs","ys","zs","o", "f"][i]] = latest[instruct[i]];
 	    }
 	    nC = parseInt('0x' + instruct[5]);
 	    eC = parseInt('0x' + instruct[6]);

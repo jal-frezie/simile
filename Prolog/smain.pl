@@ -55,7 +55,7 @@ reopen_stream_internally_formatted(Utf8Stm, IntStm, EuContents) :-
 	append_atoms(TempDir, '/temp_io.pl', TempFile),
 	open_native(TempFile, write, Stream2),
 	(var(EuContents) ->
-	    ame_gen:make_legible_for_prolog(Contents, EuContents),
+	    ame_gen:make_legible_for_prolog(Contents, EuContents, true),
 	    sicstus_write_chars(Stream2, EuContents);
 	 sicstus_write_chars(Stream2, Contents)),
 % temp file can cause NetworkDriveReadOvertakesWrite problem, avoid where poss
