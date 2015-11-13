@@ -39,6 +39,6 @@ if {[catch {
     }
     puts -nonewline [string replace $rps end end \}]
 }]} {
-#    puts $errorInfo
+    puts $errorInfo
 }
 exit

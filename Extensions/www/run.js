@@ -1269,31 +1269,41 @@ Shapes3D.prototype.display = function (time, latest, connect) {
 	    }
 	    break;
 	case "polygons":
-	    for (var old in instruct[7]) {
-		this.scene.remove(instruct[7][old]);
-		delete(instruct[7][old]);
+	    for (var old in instruct[6]) {
+		this.scene.remove(instruct[6][old]);
+		delete(instruct[6][old]);
 	    }
-
+	    instruct[6] = {};
 	    defns = {};
-	    for (i=1;i<6;++i) {
-		defns[["n","xs","ys","zs","o", "f"][i]] = latest[instruct[i]];
+	    for (i=1;i<4;++i) {
+		defns[["n","xs","ys","zs"][i]] = latest[instruct[i]];
 	    }
-	    nC = parseInt('0x' + instruct[5]);
-	    eC = parseInt('0x' + instruct[6]);
+	    nC = parseInt('0x' + instruct[4]);
+	    eC = parseInt('0x' + instruct[5]);
 	    var polyMaterial = new THREE.MeshLambertMaterial( {color: eC} ); 
 	    
-	    var polyGeometry = new THREE.Geometry();
-	    for face in defns[x] {
-		for vertex in face {
-		    newFace = new THREE.Face3(defns[x][face][vertex],
-					      defns[y][face][vertex],
-					      defns[z][face][vertex]));
-		newFace.color = nC;
-		polyGeometry.faces.push(newFace);
+	    for (var face in defns.xs) {
+		var polyGeometry = new THREE.Geometry();
+		var vc = 0
+		for (var vertex in defns.xs[face]) {
+		    polyGeometry.vertices.push(new THREE.Vector3(
+			defns.xs[face][vertex],
+			defns.zs[face][vertex],
+			defns.ys[face][vertex]));
+		    ++vc;
+		    if (vc>2) {
+			var newFace = new THREE.Face3(0, vc-2, vc-1);
+			// newFace.color = nC;
+			polyGeometry.faces.push(newFace);
+		    }
+		}
+		// need these bits to get lighting fx to work
+		polyGeometry.computeFaceNormals ();
+		polyGeometry.computeVertexNormals ();
+		poly = new THREE.Mesh(polyGeometry, polyMaterial);
+		this.scene.add(poly);
+		instruct[6][face] = poly;
 	    }
-	    polys = new THREE.Mesh(polyGeometry, polyMaterial);
-	    this.scene.add(polys);
-	    instruct[7] = [polys];
 	    break;
 	case "lollipops":
 	    // first remove old items
