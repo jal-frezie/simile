@@ -1,51 +1,45 @@
 var tabs;
-	$(function() {
+$(function() {
 		
-	    $( "#button" ).button();
-	    $( "#radioset" ).buttonset();
+    $( "#button" ).button();
+    $( "#radioset" ).buttonset();
 		
-	    tabs = $( "#tabs" ).tabs({heightstyle:"fill"});
-	    tabs.tabs({
-		activate: function( event, ui ) {
-		    if (ui.newPanel.selector != "#tabs-0") { // diagram
-			lastHelper = currentHelper =
-			    currentHelpers[$(ui.newPanel.selector)[0].id];
-			lastIndex = tabs.tabs("option","active");
-		    } else {
-			currentHelper = null;
-		    }
-		}
-	    });
-// close icon: removing the tab on click
-tabs.delegate( "span.ui-icon-close", "click", function() {
-  var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
-  delete currentHelpers[panelId];
-  $( "#" + panelId ).remove();
-  tabs.tabs( "refresh" );
+    tabs = $( "#tabs" ).tabs({heightstyle:"fill"});
+    tabs.tabs({
+	activate: function( event, ui ) {
+	    if (ui.newPanel.selector != "#tabs-0") { // diagram
+		lastHelper = currentHelper =
+		    currentHelpers[$(ui.newPanel.selector)[0].id];
+		lastIndex = tabs.tabs("option","active");
+	    } else {
+		currentHelper = null;
+	    }
+	}
+    });
+    // close icon: removing the tab on click
+    tabs.delegate( "span.ui-icon-close", "click", function() {
+	var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
+	delete currentHelpers[panelId];
+	$( "#" + panelId ).remove();
+	tabs.tabs( "refresh" );
+    });
+
+		
+    $( "#progress" ).progressbar({
+	value: 0
+    });
+    
+
+    // Hover states on the static widgets
+    $( "#dialog-link, #icons li" ).hover(
+	function() {
+	    $( this ).addClass( "ui-state-hover" );
+	},
+	function() {
+	    $( this ).removeClass( "ui-state-hover" );
+	}
+    );
 });
-
-		
-
-		
-
-		
-
-		
-		$( "#progress" ).progressbar({
-			value: 0
-		});
-		
-
-		// Hover states on the static widgets
-		$( "#dialog-link, #icons li" ).hover(
-			function() {
-				$( this ).addClass( "ui-state-hover" );
-			},
-			function() {
-				$( this ).removeClass( "ui-state-hover" );
-			}
-		);
-	});
 
 function clickOn(evt) {
     var tags = null;
@@ -80,6 +74,59 @@ function prettify (data, sub) {
     }
 }
 
+function binary_from_local(prolog, min, max) {
+    c_result = Module.ccall('get_raw_values', 'number', ['string', 'number'],
+			    [prolog, modelInstance]);
+    var ddims = Module.ccall('ds_from_nodvals', 'number', ['number'], [c_result]);
+    var vals = Module.ccall('ct_from_nodvals', 'number', ['number'], [c_result]);
+    final = "";
+    var rows = getValue(ddims, 'i32');
+    var cols = getValue(ddims+4, 'i32');
+    for (var i = 0; i < rows; ++i) {
+	for (var j = 0; j < cols; ++j) {
+	    if (model_json[prolog].units == "REAL") {
+		modelFloat = getValue(vals+8*(cols*i + j), 'double');
+	    } else {
+		modelFloat = getValue(vals+4*(cols*i + j), 'i32');
+	    }
+	    final += String.fromCharCode(255.9999*((modelFloat-min)/(max-min)));
+	}
+	while(j<4*Math.ceil(j/4)) {
+	    final += " ";
+	    ++j;
+	}
+    }
+    Module.ccall('free_bloc_data', 'number', ['number', 'number'],
+		 [vals, ddims]);
+    _free(c_result);
+    
+    return final;
+}
+
+function js_from_local_model(prolog, howMany) {
+    c_result = Module.ccall('get_raw_values', 'number', ['string', 'number'],
+			    [prolog, modelInstance]);
+    if (c_result) {
+//	console.log("Values retrieved OK");
+    } else {
+	console.log("Component has no data");
+	return;
+    }
+    var ddims = Module.ccall('ds_from_nodvals', 'number', ['number'], [c_result]);
+    var vals = Module.ccall('ct_from_nodvals', 'number', ['number'], [c_result]);
+
+    msbs_dims = [];
+    var sbList = MakeSubBlockSizes(ddims);
+//    console.log("Sub-blocks:", JSON.stringify(sbList),
+//		"Dims:", JSON.stringify(msbs_dims));
+    var final = convert_to_js(msbs_dims, sbList, vals, [howMany]);
+    Module.ccall('free_bloc_data', 'number', ['number', 'number'],
+		 [vals, ddims]);
+    _free(c_result);
+    
+    return final;
+}
+
 function hoverIn(evt) {
   var tags = null;
   var blob = evt.target;
@@ -91,72 +138,78 @@ function hoverIn(evt) {
 //  var currentLine = model_json.find(function (e) {
 //		     return e.id == prolog;
 // 		     });
-  tooltip_q.firstChild.data = model_json[prolog].equation;
-    tooltip_v.firstChild.data = prettify(JSON.parse(values_json[prolog]), 0);
-  tooltip_c.firstChild.data = model_json[prolog].comment;
+    tooltip_q.firstChild.data = model_json[prolog].equation;
+    
+    // tooltip_v.firstChild.data = prettify(JSON.parse(values_json[prolog]), 0);
+    // OK, try getting data from built-in model instead
+    tooltip_v.firstChild.data = prettify(js_from_local_model(prolog[0], 1000));
+    tooltip_c.firstChild.data = model_json[prolog].comment;
 // above will break function if it doesn't work
 
-        var uupos = ModDiag.createSVGPoint();
-        uupos.x = evt.pageX - window.pageXOffset;
-        uupos.y = evt.pageY - window.pageYOffset;
-        var ctm = ModDiag.getScreenCTM();
-        if (ctm = ctm.inverse())
-            uupos = uupos.matrixTransform(ctm);
-
-  tooltip_grp.setAttributeNS(null,"transform",
+    var uupos = ModDiag.createSVGPoint();
+    uupos.x = evt.pageX - window.pageXOffset;
+    uupos.y = evt.pageY - window.pageYOffset;
+    var ctm = ModDiag.getScreenCTM();
+    if (ctm = ctm.inverse())
+        uupos = uupos.matrixTransform(ctm);
+    
+    tooltip_grp.setAttributeNS(null,"transform",
 			     "translate(" + uupos.x + "," + uupos.y + ")scale("
 			     + tooltip_scale + ")");
-  tooltip_bd.setAttributeNS(null,"visibility","visible");
-  tooltip_qbg.setAttribute("visibility", "visible");
-  tooltip_vbg.setAttribute("visibility", "visible");
-  tooltip_cbg.setAttribute("visibility", "visible");
-  tooltip_q.setAttributeNS(null,"visibility","visible");
-  tooltip_v.setAttributeNS(null,"visibility","visible");
-  tooltip_c.setAttributeNS(null,"visibility","visible");
+    tooltip_bd.setAttributeNS(null,"visibility","visible");
+    tooltip_qbg.setAttribute("visibility", "visible");
+    tooltip_vbg.setAttribute("visibility", "visible");
+    tooltip_cbg.setAttribute("visibility", "visible");
+    tooltip_q.setAttributeNS(null,"visibility","visible");
+    tooltip_v.setAttributeNS(null,"visibility","visible");
+    tooltip_c.setAttributeNS(null,"visibility","visible");
 
-  length = Math.max(tooltip_q.getComputedTextLength(),
-		     tooltip_v.getComputedTextLength(),
-		     tooltip_c.getComputedTextLength());
-  tooltip_bd.setAttributeNS(null,"width",length+8);
-  tooltip_qbg.setAttributeNS(null,"width",length+8);
-  tooltip_vbg.setAttributeNS(null,"width",length+8);
-  tooltip_cbg.setAttributeNS(null,"width",length+8);
+    length = Math.max(tooltip_q.getComputedTextLength(),
+		      tooltip_v.getComputedTextLength(),
+		      tooltip_c.getComputedTextLength());
+    tooltip_bd.setAttributeNS(null,"width",length+8);
+    tooltip_qbg.setAttributeNS(null,"width",length+8);
+    tooltip_vbg.setAttributeNS(null,"width",length+8);
+    tooltip_cbg.setAttributeNS(null,"width",length+8);
 }
 
 function hoverOut() {
-  tooltip_bd.setAttributeNS(null,"visibility","hidden");
-  tooltip_qbg.setAttribute("visibility", "hidden");
-  tooltip_vbg.setAttribute("visibility", "hidden");
-  tooltip_cbg.setAttribute("visibility", "hidden");
-  tooltip_q.setAttributeNS(null,"visibility","hidden");
-  tooltip_v.setAttributeNS(null,"visibility","hidden");
-  tooltip_c.setAttributeNS(null,"visibility","hidden");
+    tooltip_bd.setAttributeNS(null,"visibility","hidden");
+    tooltip_qbg.setAttribute("visibility", "hidden");
+    tooltip_vbg.setAttribute("visibility", "hidden");
+    tooltip_cbg.setAttribute("visibility", "hidden");
+    tooltip_q.setAttributeNS(null,"visibility","hidden");
+    tooltip_v.setAttributeNS(null,"visibility","hidden");
+    tooltip_c.setAttributeNS(null,"visibility","hidden");
 }
 
 function addEltAction(comp) {
-  comp.addEventListener("mouseover", hoverIn);
-  comp.addEventListener("mouseout", hoverOut);
-  comp.addEventListener("mousedown", clickOn);
+    comp.addEventListener("mouseover", hoverIn);
+    comp.addEventListener("mouseout", hoverOut);
+    comp.addEventListener("mousedown", clickOn);
 }
 
 function tclListOfDimty(stuff, n) {
+    if (stuff.constructor === Array) {
+	if (n==0) {
+	    return stuff.join("");
+	}
+	var result = [];
+	for (var i=0; i<stuff.length; i+=2) { // skip whitespace elts
+	    result.push(tclListOfDimty(stuff[i],n-1));
+	}
+	return result;
+    }
     if (n==0) {
 	return stuff;
     }
-    if (!(stuff.constructor === Array)) {
-	return [tclListOfDimty(stuff, n-1)];
-    }
-    var result = [];
-    for (var i=0; i<stuff.length; ++i) {
-	result.push(tclListOfDimty(stuff[i],n-1));
-    }
-    return result;
+    return [tclListOfDimty(stuff,n-1)];
 }
 
 function idFromCapt (capt) {
 // now boringly find this by iteration
     for (comp in model_json) {
-	if (model_json[comp].captpath.replace(/\s+/g," ") == capt) {
+	if (model_json[comp].captpath == capt) {
 	    return model_json[comp].id;
 	}
     }
@@ -167,32 +220,35 @@ function oneAfter(array, term) {
 }
 
 function addTabFor(species, textContent) {
-    convd = textContent.replace(/}*\s+{*/g,"\"$&\"")
-	.replace(/{/g,"[").replace(/}/g,"]").replace(/\s+/g,", ")
-    specArray = JSON.parse("["+convd.substr(3,convd.length-6)+"]");
+    convd0 = textContent.replace(/(}*)(\s+)({*)/g,"\"$1, \"$2\", $3\"");
+    // enclose array elements and bits of whitespace in quotes
+    convd1 = convd0.replace(/{/g,"[").replace(/}/g,"]").replace(/\n/g, "\\n")
+    // replace curly brackets with square ones, escape newlines for parse
+    spacArray = JSON.parse("["+convd1.substr(3,convd1.length-6)+"]");
 //    console.log("Helper key "+species+", state "+JSON.stringify(specArray));
-
+    var specArray = [];
+    for (var i=1; i<spacArray.length; i+=2) {
+	specArray.push(spacArray[i]);
+    }
     switch (species) {
 	case "plotter1_dot_25":
 	new_helper("plot");
-	captArr = specArray[specArray.indexOf("/WIN/,Yvars")+1];
-	captPaths = tclListOfDimty(captArr,2);
-	for (x=0;x<captPaths.length;++x) {
+	captArr = oneAfter(specArray, "/WIN/,Yvars");
+	captPaths = tclListOfDimty(captArr, 1);
+	for (var x=0;x<captPaths.length;++x) {
 	    if (x>0) select_for_helper("add");
-	    captPathN = captPaths[x].join(" ");
 //	console.log("Adding plot of " + captPathN);
 // now boringly find this by iteration
-	    select_for_helper(idFromCapt(captPathN));
+	    select_for_helper(idFromCapt(captPaths[x]));
 //	    if (x==0) select_for_helper("time");
 	}
 	break;
 
 	case "tabular11510":
 	new_helper("table");
-	captPaths = tclListOfDimty(specArray[0], 2);
+	captPaths = tclListOfDimty(specArray[0], 1);
 	for (var i=0; i<captPaths.length; ++i) {
-	    captPath = captPaths[i].join(" ");
-	    select_for_helper(idFromCapt(captPath));
+	    select_for_helper(idFromCapt(captPaths[i]));
 	}
 	break;
 
@@ -204,7 +260,7 @@ function addTabFor(species, textContent) {
 	    template = ["lollipops"];
 	    newComps = [];
 	    for (parm in {"x":0,"y":0,"h":0}) {
-		nId = idFromCapt(tclListOfDimty(specArray[i++],1).join(" "));
+		nId = idFromCapt(tclListOfDimty(specArray[i++],0));
 		template.push(nId);
 		currentHelper.tgts.push(nId);
 		newComps.push(nId);
@@ -220,15 +276,11 @@ function addTabFor(species, textContent) {
 
 	case "plotterXY1_dot_0":
 	new_helper("plotxy");
-	captArr = specArray[specArray.indexOf("/WIN/,Yvars")+1];
-	captPath = tclListOfDimty(captArr,1).join(" ");
-//	console.log("Adding plot of " + captPath0);
-// now boringly find this by iteration
+	captArr = oneAfter(specArray, "/WIN/,Yvars");
+	captPath = tclListOfDimty(captArr,0);
 	select_for_helper(idFromCapt(captPath));
-	captArr = specArray[specArray.indexOf("/WIN/,Xvars")+1];
-	captPath = tclListOfDimty(captArr,1).join(" ");
-//	console.log("Adding plot of " + captPath0);
-// now boringly find this by iteration
+	captArr = oneAfter(specArray, "/WIN/,Xvars");
+	captPath = tclListOfDimty(captArr,0);
 	select_for_helper(idFromCapt(captPath));
 	break;
 
@@ -239,17 +291,17 @@ function addTabFor(species, textContent) {
 	for (var i=0; i<specArray.length;++i) {
 	    template = [];
 	    newComps = [];
-	    for (var j=0; j<specArray[i].length;++j) {
-		possCapt = tclListOfDimty(specArray[i][j], 1);
-		if (possCapt[0][0] == "/") { // its a capt path
-		    nodeId = idFromCapt(possCapt.join(" "));
-		    template[j] = nodeId;
+	    for (var j=0; j<specArray[i].length;j+=2) {
+		possCapt = tclListOfDimty(specArray[i][j], 0);
+		if (possCapt[0] == "/") { // its a capt path
+		    nodeId = idFromCapt(possCapt);
+		    template.push(nodeId);
 		    newComps.push(nodeId);
 		    currentHelper.tgts.push(nodeId);
-		} else if (possCapt[0][0] == "#") { // it's a colour
-		    template[j] = possCapt[0].substr(1);
+		} else if (possCapt[0] == "#") { // it's a colour
+		    template.push(possCapt.substr(1));
 		} else { // is shape identity
-		    template[j] = possCapt[0];
+		    template.push(possCapt);
 		}
 	    }
 	    AddTemplateToScene(currentHelper, template, newComps);
@@ -277,8 +329,8 @@ function addTabFor(species, textContent) {
 	currentHelper.bottom = parseFloat(oneAfter(specArray, "/WIN/,min"));
 	currentHelper.top = parseFloat(oneAfter(specArray, "/WIN/,max"));
 	for (var key in {"color":0,"xcoord":0,"ycoord":0}) {
-	    capt = tclListOfDimty(oneAfter(specArray, "/WIN/," + key), 1);
-	    select_for_helper(idFromCapt(capt.join(" ")));
+	    capt = tclListOfDimty(oneAfter(specArray, "/WIN/," + key), 0);
+	    select_for_helper(idFromCapt(capt));
 	}
 	break;
 
@@ -290,7 +342,7 @@ function addTabFor(species, textContent) {
 	    currentHelper.minVal = parseFloat(specArray[idx+2]);
 	    currentHelper.maxVal = parseFloat(specArray[idx+3]);
 	    currentHelper.initScale =
-		parseInt(specArray[specArray.indexOf("magnification")+1]);
+		parseInt(oneAfter(specArray, "magnification"));
 	    idx = specArray.indexOf("swatches");
 	    if (idx >= 0) {
 		cMap = ColorMapFromSwatches(specArray.slice(idx+1,
@@ -303,10 +355,10 @@ function addTabFor(species, textContent) {
 	    }
 	    currentHelper.nswat = nswat;
 	    currentHelper.cMap = cMap;
-	    var captPath =  tclListOfDimty(specArray[1],1).join(" ");
+	    var captPath =  tclListOfDimty(specArray[1],0);
 	    currentHelper.acceptClick(idFromCapt(captPath));
 	    if (currentHelper.status == "setting_aspect") {
-		captPath =  tclListOfDimty(specArray[2],1).join(" ");
+		captPath =  tclListOfDimty(specArray[2],0);
 	    	currentHelper.acceptClick(idFromCapt(captPath));
 	    }
 	}
@@ -320,16 +372,17 @@ function createInitialHelpers() {
 // convert Simile XML-style helper setup into a set of tabs on the client
 
 // First get the XML from the server
-    $.ajax({
-	type: "POST",
-	url: "model_action.php",
-	data: { "base":fileBase, "act":"GetXMLHelperSetup"}
-    })
-	.done(function( returnedXML ) {
-	    if (returnedXML == '') return;
-	    parser=new DOMParser();
-	    hlpDoc=parser.parseFromString(returnedXML,"text/xml");
-	    if ($(hlpDoc).find("parsererror").length > 0) {
+//     $.ajax({
+// 	type: "POST",
+// 	url: "model_action.php",
+// 	data: { "base":fileBase, "act":"GetXMLHelperSetup"}
+//     })
+// 	.done(function( returnedXML ) {
+    // 	    if (returnedXML == '') return;
+    if (typeof(returnedXML) == 'undefined') return;
+    parser=new DOMParser();
+    helperXML = parser.parseFromString(returnedXML, "text/xml");
+	    if ($(helperXML).find("parsererror").length > 0) {
 		// alert("Helper setup file failed to parse as XML");
 		// no problem, we can deal with v5 mime shfs...
 		b64Bloc = returnedXML.substr(returnedXML.search("\n\n")+2);
@@ -342,14 +395,14 @@ function createInitialHelpers() {
 		}
 		return;
 	    }
-	    tclHelpers = $(hlpDoc).find("container");
+	    tclHelpers = $(helperXML).find("container");
 	    for (var i=0; i<tclHelpers.length; ++i) {
 		addTabFor(tclHelpers[i].attributes.type.value,
 			  tclHelpers[i].textContent);
 	    }
 // resize in case rows of tabs have squeezed panes
 	    resize_notebook();
-	}); // GetXMLHelperSetup
+// 	}); // GetXMLHelperSetup
 }
 
 /*
@@ -362,26 +415,28 @@ function createInitialHelpers() {
 
 function scaleTimes(tList, unit) {
     tArr = tList.split(" ");
-    cArr = [];
     for (i=0;i<tArr.length;++i) {
-	cArr.push(tArr[i]*unit);
+	Module.ccall('setstep', 'number', ['number', 'number', 'number'],
+		     [modelInstance, tArr[i]*unit, i+1]);
     }
-    return cArr.join(" ");
 }
+function js_from_tgts(note) {
+    var allResults = {};
+    for (var i=0; i<note.length;i++) {
+	if (note[i].constructor === Object) {
+	    resIndx = JSON.stringify(note[i]);
 
-function js_from_tgts(newComps) {
-    var newData = {};
-    $.post('model_action.php', {"base":fileBase, "act":"Query",
- 				"note":JSON.stringify(newComps)},
- 	   function(newDataCode) {
- 	       newDataArr = JSON.parse(newDataCode);
-	       for (j=0; j<newComps.length; ++j) {
-		   nItm = newComps[j]
-		   newData[nItm] = newDataArr[j];
-		   // do not use popups they may be incomplete
-	       }
- 	   }); // Query
-    return newData;
+	    if (note[i].format == "binary") {
+		allResults[resIndx] = binary_from_local(note[i].node, note[i].bottom, note[i].top);
+	    } else {
+		allResults[resIndx] = 'placeholder';
+	    }
+	} else {
+	    resIndx = note[i];
+	    allResults[resIndx] = js_from_local_model(resIndx, 1000000);
+	}
+    }
+    return allResults;
 }
 
 var resetDepth = -2, savedStart = "stop";
@@ -390,59 +445,42 @@ function model_reset() {
 	savedStart = "stop";
 	return; // exec loop will exit and call this again
     }
-    note = ofInterest();
-    $.ajax({
-	type: "POST",
-	url: "model_action.php",
-	data: { "base":fileBase, "act":"Reset",
-		"runlength":$("#rl").val()*timeUnit, 
-		"current":0, "step":scaleTimes($("#ts").val(),timeUnit),
-		"method":pipeBits.intMethod, "depth":resetDepth,
-		"note":JSON.stringify(note)}
-    })
-	.done(function( initVals ) {
-	    if (isFinite(savedStart)) { // model has been paused before run end
-		$("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
-			     -savedStart);
-	    }
-	    savedStart = "stop";
-	    $("#ct").val(0);
-	    $( "#progress" ).progressbar({ value: 0 });
+    scaleTimes($("#ts").val(),timeUnit);
 
-	    initState = JSON.parse(initVals);
-	    allResults = {};
-	    for (var i=0; i<note.length;i++) {
-		if (note[i].constructor === Object) {
-		    resIndx = JSON.stringify(note[i]);
-		} else {
-		    resIndx = note[i];
-		}
-		allResults[resIndx] = initState[i];
-	    }
-	    update_helpers(0, allResults, false);
-	    
-	    $.post('model_action.php', { "base":fileBase, "act":"Report"}, 
-		   function(data) {
-		       values_json = JSON.parse(data);
-		       // now, if this is initialization, then now is the time to set up the helpers
-		       // from the .shf, as they will not be expecting an immediate update
-		       if (resetDepth == -2) {
-			   createInitialHelpers();
-		       // finally we are ready to roll, wait is over
-			   $("#WaitDialog").dialog("close");
-		       }
-		       resetDepth = 0;
-		   }); // Report
-	}); // Reset
+    note = ofInterest();
+    var i_result = Module.ccall('reset', 'number',
+			['number', 'number', 'number', 'number', 'number'],
+			[modelType, modelInstance, 0.0, 0, resetDepth]);
+
+//     $.ajax({
+// 	type: "POST",
+// 	url: "model_action.php",
+// 	data: { "base":fileBase, "act":"Reset",
+// 		"runlength":$("#rl").val()*timeUnit, 
+// 		"current":0, "step":scaleTimes($("#ts").val(),timeUnit),
+// 		"method":pipeBits.intMethod, "depth":resetDepth,
+// 		"note":JSON.stringify(note)}
+//     })
+// 	.done(function( initVals ) {
+    if (isFinite(savedStart)) { // model has been paused before run end
+	$("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
+		     -savedStart);
+    }
+    savedStart = "stop";
+    $("#ct").val(0);
+    $( "#progress" ).progressbar({ value: 0 });
+
+    allResults = js_from_tgts(note);
+    update_helpers(0, allResults, false);
+    if (resetDepth == -2) {
+	createInitialHelpers();
+    }
+    resetDepth = 0;
 }
 
+var TEMPaimToStop = _malloc(8); // a double
 function model_step(current, start, end, span) {
     if (current >= end || savedStart != "run") {
-	// we are done, reset progress bar and update values
-	$.post('model_action.php', { "base":fileBase, "act":"Report"}, 
-	       function(data) {
-		   values_json = JSON.parse(data);
-	       }); // Report
 	goImage = document.getElementById("button_op");
 	goImage.src = "images/play.gif";
 	goImage.parentNode.onclick = function () { model_exec(); };
@@ -459,62 +497,42 @@ function model_step(current, start, end, span) {
 	newProgress = 0;
 	savedStart = "stop";
     } else {
-	log = parseFloat($("#le").val());
-	interval = Math.min(end-current,span);
+	log = parseFloat($("#de").val());
+	interval = Math.min(end-current,log);
 	newCurrent = current+interval;
 	newRemain = end-newCurrent;
+	setValue(TEMPaimToStop, newCurrent*timeUnit, 'double');
+
+	var intMethod = ['Euler', 'Runge-Kutta'].indexOf(pipeBits.intMethod);
+	Module.ccall('execute', 'number',
+		     ['number', 'number', 'number', 'number',
+		      'number', 'number', 'number', 'number'],
+		     [modelType, modelInstance, intMethod, current*timeUnit,
+		      TEMPaimToStop, 0, 0, 0]);
+	var halted = getValue(TEMPaimToStop, 'double')/timeUnit;
+	if (halted+1e-12 < newCurrent) {
+	    savedStart = 'pause';
+	    console.log("Stopped before", newCurrent, "at", halted);
+	}
+
+	// do next step after timeout so I can update the displays and have
+	// them actually show first
+	setTimeout(function () {
+	    model_step(newCurrent, start, end, span);
+	});
+
+	// now... we have all the values in memory, but there is a wee overhead
+	// converting them to object -- so only do this where of interest...
 	note = ofInterest();
-	execParms = {"base":fileBase, "act":"ExecuteMulti",
-		     "runlength":interval*timeUnit, "current":current*timeUnit,
-		     "step":scaleTimes($("#ts").val(),timeUnit),
-		     "method":pipeBits.intMethod,"log":log*timeUnit,
-		     "note":JSON.stringify(note)};
-	// console.log(JSON.stringify(execParms));
-	$.ajax({
-	    type: "POST",
-	    url: "model_action.php",
-	    data: execParms})
-
-	    .done(function(newVals) {
-		// console.log('Data returned ' + newVals);
-// now, process the values while fetching the next lot (after timeout in case
-// still processing last lot)
-		setTimeout(function () {
-		    model_step(newCurrent, start, end, span);
-		});
-
-		var execHistory = JSON.parse(newVals);
-		for (pt=0; pt<execHistory.length; pt++) {
-		    timePt = execHistory[pt].slice(-1)[0]; // last value
-		    var timeVal = parseFloat(timePt)/timeUnit;
-		    // console.log("Displaying results for time " + timeVal);
-		    allResults = {};
-		    for (var i=0; i<note.length;i++) {
-			if (note[i].constructor === Object) {
-			    resIndx = JSON.stringify(note[i]);
-			} else {
-			    resIndx = note[i];
-			}
-			allResults[resIndx] = execHistory[pt][i];
-		    }
-		    setTimeout(createfunc(timeVal, allResults, true), 0);
-		    // for no very obvious reason the updates are
-		    // happening in the right order (at least with
-		    // positive timesteps) but nothing appears on the
-		    // screen till all are done -- need setTimeout.
-		}
-	    }); // ExecuteMulti
-	$("#ct").val(newCurrent);
-	newProgress = 100*(newCurrent-start)/(end-start);
+	allResults = js_from_tgts(note);
+	update_helpers(halted, allResults, true);
+	$("#ct").val(halted);
+	newProgress = 100*(halted-start)/(end-start);
     }
     $("#rl").val(newRemain);
     $( "#progress" ).progressbar({
 	value: newProgress
     });
-}
-
-function createfunc(timeVal, allResults, connect) {
-    return function () {update_helpers(timeVal, allResults, connect)};
 }
 
 function model_pause() {
@@ -533,7 +551,9 @@ function model_exec() {
     savedStart = "run";
     goImage.parentNode.onclick = function () { model_pause(); };
     end = now+parseFloat($("#rl").val());
-    span = $("#ue").val()
+    span = $("#de").val()
+    scaleTimes($("#ts").val(),timeUnit);
+
     //  calibrate_helpers(end);
     model_step(now, start, end, span);
 }
@@ -556,25 +576,7 @@ function ofInterest() {
     }
     return rList;
 }
-/*
-// placeholder graph plot
 
-var pgplot_data = {
-"xScale": "time",
-"yScale": "linear",
-"type": "line",
-"main": [
-{
-"className": ".pizza",
-"data": []
-}
-]
-};
-var pgplot_opts = {
-"dataFormatX": function (x) { return d3.time.format('%j').parse(x); },
-"tickFormatX": function (x) { return d3.time.format('%x')(x); }
-};
-*/
 // actual addTab function: adds new tab using the input from the form above
 var helperTitles = {"plot":"Plotter","table":"Data table",
 		    "sliders":"Input sliders","params":"File parameters",
@@ -621,7 +623,7 @@ function new_helper(type) {
 }
 
 function update_helpers(time, latest, connect) {
-    console.log("Updating for time " + time);
+//    console.log("Updating for time " + time);
     for (var id in currentHelpers) {
 	//	try {
 	currentHelpers[id].display(time, latest, connect);
@@ -671,14 +673,6 @@ function select_for_helper(compId) {
   if (currentHelper != null) {
     currentHelper.acceptClick(compId);
   }
-}
-
-function HtmlEncode(s)
-{
-  var el = document.createElement("div");
-  el.innerText = el.textContent = s;
-  s = el.innerHTML;
-  return s;
 }
 
 function AddParamLineTo(parmTable, id, ParmTree, tool) {
@@ -749,7 +743,7 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 	cell.appendChild(monitor);
 
 	input.setAttribute("type", "range");
-	monitor.value = values_json[id];
+	monitor.value = js_from_local_model(id, 1000);
 	SetSliderValue(input, id, monitor.value);
         cb = new Function("zap", "transfer(zap.target, '" + uniq + "');");
 	input.addEventListener("input", cb);
@@ -788,9 +782,7 @@ function transfer(zapTgt, entry) {
 }
 
 function toModel(zapTgt, id) {
-    parmBlock = {};
-    parmBlock[model_json[id].captpath] = 'NOW ' + GetSliderValue(zapTgt);
-    sendValues(parmBlock);
+    sendValue(id, GetSliderValue(zapTgt));
 }
 
 function Sliders (port) {
@@ -868,7 +860,7 @@ DataTable.prototype.acceptClick = function (compId) {
     newLine = {"time":now};
     this.cumData.push(newLine);
   }
-  newLine[compId] = values_json[compId];
+    newLine[compId] = js_from_local_model(compId, 1000000);
   this.tgts.push(compId);
   this.columns.push({"sTitle":model_json[compId].text,"mData":compId,
 		     "sDefaultContent":"--"});
@@ -1049,22 +1041,18 @@ PlotXY.prototype.acceptClick = function (compId) {
       } else {
 	  newComps = this.tgts.slice(totes-2,totes);
       }
-      var that = this;
-      $.post('model_action.php', {"base":fileBase, "act":"Query",
-				  "note":JSON.stringify(newComps)},
-	     function(resp) {
-		 responses = JSON.parse(resp);
-		 addys = flatten('t', responses[0]);
-		 if (that.xval == 'time') {
+      responses = [];
+      for (var i=0; i<newComps.length; ++i) {
+	  responses.push(js_from_local_model(newComps[i], 1000000))
+      }
+      addys = flatten('t', responses[0]);
+      if (this.xval == 'time') {
 // oldys must become an array as maybe more than one var...
-		     that.oldys.push(addys);
-		 } else {
-		     that.oldys = addys;
-		     that.oldxs = flatten('t', responses[1]);
-		 }
-		 AdjustAxesFor(that, addys);
-		 
-	     });
+	  this.oldys.push(addys);
+      } else {
+	  this.oldys = addys;
+	  this.oldxs = flatten('t', responses[1]);
+      }
 		 
       if (this.xval == 'time') { // x axis is time
 	  if (this.status == "adding") {
@@ -1169,7 +1157,8 @@ PlotXY.prototype.acceptClick = function (compId) {
           .attr("id", this.port + "_tt")
 	  .attr("class", "tooltip")               
 	  .style("opacity", 0);
-
+      
+      AdjustAxesFor(this, addys);
   }
 }
   
@@ -1429,7 +1418,15 @@ PlotXY.prototype.olddisplay = function (time, latest) {
       this.g.setAttributeNS(null, "preserveAspectRatio", "none");
   }
 }
-var legenData = "+gADCBhAoICBAwgSKFjAoIGDBxAiSJhAoYKFCxgyaNjAoYOHDyBCiBhBooSJEyhSqFjBooWLFzBiyJhBo4aNGzhy6NjBo4ePH0CCCBlCpIiRI0iSKFnCpImTJ1CiSJlCpYqVK1iyaNnCpYuXL2DCiBlDpoyZM2jSqFnDpo2bN3DiyJlDp46dO3jy6NnDp4+fP4ACCRpEqJChQ4gSKVrEqJGjR5AiSZpEqZKlS5gyadrEqZOnT6BCiRpFqpSpU6hSqVrFqpWrV7BiyZpFq5atW7hy6drFq5evX8CCCRtGrJixY8iSKVvGrJmzZ9CiSZtGrZq1a9iyadvGrZv6t2/gwokbR66cuXPo0qlbx66du3fw4smbR6+evXv48unbx6+fv3//CESQQQgpxJBDEElEkUUYacSRRyCJRJJJKKnEkkswyUSTTTjpxJNPQAlFlFFIKcWUU1BJRZVVWGnFlVdgiUWWWWipxZZbcMlFl1146cWXX4AJRphhiCnGmGOQSUaZZZhpxplnoIlGmmmoqcaaa7DJRpttuOnGm2/ACUecccgpx5xz0ElHnXXYacedd+CJR5556KnHnnvwyUefffjpx59/AApY0EEJLdTQQxFNVNFFGW3U0UchjVTSSSmt1NJLMc1U00057dTTT0ENVdRRSS3V1FNRTfpV1VVZbdXVV2GNVdZZaa3V1ltxzVXXXXnt1ddfgQ1W2GGJLdbYY5FNVtllmW3W2WehjVbaaamt1tprsc1W22257dbbb8ENV9xxyS3X3HPRTVfdddlt19134Y1X3nnprdfee/HNV999+e3X338BDjRogYYimOiCjDr4aISSUljphZhquGmHnoIY6oikmnhqiqqy2OqLsMo4a4224pjrjrz6+GuQwhJZ7JHIKrlsk85CGe2U1Fp5bZbactntl+CKOW6Z5qKZ7prsuvlunPLSWe+d+Oq5b5/+AhrwgIQaeGiCijLY6IOQSjhphZZimOmGnHr4aYiikljqiaiq+rhqi67CGOuMtNp4a4668tjrj8AKOWyRxiKZ7JLMOvlslNJSWe2V2Gq5bZfeghnumOSaeW6a6rLZ7pvwyjlvnfbime+e/Pr5b6ACE1jogYgquGiDjkIY6YSUWnhphppy2OmHoIo4aommopjqiqy6+GqMstJY64246rhrj74CGeyQxBp5bJLKMtnsk9BKOW2V1mKZ7ZbcevltmOKSWe6Z6Kq5bpvuwhnvnPTaeW+e+vLZ758AE5TrtGYw2XlNYbYTm8N0ZzaJ+U5tFhOe2zRmPLl5THl2E5nz9GYy6flNZdYTnMu0ZziZeU9xNhOf43RmPsn5TH2WE5r7NGdrNPl5Tmn2E53T9Gc6qflPdVYTYNYKFruuJax2YWtY7soWsd6lrWLBa1vGihe3jiWvbiFrXt5KFr2+pax6gWtZ9goXs+4lrmbha1zOyhe5nqWvckFrX+aKFr/OJa1+oWta/koXtf6lrmoACwgAOw==";
+// 256*16 sweep as gif data
+// var legenData = "+gADCBhAoICBAwgSKFjAoIGDBxAiSJhAoYKFCxgyaNjAoYOHDyBCiBhBooSJEyhSqFjBooWLFzBiyJhBo4aNGzhy6NjBo4ePH0CCCBlCpIiRI0iSKFnCpImTJ1CiSJlCpYqVK1iyaNnCpYuXL2DCiBlDpoyZM2jSqFnDpo2bN3DiyJlDp46dO3jy6NnDp4+fP4ACCRpEqJChQ4gSKVrEqJGjR5AiSZpEqZKlS5gyadrEqZOnT6BCiRpFqpSpU6hSqVrFqpWrV7BiyZpFq5atW7hy6drFq5evX8CCCRtGrJixY8iSKVvGrJmzZ9CiSZtGrZq1a9iyadvGrZv6t2/gwokbR66cuXPo0qlbx66du3fw4smbR6+evXv48unbx6+fv3//CESQQQgpxJBDEElEkUUYacSRRyCJRJJJKKnEkkswyUSTTTjpxJNPQAlFlFFIKcWUU1BJRZVVWGnFlVdgiUWWWWipxZZbcMlFl1146cWXX4AJRphhiCnGmGOQSUaZZZhpxplnoIlGmmmoqcaaa7DJRpttuOnGm2/ACUecccgpx5xz0ElHnXXYacedd+CJR5556KnHnnvwyUefffjpx59/AApY0EEJLdTQQxFNVNFFGW3U0UchjVTSSSmt1NJLMc1U00057dTTT0ENVdRRSS3V1FNRTfpV1VVZbdXVV2GNVdZZaa3V1ltxzVXXXXnt1ddfgQ1W2GGJLdbYY5FNVtllmW3W2WehjVbaaamt1tprsc1W22257dbbb8ENV9xxyS3X3HPRTVfdddlt19134Y1X3nnprdfee/HNV999+e3X338BDjRogYYimOiCjDr4aISSUljphZhquGmHnoIY6oikmnhqiqqy2OqLsMo4a4224pjrjrz6+GuQwhJZ7JHIKrlsk85CGe2U1Fp5bZbactntl+CKOW6Z5qKZ7prsuvlunPLSWe+d+Oq5b5/+AhrwgIQaeGiCijLY6IOQSjhphZZimOmGnHr4aYiikljqiaiq+rhqi67CGOuMtNp4a4668tjrj8AKOWyRxiKZ7JLMOvlslNJSWe2V2Gq5bZfeghnumOSaeW6a6rLZ7pvwyjlvnfbime+e/Pr5b6ACE1jogYgquGiDjkIY6YSUWnhphppy2OmHoIo4aommopjqiqy6+GqMstJY64246rhrj74CGeyQxBp5bJLKMtnsk9BKOW2V1mKZ7ZbcevltmOKSWe6Z6Kq5bpvuwhnvnPTaeW+e+vLZ758AE5TrtGYw2XlNYbYTm8N0ZzaJ+U5tFhOe2zRmPLl5THl2E5nz9GYy6flNZdYTnMu0ZziZeU9xNhOf43RmPsn5TH2WE5r7NGdrNPl5Tmn2E53T9Gc6qflPdVYTYNYKFruuJax2YWtY7soWsd6lrWLBa1vGihe3jiWvbiFrXt5KFr2+pax6gWtZ9goXs+4lrmbha1zOyhe5nqWvckFrX+aKFr/OJa1+oWta/koXtf6lrmoACwgAOw==";
+// now as bmp
+var legenData = "";
+for (var r=0; r<16; ++r) {
+    for (var c=0; c<256; ++c) {
+	legenData += String.fromCharCode(c);
+    }
+}
 
 function AlterRange(that, factor) {
     that.bottom = that.bottom * factor;
@@ -1471,7 +1468,7 @@ function ColorMapFromPoints (n, bot, mid, top) {
 		var r = Math.round(fract*hi.R+(1-fract)*lo.R);
 		var g = Math.round(fract*hi.G+(1-fract)*lo.G);
 		var b = Math.round(fract*hi.B+(1-fract)*lo.B);
-		data += String.fromCharCode(r, g, b);
+		data += String.fromCharCode(b, g, r, 0);
 	    }
 	}
 	lo = hi;
@@ -1485,7 +1482,7 @@ function ColorMapFromSwatches (swList) {
 	c = BytesFromHex(swList[i]);
 	for (var j=Math.floor(i*256/swList.length);
 	     j<Math.floor((i+1)*256/swList.length); ++j) {
-	    data += String.fromCharCode(c.R, c.G, c.B);
+	    data += String.fromCharCode(c.B, c.G, c.R, 0);
 	}
     }
     return data;
@@ -1527,14 +1524,39 @@ function Polygon (port) {
 function colorFrom(map, line) {
     colSpec = "#";
     line = Math.min(Math.max(line, 0), 255);
-    for (j=0;j<3;++j) {
-	s = map.charCodeAt(3*line+j).toString(16);
+    for (j=2;j>=0;--j) {
+	s = map.charCodeAt(4*line+j).toString(16);
 	if (s.length<2)
 	    colSpec = colSpec + "0"; // pad
 	colSpec = colSpec + s;
     }
 
     return colSpec;
+}
+
+function BuildBMHeader(depth, width, height) {
+    var dataLen = 4*Math.ceil(width/4)*height*depth/8;
+    var hdr = depth <= 8 ? 54 + Math.pow(2, depth)*4 : 54;
+	       
+   //BMP Header
+    headerData  = 'BM';                          // ID field
+    headerData += conv(hdr + dataLen);     // BMP size
+    headerData += conv(0);                       // unused
+    headerData += conv(hdr);                  // pixel data offset
+  
+    //DIB Header
+    headerData += conv(40);                      // DIB header length
+    headerData += conv(width);                  // image width
+    headerData += conv(height);                  // image height
+    headerData += String.fromCharCode(1, 0);     // colour panes
+    headerData += String.fromCharCode(depth, 0); // bits per pixel
+    headerData += conv(0);                       // compression method
+    headerData += conv(dataLen);              // size of the raw data
+    headerData += conv(2835);                    // horizontal print resolution
+    headerData += conv(2835);                    // vertical print resolution
+    headerData += conv(0);                       // colour palette, 0 == 2^n
+    headerData += conv(0);                       // important colours
+    return headerData;
 }
 
 Polygon.prototype.acceptClick = function (nodeId) {
@@ -1548,22 +1570,7 @@ Polygon.prototype.acceptClick = function (nodeId) {
 	this.status = "getting_y_coords";
 	d3.select('#' + this.port + '_instruct').html("Select component with values for Y coordinates of verices");
     } else {
-    headerData = 'GIF89a';
-    headerData += conv16(256);                  // image width
-    headerData += conv16(8);                  // image height
-
-    headerData += String.fromCharCode(0xf7, 0, 0);
-    // colour table, background colour, pixel aspect ratio
-
-    //black -> red -> white
-    headerData += this.cMap;
-
-    headerData += String.fromCharCode(0x2c); // image descriptor
-    headerData += conv16(0);                  // NW corner position of image
-    headerData += conv16(0);                  // in logical screen
-    headerData += conv16(256);                  // image width
-    headerData += conv16(8);                  // image height
-    headerData += String.fromCharCode(0, 8);
+	headerData = BuildBMHeader(8, 256, 16) + this.cMap;
 
     keyDiv = document.createElement("div");
     keyDiv.style.width = "100%";
@@ -1582,8 +1589,8 @@ Polygon.prototype.acceptClick = function (nodeId) {
     keyDiv.appendChild(this.lowLabel);
     keyDiv.appendChild(this.legend);
     keyDiv.appendChild(this.hiLabel);
-    this.legend.src = 'data:image/gif;base64,'
-	+ btoa(headerData) + legenData;
+    this.legend.src = 'data:image/bm;base64,'
+	    + btoa(headerData + legenData);
     this.legend.alt = "Something has gone terrubly winf";
 
 	this.ypts = nodeId;
@@ -1593,11 +1600,16 @@ Polygon.prototype.acceptClick = function (nodeId) {
 	lookAt = [this.tgts[0],this.xpts,this.ypts];
 	newTitle = model_json[this.tgts[0]].text + ' -- polygon map';
 	$('#tabs a[href=#' + this.port + ']').text(newTitle);
-	$.post('model_action.php', {"base":fileBase, "act":"Query",
-				    "note":JSON.stringify(lookAt)},
-	   function(resp) {
+//	trytopost('model_action.php', {"base":fileBase, "act":"Query",
+//				    "note":JSON.stringify(lookAt)},
+//	   function(resp) {
+//	       responses = JSON.parse(resp);
+	responses = [];
+	for (var i=0; i<lookAt.length;++i) {
+	    responses.push(js_from_local_model(lookAt[i], 1000000))
+	}
+
 	       colScaler = 255/(that.top-that.bottom); 
-	       responses = JSON.parse(resp);
 	       colours = flatten('m', responses[0]);
 	       for (var inds in colours) {
 		   indArr = inds.split(",");
@@ -1631,7 +1643,7 @@ Polygon.prototype.acceptClick = function (nodeId) {
 	       grpAttr = "translate("+-initScale*bbox.x+","+-initScale*bbox.y+
 		   ")scale("+initScale+","+initScale+")";
 	       that.scaleGrp.attr("transform",grpAttr);
-	   }); // Query
+//	   }); // Query
     } 
 }
 
@@ -1711,7 +1723,6 @@ Grid5.prototype.resize = function (x, y) {
 }
 
 Grid5.prototype.acceptClick = function (nodeId) {
-    var that = this; // no chance..
     if (this.status == "initializing") {
 	this.tgts[0] = {"format":"binary","node":nodeId,
 			"bottom":this.minVal,"top":this.maxVal,
@@ -1731,7 +1742,7 @@ Grid5.prototype.acceptClick = function (nodeId) {
     } else if (this.status == "setting_aspect") {
 	// now we need to get the unique value count and the grid data, and
 	// draw once we have both...later...also how ro get n of values?
-// 	$.post('model_action.php',
+// 	trytopost('model_action.php',
 // 	       {"base":fileBase, "act":"Query",
 // 		"note":JSON.stringify({"node":nodeId, "format":"distinct"})},
 // 	       function(distCount) {
@@ -1751,75 +1762,81 @@ Grid5.prototype.acceptClick = function (nodeId) {
     newTitle = model_json[this.tgts[0].node].text + ' -- spatial grid';
     $('#tabs a[href=#' + this.port + ']').text(newTitle);
     note.push(this.tgts[0]);
-    $.post('model_action.php', {"base":fileBase, "act":"Query",
-				"note":JSON.stringify(note)},
-	   function(resp) {
-	       responses = JSON.parse(resp);
-	       if (that.status == "setting_aspect") {
-		   that.width = parseInt(responses[0]);
-		   that.height = Math.floor(that.height/that.width);
+    
+//    trytopost('model_action.php', {"base":fileBase, "act":"Query",
+//				"note":JSON.stringify(note)},
+//	   function(resp) {
+//	       responses = JSON.parse(resp);
+
+    responses = js_from_tgts(note);
+	       if (this.status == "setting_aspect") {
+		   this.width = parseInt(responses[note[0]]);
+		   this.height = Math.floor(this.height/this.width);
 		   arrInd = 1;
 	       } else {
 		   arrInd = 0;
 	       }
 	       // GIF header
-	       data = 'GIF89a';
-	       data += conv16(that.width);                  // image width
-	       data += conv16(that.height);                  // image height
+//	       data = 'GIF89a';
+//	       data += conv16(that.width);                  // image width
+//	       data += conv16(that.height);                  // image height
 	       
-	       data += String.fromCharCode(0xf7, 0, 0);
+//	       data += String.fromCharCode(0xf7, 0, 0);
 	       // colour table, background colour, pixel aspect ratio
 	       
-	       //black -> red -> white
-	       data += that.cMap;
+    //BMP Header
+    data = BuildBMHeader(8, this.width, this.height) + this.cMap;
 
 	       // now add a graphix control xtn to declare 00 transparent
-	       data += String.fromCharCode(0x21, 0xf9, 0x04, 0x01,
-					   0,0,0,0);
+	       // data += String.fromCharCode(0x21, 0xf9, 0x04, 0x01,
+	// 				   0,0,0,0);
 	       // right that's 789 bits and we have 11 to go making 800 --
 	       // nice and round but we want a multiple of 3 to hit a
 	       // base64 char boundary, so add a comment extn to do it
-	       data += String.fromCharCode(0x21, 0xfe, 9);
-	       data += "SimiLive!";
-	       data += String.fromCharCode(0);
+	       // data += String.fromCharCode(0x21, 0xfe, 9);
+	       // data += "SimiLive!";
+	       // data += String.fromCharCode(0);
 	       
-	       data += String.fromCharCode(0x2c); // image descriptor
-	       data += conv16(0);                 // NW corner position of image
-	       data += conv16(0);                 // in logical screen
-	       data += conv16(that.width);                  // image width
-	       data += conv16(that.height);                  // image height
-	       data += String.fromCharCode(0, 8); //  no-local-colour-table,
+	       // data += String.fromCharCode(0x2c); // image descriptor
+	       // data += conv16(0);                 // NW corner position of image
+	       // data += conv16(0);                 // in logical screen
+	       // data += conv16(that.width);                  // image width
+	       // data += conv16(that.height);                  // image height
+	       ///data += String.fromCharCode(0, 8); //  no-local-colour-table,
 	       // lzw-minimum-code-size
 	       
-	       that.headerGIF = 'data:image/gif;base64,' + btoa(data);
+	       this.headerBMP = data;
 
-	       that.status = "displaying";
-	       d3.select('#' + that.port + '_img')
-		   .attr("width",that.width).attr("height",that.height)
-		   .attr("transform","translate(0," + that.height + ")scale(1,-1)")
-		   .attr("xlink:href", that.headerGIF + responses[arrInd]);
-	       if (that.hex) {
-		   d3.select('#' + that.port + '_img')
+	       this.status = "displaying";
+	       d3.select('#' + this.port + '_img')
+		   .attr("width",this.width).attr("height",this.height)
+		   // .attr("transform","translate(0," + this.height + ")scale(1,-1)")
+	.attr("xlink:href",  'data:image/bmp;base64,' + btoa(this.headerBMP + responses[JSON.stringify(note[arrInd])]));
+	       if (this.hex) {
+		   d3.select('#' + this.port + '_img')
 		       .attr("transform","scale(1.732,1.5)"); 
 	       }
-	   }); // Query
+//	   }); // Query
 
-    headerData = 'GIF89a';
-    headerData += conv16(256);                  // image width
-    headerData += conv16(8);                  // image height
+    headerData = BuildBMHeader(8, 256, 16) + this.cMap;
+	       //black -> red -> white
 
-    headerData += String.fromCharCode(0xf7, 0, 0);
+    // headerData = 'GIF89a';
+    // headerData += conv16(256);                  // image width
+    // headerData += conv16(8);                  // image height
+
+    // headerData += String.fromCharCode(0xf7, 0, 0);
     // colour table, background colour, pixel aspect ratio
 
     //black -> red -> white
-    headerData += this.cMap;
+    // headerData += this.cMap;
 
-    headerData += String.fromCharCode(0x2c); // image descriptor
-    headerData += conv16(0);                  // NW corner position of image
-    headerData += conv16(0);                  // in logical screen
-    headerData += conv16(256);                  // image width
-    headerData += conv16(8);                  // image height
-    headerData += String.fromCharCode(0, 8);
+    // headerData += String.fromCharCode(0x2c); // image descriptor
+    // headerData += conv16(0);                  // NW corner position of image
+    // headerData += conv16(0);                  // in logical screen
+    // headerData += conv16(256);                  // image width
+    // headerData += conv16(8);                  // image height
+    // headerData += String.fromCharCode(0, 8);
 
     keyDiv = document.createElement("div");
     keyDiv.style.width = "100%";
@@ -1841,8 +1858,8 @@ Grid5.prototype.acceptClick = function (nodeId) {
     keyDiv.appendChild(this.lowLabel);
     keyDiv.appendChild(this.legend);
     keyDiv.appendChild(this.hiLabel);
-    this.legend.src = 'data:image/gif;base64,'
-	+ btoa(headerData) + legenData;
+    this.legend.src = 'data:image/bmp;base64,'
+	+ btoa(headerData + legenData);
     this.legend.alt = "Something has gone terrubly winf";
     resize_notebook();
 }
@@ -1859,7 +1876,7 @@ Grid5.prototype.display = function (time, latest, connect) {
     
     arr = latest[JSON.stringify(this.tgts[0])];
     d3.select('#' + this.port + '_img')
-	.attr("xlink:href", this.headerGIF + arr);
+	.attr("xlink:href", 'data:image/bmp;base64,' + btoa(this.headerBMP + arr));
     this.lowLabel.innerHTML = this.tgts[0].bottom.toPrecision(3);
     this.hiLabel.innerHTML = this.tgts[0].top.toPrecision(3);
 }
@@ -1954,18 +1971,83 @@ function populateStructs() {
 
 // OK, now use AJAX to get a string of values
 
-$.post('model_action.php', { "base":fileBase, "act":"Describe"}, 
-      function(data) {
+//trytopost('model_action.php', { "base":fileBase, "act":"Describe"}, 
+//      function(data) {
+//
+//	  try {
+//	      model_json = JSON.parse(data);
+//	  } catch(err) {
+//	      console.log("Failed to parse: " + data);
+//	  }
+    
+  /* NEW SECTION: Get and display metadata from the model */
+  /********************************************************/
 
-	  try {
-	      model_json = JSON.parse(data);
-	  } catch(err) {
-	      console.log("Failed to parse: " + data);
-	  }
+var nodecount=Module.ccall('get_node_count','number',['number'],[modelType]);
+console.log("This model has " + nodecount + " components.");
+
+var name = _malloc(255); // string
+var ndims = _malloc(128); // 32 ints
+var types = _malloc(256); // 32 ptrs
+
+model_json = {};
+var class_strs = ["SUBMODEL", "VARIABLE", "COMPARTMENT", "FLOW", "CONDITION",
+		  "CREATION", "REPRODUCTION", "IMMIGRATION", "LOSS", "ALARM",
+		  "EVENT", "SQUIRT", "STATE"];
+var eval_strs = ["EXOGENOUS", "DERIVED", "TABLE", "INPUT", "GHOST", "LIMIT",
+		 "RECALL", "BLOCK", "POPULATION", "GRID", "HONEYCOMB"];
+for (ncount=1; ncount<nodecount; ++ncount) {
+    var nodedata = Module.ccall('get_data_line', 'number', ['number','number'],
+				[modelType, ncount]);
+    var nd_name = Module.ccall('name_from_nodlin', 'string', ['number'],
+			       [nodedata]);
+    var nd_eqn = Module.ccall('eqn_from_nodlin', 'string', ['number'],
+			       [nodedata]);
+    // console.log("Checking component with id " + nd_name);
+
+    Module.ccall('searchinfo', 'number',
+		 ['string', 'number', 'number', 'number', 'number'],
+		 [nd_name, modelType, name, ndims, types]);
+    var cp = Pointer_stringify(name);
+    // console.log("Checking component with caption path " + Pointer_stringify(name));
+
+    // now get parent id...
+    var lIO = cp.lastIndexOf('/');
+    var pcp = cp.slice(0,lIO);
+    var txt = cp.slice(lIO+1);
+    if (pcp.length) {
+	parentId = Module.ccall('getNodeId', 'string', ['number','string'],
+			   [modelType, pcp]);
+    } else {
+	parentId = '#';
+    }
+    var dposn = 0;
+    var dims = [];
+    do {
+	dims[dposn] = getValue(ndims+4*dposn, 'i32');
+       } while (dims[dposn++]);
+    var nd_class = Module.ccall('class_from_nodlin', 'number', ['number'],
+			       [nodedata]);
+    var type = Module.ccall('type_from_nodlin', 'number', ['number'],
+			       [nodedata]);
+    var min = Module.ccall('min_from_nodlin', 'number', ['number'],
+			       [nodedata]);
+    var max = Module.ccall('max_from_nodlin', 'number', ['number'],
+			       [nodedata]);
+    var evl = Module.ccall('eval_from_nodlin', 'number', ['number'],
+			       [nodedata]);
+    model_json[nd_name] = {"parent":parentId,"icon":"images/"
+			   + class_strs[nd_class] + ".gif","text":txt,
+			   "captpath":cp,"equation":nd_eqn,
+			   "min":min, "max":max, "eval":eval_strs[evl],
+			   "units":type_strs[-type],"dims":dims};
+}
+
 // If there are file parameters, add a page to the tabbed notebook to display
 // them (make this a function as user may kill and re-create)
 // remove hook from tcl core when this is working
-	   treeData = [];
+
+           treeData = [];
 	   fvParms = [];
 	   needInput = 0;
 	   for (var id in model_json) {
@@ -1973,8 +2055,9 @@ $.post('model_action.php', { "base":fileBase, "act":"Describe"},
 	      treeLine.id = id;
 	      treeData.push(treeLine);
 
-	      if (model_json[id].eval == "INPUT" || 
-		  model_json[id].eval == "TABLE") {
+	       if ((model_json[id].eval == "INPUT" || 
+		    model_json[id].eval == "TABLE") &&
+		  model_json[id].units != "VALUELESS") {
 		   fvParms.push(id);
 		  if (model_json[id].eval == "TABLE") {
 		      needInput = 1;
@@ -1989,7 +2072,7 @@ $.post('model_action.php', { "base":fileBase, "act":"Describe"},
 	      })
 	      .on('hover_node.jstree',function(e,data){
 		  // console.log('Hovered ' + data.node.id);
-		  $("#"+data.node.id).prop('title', values_json[data.node.id]);
+		  $("#"+data.node.id).prop('title', prettify(js_from_local_model(data.node.id, 1000)));
 	      })
 	   // create the instance
 	      .jstree({ 'core' : {
@@ -1999,58 +2082,329 @@ $.post('model_action.php', { "base":fileBase, "act":"Describe"},
 // This will ultimately load the parameter file (if there is one) and
 // get a list of components that still need values, or have bad values,
 // for flagging in the parameter dialogue
-	  $.post('model_action.php', {"act":"LoadSPF", "base" : fileBase}, 
-		 function(unfilled) {
-console.log("Params needed: " + needInput + ", missing: " + unfilled);
-		     if (needInput && JSON.parse(unfilled).length) {
-			 new_helper("params");
-		     }
-		     model_reset();
-		 }); // LoadSPF
-      }); // Describe
+//	  trytopost('model_action.php', {"act":"LoadSPF", "base" : fileBase}, 
+//		 function(unfilled) {
+//console.log("Params needed: " + needInput + ", missing: " + unfilled);
+//		     if (needInput && JSON.parse(unfilled).length) {
+//			 new_helper("params");
+//		     }
+//		     model_reset();
+//		 }); // LoadSPF
+//      }); // Describe
 
+    needInput = 0; // hopefully
+}
+
+var ptBytes = _malloc(8);
+var ptDims = _malloc(8);
+function parameterizeContents(smNode, prefix) {
+    var sets = smNode.children
+    for (var i=0; i<sets.length; ++i) {
+	if (sets[i].nodeName == 'variables') {
+	    var subsets = sets[i].children;
+	    for (var j=0; j<subsets.length; ++j) {
+		var pmCapt = prefix+'/'+subsets[j].attributes.label.value;
+		if (subsets[j].nodeName == 'single_value') {
+		    sendValue(idFromCapt(pmCapt),
+			      subsets[j].attributes.val.value);
+		} else if (subsets[j].nodeName == 'byte_array') {
+		    // results of sending string direct are poor, so...
+		    var rawData = atob(subsets[j].textContent);
+		    var fpHandle = fvHandles[idFromCapt(pmCapt)];
+		    if (subsets[j].children[0].attributes.val.value == "TIME") {
+			// time series...try to emulate code in ame_cmx
+			var squirtPtr = 0;
+			var count = Module.ccall('param_array_size', 'number',
+						 ['number'], [fpHandle]);
+			while (squirtPtr < rawData.length) {
+			    for (var k=0; k<8; ++k) {
+				setValue(aligner+k,
+					 rawData.charCodeAt(squirtPtr+k), 'i8');
+			    }
+			    seekTime = getValue(aligner, 'double');
+			    // console.log('Loading block for', seekTime);
+			    Module.ccall('create_time_point', 'number',
+					 ['number', 'number'],
+					 [fpHandle, seekTime]);
+			    Module.ccall('get_timepoint_ptr_and_dims', 'number',
+					 ['number','number','number','number'],
+					 [fpHandle, seekTime, ptBytes, ptDims]);
+			    var buffer = getValue(ptBytes, '*');
+			    squirtPtr += 8;
+			    for (var k=0; k<count; ++k) {
+				setValue(buffer+k,
+					 rawData.charCodeAt(squirtPtr+k), 'i8');
+			    }
+			    // console.log('Target is', buffer, '1st val',
+			    // 		getValue(buffer, 'double')); // or...
+			    squirtPtr += count;
+
+			    // extras
+			    var time = Module.ccall('get_wrap_ptr', 'number',
+						   ['number'], [fpHandle]);
+			    setValue(mtd, 0, 'double'); // default no wrap
+			    var mtd = Module.ccall('get_fill_ptr', 'number',
+						   ['number'], [fpHandle]);
+			    setValue(mtd, 0, 'i32'); // default use_last
+			    uftsi = subsets[j].attributes.interval.value;
+			    if (uftsi == undefined) {
+				uftsi = 1;
+			    }
+			    var time = Module.ccall('get_interval_ptr','number',
+						    ['number'], [fpHandle]);
+			    setValue(time, timeLib[uftsi], 'double');
+			}
+			
+		    } else {
+			var buffer = _malloc(rawData.length);
+			for (var k=0; k<rawData.length; ++k) {
+			    setValue(buffer+k, rawData.charCodeAt(k), 'i8');
+			}
+			var zpd = Module.ccall('paste_param_data', 'number',
+					   ['number', 'number'],
+					   [fpHandle, buffer]);
+			_free(buffer);
+		    }
+		    console.log('Data for', pmCapt, 'at', zpd);
+		}
+	    }
+	} else if (sets[i].nodeName == 'submodels') {
+	    var subsets = sets[i].children;
+	    for (var j=0; j<subsets.length; ++j) {
+		if (subsets[j].nodeName == 'submodel') {
+		    parameterizeContents(subsets[j], prefix+'/'+
+					 subsets[j].attributes.label.value);
+		}
+	    }
+	}
+    }
 }
 
 function loadParams() {
-  parmBlock = {};
-  for (i=0;i<fvParms.length;i++) {
-    id = fvParms[i];
-    input = "#prm_" + id;
-    parmBlock[model_json[id].captpath] = $(input).val();
-  }
-
-  sendValues(parmBlock);
+    for (i=0;i<fvParms.length;i++) {
+	id = fvParms[i];
+	input = "#prm_" + id;
+	sendValue(id, JSON.parse($(input).val()));
+    }
+    
+    resetDepth = Math.min(-1,resetDepth);
+    model_reset();
 }
 
-function sendValues(parmBlock) {
-//alert(JSON.stringify(parmBlock));
-  $.ajax({
-    type: "POST",
-    url: "model_action.php",
-      data: { "base":fileBase, "act":"Parameterize", 
-	      "data" : JSON.stringify(parmBlock)}
-    })
-      .done(function(retsStr) {
-	  rets = JSON.parse(retsStr);
-          if (rets != '') {
-	    alert(rets);
-          } else {
-	    resetDepth = -1;
-          }
-// enable model execution if not already (if all vals OK)
-    }); // Parameterize
-//    resetDepth = -1;
-// needed because setting in callback fn above seems oddly to be out of scope
+var currentParamIndices = _malloc(128); // 32 * int
+function copy_params (bloc, paramDims, nCurInds, remDims, val) {
+    if (remDims) {
+	var curBound = getValue(paramDims+nCurInds, 'i32');
+	for (var i=0; i<curBound; ++i) {
+	    setValue(currentParamIndices+nCurInds, i+1, 'i32');
+	    copy_params(bloc, paramDims, nCurInds+4, remDims-1, val[i]);
+	}
+    } else {
+	//console.log('Setting: dim1', getValue(paramDims+4, 'i32'), 'ind1',
+	//	    getValue(currentParamIndices, 'i32'), 'val', val);
+	Module.ccall('set_bloc_element', 'number',
+		     ['number', 'number', 'number', 'number'],
+		     [bloc, paramDims, currentParamIndices, val]);
+    }
+}
+
+var pParamDims = _malloc(8); // int*
+function sendValue(comp, value) {
+    //alert(JSON.stringify(parmBlock));
+    var dimty = model_json[comp].dims.indexOf(0);
+    setValue(currentParamIndices+4*dimty, 0, 'i32'); // terminates indices
+    var bloc = Module.ccall('get_param_ptr_and_dims', 'number',
+			    ['number', 'number'],
+			    [fvHandles[comp], pParamDims]);
+    copy_params(bloc, getValue(pParamDims, '*'), 0, dimty, value);
 }
 
 // window.onbeforeunload = function(e) {
 //   return 'Warning: model state will be lost if you leave the site!';
 // };
-window.onunload = function(e) {
-    $.post('model_action.php', { "act":"Exit", "base":fileBase});
-};
+// window.onunload = function(e) {
+//     trytopost('model_action.php', { "act":"Exit", "base":fileBase});
+// };
 
 var pipeBits;
+
+// functions for interacting with local emscripten model
+
+// extras
+function MakeSubBlockSizes (dims) {
+    var usedDims = 1;
+    var dim0 = getValue(dims, 'i32');
+    msbs_dims.push(dim0);
+    var tName = type_strs[-dim0];
+    if (dim0 < -5) { // enumerated type etc
+	tName = "INTEGER";
+    }
+    if (tName != undefined) {
+	sizes = [];
+	switch (tName) {
+	case "SPARSEARRAY":
+	    msbs_dims.push(getValue(dims+4, 'i32')); // transcribe index count
+	    usedDims = 2; // and fall through
+	case "OWNSIZED":
+	    sizes = MakeSubBlockSizes(dims+4*usedDims);
+	    size = 8; // sizeof(sizeAndPtr);
+	    break;
+	case "REAL":
+	    size = 8; // sizeof(double);
+	    break;
+	case "INTEGER":
+	    size = 4; // sizeof(int);
+	    break;
+	case "FLAG":
+	    size = 1; // sizeof(BOOLEAN);
+	    break;
+	case "VALUELESS":
+	    size = 0;
+	    break;
+	}
+    } else { // dimension
+	sizes = MakeSubBlockSizes(dims+4);
+	size = sizes[0] * dim0;
+    }
+    sizes.splice(0,0,size);
+    return sizes;
+}
+
+var aligner = _malloc(8); // aligned place
+function brutally_align(ragged) {
+    // will probably have to do something like below for all, since
+    // booleans can cause odd alignment
+    setValue(aligner, getValue(ragged, 'i32'), 'i32');
+    setValue(aligner+4, getValue(ragged+4, 'i32'), 'i32');
+}
+
+function convert_to_js(dims, subBlocks, blob, count) {
+    var localObj;
+    var newBlob;
+    if (dims[0] > 0) { // it's an array bound
+	localObj = append_array_members(dims[0], dims.slice(1),
+					subBlocks.slice(1), blob, count);
+    } else {
+	switch (type_strs[-dims[0]]) {
+	case "OWNSIZED":
+	    membership = Module.ccall('size_from_sznptr', 'number',
+				      ['number'], [blob]);
+	    newBlob = Module.ccall('ptr_from_sznptr', 'number',
+				      ['number'], [blob]);
+	    localObj = append_array_members(membership, dims.slice(1),
+					    subBlocks.slice(1), newBlob, count);
+	    break;
+	case "SPARSEARRAY": 
+	    // need clevers to nest indices; see old stuff
+	    membership = Module.ccall('size_from_sznptr', 'number',
+				      ['number'], [blob]);
+	    newBlob = Module.ccall('ptr_from_sznptr', 'number',
+				      ['number'], [blob]); // done
+	    indices = [];
+	    if (count[0]<0) { // start at last index group and work back
+		newBlob = newBlob+(membership-1)*(dims[1]*4+subBlocks[1]);
+	    }
+	    pMemBlb = {'mem':membership, 'blb':newBlob};
+// console.log("oblb", blob, JSON.stringify(pMemBlb), "vm dims", dims[1]);
+	    localObj = append_list_members(dims[1], 0, dims.slice(2), indices,
+					   subBlocks.slice(1), pMemBlb, count);
+	    break;
+	case "VALUELESS":
+	    localObj = 'sm';
+	    count[0] -= count[0]>0?1:-1;
+	    break;
+	case "REAL":
+	    brutally_align(blob);
+	    localObj = getValue(aligner, 'double');
+	    count[0] -= count[0]>0?1:-1;
+	    break;
+	case "FLAG":
+	    localObj = getValue(blob, 'i8');
+	    count[0] -= count[0]>0?1:-1;
+	    break;
+	default: /* INTEGER or ENUM(*) */
+	    localObj = getValue(blob, 'i32');
+	    count[0] -= count[0]>0?1:-1;
+	    break;
+	}
+    }
+    return localObj;
+}
+
+function append_list_members(dimty, depth, dims, indices, 
+			     subBlocks, pMemBlb, toGet) {
+  var localObj;
+
+  dir = toGet[0]>0?1:-1;
+  if (depth==dimty) {
+    if (pMemBlb.mem) {
+      pMemBlb.blb += dimty*4;
+      localObj = convert_to_js(dims, subBlocks, pMemBlb.blb, toGet);
+      if (dir>0) {
+	  pMemBlb.blb += subBlocks[0];
+      } else {
+	  pMemBlb.blb -= (subBlocks[0]+2*dimty*4);
+      }
+      --pMemBlb.mem;
+    } else {
+	localObj = {};
+    }
+  } else {
+      localObj = {};
+      while (pMemBlb.mem && toGet[0]) {
+	  for (count=0; count<depth; ++count) {
+	      if (getValue(pMemBlb.blb+4*count,'i32')!=indices[count])
+		  return(localObj);
+	  }
+	  indices[depth] = getValue(pMemBlb.blb+4*depth,'i32');
+	  var localSubObj = append_list_members(dimty, depth+1, dims, indices,
+						subBlocks, pMemBlb, toGet);
+	  if (localSubObj != {}) {
+	      localObj[indices[depth].toString()] = localSubObj;
+	  }
+      }
+  }
+  return(localObj);
+}
+
+function append_array_members(membership, dims, subBlocks, blob, count) {
+    var start, end, localObj = {};
+    var dir = count[0]>0?1:-1;
+    if (dir==1) {
+	start = 1; end = membership+1;
+    } else {
+	start = membership; end = 0;
+    }
+
+    for (var offset = start; offset != end; offset += dir) {
+	if (!count[0]) break;
+	var localSubObj = convert_to_js(dims, subBlocks,
+					blob+(offset-1)*subBlocks[0], count);
+	if (localSubObj != {})
+	    localObj[offset.toString()] = localSubObj;
+
+    }
+    return localObj;
+}
+// callbacks
+function respond_to_param_req(modelId, modelSlot, paramId, indCount, indices) {
+    console.log("Parameter value requested: id", paramId,
+		indCount, "ind(ex/ices), first is", getValue(indices, "i32"));
+    // Copy the appropriate value over from the array
+    setValue(modelSlot,
+	     myParams[getValue(indices, "i32")][getValue(indices+4, "i32")],
+	     'double');
+}
+
+function show_a_message(message) {
+    console.log("message from dll:", Pointer_stringify(message));
+}
+
+function show_model_time(spare, spare2, model_time) {
+    console.log("model time:", model_time);
+    return 0; // 1 if GUI stops model execution
+}
+
 ////////////////////////////////////// PREPARE /////////////////////////////
 var xmlns = 'http://www.w3.org/2000/svg';
 var tooltip_grp;
@@ -2067,6 +2421,13 @@ var values_json;
 var fvParms;
 var timeUnit = "unit";
 var diag_zoom;
+
+var type_strs = ["VALUELESS", "REAL", "INTEGER", "FLAG",
+		 "OWNSIZED", "SPARSEARRAY"];
+var modelInstance;
+var fvHandles;
+var timeLib = {"second":1/86400,"minute":1/1440,"hour":1/24,"day":1,
+	       "unit":1,"week":7,"month":365/12,"year":365};
 function prepare() {
     // display the loading, please wait screen
     $( "#WaitDialog" ).dialog({
@@ -2076,56 +2437,86 @@ function prepare() {
     });
     // remove the title bar
     $(".ui-dialog-titlebar").hide();
+
+  /* start by loading the dll with the constants and procedures it needs
+   from the client */
+Module.ccall('proc_pointers_for_shank', 'number', ['number','number','number'],
+	     [Runtime.addFunction(respond_to_param_req),
+	      Runtime.addFunction(show_model_time),
+	      Runtime.addFunction(show_a_message)]);
+
+// Make space for model class ptr, and fill it
+var pmodelType = _malloc(8); // a ptr
+var complaint=Module.ccall('load_model', 'string', ['string','string','number'], ['./dummy.so','evaluation',pmodelType]);
+modelType = getValue(pmodelType,'*');
+
+if (complaint.length) {
+    console.log("Problem creating type: " + complaint);
+} else {
+    console.log("Created model type OK");
+}
     
-$.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
-       function(execParms) {
-	   console.log("BSL returns " + execParms);
-	   pipeBits = JSON.parse(execParms);
+    // Now stick the values in the run control
+    $("#rl").val(pipeBits.execTime);
+    $("#de").val(pipeBits.displayInt);
+    $("#ts").val(pipeBits.phaseList);
+    
+    $(".unit").html(pipeBits.timeUnit);
+    timeUnit = timeLib[pipeBits.timeUnit];
+    
+    populateStructs();
+    
+// now make an instance of the model -- this creates its variables...
+modelInstance = _malloc(8); // a ptr
 
-	   // Now stick the values in the run control
-	   $("#rl").val(pipeBits.execTime);
-	   $("#ue").val(pipeBits.displayInt);
-	   $("#le").val(pipeBits.displayInt);
-	   $("#ts").val(pipeBits.phaseList);
-	   
-	   $(".unit").html(pipeBits.timeUnit);
-	   timeLib = {"second":1/86400,"minute":1/1440,"hour":1/24,"day":1,
-		      "unit":1,"week":7,"month":365/12,"year":365};
-	   timeUnit = timeLib[pipeBits.timeUnit];
+modelInstance = Module.ccall('fetch_top_instance', 'number',
+				 ['number', 'number'],
+				 [modelType, 20150909]);
 
-	// Version using UNIX sockets -- add .uxs extension to model name base
-	   $.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
-		  function(spew) {
-		      console.log("Socket created: " + spew);
-		      //           populateStructs();
-		  }); // CreateSocket
+if (modelInstance) {
+    console.log("Created model instance OK");
+} else {
+    console.log("Problem creating instance");
+}
 
-// Version using INET sockets -- ungainly and insecure
-// Start the socket -- fttb just hope it is ready when prepare is called
-//var svrPort = 99999;
-//$.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
-//            function(port) {
-////               alert("Guess what -- the model exec process just finished");
-//            	svrPort = port;
-//                console.log("Got socket " + port);
-//            	populateStructs();
-//});
-//
-	   $.post('model_action.php', {"act":"WaitSocket", "base":fileBase}, 
-		  function(port) {
-		      //            	svrPort = port;
-                      console.log("Got socket " + port);
-            	      populateStructs();
-		  }); // WaitSocket
-    $.ajax({
-	type: "POST",
-	url: "model_action.php",
-	data: {"act" : "GetSVG",  "base" : fileBase}
-    })
-    .done (function(diagSVG) {
-      document.getElementById("holds_svg").innerHTML = diagSVG;
+    // Now we need to set up the file parameter data, if
+    // any...later. But we must declare the parameters internal, or it
+    // will try to execute a callback function, something that appears
+    // not to be working at the moment...
+    fvHandles = {};
+    for (i=0;i<fvParms.length;i++) {
+	fvHandles[fvParms[i]] = Module.ccall('use_array_for_params', 'number',
+					     ['number', 'string'],
+					     [modelInstance, fvParms[i]]);
+    }
+    
+    // new parameter reader
+    if (typeof(paramXML) != 'undefined') {
+	pparser = new DOMParser();
+	paramNode = pparser.parseFromString(paramXML, 'text/xml');
+	parameterizeContents(paramNode.firstElementChild.firstElementChild, '');
+    }
+
+    /* initialize it: last arg -2 means set all values, -1 means keep constants,
+     0 means keep constants and fixed parameters,
+     +ve values mean keep all the above plus state variables */
+
+    ModDiag = document.getElementById("mod_diag");
+    if (needInput) {
+	new_helper("params");
+	// resets model when params are loaded
+    } else {
+	model_reset();
+    }
+
+    // $.ajax({
+// 	type: "POST",
+// 	url: "model_action.php",
+// 	data: {"act" : "GetSVG",  "base" : fileBase}
+    // })
+    // .done (function(diagSVG) {
+    //   document.getElementById("holds_svg").innerHTML = diagSVG;
   
-      ModDiag = document.getElementById("mod_diag");
       diag_zoom = d3.behavior.zoom()
 	  .on("zoom", function () {
 	       d3.select('#mod_diag').select('g')
@@ -2144,12 +2535,13 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
           addEltAction(element);
       }
     }
-    ModDiag.appendChild(tooltip_grp);
-  }); // GetSVG
-       }); // BuildShareLib
+  // }); // GetSVG
+
   // Create a path in SVG's namespace
   tooltip_grp = document.createElementNS(xmlns,'g');
-  tooltip_bd = document.createElementNS(xmlns,'rect');
+    ModDiag.appendChild(tooltip_grp);
+
+    tooltip_bd = document.createElementNS(xmlns,'rect');
   tooltip_bd.setAttribute("x", "12");
   tooltip_bd.setAttribute("y", "12");
   tooltip_bd.setAttribute("width", "24");
@@ -2213,4 +2605,7 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
   tooltip_c.setAttribute("visibility", "hidden");
   tooltip_c.appendChild(document.createTextNode(0));
   tooltip_grp.appendChild(tooltip_c);
+
+    // finally we are ready to roll, wait is over
+    $("#WaitDialog").dialog("close");
 }

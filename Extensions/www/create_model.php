@@ -157,11 +157,43 @@ switch ($_POST["helper_src"]) {
 // inline: creates executable and sets pipe_contents to run params
 // include_once "model_action.php";
 
+// Now build the asm.js
+if (isset($_POST['client_exec'])) {
+   include 'config.php';
+   $shlibName = pathinfo($base,PATHINFO_FILENAME);
+   $tculargs = array($simileLocn, $simileHome, $base, $shlibName);
+   $knob = popen($cgiRel . "/tcular_clexec.cgi " . implode($tculargs,
+      " "), 'r');
+   $pipe_contents = stream_get_contents($knob);
+   echo "<!-- Pipe contents: $pipe_contents -->";
+   fclose($knob);
+
 // web site starts here
-// $rps = end(explode("\n", $pipe_contents));
-echo "<script>\nvar fileBase = '$base';\n</script>";
-?> 
-<script src='run.js'></script>
+   $rps = end(explode("\n", $pipe_contents));
+   echo "<script>\n";
+   $asmStm = fopen($simileHome . "/" . $shlibName . ".asm.js", "r");
+   if ($asmStm) {
+      echo stream_get_contents($asmStm);
+      fclose($asmStm);
+   }
+
+   $helperSet = $base . '.shf';
+   if (file_exists($helperSet)) {
+      echo "var returnedXML = `" . file_get_contents($helperSet). "`;\n";
+   }
+   $paramSet = $base . '.spf';
+   if (file_exists($paramSet)) {
+      echo "var paramXML = `" . file_get_contents($paramSet). "`;\n";
+   }
+  
+  echo "var pipeBits = $rps;\nvar fileBase = '$base';\n</script>";
+  echo "<script src='run_clexec.js'></script>";
+} else {
+  echo "<script>\nvar fileBase = '$base';\n</script>";
+  echo "<script src='run.js'></script>";
+}
+?>
+<script src='shapes3d.js'></script>
 </head>
 <body onload="prepare()">
 <div id="Buttonbar">
@@ -187,10 +219,20 @@ echo "<script>\nvar fileBase = '$base';\n</script>";
 <tr><td>Current time: </td><td><input id="ct" type="text" name="current" 
 				      size="8" value=0> 
     <label class=unit>unit</label></td></tr>
-<tr><td>Update each </td><td><input id="ue" type="text" name="runstep" size="8"
-		value=10> <label class=unit>unit</label></td></tr>
-<tr><td>Log each </td><td><input id="le" type="text" name="logstep" size="8"
-		value=1> <label class=unit>unit</label></td></tr>
+<?php
+   if (isset($_POST['client_exec'])) {
+   echo '<tr><td>Display each </td>
+   <td><input id="de" type="text" name="runstep" size="8" value=1>
+     <label class=unit>unit</label></td></tr>';
+} else {
+echo '<tr><td>Update each </td>
+      <td><input id="ue" type="text" name="runstep" size="8" value=10>
+	<label class=unit>unit</label></td></tr>
+<tr><td>Log each </td>
+  <td><input id="le" type="text" name="logstep" size="8" value=1>
+    <label class=unit>unit</label></td></tr>';
+}
+?>
 <tr><td>Time step(s): </td><td><input id="ts" type="text" name="step" size="8"
 		  value=0.1> <label class=unit>unit</label></td></tr>
 </table>
@@ -206,7 +248,26 @@ echo "<script>\nvar fileBase = '$base';\n</script>";
 <!-- button type="button" onclick="SvgDiagZoom(1.25)">Zoom In</button -->
 </div>
 <div id="holds_svg" style="position: absolute">
-</div> 
+  <?php
+   if (isset($_POST['client_exec'])) {
+     // put the svg in a variable so I can start thinking about how to replace it
+     $svgStm = fopen($base . ".svg", "r");
+     if (!$svgStm) exit('No SVG file found');
+     $svgLine = "";
+     while (!feof($svgStm) && strpos($svgLine, "<svg ") !== 0) {
+        $svgLine = fgets($svgStm);
+     }
+     // passed boilerplate to start of svg object -- insert this line
+     echo preg_replace('/^<svg /', '$0id="mod_diag" ', $svgLine);
+     // add a group round all the contents so they can be translated in Chromium
+     echo "<g>";
+     while (!feof($svgStm)) {
+        echo fgets($svgStm);
+     }
+     echo "</g></div>";
+     fclose($svgStm);
+   }
+     ?>
 </div> 
     <div id="WaitDialog"   class="hidden" style="text-align: center">
         <img  src="images/ajax-loader.gif" />
