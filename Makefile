@@ -99,7 +99,8 @@ endif
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	SYSDIR = System$(BITEXTN)
-	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh85)
+#	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh85)
+	VERSION = 8.5
 	PT =
 	VERS = $(subst .,,$(VERSION))
 ifeq ($(MY_CPU),x86_64)
