@@ -22,12 +22,13 @@
 
 #define PIDKEY_LENGTH 100
 
+/* This currently causes multiple definition error in libcrypto.a
 BOOL WINAPI DllMain(HINSTANCE hModule, DWORD ul_reason_for_call,
                       LPVOID lpReserved)
 {
   return TRUE;
 }
-
+*/
 #ifndef _DEBUG
 BOOL WINAPI __DllMainCRTStartup(HINSTANCE hModule, DWORD ul_reason_for_call,
                                 LPVOID lpReserved)

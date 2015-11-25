@@ -54,6 +54,7 @@ proc Newer {is than t} {
     }
     file stat $is foo
     file stat $than bar
+#    puts "$foo(${t}time) > $bar(${t}time)"
     return [expr {$foo(${t}time) > $bar(${t}time)}]
 }
 
