@@ -1432,13 +1432,18 @@ int entitled(char* clientEdn, char* modelIdent) {
   
 // Implementation of class ModelServer
 ModelServer::ModelServer(char* fileName, char* clientEdn, char** complaint) {
+    *complaint = NULL;
+#ifdef JOIN_AT_HIP
+    getversion = get_version;
+    getcount = get_count;
+    createmodel = do_createmodel;
+#else
     handle = LOAD_DLL(fileName);
     if (!handle) {
       *complaint = strdup(WHAT_WENT_WRONG());
       return;
     }
     getversion = (getversion_type*)FIND_FUNCTION(handle, "get_version");
-    // getversion = get_version;
     // this does nothing but return the version number, so it can be checked 
     // even if different versions change the args to getcount()
     if (getversion == NULL) {
@@ -1455,10 +1460,10 @@ ModelServer::ModelServer(char* fileName, char* clientEdn, char** complaint) {
     }
 /* sprintf(globMess, "Loaded %ld", handle);
 showMess(globMess); */
-    *complaint = NULL;
 
     getcount = (getcount_type*)FIND_FUNCTION(handle, "get_count");
-    // getcount = get_count;
+    createmodel = (createmodel_type*)FIND_FUNCTION(handle, "do_createmodel");
+#endif
     nodecount = getcount(s_rand, graphpoint, release_graph_data, 
 			 compare_instance_status, handle_model_param_request, 
 			 stat_check, showModelMess,
@@ -1469,8 +1474,6 @@ showMess(globMess); */
       sprintf(*complaint, "%s edition cannot use this model", clientEdn);
       return;
     }
-    createmodel = (createmodel_type*)FIND_FUNCTION(handle, "do_createmodel");
-    // createmodel = do_createmodel;
   }
 
 ModelServer::~ModelServer() {
@@ -1497,7 +1500,7 @@ int ModelServer::parent_line (int line) {
     path = nodedata[line].path;
     for (count=0;nodecount>count;count++) {
       level = 0;
-      while (test = nodedata[count].path[level]) {
+      while ( (test = nodedata[count].path[level]) ) {
 	if (test != path[level++]) {
 	  break;
 	}
@@ -1673,12 +1676,13 @@ int ExecutingModel::SetStep(int phase, double step) {
 }
 
 void ExecutingModel::SetdT(int phase, double starttime) {
-  if (modelSpec->phases>=abs(phase))
+  if (modelSpec->phases>=abs(phase)) {
     if (phase>0) { /* lazy */
       loadedInst->dts[phase] = starttime;
     } else {
       loadedInst->ts[-phase] = starttime;
     }
+  }
 }
 
 FileParamData* ExecutingModel::FileParamForNodeNum(HCOMP seekNodeId) {
@@ -1797,11 +1801,12 @@ char* restore_param(int* dims, char** src) {
   return newData;
 }
 
-void paste_param_data(void* fpHandle, char* holder) {
+void* paste_param_data(void* fpHandle, char* holder) {
   nodeValues* nV;
 
   nV = &((FileParamData*)fpHandle)->dataPtr;
   nV->contents = restore_param(nV->dimSpecs, &holder);
+  return nV;
 }
 
 void clear_time_point_elts(void* fpHandle) {
@@ -2255,6 +2260,53 @@ graph_data_type** get_graph_base(void* type) {
 // get a node data line from the 'graph' number of the node
 node_data_line* nodlin_from_id(void* modelId, int paramId) {
   return ((ModelFor5D*)modelId)->md_nodlin_from_id(paramId);
+}
+
+// dumb it down even further for emscripten clients that do not know how to get
+// fields from structures -- the 4-D interface?
+
+char* name_from_nodlin(node_data_line* line) {
+  return line->name;
+}
+
+char* eqn_from_nodlin(node_data_line* line) {
+  return line->strings[1];
+}
+
+double min_from_nodlin(node_data_line* line) {
+  return line->min;
+}
+
+double max_from_nodlin(node_data_line* line) {
+  return line->max;
+}
+
+int class_from_nodlin(node_data_line* line) {
+  return line->compclass;
+}
+
+int type_from_nodlin(node_data_line* line) {
+  return line->datatype;
+}
+
+int eval_from_nodlin(node_data_line* line) {
+  return line->eval;
+}
+
+int* ds_from_nodvals(nodeValues* nodVals) {
+  return nodVals->dimSpecs;
+}
+
+void* ct_from_nodvals(nodeValues* nodVals) {
+  return nodVals->contents;
+}
+
+int size_from_sznptr(sizeAndPtr* szPtr) {
+  return szPtr->size;
+}
+
+void* ptr_from_sznptr(sizeAndPtr* szPtr) {
+  return szPtr->ptr;
 }
 
 // setstep: the model class instances contain an array of doubles called

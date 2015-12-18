@@ -259,7 +259,7 @@ EXTDEC void* use_array_for_params(void*, char*);
 EXTDEC void* get_param_data_space(void*);
 EXTDEC int param_array_size(void*);
 EXTDEC void copy_param_data(char*, void*);
-EXTDEC void paste_param_data(void*, char*);
+EXTDEC void* paste_param_data(void*, char*);
 EXTDEC void clear_time_point_elts(void*);
 EXTDEC double* get_wrap_ptr(void*);
 EXTDEC int* get_fill_ptr(void*);
@@ -339,3 +339,17 @@ EXTDEC int rdDatatype(long int);
 EXTDEC int rdBound(long int, int);
 EXTDEC void* rdLocateElement(long int old, int* indices);
 */
+
+// Extra shank definitions for clients that cannot look inside c structures
+// (the 4-D interface)
+EXTDEC char* name_from_nodlin(node_data_line*);
+EXTDEC char* eqn_from_nodlin(node_data_line*);
+EXTDEC double min_from_nodlin(node_data_line*);
+EXTDEC double max_from_nodlin(node_data_line*);
+EXTDEC int class_from_nodlin(node_data_line*);
+EXTDEC int type_from_nodlin(node_data_line*);
+EXTDEC int eval_from_nodlin(node_data_line*);
+EXTDEC int* ds_from_nodvals(nodeValues*);
+EXTDEC void* ct_from_nodvals(nodeValues*);
+EXTDEC int size_from_sznptr(sizeAndPtr*);
+EXTDEC void* ptr_from_sznptr(sizeAndPtr*);

@@ -26,7 +26,7 @@ int AME_model::do_evalmodel(int phase) {
   }
 
   dts[0] = phase; // so external code can access it
-  if (userStop.excpNo = -setjmp(env)) {
+  if ((userStop.excpNo = -setjmp(env))) {
     return 1;
   } else {
     // abort request from user will raise exception
