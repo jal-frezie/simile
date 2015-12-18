@@ -501,7 +501,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
         */
 	(DimExprs = TargetExprs, !,
 	    ((member(Target_base, [any, n(_ET1), a(_ET2),
-				      boolean, cond_spec, int]), !,
+				      boolean, cond_spec, int, uint64_t]), !,
 	          Target_type = Target_base;	 
 	      check_and_report_units(Target_base, TargetDims, _),
 	          Target_type = real),

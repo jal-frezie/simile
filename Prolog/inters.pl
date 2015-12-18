@@ -1615,7 +1615,7 @@ promote_unit(Lo, Hi) :-
 	promote_unit(Med, Hi).
 
 uses_as(any, Type) :-
-	member(Type, [boolean, a(_ET0), n(_ET1), real]).
+	member(Type, [boolean, a(_ET0), n(_ET1), uint64_t, real]).
 uses_as(boolean, cond_spec).
 /* above was commented out, but seems to belong
 -- probably so as not to allow cond_specs to use outside conditions
@@ -1754,8 +1754,11 @@ operator(choose, boolean, [boolean, boolean, boolean]).
 operator(choose, int, [boolean, int, int]).
 operator(choose, a(T), [boolean, a(T), a(T)]).
 operator(choose, real, [boolean, real, real]).
+operator(choose, uint64_t, [boolean, uint64_t, uint64_t]).
 operator(happens, boolean, [Any]) :- value(Any).
 operator(rand, real, [real, real]).
+operator(seed_rand, uint64_t, [int]).
+operator(use_rand, real, [uint64_t]).
 operator(cur_phase, real, []).
 operator(cur_step, real, []).
 operator(delay_for, Any, [class_template(delay, Any), real, Any]) :- value(Any).
@@ -2169,7 +2172,7 @@ individuates_elements(InterDefs, Subexp, _, 0) :-
 random(_, Subexp, _, 0) :-
 	nonvar(Subexp),
 	Subexp =.. [Functor | _],
-	(member(Functor, [rand]);
+	(member(Functor, [rand, use_rand]);
 	    sample(Functor)).
 
 /* wait_for_submodels/2

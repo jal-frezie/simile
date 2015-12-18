@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h> /* for rand procedure used by tcl models */
 #include <time.h>
 
@@ -97,7 +98,7 @@
 #define WRITEGRAPH     22
 #define USEGRAPH       23
 
-#define SIMILE_VERSION	"6.5"
+#define SIMILE_VERSION	"6.6"
 #define NEST 32
 
 #ifdef __cplusplus
@@ -215,6 +216,12 @@ typedef struct connectRecord_t {
 } connectRecord;
 */
 
+// seed for random generator erand48
+typedef union {
+  unsigned short use[3];
+  uint64_t set;
+} rand48seed;
+
 // class for storing data about exceptions while model is running
 typedef struct excpData_t {
   int excpNo;
@@ -227,6 +234,8 @@ typedef struct excpData_t {
    method didn't work in win98) */
 
 typedef double ame_rand_type(double, double);
+typedef uint64_t seed_rand_type(int);
+typedef double use_rand_type(void*);
 typedef BOOLEAN interact_gui_type(void*, BOOLEAN, double);
 typedef double graphpoint_type(double, graph_data_type*, int);
 typedef void release_graph_data_type(graph_data_type*);

@@ -76,6 +76,13 @@ void* flopen(char* fileName) {
 }
 #endif
 
+// Definitions used in this code and the model code
+#include <dllcalls.h>
+// for talking to compiled models
+#include <backend.h>
+// class interface for c++ clients
+#include <6d.h>
+
 /*
  * Unix or Win64 (or Win32!) version: does not have min & max defined
  */
@@ -86,13 +93,6 @@ int s_min(int a, int b) {
 int s_max(int a, int b) {
   return a>b?a:b;
 }
-
-// Definitions used in this code and the model code
-#include <dllcalls.h>
-// for talking to compiled models
-#include <backend.h>
-// class interface for c++ clients
-#include <6d.h>
 
 stat_check_type stat_check;
 model_requests_file_param_type handle_model_param_request;
@@ -179,14 +179,54 @@ void release_graph_data(graph_data_type *graph_data_pointer) {
 #else
 #define PLUS_THREAD_NUM
 #endif
+
 #ifdef WIN32
+
+#define RAND48_MULT_0   (0xe66d)
+#define RAND48_MULT_1   (0xdeec)
+#define RAND48_MULT_2   (0x0005)
+#define RAND48_ADD      (0x000b)
+
+unsigned int _rand48_mult[3] = {
+		RAND48_MULT_0,
+		RAND48_MULT_1,
+		RAND48_MULT_2
+};
+unsigned short _rand48_add = RAND48_ADD;
+
+void _dorand48(unsigned int xseed[3]) {
+		unsigned long accu;
+		unsigned short temp[2];
+
+		accu = (unsigned long) _rand48_mult[0] * (unsigned long) xseed[0] +
+		 (unsigned long) _rand48_add;
+		temp[0] = (unsigned short) accu;        /* lower 16 bits */
+		accu >>= sizeof(unsigned short) * 8;
+		accu += (unsigned long) _rand48_mult[0] * (unsigned long) xseed[1] +
+		 (unsigned long) _rand48_mult[1] * (unsigned long) xseed[0];
+		temp[1] = (unsigned short) accu;        /* middle 16 bits */
+		accu >>= sizeof(unsigned short) * 8;
+		accu += _rand48_mult[0] * xseed[2] + _rand48_mult[1] * xseed[1] + _rand48_mult[2] * xseed[0];
+		xseed[0] = temp[0];
+		xseed[1] = temp[1];
+		xseed[2] = (unsigned short) accu;
+}
+
+double erand48(unsigned int xseed[3]) {
+		_dorand48(xseed);
+		return ldexp((double) xseed[0], -48) +
+			   ldexp((double) xseed[1], -32) +
+			   ldexp((double) xseed[2], -16);
+}
+
+#endif
+/*
 void setup_randoms(unsigned int seed) {
    srand(seed);
 }
-
 double rand_fract() {
-/* some built-in random generators are not very accurate. In this
-case we may use several random numbers to get a random double. */
+// some built-in random generators are not very accurate. In this
+// case we may use several random numbers to get a random double.
     double fraction = 0, precise = 1;
     while (precise > 1e-16) {
 	precise = precise/(RAND_MAX+1.0);
@@ -195,6 +235,15 @@ case we may use several random numbers to get a random double. */
     return fraction;
 }
 #else
+*/
+uint64_t my_seed_rand(int seed) {
+  rand48seed shuttle;
+  shuttle.use[0] = seed/65536;
+  shuttle.use[1] = (unsigned short)fmod(seed,65536);
+  shuttle.use[2] = 10000;
+  return shuttle.set;
+}
+
 unsigned short (*rand_states)[3];
 void setup_randoms(unsigned int seed) {
   int coo, tnum = 0;
@@ -212,10 +261,15 @@ void setup_randoms(unsigned int seed) {
 double rand_fract() {
   return erand48(rand_states[0 PLUS_THREAD_NUM]);
 }
+/*
 #endif
-
+*/
 double s_rand(double lo, double hi) {
     return  lo + (hi-lo)*rand_fract();
+}
+
+double erand48_by_val(void* seed) {
+  return erand48((unsigned short int*)seed);
 }
 
 int compare_instance_status (const int pointers[], const int ref_pointers[], 
@@ -1464,7 +1518,8 @@ showMess(globMess); */
     getcount = (getcount_type*)FIND_FUNCTION(handle, "get_count");
     createmodel = (createmodel_type*)FIND_FUNCTION(handle, "do_createmodel");
 #endif
-    nodecount = getcount(s_rand, graphpoint, release_graph_data, 
+    nodecount = getcount(s_rand, my_seed_rand, erand48_by_val,
+			 graphpoint, release_graph_data, 
 			 compare_instance_status, handle_model_param_request, 
 			 stat_check, showModelMess,
 			 &c_graphdata, &identStr, &phases, &nodedata);

@@ -1234,6 +1234,10 @@ make_expr_all(Language, [Expr0 | Expr], [Result0 | Result]) :-
 	make_expr_all(Language, Expr, Result).
 
 combine( L, Op, VArgs, Atom) :-
+    Op = use_rand, !,
+        VArgs = [CArg],
+	make_pointer(L, CArg, PArg),
+	Atom =.. [Op, PArg];
 %   Now to exorcise the demon of integer division...
 	Op = (/), !,
 	    VArgs = [Nom, Div],

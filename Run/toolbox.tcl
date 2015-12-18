@@ -459,7 +459,7 @@ proc compile_c {workingDir extLibs complain} {
 		flush $spout
 		close $spout
 	    } else {
-		eval {exec g++} $sendvars(arflags) [list -fPIC -c -I$TOOLDIR \
+		eval {exec g++} $sendvars(arflags) [list -c -fPIC -I$TOOLDIR \
 							-o objtmp.o model.cpp]
 		set switchForLib -shared
 		eval {exec g++} $sendvars(arflags) \

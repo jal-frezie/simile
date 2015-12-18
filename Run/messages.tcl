@@ -290,7 +290,7 @@ set msgs(user_fn_misparse_detail) {%2$s}
 set msgs(unused_macro_param_title) [tr. {Parsing definitions in %1$s}]
 set msgs(unused_macro_param_message) [tr. {Failed to parse macro definition:
 %1$s
-The macro function contains the parameter %3$s, which does not appear in the arguments of the macro template}]
+The macro function contains the parameter "%2$s", which does not appear in the arguments of the macro template}]
 
 set msgs(bad_user_fn_format_title) [tr. {Parsing definitions in %1$s}]
 set msgs(bad_user_fn_format_message) [tr. {The file %1$s contained the line %2$s which is in the wrong format for a macro, function or unit definition -- please refer to the documentation.}]

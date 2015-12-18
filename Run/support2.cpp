@@ -288,19 +288,23 @@ void InstanceOfModel::insert_to_pipe(delay<modeldata>* extras,
 }
 
 /* This is called only when we create the type, to return model constants */
-EXPORT int get_count(ame_rand_type ame_rand_ptr, 
-			      graphpoint_type graphpoint_ptr, 
-			      release_graph_data_type release_graph_data_ptr, 
-			      compare_instance_status_type compare_instance_status_ptr, 
-			      model_requests_file_param_type model_requests_file_param_ptr, 
-			      stat_check_type stat_check_ptr,
-			      show_model_mess_type showMess_ptr,
-			      graph_data_type** graph_ptr, 
-			      char** identStr,
-			      int* phases, 
-			      node_data_line** data_ptr) {
+EXPORT int get_count(ame_rand_type ame_rand_ptr,
+		     seed_rand_type seed_rand_ptr,
+		     use_rand_type use_rand_ptr,
+		     graphpoint_type graphpoint_ptr, 
+		     release_graph_data_type release_graph_data_ptr, 
+		     compare_instance_status_type compare_instance_status_ptr, 
+		     model_requests_file_param_type model_requests_file_param_ptr, 
+		     stat_check_type stat_check_ptr,
+		     show_model_mess_type showMess_ptr,
+		     graph_data_type** graph_ptr, 
+		     char** identStr,
+		     int* phases, 
+		     node_data_line** data_ptr) {
   /* Stub is giving us function pointers to save us using the linker... */
   ame_rand_ref = ame_rand_ptr;
+  seed_rand_ref = seed_rand_ptr;
+  use_rand_ref = use_rand_ptr;
   graphpoint_ref = graphpoint_ptr;
   //release_graph_data_ref = (release_graph_data_type*)release_graph_data_ptr;
   compare_instance_status = compare_instance_status_ptr;

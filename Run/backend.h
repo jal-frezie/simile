@@ -122,8 +122,9 @@ typedef void model_requests_file_param_type(void*, void*, int,
 //typedef void exitmodel_type(InstanceOfModel*);
 
 typedef double getversion_type(void);
-typedef int getcount_type(ame_rand_type, graphpoint_type,
-			  release_graph_data_type, compare_instance_status_type,
+typedef int getcount_type(ame_rand_type, seed_rand_type, use_rand_type,
+			  graphpoint_type, release_graph_data_type,
+			  compare_instance_status_type,
 			  model_requests_file_param_type, stat_check_type,
 			  show_model_mess_type,
 			  graph_data_type**, char**, int*, node_data_line**);

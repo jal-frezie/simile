@@ -9,6 +9,8 @@ graph_data_type** graph_data_pointer;
 
 /* Pointers to functions in the stub: */
 ame_rand_type* ame_rand_ref;
+seed_rand_type* seed_rand_ref;
+use_rand_type* use_rand_ref;
 graphpoint_type* graphpoint_ref;
 // release_graph_data_type* release_graph_data_ref;
 compare_instance_status_type* compare_instance_status;
@@ -115,6 +117,14 @@ void assign_if_min(CompareClass sample, PayloadClass payload,
 
 double ame_rand(double lo, double hi) {
   return ame_rand_ref(lo, hi);
+}
+
+uint64_t seed_rand(int seed) {
+  return seed_rand_ref(seed);
+}
+
+double use_rand(void* seed) {
+  return use_rand_ref(seed);
 }
 
 double graphpoint(double xval, int indx) {

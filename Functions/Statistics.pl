@@ -42,3 +42,8 @@ colin(List) -->
 quantize(v) --> out = (
 			tot = last(1.0*tot-1*out)+v*dt(''), round(tot)
 		      ), out/dt('').
+
+% Added for XMILE
+exprnd(mean) --> at_phase(mean*-log(rand(0,1))).
+
+lognormal(mean,SD) --> at_phase(exp(inst_gaussian(mean, SD))).
