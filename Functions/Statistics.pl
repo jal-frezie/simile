@@ -44,6 +44,10 @@ quantize(v) --> out = (
 		      ), out/dt('').
 
 % Added for XMILE
+random(Lo, Hi, Seed) -->
+    State = (if is_new_instance() then seed_rand(Seed) else sofar(State)),
+    at_phase(Lo + (Hi-Lo)*use_rand(State)).
+
 exprnd(mean) --> at_phase(mean*-log(rand(0,1))).
 
 lognormal(mean,SD) --> at_phase(exp(inst_gaussian(mean, SD))).

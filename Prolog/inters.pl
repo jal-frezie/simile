@@ -215,7 +215,8 @@ expand_library(Var, NewVar) :-
 	shed_dummy_args(Var, Fn),
 	Fn =.. [Op | Args],
 	length(Args, Arity),
-	member(MacroMatch, [right, bad_format, bad_arity]),
+	member(MacroMatch, [right, bad_format /*, bad_arity */]),
+	% do not fail with wrong arg count, there may be a matching builtin
 	macro_expansion(_Orig, (UseVar --> NewVar)),
 	(MacroMatch = right,
 	    UseVar = Fn, !;
@@ -226,8 +227,9 @@ expand_library(Var, NewVar) :-
 		throw(wrong_format_of_args(Var, Op, Args, GoodArgs));
 	    MacroMatch = bad_arity,
 		length(GoodArgs, FnArity),
-		throw(wrong_no_of_args(Var, Op, Arity, FnArity)))).	  
-	/* These have just been moved to macro_expansions so if statements can
+		throw(wrong_no_of_args(Var, macro, Op, Arity, FnArity)))).
+
+/* These have just been moved to macro_expansions so if statements can
 	    be used in other macros
 	do_once(_, Var, ToDo, _),
 	    NewVar = keep_from_reset(ToDo).
@@ -931,7 +933,7 @@ make_intermediates(
 	Source =.. [makearray | WrongLen],
 	    length(WrongLen, WrongNum),
 	    \+ WrongNum = 2,
-	    throw(wrong_no_of_args(Source, makearray, WrongNum, 2));
+	    throw(wrong_no_of_args(Source, built-in, makearray, WrongNum, 2));
 	    % do not leave this to general handler because it will complain
 	    % if arguments contain place_in(...)
 	(Source = makearray(Element,count(Reps)),
@@ -1072,7 +1074,7 @@ Now one that uses a special conditional level */
 		     LN = N,
 		     (length(XpectTypes, Count), !;
 		       length(XpectTypes, ArgsReqd),
-		       throw(wrong_no_of_args(Source, element,
+		       throw(wrong_no_of_args(Source, built-in, element,
 					      Count, ArgsReqd))),
 		  % will not be picked up at parse time as no vm indices given
 		     PtrInit = [sm(N, UP, DP, vm_loop(start_only, _,_,_))];
@@ -1258,10 +1260,10 @@ Now one that uses a special conditional level */
 		name(Lop, LopStr),
 		ValRef =.. [Lop | ResultList],
 		((length(ArgTpts, Arity); WrongArity = 1),
-		    fragment_expansion(_, FragFile, Op, FragOut, ArgTpts),
+		    fragment_expansion(Categ, FragFile, Op, FragOut, ArgTpts),
 		    (WrongArity = 0;
 			length(ArgTpts, FnArity),
-			throw(wrong_no_of_args(Source, Op, Arity, FnArity))), !,
+			throw(wrong_no_of_args(Source, Categ, Op, Arity, FnArity))), !,
 				% (fragment-defined function:),
 		    m_update'><'make_blind_level(SubId, FragFile, RefNode);
 		  true)),
@@ -1346,7 +1348,11 @@ Now one that uses a special conditional level */
 					   UnitList, Arg_template));
 		 fn_or_op(Lop, _, RUnits, WrongLen),
 		    length(WrongLen, FnArity),
-		    throw(wrong_no_of_args(Source, Op, Arity, FnArity));
+		    throw(wrong_no_of_args(Source, built-in, Op, Arity, FnArity));
+		 macro_expansion(Orig, (Tplt --> _Defn)),
+		    Tplt =.. [Op | WrongLen],
+		    length(WrongLen, FnArity),
+		    throw(wrong_no_of_args(Source, Orig, Op, Arity, FnArity));
 		 m_class'><'SubId has_class_refinement uses_local_fns of UserFns,
 		    member(Op/Arity, UserFns),
 		    throw(lost_user_defined_fn(Source, Op, Arity));

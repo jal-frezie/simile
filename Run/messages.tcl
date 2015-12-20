@@ -393,7 +393,7 @@ set msgs(wrong_format_of_args_message) [tr. {Attempting to process subexpression
 set msgs(wrong_format_of_args_detail) [tr. {This problem might be fixed by adding parentheses around a subexpression that forms an argument of this subexpression.}]
 
 set msgs(wrong_no_of_args_title) [tr. {Wrong number of args}]
-set msgs(wrong_no_of_args_message) [tr. {Attempting to process subexpression "%1$s": You have tried to use the macro or function "%2$s" with %3$s arguments, but it must take %4$s}]
+set msgs(wrong_no_of_args_message) [tr. {Attempting to process subexpression "%1$s": You have tried to use the %2$s function "%3$s" with %4$s arguments, but it must take %5$s}]
 
 set msgs(missing_graph_or_table_data_title) [tr. {Built-in data missing}]
 set msgs(missing_graph_or_table_data_message) [tr. {Subexpression "%1$s" is a reference to a data table or sketch graph, but no data has been entered for it.}]
