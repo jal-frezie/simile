@@ -610,7 +610,7 @@ hash_entry* hash_lookup(lzwParms* encodeState, unsigned char id) {
   return locn;
 }
 
-write_bits(lzwParms* encodeState, uint16_t add) {
+void write_bits(lzwParms* encodeState, uint16_t add) {
   int curLen;
   unsigned char *curTgt;
 
@@ -661,7 +661,7 @@ void growLZW(void* values, int offset, lzwParms* encodeState) {
 
   hash_entry *hline;
   hline = hash_lookup(encodeState, c); // hash table and current code in state
-  if (nc = hline->code) // assignment
+  if ((nc = hline->code)) // assignment
     encodeState->code = nc;
   else {
     write_bits(encodeState, encodeState->code);

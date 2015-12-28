@@ -424,7 +424,7 @@ FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
       free(dllProblem);
       return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((char*)&modelType, 
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char*)&modelType, 
 						 sizeof(void*)));
     break;
     
@@ -453,7 +453,7 @@ FINDABLE int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
   modelHandle = fetch_top_instance(modelType, interp);
   if (modelHandle) {
     // save interp for callbacks from instance
-    Tcl_SetByteArrayObj(Tcl_GetObjResult(interp), (char*)&modelHandle, 
+    Tcl_SetByteArrayObj(Tcl_GetObjResult(interp), (unsigned char*)&modelHandle, 
 			sizeof(void*));
     return TCL_OK;
   } else {
@@ -484,7 +484,7 @@ FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
   fpHandle = use_array_for_params(modelInst, 
 				  Tcl_GetStringFromObj(argv[2], NULL));
   if (fpHandle) {
-    Tcl_SetByteArrayObj(Tcl_GetObjResult(interp), (char*)&fpHandle, 
+    Tcl_SetByteArrayObj(Tcl_GetObjResult(interp), (unsigned char*)&fpHandle, 
 			sizeof(void*));
     return TCL_OK;
   } else {
@@ -542,7 +542,7 @@ FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
   }
   
   memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
-  if (time=get_wrap_ptr(fpHandle))
+  if ((time=get_wrap_ptr(fpHandle)))
     if (argc == 3)
       return Tcl_GetDoubleFromObj(interp, argv[2], time);
     else {
@@ -567,7 +567,7 @@ FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
   }
   
   memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
-  if (mtd=get_fill_ptr(fpHandle))
+  if ((mtd=get_fill_ptr(fpHandle)))
     if (argc == 3)
       return Tcl_GetIntFromObj(interp, argv[2], mtd);
     else {
@@ -593,7 +593,7 @@ FINDABLE int setintervalCmd(ClientData clientData, Tcl_Interp *interp,
   }
   
   memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
-  if (time=get_interval_ptr(fpHandle))
+  if ((time=get_interval_ptr(fpHandle)))
     return Tcl_GetDoubleFromObj(interp, argv[2], time);
   else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to set interval size for this node", -1));
@@ -794,7 +794,7 @@ FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
   int count, error;
   void* fpHandle;
   char *nodeId;
-  unsigned char *holder;
+  char *holder;
 
   if (argc != 2) {
     Tcl_WrongNumArgs(interp, 1, argv, "param_id");
@@ -803,7 +803,7 @@ FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
   
   memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   count=param_array_size(fpHandle);
-  holder = Tcl_SetByteArrayLength(Tcl_GetObjResult(interp), count);
+  holder = (char*)Tcl_SetByteArrayLength(Tcl_GetObjResult(interp), count);
   copy_param_data(holder, fpHandle);
   return TCL_OK;
 }
@@ -862,7 +862,7 @@ FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
   
   memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   
-  if (count=param_array_size(fpHandle)) { // assignment
+  if ((count=param_array_size(fpHandle))) { // assignment
     holder = Tcl_GetByteArrayFromObj(argv[2], &num_bytes);
     // sprintf(globMess, "Total data %d bytes, each point %d", num_bytes, count);
     // showMess(globMess);
@@ -910,13 +910,13 @@ FINDABLE int gettimepointallCmd(ClientData clientData, Tcl_Interp *interp,
   }
   memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
   
-  if (count=param_array_size(fpHandle)) { // assignment
+  if ((count=param_array_size(fpHandle))) { // assignment
     currentSize = (count + sizeof(double))/2;
     resultPtr = Tcl_NewObj();
     holder = Tcl_SetByteArrayLength(resultPtr, currentSize);
     seekTime = -1e100;
     // copy data for each timept to ByteArray, doubling its size if too small
-    while (ptBytes=find_next_timept_space(fpHandle, &seekTime)) { // assignment
+    while ((ptBytes=find_next_timept_space(fpHandle, &seekTime))) {
       if (squirtPtr + count + sizeof(double) > currentSize) {
 	holder = Tcl_SetByteArrayLength(resultPtr, currentSize=2*currentSize);
       }
@@ -939,7 +939,7 @@ const char* name_in_line(void* modelType, int lineId) {
     node_data_line *nodeLine;
 
     if (lineId)
-      if (nodeLine = nodlin_from_id(modelType, lineId))
+      if ((nodeLine = nodlin_from_id(modelType, lineId)))
 	return nodeLine->strings[0];
       else
 	return "limit event";
@@ -1460,7 +1460,8 @@ FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
   */
   c_result = get_raw_values(Tcl_GetStringFromObj(argv[3], NULL), modelHandle);
   if (c_result) {
-    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((char*)&c_result, sizeof(void*)));
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char*)&c_result,
+						 sizeof(void*)));
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("component has no data", -1));
