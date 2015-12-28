@@ -194,7 +194,7 @@ unsigned int _rand48_mult[3] = {
 };
 unsigned short _rand48_add = RAND48_ADD;
 
-void _dorand48(unsigned int xseed[3]) {
+void _dorand48(unsigned short xseed[3]) {
 		unsigned long accu;
 		unsigned short temp[2];
 
@@ -212,7 +212,7 @@ void _dorand48(unsigned int xseed[3]) {
 		xseed[2] = (unsigned short) accu;
 }
 
-double erand48(unsigned int xseed[3]) {
+double erand48(unsigned short xseed[3]) {
 		_dorand48(xseed);
 		return ldexp((double) xseed[0], -48) +
 			   ldexp((double) xseed[1], -32) +

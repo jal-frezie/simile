@@ -36,6 +36,11 @@ sample(poidev, int, [real]).
 sample(binome, int, [real, int]).
 sample(hypergeom, int, [int, int, int]).
 
+% as241 turns square random into Gaussian -- only needs evaluated as often
+% as argument
+function(ppnd16, real, [real]).
+function(poidev_1rand, int, [real, real]).
+
 %Hack to allow 3 EM wards th MRSA model:
 dual_hypergeom(pop, mark, samples) -->
 	all1=element(samples,1),
