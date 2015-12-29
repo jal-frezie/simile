@@ -743,7 +743,7 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 	    (ETCount = 0, !,
 		MetaPtr = 'NULL';
 	    all(render, make_runtime_enum_data,
-		[unify(L), build(TypeList), unify(Used),
+		[unify(L), unify(Name), build(TypeList), unify(Used),
 		 build(ETPtrs), unify(Stream)]),
 		append_atoms(Name, '_ets', ETPtrName),
 		generate_name(L, ETPtrName, MetaPtr, Used),
@@ -781,17 +781,21 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 	/* No need to handle ghosts and link terminators */
 	true).
 
-make_runtime_enum_data(L, Name-Mems, Used, [ETCount, NamePtr, ETPtr],
+% The variable names for enum type data are currently global, so we are living
+% in hope that appending text to unique submodel structure names will give us
+% unique variable names (Used is lost on backtracking to save memory).
+make_runtime_enum_data(L, Name, Type-Mems, Used, [ETCount, TypePtr, ETPtr],
 		       Stream) :-
-	EltPtrs = [NamePtr | MemPtrs],
-	append_atoms(Name, '_mems', ETTag),
+	EltPtrs = [TypePtr | MemPtrs],
+	append_atoms([Name, '_mems_', Type], ETTag),
 	generate_name(L, ETTag, ETPtr, Used),
+	append_atoms(Name, '_txt_', TxtPrefix),
 	all(utility, append_atoms,
-	    [build([Name | Mems]), unify('_txt'), build(EltNames)]),
+	    [unify(TxtPrefix), build([Type | Mems]), build(EltNames)]),
 	all(utility, generate_name,
 	    [unify(L), build(EltNames), build(EltPtrs), unify(Used)]),
 	all(render, templatify,
-	    [unify(L), build([Name|Mems]), build(EltPtrs), build(VTemplates)]),
+	    [unify(L), build([Type|Mems]), build(EltPtrs), build(VTemplates)]),
 	length(Mems, ETCount),
 	append(VTemplates, [['char*', ETPtr, [ETCount], MemPtrs]], Templates),
 	all(render, excrete,

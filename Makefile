@@ -327,18 +327,18 @@ install:
 		Functions/procs.cpp \
 		Functions/procs.tcl \
 		Functions/Fragments/*.sml \
-		help/concepts/* \
-		help/data/* \
-		help/diagrams/* \
-		help/elements/* \
-		help/equations/* \
-		help/files/* \
+		help/concepts \
+		help/data \
+		help/diagrams \
+		help/elements \
+		help/equations \
+		help/files \
 		help/index.htm \
 		help/new/index.htm \
-		help/run/* \
-		help/scripting/* \
-		help/start/* \
-		help/submodels/* \
+		help/run \
+		help/scripting \
+		help/start \
+		help/submodels \
 		Images/Control/pause.gif \
 		Images/Control/play.gif \
 		Images/Control/stop.gif \
