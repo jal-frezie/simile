@@ -633,9 +633,8 @@ do_assignment(L, [reproduce(ParentPtr, Pointer, Name, ReproNames) | Clauses],
 /* OK, now for mortality. This will have to be called before immigration or reproduction because any new individuals might not yet have values for their loss nodes. It used to be done as part of the reproduction loop but had to be separated now there can be many reproduction channels. However, all loss channels are equivalent, so there only needs to
 be one of these loops; the instruction has a list of the appropriate nodes. */
 
-do_assignment(L, [lose(ParentPtr, Name, LossNodes, Initial) | Clauses],
+do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
 	      Indent, Used, Stream) :-
-	(Initial = 0, LossNodes = [] -> true; % nothing to do
 	Indent1 is Indent + 4,
 	Indent2 is Indent1 + 4,
 
@@ -661,11 +660,8 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes, Initial) | Clauses],
 	excrete(L, open_context, Pointer=[ParentPtr, Name, MPTargetRef],
 			Indent1, Stream),
 
-	/* Conditional to avoid offing new individuals  -- they have
-	not been initialized yet */
-	(Initial = 1 ->
-	    make_struct_reference(L, Pointer, new_instance, NewInstance, _),
-	    excrete(L, assignment, NewInstance=0, Indent1, Stream); true),
+	make_struct_reference(L, Pointer, new_instance, NewInstance, _),
+	excrete(L, assignment, NewInstance=0, Indent1, Stream),
 	
 	/* Next remove shagged-out individuals, node is a variable, and move
 		on to next instance */
@@ -684,7 +680,7 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes, Initial) | Clauses],
 	    excrete(L, make_reference, MetaPointer=OnPointer, Indent2, Stream),
 	    excrete(L, end(cond), IsDead, Indent1, Stream);
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream)),    
-	excrete(L, end(while), MPTargetRef, Indent, Stream)),
+	excrete(L, end(while), MPTargetRef, Indent, Stream),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 
 /* This is a fairly horrrible clause that puts in what is done when a new submodel

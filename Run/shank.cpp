@@ -1123,6 +1123,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       SetdT(0, 10+(how_int==RUNGE_KUTTA)); 
       loadedInst->updatemodel(big_phase); // b_p needed to apply squirt
       SetdT(0, (how_int==RUNGE_KUTTA)); // start prediction cycle
+      // next eval will also do event driven population channels
       if (loadedInst->do_evalmodel(big_phase)) break;
       // b_p needed to cancel series event
       // now make sure next bit happens

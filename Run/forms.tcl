@@ -988,8 +988,8 @@ proc OpenProgressBox {winId} {
 	wm geometry .progress 400x100
 	message .progress.message -aspect 400 -text [tr. "Please wait"]
 	pack .progress.message -fill both -expand true
-	::ttk::progressbar .progress.bar -maximum 100
-	pack .progress.bar -side bottom -fill x -expand 1
+#	::ttk::progressbar .progress.bar -maximum 100
+#	pack .progress.bar -side bottom -fill x -expand 1
 	update
 	incr progressBoxCount ;# update can cause AbandonEqn and ResetProgress
     }
@@ -1004,7 +1004,7 @@ proc FillProgressBox {key lits {fract 0}} {
 	puts "Progress message: $word ($fract\% complete)"
     } else {
 	.progress.message configure -text [eval [list format $msgs($key)] $lits]
-	.progress.bar configure -value $fract
+#	.progress.bar configure -value $fract
 	update
     }
 }

@@ -1191,58 +1191,35 @@ nodes.
 						elt(_, CreateBox, _), U),
 				       ParentFns)), Creators), !;
 		Creators = []),
-	    
-	    (setof(LossBox, S^X^U^(member(instance(loss, S,X,
+/* 2/2/16: We used to select event-driven channel instances by their
+/* equation forms and build separate effects with them, but doing them
+/* at the same time as the continuous ones means they are initialized
+/* properly at the right model time because the model is evaluated
+/* with phase 0 or 1 immediately after the event and without altering
+/* state variables...*/
+	    (setof(LossBox, S^X^U^member(instance(loss, S,X,
 						  elt(_, LossBox, _), U),
-					 Functions),
-				   \+ X = (rand(0,1)<_)), Losses), !;
-	      Losses = []),
-	    (setof(LossBox, S^X^U^member(instance(loss, S, rand(0,1)<X,
-						  elt(_, LossBox, _), U),
-					 Functions), EvtLosses), !;
-	      EvtLosses = []),
-	    (setof(ImmigBox, InitName^X^U^(SmName has_part InitName,
-				member(instance(immigration, InitName, X,
-						elt(_, ImmigBox, _), U),
-				       ParentFns),
-				\+ X = _+_), Immigrators), !;
-		Immigrators = []),
-	    (setof(ImmigBox, InitName^X^U^(SmName has_part InitName,
-				member(instance(immigration, InitName,
-						elt(_, ImmigBox, _)+X,
-						elt(_, ImmigBox, _), U),
-				       ParentFns)), EvtImmigrators), !;
-		EvtImmigrators = []),
-	    (setof(ReproBox, S^X^U^(member(instance(reproduction, S,X,
-						elt(_, ReproBox, _), U),
-				       Functions),
-				    \+ X = _+_), Reproducers), !;
-		Reproducers = []),
-	    (setof(ReproBox, S^X^U^(member(instance(reproduction, S,
-						    elt(_, ReproBox, _)+X,
-						    elt(_, ReproBox, _), U),
-					   Functions)), EvtReproducers), !;
-		EvtReproducers = []),
+					 Functions), Losses), !;
+	     Losses = []),
+	    (setof(ImmigBox, InitName^X^U^
+			     (SmName has_part InitName,
+			      member(instance(immigration, InitName, X,
+					      elt(_, ImmigBox, _), U),
+				     ParentFns)), Immigrators), !;
+	     Immigrators = []),
+	    (setof(ReproBox, S^X^U^member(instance(reproduction, S,X,
+						   elt(_, ReproBox, _), U),
+					  Functions), Reproducers), !;
+	     Reproducers = []),
 	    
-	    CreateRules = [make(evt_culled(Name),
-				[evt_bred(Name) | EvtLosses],
-				Path, Step, [lose(Ptr, Name, EvtLosses, 0)]),
-			   make(culled(Name),
+	    CreateRules = [make(culled(Name),
 				[init_list(Name), on_step],
-				Path, Step, [lose(Ptr, Name, Losses, 1)]),
+				Path, Step, [lose(Ptr, Name, Losses)]),
 			   make(created(Name),
 				[culled(Name) | Creators], Path, 0,
 				[init_mems(Ptr, Name, create(Creators))]),
-			   make(evt_settled(Name),
-				[init_list(Name) | EvtImmigrators],
-				Path, Step,
-				[new_member(Ptr, Name, EvtImmigrators)]),
 			   make(settled(Name), [culled(Name)], Path, Step,
 				[new_member(Ptr, Name, Immigrators)]),
-			   make(evt_bred(Name),
-				[evt_settled(Name) | EvtReproducers],
-				LocalPath, Step,
-				[reproduce(Ptr, NewPtr, Name, EvtReproducers)]),
 			   make(bred(Name), [culled(Name)], LocalPath, Step,
 				[reproduce(Ptr, NewPtr, Name, Reproducers)])],
 	    % relegate to 0 as membership may have changed during run
@@ -1264,7 +1241,7 @@ nodes.
 			  [created(Name), settled(Name)],
 			  Path, Step, []),
 		     % need culled and created to get in right step
-		    make(enumerate(Name), [evt_culled(Name), can_enter(Name),
+		    make(enumerate(Name), [/* evt_culled(Name), */ can_enter(Name),
 					   on_step], LocalPath, Step, []),
 		    make(startable(Name), [init_list(Name)], Path, Step, []),
 		    make(init_list(Name), [], Path, Step,
