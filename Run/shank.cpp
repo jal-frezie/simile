@@ -1035,7 +1035,7 @@ ExecutingModel::~ExecutingModel() {
   // Above line is correct -- deleting a param item causes it to be snipped out
   // of the list, so list head is NULL when all are snipped. Var params have
   // their own list but are also included in all-param list...
-  delete loadedInst;
+  // delete loadedInst;
 }
 
 excpData* ExecutingModel::ResetInstance(double init_time, int how_int, 
@@ -1358,7 +1358,11 @@ void ExecutingModel::advance_time (int phase, double fraction) {
 							  nextSeriesEvt);
     thisTsPosn = series_pt;
   }
-  
+
+void ExecutingModel::ExitInstance () {
+  loadedInst->do_exitmodel();
+}
+
 // new version: is member of model-execution class and takes numerical node id
 nodeValues* ExecutingModel::GetRawValues(HCOMP nodeId) {
   int sparePath[32], fullDims[32], indices[32];
@@ -2402,7 +2406,9 @@ excpData* execute(void* modelType, void* modelHandle, int how_int,
 
 // This deletes a model instance and/or a class -- both when used in Simile
 char* myexit(void* modelType, void* modelHandle) {  
-  if (modelHandle) { 
+  if (modelHandle) {
+    // ((ExecutingModel*)modelHandle)->ExitInstance();
+    // swap below cmd for above at next minor version increment
     delete (ExecutingModel*)modelHandle;
   }
   if (modelType) { 

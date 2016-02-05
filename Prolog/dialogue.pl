@@ -434,6 +434,7 @@ update_equation(Function, InterInputs, [Eqn_st, Evt_st, Unit_st,
 	get_term(Eqn_st, Result, EqnFormError),
 	(Result = '', !,
 	    EqnBase = any,
+	    EqnDims = [],
 	    ParseError = [];
 	  EqnFormError = [], !,
 	    test_eqn(Result, Function, IndxCount, InterInputs,

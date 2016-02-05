@@ -219,6 +219,8 @@ class ExecutingModel
   //! Error limit controls adaptive timestep variation, 0 turns it off
   excpData* ExecuteInstance(int, double, double*, double, BOOLEAN, BOOLEAN);
 
+  void ExitInstance();
+  
   //! get results from model by node serial number in general c format
   nodeValues* GetRawValues(HCOMP);
 

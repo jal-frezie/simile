@@ -39,7 +39,7 @@ template <class modeldata> class delay {
   }
 
   ~delay () {
-    series<modeldata> *where;
+    series<modeldata> *where = head;
     while (where) {
       where = head->next;
       delete head;
@@ -79,9 +79,10 @@ class bstree_node {
 class ExecutingModel; // defined in 6d.h
 class InstanceOfModel : public submodeltype {
 public:
-  virtual ~InstanceOfModel() {}
+  virtual ~InstanceOfModel() {};
   // Above stops memory leak in Windows but causes crash in Linux
   // (reinstated 2014, no major Linux crashability or leakage noted since)
+  // however, try calling do_exitmodel instead which calls real destructor
   excpData userStop;
   double adapt_maxerr, event_predict;
   // diffs *event_cur_sign, *event_prev_sign;

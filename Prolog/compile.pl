@@ -1192,11 +1192,11 @@ nodes.
 				       ParentFns)), Creators), !;
 		Creators = []),
 /* 2/2/16: We used to select event-driven channel instances by their
-/* equation forms and build separate effects with them, but doing them
-/* at the same time as the continuous ones means they are initialized
-/* properly at the right model time because the model is evaluated
-/* with phase 0 or 1 immediately after the event and without altering
-/* state variables...*/
+   equation forms and build separate effects with them, but doing them
+   at the same time as the continuous ones means they are initialized
+   properly at the right model time because the model is evaluated
+   with phase 0 or 1 immediately after the event and without altering
+   state variables...*/
 	    (setof(LossBox, S^X^U^member(instance(loss, S,X,
 						  elt(_, LossBox, _), U),
 					 Functions), Losses), !;

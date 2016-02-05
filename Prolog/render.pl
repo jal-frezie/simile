@@ -315,7 +315,6 @@ strings_direct( Target, NotNeeded, Variable, Indent, Stream) :-
 	member([NotNeeded, Target, Translation],
 			[[duplicate_context, c, tcl],
 			 [global_declaration, c, tcl],
-			 [clear_memory, c, tcl],
 			 [public_cons_dest, tcl, c],
 			 [end(class), tcl, c],
 			 [procedure_defn, tcl, c]]),
@@ -335,6 +334,10 @@ strings_direct(tcl, clear_memory, instance(submodel,_,_, Name, _-Dims), Indent,
 	format(Stream, "~*snamespace delete ~w\n", [NewIndent," ", SpaceName]),
 	(\+ number(Dims), !;
 	excrete(tcl, end(for), makenames, Indent, Stream)).
+
+strings_direct(c, clear_memory, instance(submodel,_,_,_,_), Indent, 
+	       Stream) :-
+	format(Stream, "~*sdelete this;\n", [Indent," "]).
 
 /* assignment */
 strings_direct(L, assignment, Dest=Source, Indent, Stream) :-
