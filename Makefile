@@ -68,7 +68,7 @@ SHAREDLIBEXTN = .so
 
 ifeq ($(PLATFORM),Darwin)
 	SYSDIR = System$(BITEXTN)
-#	VERS = 8.6
+	VERS = 8.5
 	OSNUMBER = $(shell uname -r)
 	TCLFW = /System/Library/Frameworks
 ifeq ($(MY_CPU),x86_64)

@@ -273,7 +273,7 @@ proc GetIdFromCaptionPath { caption } {
     if {[string equal abort [Query [list missing_var_requested $helperType \
 					$lostType $lostBit $lostType] \
 				 warning helpers {} abort]]} {
-	error aborted
+	return aborted
     }
     return nomatch
 }

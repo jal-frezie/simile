@@ -966,7 +966,8 @@ spread_dims(Node) :-
 	get_av_pair(Obj, 0, units, GivenUnits),
 	get_input_info(Obj, IList),
 	
-	(list_index_meanings(Obj, ISpecs),
+	(\+ find_type(Node, state),
+	    list_index_meanings(Obj, ISpecs),
 	    all(dialogue, index_types, [build(ISpecs), build(IndxCount)]),
 	    (get_av_pair(Obj, 0, table_data, TD) ->
 	        dialogue'><'assert(table_data_is(TD)); true),
