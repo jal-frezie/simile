@@ -486,7 +486,7 @@ appropriate_units(Units, TypeBase, RawBase, CheckLevel,
 	promote_unit(RawBase, ComboBase),
 	\+ member(ComboBase, [const_int, const_ratio]),
 		% variables cannot have constant units even if constant
-	(\+ member(Units, ['', any]), !,
+	(\+ member(Units, ['', any]),
 	    (Units = int, ComboBase = 1,
 	        NewUnits = 1;
 		% num constant changed from int to float -- allow
@@ -501,6 +501,10 @@ appropriate_units(Units, TypeBase, RawBase, CheckLevel,
 	    NewUnits = ComboBase), % last resort, use units from eqn
 	check_unit(ComboBase, NewUnits, CheckLevel, EqnToUnitError),
 	
+	\+ (EqnToUnitError = bad_type_conversion(_,_),
+	    \+ NewUnits == TypeBase,
+	    query(replace_units(ComboBase, NewUnits), question, fill_equation,
+		 [ok, cancel], ok)), % user chooses to override old unit field
 	(\+ EqnToUnitError == [],
 	    TypeError = EqnToUnitError;
 	    /* Next check that the value's units,however they were

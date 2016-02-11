@@ -1624,7 +1624,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    (QChange = 0, !, Linkers = [Set];
 	     Linkers = [make(tipped(Dest), [on_step], Path, SmStep,
 			    [assign(Val, ValRef+QChange)]), Set]);
-	  Type = state_fn, wake,
+	  Type = state_fn,
 	    (Fn = choose(1, OnInitEqn, ChangeEqn);
 	     Fn = choose(1, OnInitUnscaled, ChangeUnscaled) * ScaleFactor,
 	        OnInitEqn = OnInitUnscaled * ScaleFactor,

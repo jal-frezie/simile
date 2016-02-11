@@ -1492,14 +1492,15 @@ units_for_trigger_mag(Fn, MagUnits) :-
 	all(m_update, analyze_array,
 	    [build(EvtUnits), build(EvtBases), build(EvtDimses)]),
 	all(user, prefix, [build(EvtDimses), unify(EvtDims)]),
-	length(EvtDims, EDLen),
+	length(EvtDims, ResLen),
 	% limit mag dims to those of event
 	
-	(m_class'><'Fn has_class_refinement units of Mu,
-	    m_update'><'analyze_array(Mu, _, Ct),
-	    length(Ct, TrigMax);
-	 TrigMax = 0),
-	ResLen is min(EDLen, TrigMax),
+%	(m_class'><'Fn has_class_refinement units of Mu,
+% this is total bollocks, the units of the current comp have nothing to do with it
+%	    m_update'><'analyze_array(Mu, _, Ct),
+%	    length(Ct, TrigMax);
+%	 TrigMax = 0),
+%	ResLen is min(EDLen, TrigMax),
 	length(TDims, ResLen),
 	prefix(TDims, EvtDims),
 	length(EvtBases, NEvts),
@@ -1514,8 +1515,8 @@ units_for_trigger_mag(Fn, MagUnits) :-
 units_for_evt_antecedents(Fn, EvtUnit) :-
 	contains(Evt, Fn), % in case input for frag-defined fn,
 	find_type(Evt, function),
-	m_update'><'get_all_links(Evt, discrete, _,
-	     input_link(_,_,_,_, EvtUnit)).
+	m_update'><'get_all_links(Evt, discrete, ids(RealSrc, _Reln), _),
+	m_update'><'get_spec_units(RealSrc, EvtUnit).
 
 dissociate(Wrapper, made_at(Arg, Level), made_at(NewArg, Level)) :-
 	NewArg =.. [Wrapper, Arg].

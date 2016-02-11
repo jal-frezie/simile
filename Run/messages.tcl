@@ -522,6 +522,10 @@ set msgs(unknown_unit_message) [tr. {Unit expression %1$s is not recognized as a
 set msgs(bad_type_conversion_title) [tr. {Problem converting units}]
 set msgs(bad_type_conversion_message) [tr. {You are not allowed to convert implicitly from a "%1$s" value to a "%2$s" value because of the possibility for confusion or loss of information.}]
 
+set msgs(replace_units_title) [tr. {Cannot keep previous units}]
+set msgs(replace_units_message) [tr. {You cannot convert implicitly from a "%1$s" value to a "%2$s" value. Do you want to change the actual units for this component from "%2$s" to "%1$s"?}]
+set msgs(replace_units_detail) [tr. {Note that this change may propagate to other components that are influenced by this one.}]
+
 set msgs(is_scale_factor_title) [tr. {Esoteric use of unit matching}]
 set msgs(is_scale_factor_message) [tr. {You have provided a unit specification, "%1$s", that is equivalent to a dimensionless non-unity scaling factor of %2$s. This will cause the associated value to be treated as a number of quantities of that size. You may continue if this is what you want.}]
 

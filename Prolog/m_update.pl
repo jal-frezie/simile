@@ -527,7 +527,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 		     UnitDims = Unit_base),
 		    Complaint = mismatched_dimensions(Target_name, TargetDims,
 						      Unit_base, UnitDims));
-		Complaint = bad_type_conversion(Unit_base, Target_type));
+		Complaint = bad_type_conversion(Unit_base, Target_type)), !;
 	    Complaint = unknown_unit(Target_base));
 	Complaint = mismatched_arrays(Target_unit, TargetExprs, DimExprs)),
 	(nonvar(Complaint); Complaint = []).
