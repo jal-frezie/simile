@@ -96,8 +96,7 @@ get_info(_Wid, selection, Dir, Ends) :-
 	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = '').
 	
 get_info(_Wid, Comp, eqn, Eqn) :-
-	find_node_with_data(Comp, _, Fn),
-	    eqn_for(Fn, Eqn);
+	pick_equation(Comp, Eqn);
 	Eqn = '<none>'.
 
 get_info(_Wid, Comp, type, SubType) :-
