@@ -21,9 +21,6 @@ class similescript::$newHelperClass {
 	global SIMILE_PATH
         set useNodes(removeImg) \
 	    [image create photo -file "$SIMILE_PATH/Images/Toolbar/remove.gif"]
-        set useNodes(multiFileImg) \
-	    [image create photo -file "$SIMILE_PATH/Images/Toolbar/multi.gif"]
-	set ::msgs(filemode_$this) "Save as columns in one file"
 	set toolbarItems \
                 [list [list new.gif "Clear" [code $this Clear]] \
                 [list add.gif "Add variables" \
@@ -40,6 +37,7 @@ class similescript::$newHelperClass {
 	pack [::ttk::button $f.head.save -image $::iconImages(save) \
 		  -command [code $this SetSavePath]] \
 	    -before $f.head.label -side right
+	pack [message $winId.message -text {}]
 	BindPopup $f.head.label logs_$this
 	BindPopup $f.head.save [tr. {Choose folder for logs}]
 	
@@ -52,10 +50,10 @@ class similescript::$newHelperClass {
 	    $hsfParser parse $state
 	} else {
 	    # new instance so request data from model
-	    set toSeparateFiles yes
+	    MultiFileMode
 	    SetSavePathTo [GetPathChoice .csv [GetNode]]
-	    pack [message $winId.message \
-		      -text "Use + button to add components for logging"]
+	    $winId.message configure \
+		-text "Use + button to add components for logging"
 	}
     }
 
@@ -94,7 +92,14 @@ class similescript::$newHelperClass {
 
     public method PrepareSaveString {} {
 	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[$this info class]\">\n"
-	append State "<target_dir mode=\"absolute\">$curFolder</target_dir>\n"
+	set shfPath $::chosenPaths(.shf,[$modelInst cget -modelNode])
+	if {[catch {::fileutil::relative $shfPath $curFolder} relFolder]} {
+	    puts $relFolder
+	    set tdLine "<target_dir mode=\"absolute\">$curFolder</target_dir>\n"
+	} else {
+	    set tdLine "<target_dir mode=\"relative\">$relFolder</target_dir>\n"
+	}
+	append State $tdLine
 	append State "<to_separate_files whether=\"$toSeparateFiles\"/>\n"
 	append State <components>\n
 	foreach item $useNodes(logged) {
@@ -285,7 +290,11 @@ class similescript::$newHelperClass {
 	    whether { ;# to separate files
 		if {![lindex $attList 1]} {
 		    ColumnMode
+		} else {
+		    MultiFileMode
 		}
+	    } mode {
+		set useNodes(fileMode) [lindex $attList 1]
 	    }
 	}
     }
@@ -293,7 +302,20 @@ class similescript::$newHelperClass {
     method Stuff {contents} {
 	switch $useNodes(inElt) {
 	    target_dir {
-		SetSavePathTo $contents
+		if {$useNodes(fileMode) eq "relative"} {
+		    set node [$modelInst cget -modelNode]
+		    set shfPath [file dirname $::helperTable($node,stateName)]
+		    # above may not be updated before saving .shf to
+		    # new location, so use chosen path when saving --
+		    # and set it here in case modeller saves to same
+		    # location in which case no path is chosen
+		    set ::chosenPaths(.shf,$node) $shfPath
+		    SetSavePathTo [file normalize \
+				       [file join $shfPath $contents]]
+		    #puts "joined $shfPath and $contents to get $curFolder"
+		} else {
+		    SetSavePathTo $contents
+		}
 	    } component {
 		InsertLogEntry $contents 1
 	    }
