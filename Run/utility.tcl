@@ -862,9 +862,10 @@ proc PackItUp {t} {
 	focus -force [winfo toplevel $parent]
 #	AbleAllEntries $parent normal
 #	puts "Restoring $::concealedMenu($t) for $t"
-	if {[winfo exists $::concealedMenu($t)]} {
+	if {[info exists ::concealedMenu($t)]} {
 # setting menu empty allows crash if it is posted
 	    [winfo toplevel $parent] configure -menu $::concealedMenu($t)
+	    unset ::concealedMenu($t)
 	}
 # Make menu updates happen before something else does same thing
 	update idletasks
