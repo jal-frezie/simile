@@ -95,6 +95,7 @@ switch ($_POST["model_src"]) {
    } else {
       exit('No model supplied!');
    }
+   $_POST['model_link'] = "Uploaded";
    break;
 
    case "url":
@@ -148,6 +149,16 @@ switch ($_POST["helper_src"]) {
    file_put_contents($base . ".shf", file_get_contents($_POST['helper_link']));
    break;
 }
+
+// Log the event to the database for display by CRM
+require '../../crm/private/ConnectCRM.php';
+$query = "INSERT INTO crm_similive  (DateTime, IPAddress, ModelURL) ".
+"VALUES ('".date('Y/m/d H:i:s')."', '".
+gethostbyaddr($_SERVER['REMOTE_ADDR'])."', '".
+htmlspecialchars(stripslashes($_POST['model_link']))."')";
+
+$result = mysql_query($query) or die("Query failed : " . mysql_error());
+mysql_close($link);
 
 // CreateModelExec($base);
 // OK, now set up _POST so I can inline model_action and get the
