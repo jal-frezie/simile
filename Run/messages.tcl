@@ -388,6 +388,9 @@ set msgs(missing_function_detail) [tr. {%1$s should have a definition in the fil
 set msgs(no_such_function_title) [tr. {Non-existent function used}]
 set msgs(no_such_function_message) [tr. {Attempting to process subexpression "%1$s": Simile does not include "%2$s" as a function.}]
 
+set msgs(tail_not_list_title) [tr. {Misuse of Prolog operator}]
+set msgs(tail_not_list_message) [tr. {The Prolog list operators "." and "|" may only be used if the second argument is an explicit list, which is not the case in "%1$s".}]
+
 set msgs(wrong_format_of_args_title) [tr. {Wrong format of args}]
 set msgs(wrong_format_of_args_message) [tr. {Attempting to process subexpression "%1$s": You have tried to use the macro or function "%2$s" with arguments "%3$s", but it must take arguments of the form "%4$s".}]
 set msgs(wrong_format_of_args_detail) [tr. {This problem might be fixed by adding parentheses around a subexpression that forms an argument of this subexpression.}]

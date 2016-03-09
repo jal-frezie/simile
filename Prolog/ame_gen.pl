@@ -556,9 +556,11 @@ replace_subexps(Expr, TestModule, Test, Data, Dir, AllVarPairs, FinalExpr) :-
 	    Expr = param(_,_,_,_,_)), !,
 		VarPairs = [],
 		NewExpr = Expr;
-	Expr = [_ | _], !,
-		replace_all_subexps(Expr, TestModule, Test, Data, Dir,
+	Expr = [_ | Tail], !,
+                (is_list(Tail) ->
+		 replace_all_subexps(Expr, TestModule, Test, Data, Dir,
 				    VarPairs, NewExpr);
+		throw(tail_not_list(Expr)));
 /*	(Expr = (if Cond then Exp1 elseif SubExp2),
 			Exp2 = (if SubExp2);
 	Expr = (if Cond then Exp1 else Exp2)), !,
