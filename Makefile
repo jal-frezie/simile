@@ -11,7 +11,7 @@ endif
 
 # Prolog implementation to use -- GNU for Windows releases, GNU otherwise
 # (currently GNU for everything)
-PROLOG = SWI
+PROLOG = GNU
 
 DEFNS=-DSIM_BUILT=$(shell date $(DATESPEC) +%s)
 
