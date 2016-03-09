@@ -290,7 +290,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     pack $graph -padx 8 -pady 4
     set table [button $equation(actzone).buttons.table \
 		   -text " [tr. Table]... " \
-		   -command [list GetTable $t $topNode $comp $en]]
+		   -command [list GetTable $t $topNode $comp $en $enum_types]]
     pack $table -padx 8 -pady 4
     if {![string match Darwin $tcl_platform(os)]} {
 	$graph configure -compound left -image $iconImages(graph)
@@ -705,13 +705,13 @@ proc RollAll {s l1 l2 l3 top bot} {
     $l3 yview moveto $top
 }
 
-proc GetTable {parent topNode comp box} {
+proc GetTable {parent topNode comp box enum_types} {
     global equation table_entry
     
     set table_entry(data) $equation(table_data)
     set table_entry(values) $equation(table_values)
     if {[equationDoTable $parent $topNode $comp "(data determines dimensions)" \
-	     {} fixed]>0} {
+	     $enum_types fixed]>0} {
 #        if {[llength $table_entry(dataField)]} {
 #            set equation(table_data) [concat [list $table_entry(fileName) \
 #                    $table_entry(dataField)] \

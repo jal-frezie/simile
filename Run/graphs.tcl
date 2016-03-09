@@ -1234,15 +1234,21 @@ proc EditTableData {startLine capt dims trans} {
 
 proc NestedArray {dims trans} {
     if {[llength $dims]} {
-	set elt [NestedArray [lrange $dims 1 end] [lrange $trans 1 end]]
-	if {[llength [lindex $trans 0]]} {
-	    foreach mem [lrange [lindex $trans 0] 1 end] {
+	set elt [NestedArray [lrange $dims 1 end] $trans]
+	set dim [lindex $dims 0]
+	set n [lsearch -index 0 $trans $dim]
+	if {$n>-1} {
+	    foreach mem [lrange [lindex $trans $n] 1 end] {
 		lappend result $mem $elt
 	    }
-	} else {
+	} elseif {$dim eq "boolean"} {
+	    set result [list false $elt true $elt]
+	} elseif {[string is integer -strict $dim]} {
 	    for {set i 1} {$i <= [lindex $dims 0]} {incr i} {
 		lappend result $i $elt
 	    }
+	} else {
+	    set result <bad_index>
 	}
 	return $result
     } else {
