@@ -658,7 +658,8 @@ process_expr(sub(InputPairs, FragSMs, Refs), OldVar, NewExpr, Recurse) :-
 	expand_library(OldVar, NewExpr),
 	    Recurse = 1. % that's all the recursion we need
 
-build_table_ref(Table, table, Table).
+build_table_ref(Table, NoArgs, Table) :-
+        member(NoArgs, [table, table('')]), !.
 
 build_table_ref(Table, TableFn, RefTable) :-
 	TableFn =.. [table, Ind1 | IndN], ShortTableFn =.. [table | IndN],

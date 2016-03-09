@@ -1238,10 +1238,12 @@ Now one that uses a special conditional level */
 		RUnits = int,
 		ValRef = check_limit(RActEqn, Lower, Upper, Flags, GraphId,
 				     Step, RDiffs);
-	    Source =.. [table | SourceList],
+	    Source =.. [table | SourceListForm],
 	    Step = dummy,
-		\+ SourceList = [''], /* let checker handle empty args */
-	        (SourceList = [_|_], !;
+		(SourceListForm = [''] -> % let checker handle empty args
+		   SourceList = [];
+		 SourceList = SourceListForm),
+	        (is_list(SourceList), !;
 		throw(only_works_on_array(Source))),
 		(dialogue'><'table_data_is(TableData);
 		 throw(missing_graph_or_table_data(Source))),
