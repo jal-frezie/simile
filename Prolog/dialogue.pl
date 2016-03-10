@@ -847,7 +847,8 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 		throw(bad_index_number(N, prev, 32));
 	    DoneExpr = '/dest/'),
 	    Recurse = 1;
-	  expand_library(Param, DoneExpr),
+	instance'><'build_table_ref(table_const(1), Param, DoneExpr);
+	expand_library(Param, DoneExpr),
 	    Recurse = 1.
 
 collapse_params(_, param(arr(_, Param, _), _,_,_,_), Param, 0).

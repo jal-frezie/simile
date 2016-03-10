@@ -840,8 +840,11 @@ make_intermediates(
 	    NewInters = PrevInters;
 
 	(Source = table_const(1),
-	    \+ Step = dummy,
-	    (m_class'><'SubId has_class_refinement table_data of TableData;
+	  (Step = dummy ->
+            GetSpec = (dialogue'><'table_data_is(TableData));
+           GetSpec = (m_class'><'SubId has_class_refinement table_data 
+                                  of TableData)),
+            (GetSpec, !;
 		throw(missing_graph_or_table_data(Source))),
 	    member(dims=ConstBounds, TableData),
 	    member(current=BoundArray, TableData),
@@ -1238,18 +1241,6 @@ Now one that uses a special conditional level */
 		RUnits = int,
 		ValRef = check_limit(RActEqn, Lower, Upper, Flags, GraphId,
 				     Step, RDiffs);
-	    Source =.. [table | SourceListForm],
-	    Step = dummy,
-		(SourceListForm = [''] -> % let checker handle empty args
-		   SourceList = [];
-		 SourceList = SourceListForm),
-	        (is_list(SourceList), !;
-		throw(only_works_on_array(Source))),
-		(dialogue'><'table_data_is(TableData);
-		 throw(missing_graph_or_table_data(Source))),
-		member(units=RUnits, TableData),
-		member(bounds=Arg_template, TableData),
-		ValRef = table(ResultList);
 	    % Source =.. [Op | ArgListForm], (done)
 		(ArgListForm = [''], !, ArgList = [];
 		    ArgList = ArgListForm),
