@@ -78,6 +78,11 @@ sicstus_format_to_chars(Template, V1, Result) :-
 open_chars_stream(String, Stream) :-
 	open_input_codes_stream(String, Stream).
 
+chars_from_stream(Stream, Pred, Chars) :-
+        open_output_codes_stream(Stream),
+        Pred,
+        close_output_codes_stream(Stream, Chars).
+    
 sicstus_write_chars(Chars) :-
 	get_print_stream(Stream),
 	sicstus_write_chars(Stream, Chars).

@@ -49,12 +49,11 @@ ame_save( File, Model, Date, SelOnly, _MakeCompat) :-
 	% Arc data is saved to a separate stream -- original intention
 	% was to allow the save process to try and fail each node to
 	% save memory, but just doing it this way had desired
-	% result. Note these predicates do not exist in swi-prolog so
-	% will have to be bodged using a temp file.
-	open_output_codes_stream(ArcData),
-	save_nodes( Models, Stream, SelOnly, ArcData ),
+        % result (it was building list of arcs that used the resources).
+        chars_from_stream(ArcData, library'><'save_nodes( Models, Stream, 
+							  SelOnly, ArcData ),
+			  ArcChars),
 	nl(Stream),
-	close_output_codes_stream(ArcData, ArcChars),
 	reassure_user(writing_arc, []),
 	sicstus_write_chars(Stream, ArcChars),
 	close( Stream ), !;

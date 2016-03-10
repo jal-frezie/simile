@@ -65,6 +65,9 @@ reopen_stream_internally_formatted(Utf8Stm, IntStm, EuContents) :-
 close_internally_formatted_stream(Stm) :-
 	close(Stm).
 
+chars_from_stream(Stream, Pred, Chars) :-
+        with_output_to_chars((current_output(Stream), Pred), Chars).
+    
 % use sgml library to convert XMLv3 model specs to superficial Prolog syntax
 % -- GNU does this with its own libxml2 bindings
 :- use_module(library(sgml)).
