@@ -818,7 +818,7 @@ make_section_cond(L, VMPtrs, PassTest) :-
 	all(language, make_new_base_cond,
 	    [unify(L), build(VMPtrs), build(LocaleTests)]),
 	    build_junction(LocaleTests, '||', NewTest),
-	    combine(L, ?, [NewTest, -2:PhaseRef], PassTest)).
+	    combine(L, choose, [NewTest, -2, PhaseRef], PassTest)).
 	    
 	
 make_new_base_cond(L, new_context(Ptr, Phase), LocCond) :-
