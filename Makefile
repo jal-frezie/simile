@@ -544,7 +544,7 @@ install:
 	tar cf $(DESTDIR)$(EXEC_TGT)/payload.tar \
 		$(SYSDIR)/bin/relay \
 		$(SYSDIR)/bin/simile \
-		$(SYSDIR)/bin/xgsimile \
+		$(PROLOGSTATE) \
 		$(SYSDIR)/lib/SimileAutoObj/SimileAutoObj.itcl \
 		$(SYSDIR)/lib/SimileAutoObj/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/can2svg/can2svg.tcl \
