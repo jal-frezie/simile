@@ -1,0 +1,34 @@
+# Debian control file for Simile
+# Build Simile as follows:
+# 1. Export from CVS to directory called simile-x.y:
+# cvs -d :ext:u45169214@simulistics.com:/kunden/homepages/20/d204715617/htdocs/cvsroot export -D now Simile
+# 2. Copy this tree into same
+# 3. Copy tkdnd2.6 and tcl-gdal tree under Extensions
+# 4. Create help tree by running import_html_help script 
+# 5. Issue debuild command
+
+
+Source: simile
+Section: science
+Priority: extra
+Maintainer: Jasper Taylor <jasper@simulistics.com>
+Build-Depends: debhelper (>= 9.0.0), tcl-dev (>= 8.5) | tcl8.5-dev (>= 8.5), tk-dev (>= 8.5) | tk8.5-dev (>= 8.5), libgdal-dev (>= 1.5)
+# removed  gprolog (>= 1.4.0), from above as hard to find for Debians
+# build from src before building binary .deb!
+Standards-Version: 3.9.3
+Homepage: http://simulistics.com
+#Vcs-Git: git://git.debian.org/collab-maint/simile.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/simile.git;a=summary
+
+Package: simile
+Architecture: any
+Depends: ${misc:Depends}, tk8.6 (>= 8.6) | tk8.5 (>= 8.5), g++ (>= 4.0), tclxml (>= 3.2), tklib (>= 0.5), itcl3 (>= 3.3), tcl-trf (>= 2.1), tk-table (>= 2.9) | libtktable2.9 (>= 2.9), tcl-thread (>= 2.6.5) | tclthread (>= 2.6.5), libtk-img (>= 1.3)
+# ${shlibs:Depends} removed from above because it included libgdal1 which is
+# (a) unnecessary unless you are using GeoTIFFs (and large!)
+# (b) wrong for Ubuntu which calls it libgdal1h instead, preventing install
+Description: Multi-paradigm graphical modelling environment
+ Multi-paradign modelling and simulation software for complex dynamic
+ systems in the earth, environmental and life sciences. We use unique
+ logic-based declarative modelling technology to represent the
+ interactions in these systems in a clearly structured, visually
+ intuitive way.

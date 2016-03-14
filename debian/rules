@@ -1,0 +1,42 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+%:
+	dh $@ 
+
+# When cleaning, also clean the included packages
+# (dummy configure as set out in bug #570503)
+override_dh_auto_clean:
+	cd Extensions/tkdnd2.6;./configure;cd -
+	dh_auto_clean -- -C Extensions/tkdnd2.6
+	dh_auto_clean -- -C Extensions/tcl-gdal
+	dh_auto_clean --
+
+# Likewise when making
+override_dh_auto_build:
+	dh_auto_build -- -C Extensions/tkdnd2.6
+	dh_auto_build -- -C Extensions/tcl-gdal
+	dh_auto_build --
+
+# Likewise when installing
+override_dh_auto_install:
+	dh_auto_install --
+	dh_auto_install -- -C Extensions/tcl-gdal \
+		libdir=/usr/lib/simile-6.6/System/lib/Stubs
+	dh_auto_install -- -C Extensions/tkdnd2.6 \
+		libdir=/usr/lib/simile-6.6/System/lib/Stubs
+# This is from Ubuntu tkdnd package to get man page in right place	
+# (removed because manpage conflicted with that for free-living tkdnd)
+#	mv debian/simile/usr/share/man/mann debian/simile/usr/share/man/man3
+#	mv debian/simile/usr/share/man/man3/tkDND.n  \
+#		debian/simile/usr/share/man/man3/tkdnd.3tcl
+#	sed -i 's|^\.TH tkdnd n |.TH tkdnd 3tcl |' \
+#		debian/simile/usr/share/man/man3/tkdnd.3tcl
