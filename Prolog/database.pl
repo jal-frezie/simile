@@ -70,7 +70,7 @@ clear_model([Funt/Args | Rest]) :-
 :- dynamic(node_id_for_root_is/1).
 
 empty_tree :-
-	load_foreign_library('../Prolog/struct_db'),
+	load_foreign_library('../System/lib/struct_db'),
 	empty_tree(root, Ushrtmx),
 	asserta(node_id_for_root_is(Ushrtmx)).
 
