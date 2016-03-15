@@ -143,7 +143,7 @@ endif
 endif
 
 PROLOGSTATE = $(EXECDIR)/xssimile$(EXECEXTN)
-PROLOG_DB = Prolog/struct_db$(SHAREDLIBEXTN)
+PROLOG_DB = $(RESDIR)/struct_db$(SHAREDLIBEXTN)
 ifeq ($(PROLOG),GNU)
 	PROLOGSTATE = $(EXECDIR)/xgsimile$(EXECEXTN)
 	PROLOG_OBJ = $(EXECDIR)/gmain$(ARCHEXTN).o
@@ -545,6 +545,7 @@ install:
 		$(SYSDIR)/bin/relay \
 		$(SYSDIR)/bin/simile \
 		$(PROLOGSTATE) \
+		$(PROLOG_DB) \
 		$(SYSDIR)/lib/SimileAutoObj/SimileAutoObj.itcl \
 		$(SYSDIR)/lib/SimileAutoObj/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/can2svg/can2svg.tcl \
