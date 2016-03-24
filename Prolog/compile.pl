@@ -413,7 +413,7 @@ used when entering file parameters */
 	V is SimV + 4,
 	state'><'edition_is(Edition),
 	library'><'count_functions(Top, FnCount),
-	output'><'safe_tcl_eval('clock seconds', DateStr),
+	safe_tcl_eval('clock seconds', DateStr),
 	sicstus_format_to_chars("\"program='AME',version=~f,edition=~a,date=~s,size=~d,\"", [V, Edition, DateStr, FnCount], IdentStr),
 	sicstus_atom_chars(IdentAtom, IdentStr),
 %	name(V, VStr),
@@ -442,7 +442,10 @@ wot need them */
 	excrete(Language, variable_declaration,
 	       [real, dts, [BoostPhases]], 0, Stream),
 
-	list_matching_files('../Functions/*.cpp', FnIncs),
+	safe_tcl_eval([file, join, '$::SIMILE_PATH', 'Functions', 
+			      '*.cpp'], FnMatchStr),
+	name(FnMatch, FnMatchStr),
+	list_matching_files(FnMatch, FnIncs),
 	% the /* in the above line does not start a comment, nor that in this */
         all(user, get_native, [build(ExtIncs), build(UExtIncs)]),
 	append([FnIncs, LocalIncs, UExtIncs], Incs),

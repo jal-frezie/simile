@@ -264,7 +264,10 @@ read_library_funx(Done) :-
 			       choose(Bool, ThenCl, if IfCl)))),
 %	assert(macro_expansion('Built-in', (choose(Bool, ThenCl, ElseCl) -->
 %					       (Bool?ThenCl'><'ElseCl)))),
-	read_func_tree('../Functions/', '../Functions', 'Built-in', BuiltIns),
+	output'><'safe_tcl_eval([set, '::SIMILE_PATH'], BaseDirStr),
+	name(BaseDir, BaseDirStr),
+	append_atoms(BaseDir, '/Functions/', FnMatch),
+	read_func_tree(FnMatch, FnMatch, 'Built-in', BuiltIns),
 
 	state'><'use_pref_dir(UserStuff),
 	append_atoms(UserStuff, '/Functions/', UserFns),

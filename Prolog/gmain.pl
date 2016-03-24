@@ -254,7 +254,8 @@ portray(T) :-
 main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database'><'clear_database, or not as the case may be */
-	database'><'empty_tree, % comment out if not using structured database
+        database'><'empty_tree(dummy),
+	    % comment out if not using structured database
 	state'><'retractall(model_in(_,_)),
         nl, write(ready), nl,
 	current_prolog_flag(prolog_name, Vname),

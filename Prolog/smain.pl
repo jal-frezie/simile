@@ -101,13 +101,16 @@ main :-
 	gtrace,
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
-	database:empty_tree,
-	state:retractall(model_in(_,_)),
         % swi: avoid prompt chars messing up the pipe interface
         prompt(_P, ''),
         % swi: include decimals in floats so they are readable by other Prologs
         set_prolog_flag(float_format, '%#.12g'),
         nl, write(ready), nl,
+	output:safe_tcl_eval([file, join, '$::env(SYSDIR)', lib, struct_db],
+			     PathToObjStr),
+	name(PathToObj, PathToObjStr),
+	database:empty_tree(PathToObj),
+	state:retractall(model_in(_,_)),
 	prolog_flag(version, FullVnum),
 	name(FullVnum, FullVnumStr),
 	append(VnumStr, [32, 40 | _], FullVnumStr),

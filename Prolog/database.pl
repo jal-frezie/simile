@@ -15,7 +15,7 @@ sicstus_module(database, [
 			  my_assert/1, my_retract/1,
 			  assert_model/1, retract_model/1, retractall_model/1,
 			  query_model/1, anything_done/0, fetch_update/1,
-			  empty_tree/0,
+			  empty_tree/1,
 	/* for link */
 		is_arc/1, connection/3, arc_type/2, arc_info/3, continues/2,
 	/* for m_struct */
@@ -69,8 +69,8 @@ clear_model([Funt/Args | Rest]) :-
 % sicstus_load_foreign_resource(struct_db).
 :- dynamic(node_id_for_root_is/1).
 
-empty_tree :-
-	load_foreign_library('../System/lib/struct_db'),
+empty_tree(PathToObj) :-
+	load_foreign_library(PathToObj),
 	empty_tree(root, Ushrtmx),
 	asserta(node_id_for_root_is(Ushrtmx)).
 
