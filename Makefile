@@ -11,7 +11,11 @@ endif
 
 # Prolog implementation to use -- GNU for Windows releases, GNU otherwise
 # (currently GNU for everything)
-PROLOG = GNU
+ifeq ($(MY_CPU),armv7l) # 32-bit but -m32 unrecognized
+    PROLOG = SWI
+else
+    PROLOG = GNU
+endif
 
 DEFNS=-DSIM_BUILT=$(shell date $(DATESPEC) +%s)
 
@@ -173,6 +177,7 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl code.pl compile.pl database.pl \
 
 # Prolog is not Sicstus
 ifeq ($(PROLOG),SWI)
+UINFO_TPL = userinfo.swi
 $(PROLOGSTATE): $(PROLOG_FILES)  Prolog/smain.pl $(PROLOG_DB)
 	cd Prolog; swipl --goal=main --stand_alone=true \
 		-o ../$(PROLOGSTATE) -c smain.pl; cd ..
@@ -189,6 +194,7 @@ $(PROLOG_DB): Prolog/struct_db.c
 # note that libxml2 includes and libs are not needed
 endif
 ifeq ($(PROLOG),GNU)
+UINFO_TPL=userinfo.tpl
 # All-in-one without database
 # $(PROLOGSTATE): $(PROLOG_FILES)
 # 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) gmain.pl \
@@ -512,7 +518,7 @@ install:
 		Run/hai2mmii.tcl \
 		Run/language.tcl \
 		Run/toolbox.tcl \
-		Run/userinfo.tpl \
+		Run/$(UINFO_TPL) \
 		Run/messages.tcl \
 		Run/mre.tcl \
 		Run/params.tcl \
@@ -536,7 +542,7 @@ install:
 		Run/Simile.desktop; \
 	cd $(DESTDIR)$(INSTALL_TGT); \
 	tar xf payload.tar; \
-	mv Run/userinfo.tpl Run/userinfo.txt; \
+	mv Run/$(UINFO_TPL) Run/userinfo.txt; \
 	rm payload.tar; cd -; \
 	mkdir -p $(DESTDIR)$(SHAREDIR)/man/man1; \
 	cp simile.1 $(DESTDIR)$(SHAREDIR)/man/man1; \
