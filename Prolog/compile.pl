@@ -2132,8 +2132,11 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 	    /* Now if I have done some submodel assignments, recurse at
 		the same level */
 	    order_assignments(Phase, Path, EndPts, All, NewOrdered),
-	    append([FirstStep, CondPass, LastStep, NewOrdered],
-		   OrderedAssign), !;
+	    % check we actually do something, otherwise do not add loop...
+	    (member(make(_,_,_,_, [_Act | _]), CondPass) ->
+		append([FirstStep, CondPass, LastStep, NewOrdered],
+		       OrderedAssign);
+	     append(CondPass, NewOrdered, OrderedAssign)), !;
 	OrderedAssign = []).
 
 count_and_list_lookups(Eqn, N, Eqns) :-
