@@ -243,6 +243,9 @@ get_native(FileTtfn, FileNative) :-
 	sicstus_read_from_chars(Bag, String),
 	name(FileNative, String).
 
+gtrace :-
+    query(cannot_trace, warning, top, [ok], _).
+
 runtime_entry(start) :-
 	main.
 
