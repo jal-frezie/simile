@@ -507,7 +507,7 @@ recognized by Prolog unless we tell it about them...
 */
 :- op(300, xfy, ['**', '^']).
 
-:- op(400, xfy, ['%']).
+:- op(400, yfx, ['%']).
 
 /* :- op(500, fx, ['!']).
 Works but buggers up GNU prolog (do after loading?) */
