@@ -1817,6 +1817,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c file list_eqns" \
             -accelerator "$accKey+L"
     AddAccelerator $winid model "List equations" "<$accSym-l>"
+    $fm add command -label [tr. "Trace"] \
+            -command "MenuSelect $c file trace" \
+            -accelerator "$accKey+T"
+    AddAccelerator $winid model "List equations" "<$accSym-t>"
     $fm add separator
     $fm add cascade -label [tr. "Add new"] -menu $fm.sub1
     set fm1 [menu $fm.sub1 -tearoff 0]

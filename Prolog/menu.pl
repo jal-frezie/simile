@@ -496,6 +496,8 @@ menu_handle(_Win, file, import_ss) :-
 	convert_ss(SSFile, Parent),
 	finish_move(Parent, 0).
 */
+menu_handle(_Win, file, trace) :-
+    gtrace.
 
 menu_handle(Win, file, ExportType) :-
 	member(ExportType, [export_prolog, export_xml, export_session]),
@@ -563,10 +565,10 @@ menu_handle(Win, edit, Component) :-
 	event'><'assert(instant_link(Component)),
 	% this takes the last model diagram click as the position for addition.
 	% Barring adjusted so it cannot be called from toolbar edit menu.
+	get_original_click(Xpt, Ypt),
 	(Node = [_,_], !,
-	    get_original_click(Xpt, Ypt),
 	    event'><'click(Xpt, Ypt, 0);
-	 event'><'click_on(_, Node, 0)),
+	 event'><'click_on([Xpt, Ypt], Node, 0)),
 	event'><'unclick,
 	(Component is_primitive,
 	    Component is_class_of_sort box, !;
