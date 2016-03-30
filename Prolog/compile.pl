@@ -413,7 +413,7 @@ used when entering file parameters */
 	V is SimV + 4,
 	state'><'edition_is(Edition),
 	library'><'count_functions(Top, FnCount),
-	safe_tcl_eval('clock seconds', DateStr),
+	output'><'safe_tcl_eval('clock seconds', DateStr),
 	sicstus_format_to_chars("\"program='AME',version=~f,edition=~a,date=~s,size=~d,\"", [V, Edition, DateStr, FnCount], IdentStr),
 	sicstus_atom_chars(IdentAtom, IdentStr),
 %	name(V, VStr),
@@ -442,10 +442,7 @@ wot need them */
 	excrete(Language, variable_declaration,
 	       [real, dts, [BoostPhases]], 0, Stream),
 
-	safe_tcl_eval([file, join, '$::SIMILE_PATH', 'Functions', 
-			      '*.cpp'], FnMatchStr),
-	name(FnMatch, FnMatchStr),
-	list_matching_files(FnMatch, FnIncs),
+	list_matching_files('../Functions/*.cpp', FnIncs),
 	% the /* in the above line does not start a comment, nor that in this */
         all(user, get_native, [build(ExtIncs), build(UExtIncs)]),
 	append([FnIncs, LocalIncs, UExtIncs], Incs),
@@ -1591,17 +1588,17 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    GroundEqn = SourceEqn)), !,
 	    
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
-			 SmStep, UseStep, ExtInters, Used, [assign(Val, Fn)],
+			 SmStep, UseStep, ExtInters, Used, Assigns,
 			 Setups, Path, RefList, AllInters),
 	 append(ExtInters, Inters, AllInters), % declare them only once
 	(nonvar(Made), !; Made = Dest),
-	connect_params([make(Made, UseList, Path, UseStep, [Act]) | Setups],
+	connect_params([make(Made, UseList, Path, UseStep, Acts) | Setups],
 	                Actions);
 	Actions = [],
 	Inters = []),
 	Set = make(Dest, [init(Dest), update(Dest)], DestPath, SmStep, []),
 	(Type = limit, !,
-	    Act = assign(Val, Fn),
+	    Acts = Assigns,
 %	    Expr = assign(_D, choose(Test1, _Y, _N)),
 %	    Test1 =.. [_Ineq, Val, _Bound],
 				% dig out the inter
@@ -1614,34 +1611,36 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	  (member(Type, [creation, immigration, reproduction]);
 	        member(Is_P, [1, 3]);
 	        Is_P = 2, Type = init_function), !,
-	    Act = assign(Val, Fn),
+	    Acts = Assigns,
 	    Linkers = [Set];
 	  Type = al_function,
+	    Assigns = [assign(Val, Fn)],
 	    Fn = choose(LoopExitExpr, LoopStart, LoopStart),
 	    suffix(DestPath, Path), % because LoopStart evaluated when opening
 				% alarm submodel, before alarm condition done?
-	    Act = assign(Val, LoopExitExpr);
+	    Acts = [assign(Val, LoopExitExpr)];
 	  Type = compartment,
-	    Fn = ValRef+FChange+QChange,
-	    Act = assign(Val, ValRef+FChange),
+	    Assigns = [assign(Val, ValRef+FChange+QChange)],
+	    Acts = [assign(Val, ValRef+FChange)],
 	    (QChange = 0, !, Linkers = [Set];
 	     Linkers = [make(tipped(Dest), [on_step], Path, SmStep,
 			    [assign(Val, ValRef+QChange)]), Set]);
 	  Type = state_fn,
+	    Assigns = [assign(Val, Fn)],
 	    (Fn = choose(1, OnInitEqn, ChangeEqn);
 	     Fn = choose(1, OnInitUnscaled, ChangeUnscaled) * ScaleFactor,
 	        OnInitEqn = OnInitUnscaled * ScaleFactor,
 	        ChangeEqn = ChangeUnscaled * ScaleFactor),
-	    Act = assign(Val, ChangeEqn),
+	    Acts = [assign(Val, ChangeEqn)],
 	    Linkers = [make(init(Dest), [on_reset], Path, 0,
 			    [assign(Val, OnInitEqn)])];
 	  Type = magnitude, % poss ScaleFactor prob as above?
-	    Fn = delay_for(PipeExp, WaitExp, ValExp),
-	    Act = insert_to_pipe(ref_to(PipeExp), WaitExp, ValExp),
+	    Assigns = [assign(Val,  delay_for(PipeExp, WaitExp, ValExp))],
+	    Acts = [insert_to_pipe(ref_to(PipeExp), WaitExp, ValExp)],
 	    Linkers = [make(Dest, [on_step], Path, SmStep,
 			   [assign(Val, retract_from_pipe(ref_to(PipeExp),
 							  graph_id(Dest)))])];
-	  Act = assign(Val, Fn),
+	  Acts = Assigns,
 	    Linkers = []),
 	append([Collects, Actions, Linkers], Assignments).
 
