@@ -27,8 +27,8 @@ namespace eval ::ModelDiagram20060804 {
     }
 
     proc initialize {winId} {
-        set diagFile [ChooseFile model.cnv \
-			  [tr, "Display model diagram file:"] 0]
+        set diagFile [ChooseFile model.cnv [tr. "Display model diagram file:"] \
+			  0 [$::helperTable($winId,whichInstance) GetNode]]
 	if {[string length $diagFile]} {
 	    set quikStr [NetOpen $diagFile r]
 	    SetState $winId [read $quikStr] ;# transcribe file into contents
