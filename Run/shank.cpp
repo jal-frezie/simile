@@ -659,6 +659,7 @@ VarParamData::VarParamData(ExecutingModel* instToUse, HCOMP newNodeNum,
   finalTimePoint = NULL;
   curTimePoint = NULL;
   fillMethod = USE_LAST;
+  seriesIdxUnits = 1.0;
 
   nextVP = myModelExec->varParamArrayBase;
   myModelExec->varParamArrayBase = this;
@@ -673,7 +674,7 @@ double VarParamData::update_from_points(double nowInDays, double next) {
   int hiWraps = 0, oldWraps = wraps;
   double now, later, interFract;
   node_data_line* ndRef = myModelExec->modelSpec->nodedata + nodeId;
-  
+
   now = nowInDays/seriesIdxUnits;
   loBound = curTimePoint;
   if (loBound)

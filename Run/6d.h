@@ -213,7 +213,8 @@ class ExecutingModel
   excpData* ResetInstance(double, int, int);
 
   //! Execute the model -- args are int. method, start time,
-  // pointer to end time, error limit and whether to pause on events
+  // pointer to end time, error limit and whether to pause on
+  // out-of-range and events
 
   //! End time passed as pointer; value overwritten if model stopped early
   //! Error limit controls adaptive timestep variation, 0 turns it off
