@@ -27,6 +27,23 @@ namespace eval ::ModelDiagram20060804 {
     }
 
     proc initialize {winId} {
+	global window_info
+	
+	AddDiagram $winId {}
+	set node [$::helperTable($winId,whichInstance) GetNode]
+	set window_info($winId.c,top_node) $node
+	set window_info($winId.c,scale) 1.0
+	set ::custom(showgrids,$winId.c) 0
+	prolog state'><'set_display_depth('$winId.c',_,32)
+	set bg [$winId.c create rectangle 0 0 1 1 -outline {} -fill beige \
+		    -tags "/base/ /background"]
+	prolog tcl_export_graphics('$winId.c',$node)
+	$winId.c configure -scrollregion $::fromProlog
+	$winId.c coords $bg $::fromProlog
+	array unset window_info $winId.c,top_node
+    }
+    
+    proc old_initialize {winId} {
         set diagFile [ChooseFile model.cnv [tr. "Display model diagram file:"] \
 			  0 [$::helperTable($winId,whichInstance) GetNode]]
 	if {[string length $diagFile]} {
@@ -40,8 +57,15 @@ namespace eval ::ModelDiagram20060804 {
     proc AddDiagram {winId diagFile} {
 	global window_info
 
-	pack [ScrolledWindow $winId.s] -fill both -expand 1
-	$winId.s setwidget [set c [canvas $winId.c]]
+	set c [canvas $winId.c -bg white -confine 1 \
+		   -xscrollcommand "$winId.xscroll set" \
+		   -yscrollcommand "$winId.yscroll set"]
+	pack [scrollbar $winId.xscroll -orient horizontal \
+		  -command "$c xview"] -side bottom -fill x
+	pack [scrollbar $winId.yscroll -orient vertical \
+		  -command "$c yview"] -side right -fill y
+	pack $c -fill both -expand 1
+	
 	set window_info($c,topCapt) {} ;# must be top-level diagram!
 	eval $diagFile
 
@@ -63,7 +87,9 @@ namespace eval ::ModelDiagram20060804 {
 	set cany [$winId canvasy $y]
 	set target [GetClickedObj $winId $canx $cany 6]
 	set node [ExtractPrologName $winId $target]
-	return [GetClickCapt $winId $canx $cany $node]
+	set result [GetClickCapt $winId $canx $cany $node]
+	#puts [list $canx $cany $target $node $result]
+	return $node
     }
 
     proc OnElementClick { winId x y } {
@@ -83,9 +109,9 @@ namespace eval ::ModelDiagram20060804 {
 
 	set context [CaptPathFromPoint $winId $x $y]
 
-	set topNode [$helperTable([winfo parent $winId],whichInstance GetNode])
+	set topNode [$helperTable([winfo parent $winId],whichInstance) GetNode]
 	if {$runState($topNode,modelRunning)>2} {
-	    PostPopup $winId $X $Y
+	    PostPopup $X $Y
 #	    set trans [GetTransTable $plName]
 #	    if {[catch {GetModelValue $plName} mVal]} {
 #		set missing [lindex [split $mVal \"] 1]
