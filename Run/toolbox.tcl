@@ -642,7 +642,7 @@ itcl::class ModelWindowExtn {
 
 proc LoadModelWindowExtensions {} {
     set origDir [pwd]
-    cd ../Extensions
+    cd [file join $::SIMILE_PATH Extensions]
     #tk_messageBox -message "LoadModelWindowExtensions pwd [pwd]" -type ok
     set extensionList [glob -nocomplain *.tcl]
     foreach extension [lsort $extensionList] {
