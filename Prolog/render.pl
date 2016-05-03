@@ -1189,7 +1189,7 @@ refer_value(Language, Expr, Result) :-
 	 \+ cannot_be_dollared(Str1) ->
 	    Str2 = [36 | Str1];
 	 make_expr(Language, Expr, Ref),
-	    sicstus_format_to_chars("[set ~w]", Ref, Str2)),
+	    sicstus_format_to_chars("[set ~w]", [Ref], Str2)),
 	name(Result, Str2).
 
 /* refer: for indirect references. Goes straight through in Tcl, but makes
