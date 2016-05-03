@@ -1453,7 +1453,7 @@ proc ExportSVGDirect {node} {
     set window_info(ToSVG,scale) 1.0
     set ::svgXML {}
     array unset ::can2svg::defsArrowMarkerArr ::can2svg::defsStipplePatternArr
-    prolog tcl_export_svg($node)
+    prolog tcl_export_graphics('ToSVG',$node)
     foreach {l t r b} $::fromProlog {}
     set svgStm [NetOpen $tgt w]
     puts $svgStm [can2svg::makedocument 1200 800 \

@@ -17,7 +17,7 @@ sicstus_module(input, [tk_make_desktop_node/1, tk_undo/2, tk_redo/2,
 		       tk_run_settings_tweaked/1, tk_off_window/2,
 		       tk_certain_death_node/1, tk_kill_everything/1,
 		       tk_set_new_size/4, tk_change_size/4, tk_do_colours/2,
-		       tcl_export_svg/1, tk_in_days/1]).
+		       tcl_export_graphics/2, tk_in_days/1]).
 
 sicstus_use_module([library(lists), backup, event, menu, sp_only, utility]).
 
@@ -172,8 +172,8 @@ bound_all_boxes([[L1, T1, R1, B1] | More], [L, T, R, B]) :-
     R is max(R1+10, R2),
     B is max(B1+10, B2).
 
-tcl_export_svg(Node) :-
-        draw'><'display('ToSVG', Node, -1, _, 1),
+tcl_export_graphics(Tgt, Node) :-
+        draw'><'display(Tgt, Node, -1, _, 1),
         setof(Box, image'><'contains_box(Node, Box), Boxes),
         bound_all_boxes(Boxes, Frame),
         draw'><'callback(br(Frame)).
