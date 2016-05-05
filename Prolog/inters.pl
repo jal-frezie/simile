@@ -1514,7 +1514,8 @@ units_for_evt_antecedents(Fn, EvtUnit) :-
 	m_update'><'get_all_links(Evt, discrete, ids(RealSrc, _Reln), _),
 	m_update'><'get_spec_units(RealSrc, EvtUnit).
 
-dissociate(Wrapper, made_at(Arg, Level), made_at(NewArg, Level)) :-
+dissociate(Wrapper, made_at(Arg, _Level), NewArg) :-
+    % 6.6p4: assume made_at level no longer relevant if dissociated
 	NewArg =.. [Wrapper, Arg].
 dissociate(Wrapper, Arg, Arg) :-
 	Arg =.. [Wrapper, _Cond];	% in case sofars/samesteps are nested
