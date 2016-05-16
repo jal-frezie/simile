@@ -872,7 +872,7 @@ namespace eval grid005 {
     #### Handle value popup
     proc value_popup {winId X Y x y} {
         variable useNodes
-        
+
         set ncol $useNodes($winId,ncol)
         set nrow $useNodes($winId,nrow)
         set col [expr int(1+([$winId.c canvasx $x])/$useNodes($winId,mult))]

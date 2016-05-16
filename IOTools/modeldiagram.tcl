@@ -29,10 +29,38 @@ namespace eval ::ModelDiagram20060804 {
     proc initialize {winId} {
 	global window_info
 	
+	message	$winId.msg -aspect 1000 -text "Click on submodel or component"
+	AddToolbar $winId
 	AddDiagram $winId {}
-	set node [$::helperTable($winId,whichInstance) GetNode]
-	set window_info($winId.c,top_node) $node
+	GrabClicks $winId
+    }
+    
+    proc AddToolbar {winId} {
+        set toolbarItems \
+	    [list \
+		 [list zoomin.gif "Zoom in" [namespace code "Zoom $winId 1.25"]] \
+		 [list zoomout.gif "Zoom out" [namespace code "Zoom $winId 0.8"]]]
+        ::graphtools::MakeToolBar $winId $toolbarItems
+    }
+
+    proc Zoom {winId factor} {
+	global window_info
+
+	set window_info($winId.c,width) [winfo width $winId.c]
+	set window_info($winId.c,height) [winfo height $winId.c]
+	set window_info($winId.c,top_node) $topNode
+	DoZoom $winId.c $factor
+	array unset window_info $winId.c,top_node
+    }
+    
+    proc click {winId node caption} {
+	global window_info
+
+	set topNode [$::helperTable($winId,whichInstance) GetNode]
+	set window_info($winId.c,top_node) $topNode
 	set window_info($winId.c,scale) 1.0
+	set window_info($winId.c,width) [winfo width $winId.c]
+	set window_info($winId.c,height) [winfo height $winId.c]
 	set ::custom(showgrids,$winId.c) 0
 	prolog state'><'set_display_depth('$winId.c',_,32)
 	set bg [$winId.c create rectangle 0 0 1 1 -outline {} -fill beige \
@@ -41,6 +69,9 @@ namespace eval ::ModelDiagram20060804 {
 	$winId.c configure -scrollregion $::fromProlog
 	$winId.c coords $bg $::fromProlog
 	array unset window_info $winId.c,top_node
+
+	ReleaseClicks $winId
+	pack forget $winId.msg
     }
     
     proc old_initialize {winId} {

@@ -172,7 +172,9 @@ bound_all_boxes([[L1, T1, R1, B1] | More], [L, T, R, B]) :-
     R is max(R1+10, R2),
     B is max(B1+10, B2).
 
-tcl_export_graphics(Tgt, Node) :-
+tcl_export_graphics(Tgt, InnerNode) :-
+    ame_gen'><'contains(Node, InnerNode),
+    ame_gen'><'find_type(Node, submodel), !,
         draw'><'display(Tgt, Node, -1, _, 1),
         setof(Box, image'><'contains_box(Node, Box), Boxes),
         bound_all_boxes(Boxes, Frame),
