@@ -79,6 +79,9 @@ ifeq ($(MY_CPU),x86_64)
 	CFLAGS = $(OPT) -mmacosx-version-min=10.6
 else
 	CFLAGS = $(OPT) -arch i386 -mmacosx-version-min=10.4
+	LOCALIZE_TCL_REFS = install_name_tool -change \
+		$(TCLFW)/Tcl.framework/Versions/$(VERS)/Tcl \
+		@executable_path/../Frameworks/Tcl.framework/Tcl
 endif
 	ARCHEXTN = _mac
 # build for everything unless I am on Barbie
@@ -91,9 +94,6 @@ endif
 	MAKESL = -dynamiclib
 # make sure Current is set to right version
 	USETCL =  -DUSE_TCL_STUBS -framework Tcl -ltclstub$(VERS)
-	LOCALIZE_TCL_REFS = install_name_tool -change \
-		$(TCLFW)/Tcl.framework/Versions/$(VERS)/Tcl \
-		@executable_path/../Frameworks/Tcl.framework/Tcl
 	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
 else
