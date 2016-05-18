@@ -29,7 +29,11 @@ namespace eval ::ModelDiagram20060804 {
     proc initialize {winId} {
 	global window_info
 	
-	message	$winId.msg -aspect 1000 -text "Click on submodel or component"
+	pack [frame $winId.bar] -fill x
+	pack [message $winId.bar.msg -aspect 1000 -text "Click on submodel or component, or"] -side left
+	pack [button $winId.bar.btn -text "top level" \
+		  -command [namespace code "click $winId top Desktop"]] \
+	    -side left
 	AddToolbar $winId
 	AddDiagram $winId {}
 	GrabClicks $winId
@@ -48,7 +52,8 @@ namespace eval ::ModelDiagram20060804 {
 
 	set window_info($winId.c,width) [winfo width $winId.c]
 	set window_info($winId.c,height) [winfo height $winId.c]
-	set window_info($winId.c,top_node) $topNode
+	set window_info($winId.c,top_node) \
+	    [$::helperTable($winId,whichInstance) GetNode]
 	DoZoom $winId.c $factor
 	array unset window_info $winId.c,top_node
     }
@@ -57,6 +62,12 @@ namespace eval ::ModelDiagram20060804 {
 	global window_info
 
 	set topNode [$::helperTable($winId,whichInstance) GetNode]
+	if {$node eq "top"} {
+	    set node $topNode
+	    SetState $winId "top level"
+	} else {
+	    SetState $winId [GetCaptionPathFromId $node]
+	}
 	set window_info($winId.c,top_node) $topNode
 	set window_info($winId.c,scale) 1.0
 	set window_info($winId.c,width) [winfo width $winId.c]
@@ -71,7 +82,7 @@ namespace eval ::ModelDiagram20060804 {
 	array unset window_info $winId.c,top_node
 
 	ReleaseClicks $winId
-	pack forget $winId.msg
+	pack forget $winId.bar
     }
     
     proc old_initialize {winId} {
@@ -166,9 +177,17 @@ namespace eval ::ModelDiagram20060804 {
 	    AddPopupMessage $desc \#ffe0c0
 	}
     }
+
+    proc PrepareSaveString {winId} {
+    }
     
     proc Restore {winId} {
-	AddDiagram $winId [GetState $winId]
+	initialize $winId
+	set state [GetState $winId]
+	if {$state eq "top level"} {set node top} else {
+	    set node [GetIdFromCaptionPath $state]
+	}
+	click $winId $node dummy
     }
     
 # override Simile procs in this namespace
