@@ -74,6 +74,21 @@ div.tooltip {
 </style>
 <?php
 // include_once "make_exec.php"; model_action now used
+include 'config.php';
+
+if (isset($_POST['js_mod'])) {
+   $preproc = str_replace(array('"',':-'), array('\'',': -'), $_POST['js_mod']);
+// above " does not start string
+   $base = tempnam('/tmp', 'jsm');
+
+   $hole = popen($cgiRel . '/gconvert ' . $base . '.sml', 'w');
+   fwrite($hole, $preproc);
+   pclose($hole);
+   $_POST["model_src"] = "systo";
+   $_POST["param_src"] = "none";
+   $_POST["helper_src"] = "none";
+   $_POST['model_link'] = "form";
+}
 
 switch ($_POST["model_src"]) {
    case "file":
@@ -170,7 +185,6 @@ mysql_close($link);
 
 // Now build the asm.js
 if (isset($_POST['client_exec'])) {
-   include 'config.php';
    $shlibName = pathinfo($base,PATHINFO_FILENAME);
    $tculargs = array($simileLocn, $simileHome, $base, $shlibName);
    $knob = popen($cgiRel . "/tcular_clexec.cgi " . implode($tculargs,
