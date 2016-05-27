@@ -1,14 +1,23 @@
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="shf1.xsl"?>
 <shf simile_version="6.6">
-<external x="952" y="480"  w="966" h="719"/>
+<external x="891" y="406"  w="966" h="719"/>
 <std_tool_layout left_panel_width="270" run_control_height="175"/>
 <notebook>
-  <page caption="Population density">
+  <page caption="Landfill volume">
     <panedwindow orient="vertical">
       <pane>
          <container type="polygon375">
-          <![CDATA[/WIN/,max 500 /WIN/,integer 0 /WIN/,c3 #00002fff0000 /WIN/,c4 #00003fff0000 /WIN/,imgs 0 /WIN/,c5 #00004fff0000 /WIN/,c6 #00005fff0000 /WIN/,c7 #00006fff0000 /WIN/,c8 #00007fff0000 /WIN/,c9 #00008fff0000 /WIN/,colourMapTweaked 0 /WIN/,allETs {{} {}} /WIN/,ycoord /submodel3/ParishBorder/Y /WIN/,orient h /WIN/,state displaying /WIN/,datamin 2.9657142857142857 /WIN/,datamax 322.44897959183675 /WIN/,ETCount 0 /WIN/,cbord black /WIN/,c10 #00009fff0000 /WIN/,c11 #0000afff0000 /WIN/,c12 #0000bfff0000 /WIN/,c13 #0000cfff0000 /WIN/,color /submodel3/Population/PDensity /WIN/,nswatches 32 /WIN/,c14 #0000dfff0000 /WIN/,c15 #0000efff0000 /WIN/,c16 #0000ffff0000 /WIN/,stringInfo {} /WIN/,editMode 0 /WIN/,c17 #0fffffff0fff /WIN/,c18 #1fffffff1fff /WIN/,c19 #2fffffff2fff /WIN/,c20 #3fffffff3fff /WIN/,c21 #4fffffff4fff /WIN/,ctop white /WIN/,xcoord /submodel3/ParishBorder/X /WIN/,c22 #5fffffff5fff /WIN/,scalex 0.0380590445281 /WIN/,c23 #6fffffff6fff /WIN/,scaley 0.0290087167211 /WIN/,sourcefile model /WIN/,c24 #7fffffff7fff /WIN/,c25 #8fffffff8fff /WIN/,c26 #9fffffff9fff /WIN/,c27 #afffffffafff /WIN/,c28 #bfffffffbfff /WIN/,cmid green /WIN/,c30 #dfffffffdfff /WIN/,c29 #cfffffffcfff /WIN/,c31 #efffffffefff /WIN/,c32 #ffffffffffff /WIN/,dataETs {} /WIN/,cbot black /WIN/,bw 1 /WIN/,c0 #000000000000 /WIN/,min 0 /WIN/,c1 #00000fff0000 /WIN/,range 500 /WIN/,c2 #00001fff0000 /WIN/,stringInfo {}]]>
+          <![CDATA[/WIN/,cmid green /WIN/,cbord black /WIN/,stringInfo {} /WIN/,color /submodel3/var3 /WIN/,cbot black /WIN/,sourcefile model /WIN/,allETs {{} {}} /WIN/,dataETs {} /WIN/,ycoord /submodel3/ParishBorder/Y /WIN/,imgs 0 /WIN/,orient h /WIN/,editMode 0 /WIN/,c10 #000050500000 /WIN/,c11 #000058580000 /WIN/,c12 #000060600000 /WIN/,integer 0 /WIN/,c13 #000068680000 /WIN/,c14 #000070700000 /WIN/,c15 #000078780000 /WIN/,bw 1 /WIN/,c16 #000080800000 /WIN/,c0 #000000000000 /WIN/,c17 #0fff88770fff /WIN/,c1 #000008080000 /WIN/,c18 #1fff906f1fff /WIN/,c2 #000010100000 /WIN/,c20 #3fffa05f3fff /WIN/,c19 #2fff98672fff /WIN/,c21 #4fffa8574fff /WIN/,c3 #000018180000 /WIN/,c22 #5fffb04f5fff /WIN/,c4 #000020200000 /WIN/,c23 #6fffb8476fff /WIN/,c5 #000028280000 /WIN/,c24 #7fffc03f7fff /WIN/,c6 #000030300000 /WIN/,c25 #8fffc8378fff /WIN/,c7 #000038380000 /WIN/,c26 #9fffd02f9fff /WIN/,c8 #000040400000 /WIN/,c27 #afffd827afff /WIN/,c9 #000048480000 /WIN/,range 1000180000.0 /WIN/,c28 #bfffe01fbfff /WIN/,c29 #cfffe817cfff /WIN/,c30 #dffff00fdfff /WIN/,c31 #effff807efff /WIN/,xcoord /submodel3/ParishBorder/X /WIN/,c32 #ffffffffffff /WIN/,scalex 0.03896330809551543 /WIN/,nswatches 32 /WIN/,scaley 0.02952835942264688 /WIN/,datamin 796552894.0 /WIN/,datamax 796552894.0 /WIN/,ETCount 0 /WIN/,min 796470000.0 /WIN/,ctop white /WIN/,max 1796650000.0 /WIN/,colourMapTweaked 0 /WIN/,state displaying /WIN/,stringInfo {}]]>
+        </container>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Sliders">
+    <panedwindow orient="vertical">
+      <pane>
+         <container type="slide139">
+          <![CDATA[{/Influence Factor/Enforcement} {/Influence Factor/Awareness} {/Influence Factor/Techonogy}]]>
         </container>
       </pane>
     </panedwindow>
