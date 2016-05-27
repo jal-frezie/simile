@@ -1,28 +1,25 @@
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="shf1.xsl"?>
-<shf simile_version="6.4">
-<external x="588" y="300"  w="1215" h="746"/>
+<shf simile_version="6.6">
+<external x="1009" y="308"  w="1215" h="746"/>
 <std_tool_layout left_panel_width="270" run_control_height="196"/>
 <notebook>
-  <page caption="Page 2">
+  <page caption="Ecosystem service by country">
     <panedwindow orient="vertical">
       <pane>
          <container type="polygon375">
-          <![CDATA[/WIN/,cbot black /WIN/,imgs 0 /WIN/,stringInfo {} /WIN/,datamin 0.10302128242250527 /WIN/,colourMapTweaked 0 /WIN/,xcoord /Polygon/Borders/X /WIN/,datamax 0.9866205411363567 /WIN/,scalex 2.510989010989011 /WIN/,scaley 3.4124293785310735 /WIN/,sourcefile model /WIN/,ETCount 0 /WIN/,c10 #000050500000 /WIN/,range 0.9 /WIN/,c11 #000058580000 /WIN/,c12 #000060600000 /WIN/,c13 #000068680000 /WIN/,c14 #000070700000 /WIN/,c15 #000078780000 /WIN/,c16 #000080800000 /WIN/,c17 #0fff88770fff /WIN/,c18 #1fff906f1fff /WIN/,c20 #3fffa05f3fff /WIN/,c19 #2fff98672fff /WIN/,c21 #4fffa8574fff /WIN/,c22 #5fffb04f5fff /WIN/,c23 #6fffb8476fff /WIN/,c24 #7fffc03f7fff /WIN/,bw 1 /WIN/,c25 #8fffc8378fff /WIN/,c26 #9fffd02f9fff /WIN/,c0 #000000000000 /WIN/,c27 #afffd827afff /WIN/,c1 #000008080000 /WIN/,c28 #bfffe01fbfff /WIN/,c2 #000010100000 /WIN/,c29 #cfffe817cfff /WIN/,c30 #dffff00fdfff /WIN/,c3 #000018180000 /WIN/,c31 #effff807efff /WIN/,c4 #000020200000 /WIN/,c32 #ffffffffffff /WIN/,c5 #000028280000 /WIN/,state displaying /WIN/,c6 #000030300000 /WIN/,c7 #000038380000 /WIN/,c8 #000040400000 /WIN/,editMode 0 /WIN/,c9 #000048480000 /WIN/,ctop white /WIN/,dataETs {} /WIN/,cbord black /WIN/,min 0.1 /WIN/,allETs {{} {}} /WIN/,cmid green /WIN/,max 1.0 /WIN/,integer 0 /WIN/,color {/Polygon/Ecosystem
-service} /WIN/,nswatches 32 /WIN/,ycoord /Polygon/Borders/Y /WIN/,orient h /WIN/,stringInfo {}]]>
+          <![CDATA[/WIN/,range 0.9 /WIN/,nswatches 32 /WIN/,dataETs {} /WIN/,stringInfo {} /WIN/,c10 #000050500000 /WIN/,c11 #000058580000 /WIN/,integer 0 /WIN/,c12 #000060600000 /WIN/,c13 #000068680000 /WIN/,c14 #000070700000 /WIN/,state displaying /WIN/,c15 #000078780000 /WIN/,sourcefile model /WIN/,c16 #000080800000 /WIN/,c17 #0fff88770fff /WIN/,c18 #1fff906f1fff /WIN/,allETs {{} {}} /WIN/,c19 #2fff98672fff /WIN/,c20 #3fffa05f3fff /WIN/,c21 #4fffa8574fff /WIN/,c22 #5fffb04f5fff /WIN/,ycoord /Polygon/Borders/Y /WIN/,c23 #6fffb8476fff /WIN/,orient h /WIN/,c24 #7fffc03f7fff /WIN/,cbord black /WIN/,c25 #8fffc8378fff /WIN/,c26 #9fffd02f9fff /WIN/,c27 #afffd827afff /WIN/,c28 #bfffe01fbfff /WIN/,ctop white /WIN/,c30 #dffff00fdfff /WIN/,c29 #cfffe817cfff /WIN/,color {/Polygon/Ecosystem
+service} /WIN/,c31 #effff807efff /WIN/,colourMapTweaked 0 /WIN/,c32 #ffffffffffff /WIN/,bw 1 /WIN/,c0 #000000000000 /WIN/,c1 #000008080000 /WIN/,cmid green /WIN/,c2 #000010100000 /WIN/,c3 #000018180000 /WIN/,datamin 0.147807175 /WIN/,c4 #000020200000 /WIN/,datamax 0.9377605800000002 /WIN/,c5 #000028280000 /WIN/,c6 #000030300000 /WIN/,ETCount 0 /WIN/,c7 #000038380000 /WIN/,c8 #000040400000 /WIN/,c9 #000048480000 /WIN/,min 0.1 /WIN/,max 1.0 /WIN/,xcoord /Polygon/Borders/X /WIN/,cbot black /WIN/,scalex 2.510989010989011 /WIN/,scaley 3.4124293785310735 /WIN/,imgs 0 /WIN/,editMode 0 /WIN/,stringInfo {}]]>
         </container>
       </pane>
     </panedwindow>
   </page>
-  <page caption="Page 3">
+  <page caption="Input sliders">
     <panedwindow orient="vertical">
       <pane>
-      </pane>
-    </panedwindow>
-  </page>
-  <page caption="Page 4">
-    <panedwindow orient="vertical">
-      <pane>
+         <container type="slide139">
+          <![CDATA[{/Change scalar} {/Choose E Service} {/Choose from} {/Choose to} {/Choose Surface} {/Global Warming}]]>
+        </container>
       </pane>
     </panedwindow>
   </page>

@@ -1,33 +1,15 @@
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="shf1.xsl"?>
-<shf simile_version="6.3">
-<external x="1124" y="196"  w="780" h="580"/>
+<shf simile_version="6.6">
+<external x="1125" y="253"  w="780" h="580"/>
 <std_tool_layout left_panel_width="270" run_control_height="185"/>
 <notebook>
-  <page caption="Page 1">
+  <page caption="Space">
     <panedwindow orient="vertical">
       <pane>
          <container type="Shapes3D20141208">
           <![CDATA[{spheres /balls/green/x /balls/green/y /balls/green/z /balls/green/size #00ff00} {spheres /balls/orange/x /balls/orange/y /balls/orange/z /balls/orange/size #ffc100}]]>
         </container>
-      </pane>
-    </panedwindow>
-  </page>
-  <page caption="Page 2">
-    <panedwindow orient="vertical">
-      <pane>
-      </pane>
-    </panedwindow>
-  </page>
-  <page caption="Page 3">
-    <panedwindow orient="vertical">
-      <pane>
-      </pane>
-    </panedwindow>
-  </page>
-  <page caption="Page 4">
-    <panedwindow orient="vertical">
-      <pane>
       </pane>
     </panedwindow>
   </page>
