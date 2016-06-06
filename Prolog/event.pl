@@ -1013,7 +1013,7 @@ spread_dims(Node) :-
 
 spread_colour(Node, WhatsNew) :-
 	need_same_dims(Node, Flow),
-	    update_color(Flow),
+	    spread_colour(Flow, none),
 	    fail;
 	setof(More, (More = Node; status_affects(Node, More)), SpreadList),
 	(member(Hit, SpreadList), Hit = Node;

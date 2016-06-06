@@ -327,7 +327,7 @@ itcl::class similescript::$newHelperClass {
 		}
 	    }
 	}
-	if {$viewVector($winId,elevation) <= 0} {
+	if {$viewVector($winId,sin_elevation) <= 0} {
 	    set spare $upper
 	    set upper $lower
 	    set lower $spare
