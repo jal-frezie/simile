@@ -16,10 +16,10 @@ function Shapes3D (port) {
     this.State = [];
     this.showing = {};
   this.status = "displaying";
-//      w = 800;
-      w = parseInt(d3.select('#tabs').style('width'), 10)-50;
-//      h = 800;
-      h = notebookPaneHeight()-120;
+      w = 800;
+//      w = parseInt(d3.select('#tabs').style('width'), 10)-50;
+      h = 800;
+//      h = notebookPaneHeight()-120;
 
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera( 75, w/h, 0.1, 1000 );
@@ -100,21 +100,20 @@ function Shapes3D (port) {
     this.renderer = renderer;
     this.updated = false;
 
+    that = this;
     var animate = function () {
 	window.requestAnimFrame( animate );
 	// cube.rotation.x += 0.1; cube.rotation.y += 0.1;
 	// if ("tabs-" + $( "#tabs" ).tabs("option","active") == port)
 	// above dodgy because tab id can change (eg if another deleted)
-	if (currentHelper != null)
-	    if (currentHelper.port == port && currentHelper.updated) {
+	if ($('#' + that.port + '_div').width() && that.updated) {
 		renderer.render(scene, camera);
-		currentHelper.updated = false;
+		that.updated = false;
 	    }
 	controls.update();
     };
     var waggle = function() {
-	if (currentHelper != null)
-	    currentHelper.updated = true;
+	that.updated = true;
     };
     controls.addEventListener( 'change', waggle );
     animate();
@@ -463,7 +462,7 @@ Shapes3D.prototype.display = function (time, latest, connect) {
 	    alert("Unrecognized item type: " + instruct[0]);
 	}
     }
-    currentHelper.updated = true;
+    this.updated = true;
 }
 
 Shapes3D.prototype.resize = function (x,y) {

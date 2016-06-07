@@ -170,13 +170,14 @@ break;
         $svgLine = fgets($svgStm);
       }
 // passed boilerplate to start of svg object -- insert this line
-      echo preg_replace('/^<svg /', '$0id="mod_diag" ', $svgLine);
+//       echo preg_replace('/^<svg /', '$0id="mod_diag" ', $svgLine);
+      echo $svgLine;
 // add a group round all the contents so they can be translated in Chromium
-      echo "<g>";
+      echo '<defs><g id="mod_diag">';
       while (!feof($svgStm)) {
         echo fgets($svgStm);
       }
-      echo "</g>";
+      echo "</g></defs>";
       fclose($svgStm);
       break;
 

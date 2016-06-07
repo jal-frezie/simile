@@ -1,29 +1,8 @@
-var tabs;
 	$(function() {
 		
 	    $( "#button" ).button();
 	    $( "#radioset" ).buttonset();
 		
-	    tabs = $( "#tabs" ).tabs({heightstyle:"fill"});
-	    tabs.tabs({
-		activate: function( event, ui ) {
-		    if (ui.newPanel.selector != "#tabs-0") { // diagram
-			lastHelper = currentHelper =
-			    currentHelpers[$(ui.newPanel.selector)[0].id];
-			lastIndex = tabs.tabs("option","active");
-		    } else {
-			currentHelper = null;
-		    }
-		}
-	    });
-// close icon: removing the tab on click
-tabs.delegate( "span.ui-icon-close", "click", function() {
-  var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
-  delete currentHelpers[panelId];
-  $( "#" + panelId ).remove();
-  tabs.tabs( "refresh" );
-});
-
 		
 
 		
@@ -87,7 +66,12 @@ function hoverIn(evt) {
     tags = blob.getAttribute("id");
     blob = blob.parentNode;
   }
-  var prolog = tags.match(/arc\d\d\d\d\d|node\d\d\d\d\d/);
+    var prolog = tags.match(/arc\d\d\d\d\d|node\d\d\d\d\d/);
+    if (prolog == null) {
+	// console.log("No prolog id for " + evt.target);
+	return;
+    }
+    subtlety = evt.path;
 //  var currentLine = model_json.find(function (e) {
 //		     return e.id == prolog;
 // 		     });
@@ -96,16 +80,19 @@ function hoverIn(evt) {
   tooltip_c.firstChild.data = model_json[prolog].comment;
 // above will break function if it doesn't work
 
-        var uupos = ModDiag.createSVGPoint();
+    for (var i=0; subtlety[i].nodeName != "svg"; ++i) {}
+        var uupos = subtlety[i].createSVGPoint();
         uupos.x = evt.pageX - window.pageXOffset;
         uupos.y = evt.pageY - window.pageYOffset;
-        var ctm = ModDiag.getScreenCTM();
+        var ctm = subtlety[i-1].getScreenCTM();
         if (ctm = ctm.inverse())
             uupos = uupos.matrixTransform(ctm);
 
-  tooltip_grp.setAttributeNS(null,"transform",
-			     "translate(" + uupos.x + "," + uupos.y + ")scale("
-			     + tooltip_scale + ")");
+  //tooltip_grp.setAttributeNS(null,"transform",
+// 			     "translate(" + uupos.x + "," + uupos.y + ")scale("
+    // 			     + tooltip_scale + ")");
+    tooltip_grp.setAttributeNS(null,"transform",
+			       "translate(" + uupos.x + "," + uupos.y + ")scale(1.0)");
   tooltip_bd.setAttributeNS(null,"visibility","visible");
   tooltip_qbg.setAttribute("visibility", "visible");
   tooltip_vbg.setAttribute("visibility", "visible");
@@ -166,7 +153,7 @@ function oneAfter(array, term) {
     return array[array.indexOf(term) + 1];
 }
 
-function addTabFor(species, textContent) {
+function setupHelperIn(win, species, textContent) {
     convd = textContent.replace(/}*\s+{*/g,"\"$&\"")
 	.replace(/{/g,"[").replace(/}/g,"]").replace(/\s+/g,", ")
     specArray = JSON.parse("["+convd.substr(3,convd.length-6)+"]");
@@ -174,7 +161,7 @@ function addTabFor(species, textContent) {
 
     switch (species) {
 	case "plotter1_dot_25":
-	new_helper("plot");
+	insert_helper(win, "plot");
 	captArr = specArray[specArray.indexOf("/WIN/,Yvars")+1];
 	captPaths = tclListOfDimty(captArr,2);
 	for (x=0;x<captPaths.length;++x) {
@@ -188,7 +175,7 @@ function addTabFor(species, textContent) {
 	break;
 
 	case "tabular11510":
-	new_helper("table");
+	insert_helper(win, "table");
 	captPaths = tclListOfDimty(specArray[0], 2);
 	for (var i=0; i<captPaths.length; ++i) {
 	    captPath = captPaths[i].join(" ");
@@ -197,7 +184,7 @@ function addTabFor(species, textContent) {
 	break;
 
 	case "gen3d1": // lollipops
-	new_helper("shapes");
+	insert_helper(win, "shapes");
 	var i=3;
 	currentHelper.State = [];
 	while (specArray[i] != "/annotation/") {
@@ -215,11 +202,11 @@ function addTabFor(species, textContent) {
 	break;
 
 	case "slide139":
-	new_helper("sliders");
+	insert_helper(win, "sliders");
 	break;
 
 	case "plotterXY1_dot_0":
-	new_helper("plotxy");
+	insert_helper(win, "plotxy");
 	captArr = specArray[specArray.indexOf("/WIN/,Yvars")+1];
 	captPath = tclListOfDimty(captArr,1).join(" ");
 //	console.log("Adding plot of " + captPath0);
@@ -233,7 +220,7 @@ function addTabFor(species, textContent) {
 	break;
 
 	case "Shapes3D20141208":
-	new_helper("shapes");
+	insert_helper(win, "shapes");
 	currentHelper.State = [];
 // would be done, but must convert capt paths to node ids
 	for (var i=0; i<specArray.length;++i) {
@@ -257,7 +244,7 @@ function addTabFor(species, textContent) {
 	break;
 
     case "polygon375":
-	new_helper("polys");
+	insert_helper(win, "polys");
 	swatArr = []
 	if (oneAfter(specArray, "/WIN/,colourMapTweaked")) {
 	    nswat = oneAfter(specArray, "/WIN/,nswatches");
@@ -283,7 +270,7 @@ function addTabFor(species, textContent) {
 	break;
 
     case "grid005":
-	new_helper("grid");
+	insert_helper(win, "grid");
 	if (specArray[0] == "displaying") {
 	    var idx = specArray.indexOf("aspect");
 	    nswat = parseInt(specArray[idx+1]);
@@ -311,9 +298,14 @@ function addTabFor(species, textContent) {
 	    }
 	}
 	break;
-	default:
+    case "ModelDiagram20060804":
+	insert_helper(win, "diagram");
+	break;
+    default:
 	console.log("Cannot emulate Tcl helper: " + species);
+	return false;
     }
+    return true;
 }
 
 function createInitialHelpers() {
@@ -336,22 +328,99 @@ function createInitialHelpers() {
 		insList = atob(b64Bloc).split("\r\n");
 		for (i=0; i<insList.length; ++i) {
 		    if (insList[i].search("container")==0) {
+			
 			addTabFor(insList[i+1].replace(/\./g, "_dot_"),
 				  "+++\"" + insList[i+2] + " ");
 		    }
 		}
 		return;
 	    }
-	    tclHelpers = $(hlpDoc).find("container");
-	    for (var i=0; i<tclHelpers.length; ++i) {
-		addTabFor(tclHelpers[i].attributes.type.value,
-			  tclHelpers[i].textContent);
-	    }
+	    helperElt = $(hlpDoc).find("shf")[0];
+	    AddHelperHierarchy('right', helperElt.children[2]);
+	    
+//	    tclHelpers = $(hlpDoc).find("container");
+//	    for (var i=0; i<tclHelpers.length; ++i) {
+//		addTabFor(tclHelpers[i].attributes.type.value,
+//			  tclHelpers[i].textContent);
+//	    }
 // resize in case rows of tabs have squeezed panes
-	    resize_notebook();
+//	    resize_notebook();
 	}); // GetXMLHelperSetup
+    ResizeAll();
 }
 
+function AddHelperHierarchy(win, xml) {
+    if (xml == undefined) return;
+	switch (xml.nodeName) {
+	case "container":
+	    if (setupHelperIn(win, xml.attributes.type.value,
+			      xml.textContent)) {
+		currentHelpers[win] = currentHelper;
+	    }
+	    break;
+	case "panedwindow":
+	    var panes = xml.children;
+	    if (panes.length == 1) {
+		AddHelperHierarchy(win, panes[0].children[0]);
+	    } else {
+		var splitList = [];
+		//buffer = document.createElement("div");
+		//buffer.id = win + '_bfr';
+		//buffer.style.width = buffer.style.height = '100%';
+		//$('#' + win)[0].appendChild(buffer);
+		var orient = xml.attributes.orient.value;
+		// work around bug
+		if (orient == 'horizontal') {
+		    axis = 'width';
+		} else {
+		    axis = 'height';
+		}
+		var buffer = $('#' + win)[0];
+		for (var j=0; j<panes.length; ++j) {
+		    if (panes[j].nodeName == "pane") {
+			var newChild = document.createElement("div");
+			var newId = win + "_pane" + tabCounter++;
+			newChild.setAttribute("id", newId);
+			// newChild.style.height = '100%';
+			newChild.className = "split split-" + orient;
+			buffer.appendChild(newChild);
+			splitList.push('#' + newId);
+			
+			AddHelperHierarchy(newId, panes[j].children[0]);
+		    }
+		}
+		
+		var adjust = function () {ResizeTree(win)};
+		//setTimeout(function () {
+		    Split(splitList, {
+		    direction: orient,
+		    minSize: 200,
+		    onDrag: adjust
+		    });
+		//}, 10);
+	    }
+	    break;
+	case "notebook":
+	    winGrp = $('#' + createNotebook(win));
+	    if (win == 'right') {
+		// top-level notebook, add model diagram tab!
+		var newId = new_tab(winGrp, "Model Diagram");
+		winGrp.tabs("option", "active", 0);
+		insert_helper(newId, "diagram");
+		currentHelpers[newId] = currentHelper;
+	    }
+	    var tabs = xml.children;
+	    for (var j=0; j<tabs.length; ++j) {
+		var newId = new_tab(winGrp, tabs[j].attributes.caption.value);
+		winGrp.tabs("option", "active", j+(win == 'right'));
+		AddHelperHierarchy(newId, tabs[j].children[0]);
+	    }
+	    winGrp.tabs("option", "active", 0);
+	    break;
+	default:
+	    console.log("Unknown XML element type:" + xml.nodeName);
+	}
+}
 /*
   Zoom now uses d3 sorcery
   function SvgDiagZoom(factor) {
@@ -579,15 +648,16 @@ var pgplot_opts = {
 var helperTitles = {"plot":"Plotter","table":"Data table",
 		    "sliders":"Input sliders","params":"File parameters",
 		    "shapes":"3-D shape viewer","grid":"Spatial grid",
-		    "polys":"Polygon map"},
+		    "polys":"Polygon map", "diagram":"Model Diagram"},
 tabTemplate = "<li><a href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
-tabCounter = 1;
+    tabCounter = 1
+	    ;
 
-function new_tab(label) {
+function new_tab(tabs, label) {
     id = "tabs-" + tabCounter++,
     li = $( tabTemplate.replace( /#\{href\}/g, "#" + id ).replace( /#\{label\}/g, label ) ),
     tabs.find( ".ui-tabs-nav" ).append( li );
-    tabs.append( "<div id='" + id + "'></div>" );
+    tabs.append( "<div id='" + id + "' style='height:100%'></div>" );
     tabs.tabs( "refresh" );
     return(id);
 }
@@ -597,8 +667,19 @@ var currentHelper = null;
 var lastHelper = null;
 var lastIndex = null;
 function new_helper(type) {
-    var label = helperTitles[type];
-    id = new_tab(label);
+    id = add_tab($('#right_nb'), helperTitles[type]);
+    insert_helper(id, type);
+    currentHelpers[id] = lastHelper = currentHelper;
+}
+
+function add_tab(tabs, title) {
+    id = new_tab(tabs, title);
+    lastIndex = tabs.children().length - 2;
+    tabs.tabs("option", "active", lastIndex);
+    return id;
+}
+
+function insert_helper(id, type) {
     if (type == "params") {
 	currentHelper = new FileParams(id);
     } else if (type == "sliders") {
@@ -614,12 +695,11 @@ function new_helper(type) {
 	currentHelper = new Grid5(id);
     } else if (type == "polys") {
 	currentHelper = new Polygon(id);
+    } else if (type == "diagram") {
+	currentHelper = new ModelDiagram(id);
     }
-    currentHelpers[id] = lastHelper = currentHelper;
-    lastIndex = tabs.children().length - 2;
-    tabs.tabs("option", "active", lastIndex);
 }
-
+    
 function update_helpers(time, latest, connect) {
     console.log("Updating for time " + time);
     for (var id in currentHelpers) {
@@ -665,7 +745,31 @@ function resize_notebook() {
 	}
     }
 }
-window.onresize = function() {resize_notebook()};
+
+function ResizeTree(win) {
+    console.log('Resizing ' + win);
+    if (win == "") return;
+    var holder = $('#' + win);
+    var leaf = currentHelpers[win];
+    if (leaf == undefined) {
+	var twigs = holder[0].children;
+	for (var i=0; i < twigs.length; ++i) {
+	    ResizeTree(twigs[i].id);
+	}
+    } else {
+	leaf.resize(holder.width(), holder.height());
+    }
+}
+
+//window.onresize = function() {resize_notebook()};
+function ResizeAll() {
+    for (var win in currentHelpers) {
+	holder = $('#' + win);
+	currentHelpers[win].resize(holder.width(), holder.height());
+    }
+}
+
+window.onresize = ResizeAll;
 
 function select_for_helper(compId) {
   if (currentHelper != null) {
@@ -814,6 +918,9 @@ function Sliders (port) {
 Sliders.prototype.display = function  (time, latest, connect) {
 }
 
+Sliders.prototype.resize = function(x,y) {
+}
+
 function FileParams (port) {
 // Call the parent constructor
 //   DisplayTool.call(this);
@@ -836,6 +943,42 @@ FileParams.prototype.display = function  (time, latest, connect) {
 
 // FileParams.prototype = new DisplayTool(this);
 // FileParams.prototype.constructor = new FileParams;
+//args for poly: this.scaleGrp[0],this.scaleGrp[0],w,this.diagZoom
+function mapToScreen(object, eyepiece, w, action) {
+    bbox = object[0].getBBox();
+    // console.log(JSON.stringify(bbox));
+    if (bbox.width==0) return;
+    initScale = w/bbox.width;
+    action.translate([-initScale*bbox.x,-initScale*bbox.y])
+	.scale(initScale);
+    grpAttr = "translate("+-initScale*bbox.x+","+-initScale*bbox.y+
+	")scale("+initScale+","+initScale+")";
+    eyepiece[0].setAttribute("transform",grpAttr);
+}
+
+
+function ModelDiagram (port) {
+    this.port = port;
+
+    $('#' + port).html('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="' + port + '_diag" viewBox="0 0 800 800" width="800" height="800"> <use xlink:href="#mod_diag" transform="rotate(0)" x="0" y="0" width="800" height="800" /> </svg>');
+    
+    this.diagZoom = d3.behavior.zoom()
+	.on("zoom", function () {
+	    d3.select('#' + port + '_diag').select('use')
+		.attr("transform", "translate(" + d3.event.translate +
+		      ")scale(" + d3.event.scale + ")");
+	});
+    mapToScreen($('#mod_diag'), $('#' + port + '_diag').children(),
+		800, this.diagZoom);
+    d3.select('#' + port + '_diag').attr("class","pane").call(this.diagZoom);
+}
+
+ModelDiagram.prototype.display = function(time, latest, connect) {
+}
+
+ModelDiagram.prototype.resize = function(x, y) {
+    $('#' + this.port + '_diag').width(x).height(y);
+}
 
 // eventually this will inherit from a generic display tool class
 // (when such a thing works in JS)
@@ -1006,11 +1149,11 @@ PlotXY.prototype.acceptClick = function (compId) {
       this.status = "adding";
   } else { // no more clicks required
       ngap = 48;
-//      w = 800;
-      w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
-      //      h = 800
-      ;
-      h = notebookPaneHeight()-120;
+      // If setting up, window may not yet be drawn so redraw after to get dims
+      w = 800;
+      // w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
+      h = 800;
+      // h = $('#' + this.port).height()-120;
 
     if (compId == "clear") {
 	delete this.ymin;
@@ -1623,14 +1766,6 @@ Polygon.prototype.acceptClick = function (nodeId) {
 		       .attr("fill",colSpec).attr("stroke","black")
 		       .attr("stroke-width",0);
 	       }
-	       bbox = that.scaleGrp[0][0].getBBox();
-	       // console.log(JSON.stringify(bbox));
-	       initScale = 800/bbox.width;
-	       that.diagZoom.translate([-initScale*bbox.x,-initScale*bbox.y])
-		   .scale(initScale);
-	       grpAttr = "translate("+-initScale*bbox.x+","+-initScale*bbox.y+
-		   ")scale("+initScale+","+initScale+")";
-	       that.scaleGrp.attr("transform",grpAttr);
 	   }); // Query
     } 
 }
@@ -1643,8 +1778,23 @@ Polygon.prototype.resize = function (x, y) {
 //      w = 800;
       w = x-ngap;
 //      h = 800;
-      h = y-60-ngap;
+      h = y-100-ngap;
     d3.select('#' + this.port + '_diag').attr("width",w).attr("height",h);
+
+    // problem: getbbox returns 0s if diagram not visible
+    // -- so need to either raise any notebook tabs I am
+    // in, or do this inline -- works fine if done here!
+    if (this.scaleGrp.attr("transform") == null) {
+	bbox = this.scaleGrp[0][0].getBBox();
+	// console.log(JSON.stringify(bbox));
+	if (bbox.width==0) return;
+	initScale = w/bbox.width;
+	this.diagZoom.translate([-initScale*bbox.x,-initScale*bbox.y])
+	    .scale(initScale);
+	grpAttr = "translate("+-initScale*bbox.x+","+-initScale*bbox.y+
+	    ")scale("+initScale+","+initScale+")";
+	this.scaleGrp.attr("transform",grpAttr);
+    }
 }
 
 Polygon.prototype.display = function (time, latest, connect) {
@@ -1706,7 +1856,7 @@ Grid5.prototype.resize = function (x, y) {
 //      w = 800;
       w = x-ngap;
 //      h = 800;
-      h = y-60-ngap;
+      h = y-100-ngap;
     d3.select('#' + this.port + '_diag').attr("width",w).attr("height",h);
 }
 
@@ -1844,7 +1994,7 @@ Grid5.prototype.acceptClick = function (nodeId) {
     this.legend.src = 'data:image/gif;base64,'
 	+ btoa(headerData) + legenData;
     this.legend.alt = "Something has gone terrubly winf";
-    resize_notebook();
+//    resize_notebook();
 }
 
 function conv(size) {
@@ -2050,6 +2200,37 @@ window.onunload = function(e) {
     $.post('model_action.php', { "act":"Exit", "base":fileBase});
 };
 
+function createNotebook(handle) {
+    tabHdl = handle + "_nb";
+    d3.select('#' + handle).append("div")
+	.attr("id", tabHdl)
+	.attr("class", "ui-layout-center")
+	.style('height','100%')
+	.html('<ul></ul>');
+    tabs = $('#' + tabHdl);
+    tabs.tabs({heightstyle:"fill"});
+    tabs.tabs({
+	activate: function( event, ui ) {
+	    ResizeTree($(ui.newPanel.selector)[0].id);
+// 	    if (ui.newPanel.selector != "#tabs-0") { // diagram
+// 		lastHelper = currentHelper =
+// 		    currentHelpers[$(ui.newPanel.selector)[0].id];
+// 		lastIndex = tabs.tabs("option","active");
+// 	    } else {
+// 		currentHelper = null;
+// 	    }
+	}
+    });
+// close icon: removing the tab on click
+    tabs.delegate( "span.ui-icon-close", "click", function() {
+	var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
+	delete currentHelpers[panelId];
+	$( "#" + panelId ).remove();
+	tabs.tabs( "refresh" );
+    });
+    return tabHdl;
+}
+
 var pipeBits;
 ////////////////////////////////////// PREPARE /////////////////////////////
 var xmlns = 'http://www.w3.org/2000/svg';
@@ -2068,6 +2249,19 @@ var fvParms;
 var timeUnit = "unit";
 var diag_zoom;
 function prepare() {
+    // set up splits
+    Split(['#Left', '#right'], {
+	sizes: [25, 75],
+	minSize: 250,
+	onDragEnd: ResizeAll
+    });
+
+    Split(['#topleft', '#explorer'], {
+	direction: 'vertical',
+	sizes: [25, 75],
+	minSize: 200
+    })
+
     // display the loading, please wait screen
     $( "#WaitDialog" ).dialog({
 	autoOpen: true,
@@ -2117,13 +2311,20 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
                       console.log("Got socket " + port);
             	      populateStructs();
 		  }); // WaitSocket
-    $.ajax({
-	type: "POST",
-	url: "model_action.php",
-	data: {"act" : "GetSVG",  "base" : fileBase}
-    })
-    .done (function(diagSVG) {
-      document.getElementById("holds_svg").innerHTML = diagSVG;
+	   //tabs = createNotebook("right");
+	   //modDiagTab = new_tab($('#' + tabs), "Model Diagram");
+	   $.ajax({
+	       type: "POST",
+	       url: "model_action.php",
+	       data: {"act" : "GetSVG",  "base" : fileBase}
+	   })
+	       .done (function(diagSVG) {
+		   svgDoc = document.createElement("div");
+		   svgDoc.innerHTML = diagSVG;
+		   document.firstChild.appendChild(svgDoc);
+		   // stick it where the sun don't shine
+		   
+	//$('#' + modDiagTab).html(diagSVG);
   
       ModDiag = document.getElementById("mod_diag");
       diag_zoom = d3.behavior.zoom()
@@ -2132,8 +2333,8 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
 		  .attr("transform", "translate(" + d3.event.translate +
 			")scale(" + d3.event.scale + ")");
 	  });
-      d3.select('#mod_diag').attr("class","pane").call(diag_zoom);
-      resize_notebook();
+      // d3.select('#mod_diag').attr("class","pane").call(diag_zoom);
+      // resize_notebook();
     all = ModDiag.getElementsByTagName("*");
     for(var i = 0; i < all.length; i++) {
       var element = all[i];
