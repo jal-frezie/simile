@@ -59,6 +59,7 @@ class CPPEXTDEC FileParamData
 
 //! This is same as above but includes all extras for managing time points
 class CPPEXTDEC VarParamData : public FileParamData {
+  friend class FileParamData;
   // private attributes
 
   //! Start of a linked list of values to apply at time points

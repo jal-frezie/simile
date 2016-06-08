@@ -619,8 +619,8 @@ void FileParamData::extract_elt(void* tgt, double forT,
     nodeLine = myModelExec->modelSpec->nodedata + nodeId;
 
     if (myModelExec->resetting<-1 && nodeLine->eval == INPUT)
-      if (!((VarParamData*)this)->GetTimePtDataSpace(forT)) 
-	return;
+      if (!((VarParamData*)this)->curTimePoint)
+ 	return;
     // back copy now done in blocks afterwards to make record spaces, but
     // avoid forward copying first
     // memcpy(insertionPt, tgt, size_for_type());
@@ -833,7 +833,8 @@ void VarParamData::ClearTimePtElements() {
 void VarParamData::back_copy_vars(double t0) {
   nodeValues* fromModel;
   
-  if (!GetTimePtDataSpace(t0)) {
+//  if (!GetTimePtDataSpace(t0)) { }
+  if (!curTimePoint) {
     free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
     fromModel = myModelExec->GetRawValues(nodeId);
     dataPtr.contents = fromModel->contents;

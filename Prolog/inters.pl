@@ -679,7 +679,7 @@ make_intermediates(
 	    IncrExpr = IncrementRef,
 	    (UseSource = trigger_magnitude('') ->
 		units_for_trigger_mag(SubId, Units-_RefDims);
-	      Units = ArgUnits),
+	     Units = ArgUnits),
 	    ReadyContext = ClearContext;
 	member(Functor, [with_least, with_greatest]), !,
 	    append(NowBuilding, DestPath, ReadyContext),
@@ -1754,11 +1754,12 @@ language -- they and the operators are hidden */
 % above now done by parser to insert graph id to identify discontinuity posn
 operator(loses, boolean, [real, const_int]).
 operator(loses, boolean, [boolean, const_int]).
-operator(choose, boolean, [boolean, boolean, boolean]).
-operator(choose, int, [boolean, int, int]).
-operator(choose, a(T), [boolean, a(T), a(T)]).
-operator(choose, real, [boolean, real, real]).
-operator(choose, uint64_t, [boolean, uint64_t, uint64_t]).
+%operator(choose, boolean, [boolean, boolean, boolean]).
+%operator(choose, int, [boolean, int, int]).
+%operator(choose, a(T), [boolean, a(T), a(T)]).
+%operator(choose, real, [boolean, real, real]).
+%operator(choose, uint64_t, [boolean, uint64_t, uint64_t]).
+operator(choose, Any, [boolean, Any, Any]) :- value(Any); Any = uint64_t.
 operator(happens, boolean, [Any]) :- value(Any).
 operator(rand, real, [real, real]).
 operator(seed_rand, uint64_t, [int]).

@@ -306,7 +306,7 @@ namespace eval RunEnv {
         #ShowMess debug info "TabRight tabId $tabId; label [$notebook itemcget $tabId -text]" ok
         catch {destroy .notebookTabTextEdit}
 
-	set t [PutItThere .notebookTabTextEdit .notebook]
+	set t [PutItThere .notebookTabTextEdit $notebook]
 	wm title $t [tr. "Edit tab label"]
 	pack [entry $t.ebox -width 20 -textvariable ::RunEnv::TabEditText]
 	pack [frame $t.bframe]
