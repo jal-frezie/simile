@@ -611,7 +611,7 @@ namespace eval ::$keyValue {
                     -width 2 \
                     -tags [list $vartag legend markable toplevel]
             $w.canvas create text $x $y \
-                    -text [lindex $plot($w,Ylabels) $i] \
+		-text [string map {\n { }} [lindex $plot($w,Ylabels) $i]] \
                     -anchor nw -font $plot($w,fontLabels)\
                     -tags [list $vartag legend markable toplevel]
             incr j
