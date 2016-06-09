@@ -1536,9 +1536,9 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	(Is_P = 1, apply_minmax(Node, Source, SourceEqn);
 	    Is_P = 3, SourceEqn = 0),
 	    Type = function,
-	    UseList = RefList, 
+	    UseList = [on_reset | RefList], 
 	    Made = init(Dest),
-	    UseStep = -2;
+	    UseStep = 0; % was -2 but that allowed variation after reset
 	member(Type, [compartment, immigration, reproduction]),
 	  \+ Source = none,
 	    UseList = [time | RefList], 

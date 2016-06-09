@@ -53,7 +53,7 @@ class CPPEXTDEC FileParamData
   ~FileParamData();
 
  public:
-  void extract_elt(void*, double, BOOLEAN, int*);
+  void extract_elt(void*, BOOLEAN, int*);
   void extract_record_count(void*, int, int*);
 };
 
@@ -136,7 +136,7 @@ class CPPEXTDEC VarParamData : public FileParamData {
   //! value as defined in the model until they are set by a time point or user 
   //! action, otherwise
   //! the uninitialized current data space would be copied over them
-  void back_copy_vars(double);
+  void back_copy_vars();
 
   //! Set up current data from time points for time and direction 
   //! Arguments are time and dir (TRUE=forward), 
