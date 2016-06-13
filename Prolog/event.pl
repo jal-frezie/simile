@@ -984,7 +984,8 @@ spread_dims(Node) :-
 		  UseArray = FoundArray,
 		    SpecChanged = dims),
 		(Type = real, !, Base = 1; Base = Type),
-		(use_units_in(Obj, 'No'),
+		((use_units_in(Obj, 'No');
+		  IList = [], inters'><'promote_unit(Base,1)),
 		    CheckLevel = 1;
 		  CheckLevel = 2),
 		(check_unit(Base, GivenBase, CheckLevel, []), !,
