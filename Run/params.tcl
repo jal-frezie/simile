@@ -43,7 +43,6 @@ proc FileParamDialogue {topNode topWin mustShow} {
         set paramData(needed) {}
     }
     DIYMakeFrames $t
-    array unset widgetNames
     set useCppArray [RunningInC $topNode]
     foreach node $allNodes {
         set notInput [FirstIndexCheck $topNode $node]
@@ -76,6 +75,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
         # Dialogue not needed because data OK so return good
         set paramData(done) 1
     }
+    array unset widgetNames
     PackItUp $t
     return $paramData(done)
 }
