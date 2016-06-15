@@ -235,7 +235,8 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	\+ VisEntity is_of_sort captionless,
 	\+ is_ghost(VisEntity),
 	\+ image'><'draws_complete(VisEntity),
-	abs_path_name(Submodel, TopNode, OuterText),
+	(Submodel = TopNode -> OuterText = '(none)';
+	 abs_path_name(Submodel, TopNode, OuterText)),
 	caption_for(VisEntity, RedText),
 	menu'><'select_all_in(Submodel, base), /* make sure the red shows */
 	safe_tcl_eval([set, log, entered_exception], _),
@@ -288,6 +289,12 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	caption_for(Link, LinkText),
 	caption_for(Submodel, OuterText),
 	Wrinkle = lookup_not_allowed(OuterText, LinkText);
+	setof(Unitless, (find_all_comps(Submodel, Unitless),
+			 Unitless has_class_refinement units of any), BadBound),
+	all(ame_gen, caption_for, [build(BadBound), build(BadCapt)]),
+	(Submodel = TopNode -> OuterText = '(none)';
+	 abs_path_name(Submodel, TopNode, OuterText)),
+	Wrinkle = missing_boundary_cond(OuterText, BadCapt);
 	fail.
 
 /*

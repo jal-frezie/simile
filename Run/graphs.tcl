@@ -587,7 +587,7 @@ proc AbleArrows {db t} {
 set commonTimes [list second minute hour day week month year]
 proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     global table_entry iconImages tcl_platform
-    
+
     PutItThere .table $parent
     set haveDND [llength [package provide tkdnd]]
     wm title .table "Table data for [BlankCrs "$tgt $dims"]"
@@ -987,8 +987,12 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     pack .table.fbuttons.help -side top -padx 4 -pady 4
     pack .table.fbuttons -side right  -anchor e
     pack $t -side left -expand true -fill both
-    #
-
+    if {[lindex $table_entry(values) 1] eq ",bytes"} {
+	# No object data available, do not display
+	.table.fbuttons.edit configure -state disabled
+	.table.fbuttons.keepvals configure -state disabled
+	set table_entry(uftsi) [lindex $table_entry(values) 4]*day
+    }
     set t .table
     LetItShow .table
     if {[llength $table_entry(data)]} {
@@ -1362,6 +1366,8 @@ proc AcquireTableData {redo startLine} {
         set table_entry(values) [LoadTableData $tableSpec $startLine 0]
         set table_entry(source) 2
         set table_entry(data) $tableSpec
+	.table.fbuttons.edit configure -state normal
+	.table.fbuttons.keepvals configure -state normal
     }
 }
 

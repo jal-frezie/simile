@@ -477,6 +477,10 @@ set msgs(param_in_vm_model_full) [tr. {Perhaps a per-record submodel, with its m
 set msgs(lookup_not_allowed_title) [tr. {Problem with model}]
 set msgs(lookup_not_allowed_message) [tr. {Submodel "%1$s" has a membership condition that looks up instances of the model at the base of role arrow "%2$s", but this role arrow does not have base instance lookup enabled.}]
 
+set msgs(missing_boundary_cond_title) [tr. {Problem with model}]
+set msgs(missing_boundary_cond_message) [tr. {Submodel "%1$s" contains the following components which do not have a defined data type: %2$s}]
+set msgs(missing_boundary_cond_detail) [tr. {This means that they form a loop of influences and all take their data type from the previous one. Such a loop must have a boundary condition, e.g., a value that is used initially, and which sets the data type of the other values.}]
+
 set msgs(bad_instance_lookup_title) [tr. {Problem with model}]
 set msgs(bad_instance_lookup_message) [tr. {This model includes an attempt to use base instance lookup for the association submodel "%1$s". This cannot be done because index(1) in this submodel is the index of a variable-membership submodel other than itself, and therefore not an array subscript.}]
 

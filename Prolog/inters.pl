@@ -1759,8 +1759,10 @@ operator(loses, boolean, [boolean, const_int]).
 %operator(choose, a(T), [boolean, a(T), a(T)]).
 %operator(choose, real, [boolean, real, real]).
 %operator(choose, uint64_t, [boolean, uint64_t, uint64_t]).
-operator(choose, Any, [boolean, Any, Any]) :- value(Any); Any = uint64_t.
-operator(happens, boolean, [Any]) :- value(Any).
+operator(choose, Any, [boolean, Any, Any]) :-
+    member(Any, [any, uint64_t]);
+    value(Any).
+operator(happens, boolean, [_Any]).
 operator(rand, real, [real, real]).
 operator(seed_rand, uint64_t, [int]).
 operator(use_rand, real, [uint64_t]).
@@ -1777,8 +1779,8 @@ operator(table, any, ['[index, ...]']).
 
 %operator(if, any, [[then_clause]). Not needed as macro subber flags errors
 operator(then, then_clause, [boolean, else_clause]).
-operator(else, else_clause, [Any, Any]) :- value(Any).
-operator(elseif, else_clause, [Any, then_clause]) :- value(Any).
+operator(else, else_clause, [Any, Any]).
+operator(elseif, else_clause, [_Any, then_clause]).
 
 operator(+, int, [int]).
 operator(+, real, [real]).
@@ -1803,13 +1805,14 @@ parameters to real (and because everything does) */
 operator(^, real, [real, real]).
 operator(is, cond_spec, [int, int]).
 operator(is, cond_spec, [a(T), a(T)]).
-operator(==, boolean, [Any, Any]) :- value(Any).
-operator('!=', boolean, [Any, Any]) :- value(Any).
-operator(<, boolean, [Any, Any]) :- value(Any).
-operator(<=, boolean, [Any, Any]) :- value(Any).
-operator(>, boolean, [Any, Any]) :- value(Any).
-operator(>=, boolean, [Any, Any]) :- value(Any).
-operator(<>, boolean, [Any, Any]) :- value(Any).
+% v6.7: rest were formerly value(Any) but see no need for that
+operator(==, boolean, [Any, Any]).
+operator('!=', boolean, [Any, Any]).
+operator(<, boolean, [Any, Any]).
+operator(<=, boolean, [Any, Any]).
+operator(>, boolean, [Any, Any]).
+operator(>=, boolean, [Any, Any]).
+operator(<>, boolean, [Any, Any]).
 
 operator('&&', boolean, [boolean, boolean]).
 operator('||', boolean, [boolean, boolean]).
@@ -1822,7 +1825,8 @@ operator(xor, boolean, [boolean, boolean]).
 operator(not, boolean, [boolean]).
 
 value(Any) :-
-	member(Any, [boolean, int, a(_Enum), real]).
+    % v6.7: int now chosen ahead of boolean
+	member(Any, [int, boolean, a(_Enum), real]).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* add_zeros has the mind-numbingly monotonous task of shifting
 all the array elements along one so that wooly-minded treehuggers can address
