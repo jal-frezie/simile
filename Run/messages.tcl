@@ -525,6 +525,10 @@ set msgs(missing_relation_message) [tr. {Interface to submodel requires relation
 
 set msgs(unknown_unit_title) [tr. {Problem checking units}]
 set msgs(unknown_unit_message) [tr. {Unit expression %1$s is not recognized as a valid unit.}]
+set msgs(unknown_unit_detail) [tr. {Note that unit abbreviations and multiplier prefixes are case-sensitive.}]
+
+set msgs(bad_subexp_in_unit_title) [tr. {Problem checking units}]
+set msgs(bad_subexp_in_unit_message) [tr. {Unit expression %1$s, which appears as a subexpression in the given units %2$s, is not recognized as a valid unit.}]
 
 set msgs(bad_type_conversion_title) [tr. {Problem converting units}]
 set msgs(bad_type_conversion_message) [tr. {You are not allowed to convert implicitly from a "%1$s" value to a "%2$s" value because of the possibility for confusion or loss of information.}]

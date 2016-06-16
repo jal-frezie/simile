@@ -502,10 +502,12 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	(DimExprs = TargetExprs, !,
 	    ((member(Target_base, [any, n(_ET1), a(_ET2),
 				      boolean, cond_spec, int, uint64_t]), !,
-	          Target_type = Target_base;	 
-	      check_and_report_units(Target_base, TargetDims, _),
+	          Target_type = Target_base, Bad = 1;	 
+	      check_and_report_units(Target_base, TargetDims, Bad),
 	          Target_type = real),
-		(Severity = 0, !;
+	     (\+ number(Bad), !,
+	      Complaint = bad_subexp_in_unit(Bad, Target_base);
+	      Severity = 0, !;
 		    /* Unit_base = Target_base, !; */
 		    inters'><'promote_arg(Unit_base, Target_type, Unit_type, 1),
 		 !,
@@ -523,7 +525,8 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 			1 is Scale, !;
 			Complaint = needs_conversion(Target_name, Target_base,
 						     Unit_base));
-		    (check_and_report_units(Unit_base, UnitDims, _), !;
+		      (check_and_report_units(Unit_base, UnitDims, Bad),
+		       number(Bad), !;
 		     UnitDims = Unit_base),
 		    Complaint = mismatched_dimensions(Target_name, TargetDims,
 						      Unit_base, UnitDims));

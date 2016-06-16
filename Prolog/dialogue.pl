@@ -322,7 +322,7 @@ update_equation(Function, InterInputs,
 	  \+ UnitFormError = [],
 	    TypeError = bad_syntax('Units', UnitFormError);
 
-	    ((InterInputs = [], % If there are no incoming influences...
+	    ((ParamList = [], % If there are no incoming influences...
 	      (EqnBase = real; % ...and the equation evaluates to
 	       promote_unit(EqnBase, 1)); %  a dimensionless quantity,
 	      EqnBase = any; % or no eqn, min or max have been enterd
@@ -416,8 +416,8 @@ update_equation(Function, InterInputs,
 	purge(Eqn_st, "\\", OrigSt),
 	sicstus_atom_chars(OldEqn, OrigSt), % crash here if eqn too big
 
-	warn_dimless_scaler(NewUnits),
 	(FinalComplaint = [], !,
+	    warn_dimless_scaler(NewUnits),
 	    Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn, NewArrSpec,
 				  TabDat, MinVal, MaxVal, Desc, Comment,
 				  New_inputs);

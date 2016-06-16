@@ -84,3 +84,6 @@ unit_definition(bar, kgf/cm/cm).
 unit_definition(psi, lbf/inch/inch).
 unit_definition('Pa', 'N'/m/m).
 unit_definition(percent, 0.01).
+unit_definition(ppm, 1e-6).
+unit_definition(ppb, 1e-9).
+unit_definition(ppt, 1e-12).

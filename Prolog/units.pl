@@ -11,6 +11,7 @@ get_conversion(Source, Source_units, Dest_units, Converted_source) :-
 	standard_name(Source_units, SourceU),
 	standard_name(Dest_units, DestU),
 	add_conversion(SourceU/DestU, *, 1, 1, Mnum, Qnum),
+	nonvar(Qnum),
 	(Mnum = Qnum, !,
 	    Converted_source = Source;
 	    /* gcd with floats sometimes causes crashes in Linux
@@ -37,24 +38,31 @@ add_conversion(Unit, Sign, BaseIn, BaseOut, Mnum, Qnum) :-
 	    add_conversion(Defn, Sign, BaseIn, BaseOut, Mnum, Qnum);
 	break_product(Unit, Op, Top, Bottom),
 	    add_conversion(Top, Sign, BaseIn, BaseMid, M1, Q1),
-	    combine_signs(Sign, Op, Sign2),
+	    (var(Q1), Mnum = M1;
+	     combine_signs(Sign, Op, Sign2),
 	    add_conversion(Bottom, Sign2, BaseMid, BaseOut, M2, Q2),
-	    Mnum is M1*M2, Qnum is Q1*Q2, !; /* not sure why the cut helps */
+	    (var(Q2), Mnum = M2;
+	     Mnum is M1*M2, Qnum is Q1*Q2)), !; /* sure why the cut helps */
 	baseline(Unit, Dimension),
 	    Mnum = 1.0, Qnum = 1.0,
 	    (combine_signs(Sign, '/', Sign2),
 		select_factor_from(BaseIn, Dimension, Sign2, BaseOut), !;
-		join_without_ones(Sign, BaseIn, Dimension, BaseOut)).
+	     join_without_ones(Sign, BaseIn, Dimension, BaseOut));
+        Mnum = Unit.
 
 
 break_product(Unit, Op, Top, Bottom) :-
 	Unit =.. [Op, Top, Bottom],
 	    (Op = (*); Op = (/));   
 	Unit = Bottom^Exp,
+	    (\+ integer(Exp), !,
+	        sicstus_format_to_chars("with non-integer exponent ~w",
+					[Exp], TStr),
+	        name(Top, TStr); % to go in error message
 	    (Exp > 0, NextExp is Exp-1, Op = (*);
 	    Exp < 0, NextExp is Exp+1, Op = (/)),
 	    (NextExp = 0, !, Top = 1;
-		Top = Bottom^NextExp).
+		Top = Bottom^NextExp)).
 
 /* select_factor_from: extracts a factor from an expression. Args are:
 +Expr The source expression
@@ -98,7 +106,7 @@ extract_units_root(Units, Depth, Root, Conv) :-
 	    Sign = (*),
 	    UseDepth = Depth),
 	implode_units(Units, Depth, NonConvRoot, Left),
-	add_conversion(Left, Sign, 1, Bases, M, Q),
+	add_conversion(Left, Sign, 1, Bases, M, Q), nonvar(Q),
 	implode_units(Bases, Depth, ConvRoot, WontGo),
 	(WontGo = 1, !,
 	    join_without_ones(Sign, ConvRoot, NonConvRoot, Root),
@@ -174,7 +182,8 @@ unit_expansion(Unit, Def) :-
 check_and_report_units(Target_base, TargetDims, Scale) :-
 	standard_name(Target_base, Target),
 	add_conversion(Target, *, 1, TargetDims, M, Q),
-	Scale is M/Q.
+	(var(Q) -> Scale = M;
+	 Scale is M/Q).
 
 defined_as_unit(FullName, Def) :-
 	standard_name(FullName, Unit),

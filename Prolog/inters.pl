@@ -15,7 +15,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
 	
 	catch((replace_subexps(Expr, inters, insert_paths,
 			       sub(Sm, DestRef, Swaps, SmStep),
-			       top_down, _, FullExp),
+			       top_down, Substs, FullExp),
 	       make_intermediates(FullExp, Sm, [Target], DestPath, BackSwap,
 				  ExtInters, [], Step, Used, Units, AllInters,
 				  part_result(SourceContext, AllSetups, Args,
@@ -30,10 +30,12 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
 	/* If managing units, apply conversion; error message brilliant */
 	get_dims_from_loops(SourceLoops, _, SourceInds),
 	(m_update'><'use_units_in(Sm, 'Yes'),
-	    \+ Units = real,
-	    \+ promote_unit(Units, 1),
+	    \+ ((Units = real;  promote_unit(Units, 1)), Substs = []),
+	    % No conv if dimensionless and no params/timerefs
 	    \+ promote_unit(Units, XUnits),
 	    (get_conversion(Formula, Units, XUnits, ScaledF);
+	        \+ promote_unit(Units, 1),
+	        % if eqn dimensionless, use conversion if poss and succeed
 	        check_and_report_units(Units, PhysDims, _),
 	        check_and_report_units(XUnits, XPhysDims, _),
 		report(Sm, mismatched_dimensions(XUnits, XPhysDims,

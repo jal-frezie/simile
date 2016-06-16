@@ -521,7 +521,7 @@ namespace eval ::$keyValue {
         }
     }
     
-    proc TracePopup {winId node id X Y x y} {
+    proc TracePopup {winId node runNo id X Y x y} {
         global ::graphtools::plot
         
         set caption $plot(caption,$node)
@@ -541,7 +541,6 @@ namespace eval ::$keyValue {
 	if {[llength [lindex $trTab end]]} {
 	    set nearestval [expr {int($nearestval)}]
 	}
-	set runNo [expr {[lindex $id 0]+1}]
 	set id [lrange $id 1 end]
 	foreach num [concat $id [list $nearestval]] key $trTab {
 	    lappend trVals [TransValue $key $num]
@@ -800,6 +799,7 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         global errorInfo
         variable NColours
+	variable runCount
         
         if {[llength $Ynew]==1} then {
             set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,$NColours))}]]
@@ -822,8 +822,8 @@ namespace eval ::$keyValue {
 		    $w.canvas bind $node.$ident <Button-1> \
 			 [namespace code [list TraceHighlight $w $node $ident]]
 		    $w.canvas bind $node.$ident <Enter> \
-			 [namespace code [list TracePopup $w $node $id %X %Y \
-					      %x %y]]
+			     [namespace code [list TracePopup $w $node \
+					      $runCount($w) $id %X %Y %x %y]]
 		    $w.canvas bind $node.$ident <Leave> RemovePopup
 		}
 	    }
