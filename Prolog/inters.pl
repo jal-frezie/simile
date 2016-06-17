@@ -1746,7 +1746,7 @@ builtin('Model properties', as_number, int, [a(_T)]).
 builtin('Model properties', dies_of, boolean, [boolean]).
 builtin('Model properties', dies_of, boolean, [real]).
 builtin('Model properties', latency, real, [real]).
-builtin('Model properties', after, Any, [real, Any]) :- value(Any).
+builtin('Model properties', after, Any, [real, Any]) :- Any = any; value(Any).
 
 /* These are recognized by the parser but is not part of the equation
 language -- they and the operators are hidden */
@@ -1764,13 +1764,14 @@ operator(loses, boolean, [boolean, const_int]).
 operator(choose, Any, [boolean, Any, Any]) :-
     member(Any, [any, uint64_t]);
     value(Any).
-operator(happens, boolean, [_Any]).
+operator(happens, boolean, [Any]) :- Any = any; value(Any).
 operator(rand, real, [real, real]).
 operator(seed_rand, uint64_t, [int]).
 operator(use_rand, real, [uint64_t]).
 operator(cur_phase, real, []).
 operator(cur_step, real, []).
-operator(delay_for, Any, [class_template(delay, Any), real, Any]) :- value(Any).
+operator(delay_for, Any, [class_template(delay, Any), real, Any]) :-
+    Any = any; value(Any).
 
 /* These are handled by the parser but have special buttons to include them so
 we do not want them in the function list -- they only appear here so the right
@@ -1781,8 +1782,8 @@ operator(table, any, ['[index, ...]']).
 
 %operator(if, any, [[then_clause]). Not needed as macro subber flags errors
 operator(then, then_clause, [boolean, else_clause]).
-operator(else, else_clause, [Any, Any]).
-operator(elseif, else_clause, [_Any, then_clause]).
+operator(else, else_clause, [Any, Any]) :- Any = any; value(Any).
+operator(elseif, else_clause, [Any, then_clause]) :- Any = any; value(Any).
 
 operator(+, int, [int]).
 operator(+, real, [real]).
@@ -1808,13 +1809,13 @@ operator(^, real, [real, real]).
 operator(is, cond_spec, [int, int]).
 operator(is, cond_spec, [a(T), a(T)]).
 % v6.7: rest were formerly value(Any) but see no need for that
-operator(==, boolean, [Any, Any]).
-operator('!=', boolean, [Any, Any]).
-operator(<, boolean, [Any, Any]).
-operator(<=, boolean, [Any, Any]).
-operator(>, boolean, [Any, Any]).
-operator(>=, boolean, [Any, Any]).
-operator(<>, boolean, [Any, Any]).
+operator(==, boolean, [Any, Any]) :- Any = any; value(Any).
+operator('!=', boolean, [Any, Any]) :- Any = any; value(Any).
+operator(<, boolean, [Any, Any]) :- Any = any; value(Any).
+operator(<=, boolean, [Any, Any]) :- Any = any; value(Any).
+operator(>, boolean, [Any, Any]) :- Any = any; value(Any).
+operator(>=, boolean, [Any, Any]) :- Any = any; value(Any).
+operator(<>, boolean, [Any, Any]) :- Any = any; value(Any).
 
 operator('&&', boolean, [boolean, boolean]).
 operator('||', boolean, [boolean, boolean]).

@@ -478,7 +478,7 @@ update_equation(Function, Inputs, [Eqn_st, Evt_st, Unit_st, Is_P_st,
 warn_dimless_scaler(NewUnits) :-
 	units'><'check_and_report_units(NewUnits, TargetDims, ScaleFactor),
 % flag up dimensionless conversions; here is not really the place, but...
-	(\+ TargetDims = 1; ScaleFactor = 1.0;
+	(\+ TargetDims = 1; \+ number(ScaleFactor); ScaleFactor = 1.0;
 	query(is_scale_factor(NewUnits, ScaleFactor),
 	    warning, top, [ok], ok)), !; true.
 
