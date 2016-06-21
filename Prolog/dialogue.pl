@@ -72,7 +72,8 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 	(Result_list = [], !; % dialogue cancelled
 	  (TableSpec = '', !;
 	      asserta(table_data_is(TableSpec))), % needed in parser
-	    update_equation(Part, Input_list, Result_list, Effect),
+	  catch(update_equation(Part, Input_list, Result_list, Effect),
+		UpThrow, Effect = user_advice_generated(bad_syntax('Equation', UpThrow))),
 	    retractall(table_data_is(_TableSpec)),  
 		((Effect = new_effect_accepted(Cause, NewSpec, NewVal, ArrSpec),
 		    ArrSpec = Units-Dims,

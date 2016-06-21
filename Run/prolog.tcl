@@ -27,25 +27,21 @@ proc KeepLooking {} {
 	    if {$plPipe(debug)} {
 		puts $plPipe(debug_stream) [concat < $line]
 	    }
-	    if {[catch {set cmd [lindex $line 0]} mess]} {
-		error $line
-#		DebugMess "Could not parse $line : $mess"
-#		send_pl_cmd result:-1
-	    } else {
-		switch $cmd {
-		    exit {
-			set prologExit 1
-		    } fail {
-			set prologExit 0
-		    } send_tcl_cmd {
-			incr plPipe(recur) 2
-			eval do_tail $line
-			incr plPipe(recur) -2
-		    } slipup {
-			error [lreplace $line 0 0 slip-up]
-		    } default {
-			error $line
-		    }
+	    set definitelyList [split $line { }]
+	    set cmd [lindex $definitelyList 0]
+	    switch $cmd {
+		exit {
+		    set prologExit 1
+		} fail {
+		    set prologExit 0
+		} send_tcl_cmd {
+		    incr plPipe(recur) 
+		    eval do_tail $definitelyList
+		    incr plPipe(recur) -1
+		} slipup {
+		    error [lreplace $line 0 0 slip-up]
+		} default {
+		    error $line
 		}
 	    }
 	}
@@ -77,7 +73,7 @@ proc prolog {plCmd} {
 proc do_tail {header args} {
     global errorInfo
     set oldDir [pwd]
-    if {[catch $args retVal]} {
+    if {[catch [join $args { }] retVal]} {
 	puts $retVal
         cd $oldDir
         if {[string equal -length 7 slip-up $retVal]} {
