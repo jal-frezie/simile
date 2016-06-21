@@ -243,8 +243,9 @@ double_backslashes(Str, Dtr) :-
 	Dtr = Str.
 
 bite_off_number(String, Num, Left) :-
-	(append(Safe, [Black, White | _], String),
+	(append(Safe, [Black | Tail], String),
 	    (Black = 46,
+	        Tail = [White | _],
 		member(White, "\n\r\t "); % end of a macro expansion (unicode?)
 	      member(Black, "{\\} \n\r");
 	     length(Safe, 255)), !; % max length for a number
