@@ -1047,8 +1047,8 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
     SetdT( tweak_phase,steps[tweak_phase]);
   }
+  resetting = top_phase;
   if (top_phase<=0) {
-    resetting = top_phase;
     last_op = 0;
     last_exit = last_update = last_check = 0; // reset timekeeping
     for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
@@ -1128,7 +1128,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       if (loadedInst->do_evalmodel(big_phase)) break;
       // b_p needed to cancel series event
       // now make sure next bit happens
-      resetting = 0;
+      // resetting = 0;
     } 
     //    if (resetting < 1 && !errlim)
       // resetting or have just done an event -- set a finish time very close 
@@ -1836,7 +1836,7 @@ void copy_param_data(char* holder, void* fpHandle) {
   space_used(nV->dimSpecs, nV->contents, &holder);
 }
 
-char* restore_param(int* dims, char** src) {
+char* restore_param(int* dims, unsigned char** src) {
   int reps, *subDims, count;
   sizeAndPtr* convenience;
   char* newData;
@@ -1862,7 +1862,7 @@ char* restore_param(int* dims, char** src) {
   return newData;
 }
 
-void* paste_param_data(void* fpHandle, char* holder) {
+void* paste_param_data(void* fpHandle, unsigned char* holder) {
   nodeValues* nV;
 
   nV = &((FileParamData*)fpHandle)->dataPtr;

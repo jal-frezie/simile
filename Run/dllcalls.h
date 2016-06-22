@@ -268,7 +268,7 @@ EXTDEC void* use_array_for_params(void*, char*);
 EXTDEC void* get_param_data_space(void*);
 EXTDEC int param_array_size(void*);
 EXTDEC void copy_param_data(char*, void*);
-EXTDEC void* paste_param_data(void*, char*);
+EXTDEC void* paste_param_data(void*, unsigned char*);
 EXTDEC void clear_time_point_elts(void*);
 EXTDEC double* get_wrap_ptr(void*);
 EXTDEC int* get_fill_ptr(void*);

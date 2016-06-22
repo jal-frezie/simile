@@ -18,7 +18,7 @@ them to be executed etc by Tcl commands. */
 
 // seeems OK for arrays to be globals? Then why not...[1]
 char simileVersion[] = SIMILE_VERSION;
-char globMess[255];
+// char globMess[255];
 
 void showMess (const char* mess) {
   // Tcl_VarEval(globInterp, "tk_messageBox -title {c++ debug} -icon info -message {", mess, "} -type ok",
@@ -771,7 +771,7 @@ FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
   void* fpHandle;
-  void *sourcePtr;
+  unsigned char* sourcePtr;
 
   if (argc != 4) {
     Tcl_WrongNumArgs(interp, 1, argv, "param_id data indices");
