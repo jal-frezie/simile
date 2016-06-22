@@ -213,11 +213,18 @@ endif
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
+ifeq ($(PLATFORM), Darwin)
+$(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/shank.cpp Run/dllcalls.h
+	cd Run; $(GPPCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
+		ame_cmx.c shank.cpp $(USETCL) -L../$(RESDIR); cd ..; \
+	$(LOCALIZE_TCL_REFS) $(SHIM)
+else
 $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
 		ame_cmx.c $(USETCL) -L../$(RESDIR) -l5d$(ARCHEXTN) \
 		$(CHECK_LOCAL_LIBS); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(SHIM)
+endif
 
 $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
 	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. $(MAKEPIC) $(MAKESL) \
