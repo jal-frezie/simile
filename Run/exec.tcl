@@ -125,9 +125,14 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    set nextDisp [expr 2*$pause-$current]
 	    set scaled_next [expr {$pause*$unitLength}]
 	}
-	set howAndWhen [ExecuteModel $node $intMethod $scaled_current \
+	if {$scaled_next == $scaled_current} {
+	    ResetModel $node $intMethod $scaled_current 1
+	    set howAndWhen 0
+	} else {
+	    set howAndWhen [ExecuteModel $node $intMethod $scaled_current \
 			    $scaled_next $maxErr $lmtPause $evtPause]
-	set scaled_current [lindex $howAndWhen 1]
+	    set scaled_current [lindex $howAndWhen 1]
+	}
 	set displayNow 0
 	switch -- [lindex $howAndWhen 0] {
 	    -1 {

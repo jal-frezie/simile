@@ -430,6 +430,9 @@ namespace eval slide139 {
         }
 #	PlaceInArray $myNode $sub $value 0 [RunningInC $myNode]
 	ListToArray $myNode $node $sub $sub {} {} $value 0 [RunningInC $myNode]
+	# ResetModel $myNode Euler $runState($myNode,currentTime) 1
+	# TellAllHelpers $myNode {} Display $runState($myNode,currentTime) $runState($myNode,displayInt) 1
+	# scale units later
     }
     
     proc SetChoiceNumber {cbox node fixed live args} {
@@ -597,7 +600,7 @@ namespace eval slide139 {
             set data [lindex [GetModelValue $node] 0]
             set useDim [FindUseDim $sliderDoes($title,dims)]
             if {$useDim==-1} {
-                set widgetSeln($node) [GetDefVal $data -1 0]
+		set widgetSeln($node) [GetDefVal $data -1 0]
                 if {[llength $f]} {
                     ShowNthChoice $f.combo $widgetSeln($node)
                 }
