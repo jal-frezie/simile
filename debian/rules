@@ -30,9 +30,9 @@ override_dh_auto_build:
 override_dh_auto_install:
 	dh_auto_install --
 	dh_auto_install -- -C Extensions/tcl-gdal \
-		libdir=/usr/lib/simile-6.6/System/lib/Stubs
+		libdir=/usr/lib/simile-6.7/System/lib/Stubs
 	dh_auto_install -- -C Extensions/tkdnd2.6 \
-		libdir=/usr/lib/simile-6.6/System/lib/Stubs
+		libdir=/usr/lib/simile-6.7/System/lib/Stubs
 # This is from Ubuntu tkdnd package to get man page in right place	
 # (removed because manpage conflicted with that for free-living tkdnd)
 #	mv debian/simile/usr/share/man/mann debian/simile/usr/share/man/man3

@@ -1,23 +1,5 @@
-simile (6.6.3) UNRELEASED; urgency=low
-
-  * Patch release
-
- -- Jasper Taylor <jasper@simulistics.com>  Fri, 26 Feb 2016 15:00:00 +0000
-
-simile (6.6.2) UNRELEASED; urgency=low
-
-  * Patch release
-
- -- Jasper Taylor <jasper@simulistics.com>  Sat, 06 Feb 2016 11:00:00 +0000
-
-simile (6.6.1) UNRELEASED; urgency=low
-
-  * Patch release
-
- -- Jasper Taylor <jasper@simulistics.com>  Tue, 02 Feb 2016 12:00:00 +0000
-
-simile (6.6.0) UNRELEASED; urgency=low
+simile (6.7.0) UNRELEASED; urgency=low
 
   * Initial release (Closes: )
 
- -- Jasper Taylor <jasper@simulistics.com>  Tue, 22 Dec 2015 08:00:00 +0100
+ -- Jasper Taylor <jasper@simulistics.com>  Thu, 09 Jun 2016 11:00:00 +0100
