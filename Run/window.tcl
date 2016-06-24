@@ -2513,7 +2513,6 @@ proc AbandonEqn {winId} {
 # ...however it causes some horrible problems with progress dialogue when
 # entering fragment-defined functions.
     set newFocus [focus]
-    puts "focus to $newFocus"
     set eb $winId.toolSlot.eqnbar
     if {[string length $newFocus] && \
 	    [string first $eb $newFocus]} { ;# i.e. not prefix
@@ -2650,12 +2649,10 @@ proc KillTransients {winId} {
     foreach tranny [GetTransients [winfo toplevel $winId]] {
 	set customKiller [wm protocol $tranny WM_DELETE_WINDOW]
 	if {[llength $customKiller]} {
-	    puts "doing $customKiller"
 	    uplevel #0 $customKiller
 	} else {
 	    destroy $tranny
 	}
-	update
     }
 }
 
@@ -2670,7 +2667,7 @@ proc byebye {winId} {
     KillTransients $winId
     SafeEqnBarEdit [winfo parent $winId]
     set runOnEmpty [string equal aqua [tk windowingsystem]]
-    prolog [list tk_off_window( '$winId' , $runOnEmpty)]
+    after idle prolog tk_off_window('$winId',$runOnEmpty)
 }
 
 proc CertainDeathNode {winId} {

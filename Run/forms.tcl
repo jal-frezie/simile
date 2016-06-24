@@ -2521,7 +2521,7 @@ proc Query {specifics icon helpRef parent opts} {
 		[lsearch {unhandled_tcl_error too_much_data} $key]==-1} {
 	    error [list slip-up $txtNotes]
 	} else {
-	    puts $specifics
+	    puts "Doing $defButton for $specifics in bkgnd"
 	    return $defButton
 	}
     }
