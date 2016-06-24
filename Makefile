@@ -108,8 +108,7 @@ ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
 	PT =
 	VERS = $(subst .,,$(VERSION))
 ifeq ($(MY_CPU),x86_64)
-	TCLDIR =  "/f/Tcl"
-#	TCLDIR =  /usr/local
+	TCLDIR =  /usr/local
 	SWIPLDIR = "/c/Program files/swipl"
 	GCCCMD = x86_64-w64-mingw32-gcc
 	GPPCMD = x86_64-w64-mingw32-g++
