@@ -117,6 +117,20 @@ proc GetFromProlog {prologCmd} {
 
 set debounce(down) quiet
 
+proc DoContextMenu {winId X Y} {
+    global tcl_platform
+
+    # don't waut for menu focus!
+    SafeEqnBarEdit [winfo parent $winId]
+    # work round bug in windows menu posning
+    if {[string equal windows $tcl_platform(platform)] && \
+	    $Y>[winfo screenheight $winId]/2} {
+	tk_popup [winfo parent $winId]top.edit $X $Y 99
+    } else {
+	tk_popup [winfo parent $winId]top.edit $X $Y
+    }
+}
+
 # Procedure for when Tcl recognizes what object is clicked but being a
 # maleficent pile of junk refuses to pass on this information so we have
 # to interrogate it to find what is closest to the click point
@@ -183,7 +197,7 @@ proc ClickObj { x y winId X Y action} {
         $winId focus {}
         if {$RB && [string equal select $pushedbutton]} {
             prolog [list tk_${action}('$winId', $xco , $yco , 2)]
-            tk_popup [winfo parent $winId]top.edit $X $Y
+            DoContextMenu $winId $X $Y
             prolog [list tk_unclick( $xco , $yco )]
         } else {
             prolog [list tk_${action}('$winId', $xco , $yco , $CD)]
@@ -228,13 +242,7 @@ proc ClickObj { x y winId X Y action} {
         # Right button puts up context menu.
         if {$RB && [string equal select $pushedbutton]} {
 	    update
-# work round bug in windows menu posning
-	    if {[string equal windows $tcl_platform(platform)] && \
-		    $Y>[winfo screenheight $winId]/2} {
-		tk_popup [winfo parent $winId]top.edit $X $Y 99
-	    } else {
-		tk_popup [winfo parent $winId]top.edit $X $Y
-	    }
+	    DoContextMenu $winId $X $Y
             prolog [list tk_unclick( $xco , $yco )]
         }
         
@@ -2505,6 +2513,7 @@ proc AbandonEqn {winId} {
 # ...however it causes some horrible problems with progress dialogue when
 # entering fragment-defined functions.
     set newFocus [focus]
+    puts "focus to $newFocus"
     set eb $winId.toolSlot.eqnbar
     if {[string length $newFocus] && \
 	    [string first $eb $newFocus]} { ;# i.e. not prefix
@@ -2641,6 +2650,7 @@ proc KillTransients {winId} {
     foreach tranny [GetTransients [winfo toplevel $winId]] {
 	set customKiller [wm protocol $tranny WM_DELETE_WINDOW]
 	if {[llength $customKiller]} {
+	    puts "doing $customKiller"
 	    uplevel #0 $customKiller
 	} else {
 	    destroy $tranny
