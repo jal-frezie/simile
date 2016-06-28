@@ -27,7 +27,8 @@ if {[catch {
 
     # try returning the runParams if we have them...as json of course
     array set runParams {execTime 100.0 timeUnit unit displayInt 1 \
-			     intMethod Euler phaseList 0.1} ;# defaults
+			     intMethod Euler phaseList 0.1 resetTo 0}
+    # defaults
     set node [modelWin cget -modelNode]
     if {[info exists runState($node,runParams)] && \
 	     [lindex $runState($node,runParams) 0] eq "execTime"} {

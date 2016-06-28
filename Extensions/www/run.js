@@ -318,25 +318,39 @@ function createInitialHelpers() {
 	data: { "base":fileBase, "act":"GetXMLHelperSetup"}
     })
 	.done(function( returnedXML ) {
-	    if (returnedXML == '') return;
-	    parser=new DOMParser();
-	    hlpDoc=parser.parseFromString(returnedXML,"text/xml");
-	    if ($(hlpDoc).find("parsererror").length > 0) {
-		// alert("Helper setup file failed to parse as XML");
-		// no problem, we can deal with v5 mime shfs...
-		b64Bloc = returnedXML.substr(returnedXML.search("\n\n")+2);
-		insList = atob(b64Bloc).split("\r\n");
-		for (i=0; i<insList.length; ++i) {
-		    if (insList[i].search("container")==0) {
-			
-			addTabFor(insList[i+1].replace(/\./g, "_dot_"),
-				  "+++\"" + insList[i+2] + " ");
+	    helperElt = {nodeName:'notebook',children:[]};
+	    if (returnedXML == '') {
+		// no .shf, so just create notebook + model diagram
+	    } else {
+		parser=new DOMParser();
+		hlpDoc=parser.parseFromString(returnedXML,"text/xml");
+		if ($(hlpDoc).find("parsererror").length > 0) {
+		    // alert("Helper setup file failed to parse as XML");
+		    // no problem, we can deal with v5 mime shfs...
+		    // (but only old-style tab-per-helper)
+		    b64Bloc = returnedXML.substr(returnedXML.search("\n\n")+2);
+		    insList = atob(b64Bloc).split("\r\n");
+		    for (i=0; i<insList.length; ++i) {
+			if (insList[i].search("container")==0) {
+			    chType = insList[i+1].replace(/\./g, "_dot_");
+			    chState = "+++\"" + insList[i+2] + " ";
+			    chSpec = {nodeName:"container",
+				      attributes:{type:{value:chType}},
+				      textContent:chState};
+			    tabSpec = {attributes:{caption:{value:'Tab '
+					+ (helperElt.children.length+1)}},
+				       children:[chSpec]};
+			    helperElt.children.push(tabSpec);
+						     
+			    //addTabFor(insList[i+1].replace(/\./g, "_dot_"),
+			//	      "+++\"" + insList[i+2] + " ");
+			}
 		    }
+		} else {
+		    helperElt = $(hlpDoc).find("shf")[0].children[2];
 		}
-		return;
 	    }
-	    helperElt = $(hlpDoc).find("shf")[0];
-	    AddHelperHierarchy('right', helperElt.children[2]);
+	    AddHelperHierarchy('right', helperElt);
 	    
 //	    tclHelpers = $(hlpDoc).find("container");
 //	    for (var i=0; i<tclHelpers.length; ++i) {
@@ -455,6 +469,7 @@ function js_from_tgts(newComps) {
 
 var resetDepth = -2, savedStart = "stop";
 function model_reset() {
+    current = pipeBits.resetTo;
     if (savedStart == "run") {
 	savedStart = "stop";
 	return; // exec loop will exit and call this again
@@ -464,8 +479,8 @@ function model_reset() {
 	type: "POST",
 	url: "model_action.php",
 	data: { "base":fileBase, "act":"Reset",
-		"runlength":$("#rl").val()*timeUnit, 
-		"current":0, "step":scaleTimes($("#ts").val(),timeUnit),
+		"runlength":$("#rl").val()*timeUnit, "current":current*timeUnit,
+		"step":scaleTimes($("#ts").val(),timeUnit),
 		"method":pipeBits.intMethod, "depth":resetDepth,
 		"note":JSON.stringify(note)}
     })
@@ -475,7 +490,7 @@ function model_reset() {
 			     -savedStart);
 	    }
 	    savedStart = "stop";
-	    $("#ct").val(0);
+	    $("#ct").val(current);
 	    $( "#progress" ).progressbar({ value: 0 });
 
 	    initState = JSON.parse(initVals);
@@ -488,7 +503,7 @@ function model_reset() {
 		}
 		allResults[resIndx] = initState[i];
 	    }
-	    update_helpers(0, allResults, false);
+	    update_helpers(current, allResults, false);
 	    
 	    $.post('model_action.php', { "base":fileBase, "act":"Report"}, 
 		   function(data) {
@@ -770,6 +785,11 @@ function ResizeAll() {
 }
 
 window.onresize = ResizeAll;
+
+function select_for(helperId, compId) {
+    currentHelper = currentHelpers[helperId];
+    currentHelper.acceptClick(compId);
+}
 
 function select_for_helper(compId) {
   if (currentHelper != null) {
@@ -1247,11 +1267,11 @@ PlotXY.prototype.acceptClick = function (compId) {
       this.lxAxis = xAxis;
       this.lyAxis = yAxis;
       this.line = gLine;
-    buttonFn = "select_for_helper('clear')";
+    buttonFn = "select_for('" + this.port + "','clear')";
     $('#' + this.port).html("<div id='Buttonbar'><button onclick=" + buttonFn
 			    + "><img src='images/new.gif'/></button></div>");
     if (compId == "time") {
-	buttonFn = "select_for_helper('add')";
+	buttonFn = "select_for('" + this.port + "','add')";
 	$('#' + this.port).find('#Buttonbar')
 	    .append("<button onclick=" + buttonFn
 		    + "><img src='images/add.gif'/></button><div id='instruct'></div>");
@@ -1340,7 +1360,7 @@ PlotXY.prototype.resize = function(x,y) {
 //      w = 800;
       w = x-ngap;
 //      h = 800;
-      h = y-120;
+      h = y-144;
     this.lx.range([ngap, w+ngap]);
     this.ly.range([0, h]);
     this.lxAxis.tickSize(-h);

@@ -267,7 +267,7 @@ break;
       break;
 
    case "Reset":
-      $current = 0;
+      $current = $_POST['current'];
       $resArr = [];
       $pop = doTcl("DoResetModel [set iH] $current " . $_POST['method'] . " "
                    . $_POST['depth']);
