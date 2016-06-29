@@ -26,6 +26,20 @@
 		);
 	});
 
+// experimental jqueryui popup dialogue implementation
+         $(function() {
+            $( "#dialog-1" ).dialog({
+               autoOpen: false,  
+               title: "File parameters",
+            });
+            $( "#opener" ).click(function() {
+		$( "#dialog-1" ).dialog( "open" );
+		if ($( "#dialog-1" ).html() == "empty") {
+		    insert_helper("dialog-1", "params");
+		}
+            });
+         });
+
 function clickOn(evt) {
     var tags = null;
     var blob = evt.target;
@@ -514,6 +528,8 @@ function model_reset() {
 			   createInitialHelpers();
 		       // finally we are ready to roll, wait is over
 			   $("#WaitDialog").dialog("close");
+			   // restore title bar for file param dialogues
+			   $(".ui-dialog-titlebar").show();
 		       }
 		       resetDepth = 0;
 		   }); // Report
@@ -950,12 +966,22 @@ function FileParams (port) {
   this.status = "passive";
 // OK now add the table to the new tab
     $('#' + this.port).html("<table id='paramtab' border='2'></table><button type='button' onclick='loadParams()'>Load</button>");
-  parmTable = document.getElementById("paramtab");
-  for (i=0;i<fvParms.length;i++) {
-    id = fvParms[i];
-    input = AddParamLineTo(parmTable, id, model_json[id].captpath, "entry");
-    input.setAttribute("id", 'prm_' + id);
-  }
+    parmTable = document.getElementById("paramtab");
+
+    $.post('model_action.php', {base:fileBase, act:"GetParamVals"},
+	   function(gotStr) {
+	       gotVals = JSON.parse(gotStr);
+	       for (i=0;i<fvParms.length;i++) {
+		   id = fvParms[i];
+		   input = AddParamLineTo(parmTable, id,
+					  model_json[id].captpath, "entry");
+		   input.setAttribute("id", 'prm_' + id);
+		   var init = gotVals["/node00000" + model_json[id].captpath];
+		   if (init != undefined) {
+		       input.value = init;
+		   }
+	       }
+	   });
 }
 
 FileParams.prototype.display = function  (time, latest, connect) {
@@ -2172,13 +2198,13 @@ $.post('model_action.php', { "base":fileBase, "act":"Describe"},
 	  $.post('model_action.php', {"act":"LoadSPF", "base" : fileBase}, 
 		 function(unfilled) {
 console.log("Params needed: " + needInput + ", missing: " + unfilled);
-		     if (needInput && JSON.parse(unfilled).length) {
-			 new_helper("params");
+		     if (needInput && unfilled != 1) {
+			 $( "#dialog-1" ).dialog( "open" );
+			 insert_helper("dialog-1", "params");
 		     }
 		     model_reset();
 		 }); // LoadSPF
       }); // Describe
-
 }
 
 function loadParams() {

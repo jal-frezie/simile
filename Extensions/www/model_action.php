@@ -236,17 +236,32 @@ break;
    case "LoadSPF":
       if (file_exists($_POST['base'] . '.spf')) {
          doTcl("ConsultParameterMetafile [set iH] " . $_POST['base'] . '.spf');
-         $line1 = doTcl("join [set paramData(needed)] .");
-	 if (strlen($line1)) {
-            $missing = explode(".", $line1);
-	    echo json_encode($missing);
-	 } else {
-	    echo "[]";
+	 // above should create empty paramData for all parameters
+	 $fullSet = doTcl("join [array names paramData] .");
+	 $notMissing = explode(".", $fullSet);
+	 $gotAll = 1;
+      	 for($x=0;$x<count($notMissing);$x++) {
+	    if ($notMissing[$x] != "needed" &&
+	       		doTcl("set paramData($notMissing[$x])") == "") {
+	       $gotAll = 0;
+	       break;
+	    }
 	 }
+	 echo $gotAll;
       } else {
          echo -1;
       }
       break;
+      
+   case "GetParamVals":
+   	$fullSet = doTcl("join [array names paramData] .");
+	$notMissing = explode(".", $fullSet);
+	$resArr = [];
+      	for($x=0;$x<count($notMissing);$x++) {
+	   $resArr[$notMissing[$x]] = doTcl("set paramData($notMissing[$x])");
+	}
+	echo json_encode($resArr);
+	break;
 
    case "Parameterize":
 //      $goer = '{"/fixie":"56.7","/freeweel":"0 40 50 80"}';

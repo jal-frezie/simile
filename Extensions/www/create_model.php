@@ -108,6 +108,13 @@ div.tooltip {
     float: left;
   }
 
+ <!-- for popup dialogues -->
+ .ui-widget-header,.ui-state-default, ui-button{
+ background:#b9cd6d;
+ border: 1px solid #b9cd6d;
+ color: #FFFFFF;
+ font-weight: bold;
+ }
 </style>
 <?php
 // include_once "make_exec.php"; model_action now used
@@ -260,7 +267,8 @@ if (isset($_POST['client_exec'])) {
 <script src='shapes3d.js'></script>
 </head>
 <body onload="prepare()">
-  <div id="Buttonbar">
+ <div id="dialog-1" title="Dialog Title goes here...">empty</div>
+ <div id="Buttonbar">
     <button title="Plot value against time" onclick="new_helper('plot')"><img src="images/graph.gif"/></button>
     <button title="XY Plot" onclick="new_helper('plotxy')"><img src="images/plotxy.gif"/></button>
     <button title="Table of values" onclick="new_helper('table')"><img src="images/table.gif"/></button>
@@ -268,6 +276,7 @@ if (isset($_POST['client_exec'])) {
     <button title="3-D shape viewer" onclick="new_helper('shapes')"><img src="images/3d_objects.png"/></button>
     <button title="Rectangular grid" onclick="new_helper('grid')"><img src="images/grid.gif"/></button>
     <button title="Polygon map" onclick="new_helper('polys')"><img src="images/polys.png"/></button>
+    <button title="Edit parameter values" id="opener"><img src="images/property.gif"/></button>
   </div>
   <!-- Now put the rest in a set of resizable panes...later -->
   <div id="Left" class="split split-horizontal">
