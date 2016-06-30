@@ -242,7 +242,8 @@ break;
 	 $gotAll = 1;
       	 for($x=0;$x<count($notMissing);$x++) {
 	    if ($notMissing[$x] != "needed" &&
-	       		doTcl("set paramData($notMissing[$x])") == "") {
+	       		doTcl("set paramData($notMissing[$x])") == "" &&
+			doTcl("GetModelProperty [set mH] [TrimDTFromPath $notMissing[$x]] Class") != "SUBMODEL") {
 	       $gotAll = 0;
 	       break;
 	    }

@@ -2170,7 +2170,8 @@ $.post('model_action.php', { "base":fileBase, "act":"Describe"},
 	      treeData.push(treeLine);
 
 	      if (model_json[id].eval == "INPUT" || 
-		  model_json[id].eval == "TABLE") {
+		     model_json[id].eval == "TABLE" &&
+		     model_json[id].units != "VALUELESS") {
 		   fvParms.push(id);
 		  if (model_json[id].eval == "TABLE") {
 		      needInput = 1;
