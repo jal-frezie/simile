@@ -2212,8 +2212,10 @@ function loadParams() {
   parmBlock = {};
   for (i=0;i<fvParms.length;i++) {
     id = fvParms[i];
-    input = "#prm_" + id;
-    parmBlock[model_json[id].captpath] = $(input).val();
+      inputVal = $("#prm_" + id).val();
+      if (inputVal != "Byte-coded data supplied") {
+	  parmBlock[model_json[id].captpath] = inputVal;
+      }
   }
 
   sendValues(parmBlock);

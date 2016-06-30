@@ -241,9 +241,10 @@ break;
 	 $notMissing = explode(".", $fullSet);
 	 $gotAll = 1;
       	 for($x=0;$x<count($notMissing);$x++) {
-	    if ($notMissing[$x] != "needed" &&
-	       		doTcl("set paramData($notMissing[$x])") == "" &&
-			doTcl("GetModelProperty [set mH] [TrimDTFromPath $notMissing[$x]] Class") != "SUBMODEL") {
+	    $pName = escapeNasties($notMissing[$x]);
+	    if ($pName != '"needed"' &&
+	       		doTcl("set paramData($pName)") == "" &&
+			doTcl("GetModelProperty [set mH] [TrimDTFromPath $pName] Class") != "SUBMODEL") {
 	       $gotAll = 0;
 	       break;
 	    }
@@ -259,7 +260,12 @@ break;
 	$notMissing = explode(".", $fullSet);
 	$resArr = [];
       	for($x=0;$x<count($notMissing);$x++) {
-	   $resArr[$notMissing[$x]] = doTcl("set paramData($notMissing[$x])");
+	   $retrieved = doTcl("set paramData("
+	   			    . escapeNasties($notMissing[$x]) . ")");
+	   if (strncmp($retrieved, "scenario", 8)==0) {
+	      $retrieved = "Byte-coded data supplied";
+	   }
+	   $resArr[$notMissing[$x]] = $retrieved;  
 	}
 	echo json_encode($resArr);
 	break;
