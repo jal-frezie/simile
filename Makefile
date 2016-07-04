@@ -93,7 +93,7 @@ endif
 	MAKEPIC = -fPIC
 	MAKESL = -dynamiclib
 # make sure Current is set to right version
-	USETCL =  -DUSE_TCL_STUBS -framework Tcl -ltclstub$(VERS)
+	USETCL =  -DUSE_TCL_STUBS -F$(TCLFW) -framework Tcl -ltclstub$(VERS)
 	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
 else
