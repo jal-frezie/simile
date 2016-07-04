@@ -168,18 +168,22 @@ namespace eval ::polygon375 {
                         set useNodes($winId,state) sizeval
                     }
                     sizeval {
-                        pack forget $ms
-                        ReleaseClicks $winId
                         set useNodes($winId,color) $node
                         catch {wm title $winId "$caption (polygon diagram)"}; # if not a toplevel, ie MRE
                         SetColourMap useNodes $winId $node
-                        SetColours useNodes $winId
-                        DrawPolys $winId $useNodes($winId,xcoord) \
-                                $useNodes($winId,ycoord) \
-                                $node 1
-                        set useNodes($winId,state) displaying
-			PrepareSaveString $winId
-                    }
+			SetColours useNodes $winId
+                        if {[DrawPolys $winId $useNodes($winId,xcoord) \
+				 $useNodes($winId,ycoord) $node 1]} {
+			    pack forget $ms
+			    ReleaseClicks $winId
+			    set useNodes($winId,state) displaying
+			    PrepareSaveString $winId
+			} else {
+			    destroy $winId.viewport
+			    $ms configure -text "Please try again, starting with the value representing the X coordinates."
+			    set useNodes($winId,state) xcoord
+			}
+		    }
                 }
             } else {
                 
@@ -407,25 +411,22 @@ namespace eval ::polygon375 {
         # previous line appended variable quadlist at this level, now to use it
         # ShowMess debug info "Got quadlist $quadlist" ok
 	    array set quadarray $quadlist
-	    foreach id [array names quadarray] {
-		set quad $quadarray($id)
+	    foreach {id quad} [array get quadarray] {
+		if {[llength [lindex $quad 1]] == 1 || \
+			[llength [lindex $quad 2]] == 1} {
+		    Query vertices_not_array warning helpers $winId ok
+		    return 0
+		}
 		set corners ""
 		#        ShowMess debug info [lindex $quad 2] ok
-		set polyycorrds {}
-		set i 0
-		set j 1
-		set tmp [lindex $quad 2]
-		#        ShowMess debug info $tmp ok
-		while {$i < [llength [lindex $quad 2]]} {
-		    lappend polyycorrds [lindex $tmp $i]
-		    incr i 2
-		    set ttmp [lindex $tmp $j]
-		    #        ShowMess debug info "ttmp $ttmp" ok
-		    lappend polyycorrds [expr $ttmp * -1]
-		    incr j 2
-		}
-		#        ShowMess debug info $polyycorrds ok
-		Interweave corners [lindex $quad 1] $polyycorrds
+		foreach {xind xval} [lindex $quad 1] \
+		    {yind yval} [lindex $quad 2] {
+			if {$xval == {} || $yval == {} || $xind != $yind} {
+			    Query "vertices_unmatched $id] warning helpers $winId ok"
+			    return 0
+			}
+			lappend corners $xval [expr {-$yval}]
+		    }
 		set indxs [join $id ,]
 		#        ShowMess debug info $corners ok
 		set polyId [eval {$winId.viewport.c create polygon} $corners \
@@ -468,6 +469,7 @@ namespace eval ::polygon375 {
 	    update
 	    Fit $winId
 	}
+	return 1
     }
     
     proc GoodFit {smin smax dmin dmax} {
@@ -731,20 +733,6 @@ namespace eval ::polygon375 {
             return $results
         }
     }
-    
-    proc Interweave {target xs ys} {
-        upvar 1 $target outlist
-#        if {[llength $xs]} {
-#            lappend outlist [lindex $xs 1] [lindex $ys 1]
-            #ShowMess debug info "$xs; $ys; $outlist" ok
-#            Interweave outlist [lrange $xs 2 end] [lrange $ys 2 end]
-#        }
-# naaah...
-	foreach {xind xval} $xs {yind yval} $ys {
-	    lappend outlist $xval $yval
-	}
-    }
-    
     
     proc coords_source {winId} {
         after idle {.dialog1.msg configure -wraplength 4i}

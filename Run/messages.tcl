@@ -834,6 +834,12 @@ set msgs(iotool_run_fail_full) [tr. {The error message was:
 %3$s
 The helper's status was:
 %4$s}]
+
+set msgs(vertices_not_array_title) [tr. {Wrong array/list nesting}]
+set msgs(vertices_not_array_message) [tr. {A coordinate has only one value for a data value, but there should be an array/list of values for each coordinate to specify a polygon for a single data value.}]
+set msgs(vertices_unmatched_title) [tr. {Mismatched coordinate indices}]
+set msgs(vertices_unmatched_message) [tr. {Values for X and Y coordinates should have matching indices, but there was a mismatch, or more of one than the other, for datapoint indices "%1$s"}]
+
 set msgs(not_an_shf_title) [tr. {Unrecognized file format}]
 set msgs(not_an_shf_message) [tr. {This file does not look like one of Simile's helper configuration files.}]
 set msgs(wrong_layout_title) [tr. {Inappropriate view specification}]

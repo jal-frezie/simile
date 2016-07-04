@@ -377,7 +377,15 @@ itcl::class similescript::$newLayerClass {
 	    set args [eval VerticesFromInds $inds]
 	}
 	foreach {yverts xverts} $args {}
+	if {[llength $yverts] == 1 || [llength $xverts] == 1} {
+	    Query vertices_not_array warning helpers $winId ok
+	    return 0
+	}
 	foreach {yind yval} $yverts {xind xval} $xverts {
+	    if {$xval == {} || $yval == {} || $xind != $yind} {
+		Query "vertices_unmatched $id] warning helpers $winId ok"
+		return 0
+	    }
 	    lappend outlist \
 		[expr $transform(xzoom)*$xval] [expr -$transform(yzoom)*$yval]
 	}
