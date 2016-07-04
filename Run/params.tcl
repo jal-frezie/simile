@@ -1742,7 +1742,7 @@ proc GetFromTable {parent topNode compName trans dlgStyle} {
 	set table_entry(comment) $msgs(comment_$compName)
     }
 # trim off model name from caption cos it is ugly
-    set tablCapt [string range $compName [string first / $compName 1] end]
+    set tablCapt [TrimDTFromPath $compName]
     set newSource [equationDoTable [winfo toplevel $parent] $topNode $tablCapt \
 		       ($paramMetadata($compName,dimList)) $trans $dlgStyle]
 

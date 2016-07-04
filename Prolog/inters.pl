@@ -52,6 +52,11 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
 			    switch(Idle, Target), top_down, _, SubbedSetups),
 	    select(make(Target, Prereqs, Context, RealStep, NewFormula),
 		   SubbedSetups, Setups),
+            % OK, stopgap: do not remove inter if an action that builds it
+            % takes place outside the current loop...
+	    \+ (member(Prereq, Prereqs),
+		member(make(Prereq, _, PContext, _,_), Setups),
+                \+ suffix(PContext, Context)),
 	    % do not de-idle if 1st assign done less often;
 	    % could do if step were passed back from here
 	    RealStep >= Step, !;

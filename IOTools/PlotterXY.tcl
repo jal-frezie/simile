@@ -59,6 +59,7 @@ namespace eval ::$keyValue {
     
     proc InitPlotVars {w} {
         global ::graphtools::plot
+	variable runCount
 	array unset plot $w,*
         set plot($w,nodeCount) 0
         
@@ -114,7 +115,9 @@ namespace eval ::$keyValue {
         set plot($w,DrawPoints) 0
         set plot($w,CurrentOnly) 0
         set plot($w,ordinal) 0
-    }
+
+	set runCount 1
+}
     
     proc Restore {winId} {
         #    ShowMess debug info "plotter.tcl Restore $winId" ok
@@ -268,11 +271,13 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
+	variable runCount
         
         set YYold($winId) {}
         set YYnew($winId) {}
         set Told($winId) {}
         set Tnew($winId) {}
+	incr runCount
     }
     
     # Invoked at every time interval.
@@ -766,18 +771,20 @@ namespace eval ::$keyValue {
 	    set tags [[GetCanvas $w] itemcget current -tags]
 	    set timePt [string range [lsearch -inline $tags trace*] 5 end]
 	    set idxPt [split [lsearch -inline $tags indices*] ,]
+	    set runId [lindex $tags 4]
 	    PostPopup $X $Y
 	    set msg "Plot for value "
 	    if {[llength $idxPt]>1} {
 		append msg "with indices [join [lrange $idxPt 1 end] ,] "
 	    }
-	    append msg "at time $times($w,$timePt)"
+	    append msg "in run $runId at time $times($w,$timePt)"
 	    AddPopupMessage $msg \#ffffc0
 	}
 	
 	# Connect two points on the graph
 	proc drawPoint { w X0 Y0 X1 Y1 Colour id } {
 	    global ::graphtools::plot
+	    variable runCount
 	    
 	    set x0 [get_x $w $X0 $plot($w,Tscale)]
 	    set x1 [get_x $w $X1 $plot($w,Tscale)]
@@ -788,12 +795,14 @@ namespace eval ::$keyValue {
 	set iTag [join [concat indices $id] ,]
         if $plot($w,DrawLines) {
             $w.canvas create line $x0 $y0 $x1 $y1 -fill $Colour \
-		-tags [list graph scalable xaxis_item yaxis_item $cTag $iTag]
+		-tags [list graph scalable xaxis_item yaxis_item \
+			   $runCount $cTag $iTag]
             
         }
         if $plot($w,DrawPoints) {
             $w.canvas create text $x1 $y1 -text X -fill $Colour \
-		-tags [list graph scalable xaxis_item yaxis_item $cTag $iTag]
+		-tags [list graph scalable xaxis_item yaxis_item \
+			   $runCount $cTag $iTag]
             
         }
     }
@@ -808,6 +817,7 @@ namespace eval ::$keyValue {
         global ::graphtools::Told
         global ::graphtools::Tnew
         global ::graphtools::plot
+	variable runCount
         
         set plot($w,Ymax_axis) -1e200
         set plot($w,Ymin_axis) 1e200
@@ -829,6 +839,7 @@ namespace eval ::$keyValue {
         set YYnew($w) {}
         set Told($w) {}
         set Tnew($w) {}
+	set runCount 1
         
         drawGraphpad $w
         display $w [GetModelTime] 0 0
