@@ -1470,8 +1470,8 @@ proc GetTclCompProperty {topNode prop args} {
 	    getinfo $node 9
 	} MaxVal {
 	    getinfo $node 10
-	} Name|Spec|Desc|Comment {
-	    set which [lsearch {Name Spec Desc Comment} $prop]
+	} Name|Spec|Units|Comment {
+	    set which [lsearch {Name Spec Units Comment} $prop]
 	    set targetVar [lindex [getinfo $node 12] $which]
 	    if {![string equal NULL $targetVar]} {
 		return [set ::$targetVar]

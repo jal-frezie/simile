@@ -771,8 +771,8 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 	    /* do something similar for any strings that need including */
 	    all(render, make_runtime_string,
 		[unify([L, Name, Used]),
-		 build([VisName, BaseName, VisName, VisName]),
-		 build([name, spec, description, comment]),
+		 build([VisName, BaseName, BaseName, VisName]),
+		 build([name, spec, units, comment]),
 		 build(StringPtrs), unify(Stream)]),
 	    % if tcl, put in name itself to find when debugging
 	    (L = tcl -> append(StringPtrs, [Name], AllStrPtrs);
@@ -812,11 +812,15 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 		Pop has_part Node,
 		caption_for(Pop, CaptionHead),
 		append_atoms([CaptionHead, '/', LocalStr], FullStr);
-		FullStr = LocalStr);
-	  Node has_class_refinement Field of FullStr,
-	        atomic(FullStr), !;
-          Field = spec,
-	     Node has_class_refinement value of Term,
+	     FullStr = LocalStr);
+	 Field = comment,
+	     setof(T-Z, (member(T, [description, comment]),
+			 Node has_class_refinement T of Z), Pairs),
+	     (Pairs = [_Either-FullStr];
+	      select(_Desc-Pt1, Pairs, [comment-Pt2]),
+	      append_atoms([Pt1, '\n', Pt2], FullStr));
+          member(Field-Attr, [spec-value, units-units]),
+	     Node has_class_refinement Attr of Term,
              sicstus_format_to_chars("~w", [Term], FullStrStr),
              sicstus_atom_chars(FullStr, FullStrStr)),
 	templatify(L, FullStr, Ptr, Decl),

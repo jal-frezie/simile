@@ -1416,6 +1416,15 @@ function hoverInTrace(that, d) {
 	msg = "Time: " + bloc.seq;
     } else {
 	msg = model_json[bloc.seq].text;
+	units = model_json[bloc.seq].units;
+	if (isFinite(units)) {
+	    if (units == 1.0) {
+	    } else {
+		msg += " (x" + units + ")";
+	    }
+	} else {
+	    msg += " (" + units + ")";
+	}
     }
     inds = bloc.idxs.substr(0,bloc.idxs.length-2);
     if (inds.indexOf(",")>-1) {
