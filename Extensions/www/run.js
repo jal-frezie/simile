@@ -1180,7 +1180,7 @@ var xyGlbsForD3 = {};
 PlotXY.prototype.acceptClick = function (compId) {
   if (this.status == "initializing") {
     this.tgts.push(compId);
-    this.yvals.push(compId);
+    //this.yvals.push(compId);
     //addys = flatten('t', JSON.parse(values_json[compId]));
     //buttonFn = "select_for_helper('time')";
     this.status = "getting_x";
@@ -1224,7 +1224,7 @@ PlotXY.prototype.acceptClick = function (compId) {
     } else if (this.status == "adding") {
 	$('#' + this.port).find('#instruct').html(''); // delete message
 	this.tgts.push(compId);
-	this.yvals.push(compId);
+	//this.yvals.push(compId);
 	//addys = flatten('t', JSON.parse(values_json[compId]));
     } else { // just added component for X axis
 	this.tgts.push(compId);
@@ -1247,6 +1247,10 @@ PlotXY.prototype.acceptClick = function (compId) {
 		 if (that.xval == 'time') {
 // oldys must become an array as maybe more than one var...
 		     that.oldys.push(addys);
+		     // if adding many traces, responses may not be in
+		     // order of calls, so build yvals list in
+		     // response order to match data...
+		     this.yvals.push(compId);
 		 } else {
 		     that.oldys = addys;
 		     that.oldxs = flatten('t', responses[1]);
