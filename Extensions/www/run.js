@@ -1232,6 +1232,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	this.xval = compId;
 	//this.oldxs = flatten('t', JSON.parse(values_json[compId]));
 	xAxisName = model_json[compId].captpath;
+	compId = this.tgts[0]; // to add to yvals after getting data
     }
       totes = this.tgts.length;
       if (this.xval == 'time') {
