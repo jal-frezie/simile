@@ -863,7 +863,7 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 	max = model_json[id].max;
 	input.insertAdjacentHTML('beforebegin', min);
 	input.insertAdjacentHTML('afterend', max);
-	if (model_json[id].units == "REAL") {
+	if (model_json[id].type == "REAL") {
 	    input.setAttribute("min", 0);
 	    input.setAttribute("max", 1000);
 	} else {
@@ -905,7 +905,7 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 function GetSliderValue(widget) {
     //    widget = document.getElementById("rng_" + id);
     id = widget.id.substr(4);
-    if (model_json[id].units == "REAL") {
+    if (model_json[id].type == "REAL") {
 	return ((1000-widget.value)*model_json[id].min +
 		widget.value*model_json[id].max)/1000;
     } else {
@@ -914,7 +914,7 @@ function GetSliderValue(widget) {
 }
 
 function SetSliderValue(widget, id, value) {
-    if (model_json[id].units == "REAL") {
+    if (model_json[id].type == "REAL") {
 	widget.value = 1000*(value-model_json[id].min)
 	    /(model_json[id].max-model_json[id].min);
     } else {
@@ -1221,6 +1221,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	this.oldt = parseFloat($("#ct").val());
 	this.xval = 'time';
 	xAxisName = 'time';
+	compId = this.tgts[0]; // to add to yvals after getting data
     } else if (this.status == "adding") {
 	$('#' + this.port).find('#instruct').html(''); // delete message
 	this.tgts.push(compId);
@@ -1247,16 +1248,15 @@ PlotXY.prototype.acceptClick = function (compId) {
 		 if (that.xval == 'time') {
 // oldys must become an array as maybe more than one var...
 		     that.oldys.push(addys);
-		     // if adding many traces, responses may not be in
-		     // order of calls, so build yvals list in
-		     // response order to match data...
-		     this.yvals.push(compId);
 		 } else {
 		     that.oldys = addys;
 		     that.oldxs = flatten('t', responses[1]);
 		 }
+		 // if adding many traces, responses may not be in
+		 // order of calls, so build yvals list in
+		 // response order to match data...
+		 that.yvals.push(compId);
 		 AdjustAxesFor(that, addys);
-		 
 	     });
 		 
       if (this.xval == 'time') { // x axis is time
@@ -2184,7 +2184,7 @@ $.post('model_action.php', { "base":fileBase, "act":"Describe"},
 
 	      if (model_json[id].eval == "INPUT" || 
 		     model_json[id].eval == "TABLE" &&
-		     model_json[id].units != "VALUELESS") {
+		     model_json[id].type != "VALUELESS") {
 		   fvParms.push(id);
 		  if (model_json[id].eval == "TABLE") {
 		      needInput = 1;
