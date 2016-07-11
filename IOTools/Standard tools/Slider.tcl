@@ -430,8 +430,14 @@ namespace eval slide139 {
         }
 #	PlaceInArray $myNode $sub $value 0 [RunningInC $myNode]
 	ListToArray $myNode $node $sub $sub {} {} $value 0 [RunningInC $myNode]
-	# ResetModel $myNode Euler $runState($myNode,currentTime) 1
-	# TellAllHelpers $myNode {} Display $runState($myNode,currentTime) $runState($myNode,displayInt) 1
+	if {$runState($myNode,currentMode) eq "stop"} {
+	    # model is waiting to run -- adjust rates for new value
+	    set ::updateLastDone [clock clicks -milliseconds]
+	    ResetModel $myNode Euler $runState($myNode,currentTime) 1
+	    # ...and display new rates
+	    TellAllHelpers $myNode {} Display $runState($myNode,currentTime) \
+		$runState($myNode,displayInt) 1
+	}
 	# scale units later
     }
     

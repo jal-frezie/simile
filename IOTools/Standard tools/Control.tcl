@@ -13,8 +13,6 @@
 set keyValue runcontrol33857
 
 namespace eval runcontrol33857 {
-    variable sendvars
-
     proc identify {} {
         return "Run control"
     }
@@ -28,7 +26,6 @@ namespace eval runcontrol33857 {
     }
     
     proc SwapDistVar {node pt} {
-        variable sendvars
 	variable frames
         set widget $frames($node,rcf)
 
@@ -53,7 +50,6 @@ namespace eval runcontrol33857 {
     }
     
     proc initialize {t} {
-        variable sendvars
 	variable frames
         global runState
         global stopImg
@@ -141,7 +137,7 @@ namespace eval runcontrol33857 {
 	set tCd [namespace code [list SwapDistVar $node 0]]
 	set timeStepMenu [menu $rcf.edit.capt.menu -tearoff 0 -postcommand $tCd]
 # This is done in SwapDistVar
-#        foreach timeStep $sendvars($node,captList) index {1 2 3 4 5 6 7 8 9} {
+#        foreach timeStep $runState($node,captList) index {1 2 3 4 5 6 7 8 9} {
 #          $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $node $index]
 #        }
         $rcf.edit.capt configure -menu $timeStepMenu -width 18
@@ -192,9 +188,9 @@ namespace eval runcontrol33857 {
 	       -textvariable runState($node,intMethod)] -side left -anchor nw
 
 # This is done in SwapDistVar
-#        set sendvars($node,captList) {}
+#        set runState($node,captList) {}
 #        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
-#            lappend sendvars($node,captList) \
+#            lappend runState($node,captList) \
 #                    [list Time step \#$phase {(} $::runState($node,update$phase) {)}]
 #        }
 
@@ -250,12 +246,12 @@ namespace eval runcontrol33857 {
 
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
-        #        set sendvars($node,timeUnit) unit
+        #        set runState($node,timeUnit) unit
         set runState($node,expected_end) 0.0
         SendData $node
-        set sendvars($node,prevDisplay) 0.0
-        set sendvars($node,currentMode) stop
-	set sendvars($node,busy) 0
+        set runState($node,prevDisplay) 0.0
+        set runState($node,currentMode) stop
+	set runState($node,busy) 0
     }
     
 #    proc UpdateIntMethod {menu node method} {
@@ -285,11 +281,10 @@ namespace eval runcontrol33857 {
     }
 
     proc SetMode { node action } {
-        variable sendvars
-	variable frames
+        global runState
 
-	set sendvars($node,currentMode) $action
-	if {!$sendvars($node,busy)} { ;# do action now
+	set runState($node,currentMode) $action
+	if {!$runState($node,busy)} { ;# do action now
 	    switchMode $node
 	} else {
 	    ShareAction $node 1
@@ -297,10 +292,9 @@ namespace eval runcontrol33857 {
     }
 
     proc AbortFromMenu {node} {
-	global hideQuery
-        variable sendvars
+	global hideQuery runState
 
-	if {$sendvars($node,busy)} {
+	if {$runState($node,busy)} {
 	    set hideQuery 1
 	    ShareAction $node 10 ;# rest done on exit
 	} else {
@@ -312,9 +306,8 @@ namespace eval runcontrol33857 {
 
     proc switchMode {node} {
 	global runState
-        variable sendvars
 
-	set action $sendvars($node,currentMode)
+	set action $runState($node,currentMode)
 	if {[do_in_editor set runState($node,updated)]} {
 	    switch [Query model_out_of_date warning top {} {yes no cancel}] {
 		yes {
@@ -350,25 +343,24 @@ namespace eval runcontrol33857 {
 	    if {[string equal yes $paramChoice]} {
 		# reset the model
 		SendData $node
-		set sendvars($node,currentMode) reset
+		set runState($node,currentMode) reset
 		RollSimulation $node
 	    }
 	}
 	SendData $node
-	set sendvars($node,currentMode) $action
+	set runState($node,currentMode) $action
 	RollSimulation $node
     }
     
     proc SendData { node } {
         global runState redoPhase
-        variable sendvars
         
 	if {$runState($node,currentTime)==0 && \
 		$runState($node,timeReached)!=0} {
 	    Query manual_zero warning execution {} ok
 	}
         set phases [GetPhaseCount $node]
-	set sendvars($node,newData) {}
+	set runState($node,newData) {}
 	foreach entered \
 	    {displayInt currentTime execTime errLimit speedLimit resetTo} {
 # for some reason tcl thinks an empty string is a number
@@ -379,7 +371,7 @@ namespace eval runcontrol33857 {
 		set $globName 1
 	    }
 # last two not used from list, included just for format check
-	    lappend sendvars($node,newData) [set $globName]
+	    lappend runState($node,newData) [set $globName]
 	}
 	if {$runState($node,execTime)<0} {
 	    set phaseFlip -1
@@ -388,7 +380,7 @@ namespace eval runcontrol33857 {
 	}
 
         # This loop sets the array of dts in the model
-        set sendvars($node,unitLength) \
+        set runState($node,unitLength) \
 	    [expr {[InDays $runState($node,timeUnit)]}]
         set newBalls [expr ![string equal $runState($node,timeUnit) \
                       $runState($node,oldUnit)]]
@@ -404,7 +396,7 @@ namespace eval runcontrol33857 {
             #puts "Checking $tick is $runState($node,prev_update$setPhase) and $runState($node,currentTime) is $runState($node,timeAtEval)"
             if {$newBalls || ($runState($node,prev_update$setPhase)!=$tick)} {
                 set runState($node,prev_update$setPhase) $tick
-                SetStep $node [expr $tick*$sendvars($node,unitLength)] \
+                SetStep $node [expr $tick*$runState($node,unitLength)] \
 		    $setPhase
                 set redoPhase($node) $setPhase
 		if {$setPhase==$phases} {
@@ -415,7 +407,7 @@ namespace eval runcontrol33857 {
         }
         SetStep $node 0 0
 	SwapDistVar $node 0 ;# in case any non-numeric phases fixed
-#        SetState $winId $sendvars($node,newData)
+#        SetState $winId $runState($node,newData)
     }
     
     proc SetupBar {node start finish} {
@@ -427,7 +419,6 @@ namespace eval runcontrol33857 {
 
     proc UpdateBar {node now col} {
 	global runState
-	variable sendvars
         set runState($node,currentTime) [format %.8g $now]
         set runState($node,timeReached) [format %.8g $now]
 	# so I can check if entry edited
@@ -438,7 +429,7 @@ namespace eval runcontrol33857 {
 		     $runState($node,run_length)]
 	}
 	$runState($node,cnvs) itemconfigure 1 -fill $col
-	return [string compare start $sendvars($node,currentMode)]
+	return [string compare start $runState($node,currentMode)]
     }
 
 # This is called back from the model execution process whenever
@@ -449,10 +440,10 @@ namespace eval runcontrol33857 {
 # or reset execution
 
     proc RCInteractGUI {myNode current col} {
-	variable sendvars
+	global runState
 
 	set endRun [UpdateBar $myNode \
-			[expr $current/$sendvars($myNode,unitLength)] $col]
+			[expr $current/$runState($myNode,unitLength)] $col]
 	UpdateIfFreezy
 	return $endRun
     }
@@ -461,13 +452,13 @@ namespace eval runcontrol33857 {
 # if the run has been aborted.
 
     proc RCAbortCheck {node} {
-	global updateLastDone
-	variable sendvars
-	if {[string equal stop $sendvars($node,currentMode)] && \
+	global updateLastDone runState
+
+	if {[string equal stop $runState($node,currentMode)] && \
 		[clock clicks -milliseconds]-$updateLastDone>3000} {
 	    # pretend button never pushed
 	    ShareAction $node 0
-	    set sendvars($node,currentMode) start
+	    set runState($node,currentMode) start
 	    
 	    set scrog [string equal yes [Query model_stuck info execution {} \
 					     {yes no}]]
@@ -480,7 +471,6 @@ namespace eval runcontrol33857 {
     }
 
     proc RollSimulation { node } {
-        variable sendvars
         global errorInfo redoPhase runState updateLastDone
 	global pauseImg playImg hideQuery
         variable frames
@@ -490,9 +480,9 @@ namespace eval runcontrol33857 {
 	$widget.upper.topbuttons.start configure -image $pauseImg
 	$widget.upper.topbuttons.start configure -command \
 	    "[namespace current]::SetMode $node stop"
-	set sendvars($node,busy) 1
+	set runState($node,busy) 1
 
-	foreach param {display current exec} val $sendvars($node,newData) {
+	foreach param {display current exec} val $runState($node,newData) {
 	    set $param $val
 	}
 	set forward [expr $exec>0]
@@ -502,7 +492,7 @@ namespace eval runcontrol33857 {
 	    SetupBar $node $current [expr $current + $exec]
 	}
 	do_in_editor RecordRunParams $node
-	if {[string equal reset $sendvars($node,currentMode)]} {
+	if {[string equal reset $runState($node,currentMode)]} {
 	    set current $runState($node,resetTo)
 	    set exec $runState($node,run_length)
 	    SetupBar $node $current [expr $current + $exec]
@@ -526,7 +516,7 @@ namespace eval runcontrol33857 {
 	if {[info exists redoPhase($node)]} {
 	    UpdateBar $node $current yellow
 	    if {[ResetModel $node $runState($node,intMethod) \
-		     [expr {$current*$sendvars($node,unitLength)}] \
+		     [expr {$current*$runState($node,unitLength)}] \
 		     $redoPhase($node)]} {
 		if {$runState($node,modelRunning)<3} {
 		    set runState($node,modelRunning) 3
@@ -535,13 +525,13 @@ namespace eval runcontrol33857 {
 		    if {$display} {
 			TellAllHelpers $node {} Reset
 		    }
-		    set sendvars($node,currentMode) stop
+		    set runState($node,currentMode) stop
                 }
                 if {$display} {
 		    TellAllHelpers $node {} Display $current $display 1
 		}
 	    } else {
-		set sendvars($node,currentMode) exit
+		set runState($node,currentMode) exit
 	    }
 	    unset redoPhase($node)
 	}
@@ -557,20 +547,20 @@ namespace eval runcontrol33857 {
 	} else {
 	    set maxErr 0
 	}
-	if {[string equal start $sendvars($node,currentMode)]} {
+	if {[string equal start $runState($node,currentMode)]} {
 	    set modelAct \
-		[ExecuteTo $node $current $pause $sendvars($node,unitLength) \
+		[ExecuteTo $node $current $pause $runState($node,unitLength) \
 		     $display [ListFoci $node] $runState($node,intMethod) \
 		     $maxErr $runState($node,lmtpause) \
 		     $runState($node,evtpause) $runState($node,evtDisp)]
-	    if {[string equal start $sendvars($node,currentMode)]} {
-		set sendvars($node,currentMode) $modelAct
+	    if {[string equal start $runState($node,currentMode)]} {
+		set runState($node,currentMode) $modelAct
 	    }
 #	    switchMode $node
 # don't know what the above was for, it caused spurious display updates
 	}
 	set current $runState($node,currentTime)
-	if {[string equal exit $sendvars($node,currentMode)]} {
+	if {[string equal exit $runState($node,currentMode)]} {
 	    if {$runState($node,modelRunning)==2} {
 		set runState($node,modelRunning) 0
 	    } else {
@@ -588,7 +578,7 @@ namespace eval runcontrol33857 {
 	$widget.upper.topbuttons.start configure -command \
 	    "[namespace current]::SetMode $node start"
 	UpdateBar $node $current [RestingColour $node]
-	set sendvars($node,busy) 0
+	set runState($node,busy) 0
 	if {[info exists hideQuery]} { ;# finish aborting execution
 	    ScrubRun $node 1
 	    ExDestroyHelpers $node
@@ -598,7 +588,7 @@ namespace eval runcontrol33857 {
 
 	    
 #    proc ResultsToGUI {node current display} {
-#	variable sendvars
+#	variable runState
 #	global runState
 #
 #	UpdateBar $node $current blue ;# so GetModelTime does right
@@ -606,11 +596,11 @@ namespace eval runcontrol33857 {
 #	
 #	if {$runState($node,splimit)} {
 #	    set minStep [expr {1000/$runState($node,speedLimit)}]
-#	    set extraDelay [expr {$minStep-([clock clicks]-$sendvars($node,kickTime))/1000}]
+#	    set extraDelay [expr {$minStep-([clock clicks]-$runState($node,kickTime))/1000}]
 #	    after $extraDelay [namespace code [list StoreTime $node]]
-#	    set sendvars($node,busy) 0
-#	    vwait [namespace current]::sendvars($node,kickTime)
-#	    set sendvars($node,busy) 1
+#	    set runState($node,busy) 0
+#	    vwait [namespace current]::runState($node,kickTime)
+#	    set runState($node,busy) 1
 #	}
 #	return $success
 #    }

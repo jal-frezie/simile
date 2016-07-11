@@ -567,7 +567,7 @@ proc UpdateIfFreezy {} {
 }
 
 proc ShiftDisplays {node payload current display} {
-    global helperTable runState sendvars
+    global helperTable runState
 
     if {[catch {
 	$helperTable(RunControl)::UpdateBar $node $current blue
@@ -577,9 +577,9 @@ proc ShiftDisplays {node payload current display} {
 	if {$runState($node,splimit)} {
 	    set minStep [expr {1000/$runState($node,speedLimit)}]
 	    set extraDelay [expr {$minStep-([clock clicks -milliseconds]-$runState(pacer))}]
-	    after $extraDelay [list set sendvars($node,busy) 1]
-	    set sendvars($node,busy) 0
-	    vwait sendvars($node,busy)
+	    after $extraDelay [list set runState($node,busy) 1]
+	    set runState($node,busy) 0
+	    vwait runState($node,busy)
 	    set runState(pacer) [clock clicks -milliseconds]
 	}
     }]} {
@@ -1148,7 +1148,7 @@ proc SetRunParams {node runParams} {
 # 3 = up to date, 4 = out of date
 
 proc StartRun {node} {
-    global runState window_info helperTable classTable projectParams sendvars
+    global runState window_info helperTable classTable projectParams
     # ShowMess debug info enter(start_run) ok
 #    set runState($node,currentWin) $winId ;# enables rebuild from run control
 
@@ -1193,14 +1193,14 @@ proc StartRun {node} {
 
 #        }
 # above is done by reset phase
-	set sendvars($node,unitLength) [InDays $runState($node,timeUnit)]
+	set runState($node,unitLength) [InDays $runState($node,timeUnit)]
         for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
             if {![info exists runState($node,prev_update$phase)]} {
                 set runState($node,update$phase) 0.1
                 set runState($node,prev_update$phase) 0.1
 	    }
 	    SetStep $node [expr $runState($node,prev_update$phase) * \
-			       $sendvars($node,unitLength)] $phase
+			       $runState($node,unitLength)] $phase
 	}
     } else {
 	set runState($node,currentTime) 0.0
