@@ -59,6 +59,16 @@ proc ListMenuContents {menu} {
     return $mList
 }
 
+proc RedoRatesAndDisplay {node} {
+    global runState
+    
+    set ::updateLastDone [clock clicks -milliseconds]
+    ResetModel $node Euler $runState($node,currentTime) 1
+    # ...and display new rates
+    TellAllHelpers $node {} Display $runState($node,currentTime) \
+	$runState($node,displayInt) 1
+}
+
 proc MessFileParams {topNode parent} {
     global runState
     switch -exact -- [FileParamDialogue $topNode $parent 1] {
@@ -75,6 +85,11 @@ proc MessFileParams {topNode parent} {
 	
     }
     $runState($topNode,cnvs) itemconfigure 1 -fill [RestingColour $topNode]
+    # now update displays if only doing immediate changes to variables
+    if {$runState($topNode,reloadParams)==1} {
+	RedoRatesAndDisplay $topNode
+	set runState($topNode,reloadParams) 10
+    }
 }
 
 proc MessCurrentFileParams {} {

@@ -337,8 +337,7 @@ namespace eval runcontrol33857 {
 		}
 	    }
 	}
-	if {[string match start $action] && \
-		[info exists runState($node,reloadParams)]} {
+	if {[string match start $action] && $runState($node,reloadParams)<1} {
 	    set paramChoice [Query params_out_of_date warning top {} {yes no}]
 	    if {[string equal yes $paramChoice]} {
 		# reset the model
@@ -501,13 +500,9 @@ namespace eval runcontrol33857 {
 	    $log configure -state normal
 	    $log delete 1.0 end
 	    $log configure -state disabled
-	    
-	    if {[info exists runState($node,reloadParams)]} {
-		set redoPhase($node) $runState($node,reloadParams)
-		unset runState($node,reloadParams)
-	    } else {
-		set redoPhase($node) 0
-	    }
+
+	    set redoPhase($node) [expr {min(0,$runState($node,reloadParams))}]
+	    set runState($node,reloadParams) 10
 	}
 	set finish [expr {$current+$exec}]
 

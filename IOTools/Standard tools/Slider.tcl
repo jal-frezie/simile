@@ -432,11 +432,7 @@ namespace eval slide139 {
 	ListToArray $myNode $node $sub $sub {} {} $value 0 [RunningInC $myNode]
 	if {$runState($myNode,currentMode) eq "stop"} {
 	    # model is waiting to run -- adjust rates for new value
-	    set ::updateLastDone [clock clicks -milliseconds]
-	    ResetModel $myNode Euler $runState($myNode,currentTime) 1
-	    # ...and display new rates
-	    TellAllHelpers $myNode {} Display $runState($myNode,currentTime) \
-		$runState($myNode,displayInt) 1
+	    RedoRatesAndDisplay $myNode
 	}
 	# scale units later
     }
@@ -463,6 +459,7 @@ namespace eval slide139 {
 			  0 $topNode]
         if {[llength $metaFile]} {
             ZapParams $topNode $smPath $metaFile 1
+	    RedoRatesAndDisplay $topNode
         }
     }
     
