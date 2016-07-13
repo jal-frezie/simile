@@ -927,16 +927,19 @@ proc ControlDraw {prologVersion} {
     }
     cd $oldWD
     
+    set compOptions [list CHOICE [tr. GNU]]
+    set stockComboBox ON
     if {[string match windows $tcl_platform(platform)]} {
         set compOptions [list CHOICE [tr. Default] [tr. Microsoft] [tr. GNU]]
 	file attributes $simtmpdir -hidden true
 #	file attributes $custom(prefDir)/.version -hidden true
-    } elseif {[string equal Darwin $tcl_platform(os)] && \
-		  [package vcompare 14.0.0 $tcl_platform(osVersion)] > 0} {
+    } elseif {[string equal Darwin $tcl_platform(os)]} {
+	set stockComboBox OFF ;# fails to appear or crashes if screen coords -ve
+	if {[package vcompare 14.0.0 $tcl_platform(osVersion)] > 0} {
 # do not offer default on Yosemite or up cos bundled compiler does not work
-	set compOptions [list CHOICE [tr. Default] [tr. GNU]]
+	    set compOptions [list CHOICE [tr. Default] [tr. GNU]]
+	}
     } else {
-	set compOptions [list CHOICE [tr. GNU]]
     }
     LoadModelWindowExtensions
     if {!$::headless} {
@@ -973,6 +976,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(compChoice) compChoice \
 		       $compOptions [tr. "Use which C++ compiler?"]] \
 		  [list custom(popupHelp) popupHelp ON [tr. "Popup help text"]] \
+		  [list custom(tlPopups) tlPopups $stockComboBox [tr. "Top-level popups"]] \
 		  [list custom(compDescPop) compDescPop ON [tr. "Equation"]] \
 		  [list custom(compValPop) compValPop ON [tr. "Value"]] \
 		  [list custom(compCmtPop) compCmtPop ON [tr. "Comment"]] \

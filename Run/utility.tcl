@@ -339,6 +339,8 @@ proc MenuBindPopup {widget keyList} {
             AddMenuPopup $widget $keyList %y %X %Y 1]
     bind $widget <Motion> [list AddMenuPopup $widget $keyList %y %X %Y 0]
     bind $widget <Leave> RemovePopup
+#    bind $widget <<MenuSelect>> {puts see-lected1}
+    # only one working in Aqua but not until menu is closed so no use
 }
 
 proc QueuePopup {args} {
@@ -360,7 +362,6 @@ proc AddWidgetPopup {X Y args} {
     global msgs
     if {![PrefValue custom(popupHelp) popupHelp]} {
 	return
-
     }
     PostPopup $X $Y
     set empty yes
@@ -383,6 +384,10 @@ proc AddWidgetPopup {X Y args} {
 
 proc AddMenuPopup {widget list y X Y new} {
     global msgs
+
+    if {![PrefValue custom(popupHelp) popupHelp]} {
+	return
+    }
     if {$new} {
         PostPopup $X $Y
         pack [message .popup.message -aspect 400 -bg \#ffffc0] \
@@ -956,5 +961,105 @@ proc Unscroll {w dim t b} {
 # only way to find out if it has moved
     if {abs([$w canvas$dim 0])>1} {
 	$w ${dim}view moveto 0
+    }
+}
+
+proc DeDot {cb} {
+    return [string map {. dot do dodo} $cb]
+}
+
+### replace toplevel window for combobox with a placed frame to avoid 
+### Mac crash if at -ve coords
+
+bind ComboboxListbox <FocusOut>		{ ttk::combobox::LBCancel %W }
+
+namespace eval ::ttk::combobox {
+    foreach cbProc {PopdownToplevel PlacePopdown PopdownWindow \
+			Post Unpost LBMaster} {
+	rename $cbProc Old$cbProc
+
+	proc $cbProc {args} {
+	    set me [namespace tail [lindex [info level 0] 0]]
+	    if {[PrefValue custom(tlPopups) tlPopups]} {
+		eval Old$me $args
+	    } else {
+		eval New$me $args
+	    }
+	}
+    }
+
+    proc NewPopdownToplevel {w} {
+	set cb [string range $w 0 [string last . $w]-1]
+	set f [frame [winfo toplevel $cb].[DeDot $cb]]
+	$f configure -relief solid -borderwidth 0
+	return $f
+    }
+
+    proc NewPlacePopdown {cb popdown} {
+	set base [winfo toplevel $cb]
+	set x [winfo rootx $cb]
+	set y [winfo rooty $cb]
+	set w [winfo width $cb]
+	set h [winfo height $cb]
+	set postoffset [ttk::style lookup TCombobox -postoffset {} {0 0 0 0}]
+	foreach var {x y w h} delta $postoffset {
+	    incr $var $delta
+	}
+
+	set H [winfo reqheight $popdown]
+	if {$y + $h + $H > [winfo height $base]} {
+	    set Y [expr {$y - $H}]
+	} else {
+	    set Y [expr {$y + $h}]
+	}
+	#wm geometry $popdown ${w}x${H}+${x}+${Y}
+	place $popdown -in $base -x [expr {$x-[winfo rootx $base]}] \
+	    -y [expr {$Y-[winfo rooty $base]}] -width $w -height $H
+    }
+
+    proc NewPopdownWindow {cb} {
+	variable Values
+
+	if {[winfo exists $cb.popdown]} {
+	    # from default version in case preference just changed
+	    set Values([LBMaster $cb.popdown.f.l]) dummy
+	    # prevent error when unsetting
+	    destroy $cb.popdown
+	}
+	set realPopdown [winfo toplevel $cb].[DeDot $cb]
+	if {![winfo exists $realPopdown]} {
+	    OldPopdownWindow $cb
+	}
+	return $realPopdown
+    }
+
+    proc NewPost {cb} {
+	# Don't do anything if disabled:
+	#
+	$cb instate disabled { return }
+
+	# ASSERT: ![$cb instate pressed]
+
+	# Run -postcommand callback:
+	#
+	uplevel #0 [$cb cget -postcommand]
+
+	set popdown [PopdownWindow $cb]
+	ConfigureListbox $cb
+	update idletasks    ;# needed for geometry propagation.
+	PlacePopdown $cb $popdown
+    }
+
+    proc NewUnpost {cb} {
+	set w [winfo toplevel $cb].[DeDot $cb]
+	if {[winfo exists $w]} {
+	    place forget $w
+	}
+    }
+
+    proc NewLBMaster {lb} {
+	set w [winfo parent [winfo parent $lb]]
+	set tail [string range $w [string first . $w 1]+1 end]
+	return [string map {dodo do dot .} $tail] ;# ReDot
     }
 }

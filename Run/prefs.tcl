@@ -236,6 +236,7 @@ proc Pref_Dialog {} {
 		maxPopupSize {set frame $popupF.line2}
                 bigButtons {set frame $barF}
                 popupHelp {set frame $barF}
+                tlPopups {set frame $barF}
                 quickDrag {set frame $genericF}
                 myButton {set frame $genericF}
                 deleteEndToEnd {set frame $linkF}

@@ -402,10 +402,11 @@ set sphYdiam [expr {int(316*[tk scaling])}]
 set iconDiam [expr {int(30*[tk scaling])}]
 
 set startGeom +[expr ([winfo screenwidth .]-$sphXdiam)/2]+[expr ([winfo screenheight .]-$sphYdiam)/2-200]
+# cannot place initial offscreen in osx so try behind splash
 if {[string equal Linux $tcl_platform(os)]} {
     wm geometry . $startGeom
 } else {
-    wm geometry . +0+[winfo screenheight .]
+    wm geometry . 0x0+[winfo screenwidth .]+[winfo screenheight .]
 }
 
 # first put up the splash screen

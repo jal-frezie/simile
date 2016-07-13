@@ -2515,7 +2515,8 @@ proc AbandonEqn {winId} {
     set newFocus [focus]
     set eb $winId.toolSlot.eqnbar
     if {[string length $newFocus] && \
-	    [string first $eb $newFocus]} { ;# i.e. not prefix
+	    [string first $eb $newFocus] && \
+	    [string first $winId.[DeDot $eb] $newFocus]} { ;# i.e. not prefix
 	SafeEqnBarEdit $winId
 	prolog tk_abandon_eqn
     }
