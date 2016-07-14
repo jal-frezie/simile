@@ -15,9 +15,7 @@ proc ShowMess { title icon string resps {parent {}}} {
     if {[winfo exists .splash]} {
 	destroy .splash ;# ensure mess is not obscured by splash screen
     }
-    if {[winfo exists .popup]} {
-	destroy .popup ;# avoid weird hang under Aqua, or at least try
-    }
+    RemovePopup
     set progressUp [winfo exists .progress]
     if {$progressUp} { ;# avoid yet another potential MacOS stuffup
 	set progBag [wm transient .progress]
@@ -328,7 +326,7 @@ proc PostScrog { winId node } {
 proc BindPopup {widget args} {
 # any % will be subbed by binding process unless we double it
     regsub -all % $args %% keyWd
-    bind $widget <Enter> [concat [list QueuePopup AddWidgetPopup %X %Y] $keyWd]
+    bind $widget <Enter> [concat [list QueuePopup AddWidgetPopup %W %X %Y] $keyWd]
     bind $widget <Leave> RemovePopup
 }
 
@@ -351,19 +349,19 @@ proc QueuePopup {args} {
         after cancel $popper(cmd)
     }
     set popper(cmd) [after 500 $args]
-    bind all <Motion> "set latestmouse(X) %X; set latestmouse(Y) %Y"
+    bind all <Motion> "set popper(latestX) %X; set popper(latestY) %Y"
 # seems not needed in recent Mac TclTks
 #    if {![winfo exists .popup]} {
 #	set popper(foc) [focus]
 #    }
 }
 
-proc AddWidgetPopup {X Y args} {
+proc AddWidgetPopup {wid X Y args} {
     global msgs
     if {![PrefValue custom(popupHelp) popupHelp]} {
 	return
     }
-    PostPopup $X $Y
+    PostPopup $wid $X $Y
     set empty yes
     foreach key $args colour {#ffffc0 #c0ffc0 #ffe0c0} {
 	if {[info exists msgs($key)]} {
@@ -389,12 +387,15 @@ proc AddMenuPopup {widget list y X Y new} {
 	return
     }
     if {$new} {
-        PostPopup $X $Y
-        pack [message .popup.message -aspect 400 -bg \#ffffc0] \
-                -fill x -expand true
+        PostPopup $widget $X $Y
+	set msg $::popper(cur).popup.message
+        pack [message $msg -aspect 400 -bg \#ffffc0] -fill x -expand true
+    } else {
+	set msg $::popper(cur).popup.message
     }
+    
     set entry [$widget index @$y]
-    if {[string match none $entry] || ![winfo exists .popup.message]} {
+    if {[string match none $entry] || ![winfo exists $msg]} {
         return
     }
     if {[llength $list]} {
@@ -413,50 +414,60 @@ proc AddMenuPopup {widget list y X Y new} {
     if {[string equal {} $message]} {
 #	destroy .popup
     } else {
-	.popup.message configure -text $message
+	$msg configure -text $message
     }
 }
 
-proc PostPopup {X Y} {
-    global tcl_platform latestmouse
-    if {[winfo exists .popup]} {
-        destroy .popup
-    }
-    if [string match Darwin $tcl_platform(os)] {
-        toplevel .popup -width 1 -height 1
-        ::tk::unsupported::MacWindowStyle style .popup help none
+set popper(cur) {}
+proc PostPopup {w X Y} {
+    global tcl_platform popper
+
+    RemovePopup
+    set popper(cur) [winfo toplevel $w]
+    set popup $popper(cur).popup
+    if {![PrefValue custom(tlPopups) tlPopups]} {
+	frame $popup
+    } elseif [string match Darwin $tcl_platform(os)] {
+        toplevel $popup -width 1 -height 1
+        ::tk::unsupported::MacWindowStyle style $popup help none
     } else {
-        toplevel .popup -width 1 -height 1 -bd 1 -bg black
+        toplevel $popup -width 1 -height 1 -bd 1 -bg black
 # leaves one pixel of black showing round edge of messages
-        wm overrideredirect .popup 1
+        wm overrideredirect $popup 1
     }
 
     update idletasks
     bind all <Motion> {}
-    if {[info exists latestmouse(X)]} {
-	set X $latestmouse(X)
-	set Y $latestmouse(Y)
-	array unset latestmouse
+    if {[info exists popper(latestX)]} {
+	set X $popper(latestX)
+	set Y $popper(latestY)
+	array unset popper latest?
     }
     set xpoint +[expr $X+10]
     set ypoint +[expr $Y+10]
+    if {![PrefValue custom(tlPopups) tlPopups]} {
+	place $popup -in $popper(cur) \
+	    -x [expr {$xpoint-[winfo rootx $popper(cur)]}] \
+	    -y [expr {$ypoint-[winfo rooty $popper(cur)]}]
+	return
+    }
     if {![string match Darwin $tcl_platform(os)]} {
-	if {$X>[winfo screenwidth .popup]/2} {
-	    set xpoint -[expr [winfo screenwidth .popup]+10-$X]
+	if {$X>[winfo screenwidth $popup]/2} {
+	    set xpoint -[expr [winfo screenwidth $popup]+10-$X]
 	}
-	if {$Y>[winfo screenheight .popup]/2} {
-	    set ypoint -[expr [winfo screenheight .popup]+10-$Y]
+	if {$Y>[winfo screenheight $popup]/2} {
+	    set ypoint -[expr [winfo screenheight $popup]+10-$Y]
 	}
     }
-    wm geometry .popup ${xpoint}${ypoint}
-    raise .popup
+    wm geometry $popup ${xpoint}${ypoint}
+    raise $popup
 }
 
 proc RemovePopup {args} {
     global popper
     #puts "Removing popup"
-    if {[winfo exists .popup]} {
-        destroy .popup
+    if {[winfo exists $popper(cur).popup]} {
+        destroy $popper(cur).popup
 #	if {[string match aqua [tk windowingsystem]]} {
 #	    focus -force $popper(foc)
 #	}
@@ -479,13 +490,14 @@ proc AddPopupMessage {text colour args} {
 
 # note the model editor still processes events while waiting for the executable
 
-# so check window is still there
-    if {[winfo exists .popup]} {
+    # so check window is still there
+    set popup $::popper(cur).popup
+    if {[winfo exists $popup]} {
 	if {[string length $text]<20} {
-	    pack [label .popup.message$colour \
+	    pack [label $popup.message$colour \
 		      -text $text -bg $colour] -fill x -expand true
 	} else {
-	    pack [message .popup.message$colour -aspect 400 \
+	    pack [message $popup.message$colour -aspect 400 \
 		      -text $text -bg $colour] -fill x -expand true
 	}
     }

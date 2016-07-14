@@ -342,7 +342,7 @@ proc ProdObj {topNode nodeId caption} {
 
 # This is used for items on IO tool canvases -- model components have eqnpopups
 proc CanvasBindPopup {canvas widget keywd} {
-    $canvas bind $widget <Enter> [list QueuePopup AddWidgetPopup %X %Y $keywd]
+    $canvas bind $widget <Enter> [list QueuePopup AddWidgetPopup %W %X %Y $keywd]
     $canvas bind $widget <Leave> RemovePopup
 }
 

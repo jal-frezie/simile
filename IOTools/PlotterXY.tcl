@@ -772,7 +772,7 @@ namespace eval ::$keyValue {
 	    set timePt [string range [lsearch -inline $tags trace*] 5 end]
 	    set idxPt [split [lsearch -inline $tags indices*] ,]
 	    set runId [lindex $tags 4]
-	    PostPopup $X $Y
+	    PostPopup $w $X $Y
 	    set msg "Plot for value "
 	    if {[llength $idxPt]>1} {
 		append msg "with indices [join [lrange $idxPt 1 end] ,] "

@@ -315,9 +315,9 @@ itcl::class similescript::$newLayerClass {
 	    image create photo $this.derived
 	    $winId create image $stickIt -anchor sw -image $this.derived \
 						 -tag $myTag
-	    $winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %X %Y \
+	    $winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %W %X %Y \
 					\[$this CurrentPopup %x %y\]"
-	    $winId bind $myTag <Motion> "QueuePopup AddWidgetPopup %X %Y \
+	    $winId bind $myTag <Motion> "QueuePopup AddWidgetPopup %W %X %Y \
 					\[$this CurrentPopup %x %y\]"
 	    $winId bind $myTag <Leave> RemovePopup
 	    

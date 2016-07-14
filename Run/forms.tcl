@@ -770,7 +770,7 @@ proc AddEnumTypePopup {lb y X Y} {
     set popLine [$lb get [$lb nearest $y]]
     set memList disaggregate(enumtype,$popLine)
     if {[info exists $memList]} {
-        AddWidgetPopup $X $Y "members: [set $memList]"
+        AddWidgetPopup $lb $X $Y "members: [set $memList]"
     }
 }
 
@@ -2543,9 +2543,7 @@ proc Query {specifics icon helpRef parent opts} {
     if {[winfo exists .splash]} {
 	wm withdraw .splash ;# ensure mess is not obscured by splash screen
     }
-    if {[winfo exists .popup]} {
-	destroy .popup ;# avoid weird hang under Aqua, or at least try
-    }
+    RemovePopup
 # This creates no end of trouble, e.g., re-creating the box does an update
 # which breaks a 'see all', try just re-parenting the dialogues...
 #    HideProgressBox

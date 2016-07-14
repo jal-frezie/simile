@@ -18,7 +18,7 @@ itcl::class similescript::$newLayerClass {
     } {
 	array set transform [list xzoom $xzoom yzoom $yzoom]
 	$winId bind [namespace tail $this].main <Enter> \
-	    "QueuePopup AddWidgetPopup %X %Y \[$this CurrentPopup\]"
+	    "QueuePopup AddWidgetPopup %W %X %Y \[$this CurrentPopup\]"
 	$winId bind [namespace tail $this].main <Leave> RemovePopup
 	if {[string length $state]} { ;# we are restoring 
 	    array set useNodes $state

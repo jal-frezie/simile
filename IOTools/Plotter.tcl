@@ -559,7 +559,7 @@ namespace eval ::$keyValue {
 	}]} {
 	    set lastval unavailable
 	}
-	PostPopup $X $Y
+	PostPopup $winId $X $Y
 #         if {![winfo exists .popup]} {
 #             toplevel .popup -width 1 -height 1 -bd 2 -relief raised
 #             wm overrideredirect .popup 1 

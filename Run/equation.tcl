@@ -1150,14 +1150,14 @@ proc AddFnPopup {w X Y x y} {
     }
     set popTxt [lindex [split $equation(whatPopped) .] end]
     if {![string equal {} $popTxt]} {
-	AddWidgetPopup $X $Y $popTxt
+	AddWidgetPopup $w $X $Y $popTxt
     }
 }
 
 proc AddIndexPopup {lb y X Y} {
     set line [$lb nearest $y]
     if {$line>-1} {
-	AddWidgetPopup $X $Y "Index [expr $line+1] is [$lb get $line]"
+	AddWidgetPopup $lb $X $Y "Index [expr $line+1] is [$lb get $line]"
     }
 }
 
@@ -1165,7 +1165,7 @@ proc AddParamPopup {lb y X Y} {
     global equation
     set line [$lb nearest $y]
     if {$line>-1} {
-	AddWidgetPopup $X $Y [lindex $equation(origins) $line]
+	AddWidgetPopup $lb $X $Y [lindex $equation(origins) $line]
     }
 }
 

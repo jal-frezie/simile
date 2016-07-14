@@ -149,7 +149,7 @@ itcl::class similescript::$newLayerClass {
 		[lindex [$modelInst GetValue $useNodes($winId,ycoord)] 0] \
 		[lindex [$modelInst GetValue $useNodes($winId,xcoord)] 0]
 	}
-	$winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %X %Y \
+	$winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %W %X %Y \
 					\[$this CurrentPopup\]"
 	$winId bind $myTag <Leave> RemovePopup
 	$this Restipple

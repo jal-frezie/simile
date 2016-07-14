@@ -153,7 +153,7 @@ namespace eval ::ModelDiagram20060804 {
 
 	set topNode [$helperTable([winfo parent $winId],whichInstance) GetNode]
 	if {$runState($topNode,modelRunning)>2} {
-	    PostPopup $X $Y
+	    PostPopup $winId $X $Y
 #	    set trans [GetTransTable $plName]
 #	    if {[catch {GetModelValue $plName} mVal]} {
 #		set missing [lindex [split $mVal \"] 1]
