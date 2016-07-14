@@ -555,8 +555,6 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 #					 $indx] $subs $errorData
 #		}
 		if {!$pt} { ;# NOW: mark param active so it clears after event
-# active is set to 2 because the param updater will be called before the model
-# collects the parameter, and must clear the value the following time
 		    MarkEvtParamActive $topNode $tgt $useCppArray
 		}
             } elseif {![string is double -strict $indx]} {
@@ -877,10 +875,13 @@ proc PlaceInArray {topNode where what when inC} {
 }
 
 proc MarkEvtParamActive {topNode node inC} {
+# active was set to 2 because the param updater was called before the
+#    model collected the parameter, but as of 6.7p1 anything that calls this
+#    also does an extra rate pass collecting it immediately so only need 1
     if {$inC} {
 	c_markevtparamactive $topNode $node
     } else {
-	set ::setFromSeries($topNode,$node,active) 2
+	set ::setFromSeries($topNode,$node,active) 1
     }
 }
 
