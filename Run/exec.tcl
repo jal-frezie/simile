@@ -874,14 +874,15 @@ proc PlaceInArray {topNode where what when inC} {
     }
 }
 
-proc MarkEvtParamActive {topNode node inC} {
+proc MarkEvtParamActive {topNode node inC wait} {
 # active was set to 2 because the param updater was called before the
 #    model collected the parameter, but as of 6.7p1 anything that calls this
-#    also does an extra rate pass collecting it immediately so only need 1
+    #    also does an extra rate pass collecting it immediately so only need 1
+    # (except while model executing!)
     if {$inC} {
-	c_markevtparamactive $topNode $node
+	c_markevtparamactive $topNode $node $wait
     } else {
-	set ::setFromSeries($topNode,$node,active) 1
+	set ::setFromSeries($topNode,$node,active) $wait
     }
 }
 

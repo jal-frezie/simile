@@ -1945,8 +1945,8 @@ int get_timepoint_ptr_and_dims(void* fpHandle, double time,
   return 0; // success
 }
 
-void mark_values_active(void* fpHandle) {
-  ((VarParamData*)fpHandle)->active = 1;
+void mark_values_active(void* fpHandle, int wait) {
+  ((VarParamData*)fpHandle)->active = wait;
 }
 
 int set_bloc_record_count(char* ptData, int* ptDims, int* indxs, int length) {

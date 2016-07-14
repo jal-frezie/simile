@@ -402,7 +402,7 @@ namespace eval slide139 {
     proc WidgetSelnToC {node fixed args} {
         global widgetSeln
         set sub [join [concat [list $node] $args] ,]
-        SetArrayIfUsed $node $fixed $args $widgetSeln($sub)
+        return [SetArrayIfUsed $node $fixed $args $widgetSeln($sub)]
     }
     
     proc SliderEvent {node indices} {
@@ -410,10 +410,11 @@ namespace eval slide139 {
 
 #	set sub [join [concat [list {} NOW] $indices] ,]
 #	SetArrayIfUsed $node 0 $indices [$scale get]
-	MarkEvtParamActive $myNode $node [RunningInC $myNode]
 #	ListToArray $myNode $node $sub $sub {} {} [$scale get] 1 \
 #	    [RunningInC $myNode]
-	eval [list WidgetSelnToC $node 0] $indices
+	set redone [eval [list WidgetSelnToC $node 0] $indices]
+	MarkEvtParamActive $myNode $node [RunningInC $myNode] [expr {2-$redone}]
+	# if no immediate rate update, wait a step before clearing event
     }
 
     proc SetArrayIfUsed {node fixed indices value} {
@@ -433,8 +434,10 @@ namespace eval slide139 {
 	if {$runState($myNode,currentMode) eq "stop"} {
 	    # model is waiting to run -- adjust rates for new value
 	    RedoRatesAndDisplay $myNode
+	    return 1
 	}
 	# scale units later
+	return 0
     }
     
     proc SetChoiceNumber {cbox node fixed live args} {

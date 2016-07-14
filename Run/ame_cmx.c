@@ -750,18 +750,21 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int markevtparamactiveCmd(ClientData clientData, Tcl_Interp *interp,
 				int argc, Tcl_Obj *CONST argv[]) {
-  int i, error, indxs[32], *dims;
+  int i, error;
   void* fpHandle;
-  double val;
-  char* bloc;
   
-  if (argc != 2) {
-    Tcl_WrongNumArgs(interp, 1, argv, "param_id");
+  if (argc != 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id wait_steps");
     return TCL_ERROR;
   }
   
+  error = Tcl_GetIntFromObj(interp, argv[2], &i);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
   memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
-  mark_values_active(fpHandle);
+  mark_values_active(fpHandle, i);
   return TCL_OK;
 }
 
