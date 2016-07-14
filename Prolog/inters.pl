@@ -1518,8 +1518,8 @@ units_for_trigger_mag(Fn, MagUnits) :-
 units_for_evt_antecedents(Fn, EvtUnit) :-
 	contains(Evt, Fn), % in case input for frag-defined fn,
 	find_type(Evt, function),
-	m_update'><'get_all_links(Evt, discrete, ids(RealSrc, _Reln), _),
-	m_update'><'get_spec_units(RealSrc, EvtUnit).
+	m_update'><'get_all_links(Evt, discrete, _, input_link(_,_,_,_, RawU)),
+        remove_physical_units_if_disabled(Fn, RawU, EvtUnit).
 
 dissociate(Wrapper, made_at(Arg, Level), made_at(NewArg, Level)) :-
         % keep made_at(...) or primes does not work
