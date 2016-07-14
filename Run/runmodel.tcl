@@ -592,9 +592,9 @@ proc ShiftDisplays {node payload current display} {
 	if {$runState($node,splimit)} {
 	    set minStep [expr {1000/$runState($node,speedLimit)}]
 	    set extraDelay [expr {$minStep-([clock clicks -milliseconds]-$runState(pacer))}]
-	    after $extraDelay [list set runState($node,busy) 1]
-	    set runState($node,busy) 0
-	    vwait runState($node,busy)
+	    after $extraDelay [list set runState($node,ready) 1]
+	    set runState($node,ready) 0
+	    vwait runState($node,ready)
 	    set runState(pacer) [clock clicks -milliseconds]
 	}
     }]} {
