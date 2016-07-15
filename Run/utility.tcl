@@ -426,7 +426,7 @@ proc PostPopup {w X Y} {
     set popper(cur) [winfo toplevel $w]
     set popup $popper(cur).popup
     if {![PrefValue custom(tlPopups) tlPopups]} {
-	frame $popup
+	frame $popup -bd 1 -relief raised
     } elseif [string match Darwin $tcl_platform(os)] {
         toplevel $popup -width 1 -height 1
         ::tk::unsupported::MacWindowStyle style $popup help none
@@ -443,14 +443,30 @@ proc PostPopup {w X Y} {
 	set Y $popper(latestY)
 	array unset popper latest?
     }
-    set xpoint +[expr $X+10]
-    set ypoint +[expr $Y+10]
     if {![PrefValue custom(tlPopups) tlPopups]} {
-	place $popup -in $popper(cur) \
-	    -x [expr {$xpoint-[winfo rootx $popper(cur)]}] \
-	    -y [expr {$ypoint-[winfo rooty $popper(cur)]}]
+	set relx [expr {$X-[winfo rootx $popper(cur)]}]
+	if {$relx>[winfo width $popper(cur)]/2} {
+	    set xsgn -
+	    set xdir e
+	} else {
+	    set xsgn +
+	    set xdir w
+	}
+	set rely [expr {$Y-[winfo rooty $popper(cur)]}]
+	if {$rely>[winfo height $popper(cur)]/2} {
+	    set ysgn -
+	    set ydir s
+	} else {
+	    set ysgn +
+	    set ydir n
+	}
+	set offset 10
+	place $popup -in $popper(cur) -anchor $ydir$xdir \
+	    -x [expr $relx$xsgn$offset] -y [expr $rely$ysgn$offset]
 	return
     }
+    set xpoint +[expr $X+10]
+    set ypoint +[expr $Y+10]
     if {![string match Darwin $tcl_platform(os)]} {
 	if {$X>[winfo screenwidth $popup]/2} {
 	    set xpoint -[expr [winfo screenwidth $popup]+10-$X]
