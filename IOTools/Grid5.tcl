@@ -878,13 +878,9 @@ namespace eval grid005 {
         set col [expr int(1+([$winId.c canvasx $x])/$useNodes($winId,mult))]
         set row [expr int(1+$nrow-([$winId.c canvasy $y])/$useNodes($winId,mult))]
         if {$row>0&&$row<=$nrow&&$col>0&&$col<=$ncol} {
-            if {![winfo exists .popup]} {
-                toplevel .popup -width 1 -height 1 -bd 2 -relief raised
-                wm overrideredirect .popup 1
-                pack [message .popup.message -aspect 400 -bg \#ffffc0] \
-                        -fill x -expand true
-                raise .popup
-            }
+	    PostPopup $winId $X $Y
+	    set msg $::popper(cur).popup.message
+	    pack [message $msg -aspect 400 -bg \#ffffc0] -fill x -expand true
 	    if {[info exists useNodes($winId,values)]} {
 		if {[catch {set vLine $useNodes($winId,values,$row,$col)}]} {
 		    set value none
@@ -895,7 +891,7 @@ namespace eval grid005 {
 		    set index [join [TransEnums $useNodes($winId,allETs) \
 					 [lindex $vLine 0]] ,]
 		}
-		.popup.message config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
+		$msg config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
 	    } else { # get approx value from raw data
 		set cell [expr ($row-1)*$ncol+$col-1]
 		if {![binary scan $useNodes($winId,rawBinary) \
@@ -903,11 +899,8 @@ namespace eval grid005 {
 		set numValue [expr $useNodes($winId,min)+0x$hexo*($useNodes($winId,range))/255]
 		set value [TransValue $useNodes($winId,dataETs) $numValue]
 #puts "dot $hexo min $useNodes($winId,min) range $useNodes($winId,range)"
-		.popup.message config -text "Col,row=($col,$row)\nValue=$value approx"
+		$msg config -text "Col,row=($col,$row)\nValue=$value approx"
             }
-            set xpoint [expr $X+15]
-            set ypoint [expr $Y+43]
-            wm geometry .popup +$xpoint+$ypoint
             update
         }
     }
