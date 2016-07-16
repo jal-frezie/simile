@@ -1814,13 +1814,17 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    }
 		lappend indexColumns $indexColumn
 	    }
-	    set headerColumn [lsearch -exact $headerList [lindex $tableSpec 1]]
+	    if {[lindex $tableSpec 1] eq ",line"} {
+		set headerColumn useRow
+	    } else {
+		set headerColumn [lsearch -exact $headerList [lindex $tableSpec 1]]
 	    #ShowMess debug info "Columns: header $headerColumn indxs $indexColumns" ok
-	    if {$headerColumn==-1} {
-		Query [concat no_info_col data [lrange $tableSpec 0 1] \
-			   [list $headerList]] warning data_in_cols {} ok
-		close $tStr
-		return
+		if {$headerColumn==-1} {
+		    Query [concat no_info_col data [lrange $tableSpec 0 1] \
+			       [list $headerList]] warning data_in_cols {} ok
+		    close $tStr
+		    return
+		}
 	    }
 	    while {[gets $tStr entryLine] != -1} {
 		set entryList [TrimFields [split $entryLine ,]]
@@ -1845,19 +1849,23 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		    }                       
 		} else {
 		    set arrayIndex $lineCount
-		    incr lineCount
 		}
 		
 		# ignore empty entries
 		if {[info exists badIndex]} {
 		    unset badIndex
 		} else {
-		    set potEntry [lindex $entryList $headerColumn]
-		    if {[llength $potEntry]} {
-			set paramArray($arrayIndex) \
-			    [EnquoteIfNonNumeric $potEntry]
+		    if {$headerColumn eq "useRow"} {
+			set paramArray($arrayIndex) $lineCount
+		    } else {
+			set potEntry [lindex $entryList $headerColumn]
+			if {[llength $potEntry]} {
+			    set paramArray($arrayIndex) \
+				[EnquoteIfNonNumeric $potEntry]
+			}
 		    }
 		}
+		incr lineCount
 	    }
 	    close $tStr
 	} else { ;# data is from a tclodbc-connected database
