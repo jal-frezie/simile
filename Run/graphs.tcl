@@ -1317,12 +1317,12 @@ proc AcquireTableData {redo startLine} {
 		    [llength $table_entry(uftsi)] && \
 		    ![string equal unit $table_entry(uftsi)]} {
                 set tableSpec [linsert $tableSpec 2 \
-                        ,interval:$table_entry(uftsi)]
+				   ,interval:$table_entry(uftsi)]
             }
             if {[info exists table_entry(others)] && \
                         [llength $table_entry(others)]} {
                 set tableSpec [linsert $tableSpec 2 \
-                        ,others:[NameToTag $table_entry(others)]]
+				   ,others:[NameToTag $table_entry(others)]]
             }
             if {[info exists table_entry(wrapPt)] && \
                         [Numeric $table_entry(wrapPt)]} {
@@ -1332,7 +1332,7 @@ proc AcquireTableData {redo startLine} {
             if {[info exists table_entry(dbtable)] && \
                         [llength $table_entry(dbtable)]} {
                 set tableSpec [linsert $tableSpec 2 \
-                        ,dbtable:$table_entry(dbtable)]
+				   ,dbtable:$table_entry(dbtable)]
             }
         } .table.notebook.grid {
             set tableSpec \
@@ -1363,7 +1363,7 @@ proc AcquireTableData {redo startLine} {
     }
     if {$redo>1 || ![string equal $tableSpec $table_entry(data)]} {
         #do_in_editor puts "Loading with $tableSpec not $table_entry(data)"
-        set table_entry(values) [LoadTableData $tableSpec $startLine 0]
+        set table_entry(values) [LoadTableData tableSpec $startLine 0]
         set table_entry(source) 2
         set table_entry(data) $tableSpec
 	.table.fbuttons.edit configure -state normal
@@ -1610,11 +1610,11 @@ proc ChooseDataHeader {eb pth where op dtype data} {
     $eb configure -text [$path itemcget $data -text]
 }
 
-proc LoadTableData {tableSpec lineCount addSpecials} {
-    #ShowMess debug info "LoadTableData $tableSpec $lineCount $addSpecials" ok; # jmm remove
+proc LoadTableData {specLocn lineCount addSpecials} {
     # if its an ODBC database file  (database server later!)
     # need the connection string, if have file name with extension can work out driver
     # what about Linux and Mac - file extensions! - have csv files
+    upvar 1 $specLocn tableSpec
     set filename [lindex $tableSpec 0]
     set ext [file extension $filename]
     #set mode [lindex $tableSpec 1]
@@ -1622,9 +1622,9 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
     # end JMM ODBC
 
     foreach {keyWd tgtVar} \
-	{interval tpiUnit others fillMtd wrap wrapPt dbtable dbtable} {
-	    if {[regexp ,$keyWd:(.*) [lindex $tableSpec end] match $tgtVar]} {
-		set tableSpec [lreplace $tableSpec end end]
+	{dbtable dbtable wrap wrapPt others fillMtd interval tpiUnit} {
+	    if {[regexp ,$keyWd:(.*) [lindex $tableSpec 2] match $tgtVar]} {
+		set tableSpec [lreplace $tableSpec 2 2]
 	    }
 	}
 

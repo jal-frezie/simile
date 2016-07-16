@@ -1205,11 +1205,9 @@ proc StartElement {name attList args} {
 	    }
 	    # No need to put anything in the old-style file
 	} series_control {
-	    append parseStatus(translateExtras) \
+	    # this puts them at index 2 in tableSpec starting with 1st in file
+	    puts -nonewline $parseStatus(outStr) \
 		" ,$attVals(field):$attVals(value)"
-	    # this put them too early in list
-	    # puts -nonewline $parseStatus(outStr) \
-	# 	" ,$attVals(field):$attVals(value)"
 	} submodels - variables {
 	} spf {
 	    set parseStatus(simV) $attVals(simile_version)
@@ -1448,7 +1446,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 			-file [lindex $paramState($restoredComp) 0]
 		}
                 set suppliedData($restoredComp) \
-		    [LoadTableData $paramState($restoredComp) $startLine 1]
+		    [LoadTableData paramState($restoredComp) $startLine 1]
                 set whichParamsAffected($restoredComp) 1
                 set msgs(param_source_$restoredComp) \
 		    [format $msgs(metafile_ref) $VFile $oldPath]
