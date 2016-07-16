@@ -268,14 +268,19 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	caption_for(Submodel, OuterText),
 	caption_for(SmChannel, InnerText),
 	Wrinkle = misplaced_channel(InnerText, OuterText);
-	(variable_size(Submodel); from_value(Submodel)),
 	contains(Submodel, Param),
 	appears(Param),
 	is_parameter(Param, N),
 	(Param is_of_sort discrete -> N>1 ; N>0),
-	caption_for(Submodel, OuterText),
+	((variable_size(Submodel); from_value(Submodel)),
+	    Wrinkle = param_in_vm_model(InnerText, OuterText);
+	 Param has_class_refinement units of ETRef,
+	    member(ETRef, [a(ET), n(ET)]),
+	    get_all_enum_types(Submodel, Types),
+            \+ member([ET | _Mems], Types),
+	    Wrinkle = param_with_undefined_ET_units(InnerText, ET, OuterText)),
 	caption_for(Param, InnerText),
-	Wrinkle = param_in_vm_model(InnerText, OuterText);
+	caption_for(Submodel, OuterText);
 	find_all_comps(Submodel, Fn),
 	find_type(Fn, function),
 	get_host(Fn, Cond),
