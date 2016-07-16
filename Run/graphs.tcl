@@ -1622,9 +1622,9 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
     # end JMM ODBC
 
     foreach {keyWd tgtVar} \
-	{dbtable dbtable wrap wrapPt others fillMtd interval tpiUnit} {
-	    if {[regexp ,$keyWd:(.*) [lindex $tableSpec 2] match $tgtVar]} {
-		set tableSpec [lreplace $tableSpec 2 2]
+	{interval tpiUnit others fillMtd wrap wrapPt dbtable dbtable} {
+	    if {[regexp ,$keyWd:(.*) [lindex $tableSpec end] match $tgtVar]} {
+		set tableSpec [lreplace $tableSpec end end]
 	    }
 	}
 

@@ -1205,8 +1205,11 @@ proc StartElement {name attList args} {
 	    }
 	    # No need to put anything in the old-style file
 	} series_control {
-	    puts -nonewline $parseStatus(outStr) \
+	    append parseStatus(translateExtras) \
 		" ,$attVals(field):$attVals(value)"
+	    # this put them too early in list
+	    # puts -nonewline $parseStatus(outStr) \
+	# 	" ,$attVals(field):$attVals(value)"
 	} submodels - variables {
 	} spf {
 	    set parseStatus(simV) $attVals(simile_version)
@@ -1356,7 +1359,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 	fconfigure $pStr -encoding utf-8
     }
     while {[gets $pStr savedValue] != -1} {
-        # ShowMess debug info "Restoring $savedValue" ok
+        # puts "Restoring $savedValue"
         # ignore blank lines
         if {![llength $savedValue]} {
             continue
