@@ -934,7 +934,9 @@ proc ControlDraw {prologVersion} {
 	file attributes $simtmpdir -hidden true
 #	file attributes $custom(prefDir)/.version -hidden true
     } elseif {[string equal Darwin $tcl_platform(os)]} {
-	set stockComboBox OFF ;# fails to appear or crashes if screen coords -ve
+	if {[package vcompare 8.6.5 [info patchlevel]] > 0} {
+	    set stockComboBox OFF ;# fails or crashes if screen coords -ve
+	}
 	if {[package vcompare 14.0.0 $tcl_platform(osVersion)] > 0} {
 # do not offer default on Yosemite or up cos bundled compiler does not work
 	    set compOptions [list CHOICE [tr. Default] [tr. GNU]]
