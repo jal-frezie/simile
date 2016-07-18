@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.8 2015/05/19 09:34:41 u45169214 Exp $
+# $Id: can2svg.tcl,v 1.9 2016/07/18 15:11:16 cvs Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -297,6 +297,7 @@ proc can2svg::svgasxmllist {cmd args} {
     
     # If we need a stipple bitmap, need to make that first. Limited!!!
     # Only: gray12, gray25, gray50, gray75
+    puts [array get optA]
     foreach key {-stipple -outlinestipple} {
         if {[info exists optA($key)] &&  \
           ([lsearch $grayStipples $optA($key)] >= 0)} {
@@ -1160,6 +1161,9 @@ proc can2svg::GetTextSVGCoords {anchor nlines} {
     
 # JAT: Rework to avoid need to interrogate Tk for font data
 
+    set xanch middle
+    set dy [expr {1-$nlines*0.7}]em
+    # default: anchor is center
     switch -- $anchor {
         nw {
             set xanch start
@@ -1192,10 +1196,6 @@ proc can2svg::GetTextSVGCoords {anchor nlines} {
         n {
             set xanch middle
             set dy 1em
-        }
-        center {
-            set xanch middle
-            set dy [expr {1-$nlines*0.7}]em
         }
     }
     

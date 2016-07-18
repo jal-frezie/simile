@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.2 2015/07/01 14:13:26 u45169214 Exp $
+# $Id: can2svg.tcl,v 1.3 2016/07/18 15:11:16 cvs Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -1160,6 +1160,9 @@ proc can2svg::GetTextSVGCoords {anchor nlines} {
     
 # JAT: Rework to avoid need to interrogate Tk for font data
 
+    set xanch middle
+    set dy [expr {1-$nlines*0.7}]em
+    # default: anchor is center
     switch -- $anchor {
         nw {
             set xanch start
@@ -1192,10 +1195,6 @@ proc can2svg::GetTextSVGCoords {anchor nlines} {
         n {
             set xanch middle
             set dy 1em
-        }
-        center {
-            set xanch middle
-            set dy [expr {1-$nlines*0.7}]em
         }
     }
     
