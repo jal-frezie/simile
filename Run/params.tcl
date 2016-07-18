@@ -1200,8 +1200,7 @@ proc StartElement {name attList args} {
 		set parseStatus(wrapTime) $attVals(wrap_time)
 	    } 
 	    if {[info exists attVals(fill_method)]} {
-		set parseStatus(fillMtd) \
-		    [lsearch {X USE_CLOSEST INTERPOLATE} $attVals(fill_method)]
+		set parseStatus(fillMtd) $attVals(fill_method)
 	    }
 	    # No need to put anything in the old-style file
 	} series_control {
