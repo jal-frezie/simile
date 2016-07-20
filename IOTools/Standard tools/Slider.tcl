@@ -235,6 +235,7 @@ namespace eval slide139 {
                 }
 	    }
 	    set widgetSeln($node) $defVal
+	    set widgetSeln(old,$node) $defVal
             set allVals $defVal
 	    } else {
             #	    set useTrans [lindex $trans $useDim]
@@ -338,6 +339,7 @@ namespace eval slide139 {
                     }
                 }
 		set widgetSeln($node,$index) $defVal
+		set widgetSeln(old,$node,$index) $widgetSeln($node,$index)
                 lappend allVals $index $defVal
             }
         }
@@ -418,7 +420,7 @@ namespace eval slide139 {
     }
 
     proc SetArrayIfUsed {node fixed indices value} {
-        global paramData runState myNode
+        global paramData runState myNode widgetSeln
 	set sub [join [concat [list {}] $indices] ,]
         if {$fixed} {
 	    set ledColour [$runState($myNode,cnvs) itemcget 1 -fill]
@@ -429,15 +431,12 @@ namespace eval slide139 {
                 set paramData($node$sub) $value
             }
         }
-#	PlaceInArray $myNode $sub $value 0 [RunningInC $myNode]
+	#	PlaceInArray $myNode $sub $value 0 [RunningInC $myNode]
 	ListToArray $myNode $node $sub $sub {} {} $value 0 [RunningInC $myNode]
-	if {$runState($myNode,currentMode) eq "stop"} {
-	    # model is waiting to run -- adjust rates for new value
-	    RedoRatesAndDisplay $myNode
-	    return 1
-	}
+	if {$widgetSeln($node$sub) == $widgetSeln(old,$node$sub)} {return 1}
+	set widgetSeln(old,$node$sub) $widgetSeln($node$sub)
+	return [RedoRatesAndDisplay $myNode] ;# 1 if was able to do so
 	# scale units later
-	return 0
     }
     
     proc SetChoiceNumber {cbox node fixed live args} {
@@ -607,6 +606,7 @@ namespace eval slide139 {
             set useDim [FindUseDim $sliderDoes($title,dims)]
             if {$useDim==-1} {
 		set widgetSeln($node) [GetDefVal $data -1 0]
+		set widgetSeln(old,$node) $widgetSeln($node)
                 if {[llength $f]} {
                     ShowNthChoice $f.combo $widgetSeln($node)
                 }
@@ -619,6 +619,7 @@ namespace eval slide139 {
                 for {set index 1} {$count >= $index} {incr index} {
                     set widgetSeln($node,$index) \
                             [GetDefVal $data $useDim $index]
+		    set widgetSeln(old,$node,$index) $widgetSeln($node,$index)
                     if {[llength $f]} {
                         ShowNthChoice $f.elt$index.c $widgetSeln($node,$index)
                     }
