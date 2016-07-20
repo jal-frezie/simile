@@ -112,6 +112,7 @@ namespace eval ::$keyValue {
         
         set plot($w,grid) off
         set plot($w,DrawLines) 1
+        set plot($w,ArrayLines) 0
         set plot($w,DrawPoints) 0
         set plot($w,CurrentOnly) 0
         set plot($w,ordinal) 0
@@ -278,6 +279,7 @@ namespace eval ::$keyValue {
         set Told($winId) {}
         set Tnew($winId) {}
 	incr runCount
+        display $winId [GetModelTime] 0 0
     }
     
     # Invoked at every time interval.
@@ -380,6 +382,7 @@ namespace eval ::$keyValue {
 	proc Settings {w} {
 	    # copy the values of the variables to be edited to temp, but namespace accessible, variables
 	    variable DrawLines $::graphtools::plot($w,DrawLines)
+	    variable ArrayLines $::graphtools::plot($w,ArrayLines)
 	    variable DrawPoints $::graphtools::plot($w,DrawPoints)
 	    variable CurrentOnly $::graphtools::plot($w,CurrentOnly)
 	    
@@ -390,7 +393,10 @@ namespace eval ::$keyValue {
 	    set chkF [frame [GetFrame $dlg].checkbuttons -relief groove]
 	    
 	    pack [ttk::labelframe $chkF.drawlinesF -text "Draw lines between points"] -fill x
-	    pack [checkbutton $chkF.drawlinesF.cbutton -variable [namespace current]::DrawLines] -side right
+	    pack [checkbutton $chkF.drawlinesF.cbutton -text [tr. {In time}] \
+		      -variable [namespace current]::DrawLines] -side right
+	    pack [checkbutton $chkF.drawlinesF.lbutton  -text [tr. {In array}] \
+		      -variable [namespace current]::ArrayLines] -side right
 	    pack [ttk::labelframe $chkF.drawpointsF -text "Draw points"] -fill x
 	    pack [checkbutton $chkF.drawpointsF.cbutton -variable [namespace current]::DrawPoints] -side right
 	    pack [ttk::labelframe $chkF.currentOnlyF -text "Persistence (0 for indefinite)"] -fill x
@@ -412,6 +418,7 @@ namespace eval ::$keyValue {
 	    if {$::graphtools::plot(xdone)} {
  		# OK button was clicked
 		set ::graphtools::plot($w,DrawLines) $DrawLines
+		set ::graphtools::plot($w,ArrayLines) $ArrayLines
 		set ::graphtools::plot($w,DrawPoints) $DrawPoints
 		set ::graphtools::plot($w,CurrentOnly) $CurrentOnly
 		UpdateState $w
@@ -741,17 +748,25 @@ namespace eval ::$keyValue {
 		    $w.canvas delete prompt
 		    $w.canvas create text $xm $ym -tags prompt -width 100 \
 			-justify center -text [tr. "Some values resulting from maths errors have not been plotted"]
+		    array unset plot $w,lasty
+		    # do not join across bad value gap
 		} else {
 		    set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,9))}]]
 		    adjustLimits $w $Tnew $Ynew
 		    #ShowMess debug info "drawPoint Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
-		    drawPoint $w $Told $Yold $Tnew $Ynew $colour $id
+		    if {![info exists plot($w,lasty)]} {
+			array set plot "$w,lastx none $w,lasty none"
+		    }
+		    drawPoint $w $Told $Yold $plot($w,lastx) $plot($w,lasty) \
+			$Tnew $Ynew $colour $id
+		    array set plot "$w,lastx $Tnew $w,lasty $Ynew"
 		}
 	    } else {
 		array set allYOld $Yold
 		array set allTOld $Told
 		array set allYNew $Ynew
 		array set allTNew $Tnew
+		array unset plot $w,lasty ;# do not join around array rows
 		foreach {i YnewV} $Ynew {
 		    set TnewV $allTNew($i)
 		    if {[info exists allYOld($i)]} {
@@ -781,32 +796,40 @@ namespace eval ::$keyValue {
 	    AddPopupMessage $msg \#ffffc0
 	}
 	
-	# Connect two points on the graph
-	proc drawPoint { w X0 Y0 X1 Y1 Colour id } {
-	    global ::graphtools::plot
-	    variable runCount
-	    
-	    set x0 [get_x $w $X0 $plot($w,Tscale)]
-	    set x1 [get_x $w $X1 $plot($w,Tscale)]
-	    set y0 [get_y $w $Y0 $plot($w,Yscale)]
-	    set y1 [get_y $w $Y1 $plot($w,Yscale)]
+    # Connect two points on the graph
+    proc drawPoint { w X0 Y0 Xr Yr X1 Y1 Colour id } {
+	global ::graphtools::plot
+	variable runCount
+	
+	set x0 [get_x $w $X0 $plot($w,Tscale)]
+	set x1 [get_x $w $X1 $plot($w,Tscale)]
+	set y0 [get_y $w $Y0 $plot($w,Yscale)]
+	set y1 [get_y $w $Y1 $plot($w,Yscale)]
         
 	set cTag trace$plot($w,ordinal)
 	set iTag [join [concat indices $id] ,]
-        if $plot($w,DrawLines) {
-            $w.canvas create line $x0 $y0 $x1 $y1 -fill $Colour \
+	if $plot($w,DrawLines) {
+	    $w.canvas create line $x0 $y0 $x1 $y1 -fill $Colour \
 		-tags [list graph scalable xaxis_item yaxis_item \
 			   $runCount $cTag $iTag]
-            
-        }
-        if $plot($w,DrawPoints) {
-            $w.canvas create text $x1 $y1 -text X -fill $Colour \
+	    
+	}
+	if {$plot($w,ArrayLines) && $Yr ne "none"} {
+	    set x0 [get_x $w $Xr $plot($w,Tscale)]
+	    set y0 [get_y $w $Yr $plot($w,Yscale)]
+	    $w.canvas create line $x0 $y0 $x1 $y1 -fill $Colour \
 		-tags [list graph scalable xaxis_item yaxis_item \
 			   $runCount $cTag $iTag]
-            
-        }
+	    
+	}
+	if $plot($w,DrawPoints) {
+	    $w.canvas create text $x1 $y1 -text X -fill $Colour \
+		-tags [list graph scalable xaxis_item yaxis_item \
+			   $runCount $cTag $iTag]
+	    
+	}
     }
-    
+	
     
     
     # clear graph
