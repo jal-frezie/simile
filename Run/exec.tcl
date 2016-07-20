@@ -554,8 +554,9 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 #		    FPError [format [tr. {"%1$s" must be outermost index.}] \
 #					 $indx] $subs $errorData
 #		}
-		if {!$pt} { ;# NOW: mark param active so it clears after event
-		    MarkEvtParamActive $topNode $tgt $useCppArray
+		if {!$pt && $tgtClass eq "EVENT"} {
+		    # NOW: mark param active so it clears after event
+		    MarkEvtParamActive $topNode $tgt $useCppArray 1
 		}
             } elseif {![string is double -strict $indx]} {
                 set redoStep [AddErrorTo $redoStep \
