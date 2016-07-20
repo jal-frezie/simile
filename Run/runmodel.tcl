@@ -64,9 +64,11 @@ proc RedoRatesAndDisplay {node} {
     
     set ::updateLastDone [clock clicks -milliseconds]
     ResetModel $node Euler $runState($node,currentTime) 1
+    if {$runState($node,currentMode) ne "stop"} {return 0}
     # ...and display new rates
     TellAllHelpers $node {} Display $runState($node,currentTime) \
 	$runState($node,displayInt) 1
+    return 1
 }
 
 proc MessFileParams {topNode parent} {
@@ -87,8 +89,9 @@ proc MessFileParams {topNode parent} {
     $runState($topNode,cnvs) itemconfigure 1 -fill [RestingColour $topNode]
     # now update displays if only doing immediate changes to variables
     if {$runState($topNode,reloadParams)==1} {
-	RedoRatesAndDisplay $topNode
-	set runState($topNode,reloadParams) 10
+	if {[RedoRatesAndDisplay $topNode]} {
+	    set runState($topNode,reloadParams) 10
+	}
     }
 }
 

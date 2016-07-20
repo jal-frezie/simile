@@ -176,8 +176,8 @@ proc ExplainError {myNode errList origError} {
 	    set icon info
 	}
     }
-    ExecQuery $specifics $icon top {} ok
     AddLogEntry $myNode $specifics
+    ExecQuery $specifics $icon top {} ok
     # do it after idle so this process is not hung till user responds
 #    RaiseModelWindow $myNode
     return $severity
