@@ -63,8 +63,8 @@ proc RedoRatesAndDisplay {node} {
     global runState
     
     set ::updateLastDone [clock clicks -milliseconds]
-    ResetModel $node Euler $runState($node,currentTime) 1
     if {$runState($node,currentMode) ne "stop"} {return 0}
+    ResetModel $node Euler $runState($node,currentTime) 1
     # ...and display new rates
     TellAllHelpers $node {} Display $runState($node,currentTime) \
 	$runState($node,displayInt) 1
