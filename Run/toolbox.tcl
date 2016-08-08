@@ -485,9 +485,12 @@ proc compile_c {workingDir extLibs complain} {
 	    switch -regexp -- $useComp \
 		[list [tr. GNU]|[tr. Default] {
 	    set vistaFix 0
-	    set batSt [open runmingw.bat w]
+		    #set spout [open "|cmd.exe 2> returns" w]
+		    # above may get rid of temp file but causes consoles to pop
+		    # up for g++/cc calls
+	    set spout [open runmingw.bat w]
 	    if {[string equal [tr. Default] $useComp]} {
-		puts $batSt "set PATH=[file nativename \
+		puts $spout "set PATH=[file nativename \
                         [file join $env(SYSDIR) bin]]"
 		    # One day Vista fixup will be removed, because either:
 		    # (a) people have stopped using Vista, or
@@ -501,19 +504,19 @@ proc compile_c {workingDir extLibs complain} {
 # them
 		    set LIBDIR [file join $env(SYSDIR) lib]
 		    set compLocn [file join gcc mingw32 4.8.1]
-		    puts $batSt "set PATH=[file nativename [file join \
+		    puts $spout "set PATH=[file nativename [file join \
                             $env(SYSDIR) libexec $compLocn]];%PATH%"
-		    puts $batSt "copy \"[file nativename [file join \
+		    puts $spout "copy \"[file nativename [file join \
                             $LIBDIR dllcrt*.o]]\" ."
-		    puts $batSt "copy \"[file nativename [file join \
+		    puts $spout "copy \"[file nativename [file join \
                             $env(SYSDIR) lib $compLocn crt*.o]]\" ."
 		}
 	    } else {
 # Do not supply a path, modeller should add it to their environment
-		# puts $batSt "set PATH=c:\\mingw\\bin;%PATH%"
+		# puts $spout "set PATH=c:\\mingw\\bin;%PATH%"
 	    }
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
-		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o \
+		puts $spout "g++ $sendvars(arflags) -c -o objtmp.o \
                         -I\"[file nativename $TOOLDIR]\" \
                         -I\"[file nativename [file join $env(SYSDIR) mingw32 \
                                 include]]\" \
@@ -522,19 +525,20 @@ proc compile_c {workingDir extLibs complain} {
 		set libOpt1 -L\"[file nativename $LIBDIR]\"
 		set libOpt2 -L\"[file nativename \
 				     [file join $LIBDIR $compLocn]]\"
-		puts $batSt "g++ -shared -o $TARGET \
+		puts $spout "g++ -shared -o $TARGET \
                         $libOpt1 $libOpt2 objtmp.o [concat $lDirs $lFiles]"
 	    } else {
-		puts $batSt "g++ $sendvars(arflags) -c -o objtmp.o \
+		puts $spout "g++ $sendvars(arflags) -c -o objtmp.o \
                         -I\"[file nativename $TOOLDIR]\" model.cpp"
-#        puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtmp.o"
-		puts $batSt [concat [list g++ -shared -o $TARGET objtmp.o] \
+#        puts $spout "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtmp.o"
+		puts $spout [concat [list g++ -shared -o $TARGET objtmp.o] \
 				 $lDirs $lFiles]
 	    }
-	    close $batSt
+	    flush $spout
+	    close $spout
 	    exec runmingw.bat
-	    file delete runmingw.bat
 	    file delete exptemp.exp
+	    file delete runmingw.bat
 
                 # Method using command line calls to MSVC 4.0 or later -- works well
 	    } [tr. Microsoft] {
@@ -883,6 +887,8 @@ proc ControlDraw {prologVersion} {
     
     package require fileutil
     set simtmpdir [file join [::fileutil::tempdir] sim[pid]]
+    # test for network directory caching bug
+    # set simtmpdir [file join {t:/Documents/My Simile files/temp} sim[pid]]
     file mkdir $simtmpdir
 
 # Try leaving this to the form
@@ -1598,9 +1604,13 @@ proc GetSystemChars {string} {
 proc GetUsableName {string} {
     if {[string equal windows $::tcl_platform(platform)]} {
 	if {![file exists $string]} {
-	    close [open $string a] ;# create it empty
+	    # close [open $string a] ;# create it empty
+	    exec {*}[auto_execok echo] %ignore > $string
 	}
-	set string [file attributes $string -shortname]
+	#set string [file attributes $string -shortname]
+	# above sometimes fails due to network directory caching
+	set all [file attributes $string]
+        set string [lindex $all [lsearch $all -shortname]+1]
     }
     return $string
 }
@@ -1662,6 +1672,7 @@ proc OpenProjectFile {path} {
     global loadingProject runState helperTable
     set pFile [file join $path model.spj]
     set projectF [NetOpen $pFile r]
+    fconfigure $projectF -encoding utf-8
     #gets $projectF SimileProjectData
     set SimileProjectData [read $projectF] ;# may be line breaks in sm names
     close $projectF
@@ -1760,6 +1771,7 @@ proc SaveProjectFile {topNode path tgt} {
 	lappend SimileProject(spfList) $smPart $relPath
     }
     set projectF [NetOpen $ProjectFile w]
+    fconfigure $projectF -encoding utf-8
     set statLine [array get SimileProject]
     puts $projectF $statLine
     close $projectF
