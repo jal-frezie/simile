@@ -1126,11 +1126,14 @@ Now one that uses a special conditional level */
 %		member(instance(internal, inter(_,_, Loops), Param,_, _-Dims),
 %		       PrevInters),
 		(Ref = trigger_magnitude(''), !,
-		    units_for_trigger_mag(SubId, _RefUnits-RefDims);
+		 units_for_trigger_mag(SubId, _RefUnits-RefDimTypes),
+		 all(ame_gen, enum_type_ref, [build(RefDimTypes), unify(SubId),
+					      build(RefDims), build(Nm),
+					      build(_)]);
 		    % no need to raise error if t_m not used in eqn
 		  m_update'><'get_solo_list_depth(Ref, DimExp),
 		    m_update'><'analyze_array(DimExp, any, RefDims)),
-		make_inds_for(RefDims, _, Loops, _),
+		make_inds_for(RefDims, Nm, Loops, _),
 		append(Loops, BuildingArrays, Access),
 		get_dims_from_loops(Access, Dims, _)), /* building code */
 	    copy_term(DestPath, DPCopy),

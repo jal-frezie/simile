@@ -1574,18 +1574,24 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    AllActs = [Expr]; */
 	  Type = magnitude, !, % no derived events yet but same
 	    SourceEqn = event(ActEqn, TriggerEqn),
+	    inters'><'units_for_trigger_mag(Node, Base-TriggerEqnDims),
+	    
+	    % evolved from sum_over_dims -- get numerical!
+	    (Base = boolean -> Num = choose(TriggerEqn,1,0); Num = TriggerEqn),
+	    instance'><'sum_dims(TriggerEqnDims, Num, EnableEqn),
+	    
 	    (Unit = boolean -> Inactive = '"false"' ; Inactive = 0),
 	    SourceItem = trigger_magnitude(''),
 	    (ActEqn = after(Wait, Eqn, Pipe) ->
 	        Made = for_next_time(Dest),
 	        UseList = [Dest | RefList],
 	        GroundEqn = delay_for(Pipe, Wait, (SourceItem=TriggerEqn,
-						   choose(SourceItem '!=' 0,
+						   choose(EnableEqn '!=' 0,
 							  Eqn, Inactive)));
 	    UseList = RefList,
 	      GroundEqn = (SourceItem=TriggerEqn,
-			     choose(SourceItem '!=' 0, ActEqn, Inactive)));
-	  
+			     choose(EnableEqn '!=' 0, ActEqn, Inactive)));
+	  % if using 'happens', make sure it stays out of update phase
 	  Type = state_fn, !,
 	    SourceEqn = event(ActEqn, TriggerEqn),
 	    choosify(ActEqn, DimTypes, ChooseForm, OnInit),
@@ -1669,7 +1675,7 @@ choosify(Pairs, Dims, Choice, Init) :-
 	(Evt = 'reset...', !,
 	    Init = Cons,
 	    Choice = Default;
-	 sum_over_dims(Evt, Dims, EvtSum),
+	 sum_over_dims(Evt, [], EvtSum),
 	  Choice = choose(happens(EvtSum), Cons, Default)).
 	
 

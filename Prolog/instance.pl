@@ -430,10 +430,12 @@ havify(index(N) is Val and Inner, N, choose('"true"', Val, Inners)) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 build_sum([Solo], Units, SoloArr) :-
-	sum_over_dims(Solo, Units, SoloArr).
+    %	sum_over_dims(Solo, Units, SoloArr).
+    SoloArr = Solo.
 build_sum([First | Rest], Units, FirstArr+Run) :-
-	sum_over_dims(First, Units, FirstArr),
-	build_sum(Rest, Units, Run).
+    %	sum_over_dims(First, Units, FirstArr),
+    FirstArr = First,
+    build_sum(Rest, Units, Run).
 
 sum_over_dims(IP, ResDims, SD) :-
 	(IP = sofar(input(_,_,_, Units)); IP = input(_,_,_, Units)),
