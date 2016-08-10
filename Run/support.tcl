@@ -1115,7 +1115,7 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 	    }
 
 # any but interpolate: change value (or have nonzero if none) only if new
-# value in series reached
+# value in series reached (unless overshooting an event on reset)
 
 	    if {$loBound>-1 && 
 		($loBound != $setFromSeries($topNode,$node,next) || \
@@ -1123,11 +1123,14 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 		set useTime [lindex $setFromSeries($list) $loBound]
 		set setFromSeries($topNode,$node,next) $loBound
 		set setFromSeries($topNode,$node,wraps) $loWraps
-		set setFromSeries($topNode,$node,active) 1
-		foreach tsValue [concat [array names paramData $node,$useTime] \
+		if {[lsearch {EVENT SQUIRT} [GetTclCompProperty $topNode Class $node]]==-1 || $newTime==[lindex $setFromSeries($list) $loBound]+$loWraps*$paramData(wrapAroundPoint,$node)} {
+		    set setFromSeries($topNode,$node,active) 1
+		    foreach tsValue [concat [array names paramData $node,$useTime] \
 				     [array names paramData $node,$useTime,*]] {
-		    set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
-		    PlaceInArray $topNode $tgtIndex $paramData($tsValue) 0 $inC
+			set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
+			PlaceInArray $topNode $tgtIndex $paramData($tsValue) \
+			    0 $inC
+		    }
 		}
 	    }
     if {$fillMethod eq "none" && $setFromSeries($topNode,$node,active)} {

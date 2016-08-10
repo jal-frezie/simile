@@ -730,9 +730,14 @@ double VarParamData::update_from_points(double nowInDays, double next) {
   }
   if (loBound && (loBound!=curTimePoint || wraps!=oldWraps)) {
     curTimePoint = loBound;
-    free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-    dataPtr.contents = copy_bloc_data(loBound->dataPtr, dataPtr.dimSpecs);
-    active=1;
+    if (ndRef->compclass != EVENT && ndRef->compclass != SQUIRT ||
+	now == loBound->when+wraps*wrapAroundPoint) {
+      // do not add data if discrete and we have missed the exact time
+      // eg. by resetting to a later time
+      free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+      dataPtr.contents = copy_bloc_data(loBound->dataPtr, dataPtr.dimSpecs);
+      active=1;
+    }
   }
   if ((ndRef->compclass == EVENT || ndRef->compclass == SQUIRT) && active)
     myModelExec->seriesEvtSign = ndRef->graph;
