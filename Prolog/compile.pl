@@ -1546,7 +1546,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 		UseStep = SmStep),
 	    SourceEqn = Source;
 	(Is_P = 1, apply_minmax(Node, Source, SourceEqn);
-	    Is_P = 3, SourceEqn = prev(0)), % does nothing, works for any dims
+	 Is_P = 3, instance'><'regenerate_makearrays(0, LocalPath, SourceEqn)),
 	    Type = function,
 	    UseList = [on_reset | RefList], 
 	    Made = init(Dest),
