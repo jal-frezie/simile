@@ -264,7 +264,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	 all(instance, is_instance, 
 	     [build(_Type), build(EvtNodes), build(_Load),
 	      build(EvtNames), build(_Dims), build(EvtRefs)]),
-	 (build_sum(EvtArgs, Units, EvtTrigger), !;
+	 (build_sum(EvtArgs, EvtTrigger), !;
 	   EvtTrigger = 1),
 	(RType = state -> append(InputPairs, EvtPairs, AllowedInExp);
 	    AllowedInExp = InputPairs),
@@ -429,19 +429,19 @@ havify(index(N) is Val and Inner, N, choose('"true"', Val, Inners)) :-
 	havify(Inner, M, Inners).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-build_sum([Solo], _Units, SoloArr) :-
-    %	sum_over_dims(Solo, Units, SoloArr).
-    SoloArr = Solo.
-build_sum([First | Rest], Units, FirstArr+Run) :-
-    %	sum_over_dims(First, Units, FirstArr),
-    FirstArr = First,
-    build_sum(Rest, Units, Run).
+build_sum([Solo], SoloArr) :-
+    sum_over_dims(Solo, _Units, SoloArr).
+    %SoloArr = Solo.
+build_sum([First | Rest], FirstArr+Run) :-
+    sum_over_dims(First, _Units, FirstArr),
+    %FirstArr = First,
+    build_sum(Rest, Run).
 
 sum_over_dims(IP, ResDims, SD) :-
 	(IP = sofar(input(_,_,_, Units)); IP = input(_,_,_, Units)),
 				% in case of dashed influence
 	analyze_array(Units, Base, Dims),
-	(append(SummableDims, ResDims, Dims);
+	(append(SummableDims, ResDims, Dims), \+ member(var, ResDims);
 	 append(Dims, _RepDims, ResDims), SummableDims = [];
 	throw(trigger_vs_event_dims_mismatch)), !,
 	(Base = boolean -> Num = choose(IP,1,0); Num = IP),

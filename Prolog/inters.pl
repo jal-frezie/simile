@@ -1498,7 +1498,7 @@ units_for_trigger_mag(Fn, MagUnits) :-
 	all(m_update, analyze_array,
 	    [build(EvtUnits), build(EvtBases), build(EvtDimses)]),
 	all(user, prefix, [build(EvtDimses), unify(EvtDims)]),
-	length(EvtDims, ResLen),
+	length(EvtDims, _ResLen),
 	% limit mag dims to those of event
 	
 %	(m_class'><'Fn has_class_refinement units of Mu,
@@ -1507,8 +1507,7 @@ units_for_trigger_mag(Fn, MagUnits) :-
 %	    length(Ct, TrigMax);
 %	 TrigMax = 0),
 %	ResLen is min(EDLen, TrigMax),
-	length(TDims, ResLen),
-	prefix(TDims, EvtDims),
+	suffix(TDims, EvtDims), \+ member(var, TDims),
 	length(EvtBases, NEvts),
 	(value(Any),
 	list_of(Any, NEvts, Anies),
