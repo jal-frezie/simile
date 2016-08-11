@@ -485,8 +485,9 @@ namespace eval runcontrol33857 {
 	    set $param $val
 	}
 	set forward [expr $exec>0]
-	if {abs($current + $exec - $runState($node,expected_end)) > 1e-6 || \
-		![info exists runState($node,run_length)]} {
+	if {![info exists runState($node,run_length)] || \
+		abs(($current + $exec - $runState($node,expected_end)) / \
+			$runState($node,run_length)) > 1e-8} {
 # check if fields edited
 	    SetupBar $node $current [expr $current + $exec]
 	}
