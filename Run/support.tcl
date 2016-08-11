@@ -513,24 +513,27 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
     set limit_fuzz 1e-12
     # allow use of predictions with small (e.g., rounding-only) errors
     upvar \#0 $ns_extras extras
+    if {![info exists extras]} {
+	set extras {0 0 0}
+    }
     set phase [expr {int([glob_element ts 0])}]
 
-#puts "cmd [info level 0] phase $phase extras [array get extras]"
+#puts "cmd [info level 0] phase $phase extras $extras"
     switch -- $phase {
 	0 - 1 { ;# resetting model, do not use saved data
-	    set extras(t1) $trigger ;# for prediction next step
+	    lset extras 0 $trigger ;# for prediction next step
 	} 2 { ;# next 3 are R-K substeps
-	    set extras(t2) $trigger
+	    lset extras 1 $trigger
 	} 3 {
-	    set extras(t2) [expr {($extras(t2)+$trigger)/2}]
+	    lset extras 1 [expr {([lindex $extras 1]+$trigger)/2}]
 	} 5 - 6 - 9 - 10 - 11 {
 	    set heading_out 0
 	    set out 0
 	    if {$phase == 9} {
 		set old $trigger ;# no heading or rate
-		set extras(t3) 0
+		lset extras 2 0
 	    } else {
-		set old $extras(t1)
+		set old [lindex $extras 0]
 	    }
 	    if {$action & 1} {
 		if {$trigger<$old} {
@@ -559,25 +562,26 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 # prediction (to be treated as an overshoot if out).
     
 	    if {[RealPhase $phase]} {
-		set extras(t1) $trigger ;# for prediction next step
+		lset extras 0 $trigger ;# for prediction next step
 		if {$out} {
-		    if {$out != $extras(t3)} {
-			set event(culprit) $graphId 
-			return [expr {[set extras(t3) $out]*($action==1?-1:1)}]
+		    if {$out != [lindex $extras 2]} {
+			set event(culprit) $graphId
+			lset extras 2 $out
+			return [expr {$out*($action==1?-1:1)}]
 # if doing lower bound only, result should be boolean so return 1 not -1
 		    }
 		} else {
-		    set extras(t3) 0
+		    lset extras 2 0
 		}
 	    }	    
-	    if {$heading_out && $extras(t3) != $heading_out} { 
+	    if {$heading_out && [lindex $extras 2] != $heading_out} { 
 		# make prediction for this event
 		if {$phase==6 || $phase==11} { ;# ok approximate to quadratic
-		    set a [expr {-$heading_out*2*($trigger-2*$extras(t2)+$old)/pow([glob_element dts $step],2)}]
+		    set a [expr {-$heading_out*2*($trigger-2*[lindex $extras 1]+$old)/pow([glob_element dts $step],2)}]
 		    if {$a==0} { ;# it is linear
 			set prediction [expr {[glob_element ts $step] + [glob_element dts $step]*$to_limit/$rate}]
 		    } else {
-			set b [expr {-$heading_out*(3*$trigger-4*$extras(t2)+$old)/[glob_element dts $step]}]
+			set b [expr {-$heading_out*(3*$trigger-4*[lindex $extras 1]+$old)/[glob_element dts $step]}]
 
 			# that is the eqn for the curve. Determinant:
 			set det [expr {pow($b,2)-4*$a*$to_limit}]
@@ -591,7 +595,7 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 			    set prediction [expr {[glob_element ts $step] + \
 						      (-$b+$det)/(2*$a)}]
 			}
-#puts "t [glob_element ts $step] dt [glob_element dts $step] old $old t2 $extras(t2) trigger $trigger a $a b $b det $det pred $prediction"
+#puts "t [glob_element ts $step] dt [glob_element dts $step] old $old t2 [lindex $extras 1] trigger $trigger a $a b $b det $det pred $prediction"
 		    }
 		} else { ;# phase is 5 or 10, do linear extrap
 		    set prediction [expr {[glob_element ts $step] + [glob_element dts $step]*$to_limit/$rate}]
@@ -629,13 +633,15 @@ proc RaiseTclExecError {mproc mstep} {
     while {![string match "proc $mproc *" $mLine]} {
 	gets $mStream mLine
     }
-#puts "found proc $mLine"
+puts "found proc $mLine"
     for {set procLine 1} {$procLine < $lineNo} {incr procLine} {
 	gets $mStream mLine
     }
-#puts "picked line $mLine"
+puts "picked line $mLine"
     close $mStream
-    if {[regexp {set ([^ ]*) .*} $mLine spare targetName]} {
+    if {[regexp {set ([^ ]*\([^\)]*\)) .*} $mLine spare targetName] || \
+	    [regexp {set ([^ ]*) .*} $mLine spare targetName]} {
+	# 1st case is if setting an array element
 	set dest [namespace eval AME_model<> "set spare $targetName"]
     } else {
 	set dest none
