@@ -6,6 +6,7 @@
 # This file loads all procedures, and sets up the model building environment.
 #
 package require mime
+set itclVers [package require Itcl]
 if {!$headless} {
 if {![info exists simplify]} {
 # BWidget should be removed in favour of native Tk commands and the
@@ -105,6 +106,19 @@ if {[string match windows $tcl_platform(platform)]} {
     # avoid loading buggy Trf if ActiveTcl present on system
     # package ifneeded Trf 2.1 {}
     bind Text <Control-Key-v> [list event generate %W <<Paste>>]
+} elseif [string match Darwin $tcl_platform(os)] {
+    # Not clear why this need only be set on MacOS, but it seems to work
+    # without on other platforms so no sense in tinkering.  Probably
+    # because of different auto_path setting mechanisms.
+    set env(ITCL_LIBRARY) $libDir/itcl$itclVers
+
+    # MacOS 10.11 dynamic loader has stopped searching the /usr/lib
+    # directory by default, so Trf fails to load libcrypto. But it
+    # still searches the working dir, and once loaded it stays, so...
+    set oldDir [pwd]
+    cd /usr/lib
+    ::md5 dummy
+    cd $oldDir
 }
 
 menu .openrecent -tearoff 0
@@ -623,20 +637,6 @@ proc UpdateExecution {node action} {
     Rerun [FindNodeTopWin $node].canvas [string equal start $action]
 }
 
-#if {[info tclversion] > 8.5 && $tcl_platform(platform) eq "windows"} {
-#    set itclVers 4.0
-#} elseif {[info tclversion] > 8.4} {
-#    set itclVers 3.4
-#} else {
-#    set itclVers 3.3
-#}
-set itclVers [package require Itcl]
-
-# Not clear why this need only be set on MacOS, but it seems to work without on other platforms
-# so no sense in tinkering.  Probably because of different auto_path setting mechanisms.
-if [string match Darwin $tcl_platform(os)] {
-  set env(ITCL_LIBRARY) $libDir/itcl$itclVers
-}
 itcl::class ModelWindowExtn {
     variable winId
     constructor {awinId} {
