@@ -82,6 +82,7 @@ else
 	LOCALIZE_TCL_REFS = install_name_tool -change \
 		$(TCLFW)/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl
+# install_name_tool with fail silently if the new path is longer than the path it's replacing. Always verify with 'otool -L' that the path was changed as expected.
 endif
 	ARCHEXTN = _mac
 # build for everything unless I am on Barbie
