@@ -605,7 +605,7 @@ do_assignment(L, [new_member(ParentPtr, Name, InitVars) | Clauses],
 limitations of Tcl it switches context between current instance and new instances.
 This could be avoided by peeking at the reproduction compartment then decrementing
 it in a local variable, but this way is conceptually simpler, which is everything.
-*/
+
 
 do_assignment(L, [reproduce(ParentPtr, Pointer, Name, ReproNames) | Clauses],
 	      Indent, Used, Stream) :-
@@ -617,12 +617,12 @@ do_assignment(L, [reproduce(ParentPtr, Pointer, Name, ReproNames) | Clauses],
 	resolve_pointer(L, MetaPointer, MPTarget),
 	make_struct_reference(L, ParentPtr, Count, Index, RefIndex),
 
-	/* Conditional to avoid reproduction with new individuals  -- they have
-	not been initialized yet -- no longer needed as they are initialized in
-	the loop
-	make_new_check(L, Pointer, ParentNewRef),
-	combine(L, !, [ParentNewRef], ParentOld),
-	excrete(L, if_start, ParentOld, Indent1, Stream), */
+	% Conditional to avoid reproduction with new individuals  -- they have
+	% not been initialized yet -- no longer needed as they are initialized in
+	% the loop
+	% make_new_check(L, Pointer, ParentNewRef),
+	% combine(L, !, [ParentNewRef], ParentOld),
+	% excrete(L, if_start, ParentOld, Indent1, Stream),
 
 	all(language, add_for_channel,
 	    [build(ReproNames), unify([L,Index,Pointer,ParentPtr,MetaPointer,MPTarget,Name,RefIndex,Indent1,Used,Stream])]),
@@ -630,11 +630,13 @@ do_assignment(L, [reproduce(ParentPtr, Pointer, Name, ReproNames) | Clauses],
 
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 
-/* OK, now for mortality. This will have to be called before immigration or reproduction because any new individuals might not yet have values for their loss nodes. It used to be done as part of the reproduction loop but had to be separated now there can be many reproduction channels. However, all loss channels are equivalent, so there only needs to
+(Above has been replaced by combined reproduction and mortality clause below)
+
+OK, now for mortality. This will have to be called before immigration or reproduction because any new individuals might not yet have values for their loss nodes. It used to be done as part of the reproduction loop but had to be separated now there can be many reproduction channels. However, all loss channels are equivalent, so there only needs to
 be one of these loops; the instruction has a list of the appropriate nodes. */
 
-do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
-	      Indent, Used, Stream) :-
+do_assignment(L, [regenerate(ParentPtr, Name, ReproNodes, LossNodes) | Clauses],
+	      Indent, Used, Stream) :- wake,
 	Indent1 is Indent + 4,
 	Indent2 is Indent1 + 4,
 
@@ -643,9 +645,12 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
 
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, Pointer),
+	append_atoms(Name, count, Count),
+	make_struct_reference(L, ParentPtr, Count, Index, RefIndex),
 	append_atoms(Name, meta, MetaPointerName),
 	make_struct_reference(L, ParentPtr, MetaPointerName, MetaPointer, _), 
-%	append_atoms(Type, '*', MType),
+	resolve_pointer(L, MetaPointer, MPTarget),
+	append_atoms(Type, '*', MType),
 	declare(L, Pointer, _, Type, Used, Indent, Stream),
 %	declare(L, MetaPointer, _, MType, Used, Indent, Stream),
 /*	excrete(L, variable_declaration, [Type, Pointer, []], Indent, Stream),
@@ -653,9 +658,17 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
 		Stream),
 	Set pointer to first model in list, and dive into loop */
 	excrete(L, make_reference, MetaPointer=SubmodelStartPtr, Indent,Stream),
-	resolve_pointer(L, MetaPointer, MPTarget),
  	refer_value(L, MPTarget, MPTargetRef),
 	ptr_compare(L, MPTargetRef, 0, NotDone),
+
+	% some setup for reproduction
+	append_atoms(Pointer, new, NewPointer),
+	append_atoms(MetaPointerName, new, NewMeta),
+	declare(L, NewPointer, _, Type, Used, Indent, Stream),
+	excrete(L, assignment, NewPointer=0, Indent, Stream),	
+	declare(L, NewMeta, _, MType, Used, Indent, Stream),
+	excrete(L, make_reference, NewMeta=NewPointer, Indent, Stream),
+
 	excrete(L, while_start, NotDone, Indent, Stream),
 	excrete(L, open_context, Pointer=[ParentPtr, Name, MPTargetRef],
 			Indent1, Stream),
@@ -663,6 +676,14 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
 	make_struct_reference(L, Pointer, new_instance, NewInstance, _),
 	excrete(L, assignment, NewInstance=0, Indent1, Stream),
 	
+	/* Now do reproduction -- moved here for 6.8 so an individual can
+reproduce and expire at the same instant */
+	resolve_pointer(L, NewMeta, NMTarget),
+	all(language, add_for_channel,
+	    [build(ReproNodes), unify([L,Index,Pointer,ParentPtr,
+				       NewMeta,NMTarget,Name,RefIndex,
+				       Indent1,Used,Stream])]),
+
 	/* Next remove shagged-out individuals, node is a variable, and move
 		on to next instance */
 	/* Now dig out the variable names for the loss nodes...add
@@ -681,6 +702,14 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
 	    excrete(L, end(cond), IsDead, Indent1, Stream);
 	excrete(L, make_reference, MetaPointer=OnPointer, Indent1, Stream)),    
 	excrete(L, end(while), MPTargetRef, Indent, Stream),
+
+	% if we have made any, tack them on and advance metaptr to end
+	refer_value(L, NewPointer, NewPointerRef),
+	ptr_compare(L, NewPointerRef, 0, SomeAdded),
+	excrete(L, if_start, SomeAdded, Indent, Stream),
+	excrete(L, assignment, MPTarget=NewPointer, Indent1, Stream),
+	excrete(L, assignment, MetaPointer=NewMeta, Indent1, Stream),
+	excrete(L, end(if), SomeAdded, Indent, Stream),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 
 /* This is a fairly horrrible clause that puts in what is done when a new submodel

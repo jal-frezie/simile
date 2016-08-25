@@ -580,10 +580,11 @@ invent_ptr_names(L, LinkName, BaseSm, Node, Used, Ptrs) :-
 	    Ptrs = [Ptr | MorePtrs].
 
 mark_update_insts(Act, Add) :-
-	Act = make(Efct, _,_, [update | _], [assign(SV, Src)]),
-	    (member(Src, [SV, SV+stage_incr(_,_,_,_,_,_,_), 
+	Act = make(Efct, _,_, [update | _], Inst),
+	(Inst = [assign(SV, Src)],
+	 member(Src, [SV, SV+stage_incr(_,_,_,_,_,_,_), 
 			 choose(happens(_),_,_)]); % compartment updates
-	      Efct = tipped(_Sq)), !,		% state change
+	      member(Efct, [tipped(_Sq), regen(_)])), !,		% state change
 	    Add = [Act];
 	Act = make(_,_,_, [eval | _], _),
 	    Add = [].
@@ -1224,16 +1225,14 @@ nodes.
 					  Functions), Reproducers), !;
 	     Reproducers = []),
 	    
-	    CreateRules = [make(culled(Name),
-				[init_list(Name), on_step],
-				Path, Step, [lose(Ptr, Name, Losses)]),
+	    CreateRules = [make(regen(Name),
+				[init_list(Name), on_step], Path, Step,
+				[regenerate(Ptr, Name, Reproducers, Losses)]),
 			   make(created(Name),
-				[culled(Name) | Creators], Path, 0,
+				[regen(Name) | Creators], Path, 0,
 				[init_mems(Ptr, Name, create(Creators))]),
-			   make(settled(Name), [culled(Name)], Path, Step,
-				[new_member(Ptr, Name, Immigrators)]),
-			   make(bred(Name), [culled(Name)], LocalPath, Step,
-				[reproduce(Ptr, NewPtr, Name, Reproducers)])],
+			   make(settled(Name), [regen(Name)], Path, Step,
+				[new_member(Ptr, Name, Immigrators)])],
 	    % relegate to 0 as membership may have changed during run
 %	    (setof(ReproRule, maker_for(SmName, Functions, Name, Path, Step,
 %					Ptr, reproduction, ReproRule),
