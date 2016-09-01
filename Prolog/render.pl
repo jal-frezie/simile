@@ -1204,12 +1204,12 @@ refer(Language, Expr, Result) :-
 	Language = c, make_pointer(Language, Expr, Result).
 
 cannot_be_dollared(Str) :-
-	member([OpenPar, ClosePar], ["()", "[]"]),
-	(append(Base, [OpenPar | Rest], Str),
+	(member([OpenPar, ClosePar], ["()"]), % "[]" removed
+	append(Base, [OpenPar | Rest], Str),
 	append(_Sub, [ClosePar | Tail], Rest), !,
 	    append(Base, Tail, DoneHere);
 	DoneHere = Str),
-	member(Separator, "$<>"),
+	member(Separator, "$<>[]"),
 	member(Separator, DoneHere).
 
 type_for_unit(Unit, Type) :-
