@@ -124,9 +124,9 @@ instantiate_node(Node, Instances, Path, All) :-
 	    raise_exception(instantiation_failure(Capt))).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-/* Easiest first... */
+/* Easiest first...states are added with their functions  */
 
-instance_of(cloud, _, _, [], []) :- !.
+instance_of(Inert, _, _, [], []) :- member(Inert, [cloud, state]), !.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* Ghosts are treated like variables, see later. */
@@ -274,13 +274,24 @@ instance_of( function, Node, Path, Instances, Refs) :-
 			Switched, SubbedExpr),
 
 	(member(RType, [creation, compartment]), !,
-	    FinalExpr = SubbedExpr,
-	    FType = init_function;
+	  FType = init_function,
+	  FinalExpr = SubbedExpr;
+	 RType = state, !,
+	  FType = state,
+	  % hack -- the init action goes on the state node, and the
+	  % update on the function because they must be separate but
+	  % the update uses the trigger magnitude so its node must be
+	  % connected to the trigger events	  
+	    compile'><'choosify(SubbedExpr, bollocks, UpdateExpr, InitExpr),
+	    FinalExpr = (trigger_magnitude('')=EvtTrigger, UpdateExpr),
+	    is_instance(init_function, Result, InitExpr,
+			elt(Path, Name, MagBase-Units), MagBase-Units, Init),
+	      Instances = [Init, Instance];
 	    
 	  (RType = event,
 	      is_parameter(Node, PType),
 	      nth0(PType, [magnitude, limit], FType);
-	    member(RType-FType, [squirt-magnitude, state-state_fn])), !,	    
+	    member(RType-FType, [squirt-magnitude])), !,	    
 	    (FType = limit, !,
 		apply_minmax(Node, result, BoundForm),
 		(BoundForm = min(Upper, More),

@@ -580,11 +580,10 @@ invent_ptr_names(L, LinkName, BaseSm, Node, Used, Ptrs) :-
 	    Ptrs = [Ptr | MorePtrs].
 
 mark_update_insts(Act, Add) :-
-	Act = make(Efct, _,_, [update | _], Inst),
-	(Inst = [assign(SV, Src)],
-	 member(Src, [SV, SV+stage_incr(_,_,_,_,_,_,_), 
+	Act = make(Efct, _,_, [update | _], [assign(SV, Src)]),
+	    (member(Src, [SV, SV+stage_incr(_,_,_,_,_,_,_), 
 			 choose(happens(_),_,_)]); % compartment updates
-	      member(Efct, [tipped(_Sq), regen(_)])), !,		% state change
+	      Efct = tipped(_Sq)), !,		% state change
 	    Add = [Act];
 	Act = make(_,_,_, [eval | _], _),
 	    Add = [].
@@ -1225,14 +1224,16 @@ nodes.
 					  Functions), Reproducers), !;
 	     Reproducers = []),
 	    
-	    CreateRules = [make(regen(Name),
-				[init_list(Name), on_step], Path, Step,
-				[regenerate(Ptr, Name, Reproducers, Losses)]),
+	    CreateRules = [make(culled(Name),
+				[init_list(Name), on_step],
+				Path, Step, [lose(Ptr, Name, Losses)]),
 			   make(created(Name),
-				[regen(Name) | Creators], Path, 0,
+				[culled(Name) | Creators], Path, 0,
 				[init_mems(Ptr, Name, create(Creators))]),
-			   make(settled(Name), [regen(Name)], Path, Step,
-				[new_member(Ptr, Name, Immigrators)])],
+			   make(settled(Name), [culled(Name)], Path, Step,
+				[new_member(Ptr, Name, Immigrators)]),
+			   make(bred(Name), [culled(Name)], LocalPath, Step,
+				[reproduce(Ptr, NewPtr, Name, Reproducers)])],
 	    % relegate to 0 as membership may have changed during run
 %	    (setof(ReproRule, maker_for(SmName, Functions, Name, Path, Step,
 %					Ptr, reproduction, ReproRule),
@@ -1541,7 +1542,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 %		UseList = [all_for(Dest) | RefList];
 	      member(Type, [function, al_function, loss, limit]),
 		UseList = RefList;
-	      member(Type, [magnitude, state_fn])), !,
+	      member(Type-Made, [magnitude-_, state_fn-update(Dest)])), !,
 		UseStep = SmStep),
 	    SourceEqn = Source;
 	(Is_P = 1, apply_minmax(Node, Source, SourceEqn);
@@ -1550,7 +1551,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    UseList = [on_reset | RefList], 
 	    Made = init(Dest),
 	    UseStep = 0; % was -2 but that allowed variation after reset
-	member(Type, [compartment, immigration, reproduction]),
+	member(Type, [compartment, immigration, reproduction, state]),
 	  \+ Source = none,
 	    UseList = [time | RefList], 
 	    Made = update(Dest),
@@ -1625,7 +1626,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    % pass value because consequent event may care whether we are minned
 	    % or maxed (or cannoned into oblivion by an upstream squirt)
 	    % but mostly cos it is easier
-	  (member(Type, [creation, immigration, reproduction]);
+	  (member(Type, [creation, immigration, reproduction, state]);
 	        member(Is_P, [1, 3]);
 	        Is_P = 2, Type = init_function), !,
 	    Acts = Assigns,
@@ -1649,8 +1650,8 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	        OnInitEqn = OnInitUnscaled * ScaleFactor,
 	        ChangeEqn = ChangeUnscaled * ScaleFactor),
 	    Acts = [assign(Val, ChangeEqn)],
-	    Linkers = [make(init(Dest), [on_reset], Path, 0,
-			    [assign(Val, OnInitEqn)])];
+	    connect_params([make(Dest, [on_reset | RefList], Path, 0,
+			    [assign(Val, OnInitEqn)])], Linkers);
 	  Type = magnitude, % poss ScaleFactor prob as above?
 	    Assigns = [assign(Val,  delay_for(PipeExp, WaitExp, ValExp))],
 	    Acts = [insert_to_pipe(ref_to(PipeExp), WaitExp, ValExp)],
@@ -2055,7 +2056,7 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		/* and add extra loops that go around generate statement --
 		record test phase to use in later new instance tests */
 		SmLevel = sm(Submodel, ParentPtr, Ptr,
-			     vm_loop(LoopCode,_, MoreLoops, _)),
+			     vm_loop(LoopCode,_, MoreLoops, SmPrune)),
 	        decode_loop(LoopCode, _ReadyType, Dims),
 		ptr_to_last_vm(Path, -2, ParentNew),
 		make_inds_for(Dims, _, Sets, LocalInds),
@@ -2127,8 +2128,9 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		extract_action(Outer, [bound_gen_loop(ParentPtr, Submodel,
 						      LoopCode, Count)]),
 		extract_action(GenStep, [generate(Submodel, ParentPtr,
-				Ptr, GenCond, VMPtrs, Inds, BasePtrs)]),
-		SmNew = [new_context(Ptr, TestPhase)],
+						  Ptr, GenCond, VMPtrs, Inds, BasePtrs)]),
+		SmRedo is max(SmPrune, TestPhase),
+		SmNew = [new_context(Ptr, SmRedo)],
 		append([Outer | UseLoops], [GenStep], FirstStep);
 		
 	    /* no: just use start_submodel -- or give up on this
