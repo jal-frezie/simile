@@ -642,10 +642,10 @@ as well to stop rand_vars being changed in the R-K subphase */
 		[build([EndPath, StartPath]), build([PureEnd, PureStart])]),
 	    suffix(PurePath, PureEnd),
 	    suffix(PurePath, PureStart), % all(...) cannot retry subgoals
-	    find_antecedent([Loop2], outside_loop, PurePath-Step, Out),
+	    find_antecedent([Loop2], outside_loop, 1, PurePath-Step, Out),
 	    /* would be better to get setof these and trace them all back at
 	    once but that needs too_many_variables */
-	    find_antecedent([Out], =, Start, _),
+	    find_antecedent([Out], =, 2, Start, _),
 	    Out = make(Xefct, _, APath, [_,_, AStep | _], _),
 	    (remove_non_loopers(APath, PureAPath),
 		\+ suffix(PurePath, PureAPath),
@@ -2526,11 +2526,12 @@ select_for(Path, [Priority | Tail], Next) :-
 not_yet_ordered(make(_,_,_, [_,_,_, IsOrdered | _], _)) :-
 	var(IsOrdered).
 
-find_antecedent(Chain, TestFn, TestData, Found) :-
+find_antecedent(Chain, TestFn, CallSeq, TestData, Found) :-
 	member(make(_, Conds-_, _,_,_), Chain),
 	member(Prev, Conds),
-	Prev = make(_,_,_, [Phase,_,_,Cur | _], _),
-	\+ Phase = update,
+	Prev = make(_,_,_, [Phase,_,_,Trace | _], _),
+        \+ Phase = update,
+	nth(CallSeq, Trace, Cur),
 	var(Cur), Cur = 1, !,
 	/* above cut is important -- we do not want to retry selection. If this
 	one gets us nowhere we will call the procedure again with it removed
@@ -2542,8 +2543,8 @@ find_antecedent(Chain, TestFn, TestData, Found) :-
 	TestCall =.. [TestFn, Prev, TestData],
 	(call(compile'><'TestCall), !,
 	    (Found = Prev;
-	    find_antecedent(Chain, TestFn, TestData, Found));
-	find_antecedent([Prev | Chain], TestFn, TestData, Found)).
+	    find_antecedent(Chain, TestFn, CallSeq, TestData, Found));
+	find_antecedent([Prev | Chain], TestFn, CallSeq, TestData, Found)).
 
 outside_loop(make(_,_, Path, [_,_, NPhase | _], _), LoopedPath-Phase) :-
 	\+ NPhase == Phase, !;
