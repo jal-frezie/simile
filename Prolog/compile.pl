@@ -635,10 +635,12 @@ as well to stop rand_vars being changed in the R-K subphase */
 	/* Check all same-time-step circles can be done in one program loop */
 	tk_update_infobox(pl_loop, []),
 	(member(Start, Functions),
-	    Start = make(LoopEnd, Conds-_, EndPath, _,_),
+	    Start = make(LoopEnd, Conds-_, EndPath, [_,_, Step | _], _),
 	    member(later(Loop2), Conds),
-	    Loop2 = make(LoopStart, _, StartPath, [_,_, Step | _], _),
-	    % not sure whether step should be from Start or Loop2
+	    Loop2 = make(LoopStart, _, StartPath, _,_),
+	    % Step is from Start not Loop2 cos with loop of compartments Loop2
+	    % may be result for previous compartment which is stepsize 1 but
+	    % has no action 
 	    all(compile, remove_non_loopers,
 		[build([EndPath, StartPath]), build([PureEnd, PureStart])]),
 	    suffix(PurePath, PureEnd),
