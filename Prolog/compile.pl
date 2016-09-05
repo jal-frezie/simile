@@ -2483,7 +2483,8 @@ unfinished_submodels([make(_,_, PathPlus, [_,_, FoundPhase | _], _) | Waiting],
 get_next_evaluation(Assignments, Step, Remainder, Next) :-
 	select(Next, Assignments, Remainder),
 	not_yet_ordered(Next),
-	Next = make(_, Conds-_, _IPath, [Phase,_, Step | _], _),
+	Next = make(_, Conds-_, _IPath, [Phase,_, VStep | _], Act),
+        (Act = []; VStep = Step),
 	\+ ((member(Sticker, Conds); member(earlier(Sticker), Conds)),
 	       Sticker = make(_,_,_, [Phase | _], _),
 	       not_yet_ordered(Sticker)).
@@ -2546,8 +2547,8 @@ find_antecedent(Chain, TestFn, CallSeq, TestData, Found) :-
 	    find_antecedent(Chain, TestFn, CallSeq, TestData, Found));
 	find_antecedent([Prev | Chain], TestFn, CallSeq, TestData, Found)).
 
-outside_loop(make(_,_, Path, [_,_, NPhase | _], _), LoopedPath-Phase) :-
-	\+ NPhase == Phase, !;
+outside_loop(make(_,_, Path, [_,_, NPhase | _], Act), LoopedPath-Phase) :-
+	\+ NPhase == Phase, \+ Act = [], !;
 	remove_non_loopers(Path, ShortPath),
 	\+ suffix(LoopedPath, ShortPath).
 	
