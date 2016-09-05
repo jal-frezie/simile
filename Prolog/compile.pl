@@ -638,11 +638,14 @@ as well to stop rand_vars being changed in the R-K subphase */
 	    Start = make(LoopEnd, Conds-_, EndPath, _,_),
 	    member(later(Loop2), Conds),
 	    Loop2 = make(LoopStart, _, StartPath, [_,_, Step | _], _),
+	    % not sure whether step should be from Start or Loop2
 	    all(compile, remove_non_loopers,
 		[build([EndPath, StartPath]), build([PureEnd, PureStart])]),
 	    suffix(PurePath, PureEnd),
 	    suffix(PurePath, PureStart), % all(...) cannot retry subgoals
-	    find_antecedent([Loop2], outside_loop, 1, PurePath-Step, Out),
+	    (outside_loop(Loop2, PurePath-Step),
+	       Out = Loop2;
+	     find_antecedent([Loop2], outside_loop, 1, PurePath-Step, Out)),
 	    /* would be better to get setof these and trace them all back at
 	    once but that needs too_many_variables */
 	    find_antecedent([Out], =, 2, Start, _),
