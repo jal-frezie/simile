@@ -1188,7 +1188,7 @@ uses the'set' construct instead. Only works forward. */
 refer_value(Language, Expr, Result) :-
 	Language = c, Result = Expr;
 	Language = tcl, 
-	(atomic(Str1),
+	(atomic(Expr),
 	 name(Expr, Str1),
 	 \+ cannot_be_dollared(Str1) ->
 	    Str2 = [36 | Str1];

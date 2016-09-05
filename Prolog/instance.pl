@@ -510,12 +510,8 @@ generate_input_pair(Node, IType, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
 	RelatedRef = input(SourceLocation, RefExp, Relation, ArcUnits),
 	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef),
 	find_name_host(Link, ControlLink),
-	(get_av_pair(ControlLink, 2, use_sofar, 1),
-	    (find_type(SourceID, compartment),
-		ExprRef = at_update(ConvertedRef);
-	      \+ find_type(SourceID, compartment),
-		ExprRef = sofar(ConvertedRef));
-	\+ get_av_pair(ControlLink, 2, use_sofar, 1),
+	(get_av_pair(ControlLink, 2, use_sofar, 1) ->
+		ExprRef = sofar(ConvertedRef);
 	    ExprRef = ConvertedRef).
 
 try_conversion(RelatedRef, Units, BaseUnits, ConvertedRef) :-

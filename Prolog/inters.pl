@@ -1333,7 +1333,6 @@ Now one that uses a special conditional level */
 		    raise_units(Base, Exp, Units),
 			SourceRef = ValRef);
 		 (ValRef = sofar(SourceRef);
-		     ValRef = at_update(SourceRef);
 		     ValRef = default(_), SourceRef = 0),
 		    UnitList = [Units];
 		 (var(Lop),
@@ -1366,9 +1365,6 @@ Now one that uses a special conditional level */
 	    (Source = sofar(_), !,
 		all(inters, dissociate,
 		    [unify(later), build(SubArgs), build(Args)]);
-	    Source = at_update(_), !,
-		all(inters, dissociate,
-		    [unify(this_step), build(SubArgs), build(Args)]);
 	    Args = SubArgs);
 	throw(undecipherable_operand(Source, SubId)).
 
