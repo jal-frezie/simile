@@ -1538,11 +1538,14 @@ refer_inter(instance(internal, inter(SourcePath, _, ParamLoops), Source, Name,
 	we use the total from the previous time step we don't need to
 	worry about accessing elements that haven't yet been set, and not
 	using made_at(...) should prevent it being removed as an idler */
-	  member(Source, [in_preceding(_), in_progenitor(_)]), !,
+	 member(Source-Delay, [in_preceding(_)-later,
+			       in_progenitor(_)-this_step]), !,
+	 % progenitor value can be set in next loop because cannot create
+	 % offspring in same step as parent -- access before setting
+	    DelayCond =.. [Delay, lastvalue(Name)],
 	    Args = [made_at(cleared(Name), SourceContext),
  				% array must be cleared before first use
-		    made_at(this_step(lastvalue(Name)), DestPath)];
-				% access before setting in same loop
+		    made_at(DelayCond, DestPath)];
 	    Args = [made_at(Name, SourceContext)]),
 	(Source = in_progenitor(_),
 	    SourcePath = [sm(BitOfAHack, _,_,_) | _],
