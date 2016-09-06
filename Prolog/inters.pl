@@ -1541,7 +1541,7 @@ refer_inter(instance(internal, inter(SourcePath, _, ParamLoops), Source, Name,
 	  member(Source, [in_preceding(_), in_progenitor(_)]), !,
 	    Args = [made_at(cleared(Name), SourceContext),
  				% array must be cleared before first use
-		    made_at(later(lastvalue(Name)), DestPath)];
+		    made_at(this_step(lastvalue(Name)), DestPath)];
 				% access before setting in same loop
 	    Args = [made_at(Name, SourceContext)]),
 	(Source = in_progenitor(_),

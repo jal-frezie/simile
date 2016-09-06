@@ -410,7 +410,8 @@ namespace eval slide139 {
     proc SliderEvent {node indices} {
 	global myNode
 
-#	set sub [join [concat [list {} NOW] $indices] ,]
+	set sub [join [concat [list {}] $indices] ,]
+	set ::widgetSeln(old,$node$sub) 0 ;# make it show as changed
 #	SetArrayIfUsed $node 0 $indices [$scale get]
 #	ListToArray $myNode $node $sub $sub {} {} [$scale get] 1 \
 #	    [RunningInC $myNode]
