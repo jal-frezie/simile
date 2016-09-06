@@ -1611,7 +1611,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    GroundEqn = SourceEqn)), !,
 	    
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
-			 SmStep, UseStep, ExtInters, Used, Assigns,
+			 SmStep, SmStep, ExtInters, Used, Assigns,
 			 Setups, Path, RefList, AllInters),
 	 append(ExtInters, Inters, AllInters), % declare them only once
 	(nonvar(Made), !; Made = Dest),
