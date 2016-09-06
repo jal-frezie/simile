@@ -535,7 +535,7 @@ declare_structure(Language, model(Vars, Submodels), Used, AllGraphs) :-
 
 	declare_submodel_structures(Language, Submodels, Used, SmGraphs),
 	pick_types(Vars, [function, init_function, id_function, al_function,
-			  state_fn, loss,
+			  loss,
 			  internal, external, magnitude, limit], NamedVars),
 	name_components( Language, NamedVars, Used, Graphs),
 	append(SmGraphs, Graphs, AllGraphs).
@@ -823,7 +823,7 @@ generate_metadata(L, Instance, Tree, Level, Used, Stream) :-
 	    
 extract_instances(model(Funx, Subz), Instances) :-
 	pick_types(Funx, [function, init_function, id_function, al_function,
-			  state_fn, fp_compartment,
+			  fp_compartment,
 			  loss, internal, external, magnitude, limit, series],
 		   ValFunx),
 	append(Subz, ValFunx, Instances).
@@ -1506,7 +1506,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 /* Only make assignments for functions, for now, and
 	    Do not make an assignment if we are expecting one on init/reset
 	    from outside */
-	(member(Type, [event, magnitude, limit, series, state_fn]), !,
+	(member(Type, [event, magnitude, limit, series]), !,
 	    Is_P = 0;
 	  is_parameter(Node, Norm_P),
 	    (Norm_P = 2, \+ Node has_class_refinement param_type of file, !,
@@ -1547,7 +1547,7 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 %		UseList = [all_for(Dest) | RefList];
 	      member(Type, [function, al_function, loss, limit]),
 		UseList = RefList;
-	      member(Type-Made, [magnitude-_, state_fn-update(Dest)])), !,
+	      Type = magnitude), !,
 		UseStep = SmStep),
 	    SourceEqn = Source;
 	(Is_P = 1, apply_minmax(Node, Source, SourceEqn);
@@ -1597,12 +1597,6 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	      GroundEqn = (SourceItem=TriggerEqn,
 			     choose(EnableEqn '!=' 0, ActEqn, Inactive)));
 	  % if using 'happens', make sure it stays out of update phase
-	  Type = state_fn, !,
-	    SourceEqn = event(ActEqn, TriggerEqn),
-	    choosify(ActEqn, DimTypes, ChooseForm, OnInit),
-	    GroundEqn = (trigger_magnitude('')=TriggerEqn,
-			 choose('"true"', OnInit, ChooseForm)),
-	    UseList = [on_step | RefList];
 	  (SourceEqn = with_phase(SmStep, _EvtElts, GroundEqn);
 	    SourceEqn = al_spec(LoopExit, EvtConds, LoopStart),
 	   % choose(..) is just a handy fn that allows a boolean and
@@ -1648,15 +1642,6 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    (QChange = 0, !, Linkers = [Set];
 	     Linkers = [make(tipped(Dest), [on_step], Path, SmStep,
 			    [assign(Val, ValRef+QChange)]), Set]);
-	  Type = state_fn,
-	    Assigns = [assign(Val, Fn)],
-	    (Fn = choose(1, OnInitEqn, ChangeEqn);
-	     Fn = choose(1, OnInitUnscaled, ChangeUnscaled) * ScaleFactor,
-	        OnInitEqn = OnInitUnscaled * ScaleFactor,
-	        ChangeEqn = ChangeUnscaled * ScaleFactor),
-	    Acts = [assign(Val, ChangeEqn)],
-	    connect_params([make(Dest, [on_reset | RefList], Path, 0,
-			    [assign(Val, OnInitEqn)])], Linkers);
 	  Type = magnitude, % poss ScaleFactor prob as above?
 	    Assigns = [assign(Val,  delay_for(PipeExp, WaitExp, ValExp))],
 	    Acts = [insert_to_pipe(ref_to(PipeExp), WaitExp, ValExp)],
