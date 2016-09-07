@@ -524,7 +524,7 @@ Works but buggers up GNU prolog (do after loading?) */
 
 :- op(800, yfx, ['||', or, xor]).
 
-:- op(850, yfx, [?, :]).
+:- op(850, xfy, [?, :]).
 :- op(850, xfy, [then, else, elseif, on]).
 
 :- op(900, fx, [if]).
