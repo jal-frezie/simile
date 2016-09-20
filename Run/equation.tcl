@@ -605,11 +605,14 @@ proc interact_equation {} {
     set units [UnityForReal $equation(units)]
     switch $equation(done) {
         1 {
+	    set res [string trimright [$equation(actzone).text get 1.0 end]]
+	    set equation(prevs) [AddIfAbsent $res $equation(prevs)]
+	    [wm transient $t].toolSlot.eqnbar.equation configure \
+		-values $equation(prevs)
 	    if {[winfo exists $equation(actzone).evts]} {
 # entering rules -- individual items already passed back (case 4 below)
 # but have to pass current pair in case modified
-		return [list [string trimright \
-				  [$equation(actzone).text get 1.0 end]] \
+		return [list $res \
 			    [$equation(actzone).evts get $equation(last_cause)] \
 			    $units $equation(isparam) \
 			    [string trimright [$descFrame.text get 1.0 end]] \
@@ -617,9 +620,7 @@ proc interact_equation {} {
 			    $equation(min) $equation(max)]
 		
 	    } else {
-		return [list [string trimright \
-				  [$equation(actzone).text get 1.0 end]] \
-			    $units $equation(isparam) \
+		return [list $res $units $equation(isparam) \
 			    [string trimright [$descFrame.text get 1.0 end]] \
 			    [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
 			    $equation(min) $equation(max)]
