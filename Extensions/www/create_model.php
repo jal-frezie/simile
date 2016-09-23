@@ -211,7 +211,7 @@ switch ($_POST["helper_src"]) {
 
 if (isset($crmPath)) {
    // Log the event to the database for display by CRM
-   require '../../crm/private/ConnectCRM.php';
+   require $crmPath . '/ConnectCRM.php';
    $query = "INSERT INTO crm_similive  (DateTime, IPAddress, ModelURL) ".
    "VALUES ('".date('Y/m/d H:i:s')."', '".
    gethostbyaddr($_SERVER['REMOTE_ADDR'])."', '".
