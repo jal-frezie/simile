@@ -425,8 +425,7 @@ namespace eval slide139 {
 	set sub [join [concat [list {}] $indices] ,]
         if {$fixed} {
 	    set ledColour [$runState($myNode,cnvs) itemcget 1 -fill]
-	    if {[lsearch {yellow green blue} $ledColour]>-1} return
-	    set runState($myNode,reloadParams) -1
+	    if {[lsearch {yellow green blue} $ledColour]>-1} {return 0}
 # bug: command is called when slider created, generating spurious reset request
             if {![RunningInC $myNode]} {
                 set paramData($node$sub) $value
@@ -436,6 +435,12 @@ namespace eval slide139 {
 	ListToArray $myNode $node $sub $sub {} {} $value 0 [RunningInC $myNode]
 	if {$widgetSeln($node$sub) == $widgetSeln(old,$node$sub)} {return 1}
 	set widgetSeln(old,$node$sub) $widgetSeln($node$sub)
+	if $fixed {
+	    # clear file param log so it can be re-applied
+	    set paramData(/$myNode[GetCaptionPathFromId $node]) {}
+	    set runState($myNode,reloadParams) -1
+	    return 0
+	}
 	return [RedoRatesAndDisplay $myNode] ;# 1 if was able to do so
 	# scale units later
     }
