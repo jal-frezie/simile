@@ -1,45 +1,44 @@
-var tabs;
-$(function() {
+	$(function() {
 		
-    $( "#button" ).button();
-    $( "#radioset" ).buttonset();
+	    $( "#button" ).button();
+	    $( "#radioset" ).buttonset();
 		
-    tabs = $( "#tabs" ).tabs({heightstyle:"fill"});
-    tabs.tabs({
-	activate: function( event, ui ) {
-	    if (ui.newPanel.selector != "#tabs-0") { // diagram
-		lastHelper = currentHelper =
-		    currentHelpers[$(ui.newPanel.selector)[0].id];
-		lastIndex = tabs.tabs("option","active");
-	    } else {
-		currentHelper = null;
-	    }
-	}
-    });
-    // close icon: removing the tab on click
-    tabs.delegate( "span.ui-icon-close", "click", function() {
-	var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
-	delete currentHelpers[panelId];
-	$( "#" + panelId ).remove();
-	tabs.tabs( "refresh" );
-    });
+		
 
 		
-    $( "#progress" ).progressbar({
-	value: 0
-    });
-    
 
-    // Hover states on the static widgets
-    $( "#dialog-link, #icons li" ).hover(
-	function() {
-	    $( this ).addClass( "ui-state-hover" );
-	},
-	function() {
-	    $( this ).removeClass( "ui-state-hover" );
-	}
-    );
-});
+		
+
+		
+		$( "#progress" ).progressbar({
+			value: 0
+		});
+		
+
+		// Hover states on the static widgets
+		$( "#dialog-link, #icons li" ).hover(
+			function() {
+				$( this ).addClass( "ui-state-hover" );
+			},
+			function() {
+				$( this ).removeClass( "ui-state-hover" );
+			}
+		);
+	});
+
+// experimental jqueryui popup dialogue implementation
+         $(function() {
+            $( "#dialog-1" ).dialog({
+               autoOpen: false,  
+               title: "File parameters",
+            });
+            $( "#opener" ).click(function() {
+		$( "#dialog-1" ).dialog( "open" );
+		if ($( "#dialog-1" ).html() == "empty") {
+		    insert_helper("dialog-1", "params");
+		}
+            });
+         });
 
 function clickOn(evt) {
     var tags = null;
@@ -134,11 +133,16 @@ function hoverIn(evt) {
     tags = blob.getAttribute("id");
     blob = blob.parentNode;
   }
-  var prolog = tags.match(/arc\d\d\d\d\d|node\d\d\d\d\d/);
+    var prolog = tags.match(/arc\d\d\d\d\d|node\d\d\d\d\d/);
+    if (prolog == null) {
+	// console.log("No prolog id for " + evt.target);
+	return;
+    }
+    subtlety = evt.path;
 //  var currentLine = model_json.find(function (e) {
 //		     return e.id == prolog;
 // 		     });
-    tooltip_q.firstChild.data = model_json[prolog].equation;
+  tooltip_q.firstChild.data = model_json[prolog].equation;
     
     // tooltip_v.firstChild.data = prettify(JSON.parse(values_json[prolog]), 0);
     // OK, try getting data from built-in model instead
@@ -146,70 +150,70 @@ function hoverIn(evt) {
     tooltip_c.firstChild.data = model_json[prolog].comment;
 // above will break function if it doesn't work
 
-    var uupos = ModDiag.createSVGPoint();
-    uupos.x = evt.pageX - window.pageXOffset;
-    uupos.y = evt.pageY - window.pageYOffset;
-    var ctm = ModDiag.getScreenCTM();
-    if (ctm = ctm.inverse())
-        uupos = uupos.matrixTransform(ctm);
-    
-    tooltip_grp.setAttributeNS(null,"transform",
-			     "translate(" + uupos.x + "," + uupos.y + ")scale("
-			     + tooltip_scale + ")");
-    tooltip_bd.setAttributeNS(null,"visibility","visible");
-    tooltip_qbg.setAttribute("visibility", "visible");
-    tooltip_vbg.setAttribute("visibility", "visible");
-    tooltip_cbg.setAttribute("visibility", "visible");
-    tooltip_q.setAttributeNS(null,"visibility","visible");
-    tooltip_v.setAttributeNS(null,"visibility","visible");
-    tooltip_c.setAttributeNS(null,"visibility","visible");
+    for (var i=0; subtlety[i].nodeName != "svg"; ++i) {}
+        var uupos = subtlety[i].createSVGPoint();
+        uupos.x = evt.pageX - window.pageXOffset;
+        uupos.y = evt.pageY - window.pageYOffset;
+        var ctm = subtlety[i-1].getScreenCTM();
+        if (ctm = ctm.inverse())
+            uupos = uupos.matrixTransform(ctm);
 
-    length = Math.max(tooltip_q.getComputedTextLength(),
-		      tooltip_v.getComputedTextLength(),
-		      tooltip_c.getComputedTextLength());
-    tooltip_bd.setAttributeNS(null,"width",length+8);
-    tooltip_qbg.setAttributeNS(null,"width",length+8);
-    tooltip_vbg.setAttributeNS(null,"width",length+8);
-    tooltip_cbg.setAttributeNS(null,"width",length+8);
+  //tooltip_grp.setAttributeNS(null,"transform",
+// 			     "translate(" + uupos.x + "," + uupos.y + ")scale("
+    // 			     + tooltip_scale + ")");
+    tooltip_grp.setAttributeNS(null,"transform",
+			       "translate(" + uupos.x + "," + uupos.y + ")scale(1.0)");
+  tooltip_bd.setAttributeNS(null,"visibility","visible");
+  tooltip_qbg.setAttribute("visibility", "visible");
+  tooltip_vbg.setAttribute("visibility", "visible");
+  tooltip_cbg.setAttribute("visibility", "visible");
+  tooltip_q.setAttributeNS(null,"visibility","visible");
+  tooltip_v.setAttributeNS(null,"visibility","visible");
+  tooltip_c.setAttributeNS(null,"visibility","visible");
+
+  length = Math.max(tooltip_q.getComputedTextLength(),
+		     tooltip_v.getComputedTextLength(),
+		     tooltip_c.getComputedTextLength());
+  tooltip_bd.setAttributeNS(null,"width",length+8);
+  tooltip_qbg.setAttributeNS(null,"width",length+8);
+  tooltip_vbg.setAttributeNS(null,"width",length+8);
+  tooltip_cbg.setAttributeNS(null,"width",length+8);
 }
 
 function hoverOut() {
-    tooltip_bd.setAttributeNS(null,"visibility","hidden");
-    tooltip_qbg.setAttribute("visibility", "hidden");
-    tooltip_vbg.setAttribute("visibility", "hidden");
-    tooltip_cbg.setAttribute("visibility", "hidden");
-    tooltip_q.setAttributeNS(null,"visibility","hidden");
-    tooltip_v.setAttributeNS(null,"visibility","hidden");
-    tooltip_c.setAttributeNS(null,"visibility","hidden");
+  tooltip_bd.setAttributeNS(null,"visibility","hidden");
+  tooltip_qbg.setAttribute("visibility", "hidden");
+  tooltip_vbg.setAttribute("visibility", "hidden");
+  tooltip_cbg.setAttribute("visibility", "hidden");
+  tooltip_q.setAttributeNS(null,"visibility","hidden");
+  tooltip_v.setAttributeNS(null,"visibility","hidden");
+  tooltip_c.setAttributeNS(null,"visibility","hidden");
 }
 
 function addEltAction(comp) {
-    comp.addEventListener("mouseover", hoverIn);
-    comp.addEventListener("mouseout", hoverOut);
-    comp.addEventListener("mousedown", clickOn);
+  comp.addEventListener("mouseover", hoverIn);
+  comp.addEventListener("mouseout", hoverOut);
+  comp.addEventListener("mousedown", clickOn);
 }
 
 function tclListOfDimty(stuff, n) {
-    if (stuff.constructor === Array) {
-	if (n==0) {
-	    return stuff.join("");
-	}
-	var result = [];
-	for (var i=0; i<stuff.length; i+=2) { // skip whitespace elts
-	    result.push(tclListOfDimty(stuff[i],n-1));
-	}
-	return result;
-    }
     if (n==0) {
 	return stuff;
     }
-    return [tclListOfDimty(stuff,n-1)];
+    if (!(stuff.constructor === Array)) {
+	return [tclListOfDimty(stuff, n-1)];
+    }
+    var result = [];
+    for (var i=0; i<stuff.length; ++i) {
+	result.push(tclListOfDimty(stuff[i],n-1));
+    }
+    return result;
 }
 
 function idFromCapt (capt) {
 // now boringly find this by iteration
     for (comp in model_json) {
-	if (model_json[comp].captpath == capt) {
+	if (model_json[comp].captpath.replace(/\s+/g," ") == capt) {
 	    return model_json[comp].id;
 	}
     }
@@ -219,48 +223,45 @@ function oneAfter(array, term) {
     return array[array.indexOf(term) + 1];
 }
 
-function addTabFor(species, textContent) {
-    convd0 = textContent.replace(/(}*)(\s+)({*)/g,"\"$1, \"$2\", $3\"");
-    // enclose array elements and bits of whitespace in quotes
-    convd1 = convd0.replace(/{/g,"[").replace(/}/g,"]").replace(/\n/g, "\\n")
-    // replace curly brackets with square ones, escape newlines for parse
-    spacArray = JSON.parse("["+convd1.substr(3,convd1.length-6)+"]");
+function setupHelperIn(win, species, textContent) {
+    convd = textContent.replace(/}*\s+{*/g,"\"$&\"")
+	.replace(/{/g,"[").replace(/}/g,"]").replace(/\s+/g,", ")
+    specArray = JSON.parse("["+convd.substr(3,convd.length-6)+"]");
 //    console.log("Helper key "+species+", state "+JSON.stringify(specArray));
-    var specArray = [];
-    for (var i=1; i<spacArray.length; i+=2) {
-	specArray.push(spacArray[i]);
-    }
+
     switch (species) {
 	case "plotter1_dot_25":
-	new_helper("plot");
-	captArr = oneAfter(specArray, "/WIN/,Yvars");
-	captPaths = tclListOfDimty(captArr, 1);
-	for (var x=0;x<captPaths.length;++x) {
+	insert_helper(win, "plot");
+	captArr = specArray[specArray.indexOf("/WIN/,Yvars")+1];
+	captPaths = tclListOfDimty(captArr,2);
+	for (x=0;x<captPaths.length;++x) {
 	    if (x>0) select_for_helper("add");
+	    captPathN = captPaths[x].join(" ");
 //	console.log("Adding plot of " + captPathN);
 // now boringly find this by iteration
-	    select_for_helper(idFromCapt(captPaths[x]));
+	    select_for_helper(idFromCapt(captPathN));
 //	    if (x==0) select_for_helper("time");
 	}
 	break;
 
 	case "tabular11510":
-	new_helper("table");
-	captPaths = tclListOfDimty(specArray[0], 1);
+	insert_helper(win, "table");
+	captPaths = tclListOfDimty(specArray[0], 2);
 	for (var i=0; i<captPaths.length; ++i) {
-	    select_for_helper(idFromCapt(captPaths[i]));
+	    captPath = captPaths[i].join(" ");
+	    select_for_helper(idFromCapt(captPath));
 	}
 	break;
 
 	case "gen3d1": // lollipops
-	new_helper("shapes");
+	insert_helper(win, "shapes");
 	var i=3;
 	currentHelper.State = [];
 	while (specArray[i] != "/annotation/") {
 	    template = ["lollipops"];
 	    newComps = [];
 	    for (parm in {"x":0,"y":0,"h":0}) {
-		nId = idFromCapt(tclListOfDimty(specArray[i++],0));
+		nId = idFromCapt(tclListOfDimty(specArray[i++],1).join(" "));
 		template.push(nId);
 		currentHelper.tgts.push(nId);
 		newComps.push(nId);
@@ -271,37 +272,41 @@ function addTabFor(species, textContent) {
 	break;
 
 	case "slide139":
-	new_helper("sliders");
+	insert_helper(win, "sliders");
 	break;
 
 	case "plotterXY1_dot_0":
-	new_helper("plotxy");
-	captArr = oneAfter(specArray, "/WIN/,Yvars");
-	captPath = tclListOfDimty(captArr,0);
+	insert_helper(win, "plotxy");
+	captArr = specArray[specArray.indexOf("/WIN/,Yvars")+1];
+	captPath = tclListOfDimty(captArr,1).join(" ");
+//	console.log("Adding plot of " + captPath0);
+// now boringly find this by iteration
 	select_for_helper(idFromCapt(captPath));
-	captArr = oneAfter(specArray, "/WIN/,Xvars");
-	captPath = tclListOfDimty(captArr,0);
+	captArr = specArray[specArray.indexOf("/WIN/,Xvars")+1];
+	captPath = tclListOfDimty(captArr,1).join(" ");
+//	console.log("Adding plot of " + captPath0);
+// now boringly find this by iteration
 	select_for_helper(idFromCapt(captPath));
 	break;
 
 	case "Shapes3D20141208":
-	new_helper("shapes");
+	insert_helper(win, "shapes");
 	currentHelper.State = [];
 // would be done, but must convert capt paths to node ids
 	for (var i=0; i<specArray.length;++i) {
 	    template = [];
 	    newComps = [];
-	    for (var j=0; j<specArray[i].length;j+=2) {
-		possCapt = tclListOfDimty(specArray[i][j], 0);
-		if (possCapt[0] == "/") { // its a capt path
-		    nodeId = idFromCapt(possCapt);
-		    template.push(nodeId);
+	    for (var j=0; j<specArray[i].length;++j) {
+		possCapt = tclListOfDimty(specArray[i][j], 1);
+		if (possCapt[0][0] == "/") { // its a capt path
+		    nodeId = idFromCapt(possCapt.join(" "));
+		    template[j] = nodeId;
 		    newComps.push(nodeId);
 		    currentHelper.tgts.push(nodeId);
-		} else if (possCapt[0] == "#") { // it's a colour
-		    template.push(possCapt.substr(1));
+		} else if (possCapt[0][0] == "#") { // it's a colour
+		    template[j] = possCapt[0].substr(1);
 		} else { // is shape identity
-		    template.push(possCapt);
+		    template[j] = possCapt[0];
 		}
 	    }
 	    AddTemplateToScene(currentHelper, template, newComps);
@@ -309,7 +314,7 @@ function addTabFor(species, textContent) {
 	break;
 
     case "polygon375":
-	new_helper("polys");
+	insert_helper(win, "polys");
 	swatArr = []
 	if (oneAfter(specArray, "/WIN/,colourMapTweaked")) {
 	    nswat = oneAfter(specArray, "/WIN/,nswatches");
@@ -329,20 +334,20 @@ function addTabFor(species, textContent) {
 	currentHelper.bottom = parseFloat(oneAfter(specArray, "/WIN/,min"));
 	currentHelper.top = parseFloat(oneAfter(specArray, "/WIN/,max"));
 	for (var key in {"color":0,"xcoord":0,"ycoord":0}) {
-	    capt = tclListOfDimty(oneAfter(specArray, "/WIN/," + key), 0);
-	    select_for_helper(idFromCapt(capt));
+	    capt = tclListOfDimty(oneAfter(specArray, "/WIN/," + key), 1);
+	    select_for_helper(idFromCapt(capt.join(" ")));
 	}
 	break;
 
     case "grid005":
-	new_helper("grid");
+	insert_helper(win, "grid");
 	if (specArray[0] == "displaying") {
 	    var idx = specArray.indexOf("aspect");
 	    nswat = parseInt(specArray[idx+1]);
 	    currentHelper.minVal = parseFloat(specArray[idx+2]);
 	    currentHelper.maxVal = parseFloat(specArray[idx+3]);
 	    currentHelper.initScale =
-		parseInt(oneAfter(specArray, "magnification"));
+		parseInt(specArray[specArray.indexOf("magnification")+1]);
 	    idx = specArray.indexOf("swatches");
 	    if (idx >= 0) {
 		cMap = ColorMapFromSwatches(specArray.slice(idx+1,
@@ -355,17 +360,22 @@ function addTabFor(species, textContent) {
 	    }
 	    currentHelper.nswat = nswat;
 	    currentHelper.cMap = cMap;
-	    var captPath =  tclListOfDimty(specArray[1],0);
+	    var captPath =  tclListOfDimty(specArray[1],1).join(" ");
 	    currentHelper.acceptClick(idFromCapt(captPath));
 	    if (currentHelper.status == "setting_aspect") {
-		captPath =  tclListOfDimty(specArray[2],0);
+		captPath =  tclListOfDimty(specArray[2],1).join(" ");
 	    	currentHelper.acceptClick(idFromCapt(captPath));
 	    }
 	}
 	break;
-	default:
+    case "ModelDiagram20060804":
+	insert_helper(win, "diagram");
+	break;
+    default:
 	console.log("Cannot emulate Tcl helper: " + species);
+	return false;
     }
+    return true;
 }
 
 function createInitialHelpers() {
@@ -379,32 +389,122 @@ function createInitialHelpers() {
 //     })
 // 	.done(function( returnedXML ) {
     // 	    if (returnedXML == '') return;
-    if (typeof(returnedXML) == 'undefined') return;
-    parser=new DOMParser();
-    helperXML = parser.parseFromString(returnedXML, "text/xml");
-	    if ($(helperXML).find("parsererror").length > 0) {
-		// alert("Helper setup file failed to parse as XML");
-		// no problem, we can deal with v5 mime shfs...
-		b64Bloc = returnedXML.substr(returnedXML.search("\n\n")+2);
-		insList = atob(b64Bloc).split("\r\n");
-		for (i=0; i<insList.length; ++i) {
-		    if (insList[i].search("container")==0) {
-			addTabFor(insList[i+1].replace(/\./g, "_dot_"),
-				  "+++\"" + insList[i+2] + " ");
+    if (typeof(returnedXML) == 'undefined') {
+	helperElt = {nodeName:'notebook',children:[]};
+    } else {
+	parser=new DOMParser();
+	hlpDoc = parser.parseFromString(returnedXML, "text/xml");
+		if ($(hlpDoc).find("parsererror").length > 0) {
+		    // alert("Helper setup file failed to parse as XML");
+		    // no problem, we can deal with v5 mime shfs...
+		    // (but only old-style tab-per-helper)
+		    b64Bloc = returnedXML.substr(returnedXML.search("\n\n")+2);
+		    insList = atob(b64Bloc).split("\r\n");
+		    for (i=0; i<insList.length; ++i) {
+			if (insList[i].search("container")==0) {
+			    chType = insList[i+1].replace(/\./g, "_dot_");
+			    chState = "+++\"" + insList[i+2] + " ";
+			    chSpec = {nodeName:"container",
+				      attributes:{type:{value:chType}},
+				      textContent:chState};
+			    tabSpec = {attributes:{caption:{value:'Tab '
+					+ (helperElt.children.length+1)}},
+				       children:[chSpec]};
+			    helperElt.children.push(tabSpec);
+						     
+			    //addTabFor(insList[i+1].replace(/\./g, "_dot_"),
+			//	      "+++\"" + insList[i+2] + " ");
+			}
 		    }
+		} else {
+		    helperElt = $(hlpDoc).find("shf")[0].children[2];
 		}
-		return;
-	    }
-	    tclHelpers = $(helperXML).find("container");
-	    for (var i=0; i<tclHelpers.length; ++i) {
-		addTabFor(tclHelpers[i].attributes.type.value,
-			  tclHelpers[i].textContent);
-	    }
+    }
+    AddHelperHierarchy('right', helperElt);
+	    
+//	    tclHelpers = $(hlpDoc).find("container");
+//	    for (var i=0; i<tclHelpers.length; ++i) {
+//		addTabFor(tclHelpers[i].attributes.type.value,
+//			  tclHelpers[i].textContent);
+//	    }
 // resize in case rows of tabs have squeezed panes
-	    resize_notebook();
-// 	}); // GetXMLHelperSetup
+//	    resize_notebook();
+//	}); // GetXMLHelperSetup
+    ResizeAll();
 }
 
+function AddHelperHierarchy(win, xml) {
+    if (xml == undefined) return;
+	switch (xml.nodeName) {
+	case "container":
+	    if (setupHelperIn(win, xml.attributes.type.value,
+			      xml.textContent)) {
+		currentHelpers[win] = currentHelper;
+	    }
+	    break;
+	case "panedwindow":
+	    var panes = xml.children;
+	    if (panes.length == 1) {
+		AddHelperHierarchy(win, panes[0].children[0]);
+	    } else {
+		var splitList = [];
+		//buffer = document.createElement("div");
+		//buffer.id = win + '_bfr';
+		//buffer.style.width = buffer.style.height = '100%';
+		//$('#' + win)[0].appendChild(buffer);
+		var orient = xml.attributes.orient.value;
+		// work around bug
+		if (orient == 'horizontal') {
+		    axis = 'width';
+		} else {
+		    axis = 'height';
+		}
+		var buffer = $('#' + win)[0];
+		for (var j=0; j<panes.length; ++j) {
+		    if (panes[j].nodeName == "pane") {
+			var newChild = document.createElement("div");
+			var newId = win + "_pane" + tabCounter++;
+			newChild.setAttribute("id", newId);
+			// newChild.style.height = '100%';
+			newChild.className = "split split-" + orient;
+			buffer.appendChild(newChild);
+			splitList.push('#' + newId);
+			
+			AddHelperHierarchy(newId, panes[j].children[0]);
+		    }
+		}
+		
+		var adjust = function () {ResizeTree(win)};
+		//setTimeout(function () {
+		    Split(splitList, {
+		    direction: orient,
+		    minSize: 200,
+		    onDrag: adjust
+		    });
+		//}, 10);
+	    }
+	    break;
+	case "notebook":
+	    winGrp = $('#' + createNotebook(win));
+	    if (win == 'right') {
+		// top-level notebook, add model diagram tab!
+		var newId = new_tab(winGrp, "Model Diagram");
+		winGrp.tabs("option", "active", 0);
+		insert_helper(newId, "diagram");
+		currentHelpers[newId] = currentHelper;
+	    }
+	    var tabs = xml.children;
+	    for (var j=0; j<tabs.length; ++j) {
+		var newId = new_tab(winGrp, tabs[j].attributes.caption.value);
+		winGrp.tabs("option", "active", j+(win == 'right'));
+		AddHelperHierarchy(newId, tabs[j].children[0]);
+	    }
+	    winGrp.tabs("option", "active", 0);
+	    break;
+	default:
+	    console.log("Unknown XML element type:" + xml.nodeName);
+	}
+}
 /*
   Zoom now uses d3 sorcery
   function SvgDiagZoom(factor) {
@@ -420,6 +520,7 @@ function scaleTimes(tList, unit) {
 		     [modelInstance, tArr[i]*unit, i+1]);
     }
 }
+
 function js_from_tgts(note) {
     var allResults = {};
     for (var i=0; i<note.length;i++) {
@@ -441,6 +542,7 @@ function js_from_tgts(note) {
 
 var resetDepth = -2, savedStart = "stop";
 function model_reset() {
+    current = pipeBits.resetTo;
     if (savedStart == "run") {
 	savedStart = "stop";
 	return; // exec loop will exit and call this again
@@ -452,26 +554,26 @@ function model_reset() {
 			['number', 'number', 'number', 'number', 'number'],
 			[modelType, modelInstance, 0.0, 0, resetDepth]);
 
-//     $.ajax({
-// 	type: "POST",
-// 	url: "model_action.php",
-// 	data: { "base":fileBase, "act":"Reset",
-// 		"runlength":$("#rl").val()*timeUnit, 
-// 		"current":0, "step":scaleTimes($("#ts").val(),timeUnit),
-// 		"method":pipeBits.intMethod, "depth":resetDepth,
-// 		"note":JSON.stringify(note)}
-//     })
-// 	.done(function( initVals ) {
-    if (isFinite(savedStart)) { // model has been paused before run end
-	$("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
-		     -savedStart);
-    }
-    savedStart = "stop";
-    $("#ct").val(0);
-    $( "#progress" ).progressbar({ value: 0 });
+//    $.ajax({
+//	type: "POST",
+//	url: "model_action.php",
+//	data: { "base":fileBase, "act":"Reset",
+//		"runlength":$("#rl").val()*timeUnit, "current":current*timeUnit,
+//		"step":scaleTimes($("#ts").val(),timeUnit),
+//		"method":pipeBits.intMethod, "depth":resetDepth,
+//		"note":JSON.stringify(note)}
+//    })
+//	.done(function( initVals ) {
+	    if (isFinite(savedStart)) { // model has been paused before run end
+		$("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
+			     -savedStart);
+	    }
+	    savedStart = "stop";
+	    $("#ct").val(current);
+	    $( "#progress" ).progressbar({ value: 0 });
 
-    allResults = js_from_tgts(note);
-    update_helpers(0, allResults, false);
+            allResults = js_from_tgts(note);
+	    update_helpers(current, allResults, false);
     if (resetDepth == -2) {
 	createInitialHelpers();
     }
@@ -481,6 +583,7 @@ function model_reset() {
 var TEMPaimToStop = _malloc(8); // a double
 function model_step(current, start, end, span) {
     if (current >= end || savedStart != "run") {
+	// we are done, reset progress bar
 	goImage = document.getElementById("button_op");
 	goImage.src = "images/play.gif";
 	goImage.parentNode.onclick = function () { model_exec(); };
@@ -498,7 +601,7 @@ function model_step(current, start, end, span) {
 	savedStart = "stop";
     } else {
 	log = parseFloat($("#de").val());
-	interval = Math.min(end-current,log);
+	interval = Math.min(end-current,span);
 	newCurrent = current+interval;
 	newRemain = end-newCurrent;
 	setValue(TEMPaimToStop, newCurrent*timeUnit, 'double');
@@ -515,11 +618,11 @@ function model_step(current, start, end, span) {
 	    console.log("Stopped before", newCurrent, "at", halted);
 	}
 
-	// do next step after timeout so I can update the displays and have
-	// them actually show first
-	setTimeout(function () {
-	    model_step(newCurrent, start, end, span);
-	});
+// now, process the values while fetching the next lot (after timeout in case
+// still processing last lot)
+		setTimeout(function () {
+		    model_step(newCurrent, start, end, span);
+		});
 
 	// now... we have all the values in memory, but there is a wee overhead
 	// converting them to object -- so only do this where of interest...
@@ -581,15 +684,15 @@ function ofInterest() {
 var helperTitles = {"plot":"Plotter","table":"Data table",
 		    "sliders":"Input sliders","params":"File parameters",
 		    "shapes":"3-D shape viewer","grid":"Spatial grid",
-		    "polys":"Polygon map"},
+		    "polys":"Polygon map", "diagram":"Model Diagram"},
 tabTemplate = "<li><a href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
 tabCounter = 1;
 
-function new_tab(label) {
+function new_tab(tabs, label) {
     id = "tabs-" + tabCounter++,
     li = $( tabTemplate.replace( /#\{href\}/g, "#" + id ).replace( /#\{label\}/g, label ) ),
     tabs.find( ".ui-tabs-nav" ).append( li );
-    tabs.append( "<div id='" + id + "'></div>" );
+    tabs.append( "<div id='" + id + "' style='height:100%'></div>" );
     tabs.tabs( "refresh" );
     return(id);
 }
@@ -599,8 +702,19 @@ var currentHelper = null;
 var lastHelper = null;
 var lastIndex = null;
 function new_helper(type) {
-    var label = helperTitles[type];
-    id = new_tab(label);
+    id = add_tab($('#right_nb'), helperTitles[type]);
+    insert_helper(id, type);
+    currentHelpers[id] = lastHelper = currentHelper;
+}
+
+function add_tab(tabs, title) {
+    id = new_tab(tabs, title);
+    lastIndex = tabs.children().length - 2;
+    tabs.tabs("option", "active", lastIndex);
+    return id;
+}
+
+function insert_helper(id, type) {
     if (type == "params") {
 	currentHelper = new FileParams(id);
     } else if (type == "sliders") {
@@ -616,14 +730,13 @@ function new_helper(type) {
 	currentHelper = new Grid5(id);
     } else if (type == "polys") {
 	currentHelper = new Polygon(id);
+    } else if (type == "diagram") {
+	currentHelper = new ModelDiagram(id);
     }
-    currentHelpers[id] = lastHelper = currentHelper;
-    lastIndex = tabs.children().length - 2;
-    tabs.tabs("option", "active", lastIndex);
 }
-
+    
 function update_helpers(time, latest, connect) {
-//    console.log("Updating for time " + time);
+    console.log("Updating for time " + time);
     for (var id in currentHelpers) {
 	//	try {
 	currentHelpers[id].display(time, latest, connect);
@@ -667,7 +780,36 @@ function resize_notebook() {
 	}
     }
 }
-window.onresize = function() {resize_notebook()};
+
+function ResizeTree(win) {
+    console.log('Resizing ' + win);
+    if (win == "") return;
+    var holder = $('#' + win);
+    var leaf = currentHelpers[win];
+    if (leaf == undefined) {
+	var twigs = holder[0].children;
+	for (var i=0; i < twigs.length; ++i) {
+	    ResizeTree(twigs[i].id);
+	}
+    } else {
+	leaf.resize(holder.width(), holder.height());
+    }
+}
+
+//window.onresize = function() {resize_notebook()};
+function ResizeAll() {
+    for (var win in currentHelpers) {
+	holder = $('#' + win);
+	currentHelpers[win].resize(holder.width(), holder.height());
+    }
+}
+
+window.onresize = ResizeAll;
+
+function select_for(helperId, compId) {
+    currentHelper = currentHelpers[helperId];
+    currentHelper.acceptClick(compId);
+}
 
 function select_for_helper(compId) {
   if (currentHelper != null) {
@@ -717,7 +859,7 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 	max = model_json[id].max;
 	input.insertAdjacentHTML('beforebegin', min);
 	input.insertAdjacentHTML('afterend', max);
-	if (model_json[id].units == "REAL") {
+	if (model_json[id].type == "REAL") {
 	    input.setAttribute("min", 0);
 	    input.setAttribute("max", 1000);
 	} else {
@@ -759,7 +901,7 @@ function AddParamLineTo(parmTable, id, ParmTree, tool) {
 function GetSliderValue(widget) {
     //    widget = document.getElementById("rng_" + id);
     id = widget.id.substr(4);
-    if (model_json[id].units == "REAL") {
+    if (model_json[id].type == "REAL") {
 	return ((1000-widget.value)*model_json[id].min +
 		widget.value*model_json[id].max)/1000;
     } else {
@@ -768,7 +910,7 @@ function GetSliderValue(widget) {
 }
 
 function SetSliderValue(widget, id, value) {
-    if (model_json[id].units == "REAL") {
+    if (model_json[id].type == "REAL") {
 	widget.value = 1000*(value-model_json[id].min)
 	    /(model_json[id].max-model_json[id].min);
     } else {
@@ -806,6 +948,9 @@ function Sliders (port) {
 Sliders.prototype.display = function  (time, latest, connect) {
 }
 
+Sliders.prototype.resize = function(x,y) {
+}
+
 function FileParams (port) {
 // Call the parent constructor
 //   DisplayTool.call(this);
@@ -815,7 +960,7 @@ function FileParams (port) {
   this.status = "passive";
 // OK now add the table to the new tab
     $('#' + this.port).html("<table id='paramtab' border='2'></table><button type='button' onclick='loadParams()'>Load</button>");
-  parmTable = document.getElementById("paramtab");
+    parmTable = document.getElementById("paramtab");
   for (i=0;i<fvParms.length;i++) {
     id = fvParms[i];
     input = AddParamLineTo(parmTable, id, model_json[id].captpath, "entry");
@@ -828,6 +973,42 @@ FileParams.prototype.display = function  (time, latest, connect) {
 
 // FileParams.prototype = new DisplayTool(this);
 // FileParams.prototype.constructor = new FileParams;
+//args for poly: this.scaleGrp[0],this.scaleGrp[0],w,this.diagZoom
+function mapToScreen(object, eyepiece, w, action) {
+    bbox = object[0].getBBox();
+    // console.log(JSON.stringify(bbox));
+    if (bbox.width==0) return;
+    initScale = w/bbox.width;
+    action.translate([-initScale*bbox.x,-initScale*bbox.y])
+	.scale(initScale);
+    grpAttr = "translate("+-initScale*bbox.x+","+-initScale*bbox.y+
+	")scale("+initScale+","+initScale+")";
+    eyepiece[0].setAttribute("transform",grpAttr);
+}
+
+
+function ModelDiagram (port) {
+    this.port = port;
+
+    $('#' + port).html('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="' + port + '_diag" viewBox="0 0 800 800" width="800" height="800"> <use xlink:href="#mod_diag" transform="rotate(0)" x="0" y="0" width="800" height="800" /> </svg>');
+    
+    this.diagZoom = d3.behavior.zoom()
+	.on("zoom", function () {
+	    d3.select('#' + port + '_diag').select('use')
+		.attr("transform", "translate(" + d3.event.translate +
+		      ")scale(" + d3.event.scale + ")");
+	});
+    mapToScreen($('#mod_diag'), $('#' + port + '_diag').children(),
+		800, this.diagZoom);
+    d3.select('#' + port + '_diag').attr("class","pane").call(this.diagZoom);
+}
+
+ModelDiagram.prototype.display = function(time, latest, connect) {
+}
+
+ModelDiagram.prototype.resize = function(x, y) {
+    $('#' + this.port + '_diag').width(x).height(y);
+}
 
 // eventually this will inherit from a generic display tool class
 // (when such a thing works in JS)
@@ -860,7 +1041,7 @@ DataTable.prototype.acceptClick = function (compId) {
     newLine = {"time":now};
     this.cumData.push(newLine);
   }
-    newLine[compId] = js_from_local_model(compId, 1000000);
+  newLine[compId] = js_from_local_model(compId, 1000000);
   this.tgts.push(compId);
   this.columns.push({"sTitle":model_json[compId].text,"mData":compId,
 		     "sDefaultContent":"--"});
@@ -998,11 +1179,11 @@ PlotXY.prototype.acceptClick = function (compId) {
       this.status = "adding";
   } else { // no more clicks required
       ngap = 48;
-//      w = 800;
-      w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
-      //      h = 800
-      ;
-      h = notebookPaneHeight()-120;
+      // If setting up, window may not yet be drawn so redraw after to get dims
+      w = 800;
+      // w = parseInt(d3.select('#' + this.port).style('width'), 10)-ngap;
+      h = 800;
+      // h = $('#' + this.port).height()-120;
 
     if (compId == "clear") {
 	delete this.ymin;
@@ -1024,6 +1205,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	this.oldt = parseFloat($("#ct").val());
 	this.xval = 'time';
 	xAxisName = 'time';
+	compId = this.tgts[0]; // to add to yvals after getting data
     } else if (this.status == "adding") {
 	$('#' + this.port).find('#instruct').html(''); // delete message
 	this.tgts.push(compId);
@@ -1034,6 +1216,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	this.xval = compId;
 	//this.oldxs = flatten('t', JSON.parse(values_json[compId]));
 	xAxisName = model_json[compId].captpath;
+	compId = this.tgts[0]; // to add to yvals after getting data
     }
       totes = this.tgts.length;
       if (this.xval == 'time') {
@@ -1045,14 +1228,14 @@ PlotXY.prototype.acceptClick = function (compId) {
       for (var i=0; i<newComps.length; ++i) {
 	  responses.push(js_from_local_model(newComps[i], 1000000))
       }
-      addys = flatten('t', responses[0]);
-      if (this.xval == 'time') {
+		 addys = flatten('t', responses[0]);
+		 if (this.xval == 'time') {
 // oldys must become an array as maybe more than one var...
-	  this.oldys.push(addys);
-      } else {
-	  this.oldys = addys;
-	  this.oldxs = flatten('t', responses[1]);
-      }
+		     this.oldys.push(addys);
+		 } else {
+		     this.oldys = addys;
+		     this.oldxs = flatten('t', responses[1]);
+		 }
 		 
       if (this.xval == 'time') { // x axis is time
 	  if (this.status == "adding") {
@@ -1092,11 +1275,11 @@ PlotXY.prototype.acceptClick = function (compId) {
       this.lxAxis = xAxis;
       this.lyAxis = yAxis;
       this.line = gLine;
-    buttonFn = "select_for_helper('clear')";
+    buttonFn = "select_for('" + this.port + "','clear')";
     $('#' + this.port).html("<div id='Buttonbar'><button onclick=" + buttonFn
 			    + "><img src='images/new.gif'/></button></div>");
     if (compId == "time") {
-	buttonFn = "select_for_helper('add')";
+	buttonFn = "select_for('" + this.port + "','add')";
 	$('#' + this.port).find('#Buttonbar')
 	    .append("<button onclick=" + buttonFn
 		    + "><img src='images/add.gif'/></button><div id='instruct'></div>");
@@ -1157,8 +1340,7 @@ PlotXY.prototype.acceptClick = function (compId) {
           .attr("id", this.port + "_tt")
 	  .attr("class", "tooltip")               
 	  .style("opacity", 0);
-      
-      AdjustAxesFor(this, addys);
+
   }
 }
   
@@ -1186,7 +1368,7 @@ PlotXY.prototype.resize = function(x,y) {
 //      w = 800;
       w = x-ngap;
 //      h = 800;
-      h = y-120;
+      h = y-144;
     this.lx.range([ngap, w+ngap]);
     this.ly.range([0, h]);
     this.lxAxis.tickSize(-h);
@@ -1216,6 +1398,15 @@ function hoverInTrace(that, d) {
 	msg = "Time: " + bloc.seq;
     } else {
 	msg = model_json[bloc.seq].text;
+	units = model_json[bloc.seq].units;
+	if (isFinite(units)) {
+	    if (units == 1.0) {
+	    } else {
+		msg += " (x" + units + ")";
+	    }
+	} else {
+	    msg += " (" + units + ")";
+	}
     }
     inds = bloc.idxs.substr(0,bloc.idxs.length-2);
     if (inds.indexOf(",")>-1) {
@@ -1560,7 +1751,6 @@ function BuildBMHeader(depth, width, height) {
 }
 
 Polygon.prototype.acceptClick = function (nodeId) {
-    var that = this; // no chance..
     if (this.status == "initializing") {
 	this.tgts[0] = nodeId;
 	this.status = "getting_x_coords";
@@ -1570,8 +1760,26 @@ Polygon.prototype.acceptClick = function (nodeId) {
 	this.status = "getting_y_coords";
 	d3.select('#' + this.port + '_instruct').html("Select component with values for Y coordinates of verices");
     } else {
-	headerData = BuildBMHeader(8, 256, 16) + this.cMap;
+/*
+    headerData = 'GIF89a';
+    headerData += conv16(256);                  // image width
+    headerData += conv16(8);                  // image height
 
+    headerData += String.fromCharCode(0xf7, 0, 0);
+    // colour table, background colour, pixel aspect ratio
+
+    //black -> red -> white
+    headerData += this.cMap;
+
+    headerData += String.fromCharCode(0x2c); // image descriptor
+    headerData += conv16(0);                  // NW corner position of image
+    headerData += conv16(0);                  // in logical screen
+    headerData += conv16(256);                  // image width
+    headerData += conv16(8);                  // image height
+    headerData += String.fromCharCode(0, 8);
+*/
+	headerData = BuildBMHeader(8, 256, 16) + this.cMap;
+	
     keyDiv = document.createElement("div");
     keyDiv.style.width = "100%";
     this.lowLabel = document.createElement("label");
@@ -1600,16 +1808,11 @@ Polygon.prototype.acceptClick = function (nodeId) {
 	lookAt = [this.tgts[0],this.xpts,this.ypts];
 	newTitle = model_json[this.tgts[0]].text + ' -- polygon map';
 	$('#tabs a[href=#' + this.port + ']').text(newTitle);
-//	trytopost('model_action.php', {"base":fileBase, "act":"Query",
-//				    "note":JSON.stringify(lookAt)},
-//	   function(resp) {
-//	       responses = JSON.parse(resp);
 	responses = [];
 	for (var i=0; i<lookAt.length;++i) {
 	    responses.push(js_from_local_model(lookAt[i], 1000000))
 	}
-
-	       colScaler = 255/(that.top-that.bottom); 
+	       colScaler = 255/(this.top-this.bottom); 
 	       colours = flatten('m', responses[0]);
 	       for (var inds in colours) {
 		   indArr = inds.split(",");
@@ -1625,24 +1828,24 @@ Polygon.prototype.acceptClick = function (nodeId) {
 		   for (var j in yObj) {
 		       pts = pts + xObj[j] + "," + -yObj[j] + " ";
 		   }
-		   colFract = Math.floor((colours[inds]-that.bottom)*colScaler);
+		   colFract = Math.floor((colours[inds]-this.bottom)*colScaler);
 
 		   // OK now add the poligonnn
 
-		   colSpec = colorFrom(that.cMap, colFract);
-		   that.scaleGrp.append("polygon")
-		       .attr("id", that.port + niceInds).attr("points",pts)
+		   colSpec = colorFrom(this.cMap, colFract);
+		   this.scaleGrp.append("polygon")
+		       .attr("id", this.port + niceInds).attr("points",pts)
 		       .attr("fill",colSpec).attr("stroke","black")
 		       .attr("stroke-width",0);
 	       }
-	       bbox = that.scaleGrp[0][0].getBBox();
+	       bbox = this.scaleGrp[0][0].getBBox();
 	       // console.log(JSON.stringify(bbox));
 	       initScale = 800/bbox.width;
-	       that.diagZoom.translate([-initScale*bbox.x,-initScale*bbox.y])
+	       this.diagZoom.translate([-initScale*bbox.x,-initScale*bbox.y])
 		   .scale(initScale);
 	       grpAttr = "translate("+-initScale*bbox.x+","+-initScale*bbox.y+
 		   ")scale("+initScale+","+initScale+")";
-	       that.scaleGrp.attr("transform",grpAttr);
+	       this.scaleGrp.attr("transform",grpAttr);
 //	   }); // Query
     } 
 }
@@ -1655,8 +1858,23 @@ Polygon.prototype.resize = function (x, y) {
 //      w = 800;
       w = x-ngap;
 //      h = 800;
-      h = y-60-ngap;
+      h = y-100-ngap;
     d3.select('#' + this.port + '_diag').attr("width",w).attr("height",h);
+
+    // problem: getbbox returns 0s if diagram not visible
+    // -- so need to either raise any notebook tabs I am
+    // in, or do this inline -- works fine if done here!
+    if (this.scaleGrp.attr("transform") == null) {
+	bbox = this.scaleGrp[0][0].getBBox();
+	// console.log(JSON.stringify(bbox));
+	if (bbox.width==0) return;
+	initScale = w/bbox.width;
+	this.diagZoom.translate([-initScale*bbox.x,-initScale*bbox.y])
+	    .scale(initScale);
+	grpAttr = "translate("+-initScale*bbox.x+","+-initScale*bbox.y+
+	    ")scale("+initScale+","+initScale+")";
+	this.scaleGrp.attr("transform",grpAttr);
+    }
 }
 
 Polygon.prototype.display = function (time, latest, connect) {
@@ -1718,11 +1936,12 @@ Grid5.prototype.resize = function (x, y) {
 //      w = 800;
       w = x-ngap;
 //      h = 800;
-      h = y-60-ngap;
+      h = y-100-ngap;
     d3.select('#' + this.port + '_diag').attr("width",w).attr("height",h);
 }
 
 Grid5.prototype.acceptClick = function (nodeId) {
+    var that = this; // no chance..
     if (this.status == "initializing") {
 	this.tgts[0] = {"format":"binary","node":nodeId,
 			"bottom":this.minVal,"top":this.maxVal,
@@ -1742,7 +1961,7 @@ Grid5.prototype.acceptClick = function (nodeId) {
     } else if (this.status == "setting_aspect") {
 	// now we need to get the unique value count and the grid data, and
 	// draw once we have both...later...also how ro get n of values?
-// 	trytopost('model_action.php',
+// 	$.post('model_action.php',
 // 	       {"base":fileBase, "act":"Query",
 // 		"note":JSON.stringify({"node":nodeId, "format":"distinct"})},
 // 	       function(distCount) {
@@ -1762,11 +1981,6 @@ Grid5.prototype.acceptClick = function (nodeId) {
     newTitle = model_json[this.tgts[0].node].text + ' -- spatial grid';
     $('#tabs a[href=#' + this.port + ']').text(newTitle);
     note.push(this.tgts[0]);
-    
-//    trytopost('model_action.php', {"base":fileBase, "act":"Query",
-//				"note":JSON.stringify(note)},
-//	   function(resp) {
-//	       responses = JSON.parse(resp);
 
     responses = js_from_tgts(note);
 	       if (this.status == "setting_aspect") {
@@ -1776,67 +1990,21 @@ Grid5.prototype.acceptClick = function (nodeId) {
 	       } else {
 		   arrInd = 0;
 	       }
-	       // GIF header
-//	       data = 'GIF89a';
-//	       data += conv16(that.width);                  // image width
-//	       data += conv16(that.height);                  // image height
-	       
-//	       data += String.fromCharCode(0xf7, 0, 0);
-	       // colour table, background colour, pixel aspect ratio
-	       
     //BMP Header
     data = BuildBMHeader(8, this.width, this.height) + this.cMap;
-
-	       // now add a graphix control xtn to declare 00 transparent
-	       // data += String.fromCharCode(0x21, 0xf9, 0x04, 0x01,
-	// 				   0,0,0,0);
-	       // right that's 789 bits and we have 11 to go making 800 --
-	       // nice and round but we want a multiple of 3 to hit a
-	       // base64 char boundary, so add a comment extn to do it
-	       // data += String.fromCharCode(0x21, 0xfe, 9);
-	       // data += "SimiLive!";
-	       // data += String.fromCharCode(0);
-	       
-	       // data += String.fromCharCode(0x2c); // image descriptor
-	       // data += conv16(0);                 // NW corner position of image
-	       // data += conv16(0);                 // in logical screen
-	       // data += conv16(that.width);                  // image width
-	       // data += conv16(that.height);                  // image height
-	       ///data += String.fromCharCode(0, 8); //  no-local-colour-table,
-	       // lzw-minimum-code-size
-	       
 	       this.headerBMP = data;
 
 	       this.status = "displaying";
 	       d3.select('#' + this.port + '_img')
 		   .attr("width",this.width).attr("height",this.height)
-		   // .attr("transform","translate(0," + this.height + ")scale(1,-1)")
-	.attr("xlink:href",  'data:image/bmp;base64,' + btoa(this.headerBMP + responses[JSON.stringify(note[arrInd])]));
+		   .attr("xlink:href", 'data:image/bmp;base64,' + btoa(this.headerBMP + responses[JSON.stringify(note[arrInd])]));
 	       if (this.hex) {
 		   d3.select('#' + this.port + '_img')
 		       .attr("transform","scale(1.732,1.5)"); 
 	       }
-//	   }); // Query
 
     headerData = BuildBMHeader(8, 256, 16) + this.cMap;
 	       //black -> red -> white
-
-    // headerData = 'GIF89a';
-    // headerData += conv16(256);                  // image width
-    // headerData += conv16(8);                  // image height
-
-    // headerData += String.fromCharCode(0xf7, 0, 0);
-    // colour table, background colour, pixel aspect ratio
-
-    //black -> red -> white
-    // headerData += this.cMap;
-
-    // headerData += String.fromCharCode(0x2c); // image descriptor
-    // headerData += conv16(0);                  // NW corner position of image
-    // headerData += conv16(0);                  // in logical screen
-    // headerData += conv16(256);                  // image width
-    // headerData += conv16(8);                  // image height
-    // headerData += String.fromCharCode(0, 8);
 
     keyDiv = document.createElement("div");
     keyDiv.style.width = "100%";
@@ -1861,7 +2029,7 @@ Grid5.prototype.acceptClick = function (nodeId) {
     this.legend.src = 'data:image/bmp;base64,'
 	+ btoa(headerData + legenData);
     this.legend.alt = "Something has gone terrubly winf";
-    resize_notebook();
+//    resize_notebook();
 }
 
 function conv(size) {
@@ -1967,19 +2135,8 @@ PlotValAgainstTime.prototype.display = function (time, latest) {
 }
 */
 
+var needInput;
 function populateStructs() {
-
-// OK, now use AJAX to get a string of values
-
-//trytopost('model_action.php', { "base":fileBase, "act":"Describe"}, 
-//      function(data) {
-//
-//	  try {
-//	      model_json = JSON.parse(data);
-//	  } catch(err) {
-//	      console.log("Failed to parse: " + data);
-//	  }
-    
   /* NEW SECTION: Get and display metadata from the model */
   /********************************************************/
 
@@ -2057,7 +2214,7 @@ for (ncount=1; ncount<nodecount; ++ncount) {
 
 	       if ((model_json[id].eval == "INPUT" || 
 		    model_json[id].eval == "TABLE") &&
-		  model_json[id].units != "VALUELESS") {
+		     model_json[id].type != "VALUELESS") {
 		   fvParms.push(id);
 		  if (model_json[id].eval == "TABLE") {
 		      needInput = 1;
@@ -2079,18 +2236,6 @@ for (ncount=1; ncount<nodecount; ++ncount) {
 		   'data' : treeData
 	      }
 		      });
-// This will ultimately load the parameter file (if there is one) and
-// get a list of components that still need values, or have bad values,
-// for flagging in the parameter dialogue
-//	  trytopost('model_action.php', {"act":"LoadSPF", "base" : fileBase}, 
-//		 function(unfilled) {
-//console.log("Params needed: " + needInput + ", missing: " + unfilled);
-//		     if (needInput && JSON.parse(unfilled).length) {
-//			 new_helper("params");
-//		     }
-//		     model_reset();
-//		 }); // LoadSPF
-//      }); // Describe
 
     needInput = 0; // hopefully
 }
@@ -2223,8 +2368,39 @@ function sendValue(comp, value) {
 //   return 'Warning: model state will be lost if you leave the site!';
 // };
 // window.onunload = function(e) {
-//     trytopost('model_action.php', { "act":"Exit", "base":fileBase});
+//     $.post('model_action.php', { "act":"Exit", "base":fileBase});
 // };
+
+function createNotebook(handle) {
+    tabHdl = handle + "_nb";
+    d3.select('#' + handle).append("div")
+	.attr("id", tabHdl)
+	.attr("class", "ui-layout-center")
+	.style('height','100%')
+	.html('<ul></ul>');
+    tabs = $('#' + tabHdl);
+    tabs.tabs({heightstyle:"fill"});
+    tabs.tabs({
+	activate: function( event, ui ) {
+	    ResizeTree($(ui.newPanel.selector)[0].id);
+// 	    if (ui.newPanel.selector != "#tabs-0") { // diagram
+// 		lastHelper = currentHelper =
+// 		    currentHelpers[$(ui.newPanel.selector)[0].id];
+// 		lastIndex = tabs.tabs("option","active");
+// 	    } else {
+// 		currentHelper = null;
+// 	    }
+	}
+    });
+// close icon: removing the tab on click
+    tabs.delegate( "span.ui-icon-close", "click", function() {
+	var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
+	delete currentHelpers[panelId];
+	$( "#" + panelId ).remove();
+	tabs.tabs( "refresh" );
+    });
+    return tabHdl;
+}
 
 var pipeBits;
 
@@ -2429,6 +2605,19 @@ var fvHandles;
 var timeLib = {"second":1/86400,"minute":1/1440,"hour":1/24,"day":1,
 	       "unit":1,"week":7,"month":365/12,"year":365};
 function prepare() {
+    // set up splits
+    Split(['#Left', '#right'], {
+	sizes: [25, 75],
+	minSize: 250,
+	onDragEnd: ResizeAll
+    });
+
+    Split(['#topleft', '#explorer'], {
+	direction: 'vertical',
+	sizes: [25, 75],
+	minSize: 200
+    })
+
     // display the loading, please wait screen
     $( "#WaitDialog" ).dialog({
 	autoOpen: true,
@@ -2437,7 +2626,7 @@ function prepare() {
     });
     // remove the title bar
     $(".ui-dialog-titlebar").hide();
-
+    
   /* start by loading the dll with the constants and procedures it needs
    from the client */
 Module.ccall('proc_pointers_for_shank', 'number', ['number','number','number'],
@@ -2500,31 +2689,27 @@ if (modelInstance) {
     /* initialize it: last arg -2 means set all values, -1 means keep constants,
      0 means keep constants and fixed parameters,
      +ve values mean keep all the above plus state variables */
-
-    ModDiag = document.getElementById("mod_diag");
-    if (needInput) {
-	new_helper("params");
-	// resets model when params are loaded
-    } else {
-	model_reset();
-    }
-
-    // $.ajax({
-// 	type: "POST",
-// 	url: "model_action.php",
-// 	data: {"act" : "GetSVG",  "base" : fileBase}
-    // })
-    // .done (function(diagSVG) {
-    //   document.getElementById("holds_svg").innerHTML = diagSVG;
   
+	   $.ajax({
+	       type: "POST",
+	       url: "model_action.php",
+	       data: {"act" : "GetSVG",  "base" : fileBase}
+	   })
+	       .done (function(diagSVG) {
+		   svgDoc = document.createElement("div");
+		   svgDoc.innerHTML = diagSVG;
+		   document.firstChild.appendChild(svgDoc);
+		   // stick it where the sun don't shine
+		   
+    ModDiag = document.getElementById("mod_diag");
       diag_zoom = d3.behavior.zoom()
 	  .on("zoom", function () {
 	       d3.select('#mod_diag').select('g')
 		  .attr("transform", "translate(" + d3.event.translate +
 			")scale(" + d3.event.scale + ")");
 	  });
-      d3.select('#mod_diag').attr("class","pane").call(diag_zoom);
-      resize_notebook();
+      // d3.select('#mod_diag').attr("class","pane").call(diag_zoom);
+      // resize_notebook();
     all = ModDiag.getElementsByTagName("*");
     for(var i = 0; i < all.length; i++) {
       var element = all[i];
@@ -2535,13 +2720,19 @@ if (modelInstance) {
           addEltAction(element);
       }
     }
-  // }); // GetSVG
+    ModDiag.appendChild(tooltip_grp);
+
+    if (needInput) {
+	new_helper("params");
+	// resets model when params are loaded
+    } else {
+	model_reset();
+    }
+  }); // GetSVG
 
   // Create a path in SVG's namespace
   tooltip_grp = document.createElementNS(xmlns,'g');
-    ModDiag.appendChild(tooltip_grp);
-
-    tooltip_bd = document.createElementNS(xmlns,'rect');
+  tooltip_bd = document.createElementNS(xmlns,'rect');
   tooltip_bd.setAttribute("x", "12");
   tooltip_bd.setAttribute("y", "12");
   tooltip_bd.setAttribute("width", "24");
