@@ -232,7 +232,7 @@ if (isset($crmPath)) {
 // Now build the asm.js
 if (isset($_POST['client_exec'])) {
    $shlibName = pathinfo($base,PATHINFO_FILENAME);
-   $tculargs = array($simileLocn, $simileHome, $base, $shlibName);
+   $tculargs = array($simileLocn, $simileHome, $emPath, $base, $shlibName);
    $knob = popen($cgiRel . "/tcular_clexec.cgi " . implode($tculargs,
       " "), 'r');
    $pipe_contents = stream_get_contents($knob);

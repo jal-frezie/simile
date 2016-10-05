@@ -1341,6 +1341,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	  .attr("class", "tooltip")               
 	  .style("opacity", 0);
 
+      AdjustAxesFor(this, addys);
   }
 }
   
@@ -2197,7 +2198,7 @@ for (ncount=1; ncount<nodecount; ++ncount) {
 			   + class_strs[nd_class] + ".gif","text":txt,
 			   "captpath":cp,"equation":nd_eqn,
 			   "min":min, "max":max, "eval":eval_strs[evl],
-			   "units":type_strs[-type],"dims":dims};
+			   "type":type_strs[-type],"dims":dims};
 }
 
 // If there are file parameters, add a page to the tabbed notebook to display
