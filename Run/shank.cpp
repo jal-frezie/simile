@@ -2359,6 +2359,10 @@ int eval_from_nodlin(node_data_line* line) {
   return line->eval;
 }
 
+char* units_from_nodlin(node_data_line* line) {
+  return line->strings[2];
+}
+
 int* ds_from_nodvals(nodeValues* nodVals) {
   return nodVals->dimSpecs;
 }

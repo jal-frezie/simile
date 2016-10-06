@@ -2194,11 +2194,13 @@ for (ncount=1; ncount<nodecount; ++ncount) {
 			       [nodedata]);
     var evl = Module.ccall('eval_from_nodlin', 'number', ['number'],
 			       [nodedata]);
+    var us = Module.ccall('units_from_nodlin', 'string', ['number'],
+			       [nodedata]);
     model_json[nd_name] = {"parent":parentId,"icon":"images/"
 			   + class_strs[nd_class] + ".gif","text":txt,
 			   "captpath":cp,"equation":nd_eqn,
 			   "min":min, "max":max, "eval":eval_strs[evl],
-			   "type":type_strs[-type],"dims":dims};
+			   "units":us, "type":type_strs[-type],"dims":dims};
 }
 
 // If there are file parameters, add a page to the tabbed notebook to display

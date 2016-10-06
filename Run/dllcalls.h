@@ -358,6 +358,7 @@ EXTDEC double max_from_nodlin(node_data_line*);
 EXTDEC int class_from_nodlin(node_data_line*);
 EXTDEC int type_from_nodlin(node_data_line*);
 EXTDEC int eval_from_nodlin(node_data_line*);
+EXTDEC char* units_from_nodlin(node_data_line*);
 EXTDEC int* ds_from_nodvals(nodeValues*);
 EXTDEC void* ct_from_nodvals(nodeValues*);
 EXTDEC int size_from_sznptr(sizeAndPtr*);
