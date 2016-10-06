@@ -83,7 +83,7 @@ function binary_from_local(prolog, min, max) {
     var cols = getValue(ddims+4, 'i32');
     for (var i = 0; i < rows; ++i) {
 	for (var j = 0; j < cols; ++j) {
-	    if (model_json[prolog].units == "REAL") {
+	    if (model_json[prolog].type == "REAL") {
 		modelFloat = getValue(vals+8*(cols*i + j), 'double');
 	    } else {
 		modelFloat = getValue(vals+4*(cols*i + j), 'i32');
