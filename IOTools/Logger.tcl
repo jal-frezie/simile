@@ -21,6 +21,8 @@ class similescript::$newHelperClass {
 	global SIMILE_PATH
         set useNodes(removeImg) \
 	    [image create photo -file "$SIMILE_PATH/Images/Toolbar/remove.gif"]
+        set useNodes(multiFileImg) \
+	    [image create photo -file "$SIMILE_PATH/Images/Toolbar/multi.gif"]
 	set toolbarItems \
                 [list [list new.gif "Clear" [code $this Clear]] \
                 [list add.gif "Add variables" \
@@ -92,7 +94,7 @@ class similescript::$newHelperClass {
 
     public method PrepareSaveString {} {
 	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[$this info class]\">\n"
-	set shfPath $::chosenPaths(.shf,[$modelInst cget -modelNode])
+	set shfPath [GetPathChoice .shf [$modelInst cget -modelNode]]
 	if {[catch {::fileutil::relative $shfPath $curFolder} relFolder]} {
 	    puts $relFolder
 	    set tdLine "<target_dir mode=\"absolute\">$curFolder</target_dir>\n"
