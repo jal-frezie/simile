@@ -996,10 +996,11 @@ proc DeDot {cb} {
     return [string map {. dot do dodo} $cb]
 }
 
+if {!$headless} {
 ### replace toplevel window for combobox with a placed frame to avoid 
 ### Mac crash if at -ve coords
 
-bind ComboboxListbox <FocusOut>		{ ttk::combobox::LBCancel %W }
+bind ComboboxListbox <FocusOut>		{ttk::combobox::LBCancel %W }
 
 namespace eval ::ttk::combobox {
     foreach cbProc {PopdownToplevel PlacePopdown PopdownWindow \
@@ -1090,4 +1091,5 @@ namespace eval ::ttk::combobox {
 	set tail [string range $w [string first . $w 1]+1 end]
 	return [string map {dodo do dot .} $tail] ;# ReDot
     }
+}
 }

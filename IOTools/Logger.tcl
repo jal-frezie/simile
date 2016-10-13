@@ -100,6 +100,7 @@ class similescript::$newHelperClass {
 	    set tdLine "<target_dir mode=\"absolute\">$curFolder</target_dir>\n"
 	} else {
 	    set tdLine "<target_dir mode=\"relative\">$relFolder</target_dir>\n"
+	    # will be wrong if modeller changes directory when saving .shf
 	}
 	append State $tdLine
 	append State "<to_separate_files whether=\"$toSeparateFiles\"/>\n"
@@ -306,12 +307,7 @@ class similescript::$newHelperClass {
 	    target_dir {
 		if {$useNodes(fileMode) eq "relative"} {
 		    set node [$modelInst cget -modelNode]
-		    set shfPath [file dirname $::helperTable($node,stateName)]
-		    # above may not be updated before saving .shf to
-		    # new location, so use chosen path when saving --
-		    # and set it here in case modeller saves to same
-		    # location in which case no path is chosen
-		    set ::chosenPaths(.shf,$node) $shfPath
+		    set shfPath [GetPathChoice .shf $node]
 		    SetSavePathTo [file normalize \
 				       [file join $shfPath $contents]]
 		    #puts "joined $shfPath and $contents to get $curFolder"
