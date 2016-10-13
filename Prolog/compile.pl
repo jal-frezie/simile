@@ -1501,7 +1501,7 @@ things that need to be evaluated in the model and turns them into a
 list of 'make' functions which include information about how to order
 the actions corresponding to them.*/
 
-get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
+get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	       DestPath, SmStep, Swaps, ExtInters, Used, Inters, Assignments) :-
 /* Only make assignments for functions, for now, and
 	    Do not make an assignment if we are expecting one on init/reset
@@ -1585,17 +1585,17 @@ get_assignment(instance(Type, Node, Source, DestRef, Unit-DimTypes),
 	    (Base = boolean -> Num = choose(TriggerEqn,1,0); Num = TriggerEqn),
 	    instance'><'sum_dims(TriggerEqnDims, Num, EnableEqn),
 	    
-	    (Unit = boolean -> Inactive = '"false"' ; Inactive = 0),
+	    % (Unit = boolean -> Inactive = '"false"' ; Inactive = 0),
 	    SourceItem = trigger_magnitude(''),
 	    (ActEqn = after(Wait, Eqn, Pipe) ->
 	        Made = for_next_time(Dest),
 	        UseList = [Dest | RefList],
 	        GroundEqn = delay_for(Pipe, Wait, (SourceItem=TriggerEqn,
 						   choose(EnableEqn '!=' 0,
-							  Eqn, Inactive)));
+							  Eqn, default(Eqn))));
 	    UseList = RefList,
 	      GroundEqn = (SourceItem=TriggerEqn,
-			     choose(EnableEqn '!=' 0, ActEqn, Inactive)));
+			   choose(EnableEqn '!=' 0, ActEqn, default(ActEqn))));
 	  % if using 'happens', make sure it stays out of update phase
 	  (SourceEqn = with_phase(SmStep, _EvtElts, GroundEqn);
 	    SourceEqn = al_spec(LoopExit, EvtConds, LoopStart),

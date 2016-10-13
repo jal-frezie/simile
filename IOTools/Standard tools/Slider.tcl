@@ -209,7 +209,9 @@ namespace eval slide139 {
 #                    ::ttk::menubutton $f.combo -menu $bxMenu
 #                    $bxMenu invoke [expr $defVal-1]
 		    ttk::combobox $f.combo -values $possVals -state readonly
-		    $f.combo current [expr $defVal-1]
+		    if {$defVal} {
+			$f.combo current [expr $defVal-1]
+		    }
 		    bind $f.combo <<ComboboxSelected>> [namespace code \
 			[list SetChoiceNumber $f.combo $node $fixed $live]]
                     pack $f.combo -side right -fill x -expand true
@@ -304,7 +306,9 @@ namespace eval slide139 {
 #                        $bxMenu invoke [expr $defVal-1]
 			ttk::combobox $f.elt$index.c -values $possVals \
 			    -state readonly
-			$f.elt$index.c current [expr $defVal-1]
+			if {$defVal} {
+			    $f.elt$index.c current [expr $defVal-1]
+			}
 			bind $f.elt$index.c <<ComboboxSelected>> \
 			    [namespace code [list SetChoiceNumber \
 						 $f.elt$index.c \
