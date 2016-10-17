@@ -116,13 +116,11 @@ purge_graphics(Model, Prev, LostExtents, Redrawn) :-
 
 finish_move(EditedModel, ChangeExec) :-
 	\+ anything_done, !;
-	(m_update'><'contains(Model, EditedModel),
-	 set_save_status(Model, risky),
-	 fail;
-	 true),
+	m_update'><'contains(Model, EditedModel),
+	set_save_status(Model, risky),
 	(ChangeExec = 0;
 	 ChangeExec = 1,
-	    m_update'><'add_parameter(EditedModel, 1, c_new, 0)),
+	 m_update'><'add_parameter(Model, 1, c_new, 0)),
 	/* Only proceed for toplevel window containing model */
 	is_toplevel(Model),
 	(ChangeExec = 0;
