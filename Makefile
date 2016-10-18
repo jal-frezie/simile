@@ -202,11 +202,11 @@ UINFO_TPL=userinfo.tpl
 # In separate steps with database
 $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
 	gplc --no-top-level -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) \
-		-L '$(OPT)'
+		-L '$(CFLAGS)'
 $(PROLOG_OBJ): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
-	cd Prolog; gplc -o ../$(PROLOG_OBJ) -c gmain.pl; cd ..
+	cd Prolog; gplc -o ../$(PROLOG_OBJ) -c -A '$(CFLAGS)' gmain.pl; cd ..
 $(PROLOG_DB): Prolog/struct_db.c
-	cd Prolog; gplc -c -C '$(OPT) -D_GNU_PROLOG' \
+	cd Prolog; gplc -c -C '$(CFLAGS) -D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB) struct_db.c; cd ..
 endif
 
