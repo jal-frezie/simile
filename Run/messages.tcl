@@ -646,6 +646,9 @@ set msgs(blind_add_detail) [tr. {Check 'Show detail' settings, and whether paren
 set msgs(blind_add_full) [tr. {You tried to add a %1$s at depth %2$s.}]
 
 
+set msgs(invisible_caption_title) [tr. {Problem renaming component}]
+set msgs(invisible_caption_message) [tr. {Component %1$s cannot be renamed to an empty string or one consisting only of whitespace.}]
+
 set msgs(caption_clash_title) [tr. {Problem renaming component}]
 set msgs(caption_clash_message) [tr. {Component %1$s cannot be renamed %2$s.}]
 set msgs(caption_clash_detail) [tr. {The parent model of %1$s already contains a component called %2$s.}]

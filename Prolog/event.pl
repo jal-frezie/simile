@@ -717,7 +717,11 @@ finish_old_edit(NextEdit) :-
 		(Name = OldName, !;
 		    /* If name exists in submodel or contains dir chars,
 		    block the update show message and highlight the node again */
-		    (cannot_call_in(RenamedNode, Parent, Name),
+		 (output'><'safe_list(Name, SafeName),
+		  output'><'safe_tcl_eval([string, is, space, SafeName], "1"),
+		  	query(invisible_caption(OldName), warning, top,
+			      [ok], _);
+		     cannot_call_in(RenamedNode, Parent, Name),
 			query(caption_clash(OldName, Name), warning, top,
 			      [ok], _);
 		    \+ RenamedNode is_of_sort no_properties,

@@ -68,6 +68,7 @@ itcl::class similescript::$newHelperClass {
 	$winId.m add command -label "Line" -command "$this AddItem lines"
 	$winId.m add command -label "Polygon" -command "$this AddItem polygons"
 	$winId.m add command -label "Ellipse" -command "$this AddItem ellipses"
+	$winId.m add command -label "Surface" -command "$this AddItem surface"
 	# $winId.m add command -label "Old Ellipse" -command "$this AddItem oldellipses"
 	pack [::ttk::menubutton $winId.buttons.mb -text "Select new item type" \
 		  -menu $winId.m]
@@ -128,7 +129,13 @@ itcl::class similescript::$newHelperClass {
 			  {component "Y rotations"} \
 			  {component "Z rotations"} \
 			  {colour FRONT} \
-			  {colour BACK}}}
+			  {colour BACK}}
+		 surface {{type "Select new item type"} \
+			  {component "node X positions"} \
+			  {component "node Y positions"} \
+			  {component "node Z positions"} \
+			  {colour outline} \
+			  {colour fill}}}
 	set template $all_templates($type)
 	MakeSelection $type
     }
@@ -323,6 +330,31 @@ itcl::class similescript::$newHelperClass {
 			} else {
 			    lappend upper $op
 			}
+		    }
+		} surface {
+		    foreach {var posn} {x 1 y 2 z 3} {
+			set $var [lindex [$modelInst GetValue \
+					      [lindex $instruct $posn]] 0]
+		    }
+		    set bx [lindex $x 1]
+		    set by [lindex $y 1]
+		    set bz [lindex $z 1]
+		    for {set u 3} {$u < [llength $z]} {incr u 2} {
+			set fx [lindex $x $u]
+			set fy [lindex $y $u]
+			set fz [lindex $z $u]
+			for {set v 3} {$v < [llength $fz]} {incr v 2} {
+			    set op [list polygon [expr $u/2],[expr $v/2] \
+					[list [lindex $bx $v-2] [lindex $by $v-2] [lindex $bz $v-2]] \
+					[list [lindex $bx $v] [lindex $by $v] [lindex $bz $v]] \
+					[list [lindex $fx $v] [lindex $fy $v] [lindex $fz $v]] \
+					[list [lindex $fx $v-2] [lindex $fy $v-2] [lindex $fz $v-2]] \
+					[lindex $instruct 4] [lindex $instruct 5]]
+                            lappend upper $op
+			}
+			set bx $fx
+			set by $fy
+			set bz $fz
 		    }
 		}
 	    }
