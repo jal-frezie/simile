@@ -191,6 +191,7 @@ function AddItem (that, type) {
 				   ["colour","back"]]};
     that.template = allTemplates[type];
     that.newComps = [];
+    currentHelper = currentHelpers[that.port];
     MakeSelection(that, type);
 }
 

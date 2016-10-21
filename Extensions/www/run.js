@@ -1130,11 +1130,11 @@ function flatten_to_array(head,ob) {
     var result = {};
 
     for (var neck in ob) {
-	if (typeof (neck) != "object") {
+	if (typeof (ob[neck]) != "object") {
 	    result[head] = ob;
 	    return result;
 	}
-	var iny = flatten(head, ob[neck]);
+	var iny = flatten_to_array(head, ob[neck]);
 	for (var item in iny) {
 	    result[neck + ',' + item] = iny[item];
 	}
