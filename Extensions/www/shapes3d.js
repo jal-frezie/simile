@@ -132,8 +132,8 @@ function ShowMenuButton (that) {
     <li id='lines'><a href='javascript:void(0);'>Line</a></li>\
     <li id='polygons'><a href='javascript:void(0);'>Polygon</a></li>\
     <li id='lollipops'><a href='javascript:void(0);'>Lollipop</a></li>\
-    <hr>\
     <li id='ellipses'><a href='javascript:void(0);'>Ellipse</a></li>\
+    <li id='surface'><a href='javascript:void(0);'>Surface</a></li>\
   </ul>");
     
     $(dropHandle).jui_dropdown({
@@ -188,7 +188,9 @@ function AddItem (that, type) {
 				   ["component","Y rotations"],
 				   ["component","Z rotations"],
 				   ["colour","front"],
-				   ["colour","back"]]};
+				    ["colour","back"]],
+			"surface":[["type","Select new item type"],
+				   ["colour", "surface"]]};
     that.template = allTemplates[type];
     that.newComps = [];
     currentHelper = currentHelpers[that.port];
@@ -459,7 +461,41 @@ Shapes3D.prototype.display = function (time, latest, connect) {
 		this.scene.add(circle);
 	    }
 	    break;
+	case "surface":
+	    this.scene.remove(instruct[2]);
+	    fC = new THREE.Color(parseInt('0x' + instruct[1]));
+	    // "wireframe texture"
+	    var wireTexture = new THREE.ImageUtils.loadTexture( 'images/square.png' );
+	    wireTexture.wrapS = wireTexture.wrapT = THREE.RepeatWrapping; 
+	    wireTexture.repeat.set( 40, 40 );
+	    wireMaterial = new THREE.MeshBasicMaterial( { map: wireTexture, vertexColors: THREE.VertexColors, side:THREE.DoubleSide } );
+	    wireMaterial.map.repeat.set( 25, 40 );
+	
+	    
+	    meshFunction = function(u0, v0) 
+	    {
+		var x = 100*u0-50;
+		var y = 100*v0-50;
+		var z = 10*Math.sin(10*(u0*u0+v0*v0));
+		return new THREE.Vector3(x, z, y);
+	    };
+	
+	    graphGeometry = new THREE.ParametricGeometry( meshFunction, 25, 40, true );
+	    for ( var i = 0; i < graphGeometry.faces.length; i++ ) 
+	    {
+		face = graphGeometry.faces[ i ];
+		numberOfSides = ( face instanceof THREE.Face3 ) ? 3 : 4;
+		for( var j = 0; j < numberOfSides; j++ ) 
+		{
+		    face.vertexColors[ j ] = fC;
+		}
+	    }
 
+	    graphMesh = new THREE.Mesh( graphGeometry, wireMaterial );
+	    graphMesh.doubleSided = true;
+	    this.scene.add(graphMesh);
+	    instruct[2] = graphMesh;
+	    break;
 	default:
 	    alert("Unrecognized item type: " + instruct[0]);
 	}
