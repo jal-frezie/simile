@@ -1236,7 +1236,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 		     this.oldys = addys;
 		     this.oldxs = flatten('t', responses[1]);
 		 }
-		 
+
       if (this.xval == 'time') { // x axis is time
 	  if (this.status == "adding") {
 	      this.status = "displaying";

@@ -355,7 +355,8 @@ Shapes3D.prototype.display = function (time, latest, connect) {
 	    instruct[6] = {};
 	    defns = {};
 	    for (i=1;i<4;++i) {
-		defns[["n","xs","ys","zs"][i]] = latest[instruct[i]];
+		defns[["n","xs","ys","zs"][i]] =
+		    flatten_to_array("p", latest[instruct[i]]);
 	    }
 	    nC = parseInt('0x' + instruct[4]);
 	    eC = parseInt('0x' + instruct[5]);
