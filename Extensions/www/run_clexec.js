@@ -1,4 +1,6 @@
-	$(function() {
+var runningInClient = true;
+
+$(function() {
 		
 	    $( "#button" ).button();
 	    $( "#radioset" ).buttonset();
@@ -257,6 +259,7 @@ function setupHelperIn(win, species, textContent) {
 	insert_helper(win, "shapes");
 	var i=3;
 	currentHelper.State = [];
+	lolliCount = 0;
 	while (specArray[i] != "/annotation/") {
 	    template = ["lollipops"];
 	    newComps = [];

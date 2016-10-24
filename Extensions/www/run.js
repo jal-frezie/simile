@@ -1,4 +1,6 @@
-	$(function() {
+var runningInClient = false;
+
+$(function() {
 		
 	    $( "#button" ).button();
 	    $( "#radioset" ).buttonset();
@@ -201,6 +203,7 @@ function setupHelperIn(win, species, textContent) {
 	insert_helper(win, "shapes");
 	var i=3;
 	currentHelper.State = [];
+	lolliCount = 0;
 	while (specArray[i] != "/annotation/") {
 	    template = ["lollipops"];
 	    newComps = [];
@@ -465,7 +468,7 @@ function scaleTimes(tList, unit) {
     }
     return cArr.join(" ");
 }
-
+/* would need synchronous access if was ever going to work
 function js_from_tgts(newComps) {
     var newData = {};
     $.post('model_action.php', {"base":fileBase, "act":"Query",
@@ -480,7 +483,7 @@ function js_from_tgts(newComps) {
  	   }); // Query
     return newData;
 }
-
+*/
 var resetDepth = -2, savedStart = "stop";
 function model_reset() {
     current = pipeBits.resetTo;

@@ -110,6 +110,7 @@ function Shapes3D (port) {
 		renderer.render(scene, camera);
 		that.updated = false;
 	    }
+
 	controls.update();
     };
     var waggle = function() {
@@ -190,7 +191,11 @@ function AddItem (that, type) {
 				   ["colour","front"],
 				    ["colour","back"]],
 			"surface":[["type","Select new item type"],
-				   ["colour", "surface"]]};
+				   ["component","node X positions"],
+				   ["component","node Y positions"],
+				   ["component","node Z positions"],
+				   ["colour", "outline"],
+				   ["colour", "fill"]]};
     that.template = allTemplates[type];
     that.newComps = [];
     currentHelper = currentHelpers[that.port];
@@ -199,27 +204,26 @@ function AddItem (that, type) {
 
 function AddTemplateToScene (that, template, newComps) {
     template.push({}); // new empty display object list
-    var newData = js_from_tgts(newComps);
-//      for (var i=0; i<newComps.length; ++i) {
-//	  newDataArr.push(js_from_local_model(newComps[i], 1000000))
-//      }
-//     $.post('model_action.php', {"base":fileBase, "act":"Query",
-// 				"note":JSON.stringify(newComps)},
-// 	   function(newDataCode) {
-	       oldState = that.State;
-	       that.State = [template]; // New items only
-	       
-// 	       newDataArr = JSON.parse(newDataCode);
-//	       newData = {};
-//	       for (j=0; j<newComps.length; ++j) {
-//		   nItm = newComps[j]
-//		   newData[nItm] = newDataArr[j];
-		   // do not use popups they may be incomplete
-//	       }
-	       that.display(parseFloat($("#ct").val()),newData,false),
-	       that.State = oldState;
-	       that.State.push(template);
-// 	   }); // Query
+
+    if (runningInClient) {
+    // for client model execution
+	var newData = js_from_tgts(newComps);
+	that.displayOne(template, newData);
+    } else {
+	$.post('model_action.php', {"base":fileBase, "act":"Query",
+				    "note":JSON.stringify(newComps)},
+ 	       function(newDataCode) {
+		   newDataArr = JSON.parse(newDataCode);
+ 		   newData = {};
+ 		   for (j=0; j<newComps.length; ++j) {
+ 		       nItm = newComps[j]
+ 		       newData[nItm] = newDataArr[j];
+		       // do not use popups they may be incomplete
+		   }
+		   that.displayOne(template, newData);
+	       });
+    }
+    that.State.push(template);
 }
 
 function MakeSelection (that, selected) {
@@ -272,11 +276,17 @@ Shapes3D.prototype.acceptClick = function (compId) {
 
 Shapes3D.prototype.display = function (time, latest, connect) {
     lolliCount = 0;
-    lolliCols = [0x00ff00, 0xf1da7e, 0x36b694, 0xec9844, 0x94a646, 0xd9d095];
     // now add new ones
-    for (j=0; j<this.State.length; ++j) {
-	instruct = this.State[j];
-	switch (instruct[0]) {
+    for (var j=0; j<this.State.length; ++j) {
+	this.displayOne(this.State[j], latest);
+    }
+    this.updated = true;
+}
+
+var lolliCount;
+Shapes3D.prototype.displayOne = function(instruct, latest) {
+    var lolliCols = [0x00ff00, 0xf1da7e, 0x36b694, 0xec9844, 0x94a646, 0xd9d095];
+    switch (instruct[0]) {
 	case "spheres":
 	    // first remove old items
 	    for (var old in instruct[6]) {
@@ -462,47 +472,56 @@ Shapes3D.prototype.display = function (time, latest, connect) {
 	    }
 	    break;
 	case "surface":
-	    this.scene.remove(instruct[2]);
-	    fC = new THREE.Color(parseInt('0x' + instruct[1]));
+	    this.scene.remove(instruct[6]);
+	    fC = new THREE.Color(parseInt('0x' + instruct[5]));
 	    // "wireframe texture"
 	    var wireTexture = new THREE.ImageUtils.loadTexture( 'images/square.png' );
 	    wireTexture.wrapS = wireTexture.wrapT = THREE.RepeatWrapping; 
 	    wireTexture.repeat.set( 40, 40 );
-	    wireMaterial = new THREE.MeshBasicMaterial( { map: wireTexture, vertexColors: THREE.VertexColors, side:THREE.DoubleSide } );
+	    wireMaterial = new THREE.MeshBasicMaterial( { color: parseInt('0x' + instruct[4]), map: wireTexture, vertexColors: THREE.VertexColors, side:THREE.DoubleSide } );
 	    wireMaterial.map.repeat.set( 25, 40 );
-	
-	    
+
+	    this.latestXs = latest[instruct[1]];
+	    this.latestYs = latest[instruct[2]];
+	    this.latestZs = latest[instruct[3]];
+
+	    var outerKeys = Object.keys(this.latestZs);
+	    this.outerDim = outerKeys.length;
+	    var innerKeys = Object.keys(this.latestZs[outerKeys[0]]);
+	    this.innerDim = innerKeys.length;
+
+	    that = this; // for use inside function
 	    meshFunction = function(u0, v0) 
 	    {
-		var x = 100*u0-50;
-		var y = 100*v0-50;
-		var z = 10*Math.sin(10*(u0*u0+v0*v0));
+		var u = (Math.round(u0*(that.outerDim-1))+1).toString();
+		var v = (Math.round(v0*(that.innerDim-1))+1).toString();
+		var x = that.latestXs[u][v];
+		var y = that.latestYs[u][v];
+		var z = that.latestZs[u][v];
 		return new THREE.Vector3(x, z, y);
 	    };
 	
-	    graphGeometry = new THREE.ParametricGeometry( meshFunction, 25, 40, true );
-	    for ( var i = 0; i < graphGeometry.faces.length; i++ ) 
+	    graphGeometry = new THREE.ParametricGeometry( meshFunction, this.outerDim-1, this.innerDim-1, true );
+	    for ( var mi = 0; mi < graphGeometry.faces.length; mi++ ) 
 	    {
-		face = graphGeometry.faces[ i ];
+		face = graphGeometry.faces[ mi ];
 		numberOfSides = ( face instanceof THREE.Face3 ) ? 3 : 4;
-		for( var j = 0; j < numberOfSides; j++ ) 
+		for( var mj = 0; mj < numberOfSides; mj++ ) 
 		{
-		    face.vertexColors[ j ] = fC;
+		    face.vertexColors[ mj ] = fC;
 		}
 	    }
 
 	    graphMesh = new THREE.Mesh( graphGeometry, wireMaterial );
 	    graphMesh.doubleSided = true;
 	    this.scene.add(graphMesh);
-	    instruct[2] = graphMesh;
+	    instruct[6] = graphMesh;
 	    break;
 	default:
 	    alert("Unrecognized item type: " + instruct[0]);
 	}
     }
-    this.updated = true;
-}
-
+    
 Shapes3D.prototype.resize = function (x,y) {
     this.renderer.setSize(x-50, y-120);
 }
