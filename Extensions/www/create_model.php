@@ -264,6 +264,7 @@ if (isset($_POST['client_exec'])) {
   echo "<script src='run.js'></script>";
 }
 ?>
+<script src='slider.js'></script>
 <script src='shapes3d.js'></script>
 </head>
 <body onload="prepare()">

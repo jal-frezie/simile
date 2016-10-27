@@ -484,8 +484,8 @@ function js_from_tgts(newComps) {
     return newData;
 }
 */
-var resetDepth = -2, savedStart = "stop";
-function model_reset() {
+var savedStart = "stop";
+function model_reset(resetDepth) {
     current = pipeBits.resetTo;
     if (savedStart == "run") {
 	savedStart = "stop";
@@ -534,7 +534,6 @@ function model_reset() {
 			   // restore title bar for file param dialogues
 			   $(".ui-dialog-titlebar").show();
 		       }
-		       resetDepth = 0;
 		   }); // Report
 	}); // Reset
 }
@@ -551,7 +550,7 @@ function model_step(current, start, end, span) {
 	goImage.parentNode.onclick = function () { model_exec(); };
 	if (savedStart == "stop") { // reset selected during run
 	    savedStart = start;
-	    model_reset();
+	    model_reset(0);
 	    return;
 	}
 	if (current < end) {
@@ -824,140 +823,11 @@ function HtmlEncode(s)
   return s;
 }
 
-function AddParamLineTo(parmTable, id, ParmTree, tool) {
- divis = ParmTree.indexOf("/", 1);
- if (divis>-1) {
-    subParm = ParmTree.slice(1, divis);
-    rows = $(parmTable).children("TBODY").children("[name='" + subParm + "']");
-    if (rows.length) {
-      cell = rows[0].firstChild;
-      subParmTable = cell.firstChild;
-    } else {
-      row = parmTable.insertRow(-1);
-      hdr = document.createElement('th');
-      row.appendChild(hdr);
-      if (tool == "slider") {
-	  tabWidth = 3;
-      } else {
-	  tabWidth = 2;
-      }
-      hdr.colSpan = tabWidth;
-      hdr.innerHTML = subParm;
-      row = parmTable.insertRow(-1);
-	row.setAttribute("name",subParm);
-      cell = row.insertCell(-1);
-      cell.colSpan = tabWidth;
-      subParmTable = document.createElement("TABLE");
-      subParmTable.setAttribute("border", 2);
-      cell.appendChild(subParmTable);
-    }
-    return AddParamLineTo(subParmTable, id, ParmTree.slice(divis), tool);
-  } else {
-    row = parmTable.insertRow(-1);
-    cell = row.insertCell(-1);
-    label = document.createElement("LABEL");
-    cell.appendChild(label);
-    label.innerHTML = ParmTree.slice(1);
-    cell = row.insertCell(-1);
-    input = document.createElement("INPUT");
-    cell.appendChild(input);
-    if (tool == "slider") {
-	min = model_json[id].min;
-	max = model_json[id].max;
-	input.insertAdjacentHTML('beforebegin', min);
-	input.insertAdjacentHTML('afterend', max);
-	if (model_json[id].type == "REAL") {
-	    input.setAttribute("min", 0);
-	    input.setAttribute("max", 1000);
-	} else {
-	    input.setAttribute("min", min);
-	    input.setAttribute("max", max);
-	}
-	cell = row.insertCell(1);
-	monitor = document.createElement("INPUT");
-	monitor.setAttribute("type", "text");
-	monitor.onkeydown = function (e) {
-	    var evt = e || window.event;
-	    // "e" is the standard behavior (FF, Chrome, Safari, Opera),
-	    // while "window.event" (or "event") is IE's behavior
-	    if ( evt.keyCode === 13 ) {
-		id = evt.target.id.substr(4);
-		slider = document.getElementById("rng_" +id);
-		SetSliderValue(slider, id, evt.target.value);
-		toModel(slider, id);
-	    }
-	};
-        uniq = 'mtr_' + id;
-	monitor.setAttribute("id", uniq);
-	cell.appendChild(monitor);
-
-	input.setAttribute("type", "range");
-	monitor.value = values_json[id];
-	SetSliderValue(input, id, monitor.value);
-        cb = new Function("zap", "transfer(zap.target, '" + uniq + "');");
-	input.addEventListener("input", cb);
-	cb = new Function("zap", "toModel(zap.target, '" + id + "');");
-	input.addEventListener("change", cb);
-    } else {
-	input.setAttribute("type", "text");
-    }
-    return input;
-  }
-}      
-
-function GetSliderValue(widget) {
-    //    widget = document.getElementById("rng_" + id);
-    id = widget.id.substr(4);
-    if (model_json[id].type == "REAL") {
-	return ((1000-widget.value)*model_json[id].min +
-		widget.value*model_json[id].max)/1000;
-    } else {
-	return widget.value;
-    }
-}
-
-function SetSliderValue(widget, id, value) {
-    if (model_json[id].type == "REAL") {
-	widget.value = 1000*(value-model_json[id].min)
-	    /(model_json[id].max-model_json[id].min);
-    } else {
-	widget.value = value;
-    }
-}
-
-function transfer(zapTgt, entry) {
-//    alert("zap " + zapTgt + " entry " + entry);
-    document.getElementById(entry).value = GetSliderValue(zapTgt);
-}
-
 function toModel(zapTgt, id) {
     parmBlock = {};
     parmBlock[model_json[id].captpath] = 'NOW ' + GetSliderValue(zapTgt);
     sendValues(parmBlock);
-}
-
-function Sliders (port) {
-  this.port = port;
-  this.tgts = [];
-  this.status = "passive";
-
-// Add a slider for each input deprecatedly using table for layout
-    $('#' + this.port).html("<table id='slidertab' border='2'></table>");
-  rangeTable = document.getElementById("slidertab"); // assume only one
-  for (i=0;i<fvParms.length;i++) {
-      id = fvParms[i];
-      if (model_json[id].eval == "INPUT") {
-	  input = AddParamLineTo(rangeTable, id, model_json[id].captpath, 
-				 "slider");
-	  input.setAttribute("id", 'rng_' + id);
-      }
-  }
-}
-
-Sliders.prototype.display = function  (time, latest, connect) {
-}
-
-Sliders.prototype.resize = function(x,y) {
+    model_reset(1);
 }
 
 function FileParams (port) {
@@ -1125,22 +995,6 @@ function flatten(head,ob) {
 	}
     } else {
 	result[head] = ob;
-    }
-    return result;
-}
-
-function flatten_to_array(head,ob) {
-    var result = {};
-
-    for (var neck in ob) {
-	if (typeof (ob[neck]) != "object") {
-	    result[head] = ob;
-	    return result;
-	}
-	var iny = flatten_to_array(head, ob[neck]);
-	for (var item in iny) {
-	    result[neck + ',' + item] = iny[item];
-	}
     }
     return result;
 }
@@ -2236,7 +2090,7 @@ console.log("Params needed: " + needInput + ", missing: " + unfilled);
 			 $( "#dialog-1" ).dialog( "open" );
 			 insert_helper("dialog-1", "params");
 		     }
-		     model_reset();
+		     model_reset(-2);
 		 }); // LoadSPF
       }); // Describe
 }
@@ -2266,13 +2120,9 @@ function sendValues(parmBlock) {
 	  rets = JSON.parse(retsStr);
           if (rets != '') {
 	    alert(rets);
-          } else {
-	    resetDepth = -1;
           }
 // enable model execution if not already (if all vals OK)
     }); // Parameterize
-//    resetDepth = -1;
-// needed because setting in callback fn above seems oddly to be out of scope
 }
 
 // window.onbeforeunload = function(e) {

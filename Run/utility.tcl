@@ -996,7 +996,7 @@ proc DeDot {cb} {
     return [string map {. dot do dodo} $cb]
 }
 
-if {!$headless} {
+proc FixMacComboBox {} {
 ### replace toplevel window for combobox with a placed frame to avoid 
 ### Mac crash if at -ve coords
 

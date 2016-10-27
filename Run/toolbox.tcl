@@ -314,6 +314,9 @@ proc do_in_editor {args} {
 
 # load the whole execution code rather than just the common bits
 source ../Run/runmodel.tcl
+
+if {!$headless} FixMacComboBox
+
 # experimental way to stop hangs -- this does something in the execution process and
 # does it again as long as it works. With blind execution processes this is no
 # longer needed, but still used to keep Mac window list current

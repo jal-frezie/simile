@@ -98,7 +98,7 @@ function Shapes3D (port) {
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
-    this.updated = false;
+    this.updated = 0;
 
     that = this;
     var animate = function () {
@@ -108,13 +108,13 @@ function Shapes3D (port) {
 	// above dodgy because tab id can change (eg if another deleted)
 	if ($('#' + that.port + '_div').width() && that.updated) {
 		renderer.render(scene, camera);
-		that.updated = false;
+		--that.updated;
 	    }
 
 	controls.update();
     };
     var waggle = function() {
-	that.updated = true;
+	that.updated = 1;
     };
     controls.addEventListener( 'change', waggle );
     animate();
@@ -224,6 +224,7 @@ function AddTemplateToScene (that, template, newComps) {
 	       });
     }
     that.State.push(template);
+    that.updated = 2;
 }
 
 function MakeSelection (that, selected) {
@@ -274,13 +275,37 @@ Shapes3D.prototype.acceptClick = function (compId) {
     MakeSelection(this, compId);
 }
 
+function get_nesting(ob) {
+    if (typeof(ob) == "object")
+	for (subOb in ob)
+	    return get_nesting(ob[subOb])+1;
+    else
+	return 0
+}
+
+function flatten_to_depth(head, ob, depth) {
+    var result = {};
+
+    if (get_nesting(ob) <= depth)
+	result[head] = ob;
+    else {
+	for (var neck in ob) {
+	    var iny = flatten_to_depth(head, ob[neck], depth);
+	    for (var item in iny) {
+		result[neck + ',' + item] = iny[item];
+	    }
+	}
+    }
+    return result;
+}
+
 Shapes3D.prototype.display = function (time, latest, connect) {
     lolliCount = 0;
     // now add new ones
     for (var j=0; j<this.State.length; ++j) {
 	this.displayOne(this.State[j], latest);
     }
-    this.updated = true;
+    this.updated = 2;
 }
 
 var lolliCount;
@@ -360,7 +385,7 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 		this.scene.add(line);
 	    }
 	    break;
-	case "polygons":
+    case "polygons":
 	    for (var old in instruct[6]) {
 		this.scene.remove(instruct[6][old]);
 		delete(instruct[6][old]);
@@ -369,7 +394,7 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 	    defns = {};
 	    for (i=1;i<4;++i) {
 		defns[["n","xs","ys","zs"][i]] =
-		    flatten_to_array("p", latest[instruct[i]]);
+		    flatten_to_depth("p", latest[instruct[i]], 1);
 	    }
 	    nC = parseInt('0x' + instruct[4]);
 	    eC = parseInt('0x' + instruct[5]);
@@ -434,7 +459,7 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 		this.scene.add(line);
 	    }
 	    break;
-	case "ellipses":
+        case "ellipses":
 	    for (var old in instruct[11]) {
 		this.scene.remove(instruct[11][old]);
 		delete(instruct[11][old]);
@@ -471,8 +496,9 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 		this.scene.add(circle);
 	    }
 	    break;
-	case "surface":
-	    this.scene.remove(instruct[6]);
+    case "surface":
+	// if (this.updated == 1) break;
+	// halfway through draw process -- bad idea to skip, it may be last move
 	    fC = new THREE.Color(parseInt('0x' + instruct[5]));
 	    // "wireframe texture"
 	    var wireTexture = new THREE.ImageUtils.loadTexture( 'images/square.png' );
@@ -514,13 +540,17 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 
 	    graphMesh = new THREE.Mesh( graphGeometry, wireMaterial );
 	    graphMesh.doubleSided = true;
-	    this.scene.add(graphMesh);
-	    instruct[6] = graphMesh;
-	    break;
-	default:
-	    alert("Unrecognized item type: " + instruct[0]);
-	}
+	    for (var old in instruct[6]) {
+		this.scene.remove(instruct[6][old]);
+	    }
+	instruct[6] = {};
+	this.scene.add(graphMesh);
+	instruct[6].only = graphMesh;
+	break;
+    default:
+	alert("Unrecognized item type: " + instruct[0]);
     }
+}
     
 Shapes3D.prototype.resize = function (x,y) {
     this.renderer.setSize(x-50, y-120);
