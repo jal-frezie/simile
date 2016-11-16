@@ -485,31 +485,52 @@ function js_from_tgts(newComps) {
 }
 */
 var savedStart = "stop";
-function model_reset(resetDepth) {
-    current = pipeBits.resetTo;
-    if (savedStart == "run") {
-	savedStart = "stop";
-	return; // exec loop will exit and call this again
+function model_reset(ratesOnly) {
+    if (!ratesOnly) { // actual reset
+	if (savedStart == "run") {
+	    savedStart = "stop";
+	    return; // exec loop will exit and call this again
+	}
+	current = pipeBits.resetTo;
+	var depth = resetDepth;
+    } else { // just redo rates after slider adj
+	current = $("#ct").val();
+	var depth = 1;
     }
+
     note = ofInterest();
     $.ajax({
 	type: "POST",
 	url: "model_action.php",
 	data: { "base":fileBase, "act":"Reset",
-		"runlength":$("#rl").val()*timeUnit, "current":current*timeUnit,
+		"current":current*timeUnit,
 		"step":scaleTimes($("#ts").val(),timeUnit),
-		"method":pipeBits.intMethod, "depth":resetDepth,
+		"method":pipeBits.intMethod, "depth":depth,
 		"note":JSON.stringify(note)}
     })
 	.done(function( initVals ) {
-	    if (isFinite(savedStart)) { // model has been paused before run end
-		$("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
-			     -savedStart);
-	    }
-	    savedStart = "stop";
-	    $("#ct").val(current);
-	    $( "#progress" ).progressbar({ value: 0 });
+	    if (!ratesOnly) { // actual reset
+		if (isFinite(savedStart)) {
+		    // model has been paused before run end
+		    $("#rl").val(parseFloat($("#rl").val())+
+				 parseFloat($("#ct").val())-savedStart);
+		}
+		savedStart = "stop";
+		$("#ct").val(current);
+		$( "#progress" ).progressbar({ value: 0 });
 
+		$.post('model_action.php', { "base":fileBase, "act":"Report"}, 
+		   function(data) {
+		       values_json = JSON.parse(data);
+		       // now, if this is initialization, then now is the time
+		       // to set up the helpers from the .shf, as they will not
+		       // be expecting an immediate update
+		       if (resetDepth == -2) {
+			   createInitialHelpers();
+		       }
+		       resetDepth = 0;
+		   }); // Report
+	    }
 	    initState = JSON.parse(initVals);
 	    allResults = {};
 	    for (var i=0; i<note.length;i++) {
@@ -520,21 +541,7 @@ function model_reset(resetDepth) {
 		}
 		allResults[resIndx] = initState[i];
 	    }
-	    update_helpers(current, allResults, false);
-	    
-	    $.post('model_action.php', { "base":fileBase, "act":"Report"}, 
-		   function(data) {
-		       values_json = JSON.parse(data);
-		       // now, if this is initialization, then now is the time to set up the helpers
-		       // from the .shf, as they will not be expecting an immediate update
-		       if (resetDepth == -2) {
-			   createInitialHelpers();
-		       // finally we are ready to roll, wait is over
-			   $("#WaitDialog").dialog("close");
-			   // restore title bar for file param dialogues
-			   $(".ui-dialog-titlebar").show();
-		       }
-		   }); // Report
+	    update_helpers(current, allResults, ratesOnly);
 	}); // Reset
 }
 
@@ -550,7 +557,7 @@ function model_step(current, start, end, span) {
 	goImage.parentNode.onclick = function () { model_exec(); };
 	if (savedStart == "stop") { // reset selected during run
 	    savedStart = start;
-	    model_reset(0);
+	    model_reset(0); // button reset was exited early
 	    return;
 	}
 	if (current < end) {
@@ -2033,6 +2040,7 @@ PlotValAgainstTime.prototype.display = function (time, latest) {
 }
 */
 
+var resetDepth = -2;
 function populateStructs() {
 
 // OK, now use AJAX to get a string of values
@@ -2089,8 +2097,13 @@ console.log("Params needed: " + needInput + ", missing: " + unfilled);
 		     if (needInput && unfilled != 1) {
 			 $( "#dialog-1" ).dialog( "open" );
 			 insert_helper("dialog-1", "params");
+		     } else {
+			 model_reset(0);
 		     }
-		     model_reset(-2);
+		     // finally we are ready to roll, wait is over
+		     $("#WaitDialog").dialog("close");
+		     // restore title bar for file param dialogues
+		     $(".ui-dialog-titlebar").show();
 		 }); // LoadSPF
       }); // Describe
 }
@@ -2121,6 +2134,11 @@ function sendValues(parmBlock) {
           if (rets != '') {
 	    alert(rets);
           }
+	  if (resetDepth == -2) {
+	      model_reset(0); // dialogue displayed before initialization
+	  } else {
+	      resetDepth = -1;
+	  }
 // enable model execution if not already (if all vals OK)
     }); // Parameterize
 }

@@ -284,7 +284,7 @@ if (isset($_POST['client_exec'])) {
     <div id="topleft" class="split split-vertical">
       <table id="RunControl" border="2" style="width:100%"> 
       <tr><td colspan="2">
-	  <button type="button" style="width:20%" onclick="model_reset()">
+	  <button type="button" style="width:20%" onclick="model_reset(0)">
 	    <img src="images/stop.gif"></button>
 	  <button type="button" style="width:20%" onclick="model_exec()">
 	    <img id="button_op" src="images/play.gif"></button>
