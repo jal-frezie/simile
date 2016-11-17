@@ -419,7 +419,13 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block, int* count,
       *count -= *count>0?1:-1;
       break;
     case REAL:
-      localObj = Tcl_NewDoubleObj(*(double *)block);
+      if (isfinite(*(double *)block))
+	localObj = Tcl_NewDoubleObj(*(double *)block);
+      else {
+	localObj = Tcl_NewStringObj("\"", -1);
+	Tcl_AppendObjToObj(localObj, Tcl_NewDoubleObj(*(double *)block));
+	Tcl_AppendObjToObj(localObj, Tcl_NewStringObj("\"", -1));
+      }
       *count -= *count>0?1:-1;
       break;
     case FLAG:
