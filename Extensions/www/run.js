@@ -31,8 +31,9 @@ $(function() {
 // experimental jqueryui popup dialogue implementation
          $(function() {
             $( "#dialog-1" ).dialog({
-               autoOpen: false,  
-               title: "File parameters",
+		autoOpen: false,  
+		title: "File parameters",
+		maxHeight: 600
             });
             $( "#opener" ).click(function() {
 		$( "#dialog-1" ).dialog( "open" );
