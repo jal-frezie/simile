@@ -582,7 +582,7 @@ function model_reset(resetDepth) {
     }
 }
 
-var TEMPaimToStop = _malloc(8); // a double
+var TEMPaimToStop;
 function model_step(current, start, end, span) {
     if (current >= end || savedStart != "run") {
 	// we are done, reset progress bar
@@ -2116,8 +2116,8 @@ for (ncount=1; ncount<nodecount; ++ncount) {
     needInput = 0; // hopefully
 }
 
-var ptBytes = _malloc(8);
-var ptDims = _malloc(8);
+var ptBytes;
+var ptDims;
 function parameterizeContents(smNode, prefix) {
     var sets = smNode.children
     for (var i=0; i<sets.length; ++i) {
@@ -2211,7 +2211,7 @@ function loadParams() {
     model_reset(-1);
 }
 
-var currentParamIndices = _malloc(128); // 32 * int
+var currentParamIndices;
 function copy_params (bloc, paramDims, nCurInds, remDims, val) {
     if (remDims) {
 	var curBound = getValue(paramDims+nCurInds, 'i32');
@@ -2228,7 +2228,7 @@ function copy_params (bloc, paramDims, nCurInds, remDims, val) {
     }
 }
 
-var pParamDims = _malloc(8); // int*
+var pParamDims;
 function sendValue(comp, value) {
     //alert(JSON.stringify(parmBlock));
     var dimty = model_json[comp].dims.indexOf(0);
@@ -2321,7 +2321,7 @@ function MakeSubBlockSizes (dims) {
     return sizes;
 }
 
-var aligner = _malloc(8); // aligned place
+var aligner; // aligned place
 function brutally_align(ragged) {
     // will probably have to do something like below for all, since
     // booleans can cause odd alignment
@@ -2479,6 +2479,7 @@ var modelInstance;
 var fvHandles;
 var timeLib = {"second":1/86400,"minute":1/1440,"hour":1/24,"day":1,
 	       "unit":1,"week":7,"month":365/12,"year":365};
+var working = 0;
 function prepare() {
     // set up splits
     Split(['#Left', '#right'], {
@@ -2501,13 +2502,28 @@ function prepare() {
     });
     // remove the title bar
     $(".ui-dialog-titlebar").hide();
-    
+
+
+    // See if we can inject the executable asm.js at this point...
+    $.ajax({
+	type: "POST",
+	url: 'model_action.php',
+	data: {"act":"GetAsmJs", "base":fileBase},
+	dataType: 'script'})
+	.done(function(execParms) {
+	    TEMPaimToStop = _malloc(8); // a double
+	    ptBytes = _malloc(8);
+	    ptDims = _malloc(8);
+	    currentParamIndices = _malloc(128); // 32 * int
+	    pParamDims = _malloc(8); // int*
+	    aligner = _malloc(8); // aligned place
   /* start by loading the dll with the constants and procedures it needs
    from the client */
-Module.ccall('proc_pointers_for_shank', 'number', ['number','number','number'],
-	     [Runtime.addFunction(respond_to_param_req),
-	      Runtime.addFunction(show_model_time),
-	      Runtime.addFunction(show_a_message)]);
+	    Module.ccall('proc_pointers_for_shank', 'number',
+			 ['number','number','number'],
+			 [Runtime.addFunction(respond_to_param_req),
+			  Runtime.addFunction(show_model_time),
+			  Runtime.addFunction(show_a_message)]);
 
 // Make space for model class ptr, and fill it
 var pmodelType = _malloc(8); // a ptr
@@ -2603,9 +2619,11 @@ if (modelInstance) {
     } else {
 	model_reset(-2);
     }
-  }); // GetSVG
-
-  // Create a path in SVG's namespace
+	    // finally we are ready to roll, wait is over
+	    $("#WaitDialog").dialog("close");
+	       }); // GetSVG
+	}); // GetAsmJs
+    // Create a path in SVG's namespace
   tooltip_grp = document.createElementNS(xmlns,'g');
   tooltip_bd = document.createElementNS(xmlns,'rect');
   tooltip_bd.setAttribute("x", "12");
@@ -2672,6 +2690,4 @@ if (modelInstance) {
   tooltip_c.appendChild(document.createTextNode(0));
   tooltip_grp.appendChild(tooltip_c);
 
-    // finally we are ready to roll, wait is over
-    $("#WaitDialog").dialog("close");
 }
