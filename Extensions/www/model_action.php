@@ -4,9 +4,9 @@ function escapeNasties ($str) {
 }
 
 function demangle($bs) {
-// on this system the double quotes in the original Javascript all
-// somehow get prepended with a backslash
-   return str_replace(array('\\"',':-'), array('\'',': -'), $bs);
+// on some systems the double quotes in the original Javascript all
+// somehow get prepended with a backslash -- add one to match string if so
+   return str_replace(array('"',':-'), array('\'',': -'), $bs);
 // above " does not start string
 }
 
@@ -54,6 +54,7 @@ function do_query($req) {
 }
 
 header('Content-Type: text/html; charset=utf-8');
+include 'config.php';
 if ($_POST['act'] != "BuildShareLibInLine") {
    // only do for AJAX requests, produces warning if inline
    header('Access-Control-Allow-Origin: *');
@@ -63,7 +64,7 @@ switch ($_POST['act']) {
    case "ConvertJSON":
    $base = tempnam('/tmp', 'jsm');
 
-   $hole = popen('cgi-bin/gconvert ' . $base, 'w');
+   $hole = popen($cgiRel . '/gconvert ' . $base . '.sml', 'w');
    if ($hole) {
      fwrite($hole, demangle($_POST['js_mod']));
      if (pclose($hole) == -1) {
@@ -77,7 +78,6 @@ switch ($_POST['act']) {
 
    case "BuildShareLib":
    case "BuildShareLibInLine":
-   include 'config.php';
 
 $shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
 $tculargs = array($simileLocn, $simileHome, $_POST['base'], $shlibName);
@@ -125,8 +125,30 @@ if ( file_exists($simileHome . "/" . $shlibName)) {
 }
 break;
 
+case "GetAsmJs":
+   $shlibName = pathinfo($_POST['base'],PATHINFO_FILENAME);
+   $tculargs = array($simileLocn, $simileHome, $emPath, $_POST['base'],
+   	     $shlibName);
+   $knob = popen($cgiRel . "/tcular_clexec.cgi " . implode($tculargs,
+      " "), 'r');
+   $pipe_contents = stream_get_contents($knob);
+   // echo "<!-- Pipe contents: $pipe_contents -->";
+   fclose($knob);
+
+   $asmStm = fopen($simileHome . "/" . $shlibName . ".asm.js", "r");
+   if ($asmStm) {
+      $rps = end(explode("\n", $pipe_contents));
+      echo "pipeBits = $rps;" . stream_get_contents($asmStm);
+      fclose($asmStm);
+   } else {
+      $asmStm = fopen($simileHome . "/" . $shlibName . ".msg", "w");
+      fwrite($asmStm, $pipe_contents);
+      echo "pipeBits = 'sent_to_file';"; // hopefully error messages
+      fclose($asmStm);
+   }
+   break;
+
    case "CreateSocket":
-   include 'config.php';
    
 $shlibName =     pathinfo($_POST['base'],PATHINFO_FILENAME) . ".so";
 $tculargs = array($simileLocn, $simileHome, $_POST['base'], $shlibName);
