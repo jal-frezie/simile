@@ -230,23 +230,24 @@ if (isset($crmPath)) {
 // include_once "model_action.php";
 
 // Now build the asm.js
+// this is now done dynamically in run_clexec.js to allwo wait screen to show
 if (isset($_POST['client_exec'])) {
-   $shlibName = pathinfo($base,PATHINFO_FILENAME);
-   $tculargs = array($simileLocn, $simileHome, $emPath, $base, $shlibName);
-   $knob = popen($cgiRel . "/tcular_clexec.cgi " . implode($tculargs,
-      " "), 'r');
-   $pipe_contents = stream_get_contents($knob);
-   echo "<!-- Pipe contents: $pipe_contents -->";
-   fclose($knob);
+//   $shlibName = pathinfo($base,PATHINFO_FILENAME);
+//   $tculargs = array($simileLocn, $simileHome, $emPath, $base, $shlibName);
+//   $knob = popen($cgiRel . "/tcular_clexec.cgi " . implode($tculargs,
+//      " "), 'r');
+//   $pipe_contents = stream_get_contents($knob);
+//   echo "<!-- Pipe contents: $pipe_contents -->";
+//   fclose($knob);
 
-// web site starts here
-   $rps = end(explode("\n", $pipe_contents));
+//// web site starts here
+//   $rps = end(explode("\n", $pipe_contents));
    echo "<script>\n";
-   $asmStm = fopen($simileHome . "/" . $shlibName . ".asm.js", "r");
-   if ($asmStm) {
-      echo stream_get_contents($asmStm);
-      fclose($asmStm);
-   }
+//   $asmStm = fopen($simileHome . "/" . $shlibName . ".asm.js", "r");
+//   if ($asmStm) {
+//      echo stream_get_contents($asmStm);
+//      fclose($asmStm);
+//   }
 
    $helperSet = $base . '.shf';
    if (file_exists($helperSet)) {
@@ -257,7 +258,8 @@ if (isset($_POST['client_exec'])) {
       echo "var paramXML = `" . file_get_contents($paramSet). "`;\n";
    }
   
-  echo "var pipeBits = $rps;\nvar fileBase = '$base';\n</script>";
+//  echo "var pipeBits = $rps;\n";
+  echo "var fileBase = '$base';\n</script>";
   echo "<script src='run_clexec.js'></script>";
 } else {
   echo "<script>\nvar fileBase = '$base';\n</script>";
@@ -316,35 +318,6 @@ if (isset($_POST['client_exec'])) {
     <div id="explorer" class="split split-vertical" style="overflow:auto"></div>
   </div>
   <div id="right" class="split split-horizontal">
-  <!--div id="tabs" class="ui-layout-center" style="height:100%">
-    <ul>
-      <li><a href="#tabs-0">Model diagram</a></li>
-    </ul>
-    <div id="tabs-0">
-      <div id="holds_svg" style="position: absolute">
-	<?php
-	   if (isset($_POST['client_exec'])) {
-	   // put the svg in a variable so I can start thinking about how to replace it
-	   $svgStm = fopen($base . ".svg", "r");
-	   if (!$svgStm) exit('No SVG file found');
-	   $svgLine = "";
-	   while (!feof($svgStm) && strpos($svgLine, "<svg ") !== 0) {
-           $svgLine = fgets($svgStm);
-	   }
-	   // passed boilerplate to start of svg object -- insert this line
-	   echo preg_replace('/^<svg /', '$0id="mod_diag" ', $svgLine);
-				     // add a group round all the contents so they can be translated in Chromium
-				     echo "<g>";
-				     while (!feof($svgStm)) {
-				     echo fgets($svgStm);
-				     }
-				     echo "</g></div>";
-				     fclose($svgStm);
-				     }
-				     ?>
-	   </div> 
-    </div>
-  </div -->
   </div>
   <div id="WaitDialog"   class="hidden" style="text-align: center">
     <img  src="images/ajax-loader.gif" />
