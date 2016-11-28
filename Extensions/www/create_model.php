@@ -260,7 +260,7 @@ if (isset($_POST['client_exec'])) {
   
 //  echo "var pipeBits = $rps;\n";
   echo "var fileBase = '$base';\n</script>";
-  echo "<script src='run_clexec.js'></script>";
+  echo "<script src='clexec.js'></script>\n<script src='run_clexec.js'></script>";
 } else {
   echo "<script>\nvar fileBase = '$base';\n</script>";
   echo "<script src='run.js'></script>";

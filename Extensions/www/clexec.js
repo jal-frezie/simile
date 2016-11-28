@@ -19,6 +19,7 @@ function json_to_saved_sml(mwStr,    // systo model in JSON form
 
 function sml_to_asm_js(basePath, respond_to_param_req, show_model_time,
 		       show_a_message, callback) {
+    var modelType;
     $.ajax({
 	type: "POST",
 	url: similive_site,
@@ -34,6 +35,8 @@ function sml_to_asm_js(basePath, respond_to_param_req, show_model_time,
 		    svgDoc.innerHTML = diagSVG;
 		    document.firstChild.appendChild(svgDoc);
 		    // stick it where the sun don't shine
+	    
+		    callback(modelType);
 		}); // GetSVG
 	    
 	    window.eval(returnedScript);
@@ -61,8 +64,6 @@ function sml_to_asm_js(basePath, respond_to_param_req, show_model_time,
 
 	    // get data structure from model
 	    populateStructs(modelType);
-	    
-	    callback(modelType);
 	}); // GetAsmJs
 }
 
