@@ -104,6 +104,30 @@ function binary_from_local(prolog, min, max) {
     return final;
 }
 
+function js_from_local_model(prolog, howMany) {
+    c_result = Module.ccall('get_raw_values', 'number', ['string', 'number'],
+			    [prolog, modelInstance]);
+    if (c_result) {
+//	console.log("Values retrieved OK");
+    } else {
+	console.log("Component has no data");
+	return;
+    }
+    var ddims = Module.ccall('ds_from_nodvals', 'number', ['number'], [c_result]);
+    var vals = Module.ccall('ct_from_nodvals', 'number', ['number'], [c_result]);
+
+    msbs_dims = [];
+    var sbList = MakeSubBlockSizes(ddims);
+//    console.log("Sub-blocks:", JSON.stringify(sbList),
+//		"Dims:", JSON.stringify(msbs_dims));
+    var final = convert_to_js(msbs_dims, sbList, vals, [howMany]);
+    Module.ccall('free_bloc_data', 'number', ['number', 'number'],
+		 [vals, ddims]);
+    _free(c_result);
+    
+    return final;
+}
+
 function hoverIn(evt) {
   var tags = null;
   var blob = evt.target;
@@ -124,7 +148,7 @@ function hoverIn(evt) {
     
     // tooltip_v.firstChild.data = prettify(JSON.parse(values_json[prolog]), 0);
     // OK, try getting data from built-in model instead
-    tooltip_v.firstChild.data = prettify(js_from_local_model(modelInstance, prolog[0], 1000));
+    tooltip_v.firstChild.data = prettify(js_from_local_model(prolog[0], 1000));
     tooltip_c.firstChild.data = model_json[prolog].comment;
 // above will break function if it doesn't work
 
@@ -513,25 +537,33 @@ function js_from_tgts(note) {
 	    }
 	} else {
 	    resIndx = note[i];
-	    allResults[resIndx] = js_from_local_model(modelInstance, resIndx, 1000000);
+	    allResults[resIndx] = js_from_local_model(resIndx, 1000000);
 	}
     }
     return allResults;
 }
 
+var resetDepth = -2;
 var savedStart = "stop";
-function model_reset(resetDepth) {
-    current = pipeBits.resetTo;
-    if (savedStart == "run") {
-	savedStart = "stop";
-	return; // exec loop will exit and call this again
+function model_reset(ratesOnly) {
+    if (!ratesOnly) { // actual reset
+	if (savedStart == "run") {
+	    savedStart = "stop";
+	    return; // exec loop will exit and call this again
+	}
+	var current = pipeBits.resetTo;
+	var depth = resetDepth;
+	resetDepth = 0;
+    } else {
+	current = $("#ct").val();
+	var depth = 1;
     }
-    scaleTimes($("#ts").val(),timeUnit);
 
     note = ofInterest();
+    scaleTimes($("#ts").val(),timeUnit);
     var i_result = Module.ccall('reset', 'number',
 			['number', 'number', 'number', 'number', 'number'],
-			[modelType, modelInstance, 0.0, 0, resetDepth]);
+			[modelType, modelInstance, 0.0, 0, depth]);
 
 //    $.ajax({
 //	type: "POST",
@@ -543,6 +575,7 @@ function model_reset(resetDepth) {
 //		"note":JSON.stringify(note)}
 //    })
 //	.done(function( initVals ) {
+    if (!ratesOnly) { // actual reset
 	    if (isFinite(savedStart)) { // model has been paused before run end
 		$("#rl").val(parseFloat($("#rl").val())+parseFloat($("#ct").val())
 			     -savedStart);
@@ -550,10 +583,10 @@ function model_reset(resetDepth) {
 	    savedStart = "stop";
 	    $("#ct").val(current);
 	    $( "#progress" ).progressbar({ value: 0 });
-
-            allResults = js_from_tgts(note);
-	    update_helpers(current, allResults, false);
-    if (resetDepth == -2) {
+    }
+    allResults = js_from_tgts(note);
+    update_helpers(current, allResults, ratesOnly);
+    if (depth == -2) {
 	createInitialHelpers();
     }
 }
@@ -890,7 +923,7 @@ DataTable.prototype.acceptClick = function (compId) {
     newLine = {"time":now};
     this.cumData.push(newLine);
   }
-  newLine[compId] = js_from_local_model(modelInstance, compId, 1000000);
+  newLine[compId] = js_from_local_model(compId, 1000000);
   this.tgts.push(compId);
   this.columns.push({"sTitle":model_json[compId].text,"mData":compId,
 		     "sDefaultContent":"--"});
@@ -1075,7 +1108,7 @@ PlotXY.prototype.acceptClick = function (compId) {
       }
       responses = [];
       for (var i=0; i<newComps.length; ++i) {
-	  responses.push(js_from_local_model(modelInstance, newComps[i], 1000000))
+	  responses.push(js_from_local_model(newComps[i], 1000000))
       }
 		 addys = flatten('t', responses[0]);
 		 if (this.xval == 'time') {
@@ -1660,7 +1693,7 @@ Polygon.prototype.acceptClick = function (nodeId) {
 	$('#tabs a[href=#' + this.port + ']').text(newTitle);
 	responses = [];
 	for (var i=0; i<lookAt.length;++i) {
-	    responses.push(js_from_local_model(modelInstance, lookAt[i], 1000000))
+	    responses.push(js_from_local_model(lookAt[i], 1000000))
 	}
 	       colScaler = 255/(this.top-this.bottom); 
 	       colours = flatten('m', responses[0]);
@@ -1986,12 +2019,76 @@ PlotValAgainstTime.prototype.display = function (time, latest) {
 */
 
 var needInput;
+function populateStructs() {
+  /* NEW SECTION: Get and display metadata from the model */
+  /********************************************************/
+
+var nodecount=Module.ccall('get_node_count','number',['number'],[modelType]);
+console.log("This model has " + nodecount + " components.");
+
+var name = _malloc(255); // string
+var ndims = _malloc(128); // 32 ints
+var types = _malloc(256); // 32 ptrs
+
+model_json = {};
+var class_strs = ["SUBMODEL", "VARIABLE", "COMPARTMENT", "FLOW", "CONDITION",
+		  "CREATION", "REPRODUCTION", "IMMIGRATION", "LOSS", "ALARM",
+		  "EVENT", "SQUIRT", "STATE"];
+var eval_strs = ["EXOGENOUS", "DERIVED", "TABLE", "INPUT", "GHOST", "LIMIT",
+		 "RECALL", "BLOCK", "POPULATION", "GRID", "HONEYCOMB"];
+for (ncount=1; ncount<nodecount; ++ncount) {
+    var nodedata = Module.ccall('get_data_line', 'number', ['number','number'],
+				[modelType, ncount]);
+    var nd_name = Module.ccall('name_from_nodlin', 'string', ['number'],
+			       [nodedata]);
+    var nd_eqn = Module.ccall('eqn_from_nodlin', 'string', ['number'],
+			       [nodedata]);
+    // console.log("Checking component with id " + nd_name);
+
+    Module.ccall('searchinfo', 'number',
+		 ['string', 'number', 'number', 'number', 'number'],
+		 [nd_name, modelType, name, ndims, types]);
+    var cp = Pointer_stringify(name);
+    // console.log("Checking component with caption path " + Pointer_stringify(name));
+
+    // now get parent id...
+    var lIO = cp.lastIndexOf('/');
+    var pcp = cp.slice(0,lIO);
+    var txt = cp.slice(lIO+1);
+    if (pcp.length) {
+	parentId = Module.ccall('getNodeId', 'string', ['number','string'],
+			   [modelType, pcp]);
+    } else {
+	parentId = '#';
+    }
+    var dposn = 0;
+    var dims = [];
+    do {
+	dims[dposn] = getValue(ndims+4*dposn, 'i32');
+       } while (dims[dposn++]);
+    var nd_class = Module.ccall('class_from_nodlin', 'number', ['number'],
+			       [nodedata]);
+    var type = Module.ccall('type_from_nodlin', 'number', ['number'],
+			       [nodedata]);
+    var min = Module.ccall('min_from_nodlin', 'number', ['number'],
+			       [nodedata]);
+    var max = Module.ccall('max_from_nodlin', 'number', ['number'],
+			       [nodedata]);
+    var evl = Module.ccall('eval_from_nodlin', 'number', ['number'],
+			       [nodedata]);
+    var us = Module.ccall('units_from_nodlin', 'string', ['number'],
+			       [nodedata]);
+    model_json[nd_name] = {"parent":parentId,"icon":"images/"
+			   + class_strs[nd_class] + ".gif","text":txt,
+			   "captpath":cp,"equation":nd_eqn,
+			   "min":min, "max":max, "eval":eval_strs[evl],
+			   "units":us, "type":type_strs[-type],"dims":dims};
+}
 
 // If there are file parameters, add a page to the tabbed notebook to display
 // them (make this a function as user may kill and re-create)
 // remove hook from tcl core when this is working
 
-function showFileParams () {
            treeData = [];
 	   fvParms = [];
 	   needInput = 0;
@@ -2017,7 +2114,7 @@ function showFileParams () {
 	      })
 	      .on('hover_node.jstree',function(e,data){
 		  // console.log('Hovered ' + data.node.id);
-		  $("#"+data.node.id).prop('title', prettify(js_from_local_model(modelInstance, data.node.id, 1000)));
+		  $("#"+data.node.id).prop('title', prettify(js_from_local_model(data.node.id, 1000)));
 	      })
 	   // create the instance
 	      .jstree({ 'core' : {
@@ -2119,8 +2216,8 @@ function loadParams() {
 	input = "#prm_" + id;
 	sendValue(id, JSON.parse($(input).val()));
     }
-    
-    model_reset(-1);
+    resetDepth = -1;
+    model_reset(0);
 }
 
 var currentParamIndices;
@@ -2191,6 +2288,164 @@ function createNotebook(handle) {
 
 var pipeBits;
 
+// functions for interacting with local emscripten model
+
+// extras
+function MakeSubBlockSizes (dims) {
+    var usedDims = 1;
+    var dim0 = getValue(dims, 'i32');
+    msbs_dims.push(dim0);
+    var tName = type_strs[-dim0];
+    if (dim0 < -5) { // enumerated type etc
+	tName = "INTEGER";
+    }
+    if (tName != undefined) {
+	sizes = [];
+	switch (tName) {
+	case "SPARSEARRAY":
+	    msbs_dims.push(getValue(dims+4, 'i32')); // transcribe index count
+	    usedDims = 2; // and fall through
+	case "OWNSIZED":
+	    sizes = MakeSubBlockSizes(dims+4*usedDims);
+	    size = 8; // sizeof(sizeAndPtr);
+	    break;
+	case "REAL":
+	    size = 8; // sizeof(double);
+	    break;
+	case "INTEGER":
+	    size = 4; // sizeof(int);
+	    break;
+	case "FLAG":
+	    size = 1; // sizeof(BOOLEAN);
+	    break;
+	case "VALUELESS":
+	    size = 0;
+	    break;
+	}
+    } else { // dimension
+	sizes = MakeSubBlockSizes(dims+4);
+	size = sizes[0] * dim0;
+    }
+    sizes.splice(0,0,size);
+    return sizes;
+}
+
+var aligner; // aligned place
+function brutally_align(ragged) {
+    // will probably have to do something like below for all, since
+    // booleans can cause odd alignment
+    setValue(aligner, getValue(ragged, 'i32'), 'i32');
+    setValue(aligner+4, getValue(ragged+4, 'i32'), 'i32');
+}
+
+function convert_to_js(dims, subBlocks, blob, count) {
+    var localObj;
+    var newBlob;
+    if (dims[0] > 0) { // it's an array bound
+	localObj = append_array_members(dims[0], dims.slice(1),
+					subBlocks.slice(1), blob, count);
+    } else {
+	switch (type_strs[-dims[0]]) {
+	case "OWNSIZED":
+	    membership = Module.ccall('size_from_sznptr', 'number',
+				      ['number'], [blob]);
+	    newBlob = Module.ccall('ptr_from_sznptr', 'number',
+				      ['number'], [blob]);
+	    localObj = append_array_members(membership, dims.slice(1),
+					    subBlocks.slice(1), newBlob, count);
+	    break;
+	case "SPARSEARRAY": 
+	    // need clevers to nest indices; see old stuff
+	    membership = Module.ccall('size_from_sznptr', 'number',
+				      ['number'], [blob]);
+	    newBlob = Module.ccall('ptr_from_sznptr', 'number',
+				      ['number'], [blob]); // done
+	    indices = [];
+	    if (count[0]<0) { // start at last index group and work back
+		newBlob = newBlob+(membership-1)*(dims[1]*4+subBlocks[1]);
+	    }
+	    pMemBlb = {'mem':membership, 'blb':newBlob};
+// console.log("oblb", blob, JSON.stringify(pMemBlb), "vm dims", dims[1]);
+	    localObj = append_list_members(dims[1], 0, dims.slice(2), indices,
+					   subBlocks.slice(1), pMemBlb, count);
+	    break;
+	case "VALUELESS":
+	    localObj = 'sm';
+	    count[0] -= count[0]>0?1:-1;
+	    break;
+	case "REAL":
+	    brutally_align(blob);
+	    localObj = getValue(aligner, 'double');
+	    count[0] -= count[0]>0?1:-1;
+	    break;
+	case "FLAG":
+	    localObj = getValue(blob, 'i8');
+	    count[0] -= count[0]>0?1:-1;
+	    break;
+	default: /* INTEGER or ENUM(*) */
+	    localObj = getValue(blob, 'i32');
+	    count[0] -= count[0]>0?1:-1;
+	    break;
+	}
+    }
+    return localObj;
+}
+
+function append_list_members(dimty, depth, dims, indices, 
+			     subBlocks, pMemBlb, toGet) {
+  var localObj;
+
+  dir = toGet[0]>0?1:-1;
+  if (depth==dimty) {
+    if (pMemBlb.mem) {
+      pMemBlb.blb += dimty*4;
+      localObj = convert_to_js(dims, subBlocks, pMemBlb.blb, toGet);
+      if (dir>0) {
+	  pMemBlb.blb += subBlocks[0];
+      } else {
+	  pMemBlb.blb -= (subBlocks[0]+2*dimty*4);
+      }
+      --pMemBlb.mem;
+    } else {
+	localObj = {};
+    }
+  } else {
+      localObj = {};
+      while (pMemBlb.mem && toGet[0]) {
+	  for (count=0; count<depth; ++count) {
+	      if (getValue(pMemBlb.blb+4*count,'i32')!=indices[count])
+		  return(localObj);
+	  }
+	  indices[depth] = getValue(pMemBlb.blb+4*depth,'i32');
+	  var localSubObj = append_list_members(dimty, depth+1, dims, indices,
+						subBlocks, pMemBlb, toGet);
+	  if (localSubObj != {}) {
+	      localObj[indices[depth].toString()] = localSubObj;
+	  }
+      }
+  }
+  return(localObj);
+}
+
+function append_array_members(membership, dims, subBlocks, blob, count) {
+    var start, end, localObj = {};
+    var dir = count[0]>0?1:-1;
+    if (dir==1) {
+	start = 1; end = membership+1;
+    } else {
+	start = membership; end = 0;
+    }
+
+    for (var offset = start; offset != end; offset += dir) {
+	if (!count[0]) break;
+	var localSubObj = convert_to_js(dims, subBlocks,
+					blob+(offset-1)*subBlocks[0], count);
+	if (localSubObj != {})
+	    localObj[offset.toString()] = localSubObj;
+
+    }
+    return localObj;
+}
 // callbacks
 function respond_to_param_req(modelId, modelSlot, paramId, indCount, indices) {
     console.log("Parameter value requested: id", paramId,
@@ -2227,6 +2482,8 @@ var fvParms;
 var timeUnit = "unit";
 var diag_zoom;
 
+var type_strs = ["VALUELESS", "REAL", "INTEGER", "FLAG",
+		 "OWNSIZED", "SPARSEARRAY"];
 var modelInstance;
 var fvHandles;
 var timeLib = {"second":1/86400,"minute":1/1440,"hour":1/24,"day":1,
@@ -2255,20 +2512,39 @@ function prepare() {
     // remove the title bar
     $(".ui-dialog-titlebar").hide();
 
-    // See if we can inject the executable asm.js at this point...
-    sml_to_asm_js(fileBase, respond_to_param_req, show_model_time,
-		  show_a_message, callback);
-}
 
-function callback (newModelType) {
-    modelType = newModelType;
+    // See if we can inject the executable asm.js at this point...
+    $.ajax({
+	type: "POST",
+	url: 'model_action.php',
+	data: {"act":"GetAsmJs", "base":fileBase},
+	dataType: 'script'})
+	.done(function(execParms) {
+	    TEMPaimToStop = _malloc(8); // a double
+	    ptBytes = _malloc(8);
+	    ptDims = _malloc(8);
+	    currentParamIndices = _malloc(128); // 32 * int
+	    pParamDims = _malloc(8); // int*
+	    aligner = _malloc(8); // aligned place
+  /* start by loading the dll with the constants and procedures it needs
+   from the client */
+	    Module.ccall('proc_pointers_for_shank', 'number',
+			 ['number','number','number'],
+			 [Runtime.addFunction(respond_to_param_req),
+			  Runtime.addFunction(show_model_time),
+			  Runtime.addFunction(show_a_message)]);
+
+// Make space for model class ptr, and fill it
+var pmodelType = _malloc(8); // a ptr
+var complaint=Module.ccall('load_model', 'string', ['string','string','number'], ['./dummy.so','evaluation',pmodelType]);
+modelType = getValue(pmodelType,'*');
+
+if (complaint.length) {
+    console.log("Problem creating type: " + complaint);
+} else {
+    console.log("Created model type OK");
+}
     
-    TEMPaimToStop = _malloc(8); // a double
-    ptBytes = _malloc(8);
-    ptDims = _malloc(8);
-    currentParamIndices = _malloc(128); // 32 * int
-    pParamDims = _malloc(8); // int*
-        
     // Now stick the values in the run control
     $("#rl").val(pipeBits.execTime);
     $("#de").val(pipeBits.displayInt);
@@ -2277,24 +2553,25 @@ function callback (newModelType) {
     $(".unit").html(pipeBits.timeUnit);
     timeUnit = timeLib[pipeBits.timeUnit];
     
+    populateStructs();
+    
 // now make an instance of the model -- this creates its variables...
-    modelInstance = _malloc(8); // a ptr
+modelInstance = _malloc(8); // a ptr
 
-    modelInstance = Module.ccall('fetch_top_instance', 'number',
+modelInstance = Module.ccall('fetch_top_instance', 'number',
 				 ['number', 'number'],
 				 [modelType, 20150909]);
 
-    if (modelInstance) {
-	console.log("Created model instance OK");
-    } else {
-	console.log("Problem creating instance");
-    }
+if (modelInstance) {
+    console.log("Created model instance OK");
+} else {
+    console.log("Problem creating instance");
+}
 
     // Now we need to set up the file parameter data, if
     // any...later. But we must declare the parameters internal, or it
     // will try to execute a callback function, something that appears
     // not to be working at the moment...
-    showFileParams();
     fvHandles = {};
     for (i=0;i<fvParms.length;i++) {
 	fvHandles[fvParms[i]] = Module.ccall('use_array_for_params', 'number',
@@ -2313,6 +2590,17 @@ function callback (newModelType) {
      0 means keep constants and fixed parameters,
      +ve values mean keep all the above plus state variables */
   
+	   $.ajax({
+	       type: "POST",
+	       url: "model_action.php",
+	       data: {"act" : "GetSVG",  "base" : fileBase}
+	   })
+	       .done (function(diagSVG) {
+		   svgDoc = document.createElement("div");
+		   svgDoc.innerHTML = diagSVG;
+		   document.firstChild.appendChild(svgDoc);
+		   // stick it where the sun don't shine
+		   
     ModDiag = document.getElementById("mod_diag");
       diag_zoom = d3.behavior.zoom()
 	  .on("zoom", function () {
@@ -2321,8 +2609,7 @@ function callback (newModelType) {
 			")scale(" + d3.event.scale + ")");
 	  });
       // d3.select('#mod_diag').attr("class","pane").call(diag_zoom);
-    // resize_notebook();
-
+      // resize_notebook();
     all = ModDiag.getElementsByTagName("*");
     for(var i = 0; i < all.length; i++) {
       var element = all[i];
@@ -2333,20 +2620,21 @@ function callback (newModelType) {
           addEltAction(element);
       }
     }
+    ModDiag.appendChild(tooltip_grp);
 
     if (needInput) {
 	new_helper("params");
 	// resets model when params are loaded
     } else {
-	model_reset(-2);
+	model_reset(0);
     }
-    // finally we are ready to roll, wait is over
-    $("#WaitDialog").dialog("close");
+	    // finally we are ready to roll, wait is over
+	    $("#WaitDialog").dialog("close");
+	       }); // GetSVG
+	}); // GetAsmJs
     // Create a path in SVG's namespace
   tooltip_grp = document.createElementNS(xmlns,'g');
-    ModDiag.appendChild(tooltip_grp);
-
-    tooltip_bd = document.createElementNS(xmlns,'rect');
+  tooltip_bd = document.createElementNS(xmlns,'rect');
   tooltip_bd.setAttribute("x", "12");
   tooltip_bd.setAttribute("y", "12");
   tooltip_bd.setAttribute("width", "24");
