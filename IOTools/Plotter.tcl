@@ -137,7 +137,7 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         variable ynodes
         
-        set index [lsearch $plot($w,Yvars) $path]
+        set index [lsearch -exact $plot($w,Yvars) $path]
         set rootLabel [file tail $path]
         set plot($w,Yvars) [lreplace $plot($w,Yvars) $index $index]
         set ynodes($w) [lreplace $ynodes($w) $index $index]
@@ -202,7 +202,7 @@ namespace eval ::$keyValue {
         set testResult [GetModelValue $node]
         #ShowMess debug info "testResult $testResult" ok
         if {[string compare $testResult novalue]} {
-            if {[lsearch $plot($w,Yvars) $path]==-1} {
+            if {[lsearch -exact $plot($w,Yvars) $path]==-1} {
                 set plot(caption,$node) $caption
                 lappend plot($w,Yvars) $path
                 lappend ynodes($w) $node
@@ -783,7 +783,7 @@ namespace eval ::$keyValue {
         } else  {
             set capt "$plot(caption,$node), run $runCount($w)"
         }
-        set posn [lsearch $plot($w,Ylabels) $capt]
+        set posn [lsearch -exact $plot($w,Ylabels) $capt]
         if {$posn==-1} {
             set posn [llength $plot($w,Ylabels)]
             lappend plot($w,Ylabels) $capt

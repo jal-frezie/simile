@@ -186,6 +186,25 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
+    method PolyInsts {id vx vy vz tail} {
+	if {[llength [lindex $vz 1]]==1} {
+	    set op [list polygon $id]
+	    set allz 0
+	    foreach {idx nx} $vx {idy ny} $vy {idz nz} $vz {
+		    lappend op [list $nx $ny $nz]
+		    set allz [expr {$allz+$nz}]
+		}
+	    lappend op [lindex $tail 0] [lindex $tail 1]
+	    return [list $op]
+	} else {
+	    set result {}
+	    foreach {idx nx} $vx {idy ny} $vy {idz nz} $vz {
+		eval lappend result [PolyInsts $id,$idz $nx $ny $nz $tail]
+	    }
+	    return $result
+	}
+    }
+    
     public method Display {time dispInt step} {
 	variable ::gen3d1::grid
 	variable ::gen3d1::viewVector
@@ -253,25 +272,12 @@ itcl::class similescript::$newHelperClass {
 			array unset $arr
 		    }
 		    for {set i 1} {$i<4} {incr i} {
-			array set [lindex {0 vx vy vz} $i] \
+			set [lindex {0 vx vy vz} $i] \
 			    [lindex [$modelInst GetValue \
 					 [lindex $instruct $i]] 0]
 		    }
-		    foreach iV [array names vz] {
-			set op [list polygon $iV]
-			set allz 0
-			foreach {idx nx} $vx($iV) {idy ny} $vy($iV) \
-			    {idz nz} $vz($iV) {
-				lappend op [list $nx $ny $nz]
-				set allz [expr {$allz+$nz}]
-			    }
-			lappend op [lindex $instruct 4] [lindex $instruct 5]
-#			if {$allz < 0} {
-#			    lappend lower $op
-#			} else {
-			    lappend upper $op
-#			}
-		    }
+		    eval lappend upper [PolyInsts p $vx $vy $vz \
+						  [lrange $instruct 4 5]]
 		} oldellipses {
 		    foreach arr {cx cy cz tx ty tz sx sy sz} {
 			array unset $arr

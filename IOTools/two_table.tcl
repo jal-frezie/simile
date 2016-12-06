@@ -308,7 +308,7 @@ namespace eval $keyValue {
         variable dataStore
         variable orientList
         
-        set ind [lsearch $displayList($winId,paths) $var]
+        set ind [lsearch -exact $displayList($winId,paths) $var]
 	set id [lindex $displayList($winId,ids) $ind]
         set displayList($winId,paths) \
 	    [lreplace $displayList($winId,paths) $ind $ind]
@@ -342,7 +342,7 @@ namespace eval $keyValue {
         ReleaseClicks $winId
         $winId.f.mess config -text {}
         set newHeader [GetCaptionPathFromId $node]
-        set varIndex [lsearch $displayList($winId,paths) $newHeader]
+        set varIndex [lsearch -exact $displayList($winId,paths) $newHeader]
         set xScrollPosn [$winId.t xview]
         set yScrollPosn [$winId.t yview]
         if {$varIndex<0} {
@@ -1215,7 +1215,7 @@ namespace eval $keyValue {
     proc SetFormatWidgets {winId varCB catlistbox formlistbox optionsF} {
         variable displayList
         variable displayFormat
-	set varIndex [lsearch $displayList($winId,paths) [$varCB get]]
+	set varIndex [lsearch -exact $displayList($winId,paths) [$varCB get]]
         if {$varIndex==-1} {
 	    set varIndex 0
 	}

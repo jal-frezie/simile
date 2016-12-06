@@ -157,7 +157,7 @@ class similescript::$newHelperClass {
         set levels [split $title /]
         set f [MakeSubFrames {} $winId.c.canvas.frame $levels {} 0]
         pest20050803::Prune $winId $f
-	set index [lsearch $useNodes(logged) $title]
+	set index [lsearch -exact $useNodes(logged) $title]
 	close $useNodes($title.stm)
 	unset useNodes($title.stm)
 	set useNodes(logged) \
