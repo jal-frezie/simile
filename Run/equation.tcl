@@ -17,7 +17,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     set topNode $window_info($parent,top_node) 
 #    if {[catch {PutItThere .equation $parent} t]} return ;# already exists
 # Allow error message as it stops Prolog trying to close box later
-    set t [PutItThere .equation $parent]
+    set t [PutItThere .equation [winfo parent $parent]]
     wm title $t [format $::msgs($purpose) [BlankCrs $comp]]
 # TRANSLATOR: $purpose part of string is one of:
 # Cause, Initial value, equation
