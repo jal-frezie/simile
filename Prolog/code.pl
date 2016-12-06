@@ -18,7 +18,7 @@ tk_code(Model, CompOrBuild, _Tgt) :-
             Action = export_source,
 	    IdentStr = ".cpp"),
 	name(Ident, IdentStr),
-	get_default_export_name(Model, IdentStr, DefN),
+	menu'><'get_default_export_name(Model, IdentStr, DefN),
 	get_program_file(DefN, Model, Tgt),
 	\+ Tgt = '', % cancelled
 	use_temp_dir(Temp),

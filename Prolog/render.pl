@@ -651,7 +651,7 @@ generate_case_entry(L, Match, Inst, Stream) :-
 	excrete(L, case_end, Match, 8, Stream).
 
 generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
-	Inst = instance(InstType, BaseName, _Expr, NameIn, Unit-_),
+	Inst = instance(InstType, Node, _Expr, NameIn, Unit-_),
 	(NameIn = elt(_, Name, _), !;
 	    Name = NameIn),
 	( /* InstType = external, !, Type = 'EXTERNAL',
@@ -665,11 +665,11 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 		DefEval = 'DERIVED'); */
 	    InstType = submodel, !, Type = 'VALUELESS',
 	        [Wee, Muckle] = [0, 0],
-	        (by_record(BaseName), !,
+	        (by_record(Node), !,
 		    DefEval = 'TABLE';
-		 is_population(BaseName), !,
+		 is_population(Node), !,
 		    DefEval = 'POPULATION';
-		 m_update'><'ready_type(BaseName, BaseType), !,
+		 m_update'><'ready_type(Node, BaseType), !,
 		    member(BaseType-DefEval,
 			   [rect_grid(_,_)-'GRID', hex_grid(_,_)-'HONEYCOMB']);
 		    DefEval = 'BLOCK');
@@ -680,7 +680,7 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 		a number from -10 down indicating the data structure in the
 	        executable corresponding to the actual enumerated type. */
 		Wee = 1,
-		enum_type_ref(Enum, BaseName, Muckle, _, Posn);
+		enum_type_ref(Enum, Node, Muckle, _, Posn);
 	    member(Unit, [const_int, int, n(_Enum)]), !, Type = 'INTEGER',
 	        [Wee, Muckle] = [-268435455, 268435455];
 		/* limits for GNU integers; Sicstus can go further --
@@ -689,8 +689,8 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 	        [Wee, Muckle] = [-1.0e100, 1.0e100]),
 	    DefEval = 'DERIVED'),
 
-	get_host(BaseName, VisName),
-	is_parameter(BaseName, PType),
+	get_host(Node, VisName),
+	is_parameter(Node, PType),
 	(VisName is_of_sort discrete ->
 	    Types = [DefEval, 'LIMIT', 'INPUT'];
 	    Types = [DefEval, 'INPUT', 'TABLE']),
@@ -700,6 +700,8 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 	append(Path, [0], NewPath),
 	append(Dims, [0], CappedDims), 
 
+	% Node is visible for state, implicit fn for others
+	(implicit_function(VisName, BaseName), !; BaseName = Node),
 	/* Try not doing internals -- but will we need to for save/restore
 	 state? init functions confuse sketch graph editing. */
 	(\+ member(InstType, [internal, loss]),
@@ -819,7 +821,7 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 	     (Pairs = [_Either-FullStr];
 	      select(_Desc-Pt1, Pairs, [comment-Pt2]),
 	      append_atoms([Pt1, '\n', Pt2], FullStr));
-          member(Field-Attr, [spec-value, units-units]),
+          member(Field-Attr, [spec-spec, units-units]),
 	     Node has_class_refinement Attr of Term,
              sicstus_format_to_chars("~w", [Term], FullStrStr),
              sicstus_atom_chars(FullStr, FullStrStr)),
