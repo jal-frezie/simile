@@ -127,7 +127,7 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
     set width [GetLineSize $w flow $fatness]
     set fCol $::looks($::window_info($w,top_node),flow,fill)
     set bounds [PositionBowtie $w [list $l $t $r $b]]
-    $w create polygon $bounds -fill $fCol -tags "$tagSet bowtie has_info"
+    $w create polygon $bounds -outline {} -fill $fCol -tags "$tagSet bowtie has_info"
     $w create line $bounds -width $width -tags "$tagSet bowtie realwidth($width)"
     ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }

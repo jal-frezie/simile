@@ -420,6 +420,11 @@ set splash [GrowImage splash $iconDiam $iconDiam]
 set graph(font) [list helvetica 12 bold]
 set graph(megafont) [list helvetica 36 bold]
 toplevel .splash
+if {[tk windowingsystem] eq "aqua"} {
+    ::tk::unsupported::MacWindowStyle style .splash plain
+} else {
+    wm overrideredirect .splash 1
+}
 pack [canvas .splash.c -width $sphXdiam -height $sphYdiam -bd -$graph(origin) \
 	 -bg \#f0f8ff] -padx 0 -pady 0
 
@@ -451,7 +456,6 @@ catch {append regInfo ", $env(licensee_corp)"}
     -text "[format [tr. {Registered to %1$s}] $regInfo]"
 
 wm geometry .splash $startGeom
-wm overrideredirect .splash 1
 
 if {[info exists SimileAutoObjLoaded]} {
     wm withdraw .splash

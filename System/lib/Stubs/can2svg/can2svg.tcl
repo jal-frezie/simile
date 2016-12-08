@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.9 2016/07/18 15:11:16 cvs Exp $
+# $Id: can2svg.tcl,v 1.10 2016/12/08 12:57:21 cvs Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -772,9 +772,9 @@ proc can2svg::MakeStyleList {type opts args} {
             }
             -width {
 		set widthValue $value
-		if {$value > 1} {
+		# if {$value > 1} {
 		    set styleArr(stroke-width) $value
-		}
+		# }
             }
         }
     }
@@ -834,9 +834,11 @@ proc can2svg::MakeStyleList {type opts args} {
             regsub -all -- {,}    $dash  "4 " dash
             regsub -all -- {-}    $dash  "6 " dash                    
         
-            # Multiply with stroke width if > 1.
-            if {[info exists styleArr(stroke-width)] &&  \
-              ($styleArr(stroke-width) > 1)} {
+ # Multiply with stroke width if > 1.
+ #           if {[info exists styleArr(stroke-width)] &&  \
+ #             ($styleArr(stroke-width) > 1)} {
+ # ...or not }
+	    if {[info exists styleArr(stroke-width)]} {
                 set width $styleArr(stroke-width)
                 set dashOrig $dash
                 set dash {}

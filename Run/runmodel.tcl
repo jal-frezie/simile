@@ -594,6 +594,12 @@ proc ShiftDisplays {node payload current display} {
 	
 	if {$runState($node,splimit)} {
 	    set minStep [expr {1000/$runState($node,speedLimit)}]
+	} elseif {[tk windowingsystem] eq "aqua"} {
+	    set minStep 0
+	} else {
+	    set minStep -1
+	}
+	if {$minStep>=0} {
 	    set extraDelay [expr {$minStep-([clock clicks -milliseconds]-$runState(pacer))}]
 	    after $extraDelay [list set runState($node,ready) 1]
 	    set runState($node,ready) 0
