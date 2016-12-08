@@ -730,7 +730,7 @@ function insert_helper(id, type) {
     } else if (type == "shapes") {
 	currentHelper = new Shapes3D(id);
     } else if (type == "plot" || type == "plotxy") {
-	currentHelper = new PlotXY(id);
+	currentHelper = new PlotXY(id,type);
 	currentHelper.vers = type;
     } else if (type == "grid") {
 	currentHelper = new Grid5(id);
@@ -1037,8 +1037,9 @@ function AdjustAxesFor(that, addys) {
     that.zefn();
 }
 
-function PlotXY (port) {
+function PlotXY (port, type) {
   this.port = port;
+  this.type = type;
   this.tgts = [];
   this.yvals = [];
   this.oldys = [];
@@ -1046,7 +1047,7 @@ function PlotXY (port) {
   this.status = "initializing";
 
 // OK now add the message to the new tab
-  $('#' + port).html("Click on a component to plot on the Y axis.");
+  $('#' + port).html("Click on first component to plot on the Y axis.");
 }
 
 function squeezeDigits(val, room) {
@@ -1182,7 +1183,7 @@ PlotXY.prototype.acceptClick = function (compId) {
     buttonFn = "select_for('" + this.port + "','clear')";
     $('#' + this.port).html("<div id='Buttonbar'><button onclick=" + buttonFn
 			    + "><img src='images/new.gif'/></button></div>");
-    if (compId == "time") {
+    if (this.type == "plot") {
 	buttonFn = "select_for('" + this.port + "','add')";
 	$('#' + this.port).find('#Buttonbar')
 	    .append("<button onclick=" + buttonFn
