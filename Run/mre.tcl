@@ -111,7 +111,9 @@ namespace eval RunEnv {
                     {command "Print..." {} "Print display"  \
                                 {} -command { ::RunEnv::PrintCurrentContainer } }
                     {command "Export PostScript..." {} "Export display as PostScript"  \
-                                {} -command { ::RunEnv::ExportCurrentContainer } }
+                                {} -command { ::RunEnv::ExportCurrentContainer ps } }
+                    {command "Export SVG..." {} "Export display as Scalable Vector Graphics"  \
+                                {} -command { ::RunEnv::ExportCurrentContainer svg } }
                     {separator}
                     {command "Parameters..." {} "View or modify file parameters"  \
                                 {} -command { ::RunEnv::InvokeFPDialogue } }
@@ -366,13 +368,13 @@ namespace eval RunEnv {
 	$inst Print
     }
     
-    proc ExportCurrentContainer {} {
+    proc ExportCurrentContainer {format} {
         global helperTable
         variable CurrentContainer
 	variable currentNode
         
 	set inst $helperTable($CurrentContainer.container,whichInstance)
-	PostScrog [$inst GetCanvas] $currentNode
+	PostScrog [$inst GetCanvas] $currentNode $format
     }
     
     proc CopyHelper {} {

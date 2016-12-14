@@ -301,23 +301,44 @@ proc PrintRandomCanvas {canvas} {
 # the viewport is included, and the output is in landscape mode, sized so 100
 # pixels = 1 inch (so my beautiful 1152x864 screen will be about a sheet of A4)
 
-proc PostScrog { winId node } {
-    set psfile [ChooseFile image.ps [tr. "Name of postscript file:"] 1 $node]
+proc PostScrog { win node format} {
+    set tgt [ChooseFile image.$format [tr. "Name of graphics file:"] 1 $node]
     # check for cancel
-    if {![string match */ $psfile]} {
+    if {![string match */ $tgt]} {
         
-        # force .ps extension
-        if {[string compare [file extension $psfile] .ps]} {
-            set psfile [file root $psfile].ps
+        # force .ps/.svg extension
+        if {[string compare [file extension $tgt] .$format]} {
+            set tgt [file root $tgt].$format
         }
 
-	set useWidth [winfo width $winId]
-	set useHeight [winfo height $winId]
+	set useWidth [winfo width $win]
+	set useHeight [winfo height $win]
     
-	$winId postscript -file $psfile -rotate true -pageanchor nw \
-            -pagex 0 -pagey 0 \
-            -width $useWidth -height $useHeight \
-            -pagewidth [expr $useWidth/100.0]i -pageheight [expr $useHeight/100.0]i
+	switch $format {
+	    ps {
+		$win postscript -file $tgt -rotate true -pageanchor nw \
+		    -pagex 0 -pagey 0 -width $useWidth -height $useHeight \
+		    -pagewidth [expr $useWidth/100.0]i \
+		    -pageheight [expr $useHeight/100.0]i
+	    } svg {
+		package require can2svg
+		set scrogion [$win cget -scrollregion]
+		if {[llength $scrogion]} {
+		    foreach {l t r b} $scrogion break
+		} else {
+		    foreach {l t r b} [list 0 0 [winfo width $win] [winfo height $win]] break
+		}
+		set xpos [$win xview]
+		set ypos [$win yview]
+		$win configure -scrollregion [list 0 0 [expr $r-$l] [expr $b-$t]]          
+		$win move all [expr -$l] [expr -$t]
+		can2svg::canvas2file $win $tgt
+		$win move all $l $t
+		$win configure -scrollregion $scrogion
+		$win yview moveto [lindex $ypos 0]
+		$win xview moveto [lindex $xpos 0]
+	    }
+	}
     }
 }
 

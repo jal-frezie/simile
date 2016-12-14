@@ -167,6 +167,10 @@ itcl::class similescript::$newHelperClass {
 	}
     }
     
+    public method GetCanvas {} {
+        return $winId.c
+    }
+
     public method Click {path} {
 	$modelInst ReleaseClicks
 	MakeSelection $path

@@ -1327,7 +1327,7 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 	} win32 {
 	    set hideTinies 6
 	} aqua {
-	    set hideTinies 6
+	    set hideTinies 5
 	}
     }
     set n $window_info($winId,top_node)
@@ -1348,6 +1348,9 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
         set fontor $optFontor
     }
     foreach object $objList {
+	if {$hideTinies==5} {
+	    $winId itemconfigure $object -stipple {}
+	} ;# stipple breaks Postscript conversion in macos
 	switch [$winId type $object] {
         text {
 	    set fontData [ExtractFontData [$winId itemcget $object -font]]
