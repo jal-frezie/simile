@@ -1,4 +1,4 @@
-// this is the 'limits to growth' model in systo JSON format
+// this is the 'miniworld' model in systo JSON format
 var mwStr = 
 {
 "meta":{
