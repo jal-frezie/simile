@@ -54,7 +54,7 @@ endif
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
 MAKESL = -shared
-VERS = $(shell echo "puts [info tclversion]" | tclsh8.5)
+VERS = $(shell echo "puts [info tclversion]" | tclsh)
 # 8.5 stubs work in 8.6 better than vice versa
 PT = .
 
