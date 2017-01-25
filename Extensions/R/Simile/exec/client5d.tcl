@@ -79,7 +79,8 @@ proc ConsultParameterMetafile {instanceHandle fileLocn {targetSubmodel {}}} {
     set ::cbModelId $mHandle
     set ::instance_id $instanceHandle
     set topNode [lindex [listobjects $mHandle] 0]
-    set ::runState($topNode,reloadParams) 1
+#    set ::runState($topNode,reloadParams) 1
+# fixed params.tcl to do without this rather than update R package
     foreach component [ListObjPaths $mHandle] {
 	set eval [GetModelProperty $mHandle $component Eval]
 	set ::readMany(/$topNode$component) \

@@ -89,7 +89,15 @@ print("View default pattern -- now try to plot dancer")
 plot(xs, ys, type="l")
 
 # now we are going to parameterize it using a state file for the slider helper
-# -- to make this work we load the mime library, which is needed only because
+# -- the file from the distribution has no value for "Wheel outside?"
+# so we set this boolean directly
+pHandle <- create.param.array(iHandle, "/start/Wheel outside?")
+set.model.parameter(pHandle, FALSE)
+
+# reset before loading new slider posns as it will return them to defaults
+reset.model(iHandle, 0)
+
+# also to make this work we load the mime library, which is needed only because
 # the dancer.spf in Simile v5.97 is an older v4.x format file. No need to load 
 # if testing, and will always be available if live because required for Simile.
 
@@ -99,13 +107,8 @@ if (!is.dummy(iHandle)) {
 pFile  <- tcl("file", "join", path.to.installation, "Examples", "dancer.spf")
 consult.parameter.metafile(iHandle, pFile)
 
-# also the file from the distribution has no value for "Wheel outside?"
-# so we set this boolean directly
-pHandle <- create.param.array(iHandle, "/start/Wheel outside?")
-set.model.parameter(pHandle, FALSE)
-
-# apply reset at level 0 to propagate input values
-reset.model(iHandle, 0)
+# propagate new slider values to rest of model
+reset.model(iHandle, 1)
 
 xs <- list(get.value.list(iHandle, "/runs/x"))
 ys <- list(get.value.list(iHandle, "/runs/y"))
