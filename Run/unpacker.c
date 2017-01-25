@@ -930,11 +930,11 @@ return TCL_OK;
 }
  
 FINDABLE EXPORT int Unpacker_Init(Tcl_Interp *interp) {
-  char pkgName[16];
+  // char pkgName[16];
 
-  sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
-  /* Use the Tcl Stubs mechanism */
-  Tcl_InitStubs(interp, pkgName, 0);
+  // sprintf(pkgName, "%d.d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
+  // Use the Tcl Stubs mechanism --version is earliest we expect to work
+  if (!Tcl_InitStubs(interp, "8.5", 0)) return TCL_ERROR;
   Tcl_CreateObjCommand(interp, "c_testlicense", testlicenseCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 

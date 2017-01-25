@@ -1625,11 +1625,11 @@ FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
  */
 
 FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
-  char pkgName[16];
+  // char pkgName[16];
 
-  sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
-  /* Use the Tcl Stubs mechanism */
-  Tcl_InitStubs(interp, pkgName, 0);
+  // sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
+  // Use the Tcl Stubs mechanism --version is earliest we expect to work
+  if (!Tcl_InitStubs(interp, "8.5", 0)) return TCL_ERROR;
   proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess); 
   Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
