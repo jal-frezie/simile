@@ -471,7 +471,7 @@ namespace eval slide139 {
 			  0 $topNode]
         if {[llength $metaFile]} {
             ZapParams $topNode $smPath $metaFile 1
-	    RedoRatesAndDisplay $topNode
+ 	    RedoRatesAndDisplay $topNode
         }
     }
     

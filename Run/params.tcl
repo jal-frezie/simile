@@ -666,7 +666,8 @@ proc AcceptData {topNode compName notInput complain} {
                 ColourCaptions $outNames($compName) black
             }
             set suppliedData(needed) [purge $suppliedData(needed) $compName]
-	    if {$result<$runState($topNode,reloadParams)} {
+	    if {![info exists runState($topNode,reloadParams)] || \
+		    $result<$runState($topNode,reloadParams)} {
 # do not set if we already found an update needing a bigger reset than this one
 		set runState($topNode,reloadParams) $result
 	    }
