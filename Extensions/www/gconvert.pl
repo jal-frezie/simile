@@ -62,7 +62,8 @@ write_all(StmW, [Line | More]) :-
 	write_all(StmW, More).
 
 systo_to_simile(Systo, Simile, Eqs) :-
-	Systo = {meta : {_SyMs}, nodes : SyNs, arcs : SyAs, scenarios : _},
+    avs_to_list(Systo,
+		[meta : {_SyMs}, nodes : SyNs, arcs : SyAs, scenarios : _]),
 	Simile = [nodes : SmNs, arcs : SmAs],
 	nodes_systo_to_simile(SyNs, SmNs, Eqs),
 	arcs_systo_to_simile(SyAs, SmAs, SmNs, Eqs).
@@ -76,16 +77,17 @@ nodes_systo_to_simile(SyNs, SmNs, Eqs) :-
 	   SmNs = [SmN]),
 	node_systo_to_simile(SyN, SmN, Eqs).
 
-node_systo_to_simile({id : SyId, type : SyType, MoreAttrs},
+node_systo_to_simile(NodeAttrs, 
 		     node(SmId, SmType, [], SmProps, RealSmGraph),
 		     Eqs) :-
+    avs_to_list(NodeAttrs, [id : SyId, type : SyType | MoreAttrs]),
     member(SyType-SmType-MoreAttrs,
-	   [cloud-cloud-(centrex : CtrX, centrey : CtrY),
-	    stock-compartment-(label : Lbl, centrex : CtrX, centrey : CtrY,
-			       equation : SmSpc),
-	    variable-variable-(label : Lbl, centrex : CtrX, centrey : CtrY,
-			       equation : SmSpc),
-	    valve-function-(label : Lbl, equation : SmSpc)]),
+	   [cloud-cloud-[centrex : CtrX, centrey : CtrY],
+	    stock-compartment-[label : Lbl, centrex : CtrX, centrey : CtrY,
+			       equation : SmSpc],
+	    variable-variable-[label : Lbl, centrex : CtrX, centrey : CtrY,
+			       equation : SmSpc],
+	    valve-function-[label : Lbl, equation : SmSpc]]),
 	make_id_match(SyId, SmId, SyType, node, Eqs),
 	(SyType = valve -> DefUnits = 1/day, RealSmGraph = [along=550];
 	 DefUnits = 1, RealSmGraph = SmGraph),
@@ -182,13 +184,12 @@ arcs_systo_to_simile(SyAs, SmAs, SmNs, Eqs) :-
 arc_systo_to_simile(Attrs,
 		     arc(SmId, SmSrc, SmDest, SyType, SmProps, SmGraph),
 		     SmNs, Eqs) :-
-    (Attrs = {id : SyId, type : SyType,
-	      start_node_id : SySrc, end_node_id : SyDest,
-	      mid_node_ids: [SyTap]};
-     Attrs = {type : SyType, start_node_id : SySrc, end_node_id : SyDest},
-     atom_concat(SySrc, '_influencing_', SyOpen),
+    avs_to_list(Attrs, [type : SyType,
+			start_node_id : SySrc, end_node_id : SyDest | Opts]),
+    (member(id : SyId, Opts) -> true;
+     atom_concat(SySrc, '_to_', SyOpen),
      atom_concat(SyOpen, SyDest, SyId)),
-	make_id_match(SyId, SmId, SyType, arc, Eqs),
+    make_id_match(SyId, SmId, SyType, arc, Eqs),
 	make_id_match(SySrc, SmSrcs, _, node, Eqs),
 	(SmSrcs = _-SmSrc, !; SmSrcs = SmSrc),
 	make_id_match(SyDest, SmDests, _, node, Eqs),
@@ -196,6 +197,7 @@ arc_systo_to_simile(Attrs,
 	 SmDests = SmDest-_, !; SmDest = SmDests),
 
 	(SyType = flow, !,
+	    member(mid_node_ids : [SyTap], Opts),
 	    select(attached=[SmTap], SmProps, SmProps1),
 	    make_id_match(SyTap, SmTap, valve, node, Eqs),
 	    select(curve=[550,1000], SmGraph, []),
@@ -215,5 +217,13 @@ arc_systo_to_simile(Attrs,
 	        SyC = 0.3,
 	        SyA = 0.5;
 	      SmCX is round(100*SyA),
-	        SmCY is round(100*SyC))). % 'attached' must come 1st
+	      SmCY is round(100*SyC))). % 'attached' must come 1st
+
+% convert {A,B,C...} to [A,B,C...] or any permutation
+avs_to_list({First, Rest}, All) :- !,
+    avs_to_list({Rest}, Others),
+    append(Top, Bottom, Others),
+    append(Top, [First | Bottom], All).
+avs_to_list({Last}, [Last]).
+						  
 :- initialization(main).
