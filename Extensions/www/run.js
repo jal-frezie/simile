@@ -1070,6 +1070,7 @@ PlotXY.prototype.acceptClick = function (compId) {
 	$('#' + this.port).html("Click on a component to plot on the X axis.");
     } else {
 	select_for_helper('time')
+	this.status = "adding";
     }
   } else if (compId == "add") {
       $('#' + this.port).find('#instruct')
