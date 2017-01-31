@@ -195,11 +195,12 @@ break;
 //       echo preg_replace('/^<svg /', '$0id="mod_diag" ', $svgLine);
       echo $svgLine;
 // add a group round all the contents so they can be translated in Chromium
-      echo '<defs><g id="mod_diag">';
+// (group was previously in a <defs> element to allow inclusion by reference)
+      echo '<g id="mod_diag">';
       while (!feof($svgStm)) {
         echo fgets($svgStm);
       }
-      echo "</g></defs>";
+      echo "</g>";
       fclose($svgStm);
       break;
 

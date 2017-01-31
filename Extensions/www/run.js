@@ -887,11 +887,12 @@ function mapToScreen(object, eyepiece, w, action) {
 function ModelDiagram (port) {
     this.port = port;
 
-    $('#' + port).html('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="' + port + '_diag" viewBox="0 0 800 800" width="800" height="800"> <use xlink:href="#mod_diag" transform="rotate(0)" x="0" y="0" width="800" height="800" /> </svg>');
-    
+    $('#' + port).html('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="' + port + '_diag" viewBox="0 0 800 800" width="800" height="800">  </svg>');
+    // above previously included <use xlink:href="#mod_diag" transform="rotate(0)" x="0" y="0" width="800" height="800" />
+    document.getElementById(port + '_diag').appendChild(document.getElementById('mod_diag'));
     this.diagZoom = d3.behavior.zoom()
 	.on("zoom", function () {
-	    d3.select('#' + port + '_diag').select('use')
+	    d3.select('#' + port + '_diag').select('g') // was 'use'
 		.attr("transform", "translate(" + d3.event.translate +
 		      ")scale(" + d3.event.scale + ")");
 	});
@@ -2200,7 +2201,7 @@ var model_json;
 var values_json;
 var fvParms;
 var timeUnit = "unit";
-var diag_zoom;
+//var diag_zoom;
 function prepare() {
     // set up splits
     Split(['#Left', '#right'], {
@@ -2280,12 +2281,12 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
 	//$('#' + modDiagTab).html(diagSVG);
   
       ModDiag = document.getElementById("mod_diag");
-      diag_zoom = d3.behavior.zoom()
-	  .on("zoom", function () {
-	       d3.select('#mod_diag').select('g')
-		  .attr("transform", "translate(" + d3.event.translate +
-			")scale(" + d3.event.scale + ")");
-	  });
+      //diag_zoom = d3.behavior.zoom()
+//	  .on("zoom", function () {
+//	       d3.select('#mod_diag').select('g')
+//		  .attr("transform", "translate(" + d3.event.translate +
+//			")scale(" + d3.event.scale + ")");
+//	  });
       // d3.select('#mod_diag').attr("class","pane").call(diag_zoom);
       // resize_notebook();
     all = ModDiag.getElementsByTagName("*");
