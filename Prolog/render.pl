@@ -821,8 +821,10 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 	     (Pairs = [_Either-FullStr];
 	      select(_Desc-Pt1, Pairs, [comment-Pt2]),
 	      append_atoms([Pt1, '\n', Pt2], FullStr));
-          member(Field-Attr, [spec-spec, units-units]),
-	     Node has_class_refinement Attr of Term,
+          member(Field-Attr, [spec-spec, spec-value, units-units]),
+	  Node has_class_refinement Attr of Repn,
+	  (Attr = spec, catch(name(Term, Repn), _Er, fail); % old style spec
+	   Term = Repn), !,
              sicstus_format_to_chars("~w", [Term], FullStrStr),
              sicstus_atom_chars(FullStr, FullStrStr)),
 	templatify(L, FullStr, Ptr, Decl),
