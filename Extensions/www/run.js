@@ -1071,7 +1071,6 @@ PlotXY.prototype.acceptClick = function (compId) {
 	$('#' + this.port).html("Click on a component to plot on the X axis.");
     } else {
 	select_for_helper('time')
-	this.status = "adding";
     }
   } else if (compId == "add") {
       $('#' + this.port).find('#instruct')
@@ -1111,6 +1110,8 @@ PlotXY.prototype.acceptClick = function (compId) {
 	this.tgts.push(compId);
 	//this.yvals.push(compId);
 	//addys = flatten('t', JSON.parse(values_json[compId]));
+    } else if (this.status == "displaying") {
+	return
     } else { // just added component for X axis
 	this.tgts.push(compId);
 	this.xval = compId;
