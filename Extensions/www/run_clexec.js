@@ -140,7 +140,7 @@ function hoverIn(evt) {
 	// console.log("No prolog id for " + evt.target);
 	return;
     }
-    subtlety = evt.path;
+//    subtlety = evt.path;
 //  var currentLine = model_json.find(function (e) {
 //		     return e.id == prolog;
 // 		     });
@@ -152,11 +152,18 @@ function hoverIn(evt) {
     tooltip_c.firstChild.data = model_json[prolog].comment;
 // above will break function if it doesn't work
 
-    for (var i=0; subtlety[i].nodeName != "svg"; ++i) {}
-        var uupos = subtlety[i].createSVGPoint();
+// now find svg node...cannot use below cos safari does not supply evt.path
+//    for (var i=0; subtlety[i].nodeName != "svg"; ++i) {}
+//        var uupos = subtlety[i].createSVGPoint();
+	while (blob.nodeName != "svg") {
+           topGrp = blob;
+	   blob = blob.parentNode;
+	}
+	var uupos = blob.createSVGPoint();
         uupos.x = evt.pageX - window.pageXOffset;
         uupos.y = evt.pageY - window.pageYOffset;
-        var ctm = subtlety[i-1].getScreenCTM();
+//        var ctm = subtlety[i-1].getScreenCTM();
+	var ctm = topGrp.getScreenCTM();
         if (ctm = ctm.inverse())
             uupos = uupos.matrixTransform(ctm);
 
@@ -872,8 +879,9 @@ function mapToScreen(object, eyepiece, w, action) {
 function ModelDiagram (port) {
     this.port = port;
 
-    $('#' + port).html('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="' + port + '_diag" viewBox="0 0 800 800" width="800" height="800"> <use xlink:href="#mod_diag" transform="rotate(0)" x="0" y="0" width="800" height="800" /> </svg>');
-    
+    $('#' + port).html('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="' + port + '_diag" viewBox="0 0 800 800" width="800" height="800">  </svg>');
+    // above previously included <use xlink:href="#mod_diag" transform="rotate(0)" x="0" y="0" width="800" height="800" />
+    document.getElementById(port + '_diag').appendChild(document.getElementById('mod_diag'));
     this.diagZoom = d3.behavior.zoom()
 	.on("zoom", function () {
 	    d3.select('#' + port + '_diag').select('use')
