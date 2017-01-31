@@ -77,6 +77,7 @@ function prettify (data, sub) {
 }
 
 function hoverIn(evt) {
+//  console.log(evt);
   var tags = null;
   var blob = evt.target;
   while (tags == null) {
@@ -88,7 +89,7 @@ function hoverIn(evt) {
 	// console.log("No prolog id for " + evt.target);
 	return;
     }
-    subtlety = evt.path;
+//    subtlety = evt.path;
 //  var currentLine = model_json.find(function (e) {
 //		     return e.id == prolog;
 // 		     });
@@ -97,11 +98,18 @@ function hoverIn(evt) {
   tooltip_c.firstChild.data = model_json[prolog].comment;
 // above will break function if it doesn't work
 
-    for (var i=0; subtlety[i].nodeName != "svg"; ++i) {}
-        var uupos = subtlety[i].createSVGPoint();
+// now find svg node...cannot use below cos safari does not supply evt.path
+//    for (var i=0; subtlety[i].nodeName != "svg"; ++i) {}
+//        var uupos = subtlety[i].createSVGPoint();
+	while (blob.nodeName != "svg") {
+           topGrp = blob;
+	   blob = blob.parentNode;
+	}
+	var uupos = blob.createSVGPoint();
         uupos.x = evt.pageX - window.pageXOffset;
         uupos.y = evt.pageY - window.pageYOffset;
-        var ctm = subtlety[i-1].getScreenCTM();
+//        var ctm = sublety[i-1].getScreenCTM();
+	var ctm = topGrp.getScreenCTM();
         if (ctm = ctm.inverse())
             uupos = uupos.matrixTransform(ctm);
 
