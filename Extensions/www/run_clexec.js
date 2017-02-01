@@ -884,7 +884,7 @@ function ModelDiagram (port) {
     document.getElementById(port + '_diag').appendChild(document.getElementById('mod_diag'));
     this.diagZoom = d3.behavior.zoom()
 	.on("zoom", function () {
-	    d3.select('#' + port + '_diag').select('use')
+	    d3.select('#' + port + '_diag').select('g') // was 'use'
 		.attr("transform", "translate(" + d3.event.translate +
 		      ")scale(" + d3.event.scale + ")");
 	});
@@ -1168,7 +1168,7 @@ PlotXY.prototype.acceptClick = function (compId) {
     buttonFn = "select_for('" + this.port + "','clear')";
     $('#' + this.port).html("<div id='Buttonbar'><button onclick=" + buttonFn
 			    + "><img src='images/new.gif'/></button></div>");
-    if (compId == "time") {
+    if (this.vers == 'plot') {
 	buttonFn = "select_for('" + this.port + "','add')";
 	$('#' + this.port).find('#Buttonbar')
 	    .append("<button onclick=" + buttonFn

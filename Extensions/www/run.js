@@ -738,7 +738,7 @@ function insert_helper(id, type) {
     } else if (type == "shapes") {
 	currentHelper = new Shapes3D(id);
     } else if (type == "plot" || type == "plotxy") {
-	currentHelper = new PlotXY(id,type);
+	currentHelper = new PlotXY(id);
 	currentHelper.vers = type;
     } else if (type == "grid") {
 	currentHelper = new Grid5(id);
@@ -1046,9 +1046,8 @@ function AdjustAxesFor(that, addys) {
     that.zefn();
 }
 
-function PlotXY (port, type) {
+function PlotXY (port) {
   this.port = port;
-  this.type = type;
   this.tgts = [];
   this.yvals = [];
   this.oldys = [];
@@ -1194,7 +1193,7 @@ PlotXY.prototype.acceptClick = function (compId) {
     buttonFn = "select_for('" + this.port + "','clear')";
     $('#' + this.port).html("<div id='Buttonbar'><button onclick=" + buttonFn
 			    + "><img src='images/new.gif'/></button></div>");
-    if (this.type == "plot") {
+    if (this.vers == "plot") {
 	buttonFn = "select_for('" + this.port + "','add')";
 	$('#' + this.port).find('#Buttonbar')
 	    .append("<button onclick=" + buttonFn
