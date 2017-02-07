@@ -188,7 +188,7 @@ context_find(Wid, Query, Target) :-
 	    \+ Comp is_of_sort captionless,
 	    caption_for(Comp, Field)),
 	name(Query, QueryStr),
-	name(Field, FieldStr),
+        sicstus_format_to_chars("~w", [Field], FieldStr), % state eqn not atom
 	squint_at(QueryStr, LQueryStr),
 	squint_at(FieldStr, LFieldStr),
 	is_infix(LQueryStr, LFieldStr),
