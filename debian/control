@@ -12,9 +12,10 @@ Source: simile
 Section: science
 Priority: extra
 Maintainer: Jasper Taylor <jasper@simulistics.com>
-Build-Depends: debhelper (>= 9.0.0), tcl-dev (>= 8.5) | tcl8.5-dev (>= 8.5), tk-dev (>= 8.5) | tk8.5-dev (>= 8.5), libgdal-dev (>= 1.5)
+Build-Depends: debhelper (>= 9.0.0), tcl-dev (>= 8.5) | tcl8.5-dev, tk-dev (>= 8.5) | tk8.5-dev, libgdal-dev (>= 1.5)
 # removed  gprolog (>= 1.4.0), from above as hard to find for Debians
 # build from src before building binary .deb!
+# tk needed for building tkdnd
 Standards-Version: 3.9.3
 Homepage: http://simulistics.com
 #Vcs-Git: git://git.debian.org/collab-maint/simile.git
