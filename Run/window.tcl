@@ -809,7 +809,9 @@ proc FixDisabledImgBug {ttkButton} {
 # Only do for Cocoa so disabled images greyed elsewhere
     if {$::inCocoa} {
 	set origImg [$ttkButton cget -image]
-	$ttkButton config -image [list $origImg disabled $origImg]
+	set bag [$origImg data -format png]
+	set newImg [image create photo -data $bag -format {png -alpha 0.4}]
+	$ttkButton config -image [list $origImg disabled $newImg]
     }
 }
 
