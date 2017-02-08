@@ -810,7 +810,7 @@ proc FixDisabledImgBug {ttkButton} {
     if {$::inCocoa} {
 	set origImg [$ttkButton cget -image]
 	set bag [$origImg data -format png]
-	set newImg [image create photo -data $bag -format {png -alpha 0.4}]
+	set newImg [image create photo -data $bag -format {png -alpha 0.3}]
 	$ttkButton config -image [list $origImg disabled $newImg]
     }
 }
