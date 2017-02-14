@@ -63,7 +63,7 @@ SLDIR = $(RESDIR)
 # USETCL = -DUSE_TCL_STUBS -I$(TCLREF)/include/tcl$(VERS) -L$(TCLREF)/lib -ltclstub$(VERS)
 
 # Next builds against system Tcl for Prolog debugging with Sicstus/dll
-USETCL = -DUSE_TCL_STUBS -ltclstub$(VERS)
+USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include/tcl$(VERS) -ltclstub$(VERS)
 LOCALIZE_TCL_REFS = ls # placebo command
 CHECK_LOCAL_LIBS = -Wl,-rpath,'$$ORIGIN/..'
 SHAREDLIBEXTN = .so
