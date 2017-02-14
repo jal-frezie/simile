@@ -2568,8 +2568,8 @@ proc Query {specifics icon helpRef parent opts} {
 	} else { ;# "see all": display remaining messages together
 	    AddMsgsToLog
 	    set result $dialogues(done)
-	    after idle [list StopMsgLogging $specifics $title $icon \
-			    $helpRef $useParent ok]
+	    after 10 [list StopMsgLogging $specifics $title $icon \
+			    $helpRef $parent ok]
 	}
     } else {
 	set result $dialogues(done)
