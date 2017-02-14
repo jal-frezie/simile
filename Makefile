@@ -1,4 +1,4 @@
-MINREL = 7
+MINREL = 8
 
 # days after install: 0 for no installation expiry
 REL_EXP = 0
@@ -31,7 +31,7 @@ GPPCMD = g++
 
 ifeq ($(MY_CPU),x86_64)
 BITEXTN = 64
-TCLDIR = /usr
+TCLDIR = /usr/local
 TCLREF = $(TCLDIR)
 else
 BITEXTN = 
@@ -54,7 +54,7 @@ endif
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
 MAKESL = -shared
-VERS = $(shell echo "puts [info tclversion]" | tclsh)
+VERS = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh)
 # 8.5 stubs work in 8.6 better than vice versa
 PT = .
 
@@ -106,10 +106,6 @@ endif
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
         # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	SYSDIR = System$(BITEXTN)
-#	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh85)
-	VERSION = 8.5
-	PT =
-	VERS = $(subst .,,$(VERSION))
 ifeq ($(MY_CPU),x86_64)
 	TCLDIR =  /usr/local
 	SWIPLDIR = "/c/Program files/swipl"
@@ -119,13 +115,18 @@ ifeq ($(MY_CPU),x86_64)
 else
 #	TCLDIR = "/c/Program files (x86)/Tcl"
 # Actually, use local TclTk as above dir not exist on 32bit machines --
-	TCLDIR = "$(shell pwd)/$(SYSDIR)"
+#	TCLDIR = "$(shell pwd)/$(SYSDIR)"
+	TCLDIR = /usr/local32
 	RESCMD = windres
 	INSTLIB = Run/install.dll
 # must be 32-bit because installer is
 endif
+	VERSION = $(shell echo "puts [info tclversion]" | $(TCLDIR)/bin/tclsh)
+	PT =
+	VERS = $(subst .,,$(VERSION))
+
 	TCLREF = $(TCLDIR)
-	TCLINC = $(TCLREF)/include/tcl$(VERSION)
+	TCLINC = $(TCLREF)/include
 	CFLAGS = $(OPT)
 	SHAREDLIBPREFX = 
 	MAKEPIC = 
@@ -275,12 +276,14 @@ $(INSTLIB): Run/install_adv.c Makefile
 # do strange things to dll dependencies causing c000007b errors
 $(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile.rc
 	cd Interp; $(RESCMD) -o rc.o Simile.rc; \
-	$(GCCCMD) $(CFLAGS) -o ../$(EXECDIR)/Simile.exe Simile.c -I$(TCLINC) \
+	$(GCCCMD) $(CFLAGS) -DTCL_BROKEN_MAINARGS -DUNICODE -D_UNICODE \
+		-o ../$(EXECDIR)/Simile.exe Simile.c -I$(TCLINC) \
 		-L$(TCLREF)/lib -ltcl$(VERS) -ltk$(VERS) -mwindows; cd ..
 
 $(SCRIPT): Interp/script.c Interp/script.rc
 	cd Interp; $(RESCMD) -o scriptrc.o script.rc; \
-	$(GCCCMD) $(CFLAGS) -I$(TCLINC) -o ../$(SCRIPT) script.c -I$(TCLINC) \
+	$(GCCCMD) $(CFLAGS) -DTCL_BROKEN_MAINARGS -DUNICODE -D_UNICODE \
+		-I$(TCLINC) -o ../$(SCRIPT) script.c -I$(TCLINC) \
 		-L$(TCLREF)/lib -ltcl$(VERS) -ltk$(VERS) -mwindows; cd ..
 #else
 

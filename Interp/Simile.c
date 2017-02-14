@@ -1,78 +1,86 @@
- /* 
+/*
  * winMain.c --
  *
- *	Main entry point for wish and other Tk-based applications.
+ *	Provides a default version of the main program and Tcl_AppInit
+ *	procedure for wish and other Tk-based applications.
  *
- * Copyright (c) 1995-1997 Sun Microsystems, Inc.
- * Copyright (c) 1998-1999 by Scriptics Corporation.
+ * Copyright (c) 1993 The Regents of the University of California.
+ * Copyright (c) 1994-1997 Sun Microsystems, Inc.
+ * Copyright (c) 1998-1999 Scriptics Corporation.
  *
- * See the file "license.terms" for information on usage and redistribution
- * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: Simile.c,v 1.9 2007/05/05 13:08:42 jaspert Exp $
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <tk.h>
+#include "tk.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
-#include <malloc.h>
 #include <locale.h>
+#include <stdlib.h>
+#include <tchar.h>
 
-//#include "tkInt.h"
+#if defined(__GNUC__)
+int _CRT_glob = 0;
+#endif /* __GNUC__ */
 
-/*
- * The following declarations refer to internal Tk routines.  These
- * interfaces are available for use, but are not supported.
- */
+#ifdef TK_TEST
+extern Tcl_PackageInitProc Tktest_Init;
+#endif /* TK_TEST */
 
+#if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
+extern Tcl_PackageInitProc Registry_Init;
+extern Tcl_PackageInitProc Dde_Init;
+extern Tcl_PackageInitProc Dde_SafeInit;
+#endif
+
+#ifdef TCL_BROKEN_MAINARGS
+static void setargv(int *argcPtr, TCHAR ***argvPtr);
+#endif
 
 /*
  * Forward declarations for procedures defined later in this file:
  */
 
-static void		setargv _ANSI_ARGS_((int *argcPtr, char ***argvPtr));
-static void		WishPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,format));
-
-#ifdef TK_TEST
-extern int		Tktest_Init(Tcl_Interp *interp);
-#endif /* TK_TEST */
-
 static BOOL consoleRequired = TRUE;
 
 /*
- * The following #if block allows you to change the AppInit
- * function by using a #define of TCL_LOCAL_APPINIT instead
- * of rewriting this entire file.  The #if checks for that
- * #define and uses Tcl_AppInit if it doesn't exist.
+ * The following #if block allows you to change the AppInit function by using
+ * a #define of TCL_LOCAL_APPINIT instead of rewriting this entire file. The
+ * #if checks for that #define and uses Tcl_AppInit if it doesn't exist.
  */
-    
+
 #ifndef TK_LOCAL_APPINIT
-#define TK_LOCAL_APPINIT Tcl_AppInit    
+#define TK_LOCAL_APPINIT Tcl_AppInit
 #endif
-extern int TK_LOCAL_APPINIT _ANSI_ARGS_((Tcl_Interp *interp));
-    
+#ifndef MODULE_SCOPE
+#   define MODULE_SCOPE extern
+#endif
+MODULE_SCOPE int TK_LOCAL_APPINIT(Tcl_Interp *interp);
+
 /*
  * The following #if block allows you to change how Tcl finds the startup
- * script, prime the library or encoding paths, fiddle with the argv,
- * etc., without needing to rewrite Tk_Main()
+ * script, prime the library or encoding paths, fiddle with the argv, etc.,
+ * without needing to rewrite Tk_Main()
  */
 
 #ifdef TK_LOCAL_MAIN_HOOK
-extern int TK_LOCAL_MAIN_HOOK _ANSI_ARGS_((int *argc, char ***argv));
+MODULE_SCOPE int TK_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 #endif
 
-
+/* Make sure the stubbed variants of those are never used. */
+#undef Tcl_ObjSetVar2
+#undef Tcl_NewStringObj
+
 /*
  *----------------------------------------------------------------------
  *
- * WinMain --
+ * _tWinMain --
  *
  *	Main entry point from Windows.
  *
  * Results:
- *	Returns false if initialization fails, otherwise it never
- *	returns. 
+ *	Returns false if initialization fails, otherwise it never returns.
  *
  * Side effects:
  *	Just about anything, since from here we call arbitrary Tcl code.
@@ -81,45 +89,57 @@ extern int TK_LOCAL_MAIN_HOOK _ANSI_ARGS_((int *argc, char ***argv));
  */
 
 int APIENTRY
-WinMain(hInstance, hPrevInstance, lpszCmdLine, nCmdShow)
-    HINSTANCE hInstance;
-    HINSTANCE hPrevInstance;
-    LPSTR lpszCmdLine;
-    int nCmdShow;
+#ifdef TCL_BROKEN_MAINARGS
+WinMain(
+    HINSTANCE hInstance,
+    HINSTANCE hPrevInstance,
+    LPSTR lpszCmdLine,
+    int nCmdShow)
+#else
+_tWinMain(
+    HINSTANCE hInstance,
+    HINSTANCE hPrevInstance,
+    LPTSTR lpszCmdLine,
+    int nCmdShow)
+#endif
 {
-    char **argv;
+    TCHAR **argv;
     int argc;
-    char buffer[MAX_PATH+1];
-    char *p;
-	char *tempstr;
-
-
-    Tcl_SetPanicProc(WishPanic);
+    TCHAR buffer[MAX_PATH+1];
+    TCHAR *p;
+    TCHAR *tempstr;
 
     /*
-     * Create the console channels and install them as the standard
-     * channels.  All I/O will be discarded until Tk_CreateConsoleWindow is
-     * called to attach the console to a text widget.
+     * Create the console channels and install them as the standard channels.
+     * All I/O will be discarded until Tk_CreateConsoleWindow is called to
+     * attach the console to a text widget.
      */
 
     consoleRequired = TRUE;
 
     /*
-     * Set up the default locale to be standard "C" locale so parsing
-     * is performed correctly.
+     * Set up the default locale to be standard "C" locale so parsing is
+     * performed correctly.
      */
 
     setlocale(LC_ALL, "C");
-    setargv(&argc, &argv);
 
     /*
-     * Replace argv[0] with full pathname of executable, and forward
-     * slashes substituted for backslashes.
+     * Get our args from the c-runtime. Ignore lpszCmdLine.
      */
 
-    GetModuleFileName(NULL, buffer, sizeof(buffer));
-    argv[0] = buffer;
-    for (p = buffer; *p != '\0'; p++) {
+#if defined(TCL_BROKEN_MAINARGS)
+    setargv(&argc, &argv);
+#else
+    argc = __argc;
+    argv = __targv;
+#endif
+
+    /*
+     * Forward slashes substituted for backslashes.
+     */
+
+    for (p = argv[0]; *p != '\0'; p++) {
 	if (*p == '\\') {
 	    *p = '/';
 	}
@@ -129,37 +149,36 @@ WinMain(hInstance, hPrevInstance, lpszCmdLine, nCmdShow)
     TK_LOCAL_MAIN_HOOK(&argc, &argv);
 #endif
 
-	tempstr = buffer;
+    // next bit specific to Simile
+    tempstr = buffer;
     if (argc==3) {
-    tempstr = argv[1];
+	tempstr = argv[1];
 	argv[1] = argv[2];
 	argv[2] = tempstr;
-	}
+    }
     if (argc>3) {
-    MessageBeep(MB_ICONEXCLAMATION);
-    MessageBox(NULL, "More than one arguement passed to Simile.exe", "Error",
-	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
-    ExitProcess(1);
-	}
-
+	MessageBeep(MB_ICONEXCLAMATION);
+	MessageBox(NULL, "More than one argument passed to Simile.exe", "Error",
+		   MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+	ExitProcess(1);
+    }
 
     Tk_Main(argc, argv, TK_LOCAL_APPINIT);
-    return 1;
+    return 0;			/* Needed only to prevent compiler warning. */
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
  * Tcl_AppInit --
  *
- *	This procedure performs application-specific initialization.
- *	Most applications, especially those that incorporate additional
- *	packages, will have their own version of this procedure.
+ *	This procedure performs application-specific initialization. Most
+ *	applications, especially those that incorporate additional packages,
+ *	will have their own version of this procedure.
  *
  * Results:
- *	Returns a standard Tcl completion code, and leaves an error
- *	message in the interp's result if an error occurs.
+ *	Returns a standard Tcl completion code, and leaves an error message in
+ *	the interp's result if an error occurs.
  *
  * Side effects:
  *	Depends on the startup script.
@@ -168,15 +187,14 @@ WinMain(hInstance, hPrevInstance, lpszCmdLine, nCmdShow)
  */
 
 int
-Tcl_AppInit(interp)
-    Tcl_Interp *interp;		/* Interpreter for application. */
+Tcl_AppInit(
+    Tcl_Interp *interp)		/* Interpreter for application. */
 {
-
-    if (Tcl_Init(interp) == TCL_ERROR) {
-	goto error;
+    if ((Tcl_Init)(interp) == TCL_ERROR) {
+	return TCL_ERROR;
     }
     if (Tk_Init(interp) == TCL_ERROR) {
-	goto error;
+	return TCL_ERROR;
     }
     Tcl_StaticPackage(interp, "Tk", Tk_Init, Tk_SafeInit);
 
@@ -187,75 +205,131 @@ Tcl_AppInit(interp)
 
     if (consoleRequired) {
 	if (Tk_CreateConsoleWindow(interp) == TCL_ERROR) {
-	    goto error;
+	    return TCL_ERROR;
 	}
     }
+#if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
+    if (Registry_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    Tcl_StaticPackage(interp, "registry", Registry_Init, 0);
+
+    if (Dde_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
+#endif
 
 #ifdef TK_TEST
     if (Tktest_Init(interp) == TCL_ERROR) {
-	goto error;
+	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "Tktest", Tktest_Init,
-            (Tcl_PackageInitProc *) NULL);
+    Tcl_StaticPackage(interp, "Tktest", Tktest_Init, 0);
 #endif /* TK_TEST */
 
+    /*
+     * Call the init procedures for included packages. Each call should look
+     * like this:
+     *
+     * if (Mod_Init(interp) == TCL_ERROR) {
+     *     return TCL_ERROR;
+     * }
+     *
+     * where "Mod" is the name of the module. (Dynamically-loadable packages
+     * should have the same entry-point name.)
+     */
 
-    Tcl_Eval(interp, "set tcl_rcFileName [file dirname [info nameofexecutable]]/../../Run/Simile.tcl");
+    /*
+     * Call Tcl_CreateObjCommand for application-specific commands, if they
+     * weren't already created by the init procedures called above.
+     */
+
+    /*
+     * Specify a user-specific startup file to invoke if the application is
+     * run interactively. Typically the startup file is "~/.apprc" where "app"
+     * is the name of the application. If this line is deleted then no user-
+     * specific startup file will be run under any conditions.
+
+     * (Simile need not change this; arg insertion below takes care of it)
+     */
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+	    Tcl_NewStringObj("~/wishrc.tcl", -1), TCL_GLOBAL_ONLY);
 
     return TCL_OK;
-
-error:
-    MessageBeep(MB_ICONEXCLAMATION);
-    MessageBox(NULL, Tcl_GetStringResult(interp), "Error in Wish",
-	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
-    ExitProcess(1);
-    /* we won't reach this, but we need the return */
-    return TCL_ERROR;
 }
 
+#if defined(TK_TEST)
 /*
  *----------------------------------------------------------------------
  *
- * WishPanic --
+ * _tmain --
  *
- *	Display a message and exit.
+ *	Main entry point from the console.
  *
  * Results:
- *	None.
+ *	None: Tk_Main never returns here, so this procedure never returns
+ *	either.
  *
  * Side effects:
- *	Exits the program.
+ *	Whatever the applications does.
  *
  *----------------------------------------------------------------------
  */
 
-void
-WishPanic TCL_VARARGS_DEF(CONST char *,arg1)
+#ifdef TCL_BROKEN_MAINARGS
+int
+main(
+    int argc,
+    char **dummy)
 {
-    va_list argList;
-    char buf[1024];
-    CONST char *format;
-    
-    format = TCL_VARARGS_START(CONST char *,arg1,argList);
-    vsprintf(buf, format, argList);
-
-    MessageBeep(MB_ICONEXCLAMATION);
-    MessageBox(NULL, buf, "Fatal Error in Simile.exe",
-	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
-#ifdef _MSC_VER
-    DebugBreak();
+    TCHAR **argv;
+#else
+int
+_tmain(
+    int argc,
+    TCHAR **argv)
+{
 #endif
-    ExitProcess(1);
+    /*
+     * Set up the default locale to be standard "C" locale so parsing is
+     * performed correctly.
+     */
+
+    setlocale(LC_ALL, "C");
+
+#ifdef TCL_BROKEN_MAINARGS
+    /*
+     * Get our args from the c-runtime. Ignore argc/argv.
+     */
+
+    setargv(&argc, &argv);
+#endif
+    /*
+     * Console emulation widget not required as this entry is from the
+     * console subsystem, thus stdin,out,err already have end-points.
+     */
+
+    consoleRequired = FALSE;
+
+#ifdef TK_LOCAL_MAIN_HOOK
+    TK_LOCAL_MAIN_HOOK(&argc, &argv);
+#endif
+
+    Tk_Main(argc, argv, Tcl_AppInit);
+    return 0;
 }
+#endif /* !__GNUC__ || TK_TEST */
+
+
 /*
  *-------------------------------------------------------------------------
  *
  * setargv --
  *
- *	Parse the Windows command line string into argc/argv.  Done here
- *	because we don't trust the builtin argument parser in crt0.  
- *	Windows applications are responsible for breaking their command
- *	line into arguments.
+ *	Parse the Windows command line string into argc/argv. Done here
+ *	because we don't trust the builtin argument parser in crt0. Windows
+ *	applications are responsible for breaking their command line into
+ *	arguments.
  *
  *	2N backslashes + quote -> N backslashes + begin quoted string
  *	2N + 1 backslashes + quote -> literal
@@ -265,8 +339,8 @@ WishPanic TCL_VARARGS_DEF(CONST char *,arg1)
  *	quote -> begin quoted string
  *
  * Results:
- *	Fills argcPtr with the number of arguments and argvPtr with the
- *	array of arguments.
+ *	Fills argcPtr with the number of arguments and argvPtr with the array
+ *	of arguments.
  *
  * Side effects:
  *	Memory allocated.
@@ -274,17 +348,19 @@ WishPanic TCL_VARARGS_DEF(CONST char *,arg1)
  *--------------------------------------------------------------------------
  */
 
+#ifdef TCL_BROKEN_MAINARGS
 static void
-setargv(argcPtr, argvPtr)
-    int *argcPtr;		/* Filled with number of argument strings. */
-    char ***argvPtr;		/* Filled with argument strings (malloc'd). */
+setargv(
+    int *argcPtr,		/* Filled with number of argument strings. */
+    TCHAR ***argvPtr)		/* Filled with argument strings (malloc'd). */
 {
-    char *cmdLine, *p, *arg, *argSpace;
-    char **argv;
-    int argc, size, inquote, copy, slashes; 
-    char buffer[MAX_PATH+1];
-    char buffer2[MAX_PATH+1];
-    char *pdest;
+    TCHAR *cmdLine, *p, *arg, *argSpace;
+    TCHAR **argv;
+    int argc, size, inquote, copy, slashes;
+
+    TCHAR buffer[MAX_PATH+1];
+    TCHAR buffer2[MAX_PATH+1];
+    TCHAR *pdest;
     int result;
 
 	memset( buffer, 0, MAX_PATH+1 );
@@ -293,46 +369,46 @@ setargv(argcPtr, argvPtr)
     GetModuleFileName(NULL, buffer, sizeof(buffer));
 
     // find ../.. after chopping the file name off, i.e. the Simile install dir
-	pdest = strrchr( buffer, '\\' );
+	pdest = wcsrchr( buffer, '\\' );
     result = pdest - buffer;
-	strncpy(buffer2,buffer,result);
+	wcsncpy(buffer2,buffer,result);
 	memset( buffer, 0, MAX_PATH+1 );
 
-	pdest = strrchr( buffer2, '\\' );
+	pdest = wcsrchr( buffer2, '\\' );
     result = pdest - buffer2;
-	strncpy(buffer,buffer2,result);
+	wcsncpy(buffer,buffer2,result);
 	memset( buffer2, 0, MAX_PATH+1 );
 
-	pdest = strrchr( buffer, '\\' );
+	pdest = wcsrchr( buffer, '\\' );
     result = pdest - buffer;
-	strncpy(buffer2,buffer,result);
+	wcsncpy(buffer2,buffer,result);
 
 	// fill buffer2 with the full path of Simile.tcl
-	strncat( buffer2, "\\Run\\simile.tcl", strlen("\\Run\\simile.tcl") );
-	//strncat( buffer2, 0, 1 );
+	wcsncat( buffer2, L"\\Run\\simile.tcl", wcslen(L"\\Run\\simile.tcl") );
+	//wcsncat( buffer2, 0, 1 );
 
 	//wrap it in quotes in buffer
 	memset( buffer, 0, MAX_PATH+1 );
-	strncat( buffer, "\"", 1 );
-	strncat( buffer, buffer2, strlen(buffer2) );
-	strncat( buffer, "\"", 1 );
+	wcsncat( buffer, L"\"", 1 );
+	wcsncat( buffer, buffer2, wcslen(buffer2) );
+	wcsncat( buffer, L"\"", 1 );
 
     cmdLine = GetCommandLine(); /* INTL: BUG */
 	memset( buffer2, 0, MAX_PATH+1 );
-    if ( (strlen(cmdLine)+strlen(" ")+strlen(buffer)) > (MAX_PATH+1) ) {
+    if ( (wcslen(cmdLine)+wcslen(L" ")+wcslen(buffer)) > (MAX_PATH+1) ) {
     MessageBeep(MB_ICONEXCLAMATION);
     MessageBox(NULL, "Simile.exe: command line too long", "Error",
 	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
     ExitProcess(1);
 	}
-	strncat( buffer2, cmdLine, strlen(cmdLine) ); 
-	strncat( buffer2, " ", strlen(" ") ); // space between args
-	strncat( buffer2, buffer, strlen(buffer) );
+	wcsncat( buffer2, cmdLine, wcslen(cmdLine) ); 
+	wcsncat( buffer2, L" ", wcslen(L" ") ); // space between args
+	wcsncat( buffer2, buffer, wcslen(buffer) );
 	cmdLine = buffer2;
 
     /*
-     * Precompute an overly pessimistic guess at the number of arguments
-     * in the command line by counting non-space spans.
+     * Precompute an overly pessimistic guess at the number of arguments in
+     * the command line by counting non-space spans.
      */
 
     size = 2;
@@ -347,10 +423,15 @@ setargv(argcPtr, argvPtr)
 	    }
 	}
     }
-    argSpace = (char *) Tcl_Alloc(
-	    (unsigned) (size * sizeof(char *) + strlen(cmdLine) + 1));
-    argv = (char **) argSpace;
-    argSpace += size * sizeof(char *);
+
+    /* Make sure we don't call ckalloc through the (not yet initialized) stub table */
+    #undef Tcl_Alloc
+    #undef Tcl_DbCkalloc
+
+    argSpace = ckalloc(size * sizeof(char *)
+	    + (wcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR));
+    argv = (TCHAR **) argSpace;
+    argSpace += size * (sizeof(char *)/sizeof(TCHAR));
     size--;
 
     p = cmdLine;
@@ -380,29 +461,26 @@ setargv(argcPtr, argvPtr)
 		    } else {
 			inquote = !inquote;
 		    }
-                }
-                slashes >>= 1;
-            }
+		}
+		slashes >>= 1;
+	    }
 
-            while (slashes) {
+	    while (slashes) {
 		*arg = '\\';
 		arg++;
 		slashes--;
 	    }
 
-	    if ((*p == '\0')
-		    || (!inquote && ((*p == ' ') || (*p == '\t')))) { /* INTL: ISO space. */
+	    if ((*p == '\0') || (!inquote &&
+		    ((*p == ' ') || (*p == '\t')))) {	/* INTL: ISO space. */
 		break;
 	    }
-
-
-
 	    if (copy != 0) {
 		*arg = *p;
 		arg++;
 	    }
 	    p++;
-        }
+	}
 	*arg = '\0';
 	argSpace = arg + 1;
     }
@@ -411,45 +489,12 @@ setargv(argcPtr, argvPtr)
     *argcPtr = argc;
     *argvPtr = argv;
 }
+#endif /* TCL_BROKEN_MAINARGS */
 
-#if !defined(__GNUC__) || defined(TK_TEST)
 /*
- *----------------------------------------------------------------------
- *
- * main --
- *
- *	Main entry point from the console.
- *
- * Results:
- *	None: Tk_Main never returns here, so this procedure never
- *      returns either.
- *
- * Side effects:
- *	Whatever the applications does.
- *
- *----------------------------------------------------------------------
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
  */
-
-int main(int argc, char **argv)
-{
-    Tcl_SetPanicProc(WishPanic);
-
-    /*
-     * Set up the default locale to be standard "C" locale so parsing
-     * is performed correctly.
-     */
-
-    setlocale(LC_ALL, "C");
-
-    /*
-     * Create the console channels and install them as the standard
-     * channels.  All I/O will be discarded until Tk_CreateConsoleWindow is
-     * called to attach the console to a text widget.
-     */
-
-    consoleRequired = TRUE;
-
-    Tk_Main(argc, argv, Tcl_AppInit);
-    return 0;
-}
-#endif /* !__GNUC__ || TK_TEST */
