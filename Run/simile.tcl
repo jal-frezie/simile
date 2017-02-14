@@ -79,12 +79,11 @@ if {[string match Darwin $tcl_platform(os)]} {
     }
 
     proc ::tk::mac::OpenDocument {args} {
-        global env
 # only opens the first of a group of files dropped or double-clicked,
 # but at least it handles files with spaces in the name.      
         if {[catch {OpenTopLevel [lindex $args 0]} splat]} {
 # fails (because proc not yet loaded?) if Simile started by drag/drop
-	    set env(OPEN_MODEL) [lindex $args 0]
+	    set ::OPEN_MODEL [lindex $args 0]
 	}
     }
 #    proc handleOpenApp {foo bar} {
@@ -105,7 +104,7 @@ if {[string match Darwin $tcl_platform(os)]} {
 # OTOH, if Simile is not running already, need to skip the following on Macs.
 
     proc HandOver {relayProc} {
-        global relay checkFor startAnew env
+        global relay checkFor startAnew OPEN_MODEL
         gets $relayProc action
         close $relayProc
 #puts "New instance read string $action"
@@ -113,7 +112,7 @@ if {[string match Darwin $tcl_platform(os)]} {
             set startAnew 1
         } else {
             if {[info exists env(OPEN_MODEL)]} {
-                set remStartArgs [list OpenTopLevel $env(OPEN_MODEL)]
+                set remStartArgs [list OpenTopLevel $OPEN_MODEL]
             } else {
                 set remStartArgs NewTopLevel
             }
@@ -176,7 +175,7 @@ if {[string match Darwin $tcl_platform(os)]} {
 #	} else {
 #	    set env(OPEN_MODEL) $argv
 #	}
-	set env(OPEN_MODEL) [file normalize $argv]
+	set OPEN_MODEL [file normalize $argv]
     } 
 
     set checkFor [file join $SIMILE_PATH Examples handover.txt]
@@ -569,10 +568,10 @@ switch $env(interfaceId) {
 # now open up
 	set myDir [file join $::simtmpdir exec]
 	destroy .splash
-	if {![info exists env(OPEN_MODEL)]} {
-	    set env(OPEN_MODEL) [ChooseFile any.sml "Model to execute:" 0 {}]
+	if {![info exists OPEN_MODEL]} {
+	    set OPEN_MODEL [ChooseFile any.sml "Model to execute:" 0 {}]
 	}
-	LoadFile $dummyNode $myDir $env(OPEN_MODEL)
+	LoadFile $dummyNode $myDir $OPEN_MODEL
 	OpenProjectFile $myDir
     }
 }

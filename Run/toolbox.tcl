@@ -119,6 +119,9 @@ if {[string match windows $tcl_platform(platform)]} {
     cd /usr/lib
     ::md5 dummy
     cd $oldDir
+
+    # work around Aqua fullscreen pointer shift bug
+    bind Toplevel <Configure> {wm withdraw %W; wm deiconify %W}
 }
 
 menu .openrecent -tearoff 0
@@ -693,11 +696,11 @@ proc Respond {relayProc} {
 }
     
 proc StartComms {firstTime} {
-    global custom checkFor tcl_platform env SIMILE_PATH
+    global custom checkFor tcl_platform env SIMILE_PATH OPEN_MODEL
 
     if {[string equal Darwin $tcl_platform(os)] || \
-	    [info exists env(OPEN_MODEL)] && \
-	    [string equal -stealth [file tail $env(OPEN_MODEL)]]} {
+	    [info exists OPEN_MODEL] && \
+	    [string equal -stealth [file tail $OPEN_MODEL]]} {
 	return ;# MacOS takes care of this stuff -- well?
     }
     set relay [file join $env(SYSDIR) bin relay]
@@ -723,7 +726,7 @@ proc StartComms {firstTime} {
 }
 
 proc ControlDraw {prologVersion} {
-    global sendvars custom tcl_platform env userinfo openModel simtmpdir
+    global sendvars custom tcl_platform env userinfo OPEN_MODEL simtmpdir
     global regularActs tclBitness looks
 
     if {$::headless} {
@@ -1013,19 +1016,19 @@ proc ControlDraw {prologVersion} {
     # Bogosity alert -- setting an env var to {} causes it to stay
     # (or be) unset (in windows) otherwise lappend env(OPEN_MODEL)
     # would do here...
-    if {[info exists env(OPEN_MODEL)] && \
-	    ![string equal -stealth [file tail $env(OPEN_MODEL)]]} {
-        set openModel [brainwash $env(OPEN_MODEL)]
+    if {[info exists OPEN_MODEL] && \
+	    ![string equal -stealth [file tail $OPEN_MODEL]]} {
+        set OPEN_MODEL [brainwash $OPEN_MODEL]
         # Add to path and recently opened files data
-        RecordPathChoice .sml $openModel {}
+        RecordPathChoice .sml $OPEN_MODEL {}
     } else {
-        set openModel [lindex [glob -nocomplain $custom(prefDir)/*.smx] 0]
+        set OPEN_MODEL [lindex [glob -nocomplain $custom(prefDir)/*.smx] 0]
 # if there are any logfiles from unsaved models, pick one
     }
     
     # Take the opportunity to pass the temp directory name etc to Prolog
     return [list $sendvars(simV) [brainwash $simtmpdir] \
-		[brainwash $custom(prefDir)] $openModel $userinfo(edn)]
+		[brainwash $custom(prefDir)] $OPEN_MODEL $userinfo(edn)]
 }
 
 proc InitExecThread {node} {
@@ -1175,7 +1178,7 @@ proc CheckCompilerLocation {} {
 # may well sit it exactly on top of the previous one
 
 proc FixSize {c} {
-    global custom openModel
+    global custom
     set win [winfo parent $c]
     # seems necessary for console to hide
     #    catch {console hide}
@@ -1206,7 +1209,7 @@ proc FixSize {c} {
     update
 
     destroy .splash
-    if {[string match $openModel {}]} {
+    if {[string match $::OPEN_MODEL {}]} {
         DoWelcomeDialog $win
     }
 }
