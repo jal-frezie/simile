@@ -31,16 +31,14 @@ GPPCMD = g++
 
 ifeq ($(MY_CPU),x86_64)
 BITEXTN = 64
-TCLDIR = /usr/local
-TCLREF = $(TCLDIR)
 else
 BITEXTN = 
-# build on included tcl -- deprecated but needed for selectable bitness
-TCLDIR = System
-TCLREF = ../$(TCLDIR)
 endif
 
 # Default case: Linux
+TCLDIR = /usr
+TCLREF = $(TCLDIR)
+
 SYSDIR = System
 ifeq ($(MY_CPU),x86_64)
 	CFLAGS += $(OPT)
@@ -65,7 +63,7 @@ SLDIR = $(RESDIR)
 # USETCL = -DUSE_TCL_STUBS -I$(TCLREF)/include/tcl$(VERS) -L$(TCLREF)/lib -ltclstub$(VERS)
 
 # Next builds against system Tcl for Prolog debugging with Sicstus/dll
-USETCL = -DUSE_TCL_STUBS -I/usr/include/tcl$(VERS) -L/usr/lib64/tcl$(VERS) -ltclstub$(VERS)
+USETCL = -DUSE_TCL_STUBS -ltclstub$(VERS)
 LOCALIZE_TCL_REFS = ls # placebo command
 CHECK_LOCAL_LIBS = -Wl,-rpath,'$$ORIGIN/..'
 SHAREDLIBEXTN = .so
