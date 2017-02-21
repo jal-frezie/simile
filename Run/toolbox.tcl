@@ -551,14 +551,18 @@ proc compile_c {workingDir extLibs complain} {
 		set libOpt1 -L\"[file nativename $LIBDIR]\"
 		set libOpt2 -L\"[file nativename \
 				     [file join $LIBDIR $compLocn]]\"
-		puts $spout "g++ -shared -o $TARGET \
+		puts $spout "g++ -shared -o $TARGET  -static \
                         $libOpt1 $libOpt2 objtmp.o [concat $lDirs $lFiles]"
 	    } else {
 		puts $spout "g++ $sendvars(arflags) -c -o objtmp.o \
                         -I\"[file nativename $TOOLDIR]\" model.cpp"
 #        puts $spout "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtmp.o"
-		puts $spout [concat [list g++ -shared -o $TARGET objtmp.o] \
-				 $lDirs $lFiles]
+		if {$::tclBitness==32} {
+		    set cmd [list g++ -shared -static -o $TARGET objtmp.o]
+		} else {
+		    set cmd [list g++ -shared -o $TARGET objtmp.o]
+		}
+		puts $spout [concat $cmd $lDirs $lFiles]
 	    }
 	    flush $spout
 	    close $spout

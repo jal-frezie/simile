@@ -479,19 +479,6 @@ cd $SIMILE_PATH/Examples
 #   -message "TCL library is [info library]\n \
 #   Model is $env(OPEN_MODEL)" -type ok
 
-# this runs a program which starts AME from a saved state
-# -- must be concurrent because script causes Windows problems if
-# not finished
-
-switch $env(prologId) {
-    gnu {
-	set tgt [file join $execDir xgsimile]
-    } sicstus {
-	set tgt [file join $execDir sprt]
-    } swi_comp {
-	set tgt [file join $execDir xssimile]
-    }
-}
 
 switch $tcl_platform(platform) {
     windows {
@@ -508,10 +495,26 @@ switch $tcl_platform(platform) {
     }
 }
 
+# this runs a program which starts AME from a saved state
+# -- must be concurrent because script causes Windows problems if
+# not finished
+
 if {[string equal swi_interp $env(prologId)]} {
     set PROLOG_CMD {swipl -L1g -f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}
 } else {
-    set PROLOG_CMD \"$tgt$archExtn$execExtn\"
+    switch $env(prologId) {
+	gnu {
+	    set tgt xgsimile
+	} sicstus {
+	    set tgt sprt
+	} swi_comp {
+	    set tgt xssimile
+	}
+    }
+    set PROLOG_CMD [list [file join $execDir $tgt$archExtn$execExtn]]
+    if {$env(prologId) eq "swi_comp"} {
+	lappend PROLOG_CMD 2>@1 ;# avoids error popups
+    }
 }
 
 switch $env(interfaceId) {

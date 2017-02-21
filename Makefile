@@ -214,7 +214,7 @@ endif
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
-ifeq ($(PLATFORM), Darwin)
+ifeq ($(PLATFORM), none)
 $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/shank.cpp Run/dllcalls.h
 	cd Run; $(GPPCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
 		ame_cmx.c shank.cpp $(USETCL) -L../$(RESDIR); cd ..; \
@@ -235,10 +235,10 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
 # literal SLDIR allows different SHANK clauses for Windows vs Unix
 
 # Windows: idiosyncratic stuff allows dynamic linker to work
-# (even with gcc 4.5.0)
+# (even with gcc 4.5.0)...static stops exit error in win32/tcl8.6
 $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
-	cd Run; $(GPPCMD) -DSHARELIB $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) \
-		-Wl,--out-implib,lib5d$(ARCHEXTN).a -o $(SHANK) shank.cpp; \
+	cd Run; $(GPPCMD) -DSHARELIB $(CFLAGS) $(MAKEPIC) $(MAKESL) -static \
+		-I. -Wl,--out-implib,lib5d$(ARCHEXTN).a -o $(SHANK) shank.cpp; \
 		mv $(SHANK) ../$(SLDIR); \
 		mv lib5d$(ARCHEXTN).a ../$(RESDIR); cd ..
 

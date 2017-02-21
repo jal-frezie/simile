@@ -60,7 +60,7 @@ proc Newer {is than t} {
 
 set installedCreds [file join $SIMILE_PATH Run userinfo.txt]
 set creds [file join $custom(prefDir) userinfo.txt]
-if {[Newer $installedCreds $creds c]} {
+if {[Newer $installedCreds $creds m]} {
     file copy -force $installedCreds $creds
 }
 

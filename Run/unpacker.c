@@ -159,8 +159,6 @@ from our little secret -- after checking that the edition specified is right */
 
 FINDABLE int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
-  int try;
-
   if (argc != 3) {
     Tcl_WrongNumArgs(interp, 1, argv, "source_string code");
     return TCL_ERROR;
