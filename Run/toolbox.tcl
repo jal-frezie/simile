@@ -120,14 +120,16 @@ if {[string match windows $tcl_platform(platform)]} {
     ::md5 dummy
     cd $oldDir
 
-    # work around Aqua fullscreen pointer shift bug
+    # work around Aqua fullscreen pointer shift bug...makes it crash
     proc FixShiftedPointer {w} {
+	bind Toplevel <Configure> {}
 	if {[wm state $w] eq "normal"} {
 	    wm withdraw $w
 	    wm deiconify $w
 	}
+	after 10 {bind Toplevel <Configure> {FixShiftedPointer %W}}
     }
-    bind Toplevel <Configure> {FixShiftedPointer %W}
+    #bind Toplevel <Configure> {FixShiftedPointer %W}
 }
 
 menu .openrecent -tearoff 0

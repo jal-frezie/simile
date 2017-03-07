@@ -1367,7 +1367,8 @@ proc AcquireTableData {redo startLine} {
         set table_entry(source) 2
         set table_entry(data) $tableSpec
 	.table.fbuttons.edit configure -state normal
-	.table.fbuttons.keepvals configure -state normal
+	catch {.table.fbuttons.keepvals configure -state normal}
+	# (checkbutton not created if it's an equation table)
     }
 }
 
