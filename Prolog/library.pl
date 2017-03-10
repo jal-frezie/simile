@@ -570,7 +570,6 @@ adjust_to_9_8(Parent) :-
 	fail; true.
 
 adjust_to_10(Parent) :-
-	update_per_record_bracket_style(Parent);
 	contains(Parent, Flow),
 	% all sections to have same caption
 	    Flow is_of_sort has_bowtie,
@@ -604,8 +603,9 @@ adjust_to_10(Parent) :-
 		NewB = Base),
 	    all(library, dequote_ET, [build(DimList), build(NewDL)]),
 	    m_update'><'build_array(NewB, NewDL, NewU),
-	    Function has_new_class_refinement units of NewU,
+            Function has_new_class_refinement units of NewU,
 	    fail;
+	update_per_record_bracket_style(Parent);
 	% Influence properties now on last section because it is not shared
 	contains(Parent, Influence),
 	    find_type(Influence, influence),
@@ -634,9 +634,9 @@ adjust_to_10_1(Parent) :-
 	true.
 	
 dequote_ET(Qat, UQat) :-
-	atom(Qat), !,
+	atom(Qat),
 	name(Qat, Qstr),
-	append([34 | UQstr], [34], Qstr),
+	append([34 | UQstr], [34], Qstr), !,
 	name(UQat, UQstr);
 	UQat = Qat.
 
