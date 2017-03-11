@@ -650,8 +650,8 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 		#     set redoStep {}
 		# } 
 	    } else {
-		c_setrecordlist $topNode $tgt [lrange [split $subs ,] 1 end] \
-		    $last
+		c_setrecordlist $topNode $tgt \
+		    [lrange [split $numSubs ,] 1 end] $last
 		# if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
 		# 				      1 end] $last} err]} {
 		#     FPError $err $subs $errorData
