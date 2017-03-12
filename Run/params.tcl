@@ -1359,7 +1359,12 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
     while {[gets $pStr savedValue] != -1} {
         # puts "Restoring $savedValue"
         # ignore blank lines
-        if {![llength $savedValue]} {
+        if {![string length $savedValue]} {
+            continue
+        }
+	# treat leading # as denoting a comment (as in Flores catalogue model!)
+        if {![string first # $savedValue]} {
+	    append precedingComment [string range $savedValue 1 end] " " 
             continue
         }
         set IdAndValue [split $savedValue =]
@@ -1391,6 +1396,10 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 	    cd $oldDir
 	    if {$notInput>-1} {
 		set restoredComp /$topNode$restoredComp
+	    }
+	    if {[info exists precedingComment]} {
+		set msgs(comment_$restoredComp) [string trim $precedingComment]
+		unset precedingComment
 	    }
             if {$paramState(origVersion)>=4.0} {
 		set dataFinder [lindex $IdAndValue end]
