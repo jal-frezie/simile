@@ -598,21 +598,21 @@ adjust_to_10(Parent) :-
 	    fail;
 	contains(Parent, Function),
 	    Function no_longer_has_class_refinement units of U,
-	    m_update'><'analyze_array(U, Base, DimList),
-	    (Base = a(Qtd) -> dequote_ET(Qtd, DQtd), NewB = a(DQtd);
-		NewB = Base),
-	    all(library, dequote_ET, [build(DimList), build(NewDL)]),
-	    m_update'><'build_array(NewB, NewDL, NewU),
+            dequote_ET_units(U, NewU),
             Function has_new_class_refinement units of NewU,
 	    fail;
 	update_per_record_bracket_style(Parent);
 	% Influence properties now on last section because it is not shared
 	contains(Parent, Influence),
 	    find_type(Influence, influence),
-	    Influence no_longer_has_attribute use_sofar of V,
-	    find_name_host(Influence, NewAttrLocn),
-	    NewAttrLocn has_new_attribute use_sofar of V,
-	    fail;
+	    (Influence no_longer_has_attribute use_sofar of V,
+	        find_name_host(Influence, NewAttrLocn),
+	        NewAttrLocn has_new_attribute use_sofar of V,
+	        fail;
+              Influence no_longer_has_attribute role of Roles,
+                all(library, dequote_role_ETs, [build(Roles), build(NewRoles)]),
+                Influence has_new_attribute role of NewRoles,
+                fail);
         contains(Parent, Sm),
 	    Sm has_graphical_attribute internal_extent of Box,
             Sm has_part Crossing,
@@ -639,6 +639,16 @@ dequote_ET(Qat, UQat) :-
 	append([34 | UQstr], [34], Qstr), !,
 	name(UQat, UQstr);
 	UQat = Qat.
+
+dequote_ET_units(U, NewU) :-
+	m_update'><'analyze_array(U, Base, DimList),
+	(Base = a(Qtd) -> dequote_ET(Qtd, DQtd), NewB = a(DQtd);
+		NewB = Base),
+	all(library, dequote_ET, [build(DimList), build(NewDL)]),
+	m_update'><'build_array(NewB, NewDL, NewU).
+
+dequote_role_ETs(use(Rel, Use, Ref, OldETs), use(Rel, Use, Ref, ETs)) :-
+        dequote_ET_units(OldETs, ETs).
 
 floatify_large_ints([H | T], [NH | NT], Hit) :- !,
         floatify_large_ints(H, NH, Hit),
