@@ -1701,7 +1701,7 @@ connect_params(AllInsts, Insts) :-
 	    MatchPath == CommonPath,
 	    suffix(CommonPathPlus, OrigPathPlus),
 	    remove_non_loopers(CommonPathPlus, CommonPath), !,
-	    (CommonPath = Path, /* comment out to disable */ !,
+	    (\+ loop_break_needed(CommonPath, Path, OrigPath), !,
 		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
 				     Acts) | LeftInsts];
 	     length(AllInsts, N), % one greater each time
@@ -1711,6 +1711,10 @@ connect_params(AllInsts, Insts) :-
 				  CommonPathPlus, Step, []) | LeftInsts]),
 	    connect_params(ChangedInsts, Insts);
 	Insts = AllInsts.
+
+loop_break_needed(CommonPath, Path, OrigPath) :-
+    suffix([set(_, Loop) | CommonPath], Path),
+    suffix([set(_, Loop) | CommonPath], OrigPath).
 
 /* (was) in a Geraint stylee -- may need speeding up */
 get_common_path(Path, OrigPath, CommonPath) :-
