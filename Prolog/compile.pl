@@ -1701,14 +1701,15 @@ connect_params(AllInsts, Insts) :-
 	    MatchPath == CommonPath,
 	    suffix(CommonPathPlus, OrigPathPlus),
 	    remove_non_loopers(CommonPathPlus, CommonPath), !,
-	    (\+ loop_break_needed(CommonPath, Path, OrigPath), !,
-		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
-				     Acts) | LeftInsts];
-	     length(AllInsts, N), % one greater each time
-	     ChangedInsts = [make(Tgt, [made_for(Tgt, Param, N) | MoreConds],
+	    (loop_break_needed(CommonPath, Path, OrigPath),
+                \+ Param = later(_), !, % same loop OK in fact necessary
+	       length(AllInsts, N), % one greater each time
+	       ChangedInsts = [make(Tgt, [made_for(Tgt, Param, N) | MoreConds],
 				  PathPlus, Step, Acts),
 			     make(made_for(Tgt, Param, N), [Param],
-				  CommonPathPlus, Step, []) | LeftInsts]),
+				  CommonPathPlus, Step, []) | LeftInsts];
+		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
+				     Acts) | LeftInsts]),
 	    connect_params(ChangedInsts, Insts);
 	Insts = AllInsts.
 
