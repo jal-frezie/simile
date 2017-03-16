@@ -1991,7 +1991,7 @@ order_assignments(Phase, Path, RawAssign, All, OrderedAssign) :-
 	       not_yet_ordered(Hanger),
 	       Hanger = make(_,_, CPath, _,_),
 %	       remove_non_loopers(CPath, UCPath),
-	       suffix(Path, CPath)),
+	       \+ suffix([_Gap | CPath], Path)),
 	!. % cut added to prevent crash in swipl debugger, should be green
 
 	
