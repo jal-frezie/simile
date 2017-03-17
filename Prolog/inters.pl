@@ -968,11 +968,12 @@ make_intermediates(
 				   part_result([], [], _, DimVal)),
 	        promote_unit(Dun, const_int)), !; % will be integer later
 		  throw(bad_index_number(Dim, makearray, 16777215))),
-	        NowBuilding = [LocalLoop | BuildingArrays],
-	        length(BuildingArrays, BDept),
-	        append_atoms(arraybuild, BDept, BuildName),
+	        NowBuilding = [LocalLoop | BuildingArrays];
+%	        length(BuildingArrays, BDept),
+%	        append_atoms(arraybuild, BDept, BuildName),
 % added to stop bad rankings behaviour -- may clash with comp names
-	        LocalInd = glob(BuildName, _);
+% sorted that by not instantiating comp loops either...
+%	        LocalInd = glob(BuildName, _);
 	    make_choose_form(Source, keep(LocalInd), 1, Element),
 	        length(Source, DimVal),
 %	        DimSetups = [],

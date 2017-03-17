@@ -1306,9 +1306,9 @@ nodes.
 			     Path, Step, [reset_list(Ptr, Name)]),
 			make(init_list(Name), [], Path, Step,
 			     [assign(arr(Ptr, Name, []), 0)])];
-	Level = [sm(_,_,_, fm_loop(Globs, _, AlAct, _)) | _Loops],
+	Level = [sm(_,_,_, fm_loop(_Globs, _, AlAct, _)) | _Loops],
 	% its the _Loops that have the bounds!
-	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
+	    % all(compile, name_loop_vars, [build(Globs), unify(Used)]),
 	    get_dims_from_loops(Path, _, UseInds),
             ((by_record(SmName),
 	            append_atoms(Name, made, NMade),
@@ -1701,21 +1701,16 @@ connect_params(AllInsts, Insts) :-
 	    MatchPath == CommonPath,
 	    suffix(CommonPathPlus, OrigPathPlus),
 	    remove_non_loopers(CommonPathPlus, CommonPath), !,
-	    (loop_break_needed(CommonPath, Path, OrigPath),
-                \+ Param = later(_), !, % same loop OK in fact necessary
-	       length(AllInsts, N), % one greater each time
-	       ChangedInsts = [make(Tgt, [made_for(Tgt, Param, N) | MoreConds],
+	    (CommonPath = Path, /* comment out to disable */ !,
+		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
+				     Acts) | LeftInsts];
+	     length(AllInsts, N), % one greater each time
+	     ChangedInsts = [make(Tgt, [made_for(Tgt, Param, N) | MoreConds],
 				  PathPlus, Step, Acts),
 			     make(made_for(Tgt, Param, N), [Param],
-				  CommonPathPlus, Step, []) | LeftInsts];
-		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
-				     Acts) | LeftInsts]),
+				  CommonPathPlus, Step, []) | LeftInsts]),
 	    connect_params(ChangedInsts, Insts);
 	Insts = AllInsts.
-
-loop_break_needed(CommonPath, Path, OrigPath) :-
-    suffix([set(_, Loop) | CommonPath], Path),
-    suffix([set(_, Loop) | CommonPath], OrigPath).
 
 /* (was) in a Geraint stylee -- may need speeding up */
 get_common_path(Path, OrigPath, CommonPath) :-
