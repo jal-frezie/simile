@@ -637,14 +637,15 @@ as well to stop rand_vars being changed in the R-K subphase */
 	(member(Start, Functions),
 	    Start = make(LoopEnd, Conds-_, EndPath, [_,_, Step | _], _),
 	    member(later(Loop2), Conds),
-	    Loop2 = make(LoopStart, _, StartPath, _,_),
+	    Loop2 = make(LoopStart, _, _StartPath, _,_),
 	    % Step is from Start not Loop2 cos with loop of compartments Loop2
 	    % may be result for previous compartment which is stepsize 1 but
 	    % has no action 
-	    all(compile, remove_non_loopers,
-		[build([EndPath, StartPath]), build([PureEnd, PureStart])]),
-	    suffix(PurePath, PureEnd),
-	    suffix(PurePath, PureStart), % all(...) cannot retry subgoals
+	    %all(compile, remove_non_loopers,
+	%	[build([EndPath, StartPath]), build([PureEnd, PureStart])]),
+	    %suffix(PurePath, PureEnd),
+	    %suffix(PurePath, PureStart), % all(...) cannot retry subgoals
+	    remove_non_loopers(EndPath, PurePath),
 	    (outside_loop(Loop2, PurePath-Step),
 	       Out = Loop2;
 	     find_antecedent([Loop2], outside_loop, 1, PurePath-Step, Out)),
@@ -1698,17 +1699,28 @@ connect_params(AllInsts, Insts) :-
 	    remove_non_loopers(OrigPathPlus, OrigPath),
 	    suffix(MatchPath, Path),
 	    suffix(CommonPath, OrigPath),
-	    MatchPath == CommonPath,
-	    suffix(CommonPathPlus, OrigPathPlus),
-	    remove_non_loopers(CommonPathPlus, CommonPath), !,
-	    (CommonPath = Path, /* comment out to disable */ !,
+	    MatchPath == CommonPath, !,
+	    (Param = later(Deferred), !,
+	      (SafePath = CommonPath,
+	        (SafePath = [sm(_,_,_, fm_loop(_,_, Al, _)) | _],
+		 nonvar(Al), !; % if in alarm let other loops exit
+		 SafePath = [sm(_,_,_, vm_loop(_,_, [_B1, _B2 |_], _)) | _],
+		 !); % same if in association
+	       SafePath = [_RetroLevel | CommonPath],
+	        suffix(SafePath, Path), !; % stay inside loop using vals
+	       raise_exception(using_own_value(Deferred)));
+	     SafePath = CommonPath),
+							   
+	    (SafePath = Path, /* comment out to disable */ !,
 		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
 				     Acts) | LeftInsts];
+ 	     suffix(SafePathPlus, PathPlus),
+ 	     remove_non_loopers(SafePathPlus, SafePath), !,
 	     length(AllInsts, N), % one greater each time
 	     ChangedInsts = [make(Tgt, [made_for(Tgt, Param, N) | MoreConds],
 				  PathPlus, Step, Acts),
 			     make(made_for(Tgt, Param, N), [Param],
-				  CommonPathPlus, Step, []) | LeftInsts]),
+				  SafePathPlus, Step, []) | LeftInsts]),
 	    connect_params(ChangedInsts, Insts);
 	Insts = AllInsts.
 

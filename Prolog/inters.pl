@@ -839,7 +839,7 @@ make_intermediates(
 	    WhatMade = PayloadName,
 	    merge_lists([Inter, Outer], OldInters, NewInters),
 	    FinalInter = Outer),
-*/	refer_inter(FinalInter, DestPath, BuildingArrays,
+*/	refer_inter(FinalInter, CompPath, BuildingArrays,
 		    Units, SourceContext, Args, SourceRef));	  
 
 	/* third case: a numerical value. Usable in any context.  */
