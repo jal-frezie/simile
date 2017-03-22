@@ -636,7 +636,7 @@ as well to stop rand_vars being changed in the R-K subphase */
 	tk_update_infobox(pl_loop, []),
 	(member(Start, Functions),
 	    Start = make(LoopEnd, Conds-_, EndPath, [_,_, Step | _], _),
-	    member(later(Loop2), Conds),
+	    member(later(Loop2), Conds), wake,
 	    Loop2 = make(LoopStart, _, _StartPath, _,_),
 	    % Step is from Start not Loop2 cos with loop of compartments Loop2
 	    % may be result for previous compartment which is stepsize 1 but
@@ -1614,7 +1614,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	                Actions);
 	Actions = [],
 	Inters = []),
-	Set = make(Dest, [init(Dest), update(Dest)], DestPath, SmStep, []),
+
 	(Type = limit, !,
 	    Acts = Assigns,
 %	    Expr = assign(_D, choose(Test1, _Y, _N)),
@@ -1626,11 +1626,11 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	    % pass value because consequent event may care whether we are minned
 	    % or maxed (or cannoned into oblivion by an upstream squirt)
 	    % but mostly cos it is easier
-	  (member(Type, [creation, immigration, reproduction, state]);
-	        member(Is_P, [1, 3]);
-	        Is_P = 2, Type = init_function), !,
+	  (member(Is_P, [1, 3]);
+	        Type = init_function), !,
 	    Acts = Assigns,
-	    Linkers = [Set];
+	    Linkers = [make(Dest,
+			    [init(Dest), update(Dest)], Path, SmStep, [])];
 	  Type = al_function,
 	    Assigns = [assign(Val, Fn)],
 	    Fn = choose(LoopExitExpr, LoopStart, LoopStart),
@@ -1640,9 +1640,9 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	  Type = compartment,
 	    Assigns = [assign(Val, ValRef+FChange+QChange)],
 	    Acts = [assign(Val, ValRef+FChange)],
-	    (QChange = 0, !, Linkers = [Set];
+	    (QChange = 0, !, Linkers = [];
 	     Linkers = [make(tipped(Dest), [on_step], Path, SmStep,
-			    [assign(Val, ValRef+QChange)]), Set]);
+			    [assign(Val, ValRef+QChange)])]);
 	  Type = magnitude, % poss ScaleFactor prob as above?
 	    Assigns = [assign(Val,  delay_for(PipeExp, WaitExp, ValExp))],
 	    Acts = [insert_to_pipe(ref_to(PipeExp), WaitExp, ValExp)],
@@ -1700,7 +1700,7 @@ connect_params(AllInsts, Insts) :-
 	    suffix(MatchPath, Path),
 	    suffix(CommonPath, OrigPath),
 	    MatchPath == CommonPath, !,
-	    (Param = later(Deferred), !,
+	    (Param = later(Deferred), !, wake,
 	      (SafePath = CommonPath,
 	        (SafePath = [sm(_,_,_, fm_loop(_,_, Al, _)) | _],
 		 nonvar(Al), !; % if in alarm let other loops exit
