@@ -1700,7 +1700,7 @@ connect_params(AllInsts, Insts) :-
 	    suffix(MatchPath, Path),
 	    suffix(CommonPath, OrigPath),
 	    MatchPath == CommonPath, !,
-	    (Param = later(Deferred), !, wake,
+	    (Param = later(Deferred), !,
 	      (SafePath = CommonPath,
 	        (SafePath = [sm(_,_,_, fm_loop(_,_, Al, _)) | _],
 		 nonvar(Al), !; % if in alarm let other loops exit
