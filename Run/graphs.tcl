@@ -826,6 +826,15 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $ft.fdata -fill x
+    # new frame March 2017 for the choice of layer in a geotiff/netcdf JAT
+    TitleFrame $ft.ftable -text [tr. " GeoTIFF band or NetCDF variable "]
+    set ftable [GetFrame $ft.ftable]
+    pack $ftable -side top -expand true -fill x
+    pack $ft.ftable
+    # dropdown combobox for table names
+    set tablecb [ttk::combobox $ftable.tablecb -state readonly  -width 50 -textvariable table_entry(vrtable)]
+    pack $tablecb -side left
+    # end new frame March 2017 for the choice of layer in a geotiff/netcdf JAT
     TitleFrame $ft.limits -text [tr. "Boundaries of area to load "]
     set flim [GetFrame $ft.limits]
     pack [ttk::checkbutton $flim.transpose -variable table_entry(xpose) \
@@ -1034,6 +1043,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
                 set table_entry(col1) [lindex $table_entry(data) 4]
                 set table_entry(coln) [lindex $table_entry(data) 5]
 		set table_entry(xpose) [lindex $table_entry(data) 6]
+		set table_entry(vrtable) [lindex $table_entry(data) 7]
             } default {
                 .table.notebook select .table.notebook.columns
                 set table_entry(dataField) [lindex $table_entry(data) 1]
@@ -1357,8 +1367,9 @@ proc AcquireTableData {redo startLine} {
 			       $table_entry(xpose)]
         } .table.notebook.gdal {
             set tableSpec [list $table_entry(fileName) ,gdal \
-                    $table_entry(row1) $table_entry(rown) \
-                    $table_entry(col1) $table_entry(coln) $table_entry(xpose)]
+			       $table_entry(row1) $table_entry(rown) \
+			       $table_entry(col1) $table_entry(coln) \
+			       $table_entry(xpose) $table_entry(vrtable)]
         }
     }
     if {$redo>1 || ![string equal $tableSpec $table_entry(data)]} {
@@ -1430,15 +1441,11 @@ proc LoadDataFile {mode query mdl} {
     set haveDND [llength [package provide tkdnd]]
     set fc .table.notebook.columns
     set fheads [GetFrame $fc.fheads]
-    set ftable [GetFrame $fc.ftable]
     if {$haveDND} {
 	$fheads.lheads delete 0 end
     } else {
 	$fheads.lheads delete [$fheads.lheads items]
     }
-    $ftable.tablecb configure -values {}
-    set tablecb $ftable.tablecb
-    $tablecb set {}
     
     if {[string equal image $mode]} {
         set type .gif
@@ -1485,6 +1492,10 @@ proc LoadDataFile {mode query mdl} {
         set table_entry(coln) [gdal_get_x_size $hdl]
         set table_entry(row1) 1
         set table_entry(rown) [gdal_get_y_size $hdl]
+	set tablenames [gdal_get_var_names $hdl]
+	set tablecb [GetFrame .table.notebook.gdal.ftable].tablecb
+	$tablecb configure -values $tablenames
+	$tablecb set [lindex $tablenames 0]
         gdal_close $hdl
     } else {
         gets $stream firstLine

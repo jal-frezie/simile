@@ -422,7 +422,7 @@ proc c_getvalue {topNode node action} {
 #}
 
 proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
-#ShowMess debug info  "Go! tgt $tgt subs $subs trans $trans dims $dims list $list cpp $useCppArray" ok
+#puts  "Go! tgt $tgt subs $subs trans $trans dims $dims list $list cpp $useCppArray"
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
     # ... string match stops cleanly at end of list
@@ -468,7 +468,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 	    set list [concat [NumberElements [ReadGdalRefToList $list \
 						  [lindex $dims 0] \
 						  [lindex $dims 1]] \
-				  [expr {!$when}]] [lrange $list 7 end]]
+				  [expr {!$when}]] [lrange $list 8 end]]
 	}
     }
 # do not do this, ve no longer allow params in VM submodels...
@@ -713,7 +713,7 @@ proc DoNotPassTcl {topNode node dims tableSpec} {
 
     package require gdal
     set hg [gdal_open_read_only [lindex $tableSpec 0]]
-    set hdl [gdal_get_raster_band $hg 1]
+    set hdl [gdal_get_raster_band $hg [lindex $tableSpec 7]]
     set dataRows [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]]
     set dataCols [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]]
     set fillRows [lindex $dims 0]
@@ -768,7 +768,7 @@ proc ReadGdalRefToList {tableSpec {y {}} {x {}}} {
     package require gdal
 #puts "RGRTL $tableSpec $x $y"
     set hg [gdal_open_read_only [lindex $tableSpec 0]]
-    set hdl [gdal_get_raster_band $hg 1]
+    set hdl [gdal_get_raster_band $hg [lindex $tableSpec 7]]
     set l [expr [lindex $tableSpec 4]-1]
     set t [expr [lindex $tableSpec 2]-1]
     set w [expr [lindex $tableSpec 5]-$l]
