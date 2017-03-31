@@ -708,17 +708,16 @@ proc Respond {relayProc} {
 }
     
 proc StartComms {firstTime} {
-    global custom checkFor tcl_platform env SIMILE_PATH OPEN_MODEL
+    global custom checkFor tcl_platform env SIMILE_PATH
 
     if {[string equal Darwin $tcl_platform(os)] || \
-	    [info exists OPEN_MODEL] && \
-	    [string equal -stealth [file tail $OPEN_MODEL]]} {
+	    [string equal -stealth $::argv]} {
 	return ;# MacOS takes care of this stuff -- well?
     }
     set relay [file join $env(SYSDIR) bin relay]
     switch -- $firstTime {
         1 {
-# initializing -- set old proc to 0
+	    # initializing -- set old proc to 0
             set dump [NetOpen $checkFor w]
             puts $dump 0
             close $dump
@@ -1028,8 +1027,7 @@ proc ControlDraw {prologVersion} {
     # Bogosity alert -- setting an env var to {} causes it to stay
     # (or be) unset (in windows) otherwise lappend env(OPEN_MODEL)
     # would do here...
-    if {[info exists OPEN_MODEL] && \
-	    ![string equal -stealth [file tail $OPEN_MODEL]]} {
+    if {[info exists OPEN_MODEL]} {
         set OPEN_MODEL [brainwash $OPEN_MODEL]
         # Add to path and recently opened files data
         RecordPathChoice .sml $OPEN_MODEL {}

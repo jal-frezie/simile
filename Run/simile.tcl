@@ -111,7 +111,7 @@ if {[string match Darwin $tcl_platform(os)]} {
         if {[string equal "Sender process is already dead" $action]} {
             set startAnew 1
         } else {
-            if {[info exists env(OPEN_MODEL)]} {
+            if {[info exists OPEN_MODEL]} {
                 set remStartArgs [list OpenTopLevel $OPEN_MODEL]
             } else {
                 set remStartArgs NewTopLevel
@@ -169,7 +169,7 @@ if {[string match Darwin $tcl_platform(os)]} {
 
 # ok, is anybody out there?
 
-    if {$argc} {
+    if {$argc && $argv ne "-stealth"} {
 #	if {[string match relative [file pathtype $argv]]} {
 #	    set env(OPEN_MODEL) [pwd]/$argv
 #	} else {
