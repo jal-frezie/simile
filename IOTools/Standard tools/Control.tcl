@@ -443,6 +443,10 @@ namespace eval runcontrol33857 {
 
 	set endRun [UpdateBar $myNode \
 			[expr $current/$runState($myNode,unitLength)] $col]
+	if {[winfo exists .shortDlg]} {
+	    SetDlgRes no ;# closes short dlg
+	    set ::dialogues(ack) 1 ;# closes long dlg
+	}
 	UpdateIfFreezy
 	return $endRun
     }
@@ -454,17 +458,17 @@ namespace eval runcontrol33857 {
 	global updateLastDone runState
 
 	if {[string equal stop $runState($node,currentMode)] && \
-		[clock clicks -milliseconds]-$updateLastDone>3000} {
+		[clock clicks -milliseconds]-$updateLastDone>3000 && \
+	    	![winfo exists .shortDlg]} {
 	    # pretend button never pushed
-	    ShareAction $node 0
-	    set runState($node,currentMode) start
+	    # ShareAction $node 0
+	    # set runState($node,currentMode) start
 	    
-	    set scrog [string equal yes [Query model_stuck info execution {} \
-					     {yes no}]]
-	    if {$scrog} {
+	    if {[Query model_stuck info execution {} ok] eq "ok"} {
 		ShareAction $node 10
+		set runState($node,currentMode) start
 		return 1
-	    }
+	    } ;# if not, it was auto closed by above proc at end of time step
 	}
 	return 0
     }
