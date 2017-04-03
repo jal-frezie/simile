@@ -33,7 +33,6 @@ set execDir [file join $env(SYSDIR) bin]
 if {[string match windows $tcl_platform(platform)]} {
     package require dde 1.2
     set runHow(sendOp) {dde eval}
-    set argv [lindex $argv 0]
 } else {
     set runHow(sendOp) send
 }
@@ -175,7 +174,7 @@ if {[string match Darwin $tcl_platform(os)]} {
 #	} else {
 #	    set env(OPEN_MODEL) $argv
 #	}
-	set OPEN_MODEL [file normalize $argv]
+	set OPEN_MODEL [file normalize [lindex $argv 0]]
     } 
 
     set checkFor [file join $SIMILE_PATH Examples handover.txt]
