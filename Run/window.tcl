@@ -2121,9 +2121,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	if {[catch {$box index $wParen}]} {
 	    $box add command -label $wParen \
 		-command [list InsertFunction $eb.equation $component]
+	    lappend fnList $component
 	    catch {set component $msgs($component)} ;# may not exist
 	    lappend popLists($box) $component
-	    lappend fnList $wParen
 	}
     }
     set lname [menu $m.enumtypes -tearoff 0]
@@ -2185,9 +2185,9 @@ proc autocomplete {win action pt value change valuelist} {
     after idle [list $win configure -validate key]
     if {[string length $value]==[$win index end]+1} {
 # only try to match current group of alphas
-	set final [$win index insert]
-	# was [string wordend $value $pt]
-	set close [expr {$final+1}]
+	# set final [$win index insert]
+	set close [string wordend $value $pt]
+	set final [expr {$close-1}]
 # new bit: try to flash matching open bracket
 	set testChar [string index $value $final]
 	FlashMatchingBracket 0 $win $final $testChar
@@ -2200,7 +2200,9 @@ proc autocomplete {win action pt value change valuelist} {
 	    # now all leading brackets must be escaped, and leading ['s made
 	    # optional because they could be starting an itemized array
 	    set trigger [string map [list \[ \\\[? \{ \\\{] $trigger]
-
+	    if {[string index $value $close] ne "("} {
+		set valuelist [lmap fn $valuelist {string cat $fn ()}]
+	    }
 	    set valuelist [concat $equationbar(params) $valuelist]
 # right now for some innovation. Up and down arrows will scroll through 
 # possible matches so we need to get all...only include completion if it adds
