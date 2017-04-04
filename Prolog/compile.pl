@@ -1307,10 +1307,10 @@ nodes.
 			     Path, Step, [reset_list(Ptr, Name)]),
 			make(init_list(Name), [], Path, Step,
 			     [assign(arr(Ptr, Name, []), 0)])];
-	Level = [sm(_,_,_, fm_loop(_Globs, _, AlAct, _)) | _Loops],
+	Level = [sm(_,_,_, fm_loop(Globs, _, AlAct, _)) | _Loops],
 	% its the _Loops that have the bounds!
-	    % all(compile, name_loop_vars, [build(Globs), unify(Used)]),
 	    get_dims_from_loops(Path, _, UseInds),
+	    name_loop_vars(Globs, UseInds),
             ((by_record(SmName),
 	            append_atoms(Name, made, NMade),
 	            SmInters = [instance(internal, inter(Path, _,_), _, NMade,
@@ -1408,8 +1408,11 @@ delay_params_out_made(PEfx, [Out | Mo], A, [make(Out, PEfx, R2, R3, []),
 	   ScPtrOut = ptr(Out); % scalar output -- pass pointer for it
 	ScPtrOut = Out).
 
-name_loop_vars(glob(LVar, _), Used) :-
-	generate_name(c, fill, LVar, Used).
+name_loop_vars([], _).
+name_loop_vars([glob(LVar, _) | More], Inds) :-
+    length(Inds, N),
+    append_atoms(fill, N, LVar),
+    name_loop_vars(More, [_ | Inds]).
 
 get_base_side(Locale, path_substitution(Exited, Entered, _), Exited) :-
 	prefix(Entered, Locale), !;
