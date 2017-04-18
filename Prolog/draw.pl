@@ -482,16 +482,21 @@ display_in(Wid, Comp, Depth, Trans) :-
 		find_type(Comp, Density);
 	    density_for(Comp, Density)),
 	    untranslate(BBox, Trans, Screen_list),
-	    find_fatness(Trans, Fatness),
+	    find_fatness(Trans, WinFatness),
 	    get_flash(Comp, Colour_scheme),
-	    multiple_draw(Comp, MNum),
-	    find_base(Comp, BComp),
-	    is_parameter(BComp, P),
-	    DNum is MNum+10*max(0, P),
-	    (Comp is_of_sort discrete, !,
+	    (Style = image -> caption_for(Comp, Num),
+			      (get_shape(Comp, caption_offset, [ExtraFat, _]);
+			       ExtraFat = 100),
+			      Fatness is WinFatness*ExtraFat/100;
+	     Fatness = WinFatness,
+	     multiple_draw(Comp, MNum),
+	     find_base(Comp, BComp),
+	     is_parameter(BComp, P),
+	     DNum is MNum+10*max(0, P),
+	     (Comp is_of_sort discrete, !,
 	        (P = 1 -> Num is DNum+120;
-		Num is DNum+100);
-	    Num=DNum),
+	           Num is DNum+100);
+	        Num=DNum)),
 	    (Style=state, !,
 	       DCmd = compartment;
 	    DCmd = Style),
@@ -518,7 +523,8 @@ display_in(Wid, Comp, Depth, Trans) :-
 			Comp, 'as', Style, '...removing'])], _),
 		m_update'><'oblitterfry(Comp)),
 	    (get_display_depth(Wid, caption, Caption_detail),
-		((Style = cloud; \+ appears(Comp); Caption_detail =< Depth), !;
+	     ((Style is_class_of_sort captionless; \+ appears(Comp);
+	              Caption_detail =< Depth), !;
 		add_caption(Wid, Comp, DCmd, BBox, Trans, Fatness, [0], Colour_scheme)));
 	true).
 

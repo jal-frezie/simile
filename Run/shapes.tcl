@@ -256,6 +256,24 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
     ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
+proc PutImage { w l t r b stack fatness density colourScheme tagSet} {
+    set cx [Scale $w [expr {($l+$r)/2}]]
+    set cy [Scale $w [expr {($t+$b)/2}]]
+    set vis ${stack}$w
+    if {[lsearch [image names] $stack] == -1} {
+	image create photo $stack
+	$stack read $::SIMILE_PATH/Images/bigsimile.gif -shrink
+	PutSize $stack
+    }
+    image create photo $vis
+    set sw [$stack cget -width]
+    set sh [$stack cget -height]
+    set dw [expr {round([Scale $w $sw*$fatness/100])}]
+    set dh [expr {round([Scale $w $sh*$fatness/100])}]
+    $vis copy [GrowImage $stack $dw $dh] -shrink
+    PutSize $vis
+    $w create image $cx $cy -image $vis -tags [list floating($stack) $tagSet]
+}
 
 proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 			  origX origY bgColour inFat colourScheme tagSet} {
@@ -884,7 +902,7 @@ proc ColorSymbol { w name type density colorSpec } {
     global looks window_info
     
     set n $window_info($w,top_node)
-    if {[string match cloud $type]} {
+    if {[lsearch {cloud image} $type] > -1} {
         set type flow
     }
     if {[string equal influence $type] && [string equal gray50 $density]} {
@@ -1044,13 +1062,15 @@ proc WriteDesc {canvas canvasFile date args} {
         # Insert special command to re-create any photos used
         if {[string match image [$canvas type $object]]} {
 	    set tags [$canvas gettags $object]
-            regexp {source\(([^\)]+)\)} $tags all sourceImage
-            if {![regexp {posn\(([^\)]+)\)} $tags all posn]} {
-		set posn Tiled
+            if {[regexp {[source|floating]\(([^\)]+)\)} $tags all \
+		     sourceImage]} {
+		if {![regexp {posn\(([^\)]+)\)} $tags all posn]} {
+		    set posn Tiled
+		}
+		set localImage [$canvas itemcget $object -image]
+		puts $stream [concat MakeImage \$c $sourceImage $localImage \
+		    [$localImage cget -width] [$localImage cget -height] $posn]
 	    }
-            set localImage [$canvas itemcget $object -image]
-            puts $stream [concat MakeImage \$c $sourceImage $localImage \
-                    [$localImage cget -width] [$localImage cget -height] $posn]
         }
         # Do not write base objs they get re-created...actually do, so I can
 	# use diag in helper. Kill after reloading.
@@ -1388,20 +1408,27 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 	    set newWidth [expr round($factor*[$tgtImage cget -width])]
 	    set newHt [expr round($factor*[$tgtImage cget -height])]
 	    scan [$winId coords $object] {%f %f} newX newY
+	    regexp {source\(([^\)]+)\)} [$winId gettags $object] \
+		all sourceImage
 	    
 	    if {[string match "*/base/*" [$winId gettags $object]]} {
-	    } elseif {[string compare none $optFontor]} {
+	    } elseif {[regexp {floating\(([^\)]+)\)} [$winId gettags $object] \
+			   all sourceImage] || \
+			  [string compare none $optFontor]} {
 # Doing clever stuff with fonts, this zoom op is for a print
 # so scale image rather tha re-tiling it
-		if {$factor > 1} {
-		    image create photo temp
-		    temp copy $tgtImage
-		    $tgtImage config -width $newWidth -height $newHt
-		    $tgtImage copy temp -zoom [expr round($factor)]
-		} else {
-		    $tgtImage copy $tgtImage \
-			-subsample [expr round(1.0/$factor)]
-		}
+#		if {$factor > 1} {
+#		    image create photo temp
+#		    temp copy $tgtImage
+#		    $tgtImage config -width $newWidth -height $newHt
+#		    $tgtImage copy temp -zoom [expr round($factor)]
+#		} else {
+#		    $tgtImage copy $tgtImage \
+#			-subsample [expr round(1.0/$factor)]
+#		}
+		$tgtImage blank
+		$tgtImage config -width $newWidth -height $newHt		
+		$tgtImage copy [GrowImage $sourceImage $newWidth $newHt]
 	    } else {
 		set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
 		set intRad [expr int($looks($n,submodel,objectsize)* \
@@ -1437,6 +1464,9 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 # the user's intended target
 proc Visible {winId obj} {
     if {[string equal hidden [$winId itemcget $obj -state]]} {return 0}
+    if {[$winId type $obj] eq "image"} {
+	return 1
+    }
     catch {set mark [$winId itemcget $obj -outline]}
     append mark [$winId itemcget $obj -fill]
     return [string length $mark]

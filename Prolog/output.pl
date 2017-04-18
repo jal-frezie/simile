@@ -16,7 +16,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	enable_text_editing_in/1, disable_text_editing_in/1, select_text/2,
 	start_drawing_group/1, finish_drawing_group/1,
 	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
-	submodel/13, bowtie/6, flow/6, influence/6, broken_influence/6,
+	image/7, submodel/13, bowtie/6, flow/6, influence/6, broken_influence/6,
 			ghost_link/6, relation/6, text/8,
 	shift_text/3, shift_obj/3, mark_obj/2, unmark_objs/1,
 			zap_route/3, zap_bowtie/3,
@@ -238,6 +238,10 @@ event(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
 
 cloud(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutCloud', Wid, L, T, R, B, Num, Fatness, Density, 
+			Colour_scheme, br(Features)], _).
+
+image(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutImage', Wid, L, T, R, B, Num, Fatness, Density, 
 			Colour_scheme, br(Features)], _).
 
 submodel(Wid, [L, T, R, B], Stack, Fatness, FillColour, FillImage, Posn,
@@ -572,6 +576,12 @@ tk_do_text_item_dialog(Win, Caption, State, OKd, NewState) :-
 	safe_tcl_eval(['TextCheckAndSet', Win, br(write(Caption)),  StateList],
 		 New_P_string),
 	chop_list(New_P_string, [OKd | NewState]).
+
+do_image_item_dialog(Win, Caption, State, OKd, NewState) :-
+	bracketize(State, StateList),
+	safe_tcl_eval(['TweakFloatingImage', Win, Caption, StateList], New),
+	(New = "0" -> OKd = 0;
+	 OKd = 1, chop_list(New, NewState)).
 
 tk_get_pref(ResourceName, ResourceValue) :-
 	safe_tcl_eval(['PrefValue', write(custom(ResourceName)),

@@ -1843,7 +1843,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set lookers [list compartment variable flow influence separator1 \
 		      submodel relation separator2 \
 		      creation immigration reproduction loss condition alarm \
-		     separator4 text]
+		     separator4 text image]
     if {[info exists ::do_events]} {
 	set lookers [linsert $lookers 8 state event squirt separator3]
     }

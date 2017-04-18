@@ -405,5 +405,6 @@ set_initial_box_sizes(TopNode) :-
 	assert(box_size_is(TopNode, influence, 50, c, 0)),
 	assert(box_size_is(TopNode, ghost_link, 50, c, 0)),
 	assert(box_size_is(TopNode, relation, 50, c, 0)),
-	assert(box_size_is(TopNode, text, 50, c, 0)).
+	assert(box_size_is(TopNode, text, 50, c, 0)),
+	assert(box_size_is(TopNode, image, 50, c, 0)).
 

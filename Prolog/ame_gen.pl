@@ -1019,7 +1019,7 @@ find_all_comps(Parent, Comp) :-
 
 Type is_primitive :-
 	member(Type, [compartment, state, function, variable, event, cloud,
-		      flow, squirt, influence, relation, alarm, text,
+		      flow, squirt, influence, relation, alarm, text, image,
 		      condition, creation, immigration, reproduction, loss]).
 
 :- op(500, xfy, is_class_of_sort).
@@ -1044,7 +1044,8 @@ Obj is_class_of_sort Class :-
 		relation-[line, curved],
 		cloud-[cloud, regular_box, box, captionless, no_properties,
 		       can_be_ghost],
-		text-[box, no_properties],
+		text-[box],
+		image-[elongated_box, box, captionless],
 		alarm-[regular_box, box, rectangle, channel, has_function,
 			   boolean_value],
 		condition-[regular_box, box, rectangle, channel, has_function,

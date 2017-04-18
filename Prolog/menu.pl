@@ -1481,7 +1481,9 @@ too_big_for_edn(Model) :-
 transfer_images(Model, TopDir, Way) :-
 	setof(ImageSpec,
 	      Submodel^(contains(Model, Submodel),
-			get_av_pair(Submodel, 0, fill_image, ImageSpec)),
+			(get_av_pair(Submodel, 0, fill_image, ImageSpec);
+			 find_type(Submodel, image),
+			 caption_for(Submodel, ImageSpec))),
 	      Fillers), !,
 	shift_images(TopDir, Fillers, Way);
 	true.

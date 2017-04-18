@@ -638,7 +638,7 @@ is not a box type, or if there is no room at the given position to put the objec
 */
 
 add_at_point(Xpt, Ypt, New_obj, Parent, Comp_name) :-
-	New_obj = text, !,
+	member(New_obj, [text, image]), !,
 	    make_node(Parent, New_obj, Comp_name),
 	    set_shape(Comp_name, centre, [Xpt, Ypt]);
 	attempt_addition(New_obj, Parent, [Xpt, Ypt], Comp_name, no, yes).
@@ -831,14 +831,14 @@ doubleclick_on(Edit_thing) :-
 %	get_mode(select),
 	find_type(Edit_thing, Edit_type),
 	find_current(Wid),
+	contains(TopNode, Edit_thing),
+	is_toplevel(TopNode),
 	(Edit_type = submodel, !,
 	    finish_old_edit(none), /* because leaving the window */
 	all(event, get_display_depth,
 	    [unify(Wid),
 	    build([ghost_link, influence, variable, flow, compartment, 
 		   submodel, caption, text, sections]), build(Depths)]),
-	    contains(TopNode, Edit_thing),
-	    is_toplevel(TopNode),
 	    new_window_for(Edit_thing, TopNode, NewWin, Depths, 0),
 	    all(state, set_display_depth,
 		[unify(NewWin),
@@ -916,7 +916,23 @@ doubleclick_on(Edit_thing) :-
 		    fail;
 		 find_all_comps(Parent, Edit_thing),
 		  finish_move(Parent, 1));
-	    OKd == 0);
+	     OKd == 0);
+	Edit_type = image, !,
+	caption_for(Edit_thing, Capt),
+	(get_av_pair(Edit_thing, 0, comment, Cmt), !; Cmt = ''),
+	  (get_shape(Edit_thing, caption_offset, [OldZoom, _]), !,
+	   clear_shape(Edit_thing, caption_offset); OldZoom = 100),
+	  output'><'do_image_item_dialog(Wid, Capt, [OldZoom, Cmt], OKd,
+					  [NewZoomStr, NewCmtStr]),
+	  (OKd = 0, !;
+	   number_codes(NewZoom, NewZoomStr),
+	   set_shape(Edit_thing, caption_offset, [NewZoom, 0]),
+	   name(NewCmt, NewCmtStr),
+	   add_parameter(Edit_thing, 0, comment, NewCmt),
+	   redisplay(Edit_thing),
+		    fail;
+	   find_all_comps(Parent, Edit_thing),
+	   finish_move(Parent, 1));
 	Edit_type is_class_of_sort has_function, !,
 	    find_node_with_data(Edit_thing, Base, Control_thing),
 	    is_parameter(Control_thing, WasP),

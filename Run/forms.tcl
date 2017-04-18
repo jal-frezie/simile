@@ -913,34 +913,38 @@ proc ChooseImage {posRBs mdl noCentred} {
         set newImage backgnd$uid
     }
     image create photo $newImage
-    set choosing 1
-    while {$choosing} {
-        set new [ChooseFile image.gif [tr. {Image for model background}] 0 $mdl]
+    if {[SetDiagImage $newImage {Image for model background} $mdl]} {
+	set disaggregate(image) $newImage
+	foreach button [winfo children $posRBs] {
+	    $button configure -state normal
+	}
+	if {$noCentred} {
+	    $posRBs.ipCentred configure -state disabled
+	}
+	if {[string equal none $disaggregate(imgpos)]} {
+	    set disaggregate(imgpos) Tiled
+	}
+    } else {
+	image delete $newImage
+    }
+}
+
+proc SetDiagImage {newImage capt mdl} {
+    while 1 {
+        set new [ChooseFile image.gif [tr. $capt] 0 $mdl]
         if {[llength $new]} {
+	    $newImage configure -width 0 -height 0
             if {![catch {$newImage read $new -shrink} readFlop]} {
-                if {![llength $readFlop]} {
-                    set readFlop [string range [file extension $new] 1 end]
-                }
-                set disaggregate(image) $newImage
                 PutSize $newImage
-                set choosing 0
-                foreach button [winfo children $posRBs] {
-                    $button configure -state normal
-                }
-		if {$noCentred} {
-		    $posRBs.ipCentred configure -state disabled
-		}
-                if {[string equal none $disaggregate(imgpos)]} {
-                    set disaggregate(imgpos) Tiled
-                }
-            } else {
+		puts [$newImage cget -width]
+                return 1
+           } else {
 		Query [list read_image_failed $readFlop] warning top {} ok
                 # prevent crasho if reading fails
                 #       $newImage config -width 100 -height 100
             }
         } else {
-            image delete $newImage
-            set choosing 0
+            return 0
         }
     }
 }
@@ -1026,6 +1030,58 @@ proc ResetProgressBox {} {
 	CloseProgressBox
     }
     set progressBoxCount 0
+}
+
+proc TweakFloatingImage {parent title state} {
+    global text_props
+
+    set t [PutItThere .relcheck $parent]
+    wm resizable $t 0 0
+    wm protocol $t WM_DELETE_WINDOW {set text_props(done) 0}
+    wm title $t [format $::msgs(props_title) [BlankCrs $title]]
+    frame .relcheck.top
+    TitleFrame .relcheck.top.left -text [tr. {Image options:}]
+    set f [GetFrame .relcheck.top.left]
+    pack [frame $f.width -bd 4]
+    pack [frame $f.relsize -bd 4] -fill x -expand true
+    pack [ttk::label $f.relsize.lab -text [tr. {Relative size: }]] \
+        -side left
+    pack [ttk::scale $f.relsize.ent -from 20 -to 500 -orient h \
+	      -variable text_props(rel_size)] -fill x -expand true
+    set text_props(rel_size) [lindex $state 0]
+    pack .relcheck.top.left -side left -expand on -fill both
+    pack .relcheck.top -expand on -fill both
+
+    set bzone [frame .relcheck.top.right]
+    pack [button $bzone.bchange -text [tr. Image...] -width 10 \
+	      -command [list SetDiagImage $title {Image for model background} \
+			    $::window_info($parent,top_node)]] -padx 4 -pady 4
+    pack [button $bzone.bdone -text [tr. OK] -width 10 \
+	      -command {set text_props(done) 1}] -padx 4 -pady 4
+    pack [button $bzone.bc -text [tr. Cancel] -width 10 \
+	      -command {set text_props(done) 0}] -padx 4 -pady 4
+    pack [button $bzone.hlp -text [tr. Help] -width 10 \
+	      -command {ContextSensitiveHelp .relcheck diagrams/node.htm}] \
+	-padx 4 -pady 4
+    pack $bzone -side left
+
+    TitleFrame .relcheck.bottom -text [tr. Comments:]
+    set f [GetFrame .relcheck.bottom]
+    pack [text $f.comment -width 40 -height 4 -relief sunken -bd 2 \
+	      -highlightthickness 0 -wrap word] \
+            -anchor w -expand on -fill both -padx 2 -pady 2
+    $f.comment delete 1.0 end
+    $f.comment insert 1.0 [lindex $state 1]
+    pack .relcheck.bottom
+
+    LetItShow $t text_props(done)
+    set newCmt [$f.comment get 1.0 end]
+    PackItUp $t
+    if {$text_props(done)} {
+	return [list $text_props(rel_size) $newCmt]
+    } else {
+	return 0
+    }
 }
 
 proc TextCheckAndSet {parent title state} {

@@ -443,8 +443,8 @@ i.e., if it has a deep enough display depth and so do others on which it
 depends, e.g., compartments for flows.  */
 
 draws_at(Wid, Type, Depth) :-
-    member(Type, [caption, text]), !,
-        get_display_depth(Wid, Type, Detail),
+    member(Type-DType, [caption-caption, text-text, image-text]), !,
+        get_display_depth(Wid, DType, Detail),
         Detail > Depth;
     depth_list_is(List),
         draws_at(Wid, Type, List, Depth).
