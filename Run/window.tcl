@@ -516,8 +516,13 @@ proc DragObj {winId xco yco} {
         $winId yview scroll \
                 [expr int($yco-$window_info($winId,height))/$sloth] units
     }
-    
-    prolog [list tk_drag( $virtx , $virty )] ;# no cursor change
+
+#    set draggedObj [GetClickedObj $winId $canx $cany 6]
+#    if {[lsearch [$winId gettags $draggedObj] /handle/] == -1} {
+	prolog [list tk_drag( $virtx , $virty )] ;# no cursor change
+#    } else {
+#	TweakHandle $winId $draggedObj $canx $cany
+#    }
 #    update
 }
 

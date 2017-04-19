@@ -266,13 +266,28 @@ proc PutImage { w l t r b stack fatness density colourScheme tagSet} {
 	PutSize $stack
     }
     image create photo $vis
-    set sw [$stack cget -width]
-    set sh [$stack cget -height]
-    set dw [expr {round([Scale $w $sw*$fatness/100])}]
-    set dh [expr {round([Scale $w $sh*$fatness/100])}]
-    $vis copy [GrowImage $stack $dw $dh] -shrink
-    PutSize $vis
-    $w create image $cx $cy -image $vis -tags [list floating($stack) $tagSet]
+    set dw [expr {round([Scale $w $fatness])}]
+    set dh [expr {round([Scale $w $density])}]
+    FillSmImage $w $stack Direct $vis $dw $dh
+    $w create image $cx $cy -image $vis \
+	-tags [list floating($stack) $tagSet size_on_this]
+
+    # add resize handles
+    foreach anchor {nw n ne e se s sw w} {
+	switch -glob $anchor {
+	    n* {set ay [expr {$cy-$dh/2}]}
+	    s* {set ay [expr {$cy+$dh/2}]}
+	    default {set ay $cy}
+	}
+	switch -glob $anchor {
+	    *w {set ax [expr {$cx-$dw/2}]}
+	    *e {set ax [expr {$cx+$dw/2}]}
+	    default {set ax $cx}
+	}
+	$w create line $ax $ay $ax $ay -width 6 -capstyle projecting \
+	    -tags [concat $tagSet /handle/ /$anchor/]
+    }
+    ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
 }
 
 proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
@@ -396,9 +411,8 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
         set smbg sm$poly$w
         image create photo $smbg -width $mw -height $mh
         $w itemconfig $poly -image $smbg
-        set intRad [expr int($cornerRad)]
         
-        FillSmImage $fillImage $layout $smbg $mw $mh $intRad
+        FillSmImage $w $fillImage $layout $smbg $mw $mh
 	# Now to stick it behind anything that might be drawn inside
 	$w raise $poly $stackOn
 	set stackOn $poly
@@ -636,7 +650,7 @@ proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
 # the size of the submodel rectangle, so it can be tiled/stretched as
 # necessary...
 
-proc FillSmImage {fCol layout smbg mw mh intRad} {
+proc FillSmImage {c fCol layout smbg mw mh} {
     if {[catch {image type $fCol}]} {
 	set fCol splash
     }
@@ -649,7 +663,15 @@ proc FillSmImage {fCol layout smbg mw mh intRad} {
     set srcHeight [$fCol cget -height]
 
     $smbg blank
+    if {$layout eq "Direct"} {
+	$smbg config -width $mw -height $mh
+	$smbg copy [GrowImage $fCol $mw $mh] -shrink
+	return
+    }
     # Now copy the middle bit over
+    set shortSide [expr $mw<$mh?$mw:$mh]
+    set n $::window_info($c,top_node)
+    set intRad [expr int($::looks($n,submodel,objectsize)*$shortSide/400)]
     MyTile $smbg $layout $mw $mh 0 $intRad $mw [expr $mh-$intRad] $fCol \
             $srcWidth $srcHeight
     
@@ -902,18 +924,19 @@ proc ColorSymbol { w name type density colorSpec } {
     global looks window_info
     
     set n $window_info($w,top_node)
-    if {[lsearch {cloud image} $type] > -1} {
+    if {$type eq "cloud"} {
         set type flow
     }
     if {[string equal influence $type] && [string equal gray50 $density]} {
 	set type ghost_link
     }
     if {[string compare $colorSpec normal]} {
+	if {$type eq "image"} {set type text}
         set outlineColor $looks($n,$type,$colorSpec)
         set textColor $outlineColor
     } else {
-        set outlineColor $looks($n,$type,outline)
-        set textColor $looks($n,$type,text)
+	set outlineColor $looks($n,$type,outline)
+	set textColor $looks($n,$type,text)
     }
     FlashAndStippleSymbol $w $name $outlineColor $textColor $density $colorSpec
 }
@@ -1062,9 +1085,11 @@ proc WriteDesc {canvas canvasFile date args} {
         # Insert special command to re-create any photos used
         if {[string match image [$canvas type $object]]} {
 	    set tags [$canvas gettags $object]
-            if {[regexp {[source|floating]\(([^\)]+)\)} $tags all \
-		     sourceImage]} {
-		if {![regexp {posn\(([^\)]+)\)} $tags all posn]} {
+            if {[regexp {(source|floating)\(([^\)]+)\)} $tags all \
+		     use sourceImage]} {
+		if {$use eq "floating"} {
+		    set posn Direct
+		} elseif {![regexp {posn\(([^\)]+)\)} $tags all posn]} {
 		    set posn Tiled
 		}
 		set localImage [$canvas itemcget $object -image]
@@ -1121,12 +1146,10 @@ proc MakeImage {c base inst w h args} {
     #	set imageSources($base) $file
     #    }
     image create photo $inst -width $w -height $h
-    set shortSide [expr $w<$h?$w:$h]
-    set intRad [expr int($looks($n,submodel,objectsize)*$shortSide/400)]
     if {![llength $args]} {
 	set args Tiled
     }
-    FillSmImage $base $args $inst $w $h $intRad
+    FillSmImage $c $base $args $inst $w $h
 }
 
 # this is called from Prolog to load/save images with a model. Prolog does not
@@ -1350,7 +1373,6 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 	    set hideTinies 5
 	}
     }
-    set n $window_info($winId,top_node)
     $winId scale $which 0 0 $factor $factor
     if {[string compare $which all]} {
         set objList [$winId find withtag $which]
@@ -1389,7 +1411,8 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 	    $winId itemconfigure $object -width [expr {$fontor*$oldWidth}]
 	    FixBackBox $winId $object
 	} line {
-	    if {![string match "*/grid/*" [$winId gettags $object]]} {
+	    if {![string match "*/grid/*" [$winId gettags $object]] && \
+		![string match "*/handle/*" [$winId gettags $object]]} {
 		set newWidth [AdjustWidth $winId $object $factor]
 		set minWidth 0.1
 		if {[string match */encs/* [$winId gettags $object]]} {
@@ -1408,40 +1431,31 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 	    set newWidth [expr round($factor*[$tgtImage cget -width])]
 	    set newHt [expr round($factor*[$tgtImage cget -height])]
 	    scan [$winId coords $object] {%f %f} newX newY
-	    regexp {source\(([^\)]+)\)} [$winId gettags $object] \
-		all sourceImage
 	    
 	    if {[string match "*/base/*" [$winId gettags $object]]} {
-	    } elseif {[regexp {floating\(([^\)]+)\)} [$winId gettags $object] \
-			   all sourceImage] || \
-			  [string compare none $optFontor]} {
+	    } elseif {[string compare none $optFontor]} {
 # Doing clever stuff with fonts, this zoom op is for a print
 # so scale image rather tha re-tiling it
-#		if {$factor > 1} {
-#		    image create photo temp
-#		    temp copy $tgtImage
-#		    $tgtImage config -width $newWidth -height $newHt
-#		    $tgtImage copy temp -zoom [expr round($factor)]
-#		} else {
-#		    $tgtImage copy $tgtImage \
-#			-subsample [expr round(1.0/$factor)]
-#		}
-		$tgtImage blank
-		$tgtImage config -width $newWidth -height $newHt		
-		$tgtImage copy [GrowImage $sourceImage $newWidth $newHt]
+		if {$factor > 1} {
+		    image create photo temp
+		    temp copy $tgtImage
+		    $tgtImage config -width $newWidth -height $newHt
+		    $tgtImage copy temp -zoom [expr round($factor)]
+		} else {
+		    $tgtImage copy $tgtImage \
+			-subsample [expr round(1.0/$factor)]
+		}
 	    } else {
-		set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
-		set intRad [expr int($looks($n,submodel,objectsize)* \
-					 $shortSide/400)]
 		$tgtImage config -width $newWidth -height $newHt
-		regexp {source\(([^\)]+)\)} [$winId gettags $object] \
-		    all sourceImage
-		if {![regexp {posn\(([^\)]+)\)} [$winId gettags $object] \
+		regexp {(floating|source)\(([^\)]+)\)} \
+		    [$winId gettags $object] all use sourceImage
+		if {$use eq "floating"} {
+		    set layout Direct
+		} elseif {![regexp {posn\(([^\)]+)\)} [$winId gettags $object] \
 			  all layout]} {
 		    set layout Tiled
 		}
-		FillSmImage $sourceImage $layout $tgtImage $newWidth $newHt \
-		    $intRad
+		FillSmImage $winId $sourceImage $layout $tgtImage $newWidth $newHt
 	    }
 	} arc {
 	    set newWidth [AdjustWidth $winId $object $factor]
@@ -2297,6 +2311,8 @@ proc ResetLooks {c type} {
 	    set looks($c,submodel,captanchor) nw
 	} text {
 	    set looks($c,text,textanchor) c
+	    set looks($c,image,outline) {}
+	    set looks($c,image,text) {}
 	}
     }
 }

@@ -826,7 +826,7 @@ test_complete(Item) :-
             sequence(Item, Control)),
         _ is_connector from _ to Control;
     (Item is_of_sort cloud; Item is_of_sort channel;
-        find_type(Item, text));
+        find_type(Item, text); find_type(Item, image));
     Item has_class submodel,
         (Item has_link_equivalences Links, !; 
         Links = []),

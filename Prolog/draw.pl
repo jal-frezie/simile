@@ -478,17 +478,18 @@ display_in(Wid, Comp, Depth, Trans) :-
 	Depth >= 0,
 	get_drawing_form(Comp, Style, BBox),
 	draws_at(Wid, Style, Depth), !,
-	    (Style = channel, !,
-		find_type(Comp, Density);
-	    density_for(Comp, Density)),
 	    untranslate(BBox, Trans, Screen_list),
 	    find_fatness(Trans, WinFatness),
 	    get_flash(Comp, Colour_scheme),
 	    (Style = image -> caption_for(Comp, Num),
-			      (get_shape(Comp, caption_offset, [ExtraFat, _]);
-			       ExtraFat = 100),
-			      Fatness is WinFatness*ExtraFat/100;
+			      (get_shape(Comp, caption_offset, [ExFat, ExDens]);
+			       ExFat = 90, ExDens = 90),
+			      Fatness is WinFatness*ExFat/100,
+			      Density is WinFatness*ExDens/100;
 	     Fatness = WinFatness,
+	    (Style = channel, !,
+		find_type(Comp, Density);
+	    density_for(Comp, Density)),
 	     multiple_draw(Comp, MNum),
 	     find_base(Comp, BComp),
 	     is_parameter(BComp, P),

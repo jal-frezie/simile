@@ -56,7 +56,7 @@ proc ChooseFile { preferred title canbenew context} {
 	    set typeList [list .sml .sim .ame]
 	    set desc [tr. Models]
 	} .gif {
-	    set typeList [list .gif .jpg .jpeg .png .tif .tiff]
+	    set typeList [list .gif .jpg .JPG .jpeg .png .tif .tiff]
 	    set desc [tr. Images]
 	} {} {
 	    set typeList {}
