@@ -173,9 +173,10 @@ namespace eval slide139 {
         }
         $winId.slidervars add command -label $title \
                 -command [namespace code [list Remove $winId $title]]
-        if {$useDim==-1} {
+        set live [expr {$class ne "EVENT"}]
+	if {$useDim==-1} {
             set defVal [GetDefVal $initVal -1 0]
-	    if {![set live [expr {$class ne "EVENT"}]]} {
+	    if {!$live} {
 		set holder [winfo parent $f]
 		pack [::ttk::button $f.zap -style style$holder \
 			  -image $::iconImages(zap) \
@@ -241,20 +242,20 @@ namespace eval slide139 {
             set allVals $defVal
 	    } else {
             #	    set useTrans [lindex $trans $useDim]
-	    if {[string equal EVENT $class]} {
-		set holder [winfo parent $f]
-		pack [::ttk::button $f.zap -style style$holder \
-			  -image $::iconImages(zap) \
-			  -command [namespace code [list Rock]]] -side right
-		BindPopup $f.zap [tr. {Trigger an event now with these magnitudes}]
-	    }
-            pack [label $f.caption -text [lindex $levels end] \
-			      -bg $lbg -width 12]
             set count [lindex $sliderDoes($title,dims) $useDim]
             # bodge it to work with record submodels
             if {[string equal RECORDS $count]} {
                 set count [expr [llength $initVal]/2]
             }
+	    if {!$live} {
+		set holder [winfo parent $f]
+		pack [::ttk::button $f.zap -style style$holder \
+			  -image $::iconImages(zap) \
+			  -command [namespace code [list SliderArrayEvt $node $count]]] -side right
+		BindPopup $f.zap [tr. {Trigger an event now with these magnitudes}]
+	    }
+            pack [label $f.caption -text [lindex $levels end] \
+			      -bg $lbg -width 12]
             for {set index 1} {$count >= $index} {incr index} {
                 set defVal [GetDefVal $initVal $useDim $index]
                 if {[llength [lindex $trans $useDim]]} {
@@ -274,10 +275,13 @@ namespace eval slide139 {
                                     -side right
                         }
                         pack [checkbutton $row.elt$index -borderwidth 1 \
-				  -variable widgetSeln($node,$index) -command \
-				  [namespace code [list WidgetSelnToC \
-						       $node $fixed $index]] \
+				  -variable widgetSeln($node,$index) \
 				  -padx 0 -offvalue 0 -onvalue 1] -side left
+			if {$live} {
+			    $row.elt$index configure -command \
+				[namespace code [list WidgetSelnToC \
+						     $node $fixed $index]]
+			}
                         BindPopup $row.elt$index "For $slTitle"
                         set newbg white
                         if {fmod($line,2)==0} {
@@ -312,7 +316,7 @@ namespace eval slide139 {
 			bind $f.elt$index.c <<ComboboxSelected>> \
 			    [namespace code [list SetChoiceNumber \
 						 $f.elt$index.c \
-						 $node $fixed 1 $index]]
+						 $node $fixed $live $index]]
                         pack $f.elt$index.c -side right -fill x -expand true
                         pack [label $f.elt$index.id -text $slTitle -width 10] \
                                 -side left
@@ -332,9 +336,12 @@ namespace eval slide139 {
 			    -sliderlength 10 -from $min -to $max \
 			    -resolution $spacing \
 			    -bg $lbg -troughcolor $dbg -activebackground $fbg \
-			    -variable widgetSeln($node,$index) \
+			    -variable widgetSeln($node,$index)
+			if {$live} {
+			$newScale configure \
 			    -command [namespace code [list SetArrayIfUsed \
 							  $node $fixed $index]]
+			}
                         pack $newScale -fill x -expand true
                         # only put legend on bottom one
                         if {$count==$index} {
@@ -409,6 +416,12 @@ namespace eval slide139 {
         global widgetSeln
         set sub [join [concat [list $node] $args] ,]
         return [SetArrayIfUsed $node $fixed $args $widgetSeln($sub)]
+    }
+
+    proc SliderArrayEvt {node count} {
+	for {set index 1} {$count >= $index} {incr index} {
+	    SliderEvent $node $index
+	}
     }
     
     proc SliderEvent {node indices} {
