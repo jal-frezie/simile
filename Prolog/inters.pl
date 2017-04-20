@@ -60,12 +60,19 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
 	    % do not de-idle if 1st assign done less often;
 	    % could do if step were passed back from here
 	    RealStep >= Step, !;
-	[Setups, NewInters, Context] =
-	[AllSetups, AllInters, FContext],
+	[NewInters, Context] =
+	[AllInters, FContext],
 	    pointer_from(DestPath, DestPtr),
 	    get_dims_from_loops(SourceLoops, _, Inds),
-	 NewFormula = [assign(arr(DestPtr, Target, Inds), ScaledF)],
-	add_extra_dependencies(Context, DestPath, Args, Prereqs)).
+	    NewFormula = [assign(arr(DestPtr, Target, Inds), ScaledF)],
+	    (FContext = BaseContext ->
+		 Setups = AllSetups,
+	         AllArgs = Args;
+	     Setups = [make(backgnd(Target), [], BaseContext, Step,
+			    [assign(arr(DestPtr, Target, Inds), 0)])
+			   | AllSetups],
+	         AllArgs = [backgnd(Target) | Args]),
+	add_extra_dependencies(Context, DestPath, AllArgs, Prereqs)).
 
 report(Comp, Prob) :-
 	find_all_comps(Parent, Comp),
