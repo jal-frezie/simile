@@ -72,11 +72,10 @@ proc Disaggregate {parent title colour image imgpos type interp \
     pack $cmtf -padx 2 -pady 2 -fill both -expand true
     pack $t.simple.notes -side bottom -padx 4 -pady 4 -fill both -expand true
 
-    frame $t.simple.left
     if {$new} {
-	TitleFrame $t.simple.left.count \
+	TitleFrame $t.simple.count \
 	    -text [tr. "Instances:"]
-	set disaggregate(countf) [GetFrame $t.simple.left.count]
+	set disaggregate(countf) [GetFrame $t.simple.count]
 	foreach interpType {Single {Fixed array} {For data records} \
 				Population {Rectangular grid} \
 			    {Hexagonal grid}} {
@@ -94,9 +93,9 @@ proc Disaggregate {parent title colour image imgpos type interp \
 	    [list SetupDisagExtras $exFrame]
 	SetupDisagExtras $exFrame
     } else {
-    TitleFrame $t.simple.left.count \
+    TitleFrame $t.simple.count \
 	-text [tr. "Control of number of instances:"]
-    set countf [GetFrame $t.simple.left.count]
+    set countf [GetFrame $t.simple.count]
 
     ttk::frame $countf.radio
     foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
@@ -112,10 +111,11 @@ proc Disaggregate {parent title colour image imgpos type interp \
     bind $countf.value <Return> $okCmd
     }
 
-    pack $t.simple.left.count -padx 4 -pady 4 -fill both -expand true
-    
-    TitleFrame $t.simple.left.colour -text [tr. "Background shade:"]
-    set colourf [GetFrame $t.simple.left.colour]
+    pack $t.simple.count -padx 4 -pady 4 -fill both -expand true
+
+    pack [frame $t.simple.middle] -fill both -expand 1
+    TitleFrame $t.simple.middle.colour -text [tr. "Background shade:"]
+    set colourf [GetFrame $t.simple.middle.colour]
     set posRBs [frame $colourf.imageposns]
     pack [ttk::button $colourf.clear -text [tr. Clear] -width 7 \
             -command "ClearBG $posRBs"] -padx 2 -pady 4 -side left
@@ -135,9 +135,22 @@ proc Disaggregate {parent title colour image imgpos type interp \
 		  -variable disaggregate(imgpos)] -anchor w -fill x
 # TRANSLATOR: See list after rbutton
     }
-    pack $t.simple.left.colour -padx 4 -pady 4 -fill both -expand true
-    pack $t.simple.left -side left -fill both -expand 1
+    pack $t.simple.middle.colour -side left -padx 4 -pady 4 -fill both -expand 1
     
+    TitleFrame $t.simple.middle.appearance -text [tr. Appearance]
+    set appearancef [GetFrame $t.simple.middle.appearance]
+    ttk::checkbutton $appearancef.hide -text [tr. "Hide contents"] \
+            -variable disaggregate(hide)
+    pack $appearancef.hide -anchor w
+    ttk::frame $appearancef.scale
+    scale $appearancef.scale.value -from .01 -to 1 -length 150 -orient horizontal \
+            -resolution 0.01 -variable disaggregate(fatness)
+    pack $appearancef.scale.value
+    ttk::label $appearancef.scale.caption -text [tr. "Relative scale"]
+    pack $appearancef.scale.caption
+    pack $appearancef.scale -anchor w
+    pack $t.simple.middle.appearance -side left -padx 4 -pady 4 -fill both -expand true
+
     $t add [frame $t.complex] -text [tr. Advanced]
     TitleFrame $t.complex.enumtypes -text [tr. "Enumerated types"]
     set enumtypef [GetFrame $t.complex.enumtypes]
@@ -209,20 +222,6 @@ proc Disaggregate {parent title colour image imgpos type interp \
     pack $t.complex.enumtypes -anchor nw -side bottom -padx 4 -pady 4 \
 	-fill both -expand true
     
-    TitleFrame $t.complex.appearance -text [tr. Appearance]
-    set appearancef [GetFrame $t.complex.appearance]
-    ttk::checkbutton $appearancef.hide -text [tr. "Hide contents"] \
-            -variable disaggregate(hide)
-    pack $appearancef.hide -anchor w
-    ttk::frame $appearancef.scale
-    scale $appearancef.scale.value -from .01 -to 1 -length 150 -orient horizontal \
-            -resolution 0.01 -variable disaggregate(fatness)
-    pack $appearancef.scale.value
-    ttk::label $appearancef.scale.caption -text [tr. "Relative scale"]
-    pack $appearancef.scale.caption
-    pack $appearancef.scale -anchor w
-    pack $t.complex.appearance -anchor nw -side left -padx 4 -pady 4 -fill both -expand true
-    
     TitleFrame $t.complex.math -text [tr. Calculation]
     set mathf [GetFrame $t.complex.math]
 #    checkbutton $mathf.separate -text "Build submodel in separate dll" \
@@ -263,12 +262,31 @@ proc Disaggregate {parent title colour image imgpos type interp \
     ::ttk::combobox $mathf.step.pulldown -textvariable disaggregate(step) \
 	-width 10 -values [concat Default $stepNames] -state readonly
     set m [menu $mathf.step.pulldown.menu] 
-    foreach item [concat Default $stepNames] {
-      $m add command -label $item -command "set disaggregate(step) \"$item\""
-    }
+    #foreach item [concat Default $stepNames] {
+    #  $m add command -label $item -command "set disaggregate(step) \"$item\""
+    #}
     pack $mathf.step.pulldown
     pack $mathf.step -anchor w -padx 4 -pady 6
     pack $t.complex.math -side left -padx 4 -pady 4 -fill both -expand true
+    
+    TitleFrame $t.complex.cloud -text [tr. {Cloud equivalence by position}]
+    set cloudf [GetFrame $t.complex.cloud]
+    ttk::frame $cloudf.gridsm
+    ttk::label $cloudf.gridsm.caption -text [tr. "Grid submodel:"]
+    pack $cloudf.gridsm.caption -side left
+    ::ttk::combobox $cloudf.gridsm.pulldown -textvariable disaggregate(gridsm) \
+	-values [list [tr. None] fee fi fo] -width 10 -state readonly
+    pack $cloudf.gridsm.pulldown
+    pack $cloudf.gridsm -anchor w -padx 4 -pady 6
+
+    ttk::frame $cloudf.comp
+    ttk::label $cloudf.comp.caption -text [tr. "Compartment:"]
+    pack $cloudf.comp.caption -side left
+    ::ttk::combobox $cloudf.comp.pulldown -textvariable disaggregate(cloudcomp) \
+	-values [list [tr. None] earth wind fire] -width 10 -state readonly
+    pack $cloudf.comp.pulldown
+    pack $cloudf.comp -anchor w -padx 4 -pady 6
+    pack $t.complex.cloud -side left -padx 4 -pady 4 -fill both -expand true
     
     # The above "complex" frame has been constructed, but is not packed until the "More" button is pressed
     # unless, conditional expressions indicate that one of the complex attributes does not have its default
