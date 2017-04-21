@@ -268,25 +268,26 @@ proc Disaggregate {parent title colour image imgpos type interp \
     pack $mathf.step.pulldown
     pack $mathf.step -anchor w -padx 4 -pady 6
     pack $t.complex.math -side left -padx 4 -pady 4 -fill both -expand true
-    
-    TitleFrame $t.complex.cloud -text [tr. {Cloud equivalence by position}]
-    set cloudf [GetFrame $t.complex.cloud]
-    ttk::frame $cloudf.gridsm
-    ttk::label $cloudf.gridsm.caption -text [tr. "Grid submodel:"]
-    pack $cloudf.gridsm.caption -side left
-    ::ttk::combobox $cloudf.gridsm.pulldown -textvariable disaggregate(gridsm) \
-	-values [list [tr. None] fee fi fo] -width 10 -state readonly
-    pack $cloudf.gridsm.pulldown
-    pack $cloudf.gridsm -anchor w -padx 4 -pady 6
+    # next bit not used -- cloud equivalence is property of compartment
+    # so there is space here to control some as yet uninvented feature
+    # TitleFrame $t.complex.cloud -text [tr. {Cloud equivalence by position}]
+    # set cloudf [GetFrame $t.complex.cloud]
+    # ttk::frame $cloudf.gridsm
+    # ttk::label $cloudf.gridsm.caption -text [tr. "Grid submodel:"]
+    # pack $cloudf.gridsm.caption -side left
+    # ::ttk::combobox $cloudf.gridsm.pulldown -textvariable disaggregate(gridsm) \
+# 	-values [list [tr. None] fee fi fo] -width 10 -state readonly
+    # pack $cloudf.gridsm.pulldown
+    # pack $cloudf.gridsm -anchor w -padx 4 -pady 6
 
-    ttk::frame $cloudf.comp
-    ttk::label $cloudf.comp.caption -text [tr. "Compartment:"]
-    pack $cloudf.comp.caption -side left
-    ::ttk::combobox $cloudf.comp.pulldown -textvariable disaggregate(cloudcomp) \
-	-values [list [tr. None] earth wind fire] -width 10 -state readonly
-    pack $cloudf.comp.pulldown
-    pack $cloudf.comp -anchor w -padx 4 -pady 6
-    pack $t.complex.cloud -side left -padx 4 -pady 4 -fill both -expand true
+    # ttk::frame $cloudf.comp
+    # ttk::label $cloudf.comp.caption -text [tr. "Compartment:"]
+    # pack $cloudf.comp.caption -side left
+    # ::ttk::combobox $cloudf.comp.pulldown -textvariable disaggregate(cloudcomp) \
+# 	-values [list [tr. None] earth wind fire] -width 10 -state readonly
+    # pack $cloudf.comp.pulldown
+    # pack $cloudf.comp -anchor w -padx 4 -pady 6
+    # pack $t.complex.cloud -side left -padx 4 -pady 4 -fill both -expand true
     
     # The above "complex" frame has been constructed, but is not packed until the "More" button is pressed
     # unless, conditional expressions indicate that one of the complex attributes does not have its default
