@@ -450,12 +450,12 @@ fill_equation(Cur_eqn, Cur_units, MultList, IsParam, List, TableData,
 			  br(write(Min)), br(write(Max))], _).
 */
 fill_equation(BadCurEqn, CurUnits, MultList, IsParam, BadDesc, BadCmt,
-	      Min, Max) :-
-	safe_list([BadCurEqn, CurUnits, BadDesc, MultList, BadCmt],
-		  br([E, U, D, M, C])),
+	      Min, Max, Cloudscapes) :-
+	safe_list([BadCurEqn, CurUnits, BadDesc, MultList, BadCmt, Cloudscapes],
+		  br([E, U, D, M, C, CloudLists])),
 	safe_tcl_eval(['fill_equation', E, U, M,
 		       br(write(IsParam)), D, C,
-		       br(write(Min)), br(write(Max))], _).
+		       br(write(Min)), br(write(Max)), CloudLists], _).
 
 fill_inputs(List) :-
 	get_from_list(List, Table),

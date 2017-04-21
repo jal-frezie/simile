@@ -206,7 +206,6 @@ proc create_equation {parent purpose comp indices enum_types} {
 	    set bottomType "Rules"
 	} init_val_for {
 	    set eqnFrameTitle "Data source"
-	    set topType "Range of allowed values"
 	    set midType "Initial values from file"
 	    set bottomType "Initial value"
 	} equation_for {
@@ -221,10 +220,15 @@ proc create_equation {parent purpose comp indices enum_types} {
     TitleFrame $mainF.main.main -text "[tr. $eqnFrameTitle]: "
     set mainf [GetFrame $mainF.main.main]
     frame $mainf.slider
-    radiobutton $mainf.slider.radio1 -text "[tr. $topType]: " \
-	-variable equation(isparam) -value 1
-    pack $mainf.slider.radio1 -side left
-    if {[lsearch {init_val_for rules_for} $purpose]>=0} {
+    if {$purpose eq "init_val_for"} {
+	pack [label $mainf.slider.cloudfor -text [tr. {Equivalent to clouds in submodel: }] -wraplength 125] -side left -padx 4 -pady 4
+	pack [::ttk::combobox $mainf.slider.eqs -textvariable equation(cloud_equiv) -width 16 -state readonly] -side left -padx 4 -pady 4
+    } else {
+	radiobutton $mainf.slider.radio1 -text "[tr. $topType]: " \
+	    -variable equation(isparam) -value 1
+	pack $mainf.slider.radio1 -side left
+    }
+    if {$purpose eq "rules_for"} {
 # do not allow variable parameter for initial values...derrr
 	$mainf.slider.radio1 configure -state disabled
     }
@@ -498,7 +502,8 @@ proc RedoChangeOfCause {updatedUnits mult} {
     $widget.slider.cur_dims configure -text $emult
 }
 
-proc fill_equation {current_equation units mult isParam desc comment min max} {
+proc fill_equation {current_equation units mult isParam desc comment min max \
+		cloudscapes} {
     
     global equation
     global equationbar
@@ -509,6 +514,7 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     set equationbar(comment) $comment
     set equationbar(min) $min
     set equationbar(max) $max
+    set equationbar(clouds) [lindex $cloudscapes 0]
 
     
     ### Formula bar section
@@ -538,6 +544,10 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
 	set equation(last_cause) 0
     } else {	
 	$widget.equation.textbox.text insert 1.0 $current_equation
+    }
+    if {[winfo exists $widget.slider.eqs]} {
+	$widget.slider.eqs configure -values $cloudscapes
+	set equation(cloud_equiv) [lindex $cloudscapes 0]
     }
     set equation(units) [RealForUnity $units]
     if {[llength $mult]} {
@@ -578,7 +588,8 @@ proc interact_equation {} {
 			    $equationbar(desc) \
 			    $equationbar(comment) \
 			    $equationbar(min) \
-			    $equationbar(max)]
+			    $equationbar(max) \
+			    $equationbar(clouds)]
 	    if {[info exists equationbar(curEvt)]} {
 		return [linsert $result 1 $equationbar(curEvt)]
 	    }
@@ -617,13 +628,13 @@ proc interact_equation {} {
 			    $units $equation(isparam) \
 			    [string trimright [$descFrame.text get 1.0 end]] \
 			    [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
-			    $equation(min) $equation(max)]
+			    $equation(min) $equation(max) N/A]
 		
 	    } else {
 		return [list $res $units $equation(isparam) \
 			    [string trimright [$descFrame.text get 1.0 end]] \
 			    [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
-			    $equation(min) $equation(max)]
+			    $equation(min) $equation(max) $equation(cloud_equiv)]
 	    }
         } 2 {
             return [list $equation(ckLine) \

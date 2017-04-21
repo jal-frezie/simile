@@ -95,14 +95,15 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 		    true),
 	    ((Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn,
 				    NewArrSpec, TabDat, MinVal, MaxVal,
-				    Desc, Comment, NewInputs),
+				    Desc, Comment, CloudEq, NewInputs),
 		update_parameterhood(Part, Is_P, AffectedNode),
 		add_parameter(AffectedNode, 0, value, Result),
 		add_parameter(AffectedNode, 0, spec, OldEqn),
 		(\+ TabDat = 0, TableAttr = TableSpec, !;
 		    TableAttr = ''), /* no tables/graphs found */
 		add_parameter(AffectedNode, 0, table_data, TableAttr),
-		add_parameter(AffectedNode, 0, uses_local_fns, UserFnList);
+		add_parameter(AffectedNode, 0, uses_local_fns, UserFnList),
+		add_parameter(AffectedNode, 0, uses_cloudscape, CloudEq);
 	      Effect = rule_list_accepted(_,_,_,_, Is_P, MinVal, MaxVal,
 					  Desc, Comment, NewInputs),
 		update_parameterhood(Part, Is_P, AffectedNode),
@@ -241,9 +242,9 @@ update_equation(_, Input_list, [LineIndxStr, Parm_st, New_unit_st], Effect) :-
 	    Effect = input_list_changed_to(NewInputs);
 	Effect = user_advice_generated(Complaint)).
 
-% Normal equation entry -- 7 elts
-update_equation(Function, InterInputs,
-		[Eqn_st, Unit_st, Is_P_st, Desc_st, Cmt_st, Min_st, Max_st],
+% Normal equation entry -- 8 elts
+update_equation(Function, InterInputs, [Eqn_st, Unit_st, Is_P_st, Desc_st,
+					Cmt_st, Min_st, Max_st, CdEq_st],
 		Effect) :-
 	def_unit_and_index_type_list_are(TypeBase-TypeDims, IndxCount),
 	get_host(Function, Ev),
@@ -414,14 +415,15 @@ update_equation(Function, InterInputs,
 
 	sicstus_atom_chars(Desc, Desc_st),
 	sicstus_atom_chars(Comment, Cmt_st),
+	sicstus_atom_chars(CloudEq, CdEq_st),
 	purge(Eqn_st, "\\", OrigSt),
 	sicstus_atom_chars(OldEqn, OrigSt), % crash here if eqn too big
 
 	(FinalComplaint = [], !,
 	    warn_dimless_scaler(NewUnits),
 	    Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn, NewArrSpec,
-				  TabDat, MinVal, MaxVal, Desc, Comment,
-				  New_inputs);
+				  TabDat, MinVal, MaxVal,
+				  Desc, Comment, CloudEq, New_inputs);
 %	fill_equation(OldEqn, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
 	 FinalComplaint = continue, !,
 	    Effect = input_list_changed_to(New_inputs);
@@ -457,9 +459,9 @@ update_equation(Function, InterInputs, [Eqn_st, Evt_st, Unit_st,
 					 NewUnits-EqnDims);
 	 Effect = user_advice_generated(FinalError)).
 
-% OK to rule dialogue -- has 8 elts
-update_equation(Function, Inputs, [Eqn_st, Evt_st, Unit_st, Is_P_st,
-				   Desc_st, Cmt_st, Min_st, Max_st], Effect) :-
+% OK to rule dialogue -- has 9 elts
+update_equation(Function, Inputs, [Eqn_st, Evt_st, Unit_st, Is_P_st, Desc_st,
+				   Cmt_st, Min_st, Max_st, _CdEq_st], Effect) :-
 	update_equation(Function, Inputs, [Eqn_st, Evt_st, Unit_st,
 					   Min_st, Max_st], SubEffect),
 	(SubEffect = new_effect_accepted(EvtId, OldEqn, Result, NewUnits), !,
