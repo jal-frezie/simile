@@ -75,7 +75,7 @@ build_cloud_position_arrays(ForClouds) :-
 
     OverlayModel has_graphical_attribute internal_extent of IntExt,
     Grid has_class_refinement multiplication_spec of Multi,
-    member(count=[X, Y | _Stack], Multi),
+    member(count=[Y, X | _Stack], Multi),
     (setof(Cloud, (find_all_comps(OverlayModel, Cloud),
 			 find_type(Cloud, cloud)), Clouds), !; Clouds = []),
     all(compile, cloud_action, [build(Clouds), unify([Type, X, Y | IntExt]),
