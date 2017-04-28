@@ -92,10 +92,12 @@ do_equation_dialog(Win, Part) :-
 	     setof(Cloudscape, (Cloudscape = 'None';
 				poss_cloudscape_for(Win, Part, ISpecs, Cloudscape)),
 		   CloudList),
-	     (get_av_pair(Part, 0, uses_cloudscape, CurrentScape), !;
+	     (get_av_pair(ClickedObj, 0, uses_cloudscape, CurrentScape), !;
 	      CurrentScape = 'None');
 	 CloudList = ['N/A']),
-	select(CurrentScape, CloudList, CloudSpares),
+	(select(CurrentScape, CloudList, CloudSpares) ->
+	     Presente = [CurrentScape | CloudSpares];
+	   Presente = CloudList), % previous selection no longer valid
 	create_equation(Win, TitleForm, Caption, IndexList, ETList),
 	(TitleForm = rules_for, !,
 	    list_evt_captions(Part, EvtCapts),
@@ -103,7 +105,7 @@ do_equation_dialog(Win, Part) :-
 		[unify(Equation), build(EvtCapts), append(ToPass, [])]);
 	  ToPass = Equation),
 	fill_equation(ToPass, Base, Dims, Is_P, Desc, Comment, Min, Max,
-		     [CurrentScape | CloudSpares]),
+		     Presente),
 	fill_table(Part, TableList, TableVals), % calls interaction from tcl
 	destroy_equation.
 
@@ -111,8 +113,9 @@ poss_cloudscape_for(Win, Starter, [_D1, _D2 | ISpecs], Cloudscape) :-
     % should also check that the shared dims are the same
     length(ISpecs, N),
     length(AltISpecs, N),
-    Win shows_model Mod,
+    state'><'shows_model(Win, Mod),
     contains(Mod, RightDimty),
+    find_type(RightDimty, submodel),
     \+ contains(RightDimty, Starter),
     list_index_meanings(RightDimty, AltISpecs),
     caption_for(RightDimty, Cloudscape).

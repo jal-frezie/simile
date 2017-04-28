@@ -45,6 +45,65 @@ compile( Language, Parent, DestDir, Action) :-
 		    Help = execution),
 		  query(Err, error, Help, [ok], _))),
 	retract(error_free(build)). % only possible if nothing went wrong
+
+cloud_action(Cloud, [Type, X, Y, L, T, R, B], [Idx1], [Idx2], [FlowFn]) :-
+    member(Cloud-Sgn, [Src-(-), Dst-(+)]),
+    Flow is_connector from Src to Dst,
+    find_type(Flow, Type), !,
+    Cloud has_graphical_attribute centre of [CX,CY],
+    Idx1 is 1+floor(X*(CX-L)/(R-L)),
+    Idx2 is 1+floor(Y*(CY-B)/(T-B)),
+    implicit_function(Flow, PosFlowFn),
+    FlowFn =.. [Sgn, PosFlowFn].
+cloud_action(_, _, [], [], []). % flow was wrong type
+    
+build_cloud_position_arrays(ForClouds) :-
+    ForClouds has_part BaseRefs,
+    find_type(BaseRefs, submodel),
+    connects(SpecialRelation, Grid, BaseRefs),
+    find_type(SpecialRelation, relation),
+    caption_for(SpecialRelation, MagicWord),
+    member(Type, [flow, squirt]),
+    atom_concat('_', Type, UType),
+    atom_concat(UType, 's_for_', MiddleBit),
+    atom_concat(OverlayCapt, SecondBit, MagicWord),
+    atom_concat(MiddleBit, GridStockCapt, SecondBit),
+    find_all_comps(Grid, GridStock),
+    caption_for(GridStock, GridStockCapt),
+    Outer has_part Grid,
+    ame_gen'><'name_matches(OverlayModel, Outer, OverlayCapt), !, % we are go
+
+    OverlayModel has_graphical_attribute internal_extent of IntExt,
+    Grid has_class_refinement multiplication_spec of Multi,
+    member(count=[X, Y | _Stack], Multi),
+    (setof(Cloud, (find_all_comps(OverlayModel, Cloud),
+			 find_type(Cloud, cloud)), Clouds), !; Clouds = []),
+    all(compile, cloud_action, [build(Clouds), unify([Type, X, Y | IntExt]),
+				append(Xs, []), append(Ys, []),
+				append(FlowFns, [])]),
+    length(FlowFns, BaseRefCount),
+    ForClouds has_class_refinement multiplication_spec of FCMulti,
+    select(count=_N, FCMulti, FCOthers),
+    find_all_comps(ForClouds, XPosns), caption_for(XPosns, xs),
+    find_all_comps(ForClouds, YPosns), caption_for(YPosns, ys),
+    find_all_comps(ForClouds, Transp), caption_for(Transp, transp),
+    implicit_function(XPosns, XsFn),
+    implicit_function(YPosns, YsFn),
+    implicit_function(Transp, TranspFn),
+    (BaseRefCount < 2 ->
+	 ForClouds has_changed_class_refinement multiplication_spec of
+		   [count=[] | FCOthers],
+	 member([[AnX], [AnY]], [[Xs, Ys], [[0], [0]]]), !, % Match no inst
+	 XsFn has_changed_class_refinement value of AnX,
+	 YsFn has_changed_class_refinement value of AnY;
+       ForClouds has_changed_class_refinement multiplication_spec of
+		 [count=[BaseRefCount] | FCOthers],
+         XsFn has_changed_class_refinement value of element(Xs, index(1)),
+	 YsFn has_changed_class_refinement value of element(Ys, index(1))),
+    TranspFn has_changed_class_refinement value of choose_ref(FlowFns); true.
+
+    
+    
 /*	(Language = tcl, !,
 	    all(m_class, has_new_class_refinement,
 		[build(SeparateNodes), unify(separate of 1)]);  
@@ -94,6 +153,7 @@ may return one day... */
 build_instances(Language, DestDir, Parent, TopNode,
 		Step, ChangeNext, LocalFnsUsed, LocalExtLibs, 
 		KeepParents, Action) :-
+    build_cloud_position_arrays(Parent),
 	caption_for(Parent, Name),
 	append_atoms([DestDir, '/', Name], CheckDir),
 	time_step_for(Parent, Step, MyStep),

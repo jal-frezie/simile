@@ -547,8 +547,8 @@ proc fill_equation {current_equation units mult isParam desc comment min max \
     }
     if {[winfo exists $widget.slider.eqs]} {
 	$widget.slider.eqs configure -values $cloudscapes
-	set equation(cloud_equiv) [lindex $cloudscapes 0]
     }
+    set equation(cloud_equiv) [lindex $cloudscapes 0]
     set equation(units) [RealForUnity $units]
     if {[llength $mult]} {
         set emult [join $mult ,]

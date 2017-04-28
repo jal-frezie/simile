@@ -116,6 +116,12 @@ make_base_refs(Node, [Link | R1], [base(Base, Link, _) | R2]) :-
 	Link is_connector from Base to _,
 	make_base_refs(Node, R1, R2).
 
+% for map reffed overlay
+direct_ref(FlowFn, Elt, instance(_, PosFlowFn, _, PosElt, U)) :-
+    FlowFn =.. [Sgn, PosFlowFn],
+    PosElt = elt(_RPF, _Name, U),
+    Elt =.. [Sgn, PosElt].
+
 instantiate_node(Node, Instances, Path, All) :-
 	(Node has_class Class; Node has_type Class),
 	(instance_of( Class, Node, Path, Instances, Refs), !,
@@ -250,6 +256,20 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	    is_instance(function, Node, _, elt(Path, _, Base-Units), Base-Units,
 			Instance),
 	    Instances = [Instance];
+	  GroundExpr = choose_ref(FlowFns), !,
+	    all(instance, direct_ref,
+	        [build(FlowFns), build(IParams), build(Refs)]),
+	    %inters'><'make_choose_form(IParams, index(1), 1, ChxExpr),
+	    (length(IParams, 0) ->
+		 ChxExpr = 0;
+	       length(IParams, 1) ->
+		 [ChxExpr] = IParams;
+	       ChxExpr = element(IParams, index(1))),
+	    is_instance(function, Node, ChxExpr, elt(Path, _, Base-Units),
+			Base-Units, Instance),
+	    Instances = [Instance];
+
+	 
 	(setof(InputPair,
 	       generate_input_pair(Node, identified, InputPair),
 	       InputPairs ), !;
@@ -569,7 +589,7 @@ intrinsically have same units as compartment, so we go back to their control nod
 to get unit conversion factor */
 
 bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
-	find_base(Arc, General_arc),
+	find_base(Arc, General_arc), % start of old clause
 	get_chain(General_arc, Node, _, Exits, Entries),
 	caption_for(Node, BadComp),
 	caption_for(Arc, BadArc),
