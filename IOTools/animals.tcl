@@ -37,7 +37,7 @@ itcl::class similescript::$newLayerClass {
 
     method CurrentPopup {} {
 	set ind [TagToId [$winId gettags current]]
-	return "Index: $ind x: [SeekValue $ind $temp(xcoord)] y: [SeekValue $ind $temp(ycoord)] Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
+	return "Index: [join $ind ,] x: [SeekValue $ind $temp(xcoord)] y: [SeekValue $ind $temp(ycoord)] Size: [SeekValue $ind $temp(size)] Heading: [SeekValue $ind $temp(dir)]"
     }
 
     method SeekValue {inds vals} {
@@ -203,7 +203,11 @@ itcl::class similescript::$newLayerClass {
     public method IdToTag {ids} {
 	set result {}
 	foreach id $ids {
-	    lappend result [format %06d $id]
+	    if {[string is integer -strict $id]} {
+		lappend result [format %06d $id]
+	    } else { ;# is an enum type member
+		lappend result $id
+	    }
 	}
 	return [namespace tail $this]BLK[join $result ,]
     }
@@ -213,9 +217,11 @@ itcl::class similescript::$newLayerClass {
 	set end [expr [string first $myTag $tags]+[string length $myTag]]
 	set idTag [lindex [string range $tags $end end] 0]
 	foreach val [split $idTag ,] {
-	    scan $val %06d index
+	    if {![scan $val %06d index]} {
+		set index $val
+	    }
 	    lappend result $index
 	}
-	return [join $result ,]
+	return $result
     }
 }
