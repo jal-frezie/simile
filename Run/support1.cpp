@@ -270,7 +270,7 @@ void InstanceOfModel::collect (void* dest, int record_id, int id_count, ...) {
   va_list argptr;
   int curIndices[32];
   int length;
-
+  // *(int*)dest = 3; return; // debug parameter setup
   va_start(argptr, id_count);
   for (length=0; length<id_count; length++) {
     curIndices[length] = va_arg(argptr, int);
