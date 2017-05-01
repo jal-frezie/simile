@@ -82,7 +82,9 @@ build_cloud_position_arrays(ForClouds) :-
 				append(Xs, []), append(Ys, []),
 				append(FlowFns, [])]),
     length(FlowFns, BaseRefCount),
-    ForClouds has_class_refinement multiplication_spec of FCMulti,
+    (ForClouds has_class_refinement multiplication_spec of FCMulti, !;
+     FCMulti = [count=[]],
+     ForClouds has_new_class_refinement multiplication_spec of FCMulti),
     select(count=_N, FCMulti, FCOthers),
     find_all_comps(ForClouds, XPosns), caption_for(XPosns, xs),
     find_all_comps(ForClouds, YPosns), caption_for(YPosns, ys),
