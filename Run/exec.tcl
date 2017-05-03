@@ -713,7 +713,7 @@ proc DoNotPassTcl {topNode node dims tableSpec} {
 
     package require gdal
     set hg [gdal_open_read_only [lindex $tableSpec 0]]
-    set hdl [gdal_get_raster_band $hg [lindex $tableSpec 7]]
+    set hdl [gdal_get_raster_band $hg [lindex $tableSpec 6]]
     set dataRows [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]]
     set dataCols [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]]
     set fillRows [lindex $dims 0]
@@ -768,7 +768,7 @@ proc ReadGdalRefToList {tableSpec {y {}} {x {}}} {
     package require gdal
 #puts "RGRTL $tableSpec $x $y"
     set hg [gdal_open_read_only [lindex $tableSpec 0]]
-    set hdl [gdal_get_raster_band $hg [lindex $tableSpec 7]]
+    set hdl [gdal_get_raster_band $hg [lindex $tableSpec 6]]
     set l [expr [lindex $tableSpec 4]-1]
     set t [expr [lindex $tableSpec 2]-1]
     set w [expr [lindex $tableSpec 5]-$l]

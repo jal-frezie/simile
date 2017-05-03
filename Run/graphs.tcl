@@ -1042,8 +1042,8 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
                 set table_entry(rown) [lindex $table_entry(data) 3]
                 set table_entry(col1) [lindex $table_entry(data) 4]
                 set table_entry(coln) [lindex $table_entry(data) 5]
-		set table_entry(xpose) [lindex $table_entry(data) 6]
-		set table_entry(vrtable) [lindex $table_entry(data) 7]
+		set table_entry(vrtable) [lindex $table_entry(data) 6]
+		set table_entry(xpose) [lindex $table_entry(data) 7]
             } default {
                 .table.notebook select .table.notebook.columns
                 set table_entry(dataField) [lindex $table_entry(data) 1]
@@ -1369,7 +1369,7 @@ proc AcquireTableData {redo startLine} {
             set tableSpec [list $table_entry(fileName) ,gdal \
 			       $table_entry(row1) $table_entry(rown) \
 			       $table_entry(col1) $table_entry(coln) \
-			       $table_entry(xpose) $table_entry(vrtable)]
+			       $table_entry(vrtable) $table_entry(xpose)]
         }
     }
     if {$redo>1 || ![string equal $tableSpec $table_entry(data)]} {

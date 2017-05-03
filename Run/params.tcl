@@ -925,7 +925,7 @@ namespace eval fileparams {
 			}
 			puts $pStr >
 		    } ,gdal {
-			foreach att {rowmin rowmax colmin colmax xpose} val [lrange $paramState($compName) 2 6] {
+			foreach att {rowmin rowmax colmin colmax band xpose} val [lrange $paramState($compName) 2 7] {
 			    puts -nonewline $pStr " $att=[Entitize $val]"
 			}
 			puts $pStr >
@@ -1129,6 +1129,7 @@ proc StartElement {name attList args} {
     global parseStatus
 #    puts "Started a $name, atts -$attList-, args -$args-"
     set attVals(xpose) 0 ;# in case older spf does not include it
+    set attVals(band) 1 ;# likewise
     set attVals(irow) [set attVals(icol) position_in_data_area] ;# ditto
     array set attVals $attList
     if {[info exists attVals(label)]} {
@@ -1185,7 +1186,7 @@ proc StartElement {name attList args} {
 	    set parseStatus(translateExtras) [list $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(blackval) $attVals(whiteval) $attVals(transpval) $attVals(use) $attVals(xpose)]
 	} geotiff {
 	    puts -nonewline $parseStatus(outStr) $path=reference=[list $attVals(filename) ,gdal]
-	    set parseStatus(translateExtras) [list $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose)]
+	    set parseStatus(translateExtras) [list $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(band) $attVals(xpose)]
 	} byte_array {
 	    set parseStatus(loadByteArray) $attVals(label) 
 	    set parseStatus(translateExtras) $attVals(type)
