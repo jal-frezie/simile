@@ -1360,7 +1360,9 @@ nodes.
 			     [existence_tested(Name), can_enter(Name)],
 			     LocalPath, Step, []),
 			make(existence_tested(Name),
-			     [earlier(can_enter(Name)) | Conds], LocalPath,
+			     % 2017 removed earlier() from can_enter because it
+			     % made satellites of nested bases build too rarely
+			     [can_enter(Name) | Conds], LocalPath,
 			     Step, [test(Name, NewPtr, TestExpr, LoopCode)]),
 			make(can_enter(Name),
 			     [startable(Name) | BasesEnumerated], Path, Step,

@@ -206,6 +206,7 @@ proc create_equation {parent purpose comp indices enum_types} {
 	    set bottomType "Rules"
 	} init_val_for {
 	    set eqnFrameTitle "Data source"
+	    set topType unused
 	    set midType "Initial values from file"
 	    set bottomType "Initial value"
 	} equation_for {
@@ -220,12 +221,12 @@ proc create_equation {parent purpose comp indices enum_types} {
     TitleFrame $mainF.main.main -text "[tr. $eqnFrameTitle]: "
     set mainf [GetFrame $mainF.main.main]
     frame $mainf.slider
+    radiobutton $mainf.slider.radio1 -text "[tr. $topType]: " \
+	-variable equation(isparam) -value 1
     if {$purpose eq "init_val_for"} {
 	pack [label $mainf.slider.cloudfor -text [tr. {Equivalent to clouds in submodel: }] -wraplength 125] -side left -padx 4 -pady 4
 	pack [::ttk::combobox $mainf.slider.eqs -textvariable equation(cloud_equiv) -width 16 -state readonly] -side left -padx 4 -pady 4
     } else {
-	radiobutton $mainf.slider.radio1 -text "[tr. $topType]: " \
-	    -variable equation(isparam) -value 1
 	pack $mainf.slider.radio1 -side left
     }
     if {$purpose eq "rules_for"} {
