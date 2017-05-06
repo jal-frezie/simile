@@ -698,7 +698,7 @@ as well to stop rand_vars being changed in the R-K subphase */
 	tk_update_infobox(pl_loop, []),
 	(member(Start, Functions),
 	    Start = make(LoopEnd, Conds-_, EndPath, [_,_, Step | _], _),
-	    member(later(Loop2), Conds), wake,
+	    member(later(Loop2), Conds),
 	    Loop2 = make(LoopStart, _, _StartPath, _,_),
 	    % Step is from Start not Loop2 cos with loop of compartments Loop2
 	    % may be result for previous compartment which is stepsize 1 but

@@ -495,7 +495,8 @@ void zero_bloc_data(char* dest, int* ptDims) {
     for (count=0; count<reps; ++count) {
       //substitute OWNSIZED to create right size block then put back
       *subDims = ((sizeAndPtr*)dest)[count].size;
-      zero_bloc_data(((sizeAndPtr*)dest)[count].ptr, subDims);
+      if (*subDims) // no values yet loaded
+	zero_bloc_data(((sizeAndPtr*)dest)[count].ptr, subDims);
     }
     *subDims = OWNSIZED;
   } else {
