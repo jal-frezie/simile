@@ -1,5 +1,5 @@
 set SIMILE_PATH [file dirname [file dirname [file normalize [info script]]]]
-
+# WRONNGGG for Linux installation as System not under /usr/share !!
 source [file join $SIMILE_PATH Run setup.tcl]
 
 append env(PATH) ";[file nativename $env(SYSDIR)/bin]" ;# for Windows

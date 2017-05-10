@@ -56,7 +56,7 @@ namespace eval ::$keyValue {
 	    .newfile* {
 		set typesToShow {INPUT TABLE BLOCK POPULATION GRID HONEYCOMB}
 	    } .newsub* {
-		set typesToShow {BLOCK POPULATION GRID HONEYCOMB}
+		set typesToShow {BLOCK TABLE GRID HONEYCOMB}
 	    } .newout* {
 		set typesToShow {RECALL DERIVED BLOCK POPULATION GRID HONEYCOMB}
 	    } default {
