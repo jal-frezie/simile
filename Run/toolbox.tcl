@@ -1112,7 +1112,7 @@ proc InitExecThread {node} {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd
 	}
     }
-    if {[catch {load_c_stub_1 $node $::auto_path}]} {
+    if {[catch {load_c_stub_1 $node $::auto_path $::execDir}]} {
 	if {[string match Linux $::tcl_platform(os)]} {
 # try rebuilding 5d dll if in Linux -- c++ libraries may have changed!
 	    if {!$::headless && [PrefValue custom(hackBreak) hackBreak]} {
@@ -1123,9 +1123,9 @@ proc InitExecThread {node} {
 	    eval {exec g++} $::sendvars(arflags) \
 		[list -fPIC -I../Run -shared -o $shank ../Run/shank.cpp]
 	}
-    }
 # now just do it again so error gets raised as per usual if still bad
-    load_c_stub_1 $node $::auto_path
+	load_c_stub_1 $node $::auto_path $::execDir
+    }
 }
 
 proc CheckCompilerLocation {} {

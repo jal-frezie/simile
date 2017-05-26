@@ -390,6 +390,7 @@ install:
 		Images/Toolbar/Large/flow.gif \
 		Images/Toolbar/Large/ghost.gif \
 		Images/Toolbar/Large/graph.gif \
+		Images/Toolbar/Large/image.gif \
 		Images/Toolbar/Large/immigration.gif \
 		Images/Toolbar/Large/influence.gif \
 		Images/Toolbar/Large/loss.gif \
@@ -440,6 +441,7 @@ install:
 		Images/Toolbar/ghost.gif \
 		Images/Toolbar/graph.gif \
 		Images/Toolbar/greater.gif \
+		Images/Toolbar/image.gif \
 		Images/Toolbar/immigration.gif \
 		Images/Toolbar/influence.gif \
 		Images/Toolbar/less.gif \
