@@ -1390,10 +1390,11 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
         set fontor $optFontor
     }
     foreach object $objList {
-	if {$hideTinies==5} {
+	set objType [$winId type $object]
+	if {$hideTinies==5 && $objType ne "image"} {
 	    $winId itemconfigure $object -stipple {}
 	} ;# stipple breaks Postscript conversion in macos
-	switch [$winId type $object] {
+	switch $objType {
         text {
 	    set fontData [ExtractFontData [$winId itemcget $object -font]]
 	    set newTextSize [expr round([AdjustWidth $winId $object $fontor])]

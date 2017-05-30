@@ -1089,7 +1089,7 @@ proc TweakFloatingImage {parent title state} {
     pack .relcheck.bottom
 
     LetItShow $t text_props(done)
-    set newCmt [$f.comment get 1.0 end]
+    set newCmt [string trim [$f.comment get 1.0 end]]
     PackItUp $t
     if {$text_props(done)} {
 	return [list $newCmt]

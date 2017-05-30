@@ -649,12 +649,12 @@ is not a box type, or if there is no room at the given position to put the objec
 */
 
 add_at_point(Xpt, Ypt, New_obj, Parent, Comp_name) :-
-	member(New_obj, [text, image]),
+	member(New_obj, [text]), !,
 	    make_node(Parent, New_obj, Comp_name),
-	    set_shape(Comp_name, centre, [Xpt, Ypt]),
-	    (\+ New_obj = image;
-	     set_shape(Comp_name, caption_offset, [90, 90])), !;
-	attempt_addition(New_obj, Parent, [Xpt, Ypt], Comp_name, no, yes).
+	    set_shape(Comp_name, centre, [Xpt, Ypt]);
+	attempt_addition(New_obj, Parent, [Xpt, Ypt], Comp_name, no, yes),
+	(\+ New_obj = image;
+	 set_shape(Comp_name, caption_offset, [90, 90])).
 
 /* as above, but if there is no room it tries to add it nearby rather than failing and complaining */
 
