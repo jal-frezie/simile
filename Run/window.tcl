@@ -1070,8 +1070,9 @@ proc AddEqnPopup {node x y winId X Y} {
     #puts "Adding for $target"
     #    set target [$winId find closest $canx $cany 1]
     #puts "targeting $target"
-    if {$target} {
+    if {$target ne ""} {
         set plName [ExtractPrologName $winId $target]
+	if {$plName eq ""} return
  #       if {$doVal} {
  #           if {[catch {GetCompProperty $node Value $plName} value]} {
  #               set missing [lindex [split $value \"] 1]

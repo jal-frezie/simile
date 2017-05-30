@@ -399,8 +399,9 @@ enact_list(Acts, Dir) :-
 exist_pred(P) :- member(P, [is_node(_), is_arc(_)]).
 
 appearance_changes(Model, Slot, Reshapes, Comps) :-
-	setof(Comp, Action^(saved_state(Model, Slot, Action),
-			    mentions_graphics(Action, Comp),
+	setof(Comp, Action^Base^(saved_state(Model, Slot, Action),
+			    mentions_graphics(Action, Base),
+                            (Comp = Base; find_ghosts(Base, Comp)),
 			    \+ member(Comp-_, Reshapes)), Comps), !;
 	Comps = [].
 
