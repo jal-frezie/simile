@@ -11,7 +11,9 @@
 # source [file join [file dirname $env(SYSDIR)] Run support.tcl]
 
 proc load_c_stub_1 {node ap xd} {
-    cd $xd ;# prevents spurious error message finding 5d.dll on Win7/XP
+    if {$::tcl_platform(platform) eq "windows"} {
+	cd $xd ;# prevents spurious error message finding 5d.dll on Win7/XP
+    }
     set ::auto_path $ap
     scan [info tclversion] {%d.%d} MAJ MIN
     package require -exact Ame_dll $::env(SIMILE_VERSION)
