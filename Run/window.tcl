@@ -1065,7 +1065,8 @@ proc AddEqnPopup {node x y winId X Y} {
     }
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
-    set target [GetClickedObj $winId $canx $cany 2]
+    set target [$winId find withtag current]
+    # set target [GetClickedObj $winId $canx $cany 2]
     #puts "Adding for $target"
     #    set target [$winId find closest $canx $cany 1]
     #puts "targeting $target"

@@ -270,7 +270,7 @@ proc PutImage { w l t r b stack fatness density colourScheme tagSet} {
     set dh [expr {round([Scale $w $density])}]
     FillSmImage $w $stack Direct $vis $dw $dh
     $w create image $cx $cy -image $vis \
-	-tags [list floating($stack) $tagSet size_on_this]
+	-tags [list floating($stack) $tagSet /background/ has_info size_on_this]
 
     # add resize handles
     foreach anchor {nw n ne e se s sw w} {
@@ -284,8 +284,8 @@ proc PutImage { w l t r b stack fatness density colourScheme tagSet} {
 	    *e {set ax [expr {$cx+$dw/2}]}
 	    default {set ax $cx}
 	}
-	$w create line $ax $ay $ax $ay -width 6 -capstyle projecting \
-	    -tags [concat $tagSet /handle/ /$anchor/]
+	$w create line $ax $ay $ax [expr {$ay+1}] -width 6 \
+	    -capstyle projecting -tags [concat $tagSet /handle/ /$anchor/]
     }
     ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
 }

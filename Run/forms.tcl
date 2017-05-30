@@ -1063,14 +1063,6 @@ proc TweakFloatingImage {parent title state} {
     set f [GetFrame .relcheck.top.left]
     pack [frame $f.width -bd 4]
     pack [frame $f.relsize -bd 4] -fill x -expand true
-    grid [ttk::label $f.relsize.xlab -text [tr. {Horizontal scaling: }]] \
-        [ttk::scale $f.relsize.xent -from 20 -to 500 -orient h \
-	     -variable text_props(rel_xsize)]
-    set text_props(rel_xsize) [lindex $state 0]
-    grid [ttk::label $f.relsize.ylab -text [tr. {Vertical scaling: }]] \
-        [ttk::scale $f.relsize.yent -from 20 -to 500 -orient h \
-	     -variable text_props(rel_ysize)]
-    set text_props(rel_ysize) [lindex $state 1]
     pack .relcheck.top.left -side left -expand on -fill both
     pack .relcheck.top -expand on -fill both
 
@@ -1093,14 +1085,14 @@ proc TweakFloatingImage {parent title state} {
 	      -highlightthickness 0 -wrap word] \
             -anchor w -expand on -fill both -padx 2 -pady 2
     $f.comment delete 1.0 end
-    $f.comment insert 1.0 [lindex $state 2]
+    $f.comment insert 1.0 [lindex $state 0]
     pack .relcheck.bottom
 
     LetItShow $t text_props(done)
     set newCmt [$f.comment get 1.0 end]
     PackItUp $t
     if {$text_props(done)} {
-	return [list $text_props(rel_xsize) $text_props(rel_ysize) $newCmt]
+	return [list $newCmt]
     } else {
 	return 0
     }

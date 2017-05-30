@@ -259,7 +259,8 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	set_selection_abilities(Parent),
 	(get_phase(moving),
 	    /* highlight(Name, 2), */
-	    find_type(Name, submodel), !,
+	 find_type(Name, Type),
+	 member(Type, [image, submodel]), !,
 	    get_closest_edge(Name, [NewXpt, NewYpt], Edge, [EfX, EfY]),
 	    % now adjust start point so dragged edges align to grid
 	    XToGrid is EfX-NewXpt,
@@ -382,6 +383,16 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 	% click is inside a child submodel; pass it on 
 	targets(Wid, Parent, Point, Depth, Child), !, 
 	click_on_sub(Wid, Point, Trans, Parent, Depth, Child, CD).
+
+click_in(_Wid, Point, Trans, Depth, Parent, CD) :-
+    % click is inside an image; pass it on
+    get_mode(select),
+    m_class'><'Parent has_part Child,
+    get_drawing_form(Child, image, BBox),
+    inside_shape(Parent, Point, image, BBox), !,
+    save_params(Trans, Depth, Parent),
+    click_on(Point, Child, CD),
+    set_selection_abilities(Parent).
 
 click_in(Wid, Point, _,_, Parent, CD) :-
 	% right click; get ready to post menu
@@ -638,9 +649,11 @@ is not a box type, or if there is no room at the given position to put the objec
 */
 
 add_at_point(Xpt, Ypt, New_obj, Parent, Comp_name) :-
-	member(New_obj, [text, image]), !,
+	member(New_obj, [text, image]),
 	    make_node(Parent, New_obj, Comp_name),
-	    set_shape(Comp_name, centre, [Xpt, Ypt]);
+	    set_shape(Comp_name, centre, [Xpt, Ypt]),
+	    (\+ New_obj = image;
+	     set_shape(Comp_name, caption_offset, [90, 90])), !;
 	attempt_addition(New_obj, Parent, [Xpt, Ypt], Comp_name, no, yes).
 
 /* as above, but if there is no room it tries to add it nearby rather than failing and complaining */
@@ -717,6 +730,7 @@ finish_old_edit(NextEdit) :-
 		(Name = OldName, !;
 		    /* If name exists in submodel or contains dir chars,
 		    block the update show message and highlight the node again */
+                \+ RenamedNode is_of_sort common_caption,
 		 (output'><'safe_list(Name, SafeName),
 		  output'><'safe_tcl_eval([string, is, space, SafeName], "1"),
 		  	query(invisible_caption(OldName), warning, top,
@@ -724,8 +738,7 @@ finish_old_edit(NextEdit) :-
 		     cannot_call_in(RenamedNode, Parent, Name),
 			query(caption_clash(OldName, Name), warning, top,
 			      [ok], _);
-		    \+ RenamedNode is_of_sort no_properties,
-			name(Name, NameStr),
+		    name(Name, NameStr),
 			member(DodgyChr, "\\./"),
 			member(DodgyChr, NameStr),
 			name(Dodgy, [DodgyChr]),
@@ -749,6 +762,7 @@ cannot_call_in(Prev_highlight, Parent, Name) :-
 	find_all_comps(Parent, InSameModel),
 	appears(InSameModel),
 	\+ InSameModel is_of_sort captionless,
+	\+ InSameModel is_of_sort common_caption,
 	\+ InSameModel = Prev_highlight,
 	(m_class'><'InSameModel has_class_refinement name of Name;
 	caption_for(InSameModel, Name)).
@@ -820,6 +834,10 @@ doubleclick_in(Wid, Parent, AbsPoint, Trans, Depth) :-
 	    add_to_translation(Trans, Target, NewTrans),
 	    NewDepth is Depth + 1,
 	    doubleclick_in(Wid, Target, AbsPoint, NewTrans, NewDepth);
+	 m_class'><'Parent has_part Child,
+	    get_drawing_form(Child, image, BBox),
+	    inside_shape(Parent, Rel_point, image, BBox), !,
+	    doubleclick_on(Child);
 	menu'><'set_properties(Wid, Parent)).
 
 doubleclick_obj(Xpt, Ypt, Name) :-
@@ -920,16 +938,9 @@ doubleclick_on(Edit_thing) :-
 	Edit_type = image, !,
 	caption_for(Edit_thing, Capt),
 	(get_av_pair(Edit_thing, 0, comment, Cmt), !; Cmt = ''),
-	  (get_shape(Edit_thing, caption_offset, [OldXZoom, OldYZoom]), !,
-	   clear_shape(Edit_thing, caption_offset);
-	   OldXZoom = 90, OldYZoom = 90),
-	  output'><'do_image_item_dialog(Wid, Capt, [OldXZoom, OldYZoom, Cmt],
-					 OKd, [NewXZoomStr, NewYZoomStr,
-					       NewCmtStr]),
+	  output'><'do_image_item_dialog(Wid, Capt, [Cmt],
+					 OKd, [NewCmtStr]),
 	  (OKd = 0, !;
-	   number_codes(NewXZoom, NewXZoomStr),
-	   number_codes(NewYZoom, NewYZoomStr),
-	   set_shape(Edit_thing, caption_offset, [NewXZoom, NewYZoom]),
 	   name(NewCmt, NewCmtStr),
 	   add_parameter(Edit_thing, 0, comment, NewCmt),
 	   redisplay(Edit_thing),
@@ -1840,30 +1851,37 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 	Down_list = Full_downs).
 
 update_object_boundary(Submodel, Edge, XOff, YOff) :-
-	get_shape(Submodel, bounding_box, [OldL, OldT, OldR, OldB]),
-	get_shape(Submodel, internal_extent, OldInterns),
-	/* work out what the caption was nearest to */
-	(get_shape(Submodel, caption_offset, [XT, YT]);
-	    get_shape(Submodel, caption_offset, [XT, YT, _Anchor])), !,
-	OldCapX is OldL + XT,
-	OldCapY is OldT + YT,
-	get_closest_edge(Submodel, [OldCapX, OldCapY], CapEdge, _EfPt),
+    get_drawing_form(Submodel, Type, [OldL, OldT, OldR, OldB]),
 	(member(Edge, [nw, w, sw, c]), !, NewL is OldL+XOff; NewL = OldL),
 	(member(Edge, [nw, n, ne, c]), !, NewT is OldT+YOff; NewT = OldT),
 	(member(Edge, [ne, e, se, c]), !, NewR is OldR+XOff; NewR = OldR),
 	(member(Edge, [sw, s, se, c]), !, NewB is OldB+YOff; NewB = OldB),
 	NewBox = [NewL, NewT, NewR, NewB],
 	/* Check it is not too small */
-	get_box_size(Submodel, submodel, Standard),
+	get_box_size(Submodel, Type, Standard),
 	NewR-NewL > Standard//2,
 	NewB-NewT > Standard//2,
+	find_all_comps(Parent, Submodel),
+	\+ (get_overlaps(Parent, [NewBox], Obstacle), \+ Obstacle = Submodel),
+	(Type = image ->
+	     CX is floor((NewL+NewR)/2),
+	     CY is floor((NewT+NewB)/2),
+	     W is NewR-NewL,
+	     H is NewB-NewT,
+	     change_shape(Submodel, centre, [CX, CY]),
+	     change_shape(Submodel, caption_offset, [W, H]);
+      get_shape(Submodel, internal_extent, OldInterns),
+	/* work out what the caption was nearest to */
+	(get_shape(Submodel, caption_offset, [XT, YT]);
+	    get_shape(Submodel, caption_offset, [XT, YT, _Anchor])), !,
+	OldCapX is OldL + XT,
+	OldCapY is OldT + YT,
+	get_closest_edge(Submodel, [OldCapX, OldCapY], CapEdge, _EfPt),
 	add_to_translation([0,0,1,1], Submodel, ModelTrans),
 	translate(NewBox, ModelTrans, NewExtent),
 	(ghostly_move(_,_), !; % no bounds checking if in fast edit mode 
-	find_all_comps(Parent, Submodel),
 	get_shape(Parent, internal_extent, ParentShape),
 	fits_inside(NewBox, ParentShape),
-	\+ (get_overlaps(Parent, [NewBox], Obstacle), \+ Obstacle = Submodel),
 	
 	/* Check that everything that was in the model is still in it */
 	\+ (m_class'><'Submodel has_part Inside,
@@ -1879,7 +1897,7 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	change_shape(Submodel, bounding_box, NewBox),
 	/* make_links_follow(Submodel), */
 	(ghostly_move(_,_), !; % no link dragging if in fast edit mode 
-	tweak_link_connections(Submodel, OldInterns)).
+	tweak_link_connections(Submodel, OldInterns))).
 
 /* anything this complex has got to be wrong
 
@@ -2043,8 +2061,8 @@ unclick_obj :-
 	      drag_to(Xpt, Ypt, Submodel); % do it for real
 		query(overlap(drag, selection), warning, top, [ok], _)), !;
 	true),
-	(get_phase(moving_border(_)), !,
-	    get_shape(Submodel, internal_extent, NewSize),
+	(get_phase(moving_border(_)),
+	    get_shape(Submodel, internal_extent, NewSize), !,
 	    adjust_toplevel_windows(Submodel, NewSize);
 	true),
 	initialize_phase,
@@ -2321,7 +2339,7 @@ set_selection_abilities(Comp) :-
 	    Cuttable = 1,
 	    Dellable = 1;
 	setof(Lit, 
-	      (contains(Comp, Lit), \+ Lit = Comp,
+	      (contains(Comp, Lit), \+ Lit = Comp, \+ Lit is_of_sort cloud,
 		  get_highlit_obj(1, Lit)), AllLit), !,
 	    Cuttable = 0,
 	    Dellable = 1;
@@ -2329,7 +2347,7 @@ set_selection_abilities(Comp) :-
 	    Cuttable = 0,
 	    Dellable = 0),
 	(AllLit = [Choice],
-	    \+ Choice is_of_sort no_properties, !,
+	    \+ Choice is_of_sort cloud, !,
 	    Peekable = 1;
 	Peekable = 0),
 	update_ability(Comp, none, file, '{Save selection as...}', Cuttable),
@@ -2554,13 +2572,16 @@ list_captions(Parent, Used) :-
 	setof(UsedCaption,
 	      Part^(find_all_comps(Parent, Part),
 		    appears(Part),
+                    \+ Part is_of_sort captionless,
+                    \+ Part is_of_sort common_caption,
 		    \+ is_ghost(Part),
 		    caption_for(Part, UsedCaption)),
 	      UsedNow), !,
 	append(UsedNow, _, Used).
 
 retitle_duplicate(Node, Used) :-
-	(\+ appears(Node); Node is_of_sort captionless), !;
+    (\+ appears(Node);
+     Node is_of_sort captionless; Node is_of_sort common_caption), !;
 	caption_for(Node, OldCapt),
 	ensure_unused(OldCapt, NewCapt, Used, []),
 	(NewCapt = OldCapt, !;

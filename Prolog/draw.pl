@@ -225,6 +225,8 @@ redisplay(Comp) :-
 	true.
 
 redisplay_border(Comp) :-
+    find_type(Comp, image), !,
+      redisplay(Comp);
 	find_relevant_windows(Comp, Window_id, Depth, Trans),
 	kill_featured(Window_id, Comp),
 	display(Window_id, Comp, Depth, Trans, 0),
@@ -482,8 +484,7 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    find_fatness(Trans, WinFatness),
 	    get_flash(Comp, Colour_scheme),
 	    (Style = image -> caption_for(Comp, Num),
-			      (get_shape(Comp, caption_offset, [ExFat, ExDens]);
-			       ExFat = 90, ExDens = 90),
+			      get_shape(Comp, caption_offset, [ExFat, ExDens]),
 			      Fatness is WinFatness*ExFat/100,
 			      Density is WinFatness*ExDens/100;
 	     Fatness = WinFatness,

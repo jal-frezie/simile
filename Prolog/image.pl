@@ -103,7 +103,7 @@ inside_shape(Parent, [X, Y], Class, [L, T, R, B]) :-
     X > L, X < R, Y > T, Y < B,
 /* If it is, do the accurate test depending on shape of component
 (no further test necessary if it's a straight rectangle) */
-    (member(Class, [flow, compartment, channel]);
+    (member(Class, [flow, compartment, channel, image]);
         /* always, if in bounding box */
     (Class = variable; Class = influence),
         Cx is (L + R)/2, Cy is (T + B)/2,
@@ -200,7 +200,7 @@ exclude_boxes([[BL,BT,BR,BB] | Rest], [NL,NT,NR,NB], Edge, PBound, Bound) :-
     exclude_boxes(Rest, [NL, NT, NR, NB], Edge, NBound, Bound).
 
 get_closest_edge(Node, [X,Y], Edge, [EfX, EfY]) :-
-    get_shape(Node, bounding_box, [L,T,R,B]),
+    get_drawing_form(Node, _Style, [L,T,R,B]),
     slice(Y, T, B, Row),
     slice(X, L, R, Col),
     map([L,T,R,B], Edge, Row, Col, EfX, EfY).
@@ -409,6 +409,11 @@ get_drawing_form(Comp, Style, BBox) :-
         append(C, C, BBox);
     Style = submodel, !,
         get_shape(Comp, bounding_box, BBox);
+    Style = image, !,
+        get_shape(Comp, centre, [Xpt, Ypt]),
+	get_shape(Comp, caption_offset, [W, H]),
+	L is ceiling(Xpt-W/2), T is ceiling(Ypt-H/2), R is L+W, B is T+H,
+	BBox = [L, T, R, B];
     get_shape(Comp, centre, [Xpt, Ypt]),
 	get_box_size(Comp, Style, Cur_size),
 	make_bounding_box(Style, Xpt, Ypt, Cur_size, BBox);
