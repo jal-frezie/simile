@@ -104,8 +104,7 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 		add_parameter(AffectedNode, 0, table_data, TableAttr),
 		add_parameter(AffectedNode, 0, uses_local_fns, UserFnList),
 		(CloudEq = 'N/A' -> true;
-		 get_host(Part, ClickedObj),
-		 add_parameter(ClickedObj, 0, uses_cloudscape, CloudEq));
+		 add_parameter(AffectedNode, 0, uses_cloudscape, CloudEq));
 	      Effect = rule_list_accepted(_,_,_,_, Is_P, MinVal, MaxVal,
 					  Desc, Comment, NewInputs),
 		update_parameterhood(Part, Is_P, AffectedNode),
@@ -379,8 +378,8 @@ update_equation(Function, InterInputs, [Eqn_st, Unit_st, Is_P_st, Desc_st,
 */
 	    (UnitError = [], !,
 		(on_exception(Hiccup,
-			      get_actual_sizes(Function, EqnDims, MultInts,
-					       quoted, _V, _U),
+			      get_actual_sizes(Function, EqnDims, 
+					       quoted, MultInts, _V, _U),
 			      Complaint6 = Hiccup),
 		    member(Dim, MultInts),
 		    (nonvar(Complaint6);
