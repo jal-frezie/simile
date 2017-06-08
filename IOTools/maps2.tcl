@@ -18,6 +18,7 @@ namespace eval ::maptools2 {
 	set useNodes($winId,allETs) [GetTransTable $node]
 	set useNodes($winId,dataETs) [lindex $useNodes($winId,allETs) end]
 	set useNodes($winId,ETCount) [llength $useNodes($winId,dataETs)]
+	if {[info exists useNodes($winId,min)]} return ;# do not overwrite
 	if {$useNodes($winId,ETCount)>2} {
 	    set useNodes($winId,min) 1
 	    set useNodes($winId,max) [expr $useNodes($winId,ETCount)-1]
