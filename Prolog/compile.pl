@@ -46,16 +46,17 @@ compile( Language, Parent, DestDir, Action) :-
 		  query(Err, error, Help, [ok], _))),
 	retract(error_free(build)). % only possible if nothing went wrong
 
-cloud_action(Cloud, [Type, X, Y, L, T, R, B], [Idx1], [Idx2], [FlowFn]) :-
-    member(Cloud-Sgn, [Src-(-), Dst-(+)]),
+transport_action(Overlay, [Type, X, Y, IntExt], [Idx1, Idx2, FlowFn]) :-
+    find_all_comps(Overlay, Comp),
+    find_type(Comp, compartment),
+    implicit_function(Comp, Fn),
+    Fn has_class_refinement value of at_posn(_),
+    member(Comp-Sgn, [Src-(-), Dst-(+)]),
     Flow is_connector from Src to Dst,
-    find_type(Flow, Type), !,
-    Cloud has_graphical_attribute centre of [CX,CY],
-    Idx1 is 1+floor(X*(CX-L)/(R-L)),
-    Idx2 is 1+floor(Y*(CY-B)/(T-B)),
+    find_type(Flow, Type),
+    instance'><'inds_from_rel_posn(Comp, X, Y, IntExt, Idx1, Idx2),
     implicit_function(Flow, PosFlowFn),
     FlowFn =.. [Sgn, PosFlowFn].
-cloud_action(_, _, [], [], []). % flow was wrong type
     
 build_cloud_position_arrays(ForClouds) :-
     ForClouds has_part BaseRefs,
@@ -76,12 +77,9 @@ build_cloud_position_arrays(ForClouds) :-
     OverlayModel has_graphical_attribute internal_extent of IntExt,
     Grid has_class_refinement multiplication_spec of Multi,
     member(count=[Y, X | _Stack], Multi),
-    (setof(Cloud, (find_all_comps(OverlayModel, Cloud),
-			 find_type(Cloud, cloud)), Clouds), !; Clouds = []),
-    all(compile, cloud_action, [build(Clouds), unify([Type, X, Y | IntExt]),
-				append(Xs, []), append(Ys, []),
-				append(FlowFns, [])]),
-    length(FlowFns, BaseRefCount),
+    (setof(XYFn, transport_action(OverlayModel, [Type, X, Y, IntExt], XYFn),
+	   Triples); Triples = []),
+    length(Triples, BaseRefCount),
     (ForClouds has_class_refinement multiplication_spec of FCMulti, !;
      FCMulti = [count=[]],
      ForClouds has_new_class_refinement multiplication_spec of FCMulti),
@@ -92,6 +90,9 @@ build_cloud_position_arrays(ForClouds) :-
     implicit_function(XPosns, XsFn),
     implicit_function(YPosns, YsFn),
     implicit_function(Transp, TranspFn),
+    all(user, nth, [unify(1), build(Triples), build(Xs)]),
+    all(user, nth, [unify(2), build(Triples), build(Ys)]),
+    all(user, nth, [unify(3), build(Triples), build(FlowFns)]),
     (BaseRefCount < 2 ->
 	 ForClouds has_changed_class_refinement multiplication_spec of
 		   [count=[] | FCOthers],

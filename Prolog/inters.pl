@@ -1710,6 +1710,7 @@ builtin('List handling', element, any, [array_of_any, int]).
 builtin('List handling', flatten, list_of_any, [nested_list_of_any]).
 builtin('Model properties', size, int, [submodel_name]).
 builtin('Model properties', size, int, [submodel_name, const_int]).
+builtin('Model properties', at_posn, int, [compartment_name]).
 builtin('List handling', least, numeric, [array_or_list_of_numerics]).
 builtin('List handling', greatest, numeric, [array_or_list_of_numerics]).
 builtin('List handling', with_least, any, [array_or_list_of_numerics, array_or_list_of_any]).

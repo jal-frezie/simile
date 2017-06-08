@@ -165,8 +165,14 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	    ArcFromF is_connector from _ to Node,
 	    ArcFromF has_type influence,
 	    initiates(ArcFromF, F),
-	    Instances = Local;
+	    (F has_class_refinement value of at_posn(_RC) ->
+		 SetterType = function,
+		 Instances = [instance(variable, Node, _, Home, Base-Units)];
+			      % quick'n'dirty -- do, but overwrite
+	     SetterType = init_function,
+	       Instances = Local);
 	F = Node,
+	    SetterType = init_function,
 	    Instances = [FuncRef | Local]),
 
 	get_units(F, Base, Units),
@@ -174,7 +180,7 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	Diffs = elt(Path, _, diffs-Units),
 	(\+ PType = 1, !;
 	    choose_default_value(Node, Base, PType, Default)),
-	FuncRef = instance(init_function, F, Default, Home, Base-Units),
+	FuncRef = instance(SetterType, F, Default, Home, Base-Units),
 	change_due_to(flow, Node, Base, Units, FChange, FRefs),
 	change_due_to(squirt, Node, Base, Units, QChange, QRefs),
 	/* apply_minmax(F, Home+Step*(In-Out), UpdateExpr),
@@ -268,8 +274,23 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	    is_instance(function, Node, ChxExpr, elt(Path, _, Base-Units),
 			Base-Units, Instance),
 	    Instances = [Instance];
-
-	 
+	  GroundExpr = at_posn(ProjectorCapt), !,
+	    Overlay has_part Node,
+	    contains(Outer, Overlay),
+	    contains(Outer, Grid),
+	    Grid has_part Proj,
+	    Proj is_of_sort has_function,
+	    caption_for(Proj, ProjectorCapt),
+	    Grid has_class_refinement multiplication_spec of Multi,
+	    member(count=[Y, X | _Stack], Multi),
+	    Overlay has_graphical_attribute internal_extent of IntExt,
+	    inds_from_rel_posn(Result, X, Y, IntExt, Ind1, Ind2),
+	    implicit_function(Proj, ProjFn),
+	    direct_ref(+ProjFn, IParam, Ref),
+	    Refs = [Ref],
+	    is_instance(function, Node, element(IParam, Ind2, Ind1),
+			elt(Path, _, Base-Units), Base-Units, Instance),
+	    Instances = [Instance];
 	(setof(InputPair,
 	       generate_input_pair(Node, identified, InputPair),
 	       InputPairs ), !;
@@ -736,6 +757,11 @@ valid_tap(Flow, Controller) :-
 		 \+ Control has_class_refinement units of boolean),
 	      [Controller]).
 */
+
+inds_from_rel_posn(Cloud, X, Y, [L, T, R, B], Idx1, Idx2) :-
+    Cloud has_graphical_attribute centre of [CX,CY],
+    Idx1 is 1+floor(X*(CX-L)/(R-L)),
+    Idx2 is 1+floor(Y*(CY-B)/(T-B)).
 
 % 3rd arg of *m_loop(...) is inserted by extract_submodel_assignments
 path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
