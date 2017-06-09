@@ -29,7 +29,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_display_mode/1, tk_display_menu/1,
 	tk_change_color/5, kill_featured/2, shift_images/3, clear_display/1,
 	prepare_equation/1, create_equation/5,
-	fill_equation/9, fill_inputs/1, fill_table/3,
+	fill_equation/8, fill_inputs/1, fill_table/3,
 	interact_equation/1, destroy_equation/0,
 	tk_start_progress_dialogue/1, tk_update_infobox/2, 
 	tk_finish_progress_dialogue/0, tk_alter_model/1,
@@ -449,13 +449,11 @@ fill_equation(Cur_eqn, Cur_units, MultList, IsParam, List, TableData,
 			  br(write(Desc)), br(write(Comment)),
 			  br(write(Min)), br(write(Max))], _).
 */
-fill_equation(BadCurEqn, CurUnits, MultList, IsParam, BadDesc, BadCmt,
-	      Min, Max, Cloudscapes) :-
-	safe_list([BadCurEqn, CurUnits, BadDesc, MultList, BadCmt, Cloudscapes],
-		  br([E, U, D, M, C, CloudLists])),
+fill_equation(CurEqn, CurUnits, MultList, IsParam, Desc, Cmt, Min, Max) :-
+	safe_list([CurEqn, CurUnits, Desc, MultList, Cmt], br([E, U, D, M, C])),
 	safe_tcl_eval(['fill_equation', E, U, M,
 		       br(write(IsParam)), D, C,
-		       br(write(Min)), br(write(Max)), CloudLists], _).
+		       br(write(Min)), br(write(Max))], _).
 
 fill_inputs(List) :-
 	get_from_list(List, Table),

@@ -8,7 +8,7 @@ sicstus_module( compile, [compile/4] ).
 
 sicstus_use_module( [library(ordsets),library(lists),
 		sp_only,instance,inters,language,render,m_class,utility,output,
-		ame_gen, m_update, units, text, dialogue] ).
+		ame_gen, m_update, units, text] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % compile( Language, Program ) is true if Program is an ordered list of
@@ -46,38 +46,54 @@ compile( Language, Parent, DestDir, Action) :-
 		  query(Err, error, Help, [ok], _))),
 	retract(error_free(build)). % only possible if nothing went wrong
 
-transport_action(Overlay, [Type, X, Y, IntExt], [Idx1, Idx2, FlowFn]) :-
-    find_all_comps(Overlay, Comp),
+transport_action(TopLevel, Capt, [Type, X, Y], [Idx1, Idx2, FlowFn]) :-
+    contains(TopLevel, Fn),
+    Fn has_class_refinement value of at_posn(Capt),
+    get_host(Fn, Comp),
     find_type(Comp, compartment),
-    implicit_function(Comp, Fn),
-    Fn has_class_refinement value of at_posn(_),
+    find_all_comps(OverlayModel, Comp),
+    OverlayModel has_graphical_attribute internal_extent of IntExt,
     member(Comp-Sgn, [Src-(-), Dst-(+)]),
     Flow is_connector from Src to Dst,
     find_type(Flow, Type),
     instance'><'inds_from_rel_posn(Comp, X, Y, IntExt, Idx1, Idx2),
     implicit_function(Flow, PosFlowFn),
     FlowFn =.. [Sgn, PosFlowFn].
-    
-build_cloud_position_arrays(ForClouds) :-
-    ForClouds has_part BaseRefs,
-    find_type(BaseRefs, submodel),
-    connects(SpecialRelation, Grid, BaseRefs),
-    find_type(SpecialRelation, relation),
-    caption_for(SpecialRelation, MagicWord),
-    member(Type, [flow, squirt]),
-    atom_concat('_', Type, UType),
-    atom_concat(UType, 's_for_', MiddleBit),
-    atom_concat(OverlayCapt, SecondBit, MagicWord),
-    atom_concat(MiddleBit, GridStockCapt, SecondBit),
-    find_all_comps(Grid, GridStock),
-    caption_for(GridStock, GridStockCapt),
-    Outer has_part Grid,
-    ame_gen'><'name_matches(OverlayModel, Outer, OverlayCapt), !, % we are go
 
-    OverlayModel has_graphical_attribute internal_extent of IntExt,
+grid_stock_for(TopLevel, TargetCapt, PossGridStock) :-
+    contains(TopLevel, PossGridStock),
+    caption_for(PossGridStock, TargetCapt),
+    find_type(PossGridStock, compartment).
+
+build_cloud_position_arrays(ForClouds) :-
+    caption_for(ForClouds, MagicWord),
+    member(Type, [flow, squirt]),
+%    ForClouds has_part BaseRefs,
+%    find_type(BaseRefs, submodel),
+%    connects(SpecialRelation, Grid, BaseRefs),
+%    find_type(SpecialRelation, relation),
+%    caption_for(SpecialRelation, MagicWord),
+    atom_concat('_', Type, UType),
+    atom_concat(UType, 's', SecondBit),
+    atom_concat(TargetCapt, SecondBit, MagicWord), !, % we are go
+
+    contains(TopLevel, ForClouds),
+    root has_part TopLevel,
+    (setof(PossGridStock, grid_stock_for(TopLevel, TargetCapt, PossGridStock),
+	   GridStocks), !;
+     query(no_grid_stock_for(MagicWord), warning, top, [ok], _),
+     throw(aborted)),
+    (GridStocks = [GridStock], !;
+     all(ame_gen, has_part, [build(Grids), build(GridStocks)]),
+     all(ame_gen, caption_for, [build(Grids), build(Capts)]),
+     query(possible_grid_stocks(Capts), warning, top, [ok], _),
+     throw(aborted)),
+
+    Grid has_part GridStock,
     Grid has_class_refinement multiplication_spec of Multi,
     member(count=[Y, X | _Stack], Multi),
-    (setof(XYFn, transport_action(OverlayModel, [Type, X, Y, IntExt], XYFn),
+
+    (setof(XYFn, transport_action(TopLevel, TargetCapt, [Type, X, Y], XYFn),
 	   Triples); Triples = []),
     length(Triples, BaseRefCount),
     (ForClouds has_class_refinement multiplication_spec of FCMulti, !;

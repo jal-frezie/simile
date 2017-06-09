@@ -87,39 +87,16 @@ do_equation_dialog(Win, Part) :-
 	get_all_enum_types(Parent, ETList),
 	is_parameter(ClickedObj, Is_P),
 
-	% Now get all submodels with 2 less dims as poss cloudscapes
-	(find_type(ClickedObj, compartment) ->
-	     setof(Cloudscape, (Cloudscape = 'None';
-				poss_cloudscape_for(Win, Part, ISpecs, Cloudscape)),
-		   CloudList),
-	     (get_av_pair(ClickedObj, 0, uses_cloudscape, CurrentScape), !;
-	      CurrentScape = 'None');
-	 CloudList = ['N/A']),
-	(select(CurrentScape, CloudList, CloudSpares) ->
-	     Presente = [CurrentScape | CloudSpares];
-	   Presente = CloudList), % previous selection no longer valid
 	create_equation(Win, TitleForm, Caption, IndexList, ETList),
 	(TitleForm = rules_for, !,
 	    list_evt_captions(Part, EvtCapts),
 	    all(forms, list_evt_efct_pairs,
 		[unify(Equation), build(EvtCapts), append(ToPass, [])]);
 	  ToPass = Equation),
-	fill_equation(ToPass, Base, Dims, Is_P, Desc, Comment, Min, Max,
-		     Presente),
+	fill_equation(ToPass, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_table(Part, TableList, TableVals), % calls interaction from tcl
 	destroy_equation.
 
-poss_cloudscape_for(Win, Starter, [_D1, _D2 | ISpecs], Cloudscape) :-
-    % should also check that the shared dims are the same
-    length(ISpecs, N),
-    length(AltISpecs, N),
-    state'><'shows_model(Win, Mod),
-    contains(Mod, RightDimty),
-    find_type(RightDimty, submodel),
-    \+ contains(RightDimty, Starter),
-    list_index_meanings(RightDimty, AltISpecs),
-    caption_for(RightDimty, Cloudscape).
-    
 single_enquote_et_if_dubious(a(Atom), a(RuggedAtom)) :-
     catch(read_term_from_atom(Atom, Atom, [end_of_term(eof)]), _, fail), !,
         RuggedAtom = Atom;
