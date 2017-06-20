@@ -6,12 +6,12 @@ Simile-Origin: input-param-tool
 Content-ID: <7193.1280506845.2@spacehopper>
 Content-Type: application/x-simile
 
-start/start tooth=literal=NOW 13.4
-start/h offset=literal=NOW -24
-start/ring=literal=NOW 105
-start/wheel=literal=NOW 84
-start/hole=literal=NOW 12
-increment/start tooth=literal=NOW 1.50
-increment/h offset=literal=NOW 3.00
-increment/hole=literal=NOW 0
-pattern count=literal=NOW 18
+start/start tooth=literal=0 13.4
+start/h offset=literal=0 -24
+start/ring=literal=0 105
+start/wheel=literal=0 84
+start/hole=literal=0 12
+increment/start tooth=literal=0 1.50
+increment/h offset=literal=0 3.00
+increment/hole=literal=0 0
+pattern count=literal=0 18
