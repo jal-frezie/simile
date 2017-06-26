@@ -409,7 +409,7 @@ function createInitialHelpers() {
 		    // no problem, we can deal with v5 mime shfs...
 		    // (but only old-style tab-per-helper)
 		    b64Bloc = returnedXML.substr(returnedXML.search("\n\n")+2);
-		    insList = atob(b64Bloc).split("\r\n");
+		    insList = atob(b64Bloc).split(/\r?\n/);
 		    for (i=0; i<insList.length; ++i) {
 			if (insList[i].search("container")==0) {
 			    chType = insList[i+1].replace(/\./g, "_dot_");
