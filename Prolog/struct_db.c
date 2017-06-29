@@ -170,7 +170,7 @@ FORPROL empty_tree(PlTerm root, PlTerm ushrtmx) {
   int count;
   for (count=0; count<USHRT_MAX; ++count) {
     nodes[count].hide = 0;
-    arcs[count].id_atom = 0;
+    arcs[count].dest = USHRT_MAX;
   }
   for (count=0; count<4*USHRT_MAX; ++count) {
     id_lists[count].me = USHRT_MAX;
@@ -509,7 +509,7 @@ FORPROL remove_capt_off(PlTerm parent) {
 }
 
 FORPROL delete_arc(PlTerm oldlink) {
-  arc_from_term(oldlink)->id_atom = 0;
+  arc_from_term(oldlink)->dest = USHRT_MAX;
   SUCCEED;
 }
 
@@ -562,7 +562,7 @@ int node_exists(node* it) {
 }
 
 int arc_exists(arc* it) {
-  return it->id_atom;
+  return (it->dest != USHRT_MAX);
 }
 
 FORPROL find_parent(PlTerm child, PlTerm parent) {
