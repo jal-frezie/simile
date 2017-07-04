@@ -18,7 +18,7 @@ namespace eval ::maptools2 {
 	set useNodes($winId,allETs) [GetTransTable $node]
 	set useNodes($winId,dataETs) [lindex $useNodes($winId,allETs) end]
 	set useNodes($winId,ETCount) [llength $useNodes($winId,dataETs)]
-	if {[info exists useNodes($winId,min)]} return ;# do not overwrite
+	if {[info exists useNodes($winId,nswatches)]} return ;# do not overwrite
 	if {$useNodes($winId,ETCount)>2} {
 	    set useNodes($winId,min) 1
 	    set useNodes($winId,max) [expr $useNodes($winId,ETCount)-1]
@@ -53,9 +53,7 @@ namespace eval ::maptools2 {
 		set nswatches [expr int($useNodes($winId,range))]
 	    }
         }
-	if {![info exists useNodes($winId,nswatches)]} {
-	    set useNodes($winId,nswatches) $nswatches
-	}
+	set useNodes($winId,nswatches) $nswatches
 #	ShowMess debug info "min $useNodes($winId,min); \
 #                    max $useNodes($winId,max); dataETs $useNodes($winId,dataETs); $useNodes($winId,range); \
 #                    $useNodes($winId,nswatches)" ok
