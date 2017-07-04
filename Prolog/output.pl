@@ -586,12 +586,13 @@ tk_get_pref(ResourceName, ResourceValue) :-
 			  ResourceName], ResValStr),
 	name(ResourceValue, ResValStr).
 
-/* replace chars not allowed in Windows filenames with spaces */
+windowize(N, N).
+/* replace chars not allowed in Windows filenames with spaces
 windowize(Name, WName) :-
 	name(Name, NameStr),
 	all(output, replace_bad_char, [build(NameStr), build(WNameStr)]),
 	stuff_blank_levels(WNameStr, WName).
-
+ */
 stuff_blank_levels(String, Name) :-
 	[Break, Spc, Exc] = "/ _",
 	append(Head, [Break | Body], String),
