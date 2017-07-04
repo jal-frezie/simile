@@ -41,7 +41,7 @@ proc KeepLooking {} {
 		} slipup {
 		    error [lreplace $line 0 0 slip-up]
 		} default {
-		    error $line
+		    puts $line
 		}
 	    }
 	}
