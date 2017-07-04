@@ -1304,11 +1304,11 @@ nodes.
 					      elt(_, ImmigBox, _), U),
 				     ParentFns)), Immigrators), !;
 	     Immigrators = []),
-	    (setof(ReproBox, S^X^U^member(instance(reproduction, S,X,
+	    (setof(init(ReproBox), S^X^U^member(instance(reproduction, S,X,
 						   elt(_, ReproBox, _), U),
-					  Functions), Reproducers), !;
-	     Reproducers = []),
-	    
+					  Functions), ReproInits), !;
+	     ReproInits = []),
+	    all(user, arg, [unify(1), build(ReproInits), build(Reproducers)]),
 	    CreateRules = [make(culled(Name),
 				[init_list(Name), on_step],
 				Path, Step, [lose(Ptr, Name, Losses)]),
@@ -1317,7 +1317,8 @@ nodes.
 				[init_mems(Ptr, Name, create(Creators))]),
 			   make(settled(Name), [culled(Name)], Path, Step,
 				[new_member(Ptr, Name, Immigrators)]),
-			   make(bred(Name), [culled(Name)], LocalPath, Step,
+			   make(bred(Name), [culled(Name) | ReproInits],
+				LocalPath, Step,
 				[reproduce(Ptr, NewPtr, Name, Reproducers)])],
 	    % relegate to 0 as membership may have changed during run
 %	    (setof(ReproRule, maker_for(SmName, Functions, Name, Path, Step,
@@ -2094,17 +2095,13 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 	    /* try something from what is left -- no commitment yet */
 	    (SmLevel = sm(Sm, _,_, vm_loop(_,_,_,_)) ->
 		order_submodel_assignments(Phase, [SmLevel | Path], SubEndPts,
-					    All, SubPasses, TestPhase),
+					    All, SubPass, TestPhase),
 		    /* do not go into a sumbodel if I cannot get the existence
 		    test done by the time I come out */
 		\+ (member(make(existence_tested(Sm), _,_, [_,_,_,D], _), All),
-		       var(D)),
-		member(SubPass, SubPasses);
+		       var(D));
 	      order_assignments(Phase, [SmLevel | Path], SubEndPts,
-				 All, SubPass),
-	        HighPassCount is Phase+2,
-	        list_of([], HighPassCount, HighPasses),
-		append(HighPasses, [SubPass], SubPasses)),		     
+				 All, SubPass)),		     
 
 	    /* go to a level where I can do something (note test for
 	    having done something was on what is outstanding, as there may not
@@ -2129,20 +2126,21 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		   AlP =< Phase),
 			    
 	    /* OK, have I just done an existence test for it? */
-	    (number(TestPhase),
-		
+	    (nonvar(TestPhase), TestPhase = test_at(TestStep, TestGo, TestLen),
+	        CondLen is TestGo + TestLen,
+	        append(CondBit, Faster, SubPass), length(CondBit, CondLen),
 		/* yes: if test was done in a level above current,
 		this is the chosen submodel: set conditions for testing new
 	        instances. */
 	    
-	        (TestPhase < Phase,
-		    GenCond = TestPhase;
-		TestPhase = Phase,
+	        (TestStep < Phase,
+		    GenCond = TestStep;
+		TestStep = Phase,
 		    GenCond = old), !,
 		/* and add extra loops that go around generate statement --
 		record test phase to use in later new instance tests */
 		SmLevel = sm(Submodel, ParentPtr, Ptr,
-			     vm_loop(LoopCode,_, MoreLoops, SmPrune)),
+			     vm_loop(LoopCode,_, MoreLoops, _SmPrune)),
 	        decode_loop(LoopCode, _ReadyType, Dims),
 		ptr_to_last_vm(Path, -2, ParentNew),
 		make_inds_for(Dims, _, Sets, LocalInds),
@@ -2163,8 +2161,7 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		/* At this point we need to replace the innermost loop with an
 		assignment if using an id-based condition, and move the
 		condition evaluation outside that loop...*/
-		(append(Slower, [Now | Faster], SubPasses),
-		    append(IdOpens, [TestCond, _Cls | NoIdConds], Now),
+		(append(IdOpens, [TestCond, _Cls | NoIdConds], CondBit),
 		    TestCond = make(TestTgt, IdConds-_, _,_,
 					  [assign(arr(Zn, TcVar, _), IdExpr)]),
 		    member(can_find_id(IdCond), IdConds),
@@ -2190,7 +2187,7 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 			    LookupAct = make(none, []-_, _,_, Instructs),
 			    append(IdOpens, [LookupAct | SmLoop], Next),
 			    length(SpareFinishes, Count),
-			    append(SpareFinishes, LastStep, [_ | LastStepTail]);
+			    append(SpareFinishes, [EndGen | LastStep], [_ | LastStepTail]);
 			  ShortedLoops = [make(_,_,_,_, [start_submodel(N,T,BP, vm_loop(_,_,_,_))])],
 			 % looking up instance in a vm model -- open as simple
 			    SmLoop = [],
@@ -2200,23 +2197,23 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 			 % need xtra case here for nbrs? doubt
 			    ExistTest = 1,
 			    append([StartLookup | IdOpens], [LookupLoop], Next),
-			    LastStep = [LookupEnd, LookupEnd | LastStepTail]), !;
+			    [EndGen | LastStep] = [LookupEnd, LookupEnd | LastStepTail]), !;
 		      find_all_comps(AssocModel, IdCond),
 		        caption_for(AssocModel, IdCapt),	
 		        raise_exception(bad_instance_lookup(IdCapt))),
 		    append(OuterLoops, Next, UseLoops),
-		    append(Slower, [[make(none, IdConds-_, _,_, [assign(arr(Zn, TcVar, []), ExistTest)]) | NoIdConds] | Faster], UseSubPasses), !;
-		UseLoops = OpenLoops,
-		    UseSubPasses = SubPasses,
-		    LastStep = LastStepTail),
+		    append([make(none, IdConds-_, _,_, [assign(arr(Zn, TcVar, []), ExistTest)]) | NoIdConds], [EndGen | Faster], CondPass), !;
+		 UseLoops = OpenLoops,
+		    append(CondBit, [EndGen | Faster], CondPass),
+		    [EndGen | LastStep] = LastStepTail),
 				    
 		get_base_ptrs(BLoops, _, BasePtrs),
 		extract_action(Outer, [bound_gen_loop(ParentPtr, Submodel,
 						      LoopCode, Count)]),
 		extract_action(GenStep, [generate(Submodel, ParentPtr,
 						  Ptr, GenCond, VMPtrs, Inds, BasePtrs)]),
-		SmRedo is max(SmPrune, TestPhase),
-		SmNew = [new_context(Ptr, SmRedo)],
+		%SmRedo is max(SmPrune, TestStep),
+		%SmNew = [new_context(Ptr, SmRedo)],
 		append([Outer | UseLoops], [GenStep], FirstStep);
 		
 	    /* no: just use start_submodel -- or give up on this
@@ -2226,13 +2223,11 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 
 	    \+ (SmLevel = sm(_,_,_, vm_loop(_,_,_, EnumPhase)),
 		   EnumPhase > Phase), !,
-		ptr_to_last_vm([SmLevel | Path], -2, SmNew),
+		%ptr_to_last_vm([SmLevel | Path], -2, SmNew),
 		get_pass_ends(SmLevel, StartPass, FinishPass),
 		FirstStep = [StartPass],
 		LastStep = [FinishPass],
-		UseSubPasses = SubPasses),
-	    /* Now put new/timing conditions round higher-level passes */
-	    add_phase_conditions(UseSubPasses, -2, SmNew, CondPass),
+		CondPass = SubPass),
 
 	    /* Now if I have done some submodel assignments, recurse at
 		the same level */
@@ -2304,17 +2299,19 @@ get_base_ptrs([Level | AlsoExited], Names, Ptrs) :-
 (except at the top level, in case this dll has been included in a larger
 model which includes a shorter time step -- but that is done separately) */
 
-add_phase_conditions([LastPhase], _,_, LastPhase) :- !.
-
-add_phase_conditions([Group | Groups], Phase, Ptrs, Insts) :-
-	NextPhase is Phase+1,
-	add_phase_conditions(Groups, NextPhase, Ptrs, Rest),
-	(Group = [], !, Insts = Rest;
-	all(compile, relevant, [unify(Phase), build(Ptrs),
-				append(UsePtrs, [])]),
-	    extract_action(StartGroup, [check_phase(Phase, UsePtrs)]),
-	    extract_action(FinishGroup, [finish_level]),
-	    append([StartGroup | Group], [FinishGroup | Rest], Insts)).
+add_phase_conditions([Group | Groups], Phase, Ptrs, TestPhase, Insts) :-
+    extract_action(FinishGroup, [finish_level]),
+    (Phase == TestPhase -> ExtraFinish = [FinishGroup]; ExtraFinish = []),
+    (Groups = [] ->
+	 append(Group, ExtraFinish, Insts);
+     NextPhase is Phase+1,
+     add_phase_conditions(Groups, NextPhase, Ptrs, TestPhase, JustRest),
+     append(ExtraFinish, JustRest, Rest),
+     (Group = [], !, Insts = Rest;
+      all(compile, relevant, [unify(Phase), build(Ptrs),
+			      append(UsePtrs, [])]),
+      extract_action(StartGroup, [check_phase(Phase, UsePtrs)]),
+      append([StartGroup | Group], [FinishGroup | Rest], Insts))).
 
 relevant(Phase, new_context(Ptr, EnumPhase), UseContext) :-
 	Phase < EnumPhase, !,
@@ -2452,15 +2449,7 @@ order_all_assignments(Step, All, Done) :-
 	    [build(All), unify([]), unify(InstrucTree)]),
 	InstrucTree = make_level(top, _, _),
 	close_lists(InstrucTree), !,
-	order_all(Step, InstrucTree, XTests, Done).
-
-order_all(Step, Undone, All, Done) :-
-	order_submodel_assignments(Step, [], Undone, All, NowDone, _),
-	add_phase_conditions(NowDone, -2, [], NowDoneForm),
-	(NowDoneForm = [], !,
-	    Done = [];
-	  order_all(Step, Undone, All, ThenDone),
-	    append(NowDoneForm, ThenDone, Done)).
+	order_submodel_assignments(Step,[],  InstrucTree, XTests, Done, _).
 
 %select_ready(All, Phase, Ready) :-
 %	All = make(_, Conds-_, _, [MPhase | _], _),
@@ -2495,15 +2484,54 @@ close_lists(make_level(_L, Insts, Subs)) :-
 	length(Insts, _I),
 	length(Subs, _S),
 	all(compile, close_lists, [build(Subs)]).
-	
+
+
 order_submodel_assignments(Phase, Path, RawAssign, All,
+			   OrderedPasses, FoundTest) :-
+    order_assignments(Phase, Path, RawAssign, All, FirstPass),
+    ((Path = [TestModel | _],
+         made_in(existence_tested, TestModel, FirstPass),
+	 length(FirstPass, Len),
+	 FoundTest = test_at(Phase, 0, Len); % bang out if test found
+     Phase == -2) -> OrderedPasses = FirstPass;
+     NextPhase is Phase-1,
+        order_submodel_assignments(NextPhase, Path, RawAssign, All,
+				   SlowPasses, SlowTest),
+	(SlowPasses = [] -> OrderedPasses = FirstPass;
+	 (append([InnerOpen | _], [InnerClose], SlowPasses),
+	  extract_action(InnerOpen, [check_phase(InnerPhase, _)]),
+	  InnerClose = make(none,[]-_,_, Doing, [finish_level]),
+	  Doing == InnerPhase,
+ 	  extract_action(InnerClose, [finish_level]) ->
+	      % recursion result in deeper condition, no need to add one
+	      append(FirstPass, SlowPasses, OncePasses);
+	  ptr_to_last_vm(Path, -2, NewCons),
+	      all(compile, relevant, [unify(NextPhase), build(NewCons),
+				      append(Cons, [])]),
+	      extract_action(Start, [check_phase(NextPhase, Cons)]),
+	      Finish = make(none,[]-_,_, NextPhase, [finish_level]),
+	      append([FirstPass, [Start | SlowPasses], [Finish]], OncePasses)),
+	 
+	 (var(SlowTest) ->
+	      order_submodel_assignments(Phase, Path, RawAssign, All,
+					 RecursePasses, LateTest),
+	      append(OncePasses, RecursePasses, OrderedPasses);
+	  OrderedPasses = OncePasses), % bang out if test done 
+	 ((nonvar(SlowTest), SlowTest = test_at(TP, Go, Len),
+	   length(FirstPass, Lead);
+	   nonvar(LateTest), LateTest = test_at(TP, Go, Len),
+	   length(OncePasses, Lead)) ->
+	      NewGo is Go+Lead,
+	      FoundTest = test_at(TP, NewGo, Len); true))).
+    
+old_order_submodel_assignments(Phase, Path, RawAssign, All,
 			   OrderedPasses, FoundTest) :-
 	Phase < -2, !,
 	    OrderedPasses = [];
 	NextPhase is Phase-1,
 	    order_submodel_assignments(NextPhase, Path, RawAssign, All,
-				       HighPasses, DoneTest),
-	    (number(DoneTest), !,
+				       HighPasses, FoundTest),
+	    (false, number(DoneTest), !,
 		OrderedPasses = HighPasses,
 		FoundTest = DoneTest;
 	    order_assignments(Phase, Path, RawAssign, All, LastPass),
