@@ -269,8 +269,7 @@ failed through to make sure all later temporary variables get declared. */
 	    excrete(L, make_reference, Meta = OnPointer, Indent2, Stream),
 	    render(L, end(cond), MemberCheckRef, Indent1, CheckEnd),
 	    do_writing(CheckEnd, Stream);
-	 \+ number(Phase),
-	    CheckEnd = []),
+	 \+ number(Phase)),
 	excrete(L, else_clause, 'Instance exists', Indent, Stream),
 	/* IfChecking */
 	(number(Phase),
@@ -284,19 +283,22 @@ failed through to make sure all later temporary variables get declared. */
 	fill_instance_ids(L, 0, Pointer, RefIndices, Indent2, Stream),
 	move_base_ptrs(L, Pointer, save, Indent2, BasePtrs,_, Stream),
 	excrete(L, assignment, NewInstance=1, Indent2, Stream),
-	/* CheckEnd */
-	do_writing(CheckEnd, Stream),
-	excrete(L, end(cond), 'Instance exists', Indent, Stream),
-	/* IfChecking */
-	(number(Phase), !,
-	    excrete(L, if_start, MemberCheckRef, Indent, Stream),
-	    SubIndent = Indent1;
-	 SubIndent = Indent),
-	do_assign_list(L, MyLoop, SubIndent, Used, Stream),
-	do_writing(CheckEnd, Stream),
+	(number(Phase) ->
+	     /* CheckEnd */
+	     do_writing(CheckEnd, Stream),
+	     excrete(L, end(cond), 'Instance exists', Indent, Stream),
+	     /* IfChecking */
+	     (excrete(L, if_start, MemberCheckRef, Indent, Stream),
+	        SubIndent = Indent1,
+	        do_assign_list(L, MyLoop, SubIndent, Used, Stream),
+	        do_writing(CheckEnd, Stream),
+	        fail;
+	     do_assign_list(L, Later, Indent, Used, Stream));
+	   excrete(L, end(cond), 'Instance exists', Indent, Stream),
+	     do_assign_list(L, MyLoop, Indent, Used, Stream),
+	     do_assign_list(L, Later, Indent, Used, Stream)).
 	/* That should make some good code */
 
-	do_assign_list(L, Later, Indent, Used, Stream).
 
 do_assignment(L, [bound_gen_loop(Top, Name, Ready, CondCount) | Clauses],
 	      Indent, Used, Stream) :-
