@@ -1,7 +1,7 @@
 # Debian control file for Simile
 # Build Simile as follows:
 # 1. Export from CVS to directory called simile-x.y:
-# cvs -d :ext:u45169214@simulistics.com:/kunden/homepages/20/d204715617/htdocs/cvsroot export -D now Simile
+# cvs -d :ext:cvs@simulistics.com:/home/cvs/cvsroot export -D now Simile
 # 2. Copy this tree into same
 # 3. Copy tkdnd2.6 and tcl-gdal tree under Extensions
 # 4. Create help tree by running import_html_help script 

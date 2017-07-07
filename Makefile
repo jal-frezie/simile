@@ -551,15 +551,15 @@ install:
 		Run/utility.tcl \
 		Run/window.tcl \
 		Run/simdoc32.ico \
-		Run/Simile.desktop; \
+		Simile.desktop; \
 	cd $(DESTDIR)$(INSTALL_TGT); \
 	tar xf payload.tar; \
 	mv Run/$(UINFO_TPL) Run/userinfo.txt; \
+	mkdir -p $(DESTDIR)$(SHAREDIR)/applications; \
+	mv Simile.desktop $(DESTDIR)$(SHAREDIR)/applications; \
 	rm payload.tar; cd -; \
 	mkdir -p $(DESTDIR)$(SHAREDIR)/man/man1; \
-	cp simile.1 $(DESTDIR)$(SHAREDIR)/man/man1; \
-	mkdir -p $(DESTDIR)$(SHAREDIR)/applications \
-	cp Simile.desktop $(DESTDIR)$(SHAREDIR)/applications \
+	mv simile.1 $(DESTDIR)$(SHAREDIR)/man/man1; \
 	mkdir -p $(DESTDIR)$(EXEC_TGT); \
 	tar cf $(DESTDIR)$(EXEC_TGT)/payload.tar \
 		$(SYSDIR)/bin/relay \
