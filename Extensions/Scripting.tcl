@@ -387,7 +387,11 @@ itcl::class similescript::OldStyleHelper {
 	set helperTable(beingCalled) $this
 	if {[llength $state]} {
 	    set State $state
-	    [KeyValue]::Restore $winId
+	# need to catch error here because catching later leaves inconsistency
+	    if {[catch {[KeyValue]::Restore $winId} hiccup]} {
+		Query [list iotool_restore_fail [[KeyValue]::identify] \
+                           $::errorInfo] warning helpers {} abort
+	    }
 	} else {
 	    [KeyValue]::initialize $winId
 	}
