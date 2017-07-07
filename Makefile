@@ -558,6 +558,8 @@ install:
 	rm payload.tar; cd -; \
 	mkdir -p $(DESTDIR)$(SHAREDIR)/man/man1; \
 	cp simile.1 $(DESTDIR)$(SHAREDIR)/man/man1; \
+	mkdir -p $(DESTDIR)$(SHAREDIR)/applications \
+	cp Simile.desktop $(DESTDIR)$(SHAREDIR)/applications \
 	mkdir -p $(DESTDIR)$(EXEC_TGT); \
 	tar cf $(DESTDIR)$(EXEC_TGT)/payload.tar \
 		$(SYSDIR)/bin/relay \

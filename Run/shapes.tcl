@@ -23,6 +23,16 @@ for {set pt 1} {$pt < $cornerPts} {incr pt} {
 }
 lappend arcPts [expr 1-$expansion*(1-[lindex $arcPts end])/[lindex $arcPts 0]]
 
+switch [tk windowingsystem] {
+    x11 {
+	set hideTinies 40
+    } win32 {
+	set hideTinies 6
+    } aqua {
+	set hideTinies 5
+    }
+}
+
 proc GetPoints {lo rad} {
     global arcPts
     foreach pt $arcPts {
@@ -894,6 +904,9 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
 		      -width [expr {$realFont*[lindex $specials 0]}] \
 		      -font $useFont -anchor $ankh -justify $tjust \
 		      -tags "$tagSet is_caption size_on_this realwidth([expr {$realFont*12.0}]) has_info"]
+    if {$realFont*12.0 < $::hideTinies} {
+	$w itemconfigure $textItem -state hidden
+    }
     FixBackBox $w $textItem
 }
 
@@ -1363,16 +1376,7 @@ proc ZoomImage {args} {
 
 proc InnerZoomImage {winId which factor {optFontor none}} {
     #ShowMess debug info "ZoomImage $winId $which $factor $fontor" ok
-    global window_info looks niceSize
-    switch [tk windowingsystem] {
-	x11 {
-	    set hideTinies 40
-	} win32 {
-	    set hideTinies 6
-	} aqua {
-	    set hideTinies 5
-	}
-    }
+    global window_info hideTinies
     $winId scale $which 0 0 $factor $factor
     if {[string compare $which all]} {
         set objList [$winId find withtag $which]

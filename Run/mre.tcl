@@ -714,7 +714,7 @@ namespace eval RunEnv {
 
 #puts "SetCurrentContainer $win"
         set mainframe $helperTable($currentNode,whichRunEnv)
-        set mreMenu [$mainframe cget -menu]
+        set mreMenu ${mainframe}top
         set pw [winfo parent $win]
         #ShowMess debug info "RunEnv::SetCurrentContainer pw $pw" ok
 	set tb1 [GetFrame $mainframe].tbar
@@ -890,7 +890,7 @@ $tb1.b43 configure -state $useSpaceAbility
 	}
 
 	set mainframe $helperTable($currentNode,whichRunEnv)
-	set mreMenu [$mainframe cget -menu]
+	set mreMenu ${mainframe}top
 	set fileMenu [$mreMenu entrycget [tr. File] -menu]
 	$fileMenu entryconfigure [tr. {Save configuration}] -state $saveAbility
 	set tb1 [GetFrame $mainframe].tbar
