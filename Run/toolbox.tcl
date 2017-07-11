@@ -19,7 +19,7 @@ if {![info exists simplify]} {
 #catch {namespace import BWidget::*}
 
 # support drag'n'drop text exchange with other apps
-    if {[catch {package require tkdnd 2.4}]} {
+    if {[catch {package require tkdnd 2.8}]} {
 	package require BWidget
 	namespace import BWidget::*
     }
@@ -27,7 +27,7 @@ if {![info exists simplify]} {
 if {[info tclversion]>=8.5} {
 # use our own
 #    package require ttk::dialog
-} else {
+} else {index1
     package require tile 0.8.2
 }
 package require style::as
