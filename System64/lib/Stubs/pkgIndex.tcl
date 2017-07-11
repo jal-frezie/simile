@@ -40,18 +40,7 @@ foreach comp {ame_dll unpacker} {
 #
 # Tcl package index file
 #
-switch [info sharedlibextension] {
-    .dylib {
-package ifneeded tkdnd 2.4 \
-  "source \{$dir/tkdnd.tcl\} ; \
-   tkdnd::initialise \{$dir\} libtkdnd2.4.dylib tkdnd"
-    } .dll {
-package ifneeded tkdnd 2.6 \
-  "source \{$dir/tkdnd.tcl\} ; \
-   tkdnd::initialise \{$dir\} tkdnd26.dll tkdnd"
-    } .so {
-package ifneeded tkdnd 2.6 \
-  "source \{$dir/tkdnd.tcl\} ; \
-   tkdnd::initialise \{$dir\} libtkdnd2.6.so tkdnd"
-    }
-}
+package ifneeded tkdnd 2.8 \
+    "source \{$dir/tkdnd.tcl\} ; \
+     tkdnd::initialise \{$dir\} ${head}tkdnd2${ins}8${tail} tkdnd"
+
