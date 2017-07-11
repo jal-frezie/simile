@@ -551,12 +551,12 @@ install:
 		Run/utility.tcl \
 		Run/window.tcl \
 		Run/simdoc32.ico \
-		Simile.desktop; \
+		simile.desktop; \
 	cd $(DESTDIR)$(INSTALL_TGT); \
 	tar xf payload.tar; \
 	mv Run/$(UINFO_TPL) Run/userinfo.txt; \
 	mkdir -p $(DESTDIR)$(SHAREDIR)/applications; \
-	mv Simile.desktop $(DESTDIR)$(SHAREDIR)/applications; \
+	mv simile.desktop $(DESTDIR)$(SHAREDIR)/applications; \
 	rm payload.tar; cd -; \
 	mkdir -p $(DESTDIR)$(SHAREDIR)/man/man1; \
 	mv simile.1 $(DESTDIR)$(SHAREDIR)/man/man1; \

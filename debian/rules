@@ -15,14 +15,14 @@
 # When cleaning, also clean the included packages
 # (dummy configure as set out in bug #570503)
 override_dh_auto_clean:
-	cd Extensions/tkdnd2.6;./configure;cd -
-	dh_auto_clean -- -C Extensions/tkdnd2.6
+	cd Extensions/tkdnd2.8;./configure;cd -
+	dh_auto_clean -- -C Extensions/tkdnd2.8
 	dh_auto_clean -- -C Extensions/tcl-gdal
 	dh_auto_clean --
 
 # Likewise when making
 override_dh_auto_build:
-	dh_auto_build -- -C Extensions/tkdnd2.6
+	dh_auto_build -- -C Extensions/tkdnd2.8
 	dh_auto_build -- -C Extensions/tcl-gdal
 	dh_auto_build --
 
@@ -31,7 +31,7 @@ override_dh_auto_install:
 	dh_auto_install --
 	dh_auto_install -- -C Extensions/tcl-gdal \
 		libdir=/usr/lib/simile-6.8/System/lib/Stubs
-	dh_auto_install -- -C Extensions/tkdnd2.6 \
+	dh_auto_install -- -C Extensions/tkdnd2.8 \
 		libdir=/usr/lib/simile-6.8/System/lib/Stubs
 # This is from Ubuntu tkdnd package to get man page in right place	
 # (removed because manpage conflicted with that for free-living tkdnd)
