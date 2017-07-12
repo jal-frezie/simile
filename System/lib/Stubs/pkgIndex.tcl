@@ -14,24 +14,36 @@
 
 # All new for Simile 5.7: just offer what we have..,
 
-set tail [info sharedlibextension]
-if {[string equal .dylib $tail]} {
-    set tail _mac$tail
+scan [info tclversion] "%d.%d" MAJ MIN
+set extn [info sharedlibextension]
+if {[string equal .dylib $extn]} {
+    set tail _mac$extn
+} else {
+    set tail $extn
 }
 if {[string equal .dll $tail]} {
     set head {}
-    set ins .
+    set ins {}
 } else {
     set head lib
-    set ins {}
+    set ins .
 }
     
 foreach comp {ame_dll unpacker} {
     foreach shareLib [glob [file join $dir $head$comp*$tail]] {
-	set vers [string range $shareLib [string length [file join $dir $head$comp]] end-[string length $tail]]
-	set vers [string index $vers 0]$ins[string range $vers 1 end]
+	set maj [string range $shareLib [string length [file join $dir $head$comp]] end-[string length ${ins}x$tail]]
+	set min [string range $shareLib end-[string length $tail] end-[string length $tail]]
+	set vers $maj.$min
 	package ifneeded [string totitle $comp] $vers [list load $shareLib]
     }
 }
 
-# Other non-auto-installable cross-platform TclTk extensions do not go here...
+# Other non-auto-installable cross-platform TclTk extensions also go here...
+# tkdnd
+#
+# Tcl package index file (note freak unix-like name of Windows dll)
+#
+package ifneeded tkdnd 2.8 \
+    "source \{$dir/tkdnd.tcl\} ; \
+     tkdnd::initialise \{$dir\} libtkdnd2.8$extn tkdnd"
+

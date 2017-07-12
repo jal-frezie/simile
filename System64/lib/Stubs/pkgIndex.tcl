@@ -15,22 +15,25 @@
 # All new for Simile 5.7: just offer what we have..,
 
 scan [info tclversion] "%d.%d" MAJ MIN
-set tail [info sharedlibextension]
-if {[string equal .dylib $tail]} {
-    set tail _mac$tail
+set extn [info sharedlibextension]
+if {[string equal .dylib $extn]} {
+    set tail _mac$extn
+} else {
+    set tail $extn
 }
 if {[string equal .dll $tail]} {
     set head {}
-    set ins .
+    set ins {}
 } else {
     set head lib
-    set ins {}
+    set ins .
 }
     
 foreach comp {ame_dll unpacker} {
     foreach shareLib [glob [file join $dir $head$comp*$tail]] {
-	set vers [string range $shareLib [string length [file join $dir $head$comp]] end-[string length $tail]]
-	set vers [string index $vers 0]$ins[string range $vers 1 end]
+	set maj [string range $shareLib [string length [file join $dir $head$comp]] end-[string length ${ins}x$tail]]
+	set min [string range $shareLib end-[string length $tail] end-[string length $tail]]
+	set vers $maj.$min
 	package ifneeded [string totitle $comp] $vers [list load $shareLib]
     }
 }
@@ -42,5 +45,5 @@ foreach comp {ame_dll unpacker} {
 #
 package ifneeded tkdnd 2.8 \
     "source \{$dir/tkdnd.tcl\} ; \
-     tkdnd::initialise \{$dir\} ${head}tkdnd2${ins}8${tail} tkdnd"
+     tkdnd::initialise \{$dir\} ${head}tkdnd2${ins}8$extn tkdnd"
 
