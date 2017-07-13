@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.10 2016/12/08 12:57:21 cvs Exp $
+# $Id: can2svg.tcl,v 1.11 2017/07/13 15:56:17 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -297,7 +297,6 @@ proc can2svg::svgasxmllist {cmd args} {
     
     # If we need a stipple bitmap, need to make that first. Limited!!!
     # Only: gray12, gray25, gray50, gray75
-    puts [array get optA]
     foreach key {-stipple -outlinestipple} {
         if {[info exists optA($key)] &&  \
           ([lsearch $grayStipples $optA($key)] >= 0)} {
