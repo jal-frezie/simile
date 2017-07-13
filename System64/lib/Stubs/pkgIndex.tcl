@@ -38,12 +38,8 @@ foreach comp {ame_dll unpacker} {
     }
 }
 
-# Other non-auto-installable cross-platform TclTk extensions also go here...
-# tkdnd
-#
-# Tcl package index file
-#
-package ifneeded tkdnd 2.8 \
-    "source \{$dir/tkdnd.tcl\} ; \
-     tkdnd::initialise \{$dir\} ${head}tkdnd2${ins}8$extn tkdnd"
+# Other non-auto-installable cross-platform TclTk extensions do not go
+# here because this file is included in Linux distributions but such
+# packages are built and installed in separate subdirectories, so
+# trying to load them here breaks it
 
