@@ -396,7 +396,6 @@ itcl::class similescript::$newLayerClass {
     }
 
      public method ColourFor {winId value} {
-        variable useNodes
         if {[string match nil $value]} {
             set newColour gray
         } elseif {$value<=$useNodes($winId,min)} {
