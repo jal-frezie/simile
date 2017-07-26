@@ -233,6 +233,7 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method EditCurrent {} {
+# space here seems to improve reliability
 	set oldIdx end-[expr {$serialActive/2}]
 	[lindex $planes $oldIdx] Settings
     }

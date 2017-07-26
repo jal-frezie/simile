@@ -445,7 +445,7 @@ important...(or was, back when the A stood for Agroforestry)... */
 		      on_step, on_reset, /* dummy conditions */
 		      use_param_state, /* indicates file parameter */
 		      id, dims, /* arguments to extractor proc */
-		      next, instanceid, new_instance,
+		      next, instanceid, new_instance, nbrs,
 		      cause | _], % dummy arg to event proc
 	/* system vars in submodel */
 /* we cannot change names of external procedures, so add them to the used */
