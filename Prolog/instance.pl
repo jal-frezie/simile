@@ -165,7 +165,8 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	    ArcFromF is_connector from _ to Node,
 	    ArcFromF has_type influence,
 	    initiates(ArcFromF, F),
-	    (F has_class_refinement value of at_posn(_RC) ->
+	    F has_class_refinement value of AtPosnExpr,
+	    (member(AtPosnExpr, [at_posn(_RC), at_posn(_RC, _X, _Y)]) ->
 		 SetterType = function,
 		 Instances = [instance(variable, Node, _, Home, Base-Units)];
 			      % quick'n'dirty -- do, but overwrite
@@ -274,21 +275,23 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	    is_instance(function, Node, ChxExpr, elt(Path, _, Base-Units),
 			Base-Units, Instance),
 	    Instances = [Instance];
-	  GroundExpr = at_posn(ProjectorCapt), !,
+	  GroundExpr =.. [at_posn, ProjectorCapt | SuppliedInds], !,
 	    Overlay has_part Node,
 	    contains(Outer, Overlay),
 	    contains(Outer, Grid),
 	    Grid has_part Proj,
 	    Proj is_of_sort has_function,
 	    caption_for(Proj, ProjectorCapt),
-	    Grid has_class_refinement multiplication_spec of Multi,
-	    member(count=[Y, X | _Stack], Multi),
-	    Overlay has_graphical_attribute internal_extent of IntExt,
-	    inds_from_rel_posn(Result, X, Y, IntExt, Ind1, Ind2),
+	    (SuppliedInds = [] ->
+		 Grid has_class_refinement multiplication_spec of Multi,
+		 member(count=[Y, X | _Stack], Multi),
+		 inds_from_rel_posn(Result, Y, X, Inds);
+	     Inds = SuppliedInds),
+	    EltExpr =.. [element, IParam | Inds],
 	    implicit_function(Proj, ProjFn),
 	    direct_ref(+ProjFn, IParam, Ref),
 	    Refs = [Ref],
-	    is_instance(function, Node, element(IParam, Ind2, Ind1),
+	    is_instance(function, Node, EltExpr,
 			elt(Path, _, Base-Units), Base-Units, Instance),
 	    Instances = [Instance];
 	(setof(InputPair,
@@ -758,7 +761,9 @@ valid_tap(Flow, Controller) :-
 	      [Controller]).
 */
 
-inds_from_rel_posn(Cloud, X, Y, [L, T, R, B], Idx1, Idx2) :-
+inds_from_rel_posn(Cloud, Y, X, [Idx2, Idx1]) :-
+    find_all_comps(OverlayModel, Cloud),
+    OverlayModel has_graphical_attribute internal_extent of [L, T, R, B],
     Cloud has_graphical_attribute centre of [CX,CY],
     Idx1 is 1+floor(X*(CX-L)/(R-L)),
     Idx2 is 1+floor(Y*(CY-B)/(T-B)).

@@ -555,7 +555,8 @@ replace_subexps(Expr, TestModule, Test, Data, Dir, AllVarPairs, FinalExpr) :-
 	    NewExpr = MidExpr,
 	    VarPairs = [var_pair(Expr, NewExpr)]);
 	 (atomic(Expr); var(Expr);
-	  member(Expr, [size(_), size(_,_), at_posn(_), param(_,_,_,_,_)])), !,
+	  member(Expr, [size(_), size(_,_), at_posn(_), at_posn(_,_X,_Y),
+			param(_,_,_,_,_)])), !,
 		VarPairs = [],
 		NewExpr = Expr;
 	Expr = [_ | Tail], !,
@@ -668,7 +669,7 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, Units) :-
 		     Err = no_such_dimension(ModName, Ind));
 		    Err = submodel_name_recurs(ModName));
 		Err = absent_submodel(ModName));
-	Sub = at_posn(_CompName),
+	member(Sub, [at_posn(_CompName), at_posn(_CompName,_X,_Y)]),
 	    % turns compartment into ghost of one in a grid instance
 	    [Nums, Sizes, Units] = [[0], [0], [1]]; % will be unused
 	Sub = value(CompName),

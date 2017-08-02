@@ -48,15 +48,16 @@ compile( Language, Parent, DestDir, Action) :-
 
 transport_action(TopLevel, Capt, [Type, X, Y], [Idx1, Idx2, FlowFn]) :-
     contains(TopLevel, Fn),
-    Fn has_class_refinement value of at_posn(Capt),
+    Fn has_class_refinement value of Expr,
+    Expr =.. [at_posn, Capt | SuppliedInds],
     get_host(Fn, Comp),
     find_type(Comp, compartment),
-    find_all_comps(OverlayModel, Comp),
-    OverlayModel has_graphical_attribute internal_extent of IntExt,
     member(Comp-Sgn, [Src-(-), Dst-(+)]),
     Flow is_connector from Src to Dst,
     find_type(Flow, Type),
-    instance'><'inds_from_rel_posn(Comp, X, Y, IntExt, Idx1, Idx2),
+    (SuppliedInds = [] ->
+	 instance'><'inds_from_rel_posn(Comp, Y, X, [Idx2, Idx1]);
+     SuppliedInds = [Idx2, Idx1]),
     implicit_function(Flow, PosFlowFn),
     FlowFn =.. [Sgn, PosFlowFn].
 
@@ -100,8 +101,8 @@ build_cloud_position_arrays(ForClouds) :-
      FCMulti = [count=[]],
      ForClouds has_new_class_refinement multiplication_spec of FCMulti),
     select(count=_N, FCMulti, FCOthers),
-    find_all_comps(ForClouds, XPosns), caption_for(XPosns, xs),
-    find_all_comps(ForClouds, YPosns), caption_for(YPosns, ys),
+    find_all_comps(ForClouds, XPosns), caption_for(XPosns, stock_x),
+    find_all_comps(ForClouds, YPosns), caption_for(YPosns, stock_y),
     find_all_comps(ForClouds, Transp), caption_for(Transp, transp),
     implicit_function(XPosns, XsFn),
     implicit_function(YPosns, YsFn),
