@@ -64,6 +64,8 @@ void abort_check (InstanceOfModel* instId) {
   }
 }
 
+void* loopIndexPtrs[32] = {NULL};
+int loopIndexCounts[32];
 /*
  * Unix version: does not have min & max defined
  */

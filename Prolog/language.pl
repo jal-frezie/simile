@@ -70,7 +70,7 @@ Should really be done with make_array_assignment. */
 
 do_assignment(L, [open_index(glob(Loop, Inds), Bound) | Clauses],
                 Indent, Used, Stream) :-
-        NewIndent is Indent+4,
+        deepen_indent(Indent, NewIndent),
 	declare(L, Loop, loop, int, Used, Indent, Stream),
 % fatal question -- what does this do
 %	declare(L, _Feature, bound, int, Used, Indent, Stream),
@@ -112,10 +112,10 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	    excrete(L, assignment, AlarmVar=1, Indent, Stream),
 	    make_evaluation_routine(L, TryCond, Used, TryRef),
 	    excrete(L, while_start, TryRef, Indent, Stream),
-	    Indent1 is Indent + 4,
+	    deepen_indent(Indent, Indent1),
 	    do_assign_list(L, MyLoop, Indent1, Used, Stream),
 	    excrete(L, if_start, AlarmRef, Indent1, Stream),
-	    Indent2 is Indent1 + 4,
+	    deepen_indent(Indent1, Indent2),
 	    excrete(L, break, _, Indent2, Stream),
 	    excrete(L, end(cond), AlarmRef, Indent1, Stream),
 	    excrete(L, end(while), alarm, Indent, Stream);
@@ -126,12 +126,14 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
         (Dims == pop ->
 	    append_atoms(Name, progen, ParentPtr),
 	    BasePtrs = [ParentPtr],
-	    Names = [Name];
+	    Names = [Name],
+	    IndCount = 1;
 	  (get_ground_part(BaseLoops, GndBaseLoops) -> true;
 	   GndBaseLoops = BaseLoops),
 				% quick and dirty fix, should be gnd anyway
 	    all(compile, get_base_ptrs, [build(GndBaseLoops), append(Names, []),
-					 append(BasePtrs, [])])),
+					 append(BasePtrs, [])]),
+	    count_loops(LoopSpec, IndCount)),
 	  refer_value(L, Pointer, PointerRef),
 %	all(language, declare,
 %	    [unify(L), build(BasePtrs), unify(bad), build(Types),
@@ -145,8 +147,13 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	   do_assign_list(L, MyLoop, Indent, Used, Stream),
 	   KeepContext = yes;
 	   ptr_compare(L, PointerRef, 0, PtrNonNull),
+	   LoopLevel is Indent//4,
+	   make_indexed_reference(L, loopIndexPtrs, [LoopLevel], IndexSlot),
+	   make_indexed_reference(L, loopIndexCounts, [LoopLevel], CountSlot),
+	   excrete(L, assignment, IndexSlot=PointerRef, Indent, Stream),
+	   excrete(L, assignment, CountSlot=IndCount, Indent, Stream),
 	   excrete(L, while_start, PtrNonNull, Indent, Stream),
-	   Indent1 is Indent+4,
+	   deepen_indent(Indent, Indent1),
 	   all(language, declare_ptrs,
 	       [build(Names), build(Types), build(BasePtrs),
 		unify([L, Indent1, Stream])]),
@@ -154,7 +161,8 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 			  BasePtrs, Types, Stream),
 	   do_assign_list(L, MyLoop, Indent1, Used, Stream),
 	   excrete(L, assignment, Pointer=OnPointerRef, Indent1, Stream),
-	   excrete(L, end(while), Pointer, Indent, Stream));
+	   excrete(L, end(while), Pointer, Indent, Stream),
+	   excrete(L, assignment, IndexSlot=0, Indent, Stream));
 	LoopSpec = nbrs,
 	  template_type(nbrlist, Name, NbrsType),
 	  declare(L, NbrsPointer, nbrpointer, NbrsType, Used, Indent, Stream),
@@ -164,7 +172,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	  excrete(L, assignment, NbrsPointer=NbrsStartRef, Indent, Stream),
 	  ptr_compare(L, NbrsPointerRef, 0, PtrNonNull),
 	  excrete(L, while_start, PtrNonNull, Indent, Stream),
-	  Indent1 is Indent+4,
+	  deepen_indent(Indent, Indent1),
 	  make_struct_reference(L, NbrsPointer, payload, _ForUse, ForUseRef),
 	  excrete(L, assignment, Pointer=ForUseRef, Indent1, Stream),
 	  do_assign_list(L, MyLoop, Indent1, Used, Stream),
@@ -174,7 +182,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	  append_atoms(Name, progen, HackedName),
 	  ptr_compare(L, HackedName, 0, PtrNonNull),
 	  excrete(L, if_start, PtrNonNull, Indent, Stream),
-	  Indent1 is Indent + 4,
+	  deepen_indent(Indent, Indent1),
 	  excrete(L, assignment, Pointer=HackedName, Indent1, Stream),
 	  do_assign_list(L, MyLoop, Indent1, Used, Stream),
 	  excrete(L, end(if), HackedName, Indent, Stream);
@@ -191,7 +199,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 					   | VmUseIndices], LocateCallStr)),
 	  name(ToTest, LocateCallStr),
 	  excrete(L, if_start, ToTest, Indent, Stream),
-	  Indent1 is Indent + 4,
+	  deepen_indent(Indent, Indent1),
 	  do_assign_list(L, MyLoop, Indent1, Used, Stream),
 	  excrete(L, end(cond), ToTest, Indent, Stream)),
 	ground(KeepContext); true),
@@ -204,7 +212,7 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 			   BasePtrs) | Clauses],
 	      Indent, Used, Stream) :-
 
-        Indent1 is Indent+4,
+        deepen_indent(Indent, Indent1),
 
 	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, PointerForm),
@@ -257,7 +265,7 @@ failed through to make sure all later temporary variables get declared. */
 	(number(Phase), !,
 	    refer_value(L, MemberCheck, MemberCheckRef),
 	    excrete(L, if_start, MemberCheckRef, Indent1, Stream),
-	    Indent2 is Indent1+4;
+	    deepen_indent(Indent1, Indent2);
 	 \+ number(Phase),
 	    Indent2 = Indent1),
         % cut instance out of linked list
@@ -289,8 +297,7 @@ failed through to make sure all later temporary variables get declared. */
 	     excrete(L, end(cond), 'Instance exists', Indent, Stream),
 	     /* IfChecking */
 	     (excrete(L, if_start, MemberCheckRef, Indent, Stream),
-	        SubIndent = Indent1,
-	        do_assign_list(L, MyLoop, SubIndent, Used, Stream),
+	        do_assign_list(L, MyLoop, Indent1, Used, Stream),
 	        do_writing(CheckEnd, Stream),
 	        fail;
 	     do_assign_list(L, Later, Indent, Used, Stream));
@@ -468,7 +475,7 @@ given submodel */
 
 do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Indent,
 	      Used, Stream) :-
-	InnerIndent is Indent+4,
+	deepen_indent(Indent, InnerIndent),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
 	(make_section_cond(L, VMPtrs, PassTest),
 	    combine(L, >=, [Phase, PassTest], PhaseTest),
@@ -480,7 +487,7 @@ do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Indent,
 
 do_assignment(L, [check_cond(Cond) | Clauses], Indent,
 	      Used, Stream) :-
-	InnerIndent is Indent+4,
+	deepen_indent(Indent, InnerIndent),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
 	(make_evaluation_routine(L, Cond, Used, CondXpr),
 	    excrete(L, if_start, CondXpr, Indent, Stream),
@@ -611,7 +618,7 @@ it in a local variable, but this way is conceptually simpler, which is everythin
 
 do_assignment(L, [reproduce(ParentPtr, Pointer, Name, ReproNames) | Clauses],
 	      Indent, Used, Stream) :-
-	Indent1 is Indent + 4,
+	deepen_indent(Indent, Indent1),
 
 	append_atoms(Name, count, Count),
 	append_atoms(Name, meta, MetaPointerName),
@@ -637,8 +644,8 @@ be one of these loops; the instruction has a list of the appropriate nodes. */
 
 do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
 	      Indent, Used, Stream) :-
-	Indent1 is Indent + 4,
-	Indent2 is Indent1 + 4,
+	deepen_indent(Indent, Indent1),
+	deepen_indent(Indent1, Indent2),
 
 	/* Now stick in a loop */
 	make_struct_reference(L, ParentPtr, Name, SubmodelStartPtr, _), 
@@ -705,8 +712,8 @@ we only make the three lines that insert the submodel instance into its linked l
 	     build_junction(GenVals,  '&&', TestVal), !;
 	  TestVal = 0),
 	    excrete(L, if_start, TestVal, Indent, Stream),
-	    Indent1 is Indent+4),
-	Indent2 is Indent1+4,
+	    deepen_indent(Indent, Indent1)),
+	deepen_indent(Indent1, Indent2),
 	% only insert in linked list if new -- old ones not removed
 	make_new_check(L, Pointer, IsNew),
 	excrete(L, if_start, IsNew, Indent1, Stream),
@@ -768,6 +775,20 @@ do_assignment(L, [assign(Dest, Source) | Clauses], Indent, Used, Stream) :-
 	excrete(L, assignment, ScalarDest=Term, Indent, Stream),
 
 	do_assign_list(L, Clauses, Indent, Used, Stream).
+
+deepen_indent(Indent, Deeper) :-
+    Deeper is Indent+4.
+
+count_loops(LoopSpec, Count) :-
+    LoopSpec = set(_,_),
+      Count = 1;
+    LoopSpec = fm_loop(IndExprs,_,_,_),
+      length(IndExprs, Count);
+    LoopSpec = vm_loop(Type, Bounds, BaseLoops, _),
+    (Type == pop -> Count = 1;
+     length(Bounds, Local),
+      all(user, arg, [unify(4), build(BaseLoops), build(LoopSpecs)]),
+      all(language, count_loops, [build(LoopSpecs), +(Count, Local)])), !.
 
 template_type(TptName, Specific, TptPtr) :-
 	append_atoms([TptName, ' <', Specific, 'type> *'], TptPtr).
@@ -876,7 +897,7 @@ make_create_proc([L, ParentPtr, MMPtr, Index, Name, Indent, Used],
 
 % Add all instances associated with a channel
 add_for_channel(InitVar, [L, Index, Pointer, ParentPtr, MetaPointer, MPTarget, Name, RefIndex, Indent, Used, Stream]) :-
-	Indent1 is Indent + 4,
+	deepen_indent(Indent, Indent1),
 
 	/* Now loop on compartment to create submodel */
 	make_struct_reference(L, Pointer, InitVar, CompVal, CompValRef),

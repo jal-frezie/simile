@@ -151,9 +151,6 @@ proc ExecuteTo {node current pause unitLength display foci \
 		    set currentMode stop
 		}
 		set scaled_current [lindex $scaled_current 3]
-	    } 4 { ;# compartment out of range
-		ExplainError $node [lrange $scaled_current 1 end] unused
-		set currentMode stop
 	    }
 	} ;# default: keep going
 	set current [expr {$scaled_current/$unitLength}]
