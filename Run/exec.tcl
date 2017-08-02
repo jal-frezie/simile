@@ -264,7 +264,7 @@ proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
 	}
     } errList]} {
 	if {[string match tcl_model_err* $errList]} {
-#	    set severity [ExplainError $myNode [lrange $errList 1 end] \
+	    set severity [ExplainError $myNode [lrange $errList 1 end] \
 			  $::errorInfo]
 	} else {
 	    error "Unexpected problem in Tcl model execution" $::errorInfo
@@ -273,8 +273,9 @@ proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
 	return $errList
     } elseif {[lindex $errList 5] eq "event"} {
 	return [list 2 $errList]
+    } else {
+	set severity [ExplainError $myNode [lrange $errList 1 end] unused]
     }
-    set severity [ExplainError $myNode [lrange $errList 1 end] $::errorInfo]
     InteractGUI $myNode [lindex $errList 3] 2
     return [list $severity [lindex $errList 3]]
 }
