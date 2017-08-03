@@ -147,10 +147,15 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	   do_assign_list(L, MyLoop, Indent, Used, Stream),
 	   KeepContext = yes;
 	   ptr_compare(L, PointerRef, 0, PtrNonNull),
-	   LoopLevel is Indent//4,
+	   ensure_unused('/slot', Free, Used, []),
+	   (atom_concat('/slot_', LoopNumAtom, Free) ->
+		atom_number(LoopNumAtom, LoLoopNum),
+		LoopLevel is LoLoopNum+1;
+	    LoopLevel=0),
 	   make_indexed_reference(L, loopIndexPtrs, [LoopLevel], IndexSlot),
 	   make_indexed_reference(L, loopIndexCounts, [LoopLevel], CountSlot),
-	   excrete(L, assignment, IndexSlot=PointerRef, Indent, Stream),
+	   make_pointer(L, PointerRef, PointerRefPtr),
+	   excrete(L, assignment, IndexSlot=PointerRefPtr, Indent, Stream),
 	   excrete(L, assignment, CountSlot=IndCount, Indent, Stream),
 	   excrete(L, while_start, PtrNonNull, Indent, Stream),
 	   deepen_indent(Indent, Indent1),

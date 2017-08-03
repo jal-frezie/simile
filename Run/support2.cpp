@@ -128,10 +128,13 @@ t3 = estimate of next initial increment
     extras->t1 = extras->t1/dts[step];
     return result;
   case 5: case 6:
-    if ((useLims & 1) && comp<min && comp-extras->t2>=min)
+    if ((useLims & 1) && comp<min && comp-extras->t2>=min) {
       userStop.targetId = -graphId;
-    else if ((useLims & 2) && comp>max && comp-extras->t2<=max)
+      report_context();
+    } else if ((useLims & 2) && comp>max && comp-extras->t2<=max) {
       userStop.targetId = graphId;
+      report_context();
+    }
    return 0;
   case -1: // undoes previous change Euler
     result = extras->t2;
@@ -153,6 +156,23 @@ t3 = estimate of next initial increment
     return 0;
   };
 };
+
+void InstanceOfModel::report_context() {
+  int itIsThus[32], mdCount = 0, ctxCount = 0, n, *m;
+  while (loopIndexPtrs[mdCount]) {
+    if (loopIndexCounts[mdCount] == -1) {
+      itIsThus[ctxCount++] = *(int*)(loopIndexPtrs[mdCount]);
+    } else {
+      for (n=0; n<loopIndexCounts[mdCount]; ++n) {
+	m = &n;
+	m = (int*)(*(submodeltype**)(loopIndexPtrs[mdCount]))->get_pointer(2, &m);
+	itIsThus[ctxCount++] = *m;
+      }
+    }
+    ++mdCount;
+  }
+  compare_instance_status(itIsThus, itIsThus, -ctxCount);
+}
 
 BOOLEAN RealPhase(int phase) {
   return phase==5 || phase==6 || phase==9;

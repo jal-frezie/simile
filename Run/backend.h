@@ -89,6 +89,8 @@ public:
   // above saves identity of predicted events as pointer to their structure
   ExecutingModel* partner;
   double ts[8], dts[8];
+  void* loopIndexPtrs[32];
+  int loopIndexCounts[32];
 
   // functions called by host module
   virtual int do_evalmodel(int) = 0;
@@ -102,6 +104,7 @@ public:
   // support functions called by model code
   double stage_incr (double, diffs*, int, double, int, double, double, int);
   int check_limit(double, double, double, int, int, int, diffs*);
+  void report_context(void);
   template <class modeldata> 
     modeldata retract_from_pipe(delay<modeldata>*, int);
   template <class modeldata> 

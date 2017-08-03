@@ -272,14 +272,27 @@ double erand48_by_val(void* seed) {
   return erand48((unsigned short int*)seed);
 }
 
+int latestContext[32];
+int contextDepth = 0;
 int compare_instance_status (const int pointers[], const int ref_pointers[], 
 			     int num) {
    int count;
+   if (num<=0) { // using this proc to copy model context back is a hack
+     contextDepth = -num;
+     for (count=0;count<contextDepth;++count) {
+       latestContext[count] = pointers[count];
+     }
+   }
    for (count=0; count<num; count++) {
      if (pointers[count]<ref_pointers[count]) return -1;
      if (pointers[count]>ref_pointers[count]) return 1;
    }
    return 0;
+}
+
+int retrieve_context(int** ctxPtr) {
+  *ctxPtr = latestContext;
+  return contextDepth;
 }
 
 void append_ints_to_null(int* dest, int* src, int sep, int sep2) {

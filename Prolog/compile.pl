@@ -579,7 +579,7 @@ wot need them */
 insert_metadata(Language, FullModel, Used, Stream) :-
 	tk_update_infobox(pl_meta, []),
 	extract_instances(FullModel, RealDecls),
-	(nth(Posn, RealDecls, Instance),
+	(nth(Posn, RealDecls, Instance), % skip introspect arrays
 	 generate_metadata(Language, Instance, [], Posn, Used, Stream),
 	 fail;
 	make_constant_list(Language, StructText),
@@ -779,7 +779,7 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 			DeclsOnly = [])),
 	    Extras = [instance(system, next, _, next, PtrType-[]),
 		      instance(system, ids,_, instanceid, int-DummyCompDims)];
-	Extras = [],
+	 Extras = [],
 	    DeclsOnly = []),
 	(builtin_nbr_refs(SymbolicName, _) ->
 	    template_type(nbrlist, Name, NbrListType),

@@ -96,7 +96,12 @@ proc ExplainError {myNode errList origError} {
 	}
 	set target [lindex $targetList 0]
     } elseif {![string equal none $dest]} { ;# caption extracted by c++ error handling
-	set target $dest
+	if {[llength $dest] == 1} {
+	    set target $dest
+	} else {
+	    set target \
+		"[lindex $dest 0] at indices [join [lrange $dest 1 end] ,]"
+	}
     }
 
     switch -glob -- $whoopsie {

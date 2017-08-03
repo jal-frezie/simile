@@ -377,9 +377,11 @@ void get_string_for_error(char *spare, int error) {
 Tcl_Obj* make_exec_error(Tcl_Interp* interp, int excpNo, const char* phase, 
 			 const char* tgt,  double time, int step) {
   char complaint[256];
-  Tcl_Obj* errList;
+  Tcl_Obj *errList, *tgtList;
+  int n, ctxNum, *ctxVals;
 
   errList=Tcl_NewListObj(0, NULL);
+  tgtList=Tcl_NewListObj(0, NULL);
   get_string_for_error(complaint, excpNo);
 
   if (excpNo <= -96 && excpNo > -99) // event exits inner loop
@@ -388,8 +390,13 @@ Tcl_Obj* make_exec_error(Tcl_Interp* interp, int excpNo, const char* phase,
     Tcl_ListObjAppendElement(interp, errList, 
 			     Tcl_NewStringObj("tcl_model_err", -1));
 
+  Tcl_ListObjAppendElement(interp, tgtList, Tcl_NewStringObj(tgt, -1));
+  ctxNum = retrieve_context(&ctxVals);
+  for (n=0; n<ctxNum; ++n) {
+    Tcl_ListObjAppendElement(interp, tgtList, Tcl_NewIntObj(ctxVals[n]));
+  }
   Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(phase, -1));
-  Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(tgt, -1));
+  Tcl_ListObjAppendElement(interp, errList, tgtList);
   Tcl_ListObjAppendElement(interp, errList, Tcl_NewDoubleObj(time));
   Tcl_ListObjAppendElement(interp, errList, Tcl_NewIntObj(step));
   Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(complaint, -1));
