@@ -579,7 +579,7 @@ wot need them */
 insert_metadata(Language, FullModel, Used, Stream) :-
 	tk_update_infobox(pl_meta, []),
 	extract_instances(FullModel, RealDecls),
-	(nth(Posn, RealDecls, Instance), % skip introspect arrays
+	(nth(Posn, RealDecls, Instance),
 	 generate_metadata(Language, Instance, [], Posn, Used, Stream),
 	 fail;
 	make_constant_list(Language, StructText),

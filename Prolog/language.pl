@@ -80,9 +80,14 @@ do_assignment(L, [open_index(glob(Loop, Inds), Bound) | Clauses],
 	        append_atoms(Name, made, MadeBound),
 	        make_struct_reference(L, Ptr, MadeBound, _, UseBoundRef);
 	     UseBoundRef = Bound),
+	    set_introspect(L, Used, IndexSlot, CountSlot),
+	    make_pointer(L, Count, CountPtr),
+	    excrete(L, assignment, IndexSlot = CountPtr, Indent, Stream),
+	    excrete(L, assignment, CountSlot = -1, Indent, Stream),
 	    excrete(L, for_start, [Count, UseBoundRef, 1], Indent, Stream),
 	    do_assign_list(L, MyLoop, NewIndent, Used, Stream),
 	    excrete(L, end(for), Count, Indent, Stream),
+	    excrete(L, assignment, IndexSlot=0, Indent, Stream),
 	    fail;
 	do_assign_list(L, Later, Indent, Used, Stream)).
 
@@ -147,15 +152,9 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	   do_assign_list(L, MyLoop, Indent, Used, Stream),
 	   KeepContext = yes;
 	   ptr_compare(L, PointerRef, 0, PtrNonNull),
-	   ensure_unused('/slot', Free, Used, []),
-	   (atom_concat('/slot_', LoopNumAtom, Free) ->
-		atom_number(LoopNumAtom, LoLoopNum),
-		LoopLevel is LoLoopNum+1;
-	    LoopLevel=0),
-	   make_indexed_reference(L, loopIndexPtrs, [LoopLevel], IndexSlot),
-	   make_indexed_reference(L, loopIndexCounts, [LoopLevel], CountSlot),
-	   make_pointer(L, PointerRef, PointerRefPtr),
-	   excrete(L, assignment, IndexSlot=PointerRefPtr, Indent, Stream),
+	   set_introspect(L, Used, IndexSlot, CountSlot),
+	   make_pointer(L, Pointer, PointerPtr),
+	   excrete(L, assignment, IndexSlot=PointerPtr, Indent, Stream),
 	   excrete(L, assignment, CountSlot=IndCount, Indent, Stream),
 	   excrete(L, while_start, PtrNonNull, Indent, Stream),
 	   deepen_indent(Indent, Indent1),
@@ -794,6 +793,17 @@ count_loops(LoopSpec, Count) :-
      length(Bounds, Local),
       all(user, arg, [unify(4), build(BaseLoops), build(LoopSpecs)]),
       all(language, count_loops, [build(LoopSpecs), +(Count, Local)])), !.
+
+set_introspect(L, Used, IndexSlot, CountSlot) :-
+    ensure_unused('/slot', Free, Used, []),
+    (atom_concat('/slot_', LoopNumAtom, Free) ->
+	 atom_number(LoopNumAtom, LoLoopNum),
+	 LoopLevel is LoLoopNum+1;
+     LoopLevel=0),
+    make_struct_reference(L, this, loopIndexPtrs, LIP),
+    make_struct_reference(L, this, loopIndexCounts, LIC),
+    make_indexed_reference(L, LIP, [LoopLevel], IndexSlot),
+    make_indexed_reference(L, LIC, [LoopLevel], CountSlot).
 
 template_type(TptName, Specific, TptPtr) :-
 	append_atoms([TptName, ' <', Specific, 'type> *'], TptPtr).

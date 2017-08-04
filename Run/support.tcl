@@ -66,6 +66,8 @@ proc tcl_insert {node newVs} {
     return novalue
 }
 proc ExplainError {myNode errList origError} {
+    global introspect
+    
     set severity -1
     set what [lindex $errList 0]
     set dest [lindex $errList 1]
@@ -86,6 +88,9 @@ proc ExplainError {myNode errList origError} {
 		set target "[GetFullCaption $record] (node [lindex $record 0])"
 		break;
 	    }
+	}
+	if {[llength $introspect]} {
+	    append target " at indices [join $introspect ,]"
 	}
     } elseif {[string first :: $dest]>-1} { ;# a Tcl namespace hierarchy
 	set targetList [DescribeComponent $myNode $dest]
@@ -478,10 +483,12 @@ proc stage_incr {ns_comp ns_extras step v useLims min max gId} {
 	    if {$useLims & 1} {
 		if {$comp < $min && $comp-$t2>=$min} {
 		    set adapt(culprit) -$gId
+		    report_context
 		}
 	    } elseif {$useLims & 2} {
 		if {$comp > $max && $comp-$t2<=$max} {
 		    set adapt(culprit) $gId
+		    report_context
 		}
 	    }
 	    set result 0
@@ -510,6 +517,24 @@ proc stage_incr {ns_comp ns_extras step v useLims min max gId} {
     }
     set extras [list $t1 $t2 $t3]
     return $result
+}
+
+proc report_context {} {
+    namespace eval ::AME_model<> {
+    set ::introspect {}; set mdCount 0; set ctxCount 0
+
+    while {[set loopIndexPtrs($mdCount)] ne 0} {
+	if {[set loopIndexCounts($mdCount)] == -1} {
+	    lappend ::introspect [set $loopIndexPtrs($mdCount)]
+	    incr ctxCount
+	} else {
+	    eval lappend ::introspect \
+		[set [set [set loopIndexPtrs($mdCount)]]::instanceid]
+	    incr ctxCount [set loopIndexCounts($mdCount)]
+	}
+	incr mdCount
+    }
+    }
 }
 
 proc check_limit {trigger lower upper action graphId step ns_extras} {
@@ -701,6 +726,7 @@ proc abort_check {args} {
 proc TclResetModel {node t0 doingRK topPhase} {
     global myNode ts dts steps phasecount adapt adapt_maxerr event
 
+    for {set i 0} {$i < 32} {incr i} {set ::AME_model<>::loopIndexPtrs($i) 0}
     set myNode $node
     set ts(0) 9 ;# start prediction cycle
     if {$topPhase <= 0} {

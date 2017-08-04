@@ -89,7 +89,8 @@ public:
   // above saves identity of predicted events as pointer to their structure
   ExecutingModel* partner;
   double ts[8], dts[8];
-  void* loopIndexPtrs[32];
+  void* loopIndexPtrs[32] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+			     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   int loopIndexCounts[32];
 
   // functions called by host module
@@ -104,7 +105,6 @@ public:
   // support functions called by model code
   double stage_incr (double, diffs*, int, double, int, double, double, int);
   int check_limit(double, double, double, int, int, int, diffs*);
-  void report_context(void);
   template <class modeldata> 
     modeldata retract_from_pipe(delay<modeldata>*, int);
   template <class modeldata> 
@@ -113,6 +113,7 @@ public:
   void collect(void*, int, int, ...);
   int stop_on_id(int, int);
   int stop(int);
+  void report_context(void);
 };
 // Declaration for procedure types found in the model dll by the shank
 typedef void model_requests_file_param_type(void*, void*, int, 
