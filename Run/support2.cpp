@@ -239,6 +239,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       if (out) {
 	if (out != extras->t3) { 
 	  userStop.targetId = graphId; // for pause-on-event reporting
+	  report_context();
 	  extras->t3 = out;
 	  return out; // cannot return result of above assignment
 	  // because some compilers then complain about type conversion

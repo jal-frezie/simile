@@ -596,6 +596,7 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 		if {$out} {
 		    if {$out != [lindex $extras 2]} {
 			set event(culprit) $graphId
+			report_context
 			lset extras 2 $out
 			return [expr {$out*($action==1?-1:1)}]
 # if doing lower bound only, result should be boolean so return 1 not -1
