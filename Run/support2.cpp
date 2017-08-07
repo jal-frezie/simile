@@ -290,6 +290,7 @@ modeldata InstanceOfModel::retract_from_pipe(delay<modeldata>* extras,
   if (dts[0]>0) {
     ret = extras->retract(time, for_real);
     if (ret && for_real)
+      report_context();
       userStop.targetId = graphId;
     return ret;
   }

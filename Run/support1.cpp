@@ -45,6 +45,7 @@ int InstanceOfModel::stop_on_id(int lineId, int code) {
   //  throw InternalStop(lineId,code);
   // this causes it to stop at end of step
   userStop.targetId = lineId;
+  report_context();
   return (userStop.excpNo = code);
 }
 

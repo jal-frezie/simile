@@ -1821,6 +1821,7 @@ proc tcl::mathfunc::retract_from_pipe {ns_extras id} {
     if {[RealPhase $phase]} {
 	set extras [lreplace $extras 0 $where-1]
 	if {$unload} {
+	    report_context
 	    set event(culprit) $id
 	}
     }
