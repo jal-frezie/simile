@@ -127,7 +127,7 @@ namespace eval ::$keyValue {
             
             set pathLength [llength $path]
             #ShowMess debug info "$component; $type; path $path;" ok
-            if {$pathLength == 1} {
+            if {$pathLength <= 1} {
                 set parent {}
             } else  {
                 set parentLabel [lrange $path 0 [expr {$pathLength-2}]]; # indexed from 0

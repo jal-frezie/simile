@@ -1605,6 +1605,7 @@ int ModelServer::make_full_caption(int line, char *result, int* dims,
     }
     if ((parent = parent_line(line)) >= 0) {
       typesSoFar = count+make_full_caption(parent, result, dims, types+count);
+      strcat(result, "/");
     } else {
       *result = (char)NULL;
       *dims = 0;
@@ -1619,10 +1620,9 @@ int ModelServer::make_full_caption(int line, char *result, int* dims,
       count++;
     }
     // add this levels caption unless it is top
-    if (parent>=0) {
-      strcat(result, "/");
+    if (parent>=0  || nodedata[line].compclass != SUBMODEL)
       strcat(result, nodedata[line].strings[0]);
-    }
+    
     append_ints_to_null(dims, nodedata[line].dims, 0, 0);
     /* add this levels type data -- reverse order cos outer models start list
     for (count=nodedata[line].enum_type_count-1;count>=0;--count) {
