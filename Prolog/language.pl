@@ -138,7 +138,8 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 				% quick and dirty fix, should be gnd anyway
 	    all(compile, get_base_ptrs, [build(GndBaseLoops), append(Names, []),
 					 append(BasePtrs, [])]),
-	    count_loops(LoopSpec, IndCount)),
+	    count_loops(LoopSpec, IndList),
+	    length(IndList, IndCount)),
 	  refer_value(L, Pointer, PointerRef),
 %	all(language, declare,
 %	    [unify(L), build(BasePtrs), unify(bad), build(Types),
@@ -784,15 +785,11 @@ deepen_indent(Indent, Deeper) :-
     Deeper is Indent+4.
 
 count_loops(LoopSpec, Count) :-
-    LoopSpec = set(_,_),
-      Count = 1;
-    LoopSpec = fm_loop(IndExprs,_,_,_),
-      length(IndExprs, Count);
-    LoopSpec = vm_loop(Type, Bounds, BaseLoops, _),
-    (Type == pop -> Count = 1;
-     length(Bounds, Local),
-      all(user, arg, [unify(4), build(BaseLoops), build(LoopSpecs)]),
-      all(language, count_loops, [build(LoopSpecs), +(Count, Local)])), !.
+    LoopSpec = set(I,_),
+      Count = [I];
+    LoopSpec = fm_loop(_IndExprs,_,_,_),
+      Count = []; % should match those in set() levels
+    LoopSpec = vm_loop(_Type, Count, _, _).
 
 set_introspect(L, Used, IndexSlot, CountSlot) :-
     ensure_unused('/slot', Free, Used, []),
@@ -800,8 +797,8 @@ set_introspect(L, Used, IndexSlot, CountSlot) :-
 	 atom_number(LoopNumAtom, LoLoopNum),
 	 LoopLevel is LoLoopNum+1;
      LoopLevel=0),
-    make_struct_reference(L, this, loopIndexPtrs, LIP),
-    make_struct_reference(L, this, loopIndexCounts, LIC),
+    make_struct_reference(L, this, loopIndexPtrs, LIP, _),
+    make_struct_reference(L, this, loopIndexCounts, LIC, _),
     make_indexed_reference(L, LIP, [LoopLevel], IndexSlot),
     make_indexed_reference(L, LIC, [LoopLevel], CountSlot).
 

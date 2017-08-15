@@ -416,6 +416,12 @@ set msgs(mismatched_units_message) [tr. {The arguments of the function "%1$s" in
 set msgs(mixed_trigger_units_title) [tr. {Trigger types incompatible}]
 set msgs(mixed_trigger_units_message) [tr. {The events that trigger the derived event "%1$s" have the following types: %2$s. These cannot be combined to produce a trigger magnitude that can be used in the event's equation.}]
 
+set msgs(no_antecedents_for_derived_title) [tr. {Nothing to trigger %1$s}]
+set msgs(no_antecedents_for_derived_message) [tr. {The derived event "%1$s" does not have influences from any other events, so it would never occur.}]
+
+set msgs(no_triggering_events_title) [tr. {Nothing to trigger %1$s}]
+set msgs(no_triggering_events_message) [tr. {The rule-based state variable "%1$s" does not have influences from any events, so it would never change from its initial value.}]
+
 set msgs(cannot_set_dims_title) [tr. {Not enough info}]
 set msgs(cannot_set_dims_message) [tr. {The equation does not provide enough information to allow the size of dimension %1$s of explicit intermediate result %2$s to be determined.}]
 
