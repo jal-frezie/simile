@@ -55,6 +55,7 @@ EXPORT InstanceOfModel* do_createmodel(ExecutingModel* outerRef) {
   char mess[255];
   // sprintf(mess, "Model .dll setting partner to %lx", (long)outerRef);
   // suppShowMess(mess);
+  memset(newInst->loopIndexPtrs, 0, 32*sizeof(void*));
   return newInst;
 }
 

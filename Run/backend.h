@@ -89,8 +89,7 @@ public:
   // above saves identity of predicted events as pointer to their structure
   ExecutingModel* partner;
   double ts[8], dts[8];
-  void* loopIndexPtrs[32] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-			     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  void* loopIndexPtrs[32];
   int loopIndexCounts[32];
 
   // functions called by host module
