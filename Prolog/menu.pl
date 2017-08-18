@@ -1334,6 +1334,7 @@ remove_model(Win, Parent) :-
 	    finish_progress_dialogue,
 	    redisplay(Parent))),
 	clear_model_file(Parent),
+	m_update'><'clear_av_pair(Parent, 1, c_new),
 	use_temp_dir(LocalDir),
 	abs_path_name(Parent, root, DeleteDir),
 	output'><'trim_tree(LocalDir, DeleteDir).
