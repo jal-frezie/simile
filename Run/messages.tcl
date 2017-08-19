@@ -441,6 +441,10 @@ set msgs(ordering_failure_title) [tr. {Problem ordering calculations}]
 set msgs(ordering_failure_message) [tr. {Failed to put this instruction into ordered sequence, despite it not seeming to depend on anything: %1$s}]
 set msgs(ordering_failure_detail) [tr. {Please contact your software supplier.}]
 
+set msgs(using_own_value_title) [tr. {Problem with model design}]
+set msgs(using_own_value_message) [tr. {This model contains the target %1$s which depends on its own values from the previous time step. The model will run, but changing the time step size may have major effects on the results.}]
+set msgs(using_own_value_detail) [tr. {If an iterative calculation is required, use an alarm submodel, or a multi-instance submodel or array where each value is calculated from the previous one.}]
+
 set msgs(condition_outside_loop_title) [tr. {Problem with model design}]
 set msgs(condition_outside_loop_message) [tr. {This model contains the target %1$s which depends on its own values from previous iterations of a program loop, which are used to make component %2$s. However the cycle of evaluations includes target %3$s, which is calculated outside the innermost program loop in which the values of %2$s are used by target %1$s}]
 

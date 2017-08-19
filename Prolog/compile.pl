@@ -2126,7 +2126,13 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		   member(make(Alarm, _,_, [_,_, AlP, AlDone | _], _), All),
 		   var(AlDone),
 		   AlP =< Phase),
-			    
+
+	    % do not exit loop if it contains unsatisfied later() condition
+            \+ (loops(SmLevel),
+		member(make(_, Conds-_, _,_,_), SubPass),
+		member(later(Hanger), Conds),
+		not_yet_ordered(Hanger)),
+	    
 	    /* OK, have I just done an existence test for it? */
 	    (nonvar(TestPhase), TestPhase = test_at(TestStep, TestGo, TestLen),
 	        CondLen is TestGo + TestLen,
