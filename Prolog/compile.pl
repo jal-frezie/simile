@@ -1794,7 +1794,7 @@ connect_params(AllInsts, Insts) :-
 		 !); % same if in association
 	       SafePath = [_RetroLevel | CommonPath],
 	        suffix(SafePath, Path), !; % stay inside loop using vals
-	       raise_exception(using_own_value(Deferred)));
+	       query(using_own_value(Deferred), warning, top, [ok], _));
 	     SafePath = CommonPath),
 							   
 	    (SafePath = Path, /* comment out to disable */ !,
@@ -2078,13 +2078,14 @@ order_assignments(Phase, Path, RawAssign, All, OrderedAssign) :-
 	/* Now check if we picked any instructions at this level with 'later'
 	conditions that we couldn't resolve: if so, redo order_phase.
 	18/2/10: changed OrderedAssign to ThisPhase in next line because o_d_a
-	contains cuts and cannot be redone. Other effects? */
+	contains cuts and cannot be redone. Other effects? Check should really
+        be done in o_d_a...
 	\+ (member(make(_, Conds-_, _,_,_), ThisPhase),
 	       member(later(Hanger), Conds),
 	       not_yet_ordered(Hanger),
 	       Hanger = make(_,_, CPath, _,_),
 %	       remove_non_loopers(CPath, UCPath),
-	       \+ suffix([_Gap | CPath], Path)),
+	       \+ suffix([_Gap | CPath], Path)), */
 	!. % cut added to prevent crash in swipl debugger, should be green
 
 	

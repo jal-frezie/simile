@@ -1371,10 +1371,11 @@ Now one that uses a special conditional level */
 		    throw(lost_user_defined_fn(Source, Op, Arity));
 		 throw(no_such_function(Source, Op)))),
 	    (Source = sofar(_), !,
-	     (member(Level, DestPath), loops(Level) -> Wrapper = later;
-	      Wrapper = this_step),
+	     % (member(Level, DestPath), loops(Level) -> Wrapper = later;
+	     %  Wrapper = this_step),
 	     % another botch to get round need to exit submodel to change step
-	     % size. 
+	     % size -- a need that no longer exists.
+	        Wrapper = later,
 		all(inters, dissociate,
 		    [unify(Wrapper), build(SubArgs), build(Args)]);
 	    Args = SubArgs);
