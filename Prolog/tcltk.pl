@@ -8,7 +8,10 @@ any_tcl_eval(Cmd, Except, Result) :-
         decode_command(Cmd, BrokenString),
 	convert_crs(BrokenString, TtfnString),
 	all_ttfn_to_utf8(TtfnString, String),
-	format("send_tcl_cmd ~s", [String]), nl,
+%	format("send_tcl_cmd ~s", [String]), nl,
+% ~s with big strings asking for trouble
+	append("send_tcl_cmd ", String, PlString),
+	sicstus_write_chars(PlString), nl,
 	flush_output, fail;
 	wait_for_tcl(Except, Response),
 	Result = Response.
