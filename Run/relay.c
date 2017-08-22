@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #ifdef WIN32
 #include <process.h>
@@ -44,7 +45,7 @@ FILE* pip;
 char fname[256];
 char mess[256];
 
-main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
 #ifdef USE_SEMAPHORE
 	/*
 	http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dllproc/base/createsemaphore.asp

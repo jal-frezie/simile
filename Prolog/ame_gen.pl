@@ -669,7 +669,7 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, Units) :-
 		     Err = no_such_dimension(ModName, Ind));
 		    Err = submodel_name_recurs(ModName));
 		Err = absent_submodel(ModName));
-	member(Sub, [at_posn(_CompName), at_posn(_CompName,_X,_Y)]),
+	member(Sub, [at_posn(_CompName), at_posn(_CompNameXY,_X,_Y)]),
 	    % turns compartment into ghost of one in a grid instance
 	    [Nums, Sizes, Units] = [[0], [0], [1]]; % will be unused
 	Sub = value(CompName),

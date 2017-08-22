@@ -166,7 +166,7 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	    ArcFromF has_type influence,
 	    initiates(ArcFromF, F),
 	    F has_class_refinement value of AtPosnExpr,
-	    (member(AtPosnExpr, [at_posn(_RC), at_posn(_RC, _X, _Y)]) ->
+	    (member(AtPosnExpr, [at_posn(_RC), at_posn(_RCXY, _X, _Y)]) ->
 		 SetterType = function,
 		 Instances = [instance(variable, Node, _, Home, Base-Units)];
 			      % quick'n'dirty -- do, but overwrite
