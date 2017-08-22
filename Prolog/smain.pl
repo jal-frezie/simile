@@ -67,7 +67,15 @@ close_internally_formatted_stream(Stm) :-
 
 chars_from_stream(Stream, Pred, Chars) :-
         with_output_to_chars((current_output(Stream), Pred), Chars).
-    
+
+% 'make' should not recursively display all conds during debug
+efx_of([],[]).
+efx_of([make(E, _,_,_,_)  | Insts], [E | Efx]) :-
+    efx_of(Insts, Efx).
+portray(make(E, Conds-Z, P, F, A)) :-
+    efx_of(Conds, CondEs),
+    print(make(E, CondEs, Z, P, F, A)).
+
 % use sgml library to convert XMLv3 model specs to superficial Prolog syntax
 % -- GNU does this with its own libxml2 bindings
 :- use_module(library(sgml)).
