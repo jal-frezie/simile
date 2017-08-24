@@ -770,7 +770,7 @@ proc FormatVals {fmt list} {
 }
 
 proc SafeFormat {fmt val} {
-    if {$val==$val} {
+    if $val==$val {
 # nan raises error on format and is only real value that does not equal itself
 	return [format $fmt $val]
     } else {
