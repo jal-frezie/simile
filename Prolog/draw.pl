@@ -521,8 +521,9 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    Draw_command =.. [DCmd, Wid, Screen_list, Num, Fatness,
 				  Density, Colour_scheme, [Comp]],
 		call(Draw_command);
-	    output'><'safe_tcl_eval([puts, dq(['Failed to draw component',
-			Comp, 'as', Style, '...removing'])], _),
+	    output'><'safe_tcl_eval(['DebugMess',
+				     dq(['Failed to draw component', Comp,
+					 'as', Style, '...removing'])], _),
 		m_update'><'oblitterfry(Comp)),
 	    (get_display_depth(Wid, caption, Caption_detail),
 	     ((Style is_class_of_sort captionless; \+ appears(Comp);

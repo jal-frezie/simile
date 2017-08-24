@@ -1346,7 +1346,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 		mime::getbody $multiT -command SquirtMime -blocksize 256} crypt]
 	    } {
 		# really trying to load a pre-MIME version...?
-		puts "assuming v3x spf because: $crypt"
+		DebugMess "assuming v3x spf because: $crypt"
 		set metaFile $oldPath
 		set paramState(origVersion) 0.0
 	    }

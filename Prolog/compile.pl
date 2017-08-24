@@ -1793,11 +1793,13 @@ connect_params(AllInsts, Insts) :-
 		 SafePath = [sm(_,_,_, vm_loop(_,_, [_B1, _B2 |_], _)) | _],
 		 !); % same if in association
 	       SafePath = [_RetroLevel | CommonPath],
-	        suffix(SafePath, Path), !; % stay inside loop using vals
+	       suffix(SafePath, Path), !; % stay inside loop using vals
+	       % UsingLast = 1, use later to sidestep ordering constraints
 	       query(using_own_value(Deferred), warning, top, [ok], _));
 	     SafePath = CommonPath),
 							   
-	    (SafePath = Path, /* comment out to disable */ !,
+	    (SafePath = Path,
+	        % var(UsingLast), not like this
 		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
 				     Acts) | LeftInsts];
  	     suffix(SafePathPlus, PathPlus),
@@ -2066,15 +2068,14 @@ delay_clearing(Mess, [make(clearing(Total), CConds, CPath, IPhase, CAct),
 phases, the instructions have an extra argument to say which phase they go in,
 allowing there to be more than two. */
 
-order_assignments(Phase, Path, RawAssign, All, OrderedAssign) :-
-	RawAssign = make_level(_Cur, Items, _Subs),
+order_assignments(Phase, Path, EndPts, All, Assign) :-
+	EndPts = make_level(Cur, Items, Subs),
 	% (Path = [sm(Capt, _,_,_) | _];
 	%     Path = [set(_, loop(Capt, _)) | _];
 	%     Path = [], Capt = top),
 	% tk_update_infobox(pl_locn, [Capt, Phase]),
 	order_phase(Phase, Path, Items, All, ThisPhase, []),
-	order_deeper_assignments(Phase, Path, RawAssign, All, DeepAssign),
-	append(ThisPhase, DeepAssign, OrderedAssign),
+
 	/* Now check if we picked any instructions at this level with 'later'
 	conditions that we couldn't resolve: if so, redo order_phase.
 	18/2/10: changed OrderedAssign to ThisPhase in next line because o_d_a
@@ -2086,16 +2087,16 @@ order_assignments(Phase, Path, RawAssign, All, OrderedAssign) :-
 	       Hanger = make(_,_, CPath, _,_),
 %	       remove_non_loopers(CPath, UCPath),
 	       \+ suffix([_Gap | CPath], Path)), */
-	!. % cut added to prevent crash in swipl debugger, should be green
+	% !. cut added to prevent crash in swipl debugger, should be green
 
 	
-order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
+
 	( %unfinished_submodels(Later, Phase, Path, Subs),
-	    EndPts = make_level(_Cur, _Items, Subs),
 	    member(SubEndPts, Subs),
 	    SubEndPts = make_level(SmLevel, _,_), 
 	    /* try something from what is left -- no commitment yet */
-	    (SmLevel = sm(Sm, _,_, vm_loop(_,_,_,_)) ->
+	    (SmLevel = sm(Sm, _,_, vm_loop(_,_,_,EnumPhase)) ->
+	        Phase >= EnumPhase,
 		order_submodel_assignments(Phase, [SmLevel | Path], SubEndPts,
 					    All, SubPass, TestPhase),
 		    /* do not go into a sumbodel if I cannot get the existence
@@ -2127,12 +2128,28 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		   var(AlDone),
 		   AlP =< Phase),
 
-	    % do not exit loop if it contains unsatisfied later() condition
-            \+ (loops(SmLevel),
-		member(make(_, Conds-_, _,_,_), SubPass),
-		member(later(Hanger), Conds),
-		not_yet_ordered(Hanger)),
-	    
+	    do_clever_stuff(Phase, TestPhase, SmLevel, Path, SubPass, CondPass,
+			    FirstStep, LastStep),
+	    	    /* Now if I have done some submodel assignments, recurse at
+		the same level */
+	    order_assignments(Phase, Path, EndPts, All, NewOrdered),
+	    % check we actually do something, otherwise do not add loop...
+	    (member(make(_,_,_,_, [_Act | _]), CondPass) ->
+		append([FirstStep, CondPass, LastStep, NewOrdered],
+		       OrderedAssign);
+	     append(CondPass, NewOrdered, OrderedAssign));
+	    OrderedAssign = []),
+	append(ThisPhase, OrderedAssign, Assign),
+	% do not exit loop if it contains unsatisfied later() condition.
+        % Otherwise, exit and cut.
+        (member(make(_, Conds-_, _,_,_), Assign),
+	    member(later(Hanger), Conds),
+	    not_yet_ordered(Hanger) ->
+          \+ loops(Cur);
+	 !). % very red -- commit to submodel order!
+
+do_clever_stuff(Phase, TestPhase, SmLevel, Path, SubPass, CondPass,
+	       FirstStep, LastStep) :-
 	    /* OK, have I just done an existence test for it? */
 	    (nonvar(TestPhase), TestPhase = test_at(TestStep, TestGo, TestLen),
 	        CondLen is TestGo + TestLen,
@@ -2235,17 +2252,9 @@ order_deeper_assignments(Phase, Path, EndPts, All, OrderedAssign) :-
 		get_pass_ends(SmLevel, StartPass, FinishPass),
 		FirstStep = [StartPass],
 		LastStep = [FinishPass],
-		CondPass = SubPass),
+		CondPass = SubPass).
 
-	    /* Now if I have done some submodel assignments, recurse at
-		the same level */
-	    order_assignments(Phase, Path, EndPts, All, NewOrdered),
-	    % check we actually do something, otherwise do not add loop...
-	    (member(make(_,_,_,_, [_Act | _]), CondPass) ->
-		append([FirstStep, CondPass, LastStep, NewOrdered],
-		       OrderedAssign);
-	     append(CondPass, NewOrdered, OrderedAssign)), !;
-	OrderedAssign = []).
+
 
 count_and_list_lookups(Eqn, N, Eqns) :-
 	Eqn = choose(1, First, More), !,
@@ -2335,7 +2344,7 @@ order_phase(Step, Path, RawAssign, All, ThisPass, Taboo) :-
 		% [build(Deps), unify(Phase), append(Assign, Others)]),
 	    order_phase(Step, Path, Others, All, Rest, Taboo),
 	    ThisPass = [Instruction | Rest];
-	(delayable(Instruction); !, fail),
+	(delayable(Instruction), wake; !, fail),
 	    order_phase(Step, Path, RawAssign, All, ThisPass,
 			[Instruction | Taboo]));
 	ThisPass = [].

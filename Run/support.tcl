@@ -664,11 +664,11 @@ proc RaiseTclExecError {mproc mstep} {
     while {![string match "proc $mproc *" $mLine]} {
 	gets $mStream mLine
     }
-puts "found proc $mLine"
+#puts "found proc $mLine"
     for {set procLine 1} {$procLine < $lineNo} {incr procLine} {
 	gets $mStream mLine
     }
-puts "picked line $mLine"
+#puts "picked line $mLine"
     close $mStream
     if {[regexp {set ([^ ]*\([^\)]*\)) .*} $mLine spare targetName] || \
 	    [regexp {set ([^ ]*) .*} $mLine spare targetName]} {

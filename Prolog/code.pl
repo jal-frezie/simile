@@ -51,6 +51,6 @@ tk_code(Node, RunCmd, _Dummy) :-
 
 rebuild_code(Lang, Node, ProgFileDir, Action) :-
         compile(Lang, Node, ProgFileDir, Action);
-        output'><'safe_tcl_eval([puts, rebuild_code_failed], _),
+        output'><'safe_tcl_eval(['DebugMess', rebuild_code_failed], _),
 	draw'><'scrub_run(Node, 0),
 	fail.

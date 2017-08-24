@@ -41,7 +41,7 @@ proc KeepLooking {} {
 		} slipup {
 		    error [lreplace $line 0 0 slip-up]
 		} default {
-		    puts $line
+		    DebugMess $line
 		}
 	    }
 	}
@@ -49,7 +49,7 @@ proc KeepLooking {} {
     return $prologExit
 }
 
-set debugBoxes 0
+set debugBoxes 1
 proc DebugMess {Mess} {
     global debugBoxes
     if {$debugBoxes} {
@@ -74,7 +74,7 @@ proc do_tail {header args} {
     global errorInfo
     set oldDir [pwd]
     if {[catch [join $args { }] retVal]} {
-	puts $retVal
+	DebugMess $retVal
         cd $oldDir
         if {[string equal -length 7 slip-up $retVal]} {
 	    set response slipup:[lrange $retVal 1 end]

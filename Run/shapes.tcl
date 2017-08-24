@@ -1725,7 +1725,7 @@ proc CanvasSee {canvas this scnX scnY} {
 	$canvas scan dragto [expr int(-0.05*($tgtL+$tgtR))] \
 	    [expr int(-0.05*($tgtT+$tgtB))]
     } else {
-	puts "Missed with $this coords [$canvas coords $this]"
+	DebugMess "Missed with $this coords [$canvas coords $this]"
     }
 }
 
