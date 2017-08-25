@@ -49,13 +49,14 @@ proc KeepLooking {} {
     return $prologExit
 }
 
-set debugBoxes 1
+set debugBoxes 0
 proc DebugMess {Mess} {
-    global debugBoxes
-    if {$debugBoxes} {
-	tk_messageBox -title debug -icon info -message $Mess -type ok
-    } else {
-	puts [concat ! $Mess]
+    switch $::debugBoxes {
+	2 {
+	    tk_messageBox -title debug -icon info -message $Mess -type ok
+	} 1 {
+	    puts [concat ! $Mess]
+	}
     }
 }
 
