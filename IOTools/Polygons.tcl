@@ -107,6 +107,7 @@ namespace eval ::polygon375 {
         AddToolBar $winId
 	regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set useNodes $restoreString
+	incr useNodes($winId,nswatches)
 	CaptionsToNodeIds $winId
 	SetColourMap useNodes $winId $useNodes($winId,color)
         
@@ -212,7 +213,9 @@ namespace eval ::polygon375 {
     proc PrepareSaveString {winId} {
         variable useNodes
         NodeIdsToCaptions $winId
+	incr useNodes($winId,nswatches) -1
         regsub -all $winId [array get useNodes $winId,*] /WIN/ saveString
+	incr useNodes($winId,nswatches)
 	lappend saveString /WIN/,stringInfo [ListNotes [GetCanvas $winId]]
 	CaptionsToNodeIds $winId
         SetState $winId $saveString
@@ -480,13 +483,11 @@ namespace eval ::polygon375 {
         variable useNodes
         if {[string match nil $value]} {
             set newColour gray
-        } elseif {$value<=$useNodes($winId,min)} {
-	    set newColour $useNodes($winId,c0)
-        } elseif {$value>=$useNodes($winId,max)} {
-	    set newColour $useNodes($winId,c$useNodes($winId,nswatches))
-	} else {
-	    set colNum [expr int(($value-$useNodes($winId,min))* \
-				     $useNodes($winId,nswatches) / \
+        } else {
+	    set clipVal [expr {max($useNodes($winId,min),
+				   min($useNodes($winId,max),$value))}]
+	    set colNum [expr int(($clipVal-$useNodes($winId,min))* \
+				     ($useNodes($winId,nswatches)-1) / \
 				     $useNodes($winId,range))]
             set newColour $useNodes($winId,c$colNum)
         }
@@ -649,9 +650,8 @@ namespace eval ::polygon375 {
     proc GetNewVal {winId i} {
         variable newVal
         variable useNodes
-        set newVal [expr {int($useNodes($winId,min) + 0.5 + \
-                    $i * $useNodes($winId,range) /$useNodes($winId,nswatches))}]
-        for  {set j 0} {$j <= $useNodes($winId,nswatches)} {incr j} {
+        set newVal [expr {int($useNodes($winId,min) + 0.5 + $i * $useNodes($winId,range) /($useNodes($winId,nswatches)-1))}]
+        for  {set j 0} {$j < $useNodes($winId,nswatches)} {incr j} {
             $winId.legend.pop$j configure -borderwidth 0
         }
         $winId.legend.pop$i configure -relief ridge -borderwidth 2

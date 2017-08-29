@@ -22,6 +22,7 @@ itcl::class similescript::$newLayerClass {
 	    foreach {att val} $state {
 		set useNodes($winId,$att) $val
 	    }
+	    incr useNodes($winId,nswatches)
 	    if {$useNodes($winId,state) eq "displaying"} {
 		Display 0 0 0
 		return
@@ -183,7 +184,7 @@ itcl::class similescript::$newLayerClass {
 	set bmpData [binary format a2is2iiiissiiiiii \
 		 BM $fullSize {0 0} 1078 40 $cols $rows 1 8 0 0 0 0 0 0]
 	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
-	    set colourIndex [expr $rgbQuad*($useNodes($winId,nswatches)+1)/256]
+	    set colourIndex [expr $rgbQuad*$useNodes($winId,nswatches)/256]
 	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
 	    append bmpData [binary format H2H2H2c \
 				[string range $colourStr 9 12] \
@@ -259,7 +260,7 @@ itcl::class similescript::$newLayerClass {
         set min $useNodes($winId,min)
 	set max $useNodes($winId,max)
         set range [expr {$max-$min}]
-	set nswatches $useNodes($winId,nswatches)
+	set nswatches [expr {$useNodes($winId,nswatches)-1}]
         
 	if {$celval<$useNodes($winId,datamin)} {
 	    set useNodes($winId,datamin) $celval
@@ -328,7 +329,9 @@ itcl::class similescript::$newLayerClass {
     }
 
     public method PrepareSaveString {} {
+	incr useNodes($winId,nswatches) -1
 	regsub -all $winId, [array get useNodes] {} State
+	incr useNodes($winId,nswatches)
     }
 
     public method Settings {} {
@@ -475,13 +478,11 @@ itcl::class similescript::$newLayerClass {
      public method ColourFor {winId value} {
         if {[string match nil $value]} {
             set newColour gray
-        } elseif {$value<=$useNodes($winId,min)} {
-	    set newColour $useNodes($winId,c0)
-        } elseif {$value>=$useNodes($winId,max)} {
-	    set newColour $useNodes($winId,c$useNodes($winId,nswatches))
-	} else {
-	    set colNum [expr int(($value-$useNodes($winId,min))* \
-				     $useNodes($winId,nswatches) / \
+        } else {
+	    set clipVal [expr {max($useNodes($winId,min),
+				   min($useNodes($winId,max),$value))}]
+	    set colNum [expr int(($clipVal-$useNodes($winId,min))* \
+				     ($useNodes($winId,nswatches)-1) / \
 				     $useNodes($winId,range))]
             set newColour $useNodes($winId,c$colNum)
         }

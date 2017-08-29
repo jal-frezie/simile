@@ -1792,7 +1792,7 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 					     [lindex $ptColours 1]+\
 					     [lindex $ptColours 2])/3]
 		    } use_8-bit_colourmap {
-			set fract [expr 35*[lindex $ptColours 0]*7/256+5*[lindex $ptColours 1]*7/256+[lindex $ptColours 2]*5/256]
+			set fract [expr 35*(([lindex $ptColours 1]*7+128)/256)+5*(([lindex $ptColours 0]*7+128)/256)+([lindex $ptColours 2]*5+128)/256]
 		    } default {
 			error "Unrecognized conversion [lindex $tableSpec 9]"
 		    }

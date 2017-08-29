@@ -132,10 +132,11 @@ namespace eval grid005 {
 	foreach rangePt {nswatches min max} {
 	    set useNodes($winId,$rangePt) [lindex $state [incr rangeBase]]
 	}
+	incr useNodes($winId,nswatches)
 	SetColourMap useNodes $winId $useNodes($winId,color)
 	set swatchBase [lsearch $state swatches]
 	if {$swatchBase > -1} {
-	    for {set col 0} {$col<=$useNodes($winId,nswatches)} {incr col} {
+	    for {set col 0} {$col<$useNodes($winId,nswatches)} {incr col} {
 		set useNodes($winId,c$col) [lindex $state [incr swatchBase]]
 	    }
 	    set useNodes($winId,colourMapTweaked) 1
@@ -279,7 +280,7 @@ namespace eval grid005 {
 		       [GetCaptionPathFromId $useNodes($winId,colvals)]]
 	if {$useNodes($winId,colourMapTweaked)} {
 	    lappend state swatches
-	    for {set col 0} {$col<=$useNodes($winId,nswatches)} {incr col} {
+	    for {set col 0} {$col<$useNodes($winId,nswatches)} {incr col} {
 		lappend state $useNodes($winId,c$col)
 	    }
 	} else {
@@ -294,7 +295,7 @@ namespace eval grid005 {
 		lappend state $indx [$useNodes($possImg) data -format png]
 	    }
 	}
-	lappend state aspect $useNodes($winId,nswatches) \
+	lappend state aspect [expr {$useNodes($winId,nswatches)-1}] \
                 $useNodes($winId,min) $useNodes($winId,max) \
 		magnification $useNodes($winId,mult) \
 	    orient $useNodes($winId,orient) annotation [ListNotes $winId.c]
@@ -463,6 +464,8 @@ namespace eval grid005 {
         pack [button $coloursF.topcolourF.cbutton -text "..." \
                 -command [namespace code "Recolour $winId top $coloursF.topcolourF.colF"]] -side right
         pack $coloursF.topcolourF.colF -side right -padx 10
+        pack [ttk::labelframe $coloursF.swatchF -text "Swatch count"] -fill x  -padx 10 -pady 5
+        pack [entry $coloursF.swatchF.entry -textvar [namespace current]::useNodes($winId,nswatches) -width 20] -side right -padx 10
 	pack [checkbutton $coloursF.imgs -text [tr. {Superimpose images}] \
 		  -variable [namespace current]::useNodes($winId,imgs)]
         
@@ -713,7 +716,7 @@ namespace eval grid005 {
         set min $useNodes($winId,min)
 	set max $useNodes($winId,max)
         set range [expr {$max-$min}]
-	set nswatches $useNodes($winId,nswatches)
+	set nswatches [expr {$useNodes($winId,nswatches)-1}]
         
 	if {$celval<$useNodes($winId,dataMin)} {
 	    set useNodes($winId,dataMin) $celval
@@ -751,7 +754,7 @@ namespace eval grid005 {
 	set bmpData [binary format a2is2iiiissiiiiii \
 		 BM $fullSize {0 0} 1078 40 $cols $rows 1 8 0 0 0 0 0 0]
 	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
-	    set colourIndex [expr $rgbQuad*($useNodes($winId,nswatches)+1)/256]
+	    set colourIndex [expr $rgbQuad*$useNodes($winId,nswatches)/256]
 	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
 	    append bmpData [binary format H2H2H2c \
 				[string range $colourStr 9 12] \
@@ -844,7 +847,7 @@ namespace eval grid005 {
 # now superpose images if needed...first sort them by colour they replace
 	if {$useNodes($winId,imgs)} {
 # images can be all different sizes and shapes, so regularize
-	    for {set c 0} {$c<=$useNodes($winId,nswatches)} {incr c} {
+	    for {set c 0} {$c<$useNodes($winId,nswatches)} {incr c} {
 		if {[info exists useNodes($winId,i$c)]} {
 		    set new [image create photo]
 		    $new copy [GrowImage $useNodes($winId,i$c) $mult $mult]
@@ -945,7 +948,7 @@ namespace eval grid005 {
     proc ColourScale {winData winId} {
         #    ShowMess debug info "proc ColourScale" ok
         upvar 1 $winData useNodes
-        for {set swatch 0} {$swatch<=$useNodes($winId,nswatches)} {incr swatch} {
+        for {set swatch 0} {$swatch<$useNodes($winId,nswatches)} {incr swatch} {
             $winId.legend.pop$swatch configure -bg $useNodes($winId,c$swatch)
         }
     }

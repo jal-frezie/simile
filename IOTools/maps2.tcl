@@ -23,12 +23,12 @@ namespace eval ::maptools2 {
 	    set useNodes($winId,min) 1
 	    set useNodes($winId,max) [expr $useNodes($winId,ETCount)-1]
 	    set useNodes($winId,range) [expr $useNodes($winId,max)-1]
-	    set nswatches $useNodes($winId,range)
+	    set nswatches $useNodes($winId,max)
 	} elseif {$useNodes($winId,ETCount)} { ;# a boolean
 	    set useNodes($winId,min) 0
 	    set useNodes($winId,max) 1
 	    set useNodes($winId,range) 1
-	    set nswatches 1
+	    set nswatches 2
 	} else {
 	    set useNodes($winId,integer) \
 		[string match INTEGER [GetModelType $node]]
@@ -47,10 +47,11 @@ namespace eval ::maptools2 {
 	    }
 	    set useNodes($winId,range) \
                 [expr $useNodes($winId,max)-$useNodes($winId,min)]
-	    if [expr !$useNodes($winId,integer) || [expr $useNodes($winId,range) > 32]] {
+	    if {!$useNodes($winId,integer) || $useNodes($winId,range) > 32 && \
+		    $useNodes($winId,range) != 255} { # 256 special image case
 		set nswatches 32
 	    } else  {
-		set nswatches [expr int($useNodes($winId,range))]
+		set nswatches [expr int($useNodes($winId,range))+1]
 	    }
         }
 	set useNodes($winId,nswatches) $nswatches
@@ -69,7 +70,7 @@ namespace eval ::maptools2 {
 	if {$useNodes($winId,ETCount)>2} {
 	    set defCols {blue orange green brown purple red black DeepSkyBlue \
                     HotPink ForestGreen}
-	    for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
+	    for {set icolour 0} {$icolour < $useNodes($winId,nswatches)} {incr icolour} {
 		if {$icolour<[llength $defCols]} {
 		    set useNodes($winId,c$icolour) [lindex $defCols $icolour]
 		} else {
@@ -79,22 +80,35 @@ namespace eval ::maptools2 {
 	} elseif {$useNodes($winId,ETCount)} {
 	    set useNodes($winId,c0) gray20
 	    set useNodes($winId,c1) gray80
+	} elseif {$useNodes($winId,nswatches) == 256} {# 256 special image case
+	    for {set icolour 0} {$icolour <= 256} {incr icolour} {
+		if {$icolour>244} {
+		    set useNodes($winId,c$icolour) $useNodes($winId,c244)
+		    continue
+		}
+		set greenIdx [expr {$icolour/35}]
+		set redIdx [expr {($icolour-35*$greenIdx)/5}]
+		set blueIdx [expr {$icolour-35*$greenIdx-5*$redIdx}]
+		set useNodes($winId,c$icolour) \
+		    [format \#%02x%02x%02x [expr {$redIdx*255/6}] \
+			 [expr {$greenIdx*255/6}] [expr {$blueIdx*255/4}]]
+	    }
 	} else {
 	    scan [winfo rgb $winId $useNodes($winId,cbot)] "%d %d %d" botr botg botb
 	    scan [winfo rgb $winId $useNodes($winId,cmid)] "%d %d %d" midr midg midb
 	    scan [winfo rgb $winId $useNodes($winId,ctop)] "%d %d %d" topr topg topb
         
-	    set max $useNodes($winId,nswatches); #[expr int($useNodes($winId,max))]
+	    set max [expr {$useNodes($winId,nswatches)-1}]
 	    set min 0; #[expr int($useNodes($winId,min))]
-	    set med [expr $useNodes($winId,nswatches)/2.0]
+	    set med [expr $max/2.0]
         #    ShowMess debug info "$min $max $med" ok
         # make the colour descriptions, this should improve speed
-	    for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
+	    for {set icolour 0} {$icolour < $useNodes($winId,nswatches)} {incr icolour} {
 		if {$icolour<$med} {
 		    set red [expr int(($icolour*$midr+($med-$icolour)*$botr)/$med)]
 		    set green [expr int(($icolour*$midg+($med-$icolour)*$botg)/$med)]
 		    set blue [expr int(($icolour*$midb+($med-$icolour)*$botb)/$med)]
-		} elseif {$icolour<=$max} {
+		} else {
 		    set red [expr int((($icolour-$med)*$topr+($max-$icolour)*$midr)/$med)]
 		    set green [expr int((($icolour-$med)*$topg+($max-$icolour)*$midg)/$med)]
 		    set blue [expr int((($icolour-$med)*$topb+($max-$icolour)*$midb)/$med)]
@@ -159,8 +173,8 @@ namespace eval ::maptools2 {
 	    set xmax [expr $rightSc-50]
 	}
         set useNodes($winId,range) [expr $useNodes($winId,max)-$useNodes($winId,min)]
-        set xincr [expr {($xmax-$xmin)/($useNodes($winId,nswatches)+1)}]
-        for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
+        set xincr [expr {($xmax-$xmin)/$useNodes($winId,nswatches)}]
+        for {set icolour 0} {$icolour < $useNodes($winId,nswatches)} {incr icolour} {
             set x0 [expr {$xmin+$icolour*$xincr}]
             set x1 [expr {$x0+$xincr}]
             set colour $useNodes($winId,c$icolour)
@@ -175,7 +189,7 @@ namespace eval ::maptools2 {
 	    }
 	    set newVal [expr {$useNodes($winId,min) + \
 				      $icolour * $useNodes($winId,range) \
-				      / $useNodes($winId,nswatches)}]
+				      / ($useNodes($winId,nswatches)-1)}]
 	    CanvasBindPopup $cnv $polyId \
                     [list Colour for value: \
 			 [TransValue $useNodes($winId,dataETs) $newVal] \
@@ -267,14 +281,14 @@ namespace eval ::maptools2 {
         set X [$cnv canvasx $tgx]
         set Y [$cnv canvasy $tgy]
 	set zapped [$cnv find closest $X $Y]
-	for {set n 0} {$n <= $useNodes($winId,nswatches)} {incr n} {
+	for {set n 0} {$n < $useNodes($winId,nswatches)} {incr n} {
 	    set byng [$cnv find withtag COL$n]
 	    if {$byng==$zapped} {
 		$cnv itemconfig $byng -outline black
 		set useNodes($winId,paintColour) $useNodes($winId,c$n)
 		set newVal [expr {int($useNodes($winId,min) + 0.5 + \
 					  $n * $useNodes($winId,range) \
-					  / $useNodes($winId,nswatches))}]
+					  / ($useNodes($winId,nswatches)-1))}]
 	    } else {
 		$cnv itemconfig $byng  -outline {}
 	    }
@@ -302,7 +316,7 @@ namespace eval ::maptools2 {
             set tickinterval 1
             set resolution 1
         } else  {
-            set tickinterval [expr 1.0*$useNodes($winId,range)/$useNodes($winId,nswatches)]
+            set tickinterval [expr 1.0*$useNodes($winId,range)/($useNodes($winId,nswatches)-1)]
             set resolution [expr $tickinterval/10.0]
         }
         #-tickinterval [expr $useNodes($winId,range)/10.0] TODO
@@ -313,7 +327,7 @@ namespace eval ::maptools2 {
                 -width 5 -tickinterval $tickinterval \
                 -borderwidth 1 -resolution $resolution
         pack $winId.legend.scale -side left -fill y -expand true
-        for {set swatch 0} {$swatch<=$useNodes($winId,nswatches)} {incr swatch} {
+        for {set swatch 0} {$swatch<$useNodes($winId,nswatches)} {incr swatch} {
             pack [frame $winId.legend.pop$swatch -width 10] -fill y -expand true \
                     -side bottom
         }
@@ -327,7 +341,7 @@ namespace eval ::maptools2 {
         set min [expr int($useNodes($winId,min))]
         $winId.legend.scale config -from $max \
                 -to $min
-        for {set swatch 0} {$swatch<=$useNodes($winId,nswatches)} {incr swatch} {
+        for {set swatch 0} {$swatch<$useNodes($winId,nswatches)} {incr swatch} {
             $winId.legend.pop$swatch configure -bg $useNodes($winId,c$swatch)
         }
     }

@@ -21,6 +21,7 @@ itcl::class similescript::$newLayerClass {
 	if {[string length $state]} { ;# we are restoring 
 	    regsub -all /WIN/ $state $winId restoreString
 	    array set useNodes $restoreString
+	    incr useNodes($winId,nswatches)
 	    if {$useNodes($winId,state) eq "displaying"} {
 		ReTile
 		return
@@ -192,7 +193,9 @@ itcl::class similescript::$newLayerClass {
     }
 
     public method PrepareSaveString {} {
+	incr useNodes($winId,nswatches) -1
 	regsub -all $winId [array get useNodes $winId,*] /WIN/ State
+	incr useNodes($winId,nswatches)
     }
 
     public method Settings {} {
@@ -395,16 +398,14 @@ itcl::class similescript::$newLayerClass {
 	    -tag [list [namespace tail $this].main [IdToTag $inds]]
     }
 
-     public method ColourFor {winId value} {
+      public method ColourFor {winId value} {
         if {[string match nil $value]} {
             set newColour gray
-        } elseif {$value<=$useNodes($winId,min)} {
-	    set newColour $useNodes($winId,c0)
-        } elseif {$value>=$useNodes($winId,max)} {
-	    set newColour $useNodes($winId,c$useNodes($winId,nswatches))
-	} else {
-	    set colNum [expr int(($value-$useNodes($winId,min))* \
-				     $useNodes($winId,nswatches) / \
+        } else {
+	    set clipVal [expr {max($useNodes($winId,min),
+				   min($useNodes($winId,max),$value))}]
+	    set colNum [expr int(($clipVal-$useNodes($winId,min))* \
+				     ($useNodes($winId,nswatches)-1) / \
 				     $useNodes($winId,range))]
             set newColour $useNodes($winId,c$colNum)
         }
