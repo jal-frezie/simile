@@ -707,15 +707,33 @@ proc AdjustScroll {canvas dir args} {
 # which way the window was grown so the diagram is kept in the middle.
 
 proc SetSpace {c w h} {
+    #DebugMess [info level 0]
     global window_info
-#puts "SetSpace $c $w $h"
     set cx $window_info($c,width)
     set cy $window_info($c,height)
-    set window_info($c,width) [expr $w - 4]
-    set window_info($c,height) [expr $h - 4]
+    set w [expr {$w - 4}]
+    set h [expr {$h - 4}]
+    set window_info($c,width) $w
+    set window_info($c,height) $h
     #    ShowMess debug info "New size is $w $h" ok
-    RollBack $c 1 [expr ($cx - $w)/2 + 2] [expr ($cy - $h)/2 + 2] \
-            [expr ($cx + $w)/2 - 2] [expr ($cy + $h)/2 - 2]
+    if {$window_info($c,is_top_level) || [info exists window_info($c,shows)]} {
+	RollBack $c 1 [expr ($cx - $w)/2] [expr ($cy - $h)/2] \
+	    [expr ($cx + $w)/2] [expr ($cy + $h)/2]
+    } else {
+	set growth [expr {max(1.0*$w/$cx, 1.0*$h/$cy)}]
+	if {$growth>1} {
+	    set window_info($c,scale) [expr {$growth*$window_info($c,scale)}]
+	    scan [$c cget -scrollregion] "%g %g %g %g" sl st sr sb
+	    set homo $growth ;# [expr {0.5+$growth/2}]
+	    set hetero 0 ;# [expr {0.5-$growth/2}]
+	    set nl [expr {$homo*$sl+$hetero*$sr}]
+	    set nt [expr {$homo*$st+$hetero*$sb}]
+	    set nr [expr {$homo*$sr+$hetero*$sl}]
+	    set nb [expr {$homo*$sb+$hetero*$st}]
+	    $c configure -scrollregion "$nl $nt $nr $nb"
+	    ResizeBackgnd $c $nl $nt $nr $nb
+	}
+    }
 }
 
 proc TransCnvNames {c oldie newbie} {
@@ -2046,6 +2064,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     global equation msgs
     # create but only pack while state being edited
     ::ttk::combobox $eb.events -width 8 -font EquationFont -state readonly
+    BindPopup $eb.events events
     bind $eb.events <<ComboboxSelected>> [list SwitchEvent $winid $eb]
     ::ttk::label $eb.minlabel -anchor w -text below:
     ::ttk::entry $eb.min -width 6 -font EquationFont \
@@ -2057,6 +2076,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 #    ComboBox $eb.equation -editable 1 -state disabled -width 40
     ::ttk::combobox $eb.equation -state disabled -width 32 -font EquationFont \
 	-values $equation(prevs)
+    BindPopup $eb.equation eqnbar
     pack $eb.equation -side left -expand 1 -fill x
     bind $eb.equation <Return> [list EnterEqn $winid $eb.equation]
     set tabAct {if {[AcceptAutoComp $eb.equation]} break}
@@ -2080,11 +2100,13 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -style $buttonStyle \
             -command [list accept_equation $winid $eb.equation]] -side left
     FixDisabledImgBug $eb.tick
+    BindPopup $eb.tick tick
     
     pack [::ttk::button $eb.cross -state disabled -image $iconImages(cross) \
             -style $buttonStyle \
             -command [list restore_equation $winid $eb]] -side left
     FixDisabledImgBug $eb.cross
+    BindPopup $eb.cross cross
     
     frame $eb.padding2 -width 3
     pack $eb.padding2 -side left
@@ -2093,6 +2115,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     ::ttk::menubutton $eb.inputs -state disabled -menu $eb.inputs.menu -image $image
     FixDisabledImgBug $eb.inputs
     pack $eb.inputs -side left
+    BindPopup $eb.inputs inputs
     set m [menu $eb.inputs.menu -tearoff 0]
 # now done when bar filled            -postcommand [list AddInputs $winid $eb]
     #    $m add command -label [tr. biomass] -command bell
@@ -2102,6 +2125,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     ::ttk::menubutton $eb.function -state disabled -menu $eb.function.menu -image $iconImages(function)
     pack $eb.function -side left
     FixDisabledImgBug $eb.function
+    BindPopup $eb.function function
     set m [menu $eb.function.menu -tearoff 0]
     foreach funk $equation(fnDefs) {
 	set box $m
@@ -2727,6 +2751,7 @@ proc ClearWindow {winId} {
     $winId dtag /base/ doomed
     $winId delete doomed
     ResetEqnBar [winfo parent $winId]
+    set ::window_info($winId,shows) 1
 }
 
 proc exit_simile {} {
