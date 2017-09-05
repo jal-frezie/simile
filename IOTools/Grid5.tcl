@@ -466,8 +466,12 @@ namespace eval grid005 {
         pack $coloursF.topcolourF.colF -side right -padx 10
         pack [ttk::labelframe $coloursF.swatchF -text "Swatch count"] -fill x  -padx 10 -pady 5
         pack [entry $coloursF.swatchF.entry -textvar [namespace current]::useNodes($winId,nswatches) -width 20] -side right -padx 10
-	pack [checkbutton $coloursF.imgs -text [tr. {Superimpose images}] \
-		  -variable [namespace current]::useNodes($winId,imgs)]
+	pack [frame $coloursF.misc] -fill x -expand 1
+	pack [button $coloursF.misc.load -text [tr. {Load RGB file}] \
+		  -command [namespace code "LegendFromRGB $winId"]] -side left
+	pack [checkbutton $coloursF.misc.imgs -text [tr. {Superimpose images}] \
+		  -variable [namespace current]::useNodes($winId,imgs)] \
+	    -side left
         
         pack $coloursF -padx 10 -pady 10 -fill x
         
@@ -607,6 +611,34 @@ namespace eval grid005 {
 	gdal_close $newTemplate
     }
 
+    proc LegendFromRGB {winId} {
+        variable useNodes
+	set RGBfile [ChooseFile legend.rgb [tr. "Load legend from:"] 0 \
+			 [$::helperTable($winId,whichInstance) GetNode]]
+	if {$RGBfile ne {}} {
+	    set stm [open $RGBfile r]
+	    while {![eof $stm]} {
+		gets $stm line
+		set line [string trim $line]
+		if {$line eq {} || ![string first \# $line]} continue
+		if {[string first ncolors $line]>=0} {
+		    regexp {[0-9]+} $line useNodes($winId,nswatches)
+		    set icolour 0
+		    set useNodes($winId,colourMapTweaked) 1
+		} else {
+		    if {[scan $line %d%d%d r g b]==3} {
+			set useNodes($winId,c$icolour) \
+			    [format \#%02x%02x%02x $r $g $b]
+			incr icolour
+		    } else {
+			DebugMess "dodgd line $line"
+		    }
+		}
+	    }
+	    close $stm
+	}
+    }
+		    
     proc OnClickSettingOkBtn {winId coloursF rangeF dlg} {
         
         variable useNodes

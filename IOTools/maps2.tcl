@@ -80,19 +80,6 @@ namespace eval ::maptools2 {
 	} elseif {$useNodes($winId,ETCount)} {
 	    set useNodes($winId,c0) gray20
 	    set useNodes($winId,c1) gray80
-	} elseif {$useNodes($winId,nswatches) == 256} {# 256 special image case
-	    for {set icolour 0} {$icolour <= 256} {incr icolour} {
-		if {$icolour>244} {
-		    set useNodes($winId,c$icolour) $useNodes($winId,c244)
-		    continue
-		}
-		set greenIdx [expr {$icolour/35}]
-		set redIdx [expr {($icolour-35*$greenIdx)/5}]
-		set blueIdx [expr {$icolour-35*$greenIdx-5*$redIdx}]
-		set useNodes($winId,c$icolour) \
-		    [format \#%02x%02x%02x [expr {$redIdx*255/6}] \
-			 [expr {$greenIdx*255/6}] [expr {$blueIdx*255/4}]]
-	    }
 	} else {
 	    scan [winfo rgb $winId $useNodes($winId,cbot)] "%d %d %d" botr botg botb
 	    scan [winfo rgb $winId $useNodes($winId,cmid)] "%d %d %d" midr midg midb
