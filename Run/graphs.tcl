@@ -1558,6 +1558,11 @@ proc LoadDataFile {mode query mdl} {
                 set table_entry(coln) [image width tableImage]
                 set table_entry(row1) 1
                 set table_entry(rown) [image height tableImage]
+		if {![info exists table_entry(blkval)]} {
+		    set table_entry(blkval) 0
+		    set table_entry(whtval) 255
+		    set table_entry(trnval) -1
+		}
             }
         }
         catch {close $stream}

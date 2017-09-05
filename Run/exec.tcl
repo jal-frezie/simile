@@ -50,8 +50,9 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 # File is utf-8 so rather than sourcing, read in and eval
 	set stm [open $model_prog($topNode) r]
 	fconfigure $stm -encoding utf-8
-	eval [read $stm]
+	set modelCode [read $stm] ;# read first to make sure we close
 	close $stm
+	eval $modelCode
 
 	if {![catch {IdentField $simile_identifier version} buildV]} {
 	    return [expr $buildV==$env(SIMILE_VERSION)]

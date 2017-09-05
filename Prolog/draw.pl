@@ -399,12 +399,9 @@ add_window(Wid, TopNode, Model, Area, Cname, Colour, Scale, InitDs, IsTL) :-
 
 redraw_window(Wid) :-
 	Wid shows_model Model,
+	update_tk, % lets window configure self to right size
 	clear_display(Wid),
-	update_tk,
 	display(Wid, Model, -1, _, 1).
-
-/* Having drawn the components, succeed and don't come back...*/
-redraw_window(_) :- !.
 
 delete_window(Wid) :-
 	destroy_window(Wid),

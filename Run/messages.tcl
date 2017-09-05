@@ -91,7 +91,19 @@ set msgs(exit) [tr. {Exit Simile}]
 set msgs(runenv) [tr. {Go to the Run Environment window}]
 set msgs(snap) [tr. {Inspect model variable}]
 
+set msgs(eqnbar) [tr. {Enter equation for the selected component here. Use pull-down menu to retrieve previous entries, up-arrow key to cycle through completions, and tab or enter keys to accept completion.}]
+set msgs(events) [tr. {Use pulldown menu to select event upon which the equation entered will apply}]
+set msgs(tick) [tr. {Apply new equation to component}]
+set msgs(cross) [tr. {Restore component's current equation to edit field}]
+set msgs(inputs) [tr. {Include a reference to a value from an incoming influence}]
+set msgs(function) [tr. {Include a function or enumerated-type constant}]
 set msgs(built-in) [tr. {Built-in functions of the Simile equation language}]
+
+set msgs(event_condition) [tr. {These fields determine what will cause this event to occur, and what magnitude it will have when it does}]
+set msgs(rules_and_boundaries) [tr. {Specify the value this state variable will have initially and after each event that influences it}]
+set msgs(initial_data_source) [tr. {Specify how this compartment gets its initial value, plus its units and normal range of values}]
+set msgs(data_source) [tr. {Specify how this component gets its value, plus its units and normal range of values}]
+
 set msgs(arithmetic) [tr. {Arithmetic functions}]
 set msgs(list_handling) [tr. {Functions for manipulating array or list data}]
 set msgs(model_properties) [tr. {Functions that return information relating to the model components containing this equation}]
@@ -136,6 +148,10 @@ set msgs(with_colin) [tr. {Takes two lists with equal size, and returns an eleme
 set msgs(abs) [tr. {Returns absolute difference between argument and zero}]
 set msgs(ceil) [tr. {Rounds argument up to a whole number}]
 set msgs(floor) [tr. {Rounds argument down to a whole number}]
+set msgs(after) [tr. {Use only as whole equation of derived event. Instead of firing immediately when triggered, event is delayed by value of 1st argument, then fires with magnitude of 2nd argument when triggered.}]
+set msgs(as_number) [tr. {Argument is integer (for flexibility), boolean or enumerated type. Returns corresponding integer value.}]
+set msgs(at_phase) [tr. {Returns the value of the 2nd argument from the start of the time period given by 1st argument (-2 = since model was built, -1 = since fixed parameters updated, 0 = since reset, +ve = corresponding time step level)}]
+set msgs(at_posn) [tr. {Use only as whole equation. Component acts as 'ghost' of an instance of base component named in 1st argument, which must be in 2-D submodel. If 2nd and 3rd arguments present, these give indices of base component instance, otherwise these are derived from position of ghost in its own submodel.}]
 set msgs(channel_is) [tr. {Argument is an immigration, reproduction or creation channel. Returns true if this individual appeared through that channel.}]
 set msgs(is_new_instance) [tr. {Returns TRUE if the submodel instance containing the component was created on the most recent time step. TRUE everywhere after reset.}]
 set msgs(dies_of) [tr. {Argument is a mortality channel. Returns true if this channel will cause the individual to disappear at the end of the current time step.}]
@@ -399,6 +415,10 @@ set msgs(wrong_format_of_args_detail) [tr. {This problem might be fixed by addin
 
 set msgs(wrong_no_of_args_title) [tr. {Wrong number of args}]
 set msgs(wrong_no_of_args_message) [tr. {Attempting to process subexpression "%1$s": You have tried to use the %2$s function "%3$s" with %4$s arguments, but it must take %5$s}]
+
+set msgs(null_exponentiation_title) [tr. {Null exponentiation}]
+set msgs(null_exponentiation_message) [tr. {This equation contains the subexpression "%1$s", in which a value is raised to the power of 1. This operation will always leave the value unchanged, therefore it is likely that this is a typo.}]
+set msgs(null_exponentiation_detail) [tr. {The usual cause of this problem is an attempt to get the nth root of a subexpression by writing x^1/n. Exponentiation binds more strongly than division, so for this to work correctly, the exponent should be parenthesized, e.g., x^(1/n).}]
 
 set msgs(missing_graph_or_table_data_title) [tr. {Built-in data missing}]
 set msgs(missing_graph_or_table_data_message) [tr. {Subexpression "%1$s" is a reference to a data table or sketch graph, but no data has been entered for it.}]
@@ -676,9 +696,11 @@ set msgs(bad_ghost_message) [tr. {Unable to make ghost here}]
 set msgs(show_full_button) [tr. {See full error text}]
 set msgs(conversion_failure_title) [tr. {Problem building code}]
 set msgs(conversion_failure_message) [tr. {Simile failed to convert %1$s (in submodel %2$s) into a program instruction.}]
-set msgs(conversion_failure_detail) [tr. {This may be because Simile earlier failed to detect when a change elsewhere in the model made the equation for this component inconsistent, in which case editing this component again will make the model runnable.}]
+set msgs(conversion_failure_detail) [tr. {This may be because Simile earlier failed to detect when a change elsewhere in the model made the equation for this component inconsistent. Alternatively the model may have been built with an earlier version of Simile that had less strict consistency checking. In either case editing this component again will make the model runnable.}]
 # must be quoted so show_full msg gets subbed
-set msgs(conversion_failure_full) [tr. "Parsing the equation for %1\$s (in %2\$s) gave this error code: %3\$s. Hit $msgs(show_full_button) to see the full message."]
+set msgs(conversion_failure_full) [tr. "Parsing the equation for %1\$s (in %2\$s) gave this error code: %3\$s. 
+
+Hit \"$msgs(show_full_button)\" to see the full message that this equation would raise if entered as it stands."]
 
 set msgs(bad_parameter_title) [tr. {Problem interpreting equation}]
 set msgs(bad_parameter_message) [tr. {The equation for component %1$s refers to an input parameter called "%2$s". This is not a valid parameter in the context of that component}]

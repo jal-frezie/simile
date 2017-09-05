@@ -1327,6 +1327,7 @@ Now one that uses a special conditional level */
 		    UnitList = [Units, _IncUnits],
 		    SourceRef = Arg1+Arg2;
 		(ValRef = Log^Exp,
+		 (Exp == 1 -> throw(null_exponentiation(Source)); true),
 		        UnitList = [Base, ExpU],
 		        promote_unit(ExpU, const_ratio);
 		 ValRef = sqrt(Log),

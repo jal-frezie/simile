@@ -56,6 +56,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     # the widget hierrachy easier Jonathan 22 Aug 2002
     $mainF add [set middleF [panedwindow $mainF.middle -orient horizontal]]
     $middleF add [TitleFrame $middleF.functions -text "[tr. Functions]: "]
+    BindPopup $middleF.functions function
     set fnFrame [GetFrame $middleF.functions].fnFrame
 #    ScrolledWindow $fnFrame
     frame $fnFrame
@@ -111,6 +112,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     
 #    pack $middleF.functions -side left -anchor nw -padx 2 -pady 2 -expand true -fill both
     $middleF add [TitleFrame $middleF.params -text "[tr. Parameters]: "]
+    BindPopup $middleF.params inputs
     set paramsf [GetFrame $middleF.params]
     frame $paramsf.list
     set lbp [listbox $paramsf.list.ilist \
@@ -205,7 +207,7 @@ proc create_equation {parent purpose comp indices enum_types} {
 	    set midType "Initial values from file"
 	    set bottomType "Rules"
 	} init_val_for {
-	    set eqnFrameTitle "Data source"
+	    set eqnFrameTitle "Initial data source"
 	    set topType "Range of allowed values"
 	    set midType "Initial values from file"
 	    set bottomType "Initial value"
@@ -219,6 +221,7 @@ proc create_equation {parent purpose comp indices enum_types} {
 # TRANSLATOR: Quoted strings above need translations in next block
     $mainF add [frame $mainF.main]
     TitleFrame $mainF.main.main -text "[tr. $eqnFrameTitle]: "
+    BindPopup $mainF.main.main [NameToTag $eqnFrameTitle]
     set mainf [GetFrame $mainF.main.main]
     frame $mainf.slider
     radiobutton $mainf.slider.radio1 -text "[tr. $topType]: " \
