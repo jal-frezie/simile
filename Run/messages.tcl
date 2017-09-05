@@ -103,6 +103,22 @@ set msgs(event_condition) [tr. {These fields determine what will cause this even
 set msgs(rules_and_boundaries) [tr. {Specify the value this state variable will have initially and after each event that influences it}]
 set msgs(initial_data_source) [tr. {Specify how this compartment gets its initial value, plus its units and normal range of values}]
 set msgs(data_source) [tr. {Specify how this component gets its value, plus its units and normal range of values}]
+set msgs(range_of_allowed_values) [tr. {The expected minimum and maximum values for the component. These will determine the range of values displayed in diagrams for this component, and can be used to trigger events or pause the model if the value goes outside the range.}]
+set msgs(unitsanddims) [tr. {The units for the value can be entered here but must be compatible with the equation. The dimensions are determined by the equation and the dimensions of incoming values.}]
+
+set msgs(variable_parameter) [tr. {A component that will will be assigned values that change over time from a source outside the model. This might be a time series in a file, or a slider that can be adjusted while the model runs. It must have min and max values.}]
+set msgs(fixed_parameter) [tr. {A component that will be assigned values from a file. These will be loaded when the model initializes, and the model must be reset if they are changed.}]
+set msgs(time_series) $msgs(variable_parameter)
+set msgs(time_series_event) [tr. {An event that will occur at times and with magnitudes from a source outside the model. This might be a time series in a file, or a slider that can be adjusted and then "zapped" to generate the event while the model runs.}]
+set msgs(initial_values_from_file) $msgs(fixed_parameter)
+set msgs(limit:_equation_reaches...) [tr. {An event that will occur when the value of the equation below reaches the minimum or maximum specified here. Either or both may be specified. The value (magnitude) of a limit event is boolean (true) if only one bound is set, or numeric (-1 for low, 1 for high) if both bounds are set.}]
+set msgs(derived) [tr. {Equation for the component's value. If the component is a variable parameter, it will have this value unless it gets another from a file or slider input.}]
+set msgs(initial_value) [tr. {Equation for the component's initial value. This will change as the model runs according to connected flows and squirts.}]
+set msgs(triggered) [tr. {Equation for the magnitude of this event when it occurs. Writing "after(t,m)" will create a delayed event that occurs t after the trigger event. "trigger_magnitude()" can be used to refer to the magnitude of the triggering event.}]
+set msgs(rules) [tr. {Equations for values the variable will have following each condition. Select a condition to edit its equation. trigger_magnitude() can be used to refer to the magnitude of event, except in "reset..." clause.}]
+
+set msgs(graph) [tr. {Draw a sketch graph to define the behaviour of the "graph()" function in the equation.}]
+set msgs(table) [tr. {Specify a table to define the behaviour of the "table()" function in the equation. The function will need one argument for each dimension of the table.}]
 
 set msgs(arithmetic) [tr. {Arithmetic functions}]
 set msgs(list_handling) [tr. {Functions for manipulating array or list data}]

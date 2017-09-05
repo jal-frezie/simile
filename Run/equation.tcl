@@ -199,8 +199,8 @@ proc create_equation {parent purpose comp indices enum_types} {
 	cause_for {
 	    set eqnFrameTitle "Event condition"
 	    set topType "Limit: Equation reaches..."
-	    set midType "Time series"
-	    set bottomType "Derived"
+	    set midType "Time series event"
+	    set bottomType "Triggered"
 	} rules_for {
 	    set eqnFrameTitle "Rules and boundaries"
 	    set topType "Range of allowed values"
@@ -230,30 +230,35 @@ proc create_equation {parent purpose comp indices enum_types} {
     if {[lsearch {init_val_for rules_for} $purpose]>=0} {
 # do not allow variable parameter for initial values...derrr
 	$mainf.slider.radio1 configure -state disabled
+    } else {
+	BindPopup $mainf.slider.radio1 [NameToTag $topType]
     }
-    pack [label $mainf.slider.minlabel -text [tr. Minimum]] -side left \
-	-padx 4 -pady 4
-    pack [::ttk::entry $mainf.slider.minval -width 8 \
+    pack [set minmax [frame $mainf.slider.minmax]] -side left
+    pack [label $minmax.minlabel -text [tr. Minimum]] -side left -padx 4 -pady 4
+    pack [::ttk::entry $minmax.minval -width 8 \
 	      -textvariable equation(min)] -side left -padx 4 -pady 4
-    pack [label $mainf.slider.maxlabel -text [tr. Maximum]] -side left \
-	-padx 4 -pady 4
-    pack [::ttk::entry $mainf.slider.maxval -width 8 \
+    pack [label $minmax.maxlabel -text [tr. Maximum]] -side left -padx 4 -pady 4
+    pack [::ttk::entry $minmax.maxval -width 8 \
 	      -textvariable equation(max)] -side left -padx 4 -pady 4
+    BindPopup $minmax range_of_allowed_values
     
-    pack [label $mainf.slider.cur_dims] -side right -padx 4
-    pack [label $mainf.slider.dims_txt -text [tr. "Current dimensions"]: \
+    pack [set unitsanddims [frame $mainf.slider.unitsanddims]] -side right
+    pack [label $unitsanddims.cur_dims] -side right -padx 4
+    pack [label $unitsanddims.dims_txt -text [tr. "Current dimensions"]: \
 	     -wraplength 100] -side right -padx 4
-    pack [set eu [::ttk::entry $mainf.slider.entry -width 8 \
+    pack [set eu [::ttk::entry $unitsanddims.entry -width 8 \
 		      -textvariable equation(units)]] -side right \
 	-padx 4 -pady 4
-    pack [label $mainf.slider.unitslabel -text "[tr. Units]:"] -side right \
+    pack [label $unitsanddims.unitslabel -text "[tr. Units]:"] -side right \
 	-padx 4 -pady 4
+    BindPopup $unitsanddims unitsanddims
     
     pack $mainf.slider -anchor nw -fill x
     frame $mainf.file
     radiobutton $mainf.file.radio2 -text [tr. $midType] \
 	-variable equation(isparam) -value 2
     pack $mainf.file.radio2 -side left
+    BindPopup $mainf.file.radio2 [NameToTag $midType]
     pack $mainf.file -anchor nw -fill x
     frame $mainf.equation
     
@@ -262,6 +267,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     radiobutton $equation(actzone).radio0 -variable equation(isparam) \
 	-text "$bottomType: $comp = " -wraplength 120 \
 	-value 0
+    BindPopup $equation(actzone).radio0 [NameToTag $bottomType]
     
     set en [text $equation(actzone).text -height 4 -width 64 \
 		-relief sunken -bd 2 -highlightthickness 0 -font EquationFont \
@@ -291,10 +297,12 @@ proc create_equation {parent purpose comp indices enum_types} {
 		   -text " [tr. Graph]... "\
 		   -command "equationDoGraph $t $en"]
     pack $graph -padx 8 -pady 4
+    BindPopup $graph graph
     set table [button $equation(actzone).buttons.table \
 		   -text " [tr. Table]... " \
 		   -command [list GetTable $t $topNode $comp $en $enum_types]]
     pack $table -padx 8 -pady 4
+    BindPopup $table table
     if {![string match Darwin $tcl_platform(os)]} {
 	$graph configure -compound left -image $iconImages(graph)
 	$table configure -compound left -image $iconImages(table)
@@ -498,7 +506,7 @@ proc RedoChangeOfCause {updatedUnits mult} {
         set emult none
     }
     set widget [GetFrame $equation(main).main.main]
-    $widget.slider.cur_dims configure -text $emult
+    $widget.slider.unitsanddims.cur_dims configure -text $emult
 }
 
 proc fill_equation {current_equation units mult isParam desc comment min max} {
@@ -548,7 +556,7 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     } else {
         set emult none
     }
-    $widget.slider.cur_dims configure -text $emult
+    $widget.slider.unitsanddims.cur_dims configure -text $emult
     set equation(isparam) $isParam
     if {$equation(isparam)==-1} {
 	set equation(isparam) 0
