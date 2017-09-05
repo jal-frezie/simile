@@ -1039,7 +1039,7 @@ Obj is_class_of_sort Class :-
 		function-[regular_box, box],
 		compartment-[rectangle, elongated_box, box, has_function,
 			     can_be_input, init_eval, level, can_be_ghost],
-		state-[rectangle, tall_box, box, has_function, can_be_input,
+		state-[rectangle, tall_box, box, has_function,
 		       init_eval, continuous, can_be_ghost],
 		submodel-[rounded_rect, elongated_box, box],
 		flow-[line, has_function, has_bowtie, rate, transfer],
