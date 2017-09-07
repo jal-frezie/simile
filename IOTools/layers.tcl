@@ -7,7 +7,6 @@ itcl::class similescript::$newHelperClass {
 
     variable planes
     variable transform
-    variable serialActive
     variable working
 
     proc Identify {} {
@@ -20,23 +19,27 @@ itcl::class similescript::$newHelperClass {
     } {
 	# menu
 	menu $winId.add -tearoff 0
-	bind $winId.add <<MenuSelect>> [list $this LayerReady %W]
+	# bind $winId.add <<MenuSelect>> [list $this LayerReady %W]
+	set working(layerTypes) [ListMenuContents .layers.sub2]
+	set newAdd .layer[UniqueId type]
+	ReconstituteMenu $newAdd $working(layerTypes) $newAdd
 	$winId.add add cascade -label [tr. "New layer here"] \
-	    -menu .layers.sub2
+	    -menu $newAdd
 	menu $winId.edit -tearoff 0
 	$winId.edit add command -label [tr. "Move to top"] \
-	    -command [list $this MoveCurrentToTop]
+	    -command [list $this TweakLayer MoveCurrentToTop]
 	$winId.edit add command -label [tr. "Move up a level"] \
-	    -command [list $this MoveUpALevel]
+	    -command [list $this TweakLayer MoveUpALevel]
 	$winId.edit add command -label [tr. "Move down a level"] \
-	    -command [list $this MoveDownALevel]
+	    -command [list $this TweakLayer MoveDownALevel]
 	$winId.edit add command -label [tr. "Move to bottom"] \
-	    -command [list $this MoveCurrentToBottom]
+	    -command [list $this TweakLayer MoveCurrentToBottom]
 	$winId.edit add command -label [tr. "Delete"] \
-	    -command [list $this DeleteCurrent]
+	    -command [list $this TweakLayer DeleteCurrent]
 	$winId.edit add command -label [tr. "Properties..."] \
-	    -command [list $this EditCurrent]
-
+	    -command [list $this TweakLayer EditCurrent]
+	set working(editActs) [ListMenuContents $winId.edit]
+	
         set toolbarItems [list \
 		[list save.gif "Save image" "$this SaveAsFile"] \
 		[list reel.gif "Save video" "$this SaveSequence"] \
@@ -69,9 +72,8 @@ itcl::class similescript::$newHelperClass {
 		set transform($geomer) $val
 	    }
 	    $vp.c configure -scrollregion $transform(bounds)
-	    set serialActive 0
 	    foreach {layerType layerState} [lrange $state 5 end] {
-		NewLayer $layerType $layerState
+		NewLayer $layerType 0 $layerState
 	    }
 	    foreach {l t r b} $transform(bounds) {
 		$vp.c xview moveto [expr {($transform(offx)-$l)*1.0/($r-$l)}]
@@ -136,15 +138,16 @@ itcl::class similescript::$newHelperClass {
 	return normal
     }
 
-    public method LayerReady {callr} {
+    # Used to be bound to MenuSelect but was useless on Mac
+    # public method LayerReady {callr} {
 # note it is necessary to pass the calling widget id as it will be a clone of
 # $winId.add for arcane reasons known only to the developers of Tk
-	set chng [$callr index active]
-	if {$chng ne "none"} {
-	    set serialActive $chng
-	    ::RunEnv::PreserveSetup 1 ;# assume state will be updated
-	}
-    }
+# 	set chng [$callr index active]
+# 	if {$chng ne "none"} {
+# 	    set serialActive $chng
+# 	    ::RunEnv::PreserveSetup 1 ;# assume state will be updated
+# 	}
+    # }
 
     public method GetCanvas {} {
 	return $winId.viewport.c
@@ -159,83 +162,88 @@ itcl::class similescript::$newHelperClass {
 	# }
     }
 
-    public method NewLayer {type {state {}}} {
+    public method LocateCascade {parentMenu subMenu} {
+	for {set serialActive 0} {$serialActive <= [$parentMenu index end]} \
+	    {incr serialActive} {
+		if {[$parentMenu entrycget $serialActive -menu] eq $subMenu} {
+		    return $serialActive
+		}
+	    }
+	return none
+    }
+
+    public method GrowMenuList {tgt layerObj} {
+	set newActions .layer[UniqueId act]
+	ReconstituteMenu $newActions $working(editActs) $newActions
+	$winId.add insert $tgt cascade -label [$layerObj GetTitle] \
+	    -menu $newActions
+	set newEntries .layer[UniqueId type]
+	ReconstituteMenu $newEntries $working(layerTypes) $newEntries
+	$winId.add insert $tgt cascade -label [tr. "New layer here"] \
+	    -menu $newEntries
+    }
+    
+    public method NewLayer {type lvl {state {}}} {
 	set id [UniqueId layer]
 	set layerObj [$type $id $modelInst $this \
 			  $transform(zoomx) $transform(zoomy) $state]
 	pack forget $winId.message
-	set putBelow [expr {[llength $planes]-$serialActive/2}]
+	set putBelow [expr {[llength $planes]-$lvl/2}]
 # cannot use 'end' cos it means different things for lindex and linsert!
 	set aboveNew [lindex $planes $putBelow]
 	if {$state eq {} && $aboveNew ne {}} {
 	    $winId.viewport.c lower $layerObj.main $aboveNew.main
 	}
 	set planes [linsert $planes $putBelow $layerObj]
-	$winId.add insert $serialActive cascade -label [$layerObj GetTitle] \
-	    -menu $winId.edit
-	$winId.add insert $serialActive cascade -label [tr. "New layer here"] \
-	    -menu .layers.sub2
+	GrowMenuList $lvl $layerObj
     }
 
-    public method MoveCurrentToTop {} {
-	set oldIdx end-[expr {$serialActive/2}]
-	set layerObj [lindex $planes $oldIdx]
-	$winId.viewport.c raise $layerObj.main
-	set planes [linsert [lreplace $planes $oldIdx $oldIdx] end $layerObj]
-	$winId.add delete $serialActive [incr serialActive]
-	$winId.add insert 0 cascade -label [$layerObj GetTitle] \
-	    -menu $winId.edit
-	$winId.add insert 0 cascade -label [tr. "New layer here"] \
-	    -menu .layers.sub2
-    }
-
-    public method MoveCurrentToBottom {} {
-	set oldIdx end-[expr {$serialActive/2}]
-	set layerObj [lindex $planes $oldIdx]
-	$winId.viewport.c lower $layerObj.main
-	set planes [linsert [lreplace $planes $oldIdx $oldIdx] 0 $layerObj]
-	$winId.add delete $serialActive [incr serialActive]
-	$winId.add add cascade -label [$layerObj GetTitle] \
-	    -menu $winId.edit
-	$winId.add add cascade -label [tr. "New layer here"] \
-	    -menu .layers.sub2
-    }
-
-    public method MoveUpALevel {} {
+    public method TweakLayer {action calledFrom} {
+	set serialActive [LocateCascade $winId.add $calledFrom]
 	set oldIdx [expr {[llength $planes]-1-$serialActive/2}]
 	set layerObj [lindex $planes $oldIdx]
-	set planes [linsert [lreplace $planes $oldIdx $oldIdx] $oldIdx+1 \
-			$layerObj]
-	set subbedObj [lindex $planes $oldIdx]
-	$winId.viewport.c raise $layerObj.main $subbedObj.main
-	$winId.add entryconfig $serialActive -label [$subbedObj GetTitle]
-	$winId.add entryconfig [expr {$serialActive-2}] \
-	    -label [$layerObj GetTitle]
-    }
-
-    public method MoveDownALevel {} {
-	set oldIdx [expr {[llength $planes]-1-$serialActive/2}]
-	set layerObj [lindex $planes $oldIdx]
-	set planes [linsert [lreplace $planes $oldIdx $oldIdx] $oldIdx-1 \
-			$layerObj]
-	set subbedObj [lindex $planes $oldIdx]
-	$winId.viewport.c lower $layerObj.main $subbedObj.main
-	$winId.add entryconfig $serialActive -label [$subbedObj GetTitle]
-	$winId.add entryconfig [expr {$serialActive+2}] \
-	    -label [$layerObj GetTitle]
-    }
-
-    public method DeleteCurrent {} {
-	set oldIdx end-[expr {$serialActive/2}]
-	itcl::delete object [lindex $planes $oldIdx]
-	set planes [lreplace $planes $oldIdx $oldIdx]
-	$winId.add delete $serialActive [incr serialActive]
-    }
-
-    public method EditCurrent {} {
+	switch $action {
+	    MoveCurrentToTop  {
+		$winId.viewport.c raise $layerObj.main
+		set planes [linsert [lreplace $planes $oldIdx $oldIdx] end \
+				$layerObj]
+		$winId.add delete $serialActive [incr serialActive]
+		GrowMenuList 0 $layerObj
+	    } MoveCurrentToBottom {
+		set oldIdx end-[expr {$serialActive/2}]
+		set layerObj [lindex $planes $oldIdx]
+		$winId.viewport.c lower $layerObj.main
+		set planes [linsert [lreplace $planes $oldIdx $oldIdx] 0 \
+				$layerObj]
+		$winId.add delete $serialActive [incr serialActive]
+		GrowMenuList end $layerObj ;# wrong order?
+	    } MoveUpALevel {
+		set planes [linsert [lreplace $planes $oldIdx $oldIdx] \
+				$oldIdx+1 $layerObj]
+		set subbedObj [lindex $planes $oldIdx]
+		$winId.viewport.c raise $layerObj.main $subbedObj.main
+		$winId.add entryconfig $serialActive \
+		    -label [$subbedObj GetTitle]
+		$winId.add entryconfig [expr {$serialActive-2}] \
+		    -label [$layerObj GetTitle]
+	    } MoveDownALevel {
+		set planes [linsert [lreplace $planes $oldIdx $oldIdx] \
+				$oldIdx-1 $layerObj]
+		set subbedObj [lindex $planes $oldIdx]
+		$winId.viewport.c lower $layerObj.main $subbedObj.main
+		$winId.add entryconfig $serialActive \
+		    -label [$subbedObj GetTitle]
+		$winId.add entryconfig [expr {$serialActive+2}] \
+		    -label [$layerObj GetTitle]
+	    } DeleteCurrent {
+		itcl::delete object [lindex $planes $oldIdx]
+		set planes [lreplace $planes $oldIdx $oldIdx]
+		$winId.add delete $serialActive [incr serialActive]
+	    } EditCurrent {
 # space here seems to improve reliability
-	set oldIdx end-[expr {$serialActive/2}]
-	[lindex $planes $oldIdx] Settings
+		[lindex $planes $oldIdx] Settings
+	    }
+	}
     }
 
     public method Click {path} {

@@ -95,7 +95,9 @@ proc ChooseFile { preferred title canbenew context} {
 			  -filetypes $typeList \
 			  -initialdir $currentDir]
 	set active [focus]
-	if {[llength $active] && ![string equal aqua [tk windowingsystem]]} {
+	if {[tk windowingsystem] eq "aqua"} {
+	    lappend switches -message $title ;# -title does not show!
+	} elseif {[llength $active]} {
 	    # Problems on Aqua if parent is itself modal
 	    lappend switches -parent [winfo toplevel $active]
 	}

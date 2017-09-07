@@ -2078,7 +2078,7 @@ proc ToggleIOToolMenu {node} {
                 } else {
                     if {![winfo exists $topMenu.helpers]} {
                         set menuSpec [ListMenuContents .helpers]
-                        ReconstituteMenu $topMenu.helpers $menuSpec $node
+                        ReconstituteMenu $topMenu.helpers $menuSpec
                     }
 # Add menu at end if using MacOS, since Help menu is not defined by application
 # (oh yes it is)

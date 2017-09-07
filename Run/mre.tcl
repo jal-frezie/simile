@@ -849,12 +849,13 @@ $tb1.b43 configure -state $useSpaceAbility
         return $allChildren
     }
     
-    proc AddToLayerTool {layerType} {
+    proc AddToLayerTool {layerType usedMenu} {
 	global helperTable
 	variable CurrentContainer
 
 	set inst $helperTable($CurrentContainer.container,whichInstance)
-	$inst NewLayer ::similescript::$layerType
+	set lvl [$inst LocateCascade $CurrentContainer.container.add $usedMenu]
+	$inst NewLayer ::similescript::$layerType $lvl
     }
     proc CreateDisplayPageContextMenu {} {
         if  {![winfo exists .pageContextMenu]} {

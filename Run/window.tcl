@@ -2334,7 +2334,7 @@ proc AddFindMenu {winid canvas menu} {
     AddAccelerator $winid edit "Find next" "<F3>"
 }
 
-proc ReconstituteMenu {newMenu mList tgtNode} {
+proc ReconstituteMenu {newMenu mList args} {
     menu $newMenu -tearoff 0
     set subs 0
     foreach entrySpec $mList {
@@ -2342,11 +2342,12 @@ proc ReconstituteMenu {newMenu mList tgtNode} {
     $newMenu add $type -label [lindex $entrySpec 1]
     switch $type {
         command {
-        $newMenu entryconfigure last -command [lindex $entrySpec 2]
+	    $newMenu entryconfigure last \
+		-command [concat [lindex $entrySpec 2] $args]
         } cascade {
         set subMenu $newMenu.sub$subs
         incr subs
-        ReconstituteMenu $subMenu [lindex $entrySpec 2] $tgtNode
+	    eval [list ReconstituteMenu $subMenu [lindex $entrySpec 2]] $args
         $newMenu entryconfigure last -menu $subMenu
         }
     }

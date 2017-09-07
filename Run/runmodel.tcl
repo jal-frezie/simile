@@ -279,10 +279,10 @@ proc CreateHelperWindow {helperId helperTitle {state {}}} {
 #rest should be done by constructor
 }
 
-proc CreateHelperLayer {layerId layerTitle} {
+proc CreateHelperLayer {layerId layerTitle usedMenu} {
 # this should be passed to the currently focussed layer tool
     if {[PrefValue custom(helperManager) helperManager]} {
-	::RunEnv::AddToLayerTool $layerId
+	::RunEnv::AddToLayerTool $layerId $usedMenu
     } else {
 # something
     }
