@@ -248,8 +248,6 @@ itcl::class similescript::$newLayerClass {
         pack [ttk::labelframe $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
         pack [ttk::entry $rangeF.maxF.entry -width 20] -side right -padx 10
 	$rangeF.maxF.entry insert 0 $useNodes($winId,max)
-	pack [ttk::button $rangeF.apply -text [tr. Apply] \
-		  -command [list $this AdjRange $rangeF]]
         pack $rangeF -padx 10 -pady 10
         pack [checkbutton $dlg.retile -text "Re-tile at display intervals" \
 		  -variable [itcl::scope useNodes($winId,displayRetile)]]
@@ -265,7 +263,11 @@ itcl::class similescript::$newLayerClass {
 	grid $oriF.l $oriF.n $oriF.r
 	grid x $oriF.b
         pack $oriF -padx 10 -pady 10 -fill x
-        
+	pack [frame $dlg.btns] -fill x
+	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
+		  -command [list $this AdjRange $rangeF]] -side left
+        pack [ttk::button $dlg.btns.done -text [tr. Done] \
+		  -command "set polyProps(xdone) 1"] -side right
 	LetItShow $dlg polyProps(xdone)
 	PackItUp $dlg
     }

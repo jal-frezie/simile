@@ -148,6 +148,9 @@ itcl::class similescript::$newLayerClass {
         }
     }
 
+    public method AdjRange {rg} {
+    }
+
     public method DrawAnimal {inds key dir xposn yposn} {
 	set c $winId
 	eval $useNodes(cmds)
@@ -193,6 +196,33 @@ itcl::class similescript::$newLayerClass {
 	$winId addtag [namespace tail $this].main withtag unpositioned
 	$winId addtag [IdToTag $inds] withtag unpositioned
 	$winId dtag unpositioned
+    }
+
+    public method Settings {} {
+	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
+	wm title $dlg [tr. "Photo layer properties"]
+	wm protocol $dlg WM_DELETE_WINDOW "set polyProps(xdone) 0"
+        
+	set rg [labelframe $dlg.relgeom -text "Offset and scaling"]
+	grid [label $rg.lxo -text [tr. {X offset:}]] \
+	    [ttk::entry $rg.exo -width 8] \
+	    [label $rg.lyo -text [tr. {Y offset:}]] \
+	    [ttk::entry $rg.eyo -width 8]
+	grid [label $rg.lxs -text [tr. {X scale:}]] \
+	    [ttk::entry $rg.exs -width 8] \
+	    [label $rg.lys -text [tr. {Y scale:}]] \
+	    [ttk::entry $rg.eys -width 8]
+	pack $rg -fill x
+	foreach key {exo eyo exs eys} elt [lrange $State 0 3] {
+	    $rg.$key insert 0 $elt
+	}
+	pack [frame $dlg.btns] -fill x
+	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
+		  -command [list $this AdjRange $rg]] -side left
+        pack [ttk::button $dlg.btns.done -text [tr. Done] \
+		  -command "set polyProps(xdone) 1"] -side right
+	LetItShow $dlg polyProps(xdone)
+	PackItUp $dlg
     }
 
     public method ZoomTo {xzoom yzoom} {

@@ -90,8 +90,11 @@ itcl::class similescript::$newLayerClass {
 	foreach key {exo eyo exs eys} elt [lrange $State 0 3] {
 	    $rg.$key insert 0 $elt
 	}
-	pack [ttk::button $dlg.apply -text [tr. Apply] \
-		  -command [list $this AdjRange $rg]]
+	pack [frame $dlg.btns] -fill x
+	pack [ttk::button $dlg.btns.apply -text [tr. Apply] \
+		  -command [list $this AdjRange $rg]] -side left
+        pack [ttk::button $dlg.btns.done -text [tr. Done] \
+		  -command "set polyProps(xdone) 1"] -side right
 	LetItShow $dlg polyProps(xdone)
 	PackItUp $dlg
     }
