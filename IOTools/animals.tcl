@@ -17,6 +17,7 @@ itcl::class similescript::$newLayerClass {
 	Layer::constructor $modelInst $mainCanvas
     } {
 	array set transform [list xzoom $xzoom yzoom $yzoom]
+	set useNodes(transform) {0 0 1 1}
 	$winId bind [namespace tail $this].main <Enter> \
 	    "QueuePopup AddWidgetPopup %W %X %Y \[$this CurrentPopup\]"
 	$winId bind [namespace tail $this].main <Leave> RemovePopup
@@ -149,6 +150,9 @@ itcl::class similescript::$newLayerClass {
     }
 
     public method AdjRange {rg} {
+	set useNodes(transform) [list [$rg.exo get]  [$rg.eyo get] \
+				     [$rg.exs get]  [$rg.eys get]]
+	Display 0 0 0
     }
 
     public method DrawAnimal {inds key dir xposn yposn} {
@@ -166,7 +170,8 @@ itcl::class similescript::$newLayerClass {
 		set absx [expr ($x-$hotx)/$scale]
 		set absy [expr ($y-$hoty)/$scale]
 		lappend oldCoords $absx $absy
-		lappend newCoords [expr {$transform(xzoom)*(($compx*$absx+$compy*$absy)*$key+$xposn)}] [expr {-$transform(yzoom)*(($compy*$absx-$compx*$absy)*$key+$yposn)}] 
+		lappend newCoords [expr {$transform(xzoom)*((($compx*$absx+$compy*$absy)*$key+$xposn)*[lindex $useNodes(transform) 2]+[lindex $useNodes(transform) 0])}] \
+		    [expr {-$transform(yzoom)*((($compy*$absx-$compx*$absy)*$key+$yposn)*[lindex $useNodes(transform) 3]+[lindex $useNodes(transform) 1])}] 
 	    }
             if {[lsearch {arc oval} $type] > -1} {
                 if {$type eq "arc"} {
@@ -213,7 +218,7 @@ itcl::class similescript::$newLayerClass {
 	    [label $rg.lys -text [tr. {Y scale:}]] \
 	    [ttk::entry $rg.eys -width 8]
 	pack $rg -fill x
-	foreach key {exo eyo exs eys} elt [lrange $State 0 3] {
+	foreach key {exo eyo exs eys} elt $useNodes(transform) {
 	    $rg.$key insert 0 $elt
 	}
 	pack [frame $dlg.btns] -fill x
