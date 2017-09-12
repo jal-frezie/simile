@@ -1094,6 +1094,7 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 		 -characterdatacommand [namespace code LoadCharData]]
     }
     proc LoadSHF {currentNode oldPath} {
+	global bermudaTriangle
 	variable parseStatus
 	variable dp0
 
@@ -1104,7 +1105,7 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 	    return
 	}
 	# attempt to use system for relocating lost model components
-	set ::bermudaTriangle {}
+	set bermudaTriangle {}
 	if {[string first {<?xml version=} $dada]} { ;# is not 0
 	    LoadOldStyleSHF $currentNode $oldPath
 	} else {
@@ -1117,7 +1118,7 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 		return
 	    }
 	}
-	PreserveSetup 0
+	PreserveSetup [llength $bermudaTriangle] ;# renaming vars alters setup
 	set ::helperTable($currentNode,stateName) $oldPath
     }
 
