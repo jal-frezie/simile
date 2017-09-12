@@ -1103,6 +1103,8 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 	if {![EmptyDisplays]} {
 	    return
 	}
+	# attempt to use system for relocating lost model components
+	set ::bermudaTriangle {}
 	if {[string first {<?xml version=} $dada]} { ;# is not 0
 	    LoadOldStyleSHF $currentNode $oldPath
 	} else {

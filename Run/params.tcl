@@ -18,7 +18,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
         if {[llength $paramData($curVal)]} {
 	    set shortVal [TrimDTFromPath $curVal]
             set hitsPath [lindex [ExistCheck $topNode $shortVal /$topNode 0 \
-				      database] 0]
+				      "current database"] 0]
             switch $hitsPath {
                 break {
 		    return 0
@@ -1515,14 +1515,24 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 proc ExistCheck {topNode path level notInput source} {
     global bermudaTriangle
 
-    if {$notInput>-1} {
+    if {$notInput==-2} { # reloading a helper saved state
+	set relevanceCheck {expr 1} ;# accept any model component for now
+	set tgtCap $level
+	set lostRole [tr. {display arrangements}]
+	set lostType {model output}
+	set fix_act relocate
+    } elseif {$notInput>-1} {
 	set relevanceCheck {expr {[FirstIndexCheck $topNode $node]>-1}}
 	set tgtCap [TrimDTFromPath $level]
+	set lostRole [tr. {values}]
 	set lostType {file parameter}
+	set fix_act redirect
     } else {
 	set tgtCap $level
 	set relevanceCheck {info exists ::targetNames($restoredComp)}
+	set lostRole [tr. {values}]
 	set lostType {output measurement}
+	set fix_act redirect
     }
 
     set restoredComp $tgtCap$path
@@ -1563,15 +1573,16 @@ proc ExistCheck {topNode path level notInput source} {
         if {![string equal $lostBit $restoredComp]} {
             set lostType submodel
         }
-        set act [Query [list unused_param $source $lostType $badPt $nextLook] \
-		     warning spf {} {forget abort reassign}]
+        set act [Query [list moved_component $source $lostRole $lostType \
+			    $badPt $nextLook] \
+		     warning spf {} [list forget abort $fix_act]]
 	switch $act {
 	    abort {
 		return break
-	    } reassign {
-		set newPath [ChooseByInspection $topNode $lostBit $lostType]
 	    } forget {
 		set newPath none
+	    } default { # fix act
+		set newPath [ChooseByInspection $topNode $lostBit $lostType]
 	    }
 	}
         if {[string equal submodel $lostType]} {

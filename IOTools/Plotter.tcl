@@ -176,12 +176,26 @@ namespace eval ::$keyValue {
         
         InitPlatformDependentPlotVars $winId
         set ynodes($winId) {}
+	set newYvars {}
+	set topNode [$::helperTable($winId,whichInstance) GetNode]
         foreach path $plot($winId,Yvars) {
-            set node [GetIdFromCaptionPath $path]
+	    set sortedPath [ExistCheck $topNode $path {} -2 "saved setup"]
+	    switch $sortedPath {
+		break {
+		    error [tr. {Failed to initialize helper}]
+		} continue {
+		    continue
+		} default {
+		    set path [lindex $sortedPath 0]
+		    set node [lindex $sortedPath 1]
+		}
+	    }
             set plot(caption,$node) [file tail $path]
             lappend ynodes($winId) $node
+	    lappend newYvars $path
         }
         set runCount($winId) 1
+	set plot($winId,Yvars) $newYvars
         ShowHelper $winId
         display $winId [GetModelTime] 0 0
 	if {![info exists plot($winId,stringInfo)]} return

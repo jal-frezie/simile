@@ -51,9 +51,22 @@ namespace eval slide139 {
     proc Restore {winId} {
         set oldCapts [GetState $winId]
         initialize $winId
+	set topNode [$::helperTable($winId,whichInstance) GetNode]
         foreach flatCapt $oldCapts {
-            set oldCapt [RestoreCrs $flatCapt]
-            InsertSlider $winId [GetIdFromCaptionPath $oldCapt] $oldCapt 1
+	    set sortedPath [ExistCheck $topNode [RestoreCrs $flatCapt] {} -2 \
+				"saved setup"]
+	    switch $sortedPath {
+		break {
+		    error [tr. {Failed to initialize helper}]
+		} continue {
+		    continue
+		} default {
+		    set path [lindex $sortedPath 0]
+		    set node [lindex $sortedPath 1]
+		}
+	    }
+
+            InsertSlider $winId $node $path 1
         }
     }
     

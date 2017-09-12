@@ -439,6 +439,7 @@ namespace eval runcontrol33857 {
 # or reset execution
 
     proc RCInteractGUI {myNode current col} {
+	DebugMess [info level 0]
 	global runState
 
 	set endRun [UpdateBar $myNode \
@@ -466,7 +467,7 @@ namespace eval runcontrol33857 {
 	    
 	    if {[Query model_stuck info execution {} ok] eq "ok"} {
 		ShareAction $node 10
-		set runState($node,currentMode) start
+		set runState($node,currentMode) exit
 		return 1
 	    } ;# if not, it was auto closed by above proc at end of time step
 	}

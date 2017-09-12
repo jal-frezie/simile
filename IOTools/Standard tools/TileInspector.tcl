@@ -218,7 +218,7 @@ namespace eval ::$keyValue {
 	    return
 	}
 	set node [$helperTable($winId,whichInstance) GetNode]
-	if {$runState($node,modelRunning)>2} {
+	if {$runState($node,modelRunning)>1} {
 	    PostPopup $winId $X $Y
 #	    set trans [GetTransTable $plName]
 #	    if {[catch {GetModelValue $plName} mVal]} {

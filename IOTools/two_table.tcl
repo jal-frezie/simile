@@ -195,8 +195,19 @@ namespace eval $keyValue {
         set displayList($winId,transes) {}
 	foreach varCapt $displayList($winId,oldPaths) {
             if {![llength $varCapt]} continue ;# check not legacy deleted
+	    set sortedPath [ExistCheck [GetTopNode $winId] $varCapt {} -2 \
+				"saved setup"]
+	    switch $sortedPath {
+		break {
+		    error [tr. {Failed to initialize helper}]
+		} continue {
+		    continue
+		} default {
+		    set varCapt [lindex $sortedPath 0]
+		    set id [lindex $sortedPath 1]
+		}
+	    }
 	    lappend displayList($winId,paths) $varCapt
-	    set id [GetIdFromCaptionPath $varCapt]
 	    lappend displayList($winId,ids) $id
 	    lappend displayList($winId,transes) [GetTransTable $id]
 	}
