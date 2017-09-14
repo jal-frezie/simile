@@ -1273,16 +1273,15 @@ proc prune {target metaTxt idCount} {
     return [expr !$status]
 }
 
-proc locate {metaTxt idCount args} {
-    upvar 1 $metaTxt meta
+proc locate {ptr idCount args} {
     set status 1
-    while {$meta ne 0 && \
+    while {$ptr ne 0 && \
 	       [set status [compare_instance_status \
-				[set submodelptr $meta]::instanceid \
+				[set submodelptr $ptr]::instanceid \
 				$args $idCount]]==-1} {
-        set meta [set ${submodelptr}::next]
+        set ptr [set ${submodelptr}::next]
     }
-    return [expr !$status]
+    return [expr {$status?0:$ptr}]
 }
 
 proc locate_nbr {ptr metaTxt soughtIndex} {

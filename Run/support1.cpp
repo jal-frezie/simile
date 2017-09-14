@@ -348,18 +348,17 @@ BOOLEAN prune (SMClass **metaptr, int id_count, ...) {
   delete curIndices;
   return !status;
 }
-
+/*
 template <class SMClass>
 SMClass* locate (SMClass* ptr, int soughtIndex) {
   while (ptr && ptr->instanceid[0] != soughtIndex)
     ptr = ptr->next;
   return ptr;
 }
-
+*/
 template <class SMClass>
-BOOLEAN locate (SMClass **metaptr, int id_count, ...) {
+SMClass* locate (SMClass* ptr, int id_count, ...) {
   int status = 1, length;
-  SMClass *submodelptr;
   va_list argptr;
   int *curIndices;
 
@@ -370,15 +369,17 @@ BOOLEAN locate (SMClass **metaptr, int id_count, ...) {
   }
   va_end(argptr);
    
-  while (*metaptr && 
-	 (status = (*compare_instance_status)((*metaptr)->instanceid,
+  while (ptr && 
+	 (status = (*compare_instance_status)(ptr->instanceid,
 				   curIndices, id_count)) == -1) {
-    submodelptr = *metaptr;
-    *metaptr = submodelptr->next;
+    ptr = ptr->next;
     // delete submodelptr;
   };
   delete curIndices;
-  return !status;
+  if (status) // no exact match
+    return NULL;
+  else
+    return ptr;
 }
 
 template <class SMClass>
