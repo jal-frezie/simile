@@ -151,14 +151,26 @@ proc Restore {winId} {
     initialize $winId
     if {[string match displaying [lindex $state 0]]} {
 #	$winId.buttons.ang set [lindex $state 1]
-	foreach node [lrange $state 3 end] {
-	    if {$node eq "/annotation/"} {
+	set topNode [$::helperTable($winId,whichInstance) GetNode]
+	foreach path [lrange $state 3 end] {
+	    if {$path eq "/annotation/"} {
 		# next entry (currently always last) is note date
 		RestoreNotesFromList [GetCanvas $winId] [lindex $state end]
 		break
 	    }
-	    lappend useNodes($winId,selected) [GetIdFromCaptionPath $node]
-	    lappend useNodes($winId,captions) [lindex [split $node /] end]
+	    set sortedPath [ExistCheck $topNode $path {} -2 "saved setup"]
+	    switch $sortedPath {
+		break {
+		    error [tr. {Failed to initialize helper}]
+		} continue {
+		    continue
+		} default {
+		    set path [lindex $sortedPath 0]
+		    set node [lindex $sortedPath 1]
+		}
+	    }
+	    lappend useNodes($winId,selected) $node
+	    lappend useNodes($winId,captions) [lindex [split $path /] end]
 	}
 	variable trunks
 	set trunks [LoadPosns $winId]
