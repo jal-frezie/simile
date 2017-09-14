@@ -1120,14 +1120,16 @@ proc HitKey { winId char } {
 	    event generate $winId <Key-braceright>
 	} default {
 	    set begin 1.0
+	    set en [GetFrame $equation(main).main.main].equation.textbox.text
 	    if {[string match *Entry [winfo class [focus]]]} {
 		set begin 0
 	    } else {
-		focus [GetFrame $equation(main).main.main].equation.textbox.text
+		focus $en
 	    }
 	    if {[string match AC $char]} {	    
 		[focus] delete $begin end
 	    } else {
+		FlashMatchingBracket 1 [focus] 0 $char
 		[focus] insert insert $char
 	    }
 	}
