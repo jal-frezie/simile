@@ -773,7 +773,7 @@ change_name(RenamedNode, Name) :-
 		find_name_host(RenamedNode, ArcWithName);
 	    ArcWithName = RenamedNode),
 	    add_parameter(ArcWithName, 2, name, Name)),
-	(status_affects(RenamedNode, OtherGhost),
+	((OtherGhost = RenamedNode; status_affects(RenamedNode, OtherGhost)),
 	    update_captions(OtherGhost),
 	    update_default_refs_in_eqns(OtherGhost),
 	    fail;
@@ -782,12 +782,12 @@ change_name(RenamedNode, Name) :-
 update_default_refs_in_eqns(OtherGhost) :-
 	presence_affects(OtherGhost, Reference),
 	implicit_function(Reference, DownFunc),
-	setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^
+	get_av_pair(DownFunc, 0, value, Eqn),
+	(setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^
 	     (InputSpec = input_link(id(OtherGhost,P1,P2), P3,P4,P5,P6),
 		 m_update'><'get_all_links(DownFunc,continuous,P0,InputSpec)),
 	      InputSpecs),
 	get_av_pair(OtherGhost, 2, role, Roles),
-	get_av_pair(DownFunc, 0, value, Eqn),
 	m_update'><'already_used_in(InputSpecs, AllUsed),
 	/* but what about names already used in other links? Should
 	replace_subexps first then use old names then set vars */
@@ -802,9 +802,43 @@ update_default_refs_in_eqns(OtherGhost) :-
 	name(NewSpec, NewStr),
 	add_parameter(DownFunc, 0, spec, NewSpec),
 	add_parameter(OtherGhost, 2, role, NewRoles),
+	fail; wake,
+	% now sort out events for state variables. Tricky as we do not
+	% have the old caption so we may not know which one was
+	% changed. So, list the current ones, pair them off with those
+	% in the value, and find the mismatched pair. In the event of a
+	% submodel name change there may be many mismatches, if so match
+	% them up by tail.
+	find_type(Reference, state),
+	list_evt_captions(DownFunc, EvtPaths),
+	get_av_pair(DownFunc, 0, spec, Spec),
+	fix_mismatched_triggers(Eqn, Spec, EvtPaths, NewEqn, NewSpec, []),
+	\+ NewSpec = Spec, % may loop if it is?
+	add_parameter(DownFunc, 0, value, NewEqn),
+	add_parameter(DownFunc, 0, spec, NewSpec),
 	fail;
-	true.
-	
+	true).
+
+fix_mismatched_triggers(Eqn, Spec, EvtPaths, NewEqn, NewSpec, SpareTriggers) :-
+    (Eqn = (Val on Trigger),
+    Spec = (ValAtom on Trigger);
+    Eqn = (Val on Trigger, MoreEqn),
+    Spec = (ValAtom on Trigger, MoreSpec)),
+    (select(Trigger, EvtPaths, MoreEvtPaths) ->
+	 NewTrigger = Trigger;
+     MoreEvtPaths = EvtPaths),
+    (nonvar(MoreEqn) ->
+	 fix_mismatched_triggers(MoreEqn, MoreSpec, MoreEvtPaths,
+				 NMEqn, NMSpec, AvailTriggers),
+	 NewEqn = (Val on NewTrigger, NMEqn),
+	 NewSpec = (ValAtom on NewTrigger, NMSpec);
+     AvailTriggers = MoreEvtPaths,
+         NewEqn = (Val on NewTrigger),
+	 NewSpec = (ValAtom on NewTrigger)),
+    (nonvar(NewTrigger) ->
+	 SpareTriggers = AvailTriggers;
+     select(NewTrigger, AvailTriggers, SpareTriggers)). % later check poss
+
 update_role(use(P1, P2, Ref, P3), InputSpecs, AllUsed,
 	    use(P1, P2, NewRef, P3)) :-
 	\+ Ref = usr(_),
