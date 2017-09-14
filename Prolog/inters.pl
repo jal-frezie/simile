@@ -1708,7 +1708,7 @@ builtin('List handling', makearray, array_of_any, [any, const_int]).
 builtin('List handling', place_in, int, [const_int]).
 builtin('List handling', tweakarray, array_of_any, [any, const_int, int]).
 builtin('List handling', statearray, array_of_any, [int, any, array_of_any]).
-builtin('List handling', element, any, [array_of_any, int]).
+builtin('List handling', element, any, [array_of_any, int, '...']).
 builtin('List handling', flatten, list_of_any, [nested_list_of_any]).
 builtin('Model properties', size, int, [submodel_name]).
 builtin('Model properties', size, int, [submodel_name, const_int]).
