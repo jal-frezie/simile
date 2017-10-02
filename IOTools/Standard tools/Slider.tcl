@@ -231,6 +231,7 @@ namespace eval slide139 {
                     pack $f.combo -side right -fill x -expand true
                     pack [label $f.caption -text [lindex $levels end] -width 12]
                 } default {
+		    array unset widgetSeln $node ;# bad value crashes Tcl
                     scale $f.scale -length 120 -orient h -showvalue false \
 			-sliderlength 10 -from $min -to $max \
 			-tickinterval $gap -resolution $spacing \
@@ -344,6 +345,8 @@ namespace eval slide139 {
                                 [namespace code [list WidgetSelnToC $node \
 						     $fixed $index]]
                         set newScale $f.elt$index.scale
+			array unset widgetSeln $node,$index
+			# bad value crashes Tcl
                         scale $newScale -length 180 \
 			    -orient horizontal -showvalue false \
 			    -sliderlength 10 -from $min -to $max \
