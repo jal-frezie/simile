@@ -783,61 +783,79 @@ update_default_refs_in_eqns(OtherGhost) :-
 	presence_affects(OtherGhost, Reference),
 	implicit_function(Reference, DownFunc),
 	get_av_pair(DownFunc, 0, value, Eqn),
-	(setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^
+	((setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^
 	     (InputSpec = input_link(id(OtherGhost,P1,P2), P3,P4,P5,P6),
 		 m_update'><'get_all_links(DownFunc,continuous,P0,InputSpec)),
-	      InputSpecs),
-	get_av_pair(OtherGhost, 2, role, Roles),
-	m_update'><'already_used_in(InputSpecs, AllUsed),
-	/* but what about names already used in other links? Should
+		InputSpecs) -> % none if source is submodel
+	  get_av_pair(OtherGhost, 2, role, Roles),
+	  m_update'><'already_used_in(InputSpecs, AllUsed),
+	  /* but what about names already used in other links? Should
 	replace_subexps first then use old names then set vars */
-	all(event, update_role, [build(Roles), unify(InputSpecs),
-				 unify(AllUsed), build(NewRoles)]),
-	replace_subexps(Eqn, event, swap_def_params,
-			[Roles, NewRoles], top_down, _, NewEqn),
-	add_parameter(DownFunc, 0, value, NewEqn),
-	get_av_pair(DownFunc, 0, spec, OldSpec),
-	name(OldSpec, OldStr),
-	ame_gen'><'update_substrings(OldStr, Roles, NewRoles, NewStr),
-	name(NewSpec, NewStr),
-	add_parameter(DownFunc, 0, spec, NewSpec),
-	add_parameter(OtherGhost, 2, role, NewRoles),
-	fail; wake,
+	  all(event, update_role, [build(Roles), unify(InputSpecs),
+				   unify(AllUsed), build(NewRoles)]),
+	  add_parameter(OtherGhost, 2, role, NewRoles);
+	  Roles = [], NewRoles = []),
+	get_av_pair(DownFunc, 0, spec, Spec),
+	(find_type(Reference, state) ->
 	% now sort out events for state variables. Tricky as we do not
 	% have the old caption so we may not know which one was
 	% changed. So, list the current ones, pair them off with those
 	% in the value, and find the mismatched pair. In the event of a
 	% submodel name change there may be many mismatches, if so match
 	% them up by tail.
-	find_type(Reference, state),
-	list_evt_captions(DownFunc, EvtPaths),
-	get_av_pair(DownFunc, 0, spec, Spec),
-	fix_mismatched_triggers(Eqn, Spec, EvtPaths, NewEqn, NewSpec, []),
-	\+ NewSpec = Spec, % may loop if it is?
+	     list_evt_captions(DownFunc, EvtPaths),
+	     fix_mismatched_triggers(Eqn, Spec, EvtPaths, Roles,
+				     NewRoles, NewEqn, NewSpec, []),
+             \+ NewSpec = Spec; % may loop if it is?
+	  replace_subexps(Eqn, event, swap_def_params,
+			  [Roles, NewRoles], top_down, _, NewEqn),
+	     name(Spec, OldStr),
+	     ame_gen'><'update_substrings(OldStr, Roles, NewRoles, NewStr),
+	     name(NewSpec, NewStr)),
 	add_parameter(DownFunc, 0, value, NewEqn),
 	add_parameter(DownFunc, 0, spec, NewSpec),
 	fail;
 	true).
 
-fix_mismatched_triggers(Eqn, Spec, EvtPaths, NewEqn, NewSpec, SpareTriggers) :-
+fix_mismatched_triggers(Eqn, Spec, EvtPaths, Roles,
+			NewRoles, NewEqn, NewSpec, SpareTriggers) :-
     (Eqn = (Val on Trigger),
     Spec = (ValAtom on Trigger);
     Eqn = (Val on Trigger, MoreEqn),
     Spec = (ValAtom on Trigger, MoreSpec)),
+    replace_subexps(Val, event, swap_def_params,
+		    [Roles, NewRoles], top_down, _, NewVal),
+    name(ValAtom, OldStr),
+    ame_gen'><'update_substrings(OldStr, Roles, NewRoles, NewStr),
+    name(NewValAtom, NewStr),
+
     (select(Trigger, EvtPaths, MoreEvtPaths) ->
 	 NewTrigger = Trigger;
      MoreEvtPaths = EvtPaths),
     (nonvar(MoreEqn) ->
-	 fix_mismatched_triggers(MoreEqn, MoreSpec, MoreEvtPaths,
-				 NMEqn, NMSpec, AvailTriggers),
-	 NewEqn = (Val on NewTrigger, NMEqn),
-	 NewSpec = (ValAtom on NewTrigger, NMSpec);
+	 fix_mismatched_triggers(MoreEqn, MoreSpec, MoreEvtPaths, Roles,
+				 NewRoles, NMEqn, NMSpec, AvailTriggers),
+	 NewEqn = (NewVal on NewTrigger, NMEqn),
+	 NewSpec = (NewValAtom on NewTrigger, NMSpec);
      AvailTriggers = MoreEvtPaths,
          NewEqn = (Val on NewTrigger),
 	 NewSpec = (ValAtom on NewTrigger)),
     (nonvar(NewTrigger) ->
 	 SpareTriggers = AvailTriggers;
-     select(NewTrigger, AvailTriggers, SpareTriggers)). % later check poss
+     unchanged_levels(Trigger, Unchanged),
+        select(NewTrigger, AvailTriggers, SpareTriggers),
+        unchanged_levels(NewTrigger, Unchanged)).
+
+% this needs to cope if a submodel has been added/deleted around the sources
+unchanged_levels(Path, KeptLevelStrs) :-
+    name(Path, PathStr),
+    separate_levels(PathStr, LevelStrs),
+    (KeptLevelStrs = LevelStrs; select(_Changed, LevelStrs, KeptLevelStrs)).
+
+separate_levels(PathStr, [Level | Rest]) :-
+    append(Level, [47 | MorePathStr], PathStr) ->
+	separate_levels(MorePathStr, Rest);
+    [Level | Rest] = [PathStr].
 
 update_role(use(P1, P2, Ref, P3), InputSpecs, AllUsed,
 	    use(P1, P2, NewRef, P3)) :-
