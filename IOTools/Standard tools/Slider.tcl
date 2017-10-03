@@ -469,8 +469,8 @@ namespace eval slide139 {
 	if {$widgetSeln($node$sub) == $widgetSeln(old,$node$sub)} {return 1}
 	set widgetSeln(old,$node$sub) $widgetSeln($node$sub)
 	if $fixed {
-	    # clear file param log so it can be re-applied
-	    set paramData(/$myNode[GetCaptionPathFromId $node]) {}
+	    # mark change so original value can be reloaded
+	    set paramData(slid,/$myNode[GetCaptionPathFromId $node]) 1
 	    set runState($myNode,reloadParams) -1
 	    return 0
 	}

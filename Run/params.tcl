@@ -506,7 +506,9 @@ proc AcceptData {topNode compName notInput complain} {
 	    # will do that later _if_ it is error free
 	    set dataChanged 1
 	    set entryChanged 1
-	} elseif {[string toupper [lindex $newData 0]] eq "NOW"} {
+	} elseif {[string toupper [lindex $newData 0]] eq "NOW" || \
+		      [info exists suppliedData(slid,$compName)]} {
+	    array unset suppliedData slid,$compName
 	    set dataChanged 1
 	}
     } else {
