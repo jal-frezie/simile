@@ -555,6 +555,7 @@ install:
 	cd $(DESTDIR)$(INSTALL_TGT); \
 	tar xf payload.tar; \
 	mv Run/$(UINFO_TPL) Run/userinfo.txt; \
+	touch Run/userinfo.txt; \
 	mkdir -p $(DESTDIR)$(SHAREDIR)/applications; \
 	mv simile.desktop $(DESTDIR)$(SHAREDIR)/applications; \
 	rm payload.tar; cd -; \
