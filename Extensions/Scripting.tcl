@@ -579,6 +579,10 @@ redo with snap object
 	global helperTable
 
 	set helperTable($modelNode,current) $helperInst
+	UpdateCursors hand2
+	if {[info exists ::RunEnv::variableListFrame($modelNode)]} {
+	    $::RunEnv::variableListFrame($modelNode) config -cursor hand2
+	}
     }
 
     public method HasClicks {} {
@@ -595,6 +599,10 @@ redo with snap object
 	global helperTable
 
 	unset helperTable($modelNode,current)
+	UpdateCursors $::window_info(defCurs)
+	if {[info exists ::RunEnv::variableListFrame($modelNode)]} {
+	    $::RunEnv::variableListFrame($modelNode) config -cursor arrow
+	}
     }
 
     public method GetValue {path} {

@@ -293,7 +293,12 @@ proc GrabClicks {winId} {
     global helperTable
 
     set inst $helperTable($winId,whichInstance)
-    set helperTable([$inst GetNode],current) $inst
+    set node [$inst GetNode]
+    set helperTable($node,current) $inst
+    UpdateCursors hand2
+    if {[info exists ::RunEnv::variableListFrame($node)]} {
+	$::RunEnv::variableListFrame($node) config -cursor hand2
+    }
 }
 
 # This is only called by old-style helpers now
@@ -301,7 +306,12 @@ proc ReleaseClicks {winId} {
     global helperTable
 
     set inst $helperTable($winId,whichInstance)
-    unset helperTable([$inst GetNode],current)
+    set node [$inst GetNode]
+    unset helperTable($node,current)
+    UpdateCursors $::window_info(defCurs)
+    if {[info exists ::RunEnv::variableListFrame($node)]} {
+	$::RunEnv::variableListFrame($node) config -cursor arrow
+    }
 }
 
 # Two more old-style wrapper funx

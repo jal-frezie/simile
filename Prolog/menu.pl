@@ -68,7 +68,7 @@ set_cursor_for(NewMode) :-
 	NewMode = add, !,
 	    cursor_is(target);
 	NewMode = move, !,
-	    cursor_is(hand2);
+	    cursor_is(fleur);
 /*	NewMode = move, !,
 	    assert(cursor_is(fleur));
 	NewMode = copy, !,
