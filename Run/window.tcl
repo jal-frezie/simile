@@ -2112,7 +2112,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     pack $eb.padding2 -side left
     
     set image [image create photo -file "$SIMILE_PATH/Images/Eqnbar/inputs.gif"]
-    ::ttk::menubutton $eb.inputs -state disabled -menu $eb.inputs.menu -image $image
+    ::ttk::menubutton $eb.inputs -state disabled -image $image
     FixDisabledImgBug $eb.inputs
     pack $eb.inputs -side left
     BindPopup $eb.inputs inputs

@@ -1317,7 +1317,7 @@ proc DoUserDialogue {} {
     grid [label $t.head.nmess -text Name:] [entry $t.head.nentry -width 40] -sticky w
     grid [label $t.head.cmess -text Organization:] [entry $t.head.centry -width 40] -sticky w
     grid [label $t.head.lmess -text "License code:"] [frame $t.head.lfield] -sticky w
-
+    # put in old details if we have them
     pack [entry $t.head.lfield.entryl -width 5 -validate key \
 	      -validatecommand [list LimitChars %W %P]] -side left
     pack [label $t.head.lfield.hyphen -text {-}] -side left
@@ -1325,6 +1325,12 @@ proc DoUserDialogue {} {
 	      -validatecommand [list LimitChars %W %P]] -side left
     pack [label $t.head.lfield.free -text [tr. {(not required for evaluation edition)}]] -side left -fill x
 
+    if {$userinfo(license_code) ne {<insert license code here>}} {
+	$t.head.nentry insert 0 $userinfo(name)
+	$t.head.centry insert 0 $userinfo(corp)
+	$t.head.lfield.entryl insert 0 [string range $userinfo(license_code) 0 4]
+	$t.head.lfield.entryr insert 0 [string range $userinfo(license_code) 6 10]
+    }
     pack [message $t.mess2 -aspect 1000 -text [tr. "Now carefully read the following End User License Agreement, and click 'ACCEPT' to indicate that you have read and understood it and that you agree to the terms set out in it."]]
     pack [frame $t.agree -bd 4 -relief groove] -fill x
     pack [scrollbar $t.agree.y -orient v -command "$t.agree.t yview"] \
@@ -1369,8 +1375,8 @@ proc DoWelcomeDialog {dtId} {
     # available...
 
     set newVers [GetLatestVers]
-    if {$newVers == 0} {set newVers $userinfo(oldVersion)}
-    if {$newVers==$userinfo(oldVersion) && $userinfo(done)} {
+    if {$newVers == 0} {set newVers $userinfo(old_version)}
+    if {$newVers==$userinfo(old_version) && $userinfo(done)} {
 	return
     } else {
         file mkdir $custom(prefDir)/Examples
@@ -1452,7 +1458,7 @@ proc DoWelcomeDialog {dtId} {
     set links [GetFrame .register.links]
     
     frame $links.m1
-    if {$newVers > $userinfo(oldVersion)} {
+    if {$newVers > $userinfo(old_version)} {
 	pack [frame $links.m0] -anchor w
         pack [label $links.m0.left -text " * " -font {-family helvetica -size 12}] \
                 -anchor w -side left
@@ -1529,17 +1535,10 @@ proc DoWelcomeDialog {dtId} {
     wm geometry .register +[expr $d+($a-$g)/2]+[expr $f+($s-$h)/2]
     
     if {$userinfo(done)} {
-	set UserStream [NetOpen $custom(prefDir)/.version w]
-	puts $UserStream $userinfo(name)
-	puts $UserStream $userinfo(corp)
-	puts $UserStream $newVers
-	puts $UserStream 1 ;# not read as of v6.2
-	close $UserStream
-	switch [tk windowingsystem] {
-	    win32 {file attributes $custom(prefDir)/.version -hidden true}
-	}
+	set userinfo(old_version) $userinfo(Version)
+	WriteCreds
     }
-    
+
     # this never happens with welcome version
     if {$userinfo(done) == 2} {
         if {[catch {package require http
@@ -2302,7 +2301,7 @@ proc EquationListingSave {winId topNode} {
 }
 
 proc EquationListingPrint {winId} {
-    global env tcl_platform
+    global tcl_platform
     global printargs equationlist
     
     if {[string match windows $tcl_platform(platform)]} {

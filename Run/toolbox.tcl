@@ -736,6 +736,18 @@ proc StartComms {firstTime} {
     fileevent $relayProc readable [list Respond $relayProc]
 }
 
+proc WriteCreds {} {
+    global userinfo
+    if {[catch {open [file join $::custom(prefDir) userinfo.txt] w} \
+	     UserStream]} {
+	error "Simile failed to create a file to keep the user authorization data. If you are using the Mac version, be sure to copy the application to a folder on your hard disk before attempting to run it. See the README for details. The error was: $UserStream"
+    }
+    foreach savedCred $::savedCredentials {
+	puts $UserStream $userinfo($savedCred)
+    }
+    close $UserStream
+}
+
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo OPEN_MODEL simtmpdir
     global regularActs tclBitness looks
@@ -817,18 +829,7 @@ proc ControlDraw {prologVersion} {
     }
     cd $oldDir
 
-    if {[file exists $custom(prefDir)/.version]} {
-        set UserStream [NetOpen $custom(prefDir)/.version r]
-        gets $UserStream userinfo(name)
-        gets $UserStream userinfo(corp)
-        gets $UserStream userinfo(oldVersion)
-        set userinfo(done) 1
-        close $UserStream
-    } else {
-        set userinfo(oldVersion) $userinfo(Version)
-        set userinfo(done) 0
-    }
-#   ShowMess debug info "Got old version $userinfo(oldVersion)" ok
+    set userinfo(done) 1
 
     if {[catch {package require -exact Unpacker $env(SIMILE_VERSION)} dummy]} {
 	error "Could not find an unpacker for Simile -- $dummy"
@@ -836,38 +837,19 @@ proc ControlDraw {prologVersion} {
 
     if {[string match windows $tcl_platform(platform)]} {
 	c_testlicense
-	if {[catch {set userinfo(name) $env(licensee_name)}]} {
-	    set userinfo(name) {}
-	}
-	if {[catch {set userinfo(corp) $env(licensee_corp)}]} {
-	    set userinfo(corp) {}
-	}
     } else {
 # (include ff in Windows anyway in case some twerp runs it with userinfo.tpl)
 # Windows installers can ask the user for a license code and stick it in
 # userinfo.txt (formerly the registry). On other platforms we have to DIY.
-	if {[string equal {<insert license code here>} $env(license_code)]} {
+#	if {[string equal {<insert license code here>} $env(license_code)]}
+	if {! [Newer $::creds $::installedCreds m]} {
 	    if {![DoUserDialogue]} {
 		error "No license supplied"
 	    }
-	    set env(licensee_name) $userinfo(name)
-	    set env(licensee_corp) $userinfo(corp)
-	    set env(license_code) $userinfo(license_code)
 	    set installTime [clock seconds]
-	    set env(install_time) "$installTime :: [clock format $installTime -gmt true]"
+	    set userinfo(install_time) "$installTime :: [clock format $installTime -gmt true]"
 	    c_testlicense
-	    if {[catch {open [file join $custom(prefDir) userinfo.txt] w} \
-		     UserStream]} {
-		error "Simile failed to create a file to keep the user authorization data. If you are using the Mac version, be sure to copy the application to a folder on your hard disk before attempting to run it. See the README for details. The error was: $UserStream"
-	    }
-	    puts $UserStream $env(prologId)
-	    puts $UserStream $env(interfaceId)
-	    puts $UserStream $env(install_time)
-	    puts $UserStream $env(license_code)
-	    puts $UserStream $userinfo(name)
-	    puts $UserStream $userinfo(corp)
-	    puts $UserStream $userinfo(Version)
-	    close $UserStream
+	    WriteCreds
 	} else {
 	    c_testlicense
 	}
@@ -875,12 +857,7 @@ proc ControlDraw {prologVersion} {
 
     loadcommands
 
-    if {![info exists userinfo(name)]} { ;# settings directory has come to grief
-	set userinfo(name) $env(licensee_name)
-	set userinfo(corp) $env(licensee_corp)
-    }
-    array set userinfo [list name $userinfo(name) corp $userinfo(corp) \
-			    built $env(user,built) edn $env(user,edn)]
+    array set userinfo [list built $env(user,built) edn $env(user,edn)]
     
     # eezi-hack implementation of time limit: to do this anything like
     # properly, have stub dll check unix time against clock time
@@ -2241,6 +2218,7 @@ proc AddInputs {winId bar} {
 
     set node $equationbar($winId,node)
     $bar.inputs.menu delete 0 end
+    $bar.inputs configure -menu {}
     set equationbar(params) {} ;# for autocomplete
     set paramData [GetFromProlog tk_get_params('$winId',$node)]
     set popupTable {}
@@ -2248,6 +2226,7 @@ proc AddInputs {winId bar} {
 	set paramName [lindex $paramList 1]
 	$bar.inputs.menu add command -label $paramName \
 	    -command [list InsertParam $bar.equation $paramName]
+	$bar.inputs configure -menu $bar.inputs.menu
 	lappend equationbar(params) $paramName
 	lappend popupTable "$paramName: [DescribeInputParam [lindex $paramList 0]] ([lindex $paramList 2])"
     }

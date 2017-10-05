@@ -38,7 +38,7 @@ if {![file exists $custom(prefDir)]} {
 
 # Load licensing information
 set savedCredentials [list prologId interfaceId install_time license_code \
-			  licensee_name licensee_corp]
+			  name corp old_version]
 # from v5.5, windows installer creates usrinfo.txt rather than writing registry
 # if {[string equal windows $tcl_platform(platform)]} {
 #     package require registry
@@ -60,13 +60,14 @@ proc Newer {is than t} {
 
 set installedCreds [file join $SIMILE_PATH Run userinfo.txt]
 set creds [file join $custom(prefDir) userinfo.txt]
-if {[Newer $installedCreds $creds m]} {
+#if {[Newer $installedCreds $creds m]}
+if {![file exists $creds]} {
     file copy -force $installedCreds $creds
 }
 
 set UserStream [open $creds r]
 foreach regEntry $savedCredentials {
-    gets $UserStream env($regEntry)
+    gets $UserStream userinfo($regEntry)
 }
 close $UserStream
 # }

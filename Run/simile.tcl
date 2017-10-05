@@ -60,7 +60,7 @@ set headless [catch {set defScaling [tk scaling]}]
 # set env(prologId) gnu ;# goodbye forever Sicstus
 if {[info exists prolog_in_console]} {
     set SIMILE_PATH [file dirname [pwd]] ;# otherwise it is relative
-    set env(interfaceId) console
+    set userinfo(interfaceId) console
 # this will simply let the script run out after loading the rest of the Tcl
 # so control goes back to Prolog
 } else {
@@ -267,7 +267,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 6.8
-set sendvars(simP) {p7}
+set sendvars(simP) {p8}
 
 if {$env(SIMILE_VERSION)>=6.0} {
     set do_events 1 ;# include event symbols
@@ -446,10 +446,10 @@ set graph(anality) "\ua9 [tr. {Copyright Simulistics Ltd.}] 2001-$year"
     -text [tr. "Simile"]
 .splash.c create text 250.0p 290.0p -font $graph(font) -fill #660066 -anchor s \
     -text "[format [tr. {Version %1$s}] $env(SIMILE_VERSION)$sendvars(simP)]"
-if {[catch {set regInfo $env(licensee_name)}]} {
-    set regInfo [set env(licensee_name) [tr. Anonymous]]
+if {[catch {set regInfo $userinfo(name)}]} {
+    set regInfo [set userinfo(name) [tr. Anonymous]]
 }
-catch {append regInfo ", $env(licensee_corp)"}
+catch {append regInfo ", $userinfo(corp)"}
 .splash.c create text 250.0p 310.0p -font $graph(font) -fill #660066 -anchor s \
     -text "[format [tr. {Registered to %1$s}] $regInfo]"
 
@@ -498,10 +498,10 @@ switch $tcl_platform(platform) {
 # -- must be concurrent because script causes Windows problems if
 # not finished
 
-if {[string equal swi_interp $env(prologId)]} {
+if {[string equal swi_interp $userinfo(prologId)]} {
     set PROLOG_CMD {swipl --traditional -L1g -f none -g "load_files(['../Prolog/smain'],[silent(true)])" -t main}
 } else {
-    switch $env(prologId) {
+    switch $userinfo(prologId) {
 	gnu {
 	    set tgt xgsimile
 	} sicstus {
@@ -511,12 +511,12 @@ if {[string equal swi_interp $env(prologId)]} {
 	}
     }
     set PROLOG_CMD [list [file join $execDir $tgt$archExtn$execExtn]]
-    if {$env(prologId) eq "swi_comp"} {
+    if {$userinfo(prologId) eq "swi_comp"} {
 	lappend PROLOG_CMD 2>@1 ;# avoids error popups
     }
 }
 
-switch $env(interfaceId) {
+switch $userinfo(interfaceId) {
     pipe {
 #	set whatCalled [file rootname [file tail [info nameofexecutable]]]
 	source ../Run/toolbox.tcl
