@@ -775,12 +775,12 @@ change_name(RenamedNode, Name) :-
 	    add_parameter(ArcWithName, 2, name, Name)),
 	((OtherGhost = RenamedNode; status_affects(RenamedNode, OtherGhost)),
 	    update_captions(OtherGhost),
-	    update_default_refs_in_eqns(OtherGhost),
+	    presence_affects(OtherGhost, Reference),
+	    update_default_refs_in_eqns(OtherGhost, Reference),
 	    fail;
 	 update_captions(RenamedNode)).
 
-update_default_refs_in_eqns(OtherGhost) :-
-	presence_affects(OtherGhost, Reference),
+update_default_refs_in_eqns(OtherGhost, Reference) :-
 	implicit_function(Reference, DownFunc),
 	get_av_pair(DownFunc, 0, value, Eqn),
 	((setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^
@@ -2484,6 +2484,11 @@ attempt_new_component(Parent, Box) :-
 		fail;
 	true),
 	encapsulate(Parent, Include, Node_name),
+	(presence_affects(Node_name, State),
+	    find_type(State, state),
+	    update_default_refs_in_eqns(Node_name, State),
+	    fail;
+	 true),
 	set_shape(Node_name, internal_extent, [0,0,W,H]),
 	add_to_translation([0, 0, 1, 1], Node_name, Node_trans),
 	relate_graphics(Node_name, Node_trans),
@@ -2595,6 +2600,9 @@ dissolve_component(Node) :-
 	(get_all_dims(Node, []), !;
 	add_parameter(Node, 0, assume_simple, 1),
 	    spread_colour(Node, dims)),
+	(setof(State, (presence_affects(Node, State), find_type(State, state)),
+	       States), !; States = []),
+
 	/* next, set its internal extent to its bounding box so I can snap its
 	    already-moved components to the parent's grid */
 	get_shape(Node, bounding_box, BB),
@@ -2607,7 +2615,10 @@ dissolve_component(Node) :-
 	decapsulate(Node, Orphan_nodes, MovedLinks)),
 	    /* Now everything from the dead submodel must be redisplayed
 	    because its fatness will have changed to match the new parent */
-	(member(OrphanNode, Orphan_nodes),
+	(member(State, States),
+	    update_default_refs_in_eqns(Node, State),
+	    fail;
+	 member(OrphanNode, Orphan_nodes),
 	    redisplay_border(OrphanNode),
 	    fail;
 	member(MovedLink, MovedLinks),
