@@ -2259,10 +2259,11 @@ reghost(Ghost, Base) :-
 
 change_ghosthood(Node) :-
 /*	make_links_follow(Node), */
-	status_affects(Node, OutLink),
-	update_default_refs_in_eqns(OutLink),
+    status_affects(Node, OutLink),
+        presence_affects(OutLink, Dest),
+	update_default_refs_in_eqns(OutLink, Dest),
 	fail;
-	spread_colour(Node, dims).	    
+    spread_colour(Node, dims).	    
 
 delete_by_dlg(Target) :-
 	remove_highlights,
