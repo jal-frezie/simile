@@ -1095,6 +1095,10 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   return NULL;
 }
 
+void ExecutingModel::RepeatReset(double init_time) {
+  varParamArrayBase->ResetTimeSeries(init_time, 0);
+}
+
 excpData* ExecutingModel::ExecuteInstance(int how_int, double start, 
 					  double* end, double errlim,
 					  BOOLEAN pause_out_of_range,
@@ -2418,6 +2422,10 @@ nodeValues* get_raw_values(char* nodeId, void* instance_id) {
 excpData* reset(void* modelType, void* modelHandle, double t0, int how_int,
 		int top_phase) {
   return ((ExecutingModel*)modelHandle)->ResetInstance(t0, how_int, top_phase);
+}
+
+void repeat_reset(void* modelType, void* modelHandle, double t0) {
+  ((ExecutingModel*)modelHandle)->RepeatReset(t0);
 }
 
 excpData* execute(void* modelType, void* modelHandle, int how_int,

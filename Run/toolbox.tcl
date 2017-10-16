@@ -969,6 +969,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(roleRouting) roleRouting {20 -100 100} [tr. "Curve role arrows"]] \
 		  [list custom(deleteEndToEnd) deleteEndToEnd ON [tr. "Select links end-to-end"]] \
 		  [list custom(helperManager) helperManager ON [tr. "Use single window manager"]] \
+		  [list custom(resetSliders) resetSliders ON [tr. "Reset sliders on model reset"]] \
 		  [list custom(popupPrecision) popupPrecision {0 0 16} [tr. "Value popups"]] \
 		  [list custom(snapPrecision) snapPrecision {0 0 16} [tr. "Snapshots"]] \
 		  [list custom(runControlPosition) runControlPosition "+0-20" [tr. "Position of run control"]] \
@@ -1032,7 +1033,7 @@ proc InitExecThread {node} {
 # puts "Created interp $execInterp($node,id) for $node"
     }
 
-    foreach stubCmd {load_c_stub_1 c_setparamarray tcl_setparamarray c_getparamall c_gettimepointall PlaceInArray ListToArray InitTimeSeries ResetTimeSeries UpdateTimeSeries MarkEvtParamActive SetWrapTime SetFillMethod SetInterval ex_load_dll update_executable SeedRandoms ReleaseHandle GetHandle RunningInC GetTclCompExecData GetCompProperty ExScrubRun} {
+    foreach stubCmd {load_c_stub_1 c_setparamarray tcl_setparamarray c_getparamall c_gettimepointall PlaceInArray ListToArray RepeatReset MarkEvtParamActive SetWrapTime SetFillMethod SetInterval ex_load_dll update_executable SeedRandoms ReleaseHandle GetHandle RunningInC GetTclCompExecData GetCompProperty ExScrubRun} {
 	if {$useThreads} {
 	    proc $stubCmd {node args} {
 		global execThread

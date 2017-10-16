@@ -248,6 +248,16 @@ proc ResetModel {myNode howInt initTime redo} {
     return $done
 }
 
+proc RepeatReset {myNode time} {
+    global model_id instance_id
+    if {[string bytelength $model_id]} {
+#	    set model_id $myNode
+	c_repeatreset $model_id $instance_id $time
+    } else {
+	ResetTimeSeries $myNode
+    }
+}
+
 proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
     global model_id instance_id
     if {[catch {

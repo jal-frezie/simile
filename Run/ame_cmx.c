@@ -1001,6 +1001,30 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
   }
 }
 
+FINDABLE int repeatresetCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  int how_int, phase, error;
+  excpData* errorBlk;
+  void* modelType;
+  void* modelHandle;
+  double t0;
+
+  if (argc != 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id initial_time");
+    return TCL_ERROR;
+  }
+  
+  memcpy(&modelType, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  memcpy(&modelHandle, Tcl_GetByteArrayFromObj(argv[2], NULL), sizeof(void*));
+  
+  error = Tcl_GetDoubleFromObj(interp, argv[3], &t0);
+  if (error != TCL_OK) {
+    return error;
+  }
+  repeat_reset(modelType, modelHandle, t0);
+  return TCL_OK;
+}
+
 FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
@@ -1630,110 +1654,35 @@ FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
  * c.
  *----------------------------------------------------------------------
  */
-
 FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
+  const char* allNames[] = {"loadmodel", "c_createmodel", "c_createparamarray",
+  "newc_settimepointarray", "newc_setrecordlist", "newc_settimepointrecords",
+  "newc_cleartimeseries", "newc_setparamelement", "newc_setwraparoundtime",
+  "newc_setfillmethod", "newc_setinterval", "newc_settimepointelement",
+  "newc_markevtparamactive", "newc_setparamall", "newc_getparamall",
+  "newc_settimepointall", "newc_gettimepointall", "c_resetmodel",
+  "c_repeatreset", "c_executemodel", "c_setstepmodel", "c_exitmodel",
+  "getvalue", "graph_table", "handle_data", "free_data_handle",
+  "getnodeid", "listobjects", "randseed", "random01"};
+  Tcl_ObjCmdProc* allProcs[] = {loadmodelCmd, createmodelCmd, setparamarrayCmd,
+  settimepointarrayCmd, setrecordlistCmd, settimepointrecordsCmd,
+  cleartimeseriesCmd, setparamelementCmd, setwrapCmd,
+  setfillCmd, setintervalCmd, settimepointelementCmd,
+  markevtparamactiveCmd, setparamallCmd, getparamallCmd,
+  settimepointallCmd, gettimepointallCmd, resetmodelCmd,
+  repeatresetCmd, executemodelCmd, setstepCmd, exitmodelCmd,
+  interfaceCmd, graphCmd, handleDataCmd, freeDataHandleCmd,
+  getnodeidCmd, listobjCmd, randseedCmd, random01Cmd};
   // char pkgName[16];
 
   // sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
   // Use the Tcl Stubs mechanism --version is earliest we expect to work
   if (!Tcl_InitStubs(interp, "8.5", 0)) return TCL_ERROR;
-  proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess); 
-  Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "c_createmodel", createmodelCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "c_createparamarray", setparamarrayCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-    
-  Tcl_CreateObjCommand(interp, "newc_settimepointarray", settimepointarrayCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "newc_setrecordlist", setrecordlistCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "newc_settimepointrecords", 
-		       settimepointrecordsCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "newc_cleartimeseries", cleartimeseriesCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  //  Tcl_CreateObjCommand(interp, "c_savetimepoint", savetimepointCmd, 
-  //		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "newc_setparamelement", setparamelementCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "newc_setwraparoundtime", setwrapCmd,
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "newc_setfillmethod", setfillCmd,
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "newc_setinterval", setintervalCmd,
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "newc_settimepointelement", 
-		       settimepointelementCmd,
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "newc_markevtparamactive", 
-		       markevtparamactiveCmd,
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  // next four were used for byte-array params so will not bother to update
-  // to 6-D interface
-  Tcl_CreateObjCommand(interp, "newc_setparamall", setparamallCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "newc_getparamall", getparamallCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "newc_settimepointall", settimepointallCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "newc_gettimepointall", gettimepointallCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "c_resetmodel", resetmodelCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "c_executemodel", executemodelCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "c_setstepmodel", setstepCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "c_exitmodel", exitmodelCmd, (ClientData)NULL,
-		       (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "getvalue", interfaceCmd, (ClientData)NULL,
-		       (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "graph_table", graphCmd, (ClientData)NULL,
-		       (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "handle_data", handleDataCmd, (ClientData)NULL,
-		       (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "free_data_handle", freeDataHandleCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "getnodeid", getnodeidCmd, (ClientData)NULL,
-		       (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "listobjects", listobjCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "randseed", randseedCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "random01", random01Cmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  /*  Tcl_CreateObjCommand(interp, "c_set_connection_database", SetConnDBCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  */
+  proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess);
+  for (int cmdNo = 0; cmdNo < 30; ++cmdNo) {
+    Tcl_CreateObjCommand(interp, allNames[cmdNo], allProcs[cmdNo], 
+			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  }
+
   return Tcl_PkgProvide(interp, "Ame_dll", simileVersion);
 }

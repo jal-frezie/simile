@@ -603,6 +603,9 @@ namespace eval slide139 {
         #		}
         #	    }
         #	}
+	if {![PrefValue custom(resetSliders) resetSliders]} {
+	    set ::widgetSeln(resetting) 1 ;# undoes var reset in model
+	}
     }
     
     proc ShowNthChoice {combi numbi} {
@@ -628,7 +631,7 @@ namespace eval slide139 {
             set node $sliderDoes($title,node)
             set type $sliderDoes($title,type)
             set dims $sliderDoes($title,dims)
-	    
+
 #            set valGroup [InputVarFor [$helperTable($winId,whichInstance) \
 #					   GetNode] $node]
 #            upvar \#0 $valGroup valArray
@@ -643,12 +646,16 @@ namespace eval slide139 {
             }
             set data [lindex [GetModelValue $node] 0]
             set useDim [FindUseDim $sliderDoes($title,dims)]
-            if {$useDim==-1} {
-		set widgetSeln($node) [GetDefVal $data -1 0]
-		set widgetSeln(old,$node) $widgetSeln($node)
-                if {[llength $f]} {
-                    ShowNthChoice $f.combo $widgetSeln($node)
-                }
+	    if {$useDim==-1} {
+		if {[info exists widgetSeln(resetting)]} {
+		    WidgetSelnToC $node 0 
+		} else {
+		    set widgetSeln($node) [GetDefVal $data -1 0]
+		    set widgetSeln(old,$node) $widgetSeln($node)
+		    if {[llength $f]} {
+			ShowNthChoice $f.combo $widgetSeln($node)
+		    }
+		}
             } else {
                 set count [lindex $sliderDoes($title,dims) $useDim]
                 # bodge it to work with record submodels
@@ -656,15 +663,26 @@ namespace eval slide139 {
                     set count [expr {[llength $data]/2}]
                 }
                 for {set index 1} {$count >= $index} {incr index} {
-                    set widgetSeln($node,$index) \
+		    if {[info exists widgetSeln(resetting)]} {
+			WidgetSelnToC $node 0 $index
+		    } else {
+			set widgetSeln($node,$index) \
                             [GetDefVal $data $useDim $index]
-		    set widgetSeln(old,$node,$index) $widgetSeln($node,$index)
-                    if {[llength $f]} {
-                        ShowNthChoice $f.elt$index.c $widgetSeln($node,$index)
-                    }
+			set widgetSeln(old,$node,$index) \
+			    $widgetSeln($node,$index)
+			if {[llength $f]} {
+			    ShowNthChoice $f.elt$index.c $widgetSeln($node,$index)
+			}
+		    }
                 }
             }
         }
+	if {[info exists widgetSeln(resetting)]} {
+	    set topNode [$helperTable($winId,whichInstance) GetNode]
+	    array unset widgetSeln resetting
+	    RepeatReset $topNode $time
+	    RedoRatesAndDisplay $topNode
+	}
     }
     
     # old version too lazy to check if it is its own slider. What the hell

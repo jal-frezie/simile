@@ -213,6 +213,10 @@ class ExecutingModel
   //! +ve: re-evaluate derived variables for that time step
   excpData* ResetInstance(double, int, int);
 
+  //! if a user selects keeping slider values over a reset, this should be
+  //! called to override them if there is a time point there
+  void RepeatReset(double);
+  
   //! Execute the model -- args are int. method, start time,
   // pointer to end time, error limit and whether to pause on
   // out-of-range and events
