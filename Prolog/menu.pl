@@ -301,7 +301,8 @@ menu_handle(CurWin, file, OpenAct) :-
 	    find_all_comps(Parent, _), !,
 	    menu_handle(Win, Mode, Name);
 	(is_toplevel(Parent), !,
-	    \+ check_if_already_open(Name),
+            \+ check_if_already_open(Name),
+	    close_exec(Parent),
 	    scrub_autosave(Parent);   
 	 check_deletable(Win, Parent),
 	    remove_model(Win, Parent)),
@@ -1469,7 +1470,7 @@ do_save(Win, Model, New_name) :-
 	true),
 	update_captions(Model),
 	clear_autosave(Model, Name),
-	update_ability(Model, save, file, 'Save', 0),
+	% update_ability(Model, save, file, 'Save', 0), below to do
 	set_save_status(Model, safe)),
         finish_progress_dialogue, !. /* do not finish progress box 2wice */
 

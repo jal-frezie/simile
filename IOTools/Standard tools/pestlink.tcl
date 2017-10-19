@@ -903,7 +903,9 @@ namespace eval $keyValue {
 	variable spitLists
 	variable ptList
 
-        set runLength [$useNodes($winId,results).lbf.rl.ent get]
+        set t0 $::runState($::myNode,resetTo)
+	set runLength [$useNodes($winId,results).lbf.rl.ent get]
+	set runEnd [expr {$t0+$runLength}]
 	foreach eTitle $useNodes($winId,drivers) {
             AcceptData $myNode $eTitle -1 1
             set node [GetIdFromCaptionPath $eTitle]
@@ -916,7 +918,7 @@ namespace eval $keyValue {
                     lappend spitLists($time) $node=$defSet
                 }
             } else {
-                lappend spitLists($runLength) $node=$targetData($eTitle)
+                lappend spitLists($runEnd) $node=$targetData($eTitle)
                 set useEndTime 1
             }
         }
@@ -925,7 +927,7 @@ namespace eval $keyValue {
 	    return
 	}
         set ptList [lsort -real [array names spitLists]]   
-	return runLength
+	return runEnd
     }
 
     proc Optimize {winId} {
@@ -979,16 +981,17 @@ namespace eval $keyValue {
         } else {
             set mode estimation
         }
-        set runLength [LoadMeasurements $winId]
+        set runEnd [LoadMeasurements $winId]
         set lastPt [lindex $ptList end]
         if {[info exists useEndTime]} {
-            if {$runLength<$lastPt} {
+            if {$runEnd<$lastPt} {
                 ShowMess "Run length too short" warning \
-                        "You have specified a run length of $runLength time units. This is not long enough to record all the model outputs, which are required at times up until $lastPt units." ok
+                        "You have specified a run ending at time $runEnd units. This is not long enough to record all the model outputs, which are required at times up until $lastPt units." ok
                 return
             }
         }
-        set ::runState($myNode,execTime) $lastPt
+        set ::runState($myNode,execTime) \
+	    [expr {$lastPt-$::runState($myNode,resetTo)}]
 	set ::runState($myNode,progressToDate) \
 	    [expr ($useNodes($winId,rnum)-1)*$clevers(noptmax)]
         
@@ -1642,6 +1645,7 @@ $numOutputs"
 	variable usedHangers
         variable inGrpData
 
+	set t0 $::runState($::myNode,resetTo)
 	set descent [winfo children $subFrame]
 	puts $stm "<variables>"
 	foreach f [lsearch -inline -all $descent $subFrame.box*] {
@@ -1674,12 +1678,12 @@ $numOutputs"
                     # Only try to calculate inputs up to and including the time
                     # at which the last output is read
                     
-                    for {set setTime 0} {$setTime <= [lindex $ptList end]} \
+                    for {set setTime $t0} {$setTime <= [lindex $ptList end]} \
 			{set setTime [expr {$setTime+$int}]} {
 			    AddHangers $node $stm $defCons $nodeDims $setTime
 			}
                 } else {
-                    AddHangers $node $stm $defCons $nodeDims NOW
+                    AddHangers $node $stm $defCons $nodeDims $t0
 		}
 		puts $stm "</multi_value>"
             } else {

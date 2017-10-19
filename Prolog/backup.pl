@@ -24,8 +24,10 @@ sicstus_use_module([library(lists), sp_only, ame_gen, database,
 :- dynamic(running_session/3).
 
 set_save_status(Model, Stat) :-
-	retractall(save_status_of(Model, _)),
-	assert(save_status_of(Model, Stat)).
+    retractall(save_status_of(Model, _)),
+    assert(save_status_of(Model, Stat)),
+    member(Stat-CanSave, [safe-0, risky-1]),
+    draw'><'update_ability(Model, save, file, 'Save', CanSave).
 
 get_save_status(Model, Stat) :-
 	save_status_of(Model, Stat).

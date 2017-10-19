@@ -1828,8 +1828,8 @@ operator(/, 1, [1,1]).
 /* Comparison ops need int arg version to avoid unnecessarily constraining
 parameters to real (and because everything does) */
 operator(^, real, [real, real]).
-operator(is, cond_spec, [int, int]).
 operator(is, cond_spec, [a(T), a(T)]).
+operator(is, cond_spec, [int, int]).
 % v6.7: rest were formerly value(Any) but see no need for that
 operator(==, boolean, [Any, Any]) :- Any = any; value(Any).
 operator('!=', boolean, [Any, Any]) :- Any = any; value(Any).

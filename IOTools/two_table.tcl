@@ -1227,9 +1227,10 @@ namespace eval $keyValue {
         variable displayList
         variable displayFormat
 	set varIndex [lsearch -exact $displayList($winId,paths) [$varCB get]]
-        if {$varIndex==-1} {
-	    set varIndex 0
-	}
+#        if {$varIndex==-1} {
+#	    set varIndex 0
+#	}
+# caused error if no variables yet listed
 	set formatSpec [lindex $displayFormat($winId,$varIndex) 0]
 	SetCatListboxSelection $catlistbox $formatSpec
 	FillFormatListBox $catlistbox $formlistbox
