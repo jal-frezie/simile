@@ -1673,13 +1673,14 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   repeatresetCmd, executemodelCmd, setstepCmd, exitmodelCmd,
   interfaceCmd, graphCmd, handleDataCmd, freeDataHandleCmd,
   getnodeidCmd, listobjCmd, randseedCmd, random01Cmd};
+  int cmdNo;
   // char pkgName[16];
 
   // sprintf(pkgName, "%d.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION);
   // Use the Tcl Stubs mechanism --version is earliest we expect to work
   if (!Tcl_InitStubs(interp, "8.5", 0)) return TCL_ERROR;
   proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess);
-  for (int cmdNo = 0; cmdNo < 30; ++cmdNo) {
+  for (cmdNo = 0; cmdNo < 30; ++cmdNo) {
     Tcl_CreateObjCommand(interp, allNames[cmdNo], allProcs[cmdNo], 
 			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   }
