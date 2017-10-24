@@ -542,13 +542,13 @@ from these for those which havent. */
 need_same_dims(Item, Affected) :-
 	(initiates(Affected, Item); terminates(Affected, Item)),
 	Affected is_of_sort transfer.
-
+/*
 end_with_units(Flow, EndUnits) :-
 	% returns units for matching to adjoining flows
 	need_same_dims(Comp, Flow),
 	implicit_function(Comp, Fn),
 	Fn has_class_refinement units of EndUnits.
-
+*/
 match_all_units([_Unit], []).
 match_all_units([U1, U2 | Rest], Whinge) :-
 	match_all_units([U2 | Rest], SubWhinge),
@@ -560,6 +560,24 @@ endpoint_units(Flow, EndUnits, Whinge) :-
 	setof(EndUnit, end_with_units(Flow, EndUnit), [EndUnits | More]), !,
 	match_all_units([EndUnits | More], Whinge);
 	Whinge = [].
+/* New version: the dims of the flow must be sufficient to distribute across 
+instances of any submodel it enters and compartmment it connects to. So we get chain from the endpoints, multiply their dimensions by submodels they exit, then divide by what they enter, and combine the resulting dims...
+*/
+
+end_with_units(Flow, EndUnits) :-
+    need_same_dims(Comp, Flow),
+    implicit_function(Comp, Fn),
+    Fn has_class_refinement units of Units,
+    analyze_array(Units, Type, CompDims),
+    get_chain(Comp, Flow, _Top, Exited, Entered),
+    reverse(Entered, BiggestFirst),
+    all(ame_gen, get_all_dims,
+	[build(Exited), append(DefSubs, CompDims)]),
+    all(ame_gen, get_all_dims,
+	[build(BiggestFirst), append(LostDims, [])]),
+    append(LostDims, FlowDims, DefSubs),
+    build_array(Type, FlowDims, EndUnits).
+
 /*
 check_flow_ends(Func, EndUnits, AnyErr) :-
 	get_host(Func, Flow),

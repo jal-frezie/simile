@@ -629,7 +629,9 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 							  BadModel)));
 	implicit_function(General_arc, Controller),
 	get_units(Controller, ArcUnits, ArcDims),
-	all(ame_gen, get_all_dims, [build(Exits), append(AllDims, ArcDims)]),
+	reverse(Exits, BiggestFirst),
+	all(ame_gen, get_all_dims, [build(BiggestFirst),
+				    append(AllDims, ArcDims)]),
 	    (append(NodeDims, MergeDims, AllDims), !,
 		sum_dims(MergeDims, BaseVar, Var);
 	    raise_exception(flow_comp_dims_mismatch(BadArc, BadComp,
