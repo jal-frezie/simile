@@ -1385,6 +1385,7 @@ proc WindowDetail {window category level redraw} {
 # feedback window allowing progress reports on long activities.
 
 proc MenuSelect { window button item } {
+    global helperTable
     if {[string first dummy $window]} {
 	SafeEqnBarEdit [winfo parent $window] ;# use latest edit
     }
@@ -1393,6 +1394,11 @@ proc MenuSelect { window button item } {
 	    DoLocalCmd $window $item
 	} code {
 	    set node $::window_info($window,top_node)
+	    if {[info exists helperTable($node,whichRunEnv)]} {
+		set helperTable($node,whereRunEnv) \
+		    [wm geometry $helperTable($node,whichRunEnv)]
+		wm withdraw $helperTable($node,whichRunEnv)
+	    }
 	    switch $item {
 		build_c {
 		    set extn .cpp

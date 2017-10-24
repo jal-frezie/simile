@@ -77,6 +77,12 @@ namespace eval RunEnv {
         variable currentNode
         
         if {[info exists helperTable($node,whichRunEnv)]} {
+	    wm deiconify $helperTable($node,whichRunEnv)
+	    if {[info exists helperTable($node,whereRunEnv)]} {
+		wm geometry $helperTable($node,whichRunEnv) \
+		    $helperTable($node,whereRunEnv)
+		unset helperTable($node,whereRunEnv)
+	    }
             return $helperTable($node,whichRunEnv)
         } else {
             set mreId .mre[newInt]
