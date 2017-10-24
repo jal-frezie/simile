@@ -575,8 +575,9 @@ end_with_units(Flow, EndUnits) :-
 	[build(Exited), append(DefSubs, CompDims)]),
     all(ame_gen, get_all_dims,
 	[build(BiggestFirst), append(LostDims, [])]),
-    append(LostDims, FlowDims, DefSubs),
-    build_array(Type, FlowDims, EndUnits).
+    (append(LostDims, FlowDims, DefSubs) ->
+	 build_array(Type, FlowDims, EndUnits);
+     EndUnits = not_matchable(Comp)).
 
 /*
 check_flow_ends(Func, EndUnits, AnyErr) :-
