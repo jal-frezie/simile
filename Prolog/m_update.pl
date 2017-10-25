@@ -549,22 +549,25 @@ end_with_units(Flow, EndUnits) :-
 	implicit_function(Comp, Fn),
 	Fn has_class_refinement units of EndUnits.
 */
-match_all_units([_Unit], []).
-match_all_units([U1, U2 | Rest], Whinge) :-
-	match_all_units([U2 | Rest], SubWhinge),
-	(SubWhinge = [], !,
-	    check_unit(U1, U2, 2, Whinge);
+match_all_units([Only], Only, []) :- !.
+match_all_units([Type-D2 | Rest], Type-Dims, Whinge) :-
+	match_all_units(Rest, T1-D1, SubWhinge),
+	(SubWhinge = [],
+	    ((prefix(D2, D1), Dims = D1; prefix(D1, D2), Dims = D2),
+	     check_unit(Type, T1, 2, Whinge);
+	     Whinge = mismatched_arrays(flow, D1, D2)), !;
 	 Whinge = SubWhinge).
 
 endpoint_units(Flow, EndUnits, Whinge) :-
-	setof(EndUnit, end_with_units(Flow, EndUnit), [EndUnits | More]), !,
-	match_all_units([EndUnits | More], Whinge);
+	setof(EndUnit, end_with_units(Flow, EndUnit), AllUnits), !,
+	match_all_units(AllUnits, EndT-EndD, Whinge),
+	build_array(EndT, EndD, EndUnits);
 	Whinge = [].
 /* New version: the dims of the flow must be sufficient to distribute across 
 instances of any submodel it enters and compartmment it connects to. So we get chain from the endpoints, multiply their dimensions by submodels they exit, then divide by what they enter, and combine the resulting dims...
 */
 
-end_with_units(Flow, EndUnits) :-
+end_with_units(Flow, Type-FlowDims) :-
     need_same_dims(Comp, Flow),
     implicit_function(Comp, Fn),
     Fn has_class_refinement units of Units,
@@ -575,9 +578,8 @@ end_with_units(Flow, EndUnits) :-
 	[build(Exited), append(DefSubs, CompDims)]),
     all(ame_gen, get_all_dims,
 	[build(BiggestFirst), append(LostDims, [])]),
-    (append(LostDims, FlowDims, DefSubs) ->
-	 build_array(Type, FlowDims, EndUnits);
-     EndUnits = not_matchable(Comp)).
+    (append(LostDims, FlowDims, DefSubs) -> true;
+     FlowDims = [not_matchable(Comp)]).
 
 /*
 check_flow_ends(Func, EndUnits, AnyErr) :-

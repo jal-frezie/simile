@@ -617,7 +617,8 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 	get_chain(General_arc, Node, _, Exits, Entries),
 	caption_for(Node, BadComp),
 	caption_for(Arc, BadArc),
-	(member(Multi, Entries),
+	(  /* we want to allow border split if flow outside has right dimensions
+         member(Multi, Entries),
 	    (get_all_dims(Multi, BadDims),
 		\+ BadDims = [], !,
 		caption_for(Multi, BadModel),
@@ -627,15 +628,22 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 		caption_for(Multi, BadModel),
 		raise_exception(flow_crosses_dll_boundary(BadArc, BadComp,
 							  BadModel)));
+*/
 	implicit_function(General_arc, Controller),
 	get_units(Controller, ArcUnits, ArcDims),
 	reverse(Exits, BiggestFirst),
 	all(ame_gen, get_all_dims, [build(BiggestFirst),
 				    append(AllDims, ArcDims)]),
-	    (append(NodeDims, MergeDims, AllDims), !,
-		sum_dims(MergeDims, BaseVar, Var);
+	all(ame_gen, get_all_dims, [build(Entries),
+				    append(ShareDims, [])]),
+	append(ShareDims, NodeDims, SplitDims),
+	(append(SplitDims, MergeDims, AllDims), !,
+	 length(ShareDims, N),
+	 list_elt_args(N, EltArgs),
+	 InstVar =.. [element, BaseVar | EltArgs],
+	 sum_dims(MergeDims, InstVar, Var);
 	    raise_exception(flow_comp_dims_mismatch(BadArc, BadComp,
-						  AllDims, NodeDims)))),
+						  AllDims, SplitDims)))),
 	is_instance(_, Controller, _, BaseVar, _, Ref),
 	default_tick_is(Tick),
 	standard_name(NodeBase, TrimBase),
@@ -652,6 +660,10 @@ sum_dims([], Var, Var).
 sum_dims([_ | Rest], Middle, sum(Full)) :-
 	sum_dims(Rest, Middle, Full).
 
+list_elt_args(0, []) :- !.
+list_elt_args(N, [index(N) | Less]) :-
+    M is N-1,
+    list_elt_args(M, Less).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % arc_name_substitute takes a Prolog term apart, looks for atoms named in a
 % list of name-node pairs, and reconstructs the resulting expression. Only they
