@@ -546,7 +546,7 @@ display_link_in(Wid, Link, Depth, Trans) :-
         (Type = flow,
 	    find_base(Link, Base),
 	    implicit_function(Base, Fn),
-	    instance:get_units(Fn, _Type, FnDims),
+	    instance'><'get_units(Fn, _Type, FnDims),
 	    get_chain(Base, Link, _Top, Exited, Entered),
 	    reverse(Exited, BiggestFirst),
 	    all(ame_gen, get_all_dims,
