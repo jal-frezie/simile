@@ -544,7 +544,15 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	find_fatness(Trans, RelFatness),
 	get_flash(Link, Colour_scheme),
         (Type = flow,
-	    multiple_draw(Link, Num);
+	    find_base(Link, Base),
+	    implicit_function(Base, Fn),
+	    instance:get_units(Fn, _Type, FnDims),
+	    get_chain(Base, Link, _Top, Exited, Entered),
+	    reverse(Exited, BiggestFirst),
+	    all(ame_gen, get_all_dims,
+		[build(BiggestFirst), append(TopDims, FnDims)]),
+	    all(ame_gen, get_all_dims, [build(Entered), append(InDims, [])]),
+	    (append(InDims, [Num | _Spare], TopDims), !; Num = 1);
 	  Type = influence,
 	    m_class'><'Link has_attribute enabled_roles of EnabList,
 	    member(RIdx, EnabList),
