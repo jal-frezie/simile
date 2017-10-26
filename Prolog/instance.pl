@@ -639,9 +639,16 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 	append(ShareDims, NodeDims, SplitDims),
 	(append(SplitDims, MergeDims, AllDims), !,
 	 length(ShareDims, N),
-	 list_elt_args(N, EltArgs),
+	 list_elt_args(N, index, EltArgs),
 	 InstVar =.. [element, BaseVar | EltArgs],
-	 sum_dims(MergeDims, InstVar, Var);
+	 (MergeDims = [] ->
+	      Var = InstVar;
+	  % when summing flows to a compartment, match outer dimensions
+	  length(NodeDims, M),
+	  list_elt_args(M, place_in, ReconArgs),
+	  ScalarVar =.. [element, InstVar | ReconArgs],
+	  sum_dims(MergeDims, ScalarVar, ScalarSum),
+	 makearray_dims(NodeDims, ScalarSum, Var));
 	    raise_exception(flow_comp_dims_mismatch(BadArc, BadComp,
 						  AllDims, SplitDims)))),
 	is_instance(_, Controller, _, BaseVar, _, Ref),
@@ -660,10 +667,15 @@ sum_dims([], Var, Var).
 sum_dims([_ | Rest], Middle, sum(Full)) :-
 	sum_dims(Rest, Middle, Full).
 
-list_elt_args(0, []) :- !.
-list_elt_args(N, [index(N) | Less]) :-
+makearray_dims([], Var, Var).
+makearray_dims([Dim | Rest], Middle, makearray(Full, Dim)) :-
+	sum_dims(Rest, Middle, Full).
+
+list_elt_args(0, _Fun, []) :- !.
+list_elt_args(N, Fun, [Arg | Less]) :-
+    Arg =.. [Fun, N],
     M is N-1,
-    list_elt_args(M, Less).
+    list_elt_args(M, Fun, Less).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % arc_name_substitute takes a Prolog term apart, looks for atoms named in a
 % list of name-node pairs, and reconstructs the resulting expression. Only they
