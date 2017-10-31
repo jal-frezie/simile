@@ -553,13 +553,14 @@ match_all_units([Only], Only, []) :- !.
 match_all_units([Type-D2 | Rest], Type-Dims, Whinge) :-
 	match_all_units(Rest, T1-D1, SubWhinge),
 	(SubWhinge = [], !,
-	    check_unit(Type, T1, 2, Whinge),
-	    ((prefix(D2, D1), Dims = D1; prefix(D1, D2), Dims = D2);
-	     Whinge = mismatched_arrays(flow, D1, D2)), !;
+	    ((prefix(D2, D1), Dims = D1; prefix(D1, D2), Dims = D2) ->
+	     check_unit(Type, T1, 2, Whinge);
+	     Whinge = mismatched_arrays(transfer, D1, D2)), !;
 	 Whinge = SubWhinge).
 
 endpoint_units(Flow, EndUnits, Whinge) :-
-	setof(EndUnit, end_with_units(Flow, EndUnit), AllUnits), !,
+    bagof(EndUnit, end_with_units(Flow, EndUnit), AllUnits), !,
+    % bagof preserves order
 	match_all_units(AllUnits, EndT-EndD, Whinge),
 	build_array(EndT, EndD, EndUnits);
 	Whinge = [].
@@ -578,7 +579,7 @@ end_with_units(Flow, Type-FlowDims) :-
     append(LostDims, FlowDims, AvailDims),
     all(ame_gen, get_all_dims, [build(Entered), append(DefSubs, CompDims)]),
     % flow plus exited sms must have enough dims to match entered sms + comp
-    (prefix(DefSubs, AvailDims) -> true;
+    ((DefSubs = AvailDims) -> true;
      FlowDims = [not_matchable(Comp)]).
 
 /*
@@ -789,7 +790,7 @@ default_units(Node, Base, Dims) :-
 	get_host(Node, Form),
 	(Sort = transfer,
 	 units_from_context(Node, Base, Dims, Whinge),
-	 (Whinge = [] , !; query(Whinge, warning, fill_equation, [ok], _));
+	 (Whinge = [] -> true; query(Whinge, warning, fill_equation, [ok], _));
 	member(Sort-Base, [rate-(1/day), transfer-1, level-1,
 			   cond_value-cond_spec, boolean_value-boolean])),
 	Form is_of_sort Sort,

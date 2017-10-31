@@ -552,7 +552,8 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	    all(ame_gen, get_all_dims,
 		[build(BiggestFirst), append(TopDims, FnDims)]),
 	    all(ame_gen, get_all_dims, [build(Entered), append(InDims, [])]),
-	    (append(InDims, [Num | _Spare], TopDims), !; Num = 1);
+	    (append(InDims, [RealVal | _Spare], TopDims)->
+	     Num is min(RealVal, 4); Num = 1);
 	  Type = influence,
 	    m_class'><'Link has_attribute enabled_roles of EnabList,
 	    member(RIdx, EnabList),
