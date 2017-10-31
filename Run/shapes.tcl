@@ -23,13 +23,15 @@ for {set pt 1} {$pt < $cornerPts} {incr pt} {
 }
 lappend arcPts [expr 1-$expansion*(1-[lindex $arcPts end])/[lindex $arcPts 0]]
 
-switch [tk windowingsystem] {
-    x11 {
-	set hideTinies 40
-    } win32 {
-	set hideTinies 6
-    } aqua {
-	set hideTinies 5
+if {!$headless} {
+    switch [tk windowingsystem] {
+	x11 {
+	    set hideTinies 40
+	} win32 {
+	    set hideTinies 6
+	} aqua {
+	    set hideTinies 5
+	}
     }
 }
 

@@ -525,8 +525,8 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 			1 is Scale, !;
 			Complaint = needs_conversion(Target_name, Target_base,
 						     Unit_base));
-		      (check_and_report_units(Unit_base, UnitDims, Bad),
-		       number(Bad), !;
+		      (check_and_report_units(Unit_base, UnitDims, Bad2),
+		       number(Bad2), !;
 		     UnitDims = Unit_base),
 		    Complaint = mismatched_dimensions(Target_name, TargetDims,
 						      Unit_base, UnitDims));
@@ -552,9 +552,9 @@ end_with_units(Flow, EndUnits) :-
 match_all_units([Only], Only, []) :- !.
 match_all_units([Type-D2 | Rest], Type-Dims, Whinge) :-
 	match_all_units(Rest, T1-D1, SubWhinge),
-	(SubWhinge = [],
-	    ((prefix(D2, D1), Dims = D1; prefix(D1, D2), Dims = D2),
-	     check_unit(Type, T1, 2, Whinge);
+	(SubWhinge = [], !,
+	    check_unit(Type, T1, 2, Whinge),
+	    ((prefix(D2, D1), Dims = D1; prefix(D1, D2), Dims = D2);
 	     Whinge = mismatched_arrays(flow, D1, D2)), !;
 	 Whinge = SubWhinge).
 

@@ -1531,8 +1531,8 @@ proc LoadDataFile {mode query mdl} {
                             lappend tablenames [lindex $table 2]
                         }
                         # set to the first sheet
-                        set fc .table.notebook.columns
-                         $tablecb set [lindex $tablenames 0]
+			set tablecb [GetFrame $fc.ftable].tablecb
+			$tablecb set [lindex $tablenames 0]
                         $tablecb configure -values $tablenames
                         #ShowMess debug info "DoOnDataBaseColumnsLoaded $connectString $tablecb $fheads" ok
                         DoOnDataBaseColumnsLoaded $connectString $tablecb $fheads
