@@ -788,7 +788,8 @@ add_implicit_function(Exp_node, Node_name) :-
 default_units(Node, Base, Dims) :-
 	get_host(Node, Form),
 	(Sort = transfer,
-	    units_from_context(Node, Base, Dims, []);
+	 units_from_context(Node, Base, Dims, Whinge),
+	 (Whinge = [] , !; query(Whinge, warning, fill_equation, [ok], _));
 	member(Sort-Base, [rate-(1/day), transfer-1, level-1,
 			   cond_value-cond_spec, boolean_value-boolean])),
 	Form is_of_sort Sort,
