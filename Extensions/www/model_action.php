@@ -76,6 +76,16 @@ switch ($_POST['act']) {
    echo $base;
    break;
 
+   case "SaveProlog":
+   $base = tempnam('/tmp', 'plm');
+
+   $plStm = fopen($base . ".sml", "w");
+   fwrite($plStm, str_replace(array('"','\n'), array('',"\n"), $_POST['pl_mod']));
+   fclose($plStm);
+
+   echo $base;
+   break;
+
    case "BuildShareLib":
    case "BuildShareLibInLine":
 
@@ -187,6 +197,10 @@ break;
    case "GetSVG":
 // put the svg in a variable so I can start thinking about how to replace it
       $svgStm = fopen($_POST['base'] . ".svg", "r");
+      if ($svgStm === FALSE) {
+         echo 'SVG file not found';
+	 break;
+      }
       $svgLine = "";
       while (!feof($svgStm) && strpos($svgLine, "<svg ") !== 0) {
         $svgLine = fgets($svgStm);
