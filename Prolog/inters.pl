@@ -1875,9 +1875,8 @@ add_zeros_all([], _,_, [], [0 | _], any).
 add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 	add_zeros(H, SubId, Step, NH, R, U0),
 	(U0 = real -> U1 = int; U1 = U0), % 0's in list not magic
-	add_zeros_all(T, SubId, Step, NT, [M | RR], UN),
-	(R = RR, !;
-	    throw(cannot_combine_argument_dimensions([H | T]))),
+	add_zeros_all(T, SubId, Step, NT, [M | R], UN),
+	% if tail dimensions differ, fail and fall back to choosifying
 	(select(U, [U1, UN], [UR]),
 	 promote_unit(UR, U), !; % can use p_u because units always numeric
 	throw(mismatched_units(list_parts, [[H], T], [U1, UN], compatible))),
