@@ -940,10 +940,24 @@ namespace eval fileparams {
 		    } default {
 			puts $pStr " data_column=[Entitize $ident]>"
 			set dimCount 0
-			foreach dim [lrange $paramState($compName) 2 end] {
+			
+			# v6.8p10: dbtable has been inserted back into
+			# tail of paramState because both file name
+			# and data column header may be lists already,
+			# however it cannot be saved as an index
+			# because it must come before series_control
+			# elts after reload. So it is pulled out here
+			# and saved as 1st s_c elt even though this
+			# may not be a time series
+			
+			set startRealIdxs [expr {2+[regexp ,dbtable:(.*) [lindex $paramState($compName) 2] match dbtable]}]
+			foreach dim [lrange $paramState($compName) $startRealIdxs end] {
 			    puts $pStr "$indent<value index=\"[incr dimCount]\" val=[Entitize $dim]/>"
 			}
 		    }
+		}
+		if {[info exists dbtable]} {
+		    puts $pStr "$indent<series_control field=\"dbtable\" value=[Entitize $dbtable]/>"
 		}
 # insert bit copied from haveBytes case above with different output
 # -- could probably be more efficient

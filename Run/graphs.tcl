@@ -16,17 +16,18 @@
 
 proc odbcdriverFromExt { ext } {
     # e.g. [odbcdriverFromExt .xls] -> Microsoft Excel Driver (*.xls)
-    if {[catch {package require tclodbc}]} { ; #jmm ODBC
+    if {[catch {package require tdbc::odbc}]} { ; #jmm ODBC
 	Query [list no_odbc_interface] warning data_via_odbc {} ok
 	return {}
     }
-    set odbcdrivers [database drivers]
-    set index [lsearch  -regexp $odbcdrivers ".*FileExtns=.*$ext.*"]
-    if {$index == -1} {
-	Query [list no_odbc_driver $ext] warning data_via_odbc {} ok
-	return {}
+    set searchStr FileExtns=.*\\${ext}(,|\$)
+    foreach {driver spec} [tdbc::odbc::drivers] {
+	if {[lsearch -regexp $spec $searchStr]>=0} {
+	    return $driver
+	}
     }
-    return [lindex [lindex $odbcdrivers $index] 0]
+    Query [list no_odbc_driver $ext] warning data_via_odbc {} ok
+    return {}
 }
 
 # find all extensions there is driver to read
@@ -1521,22 +1522,22 @@ proc LoadDataFile {mode query mdl} {
 			    return 0
 			}
                         set dbfile $table_entry(fileName)
-                        set connectString "DRIVER=$driver;DBQ=$dbfile"
+                        set connectString "DRIVER=$driver;FIL=MS Excel;DBQ=[file nativename [file normalize $dbfile]]"
                         #ShowMess debug info $connectString ok
-                        database db $connectString
+                        set db [tdbc::odbc::connection new $connectString]
                         #ShowMess debug info "tables [db tables]" ok
-                        set dbtables [db tables]
+                        set dbtables [$db tables]
                         set tablenames {}
-                        foreach table $dbtables {
-                            lappend tablenames [lindex $table 2]
+                        foreach {table wafffle} $dbtables {
+                            lappend tablenames $table
                         }
                         # set to the first sheet
 			set tablecb [GetFrame $fc.ftable].tablecb
 			$tablecb set [lindex $tablenames 0]
                         $tablecb configure -values $tablenames
                         #ShowMess debug info "DoOnDataBaseColumnsLoaded $connectString $tablecb $fheads" ok
-                        DoOnDataBaseColumnsLoaded $connectString $tablecb $fheads
-                        bind $tablecb <<ComboboxSelected>> "DoOnDataBaseColumnsLoaded \{$connectString\} $tablecb $fheads"
+                        DoOnDataBaseColumnsLoaded $db $tablecb $fheads
+                        bind $tablecb <<ComboboxSelected>> "DoOnDataBaseColumnsLoaded \{$db\} $tablecb $fheads"
                     }
                     # was a bracket
             } grid {
@@ -1580,7 +1581,7 @@ proc LoadDataFile {mode query mdl} {
     return 1
 }
 
-proc DoOnDataBaseColumnsLoaded { connectString tablecb fheads } {
+proc DoOnDataBaseColumnsLoaded { db tablecb fheads } {
     set haveDND [llength [package provide tkdnd]]
 
     if {$haveDND} {
@@ -1588,16 +1589,15 @@ proc DoOnDataBaseColumnsLoaded { connectString tablecb fheads } {
     } else {
 	$fheads.lheads delete [$fheads.lheads items]
     }
-    database db $connectString
-    set fields [db columns [$tablecb get]]; #table name
+    set fields [$db columns [$tablecb get]]; #table name
     
     #each column {TABLE_QUALIFIER TABLE_OWNER TABLE_NAME COLUMN_NAME DATA_TYPE TYPE_NAME PRECISION LENGTH SCALE RADIX NULLABLE REMARKS}
     set i 1
     #ShowMess debug info "fields $fields" ok
-    foreach field $fields {
+    foreach {field waffle} $fields {
         # just the column name
 	if {$haveDND} {
-	    $fheads.lheads insert end [lindex $field 3]
+	    $fheads.lheads insert end $field
 	} else {
 	    $fheads.lheads insert end hd$i -text [lindex $field 3]
 	}
@@ -1890,17 +1890,17 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 	    if {![llength [set driver [odbcdriverFromExt $ext]]]} {
 		return
 	    }
-	    set connectString "DRIVER=$driver;DBQ=$filename"
+	    set connectString "DRIVER=$driver;FIL=MS Excel;DBQ=[file nativename [file normalize $filename]]"
 	    #ShowMess debug info $connectString ok
-	    database db $connectString
+	    set db [tdbc::odbc::connection new $connectString]
 
 	    set field [lindex $tableSpec 1]
 	    #ShowMess debug info "$connectString dbtable $dbtable field $field"  ok
-	    set datalist [db "select `$field` from `$dbtable`"]
+	    set datalist [ListColumn $db $dbtable $field]
 	    set indexArgs {}
 	    foreach headerIndex [lrange $tableSpec 2 end] {
 		lappend indexArgs ${headerIndex}elt \
-		    [db "select `$headerIndex` from `$dbtable`"]
+		    [ListColumn $db $dbtable $headerIndex]
 	    }
 	    eval [list foreach datum $datalist] $indexArgs [list {
 		set arrayIndex {}
@@ -1915,6 +1915,8 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 		    [EnquoteIfNonNumeric $datum]
 		incr lineCount
 	    }]
+	    # reinsert dbtable into tableSpec so it gets written to .spfs
+	    set tableSpec [linsert $tableSpec 2 ,dbtable:$dbtable]
 	    #ShowMess debug info "datalist $datalist" ok
 	    # todo add error messages!!!
 	    # make sure have some data
@@ -1940,6 +1942,16 @@ proc LoadTableData {specLocn lineCount addSpecials} {
     }
     #ShowMess debug info "result $result" ok
     return $result
+}
+
+proc ListColumn {db table column} {
+    set stmt [$db prepare "select `$column` from `$table`"]
+    set reslt {}
+    $stmt foreach row {
+	lappend reslt [dict get $row $column]
+    }
+    $stmt close
+    return $reslt
 }
 
 proc SubEndRefs {rown coln rfirst rlast cfirst clast} {
