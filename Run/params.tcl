@@ -917,8 +917,11 @@ namespace eval fileparams {
 		set ident [lindex $paramState($compName) 1]
 		set mark [lsearch $typePairs $ident]
 		set eltType [lindex $typePairs [incr mark]]
-		set relName [::fileutil::relative [file dirname $metaFile] \
-				 [lindex $paramState($compName) 0]]
+		set relName [lindex $paramState($compName) 0]
+		if {![IsBogusURL $relName]} {
+		    set relName [::fileutil::relative [file dirname $metaFile] \
+				     $relName]
+		}
 		puts -nonewline $pStr "$indent<$eltType $genericAVs filename=[Entitize $relName]"
 		switch -exact $ident {
 		    ,image {
@@ -1437,32 +1440,36 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
             
             # OK here we go...try and follow this...first go to the starting point..
             if {$reference} {
-                # Now use the saved relative path to move to the .csv file's directory
-		set seekDir [file join [file dirname $oldPath] \
-				 [file dirname $VFile]]
-		if {[catch {cd $seekDir}]} {
-		    set act [list failed_dir_reference [file tail $VFile] \
-				 $restoredComp [file dirname $VFile] \
-				 [file normalize $seekDir]]
-		    switch [Query $act warning spf {} abort] {
-			abort {break}
-			more {continue}
+		if {[IsBogusURL $VFile]} {
+		    set locn $VFile
+		} else {
+		    # Now use the saved relative path to move to the .csv file's directory
+		    set seekDir [file join [file dirname $oldPath] \
+				     [file dirname $VFile]]
+		    if {[catch {cd $seekDir}]} {
+			set act [list failed_dir_reference [file tail $VFile] \
+				     $restoredComp [file dirname $VFile] \
+				     [file normalize $seekDir]]
+			switch [Query $act warning spf {} abort] {
+			    abort {break}
+			    more {continue}
+			}
 		    }
-		}
-                cd [file join [file dirname $oldPath] [file dirname $VFile]]
-                # ...and stick the new absolute pathname into the spec! Easy!!
-		if {![file exists [file tail $VFile]]} {
-		    set act [list failed_param_reference [file tail $VFile] \
-				 $restoredComp [file dirname $VFile] \
-				 [file normalize $seekDir]]
-		    switch [Query $act warning spf {} abort] {
-			abort {break}
-			more {continue}
+		    cd [file join [file dirname $oldPath] [file dirname $VFile]]
+		    # ...and stick the new absolute pathname into the spec! Easy!!
+		    if {![file exists [file tail $VFile]]} {
+			set act [list failed_param_reference [file tail $VFile] \
+				     $restoredComp [file dirname $VFile] \
+				     [file normalize $seekDir]]
+			switch [Query $act warning spf {} abort] {
+			    abort {break}
+			    more {continue}
+			}
 		    }
+		    set locn [list [pwd]/[file tail $VFile]]
 		}
                 set paramState($restoredComp) \
-                        [concat [list [pwd]/[file tail $VFile]] \
-                        [lrange $suppliedData($restoredComp) 1 end]]
+		    [concat $locn [lrange $suppliedData($restoredComp) 1 end]]
                 # now just load up the data
                 #ShowMess debug info "Field spec set to $paramState($restoredComp)" ok
 		if {[string equal ,image \

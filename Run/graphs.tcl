@@ -14,20 +14,38 @@
 # graph function is graph(param, xlow, xhigh, xspan,
 #	ylow, yhigh, yspan, [pt1, pt2 ... ptn])
 
-proc odbcdriverFromExt { ext } {
-    # e.g. [odbcdriverFromExt .xls] -> Microsoft Excel Driver (*.xls)
-    if {[catch {package require tdbc::odbc}]} { ; #jmm ODBC
-	Query [list no_odbc_interface] warning data_via_odbc {} ok
-	return {}
+proc IsBogusURL {locn} {
+    return [string match mysql://* $locn]
+}
+
+proc DBHandleFor {location ext} {
+    if {[IsBogusURL $location]} {
+	if {![regexp {mysql://(.*):(.*)@(.*)/(.*)} $location all \
+		  usr passwd host dbname]} {
+	    return
+	}
+	package require tdbc::mysql
+	if [catch {tdbc::mysql::connection new -user $usr -passwd $passwd \
+		       -host $host -database $dbname} db] {
+	    Query [list mysql_open_failed $db] warning data_via_mysql {} ok
+	    return
+	}
+	return $db
+    }
+	
+    if {[catch {package require tdbc::odbc} spill]} { ; #jat tdbc::ODBC
+	Query [list no_odbc_interface $spill] warning data_via_odbc {} ok
+	return
     }
     set searchStr FileExtns=.*\\${ext}(,|\$)
     foreach {driver spec} [tdbc::odbc::drivers] {
 	if {[lsearch -regexp $spec $searchStr]>=0} {
-	    return $driver
+	    set connectString "DRIVER=$driver;FIL=MS Excel;DBQ=[file nativename [file normalize $location]]"
+	    return [tdbc::odbc::connection new $connectString]
 	}
     }
     Query [list no_odbc_driver $ext] warning data_via_odbc {} ok
-    return {}
+    return
 }
 
 # find all extensions there is driver to read
@@ -623,6 +641,8 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     # dropdown combobox for table names
     set tablecb [ttk::combobox $ftable.tablecb -state readonly  -width 50 -textvariable table_entry(dbtable)]
     pack $tablecb -side left
+    pack [ttk::button $ftable.mysql -text [tr. {MySQL connection}] \
+	      -command "GetMySQLConnect .table $mdl"] -padx 4 -pady 4
     # end new frame December 2008 for the choice of data table in a database JMM
     TitleFrame $fc.fheads -text [tr. "Table column headings"]
     set fheads [GetFrame $fc.fheads]
@@ -1115,6 +1135,54 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     return $table_entry(done)
 }
 
+proc GetMySQLConnect {parent $mdl} {
+    global sqlEntry
+    
+    PutItThere .sqlentry $parent
+    grid [label .sqlentry.lhostname -text Hostname:] \
+	[ttk::entry .sqlentry.ehostname -textvar sqlEntry(host)]
+    grid [label .sqlentry.luser -text User:] \
+	[ttk::entry .sqlentry.euser -textvar sqlEntry(user)]
+    grid [label .sqlentry.lpasswd -text Password:] \
+	[ttk::entry .sqlentry.epasswd -textvar sqlEntry(passwd)]
+    grid [label .sqlentry.ldbname -text Database:] \
+	[ttk::entry .sqlentry.edbname -textvar sqlEntry(dbname)]
+    grid [ttk::button .sqlentry.cancel -text Cancel -command "set sqlEntry(done) 0"] \
+	[ttk::button .sqlentry.done -text OK -command "set sqlEntry(done) 1"]
+
+    focus .sqlentry
+    LetItShow .sqlentry sqlEntry(done)
+    if {$sqlEntry(done)} {
+	set fc .table.notebook.columns
+	set fheads [GetFrame $fc.fheads]
+	set fdata [GetFrame $fc.fdata.dfile]
+	# insert something in the data file field
+	set ::table_entry(fileName) mysql://$sqlEntry(user):$sqlEntry(passwd)@$sqlEntry(host)/$sqlEntry(dbname)
+	package require tdbc::mysql
+	set db [tdbc::mysql::connection new \
+		    -user $sqlEntry(user) -passwd $sqlEntry(passwd) \
+		    -host $sqlEntry(host) -database $sqlEntry(dbname)]
+
+	PopulateTableList $db $fc $fheads
+    }
+    PackItUp .sqlentry
+}
+
+proc PopulateTableList {db fc fheads} {
+    set dbtables [$db tables]
+    set tablenames {}
+    foreach {table wafffle} $dbtables {
+	lappend tablenames $table
+    }
+    # set to the first sheet
+    set tablecb [GetFrame $fc.ftable].tablecb
+    $tablecb set [lindex $tablenames 0]
+    $tablecb configure -values $tablenames
+    #ShowMess debug info "DoOnDataBaseColumnsLoaded $connectString $tablecb $fheads" ok
+    DoOnDataBaseColumnsLoaded $db $tablecb $fheads
+    bind $tablecb <<ComboboxSelected>> "DoOnDataBaseColumnsLoaded \{$db\} $tablecb $fheads"
+}
+
 proc TrackDropCoords {x y act} {
     array set ::dropPosn [list x $x y $y]
     return $act
@@ -1516,28 +1584,10 @@ proc LoadDataFile {mode query mdl} {
                     } else {
                         #ODBC get database tables and find headers for selected table
                         close $stream
-                        
-                        #set driver "Microsoft Excel Driver (*.xls)"
-                        if {![llength [set driver [odbcdriverFromExt $ext]]]} {
-			    return 0
-			}
-                        set dbfile $table_entry(fileName)
-                        set connectString "DRIVER=$driver;FIL=MS Excel;DBQ=[file nativename [file normalize $dbfile]]"
-                        #ShowMess debug info $connectString ok
-                        set db [tdbc::odbc::connection new $connectString]
+
+			set db [DBHandleFor {$table_entry(fileName) $ext}]
                         #ShowMess debug info "tables [db tables]" ok
-                        set dbtables [$db tables]
-                        set tablenames {}
-                        foreach {table wafffle} $dbtables {
-                            lappend tablenames $table
-                        }
-                        # set to the first sheet
-			set tablecb [GetFrame $fc.ftable].tablecb
-			$tablecb set [lindex $tablenames 0]
-                        $tablecb configure -values $tablenames
-                        #ShowMess debug info "DoOnDataBaseColumnsLoaded $connectString $tablecb $fheads" ok
-                        DoOnDataBaseColumnsLoaded $db $tablecb $fheads
-                        bind $tablecb <<ComboboxSelected>> "DoOnDataBaseColumnsLoaded \{$db\} $tablecb $fheads"
+			PopulateTableList $db $fc $fheads
                     }
                     # was a bracket
             } grid {
@@ -1887,12 +1937,10 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 	    close $tStr
 	} else { ;# data is from a tclodbc-connected database
 	    #set driver "Microsoft Excel Driver (*.xls)"
-	    if {![llength [set driver [odbcdriverFromExt $ext]]]} {
+	    set db [DBHandleFor $filename $ext]
+	    if {![llength $db]} {
 		return
 	    }
-	    set connectString "DRIVER=$driver;FIL=MS Excel;DBQ=[file nativename [file normalize $filename]]"
-	    #ShowMess debug info $connectString ok
-	    set db [tdbc::odbc::connection new $connectString]
 
 	    set field [lindex $tableSpec 1]
 	    #ShowMess debug info "$connectString dbtable $dbtable field $field"  ok
