@@ -1139,16 +1139,22 @@ proc GetMySQLConnect {parent $mdl} {
     global sqlEntry
     
     PutItThere .sqlentry $parent
-    grid [label .sqlentry.lhostname -text Hostname:] \
-	[ttk::entry .sqlentry.ehostname -textvar sqlEntry(host)]
-    grid [label .sqlentry.luser -text User:] \
-	[ttk::entry .sqlentry.euser -textvar sqlEntry(user)]
-    grid [label .sqlentry.lpasswd -text Password:] \
-	[ttk::entry .sqlentry.epasswd -textvar sqlEntry(passwd)]
-    grid [label .sqlentry.ldbname -text Database:] \
-	[ttk::entry .sqlentry.edbname -textvar sqlEntry(dbname)]
-    grid [ttk::button .sqlentry.cancel -text Cancel -command "set sqlEntry(done) 0"] \
-	[ttk::button .sqlentry.done -text OK -command "set sqlEntry(done) 1"]
+    wm title .sqlentry "MySQL connection"
+    pack [set form [GetFrame [TitleFrame .sqlentry.form \
+				  -text [tr. "Specifics:"]]]]
+    grid [label $form.lhostname -text Hostname:] \
+	[ttk::entry $form.ehostname -textvar sqlEntry(host)]
+    grid [label $form.luser -text User:] \
+	[ttk::entry $form.euser -textvar sqlEntry(user)]
+    grid [label $form.lpasswd -text Password:] \
+	[ttk::entry $form.epasswd -textvar sqlEntry(passwd)]
+    grid [label $form.ldbname -text Database:] \
+	[ttk::entry $form.edbname -textvar sqlEntry(dbname)]
+    pack [set buttons [frame .sqlentry.buttons]]
+    pack [ttk::button .sqlentry.cancel -text Cancel \
+	      -command "set sqlEntry(done) 0"] -padx 4 -pady 4 -side left
+    pack [ttk::button .sqlentry.done -text OK \
+	      -command "set sqlEntry(done) 1"] -padx 4 -pady 4 -side right
 
     focus .sqlentry
     LetItShow .sqlentry sqlEntry(done)
