@@ -185,9 +185,9 @@ itcl::class similescript::$newHelperClass {
     
     public method NewLayer {type lvl {state {}}} {
 	set id [UniqueId layer]
+	pack forget $winId.message
 	set layerObj [$type $id $modelInst $this \
 			  $transform(zoomx) $transform(zoomy) $state]
-	pack forget $winId.message
 	set putBelow [expr {[llength $planes]-$lvl/2}]
 # cannot use 'end' cos it means different things for lindex and linsert!
 	set aboveNew [lindex $planes $putBelow]

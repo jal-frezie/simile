@@ -172,7 +172,9 @@ itcl::class similescript::HelperController {
     variable modelInst
     
     destructor {
-        destroy $winId
+        if {![string match *_3dinst $this]} {
+	    destroy $winId
+	}
     }
     
     public method Show {} {
@@ -295,8 +297,10 @@ itcl::class similescript::Helper {
 	set modelInst $modelWindow
         #puts "Helper constr $modelWindow [KeyValue] $winTitle"
 
-    # ShowMessage debug info "Making $helperId $helperTitle" ok
-	if {[PrefValue custom(helperManager) helperManager]} {
+	# ShowMessage debug info "Making $helperId $helperTitle" ok
+	if {[string match *_3dinst $this]} {
+	    set winId placeholder
+	} elseif {[PrefValue custom(helperManager) helperManager]} {
 	    set winId ${::RunEnv::CurrentContainer}.container
 	    pack [frame $winId] -fill both -expand true
 	    bind $winId <Destroy>  "itcl::delete object $this"
@@ -317,6 +321,7 @@ itcl::class similescript::Helper {
 	    }
 	    wm protocol $winId WM_DELETE_WINDOW "itcl::delete object $this"
 	}
+	if {[string match *_3dinst $this]} return
 	set helperTable($this,foci) {}
 	set helperTable($winId,whichInstance) $this
         #puts "Helper constr $this winId $winId"
@@ -336,10 +341,11 @@ itcl::class similescript::Helper {
 		unset runState($modelNode,helperId)
 	    }
 	}
-	unset helperTable($winId,whichInstance)
-	unset helperTable($this,foci)
 	bind $winId <Destroy> {} ;# prevent destructor calling itself when...
 	# (done by base destructor)	    destroy $winId
+	if {[string match *_3dinst $this]} return
+	unset helperTable($winId,whichInstance)
+	unset helperTable($this,foci)
     }
 
     # All derived classes must reimplement with correct keyvalue

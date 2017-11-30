@@ -17,20 +17,49 @@ itcl::class similescript::$newHelperClass {
 	variable ::gen3d1::scaleVector
 	variable ::gen3d1::viewVector
 
+	if {[AmLayer]} {
+	    set winId [winfo parent [lindex $winTitle 2]]
+	    set viewVector($winId,X) 500
+	    set viewVector($winId,Y) 500
+	    foreach {x y} [lrange $winTitle 3 4] {}
+	    array set scaleVector [list $winId,xoff [expr {250.0/$x}] \
+				       $winId,xmag [expr {500.0/$x}] \
+				       $winId,yoff [expr {-250.0/$y}] \
+				       $winId,ymag [expr {500.0/$y}] \
+				       $winId,zoff 0 $winId,zmag 150.0]
+	    array set viewVector [list $winId,angle 0 $winId,elevation 1.57 \
+				      $winId,cos_angle 1 $winId,cos_elevation 0 \
+				      $winId,sin_angle 0 $winId,sin_elevation 1]
+	} else {
+	    canvas $winId.c -width 1 -height 1 -bg white
+	    ::canvasnotes20070919::MakeCanvasAnnotatable $winId.c
+	    array set scaleVector [list $winId,xoff 0 $winId,xmag 150.0 \
+				       $winId,yoff 0 $winId,ymag 150.0 \
+				       $winId,zoff 0 $winId,zmag 150.0]
+	    ::gen3d1::DefineGrid $winId
+	    array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
+				      $winId,cos_angle 1 $winId,cos_elevation 1 \
+				      $winId,sin_angle -0.3 $winId,sin_elevation 0.5]
+	}
 	set pi 3.14
-	array set scaleVector [list $winId,xoff 0 $winId,xmag 150.0 \
-				   $winId,yoff 0 $winId,ymag 150.0 \
-				   $winId,zoff 0 $winId,zmag 150.0]
-	::gen3d1::DefineGrid $winId
-	array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
-				  $winId,cos_angle 1 $winId,cos_elevation 1 \
-				  $winId,sin_angle -0.3 $winId,sin_elevation 0.5]
 #	scale $winId.elv -orient v -from [expr $pi/2] -to [expr -$pi/2] \
 #	    -resolution 0.01 \
 #	    -command "$this TweakScale elevation"
-#	$winId.elv set 0.5
-	canvas $winId.c -width 1 -height 1 -bg white
-	::canvasnotes20070919::MakeCanvasAnnotatable $winId.c
+	#	$winId.elv set 0.5
+	if {[string length $state]} { ;# we are restoring 
+	    set State $state ;# keep it local
+	} else {
+	    set State {}
+#	    $modelInst GrabClicks $this
+	}
+	if {[AmLayer]} {
+	    if {![string length $state]} {
+		AddItem [lindex $winTitle 1]
+		tkwait window $winId.ms
+	    }
+	    Display 0 0 0
+	    return
+	}	
 	frame $winId.buttons -relief raised -bd 1
 	button $winId.buttons.but_print -text "Print..." \
 	    -command "PrintNow $winId.c"
@@ -72,19 +101,12 @@ itcl::class similescript::$newHelperClass {
 	# $winId.m add command -label "Old Ellipse" -command "$this AddItem oldellipses"
 	pack [::ttk::menubutton $winId.buttons.mb -text "Select new item type" \
 		  -menu $winId.m]
-	message $winId.ms
-	if {[string length $state]} { ;# we are restoring 
-	    set State $state ;# keep it local
-	} else {
-	    set State {}
-#	    $modelInst GrabClicks $this
-	}
-	update
-	Display 0 0 0
     }
 
     public method AddItem {type} {
-	pack forget $winId.buttons.mb
+	if {![AmLayer]} {
+	    pack forget $winId.buttons.mb
+	}
 	array set all_templates \
 	    {spheres {{type "Select new item type"} \
 			  {component "X positions"} \
@@ -137,6 +159,7 @@ itcl::class similescript::$newHelperClass {
 			  {colour outline} \
 			  {colour fill}}}
 	set template $all_templates($type)
+	pack [message $winId.ms]
 	MakeSelection $type
     }
 
@@ -150,16 +173,22 @@ itcl::class similescript::$newHelperClass {
 	incr i
 	if {$i == [llength $template]} { ;# finished
 	    lappend State $template
-	    pack forget $winId.ms
-	    pack $winId.buttons.mb
+	    destroy $winId.ms
+	    if {![AmLayer]} {
+		pack $winId.buttons.mb
+	    }
 	} else {
+	    set descrip [lindex $template $i 1]
 	    switch [lindex $template $i 0] {
 		component {
-		    $winId.ms configure -text "Click on component with [lindex $template $i 1] of [lindex $template 0]"
-		    pack $winId.ms
-		    $modelInst GrabClicks $this
+		    if {[AmLayer] && [lsearch {"Z positions" "start Z positions" "end Z positions" "Z vertex position lists" "centre Z positions" "X rotations" "Y rotations"} $descrip]>-1} {
+			MakeSelection null
+		    } else {
+			$winId.ms configure -text "Click on component with $descrip of [lindex $template 0]"
+			$modelInst GrabClicks $this
+		    }
 		} colour {
-		    set msg "Choose [lindex $template $i 1] of [lindex $template 0]"
+		    set msg "Choose $descrip of [lindex $template 0]"
 		    $winId.ms configure -text $msg
 		    MakeSelection [tk_chooseColor -title $msg]
 		}
@@ -176,20 +205,20 @@ itcl::class similescript::$newHelperClass {
 	MakeSelection $path
     }
 
-    public method Flatten {pairs} {
-	if {[llength $pairs]==1} {
-	    return [list {} $pairs]
-	} else {
-	    set result {}
-	    foreach {i sub} $pairs {
-		foreach {is v} [Flatten $sub] {
-		    lappend result [linsert $is 0 $i] $v
-		}
-	    }
-	    return $result
-	}
-    }
-
+#    public method Flatten {pairs} {
+#	if {[llength $pairs]==1} {
+#	    return [list {} $pairs]
+#	} else {
+#	    set result {}
+#	    foreach {i sub} $pairs {
+#		foreach {is v} [Flatten $sub] {
+#		    lappend result [linsert $is 0 $i] $v
+#		}
+#	    }
+#	    return $result
+#	}
+#    }
+#	    
     method PolyInsts {id vx vy vz tail} {
 	if {[llength [lindex $vz 1]]==1} {
 	    set op [list polygon $id]
@@ -215,57 +244,71 @@ itcl::class similescript::$newHelperClass {
 
 # time is current model time
 # dispInt is time to next display call
-# step is a spare parameter
-	$winId.c delete -withtag graticule
-	$winId.c delete -withtag graph
+	# step is a spare parameter
+	set layerId [namespace tail [string range $this 0 end-7]].main
+	$winId.c delete -withtag $layerId
 
 	set lower {}
 	set upper {}
 	foreach instruct $State {
 	    switch [lindex $instruct 0] {
 		spheres {
-		    foreach arr {x y z r} {
-			array unset $arr
+#		    foreach arr {x y z r} {
+#			array unset $arr
+#		    }
+		    foreach arr [lrange $instruct 1 4] {
+#			array set [lindex {0 x y z r} $i] \
+#			    [Flatten [lindex [$modelInst GetValue \
+#						  [lindex $instruct $i]] 0]]
+			if {$arr eq "null"} {
+			    lappend rawList 0
+			} else {
+			    lappend rawList [lindex [$modelInst GetValue \
+							 $arr] 0]
+			}
 		    }
-		    for {set i 1} {$i<5} {incr i} {
-			array set [lindex {0 x y z r} $i] \
-			    [Flatten [lindex [$modelInst GetValue \
-						  [lindex $instruct $i]] 0]]
-		    }
-		    foreach iV [array names r] {
+		    set quadlist {}
+		    eval [list ::maptools2::GetQuadList {}] $rawList
+#		    foreach iV [array names r] {}
+		    foreach {iV data} $quadlist {
 			if {[llength $iV]} {
 			    set id "index: [join $iV ,]"
 			} else {
 			    set id [lindex $instruct 4]
 			}
-			set op [list sphere $id [list $x($iV) $y($iV) $z($iV)] \
-				 $r($iV) 1 [lindex $instruct 5] gray25]
-			if {$z($iV) < 0} {
+			foreach {x y z r} $data {}
+			set op [list sphere $id [list $x $y $z] \
+				 $r 1 [lindex $instruct 5] gray25]
+			if {$z < 0} {
 			    lappend lower $op
 			} else {
 			    lappend upper $op
 			}
 		    }
 		} lines {
-		    foreach arr {sx sy sz fx fy fz w} {
-			array unset $arr
+#		    foreach arr {sx sy sz fx fy fz w} {
+#			array unset $arr
+#		    }
+		    foreach arr [lrange $instruct 1 7] {
+			if {$arr eq "null"} {
+			    lappend rawList 0
+			} else {
+			    lappend rawList [lindex [$modelInst GetValue \
+							 $arr] 0]
+			}
 		    }
-		    for {set i 1} {$i<8} {incr i} {
-			array set [lindex {0 sx sy sz fx fy fz w} $i] \
-			    [Flatten [lindex [$modelInst GetValue \
-						  [lindex $instruct $i]] 0]]
-		    }
-		    foreach iV [array names w] {
+		    set quadlist {}
+		    eval [list ::maptools2::GetQuadList {}] $rawList
+		    foreach {iV data} $quadlist {
 			if {[llength $iV]} {
 			    set id "index: [join $iV ,]"
 			} else {
 			    set id [lindex $instruct 7]
 			}
-			set op \
-			    [list line $id [list $sx($iV) $sy($iV) $sz($iV)] \
-				 [list $fx($iV) $fy($iV) $fz($iV)] $w($iV) \
-				 [lindex $instruct 8]]
-			if {($sz($iV)+$fz($iV))/2 < 0} {
+			foreach {x1 y1 z1 x2 y2 z2 w} $data {}
+			set op [list line $id [list $x1 $y1 $z1] \
+				 [list $x2 $y2 $z2] $w [lindex $instruct 8]]
+			if {$z1+$z2 < 0} {
 			    lappend lower $op
 			} else {
 			    lappend upper $op
@@ -309,33 +352,36 @@ itcl::class similescript::$newHelperClass {
 			}
 		    }
 		} ellipses {
-		    foreach arr {cx cy cz mr ec rx ry rz} {
-			array unset $arr
+		    foreach arr [lrange $instruct 1 8] {
+			if {$arr eq "null"} {
+			    lappend rawList 0
+			} else {
+			    lappend rawList [lindex [$modelInst GetValue \
+							 $arr] 0]
+			}
 		    }
-		    for {set i 1} {$i<9} {incr i} {
-			array set [lindex {0 cx cy cz mr ec rx ry rz} $i] \
-			    [Flatten [lindex [$modelInst GetValue \
-						  [lindex $instruct $i]] 0]]
-		    }
-		    foreach iV [array names cz] {
+		    set quadlist {}
+		    eval [list ::maptools2::GetQuadList {}] $rawList
+		    foreach {iV data} $quadlist {
 			if {[llength $iV]} {
 			    set id "index: [join $iV ,]"
 			} else {
-			    set id [lindex $instruct 3]
+			    set id [lindex $instruct 4]
 			}
-			set tx [expr {$cx($iV) + cos($ry($iV))*cos($rz($iV))*$mr($iV)}]
-			set ty [expr {$cy($iV) + cos($ry($iV))*sin($rz($iV))*$mr($iV)}]
-			set tz [expr {$cz($iV) + sin($ry($iV))*$mr($iV)}]
-			set mx [expr {$cx($iV) + (sin($rx($iV))*sin($ry($iV))*cos($rz($iV)) - cos($rx($iV))*sin($rz($iV)))*$mr($iV)/$ec($iV)}]
-			set my [expr {$cy($iV) + (cos($rx($iV))*cos($rz($iV)) + sin($rx($iV))*sin($ry($iV))*sin($rz($iV)))*$mr($iV)/$ec($iV)}]
-			set mz [expr {$cz($iV) + sin($rx($iV))*cos($ry($iV))*$mr($iV)/$ec($iV)}]	
+			foreach {cx cy cz mr ec rx ry rz} $data {}
+			set tx [expr {$cx + cos($ry)*cos($rz)*$mr}]
+			set ty [expr {$cy + cos($ry)*sin($rz)*$mr}]
+			set tz [expr {$cz + sin($ry)*$mr}]
+			set mx [expr {$cx + (sin($rx)*sin($ry)*cos($rz) - cos($rx)*sin($rz))*$mr/$ec}]
+			set my [expr {$cy + (cos($rx)*cos($rz) + sin($rx)*sin($ry)*sin($rz))*$mr/$ec}]
+			set mz [expr {$cz + sin($rx)*cos($ry)*$mr/$ec}]	
 			# hmm perhaps we would be better off altering the camera angle
 			set op [list ellipse $id \
-				    [list $cx($iV) $cy($iV) $cz($iV)] \
+				    [list $cx $cy $cz] \
 				    [list $tx $ty $tz] \
 				    [list $mx $my $mz] 1 \
 				    [lindex $instruct 9] [lindex $instruct 10]]
-			if {$cz($iV) < 0} {
+			if {$cz < 0} {
 			    lappend lower $op
 			} else {
 			    lappend upper $op
@@ -374,9 +420,9 @@ itcl::class similescript::$newHelperClass {
 	    set upper $lower
 	    set lower $spare
 	}
-	::gen3d1::DrawShapes $winId $lower graph
-	::gen3d1::DrawGrid $winId graticule
-	::gen3d1::DrawShapes $winId $upper graph
+	::gen3d1::DrawShapes $winId $lower $layerId
+	$winId.c raise graticule
+	::gen3d1::DrawShapes $winId $upper $layerId
     }
 
     public method TweakScale {which where} {
@@ -389,6 +435,8 @@ itcl::class similescript::$newHelperClass {
 	    [expr cos($viewVector($winId,elevation))]
 	set viewVector($winId,sin_elevation) \
 	    [expr sin($viewVector($winId,elevation))]
+	$winId.c delete -withtag graticule
+	::gen3d1::DrawGrid $winId graticule
 	Display 0 0 0
     }    
     public method WindowSizeChanged {} {
@@ -396,6 +444,12 @@ itcl::class similescript::$newHelperClass {
 
 	set viewVector($winId,X) [winfo width $winId.c]
 	set viewVector($winId,Y) [winfo height $winId.c]
+	$winId.c delete -withtag graticule
+	::gen3d1::DrawGrid $winId graticule
 	Display 0 0 0
+    }
+
+    public method AmLayer {} {
+	return [string match *_3dinst $this]
     }
 }

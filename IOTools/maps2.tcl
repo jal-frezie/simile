@@ -348,7 +348,13 @@ namespace eval ::maptools2 {
         } else {
             set arrcount 0
             foreach arg $args {
-                array set new$arrcount $arg
+		if {[llength $arg] == 1} { ;# dummy z for 2d? -- replicate
+		    foreach sub [array names new0] {
+			set new${arrcount}($sub) $arg
+		    }
+		} else {
+		    array set new$arrcount $arg
+		}
                 incr arrcount
             }
             
