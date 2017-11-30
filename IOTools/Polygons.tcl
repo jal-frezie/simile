@@ -481,16 +481,16 @@ namespace eval ::polygon375 {
 
     proc ColourFor {winId value} {
         variable useNodes
-        if {[string match nil $value]} {
-            set newColour gray
-        } else {
+#        if {[string match nil $value]} {
+#            set newColour gray
+#        } else {
 	    set clipVal [expr {max($useNodes($winId,min),
 				   min($useNodes($winId,max),$value))}]
 	    set colNum [expr int(($clipVal-$useNodes($winId,min))* \
 				     ($useNodes($winId,nswatches)-1) / \
 				     $useNodes($winId,range))]
             set newColour $useNodes($winId,c$colNum)
-        }
+#        }
 #puts "Colour for $value is $colNum (range $useNodes($winId,range))"
     }
     

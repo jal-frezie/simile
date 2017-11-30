@@ -251,6 +251,7 @@ itcl::class similescript::$newHelperClass {
 	set lower {}
 	set upper {}
 	foreach instruct $State {
+	    set rawList {}
 	    switch [lindex $instruct 0] {
 		spheres {
 #		    foreach arr {x y z r} {

@@ -478,20 +478,20 @@ itcl::class similescript::$newLayerClass {
 	}
     }
 
-     public method ColourFor {winId value} {
-        if {[string match nil $value]} {
-            set newColour gray
-        } else {
-	    set clipVal [expr {max($useNodes($winId,min),
-				   min($useNodes($winId,max),$value))}]
-	    set colNum [expr int(($clipVal-$useNodes($winId,min))* \
-				     ($useNodes($winId,nswatches)-1) / \
-				     $useNodes($winId,range))]
-            set newColour $useNodes($winId,c$colNum)
-        }
-#puts "Colour for $value is $colNum (range $useNodes($winId,range))"
-    }
-    
+#     public method ColourFor {winId value} {
+#        if {[string match nil $value]} {
+#            set newColour gray
+#        } else {
+#	    set clipVal [expr {max($useNodes($winId,min),
+#				   min($useNodes($winId,max),$value))}]
+#	    set colNum [expr int(($clipVal-$useNodes($winId,min))* \
+#				     ($useNodes($winId,nswatches)-1) / \
+#				     $useNodes($winId,range))]
+#            set newColour $useNodes($winId,c$colNum)
+#        }
+##puts "Colour for $value is $colNum (range $useNodes($winId,range))"
+#    }
+#    
     public method IdToTag {ids} {
 	set result {}
 	foreach id $ids {

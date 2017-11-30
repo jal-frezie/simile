@@ -338,9 +338,10 @@ namespace eval ::maptools2 {
         upvar 1 quadlist quadlist
         
         set pilot [lindex $args 0]
-        if {![llength $pilot]} {
-            set args [lreplace $args 0 0 nil]
-        } elseif {[llength $pilot]==2 && ![llength [lindex $pilot 0]]} {
+#        if {![llength $pilot]} {
+#            set args [lreplace $args 0 0 nil]
+#        } else
+	if {[llength $pilot]==2 && ![llength [lindex $pilot 0]]} {
             set args [lreplace $args 0 0 [lindex $pilot 1]]
         }
         if {[llength [lindex $args 0]] == 1} {
@@ -363,7 +364,7 @@ namespace eval ::maptools2 {
                 set newargs {}
                 foreach arg $args {
                     upvar 0 new$arrcount newarr
-                    lappend newargs [set new${arrcount}($elt)]; # $newarr($elt); ####
+                    lappend newargs [set new${arrcount}($elt)]
                     incr arrcount
                 }
                 eval GetQuadList [list [concat $inds $elt]] $newargs

@@ -273,7 +273,7 @@ proc LoadPosns {winId} {
 	    [lindex [GetModelValue $h] 0]
 #ShowMess debug info "List is $quadlist" ok
 	foreach {id data} $quadlist {
-	    if {![string match nil [lindex $data 0]]} {
+#	    if {![string match nil [lindex $data 0]]} {
 		foreach {x y z} $data {}
 		if {[llength $id]} {
 		    set pop "index: $id"
@@ -284,7 +284,7 @@ proc LoadPosns {winId} {
 				    "$x $y $z" 4 brown]
 		lappend trunks [list sphere $pop "$x $y [expr 3*$z/2]" \
 				    [expr $z/2] 1 [lindex $colours $col]]
-	    }
+#	    }
 	}
 	incr col
 	if {$col==6} {set col 0}
