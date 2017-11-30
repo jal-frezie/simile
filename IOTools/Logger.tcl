@@ -6,8 +6,7 @@ set newHelperClass DataLogger20111205
 class similescript::$newHelperClass {
     inherit Helper
 
-    public variable curFolder
-    public variable toSeparateFiles
+    public variable curFile
     variable useNodes
 
     proc Identify {} {
@@ -21,27 +20,23 @@ class similescript::$newHelperClass {
 	global SIMILE_PATH
         set useNodes(removeImg) \
 	    [image create photo -file "$SIMILE_PATH/Images/Toolbar/remove.gif"]
-        set useNodes(multiFileImg) \
-	    [image create photo -file "$SIMILE_PATH/Images/Toolbar/multi.gif"]
 	set toolbarItems \
                 [list [list new.gif "Clear" [code $this Clear]] \
                 [list add.gif "Add variables" \
                 [code $this AddVariable]] \
                 [list slider.gif "Add all variables" \
-                [code $this AddAllVariables /]] \
-                [list table.gif filemode_$this \
-                [code $this ColumnMode]]]
+                [code $this AddAllVariables /]]]
         ::graphtools::MakeToolBar $winId $toolbarItems
 	set useNodes(logged) {}
         set frameZone [DIYMakeFrames $winId]
 	set f [MakeSubFrames $winId $frameZone {{} {}} {} 0]
 	set f [join [lrange [split $f .] 0 end-1] .] ;# remove last level
 	pack [::ttk::button $f.head.save -image $::iconImages(save) \
-		  -command [code $this SetSavePath]] \
+		  -command [code $this SetSaveFile]] \
 	    -before $f.head.label -side right
 	pack [message $winId.message -text {}]
 	BindPopup $f.head.label logs_$this
-	BindPopup $f.head.save [tr. {Choose folder for logs}]
+	BindPopup $f.head.save [tr. {Select file or database for saving}]
 	
 	if {[string length $state]} { ;# we are restoring 
 	    #puts $state
@@ -52,17 +47,32 @@ class similescript::$newHelperClass {
 	    $hsfParser parse $state
 	} else {
 	    # new instance so request data from model
-	    MultiFileMode
-	    SetSavePathTo [GetPathChoice .csv [GetNode]]
+	    SetSaveFile
 	    $winId.message configure \
 		-text "Use + button to add components for logging"
 	}
+	set useNodes(runCount) 0
     }
 
     destructor {
 	CloseAllFiles
     }
 
+    public method Reset {} {
+	if {[info exists useNodes(common_stm)]} {
+	    incr useNodes(runCount)
+	    if {[catch {$useNodes(common_stm) tables}]} { # not database
+		# if filename can be incremented do so, otherwise prompt for new
+		if {[regexp {(.*[^0-9])([0-9]*[0-8][0-9]*)(\.[^\.]*)$} \
+			 $curFile all base seq ext]} {
+		    SetSaveFileTo [append nextFile $base [incr seq] $ext]
+		} else {
+		    SetSaveFile
+		}
+	    }
+	}
+    }
+    
     public method Click {path} {
         switch [GetState $winId] {
             adding_inputs {
@@ -83,27 +93,20 @@ class similescript::$newHelperClass {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
-	if {$toSeparateFiles} {
-	    foreach path $useNodes(logged) {
-		UpdateFile $path $time
-	    }
-	} else {
-	    UpdateCombined $time
-	}
+	UpdateCombined $time
     }
 
     public method PrepareSaveString {} {
 	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[$this info class]\">\n"
 	set shfPath [GetPathChoice .shf [$modelInst cget -modelNode]]
-	if {[catch {::fileutil::relative $shfPath $curFolder} relFolder]} {
-	    puts $relFolder
-	    set tdLine "<target_dir mode=\"absolute\">$curFolder</target_dir>\n"
+	if {[catch {::fileutil::relative $shfPath $curFile} relFile]} {
+	    puts $relFile
+	    set tdLine "<target_file mode=\"absolute\">$curFile</target_dir>\n"
 	} else {
-	    set tdLine "<target_dir mode=\"relative\">$relFolder</target_dir>\n"
+	    set tdLine "<target_file mode=\"relative\">$relFile</target_dir>\n"
 	    # will be wrong if modeller changes directory when saving .shf
 	}
 	append State $tdLine
-	append State "<to_separate_files whether=\"$toSeparateFiles\"/>\n"
 	append State <components>\n
 	foreach item $useNodes(logged) {
 	    append State <component>$item</component>\n
@@ -140,7 +143,6 @@ class similescript::$newHelperClass {
 	pack [label $f.caption -text [lindex $levels end]: -bg $lbg] -side left
 	pack [::ttk::button $f.remove -image $useNodes(removeImg) \
 		  -command [code $this Remove $title]] -side right
-	UpdateFile $title [$modelInst GetCurrentTime]
 	return yes
     }
 
@@ -158,8 +160,6 @@ class similescript::$newHelperClass {
         set f [MakeSubFrames {} $winId.c.canvas.frame $levels {} 0]
         pest20050803::Prune $winId $f
 	set index [lsearch -exact $useNodes(logged) $title]
-	close $useNodes($title.stm)
-	unset useNodes($title.stm)
 	set useNodes(logged) \
 	    [lreplace $useNodes(logged) $index $index]
     }
@@ -170,131 +170,117 @@ class similescript::$newHelperClass {
 	}
     }
 
-    method SetSavePath {} {
-	set newFolder [tk_chooseDirectory -title [tr. {Folder for log files:}] \
-			   -initialdir $curFolder -parent $winId]
-	if {![string length $newFolder] || \
-		[string equal $curFolder $newFolder]} return
-	SetSavePathTo $newFolder
-    }
-
-    method SetSavePathTo {newFolder} {
-	CloseAllFiles
-	set curFolder $newFolder
-	if {![file isdir $curFolder]} {
-	    file mkdir $curFolder
-	}
-	set ::msgs(logs_$this) [format [tr. {Current folder: %1$s}] $curFolder]
-	if {[llength $useNodes(logged)]} {
-	    Display [$modelInst GetCurrentTime] 1 1 ;# write current vals
-	}
-    }
-
-    method UpdateFile {path time} {
-	set val [lindex [$modelInst GetValue $path] 0]
-	if {![info exists useNodes($path.stm)]} {
-	    set name [file join $curFolder [file tail $path].csv]
-	    set useNodes($path.stm) [set out [open $name w]]
-	    
-# code to write indices lifted from snap tool
-
-# old version put index at each level in a separate row
-#	    set nst 0
-#	    set v1 $val
-#	    while {[llength $v1]>1} {
-#		incr nst
-#		set v1 [lindex $v1 1]
-#	    }
-#	    for {set idx 1} {$idx<=$nst} {incr idx} {
-#		if {$idx==$nst} {
-#		    puts -nonewline $out "Time \ "
-#		}
-#		puts -nonewline $out "Index $idx"
-#		PutIndNo $out -$idx $val
-#		puts $out {}
-#	    }
-	    if {[llength $val]>1} {
-		puts -nonewline $out Time
-		PutIndexCombos $out $val {}
-		puts $out {}
+    method SetSaveFile {} {
+	foreach same {1 0} {
+	    if {[IsBogusURL $curFile]==$same} {
+		set newFile [ChooseDatabase $winId]
+	    } else {
+		set newFile [ChooseFile log.csv [tr. {Log file:}] 1 \
+				 [$modelInst cget -modelNode]]
 	    }
-	} else {
-	    set out $useNodes($path.stm)
+	    if {$newFile ne {}} break
 	}
-	puts -nonewline $out $time
-	PutValsOnly $out $val
-	puts $out {}
+	if {![string length $newFile] || [string equal $curFile $newFile]} \
+	    return
+	SetSaveFileTo $newFile
+    }
+
+    method SetSaveFileTo {newFile} {
+	CloseAllFiles
+	set curFile $newFile
+	set ::msgs(logs_$this) [format [tr. {Current data sink: %1$s}] $curFile]
+# don't write current values, reset does this anyway
+#	if {[llength $useNodes(logged)]} {
+#	    Display [$modelInst GetCurrentTime] 1 1 ;# write current vals
+#	}
     }
 
     method UpdateCombined {time} {
 	if {[info exists useNodes(common_stm)]} {
 	} else {
-	    set useNodes(common_stm) [open [file join $curFolder log.csv] w]
-	    puts -nonewline $useNodes(common_stm) Time
+	    if {[file extension $curFile] eq ".csv"} {
+		set useNodes(common_stm) [open $curFile w]
+		set hdrs Time
+		foreach path $useNodes(logged) {
+		    PutIndexCombos hdrs \
+			[lindex [$modelInst GetValue $path] 0] \
+			, [file tail $path]
+		}
+		puts $useNodes(common_stm) $hdrs
+	    } else {
+		set useNodes(common_stm) [DBHandleFor $curFile]
+	    }		
+	}
+	if {[catch {$useNodes(common_stm) tables} tList]} { # writing csv
+	    puts -nonewline $useNodes(common_stm) $time
 	    foreach path $useNodes(logged) {
-		PutIndexCombos $useNodes(common_stm) \
-		    [lindex [$modelInst GetValue $path] 0] \
-		    [file tail $path]
+		PutValsOnly vals \
+		    [lindex [$modelInst GetValue $path] 0]
 	    }
-	puts $useNodes(common_stm) {}
+	    puts $useNodes(common_stm) $vals
+	    flush $useNodes(common_stm)
+	} else {
+	    set curTab "Run $useNodes(runCount)"
+	    if {[lsearch $tList [string map {{ } {_}} $curTab]] == -1} {
+		set sqlStr "CREATE TABLE `$curTab` (`Time"
+		foreach path $useNodes(logged) {
+		    PutIndexCombos sqlStr \
+			[lindex [$modelInst GetValue $path] 0] \
+			"` text, `" [file tail $path]
+		}
+		append sqlStr "` text)"
+		$useNodes(common_stm) allrows $sqlStr
+	    }
+	    # now add a row of values
+	    set sqlStr "INSERT INTO `$curTab` (`Time"
+	    foreach path $useNodes(logged) {
+		PutIndexCombos sqlStr \
+		    [lindex [$modelInst GetValue $path] 0] \
+		    "`, `" [file tail $path]
+	    }
+	    append sqlStr "`) VALUES ($time"
+	    foreach path $useNodes(logged) {
+		PutValsOnly sqlStr \
+		    [lindex [$modelInst GetValue $path] 0]
+	    }
+	    append sqlStr ")"
+	    $useNodes(common_stm) allrows $sqlStr
 	}
-	puts -nonewline $useNodes(common_stm) $time
-	foreach path $useNodes(logged) {
-	    PutValsOnly $useNodes(common_stm) \
-		[lindex [$modelInst GetValue $path] 0]
-	}
-	puts $useNodes(common_stm) {}
     }
 
-    method PutIndexCombos {stm val gone} {
+    method PutIndexCombos {pstr val sep gone} {
+	upvar 1 $pstr str
 	if {[llength $val]>1} {
 	    foreach {idx elt} $val {
-		PutIndexCombos $stm $elt \
-		    [join [concat [split $gone .] [list $idx]] .]
+		PutIndexCombos str $elt $sep \
+		    [join [concat [split $gone /] [list $idx]] /]
 	    }
 	} else {
-	    puts -nonewline $stm ,$gone
+	    append str $sep$gone
 	}
     }
 
+    method TableWithHeaders {$curTab} {
+    }
+    
     method CloseAllFiles {} {
-	foreach stmName [array names useNodes *.stm] {
-	    close $useNodes($stmName)
-	    unset useNodes($stmName)
-	}
 	if {[info exists useNodes(common_stm)]} {
-	    close $useNodes(common_stm)
+	    if {[catch {$useNodes(common_stm) close}]} { # was database
+		close $useNodes(common_stm) ;# was file
+	    }
 	    unset useNodes(common_stm)
 	}
-    }
-
-    method ColumnMode {} {
-	$winId.bbframe.table configure \
-	    -image $useNodes(multiFileImg) \
-	    -command [code $this MultiFileMode]
-	set ::msgs(filemode_$this) "Save as separate files"
-	CloseAllFiles
-	set toSeparateFiles no
-    }
-
-    method MultiFileMode {} {
-	$winId.bbframe.table configure \
-	    -image $::iconImages(table) \
-	    -command [code $this ColumnMode]
-	set ::msgs(filemode_$this) "Save as columns in one file"
-	CloseAllFiles
-	set toSeparateFiles yes
     }
 
     # for parsing XML status
     method StartElement {name attList args} {
 	set useNodes(inElt) $name
 	switch [lindex $attList 0] {
-	    whether { ;# to separate files
+	    whether { ;# to separate files -- no longer used
 		if {![lindex $attList 1]} {
-		    ColumnMode
+		    #ColumnMode
 		} else {
-		    MultiFileMode
+		    #MultiFileMode
 		}
 	    } mode {
 		set useNodes(fileMode) [lindex $attList 1]
@@ -308,11 +294,11 @@ class similescript::$newHelperClass {
 		if {$useNodes(fileMode) eq "relative"} {
 		    set node [$modelInst cget -modelNode]
 		    set shfPath [GetPathChoice .shf $node]
-		    SetSavePathTo [file normalize \
-				       [file join $shfPath $contents]]
+		    SetSaveFileTo [file normalize \
+				       [file join $shfPath $contents log.csv]]
 		    #puts "joined $shfPath and $contents to get $curFolder"
 		} else {
-		    SetSavePathTo $contents
+		    SetSaveFileTo [file join $contents log.csv]
 		}
 	    } component {
 		InsertLogEntry $contents 1
