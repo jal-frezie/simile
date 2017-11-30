@@ -18,7 +18,7 @@ proc IsBogusURL {locn} {
     return [string match mysql://* $locn]
 }
 
-proc DBHandleFor {location ext} {
+proc DBHandleFor {location} {
     if {[IsBogusURL $location]} {
 	if {![regexp {mysql://(.*):(.*)@(.*)/(.*)} $location all \
 		  usr passwd host dbname]} {
@@ -34,13 +34,14 @@ proc DBHandleFor {location ext} {
     }
 	
     if {[catch {package require tdbc::odbc} spill]} { ; #jat tdbc::ODBC
-	Query [list no_odbc_interface $spill] warning data_via_odbc {} ok
+	Query [list no_odbc_interface $location $spill] warning data_via_odbc {} ok
 	return
     }
+    set ext [file extension $location]
     set searchStr FileExtns=.*\\${ext}(,|\$)
     foreach {driver spec} [tdbc::odbc::drivers] {
 	if {[lsearch -regexp $spec $searchStr]>=0} {
-	    set connectString "DRIVER=$driver;FIL=MS Excel;DBQ=[file nativename [file normalize $location]]"
+	    set connectString "DRIVER=$driver;FIL=MS Excel;DBQ=[file nativename [file normalize $location]];pagetimeout=5;readonly=false"
 	    return [tdbc::odbc::connection new $connectString]
 	}
     }
@@ -1135,7 +1136,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     return $table_entry(done)
 }
 
-proc GetMySQLConnect {parent $mdl} {
+proc ChooseDatabase {parent} {
     global sqlEntry
     
     PutItThere .sqlentry $parent
@@ -1159,19 +1160,26 @@ proc GetMySQLConnect {parent $mdl} {
     focus .sqlentry
     LetItShow .sqlentry sqlEntry(done)
     if {$sqlEntry(done)} {
+	set bogURL mysql://$sqlEntry(user):$sqlEntry(passwd)@$sqlEntry(host)/$sqlEntry(dbname)
+    } else {
+	set bogURL {}
+    }
+    PackItUp .sqlentry
+    return $bogURL
+}
+
+proc GetMySQLConnect {parent $mdl} {
+    global table_entry
+
+    set table_entry(fileName) [ChooseDatabase $parent]
+    if {$table_entry(fileName) ne {}} {
 	set fc .table.notebook.columns
 	set fheads [GetFrame $fc.fheads]
-	set fdata [GetFrame $fc.fdata.dfile]
 	# insert something in the data file field
-	set ::table_entry(fileName) mysql://$sqlEntry(user):$sqlEntry(passwd)@$sqlEntry(host)/$sqlEntry(dbname)
-	package require tdbc::mysql
-	set db [tdbc::mysql::connection new \
-		    -user $sqlEntry(user) -passwd $sqlEntry(passwd) \
-		    -host $sqlEntry(host) -database $sqlEntry(dbname)]
+	set db [DBHandleFor $::table_entry(fileName)]
 
 	PopulateTableList $db $fc $fheads
     }
-    PackItUp .sqlentry
 }
 
 proc PopulateTableList {db fc fheads} {
@@ -1591,7 +1599,7 @@ proc LoadDataFile {mode query mdl} {
                         #ODBC get database tables and find headers for selected table
                         close $stream
 
-			set db [DBHandleFor {$table_entry(fileName) $ext}]
+			set db [DBHandleFor $table_entry(fileName)]
                         #ShowMess debug info "tables [db tables]" ok
 			PopulateTableList $db $fc $fheads
                     }
@@ -1943,7 +1951,7 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 	    close $tStr
 	} else { ;# data is from a tclodbc-connected database
 	    #set driver "Microsoft Excel Driver (*.xls)"
-	    set db [DBHandleFor $filename $ext]
+	    set db [DBHandleFor $filename]
 	    if {![llength $db]} {
 		return
 	    }

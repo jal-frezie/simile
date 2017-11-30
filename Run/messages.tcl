@@ -869,8 +869,8 @@ set msgs(no_odbc_driver_message) [tr. {This system does not appear to have an OD
 set msgs(no_odbc_driver_detail) [tr. {You will probably need to install one and register it.}]
 set msgs(no_odbc_interface_title) [tr. {ODBC interface not loaded}]
 set msgs(no_odbc_interface_message) [tr. {This system does not appear support the ODBC interface required for this data source.}]
-set msgs(no_odbc_interface_detail) [tr. {The message produced when trying to access it was:
-"%1$s"}]
+set msgs(no_odbc_interface_detail) [tr. {The message produced when trying to access resource "%1$s" was:
+"%2$s"}]
 set msgs(area_misses_data_title) [tr. {Area contains no data}]
 set msgs(area_misses_data_message) [tr. {The boundaries given do not enclose any usable data in this file.}]
 set msgs(area_misses_data_detail) [tr. {Check that the file is of the right type and has enough rows and columns to cover the area specified.}]
@@ -1067,6 +1067,7 @@ set help(data_via_odbc) data/table/column.htm
 set help(data_via_mysql) data/table/column.htm
 set help(enumtype) equations/enumerated.htm
 set help(model_dims) submodels/dialogue.htm
+set help(shf) run/tools/configurations.htm
 set help(pest_setup) run/pest/setup.htm
 
 set url(coviewexpiry.htm) {Permanent licence upgrade}
