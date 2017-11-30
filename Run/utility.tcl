@@ -68,7 +68,7 @@ proc ChooseFile { preferred title canbenew context} {
 	    set typeList [list .txt]
 	    set desc [tr. "Text files"]
 	} .csv {
-	    set typeList [list .csv .xls .mdb .dbf *.db]
+	    set typeList [list .csv .xls .xlsb .xlsm .xlsx .mdb .dbf *.db]
 	    set desc [tr. "Data files" ]
 	} .spf {
 	    set typeList [list .spf .smf]
@@ -114,6 +114,16 @@ proc ChooseFile { preferred title canbenew context} {
 #    cd $prevDir
 #puts "Recording path for $context"
     if {[string length $chosenFile]} {
+# Now work around a MacTcl bug whereby sometimes the path returned includes
+# the preferred file as the directory...
+	set chosenDir [file dirname $chosenFile]
+	if {[file isfile $chosenDir]} {
+	    set choice [file tail $chosenFile]
+	    set chosenFile [file join [file dirname $chosenDir] $choice]
+	    if {[file exists $chosenFile] && [tk_messageBox -icon warning -message "\"$choice\" already exists. Do you want to replace it?" -detail "A file or folder with the same name already exists in the folder [lindex [split $chosenFile /] end-1]. Replacing it will overwrite its current contents." -type okcancel -default cancel] eq "cancel"} { ;# replicate existence warning
+		return [ChooseFile $chosenFile $title $canbenew $context]
+	    } 
+	}
 	do_in_editor RecordPathChoice $fileType $chosenFile $context
     }
     return $chosenFile
