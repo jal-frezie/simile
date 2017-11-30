@@ -1058,20 +1058,21 @@ proc WriteLogs {topNode time vname step} {
     foreach logger [array names runState log*] {
 	if {[string equal $topNode [lindex $runState($logger) 0]]} {
 	    set curVals [GetModelValue [string range $logger 3 end]]
-	    set str [lindex $runState($logger) 1]
-	    puts -nonewline $str $time
-	    PutValsOnly $str [lindex $curVals 0]
-	    puts $str {}
+	    set stm [lindex $runState($logger) 1]
+	    puts -nonewline $stm $time
+	    PutValsOnly str [lindex $curVals 0]
+	    puts $stm $str
 	}
     }
 }
 
-proc PutValsOnly {str val} {
+proc PutValsOnly {pstr val} {
+    upvar 1 $pstr str
     if {[llength $val]==1} {
-	puts -nonewline $str ,$val
+	append str ,$val
     } else {
 	foreach {idx sub} $val {
-	    PutValsOnly $str $sub
+	    PutValsOnly str $sub
 	}
     }
 }
