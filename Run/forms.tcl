@@ -911,10 +911,11 @@ proc UpdateColour {parent f} {
 
 if {!$::headless && ![info exists simplify]} {
 # try to be choosy rather than support everything
-    if {[catch {
-	if {[info tclversion]<8.6} {
+    if {[catch {	
+#	if {[info tclversion]<8.6} {
+# use anyway -- works better than built-in format
 	    package require img::png ;# for internal image storage
-	}
+#	}
 	package require img::bmp ;# for grid helper (could use ppm)
 	package require img::jpeg ;# support this popular format
     } imgFail]} {

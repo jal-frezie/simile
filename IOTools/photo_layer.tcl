@@ -18,7 +18,7 @@ itcl::class similescript::$newLayerClass {
 	if {[string length $state]} { ;# we are restoring 
 	    set State $state ;# keep it local
 	    # format of state is offx offy zoomx zoomy pngdata
-	    image create photo $this.orig -data [lindex $State 5]
+	    image create photo $this.orig -data [lindex $State 5] -format png
 	    PutSize $this.orig
 	} else {
 	    # new instance so request data from model
