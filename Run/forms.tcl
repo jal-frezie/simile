@@ -1560,21 +1560,23 @@ proc PopReopen {win} {
 }
 
 proc ContextSensitiveHelp {context page} {
+    global SIMILE_PATH
+
     global tcl_platform helphtml env
     switch [tk windowingsystem] {
         win32 {
             package require winhelp
-            winhelp $context ../help/simile_book.chm $page
+            winhelp $context [file join $SIMILE_PATH help simile_book.chm] $page
         } aqua {
 # try Snow Leopard location first
-	    set helpPage [file join [file dirname $env(SYSDIR)] help $page]
+	    set helpPage [file join $SIMILE_PATH help $page]
 	    if {[catch {exec open -a "HelpViewer.app" $helpPage}]} {
 		exec open -a "Help Viewer.app" $helpPage
 	    }
         } x11 {
-            set url file://[file dirname [pwd]]/help/$page
+            set url file://${SIMILE_PATH}/help/$page
             if {![info exists env(BROWSER)]} {
-                foreach possBrowser {firefox mozilla netscape konqueror lynx} {
+                foreach possBrowser {chromium firefox mozilla netscape konqueror lynx} {
                     set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
                     if {[llength $env(BROWSER)]} {
                         break
