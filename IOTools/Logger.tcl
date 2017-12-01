@@ -172,16 +172,16 @@ class similescript::$newHelperClass {
 
     method SetSaveFile {} {
 	foreach same {1 0} {
-	    if {[IsBogusURL $curFile]==$same} {
-		set newFile [ChooseDatabase $winId]
+	    if {([info exists curFile] && [IsBogusURL $curFile])==$same} {
+		set newFile [ChooseDatabase $winId "MySQL log table"]
 	    } else {
-		set newFile [ChooseFile log.csv [tr. {Log file:}] 1 \
+		set newFile [ChooseFile log.csv [tr. {Log file}] 1 \
 				 [$modelInst cget -modelNode]]
 	    }
 	    if {$newFile ne {}} break
 	}
-	if {![string length $newFile] || [string equal $curFile $newFile]} \
-	    return
+	if {[info exists curFile] && [string equal $curFile $newFile] || \
+		![string length $newFile]} return
 	SetSaveFileTo $newFile
     }
 
@@ -221,7 +221,7 @@ class similescript::$newHelperClass {
 	    flush $useNodes(common_stm)
 	} else {
 	    set curTab "Run $useNodes(runCount)"
-	    if {[lsearch $tList [string map {{ } {_}} $curTab]] == -1} {
+	    if {[lsearch $tList $curTab] == -1} {
 		set sqlStr "CREATE TABLE `$curTab` (`Time"
 		foreach path $useNodes(logged) {
 		    PutIndexCombos sqlStr \

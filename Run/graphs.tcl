@@ -1136,11 +1136,11 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     return $table_entry(done)
 }
 
-proc ChooseDatabase {parent} {
+proc ChooseDatabase {parent title} {
     global sqlEntry
     
     PutItThere .sqlentry $parent
-    wm title .sqlentry "MySQL connection"
+    wm title .sqlentry $title
     pack [set form [GetFrame [TitleFrame .sqlentry.form \
 				  -text [tr. "Specifics:"]]]]
     grid [label $form.lhostname -text Hostname:] \
@@ -1171,7 +1171,7 @@ proc ChooseDatabase {parent} {
 proc GetMySQLConnect {parent $mdl} {
     global table_entry
 
-    set table_entry(fileName) [ChooseDatabase $parent]
+    set table_entry(fileName) [ChooseDatabase $parent "MySQL data source"]
     if {$table_entry(fileName) ne {}} {
 	set fc .table.notebook.columns
 	set fheads [GetFrame $fc.fheads]
