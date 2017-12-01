@@ -31,6 +31,8 @@ units_for(Comp, UnitStr) :-
 	    Base = submodel),
 	to_text_prefix(Dims, Pref),
 	(Base = 1, !, append(Pref, "real", UnitStr);
+	 Base = 1/day, m_update'><'use_units_in(Comp, 'No'), !,
+	     append(Pref, "1/unit", UnitStr);
 	sicstus_format_to_chars("~s~w", [Pref, Base], UnitStr)).
 
 to_text_prefix([], "").

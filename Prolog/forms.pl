@@ -92,8 +92,11 @@ do_equation_dialog(Win, Part) :-
 	    list_evt_captions(Part, EvtCapts),
 	    all(forms, list_evt_efct_pairs,
 		[unify(Equation), build(EvtCapts), append(ToPass, [])]);
-	  ToPass = Equation),
-	fill_equation(ToPass, Base, Dims, Is_P, Desc, Comment, Min, Max),
+	 ToPass = Equation),
+	(Base = 1/day,
+	 m_update'><'use_units_in(Parent, 'No') -> UseBase = 1/unit;
+	 UseBase = Base),
+	fill_equation(ToPass, UseBase, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_table(Part, TableList, TableVals), % calls interaction from tcl
 	destroy_equation.
 

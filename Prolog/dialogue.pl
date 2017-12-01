@@ -242,7 +242,7 @@ update_equation(_, Input_list, [LineIndxStr, Parm_st, New_unit_st], Effect) :-
 	Effect = user_advice_generated(Complaint)).
 
 % Normal equation entry -- 7 elts
-update_equation(Function, InterInputs, [Eqn_st, Unit_st, Is_P_st, Desc_st,
+update_equation(Function, InterInputs, [Eqn_st, Unit_pb, Is_P_st, Desc_st,
 					Cmt_st, Min_st, Max_st],
 		Effect) :-
 	def_unit_and_index_type_list_are(TypeBase-TypeDims, IndxCount),
@@ -252,6 +252,7 @@ update_equation(Function, InterInputs, [Eqn_st, Unit_st, Is_P_st, Desc_st,
 	    ParamAllowances = [[-1,1,1], [0,1,1], [1,1,0], [2,0,0]];
 	  ParamAllowances = [[-1,1,0], [0,1,0], [1,0,0], [2,0,0]]),
 	member([Is_P, ParamsAllowed, _EventInsAllowed], ParamAllowances),
+	(Unit_pb = "1/unit" -> Unit_st = "1/day"; Unit_st = Unit_pb),
 	get_term(Unit_st, Units, UnitFormError),
 	get_term(Eqn_st, Result, EqnFormError),
 	(Result = '', !,
