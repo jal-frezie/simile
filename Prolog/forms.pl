@@ -94,7 +94,7 @@ do_equation_dialog(Win, Part) :-
 		[unify(Equation), build(EvtCapts), append(ToPass, [])]);
 	 ToPass = Equation),
 	(Base = 1/day,
-	 m_update'><'use_units_in(Parent, 'No') -> UseBase = 1/unit;
+	 m_update'><'use_units_in(Parent, 'No') -> UseBase = 1/time;
 	 UseBase = Base),
 	fill_equation(ToPass, UseBase, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_table(Part, TableList, TableVals), % calls interaction from tcl
