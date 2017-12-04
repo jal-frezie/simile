@@ -646,6 +646,9 @@ proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
     set stackDepth 2
     while {$stackDepth <= $stack} {
         set stackDistance [expr {$stackDepth*$features/25}]
+	if {$stackDepth == 5} { # variable membership -- put last on other side
+	    set stackDistance [expr {-$stackDistance/2}]
+	}
 	set levelLine {}
 	foreach pt $mptz {
 	    lappend levelLine [expr $pt+$stackDistance]
