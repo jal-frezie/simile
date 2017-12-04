@@ -614,7 +614,7 @@ to get unit conversion factor */
 
 bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 	find_base(Arc, General_arc), % start of old clause
-	get_chain(General_arc, Node, _, Exits, Entries),
+	get_chain(General_arc, Node, _, Exits, BackwardEntries),
 	caption_for(Node, BadComp),
 	caption_for(Arc, BadArc),
 	(  /* we want to allow border split if flow outside has right dimensions
@@ -631,8 +631,9 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 */
 	implicit_function(General_arc, Controller),
 	get_units(Controller, ArcUnits, ArcDims),
-	reverse(Exits, BiggestFirst),
-	all(ame_gen, get_all_dims, [build(BiggestFirst),
+	reverse(Exits, BackwardExits),
+	reverse(BackwardEntries, Entries),
+	all(ame_gen, get_all_dims, [build(BackwardExits),
 				    append(AllDims, ArcDims)]),
 	all(ame_gen, get_all_dims, [build(Entries),
 				    append(ShareDims, [])]),
@@ -640,14 +641,16 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 	(append(SplitDims, MergeDims, AllDims), !,
 	 length(ShareDims, N),
 	 list_elt_args(N, index, EltArgs),
-	 InstVar =.. [element, BaseVar | EltArgs],
+	 (EltArgs = [] -> InstVar = BaseVar;
+            InstVar =.. [element, BaseVar | EltArgs]),
 	 (MergeDims = [] ->
 	      Var = InstVar;
 	  % when summing flows to a compartment, match outer dimensions
 	  length(NodeDims, M),
 	  list_elt_args(M, place_in, ReconArgs),
-	  ScalarVar =.. [element, InstVar | ReconArgs],
-	  sum_dims(MergeDims, ScalarVar, ScalarSum),
+	  (ReconArgs = [] -> ScalarVar = InstVar;
+	     ScalarVar =.. [element, InstVar | ReconArgs]),
+         sum_dims(MergeDims, ScalarVar, ScalarSum),
 	 makearray_dims(NodeDims, ScalarSum, Var));
 	    raise_exception(flow_comp_dims_mismatch(BadArc, BadComp,
 						  AllDims, SplitDims)))),

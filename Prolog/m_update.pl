@@ -573,13 +573,14 @@ end_with_units(Flow, Type-FlowDims) :-
     implicit_function(Comp, Fn),
     Fn has_class_refinement units of Units,
     analyze_array(Units, Type, CompDims),
-    get_chain(Flow, Comp, _Top, Exited, Entered),
-    reverse(Exited, BiggestFirst),
-    all(ame_gen, get_all_dims, [build(BiggestFirst), append(LostDims, [])]),
-    append(LostDims, FlowDims, AvailDims),
-    all(ame_gen, get_all_dims, [build(Entered), append(DefSubs, CompDims)]),
+    get_chain(Flow, Comp, _Top, Exited, EnterBackwards),
+    reverse(Exited, ExitBackwards),
+    reverse(EnterBackwards, Entered),
+    all(ame_gen, get_all_dims, [build(ExitBackwards), append(GainedDims, [])]),
+    append(GainedDims, FlowDims, AvailDims),
+    all(ame_gen, get_all_dims, [build(Entered), append(NeededDims, CompDims)]),
     % flow plus exited sms must have enough dims to match entered sms + comp
-    ((DefSubs = AvailDims) -> true;
+    (prefix(NeededDims, AvailDims) -> true;
      FlowDims = [not_matchable(Comp)]).
 
 /*
