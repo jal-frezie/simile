@@ -366,7 +366,7 @@ made_ghost_by(Ghost, Link) :-
 	\+ NextUp has_class function.
 	
 find_ghosts(Base, Ghost) :-
-	Base has_type flow, !,
+	Base is_of_sort transfer, !,
 	(implicit_function(Base, FlowFn),
 	    FlowFn has_class_refinement value of _Val, !,
       	    (sequence(Base, Ghost); sequence(Ghost, Base));
