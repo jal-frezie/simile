@@ -1240,7 +1240,8 @@ proc SaveFile {topNode tree tgt {noPkg 0}} {
 			   -header [list "Content-Description" "Run Status"] \
 			   -encoding base64 \
 			   -string $runState($topNode,runParams)]
-	    lappend projectInfo "Model execution parameters"
+	    lappend projectInfo \
+		"Model execution parameters"
 	}
 	if {!$::headless && [PrefValue custom(hackBreak) hackBreak] && \
 		!$noPkg} {
@@ -1369,7 +1370,9 @@ proc GetParts {top tree noPkg} {
     global projectInfo
 
     set mimes {}
-    foreach subtree [glob -nocomplain ${tree}/*] {
+    set mdlExts pl,cnv,svg,spj,cpp,so,dylib,dll,tcl
+    foreach subtree [glob -nocomplain \
+			 ${tree}/{*.{png,gif,jpeg},model.{$mdlExts}}] {
         #ShowMess debug info "GetParts subtree $subtree" ok
         if {[file isdirectory $subtree]} {
             set mimes [concat $mimes [GetParts $top $subtree $noPkg]]
@@ -1420,12 +1423,12 @@ proc GetParts {top tree noPkg} {
                     set Description "Simile helper configuration file"
                     set style attachment
                 }
-                *.spj {
+                model.spj {
                     set PartType "application/x-simile"
                     set Description "Simile package description"
                     set style attachment
                 }
-                model.* {
+	        model.* {
                     set PartType "application/x-simile"
                     if {$noPkg} {
 			set Description junk
