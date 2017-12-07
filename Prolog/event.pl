@@ -2600,7 +2600,7 @@ dissolve_component(Node) :-
 	true),
 	    
 	/* First, strip the model's dimensions and check external vars */
-	(get_all_dims(Node, []), !;
+	(catch(get_all_dims(Node, []), _SizeSourceGone, fail), !;
 	add_parameter(Node, 0, assume_simple, 1),
 	    spread_colour(Node, dims)),
 	(setof(State, (presence_affects(Node, State), find_type(State, state)),
