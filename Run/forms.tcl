@@ -1310,7 +1310,7 @@ proc LimitChars {field result} {
 
 proc DoUserDialogue {} {
     global userinfo
-    set t [PutItThere .userdata .splash]
+    set t [PutItThere .userdata .]
     wm title $t [tr. "Enter your details (not required for evaluation edition)"]
     pack [label $t.mess -text "Please enter your name, organization and license code if required."]
     pack [frame $t.head]
@@ -1346,16 +1346,16 @@ proc DoUserDialogue {} {
 	      -command "set userinfo(entrydone) 1"] -side left
     pack [button $t.buttons.ex -text "DO NOT ACCEPT" \
 	      -command "set userinfo(entrydone) 0"] -side right
-    
-    LetItShow $t userinfo(entrydone)
-    focus $t.head.nentry
     wm withdraw .splash
+    LetItShow $t userinfo(entrydone)
+    wm deiconify .splash
+    update
+    focus $t.head.nentry
     if {$userinfo(entrydone)} {
 	set userinfo(name) [$t.head.nentry get]
 	set userinfo(corp) [$t.head.centry get]
 	set userinfo(license_code) [format %5s-%5s [$t.head.lfield.entryl get] [$t.head.lfield.entryr get]]
     }
-    wm deiconify .splash
     PackItUp $t
     return $userinfo(entrydone)
 }

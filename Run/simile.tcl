@@ -503,14 +503,20 @@ if {[string equal swi_interp $userinfo(prologId)]} {
 } else {
     switch $userinfo(prologId) {
 	gnu {
-	    set tgt xgsimile
+	    set plExec xgsimile
 	} sicstus {
-	    set tgt sprt
+	    set plExec sprt
 	} swi_comp {
-	    set tgt xssimile
+	    set plExec xssimile
+	} default {
+	    wm withdraw .splash
+	    tk_messageBox -title "Credentials file corrupt" -icon error \
+		-message "Information from credentials file does not make sense. Please delete userinfo.txt and restart." \
+		-detail "The following fields were read: [array get userinfo]"
+	    exit
 	}
     }
-    set PROLOG_CMD [list [file join $execDir $tgt$archExtn$execExtn]]
+    set PROLOG_CMD [list [file join $execDir $plExec$archExtn$execExtn]]
     if {$userinfo(prologId) eq "swi_comp"} {
 	lappend PROLOG_CMD 2>@1 ;# avoids error popups
     }
