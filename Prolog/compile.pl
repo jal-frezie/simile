@@ -1776,19 +1776,24 @@ have put it back for now. Inheritance workaround is to do all the
 processing in the relation model.
 
 Issue: if there are multiple made_at conds for the same param, only one 
-made_for will need to be made, so add an integer to separate them */
+made_for will need to be made, so add an integer to separate them 
+
+Note params used in same time step do not have to be set in same loop if in an
+alarm submodel, unless they are in_preceding (with this_loop() wrapper) */
 
 connect_params(AllInsts, Insts) :-
 	select(make(Tgt, Conds, PathPlus, Step, Acts), AllInsts, LeftInsts),
-	select(made_at(Param, OrigPathPlus), Conds, MoreConds), !,
+	select(made_at(OrigParam, OrigPathPlus), Conds, MoreConds), !,
 	    remove_non_loopers(PathPlus, Path),
 	    remove_non_loopers(OrigPathPlus, OrigPath),
 	    suffix(MatchPath, Path),
 	    suffix(CommonPath, OrigPath),
 	    MatchPath == CommonPath, !,
-	    (Param = later(Deferred), !,
+	    (member(OrigParam, [this_loop(Deferred), later(Deferred)]),
+	     Param = later(Deferred), !,
 	      (SafePath = CommonPath,
-	        (SafePath = [sm(_,_,_, fm_loop(_,_, Al, _)) | _],
+                \+ OrigParam = this_loop(Deferred),
+                (SafePath = [sm(_,_,_, fm_loop(_,_, Al, _)) | _],
 		 nonvar(Al), !; % if in alarm let other loops exit
 		 SafePath = [sm(_,_,_, vm_loop(_,_, [_B1, _B2 |_], _)) | _],
 		 !); % same if in association
@@ -1796,6 +1801,7 @@ connect_params(AllInsts, Insts) :-
 	       suffix(SafePath, Path), !; % stay inside loop using vals
 	       % UsingLast = 1, use later to sidestep ordering constraints
 	       query(using_own_value(Deferred), warning, top, [ok], _));
+	     Param = OrigParam,
 	     SafePath = CommonPath),
 							   
 	    (SafePath = Path,
@@ -2424,7 +2430,8 @@ can_find_id(_)]), % dummy to do with one-sided enumeration
 	(OldCond =.. [KeyFunc, RealCond],
 	    (member(KeyFunc, [ % keyword functors
 this_step, % Cond to be made in same phase, earlier or later
-later]), !, % Cond to be made in same program loop, earlier (?) or later
+this_loop, % Cond to be made in same program loop, later
+later]), !, % Cond to be made in same program loop unless in alarm or assoc
 		Refs = [nodep(Ref)];
 	    member(KeyFunc, [ % keyword functors
 earlier]), !, % Cond to be made earlier in the program but phase dont matter

@@ -1552,7 +1552,7 @@ refer_inter(instance(internal, inter(SourcePath, _, ParamLoops), Source, Name,
 	we use the total from the previous time step we don't need to
 	worry about accessing elements that haven't yet been set, and not
 	using made_at(...) should prevent it being removed as an idler */
-	 member(Source-Delay, [in_preceding(_)-later,
+	 member(Source-Delay, [in_preceding(_)-this_loop,
 			       in_progenitor(_)-this_step]), !,
 	 % progenitor value can be set in next loop because cannot create
 	 % offspring in same step as parent -- access before setting
