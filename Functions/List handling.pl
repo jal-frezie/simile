@@ -3,11 +3,7 @@ subtotals(Arr) --> [st]=makearray((if first(place_in(1)) then 0 else
     count(Arr)),[st].
 
 rankings(ExL) --> [L] = ExL,
-    sum(makearray(
-        makearray(
-	    if element([L],place_in(2))<element([L],place_in(1)) then 0 else 1,
-	count([L])),
-    count([L]))).
+		  howmanytrue([L]>makearray([L], count([L])))+1.
 
 howmanytrue(BoolList) --> sum(if BoolList then 1 else 0).
 

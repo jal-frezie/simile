@@ -1819,6 +1819,7 @@ proc ShowAbout {winId} {
     label .about.upper -image dripu
     pack .about.upper -pady 4
     frame .about.fr -relief sunken -borderwidth 2
+    pack .about.fr -expand on -fill x -padx 8 -pady 2
     switch [tk windowingsystem] {
         aqua {
             set fSize 12; set fsSize 12
@@ -1886,7 +1887,6 @@ proc ShowAbout {winId} {
             -font "-underline true -family helvetica -size $fsSize" -fg blue -cursor hand2] -pady 2 -side left
     bind $gen.www <Button-1> "VisitUrl http://www.simulistics.com/"
     pack $gen -padx 4 -pady 2
-    pack .about.fr -expand on -fill x -padx 8 -pady 2
     
 #    label .about.lower -image dripl
 #    pack .about.lower
