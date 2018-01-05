@@ -2157,7 +2157,7 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 do_clever_stuff(Phase, TestPhase, SmLevel, Path, SubPass, CondPass,
 	       FirstStep, LastStep) :-
 	    /* OK, have I just done an existence test for it? */
-	    (nonvar(TestPhase), TestPhase = test_at(TestStep, TestGo, TestLen),
+	    nonvar(TestPhase), TestPhase = test_at(TestStep, TestGo, TestLen),
 	        CondLen is TestGo + TestLen,
 	        append(CondBit, Faster, SubPass), length(CondBit, CondLen),
 		/* yes: if test was done in a level above current,
@@ -2258,7 +2258,7 @@ do_clever_stuff(Phase, TestPhase, SmLevel, Path, SubPass, CondPass,
 		get_pass_ends(SmLevel, StartPass, FinishPass),
 		FirstStep = [StartPass],
 		LastStep = [FinishPass],
-		CondPass = SubPass).
+		CondPass = SubPass.
 
 
 
@@ -2350,7 +2350,7 @@ order_phase(Step, Path, RawAssign, All, ThisPass, Taboo) :-
 		% [build(Deps), unify(Phase), append(Assign, Others)]),
 	    order_phase(Step, Path, Others, All, Rest, Taboo),
 	    ThisPass = [Instruction | Rest];
-	(delayable(Instruction), wake; !, fail),
+	(delayable(Instruction); !, fail),
 	    order_phase(Step, Path, RawAssign, All, ThisPass,
 			[Instruction | Taboo]));
 	ThisPass = [].
@@ -2488,7 +2488,9 @@ order_all_assignments(Step, All, Done) :-
 % select existence_tested and alarm instructions as these need special ordering
 select_ext_tests(All, XTests) :-
 	(All = make(existence_tested(_), _,_,_,_);
-	  All = make(Al, _, [sm(_,_,_, fm_loop(_,_, Alarm, _)) | _], _,_),
+	 All = make(Al, _, Path, _,_),
+	    member(sm(_,_,_, fm_loop(_,_, Alarm, _)), Path),
+	    % alarm cond may of course be set in a submodel loop
 	    nonvar(Alarm),
 	    Alarm = al_action(Al, _)), !,
 	XTests = [All];
