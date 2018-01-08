@@ -649,7 +649,8 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, Units) :-
 	    Units = [Unit];
 	(Sub = size(ModName); Sub = size(ModName, Ind)),
 	    contains(Top, Node),
-	    backup'><'is_toplevel(Top),
+	    (backup'><'is_toplevel(Top);
+	     Host has_part Top, find_type(Host, function)), % in fn def
 	    (setof(SizeSource, name_matches(SizeSource, Top, ModName),
 		   Sources), !,
 		(Sources = [Source], !,
