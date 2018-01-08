@@ -750,10 +750,10 @@ build_table_ref(Table, TableFn, RefTable) :-
 process_references(Arg, ArgCapt, FragSm,
 		   sub(InPairs, BuildArrs, Refs)) :-
 	with_capt(ArgNode, _, FragSm, ArgCapt),
+	get_av_pair(ArgNode, 0, value, formal_parameter(SpareLoops, BuildArrs)),
 	list_fragments_for_use(ArgNode, SubFrags),
 	replace_subexps(Arg, instance, process_expr,
 			sub(InPairs, SubFrags, Refs), top_down, _Sw, DoneArg),
-	get_av_pair(ArgNode, 0, value, formal_parameter(SpareLoops, BuildArrs)),
 	regenerate_makearrays(DoneArg, BuildArrs, DoneArgArr),
 	append(BuildArrs, SpareLoops, AllLoops),
 	pick_elt_from(DoneArgArr, AllLoops, DoneArgArrElt, index),

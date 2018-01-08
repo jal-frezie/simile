@@ -1406,7 +1406,7 @@ get confused by another instance of the same fragment inside the current one
 */
 with_capt(Found, Loops, Sm, Capt) :-
 	    find_all_comps(Sm, Found),
-	    caption_for(Found, Capt), !,
+	    caption_for(Found, Capt),
 	    get_node_size(Sm, Dims),
 	    instance'><'path_section_for(Sm, _, Dims, Loops, _,_).
 
