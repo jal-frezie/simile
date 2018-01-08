@@ -42,6 +42,7 @@ proc KeepLooking {} {
 		    error [lreplace $line 0 0 slip-up]
 		} default {
 		    DebugMess $line
+		    set prologExit -1
 		}
 	    }
 	}
