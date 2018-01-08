@@ -499,13 +499,10 @@ multiple_draw(VComp, Num) :-
         Num = -1;
     is_conditional(Comp), !,
         Num = 0;
-    (catch(get_node_size(Comp, [Val | _]), Winge, mention(Comp, Winge, Val));
-    (implicit_function(Comp, CompFn); CompFn=Comp),
-        CompFn has_class_refinement units of array(_, Val)),
-        enum_type_ref(Val, Comp, RealVal, _, _), !,
-        Num is min(RealVal, 4);
+    get_node_size(Comp, [Val | _], _,_), !,
+        Num is min(Val, 4);
     Num = 1).
-
+/* This stuff has been put into get_actual_sizes
 mention(Comp, Winge, Val) :-
 	caption_for(Comp, Capt),
 	(member(Winge, [absent_submodel(Foo), submodel_name_recurs(Foo)]),
@@ -519,7 +516,7 @@ mention(Comp, Winge, Val) :-
 	    multiple_draw(Comp, Val);
 	query(dimensions_invalid(Capt, Winge), warning, top, [ok], _),
 	    Val = 4).
-
+*/
 get_bowtie_size(Link, Bowtie) :-
     Link is_connector from Comp to _,
     get_box_size(Comp, flow, Box),

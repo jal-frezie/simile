@@ -697,13 +697,35 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, Units) :-
 	raise_exception(Err)).
 
 get_actual_sizes(Node, Subs, ETStyle, Nums, Sizes, Units) :-
-	all(ame_gen, get_actual_size,
-	    [unify(Node), build(Subs), unify(ETStyle),
-	     append(Nums, []), append(Sizes, []), append(Units, [])]).
+    catch(all(ame_gen, get_actual_size,
+	      [unify(Node), build(Subs), unify(ETStyle),
+	       append(Nums, []), append(Sizes, []), append(Units, [])]), Winge,
+	  (remove_offending_dim(Node, Winge),
+	   get_actual_sizes(Node, Subs, ETStyle, Nums, Sizes, Units))).
+
+remove_offending_dim(Node, Winge) :-
+    caption_for(Node, Capt),
+    Winge =.. [_Problem, Offender],
+    (find_type(Node, submodel) ->
+	 Node has_class_refinement multiplication_spec of Specs,
+	 select(count=Dims, Specs, MoreSpecs),
+	 select(LostRef, Dims, GoodDims),
+	 LostRef =.. [size, Offender | _Level],
+	 Node has_changed_class_refinement multiplication_spec of
+	      [count=GoodDims | MoreSpecs];
+       (implicit_function(Node, CompFn); CompFn=Node),
+         CompFn has_class_refinement units of Unit,
+	 m_update'><'analyze_array(Unit, Base, Dims),
+	 select(LostRef, Dims, GoodDims),
+	 LostRef =.. [size, Offender | _Level],
+	 m_update'><'build_array(Base, GoodDims, NewUnit),
+         CompFn has_changed_class_refinement units of NewUnit),
+    query(failed_ref_in_dimensions(Capt, Offender), warning, top, [ok], _).
 
 name_matches(Node, Top, Name) :-
 	contains(Top, Node),
-	Node has_class submodel,
+	% Node has_class submodel,
+	appears(Node),
 	caption_for(Node, Name).
 
 enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
@@ -772,8 +794,11 @@ get_node_size(Source, Size) :-
 	get_node_size(Source, _, Size, _).
 
 get_node_size(Source, SizeN, Size, Units) :-
-	Source has_class_refinement multiplication_spec of Multi,
-	member(count=Dim, Multi), !,
+	(Source has_class_refinement multiplication_spec of Multi,
+	   member(count=Dim, Multi);
+	  (implicit_function(Source, CompFn); CompFn=Source),
+            CompFn has_class_refinement units of Unit,
+	    m_update'><'analyze_array(Unit, _Base, Dim)), !,
 	get_actual_sizes(Source, Dim, bare, SizeN, Size, Units),
 	(\+ member(var, Size), !;
 	caption_for(Source, Capt),
