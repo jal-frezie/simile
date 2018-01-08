@@ -1480,7 +1480,7 @@ status_affects(Item, Affected) :-
 	    connects(Link2, _, Target),
 	    sequence(Link2, Affected),
 	    Affected is_connector from _ to Target;
-	find_type(Item, submodel),
+	(find_type(Item, submodel); Item is_of_sort has_function),
 	    caption_for(Item, Capt),
 	    contains(Top, Item),
 	    backup'><'is_toplevel(Top),
