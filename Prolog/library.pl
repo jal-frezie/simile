@@ -170,7 +170,8 @@ go_with(Comp) :-
 	contains(Fn, Comp),	% comp in function-defining fragment
 	    \+ Fn = Comp,
 	    find_type(Fn, function),
-	    go_with(Fn).
+	    implicit_function(Host, Fn),
+	    go_with(Host).
 
 % Not sure why this needs to be tested -- arcs are only blue if both ends are!
 connects_leaver(Arc) :-
