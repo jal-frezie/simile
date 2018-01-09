@@ -1,53 +1,5 @@
-simile (6.8.8) UNRELEASED; urgency=low
-
-  * Patch release
-
- -- Jasper Taylor <jasper@simulistics.com>  Thu, 05 Oct 2017 11:00:00 +0100
-
-simile (6.8.7) UNRELEASED; urgency=low
-
-  * Patch release
-
- -- Jasper Taylor <jasper@simulistics.com>  Tue,12 Sep 2017 10:00:00 +0100
-
-simile (6.8.6) UNRELEASED; urgency=low
-
-  * Patch release
-
- -- Jasper Taylor <jasper@simulistics.com>  Fri, 25 Aug 2017 12:00:00 +0100
-
-simile (6.8.5) UNRELEASED; urgency=low
-
-  * Patch release
-
- -- Jasper Taylor <jasper@simulistics.com>  Mon, 14 Aug 2017 16:00:00 +0100
-
-simile (6.8.4) UNRELEASED; urgency=low
-
-  * Patch release
-
- -- Jasper Taylor <jasper@simulistics.com>  Tue, 04 Jul 2017 17:00:00 +0100
-
-simile (6.8.3) UNRELEASED; urgency=low
-
-  * Patch release
-
- -- Jasper Taylor <jasper@simulistics.com>  Tue, 30 May 2017 19:00:00 +0100
-
-simile (6.8.2) UNRELEASED; urgency=low
-
-  * Patch release
-
- -- Jasper Taylor <jasper@simulistics.com>  Tue, 04 Apr 2017 11:00:00 +0100
-
-simile (6.8.1) UNRELEASED; urgency=low
-
-  * Patch release
-
- -- Jasper Taylor <jasper@simulistics.com>  Fri, 17 Mar 2017 13:00:00 +0000
-
-simile (6.8.0) UNRELEASED; urgency=low
+simile (6.9.0) UNRELEASED; urgency=low
 
   * Initial release (Closes: )
 
- -- Jasper Taylor <jasper@simulistics.com>  Tue, 14 Feb 2017 16:00:00 +0000
+ -- Jasper Taylor <jasper@simulistics.com>  Wed, 09 Jan 2018 15:00:00 +0000

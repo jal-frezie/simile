@@ -1,12 +1,12 @@
 #!/usr/bin/env xdg-open
 [Desktop Entry]
-Version=6.8
+Version=6.9
 Type=Application
 Terminal=false
-Icon[en_GB]=/usr/share/simile-6.8/Images/bigsimile.gif
-Name[en_GB]=Simile v6.8
+Icon[en_GB]=/usr/share/simile-6.9/Images/bigsimile.gif
+Name[en_GB]=Simile v6.9
 Exec="/usr/bin/simile"
 Comment=Graphical Modelling Environment
 Categories=Science;Education;
-Name=Simile v6.8
-Icon=/usr/share/simile-6.8/Images/bigsimile.gif
+Name=Simile v6.9
+Icon=/usr/share/simile-6.9/Images/bigsimile.gif
