@@ -821,7 +821,9 @@ get_all_dims(Source, AllDims) :-
 	    (by_record_brackets(curly),
 		AllDims = [var]; % change to en/disable indexed reference
 	     AllDims = [records]), !;
-	get_node_size(Source, AllDims).
+	(find_type(Source, submodel) ->
+	     get_node_size(Source, AllDims);
+	 AllDims = []). % compatibility: g_n_s used to return [] for primitives
 	
 /* Purge removes all elements of the 2nd arg from the 1st leaving the 3rd.
 It uses the database so templates which match many different elements
