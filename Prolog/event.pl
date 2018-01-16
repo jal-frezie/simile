@@ -1048,8 +1048,9 @@ input values using the new units. */
 
 spread_dims(Node) :-
 	(implicit_function(Node, Obj),
+/* should be done by finish_move and for toplevel only
 	find_all_comps(Sm, Obj),
-	add_parameter(Sm, 1, c_new, 0),
+	add_parameter(Sm, 1, c_new, 0), */
 	get_av_pair(Obj, 0, value, Equation),
 	get_av_pair(Obj, 0, units, GivenUnits),
 	get_input_info(Obj, IList),
@@ -2320,11 +2321,12 @@ delete_net(Top) :-
 			    \+ member(NewLook, Range)), ChangedLooks), !;
 	    ChangedLooks = []),
 	((member(Target, Range),
-	    find_type(Target, influence),
+	    find_type(Target, influence) /* ,
+should be done by finish_move and for toplevel only
 	    (\+ is_top_arc(Target);
 	    is_top_arc(Target),
 		find_all_comps(Sm, Target),
-		add_parameter(Sm, 1, c_new, 0));
+		add_parameter(Sm, 1, c_new, 0)) */ ;
 	member(Target, Range),
 	    find_type(Target, Line),
 	    member(Line, [flow, squirt, relation]);

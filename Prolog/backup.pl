@@ -120,13 +120,11 @@ finish_move(EditedModel, ChangeExec) :-
 	\+ anything_done, !;
 	m_update'><'contains(Model, EditedModel),
 	set_save_status(Model, risky),
-	(ChangeExec = 0;
-	 ChangeExec = 1,
-	 m_update'><'add_parameter(Model, 1, c_new, 0)),
 	/* Only proceed for toplevel window containing model */
 	is_toplevel(Model),
 	(ChangeExec = 0;
 	  ChangeExec = 1,
+	    m_update'><'add_parameter(Model, 1, c_new, 0),
 	    output'><'tk_alter_model(Model)),
 	get_ring_point(Model, Current),
 	record_changes(Model, Current),
