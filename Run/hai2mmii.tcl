@@ -313,7 +313,7 @@ proc GetCompExecData {topNode prop args} {
     global runState
        
     if {[RunningInC $topNode]} {
-	if {$runState($topNode,modelRunning)<=2} {
+	if {$runState($topNode,modelRunning)<=1} {
 	    WarnNoData $topNode
 	    return nodata
 	}

@@ -651,8 +651,8 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, Units) :-
 	    contains(Top, Node),
 	    (backup'><'is_toplevel(Top);
 	     Host has_part Top, find_type(Host, function)), % in fn def
-	    (setof(SizeSource, name_matches(SizeSource, Top, ModName),
-		   Sources), !,
+	    (setof(SzSource, name_matches(SzSource, Top, ModName), Sources), !,
+	     % maybe also check for non-empty dims here?
 		(Sources = [Source], !,
 		    \+ (Source = Node,
 			raise_exception(self_reference(ModName))),
