@@ -645,7 +645,8 @@ namespace eval RunEnv {
 	global helperTable
         variable currentNode
 	
-	$helperTable(RunControl)::AbortFromMenu $currentNode
+	$helperTable(RunControl)::AbortFromMenu $currentNode \
+	    "ExDestroyHelpers $currentNode"
     }
 
     proc Destroy {node} {

@@ -1838,11 +1838,11 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set fm [menu $topm.model -tearoff 0 -postcommand "AbleComp $winid"]
     $topm add cascade -label [tr. Model] -menu $topm.model
     $fm add command -label [tr. "Run"] -state $execEntryState \
-                    -command "MenuSelect $c code run_c" \
+	-command [list FinishExecThen $c "MenuSelect $c code run_c"] \
                     -accelerator "$accKey+R"
     AddAccelerator $winid model "Run" "<$accSym-r>"
     $fm add command -label [tr. "Debug"] -state $execEntryState \
-                    -command "MenuSelect $c code run_tcl" \
+	-command [list FinishExecThen $c "MenuSelect $c code run_tcl"] \
                     -accelerator "$accKey+D"
     AddAccelerator $winid model "Debug" "<$accSym-d>"
 # Not as low-hanging a fruit as I thought!
@@ -1852,7 +1852,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 #    AddAccelerator $winid model "Extra run instance" "<$accSym-e>"
 #Model now aborted by closing run control
 #    $fm add command -label [tr. "Abort execution"] -state $execEntryState \
-#                    -command "FinishExec $c"
+#	-command [list FinishExecThen $c "ExDestroyHelpers node00000"]
     $fm add separator
     $fm add command -label [tr. "List equations"] \
             -command "MenuSelect $c file list_eqns" \

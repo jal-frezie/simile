@@ -1334,7 +1334,7 @@ proc StartRun {node} {
 	::RunEnv::InMreFor $node ;# in case it has been focussed since creation
     } else {
 	wm protocol $runState($node,helperId) WM_DELETE_WINDOW \
-	    [list ${defHelper}::AbortFromMenu $node]
+	    [list ${defHelper}::AbortFromMenu $node "ExDestroyHelpers $node"]
     }
 # Now list all the inputs in the model, so we can avoid running it until
 # all have tools attached to provide their values

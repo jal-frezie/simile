@@ -291,16 +291,16 @@ namespace eval runcontrol33857 {
 	}
     }
 
-    proc AbortFromMenu {node} {
+    proc AbortFromMenu {node action} {
 	global hideQuery runState
 
 	if {$runState($node,busy)} {
-	    set hideQuery 1
+	    set hideQuery $action
 	    ShareAction $node 10 ;# rest done on exit
+	    #tkwait variable runState($node,busy)
 	} else {
-	    if {[ExDestroyHelpers $node]} {
-		ScrubRun $node 1
-	    }
+	    ScrubRun $node 1
+	    eval $action
 	}
     }
 
@@ -582,8 +582,9 @@ namespace eval runcontrol33857 {
 	set runState($node,busy) 0
 	if {[info exists hideQuery]} { ;# finish aborting execution
 	    ScrubRun $node 1
-	    ExDestroyHelpers $node
-	    unset hideQuery
+	    set chainCmd $hideQuery
+	    unset hideQuery ;# Make sure only happens once even if recursion
+	    eval $chainCmd ;#ExDestroyHelpers $node
 	}
     }
 

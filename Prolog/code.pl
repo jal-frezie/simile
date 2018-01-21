@@ -40,7 +40,7 @@ tk_code(Node, RunCmd, _Dummy) :-
 	member([RunCmd, Lang], [[run_c, c], [run_tcl, tcl]]),
 	/* Compile the thing into whatever, load it */
 	use_temp_dir(Dir),
-	draw'><'scrub_run(Node, 0),
+	% draw'><'scrub_run(Node, 0),
 	rebuild_code(Lang, Node, Dir, prepare_exec),
 	    % if exceps happen here, catch in Tcl and return failure
 	    % on_exception(Whoops,

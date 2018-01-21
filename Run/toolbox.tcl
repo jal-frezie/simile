@@ -1632,11 +1632,11 @@ proc RaiseWinMRE {win} {
     RaiseMREFor $node
 }
 
-proc FinishExec {win} {
+proc FinishExecThen {win act} {
     global window_info helperTable hideQuery
 
     set node $window_info($win,top_node)
-    $helperTable(RunControl)::AbortFromMenu $node
+    $helperTable(RunControl)::AbortFromMenu $node $act
 }
 
 proc ExecQuery {specifics icon helpRef parent opts} {
