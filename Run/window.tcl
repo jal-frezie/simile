@@ -1438,7 +1438,7 @@ proc DoLocalCmd {win item} {
         undo {UnOrReDo $win 0}
         redo {UnOrReDo $win 1}
         print {PrintNow $win}
-        rerun {Rerun $win 1}
+        rerun {FinishExecThen $win "Rerun $win 1"}
 	tog_grid {ToggleGrid $win}
         zoomin {DoZoom $win 1.414214}
         tosel {DisplayArea $win}
