@@ -100,10 +100,10 @@ class similescript::$newHelperClass {
 	set State "<hsf simile_version=\"$::env(SIMILE_VERSION)\" helper_id=\"[$this info class]\">\n"
 	set shfPath [GetPathChoice .shf [$modelInst cget -modelNode]]
 	if {[catch {::fileutil::relative $shfPath $curFile} relFile]} {
-	    puts $relFile
-	    set tdLine "<target_file mode=\"absolute\">$curFile</target_dir>\n"
+	    #puts $relFile
+	    set tdLine "<target_file mode=\"absolute\">$curFile</target_file>\n"
 	} else {
-	    set tdLine "<target_file mode=\"relative\">$relFile</target_dir>\n"
+	    set tdLine "<target_file mode=\"relative\">$relFile</target_file>\n"
 	    # will be wrong if modeller changes directory when saving .shf
 	}
 	append State $tdLine
@@ -290,15 +290,15 @@ class similescript::$newHelperClass {
 
     method Stuff {contents} {
 	switch $useNodes(inElt) {
-	    target_dir {
+	    target_file {
 		if {$useNodes(fileMode) eq "relative"} {
 		    set node [$modelInst cget -modelNode]
 		    set shfPath [GetPathChoice .shf $node]
 		    SetSaveFileTo [file normalize \
-				       [file join $shfPath $contents log.csv]]
+				       [file join $shfPath $contents]]
 		    #puts "joined $shfPath and $contents to get $curFolder"
 		} else {
-		    SetSaveFileTo [file join $contents log.csv]
+		    SetSaveFileTo $contents
 		}
 	    } component {
 		InsertLogEntry $contents 1
