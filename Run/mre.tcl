@@ -1206,6 +1206,10 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
     proc FinishElement {name} {
 	variable parseStatus
 
+	if {$name eq "notebook"} {
+	    SetLeafCurrent [$parseStatus(currentPath) select]
+	    # select a visible tool
+	}
 	if {[lsearch {notebook page panedwindow pane} $name]>=0} {
 	    set parseStatus(currentPath) \
 		[winfo parent $parseStatus(currentPath)]

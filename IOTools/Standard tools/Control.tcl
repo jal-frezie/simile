@@ -294,10 +294,9 @@ namespace eval runcontrol33857 {
     proc AbortFromMenu {node action} {
 	global hideQuery runState
 
-	if {$runState($node,busy)} {
+	if {[info exists runState($node,busy)] && $runState($node,busy)} {
 	    set hideQuery $action
 	    ShareAction $node 10 ;# rest done on exit
-	    #tkwait variable runState($node,busy)
 	} else {
 	    ScrubRun $node 1
 	    eval $action
