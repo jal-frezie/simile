@@ -1176,25 +1176,29 @@ proc GetMySQLConnect {parent $mdl} {
 	set fc .table.notebook.columns
 	set fheads [GetFrame $fc.fheads]
 	# insert something in the data file field
-	set db [DBHandleFor $::table_entry(fileName)]
 
-	PopulateTableList $db $fc $fheads
+	PopulateTableList $::table_entry(fileName) $fc $fheads
     }
 }
 
-proc PopulateTableList {db fc fheads} {
+proc PopulateTableList {file fc fheads} {
+    set db [DBHandleFor $file]
     set dbtables [$db tables]
     set tablenames {}
+    set columnHeaders {}
     foreach {table wafffle} $dbtables {
 	lappend tablenames $table
+	lappend columnHeaders $table [$db columns $table]
     }
+    $db close
     # set to the first sheet
     set tablecb [GetFrame $fc.ftable].tablecb
     $tablecb set [lindex $tablenames 0]
     $tablecb configure -values $tablenames
     #ShowMess debug info "DoOnDataBaseColumnsLoaded $connectString $tablecb $fheads" ok
-    DoOnDataBaseColumnsLoaded $db $tablecb $fheads
-    bind $tablecb <<ComboboxSelected>> "DoOnDataBaseColumnsLoaded \{$db\} $tablecb $fheads"
+    DoOnDataBaseColumnsLoaded $columnHeaders $tablecb $fheads
+    bind $tablecb <<ComboboxSelected>> \
+	[list DoOnDataBaseColumnsLoaded $columnHeaders $tablecb $fheads]
 }
 
 proc TrackDropCoords {x y act} {
@@ -1599,9 +1603,8 @@ proc LoadDataFile {mode query mdl} {
                         #ODBC get database tables and find headers for selected table
                         close $stream
 
-			set db [DBHandleFor $table_entry(fileName)]
                         #ShowMess debug info "tables [db tables]" ok
-			PopulateTableList $db $fc $fheads
+			PopulateTableList $table_entry(fileName) $fc $fheads
                     }
                     # was a bracket
             } grid {
@@ -1631,9 +1634,9 @@ proc LoadDataFile {mode query mdl} {
             }
         }
         catch {close $stream}
-        if {[info commands db] == {db}} {
-            db disconnect
-        }
+#        if {[info commands db] == {db}} {
+#            db disconnect
+#        }
         
     }
     set fidx [GetFrame $fc.select.idxs]; ######################
@@ -1645,7 +1648,7 @@ proc LoadDataFile {mode query mdl} {
     return 1
 }
 
-proc DoOnDataBaseColumnsLoaded { db tablecb fheads } {
+proc DoOnDataBaseColumnsLoaded { cH tablecb fheads } {
     set haveDND [llength [package provide tkdnd]]
 
     if {$haveDND} {
@@ -1653,7 +1656,8 @@ proc DoOnDataBaseColumnsLoaded { db tablecb fheads } {
     } else {
 	$fheads.lheads delete [$fheads.lheads items]
     }
-    set fields [$db columns [$tablecb get]]; #table name
+    array set columnHeaders $cH
+    set fields $columnHeaders([$tablecb get]); #table name
     
     #each column {TABLE_QUALIFIER TABLE_OWNER TABLE_NAME COLUMN_NAME DATA_TYPE TYPE_NAME PRECISION LENGTH SCALE RADIX NULLABLE REMARKS}
     set i 1
@@ -1964,6 +1968,7 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 		lappend indexArgs ${headerIndex}elt \
 		    [ListColumn $db $dbtable $headerIndex]
 	    }
+	    $db close
 	    eval [list foreach datum $datalist] $indexArgs [list {
 		set arrayIndex {}
 		if {[llength $indexArgs]} {
