@@ -909,7 +909,7 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
 		      -width [expr {$realFont*[lindex $specials 0]}] \
 		      -font $useFont -anchor $ankh -justify $tjust \
 		      -tags "$tagSet is_caption size_on_this realwidth([expr {$realFont*12.0}]) has_info"]
-    if {$realFont*12.0 < $::hideTinies} {
+    if {$w ne "ToSVG" && $realFont*12.0 < $::hideTinies} {
 	$w itemconfigure $textItem -state hidden
     }
     FixBackBox $w $textItem
