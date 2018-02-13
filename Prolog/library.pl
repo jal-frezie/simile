@@ -296,7 +296,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	    query(bust_edition_limit(Fns, StopAt, Edn), error, top, [ok], _),
 	    finish_progress_dialogue,
 	    % prevent executable from running
-	    is_toplevel(Parent),
+	    backup'><'is_toplevel(Parent),
 	    Parent has_new_model_refinement c_new of 0,
 	    fail;
 
@@ -334,7 +334,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	state'><'version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV > SimileV+0.001, % throw away code so no need to test load
-	    (\+ is_toplevel(Parent);
+	    (\+ backup'><'is_toplevel(Parent);
 	    m_update'><'add_parameter(Parent, 1, c_new, 0)), !;
 	  MyV >= floor(SimileV), !;
 	  query(future_shock(SimileV), warning, top, [ok], _))).
