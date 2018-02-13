@@ -141,6 +141,9 @@ class similescript::$newHelperClass {
 
 	lappend useNodes(logged) $title
 	pack [label $f.caption -text [lindex $levels end]: -bg $lbg] -side left
+	pack [::ttk::entry $f.value] -side left -fill x -expand 1
+	set useNodes(ticker,$title) $f
+	FillTicker $title [lindex [$modelInst GetValue $title] 0]
 	pack [::ttk::button $f.remove -image $useNodes(removeImg) \
 		  -command [code $this Remove $title]] -side right
 	return yes
@@ -156,8 +159,7 @@ class similescript::$newHelperClass {
     }
 
     method Remove {title} {
-        set levels [split $title /]
-        set f [MakeSubFrames {} $winId.c.canvas.frame $levels {} 0]
+        set f $useNodes(ticker,$title)
         pest20050803::Prune $winId $f
 	set index [lsearch -exact $useNodes(logged) $title]
 	set useNodes(logged) \
@@ -195,6 +197,14 @@ class similescript::$newHelperClass {
 #	}
     }
 
+    method FillTicker {path value} {
+	set entry $useNodes(ticker,$path).value
+	$entry config -state normal
+	$entry delete 0 end
+	$entry insert 0 $value
+	$entry config -state readonly
+    }
+    
     method UpdateCombined {time} {
 	if {[info exists useNodes(common_stm)]} {
 	} else {
@@ -214,8 +224,9 @@ class similescript::$newHelperClass {
 	if {[catch {$useNodes(common_stm) tables} tList]} { # writing csv
 	    puts -nonewline $useNodes(common_stm) $time
 	    foreach path $useNodes(logged) {
-		PutValsOnly vals \
-		    [lindex [$modelInst GetValue $path] 0]
+		set toLog [lindex [$modelInst GetValue $path] 0]
+		FillTicker $path $toLog
+		PutValsOnly vals $toLog
 	    }
 	    puts $useNodes(common_stm) $vals
 	    flush $useNodes(common_stm)
@@ -240,8 +251,9 @@ class similescript::$newHelperClass {
 	    }
 	    append sqlStr "`) VALUES ($time"
 	    foreach path $useNodes(logged) {
-		PutValsOnly sqlStr \
-		    [lindex [$modelInst GetValue $path] 0]
+		set toLog [lindex [$modelInst GetValue $path] 0]
+		FillTicker $path $toLog
+		PutValsOnly sqlStr $toLog
 	    }
 	    append sqlStr ")"
 	    $useNodes(common_stm) allrows $sqlStr
