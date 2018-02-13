@@ -91,6 +91,9 @@ public:
   double ts[8], dts[8];
   void* loopIndexPtrs[32];
   int loopIndexCounts[32];
+  int ctxSaved[32], ctxCount;
+  int activeEvents[256];
+  void* spares[1024];
 
   // functions called by host module
   virtual int do_evalmodel(int) = 0;
@@ -113,6 +116,9 @@ public:
   int stop_on_id(int, int);
   int stop(int);
   void report_context(void);
+  template <class modeldata>
+    modeldata flag_derived_event(int graphId, modeldata magnitude);
+			  
 };
 // Declaration for procedure types found in the model dll by the shank
 typedef void model_requests_file_param_type(void*, void*, int, 

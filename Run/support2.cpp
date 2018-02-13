@@ -26,6 +26,8 @@ int AME_model::do_evalmodel(int phase) {
   }
 
   dts[0] = phase; // so external code can access it
+  ctxCount = 0;
+  activeEvents[0] = 0;
   if ((userStop.excpNo = -setjmp(env))) {
     return 1;
   } else {
@@ -35,8 +37,12 @@ int AME_model::do_evalmodel(int phase) {
     }
     catch (int error) {
       userStop.excpNo = error;
+      report_context();
       return 1;
     }
+    activeEvents[0] = -activeEvents[0]; // avoid confusion with dummy value
+    // passed here in earlier executables
+    compare_instance_status(ctxSaved, activeEvents, -ctxCount);
 // InternalStop not used so no need for try/catch layer
 //    catch (InternalStop notice) {
       // used if stop_on_id throws exception
@@ -159,20 +165,22 @@ t3 = estimate of next initial increment
 };
 
 void InstanceOfModel::report_context() {
-  int itIsThus[32], mdCount = 0, ctxCount = 0, n, *m;
+  int mdCount = 0, n, *m;
+  ctxCount = 0;
   while (loopIndexPtrs[mdCount]) {
     if (loopIndexCounts[mdCount] == -1) {
-      itIsThus[ctxCount++] = *(int*)(loopIndexPtrs[mdCount]);
+      ctxSaved[ctxCount++] = *(int*)(loopIndexPtrs[mdCount]);
     } else {
       for (n=0; n<loopIndexCounts[mdCount]; ++n) {
 	m = &n;
 	m = (int*)(*(submodeltype**)(loopIndexPtrs[mdCount]))->get_pointer(2, &m);
-	itIsThus[ctxCount++] = *m;
+	ctxSaved[ctxCount++] = *m;
       }
     }
     ++mdCount;
   }
-  compare_instance_status(itIsThus, itIsThus, -ctxCount);
+  //  compare_instance_status(itIsThus, itIsThus, -ctxCount);
+  //  now done at end of step
 }
 
 BOOLEAN RealPhase(int phase) {
@@ -240,6 +248,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
       if (out) {
 	if (out != extras->t3) { 
 	  userStop.targetId = graphId; // for pause-on-event reporting
+	  flag_derived_event(graphId, out);
 	  report_context();
 	  extras->t3 = out;
 	  return out; // cannot return result of above assignment
@@ -293,6 +302,7 @@ modeldata InstanceOfModel::retract_from_pipe(delay<modeldata>* extras,
     if (ret && for_real) {
       report_context();
       userStop.targetId = graphId;
+      flag_derived_event(graphId, ret);
     }
     return ret;
   }
@@ -309,6 +319,16 @@ void InstanceOfModel::insert_to_pipe(delay<modeldata>* extras,
   double time = ts[phasecount];
 
   extras->insert(time+wait, RealPhase(phase)?payload:0, &event_predict);
+}
+
+template <class modeldata>
+modeldata InstanceOfModel::flag_derived_event(int graphId,
+					      modeldata magnitude) {
+  if (!magnitude) return 0;
+  activeEvents[++activeEvents[0]] = graphId;
+  // printf(" set evt %d to %d\n", activeEvents[0],graphId);
+  // maybe also log magnitudes some time in the sweet bye and bye
+  return magnitude;
 }
 
 /* This is called only when we create the type, to return model constants */

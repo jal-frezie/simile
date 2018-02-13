@@ -1546,6 +1546,20 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
+FINDABLE int addEventCommandCmd(ClientData clientData, Tcl_Interp *interp, 
+		int argc, Tcl_Obj *CONST argv[]) {
+  void* modelInst;
+
+  if (argc != 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "instance_id node_id command_string");
+    return TCL_ERROR;
+  }
+  memcpy(&modelInst, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  add_event_command(modelInst, Tcl_GetStringFromObj(argv[2], NULL),
+		    Tcl_GetStringFromObj(argv[3], NULL));
+  return TCL_OK;
+}
+
 void respond_to_param_req(void* clientRef, void* modelSlot, double reqTime,
 			  int paramId, int indCount, int* indices) {
   printf("Unwanted parameter value request at %lf\n", reqTime);
@@ -1663,7 +1677,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   "newc_settimepointall", "newc_gettimepointall", "c_resetmodel",
   "c_repeatreset", "c_executemodel", "c_setstepmodel", "c_exitmodel",
   "getvalue", "graph_table", "handle_data", "free_data_handle",
-  "getnodeid", "listobjects", "randseed", "random01"};
+  "getnodeid", "listobjects", "randseed", "random01", "add_event_command"};
   Tcl_ObjCmdProc* allProcs[] = {loadmodelCmd, createmodelCmd, setparamarrayCmd,
   settimepointarrayCmd, setrecordlistCmd, settimepointrecordsCmd,
   cleartimeseriesCmd, setparamelementCmd, setwrapCmd,
@@ -1672,7 +1686,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   settimepointallCmd, gettimepointallCmd, resetmodelCmd,
   repeatresetCmd, executemodelCmd, setstepCmd, exitmodelCmd,
   interfaceCmd, graphCmd, handleDataCmd, freeDataHandleCmd,
-  getnodeidCmd, listobjCmd, randseedCmd, random01Cmd};
+  getnodeidCmd, listobjCmd, randseedCmd, random01Cmd, addEventCommandCmd};
   int cmdNo;
   // char pkgName[16];
 
@@ -1680,7 +1694,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   // Use the Tcl Stubs mechanism --version is earliest we expect to work
   if (!Tcl_InitStubs(interp, "8.5", 0)) return TCL_ERROR;
   proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess);
-  for (cmdNo = 0; cmdNo < 30; ++cmdNo) {
+  for (cmdNo = 0; cmdNo < 31; ++cmdNo) {
     Tcl_CreateObjCommand(interp, allNames[cmdNo], allProcs[cmdNo], 
 			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   }

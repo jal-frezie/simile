@@ -294,11 +294,11 @@ Tcl_Obj* extend_string(Tcl_Obj *localObj, int index, Tcl_Obj *localSubObj, int d
 }
 
 /* next two call convert_to_tcl, which calls them, so declare in advance */
-Tcl_Obj* convert_to_tcl(int*, int*, char*, int*, BOOLEAN);
+Tcl_Obj* convert_to_tcl(int*, int*, char*, BOOLEAN, int*, BOOLEAN);
 
 Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices, 
 			     int* subBlocks, int *members, char** block,
-			     int* toGet, BOOLEAN jsonic) {
+			     BOOLEAN loseZeros, int* toGet, BOOLEAN jsonic) {
   Tcl_Obj *localObj, *localSubObj;
   int count, dir;
 
@@ -306,7 +306,8 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
   if (depth==dimty) {
     if (*members) {
       *block += dimty*sizeof(int);
-      localObj = convert_to_tcl(dims, subBlocks, *block, toGet, jsonic);
+      localObj = convert_to_tcl(dims, subBlocks, *block,
+				loseZeros, toGet, jsonic);
       if (dir>0) {
 	*block += subBlocks[0];
       } else {
@@ -328,8 +329,8 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
       }
       indices[depth] = ((int*)*block)[depth];
       localSubObj = append_list_members(dimty, depth+1, dims, indices,
-					subBlocks, members, block, toGet, 
-					jsonic);
+					subBlocks, members, block, loseZeros,
+					toGet, jsonic);
 
       if (jsonic) {
 	if (Tcl_GetCharLength(localSubObj))
@@ -349,7 +350,7 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
 }
 
 Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks, 
-			      char* block, int* count, BOOLEAN jsonic) {
+			      char* block, BOOLEAN loseZeros, int* count, BOOLEAN jsonic) {
   Tcl_Obj *localObj, *localSubObj;
   int offset, start, end, dir;
   
@@ -363,7 +364,7 @@ Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks,
   for (offset = start; offset != end; offset += dir) {
     if (!*count) break;
     localSubObj = convert_to_tcl(dims, subBlocks, block+offset*subBlocks[0],
-				 count, jsonic);
+				 loseZeros, count, jsonic);
     if (jsonic) {
       if (Tcl_GetCharLength(localSubObj))
 	localObj = extend_string(localObj, offset+1, localSubObj, dir);
@@ -379,22 +380,22 @@ Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks,
   return localObj;
 }
   
-Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block, int* count,
-			BOOLEAN jsonic) {
+Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
+			BOOLEAN loseZeros, int* count, BOOLEAN jsonic) {
   Tcl_Obj *localObj;
   int membership, *indices;
   char *newBlock;
 
   if (dims[0] > 0) { // it's an array bound
     localObj = append_array_members(dims[0], dims+1, subBlocks+1, block, 
-				    count, jsonic);
+				    loseZeros, count, jsonic);
   } else {
     switch (dims[0]) {
     case OWNSIZED:
       membership = ((sizeAndPtr*)block)->size;
       newBlock = ((sizeAndPtr*)block)->ptr;
       localObj = append_array_members(membership, dims+1, subBlocks+1, 
-				      newBlock, count, jsonic);
+				      newBlock, loseZeros, count, jsonic);
       break;
     case SPARSEARRAY: 
       // need clevers to nest indices; see old stuff
@@ -406,7 +407,7 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block, int* count,
 	block = block+(membership-1)*(dims[1]*sizeof(int)+subBlocks[1]);
       }
       localObj = append_list_members(dims[1], 0, dims+2, indices, subBlocks+1,
-				     &membership, &block, count, jsonic);
+				     &membership, &block, loseZeros, count, jsonic);
       free(indices);
       break;
     case VALUELESS:
@@ -417,6 +418,10 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block, int* count,
       *count -= *count>0?1:-1;
       break;
     case REAL:
+      if (loseZeros && *(double *)block == 0.0) {
+	localObj = Tcl_NewListObj(0, NULL);
+	break;
+      }
       if (isfinite(*(double *)block))
 	localObj = Tcl_NewDoubleObj(*(double *)block);
       else {
@@ -426,12 +431,15 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block, int* count,
       }
       *count -= *count>0?1:-1;
       break;
-    case FLAG:
-      localObj = Tcl_NewBooleanObj(*(int *)block);
-      *count -= *count>0?1:-1;
-      break;
-    default: /* INTEGER or ENUM(*) */
-      localObj = Tcl_NewIntObj(*(int *)block);
+    default: /* FLAG, INTEGER or ENUM(*) */
+      if (loseZeros && *(int *)block == 0) {
+	localObj = Tcl_NewListObj(0, NULL);
+	break;
+      }
+      if (dims[0] == FLAG)
+	localObj = Tcl_NewBooleanObj(*(int *)block);
+      else
+	localObj = Tcl_NewIntObj(*(int *)block);
       *count -= *count>0?1:-1;
     }
   }
@@ -474,9 +482,10 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
   int dims[32], path[32];
   enum_type_data* usedTypes[32];
   nodeValues* c_result;
+  BOOLEAN loseZeros;
 
-  if (argc != 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "data_handle value_count");
+  if (argc < 3 || argc > 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "data_handle value_count ?lose_zeros?");
     return TCL_ERROR;
   }
 
@@ -486,11 +495,19 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
   if (error != TCL_OK) {
     return error;
   }
-  
+
+  if (argc == 4) {
+    error = Tcl_GetBooleanFromObj(interp, argv[3], &loseZeros);
+    if (error != TCL_OK) {
+      return error;
+    }
+  } else
+    loseZeros = 0;
+    
   int subBlocks[32];
   make_sub_block_sizes(c_result->dimSpecs, subBlocks);
   resultPtr = convert_to_tcl(c_result->dimSpecs, subBlocks, c_result->contents,
-			     &count, clientData != NULL);
+			     loseZeros, &count, clientData != NULL);
   Tcl_SetObjResult(interp, resultPtr);
   return TCL_OK;
 }
@@ -500,6 +517,18 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
 void add_to_size(void* spareValue, int spareOffset, void* sizePtr) {
   // sizePtr is actually an integer pointer
   ++(*(int*)sizePtr);
+}
+
+void add_nonzero_floats_to_size(void* Value, int Offset, void* sizePtr) {
+  // sizePtr is actually an integer pointer
+  if (((double*)Value)[Offset] != 0.0)
+    ++(*(int*)sizePtr);
+}
+
+void add_nonzero_ints_to_size(void* Value, int Offset, void* sizePtr) {
+  // sizePtr is actually an integer pointer
+  if (((int*)Value)[Offset])
+    ++(*(int*)sizePtr);
 }
 
 // structures to treat last arg of callback as 
@@ -842,18 +871,38 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
-  int size, error;
+  int size, error, baseType, loseZeros;
   nodeValues* accessTool;
+  valCallback* callback_proc;
 
-  if (argc != 2) {
-    Tcl_WrongNumArgs(interp, 1, argv, "data_handle");
+  if (argc < 2 || argc > 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "data_handle ?lose_zeros?");
     return TCL_ERROR;
   }
   memcpy(&accessTool, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+
+  if (argc == 3) {
+    error = Tcl_GetIntFromObj(interp, argv[2], &loseZeros);
+    if (error != TCL_OK) {
+      return error;
+    }
+  } else
+    loseZeros = 0;
+
+  if (loseZeros) {
+    size = 0;
+    while (!unp_base_type(baseType=accessTool->dimSpecs[size])) 
+      ++size; //stop at base data type
+    if (baseType == REAL)
+      callback_proc = add_nonzero_floats_to_size;
+    else
+      callback_proc = add_nonzero_ints_to_size;
+  } else
+    callback_proc = add_to_size;
   
   size = 0;
   call_for_each_val(accessTool->dimSpecs, accessTool->contents, 0,
-		    add_to_size, (void*)&size);
+		    callback_proc, (void*)&size);
   // this increments size once for each value
 
   Tcl_SetObjResult(interp, Tcl_NewIntObj(size));

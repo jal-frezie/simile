@@ -66,7 +66,7 @@ proc RedoRatesAndDisplay {node} {
     if {$runState($node,currentMode) ne "stop"} {return 0}
     ResetModel $node Euler $runState($node,currentTime) 1
     # ...and display new rates
-    TellAllHelpers $node {} Display $runState($node,currentTime) \
+    TellAllHelpers $node {} 1 Display $runState($node,currentTime) \
 	$runState($node,displayInt) 1
     return 1
 }
@@ -267,7 +267,7 @@ proc CreateHelperWindow {helperId helperTitle {state {}}} {
 
     set modelObj $classTable(run,[GetNodeFromFocus])
     set inst [UniqueId helper]
-    set helperTable(beingCalled) $inst
+    set helperTable(beingCalled) ::$inst
     similescript::$helperId $inst $modelObj $helperTitle $state
     set helperTable(beingCalled) {}
     if {[PrefValue custom(helperManager) helperManager]} {
@@ -594,13 +594,14 @@ proc UpdateIfFreezy {} {
     }
 }
 
-proc ShiftDisplays {node payload current display} {
+proc ShiftDisplays {node payload current display doAll} {
     global helperTable runState
 
     if {[catch {
 	$helperTable(RunControl)::UpdateBar $node $current blue
 	UpdateIfFreezy
-	set result [TellAllHelpers $node $payload Display $current $display 1]
+	set result [TellAllHelpers $node $payload $doAll \
+			Display $current $display 1]
 	
 	if {$runState($node,splimit)} {
 	    set minStep [expr {1000/$runState($node,speedLimit)}]
@@ -624,7 +625,7 @@ proc ShiftDisplays {node payload current display} {
     }
 }
 
-proc TellAllHelpers {node payload fun args} {
+proc TellAllHelpers {node payload doAll fun args} {
     global helperTable myNode subbedPlots runState
 
     if {[info exists myNode]} {
@@ -642,7 +643,9 @@ proc TellAllHelpers {node payload fun args} {
     }
     foreach helperInst [array names helperTable *,whichInstance] {
 	set inst $helperTable($helperInst)
-	if {[string equal $node [$inst GetNode]]} {
+	set winId [string range $helperInst 0 end-14]
+	if {[string equal $node [$inst GetNode]] && \
+		 ($doAll || [info exists helperTable($winId,wantEvents)])} {
 	    set helperTable(beingCalled) $inst
 	    if {[catch {eval $inst $fun $args} HelpErr]} {
 		puts $::errorInfo
@@ -734,18 +737,23 @@ proc EatInput {} {
 }
 
 proc GetShortVals {topNode plName limit} {
+    if {[lsearch {EVENT SQUIRT} [GetModelClass $plName]]>-1} {
+	set loseZeros 1
+    } else {
+	set loseZeros 0
+    }
     if {[RunningInC $topNode]} {
 	if {[catch {GetHandle $topNode $plName} hdl]} {
 	    set text novalue
 	    set count 0
 	} else {
-	    set count [count_values $hdl]
+	    set count [count_values $hdl $loseZeros]
 	    if {$count<$limit/5} {
-		set text [extract_list $hdl $count]
+		set text [extract_list $hdl $count $loseZeros]
 	    } else {
 		set tail [expr {$limit/10}]
-		set text [concat [extract_list $hdl $tail] \
-			      [extract_list $hdl -$tail]]
+		set text [concat [extract_list $hdl $tail $loseZeros] \
+			      [extract_list $hdl -$tail $loseZeros]]
 	    }
 	    ReleaseHandle $topNode $hdl
 	}
@@ -1069,7 +1077,7 @@ proc WriteLogs {topNode time vname step} {
 proc PutValsOnly {pstr val} {
     upvar 1 $pstr str
     if {[llength $val]==1} {
-	append str ,$val
+	append str ,[SafeFormat %.12g $val]
     } else {
 	foreach {idx sub} $val {
 	    PutValsOnly str $sub

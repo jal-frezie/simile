@@ -235,6 +235,7 @@ class ExecutingModel
 
   // allow model to update client during execution; client should not call
   BOOLEAN do_gui_check(double, int);
+  void set_evt_cmd(char*, char*);
 }; // End of class ExecutingModel
 
 //! An instance of this class corresponds to a type of model with own executable

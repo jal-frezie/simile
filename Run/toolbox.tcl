@@ -1033,7 +1033,7 @@ proc InitExecThread {node} {
 # puts "Created interp $execInterp($node,id) for $node"
     }
 
-    foreach stubCmd {load_c_stub_1 c_setparamarray tcl_setparamarray c_getparamall c_gettimepointall PlaceInArray ListToArray RepeatReset MarkEvtParamActive SetWrapTime SetFillMethod SetInterval ex_load_dll update_executable SeedRandoms ReleaseHandle GetHandle RunningInC GetTclCompExecData GetCompProperty ExScrubRun} {
+    foreach stubCmd {load_c_stub_1 c_setparamarray tcl_setparamarray c_getparamall c_gettimepointall PlaceInArray ListToArray RepeatReset MarkEvtParamActive AddEventCommand SetWrapTime SetFillMethod SetInterval ex_load_dll update_executable SeedRandoms ReleaseHandle GetHandle RunningInC GetTclCompExecData GetCompProperty ExScrubRun} {
 	if {$useThreads} {
 	    proc $stubCmd {node args} {
 		global execThread

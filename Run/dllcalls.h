@@ -299,6 +299,7 @@ EXTDEC graph_data_type** get_graph_base(void*);
 EXTDEC node_data_line* searchinfo(char*, void*, char*, int*, 
 				  enum_type_data**);
 EXTDEC node_data_line* nodlin_from_id(void*, int);
+EXTDEC void add_event_command(void*, char*, char*);;
 EXTDEC void* fetch_top_instance(void*, void*);
 
 EXTDEC excpData* reset(void*, void*, double, int, int);

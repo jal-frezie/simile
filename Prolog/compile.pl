@@ -1680,9 +1680,11 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	        GroundEqn = delay_for(Pipe, Wait, (SourceItem=TriggerEqn,
 						   choose(EnableEqn '!=' 0,
 							  Eqn, default(Eqn))));
-	    UseList = RefList,
-	      GroundEqn = (SourceItem=TriggerEqn,
-			   choose(EnableEqn '!=' 0, ActEqn, default(ActEqn))));
+	     UseList = RefList,
+	      nth(GraphId, Used, Dest),
+	      GroundEqn = flag_derived_event(GraphId,
+					     (SourceItem=TriggerEqn,
+			   choose(EnableEqn '!=' 0, ActEqn, default(ActEqn)))));
 	  % if using 'happens', make sure it stays out of update phase
 	  (SourceEqn = with_phase(SmStep, _EvtElts, GroundEqn);
 	    SourceEqn = al_spec(LoopExit, EvtConds, LoopStart),

@@ -110,21 +110,21 @@ proc ExecuteTo {node current pause unitLength display foci \
     set scaled_current [expr {$current*$unitLength}]
     if {$display} {
 	set lastDisp [expr int($current/$display)]
-#	set timedDisp 1
+	set timedDisp 1
     }
     set currentMode start
-    set evtPause [expr {$evtMsg || $evtDisp}]
+    set evtPause [expr {$evtMsg || $evtDisp || 1}] ;# event sounds selected
     set payload {}
     while {[lsearch {exit stop} $currentMode]==-1} {
 	if {$display} {
-#	    if {$timedDisp} {
+	    if {$timedDisp} {
 		set nextDisp [expr 1.0*$display*[incr lastDisp $forward]]
 # ensure display updated at end of run -- make optional?
 		if {($nextDisp-$pause)*$forward>0} {
 		    set nextDisp $pause
 		}
 		set scaled_next [expr {$nextDisp*$unitLength}]
-#	    }
+	    }
 	} else {
 	    set nextDisp [expr 2*$pause-$current]
 	    set scaled_next [expr {$pause*$unitLength}]
@@ -151,6 +151,15 @@ proc ExecuteTo {node current pause unitLength display foci \
 		    ExplainError $node [lrange $scaled_current 1 end] unused
 		    set currentMode stop
 		}
+		# do sounds
+		# foreach {evt sound} [array get ::eventSounds] {
+		#     set hdl [GetHandle $node $evt]
+		#     set evtVals [extract_list $hdl 16777216]
+		#     ReleaseHandle $node $hdl
+		#     if {[SumVals $evtVals]} {
+		# 	exec aplay $sound &
+		#     }
+		# }
 		set scaled_current [lindex $scaled_current 3]
 	    }
 	} ;# default: keep going
@@ -159,8 +168,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 #	    return $currentMode ;# run control window killed?
 #	}
 	set timedDisp [expr {($current-$nextDisp)*$forward > -1e-12}]
-	if {($timedDisp || $displayNow || $currentMode ne "stop") && \
-		![string equal exit $currentMode]} { ;# do a display update
+	if {![string equal exit $currentMode]} { ;# do a display update
 	    set oldPayload $payload
 	    set payload {}
 	    foreach point $foci {
@@ -171,7 +179,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 		}
 	    }
 	    if {[ShiftDisplays $node $payload [format %.8g $current] \
-		     $display]} {
+		     $display [expr {$timedDisp || $displayNow}]]} {
 		set currentMode stop
 	    }
 
@@ -896,6 +904,16 @@ proc MarkEvtParamActive {topNode node inC wait} {
 	c_markevtparamactive $topNode $node $wait
     } else {
 	set ::setFromSeries($topNode,$node,active) $wait
+    }
+}
+
+proc AddEventCommand {topNode node cmd} {
+    add_event_command $::instance_id $node $cmd
+    global eventSounds
+    if {$cmd eq ""} {
+	unset eventSounds($node)
+    } else {
+	set eventSounds($node) cmd	
     }
 }
 

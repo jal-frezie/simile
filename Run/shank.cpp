@@ -272,15 +272,69 @@ double erand48_by_val(void* seed) {
   return erand48((unsigned short int*)seed);
 }
 
+class EvtCmdData {
+public:
+  int gphId;
+  char* cmd;
+  EvtCmdData* next;
+
+  EvtCmdData() {
+  }
+  
+  ~EvtCmdData() {
+    free(cmd);
+  }
+};
+
+void playsound(const char* file) {
+  char cmd[256];
+#ifdef _WIN32
+  // do something clever
+  // // char shortBuffer[MAX_PATH];
+  // char cmdBuff[MAX_PATH + 64];
+  // GetShortPathName(file,shortBuffer,sizeof(shortBuffer));
+  // sprintf(cmdBuff,"Open \"%s\" Type waveaudio Alias theWAV",shortBuffer);
+  // sendCommand(cmdBuff);
+
+  // sendCommand("Play theWAV Wait");
+
+  sprintf(cmd, "cmdwav.exe \"%s\" &", file);
+  printf(cmd);
+  WinExec(cmd, SW_HIDE);
+#elif __APPLE__
+  sprintf(cmd, "afplay \"%s\" &", file);
+  system(cmd);
+#else
+  sprintf(cmd, "aplay -q \"%s\" &", file);
+  system(cmd);
+#endif
+}
+
 int latestContext[32];
+EvtCmdData* EvtCmdList = NULL;
 int contextDepth = 0;
 int compare_instance_status (const int pointers[], const int ref_pointers[], 
 			     int num) {
    int count;
    if (num<=0) { // using this proc to copy model context back is a hack
      contextDepth = -num;
+     //printf("copying %d context levels\n", contextDepth);
      for (count=0;count<contextDepth;++count) {
        latestContext[count] = pointers[count];
+     }
+     // now do commands associated with events
+     EvtCmdData* CheckEvtCmd;
+     // ref_pointers[0] is -ve to avoid confusion with dummy value
+     // passed here in earlier executables
+     for (count=1;count<=-ref_pointers[0];++count) {
+       CheckEvtCmd = EvtCmdList;
+       // printf("Cmding %d\n", ref_pointers[count]);
+       while (CheckEvtCmd) {
+	 if (CheckEvtCmd->gphId == ref_pointers[count]) {
+	   playsound(CheckEvtCmd->cmd);
+	 }
+	 CheckEvtCmd = CheckEvtCmd->next;
+       }
      }
    }
    for (count=0; count<num; count++) {
@@ -1383,6 +1437,30 @@ void ExecutingModel::advance_time (int phase, double fraction) {
     thisTsPosn = series_pt;
   }
 
+void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
+  int graph;
+  EvtCmdData *going, **insert;
+
+  graph = modelSpec->nodedata[modelSpec->getinfo(nodeId, &graph)].graph;
+  insert = &EvtCmdList;
+  while (*insert) { // if evt had a command, remove it
+    going = *insert;
+    if (going->gphId == graph) {
+      *insert = going->next;
+      delete going;
+    } else
+      insert = &(going->next);
+  }
+  if (*cmd) { // command non-null
+    going = new EvtCmdData;
+    going->gphId = graph;
+    // printf("Added cmd %s for %d\n", cmd, insert->gphId);
+    going->cmd = strdup(cmd);
+    going->next = NULL;
+    *insert = going;
+  }
+}
+
 void ExecutingModel::ExitInstance () {
   loadedInst->do_exitmodel();
 }
@@ -2344,6 +2422,10 @@ graph_data_type** get_graph_base(void* type) {
 // get a node data line from the 'graph' number of the node
 node_data_line* nodlin_from_id(void* modelId, int paramId) {
   return ((ModelFor5D*)modelId)->md_nodlin_from_id(paramId);
+}
+
+void add_event_command(void* instanceId, char* nodeId, char* cmd) {
+  ((ExecutingModel*)instanceId)->set_evt_cmd(nodeId, cmd);
 }
 
 // dumb it down even further for emscripten clients that do not know how to get

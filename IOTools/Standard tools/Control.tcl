@@ -523,12 +523,12 @@ namespace eval runcontrol33857 {
 		}
                 if {$redoPhase($node) < 1} {
 		    if {$display} {
-			TellAllHelpers $node {} Reset
+			TellAllHelpers $node {} 1 Reset
 		    }
 		    set runState($node,currentMode) stop
                 }
                 if {$display} {
-		    TellAllHelpers $node {} Display $current $display 1
+		    TellAllHelpers $node {} 1 Display $current $display 1
 		}
 	    } else {
 		set runState($node,currentMode) exit

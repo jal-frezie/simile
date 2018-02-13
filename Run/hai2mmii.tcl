@@ -142,6 +142,7 @@ proc AddToWatched {node} {
     global helperTable
 
     lappend helperTable($helperTable(beingCalled),foci) $node
+    puts "Add $node to helperTable($helperTable(beingCalled),foci)"
 }
 
 # GetModelValue returns the current value of a node. This is numerical if the
@@ -150,11 +151,12 @@ proc AddToWatched {node} {
 # cloud or submodel.
 
 proc GetModelValue { node } {
+    set loseZeros [expr {[lsearch {EVENT SQUIRT} [GetModelClass $node]]>-1}]
     global subbedPlots
     if {[info exists subbedPlots($node)]} {
 	if {[llength $subbedPlots($node)]==3} { # is pointer to univ struct
 	    return [list [extract_list [lindex $subbedPlots($node) 2] \
-			      16777216]] ;# enough to freeze a 4 gig machine
+			      16777216 $loseZeros]] ;# enough I hope
 	} else { # from tcl model or measured value from pest interface
 	    return [list $subbedPlots($node)]
 	}

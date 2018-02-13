@@ -1794,6 +1794,7 @@ operator(cur_phase, real, []).
 operator(cur_step, real, []).
 operator(delay_for, Any, [class_template(delay, Any), real, Any]) :-
     Any = any; value(Any).
+operator(flag_derived_event, Any, [int, Any]) :- Any = any; value(Any).
 
 /* These are handled by the parser but have special buttons to include them so
 we do not want them in the function list -- they only appear here so the right
