@@ -142,7 +142,6 @@ proc AddToWatched {node} {
     global helperTable
 
     lappend helperTable($helperTable(beingCalled),foci) $node
-    puts "Add $node to helperTable($helperTable(beingCalled),foci)"
 }
 
 # GetModelValue returns the current value of a node. This is numerical if the

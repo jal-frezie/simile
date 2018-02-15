@@ -807,8 +807,14 @@ double VarParamData::update_from_points(double nowInDays, double next) {
       active=1;
     }
   }
-  if ((ndRef->compclass == EVENT || ndRef->compclass == SQUIRT) && active)
+  if ((ndRef->compclass == EVENT || ndRef->compclass == SQUIRT) && active) {
     myModelExec->seriesEvtSign = ndRef->graph;
+    // Now play sound for event if there is one
+    int oneSound[2];
+    oneSound[0] = -1;
+    oneSound[1] = ndRef->graph;
+    compare_instance_status(NULL, oneSound, 0);
+  }
 
   return next;
 }

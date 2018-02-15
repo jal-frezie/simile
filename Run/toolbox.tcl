@@ -1707,6 +1707,7 @@ proc OpenProjectFile {path} {
 	    set helperTable($topNode,stateName) \
 		[file normalize [file join $baseDir \
 				     $SimileProject(nameOfHelperStateFile)]]
+	    RecordPathChoice .spf $helperTable($topNode,stateName) $topNode
             set command [ChooseText \
 			     [PrefValue custom(helperManager) helperManager] \
 			     ::RunEnv::LoadSHF CreateView]
