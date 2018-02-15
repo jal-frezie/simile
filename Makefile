@@ -493,6 +493,7 @@ install:
 		IOTools/2-D\ Shapes/circle_layer.tcl \
 		IOTools/2-D\ Shapes/ellipse_layer.tcl \
 		IOTools/2-D\ Shapes/line_layer.tcl \
+		IOTools/EventSounds.tcl \
 		IOTools/Grid5.tcl \
 		IOTools/Logger.tcl \
 		IOTools/Lollipop.tcl \
