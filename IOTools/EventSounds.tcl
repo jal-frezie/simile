@@ -65,6 +65,7 @@ itcl::class similescript::$newHelperClass {
 	lset useNodes(sounds) [incr resonorize] $sound
 	AddEventCommand $topNode [GetIdFromCaptionPath $path] \
 	    [file nativename $sound]
+	$winId.traces itemconfig $path&&capt -text "$path ([file tail $sound])"
     }
 
     public method Remove {} {
@@ -102,7 +103,6 @@ itcl::class similescript::$newHelperClass {
 	    set soundFile $contents
 	}
 	AddSoundFor $topNode $useNodes(comp) $soundFile
-	Display $useNodes(lastDisp) 0 0
     }
 
     method Clear {} {
@@ -138,11 +138,12 @@ itcl::class similescript::$newHelperClass {
 
     public method AddSoundFor {topNode path sound} {
 	set ytext [expr {[llength $useNodes(sounds)]*25+25}]
-	$winId.traces create text 25 $ytext -text $path -fill gray -anchor w \
-	    -tag [list $path capt]
+	$winId.traces create text 25 $ytext -text "$path ([file tail $sound])" \
+	    -fill gray -anchor w -tag [list $path capt]
 	lappend useNodes(sounds) $path $sound
-	AddEventCommand $topNode [GetIdFromCaptionPath $path] \
-	    [file nativename $sound]
+	set node [GetIdFromCaptionPath $path]
+	AddEventCommand $topNode $node [file nativename $sound]
+	do_for_node $topNode GetModelValue $node ;# to add it to foci
     }
 
     public method PrepareSaveString {} {
@@ -150,7 +151,6 @@ itcl::class similescript::$newHelperClass {
 	set shfPath [GetPathChoice .shf [$modelInst cget -modelNode]]
 	foreach {path file} $useNodes(sounds) {	    
 	    append State "<sound component=\"$path\" "
-	    puts "::fileutil::relative $shfPath $file"
 	    if {[catch {::fileutil::relative $shfPath $file} rel] || \
 		    [string first $file $rel]>-1} { ;# rel pointless
 		append State "mode=\"absolute\">$file</sound>\n"
