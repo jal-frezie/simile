@@ -2015,7 +2015,10 @@ proc ListColumn {db table column} {
     set stmt [$db prepare "select `$column` from `$table`"]
     set reslt {}
     $stmt foreach row {
-	lappend reslt [dict get $row $column]
+	if {[catch {dict get $row $column} entry]} {
+	    set entry empty
+	}
+	lappend reslt $entry
     }
     $stmt close
     return $reslt
