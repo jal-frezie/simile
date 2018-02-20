@@ -231,17 +231,20 @@ typedef struct excpData_t {
 /* this is defined in the stub, which is loaded as a library...well it
    used to be, but now once the stub has loaded the dll it just sends
    over the pointers to all the functions used by the dll (the other
-   method didn't work in win98) */
+   method didn't work in win98)
+*/
 
-typedef double ame_rand_type(double, double);
-typedef uint64_t seed_rand_type(int);
-typedef double use_rand_type(void*);
-typedef BOOLEAN interact_gui_type(void*, BOOLEAN, double);
-typedef double graphpoint_type(double, graph_data_type*, int);
-typedef void release_graph_data_type(graph_data_type*);
-typedef int compare_instance_status_type (const int*, const int*, int);
-typedef void get_value_pointer_type(void*, void*, double, int, int, int*);
-typedef void showMess_type(const char*);
+// typedef double ame_rand_type(double, double);
+// typedef uint64_t seed_rand_type(int);
+// typedef double use_rand_type(void*);
+
+// following also called from shim
+ typedef BOOLEAN interact_gui_type(void*, BOOLEAN, double);
+// typedef double graphpoint_type(double, graph_data_type*, int);
+// typedef void release_graph_data_type(graph_data_type*);
+// typedef int compare_instance_status_type (const int*, const int*, int);
+ typedef void get_value_pointer_type(void*, void*, double, int, int, int*);
+ typedef void showMess_type(const char*);
 /*
 typedef void* fetch_instance_type(char*);
 typedef void update_submodel_type(char*, void*, int);
@@ -290,9 +293,9 @@ EXTDEC get_value_pointer_type get_value_pointer;
 EXTDEC int get_node_count(void*);
 EXTDEC node_data_line* get_data_line(void*, int);
 EXTDEC void* get_node_model_id(char*);
-EXTDEC release_graph_data_type release_graph_data;
+EXTDEC void release_graph_data(graph_data_type*);
 EXTDEC graph_data_type* find_graph_by_index (int, graph_data_type*);
-EXTDEC graphpoint_type graphpoint;
+EXTDEC double graphpoint(double, graph_data_type*, int);
 EXTDEC void setup_randoms(unsigned int);
 EXTDEC double rand_fract();
 EXTDEC graph_data_type** get_graph_base(void*);

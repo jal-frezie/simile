@@ -94,9 +94,6 @@ int s_max(int a, int b) {
   return a>b?a:b;
 }
 
-stat_check_type stat_check;
-model_requests_file_param_type handle_model_param_request;
-
 char globMess[256];
 
 // check for abort (and do non-intrusive gui action). Do not do this if the
@@ -236,7 +233,7 @@ double rand_fract() {
 }
 #else
 */
-uint64_t my_seed_rand(int seed) {
+uint64_t seed_rand(int seed) {
   rand48seed shuttle;
   shuttle.use[0] = seed/65536;
   shuttle.use[1] = (unsigned short)fmod(seed,65536);
@@ -264,7 +261,7 @@ double rand_fract() {
 /*
 #endif
 */
-double s_rand(double lo, double hi) {
+double ame_rand(double lo, double hi) {
     return  lo + (hi-lo)*rand_fract();
 }
 
@@ -310,38 +307,66 @@ void playsound(const char* file) {
 #endif
 }
 
+void play_at_vol(const char* file, double level) {
+
+  char cmd[256];
+#ifdef _WIN32
+  // do something clever
+  // // char shortBuffer[MAX_PATH];
+  // char cmdBuff[MAX_PATH + 64];
+  // GetShortPathName(file,shortBuffer,sizeof(shortBuffer));
+  // sprintf(cmdBuff,"Open \"%s\" Type waveaudio Alias theWAV",shortBuffer);
+  // sendCommand(cmdBuff);
+
+  // sendCommand("Play theWAV Wait");
+
+  sprintf(cmd, "cmdwavvol.exe \"%s\" %d &", file, (int)(1000*level));
+  printf(cmd);
+  WinExec(cmd, SW_HIDE);
+#elif __APPLE__
+  sprintf(cmd, "afplay -v %f \"%s\" &", level, file);
+  system(cmd);
+#else
+  sprintf(cmd, "play -q -v %f \"%s\" &", level, file);
+  system(cmd);
+#endif
+}
+
 int latestContext[32];
 EvtCmdData* EvtCmdList = NULL;
 int contextDepth = 0;
 int compare_instance_status (const int pointers[], const int ref_pointers[], 
 			     int num) {
    int count;
-   if (num<=0) { // using this proc to copy model context back is a hack
-     contextDepth = -num;
-     //printf("copying %d context levels\n", contextDepth);
-     for (count=0;count<contextDepth;++count) {
-       latestContext[count] = pointers[count];
-     }
-     // now do commands associated with events
-     EvtCmdData* CheckEvtCmd;
-     // ref_pointers[0] is -ve to avoid confusion with dummy value
-     // passed here in earlier executables
-     for (count=1;count<=-ref_pointers[0];++count) {
-       CheckEvtCmd = EvtCmdList;
-       // printf("Cmding %d\n", ref_pointers[count]);
-       while (CheckEvtCmd) {
-	 if (CheckEvtCmd->gphId == ref_pointers[count]) {
-	   playsound(CheckEvtCmd->cmd);
-	 }
-	 CheckEvtCmd = CheckEvtCmd->next;
-       }
-     }
-   }
    for (count=0; count<num; count++) {
      if (pointers[count]<ref_pointers[count]) return -1;
      if (pointers[count]>ref_pointers[count]) return 1;
    }
    return 0;
+}
+
+void report_events(int dimty, const int inds[], int evts,
+		   const int ids[], const double sums[]) {
+  int count;
+
+  for (count=0;count<dimty;++count) {
+    latestContext[count] = inds[count];
+  }
+
+  // now do commands associated with events
+  EvtCmdData* CheckEvtCmd;
+  // ref_pointers[0] is -ve to avoid confusion with dummy value
+  // passed here in earlier executables
+  for (count=0;count<evts;++count) {
+    CheckEvtCmd = EvtCmdList;
+    // printf("Cmding %d\n", ref_pointers[count]);
+    while (CheckEvtCmd) {
+      if (CheckEvtCmd->gphId == ids[count]) {
+	play_at_vol(CheckEvtCmd->cmd, sums[count]);
+      }
+      CheckEvtCmd = CheckEvtCmd->next;
+    }
+  }
 }
 
 int retrieve_context(int** ctxPtr) {
@@ -516,6 +541,37 @@ char* copy_bloc_data(char* source, int* ptDims) {
     memcpy(newData, source, count);
   }
   return newData;
+}
+
+// sum_bloc_data used for sound loudness
+double sum_bloc_data(char* source, int* ptDims) {
+  int reps, count, *subDims;
+  double result = 0;
+  
+  reps = array_count(ptDims, &subDims);
+  if (!is_base_type(*subDims)) { // assume its OWNSIZED
+    for (count=0; count<reps; ++count) {
+      //substitute OWNSIZED to create right size block then put back
+      *subDims = ((sizeAndPtr*)source)[count].size;
+      result += sum_bloc_data(((sizeAndPtr*)source)[count].ptr, subDims);
+    }
+    *subDims = OWNSIZED;
+  } else {
+    for (count=0;count<reps;++count) {
+      switch (*subDims) {
+      case REAL:
+	result += ((double*)source)[count];
+	break;
+      case FLAG:
+	result += ((unsigned char*)source)[count];
+	break;
+      default: // INTEGER or enumerated type
+	result += ((int*)source)[count];
+	break;
+      }
+    }
+  }
+  return result;
 }
 
 char* interpolate_bloc_data(char* loSource, char* hiSource, int* ptDims,
@@ -810,10 +866,17 @@ double VarParamData::update_from_points(double nowInDays, double next) {
   if ((ndRef->compclass == EVENT || ndRef->compclass == SQUIRT) && active) {
     myModelExec->seriesEvtSign = ndRef->graph;
     // Now play sound for event if there is one
-    int oneSound[2];
-    oneSound[0] = -1;
-    oneSound[1] = ndRef->graph;
-    compare_instance_status(NULL, oneSound, 0);
+    double volume;
+    EvtCmdData* CheckEvtCmd;
+
+    CheckEvtCmd = EvtCmdList;
+    // printf("Cmding %d\n", ref_pointers[count]);
+    while (CheckEvtCmd) {
+      if (CheckEvtCmd->gphId == ndRef->graph)
+	play_at_vol(CheckEvtCmd->cmd,
+		    sum_bloc_data(dataPtr.contents, dataPtr.dimSpecs));
+      CheckEvtCmd = CheckEvtCmd->next;
+    }
   }
 
   return next;
@@ -1619,10 +1682,10 @@ ModelServer::ModelServer(char* fileName, char* clientEdn, char** complaint) {
       return;
     }
     // Version number is AME version = simile version + 4
-    if (fabs(getversion()-4-atof(SIMILE_VERSION))>0.00001) {
+    if (fabs(getversion()-MDL_OBJ_VERS)>0.00001) {
       *complaint = new char[256];
-      sprintf(*complaint, "client is for version %s but model is %.1f", 
-	      SIMILE_VERSION, getversion()-4);
+      sprintf(*complaint, "client is for version %.3f but model is %.3f", 
+	      MDL_OBJ_VERS-4, getversion()-4);
       return;
     }
 /* sprintf(globMess, "Loaded %ld", handle);
@@ -1631,11 +1694,7 @@ showMess(globMess); */
     getcount = (getcount_type*)FIND_FUNCTION(handle, "get_count");
     createmodel = (createmodel_type*)FIND_FUNCTION(handle, "do_createmodel");
 #endif
-    nodecount = getcount(s_rand, my_seed_rand, erand48_by_val,
-			 graphpoint, release_graph_data, 
-			 compare_instance_status, handle_model_param_request, 
-			 stat_check, showModelMess,
-			 &c_graphdata, &identStr, &phases, &nodedata);
+    nodecount = getcount(&c_graphdata, &identStr, &phases, &nodedata);
     // Now check if this client is entitled to run it
     if (entitled(clientEdn, identStr)) {
       *complaint = new char[256];

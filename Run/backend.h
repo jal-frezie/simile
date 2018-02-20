@@ -1,3 +1,6 @@
+// Identifier
+#define MDL_OBJ_VERS 10.903
+
 // class definition and handling procedure for extra variables used in
 // complicated integration methods
 
@@ -92,7 +95,8 @@ public:
   void* loopIndexPtrs[32];
   int loopIndexCounts[32];
   int ctxSaved[32], ctxCount;
-  int activeEvents[256];
+  int activeEvtCount, activeEvtIds[256];
+  double activeEvtSums[256];
   void* spares[1024];
 
   // functions called by host module
@@ -121,23 +125,8 @@ public:
 			  
 };
 // Declaration for procedure types found in the model dll by the shank
-typedef void model_requests_file_param_type(void*, void*, int, 
-					    BOOLEAN, int, int*);
-
-//typedef int setstep_type(InstanceOfModel*, double, int);
-//typedef void updatemodel_type(InstanceOfModel*, int);
-//typedef void advancemodel_type(void*, int);
-//typedef int evalmodel_type(InstanceOfModel*, int);
-//typedef void* getpointer_type(void*, int**, int**);
-//typedef void exitmodel_type(InstanceOfModel*);
-
 typedef double getversion_type(void);
-typedef int getcount_type(ame_rand_type, seed_rand_type, use_rand_type,
-			  graphpoint_type, release_graph_data_type,
-			  compare_instance_status_type,
-			  model_requests_file_param_type, stat_check_type,
-			  show_model_mess_type,
-			  graph_data_type**, char**, int*, node_data_line**);
+typedef int getcount_type(graph_data_type**, char**, int*, node_data_line**);
 typedef InstanceOfModel* createmodel_type(ExecutingModel*);
 
 FINDABLE EXPORT getversion_type get_version;
@@ -145,3 +134,12 @@ FINDABLE EXPORT getcount_type get_count;
 // above should load all arg data types so no need to include below
 // but that doesnt seem to work...
 FINDABLE EXPORT createmodel_type do_createmodel;
+
+// New in v6.903: declaration for procedures found in the shank by the model dll
+EXPORT double ame_rand(double, double);
+EXPORT uint64_t seed_rand(int);
+EXPORT double graphpoint(double, graph_data_type*, int);
+EXPORT int compare_instance_status (const int[], const int[],  int);
+EXPORT void report_events(int, const int[], int, const int[], const double[]);
+EXPORT void handle_model_param_request(void*, void*, int, BOOLEAN, int, int*);
+EXPORT int stat_check(void*);

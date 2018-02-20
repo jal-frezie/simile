@@ -1,9 +1,13 @@
 /* version needs its own special procedure because any other might change
-   and cause a crash before version mismatch is detected */
+   and cause a crash before version mismatch is detected
 EXPORT double get_version() {
   double simile_version;
   sscanf(strstr(simile_identifier,"version="), "version=%lf", &simile_version);
   return(simile_version);
+}
+...but now, executables have their own versioning system */
+EXPORT double get_version() {
+  return(MDL_OBJ_VERS);
 }
 
 jmp_buf env;
@@ -16,7 +20,7 @@ static void exit_sighandler(int x){
 // FINDABLE EXPORT evalmodel_type do_evalmodel;
 // FINDABLE EXPORT int do_evalmodel(InstanceOfModel* handle, int phase) {
 
-// now however it is a class method
+// now however it is a class method, as are update, advance and exit
 int AME_model::do_evalmodel(int phase) {
   // Dont want a crash while running model to terminate Simile, so add 
    // handler. This has to be done on reset cos using the handler in some OS
@@ -27,7 +31,7 @@ int AME_model::do_evalmodel(int phase) {
 
   dts[0] = phase; // so external code can access it
   ctxCount = 0;
-  activeEvents[0] = 0;
+  activeEvtCount = 0;
   if ((userStop.excpNo = -setjmp(env))) {
     return 1;
   } else {
@@ -40,9 +44,8 @@ int AME_model::do_evalmodel(int phase) {
       report_context();
       return 1;
     }
-    activeEvents[0] = -activeEvents[0]; // avoid confusion with dummy value
-    // passed here in earlier executables
-    compare_instance_status(ctxSaved, activeEvents, -ctxCount);
+    report_events(ctxCount, ctxSaved, activeEvtCount,
+		  activeEvtIds, activeEvtSums);
 // InternalStop not used so no need for try/catch layer
 //    catch (InternalStop notice) {
       // used if stop_on_id throws exception
@@ -65,26 +68,6 @@ EXPORT InstanceOfModel* do_createmodel(ExecutingModel* outerRef) {
   return newInst;
 }
 
-//FINDABLE EXPORT updatemodel_type do_updatemodel;
-//FINDABLE EXPORT void do_updatemodel(InstanceOfModel* handle, int phase) {
-//  ((AME_model *)handle)->updatemodel(phase);
-//}
-//
-//FINDABLE EXPORT advancemodel_type do_advancemodel;
-//FINDABLE EXPORT void do_advancemodel(void* handle, int phase) {
-//  ((AME_model *)handle)->advancemodel(phase);
-//}
-//
-//FINDABLE EXPORT exitmodel_type do_exitmodel;
-//FINDABLE EXPORT void do_exitmodel(InstanceOfModel* handle) {
-//  handle->do_exitmodel();
-//  delete handle;
-//}
-//
-//int at_time_step () {
-//  return glob_element(dts,0)<=1;
-//}
-//
 int InstanceOfModel::loses (double prob, int phase) {
   /* kills_per_step was intended to make sure that for R-K the same proportion 
      get killed in four passes as in a single pass for Euler. As of 5.7 we make
@@ -324,45 +307,30 @@ void InstanceOfModel::insert_to_pipe(delay<modeldata>* extras,
 template <class modeldata>
 modeldata InstanceOfModel::flag_derived_event(int graphId,
 					      modeldata magnitude) {
+  int count;
   if (!magnitude) return 0;
-  activeEvents[++activeEvents[0]] = graphId;
-  // printf(" set evt %d to %d\n", activeEvents[0],graphId);
-  // maybe also log magnitudes some time in the sweet bye and bye
+  for (count=activeEvtCount-1;count>=0;--count) {
+    if (activeEvtIds[count] == graphId) { // element of array already active
+      activeEvtSums[count] += magnitude;
+      break;
+    }
+  }
+  if (count == -1) { // new array
+    activeEvtIds[activeEvtCount] = graphId;
+    activeEvtSums[activeEvtCount++] = magnitude;
+  }
   return magnitude;
 }
 
 /* This is called only when we create the type, to return model constants */
-EXPORT int get_count(ame_rand_type ame_rand_ptr,
-		     seed_rand_type seed_rand_ptr,
-		     use_rand_type use_rand_ptr,
-		     graphpoint_type graphpoint_ptr, 
-		     release_graph_data_type release_graph_data_ptr, 
-		     compare_instance_status_type compare_instance_status_ptr, 
-		     model_requests_file_param_type model_requests_file_param_ptr, 
-		     stat_check_type stat_check_ptr,
-		     show_model_mess_type showMess_ptr,
-		     graph_data_type** graph_ptr, 
+EXPORT int get_count(graph_data_type** graph_ptr, 
 		     char** identStr,
 		     int* phases, 
 		     node_data_line** data_ptr) {
-  /* Stub is giving us function pointers to save us using the linker... */
+  /* Stub is giving us function pointers to save us using the linker...no more
   ame_rand_ref = ame_rand_ptr;
-  seed_rand_ref = seed_rand_ptr;
-  use_rand_ref = use_rand_ptr;
-  graphpoint_ref = graphpoint_ptr;
-  //release_graph_data_ref = (release_graph_data_type*)release_graph_data_ptr;
-  compare_instance_status = compare_instance_status_ptr;
-  model_requests_file_param = model_requests_file_param_ptr;
-  /*  fetch_instance_ref = (fetch_instance_type*)fetch_instance_ptr;
-  update_submodel_ref = (update_submodel_type*)update_submodel_ptr;
-  advance_submodel_ref = (advance_submodel_type*)advance_submodel_ptr;
-  eval_submodel_ref = (eval_submodel_type*)eval_submodel_ptr;
-  search_from_ref = (search_from_type*)search_from_ptr;
-  advance_ptr_ref = (advance_ptr_type*)advance_ptr_ptr;
-  get_remote_value = (get_remote_value_type*)get_remote_value_ptr;
-  */
-  stat_check = stat_check_ptr;
-  //suppShowMess = (show_model_mess_type*)showMess_ptr;
+  ...etc
+  fttb is also passes place to keep sketch graph function data */
   
   graph_data_pointer = graph_ptr;
 

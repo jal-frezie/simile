@@ -32,6 +32,19 @@ if {[info tclversion]>=8.5} {
 }
 package require style::as
 style::as::enable mousewheel global
+# as style binds mousewheel for all, so to stop this making events for
+# ctrl-mousewheel we have to define a non-empty binding for ctrl-mousewheel
+# at that level, but it do nothing because errors would result otherwise
+switch [tk windowingsystem] {
+    x11 {
+	bind all <Control-Button-4> {return}
+	bind all <Control-Button-5> {return}
+    } aqua {
+	bind all <Command-MouseWheel> {return}
+    } default  {
+	bind all <Control-MouseWheel> {return}
+    }
+}
 }
 
 # tile creates: TkCaptionFont TkTooltipFont TkFixedFont TkHeadingFont 
@@ -448,13 +461,15 @@ proc compile_c {workingDir extLibs complain} {
 	}
     }
     set shLibExt [info sharedlibextension]
-    set lDirs {}
+    # Model executable v6.903: Do not faf about passing proc addresses via
+    # get_count -- just dynamically link the shank and call them directly
+    set lDirs -L\ \"$::libDir\"
     set lFiles {}
     foreach lPath $extLibs {
 	if {[string equal [linkableExt $shLibExt] [file extension $lPath]]} {
-	    set newLib -L[file dirname $lPath]
-	    if {[lsearch $lDirs $newLib]==-1} {
-		lappend lDirs $newLib
+	    set newLib -L\ \"[file dirname $lPath]\"
+	    if {[string first $newLib $lDirs]==-1} {
+		append lDirs { } $newLib
 	    }
 	    lappend lFiles -l[string range [file rootname [file tail $lPath]] \
 				  3 end] ;# trim off "lib..."
@@ -483,7 +498,7 @@ proc compile_c {workingDir extLibs complain} {
 		}
 		puts $spout "g++ $sendvars(arflags) -fPIC -c -I\"$TOOLDIR\" -o objtmp.o model.cpp" 
 		set switchForLib -bundle 
-		puts $spout "g++ $sendvars(arflags) $switchForLib -o $TARGET objtmp.o $lDirs $lFiles"
+		puts $spout "g++ $sendvars(arflags) $switchForLib -o $TARGET objtmp.o $lDirs $lFiles -l5d_mac"
 		flush $spout
 		close $spout
 	    } else {
@@ -491,7 +506,7 @@ proc compile_c {workingDir extLibs complain} {
 							-o objtmp.o model.cpp]
 		set switchForLib -shared
 		eval {exec g++} $sendvars(arflags) \
-		    [list $switchForLib -o $TARGET objtmp.o] $lDirs $lFiles
+		    [list $switchForLib -o $TARGET objtmp.o] $lDirs $lFiles -l5d
 	    }
         }
         windows {
@@ -554,7 +569,7 @@ proc compile_c {workingDir extLibs complain} {
 		set libOpt2 -L\"[file nativename \
 				     [file join $LIBDIR $compLocn]]\"
 		puts $spout "g++ -shared -o $TARGET  -static \
-                        $libOpt1 $libOpt2 objtmp.o [concat $lDirs $lFiles]"
+                        $libOpt1 $libOpt2 objtmp.o $lDirs $lFiles -l5d_win"
 	    } else {
 		puts $spout "g++ $sendvars(arflags) -c -o objtmp.o \
                         -I\"[file nativename $TOOLDIR]\" model.cpp"
@@ -564,7 +579,7 @@ proc compile_c {workingDir extLibs complain} {
 		} else {
 		    set cmd [list g++ -shared -o $TARGET objtmp.o]
 		}
-		puts $spout [concat $cmd $lDirs $lFiles]
+		puts $spout "$cmd $lDirs $lFiles -l5d_win"
 	    }
 	    flush $spout
 	    close $spout
@@ -1707,7 +1722,7 @@ proc OpenProjectFile {path} {
 	    set helperTable($topNode,stateName) \
 		[file normalize [file join $baseDir \
 				     $SimileProject(nameOfHelperStateFile)]]
-	    RecordPathChoice .spf $helperTable($topNode,stateName) $topNode
+	    RecordPathChoice .shf $helperTable($topNode,stateName) $topNode
             set command [ChooseText \
 			     [PrefValue custom(helperManager) helperManager] \
 			     ::RunEnv::LoadSHF CreateView]
