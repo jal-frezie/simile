@@ -996,54 +996,61 @@ proc DoIfApplicable {winName item action} {
     }
 }
 
+proc CrossPlatformBind {tgt args} {
+# Bindings are slightly different in the MacVersion because many users have
+# one button mice.  Thus ctrl-left click is used to simulate right click,
+# and command-left click replaces the function of ctrl-left.    
+    if {[tk windowingsystem] eq "aqua"} {
+	set Acts {{Control-Button-1 Button-2} {Control-B1-Motion B2-Motion} 
+	    ButtonRelease-2 Command-Button-1 Command-Button-2}
+    } else {
+	set Acts {Button-3 B3-Motion ButtonRelease-3 Control-Button-1
+	    Control-Button-3}
+    }
+    foreach actset $Acts boundCmd $args {
+	foreach action $actset {
+	    bind $tgt <$action> $boundCmd
+	}
+    }
+# Bindings are also confused on the Mac by a convention that Tcl/Tk
+# has accidentally adopted, that the mouse-wheel is Button-3    
+}
+
+proc BindMouseWheel {tgt ctrl cmd} {
+    if {$ctrl} {
+	if {[tk windowingsystem] eq "aqua"} {
+	    set prefx Command-
+	} else {
+	    set prefx Control-
+	}
+    } else {
+	set prefx {}
+    }
+    switch [tk windowingsystem] {
+	x11 {
+	    bind $tgt <${prefx}Button-4> [string map {%D -5} $cmd]
+	    bind $tgt <${prefx}Button-5> [string map {%D 5} $cmd]
+	} aqua {
+	    bind $tgt <${prefx}MouseWheel> $cmd
+	} default { ;# windows
+	    bind $tgt <${prefx}MouseWheel> [string map {%D (-0.04*%D)} $cmd]
+	}
+    }
+}
+    
 proc AddCanvasBindings { c topNode } {
     global tcl_platform
 
     KoreanClick $c 1 {ClickObj %x %y %W %X %Y click}
-# Bindings are slightly different in the MacVersion because many users have
-# one button mice.  Thus ctrl-left click is used to simulate right click,
-# and command-left click replaces the function of ctrl-left.    
-    if [string match Darwin $tcl_platform(os)] {
-        bind $c <Control-Button-1> {ClickObj %x %y %W %X %Y right}
-        bind $c <Command-Button-1> {ClickObj %x %y %W %X %Y ctrl}
-    } else {
-        bind $c <Control-Button-1> {ClickObj %x %y %W %X %Y ctrl}
-    }
     bind $c <Double-1> {ClickObj %x %y %W %X %Y doubleclick}
-    
     bind $c <B1-Motion> {DragObj %W %x %y}
     bind $c <ButtonRelease-1> {ReleaseObj %W %x %y}
-# Bindings are also confused on the Mac by a convention that Tcl/Tk
-# has accidentally adopted, that the mouse-wheel is Button-3    
-    if [string match Darwin $tcl_platform(os)] {
-        bind $c <Button-2> {ClickObj %x %y %W %X %Y right}
-        bind $c <Command-Button-2> {ClickObj %x %y %W %X %Y ctrl-right}
-        bind $c <ButtonRelease-2> {ReleaseObj %W %x %y}     
-    } else {
-        bind $c <Button-3> {ClickObj %x %y %W %X %Y right}
-        bind $c <Control-Button-3> {ClickObj %x %y %W %X %Y ctrl-right}
-        bind $c <ButtonRelease-3> {ReleaseObj %W %x %y}
-    }
+    CrossPlatformBind $c {ClickObj %x %y %W %X %Y right} {} \
+	{ReleaseObj %W %x %y} \
+	{ClickObj %x %y %W %X %Y ctrl} {ClickObj %x %y %W %X %Y ctrl-right}
     bind $c <FocusIn> {EmbraceObj %W}
     bind $c <Leave> {AbandonObj}
-#    BindMouseWheel $c
-# as style binds mousewheel for all, so to stop this making events for
-# ctrl-mousewheel we have to define a non-empty binding for ctrl-mousewheel
-# at that level, but it do nothing because errors would result otherwise
-    switch [tk windowingsystem] {
-	x11 {
-	    bind all <Control-Button-4> {return}
-	    bind $c <Control-Button-4> {WheelZoom %W 5 %x %y}
-	    bind all <Control-Button-5> {return}
-	    bind $c <Control-Button-5> {WheelZoom %W -5 %x %y}
-	} aqua {
-	    bind all <Command-MouseWheel> {return}
-	    bind $c <Command-MouseWheel> {WheelZoom %W %D %x %y}
-	} default  {
-	    bind all <Control-MouseWheel> {return}
-	    bind $c <Control-MouseWheel> {WheelZoom %W %D %x %y}
-	}
-    }
+    BindMouseWheel $c 1 {WheelZoom %W %D %x %y}
     
     # text/clipboard action from Welch example
     # commented because we can now cut/copy parts of a model
@@ -1068,7 +1075,7 @@ proc AddCanvasBindings { c topNode } {
 
 proc WheelZoom {win change x y} {
 #    puts [info level 0]
-    DoZoom $win [expr {exp($change/100.0)}] $x $y
+    DoZoom $win [expr 1+$change/100.0] $x $y
 }
 
 proc AddEqnPopup {node x y winId X Y} {

@@ -58,14 +58,10 @@ proc initialize {winId} {
 	[namespace code "DropAnchor $winId l %x %y"]
     bind $winId.c <B1-Motion> \
 	[namespace code "Haul $winId l %x %y 1"]
-    bind $winId.c <Button-3> \
-	[namespace code "DropAnchor $winId r %x %y"]
-    bind $winId.c <B3-Motion> \
+    CrossPlatformBind $winId.c [namespace code "DropAnchor $winId r %x %y"] \
 	[namespace code "Haul $winId r %x %y 1"]
-    bind $winId.c <Button-4> \
-	[namespace code "Zoom $winId 0.8 %x %y"]
-    bind $winId.c <Button-5> \
-	[namespace code "Zoom $winId 1.25 %x %y"]
+    BindMouseWheel $winId.c 0 [namespace code "Zoom $winId %D %x %y"]
+
 #Grid is always displayed so only define it once
     DefineGrid $winId 0 100 10 0 100 10 -20 60 20
 
@@ -237,11 +233,12 @@ proc Haul {winId btn x y done} {
     set curPosn($winId,y) $y
 }
 
-proc Zoom {winId factor scx scy} {
+proc Zoom {winId power scx scy} {
 # use pointer location somehow?
     variable scaleVector
     variable viewVector
 
+    set factor [expr 1-$power/100.0]
     set ctrx [expr {$viewVector($winId,X)/2}]
     set ctry [expr {$viewVector($winId,Y)/2}]
     DropAnchor $winId r $scx $scy

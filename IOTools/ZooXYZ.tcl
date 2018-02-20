@@ -84,14 +84,12 @@ itcl::class similescript::$newHelperClass {
 	    [list namespace eval ::gen3d1 "DropAnchor $winId l %x %y"]
 	bind $winId.c <B1-Motion> \
 	    [list namespace eval ::gen3d1 "Haul $winId l %x %y 1"]
-	bind $winId.c <Button-3> \
-	    [list namespace eval ::gen3d1 "DropAnchor $winId r %x %y"]
-	bind $winId.c <B3-Motion> \
+	CrossPlatformBind $winId.c \
+	    [list namespace eval ::gen3d1 "DropAnchor $winId r %x %y"] \
 	    [list namespace eval ::gen3d1 "Haul $winId r %x %y 1"]
-	bind $winId.c <Button-4> \
-	    [list namespace eval ::gen3d1 "Zoom $winId 0.8 %x %y"]
-	bind $winId.c <Button-5> \
-	    [list namespace eval ::gen3d1 "Zoom $winId 1.25 %x %y"]
+	BindMouseWheel $winId.c 0 \
+	    [list namespace eval ::gen3d1 "Zoom $winId %D %x %y"]
+
 	menu $winId.m -tearoff 0
 	$winId.m add command -label "Sphere" -command "$this AddItem spheres"
 	$winId.m add command -label "Line" -command "$this AddItem lines"

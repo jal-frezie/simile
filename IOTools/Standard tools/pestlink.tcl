@@ -539,7 +539,7 @@ namespace eval $keyValue {
 		KoreanClick $f 1 {}
                 bind $f <Double-1> [namespace code \
                         [list DoInpDlg $node $f $title]]
-                bind $f <Button-3> [namespace code \
+                CrossPlatformBind $f [namespace code \
                         [list DoInpDlg $node $f $title]]
             }
         } else {
@@ -587,7 +587,7 @@ namespace eval $keyValue {
 	    KoreanClick $widjo 1 {}
             bind $widjo <Double-1> [namespace code \
                     [list DoInpDlg $node $f $title]]
-            bind $widjo <Button-3> [namespace code \
+            CrossPlatformBind $widjo [namespace code \
                     [list DoInpDlg $node $f $title]]
         }
         return $f
@@ -724,7 +724,7 @@ namespace eval $keyValue {
 		KoreanClick $widjo 1 {}
                 bind $widjo <Double-1> [namespace code \
                         [list DoOutDlg $node $f $title]]
-                bind $widjo <Button-3> [namespace code \
+                CrossPlatformBind $widjo [namespace code \
                         [list DoOutDlg $node $f $title]]
             }
         }

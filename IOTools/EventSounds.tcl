@@ -28,7 +28,7 @@ itcl::class similescript::$newHelperClass {
 	    -command [code $this SetSound]
 	$winId.traces.context add command -label "Remove" \
 	    -command [code $this Remove]
-	bind $winId.traces <Button-3> {tk_popup %W.context %X %Y}
+	CrossPlatformBind $winId.traces {tk_popup %W.context %X %Y}
 	set useNodes(lastDisp) [GetModelTime]
 	set useNodes(sounds) {}
 	$winId.message configure \
@@ -151,6 +151,7 @@ itcl::class similescript::$newHelperClass {
 	set shfPath [GetPathChoice .shf [$modelInst cget -modelNode]]
 	foreach {path file} $useNodes(sounds) {	    
 	    append State "<sound component=\"$path\" "
+	    # puts "::fileutil::relative $shfPath $file"
 	    if {[catch {::fileutil::relative $shfPath $file} rel] || \
 		    [string first $file $rel]>-1} { ;# rel pointless
 		append State "mode=\"absolute\">$file</sound>\n"

@@ -298,7 +298,7 @@ namespace eval RunEnv {
         
 	KoreanClick $containerId.notebook 1 {}
         bind $containerId.notebook <Double-1> "::RunEnv::EditTabLabel %W"
-        bind $containerId.notebook <Button-3> "::RunEnv::EditTabLabel %W"
+        CrossPlatformBind $containerId.notebook "::RunEnv::EditTabLabel %W"
         
         $containerId.notebook select [lindex [$containerId.notebook tabs] 0]
         pack $containerId.notebook -fill both -expand yes
@@ -494,8 +494,8 @@ namespace eval RunEnv {
     proc AddPane {paneId {containerId {}}} {
 	frame $paneId -highlightcolor black -highlightthickness 1
 	bind $paneId <Button-1> "+::RunEnv::SetCurrentContainer %W"
-	bind $paneId <Button-3> \
-	    "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+	CrossPlatformBind $paneId "+::RunEnv::SetCurrentContainer %W;
+                                   tk_popup .pageContextMenu %X %Y"
 	set parentPath [winfo parent $paneId]
 	if {[string length $containerId]} {
 	    $parentPath add $paneId -after $containerId
@@ -1163,7 +1163,7 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
         
 		KoreanClick $path 1 {}
 		bind $path <Double-1> "::RunEnv::EditTabLabel %W"
-		bind $path <Button-3> "::RunEnv::EditTabLabel %W"
+		CrossPlatformBind $path "::RunEnv::EditTabLabel %W"
 		pack $path -fill both -expand yes
 		set parseStatus(currentPath) $path
 	    } page {
@@ -1171,9 +1171,8 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 				       [$parseStatus(currentPath) tabs]]]
 		$parseStatus(currentPath) add $pageId -text $attVals(caption)
 		bind $pageId <Button-1> "+::RunEnv::SetCurrentContainer %W"
-		bind $pageId <Button-3> \
-		    "+::RunEnv::SetCurrentContainer %W; 
-                    tk_popup .pageContextMenu %X %Y"
+		CrossPlatformBind $pageId "+::RunEnv::SetCurrentContainer %W; 
+                                           tk_popup .pageContextMenu %X %Y"
 		set parseStatus(currentPath) $pageId
 	    } panedwindow {
 		set pwId $parseStatus(currentPath).panedwindow
@@ -1390,7 +1389,7 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
                     #ShowMess debug info "containerId $containerId" ok
 		    KoreanClick $path 1 {}
                     bind $path <Double-1> "::RunEnv::EditTabLabel %W"
-                    bind $path <Button-3> "::RunEnv::EditTabLabel %W"
+                    CrossPlatformBind $path "::RunEnv::EditTabLabel %W"
                     pack $path -fill both -expand yes
                 }
                 page {
@@ -1408,8 +1407,9 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 			;#-raisecmd [list ::RunEnv::PageRaiseCmd $containerId.notebook $pageId]
                     # page raised below before any panes so that must be moved todo                 -raisecmd [list ::RunEnv::PageRaiseCmd $notebook $pageId]
                     bind $newFr <Button-1> "+::RunEnv::SetCurrentContainer %W"
-                    bind $newFr <Button-3> \
-                            "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+                    CrossPlatformBind $newFr \
+			"+::RunEnv::SetCurrentContainer %W; 
+                         tk_popup .pageContextMenu %X %Y"
                 }
                 default {
                     # lappend metaList "Unhandled mre element"
