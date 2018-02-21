@@ -1530,6 +1530,10 @@ void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
   }
 }
 
+graph_data_type* ExecutingModel::GetSketchGraphs() {
+  return loadedInst->c_graphdata;
+}
+
 void ExecutingModel::ExitInstance () {
   loadedInst->do_exitmodel();
 }
@@ -1694,7 +1698,7 @@ showMess(globMess); */
     getcount = (getcount_type*)FIND_FUNCTION(handle, "get_count");
     createmodel = (createmodel_type*)FIND_FUNCTION(handle, "do_createmodel");
 #endif
-    nodecount = getcount(&c_graphdata, &identStr, &phases, &nodedata);
+    nodecount = getcount(NULL, &identStr, &phases, &nodedata);
     // Now check if this client is entitled to run it
     if (entitled(clientEdn, identStr)) {
       *complaint = new char[256];
@@ -1716,7 +1720,6 @@ ModelServer::~ModelServer() {
      trying to refer to procedure variables in the model class directly */
 
 ExecutingModel* ModelServer::create(void* yourRef) {
-    c_graphdata = NULL; // this will be filled when initializing new instance
     // Do not return raw instance -- just create a wrapper object with fields
     // for raw instance and model type object
     return new ExecutingModel(this, yourRef);
@@ -1811,6 +1814,8 @@ int ModelServer::GetProperty(HCOMP line, int propertyId) {
   switch (propertyId) {
     case GETTYPE:
       return nodedata[line].datatype;
+    case GETVARIABLEID:
+      return nodedata[line].graph;
     case GETEVAL:
       return nodedata[line].eval;
     case GETCLASS:
@@ -2480,8 +2485,8 @@ node_data_line* get_data_line(void* type, int line) {
   return &((ModelFor5D*)type)->nodedata[line];
 }
 
-graph_data_type** get_graph_base(void* type) {
-  return &((ModelFor5D*)type)->c_graphdata;
+graph_data_type* get_graph_base(void* instanceId) {
+  return ((ExecutingModel*)instanceId)->GetSketchGraphs();
 }
 
 // get a node data line from the 'graph' number of the node

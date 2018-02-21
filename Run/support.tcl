@@ -32,7 +32,7 @@ proc getinfo {node field} {
 # Graph handling stuff
 
 proc setup_graph_data {args} {
-    eval {graph_table 22} $args
+    eval {graph_table 0 22} $args
 }
 
 proc release_graph_data {graph_data_pointer} {
@@ -44,8 +44,8 @@ proc release_graph_data {graph_data_pointer} {
 # procedure that executes the model.
 
 
-proc graphpoint {xval index} {
-    graph_table 23 $index $xval
+proc graph_lookup {xval index} {
+    graph_table 0 23 $index $xval
 }
 
 # Stuff related to getting values
@@ -1491,7 +1491,7 @@ proc GetTclCompProperty {topNode prop args} {
 	    if {[llength $set]} {
 		eval {setup_graph_data $index} $set
 	    } else {
-		return [graph_table 21 $index]
+		return [graph_table 0 21 $index]
 	    }
 	} Caption {
 	    return [GetFullCaption [FindRecord $node]]

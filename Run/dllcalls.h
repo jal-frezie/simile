@@ -91,6 +91,7 @@
 #define GETDESC        14
 #define GETCOMMENT     15
 #define GETINTERNALID  16
+#define GETVARIABLEID  17
 #define BADTYPE        20
 #define	TEST	       99
 
@@ -298,7 +299,7 @@ EXTDEC graph_data_type* find_graph_by_index (int, graph_data_type*);
 EXTDEC double graphpoint(double, graph_data_type*, int);
 EXTDEC void setup_randoms(unsigned int);
 EXTDEC double rand_fract();
-EXTDEC graph_data_type** get_graph_base(void*);
+EXTDEC graph_data_type* get_graph_base(void*);
 EXTDEC node_data_line* searchinfo(char*, void*, char*, int*, 
 				  enum_type_data**);
 EXTDEC node_data_line* nodlin_from_id(void*, int);

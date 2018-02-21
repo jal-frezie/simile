@@ -1016,7 +1016,7 @@ make_evaluation_routine(
 	    make_expr(Language, GraphTerm, GraphExpr),
 	    /* Keep tcl working till it uses c++ graph access */
 	    make_procedure_call_chars(Language,
-				      [graphpoint, GraphExpr, GraphId],
+				      [graph_lookup, GraphExpr, GraphId],
 				      Content_chars),
 /* End of graph clause */
 	    name(Term, Content_chars);

@@ -98,6 +98,9 @@ public:
   int activeEvtCount, activeEvtIds[256];
   double activeEvtSums[256];
   void* spares[1024];
+  //! Pointer to start of list of graph data objects
+  graph_data_type* c_graphdata;
+
 
   // functions called by host module
   virtual int do_evalmodel(int) = 0;
@@ -122,7 +125,9 @@ public:
   void report_context(void);
   template <class modeldata>
     modeldata flag_derived_event(int graphId, modeldata magnitude);
-			  
+  void setup_graph_data(int, double, double, int, double, double,
+			int, int, int, ...);
+  double  graph_lookup(double, int);		  
 };
 // Declaration for procedure types found in the model dll by the shank
 typedef double getversion_type(void);

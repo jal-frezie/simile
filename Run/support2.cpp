@@ -332,7 +332,7 @@ EXPORT int get_count(graph_data_type** graph_ptr,
   ...etc
   fttb is also passes place to keep sketch graph function data */
   
-  graph_data_pointer = graph_ptr;
+  //graph_data_pointer = graph_ptr;
 
   /* ...and we are telling stub... */
   *identStr = simile_identifier;

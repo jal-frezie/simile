@@ -409,10 +409,11 @@ proc GetCCompProperty {topNode prop args} {
 	    }
 	    return $fullList
 	} Graph {
+	    set gphId [c_getvalue $topNode $node 17]
 	    if {[llength $set]} {
-		eval {getvalue $model_id $node 4} $set
+		eval {graph_table $instance_id 22 $gphId} $set
 	    } else {
-		return [c_getvalue $topNode $node 3]
+		return [graph_table $instance_id 21 $gphId]
 	    }
 	} $numberWangs {
 	    set dataWang [lindex {5 6 8 12 13 14 15 16} \

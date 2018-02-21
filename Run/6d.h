@@ -147,7 +147,7 @@ class CPPEXTDEC VarParamData : public FileParamData {
 //! Class for model instances
 
 //! Each model instance has its own data, its own set of parameter values and 
-//! its own execution state
+//! its own execution state...and as of 10.903 its own sketch graph data
 class ExecutingModel
 {
   friend class FileParamData;
@@ -236,6 +236,7 @@ class ExecutingModel
   // allow model to update client during execution; client should not call
   BOOLEAN do_gui_check(double, int);
   void set_evt_cmd(char*, char*);
+  graph_data_type* GetSketchGraphs();
 }; // End of class ExecutingModel
 
 //! An instance of this class corresponds to a type of model with own executable
@@ -254,8 +255,6 @@ class ModelServer
  public: // public attributes
   //! Number of different time steps in model
   int phases;
-  //! Pointer to start of list of graph data objects
-  graph_data_type* c_graphdata;
   //! Model's identifier
   char* identStr;
   //! Number of components in model

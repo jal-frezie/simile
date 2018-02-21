@@ -233,8 +233,12 @@ FINDABLE int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
       resultPtr = Tcl_NewIntObj(data_line->eval);
     break;
 
-  case GETINTERNALID:
+  case GETINTERNALID: // point doubtful as this is passed here
     resultPtr = Tcl_NewStringObj(data_line->name, -1);
+    break;
+
+  case GETVARIABLEID:
+    resultPtr = Tcl_NewIntObj(data_line->graph);
     break;
 
   case GETMIN:
@@ -244,13 +248,13 @@ FINDABLE int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
   case GETMAX:
     resultPtr = Tcl_NewDoubleObj(data_line->max);
     break;
-
+    /* moved to graphCmd cos they are per-instance now
   case GETGRAPH:
   case SETGRAPH:
     action = action + READGRAPH - GETGRAPH; // SETGRAPH becomes WRITEGRAPH
     return do_graph(get_graph_base(modelType), interp, action, data_line->graph,
 		    argc-1, argv+1);
-
+    */
   case GETCAPTION:
     resultPtr = Tcl_NewStringObj(current, -1);
     break;
@@ -1183,25 +1187,31 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int graphCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
+  void* modelHandle;
   int action, index, error;
-  static graph_data_type* tcl_graphdata;
+  static graph_data_type* tcl_graphdata = NULL;
 
-  if (argc < 3) {
-    Tcl_WrongNumArgs(interp, 2, argv, "graph_id");
+  if (argc < 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "instance_id action variable_id ...");
     return TCL_ERROR;
   }
 
-  error = Tcl_GetIntFromObj(interp, argv[1], &action);
+  if (strcmp("0", Tcl_GetStringFromObj(argv[1], NULL))) {
+    memcpy(&modelHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+    tcl_graphdata = get_graph_base(modelHandle);
+  }
+  
+  error = Tcl_GetIntFromObj(interp, argv[2], &action);
   if (error != TCL_OK) {
     return error;
   } /* if(error) */
 
-  error = Tcl_GetIntFromObj(interp, argv[2], &index);
+  error = Tcl_GetIntFromObj(interp, argv[3], &index);
   if (error != TCL_OK) {
     return error;
   } /* if(error) */
 
-  return do_graph(&tcl_graphdata, interp, action, index, argc, argv);
+  return do_graph(&tcl_graphdata, interp, action, index, argc-1, argv+1);
 }
 
 /* This does the same as compare_instance_status with Tcl_Obj lists instead

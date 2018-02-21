@@ -5,7 +5,7 @@
 #include <dllcalls.h>
 #include <backend.h>
 
-graph_data_type** graph_data_pointer;
+//graph_data_type** graph_data_pointer;
 
 
 int InstanceOfModel::stop_on_id(int lineId, int code) {
@@ -83,8 +83,8 @@ void assign_if_min(CompareClass sample, PayloadClass payload,
 }
 
 // add pointer to saved data before sampling sketch graph in shank
-double graphpoint(double xval, int indx) {
-  return graphpoint(xval, *graph_data_pointer, indx);
+double InstanceOfModel::graph_lookup(double xval, int indx) {
+  return graphpoint(xval, c_graphdata, indx);
 }
 
 /* Fn template for deleting a linked list of models -- if non-null, 
@@ -361,7 +361,7 @@ int* arrange_indices(int id_count, ...) {
   return curIndices;
 }
 
-void setup_graph_data(
+void InstanceOfModel::setup_graph_data(
    int index,
    double xlow,
    double xhigh,
@@ -369,7 +369,7 @@ void setup_graph_data(
    double ylow,
    double yhigh,
    int yspan,
-	int range,
+   int range,
    int xsize, ...) {
 
    va_list argptr;
@@ -391,8 +391,8 @@ void setup_graph_data(
 
    graphptr = new graph_data_type;
    graphptr->index = index;
-   graphptr->next = *graph_data_pointer;
-   *graph_data_pointer = graphptr;
+   graphptr->next = c_graphdata;
+   c_graphdata = graphptr;
 
    graphptr->xlow = xlow;
    graphptr->xhigh = xhigh;

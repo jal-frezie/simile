@@ -529,11 +529,12 @@ wot need them */
 	excrete(Language, variable_declaration,
 	       [int, phasecount, [], Phases], 0, Stream),
         BoostPhases is Phases+1,
+/* replaced by per-instance arrays
 	excrete(Language, variable_declaration,
 	       [real, ts, [BoostPhases]], 0, Stream),
 	excrete(Language, variable_declaration,
 	       [real, dts, [BoostPhases]], 0, Stream),
-
+*/
 	list_matching_files('../Functions/*.cpp', FnIncs),
 	% the /* in the above line does not start a comment, nor that in this */
         all(user, get_native, [build(ExtIncs), build(UExtIncs)]),
