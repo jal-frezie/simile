@@ -878,7 +878,8 @@ proc ControlDraw {prologVersion} {
     # properly, have stub dll check unix time against clock time
     
     set baseTime [clock scan [clock format $userinfo(built) -format %Y-%m-01]]
-    array set duration {evaluation "9 months" teaching "21 months"}
+    array set duration {evaluation "9 months" teaching "21 months"
+	enterprise "1 day"}
     if {[info exists duration($userinfo(edn))]} {
 	set expTime [clock scan $duration($userinfo(edn)) -base $baseTime]
         set userinfo(exp_time) $expTime
@@ -890,7 +891,8 @@ proc ControlDraw {prologVersion} {
         }
 	if {$toGo<0} {
 	    send_pl_cmd {error:Product has expired} ;# arrange graceful exit
-	    exit
+	    after idle exit
+	    prolog wind_up
 	}
     }
     
