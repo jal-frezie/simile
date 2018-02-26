@@ -878,8 +878,7 @@ proc ControlDraw {prologVersion} {
     # properly, have stub dll check unix time against clock time
     
     set baseTime [clock scan [clock format $userinfo(built) -format %Y-%m-01]]
-    array set duration {evaluation "9 months" teaching "21 months"
-	enterprise "1 day"}
+    array set duration {evaluation "9 months" teaching "21 months"}
     if {[info exists duration($userinfo(edn))]} {
 	set expTime [clock scan $duration($userinfo(edn)) -base $baseTime]
         set userinfo(exp_time) $expTime
