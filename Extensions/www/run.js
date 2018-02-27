@@ -172,6 +172,7 @@ function idFromCapt (capt) {
 	    return model_json[comp].id;
 	}
     }
+    return capt; // for good error, or may be old-style .shf with node ids
 }
 
 function oneAfter(array, term) {
