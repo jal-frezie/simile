@@ -761,14 +761,14 @@ proc GetShortVals {topNode plName limit} {
 	set text [lindex [GetCompExecData $topNode Value $plName] 0]
 	set count [ShrinkValueList text $limit]
     }
-    catch {GetCompProperty $topNode Type $plName} iType
-    if {[string equal REAL $iType]} {
-	set precis [PrefValue custom(popupPrecision) popupPrecision]
-	if {$precis} {
-	    set text [FormatVals %.${precis}g $text]
-	}
-    }
     if {![string equal novalue $text]} {
+    catch {GetCompProperty $topNode Type $plName} iType
+	if {[string equal REAL $iType]} {
+	    set precis [PrefValue custom(popupPrecision) popupPrecision]
+	    if {$precis} {
+		set text [FormatVals %.${precis}g $text]
+	    }
+	}
 	set text [PrettifyValList [TransEnums [GetCompProperty $topNode Trans \
 						   $plName] $text]]
     }

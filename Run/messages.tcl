@@ -428,7 +428,7 @@ set msgs(tail_not_list_message) [tr. {The Prolog list operators "." and "|" may 
 
 set msgs(wrong_format_of_args_title) [tr. {Wrong format of args}]
 set msgs(wrong_format_of_args_message) [tr. {Attempting to process subexpression "%1$s": You have tried to use the macro or function "%2$s" with arguments "%3$s", but it must take arguments of the form "%4$s".}]
-set msgs(wrong_format_of_args_detail) [tr. {This problem might be fixed by adding parentheses around a subexpression that forms an argument of this subexpression.}]
+set msgs(wrong_format_of_args_detail) [tr. {This problem might be fixed by adding parentheses around a subexpression that forms an argument of this subexpression, or around this subexpression if it is an argument to a function, e.g., sum(([a]=[2,3,5],[a]*[a])).}]
 
 set msgs(wrong_no_of_args_title) [tr. {Wrong number of args}]
 set msgs(wrong_no_of_args_message) [tr. {Attempting to process subexpression "%1$s": You have tried to use the %2$s function "%3$s" with %4$s arguments, but it must take %5$s}]
