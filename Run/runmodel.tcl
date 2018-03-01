@@ -737,16 +737,13 @@ proc EatInput {} {
 }
 
 proc GetShortVals {topNode plName limit} {
-    if {[lsearch {EVENT SQUIRT} [GetModelClass $plName]]>-1} {
-	set loseZeros 1
-    } else {
-	set loseZeros 0
-    }
     if {[RunningInC $topNode]} {
 	if {[catch {GetHandle $topNode $plName} hdl]} {
 	    set text novalue
 	    set count 0
 	} else {
+	    set loseZeros \
+		[expr {[lsearch {EVENT SQUIRT} [GetModelClass $plName]]>-1}]
 	    set count [count_values $hdl $loseZeros]
 	    if {$count<$limit/5} {
 		set text [extract_list $hdl $count $loseZeros]
@@ -762,7 +759,7 @@ proc GetShortVals {topNode plName limit} {
 	set count [ShrinkValueList text $limit]
     }
     if {![string equal novalue $text]} {
-    catch {GetCompProperty $topNode Type $plName} iType
+	catch {GetCompProperty $topNode Type $plName} iType
 	if {[string equal REAL $iType]} {
 	    set precis [PrefValue custom(popupPrecision) popupPrecision]
 	    if {$precis} {
