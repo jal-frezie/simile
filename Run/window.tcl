@@ -2237,8 +2237,8 @@ proc autocomplete {win action pt value change valuelist} {
 	FlashMatchingBracket 0 $win $final $testChar
 	if {[string is wordchar -strict $testChar]} {
 	    set origin [string wordstart $value $pt]
-	    # add any leading \['s or \{'s to search string
-	    set wordMap [string map [list \[ _ \{ _] $value]
+	    # add any leading \"'s, \['s or \{'s to search string
+	    set wordMap [string map [list \" _ \[ _ \{ _] $value]
 	    set trigStart [string wordstart $wordMap $pt]
 	    set trigger [string range $value $trigStart $final]
 	    # now all leading brackets must be escaped, and leading ['s made
@@ -2246,6 +2246,11 @@ proc autocomplete {win action pt value change valuelist} {
 	    set trigger [string map [list \[ \\\[? \{ \\\{] $trigger]
 	    if {[string index $value $close] ne "("} {
 		set valuelist [lmap fn $valuelist {string cat $fn ()}]
+	    }
+	    foreach eType $equationbar(enumTypes) {
+		foreach etMem [lrange $eType 1 end] {
+		    lappend valuelist \"${etMem}\"
+		}
 	    }
 	    set valuelist [concat $equationbar(params) $valuelist]
 # right now for some innovation. Up and down arrows will scroll through 
@@ -2261,12 +2266,12 @@ proc autocomplete {win action pt value change valuelist} {
 # currently allow any completion that adds anything -- have to delete if you
 # want substring
 	    set matches [lsearch -all -inline -regexp $valuelist $key]
+#	    puts "found $matches searching $valuelist for $key"
 	    if {[llength $matches]} {
 		foreach match $matches {
-		    lappend tails [string range [string trimleft $match \[\{] \
-				      [expr {$close-$origin}] end]
+		    lappend tails [string range [string trimleft $match \"\[\{] [expr {$close-$origin}] end]
 		}
-		set pop [string trimleft [lindex $matches 0] \[\{]
+		set pop [string trimleft [lindex $matches 0] \"\[\{]
 #		$win delete $origin $final; $win insert $origin $pop
 # ignore previous contents, we may have pasted lots of text
 		$win delete 0 end
