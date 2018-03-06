@@ -16,6 +16,11 @@ public:
   double t1, t2, t3;
 };
 
+typedef struct evt_diffs_type {
+  double t1, t2;
+  int status;
+} evt_diffs;
+
 template <class modeldata> class delay;
 
 template <class modeldata> class series {
@@ -113,7 +118,7 @@ public:
 
   // support functions called by model code
   double stage_incr (double, diffs*, int, double, int, double, double, int);
-  int check_limit(double, double, double, int, int, int, diffs*);
+  int check_limit(double, double, double, int, int, int, evt_diffs*);
   template <class modeldata> 
     modeldata retract_from_pipe(delay<modeldata>*, int);
   template <class modeldata> 

@@ -538,7 +538,8 @@ make_intermediates(
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
 	        (([Var | _] = Target; 	% it cannot be a condition of itself,
-		  Units == diffs;	% or its structure if a compartment
+		  member(Units, [diffs, evt_diffs]);
+		  % or its structure if a compartment or event
 		  nonvar(Units),
 		  Units = class_template(delay, _)), !, % or delay
 		    Args = [];
@@ -1257,7 +1258,7 @@ Now one that uses a special conditional level */
 				     Key, MinB, MaxB, GraphId);
 	    Source = check_limit(ActEqn, Lower, Upper, Flags, Step, Diffs),
 		SourceList = [ActEqn, Diffs],
-		Arg_template = [real, diffs],
+		Arg_template = [real, evt_diffs],
 		ResultList = [RActEqn, RDiffs],
 		RUnits = int,
 		ValRef = check_limit(RActEqn, Lower, Upper, Flags, GraphId,

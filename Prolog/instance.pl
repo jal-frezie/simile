@@ -348,12 +348,12 @@ instance_of( function, Node, Path, Instances, Refs) :-
 		  More = result,
 		    Flags = FL1,
 		    Lower = 0),
-		Diffs = elt(Path, _, diffs-Units),
+		Diffs = elt(Path, _, evt_diffs-Units),
 		SoughtExpr = check_limit(SubbedExpr, Lower, Upper, Flags,
 					 Step, Diffs),
 		FinalExpr = with_phase(Step, [], SoughtExpr),
 		(Flags = 3 -> MagBase = int; MagBase = boolean),
-		is_instance(internal, hist(Node), none, Diffs, diffs-Units,
+		is_instance(internal, hist(Node), none, Diffs, evt_diffs-Units,
 			    DiffSt),
 		Instances = [DiffSt, Instance];
 % derived event or state: make magnitude expression

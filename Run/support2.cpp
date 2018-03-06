@@ -176,9 +176,9 @@ BOOLEAN RealPhase(int phase) {
 // allow use of predictions with small (e.g., rounding-only) errors
 int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 				  int action, int graphId, 
-				  int step, diffs* extras) {
+				  int step, evt_diffs* extras) {
   double old, to_limit, rate, prediction;
-  int out, heading_out, phase = int(ts[0]);
+  int out, heading_out, phase = int(ts[0]), result;
   switch (phase) {
   case 0: case 1: // resetting model, do not use saved data
     extras->t1 = trigger; // for prediction next step
@@ -198,7 +198,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
     heading_out = out = 0;
     if (phase==9) {
       old = trigger; // no heading or rate
-      extras->t3 = 0; // ignore previous activation state
+      extras->status = 0; // ignore previous activation state
     } else
       old = extras->t1;
     if (action & CHECK_LOWER) {
@@ -208,7 +208,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 	rate = old-trigger;
       }
       if (trigger<lower+LIMIT_FUZZ)
-	out = -1;
+	out |= CHECK_LOWER;
     }
     if (action & CHECK_UPPER) {
       if (trigger>old) {
@@ -217,7 +217,7 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
 	rate = trigger-old;
       }
       if (trigger>=upper-LIMIT_FUZZ)
-	out = 1;
+	out |= CHECK_UPPER;
     }
 
     /* ok...if for_real, I need to update the last 'out' value and
@@ -228,20 +228,19 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
     
     if (RealPhase(phase)) {
       extras->t1 = trigger; // for prediction next step
-      if (out) {
-	if (out != extras->t3) { 
-	  userStop.targetId = graphId; // for pause-on-event reporting
-	  flag_derived_event(graphId, out);
-	  report_context();
-	  extras->t3 = out;
-	  return out; // cannot return result of above assignment
-	  // because some compilers then complain about type conversion
-	}
-      } else
-	extras->t3 = 0;
+      result = out & ~extras->status; // ~ is bitwise not
+      extras->status = out; // for next step, and avoid retrospective prediction
+      if (result) {
+	result = (result & CHECK_UPPER)?1:-1;
+	userStop.targetId = graphId; // for pause-on-event reporting
+	flag_derived_event(graphId, result);
+	report_context();
+	return result;
+      }
     }
-    if (heading_out && extras->t3 != heading_out) { 
-      // make prediction for this event
+    if (heading_out &&
+	!(extras->status&(heading_out==1?CHECK_UPPER:CHECK_LOWER))) {
+      // make prediction for this event, poss retrospective if not real phase
       if (phase==6 || phase==11) { // ok approximate to quadratic
 	// (yes I know should be 4th-order poly but have you seen the formula!)
 	// printf("old %f mid %f new %f\n", old, extras->t2, trigger);

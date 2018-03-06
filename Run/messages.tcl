@@ -145,6 +145,7 @@ set msgs(at_init) [tr. {Returns the value the argument had when first used, i.e.
 set msgs(default) [tr. {Utility for writing type-independent macros; returns 0 if arg is number, "false" if arg is boolean, or first member of arg's enumerated type}]
 set msgs(time) [tr. {Returns the current time, to nearest multiple of the time step specified by the argument -- none means that of current submodel}]
 set msgs(dt) [tr. {Returns the duration of the time step specified by the argument -- none means that of current submodel}]
+set megs(trigger_magnitude) [tr. {The value or sum of values of the incoming event that triggers a derived event, squirt or state change}]
 set msgs(prev) [tr. {Returns the value of this component the given number of time steps ago}]
 set msgs(makearray) [tr. {Returns an array of the given number of values from the first argument}]
 set msgs(element) [tr. {Returns a value from an array according to the second argument}]
