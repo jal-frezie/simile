@@ -148,7 +148,8 @@ FINDABLE EXPORT createmodel_type do_createmodel;
 // New in v6.903: declaration for procedures found in the shank by the model dll
 EXPORT double ame_rand(double, double);
 EXPORT uint64_t seed_rand(int);
-EXPORT double graphpoint(double, graph_data_type*, int);
+// EXPORT double graphpoint(double, graph_data_type*, int);
+// no need, is declared in dllcalls.h for use by shim)
 EXPORT int compare_instance_status (const int[], const int[],  int);
 EXPORT void report_events(int, const int[], int, const int[], const double[]);
 EXPORT void handle_model_param_request(void*, void*, int, BOOLEAN, int, int*);
