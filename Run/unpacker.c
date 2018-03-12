@@ -422,7 +422,8 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
 	localObj = Tcl_NewListObj(0, NULL);
 	break;
       }
-      if (isfinite(*(double *)block))
+      if (isfinite(*(double *)block) || !jsonic) // inf/nan no longer enquoted
+	// in app, allowing inf to be formatted and NaN detected
 	localObj = Tcl_NewDoubleObj(*(double *)block);
       else {
 	localObj = Tcl_NewStringObj("\"", -1);
