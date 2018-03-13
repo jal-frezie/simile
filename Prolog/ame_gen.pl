@@ -724,7 +724,8 @@ remove_offending_dim(Node, Winge) :-
     query(failed_ref_in_dimensions(Capt, Offender), warning, top, [ok], _).
 
 name_matches(Node, Top, Name) :-
-	contains(Top, Node),
+        contains(Top, Node, Chain),
+        \+ (member(Fn, Chain), find_type(Fn, function)), % do not enter fragment
 	% Node has_class submodel,
 	appears(Node),
 	caption_for(Node, Name).
