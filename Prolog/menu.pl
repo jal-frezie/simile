@@ -1187,8 +1187,9 @@ set_properties(Wid, Model) :-
 		    query(bad_syntax(dimensions, Error), error, model_dims,
 			  [ok], _);
 		on_exception(Gax,
-			     get_actual_sizes(Model, UseCount, bare,
-					      Sizes, _,_),
+			     all(ame_gen, get_actual_size,
+				 [unify(Model), build(UseCount), unify(bare),
+				  append(Sizes, []), build(_), build(_)]),
 			     query(Gax, error, model_dims, [ok], _)),
 		    (nonvar(Gax);
 		    member(Dodgy, Sizes),
