@@ -1784,20 +1784,14 @@ made_for will need to be made, so add an integer to separate them
 Note params used in same time step do not have to be set in same loop if in an
 alarm submodel, unless they are in_preceding (with this_loop() wrapper) */
 
-connect_params(AllInsts, Insts) :- select(make(Tgt, Conds, PathPlus,
-            Step, Acts), AllInsts, LeftInsts),
-            select(made_at(Param, OrigPathPlus), Conds,
-            MoreConds), !, remove_non_loopers(PathPlus, Path),
-            remove_non_loopers(OrigPathPlus, OrigPath),
-            suffix(MatchPath, Path), suffix(CommonPath, OrigPath),
-            MatchPath == CommonPath, /* !, 
-            This section generated warning for models which e.g.,
-            incremented something every time step -- commented out
-            (regresssion to 2017-03-20) because it also triggered for
-            things that incremented inside loops but were reset each
-            time step...check should probably be part of circularity
-            check
-
+connect_params(AllInsts, Insts) :-
+	select(make(Tgt, Conds, PathPlus, Step, Acts), AllInsts, LeftInsts),
+	select(made_at(OrigParam, OrigPathPlus), Conds, MoreConds), !,
+	    remove_non_loopers(PathPlus, Path),
+	    remove_non_loopers(OrigPathPlus, OrigPath),
+	    suffix(MatchPath, Path),
+	    suffix(CommonPath, OrigPath),
+	    MatchPath == CommonPath, !,
 	    (member(OrigParam, [this_loop(Deferred), later(Deferred)]),
 	     Param = later(Deferred), !,
 	      (SafePath = CommonPath,
@@ -1811,19 +1805,19 @@ connect_params(AllInsts, Insts) :- select(make(Tgt, Conds, PathPlus,
 	       % UsingLast = 1, use later to sidestep ordering constraints
 	       query(using_own_value(Deferred), warning, top, [ok], _));
 	     Param = OrigParam,
-	     SafePath = CommonPath), */
+	     SafePath = CommonPath),
 							   
- 	    suffix(CommonPathPlus, OrigPathPlus),
- 	    remove_non_loopers(CommonPathPlus, CommonPath), !,
-	    (CommonPath = Path,
+	    (SafePath = Path,
 	        % var(UsingLast), not like this
 		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
 				     Acts) | LeftInsts];
- 	     length(AllInsts, N), % one greater each time
+ 	     suffix(SafePathPlus, PathPlus),
+ 	     remove_non_loopers(SafePathPlus, SafePath), !,
+	     length(AllInsts, N), % one greater each time
 	     ChangedInsts = [make(Tgt, [made_for(Tgt, Param, N) | MoreConds],
 				  PathPlus, Step, Acts),
 			     make(made_for(Tgt, Param, N), [Param],
-				  CommonPathPlus, Step, []) | LeftInsts]),
+				  SafePathPlus, Step, []) | LeftInsts]),
 	    connect_params(ChangedInsts, Insts);
 	Insts = AllInsts.
 
