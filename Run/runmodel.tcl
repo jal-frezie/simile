@@ -1192,12 +1192,13 @@ proc StartRun {node} {
     # ShowMess debug info enter(start_run) ok
 #    set runState($node,currentWin) $winId ;# enables rebuild from run control
 
-    if {[info exists helperTable($node,whichRunEnv)]} {
-	set fpParent $helperTable($node,whichRunEnv)
-    } else {
+#    if {[info exists helperTable($node,whichRunEnv)]} {
+#    (if it does it will be withdrawn during rebuild...)
+#	set fpParent $helperTable($node,whichRunEnv)
+#    } else {
 	set fpParent [FindNodeTopWin $node]
 #	set fpParent {}
-    }
+#    }
     set runState($node,modelRunning) 1
     set topCapt [GetExecTitle $node]
     foreach {smPath spFile} [array get projectParams] {
