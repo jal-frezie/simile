@@ -538,11 +538,9 @@ make_intermediates(
 		/* a typical parameter: made_at(...) will be linked to it at
 		the appropriate looping level in remove_idlers */
 	        (([Var | _] = Target; 	% it cannot be a condition of itself,
-		  member(Units, [diffs, evt_diffs]);
-		  % or its structure if a compartment or event
-		  nonvar(Units),
-		  Units = class_template(delay, _)), !, % or delay
-		    Args = [];
+		  nonvar(Units), % or its structure if a compartment or event
+		  member(Units, [diffs, evt_diffs, class_template(delay, _)])),
+		 !, Args = [];
 		(suffix([sm(_,_,_, nbrs), _Host | ParamTail], ParamContext), !,
 		 % nbr list allows us to look forward in submodel array so be
 		 % sure to restart loops before using values from it
