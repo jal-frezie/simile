@@ -527,6 +527,11 @@ proc RemovePopup {args} {
 }
 
 proc AddPopupMessage {text colour args} {
+# note the model editor still processes events while waiting for the executable
+
+    # so check window is still there
+    set popup $::popper(cur).popup
+    if {![winfo exists $popup]} return
     set limit [PrefValue custom(maxPopupSize) maxPopupSize]
     if {[llength $args]} {
 	set combo [eval $args $limit]
@@ -535,28 +540,26 @@ proc AddPopupMessage {text colour args} {
     } else {
 	set count 0
     }
-    EndsOnly text $count $limit
-
-# note the model editor still processes events while waiting for the executable
-
-    # so check window is still there
-    set popup $::popper(cur).popup
-    if {[winfo exists $popup]} {
-	if {[string length $text]<20} {
-	    pack [label $popup.message$colour \
-		      -text $text -bg $colour] -fill x -expand true
-	} else {
-	    pack [message $popup.message$colour -aspect 400 \
-		      -text $text -bg $colour] -fill x -expand true
-	}
+    set bag $popup.message$colour
+    if {[EndsOnly text $count $limit]==-1} {
+	pack [text $bag -bd 0 -bg $colour -width 4 -height 1 -wrap none] \
+	    -fill both -expand 1
+	$bag insert 1.0 $text
+	after idle [list $bag config -xscroll "Rebag $bag width $count" \
+			-yscroll "Rebag $bag height 0"]
+    } elseif {[string length $text]<20} {
+	pack [label $bag -text $text -bg $colour] -fill x -expand true
+    } else {
+	pack [message $bag -aspect 400 \
+		  -text $text -bg $colour] -fill x -expand true
     }
 }
 
 proc EndsOnly {outerText count leave} {
     upvar 1 $outerText text
     
-    if {$count==-1} { ;# not a real value; tell caller to grey it out
-	return 1
+    if {$count<0} { ;# not a real value; tell caller to grey it out
+	return -1
     }
     set verbosity [string length $text] 
     if {$verbosity>$leave} {
@@ -574,6 +577,21 @@ proc EndsOnly {outerText count leave} {
     } else {
 	return 0
     }
+}
+
+proc Rebag {bag axis tab lo hi} {
+    puts "$hi-$lo==1 || [winfo $axis $bag]<[winfo req$axis $bag] ($tab)"
+    
+    if {$hi-$lo==1} return
+    set finalWidth [winfo req$axis $bag]
+    if {[winfo $axis $bag]<$finalWidth} {
+	if {$tab} {
+	    $bag configure -tabs [expr {$finalWidth/-$tab}]
+	}
+	return
+    }
+    set newSize [expr {round([$bag cget -$axis]/($hi-$lo))}]
+    $bag configure -$axis $newSize
 }
 
 proc ReadGdalRefToList {tableSpec {y {}} {x {}}} {

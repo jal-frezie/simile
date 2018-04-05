@@ -737,6 +737,8 @@ proc EatInput {} {
 }
 
 proc GetShortVals {topNode plName limit} {
+    set showMatrix [expr {[PrefValue custom(dispMatrix) dispMatrix] && \
+			      [llength [GetCompProperty $topNode Dims $plName]]==3}] ;# 2-D plus zero terrminator
     if {[RunningInC $topNode]} {
 	if {[catch {GetHandle $topNode $plName} hdl]} {
 	    set text novalue
@@ -745,7 +747,7 @@ proc GetShortVals {topNode plName limit} {
 	    set loseZeros \
 		[expr {[lsearch {EVENT SQUIRT} [GetModelClass $plName]]>-1}]
 	    set count [count_values $hdl $loseZeros]
-	    if {$count<$limit/5} {
+	    if {$count<$limit/5 || $showMatrix} {
 		set text [extract_list $hdl $count $loseZeros]
 	    } else {
 		set tail [expr {$limit/10}]
@@ -766,8 +768,19 @@ proc GetShortVals {topNode plName limit} {
 		set text [FormatVals %.${precis}g $text]
 	    }
 	}
-	set text [PrettifyValList [TransEnums [GetCompProperty $topNode Trans \
-						   $plName] $text]]
+	set transData [GetCompProperty $topNode Trans \
+			   $plName]
+	if {$showMatrix} {
+	    set transData [list {} {} [lindex $transData end]]
+	}
+	set text [TransEnums $transData $text]
+	if {$showMatrix} {
+	    set result [Matrixify $text]
+	    set count -[lindex $result 0]
+	    set text [lindex $result 1]
+	} else {
+	    set text [PrettifyValList $text]
+	}
     }
     return [list $count $text]
 }
@@ -792,7 +805,37 @@ proc SafeFormat {fmt val} {
 	return $val
     }
 }
-    
+
+proc Matrixify {list2D} {
+    set result {}
+    set outPlace 1
+    set minCol inf
+    set maxCols 1
+    foreach {outIndex line} $list2D {
+	if {[llength $line]} {
+	    set minCol [expr {min([lindex $line 0], $minCol)}]
+	}
+    }
+    foreach {outIndex line} $list2D {
+	while {$outPlace<$outIndex} {
+	    incr outPlace
+	    append result \n
+	}
+	set inPlace $minCol
+	foreach {inIndex val} $line {
+	    while {$inPlace<$inIndex} {
+		incr inPlace
+		append result \t
+	    }
+	    append result $val
+	}
+	set maxCols [expr {max($inPlace, $maxCols)}]
+    }
+
+    puts "mat $list2D min $minCol max $maxCols"
+    return [list [expr {1+$maxCols-$minCol}] $result]
+}
+
 ############################## snap: start ###################################
 proc MakeSnapText {w} {
     text $w.text -yscrollcommand "$w.yscroll set" -setgrid true \

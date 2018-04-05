@@ -30,7 +30,7 @@ units_for(Comp, UnitStr) :-
 		Dims = []),
 	    Base = submodel),
 	to_text_prefix(Dims, Pref),
-	(Base = 1, !, append(Pref, "real", UnitStr);
+	(member(Base, [1, 1/1]), !, append(Pref, "real", UnitStr);
 	 Base = 1/day, m_update'><'use_units_in(Comp, 'No'), !,
 	     append(Pref, "1/time", UnitStr);
 	sicstus_format_to_chars("~s~w", [Pref, Base], UnitStr)).
@@ -80,7 +80,7 @@ build_suffix([H | T], Suffix) :-
 	build_suffix(T, Tail),
 	((H = []; Tail = ""), !,
 	    append(H, Tail, Suffix);
-	append([H, " ", Tail], Suffix)).
+	append([H, ", ", Tail], Suffix)).
 
 get_info(_Wid, Comp, enum_type_defns, ETDefns) :-
 	(find_type(Comp, submodel), !,

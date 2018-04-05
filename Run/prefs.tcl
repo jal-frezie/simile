@@ -234,6 +234,7 @@ proc Pref_Dialog {} {
                 comp* {set frame $popupF}
 		eqList* {set frame $eqListF}
 		maxPopupSize {set frame $popupF.line2}
+		dispMatrix {set frame $popupF.line2}
                 bigButtons {set frame $barF}
                 popupHelp {set frame $barF}
                 tlPopups {set frame $barF}

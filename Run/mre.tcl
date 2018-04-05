@@ -1105,7 +1105,10 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 	variable parseStatus
 	variable dp0
 
-	set pStr [open $oldPath r]
+	if {[catch {open $oldPath r} pStr]} {
+	    Query [list no_shf_for_project $oldPath] warning shf {} ok
+	    return
+	}
 	set dada [read $pStr]
 	close $pStr
 	if {![EmptyDisplays]} {

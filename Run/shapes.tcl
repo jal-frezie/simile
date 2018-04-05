@@ -646,15 +646,18 @@ proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
     set stackDepth 2
     while {$stackDepth <= $stack} {
         set stackDistance [expr {$stackDepth*$features/25}]
-	if {$stackDepth == 5} { # variable membership -- put last on other side
-	    set stackDistance [expr {-$stackDistance/2}]
+	if {$stackDepth == 3 && $stack == 5} {
+	    # variable membership -- put last on other side
+	    set stackDistance [expr {-$stackDistance}]
+	    set stackDepth 5
 	}
 	set levelLine {}
 	foreach pt $mptz {
 	    lappend levelLine [expr $pt+$stackDistance]
 	}
 	$w create line $levelLine -width $stackWidth \
-	    -tags [list $tagSet size_on_this realwidth($stackWidth) no_stipple]
+	    -tags "$tagSet size_on_this realwidth($stackWidth) \
+		       no_stipple has_info"
         incr stackDepth
     }
     ResetColours $w flow {} $colourScheme [lindex $tagSet 0]

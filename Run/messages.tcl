@@ -218,6 +218,8 @@ set msgs(compChoice) [tr. {Default is gcc/g++ included in Simile distribution. O
 set msgs(compDescPop) [tr. {Enable popups for component's equation and description when pointer hovers on component.}]
 set msgs(compValPop) [tr. {Enable popups for component's current value(s) or instance indices when pointer hovers on component.}]
 set msgs(compCmtPop) [tr. {Enable popups for component's comment text when pointer hovers on component.}]
+set msgs(maxPopupSize) [tr. {Maximum number of characters that can appear in a popup. If the content is longer than this, the middle portion will be elided.}]
+set msgs(dispMatrix) [tr. {When displaying a 2-D array of values, omit the indices and place the values on a grid to indicate their positions in the array.}]
 set msgs(eqListWhere) [tr. {Include information about the origins of each equation's input parameters in the equation listing}]
 set msgs(eqListETDefns) [tr. {Include names and members of enumerated types defined in each submodel in the equation listing}]
 set msgs(eqListComments) [tr. {Include comments in the equation listing}]
@@ -910,6 +912,8 @@ set msgs(missing_var_requested_message) [tr. {An instance of the I/O tool "%1$s"
 set msgs(missing_var_requested_detail) [tr. {If the model has changed since the I/O tools were set up, you should adjust the settings of the I/O tools to reflect these changes, otherwise more warnings may appear and the model may stop running.}]
 set msgs(no_spf_for_project_title) [tr. {Problem loading project}]
 set msgs(no_spf_for_project_message) [tr. {Parameter metafile %1$s could not be found.}]
+set msgs(no_shf_for_project_title) [tr. {Problem loading project}]
+set msgs(no_shf_for_project_message) [tr. {Helper setup file %1$s could not be found.}]
 
 set msgs(unhandled_tcl_error_title) [tr. {Simile error}]
 set msgs(unhandled_tcl_error_message) [tr. {Simile encountered an unexpected problem:

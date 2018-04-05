@@ -971,6 +971,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(gridV) gridV {15 1 1000} [tr. "Vertical pitch"]] \
 		  [list custom(gridD) gridD {10 -100 100} [tr. "Depth"]] \
 		  [list custom(maxPopupSize) maxPopupSize {500 10 10000} [tr. "Size limit"]] \
+		  [list custom(dispMatrix) dispMatrix OFF [tr. "Show 2-D values as matrices"]] \
 		  [list custom(bigButtons) bigButtons OFF [tr. "Use large buttons"]] \
 		  [list custom(saveExtras) saveExtras [list CHOICE [tr. "Canvas file"] [tr. "Model file only"]] [tr. "Save models as..."]] \
 		  [list custom(recentCount) recentCount {10 0 200} [tr. "Entries on recently used file list"]] \

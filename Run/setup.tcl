@@ -61,7 +61,7 @@ proc Newer {is than t} {
 set installedCreds [file join $SIMILE_PATH Run userinfo.txt]
 set creds [file join $custom(prefDir) userinfo.txt]
 #if {[Newer $installedCreds $creds m]}
-if {![file exists $creds]} {
+if {$tcl_platform(platform) eq "windows" || ![file exists $creds]} {
     file copy -force $installedCreds $creds
 }
 
