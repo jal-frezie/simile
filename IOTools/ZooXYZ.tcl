@@ -4,6 +4,7 @@
 set newHelperClass Shapes3D20141208
 itcl::class similescript::$newHelperClass {
     inherit Helper
+    public variable inTitle tbc
     variable template {}
 
     proc Identify {} {
@@ -57,6 +58,8 @@ itcl::class similescript::$newHelperClass {
 		AddItem [lindex $winTitle 1]
 		tkwait window $winId.ms
 	    }
+	    array set titlePosns {spheres 4 lines 7 ellipses 4}
+	    set inTitle [lindex $State  0 $titlePosns([lindex $State 0 0])]
 	    Display 0 0 0
 	    return
 	}	

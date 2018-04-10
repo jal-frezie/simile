@@ -218,6 +218,7 @@ itcl::class similescript::$newHelperClass {
 		$winId.add delete $serialActive [incr serialActive]
 		GrowMenuList end $layerObj ;# wrong order?
 	    } MoveUpALevel {
+		if {$serialActive==1} return ;# already at top
 		set planes [linsert [lreplace $planes $oldIdx $oldIdx] \
 				$oldIdx+1 $layerObj]
 		set subbedObj [lindex $planes $oldIdx]
@@ -227,6 +228,7 @@ itcl::class similescript::$newHelperClass {
 		$winId.add entryconfig [expr {$serialActive-2}] \
 		    -label [$layerObj GetTitle]
 	    } MoveDownALevel {
+		if {$oldIdx==0} return ;# already at bottom
 		set planes [linsert [lreplace $planes $oldIdx $oldIdx] \
 				$oldIdx-1 $layerObj]
 		set subbedObj [lindex $planes $oldIdx]

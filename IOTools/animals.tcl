@@ -205,7 +205,7 @@ itcl::class similescript::$newLayerClass {
 
     public method Settings {} {
 	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
-	wm title $dlg [tr. "Photo layer properties"]
+	wm title $dlg "[GetTitle] properties"
 	wm protocol $dlg WM_DELETE_WINDOW "set polyProps(xdone) 0"
         
 	set rg [labelframe $dlg.relgeom -text "Offset and scaling"]

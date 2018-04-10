@@ -3,8 +3,7 @@
 
 set newLayerClass Lines20171122
 itcl::class similescript::$newLayerClass {
-    inherit Layer
-    variable useNodes
+    inherit ShapeLayer
 
     proc Identify {} {
 	return "Line Plotter"
@@ -12,34 +11,11 @@ itcl::class similescript::$newLayerClass {
 
     constructor {modelInst mainCanvas xzoom yzoom {state {}}} {
 # perverse extra body because base class constructor has args
-	Layer::constructor $modelInst $mainCanvas
-    } {
-	::similescript::Shapes3D20141208 ${this}_3dinst $modelInst \
-	    [list layer lines $winId $xzoom $yzoom] $state
-    }
-
-    destructor {
-	itcl::delete object ${this}_3dinst
-	$winId delete [namespace tail $this].main
-    }
+	ShapeLayer::constructor $modelInst $mainCanvas lines \
+	    $xzoom $yzoom $state
+    } { }
 
     public method GetTitle {} {
-	return "Lines"
-    }
-
-    public method Display {time dispInt step} {
-	${this}_3dinst Display $time $dispInt $step
-    }
-
-
-    public method ZoomTo {x y} {
-	set subWin [winfo parent $winId]
-	array set ::gen3d1::scaleVector [list $subWin,xoff [expr {250.0/$x}] \
-					     $subWin,yoff [expr {-250.0/$y}] \
-					     $subWin,xmag [expr {500.0/$x}] \
-					     $subWin,ymag [expr {500.0/$y}]]
-    }
-    public method PrepareSaveString {} {
-	set State [${this}_3dinst cget -State]
+	return [GetSortedTitle Lines]
     }
 }
