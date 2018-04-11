@@ -431,7 +431,7 @@ namespace eval slide139 {
     proc WidgetSelnToC {node fixed args} {
         global widgetSeln
         set sub [join [concat [list $node] $args] ,]
-        return [SetArrayIfUsed $node $fixed $args $widgetSeln($sub)]
+	return [SetArrayIfUsed $node $fixed $args $widgetSeln($sub)]
     }
 
     proc SliderArrayEvt {node count} {
@@ -645,6 +645,9 @@ namespace eval slide139 {
                 set f {}
             }
             set data [lindex [GetModelValue $node] 0]
+	    if {$data eq "novalue"} {
+		error "Component $title has been deleted"
+	    }
             set useDim [FindUseDim $sliderDoes($title,dims)]
 	    if {$useDim==-1} {
 		if {[info exists widgetSeln(resetting)]} {
