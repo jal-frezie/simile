@@ -832,7 +832,6 @@ proc Matrixify {list2D} {
 	set maxCols [expr {max($inPlace, $maxCols)}]
     }
 
-    puts "mat $list2D min $minCol max $maxCols"
     return [list [expr {1+$maxCols-$minCol}] $result]
 }
 

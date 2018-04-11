@@ -1446,7 +1446,8 @@ proc GetTclCompProperty {topNode prop args} {
 		return $extracted
 	    }
 	} Dims|Trans {
-	    set dimRefs [GetFullDims [FindRecord $node] typeList]
+	    if {[set rec [FindRecord $node]] eq ""} {return noitem}
+	    set dimRefs [GetFullDims $rec typeList]
 	    set count 0
 	    set transList {}
 	    while {$count<[llength $dimRefs]-1} {

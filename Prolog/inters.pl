@@ -225,15 +225,22 @@ ensure_separate(Base, Assoc, SepBase) :-
 :- dynamic(macro_expansion/2).
 :- dynamic(fragment_expansion/5).
 
-expand_library(Var, NewVar) :-
+wrap_fp(Arg, TB, formal_parameter(Arg, TB)).
+expand_library(Var, Expanded) :-
 	shed_dummy_args(Var, Fn),
 	Fn =.. [Op | Args],
 	length(Args, Arity),
 	member(MacroMatch, [right, bad_format /*, bad_arity */]),
 	% do not fail with wrong arg count, there may be a matching builtin
-	macro_expansion(_Orig, (UseVar --> NewVar)),
+	macro_expansion(Orig, (UseVar --> NewVar)),
 	(MacroMatch = right,
-	    UseVar = Fn, !;
+	 (Orig = 'System' ->
+	      UseVar = Fn,
+	      Expanded = NewVar;
+	  all(inters, wrap_fp, [build(Args), unify(ThenBuilding),
+				  build(WrappedArgs)]),
+	  UseVar =.. [Op | WrappedArgs],
+	  Expanded = macro_instance(NewVar, ThenBuilding)), !;
 	 UseVar =.. [Op | GoodArgs],
 	    (MacroMatch = bad_format,
 		length(GoodArgs, Arity),
@@ -272,9 +279,9 @@ expand_special_role(Param, LinkSpecs, Fn) :-
 read_library_funx(Done) :-
 	retractall(macro_expansion(_Cat, _Line)),
 	% in case I ship it after a run
-	assert(macro_expansion('Built-in', (if Bool then ThenCl else ElseCl -->
+	assert(macro_expansion('System', (if Bool then ThenCl else ElseCl -->
 			       choose(Bool, ThenCl, ElseCl)))),
-	assert(macro_expansion('Built-in', (if Bool then ThenCl elseif IfCl -->
+	assert(macro_expansion('System', (if Bool then ThenCl elseif IfCl -->
 			       choose(Bool, ThenCl, if IfCl)))),
 %	assert(macro_expansion('Built-in', (choose(Bool, ThenCl, ElseCl) -->
 %					       (Bool?ThenCl'><'ElseCl)))),
@@ -975,8 +982,9 @@ make_intermediates(
 	        promote_unit(Dun, const_int)), !; % will be integer later
 		  throw(bad_index_number(Dim, makearray, 16777215))),
 	        NowBuilding = [LocalLoop | BuildingArrays],
-	        length(BuildingArrays, BDept),
-	        append_atoms(arraybuild, BDept, BuildName),
+	        % length(BuildingArrays, BDept),
+	        % append_atoms(arraybuild, BDept, BuildName),
+		generate_name(c, arraybuild, BuildName, Used),
 % added to stop bad rankings behaviour -- may clash with comp names
 % sorted that by not instantiating comp loops either...
 	        LocalInd = glob(BuildName, _);
@@ -1180,7 +1188,14 @@ Now one that uses a special conditional level */
 	     Grouped = [sm(_,_,_, vm_loop(_,_,_,_)) | _],
 	     append(ArrayPayload, [Grouped | FlatBase], SourceContext);
 	    throw(no_list_to_flatten(SubExp)));
-	    
+
+	member(Source-NextBuilding,
+	       [macro_instance(SubExp, BuildingArrays)-BuildingArrays,
+		formal_parameter(SubExp, Load)-Load]), !,
+	make_intermediates(SubExp, SubId, Target, 
+			       DestPath, BackSwap, PrevInters, NextBuilding, 
+			       Step, Used, Units, NewInters,
+			       part_result(SourceContext, Setups, Args, SourceRef));
 	Source = ready(ToDoFirst), % keep deps but return TRUE
 	    replace_subexps(ToDoFirst, inters, just_inputs, Args, _,_,_),
 	    length(Args, _L), !,

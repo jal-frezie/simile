@@ -544,6 +544,7 @@ Jan 99 : replaced by a general purpose subexpression substituter.
 Sep 99 : middle arg added to specify top_down or bottom_up */
 
 replace_subexps(Expr, TestModule, Test, Data, Dir, AllVarPairs, FinalExpr) :-
+    var(Expr), !, FinalExpr = Expr, AllVarPairs = [];
 	(Dir = top_down,
 	RunTest =.. [Test, Data, Expr, MidExpr, Recurse],
 	call(TestModule'><'RunTest), !,
@@ -554,7 +555,7 @@ replace_subexps(Expr, TestModule, Test, Data, Dir, AllVarPairs, FinalExpr) :-
 	Recurse = 0,
 	    NewExpr = MidExpr,
 	    VarPairs = [var_pair(Expr, NewExpr)]);
-	 (atomic(Expr); var(Expr);
+	 (atomic(Expr);
 	  member(Expr, [size(_), size(_,_), at_posn(_), at_posn(_,_X,_Y),
 			param(_,_,_,_,_)])), !,
 		VarPairs = [],

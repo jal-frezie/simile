@@ -4,7 +4,7 @@
 
 sicstus_module( utility, [wake/0, genint/2, rt_portray/1, trim_float/2,
 			  unique_name/2, unique_name/3,
-			  y_or_n/1, any_setof/3,foreach/3, wrap/3,
+			  y_or_n/1, any_setof/3,foreach/3,
 			  all/3, unify_all/2, get_precedence/2,
 			  replace_in_list/4, write_with_breaks/2,
 			  export_with_breaks/2,
@@ -129,10 +129,10 @@ foreach( Var, [Head|Tail], Command ) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % wrap: utility to put arg inside a function. Typically used in all.
-
-wrap(Arg, Functor, Function) :-
-	Function =.. [Functor, Arg].
-
+%
+%wrap(Arg, Functor, Function) :-
+%	Function =.. [Functor, Arg].
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Standard format for recursion: all.
 

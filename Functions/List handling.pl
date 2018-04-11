@@ -2,18 +2,17 @@ subtotals(Arr) --> [st]=makearray((if first(place_in(1)) then 0 else
     element(sofar([st]),preceding(place_in(1))))+element(Arr,place_in(1)),
     count(Arr)),[st].
 
-rankings(ExL) --> [L] = ExL,
-		  howmanytrue([L]>makearray([L], count([L])))+1.
+rankings(L) --> sum(if L>makearray(L, count(L)) then 1 else 0)+1.
 
 howmanytrue(BoolList) --> sum(if BoolList then 1 else 0).
 
 firsttrue(BoolArr) --> firsttrueafter(BoolArr, '"NULL"').
-firsttrueafter(BoolArr, Start) --> [SelfCont] = BoolArr, [st]=makearray(
+firsttrueafter(BoolArr, Start) --> [st]=makearray(
 	if place_in(1)==Start then '"NULL"'
 	elseif not (first(place_in(1)) or
 		element(sofar([st]),preceding(place_in(1))) == '"NULL"')
 	    then element(sofar([st]),preceding(place_in(1)))
-	elseif element([SelfCont],place_in(1)) then place_in(1)
+	elseif element(BoolArr,place_in(1)) then place_in(1)
 	else '"NULL"', count(BoolArr)),
     element([st],count(BoolArr)).
 

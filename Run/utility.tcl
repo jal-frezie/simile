@@ -580,7 +580,7 @@ proc EndsOnly {outerText count leave} {
 }
 
 proc Rebag {bag axis tab lo hi} {
-    puts "$hi-$lo==1 || [winfo $axis $bag]<[winfo req$axis $bag] ($tab)"
+    #puts "$hi-$lo==1 || [winfo $axis $bag]<[winfo req$axis $bag] ($tab)"
     
     if {$hi-$lo==1} return
     set finalWidth [winfo req$axis $bag]
