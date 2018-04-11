@@ -556,7 +556,7 @@ table_ref(got(Datta, Tabs), Ref, DumFn, Recurse) :-
 		macro_expansion(Cat, (Fn --> _Defn)),
 		Fn =.. [Functor | TptArgs];
 		fragment_expansion(Cat, _File, Functor, _RetVal, TptArgs)),
-	    \+ Cat = 'Built-in',
+	    \+ member(Cat, ['System', 'Built-in']),
 	    length(TptArgs, Arity),
 	    (Args = [''], UseArity = 0;
 		UseArity = Arity),
