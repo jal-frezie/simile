@@ -514,6 +514,7 @@ install:
 		IOTools/grid_layer.tcl \
 		IOTools/polygon_layer.tcl \
 		IOTools/photo_layer.tcl \
+		IOTools/shape_layer.tcl \
 		IOTools/animals.tcl \
 		IOTools/ZooXYZ.tcl \
 		IOTools/Standard\ tools/Control.tcl \
