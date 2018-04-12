@@ -540,6 +540,8 @@ proc report_context {} {
 proc check_limit {trigger lower upper action graphId step ns_extras} {
     global event
 
+set CHECK_LOWER 1
+set CHECK_UPPER 2
     set limit_fuzz 1e-12
     # allow use of predictions with small (e.g., rounding-only) errors
     upvar \#0 $ns_extras extras
@@ -550,39 +552,37 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 
 #puts "cmd [info level 0] phase $phase extras $extras"
     switch -- $phase {
-	0 - 1 { ;# resetting model, do not use saved data
-	    lset extras 0 $trigger ;# for prediction next step
-	} 2 { ;# next 3 are R-K substeps
+	2 { ;# next 3 are R-K substeps
 	    lset extras 1 $trigger
 	} 3 {
 	    lset extras 1 [expr {([lindex $extras 1]+$trigger)/2}]
-	} 5 - 6 - 9 - 10 - 11 {
+	} 0 - 1 - 5 - 6 - 9 - 10 - 11 {
 	    set heading_out 0
 	    set out 0
-	    if {$phase == 9} {
+	    if {[lsearch {9 10 11} $phase] > -1} {
 		set old $trigger ;# no heading or rate
 		lset extras 2 0
 	    } else {
 		set old [lindex $extras 0]
 	    }
-	    if {$action & 1} {
+	    if {$action & $CHECK_LOWER} {
 		if {$trigger<$old} {
 		    set heading_out -1
 		    set to_limit [expr {$trigger-$lower}]
 		    set rate [expr {$old-$trigger}]
 		}
 		if {$trigger<=$lower+$limit_fuzz} {
-		    set out -1
+		    set out [expr {$out | $CHECK_LOWER}]
 		}
 	    }
-	    if {$action & 2} {
+	    if {$action & $CHECK_UPPER} {
 		if {$trigger>$old} {
 		    set heading_out 1
 		    set to_limit [expr {$upper-$trigger}]
 		    set rate [expr {$trigger-$old}]
 		}
 		if {$trigger>=$upper-$limit_fuzz} {
-		    set out 1
+		    set out [expr {$out | $CHECK_UPPER}]
 		}
 	    }
 
@@ -591,18 +591,20 @@ proc check_limit {trigger lower upper action graphId step ns_extras} {
 # but not already fired (including this pass) I need to make a
 # prediction (to be treated as an overshoot if out).
     
-	    if {[RealPhase $phase]} {
+	    if {$phase == 0 || $phase == 1 || [RealPhase $phase]} {
 		lset extras 0 $trigger ;# for prediction next step
-		if {$out} {
-		    if {$out != [lindex $extras 2]} {
-			set event(culprit) $graphId
-			report_context
-			lset extras 2 $out
-			return [expr {$out*($action==1?-1:1)}]
+		set result [expr {$out & ~[lindex $extras 2]}] ;# ~ is bwise not
+		lset extras 2 $out ;# for next step, and avoid retrospective
+		if {$phase == 0 || $phase == 1} {
+		    return 0
+		}
+		if {$result} {
+		    set result \
+			[expr {($action==3 && ($result & $CHECK_LOWER))?-1:1}]
 # if doing lower bound only, result should be boolean so return 1 not -1
-		    }
-		} else {
-		    lset extras 2 0
+		    set event(culprit) $graphId
+		    report_context
+		    return $result
 		}
 	    }	    
 	    if {$heading_out && [lindex $extras 2] != $heading_out} { 

@@ -1052,8 +1052,10 @@ make_evaluation_routine(
 	Expr = ref_to(Struct), !,
 	    make_scalar(Language, Struct, Used, SStruct),
 	    make_pointer(Language, SStruct, Term);
-	Expr = graph_id(Comp),
+	Expr = graph_id(Comp), !,
 	    nth(Term, Used, Comp);
+	Expr = flag_derived_event(_GrapghId, Val), Language = tcl, !,
+	    make_evaluation_routine(Language, Val, Used, Term);
 	Expr =.. [Op | Args],
 	    all(language, make_evaluation_routine,
 		[unify(Language), build(Args), unify(Used), build(VArgs)]),

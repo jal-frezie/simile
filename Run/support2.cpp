@@ -180,23 +180,20 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
   double old, to_limit, rate, prediction;
   int out, heading_out, phase = int(ts[0]), result;
   switch (phase) {
-  case 0: case 1: // resetting model, do not use saved data
-    extras->t1 = trigger; // for prediction next step
-    // go = (to_limit < 0); events on init = nothing but trouble
-    break;
   case 2: // next 3 are R-K substeps
     extras->t2 = trigger;
     break;
   case 3:
     extras->t2 = (extras->t2+trigger)/2;
     break;
+  case 0: case 1: // resetting prediction, do not use saved data
   case 5: // setting model rates for real -- euler
   case 6: // setting model rates for real -- R-K
   case 9: // setting model rates for real on reset -- no integration
   case 10: // error checking -- euler
   case 11: // error checking -- R-K
     heading_out = out = 0;
-    if (phase==9) {
+    if (phase==0 || phase==1 || phase==9) {
       old = trigger; // no heading or rate
       extras->status = 0; // ignore previous activation state
     } else
@@ -226,10 +223,12 @@ int InstanceOfModel::check_limit (double trigger, double lower, double upper,
        to make a prediction (to be treated as an overshoot if out).
     */
     
-    if (RealPhase(phase)) {
+    if (phase==0 || phase==1 || RealPhase(phase)) {
       extras->t1 = trigger; // for prediction next step
       result = out & ~extras->status; // ~ is bitwise not
       extras->status = out; // for next step, and avoid retrospective prediction
+      if (phase==0 || phase==1)
+	return 0;
       if (result) {
 	result = (result & CHECK_UPPER)?1:-1;
 	userStop.targetId = graphId; // for pause-on-event reporting
