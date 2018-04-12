@@ -607,8 +607,8 @@ set CHECK_UPPER 2
 		    return $result
 		}
 	    }	    
-	    if {$heading_out && [lindex $extras 2] != $heading_out} { 
-		# make prediction for this event
+	    if {$heading_out && !([lindex $extras 2] & ($heading_out==1?$CHECK_UPPER:$CHECK_LOWER))} {
+		# make prediction for this event, poss retrospective if not real
 		if {$phase==6 || $phase==11} { ;# ok approximate to quadratic
 		    set a [expr {-$heading_out*2*($trigger-2*[lindex $extras 1]+$old)/pow([glob_element dts $step],2)}]
 		    if {$a==0} { ;# it is linear
