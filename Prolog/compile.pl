@@ -1697,7 +1697,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
 			 SmStep, SmStep, ExtInters, Used, Assigns,
 			 Setups, Path, RefList, AllInters),
-	 append(ExtInters, Inters, AllInters), % declare them only once
+	 append(Inters, ExtInters, AllInters), % declare them only once
 	(nonvar(Made), !; Made = Dest),
 	connect_params([make(Made, UseList, Path, UseStep, Acts) | Setups],
 	                Actions);
