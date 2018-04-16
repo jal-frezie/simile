@@ -357,10 +357,6 @@ instance_of( function, Node, Path, Instances, Refs) :-
 			    DiffSt),
 		Instances = [DiffSt, Instance];
 % derived event or state: make magnitude expression
-	     (EvtPairs = [_|_], !;
-	       caption_for(Node, Capt),
-	         raise_exception(no_antecedents_for_derived(Capt))),
-
 	     (SubbedExpr = after(Wait, Eqn) -> % delay
 	      PipeUnits = class_template(delay, _ArgUs)-Units,
 	      % _ArgUs is unified with calculated units of arg by declaration

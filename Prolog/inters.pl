@@ -225,7 +225,11 @@ ensure_separate(Base, Assoc, SepBase) :-
 :- dynamic(macro_expansion/2).
 :- dynamic(fragment_expansion/5).
 
-wrap_fp(Arg, TB, formal_parameter(Arg, TB)).
+wrap_fp(Arg, TB, Wrapped) :-
+    integer(Arg) ->
+	Wrapped = Arg;
+    Wrapped = macro_parameter(Arg, TB).
+
 expand_library(Var, Expanded) :-
 	shed_dummy_args(Var, Fn),
 	Fn =.. [Op | Args],
@@ -1191,7 +1195,7 @@ Now one that uses a special conditional level */
 
 	member(Source-NextBuilding,
 	       [macro_instance(SubExp, BuildingArrays)-BuildingArrays,
-		formal_parameter(SubExp, Load)-Load]), !,
+		macro_parameter(SubExp, Load)-Load]), !,
 	make_intermediates(SubExp, SubId, Target, 
 			       DestPath, BackSwap, PrevInters, NextBuilding, 
 			       Step, Used, Units, NewInters,
@@ -1515,9 +1519,13 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	lower(MxOpStr, OpStr).
 
 units_for_trigger_mag(Fn, MagUnits) :-
+    m_class'><'Fn has_class_refinement value of sporadic(_), !,
+    MagUnits = int-[];
 	(setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits), !;
 	    caption_for(Fn, Capt),
-	    throw(no_triggering_events(Capt))),
+	    (Fn is_of_sort function ->
+		 throw(no_antecedents_for_derived(Capt));
+	     throw(no_triggering_events(Capt)))),
 	% check dimensions the same
 	all(m_update, analyze_array,
 	    [build(EvtUnits), build(EvtBases), build(EvtDimses)]),
