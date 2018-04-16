@@ -473,8 +473,10 @@ namespace eval grid005 {
 		  -variable [namespace current]::useNodes($winId,imgs)] \
 	    -side left
         
-        pack $coloursF -padx 10 -pady 10 -fill x
-        
+        if {$max($winId)-$min($winId)>1} {
+	    pack $coloursF -padx 10 -pady 10 -fill x
+        }
+	
         set rangeF [labelframe $fd.range -text "Scale range"]
         pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,dataMin)"] -fill x  -padx 10
         pack [label $rangeF.datamaxL -text "Data max. so far: $useNodes($winId,dataMax)"] -fill x  -padx 10
