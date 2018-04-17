@@ -44,3 +44,5 @@ interpolate(X,Xarray,Yarray) -->
     yhigher = element(Yarray,lower_array_position+1),  
     if X<xlower then ylower elseif X>xhigher then yhigher
         else ylower+(X-xlower)*(yhigher-ylower)/(xhigher-xlower).
+
+reverse(A) --> makearray(element(A,1+count(A)-place_in(1)),count(A)).
