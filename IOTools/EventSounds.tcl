@@ -125,7 +125,7 @@ itcl::class similescript::$newHelperClass {
 				   $topNode]
                     $modelInst ReleaseClicks
                     $winId.message configure -text \
-			{Use + button to add sounds to model events Right click on caption to remove.}
+			{Right click on caption to remove.}
 		    if {$sound eq ""} {
 			return
 		    }

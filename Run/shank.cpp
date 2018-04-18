@@ -272,6 +272,7 @@ double erand48_by_val(void* seed) {
 class EvtCmdData {
 public:
   int gphId;
+  double min, max;
   char* cmd;
   EvtCmdData* next;
 
@@ -354,17 +355,18 @@ void report_events(int dimty, const int inds[], int evts,
   }
 
   // now do commands associated with events
-  EvtCmdData* CheckEvtCmd;
+  EvtCmdData* EvtCmd;
   // ref_pointers[0] is -ve to avoid confusion with dummy value
   // passed here in earlier executables
   for (count=0;count<evts;++count) {
-    CheckEvtCmd = EvtCmdList;
+    EvtCmd = EvtCmdList;
     // printf("Cmding %d\n", ref_pointers[count]);
-    while (CheckEvtCmd) {
-      if (CheckEvtCmd->gphId == ids[count]) {
-	play_at_vol(CheckEvtCmd->cmd, sums[count]);
+    while (EvtCmd) {
+      if (EvtCmd->gphId == ids[count]) {
+	play_at_vol(EvtCmd->cmd,
+		    (sums[count]-EvtCmd->min)/(EvtCmd->max-EvtCmd->min));
       }
-      CheckEvtCmd = CheckEvtCmd->next;
+      EvtCmd = EvtCmd->next;
     }
   }
 }
@@ -1507,14 +1509,16 @@ void ExecutingModel::advance_time (int phase, double fraction) {
   }
 
 void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
-  int graph;
+  int spare;
   EvtCmdData *going, **insert;
+  node_data_line* nodlin;
+  double min,max;
 
-  graph = modelSpec->nodedata[modelSpec->getinfo(nodeId, &graph)].graph;
+  nodlin = modelSpec->nodedata + modelSpec->getinfo(nodeId, &spare);
   insert = &EvtCmdList;
   while (*insert) { // if evt had a command, remove it
     going = *insert;
-    if (going->gphId == graph) {
+    if (going->gphId == nodlin->graph) {
       *insert = going->next;
       delete going;
     } else
@@ -1522,7 +1526,17 @@ void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
   }
   if (*cmd) { // command non-null
     going = new EvtCmdData;
-    going->gphId = graph;
+    min = nodlin->min;
+    max = nodlin->max;
+    if (nodlin->datatype==REAL && (min==-1e100 || max==1e100) ||
+	nodlin->datatype==INTEGER && (min==-268435455 || max==268435455)) {
+      going->min = 0;
+      going->max = 1;
+    } else {
+      going->min = min;
+      going->max = max;
+    }
+    going->gphId = nodlin->graph;
     // printf("Added cmd %s for %d\n", cmd, insert->gphId);
     going->cmd = strdup(cmd);
     going->next = NULL;
