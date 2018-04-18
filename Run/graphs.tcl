@@ -1086,13 +1086,14 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
         #	    return 0
         #	}
     } else {
-	set table_entry(fileName) {}
 	set table_entry(dataField) {}
         #        if {![string compare \
         #                    [GetDataFile "No data file yet specified"] {}]} {
         #            return 0
         #        }
 	set table_entry(xpose) 0 ;# ttk checkbutton doesnt set this unless hit
+
+	# Insert previous .csv file and index columns if avail to save time
         if {[info exists table_entry(indices)] && \
 		[llength $table_entry(indices)]} {
 	    LoadDataFile columns 0 $mdl
@@ -1104,6 +1105,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 		incr i
 	    }
 	} else {
+	    set table_entry(fileName) {}
 	    set table_entry(indices) {}
 	}
     }
