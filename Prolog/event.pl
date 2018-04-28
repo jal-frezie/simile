@@ -1083,7 +1083,8 @@ spread_dims(Node) :-
 		    SpecChanged = units),
 		update_links_and_vars(IList);
 	      \+ GivenBase = any,
-		value_propagates(out, Node, Next, _Link),
+	        m_update'><'use_units_in(Node, 'Yes'),
+	        value_propagates(out, Node, Next, _Link),
 		multi_prop(out, Next, Node, 5),		
 % if eqn does not parse following unit change, see if it is in a loop
 % (limit search to 6 levels). If so, and this has not already been done,
@@ -2313,9 +2314,12 @@ when its time comes. */
 
 delete_net(Top) :-
 	tk_get_pref(deleteEndToEnd, FollowArcs),
-	setof(Tgt, (doomed(Tgt),
+	(setof(Tgt, (doomed(Tgt),
 		       \+ Tgt = Top,
-		       deletable(Top, FollowArcs, Tgt)), Range),
+		       deletable(Top, FollowArcs, Tgt)), Range);
+	 output'><'safe_tcl_eval(['DebugMess',
+				  dq('Nothing deleted -- menu abilities set for wrong submodel?')], _),
+	 Range = []),
 	(setof(NewLook, Tgt2^(member(Tgt2, Range),
 			      presence_affects(Tgt2, NewLook),
 			    \+ member(NewLook, Range)), ChangedLooks), !;

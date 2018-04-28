@@ -69,6 +69,9 @@ proc prolog {plCmd} {
     global plPipe window_info
     send_pl_cmd call:$plCmd
     set plOutcome [KeepLooking]
+    if {$plOutcome != 1} { # something wrong, remove progress box
+	ResetProgressBox
+    }
     return $plOutcome
 }
 

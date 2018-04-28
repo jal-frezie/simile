@@ -93,7 +93,7 @@ tk_menu(Window, Header, Item) :-
     (Window = '.hi.canvas', !;
      finish_window_resize),
     finish_old_edit(none),
-    (menu_handle(Window, Header, Item); true).
+    menu_handle(Window, Header, Item). % allow to fail
 
 tk_menu_select(Obj_type, from_box) :-
 /*	into_save_file(tk_menu_select(Obj_type, from_box) ), */

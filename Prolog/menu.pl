@@ -793,7 +793,8 @@ menu_handle(Win, window, NastyAtom) :-
 	    set_halo(Win, Way, Depth),
 	    event'><'update_halo(Win)).
 
-menu_handle(_, _, _).
+% predicate not too big to fail
+% menu_handle(_, _, _).
 
 record_lost_ghosts(Model) :-
 	contains(Model, Ghost),
