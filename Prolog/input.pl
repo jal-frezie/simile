@@ -51,8 +51,8 @@ tk_get_triggers(Wid, Comp) :-
 
 :- dynamic(log_interaction/0).
 
-tk_bar_edit_menu(Wid) :-
-	bar_edit_menu(Wid).
+tk_bar_edit_menu(_Wid). % :-
+%	bar_edit_menu(Wid).
 
 tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name, CD) :-
 /* Extra debugging data not put into save file while swapping to MDI

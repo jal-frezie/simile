@@ -191,12 +191,8 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	        reset_titles(Parent),
 	        setof(Mover, (contains(Parent, Mover),
 				 appears(Mover), \+ Mover = Parent), Lighters);
-		/* paste into model which already has content --
-		now relink ghosts, if their bases are in same toplevel */
-	    contains(TopNode, Parent),
-		is_toplevel(TopNode),
-		relink_ghosts(TopNode, Translated),
-		setof(Mover, O^(member(O-Mover, Translated),
+	     % paste into model which already has content
+	     setof(Mover, O^(member(O-Mover, Translated),
 				appears(Mover)), Lighters)),
 	    setof(Mover, (member(Mover, Lighters),
 			     find_all_comps(Parent, Mover)), Movers),
@@ -214,6 +210,10 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    (find_space_for(Box, Parent, Lighters, Pt, [Xoffset, Yoffset]),
 		all(event, adjust_posn,
 		    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
+		% now relink ghosts, if their bases are in same toplevel */
+		contains(TopNode, Parent),
+		is_toplevel(TopNode),
+		relink_ghosts(TopNode, Translated),
 		all(event, retitle_duplicate, [build(Movers), unify(Used)]),
 		(member(Mover, Movers),
 		    redisplay(Mover),
@@ -818,7 +818,7 @@ is_session(Name) :-
 	suffix(".ssn", NameStr).
 
 get_edit_model(Win, Comp, Pt) :-
-	(event'><'menu_submodel_is(Comp, Pt), !;
+	(event'><'menu_submodel_is(Win, Comp, Pt), !;
 	Win shows_model Comp).
 
 select_all_in(Model, Way) :-

@@ -8,7 +8,6 @@ interface of the application. It responds by:
 * Making calls to the screen drawing module (new image, or redraw)
 */
 sicstus_module(event, [get_info/4, context_find/3, get_params/2, get_triggers/2,
-		       bar_edit_menu/1,
 		       click_obj/4, click_text/4, click/3, do_colours/2,
 		       insert_variable/5,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
@@ -176,7 +175,7 @@ get_info(_, Comp, Field, Pop) :-
 
 context_find(Wid, Query, Target) :-
 	callback('{}'),
-	menu_submodel_is(Model, _),
+	menu_submodel_is(Wid, Model, _),
 	contains(Model, Sub),
 	find_all_comps(Sub, Comp),
 	appears(Comp), %     check draws_at as well
@@ -351,8 +350,8 @@ click_on_sub(_, Point, _, _, _, Comp) :-
 
 This starts addition. Last clause creates a new cloud when starting a flow in the
 middle of nowhere; i could also do variables for influences. */
-:- dynamic(menu_submodel_is/2).
-:- dynamic(menu_submodel_will_be/3).
+:- dynamic(menu_submodel_is/3).
+% :- dynamic(menu_submodel_will_be/3).
 :- dynamic(currently_moving_set/1).
 :- dynamic(grid_pitch_is/2).
 
@@ -473,20 +472,20 @@ check_drawing_at_depth(Wid, Levels, New_obj, Depth) :-
 	    query(blind_add(New_obj, Depth), warning, top, [ok], not)).
 	    
 adjust_edit_menu(Wid, Comp, Point) :-
-	retractall(menu_submodel_will_be(Wid, _,_)),
-	assert(menu_submodel_will_be(Wid, Comp, Point)).
-
-bar_edit_menu(Wid) :-
-	(menu_submodel_will_be(Wid, Comp, Point), !;
+%%%%%	retractall(menu_submodel_will_be(Wid, _,_)),
+%	assert(menu_submodel_will_be(Wid, Comp, Point)).
+%
+%bar_edit_menu(Wid) :-
+%	(menu_submodel_will_be(Wid, Comp, Point), !;
 % previously we retracted this, but that caused problems for MacOS, which can
 % call postcommand twice. Now rely on unclick to retract it.
-	Wid shows_model Comp,
-%	    get_shape(Comp, internal_extent, Box),
-%	    middle(Box, Point)
+%	Wid shows_model Comp,
+%%	    get_shape(Comp, internal_extent, Box),
+%%	    middle(Box, Point)
 % point was never used, menu addition chose posn of last mouse click
-	    Point = Comp),
-	retractall(menu_submodel_is(_, _)),
-	assert(menu_submodel_is(Comp, Point)),
+%	    Point = Comp),
+	retractall(menu_submodel_is(Wid, _, _)),
+	assert(menu_submodel_is(Wid, Comp, Point)),
 	(Comp = Point, !,
 	    CanCreate = 0;
 	CanCreate = 1),
@@ -498,8 +497,7 @@ bar_edit_menu(Wid) :-
 	(output'><'my_file_exists(CopyFile), !,
 	    Pastable = 1;
 	Pastable = 0),
-	(Wid shows_model Comp, !; %in window bg so they should already be right
-	    set_selection_abilities(Comp)),
+	set_selection_abilities(Comp),
 	Wid shows_model Model,
 	(member(Header/LinkType, ['Flow'/flow, 'Influence'/influence,
 				  '{Role arrow}'/relation /*, 'Squirt'/squirt */]),
@@ -1988,7 +1986,7 @@ old_update_object_boundary(Submodel, Edge, XOff, YOff) :-
 
 unclick :-
 	retractall(clicked_obj_is(_Obj)),
-	retractall(menu_submodel_will_be(_,_,_)),
+%	retractall(menu_submodel_will_be(_,_,_)),
 	retractall(currently_moving_set(_Movers)),
 	untag_all,
 	find_current(Wid),
@@ -2004,10 +2002,10 @@ unclick :-
 	    T is min(OldY, NewY),
 	    R is max(OldX, NewX),
 	    B is max(OldY, NewY),
+	    get_current_node(Parent),
 	    ((R-L)+(B-T)>2, % less than this is a wobbly click not a drag
-		get_current_node(Parent),
 		select_bagged([L, T, R, B], Parent, none);
-	    set_selection_abilities(Model),
+	    adjust_edit_menu(Wid, Parent, [NewX, NewY]),
 	    remove_old_rubberband),
 	    initialize_phase;
 	get_phase(action_choice), !,
