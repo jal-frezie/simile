@@ -65,6 +65,7 @@ exit_two_click_op :-
 	draw'><'off(New).
 
 synchronize_graphics(LostExtents, Redrawn) :-
+    event'><'remove_highlights,
 	all(draw, adjust_submodel_internals, [build(LostExtents)]),
 	all(draw, redisplay_border, [build(Redrawn)]),
 	all(event, make_any_links_follow, [build(Redrawn)]),
