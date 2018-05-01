@@ -441,7 +441,7 @@ instance_of(loss, Node, Path,
 	initiates(Arc, Function),
 	(generate_input_pair(Function, discrete, _), !,
 	    Expr = (rand(0,1)<Home); % this format identifies event losses
-	  Expr = with_phase(Step, [], loses(Home, Step))).
+	  Expr = with_phase(Step, [], at_phase(loses(Home, Step)))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* variables don't have any expressions of their own, they just have values which
