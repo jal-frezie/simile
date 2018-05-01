@@ -127,6 +127,11 @@ proc DoContextMenu {winId X Y} {
 	    $Y>[winfo screenheight $winId]/2} {
 	tk_popup [winfo parent $winId]top.edit $X $Y 99
     } else {
+	if {[tk windowingsystem] eq "aqua"} {
+# menu will only show if on same screen as root window
+	    wm geometry . +$X+$Y
+	    update
+	}
 	tk_popup [winfo parent $winId]top.edit $X $Y
     }
 }
