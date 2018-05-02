@@ -182,6 +182,7 @@ proc ClickObj { x y winId X Y action} {
             set CD 0
         }
     }
+    set debounce(menu) $RB
     
     set debounce(clicktime) [clock clicks -milliseconds]
     set canx [$winId canvasx $x]
@@ -202,8 +203,8 @@ proc ClickObj { x y winId X Y action} {
         $winId focus {}
         if {$RB && [string equal select $pushedbutton]} {
             prolog [list tk_${action}('$winId', $xco , $yco , 2)]
-            DoContextMenu $winId $X $Y
             prolog [list tk_unclick( $xco , $yco )]
+            DoContextMenu $winId $X $Y
         } else {
             prolog [list tk_${action}('$winId', $xco , $yco , $CD)]
         }
@@ -246,9 +247,9 @@ proc ClickObj { x y winId X Y action} {
 					   $node , $CD)]
         # Right button puts up context menu.
         if {$RB && [string equal select $pushedbutton]} {
+            prolog [list tk_unclick( $xco , $yco )]
 	    update
 	    DoContextMenu $winId $X $Y
-            prolog [list tk_unclick( $xco , $yco )]
         }
         
         ### Formula bar
@@ -533,6 +534,8 @@ proc DragObj {winId xco yco} {
 
 proc ReleaseObj {winId xco yco} {
     global tcl_platform debounce
+
+    if {$debounce(menu)} return ;# posted by ctrl-click on MacOS
 
 # this is here because Windows can sometimes generate a drag at a point 
 # after the unclick, so it makes it drag back to the actual unclick position
@@ -1050,8 +1053,7 @@ proc AddCanvasBindings { c topNode } {
     bind $c <Double-1> {ClickObj %x %y %W %X %Y doubleclick}
     bind $c <B1-Motion> {DragObj %W %x %y}
     bind $c <ButtonRelease-1> {ReleaseObj %W %x %y}
-    CrossPlatformBind $c {ClickObj %x %y %W %X %Y right} {} \
-	{ReleaseObj %W %x %y} \
+    CrossPlatformBind $c {ClickObj %x %y %W %X %Y right} {} {} \
 	{ClickObj %x %y %W %X %Y ctrl} {ClickObj %x %y %W %X %Y ctrl-right}
     bind $c <FocusIn> {EmbraceObj %W}
     bind $c <Leave> {AbandonObj}
@@ -2455,7 +2457,7 @@ proc DragComponentIn {winId button x y addOne} {
         return
     }
     if {$y<0} {
-        # in parent but not in canvas, select clicked button
+        # in parent but in headers not in canvas, select clicked button
 	$button invoke
         return
     }
