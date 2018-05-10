@@ -1232,7 +1232,7 @@ proc GetFindText {canvas} {
     global find tcl_platform
     set t [PutItThere .findentry $canvas]
     wm protocol $t WM_DELETE_WINDOW {set find(done) 0}
-    wm title $t "Findcvs commm"
+    wm title $t "Find"
     wm resizable $t 0 0
     TitleFrame .findentry.follow -text "Follow influences "
     set follow [GetFrame .findentry.follow]
