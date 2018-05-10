@@ -135,6 +135,8 @@ proc create_equation {parent purpose comp indices enum_types} {
 		  0 .  <- -> [tr. DEL] dummy [tr. NEWLINE] dummy]
     if {[string equal windows $tcl_platform(platform)]} {
 	set buttWidth 4
+    } elseif {[tk windowingsystem] eq "aqua"} {
+	set buttWidth 4
     } else {
 	set buttWidth 2
     }
@@ -146,7 +148,9 @@ proc create_equation {parent purpose comp indices enum_types} {
 		set act [PrefValue custom(myButton) myButton]
 	    }
 	    set bid [button $keypadf.keys.row$row.col$col -text $act \
-			 -width $buttWidth -command [list HitKey $t $act]]
+			 -font EquationFont -width $buttWidth \
+			 -command [list HitKey $t $act]]
+	    # use regular button because cannot set bg on ttk::button
 	    pack $bid -side left -fill x -expand false
 	    if {[string first $act .0123456789]>-1} {
 		$bid configure -bg \#a0a0a0 -activebackground \#a0a0a0
