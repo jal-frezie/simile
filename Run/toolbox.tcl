@@ -2038,15 +2038,22 @@ proc Rerun {winId go} {
     return yes
 }
 
-proc UpdateAbility {c what where which whether} {
+proc UpdateAbility {c where args} {
     global window_info menuPosns
     set winId $window_info($c,parent)
-    set newState [ChooseText $whether normal disabled]
-    ${winId}top.$where entryconfigure $menuPosns($where,$which) -state $newState
-    AcceleratorState $winId $where $which $newState
-    if {![string equal none $what]} {
-        set navBar $winId.toolSlot.navbar
-        $navBar.$what configure -state $newState
+    set navBar $winId.toolSlot.navbar
+    foreach {which whether} $args {
+	set newState [ChooseText $whether normal disabled]
+	${winId}top.$where entryconfigure $menuPosns($where,$which) \
+	    -state $newState
+	AcceleratorState $winId $where $which $newState
+	set what [string tolower $which]
+	if {$what eq "find next"} {
+	    set what findmore
+	}
+	if {[winfo exists $navBar.$what]} {
+	    $navBar.$what configure -state $newState
+	}
     }
 }
 

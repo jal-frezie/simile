@@ -27,7 +27,7 @@ set_save_status(Model, Stat) :-
     retractall(save_status_of(Model, _)),
     assert(save_status_of(Model, Stat)),
     member(Stat-CanSave, [safe-0, risky-1]),
-    draw'><'update_ability(Model, save, file, 'Save', CanSave).
+    draw'><'update_ability(Model, file, ['Save'], [CanSave]).
 
 get_save_status(Model, Stat) :-
 	save_status_of(Model, Stat).
@@ -248,7 +248,6 @@ run_move_from_file(Model, Stm, Current, IdSwaps, NewIdSwaps) :-
 
 set_edit_abilities(Model) :-
 	save_allowed(Model, CanSave),
-	draw'><'update_ability(Model, save, file, 'Save', CanSave),
 	saved_state(Model, current, Here),
 	(saved_state(Model, first, Here), !,
 	    UndoOn = 0;
@@ -257,8 +256,8 @@ set_edit_abilities(Model) :-
 	    \+ running_session(Model, _Stm, _Trans), !,
 	    RedoOn = 0;
 	 RedoOn = 1),
-	draw'><'update_ability(Model, undo, edit, 'Undo', UndoOn),
-	draw'><'update_ability(Model, redo, edit, 'Redo', RedoOn).
+	draw'><'update_ability(Model, file, ['Save'], [CanSave]),
+	draw'><'update_ability(Model, edit, ['Undo', 'Redo'], [UndoOn, RedoOn]).
 
 repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps) :-
 /* undo and redo clauses no longer needed because the acts are put into the
@@ -449,9 +448,8 @@ new_autosave(Desktop, ModelName) :-
 	
 check_autosave(Model, Name, IdSwaps, Tweaked) :-
 	set_save_status(Model, safe),
-	draw'><'update_ability(Model, undo, edit, 'Undo', 0),
-	draw'><'update_ability(Model, redo, edit, 'Redo', 0),
-	draw'><'update_ability(Model, save, file, 'Save', 0),
+	draw'><'update_ability(Model, file, ['Save'], [0]),
+	draw'><'update_ability(Model, edit, ['Undo', 'Redo'], [0,0]),
 	(is_toplevel(Model), !,
 	    initialize_ring(Model),
 	    make_auto_name(Name, ".smx", AutoName),

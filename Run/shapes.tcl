@@ -1686,7 +1686,7 @@ proc FindCaption {canvas} {
     if {[info exists find(now,$canvas)]} {
 	unset find(now,$canvas)
     }
-    UpdateAbility $canvas findmore edit "Find next" 1
+    UpdateAbility $canvas edit "Find next" 1
     NextCaption $canvas
 }
 
@@ -1700,7 +1700,7 @@ proc NextCaption {canvas} {
     if {![llength $find(List,$canvas)]} {
 	Query [list finished_matches $find(where)] info search $canvas ok
         array unset find *,$canvas
-	UpdateAbility $canvas findmore edit "Find next" 0
+	UpdateAbility $canvas edit "Find next" 0
     } else {
         set this [lindex $find(List,$canvas) 0]
         set find(List,$canvas) [lrange $find(List,$canvas) 1 end]

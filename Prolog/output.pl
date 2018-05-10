@@ -25,7 +25,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	get_text/3, change_text_to/3, 
 	inject_graphics/2, translate_canvas_pl_names/2, save_canvas/4,
 	tk_grow_canvas/2, tk_refatten/2, zoom_bits_in/5,
-			tk_display_area/1, tk_update_ability/5,  update_tk/0,
+			tk_display_area/1, tk_update_ability/4,  update_tk/0,
 	tk_display_mode/1, tk_display_menu/1,
 	tk_change_color/5, kill_featured/2, shift_images/3, clear_display/1,
 	prepare_equation/1, create_equation/5,
@@ -393,8 +393,13 @@ change_text_to(Wid, Comp, NewTitle) :-
 	argify(NewTitleStr, NewTitleArg),
 	safe_tcl_eval(['ChangeObjectTitle', Wid, Comp, chars(NewTitleArg)], _).
 
-tk_update_ability(Wid, Un, Men, Itm, Re) :-
-	safe_tcl_eval(['UpdateAbility', Wid, Un, Men, Itm, Re], _).
+interweave([], [], []).
+interweave([Att | As], [Val | Vs], [Att, Val | Pairs]) :-
+    interweave(As, Vs, Pairs).
+
+tk_update_ability(Wid, Men, Itms, Res) :-
+    interweave(Itms, Res, Tail),
+    safe_tcl_eval(['UpdateAbility', Wid, Men | Tail], _).
 
 update_tk :-
 	safe_tcl_eval([update, idletasks], _).

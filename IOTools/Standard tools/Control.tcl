@@ -438,7 +438,6 @@ namespace eval runcontrol33857 {
 # or reset execution
 
     proc RCInteractGUI {myNode current col} {
-	DebugMess [info level 0]
 	global runState
 
 	set endRun [UpdateBar $myNode \

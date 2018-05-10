@@ -470,7 +470,12 @@ check_drawing_at_depth(Wid, Levels, New_obj, Depth) :-
 	    use_style_for(New_obj, NewStyle),
 	    draws_at(Wid, NewStyle, Depth), !;
 	    query(blind_add(New_obj, Depth), warning, top, [ok], not)).
-	    
+
+goes_from(LinkType, Point, CanAddNode, Allow) :-
+    (member(LinkType, [flow, squirt]), CanAddNode = 1;
+     can_start(LinkType, Point))
+    -> Allow = 1; Allow = 0.
+
 adjust_edit_menu(Wid, Comp, Point) :-
 %%%%%	retractall(menu_submodel_will_be(Wid, _,_)),
 %	assert(menu_submodel_will_be(Wid, Comp, Point)).
@@ -499,23 +504,19 @@ adjust_edit_menu(Wid, Comp, Point) :-
 	Pastable = 0),
 	set_selection_abilities(Comp),
 	Wid shows_model Model,
-	(member(Header/LinkType, ['Flow'/flow, 'Influence'/influence,
-				  '{Role arrow}'/relation /*, 'Squirt'/squirt */]),
-	    ((LinkType = flow, CanAddNode = 1; can_start(LinkType, Point))
-	    -> Allow = 1; Allow = 0),
-	    update_ability(Model, none, 'edit.add', Header, Allow),
-	    fail;
-	update_ability(Model, none, edit, '{Add/change component}', CanCreate),
-	update_ability(Comp, none, edit, 'Paste', Pastable),
+	all(event, goes_from, [build([flow, squirt, influence, relation]),
+			       unify(Point), unify(CanAddNode), build(Allows)]),
+	update_ability(Model, edit, ['{Add/change component}', 'Paste'],
+		       [CanCreate, Pastable]),
 	(find_type(Point, cloud), !,
 	    CanAddComp = 1;
-	  CanAddComp = CanAddNode),
-	all(draw, update_ability,
-	    [unify(Model), unify(none), unify('edit.add'),
-	     build(['Compartment', 'Variable', 'Submodel', 'State',
-		    'Event', 'Squirt', '{Membership control}', '{Text box}']),
-	     build([CanAddComp, CanAddNode, CanAddNode, CanAddNode,
-		    CanAddNode, CanAddNode, CanAddNode, CanAddNode])])).
+	 CanAddComp = CanAddNode),
+	update_ability(Model, 'edit.add',
+		       ['Compartment', 'Variable', 'Submodel', 'State',
+			'Event', '{Membership control}', '{Text box}',
+		       'Flow', 'Squirt', 'Influence', '{Role arrow}'],
+		       [CanAddComp, CanAddNode, CanAddNode, CanAddNode,
+			CanAddNode, CanAddNode, CanAddNode | Allows]).
 
 click_on(XY, Poss_start, CD) :-
 	doing_add(New_obj), !,
@@ -2010,9 +2011,8 @@ unclick :-
 	    initialize_phase;
 	get_phase(action_choice), !,
 	    cursor_is(crosshair),
-	    update_ability(Model, save, file, 'Save', 0), % no save halfway
-	    update_ability(Model, undo, edit, 'Undo', 1),
-	    update_ability(Model, redo, edit, 'Redo', 0),
+	    update_ability(Model, file, ['Save'], [0]), % no save halfway
+	    update_ability(Model, edit, ['Undo', 'Redo'], [1, 0]),
 	    advance_phase_to(targetting));
 	unclick_obj.
 
@@ -2409,13 +2409,11 @@ set_selection_abilities(Comp) :-
 	    \+ Choice is_of_sort cloud, !,
 	    Peekable = 1;
 	Peekable = 0),
-	update_ability(Comp, none, file, '{Save selection as...}', Cuttable),
-	update_ability(Comp, none, edit, 'Cut', Cuttable),
-	update_ability(Comp, none, edit, 'Copy', Cuttable),
-	update_ability(Comp, none, edit, 'Delete', Dellable),
-	update_ability(Comp, none, edit, '{Reroute links}', Dellable),
-	update_ability(Comp, none, edit, '{Align to grid}', Dellable),
-	update_ability(Comp, none, edit, 'Properties...', Peekable).
+	update_ability(Comp, file, ['{Save selection as...}'], [Cuttable]),
+	update_ability(Comp, edit, ['Cut','Copy', 'Delete', '{Reroute links}',
+				    '{Align to grid}', 'Properties...'],
+		       [Cuttable, Cuttable, Dellable, Dellable,
+			Dellable, Peekable]).
 
 abandon :-
 	finish_old_edit(none).
@@ -2670,4 +2668,4 @@ prioritize_window(New_top) :-
 	make_current(New_top).
 
 run_settings_tweaked(Node) :-
-	update_ability(Node, save, file, 'Save', 1).
+	update_ability(Node, file, ['Save'], [1]).

@@ -21,7 +21,7 @@ sicstus_module(draw,
 		find_relevant_windows/4, update_captions/1, reset_titles/1,
 		update_color/1, shift_images/3,
 		give_focus/1, has_focus/1,
-		update_ability/5, scrub_run/2, kill_helpers/1,
+		update_ability/4, scrub_run/2, kill_helpers/1,
 		display_mode/1, display_menu/1, off/1,
 		shift_marked/2, untag_all/0,
 		move_text/2, move_group/2, move_display/2, reroute_display/1,
@@ -68,10 +68,10 @@ reset_titles(Model) :-
 	    fail;
 	true).
 
-update_ability(SubModel, Un, Men, Itm, Re) :-
+update_ability(SubModel, Men, Itms, Res) :-
 	contains(Model, SubModel),
 	Win shows_model Model,
-	tk_update_ability(Win, Un, Men, Itm, Re),
+	tk_update_ability(Win, Men, Itms, Res),
 	fail;
 	true.
 

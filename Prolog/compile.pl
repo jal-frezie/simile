@@ -2553,6 +2553,7 @@ order_submodel_assignments(Phase, Path, RawAssign, All,
 	      NewGo is Go+Lead,
 	      FoundTest = test_at(TP, NewGo, Len); true))).
     
+/*
 old_order_submodel_assignments(Phase, Path, RawAssign, All,
 			   OrderedPasses, FoundTest) :-
 	Phase < -2, !,
@@ -2560,7 +2561,7 @@ old_order_submodel_assignments(Phase, Path, RawAssign, All,
 	NextPhase is Phase-1,
 	    order_submodel_assignments(NextPhase, Path, RawAssign, All,
 				       HighPasses, FoundTest),
-	    (false, number(DoneTest), !,
+	    (number(DoneTest), false, !,
 		OrderedPasses = HighPasses,
 		FoundTest = DoneTest;
 	    order_assignments(Phase, Path, RawAssign, All, LastPass),
@@ -2569,14 +2570,14 @@ old_order_submodel_assignments(Phase, Path, RawAssign, All,
 			FoundTest = Phase;
 		    true);
 		true),
-		/* might not need a start/finish pair for these non-loopers
+		% might not need a start/finish pair for these non-loopers
 		get_non_looping_levels(Path, LastPass, Levels),
 		all(compile, get_pass_ends,
 		    [build(Levels), build(RStarts), build(Finishes)]),
 		reverse(RStarts, Starts),
-		append([Starts, LastPass, Finishes], Pass), */
+		append([Starts, LastPass, Finishes], Pass),
 		append(HighPasses, [LastPass], OrderedPasses)).
-
+*/
 get_non_looping_levels(_Path, [], []).
 get_non_looping_levels(Path, [make(_,_, IPath, _,_) | More], Levels) :-
 	get_non_looping_levels(Path, More, MoreLevels),
