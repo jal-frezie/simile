@@ -1227,7 +1227,7 @@ proc StartElement {name attList args} {
 	} series_control {
 	    # this puts them at index 2 in tableSpec starting with 1st in file
 	    puts -nonewline $parseStatus(outStr) \
-		" ,$attVals(field):$attVals(value)"
+		" ,$attVals(field):[EscapeNasties $attVals(value)]"
 	} submodels - variables {
 	} spf {
 	    set parseStatus(simV) $attVals(simile_version)
