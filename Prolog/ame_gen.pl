@@ -185,6 +185,9 @@ make_legible_for_prolog(String, NewString, CommentsAllowed) :-
 	ToTweak = [Fs, Ak | AfterCmtStart],
 	    suffix([Ak, Fs | Suffix], AfterCmtStart),
 	    Tweaked = [NL];
+	% Replace TTFN pi symbol with pi()
+	ToTweak = [88, 48, 121 | Suffix],
+	    Tweaked = "pi('')";
 	/* Put single quotes round things that look like Prolog atoms/vars
 	    (cos variable_names doesnt work on functors/operators) */
 	ToTweak = [StartsVar | Rest],
