@@ -1219,7 +1219,7 @@ cannot_be_dollared(Str) :-
 	member(Separator, DoneHere).
 
 type_for_unit(Unit, Type) :-
-	(Unit = real; get_conversion(_, Unit, Unit, _)), !,
+    (member(Unit, [real, const_ratio]); get_conversion(_, Unit, Unit, _)), !,
 	    Type = double;
 	member(Unit, [boolean, cond_spec]), !,
 	    Type = 'BOOLEAN';

@@ -1036,6 +1036,7 @@ proc FillProgressBox {key lits {fract 0}} {
 proc CloseProgressBox {} {
     global progressBoxCount
 
+    if {!$progressBoxCount} {return 0} ;# reset while box was open
     if {!$::headless && ![incr progressBoxCount -1]} {
 	grab release .progress
 	PackItUp .progress

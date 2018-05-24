@@ -1523,7 +1523,7 @@ units_for_trigger_mag(Fn, MagUnits) :-
     MagUnits = int-[];
 	(setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits), !;
 	    caption_for(Fn, Capt),
-	    (Fn is_of_sort function ->
+	    (find_type(Fn, function) ->
 		 throw(no_antecedents_for_derived(Capt));
 	     throw(no_triggering_events(Capt)))),
 	% check dimensions the same
