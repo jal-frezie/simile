@@ -28,7 +28,7 @@ Depends: ${misc:Depends}, tk8.6 (>= 8.6) | tk8.5 (>= 8.5), g++ (>= 4.0), tclxml 
 # (a) unnecessary unless you are using GeoTIFFs (and large!)
 # (b) wrong for Ubuntu which calls it libgdal1h instead, preventing install
 Description: Multi-paradigm graphical modelling environment
- Multi-paradign modelling and simulation software for complex dynamic
+ Multi-paradigm modelling and simulation software for complex dynamic
  systems in the earth, environmental and life sciences. We use unique
  logic-based declarative modelling technology to represent the
  interactions in these systems in a clearly structured, visually
