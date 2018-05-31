@@ -259,7 +259,9 @@ list_local_index_meanings(Submodel, Meanings) :-
 		LocalDims = [pop];
 	(by_record(Submodel); from_value(Submodel)), !,
 		LocalDims = [records];
-	get_node_size(Submodel, LocalDims)),
+	find_type(Submodel, submodel), !,
+	     get_node_size(Submodel, LocalDims);
+	LocalDims = []),
 	list_node_index_meanings(Caption, 
 			LocalDims, Group1),
 	list_links(Submodel, Links),
