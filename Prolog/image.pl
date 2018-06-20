@@ -915,11 +915,10 @@ sieve_all_events(Pairs, Fn, EvtCapts, Compound) :-
 pair_off(_, [], []).
 
 pair_off(Function, [Source | Sources], Pairs) :-
-    (setof(var_pair(Var, _),
+    setof(var_pair(Var, _),
         represents(Function, Source, Pairs, Var),
-        CurrentVars) ->
-	 purge(Pairs, CurrentVars, PairsLeft);
-     PairsLeft = Pairs), % Source has no roles so need not be mentioned
+        CurrentVars),
+    purge(Pairs, CurrentVars, PairsLeft),
     pair_off(Function, Sources, PairsLeft).
 
 represents(Function, Source, Pairs, Var) :-
