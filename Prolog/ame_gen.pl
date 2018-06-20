@@ -193,8 +193,8 @@ make_legible_for_prolog(String, NewString, CommentsAllowed) :-
 	ToTweak = [StartsVar | Rest],
 	starter_only(StartsVar, prolog, StartsVar),
 	    append(MoreVar, Suffix, Rest),
-	    Suffix = [EndsVar | _],
-            \+ continuer_only([EndsVar], prolog, [EndsVar]),
+	    (Suffix = []; Suffix = [EndsVar | _],
+            \+ continuer_only([EndsVar], prolog, [EndsVar])),
 	    continuer_only(MoreVar, prolog, MoreVar),
 	    /* now, if it is a Prolog operator but not a Simile operator, we
 	    must put in parentheses so parser treats it as an atom, otherwise
@@ -208,7 +208,7 @@ make_legible_for_prolog(String, NewString, CommentsAllowed) :-
 		append([Po | LowerVar], [Pc], Tweaked);
 	    /* If a function name, next char is open-parenthesis in which case
             convert to lowercase (and don't bother enquoting!) */
-	    EndsVar = Po,
+	    EndsVar == Po,
 	        Tweaked = LowerVar;
 	    append([Sq, StartsVar | MoreVar], [Sq], Tweaked));
 	/* Put single quotes round things in double quotes so they are read as
