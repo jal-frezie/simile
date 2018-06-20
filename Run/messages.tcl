@@ -13,6 +13,7 @@ set msgs(out) [tr. out]
 # simile basics -- objects
 set msgs(relation) [tr. {relation}]
 set msgs(flow) [tr. {flow}]
+set msgs(squirt) [tr. {squirt}]
 set msgs(influence) [tr. {influence}]
 set msgs(model) [tr. {Simile model}]
 set msgs(unsaved) [tr. {unsaved}]

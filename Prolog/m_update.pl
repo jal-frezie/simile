@@ -1090,10 +1090,11 @@ get_submodel_interface(Model, relation, Dir, Link,
 /* Flows are tricky, because the flow of information is from the tap to the
 compartments, which may or may not be in the actual direction of the flow. */
 
-get_submodel_interface(Model, flow, Dir, Link,
+get_submodel_interface(Model, Transp, Dir, Link,
 		       link(StartCaption, EndCaption,
 			    control(FlowUnits, ControlDir))) :-
-	get_connection(Model, flow, Dir, Link, SourceCapt, DestCapt, Dest, _),
+    Transp is_class_of_sort transfer,
+    get_connection(Model, Transp, Dir, Link, SourceCapt, DestCapt, Dest, _),
 	(ControlDir = Dir,
 	    Target = Dest,
 	    StartCaption = FlowCaption,
@@ -1215,18 +1216,18 @@ make_connection(Model, Type, Dir, ExternalSection,
 check_input(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 	BorderSection has_type Type,
 	BorderSection is_connector from _ to Dest,
-	(Type = flow,
+	(Type is_class_of_sort transfer,
 	Properties = control(_, ControlDir),
 	ControlDir = Dir, !,
 	    caption_for(BorderSection, SourceCapt);
 	initiates(BorderSection, Source),
 	    caption_for(Source, SourceCapt)),
-	(Type = flow,
+	(Type is_class_of_sort transfer,
 	    Dest is_of_sort cloud,
 	    appears(Dest); % submodel cut out if outward
 	Dir = in,
 	    Dest = Model,
-	    (Type = flow; Type = influence;
+	    (Type is_class_of_sort transfer; Type = influence;
 		Type = relation,
 		caption_for(BorderSection, Properties));
 	Dir = out,
@@ -1235,7 +1236,7 @@ check_input(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 check_output(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 	BorderSection has_type Type,
 	BorderSection is_connector from Dest to _,
-	(Type = flow,
+	(Type is_class_of_sort transfer,
 	Properties = control(_, ControlDir),
 	\+ ControlDir = Dir, !,
 	    caption_for(BorderSection, SourceCapt);
@@ -1243,7 +1244,7 @@ check_output(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 	    caption_for(Dest, SourceCapt);
 	terminates(BorderSection, Source),
 	    caption_for(Source, SourceCapt)),
-	(Type = flow,
+	(Type is_class_of_sort transfer,
 	    Dest is_of_sort cloud,
 	    appears(Dest); % submodel cut out if inward
 	  Type = influence,
@@ -1615,7 +1616,9 @@ make_new_end_node(Submodel, DeadLink, Dir, NewInputName, NewUnit) :-
 	member(go(LinkType, Dir, NodeType),
 	       [go(influence, start, variable),
 		go(flow, start, cloud),
-		go(flow, finish, cloud)]),
+		go(flow, finish, cloud),
+		go(squirt, start, cloud),
+		go(squirt, finish, cloud)]),
 	Submodel has_link_equivalences Equivs,
 	(Dir = start,
 	    OuterFirst = Equivs,
