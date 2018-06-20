@@ -772,7 +772,7 @@ menu_handle(Win, edit, set_interface) :-
 	ReferenceLine = no_references),
 	(TopWin shows_model Model,
 	    make_current(TopWin), % allows reroute to work outside submodel
-	    event'><'load_submodel_interface(Stream, Submodel, _, _),
+	    load_submodel_interface(Stream, Submodel, _, _),
 	    event'><'make_links_follow(Submodel),
 %	    event'><'tweak_link_connections(Submodel, [0,0], l, [0,0,1,1]),
 	    finish_move(Submodel, 1);

@@ -1209,7 +1209,7 @@ make_connection(Model, Type, Dir, ExternalSection,
 		[unify(Type), unify(InputSection),
 		 build(Outputs), build(_TopArcs)]),
 	    menu'><'reroute_sections([InputSection | Outputs]),
-		menu'><'remove_old_incomplete;
+		draw'><'remove_old_incomplete;
 	    Hassle = spare_interface_spec(Type, Dir, destination, DestCapt));
 	Hassle = spare_interface_spec(Type, Dir, source, SourceCapt)).
 
@@ -1612,13 +1612,12 @@ min_def_and_max_for(VisNode, MinVal, DefVal, MaxVal) :-
 */
 
 make_new_end_node(Submodel, DeadLink, Dir, NewInputName, NewUnit) :-
-	find_type(DeadLink, LinkType),
-	member(go(LinkType, Dir, NodeType),
-	       [go(influence, start, variable),
-		go(flow, start, cloud),
-		go(flow, finish, cloud),
-		go(squirt, start, cloud),
-		go(squirt, finish, cloud)]),
+    find_type(DeadLink, LinkType),
+    (LinkType = influence, !,
+      Dir = start,
+      (initiates(DeadLink, Comp), Comp is_of_sort discrete -> NodeType = event;
+       NodeType = variable);
+     NodeType = cloud),
 	Submodel has_link_equivalences Equivs,
 	(Dir = start,
 	    OuterFirst = Equivs,
@@ -1679,9 +1678,9 @@ remove_floater(Node) :-
 	  _ is_connector from _ to Node;
 	  implicit_function(_Arc, Node);
 	    Node has_class C,
-	    \+ member(C, [variable, cloud, border, function]);
+	    \+ member(C, [variable, event, cloud, border, function]);
 	  Node has_class_refinement min_val of _;
-	  is_parameter(Node, 2)), !;
+	  Node has_class variable, is_parameter(Node, 2)), !;
 	draw'><'off(Node),
 	oblitterfry(Node).
 
