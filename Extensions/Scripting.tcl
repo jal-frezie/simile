@@ -611,10 +611,14 @@ redo with snap object
 	}
     }
 
-    public method GetValue {path} {
+    public method GetValue {path args} {
+	array set opts $args
 	set node [do_for_node $modelNode GetIdFromCaptionPath $path]
 	set trans [GetCompProperty $modelNode Trans $node]
         set numerics [lindex [do_for_node $modelNode GetModelValue $node] 0]
+	if {[info exists opts(-numeric)] && $opts(-numeric)} {
+	    return [list $numerics]
+	}
 	return [list [TransEnums $trans $numerics]]
     }
     
