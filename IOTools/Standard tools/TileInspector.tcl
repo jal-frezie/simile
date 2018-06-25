@@ -56,7 +56,11 @@ namespace eval ::$keyValue {
 	    .newfile* {
 		set typesToShow {INPUT TABLE BLOCK POPULATION GRID HONEYCOMB}
 	    } .newsub* {
-		set typesToShow {BLOCK TABLE GRID HONEYCOMB}
+		set typesToShow {BLOCK GRID HONEYCOMB}
+		set showTopLevel 1
+		$tableframe.table insert {} end -id $::myNode -open 1 \
+		    -text "TOP LEVEL" -image $iconImages(submodel)
+		# probably no need to nest others in here, just put at top
 	    } .newout* {
 		set typesToShow {RECALL DERIVED BLOCK POPULATION GRID HONEYCOMB}
 	    } default {

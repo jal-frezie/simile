@@ -75,10 +75,10 @@ ifeq ($(PLATFORM),Darwin)
 	TCLFW = /System/Library/Frameworks
 ifeq ($(MY_CPU),x86_64)
 	CFLAGS = $(OPT)
-	XFLAGS = -mmacosx-version-min=10.6
+	MACOSX_DEPLOYMENT_TARGET=10.6
 else
 	CFLAGS = $(OPT) -arch i386
-	XFLAGS = -mmacosx-version-min=10.4
+	MACOSX_DEPLOYMENT_TARGET=10.4
 	LOCALIZE_TCL_REFS = install_name_tool -change \
 		$(TCLFW)/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl
@@ -91,6 +91,7 @@ endif
 	        ARCHEXTN = _ppc
 	endif
 	EXECEXTN = $(ARCHEXTN)
+	XFLAGS = -mmacosx-version-min=$(MACOSX_DEPLOYMENT_TARGET)
 	MAKEPIC = -fPIC
 	MAKESL = -dynamiclib
 # make sure Current is set to right version
