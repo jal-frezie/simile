@@ -167,7 +167,7 @@ itcl::class similescript::$newLayerClass {
 # do not use image mode for inputs cos we will want to edit them...
 # hah, just fixed it so we can anyway
 	set useNodes(temp,curValues) \
-	    [lindex [$modelInst GetValue $useNodes($winId,color)] 0]
+	    [lindex [$modelInst GetValue $useNodes($winId,color) -numeric 1] 0]
 	set node [GetIdFromCaptionPath $useNodes($winId,color)]
 	if {$useNodes($winId,hex) || \
 		[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
@@ -283,7 +283,11 @@ itcl::class similescript::$newLayerClass {
 	    return $vals
 	} else {
 	    array set indexed $vals
-	    return [SeekValue [lrange $inds 1 end] $indexed([lindex $inds 0])]
+	    set subL indexed([lindex $inds 0])
+	    if {![info exists $subL]} {
+		return "no instance"
+	    }
+	    return [SeekValue [lrange $inds 1 end] [set $subL]]
 	}
     }
 	    
@@ -437,6 +441,7 @@ itcl::class similescript::$newLayerClass {
 
     public method GetSwatchColour {swId} {
 	::maptools2::SetSwatchColour ::$this $winId $swId
+	$host PosnLegends
     }
 
     public method GetNewLegendSide {} {
