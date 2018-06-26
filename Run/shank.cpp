@@ -1656,26 +1656,26 @@ int entitled(char* clientEdn, char* modelIdent) {
   sscanf(strstr(modelIdent, "date="), "date=%ld", &modelTime);
   whereToLook = strstr(modelIdent, "edition=")+8;
   if (!strncmp(clientEdn, whereToLook, 8) && difftime(time(NULL), modelTime)<60)
-    return 0; // model generated recently by same edition -- OK
+    return 1; // model generated recently by same edition -- OK
   if (!strncmp(clientEdn, "enterprise", 10) || 
       !strncmp(whereToLook, "enterprise", 10))
-    return 0; // that will do nicely, sir
+    return 2; // that will do nicely, sir
 
   if (!strncmp(clientEdn, "evaluation", 10) || 
       !strncmp(whereToLook, "evaluation", 10))
     return -1; // too big for import/export by evaluation edn
 
   if (modelCompCount<=50)
-    return 0; // teaching edn ok
+    return 3; // teaching edn ok
 
   if (!strncmp(clientEdn, "teaching", 8) || 
       !strncmp(whereToLook, "teaching", 8))
-    return -1; // too big for import/export by teaching edn
+    return -2; // too big for import/export by teaching edn
 
   if (!strncmp(clientEdn, whereToLook, 8))
-    return 0; // model big but both are standard (or some other!?) edn
+    return 4; // model big but both are standard (or some other!?) edn
 
-  return -1; // one edition is not one we have created
+  return -3; // one edition is not one we have created
 }
   
 // Implementation of class ModelServer
@@ -1714,7 +1714,7 @@ showMess(globMess); */
 #endif
     nodecount = getcount(NULL, &identStr, &phases, &nodedata);
     // Now check if this client is entitled to run it
-    if (entitled(clientEdn, identStr)) {
+    if (entitled(clientEdn, identStr)<0) {
       *complaint = new char[256];
       sprintf(*complaint, "%s edition cannot use this model", clientEdn);
       return;

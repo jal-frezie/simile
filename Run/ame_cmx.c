@@ -421,15 +421,16 @@ also causes an instance of it to be created. */
 FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp, 
 			    int argc, Tcl_Obj *CONST argv[]) {
   char* fileName;
-  char* nodeName;
+  char* edition;
   char* dllProblem;
   void* modelType;
 
   switch (argc) {
   case 3:
     fileName = Tcl_GetStringFromObj(argv[1], NULL);
-    nodeName = Tcl_GetStringFromObj(argv[2], NULL);
-    dllProblem = load_model(fileName, nodeName, &modelType);
+    edition = (char*)Tcl_GetVar2(interp, "env", "user,edn", 0);
+    // was Tcl_GetStringFromObj(argv[2], NULL);
+    dllProblem = load_model(fileName, edition, &modelType);
     if (dllProblem) {
       Tcl_SetObjResult(interp, Tcl_NewStringObj(dllProblem, -1));
       free(dllProblem);
