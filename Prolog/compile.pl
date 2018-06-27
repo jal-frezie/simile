@@ -1010,8 +1010,12 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 	(member(Forgotten, NewForm),
 	    not_yet_ordered(Forgotten), !,
 	    find_circle([Forgotten], Loop),
-	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
-	    raise_exception(circular_evaluation(CircSet));
+	    (Loop = [] ->
+		 unfinished_in(Forgotten, Tail),
+	% pick act because raising exception with self-ref term crashes GNU
+		 raise_exception(ordering_failure(Tail));
+	       all(compile, unfinished_in, [build(Loop), build(CircSet)]),
+	         raise_exception(circular_evaluation(CircSet)));
 	true),
 	/* note state variables implemented by 'last' might refer to
 	compartment values, hence must go before them */
@@ -1045,9 +1049,6 @@ find_circle([Head | Chain], Loop) :-
 		NewHead = make(_,_,_, [_,_,_,x | _], _),
 		find_circle([Head | Chain], Loop);
 	     Loop = SubLoop)); % found one further down
-	unfinished_in(Head, Tail),
-	% pick act because raising exception with self-ref term crashes GNU
-	raise_exception(ordering_failure(Tail)),
 	Loop = []. % No leads from here, go back
 
 match_levels([], []).

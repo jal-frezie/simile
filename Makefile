@@ -75,10 +75,10 @@ ifeq ($(PLATFORM),Darwin)
 	TCLFW = /System/Library/Frameworks
 ifeq ($(MY_CPU),x86_64)
 	CFLAGS = $(OPT)
-	MACOSX_DEPLOYMENT_TARGET=10.6
+	export MACOSX_DEPLOYMENT_TARGET=10.9
 else
 	CFLAGS = $(OPT) -arch i386
-	MACOSX_DEPLOYMENT_TARGET=10.4
+	export MACOSX_DEPLOYMENT_TARGET=10.4
 	LOCALIZE_TCL_REFS = install_name_tool -change \
 		$(TCLFW)/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl
@@ -91,7 +91,6 @@ endif
 	        ARCHEXTN = _ppc
 	endif
 	EXECEXTN = $(ARCHEXTN)
-	XFLAGS = -mmacosx-version-min=$(MACOSX_DEPLOYMENT_TARGET)
 	MAKEPIC = -fPIC
 	MAKESL = -dynamiclib
 # make sure Current is set to right version
@@ -203,11 +202,11 @@ UINFO_TPL=userinfo.tpl
 # In separate steps with database
 $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
 	gplc --no-top-level -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) \
-		-L '$(CFLAGS) $(XFLAGS)'
+		-L '$(CFLAGS)'
 $(PROLOG_OBJ): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
-	cd Prolog; gplc -o ../$(PROLOG_OBJ) -c -A '$(XFLAGS)' -C '$(CFLAGS)' gmain.pl; cd ..
+	cd Prolog; gplc -o ../$(PROLOG_OBJ) -c -C '$(CFLAGS)' gmain.pl; cd ..
 $(PROLOG_DB): Prolog/struct_db.c
-	cd Prolog; gplc -c -C '$(CFLAGS) $(XFLAGS) -D_GNU_PROLOG' \
+	cd Prolog; gplc -c -C '$(CFLAGS) -D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB) struct_db.c; cd ..
 endif
 

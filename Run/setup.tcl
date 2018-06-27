@@ -94,6 +94,12 @@ if {$use_system_tcltk} {
     set auto_path [linsert $auto_path 0 [file join $libDir Stubs]]
 # special Simile things that cannot be found in standard TclTk
 # (or can but they wouldn't be as much use as the bundled version)
+
+# ...also MacOS dosn't actually use system TclTk, just system packages, so
+# make sure they are in the path (for e.g. R TclTk extn)
+    if {$tcl_platform(os) eq "Darwin"} {
+	lappend auto_path "/System/Library/Tcl"
+    }
 } elseif {[info exists prolog_in_console]} {
     set auto_path [linsert $auto_path 0 $libDir] ;# must be 8.4, look everywhere
 } else {
