@@ -2561,9 +2561,13 @@ proc AbleComp {winid} {
 proc EmbraceEqn {winId} {
     global equationbar
     if {[info exists equationbar($winId,node)]} {
-    if {[llength $equationbar($winId,node)]} {
-        prolog tk_embrace('$winId.canvas',$equationbar($winId,node))
-    }
+	if {[tk windowingsystem] eq "aqua"} {
+# popup menus only appear if toplevel window on same screen
+	    wm geometry . +[winfo rootx $winId]+[winfo rooty $winId]
+	}
+	if {[llength $equationbar($winId,node)]} {
+	    prolog tk_embrace('$winId.canvas',$equationbar($winId,node))
+	}
     }
 }
 
