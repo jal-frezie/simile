@@ -16,6 +16,6 @@ itcl::class similescript::$newLayerClass {
     } { }
 
     public method GetTitle {} {
-	return [GetSortedTitle Lines]
+	return [GetSortTitle Lines]
     }
 }
