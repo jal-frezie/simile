@@ -184,7 +184,7 @@ class ExecutingModel
  protected: // protected methods
   void SetdT(int, double);
   void set_dts (int, double);
-  int rk_update();
+  int rk_update(int);
   void advance_time (int, double);
   int phase_for(double, double, int);
   BOOLEAN check_gui(double, int);

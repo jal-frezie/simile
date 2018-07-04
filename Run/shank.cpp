@@ -1229,7 +1229,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 					  BOOLEAN pause_out_of_range,
 					  BOOLEAN pause_on_events) {
   double xtime, aim_for, recover, evtError, newFreq, minFreq;
-  int big_phase, wee_phase, keeper;
+  int big_phase, wee_phase, keeper, z;
   BOOLEAN made_step, first_pass;
     // printf("xm %d %lf-%lf at %lf\n", how_int, start, *end, errlim);
     // showMess(globMess);
@@ -1326,8 +1326,14 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
 	} else {
 	  SetdT(0,-2);
 	}
+	for (z=big_phase;z<modelSpec->phases;++z) {
+	  loadedInst->dts[z] = ldts[z]*2;
+	}
 	loadedInst->updatemodel(big_phase);
-	rk_update(); // returns if any err so excpNo kept
+	for (z=big_phase;z<modelSpec->phases;++z) {
+	  loadedInst->dts[z] = ldts[z];
+	}
+	rk_update(big_phase); // returns if any err so excpNo kept
 	break;
       }
       if (userDefStop->excpNo) break; // from inner loop
@@ -1458,19 +1464,19 @@ int ExecutingModel::phase_for(double current, double step, int so_far) {
     }
   }
 
-int ExecutingModel::rk_update() {
-  int wee_phase, phases=modelSpec->phases;
+int ExecutingModel::rk_update(int curPhase) {
+  int wee_phase;
     InstanceOfModel* id = loadedInst;
 
-    wee_phase=phases+1;
-    advance_time(phases, 0.5);
+    wee_phase=modelSpec->phases+1;
+    advance_time(curPhase, 0.5);
     SetdT( 0,2);
     if (id->do_evalmodel(wee_phase)) return 1;
     id->updatemodel(wee_phase);
     SetdT( 0,3);
     if (id->do_evalmodel(wee_phase)) return 1;
     id->updatemodel(wee_phase);
-    advance_time(phases, 0.5);
+    advance_time(curPhase, 0.5);
     SetdT( 0,4);
     if (id->do_evalmodel(wee_phase)) return 1;
     id->updatemodel(wee_phase);
@@ -1479,6 +1485,7 @@ int ExecutingModel::rk_update() {
   }
 
 void ExecutingModel::set_dts (int phase, double current) {
+  printf("s_d ph %d cu %lf msp %d\n", phase, current, modelSpec->phases);
     int tweak_phase;
     for (tweak_phase=phase; tweak_phase<=modelSpec->phases; tweak_phase++) {
       ldts[tweak_phase]=current-lts[tweak_phase];
@@ -1488,6 +1495,7 @@ void ExecutingModel::set_dts (int phase, double current) {
   }
   
 void ExecutingModel::advance_time (int phase, double fraction) {
+  printf("a_t ph %d fr %lf\n", phase, fraction);
     int tweak_phase;
     double series_pt;
 
