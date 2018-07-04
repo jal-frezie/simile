@@ -88,7 +88,6 @@ double InstanceOfModel::stage_incr (double comp, diffs *extras, int step,
 				    double v, int useLims, 
 				    double min, double max, int graphId) {
   double dv, span, result, errMagn;
-  printf("s_i step %d, dtimes %lf,%lf,%lf\n", step, dts[0], dts[1], dts[2]);
   /*
 In this version, the three intermediate increments are kept in t1-t3 while
 building the full R-K increment. After this is complete they are assigned:
