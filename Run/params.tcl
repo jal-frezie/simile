@@ -44,9 +44,11 @@ proc FileParamDialogue {topNode topWin mustShow} {
     }
     DIYMakeFrames $t
     set useCppArray [RunningInC $topNode]
+    set ::helperTable($topNode,paramAble) disabled
     foreach node $allNodes {
         set notInput [FirstIndexCheck $topNode $node]
         if {$notInput != -1} {
+	    set ::helperTable($topNode,paramAble) normal
             AddEntry $t $topNode $node $mustShow $notInput
         }
     }

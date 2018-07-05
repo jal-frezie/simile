@@ -77,13 +77,12 @@ namespace eval RunEnv {
         variable currentNode
         
         if {[info exists helperTable($node,whichRunEnv)]} {
-	    wm deiconify $helperTable($node,whichRunEnv)
+	    set mreId $helperTable($node,whichRunEnv)
+	    wm deiconify $mreId
 	    if {[info exists helperTable($node,whereRunEnv)]} {
-		wm geometry $helperTable($node,whichRunEnv) \
-		    $helperTable($node,whereRunEnv)
+		wm geometry $mreId $helperTable($node,whereRunEnv)
 		unset helperTable($node,whereRunEnv)
 	    }
-            return $helperTable($node,whichRunEnv)
         } else {
             set mreId .mre[newInt]
             set helperTable($node,whichRunEnv) $mreId
@@ -252,8 +251,12 @@ namespace eval RunEnv {
 #                wm iconbitmap $mreId @$::SIMILE_PATH/Images/dribble.xbm
 #            }; # on Windows uses default icon set in Runmodel.tcl
             wm protocol $mreId WM_DELETE_WINDOW ::RunEnv::WindUp
-            return $mreId
         } ; # if .mre exists
+	${mreId}top.file entryconfigure [tr. Parameters...] \
+	    -state $helperTable($node,paramAble)
+	[GetFrame $mreId].tbar.b60 configure \
+	    -state $helperTable($node,paramAble)
+	return $mreId
     }
 
     proc InMreFor {node} {
