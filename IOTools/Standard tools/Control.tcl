@@ -124,7 +124,7 @@ namespace eval runcontrol33857 {
             pack $rcf.editBoxes.$name.unit -side left
             pack $rcf.editBoxes.$name  -anchor nw -pady 2 -fill x
         }
-	set runState($node,evtDisp) 0
+	# set runState($node,evtDisp) 0
 	set squeezed $rcf.editBoxes.disp.capt
 	pack [ttk::checkbutton $rcf.editBoxes.disp.evts -text [tr. {event;}] \
 		  -variable runState($node,evtDisp)] -side left \
