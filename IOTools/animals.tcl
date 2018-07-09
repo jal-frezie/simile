@@ -112,8 +112,7 @@ itcl::class similescript::$newLayerClass {
 	if {$useNodes(state) eq "displaying"} {
 	    $winId delete [namespace tail $this].main
 	    foreach aspect {size dir xcoord ycoord} {
-		set temp($aspect) \
-		    [lindex [$modelInst GetValue $useNodes($aspect)] 0]
+		set temp($aspect) [$modelInst GetValue $useNodes($aspect)]
 	    }
 	    DoForRXYData {} DrawAnimal $temp(size) $temp(dir) \
 		$temp(xcoord) $temp(ycoord)

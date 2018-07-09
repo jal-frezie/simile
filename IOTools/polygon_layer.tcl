@@ -142,13 +142,13 @@ itcl::class similescript::$newLayerClass {
 	set myTag [namespace tail $this].main
 	$winId delete $myTag
 	set useNodes(temp,curValues) \
-	    [lindex [$modelInst GetValue $useNodes($winId,color)] 0]
+	    [$modelInst GetValue $useNodes($winId,color)]
 	if {$useNodes($winId,xcoord) eq "HEX_CTRS"} {
 	    DoForData {} AddPolygon $useNodes(temp,curValues)
 	} else {
 	    DoForXYData {} AddPolygon $useNodes(temp,curValues) \
-		[lindex [$modelInst GetValue $useNodes($winId,ycoord)] 0] \
-		[lindex [$modelInst GetValue $useNodes($winId,xcoord)] 0]
+		[$modelInst GetValue $useNodes($winId,ycoord)] \
+		[$modelInst GetValue $useNodes($winId,xcoord)]
 	}
 	$winId bind $myTag <Enter> "QueuePopup AddWidgetPopup %W %X %Y \
 					\[$this CurrentPopup\]"
@@ -161,7 +161,7 @@ itcl::class similescript::$newLayerClass {
 	if {[string equal displaying $useNodes($winId,state)] && \
 		$useNodes($winId,displayUpdate)} {
 	    set useNodes(temp,curValues) \
-		[lindex [$modelInst GetValue $useNodes($winId,color)] 0]
+		[$modelInst GetValue $useNodes($winId,color)]
 	    if {$useNodes($winId,displayRetile)} {
 		ReTile
 		return

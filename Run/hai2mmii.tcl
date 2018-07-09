@@ -149,8 +149,9 @@ proc AddToWatched {node} {
 # the node is an array or list, and 'novalue' if it does not have one, e.g., a
 # cloud or submodel.
 
-proc GetModelValue { node } {
-    set loseZeros [expr {[lsearch {EVENT SQUIRT} [GetModelClass $node]]>-1}]
+proc GetModelValue { node {keepEvtZeros 0}} {
+    set loseZeros [expr {[lsearch {EVENT SQUIRT} [GetModelClass $node]]>-1 && \
+			 !$keepEvtZeros}]
     global subbedPlots
     if {[info exists subbedPlots($node)]} {
 	if {[llength $subbedPlots($node)]==3} { # is pointer to univ struct

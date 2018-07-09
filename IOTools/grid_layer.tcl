@@ -144,8 +144,7 @@ itcl::class similescript::$newLayerClass {
 	    set useNodes($winId,nrow) \
 		[expr {[lindex $vList 0]/$useNodes($winId,ncol)}]
 	} else {
-	    set count [DoForData [lindex [$modelInst GetValue $testPath] 0] \
-			   colvals]
+	    set count [DoForData [$modelInst GetValue $testPath] colvals]
 	    set useNodes($winId,ncol) [array size colvals]
 	    set useNodes($winId,nrow) \
 		[expr {$count/$useNodes($winId,ncol)}]
@@ -167,7 +166,7 @@ itcl::class similescript::$newLayerClass {
 # do not use image mode for inputs cos we will want to edit them...
 # hah, just fixed it so we can anyway
 	set useNodes(temp,curValues) \
-	    [lindex [$modelInst GetValue $useNodes($winId,color) -numeric 1] 0]
+	    [$modelInst GetValue $useNodes($winId,color) -numeric 1]
 	set node [GetIdFromCaptionPath $useNodes($winId,color)]
 	if {$useNodes($winId,hex) || \
 		[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \

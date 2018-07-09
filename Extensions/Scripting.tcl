@@ -614,12 +614,14 @@ redo with snap object
     public method GetValue {path args} {
 	array set opts $args
 	set node [do_for_node $modelNode GetIdFromCaptionPath $path]
-	set trans [GetCompProperty $modelNode Trans $node]
-        set numerics [lindex [do_for_node $modelNode GetModelValue $node] 0]
+	set keepZeros [expr {[info exists opts(-all)] && $opts(-all)}]
+        set numerics \
+	    [lindex [do_for_node $modelNode GetModelValue $node $keepZeros] 0]
 	if {[info exists opts(-numeric)] && $opts(-numeric)} {
-	    return [list $numerics]
+	    return $numerics
 	}
-	return [list [TransEnums $trans $numerics]]
+	set trans [GetCompProperty $modelNode Trans $node]
+	return [TransEnums $trans $numerics]
     }
     
     public method RequestValues {args} {

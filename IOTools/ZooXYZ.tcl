@@ -265,8 +265,7 @@ itcl::class similescript::$newHelperClass {
 			if {$arr eq "null"} {
 			    lappend rawList 0
 			} else {
-			    lappend rawList [lindex [$modelInst GetValue \
-							 $arr] 0]
+			    lappend rawList [$modelInst GetValue $arr -all 1]
 			}
 		    }
 		    set quadlist {}
@@ -295,8 +294,7 @@ itcl::class similescript::$newHelperClass {
 			if {$arr eq "null"} {
 			    lappend rawList 0
 			} else {
-			    lappend rawList [lindex [$modelInst GetValue \
-							 $arr] 0]
+			    lappend rawList [$modelInst GetValue $arr -all 1]
 			}
 		    }
 		    set quadlist {}
@@ -322,8 +320,7 @@ itcl::class similescript::$newHelperClass {
 		    }
 		    for {set i 1} {$i<4} {incr i} {
 			set [lindex {0 vx vy vz} $i] \
-			    [lindex [$modelInst GetValue \
-					 [lindex $instruct $i]] 0]
+			    [$modelInst GetValue [lindex $instruct $i] -all 1]
 		    }
 		    eval lappend upper [PolyInsts p $vx $vy $vz \
 						  [lrange $instruct 4 5]]
@@ -333,8 +330,7 @@ itcl::class similescript::$newHelperClass {
 		    }
 		    for {set i 1} {$i<10} {incr i} {
 			array set [lindex {0 cx cy cz tx ty tz sx sy sz} $i] \
-			    [Flatten [lindex [$modelInst GetValue \
-						  [lindex $instruct $i]] 0]]
+			    [Flatten [$modelInst GetValue [lindex $instruct $i] -all 1]]
 		    }
 		    foreach iV [array names cz] {
 			if {[llength $iV]} {
@@ -358,8 +354,7 @@ itcl::class similescript::$newHelperClass {
 			if {$arr eq "null"} {
 			    lappend rawList 0
 			} else {
-			    lappend rawList [lindex [$modelInst GetValue \
-							 $arr] 0]
+			    lappend rawList [$modelInst GetValue $arr -all 1]
 			}
 		    }
 		    set quadlist {}
@@ -391,8 +386,8 @@ itcl::class similescript::$newHelperClass {
 		    }
 		} surface {
 		    foreach {var posn} {x 1 y 2 z 3} {
-			set $var [lindex [$modelInst GetValue \
-					      [lindex $instruct $posn]] 0]
+			set $var [$modelInst GetValue [lindex $instruct $posn] \
+				      -all 1]
 		    }
 		    set bx [lindex $x 1]
 		    set by [lindex $y 1]

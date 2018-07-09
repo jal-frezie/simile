@@ -143,7 +143,7 @@ class similescript::$newHelperClass {
 	pack [label $f.caption -text [lindex $levels end]: -bg $lbg] -side left
 	pack [::ttk::entry $f.value] -side left -fill x -expand 1
 	set useNodes(ticker,$title) $f
-	FillTicker $title [lindex [$modelInst GetValue $title] 0]
+	FillTicker $title [$modelInst GetValue $title]
 	pack [::ttk::button $f.remove -image $useNodes(removeImg) \
 		  -command [code $this Remove $title]] -side right
 	return yes
@@ -212,8 +212,7 @@ class similescript::$newHelperClass {
 		set useNodes(common_stm) [open $curFile w]
 		set hdrs Time
 		foreach path $useNodes(logged) {
-		    PutIndexCombos hdrs \
-			[lindex [$modelInst GetValue $path] 0] \
+		    PutIndexCombos hdrs [$modelInst GetValue $path] \
 			, [file tail $path]
 		}
 		puts $useNodes(common_stm) $hdrs
@@ -224,7 +223,7 @@ class similescript::$newHelperClass {
 	if {[catch {$useNodes(common_stm) tables} tList]} { # writing csv
 	    puts -nonewline $useNodes(common_stm) $time
 	    foreach path $useNodes(logged) {
-		set toLog [lindex [$modelInst GetValue $path] 0]
+		set toLog [$modelInst GetValue $path]
 		FillTicker $path $toLog
 		PutValsOnly vals $toLog
 	    }
@@ -235,8 +234,7 @@ class similescript::$newHelperClass {
 	    if {[lsearch $tList $curTab] == -1} {
 		set sqlStr "CREATE TABLE `$curTab` (`Time"
 		foreach path $useNodes(logged) {
-		    PutIndexCombos sqlStr \
-			[lindex [$modelInst GetValue $path] 0] \
+		    PutIndexCombos sqlStr [$modelInst GetValue $path] \
 			"` text, `" [file tail $path]
 		}
 		append sqlStr "` text)"
@@ -245,13 +243,12 @@ class similescript::$newHelperClass {
 	    # now add a row of values
 	    set sqlStr "INSERT INTO `$curTab` (`Time"
 	    foreach path $useNodes(logged) {
-		PutIndexCombos sqlStr \
-		    [lindex [$modelInst GetValue $path] 0] \
+		PutIndexCombos sqlStr [$modelInst GetValue $path] \
 		    "`, `" [file tail $path]
 	    }
 	    append sqlStr "`) VALUES ($time"
 	    foreach path $useNodes(logged) {
-		set toLog [lindex [$modelInst GetValue $path] 0]
+		set toLog [$modelInst GetValue $path]
 		FillTicker $path $toLog
 		PutValsOnly sqlStr $toLog
 	    }
