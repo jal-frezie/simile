@@ -1485,7 +1485,6 @@ int ExecutingModel::rk_update(int curPhase) {
   }
 
 void ExecutingModel::set_dts (int phase, double current) {
-  printf("s_d ph %d cu %lf msp %d\n", phase, current, modelSpec->phases);
     int tweak_phase;
     for (tweak_phase=phase; tweak_phase<=modelSpec->phases; tweak_phase++) {
       ldts[tweak_phase]=current-lts[tweak_phase];
@@ -1495,7 +1494,6 @@ void ExecutingModel::set_dts (int phase, double current) {
   }
   
 void ExecutingModel::advance_time (int phase, double fraction) {
-  printf("a_t ph %d fr %lf\n", phase, fraction);
     int tweak_phase;
     double series_pt;
 
