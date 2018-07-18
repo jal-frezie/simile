@@ -299,8 +299,8 @@ itcl::class similescript::$newHelperClass {
 	if {$arr eq "null"} {
 	    return 0
 	} elseif {[lindex $arr 0] eq ",colours"} {
-	    return [ColoursFor [$modelInst GetValue [lindex $arr 1] -all 1] \
-			[lindex $arr 2]]
+	    return [ColoursFor [$modelInst GetValue [lindex $arr 1] -all 1 \
+				    -numeric 1] [lindex $arr 2]]
 	} elseif {![string first / $arr]} { ;# model component
 	    return [$modelInst GetValue $arr -all 1]
 	} else { ;# numerical or colour constant
