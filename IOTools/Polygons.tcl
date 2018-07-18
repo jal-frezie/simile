@@ -575,7 +575,7 @@ namespace eval ::polygon375 {
         pack [button $borderF.colourF.cbutton -text "..." \
                 -command [namespace code "Recolour $winId bord $borderF.colourF.colF"]] -side right
         pack $borderF.colourF.colF -side right -padx 10
-        pack $borderF -padx 10 -pady 10
+        pack $borderF -padx 10 -pady 10 -fill x
         
         set rangeF [labelframe $dlg.range -text "Scale range"]
         pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,datamin)"] -fill x  -padx 10

@@ -198,6 +198,38 @@ itcl::class similescript::$newLayerClass {
 	incr useNodes($winId,nswatches)
     }
 
+    public method EditKey {parent} {
+	set subDlg [PutItThere .colourkey $parent]
+	wm title $subDlg [tr. "Colour key editor"]
+	set flc 0
+	while {[info exists useNodes($winId,c$flc)]} {
+	    lappend map $useNodes($winId,c$flc)
+	    incr flc
+	}
+	if {[info exists map]} {
+	    ::EditLegend::ReverseEngineerFlags $map
+	} else {
+	    set ::EditLegend::flags {{0 black} {16 red} {31 white}}
+	}
+	set ::EditLegend::nswatches [lindex $::EditLegend::flags end 0]
+	::EditLegend::Initialize $subDlg
+	LetItShow $subDlg
+	grab $subDlg
+	tkwait variable ::EditLegend::done
+	grab release $subDlg
+
+	if {$::EditLegend::done} {
+	    # OK button was clicked -- import results
+	    set map [::EditLegend::MakeColours]
+	    set useNodes($winId,nswatches) [llength $map]
+	    for {set prog 0} {$prog<$useNodes($winId,nswatches)} {incr prog} {
+		set useNodes($winId,c$prog) [lindex $map $prog]
+	    }
+	    Display 0 0 0	    
+	}
+	PackItUp $subDlg
+    }
+
     public method Settings {} {
 	set dlg [PutItThere .polyprop [winfo toplevel $winId]]
 	wm title $dlg [tr. "Polygon display properties"]
@@ -210,16 +242,18 @@ itcl::class similescript::$newLayerClass {
         
         #create widgets
         set coloursF [labelframe $dlg.colours -text "Colour scale"]
-	foreach {ptName ptId} {Low bot Middle mid High top} {
-	    pack [ttk::labelframe $coloursF.${ptId}colourF \
-		      -text "$ptName  colour"] -fill x -padx 10
-	    frame $coloursF.${ptId}colourF.colF -width 20 -height 15 \
-		-bg $useNodes($winId,c${ptId})
-	    pack [button $coloursF.${ptId}colourF.cbutton -text "..." \
-		      -command [list $this Recolour $ptId \
-				    $coloursF.${ptId}colourF.colF]] -side right
-	    pack $coloursF.${ptId}colourF.colF -side right -padx 10
-        }
+	pack [button $coloursF.change -text "Edit colour key" \
+		  -command [namespace code [list $this EditKey $dlg]]]
+#	foreach {ptName ptId} {Low bot Middle mid High top} {
+#	    pack [ttk::labelframe $coloursF.${ptId}colourF \
+#		      -text "$ptName  colour"] -fill x -padx 10
+#	    frame $coloursF.${ptId}colourF.colF -width 20 -height 15 \
+#		-bg $useNodes($winId,c${ptId})
+#	    pack [button $coloursF.${ptId}colourF.cbutton -text "..." \
+#		      -command [list $this Recolour $ptId \
+#				    $coloursF.${ptId}colourF.colF]] -side right
+#	    pack $coloursF.${ptId}colourF.colF -side right -padx 10
+#        }
         pack $coloursF -padx 10 -pady 10 -fill x
         
         set stippleF [labelframe $dlg.stipple -text "Stipple pattern"]
@@ -289,7 +323,7 @@ itcl::class similescript::$newLayerClass {
         set useNodes($winId,min) $min
         set useNodes($winId,max) $max
         set useNodes($winId,range) [expr {$max-$min}]
-	SetColours useNodes $winId
+#	SetColours useNodes $winId
 	Display 0 0 0
 	switch -regexp $useNodes($winId,legendSide) {
 	    l|r {
@@ -395,7 +429,12 @@ itcl::class similescript::$newLayerClass {
 		[expr $transform(xzoom)*$xval] [expr -$transform(yzoom)*$yval]
 	}
 	set newColour [ColourFor $winId $key]
-	$winId create polygon $outlist -outline $useNodes($winId,cbord) \
+	if {$useNodes($winId,bw)} {
+	    set newBord $useNodes($winId,cbord)
+	} else {
+	    set newBord {}
+	}
+	$winId create polygon $outlist -outline $newBord \
 	    -width $useNodes($winId,bw) -fill $newColour \
 	    -tag [list [namespace tail $this].main [IdToTag $inds]]
     }

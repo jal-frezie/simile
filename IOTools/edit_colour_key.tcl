@@ -61,6 +61,7 @@ proc Recolour {c item} {
     variable flags
     
     set newCol [tk_chooseColor -initialcolor [$c itemcget $item -fill]]
+    if {$newCol eq {}} return
     $c itemconfig $item -fill $newCol
 
     set l [lindex [$c coords $item] 0]
@@ -172,7 +173,7 @@ proc AdjustSwatchCount {f pos} {
     DrawScale $c [MakeColours]
 }
 
-proc ReverseEngineerFlags {c map} {
+proc ReverseEngineerFlags {map} {
     variable flags
 
     set count 0
@@ -201,17 +202,11 @@ proc ReverseEngineerFlags {c map} {
 	incr count
     }
     lappend flags [list [expr {$count-1}] $lastSwatch]
-
-    foreach fltag [$c find withtag flag] {
-	$c delete $fltag [incr fltag -1]
-    }
-    foreach fl $flags {
-	DrawFlag $c [lindex $fl 0] [lindex $fl 1]
-    }
 }
 
 proc LoadFile {c} {
     variable nswatches
+    variable flags
 
     set RGBfile [ChooseFile scale.rgb [tr. "Load colour scale from:"] 0 {}]
     if {$RGBfile eq {}} return
@@ -239,7 +234,14 @@ proc LoadFile {c} {
     $fr.sc configure -value $nswatches
     $fr.l configure -text "Swatches: $nswatches"
     DrawScale $c $map
-    ReverseEngineerFlags $c $map
+    ReverseEngineerFlags $map
+
+    foreach fltag [$c find withtag flag] {
+	$c delete $fltag [incr fltag -1]
+    }
+    foreach fl $flags {
+	DrawFlag $c [lindex $fl 0] [lindex $fl 1]
+    }
 }
 
 proc SaveFile {} {
