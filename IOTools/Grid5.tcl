@@ -97,7 +97,7 @@ namespace eval grid005 {
 			-initialcolor $useNodes($winId,c$whichCol)]
         if {[string length $colour]} {
 	    $exampleWidget configure -bg $colour
-	    set useNodes($winId,colourMapTweaked) 0
+	    #set useNodes($winId,colourMapTweaked) 0
 	}
         return $colour
     }
@@ -139,7 +139,7 @@ namespace eval grid005 {
 	    for {set col 0} {$col<$useNodes($winId,nswatches)} {incr col} {
 		set useNodes($winId,c$col) [lindex $state [incr swatchBase]]
 	    }
-	    set useNodes($winId,colourMapTweaked) 1
+	    #set useNodes($winId,colourMapTweaked) 1
 	} else {
 	    SetColours useNodes $winId
 	}
@@ -278,15 +278,15 @@ namespace eval grid005 {
 	set state [list displaying \
 		       [GetCaptionPathFromId $useNodes($winId,color)] \
 		       [GetCaptionPathFromId $useNodes($winId,colvals)]]
-	if {$useNodes($winId,colourMapTweaked)} {
+#	if {$useNodes($winId,colourMapTweaked)} {
 	    lappend state swatches
 	    for {set col 0} {$col<$useNodes($winId,nswatches)} {incr col} {
 		lappend state $useNodes($winId,c$col)
 	    }
-	} else {
-	    lappend state colourmap $useNodes($winId,cbot) \
-		$useNodes($winId,cmid) $useNodes($winId,ctop)
-	}
+#	} else {
+#	    lappend state colourmap $useNodes($winId,cbot) \
+#		$useNodes($winId,cmid) $useNodes($winId,ctop)
+#	}
 	lappend state images $useNodes($winId,imgs)
 	foreach possImg [array names useNodes $winId,i*] {
 	    set thei [string last i $possImg]
@@ -426,6 +426,41 @@ namespace eval grid005 {
         display $winId 0 0 0
     }
 
+    proc EditKey {winId parent} {
+        variable useNodes
+	set subDlg [PutItThere .colourkey $parent]
+	wm title $subDlg [tr. "Colour key editor"]
+	set flc 0
+	while {[info exists useNodes($winId,c$flc)]} {
+	    lappend map $useNodes($winId,c$flc)
+	    incr flc
+	}
+	if {[info exists map]} {
+	    ::EditLegend::ReverseEngineerFlags $map
+	} else {
+	    set ::EditLegend::flags {{0 black} {16 red} {31 white}}
+	}
+	set ::EditLegend::nswatches \
+	    [expr {[lindex $::EditLegend::flags end 0]+1}]
+	::EditLegend::Initialize $subDlg
+	LetItShow $subDlg
+	grab $subDlg
+	tkwait variable ::EditLegend::done
+	grab release $subDlg
+
+	if {$::EditLegend::done} {
+	    # OK button was clicked -- import results
+	    set map [::EditLegend::MakeColours]
+	    set useNodes($winId,flags) $::EditLegend::flags
+	    set useNodes($winId,nswatches) [llength $map]
+	    for {set prog 0} {$prog<$useNodes($winId,nswatches)} {incr prog} {
+		set useNodes($winId,c$prog) [lindex $map $prog]
+	    }
+	    recolour_scale $::helperTable($winId,whichInstance) $winId	    
+	}
+	PackItUp $subDlg
+    }
+    
     proc Settings {winId} {
 	global gridprops
 
@@ -444,38 +479,40 @@ namespace eval grid005 {
 	pack [set t [::ttk::notebook $dlg.notebook]] -fill both -expand true
 	$t add [set fd [frame $t.disp]] -text "Display"
         set coloursF [labelframe $fd.colours -text "Colour scale"]
-        pack [ttk::labelframe $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
-	if {$useNodes($winId,colourMapTweaked)} {
-	    DefaultColours $winId
-	}
-        frame $coloursF.lowcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cbot)
-        pack [button $coloursF.lowcolourF.cbutton -text "..." \
-                -command [namespace code "Recolour $winId bot $coloursF.lowcolourF.colF"]] -side right
-        pack $coloursF.lowcolourF.colF -side right -padx 10
+	pack [button $coloursF.change -text "Edit colour key" \
+		  -command [namespace code [list EditKey $winId $dlg]]]
+#        pack [ttk::labelframe $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
+#	if {$useNodes($winId,colourMapTweaked)} {
+#	    DefaultColours $winId
+#	}
+#        frame $coloursF.lowcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cbot)
+#        pack [button $coloursF.lowcolourF.cbutton -text "..." \
+#                -command [namespace code "Recolour $winId bot $coloursF.lowcolourF.colF"]] -side right
+#        pack $coloursF.lowcolourF.colF -side right -padx 10
         
-        pack [ttk::labelframe $coloursF.midcolourF -text "Middle colour"] -fill x -padx 10
-        frame $coloursF.midcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cmid)
-        pack [button $coloursF.midcolourF.cbutton -text "..." \
-                -command [namespace code "Recolour $winId mid $coloursF.midcolourF.colF"]] -side right
-        pack $coloursF.midcolourF.colF -side right -padx 10
+#        pack [ttk::labelframe $coloursF.midcolourF -text "Middle colour"] -fill x -padx 10
+#        frame $coloursF.midcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cmid)
+ #       pack [button $coloursF.midcolourF.cbutton -text "..." \
+ #               -command [namespace code "Recolour $winId mid $coloursF.midcolourF.colF"]] -side right
+ #       pack $coloursF.midcolourF.colF -side right -padx 10
         
-        pack [ttk::labelframe $coloursF.topcolourF -text "High colour"] -fill x -padx 10
-        frame $coloursF.topcolourF.colF -width 20 -height 15 -bg $useNodes($winId,ctop)
-        pack [button $coloursF.topcolourF.cbutton -text "..." \
-                -command [namespace code "Recolour $winId top $coloursF.topcolourF.colF"]] -side right
-        pack $coloursF.topcolourF.colF -side right -padx 10
-        pack [ttk::labelframe $coloursF.swatchF -text "Swatch count"] -fill x  -padx 10 -pady 5
-        pack [entry $coloursF.swatchF.entry -textvar [namespace current]::useNodes($winId,nswatches) -width 20] -side right -padx 10
-	pack [frame $coloursF.misc] -fill x -expand 1
-	pack [button $coloursF.misc.load -text [tr. {Load RGB file}] \
-		  -command [namespace code "LegendFromRGB $winId"]] -side left
-	pack [checkbutton $coloursF.misc.imgs -text [tr. {Superimpose images}] \
-		  -variable [namespace current]::useNodes($winId,imgs)] \
-	    -side left
+ #       pack [ttk::labelframe $coloursF.topcolourF -text "High colour"] -fill x -padx 10
+ #       frame $coloursF.topcolourF.colF -width 20 -height 15 -bg $useNodes($winId,ctop)
+#        pack [button $coloursF.topcolourF.cbutton -text "..." \
+#                -command [namespace code "Recolour $winId top $coloursF.topcolourF.colF"]] -side right
+#        pack $coloursF.topcolourF.colF -side right -padx 10
+#        pack [ttk::labelframe $coloursF.swatchF -text "Swatch count"] -fill x  -padx 10 -pady 5
+#        pack [entry $coloursF.swatchF.entry -textvar [namespace current]::useNodes($winId,nswatches) -width 20] -side right -padx 10
+#	pack [frame $coloursF.misc] -fill x -expand 1
+#	pack [button $coloursF.misc.load -text [tr. {Load RGB file}] \
+#		  -command [namespace code "LegendFromRGB $winId"]] -side left
+#	pack [checkbutton $coloursF.misc.imgs -text [tr. {Superimpose images}] \
+#		  -variable [namespace current]::useNodes($winId,imgs)] \
+#	    -side left
         
-        if {$max($winId)-$min($winId)>1} {
+#        if {$max($winId)-$min($winId)>1} {
 	    pack $coloursF -padx 10 -pady 10 -fill x
-        }
+#        }
 	
         set rangeF [labelframe $fd.range -text "Scale range"]
         pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,dataMin)"] -fill x  -padx 10
@@ -613,34 +650,6 @@ namespace eval grid005 {
 	gdal_close $newTemplate
     }
 
-    proc LegendFromRGB {winId} {
-        variable useNodes
-	set RGBfile [ChooseFile legend.rgb [tr. "Load legend from:"] 0 \
-			 [$::helperTable($winId,whichInstance) GetNode]]
-	if {$RGBfile ne {}} {
-	    set stm [open $RGBfile r]
-	    while {![eof $stm]} {
-		gets $stm line
-		set line [string trim $line]
-		if {$line eq {} || ![string first \# $line]} continue
-		if {[string first ncolors $line]>=0} {
-		    regexp {[0-9]+} $line useNodes($winId,nswatches)
-		    set icolour 0
-		    set useNodes($winId,colourMapTweaked) 1
-		} else {
-		    if {[scan $line %d%d%d r g b]==3} {
-			set useNodes($winId,c$icolour) \
-			    [format \#%02x%02x%02x $r $g $b]
-			incr icolour
-		    } else {
-			DebugMess "dodgd line $line"
-		    }
-		}
-	    }
-	    close $stm
-	}
-    }
-		    
     proc OnClickSettingOkBtn {winId coloursF rangeF dlg} {
         
         variable useNodes
@@ -648,9 +657,9 @@ namespace eval grid005 {
         variable max
         
         # copy the values from the temp values to those to be edited if OK clicked
-        set useNodes($winId,ctop) [$coloursF.topcolourF.colF cget -bg]
-        set useNodes($winId,cmid) [$coloursF.midcolourF.colF cget -bg]
-        set useNodes($winId,cbot) [$coloursF.lowcolourF.colF cget -bg]
+        # set useNodes($winId,ctop) [$coloursF.topcolourF.colF cget -bg]
+        # set useNodes($winId,cmid) [$coloursF.midcolourF.colF cget -bg]
+        # set useNodes($winId,cbot) [$coloursF.lowcolourF.colF cget -bg]
         if {[IsNumber $min($winId)]} {
             set useNodes($winId,min) $min($winId)
         } else  {
@@ -667,9 +676,9 @@ namespace eval grid005 {
             focus $rangeF.maxF.entry
             return
         }
-	if {!$useNodes($winId,colourMapTweaked)} {
-	    SetColours useNodes $winId
-	}
+#	if {!$useNodes($winId,colourMapTweaked)} {
+#	    SetColours useNodes $winId
+#	}
         recolour_scale $::helperTable($winId,whichInstance) $winId
         PrepareSaveString $winId
         display $winId 0 0 0

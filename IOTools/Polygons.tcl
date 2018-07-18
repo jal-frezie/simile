@@ -505,8 +505,18 @@ namespace eval ::polygon375 {
         variable useNodes
 	set subDlg [PutItThere .colourkey $parent]
 	wm title $subDlg [tr. "Colour key editor"]
-	set ::EditLegend::flags $useNodes($winId,flags)
-	set ::EditLegend::nswatches $useNodes($winId,nswatches)
+	set flc 0
+	while {[info exists useNodes($winId,c$flc)]} {
+	    lappend map $useNodes($winId,c$flc)
+	    incr flc
+	}
+	if {[info exists map]} {
+	    ::EditLegend::ReverseEngineerFlags $map
+	} else {
+	    set ::EditLegend::flags {{0 black} {16 green1} {31 white}}
+	}
+	set ::EditLegend::nswatches \
+	    [expr {[lindex $::EditLegend::flags end 0]+1}]
 	::EditLegend::Initialize $subDlg
 	LetItShow $subDlg
 	grab $subDlg

@@ -59,13 +59,15 @@ proc PosnFromInd {n} {
 
 proc Recolour {c item} {
     variable flags
-    
-    set newCol [tk_chooseColor -initialcolor [$c itemcget $item -fill]]
+
+    set swpos [IndFromPosn [lindex [$c coords $item] 0]]
+    set newCol [tk_chooseColor -title "New colour for swatch $swpos" \
+		    -parent [winfo parent $c] \
+		    -initialcolor [$c itemcget $item -fill]]
     if {$newCol eq {}} return
     $c itemconfig $item -fill $newCol
 
-    set l [lindex [$c coords $item] 0]
-    set swidx [lsearch -index 0 $flags [IndFromPosn $l]]
+     set swidx [lsearch -index 0 $flags $swpos]
     lset flags $swidx 1 $newCol
     DrawScale $c [MakeColours]
 }
@@ -93,6 +95,11 @@ proc AddFlag {c x} {
 	    set icol [lindex $old 1]
 	    incr pos
 	}
+    }
+    if {$swno==[lindex $flags $pos 0]} {
+	tk_messageBox -parent [winfo parent $c] -icon info \
+	    -message "This swatch already has a flag"
+	return
     }
     set flags [linsert $flags $pos [list $swno $icol]]
     [winfo parent $c].ctrls.sc config -from [llength $flags]

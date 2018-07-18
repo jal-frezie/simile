@@ -506,6 +506,7 @@ install:
 		IOTools/canvasnotes.tcl \
 		IOTools/dxf.tcl \
 		IOTools/graphtools.tcl \
+		IOTools/edit_colour_key.tcl \
 		IOTools/maps2.tcl \
 		IOTools/threedtools.tcl \
 		IOTools/textshow.tcl \

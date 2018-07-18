@@ -350,7 +350,8 @@ itcl::class similescript::$newLayerClass {
 	} else {
 	    set ::EditLegend::flags {{0 black} {16 red} {31 white}}
 	}
-	set ::EditLegend::nswatches [lindex $::EditLegend::flags end 0]
+	set ::EditLegend::nswatches \
+	    [expr {[lindex $::EditLegend::flags end 0]+1}]
 	::EditLegend::Initialize $subDlg
 	LetItShow $subDlg
 	grab $subDlg
