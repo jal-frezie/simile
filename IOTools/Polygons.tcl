@@ -41,6 +41,7 @@ namespace eval ::polygon375 {
         set useNodes($winId,cmid) green
         set useNodes($winId,ctop) white
         set useNodes($winId,cbord) black
+	set useNodes($winId,flags) {{0 black} {16 green} {31 white}}
         
 	set useNodes($winId,scalex) 1.0
 	set useNodes($winId,scaley) 1.0
@@ -133,6 +134,12 @@ namespace eval ::polygon375 {
 	if {$useNodes($winId,editMode)} {
 	    set useNodes($winId,editMode) 0
 	    ChangeEditMode [namespace current] $winId
+	}
+	if {![info exists useNodes($winId,flags)]} {
+	    foreach {where what} {0 cbot 0.5 cmid 1 ctop} {
+		lappend useNodes($winId,flags) \
+		    [list [expr {round($where*($useNodes($winId,nswatches)-1))}] $useNodes($winId,$what)]
+	    }
 	}
 	if {![info exists useNodes($winId,stringInfo)]} return
 	RestoreNotesFromList [GetCanvas $winId] $useNodes($winId,stringInfo)
@@ -493,6 +500,31 @@ namespace eval ::polygon375 {
 #        }
 #puts "Colour for $value is $colNum (range $useNodes($winId,range))"
     }
+
+    proc EditKey {winId parent} {
+        variable useNodes
+	set subDlg [PutItThere .colourkey $parent]
+	wm title $subDlg [tr. "Colour key editor"]
+	set ::EditLegend::flags $useNodes($winId,flags)
+	set ::EditLegend::nswatches $useNodes($winId,nswatches)
+	::EditLegend::Initialize $subDlg
+	LetItShow $subDlg
+	grab $subDlg
+	tkwait variable ::EditLegend::done
+	grab release $subDlg
+
+	if {$::EditLegend::done} {
+	    # OK button was clicked -- import results
+	    set map [::EditLegend::MakeColours]
+	    set useNodes($winId,flags) $::EditLegend::flags
+	    set useNodes($winId,nswatches) [llength $map]
+	    for {set prog 0} {$prog<$useNodes($winId,nswatches)} {incr prog} {
+		set useNodes($winId,c$prog) [lindex $map $prog]
+	    }
+	    recolour_scale $::helperTable($winId,whichInstance) $winId	    
+	}
+	PackItUp $subDlg
+    }
     
     proc Settings {winId} {
         variable useNodes
@@ -513,23 +545,25 @@ namespace eval ::polygon375 {
         
         #create widgets
         set coloursF [labelframe $dlg.colours -text "Colour scale"]
-        pack [ttk::labelframe $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
-        frame $coloursF.lowcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cbot)
-        pack [button $coloursF.lowcolourF.cbutton -text "..." \
-                -command [namespace code "Recolour $winId bot $coloursF.lowcolourF.colF"]] -side right
-        pack $coloursF.lowcolourF.colF -side right -padx 10
+	pack [button $coloursF.change -text "Edit colour key" \
+		  -command [namespace code [list EditKey $winId $dlg]]]
+#        pack [ttk::labelframe $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
+#        frame $coloursF.lowcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cbot)
+#        pack [button $coloursF.lowcolourF.cbutton -text "..." \
+#                -command [namespace code "Recolour $winId bot $coloursF.lowcolourF.colF"]] -side right
+#        pack $coloursF.lowcolourF.colF -side right -padx 10
         
-        pack [ttk::labelframe $coloursF.midcolourF -text "Middle colour"] -fill x -padx 10
-        frame $coloursF.midcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cmid)
-        pack [button $coloursF.midcolourF.cbutton -text "..." \
-                -command [namespace code "Recolour $winId mid $coloursF.midcolourF.colF"]] -side right
-        pack $coloursF.midcolourF.colF -side right -padx 10
+#        pack [ttk::labelframe $coloursF.midcolourF -text "Middle colour"] -fill x -padx 10
+#        frame $coloursF.midcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cmid)
+#        pack [button $coloursF.midcolourF.cbutton -text "..." \
+#                -command [namespace code "Recolour $winId mid $coloursF.midcolourF.colF"]] -side right
+#        pack $coloursF.midcolourF.colF -side right -padx 10
         
-        pack [ttk::labelframe $coloursF.topcolourF -text "High colour"] -fill x -padx 10
-        frame $coloursF.topcolourF.colF -width 20 -height 15 -bg $useNodes($winId,ctop)
-        pack [button $coloursF.topcolourF.cbutton -text "..." \
-                -command [namespace code "Recolour $winId top $coloursF.topcolourF.colF"]] -side right
-        pack $coloursF.topcolourF.colF -side right -padx 10
+#        pack [ttk::labelframe $coloursF.topcolourF -text "High colour"] -fill x -padx 10
+#        frame $coloursF.topcolourF.colF -width 20 -height 15 -bg $useNodes($winId,ctop)
+#        pack [button $coloursF.topcolourF.cbutton -text "..." \
+#                -command [namespace code "Recolour $winId top $coloursF.topcolourF.colF"]] -side right
+#        pack $coloursF.topcolourF.colF -side right -padx 10
         
         pack $coloursF -padx 10 -pady 10 -fill x
         
@@ -584,9 +618,9 @@ namespace eval ::polygon375 {
         variable max
         
         # copy the values from the temp values to those to be edited if OK clicked
-        set useNodes($winId,ctop) [$coloursF.topcolourF.colF cget -bg]
-        set useNodes($winId,cmid) [$coloursF.midcolourF.colF cget -bg]
-        set useNodes($winId,cbot) [$coloursF.lowcolourF.colF cget -bg]
+        # set useNodes($winId,ctop) [$coloursF.topcolourF.colF cget -bg]
+        # set useNodes($winId,cmid) [$coloursF.midcolourF.colF cget -bg]
+        # set useNodes($winId,cbot) [$coloursF.lowcolourF.colF cget -bg]
         if {[IsNumber $min($winId)]} {
             set useNodes($winId,min) $min($winId)
         } else  {

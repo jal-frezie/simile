@@ -114,7 +114,7 @@ itcl::class similescript::$newHelperClass {
 			  {component "Y positions"} \
 			  {component "Z positions"} \
 			  {component "size values"} \
-			  {colour colour}} \
+			  {colour surface}} \
 		 lines {{type "Select new item type"} \
 			  {component "start X positions"} \
 			  {component "start Y positions"} \
@@ -123,7 +123,7 @@ itcl::class similescript::$newHelperClass {
 			  {component "end Y positions"} \
 			  {component "end Z positions"} \
 			  {component "width values"} \
-			  {colour colour}}
+			  {colour all}}
 		 polygons {{type "Select new item type"} \
 			  {component "X vertex position lists"} \
 			  {component "Y vertex position lists"} \
@@ -160,14 +160,37 @@ itcl::class similescript::$newHelperClass {
 			  {colour outline} \
 			  {colour fill}}}
 	set template $all_templates($type)
-	pack [message $winId.ms]
+	pack [message $winId.ms -aspect 400]
 	MakeSelection $type
     }
 
     public method MakeSelection {selected} {
 	for {set i 0} {$i < [llength $template]} {incr i} {
 	    if {[lsearch {type component colour} [lindex $template $i 0]]>-1} {
-		lset template $i $selected
+		if {[lindex $template $i 0] eq "colour" && \
+			![string first / $selected]} {
+		    # have selected a component for colour, need a key
+		    set subDlg [PutItThere .colourkey $winId]
+		    wm title $subDlg [tr. "Colour key editor"]
+		    set ::EditLegend::flags {{0 black} {50 blue} {99 white}}
+		    set ::EditLegend::nswatches 100
+		    ::EditLegend::Initialize $subDlg
+		    LetItShow $subDlg
+		    grab $subDlg
+		    tkwait variable ::EditLegend::done
+		    grab release $subDlg
+		    PackItUp $subDlg
+
+		    if {$::EditLegend::done} {
+			# OK button was clicked -- import results
+			set map [::EditLegend::MakeColours]
+			lset template $i [list ,colours $selected $map]
+		    } else {
+			incr i -1 ;# do stage again
+		    }
+		} else {
+		    lset template $i $selected
+		}
 		break
 	    }
 	}
@@ -185,15 +208,35 @@ itcl::class similescript::$newHelperClass {
 		    if {[AmLayer] && [lsearch {"Z positions" "start Z positions" "end Z positions" "Z vertex position lists" "centre Z positions" "X rotations" "Y rotations"} $descrip]>-1} {
 			MakeSelection null
 		    } else {
-			$winId.ms configure -text "Click on component with $descrip of [lindex $template 0]"
+			$winId.ms configure -text "Click on component with $descrip of [lindex $template 0], or enter fixed $descrip here:"
+			pack [ttk::entry $winId.e]
+			bind $winId.e <Return> [list $this SetConst]
 			$modelInst GrabClicks $this
 		    }
 		} colour {
-		    set msg "Choose $descrip of [lindex $template 0]"
-		    $winId.ms configure -text $msg
-		    MakeSelection [tk_chooseColor -title $msg]
+		    $winId.ms configure -text "Click on component setting colour of $descrip of [lindex $template 0], or here:"
+		    pack [ttk::button $winId.e -text "Select fixed colour" \
+			      -command [list $this SetColour \
+					    [lindex $template 0] $descrip]]
+		    $modelInst GrabClicks $this
 		}
 	    }
+	}
+    }
+
+    public method SetConst {} {
+	set result [$winId.e get]
+	$modelInst ReleaseClicks
+	destroy $winId.e
+	MakeSelection $result
+    }
+
+    public method SetColour {obj role} {
+	set result [tk_chooseColor -title "Colour for $role of $obj"]
+	if {$result ne ""} {
+	    $modelInst ReleaseClicks
+	    destroy $winId.e
+	    MakeSelection $result
 	}
     }
     
@@ -203,6 +246,7 @@ itcl::class similescript::$newHelperClass {
 
     public method Click {path} {
 	$modelInst ReleaseClicks
+	destroy $winId.e
 	MakeSelection $path
     }
 
@@ -238,6 +282,31 @@ itcl::class similescript::$newHelperClass {
 	    return $result
 	}
     }
+
+    method ColoursFor {values map} {
+	if {[llength $values]==1} {
+	    set result [lindex $map [expr {min([llength $map]-1,\
+						   max(0,round($values)))}]]
+	} else {
+	    foreach {ind val} $values {
+		lappend result $ind [ColoursFor $val $map]
+	    }
+	}
+	return $result
+    }
+    
+    method AddAsApprop {arr} {
+	if {$arr eq "null"} {
+	    return 0
+	} elseif {[lindex $arr 0] eq ",colours"} {
+	    return [ColoursFor [$modelInst GetValue [lindex $arr 1] -all 1] \
+			[lindex $arr 2]]
+	} elseif {![string first / $arr]} { ;# model component
+	    return [$modelInst GetValue $arr -all 1]
+	} else { ;# numerical or colour constant
+	    return $arr
+	}
+    }
     
     public method Display {time dispInt step} {
 	variable ::gen3d1::grid
@@ -258,15 +327,11 @@ itcl::class similescript::$newHelperClass {
 #		    foreach arr {x y z r} {
 #			array unset $arr
 #		    }
-		    foreach arr [lrange $instruct 1 4] {
+		    foreach arr [lrange $instruct 1 5] {
 #			array set [lindex {0 x y z r} $i] \
 #			    [Flatten [lindex [$modelInst GetValue \
 #						  [lindex $instruct $i]] 0]]
-			if {$arr eq "null"} {
-			    lappend rawList 0
-			} else {
-			    lappend rawList [$modelInst GetValue $arr -all 1]
-			}
+			lappend rawList [AddAsApprop $arr]
 		    }
 		    set quadlist {}
 		    eval [list ::maptools2::GetQuadList {}] $rawList
@@ -277,9 +342,9 @@ itcl::class similescript::$newHelperClass {
 			} else {
 			    set id [lindex $instruct 4]
 			}
-			foreach {x y z r} $data {}
+			foreach {x y z r c} $data {}
 			set op [list sphere $id [list $x $y $z] \
-				 $r 1 [lindex $instruct 5] gray25]
+				 $r 1 $c gray25]
 			if {$z < 0} {
 			    lappend lower $op
 			} else {
@@ -290,12 +355,8 @@ itcl::class similescript::$newHelperClass {
 #		    foreach arr {sx sy sz fx fy fz w} {
 #			array unset $arr
 #		    }
-		    foreach arr [lrange $instruct 1 7] {
-			if {$arr eq "null"} {
-			    lappend rawList 0
-			} else {
-			    lappend rawList [$modelInst GetValue $arr -all 1]
-			}
+		    foreach arr [lrange $instruct 1 8] {
+			lappend rawList [AddAsApprop $arr]
 		    }
 		    set quadlist {}
 		    eval [list ::maptools2::GetQuadList {}] $rawList
@@ -305,9 +366,9 @@ itcl::class similescript::$newHelperClass {
 			} else {
 			    set id [lindex $instruct 7]
 			}
-			foreach {x1 y1 z1 x2 y2 z2 w} $data {}
+			foreach {x1 y1 z1 x2 y2 z2 w c} $data {}
 			set op [list line $id [list $x1 $y1 $z1] \
-				 [list $x2 $y2 $z2] $w [lindex $instruct 8]]
+				 [list $x2 $y2 $z2] $w $c]
 			if {$z1+$z2 < 0} {
 			    lappend lower $op
 			} else {
@@ -350,12 +411,8 @@ itcl::class similescript::$newHelperClass {
 			}
 		    }
 		} ellipses {
-		    foreach arr [lrange $instruct 1 8] {
-			if {$arr eq "null"} {
-			    lappend rawList 0
-			} else {
-			    lappend rawList [$modelInst GetValue $arr -all 1]
-			}
+		    foreach arr [lrange $instruct 1 10] {
+			lappend rawList [AddAsApprop $arr]
 		    }
 		    set quadlist {}
 		    eval [list ::maptools2::GetQuadList {}] $rawList
@@ -365,7 +422,7 @@ itcl::class similescript::$newHelperClass {
 			} else {
 			    set id [lindex $instruct 4]
 			}
-			foreach {cx cy cz mr ec rx ry rz} $data {}
+			foreach {cx cy cz mr ec rx ry rz uc lc} $data {}
 			set tx [expr {$cx + cos($ry)*cos($rz)*$mr}]
 			set ty [expr {$cy + cos($ry)*sin($rz)*$mr}]
 			set tz [expr {$cz + sin($ry)*$mr}]
@@ -376,8 +433,7 @@ itcl::class similescript::$newHelperClass {
 			set op [list ellipse $id \
 				    [list $cx $cy $cz] \
 				    [list $tx $ty $tz] \
-				    [list $mx $my $mz] 1 \
-				    [lindex $instruct 9] [lindex $instruct 10]]
+				    [list $mx $my $mz] 1 $uc $lc]
 			if {$cz < 0} {
 			    lappend lower $op
 			} else {
