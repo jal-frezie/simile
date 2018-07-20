@@ -58,11 +58,15 @@ proc Newer {is than t} {
     return [expr {$foo(${t}time) > $bar(${t}time)}]
 }
 
-set installedCreds [file join $SIMILE_PATH Run userinfo.txt]
-set creds [file join $custom(prefDir) userinfo.txt]
 #if {[Newer $installedCreds $creds m]}
-if {$tcl_platform(platform) eq "windows" || ![file exists $creds]} {
-    file copy -force $installedCreds $creds
+if {$tcl_platform(platform) eq "windows"} {
+    set creds [file join $SIMILE_PATH Run userinfo.txt]
+} else {
+    set installedCreds [file join $SIMILE_PATH Run userinfo.tpl]
+    set creds [file join $custom(prefDir) userinfo.txt]
+    if {![file exists $creds]} {
+	file copy -force $installedCreds $creds
+    }
 }
 
 set UserStream [open $creds r]

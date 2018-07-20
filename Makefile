@@ -194,7 +194,7 @@ $(PROLOG_DB): Prolog/struct_db.c
 # note that libxml2 includes and libs are not needed
 endif
 ifeq ($(PROLOG),GNU)
-UINFO_TPL=userinfo.tpl
+UINFO_TPL=userinfo.gnu
 # All-in-one without database
 # $(PROLOGSTATE): $(PROLOG_FILES)
 # 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) gmain.pl \
@@ -560,7 +560,7 @@ install:
 		simile.desktop; \
 	cd $(DESTDIR)$(INSTALL_TGT); \
 	tar xf payload.tar; \
-	mv Run/$(UINFO_TPL) Run/userinfo.txt; \
+	mv Run/$(UINFO_TPL) Run/userinfo.tpl; \
 	touch Run/userinfo.txt; \
 	mkdir -p $(DESTDIR)$(SHAREDIR)/applications; \
 	mv simile.desktop $(DESTDIR)$(SHAREDIR)/applications; \

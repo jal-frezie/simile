@@ -365,6 +365,7 @@ itcl::class similescript::$newLayerClass {
 	    for {set prog 0} {$prog<$useNodes($winId,nswatches)} {incr prog} {
 		set useNodes($winId,c$prog) [lindex $map $prog]
 	    }
+	    array unset useNodes $winId,c$prog ;# leave gap to stop loading
 	    Display 0 0 0	    
 	}
 	PackItUp $subDlg

@@ -52,6 +52,8 @@ itcl::class similescript::$newHelperClass {
 
 # now create the canvas and sliders
 	pack [set vp [frame $winId.viewport]] -fill both -expand true
+	pack [frame $winId.viewport.bottom] -side bottom ;# for shape messages
+	pack [frame $winId.viewport.bottom.nothing] ;# so above hides after use
         scrollbar $vp.xsc -orient horizontal \
 	    -command [list $vp.c xview]
         pack $vp.xsc -side bottom -fill x
@@ -84,7 +86,7 @@ itcl::class similescript::$newHelperClass {
 	} else {
 	    array set transform {offx 0 offy 0 zoomx 1 zoomy 1}
 	    # new instance so request data from model
-	    pack [message $winId.message \
+	    pack [message $winId.bottom.message \
 		      -text "Select a plane display tool from the Layers menu"]
 	}
     }
@@ -185,7 +187,7 @@ itcl::class similescript::$newHelperClass {
     
     public method NewLayer {type lvl {state {}}} {
 	set id [UniqueId layer]
-	pack forget $winId.message
+	pack forget $winId.bottom.message
 	set layerObj [$type $id $modelInst $this \
 			  $transform(zoomx) $transform(zoomy) $state]
 	set putBelow [expr {[llength $planes]-$lvl/2}]

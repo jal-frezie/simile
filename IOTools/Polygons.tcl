@@ -531,6 +531,7 @@ namespace eval ::polygon375 {
 	    for {set prog 0} {$prog<$useNodes($winId,nswatches)} {incr prog} {
 		set useNodes($winId,c$prog) [lindex $map $prog]
 	    }
+	    array unset useNodes $winId,c$prog ;# leave gap to stop loading
 	    recolour_scale $::helperTable($winId,whichInstance) $winId	    
 	}
 	PackItUp $subDlg

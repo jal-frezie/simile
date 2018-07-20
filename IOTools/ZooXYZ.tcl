@@ -56,25 +56,25 @@ itcl::class similescript::$newHelperClass {
 	if {[AmLayer]} {
 	    if {![string length $state]} {
 		AddItem [lindex $winTitle 1]
-		tkwait window $winId.ms
+		tkwait window $winId.bottom.ms
 	    }
 	    array set titlePosns {spheres 4 lines 7 ellipses 4}
 	    set inTitle [lindex $State  0 $titlePosns([lindex $State 0 0])]
 	    Display 0 0 0
 	    return
 	}	
-	frame $winId.buttons -relief raised -bd 1
-	button $winId.buttons.but_print -text "Print..." \
+	frame $winId.bottom -relief raised -bd 1
+	button $winId.bottom.but_print -text "Print..." \
 	    -command "PrintNow $winId.c"
-#	pack [label $winId.buttons.anglab -text "View angle:"] -side left
-#	scale $winId.buttons.ang -orient h -from -$pi -to $pi \
+#	pack [label $winId.bottom.anglab -text "View angle:"] -side left
+#	scale $winId.bottom.ang -orient h -from -$pi -to $pi \
 #	    -resolution 0.01 \
 #	    -command "$this TweakScale angle"
-#	$winId.buttons.ang set -0.3
-#	pack $winId.buttons.ang -side left -fill x -expand true
-#	pack [label $winId.buttons.elvlab -text "View\nelev."] -side right
-	pack $winId.buttons.but_print -side right
-	pack $winId.buttons -side bottom -fill x
+#	$winId.bottom.ang set -0.3
+#	pack $winId.bottom.ang -side left -fill x -expand true
+#	pack [label $winId.bottom.elvlab -text "View\nelev."] -side right
+	pack $winId.bottom.but_print -side right
+	pack $winId.bottom -side bottom -fill x
 #	pack $winId.elv -side right -fill y
 	pack $winId.c -fill both -expand true
 	
@@ -100,13 +100,13 @@ itcl::class similescript::$newHelperClass {
 	$winId.m add command -label "Ellipse" -command "$this AddItem ellipses"
 	$winId.m add command -label "Surface" -command "$this AddItem surface"
 	# $winId.m add command -label "Old Ellipse" -command "$this AddItem oldellipses"
-	pack [::ttk::menubutton $winId.buttons.mb -text "Select new item type" \
+	pack [::ttk::menubutton $winId.bottom.mb -text "Select new item type" \
 		  -menu $winId.m]
     }
 
     public method AddItem {type} {
 	if {![AmLayer]} {
-	    pack forget $winId.buttons.mb
+	    pack forget $winId.bottom.mb
 	}
 	array set all_templates \
 	    {spheres {{type "Select new item type"} \
@@ -160,7 +160,7 @@ itcl::class similescript::$newHelperClass {
 			  {colour outline} \
 			  {colour fill}}}
 	set template $all_templates($type)
-	pack [message $winId.ms -aspect 400]
+	pack [message $winId.bottom.ms -aspect 400] -side left
 	MakeSelection $type
     }
 
@@ -197,9 +197,9 @@ itcl::class similescript::$newHelperClass {
 	incr i
 	if {$i == [llength $template]} { ;# finished
 	    lappend State $template
-	    destroy $winId.ms
+	    destroy $winId.bottom.ms
 	    if {![AmLayer]} {
-		pack $winId.buttons.mb
+		pack $winId.bottom.mb
 	    }
 	} else {
 	    set descrip [lindex $template $i 1]
@@ -208,16 +208,17 @@ itcl::class similescript::$newHelperClass {
 		    if {[AmLayer] && [lsearch {"Z positions" "start Z positions" "end Z positions" "Z vertex position lists" "centre Z positions" "X rotations" "Y rotations"} $descrip]>-1} {
 			MakeSelection null
 		    } else {
-			$winId.ms configure -text "Click on component with $descrip of [lindex $template 0], or enter fixed $descrip here:"
-			pack [ttk::entry $winId.e]
-			bind $winId.e <Return> [list $this SetConst]
+			$winId.bottom.ms configure -text "Click on component with $descrip of [lindex $template 0], or enter fixed $descrip here:"
+			pack [ttk::entry $winId.bottom.e] -side bottom
+			bind $winId.bottom.e <Return> [list $this SetConst]
 			$modelInst GrabClicks $this
 		    }
 		} colour {
-		    $winId.ms configure -text "Click on component setting colour of $descrip of [lindex $template 0], or here:"
-		    pack [ttk::button $winId.e -text "Select fixed colour" \
+		    $winId.bottom.ms configure -text "Click on component setting colour of $descrip of [lindex $template 0], or here:"
+		    pack [ttk::button $winId.bottom.e \
 			      -command [list $this SetColour \
-					    [lindex $template 0] $descrip]]
+					    [lindex $template 0] $descrip] \
+			      -text "Select fixed colour"] -side bottom
 		    $modelInst GrabClicks $this
 		}
 	    }
@@ -225,9 +226,9 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method SetConst {} {
-	set result [$winId.e get]
+	set result [$winId.bottom.e get]
 	$modelInst ReleaseClicks
-	destroy $winId.e
+	destroy $winId.bottom.e
 	MakeSelection $result
     }
 
@@ -235,7 +236,7 @@ itcl::class similescript::$newHelperClass {
 	set result [tk_chooseColor -title "Colour for $role of $obj"]
 	if {$result ne ""} {
 	    $modelInst ReleaseClicks
-	    destroy $winId.e
+	    destroy $winId.bottom.e
 	    MakeSelection $result
 	}
     }
@@ -246,7 +247,7 @@ itcl::class similescript::$newHelperClass {
 
     public method Click {path} {
 	$modelInst ReleaseClicks
-	destroy $winId.e
+	destroy $winId.bottom.e
 	MakeSelection $path
     }
 
