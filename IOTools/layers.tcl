@@ -86,7 +86,7 @@ itcl::class similescript::$newHelperClass {
 	} else {
 	    array set transform {offx 0 offy 0 zoomx 1 zoomy 1}
 	    # new instance so request data from model
-	    pack [message $winId.bottom.message \
+	    pack [message $vp.bottom.message \
 		      -text "Select a plane display tool from the Layers menu"]
 	}
     }
@@ -187,7 +187,7 @@ itcl::class similescript::$newHelperClass {
     
     public method NewLayer {type lvl {state {}}} {
 	set id [UniqueId layer]
-	pack forget $winId.bottom.message
+	pack forget $winId.viewport.bottom.message
 	set layerObj [$type $id $modelInst $this \
 			  $transform(zoomx) $transform(zoomy) $state]
 	set putBelow [expr {[llength $planes]-$lvl/2}]

@@ -275,6 +275,7 @@ proc Initialize {topl} {
 
     set bd 4
     pack [set f [ttk::frame $topl.f]] -fill both -expand 1
+    pack [message $f.howto -aspect 600 -text {The colour legend is defined by the positions and colours of the flags, changing linearly between them. Double click on a flag to set its colour, or on background of flags to add a new one. Drag a flag to move it, or right click to delete it (except end flags). The slider sets number of swatches (distinct colours) which must be at least the number of flags.}] -fill x -expand true
 
     pack [set fr [ttk::frame $f.ctrls]] -fill x
     pack [ttk::label $fr.l -width 12 -text "Swatches: $nswatches"] -side left
