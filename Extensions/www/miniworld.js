@@ -1,4 +1,4 @@
-SYSTO.modelSpecs.miniworld = {
+var mwStr = {
     "meta": {
         "id": "miniworld",
         "name": "Miniworld",
