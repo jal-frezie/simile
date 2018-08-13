@@ -42,4 +42,7 @@ if {[catch {
 }]} {
     puts $errorInfo
 }
-exit
+#if {[catch exit lastGasp]} {
+#    exec echo $lastGasp >> /tmp/error-output.txt
+#    puts $lastGasp
+#}
