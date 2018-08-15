@@ -428,7 +428,7 @@ FINDABLE int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
   switch (argc) {
   case 3:
     fileName = Tcl_GetStringFromObj(argv[1], NULL);
-    edition = (char*)Tcl_GetVar2(interp, "env", "user,edn", 0);
+    edition = (char*)Tcl_GetVar2(interp, "env", "user,edn", TCL_GLOBAL_ONLY);
     // was Tcl_GetStringFromObj(argv[2], NULL);
     dllProblem = load_model(fileName, edition, &modelType);
     if (dllProblem) {
