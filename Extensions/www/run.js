@@ -260,8 +260,18 @@ function setupHelperIn(win, species, textContent) {
 		    template[j] = nodeId;
 		    newComps.push(nodeId);
 		    currentHelper.tgts.push(nodeId);
-		} else if (possCapt[0][0] == "#") { // it's a colour
-		    template[j] = possCapt[0].substr(1);
+		} else if (possCapt[0][0] == "#") { // it's a fixed colour
+		    var colBytes = BytesFromHex(possCapt[0]);
+		    template[j] = 65536*colBytes.R+256*colBytes.G+colBytes.B;
+		} else if (possCapt[0] == ",colours") { // colour set from val
+		    nodeId=idFromCapt(tclListOfDimty(possCapt[1],1).join(" "));
+		    template[j] = [possCapt[0], nodeId, []];
+		    for (var k=2; k<possCapt.length; ++k) {
+			var colBytes = BytesFromHex(possCapt[k]);
+			template[j][2].push(65536*colBytes.R+256*colBytes.G+colBytes.B);
+		    }
+		    newComps.push(nodeId);
+		    currentHelper.tgts.push(nodeId);
 		} else { // is shape identity
 		    template[j] = possCapt[0];
 		}
