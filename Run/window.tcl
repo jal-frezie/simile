@@ -671,6 +671,7 @@ proc ModelWindow {winName} {
 #		      -default ${SIMILE_PATH}/Run/simile16.ico }
 #        unix { wm iconbitmap $winName @${SIMILE_PATH}/Images/dribble.xbm}
 #    }
+
     wm iconphoto $winName splash
     # Create a scrollable canvas
     set c [canvas $winName.canvas -bg white -confine 1 \
@@ -2562,7 +2563,7 @@ proc EmbraceEqn {winId} {
     global equationbar
     if {[info exists equationbar($winId,node)]} {
 	if {[tk windowingsystem] eq "aqua"} {
-# popup menus only appear if toplevel window on same screen
+# popup menus only appear if root window on same screen
 	    wm geometry . +[winfo rootx $winId]+[winfo rooty $winId]
 	}
 	if {[llength $equationbar($winId,node)]} {

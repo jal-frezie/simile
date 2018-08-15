@@ -133,16 +133,28 @@ if {[string match windows $tcl_platform(platform)]} {
     ::md5 dummy
     cd $oldDir
 
-    # work around Aqua fullscreen pointer shift bug...makes it crash
+    proc IsFullscreen {w} {
+# Fullscreen windows are only ones with x offset of zero, and only then if 
+# top of their screen is level with top of primary screen
+	return [string match *+0 [winfo geometry $w]]
+    }
+
+    # work around Aqua fullscreen pointer shift bug...makes not it crash
     proc FixShiftedPointer {w} {
-	bind Toplevel <Configure> {}
-	if {[wm state $w] eq "normal"} {
-	    wm withdraw $w
+	variable wasFS
+	if {[wm transient $w] ne {}} return
+	puts $w:[winfo geometry $w]
+	if {![info exists wasFS($w)]} {
+	    set wasFS($w) 0
+	}
+	set goneFS [IsFullscreen $w]    
+	if {$goneFS != $wasFS($w)} {
+	    set wasFS($w) $goneFS
+	    wm iconify $w
 	    wm deiconify $w
 	}
-	after 10 {bind Toplevel <Configure> {FixShiftedPointer %W}}
     }
-    #bind Toplevel <Configure> {FixShiftedPointer %W}
+    bind Toplevel <Configure> {FixShiftedPointer %W}
 }
 
 menu .openrecent -tearoff 0
