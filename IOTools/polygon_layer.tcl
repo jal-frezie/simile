@@ -121,15 +121,15 @@ itcl::class similescript::$newLayerClass {
     public method GetTitle {} {
 	return $useNodes($winId,title)
     }
-
-    method SeekValue {inds vals} {
-	if {$inds eq ""} {
-	    return $vals
-	} else {
-	    array set indexed $vals
-	    return [SeekValue [lrange $inds 1 end] $indexed([lindex $inds 0])]
-	}
-    }
+#
+#    method SeekValue {inds vals} {
+#	if {$inds eq ""} {
+#	    return $vals
+#	} else {
+#	    array set indexed $vals
+#	    return [SeekValue [lrange $inds 1 end] $indexed([lindex $inds 0])]
+#	}
+#    }
 	    
     public method CurrentPopup {} {
 	set indices [TagToId [$winId gettags current]]
@@ -156,6 +156,19 @@ itcl::class similescript::$newLayerClass {
 	$this Restipple
     }
 
+    method SeekValue {idList data} {
+	if {![llength $idList]} {
+	    return $data
+	} else {
+	    foreach {ind subData} $data {
+		if {$ind eq [lindex $idList 0]} {
+		    return [SeekValue [lrange $idList 1 end] $subData]
+		}
+	    }
+	    return nil
+	}
+    }
+	    
     public method Display {time dispInt step} {
 # nothing to do at display time -- it's a photo
 	if {[string equal displaying $useNodes($winId,state)] && \
@@ -167,11 +180,12 @@ itcl::class similescript::$newLayerClass {
 		return
 	    }
 #	    DoForData {} ColourPolygon $useNodes(temp,curValues)
-# very slow because needs to search for every polygon by tag
-	    foreach tgt [$winId find withtag [namespace tail $this].main] \
-		key [Flatten2D $useNodes(temp,curValues)] {
-		    $winId itemconfigure $tgt -fill [ColourFor $winId $key]
-		}
+	    # very slow because needs to search for every polygon by tag
+	    foreach tgt [$winId find withtag [namespace tail $this].main] {
+		set key [SeekValue [split [TagToId [$winId gettags $tgt]] ,] \
+			     $useNodes(temp,curValues)]
+		$winId itemconfigure $tgt -fill [ColourFor $winId $key]
+	    }
 	}
 	$winId raise [namespace tail $this].main
     }
@@ -442,16 +456,16 @@ itcl::class similescript::$newLayerClass {
     }
 
       public method ColourFor {winId value} {
-#        if {[string match nil $value]} {
-#            set newColour gray
-#        } else {
+	  if {$value eq "nil"} {
+	      set newColour {}
+        } else {
 	    set clipVal [expr {max($useNodes($winId,min),
 				   min($useNodes($winId,max),$value))}]
 	    set colNum [expr int(($clipVal-$useNodes($winId,min))* \
 				     ($useNodes($winId,nswatches)-1) / \
 				     $useNodes($winId,range))]
             set newColour $useNodes($winId,c$colNum)
-#        }
+        }
 #puts "Colour for $value is $colNum (range $useNodes($winId,range))"
     }
     

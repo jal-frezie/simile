@@ -253,6 +253,12 @@ itcl::class similescript::$newHelperClass {
     public method Click {path} {
     }
 
+    public method Reset {args} {
+	foreach plane $planes {
+	    $plane Reset
+	}
+    }
+    
     public method Display {time dispInt step} {
 # time is current model time
 # dispInt is time to next display call

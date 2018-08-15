@@ -345,7 +345,7 @@ itcl::class similescript::$newHelperClass {
 			}
 			foreach {x y z r c} $data {}
 			set op [list sphere $id [list $x $y $z] \
-				 $r 1 $c gray25]
+				 $r 1 $c gray75]
 			if {$z < 0} {
 			    lappend lower $op
 			} else {
