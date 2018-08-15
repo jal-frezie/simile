@@ -184,7 +184,7 @@ itcl::class similescript::$newHelperClass {
 		    if {$::EditLegend::done} {
 			# OK button was clicked -- import results
 			set map [::EditLegend::MakeColours]
-			lset template $i [list ,colours $selected $map]
+			lset template $i [concat [list ,colours $selected] $map]
 		    } else {
 			incr i -1 ;# do stage again
 		    }
@@ -301,7 +301,7 @@ itcl::class similescript::$newHelperClass {
 	    return 0
 	} elseif {[lindex $arr 0] eq ",colours"} {
 	    return [ColoursFor [$modelInst GetValue [lindex $arr 1] -all 1 \
-				    -numeric 1] [lindex $arr 2]]
+				    -numeric 1] [lrange $arr 2 end]]
 	} elseif {![string first / $arr]} { ;# model component
 	    return [$modelInst GetValue $arr -all 1]
 	} else { ;# numerical or colour constant
