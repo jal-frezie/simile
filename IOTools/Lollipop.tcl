@@ -298,7 +298,10 @@ proc DrawGrid {winId tag} {
 proc DrawShapes {winId solids tag} {
     global cornerPts
     variable viewVector
+    variable scaleVector
 
+    set xAsp [expr {$viewVector($winId,X)/$scaleVector($winId,xmag)}]
+    set yAsp [expr {$viewVector($winId,Y)/$scaleVector($winId,ymag)}]
     set insts {}
     foreach object3d $solids {
 #ShowMess debug info $object3d ok
@@ -314,14 +317,13 @@ proc DrawShapes {winId solids tag} {
 		set squareOnX [expr {pow($endx-$startx,2)}]
 		set squareOnY [expr {pow($endy-$starty,2)}]
 		if {$squareOnX+$squareOnY==0} continue
-		set width [expr {0.002*[lindex $object3d 4]*\
-				     ($viewVector($winId,X)*$squareOnY + \
-				      $viewVector($winId,Y)*$squareOnX)/ \
+		set width [expr {0.3*[lindex $object3d 4]*\
+				     ($xAsp*$squareOnY + $yAsp*$squareOnX) / \
 				     ($squareOnX+$squareOnY)}]
 #ShowMess debug info "$startMap $endMap" ok
 		lappend insts [list [list \
-		$winId.c create line $startx $starty $endx $endy -tag $tag \
-		    -width $width -fill [lindex $object3d 5]] \
+		$winId.c create line $startx $starty $endx $endy -width $width \
+		    -fill [lindex $object3d 5] -capstyle round -tag $tag] \
 			   [expr ([lindex $startMap 2]+[lindex $endMap 2])/2] \
 				   [lindex $object3d 1]]
 	    } polygon {
@@ -373,12 +375,11 @@ proc DrawShapes {winId solids tag} {
 				   [lindex $ctr 2] [lindex $object3d 1]]
 			       
  	    } sphere {
-		variable scaleVector
 		set middle [project $winId [lindex $object3d 2]]
 		set midx [lindex $middle 0]
 		set midy [lindex $middle 1]
-		set radX [expr $viewVector($winId,X)*[lindex $object3d 3]/$scaleVector($winId,xmag)]
-		set radY [expr $viewVector($winId,Y)*[lindex $object3d 3]/$scaleVector($winId,ymag)]
+		set radX [expr $xAsp*[lindex $object3d 3]]
+		set radY [expr $yAsp*[lindex $object3d 3]]
 		lappend insts [list [list \
 		$winId.c create oval [expr $midx-$radX] [expr $midy-$radY] \
 		     [expr $midx+$radX] [expr $midy+$radY] -tag $tag \
