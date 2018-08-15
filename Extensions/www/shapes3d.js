@@ -299,6 +299,68 @@ function flatten_to_depth(head, ob, depth) {
     return result;
 }
 
+function nestedAtLeast(ob, depth) {
+    if (depth == 0)
+	return 1
+    else if (typeof(ob) == "object")
+    	for (subOb in ob)
+	    return nestedAtLeast(subOb, depth-1);
+    else
+	return 0
+}
+
+function flattenAll(head, objs, depth) {
+    var result = {};
+    var	goOn = 0;
+    
+    for (var deeper in objs) {
+	if (nestedAtLeast(objs[deeper], depth+1)) {
+	    goOn = 1;
+	    break;
+	}
+    }
+
+    if (goOn) {
+	for (var neck in objs[deeper]) {
+	    var subObjs = {};
+	    for (var obj in objs) {
+		if (typeof (objs[obj]) == "object") {
+		    subObjs[obj] = objs[obj][neck];
+		} else {
+		    subObjs[obj] = objs[obj];
+		}
+	    }
+	    var iny = flattenAll(head,subObjs,depth);
+	    for (var item in iny) {
+		result[neck + ',' + item] = iny[item];
+	    }
+	}
+    } else {
+	result[head] = objs;
+    }
+    return result;
+}
+
+function addAsApprop(latest, arr) {
+    if (latest[arr] != undefined) {
+	return latest[arr];
+    } else {
+	return parseFloat(arr);
+    }
+}
+
+function MakeColourKey(spec, modVals, legend) {
+    if (spec.constructor === Array) { // colour from value
+	for (i=0;i<spec[2].length;++i) {
+	    legend.push(new THREE.MeshLambertMaterial( {color: spec[2][i]} ));
+	}
+	return modVals[spec[1]];
+    } else { // colour constant
+	legend.push(new THREE.MeshLambertMaterial({color:spec}));
+	return 0;
+    }
+}
+
 Shapes3D.prototype.display = function (time, latest, connect) {
     lolliCount = 0;
     // now add new ones
@@ -312,50 +374,54 @@ var lolliCount;
 Shapes3D.prototype.displayOne = function(instruct, latest) {
     var lolliCols = [0x00ff00, 0xf1da7e, 0x36b694, 0xec9844, 0x94a646, 0xd9d095];
     switch (instruct[0]) {
-	case "spheres":
-	    // first remove old items
-	    for (var old in instruct[6]) {
-		this.scene.remove(instruct[6][old]);
-		delete(instruct[6][old]);
-	    }
-	    instruct[6] = {};
-
-	    defns = {};
-	    for (i=1;i<5;++i) {
-		defns[["n","x","y","z","r"][i]] = flatten("s",latest[instruct[i]]);
-	    }
-	    nC = parseInt('0x' + instruct[5]);
-	    var sphereMaterial = new THREE.MeshLambertMaterial( {color: nC} ); 
-	    var sphereGeometry = new THREE.SphereGeometry(1.0, 32, 16 ); 
-	    for (iV in defns.r) {
-		if (defns.r[iV] < 1) continue;
-		// Sphere parameters: radius, segments along width, segments along height
-	// use a "lambert" material rather than "basic" for realistic lighting.
-		    //   (don't forget to add (at least one) light!)
-		    
-		var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-		sphere.position.set(defns.x[iV], defns.z[iV], defns.y[iV]);
-		sphere.scale.set(defns.r[iV], defns.r[iV], defns.r[iV]);
-		instruct[6][iV] = sphere;
-		this.scene.add(sphere);
-	    }
-	    break;
-	case "lines":
-	    for (var old in instruct[9]) {
-		this.scene.remove(instruct[9][old]);
-		delete(instruct[9][old]);
-	    }
-	    instruct[9] = {};
-
-	    defns = {};
-	    for (i=1;i<8;++i) {
-		defns[["n","sx","sy","sz","fx","fy","fz","w"][i]] = flatten("l",latest[instruct[i]]);
-	    }
-	    nC = parseInt('0x' + instruct[8]);
-	    var lineGeometry = new THREE.CylinderGeometry(0.5,0.5,1.0);
-	    var lineMaterial = new THREE.MeshLambertMaterial( {color: nC} );
-	    for (iV in defns.w) {
-		if (defns.w[iV] < 1) continue;
+    case "spheres":
+	// first remove old items
+	for (var old in instruct[6]) {
+	    this.scene.remove(instruct[6][old]);
+	    delete(instruct[6][old]);
+	}
+	instruct[6] = {};
+	
+	allDefns = {};
+	for (i=1;i<5;++i) {
+	    allDefns[["n","x","y","z","r"][i]] = addAsApprop(latest, instruct[i]);
+	}
+	sphereMats = [];
+	allDefns.c = MakeColourKey(instruct[5], latest, sphereMats);
+	defns = flattenAll("s", allDefns, 0);
+	var sphereGeometry = new THREE.SphereGeometry(1.0, 32, 16 ); 
+	for (i in defns) {
+	    defn = defns[i];
+	    if (defn.r < 1) continue;
+	    // Sphere parameters: radius, segments along width, segments along height
+	    // use a "lambert" material rather than "basic" for realistic lighting.
+	    //   (don't forget to add (at least one) light!)
+	    
+	    var sphere = new THREE.Mesh(sphereGeometry, sphereMats[defn.c]);
+	    sphere.position.set(defn.x, defn.z, defn.y);
+	    sphere.scale.set(defn.r, defn.r, defn.r);
+	    instruct[6][i] = sphere;
+	    this.scene.add(sphere);
+	}
+	break;
+    case "lines":
+	for (var old in instruct[9]) {
+	    this.scene.remove(instruct[9][old]);
+	    delete(instruct[9][old]);
+	}
+	instruct[9] = {};
+	
+	allDefns = {};
+	for (i=1;i<8;++i) {
+	    allDefns[["n","sx","sy","sz","fx","fy","fz","w"][i]] = addAsApprop(latest, instruct[i]);
+	}
+	lineMats = [];
+	allDefns.c = MakeColourKey(instruct[8], latest, lineMats);
+	defns = flattenAll("l", allDefns, 0);
+	var lineGeometry = new THREE.CylinderGeometry(0.5,0.5,1.0);
+	for (i in defns) {
+	    defn = defns[i];
+	    if (defn.w < 1) continue;
 
 	/* Old version: used lineGeometry, which lacks width in Windows
 		var lineMaterial = new THREE.LineBasicMaterial(
@@ -368,61 +434,59 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 		var line = new THREE.Line(lineGeometry, lineMaterial);
 
 	New version uses cylinders */
-		var line = new THREE.Mesh(lineGeometry, lineMaterial);
-		line.position.set((defns.fx[iV]+defns.sx[iV])/2,
-				  (defns.fz[iV]+defns.sz[iV])/2,
-				  (defns.fy[iV]+defns.sy[iV])/2);
-		xyExt = Math.pow(defns.fx[iV]-defns.sx[iV],2)+
-		    Math.pow(defns.fy[iV]-defns.sy[iV],2);
-		line.scale.set(defns.w[iV], Math.sqrt(xyExt +
-					 Math.pow(defns.fz[iV]-defns.sz[iV],2)),
-			       defns.w[iV]);
-		line.rotation.set(0,
-				  -Math.atan2(defns.fy[iV]-defns.sy[iV],
-					     defns.fx[iV]-defns.sx[iV]),
-				  -Math.atan2(Math.sqrt(xyExt), defns.fz[iV]-defns.sz[iV]));
-		instruct[9][iV] = line;
-		this.scene.add(line);
-	    }
-	    break;
+	    var line = new THREE.Mesh(lineGeometry, lineMats[defn.c]);
+	    line.position.set((defn.fx+defn.sx)/2,
+			      (defn.fz+defn.sz)/2,
+			      (defn.fy+defn.sy)/2);
+	    xyExt = Math.pow(defn.fx-defn.sx,2)+ Math.pow(defn.fy-defn.sy,2);
+	    line.scale.set(defn.w, Math.sqrt(xyExt +
+					 Math.pow(defn.fz-defn.sz,2)),
+			   defn.w);
+	    line.rotation.set(0, -Math.atan2(defn.fy-defn.sy, defn.fx-defn.sx),
+			      -Math.atan2(Math.sqrt(xyExt), defn.fz-defn.sz));
+	    instruct[9][i] = line;
+	    this.scene.add(line);
+	}
+	break;
     case "polygons":
-	    for (var old in instruct[6]) {
-		this.scene.remove(instruct[6][old]);
-		delete(instruct[6][old]);
-	    }
-	    instruct[6] = {};
-	    defns = {};
-	    for (i=1;i<4;++i) {
-		defns[["n","xs","ys","zs"][i]] =
-		    flatten_to_depth("p", latest[instruct[i]], 1);
-	    }
-	    nC = parseInt('0x' + instruct[4]);
-	    eC = parseInt('0x' + instruct[5]);
-	    var polyMaterial = new THREE.MeshLambertMaterial( {color: eC} ); 
+	for (var old in instruct[6]) {
+	    this.scene.remove(instruct[6][old]);
+	    delete(instruct[6][old]);
+	}
+	instruct[6] = {};
+	allDefns = {};
+	for (i=1;i<4;++i) {
+	    allDefns[["n","xs","ys","zs"][i]] = addAsApprop(latest,instruct[i]);
+	}
+	polyMats = edgeMats = [];
+	allDefns.n = MakeColourKey(instruct[4], latest, polyMats);
+	allDefns.e = MakeColourKey(instruct[4], latest, edgeMats);
+	defns = flattenAll("p", allDefns, 1);
 	    
-	    for (var face in defns.xs) {
-		var polyGeometry = new THREE.Geometry();
-		var vc = 0
-		for (var vertex in defns.xs[face]) {
-		    polyGeometry.vertices.push(new THREE.Vector3(
-			defns.xs[face][vertex],
-			defns.zs[face][vertex],
-			defns.ys[face][vertex]));
-		    ++vc;
-		    if (vc>2) {
-			var newFace = new THREE.Face3(0, vc-2, vc-1);
-			// newFace.color = nC;
-			polyGeometry.faces.push(newFace);
-		    }
+	for (i in defns) {
+	    defn = defns[i];
+	    var polyGeometry = new THREE.Geometry();
+	    var vc = 0
+	    for (var vertex in defn.xs) {
+		polyGeometry.vertices.push(new THREE.Vector3(
+		    defn.xs[vertex],
+		    defn.zs[vertex],
+		    defn.ys[vertex]));
+		++vc;
+		if (vc>2) {
+		    var newFace = new THREE.Face3(0, vc-2, vc-1);
+		    // newFace.color = nC;
+		    polyGeometry.faces.push(newFace);
 		}
-		// need these bits to get lighting fx to work
-		polyGeometry.computeFaceNormals ();
-		polyGeometry.computeVertexNormals ();
-		poly = new THREE.Mesh(polyGeometry, polyMaterial);
-		this.scene.add(poly);
-		instruct[6][face] = poly;
 	    }
-	    break;
+	    // need these bits to get lighting fx to work
+	    polyGeometry.computeFaceNormals ();
+	    polyGeometry.computeVertexNormals ();
+	    poly = new THREE.Mesh(polyGeometry, polyMaterial);
+	    this.scene.add(poly);
+	    instruct[6][i] = poly;
+	}
+	break;
 	case "lollipops":
 	    // first remove old items
 	    for (var old in instruct[4]) {
@@ -431,71 +495,73 @@ Shapes3D.prototype.displayOne = function(instruct, latest) {
 	    }
 	    instruct[4] = {};
 
-	    defns = {};
+	    allDefns = {};
 	    for (i=1;i<4;++i) {
-		defns[["n","x","y","h"][i]] = flatten("p",latest[instruct[i]]);
+		allDefns[["n","x","y","h"][i]] = latest[instruct[i]];
 	    }
 	    nC = lolliCols[lolliCount++];
 	    var sphereMaterial = new THREE.MeshLambertMaterial( {color: nC} ); 
 	    var sphereGeometry = new THREE.SphereGeometry(1.0, 32, 16 ); 
 	    var lineMaterial = new THREE.MeshLambertMaterial({color: 0x084000});
 	    var lineGeometry = new THREE.CylinderGeometry(0.5,0.5,1.0);
-	    for (iV in defns.h) {
-		if (defns.h[iV] < 1) continue;
+	defns = flattenAll("o", allDefns, 0);
+	for (i in defns) {
+	    defn = defns[i];
+		if (defn.h < 1) continue;
 		// Sphere parameters: radius, segments along width, segments along height
 	// use a "lambert" material rather than "basic" for realistic lighting.
 		    //   (don't forget to add (at least one) light!)
 		    
 		var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-		sphere.position.set(defns.x[iV], 3*defns.h[iV]/2, defns.y[iV]);
-		sphere.scale.set(defns.h[iV]/2, defns.h[iV]/2, defns.h[iV]/2);
-		instruct[4][iV+"s"] = sphere;
+		sphere.position.set(defn.x, 3*defn.h/2, defn.y);
+		sphere.scale.set(defn.h/2, defn.h/2, defn.h/2);
+		instruct[4][i+"s"] = sphere;
 		this.scene.add(sphere);
 
 		var line = new THREE.Mesh(lineGeometry, lineMaterial);
-		line.position.set(defns.x[iV], defns.h[iV]/2, defns.y[iV]);
-		line.scale.set(2, defns.h[iV], 2);
-		instruct[4][iV+"l"] = line;
+		line.position.set(defn.x, defn.h/2, defn.y);
+		line.scale.set(2, defn.h, 2);
+		instruct[4][i+"l"] = line;
 		this.scene.add(line);
 	    }
 	    break;
-        case "ellipses":
-	    for (var old in instruct[11]) {
-		this.scene.remove(instruct[11][old]);
-		delete(instruct[11][old]);
-	    }
-	    instruct[11] = {};
+    case "ellipses":
+	for (var old in instruct[11]) {
+	    this.scene.remove(instruct[11][old]);
+	    delete(instruct[11][old]);
+	}
+	instruct[11] = {};
+	
+	allDefns = {};
+	for (i=1;i<9;++i) {
+	    allDefns[["n","cx","cy","cz","r","e","rx","ry","rz"][i]] =
+		addAsApprop(latest, instruct[i]);
+	}
+	frontMats = backMats = [];
+	allDefns.f = MakeColourKey(instruct[9], latest, frontMats);
+	allDefns.b = MakeColourKey(instruct[10], latest, backMats);
 
-	    defns = {};
-	    for (i=1;i<9;++i) {
-		defns[["n","cx","cy","cz","r","e","rx","ry","rz"][i]] =
-		    flatten("l",latest[instruct[i]]);
-	    }
-	    fC = parseInt('0x' + instruct[9]);
-	    bC = parseInt('0x' + instruct[10]);
-	    var circleGeom = new THREE.CircleGeometry(1,24);
-	    var circleMat = new THREE.MeshLambertMaterial( {color : fC});
-	    var circleBack = new THREE.MeshLambertMaterial( {color : bC});
-	    for (iV in defns.r) {
-		if (defns.r[iV] < 1) continue;
+	var circleGeom = new THREE.CircleGeometry(1,24);
+	defns = flattenAll("e", allDefns, 0);
+	for (i in defns) {
+	    defn = defns[i];
+	    if (defn.r < 1) continue;
 
-		var circle = new THREE.Mesh(circleGeom, circleMat);
-		circle.position.set(defns.cx[iV], defns.cz[iV], defns.cy[iV]);
-		circle.scale.set(defns.r[iV], defns.r[iV]/defns.e[iV], 1);
-		circle.rotation.set(-defns.rx[iV]-1.57, -defns.ry[iV],
-				    -defns.rz[iV], 'XZY');
-		instruct[11][iV + ",f"] = circle;
-		this.scene.add(circle);
+	    var circle = new THREE.Mesh(circleGeom, frontMats[defn.f]);
+	    circle.position.set(defn.cx, defn.cz, defn.cy);
+	    circle.scale.set(defn.r, defn.r/defn.e, 1);
+	    circle.rotation.set(-defn.rx-1.57, -defn.ry, -defn.rz, 'XZY');
+	    instruct[11][i + ",f"] = circle;
+	    this.scene.add(circle);
 
-		circle = new THREE.Mesh(circleGeom, circleBack);
-		circle.position.set(defns.cx[iV], defns.cz[iV], defns.cy[iV]);
-		circle.scale.set(defns.r[iV], defns.r[iV]/defns.e[iV], 1);
-		circle.rotation.set(-defns.rx[iV]+1.57, defns.ry[iV],
-				    defns.rz[iV], 'XZY');
-		instruct[11][iV + ",b"] = circle;
-		this.scene.add(circle);
-	    }
-	    break;
+	    circle = new THREE.Mesh(circleGeom, backMats[defn.b]);
+	    circle.position.set(defn.cx, defn.cz, defn.cy);
+	    circle.scale.set(defn.r, defn.r/defn.e, 1);
+	    circle.rotation.set(-defn.rx+1.57, defn.ry, defn.rz, 'XZY');
+	    instruct[11][i + ",b"] = circle;
+	    this.scene.add(circle);
+	}
+	break;
     case "surface":
 	// if (this.updated == 1) break;
 	// halfway through draw process -- bad idea to skip, it may be last move
