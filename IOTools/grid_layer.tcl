@@ -6,7 +6,8 @@ itcl::class similescript::$newLayerClass {
     inherit Layer
     variable useNodes
     variable transform
-
+    variable curValues
+    
     proc Identify {} {
 	return "Grid map"
     }
@@ -165,8 +166,7 @@ itcl::class similescript::$newLayerClass {
     public method DrawGrid8 {} {
 # do not use image mode for inputs cos we will want to edit them...
 # hah, just fixed it so we can anyway
-	set useNodes(temp,curValues) \
-	    [$modelInst GetValue $useNodes($winId,color) -numeric 1]
+	set curValues [$modelInst GetValue $useNodes($winId,color) -numeric 1]
 	set node [GetIdFromCaptionPath $useNodes($winId,color)]
 	if {$useNodes($winId,hex) || \
 		[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
@@ -206,14 +206,13 @@ itcl::class similescript::$newLayerClass {
     public method DrawGrid7 {} {
 	set ncol $useNodes($winId,ncol)
 	set nrow $useNodes($winId,nrow)
-	set data $useNodes(temp,curValues)
 	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
 	    set colShift -1
 	    if {$useNodes($winId,hex)} {
 		incr colShift $ncol
 	    }
 	    $this.original blank
-	    foreach {y row} $data {
+	    foreach {y row} $curValues {
 		set tgtRow [expr {$nrow-$y}]
 		foreach {x celval} $row {
 		    $this.original put [ForGrid $celval] \
@@ -230,7 +229,7 @@ itcl::class similescript::$newLayerClass {
 		-width [expr {$useNodes($winId,hex)?2*$ncol+1:$ncol}] \
 		
 	} else {
-	    set values [Flatten $data]
+	    set values [Flatten $curValues]
         
 	    set allData {}
 	    for {set row 1} {$row<=$nrow} {incr row} {
@@ -297,11 +296,10 @@ itcl::class similescript::$newLayerClass {
 	set row [expr {min(max($row, 1), $useNodes($winId,nrow))}]
 	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
 	    set inds [list $row $col]
-	    set value [SeekValue $inds $useNodes(temp,curValues)]
+	    set value [SeekValue $inds $curValues]
 	} else {
 	    set inds [expr {$useNodes($winId,ncol)*($row-1)+$col}]
-	    set value [lindex \
-			   [lindex [Flatten $useNodes(temp,curValues)] $inds] 1]
+	    set value [lindex [lindex [Flatten $curValues] $inds] 1]
 	}
 	return "Index $row,$col Value $value"
     }
