@@ -282,7 +282,7 @@ function setupHelperIn(win, species, textContent) {
 
     case "polygon375":
 	insert_helper(win, "polys");
-	swatArr = []
+	swatArr = [];
 	if (oneAfter(specArray, "/WIN/,colourMapTweaked")) {
 	    nswat = oneAfter(specArray, "/WIN/,nswatches");
 	    for (var i=0; i<=nswat; ++i) {
@@ -333,6 +333,16 @@ function setupHelperIn(win, species, textContent) {
 		captPath =  tclListOfDimty(specArray[2],1).join(" ");
 	    	currentHelper.acceptClick(idFromCapt(captPath));
 	    }
+	}
+	break;
+    case "Layers20131022":
+	insert_helper(win, "layers");
+	for (var i=0; i<5; ++i) {
+	    currentHelper[["offx","offy","scalex","scaley","bounds"][i]] =
+		specArray[i];
+	}
+	for (i=5;i<specArray.length;i+=2) {
+	    currentHelper.addLayer(specArray[i], specArray[i+1]);
 	}
 	break;
     case "ModelDiagram20060804":
@@ -761,6 +771,8 @@ function insert_helper(id, type) {
 	currentHelper = new Grid5(id);
     } else if (type == "polys") {
 	currentHelper = new Polygon(id);
+    } else if (type == "layers") {
+	currentHelper = new Layers2D(id);
     } else if (type == "diagram") {
 	currentHelper = new ModelDiagram(id);
     }

@@ -275,30 +275,6 @@ Shapes3D.prototype.acceptClick = function (compId) {
     MakeSelection(this, compId);
 }
 
-function get_nesting(ob) {
-    if (typeof(ob) == "object")
-	for (subOb in ob)
-	    return get_nesting(ob[subOb])+1;
-    else
-	return 0
-}
-
-function flatten_to_depth(head, ob, depth) {
-    var result = {};
-
-    if (get_nesting(ob) <= depth)
-	result[head] = ob;
-    else {
-	for (var neck in ob) {
-	    var iny = flatten_to_depth(head, ob[neck], depth);
-	    for (var item in iny) {
-		result[neck + ',' + item] = iny[item];
-	    }
-	}
-    }
-    return result;
-}
-
 function nestedAtLeast(ob, depth) {
     if (depth == 0)
 	return 1

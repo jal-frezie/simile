@@ -11,7 +11,7 @@ source [file join $sPath Run client5d.tcl]
 proc InstallModelExec {shLib} {
 catch {
  global mH iH aH catalog
- set mH [loadmodel [file join $::sHome $shLib] evaluation]
+ set mH [loadmodel [file join $::sHome $shLib] SimiLive]
  set iH [CreateModel $mH]
  set hook {}
  set catalog [ListObjPaths $mH]
