@@ -342,7 +342,8 @@ function setupHelperIn(win, species, textContent) {
 		specArray[i];
 	}
 	for (i=5;i<specArray.length;i+=2) {
-	    currentHelper.addLayer(specArray[i], specArray[i+1]);
+	    currentHelper.addLayer(specArray[i].slice(16), specArray[i+1]);
+	    // remove ::similescript:: from layer type
 	}
 	break;
     case "ModelDiagram20060804":
@@ -1841,6 +1842,38 @@ Grid5.prototype.resize = function (x, y) {
     d3.select('#' + this.port + '_diag').attr("width",w).attr("height",h);
 }
 
+function makeGifHeader(cols, rows, cMap) {
+    	       // GIF header
+	       data = 'GIF89a';
+	       data += conv16(cols);                  // image width
+	       data += conv16(rows);                  // image height
+	       
+	       data += String.fromCharCode(0xf7, 0, 0);
+	       // colour table, background colour, pixel aspect ratio
+	       
+	       //black -> red -> white
+	       data += cMap;
+
+	       // now add a graphix control xtn to declare 00 transparent
+	       data += String.fromCharCode(0x21, 0xf9, 0x04, 0x01,
+					   0,0,0,0);
+	       // right that's 789 bits and we have 11 to go making 800 --
+	       // nice and round but we want a multiple of 3 to hit a
+	       // base64 char boundary, so add a comment extn to do it
+	       data += String.fromCharCode(0x21, 0xfe, 9);
+	       data += "SimiLive!";
+	       data += String.fromCharCode(0);
+	       
+	       data += String.fromCharCode(0x2c); // image descriptor
+	       data += conv16(0);                 // NW corner position of image
+	       data += conv16(0);                 // in logical screen
+	       data += conv16(cols);                  // image width
+	       data += conv16(rows);                  // image height
+	       data += String.fromCharCode(0, 8); //  no-local-colour-table,
+	       // lzw-minimum-code-size
+	       return 'data:image/gif;base64,' + btoa(data);
+}
+
 Grid5.prototype.acceptClick = function (nodeId) {
     var that = this; // no chance..
     if (this.status == "initializing") {
@@ -1893,36 +1926,7 @@ Grid5.prototype.acceptClick = function (nodeId) {
 	       } else {
 		   arrInd = 0;
 	       }
-	       // GIF header
-	       data = 'GIF89a';
-	       data += conv16(that.width);                  // image width
-	       data += conv16(that.height);                  // image height
-	       
-	       data += String.fromCharCode(0xf7, 0, 0);
-	       // colour table, background colour, pixel aspect ratio
-	       
-	       //black -> red -> white
-	       data += that.cMap;
-
-	       // now add a graphix control xtn to declare 00 transparent
-	       data += String.fromCharCode(0x21, 0xf9, 0x04, 0x01,
-					   0,0,0,0);
-	       // right that's 789 bits and we have 11 to go making 800 --
-	       // nice and round but we want a multiple of 3 to hit a
-	       // base64 char boundary, so add a comment extn to do it
-	       data += String.fromCharCode(0x21, 0xfe, 9);
-	       data += "SimiLive!";
-	       data += String.fromCharCode(0);
-	       
-	       data += String.fromCharCode(0x2c); // image descriptor
-	       data += conv16(0);                 // NW corner position of image
-	       data += conv16(0);                 // in logical screen
-	       data += conv16(that.width);                  // image width
-	       data += conv16(that.height);                  // image height
-	       data += String.fromCharCode(0, 8); //  no-local-colour-table,
-	       // lzw-minimum-code-size
-	       
-	       that.headerGIF = 'data:image/gif;base64,' + btoa(data);
+	       that.headerGIF = makeGifHeader(that.width, that.height, that.cMap);
 
 	       that.status = "displaying";
 	       d3.select('#' + that.port + '_img')

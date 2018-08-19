@@ -2,7 +2,8 @@ function Layers2D (port) {
   this.port = port;
     this.tgts = [];
     this.State = [];
-    this.scaleGrp = d3.select('#' + port).append("svg")
+    this.scaleGrp = d3.select('#' + port)
+	    .style("image-rendering","pixelated").append("svg")
 	.attr("width",800).attr("height",480).attr("id", port + "_diag")
 	.append("g");
     this.diagZoom = d3.behavior.zoom()
@@ -19,9 +20,11 @@ Layers2D.prototype.addLayer = function (type, state) {
     layerSpec = {};
     var startComps = this.tgts.length;
     layerSpec.type = type;
-    layerSpec.gLayer = this.scaleGrp.append("g");
+    if (type == "Photo20131023")
+	layerSpec = state;
+    else 
     for (var i=0; i<state.length;i+=2) {
-	if (type == "::similescript::Polygon20131026") // indices start /WIN/,
+	if (type == "Polygon20131026") // indices start /WIN/,
 	    state[i] = state[i].substr(6);
 	possCapt = tclListOfDimty(state[i+1],1);
 	if (possCapt[0][0] == "/") { // its a capt path
@@ -30,15 +33,58 @@ Layers2D.prototype.addLayer = function (type, state) {
 	}
 	layerSpec[state[i]] = state[i+1];
     }
+    layerSpec.gLayer = this.scaleGrp.append("g");
     var endComps = this.tgts.length;
     
     // now do any one-off processing a new layer requires
     switch (type) {
-    case "::similescript::Polygon20131026": // and maybe others
+    case "RectGrid20131119":
+	grpAttr = "translate(0,0)scale("
+	    +layerSpec.xscale+","+-layerSpec.yscale+")";
+	layerSpec.gLayer.attr("transform",grpAttr);
+	layerSpec.image = layerSpec.gLayer.append("svg:image")
+	    .attr("width",layerSpec.ncol + "px")
+	    .attr("height",layerSpec.nrow + "px")
+	    .attr("xlink:href", "images/bigsimile.gif");
+	// find tgts entry for colour and sub it with gif data request
+	colourIdx = this.tgts.indexOf(layerSpec.color);
+	layerSpec.gifReq = {"format":"binary","node":this.tgts[colourIdx],
+			    "bottom":layerSpec.min,"top":layerSpec.max,
+			    "nswat":layerSpec.nswatches};
+	this.tgts[colourIdx] = layerSpec.gifReq;
+	// then make legend for display
 	swatArr = [];
 	for (var i=0; i<=layerSpec.nswatches; ++i)
 	    swatArr.push(layerSpec["c" + i]);
 	layerSpec.cMap = ColorMapFromSwatches(swatArr);
+	layerSpec.gifHeader = makeGifHeader(layerSpec.ncol, layerSpec.nrow,
+					    layerSpec.cMap);
+	break;
+    case "Polygon20131026": // and maybe others
+	swatArr = [];
+	for (var i=0; i<=layerSpec.nswatches; ++i)
+	    swatArr.push(layerSpec["c" + i]);
+	layerSpec.cMap = ColorMapFromSwatches(swatArr);
+	break;
+    case "Photo20131023": // no updates so display it here
+	localURL = "data:image/png;base64," + layerSpec[5].join("");
+	photo = layerSpec.gLayer.selectAll("image").data([0]);
+        var image = photo.enter()
+            .append("svg:image")
+            .attr("xlink:href", localURL)
+            .attr("preserveAspectRatio","none");
+	// cannot get pixel size of svg image so have to make a separate html
+	// one for this purpose...
+	var img = document.createElement("img");
+	var trans = layerSpec.slice(0,4);
+	img.src = localURL;
+	img.onload=function () {
+	    natWide = img.naturalWidth;
+	    natHigh = img.naturalHeight;
+	    image.attr("x",trans[0]).attr("y", -trans[1]-natHigh*trans[3])
+		.attr("width", natWide*trans[2])
+		.attr("height", natHigh*trans[3]);
+	}
     }
     
     var layerIndex = this.State.length;
@@ -49,8 +95,15 @@ Layers2D.prototype.addLayer = function (type, state) {
 	   function(resp) {
 	       responses = JSON.parse(resp);
 	       sorted = {};
-	       for (var i=startComps; i<endComps; ++i)
-		   sorted[that.tgts[i]] = responses[i-startComps];
+	       for (var i=startComps; i<endComps; ++i) {
+		   if (that.tgts[i].constructor === Object) {
+		       resIndx = JSON.stringify(that.tgts[i]);
+		   } else {
+		       resIndx = that.tgts[i];
+		   }
+		   
+		   sorted[resIndx] = responses[i-startComps];
+	       }
 	       that.displayLayer(0.0, sorted, 0, layerIndex);
 	   });
 }
@@ -63,7 +116,11 @@ Layers2D.prototype.display = function (time, latest, connect) {
 Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
     layerSpec = this.State[layerIndex];
     switch (layerSpec.type) {
-    case "::similescript::Polygon20131026":
+    case "RectGrid20131119":
+	arr = latest[JSON.stringify(layerSpec.gifReq)];
+	layerSpec.image.attr("xlink:href", layerSpec.gifHeader + arr);
+	break;
+    case "Polygon20131026":
 	colScaler = 255/(layerSpec.max-layerSpec.min);
 	colours = flatten('m', latest[layerSpec.color]);
 	if (!connect) { // redraw poly borders
