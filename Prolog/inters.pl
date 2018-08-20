@@ -986,9 +986,9 @@ make_intermediates(
 	        promote_unit(Dun, const_int)), !; % will be integer later
 		  throw(bad_index_number(Dim, makearray, 16777215))),
 	        NowBuilding = [LocalLoop | BuildingArrays],
-	        % length(BuildingArrays, BDept),
-	        % append_atoms(arraybuild, BDept, BuildName),
-		generate_name(c, arraybuild, BuildName, Used),
+	        length(BuildingArrays, BDept),
+	        append_atoms(arraybuild, BDept, BuildName),
+		% generate_name(c, arraybuild, BuildName, Used),
 % added to stop bad rankings behaviour -- may clash with comp names
 % sorted that by not instantiating comp loops either...
 	        LocalInd = glob(BuildName, _);
