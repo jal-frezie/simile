@@ -394,6 +394,16 @@ break;
       echo json_encode($respArr);
       break;
 		   
+   case "Can2SVG":
+      $svgCmds = "";
+      $tclCmds = json_decode($_POST['cnvdraw']);
+      for($x=0;$x<count($tclCmds);$x++) {
+      	 $svgCmds .= doTcl("can2svg::can2svg {" . $tclCmds[$x] . "}");
+      }
+      
+      echo $svgCmds;
+      break;
+
    case "Exit":
       $base = $_POST['base'];
       doTcl("file delete -force $base");

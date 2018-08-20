@@ -36,6 +36,10 @@ Layers2D.prototype.addLayer = function (type, state) {
     layerSpec.gLayer = this.scaleGrp.append("g");
     var endComps = this.tgts.length;
     
+    var layerIndex = this.State.length;
+    this.State.push(layerSpec);
+    var that = this;
+
     // now do any one-off processing a new layer requires
     switch (type) {
     case "RectGrid20131119":
@@ -85,16 +89,26 @@ Layers2D.prototype.addLayer = function (type, state) {
 		.attr("width", natWide*trans[2])
 		.attr("height", natHigh*trans[3]);
 	}
+	break;
+    case "Animals20131029":
+	var tclCmdList = [];
+	useful = layerSpec.cmds.slice(1, layerSpec.cmds.indexOf("set"));
+	while ((brk = useful.indexOf("$c")) > -1) {
+	    tclCmdList.push(useful.slice(0,brk).join(" "));
+	    useful = useful.slice(brk+1);
+	}
+	tclCmdList.push(useful.join(" ")); // final cmd
+	useful = layerSpec.cmds.slice(layerSpec.cmds.indexOf("set"));
+	for (var i=0; i<useful.length-2; i+=3) {
+	    layerSpec[useful[i+1]] = useful[i+2];
+	}
     }
-    
-    var layerIndex = this.State.length;
-    this.State.push(layerSpec);
-    var that = this;
+    // are the two local copies for posts tripping each other up??
     $.post('model_action.php', {"base":fileBase, "act":"Query",
 				"note":JSON.stringify(this.tgts.slice(startComps, endComps))},
 	   function(resp) {
 	       responses = JSON.parse(resp);
-	       sorted = {};
+	       var sorted = {};
 	       for (var i=startComps; i<endComps; ++i) {
 		   if (that.tgts[i].constructor === Object) {
 		       resIndx = JSON.stringify(that.tgts[i]);
@@ -104,7 +118,16 @@ Layers2D.prototype.addLayer = function (type, state) {
 		   
 		   sorted[resIndx] = responses[i-startComps];
 	       }
-	       that.displayLayer(0.0, sorted, 0, layerIndex);
+	       if (type == "Animals20131029") // need to translate glyph 1st
+		   $.post('model_action.php',
+			  {"base":fileBase,"act":"Can2SVG",
+			   "cnvdraw":JSON.stringify(tclCmdList)},
+			  function(resp) {
+			      that.State[layerIndex].draw = resp;
+			      that.displayLayer(0.0, sorted, 0, layerIndex);
+			  });
+	       else
+		   that.displayLayer(0.0, sorted, 0, layerIndex);
 	   });
 }
 
@@ -156,6 +179,23 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 		colSpec = colorFrom(layerSpec.cMap, colFract);
 		layerSpec.gLayer.select('#poly' + niceInds).attr("fill",colSpec);
 	    }
+	}
+	break;
+    case "Animals20131029":
+	layerSpec.gLayer.selectAll("g").remove(); // delete old critters
+	xs = flatten('a', latest[layerSpec.xcoord]);
+	ys = flatten('a', latest[layerSpec.ycoord]);
+	sizes = flatten('a', latest[layerSpec.size]);
+	dirs = flatten('a', latest[layerSpec.dir]);
+
+	for (var bg in sizes) {
+	    var sc=sizes[bg];
+	    var y=-ys[bg]-(layerSpec.hotspot[1]*sc/layerSpec.scale);
+	    var x=xs[bg]-(layerSpec.hotspot[0]*sc/layerSpec.scale);
+	    var r=[dirs[bg]*180/3.14,layerSpec.hotspot[0],layerSpec.hotspot[1]];
+	    trans = "translate("+x+","+y+")scale("+(sc/layerSpec.scale)+")rotate("+r+")";
+	    layerSpec.gLayer.append("g").html(layerSpec.draw)
+		.attr("transform",trans);
 	}
     }
 }

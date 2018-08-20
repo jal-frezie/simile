@@ -6,7 +6,10 @@ foreach local {sPath sHome mdl shLib} val $argv {
 
 set env(HOME) $sHome
 lappend auto_path [file join $sPath System lib] ;# ce qui compte...
+lappend auto_path [file join $sPath System lib Stubs] ;# ce qui compte...
 source [file join $sPath Run client5d.tcl]
+# we also want to convert tk canvas graphics to svg for the layer helper
+package require can2svg
 
 proc InstallModelExec {shLib} {
 catch {

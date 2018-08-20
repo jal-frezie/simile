@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.12 2017/07/13 15:56:17 jaspert Exp $
+# $Id: can2svg.tcl,v 1.13 2018/08/20 13:38:05 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -873,11 +873,15 @@ proc can2svg::FormatColorName {value} {
 	    set col [string range $value 0 2][string range $value 5 6][string range $value 9 10]
         } default {
             # winfo rgb . white -> 65535 65535 65535
-            foreach rgb [winfo rgb . $value] {
-                lappend rgbx [expr $rgb >> 8]
-            }
-            set col [eval {format "#%02x%02x%02x"} $rgbx]
-        }
+	    if {[catch {winfo rgb . $value} triple]} { ;# may not have tk
+		set col $value
+	    } else {
+		foreach rgb $triple {
+		    lappend rgbx [expr $rgb >> 8]
+		}
+		set col [eval {format "#%02x%02x%02x"} $rgbx]
+	    }
+	}
     }
     return $col
 }
