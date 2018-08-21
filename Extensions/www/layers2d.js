@@ -94,10 +94,10 @@ Layers2D.prototype.addLayer = function (type, state) {
 	var tclCmdList = [];
 	useful = layerSpec.cmds.slice(1, layerSpec.cmds.indexOf("set"));
 	while ((brk = useful.indexOf("$c")) > -1) {
-	    tclCmdList.push(useful.slice(0,brk).join(" "));
+	    tclCmdList.push(useful.slice(0,brk).join(" ").split("  ").join(" {} ")); // add {} for empty lists
 	    useful = useful.slice(brk+1);
 	}
-	tclCmdList.push(useful.join(" ")); // final cmd
+	tclCmdList.push(useful.join(" ").split("  ").join(" {} ")); // final cmd
 	useful = layerSpec.cmds.slice(layerSpec.cmds.indexOf("set"));
 	for (var i=0; i<useful.length-2; i+=3) {
 	    layerSpec[useful[i+1]] = useful[i+2];
@@ -139,10 +139,12 @@ Layers2D.prototype.display = function (time, latest, connect) {
 Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
     layerSpec = this.State[layerIndex];
     switch (layerSpec.type) {
+	
     case "RectGrid20131119":
 	arr = latest[JSON.stringify(layerSpec.gifReq)];
 	layerSpec.image.attr("xlink:href", layerSpec.gifHeader + arr);
 	break;
+	
     case "Polygon20131026":
 	colScaler = 255/(layerSpec.max-layerSpec.min);
 	colours = flatten('m', latest[layerSpec.color]);
@@ -181,18 +183,23 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 	    }
 	}
 	break;
+	
     case "Animals20131029":
 	layerSpec.gLayer.selectAll("g").remove(); // delete old critters
-	xs = flatten('a', latest[layerSpec.xcoord]);
-	ys = flatten('a', latest[layerSpec.ycoord]);
-	sizes = flatten('a', latest[layerSpec.size]);
-	dirs = flatten('a', latest[layerSpec.dir]);
+	allDefns = {}
+	for (i=0;i<4;++i) {
+	    allDefns[["xs","ys","sizes","dirs"][i]] =
+		addAsApprop(latest,
+			    layerSpec[["xcoord","ycoord","size","dir"][i]]);
+	}
+	defns = flattenAll("a", allDefns, 0);
 
-	for (var bg in sizes) {
-	    var sc=sizes[bg];
-	    var y=-ys[bg]-(layerSpec.hotspot[1]*sc/layerSpec.scale);
-	    var x=xs[bg]-(layerSpec.hotspot[0]*sc/layerSpec.scale);
-	    var r=[dirs[bg]*180/3.14,layerSpec.hotspot[0],layerSpec.hotspot[1]];
+	for (var bg in defns) {
+	    defn = defns[bg];
+	    var sc=defn.sizes;
+	    var y=-defn.ys-(layerSpec.hotspot[1]*sc/layerSpec.scale);
+	    var x=defn.xs-(layerSpec.hotspot[0]*sc/layerSpec.scale);
+	    var r=[-defn.dirs*180/3.14,layerSpec.hotspot[0],layerSpec.hotspot[1]];
 	    trans = "translate("+x+","+y+")scale("+(sc/layerSpec.scale)+")rotate("+r+")";
 	    layerSpec.gLayer.append("g").html(layerSpec.draw)
 		.attr("transform",trans);
