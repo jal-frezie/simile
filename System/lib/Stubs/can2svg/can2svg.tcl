@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.13 2018/08/20 13:38:05 jaspert Exp $
+# $Id: can2svg.tcl,v 1.14 2018/08/22 14:08:25 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -746,7 +746,10 @@ proc can2svg::MakeStyleList {type opts args} {
                 set fillCol $value                
                 if {[string equal $type "line"]} {
                     set styleArr(stroke) [MapEmptyToNone $value]
-                } else {
+                } elseif {$type eq "polygon" && $value eq ""} {
+		    ;# JAT: Default fill for polys is black
+                    set styleArr(fill) black
+		} else {
                     set styleArr(fill) [MapEmptyToNone $value]
                 }
             }
