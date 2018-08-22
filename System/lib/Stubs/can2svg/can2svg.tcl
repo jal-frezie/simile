@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.16 2018/08/22 17:47:06 jaspert Exp $
+# $Id: can2svg.tcl,v 1.17 2018/08/22 17:47:06 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
