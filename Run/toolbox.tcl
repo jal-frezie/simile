@@ -143,7 +143,6 @@ if {[string match windows $tcl_platform(platform)]} {
     proc FixShiftedPointer {w} {
 	variable wasFS
 	if {[wm transient $w] ne {}} return
-	puts $w:[winfo geometry $w]
 	if {![info exists wasFS($w)]} {
 	    set wasFS($w) 0
 	}

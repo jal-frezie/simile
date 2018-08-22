@@ -1084,24 +1084,7 @@ proc CanvasSavesSelected {} {
 }
 
 # adapted from Welch p265
-proc WriteDesc {canvas canvasFile date args} {
-    global window_info
-    
-    set stream [NetOpen $canvasFile w]
-    fconfigure $stream -translation lf
-    set title [wm title [winfo parent $canvas]]
-    puts $stream "# written on $date"
-#    puts $stream [list array set looks [array get looks *,*]]
-# needs special to preserve top-level node name...like this
-    puts $stream [concat LoadModelLooks \$c \
-		      [list [MakeLooksSaver $window_info($canvas,top_node)]]]
-    puts $stream [concat TweakWindow \$c \{$title\} \
-            $window_info($canvas,scale) \
-            [$canvas cget -scrollregion] clear $args]
-# Now make sure Prolog knows the screen extent of what is loaded
-    puts $stream [concat ResizeDesktop \$c [$canvas cget -scrollregion]]
-    # background colour parameter now ignored because the background is
-    # a rectangle and as such is listed in the .cnv file...not...
+proc ReverseDraw {canvas} {
     foreach object [$canvas find all] {
         # Insert special command to re-create any photos used
         if {[string match image [$canvas type $object]]} {
@@ -1144,10 +1127,32 @@ proc WriteDesc {canvas canvasFile date args} {
                     lappend config [lindex $conf 0] $value
                 }
             }
-	    puts $stream [concat \$c create [$canvas type $object] \
-			      [$canvas coords $object] $config]
+	    append result [concat \$c create [$canvas type $object] \
+			      [$canvas coords $object] $config] \n
 #	}
     }
+    return $result
+}
+
+proc WriteDesc {canvas canvasFile date args} {
+    global window_info
+    
+    set stream [NetOpen $canvasFile w]
+    fconfigure $stream -translation lf
+    set title [wm title [winfo parent $canvas]]
+    puts $stream "# written on $date"
+#    puts $stream [list array set looks [array get looks *,*]]
+# needs special to preserve top-level node name...like this
+    puts $stream [concat LoadModelLooks \$c \
+		      [list [MakeLooksSaver $window_info($canvas,top_node)]]]
+    puts $stream [concat TweakWindow \$c \{$title\} \
+            $window_info($canvas,scale) \
+            [$canvas cget -scrollregion] clear $args]
+# Now make sure Prolog knows the screen extent of what is loaded
+    puts $stream [concat ResizeDesktop \$c [$canvas cget -scrollregion]]
+    # background colour parameter now ignored because the background is
+    # a rectangle and as such is listed in the .cnv file...not...
+    puts $stream [ReverseDraw $canvas]
     close $stream
 # Also include an SVG version in the same directory, so model diagram can be
 # displayed in browser after uploading to web

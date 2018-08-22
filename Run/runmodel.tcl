@@ -738,7 +738,7 @@ proc EatInput {} {
 
 proc GetShortVals {topNode plName limit} {
     set showMatrix [expr {[PrefValue custom(dispMatrix) dispMatrix] && \
-			      [llength [lsearch -all -regexp -not [GetCompProperty $topNode Dims $plName] START_VM|END_VM|0]]==2}] ;# 2 non-special values
+			      [llength [lsearch -all -regexp -not [GetCompProperty $topNode Dims $plName] START_VM|END_VM]]==3}] ;# 2 non-special non-end values
     if {[RunningInC $topNode]} {
 	if {[catch {GetHandle $topNode $plName} hdl]} {
 	    set text novalue

@@ -54,9 +54,17 @@ itcl::class similescript::$newLayerClass {
 	set cnvFile [ChooseFile animal.cnv "Image for individuals:" 0 [GetNode]]
 	set useNodes(title) [file rootname [file tail $cnvFile]]s
 	set stm [open $cnvFile r]
-	set useNodes(cmds) [subst -novariables [regsub -line -all {^\$c create .*$} [read $stm] {& -tag unpositioned}]]
+	set c [canvas .procGraphics]
+	eval [read $stm]
+	$c addtag unpositioned all
+	set useNodes(cmds) [ReverseDraw $c]
+	foreach contextVal {hotspot scale axis} {
+	    append useNodes(cmds) [list set $contextVal [set $contextVal]] \n
+	}
+#	set useNodes(cmds) [subst -novariables [regsub -line -all {^\$c create .*$} [read $stm] {& -tag unpositioned}]]
 # subst allows eg tk_chooseColor to be done just once
 	close $stm
+	destroy $c
 # now adjust each command to tag the item
 
 	set vx [$winId canvasx 0]
