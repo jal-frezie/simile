@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.15 2018/08/22 14:08:25 jaspert Exp $
+# $Id: can2svg.tcl,v 1.16 2018/08/22 17:47:06 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -710,6 +710,9 @@ proc can2svg::MakeStyleList {type opts args} {
         array set styleArr {fill none stroke black}
     }
     set fillCol black
+    if {$type eq "polygon"} {
+	set styleArr(fill) $fillCol ;# JAT: only polygons fill by default
+    }
     
     foreach {key value} $opts {
         
@@ -740,15 +743,11 @@ proc can2svg::MakeStyleList {type opts args} {
                 # empty
             }
             -fill {
-                
                 # Need to translate names to hex spec.
 		set value [FormatColorName $value]
                 set fillCol $value                
                 if {[string equal $type "line"]} {
                     set styleArr(stroke) [MapEmptyToNone $value]
-                } elseif {$type eq "polygon" && $value eq ""} {
-		    ;# JAT: Default fill for polys is black
-                    set styleArr(fill) black
 		} else {
                     set styleArr(fill) [MapEmptyToNone $value]
                 }
