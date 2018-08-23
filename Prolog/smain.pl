@@ -117,6 +117,7 @@ main :-
 			     PathToObjStr),
 	name(PathToObj, PathToObjStr),
 	database:empty_tree(PathToObj),
+	% gtrace, % uncomment to trace startup
 	state:retractall(model_in(_,_)),
 	prolog_flag(version, FullVnum),
 	name(FullVnum, FullVnumStr),

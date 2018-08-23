@@ -196,10 +196,12 @@ make_legible_for_prolog(String, NewString, CommentsAllowed) :-
 	    (Suffix = []; Suffix = [EndsVar | _],
             \+ continuer_only([EndsVar], prolog, [EndsVar])),
 	    continuer_only(MoreVar, prolog, MoreVar),
+	    % lower([StartsVar | MoreVar], LowerVar), converts all funx to lower
+	    % including macro defns which then don't match old specs :-(
+	    LowerVar = [StartsVar | MoreVar], 
 	    /* now, if it is a Prolog operator but not a Simile operator, we
 	    must put in parentheses so parser treats it as an atom, otherwise
 	    put in quotes. How do I tell? */
-	    lower([StartsVar | MoreVar], LowerVar),
 	    (name(ForeignOp, LowerVar),
 		current_op(_Prec, _Spec, ForeignOp), % prolog knows it
 		\+ (inters'><'macro_expansion(_Src, (Tplt --> _Xpn)),
@@ -207,9 +209,9 @@ make_legible_for_prolog(String, NewString, CommentsAllowed) :-
 		    inters'><'operator(ForeignOp, _R, _As)), % simile does not
 		append([Po | LowerVar], [Pc], Tweaked);
 	    /* If a function name, next char is open-parenthesis in which case
-            convert to lowercase (and don't bother enquoting!) */
+            convert to lowercase (and don't bother enquoting!)
 	    EndsVar == Po,
-	        Tweaked = LowerVar;
+	        Tweaked = LowerVar; */
 	    append([Sq, StartsVar | MoreVar], [Sq], Tweaked));
 	/* Put single quotes round things in double quotes so they are read as
 	    atoms rather than lists of Ascii codes */
