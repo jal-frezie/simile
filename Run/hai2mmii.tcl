@@ -150,11 +150,11 @@ proc AddToWatched {node} {
 # cloud or submodel.
 
 proc GetModelValue { node {keepEvtZeros 0}} {
-    set loseZeros [expr {[lsearch {EVENT SQUIRT} [GetModelClass $node]]>-1 && \
-			 !$keepEvtZeros}]
     global subbedPlots
     if {[info exists subbedPlots($node)]} {
 	if {[llength $subbedPlots($node)]==3} { # is pointer to univ struct
+	    set loseZeros [expr {!$keepEvtZeros && \
+			[lsearch {EVENT SQUIRT} [GetModelClass $node]]>-1}]
 	    return [list [extract_list [lindex $subbedPlots($node) 2] \
 			      16777216 $loseZeros]] ;# enough I hope
 	} else { # from tcl model or measured value from pest interface
