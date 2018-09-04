@@ -976,7 +976,8 @@ set msgs(finished_matches_message) [tr. {No more matching %1$ss in this submodel
 # model diagnostics -- text mostly generated elsewhere
 set msgs(model_crash_title) [tr. {Problem with model}]
 set msgs(model_crash_message) [tr. {Simile ran into a problem trying to run this model.
-While %1$s %2$s during %3$s of the model%4$s, %5$s.}]
+While %1$s %2$s during %3$s of the model%4$s, %5$s.
+To see information about the error relating to the model itself, use the 'debug' option. Continuing to run it normally may cause Simile to exit unexpectedly.}]
 set msgs(model_crash_full) [tr. {Original error message follows:
 %6$s}]
 set msgs(model_pause_title) [tr. {Model execution paused}]
