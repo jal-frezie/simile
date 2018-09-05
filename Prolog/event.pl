@@ -1795,7 +1795,7 @@ sort_for_finish(Target, Ltype, Xpt, Ypt) :-
 	    get_host(Start, VisStart),
 	    (find_type(Target, submodel),
 	/* This requirement dropped for flows, see above */
-		(find_all_comps(Target, Baby),
+		(contains(Target, Baby),
 		    can_finish(Ltype, VisStart, Baby),
 		    \+ contains(Baby, Start), !;
 		member(Ltype, [flow, squirt])),
