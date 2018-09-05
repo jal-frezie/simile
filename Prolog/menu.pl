@@ -181,7 +181,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		(Win2 shows_model Parent,
 		    redraw_window(Win2),
 		    fail;
-		 true)),
+		 scrap_move)), % canvas size change part of loading model
 	    update_captions(Parent),
 	    redisplay(Parent);
 	Mode = insert(Pt),
