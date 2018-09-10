@@ -807,6 +807,7 @@ proc SafeFormat {fmt val} {
 }
 
 proc Matrixify {list2D vis} {
+    if {$list2D eq ""} {return [list 0 ""]}
     set result {}
     set minCol inf
     set maxCol 0

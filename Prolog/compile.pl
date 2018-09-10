@@ -563,6 +563,7 @@ wot need them */
 	build_submodel_functions(Language, BoostPhases, Constants,
 				 NewForm, Marked, Used, AllGraphs, Stream),
 	make_exit_proc(Language, RootInstance, Stream),
+	excrete(Language, procedure_defn, [void, updatemodel_chk(int)], 0, Stream),
 	excrete(Language, procedure_defn, [int, do_evalmodel(int)], 0, Stream),
 	  
 	send_to_dest(Stream, EndTopType),

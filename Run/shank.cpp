@@ -353,6 +353,7 @@ void report_events(int dimty, const int inds[], int evts,
   for (count=0;count<dimty;++count) {
     latestContext[count] = inds[count];
   }
+  contextDepth = dimty;
 
   // now do commands associated with events
   EvtCmdData* EvtCmd;
@@ -1421,8 +1422,8 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     if (pause_out_of_range) {
       keeper = userDefStop->targetId; // incase event to finish next step
       userDefStop->targetId = 0;
-      // calling update with phase 5/6 checks values within range
-      loadedInst->updatemodel(wee_phase);
+      // calling update with step 5/6 checks values within range
+      loadedInst->updatemodel_chk(wee_phase);
       if (userDefStop->targetId) {
 	if (userDefStop->targetId>0)
 	  userDefStop->excpNo = -97;
