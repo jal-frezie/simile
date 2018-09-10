@@ -821,6 +821,7 @@ proc Matrixify {list2D vis} {
 	}
     }
     set maxRow $outIndex
+    set lineLenLess1 [expr {min($maxCol-$minCol, 2*$vis)}]
 
     set outPlace $minRow
     set ellidedV 0
@@ -831,7 +832,6 @@ proc Matrixify {list2D vis} {
 	    set skip [expr {$outPlace>=$minRow+$vis&&$outPlace<=$maxRow-$vis}]
 	    if {$skip} {
 		if {!$ellidedV} {
-		    set lineLenLess1 [expr {min($maxCol-$minCol, 2*$vis)}]
 		    append result \n[string repeat ...\t $lineLenLess1]...
 		    set ellidedV 1
 		}
