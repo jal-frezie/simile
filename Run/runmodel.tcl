@@ -861,7 +861,7 @@ proc Matrixify {list2D vis} {
 	    }
 	}
     }
-    return [list [expr {1+$maxCol-$minCol}] $result]
+    return [list [incr lineLenLess1] $result]
 }
 
 ############################## snap: start ###################################
