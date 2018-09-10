@@ -1423,8 +1423,11 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
       keeper = userDefStop->targetId; // incase event to finish next step
       userDefStop->targetId = 0;
       // calling update with step 5/6 checks values within range
-      loadedInst->updatemodel_chk(wee_phase);
+      loadedInst->ctxCount = 0;
+      loadedInst->updatemodel(wee_phase);
       if (userDefStop->targetId) {
+	report_events(loadedInst->ctxCount, loadedInst->ctxSaved,
+		      0, NULL, NULL);
 	if (userDefStop->targetId>0)
 	  userDefStop->excpNo = -97;
 	else {

@@ -1,5 +1,5 @@
 // Identifier
-#define MDL_OBJ_VERS 10.910
+#define MDL_OBJ_VERS 10.903
 
 // class definition and handling procedure for extra variables used in
 // complicated integration methods
@@ -109,7 +109,6 @@ public:
 
   // functions called by host module
   virtual int do_evalmodel(int) = 0;
-  virtual void updatemodel_chk(int) = 0;
   
   // functions implemented by model code
   virtual void advancemodel (int phase) = 0;
