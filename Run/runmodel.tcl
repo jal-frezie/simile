@@ -775,7 +775,7 @@ proc GetShortVals {topNode plName limit} {
 	}
 	set text [TransEnums $transData $text]
 	if {$showMatrix} {
-	    set result [Matrixify $text]
+	    set result [Matrixify $text [expr {round(sqrt($limit/20))}]]
 	    set count -[lindex $result 0]
 	    set text [lindex $result 1]
 	} else {
@@ -806,33 +806,62 @@ proc SafeFormat {fmt val} {
     }
 }
 
-proc Matrixify {list2D} {
+proc Matrixify {list2D vis} {
     set result {}
-    set outPlace 1
     set minCol inf
+    set maxCol 0
     set maxCols 1
     foreach {outIndex line} $list2D {
 	if {[llength $line]} {
+	    if {![info exists minRow]} {
+		set minRow $outIndex
+	    }
 	    set minCol [expr {min([lindex $line 0], $minCol)}]
+	    set maxCol [expr {max([lindex $line end-1], $maxCol)}]
 	}
     }
+    set maxRow $outIndex
+
+    set outPlace $minRow
+    set ellidedV 0
+    set skip 0
     foreach {outIndex line} $list2D {
 	while {$outPlace<$outIndex} {
 	    incr outPlace
-	    append result \n
+	    set skip [expr {$outPlace>=$minRow+$vis&&$outPlace<=$maxRow-$vis}]
+	    if {$skip} {
+		if {!$ellidedV} {
+		    set lineLenLess1 [expr {min($maxCol-$minCol, 2*$vis)}]
+		    append result \n[string repeat ...\t $lineLenLess1]...
+		    set ellidedV 1
+		}
+	    } else {
+		append result \n
+	    }
 	}
+	if {$skip} continue
+	
 	set inPlace $minCol
+	set ellidedH 0
 	foreach {inIndex val} $line {
 	    while {$inPlace<$inIndex} {
 		incr inPlace
-		append result \t
+		set skip [expr {$inPlace>=$minCol+$vis&&$inPlace<=$maxCol-$vis}]
+		if {$skip} {
+		    if {!$ellidedH} {
+			append result \t ...
+			set ellidedH 1
+		    }
+		} else {
+		    append result \t
+		}
 	    }
-	    append result $val
+	    if {!$skip} {
+		append result $val
+	    }
 	}
-	set maxCols [expr {max($inPlace, $maxCols)}]
     }
-
-    return [list [expr {1+$maxCols-$minCol}] $result]
+    return [list [expr {1+$maxCol-$minCol}] $result]
 }
 
 ############################## snap: start ###################################

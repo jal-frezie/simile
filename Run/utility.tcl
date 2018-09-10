@@ -590,8 +590,7 @@ proc Rebag {bag axis tab lo hi} {
 	}
 	return
     }
-    set newSize [expr {min(round([$bag cget -$axis]/($hi-$lo)),4000)}]
-    # bigger widths cause crash with Xorg
+    set newSize [expr {round([$bag cget -$axis]/($hi-$lo)+0.5)}]
     $bag configure -$axis $newSize
 }
 
