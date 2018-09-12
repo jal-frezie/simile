@@ -168,7 +168,7 @@ function tclListOfDimty(stuff, n) {
 function idFromCapt (capt) {
 // now boringly find this by iteration
     for (comp in model_json) {
-	if (model_json[comp].captpath.replace(/\s+/g," ") == capt) {
+	if (model_json[comp].captpath == capt) {
 	    return model_json[comp].id;
 	}
     }
@@ -180,8 +180,9 @@ function oneAfter(array, term) {
 }
 
 function setupHelperIn(win, species, textContent) {
+    if (textContent.indexOf("<hsf ")>=0) return; // cannot deal with new style
     convd = textContent.replace(/}*\s+{*/g,"\"$&\"")
-	.replace(/{/g,"[").replace(/}/g,"]").replace(/\s+/g,", ")
+	.replace(/{/g,"[").replace(/}/g,"]").replace(/\s+/g,", ");
     specArray = JSON.parse("["+convd.substr(3,convd.length-6)+"]");
 //    console.log("Helper key "+species+", state "+JSON.stringify(specArray));
 
@@ -378,7 +379,8 @@ function createInitialHelpers() {
 		    // (but only old-style tab-per-helper)
 		    b64Bloc = returnedXML.substr(returnedXML.search("\n\n")+2);
 		    try {
-			v4shf = atob(b64Bloc);
+			v4shf = atob(b64Bloc.slice(0,-1));
+			// final = can cause atob to fail
 		    } catch(err) {
 			console.log("Attempting to use .shf as v4 data");
 			v4shf = b64Bloc;
@@ -1971,6 +1973,8 @@ Grid5.prototype.acceptClick = function (nodeId) {
 
     zone = document.getElementById(this.port);
     zone.style.imageRendering = "pixelated";
+    zone.style.imageRendering = "-moz-crisp-edges";
+    zone.style.imageRendering = "-o-crisp-edges";
     zone.appendChild(keyDiv);
     
     keyDiv.appendChild(this.lowLabel);

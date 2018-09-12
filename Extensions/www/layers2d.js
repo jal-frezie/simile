@@ -21,18 +21,33 @@ Layers2D.prototype.addLayer = function (type, state) {
     var startComps = this.tgts.length;
     layerSpec.type = type;
     if (type == "Photo20131023")
-	layerSpec = state;
-    else 
-    for (var i=0; i<state.length;i+=2) {
-	if (type == "Polygon20131026") // indices start /WIN/,
-	    state[i] = state[i].substr(6);
-	possCapt = tclListOfDimty(state[i+1],1);
-	if (possCapt[0][0] == "/") { // its a capt path
-	    state[i+1] = idFromCapt(possCapt.join(" "));
-	    this.tgts.push(state[i+1]);
+	layerSpec.setup = state;
+    else if (type == "Circles20171122" || type == "Lines20171122") {
+	// state is 1 element list
+	layerSpec.setup = [];
+	for (var i=0; i<state[0].length;i++) {
+	    entry = state[0][i];
+	    possCapt = tclListOfDimty(entry,1);
+	    if (possCapt[0][0] == "/") { // its a capt path
+		entry = idFromCapt(possCapt.join(" "));
+		this.tgts.push(entry);
+	    } else if (possCapt[0][0] == "#") { // it's a fixed colour
+		var colBytes = BytesFromHex(possCapt[0]);
+		entry = 65536*colBytes.R+256*colBytes.G+colBytes.B;
+	    }
+	    layerSpec.setup.push(entry);
 	}
-	layerSpec[state[i]] = state[i+1];
-    }
+    } else 
+	for (var i=0; i<state.length-1;i+=2) {
+	    if (type == "Polygon20131026") // indices start /WIN/,
+		state[i] = state[i].substr(6);
+	    possCapt = tclListOfDimty(state[i+1],1);
+	    if (possCapt[0][0] == "/") { // its a capt path
+		state[i+1] = idFromCapt(possCapt.join(" "));
+		this.tgts.push(state[i+1]);
+	    }
+	    layerSpec[state[i]] = state[i+1];
+	}
     layerSpec.gLayer = this.scaleGrp.append("g");
     var endComps = this.tgts.length;
     
@@ -71,7 +86,7 @@ Layers2D.prototype.addLayer = function (type, state) {
 	layerSpec.cMap = ColorMapFromSwatches(swatArr);
 	break;
     case "Photo20131023": // no updates so display it here
-	localURL = "data:image/png;base64," + layerSpec[5].join("");
+	localURL = "data:image/png;base64," + layerSpec.setup[5].join("");
 	photo = layerSpec.gLayer.selectAll("image").data([0]);
         var image = photo.enter()
             .append("svg:image")
@@ -80,7 +95,7 @@ Layers2D.prototype.addLayer = function (type, state) {
 	// cannot get pixel size of svg image so have to make a separate html
 	// one for this purpose...
 	var img = document.createElement("img");
-	var trans = layerSpec.slice(0,4);
+	var trans = layerSpec.setup.slice(0,4);
 	img.src = localURL;
 	img.onload=function () {
 	    natWide = img.naturalWidth;
@@ -199,10 +214,44 @@ Layers2D.prototype.displayLayer = function (time, latest, connect, layerIndex) {
 	    var sc=defn.sizes;
 	    var y=-defn.ys-(layerSpec.hotspot[1]*sc/layerSpec.scale);
 	    var x=defn.xs-(layerSpec.hotspot[0]*sc/layerSpec.scale);
-	    var r=[-defn.dirs*180/3.14,layerSpec.hotspot[0],layerSpec.hotspot[1]];
+	    var r=[(ToRadians(layerSpec.axis)-ToRadians(defn.dirs))*180/3.14,
+		   layerSpec.hotspot[0],layerSpec.hotspot[1]];
 	    trans = "translate("+x+","+y+")scale("+(sc/layerSpec.scale)+")rotate("+r+")";
 	    layerSpec.gLayer.append("g").html(layerSpec.draw)
 		.attr("transform",trans);
+	}
+	break;
+    case "Circles20171122":
+	layerSpec.gLayer.selectAll("circle").remove();
+	allDefns = {};
+	for (i=0;i<4;++i)
+	    allDefns[["x_axis","y_axis","radius","color"][i]] =
+	    addAsApprop(latest, layerSpec.setup[[1,2,4,5][i]]);
+	defns = flattenAll("c", allDefns, 0);
+
+	for (var bg in defns) {
+	    var hexColor = defns[bg].color.toString(16);
+	    layerSpec.gLayer.append("circle").attr("cx",defns[bg].x_axis)
+		.attr("cy",-defns[bg].y_axis)
+		.attr("r",defns[bg].radius)
+		.attr("fill", "#" + "000000".slice(hexColor.length) + hexColor);
+	}
+	break;
+    case "Lines20171122":
+	layerSpec.gLayer.selectAll("line").remove();
+	allDefns = {};
+	for (i=0;i<6;++i)
+	    allDefns[["startx","starty","endx","endy","width","color"][i]] =
+	    addAsApprop(latest, layerSpec.setup[[1,2,4,5,7,8][i]]);
+	defns = flattenAll("l", allDefns, 0);
+
+	for (var bg in defns) {
+	    var hexColor = defns[bg].color.toString(16);
+	    layerSpec.gLayer.append("line").attr("x1",defns[bg].startx)
+		.attr("y1",-defns[bg].starty)
+		.attr("x2",defns[bg].endx)
+		.attr("y2",-defns[bg].endy)
+		.attr("style", "stroke:#" + "000000".slice(hexColor.length) + hexColor + ";stroke-width:" + defns[bg].width);
 	}
     }
 }
@@ -234,3 +283,14 @@ Layers2D.prototype.resize = function (x,y) {
     }
 }
 
+function ToRadians (axis) {
+    fl = parseFloat(axis);
+    if (!isNaN(fl))
+	return fl;
+    else if ((ct = ["e", "ne", "n", "nw", "w", "sw", "s", "se"].indexOf(axis)) > -1)
+	return ct*6.28/8;
+    else if ((ct = ["3h", "2h", "1h", "12h", "11h", "10h", "9h", "8h", "7h", "6h", "5h", "4h"].indexOf(axis)) > -1)
+	return ct*6.28/12;
+    else
+	console.log("Unrecognized axis " + axis);
+}

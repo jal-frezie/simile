@@ -321,7 +321,7 @@ function addAsApprop(latest, arr) {
     if (latest[arr] != undefined) {
 	return latest[arr];
     } else {
-	return parseFloat(arr);
+	return arr;
     }
 }
 
