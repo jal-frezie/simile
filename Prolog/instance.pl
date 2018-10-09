@@ -303,8 +303,9 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	       EvtPairs), !;
 	 EvtPairs = []),
 	 all(user, arg, [unify(4), build(EvtPairs), build(EvtArgs)]),
-	 all(user, arg, [unify(2), build(EvtPairs), build(EvtNodes)]),
+	 all(user, arg, [unify(2), build(EvtPairs), build(EvtFnNodes)]),
 	 all(user, arg, [unify(3), build(EvtPairs), build(EvtNames)]),
+	 all(instance, sub_vis_if_loss, [build(EvtFnNodes), build(EvtNodes)]),
 	 all(instance, is_instance, 
 	     [build(_Type), build(EvtNodes), build(_Load),
 	      build(EvtNames), build(_Dims), build(EvtRefs)]),
@@ -463,6 +464,15 @@ instance_of(Type, Node, _, Inst, Ref) :-
 	    oblitterfry(Node),
 	    caption_for(Parent, PCapt),
 	    query(remove_orphan(Capt, PCapt), info, top, [ok], _)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/* If a loss channel is being used as an event antecedent, we need to use the
+spare value (actual destruction) rather than the function value (probability
+of destruction) to trigger it. */
+sub_vis_if_loss(FnNode, Node) :-
+    get_host(FnNode, Node),
+    find_type(Node, loss), !;
+    Node = FnNode.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 is_lookup_cond(GroundExpr, UseExpr) :-

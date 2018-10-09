@@ -113,7 +113,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	set timedDisp 1
     }
     set currentMode start
-    set evtPause [expr {$evtMsg || $evtDisp || 1}] ;# event sounds selected
+    set evtPause [expr {$evtMsg || $evtDisp}] ;# event sounds selected
     set payload {}
     while {[lsearch {exit stop} $currentMode]==-1} {
 	if {$display} {

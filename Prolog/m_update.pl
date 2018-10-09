@@ -328,10 +328,14 @@ valid_input(Real, SourceType, InputLink) :-
 	InputLink is_connector from _ to AlsoUsed,
 	initiates(InputLink, Source),
 	get_host(Source, VisSource), % for flows/squirts with links from fn
-	(member(SourceType, [continuous, identified]),
-	    \+ VisSource is_of_sort discrete; % event values not to be used
-	  SourceType = discrete,
-	    VisSource is_of_sort discrete). % event values to be used
+
+	(uses_as_event(VisSource, RealVar) -> SourceType = discrete;
+	 member(SourceType, [continuous, identified])).
+
+uses_as_event(VisSource, RealVar) :-
+	find_type(VisSource, loss) ->
+	    (RealVar is_of_sort discrete; find_type(RealVar, state));
+	VisSource is_of_sort discrete. % event values to be used
 
 /* This generates the extra array nestings due to submodels that are exited between a
 link's source and its destination. Note that if the destination is a creation or
