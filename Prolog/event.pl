@@ -81,6 +81,14 @@ build_suffix([H | T], Suffix) :-
 	    append(H, Tail, Suffix);
 	append([H, ", ", Tail], Suffix)).
 
+english_disjunct(Terms, Phrase) :-
+    Terms = [One], Phrase = One;
+    Terms = [One, Two], append_atoms([One, ' or ', Two], Phrase);
+    Terms = [One, Two, Three | More],
+    english_disjunct([Two, Three | More], Tail),
+    append_atoms([One, ', ', Tail], Phrase).
+
+
 get_info(_Wid, Comp, enum_type_defns, ETDefns) :-
 	(find_type(Comp, submodel), !,
 	    % just get defns for this submodel level
@@ -114,9 +122,9 @@ get_info(Wid, Comp, context, DescAtm) :-
 	    name(Capt, CaptStr),
 	    append(CaptStr, " . ", Part1)),
 
+	find_node_with_data(Comp, _, Fn),
 	(LType = submodel,
 	    image'><'quick_file(Comp, Middle);
-	find_node_with_data(Comp, _, Fn),
 	    eqn_for(Fn, MiddleAtm),
 	    name(MiddleAtm, Mid0),
 	    ((LType = event, is_parameter(Comp, 1)) -> % a limit event
@@ -131,9 +139,17 @@ get_info(Wid, Comp, context, DescAtm) :-
 	    Middle = "ghost link";
 	name(LType, Middle)), !,
 
-	(units_for(Comp, Suffix1), !;
-	Suffix1 = ""),
-	Wid shows_model Context,
+	(units_for(Comp, Suffix0), !;
+	  Suffix0 = ""),
+	((LType = event, is_parameter(Comp, 0); LType = squirt),
+		% a deived event
+	     list_evt_captions(Fn, [_reset | TriggerCapts]),
+	     english_disjunct(TriggerCapts, Suffix1Name) ->
+	     name(Suffix1Name, FlowDisj),
+	     append([Suffix0, " on ", FlowDisj], Suffix1);
+	 Suffix1 = Suffix0),
+	% Wid shows_model Context, (for paths relative to window bkgnd)
+	find_all_comps(Context, Comp), % (for paths relative to component)
 	(setof(Dest, m_update'><'connects(Comp, Source, Dest), DestList), !,
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
