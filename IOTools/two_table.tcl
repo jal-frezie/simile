@@ -298,7 +298,7 @@ namespace eval $keyValue {
 		foreach colEntry [array names colIds $winId,*] {
 		    if {$colIds($colEntry)==$col} {
 			set colsHeaders [lindex [split $colEntry ,] 1]
-			set values($rowsHeaders,$colsHeaders) $newVal
+			set values([list $rowsHeaders $colsHeaders]) $newVal
 			#puts "set values($rowsHeaders,$colsHeaders) $newVal"
 			set editMode($winId,tweaked) 1
 		    }
@@ -374,10 +374,10 @@ namespace eval $keyValue {
             ################################################################################
             set displayFormat($winId,$varIndex) $displayFormat($winId,-1)
             if {[GetModelTime]==$lastDisplay($winId)} {
-		set values [lindex [GetModelValue $varId] 0]
-		if {[llength $values]} {
+		set vals [lindex [GetModelValue $varId] 0]
+		if {[llength $vals]} {
 		    set dataStore($winId,$varId,$lastDisplay($winId)) \
-			[TransEnums $trans $values]
+			[TransEnums $trans $vals]
 		}
             }
             Reconbobulate $winId
@@ -432,13 +432,13 @@ namespace eval $keyValue {
 #puts "start display at [clock milliseconds]"
         foreach varCapt $displayList($winId,paths) {
 	    set varId [lindex $displayList($winId,ids) $varIndex]
-	    set values [lindex [GetModelValue $varId] 0]
+	    set vals [lindex [GetModelValue $varId] 0]
 #puts "got values at [clock milliseconds]"
-	    if {[llength $values]} {
+	    if {[llength $vals]} {
 # do not add empty lists they make finding dataless variables harder
 		set trans [lindex $displayList($winId,transes) $varIndex]
 		set dataStore($winId,$varId,$tCur) \
-		    [TransEnums $trans $values]
+		    [TransEnums $trans $vals]
 	    }
                 
             incr varIndex
@@ -475,10 +475,6 @@ namespace eval $keyValue {
     
     # save table contents as CSV file
     proc Save {winId} {
-        set types {
-            {{Comma seperated values}       {.csv}        }
-            {{All Files}        *             }
-        }
         set filename [ChooseFile table.csv [tr. "Save table contents as.."] 1 \
 			  [GetTopNode $winId]]
         SaveToNamedFile $winId $filename
@@ -499,6 +495,7 @@ namespace eval $keyValue {
 	variable curRows
 	variable curCols
 
+	package require csv
 	set listVersion [lrepeat $curRows [lrepeat $curCols {}]]
 	foreach {idxPair val} [array get ::data$winId] {
 	    if {[string equal active $idxPair]} continue
@@ -506,7 +503,7 @@ namespace eval $keyValue {
 	}
 	set fileId [open $filename w]
 	foreach line $listVersion {
-	    puts $fileId [join $line ,]
+	    puts $fileId [::csv::join $line]
 	}
 	close $fileId
     }
@@ -873,10 +870,11 @@ namespace eval $keyValue {
 	variable displayFormat
 
         foreach value [array names values] {
-            set headers [split $value ,]
-            set rowHead $rowIds($winId,[lindex $headers 0])
-            set colHead $colIds($winId,[lindex $headers 1])
-	    set cellFormat $displayFormat($winId,$cellFormatKey($winId,$value))
+#            set headers [split $value ,]
+            set rowHead $rowIds($winId,[lindex $value 0])
+            set colHead $colIds($winId,[lindex $value 1])
+	    set id $cellFormatKey($winId,[join $value ,])
+	    set cellFormat $displayFormat($winId,$id)
             set ::data${winId}($rowHead,$colHead) \
 		[FormatValue $values($value) [lindex $cellFormat 0] \
 		     [lindex $cellFormat 1]]
@@ -925,9 +923,9 @@ namespace eval $keyValue {
         # next copy the 2-d table to an n-d array using these
         foreach value [array names values] {
 	    if {[string length $values($value)]} {
-		set headers [split $value ,]
-		set rowsHeaders [lindex $headers 0]
-		set colsHeaders [lindex $headers 1]
+#		set headers [split $value ,]
+		set rowsHeaders [lindex $value 0]
+		set colsHeaders [lindex $value 1]
 		set subscript [eval {concat} $subscriptTemplate]
 		set newValues($subscript) [EnquoteIfNonNumeric $values($value)]
 	    }
@@ -987,7 +985,7 @@ namespace eval $keyValue {
         }
         
         if {[llength $struct] == 1} {
-            set values($rowsList,$colsList) [lindex $struct 0]
+            set values([list $rowsList $colsList]) [lindex $struct 0]
             set cellFormatKey($winId,$rowsList,$colsList) $varId
             
             set rowNames($rowsList) {}
