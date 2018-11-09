@@ -1587,13 +1587,14 @@ proc LoadDataFile {mode query mdl} {
 	$tablecb set [lindex $tablenames 0]
         gdal_close $hdl
     } else {
+	package require csv
         gets $stream firstLine
         switch $mode {
             columns {
                 # csv handled by existing code other extensions handled with ODBC
                 if {$ext == {.csv}} {
                         set i 1
-                        foreach hd [split $firstLine ,] {
+                        foreach hd [::csv::split $firstLine] {
                             if {$haveDND} {
 				$fheads.lheads insert end [string trim $hd]
 			    } else {
@@ -1615,7 +1616,7 @@ proc LoadDataFile {mode query mdl} {
                 set table_entry(row1) 1
                 set table_entry(rown) 1
                 while {[gets $stream firstLine]!=-1} {
-		    set coln [llength [split $firstLine ,]]
+		    set coln [llength [::csv::split $firstLine]]
 		    if {$coln>$table_entry(coln)} {
 			set table_entry(coln) $coln
 		    }
@@ -1714,7 +1715,7 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 		set tableSpec [lreplace $tableSpec 2 2]
 	    }
 	}
-
+    package require csv
     switch -exact [lindex $tableSpec 1] {
     ,grid {
         set rowList {}
@@ -1731,7 +1732,7 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 	set coln 0
 	set stream [NetOpen [lindex $tableSpec 0] r]
 	while {[gets $stream firstLine]!=-1} {
-	    set acoln [llength [split $firstLine ,]]
+	    set acoln [llength [::csv::split $firstLine]]
 	    if {$acoln>$coln} {
 		set coln $acoln
 	    }
@@ -1769,10 +1770,10 @@ proc LoadTableData {specLocn lineCount addSpecials} {
         for {set rowInd 1} {$rowInd <= $ylast} {incr rowInd} {
             gets $tStr entryLine
 	    if {$rowInd == $idxRow} {
-		set xIndPts [TrimFields [split ,$entryLine ,]]
+		set xIndPts [TrimFields [::csv::split ,$entryLine]]
 	    }
             if {$rowInd >= $yfirst} {
-                set usePts [TrimFields [split ,$entryLine ,]]
+                set usePts [TrimFields [::csv::split ,$entryLine]]
 		if {$idxCol>-1} {
 		    set yInd [lindex $usePts $idxCol]
 		} elseif {$yflip} {
@@ -1888,7 +1889,7 @@ proc LoadTableData {specLocn lineCount addSpecials} {
         if { $ext == {.csv} } {
 	    set tStr [NetOpen [lindex $tableSpec 0] r]
 	    gets $tStr headerLine
-	    set headerList [TrimFields [split $headerLine ,]]
+	    set headerList [TrimFields [::csv::split $headerLine]]
 	    #ShowMess debug info "Headers are $headerList" ok
 	    
 	    foreach headerIndex [lrange $tableSpec 2 end] {
@@ -1914,7 +1915,7 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 		}
 	    }
 	    while {[gets $tStr entryLine] != -1} {
-		set entryList [TrimFields [split $entryLine ,]]
+		set entryList [TrimFields [::csv::split $entryLine]]
 		#ShowMess debug info "Data line is $entryList" ok
 		if {![llength $entryList]} {
 		    continue ;# ignore blank lines anywhere
