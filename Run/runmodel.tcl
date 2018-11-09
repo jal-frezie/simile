@@ -1084,11 +1084,15 @@ proc SaveSnap {w vname topNode} {
 
 proc SaveSnapToFile {w vname filename} {
     global runState
+
+    package require csv
     set out [NetOpen $filename w]
     for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
-	puts -nonewline $out index${idx},
+	lappend line1 index${idx}
+#	puts -nonewline $out index${idx},
     }
-    puts $out $vname
+    lappend line1 $vname
+    puts $out [::csv::join $line1]
     SquirtLine $out {} $runState(val$w)
     close $out
 }
@@ -1174,10 +1178,10 @@ proc PutIndNo {str deep val} {
 proc SquirtLine {str idcs val} {
     if {[llength $val]>1} {
 	foreach {idx sub} $val {
-	    SquirtLine $str $idcs$idx, $sub
+	    SquirtLine $str [concat $idcs [list $idx]] $sub
 	}
     } else {
-	puts $str $idcs$val
+	puts $str [::csv::join [lappend idcs $val]]
     }
 }
 
