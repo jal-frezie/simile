@@ -984,17 +984,17 @@ namespace eval $keyValue {
             incr depth
         }
         
-        if {[llength $struct] == 1} {
-            set values([list $rowsList $colsList]) [lindex $struct 0]
-            set cellFormatKey($winId,$rowsList,$colsList) $varId
-            
-            set rowNames($rowsList) {}
-            set colNames($colsList) {}
-        } else {
+        if {[string is list $struct] && [llength $struct]>1} {
             foreach {newIndex newStruct} $struct {
                 GrabIndices $winId $depth $rowsList $colsList $newIndex \
                         $newStruct $varId
             }
+        } else {
+            set values([list $rowsList $colsList]) $struct
+            set cellFormatKey($winId,$rowsList,$colsList) $varId
+            
+            set rowNames($rowsList) {}
+            set colNames($colsList) {}
         }
     }
     

@@ -798,7 +798,7 @@ proc FormatVals {fmt list} {
 }
 
 proc SafeFormat {fmt val} {
-    if {$val==$val} {
+    if {[string is double -strict $val] && $val==$val} {
 # nan raises error on format and is only real value that does not equal itself
 	return [format $fmt $val]
     } else {
@@ -1122,14 +1122,15 @@ proc StopLogging {w topNode node} {
 proc StartLogging {w topNode node filename} {
     global runState iconImages
 
+    package require csv
     $w.bbframe.reel configure -image $iconImages(noreel)
     set out [NetOpen $filename w]
     set lh time
     for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
-	puts -nonewline $out $lh
+	set line $lh
 	set lh {}
-	PutIndNo $out -$idx $runState(val$w)
-	puts $out {}
+	PutIndNo line -$idx $runState(val$w)
+	puts $out [::csv::join $line]
     }
     set runState(log$node) [list $topNode $out]
 }
@@ -1140,43 +1141,41 @@ proc WriteLogs {topNode time vname step} {
 	if {[string equal $topNode [lindex $runState($logger) 0]]} {
 	    set curVals [GetModelValue [string range $logger 3 end]]
 	    set stm [lindex $runState($logger) 1]
-	    puts -nonewline $stm $time
+	    set str $time
 	    PutValsOnly str [lindex $curVals 0]
-	    puts $stm $str
+	    puts $stm [::csv::join $str]
 	}
     }
 }
 
 proc PutValsOnly {pstr val} {
     upvar 1 $pstr str
-    if {[llength $val]==1} {
-	append str ,[SafeFormat %.12g $val]
-    } else {
+    if {[string is list $val] && [llength $val]>1} {
 	foreach {idx sub} $val {
 	    PutValsOnly str $sub
 	}
+    } else {
+	lappend str [SafeFormat %.12g $val]
     }
 }
 
-proc PutIndNo {str deep val} {
-    if {$deep<0} {
-	set deep [expr $deep+1]
-    }
-    set newDeep $deep
-    if {[llength $val]==1} {
-	puts -nonewline $str ,$deep
-    } else {
+proc PutIndNo {lst deep val {wrt {}}} {
+    upvar 1 $lst line
+    set deep [expr $deep+1]
+    if {[string is list $val] && [llength $val]>1} {
 	foreach {idx sub} $val {
 	    if {!$deep} {
-		set newDeep $idx
+		set wrt $idx
 	    }
-	    PutIndNo $str $newDeep $sub
+	    PutIndNo line $deep $sub $wrt
 	}
+    } else {
+	lappend line $wrt
     }
 }
 
 proc SquirtLine {str idcs val} {
-    if {[llength $val]>1} {
+    if {[string is list $val] && [llength $val]>1} {
 	foreach {idx sub} $val {
 	    SquirtLine $str [concat $idcs [list $idx]] $sub
 	}

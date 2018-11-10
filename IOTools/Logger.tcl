@@ -208,26 +208,27 @@ class similescript::$newHelperClass {
     method UpdateCombined {time} {
 	if {[info exists useNodes(common_stm)]} {
 	} else {
+	    package require csv
 	    if {[file extension $curFile] eq ".csv"} {
 		set useNodes(common_stm) [open $curFile w]
 		set hdrs Time
 		foreach path $useNodes(logged) {
-		    PutIndexCombos hdrs [$modelInst GetValue $path] \
-			, [file tail $path]
+		    PutIndexCombos hdrs [$modelInst GetValue $path] "" \
+			[file tail $path]
 		}
-		puts $useNodes(common_stm) $hdrs
+		puts $useNodes(common_stm) [::csv::join $hdrs]
 	    } else {
 		set useNodes(common_stm) [DBHandleFor $curFile]
 	    }		
 	}
 	if {[catch {$useNodes(common_stm) tables} tList]} { # writing csv
-	    puts -nonewline $useNodes(common_stm) $time
+	    set vals $time
 	    foreach path $useNodes(logged) {
 		set toLog [$modelInst GetValue $path]
 		FillTicker $path $toLog
 		PutValsOnly vals $toLog
 	    }
-	    puts $useNodes(common_stm) $vals
+	    puts $useNodes(common_stm) [::csv::join $vals]
 	    flush $useNodes(common_stm)
 	} else {
 	    set curTab "Run $useNodes(runCount)"
@@ -246,12 +247,14 @@ class similescript::$newHelperClass {
 		PutIndexCombos sqlStr [$modelInst GetValue $path] \
 		    "`, `" [file tail $path]
 	    }
-	    append sqlStr "`) VALUES ($time"
+	    append sqlStr "`) VALUES ("
+	    set sqlSubStr $time
 	    foreach path $useNodes(logged) {
 		set toLog [$modelInst GetValue $path]
 		FillTicker $path $toLog
-		PutValsOnly sqlStr $toLog
+		PutValsOnly sqlSubStr $toLog
 	    }
+	    append sqlStr [::csv::join $sqlSubStr] 
 	    append sqlStr ")"
 	    $useNodes(common_stm) allrows $sqlStr
 	}
@@ -259,13 +262,15 @@ class similescript::$newHelperClass {
 
     method PutIndexCombos {pstr val sep gone} {
 	upvar 1 $pstr str
-	if {[llength $val]>1} {
+	if {[string is list $val] && [llength $val]>1} {
 	    foreach {idx elt} $val {
 		PutIndexCombos str $elt $sep \
 		    [join [concat [split $gone /] [list $idx]] /]
 	    }
-	} else {
+	} elseif {$sep ne ""} {
 	    append str $sep$gone
+	} else { ;# build a list for csv package
+	    lappend str $gone
 	}
     }
 
