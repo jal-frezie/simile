@@ -1670,7 +1670,7 @@ proc FindCaption {canvas} {
 	set find(List,$canvas) \
 	    [GetFromProlog tk_get_info('$canvas',selection,in)]
     } elseif {$find(done)==11} {
-	#follow infs on
+	#follow ghost links only
 	set find(List,$canvas) \
 	    [GetFromProlog tk_get_info('$canvas',selection,none)]
     } elseif {$find(done)==12} {

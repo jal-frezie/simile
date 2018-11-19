@@ -114,7 +114,7 @@ get_info(_Wid, Comp, type, SubType) :-
 	    SubType = limit;
 	  SubType = Type).
 
-get_info(Wid, Comp, context, DescAtm) :-
+get_info(_Wid, Comp, context, DescAtm) :-
 	find_type(Comp, LType),
 	(LType is_class_of_sort captionless, !,
 	    Part1 = "";
@@ -143,7 +143,7 @@ get_info(Wid, Comp, context, DescAtm) :-
 	  Suffix0 = ""),
 	((LType = event, is_parameter(Comp, 0); LType = squirt),
 		% a deived event
-	     list_evt_captions(Fn, [_reset | TriggerCapts]),
+	     list_evt_captions(Fn, [_Reset | TriggerCapts]),
 	     english_disjunct(TriggerCapts, Suffix1Name) ->
 	     name(Suffix1Name, FlowDisj),
 	     append([Suffix0, " on ", FlowDisj], Suffix1);
@@ -191,7 +191,7 @@ get_info(_, Comp, Field, Pop) :-
 
 context_find(Wid, Query, Target) :-
 	callback('{}'),
-	menu_submodel_is(Wid, Model, _),
+	menu'><'get_edit_model(Wid, Model, _),
 	contains(Model, Sub),
 	find_all_comps(Sub, Comp),
 	appears(Comp), %     check draws_at as well
