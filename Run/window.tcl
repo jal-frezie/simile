@@ -273,7 +273,7 @@ proc ClickObj { x y winId X Y action} {
 	    if {[SafeEqnBarEdit $winid]} { ;# unclick event lost due to dialogue
 		prolog [list tk_unclick( $xco , $yco )]
 	    }
-            set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
+            set oldEqn [GetFromProlog tk_get_info($node,eqn)]
             if {![string match <none> $oldEqn]} {
                 set label "[file tail [BlankCrs $context]] = "
                 $bar.label configure -text $label
@@ -283,7 +283,7 @@ proc ClickObj { x y winId X Y action} {
 		AddInputs $winid $bar
 # now add relevant enumerated types to menu
 		set enumTypes \
-		    [GetFromProlog tk_get_info('$winId',$node,enum_type_defns)]
+		    [GetFromProlog tk_get_info($node,enum_type_defns)]
 		if {![string equal $enumTypes $equationbar(enumTypes)]} {
 		    set equationbar(enumTypes) $enumTypes
 		    set lname $bar.function.menu.enumtypes
@@ -320,7 +320,7 @@ proc ClickObj { x y winId X Y action} {
 		pack forget $bar.maxlabel
 		pack forget $bar.max
 		array unset equationbar max_entry
-		set type [GetFromProlog tk_get_info('$winId',$node,type)]
+		set type [GetFromProlog tk_get_info($node,type)]
                 SetEqnButtonState $bar normal
 		if {[string equal state $type]} { ;# load the event combobox
 		    set evts [GetFromProlog tk_get_triggers('$winId',$node)]
@@ -336,11 +336,11 @@ proc ClickObj { x y winId X Y action} {
 		    set equationbar($winid,initText) [StripCrs $oldEqn]
 		    if {$type eq "limit"} {
 			$bar.max insert 0 \
-			    [GetFromProlog tk_get_info('$winId',$node,max_val)]
+			    [GetFromProlog tk_get_info($node,max_val)]
 			pack $bar.max -side left -after $bar.equation
 			pack $bar.maxlabel -side left -after $bar.equation
 			$bar.min insert 0 \
-			    [GetFromProlog tk_get_info('$winId',$node,min_val)]
+			    [GetFromProlog tk_get_info($node,min_val)]
 			pack $bar.min -side left -after $bar.equation
 			pack $bar.minlabel -side left -after $bar.equation
 		    }
@@ -363,7 +363,7 @@ proc SwitchEvent {winId bar} {
 # entered, and cancel the switch if Prolog has objected to our new one...
     
     set node $equationbar($winId,node)
-    set newEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
+    set newEqn [GetFromProlog tk_get_info($node,eqn)]
 #puts "string equal [$bar.equation get] [GetRuleEfct $newEqn]"
 #puts $equationbar(current_action)
     if {[string equal [$bar.equation get] [GetRuleEfct $newEqn]]} {
@@ -1114,13 +1114,13 @@ proc AddEqnPopup {node x y winId X Y} {
  #       }
         PostPopup $winId $X $Y
         if {$doDesc} {
-            set desc [GetFromProlog tk_get_info('$winId',$plName,context)]
+            set desc [GetFromProlog tk_get_info($plName,context)]
 # Prolog ends nonename with . for uniqueness, replace with legible :
 	    set pt [string first . $desc]
 	    set desc [string replace $desc $pt $pt :]
-	    set userDesc [GetFromProlog tk_get_info(dummy,$plName,description)]
+	    set userDesc [GetFromProlog tk_get_info($plName,description)]
             if {[string equal {} $userDesc]} {
-		set userDesc [GetFromProlog tk_get_info(dummy,$plName,desc)]
+		set userDesc [GetFromProlog tk_get_info($plName,desc)]
 		# same property has different name for submodels
 	    }
             if {![string equal {} $userDesc]} {
@@ -1133,7 +1133,7 @@ proc AddEqnPopup {node x y winId X Y} {
             AddPopupMessage $desc \#c0ffc0
         }
         if {$doCmt} {
-            set fromProlog [GetFromProlog tk_get_info('$winId',$plName,comment)]
+            set fromProlog [GetFromProlog tk_get_info($plName,comment)]
             #if {![winfo exists .popup]} return
 	    if {![string length $fromProlog]} {
 		set fromProlog [tr. {No comment}]

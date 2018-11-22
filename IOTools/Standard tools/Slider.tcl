@@ -203,7 +203,7 @@ namespace eval slide139 {
                     pack [checkbutton $f.check -text [lindex $levels end] \
 			      -offvalue 0 -onvalue 1 -relief ridge \
 			      -variable widgetSeln($node)]
-                    set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
+                    set comment [do_in_editor GetFromProlog tk_get_info($node,comment)]
                     BindPopup $f.check "$comment"
 		    if {$live} {
 			$f.check configure -command \
@@ -373,8 +373,7 @@ namespace eval slide139 {
 	if {[winfo exists $f.caption]} {
 	    set nodeDims [TransBounds $trans $sliderDoes($title,dims)]
 	    set dimList [MakeDimsLegible $nodeDims $type]
-            set comment [do_in_editor GetFromProlog \
-			     tk_get_info('$winId',$node,comment)]
+            set comment [do_in_editor GetFromProlog tk_get_info($node,comment)]
             BindPopup $f.caption "[lindex $levels end] ($dimList)" $comment
 	}
 	return $allVals

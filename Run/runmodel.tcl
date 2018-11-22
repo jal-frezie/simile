@@ -1474,7 +1474,7 @@ proc TellHelperItsGone {helperWin captionPath} {
 }
 
 proc GetExecTitle {node} {
-    set mDesc [do_in_editor GetFromProlog tk_get_info(_,$node,context)]
+    set mDesc [do_in_editor GetFromProlog tk_get_info($node,context)]
     set divis [string first { . } $mDesc]
     set modelCapt [string range $mDesc $divis+3 end-11] ;# ... (submodel)
     if {$modelCapt eq "unsaved"} {

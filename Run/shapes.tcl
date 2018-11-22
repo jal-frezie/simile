@@ -1668,15 +1668,15 @@ proc FindCaption {canvas} {
     if {$find(done)==10} {
 	#follow infs back
 	set find(List,$canvas) \
-	    [GetFromProlog tk_get_info('$canvas',selection,in)]
+	    [GetFromProlog tk_get_info(selection,in)]
     } elseif {$find(done)==11} {
 	#follow ghost links only
 	set find(List,$canvas) \
-	    [GetFromProlog tk_get_info('$canvas',selection,none)]
+	    [GetFromProlog tk_get_info(selection,none)]
     } elseif {$find(done)==12} {
 	#follow infs on
 	set find(List,$canvas) \
-	    [GetFromProlog tk_get_info('$canvas',selection,out)]
+	    [GetFromProlog tk_get_info(selection,out)]
     } elseif {[string compare $findable {}]} {
 	set find(List,$canvas) \
 	    [GetFromProlog tk_context_find('$canvas','$findable',$find(where))]

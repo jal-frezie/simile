@@ -803,7 +803,7 @@ proc CheckForETDuplicates {new} {
     } elseif {[lsearch {NULL novalue none noitem} $enumTypeMPEntry]>-1} {
 	set query [list bad_et_member $new $enumTypeMPEntry]
     } else {
-	set def [GetFromProlog tk_get_info({},'$enumTypeMPEntry',is_unit)]
+	set def [GetFromProlog tk_get_info('$enumTypeMPEntry',is_unit)]
 	if {![string equal none $def]} {
 	    set query [list member_is_unit $new $enumTypeMPEntry $def]
 	} else {
@@ -2130,7 +2130,7 @@ proc equationlisting_addsubmodel {node isub submodel_label timestep type} {
     }
     
     # Label and Description, if any
-    set description [GetFromProlog tk_get_info(dummy,$node,desc)]
+    set description [GetFromProlog tk_get_info($node,desc)]
     if [string match null $description] {
     } else  {
         $widget insert end " : ${description}\n" descrtag
@@ -2158,7 +2158,7 @@ proc equationlisting_addsubmodel {node isub submodel_label timestep type} {
 #     }
 ################################################################################
     if {[PrefValue custom(eqListETDefns) eqListETDefns]} {
-	set enumtypes [GetFromProlog tk_get_info(dummy,$node,enum_type_defns)]
+	set enumtypes [GetFromProlog tk_get_info($node,enum_type_defns)]
 	if {![string match {} $enumtypes]} {
 	    $widget insert end "\t[tr. {Enumerated types:}] ${enumtypes}\n" cmttag
 	}
@@ -2195,7 +2195,7 @@ proc equationlisting_addvariable {node vartype varlabel expression minmax \
     } else {
 	set tidy_expression [regsub -all "\n" $expression "\n\t\t\t"]
     }
-    set description [GetFromProlog tk_get_info(dummy,$node,description)]
+    set description [GetFromProlog tk_get_info($node,description)]
     set tidy_description [regsub -all {\n} $description { }]
 
     # Label and Description, if any
@@ -2256,7 +2256,7 @@ proc AddComments {widget node} {
     if {![PrefValue custom(eqListComments) eqListComments]} {
 	return
     }
-    set commentText [GetFromProlog tk_get_info(dummy,$node,comment)]
+    set commentText [GetFromProlog tk_get_info($node,comment)]
     if {[string equal {} $commentText]} {
 	return
     }

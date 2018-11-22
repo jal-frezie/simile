@@ -552,7 +552,7 @@ switch $userinfo(interfaceId) {
 	proc prolog {plCmd} {
 	    global fromProlog
 	    switch -glob $plCmd {
-		tk_get_info(*,*,*) {
+		tk_get_info(*,*) {
 		    set fromProlog "Model declarations unavailable"
 		} check_use(*) {
 		} tk_run_settings_tweaked(*) {

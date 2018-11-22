@@ -413,7 +413,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	    set node [IdFromTail $topNode $path 0]
 # take advantage to have header pop submodel comment
 	    ParamLabelPopup $nextLevel.head.label $node $level
-	    set fColour [GetFromProlog tk_get_info(dummy,$node,colour)]
+	    set fColour [GetFromProlog tk_get_info($node,colour)]
 	    if {[lsearch {white clear} $fColour]<0} {
 		$nextLevel configure -bg $fColour
 		$nextLevel.head configure -bg $fColour
@@ -433,9 +433,9 @@ proc ParamLabelPopup {label node capt} {
     # popup in the model window -- it's in window.tcl, procedure AddEqnPopup --
     # look for the calls to Prolog proc tk_get_info
     #set desc [do_in_editor GetFromProlog tk_get_info('$winId',$node,desc)]
-    set dimReqs [GetFromProlog tk_get_info(dummy,$node,units)]
-    set userDesc [GetFromProlog tk_get_info(dummy,$node,description)]
-    set comment [do_in_editor GetFromProlog tk_get_info(dummy,$node,comment)]
+    set dimReqs [GetFromProlog tk_get_info($node,units)]
+    set userDesc [GetFromProlog tk_get_info($node,description)]
+    set comment [do_in_editor GetFromProlog tk_get_info($node,comment)]
     set desc "$capt ($dimReqs)"
     if {![string equal {} $userDesc]} {
 	append desc { -- } $userDesc

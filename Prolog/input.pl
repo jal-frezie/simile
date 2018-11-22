@@ -7,7 +7,7 @@ use goals that start with "tk_" to make the diffreence clear.
 */
 
 sicstus_module(input, [tk_make_desktop_node/1, tk_undo/2, tk_redo/2,
-		       tk_get_info/3, tk_get_params/2, tk_get_triggers/2,
+		       tk_get_info/2, tk_get_params/2, tk_get_triggers/2,
 		       tk_bar_edit_menu/1, tk_click_obj/6,
 		       tk_click/4, tk_doubleclick/4, tk_unclick/2, tk_drag/2,
 		       tk_menu/3, tk_menu_select/2, tk_mode_select/1,
@@ -38,8 +38,8 @@ tk_redo(Cur, Wids) :-
 %	finish_window_resize,
 	redo_edit(Wid, Wids).
 
-tk_get_info(Wid, Comp, What) :-
-	get_info(Wid, Comp, What, Answer),
+tk_get_info(Comp, What) :-
+	get_info(Comp, What, Answer),
 	output'><'safe_list(Answer, Arg),
 	draw'><'callback(Arg).
 

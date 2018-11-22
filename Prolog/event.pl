@@ -7,7 +7,7 @@ interface of the application. It responds by:
 * Calling the model maintenance module to add information to the model
 * Making calls to the screen drawing module (new image, or redraw)
 */
-sicstus_module(event, [get_info/4, context_find/3, get_params/2, get_triggers/2,
+sicstus_module(event, [get_info/3, context_find/3, get_params/2, get_triggers/2,
 		       click_obj/4, click_text/4, click/3, do_colours/2,
 		       insert_variable/5,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
@@ -89,7 +89,7 @@ english_disjunct(Terms, Phrase) :-
     append_atoms([One, ', ', Tail], Phrase).
 
 
-get_info(_Wid, Comp, enum_type_defns, ETDefns) :-
+get_info(Comp, enum_type_defns, ETDefns) :-
 	(find_type(Comp, submodel), !,
 	    % just get defns for this submodel level
 	    m_update'><'enum_types_for(Comp, ETDefns, yes);
@@ -97,24 +97,24 @@ get_info(_Wid, Comp, enum_type_defns, ETDefns) :-
 	    find_all_comps(MotherShip, Comp),
 	    get_all_enum_types(MotherShip, ETDefns)).
 
-get_info(_Wid, Comp, colour, ColorSpec) :-
+get_info(Comp, colour, ColorSpec) :-
 	get_av_pair(Comp, 0, fill_colour, ColorSpec), !;
 	ColorSpec = white.
 
-get_info(_Wid, selection, Dir, Ends) :-
+get_info(selection, Dir, Ends) :-
 	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = '').
 	
-get_info(_Wid, Comp, eqn, Eqn) :-
+get_info(Comp, eqn, Eqn) :-
 	pick_equation(Comp, Eqn);
 	Eqn = '<none>'.
 
-get_info(_Wid, Comp, type, SubType) :-
+get_info(Comp, type, SubType) :-
 	find_type(Comp, Type),
 	((Type = event, is_parameter(Comp, 1)) -> % a limit event
 	    SubType = limit;
 	  SubType = Type).
 
-get_info(_Wid, Comp, context, DescAtm) :-
+get_info(Comp, context, DescAtm) :-
 	find_type(Comp, LType),
 	(LType is_class_of_sort captionless, !,
 	    Part1 = "";
@@ -173,15 +173,15 @@ get_info(_Wid, Comp, context, DescAtm) :-
 	append([Part1, Middle, " (", Suffix, ")"], Desc)),
 	name(DescAtm, Desc).
 
-get_info(_Wid, Comp, units, Unit) :-
+get_info(Comp, units, Unit) :-
 	units_for(Comp, UnitStr),
 	name(Unit, UnitStr), !.
 
-get_info(_, Name, is_unit, Def) :-
+get_info(Name, is_unit, Def) :-
 	(units'><'defined_as_unit(Name, Def), !;
 	Def = none).
 
-get_info(_, Comp, Field, Pop) :-
+get_info(Comp, Field, Pop) :-
 	% catch-all clause to get any attribute value
 	(find_type(Comp, relation), !,
 	    find_name_host(Comp, Base);
@@ -196,10 +196,10 @@ context_find(Wid, Query, Target) :-
 	find_all_comps(Sub, Comp),
 	appears(Comp), %     check draws_at as well
 	(Target = description,
-	    (get_info(Wid, Comp, description, Field);
-	    get_info(Wid, Comp, comment, Field));
+	    (get_info(Comp, description, Field);
+	    get_info(Comp, comment, Field));
 	 Target = equation,
-	    get_info(Wid, Comp, eqn, Field),
+	    get_info(Comp, eqn, Field),
 	    \+ Field = '<none>';
 	 Target = caption,
 	    \+ Comp is_of_sort captionless,
