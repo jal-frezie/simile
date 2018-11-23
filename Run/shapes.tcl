@@ -1722,7 +1722,7 @@ proc NextCaption {canvas} {
     }
 }
 
-proc CanvasSee {canvas this scnX scnY} {
+proc CanvasSee {c this scnX scnY} {
     global window_info
 
     # Now to pervert the 'scan' command to make an ad-hoc 'see'...
@@ -1730,16 +1730,34 @@ proc CanvasSee {canvas this scnX scnY} {
     # if the values they return are updated by resizing the window (which
     # the reported width and height aren't).
     
-    set middleX [$canvas canvasx $scnX]
-    set middleY [$canvas canvasy $scnY]
-    scan [$canvas bbox $this] {%d %d %d %d} tgtL tgtT tgtR tgtB
-    if {[info exists tgtL]} {
-	$canvas scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
-	$canvas scan dragto [expr int(-0.05*($tgtL+$tgtR))] \
-	    [expr int(-0.05*($tgtT+$tgtB))]
-    } else {
-	DebugMess "Missed with $this coords [$canvas coords $this]"
+    set middleX [$c canvasx $scnX]
+    set middleY [$c canvasy $scnY]
+    scan [$c bbox $this] {%d %d %d %d} tgtL tgtT tgtR tgtB
+    if {![info exists tgtL]} {
+	scan [eval ScaleRect $c [GetFromProlog tk_locate('$c',$this)]] \
+		  {%f %f %f %f} tgtL tgtT tgtR tgtB
+#	set hidden [GetFromProlog tk_get_info($this,context)]
+#	set hidden [string range $hidden 0 [string first " . " $hidden]-1]
+	set warn [$c create text [expr ($tgtL+$tgtR)/2] [expr ($tgtT+$tgtB)/2] \
+		      -font EquationFont \
+		      -anchor c -text "Result here hidden" -tag /reveal/]
+	$c select from $warn 0
+	$c select to $warn end
+	$c configure -selectbackground orange
+	after cancel cleanup $c
+	after 1500 cleanup $c
+	DebugMess "Missed with $this coords [$c coords $this]"
     }
+    $c scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
+	$c scan dragto [expr int(-0.05*($tgtL+$tgtR))] \
+	    [expr int(-0.05*($tgtT+$tgtB))]
+}
+
+proc cleanup {canvas} {
+    $canvas select clear
+    $canvas configure -selectbackground \
+	[lindex [$canvas configure -selectbackground] 3]
+    $canvas delete /reveal/
 }
 
 # Create image at load time to avoid confusion caused by possible changed directory

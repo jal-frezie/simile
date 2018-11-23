@@ -13,7 +13,7 @@ sicstus_module(event, [get_info/3, context_find/3, get_params/2, get_triggers/2,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
 		       resize_top_win/3, adjust_display_area/2,
-		       prioritize_window/1, run_settings_tweaked/1]).
+		       prioritize_window/1, run_settings_tweaked/1, locate/2]).
 
 sicstus_use_module([sp_only, forms, m_update, image, draw,
 		    state, backup, submodel, ame_gen, utility,
@@ -2685,3 +2685,14 @@ prioritize_window(New_top) :-
 
 run_settings_tweaked(Node) :-
 	update_ability(Node, file, ['Save'], [1]).
+
+locate(Wid, Comp) :-
+    Wid shows_model Model,
+    find_all_comps(Submodel, Comp),
+    translate_between(Model, Submodel, _Depth, Trans),
+    (get_drawing_form(Comp, _Style, BBox);
+     get_link_route(Comp, [[X1, X2] | Tail]),
+     suffix([[Xy, Xz]], Tail),
+     BBox = [X1, X2, Xy, Xz]),
+    untranslate(BBox, Trans, ScreenList),
+    callback(br(ScreenList)).

@@ -1241,10 +1241,10 @@ tie_middle(Type, [X2, Y2], [X1, Y1], Len, Fract, [NL, NT, NR, NB]) :-
 translate_between(Model, Model, 0, [0,0,1,1]).
 
 translate_between(HiModel, LoModel, Depth, Trans) :-
-    \+ get_shape(LoModel, hide_contents, 1),
+    (get_shape(LoModel, hide_contents, 1) -> Depth = 32; Depth = RealDepth),
     find_all_comps(Parent, LoModel),
     translate_between(HiModel, Parent, HiDepth, HiTrans),
-    Depth is HiDepth + 1,
+    RealDepth is HiDepth + 1,
     add_to_translation(HiTrans, LoModel, Trans).
 
 translate([], _, []).

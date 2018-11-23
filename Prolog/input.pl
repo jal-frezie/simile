@@ -17,7 +17,7 @@ sicstus_module(input, [tk_make_desktop_node/1, tk_undo/2, tk_redo/2,
 		       tk_run_settings_tweaked/1, tk_off_window/2,
 		       tk_certain_death_node/1, tk_kill_everything/1,
 		       tk_set_new_size/4, tk_change_size/4, tk_do_colours/2,
-		       tcl_export_graphics/2, tk_in_days/1]).
+		       tcl_export_graphics/2, tk_in_days/1, tk_locate/2]).
 
 sicstus_use_module([library(lists), backup, event, menu, sp_only, utility]).
 
@@ -189,3 +189,5 @@ tk_in_days(UnitA) :-
 	units'><'get_conversion(1, Unit, day, DX), D is DX, !; D=0),
 	draw'><'callback(D).
 	
+tk_locate(Wid, Comp) :-
+    locate(Wid, Comp).
