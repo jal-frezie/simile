@@ -145,7 +145,7 @@ namespace eval $keyValue {
         CreateTable $winId
         clear $winId ;# cos MRE can re-use same frame
         # note the above line is not intrusive
-        SaveState $winId
+        PrepareSaveString $winId
     }
     
     proc Update {winId} {
@@ -222,14 +222,16 @@ namespace eval $keyValue {
         if {[string match $displayUpdate($winId) {}]} {
            set displayUpdate($winId) 1
         }
-        #set colWidths($winId) [lindex $oldState 4]
+        set colWidths($winId) [lindex $oldState 4]
+        set rowHeights($winId) [lindex $oldState 5]
         #ShowMess debug info "colWidths" ok
-        #$winId.t width $colWidths($winId)
+        eval [list $winId.t width] [eval concat $colWidths($winId)]
+        eval [list $winId.t height] [eval concat $rowHeights($winId)]
         display $winId [GetModelTime] 0 0
-        SaveState $winId
+        PrepareSaveString $winId
     }
     
-    proc SaveState {winId} {
+    proc PrepareSaveString {winId} {
         variable displayList
         variable orientList
         variable displayFormat
@@ -237,8 +239,8 @@ namespace eval $keyValue {
         variable displayUpdate
         #variable colWidths
         
-        #set colWidths($winId) [$winId.t width ]
-        #ShowMess debug info "colWidths" ok
+        set colWidths($winId) [$winId.t width]
+        set rowHeights($winId) [$winId.t height]
         
         set clip [string length $winId,]
         set winDisplayFormat {}
@@ -248,9 +250,8 @@ namespace eval $keyValue {
         if {![info exists editMode($winId)]} {
             SetState $winId [list $displayList($winId,paths) \
 				 $orientList($winId) \
-				 $winDisplayFormat $displayUpdate($winId)]
-            #SetState $winId [list $displayList($winId) $orientList($winId) \
-            #        $winDisplayFormat $displayUpdate($winId) $colWidths($winId)]
+				 $winDisplayFormat $displayUpdate($winId) \
+				 $colWidths($winId) $rowHeights($winId)]
         }
     }
     
@@ -381,7 +382,7 @@ namespace eval $keyValue {
 		}
             }
             Reconbobulate $winId
-            SaveState $winId
+            PrepareSaveString $winId
         }
         #puts "vi $varIndex"
         set lineToSee [lindex $varNamePosns($winId) $varIndex]
@@ -1176,7 +1177,7 @@ namespace eval $keyValue {
 		set orientList($winId) $newOrients
 		Reconbobulate $winId
 	    }
-            SaveState $winId
+            PrepareSaveString $winId
         }
         destroy $t
     }
