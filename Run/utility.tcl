@@ -192,7 +192,7 @@ proc NetOpen {name way} {
 proc IdentField {text field} {
     global userinfo
 
-    set field0 [expr {[string first ${field}= $text]+[string length $field]+1}]
+    set field0 [expr {[string first ,${field}= $text]+[string length $field]+2}]
     set fieldEnd [expr {[string first , $text $field0]-1}]
     string range $text $field0 $fieldEnd
 }

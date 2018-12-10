@@ -1097,8 +1097,10 @@ proc ReverseDraw {canvas} {
 		    set posn Tiled
 		}
 		set localImage [$canvas itemcget $object -image]
-		puts $stream [concat MakeImage \$c $sourceImage $localImage \
-		    [$localImage cget -width] [$localImage cget -height] $posn]
+		append result \
+		    [concat MakeImage \$c $sourceImage $localImage \
+			 [$localImage cget -width] [$localImage cget -height] \
+				   $posn] \n
 	    }
         }
         # Do not write base objs they get re-created...actually do, so I can
@@ -1735,12 +1737,13 @@ proc CanvasSee {c this scnX scnY} {
     scan [$c bbox $this] {%d %d %d %d} tgtL tgtT tgtR tgtB
     if {![info exists tgtL]} {
 	scan [eval ScaleRect $c [GetFromProlog tk_locate('$c',$this)]] \
-		  {%f %f %f %f} tgtL tgtT tgtR tgtB
+	    {%f %f %f %f} tgtL tgtT tgtR tgtB
+	# Get caption if we feel like displaying it
 #	set hidden [GetFromProlog tk_get_info($this,context)]
 #	set hidden [string range $hidden 0 [string first " . " $hidden]-1]
 	set warn [$c create text [expr ($tgtL+$tgtR)/2] [expr ($tgtT+$tgtB)/2] \
 		      -font EquationFont \
-		      -anchor c -text "Result here hidden" -tag /reveal/]
+		      -anchor c -text "Hidden result here" -tag /reveal/]
 	$c select from $warn 0
 	$c select to $warn end
 	$c configure -selectbackground orange

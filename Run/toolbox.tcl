@@ -441,11 +441,18 @@ proc load_dll {topNode lang progDir id node incs} {
 proc ReuseSourceCode {workingDir currentKey} {
     set oldDir [pwd]
     cd $workingDir
+    set result 0
     if {[file exists model$currentKey.cpp]} {
-	file rename -force model$currentKey.cpp model.cpp
-	set result 1
-    } else {
-	set result 0
+	# do not re-use source code with different edition because building
+	# executable will mark model as needing resave, and source and exec
+	# cannot be saved
+	set stm [open model$currentKey.cpp r]
+	set hdr [read $stm 256] ;# should be enough for edition header
+	close $stm
+	if {[OurEdition $hdr]} {
+	    file rename -force model$currentKey.cpp model.cpp
+	    set result 1
+	}
     }
     cd $oldDir
     return $result
@@ -1515,6 +1522,7 @@ proc GetParts {top tree noPkg} {
 		    lappend headers "Authentication-Code" $HmacCode
                 }
 		if {[IsRunnableModel $ext]} {
+# Allowing save of source or exec of wrong edition will cause g_a_c to crash
 		    if {![OurEdition $boddledy]} {
 			continue
 		    }

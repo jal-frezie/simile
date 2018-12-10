@@ -143,7 +143,7 @@ FINDABLE int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
    regexp {edition=([^,]*),} $ModelText all putativeEdition */
    Tcl_SetVar2Ex(interp, "hvfe587gw938", NULL, argv[1], 0);
    if (Tcl_VarEval(interp, 
-		   "regexp {edition=([^,]*),} $hvfe587gw938 all h76rt4g7",
+		   "regexp {,edition=([^,]*),} $hvfe587gw938 all h76rt4g7",
 		   NULL) != TCL_OK) {
      return TCL_ERROR;
    }
