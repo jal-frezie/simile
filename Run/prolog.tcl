@@ -128,11 +128,10 @@ proc ClosePipe {} {
 set env(MAX_ATOM) 131072
 # These allow GNU prolog to use a decent amount of memory -- 64bit OSes are
 # especially voracious and run on big machines so give them more
-set vm_usage [expr $::tclBitness*$::tclBitness/4+16] ;# in megs
+set vm_usage [expr $::tclBitness*$::tclBitness/2] ;# in megs
 set spraf {}
 while {![string match ready $spraf]} {
-    incr vm_usage -16
-    if {!$vm_usage} {
+    if {$vm_usage<16} {
 	error $loss
     }
 
@@ -150,6 +149,7 @@ while {![string match ready $spraf]} {
 	    catch {close $plPipe(stream)} loss
 #puts "Tried with vm $vm_usage -- got $loss"
 	    # crash -- do not err, just try with less VM
+	    set vm_usage [expr {$vm_usage/2}]
 	    break
 	}
     }

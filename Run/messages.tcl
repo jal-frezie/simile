@@ -547,7 +547,7 @@ set msgs(offer_restore_full) [tr. {You can ignore these changes and edit the mod
 set msgs(no_autosave_title) [tr. {Autosave warning!}]
 set msgs(no_autosave_message) [tr. {Could not create an autosave file called %1$s for this model.}]
 set msgs(no_autosave_detail) [tr. {No autosave data will be stored until the model is saved somewhere else.}]
-set msgs(no_autosave_full) [tr. {The following message was produced: %2$s. This may mean that the model was loaded from a read-only file system.}]
+set msgs(no_autosave_full) [tr. {This may mean that the model was loaded from a read-only file system.}]
 
 set msgs(lose_enum_type_title) [tr. {Model incompatibility}]
 set msgs(lose_enum_type_message) [tr. {The components being merged include a definition for the enumerated type "%1$s", which will be replaced by the definition already in the model.}]

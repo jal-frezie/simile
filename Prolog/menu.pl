@@ -1308,6 +1308,7 @@ flip_innards(Node_name, Action) :-
 check_deletable(Win, Parent) :-
 	(\+ find_all_comps(Parent, _), !;
 	    get_save_status(Parent, safe), !;
+            \+ backup'><'autosave_file_is(Parent, _SMX), !;
 	    backup'><'autosave_suspended(Parent), !;
 	    ok_to_delete(Win, Parent)).
 

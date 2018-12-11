@@ -1328,7 +1328,14 @@ proc LoadFile {topNode tree tgt} {
     #ShowMess debug info "LoadFile $tree $tgt" ok
     set CodeChecked no
     if {[catch {
-            set multiT [mime::initialize -file $tgt]
+	# following fails in Linux if mime has DOS line ends
+	# set multiT [mime::initialize -file $tgt]
+	# but this works...
+	set stm [NetOpen $tgt r]
+	set str [read $stm]
+	close $stm
+	set multiT [mime::initialize -string $str]
+		    
             if {[catch {set intent [mime::getheader $multiT Readability]}]} {
                 set intent standard
             }

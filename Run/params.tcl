@@ -1409,7 +1409,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 	    }
             continue {continue}
         }
-	set restoredComp [lindex $move 0]
+	set relativeComp [lindex $move 0]
 	set node [lindex $move 1]
         set startLine [FirstIndexCheck $topNode $node]
         if {($startLine!=-1)==($notInput!=-1)} {
@@ -1417,7 +1417,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 	    # if merging params from script)
 	    cd $oldDir
 	    if {$notInput>-1} {
-		set restoredComp /$topNode$restoredComp
+		set restoredComp /$topNode$relativeComp
 	    }
 	    if {[info exists precedingComment]} {
 		set msgs(comment_$restoredComp) [string trim $precedingComment]
@@ -1450,7 +1450,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 				     [file dirname $VFile]]
 		    if {[catch {cd $seekDir}]} {
 			set act [list failed_dir_reference [file tail $VFile] \
-				     $restoredComp [file dirname $VFile] \
+				     $relativeComp [file dirname $VFile] \
 				     [file normalize $seekDir]]
 			switch [Query $act warning spf {} abort] {
 			    abort {break}
@@ -1461,7 +1461,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 		    # ...and stick the new absolute pathname into the spec! Easy!!
 		    if {![file exists [file tail $VFile]]} {
 			set act [list failed_param_reference [file tail $VFile] \
-				     $restoredComp [file dirname $VFile] \
+				     $relativeComp [file dirname $VFile] \
 				     [file normalize $seekDir]]
 			switch [Query $act warning spf {} abort] {
 			    abort {break}
@@ -1508,7 +1508,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 			set choices numerical
 		    }
                     set act [list bad_v3x_param $suppliedData($restoredComp) \
-				 $restoredComp [lrange $litPosn 1 end] $choices]
+				 $relativeComp [lrange $litPosn 1 end] $choices]
                     set suppliedData($restoredComp) {}
 		    switch [Query $act warning spf {} abort] {
 			abort {
