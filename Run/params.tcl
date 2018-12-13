@@ -198,7 +198,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
 
     pack $slot -before $fellow -side bottom -fill x -expand on
     raise $slot $fellow ;# for keyboard traversal
-    pack [label $slot.l1 -text [lindex $levels end] -fg red -bg $lbg \
+    pack [label $slot.caption -text [lindex $levels end] -fg red -bg $lbg \
 	      -width 12] -side left
 #    pack [label $slot.l2 -text ($dimList) -fg red] -side left
     set paramMetadata($compName,dimList) $dimList
@@ -210,7 +210,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
         set msgs(comment_$compName) $msgs(ncfv)
     }
     #Show description and comments
-    ParamLabelPopup $slot.l1 $node [lindex $levels end]
+    ParamLabelPopup $slot.caption $node [lindex $levels end]
             
     #       pack [entry $slot.e -textvariable paramData($compName)]
     # Using entries played merry hell with very long arrays -- texts work better
@@ -255,6 +255,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
 	pack $slot.b -side right
     }
     set outNames($compName) $slot
+    GrowCaptionsTo $holder
     # note whether we need to enter a parameter here...
     if {$mustShow} {
         if {[lsearch $suppliedData(needed) $compName]==-1} {
@@ -262,6 +263,23 @@ proc AddEntry {winId topNode node mustShow notInput} {
         }
     } else {
         AcceptData $topNode $compName $notInput 0
+    }
+}
+
+proc GrowCaptionsTo {sm} {
+    set newWidth 48 ;# entry widget is 8
+    set conv [expr {[winfo reqwidth .hidden_e]/[.hidden_e cget -width]}]
+    foreach widg [winfo children $sm] {
+	set lab $widg.caption
+	if {[winfo exists $lab]} {
+	    lappend mob $lab
+	    $lab configure -width 0
+	    set newWidth [expr {max([winfo reqwidth $lab],$newWidth)}]
+	}
+    }
+    set newWidth [expr {$newWidth/$conv}] ;# works on my desktop
+    foreach lab $mob {
+	$lab configure -width $newWidth
     }
 }
 
@@ -306,7 +324,7 @@ proc RemoveVMLevels {nodeDims} {
 }
 
 proc ColourCaptions {slot colour} {
-    $slot.l1 configure -fg $colour
+    $slot.caption configure -fg $colour
 #    $slot.l2 configure -fg $colour
 }
 

@@ -229,7 +229,8 @@ namespace eval slide139 {
 		    bind $f.combo <<ComboboxSelected>> [namespace code \
 			[list SetChoiceNumber $f.combo $node $fixed $live]]
                     pack $f.combo -side right -fill x -expand true
-                    pack [label $f.caption -text [lindex $levels end] -width 12]
+                    pack [label $f.caption -text [lindex $levels end] -bg $lbg \
+			      -width 12]
                 } default {
 		    array unset widgetSeln $node ;# bad value crashes Tcl
                     scale $f.scale -length 120 -orient h -showvalue false \
@@ -249,6 +250,7 @@ namespace eval slide139 {
 			bind $f.entry <KeyRelease> \
                             [namespace code [list WidgetSelnToC $node $fixed]]
 		    }
+		    GrowCaptionsTo [winfo parent $f]
                 }
 	    }
 	    set widgetSeln($node) $defVal
@@ -268,8 +270,7 @@ namespace eval slide139 {
 			  -command [namespace code [list SliderArrayEvt $node $count]]] -side right
 		BindPopup $f.zap [tr. {Trigger an event now with these magnitudes}]
 	    }
-            pack [label $f.caption -text [lindex $levels end] \
-			      -bg $lbg -width 12]
+            pack [label $f.caption -text [lindex $levels end] -bg $lbg]
             for {set index 1} {$count >= $index} {incr index} {
                 set defVal [GetDefVal $initVal $useDim $index]
                 if {[llength [lindex $trans $useDim]]} {
@@ -332,12 +333,12 @@ namespace eval slide139 {
 						 $f.elt$index.c \
 						 $node $fixed $live $index]]
                         pack $f.elt$index.c -side right -fill x -expand true
-                        pack [label $f.elt$index.id -text $slTitle -width 10] \
-                                -side left
+                        pack [label $f.elt$index.id -text $slTitle -bg $lbg \
+				  -width 4] -side left
                     } default {
                         pack [frame $f.elt$index] -fill x -expand true
                         pack [label $f.elt$index.id -text $slTitle \
-			      -bg $lbg -width 10] -side left
+			      -bg $lbg -width 4] -side left
                         pack [entry $f.elt$index.val \
                                 -textvariable widgetSeln($node,$index) \
                                 -width 8] -side left -padx 1 -pady 1
@@ -405,7 +406,7 @@ namespace eval slide139 {
     proc Remove {winId title} {
         set levels [split $title /]
         set f [MakeSubFrames $winId $::topSFrame($winId) \
-                $levels [namespace current] 0]
+		   $levels [namespace current] 0]
         Prune $winId $f
         set oldState [GetState $winId]
         set wipqosn [lsearch $oldState [StripCrs $title]]
@@ -420,6 +421,7 @@ namespace eval slide139 {
             foreach remain [winfo children $up] {
                 set box [winfo name $remain]
                 if {[string match box* $box] || [string match frame* $box]} {
+		    GrowCaptionsTo $up ;# shrink
                     return
                 }
             }
