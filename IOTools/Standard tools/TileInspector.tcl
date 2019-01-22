@@ -45,7 +45,6 @@ namespace eval ::$keyValue {
         pack $tableframe -expand true -fill both
         $tableframe.table column \#0 -width 270
         
-        
 #        tk_messageBox -message [GetObjectList] -type ok
         #get submodel nodeIds for parents
 	set universe {}
@@ -96,9 +95,11 @@ namespace eval ::$keyValue {
                     set parent $submodel($parentLabel)
                 }
                 set submodel($path) $component
+		set fColour [GetFromProlog tk_get_info($component,colour)]
+		$tableframe.table tag configure bg_$fColour -background $fColour
                 $tableframe.table insert $parent end -id $component \
 		    -text [BlankCrs [lindex $path end]] -open 1 \
-		    -image $iconImages(submodel)
+		    -image $iconImages(submodel) -tag bg_$fColour
             }
         }
 	foreach pair $sorted {
@@ -149,8 +150,9 @@ namespace eval ::$keyValue {
                     }
                 }
                 if {!$sameText} {
+		    set ptags [$tableframe.table item $parent -tags]
                     $tableframe.table insert $parent end -id $component \
-			-text $text -image $image
+			-text $text -image $image -tag $ptags
                 }
             }
         }

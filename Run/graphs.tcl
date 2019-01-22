@@ -39,11 +39,15 @@ proc DBHandleFor {location} {
     }
     set ext [file extension $location]
     set searchStr FileExtns=.*\\${ext}(,|\$)
+    set canonName [file nativename [file normalize $location]]
     foreach {driver spec} [tdbc::odbc::drivers] {
 	if {[lsearch -regexp $spec $searchStr]>=0} {
-	    set connectString "DRIVER=$driver;FIL=MS Excel;DBQ=[file nativename [file normalize $location]];pagetimeout=5;readonly=false"
+	    set connectString "DRIVER=$driver;FIL=MS Excel;DBQ=$canonName;pagetimeout=5;readonly=false"
 	    return [tdbc::odbc::connection new $connectString]
-	}
+	} elseif {$driver eq {CData ODBC Driver for Excel} && $ext eq ".xlsx"} {
+	    set connectString "DRIVER=$driver;ExcelFile=$canonName;Header=\"false\""
+	    return [tdbc::odbc::connection new $connectString]
+	}  
     }
     Query [list no_odbc_driver $ext] warning data_via_odbc {} ok
     return
