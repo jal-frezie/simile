@@ -390,14 +390,15 @@ if {!$headless} {
 # Silly val for testing: 3.0
 # Make conversion easier: pick nice ratio
 set scalRat [ChooseIntegerRatio $defScaling 0.9]
-tk scaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
+set defScaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
+tk scaling $defScaling
 
 entry .hidden_e
 pack .hidden_e
 
-set sphXdiam [expr {int(400*[tk scaling])}]
-set sphYdiam [expr {int(316*[tk scaling])}]
-set iconDiam [expr {int(30*[tk scaling])}]
+set sphXdiam [expr {round(400*[tk scaling])}]
+set sphYdiam [expr {round(316*[tk scaling])}]
+set iconDiam [expr {round(30*[tk scaling])}]
 
 set startGeom +[expr ([winfo screenwidth .]-$sphXdiam)/2]+[expr ([winfo screenheight .]-$sphYdiam)/2-200]
 # cannot place initial offscreen in osx so try behind splash
@@ -415,14 +416,27 @@ image create photo splash -width 90 -height 90
 splash read $SIMILE_PATH/Images/bigsimile.gif -shrink
 set splash [GrowImage splash $iconDiam $iconDiam]
 
-set graph(font) [list helvetica 12 bold]
-set graph(megafont) [list helvetica 36 bold]
 toplevel .splash
+
+# tile creates: TkCaptionFont TkTooltipFont TkFixedFont TkHeadingFont 
+#               TkMenuFont TkIconFont TkTextFont TkDefaultFont
+# ...on Linux. On the Mac it makes:
+# TkCaptionFont TkClassicDefaultFont TkTooltipFont TkHeadingFont TkTextFont 
+# TkDefaultFont
+# ...so...
 if {[tk windowingsystem] eq "aqua"} {
     ::tk::unsupported::MacWindowStyle style .splash plain
+    set menuFont TkDefaultFont
+    set niceSize 12
 } else {
     wm overrideredirect .splash 1
+    set menuFont TkMenuFont
+    set niceSize 9
 }
+set graph(font) [list helvetica [expr {round($niceSize*[tk scaling])}] bold]
+set graph(megafont) \
+    [list helvetica [expr {round(3*$niceSize*[tk scaling])}] bold]
+
 pack [canvas .splash.c -width $sphXdiam -height $sphYdiam -bd -$graph(origin) \
 	 -bg \#f0f8ff] -padx 0 -pady 0
 

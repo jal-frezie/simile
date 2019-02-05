@@ -1,6 +1,8 @@
 extras: gdi.dll hdc.dll printer.dll wmf.dll
+#TCLBASE = /usr/local32
 TCLBASE = /usr/local
 FLAGS = -mwindows -shared -D_MSC_VER
+#GCCCMD = gcc
 GCCCMD = x86_64-w64-mingw32-gcc
 
 gdi.dll: gdi.c

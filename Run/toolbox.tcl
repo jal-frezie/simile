@@ -47,23 +47,6 @@ switch [tk windowingsystem] {
 }
 }
 
-# tile creates: TkCaptionFont TkTooltipFont TkFixedFont TkHeadingFont 
-#               TkMenuFont TkIconFont TkTextFont TkDefaultFont
-# ...on Linux. On the Mac it makes:
-# TkCaptionFont TkClassicDefaultFont TkTooltipFont TkHeadingFont TkTextFont 
-# TkDefaultFont
-# ...so...
-if {[string equal aqua [tk windowingsystem]]} {
-    set menuFont TkDefaultFont
-    set niceSize 12
-} else {
-    set menuFont TkMenuFont
-    set niceSize 9
-}
-# OK, let Simile join every other app out there and look silly when dpi != 96
-# (when scaling is 4/3) -- might add after testing Windows/MacOS
-# set niceSize [expr {round($niceSize*[tk scaling])}]
-
 # This normalizes fonts of older widgets to look like Tile widgets
 option add *Button.font TkDefaultFont widgetDefault
 option add *Radiobutton.font TkDefaultFont widgetDefault

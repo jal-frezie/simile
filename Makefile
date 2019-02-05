@@ -561,7 +561,8 @@ install:
 	cd $(DESTDIR)$(INSTALL_TGT); \
 	tar xf payload.tar; \
 	mv Run/$(UINFO_TPL) Run/userinfo.tpl; \
-	touch Run/userinfo.txt; \
+#	touch Run/userinfo.txt;
+# target only used in Linux which ignores this file
 	mkdir -p $(DESTDIR)$(SHAREDIR)/applications; \
 	mv simile.desktop $(DESTDIR)$(SHAREDIR)/applications; \
 	rm payload.tar; cd -; \
