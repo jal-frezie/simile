@@ -247,11 +247,12 @@ run_move_from_file(Model, Stm, Current, IdSwaps, NewIdSwaps) :-
 	    run_move_from_file(Model, Stm, Current, MidIdSwaps, NewIdSwaps)).
 
 set_edit_abilities(Model) :-
-	save_allowed(Model, CanSave),
 	saved_state(Model, current, Here),
 	(saved_state(Model, first, Here), !,
+	    CanSave = 0,
 	    UndoOn = 0;
-	 UndoOn = 1),
+	save_allowed(Model, CanSave),
+	    UndoOn = 1),
 	(saved_state(Model, last, Here),
 	    \+ running_session(Model, _Stm, _Trans), !,
 	    RedoOn = 0;

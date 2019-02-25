@@ -265,12 +265,16 @@ menu_handle(Win, file, new) :-
 	Win shows_model Parent,
 	check_deletable(Win, Parent),
 	remove_model(Win, Parent),
-	finish_move(Parent, 0),
+% removing model cannot be a move because old autosave file is closed --
+% user is prompted to save so cannot complain that they cannot undo
+%	finish_move(Parent, 0),
 	set_save_status(Parent, safe),
 % inserting next two lines prevents undoing/redoing through clear action
-% but fails to disable undo key
-%	caption_for(Parent, Name),
-%	new_autosave(Parent, Name),
+% -- however removing them means further undos
+% and delete checks are disabled
+	caption_for(Parent, Name),
+	new_autosave(Parent, Name),
+	backup'><'set_edit_abilities(Parent),
 	update_captions(Parent).
 
 menu_handle(_Win, file, new_toplevel) :-

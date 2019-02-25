@@ -136,7 +136,9 @@ if {[string match windows $tcl_platform(platform)]} {
 	    wm deiconify $w
 	}
     }
-    bind Toplevel <Configure> {FixShiftedPointer %W}
+    # Do not do for now as problem was fixed (however fix does not apply if
+    # tcltk built for macosx versions below 10.13)
+    # bind Toplevel <Configure> {FixShiftedPointer %W}
 }
 
 menu .openrecent -tearoff 0
