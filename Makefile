@@ -11,7 +11,8 @@ endif
 
 # Prolog implementation to use -- GNU for Windows releases, GNU otherwise
 # (currently GNU for everything)
-ifeq ($(MY_CPU),armv7l) # 32-bit but -m32 unrecognized
+ifneq (,$(filter $(MY_CPU),armv7l aarch64))
+# result of filter is strings that match, test if not empty
     PROLOG = SWI
 else
     PROLOG = GNU
@@ -29,10 +30,8 @@ DEFNS=-DSIM_BUILT=$(shell date $(DATESPEC) +%s)
 GCCCMD = gcc
 GPPCMD = g++
 
-ifeq ($(MY_CPU),x86_64)
+ifneq (,$(filter $(MY_CPU),x86_64 aarch64))
 BITEXTN = 64
-else
-BITEXTN = 
 endif
 
 # Default case: Linux
@@ -40,7 +39,7 @@ TCLDIR = /usr
 TCLREF = $(TCLDIR)
 
 SYSDIR = System
-ifeq ($(MY_CPU),x86_64)
+ifdef BITEXTN
 	CFLAGS += $(OPT)
 else
 ifeq ($(MY_CPU),armv7l) # 32-bit but -m32 unrecognized
@@ -70,12 +69,12 @@ SHAREDLIBEXTN = .so
 
 ifeq ($(PLATFORM),Darwin)
 	SYSDIR = System$(BITEXTN)
-	VERS = 8.5
+	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
-	TCLFW = /System/Library/Frameworks
+	TCLFW = /Library/Frameworks
 ifeq ($(MY_CPU),x86_64)
 	CFLAGS = $(OPT)
-	export MACOSX_DEPLOYMENT_TARGET=10.9
+	export MACOSX_DEPLOYMENT_TARGET=10.13
 else
 	CFLAGS = $(OPT) -arch i386
 	export MACOSX_DEPLOYMENT_TARGET=10.4
