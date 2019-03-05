@@ -147,7 +147,8 @@ endif
 endif
 
 PROLOGSTATE = $(EXECDIR)/xssimile$(EXECEXTN)
-PROLOG_DB = $(RESDIR)/struct_db$(SHAREDLIBEXTN)
+PROLOG_DB = $(RESDIR)/struct_db
+# $(SHAREDLIBEXTN) not needed
 ifeq ($(PROLOG),GNU)
 	PROLOGSTATE = $(EXECDIR)/xgsimile$(EXECEXTN)
 	PROLOG_OBJ = $(EXECDIR)/gmain$(ARCHEXTN).o
@@ -555,18 +556,18 @@ install:
 		Run/utility.tcl \
 		Run/window.tcl \
 		Run/simdoc32.ico \
-		simile.desktop; \
+		simile.desktop
 	cd $(DESTDIR)$(INSTALL_TGT); \
 	tar xf payload.tar; \
 	mv Run/$(UINFO_TPL) Run/userinfo.tpl; \
-#	touch Run/userinfo.txt;
-# target only used in Linux which ignores this file
+#	touch Run/userinfo.txt; \
+# target only used in Linux which ignores this file \
 	mkdir -p $(DESTDIR)$(SHAREDIR)/applications; \
 	mv simile.desktop $(DESTDIR)$(SHAREDIR)/applications; \
-	rm payload.tar; cd -; \
-	mkdir -p $(DESTDIR)$(SHAREDIR)/man/man1; \
-	mv simile.1 $(DESTDIR)$(SHAREDIR)/man/man1; \
-	mkdir -p $(DESTDIR)$(EXEC_TGT); \
+	rm payload.tar
+	mkdir -p $(DESTDIR)$(SHAREDIR)/man/man1
+	mv simile.1 $(DESTDIR)$(SHAREDIR)/man/man1
+	mkdir -p $(DESTDIR)$(EXEC_TGT)
 	tar cf $(DESTDIR)$(EXEC_TGT)/payload.tar \
 		$(SYSDIR)/bin/relay \
 		$(SYSDIR)/bin/simile \
@@ -580,7 +581,7 @@ install:
 		$(SYSDIR)/lib/Stubs/pkgIndex.tcl \
 		$(SHIM) \
 		$(UNPK) \
-		$(SLDIR)/$(SHANK); \
+		$(SLDIR)/$(SHANK)
 	cd $(DESTDIR)$(EXEC_TGT); \
 	ln -s ../../..$(INSTALL_TGT)/Examples; \
 	ln -s ../../..$(INSTALL_TGT)/Extensions; \
@@ -590,10 +591,10 @@ install:
 	ln -s ../../..$(INSTALL_TGT)/IOTools; \
 	ln -s ../../..$(INSTALL_TGT)/Run; \
 	tar xf payload.tar; \
-	rm payload.tar; cd -; \
-	mkdir -p $(DESTDIR)/usr/bin; \
+	rm payload.tar
+	mkdir -p $(DESTDIR)/usr/bin
 	cd $(DESTDIR)/usr/bin; \
-	ln -s ../..$(EXEC_TGT)/$(SYSDIR)/bin/simile; cd -
+	ln -s ../..$(EXEC_TGT)/$(SYSDIR)/bin/simile
 endif
 
 # call clean after changing license info in this file
