@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.17 2018/08/22 17:47:06 jaspert Exp $
+# $Id: can2svg.tcl,v 1.18 2019/03/05 18:53:47 cvs Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -712,6 +712,7 @@ proc can2svg::MakeStyleList {type opts args} {
     set fillCol black
     if {$type eq "polygon"} {
 	set styleArr(fill) $fillCol ;# JAT: only polygons fill by default
+	set styleArr(stroke) {} ;# and have no outline
     }
     
     foreach {key value} $opts {
@@ -760,7 +761,7 @@ proc can2svg::MakeStyleList {type opts args} {
                 set styleArr(stroke-linejoin) $value                
             }
             -outline {
-                set styleArr(stroke) [MapEmptyToNone $value]
+                set styleArr(stroke) $value
             }
             -outlinestipple {
                 set outlineStippleValue $value
