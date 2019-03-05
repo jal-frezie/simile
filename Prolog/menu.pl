@@ -34,7 +34,7 @@ redo_edit(Wid, Wids) :-
 check_exist(Wid) :-
 	Wid shows_model Mod,
 	(get_shape(Mod, internal_extent, Rect), !,
-	    output'><'tk_grow_canvas(Wid, Rect);
+	    output><tk_grow_canvas(Wid, Rect);
 	delete_window(Wid)).
 	
 menu_select(Seln) :-
@@ -88,25 +88,25 @@ stick_model_in(Win, Parent, Name, Mode) :-
             is_toplevel(Parent),
 	    get_default_export_name(Parent, "", DefName),
 	    find_all_comps(Root, Parent),
-	    event'><'list_captions(Root, Toplevels),
+	    event><list_captions(Root, Toplevels),
 	    add_parameter(Parent, 0, name, DefName),
-	    event'><'retitle_duplicate(Parent, Toplevels),
+	    event><retitle_duplicate(Parent, Toplevels),
             */
 	    fail);
 	use_temp_dir(LocalDir),
-	(event'><'list_captions(Parent, Used), !; true),
+	(event><list_captions(Parent, Used), !; true),
 	abs_path_name(Parent, root, InsertDir),
 	append_atoms([LocalDir, '/', InsertDir], TargetDir),
         start_progress_dialogue(Win),
         reassure_user(decode_mime, []),
-	output'><'load_file(Parent, TargetDir, Name, CheckedStr),
+	output><load_file(Parent, TargetDir, Name, CheckedStr),
 	substitute(0, CheckedStr, 95, SafeCheckedStr),
 	name(Checked, SafeCheckedStr),
 	(member(Checked, [no, yes]), !, 
 	    append_atoms(TargetDir, '/model.pl', PrologData),
 	    ame_merge(Parent, PrologData, FileV, Checked, Translated),
 	    /* date not needed */
-	    output'><'my_delete_file(PrologData),
+	    output><my_delete_file(PrologData),
 
 	    /* If any nodes have actually been translated, scrap their
 	        submodel executables */
@@ -115,7 +115,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		contains(TweakedModel, New),
                 is_toplevel(TweakedModel),
 		\+ get_av_pair(TweakedModel, 1, c_new, 0),
-		m_update'><'add_parameter(TweakedModel, 1, c_new, 0),
+		m_update><add_parameter(TweakedModel, 1, c_new, 0),
 		fail;
 		
 	    /* Now if the saved model has any images these will be in the top
@@ -126,7 +126,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	/* If this exists, call tcl to skee-WIRT it into each parent window
 	(obviously stupid if window not empty!) */
 	    (Mode = open_toplevel,
-		output'><'my_file_exists(GraphFileName),
+		output><my_file_exists(GraphFileName),
 		FileV > 4.05, !,
 		/* reject canvas files older than v4.1 because clear submodels
 		need backgrounds to get paths graphically */
@@ -140,14 +140,14 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		true);
 	    /* this should call Prolog back with the display detail vals */
 	    NeedsRedraw = 1),
-	    output'><'my_delete_file(GraphFileName);
+	    output><my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
 	    no canvas, images or runnables */
 	(is_session(Name), !,
 	    open_native(Name, read, Stm),
 	    stream_property(Stm, position(Top)),
 	    (read(Stm, start_with(RelModelFile)),
-		output'><'safe_tcl_eval(['Relate', br(Name), br(RelModelFile)],
+		output><safe_tcl_eval(['Relate', br(Name), br(RelModelFile)],
 					MNameStr),
 		name(MName, MNameStr),
 		stick_model_in(Win, Parent, MName, open_toplevel);
@@ -155,10 +155,10 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		clear_model_file(Parent), % or it would be session file
 		caption_for(Parent, NewName),
 		new_autosave(Parent, NewName)),
-	    (backup'><'translation_info(Parent, ForTrans),
+	    (backup><translation_info(Parent, ForTrans),
 		member(translated(TransList), ForTrans), !;
 	      setof(Comp-Comp, contains(Parent, Comp), TransList)),
-	    backup'><'assert(running_session(Parent, Stm, TransList)),
+	    backup><assert(running_session(Parent, Stm, TransList)),
 	    redo_edit(Win, [Win]); % go to first pause so something shows
 	  on_exception(ProLoss, ame_merge(Parent, Name, _FileV, no, Translated),
 		     (make_nice_error_message(ProLoss, ProLite),
@@ -176,7 +176,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    (NeedsRedraw = 0,
 		/* Graphics update will have made a tk_visible call which we do
 		not want to save as a separate move so forget it */
- 	        input'><'retract(resizing_windows(Win)), !;
+ 	        input><retract(resizing_windows(Win)), !;
 	    resize_canvas_for(Parent),
 		(Win2 shows_model Parent,
 		    redraw_window(Win2),
@@ -198,7 +198,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 			     find_all_comps(Parent, Mover)), Movers),
 	    (member(Mover, Lighters),
 	        Mover is_of_sort box,
-		event'><'do_colours(Mover, seln),
+		event><do_colours(Mover, seln),
 		fail;
 	    member(Mover, Movers),
 	        Mover is_of_sort box,
@@ -236,8 +236,8 @@ merge_box([L1, T1, R1, B1]) :-
 check_if_already_open(Name) :-
 	get_model_file(Model, Name),
 	Win shows_model Model,
-	output'><'safe_tcl_eval([wm, deiconify, sqb([winfo, toplevel, Win])], _),
-	output'><'safe_tcl_eval([raise, sqb([winfo, toplevel, Win])], _).
+	output><safe_tcl_eval([wm, deiconify, sqb([winfo, toplevel, Win])], _),
+	output><safe_tcl_eval([raise, sqb([winfo, toplevel, Win])], _).
 
 
 resize_canvas_for(Parent) :-
@@ -274,16 +274,16 @@ menu_handle(Win, file, new) :-
 % and delete checks are disabled
 	caption_for(Parent, Name),
 	new_autosave(Parent, Name),
-	backup'><'set_edit_abilities(Parent),
+	backup><set_edit_abilities(Parent),
 	update_captions(Parent).
 
 menu_handle(_Win, file, new_toplevel) :-
-	m_update'><'make_desktop(_,_).
+	m_update><make_desktop(_,_).
 
 menu_handle(_Win, Mode, Name) :-
 	member(Mode, [open_toplevel, add]),
 	(check_if_already_open(Name), !;
-	m_update'><'make_desktop(Parent, Win),
+	m_update><make_desktop(Parent, Win),
 	    scrub_autosave(Parent),
 	    stick_model_in(Win, Parent, Name, Mode)).
 
@@ -399,7 +399,7 @@ display_submodels(Stream,[Submodel|Submodels]):-
 	display_submodels(Stream,Submodels).
 
 display_entries(_,[]).
-display_entries(Stream,[(VarType'><'VarLabel=Expression where WhereList,Comment)|Entries]):-
+display_entries(Stream,[(VarType><VarLabel=Expression where WhereList,Comment)|Entries]):-
 	write(Stream,'<tr align=left valign=top><td><table width=340><tr align=left valign=top>'),
 	display_vartype(Stream,VarType),
 	display_varlabel(Stream,VarLabel),
@@ -495,8 +495,8 @@ menu_handle(Win, file, prolog_eqns) :-
 	finish_progress_dialogue).
 
 menu_handle(_Win, file, import_ss) :-
-	output'><'safe_tcl_eval(['ConvertSSxml'], _),
-	m_update'><'make_desktop(Parent, _),
+	output><safe_tcl_eval(['ConvertSSxml'], _),
+	m_update><make_desktop(Parent, _),
 	use_temp_dir(Dir),
 	append_atoms(Dir, '/ss_decls.pl', SSFile),
 	convert_ss(SSFile, Parent),
@@ -511,7 +511,7 @@ menu_handle(Win, file, ExportType) :-
 	\+ too_big_for_edn(Model),
 	contains(TopModel, Model),
 	is_toplevel(TopModel),
-	output'><'date_is(Date),
+	output><date_is(Date),
 	(ExportType = export_prolog,
 	    get_default_export_name(Model, ".pl", DefName),
 	    get_program_file(DefName, TopModel, FileName),
@@ -527,7 +527,7 @@ menu_handle(Win, file, ExportType) :-
 	    get_default_export_name(Model, ".xml", DefName),
 	    get_program_file(DefName, TopModel, FileName),
 	    convert_simileprolog_to_similexmlv3(TempFile, FileName),
-	    output'><'my_delete_file(TempFile);
+	    output><my_delete_file(TempFile);
 */	  ExportType = export_session,
 	    autosave_file_is(TopModel, Log),
 	    get_default_export_name(TopModel, ".ssn", DefName),
@@ -535,7 +535,7 @@ menu_handle(Win, file, ExportType) :-
 	    (FileName = '', !; % cancelled
 		%%%%% if editing saved model, put ref and transfer session
 	      get_model_file(TopModel, SavedModel),
-		output'><'safe_tcl_eval(['Relativize', br(FileName),
+		output><safe_tcl_eval(['Relativize', br(FileName),
 					 br(SavedModel)], RelSaveStr),
 		name(RelSave, RelSaveStr),
 		open_native(FileName, write, StmW),
@@ -548,7 +548,7 @@ menu_handle(Win, file, ExportType) :-
 		    fail),
 		close(StmR),
 		close(StmW);
-	    output'><'safe_tcl_eval(['file copy -force',
+	    output><safe_tcl_eval(['file copy -force',
 				     br(Log), br(FileName)], _))).
 /*	
 menu_handle(Win, file, import_xml) :-
@@ -563,42 +563,42 @@ menu_handle(Win, file, import_xml) :-
 	      Loss, true),
 	(nonvar(Loss), !; stick_model_in(Win, Model, XmlSrc, open_toplevel)),
 	finish_progress_dialogue,
-	output'><'my_delete_file(TempFile).
+	output><my_delete_file(TempFile).
 */
 menu_handle(Win, edit, Component) :-
 	(Component is_class_of_sort box; Component is_class_of_sort line),
 	get_edit_model(Win, _Model, Node),
-	event'><'assert(instant_link(Component)),
+	event><assert(instant_link(Component)),
 	% this takes the last model diagram click as the position for addition.
 	% Barring adjusted so it cannot be called from toolbar edit menu.
 	get_original_click(Xpt, Ypt),
 	(Node = [_,_], !,
-	    event'><'click(Xpt, Ypt, 0);
-	 event'><'click_on([Xpt, Ypt], Node, 0)),
-	event'><'unclick,
+	    event><click(Xpt, Ypt, 0);
+	 event><click_on([Xpt, Ypt], Node, 0)),
+	event><unclick,
 	(Component is_primitive,
 	    Component is_class_of_sort box, !;
-	 event'><'assert(instant_link(Component))).
+	 event><assert(instant_link(Component))).
 /*
 menu_handle(Win, edit, Component) :-
 	get_edit_model(Win, Model, Tgt),
 	((Component = compartment, find_type(Tgt, cloud), !,
-	        event'><'cloud_to_comp(Tgt);
+	        event><cloud_to_comp(Tgt);
 	  Component is_primitive,
 	  Component is_class_of_sort box, !,
-	        event'><'insert(Win, Model, Tgt, Component)),
+	        event><insert(Win, Model, Tgt, Component)),
 	    finish_move(Model, 1);
 	(Component = submodel,
 	    Tgt = [Xpt, Ypt], !,
 	    advance_phase_to(action_choice);
 	    (Tgt = [Xpt, Ypt], !,
 	        set_current_coords(Xpt, Ypt),
-	        event'><'make_terminator(Component, Model, StartPt),
+	        event><make_terminator(Component, Model, StartPt),
 	        nonvar(StartPt);
 	    StartPt = Tgt),
-	    event'><'do_linear(Component, StartPt)),
+	    event><do_linear(Component, StartPt)),
 	    advance_phase_to(targetting),
-	    event'><'assert(instant_link(Component))).
+	    event><assert(instant_link(Component))).
 
 Delete the selection */
 menu_handle(Win, edit, reroute) :-
@@ -611,7 +611,7 @@ menu_handle(Win, edit, reroute) :-
 	(setof(Rerouter, (contains(Model, Rerouter),
 			     Rerouter is_of_sort line,
 			     appears(Rerouter),
-			     event'><'doomed(Rerouter)), Rerouters), !,
+			     event><doomed(Rerouter)), Rerouters), !,
 	    reroute_sections(Rerouters);
 	true),
 	finish_move(Model, 0),
@@ -620,11 +620,11 @@ menu_handle(Win, edit, reroute) :-
 
 menu_handle(Win, edit, snap) :-
 	get_edit_model(Win, Model, _),
-	event'><'retract(grid_pitch_is(OldX, OldY)),
-	event'><'set_snap,
-	event'><'resnap(Model, 1),
-	event'><'retract(grid_pitch_is(_,_)),
-	event'><'assert(grid_pitch_is(OldX, OldY)),
+	event><retract(grid_pitch_is(OldX, OldY)),
+	event><set_snap,
+	event><resnap(Model, 1),
+	event><retract(grid_pitch_is(_,_)),
+	event><assert(grid_pitch_is(OldX, OldY)),
 	menu_handle(Win, edit, reroute).
 
 menu_handle(Win, edit, delete) :-
@@ -633,7 +633,7 @@ menu_handle(Win, edit, delete) :-
         start_progress_dialogue(Win),
 	reassure_user(pl_action, [DelAtom]),
 	get_edit_model(Win, Model, _),
-	event'><'delete_net(Model),
+	event><delete_net(Model),
 	finish_move(Model, 1),
 	finish_progress_dialogue.
 	   
@@ -650,7 +650,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 	selection in it */
 %	assert(suspend_display),
 	/* invert_seln_in(Model),
-	event'><'delete_net(Model),
+	event><delete_net(Model),
 
 
 	Now delete unselected submodels containing selected components?
@@ -670,7 +670,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 	/* OK, now I just have the originally selected bit left -- save it */
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
-	output'><'date_is(Date),
+	output><date_is(Date),
 	retractall(lost_ghost_in_seln(_,_)),
 	record_lost_ghosts(Model),
 	save_isolated(CopyFile, Model, Date, yes, no),
@@ -687,7 +687,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 	/* Restore original selection as we may have added submodels */
 	(CutOrCopy = cut,
 	    reassure_user(pl_action, [DelAtom]),
-	    event'><'delete_net(Model),
+	    event><delete_net(Model),
 	    finish_move(Model, 1);
 	CutOrCopy = copy),
 	finish_progress_dialogue.
@@ -697,9 +697,9 @@ menu_handle(Win, edit, paste) :-
 	get_edit_model(Win, Model, Pt),
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
-	(\+ output'><'my_file_exists(CopyFile), !;
+	(\+ output><my_file_exists(CopyFile), !;
 	stick_model_in(Win, Model, CopyFile, insert(Pt)),
-	event'><'set_selection_abilities(Model)).
+	event><set_selection_abilities(Model)).
 	
 menu_handle(Win, edit, selall) :-
         start_progress_dialogue(Win),
@@ -741,14 +741,14 @@ menu_handle(Win, edit, properties) :-
 	    Target = Tgt),
 	(find_type(Target, submodel), !,
 	    set_properties(Win, Target);
-	event'><'doubleclick_on(Target), !;
+	event><doubleclick_on(Target), !;
 	    true).
 
 menu_handle(Win, edit, Action) :-
 	member(Action, [flip_v, flip_h]),
 	Win shows_model Node_name,
 	(flip_innards(Node_name, Action);
-	event'><'make_links_follow(Node_name)),
+	event><make_links_follow(Node_name)),
 	(OtherWin shows_model Node_name,
 		redraw_window(OtherWin),
 		fail;
@@ -777,8 +777,8 @@ menu_handle(Win, edit, set_interface) :-
 	(TopWin shows_model Model,
 	    make_current(TopWin), % allows reroute to work outside submodel
 	    load_submodel_interface(Stream, Submodel, _, _),
-	    event'><'make_links_follow(Submodel),
-%	    event'><'tweak_link_connections(Submodel, [0,0], l, [0,0,1,1]),
+	    event><make_links_follow(Submodel),
+%	    event><tweak_link_connections(Submodel, [0,0], l, [0,0,1,1]),
 	    finish_move(Submodel, 1);
 	close(Stream),
 	    restart_move,
@@ -795,7 +795,7 @@ menu_handle(Win, window, NastyAtom) :-
 	    (Redraw=0, !; redraw_window(Win));
 	 get_term(NastyStr, halo(Way,Depth), []),
 	    set_halo(Win, Way, Depth),
-	    event'><'update_halo(Win)).
+	    event><update_halo(Win)).
 
 % predicate not too big to fail
 % menu_handle(_, _, _).
@@ -812,9 +812,9 @@ relink_ghosts(TopNode, IdSwaps) :-
 	member(Saved-Restored, IdSwaps),
 	lost_ghost_in_seln(Saved, Base),
 	contains(TopNode, Base),
-	event'><'get_nearest_equivalent_link(ghost_link, Base,
+	event><get_nearest_equivalent_link(ghost_link, Base,
 					     Restored, OutLink),
-	event'><'reghost(Restored, OutLink),
+	event><reghost(Restored, OutLink),
 	fail; true.
 	
 is_session(Name) :-
@@ -822,25 +822,25 @@ is_session(Name) :-
 	suffix(".ssn", NameStr).
 
 get_edit_model(Win, Comp, Pt) :-
-	(event'><'menu_submodel_is(Win, Comp, Pt), !;
+	(event><menu_submodel_is(Win, Comp, Pt), !;
 	Win shows_model Comp).
 
 select_all_in(Model, Way) :-
 	Way = base, is_toplevel(Model), !,
-	    (event'><'new_selection(Model);
-		event'><'set_selection_abilities(Model));
+	    (event><new_selection(Model);
+		event><set_selection_abilities(Model));
 	contains(Model, Bit),
 	    Bit is_of_sort box,
 	    appears(Bit),
-	    \+ event'><'at_def_con(Bit, Way),
+	    \+ event><at_def_con(Bit, Way),
 	    \+ Bit = Model,
 	    (Way = seln,
-		event'><'do_colours(Bit, seln);
+		event><do_colours(Bit, seln);
 	    Way = base,
 		get_highlit_obj(0, Bit),
-		event'><'do_colours(Bit, base)),
+		event><do_colours(Bit, base)),
 	    fail;
-	event'><'set_selection_abilities(Model).
+	event><set_selection_abilities(Model).
 
 invert_seln_in(Model) :-
 	(setof(Bit, 
@@ -852,9 +852,9 @@ invert_seln_in(Model) :-
 		    \+ (appears(Bit), Bit is_of_sort box))),
 	      NewSel),
 	member(Node, NewSel),
-	    event'><'do_colours(Node, seln),
+	    event><do_colours(Node, seln),
 	    fail;
-	event'><'set_selection_abilities(Model)).
+	event><set_selection_abilities(Model)).
 /*
 find_innermost_selection_holder([Comp | Rest], Innermost, TempSels) :-
 	find_all_comps(Model, Comp),
@@ -866,7 +866,7 @@ find_innermost_selection_holder([Comp | Rest], Innermost, TempSels) :-
 	    contains(Innermost, Model, MoreAdds), !,
 	    append(Adds, MoreAdds, AllAdds),
 	    (setof(TempSel, (member(TempSel, AllAdds),
-				\+ event'><'doomed(TempSel)), NewSels), !,
+				\+ event><doomed(TempSel)), NewSels), !,
 		all(draw, set_highlit_obj, [unify(0), build(NewSels)]),
 		merge_lists(NewSels, MoreTempSels, TempSels);
 	    TempSels = MoreTempSels)).
@@ -929,28 +929,28 @@ find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 	NewL is L+TargetX, NewT is T+TargetY,
 	NewR is R+TargetX, NewB is B+TargetY,
 	\+ (member(Snag, ToAvoid),
-	       image'><'interferes([NewL, NewT, NewR, NewB], Snag)).
+	       image><interferes([NewL, NewT, NewR, NewB], Snag)).
 	
 reroute_sections(Rerouters) :-
 	Rerouters = [];
 	member(Type, [relation, flow, squirt, influence]),
 	full_section(Rerouters, Type, [Go | Rest], Remains),
 	suffix([Stop], [Go | Rest]),
-	(m_class'><'Go follows Start; m_class'><'Go is_connector from Start to _),
-	(m_class'><'End follows Stop; event'><'local_ends(Stop, _, End)),
-	event'><'draw_line_to(Start, Type, End),
-	event'><'reuse_route(Type, Stop),
+	(m_class><Go follows Start; m_class><Go is_connector from Start to _),
+	(m_class><End follows Stop; event><local_ends(Stop, _, End)),
+	event><draw_line_to(Start, Type, End),
+	event><reuse_route(Type, Stop),
 	reroute_sections(Remains).
 
 full_section(Rerouters, Type, [Start | Rest], Remains) :-
 	select(Start, Rerouters, Left),
 	find_type(Start, Type),
-	\+ (m_class'><'Start follows Before, member(Before, Left)),
+	\+ (m_class><Start follows Before, member(Before, Left)),
 	continuation(Left, Start, Rest, Remains).
 
 continuation(Rerouters, Start, Rest, Remains) :-
 	clear_shape(Start, course), fail;
-	m_class'><'Next follows Start,
+	m_class><Next follows Start,
 	select(Next, Rerouters, Left), !,
 	continuation(Left, Next, More, Remains),
 	Rest = [Next | More];
@@ -998,7 +998,7 @@ display_submodels(Isub,[Submodel|Submodels]):-
 	display_submodels(Isub1,Submodels).
 
 display_entries(_,_,[]).
-display_entries(Isub,Ivar,[(where(VarType'><'VarLabel=Expression, Node),MinMax,InFlows,OutFlow)|Entries]):-
+display_entries(Isub,Ivar,[(where(VarType><VarLabel=Expression, Node),MinMax,InFlows,OutFlow)|Entries]):-
 	tk_equationlisting_addvariable(VarType,VarLabel,Expression,Node, MinMax, InFlows,OutFlow),
 	Ivar1 is Ivar+1,
 	display_entries(Isub,Ivar1,Entries).
@@ -1113,13 +1113,13 @@ write_eqn_term(Submodel, Entry, MinMax, InFlows, OutFlows) :-
 	 OutFlows = null
 	)),
 %	((PPairs = [],
-%		Entry = (where((CompType'><'Dest=Eqn), [null]))); % Bob's change
+%		Entry = (where((CompType><Dest=Eqn), [null]))); % Bob's change
 %	(PPairs = [_ | _],
-%		Entry = (where((CompType'><'Dest=Eqn), PPairs)))),
-	event'><'units_for(Component, UnitStr),
+%		Entry = (where((CompType><Dest=Eqn), PPairs)))),
+	event><units_for(Component, UnitStr),
 	sicstus_format_to_chars("~w (~s)", [Eqn, UnitStr], EqnWUStr),
 	name(EqnWU, EqnWUStr),
-	Entry = where((CompType'><'Dest=EqnWU), VisNode),
+	Entry = where((CompType><Dest=EqnWU), VisNode),
 	make_min_max_line(Component, MinMax).
 
 make_min_max_line(Component, MinMax) :-
@@ -1135,7 +1135,7 @@ make_min_max_line(Component, MinMax) :-
 	 append_atoms([Min, ', ', Max], MinMax)).
 	
 get_flows(CompartmentNode, Direction, Names) :-
-	findall(Caption,(instance'><'flows(flow, Direction, CompartmentNode, Arc),
+	findall(Caption,(instance><flows(flow, Direction, CompartmentNode, Arc),
 			 caption_for(Arc,Caption)), Names).
 
 /* Got rid of this in favour of having tcl query the parameters
@@ -1143,7 +1143,7 @@ get_ppairs([],[]).
  %Only include a "...where P=V" entry where P is not the default parameter name for V.
 get_ppairs([input_link(_, Source, Param, _, _) | R1], Terms) :-
 	get_ppairs(R1, R2),
-	(m_update'><'add_brackets(Source,_, Param), !,
+	(m_update><add_brackets(Source,_, Param), !,
 	    Terms = R2;
 	Terms = [Param = Source | R2]).
 */
@@ -1242,15 +1242,15 @@ set_properties(Wid, Model) :-
 		update_captions(Submodel),
 		fail;
 	    NewNature = Nature, UseCount = Count, !;
-		event'><'spread_colour(Model, dims)),
+		event><spread_colour(Model, dims)),
 	    finish_move(Model, 1)).
 
 separate_type_from_mems([H | T], H-T).
 
 change_enum_type(Node, ArgAtom) :-
 	name(ArgAtom, ArgStr),
-	output'><'chop_list(ArgStr, DataStrs),
-	forms'><'strings_to_atoms(DataStrs, [Type | Mems]),
+	output><chop_list(ArgStr, DataStrs),
+	forms><strings_to_atoms(DataStrs, [Type | Mems]),
 	get_av_pair(Node, 0, enum_types, EnumTypes),
 	append(Front, [Type-_OldMems | Back], EnumTypes),
 	append(Front, [Type-Mems | Back], NewEnumTypes),	
@@ -1264,8 +1264,8 @@ refatten(Model, FatFactor) :-
 	change_shape(Model, internal_extent, NewExtent),
 %		adjust_toplevel_windows(Model, NewExtent),
 	refatten_toplevels(Model, FatFactor),
-	event'><'move_boxes(Model, FatTrans),
-	event'><'resnap(Model, 0),
+	event><move_boxes(Model, FatTrans),
+	event><resnap(Model, 0),
 	(member(RerouteType, [flow, influence]),
 	    find_all_comps(Model, Linkage),
 	    appears(Linkage),
@@ -1274,7 +1274,7 @@ refatten(Model, FatFactor) :-
 	    fail;
 	  find_all_comps(Model, Submodel),
 	    (find_type(Submodel, submodel),
-		m_update'><'fatness_for(Submodel, SubFat),
+		m_update><fatness_for(Submodel, SubFat),
 		SubFat > 1.005,
 		refatten(Submodel, SubFat),
 		fail;
@@ -1312,8 +1312,8 @@ flip_innards(Node_name, Action) :-
 check_deletable(Win, Parent) :-
 	(\+ find_all_comps(Parent, _), !;
 	    get_save_status(Parent, safe), !;
-            \+ backup'><'autosave_file_is(Parent, _SMX), !;
-	    backup'><'autosave_suspended(Parent), !;
+            \+ backup><autosave_file_is(Parent, _SMX), !;
+	    backup><autosave_suspended(Parent), !;
 	    ok_to_delete(Win, Parent)).
 
 close_exec(Parent) :-
@@ -1339,14 +1339,14 @@ remove_model(Win, Parent) :-
 	    fail;
 	superfast_delete(Parent),
 	    reassure_user(pl_draw, []),
-	    event'><'spread_colour(Parent, none),
+	    event><spread_colour(Parent, none),
 	    finish_progress_dialogue,
 	    redisplay(Parent))),
 	clear_model_file(Parent),
-	m_update'><'clear_av_pair(Parent, 1, c_new),
+	m_update><clear_av_pair(Parent, 1, c_new),
 	use_temp_dir(LocalDir),
 	abs_path_name(Parent, root, DeleteDir),
-	output'><'trim_tree(LocalDir, DeleteDir).
+	output><trim_tree(LocalDir, DeleteDir).
 
 % creates variables outside model where influences came out from it
 cutoff(Parent) :-
@@ -1357,7 +1357,7 @@ cutoff(Parent) :-
 % creates variables inside model where influences came into it
 cutout(Parent, SelnOnly) :-
 	find_all_links(Parent, Child),
-	\+ (SelnOnly = yes, \+ event'><'doomed(Child)),
+	\+ (SelnOnly = yes, \+ event><doomed(Child)),
 	sever_links(Child, Parent),
 	fail.
 		
@@ -1365,7 +1365,7 @@ change_size(TopNode, Type) :-
 	contains(TopNode, Obj),
 	(draw_style_for(Obj, Type);
 	    Type = submodel, find_type(Obj, border)),
-	event'><'make_links_follow(Obj),
+	event><make_links_follow(Obj),
 	redisplay_border(Obj),
 	fail.
 
@@ -1380,7 +1380,7 @@ off_window(Win, ExitIfKilled) :-
 		just do the minimum to exit cleanly */
 		close_exec(Model),
 		delete_window(Win);
-	    output'><'tk_certain_death(Win));
+	    output><tk_certain_death(Win));
 /* ...which calls the class destructor, which calls rule below. */
 	delete_window(Win)).
 
@@ -1429,7 +1429,7 @@ do_save(Win, Model, New_name) :-
 
 	/* save prolog data */
 	append_atoms(SaveDir, '/model.pl', TempFile),
-	output'><'date_is(Date),
+	output><date_is(Date),
 	(New_name = seln_only, Select = yes, CanvasModel = none;
 	    \+ New_name = seln_only, Select = no, CanvasModel = Model),
 	save_isolated(TempFile, Model, Date, Select, yes),
@@ -1459,7 +1459,7 @@ do_save(Win, Model, New_name) :-
 
 	/* Now build the multi-part MIME format save file */
         reassure_user(pl_mimeout, []),
-	output'><'save_file(Model, SaveDir, Name, Select, Oops),
+	output><save_file(Model, SaveDir, Name, Select, Oops),
 
         Oops = [], %If that succeeded, mark model as saved, else choose new name
 	(New_name = seln_only;
@@ -1473,7 +1473,7 @@ do_save(Win, Model, New_name) :-
 	    abs_path_name(Model, root, NewPoint),
 	    (NewPoint = Point, !; % will be if we do not change name
 	    append_atoms([Dir, '/', NewPoint], NewSaveDir),
-		output'><'safe_tcl_eval(['file rename -force',
+		output><safe_tcl_eval(['file rename -force',
 					 br(SaveDir), br(NewSaveDir)], _));
 	true),
 	update_captions(Model),
@@ -1483,7 +1483,7 @@ do_save(Win, Model, New_name) :-
         finish_progress_dialogue, !. /* do not finish progress box 2wice */
 
 too_big_for_edn(Model) :-
-	state'><'get_edition_and_limit(Edn, Limit),
+	state><get_edition_and_limit(Edn, Limit),
 	count_functions(Model, N),
 	N > Limit,
 	query(save_edition_limit(N, Limit, Edn), error, top, [ok], _).
@@ -1501,7 +1501,7 @@ transfer_images(Model, TopDir, Way) :-
 	/* Save canvas file */
 check_save_canvas(SaveDir, Model, Date) :-
 	append_atoms(SaveDir, '/model.cnv', CanvasName),
-	(output'><'safe_tcl_eval(['CanvasSavesSelected'], "1"),
+	(output><safe_tcl_eval(['CanvasSavesSelected'], "1"),
 	is_toplevel(Model), !,
 	/* might still be useful if not, but would have to do something
 	about border nodes which have graphical attributes but aren't on
@@ -1512,8 +1512,8 @@ check_save_canvas(SaveDir, Model, Date) :-
 		 build([ghost_link, influence, variable, flow, compartment,
 		   submodel, caption, sections]), build(CurrentDepths)]),
 	    save_canvas(Win, CanvasName, CurrentDepths, Date);
-	\+ output'><'my_file_exists(CanvasName), !;
-	output'><'my_delete_file(CanvasName)).
+	\+ output><my_file_exists(CanvasName), !;
+	output><my_delete_file(CanvasName)).
 
 save_dlls(Point, LocalDir, Top, Model, SaveParent) :-
 	(setof(Sub, Part^(find_all_comps(Model, Part),
@@ -1529,7 +1529,7 @@ save_dlls(Point, LocalDir, Top, Model, SaveParent) :-
 	    (Top = Model, !,
 		Loc = '';
 	    abs_path_name(Model, Top, Loc)),
-	    output'><'shift_dll(Point, LocalDir, Loc, LocalNew),
+	    output><shift_dll(Point, LocalDir, Loc, LocalNew),
 	    SaveParent = 1;
 	SaveParent = LocalNew).
 	
@@ -1584,7 +1584,7 @@ get_default_export_name(Model, Extn, Export) :-
 reroute_for(Style) :-
 	find_type(Function, function),
 	off(Function),
-	(m_class'><'Drive is_connector from Function to Recipient,
+	(m_class><Drive is_connector from Function to Recipient,
 		off(Drive),
 		(Style = sd,
 			Link_end = Recipient;
@@ -1598,7 +1598,7 @@ reroute_for(Style) :-
 				set_shape(Function, bounding_box, Box)),
 			Link_end = Function,
 			redisplay(Function)),
-		event'><'make_links_follow(Link_end),
+		event><make_links_follow(Link_end),
 	\+ m_class:_ is_connector from Function to _,
 		do_delete(Function)),
 	fail.

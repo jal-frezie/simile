@@ -22,7 +22,7 @@ pass_functions(LibFuns) :-
 	prepare_equation(AllFns).
 	
 atomize_function(FnAtom) :-
-	inters'><'builtin(Category, Functor, ResultSort, ArgSorts),
+	inters><builtin(Category, Functor, ResultSort, ArgSorts),
 	spell_out([ResultSort | ArgSorts], 1),
 	make_arg_list(ArgSorts, String),
 	sicstus_format_to_chars("{Built-in {~a}} internal ~a (~s) returns ~w",
@@ -121,7 +121,7 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 				       NewRules))).
 
 index_types(ind_spec(_Name, _Posn, Ind, _Link), Type) :-
-	inters'><'type_ind(Ind, Type).
+	inters><type_ind(Ind, Type).
 
 update_rules(Old, C-S-V-D, [C-S-V-D | Left]) :-
 	select(C-_S-_V-_D, Old, Left), !;
@@ -161,9 +161,9 @@ add_rule_specs_and_vals(Node, Rules, CommonUnits) :-
 combine_dims([], any-[]).
 combine_dims([_C-_S-_V-(Base-Dims) | RuleList], CommonType-CommonDims) :-
 	combine_dims(RuleList, Gen-SoFar),
-	inters'><'value(Any),
-	inters'><'try_units(Any, [Any, Any], [Base, Gen], CommonType, _Conv),
-	inters'><'longest_path([Dims, SoFar], CommonDims).	
+	inters><value(Any),
+	inters><try_units(Any, [Any, Any], [Base, Gen], CommonType, _Conv),
+	inters><longest_path([Dims, SoFar], CommonDims).	
 	
 convert_rule_format(Spec, Value, Rules) :-
 	Spec = '', Value = '', Rules = [];
@@ -192,7 +192,7 @@ update_equation(Function,_, [Table_st, Data_st], Effect) :-
 	(FileName = '/graph/', !,
 	    length(DataField, 3),
 	    append(DataField, [Dims | Indices], DataSpec),
-	    output'><'chop_list(Data_st, DataStrs),
+	    output><chop_list(Data_st, DataStrs),
 	    all(user, sicstus_atom_chars, [build(DataTable), build(DataStrs)]),
 	    Units = 1,
 	    Bounds = 1,
@@ -216,15 +216,15 @@ update_equation(_, Input_list, [LineIndxStr, Parm_st, New_unit_st], Effect) :-
 	length(EarlyInputs, LineIndx), !,
 	get_term(Parm_st, New_param, Complaint0),
 	(\+ Complaint0 = [], !,
-	    text'><'expand_message(param, [], TrField),
+	    text><expand_message(param, [], TrField),
 	    Complaint2 = bad_syntax(TrField, Complaint0);
 	    get_term(New_unit_st, NewUnits, Complaint1),
 	    (Complaint1 = [], !;
-		text'><'expand_message(in_units, [], TrField),
+		text><expand_message(in_units, [], TrField),
 		Complaint2 = bad_syntax(TrField, Complaint1))),
 	
 	(Complaint2 = [], !,
-	    text'><'expand_message(ip_name, [], TrParam),
+	    text><expand_message(ip_name, [], TrParam),
 	    (check_param_brackets(TrParam, New_param, Current_unit,
 				  Complaint), !;
 		(NewUnits = '', !,
@@ -277,8 +277,8 @@ update_equation(Function, InterInputs, [Eqn_st, Unit_pb, Is_P_st, Desc_st,
 	  Is_P = 1, \+ inherently_bound(Units),
 	    (var(EqnBase); \+ inherently_bound(EqnBase)), !, MinMaxNeeded = 2;
 	  MinMaxNeeded = 0),
-	text'><'expand_message(minval, [], TrMin),
-	text'><'expand_message(maxval, [], TrMax),
+	text><expand_message(minval, [], TrMin),
+	text><expand_message(maxval, [], TrMax),
 	check_bound(Min_st, TrMin, Function, MinMaxNeeded, [],
 		    Min, MinVal, MinBase, MinErr),
 	    (\+ MinErr = [], !,
@@ -313,7 +313,7 @@ update_equation(Function, InterInputs, [Eqn_st, Unit_pb, Is_P_st, Desc_st,
 		     TypeError = minmax_wrong(EqnBase)),
    ...above procedure removed, what about this? */
 	(promote_unit(any, MMVal),
-	 inters'><'try_units(MMVal, [MMVal, MMVal, MMVal],
+	 inters><try_units(MMVal, [MMVal, MMVal, MMVal],
 			     [EqnBase, MinBase, MaxBase], RawBase, _Convs);
 	 TypeError = minmax_wrong(EqnBase)),
 	 
@@ -478,7 +478,7 @@ update_equation(Function, Inputs, [Eqn_st, Evt_st, Unit_st, Is_P_st, Desc_st,
 	  Effect = SubEffect).
 
 warn_dimless_scaler(NewUnits) :-
-	units'><'check_and_report_units(NewUnits, TargetDims, ScaleFactor),
+	units><check_and_report_units(NewUnits, TargetDims, ScaleFactor),
 % flag up dimensionless conversions; here is not really the place, but...
 	(\+ TargetDims = 1; \+ number(ScaleFactor); ScaleFactor = 1.0;
 	query(is_scale_factor(NewUnits, ScaleFactor),
@@ -494,7 +494,7 @@ appropriate_units(Units, TypeBase, RawBase, CheckLevel,
 	        NewUnits = 1;
 		% num constant changed from int to float -- allow
 	     member(Units, [1, int]),
-	        units'><'get_conversion(_, ComboBase, ComboBase, _),
+	        units><get_conversion(_, ComboBase, ComboBase, _),
 	        NewUnits = ComboBase;
 	        % physical units supplied for numerical -- allow
 	      NewUnits = Units); % otherwise if units were given, use them
@@ -576,7 +576,7 @@ get_table_part(Function, Data, Table, Units, Dims, Sizes) :-
 	enum_type_ref(Num, Function, quoted, Table, Units, _),
 	    Dims = [],
 	    Sizes = [];
-	output'><'chop_list(Data, Alternator),
+	output><chop_list(Data, Alternator),
 	    feed_items(Function, Alternator, Table, Units, Dims, Sizes), !;
 	append(["Table contained the data item ", Data,
 		", which is not a recognizable constant."], Loss),
@@ -712,13 +712,13 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	DummyDest = [sm(_,_,_, fm_loop(IndxSzs, IndxSzs, _,_))],
 	% remove old function fragment submodels --
 	% these will be re-created
-	m_update'><'superfast_delete(Fn),
+	m_update><superfast_delete(Fn),
 	on_exception(ParseExcp,
 		     (make_intermediates(FullExpr, Fn, ['/dest/'],
 		                        DummyDest, _, [],
 					[], dummy, _, Type, _I,
 					part_result(Context, _,_,_)),
-		     inters'><'get_model_and_loops(Context, DummyDest,
+		     inters><get_model_and_loops(Context, DummyDest,
 						   Loops, _)),
 	(replace_subexps(ParseExcp, dialogue, collapse_params,
 			 _, top_down, _, ParseError);
@@ -729,7 +729,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	    var(Bound),
 	    ParseError = cannot_set_dims(N, Param);
 	    Type == cond_spec,
-	    \+ instance'><'is_lookup_cond(Equation, _),
+	    \+ instance><is_lookup_cond(Equation, _),
 	    ParseError = bad_cond_spec_form;
 	    %sicstus_format_to_chars("Dimension ~d of explicit intermediate variable ~w cannot be determined from its definition", [N, Param], ParseError);
 	  get_dims_from_loops(Loops, Dims, _),
@@ -757,7 +757,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	        (nonvar(Link), !,
 		    member(Param, PsUsed),
 		    analyze_array(Units, Type, Dims),
-/*		    (units'><'get_conversion(_, Base, Base, _), !,
+/*		    (units><get_conversion(_, Base, Base, _), !,
 		        Type = real;
 		    Type = Base), */
 		    make_inds_for(Dims, _, PLoops, Inds),
@@ -769,7 +769,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	        (Param = '/dest/', !,
 		        get_ground_part(LRefs, GRefs),
 		        length(GRefs, L);
-		    m_update'><'analyze_array(Depth, any, Dims),
+		    m_update><analyze_array(Depth, any, Dims),
 	                make_inds_for(Dims, _, PLoops, Inds)),
 	            Type-PLoops = Loops,
 	            Units = param_history(_Defn, 1)),
@@ -803,7 +803,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 			    top_down, _, UseExpr),
 	    (get_ground_part(SubL, DimG),
 		build_array(1, DimG, Array),
-		text'><'expand_message(exp_inter, [], TrXIR),
+		text><expand_message(exp_inter, [], TrXIR),
 		check_param_brackets(TrXIR, ExpInt, Array, ParseError), !,
 		raise_exception(ParseError);
 	    member(input_link(_,_, FPar, param_history(FDef, _)), DefnInputs),
@@ -850,7 +850,7 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 		throw(bad_index_number(N, prev, 32));
 	    DoneExpr = '/dest/'),
 	    Recurse = 1;
-	instance'><'build_table_ref(table_const(1), Param, DoneExpr);
+	instance><build_table_ref(table_const(1), Param, DoneExpr);
 	expand_library(Param, DoneExpr),
 	    Recurse = 1.
 
@@ -870,8 +870,8 @@ check_param_usage(Current, AllowLinks, Used, Left, Challenge) :-
 		AllowLinks = 1, Prob = extra_links(SourceCaption)),
 	    query(Prob, question, fill_equation, [ok, cancel], Choice),
 	    (Choice = ok,
-		event'><'off(LinkName),
-		event'><'delete_by_dlg(LinkName),
+		event><off(LinkName),
+		event><delete_by_dlg(LinkName),
 		check_param_usage(FromOthers, AllowLinks, Used, Left, Challenge);
 	     Choice = cancel,
 		Left = Current,
@@ -892,7 +892,7 @@ update_parameterhood(Function, Is_P, AffectedNode) :-
 	  (UsedFn = yes,
 	      (UsesFn = yes,
 		  AffectedNode = Is;
-		m_update'><'delete_implicit_node(Has),
+		m_update><delete_implicit_node(Has),
 		  AffectedNode = Has);
 	    UsedFn = no,
 	      (UsesFn = yes,

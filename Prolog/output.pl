@@ -46,14 +46,14 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
 
 safe_tcl_eval(Cmd, Result) :-
-	user'><'any_tcl_eval(Cmd, 1, Result).
+	user><any_tcl_eval(Cmd, 1, Result).
 /********safe_tcl_eval(Cmd, Result) :-
-	user'><'tcl_eval(['FilterErrors' | Cmd], Result),
+	user><tcl_eval(['FilterErrors' | Cmd], Result),
 	(Result = "-1",
 	    raise_exception("Tcl callback produced an exception");
 	true).
-	(\+ input'><'log_interaction, !;
-	    backup'><'into_save_file(safe_tcl_eval(Cmd, Result))). */
+	(\+ input><log_interaction, !;
+	    backup><into_save_file(safe_tcl_eval(Cmd, Result))). */
 
 tk_cursor_is(Cursor) :-
 	safe_tcl_eval(['AttackGlobalVariable window_info (defCurs)', Cursor],
@@ -478,9 +478,9 @@ get_from_list([input_link(_, RTs, P, _, I) | R1],
 	safe_list(Items, AV),
 	sicstus_write_to_chars(P, SP),
 	name(FP, SP),
-	m_update'><'analyze_array(I, U, D),
+	m_update><analyze_array(I, U, D),
 	(D = [], !, FD = '';
-	    render'><'comma_separate(D, SD),
+	    render><comma_separate(D, SD),
 	    name(FD, SD)),
 	get_from_list(R1, R2).
 

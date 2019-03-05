@@ -13,10 +13,10 @@ term_expansion to make something which it can treat as a predicate and ignore,
 but which Sicstus uses to do modules. */
 
 term_expansion(sicstus_load_foreign_resource(ModuleList), ( :- load_foreign_resource(ModuleList))).
-%term_expansion(Module'><'Pred, (Module:Pred)).
+%term_expansion(Module><Pred, (Module:Pred)).
 term_expansion(sicstus_meta_predicate(Pred), ( :- meta_predicate(Pred))).
 
-'><'(Module,Pred) :-
+><(Module,Pred) :-
 	call(Module:Pred).
 
 sicstus_use_module([library(charsio)]).
@@ -57,7 +57,7 @@ wind_up :-
 than the Sicstus, like... */
 
 read_term_from_codes(String, Term, _Unusable) :-
-	append(String, ".", ProperString),
+	append(String, [46], ProperString), % end with period
 	read_from_chars(ProperString, Term).
 
 print_to_codes(TermStr, Term) :-

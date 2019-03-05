@@ -266,7 +266,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	  GroundExpr = choose_ref(FlowFns), !,
 	    all(instance, direct_ref,
 	        [build(FlowFns), build(IParams), build(Refs)]),
-	    %inters'><'make_choose_form(IParams, index(1), 1, ChxExpr),
+	    %inters><make_choose_form(IParams, index(1), 1, ChxExpr),
 	    (length(IParams, 0) ->
 		 ChxExpr = 0;
 	       length(IParams, 1) ->
@@ -327,7 +327,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	  % update on the function because they must be separate but
 	  % the update uses the trigger magnitude so its node must be
 	  % connected to the trigger events	  
-	    compile'><'choosify(SubbedExpr, bollocks, UpdateExpr, InitExpr),
+	    compile><choosify(SubbedExpr, bollocks, UpdateExpr, InitExpr),
 	    FinalExpr = (trigger_magnitude('')=EvtTrigger, UpdateExpr),
 	    is_instance(init_function, Result, InitExpr,
 			elt(Path, Name, MagBase-Units), MagBase-Units, Init),
@@ -546,7 +546,7 @@ flows(Types, Dir, Comp, Flow) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* generate_input_pair is used in setof so should be cut free */
 generate_input_pair(Node, IType, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
-	m_update'><'get_all_links(Node, IType, ids(SourceID, Relation),
+	m_update><get_all_links(Node, IType, ids(SourceID, Relation),
 			       input_link(id(Link,_, SourceLocation), SrcData,
 					  ArcName, SourceUnits, ArcUnits)),
 	/* just in case we have extra inputs... */

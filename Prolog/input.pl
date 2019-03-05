@@ -24,9 +24,9 @@ sicstus_use_module([library(lists), backup, event, menu, sp_only, utility]).
 
 tk_make_desktop_node(Headless) :-
 	(Headless = 0;
-	 utility'><'unique_name(dummy, Canvas_name)), !,
-        m_update'><'make_desktop_node(Desktop, Canvas_name),
-	draw'><'callback(br([Desktop, Canvas_name])).
+	 utility><unique_name(dummy, Canvas_name)), !,
+        m_update><make_desktop_node(Desktop, Canvas_name),
+	draw><callback(br([Desktop, Canvas_name])).
 
 tk_undo(Cur, Wids) :-
 	nth0(Cur, Wids, Wid),
@@ -40,8 +40,8 @@ tk_redo(Cur, Wids) :-
 
 tk_get_info(Comp, What) :-
 	get_info(Comp, What, Answer),
-	output'><'safe_list(Answer, Arg),
-	draw'><'callback(Arg).
+	output><safe_list(Answer, Arg),
+	draw><callback(Arg).
 
 tk_get_params(Wid, Comp) :-
 	get_params(Wid, Comp).
@@ -117,7 +117,7 @@ tk_visible(Wid, L, T, R, B) :-
 
 finish_window_resize :-
 	retract(resizing_windows(Wid)),
-	state'><'shows_model(Wid, Model),
+	state><shows_model(Wid, Model),
 	finish_move(Model, 0),
 	fail;
 	true.
@@ -173,21 +173,21 @@ bound_all_boxes([[L1, T1, R1, B1] | More], [L, T, R, B]) :-
     B is max(B1+10, B2).
 
 tcl_export_graphics(Tgt, InnerNode) :-
-    ame_gen'><'contains(Node, InnerNode),
-    ame_gen'><'find_type(Node, submodel), !,
-        draw'><'display(Tgt, Node, -1, _, 1),
-        setof(Box, image'><'contains_box(Node, Box), Boxes),
+    ame_gen><contains(Node, InnerNode),
+    ame_gen><find_type(Node, submodel), !,
+        draw><display(Tgt, Node, -1, _, 1),
+        setof(Box, image><contains_box(Node, Box), Boxes),
         bound_all_boxes(Boxes, Frame),
-        draw'><'callback(br(Frame)).
+        draw><callback(br(Frame)).
 
 tk_append_to_log(Model, Action) :-
 	append_to_log(Model, Action).
 
 tk_in_days(UnitA) :-
 	sicstus_atom_chars(UnitA, UnitStr),
-	(ame_gen'><'get_term(UnitStr, Unit, []),
-	units'><'get_conversion(1, Unit, day, DX), D is DX, !; D=0),
-	draw'><'callback(D).
+	(ame_gen><get_term(UnitStr, Unit, []),
+	units><get_conversion(1, Unit, day, DX), D is DX, !; D=0),
+	draw><callback(D).
 	
 tk_locate(Wid, Comp) :-
     locate(Wid, Comp).

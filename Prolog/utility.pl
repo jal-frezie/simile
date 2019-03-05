@@ -142,7 +142,7 @@ all(_, _, ArgList) :-
 all(Module, Pred, ArgList) :-
     split_args(Module, ArgList, FirstList, RestList),
     Step =.. [Pred | FirstList],
-    Module'><'Step, !,
+    Module><Step, !,
     all(Module, Pred, RestList),
     join_args(Module, FirstList, RestList, ArgList).
 	
@@ -163,7 +163,7 @@ split_args(Module, [Arg | Args], [First | Firsts], [Rest | Rests]) :-
 	Arg =.. [UserFunc, First],
 	    \+ member(UserFunc, [build, unify]),
 	    DoSplit =.. [UserFunc, First, Next],
-	    Module'><'DoSplit,
+	    Module><DoSplit,
 	    Rest =.. [UserFunc, Next];
 	Arg =.. [UserFunc, _Result, Limit],
 	    Rest =.. [UserFunc, _Inter, Limit]),
@@ -179,7 +179,7 @@ join_args(Module, [First | Firsts], [Rest | Rests], [Arg | Args]) :-
 	    \+ member(UserFunc, [build, unify]);
 	Rest =.. [UserFunc, SoFar, Base],
 	    DoJoin =.. [UserFunc, First, SoFar, Next],
-	    call(Module'><'DoJoin),
+	    call(Module><DoJoin),
 	    Arg =.. [UserFunc, Next, Base]),
 	join_args(Module, Firsts, Rests, Args).
 */
@@ -188,7 +188,7 @@ join_args(Module, [First | Firsts], [Rest | Rests], [Arg | Args]) :-
 	(Arg =.. [UserFunc, Next, Base], !,
 	    Rest =.. [UserFunc, SoFar, Base],
 	    DoJoin =.. [UserFunc, First, SoFar, Next],
-	    Module'><'DoJoin;
+	    Module><DoJoin;
 	true).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -237,11 +237,11 @@ do_writing([Atom | Rest], Str) :-
 need to change its own ttfn encoding to utf8 */
 
 open_native(FileTtfn, Mode, Stream) :-
-        user'><'get_native(FileTtfn, FileNative),
+        user><get_native(FileTtfn, FileNative),
 	catch(open(FileNative, Mode, Stream), NonTtfnErrMess,
-	      (ame_gen'><'replace_subexps(NonTtfnErrMess, ame_gen, swap_matches,
+	      (ame_gen><replace_subexps(NonTtfnErrMess, ame_gen, swap_matches,
 			       FileNative=FileTtfn, top_down, _, SubbedErr),
-		  ame_gen'><'query(bad_access(SubbedErr), warning, top, [ok], not))).
+		  ame_gen><query(bad_access(SubbedErr), warning, top, [ok], not))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % delall deletes all occurrances of an element from a list 

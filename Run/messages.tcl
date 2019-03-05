@@ -318,7 +318,7 @@ set msgs(prolog_misparse) [tr. {Attempting to decipher this item failed, generat
 This is what was read in, with the text <HERE> inserted at the point where the problem was found:
 
 %2$s <HERE> %3$s}]
-set msgs(prolog_bug) [tr. {Unexpected Prolog error message: "%1$s"}]
+set msgs(prolog_bug) [tr. {Unexpected Prolog error message: "%s"}]
 
 set msgs(start_fail_title) [tr. {Simile has been unable to start up due to problems with this system.}]
 set msgs(start_fail_message) [tr. {The following system error message was generated:

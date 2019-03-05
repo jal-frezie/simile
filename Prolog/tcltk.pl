@@ -101,7 +101,7 @@ decode_command([C|Cs], Res) :- !,
         decode_command(Cs, Rx),
 	append(R1, [32 | Rx], Res).
 decode_command(Float, Chars) :-
-	utility'><'trim_float(Float, Chars), !.
+	utility><trim_float(Float, Chars), !.
 decode_command(WTorA, Chars) :-
 	(WTorA = write(Term);
 	    atomic(WTorA), Term = WTorA), !, 
@@ -152,7 +152,7 @@ all_utf8_to_ttfn([], []).
 
 all_utf8_to_ttfn(String, NewString) :-
 	append(Code, Rest, String),
-	user'><'utf8_to_unicode(Code, Char), !,
+	user><utf8_to_unicode(Code, Char), !,
 	unicode_to_ttfn(Char, Start),
 	all_utf8_to_ttfn(Rest, More),
 	append(Start, More, NewString).
@@ -166,7 +166,7 @@ all_ttfn_to_utf8([], []) :- !.
 all_ttfn_to_utf8(Str, NewString) :-
 	append(Code, Rest, Str),
 	ttfn_to_unicode(Code, Char), !,
-	user'><'unicode_to_utf8(Char, Start),
+	user><unicode_to_utf8(Char, Start),
 	all_ttfn_to_utf8(Rest, More),
 	append(Start, More, NewString);
 	write('Could not convert '), write(Str), write(' to unicode'), nl.

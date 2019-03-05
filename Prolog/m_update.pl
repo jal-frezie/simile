@@ -105,7 +105,7 @@ dealing with multiple instances. */
 
 list_evt_captions(Part, ['reset...' | EvtCapts]) :-
 	setof(DiscIn,
-	      P1^(m_update'><'get_all_links(Part, discrete, P1, DiscIn)),
+	      P1^(m_update><get_all_links(Part, discrete, P1, DiscIn)),
 	      EvtLinks), !,
 	    all(user, arg, [unify(2), build(EvtLinks), build(EvtRoles)]),
 	    all(user, arg, [unify(1), build(EvtRoles), build(EvtCapts)]), !;
@@ -167,8 +167,8 @@ check_ET_consistency(RemoteUnit, RemoteNode, Function) :-
 	Base = boolean, Type = boolean;
 	Type = 0), !,
 	(member(Checking, [Type | Dims]),
-	event'><'insert_mem_list(Checking, RemoteNode, SourceEnumSpec),
-	event'><'insert_mem_list(Checking, Function, DestEnumSpec),
+	event><insert_mem_list(Checking, RemoteNode, SourceEnumSpec),
+	event><insert_mem_list(Checking, Function, DestEnumSpec),
 	\+ DestEnumSpec = SourceEnumSpec, !,
 	caption_for(RemoteNode, RemoteCapt),
 	query(enum_type_mix(RemoteCapt, Checking, SourceEnumSpec, DestEnumSpec),
@@ -246,7 +246,7 @@ list_index_meanings(root, []).
 list_index_meanings(Submodel, Meanings) :-
 	list_local_index_meanings(Submodel, Group1),
 	find_all_comps(Contain, Submodel),
-	(instance'><'counts_as_outside(Submodel), !,
+	(instance><counts_as_outside(Submodel), !,
 	    find_all_comps(Parent, Contain);
 	Parent = Contain),
 	list_index_meanings(Parent, Group2),
@@ -351,12 +351,12 @@ parameter or destination. */
 
 get_unit_conversion(Remote, Local, 
 		Subs, Relation, Index, SourceLocation) :-
-	(instance'><'counts_as_outside(Remote), !,
+	(instance><counts_as_outside(Remote), !,
 	        DefRel = outside,
 		RemoteEnv has_part Remote;
 	DefRel = none,
 	    RemoteEnv = Remote),
-	(instance'><'counts_as_outside(Local), !,
+	(instance><counts_as_outside(Local), !,
 		LocalEnv has_part Local;
 	LocalEnv = Local),
 	find_all_comps(RemoteModel, RemoteEnv),
@@ -436,7 +436,7 @@ get_unit_conversion(Remote, Local,
 	    SourceLocation = in_assoc).
 
 ready_type(Rect, Type) :-
-	m_update'><'get_av_pair(Rect, 0, multiplication_spec, M),
+	m_update><get_av_pair(Rect, 0, multiplication_spec, M),
 	member(interpretation=Type, M).
 
 source_locn_name(Idx, Name) :-
@@ -515,7 +515,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	      Complaint = bad_subexp_in_unit(Bad, Target_base);
 	      Severity = 0, !;
 		    /* Unit_base = Target_base, !; */
-		    inters'><'promote_arg(Unit_base, Target_type, Unit_type, 1),
+		    inters><promote_arg(Unit_base, Target_type, Unit_type, 1),
 		 !,
 		    (Target_unit = 1, Target_name = real;
 			Target_name = Target_unit),
@@ -1212,8 +1212,8 @@ make_connection(Model, Type, Dir, ExternalSection,
 	      all(m_update, link_ends,
 		[unify(Type), unify(InputSection),
 		 build(Outputs), build(_TopArcs)]),
-	    menu'><'reroute_sections([InputSection | Outputs]),
-		draw'><'remove_old_incomplete;
+	    menu><reroute_sections([InputSection | Outputs]),
+		draw><remove_old_incomplete;
 	    Hassle = spare_interface_spec(Type, Dir, destination, DestCapt));
 	Hassle = spare_interface_spec(Type, Dir, source, SourceCapt)).
 
@@ -1326,7 +1326,7 @@ link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
 	    SimpleArc has_changed_attribute name to BowtieCapt,
 	    implicit_function(SimpleArc, OldFn),
 	    NoUse is_connector from _ to OldFn,
-	    event'><'delete_by_dlg(NoUse),
+	    event><delete_by_dlg(NoUse),
 	    fail;
 	  New_obj = relation, % make sure arrow for lookup still lowest index
 	    Ref = local(Top_arc),
@@ -1349,7 +1349,7 @@ link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
 	    find_name_host(OldObj, OldHost),
 	    OldHost has_attribute can_lookup of 1,
 	    make_role_first(OldHost);
-	event'><'spread_colour(Last_new_arc, dims)).
+	event><spread_colour(Last_new_arc, dims)).
 
 load_references(Submodel, ReferenceCapts) :-
 	pair_with_captions(Submodel, References, ReferenceCapts),
@@ -1490,7 +1490,7 @@ status_affects(Item, Affected) :-
 	(find_type(Item, submodel); Item is_of_sort has_function),
 	    caption_for(Item, Capt),
 	    contains(Top, Item),
-	    backup'><'is_toplevel(Top),
+	    backup><is_toplevel(Top),
 	    contains(Top, Affected),
 	    find_type(Affected, submodel),
 	    Affected has_class_refinement multiplication_spec of Multi,
@@ -1544,7 +1544,7 @@ connects_ghost_flow(Type, Link) :-
 	\+ bowtie_section(Link, Link).
 
 remove_equivs(DeadPair) :-
-	link'><'remove_connection(DeadPair),
+	link><remove_connection(DeadPair),
 	fail.
 
 is_top_arc(TopArc) :-
@@ -1560,7 +1560,7 @@ start point, allowing it to be used for end-to-end deletes. */
 fast_delete(Dead) :-
 	delete_implicit_node(Dead),
 	shows_model(Win,Dead),
-	    draw'><'delete_window(Win),
+	    draw><delete_window(Win),
 	    fail;
 	oblitterfry(Dead);
 	Dead is_connector from In to Out,
@@ -1577,7 +1577,7 @@ superfast_delete(Dead) :-
 	  superfast_delete(AlsoDead),
 	  oblitterfry(AlsoDead),
 	  shows_model(Win, AlsoDead),
-	  draw'><'delete_window(Win),
+	  draw><delete_window(Win),
 	  fail;
 	forget_highlit_obj(_, Dead).
 
@@ -1636,12 +1636,12 @@ make_new_end_node(Submodel, DeadLink, Dir, NewInputName, NewUnit) :-
 	setof(NextBit, member(DeadLink-NextBit, OuterFirst), Others),
 	Others = [TestBit | _],
 	TestBit is_connector from NextStart to NextFinish,
-	image'><'get_link_route(TestBit, Course),
+	image><get_link_route(TestBit, Course),
 	append([EndPair | _], [StartPair], Course),
 	find_all_comps(Model, OldEnd),
 	(find_type(OldEnd, submodel),
 	    make_node(Model, NodeType, NewEnd);
-	image'><'clear_shape(OldEnd, along),
+	image><clear_shape(OldEnd, along),
 	    change_class(OldEnd, border, NodeType),
 	    NewEnd = OldEnd),
 	/* make sure its name is unique to the submodel -- currently not done,
@@ -1661,13 +1661,13 @@ cause it to persist in v5.x and first does same in v6.0
 	    add_parameter(NewEnd, 0, value, NewDefVal)),
 	(var(NewMaxVal), !;
 	    add_parameter(NewEnd, 0, max_val, NewMaxVal)), */
-	event'><'insert_variable(Model, X, Y, NodeType, NewEnd),
+	event><insert_variable(Model, X, Y, NodeType, NewEnd),
 
 	/* Next bit is continually retried to delete all spare nodes */
 	member(MoveBit, Others),
 	MoveBit is_connector from CourseStart to CourseEnd,
 	MoveBit has_changed_termination Dir from NodePosn to NewEnd,
-	event'><'move_link(MoveBit),
+	event><move_link(MoveBit),
 	    /* Now delete old terminator if it is redundant */
 	remove_floater(NodePosn),
 	fail.
@@ -1685,7 +1685,7 @@ remove_floater(Node) :-
 	    \+ member(C, [variable, event, cloud, border, function]);
 	  Node has_class_refinement min_val of _;
 	  Node has_class variable, is_parameter(Node, 2)), !;
-	draw'><'off(Node),
+	draw><off(Node),
 	oblitterfry(Node).
 
 make_border_node(Line_type, Parent, Node_name) :-
@@ -1703,7 +1703,7 @@ remove_border_nodes(LineType, Finish, Start) :-
 	stick_on_edge(Local, Far, Other, LineType, InputNode),
 	\+ _ is_connector from InputNode to _,
 	\+ _ is_connector from _ to InputNode,
-	draw'><'off(InputNode),
+	draw><off(InputNode),
 	fast_delete(InputNode),
 	fail.
 
@@ -1826,7 +1826,7 @@ fatness_for(Submodel, Fat) :-
 	Fat is 1.0*(RB-LB)/(RI-LI).
 
 dequote_atom(QCount, Count) :-
-	ame_gen'><'dequote(QCount, Count), !;
+	ame_gen><dequote(QCount, Count), !;
 	Count = QCount.
 
 time_step_for(Model, TopStep, Step) :-
@@ -1877,14 +1877,14 @@ unmake_ghost(Ghost) :-
 	find_base(Ghost, Base),
 	\+ Base = Ghost,
 	remove_connection(Base, Ghost),
-	event'><'spread_colour(Base, none),
+	event><spread_colour(Base, none),
 	fail.
 
 remove_connection(Base, Ghost) :-
 	setof(GhostLink, exists_for(GhostLink, Base, Ghost), Links),
 	member(Link, Links),
 	(remove_equivs(Link-_);
-	draw'><'off(Link),
+	draw><off(Link),
 	    fast_delete(Link),
 	    fail);
 	true.
@@ -1947,9 +1947,9 @@ make_blind_level(Root, File, Parent) :-
 	use_temp_dir(LocalDir),
 	Parent has_class_refinement name of Name,
 	append_atoms([LocalDir, '/', Name], TargetDir),
-        forms'><'start_progress_dialogue('.'),
-        forms'><'reassure_user(decode_mime, []),
-	output'><'load_file(Parent, TargetDir, File, CheckedStr),
+        forms><start_progress_dialogue('.'),
+        forms><reassure_user(decode_mime, []),
+	output><load_file(Parent, TargetDir, File, CheckedStr),
 	substitute(0, CheckedStr, 95, SafeCheckedStr),
 	name(Checked, SafeCheckedStr),
 	(member(Checked, [no, yes]) ->
@@ -1957,33 +1957,33 @@ make_blind_level(Root, File, Parent) :-
 	    AllowBig = Checked;
 	  PrologData = File,
 	    AllowBig = yes), % prolog decls only saved by enterprise edn
-	library'><'ame_merge(Parent, PrologData, _FileV, AllowBig, _Tr),
-	forms'><'finish_progress_dialogue.
+	library><ame_merge(Parent, PrologData, _FileV, AllowBig, _Tr),
+	forms><finish_progress_dialogue.
 /* Procedure to draw first model window */
 
 make_desktop(Desktop, Canvas_name) :-
-	output'><'tk_make_desktop(Desktop, Canvas_name).
+	output><tk_make_desktop(Desktop, Canvas_name).
 /* ...which calls the class constructor, which calls... */
 make_desktop_node(Desktop, Canvas_name) :-
-        m_class'><'Root is_root,
+        m_class><Root is_root,
 	make_node(Root, desktop, Desktop), % generates desktop-type name
 	change_class(Desktop, _, submodel),
 	Desktop has_class_refinement name of ModelName,
-	state'><'set_initial_box_sizes(Desktop),
+	state><set_initial_box_sizes(Desktop),
         get_initial_window_size(X, Y),
-        image'><'set_shape(Desktop, internal_extent, [0, 0, X, Y]),
-        image'><'set_shape(Desktop, bounding_box, [0, 0, X, Y]),
-	output'><'safe_tcl_eval(['CanvasDefBG'], BGColStr),
+        image><set_shape(Desktop, internal_extent, [0, 0, X, Y]),
+        image><set_shape(Desktop, bounding_box, [0, 0, X, Y]),
+	output><safe_tcl_eval(['CanvasDefBG'], BGColStr),
 	name(BGCol, BGColStr),
 	Desktop has_new_class_refinement fill_colour of BGCol,
-	backup'><'new_autosave(Desktop, ModelName),
+	backup><new_autosave(Desktop, ModelName),
 	(nonvar(Canvas_name),			% headless
 	 create_window(Canvas_name, Desktop),
 	 (suspend_display; assert(suspend_display)), !;
 	 InitDepths=[0,32,32,32,32,32,32,32,showAll],
-	 event'><'new_window_for(Desktop, Desktop, Canvas_name, InitDepths, 1),
+	 event><new_window_for(Desktop, Desktop, Canvas_name, InitDepths, 1),
 	 all(state, set_display_depth,
 	     [unify(Canvas_name),
 	      build([ghost_link, influence, variable, flow, compartment,
 		     submodel, caption, text, sections]), build(InitDepths)]),
-	 draw'><'redraw_window(Canvas_name)).
+	 draw><redraw_window(Canvas_name)).

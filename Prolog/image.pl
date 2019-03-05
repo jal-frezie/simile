@@ -681,7 +681,7 @@ get_link_route(Link, Route) :-
 	    Route = [Pn, [MX, MY], P0];
 	SBox = [SL, ST, SR, SB],
 	    FBox = [FL, FT, FR, FB],
-	    (\+ suspend_display, draw'><'tk_get_pref(flowRouting, 0),
+	    (\+ suspend_display, draw><tk_get_pref(flowRouting, 0),
 		RWarp = WarpFactor,
 		SPt = [SX, SY],
 		FPt = [FX, FY];
@@ -881,14 +881,14 @@ checks_out_locally(Func) :-
     Func has_class_refinement value of Expr,
     \+ Expr = '', /* sometimes given to flow to get bowtie on right
               section 
-    instance'><'apply_minmax(Func, Expr, FullExpr), */
+    instance><apply_minmax(Func, Expr, FullExpr), */
     Func has_class_refinement units of Units,
     analyze_array(Units, Base, Dims),
     units_match_context(Func, Base, Dims, []),
     get_host(Func, Vis),
     (find_type(Vis, state), !,
 	% value is [evt1-val1, evt2-val2...] so use val parts only
-	% utility'><'all(image, sieve_events,
+	% utility><all(image, sieve_events,
 	% 	       [build(Expr), unify(Func), build(HasConts)]);
 	% New value format: val1 on event1, val2 on evt2, etc
 	list_evt_captions(Func, EvtCapts),
@@ -1144,7 +1144,7 @@ route_link(Type, Start, Finish, Route) :-
 
 shape_route(Type, Beginning, End, Route) :-
     member(Type, [flow, squirt]), !,
-        (draw'><'tk_get_pref(flowRouting, 1), !,
+        (draw><tk_get_pref(flowRouting, 1), !,
         kink_route(Beginning, End, Route);
         Route = [End, Beginning]);
     /* influence */
@@ -1180,9 +1180,9 @@ centre(Low1, Low2, High1, High2, Middle) :-
 
 curve_route(Type, [X1, Y1], [X3, Y3], [X2, Y2]) :-
 	(Type = influence,
-	    draw'><'tk_get_pref(infRouting, Curvature);
+	    draw><tk_get_pref(infRouting, Curvature);
 	  Type = relation,
-	    draw'><'tk_get_pref(roleRouting, Curvature)),
+	    draw><tk_get_pref(roleRouting, Curvature)),
 	UseCurve is min(max(Curvature,-90),90),
 	% -ve for counterclockwise curve
 	X2 is (2*(X1 + X3) + UseCurve*(Y3 - Y1)/30)/4,

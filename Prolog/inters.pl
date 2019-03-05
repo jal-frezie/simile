@@ -29,7 +29,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
 
 	/* If managing units, apply conversion; error message brilliant */
 	get_dims_from_loops(SourceLoops, _, SourceInds),
-	(m_update'><'use_units_in(Sm, 'Yes'),
+	(m_update><use_units_in(Sm, 'Yes'),
 	    \+ ((Units = real;  promote_unit(Units, 1)), Substs = []),
 	    % No conv if dimensionless and no params/timerefs
 	    \+ promote_unit(Units, XUnits),
@@ -94,7 +94,7 @@ assigned_in_vm_subloop(Formula, FContext, AllSetups) :-
 
 insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	(Var = input(Location, PathExp, Link, Units),
-	    m_update'><'analyze_array(Units, Type, _);
+	    m_update><analyze_array(Units, Type, _);
 	Var = PathExp,
 	    /* from compartment expressions -- used? -- and dest ref */
 	    [Location, Link, Type]=[in_hierarchy, none, SourceType]),
@@ -149,7 +149,7 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 		assoc model either, and it caused...shall we say...difficulties
 		when the condition was not actually a lookup
 		    find_name_host(Link, LinkWithAttrs),
-		    (\+ m_class'><'LinkWithAttrs has_attribute can_lookup of 1, !;
+		    (\+ m_class><LinkWithAttrs has_attribute can_lookup of 1, !;
 			Assoc = [sm(OneSided, _,_,_) | _],
 			LookupWait = enumerate(OneSided)),  */
 		    % ensure_separate(Base, Assoc, SepBase),
@@ -168,8 +168,8 @@ insert_paths(sub(Sm, DestRef, Swaps, Step), Var, NewVar, Recurse) :-
 	    append(LocalLoops, Path, Loops),
 	    NewVar = param(arr(SmPtr, Ref, Inds), Type, Loops, BackSwap, Wait),
 	    Recurse = 0;
-%	m_update'><'get_solo_list_depth(Var, DimExp),
-%	    m_update'><'build_array(any, Dims, DimExp),
+%	m_update><get_solo_list_depth(Var, DimExp),
+%	    m_update><build_array(any, Dims, DimExp),
 %	    make_inds_for(Dims, Loops, _),
 %	    NewVar = use_inter(Var),
 	    /* just to make sure same var is used for name each occurrence...
@@ -261,7 +261,7 @@ expand_library(Var, Expanded) :-
 	Var = (if Bool then IfCl), !,
 	    NewVar = (Bool?IfCl);
 	Var = (ThenCl else ElseCl), !,
-	    NewVar = (ThenCl'><'ElseCl);
+	    NewVar = (ThenCl><ElseCl);
 	Var = (ThenCl elseif Bool then IfCl), !,
 	    NewVar = (ThenCl:(Bool?IfCl));
 	Var = choose(Bool, V1, V2), !,
@@ -288,13 +288,13 @@ read_library_funx(Done) :-
 	assert(macro_expansion('System', (if Bool then ThenCl elseif IfCl -->
 			       choose(Bool, ThenCl, if IfCl)))),
 %	assert(macro_expansion('Built-in', (choose(Bool, ThenCl, ElseCl) -->
-%					       (Bool?ThenCl'><'ElseCl)))),
-	output'><'safe_tcl_eval([set, '::SIMILE_PATH'], BaseDirStr),
+%					       (Bool?ThenCl><ElseCl)))),
+	output><safe_tcl_eval([set, '::SIMILE_PATH'], BaseDirStr),
 	name(BaseDir, BaseDirStr),
 	append_atoms(BaseDir, '/Functions/', FnMatch),
 	read_func_tree(FnMatch, FnMatch, 'Built-in', BuiltIns),
 
-	state'><'use_pref_dir(UserStuff),
+	state><use_pref_dir(UserStuff),
 	append_atoms(UserStuff, '/Functions/', UserFns),
 	read_func_tree(UserFns, UserFns, 'Local', Local),
 	append(BuiltIns, Local, Done).
@@ -306,7 +306,7 @@ read_func_tree(TopDir, AllDirs, BuiltIn, Done) :-
 	      suffix(".sml", AllDirsStr),
 		load_fragment_macro(AllDirs, TopDir, BuiltIn, Done)), !;
 	append_atoms([AllDirs, /, *], DeepTpt), % avoid start-comment sequence
-	    output'><'list_matching_files(DeepTpt, DeepDirs),
+	    output><list_matching_files(DeepTpt, DeepDirs),
 	    all(inters, read_func_tree, [unify(TopDir), build(DeepDirs),
 					 unify(BuiltIn), append(Done, [])]).
 
@@ -337,7 +337,7 @@ load_fragment_macro(AllDirs, Context, Category, [FnEntry]) :-
 	    all(inters, convert_formal_params,
 		[build(Splists), unify(V), build(Params), build(ArgTypes)]),
 				% export guide types
-	    dialogue'><'make_arg_list(ArgTypes, String),
+	    dialogue><make_arg_list(ArgTypes, String),
 	    sicstus_format_to_chars("{~a {~s}} fragment ~a (~s) returns ~a",
 				    [Category, Nesting, Functor, String, OutGT],
 				    FnChars);
@@ -348,7 +348,7 @@ load_fragment_macro(AllDirs, Context, Category, [FnEntry]) :-
 				    FnChars)),
 	    
 	name(FnEntry, FnChars),
-%	m_update'><'make_blind_toplevel(AllDirs, TopLevel), 
+%	m_update><make_blind_toplevel(AllDirs, TopLevel), 
 	assert(fragment_expansion(Category, AllDirs, Functor, OutNode, Params)).
 
 split_into_list(Joined, Link, Separated) :-
@@ -373,7 +373,7 @@ convert_formal_params([VPNameStr | GRs], V, VPName, VPType) :-
 					     
 read_func_file(File, Context, BuiltIn, Done) :-
 	open_native(File, read, Stream),
-	user'><'reopen_stream_internally_formatted(Stream, Stream3, EuContents),
+	user><reopen_stream_internally_formatted(Stream, Stream3, EuContents),
 	
 	name(File, FileStr),
 	append(Base, ".pl", FileStr),
@@ -409,8 +409,8 @@ read_funcs(File, Stream, Text, Category, Done) :-
 	 Line = function(Functor, ReturnType, ArgTypes)),
 	    assert(function(Category, Functor, ReturnType, ArgTypes)),
 	    % assert(use_tcl_proc_for(Functor)), !, [can now use in exprs]
-	    dialogue'><'spell_out([ReturnType | ArgTypes], 1),
-	    dialogue'><'make_arg_list(ArgTypes, String),
+	    dialogue><spell_out([ReturnType | ArgTypes], 1),
+	    dialogue><make_arg_list(ArgTypes, String),
 	    sicstus_format_to_chars("{~a {~a}} procedure ~a (~s) returns ~w",
 		[Category, File, Functor, String, ReturnType], FnChars),
 	    name(FnEntry, FnChars)),
@@ -419,7 +419,7 @@ read_funcs(File, Stream, Text, Category, Done) :-
 		\+ File = 'Hidden', Done = [FnEntry | More]);
 	member(Line, [baseline(_,_), unit_definition(_,_), longhand(_,_)]), !,
 	    % use asserta so user-supplied definitions override system ones
-	    units'><'asserta(Line),
+	    units><asserta(Line),
 	    read_funcs(File, Stream, Text, Category, Done);
 	  Line =.. [LFunctor | LArgs],
 	    query(bad_user_fn_format(File, Line, LFunctor, LArgs), warning,
@@ -452,7 +452,7 @@ shed_dummy_args(Op, NewOp) :-
 
 free_params(switch(Fixed, Var), Arg, ArgVar, 0) :-
 	var(Arg), !; % in case someone used an underscore
-	m_update'><'get_solo_list_depth(Arg, _),
+	m_update><get_solo_list_depth(Arg, _),
 	(nth(N, Fixed, ArgConst),
 	    \+ var(ArgConst), % in case some b**** used an underscore
 	    Arg = ArgConst,
@@ -536,7 +536,7 @@ make_intermediates(
 	    (\+ var(Units),
 	    member(Units, [n(Type), a(Type)]),
 	    \+ member(Type, [rect_nbr, hex_nbr]),
-	    \+ ame_gen'><'resolve_enum_type(_, SubId, _, Units, _), !,
+	    \+ ame_gen><resolve_enum_type(_, SubId, _, Units, _), !,
 		throw(no_local_defn_for_type(Type, SubId));
 		
 	    get_dims_from_loops(OrigLoops, Dims, _)),
@@ -868,8 +868,8 @@ make_intermediates(
 
 	(Source = table_const(1),
 	  (Step = dummy ->
-            GetSpec = (dialogue'><'table_data_is(TableData));
-           GetSpec = (m_class'><'SubId has_class_refinement table_data 
+            GetSpec = (dialogue><table_data_is(TableData));
+           GetSpec = (m_class><SubId has_class_refinement table_data 
                                   of TableData)),
             (GetSpec, !;
 		throw(missing_graph_or_table_data(Source))),
@@ -1112,7 +1112,7 @@ Now one that uses a special conditional level */
 		     PtrInit = [sm(N, UP, DP, vm_loop(start_only, _,_,_))];
 		  VMForm = nbrs,
 		     contains(Grid, SubId),
-		     m_update'><'ready_type(Grid, GType),
+		     m_update><ready_type(Grid, GType),
 		     member(GType-XpectTypes, [rect_grid(R,C)-[a(rect_nbr)],
 					      hex_grid(R,C)-[a(hex_nbr)]]),
 		     LN = nbrs,
@@ -1150,8 +1150,8 @@ Now one that uses a special conditional level */
 					      build(RefDims), build(Nm),
 					      build(_)]);
 		    % no need to raise error if t_m not used in eqn
-		  m_update'><'get_solo_list_depth(Ref, DimExp),
-		    m_update'><'analyze_array(DimExp, any, RefDims)),
+		  m_update><get_solo_list_depth(Ref, DimExp),
+		    m_update><analyze_array(DimExp, any, RefDims)),
 		make_inds_for(RefDims, Nm, Loops, _),
 		append(Loops, BuildingArrays, Access),
 		get_dims_from_loops(Access, Dims, _)), /* building code */
@@ -1244,15 +1244,15 @@ Now one that uses a special conditional level */
 		    % need type for bool/int
 		SourceList = Source,
 		ValRef = ResultList;
-	    Source = (Test?True'><'False), !,
+	    Source = (Test?True><False), !,
 		SourceList = [Test, True, False],
 		RUnits = any,
 	        Arg_template = [boolean, RUnits, RUnits],
 		ResultList = [RTest, RTrue, RFalse],
-		ValRef = (RTest?RTrue'><'RFalse); */
+		ValRef = (RTest?RTrue><RFalse); */
 	    Source = graph(Param), \+ Param = '',
 		(\+ Step = dummy;
-		dialogue'><'table_data_is(_);
+		dialogue><table_data_is(_);
 		    throw(missing_graph_or_table_data(Source))),
 		SourceList = [Param],
 		RUnits = 1,
@@ -1297,7 +1297,7 @@ Now one that uses a special conditional level */
 			length(ArgTpts, FnArity),
 			throw(wrong_no_of_args(Source, Categ, Op, Arity, FnArity))), !,
 				% (fragment-defined function:),
-		    m_update'><'make_blind_level(SubId, FragFile, RefNode);
+		    m_update><make_blind_level(SubId, FragFile, RefNode);
 		  true)),
 	    (\+ RefNode = SubId; RefNode = SubId), % = in other cases
 	    make_subexps(SourceList, RefNode, Target, DestPath,
@@ -1311,13 +1311,13 @@ Now one that uses a special conditional level */
 		% these are replaced in instantiation during code build
 		SourceRef = FragOut, % placeholder
 		with_capt(OutNode, [sm(_,_,_,_) | SmLoops], RefNode, FragOut),
-	        m_update'><'get_av_pair(OutNode, 0, units, OutArrSpec),
-	        m_update'><'analyze_array(OutArrSpec, Units, OutDims),
+	        m_update><get_av_pair(OutNode, 0, units, OutArrSpec),
+	        m_update><analyze_array(OutArrSpec, Units, OutDims),
 	        make_inds_for(OutDims, _, OutLoops, _),
 	        get_model_and_loops(ExecContext, DestPath, ExecLoops, ExecBase),
 		append(ExecLoops, BuildingArrays, FragLoops),
 		get_dims_from_loops(FragLoops, ExecDims, _),
-		m_update'><'add_parameter(RefNode, 0, multiplication_spec,
+		m_update><add_parameter(RefNode, 0, multiplication_spec,
 					  [count=ExecDims]),
 		append([ExecLoops, OutLoops, SmLoops, ExecBase], SourceContext);
 	      SourceContext = ExecContext,
@@ -1385,7 +1385,7 @@ Now one that uses a special conditional level */
 		    Tplt =.. [Op | WrongLen],
 		    length(WrongLen, FnArity),
 		    throw(wrong_no_of_args(Source, Orig, Op, Arity, FnArity));
-		 m_class'><'SubId has_class_refinement uses_local_fns of UserFns,
+		 m_class><SubId has_class_refinement uses_local_fns of UserFns,
 		    member(Op/Arity, UserFns),
 		    throw(lost_user_defined_fn(Source, Op, Arity));
 		 throw(no_such_function(Source, Op)))),
@@ -1415,7 +1415,7 @@ with_capt_recurse(Found, Loops, Sm, Capt) :-
 	  find_all_comps(Sm, Inside),
 	    with_capt(Found, SubLoops, Inside, Capt),
 	    get_node_size(Sm, Dims),
-	    instance'><'path_section_for(Sm, _, Dims, Level, _,_),
+	    instance><path_section_for(Sm, _, Dims, Level, _,_),
 	    append(SubLoops, Level, Loops).
 
 with_capt only looks in the submodel immediately below, which means that the
@@ -1426,20 +1426,20 @@ with_capt(Found, Loops, Sm, Capt) :-
 	    find_all_comps(Sm, Found),
 	    caption_for(Found, Capt),
 	    get_node_size(Sm, Dims),
-	    instance'><'path_section_for(Sm, _, Dims, Loops, _,_).
+	    instance><path_section_for(Sm, _, Dims, Loops, _,_).
 
 decode_number(Source, SubId, Step, SourceRef, Units) :-
 	(Source = row_count(''), SourceRef = R;
 	 Source = column_count(''), SourceRef = C), !,
 	  (contains(RectId, SubId),
-	   m_update'><'ready_type(RectId, RType),
+	   m_update><ready_type(RectId, RType),
 	   member(RType, [rect_grid(R, C), hex_grid(R, C)]),
 	   Units = const_int;
 	  throw(not_in_grid(Source)));
 	get_actual_size(SubId, Source, quoted, SrcNums, SrcTypes, SrcUnits),
 	(SrcNums = [SrcNum], SrcTypes = [SrcType], SrcUnits = [SrcUnit], !;
 	  throw(not_single_fixed_dimension(Source, SrcNums))),
-	(member(Source, [0, 0.0]), m_update'><'use_units_in(SubId, 'Yes') -> 
+	(member(Source, [0, 0.0]), m_update><use_units_in(SubId, 'Yes') -> 
 	     GenUnits = real; GenUnits = SrcUnit),
 	% allow value of 0 to match any physical unit (still int if disabled)
 	remove_physical_units_if_disabled(SubId, GenUnits, Units),
@@ -1450,7 +1450,7 @@ decode_number(Source, SubId, Step, SourceRef, Units) :-
 	    SourceRef = SrcNum).
 
 remove_physical_units_if_disabled(SubId, SrcUnits, Units) :-
-	(m_update'><'use_units_in(SubId, 'No'),
+	(m_update><use_units_in(SubId, 'No'),
 	    nonvar(SrcUnits),
 	    get_conversion(_, SrcUnits, SrcUnits, _), !,
 	    Units = 1;
@@ -1519,7 +1519,7 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	lower(MxOpStr, OpStr).
 
 units_for_trigger_mag(Fn, MagUnits) :-
-    m_class'><'Fn has_class_refinement value of sporadic(_), !,
+    m_class><Fn has_class_refinement value of sporadic(_), !,
     MagUnits = int-[];
 	(setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits), !;
 	    caption_for(Fn, Capt),
@@ -1533,9 +1533,9 @@ units_for_trigger_mag(Fn, MagUnits) :-
 	length(EvtDims, _ResLen),
 	% limit mag dims to those of event
 	
-%	(m_class'><'Fn has_class_refinement units of Mu,
+%	(m_class><Fn has_class_refinement units of Mu,
 % this is total bollocks, the units of the current comp have nothing to do with it
-%	    m_update'><'analyze_array(Mu, _, Ct),
+%	    m_update><analyze_array(Mu, _, Ct),
 %	    length(Ct, TrigMax);
 %	 TrigMax = 0),
 %	ResLen is min(EDLen, TrigMax),
@@ -1552,7 +1552,7 @@ units_for_trigger_mag(Fn, MagUnits) :-
 units_for_evt_antecedents(Fn, EvtUnit) :-
 	contains(Evt, Fn), % in case input for frag-defined fn,
 	find_type(Evt, function),
-	m_update'><'get_all_links(Evt, discrete, _, input_link(_,_,_,_, RawU)),
+	m_update><get_all_links(Evt, discrete, _, input_link(_,_,_,_, RawU)),
         remove_physical_units_if_disabled(Fn, RawU, EvtUnit).
 
 dissociate(Wrapper, made_at(Arg, Level), made_at(NewArg, Level)) :-
@@ -1630,7 +1630,7 @@ swap_back(BaseContext, BackSwap, Context, MadeDim) :-
 	    append(Base, Top, BasePath),
 	    append(Tail, BasePath, BaseContext),
 	    append([Tail, Assoc, Top], Context),
-	    (m_update'><'is_exclusive_role(Link);
+	    (m_update><is_exclusive_role(Link);
 		MadeDim = new_dim), !;
 	Context = BaseContext.
 
@@ -2070,7 +2070,7 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	(nonvar(Name), % Supply actual node name in fragment instance
 	 % Should use 2nd arg for dim matching somehow
 	    (setof(InComp, with_capt(InComp, _, SubId, Name), [VisDestId]) ->
-		m_update'><'add_implicit_function(VisDestId, DestId);
+		m_update><add_implicit_function(VisDestId, DestId);
 	      throw(input_name_deref_fail));
 	  var(Name),
 	    DestId = SubId),
@@ -2095,8 +2095,8 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	    ADs = []),
 	...now, if a named input, read dims from it */
 	(nonvar(Name) ->
-	    m_update'><'get_av_pair(VisDestId, 0, units, OldU),
-	    m_update'><'analyze_array(OldU, _OldUnits, NeededDims),
+	    m_update><get_av_pair(VisDestId, 0, units, OldU),
+	    m_update><analyze_array(OldU, _OldUnits, NeededDims),
 	    length(NeededDims, N),
 	    length(NeededLoops, N),
 	    get_model_and_loops(SourceContext, DestPath, Loops, Model),
@@ -2105,16 +2105,16 @@ make_subexps([Source | Components], SubId, Target, DestPath,
 	    append(SpareLoops, Model, UseContext),
 	    % now set up input node
 	    get_dims_from_loops(NeededLoops, UsingDims, _),
-	    m_update'><'build_array(Unit, UsingDims, NewU),
+	    m_update><build_array(Unit, UsingDims, NewU),
 	    /* pick_elt_from(Source, SpareLoops, SourceElt),
 				% wrap in element(..)
-	    m_update'><'add_parameter(DestId, 0, value, SourceElt),
+	    m_update><add_parameter(DestId, 0, value, SourceElt),
 	    would be wrong because params have been substituted --
 	    add a keyword instead */
 	    FormParam = formal_parameter(SpareLoops, BuildingArrays),
-	    m_update'><'add_parameter(DestId, 0, value, FormParam),
-	    m_update'><'add_parameter(DestId, 0, units, NewU),
-	    event'><'spread_colour(VisDestId, dims);
+	    m_update><add_parameter(DestId, 0, value, FormParam),
+	    m_update><add_parameter(DestId, 0, units, NewU),
+	    event><spread_colour(VisDestId, dims);
 	  UseContext = SourceContext),
 	(combine_contexts(UseContext, OldContext, DestPath, NewContext), !;
 	    throw(cannot_combine_argument_dimensions([Source | Components]))),

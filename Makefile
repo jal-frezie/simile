@@ -179,7 +179,7 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl code.pl compile.pl database.pl \
 ifeq ($(PROLOG),SWI)
 UINFO_TPL = userinfo.swi
 $(PROLOGSTATE): $(PROLOG_FILES)  Prolog/smain.pl $(PROLOG_DB)
-	cd Prolog; swipl --traditional --goal=main --stand_alone=true -o ../$(PROLOGSTATE) -c smain.pl; cd ..
+	cd Prolog; swipl --goal=main --stand_alone=true -o ../$(PROLOGSTATE) -c smain.pl; cd ..
 $(PROLOG_DB): Prolog/struct_db.c
 # for old SWI, or if building with mingw when swipl built with msvc
 #	cd Prolog; gcc -c -I$(SWIPLDIR)/include -D__SWI_PROLOG__ \

@@ -30,7 +30,7 @@ units_for(Comp, UnitStr) :-
 	    Base = submodel),
 	to_text_prefix(Dims, Pref),
 	(member(Base, [1, 1/1]), !, append(Pref, "real", UnitStr);
-	 Base = 1/day, m_update'><'use_units_in(Comp, 'No'), !,
+	 Base = 1/day, m_update><use_units_in(Comp, 'No'), !,
 	     append(Pref, "1/time", UnitStr);
 	sicstus_format_to_chars("~s~w", [Pref, Base], UnitStr)).
 
@@ -56,13 +56,13 @@ value_propagates(Dir, From, To, Link) :-
 	    To = UseComp;
 	  (implicit_function(UseComp, Fn) -> true; Fn = UseComp),
 	    (Dir = out,
-	      (m_class'><'UseComp is_connector _ -> StartsInfs = Fn;
+	      (m_class><UseComp is_connector _ -> StartsInfs = Fn;
 		  StartsInfs = UseComp),
-	      m_class'><'connects(Link, StartsInfs, Next),
+	      m_class><connects(Link, StartsInfs, Next),
 	      find_type(Next, function),
 	      get_host(Next, To);
 	    Dir = in,
-	      m_class'><'connects(Link, StartsInfs, Fn),
+	      m_class><connects(Link, StartsInfs, Fn),
 	      get_host(StartsInfs, To)),
 	    find_type(Link, influence)).
 
@@ -92,7 +92,7 @@ english_disjunct(Terms, Phrase) :-
 get_info(Comp, enum_type_defns, ETDefns) :-
 	(find_type(Comp, submodel), !,
 	    % just get defns for this submodel level
-	    m_update'><'enum_types_for(Comp, ETDefns, yes);
+	    m_update><enum_types_for(Comp, ETDefns, yes);
 	  % if not a submodel, get all applicable enum types
 	    find_all_comps(MotherShip, Comp),
 	    get_all_enum_types(MotherShip, ETDefns)).
@@ -124,7 +124,7 @@ get_info(Comp, context, DescAtm) :-
 
 	find_node_with_data(Comp, _, Fn),
 	(LType = submodel,
-	    image'><'quick_file(Comp, Middle);
+	    image><quick_file(Comp, Middle);
 	    eqn_for(Fn, MiddleAtm),
 	    name(MiddleAtm, Mid0),
 	    ((LType = event, is_parameter(Comp, 1)) -> % a limit event
@@ -150,7 +150,7 @@ get_info(Comp, context, DescAtm) :-
 	 Suffix1 = Suffix0),
 	% Wid shows_model Context, (for paths relative to window bkgnd)
 	find_all_comps(Context, Comp), % (for paths relative to component)
-	(setof(Dest, m_update'><'connects(Comp, Source, Dest), DestList), !,
+	(setof(Dest, m_update><connects(Comp, Source, Dest), DestList), !,
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
 	    (\+ find_type(Source, cloud), !,
@@ -178,7 +178,7 @@ get_info(Comp, units, Unit) :-
 	name(Unit, UnitStr), !.
 
 get_info(Name, is_unit, Def) :-
-	(units'><'defined_as_unit(Name, Def), !;
+	(units><defined_as_unit(Name, Def), !;
 	Def = none).
 
 get_info(Comp, Field, Pop) :-
@@ -191,7 +191,7 @@ get_info(Comp, Field, Pop) :-
 
 context_find(Wid, Query, Target) :-
 	callback('{}'),
-	menu'><'get_edit_model(Wid, Model, _),
+	menu><get_edit_model(Wid, Model, _),
 	contains(Model, Sub),
 	find_all_comps(Sub, Comp),
 	appears(Comp), %     check draws_at as well
@@ -236,13 +236,13 @@ insert_mem_list(Bound, Model, Trans) :-
 get_params(_, Comp) :-
 	find_node_with_data(Comp, _, Func),
 	get_input_info(Func, Params),
-	output'><'get_from_list(Params, Table),
+	output><get_from_list(Params, Table),
 	callback(br(Table)).
 
 get_triggers(_, Comp) :-
 	find_node_with_data(Comp, _, Part),
 	list_evt_captions(Part, EvtCapts),
-	output'><'safe_list(EvtCapts, EvtCaptList),
+	output><safe_list(EvtCapts, EvtCaptList),
 	callback(EvtCaptList).
 	
 :- dynamic(min_size_is/1).
@@ -269,7 +269,7 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
 	    get_mode(Mode),
-	    menu'><'set_cursor_for(Mode),
+	    menu><set_cursor_for(Mode),
 	    drag_to(NewXpt, NewYpt, Name);
 	(CD < 2, click_on([NewXpt, NewYpt], Name, CD), !; true),
 	adjust_edit_menu(Wid, Parent, Name),
@@ -327,7 +327,7 @@ click(Xpt, Ypt, CD) :-
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
 	    get_mode(Mode),
-	    menu'><'set_cursor_for(Mode),
+	    menu><set_cursor_for(Mode),
 	    (multi_level_mode -> save_params(Trans, Depth, Parent); true),
 	    drag(Xpt, Ypt);
 	get_phase(peruse),
@@ -372,8 +372,8 @@ middle of nowhere; i could also do variables for influences. */
 :- dynamic(grid_pitch_is/2).
 
 set_snap :-
-        output'><'tk_get_pref(gridH, HGR),
-        output'><'tk_get_pref(gridV, VGR),
+        output><tk_get_pref(gridH, HGR),
+        output><tk_get_pref(gridV, VGR),
         assert(grid_pitch_is(HGR, VGR)).
 
 check_snap :-
@@ -404,7 +404,7 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 click_in(_Wid, Point, Trans, Depth, Parent, CD) :-
     % click is inside an image; pass it on
     get_mode(select),
-    m_class'><'Parent has_part Child,
+    m_class><Parent has_part Child,
     get_drawing_form(Child, image, BBox),
     inside_shape(Parent, Point, image, BBox), !,
     save_params(Trans, Depth, Parent),
@@ -515,7 +515,7 @@ adjust_edit_menu(Wid, Comp, Point) :-
 	 CanAddNode = 0),
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
-	(output'><'my_file_exists(CopyFile), !,
+	(output><my_file_exists(CopyFile), !,
 	    Pastable = 1;
 	Pastable = 0),
 	set_selection_abilities(Comp),
@@ -597,7 +597,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    advance_phase_to(MovingEnd);
 	Moving_obj is_of_sort has_bowtie,
 	    get_link_route(Moving_obj, Point_list),
-	    image'><'closest_centre([Xpt, Ypt], Point_list, _Miss, _CPt, Posn),
+	    image><closest_centre([Xpt, Ypt], Point_list, _Miss, _CPt, Posn),
 	    (% bowtie_section(Moving_obj, Moving_obj),
 		implicit_function(Moving_obj, Fn),
 		get_shape(Fn, along, OldPosn),
@@ -653,7 +653,7 @@ cloud_to_comp(Poss_start) :-
 	change_class(Poss_start, _, compartment),
 	add_implicit_function(Poss_start, _),
 	/* use insert_variable to make sure it goes in */
-	m_update'><'unique_name_for_new(Parent, compartment, Name),
+	m_update><unique_name_for_new(Parent, compartment, Name),
 	add_parameter(Poss_start, 0, name, Name),
 	insert_variable(Parent, Xpt, Ypt, compartment, Poss_start),
 	give_focus(Poss_start),
@@ -748,8 +748,8 @@ finish_old_edit(NextEdit) :-
 		    /* If name exists in submodel or contains dir chars,
 		    block the update show message and highlight the node again */
                 \+ RenamedNode is_of_sort common_caption,
-		 (output'><'safe_list(Name, SafeName),
-		  output'><'safe_tcl_eval([string, is, space, SafeName], "1"),
+		 (output><safe_list(Name, SafeName),
+		  output><safe_tcl_eval([string, is, space, SafeName], "1"),
 		  	query(invisible_caption(OldName), warning, top,
 			      [ok], _);
 		     cannot_call_in(RenamedNode, Parent, Name),
@@ -781,7 +781,7 @@ cannot_call_in(Prev_highlight, Parent, Name) :-
 	\+ InSameModel is_of_sort captionless,
 	\+ InSameModel is_of_sort common_caption,
 	\+ InSameModel = Prev_highlight,
-	(m_class'><'InSameModel has_class_refinement name of Name;
+	(m_class><InSameModel has_class_refinement name of Name;
 	caption_for(InSameModel, Name)).
 
 change_name(RenamedNode, Name) :-
@@ -802,10 +802,10 @@ update_default_refs_in_eqns(OtherGhost, Reference) :-
 	get_av_pair(DownFunc, 0, value, Eqn),
 	((setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^
 	     (InputSpec = input_link(id(OtherGhost,P1,P2), P3,P4,P5,P6),
-		 m_update'><'get_all_links(DownFunc,continuous,P0,InputSpec)),
+		 m_update><get_all_links(DownFunc,continuous,P0,InputSpec)),
 		InputSpecs) -> % none if source is submodel
 	  get_av_pair(OtherGhost, 2, role, Roles),
-	  m_update'><'already_used_in(InputSpecs, AllUsed),
+	  m_update><already_used_in(InputSpecs, AllUsed),
 	  /* but what about names already used in other links? Should
 	replace_subexps first then use old names then set vars */
 	  all(event, update_role, [build(Roles), unify(InputSpecs),
@@ -827,7 +827,7 @@ update_default_refs_in_eqns(OtherGhost, Reference) :-
 	  replace_subexps(Eqn, event, swap_def_params,
 			  [Roles, NewRoles], top_down, _, NewEqn),
 	     name(Spec, OldStr),
-	     ame_gen'><'update_substrings(OldStr, Roles, NewRoles, NewStr),
+	     ame_gen><update_substrings(OldStr, Roles, NewRoles, NewStr),
 	     name(NewSpec, NewStr)),
 	add_parameter(DownFunc, 0, value, NewEqn),
 	add_parameter(DownFunc, 0, spec, NewSpec),
@@ -843,7 +843,7 @@ fix_mismatched_triggers(Eqn, Spec, EvtPaths, Roles,
     replace_subexps(Val, event, swap_def_params,
 		    [Roles, NewRoles], top_down, _, NewVal),
     name(ValAtom, OldStr),
-    ame_gen'><'update_substrings(OldStr, Roles, NewRoles, NewStr),
+    ame_gen><update_substrings(OldStr, Roles, NewRoles, NewStr),
     name(NewValAtom, NewStr),
 
     (select(Trigger, EvtPaths, MoreEvtPaths) ->
@@ -879,7 +879,7 @@ update_role(use(P1, P2, Ref, P3), InputSpecs, AllUsed,
 	\+ Ref = usr(_),
 	member(input_link(_, Spec, Ref, Unit,_), InputSpecs), !,
 	name_from_role_texts(Spec, AllUsed, NewName),
-	m_update'><'add_brackets(NewName, Unit, NewRef);
+	m_update><add_brackets(NewName, Unit, NewRef);
 	NewRef = Ref.
 
 swap_def_params([Roles, NewRoles], OldParam, NewParam, 0) :-
@@ -903,11 +903,11 @@ doubleclick_in(Wid, Parent, AbsPoint, Trans, Depth) :-
 	    add_to_translation(Trans, Target, NewTrans),
 	    NewDepth is Depth + 1,
 	    doubleclick_in(Wid, Target, AbsPoint, NewTrans, NewDepth);
-	 m_class'><'Parent has_part Child,
+	 m_class><Parent has_part Child,
 	    get_drawing_form(Child, image, BBox),
 	    inside_shape(Parent, Rel_point, image, BBox), !,
 	    doubleclick_on(Child);
-	menu'><'set_properties(Wid, Parent)).
+	menu><set_properties(Wid, Parent)).
 
 doubleclick_obj(Xpt, Ypt, Name) :-
 	retractall(doing_double_at(_,_)),
@@ -937,7 +937,7 @@ doubleclick_on(Edit_thing) :-
 	 [RoleMsgs, RoleStats] = [[], []];
 	 Edit_type = influence,
 		% list enablement of relation roles for influence
-	 m_class'><'terminates(ControlThing, Fn),
+	 m_class><terminates(ControlThing, Fn),
 	 setof(Role-Ref,
 	       Rn^Ru^Sl^get_link_source_data(ControlThing, Fn, Rn, Ru, Role, Ref, Sl),
 	       RoleRefPairs),
@@ -983,7 +983,7 @@ doubleclick_on(Edit_thing) :-
 		/* change role order if necessary */
 		(nth(N, Attrs, can_lookup),
 		    nth(N, NewVals, 1),
-		    m_update'><'make_role_first(ControlThing); /* fails */
+		    m_update><make_role_first(ControlThing); /* fails */
 		add_parameter(ControlThing, 2, comment, NewComment)),
 		find_all_comps(Parent, ControlThing),
 		(find_name_host(Messed, ControlThing),
@@ -1007,7 +1007,7 @@ doubleclick_on(Edit_thing) :-
 	Edit_type = image, !,
 	caption_for(Edit_thing, Capt),
 	(get_av_pair(Edit_thing, 0, comment, Cmt), !; Cmt = ''),
-	  output'><'do_image_item_dialog(Wid, Capt, [Cmt],
+	  output><do_image_item_dialog(Wid, Capt, [Cmt],
 					 OKd, [NewCmtStr]),
 	  (OKd = 0, !;
 	   name(NewCmt, NewCmtStr),
@@ -1074,12 +1074,12 @@ spread_dims(Node) :-
 	    list_index_meanings(Obj, ISpecs),
 	    all(dialogue, index_types, [build(ISpecs), build(IndxCount)]),
 	    (get_av_pair(Obj, 0, table_data, TD) ->
-	        dialogue'><'assert(table_data_is(TD)); true),
-	    dialogue'><'test_eqn(Equation, Obj, IndxCount, IList,
+	        dialogue><assert(table_data_is(TD)); true),
+	    dialogue><test_eqn(Equation, Obj, IndxCount, IList,
 			      Type, FoundArray, Xs, Err),
 	    (get_av_pair(Obj, 0, table_data, TD) ->
-	        dialogue'><'retract(table_data_is(TD)); true),
-	    dialogue'><'check_param_usage(IList, [], Xs, IList, []),
+	        dialogue><retract(table_data_is(TD)); true),
+	    dialogue><check_param_usage(IList, [], Xs, IList, []),
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
 	    (Err = [],
 		(get_actual_sizes(Node, FoundArray, bare, _, Array, _),
@@ -1089,7 +1089,7 @@ spread_dims(Node) :-
 		    SpecChanged = dims),
 		(Type = real, !, Base = 1; Base = Type),
 		((use_units_in(Obj, 'No');
-		  IList = [], inters'><'promote_unit(Base,1)),
+		  IList = [], inters><promote_unit(Base,1)),
 		    CheckLevel = 1;
 		  CheckLevel = 2),
 		(check_unit(Base, GivenBase, CheckLevel, []), !,
@@ -1098,7 +1098,7 @@ spread_dims(Node) :-
 		    SpecChanged = units),
 		update_links_and_vars(IList);
 	      \+ GivenBase = any,
-	        m_update'><'use_units_in(Node, 'Yes'),
+	        m_update><use_units_in(Node, 'Yes'),
 	        value_propagates(out, Node, Next, _Link),
 		multi_prop(out, Next, Node, 5),		
 % if eqn does not parse following unit change, see if it is in a loop
@@ -1139,7 +1139,7 @@ spread_colour(Node, WhatsNew) :-
 	fail; true.
 
 new_window_for(Submodel, TopNode, Canvas_name, InitDepths, IsTopLevel) :-
-	utility'><'unique_name('.mswindow', Topwin), !,
+	utility><unique_name('.mswindow', Topwin), !,
 	window_size_for(Submodel, Sub_extent, Scale),
 	get_window_colour(Submodel, Colour, Images),
 	add_window(Topwin, TopNode, Submodel, Sub_extent, Canvas_name, 
@@ -1418,11 +1418,11 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	get_posn_around([Xout, Yout], ParentBox, Theta),
 	(Phase = moving_start,
 	    change_shape(Start, along, Theta),
-	    m_class'><'Moving_obj follows Prev;
+	    m_class><Moving_obj follows Prev;
 	Phase = moving_finish,
 	    change_shape(Finish, along, Theta),
 	    Prev = Moving_obj),
-	(m_class'><'Other follows Prev,
+	(m_class><Other follows Prev,
 	    move_link(Other),
 	    fail;
 	move_link(Prev)),
@@ -1522,7 +1522,7 @@ tweak_link_connections(Obj, _OldInterns) :-
 	    translate(OldCtr, UseTrans, NewCtr),
 	    change_shape(Comp, centre, NewCtr), */
 	    member(Comp, [From, To]),
-	    m_class'><'Link is_connector from From to To,
+	    m_class><Link is_connector from From to To,
 	    move_link(Link),
 	    fail;
 	find_all_links(Obj, Link),
@@ -1648,9 +1648,9 @@ recursive_highlight(Target, Way, Where, E2E) :-
 	    change_delete_status(Target, Way, Where),
 	    Also = Target;
 	(E2E = 1,
-	    m_class'><'connects(Target, VStart, VFinish);
+	    m_class><connects(Target, VStart, VFinish);
 	E2E = 0,
-	    m_class'><'Target is_connector from VStart to VFinish),
+	    m_class><Target is_connector from VStart to VFinish),
 	    get_visible(VStart, Start), % if a bowtie we need flow status
 	    \+ Start = VFinish,
 	    get_visible(VFinish, Finish),
@@ -1676,21 +1676,21 @@ get_visible(Invis, Vis) :-
 	(appears(Maybe), !, Vis=Maybe; find_all_comps(Vis, Maybe)).
 
 adjust_link_backwards(Target, Way, Also, Where) :-
-	m_class'><'Target follows Prev,
+	m_class><Target follows Prev,
 	(Way = (to),
 	    change_delete_status(Prev, to, Where);
 	 Way = (from),
-	    \+ (m_class'><'Other follows Prev,
+	    \+ (m_class><Other follows Prev,
 		   at_def_con(Other, Where)),
 	    change_delete_status(Prev, from, Where)),
 	 (Also = Prev; adjust_link_backwards(Prev, Way, Also, Where)).
 	
 adjust_link_forwards(Target, Way, Also, Where) :-
-	m_class'><'Next follows Target,
+	m_class><Next follows Target,
 	(Way = (from),
 	    change_delete_status(Next, from, Where);
 	 Way = (to),
-	    m_class'><'connects(Next, _, Mid),
+	    m_class><connects(Next, _, Mid),
 	    get_host(Mid, Finish),
 	    match_delete_status([Finish], to, Where),
 	    change_delete_status(Next, to, Where)),
@@ -1744,7 +1744,7 @@ match_delete_status(Ends, Way, Where) :-
 	true.
 
 local_ends(Link, Start, Finish) :-
-	m_class'><'Link is_connector from Start to Mid,
+	m_class><Link is_connector from Start to Mid,
 	get_host(Mid, Finish).
 
 doomed(End) :-
@@ -1759,7 +1759,7 @@ make_any_links_follow(Obj) :-
 	find_all_comps(Parent, Obj),
 	find_all_links(Obj, Link),
 	move_link(Link),
-	m_class'><'Parent has_link_equivalences EqList,
+	m_class><Parent has_link_equivalences EqList,
 	member(Bef-Aft, EqList),
 	select(Link, [Bef, Aft], [Other]),
 	move_link(Other),
@@ -1847,7 +1847,7 @@ get_nearest_equivalent_link(Ltype, OrigStart, Target, Start) :-
 		Start draws_inside StartPoint,
 */
                 (member(StartPoint, Entries),
-		    m_class'><'Start is_connector from _ to StartPoint;
+		    m_class><Start is_connector from _ to StartPoint;
 		member(StartPoint, BiggestFirst),
 		    Start draws_inside StartPoint),
 		get_possible_start(OrigStart, Start),
@@ -1955,7 +1955,7 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	fits_inside(NewBox, ParentShape),
 	
 	/* Check that everything that was in the model is still in it */
-	\+ (m_class'><'Submodel has_part Inside,
+	\+ (m_class><Submodel has_part Inside,
 	       \+ border_node(Inside),
 	       get_drawing_form(Inside, _, InBox),
 	       \+ fits_inside(InBox, NewExtent))),
@@ -2087,16 +2087,16 @@ on either side (tests for this should be more explicit) -- reroute all at once
 so endpoints of new bits are always defined */
 			    (\+ find_type(Terminator, New_obj), !,
 				EndSects = [];
-			     m_class'><'Terminator follows Replacer,
+			     m_class><Terminator follows Replacer,
 				EndSects = [Replacer, Terminator]),
 			    ((Replacer == Start_thing;
 			      \+ find_type(Start_thing, New_obj);
 			      \+ New_obj = flow), !,
 				MoveSects = EndSects;
-			     m_class'><'Rep2 follows Start_thing,
+			     m_class><Rep2 follows Start_thing,
 				merge_lists(EndSects, [Start_thing, Rep2],
 					    MoveSects)),
-			    menu'><'reroute_sections(MoveSects))),
+			    menu><reroute_sections(MoveSects))),
 		    clear_incomplete,
 		    remove_old_incomplete;
 		get_phase(barge),
@@ -2198,7 +2198,7 @@ reuse_route(New_obj, LastArc) :-
         find_current(Wid),
 %	Wid shows_model Parent,
 	find_base(LastArc, BowtieArc),
-        ((NewArc = LastArc; m_class'><'sequence(NewArc, LastArc)),
+        ((NewArc = LastArc; m_class><sequence(NewArc, LastArc)),
 	    find_all_comps(Node, NewArc),
 %	    get_incomplete(Node-ScreenRoute),
 %	    translate_between(Parent, Node, _D, Trans),
@@ -2331,7 +2331,7 @@ delete_net(Top) :-
 	(setof(Tgt, (doomed(Tgt),
 		       \+ Tgt = Top,
 		       deletable(Top, FollowArcs, Tgt)), Range);
-	 output'><'safe_tcl_eval(['DebugMess',
+	 output><safe_tcl_eval(['DebugMess',
 				  dq('Nothing deleted -- menu abilities set for wrong submodel?')], _),
 	 Range = []),
 	(setof(NewLook, Tgt2^(member(Tgt2, Range),
@@ -2379,7 +2379,7 @@ should be done by finish_move and for toplevel only
 deletable(Top, FollowArcs, Tgt) :-
 	contains(Top, Tgt), !;
 	FollowArcs = 1,
-	    m_class'><'equivalent_arcs(Tgt, InTgt),
+	    m_class><equivalent_arcs(Tgt, InTgt),
 	    get_highlit_obj(M, InTgt), M<3,
 	    contains(Top, InTgt).
 
@@ -2487,7 +2487,7 @@ attempt_new_component(Parent, Box) :-
 	W > Standard//2,
 	H > Standard//2,
 	attempt_addition(submodel, Parent, Box, Node_name, yes, yes),
-	output'><'safe_tcl_eval(['CanvasDefBG'], DefFillStr),
+	output><safe_tcl_eval(['CanvasDefBG'], DefFillStr),
 	name(DefFill, DefFillStr),
 	add_parameter(Node_name, 0, fill_colour, DefFill),
 /* List components inside the box */
@@ -2521,7 +2521,7 @@ attempt_new_component(Parent, Box) :-
 
 just_crosses(Flow, Contents) :-
 	member(Flow, Contents),
-	m_class'><'Flow is_connector from Start to Finish,
+	m_class><Flow is_connector from Start to Finish,
 	\+ member(Start, Contents),
 	\+ member(Finish, Contents).
 
@@ -2531,7 +2531,7 @@ relate_graphics(Node_name, Node_trans) :-
 	      Link^(find_all_links(Node_name, Link),
 		    (has_outer_equiv(DoLink, Node_name, Link); DoLink = Link)),
 	      MessedLinks), !,
-	    menu'><'reroute_sections(MessedLinks),
+	    menu><reroute_sections(MessedLinks),
 	    all(event, make_links_follow, [build(MessedLinks)]);
 	true),
 	remove_old_incomplete.
@@ -2564,7 +2564,7 @@ are because undo/redo graphics cannot cope */
 		SfL is -JumpL, SfT is -JumpT,
 		% No idea why graphics shift must be opposite direction to work
 		(Wid shows_model Bit,
-		    draw'><'shift_model(Wid, Bit, [SfL, SfT]),
+		    draw><shift_model(Wid, Bit, [SfL, SfT]),
 		    fail;
 		tweak_link_connections(Bit, OldIntern)),
 		resnap(Bit, 1);
@@ -2607,7 +2607,7 @@ dissolve_component(Node) :-
 	find_all_comps(Parent, Node),
 	subtract_from_translation([0,0,1,1], Node, Node_trans),
 	(move_boxes(Node, Node_trans),
-	(setof(Part, m_class'><'Node has_part Part, Orphan_nodes), !;
+	(setof(Part, m_class><Node has_part Part, Orphan_nodes), !;
 	    Orphan_nodes = []),
 	(setof(IntLink, 
 	   (IntLink draws_inside Node, \+ has_outer_equiv(IntLink, Node, _)),
@@ -2643,7 +2643,7 @@ dissolve_component(Node) :-
 	    redisplay_border(OrphanNode),
 	    fail;
 	member(MovedLink, MovedLinks),
-	    menu'><'reroute_sections([MovedLink]),
+	    menu><reroute_sections([MovedLink]),
 	    move_link(MovedLink),
 	    fail;
 	remove_old_incomplete,

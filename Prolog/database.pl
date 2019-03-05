@@ -197,9 +197,9 @@ tcl_call(P, Funt, MatchStr) :-
 	P =.. [Funt | Args],
 	all(database, pack_term, [build(Args), build(FixArgs)]),
 	safe_tcl_eval(['PrologQuery', Funt | FixArgs], Str),
-	output'><'chop_list(Str, MatchStrs),
+	output><chop_list(Str, MatchStrs),
 	member(MatchStr, MatchStrs),
-	output'><'chop_list(MatchStr, ArgStrs),
+	output><chop_list(MatchStr, ArgStrs),
 	all(database, unpack_term, [build(ArgStrs), build(InstArgs)]),
 	Args = InstArgs.
 

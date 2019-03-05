@@ -27,7 +27,7 @@ set_save_status(Model, Stat) :-
     retractall(save_status_of(Model, _)),
     assert(save_status_of(Model, Stat)),
     member(Stat-CanSave, [safe-0, risky-1]),
-    draw'><'update_ability(Model, file, ['Save'], [CanSave]).
+    draw><update_ability(Model, file, ['Save'], [CanSave]).
 
 get_save_status(Model, Stat) :-
 	save_status_of(Model, Stat).
@@ -58,14 +58,14 @@ initialize_ring(Model) :-
 exit_two_click_op :-
 	get_phase(targetting),
 	/* halfway through two-click link addition -- tidy up. */
-	event'><'retractall(instant_link(_)),
+	event><retractall(instant_link(_)),
 	advance_phase_to(peruse),
 	get_line_start_obj(New),
 	New is_of_sort cloud,
-	draw'><'off(New).
+	draw><off(New).
 
 synchronize_graphics(LostExtents, Redrawn) :-
-    event'><'remove_highlights,
+    event><remove_highlights,
 	all(draw, adjust_submodel_internals, [build(LostExtents)]),
 	all(draw, redisplay_border, [build(Redrawn)]),
 	all(event, make_any_links_follow, [build(Redrawn)]),
@@ -119,14 +119,14 @@ purge_graphics(Model, Prev, LostExtents, Redrawn) :-
 
 finish_move(EditedModel, ChangeExec) :-
 	\+ anything_done, !;
-	m_update'><'contains(Model, EditedModel),
+	m_update><contains(Model, EditedModel),
 	set_save_status(Model, risky),
 	/* Only proceed for toplevel window containing model */
 	is_toplevel(Model),
 	(ChangeExec = 0;
 	  ChangeExec = 1,
-	    m_update'><'add_parameter(Model, 1, c_new, 0),
-	    output'><'tk_alter_model(Model)),
+	    m_update><add_parameter(Model, 1, c_new, 0),
+	    output><tk_alter_model(Model)),
 	get_ring_point(Model, Current),
 	record_changes(Model, Current),
 	update_autosave(Model, Current, yes),
@@ -175,7 +175,7 @@ save_allowed(Model, OK) :-
 		and restoring from logfile, so stop keeping logfile */
 	    assert(autosave_suspended(Model)),
 		Win shows_model Model,
-		output'><'safe_tcl_eval(['NotifyOverLimit', Win, Edn, Limit],
+		output><safe_tcl_eval(['NotifyOverLimit', Win, Edn, Limit],
 					_)), !,
 	    OK = 0;
 	retractall(autosave_suspended(Model)),
@@ -257,8 +257,8 @@ set_edit_abilities(Model) :-
 	    \+ running_session(Model, _Stm, _Trans), !,
 	    RedoOn = 0;
 	 RedoOn = 1),
-	draw'><'update_ability(Model, file, ['Save'], [CanSave]),
-	draw'><'update_ability(Model, edit, ['Undo', 'Redo'], [UndoOn, RedoOn]).
+	draw><update_ability(Model, file, ['Save'], [CanSave]),
+	draw><update_ability(Model, edit, ['Undo', 'Redo'], [UndoOn, RedoOn]).
 
 repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps) :-
 /* undo and redo clauses no longer needed because the acts are put into the
@@ -366,8 +366,8 @@ swap_args([Arg | Args], [Template | Templates], Swaps, NewSwaps,
 	 member(Arg-NewArg, Swaps)), !,
 	    MidSwaps = Swaps;
 	 unique_name(Template, NewArg),
-	    \+ m_class'><'is_part_of(NewArg, _),
-	    \+ m_class'><'is_connector(NewArg, _), !,
+	    \+ m_class><is_part_of(NewArg, _),
+	    \+ m_class><is_connector(NewArg, _), !,
 	    MidSwaps = [Arg-NewArg | Swaps]),
 	swap_args(Args, Templates, MidSwaps, NewSwaps, NewArgs).
 
@@ -426,7 +426,7 @@ get_extent_change(Model, Slot, Comp-Was) :-
 % do not redraw contents if parent changed -- offset will be wrong
 	\+ saved_state(Model, Slot, add(subsystem(_, Comp))),
 	member(What, [bounding_box, internal_extent]),
-	image'><'add_to_translation([0,0,1,1], Comp, Was).
+	image><add_to_translation([0,0,1,1], Comp, Was).
 % world-class yuckiness -- if the border has been dragged, both attributes will
 % be changed so there will be two entries, but they will both be null
 % transforms so that's all right :-)
@@ -449,13 +449,13 @@ new_autosave(Desktop, ModelName) :-
 	
 check_autosave(Model, Name, IdSwaps, Tweaked) :-
 	set_save_status(Model, safe),
-	draw'><'update_ability(Model, file, ['Save'], [0]),
-	draw'><'update_ability(Model, edit, ['Undo', 'Redo'], [0,0]),
+	draw><update_ability(Model, file, ['Save'], [0]),
+	draw><update_ability(Model, edit, ['Undo', 'Redo'], [0,0]),
 	(is_toplevel(Model), !,
 	    initialize_ring(Model),
 	    make_auto_name(Name, ".smx", AutoName),
 	    assert(autosave_file_is(Model, AutoName)),
-	    (output'><'my_file_exists(AutoName),
+	    (output><my_file_exists(AutoName),
                query(offer_restore, question, top, [ignore, apply], apply), !,
 		open_native(AutoName, read, Load),
 		(IdSwaps = copy, !,
@@ -467,7 +467,7 @@ check_autosave(Model, Name, IdSwaps, Tweaked) :-
 		set_save_status(Model, risky),
 		retractall(autosave_file_is(Model, _)),
 		assert(autosave_file_is(Model, AutoName));
-	     output'><'my_delete_file(AutoName),
+	     output><my_delete_file(AutoName),
 	     (IdSwaps = copy, !,
 		 assert(translation_info(Model, [top_level_is(Model)]));
 	     assert(translation_info(Model, [top_level_is(Model),
@@ -478,13 +478,13 @@ scrub_autosave(Model) :-
 	(is_toplevel(Model),
 %	    retractall(genint(_,_)),
 	    retract(autosave_file_is(Model, AutoName)),
-	    output'><'my_file_exists(AutoName),
-	    output'><'my_delete_file(AutoName),
+	    output><my_file_exists(AutoName),
+	    output><my_delete_file(AutoName),
 	    fail;
 	true).
 
 is_toplevel(Model) :-
-	m_class'><'has_part(root, Model).
+	m_class><has_part(root, Model).
 
 /* This is one place where you have to take account of the fact that you
 cannot rely on Windows to give you the file name extension in any particular

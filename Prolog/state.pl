@@ -34,8 +34,8 @@ sicstus_use_module([library(lists), sp_only]).
 :- dynamic(use_temp_dir/1, use_pref_dir/1).
 
 kickoff(Vnum) :-
-	user'><'any_tcl_eval(['ControlDraw', br(Vnum)], 1, EnvVars),
-	output'><'chop_list(EnvVars, [VStr, TempStr, PrefStr, OpenStr, EStr]),
+	user><any_tcl_eval(['ControlDraw', br(Vnum)], 1, EnvVars),
+	output><chop_list(EnvVars, [VStr, TempStr, PrefStr, OpenStr, EStr]),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),
 	name(E, EStr),
@@ -50,26 +50,26 @@ kickoff(Vnum) :-
 	assert(use_pref_dir(PrefDir)),
 
 	set_mode(none),
-	inters'><'read_library_funx(LibFuns),
-	dialogue'><'pass_functions(LibFuns),
-	menu'><'update_mode(select),
-	m_update'><'make_desktop(Desktop, Canvas),
+	inters><read_library_funx(LibFuns),
+	dialogue><pass_functions(LibFuns),
+	menu><update_mode(select),
+	m_update><make_desktop(Desktop, Canvas),
 	initialize_phase,
 
 	(OpenStr = [];
 	append(Base, ".smx", OpenStr);
 	name(OpenModel, OpenStr),
-	    menu'><'stick_model_in(Canvas, Desktop, OpenModel, open_toplevel),
-	    user'><'any_tcl_eval(['RunIfPackage'], 1, _);
+	    menu><stick_model_in(Canvas, Desktop, OpenModel, open_toplevel),
+	    user><any_tcl_eval(['RunIfPackage'], 1, _);
 	true), !,
-	(utility'><'append_atoms(dummy, _, Canvas), !, Headless = 1;
-	 user'><'any_tcl_eval(['FixSize', Canvas], 1, _)),
+	(utility><append_atoms(dummy, _, Canvas), !, Headless = 1;
+	 user><any_tcl_eval(['FixSize', Canvas], 1, _)),
 	(var(Base), !;
         append(Base, ".sml", OpenFiloidStr),
 	    name(OpenModel, OpenFiloidStr),
-	    backup'><'check_autosave(Desktop, OpenModel, copy, Done),
+	    backup><check_autosave(Desktop, OpenModel, copy, Done),
 	    (Done = 0; nonvar(Headless);
-		draw'><'redraw_window(Canvas))).
+		draw><redraw_window(Canvas))).
 
 :- dynamic(model_in/2).
 :- dynamic(model_file/2).
@@ -222,8 +222,8 @@ set_border_offsets(L,T,R,B) :-
 for top level model */
 
 get_box_size(Parent, Box_type, Cur_box_size) :-
-	ame_gen'><'contains(Top, Parent),
-	backup'><'is_toplevel(Top),
+	ame_gen><contains(Top, Parent),
+	backup><is_toplevel(Top),
 	box_size_is(Top, Box_type, Abs_box_size,_,_),
 	(member(Box_type-Scale, [compartment-0.6, state-0.8,
 				 function-0.3, variable-0.3,
@@ -233,8 +233,8 @@ get_box_size(Parent, Box_type, Cur_box_size) :-
 	Cur_box_size = Abs_box_size).
 
 get_text_offset(Node, Box_type, XDefOffset, YDefOffset) :-
-	ame_gen'><'contains(Top, Node),
-	backup'><'is_toplevel(Top),
+	ame_gen><contains(Top, Node),
+	backup><is_toplevel(Top),
 	box_size_is(Top, Box_type, _, XDefOffset, YDefOffset).
 
 set_box_size(TopNode, Box_type, New_box_size, XDefOffset, YDefOffset) :-
@@ -324,7 +324,7 @@ advance_phase_to(New_phase) :-
 	(member(New_phase, Allowables), !,
 		retract(phase_is(Old_phase)),
 		assertz(phase_is(New_phase));
-	 output'><'safe_tcl_eval(['DebugMess',
+	 output><safe_tcl_eval(['DebugMess',
 				  dq(['Attempted illegal phase change from',
 				      Old_phase, 'to', New_phase])], _)).
 get_phase(Phase) :-

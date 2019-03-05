@@ -109,23 +109,23 @@ escape_nasties(Chars, ArgChars) :-
 
 /* to be removed
 translate_message(Word, Trans) :-
-	output'><'safe_tcl_eval(['tr.', br(Word)], Trans).
+	output><safe_tcl_eval(['tr.', br(Word)], Trans).
 
 translate_message(Word, Args, Trans) :-
 	translate_message(Word, Template),
 	argify(Template, SafeTemplate),
-	output'><'safe_list(Args, br(SafeArgs)),
-	output'><'safe_tcl_eval([format, chars(SafeTemplate) | SafeArgs],
+	output><safe_list(Args, br(SafeArgs)),
+	output><safe_tcl_eval([format, chars(SafeTemplate) | SafeArgs],
 			     TransStr),
 	name(Trans, TransStr).
 	*/		      
 expand_message(Key, Trans) :-
-	output'><'safe_tcl_eval(['ExpandMessage', Key], Trans).
+	output><safe_tcl_eval(['ExpandMessage', Key], Trans).
 
 expand_message(Key, Args, Trans) :-
 	expand_message(Key, Template),
 	argify(Template, SafeTemplate),
-	output'><'safe_list(Args, br(SafeArgs)),
-	output'><'safe_tcl_eval([format, chars(SafeTemplate) | SafeArgs],
+	output><safe_list(Args, br(SafeArgs)),
+	output><safe_tcl_eval([format, chars(SafeTemplate) | SafeArgs],
 			     TransStr),
 	name(Trans, TransStr).

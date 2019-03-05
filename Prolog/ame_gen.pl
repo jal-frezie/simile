@@ -59,7 +59,7 @@ get_term(String, Term, Error) :-
 /* read_term_from_codes crashes GNU if term is large -- doing it via file works
 better but I don't bother as there are many more crashes down the line
 
-	state'><'use_temp_dir(TempDir),
+	state><use_temp_dir(TempDir),
 	append_atoms(TempDir, '/temp_io.pl', TempFile),
 	open_native(TempFile, write, Stream2),
 	sicstus_write_chars(Stream2, Proper_String), nl(Stream2),
@@ -68,7 +68,7 @@ better but I don't bother as there are many more crashes down the line
 	open_native(TempFile, read, Stream3),
 	read_term(Stream3, Term, [end_of_term(eof)]),
         close(Stream3),
-	output'><'my_delete_file(TempFile).
+	output><my_delete_file(TempFile).
 
 make_nice_error_message: converts Prolog's syntax_error exception into
 something readable. Prolog itself can do this with the print_message function,
@@ -188,7 +188,7 @@ make_legible_for_prolog(String, NewString, CommentsAllowed) :-
 	% Replace TTFN pi symbol with pi()
 	ToTweak = [88, 48, 121 | Suffix],
 	    Tweaked = "pi('')";
-	/* Put single quotes round things that look like Prolog atoms/vars
+	/* Put single quotes round things that look like Prolog variables
 	    (cos variable_names doesnt work on functors/operators) */
 	ToTweak = [StartsVar | Rest],
 	starter_only(StartsVar, prolog, StartsVar),
@@ -202,17 +202,20 @@ make_legible_for_prolog(String, NewString, CommentsAllowed) :-
 	    /* now, if it is a Prolog operator but not a Simile operator, we
 	    must put in parentheses so parser treats it as an atom, otherwise
 	    put in quotes. How do I tell? */
-	    (name(ForeignOp, LowerVar),
-		current_op(_Prec, _Spec, ForeignOp), % prolog knows it
-		\+ (inters'><'macro_expansion(_Src, (Tplt --> _Xpn)),
-		       Tplt =.. [ForeignOp | _Args];
-		    inters'><'operator(ForeignOp, _R, _As)), % simile does not
+	    read_term_from_codes(LowerVar, VarOrOp, [end_of_term(eof)]),
+	    (nonvar(VarOrOp),
+	        current_op(_Prec, _Spec, VarOrOp), % prolog knows it
+		\+ (inters><macro_expansion(_Src, (Tplt --> _Xpn)),
+		       Tplt =.. [VarOrOp | _Args];
+		    inters><operator(VarOrOp, _R, _As)), % simile does not
 		append([Po | LowerVar], [Pc], Tweaked);
 	    /* If a function name, next char is open-parenthesis in which case
             convert to lowercase (and don't bother enquoting!)
 	    EndsVar == Po,
 	        Tweaked = LowerVar; */
-	    append([Sq, StartsVar | MoreVar], [Sq], Tweaked));
+	     var(VarOrOp),
+	        append([Sq, StartsVar | MoreVar], [Sq], Tweaked);
+	     Tweaked = [StartsVar | MoreVar]);
 	/* Put single quotes round things in double quotes so they are read as
 	    atoms rather than lists of Ascii codes */
 	ToTweak = [Dq | AfterQuote],
@@ -260,7 +263,7 @@ bite_off_number(String, Num, Left) :-
 	      member(Black, "{\\} \n\r");
 	     length(Safe, 255)), !; % max length for a number
 	    String = Safe),
-	output'><'safe_tcl_eval(['EatNumber', br(chars(Safe))], RList),
+	output><safe_tcl_eval(['EatNumber', br(chars(Safe))], RList),
 	append(Num, [32 | SzStr], RList),
 	name(Size, SzStr),
 	append(Eaten, Left, String),
@@ -480,10 +483,10 @@ find_reference(Object, Index, Remote) :-
 do_dialogue(Header, Icon, RiskyBlurb, Buttons, Response) :-
 	argify(RiskyBlurb, Blurb),
 	(Buttons = ok, !,
-	    output'><'safe_tcl_eval(['BuildProblem', br(chars(Header)), Icon,
+	    output><safe_tcl_eval(['BuildProblem', br(chars(Header)), Icon,
 				  chars(Blurb), top], _),
 	    Response = Buttons;
-	output'><'safe_tcl_eval(['ShowMessage', br(chars(Header)), Icon,
+	output><safe_tcl_eval(['ShowMessage', br(chars(Header)), Icon,
 			      chars(Blurb), Buttons], Feedback),
 	    name(Response, Feedback)).
 */
@@ -491,8 +494,8 @@ do_dialogue(Header, Icon, RiskyBlurb, Buttons, Response) :-
 query(Specifics, Icon, HelpRef, Opts, Act) :-
 	Specifics =.. ListForm,
 	all(ame_gen, write_nice, [build(ListForm), build(SafeForm)]),
-%        output'><'bracketize(ListForm, SpecList),
-        output'><'safe_tcl_eval(['Query', br(SafeForm), Icon, HelpRef, '{}',
+%        output><bracketize(ListForm, SpecList),
+        output><safe_tcl_eval(['Query', br(SafeForm), Icon, HelpRef, '{}',
 			      br(Opts)], ActStr),
         name(Act, ActStr).
 
@@ -500,7 +503,7 @@ query(Specifics, Icon, HelpRef, Opts, Act) :-
 announce(Format, Specifics) :-
 	sicstus_format_to_chars(Format, Specifics, String),
 	argify(String, WontBreakIt),
-	output'><'safe_tcl_eval(['tk_messageBox -title "Debugging message" -icon info -message', chars(WontBreakIt), '-type ok'], _).
+	output><safe_tcl_eval(['tk_messageBox -title "Debugging message" -icon info -message', chars(WontBreakIt), '-type ok'], _).
 
 write_nice(Term, chars(Nice)) :-
 	sicstus_write_to_chars(Term, Str),
@@ -557,7 +560,7 @@ replace_subexps(Expr, TestModule, Test, Data, Dir, AllVarPairs, FinalExpr) :-
     var(Expr), !, FinalExpr = Expr, AllVarPairs = [];
 	(Dir = top_down,
 	RunTest =.. [Test, Data, Expr, MidExpr, Recurse],
-	call(TestModule'><'RunTest), !,
+	call(TestModule><RunTest), !,
 	(Recurse = 1,
 	    replace_subexps(MidExpr, TestModule, Test, Data, Dir,
 			    MorePairs, NewExpr),
@@ -593,7 +596,7 @@ replace_subexps(Expr, TestModule, Test, Data, Dir, AllVarPairs, FinalExpr) :-
 		NewExpr =.. [Op | NewArgs]),
 	(Dir = bottom_up,
 	RunTest =.. [Test, Data, NewExpr, FinalExpr, Recurse],
-	call(TestModule'><'RunTest), !, /* never recurse on bottom-up */
+	call(TestModule><RunTest), !, /* never recurse on bottom-up */
 	[var_pair(NewExpr, FinalExpr) | VarPairs] = AllVarPairs;
 	AllVarPairs = VarPairs,
 	    FinalExpr = NewExpr).
@@ -660,7 +663,7 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, Units) :-
 	    Units = [Unit];
 	(Sub = size(ModName); Sub = size(ModName, Ind)),
 	    contains(Top, Node),
-	    (backup'><'is_toplevel(Top);
+	    (backup><is_toplevel(Top);
 	     Host has_part Top, find_type(Host, function)), % in fn def
 	    (setof(SzSource, name_matches(SzSource, Top, ModName), Sources), !,
 	     % maybe also check for non-empty dims here?
@@ -692,7 +695,7 @@ get_actual_size(Node, Sub, ETStyle, Nums, Sizes, Units) :-
 		(Sources = [UniqSource], !,
 		    implicit_function(UniqSource, UniqFn),
 		    UniqFn has_class_refinement units of U,
-		    (inters'><'promote_unit(U, int),
+		    (inters><promote_unit(U, int),
 			Nums = [value(UniqSource)],
 			Sizes = [Sub],
 			Units = [int];
@@ -727,10 +730,10 @@ remove_offending_dim(Node, Winge) :-
 	      [count=GoodDims | MoreSpecs];
        (implicit_function(Node, CompFn); CompFn=Node),
          CompFn has_class_refinement units of Unit,
-	 m_update'><'analyze_array(Unit, Base, Dims),
+	 m_update><analyze_array(Unit, Base, Dims),
 	 select(LostRef, Dims, GoodDims),
 	 LostRef =.. [size, Offender | _Level],
-	 m_update'><'build_array(Base, GoodDims, NewUnit),
+	 m_update><build_array(Base, GoodDims, NewUnit),
          CompFn has_changed_class_refinement units of NewUnit),
     query(failed_ref_in_dimensions(Capt, Offender), warning, top, [ok], _).
 
@@ -771,13 +774,13 @@ enum_type_ref(Ref, Model, ETStyle, Value, Units, ETSpec) :-
 	    Grid has_class_refinement multiplication_spec of MS,
 	    member(interpretation=Form, MS),
 	    contains(Project, Grid),
-	    backup'><'is_toplevel(Project),
+	    backup><is_toplevel(Project),
 	    contains(Project, Model);
 	[BareRef, Value, Units, ETSpec] = [boolean, 2, n(boolean), 'FLAG'];
 	BareRef = 'NULL',
 	    Value = 0,
 	    Units = any;
-	units'><'defined_as_unit(BareRef, _),
+	units><defined_as_unit(BareRef, _),
 	    Units = BareRef, Value = 1;
 	resolve_enum_type(BareRef, Model, Value, Units, ETSpec)), !.
 
@@ -788,7 +791,7 @@ dequote(Ref, BareRef) :-
        name(BareRef, BareRefStr).
 
 resolve_enum_type(Ref, Model, Value, Units, ETSpec) :-
-	(m_class'><'Model has_class_refinement enum_types of TypeList, !;
+	(m_class><Model has_class_refinement enum_types of TypeList, !;
 	    TypeList = []),
 	(nth0(Posn, TypeList, TypeName-TypeMems),
 	    (Ref = TypeName; nth(Value, TypeMems, Ref)),
@@ -811,7 +814,7 @@ get_node_size(Source, SizeN, Size, Units) :-
 	   member(count=Dim, Multi);
 	  (implicit_function(Source, CompFn); CompFn=Source),
             CompFn has_class_refinement units of Unit,
-	    m_update'><'analyze_array(Unit, _Base, Dim)), !,
+	    m_update><analyze_array(Unit, _Base, Dim)), !,
 	get_actual_sizes(Source, Dim, bare, SizeN, Size, Units),
 	(\+ member(var, Size), !;
 	caption_for(Source, Capt),
@@ -991,7 +994,7 @@ the highest-level model */
 :- op(500, xfy, draws_inside).
 
 caption_for(Comp, ID) :-
-	image'><'get_host(Comp, CompVisDest),
+	image><get_host(Comp, CompVisDest),
 	find_base(CompVisDest, CompVisSrc),
 
 	(CompVisSrc has_class_refinement name of ID, !;

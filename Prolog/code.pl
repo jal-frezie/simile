@@ -13,12 +13,12 @@ tk_interactively_parse(Node) :-
 tk_code(Model, CompOrBuild, _Tgt) :-
 	(CompOrBuild = compile_c, % export shared library
 	    Action = export_sharelib,
-	    output'><'safe_tcl_eval([info, sharedlibextension], IdentStr);
+	    output><safe_tcl_eval([info, sharedlibextension], IdentStr);
 	 CompOrBuild = build_c, % export source code
             Action = export_source,
 	    IdentStr = ".cpp"),
 	name(Ident, IdentStr),
-	menu'><'get_default_export_name(Model, IdentStr, DefN),
+	menu><get_default_export_name(Model, IdentStr, DefN),
 	get_program_file(DefN, Model, Tgt),
 	\+ Tgt = '', % cancelled
 	use_temp_dir(Temp),
@@ -28,29 +28,29 @@ tk_code(Model, CompOrBuild, _Tgt) :-
 	abs_path_name(Base, root, Path),
 	    append_atoms([Temp, '/', Path], CompDir)),
 	(\+ rebuild_code(c, Model, CompDir, Action), !;
-	 (m_update'><'get_av_pair(Model, 1, c_new, Serial), !,
+	 (m_update><get_av_pair(Model, 1, c_new, Serial), !,
 	  (Serial = 0 -> Gen = ''; Gen = Serial); Gen = 1),
 	  caption_for(Model, Capt),
 	  
-	  utility'><'append_atoms([CompDir, '/', Capt, '/model', Gen, Ident],
+	  utility><append_atoms([CompDir, '/', Capt, '/model', Gen, Ident],
 				  Top),
-	  output'><'safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)).
+	  output><safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)).
 
 tk_code(Node, RunCmd, _Dummy) :-
 	member([RunCmd, Lang], [[run_c, c], [run_tcl, tcl]]),
 	/* Compile the thing into whatever, load it */
 	use_temp_dir(Dir),
-	% draw'><'scrub_run(Node, 0),
+	% draw><scrub_run(Node, 0),
 	rebuild_code(Lang, Node, Dir, prepare_exec),
 	    % if exceps happen here, catch in Tcl and return failure
 	    % on_exception(Whoops,
-	%		 output'><'prepare_execution(Node, Lang),
+	%		 output><prepare_execution(Node, Lang),
 % 		     (sicstus_write_to_chars(Whoops, Squeak),
 % 			 scrub_run(Node, 0))),
 	set_running_model(Node).
 
 rebuild_code(Lang, Node, ProgFileDir, Action) :-
         compile(Lang, Node, ProgFileDir, Action);
-        output'><'safe_tcl_eval(['DebugMess', rebuild_code_failed], _),
-	draw'><'scrub_run(Node, 0),
+        output><safe_tcl_eval(['DebugMess', rebuild_code_failed], _),
+	draw><scrub_run(Node, 0),
 	fail.

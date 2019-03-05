@@ -4,7 +4,11 @@ launch.pl
 This starts off the application and goes into an event loop from which it is driven the rest of the time. The identity of the interpreter is saved as a global so it can be used at the other end of the system, i.e., when putting stuff on the screen. Uses all my modules to make reloading quicker.
 */
 
-term_expansion(sicstus_module(Title, Exports), ( :- module(Title, Exports))).
+:- set_prolog_flag(double_quotes, codes).
+
+term_expansion(sicstus_module(Title, Exports),
+	       [(:- module(Title, Exports)),
+		(:- set_prolog_flag(double_quotes, codes))]).
 term_expansion(sicstus_use_module(ModuleList), ( :- use_module(ModuleList))).
 term_expansion(sicstus_meta_predicate(Pred), ( :- meta_predicate(Pred))).
 
@@ -85,7 +89,7 @@ xml_file_to_term(FileIn, Xml) :-
 
 % GNU-friendly notation for cross-module calls -- already an operator in swi
 % but precedence needs changing
-:- op(550, xfy, '><').
+:- op(550, xfy, ><).
 
 % include tcltk -- we are using pipe interface
 :- 	use_module([library(lists), sp_only, tcltk, input, utility, code]).
@@ -111,7 +115,7 @@ main :-
         % swi: avoid prompt chars messing up the pipe interface
         prompt(_P, ''),
         % swi: include decimals in floats so they are readable by other Prologs
-        set_prolog_flag(float_format, '%#.12g'),
+	set_prolog_flag(float_format, '%#.12g'),
         nl, write(ready), nl,
 	output:safe_tcl_eval([file, join, '$::env(SYSDIR)', lib, struct_db],
 			     PathToObjStr),

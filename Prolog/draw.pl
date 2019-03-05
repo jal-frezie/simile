@@ -370,7 +370,7 @@ add_caption(Wid, Id, Style, Box, Trans, Fatness, Specials, Colour_scheme) :-
 	      get_shape(Id, caption_offset, [XOff, YOff, _Anchor]);
 	      XOff = 0, YOff = 0,
 	      set_shape(Id, caption_offset, [XOff, YOff]))), !,
-	image'><'map(Box, UseAnchor, _,_, TextX, TextY),
+	image><map(Box, UseAnchor, _,_, TextX, TextY),
 	VirtX is TextX + XOff,
 	VirtY is TextY + YOff,
 	untranslate([VirtX, VirtY], Trans, ScreenPoint),
@@ -417,7 +417,7 @@ bit to make sure the new
 canvas has the same aspect ratio as the old. */
 
 expand_canvas(Parent, [NL, NT, NR, NB]) :-
-	(\+ backup'><'is_toplevel(Parent),
+	(\+ backup><is_toplevel(Parent),
 	    get_shape(Parent, bounding_box, [BL, BT, BR, BB]), !,
 	    BoxRatio is (BR-BL)/(BB-BT),
 	    ModelRatio is (NR-NL)/(NB-NT),
@@ -465,7 +465,7 @@ to apply that transform to the submodel graphics...simple */
 	zoom_bits_in(Win, Model, FatChange, [L, T], InList),
 	fail; % now do simple stuff
 	redisplay_border(Model),
-	event'><'make_links_follow(Model).
+	event><make_links_follow(Model).
 	
 get_flash(Comp, Colour_scheme) :-
 	get_highlit_obj(Comp, Index), !,
@@ -518,10 +518,10 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    Draw_command =.. [DCmd, Wid, Screen_list, Num, Fatness,
 				  Density, Colour_scheme, [Comp]],
 		call(Draw_command);
-	    output'><'safe_tcl_eval(['DebugMess',
+	    output><safe_tcl_eval(['DebugMess',
 				     dq(['Failed to draw component', Comp,
 					 'as', Style, '...removing'])], _),
-		m_update'><'oblitterfry(Comp)),
+		m_update><oblitterfry(Comp)),
 	    (get_display_depth(Wid, caption, Caption_detail),
 	     ((Style is_class_of_sort captionless; \+ appears(Comp);
 	              Caption_detail =< Depth), !;
@@ -546,7 +546,7 @@ display_link_in(Wid, Link, Depth, Trans) :-
         (Type = flow,
 	    find_base(Link, Base),
 	    implicit_function(Base, Fn),
-	    instance'><'get_units(Fn, _Type, FnDims),
+	    instance><get_units(Fn, _Type, FnDims),
 	    get_chain(Base, Link, _Top, Exited, Entered),
 	    reverse(Exited, BiggestFirst),
 	    all(ame_gen, get_all_dims,
@@ -555,14 +555,14 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	    (append(InDims, [RealVal | _Spare], TopDims)->
 	     (RealVal = var -> Num = 5; Num is min(RealVal, 4)); Num = 1);
 	  Type = influence,
-	    m_class'><'Link has_attribute enabled_roles of EnabList,
+	    m_class><Link has_attribute enabled_roles of EnabList,
 	    member(RIdx, EnabList),
 	    member(RIdx, [-1, -2, -3]),
 	    Num = 4; % or however many insts current submodel has
 	  Num = 1), !,
 	(Type = influence,
 	    find_name_host(Link, ControlThing),
-	    m_class'><'ControlThing has_attribute use_sofar of 1, !,
+	    m_class><ControlThing has_attribute use_sofar of 1, !,
 	    UseType = broken_influence;
 	UseType = Type),
 	Draw_command =.. [UseType, Wid, Screen_coords, Num,
@@ -692,7 +692,7 @@ show_invisible_links(Links) :-
 	    Wid shows_model Backgnd,
 	    member(Link, Links),
 	    find_all_comps(Daddy, Link),
-	    m_update'><'contains(Backgnd, Daddy, Chain),
+	    m_update><contains(Backgnd, Daddy, Chain),
 	    length(Chain, Depth),
 	    draw_style_for(Link, Type),
 	    \+ draws_at(Wid, Type, Depth),

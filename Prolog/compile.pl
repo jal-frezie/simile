@@ -56,7 +56,7 @@ transport_action(TopLevel, Capt, [Type, X, Y], [Idx1, Idx2, FlowFn]) :-
     Flow is_connector from Src to Dst,
     find_type(Flow, Type),
     (SuppliedInds = [] ->
-	 instance'><'inds_from_rel_posn(Comp, Y, X, [Idx2, Idx1]);
+	 instance><inds_from_rel_posn(Comp, Y, X, [Idx2, Idx1]);
      SuppliedInds = [Idx2, Idx1]),
     implicit_function(Flow, PosFlowFn),
     FlowFn =.. [Sgn, PosFlowFn].
@@ -204,7 +204,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 % what follows should be separate fn
 	(( %Parent has_class_refinement separate of 1;
 	  error_free(build),
-	   backup'><'is_toplevel(Parent)), !,
+	   backup><is_toplevel(Parent)), !,
 	    /* we need an executable for this level */
 	    (Language = c,
 	        (Parent has_model_refinement c_new of OldTgt;
@@ -256,14 +256,14 @@ build_instances(Language, DestDir, Parent, TopNode,
 		 Tgt = 'model.tcl';
               % must compile and link even if only exporting source to check
 	      % if reusing from previous Simile version
-		dialogue'><'tk_update_infobox(pl_comp, []),
+		dialogue><tk_update_infobox(pl_comp, []),
 		compile_c_program(CheckDir, ExtLibs, Fuss, Tgt),
 		 (Tgt = -1, !, fail;
 		  Tgt > 0,
 		  (Parent has_changed_model_refinement c_new of Tgt;
 		      Parent has_new_model_refinement c_new of Tgt),
 		    % adjust old fn count to stop eqn limit warning here
-		    backup'><'(retract(counted_fns(OldCt)),
+		    backup><(retract(counted_fns(OldCt)),
 			       assert(counted_fns(9999)),
 			       finish_move(Parent, 0),
 			       retract(counted_fns(_NewCt)),
@@ -314,11 +314,11 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	appears(VisEntity),
 	\+ VisEntity is_of_sort captionless,
 	\+ is_ghost(VisEntity),
-	\+ image'><'draws_complete(VisEntity),
+	\+ image><draws_complete(VisEntity),
 	(Submodel = TopNode -> OuterText = '(none)';
 	 abs_path_name(Submodel, TopNode, OuterText)),
 	caption_for(VisEntity, RedText),
-	menu'><'select_all_in(Submodel, base), /* make sure the red shows */
+	menu><select_all_in(Submodel, base), /* make sure the red shows */
 	safe_tcl_eval([set, log, entered_exception], _),
 	Wrinkle = unspecified(OuterText, RedText);
 	Parent has_part Submodel,
@@ -366,7 +366,7 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	get_host(Fn, Cond),
 	find_type(Cond, condition),
 	Fn has_class_refinement value of Val,
-	instance'><'is_lookup_cond(Val, _),
+	instance><is_lookup_cond(Val, _),
 	list_index_meanings(Submodel, [ind_spec(_,_,_, Link) | _]),
 	\+ (Link = none;
 	    find_name_host(Link, HostLink),
@@ -500,12 +500,12 @@ used when entering file parameters */
 	all(user, arg, [unify(3), build(NewForm), build(AllPaths)]),
 	insert_enum_phases(VMSPs, AllPaths),
 
-	state'><'version_is(VStr),
+	state><version_is(VStr),
 	name(SimV, VStr),
 	V is SimV + 4,
-	state'><'edition_is(Edition),
-	library'><'count_functions(Top, FnCount),
-	output'><'safe_tcl_eval('clock seconds', DateStr),
+	state><edition_is(Edition),
+	library><count_functions(Top, FnCount),
+	output><safe_tcl_eval('clock seconds', DateStr),
 	sicstus_format_to_chars("\"program='AME',version=~f,edition=~a,date=~s,size=~d,\"", [V, Edition, DateStr, FnCount], IdentStr),
 	sicstus_atom_chars(IdentAtom, IdentStr),
 %	name(V, VStr),
@@ -770,7 +770,7 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 			     instance(system, _,_, channelId, int-[])];
 	    length(Bounds, IdCount),
 		DummyCompDims = [IdCount],
-		(render'><'count_base_ptrs(Bases, PtrCount),
+		(render><count_base_ptrs(Bases, PtrCount),
 		    PtrCount > 0, !,
 		    /* model have an array of assoc pointers
 		    for multiple associations.
@@ -1640,7 +1640,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 		UseStep = SmStep),
 	    SourceEqn = Source;
 	(Is_P = 1, apply_minmax(Node, Source, SourceEqn);
-	 Is_P = 3, instance'><'regenerate_makearrays(0, LocalPath, SourceEqn)),
+	 Is_P = 3, instance><regenerate_makearrays(0, LocalPath, SourceEqn)),
 	    Type = function,
 	    UseList = [on_reset | RefList], 
 	    Made = init(Dest),
@@ -1668,11 +1668,11 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	    AllActs = [Expr]; */
 	  Type = magnitude, !, % no derived events yet but same
 	    SourceEqn = event(ActEqn, TriggerEqn),
-	    inters'><'units_for_trigger_mag(Node, Base-TriggerEqnDims),
+	    inters><units_for_trigger_mag(Node, Base-TriggerEqnDims),
 	    
 	    % evolved from sum_over_dims -- get numerical!
 	    (Base = boolean -> Num = choose(TriggerEqn,1,0); Num = TriggerEqn),
-	    instance'><'sum_dims(TriggerEqnDims, Num, EnableEqn),
+	    instance><sum_dims(TriggerEqnDims, Num, EnableEqn),
 	    
 	    % (Unit = boolean -> Inactive = '"false"' ; Inactive = 0),
 	    SourceItem = trigger_magnitude(''),
@@ -1746,7 +1746,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 unite_event_contexts([], Test, Test).
 unite_event_contexts([elt(Path, _,_) | Others], Test, Act) :-
 	unite_event_contexts(Others, Test, OldAct),
-	inters'><'combine_contexts(Path, OldAct, Test, Act).
+	inters><combine_contexts(Path, OldAct, Test, Act).
 
 choosify(Pairs, Dims, Choice, Init) :-
 	(Pairs = (Cons on Evt, Rest), !,
@@ -2687,7 +2687,7 @@ find_antecedent(Chain, TestFn, CallSeq, TestData, Found) :-
 	of something that satisfied the condition. */
 
 	TestCall =.. [TestFn, Prev, TestData],
-	(call(compile'><'TestCall), !,
+	(call(compile><TestCall), !,
 	    (Found = Prev;
 	    find_antecedent(Chain, TestFn, CallSeq, TestData, Found));
 	find_antecedent([Prev | Chain], TestFn, CallSeq, TestData, Found)).

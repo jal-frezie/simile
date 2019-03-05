@@ -83,7 +83,7 @@ xml_equiv(Char, Jolly) :-
 % ========================================= convert_similexmlv3_to_simileprolog
 convert_similexmlv3_to_simileprolog(FileIn,FileOut):-
    % xml_file_to_term(FileIn, Xml), % externals loaded in database.pl
-   output'><'safe_tcl_eval(['ExmlToGenericPl', br(FileIn)], XmlStr),
+   output><safe_tcl_eval(['ExmlToGenericPl', br(FileIn)], XmlStr),
    % read_term_from_codes(XmlStr, Xml, []), % crashes GNU if big
    open_chars_stream(XmlStr, Stm),
    read_term(Stm, element(model, [], Es), []),
@@ -1267,7 +1267,7 @@ make_def_url(Opsim,DefURL):-
    atom_concat(Partial,'.htm',DefURL).
 
 handle_xml_parse_error(Mode, SimilePl, XmlPl) :-
-	ame_gen'><'query(map_failure(Mode, SimilePl, XmlPl), error, top,
+	ame_gen><query(map_failure(Mode, SimilePl, XmlPl), error, top,
 			 [abort], Do),
 	(Do = more;
 	 throw(aborted)).

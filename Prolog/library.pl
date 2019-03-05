@@ -20,9 +20,9 @@ ame_save( File, Model, Date, SelOnly, _MakeCompat) :-
 	       Models = []),
 	(SelOnly = yes,
 	    Models = [UseAsParent],
-	    \+ draw'><'get_highlit_obj(0, UseAsParent), !,
+	    \+ draw><get_highlit_obj(0, UseAsParent), !,
 	    ame_save(File, UseAsParent, Date, SelOnly, _);
-	(backup'><'is_toplevel(Model),
+	(backup><is_toplevel(Model),
 	    SelOnly = no,
 	    setof(A-V, Model has_class_refinement A of V, Props);
 	 setof(Enum, ancestor_has_enum_type(Model, Enum), AllEnums),
@@ -30,14 +30,14 @@ ame_save( File, Model, Date, SelOnly, _MakeCompat) :-
 	Props = []),
 	\+ ( member( Node, Models ),
 	     \+ Node is_model_class ),
-	output'><'windowize(File, WFile),
+	output><windowize(File, WFile),
 	on_exception(_, open_native(WFile, write, Stream), 
 	fail), !,
-	state'><'version_is(VStr),
+	state><version_is(VStr),
 	name(SimV, VStr),
 	V is SimV + 4,
 	(reassure_user(writing_root, []),
-	state'><'edition_is(Edition),
+	state><edition_is(Edition),
 	export_with_breaks(Stream, source(program='AME', version=V,
 					 edition=Edition, date=Date)),
 	nl(Stream),
@@ -50,7 +50,7 @@ ame_save( File, Model, Date, SelOnly, _MakeCompat) :-
 	% was to allow the save process to try and fail each node to
 	% save memory, but just doing it this way had desired
         % result (it was building list of arcs that used the resources).
-        chars_from_stream(ArcData, library'><'save_nodes( Models, Stream, 
+        chars_from_stream(ArcData, library><save_nodes( Models, Stream, 
 							  SelOnly, ArcData ),
 			  ArcChars),
 	nl(Stream),
@@ -156,7 +156,7 @@ go_with(Comp, SelOnly) :-
 	go_with(Comp).
 
 go_with(Comp) :-
-	draw'><'get_highlit_obj(0, Comp),
+	draw><get_highlit_obj(0, Comp),
 	    \+ connects_leaver(Comp), !;
 	Comp has_part Inner,
 	    go_with(Inner), !;
@@ -211,7 +211,7 @@ DOS-type CRLFs being used for the line breaks, which will then bugger up
 reading the file under Unix 
 
 write_with_breaks(Stream, Term) :-
-	user'><'printq_to_codes(TermStr, Term),
+	user><printq_to_codes(TermStr, Term),
 	append(TermStr, ".", FullTermStr),
 	sicstus_write_chars(Stream, FullTermStr),
 	nl(Stream).
@@ -266,7 +266,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	        Header = source(_,version=V), E=standard), !,
 	    SimileV is V-4.0, % were there integer versions??
 	    (V >= 10.0, !, % file is UTF-8
-                user'><'reopen_stream_internally_formatted(Stream, Stm, no);
+                user><reopen_stream_internally_formatted(Stream, Stm, no);
 	      Stm = Stream),
 	    read(Stm, Term);
 	Term = Header,
@@ -280,23 +280,23 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	InitBindings = []),
 	store_term( Term, Stm, Parent, InitBindings, Translated, [] ),
 	(V >= 10.0, !,
-%	    output'><'my_delete_file(TempFile);
+%	    output><my_delete_file(TempFile);
 	    close_internally_formatted_stream(Stm);
 	close( Stm )),
 
-	(state'><'get_edition_and_limit(Edn, StopAt),
+	(state><get_edition_and_limit(Edn, StopAt),
 	(HasCode=no;
 	\+ E = enterprise),
 	\+ HasCode = 'fuck it',
 	count_functions(Parent, Fns),
 	Fns > StopAt, !,
-	    backup'><'restart_move,
+	    backup><restart_move,
 	    % abort loading project file
-	    output'><'safe_tcl_eval(['catch {unset ::loadingProject}'], _),
+	    output><safe_tcl_eval(['catch {unset ::loadingProject}'], _),
 	    query(bust_edition_limit(Fns, StopAt, Edn), error, top, [ok], _),
 	    finish_progress_dialogue,
 	    % prevent executable from running
-	    backup'><'is_toplevel(Parent),
+	    backup><is_toplevel(Parent),
 	    Parent has_new_model_refinement c_new of 0,
 	    fail;
 
@@ -331,11 +331,11 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV >= 6.1, !;
 	  reassure_user(updating_v, ['5.x']),
 	    adjust_to_10_1(Parent)),
-	state'><'version_is(MyVStr),
+	state><version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV > SimileV+0.001, % throw away code so no need to test load
-	    (\+ backup'><'is_toplevel(Parent);
-	    m_update'><'add_parameter(Parent, 1, c_new, 0)), !;
+	    (\+ backup><is_toplevel(Parent);
+	    m_update><add_parameter(Parent, 1, c_new, 0)), !;
 	  MyV >= floor(SimileV), !;
 	  query(future_shock(SimileV), warning, top, [ok], _))).
 
@@ -390,7 +390,7 @@ adjust_to_4 :-
 	(member(Ghost, Ghosts),
 		Ghost no_longer_has_model_refinement is_ghost of Node,
 		appears(Ghost),
-		m_update'><'add_new_line_between(influence, Node, Ghost, _),
+		m_update><add_new_line_between(influence, Node, Ghost, _),
 		fail;
 	adjust_to_4).
 
@@ -424,7 +424,7 @@ adjust_to_8(Trans) :-
 	Node has_class_refinement table_data of
 	    [file=F, data=T, indices=I, current=C],
 	% table entered before enum_types invented
-	    inters'><'add_zeros(C, Node, 0, NC, D, U),
+	    inters><add_zeros(C, Node, 0, NC, D, U),
 	    length(D, N),
 	    list_of(int, N, B),
 	    Node has_changed_class_refinement table_data of
@@ -437,7 +437,7 @@ adjust_to_8(Trans) :-
 	    Node has_changed_class_refinement value of NewExpr,
 	    Node has_new_class_refinement table_data of Table;
 	Node has_class_refinement fill_colour of Image,
-	    output'><'safe_tcl_eval(['ColourExists', Image], "0"),
+	    output><safe_tcl_eval(['ColourExists', Image], "0"),
 	    Node no_longer_has_class_refinement fill_colour of Image,
 	    Node has_new_class_refinement fill_image of Image),	    
 	adjust_to_8(Trans).
@@ -504,7 +504,7 @@ adjust_to_9(Trans) :-
 	    (Obj has_class function,
 		member(CmtField, [description, comment]),
 		Obj no_longer_has_class_refinement CmtField of CmtValue,
-		m_update'><'get_host(Obj, VisObj),
+		m_update><get_host(Obj, VisObj),
 		(VisObj is_of_sort line,
 		    VisObj has_new_attribute CmtField of CmtValue;
 		VisObj is_of_sort box,
@@ -513,10 +513,10 @@ adjust_to_9(Trans) :-
 	    Obj has_graphical_attribute bounding_box of BB,
 		\+ find_type(Obj, submodel),
 		Obj no_longer_has_graphical_attribute bounding_box of BB,
-		image'><'middle(BB, Pt),
+		image><middle(BB, Pt),
 		Obj has_new_graphical_attribute centre of Pt);
 % Invisible terminators get points from link
-	(Trans = copy, Node is_model_class, ame_gen'><'chain_from_node(Node, Obj);
+	(Trans = copy, Node is_model_class, ame_gen><chain_from_node(Node, Obj);
 	    member(_-Obj, Trans)),
 	    Obj no_longer_has_graphical_attribute course of Course,
 	    Course = [Pn, MPt | M],
@@ -526,7 +526,7 @@ adjust_to_9(Trans) :-
 	    (posn_if_needed(Bar, Pn), fail; true),
 % Curved links get relative midpoints rather than course
 	    (Obj is_of_sort curved,
-		event'><'relativize_centre(P0, Pn, MPt, CPt),
+		event><relativize_centre(P0, Pn, MPt, CPt),
 		Obj has_new_graphical_attribute curve of CPt;
 % Kinked links have kink location coded, others get default
 	    \+ Obj is_of_sort curved,
@@ -541,8 +541,8 @@ adjust_to_9(Trans) :-
 		find_base(Obj, BowtieArc),
 		(BowtieArc = Obj,
 		    Obj no_longer_has_graphical_attribute bowtie of BTBox,
-		    image'><'middle(BTBox, BTPt),
-		    image'><'closest_centre(BTPt, Course, _,_, BTPosn);
+		    image><middle(BTBox, BTPt),
+		    image><closest_centre(BTPt, Course, _,_, BTPosn);
 		\+ BowtieArc = Obj,
 		    BTPosn = 550),
 		CPt = [KinkPosn, BTPosn]),
@@ -552,7 +552,7 @@ adjust_to_9(Trans) :-
 
 adjust_to_9_5(Parent) :-
 	contains(Parent, Node),
-	m_update'><'remove_floater(Node), fail;
+	m_update><remove_floater(Node), fail;
 	true.
 
 adjust_to_9_8(Parent) :-
@@ -569,7 +569,7 @@ adjust_to_9_8(Parent) :-
 % now may need to re-parse eqn to fix overall units
         NewUnits == 1,
 	get_host(Fn, Vis),
-	event'><'spread_dims(Vis),
+	event><spread_dims(Vis),
 	fail; true.
 
 adjust_to_10(Parent) :-
@@ -621,7 +621,7 @@ adjust_to_10(Parent) :-
             Sm has_part Crossing,
             find_type(Crossing, border),
             Crossing no_longer_has_graphical_attribute centre of Ctr,
-	    event'><'get_posn_around(Ctr, Box, Theta),
+	    event><get_posn_around(Ctr, Box, Theta),
             Crossing has_new_graphical_attribute along of Theta,
             fail;
 	true.
@@ -644,11 +644,11 @@ dequote_ET(Qat, UQat) :-
 	UQat = Qat.
 
 dequote_ET_units(U, NewU) :-
-	m_update'><'analyze_array(U, Base, DimList),
+	m_update><analyze_array(U, Base, DimList),
 	(Base = a(Qtd) -> dequote_ET(Qtd, DQtd), NewB = a(DQtd);
 		NewB = Base),
 	all(library, dequote_ET, [build(DimList), build(NewDL)]),
-	m_update'><'build_array(NewB, NewDL, NewU).
+	m_update><build_array(NewB, NewDL, NewU).
 
 dequote_role_ETs(use(Rel, Use, Ref, OldETs), use(Rel, Use, Ref, ETs)) :-
         dequote_ET_units(OldETs, ETs).
@@ -674,7 +674,7 @@ update_per_record_bracket_style(Parent) :- % should do all then fail
 	(OtherArc = Link; sequence(Link, OtherArc)),
 	\+ sequence(OtherArc, _),
 	OtherArc is_connector from _ to Fn,
-	m_update'><'get_all_links(Fn, continuous, _,
+	m_update><get_all_links(Fn, continuous, _,
 				  input_link(id(OtherArc, Rel, Use),
 					     _, AddRef, _, NewDims)),
 	OtherArc has_attribute role of Roles,
@@ -713,7 +713,7 @@ posn_if_needed(Prim, Pt) :-
 	member(Type, [variable, cloud]),
 	    \+ Prim has_graphical_attribute centre of _),
 	Prim has_new_graphical_attribute centre of Pt,
-	m_update'><'change_class(Prim, Type, border).
+	m_update><change_class(Prim, Type, border).
 
 	    
 trim_heads(With0s, No0s) :-
@@ -774,7 +774,7 @@ store_term( Term, Stream, Parent, Bindings, AllBindings, Rest ) :-
 	append( TermList, [Parent,Bindings,NewBindings], NewTermList ),
 	NewTerm =.. NewTermList,
 	%reassure_user(reading_file, []),
-	call( build'><'NewTerm ),
+	call( build><NewTerm ),
 	!,
 	read_skipping_junk( Stream, NextTerm ),
 	store_term( NextTerm, Stream, Parent, NewBindings, AllBindings, Rest ).
@@ -796,7 +796,7 @@ deal_with_rest( [], PreviousLength, Parent, Bindings, AllBindings, Terms ) :-
 	length( Terms, NewLength ),
 	(NewLength < PreviousLength, !,
 	    deal_with_rest(Terms, NewLength, Parent, Bindings, AllBindings,[]);
-	(build'><'missing(Comp),
+	(build><missing(Comp),
 	    query(lost_component(Comp, Terms), warning, top, [ok], _);
 	query(bad_model_format(Terms), warning, top, [ok], _)),
 	    AllBindings = Bindings).
@@ -805,7 +805,7 @@ deal_with_rest( [Term|Terms], Length, Parent, Bindings, AllBindings, Rest ) :-
 	Term =.. TermList,
 	append( TermList, [Parent,Bindings,NewBindings], NewTermList ),
 	NewTerm =.. NewTermList,
-	call( build'><'NewTerm ),
+	call( build><NewTerm ),
 	!,
 	deal_with_rest(Terms, Length, Parent, NewBindings, AllBindings, Rest).
 deal_with_rest( [Term|Terms], Length, Parent, Bindings, AllBindings, Rest ) :-

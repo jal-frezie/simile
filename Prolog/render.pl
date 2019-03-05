@@ -369,7 +369,7 @@ strings_direct( L, make_reference, Dest=Source, Indent, Stream) :-
 strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, Used, Dims],
 	       Indent, Stream) :-
 	Dims = [Dim | More], !, % won't work for multiple dims but no need
-	    language'><'declare(tcl, XIndex, loop, int, Used, Indent, Stream),
+	    language><declare(tcl, XIndex, loop, int, Used, Indent, Stream),
 	    DeepIndent is Indent+4,
 	    strings_direct(tcl, for_start, [XIndex, Dim, 1],
 			   Indent, Stream),
@@ -522,7 +522,7 @@ strings_direct(c, procedure_defn, [ReturnType, Fn], Indent, Stream) :-
 	format(Stream, "~*s~a ~w;\n", [Indent, " ", ReturnType, Fn]).
 
 strings_direct(tcl, release_space, [Dest, Used], Indent, Stream) :-
-	language'><'declare(tcl, XIndex, loop, int, Used, Indent, Stream),
+	language><declare(tcl, XIndex, loop, int, Used, Indent, Stream),
 	DeepIndent is Indent+4,
 %	excrete(tcl, for_start, [XIndex, Dim, 1], Indent, Stream),
 	excrete(tcl, assignment, XIndex=1, Indent, Stream),
@@ -554,7 +554,7 @@ do_obsolete_thing(L, Stat, Args, Indent, Stream) :-
 	raise_exception(failed_to_do_obsolete_thing(Stat,Args)).
 
 insert_event_call(elt(Path, Proc, _Dims), [L, Args, Indent, Stm]) :-
-	inters'><'pointer_from(Path, Ptr),
+	inters><pointer_from(Path, Ptr),
 	make_struct_reference(L, Ptr, Proc, Call),
 	Action =.. [Call | Args],
 	excrete(L, procedure_call, Action, Indent, Stm).
@@ -669,7 +669,7 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 		    DefEval = 'TABLE';
 		 is_population(Node), !,
 		    DefEval = 'POPULATION';
-		 m_update'><'ready_type(Node, BaseType), !,
+		 m_update><ready_type(Node, BaseType), !,
 		    member(BaseType-DefEval,
 			   [rect_grid(_,_)-'GRID', hex_grid(_,_)-'HONEYCOMB']);
 		    DefEval = 'BLOCK');
@@ -715,7 +715,7 @@ generate_data_decls(L, Dims, Path, Inst, Used, Stream) :-
 		append_atoms([CaptionHead, '/', CaptionTail], Caption);
 	    CaptionTail = Caption),
 	    name(Caption, CaptionTtfnStr),
-	    user'><'all_ttfn_to_utf8(CaptionTtfnStr, CaptionUtf8Str),
+	    user><all_ttfn_to_utf8(CaptionTtfnStr, CaptionUtf8Str),
 	    name(UseCaption, CaptionUtf8Str),
 */	    member(VisType-Class, [submodel-'SUBMODEL',
 				   variable-'VARIABLE',
@@ -823,7 +823,7 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 	      append_atoms([Pt1, '\n', Pt2], FullStr));
           member(Field-Attr, [spec-spec, spec-value, units-units]),
 	  Node has_class_refinement Attr of Repn,
-	  (Attr = spec, catch((tcltk'><'all_utf8_to_ttfn(Repn, TtfnRepn),
+	  (Attr = spec, catch((tcltk><all_utf8_to_ttfn(Repn, TtfnRepn),
 			       name(Term, TtfnRepn)),
 			      _Er, fail); % old style spec
 	   Term = Repn), !,
@@ -837,7 +837,7 @@ make_runtime_string([L, Name, Used], Node, Field, Ptr, Stream) :-
 
 templatify(L, Elt, Ptr, [char, Ptr, void, QElt]) :-
 	name(Elt, TtfnStr),
-	user'><'all_ttfn_to_utf8(TtfnStr, Utf8Str),
+	user><all_ttfn_to_utf8(TtfnStr, Utf8Str),
 	name(Utf8Atom, Utf8Str),
 	make_constant_string(L, Utf8Atom, QElt).
 				     

@@ -21,7 +21,7 @@ local_wind_up :-
 :- consult(sp_only).
 
 % GNU-friendly notation for cross-module calls
-:- op(550, xfy, '><').
+:- op(550, xfy, ><).
 
 :- 	use_module([library(tcltk), library(lists), input, code]).
 

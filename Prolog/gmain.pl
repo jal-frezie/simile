@@ -5,10 +5,10 @@ This starts off the application and goes into an event loop from which it is dri
 */
 
 % GNU-friendly notation for cross-module calls
-:- op(550, xfy, '><').
+:- op(550, xfy, ><).
 
 /* allow module system to be ignored */
-_Module'><'Function :-
+_Module><Function :-
         call(Function).
 
 :- discontiguous([sicstus_module/2, sicstus_use_module/1,
@@ -220,7 +220,7 @@ reopen_stream_internally_formatted(Utf8Stm, IntStm, EuContents) :-
 	    open_chars_stream(EuContents, IntStm);
 	  open_chars_stream(Contents, IntStm)).
 % temp file can cause NetworkDriveReadOvertakesWrite problem, avoid where poss
-%	state'><'use_temp_dir(TempDir),
+%	state><use_temp_dir(TempDir),
 %	append_atoms(TempDir, '/temp_io.pl', TempFile),
 %	open_native(TempFile, write, Stream2),
 %	sicstus_write_chars(Stream2, Contents),
@@ -239,7 +239,7 @@ fill_chars(St, Char) :-
 	fill_chars(More, LChar).
 
 get_native(FileTtfn, FileNative) :-
-	output'><'safe_tcl_eval(['GetSystemName', br(FileTtfn)], Bag),
+	output><safe_tcl_eval(['GetSystemName', br(FileTtfn)], Bag),
 	sicstus_read_from_chars(Bag, String),
 	name(FileNative, String).
 
@@ -256,10 +256,10 @@ portray(T) :-
 	rt_portray(T).
 main :-
 	/* first clear state from previous run (only matters in dev sys)
-	database'><'clear_database, or not as the case may be */
-        database'><'empty_tree(dummy),
+	database><clear_database, or not as the case may be */
+        database><empty_tree(dummy),
 	    % comment out if not using structured database
-	state'><'retractall(model_in(_,_)),
+	state><retractall(model_in(_,_)),
         nl, write(ready), nl,
 	current_prolog_flag(prolog_name, Vname),
 	current_prolog_flag(prolog_version, Vnum),
@@ -274,7 +274,7 @@ main :-
 			 name(Bug, String),
 			 write(Bug), nl,
 			 fail)), */
-	on_exception(ErrorFunction, state'><'kickoff(PlogV), true),
+	on_exception(ErrorFunction, state><kickoff(PlogV), true),
         (nonvar(ErrorFunction),
 	    query(start_fail(ErrorFunction), error, top, [ok], _);
 	tk_main_loop).
