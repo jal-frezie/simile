@@ -181,6 +181,15 @@ ifeq ($(PROLOG),SWI)
 UINFO_TPL = userinfo.swi
 $(PROLOGSTATE): $(PROLOG_FILES)  Prolog/smain.pl $(PROLOG_DB)
 	cd Prolog; swipl --goal=main --stand_alone=true -o ../$(PROLOGSTATE) -c smain.pl; cd ..
+# Copy the swi-prolog shared library to the directory containing the
+# executable. This should also have been done for the swi-prolog
+# installed on the host, and the executable attacked with patchelf so
+# it looks in its own directory for it, rather than in /usr/lib. That
+# results in xssimile also looking in its own directory. We cannot
+# just copy it to /usr/lib on the target in case user wants to install
+# a different version of swi-prolog.
+	cp -L /usr/lib/libswipl.so $(EXECDIR)
+
 $(PROLOG_DB): Prolog/struct_db.c
 # for old SWI, or if building with mingw when swipl built with msvc
 #	cd Prolog; gcc -c -I$(SWIPLDIR)/include -D__SWI_PROLOG__ \
@@ -582,6 +591,9 @@ install:
 		$(SHIM) \
 		$(UNPK) \
 		$(SLDIR)/$(SHANK)
+ifeq ($(PROLOG),SWI)
+	cp -L $(SYSDIR)/bin/libswipl.so $(DESTDIR)$(EXEC_TGT)/$(SYSDIR)/bin
+endif
 	cd $(DESTDIR)$(EXEC_TGT); \
 	ln -s ../../..$(INSTALL_TGT)/Examples; \
 	ln -s ../../..$(INSTALL_TGT)/Extensions; \
@@ -599,5 +611,6 @@ endif
 
 # call clean after changing license info in this file
 clean:
-	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(RELAY) \
-	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT) \
+	rm -f $(PROLOGSTATE) $(EXECDIR)/*$(SHAREDLIBEXTN) $(PROLOG_OBJ) \
+		$(PROLOG_DB) $(RELAY) $(SLDIR)/$(SHANK) $(SHIM) $(UNPK) \
+		$(INSTLIB) $(MAIN) $(SCRIPT)
