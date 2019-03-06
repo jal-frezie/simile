@@ -591,9 +591,6 @@ install:
 		$(SHIM) \
 		$(UNPK) \
 		$(SLDIR)/$(SHANK)
-ifeq ($(PROLOG),SWI)
-	cp -L $(SYSDIR)/bin/libswipl.so $(DESTDIR)$(EXEC_TGT)/$(SYSDIR)/bin
-endif
 	cd $(DESTDIR)$(EXEC_TGT); \
 	ln -s ../../..$(INSTALL_TGT)/Examples; \
 	ln -s ../../..$(INSTALL_TGT)/Extensions; \
@@ -604,6 +601,9 @@ endif
 	ln -s ../../..$(INSTALL_TGT)/Run; \
 	tar xf payload.tar; \
 	rm payload.tar
+ifeq ($(PROLOG),SWI)
+	cp -L $(SYSDIR)/bin/libswipl.so $(DESTDIR)$(EXEC_TGT)/$(SYSDIR)/bin
+endif
 	mkdir -p $(DESTDIR)/usr/bin
 	cd $(DESTDIR)/usr/bin; \
 	ln -s ../..$(EXEC_TGT)/$(SYSDIR)/bin/simile
