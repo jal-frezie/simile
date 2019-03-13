@@ -1569,17 +1569,21 @@ fast_delete(Dead) :-
 		remove_floater(In),
 		remove_floater(Out)).
 
+must_go_first(Dead, AlsoDead) :-
+	Dead has_part AlsoDead;
+	member(Dead, [E1, E2]),
+	Link is_connector from E1 to E2,
+	Link has_part AlsoDead.
+    
 superfast_delete(Dead) :-
-	(Dead has_part AlsoDead;
-	    member(Dead, [E1, E2]),
-	    Link is_connector from E1 to E2,
-	    Link has_part AlsoDead),
-	  superfast_delete(AlsoDead),
-	  oblitterfry(AlsoDead),
-	  shows_model(Win, AlsoDead),
-	  draw><delete_window(Win),
-	  fail;
-	forget_highlit_obj(_, Dead).
+    setof(ToGo, must_go_first(Dead, ToGo), AllToGo),
+        member(AlsoDead, AllToGo),
+	superfast_delete(AlsoDead),
+	oblitterfry(AlsoDead),
+	shows_model(Win, AlsoDead),
+	draw><delete_window(Win),
+	fail;
+      forget_highlit_obj(_, Dead).
 
 do_delete(Kill_obj) :-
 	delete_implicit_node(Kill_obj),

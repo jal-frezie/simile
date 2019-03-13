@@ -651,8 +651,10 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
     }
             
     set ScaleCoeff [expr {1/pow(10,$lograngem)}]
-    set ScaledMax [expr {ceil($max*$ScaleCoeff)}]
-    set ScaledMin [expr {floor($min*$ScaleCoeff)}]
+    # fernangling factor of 0.01 is to make sure scale range is not extended to
+    # next tick because of a tiny (or non-existent!) overrun
+    set ScaledMax [expr {ceil($max*$ScaleCoeff - 0.01)}]
+    set ScaledMin [expr {floor($min*$ScaleCoeff + 0.01)}]
     if {abs($ScaledMin)<abs(0.1*$ScaledMax)} {
         set ScaledMin 0; # if min < 10% of max start axis from 0
     }

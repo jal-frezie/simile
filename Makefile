@@ -611,6 +611,5 @@ endif
 
 # call clean after changing license info in this file
 clean:
-	rm -f $(PROLOGSTATE) $(EXECDIR)/*$(SHAREDLIBEXTN) $(PROLOG_OBJ) \
-		$(PROLOG_DB) $(RELAY) $(SLDIR)/$(SHANK) $(SHIM) $(UNPK) \
-		$(INSTLIB) $(MAIN) $(SCRIPT)
+	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(RELAY) \
+		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT)
