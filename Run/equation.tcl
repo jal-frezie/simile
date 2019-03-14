@@ -274,14 +274,14 @@ proc create_equation {parent purpose comp indices enum_types} {
     BindPopup $equation(actzone).radio0 [NameToTag $bottomType]
     
     set en [text $equation(actzone).text -height 4 -width 64 \
-		-relief sunken -bd 2 -highlightthickness 0 -font EquationFont \
-		-yscrollcommand "$equation(actzone).scroll set"]
+		-relief sunken -bd 2 -highlightthickness 0 -font EquationFont]
     AllowTextDrags $en
 # risky choice, it may encourage modellers to enter very large equations
     # Safer bet: use math input toool. Problem, produces wrong kind of MathML
     # bind $en <<Paste>> {CheckForMathInput %W}
     
     scrollbar $equation(actzone).scroll -orient vert -command "$en yview"
+    $en configure -yscrollcommand "$equation(actzone).scroll set"
     pack $equation(actzone).scroll -side right -fill y
     pack $en -side right -expand true -fill both
     if {[string equal rules_for $purpose]} {
