@@ -354,6 +354,7 @@ install:
 		help/concepts \
 		help/data \
 		help/diagrams \
+		help/elements \
 		help/equations \
 		help/files \
 		help/index.htm \
