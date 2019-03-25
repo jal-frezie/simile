@@ -27,6 +27,14 @@ proc SeedRandoms {node val} {
     randseed $val
 }
 
+proc loadmodel {exec ident} {
+    set modelId [loadshlib $exec $ident]
+    foreach itemId [listobjects $modelId] {
+	set ::captionCache($modelId,[getvalue $modelId $itemId 5]) $itemId
+    }
+    return $modelId
+}
+
 # load_dll adds a dll to the system. Trees are added bottom up, so model_id
 # is always that most recently added (even if not recompiled)
 
@@ -360,7 +368,11 @@ proc RunningInC {myNode} {
     global model_id
     return [string bytelength $model_id] ;# it is ready
 } 
-    
+
+proc getnodeid {modelId capt} {
+    return $::captionCache($modelId,$capt)
+}
+
 proc GetCCompProperty {topNode prop args} {
     global model_id instance_id
     set node [lindex $args 0]

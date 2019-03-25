@@ -1160,7 +1160,7 @@ FINDABLE int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
   }
   return TCL_OK;
 }
-
+/*
 FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
@@ -1185,7 +1185,7 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
 }
-
+*/
 FINDABLE int graphCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   void* modelHandle;
@@ -1680,7 +1680,7 @@ FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
-  const char* allNames[] = {"loadmodel", "c_createmodel", "c_createparamarray",
+  const char* allNames[] = {"loadshlib", "c_createmodel", "c_createparamarray",
   "newc_settimepointarray", "newc_setrecordlist", "newc_settimepointrecords",
   "newc_cleartimeseries", "newc_setparamelement", "newc_setwraparoundtime",
   "newc_setfillmethod", "newc_setinterval", "newc_settimepointelement",
@@ -1688,7 +1688,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   "newc_settimepointall", "newc_gettimepointall", "c_resetmodel",
   "c_repeatreset", "c_executemodel", "c_setstepmodel", "c_exitmodel",
   "getvalue", "graph_table", "handle_data", "free_data_handle",
-  "getnodeid", "listobjects", "randseed", "random01", "add_event_command"};
+  "listobjects", "randseed", "random01", "add_event_command"};
   Tcl_ObjCmdProc* allProcs[] = {loadmodelCmd, createmodelCmd, setparamarrayCmd,
   settimepointarrayCmd, setrecordlistCmd, settimepointrecordsCmd,
   cleartimeseriesCmd, setparamelementCmd, setwrapCmd,
@@ -1697,7 +1697,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   settimepointallCmd, gettimepointallCmd, resetmodelCmd,
   repeatresetCmd, executemodelCmd, setstepCmd, exitmodelCmd,
   interfaceCmd, graphCmd, handleDataCmd, freeDataHandleCmd,
-  getnodeidCmd, listobjCmd, randseedCmd, random01Cmd, addEventCommandCmd};
+  listobjCmd, randseedCmd, random01Cmd, addEventCommandCmd};
   int cmdNo;
   // char pkgName[16];
 
@@ -1705,7 +1705,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   // Use the Tcl Stubs mechanism --version is earliest we expect to work
   if (!Tcl_InitStubs(interp, "8.5", 0)) return TCL_ERROR;
   proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess);
-  for (cmdNo = 0; cmdNo < 31; ++cmdNo) {
+  for (cmdNo = 0; cmdNo < 30; ++cmdNo) {
     Tcl_CreateObjCommand(interp, allNames[cmdNo], allProcs[cmdNo], 
 			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   }

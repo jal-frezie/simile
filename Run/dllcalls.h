@@ -314,7 +314,7 @@ EXTDEC int setstep(void*, double, int);
 EXTDEC char* myexit(void*, void*);
 
 EXTDEC void* get_ptr(void*, void*, int**, int**);
-EXTDEC char* getNodeId(void*, char*);
+// EXTDEC char* getNodeId(void*, char*);
 EXTDEC int retrieve_context(int**);
 
 EXTDEC void proc_pointers_for_shank(get_value_pointer_type*, interact_gui_type*,

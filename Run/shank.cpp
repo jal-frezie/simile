@@ -1877,8 +1877,8 @@ int ModelServer::param_item_from_id(FileParamData** start, int paramId) {
   }
 }
 
-// New version of nodeModelAndId returns number
-// -- who knows, maybe one day it will work intelligently?
+/* New version of nodeModelAndId returns number
+   -- who knows, maybe one day it will work intelligently?
 HCOMP ModelServer::CompFromCapt(char* seeknode) {
   int count;
   char test[255];
@@ -1895,7 +1895,7 @@ HCOMP ModelServer::CompFromCapt(char* seeknode) {
   // Node with given caption not found...
   return 0;
 }
-
+*/
 int ModelServer::member_param_item(FileParamData** start, int* parentPath) {
   node_data_line* nLine;
 
@@ -2245,7 +2245,7 @@ comparing each caption with what we are after, and as well as returning if
 it finds it, it continues inside any separate submodel it comes across whose
 caption fits the start of what we are after (after trimming the portion found
 from the search string, less the submodel itself -- note it may be an issue
-that the submodel name is searched for in both models ) */
+that the submodel name is searched for in both models )
 
 char* ModelServer::nodeModelAndId(char* seeknode) {
   int count, gcount, lcount, spare;
@@ -2266,8 +2266,8 @@ char* ModelServer::nodeModelAndId(char* seeknode) {
       return(nodedata[count].name);
     }
     
-    /* rest is dedicated to finding ghost nodes, which should only be tried 
-       if base is not found, if at all, so have put in new loop */
+    // rest is dedicated to finding ghost nodes, which should only be tried 
+    // if base is not found, if at all, so have put in new loop
   }
   for (count = 0; nodecount>count; ++count) {
     make_full_caption(count, test, dims, types);
@@ -2286,10 +2286,10 @@ char* ModelServer::nodeModelAndId(char* seeknode) {
       }
     }
   }
-  /* Node with given caption not found... */
+  // Node with given caption not found...
   return NULL;
 }
-
+*/
 char *falseTxt = (char*)"false";
 char *trueTxt = (char*)"true";
 char *booleanMems[2] = {falseTxt, trueTxt};
@@ -2625,9 +2625,10 @@ char* myexit(void* modelType, void* modelHandle) {
   return NULL; // message displayed in destructor cos it is not allowed
   // to have params or retval
 }
-
+/*
 char* getNodeId(void* modelType, char* capt) {
   int tgtIndex;
 
   return ((ModelServer*)modelType)->nodeModelAndId(capt);
 }
+*/
