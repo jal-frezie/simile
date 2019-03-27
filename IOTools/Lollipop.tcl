@@ -323,7 +323,8 @@ proc DrawShapes {winId solids tag} {
 #ShowMess debug info "$startMap $endMap" ok
 		lappend insts [list [list \
 		$winId.c create line $startx $starty $endx $endy -width $width \
-		    -fill [lindex $object3d 5] -capstyle round -tag $tag] \
+				 -fill [lindex $object3d 5] -capstyle round \
+				 -arrow [lindex $object3d 6] -tag $tag] \
 			   [expr ([lindex $startMap 2]+[lindex $endMap 2])/2] \
 				   [lindex $object3d 1]]
 	    } polygon {

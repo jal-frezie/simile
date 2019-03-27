@@ -123,7 +123,9 @@ itcl::class similescript::$newHelperClass {
 			  {component "end Y positions"} \
 			  {component "end Z positions"} \
 			  {component "width values"} \
-			  {colour all}}
+			  {colour all} \
+			  {choice "Line ends on which to show arrowheads" \
+			       none first last both}}
 		 polygons {{type "Select new item type"} \
 			  {component "X vertex position lists"} \
 			  {component "Y vertex position lists"} \
@@ -166,7 +168,8 @@ itcl::class similescript::$newHelperClass {
 
     public method MakeSelection {selected} {
 	for {set i 0} {$i < [llength $template]} {incr i} {
-	    if {[lsearch {type component colour} [lindex $template $i 0]]>-1} {
+	    if {[lsearch {type component colour choice} \
+		     [lindex $template $i 0]]>-1} {
 		if {[lindex $template $i 0] eq "colour" && \
 			![string first / $selected]} {
 		    # have selected a component for colour, need a key
@@ -220,6 +223,14 @@ itcl::class similescript::$newHelperClass {
 					    [lindex $template 0] $descrip] \
 			      -text "Select fixed colour"] -side bottom
 		    $modelInst GrabClicks $this
+		} choice {
+		    $winId.bottom.ms configure -text "Choose an option for $descrip:"
+		    pack [frame $winId.bottom.e] 
+		    foreach option [lrange [lindex $template $i] 2 end] {
+			pack [ttk::button $winId.bottom.e.b$option \
+				  -command [list $this SetChoice $option] \
+			          -text $option] -side left
+		    }
 		}
 	    }
 	}
@@ -228,6 +239,12 @@ itcl::class similescript::$newHelperClass {
     public method SetConst {} {
 	set result [$winId.bottom.e get]
 	$modelInst ReleaseClicks
+	destroy $winId.bottom.e
+	MakeSelection $result
+    }
+
+    public method SetChoice {option} {
+	set result $option
 	destroy $winId.bottom.e
 	MakeSelection $result
     }
@@ -304,7 +321,7 @@ itcl::class similescript::$newHelperClass {
 				    -numeric 1] [lrange $arr 2 end]]
 	} elseif {![string first / $arr]} { ;# model component
 	    return [$modelInst GetValue $arr -all 1]
-	} else { ;# numerical or colour constant
+	} else { ;# numerical, colour or choice constant
 	    return $arr
 	}
     }
@@ -328,7 +345,7 @@ itcl::class similescript::$newHelperClass {
 #		    foreach arr {x y z r} {
 #			array unset $arr
 #		    }
-		    foreach arr [lrange $instruct 1 5] {
+		    foreach arr [lrange $instruct 1 end] {
 #			array set [lindex {0 x y z r} $i] \
 #			    [Flatten [lindex [$modelInst GetValue \
 #						  [lindex $instruct $i]] 0]]
@@ -356,7 +373,7 @@ itcl::class similescript::$newHelperClass {
 #		    foreach arr {sx sy sz fx fy fz w} {
 #			array unset $arr
 #		    }
-		    foreach arr [lrange $instruct 1 8] {
+		    foreach arr [lrange $instruct 1 end] {
 			lappend rawList [AddAsApprop $arr]
 		    }
 		    set quadlist {}
@@ -367,9 +384,9 @@ itcl::class similescript::$newHelperClass {
 			} else {
 			    set id [lindex $instruct 7]
 			}
-			foreach {x1 y1 z1 x2 y2 z2 w c} $data {}
+			foreach {x1 y1 z1 x2 y2 z2 w c a} $data {}
 			set op [list line $id [list $x1 $y1 $z1] \
-				 [list $x2 $y2 $z2] $w $c]
+				 [list $x2 $y2 $z2] $w $c $a]
 			if {$z1+$z2 < 0} {
 			    lappend lower $op
 			} else {
@@ -412,7 +429,7 @@ itcl::class similescript::$newHelperClass {
 			}
 		    }
 		} ellipses {
-		    foreach arr [lrange $instruct 1 10] {
+		    foreach arr [lrange $instruct 1 end] {
 			lappend rawList [AddAsApprop $arr]
 		    }
 		    set quadlist {}
