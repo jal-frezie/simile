@@ -1833,13 +1833,11 @@ proc Customize {winId mode} {
 	set tb [frame $text.backbox]
 	label $tb.bdwhat -text "Show border"
 	pack $tb.bdwhat -side left
-	set looks(txtbd) $looks($n,$object,txtbd)
 	checkbutton $tb.bd -variable looks(txtbd) \
 	    -command "ZotObjectSize $t $n $object 0"
 	pack $tb.bd -side left
 	label $tb.bgwhat -text "Show background"
 	pack $tb.bgwhat -side left
-	set looks(txtbg) $looks($n,$object,txtbg)
 	checkbutton $tb.bg -variable looks(txtbg) \
 	    -command "ZotObjectSize $t $n $object 0"
 	pack $tb.bg -side left
@@ -1959,9 +1957,10 @@ proc LoadLooks {t n object} {
     
 	$g.objectsize.scale set $looks($n,$object,objectsize)
 	$g.lines.scale set $looks($n,$object,lines)
-	set looks(newXOff) $looks($n,$object,xoffset)
-	set looks(newYOff) $looks($n,$object,yoffset)
-	set looks(captAnchor) $looks($n,$object,captanchor)
+	foreach {workName saveName} {newXOff xoffset newYOff yoffset \
+		     captAnchor captanchor txtbd txtbd txtbg txtbg} {
+	    set looks($workName) $looks($n,$object,$saveName)
+	}
 	DoGraphics $t $object $middlex $middley $looks($n,$object,objectsize) \
 	    $looks(captAnchor)
     } else {
@@ -2352,6 +2351,9 @@ proc ResetLooks {c type} {
 	    set looks($c,text,textanchor) c
 	    set looks($c,image,outline) {}
 	    set looks($c,image,text) {}
+	} generic {
+	    set looks($c,compartment,outline) $looks($c,$type,outline)
+	    set looks($c,compartment,fill) $looks($c,$type,fill)
 	}
     }
 }
@@ -2368,9 +2370,9 @@ proc ApplyLooks {t topNode type} {
 	CopyLooks $t $topNode $type 0
         ExportLooks $t $topNode $type
     } else {
-# add state to next line
-        foreach object {generic compartment channel function variable text \
-			    ghost_link submodel flow influence relation} {
+# added state to next line
+        foreach object {generic compartment channel function variable state \
+			    text ghost_link submodel flow influence relation} {
 	    CopyLooks $t $topNode $object [string equal submodel $object]
             ExportLooks $t $topNode $object
         }
