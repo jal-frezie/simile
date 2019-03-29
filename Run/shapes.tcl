@@ -1940,9 +1940,6 @@ proc LoadLooks {t n object} {
 	    -activebackground $looks($n,$object,text)
     }
     
-    set middlex [expr $looks(width)/2 + 60]
-    set middley [expr $looks(width)/2 + 30]
-    
     if {[string compare $object text]} {
 	set g [GetFrame $t.graphics]
 	foreach flash {outline fill incomplete} {
@@ -1962,10 +1959,11 @@ proc LoadLooks {t n object} {
 		     captAnchor captanchor txtbd txtbd txtbg txtbg} {
 	    set looks($workName) $looks($n,$object,$saveName)
 	}
-	DoGraphics $t $object $middlex $middley $looks($n,$object,objectsize) \
-	    $looks(captAnchor)
+	DoGraphics $t $object $looks($n,$object,objectsize) $looks(captAnchor)
     } else {
 	$t.canvas delete sample
+	set middlex [expr $looks(width)/2 + 60]
+	set middley [expr $looks(width)/2 + 30]
         PutText $t.canvas [list $middlex $middley] \
                 text "sample" 100 0 normal "Sample text box"
     }
@@ -2035,72 +2033,81 @@ proc CopyLooks {t n object nta} {
     }
 }
 
-proc DoGraphics {box type middlex middley size captAnchor} {
+proc DoGraphics {box type size captAnchor} {
     global looks
     $box.canvas delete sample
 
+    set count 0
+    foreach status {normal incomplete select highlight target} {
+	set lineTags [list eg_$status sample]
+	set boxTags [concat $lineTags targetable]
+	set middlex [expr {($count%2+0.5)*$looks(width)/2 + 60}]
+	set middley [expr {($count+0.5)*$looks(width)/5 + 30}]
+    
     switch -regexp $type {
         compartment|generic {
             set l [expr $middlex - 2*$size/5]
             set r [expr $middlex + 2*$size/5]
             set t [expr $middley - 3*$size/10]
             set b [expr $middley + 3*$size/10]
-	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal \
-		"sample targetable"
+	    PutRectangle $box.canvas $l $t $r $b 1 100 {} $status $boxTags
 #        } state {
 #            set l [expr $middlex - 3*$size/10]
 #            set r [expr $middlex + 3*$size/10]
 #            set t [expr $middley - 2*$size/5]
 #            set b [expr $middley + 2*$size/5]
-#	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal \
-#		"sample targetable"
+#	    PutRectangle $box.canvas $l $t $r $b 1 100 {} $status \
+#		$boxTags
         } submodel {
             set l [expr $middlex - 90]
             set r [expr $middlex + 90]
-            set t [expr $middley - 60]
-            set b [expr $middley + 60]
+            set t [expr $middley - 20]
+            set b [expr $middley + 20]
 	    PutRoundedRect $box.canvas $l $t $r $b 3 100 clear \
-		none none 0 0 white 100 normal "sample targetable"
+		none none 0 0 white 100 $status $boxTags
 	} flow {
             set l [expr $middlex - $size/8]
             set r [expr $middlex + $size/8]
             set t [expr $middley - $size/4]
             set b [expr $middley + $size/4]
-            PutBowTie $box.canvas $l $t $r $b 100 {} normal "sample targetable"
+            PutBowTie $box.canvas $l $t $r $b 100 {} $status $boxTags
 #            PutFatArrow $box.canvas "30 [expr $middley-30] $middlex \
 #                    [expr $middley - 30] $middlex [expr $middley + 30] \
 #                    [expr 2*$middlex - 30] [expr $middley + 30]" \
-#                    100 normal "sample"
-
+		#                    100 normal "sample"
+	    set l [expr $middlex-60]
+	    set r [expr $middlex+60]
 # Above drew bowtie on vertical section -- do horizontal for easy life
-	    PutFatArrow $box.canvas \
-		"30 $middley [expr 2*$middlex - 30] $middley" \
-		1 100 normal "sample"
+	    PutFatArrow $box.canvas "$l $middley $r $middley" \
+		1 100 $status $lineTags
+	    set rr [expr $r+$size/2]	    
+	    PutCloud $box.canvas $r $t $rr $b 1 100 {} $status $boxTags
         } variable|event {
             set l [expr $middlex - 3*$size/20]
             set r [expr $middlex + 3*$size/20]
             set t [expr $middley - 3*$size/20]
             set b [expr $middley + 3*$size/20]
 	    set extras [expr {1+100*($type eq "event")}]
-	    PutCrossedCirc $box.canvas $l $t $r $b $extras 100 {} normal \
-		"sample targetable"
+	    PutCrossedCirc $box.canvas $l $t $r $b $extras 100 {} $status \
+		$boxTags
         } channel {
             set l [expr $middlex - 3*$size/10]
             set r [expr $middlex + 3*$size/10]
             set t [expr $middley - 3*$size/10]
             set b [expr $middley + 3*$size/10]
-	    PutShape $box.canvas $l $t $r $b condition 100 normal \
-		"sample targetable"
-        } influence {PutThinArrow $box.canvas "30 $middley $middlex \
-                    [expr $middley-30] [expr 2*$middlex - 30] $middley" \
-                    1 100 {} normal "sample"
-        } ghost_link {PutThinArrow $box.canvas "30 $middley $middlex \
-                    [expr $middley-30] [expr 2*$middlex - 30] $middley" \
-                    1 100 gray50 normal "sample"
+	    PutShape $box.canvas $l $t $r $b condition 100 $status \
+		$boxTags
+        } influence|ghost_link {
+	    set l [expr $middlex-60]
+	    set r [expr $middlex+60]
+	    set stipple [expr {($type eq "ghost_link") ? "gray50" : {}}]
+	    PutThinArrow $box.canvas "$l $middley $middlex [expr $middley-30] \
+	    		 $r $middley" 1 100 $stipple $status $lineTags
         } relation {
-	    PutRelation $box.canvas "30 $middley $middlex \
-                    [expr $middley-30] [expr 2*$middlex - 30] $middley" \
-		100 normal "sample"
+	    set l [expr $middlex-60]
+	    set r [expr $middlex+60]
+	    PutRelation $box.canvas "$l $middley $middlex \
+                    [expr $middley-30] $r $middley" 100 $status $lineTags
 	    set l [set r $middlex]
 	    set t [set b [expr $middley-15]]
 	    $box.canvas create rectangle $l $t $r $b -outline {} \
@@ -2110,7 +2117,7 @@ proc DoGraphics {box type middlex middley size captAnchor} {
 
     if {[info exists b]} {
 # side to put caption on -- this is fixed for now, but one day...
-	set capt "Sample $type"
+	set capt "Sample $status $type"
 	set anchorPt [FindAnchor $l $t $r $b $captAnchor]
 # old way of getting anchor
 #	switch $type {
@@ -2127,13 +2134,15 @@ proc DoGraphics {box type middlex middley size captAnchor} {
 #	    }
 #	}
         PutText $box.canvas $anchorPt \
-                $type "sample movable" 100 0 normal $capt
+                $type "eg_$status sample movable" 100 0 $status $capt
         $box.canvas bind movable <Button-1> {SampleMark %x %y %W}
         $box.canvas bind movable <B1-Motion> {SampleMove %x %y %W}
 # A third binding is required, one that on release will get the bbox of the 
 # drawing, find the compass point closest to the drop, and make that the 
 # caption anchor. How hard can it be? Let's try --
 	$box.canvas bind movable <ButtonRelease-1> {SampleDrop %x %y %W}
+    }
+	incr count
     }
 }
 
@@ -2199,15 +2208,15 @@ proc SampleMark { x y w } {
     # an absolute drag!
     
     
-    set textItem [GetCaptionItem $w sample]
+    set textItem [GetCaptionItem $w current]
     $w itemconfigure $textItem \
-	-anchor [FindClosestCompassPoint $w movable $x $y]
+	-anchor [FindClosestCompassPoint $w $textItem $x $y]
     $w coords $textItem $x $y
     FixBackBox $w $textItem
 }
 
 proc SampleMove {x y w} {
-    set oldPosn [$w coords [GetCaptionItem $w sample]]
+    set oldPosn [$w coords [GetCaptionItem $w current]]
     $w move movable [expr $x-[lindex $oldPosn 0]] [expr $y-[lindex $oldPosn 1]]
 }
 
@@ -2252,27 +2261,29 @@ proc AssembleFont {family weight style textsize} {
 
 proc ZotFont { t param } {
     set txt [GetCaptionItem $t.canvas sample]
-    $t.canvas itemconfigure $txt -font [ResetFont $t]
-    FixBackBox $t.canvas $txt
+    $t.canvas itemconfigure is_caption -font [ResetFont $t]
+    foreach item [$t.canvas find withtag is_caption] {
+	FixBackBox $t.canvas item
+    }
 }
 
 proc ZotColor {t n role type} {
+    global looks
+    
     set newColour [tk_chooseColor -initialcolor \
             [$role cget -activebackground]]
     if {[llength $newColour]} {
 	$role configure -activebackground $newColour
 	CopyLooks $t $n $type 0
-	ResetColours $t.canvas $type {} normal sample
-	FillSymbol $t.canvas sample $::looks($n,$type,fill)
+#	ResetColours $t.canvas $type {} normal sample
+#	FillSymbol $t.canvas sample $::looks($n,$type,fill)
+	DoGraphics $t $type $looks($n,$type,objectsize) $looks(captAnchor)
     }
 }
 
 proc ZotObjectSize {t n type size} {
     global looks
     
-
-    set middlex [expr $looks(width)/2 + 60]
-    set middley [expr $looks(width)/2 + 30]
 #    if {[string match generic $type]} {
 #        set useLooks compartment
 #    } else {
@@ -2281,8 +2292,7 @@ proc ZotObjectSize {t n type size} {
     
     CopyLooks $t $n $useLooks 0
     if {[string compare text $type]} {
-	DoGraphics $t $useLooks $middlex $middley \
-	    [[GetFrame $t.graphics].objectsize.scale get] \
+	DoGraphics $t $useLooks [[GetFrame $t.graphics].objectsize.scale get] \
 	    $looks(captAnchor)
     } else {
 	$t.canvas delete sample
@@ -2395,7 +2405,7 @@ proc ExportLooks {t topNode type} {
     prolog [format "tk_change_size(%s,%s,%d,%s)" $topNode $type $looks($topNode,$type,objectsize) $looks($topNode,$type,captanchor)]
     foreach {doing also} {compartment state flow cloud event squirt} {
 	if {$type eq $doing} {
-	    prolog [format "tk_change_size(%s,%s,%d,%s)" $topNode $also \$looks($topNode,$type,objectsize) $looks($topNode,$type,captanchor)]
+	    prolog [format "tk_change_size(%s,%s,%d,%s)" $topNode $also $looks($topNode,$type,objectsize) $looks($topNode,$type,captanchor)]
 	}
     }
 }
