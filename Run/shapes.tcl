@@ -155,16 +155,17 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
 # outline sections will be stippled. Let's hope 8.5 is better.
 
 proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
-    set width [GetLineSize $w variable $fatness]
-    set fCol $::looks($::window_info($w,top_node),variable,fill)
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set rad [expr ($mr-$ml)/2]
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
 
+    set style [expr $extras/100]
+    set look [expr {$style?"event":"variable"}]
+    set fCol $::looks($::window_info($w,top_node),$look,fill)
+    set width [GetLineSize $w $look $fatness]
     set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] "$tagSet has_info"]
 
-    set style [expr $extras/100]
     set extras [expr $extras-100*$style]
     set generic [list -width $width \
 		     -tags "$tagSet size_on_this realwidth($width) has_info"]
@@ -241,7 +242,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
         }
         incr stackDepth
     }
-    ResetColours $w variable $density $colourScheme [lindex $tagSet 0]
+    ResetColours $w $look $density $colourScheme [lindex $tagSet 0]
 }
 
 proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
@@ -1816,15 +1817,15 @@ proc Customize {winId mode} {
         set tf [frame $text.font]
         label $tf.what -text "Font: "
         pack $tf.what -side left
-        tk_optionMenu $tf.family looks($n,$object,family) \
+        tk_optionMenu $tf.family looks(family) \
                 helvetica times system courier symbol
         bind $tf.family.menu <Leave> "ZotFont $t 120"
         pack $tf.family -side left
-        tk_optionMenu $tf.weight looks($n,$object,weight) \
+        tk_optionMenu $tf.weight looks(weight) \
                 bold normal
         bind $tf.weight.menu <Leave> "ZotFont $t 120"
         pack $tf.weight -side left
-        tk_optionMenu $tf.style looks($n,$object,style) \
+        tk_optionMenu $tf.style looks(style) \
                 italic roman
         bind $tf.style.menu <Leave> "ZotFont $t 120"
         pack $tf.style -side left
@@ -1859,7 +1860,7 @@ proc Customize {winId mode} {
 	}
 	pack $graphics.setcolours
 	pack [frame $graphics.trwhite]
-	pack [checkbutton $graphics.trwhite.chk -variable looks($n,trwhite)] -side left
+	pack [checkbutton $graphics.trwhite.chk -variable looks(trwhite)] -side left
 	pack [label $graphics.trwhite.lbl -text "Show white as transparent"] -side left
 	
 	frame $graphics.flashcolours
@@ -1930,9 +1931,9 @@ proc LoadLooks {t n object} {
     if {[string compare $object influence]} {
 #        puts "ExtractFontData looks($n,$object,font) [ExtractFontData $looks($n,$object,font)]"
 	set fontData [ExtractFontData $looks($n,$object,font)]
-	set looks($n,$object,family) [lindex $fontData 0]
-	set looks($n,$object,weight) [lindex $fontData 1]
-	set looks($n,$object,style) [lindex $fontData 2]
+	set looks(family) [lindex $fontData 0]
+	set looks(weight) [lindex $fontData 1]
+	set looks(style) [lindex $fontData 2]
 	set textsize [lindex $fontData 3]
         [GetFrame $t.text].size.scale set $textsize
 	[GetFrame $t.text].backbox.col configure \
@@ -2004,8 +2005,12 @@ proc CopyLooks {t n object nta} {
 	    set looks($n,$object,$colour) \
                 [$g.setcolours.$colour cget -activebackground]
 	    if {[string equal [Desystematize white] [Desystematize $looks($n,$object,$colour)]] && \
-		    $looks($n,trwhite)} {
+		    $looks(trwhite)} {
 		set looks($n,$object,$colour) {}
+	    }
+	    if {[string equal generic $object]} {
+		set looks($n,compartment,$colour) $looks($n,$object,$colour)
+		# for sample
 	    }
 	}
 	foreach colour {select highlight target} {
@@ -2042,13 +2047,13 @@ proc DoGraphics {box type middlex middley size captAnchor} {
             set b [expr $middley + 3*$size/10]
 	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal \
 		"sample targetable"
-        } state {
-            set l [expr $middlex - 3*$size/5]
-            set r [expr $middlex + 3*$size/5]
-            set t [expr $middley - 2*$size/10]
-            set b [expr $middley + 2*$size/10]
-	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal \
-		"sample targetable"
+#        } state {
+#            set l [expr $middlex - 3*$size/10]
+#            set r [expr $middlex + 3*$size/10]
+#            set t [expr $middley - 2*$size/5]
+#            set b [expr $middley + 2*$size/5]
+#	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal \
+#		"sample targetable"
         } submodel {
             set l [expr $middlex - 90]
             set r [expr $middlex + 90]
@@ -2071,12 +2076,13 @@ proc DoGraphics {box type middlex middley size captAnchor} {
 	    PutFatArrow $box.canvas \
 		"30 $middley [expr 2*$middlex - 30] $middley" \
 		1 100 normal "sample"
-        } variable {
+        } variable|event {
             set l [expr $middlex - 3*$size/20]
             set r [expr $middlex + 3*$size/20]
             set t [expr $middley - 3*$size/20]
             set b [expr $middley + 3*$size/20]
-	    PutCrossedCirc $box.canvas $l $t $r $b 1 100 {} normal \
+	    set extras [expr {1+100*($type eq "event")}]
+	    PutCrossedCirc $box.canvas $l $t $r $b $extras 100 {} normal \
 		"sample targetable"
         } channel {
             set l [expr $middlex - 3*$size/10]
@@ -2085,12 +2091,12 @@ proc DoGraphics {box type middlex middley size captAnchor} {
             set b [expr $middley + 3*$size/10]
 	    PutShape $box.canvas $l $t $r $b condition 100 normal \
 		"sample targetable"
-        } influence {PutThinArrow $box.canvas 1 "30 $middley $middlex \
+        } influence {PutThinArrow $box.canvas "30 $middley $middlex \
                     [expr $middley-30] [expr 2*$middlex - 30] $middley" \
-                    100 {} normal "sample"
-        } ghost_link {PutThinArrow $box.canvas 1 "30 $middley $middlex \
+                    1 100 {} normal "sample"
+        } ghost_link {PutThinArrow $box.canvas "30 $middley $middlex \
                     [expr $middley-30] [expr 2*$middlex - 30] $middley" \
-                    100 gray50 normal "sample"
+                    1 100 gray50 normal "sample"
         } relation {
 	    PutRelation $box.canvas "30 $middley $middlex \
                     [expr $middley-30] [expr 2*$middlex - 30] $middley" \
@@ -2365,18 +2371,17 @@ proc Desystematize {colorSpec} {
 }
 
 proc ApplyLooks {t topNode type} {
-    RememberLooks $topNode
     if {[string compare $type generic]} {
 	CopyLooks $t $topNode $type 0
         ExportLooks $t $topNode $type
     } else {
-# added state to next line
-        foreach object {generic compartment channel function variable state \
+        foreach object {generic compartment channel function variable event \
 			    text ghost_link submodel flow influence relation} {
 	    CopyLooks $t $topNode $object [string equal submodel $object]
             ExportLooks $t $topNode $object
         }
     }
+    RememberLooks $topNode
 }
 
 proc RememberLooks {n} {
@@ -2388,12 +2393,11 @@ proc ExportLooks {t topNode type} {
     global looks window_info
     
     prolog [format "tk_change_size(%s,%s,%d,%s)" $topNode $type $looks($topNode,$type,objectsize) $looks($topNode,$type,captanchor)]
-    if {[string match flow $type]} {
-        prolog [format "tk_change_size(%s,%s,%d,%s)" $topNode cloud $looks($topNode,$type,objectsize) $looks($topNode,$type,captanchor)]
+    foreach {doing also} {compartment state flow cloud event squirt} {
+	if {$type eq $doing} {
+	    prolog [format "tk_change_size(%s,%s,%d,%s)" $topNode $also \$looks($topNode,$type,objectsize) $looks($topNode,$type,captanchor)]
+	}
     }
-    #	foreach windae [array name window_info *,parent] {
-    #		set canvas [string trimright $windae ,parent]
-    #	}
 }
 
 #proc ReadLooks {t n topNode type} {
@@ -2437,9 +2441,8 @@ proc ExportLooks {t topNode type} {
 
 proc MakeLooksSaver {n} {
     global looks
-# add state to next line
     set objects {generic compartment channel text \
-		     variable function submodel flow influence \
+		     variable event function submodel flow influence \
 		     ghost_link relation}
     set aspects {font txtbd txtbg outline fill text select highlight target \
 		     incomplete objectsize lines xoffset yoffset textanchor \

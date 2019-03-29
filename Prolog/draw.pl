@@ -247,7 +247,7 @@ display(Window_id, Comp, Depth, Trans, Recurse) :-
 	display_in(Window_id, Comp, Depth, Trans),
 	(Recurse = 1,
 	find_type(Comp, submodel),
-	\+ get_shape(Comp, hide_contents, 1),
+	\+ (get_shape(Comp, hide_contents, 1), \+ Window_id shows_model Comp),
 	New_depth is Depth + 1,
 	draws_at(Window_id, submodel, New_depth), !,
 	    (New_depth = 0 -> Subtrans = [0, 0, 1, 1];
@@ -304,7 +304,8 @@ here; quicker just to send instruction to all windows. Must be cut free. */
 change_color(Obj, Color) :-
 	\+ suspend_display,
 	/* find_relevant_windows(Obj, Wid, _, _), */
-	draw_style_for(Obj, Type),
+	(find_type(Obj, event) -> Type = event;
+	 draw_style_for(Obj, Type)),
 	Wid shows_model _,
 	tk_change_color(Wid, Obj, Type, unchanged, Color), fail.
 
@@ -361,7 +362,9 @@ add_caption(Wid, Id, Style, Box, Trans, Fatness, Specials, Colour_scheme) :-
 	    DefAnchor = s;
 	DefAnchor = c),
 	(nonvar(PosStyle), !; */
-	  PosStyle = Style,
+	  (find_type(Id, event),
+	    PosStyle = event;
+	  PosStyle = Style), !,
 	    UseAnchor = DefAnchor),
 
 	(Style = text ->

@@ -117,11 +117,11 @@ main :-
         % swi: include decimals in floats so they are readable by other Prologs
 	set_prolog_flag(float_format, '%#.12g'),
         nl, write(ready), nl,
+	% gtrace, % uncomment to trace startup
 	output:safe_tcl_eval([file, join, '$::env(SYSDIR)', lib, struct_db],
 			     PathToObjStr),
 	name(PathToObj, PathToObjStr),
 	database:empty_tree(PathToObj),
-	% gtrace, % uncomment to trace startup
 	state:retractall(model_in(_,_)),
 	prolog_flag(version, FullVnum),
 	name(FullVnum, FullVnumStr),
