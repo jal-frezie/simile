@@ -1799,18 +1799,17 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add cascade -label [tr. "Customize"] -menu $fm.sub4
     foreach {category loc_label} \
 	[list compartment [tr. "Compartments, states..."] \
-	     variable [tr. "Variables..."] \
-	     flow [tr. "Flows, bowties, clouds..."] \
+	     variable [tr. "Variables, events..."] \
+	     flow [tr. "Flows, squirts, clouds..."] \
 	     influence [tr. "Influences..."] \
 	     submodel [tr. "Submodels..."] \
 	     relation [tr. "Relations..."] \
 	     condition [tr. "Channels..."] \
-	     event [tr. "Events, squirts..."] \
 	     text [tr. "Text boxes..."] \
 	     ghost_link [tr. "Ghost links..."] \
 	     select [tr. "All components..."]] {
-    $fm.sub4 add command -command "Customize $winid $category" \
-        -label $loc_label
+		 $fm.sub4 add command -command "Customize $winid $category" \
+		     -label $loc_label
     }
     UnderlineUniquely $fm.sub4
 

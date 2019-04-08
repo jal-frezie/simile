@@ -161,7 +161,10 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set vm [expr $mt+$rad]
 
     set style [expr $extras/100]
-    set look [expr {$style?"event":"variable"}]
+    #    set look [expr {$style?"event":"variable"}]
+    # Do not have separate appearance for events for now, it would require
+    # separate display depth
+    set look variable
     set fCol $::looks($::window_info($w,top_node),$look,fill)
     set width [GetLineSize $w $look $fatness]
     set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] "$tagSet has_info"]

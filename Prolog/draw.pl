@@ -262,9 +262,11 @@ display(Window_id, Comp, Depth, Trans, Recurse) :-
 	true);
 	Comp is_of_sort line,
 	    display_link_in(Window_id, Comp, Depth, Trans)),
-	(get_highlit_obj(N, Comp), !,
+	(Depth < 0, !;
+	 get_highlit_obj(N, Comp), !,
 	    highlight(Comp, N);
-	true).
+	 normal_colour_for(Comp, NormCol),
+	    change_color(Comp, NormCol)).
 
 /* highlight not only redraws the component in any of a number of styles, it also
 records its id in the GUI state database so it can be manipulated independently of
@@ -304,8 +306,7 @@ here; quicker just to send instruction to all windows. Must be cut free. */
 change_color(Obj, Color) :-
 	\+ suspend_display,
 	/* find_relevant_windows(Obj, Wid, _, _), */
-	(find_type(Obj, event) -> Type = event;
-	 draw_style_for(Obj, Type)),
+	draw_style_for(Obj, Type),
 	Wid shows_model _,
 	tk_change_color(Wid, Obj, Type, unchanged, Color), fail.
 
