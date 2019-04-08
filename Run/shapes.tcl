@@ -88,7 +88,7 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
                 -tags "$tagSet size_on_this realwidth($width)"
         incr stackDepth
     }
-    ResetColours $w compartment $density $colourScheme [lindex $tagSet 0]
+#    ResetColours $w compartment $density $colourScheme [lindex $tagSet 0]
 }
 
 proc PutShape {w l t r b file fatness colourScheme title} {
@@ -116,7 +116,7 @@ proc PutShape {w l t r b file fatness colourScheme title} {
 # dialogue to get its threads in a twist
     $w addtag has_info withtag unscaled
     EndGroup $w $xoff $yoff $scale    
-    ResetColours $w channel {} $colourScheme [lindex $title 0]
+#    ResetColours $w channel {} $colourScheme [lindex $title 0]
 }
 
 proc PutHexagon { w l t r b stack fatness density colourScheme tagSet} {
@@ -131,7 +131,7 @@ proc PutHexagon { w l t r b stack fatness density colourScheme tagSet} {
     set width [GetLineSize $w function $fatness]
     $w create polygon $mr $my $m75 $mt $m25 $mt $ml $my $m25 $mb $m75 $mb \
 	-width $width -fill $fCol -tags "$tagSet size_on_this realwidth($width)"
-    ResetColours $w function $density $colourScheme [lindex $tagSet 0]
+#    ResetColours $w function $density $colourScheme [lindex $tagSet 0]
 }
 
 
@@ -141,7 +141,7 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
     set bounds [PositionBowtie $w [list $l $t $r $b]]
     $w create polygon $bounds -outline {} -fill $fCol -tags "$tagSet bowtie has_info"
     $w create line $bounds -width $width -tags "$tagSet bowtie realwidth($width)"
-    ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
+#    ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
 # Circles are drawn as many-hedrons until the bug that stops ovals
@@ -245,7 +245,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
         }
         incr stackDepth
     }
-    ResetColours $w $look $density $colourScheme [lindex $tagSet 0]
+#    ResetColours $w $look $density $colourScheme [lindex $tagSet 0]
 }
 
 proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
@@ -269,7 +269,7 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
     $w create arc [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
             [expr (2*$mb + $mt)/3] -width $width \
             -style arc -start -10 -extent 225 -tags $arcTags
-    ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
+#    ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
 proc PutImage { w l t r b stack fatness density colourScheme tagSet} {
@@ -303,7 +303,7 @@ proc PutImage { w l t r b stack fatness density colourScheme tagSet} {
 	$w create line $ax $ay $ax [expr {$ay+1}] -width 6 \
 	    -capstyle projecting -tags [concat $tagSet /handle/ /$anchor/]
     }
-    ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
+#    ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
 }
 
 proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
@@ -591,7 +591,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	}
 	$w dtag $marker
     }
-    ResetColours $w submodel {} $colourScheme [lindex $tagSet 0]
+#    ResetColours $w submodel {} $colourScheme [lindex $tagSet 0]
 }
 
 proc PutThinArrow { w ptz stack fatness density colourScheme tagSet} {
@@ -615,7 +615,7 @@ proc PutThinArrow { w ptz stack fatness density colourScheme tagSet} {
 	    {-width $width -tags "$tagSet stackdecor($level)"}
 	}
     }
-    ResetColours $w influence $density $colourScheme [lindex $tagSet 0]
+#    ResetColours $w influence $density $colourScheme [lindex $tagSet 0]
 }
 
 proc PutRelation { w ptz fatness colourScheme tagSet} {
@@ -632,7 +632,7 @@ proc PutRelation { w ptz fatness colourScheme tagSet} {
     # line
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr 2*$arrowRad] \
             "$tagSet startblob"
-    ResetColours $w relation gray50 $colourScheme [lindex $tagSet 0]
+#    ResetColours $w relation gray50 $colourScheme [lindex $tagSet 0]
 }
 
 proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
@@ -664,7 +664,7 @@ proc PutFatArrow { w ptz stack fatness colourScheme tagSet} {
 		       no_stipple has_info"
         incr stackDepth
     }
-    ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
+#    ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
 }
 
 # OK now watch carefully. Here we copy a rounded-rect area of an image
@@ -1044,17 +1044,17 @@ proc FillSymbol { w name color } {
     }
 }
 
-proc ResetColours { w type density colourScheme name } {
-    global looks window_info
-    
-#    set n $window_info($w,top_node)
-    if {!$::headless} {
-	ColorSymbol $w $name $type $density $colourScheme
-    }
-#    set fillColor $looks($n,$type,fill)
-#    FillSymbol $w $name $fillColor
-}
-
+#proc ResetColours { w type density colourScheme name } {
+#    global looks window_info
+#    
+##    set n $window_info($w,top_node)
+#    if {!$::headless} {
+#	ColorSymbol $w $name $type $density $colourScheme
+#    }
+##    set fillColor $looks($n,$type,fill)
+##    FillSymbol $w $name $fillColor
+#}
+#
 proc ColourExists {col} {
     if {!$::headless && [catch {winfo rgb . $col}]} {
 	return 0
@@ -2145,6 +2145,7 @@ proc DoGraphics {box type size captAnchor} {
 # caption anchor. How hard can it be? Let's try --
 	$box.canvas bind movable <ButtonRelease-1> {SampleDrop %x %y %W}
     }
+	ColorSymbol $box.canvas eg_$status $type {} $status
 	incr count
     }
 }

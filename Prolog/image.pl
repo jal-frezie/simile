@@ -210,23 +210,24 @@ get_closest_edge(Node, [X,Y], Edge, [EfX, EfY]) :-
     member(MM-Edge, [LM-l, TM-t, RM-r, BM-b]). */
 
 make_bounding_box(New_obj, Xpt, Ypt, Cur_size, [L, T, R, B]) :-
-    ((New_obj is_class_of_sort regular_box; New_obj = channel),
+    ((New_obj is_class_of_sort regular_box; New_obj = channel;
+      New_obj is_class_of_sort tall_box),
         L is Xpt - Cur_size/2,
         R is Xpt + Cur_size/2;
     New_obj is_class_of_sort elongated_box,
         L is Xpt - 2*Cur_size/3,
         R is Xpt + 2*Cur_size/3;
-    New_obj is_class_of_sort tall_box,
-        L is Xpt - 3*Cur_size/8,
-        R is Xpt + 3*Cur_size/8;
     New_obj = flow,
         L is Xpt - Cur_size/4,
         R is Xpt + Cur_size/4;
       New_obj = squirt,
         L is Xpt - Cur_size/2 + 1, % tweak to allow caption rottion if verical
         R is Xpt + Cur_size/2 - 1),
-    T is Ypt - Cur_size/2,
-    B is Ypt + Cur_size/2.
+    (New_obj is_class_of_sort tall_box ->
+	 T is Ypt - 2*Cur_size/3,
+	 B is Ypt + 2*Cur_size/3;
+     T is Ypt - Cur_size/2,
+     B is Ypt + Cur_size/2).
 
 density_for(Comp, Density) :-
     (Comp has_type relation;
@@ -246,7 +247,7 @@ use_style_for(Obj, channel) :-
     Obj is_class_of_sort channel, !.
 
 use_style_for(Type, Shape) :-
-    member(Type-Shape, [event-variable, squirt-flow]),
+    member(Type-Shape, [event-variable, squirt-flow, state-compartment]),
     !.
 
 use_style_for(Style, Style).
@@ -416,7 +417,7 @@ get_drawing_form(Comp, Style, BBox) :-
 	BBox = [L, T, R, B];
     get_shape(Comp, centre, [Xpt, Ypt]),
 	get_box_size(Comp, Style, Cur_size),
-	make_bounding_box(Style, Xpt, Ypt, Cur_size, BBox);
+	make_bounding_box(Type, Xpt, Ypt, Cur_size, BBox);
     border_node(Comp), !,
 	Submodel has_part Comp,
 	get_shape(Comp, along, Theta),

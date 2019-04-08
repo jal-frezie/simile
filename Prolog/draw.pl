@@ -363,9 +363,7 @@ add_caption(Wid, Id, Style, Box, Trans, Fatness, Specials, Colour_scheme) :-
 	    DefAnchor = s;
 	DefAnchor = c),
 	(nonvar(PosStyle), !; */
-	  (find_type(Id, event),
-	    PosStyle = event;
-	  PosStyle = Style), !,
+	  PosStyle = Style, !,
 	    UseAnchor = DefAnchor),
 
 	(Style = text ->
@@ -500,9 +498,6 @@ display_in(Wid, Comp, Depth, Trans) :-
 	        (P = 1 -> Num is DNum+120;
 	           Num is DNum+100);
 	        Num=DNum)),
-	    (Style=state, !,
-	       DCmd = compartment;
-	    DCmd = Style),
 	    
 	    (Style = submodel, !,
 		get_colour(Comp, FillColour, FillImage, ImgPos),
@@ -519,7 +514,7 @@ display_in(Wid, Comp, Depth, Trans) :-
 				  FillColour, FillImage, ImgPos, Ox, Oy,
 				  BgColour, InFat, Colour_scheme, Comp);
 	    (Style is_class_of_sort box; Style = channel), !,
-	    Draw_command =.. [DCmd, Wid, Screen_list, Num, Fatness,
+	    Draw_command =.. [Style, Wid, Screen_list, Num, Fatness,
 				  Density, Colour_scheme, [Comp]],
 		call(Draw_command);
 	    output><safe_tcl_eval(['DebugMess',
@@ -529,7 +524,7 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    (get_display_depth(Wid, caption, Caption_detail),
 	     ((Style is_class_of_sort captionless; \+ appears(Comp);
 	              Caption_detail =< Depth), !;
-		add_caption(Wid, Comp, DCmd, BBox, Trans, Fatness, [0], Colour_scheme)));
+		add_caption(Wid, Comp, Style, BBox, Trans, Fatness, [0], Colour_scheme)));
 	true).
 
 display_link_in(Wid, Link, Depth, Trans) :-
