@@ -307,8 +307,9 @@ change_color(Obj, Color) :-
 	\+ suspend_display,
 	/* find_relevant_windows(Obj, Wid, _, _), */
 	draw_style_for(Obj, Type),
+	density_for(Obj, Density),
 	Wid shows_model _,
-	tk_change_color(Wid, Obj, Type, unchanged, Color), fail.
+	tk_change_color(Wid, Obj, Type, Density, Color), fail.
 
 change_color(_, _).
 
