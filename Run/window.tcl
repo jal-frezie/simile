@@ -142,6 +142,7 @@ proc DoContextMenu {winId X Y} {
 # (actually "$canvas find withtag current" does this, but no point changing now)
 
 set equationbar(enumTypes) {}
+set debounce(menu) 0
 proc ClickObj { x y winId X Y action} {
     global debounce equationbar pushedbutton window_info looks
     global tcl_platform
