@@ -594,8 +594,12 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 #    ResetColours $w submodel {} $colourScheme [lindex $tagSet 0]
 }
 
-proc PutThinArrow { w ptz stack fatness density colourScheme tagSet} {
+proc PutThinArrow { w ptz extras fatness density colourScheme tagSet} {
     # Have to use eval because points are packed in a list -- what a language
+    # (not any more)
+    set pulse [expr {$extras/100}]
+    set stack [expr {$extras-100*$pulse}]
+    
     set width [GetLineSize $w influence $fatness]
     set features [GetObjectSize $w influence $fatness]
     set mptz [ScaleList $w $ptz]
@@ -614,6 +618,12 @@ proc PutThinArrow { w ptz stack fatness density colourScheme tagSet} {
 	    eval {$w create line} [CurveStackEnds $mptz [expr {$level*$width/2.0}]] \
 	    {-width $width -tags "$tagSet stackdecor($level)"}
 	}
+    }
+    if {$pulse} {
+	set ripple [expr {3*$width}]
+	$w create line $mptz -smooth 1 -splinesteps $::splinePts \
+	    -width $ripple -capstyle round -dash {.  } \
+	    -tags "$tagSet realwidth($ripple) evtdecor"
     }
 #    ResetColours $w influence $density $colourScheme [lindex $tagSet 0]
 }

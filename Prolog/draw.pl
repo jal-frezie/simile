@@ -555,10 +555,15 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	    (append(InDims, [RealVal | _Spare], TopDims)->
 	     (RealVal = var -> Num = 5; Num is min(RealVal, 4)); Num = 1);
 	  Type = influence,
-	    m_class><Link has_attribute enabled_roles of EnabList,
-	    member(RIdx, EnabList),
-	    member(RIdx, [-1, -2, -3]),
-	    Num = 4; % or however many insts current submodel has
+	    (m_class><Link has_attribute enabled_roles of EnabList,
+	        member(RIdx, EnabList),
+		member(RIdx, [-1, -2, -3]),
+		Reps = 4; % or however many insts current submodel has
+	     Reps = 1),
+	    (m_class><initiates(Link, ControlThing),
+	        ControlThing is_of_sort discrete,
+		Num is 100+Reps;
+	     Num = Reps);
 	  Num = 1), !,
 	Draw_command =.. [Type, Wid, Screen_coords, Num,
 			RelFatness, Colour_scheme, [Link]],
