@@ -16,7 +16,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	enable_text_editing_in/1, disable_text_editing_in/1, select_text/2,
 	start_drawing_group/1, finish_drawing_group/1,
 	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
-	image/7, submodel/13, bowtie/6, flow/6, influence/6, broken_influence/6,
+	image/7, submodel/13, bowtie/6, flow/6, influence/6,
 			ghost_link/6, relation/6, text/8,
 	shift_text/3, shift_obj/3, mark_obj/2, unmark_objs/1,
 			zap_route/3, zap_bowtie/3,
@@ -263,11 +263,6 @@ influence(Wid, Coords, Stack, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list), Stack,
 		       Fatness, {}, Colour_scheme, br(Features)], _).
-
-broken_influence(Wid, Coords, Stack, Fatness, Colour_scheme, Features) :-
-	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list), Stack,
-		       Fatness, dashed, Colour_scheme, br(Features)], _).
 
 ghost_link(Wid, Coords, Stack, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),

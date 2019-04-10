@@ -560,12 +560,7 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	    member(RIdx, [-1, -2, -3]),
 	    Num = 4; % or however many insts current submodel has
 	  Num = 1), !,
-	(Type = influence,
-	    find_name_host(Link, ControlThing),
-	    m_class><ControlThing has_attribute use_sofar of 1, !,
-	    UseType = broken_influence;
-	UseType = Type),
-	Draw_command =.. [UseType, Wid, Screen_coords, Num,
+	Draw_command =.. [Type, Wid, Screen_coords, Num,
 			RelFatness, Colour_scheme, [Link]],
 	call(Draw_command),
 	((get_drawing_form(Link, LType, Bowtie),

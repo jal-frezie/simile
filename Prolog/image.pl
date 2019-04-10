@@ -233,7 +233,11 @@ density_for(Comp, Density) :-
     (Comp has_type relation;
 	ghost_link(Comp, _Base, _Ghost);
         find_base(Comp, Base), \+ Base = Comp), !,
-    Density = gray50;
+      Density = gray50;
+    Comp has_type influence,
+      find_name_host(Comp, ControlThing),
+      m_class><ControlThing has_attribute use_sofar of 1, !,
+      Density = dashed;
     Density = '{}'.
 
 draw_style_for(Link, ghost_link) :-
