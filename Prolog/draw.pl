@@ -563,7 +563,8 @@ display_link_in(Wid, Link, Depth, Trans) :-
 		member(RIdx, [-1, -2, -3]),
 		Reps = 4; % or however many insts current submodel has
 	     Reps = 1),
-	    (m_class><initiates(Link, ControlThing),
+	    (m_class><initiates(Link, OrigThing),
+	        get_host(OrigThing, ControlThing),
 	        ControlThing is_of_sort discrete,
 		Num is 100+Reps;
 	     Num = Reps);
