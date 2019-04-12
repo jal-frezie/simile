@@ -579,8 +579,8 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 		snap_to_grid([Xpt, Ypt], [GX, GY]),
 		set_start_coords(GX, GY);
 	    true), % clicked on link
+	    retractall(ghostly_move(_,_)),
  	    (tk_get_pref(quickDrag, 0);
-		retractall(ghostly_move(_,_)),
 		assert(ghostly_move(Xpt, Ypt))), !,
 	    find_all_comps(Parent, Moving_obj),
 	    setof(Mover, moves_with_seln(Parent, Mover), Movers),
@@ -1344,7 +1344,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	    find_all_comps(Parent, Moving_obj),
 	    get_shape(Parent, internal_extent, ParentShape),
 	    currently_moving_set(Movers),
-	    (ghostly_move(_,_), !;
+	    (ghostly_move(_,_), !; % no overlap checking if in fast edit mode
 		\+ (setof(NewPosn,
 			  Crasher^P1^(member(Crasher, Movers),
 				      find_new_box(Crasher, Xoffset,
@@ -2004,7 +2004,6 @@ old_update_object_boundary(Submodel, Edge, XOff, YOff) :-
 unclick :-
 	retractall(clicked_obj_is(_Obj)),
 %	retractall(menu_submodel_will_be(_,_,_)),
-	retractall(currently_moving_set(_Movers)),
 	untag_all,
 	find_current(Wid),
 	Wid shows_model Model,
@@ -2131,6 +2130,7 @@ unclick_obj :-
 	      drag_to(Xpt, Ypt, Submodel); % do it for real
 		query(overlap(drag, selection), warning, top, [ok], _)), !;
 	true),
+	retractall(currently_moving_set(_Movers)),
 	(get_phase(moving_border(_)),
 	    get_shape(Submodel, internal_extent, NewSize), !,
 	    adjust_toplevel_windows(Submodel, NewSize);
