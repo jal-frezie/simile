@@ -1516,10 +1516,10 @@ start_full(Type, Link) :-
 		\+ (Node has_link_equivalences Equiv_list,
 		member(Link-_, Equiv_list),
 		\+ Type = influence) /*
-	   allow drags from cloud-terminated flows -- buggy, very buggy ;   
+	   allow drags from cloud-terminated flows -- buggy, very buggy  */ ;   
 	    Link is_connector from _ to Floater,
 	       appears(Floater),
-	       Floater is_of_sort cloud */ ).
+	       Floater is_of_sort cloud).
 
 finish_full(Type, Link) :-
 	old_cloud(Link);

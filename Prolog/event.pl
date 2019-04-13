@@ -2094,7 +2094,8 @@ so endpoints of new bits are always defined */
 				MoveSects = EndSects;
 			     m_class><Rep2 follows Start_thing,
 				merge_lists(EndSects, [Start_thing, Rep2],
-					    MoveSects)),
+					    MoveSects);
+			    MoveSects = []), % linking at same level
 			    menu><reroute_sections(MoveSects))),
 		    clear_incomplete,
 		    remove_old_incomplete;
