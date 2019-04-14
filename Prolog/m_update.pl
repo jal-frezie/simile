@@ -973,11 +973,11 @@ can_finish(Ltype, Box1, Box2) :-
 	( \+ Type2 is_primitive, !;
 	Type2 = Ltype, !,
 		Box2 is_connector from Node2 to _,
-		initiates(Box2, Node2), /* cannot continue if target is
-					already a continuation */
-		(Node1 is_connector from Start to _, Parent has_part Start;
+		initiates(Box2, Node2)  % cannot continue if target is
+					% already a continuation
+		/* , (Node1 is_connector from Start to _, Parent has_part Start;
 		Parent has_part Node1),
-		\+ Parent has_part Node2;
+		\+ Parent has_part Node2 (cannot connect in same level) */ ;
 	can_connect(Ltype, Possible_type1, Type2),
 	(\+ Start_type is_primitive; Start_type = Possible_type1)),
 	\+ finish_full(Ltype, Box2),

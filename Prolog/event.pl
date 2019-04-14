@@ -2087,7 +2087,8 @@ so endpoints of new bits are always defined */
 			    (\+ find_type(Terminator, New_obj), !,
 				EndSects = [];
 			     m_class><Terminator follows Replacer,
-				EndSects = [Replacer, Terminator]),
+			        EndSects = [Replacer, Terminator];
+			     EndSects = [Terminator]),
 			    ((Replacer == Start_thing;
 			      \+ find_type(Start_thing, New_obj);
 			      \+ New_obj = flow), !,
