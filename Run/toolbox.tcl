@@ -2019,7 +2019,7 @@ proc FillReopen {winId} {
         }
     }
 # Also need to check selection because of "Save seln..."
-    prolog tk_bar_edit_menu('$winId.canvas')
+#    prolog tk_bar_edit_menu('$winId.canvas')
     update idletasks
 }
 

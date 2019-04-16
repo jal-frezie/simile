@@ -9,7 +9,7 @@ interface of the application. It responds by:
 */
 sicstus_module(event, [get_info/3, context_find/3, get_params/2, get_triggers/2,
 		       click_obj/4, click_text/4, click/3, do_colours/2,
-		       insert_variable/5,
+		       insert_variable/5, bar_edit_menu/1,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
 		       resize_top_win/3, adjust_display_area/2,
@@ -491,6 +491,10 @@ goes_from(LinkType, Point, CanAddNode, Allow) :-
     (member(LinkType, [flow, squirt]), CanAddNode = 1;
      can_start(LinkType, Point))
     -> Allow = 1; Allow = 0.
+
+bar_edit_menu(Wid) :-
+    Wid shows_model Comp,
+    adjust_edit_menu(Wid, Comp, Comp).
 
 adjust_edit_menu(Wid, Comp, Point) :-
 %%%%%	retractall(menu_submodel_will_be(Wid, _,_)),
@@ -2091,7 +2095,7 @@ so endpoints of new bits are always defined */
 			     EndSects = [Terminator]),
 			    ((Replacer == Start_thing;
 			      \+ find_type(Start_thing, New_obj);
-			      \+ New_obj = flow), !,
+			      \+ New_obj is_class_of_sort has_bowtie), !,
 				MoveSects = EndSects;
 			     m_class><Rep2 follows Start_thing,
 				merge_lists(EndSects, [Start_thing, Rep2],

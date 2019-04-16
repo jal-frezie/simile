@@ -120,20 +120,24 @@ set debounce(down) quiet
 proc DoContextMenu {winId X Y} {
     global tcl_platform
 
+    set m [winfo parent $winId]top.edit
+    # Right-click also passed to Prolog so no need to configure menu
+    $m configure -postcommand {}
     # don't waut for menu focus!
     SafeEqnBarEdit [winfo parent $winId]
     # work round bug in windows menu posning
     if {[string equal windows $tcl_platform(platform)] && \
 	    $Y>[winfo screenheight $winId]/2} {
-	tk_popup [winfo parent $winId]top.edit $X $Y 99
+	tk_popup $m $X $Y 99
     } else {
 	if {[tk windowingsystem] eq "aqua"} {
 # menu will only show if on same screen as root window
 	    wm geometry . +$X+$Y
 	    update
 	}
-	tk_popup [winfo parent $winId]top.edit $X $Y
+	tk_popup $m $X $Y
     }
+    $m configure -postcommand "prolog tk_bar_edit_menu('$winId')"
 }
 
 # Procedure for when Tcl recognizes what object is clicked but being a
@@ -1460,7 +1464,7 @@ proc DoLocalCmd {win item} {
         tosel {DisplayArea $win}
         tofit {DisplayAll $win}
         zoomout {DoZoom $win .707107}
-        find {prolog tk_bar_edit_menu('$win'); FindCaption $win}
+	find {FindCaption $win} ;# removed prolog tk_bar_edit_menu('$win');
         findnext {NextCaption $win}
         raiseMRE {RaiseWinMRE $win}
         open_all {OpenAll $win}
@@ -2484,7 +2488,7 @@ proc DragComponentIn {winId button x y addOne} {
         # a background drop
         prolog [list tk_click('$winId', $xco , $yco , 2)]
     }
-    prolog tk_bar_edit_menu('$winId')
+#    prolog tk_bar_edit_menu('$winId')
     prolog [list tk_unclick( $xco , $yco )]
     MenuSelect $winId edit $whatToAdd
     if {[lsearch {flow influence relation} $whatToAdd]>-1} {

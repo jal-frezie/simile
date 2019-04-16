@@ -1024,8 +1024,9 @@ proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
 			 [$w type $object]]>-1} {
 		    if {[llength $density]} {
 			$w itemconfigure $object -dash {1 3}
-		    } else {
-			$w itemconfigure $object -dash {}
+#		    } else {
+#			$w itemconfigure $object -dash {}
+# un-dashing messes up decorations on discrete influemce
 		    }
 		}
 	    } else {
