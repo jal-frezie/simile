@@ -350,7 +350,7 @@ menu_handle(Win, file, save_interface) :-
 	open_native(FileName, write, Stream),
 	write_with_breaks(Stream, interface_spec_for(MCaption, Bounds)),
 	save_references(Stream, Model),
-	(member(Type, [relation, flow, squirt, influence]),
+	(member(Type, [relation, flow, squirt, influence, discrete_influence]),
 	    expand_message(Type, TypeStr),
 	    name(TypeAtom, TypeStr),
 	    member(Dir, [in, out]),

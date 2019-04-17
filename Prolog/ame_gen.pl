@@ -22,7 +22,7 @@ sicstus_module(ame_gen,
 		get_chain/5, contains/2, contains/3,
 		purge/3, upper/2, lower/2, mybagof/3,
 		list_of/3, abs_path_for/2, caption_for/2, find_name_host/2,
-		find_type/2, find_all_comps/2, draws_inside/2,
+		find_type/2, find_all_comps/2, draws_inside/2, discrete_valued/1,
 		is_primitive/1, is_of_sort/2, is_class_of_sort/2, sp_is/2]).
 
 sicstus_use_module([library(lists), sp_only, utility, text, m_class]).
@@ -1027,6 +1027,12 @@ Link draws_inside Parent :-
 	\+ Parent is_of_sort line,
 	Parent has_part Node,
 	chain_from_node(Node, Link).
+
+discrete_valued(Inf) :-
+    find_type(Inf, influence),
+    m_class><initiates(Inf, OrigThing),
+    get_host(OrigThing, ControlThing),
+    ControlThing is_of_sort discrete.
 
 home_to_node(Link, Node) :-
 	Link is_connector from _ to Next,

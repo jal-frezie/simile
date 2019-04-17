@@ -15,6 +15,7 @@ set msgs(relation) [tr. {relation}]
 set msgs(flow) [tr. {flow}]
 set msgs(squirt) [tr. {squirt}]
 set msgs(influence) [tr. {influence}]
+set msgs(discrete_influence) [tr. {event-valued influence}]
 set msgs(model) [tr. {Simile model}]
 set msgs(unsaved) [tr. {unsaved}]
 
@@ -570,7 +571,7 @@ set msgs(wrong_bracket_count_message) [tr. {Your %1$s, %2$s, has brackets round 
 set msgs(wrong_bracket_count_detail) [tr. {However it actually stands for %4$s so should appear as follows: %5$s.}]
 
 set msgs(spare_interface_spec_title) [tr. {Cannot use interface data}]
-set msgs(spare_interface_spec_message) [tr. {Could not find a free %1$s going %2$s the model with %3$s caption %4$s}]
+set msgs(spare_interface_spec_message) [tr. {Could not find a free %1$s going %2$s the model with %3$s caption "%4$s"}]
 
 set msgs(interface_mismatch_title) [tr. {Interface properties mismatch}]
 set msgs(interface_mismatch_message) [tr. {%1$s a link of type %2$s from %3$s to %4$s, but it has properties %5$s whereas in the interface specification it is %6$s}]

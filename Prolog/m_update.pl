@@ -1120,10 +1120,10 @@ get_submodel_interface(Model, Transp, Dir, Link,
 	of the top link */
 	Tap has_attribute name of  FlowCaption.
 	
-get_submodel_interface(Model, influence, Dir, Link,
-			 link(InputCaption, InputCaption, SourceUnits)) :-
-	get_connection(Model, influence, Dir, Link,
-		       _,_, Dest, LastLink),
+get_submodel_interface(Model, Influence, Dir, Link,
+		       link(InputCaption, InputCaption, SourceUnits)) :-
+    member(Influence, [influence, discrete_influence]),
+	get_connection(Model, Influence, Dir, Link, _,_, Dest, LastLink),
 	initiates(Link, Source),
 	caption_for(Source, InputCaption),
 	setof(ParamEntry, get_param_entry(LastLink, Dest, ParamEntry),
@@ -1147,7 +1147,9 @@ get_connection(Model, Type, Dir, Link, SourceCapt, DestCapt,
 	Dir = out,
 	    member_eg(Link, Outers),
 	    Link is_connector from Model to _),
-	Link has_type Type,
+	(discrete_valued(Link) ->
+	     Type = discrete_influence;
+	 Link has_type Type),
 	connects_eg(Link, Source, Dest),
 	caption_for(Source, SourceCapt),
 	caption_for(Dest, DestCapt),
@@ -1189,7 +1191,7 @@ load_submodel_interface(Stream, Model, Type, Dir) :-
 		query(Hassle, warning, top, [abort], more)),
 	    load_submodel_interface(Stream, Model, Type, Dir)).
 
-make_connection(Model, Type, Dir, ExternalSection,
+make_connection(Model, HdrType, Dir, ExternalSection,
 		SourceCapt, DestCapt, Properties, Hassle) :-
 	Parent has_part Model,
 	((Dir = in,
@@ -1198,6 +1200,10 @@ make_connection(Model, Type, Dir, ExternalSection,
 	  Dir = out,
 	    find_all_comps(Model, InputSection),
 	    ExternalSection = OutputSection),
+	 (discrete_valued(InputSection) ->
+	      HdrType = discrete_influence,
+	      Type = influence;
+	  Type = HdrType),
 	check_input(Type, Dir, Model, SourceCapt, Properties,
 		     InputSection), !,
 	    /* We want to tie all possible continuation sections */
@@ -1206,18 +1212,24 @@ make_connection(Model, Type, Dir, ExternalSection,
 		     find_all_comps(Parent, OutputSection);
 		  Dir = in,
 		    find_all_comps(Model, OutputSection)),
-		      check_output(Type, Dir, Model, DestCapt, Properties,
-				   OutputSection)), Outputs),
+		   check_output(Type, Dir, Model, DestCapt, Properties,
+				OutputSection),
+		   (discrete_valued(InputSection) ->
+			HdrType = discrete_influence;
+		   \+ HdrType = discrete_influence)), Outputs),
 	      all(m_update, link_ends,
 		[unify(Type), unify(InputSection),
 		 build(Outputs), build(_TopArcs)]),
 	    menu><reroute_sections([InputSection | Outputs]),
-		draw><remove_old_incomplete;
-	    Hassle = spare_interface_spec(Type, Dir, destination, DestCapt));
-	Hassle = spare_interface_spec(Type, Dir, source, SourceCapt)).
+	    draw><remove_old_incomplete;
+	     expand_message(HdrType, TypeDescStr), name(TypeDesc, TypeDescStr),
+	     Hassle = spare_interface_spec(TypeDesc, Dir,
+					   destination, DestCapt));
+	 expand_message(HdrType, TypeDescStr), name(TypeDesc, TypeDescStr),
+	 Hassle = spare_interface_spec(TypeDesc, Dir, source, SourceCapt)).
 
 check_input(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
-	BorderSection has_type Type,
+     BorderSection has_type Type,
 	BorderSection is_connector from _ to Dest,
 	(Type is_class_of_sort transfer,
 	Properties = control(_, ControlDir),
@@ -1231,7 +1243,7 @@ check_input(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 	Dir = in,
 	    Dest = Model,
 	    (Type is_class_of_sort transfer; Type = influence;
-		Type = relation,
+		Type = discrete_influence; Type = relation,
 		caption_for(BorderSection, Properties));
 	Dir = out,
 	    Dest has_class border).
