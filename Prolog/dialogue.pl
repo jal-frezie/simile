@@ -91,7 +91,9 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 		    % Tcl data already updated, no need to change it
 		    NewTableSpec = TableSpec),
 		(Effect = user_advice_generated(Mess),
-		    query(Mess, warning, fill_equation, [ok], _);
+		 (Mess = inappropriate_assignment(_) -> HelpTopic = inters;
+		  HelpTopic = fill_equation),
+		    query(Mess, warning, HelpTopic, [ok], _);
 		    true),
 	    ((Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn,
 				    NewArrSpec, TabDat, MinVal, MaxVal,
@@ -781,7 +783,9 @@ expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
 	    raise_exception(undefined_parameter(Param)));
 	Param = (_ExpInt=_Defn), !, % '=' subexp not arg of ',' --
 	% complain now or missing parameter error may be raised instead
-	    throw(wrong_format_of_args(Param, =, (a=b), (a=b,c)));
+	%	    throw(wrong_format_of_args(Param, =, (a=b), (a=b,c)));
+	% except that probably was not what the modeller was trying to do...
+	throw(inappropriate_assignment(Param));
 	Param = (ExpInt=Defn,Use),
             NewLink = input_link(_,SubL, ExpInt, OldType, PrevDims),
 	    (member(NewLink, AllInputs),

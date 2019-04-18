@@ -437,6 +437,10 @@ set msgs(wrong_format_of_args_title) [tr. {Wrong format of args}]
 set msgs(wrong_format_of_args_message) [tr. {Attempting to process subexpression "%1$s": You have tried to use the macro or function "%2$s" with arguments "%3$s", but it must take arguments of the form "%4$s".}]
 set msgs(wrong_format_of_args_detail) [tr. {This problem might be fixed by adding parentheses around a subexpression that forms an argument of this subexpression, or around this subexpression if it is an argument to a function, e.g., sum(([a]=[2,3,5],[a]*[a])).}]
 
+set msgs(inappropriate_assignment_title) [tr. {Inappropriate assignment}]
+set msgs(inappropriate_assignment_message) [tr. {Attempting to process subexpression "%1$s": You have tried to use the "=" operator , which assigns a value to an intermediate variable, in an inappropriate context. It is likely you intended it as an equality test, in which case the operator you should use is "==", e.g., "if x==y then a else b".}]
+set msgs(inappropriate_assignment_detail) [tr. {If you were intending to assign and use an intermediate variable, please see the documentation under equations/components/intermediates.htm, or click "Help" here.}]
+    
 set msgs(wrong_no_of_args_title) [tr. {Wrong number of args}]
 set msgs(wrong_no_of_args_message) [tr. {Attempting to process subexpression "%1$s": You have tried to use the %2$s function "%3$s" with %4$s arguments, but it must take %5$s}]
 
@@ -1067,6 +1071,7 @@ set help(execution) run/index.htm
 set help(circular) concepts/sd/influence.htm#circular
 set help(fill_equation) equations/dialogue.htm
 set help(user_defns) equations/macro.htm
+set help(inters) equations/components/intermediates.htm
 set help(ext_code) submodels/external_code.htm
 set help(expiry) coviewexpiry.htm
 set help(helpers) run/tools/index.htm
