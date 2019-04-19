@@ -78,11 +78,11 @@ ifeq ($(MY_CPU),x86_64)
 else
 	CFLAGS = $(OPT) -arch i386
 	export MACOSX_DEPLOYMENT_TARGET=10.4
+endif
 	LOCALIZE_TCL_REFS = install_name_tool -change \
 		$(TCLFW)/Tcl.framework/Versions/$(VERS)/Tcl \
 		@executable_path/../Frameworks/Tcl.framework/Tcl
 # install_name_tool with fail silently if the new path is longer than the path it's replacing. Always verify with 'otool -L' that the path was changed as expected.
-endif
 	ARCHEXTN = _mac
 # build for everything unless I am on Barbie
 	ifeq ($(OSNUMBER),8.11.0)
