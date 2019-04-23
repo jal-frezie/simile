@@ -175,7 +175,8 @@ check_ET_consistency(RemoteUnit, RemoteNode, Function) :-
 	      warning, top, [ok], not);
 	true).
 
-find_node_with_data(Edit_thing, Base, Control_thing) :-
+find_node_with_data(Src_thing, Base, Control_thing) :-
+        get_host(Src_thing, Edit_thing),
 	find_base(Edit_thing, Base),
 	(implicit_function(Base, Control_thing), !;
 	    Control_thing = Base).

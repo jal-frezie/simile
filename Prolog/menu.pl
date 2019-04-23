@@ -299,8 +299,8 @@ menu_handle(CurWin, file, OpenAct) :-
 	     Parent = node00000), !,
 % last case only if win is .hi and no models open
 	(OpenAct = run_session, !,
-	    get_import_file('untitled.ssn', Parent, Name);
-	  get_load_file(Parent, Name)),
+	    get_import_file('untitled.ssn', br(''), Name);
+	  get_load_file(br(''), Name)),
 	(Name = '', !;
 	Win = '.hi.canvas', !,
 	    menu_handle(Win, Mode, Name);
