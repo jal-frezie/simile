@@ -61,10 +61,12 @@ merge_enum_types(Types, Parent) :-
 	    Parent has_new_class_refinement enum_types of [Class-Mems]),
 	merge_enum_types(Rest, Parent).
 
-ancestor_has_enum_type(Model, Enum) :-
-	ame_gen><contains(Outer, Model),
-	Outer has_class_refinement enum_types of Types,
-	member(Enum, Types).
+ancestor_has_enum_type(Model, Class-Mems) :-
+	Model has_class_refinement enum_types of Types,
+	(member(Class-Mems, Types);
+	 Parent has_part Model,
+	 ancestor_has_enum_type(Parent, Class-Mems),
+	 \+ member(Class-_InnerMems, Types)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % add_node inserts new information about a node, and updates bindings

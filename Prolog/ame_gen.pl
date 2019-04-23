@@ -803,8 +803,10 @@ resolve_enum_type(Ref, Model, Value, Units, ETSpec) :-
 		Units=n(TypeName)),
 	    ETSpec is -10-Posn, !;
 	(Model = st(Tgt), !; Tgt = Model),
-	find_all_comps(Parent, Tgt),
+	    find_all_comps(Parent, Tgt),
 	    resolve_enum_type(Ref, Parent, Value, Units, InnerSpec),
+	    \+ (Units = a(TypeName),
+		member(TypeName-_TypeMems, TypeList)), % type defn overridden
 	    length(TypeList, Skipped),
 	    ETSpec is InnerSpec - Skipped).
 
