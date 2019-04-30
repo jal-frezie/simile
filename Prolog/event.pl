@@ -2381,14 +2381,27 @@ should be done by finish_move and for toplevel only
 	    update_captions(NewVisLook),
 	    fail;
 	set_selection_abilities(Top)).
-
+/*
 deletable(Top, FollowArcs, Tgt) :-
 	contains(Top, Tgt), !;
 	FollowArcs = 1,
 	    m_class><equivalent_arcs(Tgt, InTgt),
 	    get_highlit_obj(M, InTgt), M<3,
 	    contains(Top, InTgt).
-
+*/
+deletable(Top, FollowArcs, Tgt) :-
+    (Proxy = Tgt;
+     FollowArcs = 1, m_class><equivalent_arcs(Tgt, Proxy),
+     \+ Proxy = Tgt, doomed(Proxy)),
+    (Proxy2 = Proxy;
+     m_class><Proxy is_connector from A to B, member(Fn, [A, B]),
+     get_host(Fn, Tgt2), doomed(Tgt2),
+    (Proxy2 = Tgt2;
+     FollowArcs = 1, m_class><equivalent_arcs(Tgt2, Proxy2),
+     \+ Proxy2 = Tgt2, doomed(Proxy2))),
+    contains(Top, Proxy2).
+    
+    
 kill_primitive(Target, FollowArcs) :-
 	off(Target),
 % updating of survivors' appearance now done by delete_net, which calls this
