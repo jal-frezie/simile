@@ -123,6 +123,9 @@ proc ExecuteTo {node current pause unitLength display foci \
     set currentMode start
     set evtPause [expr {$evtMsg || $evtDisp}] ;# event sounds selected
     set payload {}
+    foreach point $foci {
+	lappend ptClasses [GetCompProperty $node Class $point]
+    }
     while {[lsearch {exit stop} $currentMode]==-1} {
 	if {$display} {
 	    if {$timedDisp} {
@@ -179,8 +182,8 @@ proc ExecuteTo {node current pause unitLength display foci \
 	if {![string equal exit $currentMode]} { ;# do a display update
 	    set oldPayload $payload
 	    set payload {}
-	    foreach point $foci {
-		if {[catch {GetPayload $node $point} dataHand]} {
+	    foreach point $foci class $ptClasses {
+		if {[catch {GetPayload $node $point $class} dataHand]} {
 # data has gone, so hope it is no longer needed
 		} else {
 		    lappend payload $point $dataHand
@@ -209,9 +212,9 @@ proc ExecuteTo {node current pause unitLength display foci \
     return $currentMode
 }
 
-proc GetPayload {node point} {
+proc GetPayload {node point class} {
     if {[RunningInC $node]} {
-	return [list ptr 0 [GetHandle $node $point]]
+	return [list ptr $class [GetHandle $node $point]]
 # redundant fields make list of unique length
     } else {
 	return [lindex [tcl_insert $point {}] 0]

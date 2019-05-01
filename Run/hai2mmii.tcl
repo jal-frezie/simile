@@ -151,10 +151,12 @@ proc AddToWatched {node} {
 
 proc GetModelValue { node {keepEvtZeros 0}} {
     global subbedPlots
+
     if {[info exists subbedPlots($node)]} {
 	if {[llength $subbedPlots($node)]==3} { # is pointer to univ struct
 	    set loseZeros [expr {!$keepEvtZeros && \
-			[lsearch {EVENT SQUIRT} [GetModelClass $node]]>-1}]
+		 [lsearch {EVENT SQUIRT} [lindex $subbedPlots($node) 1]]>-1}]
+	    # G_M_C horribly slow, keep node class with handle
 	    return [list [extract_list [lindex $subbedPlots($node) 2] \
 			      16777216 $loseZeros]] ;# enough I hope
 	} else { # from tcl model or measured value from pest interface
@@ -167,6 +169,7 @@ proc GetModelValue { node {keepEvtZeros 0}} {
 
 proc SetModelValue { node newVals } {
     global myNode
+    
     return [GetCompExecData $myNode Value $node $newVals]
 }
 
