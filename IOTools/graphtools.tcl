@@ -658,7 +658,7 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
     if {abs($ScaledMin)<abs(0.1*$ScaledMax)} {
         set ScaledMin 0; # if min < 10% of max start axis from 0
     }
-    set ScaledRange [expr {abs($ScaledMax-$ScaledMin)}]
+    set ScaledRange [expr {max(1,abs($ScaledMax-$ScaledMin))}]
     #puts "lograngem $lograngem; ScaleCoeff $ScaleCoeff; ScaledMin $ScaledMin; ScaledMax $ScaledMax; ScaledRange $ScaledRange"
     set nint $karray($axis,[expr {int($ScaledRange)}])
     
