@@ -117,7 +117,7 @@ if {[string match windows $tcl_platform(platform)]} {
     cd $oldDir
 
     proc IsFullscreen {w} {
-# Fullscreen windows are only ones with x offset of zero, and only then if 
+# Fullscreen windows are only ones with y offset of zero, and only then if 
 # top of their screen is level with top of primary screen
 	return [string match *+0 [winfo geometry $w]]
     }
@@ -136,9 +136,9 @@ if {[string match windows $tcl_platform(platform)]} {
 	    wm deiconify $w
 	}
     }
-    # Do not do for now as problem was fixed (however fix does not apply if
+    # Do not do for now as problem was fixed (however fix does not apply as
     # tcltk built for macosx versions below 10.13)
-    # bind Toplevel <Configure> {FixShiftedPointer %W}
+    bind Toplevel <Configure> {FixShiftedPointer %W}
 }
 
 menu .openrecent -tearoff 0
