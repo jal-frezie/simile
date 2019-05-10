@@ -744,8 +744,8 @@ proc GetShortVals {topNode plName limit} {
 	    set text novalue
 	    set count 0
 	} else {
-	    set loseZeros \
-		[expr {[lsearch {EVENT SQUIRT} [GetModelClass $plName]]>-1}]
+	    set loseZeros [expr {[lsearch {EVENT SQUIRT} \
+			     [GetCompProperty $topNode Class $plName]]>-1}]
 	    set count [count_values $hdl $loseZeros]
 	    if {$count<$limit/5 || $showMatrix} {
 		set text [extract_list $hdl $count $loseZeros]
@@ -768,8 +768,7 @@ proc GetShortVals {topNode plName limit} {
 		set text [FormatVals %.${precis}g $text]
 	    }
 	}
-	set transData [GetCompProperty $topNode Trans \
-			   $plName]
+	set transData [GetCompProperty $topNode Trans $plName]
 	if {$showMatrix} {
 	    set transData [list {} {} [lindex $transData end]]
 	}

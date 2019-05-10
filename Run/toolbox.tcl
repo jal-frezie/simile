@@ -1057,7 +1057,7 @@ proc InitExecThread {node} {
 	if {$useThreads} {
 	    proc $stubCmd {node args} {
 		global execThread
-		#puts "exec bother [lindex [info level 0] 0]"
+		# puts "exec bother [info level 0]"
 		return [thread::send $execThread($node,id) [info level 0]]
 	    }
 	} else {
