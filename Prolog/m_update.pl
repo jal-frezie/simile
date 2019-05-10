@@ -1060,6 +1060,10 @@ containing the end. If the finish is a link, it is a reversal if it
 enters a submodel containing the start, or exits one not. */
 
 u_turn(LType, Box1, Box2) :-
+        Box1 has_type LType, % do not connect link sections in same parent
+            Box2 has_type LType, % simply because it is too hard
+	    find_all_comps(Same, Box1),
+	    find_all_comps(Same, Box2);
 	Box1 has_type LType,
 	    continues_in(Box1, Border),
 	    (find_all_comps(Border, Box1),
