@@ -363,6 +363,7 @@ install:
 		help/scripting \
 		help/start \
 		help/submodels \
+		Images/Control/debug.gif \
 		Images/Control/pause.gif \
 		Images/Control/play.gif \
 		Images/Control/stop.gif \

@@ -143,7 +143,7 @@ itcl::class similescript::$newHelperClass {
 	lappend useNodes(sounds) $path $sound
 	set node [GetIdFromCaptionPath $path]
 	AddEventCommand $topNode $node [file nativename $sound]
-	do_for_node $topNode GetModelValue $node ;# to add it to foci
+	GetModelValue $node ;# to add it to foci
     }
 
     public method PrepareSaveString {} {
@@ -181,12 +181,11 @@ itcl::class similescript::$newHelperClass {
     }
     
     public method Display {time dispInt step} {
-	set topNode [$modelInst cget -modelNode]
 	set count 0
 	set rhs [expr {[winfo width $winId.traces]-1}]
 	foreach {path sound} $useNodes(sounds) {
-	    set node [do_for_node $topNode GetIdFromCaptionPath $path]
-	    set numer [lindex [do_for_node $topNode GetModelValue $node] 0]
+	    set node [GetIdFromCaptionPath $path]
+	    set numer [lindex [GetModelValue $node] 0]
 	    if {[SumVals $numer]} {
 		set new [$winId.traces create line $rhs $count \
 			     $rhs [expr {$count+50}] \

@@ -55,6 +55,7 @@ namespace eval runcontrol33857 {
         global stopImg
         global pauseImg
         global playImg
+        global debugImg
         #	global runState
 
 	upvar 1 this4 inst ;# note Itcl 4 bug workaround
@@ -81,7 +82,7 @@ namespace eval runcontrol33857 {
         set rcf $t.nb.rcf
 	set frames($node,rcf) $rcf
         ttk::frame $rcf.upper -class Toolbar
-        foreach mode {play pause stop} {
+        foreach mode {play pause stop debug} {
             set ${mode}Img [image create photo -file $::SIMILE_PATH/Images/Control/${mode}.gif]
         }
         frame $rcf.upper.topbuttons
@@ -89,7 +90,12 @@ namespace eval runcontrol33857 {
                 -command "[namespace current]::SetMode $node reset"
         pack $rcf.upper.topbuttons.reset -side left  -padx 1 -pady 2 -expand true -fill x
         BindPopup $rcf.upper.topbuttons.reset [tr. "Reset simulation"]
-        ::ttk::button $rcf.upper.topbuttons.start -image $playImg -width 32  \
+	if {[RunningInC $node]} {
+	    set go $playImg
+	} else {
+	    set go $debugImg
+	}
+        ::ttk::button $rcf.upper.topbuttons.start -image $go -width 32  \
                 -command "[namespace current]::SetMode $node start"
         pack $rcf.upper.topbuttons.start -side left  -padx 1 -pady 2 -expand true -fill x
         BindPopup $rcf.upper.topbuttons.start [tr. "Run or pause simulation"]
@@ -474,7 +480,7 @@ namespace eval runcontrol33857 {
 
     proc RollSimulation { node } {
         global errorInfo redoPhase runState updateLastDone
-	global pauseImg playImg hideQuery
+	global pauseImg playImg debugImg hideQuery
         variable frames
 
 	set widget $frames($node,rcf)
@@ -573,7 +579,12 @@ namespace eval runcontrol33857 {
 		UpdateBar $node $current green
 	    }
 	}
-	$widget.upper.topbuttons.start configure -image $playImg
+	if {[RunningInC $node]} {
+	    set go $playImg
+	} else {
+	    set go $debugImg
+	}
+	$widget.upper.topbuttons.start configure -image $go
 	$widget.upper.topbuttons.start configure -command \
 	    "[namespace current]::SetMode $node start"
 	UpdateBar $node $current [RestingColour $node]
