@@ -307,6 +307,11 @@ namespace eval ::$keyValue {
         if {![string match [winfo toplevel $w] $w]} {
             pack $w -fill both -expand true -side bottom
         }
+	$w.canvas bind graph <Button-1> \
+	    [namespace code [list TraceHighlight $w]]
+	$w.canvas bind graph <Enter> \
+	    [concat QueuePopup [namespace code [list TracePopup $w %X %Y]]]
+	$w.canvas bind graph <Leave> RemovePopup
         pack $w.canvas -fill both -expand true -side bottom
     }
     
@@ -512,7 +517,7 @@ namespace eval ::$keyValue {
         
     }
     
-    proc TraceHighlight {w node id} {
+    proc TraceHighlight {w} {
         global ::graphtools::plot
         ################################################################################
         #         set path [GetCaptionPathFromId $node]
@@ -523,38 +528,43 @@ namespace eval ::$keyValue {
         #         }
         #         $w.canvas itemconfigure $node.$id -width $plot($w,$path,width)
         ################################################################################
-        
-        set index [lsearch $plot($w,highlittrace) $node.$id]
+        set ident [lsearch -inline [$w.canvas itemcget current -tags] *.*]
+        set index [lsearch $plot($w,highlittrace) $ident]
         if {$index>-1} {
-            $w.canvas itemconfigure $node.$id -width 1
+            $w.canvas itemconfigure $ident -width 1
             set plot($w,highlittrace) \
                [lreplace $plot($w,highlittrace)  $index $index]
         } else  {
-            lappend  plot($w,highlittrace)  $node.$id
-            $w.canvas itemconfigure $node.$id -width 2
+            lappend  plot($w,highlittrace)  $ident
+            $w.canvas itemconfigure $ident -width 2
         }
     }
     
-    proc TracePopup {winId node runNo id X Y x y} {
+    proc TracePopup {winId X Y} {
         global ::graphtools::plot
         
-        set caption $plot(caption,$node)
-	set trTab [GetTransTable $node]
         #::graphtools::get_datax {w Xc Xscale}
         #plot($w,Tscale)
 
 # Make sure values are nice -- retreive graph segment and use its coords
 	set canvas [GetCanvas $winId]
-	set segment [$canvas find closest \
-			 [$canvas canvasx $x] [$canvas canvasy $y] 1]
+	set segment [$canvas find withtag current]
 	set origin [$canvas coords $segment]
         set nearestval [::graphtools::get_datay $winId [lindex $origin 1] \
 			    $plot($winId,Yscale)]
         set nearesttime [::graphtools::get_datax $winId [lindex $origin 0] \
 			     $plot($winId,Tscale)]
+
+	set ident [lsearch -inline [$canvas itemcget $segment -tags] *.*]
+	set mid [string first . $ident]
+	set node [string range $ident 0 $mid-1]
+        set caption $plot(caption,$node)
+	set trTab [GetTransTable $node]
 	if {[llength [lindex $trTab end]]} {
 	    set nearestval [expr {int($nearestval)}]
 	}
+	set id [split [string range $ident $mid+1 end] ,]
+	set rc [lindex $id 0]
 	set id [lrange $id 1 end]
 	foreach num [concat $id [list $nearestval]] key $trTab {
 	    lappend trVals [TransValue $key $num]
@@ -577,7 +587,7 @@ namespace eval ::$keyValue {
 #         if {![winfo exists .popup]} {
 #             toplevel .popup -width 1 -height 1 -bd 2 -relief raised
 #             wm overrideredirect .popup 1 
-	AddPopupMessage "$caption, run $runNo\n\
+	AddPopupMessage "$caption, run $rc\n\
                 x     : $nearesttime\n\
                 y     : [lindex $trVals end]\n\
                 last y: $lastval" \#ffffc0
@@ -818,7 +828,7 @@ namespace eval ::$keyValue {
         if {[llength $Ynew]==1} then {
             set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,$NColours))}]]
             #puts "plot_Y iplot $iplot; lindex $plot($w,YColours) $iplot [lindex $plot($w,YColours) $iplot]"
-	    set id [linsert $id 0 $iplot]
+	    set id [linsert $id 0 $runCount($w)]
 	    set ident [join $id ,]
 	    if {[dodgyValue $Ynew]} {
 		set xm [expr $plot($w,xborder_left)+60]
@@ -832,13 +842,13 @@ namespace eval ::$keyValue {
 		}
 		if {![dodgyValue $Yold]} {
 		    drawPoint $w $Told $Yold $Tnew $Ynew $colour $node $ident
-		} else { ;# will plot next time so add binding for it
-		    $w.canvas bind $node.$ident <Button-1> \
-			 [namespace code [list TraceHighlight $w $node $ident]]
-		    $w.canvas bind $node.$ident <Enter> \
-			     [namespace code [list TracePopup $w $node \
-					      $runCount($w) $id %X %Y %x %y]]
-		    $w.canvas bind $node.$ident <Leave> RemovePopup
+#		} else { ;# will plot next time so add binding for it
+#		    $w.canvas bind $node.$ident <Button-1> \
+#			 [namespace code [list TraceHighlight $w $node $ident]]
+#		    $w.canvas bind $node.$ident <Enter> \
+#			     [namespace code [list TracePopup $w $node \
+#					      $runCount($w) $id %X %Y %x %y]]
+#		    $w.canvas bind $node.$ident <Leave> RemovePopup
 		}
 	    }
         } else {

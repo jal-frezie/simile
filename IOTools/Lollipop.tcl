@@ -494,7 +494,7 @@ proc DefineGrid {winId {x0 -50} {xn 50} {xtic 10} \
 	    {set num [expr {$num+$xtic}]} {
 	set txt [format %-6g $num]
 	lappend grid($winId) \
-	    [list line {} "$num $y0 0" "$num $yn 0" 0 red] \
+	    [list line "Grid X=$txt" "$num $y0 0" "$num $yn 0" 0 red] \
 	    [list text "X posn" "$num $yh 0" $txt red] \
 	    [list text "X posn" "$num $yt 0" $txt red]
     }
@@ -503,7 +503,7 @@ proc DefineGrid {winId {x0 -50} {xn 50} {xtic 10} \
 	    {set num [expr {$num+$ytic}]} {
 	set txt [format %-6g $num]
 	lappend grid($winId) \
-	    [list line {} "$x0 $num 0" "$xn $num 0" 0 red] \
+	    [list line "Grid Y=$txt" "$x0 $num 0" "$xn $num 0" 0 red] \
 	    [list text "Y posn" "$xh $num 0" $txt blue] \
 	    [list text "Y posn" "$xt $num 0" $txt blue]
     }

@@ -345,7 +345,8 @@ namespace eval ::$keyValue {
 	    -height [expr $plot($w,yborder_bottom)+$plot($w,ylength)+ \
 			 $plot($w,yborder_top)] \
 	    -bg $plot($w,canvas_colour) -relief solid
-	$w.canvas bind graph <Enter> [namespace code [list TracePopup $w %X %Y]]
+	$w.canvas bind graph <Enter> \
+	    [concat QueuePopup [namespace code [list TracePopup $w %X %Y]]]
 	$w.canvas bind graph <Leave> RemovePopup
 	MakeCanvasAnnotatable $w.canvas
         pack $w.canvas -fill both -expand true -side bottom
