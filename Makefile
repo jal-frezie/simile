@@ -178,6 +178,8 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl code.pl compile.pl database.pl \
 
 # Prolog is not Sicstus
 ifeq ($(PROLOG),SWI)
+SWIPLSHARELIB = $(shell ldd /usr/bin/swipl | grep libswipl | cut -d' ' -f1)
+# above should painlessly extract the name of the relevant shared library
 UINFO_TPL = userinfo.swi
 $(PROLOGSTATE): $(PROLOG_FILES)  Prolog/smain.pl $(PROLOG_DB)
 	cd Prolog; swipl --goal=main --stand_alone=true -o ../$(PROLOGSTATE) -c smain.pl; cd ..
@@ -188,7 +190,7 @@ $(PROLOGSTATE): $(PROLOG_FILES)  Prolog/smain.pl $(PROLOG_DB)
 # results in xssimile also looking in its own directory. We cannot
 # just copy it to /usr/lib on the target in case user wants to install
 # a different version of swi-prolog.
-	cp -L $(LIBDIR)/libswipl.so.?.? $(EXECDIR)/../lib
+	cp -L $(LIBDIR)/$(SWIPLSHARELIB) $(EXECDIR)/../lib
 # However we cannot put a patched swi-prolog into build environment, so
 # patch the new standalone now
 	patchelf --set-rpath '$$ORIGIN/../lib' $(PROLOGSTATE)
@@ -608,7 +610,7 @@ install:
 	rm payload.tar
 ifeq ($(PROLOG),SWI)
 # this assumes patchelf already done to prolog state and lib copied in
-	cp -L $(SYSDIR)/lib/libswipl.so.?.? $(DESTDIR)$(EXEC_TGT)/$(SYSDIR)/lib
+	cp -L $(SYSDIR)/lib/$(SWIPLSHARELIB) $(DESTDIR)$(EXEC_TGT)/$(SYSDIR)/lib
 endif
 	mkdir -p $(DESTDIR)/usr/bin
 	cd $(DESTDIR)/usr/bin; \
