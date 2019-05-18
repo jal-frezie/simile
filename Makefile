@@ -188,7 +188,10 @@ $(PROLOGSTATE): $(PROLOG_FILES)  Prolog/smain.pl $(PROLOG_DB)
 # results in xssimile also looking in its own directory. We cannot
 # just copy it to /usr/lib on the target in case user wants to install
 # a different version of swi-prolog.
-	cp -L /usr/lib/libswipl.so $(EXECDIR)
+	cp -L $(LIBDIR)/libswipl.so.?.? $(EXECDIR)/../lib
+# However we cannot put a patched swi-prolog into build environment, so
+# patch the new standalone now
+	patchelf --set-rpath '$ORIGIN/../lib' $(PROLOGSTATE)
 
 $(PROLOG_DB): Prolog/struct_db.c
 # for old SWI, or if building with mingw when swipl built with msvc
@@ -604,7 +607,10 @@ install:
 	tar xf payload.tar; \
 	rm payload.tar
 ifeq ($(PROLOG),SWI)
-	cp -L $(SYSDIR)/bin/libswipl.so $(DESTDIR)$(EXEC_TGT)/$(SYSDIR)/bin
+# this assumes patchelf already done to installed swi-prolog
+#cp -L $(SYSDIR)/bin/libswipl.so $(DESTDIR)$(EXEC_TGT)/$(SYSDIR)/bin
+# but we are doing it ourselves so raid build env for it
+cp -L $(SYSDIR)/lib/libswipl.so.?.? $(DESTDIR)$(EXEC_TGT)/$(SYSDIR)/lib
 endif
 	mkdir -p $(DESTDIR)/usr/bin
 	cd $(DESTDIR)/usr/bin; \
