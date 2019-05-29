@@ -115,6 +115,8 @@ namespace eval ::$keyValue {
         set plot($w,ArrayLines) 0
         set plot($w,DrawPoints) 0
         set plot($w,CurrentOnly) 0
+        set plot($w,KeyArrays) 1
+        set plot($w,KeyRuns) 0
         set plot($w,ordinal) 0
 
 	set runCount 1
@@ -346,7 +348,7 @@ namespace eval ::$keyValue {
 			 $plot($w,yborder_top)] \
 	    -bg $plot($w,canvas_colour) -relief solid
 	$w.canvas bind graph <Enter> \
-	    [concat QueuePopup [namespace code [list TracePopup $w %X %Y]]]
+	    [concat [namespace code [list TracePopup $w %X %Y]]]
 	$w.canvas bind graph <Leave> RemovePopup
 	MakeCanvasAnnotatable $w.canvas
         pack $w.canvas -fill both -expand true -side bottom
@@ -386,6 +388,8 @@ namespace eval ::$keyValue {
 	    variable ArrayLines $::graphtools::plot($w,ArrayLines)
 	    variable DrawPoints $::graphtools::plot($w,DrawPoints)
 	    variable CurrentOnly $::graphtools::plot($w,CurrentOnly)
+	    variable KeyArrays $::graphtools::plot($w,KeyArrays)
+	    variable KeyRuns $::graphtools::plot($w,KeyRuns)
 	    
 	    
 	    set dlg [PutItThere .plotxyprop $w]
@@ -403,6 +407,10 @@ namespace eval ::$keyValue {
 	    pack [ttk::labelframe $chkF.currentOnlyF -text "Persistence (0 for indefinite)"] -fill x
 	    pack [entry $chkF.currentOnlyF.cbutton -textvariable [namespace current]::CurrentOnly] -side right
 	    
+	    pack [ttk::labelframe $chkF.colsF -text "Use different colours for:"] -fill x
+	    pack [checkbutton $chkF.colsF.ambutton -text "Array members" -variable [namespace current]::KeyArrays] -side left
+	    pack [checkbutton $chkF.colsF.srbutton -text "Successive runs" -variable [namespace current]::KeyRuns] -side right
+        
 	    pack $chkF -padx 10
 	    
 	    pack [frame $dlg.btnfr]
@@ -422,6 +430,8 @@ namespace eval ::$keyValue {
 		set ::graphtools::plot($w,ArrayLines) $ArrayLines
 		set ::graphtools::plot($w,DrawPoints) $DrawPoints
 		set ::graphtools::plot($w,CurrentOnly) $CurrentOnly
+		set ::graphtools::plot($w,KeyArrays) $KeyArrays
+		set ::graphtools::plot($w,KeyRuns) $KeyRuns
 		UpdateState $w
 	    }
 	}
@@ -696,6 +706,10 @@ namespace eval ::$keyValue {
 	    global ::graphtools::YYnew
 	    global ::graphtools::Told
 	    global ::graphtools::Tnew
+
+	    variable KeyRuns $::graphtools::plot($w,KeyRuns)
+	    variable KeyArrays $::graphtools::plot($w,KeyArrays)
+	    variable runCount
 	    
 	    set Trange [expr {1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)}]
 	    set Yrange [expr {1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)}]
@@ -703,7 +717,14 @@ namespace eval ::$keyValue {
 	    set plot($w,Yscale) [expr {$Yrange/$plot($w,ylength)}]
 	    
 	    set iplot 0
-	    for  {set i 0} {$i < [llength $YYnew($w)]} {incr i} {
+	    set loops [llength $YYnew($w)]
+	    if {$KeyRuns} {
+		set iplot [expr {$runCount-1}]
+		if {$KeyArrays} {
+		    set iplot [expr {$loops*$iplot}]
+		}
+	    }
+	    for  {set i 0} {$i < $loops} {incr i} {
 		if {[llength [lindex $YYold($w) $i]]} {
 		    set Ynew [lindex [lindex $YYnew($w) $i] 1]
 		    set Yold [lindex [lindex $YYold($w) $i] 1]
@@ -711,7 +732,9 @@ namespace eval ::$keyValue {
 		    set Xold [lindex [lindex $Told($w) $i] 1]
 		    plot_Y $w $iplot $Xold $Yold $Xnew $Ynew {}
 		}
-		incr iplot
+		if {$KeyArrays} {
+		    incr iplot
+		}
 	    }
 	    
 	    ################################################################################
@@ -740,7 +763,8 @@ namespace eval ::$keyValue {
 	
 	proc plot_Y {w iplot Told Yold Tnew Ynew id} {
 	    global ::graphtools::plot
-	    
+
+	    variable KeyArrays $::graphtools::plot($w,KeyArrays)
 	    #ShowMess debug info "plt_Y_in Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
 	    if {[llength $Ynew]==1} then {
 		if {[dodgyValue $Tnew] || [dodgyValue $Ynew]} {
@@ -768,13 +792,17 @@ namespace eval ::$keyValue {
 		array set allYNew $Ynew
 		array set allTNew $Tnew
 		array unset plot $w,lasty ;# do not join around array rows
+
+		if {$KeyArrays} {
+		    set iplot [expr {[array size allYNew]*$iplot}]
+		}
 		foreach {i YnewV} $Ynew {
 		    set TnewV $allTNew($i)
 		    if {[info exists allYOld($i)]} {
 			set YoldV $allYOld($i)
 			set ToldV $allTOld($i)
-			plot_Y $w [expr $iplot+$i] $ToldV $YoldV $TnewV $YnewV \
-			    [concat $id [list $i]]
+			plot_Y $w [expr $iplot+($KeyArrays*($i-1))] \
+			    $ToldV $YoldV $TnewV $YnewV [concat $id [list $i]]
 		    }
 		}
 	    }
