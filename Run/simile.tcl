@@ -383,24 +383,25 @@ source $SIMILE_PATH/Run/language.tcl
 LoadTrans
 
 if {!$headless} {
+entry .hidden_e -width 25
+pack .hidden_e
+
 # Scaling affects some metrics but not all, so squash it FTTB
 # to ensure consistency (do now cos about to put up dialogues)
 
 # Fixed in 5.4 by explicitly making it apply to everything.
 # Silly val for testing: 3.0
 # Make conversion easier: pick nice ratio
-set scalRat [ChooseIntegerRatio $defScaling 0.9]
+set textBigness [expr {$defScaling*[winfo reqwidth .hidden_e]/200}]
+set scalRat [ChooseIntegerRatio $textBigness 0.9]
 set defScaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
 tk scaling $defScaling
 
-entry .hidden_e
-pack .hidden_e
+set sphXdiam 400
+set sphYdiam 316
+set iconDiam [expr {round(30*$textBigness)}]
 
-set sphXdiam [expr {round(400*[tk scaling])}]
-set sphYdiam [expr {round(316*[tk scaling])}]
-set iconDiam [expr {round(30*[tk scaling])}]
-
-set startGeom +[expr ([winfo screenwidth .]-$sphXdiam)/2]+[expr ([winfo screenheight .]-$sphYdiam)/2-200]
+set startGeom +[expr round(([winfo screenwidth .]-$sphXdiam*$defScaling)/2)]+[expr round(([winfo screenheight .]-$sphYdiam*$defScaling)/2-200)]
 # cannot place initial offscreen in osx so try behind splash
 if {[string equal Linux $tcl_platform(os)]} {
     wm geometry . $startGeom
@@ -433,22 +434,21 @@ if {[tk windowingsystem] eq "aqua"} {
     set menuFont TkMenuFont
     set niceSize 9
 }
-set graph(font) [list helvetica [expr {round($niceSize*[tk scaling])}] bold]
-set graph(megafont) \
-    [list helvetica [expr {round(3*$niceSize*[tk scaling])}] bold]
+set graph(font) [list helvetica [expr {$niceSize*4/3}] bold]
+set graph(megafont) [list helvetica [expr {$niceSize*4}] bold]
 
-pack [canvas .splash.c -width $sphXdiam -height $sphYdiam -bd -$graph(origin) \
+pack [canvas .splash.c -width ${sphXdiam}p -height ${sphYdiam}p -bd -$graph(origin) \
 	 -bg \#f0f8ff] -padx 0 -pady 0
 
 for {set y 0} {$y < $sphYdiam} {incr y 4} {
     if {$y>=$sphYdiam*0.18 && $y<$sphYdiam*0.27} {
-	set r 400
+	set r $sphXdiam
 	set shade \#ccffcc
     } else {
-	set r 84
+	set r [expr {0.21*$sphXdiam}]
 	set shade \#339933
     }
-    .splash.c create rectangle 0p $y ${r}p [expr {$y+2}] \
+    .splash.c create rectangle 0p ${y}p ${r}p [expr {$y+2}]p  \
 	-outline {} -fill $shade
 }
 set year [clock format [file mtime $SIMILE_PATH/Run/simile.tcl] -format %Y]
