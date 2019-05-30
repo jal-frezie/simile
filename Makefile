@@ -178,7 +178,7 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl code.pl compile.pl database.pl \
 
 # Prolog is not Sicstus
 ifeq ($(PROLOG),SWI)
-SWIPLSHARELIB = $(shell ldd /usr/bin/swipl | grep libswipl | cut -d' ' -f1)
+SWIPLSHARELIB = $(shell ldd /usr/bin/swipl | grep libswipl | { read str a; echo $$str; })
 # above should painlessly extract the name of the relevant shared library
 UINFO_TPL = userinfo.swi
 $(PROLOGSTATE): $(PROLOG_FILES)  Prolog/smain.pl $(PROLOG_DB)
