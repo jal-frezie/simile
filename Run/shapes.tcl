@@ -1996,17 +1996,13 @@ proc LoadLooks {t n object} {
 #
 proc ExtractFontData {font} {
     if {[catch {array set fontAttrs $font}]} {
-	set family [font actual $font -family]
-	set weight [font actual $font -weight]
-	set style [font actual $font -slant]
-	set textsize [font actual $font -size]
-    #ShowMess debug info "ExtractFontData [list $family $weight $style $textsize]" ok
-	return [list $family $weight $style $textsize]
-    } else {
-	# already a new style one, do not pass Tk in case headless
-	return [list $fontAttrs(-family) $fontAttrs(-weight) \
-		    $fontAttrs(-slant) $fontAttrs(-size)]
+	foreach attr {family weight slant size} {
+	    set fontAttrs(-$attr) [font actual $font -$attr]
+	}
     }
+    # already a new style one, do not pass Tk in case headless
+    return [list $fontAttrs(-family) $fontAttrs(-weight) \
+		$fontAttrs(-slant) [expr {-3.0*$fontAttrs(-size)/4}]]
 }
 
 proc CopyLooks {t n object nta} {
@@ -2269,7 +2265,7 @@ proc ResetFont { top } {
 
 proc AssembleFont {family weight style textsize} {
     set newFont [list -family $family -weight $weight -slant $style \
-		-size [expr {round($textsize)}]]
+		-size [expr {-round(4*$textsize/3)}]]
 
     return $newFont
 }
@@ -2466,17 +2462,24 @@ proc ExportLooks {t topNode type} {
 
 proc MakeLooksSaver {n} {
     global looks
+
     set objects {generic compartment channel text \
 		     variable event function submodel flow influence \
 		     ghost_link relation}
     set aspects {font txtbd txtbg outline fill text select highlight target \
-		     incomplete objectsize lines xoffset yoffset textanchor \
-		     captanchor}
-    for {set obj 0} {$obj < [llength $objects]} {incr obj} {
+			 incomplete objectsize lines xoffset yoffset textanchor \
+			 captanchor}
+    foreach obj $objects {
 	set sublist {}
-	for {set asp 0} {$asp < [llength $aspects]} {incr asp} {
-	    lappend sublist \
-		$looks($n,[lindex $objects $obj],[lindex $aspects $asp])
+	foreach asp $aspects {
+	    # loading looks with -ve font sizes is going to stuff up earlier versions, so...
+	    if {$asp eq "font"} {
+		set specifics [ExtractFontData  $looks($n,$obj,$asp)]
+		lappend sublist [list -family [lindex $specifics 0] -weight [lindex $specifics 1] \
+				     -slant [lindex $specifics 2] -size [lindex $specifics 3]]
+	    } else {
+		lappend sublist $looks($n,$obj,$asp)
+	    }
 	}
 	lappend result $sublist
     }
@@ -2485,14 +2488,16 @@ proc MakeLooksSaver {n} {
 
 proc UseLooksSaver {n state} {
     global looks
-    set objects [lindex $state 0]
-    set aspects [lindex $state 1]
-    set values [lindex $state 2]
-    for {set obj 0} {$obj < [llength $objects]} {incr obj} {
-	set sublist [lindex $values $obj]
-	for {set asp 0} {$asp < [llength $aspects]} {incr asp} {
-	    set looks($n,[lindex $objects $obj],[lindex $aspects $asp]) \
-		[lindex $sublist $asp]
+
+    foreach obj [lindex $state 0] sublist [lindex $state 2] {
+	foreach asp [lindex $state 1] value $sublist {
+	    if {$asp eq "font"} {
+		array set pxFont $value
+		set looks($n,$obj,$asp) [AssembleFont $pxFont(-family) $pxFont(-weight) \
+					     $pxFont(-slant) $pxFont(-size)]
+	    } else {
+		set looks($n,$obj,$asp) $value
+	    }
 	}
     }
 }
