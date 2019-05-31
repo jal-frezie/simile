@@ -74,6 +74,10 @@ eval font create EquationFont [font actual TkTextFont]
 set eqnSize [expr {[font configure EquationFont -size]*5/4}]
 font configure EquationFont -size $eqnSize
 
+# Set vertical spacing of treeview according to font height (should do this itself!)
+ttk::style configure Treeview \
+    -rowheight [expr {[font metrics TkDefaultFont -linespace] + 2}]
+
 # Now add the focus level to the toolbutton style so we can see when one is 
 # selected by keyboard traversal (on Mac this is unnecessary and makes the 
 # buttons the wrong shape)
