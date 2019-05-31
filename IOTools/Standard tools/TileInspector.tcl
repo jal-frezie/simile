@@ -38,6 +38,8 @@ namespace eval ::$keyValue {
 #        Tree $tableframe.table -showlines yes
 	scrollbar $tableframe.bar -command "$tableframe.table yview"
 	pack $tableframe.bar -side right -fill y -expand true
+	ttk::style configure Treeview \
+	    -rowheight [expr {[font metrics TkDefaultFont -linespace] + 2}]
 	::ttk::treeview $tableframe.table -show tree \
 	    -yscrollcommand "$tableframe.bar set"
         pack $tableframe.table -expand true -fill both
