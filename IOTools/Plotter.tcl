@@ -96,7 +96,8 @@ namespace eval ::$keyValue {
         set plot($w,Y_max_scalestep) 0
         set plot($w,Xprecision) 0
         set plot($w,Yprecision) 0
-        set plot($w,IdArrayElements) false; # option should plot but need legend
+        set plot($w,KeyArrays) 0
+        set plot($w,KeyRuns) 1
         set plot($w,FewXAxisTicks) false
         set plot($w,AutoAxisScaling) 1; #use ints "true" doesn't  to work with check button
         set plot($w,DrawLegend) 1
@@ -220,7 +221,7 @@ namespace eval ::$keyValue {
                 set plot(caption,$node) $caption
                 lappend plot($w,Yvars) $path
                 lappend ynodes($w) $node
-		captionNo $w $node ;# add legend whether traced or not
+		# CaptionNo $w $node $ident ;# add legend whether traced or not
                 
                 UpdateState $w
                 display $w [GetModelTime] 0 0
@@ -245,12 +246,10 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         global ::graphtools::YYnew
         
-        if {!$plot($winId,IdArrayElements)} {
-	    if {$plot($winId,usedLegend)} {
-		incr runCount($winId)
-		set plot($winId,usedLegend) 0
-	    }
-        }
+	if {$plot($winId,usedLegend)} {
+	    incr runCount($winId)
+	    set plot($winId,usedLegend) 0
+	}
         # prevent flyback
         set YYnew($winId) {}
     }
@@ -325,11 +324,11 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         # copy the values of the variables to be edited to temp, but namespace accessible, variables
         variable FewXAxisTicks
-        variable IdArrayElements
+	variable KeyArrays $::graphtools::plot($w,KeyArrays)
+	variable KeyRuns $::graphtools::plot($w,KeyRuns)
         variable AutoAxisScaling
         variable DrawLegend
         set FewXAxisTicks $::graphtools::plot($w,FewXAxisTicks)
-        set IdArrayElements $::graphtools::plot($w,IdArrayElements)
         set AutoAxisScaling $::graphtools::plot($w,AutoAxisScaling)
         set DrawLegend $::graphtools::plot($w,DrawLegend)
         
@@ -364,10 +363,11 @@ namespace eval ::$keyValue {
         #pack [checkbutton $chkF.automaticScalingF.cbutton -variable [namespace current]::AutoAxisScaling] -side right
         pack [ttk::labelframe $chkF.fewXAxisTicksF -text "Few x-axis ticks"] -fill x
         pack [checkbutton $chkF.fewXAxisTicksF.cbutton -variable [namespace current]::FewXAxisTicks] -side right
-################################################################################
-#         pack [ttk::labelframe $chkF.idArrayElementsF -text "Different colours for each element of arrays"] -fill x
-#         pack [checkbutton $chkF.idArrayElementsF.cbutton -variable [namespace current]::IdArrayElements] -side right
-################################################################################
+
+	pack [ttk::labelframe $chkF.colsF -text "Use different colours for:"] -fill x
+	pack [checkbutton $chkF.colsF.ambutton -text "Array members" -variable [namespace current]::KeyArrays] -side left
+	pack [checkbutton $chkF.colsF.srbutton -text "Successive runs" -variable [namespace current]::KeyRuns] -side right
+
         pack [ttk::labelframe $chkF.legendF -text "Draw legend"] -fill x
         pack [checkbutton $chkF.legendF.cbutton -variable [namespace current]::DrawLegend] -side right
         
@@ -391,8 +391,10 @@ namespace eval ::$keyValue {
             # has been changed but here to it anyway instead of checking if changed
             set ::graphtools::plot($w,FewXAxisTicks) $FewXAxisTicks
             #set ::graphtools::plot($w,AutoAxisScaling) $AutoAxisScaling
-            set ::graphtools::plot($w,IdArrayElements) $IdArrayElements
-            if {$IdArrayElements} {
+	    set ::graphtools::plot($w,KeyArrays) $KeyArrays
+	    set ::graphtools::plot($w,KeyRuns) $KeyRuns
+
+            if {$KeyArrays || $KeyRuns} {
                 set $plot($w,Ylabels) {}
             }
             
@@ -607,6 +609,7 @@ namespace eval ::$keyValue {
     
     proc drawLegend {w} {
         global ::graphtools::plot
+	variable NColours
         #ShowMess debug info "font [font families -displayof $w.canvas]" ok
         # legend vars only, not elements of arrays
         set nYlabel [llength $plot($w,Ylabels)]
@@ -630,7 +633,7 @@ namespace eval ::$keyValue {
             set vartag {}
             append vartag var $i
             $w.canvas create line $xa $ya $xb $ya \
-                    -fill [lindex $plot($w,YColours) $i] \
+		-fill [lindex $plot($w,YColours) [expr {$i%$NColours}]] \
                     -width 2 \
                     -tags [list $vartag legend markable toplevel]
             $w.canvas create text $x $y \
@@ -791,21 +794,25 @@ namespace eval ::$keyValue {
 	    if {![info exists Yold_array($node)]} {
 		set Yold_array($node) {}
 	    }
-	    plot_Y $w [captionNo $w $node] $Told($w) $Yold_array($node) \
+	    plot_Y $w $Told($w) $Yold_array($node) \
 		$Tnew($w) $Ynew $node {}
 #                }
 #            }
         }
     }
     
-    proc captionNo {w node} {
+    proc CaptionNo {w node ident} {
         global ::graphtools::plot
         variable runCount
-        #ShowMess debug info "captionNo" ok
-        if {$plot($w,IdArrayElements)} {
-            set capt "$plot(caption,$node)"
-        } else  {
-            set capt "$plot(caption,$node), run $runCount($w)"
+
+	#puts [info level 0]
+	set identList [split $ident ,]
+	set capt $plot(caption,$node)
+	if {$plot($w,KeyArrays) && [llength $identList]>1} {
+	    append capt \[[join [lrange $identList 1 end] ,]\]
+	}
+        if {$plot($w,KeyRuns)} {
+            append capt ", run $runCount($w)"
         }
         set posn [lsearch -exact $plot($w,Ylabels) $capt]
         if {$posn==-1} {
@@ -819,14 +826,13 @@ namespace eval ::$keyValue {
         return $posn
     }
     
-    proc plot_Y {w iplot Told Yold Tnew Ynew node id} {
+    proc plot_Y {w Told Yold Tnew Ynew node id} {
         global ::graphtools::plot
         global errorInfo
         variable NColours
 	variable runCount
         
         if {[llength $Ynew]==1} then {
-            set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,$NColours))}]]
             #puts "plot_Y iplot $iplot; lindex $plot($w,YColours) $iplot [lindex $plot($w,YColours) $iplot]"
 	    set id [linsert $id 0 $runCount($w)]
 	    set ident [join $id ,]
@@ -841,6 +847,8 @@ namespace eval ::$keyValue {
 		    adjustLimits $w $Tnew $Ynew
 		}
 		if {![dodgyValue $Yold]} {
+		    set colId [CaptionNo $w $node $ident]
+		    set colour [lindex $plot($w,YColours) [expr {$colId%$NColours}]]
 		    drawPoint $w $Told $Yold $Tnew $Ynew $colour $node $ident
 #		} else { ;# will plot next time so add binding for it
 #		    $w.canvas bind $node.$ident <Button-1> \
@@ -859,7 +867,7 @@ namespace eval ::$keyValue {
                 if {![info exists Yold_array($element)]} {
 		    set Yold_array($element) {}
 		}
-		plot_Y $w $iplot $Told $Yold_array($element) $Tnew \
+		plot_Y $w $Told $Yold_array($element) $Tnew \
 		    $Ynew_array($element) $node $identList
 		# WRONG COLOURS  -VAR1 -(4) -(2) ETC!!!
 # below stands not a chance because it confuses index with caption
