@@ -101,6 +101,8 @@ namespace eval ::$keyValue {
         set plot($w,FewXAxisTicks) false
         set plot($w,AutoAxisScaling) 1; #use ints "true" doesn't  to work with check button
         set plot($w,DrawLegend) 1
+        set plot($w,KeyArrays) 0
+        set plot($w,KeyRuns) 1
         set plot($w,highlittrace) {}
 	set plot($w,usedLegend) 0
     }
@@ -328,9 +330,13 @@ namespace eval ::$keyValue {
 	variable KeyRuns $::graphtools::plot($w,KeyRuns)
         variable AutoAxisScaling
         variable DrawLegend
+	variable KeyArrays
+	variable KeyRuns
         set FewXAxisTicks $::graphtools::plot($w,FewXAxisTicks)
         set AutoAxisScaling $::graphtools::plot($w,AutoAxisScaling)
         set DrawLegend $::graphtools::plot($w,DrawLegend)
+        set KeyArrays $::graphtools::plot($w,KeyArrays)
+        set KeyRuns $::graphtools::plot($w,KeyRuns)
         
         set dlg [PutItThere .plotxyprop $w]
         wm title $dlg [tr. "Plotter properties"]
@@ -364,12 +370,11 @@ namespace eval ::$keyValue {
         pack [ttk::labelframe $chkF.fewXAxisTicksF -text "Few x-axis ticks"] -fill x
         pack [checkbutton $chkF.fewXAxisTicksF.cbutton -variable [namespace current]::FewXAxisTicks] -side right
 
-	pack [ttk::labelframe $chkF.colsF -text "Use different colours for:"] -fill x
-	pack [checkbutton $chkF.colsF.ambutton -text "Array members" -variable [namespace current]::KeyArrays] -side left
-	pack [checkbutton $chkF.colsF.srbutton -text "Successive runs" -variable [namespace current]::KeyRuns] -side right
-
         pack [ttk::labelframe $chkF.legendF -text "Draw legend"] -fill x
         pack [checkbutton $chkF.legendF.cbutton -variable [namespace current]::DrawLegend] -side right
+        pack [ttk::labelframe $chkF.colsF -text "Use different colours for:"] -fill x
+        pack [checkbutton $chkF.colsF.ambutton -text "Array members" -variable [namespace current]::KeyArrays] -side left
+        pack [checkbutton $chkF.colsF.srbutton -text "Successive runs" -variable [namespace current]::KeyRuns] -side right
         
         pack $chkF -padx 10
         
@@ -399,6 +404,8 @@ namespace eval ::$keyValue {
             }
             
             set ::graphtools::plot($w,DrawLegend) $DrawLegend
+            set ::graphtools::plot($w,KeyArrays) $KeyArrays
+            set ::graphtools::plot($w,KeyRuns) $KeyRuns
 ################################################################################
 #             set OldXRange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]
 #             set OldXmin_axis $plot($w,Xmin_axis)
@@ -860,15 +867,15 @@ namespace eval ::$keyValue {
 		}
 	    }
         } else {
-            array set Ynew_array $Ynew
+            #array set Ynew_array $Ynew
             array set Yold_array $Yold
-            foreach element [array names Ynew_array] {
+            foreach {element newVal} $Ynew {
 		set identList [concat $id [list $element]]
                 if {![info exists Yold_array($element)]} {
 		    set Yold_array($element) {}
 		}
 		plot_Y $w $Told $Yold_array($element) $Tnew \
-		    $Ynew_array($element) $node $identList
+		    $newVal $node $identList
 		# WRONG COLOURS  -VAR1 -(4) -(2) ETC!!!
 # below stands not a chance because it confuses index with caption
 #		if {$plot($w,IdArrayElements)} {
