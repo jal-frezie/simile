@@ -843,9 +843,19 @@ proc AddGrid {c onCol wl wt wr wb} {
 }
 
 proc FixDisabledImgBug {ttkButton} {
+    # we shall use this as a convenient spot to enlarge all button images  for hidpi
+
+    set growth [expr {int($::defScaling)}]
+    set origImg [$ttkButton cget -image]
+    if {$growth>1} {
+        set fatImg [image create photo]
+	$fatImg copy $origImg -zoom $growth
+	set origImg $fatImg
+	$ttkButton config -image $origImg
+    }
+
 # Only do for Cocoa so disabled images greyed elsewhere
     if {$::inCocoa} {
-	set origImg [$ttkButton cget -image]
 	set bag [$origImg data -format png]
 	set newImg [image create photo -data $bag -format {png -alpha 0.3}]
 	$ttkButton config -image [list $origImg disabled $newImg]
@@ -2054,6 +2064,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             set bt [::ttk::radiobutton $tb.$mode -command "ItemSelect $mode"  \
                 -variable MIpushedbutton -value $mode -image $testImg -style Toolbutton]
             pack $bt -side left -padx 2 -pady 2
+	    FixDisabledImgBug $bt
             BindPopup $bt add_$mode
             bind $bt <ButtonRelease-1> "DragComponentIn $c $bt %X %Y yes"
         }

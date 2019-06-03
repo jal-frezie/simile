@@ -70,6 +70,7 @@ proc ::graphtools::MakeToolBar {w toolbarItems} {
 		 -takefocus 0 -relief flat -borderwidth 1 -padx 1 -pady 1 \
 		 -command $command]
 	pack $newButton -side left
+	FixDisabledImgBug $newButton
 	BindPopup $newButton $helptext
     }
     pack $f -side top -fill x

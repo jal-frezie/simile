@@ -159,7 +159,7 @@ namespace eval $keyValue {
     
     proc CreateTable {winId} {
         table $winId.t -rows 1 -cols 1 -variable data$winId -bg \#a0ffa0 \
-	    -selectmode extended -sparsearray 0 \
+	    -selectmode extended -sparsearray 0 -font TkDefaultFont \
 	    -rowtagcommand [namespace code rowProc] \
 	    -coltagcommand [namespace code colProc] \
 	    -rowseparator \n -colseparator \t \

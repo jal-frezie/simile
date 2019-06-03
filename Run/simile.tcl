@@ -434,8 +434,8 @@ if {[tk windowingsystem] eq "aqua"} {
     set menuFont TkMenuFont
     set niceSize 9
 }
-set graph(font) [list helvetica [expr {$niceSize*4/3}] bold]
-set graph(megafont) [list helvetica [expr {$niceSize*4}] bold]
+set graph(font) [list helvetica $niceSize bold]
+set graph(megafont) [list helvetica [expr {$niceSize*3}] bold]
 
 pack [canvas .splash.c -width ${sphXdiam}p -height ${sphYdiam}p -bd -$graph(origin) \
 	 -bg \#f0f8ff] -padx 0 -pady 0

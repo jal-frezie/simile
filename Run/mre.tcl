@@ -63,7 +63,7 @@ namespace eval RunEnv {
     
     # A top level window to contain the helpers
     proc Create { node } {
-        global helperTable tcl_platform
+        global helperTable tcl_platform defScaling
         variable runControlFrame
         variable sliderControlFrame;
         variable variableListFrame;
@@ -238,7 +238,8 @@ namespace eval RunEnv {
 #            pack $mainframe -fill both -expand yes
             pack $mainpw -fill both -expand yes
             update ;# needed for sash place to work
-	    $mainpw sash place 0 270 0; # must be wide enough (270ish) for the sliders
+	    $mainpw sash place 0 [expr {round($defScaling*200)}] 0
+	    # must be wide enough (270ish) for the sliders
             
             pack $hiercontrolpw -fill both -expand yes
             
@@ -246,7 +247,8 @@ namespace eval RunEnv {
             # run control is automatically created when model is run
             # input slider helper is automatically created if needed when model is run
             
-            wm geometry $mreId ${width}x${height}
+            wm geometry $mreId \
+		[expr {round($width*$defScaling)}]x[expr {round($height*$defScaling)}]
 #            if {[string match unix $tcl_platform(platform)]} {
 #                wm iconbitmap $mreId @$::SIMILE_PATH/Images/dribble.xbm
 #            }; # on Windows uses default icon set in Runmodel.tcl
