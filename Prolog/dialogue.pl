@@ -575,6 +575,8 @@ get_table_data(Function, Data, Table, Units, Dims, Sizes, Complaint) :-
 get_table_part(Function, Data, Table, Units, Dims, Sizes) :-
 	length(Data, Len), Len<255,
 	name(Num, Data),
+	% swi-prolog accepts embedded whitespace in integers -- reject
+	\+ (integer(Num), member(32, Data)),
 	enum_type_ref(Num, Function, quoted, Table, Units, _),
 	    Dims = [],
 	    Sizes = [];
