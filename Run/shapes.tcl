@@ -1783,7 +1783,7 @@ proc cleanup {canvas} {
 # set looks(brushmap) [image create bitmap -file brush.xbm]
 
 proc Customize {winId mode} {
-    global looks done window_info custom
+    global looks done window_info custom defScaling
     
     set n $window_info($winId.canvas,top_node)
     set looks(width) 180
@@ -1803,15 +1803,15 @@ proc Customize {winId mode} {
             wm title $t "Customize $object appearance"
         }
     }
-    
-    canvas $t.canvas -width [expr $looks(width) + 120] \
-            -height [expr $looks(width) + 60]
-    set window_info($t.canvas,scale) 1
+
+    set fullWidth [expr {($looks(width) + 120)*$defScaling}] 
+    canvas $t.canvas -width $fullWidth \
+	-height [expr {($looks(width) + 60)*$defScaling}]
+    set window_info($t.canvas,scale) $defScaling
     set window_info($t.canvas,top_node) $n
     set custom(showgrids,$t.canvas) 1
     pack $t.canvas
-    AddGrid $t.canvas [Gradient white $t.canvas]  0 0 \
-	[expr $looks(width)+120] [expr $looks(width)+60]
+    AddGrid $t.canvas [Gradient white $t.canvas]  0 0 $fullWidth $fullWidth
 
     if {[string compare $object influence]} {
 	TitleFrame $t.text -text "Text: "
@@ -1822,26 +1822,25 @@ proc Customize {winId mode} {
         set ts [frame $text.size]
         label $ts.what -text "Text size: "
         pack $ts.what -side left
-        scale $ts.scale -from 1 -to 25 -length $looks(width) \
-                -orient horizontal -showvalue false -resolution 1 \
-                -command "ZotFont $t"
-        pack $ts.scale -side left
-        pack $ts
+        scale $ts.scale -from 1 -to 25 -orient horizontal -showvalue false -resolution 1 \
+	    -command "ZotObjectSize $t $n $object"
+        pack $ts.scale -side left -fill x -expand 1
+        pack $ts -fill x -expand 1
         
         set tf [frame $text.font]
         label $tf.what -text "Font: "
         pack $tf.what -side left
         tk_optionMenu $tf.family looks(family) \
                 helvetica times system courier symbol
-        bind $tf.family.menu <Leave> "ZotFont $t 120"
+        bind $tf.family.menu <Leave> "ZotObjectSize $t $n $object 120"
         pack $tf.family -side left
         tk_optionMenu $tf.weight looks(weight) \
                 bold normal
-        bind $tf.weight.menu <Leave> "ZotFont $t 120"
+        bind $tf.weight.menu <Leave> "ZotObjectSize $t $n $object 120"
         pack $tf.weight -side left
         tk_optionMenu $tf.style looks(style) \
                 italic roman
-        bind $tf.style.menu <Leave> "ZotFont $t 120"
+        bind $tf.style.menu <Leave> "ZotObjectSize $t $n $object 120"
         pack $tf.style -side left
         pack $tf
 
@@ -1889,19 +1888,19 @@ proc Customize {winId mode} {
 	label $graphics.objectsize.what -text "Relative size: "
 	pack $graphics.objectsize.what -side left
 	scale $graphics.objectsize.scale -from 0 -to $looks(width) \
-            -length $looks(width) -orient horizontal -showvalue false \
+            -orient horizontal -showvalue false \
             -resolution 1 -command "ZotObjectSize $t $n $object"
-	pack $graphics.objectsize.scale -side left
-	pack $graphics.objectsize
+	pack $graphics.objectsize.scale -side left -fill x -expand 1
+	pack $graphics.objectsize -fill x -expand 1
     
 	frame $graphics.lines
 	label $graphics.lines.what -text "Line thickness: "
 	pack $graphics.lines.what -side left
-	scale $graphics.lines.scale -from 0 -to 10 -length $looks(width) \
+	scale $graphics.lines.scale -from 0 -to 10 \
             -orient horizontal -showvalue false -resolution 0.05 \
             -command "ZotObjectSize $t $n $object"
-	pack $graphics.lines.scale -side left
-	pack $graphics.lines
+	pack $graphics.lines.scale -side left -fill x -expand 1
+	pack $graphics.lines -fill x -expand 1
 	pack $t.graphics -fill x
     }
     
@@ -2270,14 +2269,6 @@ proc AssembleFont {family weight style textsize} {
     return $newFont
 }
 
-proc ZotFont { t param } {
-    set txt [GetCaptionItem $t.canvas sample]
-    $t.canvas itemconfigure is_caption -font [ResetFont $t]
-    foreach item [$t.canvas find withtag is_caption] {
-	FixBackBox $t.canvas item
-    }
-}
-
 proc ZotColor {t n role type} {
     global looks
     
@@ -2307,6 +2298,8 @@ proc ZotObjectSize {t n type size} {
 	    $looks(captAnchor)
     } else {
 	$t.canvas delete sample
+	set middlex [expr $looks(width)/2 + 60]
+	set middley [expr $looks(width)/2 + 30]
         PutText $t.canvas [list $middlex $middley] \
                 text "sample" 100 0 normal "Sample text box"
     }
