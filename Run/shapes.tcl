@@ -1790,6 +1790,7 @@ proc Customize {winId mode} {
     
     set t [PutItThere .customize $winId]
     wm protocol $t WM_DELETE_WINDOW "set done 0"
+    BringRootWindow $t
     
     switch -regexp $mode {
         condition|creation|immigration|reproduction|loss {
@@ -1830,18 +1831,21 @@ proc Customize {winId mode} {
         set tf [frame $text.font]
         label $tf.what -text "Font: "
         pack $tf.what -side left
-        tk_optionMenu $tf.family looks(family) \
-                helvetica times system courier symbol
-        bind $tf.family.menu <Leave> "ZotObjectSize $t $n $object 120"
+	set cbWid [expr {round(8*$defScaling)}]
+        ttk::combobox $tf.family -width $cbWid -textvariable looks(family) \
+	    -values {helvetica times system courier symbol}
+        bind $tf.family <<ComboboxSelected>> "ZotObjectSize $t $n $object 120"
         pack $tf.family -side left
-        tk_optionMenu $tf.weight looks(weight) \
-                bold normal
-        bind $tf.weight.menu <Leave> "ZotObjectSize $t $n $object 120"
+        ttk::combobox $tf.weight -width $cbWid -textvariable looks(weight) \
+	    -values {bold normal}
+        bind $tf.weight <<ComboboxSelected>> "ZotObjectSize $t $n $object 120"
         pack $tf.weight -side left
-        tk_optionMenu $tf.style looks(style) \
-                italic roman
-        bind $tf.style.menu <Leave> "ZotObjectSize $t $n $object 120"
+        ttk::combobox $tf.style -width $cbWid -textvariable looks(style) \
+	    -values {italic roman}
+        bind $tf.style <<ComboboxSelected>> "ZotObjectSize $t $n $object 120"
         pack $tf.style -side left
+	button $tf.all -text All... -command [list ChooseFont $t $n $object]
+	pack $tf.all -side left
         pack $tf
 
 	set tb [frame $text.backbox]
@@ -2246,9 +2250,9 @@ proc SampleDrop {x y w} {
 
 proc ResetFont { top } {
     set t [GetFrame $top.text]
-    return [AssembleFont [$t.font.family cget -text] \
-            [$t.font.weight cget -text] \
-            [$t.font.style cget -text] \
+    return [AssembleFont [$t.font.family get] \
+            [$t.font.weight get] \
+            [$t.font.style get] \
             [$t.size.scale get]]
             #[string index [$tf.style cget -text] 0]
 }
@@ -2281,6 +2285,33 @@ proc ZotColor {t n role type} {
 #	FillSymbol $t.canvas sample $::looks($n,$type,fill)
 	DoGraphics $t $type $looks($n,$type,objectsize) $looks(captAnchor)
     }
+}
+
+proc GulpateFont {t n object font args} {
+    global looks
+    #puts [info level 0]
+    
+    set ts [GetFrame $t.text].size
+    set looks(family) [lindex $font 0]
+    $ts.scale set [lindex $font 1]
+    if {[lindex $font 2] eq "bold"} {
+	set looks(weight) bold
+	set font [lreplace $font 2 2 {}]
+    } else {
+	set looks(weight) normal
+    }
+    if {[lindex $font 2] eq "italic"} {
+	set looks(style) italic
+    } else {
+	set looks(style) roman
+    }
+    ZotObjectSize $t $n $object 120
+}
+
+proc ChooseFont {t n obj} {
+    tk fontchooser configure -parent $t -command [list GulpateFont $t $n $obj] \
+	-font $::looks($n,$obj,font)
+    tk fontchooser show
 }
 
 proc ZotObjectSize {t n type size} {
