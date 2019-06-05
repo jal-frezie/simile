@@ -20,15 +20,14 @@ itcl::class similescript::$newHelperClass {
 
 	if {[AmLayer]} {
 	    set winId [winfo parent [lindex $winTitle 2]]
-	    set viewVector($winId,X) 500
-	    set viewVector($winId,Y) 500
 	    foreach {x y} [lrange $winTitle 3 4] {}
 	    array set scaleVector [list $winId,xoff [expr {250.0/$x}] \
 				       $winId,xmag [expr {500.0/$x}] \
 				       $winId,yoff [expr {-250.0/$y}] \
 				       $winId,ymag [expr {500.0/$y}] \
 				       $winId,zoff 0 $winId,zmag 150.0]
-	    array set viewVector [list $winId,angle 0 $winId,elevation 1.57 \
+	    array set viewVector [list $winId,X 500 $winId,Y 500 \
+				      $winId,angle 0 $winId,elevation 1.57 \
 				      $winId,cos_angle 1 $winId,cos_elevation 0 \
 				      $winId,sin_angle 0 $winId,sin_elevation 1]
 	} else {
@@ -38,7 +37,9 @@ itcl::class similescript::$newHelperClass {
 				       $winId,yoff 0 $winId,ymag 150.0 \
 				       $winId,zoff 0 $winId,zmag 150.0]
 	    ::gen3d1::DefineGrid $winId
-	    array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
+	    array set viewVector [list $winId,X [winfo width $winId.c] \
+				      $winId,Y [winfo height $winId.c] \
+				      $winId,angle -0.3 $winId,elevation 0.5 \
 				      $winId,cos_angle 1 $winId,cos_elevation 1 \
 				      $winId,sin_angle -0.3 $winId,sin_elevation 0.5]
 	}

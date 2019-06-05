@@ -64,11 +64,10 @@ proc ::graphtools::MakeToolBar {w toolbarItems} {
 # non-bwidget version which works but needs all the clients changed
 # to set button abilities by name instead of number (which they should anyway)
 	set newButton \
-	    [button $f.[file rootname $gif] -highlightthickness 0 \
+	    [ttk::button $f.[file rootname $gif] -style Toolbutton \
 		 -image [image create photo \
 			     -file "$::SIMILE_PATH/Images/Toolbar/$gif"] \
-		 -takefocus 0 -relief flat -borderwidth 1 -padx 1 -pady 1 \
-		 -command $command]
+		 -takefocus 0 -command $command]
 	pack $newButton -side left
 	FixDisabledImgBug $newButton
 	BindPopup $newButton $helptext
