@@ -383,7 +383,7 @@ source $SIMILE_PATH/Run/language.tcl
 LoadTrans
 
 if {!$headless} {
-entry .hidden_e -width 25
+entry .hidden_e -font TkEntryFont -width 25
 pack .hidden_e
 
 # Scaling affects some metrics but not all, so squash it FTTB
@@ -440,7 +440,7 @@ set graph(megafont) [list helvetica [expr {$niceSize*3}] bold]
 pack [canvas .splash.c -width ${sphXdiam}p -height ${sphYdiam}p -bd -$graph(origin) \
 	 -bg \#f0f8ff] -padx 0 -pady 0
 
-for {set y 0} {$y < $sphYdiam} {incr y 4} {
+for {set y 0} {$y < $sphYdiam} {incr y 6} {
     if {$y>=$sphYdiam*0.18 && $y<$sphYdiam*0.27} {
 	set r $sphXdiam
 	set shade \#ccffcc
@@ -448,7 +448,7 @@ for {set y 0} {$y < $sphYdiam} {incr y 4} {
 	set r [expr {0.21*$sphXdiam}]
 	set shade \#339933
     }
-    .splash.c create rectangle 0p ${y}p ${r}p [expr {$y+2}]p  \
+    .splash.c create rectangle 0p ${y}p ${r}p [expr {$y+3}]p  \
 	-outline {} -fill $shade
 }
 set year [clock format [file mtime $SIMILE_PATH/Run/simile.tcl] -format %Y]

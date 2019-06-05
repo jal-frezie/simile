@@ -1790,7 +1790,6 @@ proc Customize {winId mode} {
     
     set t [PutItThere .customize $winId]
     wm protocol $t WM_DELETE_WINDOW "set done 0"
-    BringRootWindow $t
     
     switch -regexp $mode {
         condition|creation|immigration|reproduction|loss {

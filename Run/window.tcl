@@ -6,6 +6,8 @@
 # This file contains procedures for drawing the main window.
 #
 
+proc tkerror {args} {error $::errorInfo}
+
 # Scale translates coordinates in desktop space to canvas space. Used to include
 # 'round' because some floating point values caused trouble, but later Tcls do
 # not seem to mind them, and they help when things are made very small then zoomed.
@@ -117,6 +119,14 @@ proc GetFromProlog {prologCmd} {
 
 set debounce(down) quiet
 
+proc BringRootWindow {winId} {
+    if {[tk windowingsystem] eq "aqua"} {
+	# popup menus only appear if root window on same screen
+	wm geometry . +[winfo rootx $winId]+[winfo rooty $winId]
+	update
+    }
+}
+
 proc DoContextMenu {winId X Y} {
     global tcl_platform
 
@@ -130,11 +140,7 @@ proc DoContextMenu {winId X Y} {
 	    $Y>[winfo screenheight $winId]/2} {
 	tk_popup $m $X $Y 99
     } else {
-	if {[tk windowingsystem] eq "aqua"} {
-# menu will only show if on same screen as root window
-	    wm geometry . +$X+$Y
-	    update
-	}
+	BringRootWindow $winId
 	tk_popup $m $X $Y
     }
     $m configure -postcommand "prolog tk_bar_edit_menu('$winId')"
@@ -1813,7 +1819,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     menu $fm.sub4 -tearoff 0
     $fm add cascade -label [tr. "Customize"] -menu $fm.sub4
     foreach {category loc_label} \
-	[list compartment [tr. "Compartments, states..."] \
+	[list select [tr. "All components..."] \
+	     compartment [tr. "Compartments, states..."] \
 	     variable [tr. "Variables, events..."] \
 	     flow [tr. "Flows, squirts, clouds..."] \
 	     influence [tr. "Influences..."] \
@@ -1821,8 +1828,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	     relation [tr. "Relations..."] \
 	     condition [tr. "Channels..."] \
 	     text [tr. "Text boxes..."] \
-	     ghost_link [tr. "Ghost links..."] \
-	     select [tr. "All components..."]] {
+	     ghost_link [tr. "Ghost links..."]] {
+
 		 $fm.sub4 add command -command "Customize $winid $category" \
 		     -label $loc_label
     }
@@ -2578,10 +2585,7 @@ proc AbleComp {winid} {
 proc EmbraceEqn {winId} {
     global equationbar
     if {[info exists equationbar($winId,node)]} {
-	if {[tk windowingsystem] eq "aqua"} {
-# popup menus only appear if root window on same screen
-	    wm geometry . +[winfo rootx $winId]+[winfo rooty $winId]
-	}
+	BringRootWindow $winId
 	if {[llength $equationbar($winId,node)]} {
 	    prolog tk_embrace('$winId.canvas',$equationbar($winId,node))
 	}
