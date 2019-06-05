@@ -78,14 +78,14 @@ namespace eval runcontrol33857 {
         
         ::ttk::notebook $t.nb
         
-        $t.nb add [frame $t.nb.rcf] -text [tr. "Run control"]
+        $t.nb add [ttk::frame $t.nb.rcf] -text [tr. "Run control"]
         set rcf $t.nb.rcf
 	set frames($node,rcf) $rcf
         ttk::frame $rcf.upper -class Toolbar
         foreach mode {play pause stop debug} {
             set ${mode}Img [image create photo -file $::SIMILE_PATH/Images/Control/${mode}.gif]
         }
-        frame $rcf.upper.topbuttons
+        ttk::frame $rcf.upper.topbuttons
         ::ttk::button $rcf.upper.topbuttons.reset -image $stopImg -width 32 \
                 -command "[namespace current]::SetMode $node reset"
         pack $rcf.upper.topbuttons.reset -side left  -padx 1 -pady 2 -expand true -fill x
@@ -101,24 +101,32 @@ namespace eval runcontrol33857 {
         BindPopup $rcf.upper.topbuttons.start [tr. "Run or pause simulation"]
         pack $rcf.upper.topbuttons -side left
         
-        frame $rcf.upper.bf
+        ttk::frame $rcf.upper.bf
         set runState($node,cnvs) [canvas $rcf.upper.bf.flag -width 18 -height 18]
         $runState($node,cnvs) create oval 6 6 12 12 -fill [RestingColour $node]
         $runState($node,cnvs) create oval 6 6 12 12 -outline grey
         pack $runState($node,cnvs) -side right -anchor e
         after idle set runState($node,fractDone) 0
+#	set runState($node,progressBar) \
+#	    [::ttk::progressbar $rcf.upper.bf.bar -maximum 100 \
+#		-variable runState($node,progress)]
+	set runState($node,progress) 0
 	set runState($node,progressBar) \
-	    [::ttk::progressbar $rcf.upper.bf.bar -maximum 100]
+	    [frame $rcf.upper.bf.bar -width 80 -height 20 -bg white]
+	set progf [frame $runState($node,progressBar).fill -height 20 -bg blue]
+	pack $progf -side left -fill y
+	bind $runState($node,progressBar) <Configure> \
+	    [namespace code [list ShiftBar %W $node]]
 	pack $runState($node,progressBar) \
 	    -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.upper.bf -side left -fill x -expand true
         pack $rcf.upper -side top -anchor n -fill x -padx 4 -pady 4
         set captWidth 17
-        frame $rcf.editBoxes
+        ttk::frame $rcf.editBoxes
         foreach {name capt var} {exec {Execute for:} execTime \
                     current {Current time:} currentTime \
                     disp {Display each} displayInt} {
-            frame $rcf.editBoxes.$name
+            ttk::frame $rcf.editBoxes.$name
             label $rcf.editBoxes.$name.capt -text [tr. $capt] \
 		-width $captWidth -anchor w
 # TRANSLATOR: $capt is one of doubly bracketed strings after foreach above
@@ -138,7 +146,7 @@ namespace eval runcontrol33857 {
 	$squeezed config -width 10
         pack $rcf.editBoxes -side top -pady 2 -expand on -fill both
 	set runState($node,timeReached) $runState($node,currentTime)
-        pack [frame $rcf.edit] -pady 2 -expand on -fill both
+        pack [ttk::frame $rcf.edit] -pady 2 -expand on -fill both
         ::ttk::menubutton $rcf.edit.capt
 	set tCd [namespace code [list SwapDistVar $node 0]]
 	set timeStepMenu [menu $rcf.edit.capt.menu -tearoff 0 -postcommand $tCd]
@@ -154,10 +162,10 @@ namespace eval runcontrol33857 {
 	bind $stepField <Return> $tCd
         SwapDistVar $node [GetPhaseCount $node]
         
-        $t.nb add [frame $t.nb.rsf] -text [tr. "Run settings"]
+        $t.nb add [ttk::frame $t.nb.rsf] -text [tr. "Run settings"]
         set rsf $t.nb.rsf
         set frames($node,rsf) $rsf
-        pack [frame $rsf.unitselection] -pady 2 -fill x
+        pack [ttk::frame $rsf.unitselection] -pady 2 -fill x
         pack [label $rsf.unitselection.caption -text [tr. "Time units:"] \
 		  -width $captWidth -anchor w] -side left -anchor nw
 #        ::ttk::menubutton $rsf.unitselection.pulldown
@@ -176,7 +184,7 @@ namespace eval runcontrol33857 {
 	    [namespace code [list AlterUnit $node]]
         pack $rsf.unitselection.pulldown -side left -anchor nw
         
-        pack [frame $rsf.integration] -pady 2 -fill x
+        pack [ttk::frame $rsf.integration] -pady 2 -fill x
         pack [label $rsf.integration.caption -text [tr. "Integration method:"] \
 		  -width $captWidth -anchor w] -side left -anchor nw
 #        ::ttk::menubutton $rsf.integration.pulldown
@@ -200,7 +208,7 @@ namespace eval runcontrol33857 {
 #                    [list Time step \#$phase {(} $::runState($node,update$phase) {)}]
 #        }
 
-        pack [frame $rsf.stepsize] -pady 4 -expand on -fill both
+        pack [ttk::frame $rsf.stepsize] -pady 4 -expand on -fill both
 	pack [ttk::checkbutton $rsf.stepsize.adapt \
 		  -variable runState($node,adapt) \
 		  -text [tr. "Adaptive\; Error limit:"] \
@@ -211,7 +219,7 @@ namespace eval runcontrol33857 {
 	    -side right -expand on -fill x
 	bind $rsf.stepsize.maxerr <Key> "set runState($node,tweaked) 1"
 
-	pack [frame $rsf.speedlim] -pady 4 -expand on -fill both
+	pack [ttk::frame $rsf.speedlim] -pady 4 -expand on -fill both
 	pack [ttk::checkbutton $rsf.speedlim.use \
 		  -variable runState($node,splimit) \
 		  -text [tr. "Limit updates/sec to:"] \
@@ -221,7 +229,7 @@ namespace eval runcontrol33857 {
 	    -side right -expand on -fill x
 	bind $rsf.speedlim.val <Key> "set runState($node,tweaked) 1"
 
-	pack [frame $rsf.resetTo] -anchor nw -pady 2 -fill x
+	pack [ttk::frame $rsf.resetTo] -anchor nw -pady 2 -fill x
 	label $rsf.resetTo.capt -text [tr. {Time at reset:}] \
 	    -width $captWidth -anchor w
 	pack $rsf.resetTo.capt -side left -anchor nw
@@ -229,7 +237,7 @@ namespace eval runcontrol33857 {
 	    -textvar runState($node,resetTo) -width 8
 	pack $rsf.resetTo.num -side left -expand on -fill x -anchor nw
 
-	frame $rsf.pauses
+	ttk::frame $rsf.pauses
 	pack [label $rsf.pauses.capt -text [tr. "Pause on:"] -anchor w] \
 	    -side left -padx 4 -anchor w
 	pack [ttk::checkbutton $rsf.pauses.event \
@@ -243,7 +251,7 @@ namespace eval runcontrol33857 {
 	if {[info exists ::do_events]} {
 	    pack $rsf.pauses -pady 4 -expand on -fill both
 	}
-        $t.nb add [frame $t.nb.log] -text [tr. "Log"]
+        $t.nb add [ttk::frame $t.nb.log] -text [tr. "Log"]
         set log $t.nb.log
 	pack [scrollbar $log.scroll -orient vert -command "$log.text yview"] \
 	    -side right -fill y
@@ -266,6 +274,11 @@ namespace eval runcontrol33857 {
 #	[winfo parent $menu] configure -text [tr. $method] ;# TRANSLATOR done
 #	set runState($node,intMethod) $method
 #    }
+
+    proc ShiftBar {fr node} {
+	$fr.fill configure -width \
+	    [expr {[winfo width $fr]*$::runState($node,progress)/100}]
+    } 
 
     proc AlterUnit {node} {
 	global runState
@@ -428,9 +441,11 @@ namespace eval runcontrol33857 {
 	# so I can check if entry edited
 	set runState($node,execTime) [format %.8g [expr {$runState($node,expected_end)-$now}]]
 	if {$runState($node,run_length)} {
-	    $runState($node,progressBar) configure -value \
+#	    $runState($node,progressBar) configure -value 
+	    set runState($node,progress) \
 		[expr 100*($now-$runState($node,remembered_start))/ \
 		     $runState($node,run_length)]
+	    ShiftBar $runState($node,progressBar) $node
 	}
 	$runState($node,cnvs) itemconfigure 1 -fill $col
 	return [string compare start $runState($node,currentMode)]
