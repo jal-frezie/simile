@@ -422,8 +422,8 @@ proc create_equation {parent purpose comp indices enum_types} {
 	close $stream
     } else {
 # they do not place themselves properly ont' Mac
-	$middleF sash place 0 [expr {round($::textBigness*120)}] 0
-	$middleF sash place 1 [expr {round($::textBigness*240)}] 0
+	$middleF sash place 0 [expr {round($::niceSize*$::textBigness*12)}] 0
+	$middleF sash place 1 [expr {round($::niceSize*$::textBigness*24)}] 0
     }
 }
 
