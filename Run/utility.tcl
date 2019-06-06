@@ -582,16 +582,25 @@ proc EndsOnly {outerText count leave} {
 proc Rebag {bag axis tab lo hi} {
     #puts "$hi-$lo==1 || [winfo $axis $bag]<[winfo req$axis $bag] ($tab)"
     
+    # Note that the appalling TclTk8.6.9 in MacOS can generate a new
+    # configure event from a setting change even if the new setting is
+    # the same, so check first and don't do it if it is...
+    
     if {$hi-$lo==1} return
     set finalWidth [winfo req$axis $bag]
     if {[winfo $axis $bag]<$finalWidth} {
 	if {$tab} {
-	    $bag configure -tabs [expr {$finalWidth/-$tab}]
+	    set newTab [expr {$finalWidth/-$tab}]
+	    if {[$bag cget -tabs]!=$newTab} { 
+		$bag configure -tabs $newTab
+	    }
 	}
 	return
     }
     set newSize [expr {round([$bag cget -$axis]/($hi-$lo))}]
-    $bag configure -$axis $newSize
+    if {[$bag cget -$axis]!=$newSize} {
+	$bag configure -$axis $newSize
+    }
 }
 
 proc ReadGdalRefToList {tableSpec {y {}} {x {}}} {

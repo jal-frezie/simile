@@ -1830,7 +1830,7 @@ proc Customize {winId mode} {
         set tf [frame $text.font]
         label $tf.what -text "Font: "
         pack $tf.what -side left
-	set cbWid [expr {round(8*$defScaling)}]
+	set cbWid [expr {round(108/$::niceSize)}]
         ttk::combobox $tf.family -width $cbWid -textvariable looks(family) \
 	    -values {helvetica times system courier symbol}
         bind $tf.family <<ComboboxSelected>> "ZotObjectSize $t $n $object 120"
