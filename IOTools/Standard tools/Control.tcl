@@ -107,16 +107,16 @@ namespace eval runcontrol33857 {
         $runState($node,cnvs) create oval 6 6 12 12 -outline grey
         pack $runState($node,cnvs) -side right -anchor e
         after idle set runState($node,fractDone) 0
-#	set runState($node,progressBar) \
-#	    [::ttk::progressbar $rcf.upper.bf.bar -maximum 100 \
-#		-variable runState($node,progress)]
-	set runState($node,progress) 0
 	set runState($node,progressBar) \
-	    [frame $rcf.upper.bf.bar -width 80 -height 20 -bg white]
-	set progf [frame $runState($node,progressBar).fill -height 20 -bg blue]
-	pack $progf -side left -fill y
-	bind $runState($node,progressBar) <Configure> \
-	    [namespace code [list ShiftBar %W $node]]
+	    [::ttk::progressbar $rcf.upper.bf.bar -maximum 100 \
+		-variable runState($node,progress)]
+	set runState($node,progress) 0
+#	set runState($node,progressBar) \
+#	    [frame $rcf.upper.bf.bar -width 80 -height 20 -bg white]
+#	set progf [frame $runState($node,progressBar).fill -height 20 -bg blue]
+#	pack $progf -side left -fill y
+#	bind $runState($node,progressBar) <Configure> \
+#	    [namespace code [list ShiftBar %W $node]]
 	pack $runState($node,progressBar) \
 	    -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.upper.bf -side left -fill x -expand true
@@ -441,11 +441,10 @@ namespace eval runcontrol33857 {
 	# so I can check if entry edited
 	set runState($node,execTime) [format %.8g [expr {$runState($node,expected_end)-$now}]]
 	if {$runState($node,run_length)} {
-#	    $runState($node,progressBar) configure -value 
 	    set runState($node,progress) \
 		[expr 100*($now-$runState($node,remembered_start))/ \
 		     $runState($node,run_length)]
-	    ShiftBar $runState($node,progressBar) $node
+#	    ShiftBar $runState($node,progressBar) $node
 	}
 	$runState($node,cnvs) itemconfigure 1 -fill $col
 	return [string compare start $runState($node,currentMode)]
