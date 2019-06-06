@@ -397,11 +397,11 @@ namespace eval grid005 {
         variable useNodes
         if {$useNodes($winId,freeze)} {
             set useNodes($winId,freeze) false
-	    ::graphtools::SetButtonState $winId pause flat
+	    ::graphtools::SetButtonState $winId pause normal
 #            $winId.bbframe.buttonBox itemconfigure end -relief flat; #disable the add var button
         } else  {
             set useNodes($winId,freeze) true
-	    ::graphtools::SetButtonState $winId pause sunken
+	    ::graphtools::SetButtonState $winId pause pressed
 #            $winId.bbframe.buttonBox itemconfigure end -relief sunken; #disable the add var button
         }
     }

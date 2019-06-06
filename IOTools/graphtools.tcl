@@ -78,10 +78,10 @@ proc ::graphtools::MakeToolBar {w toolbarItems} {
 }
 
 proc ::graphtools::SetButtonState {bar button newState} {
-    if {[lsearch {raised flat sunken} $newState]>-1} {
-	$bar.bbframe.$button configure -relief $newState
+    if {$newState eq "normal"} {
+	$bar.bbframe.$button state {!disabled !pressed}
     } else {
-	$bar.bbframe.$button configure -state $newState
+	$bar.bbframe.$button state $newState
     }
 } 
 
