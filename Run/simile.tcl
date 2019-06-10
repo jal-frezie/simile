@@ -386,12 +386,11 @@ if {!$headless} {
 entry .hidden_e -font TkEntryFont -width 25
 pack .hidden_e
 
-# Scaling affects some metrics but not all, so squash it FTTB
-# to ensure consistency (do now cos about to put up dialogues)
+# Scaling affects all metrics expressed in points, but its initial
+# value does not depend on the system dpi setting. However the default
+# fonts do depend on this, so put up a box sized in characters and see
+# how many pixels it takes, and use the ratio to set the scaling.
 
-# Fixed in 5.4 by explicitly making it apply to everything.
-# Silly val for testing: 3.0
-# Make conversion easier: pick nice ratio
 set textBigness [expr {$defScaling*[winfo reqwidth .hidden_e]/288}]
 set scalRat [ChooseIntegerRatio $textBigness 0.9]
 set defScaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
