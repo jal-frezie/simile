@@ -2292,7 +2292,7 @@ indices_direct([MPtr | Inds], ind(IPtr, N), Ind, 0) :-
 
 decode_loop(LoopCode, ReadyType, Dims) :-
 	LoopCode =.. [ReadyType | Dims],
-	    \+ ReadyType = '.', !;
+	    \+ member(ReadyType, ['.', '[|]']),  !; % swi uses [|] instead of .
 	  ReadyType = simple,
 	    Dims = LoopCode.
 

@@ -392,7 +392,7 @@ pack .hidden_e
 # Fixed in 5.4 by explicitly making it apply to everything.
 # Silly val for testing: 3.0
 # Make conversion easier: pick nice ratio
-set textBigness [expr {$defScaling*[winfo reqwidth .hidden_e]/250}]
+set textBigness [expr {$defScaling*[winfo reqwidth .hidden_e]/288}]
 set scalRat [ChooseIntegerRatio $textBigness 0.9]
 set defScaling [expr {1.0*[lindex $scalRat 0]/[lindex $scalRat 1]}]
 tk scaling $defScaling
