@@ -34,11 +34,15 @@ ame_save( File, Model, Date, SelOnly, _MakeCompat) :-
 	on_exception(_, open_native(WFile, write, Stream), 
 	fail), !,
 	state><version_is(VStr),
-	name(SimV, VStr),
-	V is SimV + 4,
+%	name(SimV, VStr),
+%	V is SimV + 4,
+	append("Simile v", VStr, SimVStr),
+	name(SimV, SimVStr),
+	state><numeric_version_is(V),
+	AmeV is V+4,
 	(reassure_user(writing_root, []),
 	state><edition_is(Edition),
-	export_with_breaks(Stream, source(program='AME', version=V,
+	export_with_breaks(Stream, source(program=SimV, version=AmeV,
 					 edition=Edition, date=Date)),
 	nl(Stream),
 	export_with_breaks( Stream, roots( Models )),
@@ -331,8 +335,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV >= 6.1, !;
 	  reassure_user(updating_v, ['5.x']),
 	    adjust_to_10_1(Parent)),
-	state><version_is(MyVStr),
-	name(MyV, MyVStr),
+	state><numeric_version_is(MyV),
 	(MyV > SimileV+0.001, % throw away code so no need to test load
 	    (\+ backup><is_toplevel(Parent);
 	    m_update><add_parameter(Parent, 1, c_new, 0)), !;

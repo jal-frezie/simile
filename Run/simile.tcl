@@ -266,10 +266,10 @@ switch $tcl_platform(platform) {
     }
 }
 
-set env(SIMILE_VERSION) 6.9
-set sendvars(simP) {p14}
+set env(SIMILE_VERSION) 6.10
+set sendvars(simP) {}
 
-if {$env(SIMILE_VERSION)>=6.0} {
+if {[package vcompare $env(SIMILE_VERSION) 6.0]>=0} {
     set do_events 1 ;# include event symbols
     set support_sessions 1 ;# include session creation
 }

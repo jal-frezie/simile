@@ -8,7 +8,7 @@ available to the other modules that use it.
 
 sicstus_module(state,
 	       [use_temp_dir/1, use_pref_dir/1,
-		kickoff/1, get_initial_window_size/2,
+		kickoff/1, numeric_version_is/1, get_initial_window_size/2,
 		create_window/2, destroy_window/1, clear_model_file/1,
 		set_model_file/2, get_model_file/2, get_edition_and_limit/2,
 		kill_windows/0, set_halo/3, get_halo/2,
@@ -70,6 +70,15 @@ kickoff(Vnum) :-
 	    backup><check_autosave(Desktop, OpenModel, copy, Done),
 	    (Done = 0; nonvar(Headless);
 		draw><redraw_window(Canvas))).
+
+numeric_version_is(V) :-
+    version_is(VStr),
+    append(MajStr, [46 | MinStr], VStr),
+    name(Min, MinStr),
+    (Min < 10 ->
+	name(V, VStr);
+      name(Maj, MajStr),
+        V is Maj + 0.81 + Min/100). % change before 6.19!
 
 :- dynamic(model_in/2).
 :- dynamic(model_file/2).
