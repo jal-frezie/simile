@@ -439,7 +439,7 @@ set graph(megafont) [list helvetica [expr {$niceSize*3}] bold]
 
 pack [canvas .splash.c -width ${sphXdiam}p -height ${sphYdiam}p -bd -$graph(origin) \
 	 -bg \#f0f8ff] -padx 0 -pady 0
-
+#puts "$sphXdiam points = [.splash.c cget -width] pixels"
 for {set y 0} {$y < $sphYdiam} {incr y 6} {
     if {$y>=$sphYdiam*0.18 && $y<$sphYdiam*0.27} {
 	set r $sphXdiam
