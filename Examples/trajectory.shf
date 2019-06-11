@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="shf1.xsl"?>
+<shf simile_version="6.10">
+<external x="1461" y="705"  w="1950" h="1450"/>
+<std_tool_layout left_panel_width="563" run_control_height="350"/>
+<notebook>
+  <page caption="Page 1">
+    <panedwindow orient="vertical">
+      <pane>
+         <container type="plotterXY1_dot_0">
+          <![CDATA[/WIN/,KeyRuns 1 /WIN/,Y_min_scalestep 0 /WIN/,canvas_colour #e0e0e0 /WIN/,Ymajorstep 20.0 /WIN/,grapharea_colour white /WIN/,YColours {{#0000ff} #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,Xmax_axis 180.0 /WIN/,yborder_top 30 /WIN/,Ymin_axis -10.0 /WIN/,x_Ylabels 25 /WIN/,xstep_Ylabels 120 /WIN/,Tscale 0.13740458015267176 /WIN/,fontTitle {Helvetica 8 normal} /WIN/,ordinal 1128 /WIN/,Ymax_data 80.16865828115098 /WIN/,Xmin_axis 0.0 /WIN/,Xvars /distance /WIN/,stringInfo {} /WIN/,pointer 1 /WIN/,nodeCount 2 /WIN/,ystep_Ylabels 12 /WIN/,CurrentOnly 0 /WIN/,grid off /WIN/,redraw 0 /WIN/,Xmax_data 160.8106527273356 /WIN/,topright 1 /WIN/,AxisDivisions 10 /WIN/,xborder_left 50 /WIN/,X_scalestep 0 /WIN/,Ymin_data -3.9768742354089675 /WIN/,fontValues {Helvetica 8 normal} /WIN/,y_Xlabel 10 /WIN/,Yscale 0.0819000819000819 /WIN/,fontLabels {Helvetica 8 normal} /WIN/,Xprecision 2 /WIN/,yborder_bottom 30 /WIN/,Xminorstep 20.0 /WIN/,DrawLines 1 /WIN/,x_Xlabel 100 /WIN/,xwindow_size 0 /WIN/,Xmin_data 0.0 /WIN/,ywindow_size 0 /WIN/,ylength 1221 /WIN/,Xmajorstep 20.0 /WIN/,xlength 1310 /WIN/,Y_max_scalestep 0 /WIN/,Yvars /height /WIN/,KeyArrays 0 /WIN/,Ylabels height /WIN/,ArrayLines 0 /WIN/,DrawPoints 0 /WIN/,Yprecision 1 /WIN/,XaxisLabel distance /WIN/,Ymax_axis 90.0 /WIN/,state ycoord /WIN/,Yminorstep 20.0 /WIN/,xborder_right 15 /WIN/,y_Ylabels 0 /WIN/,lastx 0.0 /WIN/,lasty 0.0]]>
+        </container>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Page 2">
+    <panedwindow orient="vertical">
+      <pane>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Page 3">
+    <panedwindow orient="vertical">
+      <pane>
+      </pane>
+    </panedwindow>
+  </page>
+  <page caption="Page 4">
+    <panedwindow orient="vertical">
+      <pane>
+      </pane>
+    </panedwindow>
+  </page>
+</notebook>
+</shf>
