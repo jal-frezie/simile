@@ -31,8 +31,10 @@ if {[string equal .dll $tail]} {
     
 foreach comp {ame_dll unpacker} {
     foreach shareLib [glob [file join $dir $head$comp*$tail]] {
-	set maj [string range $shareLib [string length [file join $dir $head$comp]] end-[string length ${ins}x$tail]]
-	set min [string range $shareLib end-[string length $tail] end-[string length $tail]]
+	set vgo [string length [file join $dir $head$comp]]
+	set maj [string range $shareLib $vgo $vgo]
+	set min [string range $shareLib [incr vgo [string length n$ins]] \
+		     end-[string length $tail]]
 	set vers $maj.$min
 	package ifneeded [string totitle $comp] $vers [list load $shareLib]
     }
