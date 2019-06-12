@@ -30,10 +30,12 @@ if {[string equal .dll $tail]} {
 }
     
 foreach comp {ame_dll unpacker} {
-    set base [file join $dir $head$comp]
-    foreach shareLib [glob $base*$tail] {
-	set vers [string range $shareLib [string length $base] \
-		      end-[string length $tail]]
+    foreach shareLib [glob [file join $dir $head$comp*$tail]] {
+	set vgo [string length [file join $dir $head$comp]]
+	set maj [string range $shareLib $vgo $vgo]
+	set min [string range $shareLib [incr vgo [string length n$ins]] \
+		     end-[string length $tail]]
+	set vers $maj.$min
 	package ifneeded [string totitle $comp] $vers [list load $shareLib]
     }
 }
@@ -42,3 +44,4 @@ foreach comp {ame_dll unpacker} {
 # here because this file is included in Linux distributions but such
 # packages are built and installed in separate subdirectories, so
 # trying to load them here breaks it
+

@@ -431,7 +431,11 @@ if {[tk windowingsystem] eq "aqua"} {
 } else {
     wm overrideredirect .splash 1
     set menuFont TkMenuFont
-    set niceSize 9
+    if {[tk windowingsystem] eq "win32"} {
+	set niceSize 12
+    } else {
+	set niceSize 9
+    }
 }
 set graph(font) [list helvetica $niceSize bold]
 set graph(megafont) [list helvetica [expr {$niceSize*3}] bold]
