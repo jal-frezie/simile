@@ -120,6 +120,8 @@ if {[string match windows $tcl_platform(platform)]} {
     ::md5 dummy
     cd $oldDir
 
+    if {[package vcompare [info patchlevel] 8.6.9]<0} {
+    # problem was fixed in 8.6.9
     proc IsFullscreen {w} {
 # Fullscreen windows are only ones with y offset of zero, and only then if 
 # top of their screen is level with top of primary screen
@@ -143,6 +145,7 @@ if {[string match windows $tcl_platform(platform)]} {
     # Do not do for now as problem was fixed (however fix does not apply as
     # tcltk built for macosx versions below 10.13)
     bind Toplevel <Configure> {FixShiftedPointer %W}
+}
 }
 
 menu .openrecent -tearoff 0

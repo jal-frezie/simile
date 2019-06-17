@@ -198,8 +198,8 @@ proc AddEntry {winId topNode node mustShow notInput} {
 
     pack $slot -before $fellow -side bottom -fill x -expand on
     raise $slot $fellow ;# for keyboard traversal
-    pack [label $slot.caption -text [lindex $levels end] -fg red -bg $lbg \
-	      -width 12] -side left
+    pack [label $slot.caption -text [lindex $levels end] -foreground red \
+	      -background $lbg] -side left
 #    pack [label $slot.l2 -text ($dimList) -fg red] -side left
     set paramMetadata($compName,dimList) $dimList
     if {![info exists msgs(param_source_$compName)]} {
@@ -267,19 +267,22 @@ proc AddEntry {winId topNode node mustShow notInput} {
 }
 
 proc GrowCaptionsTo {sm} {
-    set newWidth 48 ;# entry widget is 8
-    set conv [expr {[winfo reqwidth .hidden_e]/[.hidden_e cget -width]}]
+    # horrible hack to grow all labels to the same size, should use grid instead
+    set newWidth 48 ;# min width
     foreach widg [winfo children $sm] {
 	set lab $widg.caption
 	if {[winfo exists $lab]} {
 	    lappend mob $lab
 	    $lab configure -width 0
-	    set newWidth [expr {max([winfo reqwidth $lab],$newWidth)}]
+	    puts "max([winfo reqwidth $lab]+4,$newWidth)"
+	    set newWidth [expr {max([winfo reqwidth $lab]+4,$newWidth)}]
 	}
     }
-    set newWidth [expr {$newWidth/$conv}] ;# works on my desktop
+    label .unseen -width 60
+    set regularWidth [expr {$newWidth*60/[winfo reqwidth .unseen]}]
+    destroy .unseen
     foreach lab $mob {
-	$lab configure -width $newWidth
+	$lab configure -width $regularWidth
     }
 }
 
@@ -324,7 +327,7 @@ proc RemoveVMLevels {nodeDims} {
 }
 
 proc ColourCaptions {slot colour} {
-    $slot.caption configure -fg $colour
+    $slot.caption configure -foreground $colour
 #    $slot.l2 configure -fg $colour
 }
 
