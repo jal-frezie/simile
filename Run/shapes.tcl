@@ -13,15 +13,15 @@
 #  Caption, to be written in centre
 
 set pi 3.14159
-set cornerPts 6
-set faceAngle [expr $pi/2/$cornerPts]
+set cornerPts 12
+#set faceAngle [expr $pi/2/$cornerPts]
 set splinePts [expr {2*$cornerPts+1}]
 
-set expansion [expr (1 - cos($faceAngle/2))/2]
-for {set pt 1} {$pt < $cornerPts} {incr pt} {
-    lappend arcPts [expr 1-(1+$expansion)*cos($faceAngle*$pt)]
-}
-lappend arcPts [expr 1-$expansion*(1-[lindex $arcPts end])/[lindex $arcPts 0]]
+#set expansion [expr (1 - cos($faceAngle/2))/2]
+#for {set pt 1} {$pt < $cornerPts} {incr pt} {
+#    lappend arcPts [expr 1-(1+$expansion)*cos($faceAngle*$pt)]
+#}
+#lappend arcPts [expr 1-$expansion*(1-[lindex $arcPts end])/[lindex $arcPts 0]]
 
 if {!$headless} {
     switch [tk windowingsystem] {
@@ -35,14 +35,14 @@ if {!$headless} {
     }
 }
 
-proc GetPoints {lo rad} {
-    global arcPts
-    foreach pt $arcPts {
-        lappend result [expr $lo+$pt*$rad]
-    }
-    return $result
-}
-
+#proc GetPoints {lo rad} {
+#    global arcPts
+#    foreach pt $arcPts {
+#        lappend result [expr $lo+$pt*$rad]
+#    }
+#    return $result
+#}
+#
 proc GetObjectSize {w type fatness} {
     global looks window_info
     return [expr [Scale $w $looks($window_info($w,top_node),$type,objectsize)]*$fatness/100.0]
@@ -173,10 +173,10 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set generic [list -width $width \
 		     -tags "$tagSet size_on_this realwidth($width) has_info"]
     # second approximation to fill
-    scan [GetPoints $ml $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
-    scan [GetPoints $mt $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
-    scan [GetPoints $mr -$rad] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
-    scan [GetPoints $mb -$rad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
+#    scan [GetPoints $ml $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
+#    scan [GetPoints $mt $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
+#    scan [GetPoints $mr -$rad] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
+#    scan [GetPoints $mb -$rad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
 
     if {$style} {
 	set outer [expr 3*($rad+$width/2)/5+$width/2]
@@ -195,11 +195,19 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     } else {
 #    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
 
-	eval {$w create polygon $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {} -fill $fCol} $generic
-	eval {$w create polygon $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {} -fill $fCol} $generic
-	eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
-		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
-		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
+#	eval {$w create polygon $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {} -fill $fCol} $generic
+#	eval {$w create polygon $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {} -fill $fCol} $generic
+#	eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
+#		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
+#		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
+	set il [expr $ml+$width/2]
+	set it [expr $mt+$width/2]
+	set ir [expr $mr-$width/2]
+	set ib [expr $mb-$width/2]
+	eval {$w create arc $il $it $ir $ib -start 45 -extent 90 \
+		  -style pieslice -outline {} -fill $fCol} $generic
+	eval {$w create arc $il $it $ir $ib -start 225 -extent 90 \
+		  -style pieslice -outline {} -fill $fCol} $generic
     }
     set decor [expr $extras/10]
     set stack [expr $extras-10*$decor]
@@ -235,11 +243,14 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set stackDepth 0
     while {$stackDepth < $stack} {
         set stackDistance [expr $stackDepth*$width*2]
-        set stackSide [eval {$w create line} [ShiftAll $stackDistance \
-		$h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
-                $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 \
-	        $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10] $generic]
-         if {$stackDepth} {
+#        set stackSide [eval {$w create line} [ShiftAll $stackDistance \
+#		$h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
+#                $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 \
+#	        $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10] $generic]
+	set stackSide \
+	    [eval {$w create arc} [ShiftAll $stackDistance $ml $mt $mr $mb] \
+		 {-style arc -start 225 -extent 180} $generic]
+	if {$stackDepth} {
             $w lower $stackSide $p1
             set p1 $stackSide
         }
