@@ -225,11 +225,13 @@ proc AddEntry {winId topNode node mustShow notInput} {
 	-command [namespace code [list AcceptData $topNode $compName \
 				      $notInput 1]]
     BindPopup $slot.tick [tr. "Accept these values"]
+    FixDisabledImgBug $slot.tick
     ::ttk::button $slot.cross -style style$holder \
 	-image $iconImages(cross) \
 	-command [namespace code [list RevertData $winId $compName \
 				      $notInput]]
     BindPopup $slot.cross [tr. "Revert to old values"]
+    FixDisabledImgBug $slot.cross
 
     if {[info exists suppliedData($compName)]} {
         FillIfSmall $slot.e $suppliedData($compName)
@@ -253,6 +255,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
 					  $compName $trans $dlgStyle]]
 	BindPopup $slot.b [tr. "Get values from file"]
 	pack $slot.b -side right
+	FixDisabledImgBug $slot.b
     }
     set outNames($compName) $slot
     GrowCaptionsTo $holder
@@ -408,12 +411,14 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		    -side right
 		BindPopup $nextLevel.head.save \
 		    [format [tr. {Save values for submodel "%1$s"}] $level]
+		FixDisabledImgBug $nextLevel.head.save
 		pack [::ttk::button $nextLevel.head.open -style $bStyle \
 			  -image $iconImages(open) \
 			  -command [list ${ns}::Open $clientId $path]] \
 		    -side right
 		BindPopup $nextLevel.head.open \
 		    [format [tr. {Load values for submodel "%1$s"}] $level]
+		FixDisabledImgBug $nextLevel.head.open
 		lower $nextLevel.head.open
 	    }
             if {[string equal fileparams $ns]} {
@@ -423,6 +428,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		    -side right
                 BindPopup $nextLevel.head.clear \
 		    [tr. "Clear values in this submodel"]
+		FixDisabledImgBug $nextLevel.head.clear
 		lower $nextLevel.head.clear
             }
             pack [label $nextLevel.head.label -text $level:]
@@ -942,8 +948,7 @@ namespace eval fileparams {
 		set eltType [lindex $typePairs [incr mark]]
 		set relName [lindex $paramState($compName) 0]
 		if {![IsBogusURL $relName]} {
-		    set relName [::fileutil::relative [file dirname $metaFile] \
-				     $relName]
+		    set relName [Relativize $metaFile $relName]
 		}
 		puts -nonewline $pStr "$indent<$eltType $genericAVs filename=[Entitize $relName]"
 		switch -exact $ident {

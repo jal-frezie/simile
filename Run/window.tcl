@@ -2818,7 +2818,7 @@ proc exit_simile {} {
     foreach oldFile $custom(hotlist) {
 # no longer experimental: save relative to prefdir --
 # everything in hotlist should be normalized (case, form, etc)
-        puts $cacheStream [::fileutil::relative $normPref $oldFile]
+        puts $cacheStream [Relativize $cache $oldFile]
     }
     close $cacheStream
 # remove eqn dialogue layout, it might be wrong when we restart

@@ -17,10 +17,6 @@ package require Trf
 c_testlicense ;# sets edition 
 loadcommands ;# for unpacker -- edition checked here
 
-## Start of stuff needed to load and execute Simile code for reading .spfs
-set simtmpdir [file join $custom(prefDir) cl5d]
-file mkdir $simtmpdir 
-
 # No messages should be displayed so translation not needed
 proc tr. {en} {return $en}
 

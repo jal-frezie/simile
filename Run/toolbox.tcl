@@ -905,12 +905,6 @@ proc ControlDraw {prologVersion} {
 	}
     }
     
-    package require fileutil
-    set simtmpdir [file join [::fileutil::tempdir] sim[pid]]
-    # test for network directory caching bug
-    # set simtmpdir [file join {t:/Documents/My Simile files/temp} sim[pid]]
-    file mkdir $simtmpdir
-
 # Try leaving this to the form
 #     set UserStream [NetOpen $custom(prefDir)/.version w]
 #     puts $UserStream $userinfo(name)
@@ -957,7 +951,7 @@ proc ControlDraw {prologVersion} {
     set stockComboBox ON
     if {[string match windows $tcl_platform(platform)]} {
         set compOptions [list CHOICE [tr. Default] [tr. Microsoft] [tr. GNU]]
-	file attributes $simtmpdir -hidden true
+#	file attributes $simtmpdir -hidden true
 #	file attributes $custom(prefDir)/.version -hidden true
     } elseif {[string equal Darwin $tcl_platform(os)]} {
 	if {[package vcompare 8.6.5 [info patchlevel]] > 0} {
@@ -1780,7 +1774,6 @@ proc SaveProjectFile {topNode path tgt} {
 	    }
 	}
     }
-    set tgtDir [file dirname $tgt]
     if {[info exists helperTable($topNode,stateName)]} {
 # old method: include helper state in saved model, just because we could...
 #	if {![string equal $path \
@@ -1788,14 +1781,14 @@ proc SaveProjectFile {topNode path tgt} {
 #	    file copy -force $helperTable($topNode,stateName) $path
 #	}
         set SimileProject(nameOfHelperStateFile) \
-	    [::fileutil::relative $tgtDir $helperTable($topNode,stateName)]
+	    [Relativize $tgt $helperTable($topNode,stateName)]
     }
     # shf file name loaded
     
     set spfList [array get ::SimileProject fileparam,/${topNode}/*]
     foreach {varName spfPath} $spfList {
 	set smPart [Submodelize $varName]
-	set relPath [::fileutil::relative $tgtDir $spfPath]
+	set relPath [Relativize $tgt $spfPath]
 	set pmData "Reference to parameter metafile $relPath"
 	if {[llength $smPart]} {
 	    append pmData " for [string range $smPart 1 end]"

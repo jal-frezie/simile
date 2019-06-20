@@ -1017,6 +1017,11 @@ proc GetFrame {special} {
 #    eval [list format [tr. $key]] $params
 #}
 
+# on loading, create a temporary directory in a useful place
+package require fileutil
+set simtmpdir [file join [::fileutil::tempdir] sim[pid]]
+file mkdir $simtmpdir
+
 # use this to look after the single clicks and the doubleclicks will
 # look after themselves    
 set ::clickKO(x) 0
