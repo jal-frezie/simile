@@ -372,6 +372,10 @@ install:
 		Images/Control/pause.gif \
 		Images/Control/play.gif \
 		Images/Control/stop.gif \
+		Images/Control/debug48.png \
+		Images/Control/pause48.png \
+		Images/Control/play48.png \
+		Images/Control/stop48.png \
 		Images/HelpAboutUpper.gif \
 		Images/Icons/*.png \
 		Images/Welcome.gif \

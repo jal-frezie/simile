@@ -12,6 +12,7 @@
 #undef APSTUDIO_HIDDEN_SYMBOLS
 //needed for 64 bit compilation, still allows 32bit compilation.
 #include "winresrc.h"
+#include "winuser.h"
 
 //#include "tk.h"
 
@@ -55,12 +56,12 @@ BEGIN
             VALUE "FileDescription", "Simile: simulation modelling software\0"
             VALUE "FileVersion", "1, 0, 0, 0\0"
             VALUE "InternalName", "\0"
-            VALUE "LegalCopyright", "Copyright © 2002-10 by Simulistics Ltd, et al\0"
+            VALUE "LegalCopyright", "Copyright © 2002-19 by Simulistics Ltd, et al\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "simile.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Simile\0"
-            VALUE "ProductVersion", "5.7\0"
+            VALUE "ProductVersion", "6.10\0"
             VALUE "SpecialBuild", "\0"
         END
     END

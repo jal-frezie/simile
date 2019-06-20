@@ -1,11 +1,10 @@
 # see procs.cpp for c++ equivalents and documemtation
 
-global have_spare
-set have_spare 0
 proc inst_gaussian {mean sd} {
-    global spare have_spare
-    if {$have_spare} {
+    variable spare
+    if {[info exists spare]} {
 	set norm $spare
+	unset spare
     } else {
 	set r 1
 	while {$r>=1} {
@@ -17,7 +16,6 @@ proc inst_gaussian {mean sd} {
 	set spare [expr $v1*$fac]
 	set norm [expr $v2*$fac]
     }
-    set have_spare [expr !$have_spare]
     return [expr $mean+$sd*$norm]
 }
 
