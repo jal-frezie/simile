@@ -277,7 +277,6 @@ proc GrowCaptionsTo {sm} {
 	if {[winfo exists $lab]} {
 	    lappend mob $lab
 	    $lab configure -width 0
-	    puts "max([winfo reqwidth $lab]+4,$newWidth)"
 	    set newWidth [expr {max([winfo reqwidth $lab]+4,$newWidth)}]
 	}
     }

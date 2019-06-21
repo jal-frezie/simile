@@ -200,14 +200,12 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #	eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
 #		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
 #		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
-	set il [expr $ml+$width/2]
-	set it [expr $mt+$width/2]
-	set ir [expr $mr-$width/2]
-	set ib [expr $mb-$width/2]
-	eval {$w create arc $il $it $ir $ib -start 45 -extent 90 \
+	eval {$w create arc $ml $mt $mr $mb -start 45 -extent 90 \
 		  -style pieslice -outline {} -fill $fCol} $generic
-	eval {$w create arc $il $it $ir $ib -start 225 -extent 90 \
+	eval {$w create arc $ml $mt $mr $mb -start 225 -extent 90 \
 		  -style pieslice -outline {} -fill $fCol} $generic
+	eval {$w create arc $ml $mt $mr $mb -start 45 -extent 180 \
+		  -style arc} $generic
     }
     set decor [expr $extras/10]
     set stack [expr $extras-10*$decor]

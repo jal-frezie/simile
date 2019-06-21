@@ -454,7 +454,11 @@ namespace eval ::$keyValue {
 	$w.canvas addtag togo all
 	$w.canvas dtag annotation togo
         $w.canvas delete togo
-        
+
+	set sample [$w.canvas create text 0 0 -text "two\nline" -anchor nw]
+	set plot($w,yborder_top) [lindex [$w.canvas bbox $sample] 3]
+	$w.canvas delete $sample
+
         ### Convenience variables
         set x0 $plot($w,xborder_left)
         set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
@@ -617,13 +621,15 @@ namespace eval ::$keyValue {
     proc drawLegend {w} {
         global ::graphtools::plot
 	variable NColours
+
+	$w.canvas delete legend
         #ShowMess debug info "font [font families -displayof $w.canvas]" ok
         # legend vars only, not elements of arrays
         set nYlabel [llength $plot($w,Ylabels)]
-        set longestlbl 0
+        set longestlbl {}
         foreach label $plot($w,Ylabels) {
-            if {[string length $label]>$longestlbl} {
-                set longestlbl $label ;# derrr
+            if {[string length $label]>[string length $longestlbl]} {
+                set longestlbl $label
             }
         }
         set plot($w,xstep_Ylabels) \
@@ -636,14 +642,14 @@ namespace eval ::$keyValue {
             set y [expr $plot($w,y_Ylabels)+$j*$plot($w,ystep_Ylabels)]
             set xa [expr $x-15]
             set xb [expr $x-2]
-            set ya [expr $y+8]
+            set ya [expr $y+4]p
             set vartag {}
             append vartag var $i
             $w.canvas create line $xa $ya $xb $ya \
 		-fill [lindex $plot($w,YColours) [expr {$i%$NColours}]] \
                     -width 2 \
                     -tags [list $vartag legend markable toplevel]
-            $w.canvas create text $x $y \
+            $w.canvas create text $x ${y}p \
 		-text [string map {\n { }} [lindex $plot($w,Ylabels) $i]] \
                     -anchor nw -font $plot($w,fontLabels)\
                     -tags [list $vartag legend markable toplevel]

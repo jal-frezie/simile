@@ -379,6 +379,7 @@ set_snap :-
 check_snap :-
 	retractall(grid_pitch_is(_,_)),
 	(tk_get_pref(gridSnap, 0), !,
+	 % snapping to integer coordinates prevents rounding errors building up
 	    assert(grid_pitch_is(1,1));
         set_snap).
 	

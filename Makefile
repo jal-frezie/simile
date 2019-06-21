@@ -517,6 +517,7 @@ install:
 		IOTools/Logger.tcl \
 		IOTools/Lollipop.tcl \
 		IOTools/New3d.tcl \
+		IOTools/Piechart.tcl \
 		IOTools/Plotter.tcl \
 		IOTools/PlotterXY.tcl \
 		IOTools/Polygons.tcl \

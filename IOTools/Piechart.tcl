@@ -33,8 +33,6 @@ proc initialize {w} {
     global ::graphtools::Told
     global ::graphtools::Tnew
     
-    namespace import -force ::graphtools::*
-    
     set plot($w,nodeCount) 0
     
     # puts $line "Start" ;#Bob
@@ -128,6 +126,7 @@ proc Restore {winId} {
     get_Yvalues $winId
     
     plot_YY $winId
+    RestoreNotesFromList [GetCanvas $winId] $plot($winId,stringInfo)
 }
 
 proc GetCanvas {winId} {
@@ -200,6 +199,9 @@ proc ShowHelper {w} {
     
     variable piesum
     variable pievalues
+    
+    namespace import -force ::graphtools::*
+    namespace import -force ::canvasnotes20070919::*
     
     constructControlPanel $w
     
@@ -278,6 +280,7 @@ proc constructControlPanel {w} {
 			$plot($w,yborder_top)] \
 		-bg $plot($w,canvas_colour) -relief solid
 	pack $w.canvas -fill both -expand true -side bottom
+	MakeCanvasAnnotatable $w.canvas
 }
 
 proc AddVariable { winId } {
@@ -314,7 +317,7 @@ proc drawGraphpad {w} {
     global ::graphtools::plot
     
     ### rub out previous graph
-    $w.canvas delete all
+    $w.canvas delete label slice
     
     ### Convenience variables
     set x0 $plot($w,xborder_left)
@@ -397,9 +400,10 @@ proc Repaint {w} {
     set plot($w,cx) [expr {($x1+$x2)/2}]
     set plot($w,cy) [expr {($y1+$y2)/2}]
     
-    $w.canvas delete all
+    $w.canvas delete label slice
     
     DrawPie $w $x1 $y1 $x2 $y2 $pievalues($w) $piesum($w)
+    $w.canvas raise annotation
 }
 
 ############################################################################
@@ -558,14 +562,19 @@ proc get_Yvalues {w} {
 
     set YYnew($w) [list 1 2]
     set YYnew($w) [lreplace $YYnew($w) 0 end]
-	foreach node $plot($w,Yvars) {
+    foreach node $plot($w,Yvars) {
 		set values [GetModelValue $node]
 		set values [lindex $values 0]
 ##        set YYnew($w) [lindex $values 0]
         
         lappend YYnew($w) [list $node $values]
 #        ShowMess debug info "$YYnew($w)" ok
-	}
+    }
+}
+    
+proc PrepareSaveString {w} {
+    set ::graphtools::plot($w,stringInfo) [ListNotes [GetCanvas $w]]
+    UpdateState $w
 }
 
 # end of namespace
