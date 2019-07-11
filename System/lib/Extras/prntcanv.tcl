@@ -47,7 +47,7 @@ namespace eval printer {
     variable vtgPrint
 
     set debug 0
-    set option(use_copybits) 1
+#    set option(use_copybits) 1
     set vtgPrint(printer.bg) white
   }
 
@@ -389,7 +389,6 @@ namespace eval printer {
     set color [print_canvas.TransColor [$cw itemcget $id -fill]]
     if {[string match $vtgPrint(printer.bg) $color] || \
 	![llength $color]} {return}
-    
     set coords  [$cw coords $id]
     set wdth    [$cw itemcget $id -width]
     set arrow   [$cw itemcget $id -arrow]
@@ -458,21 +457,21 @@ namespace eval printer {
       set rad [expr {[$cw itemcget $id -width]/2}]
 
       foreach {x y} [$cw coords $id] {
-#	  set box [list [expr {$x-$rad}] [expr {$y-$rad}] \
-#		       [expr {$x+$rad}] [expr {$y+$rad}]]
-#	  set cmmd "gdi oval $hdc $box -width 1 -outline $vtgPrint(printer.bg) -fill $col"
+	  set box [list [expr {$x-$rad}] [expr {$y-$rad}] \
+		       [expr {$x+$rad}] [expr {$y+$rad}]]
+	  set cmmd "gdi oval $hdc $box -width 1 -outline $col -fill $col"
 #	  set cmmd "gdi oval $hdc [list $x $y $x $y] -outline $col -width [$cw itemcget $id -width]"
 # Sledgehammer method borrowed from Simile: oval and arc are broken, so approximate 
 # with polygon
-	  set ol [expr $x-$rad]
-	  set ot [expr $y-$rad]
-	  set or [expr $x+$rad]
-	  set ob [expr $y+$rad]
-	  scan [GetPoints $ol $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
-	  scan [GetPoints $ot $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
-	  scan [GetPoints $or (-$rad)] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
-	  scan [GetPoints $ob (-$rad)] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
-	  set cmmd "gdi polygon $hdc [list $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3] -outline $col -fill $col"
+#	  set ol [expr $x-$rad]
+#	  set ot [expr $y-$rad]
+#	  set or [expr $x+$rad]
+#	  set ob [expr $y+$rad]
+#	  scan [GetPoints $ol $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
+#	  scan [GetPoints $ot $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
+#	  scan [GetPoints $or (-$rad)] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
+#	  scan [GetPoints $ob (-$rad)] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
+#	  set cmmd "gdi polygon $hdc [list $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3] -outline $col -fill $col"
 	
 	  debug_puts "$cmmd"
 	  eval $cmmd
@@ -500,11 +499,11 @@ namespace eval printer {
 # outline is transparent set it to fill colour unless fill is
 # also transparent in which case do nit print at all...
 
-    if {![string length $color]} {set color $fill}
-    if {[string length $color]} {
+      set wdth    [$cw itemcget $id -width]
+      if {![string length $color]} {set color $fill; set wdth 0}
+      if {[string length $color]} {
 
 	set coords  [$cw coords $id]
-	set wdth    [$cw itemcget $id -width]
 	set style   [ $cw itemcget $id -style ]
 	set start   [ $cw itemcget $id -start ]
 	set extent  [ $cw itemcget $id -extent ]
@@ -575,6 +574,9 @@ namespace eval printer {
     if {![string length $fcolor]} {set fcolor $vtgPrint(printer.bg)}
     set ocolor [print_canvas.TransColor [$cw itemcget $id -outline]]
     if {![string length $ocolor]} {set ocolor $vtgPrint(printer.bg)}
+      # note that using printer.bg as above is a bad idea because we may be
+      # printing the item in front of something other than the background,
+      # though not sure how else to do oval with no fill colour
     set coords  [$cw coords $id]
     set wdth [$cw itemcget $id -width]
       if {$wdth>0 && $wdth<1} {set wdth 1}
@@ -656,7 +658,7 @@ namespace eval printer {
     set font [ eval font create $font ]
     # Just get the name and family, or some of the gdi commands will fail.
     # Improve this as GDI improves
-    set font [list [font configure $font -family]  -[font configure $font -size] ]
+    set font [list [font configure $font -family]  [font configure $font -size] ]
 
     set cmmd "gdi text $hdc $coords -fill $color -text [list $txt] \
 		-anchor $anchr -font [ list $font ] \
