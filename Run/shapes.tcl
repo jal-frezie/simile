@@ -184,7 +184,10 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	set ot [expr $vm-$outer]
 	set or [expr $hm+$outer]
 	set ob [expr $vm+$outer]
-	eval {$w create oval $ol $ot $or $ob -outline {} -fill $fCol} $generic
+	$w create oval $ol $ot $or $ob -width 0 -outline $fCol -fill $fCol \
+	    -tags "$tagSet has_info"
+	# needs zero width to print/copy nice on Windows so avoid generic
+    
 #	scan [GetPoints $ol $outer] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
 #	scan [GetPoints $ot $outer] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
 #	scan [GetPoints $or (-$outer)] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
@@ -265,12 +268,12 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
     
     set mtb13 [expr ($mb + 2*$mt)/3]
     set arcTags [concat $tagSet [list size_on_this realwidth($width)]]
-    $w create oval $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -outline {} \
+    $w create oval $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -outline $fCol \
              -fill $fCol -tags $tagSet
-    $w create oval [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -outline {} \
+    $w create oval [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -outline $fCol \
              -fill $fCol -tags $tagSet
     $w create oval [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
-            [expr (2*$mb + $mt)/3] -outline {}  -fill $fCol -tags $tagSet
+            [expr (2*$mb + $mt)/3] -outline $fCol -fill $fCol -tags $tagSet
     $w create arc $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -width $width \
             -style arc -start 120 -extent 210 -tags $arcTags
     $w create arc [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -width $width \
@@ -1059,7 +1062,7 @@ proc FillSymbol { w name color } {
 	if {[lsearch "rectangle oval polygon" [$w type $object]]!=-1 && \
 		![string match *_text/* $tags] && \
 		![string match */background/* $tags]} {
-	    $w itemconfigure $object -fill $color
+	    $w itemconfigure $object -outline $color -fill $color
         }
     }
 }
