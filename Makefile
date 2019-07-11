@@ -285,16 +285,16 @@ $(INSTLIB): Run/install_adv.c Makefile
 
 # the rc objects from windres are ommitted from linking below becaise they
 # do strange things to dll dependencies causing c000007b errors
-$(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile.rc
-	cd Interp; $(RESCMD) -o rc.o Simile.rc; \
+$(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile$(BITEXTN).rc
+	cd Interp; $(RESCMD) -o rc.o Simile$(BITEXTN).rc; \
 	$(GCCCMD) $(CFLAGS) -DTCL_BROKEN_MAINARGS -DUNICODE -D_UNICODE \
-		-o ../$(EXECDIR)/Simile.exe Simile.c -I$(TCLINC) \
+		-o ../$(EXECDIR)/Simile.exe Simile.c rc.o -I$(TCLINC) \
 		-L$(TCLREF)/lib -ltcl$(VERS) -ltk$(VERS) -mwindows; cd ..
 
-$(SCRIPT): Interp/script.c Interp/script.rc
-	cd Interp; $(RESCMD) -o scriptrc.o script.rc; \
+$(SCRIPT): Interp/script.c Interp/script$(BITEXTN).rc
+	cd Interp; $(RESCMD) -o scriptrc.o script$(BITEXTN).rc; \
 	$(GCCCMD) $(CFLAGS) -DTCL_BROKEN_MAINARGS -DUNICODE -D_UNICODE \
-		-I$(TCLINC) -o ../$(SCRIPT) script.c -I$(TCLINC) \
+		-I$(TCLINC) -o ../$(SCRIPT) script.c scriptrc.o -I$(TCLINC) \
 		-L$(TCLREF)/lib -ltcl$(VERS) -ltk$(VERS) -mwindows; cd ..
 #else
 

@@ -84,7 +84,7 @@ APP                     ICON    DISCARDABLE     "scriptv2_100.ico"
 // 24
 //
 
-CREATEPROCESS_MANIFEST_RESOURCE_ID 24      MOVEABLE PURE   "simile.exe.manifest"
+CREATEPROCESS_MANIFEST_RESOURCE_ID 24 MOVEABLE PURE "simile64.exe.manifest"
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
