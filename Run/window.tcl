@@ -2596,10 +2596,11 @@ proc AbandonEqn {winId} {
 # Only query save if new focus is a 'rival', otherwise no bother as
 # the eqnbar will get it back anyway...update needed before new focus
 # can be queried
-    update
+    update idletasks
 # ...however it causes some horrible problems with progress dialogue
 # when entering fragment-defined functions. Can no longer find these
-# or see how they could happen, so will ignore for now.
+# or see how they could happen. However a full update causes unused influences
+# to be removed before user responds to dialogue, so try short one.    
 
     set newFocus [focus]
     set eb $winId.toolSlot.eqnbar
