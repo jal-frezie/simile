@@ -2468,10 +2468,11 @@ proc TtkLikeDialogue {dlg args} {
     if {$options(-icon) ne ""} {
 	$f.icon configure -image $::iconImages($options(-icon))
     }
+    set boxWidth [expr {round(400*$::defScaling)}]
     ttk::label $f.message -textvariable ${dlg}(-message) \
-    	-font TkCaptionFont -wraplength 400 -anchor w -justify left
+    	-font TkCaptionFont -wraplength $boxWidth -anchor w -justify left
     ttk::label $f.detail -textvariable ${dlg}(-detail) \
-    	-font TkTextFont -wraplength 400 -anchor w -justify left
+    	-font TkTextFont -wraplength $boxWidth -anchor w -justify left
 
     #
     # Command buttons:
