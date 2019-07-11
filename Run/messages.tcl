@@ -657,7 +657,7 @@ set msgs(bad_array_size_detail) [tr. {%2$s is not a valid dimension for a model 
 set msgs(bad_link_use_title) [tr. {Wrong use of inputs}]
 set msgs(bad_link_use_message) [tr. {The equation uses the parameter "%1$s" from an incoming influence, but the component is marked as a file parameter, which cannot have influences from other components.}]
 set msgs(unwanted_links_title) [tr. {Unwanted inputs}]
-set msgs(unwanted_links_message) [tr. {This node has a link from %1$s, which is not used in the equation. Parameter default values are not allowed to have input variables themselves. Remove this link?}]
+set msgs(unwanted_links_message) [tr. {This component has an influence from %1$s, which is not used in the equation. Parameter default values are not allowed to have input variables themselves. Remove this influence?}]
 
 set msgs(undefined_parameter_title) [tr. {Undefined parameter}]
 set msgs(undefined_parameter_message) [tr. {This expression contains the term %1$s, which appears to be used as a parameter, but it does not appear as a parameter name.}]
@@ -697,7 +697,7 @@ set msgs(lost_user_defined_fn_title) [tr. {Function definition not found}]
 set msgs(lost_user_defined_fn_message) [tr. {Attempting to process subexpression "%1$s": When this was entered, "%2$s" was a user-defined function (a procedure or macro) with %3$s arguments, but currently there is no definition for it.}]
 
 set msgs(extra_links_title) [tr. {Too many inputs}]
-set msgs(extra_links_message) [tr. {This node has a link from %1$s, which is not referred to by any of its parameter names in the equation. Remove this link?}]
+set msgs(extra_links_message) [tr. {This component has an influence from %1$s, which is not referred to by any of its parameter names in the equation. Remove this influence?}]
 
 set msgs(blind_add_title) [tr. {Failed to add component}]
 set msgs(blind_add_message) [tr. {Simile will not add a %1$s where it will not currently be displayed!}]
