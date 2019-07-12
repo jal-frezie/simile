@@ -751,12 +751,14 @@ enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
 enum_type_ref(Ref, Model, ETStyle, Value, Units, ETSpec) :-
 % also handles physical unit identifiers, which stand for 1 of that unit
 	(integer(Ref),
+	    Value = Ref,
 	    Units = const_int;
 	member(Ref, [var, pop, records]), 
+	    Value = undef,
 	    Units = int;
 	number(Ref),
-	    Units = 1), !,
 	    Value = Ref,
+	    Units = 1), !,
 	    ETSpec = Ref;
 	(ETStyle = quoted,
 	    dequote(Ref, BareRef);
