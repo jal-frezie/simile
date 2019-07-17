@@ -143,6 +143,7 @@ namespace eval ::$keyValue {
         set index [lsearch -exact $plot($w,Yvars) $path]
         set rootLabel [file tail $path]
         set plot($w,Yvars) [lreplace $plot($w,Yvars) $index $index]
+	UpdateYLabel $w
         set ynodes($w) [lreplace $ynodes($w) $index $index]
 # keep labels, otherwise colours change
 #        set plot($w,Ylabels) [lreplace $plot($w,Ylabels) $index $index]
@@ -200,6 +201,7 @@ namespace eval ::$keyValue {
         set runCount($winId) 1
 	set plot($winId,Yvars) $newYvars
         ShowHelper $winId
+	UpdateYLabel $winId
         display $winId [GetModelTime] 0 0
 	if {![info exists plot($winId,stringInfo)]} return
 	RestoreNotesFromList [GetCanvas $winId] $plot($winId,stringInfo)
@@ -222,6 +224,7 @@ namespace eval ::$keyValue {
             if {[lsearch -exact $plot($w,Yvars) $path]==-1} {
                 set plot(caption,$node) $caption
                 lappend plot($w,Yvars) $path
+		UpdateYLabel $w
                 lappend ynodes($w) $node
 		# CaptionNo $w $node $ident ;# add legend whether traced or not
                 
@@ -493,7 +496,9 @@ namespace eval ::$keyValue {
                 [expr $y0+$plot($w,yborder_bottom)-5] \
                 -text "Time" -anchor s \
                 -tags {movable scalable xaxis_label markable toplevel}
-        
+        $w.canvas create text $x0 [expr $y0-$plot($w,ylength)/2.0] \
+                -text Values\n -anchor s -angle 90 \
+                -tags {movable scalable yaxis_label markable toplevel}
         if {$plot($w,DrawLegend)} {
             drawLegend $w
         }   
@@ -529,7 +534,17 @@ namespace eval ::$keyValue {
         bind $w.canvas <Configure> [namespace code "resize $w %W %x %y %w %h"]
         
     }
-    
+
+    proc UpdateYLabel {w} {
+	foreach var $::graphtools::plot($w,Yvars) {
+	    lappend tails [string map {\n { }} [file tail $var]]
+	}
+	if {![info exists tails]} {
+	    set tails Values
+	}
+        $w.canvas itemconfig yaxis_label -text [join $tails {, }]\n
+    }
+	
     proc TraceHighlight {w} {
         global ::graphtools::plot
         ################################################################################
