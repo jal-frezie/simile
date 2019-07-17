@@ -499,7 +499,8 @@ namespace eval ::$keyValue {
         $w.canvas create text $x0 [expr $y0-$plot($w,ylength)/2.0] \
                 -text Values\n -anchor s -angle 90 \
                 -tags {movable scalable yaxis_label markable toplevel}
-        if {$plot($w,DrawLegend)} {
+        UpdateYLabel $w
+	if {$plot($w,DrawLegend)} {
             drawLegend $w
         }   
         
