@@ -138,7 +138,11 @@ namespace eval ::maptools2 {
 	    $cnv create rect $topSc $leftSc $bottomSc $rightSc \
 		-outline {} -fill [$cnv cget -bg] -tag {colour_scale scale_base}
 	    $cnv coords caption [expr $bottomSc-30] [expr ($leftSc+$rightSc)/2]
-	    $cnv itemconfigure caption -width 1
+	    if {[package vcompare [info tclversion] 8.5]>0} {
+		$cnv itemconfigure caption -angle 90
+	    } else {
+		$cnv itemconfigure caption -width 1
+	    }
 #        UpdateCaption useNodes $winId
 	    $cnv create text $midSc [expr $leftSc-48] \
                 -text $useNodes($winId,min) -anchor n -tag colour_scale
@@ -150,7 +154,11 @@ namespace eval ::maptools2 {
 	    $cnv create rect $leftSc $topSc $rightSc $bottomSc \
 		-outline {} -fill [$cnv cget -bg] -tag {colour_scale scale_base}
 	    $cnv coords caption [expr ($leftSc+$rightSc)/2] [expr $bottomSc-30]
-	    $cnv itemconfigure caption -width 0 ;# = whatever it takes
+	    if {[package vcompare [info tclversion] 8.5]>0} {
+		$cnv itemconfigure caption -angle 0
+	    } else {
+		$cnv itemconfigure caption -width 0 ;# = whatever it takes
+	    }
 #        UpdateCaption useNodes $winId
 	    $cnv create text [expr $leftSc+47] $midSc \
                 -text $useNodes($winId,min) -anchor e -tag colour_scale
