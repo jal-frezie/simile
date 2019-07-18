@@ -497,8 +497,12 @@ namespace eval ::$keyValue {
                 -text "Time" -anchor s \
                 -tags {movable scalable xaxis_label markable toplevel}
         $w.canvas create text $x0 [expr $y0-$plot($w,ylength)/2.0] \
-                -text Values\n -anchor s -angle 90 \
                 -tags {movable scalable yaxis_label markable toplevel}
+	if {[package vcompare [info tclversion] 8.5]>0} {
+	    $w.canvas itemconfigure yaxis_label -anchor s -angle 90
+	} else {
+	    $w.canvas itemconfigure yaxis_label -anchor e -width 1
+	}
         UpdateYLabel $w
 	if {$plot($w,DrawLegend)} {
             drawLegend $w
@@ -547,7 +551,7 @@ namespace eval ::$keyValue {
     }
 	
     proc TraceHighlight {w} {
-        global ::graphtools::plot
+        global ::graphtools::plot defScaling
         ################################################################################
         #         set path [GetCaptionPathFromId $node]
         #         if {$plot($w,$path,width)==2} {
@@ -560,12 +564,12 @@ namespace eval ::$keyValue {
         set ident [lsearch -inline [$w.canvas itemcget current -tags] *.*]
         set index [lsearch $plot($w,highlittrace) $ident]
         if {$index>-1} {
-            $w.canvas itemconfigure $ident -width 1
+            $w.canvas itemconfigure $ident -width $defScaling
             set plot($w,highlittrace) \
                [lreplace $plot($w,highlittrace)  $index $index]
         } else  {
             lappend  plot($w,highlittrace)  $ident
-            $w.canvas itemconfigure $ident -width 2
+            $w.canvas itemconfigure $ident -width [expr {2*$defScaling}]
         }
     }
     
@@ -663,7 +667,7 @@ namespace eval ::$keyValue {
             append vartag var $i
             $w.canvas create line $xa $ya $xb $ya \
 		-fill [lindex $plot($w,YColours) [expr {$i%$NColours}]] \
-                    -width 2 \
+                    -width $::defScaling \
                     -tags [list $vartag legend markable toplevel]
             $w.canvas create text $x ${y}p \
 		-text [string map {\n { }} [lindex $plot($w,Ylabels) $i]] \
@@ -917,7 +921,7 @@ namespace eval ::$keyValue {
     
     # Connect two points on the graph
     proc drawPoint { w X0 Y0 X1 Y1 Colour node id} {
-        global ::graphtools::plot
+        global ::graphtools::plot defScaling
         #ShowMess debug info "draw $node.$id" ok
 #puts "Drawing from $X0 $Y0 to $X1 $Y1"
         set x0 [get_x $w $X0 $plot($w,Tscale)]
@@ -928,9 +932,9 @@ namespace eval ::$keyValue {
         # should be a parameter for each variable
         set index [lsearch $plot($w,highlittrace) $node.$id]
         if {$index>-1} {
-            set width 2
+            set width [expr {2*$defScaling}]
         } else  {
-            set width 1
+            set width $defScaling
         }
 	set plot($w,usedLegend) 1
         $w.canvas create line $x0 $y0 $x1 $y1 \
