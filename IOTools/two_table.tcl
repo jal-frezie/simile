@@ -478,7 +478,9 @@ namespace eval $keyValue {
     proc Save {winId} {
         set filename [ChooseFile table.csv [tr. "Save table contents as.."] 1 \
 			  [GetTopNode $winId]]
-        SaveToNamedFile $winId $filename
+	if {$filename ne {}} {
+	    SaveToNamedFile $winId $filename
+	}
     }
     
     proc GetTopNode {winId} {
