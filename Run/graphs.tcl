@@ -55,7 +55,7 @@ proc DBHandleFor {location} {
 
 # find all extensions there is driver to read
 
-proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
+proc GraphEntry { t modal xlow xhigh xspan ylow yhigh yspan range size points \
             {target {}}} {
     global tcl_platform graph looks
     
@@ -255,8 +255,15 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     if {![llength $target]} {
         while {1} {
             LetItShow $t
+	    if {$modal} {
+		focus $t
+		grab $t
+	    }
             tkwait variable graph($t,done)
-            if {$graph($t,done)==1} {
+            if {$modal} {
+		grab release $t
+	    }
+	    if {$graph($t,done)==1} {
                 if {[CheckFloaty $graph($t,lowy) $graph($t,highy) \
                             $graph($t,lowx) $graph($t,highx)]} {
                     set graph($t,range) [SetCombos $t]

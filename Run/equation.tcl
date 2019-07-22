@@ -1023,8 +1023,6 @@ proc equationGraph {parent} {
     PutItThere .graph $parent
     wm protocol .graph WM_DELETE_WINDOW {set graph(.graph,done) 0}
     # One way to set the window size is to do it explicitly: the other is to use a large initial graph pad size
-    focus .graph
-    grab .graph
     # set default values for new graph
     set graphArgs {0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200}
     if {[info exists equation(table_data)]} {
@@ -1036,8 +1034,8 @@ proc equationGraph {parent} {
 			       [join $equation(table_values) ,]]
 	}
     }
-    set done [eval {GraphEntry .graph} $graphArgs]
-    grab release .graph
+    set done [eval {GraphEntry .graph 1} $graphArgs]
+
     PackItUp .graph
     grab $parent
     return $done
