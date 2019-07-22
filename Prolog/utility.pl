@@ -237,11 +237,14 @@ do_writing([Atom | Rest], Str) :-
 need to change its own ttfn encoding to utf8 */
 
 open_native(FileTtfn, Mode, Stream) :-
+    (Mode = FileMode-Noise -> true;
+     FileMode = Mode, Noise = loud),
         user><get_native(FileTtfn, FileNative),
-	catch(open(FileNative, Mode, Stream), NonTtfnErrMess,
-	      (ame_gen><replace_subexps(NonTtfnErrMess, ame_gen, swap_matches,
+	catch(open(FileNative, FileMode, Stream), NonTtfnErrMess,
+	      (Noise = quiet -> fail;
+	       ame_gen><replace_subexps(NonTtfnErrMess, ame_gen, swap_matches,
 			       FileNative=FileTtfn, top_down, _, SubbedErr),
-		  ame_gen><query(bad_access(SubbedErr), warning, top, [ok], not))).
+	       ame_gen><query(bad_access(SubbedErr), warning, top, [ok], not))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % delall deletes all occurrances of an element from a list 

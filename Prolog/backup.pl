@@ -213,12 +213,13 @@ into_save_file(Model, ActList) :-
 	append_to_log(Model, FullList).
 
 append_to_log(Model, Action) :-
-	autosave_file_is(Model, File),
-	(open_native(File, append, Save) ->
+	autosave_file_is(Model, File) ->
+	(open_native(File, append-quiet, Save) ->
 	     write_with_breaks(Save, Action),
 	     close(Save);
 	 query(no_autosave(File), warning, top, [ok], _),
-	 retract(autosave_file_is(Model, _))).
+	 retract(autosave_file_is(Model, _)));
+	true.
 
 restore_save_file(Model, Load, IdSwaps) :-
 	read(Load, ActSpec),
