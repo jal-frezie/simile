@@ -1573,9 +1573,12 @@ proc ContextSensitiveHelp {context page} {
         } aqua {
 # try Snow Leopard location first
 	    set helpPage [file join $SIMILE_PATH help $page]
-	    if {[catch {exec open -a "HelpViewer.app" $helpPage}]} {
-		exec open -a "Help Viewer.app" $helpPage
-	    }
+#	    if {[catch {exec open -a "HelpViewer.app" $helpPage}]} {
+#		exec open -a "Help Viewer.app" $helpPage
+#	    }
+# Help Viewer needs some exotic metadata that no 3rd party developer has been
+# able to work out, so just use default browser
+	    exec open $helpPage
         } x11 {
             set url file://${SIMILE_PATH}/help/$page
             if {![info exists env(BROWSER)]} {
