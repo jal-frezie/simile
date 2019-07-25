@@ -981,7 +981,8 @@ $tb1.b43 configure -state $useSpaceAbility
 #            set tempFile [file join $simtmpdir temp_out.shf]
 #            set stream [NetOpen $tempFile w]
 #            set metaList {}
-
+	    foreach {num denom} \
+		[ChooseIntegerRatio [expr {$::defScaling/1.25}] 0.9] {}
             set metaStream [NetOpen $saveName w]
 	    set mreId $helperTable($currentNode,whichRunEnv)
 
@@ -993,11 +994,10 @@ $tb1.b43 configure -state $useSpaceAbility
 	    puts $metaStream {<?xml version="1.0"?>}
 	    puts $metaStream {<?xml-stylesheet type="text/xsl" href="shf1.xsl"?>}
 	    puts $metaStream "<shf simile_version=\"$::env(SIMILE_VERSION)\">"
-	    puts $metaStream "<external x=\"[winfo x $mreId]\" y=\"[winfo y $mreId]\" \
-w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
-	    puts $metaStream "<std_tool_layout left_panel_width=\"[lindex [[GetFrame $mainframe].mainpw sash coord 0] 0]\" run_control_height=\"[lindex [[GetFrame $mainframe].mainpw.controlPane.panedwindow sash coord 0] 1]\"/>"
+	    puts $metaStream "<external x=\"[winfo x $mreId]\" y=\"[winfo y $mreId]\" w=\"[expr {[winfo width $mreId]*$denom/$num}]\" h=\"[expr {[winfo height $mreId]*$denom/$num}]\"/>"
+	    puts $metaStream "<std_tool_layout left_panel_width=\"[expr {[lindex [[GetFrame $mainframe].mainpw sash coord 0] 0]*$denom/$num}]\" run_control_height=\"[expr {[lindex [[GetFrame $mainframe].mainpw.controlPane.panedwindow sash coord 0] 1]*$denom/$num}]\"/>"
 
-            SaveChildrenConfig $dp0 {}
+            SaveChildrenConfig $dp0 {} $num $denom
             
 	    puts $metaStream "</shf>"
             close $metaStream
@@ -1007,14 +1007,14 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 	}
     }
     
-    proc SaveChildrenConfig {page indent} {
+    proc SaveChildrenConfig {page indent num denom} {
 	upvar 1 metaStream metaStream
 	switch [winfo class $page] {
 	    Panedwindow {
-		SavePanedwindowConfig $page $indent
+		SavePanedwindowConfig $page $indent $num $denom
 	    }
 	    TNotebook {
-		SaveNotebookConfig $page $indent
+		SaveNotebookConfig $page $indent $num $denom
 	    }
 	    default {
 		#lappend metaList "Unhandled Notebook page child: $child"
@@ -1022,39 +1022,39 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 		    SaveContainer $page $indent
 		} else {
 		    foreach child [winfo children $page]  {
-			SaveChildrenConfig $child $indent
+			SaveChildrenConfig $child $indent $num $denom
                     }
                 }
 	    }
 	}
     }
 
-    proc SaveNotebookConfig {notebook indent} {
+    proc SaveNotebookConfig {notebook indent num denom} {
 	upvar 1 metaStream metaStream
 
         puts $metaStream "$indent<notebook>"
         foreach page [$notebook tabs] {
             set pagecaption [$notebook tab $page -text]
             puts $metaStream "  $indent<page caption=\"$pagecaption\">"
-	    SaveChildrenConfig $page "    $indent"
+	    SaveChildrenConfig $page "    $indent" $num $denom
 	    puts $metaStream "  $indent</page>"
         }
         puts $metaStream "$indent</notebook>"	
     }
     
-    proc SavePanedwindowConfig {panedwindow indent} {
+    proc SavePanedwindowConfig {panedwindow indent num denom} {
 	upvar 1 metaStream metaStream
 
         puts $metaStream "$indent<panedwindow orient=\"[$panedwindow cget -orient]\">"
 	set sashCount -1
         foreach pane [$panedwindow panes] {
             puts $metaStream "  $indent<pane>"
-	    SaveChildrenConfig $pane "    $indent"
+	    SaveChildrenConfig $pane "    $indent" $num $denom
             puts $metaStream "  $indent</pane>"
 
 	    if {$sashCount>-1} {
 		set sashPt [$panedwindow sash coord $sashCount]
-		puts $metaStream "  $indent<sash index=\"$sashCount\" xposn=\"[lindex $sashPt 0]\" yposn=\"[lindex $sashPt 1]\"/>"
+		puts $metaStream "  $indent<sash index=\"$sashCount\" xposn=\"[expr {[lindex $sashPt 0]*$denom/$num}]\" yposn=\"[expr {[lindex $sashPt 1]*$denom/$num}]\"/>"
 	    }
 	    incr sashCount
 	}
@@ -1125,6 +1125,9 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 	    LoadOldStyleSHF $currentNode $oldPath
 	} else {
 	    set parseStatus(currentNode) $currentNode
+	    foreach {num denom} \
+		[ChooseIntegerRatio [expr {$::defScaling/1.25}] 0.9] {}
+	    set parseStatus(mapScale) $num/$denom
 	
 	    if {[catch {$parseStatus(shfParser) parse [DefuseXmlBombs $dada]} \
 		 feedback]} {
@@ -1149,8 +1152,8 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 	    } external {
 		set x $attVals(x)
 		set y $attVals(y)
-		set width $attVals(w)
-		set height $attVals(h)
+		set width [expr $attVals(w)*$parseStatus(mapScale)]
+		set height [expr $attVals(h)*$parseStatus(mapScale)]
 		if {$x>=0 && $x+$width<[winfo screenwidth $win] && \
 			$y>=0 && $y+$height<[winfo screenheight $win]} {
 		    wm geometry $win ${width}x${height}+${x}+${y}
@@ -1159,9 +1162,10 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 		}
 	    } std_tool_layout {
 		set topFrame [GetFrame $win].mainpw 
-		$topFrame sash place 0 $attVals(left_panel_width) 1
-		$topFrame.controlPane.panedwindow sash place 0 \
-		    1 $attVals(run_control_height)
+		$topFrame sash place 0 \
+		    [expr $attVals(left_panel_width)*$parseStatus(mapScale)] 1
+		$topFrame.controlPane.panedwindow sash place 0 1 \
+		    [expr $attVals(run_control_height)*$parseStatus(mapScale)]
 		set parseStatus(currentPath) $topFrame.mainDisplayPane
 	    } notebook {
 		set path $parseStatus(currentPath).notebook
@@ -1201,7 +1205,8 @@ w=\"[winfo width $mreId]\" h=\"[winfo height $mreId]\"/>"
 		}
 		update idletasks
 		$parseStatus(currentPath) sash place $attVals(index) \
-		    $attVals(xposn) $attVals(yposn)
+		    [expr $attVals(xposn)*$parseStatus(mapScale)] \
+		    [expr $attVals(yposn)*$parseStatus(mapScale)]
 	    } container {
 		set parseStatus(hType) $attVals(type)
 	    } default {
