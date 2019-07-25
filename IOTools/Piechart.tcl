@@ -122,6 +122,33 @@ proc Restore {winId} {
     regsub -all /WIN/ [GetState $winId] $winId restoreString
     array set plot $restoreString
     #    ShowMess debug info $restoreString ok
+
+    if {![info exists plot($winId,Ycapts)]} {
+	set plot($winId,Ycapts) {} ;# legacy: targets as node numbers
+    } else {
+	set plot($winId,Yvars) {} ;# current: targets as caption paths
+    }
+
+    set newYcapts {}
+    set topNode [$::helperTable($winId,whichInstance) GetNode]
+    foreach path $plot($winId,Ycapts) {
+	set sortedPath [ExistCheck $topNode $path {} -2 "saved setup"]
+	switch $sortedPath {
+	    break {
+		error [tr. {Failed to initialize helper}]
+	    } continue {
+		continue
+	    } default {
+		set path [lindex $sortedPath 0]
+		set node [lindex $sortedPath 1]
+	    }
+	}
+#	set plot(caption,$node) [file tail $path]
+	lappend plot($winId,Yvars) $node
+	lappend newYcapts $path
+    }
+    
+    set plot($winId,Ycapts) $newYcapts
     ShowHelper $winId
     get_Yvalues $winId
     
@@ -152,9 +179,10 @@ proc click {w node caption} {
         if {[llength $values]==1} then {
             lappend plot($w,Ylabels) $caption
         } else {
-            ArrayLabeling $w $caption $values {}
+            ArrayLabeling $w $caption [TransEnums [GetTransTable $node] $values]
         }
         
+        lappend plot($w,Ycapts)   $name
         lappend plot($w,Yvars)   $node
         drawGraphpad $w
         UpdateState $w
@@ -169,15 +197,14 @@ proc click {w node caption} {
     plot_YY $w        
 }
 
-proc ArrayLabeling { w caption values index } {
+proc ArrayLabeling { w caption values} {
     global ::graphtools::plot
 #    ShowMess debug info "ArrayLabeling [llength $values] $values" ok
     if {[llength $values]==1} then {
-        lappend plot($w,Ylabels) ${caption}/$index
+        set plot($w,Ylabels) [linsert $plot($w,Ylabels) 0 $caption]
     } else {
-        array set val_array $values
-        foreach element [lsort -decreasing [array names val_array]] {
-            ArrayLabeling $w $caption $val_array($element) $element;
+        foreach {ind val} $values {
+            ArrayLabeling $w $caption/$ind $val
         }
     }
 }
@@ -288,7 +315,7 @@ proc AddVariable { winId } {
     
     set xm [expr $plot($winId,xborder_left)+60]
     set ym [expr $plot($winId,yborder_top)+20]
-    $winId.canvas create text $xm $ym -tags prompt -width 100 -justify center\
+    $winId.canvas create text $xm $ym -tags prompt -width 100p -justify center\
             -text "Click on a variable in the Explorer window\
             or a Model Diagram."
     GrabClicks $winId
@@ -401,6 +428,7 @@ proc Repaint {w} {
     set plot($w,cy) [expr {($y1+$y2)/2}]
     
     $w.canvas delete label slice
+
     
     DrawPie $w $x1 $y1 $x2 $y2 $pievalues($w) $piesum($w)
     $w.canvas raise annotation
@@ -473,7 +501,7 @@ proc DrawPie { w x1 y1 x2 y2 pievalues piesum } {
     
     if {($piesum==0) && ([llength $pievalues] > 0)} {
 #        return
-        $w.canvas create text $plot($w,cx) $plot($w,cy) -text "Sum of all values is negative" -tag label
+        $w.canvas create text $plot($w,cx) $plot($w,cy) -text "Sum of all values is zero or negative" -tag label
     } else  {
     set iplot 0
     set StartAngle 0
