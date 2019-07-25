@@ -589,7 +589,7 @@ proc LoseDTRef {statusLine} {
 proc UpdateIfFreezy {} {
     global updateLastDone
     if {$updateLastDone < [clock clicks -milliseconds]-40} {
-	update idletasks
+	update ;# idletasks misses click on pause
 	set updateLastDone [clock clicks -milliseconds]
     }
 }
