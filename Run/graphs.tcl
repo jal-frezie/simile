@@ -956,6 +956,8 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 		      -width 10 -values $table_entry(between_txts) \
 		      -state readonly]
 	    set table_entry(others) [lindex $table_entry(between_txts) 0]
+	} else {
+	    array unset table_entry others
 	}
 	if {!($dlgStyle eq "measure")} {
 	    pack [label $wrapf.wm -text [tr. "Wraparound at:"]]
@@ -1328,7 +1330,7 @@ proc EditTableData {startLine capt dims trans} {
 	    set timePts \
 		[GetDimOrTimePtList .table [tr. {Time points for new table}] \
 		     [tr. {Enter time points for new table, separated by commas:}]]
-	    lset trans 0 [split t,$timePts ,]
+	    lset trans 0 [split TIME,$timePts ,]
 	}
 	set values [NestedArray $dims $trans]
     }
@@ -1347,11 +1349,11 @@ proc EditTableData {startLine capt dims trans} {
 }
 
 proc NestedArray {dims trans} {
+    puts [info level 0]
     if {[llength $dims]} {
 	set elt [NestedArray [lrange $dims 1 end] $trans]
 	set dim [lindex $dims 0]
-	set n [lsearch -index 0 $trans $dim]
-	if {$n>-1} {
+	if {![catch {lsearch -index 0 $trans $dim} n] && $n>-1} {
 	    foreach mem [lrange [lindex $trans $n] 1 end] {
 		lappend result $mem $elt
 	    }
