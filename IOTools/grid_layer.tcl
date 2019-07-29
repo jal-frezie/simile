@@ -19,6 +19,7 @@ itcl::class similescript::$newLayerClass {
 	namespace import -force ::maptools2::*
 	array set transform [list xzoom $xzoom yzoom $yzoom]
 	image create photo $this.original 
+	set useNodes($winId,resetDone) 1 ;# always do one update
 	if {[string length $state]} { ;# we are restoring 
 	    foreach {att val} $state {
 		set useNodes($winId,$att) $val
@@ -153,14 +154,20 @@ itcl::class similescript::$newLayerClass {
 	}
     }
 
+    public method Reset {} {
+	# want to update display even if updates over time disabled
+	set useNodes($winId,resetDone) 1
+    }
+	    
     public method Display {time dispInt step} {
 	if {[string equal displaying $useNodes($winId,state)] && \
-		$useNodes($winId,displayUpdate)} {
+		($useNodes($winId,displayUpdate) || $useNodes($winId,resetDone))} {
             DrawGrid8
 # will update visible part of canvas if whole scrollregion not displayed
 	    ZoomTo $transform(xzoom) $transform(yzoom)
 	    $winId raise [namespace tail $this].main
 	}
+	set useNodes($winId,resetDone) 0
     }
 
     public method DrawGrid8 {} {

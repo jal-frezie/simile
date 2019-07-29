@@ -18,6 +18,7 @@ itcl::class similescript::$newLayerClass {
 	namespace import -force ::maptools2::*
 	array set transform [list xzoom $xzoom yzoom $yzoom]
 	set useNodes($winId,stipple) none
+	set useNodes($winId,resetDone) 1 ;# always do one update
 	if {[string length $state]} { ;# we are restoring 
 	    regsub -all /WIN/ $state $winId restoreString
 	    array set useNodes $restoreString
@@ -168,11 +169,16 @@ itcl::class similescript::$newLayerClass {
 	    return nil
 	}
     }
+
+    public method Reset {} {
+	# want to update display even if updates over time disabled
+	set useNodes($winId,resetDone) 1
+    }
 	    
     public method Display {time dispInt step} {
 # nothing to do at display time -- it's a photo
 	if {[string equal displaying $useNodes($winId,state)] && \
-		$useNodes($winId,displayUpdate)} {
+		($useNodes($winId,displayUpdate) || $useNodes($winId,resetDone))} {
 	    set useNodes(temp,curValues) \
 		[$modelInst GetValue $useNodes($winId,color) -numeric 1]
 	    if {$useNodes($winId,displayRetile)} {
@@ -188,6 +194,7 @@ itcl::class similescript::$newLayerClass {
 	    }
 	}
 	$winId raise [namespace tail $this].main
+	set useNodes($winId,resetDone) 0
     }
 
     method Flatten2D {tree} {
