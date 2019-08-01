@@ -20,12 +20,9 @@ itcl::class similescript::$newHelperClass {
 
 	if {[AmLayer]} {
 	    set winId [winfo parent [lindex $winTitle 2]]
-	    foreach {x y} [lrange $winTitle 3 4] {}
-	    array set scaleVector [list $winId,xoff [expr {250.0/$x}] \
-				       $winId,xmag [expr {500.0/$x}] \
-				       $winId,yoff [expr {-250.0/$y}] \
-				       $winId,ymag [expr {500.0/$y}] \
-				       $winId,zoff 0 $winId,zmag 150.0]
+#	    foreach {x y} [lrange $winTitle 3 4] {}
+	    array set scaleVector [list $winId,zoff 0 $winId,zmag 150.0]
+# others done in 2d helper now
 	    array set viewVector [list $winId,X 500 $winId,Y 500 \
 				      $winId,angle 0 $winId,elevation 1.57 \
 				      $winId,cos_angle 1 $winId,cos_elevation 0 \

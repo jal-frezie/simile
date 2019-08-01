@@ -9,7 +9,15 @@ itcl::class similescript::ShapeLayer {
 # perverse extra body because base class constructor has args
 	Layer::constructor $modelInst $mainCanvas
     } {
-	set useNodes(transform) {0 0 1 1}
+	set useNodes(curZoom) [list $xzoom $yzoom]
+	if {[lindex $state end 0] eq "layer_transform"} {
+	    # recent enough to have transform info
+	    set useNodes(transform) [lrange [lindex $state end] 1 end]
+	    set state [lrange $state 0 end-1]
+	} else {
+	    set useNodes(transform) {0 0 1 1}
+	}
+	SetScaling
 	::similescript::Shapes3D20141208 ${this}_3dinst $modelInst \
 	    [list layer $type $winId $xzoom $yzoom] $state
     }
@@ -28,6 +36,7 @@ itcl::class similescript::ShapeLayer {
     }
 
     public method Display {time dispInt step} {
+	SetScaling ;# avoid interference from other shape layers
 	${this}_3dinst Display $time $dispInt $step
     }
 
@@ -36,10 +45,10 @@ itcl::class similescript::ShapeLayer {
 	foreach {x y} $useNodes(curZoom) {}
 	foreach {xo yo xs ys} $useNodes(transform) {} ;# add use later
 	array set ::gen3d1::scaleVector \
-	    [list $subWin,xoff [expr {250.0/$x}] \
-		 $subWin,yoff [expr {-250.0/$y}] \
-		 $subWin,xmag [expr {500.0/$x}] \
-		 $subWin,ymag [expr {500.0/$y}]]
+	    [list $subWin,xoff [expr {(250.0/$x-$xo)/$xs}] \
+		 $subWin,yoff [expr {-(250.0/$y+$yo)/$ys}] \
+		 $subWin,xmag [expr {500.0/$xs/$x}] \
+		 $subWin,ymag [expr {500.0/$ys/$y}]]
     }
     
     public method ZoomTo {x y} {
@@ -49,6 +58,8 @@ itcl::class similescript::ShapeLayer {
     
     public method PrepareSaveString {} {
 	set State [${this}_3dinst cget -State]
+	lappend State [concat layer_transform $useNodes(transform)]
+	# will not break legacy drawing, at end to avoid inTitle choice
     }
 
     public method AdjRange {rg} {
