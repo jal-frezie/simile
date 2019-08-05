@@ -1347,6 +1347,7 @@ $tb1.b43 configure -state $useSpaceAbility
 						 $tail $origVersion]]} {
 			break
 		    }
+		    update idletasks ;# allow tool to draw before trying next
                 }
                 panedwindow {
                     #%lappend metaList "panedwindow $panedwindow [$panedwindow cget -orient]"

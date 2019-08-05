@@ -545,8 +545,9 @@ proc AddPopupMessage {text colour args} {
 	pack [text $bag -bd 0 -bg $colour -width 4 -height 1 -wrap none] \
 	    -fill both -expand 1
 	$bag insert 1.0 $text
-	after idle [list $bag config -xscroll "Rebag $bag width $count" \
-			-yscroll "Rebag $bag height 0"]
+	$bag config -xscroll "Rebag $bag width $count" \
+	    -yscroll "Rebag $bag height 0"
+	# config was done after idle but that blew up if window gone
     } elseif {[string length $text]<20} {
 	pack [label $bag -text $text -bg $colour] -fill x -expand true
     } else {
@@ -554,6 +555,7 @@ proc AddPopupMessage {text colour args} {
 		  -text $text -bg $colour] -fill x -expand true
     }
 }
+
 
 proc EndsOnly {outerText count leave} {
     upvar 1 $outerText text
