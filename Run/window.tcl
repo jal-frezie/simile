@@ -635,7 +635,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
 	set window_info($c,topCapt) $window_info(lastClickCapt)
     }
     
-    TweakWindow $c $winTitle [expr {$::defScaling*$initialScale}] $wl $wt $wr $wb $colour
+    TweakWindow $c $winTitle $initialScale $wl $wt $wr $wb $colour
     #    wm maxsize $winName [winfo screenwidth $winName] \
     #   [winfo screenheight $winName]
     
