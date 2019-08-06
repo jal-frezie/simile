@@ -38,7 +38,8 @@ proc Disaggregate {parent title colour image imgpos type interp \
     }
 
     set tt .disaggregation
-    set tf [::ttk::frame [PutItThere $tt $parent].all]
+    set tf [PutItThere $tt $parent]
+    #    set tf [::ttk::frame [PutItThere $tt $parent].all]
     set t [::ttk::notebook $tf.notebook]
     wm resizable $tt 0 1
     wm protocol $tt WM_DELETE_WINDOW {set disaggregate(done) 0}
@@ -87,7 +88,7 @@ proc Disaggregate {parent title colour image imgpos type interp \
 	
 	set exFrame [frame $disaggregate(countf).detail]
 	pack $exFrame -side left -anchor s -pady 4 -fill both -expand 1
-	pack [ttk::label $exFrame.l -wraplength 400]
+	pack [ttk::label $exFrame.l -wraplength 300p]
 	ShowDisagSetup ;# Set current type
 	bind $disaggregate(countf).mb <<ComboboxSelected>> \
 	    [list SetupDisagExtras $exFrame]
@@ -333,19 +334,21 @@ proc Disaggregate {parent title colour image imgpos type interp \
     pack [button $publicatf.removeb -text "Remove Publication"] -side left
     pack $t.metadata.publications -padx 4 -pady 4 -fill both -expand 1
 
+    ttk::frame $tf.bs
+    ttk::button $tf.bs.ok -text [tr. OK] -width 10 -default active \
+            -command $okCmd
+    pack $tf.bs.ok -side left -padx 2 -pady 4
+    ttk::button $tf.bs.cancel -text [tr. Cancel] -width 10 \
+            -command {set disaggregate(done) 0}
+    pack $tf.bs.cancel -side left -padx 2 -pady 4
+    ttk::button $tf.bs.help -text [tr. Help] -width 10 \
+            -command {ContextSensitiveHelp .disaggregation submodels/dialogue.htm}
+    pack $tf.bs.help -side left -padx 2 -pady 4
+    pack $tf.bs -side bottom -fill x
+    
     $t select 0
     pack $t -fill both -expand true
-
-    ttk::button $tf.ok -text [tr. OK] -width 10 -default active \
-            -command $okCmd
-    pack $tf.ok -side left -padx 2 -pady 4
-    ttk::button $tf.cancel -text [tr. Cancel] -width 10 \
-            -command {set disaggregate(done) 0}
-    pack $tf.cancel -side left -padx 2 -pady 4
-    ttk::button $tf.help -text [tr. Help] -width 10 \
-            -command {ContextSensitiveHelp .disaggregation submodels/dialogue.htm}
-    pack $tf.help -side left -padx 2 -pady 4
-    pack $tf
+#    pack $tf
 #    button $tf.more -text "More" -width 10 -command "ShowComplexity $t"
 #    pack $tf.more -padx 2 -pady 4
     
