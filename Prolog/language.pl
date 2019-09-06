@@ -444,7 +444,7 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	  SpecialOp = call_ext_code(ProcName, CurSmPtr, ArgCodes),
 	    all(render, msr_with_ptrs,
 		[unify(L), unify(CurSmPtr), build(ArgCodes), build(XArgs)]),
-	    CallSpec =.. [ProcName | XArgs];
+	    CallSpec =.. [ProcName, this | XArgs];
 /*	SpecialOp =.. [SubCall, NodeId, InstHandle, NewCond],
 	    member(SubCall,
 		   [update_submodel, advance_submodel,
