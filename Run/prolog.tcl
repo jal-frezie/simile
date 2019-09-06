@@ -87,9 +87,11 @@ proc do_tail {header args} {
 	    Query [list unhandled_tcl_error $retVal $errorInfo] error top {} ok
 	    set response error:$errorInfo
 	}
-    } elseif {[string length $retVal]>=8192} {
-	Query too_much_data error top {} ok
-	set response result: ;# emulate a cancel
+#    {} elseif {[string length $retVal]>=8192} {}
+	# Do not check for long string here as it might be a relatively harmless
+	# eqn table. Do on entering eqn instead.
+#	Query too_much_data error top {} ok
+#	set response result: ;# emulate a cancel
     } else {
 	set response result:$retVal
     }

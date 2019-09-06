@@ -587,6 +587,10 @@ proc interact_equation {} {
 	    if {[info exists equationbar(max_entry)]} {
 		set equationbar(max) $equationbar(max_entry)
 	    }
+	    if {[string length $equationbar(equation)]>=8192} {
+		Query too_much_data error top {} ok
+		return
+	    }
 	    set result [list $equationbar(equation) \
 			    $equationbar(units) \
 			    $equationbar(isParam) \
@@ -597,6 +601,7 @@ proc interact_equation {} {
 	    if {[info exists equationbar(curEvt)]} {
 		return [linsert $result 1 $equationbar(curEvt)]
 	    }
+	    
 	    return $result
 	}
     }
@@ -1043,6 +1048,10 @@ proc equationGraph {parent} {
 
 proc equationOK {} {
     global equation
+    if {[$equation(actzone).text count 1.0 end]>=8192} {
+	Query too_much_data error top {} ok
+	return
+    }
     set equation(done) 1
 }
 
