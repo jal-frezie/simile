@@ -6,7 +6,7 @@
 # This file contains procedures for all dialogues except the equation,
 # preferences and customise dialogues.
 #
-proc Disaggregate {parent title colour image imgpos type interp \
+proc Disaggregate {parent title modelLocn colour image imgpos type interp \
 		       fatness icount step desc comment enumLists \
 		       xproc xinc xlibs eqnunit hide separate} {
     global disaggregate tcl_platform window_info
@@ -233,7 +233,8 @@ proc Disaggregate {parent title colour image imgpos type interp \
     pack [ttk::checkbutton $mathf.extcode.whether -text [tr. "Use own code"] \
 	      -variable disaggregate(useOwnCode) -command "AbleSetup $mathf"] \
 	-side left -anchor w
-    pack [ttk::button $mathf.extcode.how -text Setup -command "ExtCodeSetup $mdl"]
+    pack [ttk::button $mathf.extcode.how -text Setup \
+	      -command [list ExtCodeSetup $mdl $modelLocn]]
     AbleSetup $mathf
     #    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
     #            -variable disaggregate(matherror)
@@ -466,7 +467,7 @@ proc AbleSetup {mathf} {
 	[ChooseText $disaggregate(useOwnCode) normal disabled]
 }
 
-proc ExtCodeSetup {mdl} {
+proc ExtCodeSetup {mdl modelLocn} {
     global disaggregate
 
     set t [PutItThere .extcodesetup .disaggregation]
@@ -484,7 +485,8 @@ proc ExtCodeSetup {mdl} {
     $incFileTxt insert 1.0 $disaggregate(xinc)
     $incFileTxt configure -state disabled
     pack [button [GetFrame $t.incfilefr].btn -text [tr. Browse] \
-	      -command "ChangeIncFile $incFileTxt $mdl"] -anchor e -side right
+	      -command [list ChangeIncFile $incFileTxt $mdl $modelLocn]] \
+	-anchor e -side right
 
     pack [TitleFrame $t.liblistfr -text [tr. "Library files:"]] \
 	-padx 4 -pady 4 -fill x
@@ -659,12 +661,16 @@ proc ShowDisagSetup {} {
 #    $disaggregate(countf).detail configure -text $sides
 }
 
-proc ChangeIncFile {incFileTxt mdl} {
+proc ChangeIncFile {incFileTxt mdl modelLocn} {
     set newFile [ChooseFile external.cpp [tr. "External source/header file:"] \
 		     0 $mdl]
     if {[string length $newFile]} {
 	$incFileTxt configure -state normal
 	$incFileTxt delete 1.0 end
+	# save relative to model save name
+	if {$modelLocn ne "unsaved"} {
+	    set newFile [Relativize $modelLocn $newFile]
+	}
 	$incFileTxt insert 1.0 $newFile
 	$incFileTxt configure -state disabled
     }

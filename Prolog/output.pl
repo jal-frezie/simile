@@ -36,7 +36,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_scrub_run/2, tk_kill_helpers/1,
 	update_tk_variable/3, tk_clear_graph/1, handle_tk_events/0, 
 	tk_update_sim_display/3, my_file_exists/1, my_delete_file/1,
-	tk_do_disag_dialog/4, tk_do_relation_dialog/9, tk_do_text_item_dialog/5,
+	tk_do_disag_dialog/5, tk_do_relation_dialog/9, tk_do_text_item_dialog/5,
 			get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2,
 	check_directory/1, windowize/2,
@@ -527,7 +527,7 @@ handle_tk_events :- repeat, \+ tk_do_one_event, !.
 tk_update_sim_display(Win, Current, Left) :-
 	safe_tcl_eval(['UpdateTimes', Win, Current, Left], _).
 	
-tk_do_disag_dialog(Win, Caption,
+tk_do_disag_dialog(Win, Caption, Locn,
 		   [Colour, Image, ImgPos, Type, Interp, Fatness, CountList,
 		    Step, Desc, Comment, EnumSpecs, Proc, Inc,
 		    LibList | Choices], ResultList) :-
@@ -538,8 +538,8 @@ tk_do_disag_dialog(Win, Caption,
 	bracketize(LibList, Libs),
 % Q&D fix for bad enum type chars
 	safe_list(EnumSpecs, EnumLists),
-	safe_tcl_eval(['Disaggregate', Win, chars(CaptArg), Colour, Image,
-		       ImgPos, Type, br(write(Interp)), Fatness, Count,
+	safe_tcl_eval(['Disaggregate', Win, chars(CaptArg), br(Locn), Colour,
+		       Image, ImgPos, Type, br(write(Interp)), Fatness, Count,
 		       Step, br(write(Desc)), br(write(Comment)), EnumLists,
 		       br(write(Proc)), br(write(Inc)), Libs | Choices],
 		      New_P_string),

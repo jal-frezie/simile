@@ -1438,7 +1438,13 @@ nodes.
 	(SmName has_class_refinement external_code of ExtCode,
 	member(include=Inc, ExtCode),
 	\+ Inc = none, !,
-	    merge_lists([Inc], SubIncludes, ExtIncludes),
+	% May have stored it relative to model locn! Restore abs path
+	    suffix([instance(submodel, TopModel, _,_,_)], Tree),
+	    (state><get_model_file(TopModel, Locn) ->
+		 output><safe_tcl_eval(['Relate', br(Locn), br(Inc)], RelIncSt),
+		 name(RelInc, RelIncSt);
+	     RelInc = Inc),
+	    merge_lists([RelInc], SubIncludes, ExtIncludes),
 	    member(procedure=Proc, ExtCode),
 	    list_params_from("input", 1, AssignList0, ParamsIn),
 	    list_params_from("output", 1, AssignList0, DirParamsOut),

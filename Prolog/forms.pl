@@ -126,8 +126,11 @@ First it asks for the disaggregation parameters (this shouldn't
 really be necessary). */
 
 do_disag_dialog(Win, Model, P_list, New_P_List) :-
-	caption_for(Model, Capt),
-	tk_do_disag_dialog(Win, Capt, P_list, New_P_Strs),
+    caption_for(Model, Capt),
+    contains(Top, Model),
+    backup><is_toplevel(Top),
+    (state><get_model_file(Top, Locn), !; Locn = unsaved),
+	tk_do_disag_dialog(Win, Capt, Locn, P_list, New_P_Strs),
 	strings_to_atoms(New_P_Strs, New_P_List).
 
 do_relation_dialog(Win, Relation, Type, Fields, State, OldComment,
