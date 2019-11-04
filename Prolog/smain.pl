@@ -4,6 +4,7 @@ launch.pl
 This starts off the application and goes into an event loop from which it is driven the rest of the time. The identity of the interpreter is saved as a global so it can be used at the other end of the system, i.e., when putting stuff on the screen. Uses all my modules to make reloading quicker.
 */
 
+:- set_prolog_flag(readline, false).
 :- set_prolog_flag(double_quotes, codes).
 
 term_expansion(sicstus_module(Title, Exports),
