@@ -1,13 +1,11 @@
 MINREL = 10
+MY_CPU = $(firstword $(subst -, ,$(shell gcc -dumpmachine)))
 
 # days after install: 0 for no installation expiry
 REL_EXP = 0
 
 # What kind of system are we on
 PLATFORM = $(shell uname -s)
-ifndef MY_CPU
-	MY_CPU=$(shell uname -m)
-endif
 
 # Prolog implementation to use -- GNU for Windows releases, GNU otherwise
 # (currently GNU for everything)
@@ -39,14 +37,11 @@ TCLDIR = /usr
 TCLREF = $(TCLDIR)
 
 SYSDIR = System
-ifdef BITEXTN
-	CFLAGS += $(OPT)
-else
-ifeq ($(MY_CPU),armv7l) # 32-bit but -m32 unrecognized, support early vs
+
+ifeq ($(MY_CPU),arm) # 32-bit -- support early vs
 	CFLAGS += $(OPT) -march=armv6
 else
-	CFLAGS += $(OPT) -m32
-endif
+	CFLAGS += $(OPT)
 endif
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
