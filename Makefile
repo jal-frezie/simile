@@ -42,8 +42,8 @@ SYSDIR = System
 ifdef BITEXTN
 	CFLAGS += $(OPT)
 else
-ifeq ($(MY_CPU),armv7l) # 32-bit but -m32 unrecognized
-	CFLAGS += $(OPT)
+ifeq ($(MY_CPU),armv7l) # 32-bit but -m32 unrecognized, support early vs
+	CFLAGS += $(OPT) -march=armv6
 else
 	CFLAGS += $(OPT) -m32
 endif
