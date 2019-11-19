@@ -9,7 +9,7 @@ PLATFORM = $(shell uname -s)
 
 # Prolog implementation to use -- GNU for Windows releases, GNU otherwise
 # (currently GNU for everything)
-ifneq (,$(filter $(MY_CPU),armv7l aarch64))
+ifneq (,$(filter $(MY_CPU),arm aarch64))
 # result of filter is strings that match, test if not empty
     PROLOG = SWI
 else
@@ -37,12 +37,8 @@ TCLDIR = /usr
 TCLREF = $(TCLDIR)
 
 SYSDIR = System
+CFLAGS += $(OPT)
 
-ifeq ($(MY_CPU),arm) # 32-bit -- support early vs
-	CFLAGS += $(OPT) -march=armv6
-else
-	CFLAGS += $(OPT)
-endif
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
 MAKESL = -shared
