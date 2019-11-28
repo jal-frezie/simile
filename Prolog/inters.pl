@@ -1518,7 +1518,8 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	name(MxOp, MxOpStr),
 	lower(MxOpStr, OpStr).
 
-units_for_trigger_mag(Fn, MagUnits) :-
+units_for_trigger_mag(FnR, MagUnits) :-
+    (FnR = nx(Fn) -> true; Fn = FnR),
     m_class><Fn has_class_refinement value of sporadic(_), !,
     MagUnits = int-[];
 	(setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits), !;
@@ -1809,6 +1810,7 @@ operator(choose, Any, [boolean, Any, Any]) :-
     member(Any, [any, uint64_t]);
     value(Any).
 operator(happens, boolean, [Any]) :- Any = any; value(Any).
+operator(in_update, Any, [Any]) :- Any = any; value(Any).
 operator(rand, real, [real, real]).
 operator(seed_rand, uint64_t, [int]).
 operator(use_rand, real, [uint64_t]).

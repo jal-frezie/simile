@@ -662,9 +662,9 @@ invent_ptr_names(L, LinkName, BaseSm, Node, Used, Ptrs) :-
 
 mark_update_insts(Act, Add) :-
 	Act = make(Efct, _,_, [update | _], [assign(SV, Src)]),
-	    (member(Src, [SV, SV+stage_incr(_,_,_,_,_,_,_), 
-			 choose(happens(_),_,_)]); % compartment updates
-	      Efct = tipped(_Sq)), !,		% state change
+	    (member(Src, [SV, SV+stage_incr(_,_,_,_,_,_,_), % add flow
+			 in_update(_)]); % apply event
+	      Efct = tipped(_Sq)), !,		% add squirt
 	    Add = [Act];
 	Act = make(_,_,_, [eval | _], _),
 	    Add = [].
@@ -1754,16 +1754,16 @@ unite_event_contexts([elt(Path, _,_) | Others], Test, Act) :-
 	unite_event_contexts(Others, Test, OldAct),
 	inters><combine_contexts(Path, OldAct, Test, Act).
 
-choosify(Pairs, Dims, Choice, Init) :-
+choosify(Pairs, Default, Choice, Init) :-
 	(Pairs = (Cons on Evt, Rest), !,
-	    choosify(Rest, Dims, Default, Init);
+	    choosify(Rest, Default, Tail, Init);
 	  Pairs = (Cons on Evt),
-	    Default = prev(0)),
+	    Tail = Default),
 	(Evt = 'reset...', !,
 	    Init = Cons,
-	    Choice = Default;
+	    Choice = Tail;
 	 sum_over_dims(Evt, [], EvtSum),
-	  Choice = choose(happens(EvtSum), Cons, Default)).
+	  Choice = choose(happens(EvtSum), Cons, Tail)).
 	
 
 /* Now...when using a variable in the equation I have been putting
@@ -2747,9 +2747,11 @@ name_components( _, [], _, []).
 
 name_components(Language, [instance(_Type, Node, _, elt(_, Var, _), _)
 			  | Compartments], Used, Graphs) :-
-	(member(Node, [st(Host), hist(Host), n_made(Host), pipe(Host)]), !,
+    (member(Node-Extn, [st(Host)-'_extras', hist(Host)-'_extras',
+			n_made(Host)-'_made', pipe(Host)-'_pipe',
+			nx(Host)-'_next']), !,
 	    caption_for(Host, CompName),
-	    append_atoms(CompName, '_extras', Name);
+	    append_atoms(CompName, Extn, Name);
 	  caption_for(Node, Name)),
 	(Node = n_made(Host), !,
 	    append_atoms(CompName, made, Var); % use name reserved by submodel

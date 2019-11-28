@@ -327,11 +327,16 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	  % update on the function because they must be separate but
 	  % the update uses the trigger magnitude so its node must be
 	  % connected to the trigger events	  
-	    compile><choosify(SubbedExpr, bollocks, UpdateExpr, InitExpr),
-	    FinalExpr = (trigger_magnitude('')=EvtTrigger, UpdateExpr),
+	    DefExpr = elt(Path, Name, MagBase-Units), 
+	    compile><choosify(SubbedExpr, DefExpr, ChoiceExpr, InitExpr),
+	    UpdateExpr = (trigger_magnitude('')=EvtTrigger, ChoiceExpr),
+	    NextExpr = elt(Path, _NxName, MagBase-Units),
+	    FinalExpr = in_update(NextExpr),
 	    is_instance(init_function, Result, InitExpr,
-			elt(Path, Name, MagBase-Units), MagBase-Units, Init),
-	      Instances = [Init, Instance];
+			DefExpr, MagBase-Units, Init),
+	    is_instance(function, nx(Result), UpdateExpr,
+			NextExpr, MagBase-Units, Update),
+	      Instances = [Init, Update, Instance];
 	    
 	  (RType = event,
 	      is_parameter(Node, PType),
