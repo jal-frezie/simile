@@ -1462,7 +1462,10 @@ presence_affects(Item, AffectedBase) :-
 	    Item is_connector from _ to Fn,
 	    implicit_function(Affected, Fn);
 	find_type(Item, submodel),
-	    Emerge is_connector from Item to _,
+	(Emerge is_connector from Item to _;
+	  Item has_link_equivalences Pairs,
+	      Impinge is_connector from _ to Item,
+	      member(Impinge-Emerge, Pairs)),
 	    find_type(Emerge, influence),
 	    terminates(Emerge, Fn),
 	    (implicit_function(Affected, Fn);
