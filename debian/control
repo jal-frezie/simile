@@ -12,7 +12,7 @@ Source: simile
 Section: science
 Priority: extra
 Maintainer: Jasper Taylor <jasper@simulistics.com>
-Build-Depends: debhelper (>= 9.0.0), tcl-dev (>= 8.5) | tcl8.5-dev, tk-dev (>= 8.5) | tk8.5-dev, libgdal-dev (>= 1.5)
+Build-Depends: debhelper (>= 9.0.0), tcl-dev (>= 8.5) | tcl8.5-dev, tk-dev (>= 8.5) | tk8.5-dev, libgdal-dev (>= 1.5), swi-prolog-nox (>= 5.10), patchelf (>= 0.8)
 # removed  gprolog (>= 1.4.0), from above as hard to find for Debians
 # build from src before building binary .deb!
 # tk needed for building tkdnd
@@ -23,7 +23,7 @@ Homepage: http://simulistics.com
 
 Package: simile
 Architecture: any
-Depends: ${misc:Depends}, tk8.6 (>= 8.6) | tk8.5 (>= 8.5), g++ (>= 4.0), tclxml (>= 3.2), tklib (>= 0.5), itcl3 (>= 3.3), tcl-trf (>= 2.1), tk-table (>= 2.9) | libtktable2.9 (>= 2.9), tcl-thread (>= 2.6.5) | tclthread (>= 2.6.5), libtk-img (>= 1.3)
+Depends: ${misc:Depends}, tk8.6 (>= 8.6) | tk8.5 (>= 8.5), g++ (>= 4.0), tclxml (>= 3.2), tklib (>= 0.5), itcl3 (>= 3.3), tcl-trf (>= 2.1), tk-table (>= 2.9) | libtktable2.9 (>= 2.9), tcl-thread (>= 2.6.5) | tclthread (>= 2.6.5), libtk-img (>= 1.3), libtinfo5 (>= 5.0)
 # ${shlibs:Depends} removed from above because it included libgdal1 which is
 # (a) unnecessary unless you are using GeoTIFFs (and large!)
 # (b) wrong for Ubuntu which calls it libgdal1h instead, preventing install

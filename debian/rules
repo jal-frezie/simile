@@ -15,8 +15,8 @@
 # do not strip swi-prolog saved state cos it rui
 # When cleaning, also clean the included packages
 # (dummy configure as set out in bug #570503)
+# cd Extensions/tkdnd;./configure;cd -
 override_dh_auto_clean:
-	cd Extensions/tkdnd;./configure;cd -
 	dh_auto_clean -- -C Extensions/tkdnd
 	dh_auto_clean -- -C Extensions/tcl-gdal
 	dh_auto_clean --
