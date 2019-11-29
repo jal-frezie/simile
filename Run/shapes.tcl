@@ -635,7 +635,7 @@ proc PutThinArrow { w ptz extras fatness density colourScheme tagSet} {
 	set ripple [expr {3*$width}]
 	$w create line $mptz -smooth 1 -splinesteps $::splinePts \
 	    -width $ripple -capstyle round -dash {.  } \
-	    -tags "$tagSet realwidth($ripple) evtdecor"
+	    -tags "$tagSet realwidth($ripple) has_info evtdecor"
     }
 #    ResetColours $w influence $density $colourScheme [lindex $tagSet 0]
 }
