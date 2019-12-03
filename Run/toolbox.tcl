@@ -1864,11 +1864,13 @@ proc PrepForExport {winId way} {
     # now, zoom in by detail factor to get the line thickness resolution decent
     set detail 1.0
     # For font scale 1 seems right for Unix -- Windows takes about 1.6
-    if {[string match windows $tcl_platform(platform)]} {
-        set textBoost 1.6
-    } else {
-        set textBoost 1.0
-    }
+    # if {[string match windows $tcl_platform(platform)]} {
+    #     set textBoost 1.6
+    # } else {
+    #     set textBoost 1.0
+    # }
+    set textBoost $::defScaling
+    
     set textscale [expr $detail*$textBoost]
     if {[string match there $way]} {
 	set jiggles(oldScroll) [$winId cget -scrollregion]

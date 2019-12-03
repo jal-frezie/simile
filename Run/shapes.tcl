@@ -2292,9 +2292,11 @@ proc ZotColor {t n role type} {
     if {[llength $newColour]} {
 	$role configure -activebackground $newColour
 	CopyLooks $t $n $type 0
-#	ResetColours $t.canvas $type {} normal sample
-#	FillSymbol $t.canvas sample $::looks($n,$type,fill)
-	DoGraphics $t $type $looks($n,$type,objectsize) $looks(captAnchor)
+	if {$type eq "text"} {
+	    $t.canvas itemconfigure is_caption -fill $newColour
+	} else {
+	    DoGraphics $t $type $looks($n,$type,objectsize) $looks(captAnchor)
+	}
     }
 }
 
