@@ -1496,31 +1496,10 @@ proc DoLocalCmd {win item} {
 }
 
 proc ExportSVG {win} {
-#    global window_info
-#    package require can2svg
-    set node $::window_info($win,top_node)
-    # Direct version works better -- use it
-    ExportSVGDirect $node
-    
-#    set tgt [ChooseFile [GetExecTitle $node].svg \
-#		 [tr. "Export code to:"] 1 $node]
-## SVG does not like -ve coords so shift to origin
-#    foreach {l t r b} [$win cget -scrollregion] break
-#    set xpos [$win xview]
-#    set ypos [$win yview]
-#    $win configure -scrollregion [list 0 0 [expr $r-$l] [expr $b-$t]]
-#    $win move all [expr -$l] [expr -$t]
-#    can2svg::canvas2file $win $tgt
-#    $win move all $l $t
-#    $win configure -scrollregion [list $l $t $r $b]
-#    $win yview moveto [lindex $ypos 0]
-#    $win xview moveto [lindex $xpos 0]
-}
-
-proc ExportSVGDirect {node} {
     global window_info
     package require can2svg
 
+    set node $window_info($win,top_node)
     set tgt [ChooseFile [GetExecTitle $node].svg \
 		 [tr. "Export code to:"] 1 $node]
     if {$tgt eq ""} return
@@ -1530,7 +1509,7 @@ proc ExportSVGDirect {node} {
     set window_info(ToSVG,scale) 1.0
     set ::svgXML {}
     array unset ::can2svg::defsArrowMarkerArr ::can2svg::defsStipplePatternArr
-    prolog tcl_export_graphics('ToSVG',$node)
+    prolog tcl_export_graphics('ToSVG','$win')
     foreach {l t r b} $::fromProlog {}
     set svgStm [NetOpen $tgt w]
     puts $svgStm [can2svg::makedocument 1200 800 \
