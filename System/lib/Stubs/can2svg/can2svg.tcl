@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.20 2019/04/29 17:12:13 jaspert Exp $
+# $Id: can2svg.tcl,v 1.21 2019/12/04 10:51:01 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -828,27 +828,36 @@ proc can2svg::MakeStyleList {type opts args} {
             # .=2 ,=4 -=6 space=4    times stroke width.
             # A space enlarges the... space.
             # Not foolproof!
-            regsub -all -- {[^ ]} $dashValue "& " dash
-            regsub -all -- "   "  $dash  "12 " dash
-            regsub -all -- "  "   $dash  "8 " dash
-            regsub -all -- " "    $dash  "4 " dash
-            regsub -all -- {\.}   $dash  "2 " dash
-            regsub -all -- {,}    $dash  "4 " dash
-            regsub -all -- {-}    $dash  "6 " dash                    
+
+            #regsub -all -- {[^ ]} $dashValue "& " dash
+            #regsub -all -- "   "  $dashValue "12 " dash
+            #regsub -all -- "  "   $dash  "8 " dash
+            #regsub -all -- " "    $dash  "4 " dash
+            #regsub -all -- {\.}   $dash  "2 " dash
+            #regsub -all -- {,}    $dash  "4 " dash
+            #regsub -all -- {-}    $dash  "6 " dash
+	    
+	    # JAT: The main problem with this is that spaces in
+	    # substitutions for long strings of spaces themselves get
+	    # substituted with "4 "s. Can I sub any length of spaces
+	    # at once? No, but with marks of 0 they will add...also,
+	    # let's re-create the native behaviour where a mark and
+	    # its spacer are multiplied by the width, but a space is
+	    # width+1...
+	    set width 1
+	    if {[info exists styleArr(stroke-width)] && \
+		    round($styleArr(stroke-width))>0} {
+		set width [expr round($styleArr(stroke-width))]
+	    }
+	    set cmVal [expr 4*$width]
+
+	    regsub -all -- " "    $dashValue  "0 [expr $width+1] " dash
+            regsub -all -- {\.}   $dash  "[expr 2*$width] $cmVal " dash
+            regsub -all -- {,}    $dash  "$cmVal $cmVal " dash
+            regsub -all -- {-}    $dash  "[expr 6*$width] $cmVal " dash
+            regsub -all -- {_}    $dash  "[expr 8*$width] $cmVal " dash
         
- # Multiply with stroke width if > 1.
- #           if {[info exists styleArr(stroke-width)] &&  \
- #             ($styleArr(stroke-width) > 1)} {
- # ...or not }
-	    if {[info exists styleArr(stroke-width)]} {
-                set width $styleArr(stroke-width)
-                set dashOrig $dash
-                set dash {}
-                foreach num $dashOrig {
-                    lappend dash [expr int($width * $num)]
-                }
-            }
-            set styleArr(stroke-dasharray) [string trim $dash]
+	    set styleArr(stroke-dasharray) [string trim $dash]
         } else {
             set dashValue [string trim $dashValue]
             if {$dashValue ne ""} {
