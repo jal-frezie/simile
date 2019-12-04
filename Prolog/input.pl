@@ -173,6 +173,9 @@ bound_all_boxes([[L1, T1, R1, B1] | More], [L, T, R, B]) :-
     B is max(B1+10, B2).
 
 tcl_export_graphics(Tgt, Win) :-
+    state><get_display_depth(Win, Param, Val),
+    state><set_display_depth(Tgt, Param, Val),
+    fail;
     state><shows_model(Win, Node),
         draw><display(Tgt, Node, -1, _, 1),
         setof(Box, image><contains_box(Node, Box), Boxes),
