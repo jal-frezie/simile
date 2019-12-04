@@ -334,7 +334,7 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	    FinalExpr = in_update(NextExpr),
 	    is_instance(init_function, Result, InitExpr,
 			DefExpr, MagBase-Units, Init),
-	    is_instance(function, nx(Result), UpdateExpr,
+	    is_instance(function, nx(Node), UpdateExpr,
 			NextExpr, MagBase-Units, Update),
 	      Instances = [Init, Update, Instance];
 	    

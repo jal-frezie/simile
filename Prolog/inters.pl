@@ -1520,9 +1520,9 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 
 units_for_trigger_mag(FnR, MagUnits) :-
     (FnR = nx(Fn) -> true; Fn = FnR),
-    m_class><Fn has_class_refinement value of sporadic(_), !,
-    MagUnits = int-[];
-	(setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits), !;
+    (m_class><FnR has_class_refinement value of sporadic(_), !,
+        MagUnits = int-[];
+      (setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits), !;
 	    caption_for(Fn, Capt),
 	    (find_type(Fn, function) ->
 		 throw(no_antecedents_for_derived(Capt));
@@ -1548,7 +1548,7 @@ units_for_trigger_mag(FnR, MagUnits) :-
 	    caption_for(Fn, Capt),
 	    throw(mixed_trigger_units(Capt, EvtUnits))),
 	(MagBase = boolean -> ReferMagBase = int; ReferMagBase = MagBase),
-	MagUnits = ReferMagBase-TDims. % triggers now summed or howmanytrued
+	MagUnits = ReferMagBase-TDims). % triggers now summed or howmanytrued
 
 units_for_evt_antecedents(Fn, EvtUnit) :-
 	contains(Evt, Fn), % in case input for frag-defined fn,
