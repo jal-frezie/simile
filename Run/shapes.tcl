@@ -919,7 +919,10 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
     $w dtag $backBox editable
     $w dtag $backBox currently_editable
     if {$looks($n,$type,txtbd)} {
-	$w create line 0 0 1 1 -fill $textColor -tags [$w gettags $backBox]
+	set width [Scale $w [expr {$fatness/100}]]
+	puts $width
+	$w create line 0 0 1 1 -fill $textColor -width $width \
+	    -tags "[$w gettags $backBox] realwidth($width)"
     }
     set ankh $looks($n,$type,textanchor)
 # rotate clockwise for horizontal flow
@@ -984,6 +987,7 @@ proc ColorSymbol { w name type density colorSpec } {
     } else {
 	set outlineColor $looks($n,$type,outline)
 	set textColor $looks($n,$type,text)
+	if {$type eq "text"} {set outlineColor $textColor}
     }
     FlashAndStippleSymbol $w $name $outlineColor $textColor $density $colorSpec
 }
@@ -993,9 +997,10 @@ proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
         switch -regexp [$w type $object] {
             text {$w itemconfigure $object -fill $textColor}
             line {
-		if {[string match */*_text/* [$w gettags $object]]} {
-		    $w itemconfigure $object -fill $textColor
-		} elseif {![string match */background/* [$w gettags $object]]} {
+#		if {[string match */*_text/* [$w gettags $object]]} {
+#		    $w itemconfigure $object -fill $textColor
+		#		} else
+		if {![string match */background/* [$w gettags $object]]} {
 		    $w itemconfigure $object -fill $outlineColor
 		}
             } oval {
@@ -1056,17 +1061,23 @@ proc FlashAndStippleSymbol {w name outlineColor textColor density selected} {
     }
 }
 
-proc FillSymbol { w name color } {
-    foreach object [$w find withtag $name] {
-	set tags [$w gettags $object]
-	if {[lsearch "rectangle oval polygon" [$w type $object]]!=-1 && \
-		![string match *_text/* $tags] && \
-		![string match */background/* $tags]} {
-	    $w itemconfigure $object -outline $color -fill $color
-        }
-    }
-}
+#proc FillSymbol { w name color } {
+#    foreach object [$w find withtag $name] {
+#	set tags [$w gettags $object]
+#	if {[lsearch "rectangle oval polygon" [$w type $object]]!=-1 && \
+#		![string match *_text/* $tags] && \
+#		![string match */background/* $tags]} {
+#	    $w itemconfigure $object -outline $color -fill $color
+#        }
+#    }
+#}
 
+# In order for the SVG generation to work properly, we have to do draw
+# things the right colour first time, rather than itemconfig them
+# afterwards. So just get the switches...
+
+proc LooksSwitchesFor {type scheme} {
+}
 #proc ResetColours { w type density colourScheme name } {
 #    global looks window_info
 #    
