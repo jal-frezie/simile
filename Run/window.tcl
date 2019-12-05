@@ -1496,6 +1496,30 @@ proc DoLocalCmd {win item} {
 }
 
 proc ExportSVG {win} {
+#    global window_info
+    package require can2svg
+    set node $::window_info($win,top_node)
+    # Direct version works better -- use it? Actually canvas export should work
+    # better as some graphics features are altered right after first drawing.
+    # Only issue now is stippling of relations (not done direct!)
+    # ExportSVGDirect $node ;# note this will draw desktop not current window
+    
+    set tgt [ChooseFile [GetExecTitle $node].svg \
+		 [tr. "Export code to:"] 1 $node]
+## SVG does not like -ve coords so shift to origin
+    foreach {l t r b} [$win cget -scrollregion] break
+    set xpos [$win xview]
+    set ypos [$win yview]
+    $win configure -scrollregion [list 0 0 [expr $r-$l] [expr $b-$t]]
+    $win move all [expr -$l] [expr -$t]
+    can2svg::canvas2file $win $tgt
+    $win move all $l $t
+    $win configure -scrollregion [list $l $t $r $b]
+    $win yview moveto [lindex $ypos 0]
+    $win xview moveto [lindex $xpos 0]
+}
+
+proc ExportSVGDirect {node} {
     global window_info
     package require can2svg
 

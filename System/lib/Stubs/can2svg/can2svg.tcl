@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.21 2019/12/04 10:51:01 jaspert Exp $
+# $Id: can2svg.tcl,v 1.22 2019/12/05 13:57:14 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -761,7 +761,7 @@ proc can2svg::MakeStyleList {type opts args} {
                 set styleArr(stroke-linejoin) $value                
             }
             -outline {
-                set styleArr(stroke) $value
+                set styleArr(stroke) [MapEmptyToNone $value]
             }
             -outlinestipple {
                 set outlineStippleValue $value
@@ -1489,8 +1489,9 @@ proc can2svg::canvas2file {wcan path args} {
             set op [lindex $opt 0]
             set val [lindex $opt 4]
             
-            # Empty val's except -fill can be stripped off.
-            if {![string equal $op "-fill"] && ([string length $val] == 0)} {
+            # Empty val's except -outline and -fill can be stripped off.
+            if {[lsearch {-outline -fill} $op]==-1 && \
+		    ([string length $val] == 0)} {
                 continue
             }
             lappend opcmd $op $val

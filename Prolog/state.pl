@@ -156,6 +156,10 @@ set_display_depth(Model, Parameter, Stat) :-
 	assertz(display_depth(Model, Parameter, Stat)).
 
 get_display_depth(Model, Parameter, Stat) :-
+    Model = 'ToSVG' ->
+	(Parameter = 'ghost_link' -> 
+	     Stat = 0;
+         Stat = 32);
     display_depth(Model, Parameter, Stat).
 
 :- dynamic(halo_is/2).
