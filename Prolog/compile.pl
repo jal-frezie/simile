@@ -505,7 +505,7 @@ used when entering file parameters */
 %	V is SimV + 4,
 	state><edition_is(Edition),
 	library><count_functions(Top, FnCount),
-	output><safe_tcl_eval('clock seconds', DateStr),
+	safe_tcl_eval('clock seconds', DateStr),
 	sicstus_format_to_chars("\"program='Simile',version=~s,edition=~a,date=~s,size=~d,\"", [VStr, Edition, DateStr, FnCount], IdentStr),
 	sicstus_atom_chars(IdentAtom, IdentStr),
 %	name(V, VStr),
@@ -535,7 +535,10 @@ wot need them */
 	excrete(Language, variable_declaration,
 	       [real, dts, [BoostPhases]], 0, Stream),
 */
-	list_matching_files('../Functions/*.cpp', FnIncs),
+	safe_tcl_eval([set, '::SIMILE_PATH'], BaseDirStr),
+	name(BaseDir, BaseDirStr),
+	append_atoms(BaseDir, '/Functions/*.cpp', FnMatch),
+	list_matching_files(FnMatch, FnIncs),
 	% the /* in the above line does not start a comment, nor that in this */
         all(user, get_native, [build(ExtIncs), build(UExtIncs)]),
 	append([FnIncs, LocalIncs, UExtIncs], Incs),
@@ -1441,7 +1444,7 @@ nodes.
 	% May have stored it relative to model locn! Restore abs path
 	    suffix([instance(submodel, TopModel, _,_,_)], Tree),
 	    (state><get_model_file(TopModel, Locn) ->
-		 output><safe_tcl_eval(['Relate', br(Locn), br(Inc)], RelIncSt),
+		 safe_tcl_eval(['Relate', br(Locn), br(Inc)], RelIncSt),
 		 name(RelInc, RelIncSt);
 	     RelInc = Inc),
 	    merge_lists([RelInc], SubIncludes, ExtIncludes),
