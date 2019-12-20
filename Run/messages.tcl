@@ -444,6 +444,10 @@ set msgs(inappropriate_assignment_detail) [tr. {If you were intending to assign 
 set msgs(wrong_no_of_args_title) [tr. {Wrong number of args}]
 set msgs(wrong_no_of_args_message) [tr. {Attempting to process subexpression "%1$s": You have tried to use the %2$s function "%3$s" with %4$s arguments, but it must take %5$s}]
 
+set msgs(new_frag_defn_title) [tr. {Macro definition changed}]
+set msgs(new_frag_defn_message) [tr. {The definition of "%1$s" has changed since this model was last executed.}]
+set msgs(new_frag_defn_detail) [tr. {New definition is being loaded for each use case. If compilation fails, please try again.}]
+
 set msgs(null_exponentiation_title) [tr. {Null exponentiation}]
 set msgs(null_exponentiation_message) [tr. {This equation contains the subexpression "%1$s", in which a value is raised to the power of 1. This operation will always leave the value unchanged, therefore it is likely that this is a typo.}]
 set msgs(null_exponentiation_detail) [tr. {The usual cause of this problem is an attempt to get the nth root of a subexpression by writing x^1/n. Exponentiation binds more strongly than division, so for this to work correctly, the exponent should be parenthesized, e.g., x^(1/n).}]

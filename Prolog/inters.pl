@@ -1297,7 +1297,9 @@ Now one that uses a special conditional level */
 			length(ArgTpts, FnArity),
 			throw(wrong_no_of_args(Source, Categ, Op, Arity, FnArity))), !,
 				% (fragment-defined function:),
-		    m_update><make_blind_level(SubId, Step, FragFile, RefNode);
+		    m_update><make_blind_level(SubId, Step, FragFile, RefNode),
+		    (Step = dummy -> true;
+		     query(new_frag_defn(Op), info,execution,[ok],_));
 		  true)),
 	    (\+ RefNode = SubId; RefNode = SubId), % = in other cases
 	    make_subexps(SourceList, RefNode, Target, DestPath,
