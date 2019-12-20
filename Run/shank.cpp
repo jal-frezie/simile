@@ -1207,6 +1207,8 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
       nextSeriesEvt = varParamArrayBase->ResetTimeSeries(init_time, top_phase);
     else
       nextSeriesEvt = INFINITY;
+  } else {
+    set_dts(top_phase, init_time);
   }
   loadedInst->event_predict = init_time+steps[1]; // just initialize  
   freq = steps[modelSpec->phases];

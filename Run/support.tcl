@@ -743,6 +743,8 @@ proc TclResetModel {node t0 doingRK topPhase} {
         }
 	set event(predict) [expr {$t0+Inf*$steps($phasecount)}]
 # simulate effect of 'resetting' in c++
+    } else {
+	SetDTs $topPhase $t0
     }
     set adapt(curFreq) $steps($phasecount)
     set adapt_maxerr 0 ;# just so it is defined at first comparison
