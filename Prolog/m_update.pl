@@ -1961,7 +1961,7 @@ get_action_point(Top, End, Point) :-
             get_action_point(Next, End, Point).
 
 % load a model fragment from a file without a graphical window
-make_blind_level(Root, File, Parent) :-
+make_blind_level(Root, Step, File, Parent) :-
 	caption_for(Root, RootCapt),
 	append_atoms(RootCapt, '.frag', CaptRoot),
 	unique_name(CaptRoot, Capt, _),
@@ -1970,8 +1970,9 @@ make_blind_level(Root, File, Parent) :-
 	use_temp_dir(LocalDir),
 	Parent has_class_refinement name of Name,
 	append_atoms([LocalDir, '/', Name], TargetDir),
-        forms><start_progress_dialogue('.'),
-        forms><reassure_user(decode_mime, []),
+        (Step = dummy -> forms><start_progress_dialogue('.') ; true),
+        % If doing during code build there will already be a progress dialog up
+	forms><reassure_user(decode_mime, []),
 	output><load_file(Parent, TargetDir, File, CheckedStr),
 	substitute(0, CheckedStr, 95, SafeCheckedStr),
 	name(Checked, SafeCheckedStr),
@@ -1981,7 +1982,7 @@ make_blind_level(Root, File, Parent) :-
 	  PrologData = File,
 	    AllowBig = yes), % prolog decls only saved by enterprise edn
 	library><ame_merge(Parent, PrologData, _FileV, AllowBig, _Tr),
-	forms><finish_progress_dialogue.
+	(Step = dummy -> forms><finish_progress_dialogue ; true).
 /* Procedure to draw first model window */
 
 make_desktop(Desktop, Canvas_name) :-
