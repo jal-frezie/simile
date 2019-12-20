@@ -13,7 +13,7 @@ const_delay(val,duration,initial) -->
 	element([array],1).
 const_delay(val,duration) -->
     const_delay(val,duration,at_init(val)).
-
+/* replaced by model fragment storing arrays of values and times
 var_delay(val,time) -->
 	ptw = round(simile_mod(10*time(0),1000))+1,
 	ptr = round(simile_mod(10*(time(0)-time),1000))+1,
@@ -23,6 +23,13 @@ var_delay(val,time) -->
 			1000),
 	element([array],ptr).
 
+...this doesn't work because those array self-references count as circular
+var_delay(val,time) -->
+    go = (time()==at_init(time())),
+    [vals] = makearray(if go then default(val) elseif place_in(1)==1024 then val else element([vals],place_in(1)+1),1024),
+    [times] = makearray(if go or place_in(1)==1024 then time() else element([times],place_in(1)+1),1024),
+    element([vals], binary_search(time()-time, [times])).
+*/
 parent('') -->
     at_init(in_progenitor(index(1))).
 parent(dummy) -->
