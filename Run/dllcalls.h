@@ -16,7 +16,9 @@
 #define	FALSE		0
 #define	TRUE		1
 
+#ifndef BOOLEAN
 #define BOOLEAN         int
+#endif
 /* possibly needed for Unix */
 
 /* component types */
