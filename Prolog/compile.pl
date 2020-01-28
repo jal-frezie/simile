@@ -1599,11 +1599,12 @@ things that need to be evaluated in the model and turns them into a
 list of 'make' functions which include information about how to order
 the actions corresponding to them.*/
 
-get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
+get_assignment(instance(Type, NodeR, Source, DestRef, _Unit-DimTypes),
 	       DestPath, SmStep, Swaps, ExtInters, Used, Inters, Assignments) :-
 /* Only make assignments for functions, for now, and
 	    Do not make an assignment if we are expecting one on init/reset
 	    from outside */
+        (NodeR = nx(Node) -> true; Node = NodeR),
 	(member(Type, [event, magnitude, limit, series]), !,
 	    Is_P = 0;
 	  is_parameter(Node, Norm_P),
