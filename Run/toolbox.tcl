@@ -459,7 +459,8 @@ proc ReuseShareLib {workingDir lang currentKey} {
     return [file exists [file join $workingDir $tail]]
 }
 
-proc compile_c {workingDir extLibs complain} {
+proc compile_c {workingDir extSrcs extTgts extLibs complain} {
+    puts [info level 0]
     global sendvars tcl_platform env SIMILE_PATH
 
     if {$::headless} {
@@ -512,11 +513,19 @@ proc compile_c {workingDir extLibs complain} {
 		flush $spout
 		close $spout
 	    } else {
+		set objs {}
+		foreach src $extSrcs tgt $extTgts {
+		    set obj $tgt.o
+		    eval {exec g++} $sendvars(arflags) \
+			[list -c -fPIC -I$TOOLDIR -o $obj $src]
+		    lappend objs $obj
+		}
 		eval {exec g++} $sendvars(arflags) [list -c -fPIC -I$TOOLDIR \
 							-o objtmp.o model.cpp]
 		set switchForLib -shared
 		eval {exec g++} $sendvars(arflags) \
-		    [list $switchForLib -o $TARGET objtmp.o] $lDirs $lFiles -l5d
+		    [list $switchForLib -o $TARGET objtmp.o] $objs \
+		    $lDirs $lFiles -l5d
 	    }
         }
         windows {
@@ -582,7 +591,7 @@ proc compile_c {workingDir extLibs complain} {
                         $libOpt1 $libOpt2 objtmp.o $lDirs $lFiles -l5d_win"
 	    } else {
 		puts $spout "g++ $sendvars(arflags) -c -o objtmp.o \
-                        -I\"[file nativename $TOOLDIR]\" model.cpp"
+                        -I\"[file nativename $TOOLDIR]\" model.cpp -Wno-write-strings"
 #        puts $spout "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtmp.o"
 		if {$::tclBitness==32} {
 		    set cmd [list g++ -shared -static -o $TARGET objtmp.o]

@@ -248,7 +248,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 		    open_native(WProgName, write, Stream),
 		    on_exception(Puke,
 				 protected_build(Language, Stream, MyStep, 
-						 Model, Includes),
+						 Model, Includes, ExtDefns),
 				 (reclose(Stream), raise_exception(Puke))),
 		    close(Stream),
 		    Fuss = 1),
@@ -256,8 +256,8 @@ build_instances(Language, DestDir, Parent, TopNode,
 		 Tgt = 'model.tcl';
               % must compile and link even if only exporting source to check
 	      % if reusing from previous Simile version
-		dialogue><tk_update_infobox(pl_comp, []),
-		compile_c_program(CheckDir, ExtLibs, Fuss, Tgt),
+	      dialogue><tk_update_infobox(pl_comp, []),
+		compile_c_program(CheckDir, ExtDefns, ExtLibs, Fuss, Tgt),
 		 (Tgt = -1, !, fail;
 		  Tgt > 0,
 		  (Parent has_changed_model_refinement c_new of Tgt;
@@ -401,7 +401,7 @@ defines_membership(SmByRec, Fp) :-
 % The code works by first giving names to the mathematical entities in the
 % model, and then working out bit by bit what the program has to be.
 
-protected_build(Language, Stream, TopStep, FullModel, LocalIncs) :-
+protected_build(Language, Stream, TopStep, FullModel, LocalIncs, ExtDefns) :-
 	FullModel = model(_Channels,
 			  [instance(submodel, Top, xrefs(_,_,_), _,_)]), 
 	/* Parent of top level model is not specified, so set it empty */
@@ -469,7 +469,7 @@ bits and pieces */
 	tk_update_infobox(pl_expr, []),
 	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_),_,_),
 			    [], [], TopStep, Phases, [], [], Used,
-			    ExtIncs, Inters, ReevaluateForm),
+			    ExtDefns, Inters, ReevaluateForm),
 	merge_inters(Inters, FullModel, AugmentedModel, Constants),
 	
 /*	extract_submodel_updates(Instances, [], 1, Phases, Deltas),
@@ -517,13 +517,13 @@ used when entering file parameters */
 	update_submodel_compartments( Language, Phases, Used, Deltas, Comps),
 */
 /* This generates the declarations in languages such as C and Tcl8.0
-wot need them */
+wot need them
 
 	excrete(Language, comment, 'GLOBAL DECLARATIONS', 0, Stream),
 	all(compile, excrete,
 	    [unify(Language), unify(global_declaration),
 	     build([[void, this, []] | Constants]),
-	     unify(0), unify(Stream)]),
+	     unify(0), unify(Stream)]), */
 	excrete(Language, variable_declaration,
 	       [char, simile_identifier, void, IdentAtom], 0, Stream),
 	excrete(Language, variable_declaration,
@@ -540,8 +540,8 @@ wot need them */
 	append_atoms(BaseDir, '/Functions/*.cpp', FnMatch),
 	list_matching_files(FnMatch, FnIncs),
 	% the /* in the above line does not start a comment, nor that in this */
-        all(user, get_native, [build(ExtIncs), build(UExtIncs)]),
-	append([FnIncs, LocalIncs, UExtIncs], Incs),
+        % all(user, get_native, [build(ExtIncs), build(UExtIncs)]),
+	append(FnIncs, LocalIncs, Incs),
 	all(utility, append_atoms,
 	    [unify('#include "'), build(Incs), build(PartIncs)]),
 	/* the " in the above line does not start a quoted string */
@@ -549,6 +549,11 @@ wot need them */
 	    [build(PartIncs), unify('"'), build(FullIncs)]),
 	/* the " in the above line does not start a quoted string */
 	send_to_dest(Stream, FullIncs),
+
+	excrete(Language, comment, 'EXTERNAL PROC DECLARATIONS', 0, Stream),
+	all(compile, excrete,
+	    [unify(Language), unify(procedure_declaration), build(ExtDefns),
+	     unify(0), unify(Stream)]),
 	
 	tk_update_infobox(pl_const, []),
 	excrete(Language, comment, 'CONSTANT DECLARATIONS', 0, Stream),
@@ -569,10 +574,12 @@ wot need them */
 	excrete(Language, procedure_defn, [int, do_evalmodel(int)], 0, Stream),
 	  
 	send_to_dest(Stream, EndTopType),
+	assert(holding_over_fail(ExtDefns)),
 	fail;
 
 	insert_metadata(Language, FullModel, Used, Stream),
-	send_to_dest(Stream, ['#include <support2.cpp>'])
+	send_to_dest(Stream, ['#include <support2.cpp>']),
+	retract(holding_over_fail(ExtDefns))
 
 	/* OK at this point we need to free all the memory we possibly can;
 	fail through everything, and trust that I can ignore what was 'used'
@@ -1151,7 +1158,7 @@ and functions within a submodel. It also creates the instructions that determine
 many individuals in each population submodel within it are created each round. */
 
 extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, ExtInters, Used,
-		    ExtIncs, Inters, AssignList) :-
+		    ExtProcDefns, Inters, AssignList) :-
 	Instance = instance(submodel, Id,
 			    xrefs(model(Functions, Submodels), _,_), _,_),
 	/* Alarm submodels now marked in e_s_a
@@ -1185,7 +1192,7 @@ extract_assignments(Instance, Path, Tree, Step, MaxStep, Swaps, ExtInters, Used,
 	    [build(Submodels),
 	     unify(Functions), unify(InterLists), unify(Path), unify(Tree),
 	     unify(Swaps), unify(Step), biggest(MaxStep, Step), unify(Used),
-	     merge_lists(ExtIncs, []),
+	     merge_lists(ExtProcDefns, []),
 	     append(MoreInters, []), append(AssignList, AssignList0)]),
 	append([MoreInters | InterLists], Inters),
 % Remove submodel-local function definitions from database
@@ -1219,7 +1226,7 @@ of the full model augmented with the extra nodes. */
 
 extract_submodel_assignment(Instance, ParentFns, ParentInters,
 			    Path, Tree, Swaps, TopStep, MaxStep, Used,
-			    ExtIncludes, Inters, AssignList) :-
+			    ExtProcDefns, Inters, AssignList) :-
 
 	Instance = instance(submodel, SmName, xrefs(Model, Bases, Assocs), 
 			    Name, _-Dims),
@@ -1436,7 +1443,7 @@ nodes.
 	     [SmInters, Specials] = [[], []])),
 	extract_assignments(Instance, LocalPath, LocalTree, Step, MaxStep,
 			    NewSwaps, ExtInters, Used,
-			    SubIncludes, FnInters, AssignList0),
+			    SubProcDefns, FnInters, AssignList0),
 /* Now add an extra instruction if this needs an external proc */
 	(SmName has_class_refinement external_code of ExtCode,
 	member(include=Inc, ExtCode),
@@ -1447,18 +1454,21 @@ nodes.
 		 safe_tcl_eval(['Relate', br(Locn), br(Inc)], RelIncSt),
 		 name(RelInc, RelIncSt);
 	     RelInc = Inc),
-	    merge_lists([RelInc], SubIncludes, ExtIncludes),
+	    get_native(RelInc, URelInc),
 	    member(procedure=Proc, ExtCode),
-	    list_params_from("input", 1, AssignList0, ParamsIn),
-	    list_params_from("output", 1, AssignList0, DirParamsOut),
+	    list_params_from("input", 1, Functions, ParamsIn, UnDsIn),
+	    list_params_from("output", 1, Functions, DirParamsOut, UnDsOut),
 	    delay_params_out_made([ext_done_for(Name)], DirParamsOut,
-	                           AssignList0, AssignList1, Goals, ParamsOut),
+	                          AssignList0, AssignList1, Goals, ParamsOut),
 	    append(ParamsIn, Goals, AllConds),
 	    append(ParamsIn, ParamsOut, ArgCodes),
+	    merge_lists([declare(Proc, UnDsIn, UnDsOut, URelInc)], SubProcDefns,
+			ExtProcDefns),
+	    % Should only accept duplicate decl if incs are also same!
 	    ExtInst = make(ext_done_for(Name), AllConds, LocalPath, Step,
 	                  [call_ext_code(Proc, NewPtr, ArgCodes)]),
 	    append(Specials, [ExtInst | AssignList1], AssignList);
-	ExtIncludes = SubIncludes,
+	 ExtProcDefns = SubProcDefns,
 	    append(Specials, AssignList0, AssignList)),
 	append(FnInters, SmInters, Inters).
 
@@ -1480,27 +1490,28 @@ maker_for(SmName, Fns, Name, Path, Step, Ptr, Channel, Rule) :-
 	  make(Effect, [culled(Name), on_step], Path, Step, [Action])]).
 */
 
-list_params_from(BaseStr, N, Assigns, List) :-
+list_params_from(BaseStr, N, Fns, List, UDList) :-
 	sicstus_write_to_chars(N, NStr),
 	append(BaseStr, NStr, HeaderStr),
-	member(make(Tgt, _,_,_,_), Assigns),
+	member(instance(_,_,_, elt(_, Tgt, UnitDims), _), Fns),
 	atom(Tgt), name(Tgt, TgtStr),
 	append(HeaderStr, TailStr, TgtStr),
 	\+ (TailStr = [Next | _], \+ [Next] = "_"), !,
 	M is N+1,
-	list_params_from(BaseStr, M, Assigns, More),
-	List = [Tgt | More];
+	list_params_from(BaseStr, M, Fns, More, MoreUDs),
+	List = [Tgt | More],
+	UDList = [UnitDims | MoreUDs];
 	List = [].	
 
 delay_params_out_made(_, [], A, A, [], []).
 delay_params_out_made(PEfx, [Out | Mo], A, [make(Out, PEfx, R2, R3, []),
-			make(def_set(Out), R1,R2,R3,R4) | APlus],
+		       make(def_set(Out), R1,R2,R3,R4) | APlus],
 		      [def_set(Out) | MoDefs], [ScPtrOut | ScPtrMo]) :-
 	select(make(Out, R1, R2, R3, R4), A, AMinus),
 	delay_params_out_made(PEfx, Mo, AMinus, APlus, MoDefs, ScPtrMo),
 	(R2  = [sm(_,_,_,_) | _], !,
-	   ScPtrOut = ptr(Out); % scalar output -- pass pointer for it
-	ScPtrOut = Out).
+	    ScPtrOut = ptr(Out); % scalar output -- pass pointer for it
+	 ScPtrOut = Out).
 
 name_loop_vars([], _).
 name_loop_vars([glob(LVar, _) | More], Inds) :-

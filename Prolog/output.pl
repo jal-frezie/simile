@@ -40,7 +40,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 			get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2,
 	check_directory/1, windowize/2,
-	compile_c_program/4, check_exec_fns_fresh/5, load_executable/6,
+	compile_c_program/5, check_exec_fns_fresh/5, load_executable/6,
 	find_phase/4, tk_kill_window/1, tk_certain_death/1, exit_AME/0]).
 
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
@@ -652,11 +652,16 @@ build_interconnects(TopNode, FinderList) :-
 	safe_tcl_eval([do_for_node, TopNode, set_connection_database,
 		       FinderTclList], _).
 */
-compile_c_program(ModelPath, ExtLibs, Fuss, Err) :-
-	windowize(ModelPath, WModelPath),
+compile_c_program(ModelPath, ExtDefns, ExtLibs, Fuss, Err) :-
+    windowize(ModelPath, WModelPath),
+    all(user, arg, [unify(1), build(ExtDefns), build(Objs)]),
+    bracketize(Objs, BrObjs),
+    all(user, arg, [unify(4), build(ExtDefns), build(Srcs)]),
+    bracketize(Srcs, BrSrcs),
 	all(output, windowize, [build(ExtLibs), build(WExtLibs)]),
 	bracketize(WExtLibs, WExtList),
-	safe_tcl_eval([compile_c, br(WModelPath), WExtList, Fuss], ErrStr),
+	safe_tcl_eval([compile_c, br(WModelPath), BrSrcs, BrObjs,
+		       WExtList, Fuss], ErrStr),
 	name(Err, ErrStr).
 
 check_exec_fns_fresh(L, WModelPath, Id, Fns, Stat) :-

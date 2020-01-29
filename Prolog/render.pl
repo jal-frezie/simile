@@ -96,13 +96,30 @@ make_cons_dest(instance(Type, Sym, _, Name, _), ConLines, DeLines) :-
 	    name(Fetch, FetchStr),
 	    render(c, assignment, Name=Fetch, 8, ConLine),
 	    render(c, procedure_call, discard_instance(Name), 8, DeLine);
-*/	[ConLines, DeLines] = [[], []].
+*/	backup><is_toplevel(Sym), !,
+	    make_assignment(c, curInst, this, SubConLine),
+	    append(["        ", SubConLine, ";"], ConLineStr),
+	    name(ConLine, ConLineStr),
+	    ConLines = [ConLine],
+	    DeLines = [];
+	[ConLines, DeLines] = [[], []].
 
 count_base_ptrs([], 0).
 count_base_ptrs([base(_,_, Ptrs) | More], N) :-
 	length(Ptrs, Here),
 	count_base_ptrs(More, M),
 	N is M+Here.
+
+refer_type(Data, Ptr) :-
+    append_atoms(Data, '*', Ptr).
+
+type_from_arg(U-D, Type, RefAll) :-
+    D = [_N | More] ->
+	type_from_arg(U-More, DirType, false),
+	refer_type(DirType, Type);
+      type_for_unit(U, CU),
+        (RefAll -> refer_type(CU, Type);
+	 Type = CU).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % render converts proglog atoms or terms float valid expressions in the named
@@ -428,6 +445,14 @@ and the rules for breaking lines are like tcl's (need a \ at end) so... */
 		format(Stream, "~*svariable ~a\n", [Indent, " ", Name]),
 		assign_initial_values(Name, InitialValues, Indent, Stream))).
 
+strings_direct(L, procedure_declaration, declare(Name, Ins, Outs, _Inc),
+	       Indent, Stream) :-
+    all(render, type_from_arg, [build(Ins), build(InDecls), unify(false)]),
+    all(render, type_from_arg, [build(Outs), build(OutDecls), unify(true)]),
+    append(InDecls, OutDecls, ArgDecls),
+    make_procedure_call(L, [Name | ArgDecls], CallAlike),
+    format(Stream, "~*svoid ~s;\n", [Indent, " ", CallAlike]).
+    
 strings_direct(L, data_declaration,
 		instance(NodeType, SymbolicName, _, NameIn, Type-Dims),
 		Indent, Stream) :-
