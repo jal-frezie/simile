@@ -507,24 +507,35 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    puts $spout "export PATH=\"[file nativename [file join $env(SYSDIR) bin]]\""
 		    puts $spout "export CPLUS_INCLUDE_PATH=\"[file nativename [file join $env(SYSDIR) include MacOS]]\""
 		}
-		puts $spout "g++ $sendvars(arflags) -fPIC -c -I\"$TOOLDIR\" -o objtmp.o model.cpp" 
+		set objs {}
+		foreach src [concat $extSrcs model.cpp] \
+		    tgt [concat $extTgts model] {
+		    set obj ${tgt}_$tcl_platform(machine)_mac.o
+		    if {![file exists $obj] || \
+			    [file exists $src] && [Newer $src $obj m]} {
+			puts $spout "g++ $sendvars(arflags) -fPIC -c -I\"$TOOLDIR\" -o $obj \"$src\"" 
+		    }
+		    lappend objs $obj
+		}
 		set switchForLib -bundle 
-		puts $spout "g++ $sendvars(arflags) $switchForLib -o $TARGET objtmp.o $lDirs $lFiles -l5d_mac"
+		puts $spout "g++ $sendvars(arflags) $switchForLib -o $TARGET $objs $lDirs $lFiles -l5d_mac"
 		flush $spout
 		close $spout
 	    } else {
 		set objs {}
-		foreach src $extSrcs tgt $extTgts {
-		    set obj $tgt.o
-		    eval {exec g++} $sendvars(arflags) \
-			[list -c -fPIC -I$TOOLDIR -o $obj $src]
+		foreach src [concat $extSrcs model.cpp] \
+		    tgt [concat $extTgts model] {
+		    set obj ${tgt}_$tcl_platform(machine).o
+		    if {![file exists $obj] || \
+			    [file exists $src] && [Newer $src $obj m]} {
+			eval {exec g++} $sendvars(arflags) \
+			    [list -c -fPIC -I$TOOLDIR -o $obj $src]
+		    }
 		    lappend objs $obj
 		}
-		eval {exec g++} $sendvars(arflags) [list -c -fPIC -I$TOOLDIR \
-							-o objtmp.o model.cpp]
 		set switchForLib -shared
 		eval {exec g++} $sendvars(arflags) \
-		    [list $switchForLib -o $TARGET objtmp.o] $objs \
+		    [list $switchForLib -o $TARGET] $objs \
 		    $lDirs $lFiles -l5d
 	    }
         }
@@ -590,13 +601,22 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		puts $spout "g++ -shared -o $TARGET  -static \
                         $libOpt1 $libOpt2 objtmp.o $lDirs $lFiles -l5d_win"
 	    } else {
-		puts $spout "g++ $sendvars(arflags) -c -o objtmp.o \
-                        -I\"[file nativename $TOOLDIR]\" model.cpp -Wno-write-strings"
+		set objs {}
+		foreach src [concat $extSrcs model.cpp] \
+		    tgt [concat $extTgts model] {
+		    set obj ${tgt}_$tcl_platform(machine)_win.o
+		    if {![file exists $obj] || \
+			    [file exists $src] && [Newer $src $obj m]} {
+			puts $spout "g++ $sendvars(arflags) -c -o $obj \
+                             -I\"[file nativename $TOOLDIR]\" \"$src\" -Wno-write-strings"
+		    }
+		    lappend objs $obj
+		}
 #        puts $spout "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtmp.o"
 		if {$::tclBitness==32} {
-		    set cmd [list g++ -shared -static -o $TARGET objtmp.o]
+		    set cmd [concat g++ -shared -static -o $TARGET $objs]
 		} else {
-		    set cmd [list g++ -shared -o $TARGET objtmp.o]
+		    set cmd [concat g++ -shared -o $TARGET $objs]
 		}
 		puts $spout "$cmd $lDirs $lFiles -l5d_win"
 	    }
@@ -656,7 +676,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 	# file delete model.cpp
 	# (no, we might be copying)
 	file rename -force model.cpp model$serial.cpp
-	file delete objtmp.o
+	file delete [lindex $objs end] ;# if reusable, so is executable
     }
     # do not allow an old dcf to be saved with a new model
     cd $oldDir
@@ -1298,7 +1318,7 @@ proc SaveFile {topNode tree tgt {noPkg 0}} {
     }
 }
 
-proc SaveMimeBit {body newPath} {
+proc SaveMimeBit {body newPath Date} {
     file mkdir [file dirname $newPath]
     set mimeSquirter [NetOpen $newPath w]
     fconfigure $mimeSquirter -translation binary
@@ -1306,9 +1326,7 @@ proc SaveMimeBit {body newPath} {
 #    mime::getbody $bit -command SquirtMime -blocksize 256
     puts -nonewline $mimeSquirter $body
     close $mimeSquirter
-    if {![catch {mime::getheader $bit Date-Modified} Date]} {
-	file mtime $newPath [clock scan [lindex $Date 0]]
-    }
+    file mtime $newPath [clock scan [lindex $Date 0]]
 }
 
 proc OurEdition {text} {
@@ -1339,6 +1357,9 @@ proc LoadFile {topNode tree tgt} {
                 #ShowMess debug info $Desc ok
 		if {[catch {PathFromDispo $bit} oldPath]} {
 		    set oldPath /none/
+		} else {
+		    # if it has a path, it is a file and should have a date
+		    set Date [mime::getheader $bit Date-Modified]
 		}
 		set boddledy [mime::getbody $bit]
                 switch [lindex $Desc 0] {
@@ -1358,12 +1379,12 @@ proc LoadFile {topNode tree tgt} {
 			    check_auth_code $boddledy [string trim $codes]
 			    set CodeChecked yes
                         }
-			SaveMimeBit $boddledy $tree$oldPath
+			SaveMimeBit $boddledy $tree$oldPath $Date
 		    } "Simile helper configuration file" {
 # as of 5.6 these are no longer included in the .sml file for reasons of
 # consistency, so this is an earlier saved model. Attempt to copy the .shf
 # relative to saved model file so it will open.
-			SaveMimeBit $boddledy [file dirname $tgt]$oldPath
+			SaveMimeBit $boddledy [file dirname $tgt]$oldPath $Date
                     } default {
 			# If no auth code, do not keep executable, but
 			# dont crash either -- could be innocent
@@ -1377,7 +1398,7 @@ proc LoadFile {topNode tree tgt} {
 				set oldPath [file rootname $oldPath]1[file extension $oldPath]
 			    }
 			}
-			SaveMimeBit $boddledy $tree$oldPath
+			SaveMimeBit $boddledy $tree$oldPath $Date
 		    }
                 }
             }
@@ -1409,7 +1430,7 @@ proc GetParts {top tree noPkg} {
     set mimes {}
     set mdlExts pl,cnv,svg,spj,cpp,so,dylib,dll,tcl
     foreach subtree [glob -nocomplain \
-			 ${tree}/{*.{png,gif,jpeg},model.{$mdlExts}}] {
+			 ${tree}/{*.{png,gif,jpeg,o},model.{$mdlExts}}] {
         #ShowMess debug info "GetParts subtree $subtree" ok
         if {[file isdirectory $subtree]} {
             set mimes [concat $mimes [GetParts $top $subtree $noPkg]]
@@ -1430,6 +1451,11 @@ proc GetParts {top tree noPkg} {
                 *.jpeg { ;# legacy
                     set PartType "image/jpeg"
                     set Description "Image"
+                    set style inline
+                }
+                *.o { ;# Object file for included submodel
+                    set PartType "application/octet-stream"
+                    set Description "Binary object"
                     set style inline
                 }
                 model.pl {
