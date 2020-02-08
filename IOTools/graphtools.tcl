@@ -216,7 +216,7 @@ proc ::graphtools::draw_Xaxis { w } {
                 -tags {scalable axis_line xaxis_item xtick markable \
                     xaxis_movable}
         $w.canvas create text $x $y \
-                -text [VarPrecRender $w $value $plot($w,Xprecision)] \
+                -text [::DisplayFormat::General $value $plot($w,Xprecision)] \
                 -font $plot($w,fontValues) \
                 -tags {scalable axis_value xaxis_item xaxis_movable xtick \
                     toplevel markable} -anchor n
@@ -265,7 +265,7 @@ proc ::graphtools::draw_Yaxis { w} {
                 -tags {scalable axis_line yaxis_item ytick markable \
                     yaxis_movable}
         $w.canvas create text $x [expr $y-1] \
-                -text [VarPrecRender $w $value $plot($w,Yprecision)] \
+                -text [::DisplayFormat::General $value $plot($w,Yprecision)] \
                 -font $plot($w,fontValues) \
                 -tags {scalable  axis_value yaxis_item yaxis_movable ytick \
                     toplevel markable} -anchor e
@@ -669,10 +669,7 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
     set rmax [expr {$rmin+$nint*$inter}]
     
 # how precisely do we need to label our axes?
-    set biggestOffset [expr {max(abs($dataMax), abs($dataMin))}]
-    set decmlPos \
-	[expr int(1+log10($biggestOffset)-floor(log10($inter)))]
-    
+    set decmlPos [expr {int(max(0,-floor(log10($inter))))}]
 #    if {$lograngem>0} {
 #        set decmlPos 0
 #    } else  {
@@ -728,24 +725,25 @@ proc ::graphtools::boxed {w} {
 }
 
 # from tabular.tcl Jasper May 2002
-proc ::graphtools::VarPrecRender {winId val precision} {
-    global ::graphtools::plot
-    
-    if {$val==0} {
-	return 0
-    }
-    set decimals [expr {max(0, int($precision-log10(abs($val))))}]
-    set regular [format %.${decimals}f $val]
-    set scf %.[expr {max(0, $precision-1)}]e
-    set scientific [format $scf $val]
-#puts "$val to $precision is $regular or $scientific"
-    if {[string length $scientific]<[string length $regular]} {
-        return $scientific
-    } else {
-        return $regular
-    }
-}
-
+# -- replaced by ::DisplayFormat::General
+#proc ::graphtools::VarPrecRender {winId val precision} {
+#    global ::graphtools::plot
+#    
+#    if {$val==0} {
+#	return 0
+#    }
+#    set decimals [expr {max(0, $precision-int(log10(abs($val)))-1)}]
+#    set regular [format %.${decimals}f $val]
+#    set scf %.[expr {max(0, $precision-1)}]e
+#    set scientific [format $scf $val]
+##puts "$val to $precision is $regular or $scientific"
+#    if {[string length $scientific]<[string length $regular]} {
+#        return $scientific
+#    } else {
+#        return $regular
+#    }
+#}
+#
 # Scales data x and y pixel co-ord to x and y data values
 proc ::graphtools::get_datax {w Xc Xscale} {
     global ::graphtools::plot
