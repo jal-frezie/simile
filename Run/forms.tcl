@@ -2298,7 +2298,7 @@ proc AddWhereClauses {widget node minmax} {
 	$widget insert end "\t[tr. Where:]\n" whrtag
 	foreach paramList $paramData {
 	    set paramName [lindex $paramList 1]
-	    $widget insert end "\t\t$paramName = [DescribeInputParam [lindex $paramList 0]]\n" whrtag
+	    $widget insert end "\t\t$paramName = [DescribeInputParam [lindex $paramList 0] [lindex $paramList 2] [lindex $paramList 3]]\n" whrtag
 	}
     }
     if {![string match {null} $minmax]} {

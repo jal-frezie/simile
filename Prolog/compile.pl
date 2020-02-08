@@ -686,16 +686,17 @@ mark_limit_checks(Act, Add) :-
 
 % anything that affects a compartment has to go in the sub-shortest time step
 % so R-K integration works. 
-update_antes_to_step(List, Step) :-
-	List = [make(_, Conds-_, _,_,_) | Rest], !,
+update_antes_to_step(List) :-
+	List = [make(_, Conds-_, _, [_,_, Step | _], _) | Rest], !,
 	all(compile, mark_unstepped,
 	    [build(Conds), unify(Step), append(Marked, Rest), unify(no)]),
-	update_antes_to_step(Marked, Step);
+	update_antes_to_step(Marked);
 	true.
 
 mark_unstepped(Cond, Set, Add, DoSquirts) :-
 	member(Cond, [Act, later(Act), this_step(Act)]),
-	Act = make(Tgt, _,_, [_,_, Step | _], _),
+	Act = make(Tgt, _,_, [_,_, Step | _], Op),
+	\+ Op = [assign(_, in_update(_))], % Do explicit state only in full step
 	(\+ Tgt = tweaked(_); DoSquirts = yes),
 	var(Step), !,
 	Step = Set,
@@ -720,7 +721,7 @@ as well to stop rand_vars being changed in the R-K subphase */
 	RKStep is Steps+1,
 	all(compile, mark_unstepped,
 	    [build(Updates), unify(RKStep), append(_Marked, []), unify(no)]),
-	update_antes_to_step(Updates, RKStep),
+	update_antes_to_step(Updates),
 	all(compile, mark_unstepped, [build(Functions), unify(Steps),
 				      append(_Normal, []), unify(yes)]),
 	/* Check all same-time-step circles can be done in one program loop */

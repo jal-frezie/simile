@@ -799,7 +799,8 @@ proc fill_inputs { triples } {
         set equation(paths,$line) [lindex $vpiTriple 0]
         set equation(oldentry,$line) [lindex $vpiTriple 1]
         $lbp insert end [lindex $vpiTriple 1]
-	set paramPopMsg [DescribeInputParam [lindex $vpiTriple 0]]
+	set paramPopMsg [DescribeInputParam [lindex $vpiTriple 0] \
+			     [lindex $vpiTriple 2] [lindex $vpiTriple 3]]
 	lappend equation(origins) $paramPopMsg
         set equation(oldunit,$line) [RealForUnity [lindex $vpiTriple 2]]
         

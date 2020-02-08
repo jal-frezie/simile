@@ -460,7 +460,6 @@ proc ReuseShareLib {workingDir lang currentKey} {
 }
 
 proc compile_c {workingDir extSrcs extTgts extLibs complain} {
-    puts [info level 0]
     global sendvars tcl_platform env SIMILE_PATH
 
     if {$::headless} {
@@ -2305,7 +2304,7 @@ proc AddInputs {winId bar} {
 	    -command [list InsertParam $bar.equation $paramName]
 	$bar.inputs configure -menu $bar.inputs.menu
 	lappend equationbar(params) $paramName
-	lappend popupTable "$paramName: [DescribeInputParam [lindex $paramList 0]] ([lindex $paramList 2])"
+	lappend popupTable "$paramName: [DescribeInputParam [lindex $paramList 0] [lindex $paramList 2] [lindex $paramList 3]]"
     }
     MenuBindPopup $bar.inputs.menu $popupTable
 }
@@ -2317,7 +2316,7 @@ proc InsertParam {bar paramName} {
     $bar configure -validate key
 }
 
-proc DescribeInputParam {paramSpec} {
+proc DescribeInputParam {paramSpec units dims} {
     if {[string equal in_hierarchy [lindex $paramSpec 2]] ||
 	[string equal /none/ [lindex $paramSpec 1]]} { 
 # no roles or role not used
@@ -2327,8 +2326,14 @@ proc DescribeInputParam {paramSpec} {
     } else { ;# in_assoc
 	set template [tr. {Value(s) of %1$s for submodel "%2$s" in role "%3$s"}]
     }
-    format $template [BlankCrs [lindex $paramSpec 0]] \
-	[BlankCrs [lindex $paramSpec 1]] [BlankCrs [lindex $paramSpec 3]]
+    if {$dims ne {}} {
+	set tail [tr. {%4$s of %5$s}]
+    } else {
+	set tail {%5$s}
+    }
+    format "$template ($tail)" [BlankCrs [lindex $paramSpec 0]] \
+	[BlankCrs [lindex $paramSpec 1]] [BlankCrs [lindex $paramSpec 3]] \
+	[join [split $dims ,] x] [RealForUnity $units]
 }
 
 proc restore_equation {winId bar} {
