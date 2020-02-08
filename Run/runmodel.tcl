@@ -61,14 +61,17 @@ proc ListMenuContents {menu} {
 
 proc RedoRatesAndDisplay {node} {
     global runState
-    
+
+    set howInt $runState($node,intMethod)
     set ::updateLastDone [clock clicks -milliseconds]
-    if {$runState($node,currentMode) ne "stop"} {return 0}
-    ResetModel $node Euler $runState($node,currentTime) 1
+    if {$runState($node,currentMode) ne "stop"} {
+	return [lsearch {none Euler Runge-Kutta} $howInt]
+    }
+    ResetModel $node $howInt $runState($node,currentTime) 1
     # ...and display new rates
     TellAllHelpers $node {} 1 Display $runState($node,currentTime) \
 	$runState($node,displayInt) 1
-    return 1
+    return 0
 }
 
 proc MessFileParams {topNode parent} {
@@ -89,7 +92,7 @@ proc MessFileParams {topNode parent} {
     $runState($topNode,cnvs) itemconfigure 1 -fill [RestingColour $topNode]
     # now update displays if only doing immediate changes to variables
     if {$runState($topNode,reloadParams)==1} {
-	if {[RedoRatesAndDisplay $topNode]} {
+	if {![RedoRatesAndDisplay $topNode]} {
 	    set runState($topNode,reloadParams) 10
 	}
     }

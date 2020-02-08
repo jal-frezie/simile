@@ -449,8 +449,8 @@ namespace eval slide139 {
 #	SetArrayIfUsed $node 0 $indices [$scale get]
 #	ListToArray $myNode $node $sub $sub {} {} [$scale get] 1 \
 #	    [RunningInC $myNode]
-	set redone [eval [list WidgetSelnToC $node 0] $indices]
-	MarkEvtParamActive $myNode $node [RunningInC $myNode] [expr {2-$redone}]
+	set hold [eval [list WidgetSelnToC $node 0] $indices]
+	MarkEvtParamActive $myNode $node [RunningInC $myNode] [expr {1+$hold}]
 	# if no immediate rate update, wait a step before clearing event
     }
 
@@ -475,8 +475,8 @@ namespace eval slide139 {
 	    set runState($myNode,reloadParams) -1
 	    return 0
 	}
-	return [RedoRatesAndDisplay $myNode] ;# 1 if was able to do so
-	# scale units later
+	return [RedoRatesAndDisplay $myNode] ;# 0 if was able to do so
+	# otherwise integration method -- scale units later
     }
     
     proc SetChoiceNumber {cbox node fixed live args} {
