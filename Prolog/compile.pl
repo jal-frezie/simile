@@ -698,8 +698,8 @@ mark_unstepped(Cond, Set, Add, DoSquirts) :-
 	Act = make(Tgt, _,_, [_,_, Step | _], Op),
 	\+ Op = [assign(_, in_update(_))], % Do explicit state only in full step
 	(\+ Tgt = tweaked(_); DoSquirts = yes),
-	var(Step), !,
-	Step = Set,
+	\+ Step == Set, % recursive so make sure we are doing something new
+	Step = Set, !,
 	Add = [Act];
 	Add = [].
 	    
