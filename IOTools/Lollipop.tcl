@@ -278,7 +278,7 @@ proc LoadPosns {winId} {
 		    set pop {}
 		}
 		lappend trunks [list line $pop "$x $y 0" \
-				    "$x $y $z" 4 brown]
+				    "$x $y $z" [expr abs($z/8)] brown]
 		lappend trunks [list sphere $pop "$x $y [expr 3*$z/2]" \
 				    [expr $z/2] 1 [lindex $colours $col]]
 #	    }
@@ -319,7 +319,7 @@ proc DrawShapes {winId solids tag} {
 		if {$squareOnX+$squareOnY==0} continue
 		set width [expr {0.3*[lindex $object3d 4]*\
 				     ($xAsp*$squareOnY + $yAsp*$squareOnX) / \
-				     ($squareOnX+$squareOnY)}]
+				     ($squareOnX+$squareOnY)}]p
 #ShowMess debug info "$startMap $endMap" ok
 		lappend insts [list [list \
 		$winId.c create line $startx $starty $endx $endy -width $width \
@@ -339,7 +339,8 @@ proc DrawShapes {winId solids tag} {
 		lappend insts [list [concat $winId.c create poly \
 					 [eval concat $ptList] -tag $tag \
 					 -outline  [lindex $object3d end-1] \
-					 -fill [lindex $object3d end]] $z \
+					 -fill [lindex $object3d end] \
+					 -width 1p] $z \
 				   [lindex $object3d 1]:$z]
 	    } ellipse {
 		# format is "ellipse popupTxt centrePt borderPt1 borderPt2
@@ -371,7 +372,7 @@ proc DrawShapes {winId solids tag} {
 		lappend ptList $l1 $t1
 		lappend insts [list [concat \
 		$winId.c create poly $ptList -tag $tag \
-		     -width [lindex $object3d 5] -outline black \
+		     -width [lindex $object3d 5]p -outline black \
 					 -fill [lindex $object3d $fillColIdx]] \
 				   [lindex $ctr 2] [lindex $object3d 1]]
 			       
@@ -384,7 +385,7 @@ proc DrawShapes {winId solids tag} {
 		lappend insts [list [list \
 		$winId.c create oval [expr $midx-$radX] [expr $midy-$radY] \
 		     [expr $midx+$radX] [expr $midy+$radY] -tag $tag \
-		     -width [lindex $object3d 4] -fill [lindex $object3d 5] \
+		     -width [lindex $object3d 4]p -fill [lindex $object3d 5] \
 					-stipple [lindex $object3d 6]] \
 				   [lindex $middle 2] \
 				   [lindex $object3d 1]]
@@ -449,7 +450,7 @@ proc ShowKey {winId} {
     
     $winId.c delete -withtag key
     foreach {x y sz} $useNodes($winId,captions) {
-	$winId.c create line $atx $aty $atx [expr $aty-16] -width 4 \
+	$winId.c create line $atx $aty $atx [expr $aty-16] -width 4p \
 	    -fill brown -tag key
 	$winId.c create oval [expr $atx-8] [expr $aty-32] [expr $atx+8] \
 	    [expr $aty-16] -fill [lindex $colours $col] -tag key
