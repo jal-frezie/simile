@@ -280,32 +280,35 @@ itcl::class similescript::$newHelperClass {
 #	}
 #    }
 #	    
-    method PolyInsts {id vx vy vz tail} {
-	if {[llength [lindex $vz 1]]==1} {
-	    set op [list polygon $id]
-	    set allz 0
-	    foreach {idx nx} $vx {idy ny} $vy {idz nz} $vz {
-		    lappend op [list $nx $ny $nz]
-		    set allz [expr {$allz+$nz}]
-		}
-	    lappend op [lindex $tail 0] [lindex $tail 1]
-	    return [list $op]
-	} else {
-	    set result {}
-	    foreach {idx nx} $vx {idy ny} $vy {idz nz} $vz {
-		eval lappend result [PolyInsts $id,$idz $nx $ny $nz $tail]
-	    }
-	    return $result
-	}
-    }
+#    method PolyInsts {id vx vy vz tail} {
+#	puts [info level 0]
+#	if {[llength [lindex $vz 1]]==1} {
+#	    set op [list polygon $id]
+#	    set allz 0
+#	    foreach {idx nx} $vx {idy ny} $vy {idz nz} $vz {
+#		    lappend op [list $nx $ny $nz]
+#		    set allz [expr {$allz+$nz}]
+#		}
+#	    lappend op [AddAsApprop [lindex $tail 0]] \
+#		[AddAsApprop [lindex $tail 1]]
+#	    puts $op
+#	    return [list $op]
+#	} else {
+#	    set result {}
+#	    foreach {idx nx} $vx {idy ny} $vy {idz nz} $vz {
+#		eval lappend result [PolyInsts $id,$idz $nx $ny $nz $tail]
+#	    }
+#	    return $result
+#	}
+#    }
 
-    method ColoursFor {values map} {
+    method ColoursFor {values min max map} {
 	if {[llength $values]==1} {
-	    set result [lindex $map [expr {min([llength $map]-1,\
-						   max(0,round($values)))}]]
+	    set scaled [expr {max(0, min(0.999, ($values-$min)/($max-$min)))}]
+	    set result [lindex $map [expr {int($scaled*[llength $map])}]]
 	} else {
 	    foreach {ind val} $values {
-		lappend result $ind [ColoursFor $val $map]
+		lappend result $ind [ColoursFor $val $min $max $map]
 	    }
 	}
 	return $result
@@ -315,8 +318,14 @@ itcl::class similescript::$newHelperClass {
 	if {$arr eq "null"} {
 	    return 0
 	} elseif {[lindex $arr 0] eq ",colours"} {
+	    set min [$modelInst GetMinValue [lindex $arr 1]]
+	    set max [$modelInst GetMaxValue [lindex $arr 1]]
+	    if {$max-$min>=536870910} { ;# probably defaults
+		set min 0
+		set max [expr {[llength $arr]-2}]
+	    }
 	    return [ColoursFor [$modelInst GetValue [lindex $arr 1] -all 1 \
-				    -numeric 1] [lrange $arr 2 end]]
+				    -numeric 1] $min $max [lrange $arr 2 end]]
 	} elseif {![string first / $arr]} { ;# model component
 	    return [$modelInst GetValue $arr -all 1]
 	} else { ;# numerical, colour or choice constant
@@ -392,15 +401,27 @@ itcl::class similescript::$newHelperClass {
 			}
 		    }
 		} polygons {
-		    foreach arr {vx vy vz} {
-			array unset $arr
+		    # reverse list to avoid flattening vertex arrays...er...
+		    # will only work if fill colour set from models!
+		    foreach arr [lreverse [lrange $instruct 1 end]] {
+			lappend rawList [AddAsApprop $arr]
 		    }
-		    for {set i 1} {$i<4} {incr i} {
-			set [lindex {0 vx vy vz} $i] \
-			    [$modelInst GetValue [lindex $instruct $i] -all 1]
+		    set quadlist {}
+		    eval [list ::maptools2::GetQuadList {}] $rawList
+		    foreach {iV data} $quadlist {
+			if {[llength $iV]} {
+			    set id "index: [join $iV ,]"
+			} else {
+			    set id [lindex $instruct end 1]
+			}
+			foreach {vf vo vz vy vx} $data {}
+			set op [list polygon $id]
+			foreach {idx nx} $vx {idy ny} $vy {idz nz} $vz {
+			    lappend op [list $nx $ny $nz]
+			}
+			lappend op $vo $vf
+			lappend upper $op
 		    }
-		    eval lappend upper [PolyInsts p $vx $vy $vz \
-						  [lrange $instruct 4 5]]
 		} oldellipses {
 		    foreach arr {cx cy cz tx ty tz sx sy sz} {
 			array unset $arr
