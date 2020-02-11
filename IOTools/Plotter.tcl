@@ -551,7 +551,7 @@ namespace eval ::$keyValue {
     }
 	
     proc TraceHighlight {w} {
-        global ::graphtools::plot defScaling
+        global ::graphtools::plot
         ################################################################################
         #         set path [GetCaptionPathFromId $node]
         #         if {$plot($w,$path,width)==2} {
@@ -564,12 +564,12 @@ namespace eval ::$keyValue {
         set ident [lsearch -inline [$w.canvas itemcget current -tags] *.*]
         set index [lsearch $plot($w,highlittrace) $ident]
         if {$index>-1} {
-            $w.canvas itemconfigure $ident -width $defScaling
+            $w.canvas itemconfigure $ident -width 1p
             set plot($w,highlittrace) \
                [lreplace $plot($w,highlittrace)  $index $index]
         } else  {
             lappend  plot($w,highlittrace)  $ident
-            $w.canvas itemconfigure $ident -width [expr {2*$defScaling}]
+            $w.canvas itemconfigure $ident -width 2p
         }
     }
     
@@ -667,7 +667,7 @@ namespace eval ::$keyValue {
             append vartag var $i
             $w.canvas create line $xa $ya $xb $ya \
 		-fill [lindex $plot($w,YColours) [expr {$i%$NColours}]] \
-                    -width $::defScaling \
+                    -width 1p \
                     -tags [list $vartag legend markable toplevel]
             $w.canvas create text $x ${y}p \
 		-text [string map {\n { }} [lindex $plot($w,Ylabels) $i]] \
@@ -921,7 +921,7 @@ namespace eval ::$keyValue {
     
     # Connect two points on the graph
     proc drawPoint { w X0 Y0 X1 Y1 Colour node id} {
-        global ::graphtools::plot defScaling
+        global ::graphtools::plot
         #ShowMess debug info "draw $node.$id" ok
 #puts "Drawing from $X0 $Y0 to $X1 $Y1"
         set x0 [get_x $w $X0 $plot($w,Tscale)]
@@ -932,9 +932,9 @@ namespace eval ::$keyValue {
         # should be a parameter for each variable
         set index [lsearch $plot($w,highlittrace) $node.$id]
         if {$index>-1} {
-            set width [expr {2*$defScaling}]
+            set width 2p
         } else  {
-            set width $defScaling
+            set width 1p
         }
 	set plot($w,usedLegend) 1
         $w.canvas create line $x0 $y0 $x1 $y1 \
