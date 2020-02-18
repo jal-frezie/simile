@@ -278,9 +278,9 @@ proc LoadPosns {winId} {
 		    set pop {}
 		}
 		lappend trunks [list line $pop "$x $y 0" \
-				    "$x $y $z" [expr abs($z/8)] brown]
-		lappend trunks [list sphere $pop "$x $y [expr 3*$z/2]" \
-				    [expr $z/2] 1 [lindex $colours $col]]
+				    "$x $y $z" [expr abs($z/8.0)] brown]
+		lappend trunks [list sphere $pop "$x $y [expr 3.0*$z/2]" \
+				    [expr $z/2.0] 1 [lindex $colours $col]]
 #	    }
 	}
 	incr col
