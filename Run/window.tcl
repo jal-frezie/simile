@@ -1523,7 +1523,7 @@ proc ExportSVGDirect {node} {
     global window_info
     package require can2svg
 
-    set node $window_info($win,top_node)
+#    set node $window_info($win,top_node)
     set tgt [ChooseFile [GetExecTitle $node].svg \
 		 [tr. "Export code to:"] 1 $node]
     if {$tgt eq ""} return
@@ -1533,7 +1533,7 @@ proc ExportSVGDirect {node} {
     set window_info(ToSVG,scale) 1.0
     set ::svgXML {}
     array unset ::can2svg::defsArrowMarkerArr ::can2svg::defsStipplePatternArr
-    prolog tcl_export_graphics('ToSVG','$win')
+    prolog tcl_export_graphics('ToSVG',$node)
     foreach {l t r b} $::fromProlog {}
     set svgStm [NetOpen $tgt w]
     puts $svgStm [can2svg::makedocument 1200 800 \

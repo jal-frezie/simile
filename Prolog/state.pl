@@ -155,12 +155,10 @@ set_display_depth(Model, Parameter, Stat) :-
 	retractall(display_depth(Model, Parameter, _)),
 	assertz(display_depth(Model, Parameter, Stat)).
 
-get_display_depth(Model, Parameter, Stat) :-
-    Model = 'ToSVG' ->
-	(Parameter = 'ghost_link' -> 
-	     Stat = 0;
-         Stat = 32);
-    display_depth(Model, Parameter, Stat).
+get_display_depth(Win, Parameter, Stat) :-
+    Win shows_model _ ->
+	display_depth(Win, Parameter, Stat);
+    member(Parameter-Stat, [ghost_link-0, sections-showAll, _-32]), !.
 
 :- dynamic(halo_is/2).
 

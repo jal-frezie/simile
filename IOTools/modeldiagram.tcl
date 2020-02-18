@@ -142,7 +142,8 @@ namespace eval ::ModelDiagram20060804 {
 	set node [ExtractPrologName $winId $target]
 	set context [GetClickCapt $winId $canx $cany $node]
 
-	ProdFromHelper [winfo parent $winId] [CaptPathFromPoint $winId $x $y]
+	ProdFromHelper [winfo parent $winId] $node \
+	    [CaptPathFromPoint $winId $x $y]
     }
     
     proc DoInspPopup {winId x y X Y} {
