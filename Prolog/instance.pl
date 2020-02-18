@@ -328,15 +328,12 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	  % the update uses the trigger magnitude so its node must be
 	  % connected to the trigger events	  
 	    DefExpr = elt(Path, Name, MagBase-Units), 
-	    compile><choosify(SubbedExpr, DefExpr, ChoiceExpr, InitExpr),
-	    UpdateExpr = (trigger_magnitude('')=EvtTrigger, ChoiceExpr),
-	    NextExpr = elt(Path, _NxName, MagBase-Units),
-	    FinalExpr = in_update(NextExpr),
+	    compile><choosify(SubbedExpr, DefExpr, UpdateExpr, InitExpr),
+	    FinalExpr = in_update((trigger_magnitude('')=EvtTrigger,
+				    UpdateExpr)),
 	    is_instance(init_function, Result, InitExpr,
 			DefExpr, MagBase-Units, Init),
-	    is_instance(function, nx(Node), UpdateExpr,
-			NextExpr, MagBase-Units, Update),
-	      Instances = [Init, Update, Instance];
+	      Instances = [Init, Instance];
 	    
 	  (RType = event,
 	      is_parameter(Node, PType),
@@ -566,8 +563,12 @@ generate_input_pair(Node, IType, input_pair(ArcName, NodeID, Ref, ExprRef)) :-
 	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef),
 	find_name_host(Link, ControlLink),
 	(get_av_pair(ControlLink, 2, use_sofar, 1) ->
-		ExprRef = sofar(ConvertedRef);
-	    ExprRef = ConvertedRef).
+	     ExprRef = sofar(ConvertedRef);
+	 (find_type(SourceID, state),
+	  get_host(Node, VisNode),
+	  find_type(VisNode, state) ->
+	      ExprRef = make_inter(ConvertedRef, ArcName);
+	    ExprRef = ConvertedRef)).
 
 try_conversion(RelatedRef, Units, BaseUnits, ConvertedRef) :-
 	(Units = int -> TreatAs = 1; TreatAs = Units),
