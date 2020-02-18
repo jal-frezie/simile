@@ -56,8 +56,11 @@ itcl::class similescript::$newHelperClass {
 		AddItem [lindex $winTitle 1]
 		tkwait window $winId.bottom.ms
 	    }
-	    array set titlePosns {spheres 4 lines 7 ellipses 4}
+	    array set titlePosns {spheres 4 lines 7 ellipses 4 polygons 5}
 	    set inTitle [lindex $State  0 $titlePosns([lindex $State 0 0])]
+	    if {[lindex $inTitle 0] eq ",colours"} {
+		set inTitle [lindex $inTitle 1]
+	    }
 	    Display 0 0 0
 	    return
 	}	
@@ -417,6 +420,9 @@ itcl::class similescript::$newHelperClass {
 			foreach {vf vo vz vy vx} $data {}
 			set op [list polygon $id]
 			foreach {idx nx} $vx {idy ny} $vy {idz nz} $vz {
+			    if {$vz eq "0"} { ;# expand null from 2-d shape
+				set nz 0
+			    }
 			    lappend op [list $nx $ny $nz]
 			}
 			lappend op $vo $vf
