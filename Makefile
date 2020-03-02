@@ -578,7 +578,7 @@ install:
 	mv simile.desktop $(DESTDIR)$(SHAREDIR)/applications; \
 	rm payload.tar
 	mkdir -p $(DESTDIR)$(SHAREDIR)/man/man1
-	mv simile.1 $(DESTDIR)$(SHAREDIR)/man/man1
+	cp simile.1 $(DESTDIR)$(SHAREDIR)/man/man1
 	mkdir -p $(DESTDIR)$(EXEC_TGT)
 	tar cf $(DESTDIR)$(EXEC_TGT)/payload.tar \
 		$(SYSDIR)/bin/relay \
