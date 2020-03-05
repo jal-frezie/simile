@@ -970,7 +970,7 @@ set msgs(extn_bug_full) [tr. {The error message was:
 set msgs(no_compiler_title) [tr. {Problem with c++ compiler setup}]
 set msgs(no_compiler_message) [tr. {c++ compiler preference set to %1$s but no executable %2$s found.}]
 set msgs(no_compiler_full) [tr. {The following directories were checked:
-%1$s}]
+%3$s}]
 
 set msgs(get_graphics_failed_title) [tr. {Problem copying graphics}]
 set msgs(get_graphics_failed_message) [tr. {Simile failed to get graphics from the canvas to put on the clipboard, so it will not be possible to paste them into another application.}]

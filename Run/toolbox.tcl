@@ -1665,12 +1665,17 @@ proc GetUsableName {string} {
     if {[string equal windows $::tcl_platform(platform)]} {
 	if {![file exists $string]} {
 	    # close [open $string a] ;# create it empty
-	    exec {*}[auto_execok echo] %ignore > $string
+	    # (can fail due to close overtaking open on remote disk)
+	    # exec {*}[auto_execok echo] %ignore > $string
+	    # write may fail, causing nasty error
+	    array set all [file attributes [file dirname $string]]
+	    set string [file join $all(-shortname) [file tail $string]]
+	} else {
+	    #set string [file attributes $string -shortname]
+	    # above sometimes fails due to network directory caching
+	    set all [file attributes $string]
+	    set string [lindex $all [lsearch $all -shortname]+1]
 	}
-	#set string [file attributes $string -shortname]
-	# above sometimes fails due to network directory caching
-	set all [file attributes $string]
-        set string [lindex $all [lsearch $all -shortname]+1]
     }
     return $string
 }

@@ -1854,7 +1854,11 @@ proc ShowAbout {winId} {
             -font "-family helvetica -size $fsSize"] -side left
     switch [tk windowingsystem] {
         win32 {
-	    set gppVers [exec [file join $::execDir g++] -dumpversion]
+	    if {[PrefValue custom(compChoice) compChoice] eq "Default"} {
+		set gppVers [exec [file join $::execDir g++] -dumpversion]
+	    } else {
+		catch {exec g++ -dumpversion} gppVers
+	    }		
             pack [label $platform.g++ \
 		      -text "MinGW g++: $gppVers" \
 		      -font "-family helvetica -size $fsSize"] -side left
