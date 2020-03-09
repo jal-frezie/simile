@@ -1666,16 +1666,17 @@ proc GetUsableName {string} {
 	if {![file exists $string]} {
 	    # close [open $string a] ;# create it empty
 	    # (can fail due to close overtaking open on remote disk)
-	    # exec {*}[auto_execok echo] %ignore > $string
-	    # write may fail, causing nasty error
-	    array set all [file attributes [file dirname $string]]
-	    set string [file join $all(-shortname) [file tail $string]]
-	} else {
-	    #set string [file attributes $string -shortname]
-	    # above sometimes fails due to network directory caching
-	    set all [file attributes $string]
-	    set string [lindex $all [lsearch $all -shortname]+1]
+	    if {[catch {exec {*}[auto_execok echo] %ignore > $string}]} {
+		# write may fail, causing nasty error, in which case dir probly
+		# write-protected so shortname does not matter
+		array set all [file attributes [file dirname $string]]
+		return [file join $all(-shortname) [file tail $string]]
+	    }
 	}
+	#set string [file attributes $string -shortname]
+	# above sometimes fails due to network directory caching
+	set all [file attributes $string]
+	set string [lindex $all [lsearch $all -shortname]+1]
     }
     return $string
 }

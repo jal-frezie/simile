@@ -267,7 +267,7 @@ $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 # Version for Advanced Installer
 # -static-libgcc is neeeded because this also used for 64bit install (and 32bit
 # install on 64bit systems) where 32bit libraries maybe missing
-MSI = "/c/MsiIntel.sdk"
+MSI = /c/MinGW-w64/v49j32/mingw32/opt
 $(INSTLIB): Run/install_adv.c Makefile
 	cd Run; $(GCCCMD) -static -m32 $(CFLAGS) $(DEFNS) \
 		-I$(MSI)/include $(MAKEPIC) $(MAKESL) \
@@ -277,15 +277,15 @@ $(INSTLIB): Run/install_adv.c Makefile
 # the rc objects from windres are ommitted from linking below becaise they
 # do strange things to dll dependencies causing c000007b errors
 $(EXECDIR)/Simile.exe: Interp/Simile.c Interp/Simile$(BITEXTN).rc
-	cd Interp; $(RESCMD) -o rc.o Simile$(BITEXTN).rc; \
+	cd Interp; $(RESCMD) -o rc$(BITEXTN).o Simile$(BITEXTN).rc; \
 	$(GCCCMD) $(CFLAGS) -DTCL_BROKEN_MAINARGS -DUNICODE -D_UNICODE \
-		-o ../$(EXECDIR)/Simile.exe Simile.c rc.o -I$(TCLINC) \
+		-o ../$(EXECDIR)/Simile.exe Simile.c rc$(BITEXTN).o -I$(TCLINC) \
 		-L$(TCLREF)/lib -ltcl$(VERS) -ltk$(VERS) -mwindows; cd ..
 
 $(SCRIPT): Interp/script.c Interp/script$(BITEXTN).rc
-	cd Interp; $(RESCMD) -o scriptrc.o script$(BITEXTN).rc; \
+	cd Interp; $(RESCMD) -o scriptrc$(BITEXTN).o script$(BITEXTN).rc; \
 	$(GCCCMD) $(CFLAGS) -DTCL_BROKEN_MAINARGS -DUNICODE -D_UNICODE \
-		-I$(TCLINC) -o ../$(SCRIPT) script.c scriptrc.o -I$(TCLINC) \
+		-I$(TCLINC) -o ../$(SCRIPT) script.c scriptrc$(BITEXTN).o -I$(TCLINC) \
 		-L$(TCLREF)/lib -ltcl$(VERS) -ltk$(VERS) -mwindows; cd ..
 #else
 
