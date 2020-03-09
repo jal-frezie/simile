@@ -127,7 +127,7 @@ proc ClosePipe {} {
     exit
 }
 
-set env(MAX_ATOM) 131072
+set env(MAX_ATOM) 262144 ;# default is 32768
 # These allow GNU prolog to use a decent amount of memory -- 64bit OSes are
 # especially voracious and run on big machines so give them more
 set vm_usage [expr $::tclBitness*$::tclBitness/2] ;# in megs
