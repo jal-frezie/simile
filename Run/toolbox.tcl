@@ -522,6 +522,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		close $spout
 	    } else {
 		set objs {}
+		#puts "extsrcs $extSrcs"
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {
 		    set obj ${tgt}_$tcl_platform(machine).o
