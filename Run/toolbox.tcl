@@ -5,6 +5,7 @@
 #
 # This file loads all procedures, and sets up the model building environment.
 #
+package require md5
 package require mime
 set itclVers [package require Itcl]
 if {!$headless} {
@@ -115,10 +116,11 @@ if {[string match windows $tcl_platform(platform)]} {
     # MacOS 10.11 dynamic loader has stopped searching the /usr/lib
     # directory by default, so Trf fails to load libcrypto. But it
     # still searches the working dir, and once loaded it stays, so...
-    set oldDir [pwd]
-    cd /usr/lib
-    ::md5 dummy
-    cd $oldDir
+    # set oldDir [pwd]
+    # cd /usr/lib
+    # ::md5 dummy
+    # cd $oldDir
+    # ...removed, as loading libcrypto now crashes it
 
     if {[package vcompare [info patchlevel] 8.6.9]<0} {
     # problem was fixed in 8.6.9

@@ -47,23 +47,27 @@ void crash (Tcl_Interp *interp, const char *cause) {
 }	 
 
 int my_md5(Tcl_Interp *interp, Tcl_Obj* text) {
+  char interpCmd[] = "::md5::md5";
   Tcl_Obj* argv[3];
   int result;
 
   /* First we must make up our command for doing MD5. This will involve direct 
-     invocation of the Trf library routine with Tcl objects. */
+     invocation of the Trf library routine with Tcl objects.
+
+     Note that using the Trf routine on the Mac now crashes it, as the libcrypto
+     library deprecates itself. So use the tcllib version instead... */
   Tcl_CmdInfo info;
   Tcl_ObjCmdProc* md5ObjProc;
   ClientData md5ObjClientData;
 
-  if (! Tcl_GetCommandInfo(interp, "::md5", &info)) {
-    Tcl_AppendResult(interp, "unknown command \"", "::md5", "\"", NULL);
+  if (! Tcl_GetCommandInfo(interp, interpCmd, &info)) {
+    Tcl_AppendResult(interp, "unknown command \"", interpCmd, "\"", NULL);
     return TCL_ERROR;
   }
   md5ObjProc = info.objProc;
   md5ObjClientData = info.objClientData;
 
-  argv[0] = Tcl_NewStringObj("::md5", -1);
+  argv[0] = Tcl_NewStringObj(interpCmd, -1);
   Tcl_IncrRefCount(argv[0]);  
   argv[1] = Tcl_NewStringObj("--", -1);
   Tcl_IncrRefCount(argv[1]);  
