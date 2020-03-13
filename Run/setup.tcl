@@ -102,9 +102,11 @@ if {$use_system_tcltk} {
 # ...also MacOS dosn't actually use system TclTk, just system packages, so
 # make sure they are in the path (for e.g. R TclTk extn)
     if {$tcl_platform(os) eq "Darwin"} {
+	package require md5 ;# Do now because even querying system package barfs
 	lappend auto_path "/System/Library/Tcl"
 # ..but system itcl no longer works with tcl 8.6.9 so bundle that
 	set env(ITCL_LIBRARY) $env(SYSDIR)/lib/Stubs/itcl4.1.2
+# (brewed 8.6.10 seems no longer to need this)
     }
 } elseif {[info exists prolog_in_console]} {
     set auto_path [linsert $auto_path 0 $libDir] ;# must be 8.4, look everywhere
