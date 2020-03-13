@@ -62,7 +62,7 @@ ifeq ($(PLATFORM),Darwin)
 	SYSDIR = System$(BITEXTN)
 	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
-	TCLFW = /Library/Frameworks
+	TCLFW = ../Frameworks/Tcl.framework
 ifeq ($(MY_CPU),x86_64)
 	CFLAGS = $(OPT)
 	export MACOSX_DEPLOYMENT_TARGET=10.13
@@ -70,9 +70,10 @@ else
 	CFLAGS = $(OPT) -arch i386
 	export MACOSX_DEPLOYMENT_TARGET=10.4
 endif
-	LOCALIZE_TCL_REFS = install_name_tool -change \
-		$(TCLFW)/Tcl.framework/Versions/$(VERS)/Tcl \
-		@executable_path/../Frameworks/Tcl.framework/Tcl
+# building locally so refs should already be local
+#	LOCALIZE_TCL_REFS = install_name_tool -change \
+#		$(TCLFW)/Versions/$(VERS)/Tcl \
+#		@executable_path/../Frameworks/Tcl.framework/Tcl
 # install_name_tool with fail silently if the new path is longer than the path it's replacing. Always verify with 'otool -L' that the path was changed as expected.
 	ARCHEXTN = _mac
 # build for everything unless I am on Barbie
@@ -84,7 +85,7 @@ endif
 	MAKEPIC = -fPIC
 	MAKESL = -dynamiclib
 # make sure Current is set to right version
-	USETCL =  -DUSE_TCL_STUBS -F$(TCLFW) -framework Tcl -ltclstub$(VERS)
+	USETCL =  -DUSE_TCL_STUBS -L../$(TCLFW) -ltclstub$(VERS)
 	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
 else
