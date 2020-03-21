@@ -1521,7 +1521,8 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	lower(MxOpStr, OpStr).
 
 units_for_trigger_mag(Fn, MagUnits) :-
-    (m_class><Fn has_class_refinement value of sporadic(_), !,
+    (m_class><Fn has_class_refinement value of V,
+     member(V, [sporadic(_), regular(_)]), !,
         MagUnits = int-[];
       (setof(EvtUnit, units_for_evt_antecedents(Fn, EvtUnit), EvtUnits), !;
 	    caption_for(Fn, Capt),
