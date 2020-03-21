@@ -689,18 +689,19 @@ mark_limit_checks(Act, Add) :-
 update_antes_to_step(List) :-
 	List = [make(_, Conds-_, _, [_,_, Step | _], _) | Rest], !,
 	all(compile, mark_unstepped,
-	    [build(Conds), unify(Step), append(Marked, Rest), unify(no)]),
+	    [build(Conds), unify(Step), append(Marked, Rest), unify(others)]),
 	update_antes_to_step(Marked);
 	true.
 
-mark_unstepped(Cond, Set, Add, DoSquirts) :-
+mark_unstepped(Cond, Set, Add, Do) :-
 	member(Cond, [Act, later(Act), this_step(Act)]),
 	Act = make(Tgt, _,_, [_,_, Step | _], Op),
-	\+ Op = [assign(_, in_update(_))], % Do explicit state only in full step
-	(\+ Tgt = tweaked(_); DoSquirts = yes),
+	(\+ Op = [assign(_, in_update(_))]; Do = states),
+	(\+ Tgt = tweaked(_); Do = squirts),
 	\+ Step == Set, % recursive so make sure we are doing something new
-	\+ var(Set), % avoid blowback
+	\+ var(Set), % avoid blowback, should never happen
 	Step = Set, !,
+	update_antes_to_step([Cond]),
 	Add = [Act];
 	Add = [].
 	    
@@ -719,12 +720,13 @@ check_functions(Functions, Steps, Updates) :-
 Previously only did steps up to shortest-1, but need to do shortest
 as well to stop rand_vars being changed in the R-K subphase */
         sort_assignments(Functions, Steps, no),
-	RKStep is Steps+1,
-	all(compile, mark_unstepped,
-	    [build(Updates), unify(RKStep), append(_Marked, []), unify(no)]),
-	update_antes_to_step(Updates),
-	all(compile, mark_unstepped, [build(Functions), unify(Steps),
-				      append(_Normal, []), unify(yes)]),
+	SubSteps is Steps+1,
+	all(compile, mark_unstepped, % compartments only
+	    [build(Updates), unify(SubSteps), append(_C, []), unify(others)]),
+	all(compile, mark_unstepped, % states only
+	    [build(Updates), unify(Steps), append(_S, []), unify(states)]),
+	all(compile, mark_unstepped, % everyone else
+	    [build(Functions), unify(Steps), append(_O, []), unify(squirts)]),
 	/* Check all same-time-step circles can be done in one program loop */
 	tk_update_infobox(pl_loop, []),
 	(member(Start, Functions),
@@ -1689,7 +1691,15 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	    GroundEqn = check_limit(ActEqn, Lower, Upper, Flags),
 	    AllActs = [Expr]; */
 	  Type = magnitude, !, % no derived events yet but same
-	    SourceEqn = event(ActEqn, TriggerEqn),
+	    SourceEqn = event(ActEqn, TestEqn),
+	    replace_subexps(ActEqn, compile, find_fn, trigger_magnitude,
+			    top_down, TMHits, _),
+	    (TMHits = [] ->
+		 TriggerEqn = TestEqn,
+		 LiveEqn = Chooser;
+	     TriggerEqn = trigger_magnitude(''),
+	         LiveEqn = (TriggerEqn=TestEqn, Chooser)),
+	    
 	    inters><units_for_trigger_mag(Node, Base-TriggerEqnDims),
 	    
 	    % evolved from sum_over_dims -- get numerical!
@@ -1697,19 +1707,16 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	    instance><sum_dims(TriggerEqnDims, Num, EnableEqn),
 	    
 	    % (Unit = boolean -> Inactive = '"false"' ; Inactive = 0),
-	    SourceItem = trigger_magnitude(''),
 	    (ActEqn = after(Wait, Eqn, Pipe) ->
 	        Made = for_next_time(Dest),
 	        UseList = [Dest | RefList],
-	        GroundEqn = delay_for(Pipe, Wait, (SourceItem=TriggerEqn,
-						   choose(EnableEqn '!=' 0,
-							  Eqn, default(Eqn))));
-	     UseList = RefList,
+	        GroundEqn = delay_for(Pipe, Wait, LiveEqn);
+	     Eqn = ActEqn,
+	      UseList = RefList,
 	      nth(GraphId, Used, Dest),
-	      GroundEqn = flag_derived_event(GraphId,
-					     (SourceItem=TriggerEqn,
-			   choose(EnableEqn '!=' 0, ActEqn, default(ActEqn)))));
-	  % if using 'happens', make sure it stays out of update phase
+	      GroundEqn = flag_derived_event(GraphId, LiveEqn)),
+	    Chooser = choose(EnableEqn '!=' 0, Eqn, default(Eqn));
+	    % if using 'happens', make sure it stays out of update phase
 	  (SourceEqn = with_phase(SmStep, _EvtElts, GroundEqn);
 	    SourceEqn = al_spec(LoopExit, EvtConds, LoopStart),
 	   % choose(..) is just a handy fn that allows a boolean and
@@ -2129,7 +2136,7 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 	    /* try something from what is left -- no commitment yet */
 	    (SmLevel = sm(Sm, _,_, vm_loop(_,_,_,EnumPhase)) ->
 	        Phase >= EnumPhase,
-		order_submodel_assignments(Phase, [SmLevel | Path], SubEndPts,
+		fwd_submodel_assignments(Phase, [SmLevel | Path], SubEndPts,
 					    All, SubPass, TestPhase),
 		    /* do not go into a sumbodel if I cannot get the existence
 		    test done by the time I come out */
@@ -2311,6 +2318,9 @@ assign_and_test_limit(IdVar, [make(_,_,_,_, [open_index(IdRef, Bound)]) | R1],
 indices_direct([MPtr | Inds], ind(IPtr, N), Ind, 0) :-
 	MPtr == IPtr,
 	nth0(N, Inds, Ind).
+
+find_fn(Fn, Exp, Exp, 0) :-
+    Exp =.. [Fn | _].
 
 decode_loop(LoopCode, ReadyType, Dims) :-
 	LoopCode =.. [ReadyType | Dims],
@@ -2498,8 +2508,9 @@ order_all_assignments(Step, All, Done) :-
 	all(compile, hang_on_tree,
 	    [build(All), unify([]), unify(InstrucTree)]),
 	InstrucTree = make_level(top, _, _),
+%	sort_and_close_lists(InstrucTree, _D-SortedTree), !,
 	close_lists(InstrucTree), !,
-	order_submodel_assignments(Step,[],  InstrucTree, XTests, Done, _).
+	fwd_submodel_assignments(Step,[], InstrucTree, XTests, Done, _).
 
 %select_ready(All, Phase, Ready) :-
 %	All = make(_, Conds-_, _, [MPhase | _], _),
@@ -2536,8 +2547,68 @@ close_lists(make_level(_L, Insts, Subs)) :-
 	length(Insts, _I),
 	length(Subs, _S),
 	all(compile, close_lists, [build(Subs)]).
+/*
+Version that could boost model efficiency by scheduling shallow trees before
+deep ones -- don't use till I've improved on that perm!
 
+sort_and_close_lists(make_level(L, Insts, Subs),
+		     Depth-make_level(L, Insts, Shuffled)) :-
+	length(Insts, _I),
+	length(Subs, S),
+	(S=0 -> Depth = 0, Shuffled = [];
+	  all(compile, sort_and_close_lists, [build(Subs), build(Tagged)]),
+	  permutation(Tagged, TagShuffled),
+	  \+ (suffix([D1-_, D2-_ | _], TagShuffled), D1 > D2),
+	  suffix([Dn-_], TagShuffled),
+	  Depth is Dn + 1,
+	  all(user, arg, [unify(2), build(TagShuffled), build(Shuffled)])).
+*/
+fwd_submodel_assignments(Phase, Path, RawAssign, All, OrderedPasses,
+			FoundTest) :-
+    (Phase == -2 ->
+	SlowPasses = [];
+      NextPhase is Phase-1,
+        fwd_submodel_assignments(NextPhase, Path, RawAssign, All, SlowPasses,
+	  		      FoundTest)),
+    (var(FoundTest) ->
+	 order_assignments(Phase, Path, RawAssign, All, FirstPass);
+      FirstPass = []),
+    
+     ((SlowPasses = [];
+      append([InnerOpen | _], [InnerClose], SlowPasses),
+      extract_action(InnerOpen, [check_phase(InnerPhase, _)]),
+      InnerClose = make(none,[]-_,_, Doing, [finish_level]),
+      Doing == InnerPhase,
+      extract_action(InnerClose, [finish_level])) ->
+	  % recursion result in deeper condition, no need to add one
+	  Preamble = SlowPasses;
+      	ptr_to_last_vm(Path, -2, NewCons),
+	  all(compile, relevant, [unify(NextPhase), build(NewCons),
+				  append(Cons, [])]),
+	  extract_action(Start, [check_phase(NextPhase, Cons)]),
+	  Finish = make(none,[]-_,_, NextPhase, [finish_level]),
+	  append([Start | SlowPasses], [Finish], Preamble)),
 
+    (FirstPass = [] -> OrderedPasses = Preamble;
+     append(Preamble, FirstPass, OncePasses),
+     ((Path = [TestModel | _],
+         made_in(existence_tested, TestModel, FirstPass),
+	  length(Preamble, Lead),
+	  length(FirstPass, Len),
+	  FoundTest = test_at(Phase, Lead, Len); % bang out if test found
+       Phase == -2) -> OrderedPasses = OncePasses;
+          
+     
+      fwd_submodel_assignments(Phase, Path, RawAssign, All, RecursePasses,
+			       LateTest),
+      (var(LateTest) -> true;
+       LateTest = test_at(TP, Go, Len),
+       length(OncePasses, Lead),
+       NewGo is Go + Lead,
+       FoundTest = test_at(TP, NewGo, Len)),
+     append(OncePasses, RecursePasses, OrderedPasses))).
+
+    
 order_submodel_assignments(Phase, Path, RawAssign, All,
 			   OrderedPasses, FoundTest) :-
     order_assignments(Phase, Path, RawAssign, All, FirstPass),

@@ -329,8 +329,12 @@ instance_of( function, Node, Path, Instances, Refs) :-
 	  % connected to the trigger events	  
 	    DefExpr = elt(Path, Name, MagBase-Units), 
 	    compile><choosify(SubbedExpr, DefExpr, UpdateExpr, InitExpr),
-	    FinalExpr = in_update((trigger_magnitude('')=EvtTrigger,
-				    UpdateExpr)),
+	    replace_subexps(UpdateExpr, compile, find_fn, trigger_magnitude,
+			    top_down, TMHits, _),
+	    (TMHits = [] ->
+		 DoUpdate = UpdateExpr;
+	     DoUpdate = (trigger_magnitude('')=EvtTrigger, UpdateExpr)),
+	    FinalExpr = in_update(DoUpdate),
 	    is_instance(init_function, Result, InitExpr,
 			DefExpr, MagBase-Units, Init),
 	      Instances = [Init, Instance];
