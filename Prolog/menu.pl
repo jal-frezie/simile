@@ -1156,9 +1156,9 @@ set_properties(Wid, Model) :-
 	New_P_list = [NewColour, NewImage, NewImgPos,
 		      NewNature, NewInterp, NewFatness,
 		      NewCount, NewStep, NewDesc, NewComment, NewFix, NewHide,
-		      _NewSeparate, NewProc, NewInc, NewLibs, NewEnumSpecs],
+		      NewSeparate, NewProc, NewInc, NewLibs, NewEnumSpecs],
 	    P_list = [Colour, Image, ImgPos, Nature, _I, Fatness, Count,
-		      _S, _D, _C, _E, _Proc, _Inc, _Libs, _Fix, Hide, _Sep],
+		      _S, _D, _C, _E, _Proc, _Inc, _Libs, _Fix, Hide, Separate],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
@@ -1174,7 +1174,7 @@ set_properties(Wid, Model) :-
 	    (NewFix = 'Default', !,
 		add_parameter(Model, 0, eqn_units, '');
 	    add_parameter(Model, 0, eqn_units, NewFix)),	
-	    % add_parameter(Model, 0, separate, NewSeparate),
+	    add_parameter(Model, 0, separate, NewSeparate),
 	    /* fix quirk in new strings_to_atoms */
 	    (NewLibs = '', !, RealNewLibs = []; RealNewLibs= NewLibs),
 	    add_parameter(Model, 0, external_code,
@@ -1234,11 +1234,11 @@ set_properties(Wid, Model) :-
 		redisplay_border(Model);
 	    redisplay(Model)),
 
-	    /* (Separate = NewSeparate, !;
+	    (Separate = NewSeparate, !;
 		find_all_comps(Parent, Model),
 		add_parameter(Parent, 1, c_new, 0)),
 	    
-	    this is quick so do it anyway */
+	    % this is quick so do it anyway
 	    (contains(Model, Submodel),
 		_Window shows_model Submodel,
 		update_captions(Submodel),

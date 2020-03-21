@@ -225,25 +225,27 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     
     TitleFrame $t.complex.math -text [tr. Calculation]
     set mathf [GetFrame $t.complex.math]
-#    checkbutton $mathf.separate -text "Build submodel in separate dll" \
-#            -variable disaggregate(separate)
-#    pack $mathf.separate -anchor w
-    pack [ttk::frame $mathf.extcode] -anchor w -pady 6
+    pack [set mathl [ttk::frame $mathf.l]] -side left
+    pack [set mathr [ttk::frame $mathf.r]] -side left
+    pack [ttk::frame $mathr.extcode] -anchor w -pady 6
     set disaggregate(useOwnCode) [expr {![string eq none $disaggregate(xinc)]}]
-    pack [ttk::checkbutton $mathf.extcode.whether -text [tr. "Use own code"] \
-	      -variable disaggregate(useOwnCode) -command "AbleSetup $mathf"] \
+    pack [ttk::checkbutton $mathr.extcode.whether -text [tr. "Use own code"] \
+	      -variable disaggregate(useOwnCode) -command "AbleSetup $mathr"] \
 	-side left -anchor w
-    pack [ttk::button $mathf.extcode.how -text Setup \
+    pack [ttk::button $mathr.extcode.how -text Setup \
 	      -command [list ExtCodeSetup $mdl $modelLocn]]
-    AbleSetup $mathf
+    AbleSetup $mathr
+    ttk::checkbutton $mathr.separate -text "Build as separate procedure" \
+            -variable disaggregate(separate)
+    pack $mathr.separate -side left -anchor w
     #    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
     #            -variable disaggregate(matherror)
     #    pack $mathf.matherror -anchor w
-    ttk::frame $mathf.eqnunit
-    ttk::label $mathf.eqnunit.caption -text [tr. "Use units in math:"]
-    pack $mathf.eqnunit.caption -side left
+    ttk::frame $mathl.eqnunit
+    ttk::label $mathl.eqnunit.caption -text [tr. "Use units in math:"]
+    pack $mathl.eqnunit.caption -side left
     #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
-    ::ttk::combobox $mathf.eqnunit.pulldown -textvariable disaggregate(eqnunit) \
+    ::ttk::combobox $mathl.eqnunit.pulldown -textvariable disaggregate(eqnunit) \
 	-values [list [tr. Default] [tr. Yes] [tr. No]] \
             -width 10 -state readonly
 #    ::ttk::menubutton $mathf.eqnunit.pulldown -width 10 -textvariable disaggregate(eqnunit)
@@ -252,23 +254,23 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
 #      $m add command -label $item -command "set disaggregate(eqnunit) $item"
 #    }
 #    $mathf.eqnunit.pulldown configure -menu $m
-    pack $mathf.eqnunit.pulldown
-    pack $mathf.eqnunit -anchor w -padx 4 -pady 6
-    ttk::frame $mathf.step
-    ttk::label $mathf.step.caption -text [tr. "Time step index:"]
-    pack $mathf.step.caption -side left
+    pack $mathl.eqnunit.pulldown
+    pack $mathl.eqnunit -anchor w -padx 4 -pady 6
+    ttk::frame $mathl.step
+    ttk::label $mathl.step.caption -text [tr. "Time step index:"]
+    pack $mathl.step.caption -side left
     #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
     #ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
     #        -values [list Default "Initialize only" "Reset only" 1 2 3 4 5 6 7] \
     #        -width 10 -state readonly
-    ::ttk::combobox $mathf.step.pulldown -textvariable disaggregate(step) \
+    ::ttk::combobox $mathl.step.pulldown -textvariable disaggregate(step) \
 	-width 10 -values [concat Default $stepNames] -state readonly
-    set m [menu $mathf.step.pulldown.menu] 
+    set m [menu $mathl.step.pulldown.menu] 
     #foreach item [concat Default $stepNames] {
     #  $m add command -label $item -command "set disaggregate(step) \"$item\""
     #}
-    pack $mathf.step.pulldown
-    pack $mathf.step -anchor w -padx 4 -pady 6
+    pack $mathl.step.pulldown
+    pack $mathl.step -anchor w -padx 4 -pady 6
     pack $t.complex.math -side left -padx 4 -pady 4 -fill both -expand true
     # next bit not used -- cloud equivalence is property of compartment
     # so there is space here to control some as yet uninvented feature
