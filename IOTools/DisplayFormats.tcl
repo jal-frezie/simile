@@ -4,7 +4,7 @@ namespace eval DisplayFormat {
             General Fixed Scientific Percent\
             DMS RadinDMS \
             HHMM HHMMSS \
-            YYYYMMDD YYYYMMDDHHMMSS \
+            YYYYMMDD YYYYMMDDHHMMSS DDMMYYYY \
             Boolean
     
 #    package require calendar
@@ -67,6 +67,10 @@ namespace eval DisplayFormat {
     }
     
     set datevar(ERA) CE
+
+    proc JulianDayToUnixEra {JD} {
+	return [expr {86400*int(floor($JD-2440588))}]
+    }
     
     proc YYYYMMDD {val dp} {
 # Interprets value as number of days since midnight on 31st dec 1900, and returns date format
@@ -75,8 +79,11 @@ namespace eval DisplayFormat {
 #        return [format %.4d/%.2d/%.2d  $datevar(YEAR) $datevar(MONTH) $datevar(DAY_OF_MONTH)]
 
 # redone using clock command to reduce baroquity and package count --JAT
-	return [clock format [expr {86400*int(floor($val-25567))}] \
-		    -format %Y/%m/%d] 
+	return [clock format [JulianDayToUnixEra $val] -format %Y/%m/%d] 
+    }
+
+    proc DDMMYYYY {val dp} {
+	return [clock format [JulianDayToUnixEra $val] -format %d/%m/%Y] 
     }
     
     proc HHMM {val dp} {

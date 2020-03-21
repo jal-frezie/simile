@@ -86,7 +86,7 @@ namespace eval $keyValue {
     set format(Number) {General Fixed Scientific Percent}
     set format(Angle)  {DMS "Rad in DMS"}
     set format(Time)   { HHMM HHMMSS YYYYMMDDHHMMSS}
-    set format(Date)   { YYYYMMDD YYYYMMDDHHMMSS}
+    set format(Date)   { YYYYMMDD YYYYMMDDHHMMSS DDMMYYYY}
     set format(Boolean) Boolean
     
     proc identify {} {
