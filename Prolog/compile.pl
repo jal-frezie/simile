@@ -674,7 +674,7 @@ mark_update_insts(Act, Add) :-
 	Act = make(Efct, _,_, [update | _], [assign(SV, Src)]),
 	    (member(Src, [SV, SV+stage_incr(_,_,_,_,_,_,_), % add flow
 			 in_update(_)]); % apply event
-	      Efct = tipped(_Sq)), !,		% add squirt
+	     Efct = tipped(_Sq)), !,		% add squirt
 	    Add = [Act];
 	Act = make(_,_,_, [eval | _], _),
 	    Add = [].
@@ -1022,10 +1022,11 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 	order_all_assignments(Phases, NewForm, Ordered), !,
 %	order_all_assignments(Phases, NewForm, advance, OrdStates),
 	(member(Forgotten, NewForm),
+	    \+ Forgotten = make(_, []-_, _,_,_),
 	    not_yet_ordered(Forgotten), !,
-	    find_circle([Forgotten], Loop),
+	    find_circle([Forgotten], Loop, Tail),
 	    (Loop = [] ->
-		 unfinished_in(Forgotten, Tail),
+		 % unfinished_in(Forgotten, Tail),
 	% pick act because raising exception with self-ref term crashes GNU
 		 raise_exception(ordering_failure(Tail));
 	       all(compile, unfinished_in, [build(Loop), build(CircSet)]),
@@ -1052,18 +1053,20 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 This looks combinatorial but I have tested it with some pretty extreme
 examples, and it's fast enough. Still, if a thing's worth doing... */
 
-find_circle([Head | Chain], Loop) :-
+find_circle([Head | Chain], Loop, Longest) :-
 	(NewHead = make(enumerate(_), _,_,_,_); true), % prioritize
 	order(NewHead, Head),
 	not_yet_ordered(NewHead), !,
 	(append(Circle, [NewHead | _], [Head | Chain]), % this completes it
 	    Loop = [NewHead | Circle];
-	 find_circle([NewHead, Head | Chain], SubLoop),
+	 find_circle([NewHead, Head | Chain], SubLoop, Try1),
 	    (SubLoop = [], !, %this was fruitless, tag it and try another
-		NewHead = make(_,_,_, [_,_,_,x | _], _),
-		find_circle([Head | Chain], Loop);
+		NewHead = make(Action, _,_, [_,_,_,x | _], _),
+		find_circle([Head | Chain], Loop, Try2),
+	        length(Try1, L1), length(Try2, L2),
+		(L1 < L2 -> Longest = Try2; Longest = [Action | Try1]);
 	     Loop = SubLoop)); % found one further down
-	Loop = []. % No leads from here, go back
+	Loop = [], Longest = []. % No leads from here, go back
 
 match_levels([], []).
 match_levels([make(_,_, Path, _,_) | Insts], Levels) :-
@@ -1476,6 +1479,26 @@ nodes.
 	    append(Specials, AssignList0, AssignList)),
 	append(FnInters, SmInters, Inters).
 
+% may need this for isolating separatelu built submodels from dependencies
+ext_deps_and_conds(AssignList, Home, NewCond, Untried, Deps, Conds) :-
+    append(NoExtDeps, [ExtDep | StillUntried], Untried),
+    ExtDep = make(A, MixedConds, Path, Step, D),
+    Step>0,
+    suffix(Home, Path),
+    setof(ExtCond, (member(ExtCond, MixedConds),
+		    \+ member(ExtCond, [time, on_reset]),
+		    \+ (member(make(ExtCond, _,IntPath,_,_), AssignList),
+		       suffix(Home, IntPath))),
+	  ExtConds), !,
+      NewExtDep = make(A, [NewCond | MixedConds], Path, Step, D),
+      append(StillUntried, NoExtDeps, MixedDeps),
+      ext_deps_and_conds(AssignList, Home, NewCond,
+			 MixedDeps, MoreDeps, MoreConds),
+      Deps = [NewExtDep | MoreDeps],
+      merge_lists(ExtConds, MoreConds, Conds);
+    Deps = Untried,
+      Conds = [].
+    
 cond_test_in(CondBox, Functions) :-
 	member(instance(condition,_, function,
 			elt(_, CondBox, _),_), Functions),
@@ -1725,7 +1748,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	    GroundEqn = SourceEqn)), !,
 	    
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
-			 SmStep, SmStep, ExtInters, Used, Assigns,
+			 SmStep, UseStep, ExtInters, Used, Assigns,
 			 Setups, Path, RefList, AllInters),
 	 append(Inters, ExtInters, AllInters), % declare them only once
 	(nonvar(Made), !; Made = Dest),
@@ -1837,7 +1860,7 @@ connect_params(AllInsts, Insts) :-
 	     Param = OrigParam,
 	     SafePath = CommonPath),
 							   
-	    (SafePath = Path,
+	    (SafePath = Path, % or OrigPath?
 	        % var(UsingLast), not like this
 		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
 				     Acts) | LeftInsts];
@@ -2131,7 +2154,7 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 	
 
 	( %unfinished_submodels(Later, Phase, Path, Subs),
-	    member(SubEndPts, Subs),
+	  member(SubEndPts, Subs),
 	    SubEndPts = make_level(SmLevel, _,_), 
 	    /* try something from what is left -- no commitment yet */
 	    (SmLevel = sm(Sm, _,_, vm_loop(_,_,_,EnumPhase)) ->
@@ -2142,7 +2165,7 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 		    test done by the time I come out */
 		\+ (member(make(existence_tested(Sm), _,_, [_,_,_,D], _), All),
 		       var(D));
-	      order_assignments(Phase, [SmLevel | Path], SubEndPts,
+	     order_assignments(Phase, [SmLevel | Path], SubEndPts,
 				 All, SubPass)),		     
 
 	    /* go to a level where I can do something (note test for
@@ -2509,8 +2532,8 @@ order_all_assignments(Step, All, Done) :-
 	    [build(All), unify([]), unify(InstrucTree)]),
 	InstrucTree = make_level(top, _, _),
 %	sort_and_close_lists(InstrucTree, _D-SortedTree), !,
-	close_lists(InstrucTree), !,
-	fwd_submodel_assignments(Step,[], InstrucTree, XTests, Done, _).
+	close_lists(InstrucTree), SortedTree = InstrucTree, !,
+	fwd_submodel_assignments(Step,[], SortedTree, XTests, Done, _).
 
 %select_ready(All, Phase, Ready) :-
 %	All = make(_, Conds-_, _, [MPhase | _], _),
@@ -2549,7 +2572,7 @@ close_lists(make_level(_L, Insts, Subs)) :-
 	all(compile, close_lists, [build(Subs)]).
 /*
 Version that could boost model efficiency by scheduling shallow trees before
-deep ones -- don't use till I've improved on that perm!
+deep ones -- don't use till I've improved on that perm! */
 
 sort_and_close_lists(make_level(L, Insts, Subs),
 		     Depth-make_level(L, Insts, Shuffled)) :-
@@ -2562,7 +2585,7 @@ sort_and_close_lists(make_level(L, Insts, Subs),
 	  suffix([Dn-_], TagShuffled),
 	  Depth is Dn + 1,
 	  all(user, arg, [unify(2), build(TagShuffled), build(Shuffled)])).
-*/
+
 fwd_submodel_assignments(Phase, Path, RawAssign, All, OrderedPasses,
 			FoundTest) :-
     (Phase == -2 ->

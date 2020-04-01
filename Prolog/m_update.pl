@@ -420,9 +420,9 @@ get_unit_conversion(Remote, Local,
 	    SourceLocation = in_base;
 	 suffix([Assoc | ReallyExited], BiggestFirst),
 	    (member(Base, Entered);
-	     % do not allow data by role from hierarchical satellite because
-	     % current made_in() system cannot cope
-	      fail, Base = LocalModel,
+	     % do allow data by role from hierarchical satellite,
+	     % will fix current made_in() system to cope at some point
+	      Base = LocalModel,
 	        Entered = []),
 	    connects(Relation, Base, Assoc),
 	    Relation has_type relation,

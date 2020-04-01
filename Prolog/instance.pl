@@ -52,11 +52,11 @@ instantiate(Parent, model(ModelInstance, Submodels ), Path, FullSet) :-
 contents(Parent, Component) :-
 	find_all_comps(Parent, Component),
 	    (Component is_of_sort has_function; Component has_class function;
-		Component has_class_refinement separate of 1),
+		Component has_class_refinement old_separate of 1),
 	    \+ counts_as_outside(Component);
 	Parent has_part Submodel,
 	    is_population(Submodel),
-	    \+ Submodel has_class_refinement separate of 1,
+	    \+ Submodel has_class_refinement old_separate of 1,
 	    find_all_comps(Submodel, Component),
 	    counts_as_outside(Component).
 
