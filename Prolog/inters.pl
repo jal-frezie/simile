@@ -783,10 +783,9 @@ make_intermediates(
 	    Setting = [make(increment(TotalName),
 			    [Target, increment(Target) | Depends])],
 	    but now goes in update phase before compartments so only needs to
-	    check if another last(...) has been copied from it
-	    Dependencies now put back as target eval may go in advance phase */
+	    check if another last(...) has been copied from it */
 	    Setting = [make(lastvalue(TotalName),
-			    [made_at(InnerTgt, SourceContext),
+			    [ % made_at(InnerTgt, SourceContext),
 			     lastvalue(InnerTgt) | Depends],
 			    WriteContext, Step, [IncrAct]),
 		       make(TotalName, [cleared(TotalName), time],

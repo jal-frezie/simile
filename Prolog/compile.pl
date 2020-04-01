@@ -674,7 +674,8 @@ mark_update_insts(Act, Add) :-
 	Act = make(Efct, _,_, [update | _], [assign(SV, Src)]),
 	    (member(Src, [SV, SV+stage_incr(_,_,_,_,_,_,_), % add flow
 			 in_update(_)]); % apply event
-	     Efct = tipped(_Sq)), !,		% add squirt
+	     Efct = tipped(_Sq);		% add squirt
+	     Efct = lastvalue(_)), !,           % explicit preserve
 	    Add = [Act];
 	Act = make(_,_,_, [eval | _], _),
 	    Add = [].
@@ -696,7 +697,8 @@ update_antes_to_step(List) :-
 mark_unstepped(Cond, Set, Add, Do) :-
 	member(Cond, [Act, later(Act), this_step(Act)]),
 	Act = make(Tgt, _,_, [_,_, Step | _], Op),
-	(\+ Op = [assign(_, in_update(_))]; Do = states),
+	(\+ Op = [assign(_, in_update(_))], \+ Tgt = lastvalue(_L);
+	 Do = states),
 	(\+ Tgt = tweaked(_); Do = squirts),
 	\+ Step == Set, % recursive so make sure we are doing something new
 	\+ var(Set), % avoid blowback, should never happen
@@ -2742,9 +2744,10 @@ unfinished_submodels([make(_,_, PathPlus, [_,_, FoundPhase | _], _) | Waiting],
 	Subs = MoreSubs).
 
 get_next_evaluation(Assignments, Step, Remainder, Next) :-
+    (Efct = lastvalue(_); true), % set lasts first in update phase
+        Next = make(Efct, Conds-_, _IPath, [Phase,_, VStep | _], Act),
 	select(Next, Assignments, Remainder),
 	not_yet_ordered(Next),
-	Next = make(_, Conds-_, _IPath, [Phase,_, VStep | _], Act),
         (Act = []; VStep = Step),
 	\+ ((member(Sticker, Conds); member(earlier(Sticker), Conds)),
 	       Sticker = make(_,_,_, [Phase | _], _),
