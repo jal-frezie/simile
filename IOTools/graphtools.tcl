@@ -206,6 +206,8 @@ proc ::graphtools::draw_Xaxis { w } {
     set y0 [expr {$plot($w,yborder_top)+$plot($w,ylength)}]
     set x1 [expr {$plot($w,xborder_left)+$plot($w,xlength)}]
     
+    set precision [expr {int(ceil(-log10($Xmajorstep)))}]
+    # = no of decimals needed to distinguish tick vals
     set step [expr {1.0*$plot($w,xlength)*$Xmajorstep \
                 / ($Xmax_axis-$Xmin_axis)}]
     set value $Xmin_axis
@@ -216,7 +218,7 @@ proc ::graphtools::draw_Xaxis { w } {
                 -tags {scalable axis_line xaxis_item xtick markable \
                     xaxis_movable}
         $w.canvas create text $x $y \
-                -text [::DisplayFormat::General $value $plot($w,Xprecision)] \
+                -text [::DisplayFormat::General $value $precision] \
                 -font $plot($w,fontValues) \
                 -tags {scalable axis_value xaxis_item xaxis_movable xtick \
                     toplevel markable} -anchor n
@@ -254,7 +256,9 @@ proc ::graphtools::draw_Yaxis { w} {
     set x0 $plot($w,xborder_left)
     set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
     set y1 $plot($w,yborder_top)
-    
+
+    set precision [expr {int(ceil(-log10($Ymajorstep)))}]
+    # = no of decimals needed to distinguish tick vals
     set step [expr 1.0*$plot($w,ylength)*$Ymajorstep \
             / ($Ymax_axis-$Ymin_axis)]
     set value $Ymin_axis
@@ -265,7 +269,7 @@ proc ::graphtools::draw_Yaxis { w} {
                 -tags {scalable axis_line yaxis_item ytick markable \
                     yaxis_movable}
         $w.canvas create text $x [expr $y-1] \
-                -text [::DisplayFormat::General $value $plot($w,Yprecision)] \
+                -text [::DisplayFormat::General $value $precision] \
                 -font $plot($w,fontValues) \
                 -tags {scalable  axis_value yaxis_item yaxis_movable ytick \
                     toplevel markable} -anchor e

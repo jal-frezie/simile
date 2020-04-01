@@ -15,23 +15,31 @@ namespace eval DisplayFormat {
 		$val!=$val} { ;# last disjunct catches nan
        	    return $val
         }
-        set regular [format %.${prec}f $val]
-        set scientific [format %.${prec}e $val]
-        if {$prec >= 3} {
-            set shortSci [format %.[expr $prec-3]e $val]
-        } else  {
-            set shortSci $scientific
-        }
-        
-        if {[string length $scientific]<[string length $regular]} {
-            return $scientific
-        } else {
-            if {$scientific && !$regular} {
-                return $shortSci
-            } else {
-                return $regular
-            }
-        }
+	# This returns whichever of regular or scientific is most compact for
+	# required precision -- and Tcl has a notation for that
+	set digits [expr {1+log10(abs($val))}]
+	if {$digits<5 && $prec<0} {
+	    set prec 0 ;# do not use sci just to show less precision
+	}
+	set gPrec [expr {int(floor(max(0,$prec+$digits)))}]
+	return [format %.${gPrec}g $val]
+#        set regular [format %.${prec}f $val]
+#        set scientific [format %.${prec}e $val]
+#        if {$prec >= 3} {
+#            set shortSci [format %.[expr $prec-3]e $val]
+#        } else  {
+#            set shortSci $scientific
+#        }
+#        
+#        if {[string length $scientific]<[string length $regular]} {
+#            return $scientific
+#        } else {
+#            if {$scientific && !$regular} {
+#                return $shortSci
+#            } else {
+#                return $regular
+#            }
+#        }
     }
     
     proc Fixed {val dp} {

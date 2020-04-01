@@ -785,7 +785,7 @@ make_intermediates(
 	    but now goes in update phase before compartments so only needs to
 	    check if another last(...) has been copied from it */
 	    Setting = [make(lastvalue(TotalName),
-			    [ % made_at(InnerTgt, SourceContext),
+			    [time, % made_at(InnerTgt, SourceContext),
 			     lastvalue(InnerTgt) | Depends],
 			    WriteContext, Step, [IncrAct]),
 		       make(TotalName, [cleared(TotalName), time],
