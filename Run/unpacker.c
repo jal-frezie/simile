@@ -59,8 +59,11 @@ int my_md5(Tcl_Interp *interp, Tcl_Obj* text) {
   Tcl_CmdInfo info;
   Tcl_ObjCmdProc* md5ObjProc;
   ClientData md5ObjClientData;
-
-  if (! Tcl_GetCommandInfo(interp, interpCmd, &info)) {
+  if (strcmp("Darwin", Tcl_GetVar2(interp, "::tcl_platform", "os", 0)))
+    result = 5;
+  else
+    result = 0;
+  if (! Tcl_GetCommandInfo(interp, interpCmd+result, &info)) {
     Tcl_AppendResult(interp, "unknown command \"", interpCmd, "\"", NULL);
     return TCL_ERROR;
   }

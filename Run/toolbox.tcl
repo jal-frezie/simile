@@ -5,7 +5,6 @@
 #
 # This file loads all procedures, and sets up the model building environment.
 #
-package require md5
 package require mime
 set itclVers [package require Itcl]
 if {!$headless} {
@@ -121,6 +120,7 @@ if {[string match windows $tcl_platform(platform)]} {
     # ::md5 dummy
     # cd $oldDir
     # ...removed, as loading libcrypto now crashes it
+    package require md5
 
     if {[package vcompare [info patchlevel] 8.6.9]<0} {
     # problem was fixed in 8.6.9
