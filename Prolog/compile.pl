@@ -974,6 +974,8 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 		AllGraphs, Stream) :-
 	all(compile, extract_action,
 	    [build(OrderedForm), append(ActionForm, [])]),
+	separate_sub_procs(ActionForm, ProcDefns, ExecForm),
+
 	excrete(Language, comment, 'EVALUATION PROCEDURE DECLARATION', 0,
 				Stream),
 	nl(Stream),
@@ -1003,11 +1005,22 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 	nl(Stream),
 	excrete(Language, comment, 'UPDATE FUNCTION VALUES', 4, Stream),
 	nl(Stream),
-	do_assign_list( Language, ActionForm, 4, Used, Stream),
-	nl(Stream),
+	(do_assign_list( Language, ExecForm, 4, Used, Stream),
+	fail; nl(Stream)), % need to backtrack to forget variable declarations
 	excrete(Language, end(procedure), ProcName, 0, Stream),
 	nl(Stream),
-        fail; true. % need to backtrack to forget variable declarations
+	excrete(Language, comment, 'PROCEDURES FOR SEPARATE SUBMODELS', 0,
+				Stream),
+	do_assign_list( Language, ProcDefns, 0, Used, Stream).
+
+separate_sub_procs(Mixed, Defns, Calls) :-
+    append(Before, [as_separate_proc(Sm, Path), ProcLoop | After], Mixed) ->
+    language><get_rest_of_my_loop(After, Inside, Outside),
+    append([define_proc_for(Sm, Path), ProcLoop | Inside],
+	   [finish_level | MoreDefns], Defns),
+    append(Before, [call_proc_for(Sm, Path) | Outside], PartSplit),
+    separate_sub_procs(PartSplit, MoreDefns, Calls);
+    Defns = [], Calls = Mixed.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % build_functions goes throught the functions and calculates their values. The
@@ -1477,11 +1490,43 @@ nodes.
 	    ExtInst = make(ext_done_for(Name), AllConds, LocalPath, Step,
 	                  [call_ext_code(Proc, NewPtr, ArgCodes)]),
 	    append(Specials, [ExtInst | AssignList1], AssignList);
+	 SmName has_class_refinement separate of 1, !,
+	 ExtProcDefns = SubProcDefns,
+	    NewCond = all_done_for(Name),
+	    separate_instructs(AssignList0, LocalPath, [separate(Level) | Path],
+			       earlier(NewCond), AssignList0,
+			       AssignList1, ExtConds),
+	    append([make(NewCond, ExtConds, Path,
+			 Step, []) | Specials], AssignList1, AssignList);
 	 ExtProcDefns = SubProcDefns,
 	    append(Specials, AssignList0, AssignList)),
 	append(FnInters, SmInters, Inters).
 
-% may need this for isolating separatelu built submodels from dependencies
+separate_instructs([], _,_,_,_, [],[]).
+separate_instructs([make(A, C1, P1, D,E) | Insts], GoesIn, Replace, NewCond,
+		   AllMakes, [make(A, C2, P2, D,E) | Outsts], Conds) :-
+    separate_instructs(Insts, GoesIn, Replace, NewCond, AllMakes,
+		       Outsts, MoreConds),
+    (append(Front, Back, P1),
+     Back = GoesIn ->
+	 append(Front, Replace, P2), % put instruction in procedure
+	 (D>0,
+	  setof(ExtCond, (member(ExtCond, C1),
+			  \+ member(ExtCond, [time, on_reset]),
+			  \+ (member(make(ExtCond, _,IntPath,_,_), AllMakes),
+			      suffix(GoesIn, IntPath))),
+		ExtConds) -> C2 = [NewCond | C1], % make entry a condition
+			     % (in order to flag circularities)
+			     merge_lists(ExtConds, MoreConds, Conds);
+	                     % make externals conditions of entry
+	  C2 = C1,
+	    Conds = MoreConds);
+     P2 = P1,
+       C2 = C1,
+       Conds = MoreConds).
+    
+% may need this for isolating separatelu built submodels from dependencies --
+% used as template for above
 ext_deps_and_conds(AssignList, Home, NewCond, Untried, Deps, Conds) :-
     append(NoExtDeps, [ExtDep | StillUntried], Untried),
     ExtDep = make(A, MixedConds, Path, Step, D),
@@ -2122,6 +2167,11 @@ delay_clearing(Mess, [make(clearing(Total), CConds, CPath, IPhase, CAct),
 		   Mess2),
 	    delay_clearing(Mess2, Better).
 */
+needs_shorter_step(make_level(_Level, Insts, Lower), Phase) :-
+    member(make(_,_,_, [_,_,Need | _], _), Insts),
+      Need > Phase;
+    member(Bad, Lower),
+      needs_shorter_step(Bad, Phase).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % order_assignments puts a list of make instructions (1) into order so that things are
 % calculated when they're used. 2nd argument is the submodel path of the last
@@ -2154,13 +2204,20 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 	% !. cut added to prevent crash in swipl debugger, should be green
 
 	
-
 	( %unfinished_submodels(Later, Phase, Path, Subs),
 	  member(SubEndPts, Subs),
 	    SubEndPts = make_level(SmLevel, _,_), 
 	    /* try something from what is left -- no commitment yet */
-	    (SmLevel = sm(Sm, _,_, vm_loop(_,_,_,EnumPhase)) ->
-	        Phase >= EnumPhase,
+	    ((SmLevel = separate([sm(Sm, _,_,_) | _]),
+	      ProcKey = make(all_done_for(Sm), _,_,_,_),
+	        member(ProcKey, Items); % no restrict if ready test not in proc
+	      SmLevel = sm(Sm, _,_, vm_loop(_,_,_,EnumPhase))) ->
+		 % a level with special conditions
+		 (SmLevel = sm(_,_,_,_) -> % 2nd case above
+		      Phase >= EnumPhase;
+		  (Phase =< 0; SepPass = 1, % add special later
+		   \+ not_yet_ordered(ProcKey),
+		   \+ needs_shorter_step(SubEndPts, Phase))),
 		fwd_submodel_assignments(Phase, [SmLevel | Path], SubEndPts,
 					    All, SubPass, TestPhase),
 		    /* do not go into a sumbodel if I cannot get the existence
@@ -2193,7 +2250,10 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 		   AlP =< Phase),
 
 	    do_clever_stuff(Phase, TestPhase, SmLevel, Path, SubPass, CondPass,
-			    FirstStep, LastStep),
+			    VFirstStep, LastStep),
+	    (var(SepPass) -> FirstStep = VFirstStep;
+	     extract_action(RFirstStep, [as_separate_proc(Sm, Path)]),
+	     FirstStep = [RFirstStep | VFirstStep]),
 	    	    /* Now if I have done some submodel assignments, recurse at
 		the same level */
 	    order_assignments(Phase, Path, EndPts, All, NewOrdered),
@@ -2313,10 +2373,14 @@ do_clever_stuff(Phase, TestPhase, SmLevel, Path, SubPass, CondPass,
 	    \+ (SmLevel = sm(_,_,_, vm_loop(_,_,_, EnumPhase)),
 		   EnumPhase > Phase), !,
 		%ptr_to_last_vm([SmLevel | Path], -2, SmNew),
-		get_pass_ends(SmLevel, StartPass, FinishPass),
+	    (SmLevel = separate(Seq) ->
+		 reverse(Seq, OuterFirst),
+		 all(compile, get_pass_ends,
+		     [build(OuterFirst), build(FirstStep), build(LastStep)]);
+	     get_pass_ends(SmLevel, StartPass, FinishPass),
 		FirstStep = [StartPass],
-		LastStep = [FinishPass],
-		CondPass = SubPass.
+		LastStep = [FinishPass]),
+	      CondPass = SubPass.
 
 
 
@@ -2714,14 +2778,12 @@ get_non_looping_levels(Path, [make(_,_, IPath, _,_) | More], Levels) :-
 	merge_lists(NLPart, MoreLevels, Levels)).
 
 get_pass_ends(Level, StartInit, Finish) :-
-	(Level = cond_section(Cond), !,
-	    extract_action(StartInit, [check_cond(Cond)]);
-	Level = set(Ind, loop(IndSrc,_)), !,
-	    extract_action(StartInit, [open_index(Ind, IndSrc)]);
-	Level = sm(Submodel, ParentPtr, Ptr, Inds),
-	    extract_action(StartInit,
-		[start_submodel(Submodel, ParentPtr, Ptr, Inds)])),
-	extract_action(Finish, [finish_level]).
+    member(Level-StartAction,
+	   [cond_section(Cond)-check_cond(Cond),
+	    set(Ind, loop(IndSrc,_))-open_index(Ind, IndSrc),
+	    sm(Submodel, ParentPtr, Ptr, Inds)-start_submodel(Submodel, ParentPtr, Ptr, Inds)]),
+    extract_action(StartInit, [StartAction]),
+    extract_action(Finish, [finish_level]).
 
 prepares(V, F) :-
 	member(F, [element(V), increment(V)]).

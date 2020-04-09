@@ -371,6 +371,31 @@ do_assignment(L, [reset_list(Ptr, Name) | Clauses],
 	excrete(L, assignment, Ref=0, Indent, Stream),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 
+/* Put the next loop into a separate procedure */
+
+do_assignment(L, [define_proc_for(Sm, Path), SmLoop0 | Clauses], I, Used, Stream) :-
+    get_rest_of_my_loop(Clauses, MyLoop, Later), Path = [_|_], wake,
+    append_atoms(Sm, '_proc', ProcName),
+    all(language, formal_arg_for_proc_sm,
+	[build(Path), unify([L, Used]), build(Args)]),
+    CallSpec =.. [call, void, ProcName, [int, phase] | Args],
+    excrete(L, procedure_start, CallSpec, I, Stream),
+    I1 is I+4,
+    append(MyLoop, [finish_level], FullLoop),
+    do_assign_list(L, [SmLoop0 | FullLoop], I1, Used, Stream),
+    excrete(L, end(procedure), ProcName, I, Stream),
+    do_assign_list(L, Later, I, Used, Stream).
+
+/* Call that proc */
+
+do_assignment(L, [call_proc_for(Sm, Path) | Clauses], I, Used, Stream) :-
+    append_atoms(Sm, '_proc', ProcName), Path = [_|_], wake,
+    all(language, arg_for_proc_sm,
+	[build(Path), unify([L, Used]), build(Args)]),
+    Call =.. [ProcName, phase | Args],
+    excrete(L, procedure_call, Call, I, Stream),
+    do_assign_list(L, Clauses, I, Used, Stream).
+    
 /* Clause to handle end of a submodel loop does not actually generate any code (this
 is all done at start submodel time) but rearranges the preambles and postambles so
 subsequent stuff is put outside the loop.
@@ -827,6 +852,22 @@ copy_to_exit([Inst | Togo], N, Tail) :-
 	    M is N-1;
 	 M=N),
 	copy_to_exit(Togo, M, Tail).
+
+arg_for_proc_sm(Level, [L, Used], ArgRef) :-
+    (Level = sm(_,_, Arg, _);
+    Level = set(Spec, _),
+      make_scalar(L, Spec, Used, Arg)),
+    refer_value(L, Arg, ArgRef).
+
+formal_arg_for_proc_sm(Level, [L, Used], [Type, Arg]) :-
+    (Level = sm(Name, _, Arg, _),
+       append_atoms(Name, 'type*', Type);
+     Level = set(Spec, _),
+       Type = int,
+       Spec = glob(_, glob(Arg, []))),
+    generate_name(L, arg, Arg, Used).
+
+declare_as(glob(Ind,_), Type, [Ind, Type]).
 
 move_base_ptrs(_,_,_,_, [],[],_).
 move_base_ptrs(L, Pointer, Action, Indent,

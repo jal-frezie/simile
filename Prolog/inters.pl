@@ -1909,7 +1909,8 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 	N is M+1.
 
 /* Returns expressions for a model's indices, those for outer loops first */
-indices_for(set(_, loop(_,_)), [], []).
+indices_for(Level, [], []) :-
+    member(Level, [set(_, loop(_,_)), separate(_)]).
 
 indices_for(sm(_,_, Ptr, Spec), Inds, Dims) :-
 	Spec = fm_loop(Inds, Dims,_,_);
