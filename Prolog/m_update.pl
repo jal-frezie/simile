@@ -968,7 +968,9 @@ can_finish(Ltype, Box1, Box2) :-
 	find_type(Box1, Type1),
 	find_type(Box2, Type2),
 	(Type1 = Ltype, !,
-		Box1 is_connector from Node1 to _;
+	    Box1 is_connector from Node1fn to _,
+	    (Node1 has_part Node1fn, Node1 is_of_sort line, !;
+	     Node1 = Node1fn); % handle influence from flow
 	Node1 = Box1),
 	find_type(Node1, Start_type),
 	( \+ Type2 is_primitive, !;
