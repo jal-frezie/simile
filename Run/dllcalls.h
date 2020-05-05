@@ -299,6 +299,7 @@ EXTDEC void* get_node_model_id(char*);
 EXTDEC void release_graph_data(graph_data_type*);
 EXTDEC graph_data_type* find_graph_by_index (int, graph_data_type*);
 EXTDEC double graphpoint(double, graph_data_type*, int);
+EXTDEC void setup_thread_randoms(unsigned int, int);
 EXTDEC void setup_randoms(unsigned int);
 EXTDEC double rand_fract();
 EXTDEC graph_data_type* get_graph_base(void*);

@@ -84,7 +84,7 @@ do_assignment(L, [open_index(glob(Loop, Inds), Bound) | Clauses],
 	    make_pointer(L, Count, CountPtr),
 	    excrete(L, assignment, IndexSlot = CountPtr, Indent, Stream),
 	    excrete(L, assignment, CountSlot = -1, Indent, Stream),
-	    excrete(L, for_start, [Count, UseBoundRef, 1], Indent, Stream),
+	    excrete(L, for_start, [Count, 1, UseBoundRef, 1], Indent, Stream),
 	    do_assign_list(L, MyLoop, NewIndent, Used, Stream),
 	    excrete(L, end(for), Count, Indent, Stream),
 	    excrete(L, assignment, IndexSlot=0, Indent, Stream),
@@ -118,6 +118,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	    make_evaluation_routine(L, TryCond, Used, TryRef),
 	    excrete(L, while_start, TryRef, Indent, Stream),
 	    deepen_indent(Indent, Indent1),
+	    excrete(L, procedure_call, abort_check, Indent1, Stream),
 	    do_assign_list(L, MyLoop, Indent1, Used, Stream),
 	    excrete(L, if_start, AlarmRef, Indent1, Stream),
 	    deepen_indent(Indent1, Indent2),
@@ -159,6 +160,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec) | Clauses],
 	   excrete(L, assignment, CountSlot=IndCount, Indent, Stream),
 	   excrete(L, while_start, PtrNonNull, Indent, Stream),
 	   deepen_indent(Indent, Indent1),
+	   excrete(L, procedure_call, abort_check, Indent1, Stream),
 	   all(language, declare_ptrs,
 	       [build(Names), build(Types), build(BasePtrs),
 		unify([L, Indent1, Stream])]),
@@ -238,8 +240,7 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 
 	make_struct_reference(L, Pointer, new_instance, NewInstance, _),
 
-	refer_value(L, this, ThisRef),
-	excrete(L, procedure_call, abort_check(ThisRef), Indent, Stream),
+	excrete(L, procedure_call, abort_check, Indent, Stream),
 	length(RefIndices, NumIndices),
 	(NumIndices = 0,
 	    ptr_compare(L, MPTargetRef, 0, CallPrune);
@@ -373,26 +374,79 @@ do_assignment(L, [reset_list(Ptr, Name) | Clauses],
 
 /* Put the next loop into a separate procedure */
 
-do_assignment(L, [define_proc_for(Sm, Path), SmLoop0 | Clauses], I, Used, Stream) :-
+do_assignment(L, [define_proc_for(Sm, Path), open_index(MSt, _B) | Clauses],
+	      I, Used, Stream) :-
     get_rest_of_my_loop(Clauses, MyLoop, Later), Path = [_|_], wake,
-    append_atoms(Sm, '_proc', ProcName),
+    all(user, append_atoms, [unify(Sm), build(['_context', '_proc', '_mtd']),
+			     build([StructName, ProcName, MethodName])]),
     all(language, formal_arg_for_proc_sm,
-	[build(Path), unify([L, Used]), build(Args)]),
-    CallSpec =.. [call, void, ProcName, [int, phase] | Args],
+	[build(Path), unify([L, Used, context]), build(Defns)]),
+    excrete(L, struct_defn, [StructName, ['AME_model*', mdlInst, []] | Defns],
+	    I, Stream),
+    
+    CallSpec =.. [call, 'static void', ProcName, ['ModelThread', '*mThd']],
     excrete(L, procedure_start, CallSpec, I, Stream),
-    I1 is I+4,
-    append(MyLoop, [finish_level], FullLoop),
-    do_assign_list(L, [SmLoop0 | FullLoop], I1, Used, Stream),
-    excrete(L, end(procedure), ProcName, I, Stream),
+    all(render, make_struct_reference,
+	[unify(L), unify(mThd), build([tid, phase, context, go, come]),
+	 build(_Nms), build([TidMem, PhaseMem, ContextMem, Go0Mem, Come1Mem])]),
+    append_atoms(['(', StructName, '*)(', ContextMem, ')'], CastContextMem),
+    deepen_indent(I, I1),
+    excrete(L, variable_declaration, [StructName, '*context', [],
+				      CastContextMem], I1, Stream),
+    SetupRandCall =.. [setup_thread_randoms, 1234567890, TidMem],
+    excrete(L, procedure_call, SetupRandCall, I1, Stream),
+    make_struct_reference(L, context, mdlInst, _, InstRef),
+    make_struct_reference(L, InstRef, MethodName, _, MethodRef),
+    MethodCall =.. [MethodRef, mThd],
+    excrete(L, procedure_call, MethodCall, I1, Stream),
+    excrete(L, end(procedure), CallSpec, I, Stream),
+    nl(Stream),
+    MtdCallSpec =.. [call, void, MethodName, ['ModelThread', '*mThd']],
+    excrete(L, procedure_start, MtdCallSpec, I, Stream),
+    
+    excrete(L, variable_declaration, [StructName, '*context', [],
+				      CastContextMem], I1, Stream),
+    excrete(L, variable_declaration, [int, snf, [2]], I1, Stream),
+    make_procedure_call_chars(L, [read, Go0Mem, '(char*)snf',
+				  '2*sizeof(int)'], ReadProcStr),
+    name(ReadProc, ReadProcStr),
+    excrete(L, while_start, ReadProc, I1, Stream),		     
+    deepen_indent(I1, I2),
+    excrete(L, variable_declaration, [int, phase, [], PhaseMem], I2, Stream),
+    % re-create stuff from open_index
+    deepen_indent(I2, I3),
+    MSt = glob(Loop, Inds),
+    declare(L, Loop, loop, int, Used, I2, Stream),
+    make_indexed_reference(L, Loop, Inds, Count),
+    % per-record array?
+    all(render, make_indexed_reference, [unify(L), unify(snf), build([[0],[1]]),
+				   build([Go, Stop])]),
+    excrete(L, for_start, [Count, Go, Stop, 1], I2, Stream),
+    
+    do_assign_list(L, MyLoop, I3, Used, Stream),
+    excrete(L, end(for), Count, I2, Stream),
+    excrete(L, procedure_call, write(Come1Mem, '(char*)snf',
+				     'sizeof(int)'), I1, Stream),
+    excrete(L, end(while), ReadProc, I1, Stream),
+    excrete(L, end(procedure), MtdCallSpec, I, Stream),
     do_assign_list(L, Later, I, Used, Stream).
 
 /* Call that proc */
 
-do_assignment(L, [call_proc_for(Sm, Path) | Clauses], I, Used, Stream) :-
-    append_atoms(Sm, '_proc', ProcName), Path = [_|_], wake,
+do_assignment(L, [call_proc_for(Sm, Path, Loop) | Clauses], I, Used, Stream) :-
+    all(user, append_atoms, [unify(Sm), build(['_context', '_state', '_proc']),
+			     build([ContextName, StateName, ProcName])]),
+    append_atoms('static struct ', ContextName, StructType),
+    excrete(L, variable_declaration, [StructType, StateName, []], I, Stream),
     all(language, arg_for_proc_sm,
-	[build(Path), unify([L, Used]), build(Args)]),
-    Call =.. [ProcName, phase | Args],
+	[build(Path), unify([L, Used]), build(Mems), build(Args)]),
+    all(render, populate_struct,
+	[unify(L), unify(StateName), build([mdlInst | Args]),
+	 build([this | Mems]), unify(I), unify(Stream)]),
+    make_pointer(L, StateName, StatePtr),
+    append_atoms('(void* (*)(void*))', ProcName, CastProcName),
+    append_atoms('(void*)', StatePtr, CastStatePtr),
+    Call =.. [thread_mgr, CastProcName, phase, CastStatePtr, Loop],
     excrete(L, procedure_call, Call, I, Stream),
     do_assign_list(L, Clauses, I, Used, Stream).
     
@@ -827,10 +881,8 @@ set_introspect(L, Used, IndexSlot, CountSlot) :-
 	 atom_number(LoopNumAtom, LoLoopNum),
 	 LoopLevel is LoLoopNum+1;
      LoopLevel=0),
-    make_struct_reference(L, this, loopIndexPtrs, LIP, _),
-    make_struct_reference(L, this, loopIndexCounts, LIC, _),
-    make_indexed_reference(L, LIP, [LoopLevel], IndexSlot),
-    make_indexed_reference(L, LIC, [LoopLevel], CountSlot).
+    make_indexed_reference(L, loopIndexPtrs, [LoopLevel], IndexSlot),
+    make_indexed_reference(L, loopIndexCounts, [LoopLevel], CountSlot).
 
 template_type(TptName, Specific, TptPtr) :-
 	append_atoms([TptName, ' <', Specific, 'type> *'], TptPtr).
@@ -853,19 +905,21 @@ copy_to_exit([Inst | Togo], N, Tail) :-
 	 M=N),
 	copy_to_exit(Togo, M, Tail).
 
-arg_for_proc_sm(Level, [L, Used], ArgRef) :-
+arg_for_proc_sm(Level, [L, Used], ArgRef, Field) :-
     (Level = sm(_,_, Arg, _);
     Level = set(Spec, _),
       make_scalar(L, Spec, Used, Arg)),
-    refer_value(L, Arg, ArgRef).
+    refer_value(L, Arg, ArgRef),
+    generate_name(L, arg, Field, Used).
 
-formal_arg_for_proc_sm(Level, [L, Used], [Type, Arg]) :-
+formal_arg_for_proc_sm(Level, [L, Used, State], [Type, Mem, []]) :-
     (Level = sm(Name, _, Arg, _),
        append_atoms(Name, 'type*', Type);
      Level = set(Spec, _),
        Type = int,
        Spec = glob(_, glob(Arg, []))),
-    generate_name(L, arg, Arg, Used).
+    generate_name(L, arg, Mem, Used),
+    make_struct_reference(L, State, Mem, Arg, _).
 
 declare_as(glob(Ind,_), Type, [Ind, Type]).
 

@@ -1786,7 +1786,7 @@ proc tcl::mathfunc::loses {prob phase} {
 #	set kills_per_step [expr $ts(0)?4:1]
 #	return [expr [ame_rand 0 1] > \
 #		    pow(1-$prob, $dts($phase)/$kills_per_step)]
-	return [expr {ame_rand(0, 1) > pow(1-$prob, $dts($phase))}]
+	return [expr {[random01] > pow(1-$prob, $dts($phase))}]
     }
 }
 

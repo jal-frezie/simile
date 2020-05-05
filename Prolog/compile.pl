@@ -980,7 +980,7 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 				Stream),
 	nl(Stream),
 	excrete(Language, procedure_start,
-	       call(void, ProcName, [int, phase]), 0, Stream),
+		call(void, ProcName, [int, phase]), 0, Stream),
 	nl(Stream),
 	excrete(Language, comment, 'CONSTANT DECLARATIONS', 0, Stream),
 	nl(Stream),
@@ -1018,7 +1018,8 @@ separate_sub_procs(Mixed, Defns, Calls) :-
     language><get_rest_of_my_loop(After, Inside, Outside),
     append([define_proc_for(Sm, Path), ProcLoop | Inside],
 	   [finish_level | MoreDefns], Defns),
-    append(Before, [call_proc_for(Sm, Path) | Outside], PartSplit),
+    ProcLoop = open_index(_MSt, LoopCount),
+    append(Before, [call_proc_for(Sm, Path, LoopCount) | Outside], PartSplit),
     separate_sub_procs(PartSplit, MoreDefns, Calls);
     Defns = [], Calls = Mixed.
 
@@ -1122,6 +1123,11 @@ make_exit_proc(Language, Instance, Dest) :-
 	send_to_dest(Dest, Blank),
 	excrete(Language, procedure_start, call(void, do_exitmodel), 0, Dest),
 	send_to_dest(Dest, Blank),
+	% if worker threads have been created, destroy them
+	(_Any has_class_refinement separate of 1 ->
+	     excrete(Language, procedure_call,
+		     thread_mgr('NULL', -10, 'NULL', 0), 4, Dest);
+	 true),
 	excrete(Language, clear_memory, Instance, 4, Dest),
 	send_to_dest(Dest, Blank),
 	excrete(Language, end(procedure), dummy, 0, Dest).
@@ -2579,7 +2585,7 @@ add_to_deps(Cond, Full) :-
 %	    member(Dep, Deps);
 %	    member(Cond, Consequential);
 	Cond = make(Act, []-_, [], [_, -2, -2, -2 | _], []),
-	    (member(Act, [lastvalue(_), update(_)]);
+	    (member(Act, [lastvalue(_), precvalue(_), update(_)]);
 				% conditions that may not need making
 	    raise_exception(cond_not_found(Act))).
 

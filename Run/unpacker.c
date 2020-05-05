@@ -59,6 +59,7 @@ int my_md5(Tcl_Interp *interp, Tcl_Obj* text) {
   Tcl_CmdInfo info;
   Tcl_ObjCmdProc* md5ObjProc;
   ClientData md5ObjClientData;
+  // could use #ifdef __APPLE__ instead
   if (strcmp("Darwin", Tcl_GetVar2(interp, "::tcl_platform", "os", 0)))
     result = 5;
   else

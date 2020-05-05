@@ -343,7 +343,7 @@ strings_direct(tcl, clear_memory, instance(submodel,_,_, Name, _-Dims), Indent,
 	       Stream) :-
 	(number(Dims), !,
 	    NewIndent is Indent + 4,
-	    excrete(tcl, for_start, [makenames, Dims, 1], Indent, Stream),
+	    excrete(tcl, for_start, [makenames, 1, Dims, 1], Indent, Stream),
 	    refer_value(tcl, makenames, VWithDollar),
 	    make_struct_reference(tcl, Name, VWithDollar, SpaceName);
 	NewIndent = Indent,
@@ -388,7 +388,7 @@ strings_direct(tcl, assign_space, Dest=[Top, Struct, Indices, Used, Dims],
 	Dims = [Dim | More], !, % won't work for multiple dims but no need
 	    language><declare(tcl, XIndex, loop, int, Used, Indent, Stream),
 	    DeepIndent is Indent+4,
-	    strings_direct(tcl, for_start, [XIndex, Dim, 1],
+	    strings_direct(tcl, for_start, [XIndex, 1, Dim, 1],
 			   Indent, Stream),
 	    refer_value(tcl, XIndex, XIndexRef),
 	    make_indexed_namespace(tcl, Dest, [XIndexRef], NewDest),
@@ -486,8 +486,8 @@ strings_direct(L, data_declaration,
 			Indent, Stream).
 
 /* start of a for loop */
-strings_direct( L, for_start, [Name,End,Step], Indent, Stream) :- 
-	make_assignment(L, Name, 1, Init),
+strings_direct( L, for_start, [Name,Start,End,Step], Indent, Stream) :- 
+	make_assignment(L, Name, Start, Init),
 	refer_value(L, Name, NameRef),
 	make_increment_expr(L, Name, Step, Incr),
 	(L = c, Template = "~*sfor ( ~s; ~w; ~s ) {\n";
@@ -500,11 +500,7 @@ strings_direct( L, for_start, [Name,End,Step], Indent, Stream) :-
 strings_direct( L, while_start, Expr, Indent, Stream) :-
 	(L = c, Fmt = "~*swhile ( ~w ) {\n";
 	    L = tcl, Fmt =  "~*swhile {~w} {\n"),
-	format(Stream, Fmt, [Indent," ", Expr]),
-	ContDent is Indent+4,
-	refer_value(L, this, ThisRef),
-	strings_direct(L, procedure_call, abort_check(ThisRef), ContDent,
-		       Stream).
+	format(Stream, Fmt, [Indent," ", Expr]).
 
 strings_direct(L, switch_start, Condition, Indent, Stream) :-
 	make_expr(L, Condition, ConditionExpr),
@@ -569,6 +565,13 @@ strings_direct(L, cond_events, [Cond, Procs, Args], Indent, Stream) :-
 		[build(Procs), unify([L, Args, DeepIndent, Stream])]),
 	excrete(L, end(if), Cond, Indent, Stream).
 
+strings_direct(L, struct_defn, [Name | Members], Indent, Stream) :-
+    format(Stream, "~*sstruct ~a {\n", [Indent, " ", Name]),
+    I1 is Indent+4,
+    all(render, excrete, [unify(L), unify(variable_declaration),
+			  build(Members), unify(I1), unify(Stream)]),
+    format(Stream, "~*s};\n", [Indent, " "]).
+	
 excrete(L, Stat, Args, Indent, Stream) :-
 	strings_direct(L, Stat, Args, Indent, Stream), !;
 	do_obsolete_thing(L, Stat, Args, Indent, Stream), fail; true.
@@ -1147,6 +1150,10 @@ get_element_ref(L, Array, Index, Result) :-
 	    sicstus_format_to_chars("[lindex ~w ~w]", [ArrayRef, Index], ResChars),
 	    name(Result, ResChars).
 
+populate_struct(L, Struct, Mem, Val, Indent, Stream) :-
+    sicstus_format_to_chars("~a.~a", [Struct, Mem], FieldStr),
+    name(Field, FieldStr),
+    excrete(L, assignment, Field = Val, Indent, Stream).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* make_struct_reference/4: Takes language, an expression which should have a
 structure pointer assigned to it and a variable name, and returns an expression that can
@@ -1280,6 +1287,8 @@ combine( L, Op, VArgs, Atom) :-
         VArgs = [CArg],
 	make_pointer(L, CArg, PArg),
 	Atom =.. [Op, PArg];
+      member(Op, [rand, ame_rand]), !,
+	 Atom =.. [ame_rand | VArgs];
 %   Now to exorcise the demon of integer division...
 	Op = (/), !,
 	    VArgs = [Nom, Div],
@@ -1344,8 +1353,6 @@ combine( L, Op, VArgs, Atom) :-
 		TargetOp = atan;
 	Op = abs, L = c, !,
 	        TargetOp = myabs;
-	Op = rand, !,
-	        TargetOp = ame_rand;
 	TargetOp = Op),
 		Atom =.. [TargetOp | VArgs].
 

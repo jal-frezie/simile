@@ -792,8 +792,8 @@ make_intermediates(
 			    ClearContext, Step, [])];
 	member(Functor, [in_preceding, in_progenitor]), !,
 	    wait_for_submodels(Exited, Access),
-	    Setting = [make(lastvalue(TotalName),
-			    [ClearTime,InnerTgt,lastvalue(InnerTgt) | Depends],
+	    Setting = [make(precvalue(TotalName),
+			    [ClearTime,InnerTgt,precvalue(InnerTgt) | Depends],
 			    WriteContext, Step, [IncrAct]),
 		       make(TotalName,
 			    [cleared(TotalName), this_step(InnerTgt) | Access],
@@ -1580,7 +1580,7 @@ refer_inter(instance(internal, inter(SourcePath, _, ParamLoops), Source, Name,
 			       in_progenitor(_)-this_step]), !,
 	 % progenitor value can be set in next loop because cannot create
 	 % offspring in same step as parent -- access before setting
-	    DelayCond =.. [Delay, lastvalue(Name)],
+	    DelayCond =.. [Delay, precvalue(Name)],
 	    Args = [made_at(cleared(Name), SourceContext),
  				% array must be cleared before first use
 		    made_at(DelayCond, DestPath)];

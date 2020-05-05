@@ -1,6 +1,8 @@
 #include	<stdarg.h>
 #include        <signal.h>
 #include        <setjmp.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include <dllcalls.h>
 #include <backend.h>
@@ -24,10 +26,10 @@ int stop(int code) {
 }
 
 int lazy = 16384;
-void abort_check (InstanceOfModel* instId) {
+void InstanceOfModel::abort_check () {
   if (!lazy--) {
     lazy=16384;
-    if (stat_check(instId->partner)) {
+    if (stat_check(partner)) {
       throw -101;
     }
   }
@@ -440,3 +442,57 @@ int preceding(int lo) {
 int first(int lo) {
   return lo==1;
 }
+
+#define NUM_THREADS 6
+#define NUM_TASKS 48
+
+void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
+				 int phase, void* context, int loop) {
+  static int go[2], come[2];
+  int i, snf[2];
+  static ModelThread* pThd[NUM_THREADS];
+
+  if (phase == -10) { // special exit value to tidy up threads
+    close(go[1]);
+    for( i = 0; i < NUM_THREADS; i++ ) {
+      pthread_join(pThd[i]->thread, NULL);
+      delete pThd[i];
+    }
+    return;
+  }
+
+  if (phase == -2) { // initialize the threads and comms
+    
+    pipe(go);
+    pipe(come);
+    
+    for( i = 0; i < NUM_THREADS; i++ ) {
+      pThd[i] = new ModelThread;
+      pThd[i]->tid = i+1;
+      pThd[i]->go = go[0]; // only copy pipe ends needed by thread
+      pThd[i]->come = come[1];
+      pThd[i]->context = context;
+      pthread_create(&(pThd[i]->thread), NULL, worker_fn, pThd[i]);
+    }
+  } // end initialization
+  for( i = 0; i < NUM_THREADS; i++ ) {
+    pThd[i]->phase = phase;
+  }
+  snf[1] = 0;
+  for (i=1; i<=NUM_TASKS; ++i) {
+    snf[0] = snf[1]+1;
+    snf[1] = loop*i/NUM_TASKS;
+    write(go[1], (char*)snf, 2*sizeof(int));
+  }
+  
+  for (i=1; i<=NUM_TASKS; ++i) {
+    read(come[0], (char*)snf, sizeof(int));
+  }
+  // terminate threads -- do in exit?
+  // close(payload.ports[1]);
+  
+  // for( i = 0; i < NUM_THREADS; i++ ) {
+  //   pthread_join(threads[i], NULL);
+  // }
+  
+};

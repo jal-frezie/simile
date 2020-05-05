@@ -81,6 +81,14 @@ class bstree_node {
   int level;
   submodeltype* data;
 };
+  
+class ModelThread {
+public:
+  int tid;
+  pthread_t thread;
+  int phase, go, come;
+  void* context;
+};
 
 // abstract base class for submodels, with extractor virtual function --
 // these are actually made in the model code itself
@@ -106,14 +114,13 @@ public:
   //! Pointer to start of list of graph data objects
   graph_data_type* c_graphdata;
 
-
   // functions called by host module
   virtual int do_evalmodel(int) = 0;
   
   // functions implemented by model code
-  virtual void advancemodel (int phase) = 0;
-  virtual void updatemodel (int phase) = 0;
-  virtual void evalmodel (int phase) = 0;
+  virtual void advancemodel (int) = 0;
+  virtual void updatemodel (int) = 0;
+  virtual void evalmodel (int) = 0;
   virtual void do_exitmodel () = 0;
 
   // support functions called by model code
@@ -132,8 +139,11 @@ public:
     modeldata flag_derived_event(int graphId, modeldata magnitude);
   void setup_graph_data(int, double, double, int, double, double,
 			int, int, int, ...);
-  double  graph_lookup(double, int);		  
+  double  graph_lookup(double, int);
+  void abort_check(void);
+  void thread_mgr(void* (*)(void*), int, void*, int);
 };
+
 // Declaration for procedure types found in the model dll by the shank
 typedef double getversion_type(void);
 typedef int getcount_type(graph_data_type**, char**, int*, node_data_line**);

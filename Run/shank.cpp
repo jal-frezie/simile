@@ -39,7 +39,7 @@ return (char*)lpMsgBuf;
     #include <setjmp.h>
     #include <dlfcn.h>
 
-    #define LOAD_DLL flopen
+    #define LOAD_DLL safe_open
 /* 'dummyunload' clause was used with macos because dlcompat didn't include
  * unload, but using -bundle instead of -dynamiclib to build the model seems to
  * make dlcompat, and dummyunload, unnecessary. Indeed it allows model
@@ -63,7 +63,7 @@ static void exit_sighandler(int x){
   longjmp(s_env, x);
 }
 
-void* flopen(char* fileName) {
+void* safe_open(char* fileName) {
   int error;
 
   signal(SIGFPE,exit_sighandler);
@@ -241,22 +241,20 @@ uint64_t seed_rand(int seed) {
   return shuttle.set;
 }
 
-unsigned short (*rand_states)[3];
-void setup_randoms(unsigned int seed) {
-  int coo, tnum = 0;
-#pragma omp parallel
-  ++tnum;
+thread_local unsigned short rand_states[3];
 
-  rand_states = new unsigned short[tnum][3];
-  for (coo=0; coo<tnum; ++coo) {
-    rand_states[coo][0] = seed/65536;
-    rand_states[coo][1] = (unsigned short)fmod(seed,65536);
-    rand_states[coo][2] = 10000+coo;
-  }
+void setup_randoms(unsigned int seed) {
+  setup_thread_randoms(seed, 0);
+}
+
+void setup_thread_randoms(unsigned int seed, int tNum) {
+  rand_states[0] = seed/65536;
+  rand_states[1] = (unsigned short)fmod(seed,65536);
+  rand_states[2] = 10000+tNum;
 }
 
 double rand_fract() {
-  return erand48(rand_states[0 PLUS_THREAD_NUM]);
+  return erand48(rand_states);
 }
 /*
 #endif
@@ -1880,7 +1878,7 @@ int ModelServer::param_item_from_id(FileParamData** start, int paramId) {
 }
 
 /* New version of nodeModelAndId returns number
-   -- who knows, maybe one day it will work intelligently?
+   -- who knows, maybe one day it will work intelligently? */
 HCOMP ModelServer::CompFromCapt(char* seeknode) {
   int count;
   char test[255];
@@ -1897,7 +1895,7 @@ HCOMP ModelServer::CompFromCapt(char* seeknode) {
   // Node with given caption not found...
   return 0;
 }
-*/
+
 int ModelServer::member_param_item(FileParamData** start, int* parentPath) {
   node_data_line* nLine;
 
@@ -2617,7 +2615,7 @@ excpData* execute(void* modelType, void* modelHandle, int how_int,
 // This deletes a model instance and/or a class -- both when used in Simile
 char* myexit(void* modelType, void* modelHandle) {  
   if (modelHandle) {
-    // ((ExecutingModel*)modelHandle)->ExitInstance();
+    ((ExecutingModel*)modelHandle)->ExitInstance();
     // swap below cmd for above at next minor version increment
     delete (ExecutingModel*)modelHandle;
   }
