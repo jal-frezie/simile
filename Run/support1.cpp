@@ -25,13 +25,19 @@ int stop(int code) {
   return curInst->stop_on_id(0, code);
 }
 
-int lazy = 16384;
+thread_local int lazy = 16384;
+thread_local int phoneHome = -1;
+// pipe to master or NULL if already there
+// guaranteed never to be a valid file descriptor
 void InstanceOfModel::abort_check () {
+  int valToSend = WORKER_QUERY_GUI;
   if (!lazy--) {
     lazy=16384;
-    if (stat_check(partner)) {
-      throw -101;
-    }
+    if (phoneHome == -1) { // in master, save to prod Tcl
+      if (stat_check(partner))
+	throw -101;
+    } else
+      write(phoneHome, (char*)&valToSend, sizeof(int));	
   }
 }
 
@@ -465,6 +471,7 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
     
     pipe(go);
     pipe(come);
+    phoneHome = -1; // guaranteed never to be a valid file descriptor
     
     for( i = 0; i < NUM_THREADS; i++ ) {
       pThd[i] = new ModelThread;
@@ -487,6 +494,11 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
   
   for (i=1; i<=NUM_TASKS; ++i) {
     read(come[0], (char*)snf, sizeof(int));
+    if (*snf == WORKER_QUERY_GUI) { // thread not finished, checking interrupt
+      if (stat_check(partner))
+	throw -101;
+      --i; // do not count finish
+    }
   }
   // terminate threads -- do in exit?
   // close(payload.ports[1]);

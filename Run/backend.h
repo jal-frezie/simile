@@ -1,6 +1,9 @@
 // Identifier
 #define MDL_OBJ_VERS 10.903
 
+// special integers sent between mgr and worker threads
+#define WORKER_QUERY_GUI -1
+
 // class definition and handling procedure for extra variables used in
 // complicated integration methods
 
