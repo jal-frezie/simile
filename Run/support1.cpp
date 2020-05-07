@@ -25,6 +25,17 @@ int stop(int code) {
   return curInst->stop_on_id(0, code);
 }
 
+#ifdef WIN32
+int spareForCount;
+#define PIPENEW(ENDS) CreatePipe(ENDS, ENDS+1, NULL, 0)
+#define PIPEREAD(SPOUT,BUF,COUNT) ReadFile(SPOUT,BUF,COUNT,spareForCount,NULL)
+#define PIPEWRITE(SPOUT,BUF,COUNT) WriteFile(SPOUT,BUF,COUNT,spareForCount,NULL)
+#else
+#define PIPENEW(ENDS) pipe(ENDS)
+#define PIPEREAD(SPOUT,BUF,COUNT) read(SPOUT,BUF,COUNT)
+#define PIPEWRITE(SPOUT,BUF,COUNT) write(SPOUT,BUF,COUNT)
+#endif
+
 thread_local int lazy = 16384;
 thread_local int phoneHome = -1;
 // pipe to master or NULL if already there
@@ -37,7 +48,7 @@ void InstanceOfModel::abort_check () {
       if (stat_check(partner))
 	throw -101;
     } else
-      write(phoneHome, (char*)&valToSend, sizeof(int));	
+      PIPEWRITE(phoneHome, (char*)&valToSend, sizeof(int));	
   }
 }
 
@@ -468,9 +479,8 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
   }
 
   if (phase == -2) { // initialize the threads and comms
-    
-    pipe(go);
-    pipe(come);
+    PIPENEW(go);
+    PIPENEW(come);
     phoneHome = -1; // guaranteed never to be a valid file descriptor
     
     for( i = 0; i < NUM_THREADS; i++ ) {
@@ -489,11 +499,11 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
   for (i=1; i<=NUM_TASKS; ++i) {
     snf[0] = snf[1]+1;
     snf[1] = loop*i/NUM_TASKS;
-    write(go[1], (char*)snf, 2*sizeof(int));
+    PIPEWRITE(go[1], (char*)snf, 2*sizeof(int));
   }
   
   for (i=1; i<=NUM_TASKS; ++i) {
-    read(come[0], (char*)snf, sizeof(int));
+    PIPEREAD(come[0], (char*)snf, sizeof(int));
     if (*snf == WORKER_QUERY_GUI) { // thread not finished, checking interrupt
       if (stat_check(partner))
 	throw -101;
