@@ -152,12 +152,13 @@ SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll6$(PT)$(MINREL)$(SHAREDLIBEXTN)
 UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker6$(PT)$(MINREL)$(SHAREDLIBEXTN)
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 RELAY =  $(EXECDIR)/relay$(EXECEXTN)
+SUPP = Run/support.o
 
 # shank before shims in dependencies because some Make utilities build them
 # in order, and while changed shank does not require shim rebuild, it must
 # be present...
 simile: $(PROLOGSTATE) $(RELAY) \
-	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT)
+	$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT) $(SUPP)
 
 vpath %.pl Prolog
 
@@ -251,6 +252,10 @@ $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 	cd Run; $(GPPCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) \
 		-o ../$(SLDIR)/$(SHANK) shank.cpp; cd ..
+
+$(SUPP): Run/support.cpp Run/backend.h
+	cd Run; $(GPPCMD) -c $(CFLAGS) -I. $(MAKEPIC) \
+		-o support.o support.cpp; cd ..
 
 # Build a .dll to check licence code during Windows installation
 # Version for GPInstall by QSC
@@ -616,5 +621,5 @@ endif
 
 # call clean after changing license info in this file
 clean:
-	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(RELAY) \
+	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(RELAY) $(SUPP) \
 		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT)

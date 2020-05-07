@@ -523,7 +523,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		flush $spout
 		close $spout
 	    } else {
-		set objs {}
+		set objs [file join $TOOLDIR support.o]
 		#puts "extsrcs $extSrcs"
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {

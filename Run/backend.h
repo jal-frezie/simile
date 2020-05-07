@@ -167,3 +167,6 @@ EXPORT int compare_instance_status (const int[], const int[],  int);
 EXPORT void report_events(int, const int[], int, const int[], const double[]);
 EXPORT void handle_model_param_request(void*, void*, int, BOOLEAN, int, int*);
 EXPORT int stat_check(void*);
+
+// procedures called between model code and support object
+void setup_thread(int, int);
