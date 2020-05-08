@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdlib.h> /* for rand procedure used by tcl models */
 #include <time.h>
+#include <pthread.h>
 
 /* Primitives
 ---------- */

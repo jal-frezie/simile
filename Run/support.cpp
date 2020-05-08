@@ -2,34 +2,40 @@
 
 #ifdef _WIN32
 #include <windows.h>
-int spareForCount;
 #define PIPENEW(ENDS) CreatePipe(ENDS, ENDS+1, NULL, 0)
-#define PIPEREAD(SPOUT,BUF,COUNT) ReadFile(SPOUT,BUF,COUNT,spareForCount,NULL)
-#define PIPEWRITE(SPOUT,BUF,COUNT) WriteFile(SPOUT,BUF,COUNT,spareForCount,NULL)
+#define PIPEREAD(SPOUT,BUF,COUNT) ReadFile(SPOUT,BUF,COUNT,&spareForCount,NULL)
+#define PIPEWRITE(SPOUT,BUF,COUNT) WriteFile(SPOUT,BUF,COUNT,&spareForCount,NULL)
+#define PIPECLOSE(SPOUT) CloseHandle(SPOUT)
+#define TSPOUT HANDLE
+long unsigned int spareForCount;
 #else
 #include <unistd.h>
 #define PIPENEW(ENDS) pipe(ENDS)
 #define PIPEREAD(SPOUT,BUF,COUNT) read(SPOUT,BUF,COUNT)
 #define PIPEWRITE(SPOUT,BUF,COUNT) write(SPOUT,BUF,COUNT)
+#define PIPECLOSE(SPOUT) close(SPOUT)
+#define TSPOUT int
 #endif
 
 #include <dllcalls.h>
 #include <backend.h>
 
 // for use by generated code
-int pipeRead(int spout, char* buf, int count) {
-  return PIPEREAD(spout, buf, count);
+TSPOUT homeCalling, phoneHome;
+int pipeRead(char* buf, int count) {
+  return PIPEREAD(homeCalling, buf, count);
 }
 
-int pipeWrite(int spout, char* buf, int count) {
-  return PIPEWRITE(spout, buf, count);
+int pipeWrite(char* buf, int count) {
+  return PIPEWRITE(phoneHome, buf, count);
 }
 
-thread_local int lazy = 16384, phoneHome = -1;
+thread_local int lazy = 16384;
+thread_local int amWorker = 0;
 
-void setup_thread(int id, int mic) {
+void setup_thread(int id) {
   setup_thread_randoms(1234567890, id);
-  phoneHome = mic;
+  amWorker = 1;
 }
 
 // pipe to master or NULL if already there
@@ -38,7 +44,7 @@ void InstanceOfModel::abort_check () {
   int valToSend = WORKER_QUERY_GUI;
   if (!lazy--) {
     lazy=16384;
-    if (phoneHome == -1) { // in master, save to prod Tcl
+    if (!amWorker) { // in master, save to prod Tcl
       if (stat_check(partner))
 	throw -101;
     } else
@@ -51,12 +57,12 @@ void InstanceOfModel::abort_check () {
 
 void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
 				 int phase, void* context, int loop) {
-  static int go[2], come[2];
+  static TSPOUT go[2], come[2];
   int i, snf[2];
   static ModelThread* pThd[NUM_THREADS];
 
   if (phase == -10) { // special exit value to tidy up threads
-    close(go[1]);
+    PIPECLOSE(go[1]);
     for( i = 0; i < NUM_THREADS; i++ ) {
       pthread_join(pThd[i]->thread, NULL);
       delete pThd[i];
@@ -67,13 +73,14 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
   if (phase == -2) { // initialize the threads and comms
     PIPENEW(go);
     PIPENEW(come);
-    phoneHome = -1; // guaranteed never to be a valid file descriptor
+    amWorker = 0;
+    // pipe ends used by worker thread
+    homeCalling = go[0];
+    phoneHome = come[1];
     
     for( i = 0; i < NUM_THREADS; i++ ) {
       pThd[i] = new ModelThread;
       pThd[i]->tid = i+1;
-      pThd[i]->go = go[0]; // only copy pipe ends needed by thread
-      pThd[i]->come = come[1];
       pThd[i]->context = context;
       pthread_create(&(pThd[i]->thread), NULL, worker_fn, pThd[i]);
     }

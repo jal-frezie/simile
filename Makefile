@@ -243,7 +243,7 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
 # Windows: idiosyncratic stuff allows dynamic linker to work
 # (even with gcc 4.5.0)...static stops exit error in win32/tcl8.6
 $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
-	cd Run; $(GPPCMD) -DSHARELIB $(CFLAGS) $(MAKEPIC) $(MAKESL) -static \
+	cd Run; $(GPPCMD) -std=c++11 -DSHARELIB $(CFLAGS) $(MAKEPIC) $(MAKESL) -static \
 		-I. -Wl,--out-implib,lib5d$(ARCHEXTN).a -o $(SHANK) shank.cpp; \
 		mv $(SHANK) ../$(SLDIR); \
 		mv lib5d$(ARCHEXTN).a ../$(RESDIR); cd ..
@@ -254,7 +254,7 @@ $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 		-o ../$(SLDIR)/$(SHANK) shank.cpp; cd ..
 
 $(SUPP): Run/support.cpp Run/backend.h
-	cd Run; $(GPPCMD) -c $(CFLAGS) -I. $(MAKEPIC) \
+	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \
 		-o support.o support.cpp; cd ..
 
 # Build a .dll to check licence code during Windows installation

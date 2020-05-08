@@ -603,7 +603,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		puts $spout "g++ -shared -o $TARGET  -static \
                         $libOpt1 $libOpt2 objtmp.o $lDirs $lFiles -l5d_win"
 	    } else {
-		set objs {}
+		set objs [file join $TOOLDIR support.o]
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {
 		    set obj ${tgt}_$tcl_platform(machine)_win.o
@@ -830,7 +830,7 @@ proc ControlDraw {prologVersion} {
     set sendvars(proV) $prologVersion
     
     # set up to compile stub and models with same bitness as tcltk
-    set sendvars(arflags) [list -Wno-trigraphs] ;# [list -O3]
+    set sendvars(arflags) [list -std=c++11 -Wno-trigraphs] ;# [list -O3]
     if {!$::headless && ![string equal [tr. Default] \
 			    [PrefValue custom(compChoice) compChoice]]} {
 # using local compiler, check if we have to tell it our bitnesss

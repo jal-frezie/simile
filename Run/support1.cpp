@@ -432,5 +432,6 @@ int first(int lo) {
 }
 
 // declarations of procs in support.cpp
-int pipeRead(int, char*, int);
-int pipeWrite(int, char*, int);
+void setup_thread(int);
+int pipeRead(char*, int);
+int pipeWrite(char*, int);
