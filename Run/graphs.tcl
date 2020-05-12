@@ -14,6 +14,10 @@
 # graph function is graph(param, xlow, xhigh, xspan,
 #	ylow, yhigh, yspan, [pt1, pt2 ... ptn])
 
+proc IsCSV {extn} {
+    return [expr {[string tolower $extn] eq {.csv}}]
+}
+
 proc IsBogusURL {locn} {
     return [string match mysql://* $locn]
 }
@@ -1605,7 +1609,7 @@ proc LoadDataFile {mode query mdl} {
         switch $mode {
             columns {
                 # csv handled by existing code other extensions handled with ODBC
-                if {$ext == {.csv}} {
+                if {[IsCSV $ext]} {
                         set i 1
                         foreach hd [::csv::split $firstLine] {
                             if {$haveDND} {
@@ -1624,12 +1628,17 @@ proc LoadDataFile {mode query mdl} {
                     }
                     # was a bracket
             } grid {
+		if {[IsCSV $ext]} {
+		    set split_row ::csv::split
+		} else {
+		    set split_row concat
+		}
                 set table_entry(col1) 1
-                set table_entry(coln) [llength [split $firstLine ,]]
+                set table_entry(coln) [llength [eval $split_row {$firstLine}]]
                 set table_entry(row1) 1
                 set table_entry(rown) 1
                 while {[gets $stream firstLine]!=-1} {
-		    set coln [llength [::csv::split $firstLine]]
+		    set coln [llength [eval $split_row {$firstLine}]]
 		    if {$coln>$table_entry(coln)} {
 			set table_entry(coln) $coln
 		    }
@@ -1718,6 +1727,11 @@ proc LoadTableData {specLocn lineCount addSpecials} {
     upvar 1 $specLocn tableSpec
     set filename [lindex $tableSpec 0]
     set ext [file extension $filename]
+    if {[IsCSV $ext]} {
+	set split_row ::csv::split
+    } else {
+	set split_row concat
+    }
     #set mode [lindex $tableSpec 1]
     
     # end JMM ODBC
@@ -1745,7 +1759,7 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 	set coln 0
 	set stream [NetOpen [lindex $tableSpec 0] r]
 	while {[gets $stream firstLine]!=-1} {
-	    set acoln [llength [::csv::split $firstLine]]
+	    set acoln [llength [eval $split_row {$firstLine}]]
 	    if {$acoln>$coln} {
 		set coln $acoln
 	    }
@@ -1783,10 +1797,10 @@ proc LoadTableData {specLocn lineCount addSpecials} {
         for {set rowInd 1} {$rowInd <= $ylast} {incr rowInd} {
             gets $tStr entryLine
 	    if {$rowInd == $idxRow} {
-		set xIndPts [TrimFields [::csv::split ,$entryLine]]
+		set xIndPts [concat dummy [TrimFields [eval $split_row {$entryLine}]]]
 	    }
             if {$rowInd >= $yfirst} {
-                set usePts [TrimFields [::csv::split ,$entryLine]]
+                set usePts [concat dummy [TrimFields [eval $split_row {$entryLine}]]]
 		if {$idxCol>-1} {
 		    set yInd [lindex $usePts $idxCol]
 		} elseif {$yflip} {
@@ -1901,7 +1915,7 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 # fileName dataHeader ?dbtableId? ?wrapTime? ?fillMethod? ?tpiUnits? indHeaders...
         # csv handled by existing code other extensions handled with ODBC
         #ShowMess debug info "Loading table with data $tableSpec; ext $ext" ok
-        if { $ext == {.csv} } {
+        if {[IsCSV $ext]} {
 	    set tStr [NetOpen [lindex $tableSpec 0] r]
 	    gets $tStr headerLine
 	    set headerList [TrimFields [::csv::split $headerLine]]
