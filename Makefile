@@ -250,7 +250,7 @@ $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 
 # Unix: not needed for Linux as it can build at run time
 $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
-	cd Run; $(GPPCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) \
+	cd Run; $(GPPCMD) $(CFLAGS) -std=c++11 -I. $(MAKEPIC) $(MAKESL) \
 		-o ../$(SLDIR)/$(SHANK) shank.cpp; cd ..
 
 $(SUPP): Run/support.cpp Run/backend.h
