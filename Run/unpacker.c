@@ -47,7 +47,9 @@ void crash (Tcl_Interp *interp, const char *cause) {
 }	 
 
 int my_md5(Tcl_Interp *interp, Tcl_Obj* text) {
-  char interpCmd[] = "::md5::md5";
+  char interpCmd[] = "::md5"; // uses Trf version (compiled)
+  // except on Mac where tcllib version (scripted) is copied over this
+
   Tcl_Obj* argv[3];
   int result;
 
@@ -59,12 +61,8 @@ int my_md5(Tcl_Interp *interp, Tcl_Obj* text) {
   Tcl_CmdInfo info;
   Tcl_ObjCmdProc* md5ObjProc;
   ClientData md5ObjClientData;
-  // could use #ifdef __APPLE__ instead
-  if (strcmp("Darwin", Tcl_GetVar2(interp, "::tcl_platform", "os", 0)))
-    result = 5;
-  else
-    result = 0;
-  if (! Tcl_GetCommandInfo(interp, interpCmd+result, &info)) {
+
+  if (! Tcl_GetCommandInfo(interp, interpCmd, &info)) {
     Tcl_AppendResult(interp, "unknown command \"", interpCmd, "\"", NULL);
     return TCL_ERROR;
   }

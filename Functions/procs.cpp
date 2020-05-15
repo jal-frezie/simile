@@ -164,12 +164,13 @@ double simile_mod(double point, double span) {
   Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
   MA  02111-1307  USA
 
+  JAT: 'register' class removed as incompatible with newer c++
   ------------------------------------------------------------*/
 static double			/* direct method for integer order */
 GammaDeviate_direct (unsigned long order)
 {
-  register double x;
-  register unsigned long n;
+  double x;
+  unsigned long n;
 
 /*    assert (order > 0); */
 
@@ -183,7 +184,7 @@ GammaDeviate_direct (unsigned long order)
 static double			/* rejection method for float order */
 GammaDeviate_rejection (double order)
 {
-    register double x, s, y, v;
+    double x, s, y, v;
 
     s = sqrt(2.0 * order - 1.0);
     do {
@@ -202,8 +203,8 @@ GammaDeviate_rejection (double order)
 static int			/* actually compute the next value */
 binome(double p, int n)
 {
-  register unsigned long i, a, b, k = 0;
-  register double x, x1, x2;
+  unsigned long i, a, b, k = 0;
+  double x, x1, x2;
   /* check for parameters out of range */
   if (p<0 || p>1) return stop(51);
   if (n<0) return stop(52);

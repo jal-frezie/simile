@@ -119,9 +119,10 @@ if {[string match windows $tcl_platform(platform)]} {
     # cd /usr/lib
     # ::md5 dummy
     # cd $oldDir
-    # ...removed, as loading libcrypto now crashes it
+    # ...removed, as loading libcrypto now crashes it. Substitute with script v
     package require md5
-
+    proc md5 {args} {return [eval md5::md5 $args]}
+    
     if {[package vcompare [info patchlevel] 8.6.9]<0} {
     # problem was fixed in 8.6.9
     proc IsFullscreen {w} {
@@ -508,7 +509,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    puts $spout "export PATH=\"[file nativename [file join $env(SYSDIR) bin]]\""
 		    puts $spout "export CPLUS_INCLUDE_PATH=\"[file nativename [file join $env(SYSDIR) include MacOS]]\""
 		}
-		set objs {}
+		set objs \"[file join $TOOLDIR support.o]\"
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {
 		    set obj ${tgt}_$tcl_platform(machine)_mac.o
@@ -516,7 +517,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 			    [file exists $src] && [Newer $src $obj m]} {
 			puts $spout "g++ $sendvars(arflags) -fPIC -c -I\"$TOOLDIR\" -o $obj \"$src\"" 
 		    }
-		    lappend objs $obj
+		    append objs " \"$obj\""
 		}
 		set switchForLib -bundle 
 		puts $spout "g++ $sendvars(arflags) $switchForLib -o $TARGET $objs $lDirs $lFiles -l5d_mac"
