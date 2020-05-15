@@ -152,7 +152,7 @@ SHIM = $(STUBS_DIR)/$(SHAREDLIBPREFX)ame_dll6$(PT)$(MINREL)$(SHAREDLIBEXTN)
 UNPK = $(STUBS_DIR)/$(SHAREDLIBPREFX)unpacker6$(PT)$(MINREL)$(SHAREDLIBEXTN)
 SHANK = $(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN)
 RELAY =  $(EXECDIR)/relay$(EXECEXTN)
-SUPP = Run/support.o
+SUPP = Run/support$(ARCHEXTN).o
 
 # shank before shims in dependencies because some Make utilities build them
 # in order, and while changed shank does not require shim rebuild, it must
@@ -255,7 +255,7 @@ $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
 
 $(SUPP): Run/support.cpp Run/backend.h
 	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \
-		-o support.o support.cpp; cd ..
+		-o support$(ARCHEXTN).o support.cpp; cd ..
 
 # Build a .dll to check licence code during Windows installation
 # Version for GPInstall by QSC
@@ -568,6 +568,7 @@ install:
 		Run/simile16.ico \
 		Run/simile32.ico \
 		Run/simile64.ico \
+		$(SUPP) \
 		Run/support.tcl \
 		Run/support1.cpp \
 		Run/support2.cpp \
