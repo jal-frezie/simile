@@ -509,7 +509,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    puts $spout "export PATH=\"[file nativename [file join $env(SYSDIR) bin]]\""
 		    puts $spout "export CPLUS_INCLUDE_PATH=\"[file nativename [file join $env(SYSDIR) include MacOS]]\""
 		}
-		set objs \"[file join $TOOLDIR support.o]\"
+		set objs \"[file join $TOOLDIR support_mac.o]\"
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {
 		    set obj ${tgt}_$tcl_platform(machine)_mac.o
