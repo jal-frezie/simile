@@ -792,28 +792,35 @@ proc SquirtMime {args} {
         puts -nonewline $mimeSquirter [lindex $args 1]
     }
 }
-
 proc LoadIconImages {} {
     global iconImages
+
+    set rawImg [image create photo]
+    set growth [expr {int($::defScaling)}]
+    foreach icon {info question warning error} {
+	set iconImages($icon) \
+	    [image create photo -file "../Images/Icons/dialog-$icon.png"]
+    }
     foreach fn {tick cross function} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
     }
-    foreach fn {graph table new open save edit reel noreel text zap \
-		    submodel compartment flow variable condition \
-		    creation reproduction immigration loss alarm} {
-        set iconImages($fn) \
+    foreach fn {graph table new open save edit reel noreel text zap} {
+	set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
+    }
+    foreach fn {submodel compartment flow variable condition \
+		    creation reproduction immigration loss alarm} {
+	$rawImg read "../Images/Toolbar/${fn}.gif" -shrink
+        set iconImages($fn) [image create photo]
+	$iconImages($fn) copy $rawImg -zoom $growth
     }
     if {[info exists ::do_events]} {
 	foreach fn {event state squirt} {
-	    set iconImages($fn) \
-		[image create photo -file "../Images/Toolbar/${fn}.gif"]
+	    $rawImg read "../Images/Toolbar/${fn}.gif" -shrink
+	    set iconImages($fn) [image create photo]
+	    $iconImages($fn) copy $rawImg -zoom $growth
 	}
-    }
-    foreach icon {info question warning error} {
-	set iconImages($icon) \
-	    [image create photo -file "../Images/Icons/dialog-$icon.png"]
     }
 }
 

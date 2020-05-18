@@ -196,6 +196,7 @@ namespace eval slide139 {
 			  -command [namespace code \
 					[list SliderEvent $node {}]]] \
 		    -side right
+		FixDisabledImgBug $f.zap
 		BindPopup $f.zap [tr. {Trigger an event now with this magnitude}]
 	    }
             switch -glob $type {
