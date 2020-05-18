@@ -570,7 +570,23 @@ namespace eval $keyValue {
     #         $winId.t configure -titlerows $titlerows
     #     }
     ################################################################################
-    
+    # will use hidden widget to get header metrics
+    label .hidden_l -font TkDefaultFont
+    proc FillCellPixels {winId row col text} {
+	global data$winId
+	.hidden_l configure -text $text
+	set data${winId}($row,$col) $text
+	set hpxl -[winfo reqwidth .hidden_l]
+	set vpxl -[winfo reqheight .hidden_l]
+#	puts "$text at $row,$col is $hpxl,$vpxl (now [$winId.t width $col], [$winId.t height $row])"
+	if {$vpxl < [$winId.t height $row]} {
+	    $winId.t height $row $vpxl
+	}
+	if {$hpxl < [$winId.t width $col]} {
+	    $winId.t width $col $hpxl
+	}
+    }
+
     proc Reconbobulate {winId} {
 	global data$winId
 
@@ -715,10 +731,9 @@ namespace eval $keyValue {
                 set tgtSq [expr $curHeaderRows-1],$rowsTop
                 set oldCapt [lindex [array get data$winId $tgtSq] 1]
                 if {[llength $oldCapt]} {
-                    set data${winId}($tgtSq) "$topCapt \\ $oldCapt"
-                } else {
-		    set data${winId}($tgtSq) $topCapt
+                    append topCapt " \\ $oldCapt"
                 }
+		FillCellPixels $winId [expr $curHeaderRows-1] $rowsTop $topCapt
                 incr rowsTop
             } else {
                 set tgtSq $colsTop,[expr $curHeaderCols-1]
@@ -726,11 +741,9 @@ namespace eval $keyValue {
                 set oldCapt [lindex [array get data$winId $tgtSq] 1]
                 if {[llength $oldCapt]} {
 #                    $winId.t set $tgtSq "$oldCapt \\ $topCapt"
-                    set data${winId}($tgtSq) "$oldCapt \\ $topCapt"
-                } else {
-#                    $winId.t set $tgtSq $topCapt
-		    set data${winId}($tgtSq) $topCapt
+                    set topCapt "$oldCapt \\ $topCapt"
                 }
+		FillCellPixels $winId $colsTop [expr $curHeaderCols-1] $topCapt
                 incr colsTop
             }
             $winId.t tag cell base $tgtSq
@@ -738,10 +751,11 @@ namespace eval $keyValue {
         }
 	if {![info exists scaryFact]} {
 	    if {[info exists tgtSq]} {
-		set rcolWidth [string length [$winId.t get $tgtSq]]
-		if {$rcolWidth>10} {
-		    $winId.t width [expr $curHeaderCols-1] $rcolWidth
-		}
+		# column width set on insertion for all headers now
+		# set rcolWidth [string length [$winId.t get $tgtSq]]
+		# if {$rcolWidth>10} {
+		#     $winId.t width [expr $curHeaderCols-1] $rcolWidth
+		# }
 		$winId.t tag raise base
 		$winId.t tag config base -fg black
 	    }
@@ -795,8 +809,10 @@ namespace eval $keyValue {
                             $headerElt==$timeToShow} {
                     set lineToShow $count
                 }
-                set data${winId}($count,$headerCol) \
-                        [lindex [split $headerElt /] end]
+#                set data${winId}($count,$headerCol) \
+#                        [lindex [split $headerElt /] end]
+		FillCellPixels $winId $count $headerCol \
+		    [lindex [split $headerElt /] end]
                 incr headerCol
             }
             incr count
@@ -835,8 +851,10 @@ namespace eval $keyValue {
                                 $headerElt==$timeToShow} {
                         set lineToShow $count
                     }
-                    set data${winId}($headerRow,$count) \
-                            [lindex [split $headerElt /] end]
+#                    set data${winId}($headerRow,$count) \
+#                            [lindex [split $headerElt /] end]
+		    FillCellPixels $winId $headerRow $count \
+			[lindex [split $headerElt /] end]
                 }
                 incr headerRow
             }
