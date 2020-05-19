@@ -582,7 +582,7 @@ namespace eval $keyValue {
 	if {$vpxl < [$winId.t height $row]} {
 	    $winId.t height $row $vpxl
 	}
-	if {$hpxl < [$winId.t width $col]} {
+	if {$hpxl < [$winId.t width $col] && $hpxl < -48*$::defScaling} {
 	    $winId.t width $col $hpxl
 	}
     }
