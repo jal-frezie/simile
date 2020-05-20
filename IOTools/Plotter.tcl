@@ -460,6 +460,8 @@ namespace eval ::$keyValue {
 
 	set sample [$w.canvas create text 0 0 -text "two\nline" -anchor nw]
 	set plot($w,yborder_top) [lindex [$w.canvas bbox $sample] 3]
+	set plot($w,yborder_bottom) $plot($w,yborder_top)
+	set plot($w,xborder_left) [expr {3*$plot($w,yborder_top)/2}]
 	$w.canvas delete $sample
 
         ### Convenience variables
@@ -492,9 +494,8 @@ namespace eval ::$keyValue {
         }
         
         ### Label the two axes
-        $w.canvas create text [expr $x0+$plot($w,xlength)/2.0] \
-                [expr $y0+$plot($w,yborder_bottom)-5] \
-                -text "Time" -anchor s \
+        $w.canvas create text [expr $x0+$plot($w,xlength)/2.0] $y0 \
+                -text "\nTime" -anchor n \
                 -tags {movable scalable xaxis_label markable toplevel}
         $w.canvas create text $x0 [expr $y0-$plot($w,ylength)/2.0] \
                 -tags {movable scalable yaxis_label markable toplevel}
@@ -535,7 +536,7 @@ namespace eval ::$keyValue {
         #         $w.canvas bind Ylabel
         ################################################################################
         
-        bind $w <Configure> [namespace code "resize $w %W %x %y %w %h"]
+        #bind $w <Configure> [namespace code "resize $w %W %x %y %w %h"]
         bind $w.canvas <Configure> [namespace code "resize $w %W %x %y %w %h"]
         
     }
@@ -547,7 +548,9 @@ namespace eval ::$keyValue {
 	if {![info exists tails]} {
 	    set tails Values
 	}
-        $w.canvas itemconfig yaxis_label -text [join $tails {, }]\n
+	# add newlines to make it 3 lines high if less
+        $w.canvas itemconfig yaxis_label -text \
+	    [join $tails {, }][string repeat \n [expr 3-[llength [split $tails \n]]]]
     }
 	
     proc TraceHighlight {w} {
@@ -726,7 +729,7 @@ namespace eval ::$keyValue {
             set xlabel [expr $plot($w,xborder_left)+$plot($w,xlength)/2.0]
             set ylabel [expr $plot($w,yborder_top)+$plot($w,ylength) \
                     +$plot($w,yborder_bottom)-5]
-            $w.canvas coords xaxis_label $xlabel $ylabel
+            ##$w.canvas coords xaxis_label $xlabel $ylabel
             
             set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]; #jmm
             set x2 [expr $x1+5]; # todo 2000 seems a bit big jmm
@@ -1034,7 +1037,9 @@ namespace eval ::$keyValue {
         set xmove [expr {\
             [get_x $w $OldXmin_axis $plot($w,Tscale)] \
                     -[get_x $w $plot($w,Xmin_axis) $plot($w,Tscale)] }]
-	if {$scaleChange==1} {
+	if {$scaleChange>0.99 && $scaleChange<1.01} {
+# ignore very small changes due to fp error -- all real ones large
+# since resizes handled separately
 	    $w.canvas move xaxis_item $xmove 0
         } else {
 # single move for greater speed?

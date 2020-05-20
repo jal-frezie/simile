@@ -449,6 +449,11 @@ namespace eval ::$keyValue {
 	    set notes [ListNotes $w.canvas]
 	    ### rub out previous graph
 	    $w.canvas delete all
+
+	    set sample [$w.canvas create text 0 0 -text "two\nline" -anchor nw]
+	    set plot($w,yborder_bottom) [lindex [$w.canvas bbox $sample] 3]
+	    set plot($w,xborder_left) [expr {3*$plot($w,yborder_bottom)/2}]
+	    $w.canvas delete $sample
 	    
 	    ### Convenience variables
 	    set x0 $plot($w,xborder_left)
@@ -486,10 +491,15 @@ namespace eval ::$keyValue {
 		[expr $y0+$plot($w,yborder_bottom)-5] \
 		-text $plot($w,XaxisLabel) -anchor s \
 		-tags {movable scalable xaxis_label markable toplevel}
-	    $w.canvas create text 5 [expr $y0-$plot($w,ylength)/2.0] \
-		-text [lindex $plot($w,Ylabels) 0] -anchor w \
-		-tags {movable scalable xaxis_label markable toplevel}
-	    
+	    set tails [lindex $plot($w,Ylabels) 0]
+	    # add newlines to make it 3 lines high if less
+	    append tails [string repeat \n [expr 3-[llength [split $tails \n]]]]
+	    $w.canvas create text $x0 [expr $y0-$plot($w,ylength)/2.0] \
+		-text $tails -anchor e \
+		-tags {movable scalable yaxis_label markable toplevel}
+	    if {[package vcompare [info tclversion] 8.5]>0} {
+		$w.canvas itemconfigure yaxis_label -anchor s -angle 90
+	    }	    
 	    # legend vars only not elements of arrays
 	    # for now, legend nothing
 	    #        set nYlabel [llength $plot($w,Ylabels)]
