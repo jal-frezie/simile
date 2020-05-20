@@ -427,7 +427,7 @@ itcl::class similescript::$newLayerClass {
         pack [ttk::entry $rangeF.maxF.entry -width 20] -side right -padx 10
 	$rangeF.maxF.entry insert 0 $useNodes($winId,max)
         pack $rangeF -padx 10 -pady 10
-        pack [checkbutton $dlg.update -text "Update at display intervals" \
+        pack [ttk::checkbutton $dlg.update -text "Update at display intervals" \
 		  -variable [itcl::scope useNodes($winId,displayUpdate)]]
         
         set oriF [labelframe $dlg.orient -text "Legend position:"]

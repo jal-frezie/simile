@@ -427,7 +427,7 @@ proc AddPub {mdl} {
     pack [label $onlinef.l -text "ID of Primary Publication:"] -side left
     pack [entry $onlinef.e] -side left
     foreach indexer {PUBMED DOI URL OFFLINE} {
-	pack [radiobutton $onlinef.rb$indexer -variable disaggregate(md_idxr) \
+	pack [ttk::radiobutton $onlinef.rb$indexer -variable disaggregate(md_idxr) \
 		  -value $indexer -text $indexer] -side left
     }
 
@@ -1206,7 +1206,7 @@ proc RelationCheck {parent title type entries state init_comment} {
     }
     foreach attr $entries val $state {
 	set capt [format $msgs([lindex $attr 0]) [lrange $attr 1 end]]
-        pack [checkbutton $f.$attr -text $capt -wraplength 160 \
+        pack [ttk::checkbutton $f.$attr -text $capt \
                 -variable relation($attr) -offvalue 0 -onvalue 1] -anchor w
         set relation($attr) $val
         if {$relation($attr)==-1} {
@@ -1530,7 +1530,8 @@ proc DoWelcomeDialog {dtId} {
     pack .register.links -expand on -fill x -padx 4 -pady 2
     
     pack [frame .register.checkframe] -padx 4 -pady 4
-    pack [checkbutton .register.checkframe.cb -variable welcomeDone] -side left
+    pack [ttk::checkbutton .register.checkframe.cb -variable welcomeDone] \
+	-side left
     pack [label .register.checkframe.l -text "Do not show this welcome screen again"] \
             -side left
     #    pack [button .register.ok -text OK -width 10 -default active -command {set userinfo(done) $welcomeDone}]

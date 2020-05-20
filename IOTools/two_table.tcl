@@ -1069,35 +1069,35 @@ namespace eval $keyValue {
         pack [frame $layoutP.l1]  -anchor w -padx 2 -pady 4
         pack [label $layoutP.l1.lbl -text "Times:" -width 20] -side left  -anchor w
         pack [label $layoutP.l1.lbl2 -text "On Rows"] -side left -anchor w
-        pack [radiobutton $layoutP.l1.rowb -variable ${t}l1 -value rows] -side left  -anchor w
+        pack [ttk::radiobutton $layoutP.l1.rowb -variable ${t}l1 -value rows] -side left  -anchor w
         pack [label $layoutP.l1.coll -text "On Columns"] -side left -anchor w
-        pack [radiobutton $layoutP.l1.colb -variable ${t}l1 -value cols] -side left -anchor w
+        pack [ttk::radiobutton $layoutP.l1.colb -variable ${t}l1 -value cols] -side left -anchor w
         pack [label $layoutP.l1.nonel1 -text "Current values only"] -side left -anchor w
-        pack [radiobutton $layoutP.l1.noneb -variable ${t}l1 -value none] -side left -anchor w
+        pack [ttk::radiobutton $layoutP.l1.noneb -variable ${t}l1 -value none] -side left -anchor w
         
         pack [frame $layoutP.l2]  -anchor w -padx 2 -pady 4
         pack [label $layoutP.l2.lbl -text "Element names:" -width 20] -side left  -anchor w
         pack [label $layoutP.l2.lbl2 -text "On Rows"] -side left -anchor w
-        pack [radiobutton $layoutP.l2.rowb -variable ${t}l2 -value rows] -side left  -anchor w
+        pack [ttk::radiobutton $layoutP.l2.rowb -variable ${t}l2 -value rows] -side left  -anchor w
         pack [label $layoutP.l2.coll -text "On Columns"] -side left  -anchor w
-        pack [radiobutton $layoutP.l2.colb -variable ${t}l2 -value cols] -side left  -anchor w
+        pack [ttk::radiobutton $layoutP.l2.colb -variable ${t}l2 -value cols] -side left  -anchor w
         
         pack [frame $layoutP.l3]  -anchor w -padx 2 -pady 4
         pack [label $layoutP.l3.lbl -text "First index:" -width 20] -side left  -anchor w
         pack [label $layoutP.l3.lbl2 -text "On Rows"] -side left -anchor w
-        pack [radiobutton $layoutP.l3.rowb -variable ${t}l3 -value rows] -side left  -anchor w
+        pack [ttk::radiobutton $layoutP.l3.rowb -variable ${t}l3 -value rows] -side left  -anchor w
         pack [label $layoutP.l3.coll -text "On Columns"] -side left  -anchor w
-        pack [radiobutton $layoutP.l3.colb -variable ${t}l3 -value cols] -side left  -anchor w
+        pack [ttk::radiobutton $layoutP.l3.colb -variable ${t}l3 -value cols] -side left  -anchor w
         
         pack [frame $layoutP.l4]  -anchor w -padx 2 -pady 4
         pack [label $layoutP.l4.lbl -text "Other indices:" -width 20] -side left  -anchor w
         pack [label $layoutP.l4.lbl2 -text "On Rows"] -side left -anchor w
-        pack [radiobutton $layoutP.l4.rowb -variable ${t}l4 -value rows] -side left  -anchor w
+        pack [ttk::radiobutton $layoutP.l4.rowb -variable ${t}l4 -value rows] -side left  -anchor w
         pack [label $layoutP.l4.coll -text "On Columns"] -side left -anchor w
-        pack [radiobutton $layoutP.l4.colb -variable ${t}l4 -value cols] -side left -anchor w
+        pack [ttk::radiobutton $layoutP.l4.colb -variable ${t}l4 -value cols] -side left -anchor w
         
         pack [frame $layoutP.l5]  -anchor w -padx 2 -pady 4
-        pack [checkbutton $layoutP.l5.update -variable ${t}l5 \
+        pack [ttk::checkbutton $layoutP.l5.update -variable ${t}l5 \
                 -text "Update at display intervals"]
         
         #set newHeader [GetCaptionPathFromId $node]

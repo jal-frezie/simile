@@ -60,11 +60,11 @@ namespace eval $keyValue {
         DIYMakeFrames $inpId; Clear $winId
         DIYMakeFrames $outId; ClearOut $winId
         
-        pack [checkbutton $inpId.gather -text "Use current data as estimates" \
+        pack [ttk::checkbutton $inpId.gather -text "Use current data as estimates" \
                 -variable ::[namespace current]::useNodes($winId,gathering) \
                 -command [namespace code [list AbleEstimateFields $winId]]]
 	set scrogVar ::[namespace current]::useNodes($winId,scrogging)
-        pack [checkbutton $outId.show -text "Show these on plots" \
+        pack [ttk::checkbutton $outId.show -text "Show these on plots" \
 		  -variable $scrogVar \
 		  -command [namespace code [list LoadMeasurements $winId]]]
 	bind $outId.show <Destroy> [list unset $scrogVar] ;# tidy up
@@ -96,7 +96,7 @@ namespace eval $keyValue {
         pack [set pf [labelframe $resId.pbf \
                 -text {Predictive analysis:}]] -fill x -padx 4 -pady 4
         pack [frame $pf.pknobs]
-        pack [checkbutton $pf.pknobs.ck -text Predict \
+        pack [ttk::checkbutton $pf.pknobs.ck -text Predict \
                 -command [namespace code [list AblePrediction $winId]] \
                 -variable [namespace current]::useNodes($winId,preds)] \
                 -side left
@@ -556,10 +556,10 @@ namespace eval $keyValue {
         set ::timeInfo($node) start
         if {[string equal INPUT $mode]} {
             pack [label $f.caption -text "Set [lindex $levels end]:"] -side left
-            pack [radiobutton $f.start -text "At start" -variable timeInfo($node) \
+            pack [ttk::radiobutton $f.start -text "At start" -variable timeInfo($node) \
                     -value start -command \
                     [namespace code [list AbleTimeData $node $f]]] -side left
-            pack [radiobutton $f.ints -text "Every" -variable timeInfo($node) \
+            pack [ttk::radiobutton $f.ints -text "Every" -variable timeInfo($node) \
                     -value ints -command \
                     [namespace code [list AbleTimeData $node $f]]] -side left
             pack [entry $f.int -textvariable regularInt($node) -width 8 \
@@ -713,7 +713,7 @@ namespace eval $keyValue {
 	    set targetData($title) {} ;# in case used before with different reqs
 	    lappend useNodes($winId,drivers) $title
             
-#            pack [checkbutton $f.end -variable ::readMany($title) \
+#            pack [ttk::checkbutton $f.end -variable ::readMany($title) \
 #                    -command [namespace code \
 #                    [list AbleTimeSampling $myNode $node $title $f]]] \
 #                    -side left

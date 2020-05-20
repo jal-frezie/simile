@@ -437,6 +437,11 @@ if {[tk windowingsystem] eq "aqua"} {
 	set niceSize 9
     }
 }
+# set size of indicators for clickables
+set clickables [expr {int(8*$defScaling)}]
+ttk::style configure TCheckbutton -indicatordiameter $clickables
+ttk::style configure TRadiobutton -indicatordiameter $clickables
+
 set graph(font) [list helvetica $niceSize bold]
 set graph(megafont) [list helvetica [expr {$niceSize*3}] bold]
 

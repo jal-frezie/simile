@@ -1001,8 +1001,8 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 	array unset table_entry uftsi
     }
     if {![string equal .equation $parent]} {
-        pack [checkbutton .table.fbuttons.keepvals -var table_entry(bytes) \
-                -text [tr. "Include values in scenario files"] -wrap 200 \
+        pack [ttk::checkbutton .table.fbuttons.keepvals -var table_entry(bytes) \
+                -text [tr. "Include values in scenario files"] \
                 -command "set table_entry(source) 1"] -padx 4 -pady 4
 # comments section : new for 5.6 : should be scrollable!
 	pack [text .table.commentt -height 4] -side bottom -fill x -expand 1

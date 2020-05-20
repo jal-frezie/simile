@@ -228,7 +228,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     BindPopup $mainF.main.main [NameToTag $eqnFrameTitle]
     set mainf [GetFrame $mainF.main.main]
     frame $mainf.slider
-    radiobutton $mainf.slider.radio1 -text "[tr. $topType]: " \
+    ttk::radiobutton $mainf.slider.radio1 -text "[tr. $topType]: " \
 	-variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
     if {[lsearch {init_val_for rules_for} $purpose]>=0} {
@@ -259,7 +259,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     
     pack $mainf.slider -anchor nw -fill x
     frame $mainf.file
-    radiobutton $mainf.file.radio2 -text [tr. $midType] \
+    ttk::radiobutton $mainf.file.radio2 -text [tr. $midType] \
 	-variable equation(isparam) -value 2
     pack $mainf.file.radio2 -side left
     BindPopup $mainf.file.radio2 [NameToTag $midType]
@@ -268,9 +268,8 @@ proc create_equation {parent purpose comp indices enum_types} {
     
     set equation(actzone) $mainf.equation.textbox
     frame $equation(actzone)
-    radiobutton $equation(actzone).radio0 -variable equation(isparam) \
-	-text "$bottomType: $comp = " -wraplength 120 \
-	-value 0
+    ttk::radiobutton $equation(actzone).radio0 -variable equation(isparam) \
+	-text "$bottomType: $comp = " -value 0
     BindPopup $equation(actzone).radio0 [NameToTag $bottomType]
     
     set en [text $equation(actzone).text -height 4 -width 64 \

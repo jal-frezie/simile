@@ -1873,12 +1873,12 @@ proc Customize {winId mode} {
 	set tb [frame $text.backbox]
 	label $tb.bdwhat -text "Show border"
 	pack $tb.bdwhat -side left
-	checkbutton $tb.bd -variable looks(txtbd) \
+	ttk::checkbutton $tb.bd -variable looks(txtbd) \
 	    -command "ZotObjectSize $t $n $object 0"
 	pack $tb.bd -side left
 	label $tb.bgwhat -text "Show background"
 	pack $tb.bgwhat -side left
-	checkbutton $tb.bg -variable looks(txtbg) \
+	ttk::checkbutton $tb.bg -variable looks(txtbg) \
 	    -command "ZotObjectSize $t $n $object 0"
 	pack $tb.bg -side left
         button $tb.col -text "Set colour" \
@@ -1899,7 +1899,7 @@ proc Customize {winId mode} {
 	}
 	pack $graphics.setcolours
 	pack [frame $graphics.trwhite]
-	pack [checkbutton $graphics.trwhite.chk -variable looks(trwhite)] -side left
+	pack [ttk::checkbutton $graphics.trwhite.chk -variable looks(trwhite)] -side left
 	pack [label $graphics.trwhite.lbl -text "Show white as transparent"] -side left
 	
 	frame $graphics.flashcolours

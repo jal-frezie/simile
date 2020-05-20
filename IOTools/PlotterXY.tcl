@@ -398,18 +398,18 @@ namespace eval ::$keyValue {
 	    set chkF [frame [GetFrame $dlg].checkbuttons -relief groove]
 	    
 	    pack [ttk::labelframe $chkF.drawlinesF -text "Draw lines between points"] -fill x
-	    pack [checkbutton $chkF.drawlinesF.cbutton -text [tr. {In time}] \
+	    pack [ttk::checkbutton $chkF.drawlinesF.cbutton -text [tr. {In time}] \
 		      -variable [namespace current]::DrawLines] -side right
-	    pack [checkbutton $chkF.drawlinesF.lbutton  -text [tr. {In array}] \
+	    pack [ttk::checkbutton $chkF.drawlinesF.lbutton  -text [tr. {In array}] \
 		      -variable [namespace current]::ArrayLines] -side right
 	    pack [ttk::labelframe $chkF.drawpointsF -text "Draw points"] -fill x
-	    pack [checkbutton $chkF.drawpointsF.cbutton -variable [namespace current]::DrawPoints] -side right
+	    pack [ttk::checkbutton $chkF.drawpointsF.cbutton -variable [namespace current]::DrawPoints] -side right
 	    pack [ttk::labelframe $chkF.currentOnlyF -text "Persistence (0 for indefinite)"] -fill x
 	    pack [entry $chkF.currentOnlyF.cbutton -textvariable [namespace current]::CurrentOnly] -side right
 	    
 	    pack [ttk::labelframe $chkF.colsF -text "Use different colours for:"] -fill x
-	    pack [checkbutton $chkF.colsF.ambutton -text "Array members" -variable [namespace current]::KeyArrays] -side left
-	    pack [checkbutton $chkF.colsF.srbutton -text "Successive runs" -variable [namespace current]::KeyRuns] -side right
+	    pack [ttk::checkbutton $chkF.colsF.ambutton -text "Array members" -variable [namespace current]::KeyArrays] -side left
+	    pack [ttk::checkbutton $chkF.colsF.srbutton -text "Successive runs" -variable [namespace current]::KeyRuns] -side right
         
 	    pack $chkF -padx 10
 	    

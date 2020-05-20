@@ -507,7 +507,7 @@ namespace eval grid005 {
 #	pack [frame $coloursF.misc] -fill x -expand 1
 #	pack [button $coloursF.misc.load -text [tr. {Load RGB file}] \
 #		  -command [namespace code "LegendFromRGB $winId"]] -side left
-#	pack [checkbutton $coloursF.misc.imgs -text [tr. {Superimpose images}] \
+#	pack [ttk::checkbutton $coloursF.misc.imgs -text [tr. {Superimpose images}] \
 #		  -variable [namespace current]::useNodes($winId,imgs)] \
 #	    -side left
         
@@ -525,8 +525,8 @@ namespace eval grid005 {
         pack $rangeF -padx 10 -pady 10
         
         set oriF [labelframe $fd.orient -text "Legend orientation"]
-	pack [radiobutton $oriF.h -text Horizontal -var [namespace current]::useNodes($winId,orient) -value h] -side left
-	pack [radiobutton $oriF.v -text Vertical -var [namespace current]::useNodes($winId,orient) -value v] -side right
+	pack [ttk::radiobutton $oriF.h -text Horizontal -var [namespace current]::useNodes($winId,orient) -value h] -side left
+	pack [ttk::radiobutton $oriF.v -text Vertical -var [namespace current]::useNodes($winId,orient) -value v] -side right
         pack $oriF -padx 10 -pady 10 -fill x
         
 	$t add [set fr [frame $t.rec]] -text "Record"
@@ -550,7 +550,7 @@ namespace eval grid005 {
 	pack [button $actionF.b -text "Save current" \
 		  -command [namespace code [list WriteImage $winId now]]] \
 	    -padx 10 -pady 10 
-	pack [checkbutton $actionF.cb -text "Save at display update" \
+	pack [ttk::checkbutton $actionF.cb -text "Save at display update" \
 		  -variable [namespace current]::useNodes($winId,regSave)] \
 	    -padx 10 -pady 10 
         pack $actionF -padx 10 -pady 10 -fill x -expand true

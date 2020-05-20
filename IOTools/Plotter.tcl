@@ -371,13 +371,13 @@ namespace eval ::$keyValue {
         #pack [ttk::labelframe $chkF.automaticScalingF -text "Automatic scaling"] -fill x
         #pack [checkbutton $chkF.automaticScalingF.cbutton -variable [namespace current]::AutoAxisScaling] -side right
         pack [ttk::labelframe $chkF.fewXAxisTicksF -text "Few x-axis ticks"] -fill x
-        pack [checkbutton $chkF.fewXAxisTicksF.cbutton -variable [namespace current]::FewXAxisTicks] -side right
+        pack [ttk::checkbutton $chkF.fewXAxisTicksF.cbutton -variable [namespace current]::FewXAxisTicks] -side right
 
         pack [ttk::labelframe $chkF.legendF -text "Draw legend"] -fill x
-        pack [checkbutton $chkF.legendF.cbutton -variable [namespace current]::DrawLegend] -side right
+        pack [ttk::checkbutton $chkF.legendF.cbutton -variable [namespace current]::DrawLegend] -side right
         pack [ttk::labelframe $chkF.colsF -text "Use different colours for:"] -fill x
-        pack [checkbutton $chkF.colsF.ambutton -text "Array members" -variable [namespace current]::KeyArrays] -side left
-        pack [checkbutton $chkF.colsF.srbutton -text "Successive runs" -variable [namespace current]::KeyRuns] -side right
+        pack [ttk::checkbutton $chkF.colsF.ambutton -text "Array members" -variable [namespace current]::KeyArrays] -side left
+        pack [ttk::checkbutton $chkF.colsF.srbutton -text "Successive runs" -variable [namespace current]::KeyRuns] -side right
         
         pack $chkF -padx 10
         
