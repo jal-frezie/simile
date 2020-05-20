@@ -237,7 +237,8 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     AbleSetup $mathr
     ttk::checkbutton $mathr.separate -text "Build as separate procedure" \
             -variable disaggregate(separate)
-    pack $mathr.separate -side left -anchor w
+    # pack $mathr.separate -side left -anchor w
+    # feature not yet released -- give new name when it is
     #    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
     #            -variable disaggregate(matherror)
     #    pack $mathf.matherror -anchor w
