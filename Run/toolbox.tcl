@@ -509,7 +509,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    puts $spout "export PATH=\"[file nativename [file join $env(SYSDIR) bin]]\""
 		    puts $spout "export CPLUS_INCLUDE_PATH=\"[file nativename [file join $env(SYSDIR) include MacOS]]\""
 		}
-		set objs \"[file join $TOOLDIR support_mac.o]\"
+		set objs \"[file join $env(SYSDIR) lib support_mac.o]\"
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {
 		    set obj ${tgt}_$tcl_platform(machine)_mac.o
@@ -524,7 +524,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		flush $spout
 		close $spout
 	    } else {
-		set objs [file join $TOOLDIR support.o]
+		set objs [file join $env(SYSDIR) lib support.o]
 		#puts "extsrcs $extSrcs"
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {
@@ -604,7 +604,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		puts $spout "g++ -shared -o $TARGET  -static \
                         $libOpt1 $libOpt2 objtmp.o $lDirs $lFiles -l5d_win"
 	    } else {
-		set objs [file join $TOOLDIR support.o]
+		set objs [file join $env(SYSDIR) lib support_win.o]
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {
 		    set obj ${tgt}_$tcl_platform(machine)_win.o
