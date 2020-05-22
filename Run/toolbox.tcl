@@ -524,7 +524,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		flush $spout
 		close $spout
 	    } else {
-		set objs [file join $env(SYSDIR) lib support.o]
+		set objs \"[file join $env(SYSDIR) lib support.o]\"
 		#puts "extsrcs $extSrcs"
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {
@@ -534,7 +534,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 			eval {exec g++} $sendvars(arflags) \
 			    [list -c -fPIC -I$TOOLDIR -o $obj $src]
 		    }
-		    lappend objs $obj
+		    append objs " \"$obj\""
 		}
 		set switchForLib -shared
 		eval {exec g++} $sendvars(arflags) \
@@ -604,7 +604,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		puts $spout "g++ -shared -o $TARGET  -static \
                         $libOpt1 $libOpt2 objtmp.o $lDirs $lFiles -l5d_win"
 	    } else {
-		set objs [file join $env(SYSDIR) lib support_win.o]
+		set objs \"[file join $env(SYSDIR) lib support_win.o]\"
 		foreach src [concat $extSrcs model.cpp] \
 		    tgt [concat $extTgts model] {
 		    set obj ${tgt}_$tcl_platform(machine)_win.o
@@ -613,7 +613,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 			puts $spout "g++ $sendvars(arflags) -c -o $obj \
                              -I\"[file nativename $TOOLDIR]\" \"$src\" -Wno-write-strings"
 		    }
-		    lappend objs $obj
+		    append objs " \"$obj\""
 		}
 #        puts $spout "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtmp.o"
 		if {$::tclBitness==32} {
