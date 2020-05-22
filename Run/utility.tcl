@@ -796,7 +796,7 @@ proc LoadIconImages {} {
     global iconImages
 
     set rawImg [image create photo]
-    set growth [expr {int($::defScaling)}]
+    set growth [expr {max(1,int($::defScaling))}]
     foreach icon {info question warning error} {
 	set iconImages($icon) \
 	    [image create photo -file "../Images/Icons/dialog-$icon.png"]
