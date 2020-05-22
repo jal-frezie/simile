@@ -2422,7 +2422,7 @@ proc ListWindows {fm} {
     $fm delete 0 end
     foreach win [winfo children .] {
 	if {[string equal Toplevel [winfo class $win]]} {
-	    $fm insert 0 radiobutton -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -variable window_info(uppermost) \
+	    $fm insert 0 radio -variable window_info(uppermost) \
 		-value $win -label [wm title $win] \
 		-command [list MyRaise $win]
 	}
