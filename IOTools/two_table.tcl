@@ -1140,7 +1140,7 @@ namespace eval $keyValue {
         set DecimalPlacesSB [spinbox $optionsF.decimalPlacesF.decimalPlacesSB -from 0 -to 20 -width 5]
         pack $DecimalPlacesSB -side right
         
-        set NegInRedCB [checkbutton $optionsF.negInRedCB -text "Show negative numbers in red"]
+        set NegInRedCB [ttk::checkbutton $optionsF.negInRedCB -text "Show negative numbers in red" -variable negInRedCB]
         pack $optionsF.decimalPlacesF $NegInRedCB -fill x -pady 15
         
         pack $catF $formF $optionsF -side left -padx 10 -fill y
@@ -1255,11 +1255,12 @@ namespace eval $keyValue {
 	FillFormatListBox $catlistbox $formlistbox
 	SetFormatListboxSelection $formlistbox $formatSpec
 	$optionsF.decimalPlacesF.decimalPlacesSB set [lindex $displayFormat($winId,$varIndex) 1]
-	if {[lindex $displayFormat($winId,$varIndex) 2]} {
-	    $optionsF.negInRedCB select
-	} else  {
-	    $optionsF.negInRedCB deselect
-	}
+#	if {[lindex $displayFormat($winId,$varIndex) 2]} {
+#	    $optionsF.negInRedCB select
+#	} else  {
+#	    $optionsF.negInRedCB deselect
+#	}
+	set ::negInRedCB [lindex $displayFormat($winId,$varIndex) 2]
 	$optionsF.decimalPlacesF.decimalPlacesSB configure -command \
 	    [namespace code "AdjustCurrentFormatList $winId $varCB 1 %s"]
 	$optionsF.negInRedCB configure -command \
