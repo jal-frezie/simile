@@ -568,7 +568,6 @@ install:
 		Run/simile16.ico \
 		Run/simile32.ico \
 		Run/simile64.ico \
-		$(SUPP) \
 		Run/support.tcl \
 		Run/support1.cpp \
 		Run/support2.cpp \
@@ -592,6 +591,7 @@ install:
 		$(SYSDIR)/bin/simile \
 		$(PROLOGSTATE) \
 		$(PROLOG_DB) \
+		$(SUPP) \
 		$(SYSDIR)/lib/SimileAutoObj/SimileAutoObj.itcl \
 		$(SYSDIR)/lib/SimileAutoObj/pkgIndex.tcl \
 		$(SYSDIR)/lib/Stubs/can2svg/can2svg.tcl \
