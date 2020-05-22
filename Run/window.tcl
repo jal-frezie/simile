@@ -1778,12 +1778,12 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set fm [menu $topm.view -tearoff 0]
     $topm add cascade -label [tr. View] -menu $topm.view
     $fm add check -label " [tr. Toolbar]" -variable custom(shownavbar,$winid) \
-            -indicatoron 0 -image $iconImages(chk_off) -selectimage $iconImages(chk_on) -compound left -command "toggleBar $winid"
-    $fm add check -command "toggleBar $winid" -indicatoron 0 -image $iconImages(chk_off) -selectimage $iconImages(chk_on) -compound left \
+            -command "toggleBar $winid"
+    $fm add check -command "toggleBar $winid" \
             -label [tr. "Component bar"] -variable custom(showtoolbar,$winid)
-    $fm add check -command "toggleBar $winid" -indicatoron 0 -image $iconImages(chk_off) -selectimage $iconImages(chk_on) -compound left \
+    $fm add check -command "toggleBar $winid" \
             -label [tr. "Equation bar"] -variable custom(showeqnbar,$winid)
-    $fm add check -command "UpdateGrid $c" -indicatoron 0 -image $iconImages(chk_off) -selectimage $iconImages(chk_on) -compound left \
+    $fm add check -command "UpdateGrid $c" \
             -label [tr. "Grids"] -variable custom(showgrids,$c)
     
     $fm add separator
@@ -1846,10 +1846,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 
     set levelCapts [list "Bases only" "One level" "Two levels" "Three levels"]
     for {set levels 0} {$levels<4} {incr levels} {
-	$fm.sub5 add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -command "SetHalo $c back $levels" \
+	$fm.sub5 add radio -command "SetHalo $c back $levels" \
 	    -label [tr. [lindex $levelCapts $levels]] \
 	    -variable rads(back) -value $levels
-	$fm.sub6 add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -command "SetHalo $c fwd $levels" \
+	$fm.sub6 add radio -command "SetHalo $c fwd $levels" \
 	    -label [tr. [lindex $levelCapts $levels]] \
 	    -variable rads(fwd) -value $levels
     }
@@ -1920,7 +1920,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     }
     foreach itemType $lookers {
 	if {[string match separator* $itemType]} continue
-	$fm1 add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [tr. [string totitle $itemType]] \
+	$fm1 add radio -label [tr. [string totitle $itemType]] \
 	    -command "ItemSelect $itemType" \
             -variable MIpushedbutton -value $itemType
 # TRANSLATOR: Strings are any of those following "set lookers [list..." above,
@@ -1947,19 +1947,19 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     set fm [menu $topm.tools -tearoff 0]
     $topm add cascade -label [tr. Tools] -menu $topm.tools
-    $fm add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [tr. "Label/move elements"] \
+    $fm add radio -label [tr. "Label/move elements"] \
             -command "ModeSelect select" -variable MIpushedbutton -value select
-    #    $fm add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [tr. "Move elements"] -command "ModeSelect move" \
+    #    $fm add radio -label [tr. "Move elements"] -command "ModeSelect move" \
     -variable MIpushedbutton -value move
-    #    $fm add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [tr. "Delete elements"] -command "ModeSelect delete" \
+    #    $fm add radio -label [tr. "Delete elements"] -command "ModeSelect delete" \
     -variable MIpushedbutton -value delete
-    #    $fm add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [tr. "Duplicate submodels"] -command "ModeSelect copy" \
+    #    $fm add radio -label [tr. "Duplicate submodels"] -command "ModeSelect copy" \
     -variable MIpushedbutton -value copy
-    $fm add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [tr. "Move canvas"]  -command "ModeSelect move" \
+    $fm add radio -label [tr. "Move canvas"]  -command "ModeSelect move" \
             -variable MIpushedbutton -value move
-    $fm add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [tr. "Create ghost nodes"]  -command "ModeSelect ghost" \
+    $fm add radio -label [tr. "Create ghost nodes"]  -command "ModeSelect ghost" \
             -variable MIpushedbutton -value ghost
-    $fm add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [tr. "Inspect elements"]  -command "ModeSelect snap" \
+    $fm add radio -label [tr. "Inspect elements"]  -command "ModeSelect snap" \
             -variable MIpushedbutton -value snap -state disabled
     set ::menuPosns(tools,Inspect\ elements) [$fm index last]
     UnderlineUniquely $fm
@@ -2685,27 +2685,27 @@ proc AddDetailMenu {winId fm3 initVals} {
         $fm3 add cascade -label $loc_label \
                 -menu $fm3.$cat
         set lastmenu [menu $fm3.$cat -tearoff 0]
-        $lastmenu add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [tr. "None"] -variable rads($winId,$cat) \
+        $lastmenu add radio -label [tr. "None"] -variable rads($winId,$cat) \
                 -value 0 -command "WindowDetail $winId $cat 0 1"
-        $lastmenu add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [tr. "One level"] \
+        $lastmenu add radio -label [tr. "One level"] \
 	    -variable rads($winId,$cat) \
 	    -value 1 -command "WindowDetail $winId $cat 1 1"
 	set tr_plural_levels [tr. {%1$s levels}]
         foreach depth {2 3 4 5 6} {
-            $lastmenu add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [format $tr_plural_levels $depth] \
+            $lastmenu add radio -label [format $tr_plural_levels $depth] \
                     -variable rads($winId,$cat) -value $depth \
                     -command "WindowDetail $winId $cat $depth 1"
             
 
         }
-        $lastmenu add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [tr. "All"] -variable rads($winId,$cat) \
+        $lastmenu add radio -label [tr. "All"] -variable rads($winId,$cat) \
                 -value 32 -command "WindowDetail $winId $cat 32 1"
     }
     $fm3 add cascade -label [tr. "Influence sections..."] -menu $fm3.sections
     set lastmenu [menu $fm3.sections -tearoff 0]
     set rads($winId,sections) [lindex $initVals $posn]
     foreach sectType {Local Terminal All} {
-        $lastmenu add radio -indicatoron 0 -image $iconImages(rad_off) -selectimage $iconImages(rad_on) -compound left -label [tr. $sectType] \
+        $lastmenu add radio -label [tr. $sectType] \
                 -variable rads($winId,sections) -value show$sectType \
                 -command "WindowDetail $winId sections show$sectType 1"
 # TRANSLATOR: $sectType may be Local, Terminal or All

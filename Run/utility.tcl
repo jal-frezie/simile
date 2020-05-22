@@ -809,11 +809,13 @@ proc LoadIconImages {} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
-    foreach fn {rad_on rad_off chk_on chk_off} {
-	$rawImg read "../Images/Icons/${fn}.png" -shrink
-        set iconImages($fn) [image create photo]
-	$iconImages($fn) copy $rawImg -zoom $growth
-    }
+    # images for fake ttk radio/check buttons in menu entries --
+    # real ones are too theme-dependent to emulate
+    # foreach fn {rad_on rad_off chk_on chk_off} {
+# 	$rawImg read "../Images/Icons/${fn}.png" -shrink
+#         set iconImages($fn) [image create photo]
+# 	$iconImages($fn) copy $rawImg -zoom $growth
+    # }
     foreach fn {submodel compartment flow variable condition \
 		    creation reproduction immigration loss alarm} {
 	$rawImg read "../Images/Toolbar/${fn}.gif" -shrink
