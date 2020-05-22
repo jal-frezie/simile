@@ -3,7 +3,7 @@
 // calls in 5-D.                                                            //
 //////////////////////////////////////////////////////////////////////////////
 
-#ifdef WIN32
+#ifdef _WIN32
 #ifdef SHARELIB
 #define CPPEXTDEC __declspec(dllexport)
 #else

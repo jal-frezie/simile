@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <stdlib.h> /* for rand procedure used by tcl models */
 #include <time.h>
-#include <pthread.h>
 
 /* Primitives
 ---------- */
@@ -105,6 +104,17 @@
 #define SIMILE_VERSION	"6.10"
 #define NEST 32
 
+#ifdef _WIN32 // note underscore, without is only defined in uSoft c
+    #ifdef _WIN64
+        #define SIM_PAR_EXEC 1
+    #endif
+#else
+    #define SIM_PAR_EXEC 1
+#endif
+#ifdef SIM_PAR_EXEC
+    #include <pthread.h>
+#endif
+
 #ifdef __cplusplus
     #define FINDABLE extern "C"
 #else
@@ -121,6 +131,7 @@
     #define EXTDEC FINDABLE
     #define EXPORT 
 #endif
+
 /* type declaration for structure representing a graph */
 
 typedef struct graph_data_type_t {

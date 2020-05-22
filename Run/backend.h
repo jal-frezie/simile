@@ -84,7 +84,8 @@ class bstree_node {
   int level;
   submodeltype* data;
 };
-  
+
+#ifdef SIM_PAR_EXEC
 class ModelThread {
 public:
   int tid;
@@ -92,6 +93,7 @@ public:
   int phase;
   void* context;
 };
+#endif
 
 // abstract base class for submodels, with extractor virtual function --
 // these are actually made in the model code itself

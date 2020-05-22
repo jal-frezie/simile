@@ -51,7 +51,7 @@ void InstanceOfModel::abort_check () {
       PIPEWRITE(phoneHome, (char*)&valToSend, sizeof(int));	
   }
 }
-
+#ifdef SIM_PARALLEL
 #define NUM_THREADS 6
 #define NUM_TASKS 48
 
@@ -111,3 +111,4 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
   // }
   
 };
+#endif
