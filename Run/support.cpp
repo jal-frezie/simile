@@ -1,5 +1,3 @@
-#include <pthread.h>
-
 #ifdef _WIN32
 #include <windows.h>
 #define PIPENEW(ENDS) CreatePipe(ENDS, ENDS+1, NULL, 0)
@@ -51,7 +49,7 @@ void InstanceOfModel::abort_check () {
       PIPEWRITE(phoneHome, (char*)&valToSend, sizeof(int));	
   }
 }
-#ifdef SIM_PARALLEL
+#ifdef SIM_PAR_EXEC
 #define NUM_THREADS 6
 #define NUM_TASKS 48
 
