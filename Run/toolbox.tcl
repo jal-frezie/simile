@@ -480,7 +480,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
     set lFiles {}
     foreach lPath $extLibs {
 	if {[string equal [linkableExt $shLibExt] [file extension $lPath]]} {
-	    set newLib -L\ \"[file dirname $lPath]\"
+	    set newLib -L\"[file dirname $lPath]\"
 	    if {[string first $newLib $lDirs]==-1} {
 		append lDirs { } $newLib
 	    }
@@ -519,8 +519,21 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    }
 		    append objs " \"$obj\""
 		}
-		set switchForLib -bundle 
-		puts $spout "g++ $sendvars(arflags) $switchForLib -o $TARGET $objs $lDirs $lFiles -l5d_mac"
+		set switchForLib -shared ;# -bundle 
+		set bldr "g++ $sendvars(arflags) $switchForLib -o $TARGET $objs $lDirs $lFiles -l5d_mac"
+		# puts $bldr
+		puts $spout $bldr
+		# There now follows a botch worthy of Windows
+		# Vista. Even though I passed the absolute shank path
+		# to the linker, for some reason the model dylib gets
+		# a path relative to Run, which is odd because we are
+		# in the model directory, but does work because we are
+		# in Run again when we load the model. However, this
+		# is not compatible with signed code, so change it to
+		# what it should be...
+		set fixr "install_name_tool -change ../System64/lib/lib5d_mac.dylib \"$::libDir/lib5d_mac.dylib\" $TARGET"
+		# puts $fixr
+		puts $spout $fixr
 		flush $spout
 		close $spout
 	    } else {
@@ -680,6 +693,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 	# (no, we might be copying)
 	file rename -force model.cpp model$serial.cpp
 	file delete [lindex $objs end] ;# if reusable, so is executable
+	# puts [exec otool -L $TARGET]
     }
     # do not allow an old dcf to be saved with a new model
     cd $oldDir

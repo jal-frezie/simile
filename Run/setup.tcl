@@ -88,7 +88,6 @@ if {$tcl_platform(os) ne "Linux" && $tclBitness==64} {
     append env(SYSDIR) 64
 }
 set libDir [file join $env(SYSDIR) lib]
-
 set use_system_tcltk 0 ;# use separately installed tcltk and tools
 if {$tcl_platform(os) eq "Linux" || \
 	$tcl_platform(os) eq "Darwin" && $tclBitness==64} {
