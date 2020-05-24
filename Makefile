@@ -55,6 +55,7 @@ SLDIR = $(RESDIR)
 # Next builds against system Tcl for Prolog debugging with Sicstus/dll
 USETCL = -DUSE_TCL_STUBS -I$(TCLDIR)/include/tcl$(VERS) -ltclstub$(VERS)
 LOCALIZE_TCL_REFS = ls # placebo command
+ADJUST_LOCAL_LIBS = ls # placebo command
 CHECK_LOCAL_LIBS = -Wl,-rpath,'$$ORIGIN/..'
 SHAREDLIBEXTN = .so
 
@@ -86,6 +87,7 @@ endif
 	MAKESL = -dynamiclib
 # make sure Current is set to right version
 	USETCL =  -DUSE_TCL_STUBS -L../$(TCLFW) -ltclstub$(VERS)
+	ADJUST_LOCAL_LIBS = install_name_tool -change ../$(1) @executable_path/../Resources/$(1)
 	CHECK_LOCAL_LIBS =
 	SHAREDLIBEXTN = $(ARCHEXTN).dylib
 else
@@ -230,10 +232,11 @@ $(SHIM): $(SLDIR)/$(SHANK) Run/ame_cmx.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(CFLAGS) -I. $(MAKEPIC) $(MAKESL) -o ../$(SHIM) \
 		ame_cmx.c $(USETCL) -L../$(RESDIR) -l5d$(ARCHEXTN) \
 		$(CHECK_LOCAL_LIBS); cd ..; \
+	$(call ADJUST_LOCAL_LIBS,$(SLDIR)/$(SHANK)) $(SHIM)
 	$(LOCALIZE_TCL_REFS) $(SHIM)
 endif
 
-$(UNPK): Run/unpacker.c Run/dllcalls.h Makefile
+$(UNPK): Run/unpacker.c Run/dllcalls.h
 	cd Run; $(GCCCMD) $(CFLAGS) $(DEFNS) -I. $(MAKEPIC) $(MAKESL) \
 		-o ../$(UNPK) unpacker.c $(USETCL); cd ..; \
 	$(LOCALIZE_TCL_REFS) $(UNPK)
@@ -274,7 +277,7 @@ $(SUPP): Run/support.cpp Run/backend.h
 # -static-libgcc is neeeded because this also used for 64bit install (and 32bit
 # install on 64bit systems) where 32bit libraries maybe missing
 MSI = /c/MinGW-w64/v49j32/mingw32/opt
-$(INSTLIB): Run/install_adv.c Makefile
+$(INSTLIB): Run/install_adv.c
 	cd Run; $(GCCCMD) -static -m32 $(CFLAGS) $(DEFNS) \
 		-I$(MSI)/include $(MAKEPIC) $(MAKESL) \
 		-o ../$(INSTLIB) install_adv.c -L$(MSI)/lib -lmsi \
