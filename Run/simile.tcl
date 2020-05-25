@@ -383,6 +383,7 @@ source $SIMILE_PATH/Run/language.tcl
 LoadTrans
 
 if {!$headless} {
+set niceSize [font actual {-size -12} -size]
 entry .hidden_e -font TkEntryFont -width 25
 pack .hidden_e
 
@@ -427,16 +428,11 @@ toplevel .splash
 if {[tk windowingsystem] eq "aqua"} {
     ::tk::unsupported::MacWindowStyle style .splash plain
     set menuFont TkDefaultFont
-    set niceSize 12
 } else {
     wm overrideredirect .splash 1
     set menuFont TkMenuFont
-    if {[tk windowingsystem] eq "win32"} {
-	set niceSize 12
-    } else {
-	set niceSize 9
-    }
 }
+
 # set size of indicators for clickables
 set clickables [expr {int(8*$defScaling)}]
 ttk::style configure TCheckbutton -indicatordiameter $clickables
