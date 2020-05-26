@@ -4,7 +4,12 @@
 
 
 # helpers must bind $canvas <Configure> resize $canvas
+if {$inCocoa} {
+    # claw back some wasted space on Macs                                       
+    ttk::style configure TNotebook -padding {-10 0 -10 -10}
+}
 
+ttk::style configure TPanedwindow 
 namespace eval RunEnv {
     global helperTable
 
@@ -214,14 +219,16 @@ namespace eval RunEnv {
 	    UnderlineUniquely $mreMenu
 
             # Add a PanedWindow for the hierrachical/run control view and main display window
-            set mainpw [panedwindow $mainframe.mainpw  -orient horizontal]
+            set mainpw [panedwindow $mainframe.mainpw  -orient horizontal \
+			    -sashrelief raised -showhandle 1]
             set controlPane [AddPane $mainpw.controlPane]; # made by runmodel.tcl AddHelperSublist
             set dp0 [AddPane $mainpw.mainDisplayPane]
             set dp0s($node) $dp0
             
             
             # Add a panedwindow to split the hier/contol pane into hierrachical pane and control pane
-            set hiercontrolpw [panedwindow $controlPane.panedwindow -orient vertical]
+            set hiercontrolpw [panedwindow $controlPane.panedwindow -orient \
+				   vertical -sashrelief raised -showhandle 1]
             set runcontrolpane [AddPane $hiercontrolpw.runcontrolPane]
             set explorerPane [AddPane $hiercontrolpw.explorerPane]
             
@@ -686,7 +693,7 @@ namespace eval RunEnv {
 #ShowMess debug info "RunEnv::Addpanedwindow $containerId $orientation\n \
         #        pwidth $pwidth; pheight $pheight" ok; ################
 	set pwId $containerId.panedwindow
-	panedwindow $pwId  -orient $orientation
+	panedwindow $pwId -orient $orientation -sashrelief raised -showhandle 1
         pack $pwId -expand yes -fill both
 	AddPane [UniqueId $pwId.pane [$pwId panes]]
 
@@ -1188,7 +1195,8 @@ $tb1.b43 configure -state $useSpaceAbility
 		set parseStatus(currentPath) $pageId
 	    } panedwindow {
 		set pwId $parseStatus(currentPath).panedwindow
-		panedwindow $pwId -orient $attVals(orient)
+		panedwindow $pwId -orient $attVals(orient) -sashrelief raised \
+		    -showhandle 1
 		$parseStatus(currentPath) configure -highlightthickness 0
 		pack $pwId  -expand yes -fill both
 		set parseStatus(currentPath) $pwId
@@ -1355,7 +1363,8 @@ $tb1.b43 configure -state $useSpaceAbility
                     if {$origVersion<4.0} {
                         set path [LoseTLRef $path]
                     }
-                    panedwindow $dp0.$path -orient $orient
+                    panedwindow $dp0.$path -orient $orient -sashrelief raised \
+			-showhandle 1
 		    [winfo parent $dp0.$path] configure -highlightthickness 0
                     pack $dp0.$path -expand yes -fill both
                 }
