@@ -334,15 +334,6 @@ void play_at_vol(const char* file, double level) {
 int latestContext[32];
 EvtCmdData* EvtCmdList = NULL;
 int contextDepth = 0;
-int compare_instance_status (const int pointers[], const int ref_pointers[], 
-			     int num) {
-   int count;
-   for (count=0; count<num; count++) {
-     if (pointers[count]<ref_pointers[count]) return -1;
-     if (pointers[count]>ref_pointers[count]) return 1;
-   }
-   return 0;
-}
 
 void report_events(int dimty, const int inds[], int evts,
 		   const int ids[], const double sums[]) {

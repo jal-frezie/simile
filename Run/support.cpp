@@ -18,6 +18,17 @@ long unsigned int spareForCount;
 #include <dllcalls.h>
 #include <backend.h>
 
+// eventually all model support code should go here to avoid user building it
+int compare_instance_status (const int pointers[], const int ref_pointers[], 
+			     int num) {
+   int count;
+   for (count=0; count<num; count++) {
+     if (pointers[count]<ref_pointers[count]) return -1;
+     if (pointers[count]>ref_pointers[count]) return 1;
+   }
+   return 0;
+}
+
 // for use by generated code
 TSPOUT homeCalling, phoneHome;
 int pipeRead(char* buf, int count) {
