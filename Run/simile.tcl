@@ -383,7 +383,7 @@ source $SIMILE_PATH/Run/language.tcl
 LoadTrans
 
 if {!$headless} {
-set niceSize [font actual {-size -12} -size]
+    set niceSize 12 ;# [font actual {-size -12} -size]
 entry .hidden_e -font TkEntryFont -width 25
 pack .hidden_e
 
