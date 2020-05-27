@@ -356,18 +356,6 @@ install:
 		Functions/procs.cpp \
 		Functions/procs.tcl \
 		Functions/Fragments/*.sml \
-		help/concepts \
-		help/data \
-		help/diagrams \
-		help/elements \
-		help/equations \
-		help/files \
-		help/index.htm \
-		help/new/index.htm \
-		help/run \
-		help/scripting \
-		help/start \
-		help/submodels \
 		Images/Control/debug.gif \
 		Images/Control/pause.gif \
 		Images/Control/play.gif \
@@ -578,8 +566,23 @@ install:
 		Run/window.tcl \
 		Run/simdoc32.ico \
 		simile.desktop
+	cd Scripts
+	tar cf $(DESTDIR)$(INSTALL_TGT)/helpload.tar \
+		help/concepts \
+		help/data \
+		help/diagrams \
+		help/elements \
+		help/equations \
+		help/files \
+		help/index.htm \
+		help/new/index.htm \
+		help/run \
+		help/scripting \
+		help/start \
+		help/submodels
 	cd $(DESTDIR)$(INSTALL_TGT); \
 	tar xf payload.tar; \
+	tar xf helpload.tar; \
 	mv Run/$(UINFO_TPL) Run/userinfo.tpl; \
 #	touch Run/userinfo.txt; \
 # target only used in Linux which ignores this file \
