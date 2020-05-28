@@ -566,7 +566,7 @@ install:
 		Run/window.tcl \
 		Run/simdoc32.ico \
 		simile.desktop
-	cd Scripts
+	cd Scripts; \
 	tar cf $(DESTDIR)$(INSTALL_TGT)/helpload.tar \
 		help/concepts \
 		help/data \
