@@ -583,6 +583,7 @@ install:
 	cd $(DESTDIR)$(INSTALL_TGT); \
 	tar xf payload.tar; \
 	tar xf helpload.tar; \
+	rm helpload.tar; \
 	mv Run/$(UINFO_TPL) Run/userinfo.tpl; \
 #	touch Run/userinfo.txt; \
 # target only used in Linux which ignores this file \
