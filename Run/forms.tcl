@@ -235,9 +235,7 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     pack [ttk::button $mathr.extcode.how -text Setup \
 	      -command [list ExtCodeSetup $mdl $modelLocn]]
     AbleSetup $mathr
-    ttk::checkbutton $mathr.separate -text "Build as separate procedure" \
-            -variable disaggregate(separate)
-    # pack $mathr.separate -side left -anchor w
+    
     # feature not yet released -- give new name when it is
     #    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
     #            -variable disaggregate(matherror)
@@ -272,7 +270,7 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     #}
     pack $mathl.step.pulldown
     pack $mathl.step -anchor w -padx 4 -pady 6
-    pack $t.complex.math -side left -padx 4 -pady 4 -fill both -expand true
+    pack $t.complex.math -padx 4 -pady 4 -fill both -expand true
     # next bit not used -- cloud equivalence is property of compartment
     # so there is space here to control some as yet uninvented feature
     # TitleFrame $t.complex.cloud -text [tr. {Cloud equivalence by position}]
@@ -310,6 +308,27 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
 #    }
 #   
 
+    TitleFrame $t.complex.threads -text [tr. Multi-threading]
+    set threadf [GetFrame $t.complex.threads]
+    if {$disaggregate(separate) == 0} {
+	set disaggregate(do_threads) 0
+    } else {
+	set disaggregate(do_threads) 1
+	foreach field {threads tasks tapers} \
+	    filler [split $disaggregate(separate) ,] {
+		set disaggregate($field) $filler
+	    }
+    }
+    ttk::checkbutton $threadf.separate -text "Divide instances among threads" \
+	-variable disaggregate(do_threads)
+    pack $threadf.separate -anchor w
+    pack [set tprm [frame $threadf.params]]
+    grid [label $tprm.threadl -text "Number of threads"] [ttk::entry $tprm.threads -textvariable disaggregate(threads)]
+    
+    grid [label $tprm.taskl -text "Number of tasks per thread"] [ttk::entry $threadf.tasks -textvariable disaggregate(tasks)]
+    grid [label $tprm.taperl -text "Task size taper factor"] [ttk::entry $threadf.taper -textvariable disaggregate(tapers)]
+    pack $t.complex.threads -side left -padx 4 -pady 4 -fill both -expand true
+    
 # Context frame for metadata
 # do not display fttb    
     frame $t.metadata
@@ -389,6 +408,12 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     }
     }
 
+    if {$disaggregate(do_threads)} {
+	set disaggregate(separate) \
+	    $disaggregate(threads),$disaggregate(tasks),$disaggregate(tapers)
+    } else {
+	set disaggregate(separate) 0
+    }
     if {$disaggregate(done)} {
 	set stepIndx [lsearch $stepNames $disaggregate(step)]
 	if {$stepIndx == -1} {

@@ -146,7 +146,7 @@ public:
 			int, int, int, ...);
   double  graph_lookup(double, int);
   void abort_check(void);
-  void thread_mgr(void* (*)(void*), int, void*, int);
+  void thread_mgr(void* (*)(void*), int, void*, int, int, int, double);
 };
 
 // Declaration for procedure types found in the model dll by the shank

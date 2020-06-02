@@ -376,7 +376,7 @@ do_assignment(L, [reset_list(Ptr, Name) | Clauses],
 
 do_assignment(L, [define_proc_for(Sm, Path), open_index(MSt, _B) | Clauses],
 	      I, Used, Stream) :-
-    get_rest_of_my_loop(Clauses, MyLoop, Later), Path = [_|_], wake,
+    get_rest_of_my_loop(Clauses, MyLoop, Later), Path = [_|_],
     all(user, append_atoms, [unify(Sm), build(['_context', '_proc', '_mtd']),
 			     build([StructName, ProcName, MethodName])]),
     all(language, formal_arg_for_proc_sm,
@@ -433,7 +433,8 @@ do_assignment(L, [define_proc_for(Sm, Path), open_index(MSt, _B) | Clauses],
 
 /* Call that proc */
 
-do_assignment(L, [call_proc_for(Sm, Path, Loop) | Clauses], I, Used, Stream) :-
+do_assignment(L, [call_proc_for(Sm, Path, Loop, [Td, Tk, Tr]) | Clauses],
+	      I, Used, Stream) :-
     all(user, append_atoms, [unify(Sm), build(['_context', '_state', '_proc']),
 			     build([ContextName, StateName, ProcName])]),
     append_atoms('static struct ', ContextName, StructType),
@@ -446,7 +447,7 @@ do_assignment(L, [call_proc_for(Sm, Path, Loop) | Clauses], I, Used, Stream) :-
     make_pointer(L, StateName, StatePtr),
     append_atoms('(void* (*)(void*))', ProcName, CastProcName),
     append_atoms('(void*)', StatePtr, CastStatePtr),
-    Call =.. [thread_mgr, CastProcName, phase, CastStatePtr, Loop],
+    Call =.. [thread_mgr, CastProcName, phase, CastStatePtr, Loop, Td, Tk, Tr],
     excrete(L, procedure_call, Call, I, Stream),
     do_assign_list(L, Clauses, I, Used, Stream).
     

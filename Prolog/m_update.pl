@@ -1836,7 +1836,10 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Interp, Fat, Count,
 	Fix = 'Default'),
 	(Submodel has_graphical_attribute hide_contents of Hide, !;
 	Hide = 0),
-	(Submodel has_class_refinement separate of Separate, !;
+	(Submodel has_class_refinement separate of SepField,
+	 SepField = [threads=Th, tasks=Ta, taper=Tpr],
+	 sicstus_format_to_chars("~d,~d,~1f", [Th, Ta, Tpr], SeparateSt),
+	 name(Separate, SeparateSt), !;
 	Separate = 0),
 	(Submodel has_class_refinement external_code of ExternCode, !,
 	    member(procedure=Proc, ExternCode),

@@ -1,3 +1,5 @@
+#include <time.h>
+
 #ifdef _WIN32
 #include <windows.h>
 #define PIPENEW(ENDS) CreatePipe(ENDS, ENDS+1, NULL, 0)
@@ -29,26 +31,18 @@ int compare_instance_status (const int pointers[], const int ref_pointers[],
    return 0;
 }
 
-// for use by generated code
-TSPOUT homeCalling, phoneHome;
-int pipeRead(char* buf, int count) {
-  return PIPEREAD(homeCalling, buf, count);
-}
-
-int pipeWrite(char* buf, int count) {
-  return PIPEWRITE(phoneHome, buf, count);
-}
-
-thread_local int lazy = 16384;
 thread_local int amWorker = 0;
+thread_local int lazy = 16384;
 
 void setup_thread(int id) {
   setup_thread_randoms(1234567890, id);
-  amWorker = 1;
+  amWorker = id; // workers start from 1
 }
 
 // pipe to master or NULL if already there
 // guaranteed never to be a valid file descriptor
+TSPOUT homeCalling, phoneHome;
+
 void InstanceOfModel::abort_check () {
   int valToSend = WORKER_QUERY_GUI;
   if (!lazy--) {
@@ -61,18 +55,53 @@ void InstanceOfModel::abort_check () {
   }
 }
 #ifdef SIM_PAR_EXEC
-#define NUM_THREADS 6
-#define NUM_TASKS 48
+
+int *timeReading;
+int *timeWriting;
+int *timeIdle;
+long int *timers;
+
+long int now() {
+  struct timespec tp;
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tp);
+  return 1000000000l*tp.tv_sec+tp.tv_nsec;
+}
+
+// for use by generated code
+int pipeRead(char* buf, int count) {
+  int got;
+  timers[amWorker] = now();
+  got = PIPEREAD(homeCalling, buf, count);
+  timeReading[amWorker] += (now()-timers[amWorker]);
+  return got;
+}
+
+int pipeWrite(char* buf, int count) {
+  int got;
+  struct timespec tp;
+  int tRef;
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tp);
+  tRef = tp.tv_nsec;
+  got = PIPEWRITE(phoneHome, buf, count);
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tp);
+  timeWriting[amWorker] += (1000000000+tp.tv_nsec-tRef)%1000000000;
+  return got;
+}
+
+int reporting;
 
 void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
-				 int phase, void* context, int loop) {
+				 int phase, void* context, int loop,
+				 int nThread, int nTask, double taper) {
   static TSPOUT go[2], come[2];
   int i, snf[2];
-  static ModelThread* pThd[NUM_THREADS];
+  static ModelThread** pThd;
+  long int stopwatch;
+  static long int smTotal = 0;
 
   if (phase == -10) { // special exit value to tidy up threads
     PIPECLOSE(go[1]);
-    for( i = 0; i < NUM_THREADS; i++ ) {
+    for( i = 0; i < nThread; i++ ) {
       pthread_join(pThd[i]->thread, NULL);
       delete pThd[i];
     }
@@ -80,6 +109,13 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
   }
 
   if (phase == -2) { // initialize the threads and comms
+    printf("Threads: %d, tasks: %d, taper: %lf\n", nThread, nTask, taper);
+    pThd = (ModelThread**)malloc(nThread*sizeof(void*));
+    timeReading = (int*)malloc((nThread+1)*sizeof(int));
+    timeWriting = (int*)malloc((nThread+1)*sizeof(int));
+    timeIdle = (int*)malloc((nThread+1)*sizeof(int));
+    timers = (long int*)malloc((nThread+1)*sizeof(long int));
+
     PIPENEW(go);
     PIPENEW(come);
     amWorker = 0;
@@ -87,24 +123,30 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
     homeCalling = go[0];
     phoneHome = come[1];
     
-    for( i = 0; i < NUM_THREADS; i++ ) {
+    timeReading[0] = timeWriting[0] = timeIdle[0] = 0;
+    for( i = 0; i < nThread; i++ ) {
       pThd[i] = new ModelThread;
       pThd[i]->tid = i+1;
       pThd[i]->context = context;
       pthread_create(&(pThd[i]->thread), NULL, worker_fn, pThd[i]);
+      timeReading[i+1] = timeWriting[i+1] = timeIdle[i+1] = reporting = 0;
     }
   } // end initialization
-  for( i = 0; i < NUM_THREADS; i++ ) {
+  stopwatch = now();
+  smTotal -= stopwatch;
+  for( i = 0; i < nThread; i++ ) {
     pThd[i]->phase = phase;
+    // Start recording time as pipe reading overhead
+    timers[i+1] = stopwatch;
   }
   snf[1] = 0;
-  for (i=1; i<=NUM_TASKS; ++i) {
+  for (i=1; i<=nTask; ++i) {
     snf[0] = snf[1]+1;
-    snf[1] = loop*i/NUM_TASKS;
+    snf[1] = loop*i/nTask;
     PIPEWRITE(go[1], (char*)snf, 2*sizeof(int));
   }
   
-  for (i=1; i<=NUM_TASKS; ++i) {
+  for (i=1; i<=nTask; ++i) {
     PIPEREAD(come[0], (char*)snf, sizeof(int));
     if (*snf == WORKER_QUERY_GUI) { // thread not finished, checking interrupt
       if (stat_check(partner))
@@ -112,10 +154,36 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
       --i; // do not count finish
     }
   }
+  // Step is over, record idle times
+  stopwatch = now();
+  smTotal += stopwatch;
+  for (i=1; i<=nThread; ++i) {
+    timeIdle[i] += (stopwatch-timers[i]);
+  }
+
+  struct timespec tp;
+  int tRef;
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tp);
+  tRef = tp.tv_nsec;
+
+  if (++reporting == 256) {
+    for (i=1; i<=nThread; ++i) {
+      timeReading[0] += timeReading[i];
+      timeWriting[0] += timeWriting[i];
+      timeIdle[0] += timeIdle[i];
+      timeReading[i] = timeWriting[i] = timeIdle[i] = 0;
+    }
+    printf("Total %ld, reading %d, writing %d, idle %d\n",
+	   nThread*smTotal, timeReading[0],
+	     timeWriting[0], timeIdle[0]);
+    reporting = 0;
+    smTotal = 0;
+    timeReading[0] = timeWriting[0] = timeIdle[0] = 0;
+  }
   // terminate threads -- do in exit?
   // close(payload.ports[1]);
   
-  // for( i = 0; i < NUM_THREADS; i++ ) {
+  // for( i = 0; i < nThread; i++ ) {
   //   pthread_join(threads[i], NULL);
   // }
   

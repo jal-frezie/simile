@@ -1014,13 +1014,13 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 	do_assign_list( Language, ProcDefns, 0, Used, Stream).
 
 separate_sub_procs(Mixed, Defns, Calls) :-
-    append(Before, [as_separate_proc(Sm, Path), ProcLoop | After], Mixed) ->
+    append(Before, [as_separate_proc(Sm, Path, Tm), ProcLoop | After], Mixed) ->
     language><get_rest_of_my_loop(After, Inside, Outside),
     append([define_proc_for(Sm, Path), ProcLoop | Inside],
 	   [finish_level | MoreDefns], Defns),
     ProcLoop = open_index(_MSt, LoopCount),
-    append(Before, [call_proc_for(Sm, Path, LoopCount) | Outside], PartSplit),
-    separate_sub_procs(PartSplit, MoreDefns, Calls);
+    append(Before, [call_proc_for(Sm, Path, LoopCount, Tm) | Outside], PartSpl),
+    separate_sub_procs(PartSpl, MoreDefns, Calls);
     Defns = [], Calls = Mixed.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1124,9 +1124,9 @@ make_exit_proc(Language, Instance, Dest) :-
 	excrete(Language, procedure_start, call(void, do_exitmodel), 0, Dest),
 	send_to_dest(Dest, Blank),
 	% if worker threads have been created, destroy them
-	(_Any has_class_refinement separate of 1 ->
-	     excrete(Language, procedure_call,
-		     thread_mgr('NULL', -10, 'NULL', 0), 4, Dest);
+	(_Any has_class_refinement separate of [threads=Td, tasks=Tk, taper-Tr]
+	-> excrete(Language, procedure_call,
+		   thread_mgr('NULL', -10, 'NULL', 0, Td, Tk, Tr), 4, Dest);
 	 true),
 	excrete(Language, clear_memory, Instance, 4, Dest),
 	send_to_dest(Dest, Blank),
@@ -1496,9 +1496,10 @@ nodes.
 	    ExtInst = make(ext_done_for(Name), AllConds, LocalPath, Step,
 	                  [call_ext_code(Proc, NewPtr, ArgCodes)]),
 	    append(Specials, [ExtInst | AssignList1], AssignList);
-	 SmName has_class_refinement separate of 1, !,
+	 SmName has_class_refinement separate of [threads=Td, tasks=Tk,
+						  taper= Tr], !,
 	 ExtProcDefns = SubProcDefns,
-	    NewCond = all_done_for(Name),
+	    NewCond = all_done_for(Name, [Td, Tk, Tr]),
 	    separate_instructs(AssignList0, LocalPath, [separate(Level) | Path],
 			       earlier(NewCond), AssignList0,
 			       AssignList1, ExtConds),
@@ -2215,7 +2216,7 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 	    SubEndPts = make_level(SmLevel, _,_), 
 	    /* try something from what is left -- no commitment yet */
 	    ((SmLevel = separate([sm(Sm, _,_,_) | _]),
-	      ProcKey = make(all_done_for(Sm), _,_,_,_),
+	      ProcKey = make(all_done_for(Sm, Tm), _,_,_,_),
 	        member(ProcKey, Items); % no restrict if ready test not in proc
 	      SmLevel = sm(Sm, _,_, vm_loop(_,_,_,EnumPhase))) ->
 		 % a level with special conditions
@@ -2258,7 +2259,7 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 	    do_clever_stuff(Phase, TestPhase, SmLevel, Path, SubPass, CondPass,
 			    VFirstStep, LastStep),
 	    (var(SepPass) -> FirstStep = VFirstStep;
-	     extract_action(RFirstStep, [as_separate_proc(Sm, Path)]),
+	     extract_action(RFirstStep, [as_separate_proc(Sm, Path, Tm)]),
 	     FirstStep = [RFirstStep | VFirstStep]),
 	    	    /* Now if I have done some submodel assignments, recurse at
 		the same level */

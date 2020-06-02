@@ -1173,8 +1173,16 @@ set_properties(Wid, Model) :-
 	    add_parameter(Model, 0, comment, NewComment),
 	    (NewFix = 'Default', !,
 		add_parameter(Model, 0, eqn_units, '');
-	    add_parameter(Model, 0, eqn_units, NewFix)),	
-	    add_parameter(Model, 0, separate, NewSeparate),
+	     add_parameter(Model, 0, eqn_units, NewFix)),
+	    (NewSeparate = 0 ->
+		 SepField = '';
+	     name(NewSeparate, SepSt),
+	     append(ThreadsSt, [44 | TailSt], SepSt), % comma separate
+	     append(TasksSt, [44 | TaperSt], TailSt),
+	     all(user, name, [build([Threads, Tasks, Taper]),
+			      build([ThreadsSt, TasksSt, TaperSt])]),
+	     SepField = [threads=Threads,tasks=Tasks,taper=Taper]),
+	    add_parameter(Model, 0, separate, SepField),
 	    /* fix quirk in new strings_to_atoms */
 	    (NewLibs = '', !, RealNewLibs = []; RealNewLibs= NewLibs),
 	    add_parameter(Model, 0, external_code,
