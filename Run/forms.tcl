@@ -325,7 +325,7 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     pack [set tprm [frame $threadf.params]]
     grid [label $tprm.threadl -text "Number of threads"] [ttk::entry $tprm.threads -textvariable disaggregate(threads)]
     
-    grid [label $tprm.taskl -text "Number of tasks per thread"] [ttk::entry $threadf.tasks -textvariable disaggregate(tasks)]
+    grid [label $tprm.taskl -text "Number of tasks per step"] [ttk::entry $threadf.tasks -textvariable disaggregate(tasks)]
     grid [label $tprm.taperl -text "Task size taper factor"] [ttk::entry $threadf.taper -textvariable disaggregate(tapers)]
     pack $t.complex.threads -side left -padx 4 -pady 4 -fill both -expand true
     
