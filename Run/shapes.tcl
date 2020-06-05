@@ -920,7 +920,6 @@ proc PutText { w ptz ptype tagSet fatness specials colourScheme capt } {
     $w dtag $backBox currently_editable
     if {$looks($n,$type,txtbd)} {
 	set width [Scale $w [expr {$fatness/100}]]
-	puts $width
 	$w create line 0 0 1 1 -fill $textColor -width $width \
 	    -tags "[$w gettags $backBox] realwidth($width)"
     }
@@ -1974,6 +1973,8 @@ proc LoadLooks {t n object} {
 	set looks(weight) [lindex $fontData 1]
 	set looks(style) [lindex $fontData 2]
 	set textsize [lindex $fontData 3]
+	set looks(txtbd) $looks($n,$object,txtbd)
+	set looks(txtbg) $looks($n,$object,txtbg)
         [GetFrame $t.text].size.scale set $textsize
 	[GetFrame $t.text].backbox.col configure \
 	    -activebackground $looks($n,$object,text)
@@ -1995,7 +1996,7 @@ proc LoadLooks {t n object} {
 	$g.objectsize.scale set $looks($n,$object,objectsize)
 	$g.lines.scale set $looks($n,$object,lines)
 	foreach {workName saveName} {newXOff xoffset newYOff yoffset \
-		     captAnchor captanchor txtbd txtbd txtbg txtbg} {
+		     captAnchor captanchor} {
 	    set looks($workName) $looks($n,$object,$saveName)
 	}
 	DoGraphics $t $object $looks($n,$object,objectsize) $looks(captAnchor)
