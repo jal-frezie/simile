@@ -508,7 +508,7 @@ menu_handle(_Win, file, trace) :-
     gtrace.
 
 menu_handle(Win, file, ExportType) :-
-	member(ExportType, [export_prolog, export_xml, export_session]),
+	member(ExportType, [export_prolog, export_xml, export_session]), wake,
 	Win shows_model Model,
 	\+ too_big_for_edn(Model),
 	contains(TopModel, Model),
@@ -531,7 +531,7 @@ menu_handle(Win, file, ExportType) :-
 	    convert_simileprolog_to_similexmlv3(TempFile, FileName),
 	    output><my_delete_file(TempFile);
 */	  ExportType = export_session,
-	    autosave_file_is(TopModel, Log),
+	    backup><autosave_file_is(TopModel, Log),
 	    get_default_export_name(TopModel, ".ssn", DefName),
 	    get_program_file(DefName, TopModel, FileName),
 	    (FileName = '', !; % cancelled
