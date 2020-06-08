@@ -327,7 +327,9 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     
     grid [label $tprm.taskl -text "Number of tasks per step"] [ttk::entry $threadf.tasks -textvariable disaggregate(tasks)]
     grid [label $tprm.taperl -text "Task size taper factor"] [ttk::entry $threadf.taper -textvariable disaggregate(tapers)]
-    pack $t.complex.threads -side left -padx 4 -pady 4 -fill both -expand true
+    if {[string range $::userinfo(corp) end-3 end] eq "Devs"} {
+	pack $t.complex.threads -side left -padx 4 -pady 4 -fill both -expand 1
+    }
     
 # Context frame for metadata
 # do not display fttb    
