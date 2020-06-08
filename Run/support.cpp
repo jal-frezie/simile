@@ -64,7 +64,7 @@ int *endPts;
 
 long int now() {
   struct timespec tp;
-  clock_gettime(CLOCK_MONOTONIC_RAW, &tp);
+  clock_gettime(CLOCK_MONOTONIC, &tp);
   return 1000000000l*tp.tv_sec+tp.tv_nsec;
 }
 
