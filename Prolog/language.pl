@@ -376,7 +376,7 @@ do_assignment(L, [reset_list(Ptr, Name) | Clauses],
 
 do_assignment(L, [define_proc_for(Sm, Path), open_index(MSt, _B) | Clauses],
 	      I, Used, Stream) :-
-    get_rest_of_my_loop(Clauses, MyLoop, Later), Path = [_|_],
+    get_rest_of_my_loop(Clauses, MyLoop, Later),
     all(user, append_atoms, [unify(Sm), build(['_context', '_proc', '_mtd']),
 			     build([StructName, ProcName, MethodName])]),
     all(language, formal_arg_for_proc_sm,
