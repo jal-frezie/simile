@@ -498,6 +498,9 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 	set TARGET model${serial}$shLibExt
     }
     set TOOLDIR [file join $SIMILE_PATH Run]
+    set gppFlags [concat $::sendvars(arflags) \
+		      [PrefValue custom(compFlags) compFlags]]
+    puts "Flags: $gppFlags"
     #set TCL [file dirname [file dirname [info library]]]
     #ShowMess debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
     if {[catch {switch $tcl_platform(platform) {
@@ -515,12 +518,12 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    set obj ${tgt}_$tcl_platform(machine)_mac.o
 		    if {![file exists $obj] || \
 			    [file exists $src] && [Newer $src $obj m]} {
-			puts $spout "g++ $sendvars(arflags) -fPIC -c -I\"$TOOLDIR\" -o $obj \"$src\"" 
+			puts $spout "g++ $gppFlags -fPIC -c -I\"$TOOLDIR\" -o $obj \"$src\"" 
 		    }
 		    append objs " \"$obj\""
 		}
 		set switchForLib -shared ;# -bundle 
-		set bldr "g++ $sendvars(arflags) $switchForLib -o $TARGET $objs $lDirs $lFiles -l5d_mac"
+		set bldr "g++ $gppFlags $switchForLib -o $TARGET $objs $lDirs $lFiles -l5d_mac"
 		# puts $bldr
 		puts $spout $bldr
 		# There now follows a botch worthy of Windows
@@ -544,13 +547,13 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    set obj ${tgt}_$tcl_platform(machine).o
 		    if {![file exists $obj] || \
 			    [file exists $src] && [Newer $src $obj m]} {
-			eval {exec g++} $sendvars(arflags) \
+			eval {exec g++} $gppFlags \
 			    [list -c -fPIC -I$TOOLDIR -o $obj $src]
 		    }
 		    append objs " \"$obj\""
 		}
 		set switchForLib -shared
-		eval {exec g++} $sendvars(arflags) \
+		eval {exec g++} $gppFlags \
 		    [list $switchForLib -o $TARGET] $objs \
 		    $lDirs $lFiles -l5d
 	    }
@@ -605,7 +608,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		# puts $spout "set PATH=c:\\mingw\\bin;%PATH%"
 	    }
 	    if {[info exists LIBDIR]} { ;# continue with Vista fixup
-		puts $spout "g++ $sendvars(arflags) -c -o objtmp.o \
+		puts $spout "g++ $gppFlags -c -o objtmp.o \
                         -I\"[file nativename $TOOLDIR]\" \
                         -I\"[file nativename [file join $env(SYSDIR) mingw32 \
                                 include]]\" \
@@ -623,7 +626,7 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 		    set obj ${tgt}_$tcl_platform(machine)_win.o
 		    if {![file exists $obj] || \
 			    [file exists $src] && [Newer $src $obj m]} {
-			puts $spout "g++ $sendvars(arflags) -c -o $obj \
+			puts $spout "g++ $gppFlags -c -o $obj \
                              -I\"[file nativename $TOOLDIR]\" \"$src\" -Wno-write-strings"
 		    }
 		    append objs " \"$obj\""
@@ -1045,6 +1048,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(hackBreak) hackBreak OFF [tr. "Pause to edit C++ code?"]] \
 		  [list custom(compChoice) compChoice \
 		       $compOptions [tr. "Use which C++ compiler?"]] \
+		  [list custom(compFlags) compFlags "-O3" [tr. "Extra compiler flags:"]] \
 		  [list custom(popupHelp) popupHelp ON [tr. "Popup help text"]] \
 		  [list custom(tlPopups) tlPopups $stockComboBox [tr. "Top-level popups"]] \
 		  [list custom(compDescPop) compDescPop ON [tr. "Equation"]] \

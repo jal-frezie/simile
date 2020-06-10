@@ -178,6 +178,7 @@ proc Pref_Dialog {} {
         $notebook add $bf -text [tr. Build]
             set compTF [TitleFrame $bf.compTF -text [tr. "C++ compiler:"]]
             set compF $compTF
+	    pack [frame $compF.line3] -side bottom -fill x -expand 1
 	    pack [frame $compF.line2] -side bottom -fill x -expand 1
         set sf [frame $notebook.save]
         $notebook add $sf -text [tr. Save]
@@ -229,6 +230,7 @@ proc Pref_Dialog {} {
                 init* {set frame $displayF}
                 hackBreak {set frame $compF}
                 compChoice {set frame $compF.line2}
+                compFlags {set frame $compF.line3}
                 gridSnap {set frame $genericF}
                 grid* {set frame $gridF}
                 comp* {set frame $popupF}
@@ -306,7 +308,7 @@ proc PrefDialogItem { frame item width } {
 	# This is a string or numeric
 	::ttk::entry $f.entry -width 10 -textvariable $varName
 	pack $f.label -side left -anchor w -padx 2 -pady 2
-	pack $f.entry -side left -fill x -padx 2 -pady 2
+	pack $f.entry -side left -fill x -padx 2 -pady 2 -expand 1
 	set pref(entry,$varName) $f.entry
 	bind $f.entry <FocusOut> "PrefEntrySet $varName $resName"
     }
