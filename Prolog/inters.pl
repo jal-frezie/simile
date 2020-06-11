@@ -27,6 +27,10 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
 	(swap_back(BaseContext, BackSwap, FContext, no_dim), !;
 	throw(cannot_make_context(Target, BaseContext, BackSwap))),
 
+	/* Any actions without time step set to component default need it set
+	to submodel default */
+	all(inters, set_free_step, [build(AllSetups), unify(SmStep)]),
+	
 	/* If managing units, apply conversion; error message brilliant */
 	get_dims_from_loops(SourceLoops, _, SourceInds),
 	(m_update><use_units_in(Sm, 'Yes'),
@@ -73,6 +77,9 @@ final_assignment(Expr, Sm, DestRef, Swaps, SmStep, Step, ExtInters, Used,
 			   | AllSetups],
 	         AllArgs = [backgnd(Target) | Args]),
 	add_extra_dependencies(Context, DestPath, AllArgs, Prereqs)).
+
+set_free_step(make(_,_,_, OrigStep, _), Step) :-
+    var(OrigStep) -> OrigStep = Step; true.
 
 report(Comp, Prob) :-
 	find_all_comps(Parent, Comp),
@@ -790,11 +797,12 @@ make_intermediates(
 			    WriteContext, Step, [IncrAct]),
 		       make(TotalName, [cleared(TotalName), time],
 			    ClearContext, Step, [])];
-	member(Functor, [in_preceding, in_progenitor]), !,
+	 member(Functor, [in_preceding, in_progenitor]), !,
+	 % Step will be set in set_free_phases
 	    wait_for_submodels(Exited, Access),
 	    Setting = [make(precvalue(TotalName),
 			    [ClearTime,InnerTgt,precvalue(InnerTgt) | Depends],
-			    WriteContext, Step, [IncrAct]),
+			    WriteContext, _PostFill, [IncrAct]),
 		       make(TotalName,
 			    [cleared(TotalName), this_step(InnerTgt) | Access],
 			    ClearContext, Step, [])];
@@ -1576,7 +1584,7 @@ refer_inter(instance(internal, inter(SourcePath, _, ParamLoops), Source, Name,
 	we use the total from the previous time step we don't need to
 	worry about accessing elements that haven't yet been set, and not
 	using made_at(...) should prevent it being removed as an idler */
-	 member(Source-Delay, [in_preceding(_)-this_loop,
+	 member(Source-Delay, [in_preceding(_)-this_step,
 			       in_progenitor(_)-this_step]), !,
 	 % progenitor value can be set in next loop because cannot create
 	 % offspring in same step as parent -- access before setting

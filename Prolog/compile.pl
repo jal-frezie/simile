@@ -1800,16 +1800,26 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	   % something of any type to be passed to the maker
 	      GroundEqn = choose(LoopExit,EvtConds,EvtConds);
 	    GroundEqn = SourceEqn)), !,
-	    
+	
+% In next call, if arg 6 is SmStep then clearing a sum expr in a
+% compartment gets put in step 1 -- it is promoted to -2 but ends up
+% depending on all_done_for which messes up separate evaluation. But
+% if it is UseStep, that gets put in step 0, but so does the reference
+% of in_progenitor, which then has its value from when progenitor
+% rather than progeny was created. Hmmm...allow orderer to ignore
+% a_d_f dependency of static values? Surely initialization inter
+% should be step 0 anyway unless submodel is new ? Arr but the
+% progenitor holds the value and is not new...should evaluate those in
+% SmStep somehow.
+	
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
-			 SmStep, SmStep, ExtInters, Used, Assigns,
+			 SmStep, UseStep, ExtInters, Used, Assigns,
 			 Setups, Path, RefList, AllInters),
-	 append(Inters, ExtInters, AllInters), % declare them only once
+	append(Inters, ExtInters, AllInters), % declare them only once
 	(nonvar(Made), !; Made = Dest),
 	connect_params([make(Made, UseList, Path, UseStep, Acts) | Setups],
-	                Actions);
-	Actions = [],
-	Inters = []),
+		       Actions);
+	 Actions = [], Inters = []),
 
 	(Type = limit, !,
 	    Acts = Assigns,
@@ -2537,6 +2547,7 @@ convert_form(make(T1, Conds, Path, Ph, T5), Phase,
 	/* above is not correct -- all instructions should have a ground step,
 	as the default step could be too short for their submodel. TODO: Find
 	and fix any case where something gets here with a variable step. */
+	
 	( /* T5 = [assign(SV, SV+stage_incr(_,_,_))], !,
 	    Refs = [], NewC = []; % no order needed in update */
 	(\+ member(T1, [lastvalue(_)]),

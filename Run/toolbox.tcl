@@ -500,7 +500,6 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
     set TOOLDIR [file join $SIMILE_PATH Run]
     set gppFlags [concat $::sendvars(arflags) \
 		      [PrefValue custom(compFlags) compFlags]]
-    puts "Flags: $gppFlags"
     #set TCL [file dirname [file dirname [info library]]]
     #ShowMess debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
     if {[catch {switch $tcl_platform(platform) {
