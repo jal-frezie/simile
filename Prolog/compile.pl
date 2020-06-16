@@ -1516,8 +1516,7 @@ nodes.
 separate_instructs([], _,_,_,_, [],[]).
 separate_instructs([make(A, C, P1, D,E) | Insts], GoesIn, Replace, NewCond,
 		   AllMakes, [make(A, C, P2, D,E) | Outsts], Conds) :-
-    (D>0,
-     append(Front, Back, P1),
+    (append(Front, Back, P1),
      Back = GoesIn ->
 	 append(Front, Replace, P2), % put instruction in procedure
 	 (setof(ExtCond, (member(ExtCond, C),
@@ -1525,6 +1524,7 @@ separate_instructs([make(A, C, P1, D,E) | Insts], GoesIn, Replace, NewCond,
 			  \+ (member(make(ExtCond, _,IntPath,_,_), AllMakes),
 			      suffix(GoesIn, IntPath))), ExtConds);
 	   ExtConds = []); % make externals conditions of entry
+     % (in order to flag circularities)
      P2 = P1,
        ExtConds = []),
     separate_instructs(Insts, GoesIn, Replace, NewCond, AllMakes,
