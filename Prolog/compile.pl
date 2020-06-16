@@ -1512,27 +1512,29 @@ nodes.
 separate_instructs([], _,_,_,_, [],[]).
 separate_instructs([make(A, C1, P1, D,E) | Insts], GoesIn, Replace, NewCond,
 		   AllMakes, [make(A, C2, P2, D,E) | Outsts], Conds) :-
-    separate_instructs(Insts, GoesIn, Replace, NewCond, AllMakes,
-		       Outsts, MoreConds),
-    (append(Front, Back, P1),
+    (D>0,
+     append(Front, Back, P1),
      Back = GoesIn ->
 	 append(Front, Replace, P2), % put instruction in procedure
-	 (D>0,
-	  setof(ExtCond, (member(ExtCond, C1),
+	 (setof(ExtCond, (member(ExtCond, C1),
 			  \+ member(ExtCond, [time, on_reset]),
 			  \+ (member(make(ExtCond, _,IntPath,_,_), AllMakes),
-			      suffix(GoesIn, IntPath))),
-		ExtConds) -> C2 = [NewCond | C1], % make entry a condition
-			     % (in order to flag circularities)
-			     merge_lists(ExtConds, MoreConds, Conds);
-	                     % make externals conditions of entry
-	  C2 = C1,
-	    Conds = MoreConds);
+			      suffix(GoesIn, IntPath))), ExtConds);
+	   ExtConds = []), % make externals conditions of entry
+	 (member(ExtCond, C1),
+	     member(make(ExtCond, _,IntPath,_,_), AllMakes),
+	     suffix(IntPath, GoesIn) ->  % has dependencies inside model
+	      C2 = C1;
+	  C2 = [NewCond | C1]); % make entry a condition
+     % (in order to flag circularities)
      P2 = P1,
        C2 = C1,
-       Conds = MoreConds).
+       ExtConds = []),
+    separate_instructs(Insts, GoesIn, Replace, NewCond, AllMakes,
+		       Outsts, MoreConds),
+    merge_lists(ExtConds, MoreConds, Conds).
     
-% may need this for isolating separatelu built submodels from dependencies --
+% may need this for isolating separately built submodels from dependencies --
 % used as template for above
 ext_deps_and_conds(AssignList, Home, NewCond, Untried, Deps, Conds) :-
     append(NoExtDeps, [ExtDep | StillUntried], Untried),

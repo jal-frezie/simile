@@ -614,10 +614,10 @@ void convert_to_byte(void* values, int offset, convertParms* cbData) {
 //	  offset, values[offset]);
 //  showMess(globMess);
   *((*cbData->tgtPtr)++) =
-    (unsigned char)(thisVal<=valfor0?1:(thisVal>valfor255?255:
+    (unsigned char)(thisVal<=valfor0?0:(thisVal>valfor255?255:
 				       ceil(255*(thisVal-valfor0)/
 					(valfor255-valfor0))));
-  // set minimum to 1, perhaps because 0 reserved for transparency?
+  // Previously set minimum to 1, perhaps because 0 reserved for transparency?
 }
 
 typedef struct hash_entry_t {
