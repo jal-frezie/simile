@@ -1037,10 +1037,11 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 	order_all_assignments(Phases, Updates, OrdUpdates),
 	order_all_assignments(Phases, NewForm, Ordered), !,
 %	order_all_assignments(Phases, NewForm, advance, OrdStates),
-	(member(Forgotten, NewForm),
+	((Forgotten = make(all_done_for(Proc, _), _,_,_,_); Proc = '/none/'),
+	 member(Forgotten, NewForm),
 	    \+ Forgotten = make(_, []-_, _,_,_),
 	    not_yet_ordered(Forgotten), !,
-	    find_circle([Forgotten], Loop, Tail),
+	    find_circle([Forgotten], Proc, Loop, Tail),
 	    (Loop = [] ->
 		 % unfinished_in(Forgotten, Tail),
 	% pick act because raising exception with self-ref term crashes GNU
@@ -1069,16 +1070,19 @@ build_submodel_functions( Language, Phases, Constants, NewForm, Updates,
 This looks combinatorial but I have tested it with some pretty extreme
 examples, and it's fast enough. Still, if a thing's worth doing... */
 
-find_circle([Head | Chain], Loop, Longest) :-
+find_circle([Head | Chain], Proc, Loop, Longest) :-
 	(NewHead = make(enumerate(_), _,_,_,_); true), % prioritize
 	order(NewHead, Head),
 	not_yet_ordered(NewHead), !,
 	(append(Circle, [NewHead | _], [Head | Chain]), % this completes it
 	    Loop = [NewHead | Circle];
-	 find_circle([NewHead, Head | Chain], SubLoop, Try1),
+	 NewHead = make(_,_, Path, _,_),
+	    suffix([separate([sm(Proc, _,_,_) | _]) | _], Path),
+	    Loop = [NewHead, Head | Chain];
+	 find_circle([NewHead, Head | Chain], Proc, SubLoop, Try1),
 	    (SubLoop = [], !, %this was fruitless, tag it and try another
 		NewHead = make(Action, _,_, [_,_,_,x | _], _),
-		find_circle([Head | Chain], Loop, Try2),
+		find_circle([Head | Chain], Proc, Loop, Try2),
 	        length(Try1, L1), length(Try2, L2),
 		(L1 < L2 -> Longest = Try2; Longest = [Action | Try1]);
 	     Loop = SubLoop)); % found one further down
@@ -1510,25 +1514,18 @@ nodes.
 	append(FnInters, SmInters, Inters).
 
 separate_instructs([], _,_,_,_, [],[]).
-separate_instructs([make(A, C1, P1, D,E) | Insts], GoesIn, Replace, NewCond,
-		   AllMakes, [make(A, C2, P2, D,E) | Outsts], Conds) :-
+separate_instructs([make(A, C, P1, D,E) | Insts], GoesIn, Replace, NewCond,
+		   AllMakes, [make(A, C, P2, D,E) | Outsts], Conds) :-
     (D>0,
      append(Front, Back, P1),
      Back = GoesIn ->
 	 append(Front, Replace, P2), % put instruction in procedure
-	 (setof(ExtCond, (member(ExtCond, C1),
+	 (setof(ExtCond, (member(ExtCond, C),
 			  \+ member(ExtCond, [time, on_reset]),
 			  \+ (member(make(ExtCond, _,IntPath,_,_), AllMakes),
 			      suffix(GoesIn, IntPath))), ExtConds);
-	   ExtConds = []), % make externals conditions of entry
-	 (member(ExtCond, C1),
-	     member(make(ExtCond, _,IntPath,_,_), AllMakes),
-	     suffix(IntPath, GoesIn) ->  % has dependencies inside model
-	      C2 = C1;
-	  C2 = [NewCond | C1]); % make entry a condition
-     % (in order to flag circularities)
+	   ExtConds = []); % make externals conditions of entry
      P2 = P1,
-       C2 = C1,
        ExtConds = []),
     separate_instructs(Insts, GoesIn, Replace, NewCond, AllMakes,
 		       Outsts, MoreConds),
