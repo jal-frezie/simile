@@ -1,3 +1,10 @@
+// Definitions used in this code and the model code
+#include <dllcalls.h>
+// for talking to compiled models
+#include <backend.h>
+// class interface for c++ clients
+#include <6d.h>
+
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
@@ -75,13 +82,6 @@ void* safe_open(char* fileName) {
   }
 }
 #endif
-
-// Definitions used in this code and the model code
-#include <dllcalls.h>
-// for talking to compiled models
-#include <backend.h>
-// class interface for c++ clients
-#include <6d.h>
 
 /*
  * Unix or Win64 (or Win32!) version: does not have min & max defined

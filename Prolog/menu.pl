@@ -508,7 +508,7 @@ menu_handle(_Win, file, trace) :-
     gtrace.
 
 menu_handle(Win, file, ExportType) :-
-	member(ExportType, [export_prolog, export_xml, export_session]), wake,
+	member(ExportType, [export_prolog, export_xml, export_session]),
 	Win shows_model Model,
 	\+ too_big_for_edn(Model),
 	contains(TopModel, Model),
