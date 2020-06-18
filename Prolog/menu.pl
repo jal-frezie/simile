@@ -1335,8 +1335,7 @@ remove_model(Win, Parent) :-
 	(is_toplevel(Parent), !,
 	    close_exec(Parent),
 	    superfast_delete(Parent),
-	    (member(ToClear, [step, multiplication_spec, description, comment,
-			      fill_colour, fill_image, enum_types, eqn_units]),
+	    (get_av_pair(Parent, 0, ToClear, _),
 	        add_parameter(Parent, 0, ToClear, ''),
 	        fail;
 	    redraw_window(Win));
