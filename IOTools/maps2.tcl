@@ -168,6 +168,9 @@ namespace eval ::maptools2 {
 	    set xmax [expr $rightSc-50]
 	}
         set useNodes($winId,range) [expr $useNodes($winId,max)-$useNodes($winId,min)]
+	if {fmod(($useNodes($winId,range)+1),$useNodes($winId,nswatches))} {
+	    set useNodes($winId,range) [expr {1.0*$useNodes($winId,range)}]
+	} ;# ensure it is real so math works
         set xincr [expr {($xmax-$xmin)/$useNodes($winId,nswatches)}]
         for {set icolour 0} {$icolour < $useNodes($winId,nswatches)} {incr icolour} {
             set x0 [expr {$xmin+$icolour*$xincr}]

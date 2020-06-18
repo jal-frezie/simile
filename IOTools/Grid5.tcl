@@ -761,7 +761,7 @@ namespace eval grid005 {
 	set max $useNodes($winId,max)
         set range [expr {$max-$min}]
 	set nswatches [expr {$useNodes($winId,nswatches)-1}]
-        
+
 	if {$celval<$useNodes($winId,dataMin)} {
 	    set useNodes($winId,dataMin) $celval
 	}
