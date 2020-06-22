@@ -158,7 +158,6 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
   } // end initialization
   for( i = 0; i < nThread; i++ ) {
     pThd[i]->phase = phase;
-    pThd[i]->context = context;
     // Start recording time as pipe reading overhead
     timers[i+1] = stopwatch;
   }

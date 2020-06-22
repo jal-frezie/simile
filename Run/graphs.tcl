@@ -1039,7 +1039,9 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 	# No object data available, do not display
 	.table.fbuttons.edit configure -state disabled
 	.table.fbuttons.keepvals configure -state disabled
-	set table_entry(uftsi) [lindex $table_entry(values) 4]*day
+	if {!$startLine} {
+	    set table_entry(uftsi) [lindex $table_entry(values) 4]*day
+	}
     }
     set t .table
     LetItShow .table
@@ -1897,7 +1899,7 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 		    } use_8-bit_colourmap {
 			#			set fract [expr 35*(([lindex $ptColours 1]*6+128)/256)+5*(([lindex $ptColours 0]*6+128)/256)+([lindex $ptColours 2]*4+128)/256]
 			# above for 7x7x5 values 0 to 244
-			set fract [expr 32*(([lindex $ptColours 1]*7+128)/256)+4*(([lindex $ptColours 0]*7+128)/256)+([lindex $ptColours 2]*3+128)/256]
+			set fract [expr {32*([lindex $ptColours 1]/32)+4*([lindex $ptColours 0]/32)+[lindex $ptColours 2]/64}]
 		    } default {
 			error "Unrecognized conversion [lindex $tableSpec 9]"
 		    }
