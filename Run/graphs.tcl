@@ -627,7 +627,6 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     set haveDND [llength [package provide tkdnd]]
     wm title .table "Table data for [BlankCrs "$tgt $dims"]"
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
-    set table_entry(source) -1
     
     set t [::ttk::notebook .table.notebook]
     $t add [set fc [frame $t.columns]] -text [tr. "Data in column"]
@@ -1126,13 +1125,18 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 	} else {
 	    set table_entry(fileName) {}
 	    set table_entry(indices) {}
+	    set table_entry(row1) {}
+	    set table_entry(rown) {}
+	    set table_entry(col1) {}
+	    set table_entry(coln) {}
 	}
     }
     
     #    if {![LoadDataFile]} {
     #        return 0
     #    }
-    
+
+    set table_entry(source) -1
     focus $t
     grab $t
     tkwait variable table_entry(done)
