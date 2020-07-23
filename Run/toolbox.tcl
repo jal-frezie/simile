@@ -1793,17 +1793,19 @@ proc OpenProjectFile {path} {
 	set command [ChooseText \
 			 [PrefValue custom(helperManager) helperManager] \
 			 ::RunEnv::LoadSHF CreateView]
+	if {[file exists $defaultSHF]} {
+	    $command $topNode $defaultSHF
+	    return ;# model saved by v7 ignore legacy stuff
+	}
 	if {[info exists SimileProject(nameOfHelperStateFile)]} {
 	# pre-v7 model with associated helper state file
 	    set helperTable($topNode,stateName) \
 		[file normalize [file join $baseDir \
 				     $SimileProject(nameOfHelperStateFile)]]
 	    RecordPathChoice .shf $helperTable($topNode,stateName) $topNode
-            file copy $helperTable($topNode,stateName) $defaultSHF
+            $command $topNode $helperTable($topNode,stateName)
+	    set helperTable($topNode,keepSetup) 1 ;# ensure bundle saved
         }
-	if {[file exists $defaultSHF]} {
-	    $command $topNode $defaultSHF
-	}
     }
 }
 
@@ -1826,6 +1828,8 @@ proc SaveProjectFile {topNode path tgt} {
 	    $helperTable($topNode,keepSetup)} {
 	set helperTable($topNode,stateName) [file join $path model.shf]
 	::RunEnv::SaveView 0
+	set SimileProject(nameOfHelperStateFile) model.shf
+	# this should make v6x find it OK
 
 # 	set choices {lose_shf update_shf}
 # 	if {[info exists helperTable($topNode,stateName)]} {
