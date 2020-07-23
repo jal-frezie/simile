@@ -1401,10 +1401,7 @@ proc LoadFile {topNode tree tgt} {
                         }
 			SaveMimeBit $boddledy $tree$oldPath $Date
 		    } "Simile helper configuration file" {
-# as of 5.6 these are no longer included in the .sml file for reasons of
-# consistency, so this is an earlier saved model. Attempt to copy the .shf
-# relative to saved model file so it will open.
-			SaveMimeBit $boddledy [file dirname $tgt]$oldPath $Date
+			SaveMimeBit $boddledy $tree$oldPath $Date
                     } default {
 			# If no auth code, do not keep executable, but
 			# dont crash either -- could be innocent
@@ -1448,7 +1445,7 @@ proc GetParts {top tree noPkg} {
     global projectInfo
 
     set mimes {}
-    set mdlExts pl,cnv,svg,spj,cpp,so,dylib,dll,tcl
+    set mdlExts pl,cnv,svg,spj,shf,cpp,so,dylib,dll,tcl
     foreach subtree [glob -nocomplain \
 			 ${tree}/{*.{png,gif,jpeg,o},model.{$mdlExts}}] {
         #ShowMess debug info "GetParts subtree $subtree" ok
@@ -1500,8 +1497,7 @@ proc GetParts {top tree noPkg} {
                     set Description "Simile parameter file"
                     set style attachment
                 }
-                #*.shf {
-# reference .shfs as well, for consistency
+                *.shf {
                     set PartType "application/x-simile"
                     set Description "Simile helper configuration file"
                     set style attachment
@@ -1792,17 +1788,22 @@ proc OpenProjectFile {path} {
             MenuSelect $tw.canvas code run_tcl
         }
 	update
-        if {$runState($topNode,modelRunning)>=3 && \
-		[info exists SimileProject(nameOfHelperStateFile)]} {
+        if {$runState($topNode,modelRunning)<3} return
+	set defaultSHF [file join $path model.shf]
+	set command [ChooseText \
+			 [PrefValue custom(helperManager) helperManager] \
+			 ::RunEnv::LoadSHF CreateView]
+	if {[info exists SimileProject(nameOfHelperStateFile)]} {
+	# pre-v7 model with associated helper state file
 	    set helperTable($topNode,stateName) \
 		[file normalize [file join $baseDir \
 				     $SimileProject(nameOfHelperStateFile)]]
 	    RecordPathChoice .shf $helperTable($topNode,stateName) $topNode
-            set command [ChooseText \
-			     [PrefValue custom(helperManager) helperManager] \
-			     ::RunEnv::LoadSHF CreateView]
-            $command $topNode $helperTable($topNode,stateName)
+            file copy $helperTable($topNode,stateName) $defaultSHF
         }
+	if {[file exists $defaultSHF]} {
+	    $command $topNode $defaultSHF
+	}
     }
 }
 
@@ -1820,31 +1821,34 @@ proc SaveProjectFile {topNode path tgt} {
         set SimileProject(modelRunning) 1
 	set SimileProject(running_c) [string equal c $runState($topNode,lang)]
     }
+    # stateName referred to separate .shf -- bundle it instead
     if {[info exists helperTable($topNode,keepSetup)] && \
 	    $helperTable($topNode,keepSetup)} {
-	set choices {lose_shf update_shf}
-	if {[info exists helperTable($topNode,stateName)]} {
-	    set choices [linsert $choices 0 keep_shf]
-	}
-	set helperAction [Query save_helper_setup question top {} $choices]
-	switch $helperAction {
-	    update_shf {
-		::RunEnv::SaveView 0
-	    } lose_shf {
-		array unset helperTable $topNode,stateName
-	    }
-	}
+	set helperTable($topNode,stateName) [file join $path model.shf]
+	::RunEnv::SaveView 0
+
+# 	set choices {lose_shf update_shf}
+# 	if {[info exists helperTable($topNode,stateName)]} {
+# 	    set choices [linsert $choices 0 keep_shf]
+# 	}
+# 	set helperAction [Query save_helper_setup question top {} $choices]
+# 	switch $helperAction {
+# 	    update_shf {
+# 		::RunEnv::SaveView 0
+# 	    } lose_shf {
+# 		array unset helperTable $topNode,stateName
+# 	    }
+# 	}
     }
-    if {[info exists helperTable($topNode,stateName)]} {
+#     if {[info exists helperTable($topNode,stateName)]} {
 # old method: include helper state in saved model, just because we could...
 #	if {![string equal $path \
 #		  [file dirname $helperTable($topNode,stateName)]]} {
 #	    file copy -force $helperTable($topNode,stateName) $path
 #	}
-        set SimileProject(nameOfHelperStateFile) \
-	    [Relativize $tgt $helperTable($topNode,stateName)]
-    }
-    # shf file name loaded
+#         set SimileProject(nameOfHelperStateFile) \
+# 	    [Relativize $tgt $helperTable($topNode,stateName)]
+#     }
     
     set spfList [array get ::SimileProject fileparam,/${topNode}/*]
     foreach {varName spfPath} $spfList {
