@@ -14,7 +14,7 @@ sicstus_module(menu, [undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
 	
 sicstus_use_module([sp_only, forms, m_update, image, draw, 
 	state, backup, library, ame_gen, utility, m_class, text,
-				% imexport,
+				imexport,
 	library(lists), library(ordsets)]).
 
 undo_edit(Wid, Wids) :-
@@ -520,7 +520,7 @@ menu_handle(Win, file, ExportType) :-
 	    start_progress_dialogue(Win),
 	    save_isolated(FileName, Model, Date, no, yes),
 	    finish_progress_dialogue;
-/*	  ExportType = export_xml,
+	  ExportType = export_xml,
 	    use_pref_dir(Dir),
 	    append_atoms(Dir, '/temp_out.pl', TempFile),
 	    start_progress_dialogue(Win),
@@ -530,7 +530,7 @@ menu_handle(Win, file, ExportType) :-
 	    get_program_file(DefName, TopModel, FileName),
 	    convert_simileprolog_to_similexmlv3(TempFile, FileName),
 	    output><my_delete_file(TempFile);
-*/	  ExportType = export_session,
+	  ExportType = export_session,
 	    backup><autosave_file_is(TopModel, Log),
 	    get_default_export_name(TopModel, ".ssn", DefName),
 	    get_program_file(DefName, TopModel, FileName),
@@ -552,21 +552,26 @@ menu_handle(Win, file, ExportType) :-
 		close(StmW);
 	    output><safe_tcl_eval(['file copy -force',
 				     br(Log), br(FileName)], _))).
-/*	
+	
 menu_handle(Win, file, import_xml) :-
 	Win shows_model Model,
 	contains(TopModel, Model),
 	is_toplevel(TopModel),
 	get_import_file('model.xml', TopModel, XmlSrc),
-	use_pref_dir(Dir),
+	use_temp_dir(Dir),
+	output><check_directory(Dir),
 	append_atoms(Dir, '/temp_in.pl', TempFile),
 	start_progress_dialogue(Win),
 	catch(convert_similexmlv3_to_simileprolog(XmlSrc, TempFile),
 	      Loss, true),
-	(nonvar(Loss), !; stick_model_in(Win, Model, XmlSrc, open_toplevel)),
+	(nonvar(Loss), !,
+	 query(xml_conversion_fail(Loss), warning, top, [ok], _);
+	 % stick_model_in(Win, Model, TempFile, open_toplevel)),
+	 ame_merge(Model, TempFile, _F, _C, _T),
+	 redraw_window(Win)),
 	finish_progress_dialogue,
 	output><my_delete_file(TempFile).
-*/
+
 menu_handle(Win, edit, Component) :-
 	(Component is_class_of_sort box; Component is_class_of_sort line),
 	get_edit_model(Win, _Model, Node),

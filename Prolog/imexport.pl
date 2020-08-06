@@ -83,11 +83,11 @@ xml_equiv(Char, Jolly) :-
 % ========================================= convert_similexmlv3_to_simileprolog
 convert_similexmlv3_to_simileprolog(FileIn,FileOut):-
    % xml_file_to_term(FileIn, Xml), % externals loaded in database.pl
-   output><safe_tcl_eval(['ExmlToGenericPl', br(FileIn)], XmlStr),
+   output><safe_tcl_eval(['ExmlToGenericPl', br(FileIn), br(FileOut)], _),
    % read_term_from_codes(XmlStr, Xml, []), % crashes GNU if big
-   open_chars_stream(XmlStr, Stm),
+   open_native(FileOut, read, Stm),
    read_term(Stm, element(model, [], Es), []),
-   close_internally_formatted_stream(Stm),
+   close(Stm),
    open_native(FileOut, write, PlStm),
    convert_xml_elements(PlStm, Es),
    close(PlStm).
@@ -194,9 +194,10 @@ map(top,
 
 map(top,
   arc(ID,From,To,Type,SpecsProlog,GraphicsProlog),
-  element(arc,[id=ID,(from)=From,(to)=To,type=Type],
+  element(arc, ArcAttrs,
     [element(arcspecs,[],SpecsXML),
      element(arcgraphics,[],GraphicsXML)])):-
+         permutation([id=ID,(from)=From,(to)=To,type=Type], ArcAttrs),
          map_list(node_arc,SpecsProlog,SpecsXML),
          map_list(graph_node_arc,GraphicsProlog,GraphicsXML).
 
@@ -234,7 +235,7 @@ map(reference,
 map(reference,
   ancestor(I),
   element(ancestor,[],[A])):-
-      term_to_atom(I,A).
+      term_atom(I,A).
 
 map(reference,
   obsolete,
@@ -418,7 +419,7 @@ map(av,
 map(av,
   exclusive=N,
   element(exclusive,[],[A])):-
-      term_to_atom(N,A).
+      term_atom(N,A).
 
 % Note: THIS IS NOT RIGHT.     It's done this way to conform to the current (Feb 2011) version of the Schema.
 % In practice, there is a list of external_code values; and then a list (possibly empty) of libraries.
@@ -511,6 +512,11 @@ map(av,
   element(name,[],[N])).
 
 map(av,
+  attached=Nodes,
+  element(attached,[],NodesXML)) :-
+    map_list(subnode, Nodes, NodesXML).
+
+map(av,
   param_type=P,
   element(param_type,[],[P])).
 
@@ -527,7 +533,7 @@ map(av,
 map(av,
   separate=Sn,
   element(separate,[],[Sa])):-
-      term_to_atom(Sn,Sa).
+      term_atom(Sn,Sa).
 
 % The list that's being checked for here is the list of characters in a 
 % Prolog string.
@@ -687,7 +693,7 @@ map(count_item,
 map(count_item,
    An,
    element(dimension,[],[Aa])):-
-      term_to_atom(An,Aa),
+      term_atom(An,Aa),
       number(An),!.
 map(count_item,
    A,
@@ -739,12 +745,13 @@ map(use,
 
 
 map(useV,
-   usr(V),
-   element(usr,[],[V])):-!.
+   usr(Vterm),
+   element(usr,[],[Vatom])):-!,
+      term_atom(Vterm,Vatom).
 map(useV,
    Vterm,
    element(text,[],[Vatom])):-
-      term_to_atom(Vterm,Vatom).
+      term_atom(Vterm,Vatom).
 
    
 
@@ -781,22 +788,22 @@ map(table_data,
 map(table_data,
    bounds=[BdsProlog],
    element(array_bounds,[],[BdsXML])):-
-      term_to_atom(BdsProlog,BdsXML).
+      term_atom(BdsProlog,BdsXML).
 
 map(table_data,
    bounds=BdsProlog,
    element(bounds,[],[BdsXML])):-
-      term_to_atom(BdsProlog,BdsXML).
+      term_atom(BdsProlog,BdsXML).
 
 map(table_data,
    dims=[DsProlog],
    element(array_dims,[],[DsXML])):-
-      term_to_atom(DsProlog,DsXML).
+      term_atom(DsProlog,DsXML).
 
 map(table_data,
    dims=DsProlog,
    element(dims,[],[DsXML])):-
-      term_to_atom(DsProlog,DsXML).
+      term_atom(DsProlog,DsXML).
 
 map(atom,
    A,
@@ -805,7 +812,7 @@ map(atom,
 map(number,
    N,
    element(data,[],[A])):-
-      term_to_atom(N,A).
+      term_atom(N,A).
 
 
 
@@ -816,7 +823,7 @@ map(math,V,element('m:ci',[],[V])):-
 
 
 map(math,V,element('m:cn',[],[Vatom])):-
-	atom_number(Vatom, V).
+	catch(atom_number(Vatom, V), _NotToBe, fail).
 
 % ------------------------------ if ... then ... elseif ... else
 
@@ -904,6 +911,47 @@ map(math,
       map(math,B,Bmath),
       Expr =.. [Opsim,A,B].
 
+% ------------------------ Arrays, array variables and list variables
+
+map(math,
+   [A1,A2|As],
+   element('m:vector',[class=array],[Amath1,Amath2|Amaths])):-
+      map(math,A1,Amath1),
+      map(math,A2,Amath2),
+      map_list(math,As,Amaths),!.
+
+map(math,
+   [A],
+   element('m:vector',[class=array],[Amath])):-
+      map(math,A,Amath),!.
+
+/*
+map(math,
+   As,
+   Amaths):-
+      map_list(math,As,Amaths),!.
+*/
+
+map(math,
+   {A},
+   element('m:vector',[class=list],[Amath])):-
+      map(math,A,Amath),!.
+
+
+% The bracketed, comma-separated term is an expression with assignments.
+% The comma is left-associative, so all the assignments are picked up together.
+% We then need to use a special predicate (like maplist) to handle them.
+map(math,
+   (A=B,Arest),
+   element('m:apply',[],[Wmath, element('m:apply',[],[element('m:eq',[],[]),Amath,Bmath])|Arestmath])):-
+	map(math, where, Wmath),
+	term_atom(A, Aatom),
+	map(math,Aatom,Amath),
+	map(math,B,Bmath),
+	map_assignments(Arest,Arestmath).
+
+
+
 
 % --------------------------------- Functions not in MathML
 
@@ -956,47 +1004,6 @@ map(math,
 	  map_list(math,[1],ArgsXML);
       map_list(math,ArgsSim,ArgsXML)),
       make_def_url(Opsim,DefURL),!.
-
-
-% ------------------------ Arrays, array variables and list variables
-
-map(math,
-   [A1,A2|As],
-   element('m:vector',[class=array],[Amath1,Amath2|Amaths])):-
-      map(math,A1,Amath1),
-      map(math,A2,Amath2),
-      map_list(math,As,Amaths),!.
-
-map(math,
-   [A],
-   element('m:vector',[class=array],[Amath])):-
-      map(math,A,Amath),!.
-
-/*
-map(math,
-   As,
-   Amaths):-
-      map_list(math,As,Amaths),!.
-*/
-
-map(math,
-   {A},
-   element('m:vector',[class=list],[Amath])):-
-      map(math,A,Amath),!.
-
-
-% The bracketed, comma-separated term is an expression with assignments.
-% The comma is left-associative, so all the assignments are picked up together.
-% We then need to use a special predicate (like maplist) to handle them.
-map(math,
-   (A=B,Arest),
-   element('m:apply',[],[Wmath, element('m:apply',[],[element('m:eq',[],[]),Amath,Bmath])|Arestmath])):-
-	map(math, where, Wmath),
-	term_to_atom(A, Aatom),
-	map(math,Aatom,Amath),
-	map(math,B,Bmath),
-	map_assignments(Arest,Arestmath).
-
 
 
 % END OF MATHS
@@ -1219,7 +1226,7 @@ number_atom(A,A).
 
 Not needed at all in GNU-prolog; put in client code if needed
 number_atom(N,A):-
-   term_to_atom(N,A).
+   term_atom(N,A).
 */
 
 % Go through and remove all instances, replacing with number_atom/2.

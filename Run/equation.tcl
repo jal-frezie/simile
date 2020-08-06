@@ -1244,40 +1244,49 @@ proc StartPlElement {name attList args} {
     foreach {att val} $attList {
 	lappend pairs "($att)='$val'"
     }
-    if {$parseStatus(inList)} {
+    if {$parseStatus(inWhat) eq "list"} {
 	append parseStatus(plStr) ,
     }
     append parseStatus(plStr) "element($name,\[" [join $pairs ,] "\],\["
-    set parseStatus(inList) no
+    set parseStatus(inWhat) none
 }
 
 proc FinishPlElement {name args} {
     global parseStatus
 
+    if {$parseStatus(inWhat) eq "string"} {
+	append parseStatus(plStr) "'"
+    }
     append parseStatus(plStr) "])"
-    set parseStatus(inList) yes
+    set parseStatus(inWhat) list
 }
 
 proc StuffPlElement {data} {
     global parseStatus
 
-    append parseStatus(plStr) '$data'
+    if {$parseStatus(inWhat) eq "none"} {
+	set parseStatus(inWhat) string
+	append parseStatus(plStr) "'"
+    }
+    append parseStatus(plStr) $data
 }
 
-proc ExmlToGenericPl {tgt} {
-    set pStr [open $tgt r]
+proc ExmlToGenericPl {src tgt} {
+    set pStr [open $src r]
     set dada [read $pStr]
     close $pStr
     global parseStatus
-    array unset parseStatus
     package require xml
 
     set parseStatus(pl) [::xml::parser -ignorewhitespace true \
 				-elementstartcommand StartPlElement \
 				-elementendcommand FinishPlElement \
 				-characterdatacommand StuffPlElement]
-    array set parseStatus {plStr {} inList no}
+    array set parseStatus {plStr {} inWhat none}
     $parseStatus(pl) parse $dada
     append parseStatus(plStr) . ;# allow prolog to read normally
-    return $parseStatus(plStr)
+    set pStr [open $tgt w]
+    puts $pStr $parseStatus(plStr)
+    close $pStr
+    return ok
 }

@@ -1655,20 +1655,20 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add cascade -label [tr. "Import"] -menu $fm.sub0
     set fm0 [menu $fm.sub0 -tearoff 0]
     # XML im/export via web service is local; replace with file to use built-in
-    # convertor
-    $fm0 add command -label [tr. "XML Model Description"] \
-            -command "MenuSelect $c local import_xml"
-#    $fm0 add command -label [tr. "XML Model Description (local)"] \
-#            -command "MenuSelect $c file import_xml"
+    # convertor (done)
+#    $fm0 add command -label [tr. "XML Model Description"] \
+#            -command "MenuSelect $c local import_xml"
+    $fm0 add command -label [tr. "XML Model Description (local)"] \
+            -command "MenuSelect $c file import_xml"
 
     $fm add cascade -label [tr. "Export"] -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
     $fm2 add command -label [tr. "Model declarations"] \
             -command "MenuSelect $c file export_prolog"
-    $fm2 add command -label [tr. "XML Model Description"] \
-            -command "MenuSelect $c local export_xml"
-#    $fm2 add command -label [tr. "XML Model Description (local)"] \
-#            -command "MenuSelect $c file export_xml"
+#    $fm2 add command -label [tr. "XML Model Description"] \
+#            -command "MenuSelect $c local export_xml"
+    $fm2 add command -label [tr. "XML Model Description (local)"] \
+            -command "MenuSelect $c file export_xml"
     $fm2 add command -label [tr. "SVG Image"] \
             -command "MenuSelect $c local export_svg"
     $fm2 add command -label [tr. "C++ code"] \

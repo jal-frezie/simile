@@ -1208,6 +1208,7 @@ proc GetMySQLConnect {parent $mdl} {
 
 proc PopulateTableList {file fc fheads} {
     set db [DBHandleFor $file]
+    if {$db eq ""} return
     set dbtables [$db tables]
     set tablenames {}
     set columnHeaders {}
@@ -2006,23 +2007,26 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 	    #ShowMess debug info "$connectString dbtable $dbtable field $field"  ok
 	    set datalist [ListColumn $db $dbtable $field]
 	    set indexArgs {}
-	    foreach headerIndex [lrange $tableSpec 2 end] {
-		lappend indexArgs ${headerIndex}elt \
-		    [ListColumn $db $dbtable $headerIndex]
+	    for {set idxPsn 2} {$idxPsn < [llength $tableSpec]} {incr idxPsn} {
+		lappend indexArgs idx$idxPsn \
+		    [ListColumn $db $dbtable [lindex $tableSpec $idxPsn]]
 	    }
 	    $db close
 	    eval [list foreach datum $datalist] $indexArgs [list {
-		set arrayIndex {}
 		if {[llength $indexArgs]} {
+		    set arrayIndex {}
 		    foreach {item list} $indexArgs {
 			lappend arrayIndex [Sink [set $item]]
 		    }
+		    if {[lsearch empty $arrayIndex]>-1} continue
 		} else {
 		    set arrayIndex $lineCount
+		    incr lineCount
+		    if {$datum eq "empty"} continue
 		}
+		# keep empty data points if indices present
 		set paramArray($arrayIndex) \
 		    [EnquoteIfNonNumeric $datum]
-		incr lineCount
 	    }]
 	    # reinsert dbtable into tableSpec so it gets written to .spfs
 	    set tableSpec [linsert $tableSpec 2 ,dbtable:$dbtable]

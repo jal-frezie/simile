@@ -307,8 +307,8 @@ itcl::class similescript::$newHelperClass {
 
     method ColoursFor {values min max map} {
 	if {[llength $values]==1} {
-	    set scaled [expr {max(0, min(0.999, ($values-$min)/($max-$min)))}]
-	    set result [lindex $map [expr {int($scaled*[llength $map])}]]
+	    set result [lindex $map [expr {max(0, min([llength $map]-1, \
+			  int([llength $map]*($values-$min)/($max-$min))))}]]
 	} else {
 	    foreach {ind val} $values {
 		lappend result $ind [ColoursFor $val $min $max $map]

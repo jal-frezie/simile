@@ -37,7 +37,12 @@ substitute(E, [G | T1], F, [H | T2]) :-
 % swi: things actually more similar to gnu-prolog
 
 local_atom_chars(Atom, Chars) :-
-	atom_codes(Atom, Chars).
+    atom_codes(Atom, Chars).
+
+term_atom(T, A) :-
+    var(A) ->
+	with_output_to(atom(A), write(T));
+    atom_to_term(A, T, XX), all(user, call, [build(XX)]).
 
 local_wind_up :-
     halt(0).

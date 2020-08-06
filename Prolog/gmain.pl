@@ -30,7 +30,7 @@ _Module><Function :-
 :- include('utility.pl').
 :- include('ame_gen.pl').
 :- include('library.pl').
-% :- include('imexport.pl').
+:- include('imexport.pl').
 
 /* files needed to build programs */
 
@@ -111,10 +111,11 @@ append([H | T], L) :-
 
 atom_number(A, N) :- number_atom(N, A).
 
-term_to_atom(T, A) :-
+term_atom(T, A) :-
 	var(A) ->
 	write_to_atom(A, T);
-	read_from_atom(A, T).
+	read_term_from_atom(A, T, [end_of_term(eof), variable_names(XX)]),
+        all(user, call, [build(XX)]).
 
 /* Reimplemented from Sicstus libraries: */
 
