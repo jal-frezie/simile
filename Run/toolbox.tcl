@@ -1875,8 +1875,10 @@ proc SaveProjectFile {topNode path tgt} {
 #    }
 
 # start by always writing it, later add check if version in tmp has been updated
-    set ::preSelect [file join $path model.spf]
-    fileparams::Save $topNode /$topNode
+    if {[HaveValues $topNode]} {
+	set ::preSelect [file join $path model.spf]
+	fileparams::Save $topNode /$topNode
+    }
 
     set projectF [NetOpen $ProjectFile w]
     fconfigure $projectF -encoding utf-8
