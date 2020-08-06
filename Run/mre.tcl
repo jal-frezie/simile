@@ -1144,7 +1144,8 @@ $tb1.b43 configure -state $useSpaceAbility
 		return
 	    }
 	}
-	PreserveSetup [llength $bermudaTriangle] ;# renaming vars alters setup
+	PreserveSetup 1
+	# Loading manually means auto version needs updating
 	set ::helperTable($currentNode,stateName) $oldPath
     }
 

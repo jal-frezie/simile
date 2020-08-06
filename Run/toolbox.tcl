@@ -1402,6 +1402,8 @@ proc LoadFile {topNode tree tgt} {
 			SaveMimeBit $boddledy $tree$oldPath $Date
 		    } "Simile helper configuration file" {
 			SaveMimeBit $boddledy $tree$oldPath $Date
+		    } "Simile parameter file" {
+			SaveMimeBit $boddledy $tree$oldPath $Date
                     } default {
 			# If no auth code, do not keep executable, but
 			# dont crash either -- could be innocent
@@ -1445,7 +1447,7 @@ proc GetParts {top tree noPkg} {
     global projectInfo
 
     set mimes {}
-    set mdlExts pl,cnv,svg,spj,shf,cpp,so,dylib,dll,tcl
+    set mdlExts pl,cnv,svg,spj,shf,spf,cpp,so,dylib,dll,tcl
     foreach subtree [glob -nocomplain \
 			 ${tree}/{*.{png,gif,jpeg,o},model.{$mdlExts}}] {
         #ShowMess debug info "GetParts subtree $subtree" ok
@@ -1490,9 +1492,9 @@ proc GetParts {top tree noPkg} {
                     set Description "Simile diagram"
                     set style attachment
                 }
-                #*.spf {
-# .spfs contain relative paths so are referenced, not moved into the tree
-# (note exra hashes because match string cannot be commented out)
+                *.spf {
+# .spfs contain relative paths so are referenced, not moved into the tree...
+# will have to somehow make them relative to saved model
                     set PartType "application/x-simile"
                     set Description "Simile parameter file"
                     set style attachment
@@ -1770,13 +1772,17 @@ proc OpenProjectFile {path} {
     unset loadingProject
     if {[info exists SimileProject(modelRunning)]} {
 #puts "win $win topNode ÃÂ£topNode"
+	set defaultSPF [file join $path model.spf]
 	if {[info exists SimileProject(spfList)]} {
+	# pre-v7 model with associated parameter files
         # file params cannot be loaded until model is ready, so set this
         # variable which will be read before opening the dialogue
 #puts "retrieved SimileProject(spfList) $SimileProject(spfList)"
 	    foreach {smPath spfRelPath} $SimileProject(spfList) {
 		set ::projectParams($smPath) [file join $baseDir $spfRelPath]
 	    }
+	} elseif {[file exists $defaultSPF]} {
+	    set ::projectParams({}) $defaultSPF
 	}
 	set tw [FindNodeTopWin $topNode]
 	# if undo enabled, a log has been applied, so do not rerun!
@@ -1854,17 +1860,24 @@ proc SaveProjectFile {topNode path tgt} {
 # 	    [Relativize $tgt $helperTable($topNode,stateName)]
 #     }
     
-    set spfList [array get ::SimileProject fileparam,/${topNode}/*]
-    foreach {varName spfPath} $spfList {
-	set smPart [Submodelize $varName]
-	set relPath [Relativize $tgt $spfPath]
-	set pmData "Reference to parameter metafile $relPath"
-	if {[llength $smPart]} {
-	    append pmData " for [string range $smPart 1 end]"
-	}
-	lappend projectInfo $pmData
-	lappend SimileProject(spfList) $smPart $relPath
-    }
+# v6 included links to all saved spfs and attempted to reload. v7 abandons
+# such fripperies and just creates a top-level .spf which gets put in the mime.
+#    set spfList [array get ::SimileProject fileparam,/${topNode}/*]
+#    foreach {varName spfPath} $spfList {
+#	set smPart [Submodelize $varName]
+#	set relPath [Relativize $tgt $spfPath]
+#	set pmData "Reference to parameter metafile $relPath"
+#	if {[llength $smPart]} {
+#	    append pmData " for [string range $smPart 1 end]"
+#	}
+#	lappend projectInfo $pmData
+#	lappend SimileProject(spfList) $smPart $relPath
+#    }
+
+# start by always writing it, later add check if version in tmp has been updated
+    set ::preSelect [file join $path model.spf]
+    fileparams::Save $topNode /$topNode
+
     set projectF [NetOpen $ProjectFile w]
     fconfigure $projectF -encoding utf-8
     set statLine [array get SimileProject]

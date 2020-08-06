@@ -891,9 +891,10 @@ namespace eval fileparams {
 		append genericAVs { } \
 		    comment=[Entitize $msgs(comment_$compName)]
 	    }
-	    if {![string length [$outWidgets($compName).e get]]} {
+#	    if {![string length [$outWidgets($compName).e get]]} {
 # visible entry is empty, probably cleared, so skip writing
-	    } elseif {[DataInScenario $compName]} {
+#	    } else (removed as the dialogue will no longer exist)
+	    if {[DataInScenario $compName]} {
 		set type [GetCompProperty $topNode Type $nodeId]
 		puts -nonewline $pStr \
 		    "$indent<byte_array $genericAVs type=[Entitize $type]"
