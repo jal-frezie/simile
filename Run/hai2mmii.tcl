@@ -142,6 +142,9 @@ proc AddToWatched {node} {
     global helperTable
 
     lappend helperTable($helperTable(beingCalled),foci) $node
+    if {$helperTable(beingCalled) eq ""} return
+    $helperTable(VariableList)::AddHelperLeaf $::runState($::myNode,inspId) \
+	$node $helperTable(beingCalled)
 }
 
 # GetModelValue returns the current value of a node. This is numerical if the

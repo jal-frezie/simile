@@ -639,6 +639,15 @@ namespace eval RunEnv {
 	    return [FindParentNotebookPage [winfo parent $containerId]]
         }
     }
+
+    proc FocusTool {hlpr} {
+	set cont [$hlpr cget -winId]
+	SetCurrentContainer $cont
+	while {[set page [FindParentNotebookPage $cont]] ne ""} {
+	    set cont [winfo parent $page]
+	    $cont select $page
+	}
+    }
     
     proc ShowMreHelp {} {
         variable currentNode

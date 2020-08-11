@@ -445,7 +445,14 @@ namespace eval ::$keyValue {
     }
     
     proc PrepareSaveString {w} {
-	set ::graphtools::plot($w,stringInfo) [ListNotes [GetCanvas $w]]
+	global ::graphtools::plot
+	variable ynodes
+	
+	set plot($w,stringInfo) [ListNotes [GetCanvas $w]]
+	set plot($w,Yvars) {}
+	foreach node $ynodes($w) {
+	    lappend plot($w,Yvars) [GetCaptionPathFromId $node]
+	}
 	UpdateState $w
     }
 

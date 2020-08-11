@@ -12,8 +12,6 @@
 set keyValue TileInspector0
 
 namespace eval ::$keyValue {
-    variable tableframe
-    
     proc identify {} {
         return "Explorer (Tile version)"
     }
@@ -29,7 +27,6 @@ namespace eval ::$keyValue {
 
     proc initialize {winId} {
         global tcl_platform iconImages
-        variable tableframe
 	variable chop
         
         set tableframe $winId.tableframe
@@ -210,8 +207,12 @@ namespace eval ::$keyValue {
     proc OnElementClick { winId x y } {
 	variable chop
 	set node [$winId.tableframe.table identify row $x $y]
-	ProdFromHelper $winId $node \
-	    [string range [GetCaptionPathFromId $node] $chop end]
+	if {[regexp ^\(.*\)\\. $node spare hlpr]} {
+	    ::RunEnv::FocusTool $hlpr
+	} else {
+	    ProdFromHelper $winId $node \
+		[string range [GetCaptionPathFromId $node] $chop end]
+	}
     }
     
     proc DoInspPopup {winId X Y x y} {
@@ -259,7 +260,8 @@ namespace eval ::$keyValue {
     
     proc OpenLevel {level} {
         # only works for level = 0
-        variable tableframe
+	set tableframe $winId.tableframe
+	
         $tableframe.table closetree node00001; # recursively close all nodes
         set nodes node00001; # root or Desktop
         for {set i 0} {$i <= $level} {incr i} {
@@ -269,5 +271,27 @@ namespace eval ::$keyValue {
             }
         }
     }
-    
+
+    proc AddHelperLeaf {winId node hlpr} {
+	set tableframe $winId.tableframe
+	if {[$tableframe.table exists $hlpr.$node]} return
+	set id [[$hlpr info class]::Identify]
+	array set hlprIcons {Plotter graph \
+				 "XY Plotter" plotxy \
+				 "Polygon diagram" polys \
+				 "Data table" table \
+				 "Data logger" table \
+				 "Spatial grid display" grid \
+				 "Lollipop diagram" 3d_objects \
+				 "Slider control" slider \
+				 "Multi-layer 2-D display" layers \
+				 "3-D Shape Plotter" 3d_objects}
+	if {[catch {set img $hlprIcons($id)}]} {
+	    set img display
+	}
+	set ptags [$tableframe.table item $node -tags]
+	$tableframe.table insert $node end -id $hlpr.$node \
+	    -text $id -image $::iconImages($img) -tag "$ptags disp($hlpr)"
+	$tableframe.table item $node -open 1
+    }
 }; # end namespace

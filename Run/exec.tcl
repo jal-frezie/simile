@@ -28,9 +28,12 @@ proc SeedRandoms {node val} {
 }
 
 proc loadmodel {exec ident} {
+    global captionCache
+
     set modelId [loadshlib $exec $ident]
+    array unset captionCache $modelId,*
     foreach itemId [listobjects $modelId] {
-	set ::captionCache($modelId,[getvalue $modelId $itemId 5]) $itemId
+	set captionCache($modelId,[getvalue $modelId $itemId 5]) $itemId
     }
     return $modelId
 }

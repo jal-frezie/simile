@@ -1398,6 +1398,7 @@ proc StartRun {node} {
  	set hlp [UniqueId helper]
 	set helperId $helperTable(VariableList)
 	similescript::$helperId $hlp $runClass Variables
+	set runState($node,inspId) [$hlp cget -winId]
 #	if {![winfo exists $helperTable(autosliders)]} {
 # No sliders in model, so delete notebook page
 #	    $sliderBook delete InputSliders
