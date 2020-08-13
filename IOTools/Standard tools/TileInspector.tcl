@@ -229,6 +229,8 @@ namespace eval ::$keyValue {
 	foreach {topRef someNode} [array get window_info *,top_node] {
 	    if {$someNode eq $topNode} {
 		set canvas [string range $topRef 0 end-9]
+		# check node appears in each canvas
+		if {[GetFromProlog tk_locate('$canvas',$node)] eq {}} continue
 		CanvasSee $canvas $node [expr $window_info($canvas,width)/2] \
 		    [expr $window_info($canvas,height)/2]
 		prolog tk_do_colours($node,seln)
