@@ -158,6 +158,8 @@ namespace eval ::$keyValue {
 #        
 	bind $tableframe.table <Button-1> \
 	    [namespace code "OnElementClick $winId %x %y"]
+	CrossPlatformBind $tableframe.table \
+	    [namespace code "OnElementContext $winId %X %Y %x %y"]
 #	$tableframe.table bindImage <Button-1> \
 #	    [namespace code "OnElementClick $winId"]
 #        $tableframe.table bindText <Button-1> \
@@ -204,6 +206,36 @@ namespace eval ::$keyValue {
 #	return $base/$local
 #    }
 #
+    menu .inspContext -tearoff 0
+    .inspContext add command -label "View in model diagram"
+
+    proc OnElementContext { winId X Y x y } {
+	set node [$winId.tableframe.table identify row $x $y]
+	if {[regexp ^\(.*\)\\. $node spare hlpr]} {
+	    ::RunEnv::FocusTool $hlpr
+	} else {
+	    # display context menu
+	    .inspContext entryconfigure 0 \
+		-command [namespace code "ShowInModel $winId $node"]
+	    .inspContext post $X $Y
+	}
+    }
+
+    proc ShowInModel {winId node} {
+	global window_info
+	# hardest bit is finding the canvas
+	set topNode [$::helperTable($winId,whichInstance) GetNode]
+	RaiseModelWindow $topNode
+	foreach {topRef someNode} [array get window_info *,top_node] {
+	    if {$someNode eq $topNode} {
+		set canvas [string range $topRef 0 end-9]
+		CanvasSee $canvas $node [expr $window_info($canvas,width)/2] \
+		    [expr $window_info($canvas,height)/2]
+		prolog tk_do_colours($node,seln)
+	    }
+	}
+    }
+    
     proc OnElementClick { winId x y } {
 	variable chop
 	set node [$winId.tableframe.table identify row $x $y]
