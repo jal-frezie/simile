@@ -235,25 +235,30 @@ proc AttackGlobalVariable {array elt val} {
 # image create photo open -file "../Images/mailbox.gif"
 # Actually I think not, it seems to prevent the window menu appearing as well
 
+proc NeedNewExec {topNode} {
+    # for benefit of Prolog
+    return $::runState($topNode,updated)
+}
+
 # Copy any current executables to names where they will be saved; delete 
 # previous files in these posns as they are obsolete, and only copies
-proc ShiftDll {Point Top Loc Rep} {
-    if {[llength $Loc]} {
-        set AddLoc /$Loc
-    } else {
-        set AddLoc $Loc
-    }
-    
-    set base $Top/$Point$AddLoc
+proc ShiftDll {Point Top Model Rep} {
+    set base [file join $Top $Point]
     file mkdir $base
     if {[llength $Rep]} {
         set prefx $base/model
+    # ignore specified rep just use highest numbered c++
+	foreach src [glob -nocomplain ${prefx}*.cpp] {
+	    set ver [string range $src [string length $prefx] end-4]
+	    if {$ver>$Rep} {set Rep $ver}
+	}
 	foreach runnableExtn {.cpp .tcl .dll .so .dylib} {
 	    set tgt ${prefx}$runnableExtn
 	    if {[file exists $tgt]} {
 		file delete -force $tgt
 	    }
-	    if {$Rep && [file exists ${prefx}${Rep}$runnableExtn]} {
+	    if {$Rep && [file exists ${prefx}${Rep}$runnableExtn] && \
+		    ([HaveValues $Model] || !$::runState($Model,updated))} {
 		file copy -force ${prefx}${Rep}$runnableExtn $tgt
 	    }
 	}
@@ -1739,10 +1744,14 @@ proc ExecQuery {specifics icon helpRef parent opts} {
 }
 
 proc OpenAll {win} {
+    global window_info
+    
     MenuSelect $win file open
-    if {![info exists ::SimileAutoObjLoaded] && \
-	    $::window_info($win,is_top_level)} {
-	RunIfPackage
+    if {$window_info($win,is_top_level)} {
+	set ::runState($window_info($win,top_node),updated) 0
+	if {![info exists ::SimileAutoObjLoaded]} {
+	    RunIfPackage
+	}
     }
 }
 
@@ -1788,12 +1797,13 @@ proc OpenProjectFile {path} {
 	# if undo enabled, a log has been applied, so do not rerun!
 	if {[$tw.toolSlot.navbar.undo cget -state] eq "normal"} return
 
-        if {$SimileProject(running_c)} {
+	if {$SimileProject(running_c)} {
             MenuSelect $tw.canvas code run_c
         } else  {
             MenuSelect $tw.canvas code run_tcl
         }
 	update
+	set runState($topNode,updated) [expr {$SimileProject(modelRunning)-1}]
         if {$runState($topNode,modelRunning)<3} return
 	set defaultSHF [file join $path model.shf]
 	set command [ChooseText \
@@ -1825,8 +1835,8 @@ proc SaveProjectFile {topNode path tgt} {
 #    set topCapt [GetExecTitle $topNode]
     
     # is it builtC|builtTcl|notbuilt
-    if {[HaveValues $topNode] && !$runState($topNode,updated)} {
-        set SimileProject(modelRunning) 1
+    if {[HaveValues $topNode]} {
+        set SimileProject(modelRunning) [expr {1+$runState($topNode,updated)}]
 	set SimileProject(running_c) [string equal c $runState($topNode,lang)]
     }
     # stateName referred to separate .shf -- bundle it instead

@@ -772,9 +772,12 @@ namespace eval $keyValue {
         set translateSide [lindex $orientList($winId) 1]
         set translateLevel [string match $translateSide \
                 [lindex $orientList($winId) 0]]
-        if {[string compare none $timeSide]} {
+        if {[string compare none $timeSide] && \
+		![info exists editMode($winId)]} {
             set timeToShow [GetModelTime]
-        }
+        } else {
+	    set timeToShow 0
+	}
         set varNamePosns($winId) {}
         
         set lastEntry(0) none
@@ -1195,7 +1198,13 @@ namespace eval $keyValue {
 		    unset dataStore
 		    # need tweaking if time/var in use
 		    # (removed, what to do now 2nd subscript is id not index)
-		    set dataStore($winId,dummyId,0.0) [ExtractEdits $winId]
+		    if {[lindex $orientList($winId) 0] ne "none"} {
+			foreach {snap shot} [ExtractEdits $winId] {
+			    set dataStore($winId,dummyId,$snap) $shot
+			}
+		    } else {
+			set dataStore($winId,dummyId,0.0) [ExtractEdits $winId]
+		    }
 		}
 		set orientList($winId) $newOrients
 		Reconbobulate $winId

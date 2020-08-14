@@ -1760,43 +1760,6 @@ chain_hierarchy(Line_type, Dir, Link_in, To_go, Node_out, Link_out) :-
 		(To_go = [Node_out], !;
 		true).
 
-oldd_new_line_between(Line_type, Start, Finish, Top_link) :-
-	(Start has_type Line_type, !, 
-		continues_in(Start, Start_node),
-		Chain_start = Start;
-	Start_node = Start),
-	(Finish has_type Line_type, !, 
-		continues_from(Finish, Finish_node),
-		Chain_finish = Finish;
-	Finish_node = Finish),
-
-	get_chain(Start_node, Finish_node, Top_node, Out, In),
-		
-	chain_hierarchy(Line_type, out, Chain_start, Out, End, Forward_link),
-	chain_hierarchy(Line_type, in, Chain_finish, In, End2, Backward_link),
-	((nonvar(End), nonvar(End2), !,
-	        new_line(Line_type, [], End, End2, Top_link),
-	        (Line_type = influence, !,
-		    add_parameter(Top_node, 1, c_new, 0);
-		true);
-	nonvar(End), !,
-		add_outward_line(Line_type, Top_node, End, Top_link);
-	nonvar(End2), !,
-		add_inward_line(Line_type, Top_node, End2, Top_link)), !,
-		(var(Forward_link), !;
-			continues_in(Forward_link, Boundary),
-			add_equivalence(Boundary, Forward_link, Top_link)),
-		(var(Backward_link), !;
-			continues_from(Backward_link, Boundary2),
-			add_equivalence(Boundary2, Top_link, Backward_link));
-	nonvar(Forward_link), nonvar(Backward_link), !,
-		add_equivalence(Top_node, Forward_link, Backward_link),
-		(Forward_link is_connector from _ to Top_node, !,
-			Top_link = Forward_link;
-		Top_link = Backward_link);
-	Top_link = Forward_link,
-		Top_link = Backward_link).
-
 unique_name_for_new(Parent, Type, Name) :-
 	(get_abbrev(Type, Abbrev), !; Type = Abbrev),
 	unique_name(Abbrev, Name, _),

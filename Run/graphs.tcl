@@ -1341,6 +1341,7 @@ proc EditTableData {startLine capt dims trans} {
 	    set timePts \
 		[GetDimOrTimePtList .table [tr. {Time points for new table}] \
 		     [tr. {Enter time points for new table, separated by commas:}]]
+	    if {$timePts eq {}} return
 	    lset trans 0 [split TIME,$timePts ,]
 	}
 	set values [NestedArray $dims $trans]
@@ -1360,7 +1361,6 @@ proc EditTableData {startLine capt dims trans} {
 }
 
 proc NestedArray {dims trans} {
-    puts [info level 0]
     if {[llength $dims]} {
 	set elt [NestedArray [lrange $dims 1 end] $trans]
 	set dim [lindex $dims 0]

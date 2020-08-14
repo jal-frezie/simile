@@ -299,9 +299,6 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	    output><safe_tcl_eval(['catch {unset ::loadingProject}'], _),
 	    query(bust_edition_limit(Fns, StopAt, Edn), error, top, [ok], _),
 	    finish_progress_dialogue,
-	    % prevent executable from running
-	    backup><is_toplevel(Parent),
-	    Parent has_new_model_refinement c_new of 0,
 	    fail;
 
 	(SimileV >= 0.0, !;
@@ -338,7 +335,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	state><numeric_version_is(MyV),
 	(MyV > SimileV+0.001, % throw away code so no need to test load
 	    (\+ backup><is_toplevel(Parent);
-	    m_update><add_parameter(Parent, 1, c_new, 0)), !;
+	    output><tk_alter_model(Parent)), !;
 	  MyV >= floor(SimileV), !;
 	  query(future_shock(SimileV), warning, top, [ok], _))).
 

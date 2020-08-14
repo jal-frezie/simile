@@ -114,8 +114,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		\+ Old = New,
 		contains(TweakedModel, New),
                 is_toplevel(TweakedModel),
-		\+ get_av_pair(TweakedModel, 1, c_new, 0),
-		m_update><add_parameter(TweakedModel, 1, c_new, 0),
+		output><tk_alter_model(TweakedModel),
 		fail;
 		
 	    /* Now if the saved model has any images these will be in the top
@@ -1248,8 +1247,9 @@ set_properties(Wid, Model) :-
 	    redisplay(Model)),
 
 	    (Separate = NewSeparate, !;
-		find_all_comps(Parent, Model),
-		add_parameter(Parent, 1, c_new, 0)),
+	        contains(Top, Model),
+	        is_toplevel(Top),
+		output><tk_alter_model(Top)),
 	    
 	    % this is quick so do it anyway
 	    (contains(Model, Submodel),
@@ -1357,7 +1357,6 @@ remove_model(Win, Parent) :-
 	    finish_progress_dialogue,
 	    redisplay(Parent))),
 	clear_model_file(Parent),
-	m_update><clear_av_pair(Parent, 1, c_new),
 	use_temp_dir(LocalDir),
 	abs_path_name(Parent, root, DeleteDir),
 	output><trim_tree(LocalDir, DeleteDir).
@@ -1439,7 +1438,9 @@ do_save(Win, Model, New_name) :-
 	
         start_progress_dialogue(Win),
 	/* Remove any old executables (and make sure dirs exist) */
-	save_dlls(Point, Dir, Model, Model, _),
+	(is_toplevel(Model) ->
+	     output><shift_dll(Point, Dir, Model, 0);
+	 true),
 
 	/* save prolog data */
 	append_atoms(SaveDir, '/model.pl', TempFile),
@@ -1529,24 +1530,6 @@ check_save_canvas(SaveDir, Model, Date) :-
 	\+ output><my_file_exists(CanvasName), !;
 	output><my_delete_file(CanvasName)).
 
-save_dlls(Point, LocalDir, Top, Model, SaveParent) :-
-	(setof(Sub, Part^(find_all_comps(Model, Part),
-			 find_type(Part, submodel),
-			 save_dlls(Point, LocalDir, Top, Part, Sub)),
-		Subs),
-	    member(0, Subs),
-	LocalNew = 0;
-	get_av_pair(Model, 1, c_new, LocalNew); % should only exist for toplevel
-	LocalNew = 1), !,
-
-	((get_av_pair(Model, 0, separate, 1); Model = Top), !,
-	    (Top = Model, !,
-		Loc = '';
-	    abs_path_name(Model, Top, Loc)),
-	    output><shift_dll(Point, LocalDir, Loc, LocalNew),
-	    SaveParent = 1;
-	SaveParent = LocalNew).
-	
 /* try_save_files will keep prompting the user for save files each time it is
 retried, but fail when the user cancels the request */
 

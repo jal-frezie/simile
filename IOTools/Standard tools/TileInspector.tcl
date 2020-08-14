@@ -207,8 +207,17 @@ namespace eval ::$keyValue {
 #    }
 #
     menu .inspContext -tearoff 0
+    menu .inspContext.param -tearoff 0
+    
     .inspContext add command -label "View in model diagram"
-
+    .inspContext add separator
+    .inspContext add command -label "(Helper setup goes here)"
+    .inspContext add separator
+    .inspContext add cascade -menu .inspContext.param -label "Set parameter values"
+    .inspContext.param add radio -variable paramSrc -value table -label "Edit as table"
+    .inspContext.param add radio -variable paramSrc -value column -label "Get from column"
+    .inspContext.param add radio -variable paramSrc -value grid -label "Get from grid/image"
+    
     proc OnElementContext { winId X Y x y } {
 	set node [$winId.tableframe.table identify row $x $y]
 	if {[regexp ^\(.*\)\\. $node spare hlpr]} {
@@ -217,6 +226,8 @@ namespace eval ::$keyValue {
 	    # display context menu
 	    .inspContext entryconfigure 0 \
 		-command [namespace code "ShowInModel $winId $node"]
+	    .inspContext.param entryconfigure 0 \
+		-command [namespace code "EditAsTable $winId $node"]
 	    .inspContext post $X $Y
 	}
     }
@@ -233,11 +244,29 @@ namespace eval ::$keyValue {
 		if {[GetFromProlog tk_locate('$canvas',$node)] eq {}} continue
 		CanvasSee $canvas $node [expr $window_info($canvas,width)/2] \
 		    [expr $window_info($canvas,height)/2]
-		prolog tk_do_colours($node,seln)
 	    }
 	}
+	prolog tk_do_colours($node,seln)
     }
     
+    proc EditAsTable {winId node} {
+	global table_entry paramData
+
+	set topNode [$::helperTable($winId,whichInstance) GetNode]
+	set tgt [GetCaptionPathFromId $node]
+	set compName /$topNode$tgt
+	set table_entry(fileName) {}
+	set table_entry(values) $paramData($compName)
+	set startLine 1 ;# should be 0 if time series, add to setup
+	set dims [GetCompProperty $topNode Dims $node]
+	set trans [GetCompProperty $topNode Trans $node]
+	EditTableData $startLine $tgt $dims $trans
+	set paramData($compName) $table_entry(values)
+	set ::whichParamsAffected($compName) 1
+	AcceptData $topNode $compName 1 -1 ;# neg complain cos no widget
+	# do something to metadata too
+    }
+
     proc OnElementClick { winId x y } {
 	variable chop
 	set node [$winId.tableframe.table identify row $x $y]
