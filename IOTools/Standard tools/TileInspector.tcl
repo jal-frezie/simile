@@ -257,13 +257,13 @@ namespace eval ::$keyValue {
 	set compName /$topNode$tgt
 	set table_entry(fileName) {}
 	set table_entry(values) $paramData($compName)
-	set startLine 1 ;# should be 0 if time series, add to setup
+	set startLine [expr {[GetModelEval $node] ne "INPUT"}]
 	set dims [GetCompProperty $topNode Dims $node]
 	set trans [GetCompProperty $topNode Trans $node]
 	EditTableData $startLine $tgt $dims $trans
 	set paramData($compName) $table_entry(values)
 	set ::whichParamsAffected($compName) 1
-	AcceptData $topNode $compName 1 -1 ;# neg complain cos no widget
+	AcceptData $topNode $compName $startLine -1
 	# do something to metadata too
     }
 
