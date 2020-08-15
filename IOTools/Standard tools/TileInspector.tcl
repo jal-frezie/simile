@@ -257,10 +257,16 @@ namespace eval ::$keyValue {
 	set compName /$topNode$tgt
 	set table_entry(fileName) {}
 	set table_entry(values) $paramData($compName)
+	SeparateTimeExtras
 	set startLine [expr {[GetModelEval $node] ne "INPUT"}]
-	set dims [GetCompProperty $topNode Dims $node]
+	set dims [lrange [GetCompProperty $topNode Dims $node] 0 end-1]
 	set trans [GetCompProperty $topNode Trans $node]
+	if {!$startLine} {
+	    set dims [linsert $dims 0 TIME]
+	    set trans [linsert $trans 0 {}]
+	}
 	EditTableData $startLine $tgt $dims $trans
+	CombineTimeExtras
 	set paramData($compName) $table_entry(values)
 	set ::whichParamsAffected($compName) 1
 	AcceptData $topNode $compName $startLine -1
