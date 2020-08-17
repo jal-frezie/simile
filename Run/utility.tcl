@@ -816,7 +816,7 @@ proc LoadIconImages {} {
 #         set iconImages($fn) [image create photo]
 # 	$iconImages($fn) copy $rawImg -zoom $growth
     # }
-    foreach fn {submodel compartment flow variable condition \
+    foreach fn {submodel compartment flow variable input file condition \
 		    creation reproduction immigration loss alarm} {
 	$rawImg read "../Images/Toolbar/${fn}.gif" -shrink
         set iconImages($fn) [image create photo]

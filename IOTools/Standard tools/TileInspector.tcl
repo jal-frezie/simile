@@ -126,7 +126,12 @@ namespace eval ::$keyValue {
                 SQUIRT       {set image $iconImages(squirt)}
                 default      {set image $iconImages(variable)}
             }
-            
+            if {$type eq "VARIABLE"} {
+		switch [GetModelEval $component] {
+		    INPUT {set image $iconImages(input)}
+		    TABLE {set image $iconImages(file)}
+		}
+	    }
             set pathLength [llength $path]
             #ShowMess debug info "$component; $type; path $path;" ok
             if {$pathLength <= 1} {
