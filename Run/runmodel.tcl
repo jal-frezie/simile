@@ -91,7 +91,8 @@ proc MessFileParams {topNode parent} {
     }
     $runState($topNode,cnvs) itemconfigure 1 -fill [RestingColour $topNode]
     # now update displays if only doing immediate changes to variables
-    if {$runState($topNode,reloadParams)==1} {
+    if {$runState($topNode,modelRunning)>2 && \
+	    $runState($topNode,reloadParams)==1} {
 	if {![RedoRatesAndDisplay $topNode]} {
 	    set runState($topNode,reloadParams) 10
 	}
@@ -656,6 +657,11 @@ proc TellAllHelpers {node payload doAll fun args} {
 			   $fun $::errorInfo [$inst cget -State]] \
 		    warning helpers {} ok
 		set failure 1
+<<<<<<< runmodel.tcl
+		error "How we got here..."
+=======
+		error "how we got here"
+>>>>>>> 1.414.2.1
 	    }
 	    set helperTable(beingCalled) {}
 	}
@@ -1265,7 +1271,7 @@ proc SetRunParams {node runParams} {
 # 3 = up to date, 4 = out of date
 
 proc StartRun {node} {
-    global runState window_info helperTable classTable projectParams
+    global runState window_info helperTable classTable projectParams paramData
     # ShowMess debug info enter(start_run) ok
 #    set runState($node,currentWin) $winId ;# enables rebuild from run control
 
@@ -1291,12 +1297,12 @@ proc StartRun {node} {
     }
     update idletasks ;# 'see all' missing spfs if that option was selected
     # otherwise query tangles with fp dialogue and hangs under windows
-    if {[FileParamDialogue $node $fpParent 0]<1} {
-	if {[info exists runState($node,cnvs)]} {
-	    $runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
-	}
-	return 0
-    }
+#    if {[FileParamDialogue $node $fpParent 0]<1} {
+#	if {[info exists runState($node,cnvs)]} {
+#	    $runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
+#	}
+#	return 0
+#    }
     foreach {var defVal} {adapt 0 errLimit 1e-6 splimit 0 speedLimit 50 \
 			      resetTo 0 evtpause 0 lmtpause 0 evtDisp 0} {
 	if {![info exists runState($node,$var)]} {
@@ -1346,7 +1352,32 @@ proc StartRun {node} {
 #        set navBar $window_info($winData).toolSlot.navbar
 #        $navBar.runenv configure -state active
 #        $window_info($winData)top.tools entryconfigure {Inspect elements} -state active
-#    }
+    #    }
+
+    # V7: MRE is now showing, and we have loaded any .spf specified in the
+    # project, so check we have values for everything
+    AlignParamsToModel $node
+    set allNodes [GetCompProperty $node Objects]
+    set paramData(needed) {}
+    foreach param $allNodes {
+	set notInput [FirstIndexCheck $node $param]
+        if {$notInput != -1} {
+	    set compName /$node[GetCompProperty $node Caption $param]
+	    set ::readMany($compName) [expr {$notInput==0}]
+	    if {[info exists paramData($compName)]} {
+		AcceptData $node $compName $notInput -1
+	    } elseif {$notInput} {
+		lappend paramData(needed) $compName
+		# paint inspector line red
+	    }
+	}
+    }
+
+    if {[llength $paramData(needed)]} {
+	# add red caption to inspector
+	return 0
+    }
+    
     set runState($node,modelRunning) 2
 #    EnableTools Fix
 

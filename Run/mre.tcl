@@ -60,12 +60,12 @@ namespace eval RunEnv {
         [list slider.gif "Create input sliders" "::RunEnv::InsertHelperWindow slide139 {}"] \
         [list display.gif "Choose display to create" "::RunEnv::AllDisplaysPopupCurrentContainer"]] \
    [list \
-        [list clear.gif "Clear all displays" "ClearView"]]\
-   [list \
-	[list property.gif "Modify file parameters" ::RunEnv::InvokeFPDialogue]] \
+        [list clear.gif "Clear all displays" "ClearView"]] \
    [list \
         [list mainwin.gif "Go to Model Window" "::RunEnv::RaiseModelWindow"]] \
 		 ]
+#   [list \
+#	[list property.gif "Modify file parameters" ::RunEnv::InvokeFPDialogue]] \
     
     # A top level window to contain the helpers
     proc Create { node } {
@@ -126,9 +126,6 @@ namespace eval RunEnv {
                     {command "Export SVG..." {} "Export display as Scalable Vector Graphics"  \
                                 {} -command { ::RunEnv::ExportCurrentContainer svg } }
                     {separator}
-                    {command "Parameters..." {} "View or modify file parameters"  \
-                                {} -command { ::RunEnv::InvokeFPDialogue } }
-                    {separator}
                     {command "Close"    {} "Close the Run Environment window" \
                                 {} -command RunEnv::WindUp }
                 }
@@ -144,6 +141,9 @@ namespace eval RunEnv {
                     {command "Clear all"    {} "Clear all saved data from displays" {} -command {ClearView} }
                 }
             }
+#                    {command "Parameters..." {} "View or modify file parameters"  \
+#                                {} -command { ::RunEnv::InvokeFPDialogue } }
+#                    {separator}
             
 #            set mainframe [MainFrame $mreId.mainframe -width 200m -height 150m \
 #			       -menu         $descmenu \
@@ -262,10 +262,10 @@ namespace eval RunEnv {
 #            }; # on Windows uses default icon set in Runmodel.tcl
             wm protocol $mreId WM_DELETE_WINDOW ::RunEnv::WindUp
         } ; # if .mre exists
-	${mreId}top.file entryconfigure [tr. Parameters...] \
-	    -state $helperTable($node,paramAble)
-	[GetFrame $mreId].tbar.b60 configure \
-	    -state $helperTable($node,paramAble)
+#	${mreId}top.file entryconfigure [tr. Parameters...] \
+#	    -state $helperTable($node,paramAble)
+#	[GetFrame $mreId].tbar.b60 configure \
+#	    -state $helperTable($node,paramAble)
 	return $mreId
     }
 
