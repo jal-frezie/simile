@@ -593,7 +593,11 @@ proc LoseDTRef {statusLine} {
 proc UpdateIfFreezy {} {
     global updateLastDone
     if {$updateLastDone < [clock clicks -milliseconds]-40} {
-	update ;# idletasks misses click on pause
+        if {[tk windowingsystem] eq "aqua"} {
+	    update idletasks
+	} else {
+	    update ;# idletasks misses click on pause
+	}
 	set updateLastDone [clock clicks -milliseconds]
     }
 }
@@ -657,11 +661,6 @@ proc TellAllHelpers {node payload doAll fun args} {
 			   $fun $::errorInfo [$inst cget -State]] \
 		    warning helpers {} ok
 		set failure 1
-<<<<<<< runmodel.tcl
-		error "How we got here..."
-=======
-		error "how we got here"
->>>>>>> 1.414.2.1
 	    }
 	    set helperTable(beingCalled) {}
 	}
@@ -1100,8 +1099,9 @@ proc SaveSnapToFile {w vname filename} {
 #	puts -nonewline $out index${idx},
     }
     lappend line1 $vname
-    puts $out [::csv::join $line1]
-    SquirtLine $out {} $runState(val$w)
+    set sepChar [PrefValue custom(columnSeparator) columnSeparator]
+    puts $out [::csv::join $line1 $sepChar]
+    SquirtLine $out {} $runState(val$w) $sepChar
     close $out
 }
 
@@ -1134,11 +1134,12 @@ proc StartLogging {w topNode node filename} {
     $w.bbframe.reel configure -image $iconImages(noreel)
     set out [NetOpen $filename w]
     set lh time
+    set runState(sep$node) [PrefValue custom(columnSeparator) columnSeparator)]
     for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
 	set line $lh
 	set lh {}
 	PutIndNo line -$idx $runState(val$w)
-	puts $out [::csv::join $line]
+	puts $out [::csv::join $line $runState(sep$node)]
     }
     set runState(log$node) [list $topNode $out]
 }
@@ -1151,7 +1152,8 @@ proc WriteLogs {topNode time vname step} {
 	    set stm [lindex $runState($logger) 1]
 	    set str $time
 	    PutValsOnly str [lindex $curVals 0]
-	    puts $stm [::csv::join $str]
+	    set sepChar $runState(sep[string range $logger 3 end])
+	    puts $stm [::csv::join $str $sepChar]
 	}
     }
 }
@@ -1182,13 +1184,13 @@ proc PutIndNo {lst deep val {wrt {}}} {
     }
 }
 
-proc SquirtLine {str idcs val} {
+proc SquirtLine {str idcs val sepChar} {
     if {[string is list $val] && [llength $val]>1} {
 	foreach {idx sub} $val {
-	    SquirtLine $str [concat $idcs [list $idx]] $sub
+	    SquirtLine $str [concat $idcs [list $idx]] $sub $sepChar
 	}
     } else {
-	puts $str [::csv::join [lappend idcs $val]]
+	puts $str [::csv::join [lappend idcs $val] $sepChar]
     }
 }
 
@@ -1438,7 +1440,7 @@ proc StartRun {node} {
 #	}
 	set ::RunEnv::CurrentContainer $RunEnv::dp0 ;# back to default
 	set ctrlPane [winfo parent [winfo parent $::RunEnv::runControlFrame($node)]]
-	update ;# so reqheight works next
+	update idletasks ;# so reqheight works next
 #	tkwait visibility $runState($node,helperId)
 	set aimPane [expr {[winfo reqheight $ctrlPane.runcontrolPane]+10}]
 # this sometimes fails to work, so keep trying till it does!

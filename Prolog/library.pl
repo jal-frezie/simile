@@ -420,7 +420,10 @@ adjust_to_8(Trans) :-
 	(Trans = copy; member(_-Node, Trans)),
 	(Node has_class_refinement fix_math_args of V,
 	    Node no_longer_has_class_refinement fix_math_args of V;
-	    
+	 Node has_class variable, % some fixed parameters had no units
+	    Node has_class_refinement param_type of file,
+	    \+ Node has_class_refinement units of _Any,
+	    Node has_new_class_refinement units of 1;
 	Node has_class_refinement table_data of
 	    [file=F, data=T, indices=I, current=C],
 	% table entered before enum_types invented

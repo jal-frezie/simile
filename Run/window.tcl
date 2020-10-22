@@ -577,7 +577,7 @@ proc EmbraceObj {winId} {
 
 # This allows prolog to save the values of editing when the window is exited.
 # Comment it out to debug edit procedure from separate window.
-proc AbandonObj {} {
+proc AbandonObj {c} {
     prolog tk_abandon
 }
 
@@ -1078,7 +1078,7 @@ proc AddCanvasBindings { c topNode } {
     CrossPlatformBind $c {ClickObj %x %y %W %X %Y right} {} {} \
 	{ClickObj %x %y %W %X %Y ctrl} {ClickObj %x %y %W %X %Y ctrl-right}
     bind $c <FocusIn> {EmbraceObj %W}
-    bind $c <Leave> {AbandonObj}
+    bind $c <Leave> {AbandonObj %W}
     BindMouseWheel $c 1 {WheelZoom %W %D %x %y}
     
     # text/clipboard action from Welch example

@@ -508,8 +508,9 @@ namespace eval $keyValue {
 	    lset listVersion [split $idxPair ,] $val
 	}
 	set fileId [open $filename w]
+	set brkr [PrefValue custom(columnSeparator) columnSeparator]
 	foreach line $listVersion {
-	    puts $fileId [::csv::join $line]
+	    puts $fileId [::csv::join $line $brkr]
 	}
 	close $fileId
     }

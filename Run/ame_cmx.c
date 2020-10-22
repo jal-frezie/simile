@@ -1035,7 +1035,7 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
   char spare[256];
   double starttime, endtime, errlim;
   BOOLEAN lmt_pause, evt_pause;
-  int how_int, error;
+  int how_int, error, notBool;
   excpData* errorBlk;
   Tcl_Obj* working;
   void* modelType;
@@ -1070,15 +1070,17 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
   
-  error = Tcl_GetBooleanFromObj(interp, argv[7], &lmt_pause);
+  error = Tcl_GetBooleanFromObj(interp, argv[7], &notBool);
   if (error != TCL_OK) {
     return error;
   }
+  lmt_pause = (BOOLEAN)notBool;
   
-  error = Tcl_GetBooleanFromObj(interp, argv[8], &evt_pause);
+  error = Tcl_GetBooleanFromObj(interp, argv[8], &notBool);
   if (error != TCL_OK) {
     return error;
   }
+  evt_pause = (BOOLEAN)notBool;
   
   errorBlk = execute(modelType, modelHandle, how_int, starttime, &endtime, 
 		     errlim, lmt_pause, evt_pause);
@@ -1577,8 +1579,8 @@ void respond_to_param_req(void* clientRef, void* modelSlot, double reqTime,
   Tcl_BackgroundError((Tcl_Interp*)clientRef);
 }
 
-BOOLEAN outeract_gui(void* ref, BOOLEAN stop_chk, double now) {
-  BOOLEAN response;
+BOOLEAN outeract_gui(void* ref, int stop_chk, double now) {
+  int response;
   Tcl_Interp* globInterp = (Tcl_Interp*)ref;
   Tcl_Obj* feedbackCmd;
 
@@ -1596,7 +1598,7 @@ BOOLEAN outeract_gui(void* ref, BOOLEAN stop_chk, double now) {
 
   /* if anything like this at all is done, it will communicate with tsv's */
   Tcl_GetIntFromObj(globInterp, Tcl_GetObjResult(globInterp), &response);
-  return response;
+  return (BOOLEAN)response;
 }
 /*
 FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp, 

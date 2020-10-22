@@ -1157,12 +1157,12 @@ set_properties(Wid, Model) :-
 	get_disag_params(Model, P_list),
 	do_disag_dialog(Wid, Model, P_list, New_P_list),
 	(New_P_list = '', !; /* dialogue was cancelled */
-	New_P_list = [NewColour, NewImage, NewImgPos,
-		      NewNature, NewInterp, NewFatness,
-		      NewCount, NewStep, NewDesc, NewComment, NewFix, NewHide,
-		      NewSeparate, NewProc, NewInc, NewLibs, NewEnumSpecs],
-	    P_list = [Colour, Image, ImgPos, Nature, _I, Fatness, Count,
-		      _S, _D, _C, _E, _Proc, _Inc, _Libs, _Fix, Hide, Separate],
+	 New_P_list = [NewColour, NewImage, NewImgPos, NewNature, NewInterp,
+		       NewFatness, NewCount, NewStep, NewDesc, NewComment,
+		       NewFix, NewHide,NewSeparate, NewProc, NewInc, NewUnit,
+		       NewLibs, NewEnumSpecs],
+	 P_list = [Colour, Image, ImgPos, Nature, _I, Fatness, Count, _S, _D,
+		   _C, _E, _Proc, _Inc, _Libs, _U, _Fix, Hide, Separate],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
@@ -1190,7 +1190,8 @@ set_properties(Wid, Model) :-
 	    /* fix quirk in new strings_to_atoms */
 	    (NewLibs = '', !, RealNewLibs = []; RealNewLibs= NewLibs),
 	    add_parameter(Model, 0, external_code,
-		  [procedure=NewProc,include=NewInc,libraries=RealNewLibs]),
+			  [procedure=NewProc,include=NewInc,
+			   unit=NewUnit,libraries=RealNewLibs]),
 	    (NewEnumSpecs = '', !,
 	        NewEnumTypes = [];
 	    all(menu, separate_type_from_mems,
@@ -1341,6 +1342,7 @@ remove_model(Win, Parent) :-
 	    close_exec(Parent),
 	    superfast_delete(Parent),
 	    (get_av_pair(Parent, 0, ToClear, _),
+	        \+ ToClear = name,
 	        add_parameter(Parent, 0, ToClear, ''),
 	        fail;
 	    redraw_window(Win));

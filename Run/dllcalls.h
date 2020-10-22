@@ -17,7 +17,7 @@
 #define	TRUE		1
 
 #ifndef BOOLEAN
-#define BOOLEAN         int
+#define BOOLEAN         unsigned char
 #endif
 /* possibly needed for Unix */
 
@@ -101,7 +101,7 @@
 #define WRITEGRAPH     22
 #define USEGRAPH       23
 
-#define SIMILE_VERSION	"6.10"
+#define SIMILE_VERSION	"6.11"
 #define NEST 32
 
 #ifdef _WIN32 // note underscore, without is only defined in uSoft c
@@ -254,7 +254,7 @@ typedef struct excpData_t {
 // typedef double use_rand_type(void*);
 
 // following also called from shim
- typedef BOOLEAN interact_gui_type(void*, BOOLEAN, double);
+ typedef BOOLEAN interact_gui_type(void*, int, double);
 // typedef double graphpoint_type(double, graph_data_type*, int);
 // typedef void release_graph_data_type(graph_data_type*);
 // typedef int compare_instance_status_type (const int*, const int*, int);
@@ -271,6 +271,7 @@ typedef void* get_remote_value_type(void*, void*, int, int, int*);
 */
 typedef int stat_check_type(void*);
 typedef void show_model_mess_type(void*, const char*);
+typedef int make_full_caption_type(int, char*, int*, enum_type_data**);
 
 #ifdef __cplusplus
 #endif

@@ -206,6 +206,7 @@ class similescript::$newHelperClass {
     }
     
     method UpdateCombined {time} {
+	set brkr [PrefValue custom(columnSeparator) columnSeparator]
 	if {[info exists useNodes(common_stm)]} {
 	} else {
 	    package require csv
@@ -216,7 +217,7 @@ class similescript::$newHelperClass {
 		    PutIndexCombos hdrs [$modelInst GetValue $path] "" \
 			[file tail $path]
 		}
-		puts $useNodes(common_stm) [::csv::join $hdrs]
+		puts $useNodes(common_stm) [::csv::join $hdrs $brkr]
 	    } else {
 		set useNodes(common_stm) [DBHandleFor $curFile]
 	    }		
@@ -228,7 +229,7 @@ class similescript::$newHelperClass {
 		FillTicker $path $toLog
 		PutValsOnly vals $toLog
 	    }
-	    puts $useNodes(common_stm) [::csv::join $vals]
+	    puts $useNodes(common_stm) [::csv::join $vals $brkr]
 	    flush $useNodes(common_stm)
 	} else {
 	    set curTab "Run $useNodes(runCount)"
@@ -254,7 +255,7 @@ class similescript::$newHelperClass {
 		FillTicker $path $toLog
 		PutValsOnly sqlSubStr $toLog
 	    }
-	    append sqlStr [::csv::join $sqlSubStr] 
+	    append sqlStr [::csv::join $sqlSubStr $brkr] 
 	    append sqlStr ")"
 	    $useNodes(common_stm) allrows $sqlStr
 	}

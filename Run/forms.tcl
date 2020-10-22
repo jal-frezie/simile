@@ -8,12 +8,12 @@
 #
 proc Disaggregate {parent title modelLocn colour image imgpos type interp \
 		       fatness icount step desc comment enumLists \
-		       xproc xinc xlibs eqnunit hide separate} {
+		       xproc xinc xunit xlibs eqnunit hide separate} {
     global disaggregate tcl_platform window_info
 
     set mdl $window_info($parent,top_node)
     foreach varName {colour image imgpos type interp fatness \
-                icount xproc xinc xlibs eqnunit hide separate} {
+                icount xproc xinc xunit xlibs eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
     }
     set new 1
@@ -226,15 +226,35 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     TitleFrame $t.complex.math -text [tr. Calculation]
     set mathf [GetFrame $t.complex.math]
     pack [set mathl [ttk::frame $mathf.l]] -side left
-    pack [set mathr [ttk::frame $mathf.r]] -side left
-    pack [ttk::frame $mathr.extcode] -anchor w -pady 6
-    set disaggregate(useOwnCode) [expr {![string eq none $disaggregate(xinc)]}]
-    pack [ttk::checkbutton $mathr.extcode.whether -text [tr. "Use own code"] \
-	      -variable disaggregate(useOwnCode) -command "AbleSetup $mathr"] \
-	-side left -anchor w
-    pack [ttk::button $mathr.extcode.how -text Setup \
-	      -command [list ExtCodeSetup $mdl $modelLocn]]
+    pack [set mathr [ttk::frame $mathf.r]] -side right -fill x -expand 1
+    pack [ttk::frame $mathr.extcode] -fill x -padx 10 -pady 6
+    if {$disaggregate(xinc) eq "none"} {
+	set disaggregate(useOwnCode) none
+    } elseif {$disaggregate(xunit) eq "none"} {
+	set disaggregate(useOwnCode) proc
+    } else {
+	set disaggregate(useOwnCode) pipe
+    }
+
+#    pack [ttk::checkbutton $mathr.extcode.whether -text [tr. "Use own code"] \
+#	      -variable disaggregate(useOwnCode) -command "AbleSetup $mathr"] \
+#	-side left -anchor w
+    ttk::radiobutton $mathr.extcode.no -variable disaggregate(useOwnCode) \
+	-value none -text "Build from components" -command "AbleSetup $mathr"
+    ttk::radiobutton $mathr.extcode.proc -variable disaggregate(useOwnCode) \
+	-value proc -text "Use supplied code" -command "AbleSetup $mathr"
+    ttk::radiobutton $mathr.extcode.pipe -variable disaggregate(useOwnCode) \
+	-value pipe -text "Connect via pipe/socket" -command "AbleSetup $mathr"
+    ttk::button $mathr.extcode.how -text "Setup code" \
+	      -command [list ExtCodeSetup $mdl $modelLocn]
+    ttk::button $mathr.extcode.where -text "Setup pipe" \
+	-command [list PipeSetup $mdl $modelLocn]
     AbleSetup $mathr
+    grid $mathr.extcode.no -sticky w
+    grid $mathr.extcode.proc $mathr.extcode.how -sticky w
+    grid $mathr.extcode.pipe $mathr.extcode.where -sticky w
+    grid columnconfigure $mathr.extcode 0 -weight 1
+    grid columnconfigure $mathr.extcode 1 -weight 1
     
     # feature not yet released -- give new name when it is
     #    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
@@ -383,10 +403,12 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
     set disaggregate(desc) [string trimright [$notesf.desc.text get]]
     set disaggregate(comment) [string trimright \
 				   [$notesf.commentsSW.comment get 1.0 end]]
-    if {!$disaggregate(useOwnCode)} {
-	set disaggregate(xproc) none
-	set disaggregate(xinc) none
-	set disaggregate(xlibs) {}
+    if {$disaggregate(useOwnCode) ne "pipe"} {
+	set disaggregate(xunit) none
+	if {$disaggregate(useOwnCode) ne "proc"} {
+	    set disaggregate(xlibs) {}
+	    set disaggregate(xinc) none
+	}
     }
     UpdateDisagInfo
     PackItUp $tt
@@ -428,14 +450,15 @@ proc Disaggregate {parent title modelLocn colour image imgpos type interp \
             lappend enumTypes [concat [list [string range $typename 9 end]] \
                     $members]
         }
-        set result [list $disaggregate(colour) $disaggregate(image) \
-                $disaggregate(imgpos) $disaggregate(type) \
-			$disaggregate(interp) \
-                $disaggregate(fatness) $icount \
-                $step $disaggregate(desc) $disaggregate(comment) \
-                $disaggregate(eqnunit) $disaggregate(hide) \
-                $disaggregate(separate) $disaggregate(xproc) \
-		$disaggregate(xinc) $disaggregate(xlibs) $enumTypes]
+        set result \
+	    [list $disaggregate(colour) $disaggregate(image) \
+		 $disaggregate(imgpos) $disaggregate(type) \
+		 $disaggregate(interp) $disaggregate(fatness) $icount $step \
+		 $disaggregate(desc) $disaggregate(comment) \
+		 $disaggregate(eqnunit) $disaggregate(hide) \
+		 $disaggregate(separate) $disaggregate(xproc) \
+		 $disaggregate(xinc) $disaggregate(xunit) $disaggregate(xlibs) \
+		 $enumTypes]
     } else {
         set result {}
     }
@@ -494,7 +517,54 @@ proc AbleSetup {mathf} {
     global disaggregate
     
     $mathf.extcode.how configure -state \
-	[ChooseText $disaggregate(useOwnCode) normal disabled]
+	[ChooseText [expr {$disaggregate(useOwnCode) eq "proc"}] normal disabled]
+    $mathf.extcode.where configure -state \
+	[ChooseText [expr {$disaggregate(useOwnCode) eq "pipe"}] normal disabled]
+}
+proc PipeSetup {mdl modelLocn} {
+    global disaggregate
+
+    set t [PutItThere .pipesetup .disaggregation]
+    wm title $t [tr. "Pipe/socket interaction"]
+    set prev $disaggregate(xinc)
+    if {$prev eq "none"} {set prev pipe}
+    pack [TitleFrame $t.incfilefr -text [tr. "Pipe/socket name:"]] \
+	-padx 4 -pady 4 -fill x
+    set incFileTxt [GetFrame $t.incfilefr].txt
+    pack [text $incFileTxt -width 32 -height 1] \
+	-side left -fill x
+    $incFileTxt insert 1.0 $prev
+    if {$::tcl_platform(platform) eq "Windows"} { # pipe name can be anything
+    } else { # must be in file system
+	$incFileTxt configure -state disabled
+	pack [button [GetFrame $t.incfilefr].btn -text [tr. Browse] \
+		  -command [list ChangeIncFile $incFileTxt 1 $mdl $modelLocn]] \
+	    -anchor e -side right
+    }
+    pack [TitleFrame $t.remmodfr -text [tr. "Remote model:"]] \
+	-padx 4 -pady 4 -fill x
+    set remmod [GetFrame $t.remmodfr]
+    pack [frame $remmod.cmd] -fill x
+    pack [label $remmod.cmd.lbl -text "Command to start:"] \
+	-side left
+    pack [entry $remmod.cmd.e -textvariable disaggregate(xproc)] -side right
+    if {$disaggregate(xunit) eq "none"} {set disaggregate(xunit) day}
+    pack [frame $remmod.tu] -fill x
+    pack [label $remmod.tu.lbl -text "Time unit:"] \
+	-side left
+    pack [entry $remmod.tu.e -textvariable disaggregate(xunit)] -side right
+
+    pack [frame $t.btnfr]
+    pack [button $t.btnfr.ok -text [tr. OK] \
+	      -command "set disaggregate(xdone) 1"] -side right
+    pack [button $t.btnfr.cancel -text [tr. Cancel] \
+	      -command "set disaggregate(xdone) 0"] -side right
+    LetItShow $t disaggregate(xdone)
+    if {$disaggregate(xdone)} {
+# transfer data back to variables
+	set disaggregate(xinc) [string trimright [$incFileTxt get 1.0 end]]
+    }
+    PackItUp $t
 }
 
 proc ExtCodeSetup {mdl modelLocn} {
@@ -515,7 +585,7 @@ proc ExtCodeSetup {mdl modelLocn} {
     $incFileTxt insert 1.0 $disaggregate(xinc)
     $incFileTxt configure -state disabled
     pack [button [GetFrame $t.incfilefr].btn -text [tr. Browse] \
-	      -command [list ChangeIncFile $incFileTxt $mdl $modelLocn]] \
+	      -command [list ChangeIncFile $incFileTxt 0 $mdl $modelLocn]] \
 	-anchor e -side right
 
     pack [TitleFrame $t.liblistfr -text [tr. "Library files:"]] \
@@ -691,15 +761,31 @@ proc ShowDisagSetup {} {
 #    $disaggregate(countf).detail configure -text $sides
 }
 
-proc ChangeIncFile {incFileTxt mdl modelLocn} {
-    set newFile [ChooseFile external.cpp [tr. "External source/header file:"] \
-		     0 $mdl]
+proc ChangeIncFile {incFileTxt isPipe mdl modelLocn} {
+    set current [string trimright [$incFileTxt get 1.0 end]]
+    if {[file pathtype $current] ne "absolute" && $modelLocn ne "unsaved"} {
+	set current [file join [file dirname $modelLocn] $current]
+    }
+    if {[file pathtype $current] eq "absolute"} {
+	RecordPathChoice [file extension $current] $current $mdl
+	set current [file tail $current]
+    }
+    if {$isPipe} {
+	set newFile [ChooseFile $current [tr. "Pipe/socket location:"] \
+			 1 $mdl]
+    } else {
+	set newFile [ChooseFile $current [tr. "External source/header file:"] \
+			 0 $mdl]
+    }
     if {[string length $newFile]} {
 	$incFileTxt configure -state normal
 	$incFileTxt delete 1.0 end
 	# save relative to model save name
 	if {$modelLocn ne "unsaved"} {
-	    set newFile [Relativize $modelLocn $newFile]
+	    set relFile [Relativize $modelLocn $newFile]
+	    if {[string first $newFile $relFile]==-1} { # actually shortened it
+		set newFile $relFile
+	    }
 	}
 	$incFileTxt insert 1.0 $newFile
 	$incFileTxt configure -state disabled
@@ -1055,7 +1141,7 @@ proc OpenProgressBox {winId} {
 	pack .progress.message -fill both -expand true
 #	::ttk::progressbar .progress.bar -maximum 100
 #	pack .progress.bar -side bottom -fill x -expand 1
-	update
+	update idletasks
 	incr progressBoxCount ;# update can cause AbandonEqn and ResetProgress
     }
     return $progressBoxCount
@@ -1070,7 +1156,7 @@ proc FillProgressBox {key lits {fract 0}} {
     } else {
 	.progress.message configure -text [eval [list format $msgs($key)] $lits]
 #	.progress.bar configure -value $fract
-	update
+	update idletasks
     }
 }
 
@@ -1391,7 +1477,7 @@ proc DoUserDialogue {} {
     wm withdraw .splash
     LetItShow $t userinfo(entrydone)
     wm deiconify .splash
-    update
+    update idletasks
     focus $t.head.nentry
     if {$userinfo(entrydone)} {
 	set userinfo(name) [$t.head.nentry get]
@@ -1632,7 +1718,7 @@ proc ContextSensitiveHelp {context page} {
         # lynx can also output formatted text to a variable
         # with the -dump option, as a last resort:
         # set formatted_text [ exec lynx -dump $url ] - PSE
-            if {[catch {exec $env(BROWSER) -remote $url}]} {
+            if {[catch {exec $env(BROWSER) -remote $url &}]} {
                 # perhaps browser doesn't understand -remote flag
                 if {[catch {exec $env(BROWSER) $url &} emsg]} {
                     error "Error displaying $url in browser\n$emsg"
@@ -2028,7 +2114,7 @@ proc ShowExpiryImminent {expTime left} {
     set swidth [winfo screenwidth .expiry]
     wm geometry .expiry +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
     wm withdraw .splash
-    update
+    update idletasks
     
     tkwait variable ack
     destroy .expiry

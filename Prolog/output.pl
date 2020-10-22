@@ -529,7 +529,7 @@ tk_update_sim_display(Win, Current, Left) :-
 	
 tk_do_disag_dialog(Win, Caption, Locn,
 		   [Colour, Image, ImgPos, Type, Interp, Fatness, CountList,
-		    Step, Desc, Comment, EnumSpecs, Proc, Inc,
+		    Step, Desc, Comment, EnumSpecs, Proc, Inc, Unit,
 		    LibList | Choices], ResultList) :-
 	name(Caption, CaptStr),
 	argify(CaptStr, CaptArg),
@@ -541,8 +541,8 @@ tk_do_disag_dialog(Win, Caption, Locn,
 	safe_tcl_eval(['Disaggregate', Win, chars(CaptArg), br(Locn), Colour,
 		       Image, ImgPos, Type, br(write(Interp)), Fatness, Count,
 		       Step, br(write(Desc)), br(write(Comment)), EnumLists,
-		       br(write(Proc)), br(write(Inc)), Libs | Choices],
-		      New_P_string),
+		       br(write(Proc)), br(write(Inc)), br(write(Unit)), Libs
+		       | Choices], New_P_string),
 	chop_list(New_P_string, ResultListN),
 	(append(ResultList0, [LibFileStList, EnumTypeList], ResultListN), !,
 	    chop_list(LibFileStList, LibFileList),

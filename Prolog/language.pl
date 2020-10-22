@@ -414,6 +414,8 @@ do_assignment(L, [define_proc_for(Sm, Path), open_index(MSt, _B) | Clauses],
     % re-create stuff from open_index
     excrete(L, variable_declaration, [StructName, '*context', [],
 				      CastContextMem], I2, Stream),
+    make_struct_reference(L, InstRef, ts, _, TimesRef),
+    excrete(L, variable_declaration, [double, '*ts', [], TimesRef], I2, Stream),
     deepen_indent(I2, I3),
     MSt = glob(Loop, Inds),
     declare(L, Loop, loop, int, Used, I2, Stream),
@@ -447,11 +449,127 @@ do_assignment(L, [call_proc_for(Sm, Path, Loop, [Td, Tk, Tr]) | Clauses],
     make_pointer(L, StateName, StatePtr),
     append_atoms('(void* (*)(void*))', ProcName, CastProcName),
     append_atoms('(void*)', StatePtr, CastStatePtr),
-    Call =.. [thread_mgr, CastProcName, phase, CastStatePtr, Loop, Td, Tk, Tr],
+    Call =thread_mgr(CastProcName, phase, CastStatePtr, Loop, Td, Tk, Tr),
     excrete(L, procedure_call, Call, I, Stream),
     do_assign_list(L, Clauses, I, Used, Stream).
-    
-/* Clause to handle end of a submodel loop does not actually generate any code (this
+
+do_assignment(L, [init_server_skt(GraphId, URelInc, Ptr, SrvSkt)
+		  | Clauses], I1, Used, Stm) :-
+    generate_name(L, scratch, Scratch, Used),
+    excrete(L, variable_declaration, [int, Scratch, []], I1, Stm),
+    append_atoms(['"', URelInc, '"'], Locn),
+    make_struct_reference(L, Ptr, SrvSkt, Skt, _),
+    make_pointer(L, Skt, SktPtr),
+    make_procedure_call_chars(L, [setServerPipe, Locn, SktPtr], SSPStr),
+    name(SSP, SSPStr),
+    excrete(L, assignment, Scratch=SSP, I1, Stm),
+    excrete(L, if_start, Scratch, I1, Stm),
+    deepen_indent(I1, I2),
+    excrete(L, procedure_call, stop_on_id(GraphId, Scratch), I2, Stm),
+    excrete(L, function, "return", I2, Stm),
+    excrete(L, end(if), SSP, I1, Stm),
+    do_assign_list(L, Clauses, I1, Used, Stm).
+
+do_assignment(L, [accept_connects(GraphId, SrvSkt, NewSkt, NDim, RefExprs)
+		  | Clauses], I1, Used, Stm) :-
+    generate_name(L, scratch, Scratch, Used),
+    generate_name(L, newDataSocket, NewSkt, Used),
+    excrete(L, variable_declaration, [int, Scratch, []], I1, Stm),
+    excrete(L, variable_declaration, ['TSPOUT', NewSkt, []], I1, Stm),
+    make_struct_reference(L, this, SrvSkt, _, SvrSktRef),
+    make_pointer(L, NewSkt, NewSktPtr),
+    make_procedure_call_chars(L, [getClientPipe, SvrSktRef, NewSktPtr],
+			      GCPStr),
+    name(GCP, GCPStr),
+    excrete(L, assignment, Scratch=GCP, I1, Stm),
+    excrete(L, if_start, Scratch, I1, Stm),
+    deepen_indent(I1, I2),
+    excrete(L, procedure_call, stop_on_id(GraphId, Scratch), I2, Stm),
+    excrete(L, function, "return", I2, Stm),
+    excrete(L, end(if), GCP, I1, Stm),
+
+    % Read indices and init time from each pipe
+    generate_name(L, destIdcs, DestIdcs, Used),
+    excrete(L, variable_declaration, [int, DestIdcs, [NDim]], I1, Stm),
+    /* excrete(L, for_start, [Scratch, 0, NDim-1, 1], I1, Stm),
+    make_indexed_reference(L, DestIdcs, [Scratch], CurIdx),
+    make_pointer(L, CurIdx, CurIdxPtr),
+    excrete(L, procedure_call, get_int_from_pipe(NewSkt, CurIdxPtr), I2, Stm),
+    % convert to treehugger index convention
+    excrete(L, increment_by, [CurIdx, 1], I2, Stm),
+    excrete(L, end(for), Scratch, I1, Stm),
+    */
+    excrete(L, procedure_call, get_client_indices(NewSkt, GraphId, DestIdcs),
+	    I1, Stm),
+    % Now open the instance this pipe is for
+    ref_elements(L, DestIdcs, NDim, RefExprs),
+    /* rest all to be done by loop mechanism
+    append_atoms(Name, 'type*', Type),
+    append_atoms(Name, pointer, PointerForm),
+    declare(L, NewPtr, PointerForm, Type, Used, I1, Stm),
+    excrete(L, enter_context, NewPtr=[Ptr, Name, RefExprs], I1, Stm),
+    excrete(L, end(for), Loop, Indent, Stm), */
+
+    % do not fail since we are setting NewSkt and RefExprs for next clause!
+    do_assign_list(L, Clauses, I1, Used, Stm).
+
+do_assignment(L, [init_connects(Ptr, Skt, NewSkt, CkRem, CkOff, RemDay)
+		  | Clauses], I1, Used, Stm) :-
+    make_struct_reference(L, Ptr, Skt, InstSkt, _),
+    excrete(L, assignment, InstSkt=NewSkt, I1, Stm),
+    make_struct_reference(L, Ptr, CkRem, InstCkRem, InstCkRef),
+    make_pointer(L, InstCkRem, CkRemPtr),
+    excrete(L, procedure_call, get_double_from_pipe(NewSkt, CkRemPtr), I1,
+	    Stm),
+    make_struct_reference(L, Ptr, CkOff, InstCkOff, _),
+    make_indexed_reference(L, ts, [1], Now),
+    combine(L, *, [RemDay, Now], RemNow),
+    combine(L, -, [InstCkRef, RemNow], CkDiff),
+    excrete(L, assignment, InstCkOff=CkDiff, I1, Stm),
+    fail;
+    do_assign_list(L, Clauses, I1, Used, Stm).
+
+do_assignment(L, [access_pipe(GraphId, Way, NewPtr, RemDay, CkOff, CkRem, Skt,
+			      Params, UnDs, Clear) | Clauses],
+	      Indent, Used, Stm) :-
+    make_indexed_reference(L, ts, [1], Now),
+    make_struct_reference(L, NewPtr, Skt, _, InstSkt),
+    make_struct_reference(L, NewPtr, CkOff, _, CkOffRef),
+    make_struct_reference(L, NewPtr, CkRem, CkRemDir, CkRemRef),
+    combine(L, *, [RemDay, Now], RemNow),
+    combine(L, +, [RemNow, CkOffRef], CkRemEst),
+    combine(L, >=, [CkRemEst, CkRemRef], CkTest),
+    excrete(L, if_start, CkTest, Indent, Stm),
+    deepen_indent(Indent, I1),
+    all(render, make_struct_reference, [unify(L), unify(NewPtr),
+				build(Params), build(_), build(ParamRefs)]),
+    (Way = send ->
+	 TimeSgnl = CkRemEst,
+	 Badness = 76;
+     TimeSgnl = CkRemDir,
+     Badness = 77),
+    pipe_action_for(1-[], Way, InstSkt, 0, TimeSgnl, ProcSpec),
+    ProcSpec =.. ProcList,
+    make_procedure_call_chars(L, ProcList, TimeChkStr),
+    name(TimeChk, TimeChkStr),
+    combine(L, <, [TimeChk, 0], TimeFail),
+    excrete(L, if_start, TimeFail, I1, Stm),
+    deepen_indent(I1, I2),
+    excrete(L, procedure_call, stop_on_id(GraphId, Badness), I2, Stm),
+    (Way = send -> true; % do not cancel pipe we try to read it later
+     excrete(L, assignment, InstSkt=0, I2, Stm)),
+    excrete(L, else_clause, TimeFail, I1, Stm),
+    all(language, pipe_action_for, [build(UnDs), unify(Way), unify(InstSkt),
+				    unify(GraphId), build(ParamRefs),
+				    build(PrCalls)]),
+    all(render, excrete, [unify(L), unify(procedure_call), build(PrCalls),
+			  unify(I2), unify(Stm)]),
+    do_assign_list(L, Clear, I2, Used, Stm),
+    excrete(L, end(if), TimeFail, I1, Stm),
+    excrete(L, end(if), CkTest, Indent, Stm),
+    do_assign_list(L, Clauses, Indent, Used, Stm).
+
+    /* Clause to handle end of a submodel loop does not actually generate any code (this
 is all done at start submodel time) but rearranges the preambles and postambles so
 subsequent stuff is put outside the loop.
 
@@ -555,7 +673,11 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	 SpecialOp = list_fixed_nbrs(Ptr, Shp, CB, RB, Inds), !,
 	     all(language, make_evaluation_routine,
 		 [unify(L), build(Inds), unify(Used), build([CX, RX])]),
-	     CallSpec = make_fixed_nbr_list(Ptr, Shp, CB, RB, CX, RX)),
+	     CallSpec = make_fixed_nbr_list(Ptr, Shp, CB, RB, CX, RX);
+	SpecialOp = start_remote_model(Cmd), !,
+	     append_atoms(Cmd, ' &', CmdN),
+	     render><templatify(L, CmdN, '', [_,_,_, CmdQ]), 
+	     CallSpec = system(CmdQ)),
 	excrete(L, procedure_call, CallSpec, Indent, Stream),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 % have to render after instantiating CollectId
@@ -885,6 +1007,44 @@ set_introspect(L, Used, IndexSlot, CountSlot) :-
     make_indexed_reference(L, loopIndexPtrs, [LoopLevel], IndexSlot),
     make_indexed_reference(L, loopIndexCounts, [LoopLevel], CountSlot).
 
+ref_elements(L, Array, N, List) :-
+    N=0 -> List = [];
+    M is N-1,
+    ref_elements(L, Array, M, SubList),
+    make_indexed_reference(L, Array, [M], Last),
+    append(SubList, [Last], List).
+
+pipe_action_for(Unit-Dims, Way, Socket, GraphId, Tgt, Spec) :-
+    render><type_for_unit(Unit, Type),
+    member([Way,V,P,TgtRef], [[send,put,in,Tgt], [recv,get,from,TgtPtr]]),
+    (Dims = [] ->
+	 make_pointer(c, Tgt, TgtPtr),
+	 (Unit = a(EnumType) ->
+	      Variant = member,
+	      append_atoms(['"', EnumType, '"'], EnumLit),
+	      Args = [Socket, GraphId, EnumLit, TgtRef];
+	 Variant = Type,
+	 Args = [Socket, TgtRef]);
+     Variant = array,
+     product(c, [sizeof(Type) | Dims], Tail),
+     Args = [Socket, Tgt, Tail]),
+    append_atoms([V, '_', Variant, '_', P, '_pipe'], Action),
+    Spec =.. [Action | Args].
+
+product(_L, [], 1).
+product(L, [H | T], N) :-
+    product(L, T, M),
+    combine(L, '*', [H,M], N).
+
+list_int_versions(0, []).
+list_int_versions(N, List) :-
+    M is N-4,
+    list_int_versions(M, SubList),
+    combine(c, +, [rBuffer, M], PtrTm),
+    term_atom(PtrTm, Ptr),
+    append_atoms(['*(int*)(', Ptr, ')'], NewIdx),
+    append(SubList, [NewIdx], List).
+
 template_type(TptName, Specific, TptPtr) :-
 	append_atoms([TptName, ' <', Specific, 'type> *'], TptPtr).
 
@@ -921,6 +1081,28 @@ formal_arg_for_proc_sm(Level, [L, Used, State], [Type, Mem, []]) :-
        Spec = glob(_, glob(Arg, []))),
     generate_name(L, arg, Mem, Used),
     make_struct_reference(L, State, Mem, Arg, _).
+
+formal_arg_for_pipe_exch(UnitDims, [L, AsPtr, Used], [Type, Name]) :-
+    generate_name(L, arg, Name, [arg | Used]),
+    type_from_arg(UnitDims, Type, AsPtr).
+
+repopulate_buf(N, [], _, [], N).
+repopulate_buf(N, [[Type, Name] | Specs], Recv, [Act | Acts], M) :-
+    (Recv ->
+	TypeRef = Type,
+	render><refer_type(BaseType, Type),
+        resolve_pointer(c, Name, Locn),
+        Act = (Locn=Slot);
+      BaseType = Type,
+        Locn = Name,
+	Act = (Slot=Locn)),
+    render><refer_type(BaseType, TypeRef),
+    member(BaseType-Size, [int-4, double-8, 'unsigned char'-1]),
+    NP is N+Size,
+    combine(c, +, [rBuffer, N], SlotPosnTrm),
+    term_atom(SlotPosnTrm, SlotPosn),
+    append_atoms(['*(', TypeRef, ')(', SlotPosn, ')'], Slot),
+    repopulate_buf(NP, Specs, Recv, Acts, M).
 
 declare_as(glob(Ind,_), Type, [Ind, Type]).
 
@@ -1022,7 +1204,7 @@ add_for_channel(InitVar, [L, Index, Pointer, ParentPtr, MetaPointer, MPTarget, N
 					  _, []], Indent1, Stream),
 	nth(ChannelN, Used, InitVar), !,
 	excrete(L, procedure_call, init_pop_member(MPTarget, RefIndex,
-						  ChannelN), Indent1, Stream),
+						   ChannelN), Indent1, Stream),
 	((Pointer = ParentPtr) -> true; % immigrate: progen set to 0 in i_p_m
 	  move_base_ptrs(L, MPTarget, save, Indent1, [Pointer], _, Stream)),
 

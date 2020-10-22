@@ -1,8 +1,15 @@
 // Identifier
-#define MDL_OBJ_VERS 10.903
+#define MDL_OBJ_VERS 10.92
 
 // special integers sent between mgr and worker threads
 #define WORKER_QUERY_GUI -1
+
+#ifdef _WIN32
+   #define TSPOUT handle_for_win32
+   typedef void* TSPOUT;
+#else
+   #define TSPOUT int
+#endif
 
 // class definition and handling procedure for extra variables used in
 // complicated integration methods
@@ -147,6 +154,7 @@ public:
   double  graph_lookup(double, int);
   void abort_check(void);
   void thread_mgr(void* (*)(void*), int, void*, int, int, int, double);
+  int parent_line(int);
 };
 
 // Declaration for procedure types found in the model dll by the shank
@@ -159,6 +167,7 @@ FINDABLE EXPORT getcount_type get_count;
 // above should load all arg data types so no need to include below
 // but that doesnt seem to work...
 FINDABLE EXPORT createmodel_type do_createmodel;
+FINDABLE make_full_caption_type make_full_caption;
 
 // New in v6.903: declaration for procedures found in the shank by the model dll
 EXPORT double ame_rand(double, double);
@@ -169,3 +178,18 @@ int compare_instance_status (const int[], const int[],  int);
 EXPORT void report_events(int, const int[], int, const int[], const double[]);
 EXPORT void handle_model_param_request(void*, void*, int, BOOLEAN, int, int*);
 EXPORT int stat_check(void*);
+
+int setServerPipe(const char*, TSPOUT*);
+int getClientPipe(TSPOUT, TSPOUT*);
+int get_client_indices(TSPOUT, int, int[]);
+int exchPipe(TSPOUT, char*, int, int);
+int get_int_from_pipe(TSPOUT, int*);
+int get_double_from_pipe(TSPOUT, double*);
+int get_array_from_pipe(TSPOUT, void*, int);
+int get_chars_from_pipe(TSPOUT, char*);
+int get_member_from_pipe(TSPOUT, int, const char*, int*);
+int put_BOOLEAN_in_pipe(TSPOUT, BOOLEAN);
+int put_int_in_pipe(TSPOUT, int);
+int put_double_in_pipe(TSPOUT, double);
+int put_array_in_pipe(TSPOUT, void*, int);
+int put_member_in_pipe(TSPOUT, int, const char*, int);

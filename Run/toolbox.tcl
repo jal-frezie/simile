@@ -1037,6 +1037,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(gridSnap) gridSnap OFF [tr. "Snap to grid"]] \
 		  [list custom(quickDrag) quickDrag OFF  [tr. "Quick drag"]] \
 		  [list custom(myButton) myButton \u03bc [tr. "Custom keypad button"]] \
+		  [list custom(columnSeparator) columnSeparator {,} [tr. "Column separator"]] \
 		  [list custom(defBackground) defBackground [list CHOICE [tr. "White"] [tr. "Black"] [tr. "Clear"]] [tr. "Default background"]] \
 		  [list custom(flowRouting) flowRouting ON [tr. "Kink flows"]] \
 		  [list custom(infRouting) infRouting {20 -100 100} [tr. "Curve influences"]] \
@@ -1690,7 +1691,9 @@ proc GetUsableName {string} {
 	if {![file exists $string]} {
 	    # close [open $string a] ;# create it empty
 	    # (can fail due to close overtaking open on remote disk)
-	    if {[catch {exec {*}[auto_execok echo] %ignore > $string}]} {
+	    if {[catch {exec {*}[auto_execok echo] %ignore > $string}]} {}
+		# percent sign gets escaped causing autosave restore to mess
+	    if {[catch {exec {*}[auto_execok copy] nul $string}]} {
 		# write may fail, causing nasty error, in which case dir probly
 		# write-protected so shortname does not matter
 		array set all [file attributes [file dirname $string]]

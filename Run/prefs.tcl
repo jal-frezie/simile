@@ -189,6 +189,8 @@ proc Pref_Dialog {} {
             set abandonTF [TitleFrame $sf.abandonTF -text [tr. "For unsaved changes:"]]
             set abandonF $abandonTF
 	    pack [frame $abandonF.line2] -side bottom -fill x -expand 1
+            set csvTF [TitleFrame $sf.csvTF -text [tr. "Saving .csv files:"]]
+            set csvF $csvTF
         set rf [frame $notebook.run]
         $notebook add $rf -text [tr. Run]
             set oneWinTF [TitleFrame $rf.oneWinTF -text [tr. "Run time environment:"]]
@@ -200,8 +202,10 @@ proc Pref_Dialog {} {
             set occurrenceTF [TitleFrame $rf.occurrenceTF -text [tr. "Occurrences during execution"]]
             set occurrenceF $occurrenceTF
        # $notebook select View
-        pack $initWinTF $displayTF $gridTF $popupTF $eqListTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $precisTF $occurrenceTF $compTF \
-                $canvasTF $recentTF $abandonTF $notebook -fill x -padx 4 -pady 4
+        pack $initWinTF $displayTF $gridTF $popupTF $eqListTF $barTF \
+	    $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF \
+	    $precisTF $occurrenceTF $compTF $canvasTF $recentTF $abandonTF \
+	    $csvTF $notebook -fill x -padx 4 -pady 4
         set bbox [frame $dlg.bbox] 
         pack [::ttk::button $bbox.bok -text [tr. OK] -underline 0 -width 8  \
                 -command {PrefSave}] -padx 2 -pady 2 -side left -anchor e
@@ -249,6 +253,7 @@ proc Pref_Dialog {} {
                 recentCount {set frame $recentF}
 		quickExit {set frame $abandonF}
 		leaveEqnBar {set frame $abandonF.line2}
+		columnSeparator {set frame $csvF}
                 helperManager {set frame $oneWinF}
                 resetSliders {set frame $oneWinF}
                 popupPrecision {set frame $precisF}

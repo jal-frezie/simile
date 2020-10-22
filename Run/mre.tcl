@@ -245,7 +245,7 @@ namespace eval RunEnv {
             
 #            pack $mainframe -fill both -expand yes
             pack $mainpw -fill both -expand yes
-            update ;# needed for sash place to work
+            update idletasks ;# needed for sash place to work
 	    $mainpw sash place 0 [expr {round($::niceSize*$defScaling*25)}] 0
 	    # must be wide enough (270ish) for the sliders
             
@@ -478,7 +478,7 @@ namespace eval RunEnv {
         #            page $page; n pages: $n; \n \
         #            parent [winfo parent $notebook]"
 	destroy [lindex $pages $page]
-	update
+	update idletasks
         set pages [$notebook tabs]
         set n [llength $pages]
         #ShowMess debug info "DeleteNotebookPage after delete page pages $n" ok; #########
@@ -1321,7 +1321,7 @@ $tb1.b43 configure -state $useSpaceAbility
         }
 #        close $stream
 # allow helper windows to configure themselves
-	update
+	update idletasks
     }
     
     proc LoadViewFile {currentNode metaList origVersion} {

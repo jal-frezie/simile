@@ -595,9 +595,12 @@ insert_metadata(Language, FullModel, Used, Stream) :-
 uses_ext_proc(Model, Proc) :-
         contains(Model, Submodel),
 	Submodel has_class_refinement external_code of ExtCode,
+	\+ (member(unit=U, ExtCode), \+ U = none),
+	% that would now be a pipe-interfaced implementation
 	member(include=Inc, ExtCode),
 	\+ Inc = none,
-	member(procedure=Proc, ExtCode).
+	member(procedure=Proc, ExtCode),
+	\+ Proc = none.
 /*
 get_graph_spec(GraphSpec) :-
 	NodeId has_class_refinement table_data of
@@ -1119,11 +1122,21 @@ make_exit_proc(Language, Instance, Dest) :-
 	send_to_dest(Dest, Blank),
 	excrete(Language, procedure_start, call(void, do_exitmodel), 0, Dest),
 	send_to_dest(Dest, Blank),
+	% Get rid of any filesystem entries for, well, anything
+	(_ has_class_refinement external_code of ExtCode,
+	 member(include=Inc, ExtCode),
+	 \+ inc=none,
+	 member(unit=U, ExtCode),
+	 \+ U = none, % is a hierarchical pipe interface
+	 append_atoms(['"', Inc, '"'], IncQtd),
+	 excrete(Language, procedure_call, remove(IncQtd), 4, Dest),
+	 fail;
 	% if worker threads have been created, destroy them
-	(_Any has_class_refinement separate of [threads=Td, tasks=Tk, taper-Tr]
-	-> excrete(Language, procedure_call,
-		   thread_mgr('NULL', -10, 'NULL', 0, Td, Tk, Tr), 4, Dest);
-	 true),
+	_ has_class_refinement separate of [threads=Td, tasks=Tk, taper-Tr],
+	 excrete(Language, procedure_call,
+		 thread_mgr('NULL', -10, 'NULL', 0, Td, Tk, Tr), 4, Dest),
+	 fail;
+	true),
 	excrete(Language, clear_memory, Instance, 4, Dest),
 	send_to_dest(Dest, Blank),
 	excrete(Language, end(procedure), dummy, 0, Dest).
@@ -1150,12 +1163,13 @@ merge_inters([], M, M, []).
 
 merge_inters([Function | Rest], Model, NewModel, Constants) :-
 	Model = model(Functions, Submodels),
-	(Function = instance(internal, inter(Path, _,_), _, Name, Type-Dims),
+	(Function = instance(Use, inter(Path, _,_), Fn, Name, Type-Dims),
+	    member(Use, [internal, function]),
 	    (append(LowPath, [sm(Top, _,_,_) | _], Path),
 		append(BeforeSubs,
 		       [instance(submodel, P2, xrefs(NextModel, X3,X4),
 				 Top, P5) | AfterSubs], Submodels), !,
-		merge_inters([instance(internal, inter(LowPath, _,_), _, Name, 
+		merge_inters([instance(Use, inter(LowPath, _,_), Fn, Name, 
 				       Type-Dims)], NextModel, NewNext, []),
 		append(BeforeSubs,
 		       [instance(submodel, P2, xrefs(NewNext, X3,X4),
@@ -1471,39 +1485,100 @@ nodes.
 /* Now add an extra instruction if this needs an external proc */
 	(SmName has_class_refinement external_code of ExtCode,
 	member(include=Inc, ExtCode),
+	member(procedure=Proc, ExtCode),
 	\+ Inc = none, !,
 	% May have stored it relative to model locn! Restore abs path
 	    suffix([instance(submodel, TopModel, _,_,_)], Tree),
-	    (state><get_model_file(TopModel, Locn) ->
-		 safe_tcl_eval(['Relate', br(Locn), br(Inc)], RelIncSt),
-		 name(RelInc, RelIncSt);
-	     RelInc = Inc),
-	    get_native(RelInc, URelInc),
-	    member(procedure=Proc, ExtCode),
 	    list_params_from("input", 1, Functions, ParamsIn, UnDsIn),
 	    list_params_from("output", 1, Functions, DirParamsOut, UnDsOut),
 	    delay_params_out_made([ext_done_for(Name)], DirParamsOut,
 	                          AssignList0, AssignList1, Goals, ParamsOut),
 	    append(ParamsIn, Goals, AllConds),
 	    append(ParamsIn, ParamsOut, ArgCodes),
-	    merge_lists([declare(Proc, UnDsIn, UnDsOut, URelInc)], SubProcDefns,
-			ExtProcDefns),
 	    % Should only accept duplicate decl if incs are also same!
+	    Interact = call_ext_code(UseProc, NewPtr, ArgCodes),
+	    (member(unit=U, ExtCode),
+	     \+ U = none,
+	         units><get_conversion(1, day, U, RemDay),
+	         %all(ame_gen, enum_type_ref, [build(Dims), unify(SmName),
+			%		 build(Sizes), build(_), build(_)]),
+	         nth(GraphId, Used, Name),
+		 ExtProcDefns = SubProcDefns,
+		 append_atoms('share_', Name, UseProc),
+		 % add accumulator functions for outgoing events
+		 add_accum_fns(ParamsIn, NewPtr, LocalPath, Functions,
+			AccumInters, ParamsSwpd, ClearAccums, IncrAccums),
+
+		 % add internal to parent to hold pipe
+		 all(utility, append_atoms,
+		     [unify(Name),
+		      build(['_svr', '_skt', '_ckOff', '_ckRem']),
+		      build([SrvSkt, Skt, CkOff, CkRem])]),
+		 XCInters =
+		    [instance(internal, inter([], _,_), _, SrvSkt, 'TSPOUT'-[]),
+		     instance(internal, inter(LocalPath, _,_), _, Skt, 'TSPOUT'-[]),
+		     instance(internal, inter(LocalPath, _,_), _, CkOff, double-[]),
+		     instance(internal, inter(LocalPath, _,_), _, CkRem, double-[]) | AccumInters],
+		 InitSvr = make(svr_init(Name), [], [], -2, [init_server_skt(GraphId, Inc, this, SrvSkt)]),
+		 (Proc = none -> RemActs = [];
+		  RemActs = [start_remote_model(Proc)]),
+		 StartRem = make(rem_start(Name), [svr_init(Name), on_reset],
+				 [], 0, RemActs),
+		 abracadabra(LocalPath, ConLoops, SetPath, SetInds, Len),
+		 AcceptCons = make(con_acpt(Name), [rem_start(Name)], ConLoops, 0, [accept_connects(GraphId, SrvSkt, NewSkt, Len, SetInds)]),
+		 append(SetPath, ConLoops, InitPath),
+		 InitCons = make(con_init(Name), [con_acpt(Name)], InitPath, 0, [init_connects(NewPtr, Skt, NewSkt, CkRem, CkOff, RemDay)]),
+		 ClearInst = make(accums_clrd(Name), [on_reset], LocalPath,
+				   Step, ClearAccums),
+		 IncrInst = make(accums_incd(Name),
+				 [accums_clrd(Name) | AllConds], LocalPath,
+				 Step, IncrAccums),
+		 SendInputs = make(input_send(Name), [con_init(Name), accums_incd(Name), time], LocalPath, Step, [access_pipe(GraphId, send, NewPtr, RemDay, CkOff, CkRem, Skt, ParamsSwpd, UnDsIn, ClearAccums)]),
+		 Whistle = made_for(Name, inputs_sent),
+		 InputsSent = make(Whistle, [input_send(Name)], [], Step, []),
+		 RecvOutputs = make(ext_done_for(Name), [Whistle], LocalPath, Step, [access_pipe(GraphId, recv, NewPtr, RemDay, CkOff, CkRem, Skt, DirParamsOut, UnDsOut, [])]),
+		 AssignList2 = [InitSvr, StartRem, AcceptCons, InitCons,
+				ClearInst, IncrInst, SendInputs, InputsSent,
+				RecvOutputs | AssignList1];
+	    (state><get_model_file(TopModel, Locn) ->
+		 safe_tcl_eval(['Relate', br(Locn), br(Inc)], RelIncSt),
+		 name(RelInc, RelIncSt);
+	     RelInc = Inc),
+	    get_native(RelInc, URelInc),
+	     merge_lists([declare(Proc, UnDsIn, UnDsOut, URelInc)],
+			 SubProcDefns, ExtProcDefns),
+	         UseProc = Proc, ExtActions = [Interact], XCInters = [],
 	    ExtInst = make(ext_done_for(Name), AllConds, LocalPath, Step,
-	                  [call_ext_code(Proc, NewPtr, ArgCodes)]),
-	    append(Specials, [ExtInst | AssignList1], AssignList);
-	 SmName has_class_refinement separate of [threads=Td, tasks=Tk,
+	                  ExtActions),
+	    AssignList2 = [ExtInst | AssignList1]);
+	 ExtProcDefns = SubProcDefns,
+	    AssignList2 = AssignList0,
+	    XCInters = []),
+	 (SmName has_class_refinement separate of [threads=Td, tasks=Tk,
 						  taper= Tr], !,
-	 ExtProcDefns = SubProcDefns,
 	    NewCond = all_done_for(Name, [Td, Tk, Tr]),
-	    separate_instructs(AssignList0, LocalPath, [separate(Level) | Path],
-			       earlier(NewCond), AssignList0,
-			       AssignList1, ExtConds),
+	    separate_instructs(AssignList2, LocalPath, [separate(Level) | Path],
+			       earlier(NewCond), AssignList2,
+			       AssignList3, ExtConds),
 	    append([make(NewCond, ExtConds, Path,
-			 Step, []) | Specials], AssignList1, AssignList);
-	 ExtProcDefns = SubProcDefns,
-	    append(Specials, AssignList0, AssignList)),
-	append(FnInters, SmInters, Inters).
+			 Step, []) | Specials], AssignList3, AssignList);
+	 append(Specials, AssignList2, AssignList)),
+	 append([FnInters, SmInters, XCInters], Inters).
+
+abracadabra([], [], [], [], 0).
+abracadabra([Level | Rest], ConLoops, ModelOpens, SetInds, N) :-
+    abracadabra(Rest, MoreLoops, MoreOpens, MoreInds, M),
+    (Level = sm(A,B,C, fm_loop(OldLoops, _,_,_)) ->
+	 length(OldLoops, Dimty),
+	 length(NewLoops, Dimty),
+	 ConLoops = MoreLoops,
+	 ModelOpens = [sm(A,B,C, fm_loop(NewLoops, _,_,_)) | MoreOpens],
+	 append(MoreInds, NewLoops, SetInds),
+	 N is M+Dimty;
+     ConLoops = [Level | MoreLoops],
+     [ModelOpens, SetInds, N]=[MoreOpens, MoreInds, M]).
+	 
+
 
 separate_instructs([], _,_,_,_, [],[]).
 separate_instructs([make(A, C, P1, D,E) | Insts], GoesIn, Replace, NewCond,
@@ -1525,25 +1600,25 @@ separate_instructs([make(A, C, P1, D,E) | Insts], GoesIn, Replace, NewCond,
     
 % may need this for isolating separately built submodels from dependencies --
 % used as template for above
-ext_deps_and_conds(AssignList, Home, NewCond, Untried, Deps, Conds) :-
-    append(NoExtDeps, [ExtDep | StillUntried], Untried),
-    ExtDep = make(A, MixedConds, Path, Step, D),
-    Step>0,
-    suffix(Home, Path),
-    setof(ExtCond, (member(ExtCond, MixedConds),
-		    \+ member(ExtCond, [time, on_reset]),
-		    \+ (member(make(ExtCond, _,IntPath,_,_), AssignList),
-		       suffix(Home, IntPath))),
-	  ExtConds), !,
-      NewExtDep = make(A, [NewCond | MixedConds], Path, Step, D),
-      append(StillUntried, NoExtDeps, MixedDeps),
-      ext_deps_and_conds(AssignList, Home, NewCond,
-			 MixedDeps, MoreDeps, MoreConds),
-      Deps = [NewExtDep | MoreDeps],
-      merge_lists(ExtConds, MoreConds, Conds);
-    Deps = Untried,
-      Conds = [].
-    
+% ext_deps_and_conds(AssignList, Home, NewCond, Untried, Deps, Conds) :-
+%     append(NoExtDeps, [ExtDep | StillUntried], Untried),
+%     ExtDep = make(A, MixedConds, Path, Step, D),
+%     Step>0,
+%     suffix(Home, Path),
+%     setof(ExtCond, (member(ExtCond, MixedConds),
+% 		    \+ member(ExtCond, [time, on_reset]),
+% 		    \+ (member(make(ExtCond, _,IntPath,_,_), AssignList),
+% 		       suffix(Home, IntPath))),
+% 	  ExtConds), !,
+%       NewExtDep = make(A, [NewCond | MixedConds], Path, Step, D),
+%       append(StillUntried, NoExtDeps, MixedDeps),
+%       ext_deps_and_conds(AssignList, Home, NewCond,
+% 			 MixedDeps, MoreDeps, MoreConds),
+%       Deps = [NewExtDep | MoreDeps],
+%       merge_lists(ExtConds, MoreConds, Conds);
+%     Deps = Untried,
+%       Conds = [].
+%     
 cond_test_in(CondBox, Functions) :-
 	member(instance(condition,_, function,
 			elt(_, CondBox, _),_), Functions),
@@ -1573,7 +1648,8 @@ list_params_from(BaseStr, N, Fns, List, UDList) :-
 	list_params_from(BaseStr, M, Fns, More, MoreUDs),
 	List = [Tgt | More],
 	UDList = [UnitDims | MoreUDs];
-	List = [].	
+	List = [],
+        UDList = [].	
 
 delay_params_out_made(_, [], A, A, [], []).
 delay_params_out_made(PEfx, [Out | Mo], A, [make(Out, PEfx, R2, R3, []),
@@ -1585,6 +1661,24 @@ delay_params_out_made(PEfx, [Out | Mo], A, [make(Out, PEfx, R2, R3, []),
 	    ScPtrOut = ptr(Out); % scalar output -- pass pointer for it
 	 ScPtrOut = Out).
 
+add_accum_fns(ParamsIn, Ptr, Path, Functions, AccumInters, ParamsSwpd,
+	      ClearAccums, IncrAccums) :-
+    append(Bef, [ParamIn | Aft], ParamsIn),
+    member(instance(event, _,_, elt(_, ParamIn, UnD), _), Functions) ->
+	append_atoms(ParamIn, '_accum', Accum),
+	append(Bef, [Accum | Aft], ParamsMid),
+	add_accum_fns(ParamsMid, Ptr, Path, Functions, MoreInters,
+		      ParamsSwpd, ClearMore, IncrMore),
+	AccumInters = [instance(internal, inter(Path, _,_),
+				ParamIn, Accum, UnD) | MoreInters],
+	DeScalar = arr(Ptr, Accum, []),
+	ClearAccums = [assign(DeScalar, 0) | ClearMore],
+	IncrAccums = [assign(DeScalar, DeScalar+arr(Ptr, ParamIn, []))
+		      | IncrMore];
+    [AccumInters, ParamsSwpd, ClearAccums, IncrAccums] =
+    [[], ParamsIn, [], []].
+    
+    
 name_loop_vars([], _).
 name_loop_vars([glob(LVar, _) | More], Inds) :-
     length(Inds, N),

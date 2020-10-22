@@ -627,7 +627,10 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     set haveDND [llength [package provide tkdnd]]
     wm title .table "Table data for [BlankCrs "$tgt $dims"]"
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
-    
+
+    if {![info exists table_entry(separator)]} {
+	set table_entry(separator) ,
+    }
     set t [::ttk::notebook .table.notebook]
     $t add [set fc [frame $t.columns]] -text [tr. "Data in column"]
     # Data file and data column heading
@@ -645,7 +648,11 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
             -command "LoadDataFile columns 1 $mdl"
-    pack $fdata.new -side bottom -padx 4 -pady 4
+    pack $fdata.new -side left -padx 4 -pady 4
+    label $fdata.sepCapt -text Separator:
+    pack $fdata.sepCapt -side left -padx 4 -pady 4
+    ttk::entry $fdata.sepVal -textvariable table_entry(separator) -width 4
+    pack $fdata.sepVal -side left -padx 4 -pady 4
     pack $fdata -fill x
     pack $fc.fdata -fill x
     # new frame December 2008 for the choice of data table in a database JMM
@@ -730,7 +737,11 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
             -command "LoadDataFile grid 1 $mdl"
-    pack $fdata.new -side bottom -padx 4 -pady 4
+    pack $fdata.new -side left -padx 4 -pady 4
+    label $fdata.sepCapt -text Separator:
+    pack $fdata.sepCapt -side left -padx 4 -pady 4
+    ttk::entry $fdata.sepVal -textvariable table_entry(separator) -width 4
+    pack $fdata.sepVal -side left -padx 4 -pady 4
     pack $fdata -fill x
     pack $fg.fdata -fill x
     TitleFrame $fg.limits -text [tr. "Boundaries of area to load "]
@@ -787,7 +798,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     bind $dfile <Double-1> "LoadDataFile image 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
-            -command "LoadDataFile image 1 $mdl"
+	-command "LoadDataFile image 1 $mdl"
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $fi.fdata -fill x
@@ -858,7 +869,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     bind $dfile <Double-1> "LoadDataFile gdal 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text [tr. Browse] \
-            -command "LoadDataFile gdal 1 $mdl"
+	-command "LoadDataFile gdal 1 $mdl"
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $ft.fdata -fill x
@@ -1036,6 +1047,7 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 		    [lindex $table_entry(icol_txts) \
 			 [lsearch $table_entry(icol_keys) \
 			      [lindex $table_entry(data) 8]]]
+		set table_entry(separator) [lindex $table_entry(data) 9]
             } ,image {
                 .table.notebook select .table.notebook.image
                 set table_entry(row1) [lindex $table_entry(data) 2]
@@ -1061,7 +1073,8 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
             } default {
                 .table.notebook select .table.notebook.columns
                 set table_entry(dataField) [lindex $table_entry(data) 1]
-                set table_entry(indices) [lrange $table_entry(data) 2 end]
+                set table_entry(separator) [lindex $table_entry(data) 2]
+                set table_entry(indices) [lrange $table_entry(data) 3 end]
                 set i 1
                 foreach idx $table_entry(indices) {
                     if {![string match ,* $idx]} { ;# this not wrap or db info
@@ -1449,27 +1462,28 @@ proc AcquireTableData {redo startLine} {
             # jmm need to add table_entry(dbtable) to the tableSpec for ODBC sources with tables
             # BUT indices may be empty and so, effectively no list item
             # handle as table_entry(others) and table_entry(indices) inserted
-            set tableSpec [concat [list $table_entry(fileName) \
-                    $table_entry(dataField)] $table_entry(indices)]
+            set tableSpec \
+		[concat [list $table_entry(fileName) $table_entry(dataField) \
+			     $table_entry(separator)] $table_entry(indices)]
             if {[info exists table_entry(uftsi)] && \
 		    [llength $table_entry(uftsi)] && \
 		    ![string equal unit $table_entry(uftsi)]} {
-                set tableSpec [linsert $tableSpec 2 \
+                set tableSpec [linsert $tableSpec 3 \
 				   ,interval:$table_entry(uftsi)]
             }
             if {[info exists table_entry(others)] && \
                         [llength $table_entry(others)]} {
-                set tableSpec [linsert $tableSpec 2 \
+                set tableSpec [linsert $tableSpec 3 \
 				   ,others:[NameToTag $table_entry(others)]]
             }
             if {[info exists table_entry(wrapPt)] && \
                         [Numeric $table_entry(wrapPt)]} {
-                set tableSpec [linsert $tableSpec 2 ,wrap:$table_entry(wrapPt)]
+                set tableSpec [linsert $tableSpec 3 ,wrap:$table_entry(wrapPt)]
             }
 # JAT: If there is a dbtable it must be item 2 so insert it last
             if {[info exists table_entry(dbtable)] && \
                         [llength $table_entry(dbtable)]} {
-                set tableSpec [linsert $tableSpec 2 \
+                set tableSpec [linsert $tableSpec 3 \
 				   ,dbtable:$table_entry(dbtable)]
             }
         } .table.notebook.grid {
@@ -1482,7 +1496,9 @@ proc AcquireTableData {redo startLine} {
 			       $table_entry(irow)]] \
 		     [lindex $table_entry(icol_keys) \
 			  [lsearch $table_entry(icol_txts) \
-			       $table_entry(icol)]]]
+			       $table_entry(icol)]] \
+		     $table_entry(separator)]
+		
         } .table.notebook.image {
             set tableSpec [list $table_entry(fileName) ,image \
 			       $table_entry(row1) $table_entry(rown) \
@@ -1627,13 +1643,14 @@ proc LoadDataFile {mode query mdl} {
         gdal_close $hdl
     } else {
 	package require csv
+	set brkr $table_entry(separator)
         gets $stream firstLine
         switch $mode {
             columns {
                 # csv handled by existing code other extensions handled with ODBC
                 if {[IsCSV $ext]} {
                         set i 1
-                        foreach hd [::csv::split $firstLine] {
+                        foreach hd [::csv::split $firstLine $brkr] {
                             if {$haveDND} {
 				$fheads.lheads insert end [string trim $hd]
 			    } else {
@@ -1654,13 +1671,15 @@ proc LoadDataFile {mode query mdl} {
 		    set split_row ::csv::split
 		} else {
 		    set split_row concat
+		    set brkr {}
 		}
                 set table_entry(col1) 1
-                set table_entry(coln) [llength [eval $split_row {$firstLine}]]
+                set table_entry(coln) \
+		    [llength [eval $split_row {$firstLine} {$brkr}]]
                 set table_entry(row1) 1
                 set table_entry(rown) 1
                 while {[gets $stream firstLine]!=-1} {
-		    set coln [llength [eval $split_row {$firstLine}]]
+		    set coln [llength [eval $split_row {$firstLine} {$brkr}]]
 		    if {$coln>$table_entry(coln)} {
 			set table_entry(coln) $coln
 		    }
@@ -1750,19 +1769,14 @@ proc LoadTableData {specLocn lineCount addSpecials} {
     upvar 1 $specLocn tableSpec
     set filename [lindex $tableSpec 0]
     set ext [file extension $filename]
-    if {[IsCSV $ext]} {
-	set split_row ::csv::split
-    } else {
-	set split_row concat
-    }
     #set mode [lindex $tableSpec 1]
     
     # end JMM ODBC
 
     foreach {keyWd tgtVar} \
 	{dbtable dbtable wrap wrapPt others fillMtd interval tpiUnit} {
-	    if {[regexp ,$keyWd:(.*) [lindex $tableSpec 2] match $tgtVar]} {
-		set tableSpec [lreplace $tableSpec 2 2]
+	    if {[regexp ,$keyWd:(.*) [lindex $tableSpec 3] match $tgtVar]} {
+		set tableSpec [lreplace $tableSpec 3 3]
 	    }
 	}
     package require csv
@@ -1780,9 +1794,16 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 	}
 	set rown 0
 	set coln 0
+	if {[IsCSV $ext]} {
+	    set split_row ::csv::split
+	    set brkr [lindex $tableSpec 9]
+	} else {
+	    set split_row concat
+	    set brkr {}
+	}
 	set stream [NetOpen [lindex $tableSpec 0] r]
 	while {[gets $stream firstLine]!=-1} {
-	    set acoln [llength [eval $split_row {$firstLine}]]
+	    set acoln [llength [eval $split_row {$firstLine} {$brkr}]]
 	    if {$acoln>$coln} {
 		set coln $acoln
 	    }
@@ -1820,10 +1841,10 @@ proc LoadTableData {specLocn lineCount addSpecials} {
         for {set rowInd 1} {$rowInd <= $ylast} {incr rowInd} {
             gets $tStr entryLine
 	    if {$rowInd == $idxRow} {
-		set xIndPts [concat dummy [TrimFields [eval $split_row {$entryLine}]]]
+		set xIndPts [concat dummy [TrimFields [eval $split_row {$entryLine} $brkr]]]
 	    }
             if {$rowInd >= $yfirst} {
-                set usePts [concat dummy [TrimFields [eval $split_row {$entryLine}]]]
+                set usePts [concat dummy [TrimFields [eval $split_row {$entryLine} $brkr]]]
 		if {$idxCol>-1} {
 		    set yInd [lindex $usePts $idxCol]
 		} elseif {$yflip} {
@@ -1941,10 +1962,11 @@ proc LoadTableData {specLocn lineCount addSpecials} {
         if {[IsCSV $ext]} {
 	    set tStr [NetOpen [lindex $tableSpec 0] r]
 	    gets $tStr headerLine
-	    set headerList [TrimFields [::csv::split $headerLine]]
+	    set headerList [TrimFields [::csv::split $headerLine \
+					    [lindex $tableSpec 2]]]
 	    #ShowMess debug info "Headers are $headerList" ok
 	    
-	    foreach headerIndex [lrange $tableSpec 2 end] {
+	    foreach headerIndex [lrange $tableSpec 3 end] {
 		set indexColumn  [lsearch -exact $headerList $headerIndex]
 		if {$indexColumn==-1} {
 		    Query [concat no_info_col index [lrange $tableSpec 0 0] \
@@ -1967,7 +1989,8 @@ proc LoadTableData {specLocn lineCount addSpecials} {
 		}
 	    }
 	    while {[gets $tStr entryLine] != -1} {
-		set entryList [TrimFields [::csv::split $entryLine]]
+		set entryList [TrimFields [::csv::split $entryLine \
+					       [lindex $tableSpec 2]]]
 		#ShowMess debug info "Data line is $entryList" ok
 		if {![llength $entryList]} {
 		    continue ;# ignore blank lines anywhere

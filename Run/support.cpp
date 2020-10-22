@@ -1,20 +1,22 @@
 #include <time.h>
 
+#define BUFSIZE 256
 #ifdef _WIN32
 #include <windows.h>
+#include <tchar.h>
 #define PIPENEW(ENDS) CreatePipe(ENDS, ENDS+1, NULL, 0)
 #define PIPEREAD(SPOUT,BUF,COUNT) ReadFile(SPOUT,BUF,COUNT,&spareForCount,NULL)
 #define PIPEWRITE(SPOUT,BUF,COUNT) WriteFile(SPOUT,BUF,COUNT,&spareForCount,NULL)
 #define PIPECLOSE(SPOUT) CloseHandle(SPOUT)
-#define TSPOUT HANDLE
 long unsigned int spareForCount;
 #else
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
 #define PIPENEW(ENDS) pipe(ENDS)
 #define PIPEREAD(SPOUT,BUF,COUNT) read(SPOUT,BUF,COUNT)
 #define PIPEWRITE(SPOUT,BUF,COUNT) write(SPOUT,BUF,COUNT)
 #define PIPECLOSE(SPOUT) close(SPOUT)
-#define TSPOUT int
 #endif
 
 #include <dllcalls.h>
@@ -207,4 +209,264 @@ void InstanceOfModel::thread_mgr(void* (*worker_fn)(void*),
   // }
   
 };
+
+/*****************************************************************/
+// STUFF FOR INCLUDING A REMOTE SUBMODEL BY PIPE INTERFACE       //
+/*****************************************************************/
+int setServerPipe (const char* pipeName, TSPOUT* service) {
+#ifdef _WIN32
+  // use named pupes
+  char nbuffer[BUFSIZE] = "\\\\.\\pipe\\";
+  strcat(nbuffer, pipeName);
+  TCHAR *ttemp = new TCHAR[strlen(nbuffer)+1];
+  _tcscpy(ttemp, nbuffer); // remember to free it
+  *service = (TSPOUT)ttemp;
+#else
+  // UNIX -- use sockets
+  struct sockaddr_un name;
+  int connection_socket, ret;
+
+  connection_socket = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (connection_socket == -1)
+    return 70;  
+
+  memset(&name, 0, sizeof(struct sockaddr_un));
+
+  name.sun_family = AF_UNIX;
+  strncpy(name.sun_path, pipeName, sizeof(name.sun_path) - 1);
+
+  ret = bind(connection_socket, (const struct sockaddr *) &name,
+	     sizeof(struct sockaddr_un));
+  if (ret == -1)
+    return 71;
+
+  ret = listen(connection_socket, 20);
+  if (ret == -1)
+    return 72;
+
+  *service = connection_socket;
 #endif
+  return 0;
+}
+
+int getClientPipe (TSPOUT service, TSPOUT* data_socket) {
+#ifdef _WIN32
+  // use named pupes
+      *data_socket = CreateNamedPipe( 
+	  (LPCTSTR)service,             // pipe name 
+          PIPE_ACCESS_DUPLEX,       // read/write access 
+          PIPE_TYPE_MESSAGE |       // message type pipe 
+          PIPE_READMODE_MESSAGE |   // message-read mode 
+          PIPE_WAIT,                // blocking mode 
+          PIPE_UNLIMITED_INSTANCES, // max. instances  
+          BUFSIZE,                  // output buffer size 
+          BUFSIZE,                  // input buffer size 
+          0,                        // client time-out 
+          NULL);                    // default security attribute 
+
+      if (*data_socket == INVALID_HANDLE_VALUE) 
+      {
+          printf("CreateNamedPipe failed, GLE=%d.\n", GetLastError()); 
+          return -1;
+      }
+      BOOL fConnected = ConnectNamedPipe(*data_socket, NULL) ? 
+         TRUE : (GetLastError() == ERROR_PIPE_CONNECTED); 
+ 
+      if (fConnected)
+	return 0;
+      else
+	return 73;
+#else
+  // UNIX -- use sockets
+  *data_socket = accept(service, NULL, NULL);
+  if (*data_socket == -1)
+    return 73;
+#endif
+  return 0;
+}
+#endif
+
+extern int nodecount;
+extern node_data_line nodedata[];
+
+int find_graph(int graph) {
+  for (int nodeLine=0; nodeLine<nodecount; ++nodeLine)
+    if (nodedata[nodeLine].graph == graph) return nodeLine;
+  return -1;
+}
+
+int find_member(char* member, enum_type_data *dimType) {
+  int ordinal;
+  
+  for (ordinal=0; ordinal<dimType->count;++ordinal)
+    if (strcmp(member, dimType->members[ordinal])==0) return ordinal;
+  return -1;
+}
+
+int get_BOOLEAN_from_pipe(TSPOUT where, BOOLEAN* what) {
+  int ness=PIPEREAD(where, (char*)what, sizeof(BOOLEAN));
+  //  printf("Recvd %d\n", *what);
+  return ness;
+}
+int get_int_from_pipe(TSPOUT where, int* what) {
+  int ness=PIPEREAD(where, (char*)what, sizeof(int));
+  // printf("Recvd %d\n", *what);
+  return ness;
+}
+int get_double_from_pipe(TSPOUT where, double* what) {
+  int ness=PIPEREAD(where, (char*)what, sizeof(double));
+  // printf("Recvd %lf\n", *what);
+  return ness;
+}
+int get_array_from_pipe(TSPOUT where, void* what, int count) {
+  int ness=PIPEREAD(where, (char*)what, count);
+  // printf("Recvd %d bytes\n", ness);
+  int rem = count-ness;
+  if (rem>0) get_array_from_pipe(where, (char*)what+ness, rem);
+  return count;
+}
+int get_chars_from_pipe(TSPOUT where, char* what) {
+  unsigned char length;
+  get_BOOLEAN_from_pipe(where, &length); // length may be more than 1 byte for longer strs
+  get_array_from_pipe(where, what, length);
+  what[length] = 0; // terminate the string
+  // printf("Recvd %s\n", what);
+  return length;
+}
+int get_member_from_pipe(TSPOUT where, int graph, const char* ETid, int* what) {
+  int mdDims[32], nTypes, curType;
+  enum_type_data *types[32];
+  char instName[BUFSIZE];
+
+  int nodeLine = find_graph(graph);
+  nTypes = make_full_caption(nodeLine, instName, mdDims, types);
+  for (curType=0; curType<nTypes; ++curType)
+    if (strcmp(types[curType]->name, ETid)==0) break;
+  get_chars_from_pipe(where, instName);
+  *what = find_member(instName, types[curType])+1;
+  return 1;
+}
+int put_BOOLEAN_in_pipe(TSPOUT where, BOOLEAN what) {
+  int ness=PIPEWRITE(where, (char*)&what, sizeof(BOOLEAN));
+  // printf("Sent %d\n", what);
+  return ness;
+}
+int put_int_in_pipe(TSPOUT where, int what) {
+  int ness=PIPEWRITE(where, (char*)&what, sizeof(int));
+  // printf("Sent %d\n", what);
+  return ness;
+}
+int put_double_in_pipe(TSPOUT where, double what) {
+  int ness=PIPEWRITE(where, (char*)&what, sizeof(double));
+  // printf("Sent %lf\n", what);
+  return ness;
+}
+int put_array_in_pipe(TSPOUT where, void* what, int count) {
+  int ness=PIPEWRITE(where, (char*)what, count);
+  // printf("Sent %d bytes\n", ness);
+  return ness;
+}
+int put_chars_in_pipe(TSPOUT where, char* what) {
+  int length;
+  length = strlen(what);
+  put_BOOLEAN_in_pipe(where, (BOOLEAN)length); // length may be more than 1 byte for longer strs
+  put_array_in_pipe(where, what, length);
+  // printf("Sent %s\n", what);
+  return length;
+}
+int put_member_in_pipe(TSPOUT where, int graph, const char* ETid, int what) {
+  int mdDims[32], nTypes, curType;
+  enum_type_data *types[32];
+  char instName[BUFSIZE];
+
+  int nodeLine = find_graph(graph);
+  nTypes = make_full_caption(nodeLine, instName, mdDims, types);
+  for (curType=0; curType<nTypes; ++curType)
+    if (strcmp(types[curType]->name, ETid)==0) break;
+  return put_chars_in_pipe(where, types[curType]->members[what-1]);
+}
+
+int get_client_indices(TSPOUT where, int sm_graph_id, int destIdcs[]) {
+  char instName[BUFSIZE];
+  int nodeLine, mdDims[32], curDim, place, nTypes;
+  enum_type_data *types[32];
+
+  // first, translate that graph id to a node line
+  nodeLine = find_graph(sm_graph_id);
+  
+  // plunder the metadata
+  nTypes = make_full_caption(nodeLine, instName, mdDims, types);
+  // instName set to submodel caption path -- not used
+
+  place=0;
+  while (curDim = mdDims[place]) { // assignment
+    // while (curDim = mdDims[place]) {} // assignment
+    if (curDim > ENUM_BASE) // numerical dimension, boring
+      get_int_from_pipe(where, destIdcs + place);
+    else { // enumerated type dimension, rock'n'roll
+      get_chars_from_pipe(where, instName);
+      destIdcs[place] = find_member(instName, types[ENUM_BASE-curDim]);
+     if (destIdcs[place] == -1) return 78; // none match, raise issue
+    }
+    ++destIdcs[place]; // convert to treehugger convention
+    ++place;
+  }
+  return 0;
+}
+
+int parent_line (int line) {
+  int count, level, test, *path;
+  path = nodedata[line].path;
+  for (count=0;nodecount>count;count++) {
+    level = 0;
+    while ( (test = nodedata[count].path[level]) ) {
+      if (test != path[level++]) {
+	break;
+      }
+      
+    }
+    if (!test && path[level] && (!path[level+1] || 
+				 (path[level+1]<0 && !path[level+2]))) {
+      return(count);
+    }
+  }
+  return(-1);
+}
+
+int make_full_caption(int line, char *result, int* dims,
+			 enum_type_data** types) {
+    // New version which does not depend on the nodedata array being in
+    // any particular order -- and returns the whole caption
+  int parent, typesSoFar, count, dimCount=0;
+  for (count=0; count<nodedata[line].enum_type_count; ++count) {
+    types[count]=&(nodedata[line].enum_type_ptrs[count]);
+  }
+  if ((parent = parent_line(line)) >= 0) {
+    typesSoFar = count+make_full_caption(parent, result, dims, types+count);
+    strcat(result, "/");
+  } else {
+    *result = (char)NULL;
+    *dims = 0;
+    typesSoFar = count;
+  }
+  // correct earlier enum type references to take account of this level
+  count = 0;
+  while (dims[count]) {
+    if (dims[count] <= ENUM_BASE) {
+      dims[count] = dims[count] - nodedata[line].enum_type_count;
+    }
+    count++;
+  }
+  // add this levels caption unless it is top
+  if (parent>=0  || nodedata[line].compclass != SUBMODEL)
+    strcat(result, nodedata[line].strings[0]);
+  
+  do dims[count]=nodedata[line].dims[dimCount++];
+  while (dims[count++]);
+// add this levels type data -- reverse order cos outer models start list
+    // for (count=nodedata[line].enum_type_count-1;count>=0;--count) {
+    // types[typesSoFar++]=&(nodedata[line].enum_type_ptrs[count]);
+    // } ...not any more
+  return typesSoFar;
+}
+

@@ -805,9 +805,13 @@ proc LoadIconImages {} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
     }
-    foreach fn {graph plotxy table new open save edit reel noreel text zap} {
+    foreach fn {display graph plotxy table new open save edit reel noreel text zap} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
+    }
+    foreach fn {3d_objects} {
+	set iconImages($fn) \
+	    [image create photo -file "../Images/Toolbar/${fn}.png"]
     }
     # images for fake ttk radio/check buttons in menu entries --
     # real ones are too theme-dependent to emulate

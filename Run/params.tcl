@@ -968,13 +968,14 @@ namespace eval fileparams {
 			}
 			puts $pStr >
 		    } ,grid {
-			foreach val [lrange $paramState($compName) 2 8] \
-			    att {rowmin rowmax colmin colmax xpose irow icol} {
+			foreach val [lrange $paramState($compName) 2 9] \
+			    att {rowmin rowmax colmin colmax xpose irow icol \
+				 separator} {
 				puts -nonewline $pStr " $att=[Entitize $val]"
 			    }
 			puts $pStr >
 		    } default {
-			puts $pStr " data_column=[Entitize $ident]>"
+			puts $pStr " data_column=[Entitize $ident] separator=[Entitize [lindex $paramState($compName) 2]]>"
 			set dimCount 0
 			
 			# v6.8p10: dbtable has been inserted back into
@@ -986,7 +987,7 @@ namespace eval fileparams {
 			# and saved as 1st s_c elt even though this
 			# may not be a time series
 			
-			set startRealIdxs [expr {2+[regexp ,dbtable:(.*) [lindex $paramState($compName) 2] match dbtable]}]
+			set startRealIdxs [expr {3+[regexp ,dbtable:(.*) [lindex $paramState($compName) 3] match dbtable]}]
 			foreach dim [lrange $paramState($compName) $startRealIdxs end] {
 			    puts $pStr "$indent<value index=\"[incr dimCount]\" val=[Entitize $dim]/>"
 			}
@@ -1183,6 +1184,7 @@ proc StartElement {name attList args} {
     set attVals(xpose) 0 ;# in case older spf does not include it
     set attVals(band) 1 ;# likewise
     set attVals(irow) [set attVals(icol) position_in_data_area] ;# ditto
+    set attVals(separator) ,
     array set attVals $attList
     if {[info exists attVals(label)]} {
 	set logLabel [BlankCrs $attVals(label)]
@@ -1226,12 +1228,12 @@ proc StartElement {name attList args} {
 		}
 	    }
 	} csv_columns {
-	    puts -nonewline $parseStatus(outStr) $path=reference=[list $attVals(filename) $attVals(data_column)]
+	    puts -nonewline $parseStatus(outStr) $path=reference=[list $attVals(filename) $attVals(data_column) $attVals(separator)]
 	    set parseStatus(translateExtras) {}
 	    LogXMLAction "$logLabel,from column $attVals(data_column) in file $attVals(filename),$logComment"
 	} csv_grid {
 	    puts -nonewline $parseStatus(outStr) $path=reference=[list $attVals(filename) ,grid]
-	    set parseStatus(translateExtras) [list $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose) $attVals(irow) $attVals(icol)]
+	    set parseStatus(translateExtras) [list $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(xpose) $attVals(irow) $attVals(icol) $attVals(separator)]
 	    LogXMLAction "$logLabel,from grid in file $attVals(filename),$logComment"
 	} image {
 	    puts -nonewline $parseStatus(outStr) $path=reference=[list $attVals(filename) ,image]

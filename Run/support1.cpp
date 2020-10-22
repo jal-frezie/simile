@@ -419,6 +419,10 @@ BOOLEAN requests_record_count(int *dim_list) {
 void discard_instance(void* instanceId) {
 }
 
+BOOLEAN RealPhase(int phase) {
+  return phase==5 || phase==6 || phase==9;
+}
+
 int following(int lo) {
   return lo+1;
 }

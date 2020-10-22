@@ -111,6 +111,9 @@ namespace eval runcontrol33857 {
         $runState($node,cnvs) create oval 6p 6p 12p 12p -fill [RestingColour $node]
         $runState($node,cnvs) create oval 6p 6p 12p 12p -outline grey
         pack $runState($node,cnvs) -side right -anchor e
+	BindPopup $runState($node,cnvs) led_status
+	bind $runState($node,cnvs) <Enter> \
+	    +[namespace code [list RunStatusText %W]]
         after idle set runState($node,fractDone) 0
 	set runState($node,progressBar) \
 	    [::ttk::progressbar $rcf.upper.bf.bar -maximum 100 \
@@ -271,6 +274,10 @@ namespace eval runcontrol33857 {
         set runState($node,prevDisplay) 0.0
         set runState($node,currentMode) stop
 	set runState($node,busy) 0
+    }
+
+    proc RunStatusText {c} {
+	set ::msgs(led_status) "Status LED is [$c itemcget 1 -fill]"
     }
     
 #    proc UpdateIntMethod {menu node method} {

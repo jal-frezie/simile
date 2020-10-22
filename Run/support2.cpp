@@ -166,10 +166,6 @@ void InstanceOfModel::report_context() {
   //  now done at end of step by report_events
 }
 
-BOOLEAN RealPhase(int phase) {
-  return phase==5 || phase==6 || phase==9;
-}
-
 #define   CHECK_LOWER   1
 #define   CHECK_UPPER   2
 #define   LIMIT_FUZZ    1e-12

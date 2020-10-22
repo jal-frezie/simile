@@ -1,4 +1,4 @@
-MINREL = 10
+MINREL = 11
 MY_CPU = $(firstword $(subst -, ,$(shell gcc -dumpmachine)))
 
 # days after install: 0 for no installation expiry
@@ -82,6 +82,7 @@ endif
 		CFLAGS = $(OPT)
 	        ARCHEXTN = _ppc
 	endif
+	CPPFLAGS = -static-libstdc++
 	EXECEXTN = $(ARCHEXTN)
 	MAKEPIC = -fPIC
 	MAKESL = -dynamiclib

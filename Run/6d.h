@@ -231,7 +231,7 @@ class ExecutingModel
   nodeValues* GetRawValues(HCOMP);
 
   //! allow model to access parameter data; client should not call this
-  void GetValuePointer(void*, int, int, BOOLEAN, int*);
+  void GetValuePointer(void*, int, BOOLEAN, int, int*);
 
   // allow model to update client during execution; client should not call
   BOOLEAN do_gui_check(double, int);
@@ -282,8 +282,8 @@ class ModelServer
   //! Client must make space for all of these
   node_data_line* SearchInfo(int, char *, int*, enum_type_data**);
 
-  //! As above but lists all applicable enum types and does not convert dims
-  int make_full_caption(int, char*, int*, enum_type_data**);
+  //! Function for generating captions and enum type lists
+  make_full_caption_type* make_full_caption;
 
   //! Gets node serial number from old id (last arg set to submodel if ghost)
   int getinfo(char*, int*);
@@ -324,7 +324,7 @@ class ModelServer
   //! Arg 1 is client supplied reference
   //! Arg 2 is time step being calculated
   //! Arg 3 is model time
-  virtual int interact_gui(void*, int, double) = 0;
+  virtual BOOLEAN interact_gui(void*, int, double) = 0;
 
   //! What client is to do if model produces an error or debugging message
   virtual void showMess(const char*) = 0;

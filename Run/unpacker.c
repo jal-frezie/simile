@@ -438,16 +438,21 @@ Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
       }
       *count -= *count>0?1:-1;
       break;
-    default: /* FLAG, INTEGER or ENUM(*) */
-      if (loseZeros && *(int *)block == 0) {
+    case FLAG:
+      if (loseZeros && *(BOOLEAN *)block == 0)
 	localObj = Tcl_NewListObj(0, NULL);
-	break;
+      else {
+	localObj = Tcl_NewBooleanObj(*(BOOLEAN *)block);
+	*count -= *count>0?1:-1;
       }
-      if (dims[0] == FLAG)
-	localObj = Tcl_NewBooleanObj(*(int *)block);
-      else
+      break;
+    default: /* INTEGER or ENUM(*) */
+      if (loseZeros && *(int *)block == 0)
+	localObj = Tcl_NewListObj(0, NULL);
+      else {
 	localObj = Tcl_NewIntObj(*(int *)block);
-      *count -= *count>0?1:-1;
+	*count -= *count>0?1:-1;
+      }
     }
   }
   return localObj;
@@ -486,7 +491,7 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
   int iPosn, error, count;
 
   char spare[256];
-  int dims[32], path[32];
+  int dims[32], path[32], notBool;
   enum_type_data* usedTypes[32];
   nodeValues* c_result;
   BOOLEAN loseZeros;
@@ -502,12 +507,12 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
   if (error != TCL_OK) {
     return error;
   }
-
   if (argc == 4) {
-    error = Tcl_GetBooleanFromObj(interp, argv[3], &loseZeros);
+    error = Tcl_GetBooleanFromObj(interp, argv[3], &notBool);
     if (error != TCL_OK) {
       return error;
     }
+    loseZeros = (BOOLEAN)notBool;
   } else
     loseZeros = 0;
     
@@ -535,6 +540,12 @@ void add_nonzero_floats_to_size(void* Value, int Offset, void* sizePtr) {
 void add_nonzero_ints_to_size(void* Value, int Offset, void* sizePtr) {
   // sizePtr is actually an integer pointer
   if (((int*)Value)[Offset])
+    ++(*(int*)sizePtr);
+}
+
+void add_nonzero_BOOLEANs_to_size(void* Value, int Offset, void* sizePtr) {
+  // sizePtr is actually an integer pointer
+  if (((BOOLEAN*)Value)[Offset])
     ++(*(int*)sizePtr);
 }
 
@@ -903,6 +914,8 @@ FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
       ++size; //stop at base data type
     if (baseType == REAL)
       callback_proc = add_nonzero_floats_to_size;
+    else if (baseType == FLAG)
+      callback_proc = add_nonzero_BOOLEANs_to_size;
     else
       callback_proc = add_nonzero_ints_to_size;
   } else

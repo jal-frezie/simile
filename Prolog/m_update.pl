@@ -1771,8 +1771,8 @@ unique_name_for_new(Parent, Type, Name) :-
 	       Parent has_part Part), !.
 
 get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Interp, Fat, Count,
-			    Step, Desc, Comment, EnumSpecs, Proc, Inc, Libs,
-			    Fix, Hide, Separate]) :-
+			    Step, Desc, Comment, EnumSpecs, Proc, Inc, Unit,
+			    Libs, Fix, Hide, Separate]) :-
 	(Submodel has_class_refinement fill_colour of Colour,
 	    \+ Colour = clear, !;
 	    Colour = white),
@@ -1807,8 +1807,9 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Interp, Fat, Count,
 	(Submodel has_class_refinement external_code of ExternCode, !,
 	    member(procedure=Proc, ExternCode),
 	    member(include=Inc, ExternCode),
+	    (member(unit=Unit, ExternCode) -> true; Unit=none),
 	    member(libraries=Libs, ExternCode);
-	Proc = none, Inc = none, Libs = []),
+	Proc = none, Inc = none, Unit = none, Libs = []),
 	fatness_for(Submodel, Fat).
 
 fatness_for(Submodel, Fat) :-

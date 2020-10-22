@@ -1715,6 +1715,8 @@ showMess(globMess); */
 
     getcount = (getcount_type*)FIND_FUNCTION(handle, "get_count");
     createmodel = (createmodel_type*)FIND_FUNCTION(handle, "do_createmodel");
+    make_full_caption =
+      (make_full_caption_type*)FIND_FUNCTION(handle, "make_full_caption");
 #endif
     nodecount = getcount(NULL, &identStr, &phases, &nodedata);
     // Now check if this client is entitled to run it
@@ -1742,7 +1744,7 @@ ExecutingModel* ModelServer::create(void* yourRef) {
     // for raw instance and model type object
     return new ExecutingModel(this, yourRef);
   }
-
+/*
 int ModelServer::parent_line (int line) {
     int count, level, test, *path;
     path = nodedata[line].path;
@@ -1764,8 +1766,8 @@ int ModelServer::parent_line (int line) {
       
 int ModelServer::make_full_caption(int line, char *result, int* dims,
 			 enum_type_data** types) {
-    /* New version which does not depend on the nodedata array being in
-       any particular order -- and returns the whole caption */
+    // New version which does not depend on the nodedata array being in
+    // any particular order -- and returns the whole caption
     int parent, typesSoFar, count;
 
     for (count=0; count<nodedata[line].enum_type_count; ++count) {
@@ -1792,14 +1794,10 @@ int ModelServer::make_full_caption(int line, char *result, int* dims,
       strcat(result, nodedata[line].strings[0]);
     
     append_ints_to_null(dims, nodedata[line].dims, 0, 0);
-    /* add this levels type data -- reverse order cos outer models start list
-    for (count=nodedata[line].enum_type_count-1;count>=0;--count) {
-      types[typesSoFar++]=&(nodedata[line].enum_type_ptrs[count]);
-      } ...not any more */
     return typesSoFar;
-}
+    }
   
-  /*  int find_et_struct(int fake_dim) {
+    int find_et_struct(int fake_dim) {
     enum_data_type* seeker = enumtypedata;
     while (fake_dim++ < -10) {
       seeker = seeker->next;

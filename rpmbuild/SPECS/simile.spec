@@ -4,13 +4,13 @@
 # simile.spec"
 
 Name:		simile
-Version:	6.10
-Release:	14%{?dist}
+Version:	6.11
+Release:	0%{?dist}
 Summary:	Multi-paradigm graphical modelling environment
 
 License:	Proprietary
 URL:		http://simulistics.com
-source:		simile_6.10.14.tar.gz
+source:		simile_6.11.0.tar.gz
 
 BuildRequires:  gcc-c++ >= 4.0, gprolog >= 1.4.0, tcl-devel >= 8.5, tk-devel >= 8.5, gdal-devel >= 1.5
 # tk needed for building tkdnd and tktable
@@ -25,7 +25,7 @@ intuitive way.
 
 
 %prep
-%setup -q -n simile-%{version}
+%setup -q -n simile
 # The above unpacks the file specified by "source" above. If CVS/Drupal/Exts
 # have changed, unpack it manually, update and repack before building.
 
@@ -66,6 +66,12 @@ cd -
 
 
 %changelog
+* Tue Oct 20 2020 Simulistics Ltd <info@simulistics.com> - 6.11-0
+- Minor release
+
+* Mon Oct 12 2020 Simulistics Ltd <info@simulistics.com> - 6.10-15
+- Patch release
+
 * Sun Jun 07 2020 Simulistics Ltd <info@simulistics.com> - 6.10-14
 - Patch release
 

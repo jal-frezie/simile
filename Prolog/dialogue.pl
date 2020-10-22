@@ -93,6 +93,7 @@ handle_eqn_interaction(Part, Input_list, TableSpec, Rules) :-
 		(Effect = user_advice_generated(Mess),
 		 (Mess = inappropriate_assignment(_) -> HelpTopic = inters;
 		  HelpTopic = fill_equation),
+		    event><unclick, % lost from GUI if it accepted eqn bar
 		    query(Mess, warning, HelpTopic, [ok], _);
 		    true),
 	    ((Effect = eqn_accepted(Is_P, Result, UserFnList, OldEqn,
