@@ -1800,13 +1800,13 @@ proc OpenProjectFile {path} {
 	# if undo enabled, a log has been applied, so do not rerun!
 	if {[$tw.toolSlot.navbar.undo cget -state] eq "normal"} return
 
+	set runState($topNode,updated) [expr {$SimileProject(modelRunning)-1}]
 	if {$SimileProject(running_c)} {
             MenuSelect $tw.canvas code run_c
         } else  {
             MenuSelect $tw.canvas code run_tcl
         }
 	update
-	set runState($topNode,updated) [expr {$SimileProject(modelRunning)-1}]
         if {$runState($topNode,modelRunning)<3} return
 	set defaultSHF [file join $path model.shf]
 	set command [ChooseText \

@@ -200,7 +200,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 	    /* we need an executable for this level */
 	    (Language = c,
 	     safe_tcl_eval(['NeedNewExec', Parent], ChangeTop),
-	     (ChangeTop = "0" -> Parent has_model_refinement c_new of OldTgt;
+	     (ChangeTop = "0" -> OldTgt = 1;
 	      OldTgt = 0), !;
 	    /* if no c_new look for dll from save file with 1 in name */
 	    OldTgt = 0),
