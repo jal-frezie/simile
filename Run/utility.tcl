@@ -805,7 +805,7 @@ proc LoadIconImages {} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
     }
-    foreach fn {display graph plotxy table new open save edit reel noreel text zap} {
+    foreach fn {display graph plotxy table slider multi new open save edit reel noreel text zap} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
