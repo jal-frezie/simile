@@ -677,7 +677,7 @@ do_assignment(L, [SpecialOp | Clauses], Indent, Used, Stream) :-
 	SpecialOp = start_remote_model(Cmd), !,
 	     append_atoms(Cmd, ' &', CmdN),
 	     render><templatify(L, CmdN, '', [_,_,_, CmdQ]), 
-	     CallSpec = system(CmdQ)),
+	     CallSpec = run_external(CmdQ)),
 	excrete(L, procedure_call, CallSpec, Indent, Stream),
 	do_assign_list(L, Clauses, Indent, Used, Stream).
 % have to render after instantiating CollectId

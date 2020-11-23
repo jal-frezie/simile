@@ -620,6 +620,9 @@ set msgs(mismatched_arrays_detail) $msgs(mismatched_dimensions_detail)
 set msgs(unwanted_syntax_title) [tr. {Parameter contains confusing characters}]
 set msgs(unwanted_syntax_message) [tr. {Your %1$s, %2$s, contains characters that might cause the interpreter to confuse it with a compound expression.}]
 
+set msgs(duplicate_param_title) [tr. {Duplicate local name}]
+set msgs(duplicate_param_message) [tr. {Your new %1$s name, "%2$s", is already in use as a local name for another %1$s.}]
+
 set msgs(bad_table_data_title) [tr. {Problem with input data}]
 set msgs(bad_table_data_message) [tr. {The data you specified is not suitable for a lookup table. %1$s}]
 
@@ -657,6 +660,10 @@ set msgs(minmax_wrong_message) [tr. {Equation has non-numeric units %1$s, so min
 set msgs(bad_array_size_title) $msgs(bad_eqn_title)
 set msgs(bad_array_size_message) [tr. {This equation contains the subexpression %1$s, which evaluates to a data structure containing an array of size %2$s.}]
 set msgs(bad_array_size_detail) [tr. {%2$s is not a valid dimension for a model component -- they must be integers greater than 1.}]
+
+set msgs(singlet_array_title) $msgs(bad_eqn_title)
+set msgs(singlet_array_message) [tr. {This equation contains a square-bracketed list %1$s, containing only %2$s element.}]
+set msgs(singlet_array_detail) [tr. {Square-bracketed lists are used to define arrays with more than one element. Perhaps that expression does not need to be in square brackets.}]
 
 set msgs(bad_link_use_title) [tr. {Wrong use of inputs}]
 set msgs(bad_link_use_message) [tr. {The equation uses the parameter "%1$s" from an incoming influence, but the component is marked as a file parameter, which cannot have influences from other components.}]

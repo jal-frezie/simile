@@ -180,6 +180,7 @@ EXPORT void handle_model_param_request(void*, void*, int, BOOLEAN, int, int*);
 EXPORT int stat_check(void*);
 
 int setServerPipe(const char*, TSPOUT*);
+void run_external(const char*);
 int getClientPipe(TSPOUT, TSPOUT*);
 int get_client_indices(TSPOUT, int, int[]);
 int exchPipe(TSPOUT, char*, int, int);

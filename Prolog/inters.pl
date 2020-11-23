@@ -1001,7 +1001,8 @@ make_intermediates(
 	        LocalInd = glob(BuildName, _);
 	    make_choose_form(Source, keep(LocalInd), 1, Element),
 	        length(Source, DimVal),
-%	        DimSetups = [],
+		(DimVal > 1, !; throw(singlet_array(Source, DimVal))),
+%		DimSetups = [],
 	        MidInters = PrevInters,
 	        NowBuilding = BuildingArrays,
 	        Dun = const_int), !,
@@ -1899,7 +1900,7 @@ Simile's code, so they want arrays starting at 0. */
 add_zeros(L, SubId, Step, NL, [Outer | Dims], U) :-
 	add_zeros_all(L, SubId, Step, NL, [Outer | Dims], U),
 	(Outer > 1, !; % others already checked
-	    throw(bad_array_size(L, Outer))).
+	    throw(singlet_array(L, Outer))).
 
 add_zeros(N, SubId, Step, RN, [], U) :-
 	decode_number(N, SubId, Step, RN, U).

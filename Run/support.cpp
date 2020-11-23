@@ -249,6 +249,12 @@ int setServerPipe (const char* pipeName, TSPOUT* service) {
   return 0;
 }
 
+void run_external(const char* cmd) {
+  // needed because just calling system() complains return value is not used
+  // even though command ends in '&' so always always always returns 0
+  if (system(cmd)) {}
+}
+
 int getClientPipe (TSPOUT service, TSPOUT* data_socket) {
 #ifdef _WIN32
   // use named pupes

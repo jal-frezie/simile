@@ -813,15 +813,19 @@ namespace eval RunEnv {
 	$editMenu entryconfigure [tr. Paste] -state $useSpaceAbility
 
 ###############################################################################
-$tb1.b10 configure -state $copyAbility ;# copy button
-$tb1.b11 configure -state $copyAbility ;# cut button
-$tb1.b12 configure -state $useSpaceAbility; # paste button
-$tb1.b14 configure -state $printAbility; # print button
-$tb1.b31 configure -state $useSpaceAbility; # Add Notebook button
-$tb1.b40 configure -state $useSpaceAbility; # add helper buttons
-$tb1.b41 configure -state $useSpaceAbility
-$tb1.b42 configure -state $useSpaceAbility
-$tb1.b43 configure -state $useSpaceAbility
+	$tb1.b10 configure -state $copyAbility ;# copy button
+	$tb1.b11 configure -state $copyAbility ;# cut button
+	$tb1.b12 configure -state $useSpaceAbility; # paste button
+	$tb1.b14 configure -state $printAbility; # print button
+	$tb1.b31 configure -state $useSpaceAbility; # Add Notebook button
+	foreach toolAdder [winfo children $tb1] {
+	    if {![catch {$toolAdder cget -command} cmd]} {
+		if {![string first ::RunEnv::Insert $cmd]} {
+		    # button adds a helper
+		    $toolAdder configure -state $useSpaceAbility;
+		}
+	    }
+	}
 
 ###############################################################################
 ################################################################################

@@ -218,8 +218,8 @@ update_equation(_, Input_list, [LineIndxStr, Parm_st, New_unit_st], Effect) :-
 	       Input_list),
 	length(EarlyInputs, LineIndx), !,
 	get_term(Parm_st, New_param, Complaint0),
+	text><expand_message(param, [], TrField),
 	(\+ Complaint0 = [], !,
-	    text><expand_message(param, [], TrField),
 	    Complaint2 = bad_syntax(TrField, Complaint0);
 	    get_term(New_unit_st, NewUnits, Complaint1),
 	    (Complaint1 = [], !;
@@ -229,13 +229,19 @@ update_equation(_, Input_list, [LineIndxStr, Parm_st, New_unit_st], Effect) :-
 	(Complaint2 = [], !,
 	    text><expand_message(ip_name, [], TrParam),
 	    (check_param_brackets(TrParam, New_param, Current_unit,
-				  Complaint), !;
+				  Complaint3), !;
 		(NewUnits = '', !,
 		    NewInputUnit = Current_unit;
 		    analyze_array(Current_unit, CurrentBase, CurrentDims),
 		    build_array(NewUnits, CurrentDims, NewInputUnit),
-		    check_unit(CurrentBase, NewUnits, 2, Complaint)));
-	    Complaint = Complaint2),
+		    check_unit(CurrentBase, NewUnits, 2, Complaint3)));
+	    Complaint3 = Complaint2),
+
+	(Complaint3 = [],
+	    member(Grp, [EarlyInputs, LateInputs]),
+	    member(input_link(_,_, New_param, _,_), Grp), !,
+	    Complaint = duplicate_param(TrField, New_param);
+	 Complaint = Complaint3),
 	
 	(Complaint = [], !,
 	    warn_dimless_scaler(NewUnits),

@@ -1480,7 +1480,8 @@ proc DoLocalCmd {win item} {
         tosel {DisplayArea $win}
         tofit {DisplayAll $win}
         zoomout {DoZoom $win .707107}
-	find {FindCaption $win} ;# removed prolog tk_bar_edit_menu('$win');
+	find {prolog tk_bar_edit_menu('$win'); FindCaption $win} \
+	    ;# removing tk_bar_edit_menu('$win') searches only last sm clicked
         findnext {NextCaption $win}
         raiseMRE {RaiseWinMRE $win}
         open_all {OpenAll $win}
@@ -1798,6 +1799,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             $c 1.25" -accelerator "$accKey++"
     AddAccelerator $winid view.zoom "In a bit" "<$accSym-KP_Add>"
     AddAccelerator $winid view.zoom "In a bit" "<$accSym-plus>"
+    AddAccelerator $winid view.zoom "In a bit" "<$accSym-equal>"
     $fm2 add command -label [tr. "To selection"] -command "DisplayArea $c" \
 	-accelerator "$accKey+@"
     AddAccelerator $winid view.zoom "To selection" "<$accSym-at>"

@@ -2288,7 +2288,8 @@ change_ghosthood(Node) :-
         presence_affects(OutLink, Dest),
 	update_default_refs_in_eqns(OutLink, Dest),
 	fail;
-    spread_colour(Node, dims).	    
+    find_base(Node, Base),
+        spread_colour(Base, dims).	    
 
 delete_by_dlg(Target) :-
 	remove_highlights,

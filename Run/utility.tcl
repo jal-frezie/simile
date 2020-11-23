@@ -1111,8 +1111,8 @@ namespace eval ::ttk::combobox {
 
     proc NewPlacePopdown {cb popdown} {
 	set base [winfo toplevel $cb]
-	set x [winfo rootx $cb]
-	set y [winfo rooty $cb]
+	set x [expr {[winfo rootx $cb]-[winfo rootx $base]}]
+	set y [expr {[winfo rooty $cb]-[winfo rooty $base]}]
 	set w [winfo width $cb]
 	set h [winfo height $cb]
 	set postoffset [ttk::style lookup TCombobox -postoffset {} {0 0 0 0}]
@@ -1127,8 +1127,7 @@ namespace eval ::ttk::combobox {
 	    set Y [expr {$y + $h}]
 	}
 	#wm geometry $popdown ${w}x${H}+${x}+${Y}
-	place $popdown -in $base -x [expr {$x-[winfo rootx $base]}] \
-	    -y [expr {$Y-[winfo rooty $base]}] -width $w -height $H
+	place $popdown -in $base -x $x -y $Y -width $w -height $H
     }
 
     proc NewPopdownWindow {cb} {
