@@ -26,7 +26,6 @@ namespace eval ::$keyValue {
     }
 
     proc initialize {winId} {
-	puts [info level 0]
         global tcl_platform iconImages
 	variable chop
         

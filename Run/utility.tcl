@@ -801,11 +801,16 @@ proc LoadIconImages {} {
 	set iconImages($icon) \
 	    [image create photo -file "../Images/Icons/dialog-$icon.png"]
     }
+    foreach fn {play} {
+	set iconImages($fn) \
+	    [image create photo -file "../Images/Control/${fn}.gif"]
+    }
     foreach fn {tick cross function} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
     }
-    foreach fn {display graph plotxy table slider multi new open save edit reel noreel text zap} {
+    foreach fn {display graph plotxy table slider multi new open save edit reel noreel text zap
+		drop rerun} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }

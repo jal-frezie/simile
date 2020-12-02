@@ -124,6 +124,7 @@ proc DIYMakeFrames {windowId} {
     bind $canId <Configure> [list $canId itemconfigure $sf -width %w]
     bind $canId.frame <Configure> \
 	[list $canId configure -scrollregion {0 0 %w %h}]
+    # pack [frame $canId.frame.body] -fill x -expand 1
     return $canId.frame
 }
 
@@ -189,20 +190,14 @@ proc AddEntry {winId topNode node mustShow notInput} {
     set dimList [MakeDimsLegible $nodeDims \
 		     [GetCompProperty $topNode Type $node]]
     set topFrame $winId.c.canvas.frame
-    set slot [frame [AddSubFrames $topNode $topNode $topFrame $levels \
-			 fileparams 0]]
+    set slot [AddSubFrames $topNode $topNode $topFrame $levels \
+		  fileparams 0]
     set holder [winfo parent $slot]
-# holder always contains header frame, which is packed at top
-    foreach fellow [pack slaves $holder] {
-	if {[string compare -nocase $fellow $slot]<0} {
-	    break
-	}
-    }
+
     set lbg [$holder.head cget -bg]
+    set colStyle style$holder
     $slot configure -bg $lbg
 
-    pack $slot -before $fellow -side bottom -fill x -expand on
-    raise $slot $fellow ;# for keyboard traversal
     pack [label $slot.caption -text [lindex $levels end] -foreground red \
 	      -background $lbg] -side left
 #    pack [label $slot.l2 -text ($dimList) -fg red] -side left
@@ -225,13 +220,13 @@ proc AddEntry {winId topNode node mustShow notInput} {
     KoreanClick $slot.e 1 {}
     bind $slot.e <Double-1> [list EditValueComment $topFrame $compName]
 
-    ::ttk::button $slot.tick -style style$holder \
+    ::ttk::button $slot.tick -style $colStyle \
 	-image $iconImages(tick) \
 	-command [namespace code [list AcceptData $topNode $compName \
 				      $notInput 1]]
     BindPopup $slot.tick [tr. "Accept these values"]
     FixDisabledImgBug $slot.tick
-    ::ttk::button $slot.cross -style style$holder \
+    ::ttk::button $slot.cross -style $colStyle \
 	-image $iconImages(cross) \
 	-command [namespace code [list RevertData $winId $compName \
 				      $notInput]]
@@ -255,7 +250,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
 	set dlgStyle [lindex {result measure discrete continuous fixed} \
 			  [expr {2*$notInput+$readMany($compName) \
 				 -($compClass eq "EVENT")+2}]]
-	::ttk::button $slot.b -style style$holder -image $iconImages(edit) \
+	::ttk::button $slot.b -style $colStyle -image $iconImages(edit) \
 	    -command [namespace code [list GetFromTable $winId $topNode \
 					  $compName $trans $dlgStyle]]
 	BindPopup $slot.b [tr. "Get values from file"]
@@ -375,28 +370,34 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
     global msgs iconImages
     set level [lindex $hierarchy $pt]
     set nextPt [expr $pt+1]
-    if {[llength $hierarchy]<=$nextPt} {
-        return $parent.box$level
+    set leaf [expr {[llength $hierarchy]<=$nextPt}]
+    if {$leaf} {
+        set nextLevel $parent.box$level
     } else {
         set nextLevel $parent.frame$level
-        if {![winfo exists $nextLevel]} {
+    }
+    if {![winfo exists $nextLevel]} {
 #            pack [ttk::labelframe $nextLevel -borderwidth 2 -relief sunken]
-            frame $nextLevel -bd 2 -relief sunken
-	    if {$pt} {
-		foreach fellow [pack slaves $parent] {
-		    if {[string compare -nocase $fellow $nextLevel]<0} {
-			break
-		    }
+	frame $nextLevel -bd 2 -relief sunken
+	if {$pt} {
+	    pack $nextLevel -in $parent.body -side bottom \
+		-fill x -expand true -padx 2 -pady 2
+	    foreach fellow [pack slaves $parent.body] {
+		if {[string compare -nocase $fellow $nextLevel]<0} {
+		    break
 		}
-# parent always contains header frame, which is packed at top
-		pack $nextLevel -before $fellow -side bottom \
-		    -fill x -expand true -padx 2 -pady 2
-		raise $nextLevel $fellow ;# for keyboard traversal
-	    } else {
-		set level [tr. "TOP LEVEL"]
-		pack $nextLevel -side bottom \
-		    -fill x -expand true -padx 2 -pady 2
 	    }
+	    if {[info exists fellow]} {
+		pack $nextLevel -before $fellow
+		raise $nextLevel $fellow ;# for keyboard traversal
+	    }
+	} else {
+	    set level [tr. "TOP LEVEL"]
+	    pack $nextLevel -side bottom \
+		-fill x -expand true -padx 2 -pady 2
+	}
+	
+	if {!$leaf} {
 # now create a style for this level which we will use for the buttons
 # to set their background colour to that of the appropriate submodel
 	    set bStyle style$nextLevel
@@ -406,8 +407,13 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	    ttk::style layout $bStyle [ttk::style layout Toolbutton]
 
             pack [frame $nextLevel.head] -fill x -expand true
+            pack [frame $nextLevel.body] -fill x -expand true
             set path /[join [lrange $hierarchy 0 $pt] /]
             # added setting of SimileProject element to store spf path
+	    pack [::ttk::button $nextLevel.head.vis -style $bStyle \
+		      -image $iconImages(drop) \
+		      -command [list Compand $nextLevel]] \
+		-side left
 	    if {[llength $ns]} {
 		pack [::ttk::button $nextLevel.head.save -style $bStyle \
 			  -image $iconImages(save) \
@@ -454,9 +460,24 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 			 active [Gradient $fColour $nextLevel -75] {} $fColour]
 	    }
         }
-        return [AddSubFrames $topNode $clientId $nextLevel $hierarchy \
-		    $ns $nextPt]
     }
+    if {!$leaf} {
+	return [AddSubFrames $topNode $clientId $nextLevel $hierarchy \
+		    $ns $nextPt]
+    } else {
+	return $nextLevel
+    }
+}
+
+proc Compand {level} {
+    if {[winfo viewable $level.body]} {
+	pack forget $level.body
+	set newImg rerun
+    } else {
+	pack $level.body -fill x -expand 1
+	set newImg drop
+    }
+    $level.head.vis configure -image $::iconImages($newImg)
 }
 
 proc ParamLabelPopup {label node capt} {

@@ -60,14 +60,17 @@ namespace eval $keyValue {
         DIYMakeFrames $inpId; Clear $winId
         DIYMakeFrames $outId; ClearOut $winId
         
-        pack [ttk::checkbutton $inpId.gather -text "Use current data as estimates" \
-                -variable ::[namespace current]::useNodes($winId,gathering) \
-                -command [namespace code [list AbleEstimateFields $winId]]]
+        set gathVar ::[namespace current]::useNodes($winId,gathering)
+	pack [ttk::checkbutton $inpId.gather -text "Use current data as estimates" \
+                -variable $gathVar \
+		  -command [namespace code [list AbleEstimateFields $winId]]]
+	set $gathVar 0
 	set scrogVar ::[namespace current]::useNodes($winId,scrogging)
         pack [ttk::checkbutton $outId.show -text "Show these on plots" \
 		  -variable $scrogVar \
 		  -command [namespace code [list LoadMeasurements $winId]]]
-	bind $outId.show <Destroy> [list unset $scrogVar] ;# tidy up
+	set $scrogVar 0
+	# bind $outId.show <Destroy> [list unset $scrogVar] ;# tidy up
         # Actions frame
         # Control buttons
         pack [set lf [labelframe $resId.lbf -text {Parameter estimation}]] \
@@ -96,10 +99,12 @@ namespace eval $keyValue {
         pack [set pf [labelframe $resId.pbf \
                 -text {Predictive analysis:}]] -fill x -padx 4 -pady 4
         pack [frame $pf.pknobs]
+	set predVar [namespace current]::useNodes($winId,preds)
         pack [ttk::checkbutton $pf.pknobs.ck -text Predict \
                 -command [namespace code [list AblePrediction $winId]] \
-                -variable [namespace current]::useNodes($winId,preds)] \
-                -side left
+                -variable $predVar] \
+	    -side left
+	set $predVar 0
         pack [ttk::combobox $pf.pknobs.mm -values {minimum maximum} -state readonly \
                 -textvariable [namespace current]::useNodes($winId,way) \
                 -width 8] -side left
@@ -531,11 +536,11 @@ namespace eval $keyValue {
         set levels [split $title /]
         if {$nest} {
             set f [MakeSubFrames $inpId $inpId.c.canvas.frame $levels {} 0]
-            if {[winfo exists $f]} {
+            if {[llength [winfo children $f]]} {
                 ScrollToSee $inpId.c.canvas $f
                 return $f
             } else {
-                pack [frame $f] -fill x -expand true
+                # pack [frame $f] -fill x -expand true
 		KoreanClick $f 1 {}
                 bind $f <Double-1> [namespace code \
                         [list DoInpDlg $node $f $title]]
@@ -701,7 +706,7 @@ namespace eval $keyValue {
         set outGrpData($node,weight) 1.0
         set f [MakeSubFrames $myNode $outId.c.canvas.frame \
                 [split $title /] [namespace current] 0]
-        if {[winfo exists $f]} {
+        if {[llength [winfo children $f]]} {
             ScrollToSee $outId.c.canvas $f
         } else {
             lappend targetData(needed) $title

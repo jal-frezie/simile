@@ -169,11 +169,11 @@ namespace eval slide139 {
         if {$nest} {
             set f [MakeSubFrames $winId $::topSFrame($winId) \
                     $levels [namespace current] 0]
-            if {[winfo exists $f]} {
+            if {[llength [winfo children $f]]} {
 		ScrollToSee $winId.c.canvas $f
                 return already_up
             } else {
-                pack [frame $f] -fill x -expand true
+                # pack [frame $f] -fill x -expand true
 		set lbg [[winfo parent $f].head cget -bg]
 		set dbg [Gradient $lbg $f 15]
 		set fbg [Gradient $lbg $f -50]

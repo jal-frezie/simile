@@ -126,14 +126,12 @@ class similescript::$newHelperClass {
         set levels [split $title /]
         if {$nest} {
             set f [MakeSubFrames $winId $winId.c.canvas.frame $levels {} 0]
-            if {[winfo exists $f]} {
+            if {[llength [winfo children $f]]} {
                 ScrollToSee $winId.c.canvas $f
                 return $f
-            } else {
-                pack [frame $f] -fill x -expand true
             }
 	    set lbg [[winfo parent $f].head cget -bg]
-	    $f configure -bg $lbg
+	    #$f configure -bg $lbg
         } else {
             set f $winId
 	    set lbg blue
