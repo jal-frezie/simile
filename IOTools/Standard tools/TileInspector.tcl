@@ -359,7 +359,7 @@ namespace eval ::$keyValue {
 				 "Spatial grid display" grid \
 				 "Lollipop diagram" 3d_objects \
 				 "Slider control" slider \
-				 "Multi-layer 2-D display" layers \
+				 "Multi-layer 2-D display" multi \
 				 "3-D Shape Plotter" 3d_objects}
 	if {[catch {set img $hlprIcons($id)}]} {
 	    set img display
