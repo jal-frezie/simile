@@ -956,7 +956,6 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     set startLine [expr {[lsearch {fixed result} $dlgStyle]>-1}]
 # 0 for times, 1 for array indices
     if {!$startLine} {
-	SeparateTimeExtras
         pack [TitleFrame .table.fbuttons.wrapf -text [tr. "Time options: "]] \
                 -padx 4 -pady 4 -expand true -fill x
         set wrapf [GetFrame .table.fbuttons.wrapf]
@@ -978,6 +977,33 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
 	    pack [label $wrapf.wm -text [tr. "Wraparound at:"]]
 	    pack [entry $wrapf.we -width 1 -textvariable table_entry(wrapPt)] \
                 -expand true -fill x
+	    if {[string equal restart [string tolower \
+					   [lindex $table_entry(values) end]]]} {
+		set table_entry(oldWrapPt) [lindex $table_entry(values) end-1]
+		set table_entry(wrapPt) $table_entry(oldWrapPt)
+		set table_entry(values) [lrange $table_entry(values) 0 end-2]
+	    } else {
+		set table_entry(oldWrapPt) {}
+	    }
+        }
+        if {[string equal others [string tolower \
+				      [lindex $table_entry(values) end-1]]]} {
+            set table_entry(oldOthers) \
+		[lindex $table_entry(between_txts) \
+		     [lsearch $table_entry(between_keys) \
+			  [lindex $table_entry(values) end]]]
+            set table_entry(others) $table_entry(oldOthers)
+            set table_entry(values) [lrange $table_entry(values) 0 end-2]
+        } else {
+            set table_entry(oldOthers) {}
+        }
+        if {[string equal interval [string tolower \
+					[lindex $table_entry(values) end-1]]]} {
+            set table_entry(oldUftsi) [lindex $table_entry(values) end]
+	    set table_entry(uftsi) $table_entry(oldUftsi)
+            set table_entry(values) [lrange $table_entry(values) 0 end-2]
+        } else {
+            set table_entry(oldUftsi) {}
         }
     } else {
 	array unset table_entry others
@@ -1130,45 +1156,6 @@ proc equationDoTable {parent mdl tgt dims trans dlgStyle} {
     grab release $t
     PackItUp $t
     grab $parent
-    CombineTimeExtras
-    return $table_entry(done)
-}
-
-proc SeparateTimeExtras {} {
-    global table_entry
-
-    if {[string equal restart [string tolower \
-				   [lindex $table_entry(values) end]]]} {
-	set table_entry(oldWrapPt) [lindex $table_entry(values) end-1]
-	set table_entry(wrapPt) $table_entry(oldWrapPt)
-	set table_entry(values) [lrange $table_entry(values) 0 end-2]
-    } else {
-	set table_entry(oldWrapPt) {}
-    }
-    if {[string equal others [string tolower \
-				  [lindex $table_entry(values) end-1]]]} {
-	set table_entry(oldOthers) \
-	    [lindex $table_entry(between_txts) \
-		 [lsearch $table_entry(between_keys) \
-		      [lindex $table_entry(values) end]]]
-	set table_entry(others) $table_entry(oldOthers)
-	set table_entry(values) [lrange $table_entry(values) 0 end-2]
-    } else {
-	set table_entry(oldOthers) {}
-    }
-    if {[string equal interval [string tolower \
-				    [lindex $table_entry(values) end-1]]]} {
-	set table_entry(oldUftsi) [lindex $table_entry(values) end]
-	set table_entry(uftsi) $table_entry(oldUftsi)
-	set table_entry(values) [lrange $table_entry(values) 0 end-2]
-    } else {
-	set table_entry(oldUftsi) {}
-    }
-}
-
-proc CombineTimeExtras {} {
-    global table_entry
-    
     if {[info exists table_entry(uftsi)] && [llength $table_entry(uftsi)] && \
 	    ![string equal unit $table_entry(uftsi)] && \
 	    ![string equal interval [lindex $table_entry(values) end-1]]} {
@@ -1184,6 +1171,7 @@ proc CombineTimeExtras {} {
                 ![string equal restart [lindex $table_entry(values) end]]} {
         lappend table_entry(values) $table_entry(wrapPt) restart
     }
+    return $table_entry(done)
 }
 
 proc ChooseDatabase {parent title} {

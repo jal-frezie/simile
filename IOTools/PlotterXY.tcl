@@ -437,18 +437,10 @@ namespace eval ::$keyValue {
 	}
 	
 	proc PrepareSaveString {w} {
-	    global ::graphtools::plot
-	    variable ynodes
-	    variable xnodes
-	    
-	    set plot($w,stringInfo) [ListNotes [GetCanvas $w]]
-	    foreach xnode $xnodes($w) ynode $ynodes($w) {
-		set plot($w,Xvars) [GetCaptionPathFromId $xnode]
-		set plot($w,Yvars) [GetCaptionPathFromId $ynode]
-	    }
+	    set ::graphtools::plot($w,stringInfo) [ListNotes [GetCanvas $w]]
 	    UpdateState $w
 	}
-	
+
 	### Draw everything except the actual data points.
 	proc drawGraphpad {w} {
 	    global ::graphtools::plot

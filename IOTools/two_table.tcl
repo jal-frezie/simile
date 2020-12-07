@@ -247,12 +247,9 @@ namespace eval $keyValue {
         foreach {id val} [array get displayFormat $winId,*] {
             lappend winDisplayFormat [string range $id $clip end] $val
         }
-	set paths {}
-	foreach id $displayList($winId,ids) {
-	    lappend paths [GetCaptionPathFromId $id]
-	}
         if {![info exists editMode($winId)]} {
-            SetState $winId [list $paths $orientList($winId) \
+            SetState $winId [list $displayList($winId,paths) \
+				 $orientList($winId) \
 				 $winDisplayFormat $displayUpdate($winId) \
 				 $colWidths($winId) $rowHeights($winId)]
         }

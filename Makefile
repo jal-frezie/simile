@@ -35,9 +35,9 @@ endif
 # Default case: Linux
 TCLDIR = /usr
 TCLREF = $(TCLDIR)
+
 SYSDIR = System
 CFLAGS += $(OPT)
-CPPFLAGS = -static-libstdc++ -static-libgcc
 
 SHAREDLIBPREFX = lib
 MAKEPIC = -fPIC
@@ -246,18 +246,16 @@ $(UNPK): Run/unpacker.c Run/dllcalls.h
 
 # Windows: idiosyncratic stuff allows dynamic linker to work
 # (even with gcc 4.5.0)...static stops exit error in win32/tcl8.6
-# but breaks GPL so try with just CPPFLAGS
 $(EXECDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
-	cd Run; $(GPPCMD) -std=c++11 -DSHARELIB $(CFLAGS) $(CPPFLAGS) \
-		$(MAKEPIC) $(MAKESL) \
+	cd Run; $(GPPCMD) -std=c++11 -DSHARELIB $(CFLAGS) $(MAKEPIC) $(MAKESL) -static \
 		-I. -Wl,--out-implib,lib5d$(ARCHEXTN).a -o $(SHANK) shank.cpp; \
 		mv $(SHANK) ../$(SLDIR); \
 		mv lib5d$(ARCHEXTN).a ../$(RESDIR); cd ..
 
 # Unix: not needed for Linux as it can build at run time
 $(RESDIR)/$(SHANK): Run/shank.cpp Run/dllcalls.h Run/6d.h Run/backend.h
-	cd Run; $(GPPCMD) $(CFLAGS) $(CPPFLAGS) -std=c++11 -I. $(MAKEPIC) \
-		$(MAKESL) -o ../$(SLDIR)/$(SHANK) shank.cpp; cd ..
+	cd Run; $(GPPCMD) $(CFLAGS) -std=c++11 -I. $(MAKEPIC) $(MAKESL) \
+		-o ../$(SLDIR)/$(SHANK) shank.cpp; cd ..
 
 $(SUPP): Run/support.cpp Run/backend.h
 	cd Run; $(GPPCMD) -c -std=c++11 $(CFLAGS) -I. $(MAKEPIC) \

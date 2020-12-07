@@ -333,7 +333,7 @@ int get_array_from_pipe(TSPOUT where, void* what, int count) {
 }
 int get_chars_from_pipe(TSPOUT where, char* what) {
   unsigned char length;
-  get_BOOLEAN_from_pipe(where, &length); // length may be more than 1 byte for longer strs
+  PIPEREAD(where, &length, 1); // length may be more than 1 byte for longer strs
   get_array_from_pipe(where, what, length);
   what[length] = 0; // terminate the string
   // printf("Recvd %s\n", what);

@@ -33,7 +33,7 @@ compile( Language, Parent, DestDir, Action) :-
 	deleted so only to do these checks when needed */
 	asserta(error_free(build)),
 	catch(build_instances(Language, DestDir, Parent, Parent, 1, 
-			      _, Action), Err, 
+			      _,_,_,_, Action), Err, 
 	      (Err = aborted, !; % no further message needed
 		  retractall(error_free(build)),
 % It really as the wrong thing to do to have the help reference as an
@@ -171,20 +171,23 @@ heirarchy of submodels, although this is no longer used as of v5.0. It
 may return one day... */
 
 build_instances(Language, DestDir, Parent, TopNode,
-		Step, KeepParents, Action) :-
+		Step, ChangeNext, LocalFnsUsed, LocalExtLibs, 
+		KeepParents, Action) :-
     build_cloud_position_arrays(Parent),
 	caption_for(Parent, Name),
 	append_atoms([DestDir, '/', Name], CheckDir),
 	time_step_for(Parent, Step, MyStep),
 	build_sub_instances(Language, CheckDir, Parent,
-			    TopNode, MyStep,
-			    KeepDir),
+			    TopNode, MyStep, ChangeTop,
+			    SubFnsUsed, SubExtLibs, KeepDir),
 
-	(setof(Fn, list_user_fns(Parent, Fn), FnsUsed), !;
-	FnsUsed = []),
+	(setof(Fn, list_user_fns(Parent, Fn), LevelFnsUsed), !,
+	    merge_lists(LevelFnsUsed, SubFnsUsed, FnsUsed);
+	FnsUsed = SubFnsUsed),
 	(Parent has_class_refinement external_code of ExtCodSpec,
-	    member(libraries=ExtLibs, ExtCodSpec), !;
-	ExtLibs = []),
+	    member(libraries=LevelExtLibs, ExtCodSpec), !,
+	    merge_lists(LevelExtLibs, SubExtLibs, ExtLibs);
+	ExtLibs = SubExtLibs),
 	/* model can go incomplete then complete again without change
 	 so check all */
 	(setof(Issue, check_level_for_reds(TopNode, Parent, Issue), Issues),
@@ -192,16 +195,20 @@ build_instances(Language, DestDir, Parent, TopNode,
 	    (all(ame_gen, query, [build(Issues), unify(warning), unify(top),
 				  unify([abort]), unify(more)]), fail;
 	    throw(aborted));
-	true),
+	Parent has_model_refinement c_new of 0, !,
+	    ChangeTop = 1,
+	    LocalFnsUsed = [],
+	    LocalExtLibs = [];
+	LocalFnsUsed = FnsUsed,
+	    LocalExtLibs = ExtLibs),
 % what follows should be separate fn
 	(( %Parent has_class_refinement separate of 1;
 	  error_free(build),
 	   backup><is_toplevel(Parent)), !,
 	    /* we need an executable for this level */
 	    (Language = c,
-	     safe_tcl_eval(['NeedNewExec', Parent], ChangeTop),
-	     (ChangeTop = "0" -> OldTgt = 1;
-	      OldTgt = 0), !;
+	        (Parent has_model_refinement c_new of OldTgt;
+		    OldTgt = 1), !;
 	    /* if no c_new look for dll from save file with 1 in name */
 	    OldTgt = 0),
 	    check_directory(CheckDir),
@@ -265,7 +272,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 	     load_executable(Language, CheckDir, Tgt, Parent, 
 			     TopNode, Includes)),
 	    KeepDir = 1;
-	true),
+	ChangeNext = ChangeTop),
 	/* delete dir if empty...*/
 	(\+ KeepDir == 1, !;
 	    KeepParents = 1).
@@ -291,14 +298,15 @@ delete_prog(Base, Extn) :-
 	my_delete_file(FullName).
 	
 build_sub_instances(Language, DestDir, Parent, Node,
-		    Step, KeepDir) :-
+		    Step, ChangeTop, LocalFnsUsed, LocalExtLibs, KeepDir) :-
 	(setof( Submodel, (Parent has_part Submodel,
 			      Submodel has_class submodel,
 			      appears(Submodel)), Submodels), !; 
 	    Submodels = []),
 	all(compile, build_instances, 
 	    [unify(Language), unify(DestDir), build(Submodels),
-	     unify(Node), unify(Step),
+	     unify(Node), unify(Step), unify(ChangeTop),
+	     merge_lists(LocalFnsUsed, []), merge_lists(LocalExtLibs,[]),
 	     unify(KeepDir), unify(none)]).
 
 check_level_for_reds(TopNode, Submodel, Wrinkle) :-

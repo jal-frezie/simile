@@ -12,6 +12,8 @@
 set keyValue TileInspector0
 
 namespace eval ::$keyValue {
+    variable tableframe
+    
     proc identify {} {
         return "Explorer (Tile version)"
     }
@@ -27,6 +29,7 @@ namespace eval ::$keyValue {
 
     proc initialize {winId} {
         global tcl_platform iconImages
+        variable tableframe
 	variable chop
         
         set tableframe $winId.tableframe
@@ -126,12 +129,7 @@ namespace eval ::$keyValue {
                 SQUIRT       {set image $iconImages(squirt)}
                 default      {set image $iconImages(variable)}
             }
-            if {$type eq "VARIABLE"} {
-		switch [GetModelEval $component] {
-		    INPUT {set image $iconImages(input)}
-		    TABLE {set image $iconImages(file)}
-		}
-	    }
+            
             set pathLength [llength $path]
             #ShowMess debug info "$component; $type; path $path;" ok
             if {$pathLength <= 1} {
@@ -163,8 +161,6 @@ namespace eval ::$keyValue {
 #        
 	bind $tableframe.table <Button-1> \
 	    [namespace code "OnElementClick $winId %x %y"]
-	CrossPlatformBind $tableframe.table \
-	    [namespace code "OnElementContext $winId %X %Y %x %y"]
 #	$tableframe.table bindImage <Button-1> \
 #	    [namespace code "OnElementClick $winId"]
 #        $tableframe.table bindText <Button-1> \
@@ -211,82 +207,11 @@ namespace eval ::$keyValue {
 #	return $base/$local
 #    }
 #
-    menu .inspContext -tearoff 0
-    menu .inspContext.param -tearoff 0
-    
-    .inspContext add command -label "View in model diagram"
-    .inspContext add separator
-    .inspContext add command -label "(Helper setup goes here)"
-    .inspContext add separator
-    .inspContext add cascade -menu .inspContext.param -label "Set parameter values"
-    .inspContext.param add radio -variable paramSrc -value table -label "Edit as table"
-    .inspContext.param add radio -variable paramSrc -value column -label "Get from column"
-    .inspContext.param add radio -variable paramSrc -value grid -label "Get from grid/image"
-    
-    proc OnElementContext { winId X Y x y } {
-	set node [$winId.tableframe.table identify row $x $y]
-	if {[regexp ^\(.*\)\\. $node spare hlpr]} {
-	    ::RunEnv::FocusTool $hlpr
-	} else {
-	    # display context menu
-	    .inspContext entryconfigure 0 \
-		-command [namespace code "ShowInModel $winId $node"]
-	    .inspContext.param entryconfigure 0 \
-		-command [namespace code "EditAsTable $winId $node"]
-	    .inspContext post $X $Y
-	}
-    }
-
-    proc ShowInModel {winId node} {
-	global window_info
-	# hardest bit is finding the canvas
-	set topNode [$::helperTable($winId,whichInstance) GetNode]
-	RaiseModelWindow $topNode
-	foreach {topRef someNode} [array get window_info *,top_node] {
-	    if {$someNode eq $topNode} {
-		set canvas [string range $topRef 0 end-9]
-		# check node appears in each canvas
-		if {[GetFromProlog tk_locate('$canvas',$node)] eq {}} continue
-		CanvasSee $canvas $node [expr $window_info($canvas,width)/2] \
-		    [expr $window_info($canvas,height)/2]
-	    }
-	}
-	prolog tk_do_colours($node,seln)
-    }
-    
-    proc EditAsTable {winId node} {
-	global table_entry paramData
-
-	set topNode [$::helperTable($winId,whichInstance) GetNode]
-	set tgt [GetCaptionPathFromId $node]
-	set compName /$topNode$tgt
-	set table_entry(fileName) {}
-	set table_entry(values) $paramData($compName)
-	SeparateTimeExtras
-	set startLine [expr {[GetModelEval $node] ne "INPUT"}]
-	set dims [lrange [GetCompProperty $topNode Dims $node] 0 end-1]
-	set trans [GetCompProperty $topNode Trans $node]
-	if {!$startLine} {
-	    set dims [linsert $dims 0 TIME]
-	    set trans [linsert $trans 0 {}]
-	}
-	EditTableData $startLine $tgt $dims $trans
-	CombineTimeExtras
-	set paramData($compName) $table_entry(values)
-	set ::whichParamsAffected($compName) 1
-	AcceptData $topNode $compName $startLine -1
-	# do something to metadata too
-    }
-
     proc OnElementClick { winId x y } {
 	variable chop
 	set node [$winId.tableframe.table identify row $x $y]
-	if {[regexp ^\(.*\)\\. $node spare hlpr]} {
-	    ::RunEnv::FocusTool $hlpr
-	} else {
-	    ProdFromHelper $winId $node \
-		[string range [GetCaptionPathFromId $node] $chop end]
-	}
+	ProdFromHelper $winId $node \
+	    [string range [GetCaptionPathFromId $node] $chop end]
     }
     
     proc DoInspPopup {winId X Y x y} {
@@ -334,8 +259,7 @@ namespace eval ::$keyValue {
     
     proc OpenLevel {level} {
         # only works for level = 0
-	set tableframe $winId.tableframe
-	
+        variable tableframe
         $tableframe.table closetree node00001; # recursively close all nodes
         set nodes node00001; # root or Desktop
         for {set i 0} {$i <= $level} {incr i} {
@@ -345,27 +269,5 @@ namespace eval ::$keyValue {
             }
         }
     }
-
-    proc AddHelperLeaf {winId node hlpr} {
-	set tableframe $winId.tableframe
-	if {[$tableframe.table exists $hlpr.$node]} return
-	set id [[$hlpr info class]::Identify]
-	array set hlprIcons {Plotter graph \
-				 "XY Plotter" plotxy \
-				 "Polygon diagram" polys \
-				 "Data table" table \
-				 "Data logger" table \
-				 "Spatial grid display" grid \
-				 "Lollipop diagram" 3d_objects \
-				 "Slider control" slider \
-				 "Multi-layer 2-D display" multi \
-				 "3-D Shape Plotter" 3d_objects}
-	if {[catch {set img $hlprIcons($id)}]} {
-	    set img display
-	}
-	set ptags [$tableframe.table item $node -tags]
-	$tableframe.table insert $node end -id $hlpr.$node \
-	    -text $id -image $::iconImages($img) -tag "$ptags disp($hlpr)"
-	$tableframe.table item $node -open 1
-    }
+    
 }; # end namespace

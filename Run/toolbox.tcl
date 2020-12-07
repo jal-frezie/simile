@@ -235,30 +235,25 @@ proc AttackGlobalVariable {array elt val} {
 # image create photo open -file "../Images/mailbox.gif"
 # Actually I think not, it seems to prevent the window menu appearing as well
 
-proc NeedNewExec {topNode} {
-    # for benefit of Prolog
-    return $::runState($topNode,updated)
-}
-
 # Copy any current executables to names where they will be saved; delete 
 # previous files in these posns as they are obsolete, and only copies
-proc ShiftDll {Point Top Model Rep} {
-    set base [file join $Top $Point]
+proc ShiftDll {Point Top Loc Rep} {
+    if {[llength $Loc]} {
+        set AddLoc /$Loc
+    } else {
+        set AddLoc $Loc
+    }
+    
+    set base $Top/$Point$AddLoc
     file mkdir $base
     if {[llength $Rep]} {
         set prefx $base/model
-    # ignore specified rep just use highest numbered c++
-	foreach src [glob -nocomplain ${prefx}*.cpp] {
-	    set ver [string range $src [string length $prefx] end-4]
-	    if {$ver>$Rep} {set Rep $ver}
-	}
 	foreach runnableExtn {.cpp .tcl .dll .so .dylib} {
 	    set tgt ${prefx}$runnableExtn
 	    if {[file exists $tgt]} {
 		file delete -force $tgt
 	    }
-	    if {$Rep && [file exists ${prefx}${Rep}$runnableExtn] && \
-		    ([HaveValues $Model] || !$::runState($Model,updated))} {
+	    if {$Rep && [file exists ${prefx}${Rep}$runnableExtn]} {
 		file copy -force ${prefx}${Rep}$runnableExtn $tgt
 	    }
 	}
@@ -1407,9 +1402,10 @@ proc LoadFile {topNode tree tgt} {
                         }
 			SaveMimeBit $boddledy $tree$oldPath $Date
 		    } "Simile helper configuration file" {
-			SaveMimeBit $boddledy $tree$oldPath $Date
-		    } "Simile parameter file" {
-			SaveMimeBit $boddledy $tree$oldPath $Date
+# as of 5.6 these are no longer included in the .sml file for reasons of
+# consistency, so this is an earlier saved model. Attempt to copy the .shf
+# relative to saved model file so it will open.
+			SaveMimeBit $boddledy [file dirname $tgt]$oldPath $Date
                     } default {
 			# If no auth code, do not keep executable, but
 			# dont crash either -- could be innocent
@@ -1453,7 +1449,7 @@ proc GetParts {top tree noPkg} {
     global projectInfo
 
     set mimes {}
-    set mdlExts pl,cnv,svg,spj,shf,spf,cpp,so,dylib,dll,tcl
+    set mdlExts pl,cnv,svg,spj,cpp,so,dylib,dll,tcl
     foreach subtree [glob -nocomplain \
 			 ${tree}/{*.{png,gif,jpeg,o},model.{$mdlExts}}] {
         #ShowMess debug info "GetParts subtree $subtree" ok
@@ -1498,14 +1494,15 @@ proc GetParts {top tree noPkg} {
                     set Description "Simile diagram"
                     set style attachment
                 }
-                *.spf {
-# .spfs contain relative paths so are referenced, not moved into the tree...
-# will have to somehow make them relative to saved model
+                #*.spf {
+# .spfs contain relative paths so are referenced, not moved into the tree
+# (note exra hashes because match string cannot be commented out)
                     set PartType "application/x-simile"
                     set Description "Simile parameter file"
                     set style attachment
                 }
-                *.shf {
+                #*.shf {
+# reference .shfs as well, for consistency
                     set PartType "application/x-simile"
                     set Description "Simile helper configuration file"
                     set style attachment
@@ -1747,14 +1744,10 @@ proc ExecQuery {specifics icon helpRef parent opts} {
 }
 
 proc OpenAll {win} {
-    global window_info
-    
     MenuSelect $win file open
-    if {$window_info($win,is_top_level)} {
-	set ::runState($window_info($win,top_node),updated) 0
-	if {![info exists ::SimileAutoObjLoaded]} {
-	    RunIfPackage
-	}
+    if {![info exists ::SimileAutoObjLoaded] && \
+	    $::window_info($win,is_top_level)} {
+	RunIfPackage
     }
 }
 
@@ -1784,46 +1777,34 @@ proc OpenProjectFile {path} {
     unset loadingProject
     if {[info exists SimileProject(modelRunning)]} {
 #puts "win $win topNode ÃÂ£topNode"
-	set defaultSPF [file join $path model.spf]
 	if {[info exists SimileProject(spfList)]} {
-	# pre-v7 model with associated parameter files
         # file params cannot be loaded until model is ready, so set this
         # variable which will be read before opening the dialogue
 #puts "retrieved SimileProject(spfList) $SimileProject(spfList)"
 	    foreach {smPath spfRelPath} $SimileProject(spfList) {
 		set ::projectParams($smPath) [file join $baseDir $spfRelPath]
 	    }
-	} elseif {[file exists $defaultSPF]} {
-	    set ::projectParams({}) $defaultSPF
 	}
 	set tw [FindNodeTopWin $topNode]
 	# if undo enabled, a log has been applied, so do not rerun!
 	if {[$tw.toolSlot.navbar.undo cget -state] eq "normal"} return
 
-	set runState($topNode,updated) [expr {$SimileProject(modelRunning)-1}]
-	if {$SimileProject(running_c)} {
+        if {$SimileProject(running_c)} {
             MenuSelect $tw.canvas code run_c
         } else  {
             MenuSelect $tw.canvas code run_tcl
         }
 	update
-        if {$runState($topNode,modelRunning)<3} return
-	set defaultSHF [file join $path model.shf]
-	set command [ChooseText \
-			 [PrefValue custom(helperManager) helperManager] \
-			 ::RunEnv::LoadSHF CreateView]
-	if {[file exists $defaultSHF]} {
-	    $command $topNode $defaultSHF
-	    return ;# model saved by v7 ignore legacy stuff
-	}
-	if {[info exists SimileProject(nameOfHelperStateFile)]} {
-	# pre-v7 model with associated helper state file
+        if {$runState($topNode,modelRunning)>=3 && \
+		[info exists SimileProject(nameOfHelperStateFile)]} {
 	    set helperTable($topNode,stateName) \
 		[file normalize [file join $baseDir \
 				     $SimileProject(nameOfHelperStateFile)]]
 	    RecordPathChoice .shf $helperTable($topNode,stateName) $topNode
+            set command [ChooseText \
+			     [PrefValue custom(helperManager) helperManager] \
+			     ::RunEnv::LoadSHF CreateView]
             $command $topNode $helperTable($topNode,stateName)
-	    set helperTable($topNode,keepSetup) 1 ;# ensure bundle saved
         }
     }
 }
@@ -1838,61 +1819,47 @@ proc SaveProjectFile {topNode path tgt} {
 #    set topCapt [GetExecTitle $topNode]
     
     # is it builtC|builtTcl|notbuilt
-    if {[HaveValues $topNode]} {
-        set SimileProject(modelRunning) [expr {1+$runState($topNode,updated)}]
+    if {[HaveValues $topNode] && !$runState($topNode,updated)} {
+        set SimileProject(modelRunning) 1
 	set SimileProject(running_c) [string equal c $runState($topNode,lang)]
     }
-    # stateName referred to separate .shf -- bundle it instead
     if {[info exists helperTable($topNode,keepSetup)] && \
 	    $helperTable($topNode,keepSetup)} {
-	set helperTable($topNode,stateName) [file join $path model.shf]
-	::RunEnv::SaveView 0
-	set SimileProject(nameOfHelperStateFile) model.shf
-	# this should make v6x find it OK
-
-# 	set choices {lose_shf update_shf}
-# 	if {[info exists helperTable($topNode,stateName)]} {
-# 	    set choices [linsert $choices 0 keep_shf]
-# 	}
-# 	set helperAction [Query save_helper_setup question top {} $choices]
-# 	switch $helperAction {
-# 	    update_shf {
-# 		::RunEnv::SaveView 0
-# 	    } lose_shf {
-# 		array unset helperTable $topNode,stateName
-# 	    }
-# 	}
+	set choices {lose_shf update_shf}
+	if {[info exists helperTable($topNode,stateName)]} {
+	    set choices [linsert $choices 0 keep_shf]
+	}
+	set helperAction [Query save_helper_setup question top {} $choices]
+	switch $helperAction {
+	    update_shf {
+		::RunEnv::SaveView 0
+	    } lose_shf {
+		array unset helperTable $topNode,stateName
+	    }
+	}
     }
-#     if {[info exists helperTable($topNode,stateName)]} {
+    if {[info exists helperTable($topNode,stateName)]} {
 # old method: include helper state in saved model, just because we could...
 #	if {![string equal $path \
 #		  [file dirname $helperTable($topNode,stateName)]]} {
 #	    file copy -force $helperTable($topNode,stateName) $path
 #	}
-#         set SimileProject(nameOfHelperStateFile) \
-# 	    [Relativize $tgt $helperTable($topNode,stateName)]
-#     }
-    
-# v6 included links to all saved spfs and attempted to reload. v7 abandons
-# such fripperies and just creates a top-level .spf which gets put in the mime.
-#    set spfList [array get ::SimileProject fileparam,/${topNode}/*]
-#    foreach {varName spfPath} $spfList {
-#	set smPart [Submodelize $varName]
-#	set relPath [Relativize $tgt $spfPath]
-#	set pmData "Reference to parameter metafile $relPath"
-#	if {[llength $smPart]} {
-#	    append pmData " for [string range $smPart 1 end]"
-#	}
-#	lappend projectInfo $pmData
-#	lappend SimileProject(spfList) $smPart $relPath
-#    }
-
-# start by always writing it, later add check if version in tmp has been updated
-    if {[HaveValues $topNode]} {
-	set ::preSelect [file join $path model.spf]
-	fileparams::Save $topNode /$topNode
+        set SimileProject(nameOfHelperStateFile) \
+	    [Relativize $tgt $helperTable($topNode,stateName)]
     }
-
+    # shf file name loaded
+    
+    set spfList [array get ::SimileProject fileparam,/${topNode}/*]
+    foreach {varName spfPath} $spfList {
+	set smPart [Submodelize $varName]
+	set relPath [Relativize $tgt $spfPath]
+	set pmData "Reference to parameter metafile $relPath"
+	if {[llength $smPart]} {
+	    append pmData " for [string range $smPart 1 end]"
+	}
+	lappend projectInfo $pmData
+	lappend SimileProject(spfList) $smPart $relPath
+    }
     set projectF [NetOpen $ProjectFile w]
     fconfigure $projectF -encoding utf-8
     set statLine [array get SimileProject]
