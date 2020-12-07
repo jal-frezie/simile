@@ -13,29 +13,8 @@ proc FileParamDialogue {topNode topWin mustShow} {
     set allNodes [GetCompProperty $topNode Objects]
     # first check for any parameter values that are no longer needed
     # do it now to shake out errors before opening window
-    set ::bermudaTriangle {}
-    foreach curVal [array names paramData /$topNode/*] {
-        if {[llength $paramData($curVal)]} {
-	    set shortVal [TrimDTFromPath $curVal]
-            set hitsPath [lindex [ExistCheck $topNode $shortVal /$topNode 0 \
-				      "current database"] 0]
-            switch $hitsPath {
-                break {
-		    return 0
-                } continue {
-                    unset paramData($curVal)
-                } default {
-		    if {![string equal $shortVal $hitsPath]} {
-			set newPath /$topNode$hitsPath
-			set paramData($newPath) $paramData($curVal)
-			unset paramData($curVal)
-		    }
-		}
-            }
-        } else {
-	    unset paramData($curVal)
-	}
-    }
+    AlignParamsToModel $topNode
+    
     set t [PutItThere .fpdialogue $topWin]
     wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
     wm title $t [format [tr. {File parameters for "%1$s"}] $topCapt]
@@ -80,6 +59,32 @@ proc FileParamDialogue {topNode topWin mustShow} {
     array unset widgetNames
     PackItUp $t
     return $paramData(done)
+}
+
+proc AlignParamsToModel {topNode} {
+    set ::bermudaTriangle {}
+    foreach curVal [array names paramData /$topNode/*] {
+        if {[llength $paramData($curVal)]} {
+	    set shortVal [TrimDTFromPath $curVal]
+            set hitsPath [lindex [ExistCheck $topNode $shortVal /$topNode 0 \
+				      "current database"] 0]
+            switch $hitsPath {
+                break {
+		    return 0
+                } continue {
+                    unset paramData($curVal)
+                } default {
+		    if {![string equal $shortVal $hitsPath]} {
+			set newPath /$topNode$hitsPath
+			set paramData($newPath) $paramData($curVal)
+			unset paramData($curVal)
+		    }
+		}
+            }
+        } else {
+	    unset paramData($curVal)
+	}
+    }
 }
 
 # ScrolledWindow and ScrollableFrame allow any widget to be scrolled,
@@ -912,9 +917,10 @@ namespace eval fileparams {
 		append genericAVs { } \
 		    comment=[Entitize $msgs(comment_$compName)]
 	    }
-	    if {![string length [$outWidgets($compName).e get]]} {
+#	    if {![string length [$outWidgets($compName).e get]]} {
 # visible entry is empty, probably cleared, so skip writing
-	    } elseif {[DataInScenario $compName]} {
+#	    } else (removed as the dialogue will no longer exist)
+	    if {[DataInScenario $compName]} {
 		set type [GetCompProperty $topNode Type $nodeId]
 		puts -nonewline $pStr \
 		    "$indent<byte_array $genericAVs type=[Entitize $type]"

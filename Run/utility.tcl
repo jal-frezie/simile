@@ -809,10 +809,14 @@ proc LoadIconImages {} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
     }
-    foreach fn {graph table new open save edit reel noreel text zap \
+    foreach fn {display graph plotxy table slider multi new open save edit reel noreel text zap
 		drop rerun} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
+    }
+    foreach fn {3d_objects} {
+	set iconImages($fn) \
+	    [image create photo -file "../Images/Toolbar/${fn}.png"]
     }
     # images for fake ttk radio/check buttons in menu entries --
     # real ones are too theme-dependent to emulate
@@ -821,7 +825,7 @@ proc LoadIconImages {} {
 #         set iconImages($fn) [image create photo]
 # 	$iconImages($fn) copy $rawImg -zoom $growth
     # }
-    foreach fn {submodel compartment flow variable condition \
+    foreach fn {submodel compartment flow variable input file condition \
 		    creation reproduction immigration loss alarm} {
 	$rawImg read "../Images/Toolbar/${fn}.gif" -shrink
         set iconImages($fn) [image create photo]

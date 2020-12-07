@@ -1213,8 +1213,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
 }
 
 void ExecutingModel::RepeatReset(double init_time) {
-  if (varParamArrayBase)
-    varParamArrayBase->ResetTimeSeries(init_time, 0);
+  varParamArrayBase->ResetTimeSeries(init_time, 0);
 }
 
 excpData* ExecutingModel::ExecuteInstance(int how_int, double start, 

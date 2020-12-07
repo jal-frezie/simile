@@ -19,7 +19,7 @@ tk_code(Model, CompOrBuild, _Tgt) :-
 	    IdentStr = ".cpp"),
 	name(Ident, IdentStr),
 	menu><get_default_export_name(Model, IdentStr, DefN),
-	get_program_file(DefN, Model, Tgt),
+	forms><get_program_file(DefN, Model, Tgt),
 	\+ Tgt = '', % cancelled
 	use_temp_dir(Temp),
 	find_all_comps(Base, Model),
