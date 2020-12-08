@@ -1099,12 +1099,10 @@ write_eqn_term(Submodel, Entry, MinMax, InFlows, OutFlows) :-
 	find_all_comps(Submodel, Component),
 	(find_type(Component, function),
 	    implicit_function(VisNode, Component),
-	    pick_equation(VisNode, Eqn),
-	    \+ Eqn = ''; 
+	    eqn_for(Component, _Eqn); 
 	find_type(Component, variable),
 	    VisNode = Component,
-	    (is_parameter(Component, 2), Eqn = 'Fixed parameter';
-		is_parameter(Component, 1), Eqn = 'Variable parameter')),
+	    \+ is_parameter(Component, 0)),
 	\+ is_ghost(VisNode),
 	find_type(VisNode, CompType),
 	caption_for(VisNode, Dest),
@@ -1122,9 +1120,12 @@ write_eqn_term(Submodel, Entry, MinMax, InFlows, OutFlows) :-
 %		Entry = (where((CompType><Dest=Eqn), [null]))); % Bob's change
 %	(PPairs = [_ | _],
 %		Entry = (where((CompType><Dest=Eqn), PPairs)))),
-	event><units_for(Component, UnitStr),
-	sicstus_format_to_chars("~w (~s)", [Eqn, UnitStr], EqnWUStr),
-	name(EqnWU, EqnWUStr),
+	%event><units_for(Component, UnitStr),
+	%sicstus_format_to_chars("~w (~s)", [Eqn, UnitStr], EqnWUStr),
+	%name(EqnWU, EqnWUStr),
+	event><get_info(Component, context, DescAtm),
+	append_atoms(Dest, Tail, DescAtm),
+	append_atoms(' . ', EqnWU, Tail),
 	Entry = where((CompType><Dest=EqnWU), VisNode),
 	make_min_max_line(Component, MinMax).
 

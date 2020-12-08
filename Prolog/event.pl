@@ -122,9 +122,10 @@ get_info(Comp, context, DescAtm) :-
 	    name(Capt, CaptStr),
 	    append(CaptStr, " . ", Part1)),
 
-	find_node_with_data(Comp, _, Fn),
+	find_node_with_data(Comp, Vis, Fn),
 	(LType = submodel,
-	    image><quick_file(Comp, Middle);
+	 image><quick_file(Comp, Middle);
+	 find_type(Fn, function), % in case its a parameter
 	    eqn_for(Fn, MiddleAtm),
 	    name(MiddleAtm, Mid0),
 	    ((LType = event, is_parameter(Comp, 1)) -> % a limit event
@@ -137,6 +138,8 @@ get_info(Comp, context, DescAtm) :-
 		Middle = Mid0);
 	ghost_link(Comp, _,_),
 	    Middle = "ghost link";
+	is_parameter(Comp, 2), Middle = "Fixed parameter";
+	is_parameter(Comp, 1), Middle = "Variable parameter";
 	name(LType, Middle)), !,
 
 	(units_for(Comp, Suffix0), !;
@@ -150,10 +153,10 @@ get_info(Comp, context, DescAtm) :-
 	 Suffix1 = Suffix0),
 	% Wid shows_model Context, (for paths relative to window bkgnd)
 	find_all_comps(Context, Comp), % (for paths relative to component)
-	(setof(Dest, m_update><connects(Comp, Source, Dest), DestList), !,
+	(setof(Dest, m_update><connects(Vis, Source, Dest), DestList), !,
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
-	    (\+ find_type(Source, cloud), !,
+	    (\+ find_type(Source, cloud), !, wake,
 		abs_path_name(Source, Context, SourceLoc), !,
 		sicstus_format_to_chars("from ~a", [SourceLoc], Suffix2);
 	      Suffix2 = []),
