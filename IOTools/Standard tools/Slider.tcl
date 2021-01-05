@@ -169,7 +169,7 @@ namespace eval slide139 {
         if {$nest} {
             set f [MakeSubFrames $winId $::topSFrame($winId) \
                     $levels [namespace current] 0]
-            if {[llength [winfo children $f]]} {
+            if {[llength [winfo children $f]]>1} { # new one will have tree
 		ScrollToSee $winId.c.canvas $f
                 return already_up
             } else {

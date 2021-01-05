@@ -809,12 +809,12 @@ proc LoadIconImages {} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
     }
-    foreach fn {display graph plotxy table slider multi new open save edit reel noreel text zap
+    foreach fn {display graph grid plotxy table slider multi new open save edit reel noreel text zap
 		drop rerun} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
-    foreach fn {3d_objects} {
+    foreach fn {3d_objects flask caselist compfact permut} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.png"]
     }

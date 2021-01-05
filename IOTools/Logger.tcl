@@ -30,7 +30,8 @@ class similescript::$newHelperClass {
 	set useNodes(logged) {}
         set frameZone [DIYMakeFrames $winId]
 	set f [MakeSubFrames $winId $frameZone {{} {}} {} 0]
-	set f [join [lrange [split $f .] 0 end-1] .] ;# remove last level
+	#	set f [join [lrange [split $f .] 0 end-1] .]
+	# remove last level not needed as null leaf no longer made
 	pack [::ttk::button $f.head.save -image $::iconImages(save) \
 		  -command [code $this SetSaveFile]] \
 	    -before $f.head.label -side right
@@ -126,7 +127,7 @@ class similescript::$newHelperClass {
         set levels [split $title /]
         if {$nest} {
             set f [MakeSubFrames $winId $winId.c.canvas.frame $levels {} 0]
-            if {[llength [winfo children $f]]} {
+            if {[llength [winfo children $f]]>1} { # new one will have tree
                 ScrollToSee $winId.c.canvas $f
                 return $f
             }

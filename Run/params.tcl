@@ -378,19 +378,27 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
     }
     if {![winfo exists $nextLevel]} {
 #            pack [ttk::labelframe $nextLevel -borderwidth 2 -relief sunken]
-	frame $nextLevel -bd 2 -relief sunken
+	frame $nextLevel -bd 1 -relief sunken
 	if {$pt} {
-	    pack $nextLevel -in $parent.body -side bottom \
+	    pack $nextLevel -in $parent.body \
 		-fill x -expand true -padx 2 -pady 2
-	    foreach fellow [pack slaves $parent.body] {
-		if {[string compare -nocase $fellow $nextLevel]<0} {
+	    pack [canvas $nextLevel.tree -width 16p -height 1p \
+		      -bg [$parent cget -bg]] -side left -fill y
+	    $nextLevel.tree create line 8p 0p 8p 8p
+	    $nextLevel.tree create line 8p 8p 16p 8p
+	    foreach fellow [lrange [pack slaves $parent.body] 0 end-1] {
+		if {[string compare -nocase $fellow $nextLevel]>0} {
+		    set belowMe $fellow
 		    break
 		}
 	    }
-	    if {[info exists fellow]} {
-		pack $nextLevel -before $fellow
-		raise $nextLevel $fellow ;# for keyboard traversal
-	    }
+	    if {[info exists belowMe]} {
+		pack $nextLevel -before $belowMe
+		raise $nextLevel $belowMe ;# for keyboard traversal
+		$nextLevel.tree coords 1 8p 0p 8p 10000p
+	    } elseif {[info exists fellow]} {
+		$fellow.tree coords 1 8p 0p 8p 10000p
+	    }	    
 	} else {
 	    set level [tr. "TOP LEVEL"]
 	    pack $nextLevel -side bottom \
@@ -408,12 +416,11 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 
             pack [frame $nextLevel.head] -fill x -expand true
             pack [frame $nextLevel.body] -fill x -expand true
-            set path /[join [lrange $hierarchy 0 $pt] /]
-            # added setting of SimileProject element to store spf path
 	    pack [::ttk::button $nextLevel.head.vis -style $bStyle \
 		      -image $iconImages(drop) \
-		      -command [list Compand $nextLevel]] \
-		-side left
+		      -command [list Compand $nextLevel]] -side left
+            set path /[join [lrange $hierarchy 0 $pt] /]
+            # added setting of SimileProject element to store spf path
 	    if {[llength $ns]} {
 		pack [::ttk::button $nextLevel.head.save -style $bStyle \
 			  -image $iconImages(save) \
@@ -442,6 +449,10 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		lower $nextLevel.head.clear
             }
             pack [label $nextLevel.head.label -text $level:]
+	    foreach part {head head.vis head.label} {
+		bindtags $nextLevel.$part \
+		    [linsert [bindtags $nextLevel.$part] 0 $nextLevel]
+	    }
 #	    $nextLevel configure -text $level: -labelanchor n
 
 #set bg colour from submodel: rejected because not all widgets can have their
@@ -453,6 +464,9 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	    set fColour [GetFromProlog tk_get_info($node,colour)]
 	    if {[lsearch {white clear} $fColour]<0} {
 		$nextLevel configure -bg $fColour
+		if {$pt} {
+		    $nextLevel.tree configure -bg $fColour
+		}
 		$nextLevel.head configure -bg $fColour
 		$nextLevel.head.label configure -bg $fColour
 		ttk::style map $bStyle -background \
@@ -461,7 +475,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	    }
         }
     }
-    if {!$leaf} {
+    if {!$leaf && [lindex $hierarchy $nextPt] ne {}} {
 	return [AddSubFrames $topNode $clientId $nextLevel $hierarchy \
 		    $ns $nextPt]
     } else {
