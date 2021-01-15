@@ -710,7 +710,7 @@ namespace eval $keyValue {
             ScrollToSee $outId.c.canvas $f
         } else {
             lappend targetData(needed) $title
-            set mess [AddEntry $outId $myNode $node 1 -1]
+            set mess [AddEntry $outId $myNode $node {} 1 -1]
 	    if {[string length $mess]} {
 		$useNodes($winId,output).intro configure -text $mess
 		return {}

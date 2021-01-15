@@ -28,7 +28,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
         set notInput [FirstIndexCheck $topNode $node]
         if {$notInput != -1} {
 	    set ::helperTable($topNode,paramAble) normal
-            AddEntry $t $topNode $node $mustShow $notInput
+            AddEntry $t $topNode $node [list /$topNode] $mustShow $notInput
         }
     }
     if {$mustShow || [llength $paramData(needed)]} {
@@ -142,7 +142,8 @@ proc ScrollToSee {canvas w} {
 #puts "current $current goesTo $goesTo cbox $cbox height $height move $move start $start"
 }
 
-proc AddEntry {winId topNode node mustShow notInput} {
+proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
+    #puts [info level 0]
     global iconImages msgs paramMetadata readMany
     if {$notInput==-1} {
 	set dataLocn targetData
@@ -155,18 +156,18 @@ proc AddEntry {winId topNode node mustShow notInput} {
     upvar \#0 $widgetLocn outNames
 
     set compName [GetCompProperty $topNode Caption $node]
-    set levels [split $compName /]
-    if {$notInput>-1} {
-	set compName /$topNode$compName
-	set levels [concat $topNode [lrange $levels 1 end]]
-	set readMany($compName) [expr {$notInput==0}]
-    } ;# otherwise it has been set by the PEST interface GUI
+    if {$caseId ne {}} {
+	append compName ", " $caseId
+    }
+    set levels [concat $exptLevels [lrange [split $compName /] 1 end]]
+    set compName [join $exptLevels /]$compName
+
+    set readMany($compName) [expr {![FirstIndexCheck $topNode $node]}]
     set compClass [GetCompProperty $topNode Class $node]
     if {$compClass eq "SUBMODEL"} {
         set suppliedData($compName) {}
         return
     }
-	
 #ShowMess debug info "Creating compname $compName" ok
     # bit of voodoo...get table relating numerical indices of node to enumerated
     # types (from model) and use to translate array bounds. Do this first because
@@ -190,8 +191,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
     set dimList [MakeDimsLegible $nodeDims \
 		     [GetCompProperty $topNode Type $node]]
     set topFrame $winId.c.canvas.frame
-    set slot [AddSubFrames $topNode $topNode $topFrame $levels \
-		  fileparams 0]
+    set slot [AddSubFrames $topNode $topNode $topFrame $levels fileparams 0]
     set holder [winfo parent $slot]
 
     set lbg [$holder.head cget -bg]

@@ -462,7 +462,7 @@ proc c_getvalue {topNode node action} {
 #}
 
 proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
-#puts  "Go! tgt $tgt subs $subs trans $trans dims $dims list $list cpp $useCppArray"
+    #puts [info level 0]
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
     # ... string match stops cleanly at end of list
