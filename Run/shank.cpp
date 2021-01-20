@@ -1154,8 +1154,10 @@ void fill_raw_values(InstanceOfModel* smHandle, int tree[],
 class ModelServer;
 
 // Implementation of class ExecutingModel
-ExecutingModel::ExecutingModel(ModelServer* newModelSpec, void* yourRef) {
+ExecutingModel::ExecutingModel(ModelServer* newModelSpec,
+			       ExecutingGroup* newParent, void* yourRef) {
     modelSpec = newModelSpec;
+    parent = newParent;
     clientRef = yourRef;
     loadedInst = modelSpec->createmodel(this);
     //sprintf(globMess, "This is XM %lx of M %lx being created with IOM %lx", 
@@ -1213,7 +1215,8 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
 }
 
 void ExecutingModel::RepeatReset(double init_time) {
-  varParamArrayBase->ResetTimeSeries(init_time, 0);
+  if (varParamArrayBase)
+    varParamArrayBase->ResetTimeSeries(init_time, 0);
 }
 
 excpData* ExecutingModel::ExecuteInstance(int how_int, double start, 
@@ -1638,14 +1641,115 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId, BOOLEAN up,
     if (modelSpec->member_param_item(&paramArrayItem, nodeLine->path))
       // found a parameter inside this submodel, get record count
       paramArrayItem->extract_record_count(modelSlot, ic, indxs);
+    else if (parent)
+      parent->defaultInstance->GetValuePointer(modelSlot, paramId, up, ic, indxs);
     else
       modelSpec->get_value_pointer(clientRef, modelSlot, thisTsPosn,
 			       paramId, ic, indxs);
+    
   }
   // sprintf(globMess, "Think we got %d (%lf)", *(int*)modelSlot, *(double*)modelSlot);
   // showMess(globMess);
 
 }
+
+// Implementation of class ExecutingGroup
+ExecutingGroup::ExecutingGroup(ModelServer* newModelSpec, void* yourRef,
+			       int count) {
+  group_size = count;
+  instance_list = new ExecutingModel*[group_size];
+  // make default instance for parameters
+  defaultInstance = new ExecutingModel(newModelSpec, NULL, yourRef);
+  for (int i=0; i<group_size; ++i)
+    instance_list[i] = new ExecutingModel(newModelSpec, this, yourRef);
+  
+    //sprintf(globMess, "This is XM %lx of M %lx being created with IOM %lx", 
+//	    (long)this, (long)modelSpec, (long)loadedInst);
+    //showMess(globMess);
+    //param_array_base = NULL;
+    //varParamArrayBase = NULL;
+}
+
+ExecutingGroup::~ExecutingGroup() {
+  delete defaultInstance;
+  for (int i=0; i<group_size; ++i)
+    delete instance_list[i];
+  
+  delete instance_list;
+  //while (param_array_base) delete param_array_base;
+  // Above line is correct -- deleting a param item causes it to be snipped out
+  // of the list, so list head is NULL when all are snipped. Var params have
+  // their own list but are also included in all-param list...
+  // delete loadedInst;
+}
+
+int ExecutingGroup::SetStep(int phase, double step) {
+  int specPhases;
+  
+  for (int i=0; i<group_size; ++i)
+    specPhases = instance_list[i]->SetStep(phase, step);
+  return specPhases;
+}
+typedef struct instInfo_t {
+  pthread_t thredd;
+  ExecutingGroup* group; // same for all 
+  int myInst;
+} instInfo;
+
+excpData* ExecutingGroup::ResetOneInstance(int which) {
+  return instance_list[which]->ResetInstance(initTime, howInt, topPhase);
+}
+
+void* reset_grp_instance(void* clientData) {
+  instInfo *payload = (instInfo*)clientData;
+  return (payload->group)->ResetOneInstance(payload->myInst);
+}
+
+excpData* ExecutingGroup::ResetInstances(double init_time, int how_int, 
+					int top_phase) {
+  instInfo *threddz;
+  excpData *retVal = NULL;
+  void *clientResult;
+
+  initTime = init_time;
+  howInt = how_int;
+  topPhase = top_phase;
+  
+  threddz = new instInfo[group_size];
+  for (int i=0; i<group_size; ++i) {
+    threddz[i].group = this;
+    threddz[i].myInst = i;
+    pthread_create(&threddz[i].thredd, NULL, reset_grp_instance, &threddz[i]);
+  }
+
+  for (int i=0; i<group_size; ++i) {
+    pthread_join(threddz[i].thredd, &clientResult);
+    if (clientResult) {
+      retVal = (excpData*)clientResult;
+      retVal->groupPosn = i;
+    }
+  }
+  delete threddz;
+  return retVal;
+}
+
+  // execution to go here
+
+nodeValues* ExecutingGroup::GetRawValues(int which_inst, HCOMP nodeId) {
+  return instance_list[which_inst]->GetRawValues(nodeId);
+}
+
+FileParamData* ExecutingGroup::UseArrayForParams(int which_inst, HCOMP nodeNum)
+{
+  return instance_list[which_inst]->UseArrayForParams(nodeNum);
+}
+
+FileParamData* ExecutingGroup::UseArrayForDefaults(HCOMP nodeNum)
+{
+  return defaultInstance->UseArrayForParams(nodeNum);
+}
+
+// end of implementation of class ExecutingGroup
 
 int entitled(char* clientEdn, char* modelIdent) {
   char modelEdn[16];
@@ -1742,8 +1846,15 @@ ModelServer::~ModelServer() {
 ExecutingModel* ModelServer::create(void* yourRef) {
     // Do not return raw instance -- just create a wrapper object with fields
     // for raw instance and model type object
-    return new ExecutingModel(this, yourRef);
-  }
+  return new ExecutingModel(this, NULL, yourRef);
+}
+
+ExecutingGroup* ModelServer::create_group(void* yourRef, int count) {
+    // Do not return raw instance -- just create a wrapper object with fields
+    // for raw instance and model type object
+  
+  return new ExecutingGroup(this, yourRef, count);
+}
 /*
 int ModelServer::parent_line (int line) {
     int count, level, test, *path;

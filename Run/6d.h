@@ -21,6 +21,8 @@ class CPPEXTDEC ModelServer;
 
 class CPPEXTDEC ExecutingModel;
 
+class CPPEXTDEC ExecutingGroup;
+
 class listTimePoint;
 
 //! Data to be associated with a file parameter component in the model
@@ -155,6 +157,7 @@ class ExecutingModel
 
  protected: // protected attributes
   InstanceOfModel* loadedInst;
+  ExecutingGroup* parent = NULL; // set to group containing instance
   FileParamData* param_array_base;
   VarParamData* varParamArrayBase;
   // state of execution
@@ -192,7 +195,7 @@ class ExecutingModel
  public: // public methods
 
   //! Constructor takes model type object and client reference
-  ExecutingModel(ModelServer*, void*);
+  ExecutingModel(ModelServer*, ExecutingGroup*, void*);
   ~ExecutingModel();
 
   //! Set the length (double) of an execution step of depth int
@@ -238,6 +241,41 @@ class ExecutingModel
   void set_evt_cmd(char*, char*);
   graph_data_type* GetSketchGraphs();
 }; // End of class ExecutingModel
+
+class ExecutingGroup
+{
+public:
+  int group_size;
+  
+  ExecutingModel *defaultInstance, **instance_list;
+
+  // for instance resets
+  double initTime;
+  int howInt;
+  int topPhase;
+  
+  //! Constructor takes model type object, client reference and instance count
+  ExecutingGroup(ModelServer*, void*, int);
+  ~ExecutingGroup();
+
+  //! Set the length (double) of an execution step of depth int
+  int SetStep(int, double);
+
+  //! Create local data structure for a fixed parameter if instance has none
+  FileParamData* UseArrayForDefaults(HCOMP);
+
+  //! Create local data structure for a fixed parameter by serial number
+  FileParamData* UseArrayForParams(int, HCOMP);
+
+  excpData* ResetInstances(double, int, int);
+  excpData* ResetOneInstance(int);
+
+  // execution to go here
+
+  //! get results from model by node serial number in general c format
+  nodeValues* GetRawValues(int, HCOMP);
+
+}; // End of class ExecutingGroup
 
 //! An instance of this class corresponds to a type of model with own executable
 
@@ -306,6 +344,10 @@ class ModelServer
   //! gets node ids from full caption, including ghost node ids
   char* nodeModelAndId(char*);
 
+  // New for v7: create arrays of model instances that execute in parallel
+  // and have common default parameter values plus individual overrides
+  ExecutingGroup* create_group(void*, int);
+  
   // Virtual callback functions: clients use a class that inherits ModelServer
   // and implements these, and the server calls them
 

@@ -241,6 +241,7 @@ typedef union {
 typedef struct excpData_t {
   int excpNo;
   int targetId;
+  int groupPosn;
 } excpData;
 
 /* this is defined in the stub, which is loaded as a library...well it
