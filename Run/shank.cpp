@@ -1179,6 +1179,14 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
 					int top_phase) {
   int tweak_phase;
 
+  if (top_phase==-2) { // initializing, so do randoms in the thread
+    timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    unsigned int rnd=(1000000007*pthread_self()+now.tv_nsec);
+    // printf("randing to %ud", rnd);
+    setup_randoms(rnd);
+  }
+
   SetdT(0, 9); // start prediction cycle
   for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
     SetdT( tweak_phase,steps[tweak_phase]);
@@ -1700,9 +1708,19 @@ excpData* ExecutingGroup::ResetOneInstance(int which) {
   return instance_list[which]->ResetInstance(initTime, howInt, topPhase);
 }
 
+excpData* ExecutingGroup::ExecuteOneInstance(int which) {
+  return instance_list[which]->ExecuteInstance(howInt, initTime, finalTime,
+					     errLim, pauseRange, pauseEvt);
+}
+
 void* reset_grp_instance(void* clientData) {
   instInfo *payload = (instInfo*)clientData;
   return (payload->group)->ResetOneInstance(payload->myInst);
+}
+
+void* execute_grp_instance(void* clientData) {
+  instInfo *payload = (instInfo*)clientData;
+  return (payload->group)->ExecuteOneInstance(payload->myInst);
 }
 
 excpData* ExecutingGroup::ResetInstances(double init_time, int how_int, 
@@ -1734,6 +1752,39 @@ excpData* ExecutingGroup::ResetInstances(double init_time, int how_int,
 }
 
   // execution to go here
+excpData* ExecutingGroup::ExecuteInstances(int how_int, double start, 
+					  double* end, double error_limit,
+					  BOOLEAN pause_out_of_range,
+					  BOOLEAN pause_on_events) {
+  instInfo *threddz;
+  excpData *retVal = NULL;
+  void *clientResult;
+
+  initTime = start;
+  howInt = how_int;
+  finalTime = end;
+  errLim = error_limit;
+  pauseRange = pause_out_of_range;
+  pauseEvt = pause_on_events;
+  
+  threddz = new instInfo[group_size];
+  for (int i=0; i<group_size; ++i) {
+    threddz[i].group = this;
+    threddz[i].myInst = i;
+    pthread_create(&threddz[i].thredd, NULL, execute_grp_instance, &threddz[i]);
+  }
+
+  for (int i=0; i<group_size; ++i) {
+    pthread_join(threddz[i].thredd, &clientResult);
+    if (clientResult) {
+      retVal = (excpData*)clientResult;
+      retVal->groupPosn = i;
+    }
+  }
+  delete threddz;
+  return retVal;
+}
+  
 
 nodeValues* ExecutingGroup::GetRawValues(int which_inst, HCOMP nodeId) {
   return instance_list[which_inst]->GetRawValues(nodeId);

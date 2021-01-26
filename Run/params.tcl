@@ -448,7 +448,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		FixDisabledImgBug $nextLevel.head.clear
 		lower $nextLevel.head.clear
             }
-            pack [label $nextLevel.head.label -text $level:]
+            pack [ttk::label $nextLevel.head.label -text $level:]
 	    foreach part {head head.vis head.label} {
 		bindtags $nextLevel.$part \
 		    [linsert [bindtags $nextLevel.$part] 0 $nextLevel]
@@ -468,7 +468,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 		    $nextLevel.tree configure -bg $fColour
 		}
 		$nextLevel.head configure -bg $fColour
-		$nextLevel.head.label configure -bg $fColour
+		$nextLevel.head.label configure -style $bStyle ;# -bg $fColour
 		ttk::style map $bStyle -background \
 		    [list pressed [Gradient $fColour $nextLevel 15] \
 			 active [Gradient $fColour $nextLevel -75] {} $fColour]

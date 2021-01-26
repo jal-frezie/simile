@@ -814,7 +814,7 @@ proc LoadIconImages {} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
-    foreach fn {3d_objects flask caselist compfact permut} {
+    foreach fn {polys 3d_objects flask caselist compfact permut} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.png"]
     }

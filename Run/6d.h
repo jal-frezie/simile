@@ -249,10 +249,11 @@ public:
   
   ExecutingModel *defaultInstance, **instance_list;
 
-  // for instance resets
-  double initTime;
-  int howInt;
-  int topPhase;
+  // for instance resets/executes
+  double initTime, *finalTime, errLim;
+  int howInt, topPhase;
+  BOOLEAN pauseRange, pauseEvt;
+  
   
   //! Constructor takes model type object, client reference and instance count
   ExecutingGroup(ModelServer*, void*, int);
@@ -271,6 +272,8 @@ public:
   excpData* ResetOneInstance(int);
 
   // execution to go here
+  excpData* ExecuteInstances(int, double, double*, double, BOOLEAN, BOOLEAN);
+  excpData* ExecuteOneInstance(int);
 
   //! get results from model by node serial number in general c format
   nodeValues* GetRawValues(int, HCOMP);
