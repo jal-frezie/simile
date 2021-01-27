@@ -1675,7 +1675,7 @@ proc DoWelcomeDialog {dtId} {
                 set regData [::http::formatQuery Name $userinfo(name) \
                         Organisation $userinfo(corp) Email $userinfo(email) \
                         Version $userinfo(Version) OS $tcl_platform(os)]
-                ::http::geturl http://www.simulistics.com/products/SendMail.asp \
+                ::http::geturl -timeout 1000 http://www.simulistics.com/products/SendMail.asp \
                         -query $regData}]} {
             set userinfo(done) 1
         }
@@ -1827,7 +1827,7 @@ proc TradeXML {c exp} {
     OpenProgressBox $c
     FillProgressBox wait_for_web {}
     set url http://webflow.simileweb.com/processes/$service/
-    if {[catch {::http::geturl $url -type $content_type -binary true \
+    if {[catch {::http::geturl -timeout 1000 $url -type $content_type -binary true \
 		    -headers $headers -query $body} token]} {
 	CloseProgressBox
 	Query [list web_fail $token] warning top $c ok
@@ -2040,7 +2040,7 @@ proc GetLatestVers {} {
     package require http
 # catch everything -- failure to connect, unexpected sign-in web page, etc.
     if {[catch {
-	set token [::http::geturl http://www.simulistics.com/cgi-bin/products/current-version.php -timeout 2500]
+	set token [::http::geturl -timeout 1000 http://www.simulistics.com/cgi-bin/products/current-version.php]
 	upvar #0 $token versReq
 	array set versInfo $versReq(body)
 	set latest $versInfo(simileVerNo)

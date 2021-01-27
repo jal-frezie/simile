@@ -28,7 +28,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
         set notInput [FirstIndexCheck $topNode $node]
         if {$notInput != -1} {
 	    set ::helperTable($topNode,paramAble) normal
-            AddEntry $t $topNode $node [list /$topNode] $mustShow $notInput
+            AddEntry $t $topNode $node [list $topNode] $mustShow $notInput
         }
     }
     if {$mustShow || [llength $paramData(needed)]} {
@@ -143,7 +143,6 @@ proc ScrollToSee {canvas w} {
 }
 
 proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
-    #puts [info level 0]
     global iconImages msgs paramMetadata readMany
     if {$notInput==-1} {
 	set dataLocn targetData
@@ -160,7 +159,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
 	append compName ", " $caseId
     }
     set levels [concat $exptLevels [lrange [split $compName /] 1 end]]
-    set compName [join $exptLevels /]$compName
+    set compName /[join $exptLevels /]$compName
 
     set readMany($compName) [expr {![FirstIndexCheck $topNode $node]}]
     set compClass [GetCompProperty $topNode Class $node]
@@ -210,7 +209,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
         set msgs(comment_$compName) $msgs(ncfv)
     }
     #Show description and comments
-    ParamLabelPopup $slot.caption $node [lindex $levels end]
+    fileparams::LabelPopup $slot.caption $node [lindex $levels end]
             
     #       pack [entry $slot.e -textvariable paramData($compName)]
     # Using entries played merry hell with very long arrays -- texts work better
@@ -377,13 +376,21 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
         set nextLevel $parent.frame$level
     }
     if {![winfo exists $nextLevel]} {
+	switch $clientId {
+	    insp {
+		set defBd 0
+	    } default {
+		set defBd 2
+	    }
+	}
 #            pack [ttk::labelframe $nextLevel -borderwidth 2 -relief sunken]
-	frame $nextLevel -bd 1 -relief sunken
+	frame $nextLevel -bd $defBd -relief sunken
 	if {$pt} {
 	    pack $nextLevel -in $parent.body \
-		-fill x -expand true -padx 2 -pady 2
+		-fill x -expand true -padx $defBd -pady $defBd
 	    pack [canvas $nextLevel.tree -width 16p -height 1p \
-		      -bg [$parent cget -bg]] -side left -fill y
+		      -bg [$parent cget -bg] -highlightthickness 0] \
+		-side left -fill y
 	    $nextLevel.tree create line 8p 0p 8p 8p
 	    $nextLevel.tree create line 8p 8p 16p 8p
 	    foreach fellow [lrange [pack slaves $parent.body] 0 end-1] {
@@ -402,7 +409,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	} else {
 	    set level [tr. "TOP LEVEL"]
 	    pack $nextLevel -side bottom \
-		-fill x -expand true -padx 2 -pady 2
+		-fill x -expand true -padx $defBd -pady $defBd
 	}
 	
 	if {!$leaf} {
@@ -419,36 +426,33 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	    pack [::ttk::button $nextLevel.head.vis -style $bStyle \
 		      -image $iconImages(drop) \
 		      -command [list Compand $nextLevel]] -side left
-            set path /[join [lrange $hierarchy 0 $pt] /]
+            set path [join [lrange $hierarchy 0 $pt] /]
             # added setting of SimileProject element to store spf path
+	    set node [IdFromTail $topNode /$path 0]
+            pack [::ttk::label $nextLevel.head.label -text $level:]
 	    if {[llength $ns]} {
-		pack [::ttk::button $nextLevel.head.save -style $bStyle \
-			  -image $iconImages(save) \
-			  -command [list ${ns}::Save $clientId $path]] \
-		    -side right
-		BindPopup $nextLevel.head.save \
-		    [format [tr. {Save values for submodel "%1$s"}] $level]
-		FixDisabledImgBug $nextLevel.head.save
-		pack [::ttk::button $nextLevel.head.open -style $bStyle \
-			  -image $iconImages(open) \
-			  -command [list ${ns}::Open $clientId $path]] \
-		    -side right
-		BindPopup $nextLevel.head.open \
-		    [format [tr. {Load values for submodel "%1$s"}] $level]
-		FixDisabledImgBug $nextLevel.head.open
-		lower $nextLevel.head.open
-	    }
-            if {[string equal fileparams $ns]} {
-                pack [::ttk::button $nextLevel.head.clear -style $bStyle \
-			  -image $iconImages(new) \
-			  -command [list ${ns}::Clear $clientId $path]] \
-		    -side right
-                BindPopup $nextLevel.head.clear \
-		    [tr. "Clear values in this submodel"]
-		FixDisabledImgBug $nextLevel.head.clear
-		lower $nextLevel.head.clear
+		foreach {cmd act img} {Save Save save Open Load open \
+					   Clear Clear new} {
+		    set nsCmd ${ns}::$cmd
+		    if {[llength [info commands $nsCmd]]} {
+			set btn $nextLevel.head.$img
+			pack [::ttk::button $btn -style $bStyle \
+			      -image $iconImages($img) \
+			      -command [list $nsCmd $clientId $path]] \
+			-side right
+			BindPopup $btn \
+			    [format [tr. "$act values for submodel \"%1\$s\""] \
+				 $level]
+			FixDisabledImgBug $btn
+			lower $btn
+		    }
+		}
+		set nsCmd ${ns}::LabelPopup
+		if {[llength [info commands $nsCmd]]} {		
+		    $nsCmd $nextLevel.head.label $node $level
+		}
+
             }
-            pack [ttk::label $nextLevel.head.label -text $level:]
 	    foreach part {head head.vis head.label} {
 		bindtags $nextLevel.$part \
 		    [linsert [bindtags $nextLevel.$part] 0 $nextLevel]
@@ -458,9 +462,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 #set bg colour from submodel: rejected because not all widgets can have their
 #colours set so it looks odd, but then I discovered ttk styles...
 
-	    set node [IdFromTail $topNode $path 0]
 # take advantage to have header pop submodel comment
-	    ParamLabelPopup $nextLevel.head.label $node $level
 	    set fColour [GetFromProlog tk_get_info($node,colour)]
 	    if {[lsearch {white clear} $fColour]<0} {
 		$nextLevel configure -bg $fColour
@@ -492,22 +494,6 @@ proc Compand {level} {
 	set newImg drop
     }
     $level.head.vis configure -image $::iconImages($newImg)
-}
-
-proc ParamLabelPopup {label node capt} {
-    # Look at the code that gets the information for the variable's
-    # popup in the model window -- it's in window.tcl, procedure AddEqnPopup --
-    # look for the calls to Prolog proc tk_get_info
-    #set desc [do_in_editor GetFromProlog tk_get_info('$winId',$node,desc)]
-    set dimReqs [GetFromProlog tk_get_info($node,units)]
-    set userDesc [GetFromProlog tk_get_info($node,description)]
-    set comment [do_in_editor GetFromProlog tk_get_info($node,comment)]
-    set desc "$capt ($dimReqs)"
-    if {![string equal {} $userDesc]} {
-	append desc { -- } $userDesc
-    }
-    BindPopup $label $desc $comment
-#    BindPopup $slot.l2 "$comment"
 }
 
 proc purge {list toGo} {
@@ -811,8 +797,8 @@ namespace eval fileparams {
     
     proc Clear {spare smPath} {
         global widgetNames msgs paramState paramMetadata
-	ClearSubParamRefs $smPath
-        foreach compName [array names widgetNames $smPath*] {
+	ClearSubParamRefs /$smPath
+        foreach compName [array names widgetNames /$smPath*] {
             $widgetNames($compName).e configure -state normal
             $widgetNames($compName).e delete 0 end
             set msgs(param_source_$compName) [tr. Unsaved]
@@ -829,7 +815,6 @@ namespace eval fileparams {
 	if {$notInput} {
 	    set dataLocn targetData
 	    set widgetLocn targetNames
-	    set smPath [string range $smPath 1 end]
 	    set defExtn .smf
 	} else {
 	    set dataLocn paramData
@@ -864,7 +849,7 @@ namespace eval fileparams {
 	    puts $pStr "<spf simile_version=\"$env(SIMILE_VERSION)\">"
 	    puts $pStr {<submodel label="top">}
 	    WriteSubmodelParams suppliedData outNames $topNode $metaFile \
-		$pStr $smPath {}
+		$pStr /$smPath {}
 	    puts $pStr {</submodel>}
 	    puts $pStr {</spf>}
 #            foreach compName [array names outNames $smPath*] {
@@ -1115,6 +1100,23 @@ namespace eval fileparams {
             
         }
     }
+    
+    proc LabelPopup {label node capt} {
+	# Look at the code that gets the information for the variable's
+	# popup in the model window -- it's in window.tcl, procedure AddEqnPopup --
+	# look for the calls to Prolog proc tk_get_info
+	#set desc [do_in_editor GetFromProlog tk_get_info('$winId',$node,desc)]
+	set dimReqs [GetFromProlog tk_get_info($node,units)]
+	set userDesc [GetFromProlog tk_get_info($node,description)]
+	set comment [do_in_editor GetFromProlog tk_get_info($node,comment)]
+	set desc "$capt ($dimReqs)"
+	if {![string equal {} $userDesc]} {
+	    append desc { -- } $userDesc
+	}
+	BindPopup $label $desc $comment
+	#    BindPopup $slot.l2 "$comment"
+    }
+
 }
 
 proc Entitize {str} {
@@ -1143,7 +1145,7 @@ proc IsRecordCount {compName} {
 
 proc LevelForTitle {path} {
     set levels [split $path /]
-    catch {set levels [lreplace $levels 1 1 [GetExecTitle [lindex $levels 1]]]}
+    catch {set levels [lreplace $levels 0 0 [GetExecTitle [lindex $levels 0]]]}
     return [lindex $levels end]
 }
 
@@ -1399,11 +1401,11 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
-	set smPath [string range $smPath 1 end]
     } else {
 	set dataLocn paramData
 	set widgetLocn widgetNames
     }
+    set smPath [string range $smPath 1 end]
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
     
@@ -1525,9 +1527,10 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 			    more {continue}
 			}
 		    }
-		    cd [file join [file dirname $oldPath] [file dirname $VFile]]
+		    # cd [file join [file dirname $oldPath] [file dirname $VFile]]
 		    # ...and stick the new absolute pathname into the spec! Easy!!
 		    if {![file exists [file tail $VFile]]} {
+			puts "failed to find [file tail $VFile] in [pwd] among [glob *]"
 			set act [list failed_param_reference [file tail $VFile] \
 				     $relativeComp [file dirname $VFile] \
 				     [file normalize $seekDir]]

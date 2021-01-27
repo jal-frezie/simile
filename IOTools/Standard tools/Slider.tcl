@@ -19,7 +19,7 @@ namespace eval slide139 {
         menu $winId.slidervars -tearoff 0
         
         set toolbarItems \
-                [list [list new.gif "Clear" [namespace code "Clear $winId"]] \
+                [list [list new.gif "Clear" [namespace code "Clear $winId /"]] \
                 [list add.gif "Add variables" \
                 [namespace code "AddVariable $winId"]] \
                 [list remove.gif "Remove a variable" \
@@ -40,7 +40,8 @@ namespace eval slide139 {
     proc clear {winId} {
     }
     
-    proc Clear {winId} {
+    proc Clear {winId sm} {
+	# TODO: make use of submodel path!
         foreach current [winfo children $::topSFrame($winId)] {
             destroy $current
         }
