@@ -1003,7 +1003,10 @@ caption_for(Comp, ID) :-
 	image><get_host(Comp, CompVisDest),
 	find_base(CompVisDest, CompVisSrc),
 
-	(CompVisSrc has_class_refinement name of ID, !;
+	(%Parent has_part CompVisDest,
+	 %\+ Parent has_part CompVisSrc, !,
+	 %m_update><abs_path_name(CompVisSrc, Parent, ID);
+	 CompVisSrc has_class_refinement name of ID, !;
 	(CompVisSrc has_type relation, !,
 	    find_name_host(CompVisSrc, NameSource);
 	NameSource = CompVisSrc),

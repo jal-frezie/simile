@@ -760,7 +760,7 @@ finish_old_edit(NextEdit) :-
 		  output><safe_tcl_eval([string, is, space, SafeName], "1"),
 		  	query(invisible_caption(OldName), warning, top,
 			      [ok], _);
-		     cannot_call_in(RenamedNode, Parent, Name),
+		     cannot_call_in(Parent, Name),
 			query(caption_clash(OldName, Name), warning, top,
 			      [ok], _);
 		    name(Name, NameStr),
@@ -782,15 +782,6 @@ finish_old_edit(NextEdit) :-
 
 /* Test for existing use of caption within model -- access database directly
 because this is speed-critical. */
-
-cannot_call_in(Prev_highlight, Parent, Name) :-
-	find_all_comps(Parent, InSameModel),
-	appears(InSameModel),
-	\+ InSameModel is_of_sort captionless,
-	\+ InSameModel is_of_sort common_caption,
-	\+ InSameModel = Prev_highlight,
-	(m_class><InSameModel has_class_refinement name of Name;
-	caption_for(InSameModel, Name)).
 
 change_name(RenamedNode, Name) :-
 	(add_parameter(RenamedNode, 0, name, Name);
@@ -2676,24 +2667,26 @@ dissolve_component(Node) :-
 	    fail;
 	true)).
 
+cannot_call_in(Parent, Name) :-
+        find_all_comps(Parent, InSameModel),
+	appears(InSameModel),
+        \+ InSameModel is_of_sort captionless,
+        \+ InSameModel is_of_sort common_caption,
+	% \+ is_ghost(InSameModel),
+	(get_av_pair(InSameModel, _, name, Name);
+	 caption_for(InSameModel, Name)).
+
 list_captions(Parent, Used) :-
-	setof(UsedCaption,
-	      Part^(find_all_comps(Parent, Part),
-		    appears(Part),
-                    \+ Part is_of_sort captionless,
-                    \+ Part is_of_sort common_caption,
-		    \+ is_ghost(Part),
-		    caption_for(Part, UsedCaption)),
-	      UsedNow), !,
-	append(UsedNow, _, Used).
+    setof(InUse, cannot_call_in(Parent, InUse), UsedNow),
+    append(UsedNow, _, Used).
 
 retitle_duplicate(Node, Used) :-
     (\+ appears(Node);
      Node is_of_sort captionless; Node is_of_sort common_caption), !;
-	caption_for(Node, OldCapt),
+	(Name_type = 0; Name_type = 2),
+	get_av_pair(Node, Name_type, name, OldCapt),
 	ensure_unused(OldCapt, NewCapt, Used, []),
 	(NewCapt = OldCapt, !;
-	(Name_type = 0; Name_type = 2),
 	    add_parameter(Node, Name_type, name, NewCapt), !,
 	    update_captions(Node)).
 

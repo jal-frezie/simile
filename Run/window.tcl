@@ -221,8 +221,7 @@ proc ClickObj { x y winId X Y action} {
         }
         return
     }
-    # if we have loaded an already built model, its node names may not match
-    # the ones given it in Prolog, so get them from the canvas
+    # Prolog ID of canvas objects is translated along with model if needed
     set node [ExtractPrologName $winId $target]
     set context [GetClickCapt $winId $canx $cany $node]
     set topNode $window_info($winId,top_node)
@@ -1137,7 +1136,8 @@ proc AddEqnPopup {node x y winId X Y} {
         if {$doDesc} {
             set desc [GetFromProlog tk_get_info($plName,context)]
 # Prolog ends nonename with . for uniqueness, replace with legible :
-	    set pt [string first . $desc]
+# (dots in endpoint pathnames never followed by space)
+	    set pt [string first ". " $desc]
 	    set desc [string replace $desc $pt $pt :]
 	    set userDesc [GetFromProlog tk_get_info($plName,description)]
             if {[string equal {} $userDesc]} {
@@ -1162,12 +1162,7 @@ proc AddEqnPopup {node x y winId X Y} {
             AddPopupMessage $fromProlog \#ffe0c0
         }
         if {$doVal} {
-	    set cptPath [GetClickCapt $winId $canx $cany $plName]
-	    set execName [GetCompProperty $node IdFromCapt $cptPath]
-	    if {[string equal nomatch $execName]} {
-		set execName $plName
-	    }
-            AddPopupMessage novalue \#ffffc0 GetShortVals $node $execName
+            AddPopupMessage novalue \#ffffc0 GetShortVals $node $plName
 	    
 	}
     }
@@ -2547,6 +2542,8 @@ proc GetClickedObj { winId canx cany range} {
     return 0
 }
 
+# Gets the caption path of a component from the stack of canvas items at its
+# location. Might be simpler to get them from Prolog or the executing model
 proc GetClickCapt { winId canx cany node} {
     global window_info
     set result $window_info($winId,topCapt)

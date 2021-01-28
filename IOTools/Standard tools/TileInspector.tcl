@@ -61,7 +61,7 @@ namespace eval ::$keyValue {
 		set typesToShow {RECALL DERIVED BLOCK POPULATION GRID HONEYCOMB}
 	    } default {
 		set doPops [PrefValue custom(compValPop) compValPop]
-		set typesToShow {RECALL DERIVED INPUT TABLE GHOST LIMIT \
+		set typesToShow {RECALL DERIVED INPUT TABLE LIMIT \
 				     BLOCK POPULATION GRID HONEYCOMB}
 	    }
 	}
