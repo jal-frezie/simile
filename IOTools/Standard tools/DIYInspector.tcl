@@ -5,6 +5,8 @@ set newHelperClass DIYInspector20210125
 itcl::class similescript::$newHelperClass {
     inherit Helper
 
+    variable topFrame
+
     proc Identify {} {
 	return "Explorer (DIY version)"
     }
@@ -13,7 +15,6 @@ itcl::class similescript::$newHelperClass {
 # perverse extra body because base class constructor has args
 	Helper::constructor $modelInst $winTitle
     } {
-	variable topFrame
 	variable chop
 
 	set chop [string length $state]
@@ -73,8 +74,7 @@ itcl::class similescript::$newHelperClass {
 		    bindtags $f.label [linsert [bindtags $f.label] 0 $f]
 		    if {$doPops} {
 			LabelPopup $f.label $component $capt
-		    }
-		    
+		    }		    
 		}
 	    }
 	}
@@ -112,5 +112,32 @@ itcl::class similescript::$newHelperClass {
 # time is current model time
 # dispInt is time to next display call
 # step is a spare parameter
+    }
+
+    public method AddHelperLeaf {node hlpr} {
+	set id [[$hlpr info class]::Identify]
+	array set hlprIcons {Plotter graph \
+				 "XY Plotter" plotxy \
+				 "Polygon diagram" polys \
+				 "Data table" table \
+				 "Data logger" table \
+				 "Spatial grid display" grid \
+				 "Lollipop diagram" 3d_objects \
+				 "Slider control" slider \
+				 "Multi-layer 2-D display" multi \
+				 "3-D Shape Plotter" 3d_objects}
+	if {[catch {set img $hlprIcons($id)}]} {
+	    set img display
+	}
+
+	set fullCapt [GetCaptionPathFromId $node]
+	set levels [split $fullCapt /]
+	set f [MakeSubFrames insp $topFrame $levels [namespace current] 0]
+	set neWidg [UniqueId hlpr]
+	set bStyle [[winfo parent $f].head.vis cget -style]
+	pack [ttk::button $f.$neWidg -style $bStyle -image $::iconImages($img) \
+		  -command [list ::RunEnv::FocusTool $hlpr]] \
+	    -side right -padx 1p
+	BindPopup $f.$neWidg $id
     }
 }

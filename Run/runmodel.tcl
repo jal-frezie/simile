@@ -202,7 +202,7 @@ proc AddHelperSublist {fm lm title ct} {
 	}
 	if {[info exists newHelperClass]} {
 	    set action [similescript::${newHelperClass}::Identify]
-	    set actions [list {Run control} {Explorer (Tile version)} \
+	    set actions [list {Run control} {Explorer (DIY version)} \
 		    {PEST interface} {Plotter} {Slider control} {Data table}]
 	    if {[set posn [lsearch $actions $action]]>-1} {
 		set classIdx [lindex {RunControl VariableList pestInterface \
@@ -1407,7 +1407,7 @@ proc StartRun {node} {
  	set hlp [UniqueId helper]
 	set helperId $helperTable(VariableList)
 	similescript::$helperId $hlp $runClass Variables
-	set runState($node,inspId) [$hlp cget -winId]
+	set runState($node,inspId) $hlp
 #	if {![winfo exists $helperTable(autosliders)]} {
 # No sliders in model, so delete notebook page
 #	    $sliderBook delete InputSliders
