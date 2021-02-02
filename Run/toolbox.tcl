@@ -58,7 +58,7 @@ option add *Message.font TkDefaultFont widgetDefault
 option add *Menu.font $menuFont widgetDefault
 option add *Entry.font TkTextFont widgetDefault
 option add *Text.font TkTextFont widgetDefault
-option add *TLabel.font TkCaptionFont widgetDefault
+# option add *TLabel.font TkCaptionFont widgetDefault
 # ...and this makes sure they all scale when the screen metrics change
 font configure TkDefaultFont -size $niceSize
 font configure $menuFont -size $niceSize
@@ -1890,7 +1890,7 @@ proc SaveProjectFile {topNode path tgt} {
 # start by always writing it, later add check if version in tmp has been updated
     if {[HaveValues $topNode]} {
 	set ::preSelect [file join $path model.spf]
-	fileparams::Save $topNode /$topNode
+	fileparams::Save $topNode $topNode
     }
 
     set projectF [NetOpen $ProjectFile w]

@@ -1154,10 +1154,10 @@ void fill_raw_values(InstanceOfModel* smHandle, int tree[],
 class ModelServer;
 
 // Implementation of class ExecutingModel
-ExecutingModel::ExecutingModel(ModelServer* newModelSpec,
-			       ExecutingGroup* newParent, void* yourRef) {
+ExecutingModel::ExecutingModel(ModelServer* newModelSpec, void* yourRef) {
     modelSpec = newModelSpec;
-    parent = newParent;
+    parent = NULL;
+    children = NULL;
     clientRef = yourRef;
     loadedInst = modelSpec->createmodel(this);
     //sprintf(globMess, "This is XM %lx of M %lx being created with IOM %lx", 
@@ -1168,6 +1168,12 @@ ExecutingModel::ExecutingModel(ModelServer* newModelSpec,
 }
 
 ExecutingModel::~ExecutingModel() {
+  while (children) {
+    delete children->now;
+    delete children;
+    children = children->next; // should persist that long
+  }
+  
   while (param_array_base) delete param_array_base;
   // Above line is correct -- deleting a param item causes it to be snipped out
   // of the list, so list head is NULL when all are snipped. Var params have
@@ -1175,9 +1181,49 @@ ExecutingModel::~ExecutingModel() {
   // delete loadedInst;
 }
 
+ExecutingModel* ExecutingModel::AddGroupMember(void* usersRef) {
+  xmList* newChild = children;
+
+  if (newChild) {
+    while (newChild->next) {
+      newChild = newChild->next; // proceed to end of list
+    }
+    newChild->next = new xmList;
+    newChild = newChild->next;
+  } else {
+    newChild = new xmList;
+    children = newChild;
+  }
+  newChild->now = new ExecutingModel(modelSpec, usersRef);
+  newChild->next = NULL;
+  newChild->now->parent = this;
+  for (int ph=1; ph<=modelSpec->phases;++ph)
+    newChild->now->SetStep(ph, steps[ph]);
+  return newChild->now;
+}
+
+void* reset_grp_instance(void* clientData) {
+  ExecutingModel *payload = (ExecutingModel*)clientData;
+  return (payload->ResetInstance(payload->parent->initTime,
+				 payload->parent->howInt,
+				 payload->parent->topPhase));
+}
+
+void* execute_grp_instance(void* clientData) {
+  ExecutingModel *payload = (ExecutingModel*)clientData;
+  return (payload->ExecuteInstance(payload->parent->howInt,
+				   payload->parent->initTime,
+				   payload->parent->finalTime,
+				   payload->parent->errLim,
+				   payload->parent->pauseRange,
+				   payload->parent->pauseEvt));
+}
+
 excpData* ExecutingModel::ResetInstance(double init_time, int how_int, 
 					int top_phase) {
   int tweak_phase;
+  excpData* retVal = NULL;
+  void *clientResult;
 
   if (top_phase==-2) { // initializing, so do randoms in the thread
     timespec now;
@@ -1185,6 +1231,16 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
     unsigned int rnd=(1000000007*pthread_self()+now.tv_nsec);
     // printf("randing to %ud", rnd);
     setup_randoms(rnd);
+  }
+
+  // kick off threads to reset child instances
+  initTime = init_time;
+  howInt = how_int;
+  topPhase = top_phase;
+  xmList* aChild = children;
+  while (aChild) {
+    pthread_create(&aChild->thredd, NULL, reset_grp_instance, aChild->now);
+    aChild = aChild->next;
   }
 
   SetdT(0, 9); // start prediction cycle
@@ -1213,13 +1269,23 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   freq = steps[modelSpec->phases];
 
   (loadedInst->userStop).targetId = 0;
-  if (loadedInst->do_evalmodel(top_phase))
-    return &(loadedInst->userStop);
+  (loadedInst->userStop).excpSource = this;
+  if (loadedInst->do_evalmodel(top_phase)) {  
+    retVal = &(loadedInst->userStop);
+    retVal->excpSource = this;
+  }
   // reset successful: now do back copy if needed
-  if (top_phase<1 && varParamArrayBase) {
+  else if (top_phase<1 && varParamArrayBase) {
     varParamArrayBase->back_copy_vars(); // does all
   }
-  return NULL;
+  aChild = children;
+  while (aChild) {
+    pthread_join(aChild->thredd, &clientResult);
+    if (clientResult)
+      retVal = (excpData*)clientResult;
+    aChild = aChild->next;
+  }
+  return retVal;
 }
 
 void ExecutingModel::RepeatReset(double init_time) {
@@ -1234,10 +1300,26 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   double xtime, aim_for, recover, evtError, newFreq, minFreq;
   int big_phase, wee_phase, a_phase, keeper, z;
   BOOLEAN made_step, first_pass;
+  void *clientResult;
     // printf("xm %d %lf-%lf at %lf\n", how_int, start, *end, errlim);
     // showMess(globMess);
     // temporary arrangement until we move this function into the instance
+
+  initTime = start;
+  howInt = how_int;
+  finalTime = end;
+  errLim = errlim;
+  pauseRange = pause_out_of_range;
+  pauseEvt = pause_on_events;
+
+  xmList* aChild = children;
+  while (aChild) {
+    pthread_create(&aChild->thredd, NULL, execute_grp_instance, aChild->now);
+    aChild = aChild->next;
+  }
+  
   excpData* userDefStop = &(loadedInst->userStop);
+  userDefStop->excpSource = this;
 
   userDefStop->excpNo = 0;
   xtime = start;
@@ -1255,11 +1337,11 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     big_phase = phase_for(xtime, freq, modelSpec->phases);
     wee_phase = modelSpec->phases+1;
     // that is the biggest phase we will try to run, we may not succeed
-    if (check_gui(xtime, big_phase)) {
-      userDefStop->excpNo = -100; // should not conflict with os signals
-      *end = xtime;
-      return userDefStop;
-    }
+     if (check_gui(xtime, big_phase)) {
+       userDefStop->excpNo = -100; // should not conflict with os signals
+       *end = xtime;
+       goto windup;
+     }
 
     // If an event has happened and changed a state variable, we need
     // an extra update to make it actually change, followed by a
@@ -1448,6 +1530,16 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     // always go to make sure time is right
     userDefStop->excpNo = -100;
   *end=xtime;
+
+ windup:
+  aChild = children;
+  while (aChild) {
+    pthread_join(aChild->thredd, &clientResult);
+    if (clientResult)
+      userDefStop = (excpData*)clientResult;
+    aChild = aChild->next;
+  }
+
   if (userDefStop->excpNo)
     return userDefStop;
   return NULL;
@@ -1650,7 +1742,7 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId, BOOLEAN up,
       // found a parameter inside this submodel, get record count
       paramArrayItem->extract_record_count(modelSlot, ic, indxs);
     else if (parent)
-      parent->defaultInstance->GetValuePointer(modelSlot, paramId, up, ic, indxs);
+      parent->GetValuePointer(modelSlot, paramId, up, ic, indxs);
     else
       modelSpec->get_value_pointer(clientRef, modelSlot, thisTsPosn,
 			       paramId, ic, indxs);
@@ -1660,147 +1752,6 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId, BOOLEAN up,
   // showMess(globMess);
 
 }
-
-// Implementation of class ExecutingGroup
-ExecutingGroup::ExecutingGroup(ModelServer* newModelSpec, void* yourRef,
-			       int count) {
-  group_size = count;
-  instance_list = new ExecutingModel*[group_size];
-  // make default instance for parameters
-  defaultInstance = new ExecutingModel(newModelSpec, NULL, yourRef);
-  for (int i=0; i<group_size; ++i)
-    instance_list[i] = new ExecutingModel(newModelSpec, this, yourRef);
-  
-    //sprintf(globMess, "This is XM %lx of M %lx being created with IOM %lx", 
-//	    (long)this, (long)modelSpec, (long)loadedInst);
-    //showMess(globMess);
-    //param_array_base = NULL;
-    //varParamArrayBase = NULL;
-}
-
-ExecutingGroup::~ExecutingGroup() {
-  delete defaultInstance;
-  for (int i=0; i<group_size; ++i)
-    delete instance_list[i];
-  
-  delete instance_list;
-  //while (param_array_base) delete param_array_base;
-  // Above line is correct -- deleting a param item causes it to be snipped out
-  // of the list, so list head is NULL when all are snipped. Var params have
-  // their own list but are also included in all-param list...
-  // delete loadedInst;
-}
-
-int ExecutingGroup::SetStep(int phase, double step) {
-  int specPhases;
-  
-  for (int i=0; i<group_size; ++i)
-    specPhases = instance_list[i]->SetStep(phase, step);
-  return specPhases;
-}
-typedef struct instInfo_t {
-  pthread_t thredd;
-  ExecutingGroup* group; // same for all 
-  int myInst;
-} instInfo;
-
-excpData* ExecutingGroup::ResetOneInstance(int which) {
-  return instance_list[which]->ResetInstance(initTime, howInt, topPhase);
-}
-
-excpData* ExecutingGroup::ExecuteOneInstance(int which) {
-  return instance_list[which]->ExecuteInstance(howInt, initTime, finalTime,
-					     errLim, pauseRange, pauseEvt);
-}
-
-void* reset_grp_instance(void* clientData) {
-  instInfo *payload = (instInfo*)clientData;
-  return (payload->group)->ResetOneInstance(payload->myInst);
-}
-
-void* execute_grp_instance(void* clientData) {
-  instInfo *payload = (instInfo*)clientData;
-  return (payload->group)->ExecuteOneInstance(payload->myInst);
-}
-
-excpData* ExecutingGroup::ResetInstances(double init_time, int how_int, 
-					int top_phase) {
-  instInfo *threddz;
-  excpData *retVal = NULL;
-  void *clientResult;
-
-  initTime = init_time;
-  howInt = how_int;
-  topPhase = top_phase;
-  
-  threddz = new instInfo[group_size];
-  for (int i=0; i<group_size; ++i) {
-    threddz[i].group = this;
-    threddz[i].myInst = i;
-    pthread_create(&threddz[i].thredd, NULL, reset_grp_instance, &threddz[i]);
-  }
-
-  for (int i=0; i<group_size; ++i) {
-    pthread_join(threddz[i].thredd, &clientResult);
-    if (clientResult) {
-      retVal = (excpData*)clientResult;
-      retVal->groupPosn = i;
-    }
-  }
-  delete threddz;
-  return retVal;
-}
-
-  // execution to go here
-excpData* ExecutingGroup::ExecuteInstances(int how_int, double start, 
-					  double* end, double error_limit,
-					  BOOLEAN pause_out_of_range,
-					  BOOLEAN pause_on_events) {
-  instInfo *threddz;
-  excpData *retVal = NULL;
-  void *clientResult;
-
-  initTime = start;
-  howInt = how_int;
-  finalTime = end;
-  errLim = error_limit;
-  pauseRange = pause_out_of_range;
-  pauseEvt = pause_on_events;
-  
-  threddz = new instInfo[group_size];
-  for (int i=0; i<group_size; ++i) {
-    threddz[i].group = this;
-    threddz[i].myInst = i;
-    pthread_create(&threddz[i].thredd, NULL, execute_grp_instance, &threddz[i]);
-  }
-
-  for (int i=0; i<group_size; ++i) {
-    pthread_join(threddz[i].thredd, &clientResult);
-    if (clientResult) {
-      retVal = (excpData*)clientResult;
-      retVal->groupPosn = i;
-    }
-  }
-  delete threddz;
-  return retVal;
-}
-  
-
-nodeValues* ExecutingGroup::GetRawValues(int which_inst, HCOMP nodeId) {
-  return instance_list[which_inst]->GetRawValues(nodeId);
-}
-
-FileParamData* ExecutingGroup::UseArrayForParams(int which_inst, HCOMP nodeNum)
-{
-  return instance_list[which_inst]->UseArrayForParams(nodeNum);
-}
-
-FileParamData* ExecutingGroup::UseArrayForDefaults(HCOMP nodeNum)
-{
-  return defaultInstance->UseArrayForParams(nodeNum);
-}
-
-// end of implementation of class ExecutingGroup
 
 int entitled(char* clientEdn, char* modelIdent) {
   char modelEdn[16];
@@ -1897,14 +1848,7 @@ ModelServer::~ModelServer() {
 ExecutingModel* ModelServer::create(void* yourRef) {
     // Do not return raw instance -- just create a wrapper object with fields
     // for raw instance and model type object
-  return new ExecutingModel(this, NULL, yourRef);
-}
-
-ExecutingGroup* ModelServer::create_group(void* yourRef, int count) {
-    // Do not return raw instance -- just create a wrapper object with fields
-    // for raw instance and model type object
-  
-  return new ExecutingGroup(this, yourRef, count);
+  return new ExecutingModel(this, yourRef);
 }
 /*
 int ModelServer::parent_line (int line) {
@@ -2082,6 +2026,11 @@ node_data_line* ModelServer::md_nodlin_from_id(int paramId) {
 
 int ExecutingModel::SetStep(int phase, double step) {
   steps[phase] = step;
+  xmList* aChild = children;
+  while (aChild) {
+    aChild->now->SetStep(phase, step);
+    aChild = aChild->next;
+  }
   return modelSpec->phases;
 }
 

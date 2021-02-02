@@ -143,6 +143,7 @@ proc ScrollToSee {canvas w} {
 }
 
 proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
+    puts [info level 0]
     global iconImages msgs paramMetadata readMany
     if {$notInput==-1} {
 	set dataLocn targetData
@@ -158,7 +159,13 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     if {$caseId ne {}} {
 	append compName ", " $caseId
     }
-    set levels [concat $exptLevels [lrange [split $compName /] 1 end]]
+    set handle [split $compName /]
+    if {[string length $caseId]} {
+	set handle [lrange $handle end end]
+    } else {
+	set handle [lrange $handle 1 end]
+    }
+    set levels [concat $exptLevels $handle]
     set compName /[join $exptLevels /]$compName
 
     set readMany($compName) [expr {![FirstIndexCheck $topNode $node]}]
@@ -231,7 +238,6 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
 				      $notInput]]
     BindPopup $slot.cross [tr. "Revert to old values"]
     FixDisabledImgBug $slot.cross
-
     if {[info exists suppliedData($compName)]} {
         FillIfSmall $slot.e $suppliedData($compName)
     } else {
@@ -257,7 +263,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
 	FixDisabledImgBug $slot.b
     }
     set outNames($compName) $slot
-    GrowCaptionsTo $holder
+    #GrowCaptionsTo $holder
     # note whether we need to enter a parameter here...
     if {$mustShow} {
         if {[lsearch $suppliedData(needed) $compName]==-1} {
@@ -270,6 +276,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
 
 proc GrowCaptionsTo {sm} {
     # horrible hack to grow all labels to the same size, should use grid instead
+    # (currently unused as not working for compound labels!)
     set newWidth 48 ;# min width
     foreach widg [winfo children $sm] {
 	set lab $widg.caption
@@ -408,7 +415,7 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
 	    }	    
 	} else {
 	    set level [tr. "TOP LEVEL"]
-	    pack $nextLevel -side bottom \
+	    pack $nextLevel \
 		-fill x -expand true -padx $defBd -pady $defBd
 	}
 	
@@ -534,7 +541,7 @@ proc AcceptAll {topNode compNames notInput complain} {
 }
 
 proc AcceptData {topNode compName notInput complain} {
-#puts "AcceptData $topNode $compName $notInput $complain"
+    #puts [info level 0]
     global runState msgs whichParamsAffected readMany paramMetadata
     if {$notInput==-1} {
 	set dataLocn targetData
@@ -1861,9 +1868,9 @@ proc GetFromTable {parent topNode compName trans dlgStyle} {
 		       ($paramMetadata($compName,dimList)) $trans $dlgStyle]
 
 # If loading data for PEST there is no parent dialogue so do not keep grab
-    if {$dlgStyle eq "result" || $dlgStyle eq "measure"} {
+#    if {$dlgStyle eq "result" || $dlgStyle eq "measure"} {
 	grab release [winfo toplevel $parent]
-    }
+#    }
     if {$newSource>0} {
         set suppliedData($compName) $table_entry(values)
 	set whichParamsAffected($compName) 1
@@ -1882,6 +1889,7 @@ proc GetFromTable {parent topNode compName trans dlgStyle} {
             }
         }
 	set paramMetadata($compName,saveBinary) $table_entry(bytes)
+	$outNames($compName).tick invoke
     }
     if {$newSource} {
 	set msgs(comment_$compName) $msgs(ncfv)

@@ -15,7 +15,24 @@ itcl::class similescript::$newHelperClass {
 # perverse extra body because base class constructor has args
 	Helper::constructor $modelInst $winTitle
     } {
+	global iconImages
 	variable chop
+	variable cMenu
+	variable decor
+
+	set decor [list param [tr. "Parameter value"] file \
+		       plist [tr. "List for parameter"] list \
+		       clist [tr. "List of cases"] caselist \
+		       compound [tr. "Multi-factor case(s)"] compfact \
+		       perm [tr. "Set of permutations"] permut]
+	set cMenu [menu .expt_context -tearoff 0]
+	set iMenu [menu $cMenu.insert -tearoff 0]
+	foreach {key txt img} $decor {
+	    $iMenu add command -label $txt -compound left \
+		-image $iconImages($img) -command "$this InsertLevel $key"
+	}
+	$cMenu add cascade -label [tr. Insert] -menu $iMenu
+	$cMenu add command -label [tr. Delete] -command "$this delete"
 
 	set chop [string length $state]
 	set doPops 0
@@ -37,6 +54,19 @@ itcl::class similescript::$newHelperClass {
 	    }
 	}
 	set topFrame [DIYMakeFrames $winId]
+	# Attempt to add experiment node as peer of default top level
+	set f [MakeSubFrames insp $topFrame {expt {}} [namespace current] 0]
+	$f.head.label configure -text [tr. {Experimental conditions}] \
+	    -image $iconImages(flask) -compound left
+	pack $f.head.label -side left
+	CrossPlatformBind $f \
+	    [namespace code [list OnElementContext {expt} %X %Y]]
+	set f [MakeSubFrames insp $topFrame [list $::myNode {}] \
+		   [namespace current] 0]
+	$f.head.label configure -text [tr. {Default case}] \
+	    -image $iconImages(globe) -compound left
+	pack $f.head.label -side left
+
         foreach component [GetObjectList] {
 	    set fullCapt [GetCaptionPathFromId $component]
 	    if {(![string length $state] || \
@@ -44,44 +74,82 @@ itcl::class similescript::$newHelperClass {
 		    [lsearch $typesToShow [GetModelEval $component]]>=0} {
 
 		# AddEntry $winId $::myNode $component / 1 1
+		set notInput -1
 		set levels [split $fullCapt /]
 		set capt [lindex $levels end]
 		set type [GetModelClass $component]
 		if {$type eq "SUBMODEL"} {
 		    lappend levels {}
 		} elseif {$type eq "VARIABLE"} {
-		    switch [GetModelEval $component] {
-			INPUT {set type input}
-			TABLE {set type file}
-		    }
+		    set notInput [lsearch {INPUT TABLE} \
+				      [GetModelEval $component]]
 		}
-		set f [MakeSubFrames insp $topFrame $levels \
+		if {$notInput>-1} {
+		    set type [lindex {input file} $notInput]
+		    AddEntry $winId $::myNode $component $::myNode 0 $notInput
+		}
+		set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 $::myNode] \
 			   [namespace current] 0]
 		bind $f <Button-1> [list ProdFromHelper $winId $component \
 					[string range $fullCapt $chop end]]
 		if {$type eq "SUBMODEL"} {
 		    set label $f.head.label
-		    $label configure -image $::iconImages(submodel) \
+		    $label configure -image $iconImages(submodel) \
 			-compound left
 		    pack $label -side left
 		} else {
 		    set beeGee [[winfo parent $f].head cget -bg]
 		    set bStyle [[winfo parent $f].head.vis cget -style]
 		    $f configure -bg $beeGee
-		    pack [ttk::label $f.label -text $capt -style $bStyle \
-			      -image $::iconImages([string tolower $type]) \
-			      -compound left] -side left
-		    bindtags $f.label [linsert [bindtags $f.label] 0 $f]
+		    if {$notInput==-1} {
+			pack [ttk::label $f.caption -text $capt \
+				  -style $bStyle] -side left
+		    }
+		    $f.caption configure -image $iconImages([string tolower $type]) -compound left
+		    bindtags $f.caption [linsert [bindtags $f.caption] 0 $f]
 		    if {$doPops} {
-			LabelPopup $f.label $component $capt
+			LabelPopup $f.caption $component $capt
 		    }		    
 		}
 	    }
 	}
     }
     destructor {
+	destroy .expt_context
     }
-    
+        
+    proc OnElementContext {path X Y} {
+	puts [info level 0]
+	variable cMenu
+	variable clickPath
+	# We have a hierarchy of frames below the click, need to find which
+	$cMenu post $X $Y
+	set clickPath $path
+    }
+
+    public method InsertLevel {type} {
+	variable clickPath
+	variable decor
+	
+	set anchor [lsearch $decor $type]
+	
+	if {[lsearch {param plist} $type]>-1} {
+	    pack [label $winId.label -text [tr. "Select a parameter from the model diagram or explorer"] -fg red]
+	    $modelInst GrabClicks $this
+	} else {
+	    set newLevel [UniqueId $type]
+	    lappend clickPath $newLevel
+	    set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
+		       [namespace current] 0]
+	    set lab $f.head.label
+	    $lab configure -text [lindex $decor $anchor+1] \
+		-image $::iconImages([lindex $decor $anchor+2]) -compound left
+	    pack $lab -side left
+	    CrossPlatformBind $f \
+		[namespace code [list OnElementContext  $clickPath %X %Y]]
+	}
+    }
+
     proc LabelPopup {widget node capt} {
 	bind $widget <Enter> [::itcl::code AddPopup %W %X %Y $::myNode $node]
 	bind $widget <Leave> RemovePopup
@@ -92,6 +160,41 @@ itcl::class similescript::$newHelperClass {
 	AddPopupMessage novalue \#ffffc0 GetShortVals $node $capt
     }
     
+    public method GetCaseName {path} {	
+	set t [PutItThere .caseentry $winId]
+	wm protocol $t WM_DELETE_WINDOW {set case(done) 0}
+	wm title $t "Case name"
+	wm resizable $t 0 0
+	
+	set ft [frame .caseentry.ft]
+	pack [message $ft.m -text "Parameter $path selected. Now supply a name for this case in the experiment:" -width 300] \
+	    -padx 4 -pady 6 -anchor nw 
+	pack [ttk::entry $ft.e -width 40] \
+	    -padx 4 -pady 6 -anchor nw -side left
+	
+	bind $ft.e <Return> "set case(done) 1"
+	pack .caseentry.ft -anchor nw -fill both
+
+	pack [set bs [frame .caseentry.buttframe]]
+    #pack [button $bs.clear -text Clear -width 10 -command ".caseentry.e delete 0 end"] -padx 2 -pady 2 -side left
+	pack [button $bs.ok -text [tr. OK] -default active -width 10 \
+		  -command "set case(done) 1"] -padx 2 -pady 4 -side left
+	pack [button $bs.cancel -text [tr. Cancel] -width 10 \
+		  -command "set case(done) 0"] -padx 2 -pady 4 -side left
+	pack [button $bs.help -text [tr. Help] -width 10 \
+		  -command "ContextSensitiveHelp .caseentry experiments.htm"] \
+	-padx 2 -pady 4 -side left
+    
+	focus $ft.e
+	LetItShow .caseentry case(done)
+	set result [$ft.e get]
+	PackItUp .caseentry
+	if {$::case(done)==1} {
+	    return $result
+	}
+	
+    }
+
     public method Click {path} {
 	global myNode
 	variable curFrame
@@ -132,7 +235,15 @@ itcl::class similescript::$newHelperClass {
 
 	set fullCapt [GetCaptionPathFromId $node]
 	set levels [split $fullCapt /]
-	set f [MakeSubFrames insp $topFrame $levels [namespace current] 0]
+	set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 $::myNode] \
+		   [namespace current] 0]
+	set cmd [list ::RunEnv::FocusTool $hlpr]
+	foreach prev [winfo children $f] {
+	    if {[winfo class $prev] eq "TButton" && \
+		    [$prev cget -command] eq $cmd} {
+		return ;# is already there
+	    }
+	}
 	set neWidg [UniqueId hlpr]
 	set bStyle [[winfo parent $f].head.vis cget -style]
 	pack [ttk::button $f.$neWidg -style $bStyle -image $::iconImages($img) \
