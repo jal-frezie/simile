@@ -1203,20 +1203,74 @@ ExecutingModel* ExecutingModel::AddGroupMember(void* usersRef) {
 }
 
 void* reset_grp_instance(void* clientData) {
-  ExecutingModel *payload = (ExecutingModel*)clientData;
-  return (payload->ResetInstance(payload->parent->initTime,
-				 payload->parent->howInt,
-				 payload->parent->topPhase));
+  void* retVal;
+  ExecutingModel *payload = ((xmList*)clientData)->now;
+  memcpy(rand_states, ((xmList*)clientData)->randKeeper, 3*sizeof(unsigned short));
+  retVal = payload->ResetInstance(payload->parent->initTime,
+				  payload->parent->howInt,
+				  payload->parent->topPhase);
+  memcpy(((xmList*)clientData)->randKeeper, rand_states, 3*sizeof(unsigned short));
+  return retVal;
 }
 
 void* execute_grp_instance(void* clientData) {
-  ExecutingModel *payload = (ExecutingModel*)clientData;
-  return (payload->ExecuteInstance(payload->parent->howInt,
-				   payload->parent->initTime,
-				   payload->parent->finalTime,
-				   payload->parent->errLim,
-				   payload->parent->pauseRange,
-				   payload->parent->pauseEvt));
+  void* retVal;
+  ExecutingModel *payload = ((xmList*)clientData)->now;
+  memcpy(rand_states, ((xmList*)clientData)->randKeeper, 3*sizeof(unsigned short));
+  retVal = payload->ExecuteInstance(payload->parent->howInt,
+				    payload->parent->initTime,
+				    payload->parent->finalTime,
+				    payload->parent->errLim,
+				    payload->parent->pauseRange,
+				    payload->parent->pauseEvt);
+  memcpy(((xmList*)clientData)->randKeeper, rand_states, 3*sizeof(unsigned short));
+  return retVal;
+}
+
+void ExecutingModel::LaunchThreads(void* thread_action(void*)) {
+  xmList* aChild = children;
+  while (aChild) {
+    pthread_create(&aChild->thredd, NULL, thread_action, aChild);
+    aChild = aChild->next;
+  }
+}
+
+pthread_t supervisorId;
+void ExecutingModel::WrapUpThreads(excpData* userDefStop) {
+  void *clientResult;
+  struct timespec ts;
+
+  xmList* aChild = children;
+  while (aChild) {
+    if (pthread_equal(pthread_self(), supervisorId)) {
+      // am supervisor so keep checking gui while awaiting others
+      clock_gettime(CLOCK_REALTIME, &ts);
+      while (aChild->thredd) {
+	ts.tv_nsec += 40000000; // 40ms
+	if (ts.tv_nsec >= 1000000000) {
+	  ts.tv_nsec -= 1000000000;
+	  ts.tv_sec += 1;
+	}
+	if (!pthread_timedjoin_np(aChild->thredd, &clientResult, &ts))
+	  aChild->thredd = 0; // success, go to next one
+	else
+	  if (do_gui_check(0,0)) break; // else keep waiting for this one
+      }
+      if (aChild->thredd) {
+	// left loop at user req, kill all remaining threads
+	while (aChild) {
+	  pthread_kill(aChild->thredd, SIGTERM);
+	  aChild = aChild->next;
+	}
+	userDefStop->excpNo = -101;
+	break;
+      }
+    } else
+      pthread_join(aChild->thredd, &clientResult);
+    if (clientResult)
+      *userDefStop = *(excpData*)clientResult; // copy it up?
+    aChild = aChild->next;
+  }
 }
 
 excpData* ExecutingModel::ResetInstance(double init_time, int how_int, 
@@ -1229,7 +1283,6 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
     timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
     unsigned int rnd=(1000000007*pthread_self()+now.tv_nsec);
-    // printf("randing to %ud", rnd);
     setup_randoms(rnd);
   }
 
@@ -1239,7 +1292,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   topPhase = top_phase;
   xmList* aChild = children;
   while (aChild) {
-    pthread_create(&aChild->thredd, NULL, reset_grp_instance, aChild->now);
+    pthread_create(&aChild->thredd, NULL, reset_grp_instance, aChild);
     aChild = aChild->next;
   }
 
@@ -1300,7 +1353,6 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   double xtime, aim_for, recover, evtError, newFreq, minFreq;
   int big_phase, wee_phase, a_phase, keeper, z;
   BOOLEAN made_step, first_pass;
-  void *clientResult;
     // printf("xm %d %lf-%lf at %lf\n", how_int, start, *end, errlim);
     // showMess(globMess);
     // temporary arrangement until we move this function into the instance
@@ -1312,11 +1364,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   pauseRange = pause_out_of_range;
   pauseEvt = pause_on_events;
 
-  xmList* aChild = children;
-  while (aChild) {
-    pthread_create(&aChild->thredd, NULL, execute_grp_instance, aChild->now);
-    aChild = aChild->next;
-  }
+  LaunchThreads(execute_grp_instance);
   
   excpData* userDefStop = &(loadedInst->userStop);
   userDefStop->excpSource = this;
@@ -1337,12 +1385,12 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
     big_phase = phase_for(xtime, freq, modelSpec->phases);
     wee_phase = modelSpec->phases+1;
     // that is the biggest phase we will try to run, we may not succeed
-     if (check_gui(xtime, big_phase)) {
-       userDefStop->excpNo = -100; // should not conflict with os signals
-       *end = xtime;
-       goto windup;
-     }
-
+    if (check_gui(xtime, big_phase)) {
+      userDefStop->excpNo = -100; // should not conflict with os signals
+      *end = xtime;
+      goto windup;
+    }
+    
     // If an event has happened and changed a state variable, we need
     // an extra update to make it actually change, followed by a
     // propagate to get the model consistent, so derivatives of
@@ -1532,13 +1580,7 @@ excpData* ExecutingModel::ExecuteInstance(int how_int, double start,
   *end=xtime;
 
  windup:
-  aChild = children;
-  while (aChild) {
-    pthread_join(aChild->thredd, &clientResult);
-    if (clientResult)
-      userDefStop = (excpData*)clientResult;
-    aChild = aChild->next;
-  }
+  WrapUpThreads(userDefStop);
 
   if (userDefStop->excpNo)
     return userDefStop;
@@ -1686,7 +1728,8 @@ nodeValues* ExecutingModel::GetRawValues(HCOMP nodeId) {
 
 BOOLEAN ExecutingModel::do_gui_check(double model_time, int actionType) {
   BOOLEAN result;
-
+  if (!pthread_equal(pthread_self(), supervisorId)) return FALSE;
+  // calling Tcl from worker will crash -- thread cleanup to check for hang
   result = modelSpec->interact_gui(clientRef, actionType, model_time);
   last_check = clock(); // GUI may have taken time
   return result;
@@ -1846,6 +1889,7 @@ ModelServer::~ModelServer() {
      trying to refer to procedure variables in the model class directly */
 
 ExecutingModel* ModelServer::create(void* yourRef) {
+  supervisorId = pthread_self(); // toplevel instances only created in master
     // Do not return raw instance -- just create a wrapper object with fields
     // for raw instance and model type object
   return new ExecutingModel(this, yourRef);
@@ -2576,6 +2620,15 @@ void* fetch_top_instance(void* modelType, void* clientRef) {
 
   // 5-D callbacks have the client data set to the instance
   justMade = ((ModelFor5D*)modelType)->create(clientRef);
+  return justMade;
+}
+
+// create a group member for a model instance
+void* fetch_group_member(void* instanceType, void* clientRef) {
+  ExecutingModel* justMade;
+
+  // 5-D callbacks have the client data set to the instance
+  justMade = ((ExecutingModel*)instanceType)->AddGroupMember(clientRef);
   return justMade;
 }
 

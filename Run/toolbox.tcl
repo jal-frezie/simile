@@ -248,10 +248,10 @@ proc ShiftDll {Point Top Model Rep} {
     if {[llength $Rep]} {
         set prefx $base/model
     # ignore specified rep just use highest numbered c++
-	foreach src [glob -nocomplain ${prefx}*.cpp] {
-	    set ver [string range $src [string length $prefx] end-4]
-	    if {$ver>$Rep} {set Rep $ver}
-	}
+#	foreach src [glob -nocomplain ${prefx}*.cpp] {
+#	    set ver [string range $src [string length $prefx] end-4]
+#	    if {$ver>$Rep} {set Rep $ver}
+#	}
 	foreach runnableExtn {.cpp .tcl .dll .so .dylib} {
 	    set tgt ${prefx}$runnableExtn
 	    if {[file exists $tgt]} {

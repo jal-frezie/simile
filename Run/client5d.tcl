@@ -128,6 +128,13 @@ proc CreateModel {mHandle} {
     return $iHandle
 }
 
+proc AddModelToGroup {iHandle} {
+    global modelTypes
+    set gHandle [c_addmodeltogroup $iHandle]
+    set modelTypes($gHandle) $modelTypes($iHandle)
+    return $gHandle
+}
+
 proc GetPairedValues {iHandle outputNode asEnumType} {
     set result [GetValuesById $iHandle \
 		    [getnodeid $::modelTypes($iHandle) $outputNode]]
@@ -315,19 +322,14 @@ proc DoResetModel {iHandle t0 intMethod depth} {
     return [ResetModel dummy $intMethod $t0 $depth]
 }
 
-proc DoExecuteModel {iHandle intMethod from to errLim pauses} {
+proc DoExecuteModel {iHandle intMethod from to errLim lmtPause evtPause} {
     set ::instance_id $iHandle
     set ::model_id $::modelTypes($iHandle)
-# now we have the problem that ExecuteModel got a required extra arg for 6.2
-# but we have no access to Simile version (save by trying outdated model!)
-# so do introspection...
-    set execCmd [list ExecuteModel dummy $intMethod $from $to $errLim $pauses]
-    if {[llength [info args ExecuteModel]]==7} {
-	lappend execCmd $pauses
-    }
+    set execCmd [list ExecuteModel dummy $intMethod $from $to $errLim \
+		     $lmtPause $evtPause]
     set result [eval $execCmd]
     set ::currentTimes($iHandle) [lindex $result 1]
-    return [lindex $result 0]
+    return $result
 }
 
 proc GetModelTime {iHandle} {

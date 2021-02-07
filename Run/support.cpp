@@ -33,8 +33,9 @@ int compare_instance_status (const int pointers[], const int ref_pointers[],
    return 0;
 }
 
+#define PASSUP_TIMER 1048576
 thread_local int amWorker = 0;
-thread_local int lazy = 16384;
+thread_local int lazy = PASSUP_TIMER;
 
 void setup_thread(int id) {
   setup_thread_randoms(1234567890, id);
@@ -48,7 +49,7 @@ TSPOUT homeCalling, phoneHome;
 void InstanceOfModel::abort_check () {
   int valToSend = WORKER_QUERY_GUI;
   if (!lazy--) {
-    lazy=16384;
+    lazy = PASSUP_TIMER;
     if (!amWorker) { // in master, save to prod Tcl
       if (stat_check(partner))
 	throw -101;

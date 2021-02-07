@@ -338,7 +338,8 @@ namespace eval runcontrol33857 {
 	global runState
 
 	set action $runState($node,currentMode)
-	if {[do_in_editor set runState($node,updated)]} {
+	if {[do_in_editor set runState($node,updated)] && \
+		$runState($node,modelRunning)<4} {
 	    switch [Query model_out_of_date warning top {} {yes no cancel}] {
 		yes {
 		    UpdateExecution $node $action
@@ -347,7 +348,6 @@ namespace eval runcontrol33857 {
 		    if {$runState($node,modelRunning)==3} {
 			set runState($node,modelRunning) 4
 		    }
-		    do_in_editor set runState($node,updated) 0
 		} cancel {
 		    return
 		}

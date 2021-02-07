@@ -149,6 +149,7 @@ class CPPEXTDEC VarParamData : public FileParamData {
 
 typedef struct xmList_t {
   pthread_t thredd;
+  unsigned short randKeeper[3];
   ExecutingModel* now;
   struct xmList_t* next;
 } xmList;
@@ -208,6 +209,8 @@ class ExecutingModel
   void advance_time (int, double);
   int phase_for(double, double, int);
   BOOLEAN check_gui(double, int);
+  void LaunchThreads(void*(void*));
+  void WrapUpThreads(excpData*);
 
  public: // public methods
 
