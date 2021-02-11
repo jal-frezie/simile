@@ -44,6 +44,14 @@ proc Query {act level topic win opts} {
     return $response
 }
 
+proc ExecQuery {args} {
+    eval Query $args
+}
+
+proc AddLogEntry {top msg} {
+    lappend execLog $msg
+}
+
 # ignore GUI updates by default
 proc AbortCheck {nodeId} {
     return 0
@@ -100,11 +108,11 @@ proc SetParameter {accessHandle value} {
 proc GetModelProperty {modelId path prop} {
     set node [getnodeid $modelId $path]
     set ::model_id $modelId
-    return [GetCCompProperty DUMMY $prop $node]
+    return [GetCCompProperty $prop $node]
 }
 
-proc GetCompProperty {topNode prop args} {
-    return [eval GetCCompProperty DUMMY $prop $args]
+proc GetCompProperty {dummy prop args} {
+    return [eval GetCCompProperty $prop $args]
 }
 
 proc CreateTimeSeriesStructs {mHandle iHandle} {

@@ -159,8 +159,12 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
 	append compName ", " $caseId
     }
     set handle [split $compName /]
-    if {[string length $caseId]} {
+    if {$caseId ne {}} {
 	set handle [lrange $handle end end]
+	# Add case for this entry
+	AddCase $topNode $caseId
+	# ...and give it an array for the new parameter...that is done in
+	# AcceptData for default parameters
     } else {
 	set handle [lrange $handle 1 end]
     }
@@ -271,6 +275,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     } else {
         AcceptData $topNode $compName $notInput 0
     }
+    return $slot
 }
 
 proc GrowCaptionsTo {sm} {
@@ -540,21 +545,24 @@ proc AcceptAll {topNode compNames notInput complain} {
 }
 
 proc AcceptData {topNode compName notInput complain} {
-    #puts [info level 0]
+    puts [info level 0]
     global runState msgs whichParamsAffected readMany paramMetadata
+    set namencase [split $compName ,]
+    set compLocal [lindex $namencase 0]
+    set caseId [string range [lindex $namencase 1] 1 end]
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
-	set compLocal $compName
     } else {
 	set dataLocn paramData
 	set widgetLocn widgetNames
-	set compLocal [TrimDTFromPath $compName]
+	set compLocal [TrimDTFromPath $compLocal]
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
 
-    set node [IdFromTail $topNode $compName $notInput]
+    puts $compLocal
+    set node [IdFromTail $topNode $compLocal -1]
     set dataChanged 0
     if {$complain > -1 && \
 	    ![string equal disabled [$outNames($compName).e cget -state]]} {
@@ -585,7 +593,7 @@ proc AcceptData {topNode compName notInput complain} {
 # very wasteful
 #    if {$runState($topNode,modelRunning)<=2} {
 #        set dataChanged 1
-#    } elseif {[catch {GetCompProperty $topNode Value $node} oldVal]} {
+#    } elseif {[catch {GetCompProperty $topNode $topNode Value $node} oldVal]} {
 #        set dataChanged 1
 #    } elseif {[string compare [lindex $oldVal 0] $suppliedData($compName)]} {
 #        set dataChanged 1
@@ -633,7 +641,7 @@ proc AcceptData {topNode compName notInput complain} {
 			tcl_setparamarray $topNode $recordNode
 		    }
 # Not sure how this condition would ever fail...does if TIME added above
-#		    set outerDims [lrange [GetCompProperty $topNode Dims \
+#		    set outerDims [lrange [GetCompProperty $topNode $topNode Dims \
 #					       $recordNode] 0 end-1]
 #puts "node $recordNode outer dims $outerDims"
 #		    if {[string match $outerDims \
@@ -660,7 +668,7 @@ proc AcceptData {topNode compName notInput complain} {
         }
 	if {$useCppArray} {
 	    #puts "c_setparamarray b $node"
-	    c_setparamarray $topNode $node
+	    c_setparamarray $topNode $node $caseId
 	} else {
 	    tcl_setparamarray $topNode $node
 	}
@@ -668,7 +676,7 @@ proc AcceptData {topNode compName notInput complain} {
 	    # accept empty field for saving data
 	    set result {} ;# handle as error
 	} else {
-	    set result [ListToArray $topNode $node {} {} $trans $recordDims \
+	    set result [ListToArray $topNode $caseId $node {} {} $trans $recordDims \
 			    $newData $readMany($compName) $useCppArray]
 	    if {![string is integer -strict $result]} { # list of errors
 		set action [lindex {none load check} $complain]

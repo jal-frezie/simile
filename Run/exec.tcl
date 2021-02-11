@@ -111,6 +111,12 @@ proc update_executable {node lang} {
     }
 }
 
+proc InsertExptlCase {node caseId} {
+    global instance_id exptl_case
+
+    return [set exptl_case($caseId) [c_addmodeltogroup $instance_id]]
+}
+
 proc ExecuteTo {node current pause unitLength display foci \
 		    intMethod maxErr lmtPause evtMsg evtDisp} {
     global dispDone actDone
@@ -128,7 +134,7 @@ proc ExecuteTo {node current pause unitLength display foci \
     set ptClasses {}
     set payload {}
     foreach point $foci {
-	lappend ptClasses [GetCompProperty $node Class $point]
+	lappend ptClasses [GetCompProperty dummy Class $point]
     }
     while {[lsearch {exit stop} $currentMode]==-1} {
 	if {$display} {
@@ -179,9 +185,6 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    }
 	} ;# default: keep going
 	set current [expr {$scaled_current/$unitLength}]
-#	if {![info exists runState($node,cnvs)]} {
-#	    return $currentMode ;# run control window killed?
-#	}
 	set timedDisp [expr {($current-$nextDisp)*$forward > -1e-12}]
 	if {![string equal exit $currentMode]} { ;# do a display update
 	    set oldPayload $payload
@@ -380,7 +383,7 @@ proc getnodeid {modelId capt} {
     return $::captionCache($modelId,$capt)
 }
 
-proc GetCCompProperty {topNode prop args} {
+proc GetCCompProperty {prop args} {
     global model_id instance_id
     set node [lindex $args 0]
     set set [lrange $args 1 end]
@@ -402,7 +405,7 @@ proc GetCCompProperty {topNode prop args} {
 			    Eval,cIdx 2 Eval,names \
 			    {EXOGENOUS DERIVED TABLE INPUT GHOST LIMIT RECALL \
 				 BLOCK POPULATION GRID HONEYCOMB}]
-	    set numericVal [c_getvalue $topNode $node $propData($prop,cIdx)]
+	    set numericVal [c_getvalue $node $propData($prop,cIdx)]
 	    if {![string is integer -strict $numericVal]} {
 		return $numericVal
 	    }
@@ -413,7 +416,7 @@ proc GetCCompProperty {topNode prop args} {
 	    }
 	} Dims {
 	    set specials {RECORDS MEMBERS SEPARATE START_VM END_VM}
-	    set fullList [c_getvalue $topNode $node 0]
+	    set fullList [c_getvalue $node 0]
 	    
 	    set idx 0
 	    foreach elt $fullList {
@@ -428,7 +431,7 @@ proc GetCCompProperty {topNode prop args} {
 	    }
 	    return $fullList
 	} Graph {
-	    set gphId [c_getvalue $topNode $node 17]
+	    set gphId [c_getvalue $node 17]
 	    if {[llength $set]} {
 		eval {graph_table $instance_id 22 $gphId} $set
 	    } else {
@@ -437,7 +440,7 @@ proc GetCCompProperty {topNode prop args} {
 	} $numberWangs {
 	    set dataWang [lindex {5 6 8 12 13 14 15 16} \
 			      [lsearch [split $numberWangs |] $prop]]
-	    return [c_getvalue $topNode $node $dataWang]
+	    return [c_getvalue $node $dataWang]
 	} IdFromCapt {
 	    # node is actually caption in this case
 	    if {[catch {getnodeid $model_id $node} id]} {
@@ -451,7 +454,7 @@ proc GetCCompProperty {topNode prop args} {
 }
 
 # wraps c++ defined version in different interp
-proc c_getvalue {topNode node action} {
+proc c_getvalue {node action} {
     global model_id
     set res [getvalue $model_id $node $action]
     return $res
@@ -461,8 +464,8 @@ proc c_getvalue {topNode node action} {
 #    getinfo $node $field
 #}
 
-proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
-    #puts [info level 0]
+proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
+		      useCppArray} {
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
     # ... string match stops cleanly at end of list
@@ -471,12 +474,12 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
     if {[string equal ,bytes [lindex $list 1]]} {
 	if {$useCppArray} {
 	    if {$when} {
-		c_settimepointall $topNode $tgt [lindex $list end]
-		SetInterval $topNode $useCppArray $tgt [lindex $list end-3]*day [lindex $list end-3]
-		SetWrapTime $topNode $useCppArray $tgt [lindex $list end-2]
-		SetFillMethod $topNode $useCppArray $tgt [lindex $list end-1]
+		c_settimepointall $caseId $tgt [lindex $list end]
+		SetInterval $caseId $useCppArray $tgt [lindex $list end-3]*day [lindex $list end-3]
+		SetWrapTime $caseId $useCppArray $tgt [lindex $list end-2]
+		SetFillMethod $caseId $useCppArray $tgt [lindex $list end-1]
 	    } else {
-		c_setparamall $topNode $tgt [lindex $list end] \
+		c_setparamall $caseId $tgt [lindex $list end] \
 		    [lrange $list 3 end-3]
 	    }
 	    return -1 ;# do nothing more, the data has now been loaded to c
@@ -502,7 +505,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
     } elseif {[string equal ,gdal [lindex $list 1]]} {
 	# transposition not yet handled
 	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1 && !$when} {
-	    DoNotPassTcl $topNode $tgt $dims $list
+	    DoNotPassTcl $caseId $tgt $dims $list
 	    return -1 ;# typical fixed parameter
 	} else {
 	    set list [concat [NumberElements [ReadGdalRefToList $list \
@@ -530,7 +533,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 	    if {![string last ,NOW [string toupper $subs] 3]} {
 		# setting current value for var param
 		set idAndSubs $tgt[string range $numSubs 4 end]
-		if {[catch {EnumTypeToNumber $topNode $idAndSubs $list \
+		if {[catch {EnumTypeToNumber $caseId $idAndSubs $list \
 				$thisTrans 0 $useCppArray} woops]} {
 		    return [AddErrorTo {} $woops $subs]
 		} else {
@@ -538,7 +541,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 		}
 	    } else {
 		# setting value for fixed param or time point
-		if {[catch {EnumTypeToNumber $topNode $tgt$numSubs $list \
+		if {[catch {EnumTypeToNumber $caseId $tgt$numSubs $list \
 				$thisTrans $when $useCppArray} woops]} {
 		    return [AddErrorTo {} $woops $subs]
 		} else {
@@ -569,12 +572,12 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 	# array set sub $list ;# was this faster?
 
         # Next call removes old time series data from the system (no throws)
-        EnumTypeToNumber $topNode $tgt {} {} 1 $useCppArray
-	SetWrapTime $topNode $useCppArray $tgt 0 ;# clear old wraparound point
+        EnumTypeToNumber $caseId $tgt {} {} 1 $useCppArray
+	SetWrapTime $caseId $useCppArray $tgt 0 ;# clear old wraparound point
 # do not allow OTHERS if an event series
 
-	set tgtEval [GetCompProperty $topNode Eval $tgt]
-	set tgtClass [GetCompProperty $topNode Class $tgt]
+	set tgtEval [GetCompProperty dummy Eval $tgt]
+	set tgtClass [GetCompProperty dummy Class $tgt]
 
 	if {[string equal DERIVED $tgtEval]} {
 	    set specialPts {} ;# loading measurements for PEST
@@ -582,9 +585,9 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 	    set specialPts [list NOW INTERVAL]
 	} else {
 	    set specialPts [list NOW INTERVAL OTHERS]
-	    SetFillMethod $topNode $useCppArray $tgt use_last ;# and fill method
+	    SetFillMethod $caseId $useCppArray $tgt use_last ;# and fill method
 	}
-	SetInterval $topNode $useCppArray $tgt unit 1
+	SetInterval $caseId $useCppArray $tgt unit 1
     
         foreach {indx subList} $list {
 	    set nextSubs $subs,[list $indx]
@@ -596,22 +599,22 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 #		}
 		if {!$pt && $tgtClass eq "EVENT"} {
 		    # NOW: mark param active so it clears after event
-		    MarkEvtParamActive $topNode $tgt $useCppArray 1
+		    MarkEvtParamActive $caseId $tgt $useCppArray 1
 		}
             } elseif {![string is double -strict $indx]} {
                 set redoStep [AddErrorTo $redoStep \
 				  [list bad_time_point_index $specialPts] \
 				  $nextSubs]
             } elseif {[string equal RESTART [string toupper $subList]]} {
-		SetWrapTime $topNode $useCppArray $tgt $indx
+		SetWrapTime $caseId $useCppArray $tgt $indx
 		continue
 	    } elseif {$useCppArray} {
 # If there are values other than NOW, do an init step
-                c_settimepointarray $topNode $tgt $indx
+                c_settimepointarray $caseId $tgt $indx
             }
 # check for fill method if one might be appropriate
 	    if {[lsearch $specialPts OTHERS]>-1} {
-		set noMtd [catch {SetFillMethod $topNode $useCppArray $tgt \
+		set noMtd [catch {SetFillMethod $caseId $useCppArray $tgt \
 				      $subList} badFill]
 		if {$pt==2} { ;# fill method expected
 		    if {$noMtd} {
@@ -644,7 +647,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 				  [list misplaced_uftsi $subList] $nextSubs]
 	    }
 	    set redoStep [JoinSteps $redoStep \
-			      [ListToArray $topNode $tgt $subs,$indx \
+			      [ListToArray $caseId $tgt $subs,$indx \
 				   $numSubs,$indx $trans [lrange $dims 1 end] \
 				   $subList $when $useCppArray]]
         }
@@ -682,7 +685,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
         if {$useCppArray} {
 	    if {$when} {
 		set map [split $subs ,]
-		c_settimepointrecords $topNode $tgt [lrange $map 2 end] \
+		c_settimepointrecords $caseId $tgt [lrange $map 2 end] \
 		    [lindex $map 1] $last
 		# if {[catch {c_settimepointrecords $tgt [lrange $map 2 end] \
 		# 		[lindex $map 1] $last} err]} {
@@ -690,7 +693,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 		#     set redoStep {}
 		# } 
 	    } else {
-		c_setrecordlist $topNode $tgt \
+		c_setrecordlist $caseId $tgt \
 		    [lrange [split $numSubs ,] 1 end] $last
 		# if {[catch {c_setrecordlist $tgt [lrange [split $subs ,] \
 		# 				      1 end] $last} err]} {
@@ -700,7 +703,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
 	    }
 	} else { ;# use old system for Tcl
 	    set recordNode [lindex $nextDim 1]
-	    EnumTypeToNumber $topNode $recordNode$numSubs $last {} $when \
+	    EnumTypeToNumber $caseId $recordNode$numSubs $last {} $when \
 		     $useCppArray ;# cannot fail
 	}
 
@@ -734,7 +737,7 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
             set redoStep [AddErrorTo $redoStep gap_in_data $newSubs]
         } else {
 	    set redoStep [JoinSteps $redoStep \
-			      [ListToArray $topNode $tgt $subs,$indx \
+			      [ListToArray $caseId $tgt $subs,$indx \
 				   $numSubs,$arrayPt \
 				   [lrange $trans 1 end] [lrange $dims 1 end] \
 				   $sub($indx) $when $useCppArray]]
@@ -743,9 +746,9 @@ proc ListToArray {topNode tgt subs numSubs trans dims list when useCppArray} {
     return $redoStep
 }
 
-proc DoNotPassTcl {topNode node dims tableSpec} {
+proc DoNotPassTcl {caseId node dims tableSpec} {
 #puts "dims $dims spec $tableSpec"
-    if {[string equal REAL [GetCCompProperty $topNode Type $node]]} {
+    if {[string equal REAL [GetCCompProperty Type $node]]} {
 	set gdalType GDT_Float64
     } else {
 	set gdalType GDT_Int32
@@ -764,7 +767,7 @@ proc DoNotPassTcl {topNode node dims tableSpec} {
 		     $dataCols $dataRows $gdalType $fillCols $fillRows]
     gdal_close $hg
     
-    c_setparamall $topNode $node $bytesFromGdal [list $fillRows $fillCols]
+    c_setparamall $caseId $node $bytesFromGdal [list $fillRows $fillCols]
 }
 
 # duplicate of procedure in utility.tcl
@@ -874,13 +877,13 @@ proc UntransVal {trans mem type} {
     return $mem
 }
 
-proc EnumTypeToNumber {topNode tgt head trans when useCppArray} {
+proc EnumTypeToNumber {caseId tgt head trans when useCppArray} {
     if {![llength $head]} {
         # empty head, signal to clear out old values
         if {$useCppArray} {
-            c_cleartimeseries $topNode $tgt
+            c_cleartimeseries $caseId $tgt
         } else {
-	    tcl_cleartimeseries $topNode $tgt
+	    tcl_cleartimeseries $tgt
         }
     } else {
 	set head [UntransVal $trans $head data]
@@ -889,21 +892,20 @@ proc EnumTypeToNumber {topNode tgt head trans when useCppArray} {
 	} elseif {![string is double -strict $head]} {
 	    error [list data_not_number $head]
 	}
-	PlaceInArray $topNode $tgt $head $when $useCppArray
+	PlaceInArray $caseId $tgt $head $when $useCppArray
     }
     #puts "just went set paramData($tgt) $paramData($tgt)"
 }
 
 ########################### stuff for both languages below ###############
-proc PlaceInArray {topNode where what when inC} {
-    #puts "PlaceInArray $where $what $inC"
+proc PlaceInArray {caseId where what when inC} {
     set map [split $where ,]
     if {$inC} {
 	if {$when} {
-	    c_settimepointelement $topNode [lindex $map 0] \
+	    c_settimepointelement $caseId [lindex $map 0] \
 		[lrange $map 2 end] [lindex $map 1] $what
 	} else {
-	    c_setparamelement $topNode [lindex $map 0] \
+	    c_setparamelement $caseId [lindex $map 0] \
 		[lrange $map 1 end] $what
 	}
     } else {
@@ -915,15 +917,15 @@ proc PlaceInArray {topNode where what when inC} {
     }
 }
 
-proc MarkEvtParamActive {topNode node inC wait} {
+proc MarkEvtParamActive {caseId node inC wait} {
 # active was set to 2 because the param updater was called before the
 #    model collected the parameter, but as of 6.7p1 anything that calls this
     #    also does an extra rate pass collecting it immediately so only need 1
     # (except while model executing!)
     if {$inC} {
-	c_markevtparamactive $topNode $node $wait
+	c_markevtparamactive $caseId $node $wait
     } else {
-	set ::setFromSeries($topNode,$node,active) $wait
+	set ::setFromSeries($node,active) $wait
     }
 }
 
@@ -937,17 +939,17 @@ proc AddEventCommand {topNode node cmd} {
     }
 }
 
-proc SetWrapTime {topNode inC where args} {
+proc SetWrapTime {caseId inC where args} {
     global paramData
     if {$inC} {
-	eval c_setwraparoundtime $topNode $where $args
+	eval c_setwraparoundtime $caseId $where $args
     } else {
 	eval set paramData(wrapAroundPoint,$where) $args
     }
 }
 
 # this one takes numerical for c and textual for tcl
-proc SetFillMethod {topNode inC where {what {}}} {
+proc SetFillMethod {caseId inC where {what {}}} {
     global paramData
 
     set fillMtds {use_last use_closest interpolate}
@@ -959,19 +961,19 @@ proc SetFillMethod {topNode inC where {what {}}} {
 	set which {}
     }
     if {$inC} {
-	lindex $fillMtds [eval c_setfillmethod $topNode $where $which]
+	lindex $fillMtds [eval c_setfillmethod $caseId $where $which]
     } else {
 	eval set paramData(fillMethod,$where) [string toupper $what]
     }
 }
 
-proc SetInterval {topNode inC where {what {}} {howLong {}}} {
+proc SetInterval {caseId inC where {what {}} {howLong {}}} {
     global paramData
 
     if {[string length $what]} {
 	set paramData(uftsi,$where) $what
 	if {$inC} {
-	    eval c_setinterval $topNode $where $howLong
+	    eval c_setinterval $caseId $where $howLong
 	} else {
 	    set paramData(timePointInterval,$where) $howLong
 	}
@@ -1000,10 +1002,17 @@ proc NumberToEnumType {idx trans} {
     }
 }
 
-proc c_setparamarray {topNode tgtNode} {
-    global instance_id param_id
+proc c_setparamarray {topNode tgtNode caseId} {
+    global instance_id param_id exptl_case exptl_params
 
-    set param_id($tgtNode) [c_createparamarray $instance_id $tgtNode]
+    if {$caseId ne {}} {
+	set useInst $exptl_case($caseId)
+	set keepPrm exptl_params($tgtNode,$caseId)
+    } else {
+	set useInst $instance_id
+	set keepPrm param_id($tgtNode)
+    }
+    set $keepPrm [c_createparamarray $useInst $tgtNode]
 }
 
 # Old versions of these (identifying parameters by target node id) are passed
@@ -1015,11 +1024,15 @@ foreach oldCProc {setparamelement settimepointelement settimepointarray \
 		      setrecordlist settimepointrecords markevtparamactive \
 		      setparamall getparamall settimepointall gettimepointall} {
     proc c_$oldCProc {args} {
-	global param_id
+	global param_id exptl_params
 	set cmd [info level 0]
-	
-	return [eval [list new[lindex $cmd 0] $param_id([lindex $cmd 2])] \
-		    [lrange $cmd 3 end]] ;# elt 1 (2nd) is top node
+	if {[lindex $cmd 1] ne {}} { ;# experiment case id
+	    set usePrm $exptl_params([lindex $cmd 2],[lindex $cmd 1])
+	} else {
+	    set usePrm $param_id([lindex $cmd 2])
+	}
+	return [eval [list new[lindex $cmd 0] $usePrm] [lrange $cmd 3 end]]
+		# elt 1 (2nd) is top node, not needed here
     }
 }
 
@@ -1037,16 +1050,10 @@ foreach oldCProc {setparamelement settimepointelement settimepointarray \
 #
 # this could be more efficient
 proc ExScrubRun {node times} {
-    global runState model_id instance_id
+    global model_id instance_id
     #    if {![string match ok [ShowMess debug info Scrubbing okcancel]]} {
     #	error Bombed
     #    }
-    if {$times && [info exists runState($node,currentTime)]} {
-        unset runState($node,currentTime)
-    }
-    if {[info exists runState($node,cnvs)]} {
-	$runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
-    }
     if {[info exists model_id]} {
         if {[string bytelength $model_id]} {
             if {[info exists instance_id]} {
@@ -1069,3 +1076,164 @@ proc ExScrubRun {node times} {
     }
 }
 
+proc ExplainError {myNode errList origError} {
+    global introspect
+    
+    set severity -1
+    set what [lindex $errList 0]
+    set dest [lindex $errList 1]
+    set mtime [lindex $errList 2]
+    set mstep [lindex $errList 3]
+    set whoopsie [lindex $errList 4]
+    switch $what {
+	evalmodel {set operation "calculating the value of"}
+	updatemodel {set operation "updating the state"}
+	resetmodel {set operation "resetting"}
+	default {set operation "doing $what for"}
+    }
+#	advancemodel {set operation "advancing the time point for"}
+    set target something
+    if {[string is integer -strict $dest]} { ;# graph id (tcl only for now)
+	foreach {n record} [array get ::nodedata] {
+	    if {[lindex $record 9]==$dest} {
+		set target "[GetFullCaption $record] (node [lindex $record 0])"
+		break;
+	    }
+	}
+	if {[llength $introspect]} {
+	    append target " at indices [join $introspect ,]"
+	}
+    } elseif {[string first :: $dest]>-1} { ;# a Tcl namespace hierarchy
+	set targetList [DescribeComponent $myNode $dest]
+	if {![namespace exists [join [lrange [split $dest :] 0 end-2] :]]} {
+	    set whoopsie dest_missing
+# Just remind me, when does this happen? 
+# Probably never, due to base index range checking
+	}
+	set target [lindex $targetList 0]
+    } elseif {![string equal none $dest]} { ;# caption extracted by c++ error handling
+	if {[llength $dest] == 1} {
+	    set target $dest
+	} else {
+	    set target \
+		"[lindex $dest 0] at indices [join [lrange $dest 1 end] ,]"
+	}
+    }
+
+    switch -glob -- $whoopsie {
+	"can't read \"*\": no such element in array" - 
+	"can't read \"*\": no such variable" {
+	    set ref [lindex [split $whoopsie \"] 1]
+	    set sourceList [DescribeComponent $myNode $ref] 
+	    if {![namespace exists [join [lrange [split $ref :] 0 end-2] :]]} {
+		set problem "it found that there was no submodel instance when trying to get [lindex $sourceList 0]"
+	    } else {
+		set problem "it found that there was no value for [lindex $sourceList 0]"
+	    }
+	} dest_missing {
+	    set problem "it found there was no instance with these indices. This may mean that you have specified a base model instance by an index which is out of range"
+	} "User-defined interruption code *" {
+	    set code [lindex $whoopsie end]
+	    set problem "there was a user-defined interruption: $code"
+	    set severity 0
+	} "abort request from the user" {
+	    set problem "the user chose to abort a long operation"
+	    set severity 0
+	} discontinuity {
+	    set problem "there was a discontinuity which could not be dealt with by adaptive step size control"
+	    set severity 0
+	} event {
+	    set problem "there was a limit event, producing a pause"
+	    set severity 0
+	} min {
+	    set problem "the compartment value went below its minimum"
+	    set severity 0
+	} max {
+	    set problem "the compartment value went above its maximum"
+	    set severity 0
+	} "Illegal operation signal *" {
+	    set code [lindex $whoopsie end]
+	    set which [lindex {SIGEOF SIGHUP SIGINT SIGQUIT SIGILL SIGTRAP 
+		SIGIOT SIGEMT SIGFPE SIGKILL SIGBUS SIGSEGV SIGSYS SIGPIPE 
+		SIGALRM SIGTERM SIGUSR1 SIGUSR2 SIGCHLD SIGPWR SIGWINCH 
+		SIGURG SIGIO SIGSTOP SIGTSTP SIGCONT SIGTTIN
+		SIGTTOU SIGVTALRM SIGPROF} $code]
+	    set problem "there was an OS signal: $code ($which)"
+	} "domain error: argument not in valid range" -
+	"floating-point value too large to represent" -
+	"divide by zero" {
+	    set problem "there was a math error: $whoopsie"
+	} default {
+	    # could not get cause of error, raise again as general problem
+	    set problem "there was a $whoopsie"
+	}
+    }
+    
+    switch -- $mstep {
+	-2 {
+	    set action initialization
+	    set timing {}
+	    #		ScrubRun $node 0
+	} -1 {
+	    set action parameterization
+	    set timing {}
+	    #		ScrubRun $node 0
+	} 0 {
+	    set action reset
+	    set timing {}
+	} default {
+	    set action execution
+	    set timing " at time $mtime"
+	}
+    }
+    switch -- $severity {
+	-1 {
+	    set specifics [list model_crash $operation $target $action $timing \
+		       $problem $origError]
+	    set icon warning
+	} 0 {
+	    set specifics [list model_pause $operation $target $action $timing \
+		       $problem]
+	    set icon info
+	}
+    }
+    AddLogEntry $myNode $specifics
+    ExecQuery $specifics $icon top {} ok
+    # do it after idle so this process is not hung till user responds
+#    RaiseModelWindow $myNode
+    return $severity
+}
+
+proc tcl_insert {node newVs} {
+    global nodedata
+
+    set line [FindRecord $node]
+    if {[llength $line]} {
+	set tree [lindex $line 8]
+	set type [lindex $line 1]
+	set dims [GetTclCompProperty Dims $node]
+	return [list [FillValue ::AME_model<> $tree $type $dims {} 0 $newVs]]
+    }
+    return novalue
+}
+
+proc DescribeComponent {topNode ref} {
+    set hierarchy [split $ref :] ;# joins actually :: so every other elt null
+    set inds {} ;# inds no longer needed, kept as spare part
+    set context [MakeContext $topNode [lrange $hierarchy 0 end-2]]
+    set variable [lindex $hierarchy end]
+    set br [string first \( $variable]
+    if {$br == -1} {
+	set captPath [NewCaptionIfAvail $topNode $hierarchy 1 $variable]
+	set vdesc "variable [lindex $captPath 0]"
+    } else {
+	set locals [split [string range $variable [incr br 1] end-1] ,]
+	eval {lappend inds} $locals
+	set captPath [NewCaptionIfAvail $topNode $hierarchy \
+			  [concat $locals [list 1]] \
+			  [string range $variable 0 [incr br -2]]]
+	set vdesc "element [join [lrange $captPath 1 end-1] ,] of variable [lindex $captPath 0]"
+    }
+# next turn last arg into node
+    return [list $vdesc$context $inds]
+}

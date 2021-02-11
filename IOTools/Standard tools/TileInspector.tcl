@@ -264,8 +264,8 @@ namespace eval ::$keyValue {
 	set table_entry(values) $paramData($compName)
 	SeparateTimeExtras
 	set startLine [expr {[GetModelEval $node] ne "INPUT"}]
-	set dims [lrange [GetCompProperty $topNode Dims $node] 0 end-1]
-	set trans [GetCompProperty $topNode Trans $node]
+	set dims [lrange [GetCompProperty Dims $node] 0 end-1]
+	set trans [GetCompProperty Trans $node]
 	if {!$startLine} {
 	    set dims [linsert $dims 0 TIME]
 	    set trans [linsert $trans 0 {}]

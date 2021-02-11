@@ -166,9 +166,9 @@ namespace eval ::ModelDiagram20060804 {
 		#puts "trans $trans value $value"
 #	    }
 	    AddPopupMessage novalue \#ffffc0 GetShortVals $topNode $context
-	    AddPopupMessage [GetCompProperty $topNode Spec $context] \#c0ffc0
-	    set desc [GetCompProperty $topNode Desc $context]
-	    set comment [GetCompProperty $topNode Comment $context]
+	    AddPopupMessage [GetCompProperty Spec $context] \#c0ffc0
+	    set desc [GetCompProperty Desc $context]
+	    set comment [GetCompProperty Comment $context]
 	    if {[string length $comment]} {
 		append desc \n$comment
 	    }

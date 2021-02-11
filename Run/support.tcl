@@ -53,174 +53,13 @@ proc graph_lookup {xval index} {
 proc setup_enum_type_data {args} {
 }
 
-proc tcl_insert {node newVs} {
-    global nodedata
-
-    set line [FindRecord $node]
-    if {[llength $line]} {
-	set tree [lindex $line 8]
-	set type [lindex $line 1]
-	set dims [GetTclCompProperty dummy Dims $node]
-	return [list [FillValue ::AME_model<> $tree $type $dims {} 0 $newVs]]
-    }
-    return novalue
-}
-proc ExplainError {myNode errList origError} {
-    global introspect
-    
-    set severity -1
-    set what [lindex $errList 0]
-    set dest [lindex $errList 1]
-    set mtime [lindex $errList 2]
-    set mstep [lindex $errList 3]
-    set whoopsie [lindex $errList 4]
-    switch $what {
-	evalmodel {set operation "calculating the value of"}
-	updatemodel {set operation "updating the state"}
-	resetmodel {set operation "resetting"}
-	default {set operation "doing $what for"}
-    }
-#	advancemodel {set operation "advancing the time point for"}
-    set target something
-    if {[string is integer -strict $dest]} { ;# graph id (tcl only for now)
-	foreach {n record} [array get ::nodedata] {
-	    if {[lindex $record 9]==$dest} {
-		set target "[GetFullCaption $record] (node [lindex $record 0])"
-		break;
-	    }
-	}
-	if {[llength $introspect]} {
-	    append target " at indices [join $introspect ,]"
-	}
-    } elseif {[string first :: $dest]>-1} { ;# a Tcl namespace hierarchy
-	set targetList [DescribeComponent $myNode $dest]
-	if {![namespace exists [join [lrange [split $dest :] 0 end-2] :]]} {
-	    set whoopsie dest_missing
-# Just remind me, when does this happen? 
-# Probably never, due to base index range checking
-	}
-	set target [lindex $targetList 0]
-    } elseif {![string equal none $dest]} { ;# caption extracted by c++ error handling
-	if {[llength $dest] == 1} {
-	    set target $dest
-	} else {
-	    set target \
-		"[lindex $dest 0] at indices [join [lrange $dest 1 end] ,]"
-	}
-    }
-
-    switch -glob -- $whoopsie {
-	"can't read \"*\": no such element in array" - 
-	"can't read \"*\": no such variable" {
-	    set ref [lindex [split $whoopsie \"] 1]
-	    set sourceList [DescribeComponent $myNode $ref] 
-	    if {![namespace exists [join [lrange [split $ref :] 0 end-2] :]]} {
-		set problem "it found that there was no submodel instance when trying to get [lindex $sourceList 0]"
-	    } else {
-		set problem "it found that there was no value for [lindex $sourceList 0]"
-	    }
-	} dest_missing {
-	    set problem "it found there was no instance with these indices. This may mean that you have specified a base model instance by an index which is out of range"
-	} "User-defined interruption code *" {
-	    set code [lindex $whoopsie end]
-	    set problem "there was a user-defined interruption: $code"
-	    set severity 0
-	} "abort request from the user" {
-	    set problem "the user chose to abort a long operation"
-	    set severity 0
-	} discontinuity {
-	    set problem "there was a discontinuity which could not be dealt with by adaptive step size control"
-	    set severity 0
-	} event {
-	    set problem "there was a limit event, producing a pause"
-	    set severity 0
-	} min {
-	    set problem "the compartment value went below its minimum"
-	    set severity 0
-	} max {
-	    set problem "the compartment value went above its maximum"
-	    set severity 0
-	} "Illegal operation signal *" {
-	    set code [lindex $whoopsie end]
-	    set which [lindex {SIGEOF SIGHUP SIGINT SIGQUIT SIGILL SIGTRAP 
-		SIGIOT SIGEMT SIGFPE SIGKILL SIGBUS SIGSEGV SIGSYS SIGPIPE 
-		SIGALRM SIGTERM SIGUSR1 SIGUSR2 SIGCHLD SIGPWR SIGWINCH 
-		SIGURG SIGIO SIGSTOP SIGTSTP SIGCONT SIGTTIN
-		SIGTTOU SIGVTALRM SIGPROF} $code]
-	    set problem "there was an OS signal: $code ($which)"
-	} "domain error: argument not in valid range" -
-	"floating-point value too large to represent" -
-	"divide by zero" {
-	    set problem "there was a math error: $whoopsie"
-	} default {
-	    # could not get cause of error, raise again as general problem
-	    set problem "there was a $whoopsie"
-	}
-    }
-    
-    switch -- $mstep {
-	-2 {
-	    set action initialization
-	    set timing {}
-	    #		ScrubRun $node 0
-	} -1 {
-	    set action parameterization
-	    set timing {}
-	    #		ScrubRun $node 0
-	} 0 {
-	    set action reset
-	    set timing {}
-	} default {
-	    set action execution
-	    set timing " at time $mtime"
-	}
-    }
-    switch -- $severity {
-	-1 {
-	    set specifics [list model_crash $operation $target $action $timing \
-		       $problem $origError]
-	    set icon warning
-	} 0 {
-	    set specifics [list model_pause $operation $target $action $timing \
-		       $problem]
-	    set icon info
-	}
-    }
-    AddLogEntry $myNode $specifics
-    ExecQuery $specifics $icon top {} ok
-    # do it after idle so this process is not hung till user responds
-#    RaiseModelWindow $myNode
-    return $severity
-}
-
-proc DescribeComponent {topNode ref} {
-    set hierarchy [split $ref :] ;# joins actually :: so every other elt null
-    set inds {} ;# inds no longer needed, kept as spare part
-    set context [MakeContext $topNode [lrange $hierarchy 0 end-2]]
-    set variable [lindex $hierarchy end]
-    set br [string first \( $variable]
-    if {$br == -1} {
-	set captPath [NewCaptionIfAvail $topNode $hierarchy 1 $variable]
-	set vdesc "variable [lindex $captPath 0]"
-    } else {
-	set locals [split [string range $variable [incr br 1] end-1] ,]
-	eval {lappend inds} $locals
-	set captPath [NewCaptionIfAvail $topNode $hierarchy \
-			  [concat $locals [list 1]] \
-			  [string range $variable 0 [incr br -2]]]
-	set vdesc "element [join [lrange $captPath 1 end-1] ,] of variable [lindex $captPath 0]"
-    }
-# next turn last arg into node
-    return [list $vdesc$context $inds]
-}
-
 proc NewCaptionIfAvail {topNode dest inds in_code} {
     global nodedata
 
     foreach record [array names nodedata] {
 	set texts [lindex $nodedata($record) 13]
 	if {[string equal $in_code [lindex $texts 4]]} {
-	    set allETs [GetTclCompProperty $topNode Trans \
+	    set allETs [GetTclCompProperty Trans \
 		      [lindex $nodedata($record) 0]]
 	    set useETs [lrange $allETs end-[expr {[llength $inds]-1}] end]
 	    return [concat [list [set ::[lindex $texts 0]]] \
@@ -317,7 +156,7 @@ proc tcl_setparamarray {model node} {
     set paramLocns($paramIdx,arr) tclParmData ;# was [InputVarFor $model $node]
 }
 
-proc tcl_cleartimeseries {topNode node} {
+proc tcl_cleartimeseries {node} {
     global paramData
 
     array unset paramData $node*
@@ -1004,9 +843,9 @@ proc AdvanceTime {node phase fraction} {
 proc InitTimeSeries {topNode} {
     global setFromSeries paramData
     array unset setFromSeries
-    foreach node [GetTclCompProperty $topNode Objects] {
+    foreach node [GetTclCompProperty Objects] {
 	set evalN [lsearch {INPUT} \
-		       [GetTclCompProperty $topNode Eval $node]]
+		       [GetTclCompProperty Eval $node]]
 	if {$evalN > -1} {
 #puts "node $node timePts [array names paramData $node,*]"
 	    foreach timePt [array names paramData $node,*] {
@@ -1018,7 +857,9 @@ proc InitTimeSeries {topNode} {
 		    [lsort -real [array names $node]]
 		set setFromSeries($topNode,$node,next) -1 ;# no data yet loaded
 		set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
-		set setFromSeries($topNode,$node,active) 0
+	        set setFromSeries($node,active) 0
+	    # true if NOW or zapped. Hoping never needs doing for a whole
+	    # model so can get away without specifying $topNode
 #puts "initted $setFromSeries($topNode,$node,times)"
 #	    }
 	}
@@ -1060,7 +901,7 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 	set ptCount [llength $setFromSeries($list)]
 	set node [lindex [split $list ,] 1]
 	set newTime [expr {$newTimeInDays/$paramData(timePointInterval,$node)}]
-    if {[lsearch {EVENT SQUIRT} [GetTclCompProperty $topNode Class $node]]>-1} {
+    if {[lsearch {EVENT SQUIRT} [GetTclCompProperty Class $node]]>-1} {
 	set fillMethod none
 	} else {
 	    set fillMethod [string tolower [SetFillMethod $topNode $inC $node]]
@@ -1142,9 +983,9 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 		}
 	    }
 	    if {[string equal none $fillMethod]} {
-		if {$setFromSeries($topNode,$node,active)} {
-		    incr setFromSeries($topNode,$node,active) -1
-		    if {!$setFromSeries($topNode,$node,active)} {
+		if {$setFromSeries($node,active)} {
+		    incr setFromSeries($node,active) -1
+		    if {!$setFromSeries($node,active)} {
 			tcl_zeroparam $node
 		    }
 		}
@@ -1165,8 +1006,8 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 		set useTime [lindex $setFromSeries($list) $loBound]
 		set setFromSeries($topNode,$node,next) $loBound
 		set setFromSeries($topNode,$node,wraps) $loWraps
-		if {[lsearch {EVENT SQUIRT} [GetTclCompProperty $topNode Class $node]]==-1 || $newTime==[lindex $setFromSeries($list) $loBound]+$loWraps*$paramData(wrapAroundPoint,$node)} {
-		    set setFromSeries($topNode,$node,active) 1
+		if {[lsearch {EVENT SQUIRT} [GetTclCompProperty Class $node]]==-1 || $newTime==[lindex $setFromSeries($list) $loBound]+$loWraps*$paramData(wrapAroundPoint,$node)} {
+		    set setFromSeries($node,active) 1
 		    foreach tsValue [concat [array names paramData $node,$useTime] \
 				     [array names paramData $node,$useTime,*]] {
 			set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
@@ -1175,7 +1016,7 @@ proc UpdateFromPoints {list topNode newTimeInDays next} {
 		    }
 		}
 	    }
-    if {$fillMethod eq "none" && $setFromSeries($topNode,$node,active)} {
+    if {$fillMethod eq "none" && $setFromSeries($node,active)} {
 	set ::event(seriesSign) [getinfo $node 8]
     }
     return $next
@@ -1412,19 +1253,17 @@ proc stop {code} {
     stop_on_id 0 $code
 }
 
-proc GetCompProperty {topNode prop args} {
-    global runState
-       
-    if {[RunningInC $topNode]} {
-	set result [eval GetCCompProperty $topNode $prop $args]
+proc GetCompProperty {dummy prop args} {
+    if {[RunningInC $dummy]} {
+	set result [eval GetCCompProperty $prop $args]
     } else {
-	set result [eval GetTclCompProperty $topNode $prop $args]
+	set result [eval GetTclCompProperty $prop $args]
     }
 #puts "result $result"
     return $result
 }
 
-proc GetTclCompProperty {topNode prop args} {
+proc GetTclCompProperty {prop args} {
     global nodecount nodedata phasecount steps
     set node [lindex $args 0]
     set set [lrange $args 1 end]

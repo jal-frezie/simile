@@ -452,7 +452,7 @@ namespace eval slide139 {
 #	ListToArray $myNode $node $sub $sub {} {} [$scale get] 1 \
 #	    [RunningInC $myNode]
 	set hold [eval [list WidgetSelnToC $node 0] $indices]
-	MarkEvtParamActive $myNode $node [RunningInC $myNode] [expr {1+$hold}]
+	MarkEvtParamActive {} $node [RunningInC $myNode] [expr {1+$hold}]
 	# if no immediate rate update, wait a step before clearing event
     }
 

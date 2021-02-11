@@ -119,7 +119,6 @@ itcl::class similescript::$newHelperClass {
     }
         
     proc OnElementContext {path X Y} {
-	puts [info level 0]
 	variable cMenu
 	variable clickPath
 	# We have a hierarchy of frames below the click, need to find which
@@ -204,8 +203,10 @@ itcl::class similescript::$newHelperClass {
 	set caseName [GetCaseName $path]
 	if {$caseName ne {}} {
 	    set notInput [expr {[GetModelEval $node] ne "INPUT"}]
-	    AddEntry $winId $myNode [IdFromTail $myNode $path -1] \
-		$clickPath 0 $notInput $caseName
+	    set type [lindex {input file} $notInput]
+	    set f [AddEntry $winId $myNode [IdFromTail $myNode $path -1] \
+		       $clickPath 0 $notInput $caseName]
+	    $f.caption configure -image $::iconImages([string tolower $type]) -compound left
 	    destroy $winId.label
 	}
 	$modelInst ReleaseClicks
