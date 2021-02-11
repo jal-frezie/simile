@@ -1478,8 +1478,7 @@ FINDABLE int freeDataHandleCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&toFree, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
-  
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &toFree);
   free_bloc_data(toFree->contents, toFree->dimSpecs);
   free(toFree);
   return TCL_OK;
@@ -1489,8 +1488,8 @@ FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   Tcl_Obj *resultPtr, *newData;
   int error;
-  /*
   char spare[256];
+  /*
   int dims[32], path[32];
   void* mSpare;
   enum_type_data* usedTypes[32];
@@ -1534,8 +1533,8 @@ FINDABLE int handleDataCmd(ClientData clientData, Tcl_Interp *interp,
   */
   c_result = get_raw_values(Tcl_GetStringFromObj(argv[3], NULL), modelHandle);
   if (c_result) {
-    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char*)&c_result,
-						 sizeof(void*)));
+    sprintf(spare, "%p", c_result);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(spare, -1));
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("component has no data", -1));

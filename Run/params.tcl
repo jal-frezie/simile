@@ -545,7 +545,6 @@ proc AcceptAll {topNode compNames notInput complain} {
 }
 
 proc AcceptData {topNode compName notInput complain} {
-    puts [info level 0]
     global runState msgs whichParamsAffected readMany paramMetadata
     set namencase [split $compName ,]
     set compLocal [lindex $namencase 0]
@@ -561,7 +560,6 @@ proc AcceptData {topNode compName notInput complain} {
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
 
-    puts $compLocal
     set node [IdFromTail $topNode $compLocal -1]
     set dataChanged 0
     if {$complain > -1 && \

@@ -501,8 +501,7 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
 
-  memcpy(&c_result, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
-  
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &c_result);
   error = Tcl_GetIntFromObj(interp, argv[2], &count);
   if (error != TCL_OK) {
     return error;
@@ -810,7 +809,7 @@ FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
     }
   }
 
-  memcpy(&accessTool, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &accessTool);
   
   valspan=valfor255-valfor0; // set to span
 
@@ -898,7 +897,7 @@ FINDABLE int getValueCountCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_WrongNumArgs(interp, 1, argv, "data_handle ?lose_zeros?");
     return TCL_ERROR;
   }
-  memcpy(&accessTool, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &accessTool);
 
   if (argc == 3) {
     error = Tcl_GetIntFromObj(interp, argv[2], &loseZeros);

@@ -1175,7 +1175,9 @@ proc CombineTimeExtras {} {
         lappend table_entry(values) interval $table_entry(uftsi)
     }
     if {[info exists table_entry(others)] && [llength $table_entry(others)] && \
-                ![string equal others [lindex $table_entry(values) end-1]]} {
+	    ![string equal [lindex $table_entry(between_txts) 0] \
+		  $table_entry(others)] && \
+	    ![string equal others [lindex $table_entry(values) end-1]]} {
         lappend table_entry(values) others \
 	    [lindex $table_entry(between_keys) \
 		 [lsearch $table_entry(between_txts) $table_entry(others)]]
