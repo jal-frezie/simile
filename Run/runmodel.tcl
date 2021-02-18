@@ -744,6 +744,17 @@ proc EatInput {} {
     eval [join $blether \n]
 }
 
+proc CountCValues {dH loseZeros} {
+    if {[llength $dH]==1} {
+	set dH [list default $dH]
+    }
+    set runTot 0
+    foreach {case hdl} $dH {
+	incr runTot [count_values $hdl $loseZeros]
+    }
+    return $runTot
+}
+
 proc GetShortVals {topNode plName limit} {
     set showMatrix [expr {[PrefValue custom(dispMatrix) dispMatrix] && \
 			      [llength [lsearch -all -regexp -not [GetCompProperty $topNode Dims $plName] START_VM|END_VM]]==3}] ;# 2 non-special non-end values
@@ -754,13 +765,13 @@ proc GetShortVals {topNode plName limit} {
 	} else {
 	    set loseZeros [expr {[lsearch {EVENT SQUIRT} \
 			     [GetCompProperty $topNode Class $plName]]>-1}]
-	    set count [count_values $hdl $loseZeros]
+	    set count [CountCValues $hdl $loseZeros]
 	    if {$count<$limit/5 || $showMatrix} {
-		set text [extract_list $hdl $count $loseZeros]
+		set text [ExtractCList $hdl $count $loseZeros]
 	    } else {
 		set tail [expr {$limit/10}]
-		set text [concat [extract_list $hdl $tail $loseZeros] \
-			      [extract_list $hdl -$tail $loseZeros]]
+		set text [concat [ExtractCList $hdl $tail $loseZeros] \
+			      [ExtractCList $hdl -$tail $loseZeros]]
 	    }
 	    ReleaseHandle $topNode $hdl
 	}
@@ -786,7 +797,7 @@ proc GetShortVals {topNode plName limit} {
 	    set count -[lindex $result 0]
 	    set text [lindex $result 1]
 	} else {
-	    set text [PrettifyValList $text]
+#	    set text [PrettifyValList $text]
 	}
     }
     return [list $count $text]
@@ -970,7 +981,7 @@ proc UpdateSnap {w label submodels topNode node} {
     # check size
     if {[RunningInC $topNode]} {
 	set hdl [GetHandle $topNode $node]
-	set count [count_values $hdl]
+	set count [CountCValues $hdl 0]
 	ReleaseHandle $topNode $hdl
     } else {
 	set count [CountValues $runState(val$w)]

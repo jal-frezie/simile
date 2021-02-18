@@ -229,18 +229,31 @@ proc GetPayload {node point class} {
 }
 
 proc GetHandle {node point} {
-    global model_id instance_id
-    return [handle_data $model_id $instance_id $point]
+    global model_id instance_id exptl_case
+    set result [handle_data $model_id $instance_id $point]
+    if {[array exists exptl_case]} {
+	set result [list default $result]
+	foreach caseId [array names exptl_case] {
+	    lappend result $caseId \
+		[handle_data $model_id $exptl_case($caseId) $point]
+	}
+    }
+    return $result
 }
   
 proc ReleaseHandle {node handle} {
-    free_data_handle $handle
+    if {[llength $handle]==1} {
+	set handle [list default $handle]
+    }
+    foreach {case sub} $handle {
+	free_data_handle $sub
+    }
 }
 
 proc FreeAll {load} {
     foreach {id hdl} $load {
 	if {[llength $hdl]==3} {
-	    free_data_handle [lindex $hdl 2]
+	    ReleaseHandle dummy [lindex $hdl 2]
 	}
     }
 }
@@ -647,7 +660,7 @@ proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
 				  [list misplaced_uftsi $subList] $nextSubs]
 	    }
 	    set redoStep [JoinSteps $redoStep \
-			      [ListToArray $caseId $tgt $subs,$indx \
+			      [ListToArray dummy $caseId $tgt $subs,$indx \
 				   $numSubs,$indx $trans [lrange $dims 1 end] \
 				   $subList $when $useCppArray]]
         }
@@ -737,7 +750,7 @@ proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
             set redoStep [AddErrorTo $redoStep gap_in_data $newSubs]
         } else {
 	    set redoStep [JoinSteps $redoStep \
-			      [ListToArray $caseId $tgt $subs,$indx \
+			      [ListToArray dummy $caseId $tgt $subs,$indx \
 				   $numSubs,$arrayPt \
 				   [lrange $trans 1 end] [lrange $dims 1 end] \
 				   $sub($indx) $when $useCppArray]]
@@ -942,7 +955,7 @@ proc AddEventCommand {topNode node cmd} {
 proc SetWrapTime {caseId inC where args} {
     global paramData
     if {$inC} {
-	eval c_setwraparoundtime $caseId $where $args
+	eval [list c_setwraparoundtime $caseId $where] $args
     } else {
 	eval set paramData(wrapAroundPoint,$where) $args
     }
@@ -961,7 +974,7 @@ proc SetFillMethod {caseId inC where {what {}}} {
 	set which {}
     }
     if {$inC} {
-	lindex $fillMtds [eval c_setfillmethod $caseId $where $which]
+	lindex $fillMtds [c_setfillmethod $caseId $where $which]
     } else {
 	eval set paramData(fillMethod,$where) [string toupper $what]
     }
@@ -973,7 +986,7 @@ proc SetInterval {caseId inC where {what {}} {howLong {}}} {
     if {[string length $what]} {
 	set paramData(uftsi,$where) $what
 	if {$inC} {
-	    eval c_setinterval $caseId $where $howLong
+	    c_setinterval $caseId $where $howLong
 	} else {
 	    set paramData(timePointInterval,$where) $howLong
 	}

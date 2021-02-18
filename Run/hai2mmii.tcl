@@ -148,6 +148,30 @@ proc AddToWatched {node} {
     $::runState($::myNode,inspId) AddHelperLeaf $node $helperTable(beingCalled)
 }
 
+proc ExtractCList {dH count loseZeros} {
+    if {[llength $dH]==1} {
+	return [extract_list $dH $count $loseZeros]
+    } ;# else
+    set runTot {}
+    set snip [expr {2*$count/[llength $dH]}]
+    foreach {case hdl} $dH {
+	lappend runTot $case [extract_list $hdl $snip $loseZeros]
+    }
+    return $runTot
+}
+
+proc ExtractJList {dH count loseZeros} {
+    if {[llength $dH]==1} {
+	return [extract_json $dH $count $loseZeros]
+    } ;# else
+    set runTot {}
+    set snip [expr {2*$count/[llength $dH]}]
+    foreach {case hdl} $dH {
+	lappend runTot $case [extract_json $hdl $snip $loseZeros]
+    }
+    return $runTot
+}
+
 # GetModelValue returns the current value of a node. This is numerical if the
 # node is scalar, a (possibly empty) list of alternating indices and values if
 # the node is an array or list, and 'novalue' if it does not have one, e.g., a
@@ -161,7 +185,7 @@ proc GetModelValue { node {keepEvtZeros 0}} {
 	    set loseZeros [expr {!$keepEvtZeros && \
 		 [lsearch {EVENT SQUIRT} [lindex $subbedPlots($node) 1]]>-1}]
 	    # G_M_C horribly slow, keep node class with handle
-	    return [list [extract_list [lindex $subbedPlots($node) 2] \
+	    return [list [ExtractCList [lindex $subbedPlots($node) 2] \
 			      16777216 $loseZeros]] ;# enough I hope
 	} else { # from tcl model or measured value from pest interface
 	    return [list $subbedPlots($node)]
@@ -331,7 +355,7 @@ proc GetCompExecData {topNode prop args} {
 	}
 	switch -regexp $prop {
 	    Value {
-		set result [list [extract_list $hdl 16777216]]
+		set result [list [ExtractCList $hdl 16777216 0]]
 	    } Binary {
 		set result [eval extract_binary [list $hdl] \
 				[lrange $args 1 end]]
