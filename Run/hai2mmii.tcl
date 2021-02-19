@@ -145,7 +145,7 @@ proc AddToWatched {node} {
     if {$helperTable(beingCalled) eq ""} return
 #    $helperTable(VariableList)::AddHelperLeaf $::runState($::myNode,inspId) \
 	#	$node $helperTable(beingCalled)
-    $::runState($::myNode,inspId) AddHelperLeaf $node $helperTable(beingCalled)
+    $::runState($::myNode,inspId) HelperLeaf $node $helperTable(beingCalled) 1
 }
 
 proc ExtractCList {dH count loseZeros} {

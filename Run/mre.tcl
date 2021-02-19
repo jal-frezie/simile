@@ -666,9 +666,9 @@ namespace eval RunEnv {
     proc WindUp {} {
 	global helperTable
         variable currentNode
-	
-	$helperTable(RunControl)::AbortFromMenu $currentNode \
-	    "ExDestroyHelpers $currentNode"
+
+	ExDestroyHelpers $currentNode
+	ScrubRun $currentNode 1
     }
 
     proc Destroy {node} {
@@ -1338,9 +1338,13 @@ namespace eval RunEnv {
 	}
         set win $helperTable($currentNode,whichRunEnv)
 	set mainframe $win
+	foreach {num denom} \
+	    [ChooseIntegerRatio [expr {$::defScaling/1.25}] 0.9] {}
         # read and set .mre position and size
         PullMember line
         scan $line "%i %i %i %i" x y width height
+	set width [expr {$width*$num/$denom}]
+	set height [expr {$height*$num/$denom}]
 	if {$x>=0 && $x+$width<[winfo screenwidth $win] && \
 		$y>=0 && $y+$height<[winfo screenheight $win]} {
 	    wm geometry $win ${width}x${height}+${x}+${y}
@@ -1350,10 +1354,12 @@ namespace eval RunEnv {
 
         PullMember line
         scan $line "%i %i" x y;
+	set x [expr {$x*$num/$denom}]
         [GetFrame $mainframe].mainpw sash place  0 $x $y
         
         PullMember line
         scan $line "%i %i" x y
+	set y [expr {$y*$num/$denom}]
         [GetFrame $mainframe].mainpw.controlPane.panedwindow sash place  0 $x $y
 
         set newNotebooks {}
@@ -1409,7 +1415,8 @@ namespace eval RunEnv {
                     #        page [$notebook pages]\n\
                     #        FindParentNotebook $notebook \n\
                     #        FindParentNotebookPage $pageId" ok
-                    $panedwindow sash place $index $sashx $sashy
+                    $panedwindow sash place $index [expr {$sashx*$num/$denom}] \
+			[expr {$sashy*$num/$denom}]
                 }
                 notebook {
                     #lappend metaList "notebook $notebook"

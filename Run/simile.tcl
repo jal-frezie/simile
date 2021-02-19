@@ -1,7 +1,7 @@
 #set simplify 1 ;# avoid loading anything awkward
 # Simile source code file: Run/simile.tcl
 #
-# (c) Simulistics Ltd. 2001-2011
+# (c) Simulistics Ltd. 2001-2021
 # (c) University of Edinburgh 1995-2001
 #
 # This file contains the code initially sourced into the Tcl interpreter and
@@ -267,7 +267,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 6.11
-set sendvars(simP) {p91}
+set sendvars(simP) {p92}
 
 if {[package vcompare $env(SIMILE_VERSION) 6.0]>=0} {
     set do_events 1 ;# include event symbols

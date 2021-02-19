@@ -2628,8 +2628,10 @@ dissolve_component(Node) :-
 	   (IntLink draws_inside Node, \+ has_outer_equiv(IntLink, Node, _)),
 	       OrphanLinks), !; OrphanLinks = []),
 	append(Orphan_nodes, OrphanLinks, Orphans),
-	(list_captions(Parent, Used), !,
-	    all(event, retitle_duplicate, [build(Orphans), unify(Used)]);
+	(list_captions(Parent, Used),
+	 caption_for(Parent, LosingCapt),
+	 select(Used, LosingCapt, StillUsed), !,
+	    all(event, retitle_duplicate, [build(Orphans), unify(StillUsed)]);
 	true),
 	    
 	/* First, strip the model's dimensions and check external vars */

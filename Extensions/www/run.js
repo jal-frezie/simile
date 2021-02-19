@@ -2273,7 +2273,13 @@ function prepare() {
 $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
        function(execParms) {
 	   console.log("BSL returns " + execParms);
-	   pipeBits = JSON.parse(execParms);
+	   try {
+	       pipeBits = JSON.parse(execParms);
+	   } catch(err) {
+	       $("#WaitDialog").dialog("close");
+	       document.getElementById("right").innerText = "There was a problem -- see console log for details";
+	       return;
+	   }
 
 	   // Now stick the values in the run control
 	   $("#rl").val(pipeBits.execTime);

@@ -94,9 +94,8 @@ proc Nappy {args} {
 
 proc update_executable {node lang} {
     #    ShowMess debug info "References are $finderList" ok
-    global nodeId model_id instance_id
+    global model_id instance_id
 
-    set nodeId $node
     # For the toplevel model, make an instance. This will also make
     # instances of any fixed-membership submodels immediately, so they had
     # better already be loaded
@@ -196,7 +195,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 		    lappend payload $point $dataHand
 		}
 	    }
-	    if {[ShiftDisplays $node $payload [format %.8g $current] \
+	    if {[ShiftDisplays $::nodeId $payload [format %.8g $current] \
 		     $display [expr {$timedDisp || $displayNow}]]} {
 		set currentMode stop
 	    }
@@ -211,7 +210,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    set currentMode stop
 	}
     }
-    InteractGUI $node $scaled_current 1
+    OuteractGUI $scaled_current 1
 # above is required to leave right time in progress display if not finishing
 # on display interval boundary
     waitForDisps
@@ -323,7 +322,7 @@ proc ExecuteModel {myNode howInt start finish errLim lmtPause evtPause} {
     } else {
 	set severity [ExplainError $myNode [lrange $errList 1 end] unused]
     }
-    InteractGUI $myNode [lindex $errList 3] 2
+    OuteractGUI [lindex $errList 3] 2
     return [list $severity [lindex $errList 3]]
 }
 
@@ -347,37 +346,43 @@ proc OuteractGUI {time mode} {
     return [InteractGUI $nodeId $time $mode]
 }
 
+proc InMaster {cmd result} {
+    thread::send -async $::masterId $cmd $result
+}
+
 if {[info exists masterId]} { ;# we are in separate interp
     proc PullAction {inst} {
 	return [tsv::get action $inst]
     }
 
     proc AbortCheck {nodeId args} {
-	global masterId
-	thread::send -async $masterId [info level 0]
+	InMaster [info level 0] dummy
 	return [PullAction $nodeId]
     }
  
     proc InteractGUI {nodeId args} {
-	global masterId
-	thread::send -async $masterId [info level 0]
+	InMaster [info level 0] dummy
 	return [PullAction $nodeId]
+    }
+ 
+    proc AddLogEntry {nodeId args} {
+	InMaster [info level 0] dummy
     }
  
 # This one needs to wait till previous call finished    
     proc ShiftDisplays {nodeId args} {
-	global masterId dispDone
+	global dispDone
 	waitForDisps
 	if {$dispDone} { ;# helper has stuffed up
 	    return 1
 	} else {
 	    unset dispDone
-	    thread::send -async $masterId [info level 0] dispDone
+	    InMaster [info level 0] dispDone
 	    return [PullAction $nodeId]
 	}
     }
 # these are straight copies
-    foreach straight {AddLogEntry ExecQuery TransEnums} { ;# InDays not needed
+    foreach straight {ExecQuery TransEnums} { ;# InDays not needed
 	proc $straight {args} {
 	    global masterId
 
@@ -1210,7 +1215,7 @@ proc ExplainError {myNode errList origError} {
 	    set icon info
 	}
     }
-    AddLogEntry $myNode $specifics
+    AddLogEntry $::nodeId $specifics
     ExecQuery $specifics $icon top {} ok
     # do it after idle so this process is not hung till user responds
 #    RaiseModelWindow $myNode

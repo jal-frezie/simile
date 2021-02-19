@@ -6,7 +6,7 @@
 #  
 #  This file is distributed under BSD style license.
 #
-# $Id: can2svg.tcl,v 1.22 2019/12/05 13:57:14 jaspert Exp $
+# $Id: can2svg.tcl,v 1.22.4.1 2021/02/19 15:50:46 jaspert Exp $
 # 
 # ########################### USAGE ############################################
 #
@@ -235,12 +235,12 @@ proc can2svg::svgasxmllist {cmd args} {
         return
     }
     
-    # Figure out if we've got a spline.
-    set haveSpline 0
-    if {[info exists optA(-smooth)] && ($optA(-smooth) != "0") &&  \
-      !([info exists optA(-splinesteps)] && ($optA(-splinesteps) <= 2))} {
-        set haveSpline 1
-    }
+    # Figure out if we've got a spline -- done in CoordsToAttr now
+    # set haveSpline 0
+    # if {[info exists optA(-smooth)] && ($optA(-smooth) != "0") &&  \
+    #   !([info exists optA(-splinesteps)] && ($optA(-splinesteps) <= 2))} {
+    #     set haveSpline 1
+    # }
     if {[info exists optA(-fill)]} {
         set fillValue $optA(-fill)
 	set fillValue [FormatColorName $fillValue]

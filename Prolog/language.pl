@@ -68,6 +68,12 @@ do_assign_list(_, [], _, _, _).
 /* This makes a loop for a fixed membership submodel.
 Should really be done with make_array_assignment. */
 
+expand_record_bound(Bound, UseBoundRef) :-
+    Bound = pra_bound(Ptr, Name) ->
+	append_atoms(Name, made, MadeBound),
+	make_struct_reference(L, Ptr, MadeBound, _, UseBoundRef);
+    UseBoundRef = Bound.
+
 do_assignment(L, [open_index(glob(Loop, Inds), Bound) | Clauses],
                 Indent, Used, Stream) :-
         deepen_indent(Indent, NewIndent),
@@ -76,10 +82,7 @@ do_assignment(L, [open_index(glob(Loop, Inds), Bound) | Clauses],
 %	declare(L, _Feature, bound, int, Used, Indent, Stream),
 	get_rest_of_my_loop(Clauses, MyLoop, Later),
         (make_indexed_reference(L, Loop, Inds, Count),
-	    (Bound = pra_bound(Ptr, Name) ->
-	        append_atoms(Name, made, MadeBound),
-	        make_struct_reference(L, Ptr, MadeBound, _, UseBoundRef);
-	     UseBoundRef = Bound),
+	    expand_record_bound(Bound, UseBoundRef),
 	    set_introspect(L, Used, IndexSlot, CountSlot),
 	    make_pointer(L, Count, CountPtr),
 	    excrete(L, assignment, IndexSlot = CountPtr, Indent, Stream),
@@ -449,7 +452,8 @@ do_assignment(L, [call_proc_for(Sm, Path, Loop, [Td, Tk, Tr]) | Clauses],
     make_pointer(L, StateName, StatePtr),
     append_atoms('(void* (*)(void*))', ProcName, CastProcName),
     append_atoms('(void*)', StatePtr, CastStatePtr),
-    Call =thread_mgr(CastProcName, phase, CastStatePtr, Loop, Td, Tk, Tr),
+    expand_record_bound(Loop, Count),
+    Call =thread_mgr(CastProcName, phase, CastStatePtr, Count, Td, Tk, Tr),
     excrete(L, procedure_call, Call, I, Stream),
     do_assign_list(L, Clauses, I, Used, Stream).
 

@@ -440,7 +440,8 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
             set path [join [lrange $hierarchy 0 $pt] /]
             # added setting of SimileProject element to store spf path
 	    set node [IdFromTail $topNode /$path 0]
-            pack [::ttk::label $nextLevel.head.label -text $level:]
+            pack [::ttk::label $nextLevel.head.label -text $level:] -side left \
+		-expand 1
 	    if {[llength $ns]} {
 		foreach {cmd act img} {Save Save save Open Load open \
 					   Clear Clear new} {
@@ -1733,6 +1734,7 @@ proc ChooseByInspection {topNode oldObj type} {
     set hlp [UniqueId helper]
     set helperId $helperTable(VariableList)
     set runClass $classTable(run,$topNode)
+    set ::RunEnv::CurrentContainer $t
     similescript::$helperId $hlp $runClass Variables {}
 
     LetItShow $t paramData(newPath,done)

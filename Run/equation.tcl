@@ -399,7 +399,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     }
 #    tkwait visibility $middleF
 # above is insufficient to get Mac version to work proper, so...
-    update
+    update idletasks
     set eqnLayout [file join $custom(prefDir) .layouts equation]
     if {[file exists $eqnLayout]} {
         set stream [NetOpen $eqnLayout r]

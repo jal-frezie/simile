@@ -409,6 +409,7 @@ install:
 		Images/Toolbar/Large/open.gif \
 		Images/Toolbar/Large/print.gif \
 		Images/Toolbar/Large/redo.gif \
+		Images/Toolbar/Large/reel.gif \
 		Images/Toolbar/Large/relation.gif \
 		Images/Toolbar/Large/reproduction.gif \
 		Images/Toolbar/Large/rerun.gif \
@@ -427,7 +428,6 @@ install:
 		Images/Toolbar/Large/zoomin.gif \
 		Images/Toolbar/Large/zoomout.gif \
 		Images/Toolbar/Large/zoomsel.gif \
-		Images/Toolbar/Large/reel.gif \
 		Images/Toolbar/3d_objects.png \
 		Images/Toolbar/add.gif \
 		Images/Toolbar/alarm.gif \
@@ -442,6 +442,7 @@ install:
 		Images/Toolbar/cut.gif \
 		Images/Toolbar/delete.gif \
 		Images/Toolbar/display.gif \
+		Images/Toolbar/drop.gif \
 		Images/Toolbar/edit.gif \
 		Images/Toolbar/event.gif \
 		Images/Toolbar/find.gif \

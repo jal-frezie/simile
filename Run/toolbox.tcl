@@ -503,8 +503,11 @@ proc compile_c {workingDir extSrcs extTgts extLibs complain} {
 	set TARGET model${serial}$shLibExt
     }
     set TOOLDIR [file join $SIMILE_PATH Run]
-    set gppFlags [concat $::sendvars(arflags) \
-		      [PrefValue custom(compFlags) compFlags]]
+    set gppFlags $::sendvars(arflags)
+    if {!$::headless} {
+	set gppFlags [concat $gppFlags \
+			  [PrefValue custom(compFlags) compFlags]]
+    }
     #set TCL [file dirname [file dirname [info library]]]
     #ShowMess debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
     if {[catch {switch $tcl_platform(platform) {
@@ -1126,12 +1129,14 @@ proc InitExecThread {node} {
 	    proc $stubCmd {node args} {
 		global execThread
 		# puts "exec bother [info level 0]"
-		return [thread::send $execThread($node,id) [info level 0]]
+		set execSideCmd [info level 0]
+		return [thread::send $execThread($node,id) $execSideCmd]
 	    }
 	} else {
 	    proc $stubCmd {node args} {
 		global execInterp
-		return [$execInterp($node,id) eval [info level 0]]
+		set execSideCmd [info level 0]
+		return [$execInterp($node,id) eval $execSideCmd]
 	    }
 	}
     }
@@ -1164,6 +1169,7 @@ proc InitExecThread {node} {
 
     if {$useThreads} {
 	thread::send $execThread($node,id) [list set masterId [thread::id]]
+	thread::send $execThread($node,id) [list set nodeId $node]
 	thread::send $execThread($node,id) \
 	    [list source [file join $SIMILE_PATH Run support.tcl]]
 	thread::send $execThread($node,id) \
@@ -1173,6 +1179,7 @@ proc InitExecThread {node} {
 	    [list source [file join $SIMILE_PATH Run support.tcl]]
 	$execInterp($node,id) eval \
 	    [list source [file join $SIMILE_PATH Run exec.tcl]]
+	# callback cmds will need adjusting to include global nodeid
 	foreach callbackCmd {AbortCheck InteractGUI ShiftDisplays \
 				 AddLogEntry ExecQuery TransEnums InDays} {
 	    $execInterp($node,id) alias $callbackCmd $callbackCmd

@@ -115,7 +115,7 @@ namespace eval grid005 {
 # looks like "displaying %s %s colourmap %s %s %s aspect %d %g %g magnification %d"
 	set useNodes($winId,color) [GetIdFromCaptionPath [lindex $state 1]]
 	set useNodes($winId,tgtDims) [GetModelDims $useNodes($winId,color)]
-	if {[IsTwoDee $winId $useNodes($winId,tgtDims)]} {
+	if {[IsTwoDee $winId]} {
 	    set useNodes($winId,colvals) USE_INDICES
 	} else {
 	    set useNodes($winId,colvals) \
@@ -201,7 +201,7 @@ namespace eval grid005 {
                     catch {wm title $winId $caption}
 		    SetColours useNodes $winId
 		    set useNodes($winId,tgtDims) [GetModelDims $node]
-		    if {[IsTwoDee $winId $useNodes($winId,tgtDims)]} {
+		    if {[IsTwoDee $winId]} {
 			set useNodes($winId,colvals) USE_INDICES
 			FinishClicking $winId
 		    } else {
@@ -234,13 +234,13 @@ namespace eval grid005 {
 	raise $winId
     }
 
-    proc IsTwoDee {winId dimList} {
+    proc IsTwoDee {winId} {
 	variable useNodes
 	
-	foreach dim $dimList {
+	foreach dim $useNodes($winId,tgtDims) {
 	    if {[string is integer -strict $dim]} {
 		foreach space [list useNodes($winId,nrow) \
-				   useNodes($winId,ncol) terminator] {
+				   useNodes($winId,ncol) subxel terminator] {
 		    if {![info exists $space]} {
 			set $space $dim
 			break
@@ -248,7 +248,15 @@ namespace eval grid005 {
 		}
 	    }
 	}
-	return [expr {[info exists terminator] && !$terminator}]
+	set useNodes($winId,bpp) 8
+	if {[info exists subxel]} {
+	    if {!$subxel} {return 1} ;# 2-D array of values
+	    if {$subxel==3 && !$terminator} {
+		set useNodes($winId,bpp) 24
+		return 1
+	    } ;# of triplets
+	}
+	return 0
     }
 
     proc NumDistinct {winId testNode} {
@@ -793,10 +801,11 @@ namespace eval grid005 {
 #puts "Binary is of size [string bytelength $useNodes($winId,rawBinary)]"
 	set rows $useNodes($winId,nrow)
 	set cols $useNodes($winId,ncol)
-	set bitCols [expr 4*int(($cols+3)/4)]
+	set bpp $useNodes($winId,bpp)
+	set bitCols [expr 4*int(($bpp*$cols+31)/32)]
 	set fullSize [expr 1078+$bitCols*$rows]
 	set bmpData [binary format a2is2iiiissiiiiii \
-		 BM $fullSize {0 0} 1078 40 $cols $rows 1 8 0 0 0 0 0 0]
+		 BM $fullSize {0 0} 1078 40 $cols $rows 1 $bpp 0 0 0 0 0 0]
 	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
 	    set colourIndex [expr $rgbQuad*$useNodes($winId,nswatches)/256]
 	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
@@ -805,11 +814,13 @@ namespace eval grid005 {
 				[string range $colourStr 5 8] \
 				[string range $colourStr 1 4] 0]
 	}
-	set filling [string repeat 0 [expr $bitCols-$cols]]
+	set colBytes [expr {$cols*$bpp/8}]
+	set filling [string repeat 0 [expr $bitCols-$colBytes]]
 	if {[string length $filling]} {
 	    for {set row 0} {$row<$rows} {incr row} {
 		append bmpData [string range $useNodes($winId,rawBinary) \
-		        [expr $row*$cols] [expr $row*$cols+$cols-1]] $filling
+				    [expr $row*$colBytes] \
+				    [expr $row*$colBytes+$colBytes-1]] $filling
 	    }
 	} else {
 	    append bmpData $useNodes($winId,rawBinary)

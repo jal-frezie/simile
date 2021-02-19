@@ -468,7 +468,7 @@ namespace eval slide139 {
             }
         }
 	#	PlaceInArray $myNode $sub $value 0 [RunningInC $myNode]
-	ListToArray $myNode $node $sub $sub {} {} $value 0 [RunningInC $myNode]
+	ListToArray $myNode {} $node $sub $sub {} {} $value 0 [RunningInC $myNode]
 	if {$widgetSeln($node$sub) == $widgetSeln(old,$node$sub)} {return 1}
 	set widgetSeln(old,$node$sub) $widgetSeln($node$sub)
 	if $fixed {

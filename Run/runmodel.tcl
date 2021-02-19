@@ -13,7 +13,9 @@ source ../Run/hai2mmii.tcl
 
 # mre.tcl has to be loaded after the other Tcl procedures are defined
 
-source ../Run/mre.tcl
+if {!$headless} {
+    source ../Run/mre.tcl
+}
 
 proc MakeHelperMenu {} {
     global custom tcl_platform SIMILE_PATH

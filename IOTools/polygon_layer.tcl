@@ -18,6 +18,7 @@ itcl::class similescript::$newLayerClass {
 	namespace import -force ::maptools2::*
 	array set transform [list xzoom $xzoom yzoom $yzoom]
 	set useNodes($winId,stipple) none
+	set useNodes($winId,smooth) 0
 	set useNodes($winId,resetDone) 1 ;# always do one update
 	if {[string length $state]} { ;# we are restoring 
 	    regsub -all /WIN/ $state $winId restoreString
@@ -85,7 +86,8 @@ itcl::class similescript::$newLayerClass {
 		    set useNodes($winId,color) $path
 		    set useNodes($winId,title) "[file tail $path] (polygon diagram)"
 		    set parentPath [join [lrange [split $path /] 0 end-1] /]
-		    if {[$modelInst GetModelEval $parentPath] eq "HONEYCOMB"} {
+		    if {[llength [$modelInst GetModelDims $parentPath]]==3 && \
+			    [$modelInst GetModelEval $parentPath] eq "HONEYCOMB"} {
 			set useNodes($winId,xcoord) HEX_CTRS
 			FinishClicking
 		    } else {
@@ -289,6 +291,8 @@ itcl::class similescript::$newLayerClass {
         set borderF [labelframe $dlg.border -text "Borders"]
         pack [ttk::labelframe $borderF.widF -text "Width"] -fill x  -padx 10 -pady 5
         pack [entry $borderF.widF.entry -textvar [itcl::scope useNodes($winId,bw)] -width 20] -side left -padx 10
+	pack [ttk::checkbutton $borderF.smth -text "Smooth" \
+		  -variable [itcl::scope useNodes($winId,smooth)]] -fill x -padx 10
         pack [ttk::labelframe $borderF.colourF -text "Colour"] -fill x -padx 10
         frame $borderF.colourF.colF -width 20 -height 15 -bg $useNodes($winId,cbord)
         pack [button $borderF.colourF.cbutton -text "..." \
@@ -347,7 +351,7 @@ itcl::class similescript::$newLayerClass {
         set useNodes($winId,max) $max
         set useNodes($winId,range) [expr {$max-$min}]
 #	SetColours useNodes $winId
-	Display 0 0 0
+	ReTile
 	switch -regexp $useNodes($winId,legendSide) {
 	    l|r {
 		set useNodes($winId,orient) v
@@ -377,9 +381,9 @@ itcl::class similescript::$newLayerClass {
         set useNodes($winId,c$whichCol) $col
 	$exampleWidget configure -bg $useNodes($winId,c$whichCol)
 	if {[string equal bord $whichCol]} {
-	    if {$useNodes($winId,bw)<=0} {
-		set useNodes($winId,cbord) {}
-	    }
+#	    if {$useNodes($winId,bw)<=0} {
+#		set useNodes($winId,cbord) {}
+#	    }
 	    ReTile
 	} else {
 	    SetColours useNodes $winId
@@ -457,8 +461,8 @@ itcl::class similescript::$newLayerClass {
 	} else {
 	    set newBord {}
 	}
-	$winId create polygon $outlist -outline $newBord \
-	    -width $useNodes($winId,bw) -fill $newColour \
+	$winId create polygon $outlist -outline $newBord -fill $newColour \
+	    -width $useNodes($winId,bw) -smooth $useNodes($winId,smooth) \
 	    -tag [list [namespace tail $this].main [IdToTag $inds]]
     }
 

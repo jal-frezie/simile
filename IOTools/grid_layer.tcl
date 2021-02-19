@@ -86,7 +86,7 @@ itcl::class similescript::$newLayerClass {
 		    SetColourMap useNodes $winId [GetIdFromCaptionPath $path]
 		    SetColours useNodes $winId
 		    set useNodes($winId,tgtDims) [$modelInst GetModelDims $path]
-		    if {[IsTwoDee $winId $useNodes($winId,tgtDims)]} {
+		    if {[IsTwoDee $winId]} {
 			set useNodes($winId,colvals) USE_INDICES
 			set parentPath [join [lrange [split $path /] 0 end-1] /]
 			if {[$modelInst GetModelEval $parentPath] eq \
@@ -124,11 +124,11 @@ itcl::class similescript::$newLayerClass {
 	return $useNodes($winId,title)
     }
 
-    public method IsTwoDee {winId dimList} {
-	foreach dim $dimList {
+    public method IsTwoDee {winId} {
+	foreach dim $useNodes($winId,tgtDims) {
 	    if {[string is integer -strict $dim]} {
 		foreach space [list useNodes($winId,nrow) \
-				   useNodes($winId,ncol) terminator] {
+				   useNodes($winId,ncol) subxel terminator] {
 		    if {![info exists $space]} {
 			set $space $dim
 			break
@@ -136,7 +136,15 @@ itcl::class similescript::$newLayerClass {
 		}
 	    }
 	}
-	return [expr {[info exists terminator] && !$terminator}]
+	set useNodes($winId,bpp) 8
+	if {[info exists subxel]} {
+	    if {!$subxel} {return 1} ;# 2-D array of values
+	    if {$subxel==3 && !$terminator} {
+		set useNodes($winId,bpp) 24
+		return 1
+	    } ;# of triplets
+	}
+	return 0
     }
 
     public method NumDistinct {winId testPath} {
@@ -185,10 +193,11 @@ itcl::class similescript::$newLayerClass {
 #puts "Binary is of size [string bytelength $rawBinary]"
 	set rows $useNodes($winId,nrow)
 	set cols $useNodes($winId,ncol)
-	set bitCols [expr 4*int(($cols+3)/4)]
+	set bpp $useNodes($winId,bpp)
+	set bitCols [expr 4*int(($bpp*$cols+31)/32)]
 	set fullSize [expr 1078+$bitCols*$rows]
 	set bmpData [binary format a2is2iiiissiiiiii \
-		 BM $fullSize {0 0} 1078 40 $cols $rows 1 8 0 0 0 0 0 0]
+		 BM $fullSize {0 0} 1078 40 $cols $rows 1 $bpp 0 0 0 0 0 0]
 	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
 	    set colourIndex [expr $rgbQuad*$useNodes($winId,nswatches)/256]
 	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
@@ -197,11 +206,12 @@ itcl::class similescript::$newLayerClass {
 				[string range $colourStr 5 8] \
 				[string range $colourStr 1 4] 0]
 	}
-	set filling [string repeat 0 [expr $bitCols-$cols]]
+	set colBytes [expr {$cols*$bpp/8}]
+	set filling [string repeat 0 [expr $bitCols-$colBytes]]
 	if {[string length $filling]} {
 	    for {set row 0} {$row<$rows} {incr row} {
 		append bmpData [string range $rawBinary \
-		        [expr $row*$cols] [expr $row*$cols+$cols-1]] $filling
+		        [expr $row*$colBytes] [expr $row*$colBytes+$colBytes-1]] $filling
 	    }
 	} else {
 	    append bmpData $rawBinary

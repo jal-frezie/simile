@@ -20,52 +20,58 @@ itcl::class similescript::$newHelperClass {
 	variable cMenu
 	variable decor
 
-	set decor [list param [tr. "Parameter value"] file \
-		       plist [tr. "List for parameter"] list \
-		       clist [tr. "List of cases"] caselist \
-		       compound [tr. "Multi-factor case(s)"] compfact \
-		       perm [tr. "Set of permutations"] permut]
-	set cMenu [menu .expt_context -tearoff 0]
-	set iMenu [menu $cMenu.insert -tearoff 0]
-	foreach {key txt img} $decor {
-	    $iMenu add command -label $txt -compound left \
-		-image $iconImages($img) -command "$this InsertLevel $key"
-	}
-	$cMenu add cascade -label [tr. Insert] -menu $iMenu
-	$cMenu add command -label [tr. Delete] -command "$this delete"
-
 	set chop [string length $state]
 	set doPops 0
+	set incExpts 0
 	switch -glob $winId { ;# check if relocating param or measurement data
 	    .newfile* {
 		set typesToShow {INPUT TABLE BLOCK POPULATION GRID HONEYCOMB}
 	    } .newsub* {
 		set typesToShow {BLOCK GRID HONEYCOMB}
-		set showTopLevel 1
-		$tableframe.table insert {} end -id $::myNode -open 1 \
-		    -text "TOP LEVEL" -image $iconImages(new)
+#		set showTopLevel 1
+#		$tableframe.table insert {} end -id $::myNode -open 1 \
+#		    -text "TOP LEVEL" -image $iconImages(new)
 		# probably no need to nest others in here, just put at top
-	    } .newout* {
+	    } .newmod* {
 		set typesToShow {RECALL DERIVED BLOCK POPULATION GRID HONEYCOMB}
 	    } default {
 		set doPops [PrefValue custom(compValPop) compValPop]
+		set incExpts 1
 		set typesToShow {RECALL DERIVED INPUT TABLE LIMIT \
 				     BLOCK POPULATION GRID HONEYCOMB}
 	    }
 	}
 	set topFrame [DIYMakeFrames $winId]
 	# Attempt to add experiment node as peer of default top level
-	set f [MakeSubFrames insp $topFrame {expt {}} [namespace current] 0]
-	$f.head.label configure -text [tr. {Experimental conditions}] \
-	    -image $iconImages(flask) -compound left
-	pack $f.head.label -side left
-	CrossPlatformBind $f \
-	    [namespace code [list OnElementContext {expt} %X %Y]]
+	if {$incExpts} {
+	    set decor [list param [tr. "Parameter value"] file \
+			   plist [tr. "List for parameter"] list \
+			   clist [tr. "List of cases"] caselist \
+			   compound [tr. "Multi-factor case(s)"] compfact \
+			   perm [tr. "Set of permutations"] permut]
+	    set cMenu [menu .expt_context -tearoff 0]
+	    set iMenu [menu $cMenu.insert -tearoff 0]
+	    foreach {key txt img} $decor {
+		$iMenu add command -label $txt -compound left \
+		    -image $iconImages($img) -command "$this InsertLevel $key"
+	    }
+	    $cMenu add cascade -label [tr. Insert] -menu $iMenu
+	    $cMenu add command -label [tr. Delete] -command "$this delete"
+	    
+	    set f [MakeSubFrames insp $topFrame {expt {}} [namespace current] 0]
+	    $f.head.label configure -text [tr. {Experimental conditions}] \
+		-image $iconImages(flask) -compound left
+	    pack $f.head.label -side left -expand 0
+	    CrossPlatformBind $f \
+		[namespace code [list OnElementContext {expt} %X %Y]]
+	    set f [MakeSubFrames insp $topFrame [list $::myNode {}] \
+		       [namespace current] 0]
+	    $f.head.label configure -text [tr. {Default case}] \
+		-image $iconImages(globe) -compound left
+	    pack $f.head.label -side left -expand 0
+	}
 	set f [MakeSubFrames insp $topFrame [list $::myNode {}] \
 		   [namespace current] 0]
-	$f.head.label configure -text [tr. {Default case}] \
-	    -image $iconImages(globe) -compound left
-	pack $f.head.label -side left
 
         foreach component [GetObjectList] {
 	    set fullCapt [GetCaptionPathFromId $component]
@@ -96,7 +102,7 @@ itcl::class similescript::$newHelperClass {
 		    set label $f.head.label
 		    $label configure -image $iconImages(submodel) \
 			-compound left
-		    pack $label -side left
+		    pack $label -expand 0
 		} else {
 		    set beeGee [[winfo parent $f].head cget -bg]
 		    set bStyle [[winfo parent $f].head.vis cget -style]
@@ -218,7 +224,7 @@ itcl::class similescript::$newHelperClass {
 # step is a spare parameter
     }
 
-    public method AddHelperLeaf {node hlpr} {
+    public method HelperLeaf {node hlpr add} {
 	set id [[$hlpr info class]::Identify]
 	array set hlprIcons {Plotter graph \
 				 "XY Plotter" plotxy \
@@ -236,15 +242,19 @@ itcl::class similescript::$newHelperClass {
 
 	set fullCapt [GetCaptionPathFromId $node]
 	set levels [split $fullCapt /]
-	set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 $::myNode] \
+	set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 [GetNode]] \
 		   [namespace current] 0]
 	set cmd [list ::RunEnv::FocusTool $hlpr]
 	foreach prev [winfo children $f] {
 	    if {[winfo class $prev] eq "TButton" && \
 		    [$prev cget -command] eq $cmd} {
-		return ;# is already there
+		if {!$add} {
+		    destroy $prev
+		}
+		return ;# is already there		    
 	    }
 	}
+	if {!$add} {return} ;# is already gone
 	set neWidg [UniqueId hlpr]
 	set bStyle [[winfo parent $f].head.vis cget -style]
 	pack [ttk::button $f.$neWidg -style $bStyle -image $::iconImages($img) \

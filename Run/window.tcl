@@ -546,7 +546,6 @@ proc ReleaseObj {winId xco yco} {
     global tcl_platform debounce
 
     if {$debounce(menu)} return ;# posted by ctrl-click on MacOS
-
 # this is here because Windows can sometimes generate a drag at a point 
 # after the unclick, so it makes it drag back to the actual unclick position
     if {[info exists debounce(realdrag)]} {
