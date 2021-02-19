@@ -1359,7 +1359,7 @@ proc FinishElement {name args} {
 proc LoadBase64CharData {encoded} {
     global parseStatus paramData widgetNames whichParamsAffected msgs \
 	paramMetadata
-
+    
     if {![info exists parseStatus(loadByteArray)]} return
     set relPath [RestoreCrs $parseStatus(submodel)/$parseStatus(loadByteArray)]
 #    set compName $parseStatus(smPath)$relPath
@@ -1371,7 +1371,7 @@ proc LoadBase64CharData {encoded} {
 	continue {return}
     }
 #puts "$compName replaced with $parseStatus(smPath)[lindex $nodeId 0]"
-    set compName $parseStatus(smPath)[lindex $nodeId 0]
+    set compName /$parseStatus(smPath)[lindex $nodeId 0]
 #    set nodeId [IdFromTail $parseStatus(topNode) $compName 0]
 #puts "got node $nodeId from $compName"
     set decoded [base64 -mode decode -- $encoded]
@@ -1390,7 +1390,7 @@ proc LoadBase64CharData {encoded} {
 	AbleHandEditControls $widgetNames($compName)
     }
     set whichParamsAffected($compName) 1 ;# re-enabled so works in client5d
-#...quick test shows no performance reduction elsewhere
+    #...quick test shows no performance reduction elsewhere
 }
 
 proc RestoreOldCrs {txt} {

@@ -347,7 +347,7 @@ proc OuteractGUI {time mode} {
 }
 
 proc InMaster {cmd result} {
-    thread::send -async $::masterId $cmd $result
+    thread::send -async $::masterId [lreplace $cmd 1 1 $::nodeId] $result
 }
 
 if {[info exists masterId]} { ;# we are in separate interp
