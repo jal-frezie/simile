@@ -1443,7 +1443,8 @@ do_save(Win, Model, New_name) :-
 	/* Remove any old executables (and make sure dirs exist) */
 	(is_toplevel(Model),
 	 output><safe_tcl_eval(['NeedNewExec', Model], "0") ->
-	     get_av_pair(Model, 1, c_new, LocalNew);
+	     (get_av_pair(Model, 1, c_new, LocalNew) -> true;
+	      LocalNew = 1); % executable unchanged since loading with model
 	 LocalNew = 0),
 	output><shift_dll(Point, Dir, Model, LocalNew),
 

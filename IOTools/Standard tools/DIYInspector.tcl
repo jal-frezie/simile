@@ -57,7 +57,8 @@ itcl::class similescript::$newHelperClass {
 		    -image $iconImages($img) -command "$this InsertLevel $key"
 	    }
 	    $cMenu add cascade -label [tr. Insert] -menu $iMenu
-	    $cMenu add command -label [tr. Delete] -command "$this delete"
+	    $cMenu add command -label [tr. Delete] \
+		-command "$this delete"
 	    
 	    set f [MakeSubFrames insp $topFrame {expt {}} [namespace current] 0]
 	    $f.head.label configure -text [tr. {Experimental conditions}] \
@@ -166,6 +167,15 @@ itcl::class similescript::$newHelperClass {
 	}
     }
 
+    public method delete {} {
+	variable clickPath
+	
+	set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
+		   [namespace current] 0]
+	# todo: destroy instance for case
+	destroy $f
+    }
+    
     proc LabelPopup {widget node capt} {
 	bind $widget <Enter> [::itcl::code AddPopup %W %X %Y $::myNode $node]
 	bind $widget <Leave> RemovePopup

@@ -979,7 +979,7 @@ proc SetFillMethod {caseId inC where {what {}}} {
 	set which {}
     }
     if {$inC} {
-	lindex $fillMtds [c_setfillmethod $caseId $where $which]
+	lindex $fillMtds [eval [list c_setfillmethod $caseId $where] $which]
     } else {
 	eval set paramData(fillMethod,$where) [string toupper $what]
     }

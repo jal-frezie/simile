@@ -1130,6 +1130,7 @@ proc InitExecThread {node} {
 		global execThread
 		# puts "exec bother [info level 0]"
 		set execSideCmd [info level 0]
+		set execSideCmd [lreplace $execSideCmd 1 1 {}]
 		return [thread::send $execThread($node,id) $execSideCmd]
 	    }
 	} else {

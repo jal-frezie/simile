@@ -513,6 +513,7 @@ FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
   int error;
   void* modelInst;
   void* fpHandle;
+  char spare[256];
 
   if (argc != 3) {
     Tcl_WrongNumArgs(interp, 1, argv, "instance_id node_id");
@@ -523,8 +524,10 @@ FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
   fpHandle = use_array_for_params(modelInst, 
 				  Tcl_GetStringFromObj(argv[2], NULL));
   if (fpHandle) {
-    Tcl_SetByteArrayObj(Tcl_GetObjResult(interp), (unsigned char*)&fpHandle, 
-			sizeof(void*));
+    // Tcl_SetByteArrayObj(Tcl_GetObjResult(interp), (unsigned char*)&fpHandle, 
+    //			sizeof(void*));
+    sprintf(spare, "%p", fpHandle);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(spare, -1));
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
@@ -541,7 +544,8 @@ FINDABLE int cleartimeseriesCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
   clear_time_point_elts(fpHandle);
   return TCL_OK;
 }
@@ -580,7 +584,8 @@ FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
   if ((time=get_wrap_ptr(fpHandle)))
     if (argc == 3)
       return Tcl_GetDoubleFromObj(interp, argv[2], time);
@@ -605,7 +610,8 @@ FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
   if ((mtd=get_fill_ptr(fpHandle)))
     if (argc == 3)
       return Tcl_GetIntFromObj(interp, argv[2], mtd);
@@ -631,7 +637,8 @@ FINDABLE int setintervalCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
   if ((time=get_interval_ptr(fpHandle)))
     return Tcl_GetDoubleFromObj(interp, argv[2], time);
   else {
@@ -651,7 +658,8 @@ FINDABLE int settimepointarrayCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
   error = Tcl_GetDoubleFromObj(interp, argv[2], &timePt);
   if (error != TCL_OK) {
     return error;
@@ -693,7 +701,8 @@ FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
   if ((error = ints_from_list(interp, argv[2], indxs)) != TCL_OK)
     return error;
 
@@ -725,7 +734,8 @@ FINDABLE int settimepointrecordsCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
 
   if ((error = ints_from_list(interp, argv[2], indxs)) != TCL_OK)
     return error;
@@ -766,7 +776,8 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
   error = Tcl_GetDoubleFromObj(interp, argv[3], &val);
   if (error != TCL_OK) {
     return error;
@@ -802,7 +813,8 @@ FINDABLE int markevtparamactiveCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
   mark_values_active(fpHandle, i);
   return TCL_OK;
 }
@@ -820,7 +832,8 @@ FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
   // if ((error = ints_from_list(interp, argv[3], indxs)) != TCL_OK)
   //   return error;
 
@@ -843,7 +856,8 @@ FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
   count=param_array_size(fpHandle);
   holder = (char*)Tcl_SetByteArrayLength(Tcl_GetObjResult(interp), count);
   copy_param_data(holder, fpHandle);
@@ -862,7 +876,8 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
 
   error = Tcl_GetDoubleFromObj(interp, argv[3], &time);
   if (error != TCL_OK) {
@@ -902,7 +917,8 @@ FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  //  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
   
   if ((count=param_array_size(fpHandle))) { // assignment
     holder = Tcl_GetByteArrayFromObj(argv[2], &num_bytes);
@@ -950,8 +966,9 @@ FINDABLE int gettimepointallCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_WrongNumArgs(interp, 1, argv, "param_id");
     return TCL_ERROR;
   }
-  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
-  
+  //  memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
+
   if ((count=param_array_size(fpHandle))) { // assignment
     currentSize = (count + sizeof(double))/2;
     resultPtr = Tcl_NewObj();
