@@ -62,6 +62,8 @@ proc FileParamDialogue {topNode topWin mustShow} {
 }
 
 proc AlignParamsToModel {topNode} {
+    global paramData
+    
     set ::bermudaTriangle {}
     foreach curVal [array names paramData /$topNode/*] {
         if {[llength $paramData($curVal)]} {
@@ -159,7 +161,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
 	append compName ", " $caseId
     }
     set handle [split $compName /]
-    if {$caseId ne {}} {
+    if {![string match compound* [lindex $exptLevels end]] && $caseId ne {}} {
 	set handle [lrange $handle end end]
 	# Add case for this entry
 	AddCase $topNode $caseId
@@ -169,7 +171,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
 	set handle [lrange $handle 1 end]
     }
     set levels [concat $exptLevels $handle]
-    set compName /[join $exptLevels /]$compName
+    set compName /[lindex $exptLevels end]$compName
 
     set readMany($compName) [expr {![FirstIndexCheck $topNode $node]}]
     set compClass [GetCompProperty $topNode Class $node]
@@ -1109,8 +1111,7 @@ namespace eval fileparams {
 	set title [format [tr. {Load "%1$s" measurements from:}] $defBase]
 	set metaFile [ChooseFile $defBase$extn $title 0 $topNode]
         if {[llength $metaFile]} {
-            MergeParams $topNode $smPath $metaFile $notInput 1
-            
+            MergeParams $topNode /$smPath $metaFile $notInput 1            
         }
     }
     
@@ -1371,7 +1372,7 @@ proc LoadBase64CharData {encoded} {
 	continue {return}
     }
 #puts "$compName replaced with $parseStatus(smPath)[lindex $nodeId 0]"
-    set compName /$parseStatus(smPath)[lindex $nodeId 0]
+    set compName /$parseStatus(topNode)[lindex $nodeId 0]
 #    set nodeId [IdFromTail $parseStatus(topNode) $compName 0]
 #puts "got node $nodeId from $compName"
     set decoded [base64 -mode decode -- $encoded]
@@ -1418,7 +1419,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 	set dataLocn paramData
 	set widgetLocn widgetNames
     }
-    set smPath [string range $smPath 1 end]
+    #set smPath [string range $smPath 1 end]
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
     

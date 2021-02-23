@@ -23,8 +23,9 @@ itcl::class similescript::$newHelperClass {
 	set chop [string length $state]
 	set doPops 0
 	set incExpts 0
-	switch -glob $winId { ;# check if relocating param or measurement data
+	switch -glob $winId {
 	    .newfile* {
+#	        check if relocating param or measurement data
 		set typesToShow {INPUT TABLE BLOCK POPULATION GRID HONEYCOMB}
 	    } .newsub* {
 		set typesToShow {BLOCK GRID HONEYCOMB}
@@ -135,23 +136,33 @@ itcl::class similescript::$newHelperClass {
     public method InsertLevel {type} {
 	variable clickPath
 	variable decor
+	variable compCases
 	
 	set anchor [lsearch $decor $type]
 	
-	if {[lsearch {param plist} $type]>-1} {
-	    pack [label $winId.label -text [tr. "Select a parameter from the model diagram or explorer"] -fg red]
-	    $modelInst GrabClicks $this
-	} else {
-	    set newLevel [UniqueId $type]
-	    lappend clickPath $newLevel
-	    set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
-		       [namespace current] 0]
-	    set lab $f.head.label
-	    $lab configure -text [lindex $decor $anchor+1] \
-		-image $::iconImages([lindex $decor $anchor+2]) -compound left
-	    pack $lab -side left
-	    CrossPlatformBind $f \
-		[namespace code [list OnElementContext  $clickPath %X %Y]]
+	switch -regexp $type {
+	    param|plist {
+		pack [label $winId.label -text [tr. "Select a parameter from the model diagram or explorer"] -fg red]
+		$modelInst GrabClicks $this
+	    } default {
+		set newLevel [UniqueId $type]
+		lappend clickPath $newLevel
+		set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
+			   [namespace current] 0]
+		set lab $f.head.label
+		set leafName [lindex $decor $anchor+1]
+		if {$type eq "compound"} {
+		    set compCase [GetCaseName combination]
+		    AddCase $::myNode $compCase
+		    set compCases($newLevel) $compCase
+		    set leafName "$compCase: $leafName"
+		}
+		$lab configure -compound left -text $leafName \
+		    -image $::iconImages([lindex $decor $anchor+2])
+		pack $lab -side left
+		CrossPlatformBind $f \
+		    [namespace code [list OnElementContext  $clickPath %X %Y]]
+	    }
 	}
     }
 
@@ -204,9 +215,12 @@ itcl::class similescript::$newHelperClass {
 	global myNode
 	variable curFrame
 	variable clickPath
+	variable compCases
 
 	set node [IdFromTail $myNode $path -1]
-	set caseName [GetCaseName $path]
+	if {[catch {set caseName $compCases([lindex $clickPath end])}]} {
+	    set caseName [GetCaseName $path]
+	}
 	if {$caseName ne {}} {
 	    set notInput [expr {[GetModelEval $node] ne "INPUT"}]
 	    set type [lindex {input file} $notInput]
