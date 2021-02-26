@@ -1420,6 +1420,7 @@ proc StartRun {node} {
 	set helperId $helperTable(VariableList)
  	set hlp [UniqueId helper]
 	similescript::$helperId $hlp $runClass outputs
+	set runState($node,inspId) $hlp
 
 	set ::RunEnv::CurrentContainer $RunEnv::paramFrame($node)
 	if {![catch {set oldInsp $helperTable($::RunEnv::CurrentContainer.container,whichInstance)}]} {
@@ -1427,7 +1428,6 @@ proc StartRun {node} {
 	}
  	set hlp [UniqueId helper $hlp]
 	similescript::$helperId $hlp $runClass parameters
-	set runState($node,inspId) $hlp
 
 #	if {![winfo exists $helperTable(autosliders)]} {
 # No sliders in model, so delete notebook page
