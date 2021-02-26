@@ -1417,10 +1417,18 @@ proc StartRun {node} {
 	if {![catch {set oldInsp $helperTable($::RunEnv::CurrentContainer.container,whichInstance)}]} {
 	    itcl::delete object $oldInsp ;# model components may have changed
 	}
- 	set hlp [UniqueId helper]
 	set helperId $helperTable(VariableList)
-	similescript::$helperId $hlp $runClass Variables
+ 	set hlp [UniqueId helper]
+	similescript::$helperId $hlp $runClass outputs
+
+	set ::RunEnv::CurrentContainer $RunEnv::paramFrame($node)
+	if {![catch {set oldInsp $helperTable($::RunEnv::CurrentContainer.container,whichInstance)}]} {
+	    itcl::delete object $oldInsp ;# model components may have changed
+	}
+ 	set hlp [UniqueId helper $hlp]
+	similescript::$helperId $hlp $runClass parameters
 	set runState($node,inspId) $hlp
+
 #	if {![winfo exists $helperTable(autosliders)]} {
 # No sliders in model, so delete notebook page
 #	    $sliderBook delete InputSliders

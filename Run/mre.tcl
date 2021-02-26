@@ -19,6 +19,7 @@ namespace eval RunEnv {
     variable runControlFrame; # the widget id of the frame to hold the run control
     variable sliderControlFrame;
     variable variableListFrame;
+    variable paramFrame;
     variable explorerPane
     variable runControlWindId
     variable dp0;    # identifies top-level display window
@@ -73,6 +74,7 @@ namespace eval RunEnv {
         variable runControlFrame
         variable sliderControlFrame;
         variable variableListFrame;
+        variable paramFrame;
         variable explorerPane
         variable dp0;    # display pane
         variable dp0s;    # display panes for all models
@@ -234,8 +236,17 @@ namespace eval RunEnv {
             set explorerPane [AddPane $hiercontrolpw.explorerPane]
             
             # Add notebook for controls, explorer etc
-            set variableListFrame($node) [frame $explorerPane.variables]
-            pack $variableListFrame($node) -fill both -expand yes
+	    set xn $explorerPane.notebook
+	    ::ttk::notebook $xn
+	    foreach {role title} {out Outputs: params Parameters:} {
+		frame $xn.$role
+		$xn add $xn.$role -text $title
+	    }
+	    pack $xn -fill both -expand yes
+
+            set variableListFrame($node) $xn.out
+            set paramFrame($node) $xn.params
+            #pack $variableListFrame($node) -fill both -expand yes
             set runControlFrame($node) [frame $runcontrolpane.variables]
             pack $runControlFrame($node) -fill both -expand yes
             

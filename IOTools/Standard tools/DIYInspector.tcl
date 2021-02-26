@@ -23,24 +23,23 @@ itcl::class similescript::$newHelperClass {
 	set chop [string length $state]
 	set doPops 0
 	set incExpts 0
-	switch -glob $winId {
-	    .newfile* {
+	switch -glob $winTitle {
+	    "file parameter" {
 #	        check if relocating param or measurement data
 		set typesToShow {INPUT TABLE BLOCK POPULATION GRID HONEYCOMB}
-	    } .newsub* {
+	    } submodel {
 		set typesToShow {BLOCK GRID HONEYCOMB}
 #		set showTopLevel 1
 #		$tableframe.table insert {} end -id $::myNode -open 1 \
 #		    -text "TOP LEVEL" -image $iconImages(new)
 		# probably no need to nest others in here, just put at top
-	    } .newmod* {
+	    } "model output" {
 		set typesToShow {RECALL DERIVED BLOCK POPULATION GRID HONEYCOMB}
-	    } .fpdial* {
+	    } parameters {
 		set incExpts 1
 		set typesToShow {INPUT TABLE}
-	    } default {
+	    } outputs {
 		set doPops [PrefValue custom(compValPop) compValPop]
-		set incExpts 1
 		set typesToShow {RECALL DERIVED INPUT TABLE LIMIT \
 				     BLOCK POPULATION GRID HONEYCOMB}
 	    }
@@ -56,14 +55,14 @@ itcl::class similescript::$newHelperClass {
 	    if {![winfo exists .expt_context]} {
 		set cMenu [menu .expt_context -tearoff 0]
 		set iMenu [menu $cMenu.insert -tearoff 0]
+		foreach {key txt img} $decor {
+		    $iMenu add command -label $txt -compound left \
+			-image $iconImages($img) -command "$this InsertLevel $key"
+		}
+		$cMenu add cascade -label [tr. Insert] -menu $iMenu
+		$cMenu add command -label [tr. Delete] \
+		    -command "$this delete"
 	    }
-	    foreach {key txt img} $decor {
-		$iMenu add command -label $txt -compound left \
-		    -image $iconImages($img) -command "$this InsertLevel $key"
-	    }
-	    $cMenu add cascade -label [tr. Insert] -menu $iMenu
-	    $cMenu add command -label [tr. Delete] \
-		-command "$this delete"
 	    
 	    set f [MakeSubFrames insp $topFrame {expt {}} [namespace current] 0]
 	    $f.head.label configure -text [tr. {Experimental conditions}] \

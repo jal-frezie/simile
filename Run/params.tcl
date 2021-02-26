@@ -38,7 +38,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
     set hlp [UniqueId helper]
     set helperId $::helperTable(VariableList)
     set runClass $::classTable(run,$topNode)
-    do_for_node $topNode similescript::$helperId $hlp $runClass Variables
+    do_for_node $topNode similescript::$helperId $hlp $runClass parameters
 
     if {$mustShow || [llength $paramData(needed)]} {
         pack [set bfrm [frame .fpdialogue.buttons ]] -fill x
@@ -1745,7 +1745,7 @@ proc ChooseByInspection {topNode oldObj type} {
     set helperId $helperTable(VariableList)
     set runClass $classTable(run,$topNode)
     set ::RunEnv::CurrentContainer $t
-    similescript::$helperId $hlp $runClass Variables {}
+    similescript::$helperId $hlp $runClass $type {}
 
     LetItShow $t paramData(newPath,done)
     PackItUp $t
