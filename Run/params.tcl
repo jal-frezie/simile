@@ -10,7 +10,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
     global paramData widgetNames myNode
 
     set topCapt [GetExecTitle $topNode]
-    set allNodes [GetCompProperty $topNode Objects]
+
     # first check for any parameter values that are no longer needed
     # do it now to shake out errors before opening window
     AlignParamsToModel $topNode
@@ -21,16 +21,25 @@ proc FileParamDialogue {topNode topWin mustShow} {
     if {!$mustShow} {
         set paramData(needed) {}
     }
-    DIYMakeFrames $t
-    set useCppArray [RunningInC $topNode]
-    set ::helperTable($topNode,paramAble) disabled
-    foreach node $allNodes {
-        set notInput [FirstIndexCheck $topNode $node]
-        if {$notInput != -1} {
-	    set ::helperTable($topNode,paramAble) normal
-            AddEntry $t $topNode $node [list $topNode] $mustShow $notInput
-        }
-    }
+#    DIYMakeFrames $t
+#    set useCppArray [RunningInC $topNode]
+#    set ::helperTable($topNode,paramAble) disabled
+#    set allNodes [GetCompProperty $topNode Objects]
+#    foreach node $allNodes {
+#        set notInput [FirstIndexCheck $topNode $node]
+#        if {$notInput != -1} {
+#	    set ::helperTable($topNode,paramAble) normal
+#            AddEntry $t $topNode $node [list $topNode] $mustShow $notInput
+#        }
+#    }
+
+    # Insert an instance of the inspector helper
+    set ::RunEnv::CurrentContainer $t
+    set hlp [UniqueId helper]
+    set helperId $::helperTable(VariableList)
+    set runClass $::classTable(run,$topNode)
+    do_for_node $topNode similescript::$helperId $hlp $runClass Variables
+
     if {$mustShow || [llength $paramData(needed)]} {
         pack [set bfrm [frame .fpdialogue.buttons ]] -fill x
         pack [label $bfrm.banner -fg red -text [tr. "All values with red captions must be set to run the model."]]

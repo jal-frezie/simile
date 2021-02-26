@@ -35,6 +35,9 @@ itcl::class similescript::$newHelperClass {
 		# probably no need to nest others in here, just put at top
 	    } .newmod* {
 		set typesToShow {RECALL DERIVED BLOCK POPULATION GRID HONEYCOMB}
+	    } .fpdial* {
+		set incExpts 1
+		set typesToShow {INPUT TABLE}
 	    } default {
 		set doPops [PrefValue custom(compValPop) compValPop]
 		set incExpts 1
@@ -50,8 +53,10 @@ itcl::class similescript::$newHelperClass {
 			   clist [tr. "List of cases"] caselist \
 			   compound [tr. "Multi-factor case(s)"] compfact \
 			   perm [tr. "Set of permutations"] permut]
-	    set cMenu [menu .expt_context -tearoff 0]
-	    set iMenu [menu $cMenu.insert -tearoff 0]
+	    if {![winfo exists .expt_context]} {
+		set cMenu [menu .expt_context -tearoff 0]
+		set iMenu [menu $cMenu.insert -tearoff 0]
+	    }
 	    foreach {key txt img} $decor {
 		$iMenu add command -label $txt -compound left \
 		    -image $iconImages($img) -command "$this InsertLevel $key"
@@ -66,8 +71,8 @@ itcl::class similescript::$newHelperClass {
 	    pack $f.head.label -side left -expand 0
 	    CrossPlatformBind $f \
 		[namespace code [list OnElementContext {expt} %X %Y]]
-	    set f [MakeSubFrames insp $topFrame [list $::myNode {}] \
-		       [namespace current] 0]
+	    set f [MakeSubFrames $::myNode $topFrame [list $::myNode {}] \
+		       fileparams 0]
 	    $f.head.label configure -text [tr. {Default case}] \
 		-image $iconImages(globe) -compound left
 	    pack $f.head.label -side left -expand 0
