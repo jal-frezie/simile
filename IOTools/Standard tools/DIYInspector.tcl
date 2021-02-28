@@ -95,9 +95,11 @@ itcl::class similescript::$newHelperClass {
 		} elseif {$type eq "VARIABLE"} {
 		    set notInput [lsearch {INPUT TABLE} \
 				      [GetModelEval $component]]
+		    if {$notInput>-1} {
+			set type [lindex {input file} $notInput]
+		    }
 		}
-		if {$notInput>-1} {
-		    set type [lindex {input file} $notInput]
+		if {$incExpts && $notInput>-1} {
 		    AddEntry $winId $::myNode $component $::myNode 0 $notInput
 		}
 		set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 $::myNode] \
@@ -113,7 +115,8 @@ itcl::class similescript::$newHelperClass {
 		    set beeGee [[winfo parent $f].head cget -bg]
 		    set bStyle [[winfo parent $f].head.vis cget -style]
 		    $f configure -bg $beeGee
-		    if {$notInput==-1} {
+		    if {$incExpts && $notInput>-1} {
+		    } else {
 			pack [ttk::label $f.caption -text $capt \
 				  -style $bStyle] -side left
 		    }
