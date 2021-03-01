@@ -38,6 +38,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
     set hlp [UniqueId helper]
     set helperId $::helperTable(VariableList)
     set runClass $::classTable(run,$topNode)
+    array unset widgetNames
     do_for_node $topNode similescript::$helperId $hlp $runClass parameters
 
     if {$mustShow || [llength $paramData(needed)]} {
@@ -65,7 +66,6 @@ proc FileParamDialogue {topNode topWin mustShow} {
         # Dialogue not needed because data OK so return good
         set paramData(done) 1
     }
-    array unset widgetNames
     PackItUp $t
     return $paramData(done)
 }

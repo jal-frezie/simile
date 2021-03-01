@@ -100,7 +100,8 @@ itcl::class similescript::$newHelperClass {
 		    }
 		}
 		if {$incExpts && $notInput>-1} {
-		    AddEntry $winId $::myNode $component $::myNode 0 $notInput
+		    set e [AddEntry $winId $::myNode $component $::myNode 0 $notInput]
+		    bind $e.e <FocusOut> [list $e.tick invoke]
 		}
 		set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 $::myNode] \
 			   [namespace current] 0]
@@ -243,7 +244,8 @@ itcl::class similescript::$newHelperClass {
 	    set type [lindex {input file} $notInput]
 	    set f [AddEntry $winId $myNode [IdFromTail $myNode $path -1] \
 		       $clickPath 0 $notInput $caseName]
-	    $f.caption configure -image $::iconImages([string tolower $type]) -compound left
+	    $f.caption configure -image $::iconImages([string tolower $type]) \
+		-compound left
 	    destroy $winId.label
 	}
 	$modelInst ReleaseClicks
