@@ -92,10 +92,10 @@ itcl::class similescript::$newHelperClass {
 		set type [GetModelClass $component]
 		if {$type eq "SUBMODEL"} {
 		    lappend levels {}
-		} elseif {$type eq "VARIABLE"} {
+		} else {
 		    set notInput [lsearch {INPUT TABLE} \
 				      [GetModelEval $component]]
-		    if {$notInput>-1} {
+		    if {$notInput>-1 && $type eq "VARIABLE"} {
 			set type [lindex {input file} $notInput]
 		    }
 		}

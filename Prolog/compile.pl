@@ -1789,7 +1789,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	     Is_P = Norm_P)),
 	DestRef = elt(_, Dest, X),    
 	((Is_P = 2,
-	    (Type = function, Tgt = Dest, Step = -1, Wait = [on_step];
+	    (Type = function, Tgt = Dest, Step = -1, Wait = [init(Tgt), on_step];
 	    Type = init_function, Tgt = init(Dest),
 		Step = 0, Wait = [on_reset]);
 	 member(Is_P, [1,3]),
@@ -1825,12 +1825,15 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	      Type = magnitude), !,
 		UseStep = SmStep),
 	    SourceEqn = Source;
-	(Is_P = 1, apply_minmax(Node, Source, SourceEqn);
-	 Is_P = 3, instance><regenerate_makearrays(0, LocalPath, SourceEqn)),
+	(Is_P = 1, apply_minmax(Node, Source, SourceEqn),
+	  UseStep = 0; % was -2 but that allowed variation after reset
+	 Is_P = 2, \+ Source = use_param_state, SourceEqn = Source, wake,
+	  UseStep = -1;
+	 Is_P = 3, instance><regenerate_makearrays(0, LocalPath, SourceEqn),
+	  UseStep = 0),
 	    Type = function,
 	    UseList = [on_reset | RefList], 
-	    Made = init(Dest),
-	    UseStep = 0; % was -2 but that allowed variation after reset
+	    Made = init(Dest);
 	member(Type, [compartment, immigration, reproduction, state]),
 	  \+ Source = none,
 	    UseList = [time | RefList], 
