@@ -577,7 +577,7 @@ instances of any submodel it enters and compartmment it connects to. So we get c
 
 end_with_units(Flow, Type-FlowDims) :-
     need_same_dims(Comp, Flow),
-    implicit_function(Comp, Fn),
+    find_node_with_data(Comp, _, Fn),
     Fn has_class_refinement units of Units,
     analyze_array(Units, Type, CompDims),
     get_chain(Flow, Comp, _Top, Exited, EnterBackwards),

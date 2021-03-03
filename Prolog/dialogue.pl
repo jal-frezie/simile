@@ -583,9 +583,10 @@ get_table_data(Function, Data, Table, Units, Dims, Sizes, Complaint) :-
 
 get_table_part(Function, Data, Table, Units, Dims, Sizes) :-
 	length(Data, Len), Len<255,
-	name(Num, Data),
+	(ame_gen><bite_off_number(Data, NumSt, "") -> number_codes(Num, NumSt);
+	name(Num, Data)),
 	% swi-prolog accepts embedded whitespace in integers -- reject
-	\+ (integer(Num), member(32, Data)),
+	% \+ (integer(Num), member(32, Data)),
 	enum_type_ref(Num, Function, quoted, Table, Units, _),
 	    Dims = [],
 	    Sizes = [];
@@ -722,10 +723,12 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 		are not making code we can use the time step field to tell it
 		this by setting it to 'dummy'. */
 	
-	DummyDest = [sm(_,_,_, fm_loop(IndxSzs, IndxSzs, _,_))],
 	% remove old function fragment submodels --
 	% these will be re-created
-	m_update><superfast_delete(Fn),
+	(find_all_comps(Fn, Frag),
+	 superfast_delete(Frag),
+	 oblitterfry(Frag), fail;
+	DummyDest = [sm(_,_,_, fm_loop(IndxSzs, IndxSzs, _,_))]),
 	on_exception(ParseExcp,
 		     (make_intermediates(FullExpr, Fn, ['/dest/'],
 		                        DummyDest, _, [],
