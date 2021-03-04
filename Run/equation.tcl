@@ -233,7 +233,9 @@ proc create_equation {parent purpose comp indices enum_types} {
     pack $mainf.slider.radio1 -side left
     if {[lsearch {init_val_for rules_for} $purpose]>=0} {
 # do not allow variable parameter for initial values...derrr
-	$mainf.slider.radio1 configure -state disabled
+	ttk::label $mainf.slider.l -text [$mainf.slider.radio1 cget -text]
+	pack $mainf.slider.l -after $mainf.slider.radio1 -side left
+	pack forget $mainf.slider.radio1
     } else {
 	BindPopup $mainf.slider.radio1 [NameToTag $topType]
     }
@@ -249,7 +251,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     pack [set unitsanddims [frame $mainf.slider.unitsanddims]] -side right
     pack [label $unitsanddims.cur_dims] -side right -padx 4
     pack [label $unitsanddims.dims_txt -text [tr. "Current dimensions"]: \
-	     -wraplength 100] -side right -padx 4
+	     -wraplength 100p] -side right -padx 4
     pack [set eu [::ttk::entry $unitsanddims.entry -width 8 \
 		      -textvariable equation(units)]] -side right \
 	-padx 4 -pady 4
@@ -564,8 +566,7 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     if {$equation(isparam)==-1} {
 	set equation(isparam) 0
 #    $widget.equation.textbox.radio0 configure -state $paramMenuState
-	$widget.slider.radio1 configure -state disabled
-	$widget.file.radio2 configure -state disabled
+	pack forget $widget.file.radio2
     }
     set equation(min) $min
     set equation(max) $max

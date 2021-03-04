@@ -92,6 +92,7 @@ itcl::class similescript::$newHelperClass {
 		set type [GetModelClass $component]
 		if {$type eq "SUBMODEL"} {
 		    lappend levels {}
+		    set notInput 1
 		} else {
 		    set notInput [lsearch {INPUT TABLE} \
 				      [GetModelEval $component]]
@@ -101,7 +102,10 @@ itcl::class similescript::$newHelperClass {
 		}
 		if {$incExpts && $notInput>-1} {
 		    set e [AddEntry $winId $::myNode $component $::myNode 0 $notInput]
-		    bind $e.e <FocusOut> [list $e.tick invoke]
+# do this in AE so it also worx for expt conds
+#		    if {$notInput>-1} {
+#			bind $e.e <FocusOut> [list $e.tick invoke]
+#		    }
 		}
 		set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 $::myNode] \
 			   [namespace current] 0]

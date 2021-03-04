@@ -577,7 +577,12 @@ proc AcceptData {topNode compName notInput complain} {
     if {$complain > -1 && \
 	    ![string equal disabled [$outNames($compName).e cget -state]]} {
 	set newData [UglifyValList [$outNames($compName).e get]]
-	if {![string equal $newData $suppliedData($compName)]} {
+	set preload [GetCompProperty $topNode Spec $node]
+	if {$newData eq "" && $caseId eq "" && $preload ne ""} {
+	    $outNames($compName).e insert 0 $preload
+	    set suppliedData($compName) $preload
+	    set msgs(param_source_$compName) [tr. {From component equation}]
+	} elseif {![string equal $newData $suppliedData($compName)]} {
 	    set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0
 	    #                set suppliedData($compName) $newData
@@ -619,7 +624,7 @@ proc AcceptData {topNode compName notInput complain} {
     }
 	
     # Make array form if data has changed
-    if {$dataChanged} {
+    if {$dataChanged && $msgs(param_source_$compName) ne [tr. {From component equation}]} {
         #   set msgs(param_source_$compName) Unsaved
         # only if the actual entry field has been edited
 	set recordDims [lrange [GetCompProperty $topNode Dims $node] 0 end-1]

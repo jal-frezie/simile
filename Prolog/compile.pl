@@ -1789,12 +1789,14 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	     Is_P = Norm_P)),
 	DestRef = elt(_, Dest, X),    
 	((Is_P = 2,
-	    (Type = function, Tgt = Dest, Step = -1, Wait = [init(Tgt), on_step];
+	  (Type = function, Tgt = Dest, Step = -1,
+	   (Source = use_param_state -> Wait = [on_step];
+	    Wait = [preload(Dest), on_step]);
 	    Type = init_function, Tgt = init(Dest),
 		Step = 0, Wait = [on_reset]);
 	 member(Is_P, [1,3]),
 	    Tgt = update(Dest),
-	    (Type = function, Step = SmStep, Wait = [init(Dest), on_step];
+	    (Type = function, Step = SmStep, Wait = [preload(Dest), on_step];
 		% last wait was time but made R-K results look wrong
 	    Type = init_function, Step = 0, Wait = [on_reset];
 	    Type = magnitude, Step = SmStep, Wait = [on_step])), !,
@@ -1833,7 +1835,7 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	  UseStep = 0),
 	    Type = function,
 	    UseList = [on_reset | RefList], 
-	    Made = init(Dest);
+	    Made = preload(Dest);
 	member(Type, [compartment, immigration, reproduction, state]),
 	  \+ Source = none,
 	    UseList = [time | RefList], 
@@ -1920,11 +1922,11 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	    % pass value because consequent event may care whether we are minned
 	    % or maxed (or cannoned into oblivion by an upstream squirt)
 	    % but mostly cos it is easier
-	  (member(Is_P, [1, 3]);
-	        Type = init_function), !,
+	  (member(Is_P, [1, 3]), Step1 = preload(Dest);
+	        Type = init_function, Step1 = init(Dest)), !,
 	    Acts = Assigns,
 	    Linkers = [make(Dest,
-			    [init(Dest), update(Dest)], Path, SmStep, [])];
+			    [Step1, update(Dest)], Path, SmStep, [])];
 	  Type = al_function,
 	    Assigns = [assign(Val, Fn)],
 	    Fn = choose(LoopExitExpr, LoopStart, LoopStart),
