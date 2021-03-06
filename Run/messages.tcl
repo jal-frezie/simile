@@ -228,6 +228,7 @@ set msgs(eqListWhere) [tr. {Include information about the origins of each equati
 set msgs(eqListETDefns) [tr. {Include names and members of enumerated types defined in each submodel in the equation listing}]
 set msgs(eqListComments) [tr. {Include comments in the equation listing}]
 set msgs(ncfv) [tr. {No comment for value}]
+set msgs(fce) [tr. {From component equation}]
 set msgs(recentCount) [tr. {Save names of recently opened models for display on the File menu.}]
 set msgs(saveExtras) [tr. {Save the canvas file to reduce the time initially taken to draw the model diagram.}]
 set msgs(quickExit) [tr. {Choose an option to be offered in a short query when closing a window with unsaved content -- "None" goes straight to full query}]

@@ -207,12 +207,12 @@ proc create_equation {parent purpose comp indices enum_types} {
 	    set bottomType "Triggered"
 	} rules_for {
 	    set eqnFrameTitle "Rules and boundaries"
-	    set topType "Range of allowed values"
+	    set topType "n/a"
 	    set midType "Initial values from file"
 	    set bottomType "Rules"
 	} init_val_for {
 	    set eqnFrameTitle "Initial data source"
-	    set topType "Range of allowed values"
+	    set topType "n/a"
 	    set midType "Initial values from file"
 	    set bottomType "Initial value"
 	} equation_for {
@@ -233,8 +233,6 @@ proc create_equation {parent purpose comp indices enum_types} {
     pack $mainf.slider.radio1 -side left
     if {[lsearch {init_val_for rules_for} $purpose]>=0} {
 # do not allow variable parameter for initial values...derrr
-	ttk::label $mainf.slider.l -text [$mainf.slider.radio1 cget -text]
-	pack $mainf.slider.l -after $mainf.slider.radio1 -side left
 	pack forget $mainf.slider.radio1
     } else {
 	BindPopup $mainf.slider.radio1 [NameToTag $topType]
@@ -566,7 +564,12 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     if {$equation(isparam)==-1} {
 	set equation(isparam) 0
 #    $widget.equation.textbox.radio0 configure -state $paramMenuState
+	pack forget $widget.slider.radio1
 	pack forget $widget.file.radio2
+    }
+    if {[catch {pack info $widget.slider.radio1}]} {
+	pack [label $widget.slider.l1 -text [tr. "Range of expected values:"]] \
+	    -before $widget.slider.minmax -side left
     }
     set equation(min) $min
     set equation(max) $max

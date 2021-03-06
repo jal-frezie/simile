@@ -581,7 +581,7 @@ proc AcceptData {topNode compName notInput complain} {
 	if {$newData eq "" && $caseId eq "" && $preload ne ""} {
 	    $outNames($compName).e insert 0 $preload
 	    set suppliedData($compName) $preload
-	    set msgs(param_source_$compName) [tr. {From component equation}]
+	    set msgs(param_source_$compName) $msgs(fce)
 	} elseif {![string equal $newData $suppliedData($compName)]} {
 	    set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0
@@ -624,7 +624,7 @@ proc AcceptData {topNode compName notInput complain} {
     }
 	
     # Make array form if data has changed
-    if {$dataChanged && $msgs(param_source_$compName) ne [tr. {From component equation}]} {
+    if {$dataChanged && $msgs(param_source_$compName) ne $msgs(fce)} {
         #   set msgs(param_source_$compName) Unsaved
         # only if the actual entry field has been edited
 	set recordDims [lrange [GetCompProperty $topNode Dims $node] 0 end-1]
@@ -927,7 +927,8 @@ namespace eval fileparams {
 	upvar 1 $outerWidgets outWidgets
 	set inC [RunningInC $topNode]
 	foreach compName [array names outData $smPath/*] {
-	    if {[IsRecordCount $compName]} continue
+	    if {[IsRecordCount $compName] || \
+		$msgs(param_source_$compName) eq $msgs(fce)} continue
 	    set compTail [string range $compName [string length $smPath] end]
 	    if {[set slashPosn [string first / $compTail 1]]>-1} {
 		set inners([string range $compTail 1 [incr slashPosn -1]]) 1
