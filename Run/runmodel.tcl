@@ -769,7 +769,7 @@ proc GetShortVals {topNode plName limit} {
 			     [GetCompProperty $topNode Class $plName]]>-1}]
 	    set count [CountCValues $hdl $loseZeros]
 	    if {$count<$limit/5 || $showMatrix} {
-		set text [ExtractCList $hdl $count $loseZeros]
+		set text [ExtractCList $hdl $limit $loseZeros]
 	    } else {
 		set tail [expr {$limit/10}]
 		set text [concat [ExtractCList $hdl $tail $loseZeros] \
