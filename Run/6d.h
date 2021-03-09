@@ -53,7 +53,7 @@ class CPPEXTDEC FileParamData
   ~FileParamData();
 
  public:
-  void extract_elt(void*, BOOLEAN, int*);
+  int extract_elt(void*, BOOLEAN, int*);
   void extract_record_count(void*, int, int*);
 };
 

@@ -535,6 +535,21 @@ FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
   }
 }
 
+FINDABLE int clearparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  int error;
+  void* fpHandle;
+  if (argc != 2) {
+    Tcl_WrongNumArgs(interp, 1, argv, "param_id");
+    return TCL_ERROR;
+  }
+  
+  // memcpy(&fpHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  sscanf(Tcl_GetStringFromObj(argv[1], NULL), "%p", &fpHandle);
+  forget_param_array(fpHandle);
+  return TCL_OK;
+}
+
 FINDABLE int cleartimeseriesCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
@@ -1726,7 +1741,8 @@ FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
  */
 FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   const char* allNames[] =
-    {"loadshlib", "c_createmodel", "c_addmodeltogroup", "c_createparamarray",
+    {"loadshlib", "c_createmodel", "c_addmodeltogroup",
+     "c_createparamarray", "c_forgetparamarray",
      "newc_settimepointarray", "newc_setrecordlist", "newc_settimepointrecords",
      "newc_cleartimeseries", "newc_setparamelement", "newc_setwraparoundtime",
      "newc_setfillmethod", "newc_setinterval", "newc_settimepointelement",
@@ -1737,8 +1753,8 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
      "listobjects", "randseed", "random01", "add_event_command"};
   Tcl_ObjCmdProc* allProcs[] =
     {loadmodelCmd, createmodelCmd, addtogroupCmd, setparamarrayCmd,
-     settimepointarrayCmd, setrecordlistCmd, settimepointrecordsCmd,
-     cleartimeseriesCmd, setparamelementCmd, setwrapCmd,
+     clearparamarrayCmd, settimepointarrayCmd, setrecordlistCmd,
+     settimepointrecordsCmd, cleartimeseriesCmd, setparamelementCmd, setwrapCmd,
      setfillCmd, setintervalCmd, settimepointelementCmd,
      markevtparamactiveCmd, setparamallCmd, getparamallCmd,
      settimepointallCmd, gettimepointallCmd, resetmodelCmd,

@@ -147,13 +147,17 @@ proc insert_to_pipe {ns_extras when what} {
     }
 }
    
-proc tcl_setparamarray {model node} {
+proc tcl_setparamarray {model node create} {
     global paramLocns
 
     set paramIdx [getinfo $node 8]
 #puts "tcl_setparamarray $model $node $paramIdx"
-    set paramLocns($paramIdx,nod) $node
-    set paramLocns($paramIdx,arr) tclParmData ;# was [InputVarFor $model $node]
+    if {$create} {
+	set paramLocns($paramIdx,nod) $node
+	set paramLocns($paramIdx,arr) tclParmData ;# was [InputVarFor $model $node]
+    } else {
+	array unset paramLocns $paramIdx,*
+    }
 }
 
 proc tcl_cleartimeseries {node} {

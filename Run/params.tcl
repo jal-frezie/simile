@@ -582,6 +582,7 @@ proc AcceptData {topNode compName notInput complain} {
 	    $outNames($compName).e insert 0 $preload
 	    set suppliedData($compName) $preload
 	    set msgs(param_source_$compName) $msgs(fce)
+	    set dataChanged 1
 	} elseif {![string equal $newData $suppliedData($compName)]} {
 	    set msgs(param_source_$compName) [tr. Unsaved]
 	    set paramMetadata($compName,saveReference) 0
@@ -624,7 +625,25 @@ proc AcceptData {topNode compName notInput complain} {
     }
 	
     # Make array form if data has changed
-    if {$dataChanged && $msgs(param_source_$compName) ne $msgs(fce)} {
+    if {$dataChanged} {
+        set useCppArray [RunningInC $topNode]
+
+	if {!$readMany($compName) && \
+		$msgs(param_source_$compName) eq $msgs(fce)} {
+	    if {$useCppArray} {
+		#puts "c_setparamarray b $node"
+		c_setparamarray $topNode $node $caseId 0
+	    } else {
+		tcl_setparamarray $topNode $node 0
+	    }
+	    set result [expr {-1+$readMany($compName)}]
+	    if {![info exists runState($topNode,reloadParams)] || \
+		    $result<$runState($topNode,reloadParams)} {
+# do not set if we already found an update needing a bigger reset than this one
+		set runState($topNode,reloadParams) $result
+	    }
+	    return 1
+	}	    
         #   set msgs(param_source_$compName) Unsaved
         # only if the actual entry field has been edited
 	set recordDims [lrange [GetCompProperty $topNode Dims $node] 0 end-1]
@@ -634,8 +653,6 @@ proc AcceptData {topNode compName notInput complain} {
 	}
 #        # Now replace each -1 in the dims with the id of the by-record
 #        # submodel it represents...no longer needed
-
-        set useCppArray [RunningInC $topNode]
 
 #puts "node $compName has dims $recordDims"
 	while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
@@ -683,9 +700,9 @@ proc AcceptData {topNode compName notInput complain} {
         }
 	if {$useCppArray} {
 	    #puts "c_setparamarray b $node"
-	    c_setparamarray $topNode $node $caseId
+	    c_setparamarray $topNode $node $caseId 1
 	} else {
-	    tcl_setparamarray $topNode $node
+	    tcl_setparamarray $topNode $node 1
 	}
 	if {$complain==2 && ![string length $newData]} {
 	    # accept empty field for saving data

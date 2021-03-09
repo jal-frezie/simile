@@ -285,6 +285,7 @@ typedef int make_full_caption_type(int, char*, int*, enum_type_data**);
 /* Defined in the shank, used by the shim */
 EXTDEC char* load_model(char*, char*, void**);
 EXTDEC void* use_array_for_params(void*, char*);
+EXTDEC void forget_param_array(void*);
 EXTDEC void* get_param_data_space(void*);
 EXTDEC int param_array_size(void*);
 EXTDEC void copy_param_data(char*, void*);

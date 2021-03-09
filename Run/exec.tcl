@@ -1020,7 +1020,7 @@ proc NumberToEnumType {idx trans} {
     }
 }
 
-proc c_setparamarray {topNode tgtNode caseId} {
+proc c_setparamarray {topNode tgtNode caseId create} {
     global instance_id param_id exptl_case exptl_params
 
     if {$caseId ne {}} {
@@ -1030,7 +1030,12 @@ proc c_setparamarray {topNode tgtNode caseId} {
 	set useInst $instance_id
 	set keepPrm param_id($tgtNode)
     }
-    set $keepPrm [c_createparamarray $useInst $tgtNode]
+    if {$create} {
+	set $keepPrm [c_createparamarray $useInst $tgtNode]
+    } elseif {[info exists $keepPrm]} {
+	c_forgetparamarray [set $keepPrm]
+	unset $keepPrm
+    }
 }
 
 # Old versions of these (identifying parameters by target node id) are passed
