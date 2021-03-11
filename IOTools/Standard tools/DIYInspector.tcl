@@ -102,10 +102,6 @@ itcl::class similescript::$newHelperClass {
 		}
 		if {$incExpts && $notInput>-1} {
 		    set e [AddEntry $winId $::myNode $component $::myNode 0 $notInput]
-# do this in AE so it also worx for expt conds
-#		    if {$notInput>-1} {
-#			bind $e.e <FocusOut> [list $e.tick invoke]
-#		    }
 		}
 		set f [MakeSubFrames insp $topFrame [lreplace $levels 0 0 $::myNode] \
 			   [namespace current] 0]

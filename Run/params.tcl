@@ -218,7 +218,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     set colStyle style$holder
     $slot configure -bg $lbg
 
-    pack [label $slot.caption -text [lindex $levels end] -foreground red \
+    pack [label $slot.caption -text [lindex $levels end] \
 	      -background $lbg] -side left
 #    pack [label $slot.l2 -text ($dimList) -fg red] -side left
     set paramMetadata($compName,dimList) $dimList
@@ -237,6 +237,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     pack [::ttk::entry $slot.e -width 1] -side left -fill x -expand on
     BindPopup $slot.e param_source_$compName comment_$compName
     bind $slot.e <Return> [list $slot.tick invoke]
+    bind $slot.e <FocusOut> [list $slot.tick invoke]
     KoreanClick $slot.e 1 {}
     bind $slot.e <Double-1> [list EditValueComment $topFrame $compName]
 
@@ -252,7 +253,8 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
 				      $notInput]]
     BindPopup $slot.cross [tr. "Revert to old values"]
     FixDisabledImgBug $slot.cross
-    if {[info exists suppliedData($compName)]} {
+    if {[info exists suppliedData($compName)] && \
+	    $msgs(param_source_$compName) ne $msgs(fce)} {
         FillIfSmall $slot.e $suppliedData($compName)
     } else {
         set suppliedData($compName) {}
@@ -572,16 +574,20 @@ proc AcceptData {topNode compName notInput complain} {
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
 
+    if {[focus] eq "$outNames($compName).cross"} {return 0}
+    # tick invoked by clicking on cross, not what user wanted
     set node [IdFromTail $topNode $compLocal -1]
     set dataChanged 0
     if {$complain > -1 && \
 	    ![string equal disabled [$outNames($compName).e cget -state]]} {
 	set newData [UglifyValList [$outNames($compName).e get]]
 	set preload [GetCompProperty $topNode Spec $node]
-	if {$newData eq "" && $caseId eq "" && $preload ne ""} {
+	if {$newData eq "" && $caseId eq "" && $preload ne "" && \
+		[GetCompProperty $topNode Class $node] ne "EVENT"} {
 	    $outNames($compName).e insert 0 $preload
 	    set suppliedData($compName) $preload
 	    set msgs(param_source_$compName) $msgs(fce)
+	    ColourCaptions $outNames($compName) blue
 	    set dataChanged 1
 	} elseif {![string equal $newData $suppliedData($compName)]} {
 	    set msgs(param_source_$compName) [tr. Unsaved]
@@ -764,7 +770,7 @@ proc AcceptData {topNode compName notInput complain} {
 	    if {[info exists entryChanged]} {
 		set suppliedData($compName) $newData
 	    }
-            if {$complain>-1} {
+            if {$complain>-1 && $newData ne ""} { ;# leave eqned variables blue
                 ColourCaptions $outNames($compName) black
             }
             set suppliedData(needed) [purge $suppliedData(needed) $compName]
