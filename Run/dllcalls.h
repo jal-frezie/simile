@@ -302,7 +302,7 @@ EXTDEC void mark_values_active(void*, int);
 //EXTDEC int set_param_array_elt(char*, double, int*);
 //EXTDEC int set_time_point_elt(char*, double, double, int*);
 EXTDEC char* get_param_ptr_and_dims(void*, int**);
-EXTDEC int get_timepoint_ptr_and_dims(void*, double, char**, int**);
+EXTDEC char** get_timepoint_ptr_and_dims(void*, double, int**);
 //EXTDEC void free_bloc_records(char*, int*);
 EXTDEC int set_bloc_record_count(char*, int*, int*, int);
 EXTDEC void set_bloc_element(char*, int*, int*, double);

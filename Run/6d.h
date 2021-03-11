@@ -121,7 +121,7 @@ class CPPEXTDEC VarParamData : public FileParamData {
   char* FindNextTimePtSpace(double*);
 
   //! Data space for time point at given time, or NULL if none added
-  char* GetTimePtDataSpace(double);
+  char** GetTimePtDataSpace(double);
 
   //! Recursively remove all time points
   void ClearTimePtElements();

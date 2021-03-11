@@ -516,6 +516,8 @@ char* copy_bloc_data(char* source, int* ptDims) {
   int reps, count, *subDims;
   char* newData;
   
+  if (!source)
+    return NULL;
   reps = array_count(ptDims, &subDims);
   if (!is_base_type(*subDims)) { // assume its OWNSIZED
     newData = new char[reps*sizeof(sizeAndPtr)];
@@ -942,12 +944,12 @@ char* VarParamData::FindNextTimePtSpace(double* last_time) {
   */
 }
 
-  char* VarParamData::GetTimePtDataSpace (double time) {
+  char** VarParamData::GetTimePtDataSpace (double time) {
     listTimePoint* timePt;
 
     if (timePoints) {
       if ((timePt = timePoints->find_last_pt(time))->when==time)
-	return timePt->dataPtr;
+	return &(timePt->dataPtr);
     }
     return NULL;
   }
@@ -2287,20 +2289,16 @@ char* get_param_ptr_and_dims(void* fpHandle, int** dimSlot) {
   return arrSlot->dataPtr.contents;
 }
 
-int get_timepoint_ptr_and_dims(void* fpHandle, double time, 
-				 char** ptDataSlot, int** dimSlot) {
+char** get_timepoint_ptr_and_dims(void* fpHandle, double time, 
+				 int** dimSlot) {
   VarParamData* arrSlot = (VarParamData*)fpHandle;
-  char* ptData;
+  char** ptData;
 
 //  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
 //    return 2; // no data structure for this elt
 //  }
-  ptData = arrSlot->GetTimePtDataSpace(time);
-  if (!ptData) return 1; // no matching time point
-
-  *ptDataSlot = ptData;
   *dimSlot = arrSlot->dataPtr.dimSpecs;
-  return 0; // success
+  return arrSlot->GetTimePtDataSpace(time);
 }
 
 void mark_values_active(void* fpHandle, int wait) {

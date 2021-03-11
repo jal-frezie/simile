@@ -741,7 +741,7 @@ FINDABLE int settimepointrecordsCmd(ClientData clientData, Tcl_Interp *interp,
 				    int argc, Tcl_Obj *CONST argv[]) {
   int count, error, indxs[32], *dims;
   void* fpHandle;
-  char* bloc;
+  char** bloc;
   double timePt;
 
   if (argc != 5) {
@@ -764,15 +764,12 @@ FINDABLE int settimepointrecordsCmd(ClientData clientData, Tcl_Interp *interp,
   if (error != TCL_OK) {
     return error;
   }
-  switch (get_timepoint_ptr_and_dims(fpHandle, timePt, &bloc, &dims)) {
-  case 2:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("set_tp_records: no array has been created for this node", -1));
-    return TCL_ERROR;
-  case 1:
+  bloc = get_timepoint_ptr_and_dims(fpHandle, timePt, &dims);
+  if (!bloc) {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("set_tp_records: no array exists for this time point", -1));
     return TCL_ERROR;
   }
-  if (set_bloc_record_count(bloc, dims, indxs, count)) {
+  if (set_bloc_record_count(*bloc, dims, indxs, count)) {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("set_tp_records: number of indices does not correspond to a per-record submodel level", -1));
     return TCL_ERROR;
   }
@@ -884,7 +881,7 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
   int error, indxs[32], *dims;
   void* fpHandle;
   double time, val;
-  char* bloc;
+  char** bloc;
 
   if (argc != 5) {
     Tcl_WrongNumArgs(interp, 1, argv, "param_id index_list time value");
@@ -906,15 +903,16 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 
   if ((error = ints_from_list(interp, argv[2], indxs)) != TCL_OK)
     return error;
-  switch (get_timepoint_ptr_and_dims(fpHandle, time, &bloc, &dims)) {
-  case 2:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("set_tp_element: no array has been created for this node", -1));
-    return TCL_ERROR;
-  case 1:
+  bloc = get_timepoint_ptr_and_dims(fpHandle, time, &dims);
+  if (!bloc) {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("set_tp_element: no array exists for this time point", -1));
     return TCL_ERROR;
   }
-  set_bloc_element(bloc, dims, indxs, val);
+  if (indxs[0] == -1) { // indicates DEFAULT point
+    free_bloc_data(*bloc, dims);
+    *bloc = NULL;
+  } else
+    set_bloc_element(*bloc, dims, indxs, val);
   return TCL_OK;
 }
 
@@ -922,7 +920,7 @@ FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int count, error, squirtPtr = 0, num_bytes, *dims;
   void* fpHandle;
-  char *ptBytes;
+  char **ptBytes;
   unsigned char *holder;
   double seekTime;
   Tcl_Obj* resultPtr;
@@ -948,13 +946,14 @@ FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
       }
       // sprintf(globMess, "Adding datum at time %lf", seekTime);
       // showMess(globMess);
-      if (get_timepoint_ptr_and_dims(fpHandle, seekTime, &ptBytes, &dims)) {
+      ptBytes = get_timepoint_ptr_and_dims(fpHandle, seekTime, &dims);
+      if (!ptBytes) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("This never happens", -1));
 	return TCL_ERROR;
       }
       // assume above works as we have just created it
       squirtPtr += sizeof(double);
-      memcpy(ptBytes, holder+squirtPtr, count);
+      memcpy(*ptBytes, holder+squirtPtr, count);
       // sprintf(globMess, "Inserted %d if int, %lf if double, dims %d", 
 	 //      *(int*)ptBytes, *(double*)ptBytes, *dims);
       // showMess(globMess);

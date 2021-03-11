@@ -630,6 +630,11 @@ proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
 # If there are values other than NOW, do an init step
                 c_settimepointarray $caseId $tgt $indx
             }
+	    if {[string equal DEFAULT [string toupper $subList]]} {
+# Values return to default as before first time point -- index -1 clears data
+		EnumTypeToNumber $caseId $tgt,$indx,-1 0 {} 1 $useCppArray
+		continue
+	    }
 # check for fill method if one might be appropriate
 	    if {[lsearch $specialPts OTHERS]>-1} {
 		set noMtd [catch {SetFillMethod $caseId $useCppArray $tgt \
