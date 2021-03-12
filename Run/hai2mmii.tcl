@@ -62,10 +62,10 @@ proc TransValue {curLevel val} {
 }
 
 proc IsPretty {bride} {
-    expr {[string first [string index $bride 0] \{\[] > -1}
+    expr {[string first [string index $bride 0] \{\[]+1}
 }
 
-proc PrettifyValList {ugly txtVals args} {
+proc PrettifyValList {ugly txtVals} {
 #puts "Trying to tidy up $ugly"
     if {[llength $ugly]==1} {
 	set result $ugly
@@ -80,19 +80,29 @@ proc PrettifyValList {ugly txtVals args} {
 	    } else {
 		set result \{
 	    }
-	    append result $indx:\ [PrettifyValList $val $txtVals 1]
+	    append result $indx:\ [PrettifyValList $val $txtVals]
 	}
-	append result \}
+	if {[string length $result]} {
+	    append result \}
+	}
     }
     return $result
 }
 
-proc UglifyValList {pretty} {
-    if {[IsPretty $pretty]} {
-	::json::json2dict $pretty
-    } else {
-	return $pretty
+proc UglifyValList {pretty isTimes} {
+    set p [IsPretty $pretty]
+    if {$p} {
+	set hugTree [::json::json2dict $pretty]
+	if {$p==2 && $isTimes} { # array for time series, indices start from 0
+	    set science {}
+	    foreach {ind val} $hugTree {
+		lappend science [expr {$ind-1}] $val
+	    }
+	    return $science
+	}
+	return $hugTree
     }
+    return $pretty
 }
 
 proc OldUglifyValList {pretty} {

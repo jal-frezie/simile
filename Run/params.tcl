@@ -580,7 +580,8 @@ proc AcceptData {topNode compName notInput complain} {
     set dataChanged 0
     if {$complain > -1 && \
 	    ![string equal disabled [$outNames($compName).e cget -state]]} {
-	if {[catch {UglifyValList [$outNames($compName).e get]} newData]} {
+	if {[catch {UglifyValList [$outNames($compName).e get] \
+			$readMany($compName)} newData]} {
 	    Query [list json_parse_fail $newData] warning spf {} ok
 	    return 0
 	}
@@ -811,7 +812,7 @@ proc RevertData {winId compName notInput valTrans} {
     upvar \#0 $widgetLocn outNames
 
     set oldData [$outNames($compName).e get]
-    if {![catch {UglifyValList $oldData} worked]} {
+    if {![catch {UglifyValList $oldData $::readMany($compName)} worked]} {
 	set oldData $worked
     }
     $outNames($compName).e delete 0 end
@@ -1907,7 +1908,8 @@ proc GetFromTable {parent topNode compName trans dlgStyle} {
         set table_entry(data) {}
     }
     if {[string match normal [$outNames($compName).e cget -state]]} {
-        set table_entry(values) [UglifyValList [$outNames($compName).e get]]
+        set table_entry(values) [UglifyValList [$outNames($compName).e get] \
+				    $::readMany($compName)]
     } else {
         set table_entry(values) $suppliedData($compName)
     }
