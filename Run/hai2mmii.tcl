@@ -67,22 +67,22 @@ proc IsPretty {bride} {
 
 proc PrettifyValList {ugly txtVals args} {
 #puts "Trying to tidy up $ugly"
-    if {[llength $ugly]==1 || [lsearch $txtVals $ugly]>-1} {
-	# do mind even length ET mem mangling
+    if {[llength $ugly]==1} {
 	set result $ugly
+    } elseif {[lsearch $txtVals $ugly]>-1} {
+	# do mind even length ET mem mangling
+	set result \"$ugly\"
     } else {
 	set result {}
 	foreach {indx val} $ugly {
 	    if {[string length $result]} {
-		append result { }
-	    } elseif {[llength $args]} {
+		append result {, }
+	    } else {
 		set result \{
 	    }
-	    append result \#$indx:\ [PrettifyValList $val $txtVals 1]
+	    append result $indx:\ [PrettifyValList $val $txtVals 1]
 	}
-	if {[llength $args]} {
-	    append result \}
-	}
+	append result \}
     }
     return $result
 }

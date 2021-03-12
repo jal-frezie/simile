@@ -783,6 +783,10 @@ set msgs(bad_access_message) [tr. {Simile could not open this file.}]
 set msgs(bad_access_detail) [tr. {The reported problem was:
 %1$s}]
 
+set msgs(json_parse_fail_title) [tr. {Failed to parse JSON literal parameter values}]
+set msgs(json_parse_fail_message) [tr. "Parameter value entries that start with a \[ or \{ are treated as JSON objects or arrays respecitvely, and passed to an external parser."]
+set msgs(json_parse_fail_detail) [tr. {The JSON parser gave the following message: %1$s}]
+
 set msgs(xml_parse_fail_title) [tr. {Failed to parse XML parameter metafile}]
 set msgs(xml_parse_fail_message) [tr. {The XML parser gave the following message: %1$s}]
 set msgs(xml_parse_fail_detail) [tr. {The parser status was:

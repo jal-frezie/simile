@@ -580,7 +580,10 @@ proc AcceptData {topNode compName notInput complain} {
     set dataChanged 0
     if {$complain > -1 && \
 	    ![string equal disabled [$outNames($compName).e cget -state]]} {
-	set newData [UglifyValList [$outNames($compName).e get]]
+	if {[catch {UglifyValList [$outNames($compName).e get]} newData]} {
+	    Query [list json_parse_fail $newData] warning spf {} ok
+	    return 0
+	}
 	set preload [GetCompProperty $topNode Spec $node]
 	if {$newData eq "" && $caseId eq "" && $preload ne "" && \
 		[GetCompProperty $topNode Class $node] ne "EVENT"} {
@@ -807,7 +810,10 @@ proc RevertData {winId compName notInput valTrans} {
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
 
-    set oldData [UglifyValList [$outNames($compName).e get]]
+    set oldData [$outNames($compName).e get]
+    if {![catch {UglifyValList $oldData} worked]} {
+	set oldData $worked
+    }
     $outNames($compName).e delete 0 end
     if {[info exists suppliedData($compName)]} {
         $outNames($compName).e insert 0 \
