@@ -9,6 +9,8 @@
 # that are required for this purpose.
 #
 
+source [file join $SIMILE_PATH Run jsonplus.tcl]
+
 proc SetStep {node time phase} {
     GetCompProperty $node SetStep $time $phase
 }
@@ -59,9 +61,14 @@ proc TransValue {curLevel val} {
     }
 }
 
-proc PrettifyValList {ugly args} {
+proc IsPretty {bride} {
+    expr {[string first [string index $bride 0] \{\[] > -1}
+}
+
+proc PrettifyValList {ugly txtVals args} {
 #puts "Trying to tidy up $ugly"
-    if {fmod([llength $ugly],2)==1} { ;# dont mind even length ET mem mangling
+    if {[llength $ugly]==1 || [lsearch $txtVals $ugly]>-1} {
+	# do mind even length ET mem mangling
 	set result $ugly
     } else {
 	set result {}
@@ -71,7 +78,7 @@ proc PrettifyValList {ugly args} {
 	    } elseif {[llength $args]} {
 		set result \{
 	    }
-	    append result \#$indx:\ [PrettifyValList $val 1]
+	    append result \#$indx:\ [PrettifyValList $val $txtVals 1]
 	}
 	if {[llength $args]} {
 	    append result \}
@@ -81,6 +88,14 @@ proc PrettifyValList {ugly args} {
 }
 
 proc UglifyValList {pretty} {
+    if {[IsPretty $pretty]} {
+	::json::json2dict $pretty
+    } else {
+	return $pretty
+    }
+}
+
+proc OldUglifyValList {pretty} {
 #puts "pretty $pretty"
 # Something should go in around here to deal with the fact that user input is
 # not necessarily a list

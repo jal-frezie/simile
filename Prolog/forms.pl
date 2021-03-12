@@ -66,7 +66,9 @@ do_equation_dialog(Win, Part) :-
 	    (FilePath = '/graph/', !,
 		append([FilePath | DataField], [Bounds | Indices], TableList),
 		TableVals = br(Values);
-	    TableList = [FilePath, DataField | Indices],
+	     (FilePath = '' -> % only numerical values entered
+		  TableList = '';
+	      TableList = [FilePath, DataField | Indices]),
 		append(Bounds, [TUnits], TableTypes), 
 		all(event, insert_mem_list,
 		    [build(TableTypes), unify(ClickedObj), build(TableTrans)]),

@@ -250,12 +250,12 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     ::ttk::button $slot.cross -style $colStyle \
 	-image $iconImages(cross) \
 	-command [namespace code [list RevertData $winId $compName \
-				      $notInput]]
+				      $notInput [lindex $trans end]]]
     BindPopup $slot.cross [tr. "Revert to old values"]
     FixDisabledImgBug $slot.cross
     if {[info exists suppliedData($compName)] && \
 	    $msgs(param_source_$compName) ne $msgs(fce)} {
-        FillIfSmall $slot.e $suppliedData($compName)
+        FillIfSmall $slot.e $suppliedData($compName) $trans
     } else {
         set suppliedData($compName) {}
 	AbleHandEditControls $slot ;# they are not packed yet
@@ -796,7 +796,7 @@ proc rsearch {list tgt} {
     }
 }
 
-proc RevertData {winId compName notInput} {
+proc RevertData {winId compName notInput valTrans} {
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -811,19 +811,19 @@ proc RevertData {winId compName notInput} {
     $outNames($compName).e delete 0 end
     if {[info exists suppliedData($compName)]} {
         $outNames($compName).e insert 0 \
-	    [PrettifyValList $suppliedData($compName)]
+	    [PrettifyValList $suppliedData($compName) $valTrans]
 	set suppliedData($compName) $oldData
     }
     
 }
 
-proc FillIfSmall {entry text} {
+proc FillIfSmall {entry text trans} {
 #ShowMess debug info "Shrinking $text" ok
     $entry configure -state normal
     $entry delete 0 end
     set limit 500
     set count [ShrinkValueList text $limit]
-    set text [PrettifyValList $text]
+    set text [PrettifyValList $text [lindex $trans end]]
     
     set shrunken [EndsOnly text $count $limit]
     $entry insert 0 $text
@@ -1423,8 +1423,8 @@ proc LoadBase64CharData {encoded} {
 					  $parseStatus(oldPath)]
     set paramMetadata($compName,saveBinary) 1
     if {[info exists widgetNames($compName)]} { ;# should imply widget exists
-	FillIfSmall $widgetNames($compName).e \
-	    [concat $paramData($compName)]
+	FillIfSmall $widgetNames($compName).e [concat $paramData($compName)] \
+	    [GetCompProperty $topNode Trans $nodeId]
 	$widgetNames($compName).e configure -state disabled
 	AbleHandEditControls $widgetNames($compName)
     }
@@ -1563,6 +1563,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
             #ShowMess debug info "Param data is $paramData($restoredComp)" ok
             
             # OK here we go...try and follow this...first go to the starting point..
+	    set trans [GetCompProperty $topNode Trans $node]
             if {$reference} {
 		if {[IsBogusURL $VFile]} {
 		    set locn $VFile
@@ -1611,7 +1612,6 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
 		set paramMetadata($restoredComp,saveBinary) 0
 		set paramMetadata($restoredComp,saveReference) 1
             } else {
-                set trans [GetCompProperty $topNode Trans $node]
                 if {!$startLine || ($startLine==-1 && \
 				    $readMany($restoredComp))} {
 		    set trans [lreplace $trans 0 0 time \
@@ -1645,7 +1645,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive {noneBad 1}} {
             if {$interactive} {
                 #$widgetNames($restoredComp).e
                 FillIfSmall $outNames($restoredComp).e \
-		    $suppliedData($restoredComp)
+		    $suppliedData($restoredComp) $trans
             }
         }
     }
@@ -1884,7 +1884,8 @@ proc GetFromTable {parent topNode compName trans dlgStyle} {
     global paramState table_entry msgs paramMetadata \
 	widgetNames whichParamsAffected
 
-    if {$dlgStyle eq "result" || $dlgStyle eq "measure"} {
+    set notInput [expr {-($dlgStyle eq "result" || $dlgStyle eq "measure")}]
+    if {$notInput} {
 	set dataLocn targetData
 	set widgetLocn targetNames
     } else {
@@ -1920,7 +1921,9 @@ proc GetFromTable {parent topNode compName trans dlgStyle} {
     if {$newSource>0} {
         set suppliedData($compName) $table_entry(values)
 	set whichParamsAffected($compName) 1
-        FillIfSmall $outNames($compName).e $suppliedData($compName)
+	set node [IdFromTail $topNode $compName $notInput]
+	set trans [GetCompProperty $topNode Trans $node]
+        FillIfSmall $outNames($compName).e $suppliedData($compName) $trans
         switch $newSource {
             2 {
 		# data loaded from separate file and not altered

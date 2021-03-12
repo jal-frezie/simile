@@ -799,7 +799,7 @@ proc GetShortVals {topNode plName limit} {
 	    set count -[lindex $result 0]
 	    set text [lindex $result 1]
 	} else {
-#	    set text [PrettifyValList $text]
+	    set text [PrettifyValList $text [lindex $transData end]]
 	}
     }
     return [list $count $text]
