@@ -2108,6 +2108,7 @@ proc MakeDesktopNode {} {
     similescript::ModelWindow $newInstance
     set node [$newInstance cget -modelNode]
     set classTable(model,$node) $newInstance
+    set ::runState($node,updated) 0
     return [list $node [$newInstance cget -modelCanvas]]
 }
 

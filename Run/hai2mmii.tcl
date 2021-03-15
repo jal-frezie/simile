@@ -91,18 +91,18 @@ proc PrettifyValList {ugly txtVals} {
 
 proc UglifyValList {pretty isTimes} {
     set p [IsPretty $pretty]
-    if {$p} {
-	set hugTree [::json::json2dict $pretty]
-	if {$p==2 && $isTimes} { # array for time series, indices start from 0
-	    set science {}
-	    foreach {ind val} $hugTree {
-		lappend science [expr {$ind-1}] $val
-	    }
-	    return $science
-	}
-	return $hugTree
+    if {!$p} {
+	return $pretty
     }
-    return $pretty
+    set hugTree [::json::json2dict $pretty]
+    if {$p==2 && $isTimes} { # array for time series, indices start from 0
+	set science {}
+	foreach {ind val} $hugTree {
+	    lappend science [expr {$ind-1}] $val
+	}
+	return $science
+    }
+    return $hugTree
 }
 
 proc OldUglifyValList {pretty} {

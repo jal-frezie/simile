@@ -151,7 +151,8 @@ itcl::class similescript::$newHelperClass {
 	
 	switch -regexp $type {
 	    param|plist {
-		pack [label $winId.label -text [tr. "Select a parameter from the model diagram or explorer"] -fg red]
+		lappend clickPath $type
+		pack [label $winId.label -wrap 400 -text [tr. "Select a parameter from the model diagram or explorer"] -fg red]
 		$modelInst GrabClicks $this
 	    } default {
 		set newLevel [UniqueId $type]
@@ -234,21 +235,35 @@ itcl::class similescript::$newHelperClass {
 	variable curFrame
 	variable clickPath
 	variable compCases
+	variable listStrings
 
 	set node [IdFromTail $myNode $path -1]
-	if {[catch {set caseName $compCases([lindex $clickPath end])}]} {
-	    set caseName [GetCaseName $path]
-	}
-	if {$caseName ne {}} {
+	set action [lindex $clickPath end]
+	set clickPath [lrange $clickPath 0 end-1]
+
+	destroy $winId.label
+	$modelInst ReleaseClicks
+	
+	if {$action eq "plist"} {
+	    set listStrings($node) {}
+	    set f [AddEntry $winId $myNode $node $clickPath 0 0 s]
+	    # just like a regular entry except...
+	    $f.caption configure -image $::iconImages(list) -compound left
+	    $f.tick configure -command [list $this DecodeListSpec $f $node]
+	} else {
+	    if {[catch {set caseName $compCases([lindex $clickPath end])}]} {
+		set caseName [GetCaseName $path]
+		# Add case for this entry
+		AddCase $myNode $caseName
+		if {$caseName eq {}} return
+	    }
 	    set notInput [expr {[GetModelEval $node] ne "INPUT"}]
 	    set type [lindex {input file} $notInput]
 	    set f [AddEntry $winId $myNode [IdFromTail $myNode $path -1] \
 		       $clickPath 0 $notInput $caseName]
-	    $f.caption configure -image $::iconImages([string tolower $type]) \
+	    $f.caption configure -image $::iconImages($type) \
 		-compound left
-	    destroy $winId.label
 	}
-	$modelInst ReleaseClicks
     }
 
     public method Display {time dispInt step} {
@@ -257,6 +272,40 @@ itcl::class similescript::$newHelperClass {
 # step is a spare parameter
     }
 
+    public method DecodeListSpec {box node} {
+	variable listStrings
+
+	set name [string range [winfo name $box] 3 end-3]
+	set listExpr [$box.e get]
+	if {$listExpr eq $listStrings($node)} return
+	
+	set range [scan $listExpr "%f to %f step %f" start end step]
+	if {$range>1} {
+	    if {$range==2} {
+		set step 1
+	    }
+	    if {!($end-$start)/$step>1} {
+		error "Too few steps"
+	    }
+	    for {set val $start} {$val/$step<=$end/$step} \
+		{set val [expr $val+$step]} {
+		    lappend compound $name=$val $val
+		}
+	} else {
+	    set alt [UglifyValList $listExpr 0]
+	    if {[IsPretty $listExpr]==2} { ;# a json list, legibilize indices
+		foreach {ind val} $alt {
+		    lappend compound $name=$ind $val
+		}
+	    } else {
+		set compound $alt
+	    }
+	}
+
+	set $listStrings($node) $listExpr
+	puts $compound
+    }
+		
     public method HelperLeaf {node hlpr add} {
 	set id [[$hlpr info class]::Identify]
 	array set hlprIcons {Plotter graph \

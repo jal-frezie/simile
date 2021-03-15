@@ -172,8 +172,6 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     set handle [split $compName /]
     if {![string match compound* [lindex $exptLevels end]] && $caseId ne {}} {
 	set handle [lrange $handle end end]
-	# Add case for this entry
-	AddCase $topNode $caseId
 	# ...and give it an array for the new parameter...that is done in
 	# AcceptData for default parameters
     } else {
