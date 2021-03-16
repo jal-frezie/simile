@@ -666,12 +666,10 @@ class listTimePoint {
   friend class VarParamData;
 
   double when;
-  BOOLEAN myArraySpace;
   char* dataPtr;
   listTimePoint *last, *next;
 
   listTimePoint(double time, int* dimSpecs) {
-    myArraySpace = FALSE;
     when = time;
     dataPtr = init_space(dimSpecs);
     last = next = NULL;

@@ -295,7 +295,7 @@ namespace eval RunEnv {
         set CurrentContainer $CurrentContainers($node)
         set dp0 $dp0s($node)
     }
-
+    
     proc RaiseModelWindow {} {
 	variable currentNode
 	do_in_editor RaiseModelWindow $currentNode

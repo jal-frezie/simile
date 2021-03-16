@@ -129,6 +129,15 @@ itcl::class similescript::$newHelperClass {
 		}
 	    }
 	}
+	set dad [winfo parent $winId]
+	set grandad [winfo parent $dad]
+	if {[winfo class $grandad] eq "TNotebook"} {
+	    if {[info exists notInput]} {
+		$grandad add $dad
+	    } else {
+		$grandad hide $dad
+	    }
+	}
     }
     destructor {
 	destroy .expt_context
