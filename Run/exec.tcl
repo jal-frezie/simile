@@ -116,6 +116,13 @@ proc InsertExptlCase {node caseId} {
     return [set exptl_case($caseId) [c_addmodeltogroup $instance_id]]
 }
 
+proc DeleteExptlCase {node caseId} {
+    global exptl_case
+
+    c_deletemodel $exptl_case($caseId)
+    unset exptl_case($caseId)
+}
+
 proc ExecuteTo {node current pause unitLength display foci \
 		    intMethod maxErr lmtPause evtMsg evtDisp} {
     global dispDone actDone

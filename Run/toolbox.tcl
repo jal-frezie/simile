@@ -732,6 +732,14 @@ proc AddCase {node caseId} {
     set runState($node,reloadParams) -2
 }
 
+proc DeleteCase {node caseId} {
+    global runState
+    
+    DeleteExptlCase $node $caseId
+    unset runState($node,case$caseId) 
+    set runState($node,reloadParams) -2
+}
+
 set intCount 0
 
 proc newInt {} {
@@ -1119,12 +1127,14 @@ proc InitExecThread {node} {
 # puts "Created interp $execInterp($node,id) for $node"
     }
 
-    foreach stubCmd {load_c_stub_1 c_setparamarray tcl_setparamarray
-	c_getparamall c_gettimepointall PlaceInArray ListToArray RepeatReset
-	MarkEvtParamActive AddEventCommand SetWrapTime SetFillMethod
-	SetInterval ex_load_dll update_executable InsertExptlCase SeedRandoms
-	ReleaseHandle GetHandle RunningInC GetTclCompExecData GetCompProperty
-	ExScrubRun} {
+    foreach stubCmd \
+	{load_c_stub_1 c_setparamarray tcl_setparamarray c_getparamall \
+	     c_gettimepointall PlaceInArray ListToArray RepeatReset \
+	     MarkEvtParamActive AddEventCommand SetWrapTime \
+	     SetFillMethod SetInterval ex_load_dll update_executable \
+	     InsertExptlCase DeleteExptlCase SeedRandoms ReleaseHandle \
+	     GetHandle RunningInC GetTclCompExecData GetCompProperty \
+	     ExScrubRun} {
 	if {$useThreads} {
 	    proc $stubCmd {node args} {
 		global execThread

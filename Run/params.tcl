@@ -153,6 +153,21 @@ proc ScrollToSee {canvas w} {
 #puts "current $current goesTo $goesTo cbox $cbox height $height move $move start $start"
 }
 
+proc CaseForExpt {topNode levels} {
+    global compCases
+    
+    if {$levels eq ""} {
+	return ""
+    } else {
+	set levelSrc compCases($topNode,[lindex $levels end])
+	if {[info exists $levelSrc]} {
+	    return [set $levelSrc]
+	} else {
+	    return [CaseForExpt $topNode [lrange $levels 0 end-1]]
+	}
+    }
+}
+
 proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     global iconImages msgs paramMetadata readMany
     if {$notInput==-1} {
@@ -170,12 +185,15 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
 	append compName ", " $caseId
     }
     set handle [split $compName /]
-    if {![string match compound* [lindex $exptLevels end]] && $caseId ne {}} {
+    if {$caseId ne {}} {
 	set handle [lrange $handle end end]
 	# ...and give it an array for the new parameter...that is done in
 	# AcceptData for default parameters
     } else {
 	set handle [lrange $handle 1 end]
+    }
+    if {$caseId eq ""} {
+	set caseId [CaseForExpt $topNode $exptLevels]
     }
     set levels [concat $exptLevels $handle]
     set compName /[lindex $exptLevels end]$compName
@@ -242,7 +260,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
     ::ttk::button $slot.tick -style $colStyle \
 	-image $iconImages(tick) \
 	-command [namespace code [list AcceptData $topNode $compName \
-				      $notInput 1]]
+				      $notInput 1 $caseId]]
     BindPopup $slot.tick [tr. "Accept these values"]
     FixDisabledImgBug $slot.tick
     ::ttk::button $slot.cross -style $colStyle \
@@ -392,11 +410,11 @@ proc AddSubFrames {topNode clientId parent hierarchy ns pt} {
     set level [lindex $hierarchy $pt]
     set nextPt [expr $pt+1]
     set leaf [expr {[llength $hierarchy]<=$nextPt}]
-    if {$leaf} {
-        set nextLevel $parent.box$level
-    } else {
+#    if {$leaf} {
+#        set nextLevel $parent.box$level
+#    } else {
         set nextLevel $parent.frame$level
-    }
+#    }
     if {![winfo exists $nextLevel]} {
 	switch $clientId {
 	    insp {
@@ -556,11 +574,10 @@ proc AcceptAll {topNode compNames notInput complain} {
     }
 }
 
-proc AcceptData {topNode compName notInput complain} {
+proc AcceptData {topNode compName notInput complain {caseId {}}} {
     global runState msgs whichParamsAffected readMany paramMetadata
     set namencase [split $compName ,]
     set compLocal [lindex $namencase 0]
-    set caseId [string range [lindex $namencase 1] 1 end]
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -584,7 +601,7 @@ proc AcceptData {topNode compName notInput complain} {
 	    return 0
 	}
 	set preload [GetCompProperty $topNode Spec $node]
-	if {$newData eq "" && $caseId eq "" && $preload ne "" && \
+	if {$newData eq "" && $preload ne "" && \
 		[GetCompProperty $topNode Class $node] ne "EVENT"} {
 	    $outNames($compName).e insert 0 $preload
 	    set suppliedData($compName) $preload

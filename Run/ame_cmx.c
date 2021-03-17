@@ -502,6 +502,21 @@ FINDABLE int addtogroupCmd(ClientData clientData, Tcl_Interp *interp,
   }
 }
 
+FINDABLE int deletemodelCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  int error;
+  void* instHandle;
+
+  if (argc != 2) {
+    Tcl_WrongNumArgs(interp, 1, argv, "instance_id");
+    return TCL_ERROR;
+  }
+  
+  memcpy(&instHandle, Tcl_GetByteArrayFromObj(argv[1], NULL), sizeof(void*));
+  delete_instance(instHandle);
+  return TCL_OK;
+}
+
 /* This one creates an array to hold values for a model parameter and
    tells the model subsystem that it is to use this array to get
    values 
@@ -1740,7 +1755,7 @@ FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
  */
 FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   const char* allNames[] =
-    {"loadshlib", "c_createmodel", "c_addmodeltogroup",
+    {"loadshlib", "c_createmodel", "c_addmodeltogroup", "c_deletemodel",
      "c_createparamarray", "c_forgetparamarray",
      "newc_settimepointarray", "newc_setrecordlist", "newc_settimepointrecords",
      "newc_cleartimeseries", "newc_setparamelement", "newc_setwraparoundtime",
@@ -1751,12 +1766,12 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
      "getvalue", "graph_table", "handle_data", "free_data_handle",
      "listobjects", "randseed", "random01", "add_event_command"};
   Tcl_ObjCmdProc* allProcs[] =
-    {loadmodelCmd, createmodelCmd, addtogroupCmd, setparamarrayCmd,
-     clearparamarrayCmd, settimepointarrayCmd, setrecordlistCmd,
-     settimepointrecordsCmd, cleartimeseriesCmd, setparamelementCmd, setwrapCmd,
-     setfillCmd, setintervalCmd, settimepointelementCmd,
-     markevtparamactiveCmd, setparamallCmd, getparamallCmd,
-     settimepointallCmd, gettimepointallCmd, resetmodelCmd,
+    {loadmodelCmd, createmodelCmd, addtogroupCmd, deletemodelCmd,
+     setparamarrayCmd, clearparamarrayCmd, settimepointarrayCmd,
+     setrecordlistCmd, settimepointrecordsCmd, cleartimeseriesCmd,
+     setparamelementCmd, setwrapCmd, setfillCmd, setintervalCmd,
+     settimepointelementCmd, markevtparamactiveCmd, setparamallCmd,
+     getparamallCmd, settimepointallCmd, gettimepointallCmd, resetmodelCmd,
      repeatresetCmd, executemodelCmd, setstepCmd, exitmodelCmd,
      interfaceCmd, graphCmd, handleDataCmd, freeDataHandleCmd,
      listobjCmd, randseedCmd, random01Cmd, addEventCommandCmd};

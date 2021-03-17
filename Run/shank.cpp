@@ -1178,12 +1178,24 @@ ExecutingModel::ExecutingModel(ModelServer* newModelSpec, void* yourRef) {
 }
 
 ExecutingModel::~ExecutingModel() {
-  while (children) {
-    delete children->now;
-    delete children;
-    children = children->next; // should persist that long
-  }
+  xmList* sibling;
   
+  while (children) { // assignment intentional
+    delete children->now;
+    // deletion of child instance will point children to next child
+  }
+  if (parent) { // snip this out of parent's child list
+    xmList** siblingPtr = &(parent->children);
+    while (sibling = *siblingPtr) { // assignment intentional
+      if (sibling->now == this) break;
+      siblingPtr = &(sibling->next);
+    }
+    if (sibling) {
+      *siblingPtr = sibling->next;
+      delete sibling;
+    } else
+      printf("Could not find %p in children of %p\n", this, parent);
+  }
   while (param_array_base) delete param_array_base;
   // Above line is correct -- deleting a param item causes it to be snipped out
   // of the list, so list head is NULL when all are snipped. Var params have
@@ -2642,6 +2654,10 @@ void* fetch_group_member(void* instanceType, void* clientRef) {
   // 5-D callbacks have the client data set to the instance
   justMade = ((ExecutingModel*)instanceType)->AddGroupMember(clientRef);
   return justMade;
+}
+
+void delete_instance(void* instanceType) {
+  delete (ExecutingModel*)instanceType;
 }
 
 // get metadata: deprecated as each attribute should be sought individually

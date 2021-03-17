@@ -146,15 +146,22 @@ itcl::class similescript::$newHelperClass {
     proc OnElementContext {path X Y} {
 	variable cMenu
 	variable clickPath
+
+	$cMenu entryconfig Insert -state normal
 	# We have a hierarchy of frames below the click, need to find which
-	$cMenu post $X $Y
 	set clickPath $path
+	switch [lindex $clickPath end] {
+	    param {
+		$cMenu entryconfig Insert -state disabled
+	    }
+	}
+	$cMenu post $X $Y
     }
 
     public method InsertLevel {type} {
+	global myNode compCases
 	variable clickPath
 	variable decor
-	variable compCases
 	
 	set anchor [lsearch $decor $type]
 	
@@ -172,8 +179,8 @@ itcl::class similescript::$newHelperClass {
 		set leafName [lindex $decor $anchor+1]
 		if {$type eq "compound"} {
 		    set compCase [GetCaseName combination]
-		    AddCase $::myNode $compCase
-		    set compCases($newLevel) $compCase
+		    AddCase $myNode $compCase
+		    set compCases($myNode,$newLevel) $compCase
 		    set leafName "$compCase: $leafName"
 		}
 		$lab configure -compound left -text $leafName \
@@ -186,11 +193,24 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method delete {} {
+	global myNode compCases
 	variable clickPath
+	puts $clickPath
 	
 	set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
 		   [namespace current] 0]
-	# todo: destroy instance for case
+	set leaf [lindex $clickPath end]
+	set endNodes [string first {, } $leaf]
+	if {$endNodes>=0} {
+	    DeleteCase $myNode [string range $leaf $endNodes+2 end]
+	} elseif {[info exists compCases($myNode,$leaf)]} {
+	    DeleteCase $myNode $compCases($myNode,$leaf)
+	    unset compCases($myNode,$leaf)
+	} elseif {[winfo exists $f.tick]} {
+	    # parameter value in compound case, case will survive so clear it 
+	    $f.e delete 0 end
+	    $f.tick invoke
+	}
 	destroy $f
     }
     
@@ -240,10 +260,9 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method Click {path} {
-	global myNode
+	global myNode compCases
 	variable curFrame
 	variable clickPath
-	variable compCases
 	variable listStrings
 
 	set node [IdFromTail $myNode $path -1]
@@ -260,11 +279,12 @@ itcl::class similescript::$newHelperClass {
 	    $f.caption configure -image $::iconImages(list) -compound left
 	    $f.tick configure -command [list $this DecodeListSpec $f $node]
 	} else {
-	    if {[catch {set caseName $compCases([lindex $clickPath end])}]} {
+	    set caseName ""
+	    if {[CaseForExpt $myNode $clickPath] eq ""} {
 		set caseName [GetCaseName $path]
 		# Add case for this entry
-		AddCase $myNode $caseName
 		if {$caseName eq {}} return
+		AddCase $myNode $caseName
 	    }
 	    set notInput [expr {[GetModelEval $node] ne "INPUT"}]
 	    set type [lindex {input file} $notInput]
@@ -273,6 +293,9 @@ itcl::class similescript::$newHelperClass {
 	    $f.caption configure -image $::iconImages($type) \
 		-compound left
 	}
+	lappend clickPath [$f.caption cget -text]
+	CrossPlatformBind $f.caption \
+	    [namespace code [list OnElementContext  $clickPath %X %Y]]
     }
 
     public method Display {time dispInt step} {

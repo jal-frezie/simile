@@ -324,6 +324,7 @@ EXTDEC node_data_line* nodlin_from_id(void*, int);
 EXTDEC void add_event_command(void*, char*, char*);;
 EXTDEC void* fetch_top_instance(void*, void*);
 EXTDEC void* fetch_group_member(void*, void*);
+EXTDEC void delete_instance(void*);
 
 EXTDEC excpData* reset(void*, void*, double, int, int);
 EXTDEC void repeat_reset(void*, void*, double);
