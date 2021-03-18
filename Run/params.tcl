@@ -601,7 +601,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 	    return 0
 	}
 	set preload [GetCompProperty $topNode Spec $node]
-	if {$newData eq "" && $preload ne "" && \
+	if {$newData eq "" && $caseId eq "" && $preload ne "" && \
 		[GetCompProperty $topNode Class $node] ne "EVENT"} {
 	    $outNames($compName).e insert 0 $preload
 	    set suppliedData($compName) $preload

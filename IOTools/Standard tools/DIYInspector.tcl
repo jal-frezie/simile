@@ -193,6 +193,7 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method delete {} {
+	# needs to handle case lists
 	global myNode compCases
 	variable clickPath
 	puts $clickPath
@@ -202,14 +203,16 @@ itcl::class similescript::$newHelperClass {
 	set leaf [lindex $clickPath end]
 	set endNodes [string first {, } $leaf]
 	if {$endNodes>=0} {
-	    DeleteCase $myNode [string range $leaf $endNodes+2 end]
+	    if {[string range $leaf $endNodes end] eq ", s"} {
+	    # parameter value in compound case, case will survive so clear it 
+		$f.e delete 0 end
+		$f.tick invoke
+	    } else {
+		DeleteCase $myNode [string range $leaf $endNodes+2 end]
+	    }
 	} elseif {[info exists compCases($myNode,$leaf)]} {
 	    DeleteCase $myNode $compCases($myNode,$leaf)
 	    unset compCases($myNode,$leaf)
-	} elseif {[winfo exists $f.tick]} {
-	    # parameter value in compound case, case will survive so clear it 
-	    $f.e delete 0 end
-	    $f.tick invoke
 	}
 	destroy $f
     }
@@ -273,11 +276,13 @@ itcl::class similescript::$newHelperClass {
 	$modelInst ReleaseClicks
 	
 	if {$action eq "plist"} {
-	    set listStrings($node) {}
+	    set listStrings($path) {}
+	    set compCases($myNode,$path) {}
 	    set f [AddEntry $winId $myNode $node $clickPath 0 0 s]
 	    # just like a regular entry except...
 	    $f.caption configure -image $::iconImages(list) -compound left
-	    $f.tick configure -command [list $this DecodeListSpec $f $node]
+	    $f.tick configure -command [list $this DecodeListSpec \
+					    $f $path $clickPath]
 	} else {
 	    set caseName ""
 	    if {[CaseForExpt $myNode $clickPath] eq ""} {
@@ -288,7 +293,7 @@ itcl::class similescript::$newHelperClass {
 	    }
 	    set notInput [expr {[GetModelEval $node] ne "INPUT"}]
 	    set type [lindex {input file} $notInput]
-	    set f [AddEntry $winId $myNode [IdFromTail $myNode $path -1] \
+	    set f [AddEntry $winId $myNode $node \
 		       $clickPath 0 $notInput $caseName]
 	    $f.caption configure -image $::iconImages($type) \
 		-compound left
@@ -304,12 +309,15 @@ itcl::class similescript::$newHelperClass {
 # step is a spare parameter
     }
 
-    public method DecodeListSpec {box node} {
+    public method DecodeListSpec {box path clickPath} {
+	global myNode compCases
 	variable listStrings
 
-	set name [string range [winfo name $box] 3 end-3]
+	set oldCases $compCases($myNode,$path)
+	set compCases($myNode,$path) {}
+	set name [string range [winfo name $box] 5 end-3]
 	set listExpr [$box.e get]
-	if {$listExpr eq $listStrings($node)} return
+	if {$listExpr eq $listStrings($path)} return
 	
 	set range [scan $listExpr "%f to %f step %f" start end step]
 	if {$range>1} {
@@ -325,17 +333,38 @@ itcl::class similescript::$newHelperClass {
 		}
 	} else {
 	    set alt [UglifyValList $listExpr 0]
-	    if {[IsPretty $listExpr]==2} { ;# a json list, legibilize indices
+	    if {[IsPretty $listExpr]==2} { ;# a json array, legibilize indices
 		foreach {ind val} $alt {
-		    lappend compound $name=$ind $val
+		    lappend compound $name=$val $val
 		}
 	    } else {
 		set compound $alt
 	    }
 	}
 
-	set $listStrings($node) $listExpr
-	puts $compound
+	foreach {name val} $compound {
+	    set found [lsearch $oldCases $name]
+	    if {$found>=0} {
+		set oldCases [lreplace $oldCases $found $found]
+	    } else {
+		AddCase $myNode $name
+	    }
+	    # set the actual parameter in the case!
+	    $box.e delete 0 end
+	    $box.e insert 0 $val
+	    set fullPath "[join [concat {{}} $clickPath] /]$path, s"
+	    AcceptData $myNode $fullPath 0 1 $name
+	    
+	    lappend compCases($myNode,$path) $name
+	}
+	$box.e delete 0 end
+	$box.e insert 0 $listExpr
+	
+	foreach case $oldCases {
+	    DeleteCase $myNode $case
+	}
+	
+	set listStrings($path) $listExpr
     }
 		
     public method HelperLeaf {node hlpr add} {
