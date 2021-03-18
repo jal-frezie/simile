@@ -790,6 +790,9 @@ proc GetShortVals {topNode plName limit} {
 	    }
 	}
 	set transData [GetCompProperty $topNode Trans $plName]
+	if {[llength $hdl]>1} {
+	    set transData [linsert $transData 0 {}]
+	}
 	if {$showMatrix} {
 	    set transData [list {} {} [lindex $transData end]]
 	}

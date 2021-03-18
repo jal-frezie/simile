@@ -1133,7 +1133,7 @@ proc InitExecThread {node} {
 	     MarkEvtParamActive AddEventCommand SetWrapTime \
 	     SetFillMethod SetInterval ex_load_dll update_executable \
 	     InsertExptlCase DeleteExptlCase SeedRandoms ReleaseHandle \
-	     GetHandle RunningInC GetTclCompExecData GetCompProperty \
+	     ListCases GetHandle RunningInC GetTclCompExecData GetCompProperty \
 	     ExScrubRun} {
 	if {$useThreads} {
 	    proc $stubCmd {node args} {

@@ -348,7 +348,11 @@ proc GetMaxValue { node } {
 
 proc GetTransTable { node } {
     global myNode
-    return [GetCompProperty $myNode Trans $node]
+    set result [GetCompProperty $myNode Trans $node]
+    if {[llength [ListCases $myNode]]} {
+	set result [linsert $result 0 {}]
+    }
+    return $result
 #    return [do_in_editor GetTransTable $node]
 }
 

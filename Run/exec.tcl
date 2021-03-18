@@ -234,14 +234,18 @@ proc GetPayload {node point class} {
     }
 }
 
+proc ListCases {node} {
+    return [array get ::exptl_case]
+}
+    
 proc GetHandle {node point} {
-    global model_id instance_id exptl_case
+    global model_id instance_id
     set result [handle_data $model_id $instance_id $point]
-    if {[array exists exptl_case]} {
+    set expts [ListCases $node]
+    if {[llength $expts]} {
 	set result [list default $result]
-	foreach caseId [array names exptl_case] {
-	    lappend result $caseId \
-		[handle_data $model_id $exptl_case($caseId) $point]
+	foreach {caseId hdl} $expts {
+	    lappend result $caseId [handle_data $model_id $hdl $point]
 	}
     }
     return $result
