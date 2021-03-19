@@ -259,7 +259,7 @@ typedef struct excpData_t {
 // typedef double graphpoint_type(double, graph_data_type*, int);
 // typedef void release_graph_data_type(graph_data_type*);
 // typedef int compare_instance_status_type (const int*, const int*, int);
- typedef void get_value_pointer_type(void*, void*, double, int, int, int*);
+ typedef int get_value_pointer_type(void*, void*, double, int, int, int*);
  typedef void showMess_type(const char*);
 /*
 typedef void* fetch_instance_type(char*);

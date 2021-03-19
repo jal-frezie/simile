@@ -23,7 +23,7 @@ char simileVersion[] = SIMILE_VERSION;
 void showMess (const char* mess) {
   // Tcl_VarEval(globInterp, "tk_messageBox -title {c++ debug} -icon info -message {", mess, "} -type ok",
   // NULL);
-  printf("%s\n", mess);
+  printf("exec: %s\n", mess);
 }
 
 /* this simply makes up a tcl list of all the objects that
@@ -1645,10 +1645,11 @@ FINDABLE int addEventCommandCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
-void respond_to_param_req(void* clientRef, void* modelSlot, double reqTime,
+int respond_to_param_req(void* clientRef, void* modelSlot, double reqTime,
 			  int paramId, int indCount, int* indices) {
   printf("Unwanted parameter value request at %lf\n", reqTime);
   Tcl_BackgroundError((Tcl_Interp*)clientRef);
+  return 0; // failed to supply parameter value
 }
 
 BOOLEAN outeract_gui(void* ref, int stop_chk, double now) {

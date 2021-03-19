@@ -176,7 +176,7 @@ EXPORT uint64_t seed_rand(int);
 // no need, is declared in dllcalls.h for use by shim)
 int compare_instance_status (const int[], const int[],  int);
 EXPORT void report_events(int, const int[], int, const int[], const double[]);
-EXPORT void handle_model_param_request(void*, void*, int, BOOLEAN, int, int*);
+EXPORT int handle_model_param_request(void*, void*, int, int, int*);
 EXPORT int stat_check(void*);
 
 int setServerPipe(const char*, TSPOUT*);

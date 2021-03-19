@@ -181,8 +181,7 @@ void InstanceOfModel::collect (void* dest, int record_id, int id_count, ...) {
   }
   va_end(argptr);
 
-  handle_model_param_request(partner, dest, record_id, 
-			       FALSE, id_count, curIndices);
+  handle_model_param_request(partner, dest, record_id, id_count, curIndices);
 }
    
 template <class modeldata> 

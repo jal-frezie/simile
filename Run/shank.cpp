@@ -720,12 +720,11 @@ FileParamData::~FileParamData() {
 
 // These last two are actually called by the model code to get data
 
-int FileParamData::extract_elt(void* tgt, BOOLEAN up, int* indxs) {
+int FileParamData::extract_elt(void* tgt, int* indxs) {
   // do not do it if this is a variable parameter and we are initializing --
     // array not yet set so let model keep default value...in fact, save it in
     // the array for later
   void *insertionPt; 
-  char *sparePt;
   node_data_line* nodeLine;
   int dataSize;
 
@@ -745,19 +744,11 @@ int FileParamData::extract_elt(void* tgt, BOOLEAN up, int* indxs) {
     // avoid forward copying first
     // memcpy(insertionPt, tgt, size_for_type());
     dataSize = size_for_data_type(nodeLine->datatype);
-    if (up) {
-      sparePt = new char[dataSize];
-      memcpy(sparePt, tgt, dataSize);
-    }
     memcpy(tgt, insertionPt, dataSize);
-    if (up) {
-      memcpy(insertionPt, sparePt, dataSize);
-      delete sparePt;
-    }
     return 1; // parameter loaded successfully
   }
 
-  void FileParamData::extract_record_count(void* tgt, int ic, int* indxs) {
+  int FileParamData::extract_record_count(void* tgt, int ic, int* indxs) {
     sizeAndPtr* insertionPt;
     int count, indxsWith0[32];
 
@@ -769,6 +760,7 @@ int FileParamData::extract_elt(void* tgt, BOOLEAN up, int* indxs) {
     insertionPt = (sizeAndPtr*)locate_elt(dataPtr.contents, 0, 
 					  dataPtr.dimSpecs, indxsWith0);
     *(int*)tgt = insertionPt->size;
+    return 1; //always succeeds?
   }
 // end of FileParamData class
 
@@ -972,23 +964,6 @@ void VarParamData::ClearTimePtElements() {
   }
   finalTimePoint = NULL;
   curTimePoint = NULL;
-}
-
-void VarParamData::back_copy_vars() {
-  nodeValues* fromModel;
-  
-//  if (!GetTimePtDataSpace(t0)) { }
-  if (!curTimePoint) {
-    free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-    fromModel = myModelExec->GetRawValues(nodeId);
-    dataPtr.contents = fromModel->contents;
-//    sprintf(globMess, "dims %d %d backcopied %d records 1st %lf", 
-//	    dataPtr.dimSpecs[0], dataPtr.dimSpecs[1], ((sizeAndPtr*)dataPtr.contents)->size,
-//	    *(double*)(((sizeAndPtr*)dataPtr.contents)->ptr));
-//    showMess(globMess);
-    delete fromModel;
-  }
-  if (nextVP) nextVP->back_copy_vars();
 }
 
 double VarParamData::ResetTimeSeries(double init_time, int topPhase) {
@@ -1792,14 +1767,14 @@ FileParamData* ExecutingModel::UseArrayForParams(HCOMP nodeNum) {
     return new FileParamData(this, nodeNum, fullDims);
 }
 
-void ExecutingModel::GetValuePointer(void* modelSlot, int paramId, BOOLEAN up,
+int ExecutingModel::FillValuePointer(void* modelSlot, int paramId,
 				     int ic, int* indxs) {
   FileParamData* paramArrayItem;
 
   paramArrayItem = param_array_base;
   if (modelSpec->param_item_from_id(&paramArrayItem, paramId))
-    paramArrayItem->extract_elt(modelSlot, up, indxs);
-  else if (!up) {
+    return paramArrayItem->extract_elt(modelSlot, indxs);
+  else {
     // couldn't find id, try to find a member parameter
     // first get its nodeline
     node_data_line *nodeLine;
@@ -1807,12 +1782,12 @@ void ExecutingModel::GetValuePointer(void* modelSlot, int paramId, BOOLEAN up,
     paramArrayItem = param_array_base;
     if (modelSpec->member_param_item(&paramArrayItem, nodeLine->path))
       // found a parameter inside this submodel, get record count
-      paramArrayItem->extract_record_count(modelSlot, ic, indxs);
+      return paramArrayItem->extract_record_count(modelSlot, ic, indxs);
     else if (parent)
       // No data for it in this instance, pass request up default hierarchy
-      parent->GetValuePointer(modelSlot, paramId, up, ic, indxs);
+      return parent->FillValuePointer(modelSlot, paramId, ic, indxs);
     else
-      modelSpec->get_value_pointer(clientRef, modelSlot, thisTsPosn,
+      return modelSpec->get_value_pointer(clientRef, modelSlot, thisTsPosn,
 			       paramId, ic, indxs);
     
   }
@@ -2405,11 +2380,11 @@ void set_bloc_element(char* ptData, int* ptDims, int* indxs, double value) {
   }
 }
 
-void handle_model_param_request(void* instId, void* modelSlot, int paramId, 
-				BOOLEAN up, int ic, int* indxs) {
+int handle_model_param_request(void* instId, void* modelSlot, int paramId, 
+				int ic, int* indxs) {
 //  sprintf(globMess, "h_m_p_t to location %lx for exmod %lx node %d count %d indx0 %d indx1 %d", (long)modelSlot, (long)instId, paramId, ic, indxs[0], indxs[1]);
 //  showMess(globMess);
-  ((ExecutingModel*)instId)->GetValuePointer(modelSlot, paramId, up, ic, indxs);
+  return ((ExecutingModel*)instId)->FillValuePointer(modelSlot, paramId, ic, indxs);
 }
 
 /* This finds node ids from captions globally. It runs through a model
@@ -2609,9 +2584,9 @@ public:
   {
   }
 
-  void get_value_pointer(void* ref, void* slot, double time,
+  int get_value_pointer(void* ref, void* slot, double time,
 				int paramId, int ic, int* indxs) {
-    fivedee_get_value_pointer(ref, slot, time, paramId, ic, indxs);
+    return fivedee_get_value_pointer(ref, slot, time, paramId, ic, indxs);
   }
 
   BOOLEAN interact_gui(void* ref, int action, double modelTime) {

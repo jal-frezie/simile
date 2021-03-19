@@ -53,8 +53,8 @@ class CPPEXTDEC FileParamData
   ~FileParamData();
 
  public:
-  int extract_elt(void*, BOOLEAN, int*);
-  void extract_record_count(void*, int, int*);
+  int extract_elt(void*, int*);
+  int extract_record_count(void*, int, int*);
 };
 
 //! This is same as above but includes all extras for managing time points
@@ -129,14 +129,6 @@ class CPPEXTDEC VarParamData : public FileParamData {
   //! Set up current data from time points as if running forward to time zero
   //! (argument is phase, result is time of first event, 0 if none)
   double ResetTimeSeries(double, int);
-
-  //! Copy values from model into current data space if no time point zero
-
-  //! This is needed in order that the variable parameters keep their initial
-  //! value as defined in the model until they are set by a time point or user 
-  //! action, otherwise
-  //! the uninitialized current data space would be copied over them
-  void back_copy_vars();
 
   //! Set up current data from time points for time and direction 
   //! Arguments are time and dir (TRUE=forward), 
@@ -259,7 +251,7 @@ class ExecutingModel
   nodeValues* GetRawValues(HCOMP);
 
   //! allow model to access parameter data; client should not call this
-  void GetValuePointer(void*, int, BOOLEAN, int, int*);
+  int FillValuePointer(void*, int, int, int*);
 
   // allow model to update client during execution; client should not call
   BOOLEAN do_gui_check(double, int);
@@ -346,7 +338,7 @@ class ModelServer
   //! Arg 4 is serial number of component needing value
   //! Arg 5 says how many array indices are given to pick the value
   //! Arg 6 points to array holding the indices
-  virtual void get_value_pointer(void*, void*, double, int, int, int*) = 0;
+  virtual int get_value_pointer(void*, void*, double, int, int, int*) = 0;
 
   //! Inform the client about model progress: client returns nonzero to halt it
 
