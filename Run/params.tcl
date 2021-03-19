@@ -653,7 +653,8 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
     if {$dataChanged} {
         set useCppArray [RunningInC $topNode]
 
-	if {$msgs(param_source_$compName) eq $msgs(fce)} {
+	if {!$readMany($compName) && \
+		$msgs(param_source_$compName) eq $msgs(fce)} {
 	    if {$useCppArray} {
 		#puts "c_setparamarray b $node"
 		c_setparamarray $topNode $node $caseId 0
@@ -1881,7 +1882,7 @@ proc VarType {testVar types} {
 	    return 2
 	}
     } elseif {[string equal timePt [lindex $types 0]]} {
-	if {[lsearch {RESTART USE_LAST USE_CLOSEST INTERPOLATE} \
+	if {[lsearch {RESTART USE_LAST USE_CLOSEST INTERPOLATE DEFAULT} \
 		 [string toupper $testVar]]!=-1} {
 	    return 2
 	} else {
