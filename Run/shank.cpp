@@ -824,7 +824,8 @@ double VarParamData::update_from_points(double nowInDays, double next) {
     }
   }
   
-  if (loBound && hiBound && fillMethod!=USE_LAST) {
+  if (fillMethod!=USE_LAST &&
+      loBound && loBound->dataPtr && hiBound && hiBound->dataPtr) {
     interFract = (now-wraps*wrapAroundPoint-loBound->when)/
       (hiBound->when+(hiWraps-wraps)*wrapAroundPoint-loBound->when);
     //            sprintf(globMess, "lotime %lf hitime %lf Fract %lf", 

@@ -653,8 +653,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
     if {$dataChanged} {
         set useCppArray [RunningInC $topNode]
 
-	if {!$readMany($compName) && \
-		$msgs(param_source_$compName) eq $msgs(fce)} {
+	if {$msgs(param_source_$compName) eq $msgs(fce)} {
 	    if {$useCppArray} {
 		#puts "c_setparamarray b $node"
 		c_setparamarray $topNode $node $caseId 0

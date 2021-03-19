@@ -1828,14 +1828,14 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 		UseStep = SmStep),
 	    SourceEqn = Source;
 	(Is_P = 1, apply_minmax(Node, Source, SourceEqn),
-	  UseStep = 1; % was -2 but that allowed variation after reset
+	  UseStep = SmStep; % was -2 but that allowed variation after reset
 	 % then 0 but changed in v7 to allow default to be e.g., graph(time())
 	 Is_P = 2, \+ Source = use_param_state, SourceEqn = Source, wake,
 	  UseStep = -1;
 	 Is_P = 3, instance><regenerate_makearrays(0, LocalPath, SourceEqn),
 	  UseStep = 0),
 	    Type = function,
-	    UseList = [on_reset | RefList], 
+	    UseList = [on_step | RefList], 
 	    Made = preload(Dest);
 	member(Type, [compartment, immigration, reproduction, state]),
 	  \+ Source = none,
