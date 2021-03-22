@@ -196,7 +196,6 @@ itcl::class similescript::$newHelperClass {
 	# needs to handle case lists
 	global myNode compCases
 	variable clickPath
-	puts $clickPath
 	
 	set f [MakeSubFrames $winId $topFrame [concat $clickPath {{}}] \
 		   [namespace current] 0]

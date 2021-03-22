@@ -495,7 +495,6 @@ proc c_getvalue {node action} {
 
 proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
 		      useCppArray} {
-    puts [info level 0]
     # skip over any vm arrays, their indices will not appear
     # in calls for values, but keep the translation list in sync
     # ... string match stops cleanly at end of list
