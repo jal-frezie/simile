@@ -734,12 +734,14 @@ int FileParamData::extract_elt(void* tgt, int* indxs) {
     if (!insertionPt) return -1; // record pointers not yet made
     nodeLine = myModelExec->modelSpec->nodedata + nodeId;
 
-    if (myModelExec->resetting<1 && nodeLine->eval == INPUT)
-      if (!((VarParamData*)this)->curTimePoint) {
-	free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-	dataPtr.contents = NULL;
- 	return 0; // emptied data as no time point reached
-      }
+    // this is not good for hierarchy -- make sure contents NULL when updaing
+    // if (myModelExec->resetting<1 && nodeLine->eval == INPUT)
+    //   if (!((VarParamData*)this)->curTimePoint) {
+// 	free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+// 	dataPtr.contents = NULL;
+ // 	return 0; // emptied data as no time point reached
+    //   }
+    
     // back copy now done in blocks afterwards to make record spaces, but
     // avoid forward copying first
     // memcpy(insertionPt, tgt, size_for_type());
@@ -798,14 +800,14 @@ double VarParamData::update_from_points(double nowInDays, double next,
     hiBound = roll_forward(loBound, &hiWraps);
   else
     hiBound = timePoints; // first point
-  if (next>=nowInDays) {
+  //  if (next>=nowInDays) { move either way irrespective of step direction
     while (hiBound && now>=hiBound->when+hiWraps*wrapAroundPoint) {
       loBound = hiBound;
       newWraps = hiWraps;
       hiBound = roll_forward(loBound, &hiWraps);
     }
-  } else {
-    newWraps = wraps;
+    //  } else {
+    //    newWraps = wraps;
     while (loBound && now<loBound->when+newWraps*wrapAroundPoint) {
       hiBound = loBound;
       hiWraps = newWraps;
@@ -815,7 +817,7 @@ double VarParamData::update_from_points(double nowInDays, double next,
 	loBound = finalTimePoint;
       }
     }
-  }
+    //  }
   if (fillMethod!=USE_LAST &&
       loBound && loBound->dataPtr && hiBound && hiBound->dataPtr) {
     interFract = (now-newWraps*wrapAroundPoint-loBound->when)/
@@ -850,7 +852,9 @@ double VarParamData::update_from_points(double nowInDays, double next,
 	next = later;
     }
   }
-  if (loBound && (loBound!=curTimePoint || newWraps!=wraps)) { // found next pt
+  if (loBound /* && (loBound!=curTimePoint || newWraps!=wraps) */ ) {
+    // cannot tell if found next pt in fallback case,
+    // need to re-clear anyway if no override to let default update it
     if (!fallback) {
       curTimePoint = loBound;
       wraps = newWraps;
@@ -863,7 +867,11 @@ double VarParamData::update_from_points(double nowInDays, double next,
       destPtr->contents = copy_bloc_data(loBound->dataPtr, destPtr->dimSpecs);
       active=1;
     }
+  } else {
+    free_bloc_data(destPtr->contents, destPtr->dimSpecs);
+    destPtr->contents = NULL;
   }
+
   if ((ndRef->compclass == EVENT || ndRef->compclass == SQUIRT) && active) {
     myModelExec->seriesEvtSign = ndRef->graph;
     // Now play sound for event if there is one
@@ -978,7 +986,10 @@ void VarParamData::InitTimeSeries() {
     curTimePoint = NULL;
     wraps = 0;
     active = 1; // this will cause any current event data to be zeroed
-
+    if (dataPtr.contents) {
+      free_bloc_data(dataPtr.contents,dataPtr.dimSpecs);
+      dataPtr.contents = NULL;
+    }
     nextVP->InitTimeSeries();
   }
 }
