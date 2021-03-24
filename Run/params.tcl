@@ -302,7 +302,7 @@ proc AddEntry {winId topNode node exptLevels mustShow notInput {caseId {}}} {
             ColourCaptions $slot black
         }
     } else {
-        AcceptData $topNode $compName $notInput 0
+        AcceptData $topNode $compName $notInput 0 $caseId
     }
     return $slot
 }

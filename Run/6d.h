@@ -101,7 +101,6 @@ class CPPEXTDEC VarParamData : public FileParamData {
  protected: // protected methods
 
   listTimePoint* roll_forward(listTimePoint*, int*);
-  double update_from_points(double, double); // overrides FileParamData version
 
  public: // public methods
 
@@ -128,12 +127,9 @@ class CPPEXTDEC VarParamData : public FileParamData {
 
   //! Set up current data from time points as if running forward to time zero
   //! (argument is phase, result is time of first event, 0 if none)
-  double ResetTimeSeries(double, int);
+  void InitTimeSeries();
 
-  //! Set up current data from time points for time and direction 
-  //! Arguments are time and dir (TRUE=forward), 
-  //! result is time of next event (now if none)
-  double UpdateTimeSeries(double, double);
+  double update_from_points(double, double, nodeValues*, BOOLEAN);
 };
 
 // Structue for making a linked list of model instances representing group
@@ -249,6 +245,11 @@ class ExecutingModel
   
   //! get results from model by node serial number in general c format
   nodeValues* GetRawValues(HCOMP);
+
+  //! Set up current data from time points for time and direction 
+  //! Arguments are time and dir (TRUE=forward), 
+  //! result is time of next event (now if none)
+  double UpdateTimeSeries(double, double);
 
   //! allow model to access parameter data; client should not call this
   int FillValuePointer(void*, int, int, int*);

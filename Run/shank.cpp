@@ -786,12 +786,12 @@ VarParamData::~VarParamData() {
   *current = nextVP;
 }
 
-double VarParamData::update_from_points(double nowInDays, double next) {
+double VarParamData::update_from_points(double nowInDays, double next,
+					nodeValues* destPtr, BOOLEAN fallback) {
   listTimePoint *loBound, *hiBound;
-  int hiWraps = 0, oldWraps = wraps;
+  int hiWraps = 0, newWraps = wraps;
   double now, later, interFract;
   node_data_line* ndRef = myModelExec->modelSpec->nodedata + nodeId;
-
   now = nowInDays/seriesIdxUnits;
   loBound = curTimePoint;
   if (loBound)
@@ -801,60 +801,66 @@ double VarParamData::update_from_points(double nowInDays, double next) {
   if (next>=nowInDays) {
     while (hiBound && now>=hiBound->when+hiWraps*wrapAroundPoint) {
       loBound = hiBound;
-      wraps = hiWraps;
+      newWraps = hiWraps;
       hiBound = roll_forward(loBound, &hiWraps);
     }
   } else {
-    while (loBound && now<loBound->when+wraps*wrapAroundPoint) {
+    newWraps = wraps;
+    while (loBound && now<loBound->when+newWraps*wrapAroundPoint) {
       hiBound = loBound;
-      hiWraps = wraps;
+      hiWraps = newWraps;
       loBound = loBound->last;
       if (wrapAroundPoint>0.0 && !loBound) {
-	--wraps;
+	--newWraps;
 	loBound = finalTimePoint;
       }
     }
   }
-  
   if (fillMethod!=USE_LAST &&
       loBound && loBound->dataPtr && hiBound && hiBound->dataPtr) {
-    interFract = (now-wraps*wrapAroundPoint-loBound->when)/
-      (hiBound->when+(hiWraps-wraps)*wrapAroundPoint-loBound->when);
+    interFract = (now-newWraps*wrapAroundPoint-loBound->when)/
+      (hiBound->when+(hiWraps-newWraps)*wrapAroundPoint-loBound->when);
     //            sprintf(globMess, "lotime %lf hitime %lf Fract %lf", 
     //		    loBound->when, hiBound->when, interFract);
     //      showMess(globMess);
     if (fillMethod==INTERPOLATE && ndRef->datatype != FLAG) {
-      curTimePoint = loBound; // cos that's what wraps refers to
-      free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-      dataPtr.contents = interpolate_bloc_data(loBound->dataPtr, 
+      if (!fallback) {
+	curTimePoint = loBound; // cos that's what wraps refers to
+	wraps = newWraps;
+      }
+      free_bloc_data(destPtr->contents, destPtr->dimSpecs);
+      destPtr->contents = interpolate_bloc_data(loBound->dataPtr, 
 					       hiBound->dataPtr, 
-					       dataPtr.dimSpecs, 
+					       destPtr->dimSpecs, 
 					       interFract);
       return next; // nothing has changed it yet
     }
     if (interFract>0.5) { // fillMethod is USE_CLOSEST
       loBound = hiBound;
-      wraps = hiWraps;
+      newWraps = hiWraps;
     }
   }
   if (ndRef->compclass == EVENT || ndRef->compclass == SQUIRT) {
     if (active)
       if (!--active) // don't trust lazy evaluation
-	zero_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
+	zero_bloc_data(destPtr->contents, destPtr->dimSpecs);
     if (hiBound) { // return time at which event will next happen
       later = (hiBound->when+hiWraps*wrapAroundPoint)*seriesIdxUnits;
       if (later<next)
 	next = later;
     }
   }
-  if (loBound && (loBound!=curTimePoint || wraps!=oldWraps)) {
-    curTimePoint = loBound;
+  if (loBound && (loBound!=curTimePoint || newWraps!=wraps)) { // found next pt
+    if (!fallback) {
+      curTimePoint = loBound;
+      wraps = newWraps;
+    }
     if (ndRef->compclass != EVENT && ndRef->compclass != SQUIRT ||
-	now == loBound->when+wraps*wrapAroundPoint) {
+	now == loBound->when+newWraps*wrapAroundPoint) {
       // do not add data if discrete and we have missed the exact time
       // eg. by resetting to a later time
-      free_bloc_data(dataPtr.contents, dataPtr.dimSpecs);
-      dataPtr.contents = copy_bloc_data(loBound->dataPtr, dataPtr.dimSpecs);
+      free_bloc_data(destPtr->contents, destPtr->dimSpecs);
+      destPtr->contents = copy_bloc_data(loBound->dataPtr, destPtr->dimSpecs);
       active=1;
     }
   }
@@ -869,7 +875,7 @@ double VarParamData::update_from_points(double nowInDays, double next) {
     while (CheckEvtCmd) {
       if (CheckEvtCmd->gphId == ndRef->graph)
 	play_at_vol(CheckEvtCmd->cmd,
-		    sum_bloc_data(dataPtr.contents, dataPtr.dimSpecs));
+		    sum_bloc_data(destPtr->contents, destPtr->dimSpecs));
       CheckEvtCmd = CheckEvtCmd->next;
     }
   }
@@ -948,10 +954,9 @@ char* VarParamData::FindNextTimePtSpace(double* last_time) {
   listTimePoint* VarParamData::roll_forward(listTimePoint *bound, int *newWraps) {
     bound = bound->next;
     if (!bound && wrapAroundPoint>0.0) {
-      *newWraps = wraps+1;
+      ++*newWraps;
       bound = timePoints;
-    } else
-      *newWraps = wraps;
+    }
     return bound;
   }
 
@@ -966,24 +971,18 @@ void VarParamData::ClearTimePtElements() {
   curTimePoint = NULL;
 }
 
-double VarParamData::ResetTimeSeries(double init_time, int topPhase) {
+void VarParamData::InitTimeSeries() {
   double next_evt_sofar, next_evt;
 
-  curTimePoint = NULL;
-  wraps = 0;
-
-  if (topPhase <= -2)
+  if (this) { // WTFN?
+    curTimePoint = NULL;
+    wraps = 0;
     active = 1; // this will cause any current event data to be zeroed
-  next_evt = update_from_points(init_time, INFINITY);
 
-  if (nextVP) {
-    next_evt_sofar = nextVP->ResetTimeSeries(init_time, topPhase);  
-    if ((next_evt_sofar-init_time)/(next_evt-init_time) < 1)
-      next_evt = next_evt_sofar;
+    nextVP->InitTimeSeries();
   }
-  return next_evt; 
 }
-
+/*
 double VarParamData::UpdateTimeSeries(double now, double horizon) {
   double next_evt;
 
@@ -994,7 +993,7 @@ double VarParamData::UpdateTimeSeries(double now, double horizon) {
   }
   return next_evt; 
 }    
-  
+*/
 int step_list(int **dim_list) {
   return *(*dim_list)++;
 }
@@ -1283,6 +1282,9 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
     unsigned int rnd=(1000000007*pthread_self()+now.tv_nsec);
     setup_randoms(rnd);
   }
+  if (top_phase<=0) {
+    varParamArrayBase->InitTimeSeries();
+  }
 
   // kick off threads to reset child instances
   initTime = init_time;
@@ -1309,10 +1311,8 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
     }
     thisTsPosn = init_time;
     seriesEvtSign = 0;
-    if (varParamArrayBase)
-      nextSeriesEvt = varParamArrayBase->ResetTimeSeries(init_time, top_phase);
-    else
-      nextSeriesEvt = INFINITY;
+    nextSeriesEvt = UpdateTimeSeries(init_time, INFINITY);
+    // hope we are going forwards
   } else {
     set_dts(top_phase, init_time);
   }
@@ -1341,8 +1341,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
 }
 
 void ExecutingModel::RepeatReset(double init_time) {
-  if (varParamArrayBase)
-    varParamArrayBase->ResetTimeSeries(init_time, 0);
+  UpdateTimeSeries(init_time, init_time);
 }
 
 excpData* ExecutingModel::ExecuteInstance(int how_int, double start, 
@@ -1650,11 +1649,37 @@ void ExecutingModel::advance_time (int phase, double fraction) {
     series_pt = lts[modelSpec->phases];
     seriesEvtSign = 0;
     nextSeriesEvt = ((series_pt >= thisTsPosn)?1:-1)*INFINITY;
-    if (varParamArrayBase) 
-      nextSeriesEvt = varParamArrayBase->UpdateTimeSeries(series_pt, 
-							  nextSeriesEvt);
+    nextSeriesEvt = UpdateTimeSeries(series_pt, nextSeriesEvt);
     thisTsPosn = series_pt;
   }
+
+double ExecutingModel::UpdateTimeSeries(double series_pt, double nextSeriesEvt)
+{
+  VarParamData *paramCursor, *srcCursor;
+  
+  paramCursor = varParamArrayBase;
+  while (paramCursor) {
+    nodeValues* destPtr = &(paramCursor->dataPtr);
+    ExecutingModel* defaultHolder = parent;
+    nextSeriesEvt = paramCursor->update_from_points(series_pt, nextSeriesEvt,
+						    destPtr, false);
+    while (defaultHolder && !destPtr->contents) {
+      srcCursor = defaultHolder->varParamArrayBase;
+      while (srcCursor && srcCursor->nodeId != paramCursor->nodeId)
+	srcCursor = srcCursor->nextVP;
+      if (!srcCursor) {
+	printf("TNH: node %d has var data in child but not parent!\n",
+	       paramCursor->nodeId);
+	return 0;
+      }
+      nextSeriesEvt = srcCursor->update_from_points(series_pt, nextSeriesEvt,
+						    destPtr, true);
+      defaultHolder = defaultHolder->parent;
+    }
+    paramCursor = paramCursor->nextVP;
+  }
+  return nextSeriesEvt;
+}
 
 void ExecutingModel::set_evt_cmd(char* nodeId, char* cmd) {
   int spare;
