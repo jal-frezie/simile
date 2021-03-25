@@ -167,8 +167,16 @@ itcl::class similescript::$newHelperClass {
 	
 	switch -regexp $type {
 	    param|plist {
+		if {$type eq "param"} {
+		    set parmCase [GetCaseName parameter]
+		    if {$parmCase eq {}} return
+		    AddCase $myNode $parmCase
+		    set newLevel [UniqueId $type]
+		    lappend clickPath $newLevel
+		    set compCases($myNode,$newLevel) $parmCase
+		}
+		pack [label $winId.label -wrap 400 -text [tr. "Select the parameter to vary in this case from the model diagram or explorer"] -fg red]
 		lappend clickPath $type
-		pack [label $winId.label -wrap 400 -text [tr. "Select a parameter from the model diagram or explorer"] -fg red]
 		$modelInst GrabClicks $this
 	    } default {
 		set newLevel [UniqueId $type]
