@@ -1190,24 +1190,21 @@ ExecutingModel::~ExecutingModel() {
 }
 
 ExecutingModel* ExecutingModel::AddGroupMember(void* usersRef) {
-  xmList* newChild = children;
+  xmList* oldChild = children;
 
-  if (newChild) {
-    while (newChild->next) {
-      newChild = newChild->next; // proceed to end of list
-    }
-    newChild->next = new xmList;
-    newChild = newChild->next;
-  } else {
-    newChild = new xmList;
-    children = newChild;
-  }
-  newChild->now = new ExecutingModel(modelSpec, usersRef);
-  newChild->next = NULL;
-  newChild->now->parent = this;
+  children = new xmList;
+  children->next = oldChild;
+
+  children->now = new ExecutingModel(modelSpec, usersRef);
+  children->now->parent = this;
   for (int ph=1; ph<=modelSpec->phases;++ph)
-    newChild->now->SetStep(ph, steps[ph]);
-  return newChild->now;
+    children->now->SetStep(ph, steps[ph]);
+  VarParamData* oldVP = varParamArrayBase;
+  while (oldVP) {
+    children->now->UseArrayForParams(oldVP->nodeId);
+    oldVP = oldVP->nextVP;
+  }
+  return children->now;
 }
 
 void* reset_grp_instance(void* clientData) {
@@ -1788,6 +1785,16 @@ BOOLEAN ExecutingModel::check_gui(double model_time, int this_op) {
   return result;
 }
 
+VarParamData* ExecutingModel::UseArrayForVarParam(HCOMP nodeNum, int* fullDims)
+{
+  xmList* variant = children;
+  while (variant) {
+    variant->now->UseArrayForVarParam(nodeNum, fullDims);
+    variant = variant->next;
+  }
+  return new VarParamData(this, nodeNum, fullDims);      
+}
+
 FileParamData* ExecutingModel::UseArrayForParams(HCOMP nodeNum) {
   int fullDims[32], evalProp;
   char spareCapt[255];
@@ -1798,7 +1805,9 @@ FileParamData* ExecutingModel::UseArrayForParams(HCOMP nodeNum) {
   // make the appropriate kind of file parameter
   evalProp = modelSpec->GetProperty(nodeNum, GETEVAL);
   if (evalProp == INPUT)
-    return new VarParamData(this, nodeNum, fullDims);
+    // need to make for children so they can get values for different times
+    // (is separate procedure to reduce searches)
+    return UseArrayForVarParam(nodeNum, fullDims);
   else
     return new FileParamData(this, nodeNum, fullDims);
 }

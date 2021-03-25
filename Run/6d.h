@@ -191,6 +191,9 @@ class ExecutingModel
   #define FLASH CLOCKS_PER_SEC/25 // 40ms
  
  protected: // protected methods
+  //! Create local data structure for a variable parameter by serial number
+  VarParamData* UseArrayForVarParam(HCOMP, int*);
+
   void SetdT(int, double);
   void set_dts (int, double);
   int rk_update(int);
