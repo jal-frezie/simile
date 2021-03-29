@@ -735,7 +735,7 @@ set msgs(bad_ghost_message) [tr. {Unable to make ghost here}]
 
 set msgs(show_full_button) [tr. {See full error text}]
 set msgs(conversion_failure_title) [tr. {Problem building code}]
-set msgs(conversion_failure_message) [tr. {Simile failed to convert %1$s (in submodel %2$s) into a program instruction.}]
+set msgs(conversion_failure_message) [tr. {Simile failed to convert "%1$s" (in submodel "%2$s") into a program instruction.}]
 set msgs(conversion_failure_detail) [tr. {This may be because Simile earlier failed to detect when a change elsewhere in the model made the equation for this component inconsistent. Alternatively the model may have been built with an earlier version of Simile that had less strict consistency checking. In either case editing this component again will make the model runnable.}]
 # must be quoted so show_full msg gets subbed
 set msgs(conversion_failure_full) [tr. "Parsing the equation for %1\$s (in %2\$s) gave this error code: %3\$s. 

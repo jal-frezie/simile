@@ -158,6 +158,7 @@ itcl::class similescript::$newHelperClass {
 	$cMenu post $X $Y
     }
 
+    # can probably improve the logic of this next bit
     public method InsertLevel {type} {
 	global myNode compCases
 	variable clickPath

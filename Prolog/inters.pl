@@ -1338,8 +1338,9 @@ Now one that uses a special conditional level */
 		    (member(any, UnitList),
 			Units = any;
 		      select(One, UnitList, [Other]), % == permutation
-			\+ promote_unit(One, 1), % succeeds only if unitless
-			(promote_unit(Other, 1),
+		      \+ (promote_unit(One, 1); One = real),
+		      % succeeds only if unitless, or matches any units
+			((promote_unit(Other, 1); Other = real),
 			    (UnitList == [Other, One], Lop = (/),
 				Units = 1/One;
 				Units = One),
