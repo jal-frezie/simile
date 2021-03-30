@@ -168,7 +168,8 @@ itcl::class similescript::$newHelperClass {
 	
 	switch -regexp $type {
 	    param|plist {
-		if {$type eq "param"} {
+		if {[CaseForExpt $myNode $clickPath] ne ""} {
+		} elseif {$type eq "param"} {
 		    set parmCase [GetCaseName parameter]
 		    if {$parmCase eq {}} return
 		    AddCase $myNode $parmCase
@@ -293,12 +294,16 @@ itcl::class similescript::$newHelperClass {
 					    $f $path $clickPath]
 	} else {
 	    set caseName ""
-	    if {[CaseForExpt $myNode $clickPath] eq ""} {
-		set caseName [GetCaseName $path]
-		# Add case for this entry
-		if {$caseName eq {}} return
-		AddCase $myNode $caseName
+	    if {[string match param* [lindex $clickPath end]]} {
+		set caseName [CaseForExpt $myNode $clickPath]
+		set clickPath [lrange $clickPath 0 end-1]
 	    }
+	#    if {[CaseForExpt $myNode $clickPath] eq ""} {
+	#	set caseName [GetCaseName $path]
+	#	# Add case for this entry
+	#	if {$caseName eq {}} return
+	#	AddCase $myNode $caseName
+	#    }
 	    set notInput [expr {[GetModelEval $node] ne "INPUT"}]
 	    set type [lindex {input file} $notInput]
 	    set f [AddEntry $winId $myNode $node \
