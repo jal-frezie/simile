@@ -80,6 +80,9 @@ proc PrettifyValList {ugly txtVals} {
 	    } else {
 		set result \{
 	    }
+	    if {[llength $indx]!=1} {
+		set indx \"$indx\"
+	    }
 	    append result $indx:\ [PrettifyValList $val $txtVals]
 	}
 	if {[string length $result]} {
