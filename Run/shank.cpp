@@ -852,7 +852,7 @@ double VarParamData::update_from_points(double nowInDays, double next,
 	next = later;
     }
   }
-  if (loBound /* && (loBound!=curTimePoint || newWraps!=wraps) */ ) {
+  if (loBound && (fallback || loBound!=curTimePoint || newWraps!=wraps)) {
     // cannot tell if found next pt in fallback case,
     // need to re-clear anyway if no override to let default update it
     if (!fallback) {
@@ -867,9 +867,9 @@ double VarParamData::update_from_points(double nowInDays, double next,
       destPtr->contents = copy_bloc_data(loBound->dataPtr, destPtr->dimSpecs);
       active=1;
     }
-  } else {
-    free_bloc_data(destPtr->contents, destPtr->dimSpecs);
-    destPtr->contents = NULL;
+  } else if (ndRef->compclass != EVENT && ndRef->compclass != SQUIRT) {
+    // free_bloc_data(destPtr->contents, destPtr->dimSpecs);
+    // destPtr->contents = NULL;
   }
 
   if ((ndRef->compclass == EVENT || ndRef->compclass == SQUIRT) && active) {
@@ -980,13 +980,12 @@ void VarParamData::ClearTimePtElements() {
 }
 
 void VarParamData::InitTimeSeries() {
-  double next_evt_sofar, next_evt;
-
   if (this) { // WTFN?
     curTimePoint = NULL;
     wraps = 0;
     active = 1; // this will cause any current event data to be zeroed
-    if (dataPtr.contents) {
+    int forClass = myModelExec->modelSpec->nodedata[nodeId].compclass;
+    if (dataPtr.contents && (forClass != EVENT && forClass != SQUIRT)) {
       free_bloc_data(dataPtr.contents,dataPtr.dimSpecs);
       dataPtr.contents = NULL;
     }
@@ -2263,45 +2262,29 @@ void* paste_param_data(void* fpHandle, unsigned char* holder) {
 
 void clear_time_point_elts(void* fpHandle) {
   ((VarParamData*)fpHandle)->ClearTimePtElements();
-
-//  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
-//    return 1; // no data structure for this elt
-//  }
 }
 
 double* get_wrap_ptr(void* fpHandle) {
   VarParamData* arrSlot = (VarParamData*)fpHandle;
 
-//  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
-//    return NULL; // no data structure for this elt
-//  }
   return &arrSlot->wrapAroundPoint;
 }
 
 int* get_fill_ptr(void* fpHandle) {
   VarParamData* arrSlot = (VarParamData*)fpHandle;
 
-//  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
-//    return NULL; // no data structure for this elt
-//  }
   return &arrSlot->fillMethod;
 }
 
 double* get_interval_ptr(void* fpHandle) {
   VarParamData* arrSlot = (VarParamData*)fpHandle;
 
-//  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
-//    return NULL; // no data structure for this elt
-//  }
   return &arrSlot->seriesIdxUnits;
 }
 
 int create_time_point(void* fpHandle, double time) {
   VarParamData* arrSlot = (VarParamData*)fpHandle;
 
-//  if (!(arrSlot=param_array_item(recipient->param_array_base, nodeId))) {
-//    return 1; // no data structure for this elt
-//  }
   arrSlot->create_time_point(time);
   return 0;
 }
@@ -2311,13 +2294,12 @@ void* find_next_timept_space(void* fpHandle, double* last_time) {
 }
 
 char* get_param_ptr_and_dims(void* fpHandle, int** dimSlot) {
-  FileParamData* arrSlot = (FileParamData*)fpHandle;
-//  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-//    return NULL; // no data structure for this elt
-//  }
+  nodeValues* arrSlot = &((FileParamData*)fpHandle)->dataPtr;
 
-  *dimSlot = arrSlot->dataPtr.dimSpecs;
-  return arrSlot->dataPtr.contents;
+  *dimSlot = arrSlot->dimSpecs;
+  if (!arrSlot->contents) // currently set to default
+     arrSlot->contents = init_space(*dimSlot);
+  return arrSlot->contents;
 }
 
 char** get_timepoint_ptr_and_dims(void* fpHandle, double time, 
@@ -2325,9 +2307,6 @@ char** get_timepoint_ptr_and_dims(void* fpHandle, double time,
   VarParamData* arrSlot = (VarParamData*)fpHandle;
   char** ptData;
 
-//  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-//    return 2; // no data structure for this elt
-//  }
   *dimSlot = arrSlot->dataPtr.dimSpecs;
   return arrSlot->GetTimePtDataSpace(time);
 }

@@ -814,10 +814,11 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   
   bloc = get_param_ptr_and_dims(fpHandle, &dims);
-  if (!bloc) {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("set_param_array_elt: no array has been created for this node", -1));
-    return TCL_ERROR;
-  }
+  // g_p_p_a_d now creates data space if there is none
+  // if (!bloc) {
+  //   Tcl_SetObjResult(interp, Tcl_NewStringObj("set_param_array_elt: no array has been created for this node", -1));
+  //   return TCL_ERROR;
+  // }
   //sprintf(globMess, "setting element %d %d of %d %d in %lx to %lf",
   //	  indxs[0], indxs[1], dims[0], dims[1], (long unsigned int)bloc, val);
   //showMess(globMess);
