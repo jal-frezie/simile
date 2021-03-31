@@ -795,7 +795,6 @@ double VarParamData::update_from_points(double nowInDays, double next,
   double now, later, interFract;
   node_data_line* ndRef = myModelExec->modelSpec->nodedata + nodeId;
   now = nowInDays/seriesIdxUnits;
-  printf("%d: %lf = %lf/%lf\n", fallback, now, nowInDays, seriesIdxUnits);
   loBound = curTimePoint;
   if (loBound)
     hiBound = roll_forward(loBound, &hiWraps);
@@ -869,9 +868,10 @@ double VarParamData::update_from_points(double nowInDays, double next,
       destPtr->contents = copy_bloc_data(loBound->dataPtr, destPtr->dimSpecs);
       active=1;
 //     }
-  } else if (ndRef->compclass != EVENT && ndRef->compclass != SQUIRT) {
-    // free_bloc_data(destPtr->contents, destPtr->dimSpecs);
-    // destPtr->contents = NULL;
+  }
+  if (!loBound && ndRef->compclass != EVENT && ndRef->compclass != SQUIRT) {
+    free_bloc_data(destPtr->contents, destPtr->dimSpecs);
+    destPtr->contents = NULL;
   }
 
   if ((ndRef->compclass == EVENT || ndRef->compclass == SQUIRT) && active) {
