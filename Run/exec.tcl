@@ -1098,6 +1098,7 @@ proc ExScrubRun {node times} {
             if {[info exists instance_id]} {
                 #ShowMess debug info "Exiting $model_id $instance_id" ok
                 c_exitmodel $model_id $instance_id
+		array unset ::param_id
 		array unset ::exptl_case
                 unset instance_id
             } else {

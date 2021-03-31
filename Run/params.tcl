@@ -655,6 +655,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 
 	if {!$readMany($compName) && \
 		$msgs(param_source_$compName) eq $msgs(fce)} {
+	    # Parameter removed, delete its space to go back to eqn value
 	    if {$useCppArray} {
 		#puts "c_setparamarray b $node"
 		c_setparamarray $topNode $node $caseId 0
