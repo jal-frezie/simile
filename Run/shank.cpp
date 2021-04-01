@@ -775,7 +775,9 @@ VarParamData::VarParamData(ExecutingModel* instToUse, HCOMP newNodeNum,
   curTimePoint = NULL;
   fillMethod = USE_LAST;
   seriesIdxUnits = 1.0;
-
+  int forClass = myModelExec->modelSpec->nodedata[nodeId].compclass;
+  amEvent = (forClass == EVENT || forClass == SQUIRT);
+  
   nextVP = myModelExec->varParamArrayBase;
   myModelExec->varParamArrayBase = this;
 }
@@ -786,6 +788,14 @@ VarParamData::~VarParamData() {
   VarParamData** current = &(myModelExec->varParamArrayBase);
   while (*current != this) current = &(*current)->nextVP; // better be in there
   *current = nextVP;
+}
+
+BOOLEAN VarParamData::CopySeries(VarParamData* source) {
+  timePoints = source->timePoints;
+  finalTimePoint = source->finalTimePoint;
+  wrapAroundPoint = source->wrapAroundPoint;
+  seriesIdxUnits = source->seriesIdxUnits;
+  return timePoints!=NULL;
 }
 
 double VarParamData::update_from_points(double nowInDays, double next,
@@ -842,7 +852,7 @@ double VarParamData::update_from_points(double nowInDays, double next,
       newWraps = hiWraps;
     }
   }
-  if (ndRef->compclass == EVENT || ndRef->compclass == SQUIRT) {
+  if (amEvent) {
     if (active)
       if (!--active) // don't trust lazy evaluation
 	zero_bloc_data(destPtr->contents, destPtr->dimSpecs);
@@ -869,12 +879,12 @@ double VarParamData::update_from_points(double nowInDays, double next,
       active=1;
 //     }
   }
-  if (!loBound && ndRef->compclass != EVENT && ndRef->compclass != SQUIRT) {
+  if (!loBound && !amEvent) {
     free_bloc_data(destPtr->contents, destPtr->dimSpecs);
     destPtr->contents = NULL;
   }
 
-  if ((ndRef->compclass == EVENT || ndRef->compclass == SQUIRT) && active) {
+  if (amEvent && active) {
     myModelExec->seriesEvtSign = ndRef->graph;
     // Now play sound for event if there is one
     double volume;
@@ -971,12 +981,16 @@ char* VarParamData::FindNextTimePtSpace(double* last_time) {
   }
 
 void VarParamData::ClearTimePtElements() {
-  while (timePoints) {
-    curTimePoint = timePoints;
-    timePoints = curTimePoint->next;
-    free_bloc_data(curTimePoint->dataPtr, dataPtr.dimSpecs);
-    delete(curTimePoint);
-  }
+  if (inheritSeries) {
+    timePoints = NULL;
+    inheritSeries = FALSE;
+  } else
+    while (timePoints) {
+      curTimePoint = timePoints;
+      timePoints = curTimePoint->next;
+      free_bloc_data(curTimePoint->dataPtr, dataPtr.dimSpecs);
+      delete(curTimePoint);
+    }
   finalTimePoint = NULL;
   curTimePoint = NULL;
 }
@@ -986,8 +1000,22 @@ void VarParamData::InitTimeSeries() {
     curTimePoint = NULL;
     wraps = 0;
     active = 1; // this will cause any current event data to be zeroed
-    int forClass = myModelExec->modelSpec->nodedata[nodeId].compclass;
-    if (dataPtr.contents && (forClass != EVENT && forClass != SQUIRT)) {
+    inheritSeries = FALSE;
+    if (amEvent) {
+      ExecutingModel* host = myModelExec->parent;
+      while (host && !timePoints) {
+	VarParamData* srcWotsit = host->varParamArrayBase;
+	while (srcWotsit) {
+	  if (srcWotsit->nodeId == nodeId) {
+	    CopySeries(srcWotsit);
+	    if (timePoints) inheritSeries = TRUE;
+	    break;
+	  }
+	  srcWotsit = srcWotsit->nextVP;
+	}
+	host = host->parent;
+      }
+    } else if (dataPtr.contents) {
       free_bloc_data(dataPtr.contents,dataPtr.dimSpecs);
       dataPtr.contents = NULL;
     }
@@ -1350,7 +1378,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
 }
 
 void ExecutingModel::RepeatReset(double init_time) {
-  UpdateTimeSeries(init_time, init_time);
+  varParamArrayBase->InitTimeSeries();
 }
 
 excpData* ExecutingModel::ExecuteInstance(int how_int, double start, 

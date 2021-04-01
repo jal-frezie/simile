@@ -64,10 +64,6 @@ class CPPEXTDEC VarParamData : public FileParamData {
 
   //! Start of a linked list of values to apply at time points
 
-  //! These are only present for variable parameters, and they are always kept 
-  //!in time order
-  listTimePoint* timePoints;
-
   //! Last entry in linked list of valus to apply at time points
   listTimePoint* finalTimePoint;
 
@@ -81,6 +77,10 @@ class CPPEXTDEC VarParamData : public FileParamData {
   //! parameters, allowing searching for only the variable parameters
   VarParamData* nextVP;
 
+  //! These are only present for variable parameters, and they are always kept 
+  //!in time order
+  listTimePoint* timePoints;
+
   //! Number of times wrapAroundPoint reached before loading curTimePoint
   int wraps;
 
@@ -93,6 +93,11 @@ class CPPEXTDEC VarParamData : public FileParamData {
   //! Unit size for indices of time series entries
   double seriesIdxUnits;
 
+  //! True if parameter is a discrete valued component
+  BOOLEAN amEvent;
+
+  BOOLEAN inheritSeries;
+  
   //! valid for time series events only: 0 means no activity
   //! 1 means used and needs resetting
   //! 2 means set but not yet used
@@ -129,6 +134,9 @@ class CPPEXTDEC VarParamData : public FileParamData {
   //! (argument is phase, result is time of first event, 0 if none)
   void InitTimeSeries();
 
+  //! Borrow series data from another param spec
+  BOOLEAN CopySeries(VarParamData*);
+  
   double update_from_points(double, double, nodeValues*, BOOLEAN);
 };
 
