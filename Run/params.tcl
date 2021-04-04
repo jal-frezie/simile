@@ -743,7 +743,7 @@ proc AcceptData {topNode compName notInput complain {caseId {}}} {
 			set txtUftsi [lindex $errorSpec 2]
 			set numUftsi [InDays $txtUftsi]
 			if {$numUftsi} {
-			    SetInterval $topNode $useCppArray $node \
+			    SetInterval $topNode $caseId $useCppArray $node \
 				$txtUftsi $numUftsi
 			    continue
 			} else {
@@ -1010,7 +1010,7 @@ namespace eval fileparams {
 			    puts -nonewline $pStr " fill_method=\"$fillMtd\""
 			}
 		    }
-		    if {[set uftsi [SetInterval $topNode $inC $nodeId]]!=1} {
+		    if {[set uftsi [SetInterval $topNode {} $inC $nodeId]]!=1} {
 			puts -nonewline $pStr " interval=[Entitize $uftsi]"
 		    }
 		}
@@ -1105,7 +1105,7 @@ namespace eval fileparams {
 			    puts $pStr "$indent<series_control field=\"others\" value=\"$fillMtd\"/>"
 			}
 		    }
-		    set uftsi [SetInterval $topNode $inC $nodeId]
+		    set uftsi [SetInterval $topNode {} $inC $nodeId]
 		    if {[lsearch {1 unit} $uftsi]==-1} {
 			puts $pStr "$indent<series_control field=\"interval\" value=[Entitize $uftsi]/>"
 		    }

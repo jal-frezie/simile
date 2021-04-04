@@ -504,7 +504,8 @@ proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
 	if {$useCppArray} {
 	    if {$when} {
 		c_settimepointall $caseId $tgt [lindex $list end]
-		SetInterval $caseId $useCppArray $tgt [lindex $list end-3]*day [lindex $list end-3]
+		SetInterval dummy $caseId $useCppArray $tgt \
+		    [lindex $list end-3]*day [lindex $list end-3]
 		SetWrapTime $caseId $useCppArray $tgt [lindex $list end-2]
 		SetFillMethod $caseId $useCppArray $tgt [lindex $list end-1]
 	    } else {
@@ -616,7 +617,7 @@ proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
 	    set specialPts [list NOW INTERVAL OTHERS]
 	    SetFillMethod $caseId $useCppArray $tgt use_last ;# and fill method
 	}
-	SetInterval $caseId $useCppArray $tgt unit 1
+	SetInterval dummy $caseId $useCppArray $tgt unit 1
     
         foreach {indx subList} $list {
 	    set nextSubs $subs,[list $indx]
@@ -1001,7 +1002,7 @@ proc SetFillMethod {caseId inC where {what {}}} {
     }
 }
 
-proc SetInterval {caseId inC where {what {}} {howLong {}}} {
+proc SetInterval {dummy caseId inC where {what {}} {howLong {}}} {
     global paramData
 
     if {[string length $what]} {
