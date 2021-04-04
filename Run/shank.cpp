@@ -1000,7 +1000,6 @@ void VarParamData::InitTimeSeries() {
     curTimePoint = NULL;
     wraps = 0;
     active = 1; // this will cause any current event data to be zeroed
-    inheritSeries = FALSE;
     if (amEvent) {
       ExecutingModel* host = myModelExec->parent;
       while (host && !timePoints) {
