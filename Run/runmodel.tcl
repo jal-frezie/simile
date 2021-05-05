@@ -595,11 +595,7 @@ proc LoseDTRef {statusLine} {
 proc UpdateIfFreezy {} {
     global updateLastDone
     if {$updateLastDone < [clock clicks -milliseconds]-40} {
-        if {[tk windowingsystem] eq "aqua"} {
-	    update idletasks
-	} else {
-	    update ;# idletasks misses click on pause
-	}
+	UpdateByOS
 	set updateLastDone [clock clicks -milliseconds]
     }
 }
@@ -790,7 +786,7 @@ proc GetShortVals {topNode plName limit} {
 	    }
 	}
 	set transData [GetCompProperty $topNode Trans $plName]
-	if {[llength $hdl]>1} {
+	if {[info exists hdl] && [llength $hdl]>1} {
 	    set transData [linsert $transData 0 {}]
 	}
 	if {$showMatrix} {
@@ -1313,7 +1309,7 @@ proc StartRun {node} {
 	    }
 	}
     }
-    update idletasks ;# 'see all' missing spfs if that option was selected
+    UpdateByOS ;# 'see all' missing spfs if that option was selected
     # otherwise query tangles with fp dialogue and hangs under windows
     if {[FileParamDialogue $node $fpParent 0]<1} {
 	if {[info exists runState($node,cnvs)]} {
@@ -1440,13 +1436,13 @@ proc StartRun {node} {
 #	}
 	set ::RunEnv::CurrentContainer $RunEnv::dp0 ;# back to default
 	set ctrlPane [winfo parent [winfo parent $::RunEnv::runControlFrame($node)]]
-	update idletasks ;# so reqheight works next
+	UpdateByOS ;# so reqheight works next
 #	tkwait visibility $runState($node,helperId)
 	set aimPane [expr {[winfo reqheight $ctrlPane.runcontrolPane]+10}]
 # this sometimes fails to work, so keep trying till it does!
 	while {[lindex [$ctrlPane sash coord 0] 1]!=$aimPane} {
 	    $ctrlPane sash place 0 10 $aimPane
-	    update
+	    UpdateByOS
 	}
 	::RunEnv::InMreFor $node ;# in case it has been focussed since creation
     } else {

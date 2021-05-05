@@ -75,6 +75,11 @@ namespace eval ::$keyValue {
 	    }
 	}
 	set sorted [lsort -dictionary -index 1 $universe]
+	set fColour [GetFromProlog tk_get_info($::myNode,colour)]
+	set tColour $::looks($::myNode,submodel,text)
+	$tableframe.table tag configure bg_$fColour \
+	    -background $fColour -foreground $tColour
+	$tableframe.table tag add bg_$fColour {{}}
 	foreach pair $sorted {
 	    set component [lindex $pair 0]
             if {[llength [info commands GetModelClass]] >0} {
@@ -93,7 +98,9 @@ namespace eval ::$keyValue {
                 }
                 set submodel($path) $component
 		set fColour [GetFromProlog tk_get_info($component,colour)]
-		$tableframe.table tag configure bg_$fColour -background $fColour
+		set tColour $::looks($::myNode,submodel,text)
+		if {$fColour eq "clear"} {set fColour {}}
+		$tableframe.table tag configure bg_$fColour -background $fColour -foreground $tColour
                 $tableframe.table insert $parent end -id $component \
 		    -text [BlankCrs [lindex $path end]] -open 1 \
 		    -image $iconImages(submodel) -tag bg_$fColour
@@ -291,15 +298,15 @@ namespace eval ::$keyValue {
     
     proc DoInspPopup {winId X Y x y} {
 	#	    ShowMess debug info $args ok
-	global helperTable runState
+	global helperTable runState myNode
 
 	set plName $helperTable($winId,whatPopped)
 #puts "setting helperTable($winId,whatPopped)"
 	if {![llength $plName]} {
 	    return
 	}
-	set node [$helperTable($winId,whichInstance) GetNode]
-	if {$runState($node,modelRunning)>1} {
+#	set node [$helperTable($winId,whichInstance) GetNode]
+	if {$runState($myNode,modelRunning)>1} {
 	    PostPopup $winId $X $Y
 #	    set trans [GetTransTable $plName]
 #	    if {[catch {GetModelValue $plName} mVal]} {
@@ -311,7 +318,7 @@ namespace eval ::$keyValue {
 #		set value [lindex $mVal 0]
 #		#puts "trans $trans value $value"
 #	    }
-	    AddPopupMessage novalue \#ffffc0 GetShortVals $node $plName
+	    AddPopupMessage novalue \#ffffc0 GetShortVals $myNode $plName
 	}
     }
     

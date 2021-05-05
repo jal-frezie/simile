@@ -959,7 +959,7 @@ namespace eval grid005 {
 #puts "dot $hexo min $useNodes($winId,min) range $useNodes($winId,range)"
 		$msg config -text "Col,row=($col,$row)\nValue=$value approx"
             }
-            update
+            UpdateByOS
         }
     }
     

@@ -256,7 +256,7 @@ namespace eval RunEnv {
             
 #            pack $mainframe -fill both -expand yes
             pack $mainpw -fill both -expand yes
-            update idletasks ;# needed for sash place to work
+            UpdateByOS ;# needed for sash place to work
 	    $mainpw sash place 0 [expr {round($::niceSize*$defScaling*25)}] 0
 	    # must be wide enough (270ish) for the sliders
             
@@ -489,7 +489,7 @@ namespace eval RunEnv {
         #            page $page; n pages: $n; \n \
         #            parent [winfo parent $notebook]"
 	destroy [lindex $pages $page]
-	update idletasks
+	UpdateByOS
         set pages [$notebook tabs]
         set n [llength $pages]
         #ShowMess debug info "DeleteNotebookPage after delete page pages $n" ok; #########
@@ -567,7 +567,7 @@ namespace eval RunEnv {
 	    $containerId configure -highlightthickness 0 ;# no longer a leaf
 	    set parentPath [Addpanedwindow $containerId $orientation]
 	    set containerId [lindex [$parentPath panes] 0]
-	    update idletasks ;# so splitting new pane works
+	    UpdateByOS ;# so splitting new pane works
         }
             # now it's a pane to be split in the same orientation
             # add a new pane
@@ -594,7 +594,7 @@ namespace eval RunEnv {
             ###############################################################################
             
 #puts "$parentPath sash place $sash $sashx $sashy"
-	update idletasks ;# needed for sash place to work
+	UpdateByOS ;# needed for sash place to work
 	$parentPath sash place $sash $sashx $sashy
 	SetCurrentContainer $paneId
     }
@@ -1237,7 +1237,7 @@ namespace eval RunEnv {
 		if {[string length $pageId]} {
 		    [winfo parent $pageId] select $pageId
 		}
-		update idletasks
+		UpdateByOS
 		$parseStatus(currentPath) sash place $attVals(index) \
 		    [expr $attVals(xposn)*$parseStatus(mapScale)] \
 		    [expr $attVals(yposn)*$parseStatus(mapScale)]
@@ -1336,7 +1336,7 @@ namespace eval RunEnv {
         }
 #        close $stream
 # allow helper windows to configure themselves
-	update idletasks
+	UpdateByOS
     }
     
     proc LoadViewFile {currentNode metaList origVersion} {
@@ -1387,7 +1387,7 @@ namespace eval RunEnv {
 						 $tail $origVersion]]} {
 			break
 		    }
-		    update idletasks ;# allow tool to draw before trying next
+		    UpdateByOS ;# allow tool to draw before trying next
                 }
                 panedwindow {
                     #%lappend metaList "panedwindow $panedwindow [$panedwindow cget -orient]"
@@ -1421,7 +1421,7 @@ namespace eval RunEnv {
 		    if {[string length $pageId]} {
 			[winfo parent $pageId] select $pageId
 		    }
-		    update idletasks
+		    UpdateByOS
                     #ShowMess debug info "$panedwindow sash place $index $sashx $sashy \n\
                     #        page [$notebook pages]\n\
                     #        FindParentNotebook $notebook \n\

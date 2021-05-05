@@ -67,7 +67,8 @@ proc IsPretty {bride} {
 
 proc PrettifyValList {ugly txtVals} {
 #puts "Trying to tidy up $ugly"
-    if {[llength $ugly]==1} {
+    if {[llength $ugly]==1 || [lsearch $txtVals $ugly]>-1} {
+	# do mind even length ET mem mangling
 	set result $ugly
     } elseif {[lsearch $txtVals $ugly]>-1} {
 	# do mind even length ET mem mangling

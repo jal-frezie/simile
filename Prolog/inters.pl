@@ -794,18 +794,19 @@ make_intermediates(
 	    Setting = [make(lastvalue(TotalName),
 			    [time, % made_at(InnerTgt, SourceContext),
 			     lastvalue(InnerTgt) | Depends],
-			    WriteContext, Step, [IncrAct]),
+			    WriteContext, _PostFillL, [IncrAct]),
 		       make(TotalName, [cleared(TotalName), time],
-			    ClearContext, Step, [])];
-	 member(Functor, [in_preceding, in_progenitor]), !,
+			    ClearContext, _PostFillLT, [])];
+	 member(Functor-Delays, [in_preceding-[InnerTgt, precvalue(InnerTgt)],
+				 in_progenitor-[]]), !,
 	 % Step will be set in set_free_phases
+	    append(Delays, [ClearTime | Depends], SettingConds),
 	    wait_for_submodels(Exited, Access),
-	    Setting = [make(precvalue(TotalName),
-			    [ClearTime,InnerTgt,precvalue(InnerTgt) | Depends],
-			    WriteContext, _PostFill, [IncrAct]),
+	    Setting = [make(precvalue(TotalName), SettingConds,
+			    WriteContext, _PostFillP, [IncrAct]),
 		       make(TotalName,
 			    [cleared(TotalName), this_step(InnerTgt) | Access],
-			    ClearContext, Step, [])];
+			    ClearContext, _PostFillPT, [])];
 	    /* If keep_from_reseting, we can remove time from the increment expression's
 	    conditions since we need only do it once even though it changes */
 	(Functor = at_phase,
@@ -1690,6 +1691,7 @@ uses_as(const_int, int).
 uses_as(const_int, const_ratio).
 uses_as(const_ratio, 1).
 uses_as(int, 1).
+uses_as(real, 1).
 
 /* this one interprets the unit specs in fragment names (more later?) */
 describes_unit(Spec, Actual) :-

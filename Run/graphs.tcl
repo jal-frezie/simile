@@ -59,8 +59,8 @@ proc DBHandleFor {location} {
 
 # find all extensions there is driver to read
 
-proc GraphEntry { t modal xlow xhigh xspan ylow yhigh yspan range size points \
-            {target {}}} {
+proc GraphEntry { t modal name xlow xhigh xspan ylow yhigh yspan range size \
+		  points {target {}}} {
     global tcl_platform graph looks
     
     set graph(bd) 3
@@ -82,7 +82,7 @@ proc GraphEntry { t modal xlow xhigh xspan ylow yhigh yspan range size points \
     
     catch {wm title $t [tr. "Sketch graph"]}
     
-    TitleFrame $t.gph -text [tr. "Graph pad"]
+    TitleFrame $t.gph -text [tr. "Graph pad for [BlankCrs $name]"]
     set gph [GetFrame $t.gph]
     frame $gph.yentry
     ::ttk::entry $gph.yentry.topentry -textvar graph($t,lowy) -width 8
@@ -185,7 +185,7 @@ proc GraphEntry { t modal xlow xhigh xspan ylow yhigh yspan range size points \
     #    pack [ComboBox $between.rangeopts -values "Interpolate Round" -editable 0 \
     #	      -modifycmd "Reshape $t" -width 12]
     ::ttk::combobox $between.rangeopts -textvariable graph($t,betweenOpt) \
-	-state readonly -values [list [tr. Interpolate] [tr. Round]]
+	-width 12 -state readonly -values [list [tr. Interpolate] [tr. Round]]
     bind $between.rangeopts <<ComboboxSelected>> [list Reshape $t]
 #    ::ttk::menubutton $between.rangeopts
 #    set betweenMenu [menu $between.rangeopts.menu -tearoff 0]
@@ -215,7 +215,7 @@ proc GraphEntry { t modal xlow xhigh xspan ylow yhigh yspan range size points \
 #    }
 #    $out.rangeopts configure -menu $outMenu -width 11 \
 #            -textvariable graph($t,outOpt)
-    ::ttk::combobox $out.rangeopts -textvariable graph($t,outOpt) \
+    ::ttk::combobox $out.rangeopts -textvariable graph($t,outOpt) -width 12 \
 	-values [list [tr. Truncate] [tr. Extrapolate] [tr. Wraparound]] \
 	-state readonly
     pack $out.rangeopts -side left -anchor nw

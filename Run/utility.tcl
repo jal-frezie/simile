@@ -33,7 +33,7 @@ proc ShowMess { title icon string resps {parent {}}} {
 	OpenProgressBox $progBag
 	.progress.message configure -text $progMess
     }
-    update idletasks
+    UpdateByOS
     return $act
 }
 
@@ -247,7 +247,7 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
     } elseif {[string match Linux $tcl_platform(os)]} { 
 # unix: own clipboard and set up request handler
 	package require img::window
-	update ;# get canvas displayed again
+	UpdateByOS ;# get canvas displayed again
 	# Easy, teenage, New York version
 	#clipboard clear
 	#set img [image create photo -format window -data $canvas]
@@ -469,7 +469,7 @@ proc PostPopup {w X Y} {
         wm overrideredirect $popup 1
     }
 
-    update idletasks
+    #UpdateByOS
     bind all <Motion> {}
     if {[info exists popper(latestX)]} {
 	set X $popper(latestX)
@@ -541,6 +541,7 @@ proc AddPopupMessage {text colour args} {
 	set count 0
     }
     set bag $popup.message$colour
+    set colour [VaryColour $::looks(outlineColor) $colour $popup]
     if {[EndsOnly text $count $limit]==-1} {
 	pack [text $bag -bd 0 -bg $colour -width 4 -height 1 -wrap none] \
 	    -fill both -expand 1
@@ -664,6 +665,9 @@ proc ShrinkValueList {outerList limit} {
 	if {[string equal REAL [lindex $list 2]]} {
 	    set fieldChar d
 	    set fieldSize 8
+	} elseif {[string equal FLAG [lindex $list 2]]} {
+	    set fieldChar c
+	    set fieldSize 1
 	} else {
 	    set fieldChar i
 	    set fieldSize 4
@@ -915,7 +919,7 @@ proc PutItThere {t parent} {
 
 # This actually isnt much use, because if a script creates a window then makes
 # it a slave of another withdrawn window, then calls this, the 'state' will
-# come up as 'normal' until an update happens. Adding 'update idletasks'
+# come up as 'normal' until an update happens. Adding 'UpdateByOS'
 # may have sorted this.
 
 # Added functionality to move window to the centre of its parent, or
@@ -927,7 +931,7 @@ proc LetItShow {t {doneVar {}}} {
 	set ::$doneVar 1
 	return
     }
-    update idletasks
+    UpdateByOS
 #puts "$t: viewable [winfo viewable $t]; state [wm state $t]"
     if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
 	tkwait visibility $t
@@ -956,13 +960,18 @@ proc LetItShow {t {doneVar {}}} {
 # have variable that gets set on exit, if scripting just set it
 # otherwise do interaction here
         set oldGrab [grab current]
-	grab $t
-	tkwait variable $doneVar
-        if {[string length $oldGrab]} {
-	    grab $oldGrab
-	} else {
-	    grab release $t
+	if {[string length $oldGrab]} {
+	    grab release $oldGrab
 	}
+	bind $t <Enter> [list grab $t]
+	# MacOS may disable dialog if grabbed now so only do if needed
+	tkwait variable $doneVar
+	bind $t <Enter> {}
+#        if {[string length $oldGrab]} {
+#	    grab $oldGrab
+#	} else {
+#	    grab release $t
+#	}
     }
     return [winfo viewable $t]
 }
@@ -986,7 +995,7 @@ proc PackItUp {t} {
 	    unset ::concealedMenu($t)
 	}
 # Make menu updates happen before something else does same thing
-	update idletasks
+	UpdateByOS
     }
 }
 
@@ -1086,6 +1095,16 @@ proc DeDot {cb} {
     return [string map {. dot do dodo} $cb]
 }
 
+# Sometimes an 'update' will hang the Mac version, while an 'UpdateByOS'
+# will hang the Windows version (either works in Linux) so...
+proc UpdateByOS {} {
+    if {$::tcl_platform(platform) eq "windows"} {
+	update
+    } else {
+	update idletasks
+    }
+}
+
 proc FixMacComboBox {} {
 ### replace toplevel window for combobox with a placed frame to avoid 
 ### Mac crash if at -ve coords
@@ -1164,7 +1183,7 @@ namespace eval ::ttk::combobox {
 
 	set popdown [PopdownWindow $cb]
 	ConfigureListbox $cb
-	update idletasks    ;# needed for geometry propagation.
+	UpdateByOS    ;# needed for geometry propagation.
 	PlacePopdown $cb $popdown
     }
 

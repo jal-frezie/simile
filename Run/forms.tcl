@@ -1041,7 +1041,7 @@ if {!$::headless && ![info exists simplify]} {
     if {[catch {	
 #	if {[info tclversion]<8.6} {
 # use anyway -- works better than built-in format
-	    package require img::png ;# for internal image storage
+#	    package require img::png ;# for internal image storage
 #	}
 	package require img::bmp ;# for grid helper (could use ppm)
 	package require img::jpeg ;# support this popular format
@@ -1141,7 +1141,7 @@ proc OpenProgressBox {winId} {
 	pack .progress.message -fill both -expand true
 #	::ttk::progressbar .progress.bar -maximum 100
 #	pack .progress.bar -side bottom -fill x -expand 1
-	update idletasks
+	UpdateByOS
 	incr progressBoxCount ;# update can cause AbandonEqn and ResetProgress
     }
     return $progressBoxCount
@@ -1156,7 +1156,7 @@ proc FillProgressBox {key lits {fract 0}} {
     } else {
 	.progress.message configure -text [eval [list format $msgs($key)] $lits]
 #	.progress.bar configure -value $fract
-	update idletasks
+	UpdateByOS
     }
 }
 
@@ -1283,10 +1283,7 @@ proc GetDimOrTimePtList {parent title msg} {
 	      -command "set dotpl(done) 1"] -side right
     pack [ttk::button $btnFrame.cancel -text [tr. Cancel] \
 	      -command "set dotpl(done) 0"] -side right
-    LetItShow $t
-    grab $t
-    tkwait variable dotpl(done)
-    grab release $t
+    LetItShow $t dotpl(done)
     if {$dotpl(done)} {
 	set result [$txtFrame.text get]
     } else {
@@ -1477,7 +1474,7 @@ proc DoUserDialogue {} {
     wm withdraw .splash
     LetItShow $t userinfo(entrydone)
     wm deiconify .splash
-    update idletasks
+    UpdateByOS
     focus $t.head.nentry
     if {$userinfo(entrydone)} {
 	set userinfo(name) [$t.head.nentry get]
@@ -2114,7 +2111,7 @@ proc ShowExpiryImminent {expTime left} {
     set swidth [winfo screenwidth .expiry]
     wm geometry .expiry +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
     wm withdraw .splash
-    update idletasks
+    UpdateByOS
     
     tkwait variable ack
     destroy .expiry
@@ -2299,7 +2296,7 @@ proc equationlisting_addsubmodel {node isub submodel_label timestep type} {
 	}
     }
     $equationlist(textbox) configure -state disabled
-    update idletasks
+    UpdateByOS
 }
 
 
@@ -2788,7 +2785,7 @@ proc Query {specifics icon helpRef parent opts} {
     unset dialogues(done)
 
     focus -force $oldFocus
-#    update idletasks
+#    UpdateByOS
     return $result
 }
 
@@ -2827,7 +2824,7 @@ proc HideProgressBox {} {
 	    grab release $dialogues(progressUp)
 	}
     }
-    update ;# avoids Mac hang
+    update idletasks ;# avoids Mac hang
 }
 
 proc ReplaceProgressBox {} {

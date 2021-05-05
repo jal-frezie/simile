@@ -267,7 +267,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 6.11
-set sendvars(simP) {p93}
+set sendvars(simP) {p94}
 
 if {[package vcompare $env(SIMILE_VERSION) 6.0]>=0} {
     set do_events 1 ;# include event symbols
@@ -480,7 +480,7 @@ wm geometry .splash $startGeom
 if {[info exists SimileAutoObjLoaded]} {
     wm withdraw .splash
 } else {
-    update
+    update ;# UpdateByOS not loaded yet, hope this is OK on Mac
 }
 
 # now before we put up any regular Simile windows, reset the scaling, because

@@ -879,7 +879,7 @@ double VarParamData::update_from_points(double nowInDays, double next,
       active=1;
 //     }
   }
-  if (!loBound && !amEvent) {
+  if ((!loBound || !loBound->dataPtr) && !amEvent) {
     free_bloc_data(destPtr->contents, destPtr->dimSpecs);
     destPtr->contents = NULL;
   }

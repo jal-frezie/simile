@@ -9,7 +9,7 @@ PLATFORM = $(shell uname -s)
 
 # Prolog implementation to use -- GNU for Windows releases, GNU otherwise
 # (currently GNU for everything)
-ifneq (,$(filter $(MY_CPU),arm aarch64))
+ifneq (,$(filter $(MY_CPU),none))
 # result of filter is strings that match, test if not empty
     PROLOG = SWI
 else
@@ -28,7 +28,7 @@ DEFNS=-DSIM_BUILT=$(shell date $(DATESPEC) +%s)
 GCCCMD = gcc
 GPPCMD = g++
 
-ifneq (,$(filter $(MY_CPU),x86_64 aarch64))
+ifneq (,$(filter $(MY_CPU),x86_64 aarch64 arm64))
 BITEXTN = 64
 endif
 
@@ -64,8 +64,8 @@ ifeq ($(PLATFORM),Darwin)
 	VERS = 8.6
 	OSNUMBER = $(shell uname -r)
 	TCLFW = ../Frameworks/Tcl.framework
-ifeq ($(MY_CPU),x86_64)
-	CFLAGS = $(OPT)
+ifneq (,$(filter $(MY_CPU),x86_64 aarch64 arm64))
+        CFLAGS = $(OPT) -arch x86_64 -arch arm64
 	export MACOSX_DEPLOYMENT_TARGET=10.13
 else
 	CFLAGS = $(OPT) -arch i386
@@ -211,12 +211,11 @@ UINFO_TPL=userinfo.gnu
 # 		-L '$(OPT)'; cd ..
 # In separate steps with database
 $(PROLOGSTATE): $(PROLOG_OBJ) $(PROLOG_DB)
-	gplc --no-top-level -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) \
-		-L '$(CFLAGS)'
+	gplc --no-top-level -o $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB)
 $(PROLOG_OBJ): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
-	cd Prolog; gplc -o ../$(PROLOG_OBJ) -c -C '$(CFLAGS)' gmain.pl; cd ..
+	cd Prolog; gplc -o ../$(PROLOG_OBJ) -c gmain.pl; cd ..
 $(PROLOG_DB): Prolog/struct_db.c
-	cd Prolog; gplc -c -C '$(CFLAGS) -D_GNU_PROLOG' \
+	cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB) struct_db.c; cd ..
 endif
 

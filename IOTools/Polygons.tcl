@@ -476,7 +476,7 @@ namespace eval ::polygon375 {
 		recolour_scale $::helperTable($winId,whichInstance) $winId
 		Repaint $winId $hs
 	    }
-	    update
+	    UpdateByOS
 	    Fit $winId
 	}
 	return 1

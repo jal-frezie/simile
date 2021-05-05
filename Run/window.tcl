@@ -88,7 +88,7 @@ proc canvasTLDistance {winId x y} {
 # equation bar. The prolog procedure has to set fromProlog. It should stop
 # the thread until it returns, but something is wrong -- occasionally
 # fromProlog doesn't get set. Answer: set it first. Or fix the actual
-# bug -- it seems 'update idletasks' somehow interferes with this,
+# bug -- it seems 'UpdateByOS' somehow interferes with this,
 # resulting in the variable not getting set, or something. Bug seems fixed now
 # by new pipe interface technology -- might still do funnies if the Prolog
 # command calls Tcl back though...
@@ -123,7 +123,7 @@ proc BringRootWindow {winId} {
     if {[tk windowingsystem] eq "aqua"} {
 	# popup menus only appear if root window on same screen
 	wm geometry . +[winfo rootx $winId]+[winfo rooty $winId]
-	update
+	UpdateByOS
     }
 }
 
@@ -135,6 +135,7 @@ proc DoContextMenu {winId X Y} {
     $m configure -postcommand {}
     # don't waut for menu focus!
     SafeEqnBarEdit [winfo parent $winId]
+    set ::equationbar(current_action) null ;# just make sure on Mac
     # work round bug in windows menu posning
     if {[string equal windows $tcl_platform(platform)] && \
 	    $Y>[winfo screenheight $winId]/2} {
@@ -258,7 +259,7 @@ proc ClickObj { x y winId X Y action} {
         # Right button puts up context menu.
         if {$RB && [string equal select $pushedbutton]} {
             prolog [list tk_unclick( $xco , $yco )]
-	    update
+	    UpdateByOS
 	    DoContextMenu $winId $X $Y
         }
         
@@ -683,7 +684,7 @@ proc ModelWindow {winName} {
 
     wm iconphoto $winName splash
     # Create a scrollable canvas
-    set c [canvas $winName.canvas -bg white -confine 1 \
+    set c [canvas $winName.canvas -bg $looks(windowColor) -confine 1 \
 	       -xscrollcommand "AdjustCanvas $winName toolSlot x" \
 	       -yscrollcommand "AdjustCanvas $winName canvas y" \
 	       -xscrollincrement $looks(scrollIncr) \
@@ -925,6 +926,13 @@ proc Gradient {rgb {window .} {swing 0}} {
         ### Return the new rgb string
         return $rgb
     }
+
+proc VaryColour {base variation {window .}} {
+    foreach b [winfo rgb $window $base] v [winfo rgb $window $variation] {
+	append vis [format %.4x [expr {$b^$v}]]
+    }
+    return #$vis
+}
 
 proc ResizeBackgnd {wc l t r b} {
     global window_info looks
@@ -1695,7 +1703,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set fm [menu $topm.edit -tearoff 0 \
 		-postcommand "prolog tk_bar_edit_menu('$c')"]
     $topm add cascade -label [tr. Edit] -menu $topm.edit
-    
+
     $fm add cascade -label [tr. "Add/change component"] -menu $fm.add
     set ::menuPosns(edit,Add/change\ component) [$fm index last]
     set em1 [menu $fm.add -tearoff 0]
@@ -2227,7 +2235,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     ### End of formula bar section
     
-    update idletasks ;# to allow reqwidth to be calculated
+    UpdateByOS ;# to allow reqwidth to be calculated
     #set navWidth [winfo reqwidth $tb] ;# tool bar is widest
     #ShowMess debug info "Toolbar has $initWidth, needs $navWidth" ok
     set custom(showtoolbar,$winid) [expr \
@@ -2526,6 +2534,16 @@ proc ExtractPrologName { winId target } {
 # we reach the edge of our search radius.
 
 proc GetClickedObj { winId canx cany range} {
+    # alternative version if we trust the user to hit the nail on the head
+    # (for some reason this prevents dragging flows to/from compartments --
+    # possibly because current tag not set til unclick)
+#    set target [$winId find withtag current]
+#    if {![string match "*/background/*" [$winId gettags $target]] && \
+#	    [Visible $winId $target]} {
+#	return $target
+#    }
+#    return 0
+    
     for {set halo 1} {$halo < $range} {incr halo 2} {
         set tgt1 [set target [$winId find closest $canx $cany $halo]]
 	set looped 0
@@ -2597,7 +2615,7 @@ proc AbandonEqn {winId} {
 # Only query save if new focus is a 'rival', otherwise no bother as
 # the eqnbar will get it back anyway...update needed before new focus
 # can be queried
-    update idletasks
+    UpdateByOS
 # ...however it causes some horrible problems with progress dialogue
 # when entering fragment-defined functions. Can no longer find these
 # or see how they could happen. However a full update causes unused influences
@@ -2783,7 +2801,7 @@ proc ZapWindow { fullName } {
     #ShowMess debug info "$winId $custom(first_up)" ok
     if {$window_info($fullName,is_top_level)} {
         focus $target.canvas
-        update
+        UpdateByOS
         set cacheStream [NetOpen $custom(prefDir)/.layout w]
         puts $cacheStream [string match zoomed [wm state $target]]
         puts $cacheStream [wm geometry $target]

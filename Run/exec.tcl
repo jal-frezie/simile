@@ -75,9 +75,16 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 	if {![file exists $progFile]} {
 	    puts "Shared library $progFile appears not to exist!"
 	    return 0
-	}
-	set new_model_id [loadmodel $progFile $node]
-	set model_id $new_model_id
+}
+# Some APIs are determined to do what they think we really want rather than
+# what we actually ask for. So rename the shared library before reloading it,
+# otherwise we may get an earlier version back.
+        set OSBaffler [file join [file dirname $progFile] bamf[random01]]
+        file rename $progFile $OSBaffler
+        set new_model_id [loadmodel $OSBaffler $node]
+        file rename $OSBaffler $progFile
+
+        set model_id $new_model_id
         #        set model_id [loadmodel $nameBase[info sharedlibextension] $node]
         set model_ids($node) $new_model_id
 	return 1 ;# was $new_model_id but bytecodes bad for swi
@@ -518,6 +525,9 @@ proc ListToArray {dummy caseId tgt subs numSubs trans dims list when \
 	    if {[string equal REAL [lindex $list 2]]} {
 		set fieldChar d
 		set fieldSize 8
+	    } elseif {[string equal FLAG [lindex $list 2]]} {
+		set fieldChar c
+		set fieldSize 1
 	    } else {
 		set fieldChar i
 		set fieldSize 4

@@ -242,7 +242,7 @@ proc ShowHelper {w} {
 
     drawGraphpad $w;
     
-    update
+    UpdateByOS
     resize $w win [winfo x $w.canvas] [winfo y $w.canvas] \
             [winfo width $w.canvas] [winfo height $w.canvas]
     Repaint $w

@@ -45,8 +45,11 @@ proc click {windowId nodename caption} {
     SetState $windowId [StripCrs [GetCaptionPathFromId $nodename]]
     set length [lindex $graphData 7]
     set graphPoints [join [lrange $graphData 8 end] ,]
-    eval {after idle GraphEntry $windowId 0} [lrange $graphData 0 6] \
-	{$length $graphPoints} $nodename
+#    eval [list after idle GraphEntry $windowId 0 $caption] \
+#	[lrange $graphData 0 6] {$length $graphPoints} $nodename
+    UpdateByOS
+    eval [list GraphEntry $windowId 0 $caption] \
+	[lrange $graphData 0 6] {$length $graphPoints} $nodename
 #    kill_helper_window $windowId
 }
     

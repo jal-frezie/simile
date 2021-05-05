@@ -1364,7 +1364,7 @@ namespace eval graphics {
          #set rotation [expr $rotation + 0.1]
          HRotate LEFT $winId
          #if { $rotation > 1 } then { set rotation [expr $rotation - 1] }
-         update
+         UpdateByOS
       }
    }
    # END proc spin {} 
@@ -2179,7 +2179,7 @@ namespace eval window {
          $winId.status.drawing configure -text "Ready  "
       }
       # ensure that the message is displayed.
-      update idletasks 
+      UpdateByOS 
    }
    # proc window::setDrawingStatus{ status winId }
    #########################
@@ -2196,7 +2196,7 @@ namespace eval window {
          $winId.status.rotate configure -text "Rotate OFF"
       }
       # ensure that the message is displayed.
-      update idletasks 
+      UpdateByOS 
    }
    # proc window::setRotateStatus { status winId }
    #########################
@@ -2213,7 +2213,7 @@ namespace eval window {
          $winId.status.backFace configure -text "Back Faces OFF"
       }
       # ensure that the message is displayed.
-      update idletasks 
+      UpdateByOS 
    }
    # proc window::setBackFacesState { status winId }
    #########################
@@ -2227,7 +2227,7 @@ namespace eval window {
          $winId.status.view configure -text "Surface View"
       }
       # ensure that the message is displayed.
-      update idletasks 
+      UpdateByOS 
    }
    # proc window::setViewStatus { status winId }
    #########################

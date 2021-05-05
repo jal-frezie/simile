@@ -152,7 +152,7 @@ namespace eval $keyValue {
         set topWin [winfo toplevel $winId]
         set origCursor [$topWin cget -cursor]
         $topWin configure -cursor watch
-        update
+        UpdateByOS
         Reconbobulate $winId
         $topWin configure -cursor $origCursor
     }
@@ -167,7 +167,7 @@ namespace eval $keyValue {
 	    -xscrollcommand [list AdjustCanvas $winId f x] \
 	    -validatecommand [namespace code [list EditCellIs %W %r %c %S]] \
 	    -validate 1 -selecttitle true
-        
+	
         pack $winId.t -fill both -expand true
         $winId.t tag configure red -fg red
         
@@ -1177,7 +1177,7 @@ namespace eval $keyValue {
 # it is impossible to switch between tabs on the Mac -- even though
 # the same thing works fine in the equation dialogue.
         $nb select 1
-	update
+	UpdateByOS
         $nb select 0
 	grab $t
         tkwait variable ${t}done

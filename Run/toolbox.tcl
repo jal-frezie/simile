@@ -403,6 +403,13 @@ proc ScrubRun {node times} {
     }
     set runState($node,modelRunning) 0
     ExScrubRun $node $times
+    if {[info exists execThread($node,id)]} {
+	thread::release $execThread($node,id)
+	unset execThread($node,id)
+    } else {
+	interp delete $execInterp($node,id)
+	unset execInterp($node,id)
+    }
     ToggleIOToolMenu $node
 }
 
@@ -852,8 +859,11 @@ proc ControlDraw {prologVersion} {
 	set looks(buttonColor) \#d9d9d9
     } else {
 	button .b
+	entry .sampleTheme
 	set looks(buttonColor) [Desystematize [.b cget -bg]]
-	set looks(windowColor) white
+	set looks(windowColor) [Desystematize [.sampleTheme cget -bg]]
+	set looks(outlineColor) [Desystematize [.sampleTheme cget -fg]]
+	destroy .sampleTheme
 	destroy .b
 	LoadIconImages
     }
@@ -1056,7 +1066,7 @@ proc ControlDraw {prologVersion} {
 		  [list custom(quickDrag) quickDrag OFF  [tr. "Quick drag"]] \
 		  [list custom(myButton) myButton \u03bc [tr. "Custom keypad button"]] \
 		  [list custom(columnSeparator) columnSeparator {,} [tr. "Column separator"]] \
-		  [list custom(defBackground) defBackground [list CHOICE [tr. "White"] [tr. "Black"] [tr. "Clear"]] [tr. "Default background"]] \
+		  [list custom(defBackground) defBackground [list CHOICE [tr. "Normal"] [tr. "Inverse"] [tr. "Clear"]] [tr. "Default background"]] \
 		  [list custom(flowRouting) flowRouting ON [tr. "Kink flows"]] \
 		  [list custom(infRouting) infRouting {20 -100 100} [tr. "Curve influences"]] \
 		  [list custom(roleRouting) roleRouting {20 -100 100} [tr. "Curve role arrows"]] \
@@ -1300,7 +1310,7 @@ proc FixSize {c} {
 	}
         close $stream
     }
-    update
+    UpdateByOS
 
     destroy .splash
     if {[string match $::OPEN_MODEL {}]} {
@@ -1836,7 +1846,7 @@ proc OpenProjectFile {path} {
         } else  {
             MenuSelect $tw.canvas code run_tcl
         }
-	update
+	UpdateByOS
         if {$runState($topNode,modelRunning)<3} return
 	set defaultSHF [file join $path model.shf]
 	set command [ChooseText \
@@ -2150,7 +2160,7 @@ proc FillReopen {winId} {
     }
 # Also need to check selection because of "Save seln..."
 #    prolog tk_bar_edit_menu('$winId.canvas')
-    update idletasks
+    UpdateByOS
 }
 
 proc Rerun {winId go} {
@@ -2293,7 +2303,7 @@ proc ShowWatchWhileDoing {cmd} {
     } else {
 	set window_info(oldCurs) arrow ;# value irrelevant
 	UpdateCursors watch
-	update idletasks
+	UpdateByOS
 	uplevel \#0 $cmd
 	UpdateCursors $window_info(defCurs)
 	unset window_info(oldCurs)

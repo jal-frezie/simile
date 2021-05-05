@@ -699,7 +699,7 @@ namespace eval runcontrol33857 {
         }
         
         if {$currentOld || $startingLong} {
-            update
+            UpdateByOS
             set runState($node,lastUpdate) $thisUpdate
         }
     }

@@ -81,7 +81,7 @@ itcl::class similescript::$newHelperClass {
 		$vp.c xview moveto [expr {($transform(offx)-$l)*1.0/($r-$l)}]
 		$vp.c yview moveto [expr {($transform(offy)-$t)*1.0/($b-$t)}]
 	    }
-	    update
+	    UpdateByOS
 	    PosnLegends
 	} else {
 	    array set transform {offx 0 offy 0 zoomx 1 zoomy 1}

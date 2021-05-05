@@ -298,7 +298,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     
     set graph [button $equation(actzone).buttons.graph \
 		   -text " [tr. Graph]... "\
-		   -command "equationDoGraph $t $en"]
+		   -command [list equationDoGraph $t $comp $en]]
     pack $graph -padx 8 -pady 4
     BindPopup $graph graph
     set table [button $equation(actzone).buttons.table \
@@ -399,7 +399,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     }
 #    tkwait visibility $middleF
 # above is insufficient to get Mac version to work proper, so...
-    update idletasks
+    UpdateByOS
     set eqnLayout [file join $custom(prefDir) .layouts equation]
     if {[file exists $eqnLayout]} {
         set stream [NetOpen $eqnLayout r]
@@ -621,8 +621,10 @@ proc interact_equation {} {
 	.equation.notebook select 1 ;# raise parameters tab
 	focus $equation(ckWidg) ;# keep here until correct input or cancel
     }
-    grab $t
+    bind $t <Enter> [list grab $t]
+    # MacOS may disable dialog if grabbed now so only do if needed
     tkwait variable equation(done)
+    bind $t <Enter> {}
     grab release $t
 
     set units [UnityForReal $equation(units)]
@@ -1000,7 +1002,7 @@ proc FlashRange {inText win pt} {
 	after 500 $win tag remove flash $pt
     } else {
 	set end [expr {$pt+1}]
-	set pop "$win selection range $pt $end; update idletasks; after 100; $win selection clear"
+	set pop "$win selection range $pt $end; UpdateByOS; after 100; $win selection clear"
 	after idle $pop
 	after 200 $pop
 	after 400 $pop
@@ -1017,9 +1019,9 @@ proc MoveInFns {w X Y x y} {
     }}
 }
 
-proc equationDoGraph {parent box} {
+proc equationDoGraph {parent name box} {
     global equation
-    if {[equationGraph $parent]} {
+    if {[equationGraph $parent $name]} {
         if {![string match *graph(*)* [$box get 1.0 end]]} {
             InsertFunction $box graph
         }
@@ -1027,7 +1029,7 @@ proc equationDoGraph {parent box} {
     }
 }
 
-proc equationGraph {parent} {
+proc equationGraph {parent name} {
     global equation tcl_platform
     PutItThere .graph $parent
     wm protocol .graph WM_DELETE_WINDOW {set graph(.graph,done) 0}
@@ -1043,7 +1045,7 @@ proc equationGraph {parent} {
 			       [join $equation(table_values) ,]]
 	}
     }
-    set done [eval {GraphEntry .graph 1} $graphArgs]
+    set done [eval [list GraphEntry .graph 1 $name] $graphArgs]
 
     PackItUp .graph
     grab $parent

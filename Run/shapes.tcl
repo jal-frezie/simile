@@ -1097,14 +1097,16 @@ proc ColourExists {col} {
 }
 
 proc CanvasDefBG {} {
+    global looks
+    
     if {$::headless} {
 	return \#d9d9d9
     }
     switch [PrefValue custom(defBackground) defBackground] \
-	[list [tr. {White}] {
-	    return white
-	} [tr. {Black}] {
-	    return black
+	[list [tr. {Normal}] {
+	    return $looks(windowColor)
+	} [tr. {Inverse}] {
+	    return $looks(outlineColor)
 	} default {
 	    return clear
 	}
@@ -1292,7 +1294,7 @@ proc InjectGraphics {c canvasFile} {
     # a tcl bug that if the scrollregion is smaller than the window it may not all
     # be displayed.
     # $c delete withtag /base/ ;# these may be deleted and re-created
-    update idletasks
+    UpdateByOS
     CanvasSee $c [ExtractPrologName $c [lindex [$c find all] end]] \
 	[expr $window_info($c,width)/2] [expr $window_info($c,height)/2]
 # view topmost item
@@ -1809,6 +1811,7 @@ proc Customize {winId mode} {
     
     set n $window_info($winId.canvas,top_node)
     set looks(width) 180
+    set looks(trwhite) 0
     
     set t [PutItThere .customize $winId]
     wm protocol $t WM_DELETE_WINDOW "set done 0"
@@ -1950,10 +1953,7 @@ proc Customize {winId mode} {
     LoadLooks $t $n $object
     RememberLooks $n
     
-    LetItShow $t
-    grab $t
-    tkwait variable done
-    grab release $t
+    LetItShow $t done
     if {$done} {
         ApplyLooks $t $n $object
     } else {
@@ -2392,9 +2392,9 @@ proc ResetLooks {c type} {
     set looks($c,$type,font) [AssembleFont Helvetica bold roman $niceSize]
     set looks($c,$type,txtbd) 0
     set looks($c,$type,txtbg) 0
-    set looks($c,$type,outline) black
+    set looks($c,$type,outline) $looks(outlineColor)
     set looks($c,$type,fill) $looks(buttonColor)
-    set looks($c,$type,text) black
+    set looks($c,$type,text) $looks(outlineColor)
     set looks($c,$type,select) \#0000cd
     set looks($c,$type,highlight) \#008b00
     set looks($c,$type,target) \#00ee00

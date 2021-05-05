@@ -1784,7 +1784,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   // Use the Tcl Stubs mechanism --version is earliest we expect to work
   if (!Tcl_InitStubs(interp, "8.5", 0)) return TCL_ERROR;
   proc_pointers_for_shank(respond_to_param_req, outeract_gui, showMess);
-  for (cmdNo = 0; cmdNo < 31; ++cmdNo) {
+  for (cmdNo = 0; cmdNo < 33; ++cmdNo) {
     Tcl_CreateObjCommand(interp, allNames[cmdNo], allProcs[cmdNo], 
 			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   }

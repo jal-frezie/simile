@@ -749,7 +749,8 @@ as well to stop rand_vars being changed in the R-K subphase */
 		\+ suffix(PurePath, PureAPath),
 		raise_exception(condition_outside_loop(LoopEnd, LoopStart,
 						       Xefct));
-	    raise_exception(mixed_phase_loop(LoopEnd, Xefct, Step, AStep)));
+	     % below should never happen as mixed step now OK
+	     raise_exception(mixed_phase_loop(LoopEnd, Xefct, Step, AStep)));
 	!).
 /*
 reachable(P, Trail) :-
@@ -2275,6 +2276,13 @@ delay_clearing(Mess, [make(clearing(Total), CConds, CPath, IPhase, CAct),
 		   Mess2),
 	    delay_clearing(Mess2, Better).
 */
+try_longer_steps_in(Level, Sm, MinStep) :-
+    Level = sm(Sm, _,_, Loop),
+    (Loop = vm_loop(_,_,_,MinStep);
+     Loop = fm_loop(_, D, A, _),
+     (D = [_D | _]; nonvar(A)),
+       MinStep = -1).
+
 needs_shorter_step(make_level(_Level, Insts, Lower), Phase) :-
     member(make(_,_,_, [_,_,Need | _], _), Insts),
       Need > Phase;
@@ -2291,7 +2299,7 @@ phases, the instructions have an extra argument to say which phase they go in,
 allowing there to be more than two. */
 
 order_assignments(Phase, Path, EndPts, All, Assign) :-
-	EndPts = make_level(Cur, Items, Subs),
+	EndPts = make_level(_Cur, Items, Subs),
 	% (Path = [sm(Capt, _,_,_) | _];
 	%     Path = [set(_, loop(Capt, _)) | _];
 	%     Path = [], Capt = top),
@@ -2314,24 +2322,34 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 	
 	( %unfinished_submodels(Later, Phase, Path, Subs),
 	  member(SubEndPts, Subs),
-	    SubEndPts = make_level(SmLevel, _,_), 
+	    SubEndPts = make_level(SmLevel, _,_),
+	    \+ (SmLevel = sm(Sm, _,_,_), % check for unmade can_enter cond
+		member(make(can_enter(Sm), _,_,Ordering,_), Items),
+		not_yet_ordered(make(_,_,_,Ordering,_))),
 	    /* try something from what is left -- no commitment yet */
 	    ((SmLevel = separate([sm(Sm, _,_,_) | _]),
 	      ProcKey = make(all_done_for(Sm, Tm), _,_,_,_),
 	        member(ProcKey, Items); % no restrict if ready test not in proc
-	      SmLevel = sm(Sm, _,_, vm_loop(_,_,_,EnumPhase))) ->
+	      try_longer_steps_in(SmLevel, Sm, EnumPhase)) ->
 		 % a level with special conditions
-		 (SmLevel = sm(_,_,_,_) -> % 2nd case above
-		      Phase >= EnumPhase;
-		  (Phase =< 0; SepPass = 1, % add special later
-		   \+ not_yet_ordered(ProcKey),
-		   \+ needs_shorter_step(SubEndPts, Phase))),
+		 (SmLevel = separate(_) -> % 1st case above
+		      (Phase =< 0; SepPass = 1, % add special later
+				   \+ not_yet_ordered(ProcKey),
+				   \+ needs_shorter_step(SubEndPts, Phase));
+		  Phase >= EnumPhase),
 		fwd_submodel_assignments(Phase, [SmLevel | Path], SubEndPts,
 					    All, SubPass, TestPhase),
 		    /* do not go into a sumbodel if I cannot get the existence
 		    test done by the time I come out */
 		\+ (member(make(existence_tested(Sm), _,_, [_,_,_,D], _), All),
-		       var(D));
+		       var(D)),
+
+	    % Check for incomplete single-loop chains before exiting loop
+		\+ (member(make(_, Conds-_, _,_,_), SubPass),
+		    nonvar(Conds), % filter dummy instructions from d_c_s
+		    member(later(Hanger), Conds),
+		    not_yet_ordered(Hanger));
+	     
 	     order_assignments(Phase, [SmLevel | Path], SubEndPts,
 				 All, SubPass)),		     
 
@@ -2340,7 +2358,7 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 	actually have been any new commands generated, but now the whole
 	instructions are returned at this point) */
 	    \+ SubPass = [],
-			     
+	    
 	    /* If this line uncommented, do not do anything that would use the
 	    check-member feature */
 	    % \+ (number(TestPhase), TestPhase < Phase),
@@ -2356,7 +2374,8 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 		   member(make(Alarm, _,_, [_,_, AlP, AlDone | _], _), All),
 		   var(AlDone),
 		   AlP =< Phase),
-
+	    !, % very red -- commit to submodel order!
+	    
 	    do_clever_stuff(Phase, TestPhase, SmLevel, Path, SubPass, CondPass,
 			    VFirstStep, LastStep),
 	    (var(SepPass) -> FirstStep = VFirstStep;
@@ -2371,14 +2390,7 @@ order_assignments(Phase, Path, EndPts, All, Assign) :-
 		       OrderedAssign);
 	     append(CondPass, NewOrdered, OrderedAssign));
 	    OrderedAssign = []),
-	append(ThisPhase, OrderedAssign, Assign),
-	% do not exit loop if it contains unsatisfied later() condition.
-        % Otherwise, exit and cut.
-        (member(make(_, Conds-_, _,_,_), Assign),
-	    member(later(Hanger), Conds),
-	    not_yet_ordered(Hanger) ->
-          \+ loops(Cur);
-	 !). % very red -- commit to submodel order!
+	append(ThisPhase, OrderedAssign, Assign).
 
 do_clever_stuff(Phase, TestPhase, SmLevel, Path, SubPass, CondPass,
 	       FirstStep, LastStep) :-
@@ -2982,8 +2994,8 @@ find_antecedent(Chain, TestFn, CallSeq, TestData, Found) :-
 	    find_antecedent(Chain, TestFn, CallSeq, TestData, Found));
 	find_antecedent([Prev | Chain], TestFn, CallSeq, TestData, Found)).
 
-outside_loop(make(_,_, Path, [_,_, NPhase | _], Act), LoopedPath-Phase) :-
-	\+ NPhase == Phase, \+ Act = [], !;
+outside_loop(make(_,_, Path, [_,_, _NPhase | _], _Act), LoopedPath-_Phase) :-
+	% \+ NPhase == Phase, \+ Act = [], !; mixed step -- allow!
 	remove_non_loopers(Path, ShortPath),
 	\+ suffix(LoopedPath, ShortPath).
 	

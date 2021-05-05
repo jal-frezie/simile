@@ -236,8 +236,9 @@ instance_of(Type, Node, Path,
 	initiates(Arc, Function),
 	(generate_input_pair(Function, discrete, _EvtPair) ->
 	 % channel is event -- just add magnitude
-	 Updater = Home+Struct;  % this format identifies discrete immigrations
-	 % channel is coninuous -- increment compartment style
+	     Updater = in_update(Home+Struct);
+	 % this format identifies discrete immigrations
+	 % channel is continuous -- increment compartment style
 	Updater = with_phase(Step, [], Home+stage_incr(Diffs, Step,
 						       Struct, 0,0,0))).
 
@@ -447,7 +448,8 @@ instance_of(loss, Node, Path,
 	Arc is_connector from _ to Node,
 	initiates(Arc, Function),
 	(generate_input_pair(Function, discrete, _), !,
-	    Expr = (rand(0,1)<Home); % this format identifies event losses
+	    Expr = in_update(rand(0,1)<Home);
+	    % this format identifies event losses
 	  Expr = with_phase(Step, [], at_phase(loses(Home, Step)))).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -296,8 +296,8 @@ normalize(Obj) :-
 update_color(Obj) :-
 	appears(Obj),
 	check_complete(Obj),
-	\+ get_highlit_obj(_, Obj),
 	normal_colour_for(Obj, Colour),
+	\+ get_highlit_obj(_, Obj),
 	change_color(Obj, Colour).
 
 /* find_relevant_windows does lots of messing with translations which I don't need
@@ -743,7 +743,7 @@ tk_equationlisting_addvariable(VarType,VarLabel,Expression,
 		br(write(MinMax)),
 		br(write(InFlows)),
 		br(write(OutFlows))], _),  % jmm
-	safe_tcl_eval(['update idletasks'], _).
+	safe_tcl_eval(['UpdateByOS'], _).
 
 
 % ############################################ End Bob's changes

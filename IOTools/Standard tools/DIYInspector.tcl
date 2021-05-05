@@ -38,7 +38,8 @@ itcl::class similescript::$newHelperClass {
 	    } parameters {
 		set incExpts 1
 		set typesToShow {INPUT TABLE}
-	    } outputs {
+	    } default {
+		# outputs, or user added instance: show all
 		set doPops [PrefValue custom(compValPop) compValPop]
 		set typesToShow {RECALL DERIVED INPUT TABLE LIMIT \
 				     BLOCK POPULATION GRID HONEYCOMB}
@@ -89,6 +90,7 @@ itcl::class similescript::$newHelperClass {
 		set notInput -1
 		set levels [split $fullCapt /]
 		set capt [lindex $levels end]
+		set levels [string map {. :} $levels]
 		set type [GetModelClass $component]
 		if {$type eq "SUBMODEL"} {
 		    lappend levels {}
@@ -112,6 +114,9 @@ itcl::class similescript::$newHelperClass {
 		    $label configure -image $iconImages(submodel) \
 			-compound left
 		    pack $label -expand 0
+		    if {[string first . $capt]>=0} { ;# frag submodel
+			$label configure -text $capt:
+		    }
 		} else {
 		    set beeGee [[winfo parent $f].head cget -bg]
 		    set bStyle [[winfo parent $f].head.vis cget -style]

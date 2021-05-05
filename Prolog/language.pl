@@ -896,8 +896,10 @@ do_assignment(L, [lose(ParentPtr, Name, LossNodes) | Clauses],
 	make_struct_reference(L, Pointer, 'next', OnPointer, OnPointerRef),
 	(setof(LossVal, get_term_refs(L, Pointer, LossNodes, LossVal),
 	       LossTerms), !,
-	    build_junction(LossTerms, '||', IsDead),
-
+	    build_junction(LossTerms, '||', WillDie),
+	    % skip actual removal if dt[] is 0 as in slider helper rate step
+	    make_indexed_reference(L, dts, [phase], CanDie),
+	    combine(L, '&&', [CanDie, WillDie], IsDead),
 	    excrete(L, if_start, IsDead, Indent1, Stream),
 	    excrete(L, assignment, MPTarget=OnPointerRef, Indent2, Stream),
 	    excrete(L, release_memory, Pointer, Indent2, Stream),
