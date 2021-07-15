@@ -1275,6 +1275,10 @@ void ExecutingModel::WrapUpThreads(excpData* userDefStop) {
 
   xmList* aChild = children;
   while (aChild) {
+    /* clang does not have pt_tj_np so dream up some other way of coping with 
+    an endless child job...eg, create a separate thread to try to join them
+    that can be killed after a certain time
+
     if (pthread_equal(pthread_self(), supervisorId)) {
       // am supervisor so keep checking gui while awaiting others
       clock_gettime(CLOCK_REALTIME, &ts);
@@ -1299,6 +1303,7 @@ void ExecutingModel::WrapUpThreads(excpData* userDefStop) {
 	break;
       }
     } else
+    */
       pthread_join(aChild->thredd, &clientResult);
     if (clientResult)
       *userDefStop = *(excpData*)clientResult; // copy it up?
@@ -1315,7 +1320,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
   if (top_phase==-2) { // initializing, so do randoms in the thread
     timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
-    unsigned int rnd=(1000000007*pthread_self()+now.tv_nsec);
+    unsigned int rnd=(1000000007*(intptr_t)pthread_self()+now.tv_nsec);
     setup_randoms(rnd);
   }
   if (top_phase<=0) {

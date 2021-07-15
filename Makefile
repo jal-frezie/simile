@@ -65,7 +65,7 @@ ifeq ($(PLATFORM),Darwin)
 	OSNUMBER = $(shell uname -r)
 	TCLFW = ../Frameworks/Tcl.framework
 ifneq (,$(filter $(MY_CPU),x86_64 aarch64 arm64))
-        CFLAGS = $(OPT) -arch x86_64 -arch arm64
+	CFLAGS = $(OPT) -arch x86_64 -arch arm64
 	export MACOSX_DEPLOYMENT_TARGET=10.13
 else
 	CFLAGS = $(OPT) -arch i386
@@ -80,7 +80,7 @@ endif
 # build for everything unless I am on Barbie
 	ifeq ($(OSNUMBER),8.11.0)
 		CFLAGS = $(OPT)
-	        ARCHEXTN = _ppc
+		ARCHEXTN = _ppc
 	endif
 	CPPFLAGS = -static-libstdc++
 	EXECEXTN = $(ARCHEXTN)
@@ -96,7 +96,7 @@ else
 endif 
 
 ifeq ($(PLATFORM),Msys) # any Windows, any toolchain
-        # GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
+	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	SYSDIR = System$(BITEXTN)
 ifeq ($(MY_CPU),x86_64)
 	TCLDIR =  /usr/local
@@ -146,8 +146,6 @@ PROLOG_DB = $(RESDIR)/struct_db
 # $(SHAREDLIBEXTN) not needed
 ifeq ($(PROLOG),GNU)
 	PROLOGSTATE = $(EXECDIR)/xgsimile$(EXECEXTN)
-	PROLOG_OBJ = $(EXECDIR)/gmain$(ARCHEXTN).o
-	PROLOG_DB = $(EXECDIR)/struct_db$(ARCHEXTN).o
 endif
 
 STUBS_DIR = $(RESDIR)/Stubs
@@ -205,6 +203,39 @@ $(PROLOG_DB): Prolog/struct_db.c
 endif
 ifeq ($(PROLOG),GNU)
 UINFO_TPL=userinfo.gnu
+ifeq ($(PLATFORM),Darwin)
+# all hell breaks loose as we try to build x64 and arm versions
+PROLOGSTATE_X = $(PROLOGSTATE)_x
+PROLOGSTATE_A = $(PROLOGSTATE)_a
+$(PROLOGSTATE): $(PROLOGSTATE_X) $(PROLOGSTATE_A)
+	lipo $(PROLOGSTATE_X) $(PROLOGSTATE_A) -create -output $(PROLOGSTATE)
+
+XGNU_PATH = PATH=/Users/jaspert/local/bin:$$PATH
+PROLOG_OBJ_X = $(EXECDIR)/gmain$(ARCHEXTN)_x.o
+PROLOG_DB_X = $(EXECDIR)/struct_db$(ARCHEXTN)_x.o
+$(PROLOGSTATE_X): $(PROLOG_OBJ_X) $(PROLOG_DB_X)
+	$(XGNU_PATH);gplc --no-top-level -o $(PROLOGSTATE_X) $(PROLOG_OBJ_X) $(PROLOG_DB_X)
+
+AGNU_PATH = cd /Users/jaspert/Build/gprolog/src;. ./SETVARS;cd -
+PROLOG_OBJ_A = $(EXECDIR)/gmain$(ARCHEXTN)_a.o
+PROLOG_DB_A = $(EXECDIR)/struct_db$(ARCHEXTN)_a.o
+$(PROLOGSTATE_A): $(PROLOG_OBJ_A) $(PROLOG_DB_A)
+	$(AGNU_PATH);gplc --no-top-level -o $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A)
+$(PROLOG_OBJ_X): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
+	$(XGNU_PATH);cd Prolog; gplc -o ../$(PROLOG_OBJ_X) -c gmain.pl; cd ..
+$(PROLOG_OBJ_A): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
+	$(AGNU_PATH);cd Prolog; gplc -o ../$(PROLOG_OBJ_A) -c gmain.pl; cd ..
+$(PROLOG_DB_X): Prolog/struct_db.c
+	$(XGNU_PATH);cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
+		-o ../$(PROLOG_DB_X) struct_db.c; cd ..
+$(PROLOG_DB_A): Prolog/struct_db.c
+	$(AGNU_PATH);cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
+		-o ../$(PROLOG_DB_A) struct_db.c; cd ..
+clean_prolog:
+	rm -f $(PROLOGSTATE) $(PROLOGSTATE_A) $(PROLOG_OBJ_A) $(PROLOG_DB_A) $(PROLOGSTATE_X) $(PROLOG_OBJ_X) $(PROLOG_DB_X)
+else # not on mac
+PROLOG_OBJ = $(EXECDIR)/gmain$(ARCHEXTN).o
+	PROLOG_DB = $(EXECDIR)/struct_db$(ARCHEXTN).o
 # All-in-one without database
 # $(PROLOGSTATE): $(PROLOG_FILES)
 # 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) gmain.pl \
@@ -217,7 +248,10 @@ $(PROLOG_OBJ): $(PROLOG_FILES) Prolog/gmain.pl Prolog/gstr_db.pl
 $(PROLOG_DB): Prolog/struct_db.c
 	cd Prolog; gplc -c -C '-D_GNU_PROLOG' \
 		-o ../$(PROLOG_DB) struct_db.c; cd ..
-endif
+clean_prolog:
+	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB)
+endif # on Mac
+endif # GNU prolog
 
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
@@ -347,6 +381,8 @@ install:
 		Examples/TreesStats.tcl \
 		Examples/TreesTableHelper.tcl \
 		Extensions/Scripting.tcl \
+		Extensions/www/load_tools.html \
+		Extensions/www/web_embed.tcl \
 		Functions/Arithmetic.pl \
 		Functions/Hidden.pl \
 		Functions/List\ handling.pl \
@@ -519,6 +555,7 @@ install:
 		IOTools/dxf.tcl \
 		IOTools/graphtools.tcl \
 		IOTools/edit_colour_key.tcl \
+		IOTools/inpoint.tcl \
 		IOTools/maps2.tcl \
 		IOTools/threedtools.tcl \
 		IOTools/textshow.tcl \
@@ -632,6 +669,6 @@ endif
 endif
 
 # call clean after changing license info in this file
-clean:
-	rm -f $(PROLOGSTATE) $(PROLOG_OBJ) $(PROLOG_DB) $(RELAY) $(SUPP) \
+clean: clean_prolog
+	rm -f $(RELAY) $(SUPP) \
 		$(SLDIR)/$(SHANK) $(SHIM) $(UNPK) $(INSTLIB) $(MAIN) $(SCRIPT)
