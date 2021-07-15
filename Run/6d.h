@@ -168,7 +168,7 @@ class ExecutingModel
   // state of execution
   double steps[8];
   double lts[8], ldts[8], thisTsPosn;
-  int resetting;
+  int resetting, keepingSliders;
   double freq;
   int seriesEvtSign;
   double nextSeriesEvt;

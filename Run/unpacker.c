@@ -300,20 +300,20 @@ Tcl_Obj* extend_string(Tcl_Obj *localObj, int index, Tcl_Obj *localSubObj, int d
 }
 
 /* next two call convert_to_tcl, which calls them, so declare in advance */
-Tcl_Obj* convert_to_tcl(int*, int*, char*, BOOLEAN, int*, BOOLEAN);
+Tcl_Obj* convert_to_tcl(int*, int*, char*, BOOLEAN, int*, int*, BOOLEAN);
 
 Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices, 
 			     int* subBlocks, int *members, char** block,
 			     BOOLEAN loseZeros, int* toGet, BOOLEAN jsonic) {
   Tcl_Obj *localObj, *localSubObj;
-  int count, dir;
+  int count, dir, noinds = -1;
 
   dir = *toGet>0?1:-1;
   if (depth==dimty) {
     if (*members) {
       *block += dimty*sizeof(int);
       localObj = convert_to_tcl(dims, subBlocks, *block,
-				loseZeros, toGet, jsonic);
+				loseZeros, &noinds, toGet, jsonic);
       if (dir>0) {
 	*block += subBlocks[0];
       } else {
@@ -356,9 +356,10 @@ Tcl_Obj* append_list_members(int dimty, int depth, int* dims, int* indices,
 }
 
 Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks, 
-			      char* block, BOOLEAN loseZeros, int* count, BOOLEAN jsonic) {
+			      char* block, BOOLEAN loseZeros,
+			      int* count, BOOLEAN jsonic) {
   Tcl_Obj *localObj, *localSubObj;
-  int offset, start, end, dir;
+  int offset, start, end, dir, noinds = -1;
   
   localObj = Tcl_NewListObj(0, NULL);
   dir = *count>0?1:-1;
@@ -370,7 +371,7 @@ Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks,
   for (offset = start; offset != end; offset += dir) {
     if (!*count) break;
     localSubObj = convert_to_tcl(dims, subBlocks, block+offset*subBlocks[0],
-				 loseZeros, count, jsonic);
+				 loseZeros, &noinds, count, jsonic);
     if (jsonic) {
       if (Tcl_GetCharLength(localSubObj))
 	localObj = extend_string(localObj, offset+1, localSubObj, dir);
@@ -387,12 +388,18 @@ Tcl_Obj* append_array_members(int membership, int* dims, int* subBlocks,
 }
   
 Tcl_Obj* convert_to_tcl(int* dims, int* subBlocks, char* block,
-			BOOLEAN loseZeros, int* count, BOOLEAN jsonic) {
+			BOOLEAN loseZeros, int* indxs, int* count,
+			BOOLEAN jsonic) {
   Tcl_Obj *localObj;
   int membership, *indices;
   char *newBlock;
 
   if (dims[0] > 0) { // it's an array bound
+    if (indxs[0]>-1) // Select element by index
+      printf("indxs start %d,%d...\n", indxs[0], indxs[1]);
+//      localObj = convert_to_tcl(dims+1, subBlocks+1, block+indxs[0]*subBlocks[0],
+//				 loseZeros, indxs+1, count, jsonic);
+//    else
     localObj = append_array_members(dims[0], dims+1, subBlocks+1, block, 
 				    loseZeros, count, jsonic);
   } else {
@@ -485,10 +492,28 @@ void make_sub_block_sizes(int *dims, int *sizes) {
   }
 }
 
+// same as version in ame_cmx.c except terminates array with -1 because it is
+// for indices, which may be zero
+int ints_from_list(Tcl_Interp *interp, Tcl_Obj *CONST obList, int indxs[]) {
+  int i, count, error;
+  Tcl_Obj* elt;
+
+  if ((error = Tcl_ListObjLength(interp, obList, &count)) != TCL_OK)
+    return error;
+  for (i=0;i<count;i++) {
+    if ((error = Tcl_ListObjIndex(interp, obList, i, &elt)) != TCL_OK)
+      return error;
+    if ((error = Tcl_GetIntFromObj(interp, elt, indxs + i)) != TCL_OK)
+      return error;
+  }
+  indxs[i]=-1; // terminate array
+  return TCL_OK;
+}
+
 FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   Tcl_Obj *resultPtr, *newData;
-  int iPosn, error, count;
+  int iPosn, error, count, indxs[32];
 
   char spare[256];
   int dims[32], path[32], notBool;
@@ -496,8 +521,8 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
   nodeValues* c_result;
   BOOLEAN loseZeros;
 
-  if (argc < 3 || argc > 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "data_handle value_count ?lose_zeros?");
+  if (argc < 3 || argc > 5) {
+    Tcl_WrongNumArgs(interp, 1, argv, "data_handle value_count ?lose_zeros? ?at_indices?");
     return TCL_ERROR;
   }
 
@@ -506,7 +531,7 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
   if (error != TCL_OK) {
     return error;
   }
-  if (argc == 4) {
+  if (argc >= 4) {
     error = Tcl_GetBooleanFromObj(interp, argv[3], &notBool);
     if (error != TCL_OK) {
       return error;
@@ -514,11 +539,17 @@ FINDABLE int extractListCmd(ClientData clientData, Tcl_Interp *interp,
     loseZeros = (BOOLEAN)notBool;
   } else
     loseZeros = 0;
-    
+
+  if (argc == 5) {
+    if ((error = ints_from_list(interp, argv[4], indxs)) != TCL_OK)
+      return error;
+  } else
+    indxs[0] = -1;
+  
   int subBlocks[32];
   make_sub_block_sizes(c_result->dimSpecs, subBlocks);
   resultPtr = convert_to_tcl(c_result->dimSpecs, subBlocks, c_result->contents,
-			     loseZeros, &count, clientData != NULL);
+			     loseZeros, indxs, &count, clientData != NULL);
   Tcl_SetObjResult(interp, resultPtr);
   return TCL_OK;
 }

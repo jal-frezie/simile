@@ -9,6 +9,7 @@ proc create_equation {parent purpose comp indices enum_types} {
     global equation tcl_platform iconImages window_info custom
 
     ### Formula bar section
+    UpdateByOS ;# allow equationbar to exit before opening dialogue
     if {[lsearch {click tick} $::equationbar(current_action)]>=0} {
         return
     }
@@ -1002,7 +1003,7 @@ proc FlashRange {inText win pt} {
 	after 500 $win tag remove flash $pt
     } else {
 	set end [expr {$pt+1}]
-	set pop "$win selection range $pt $end; UpdateByOS; after 100; $win selection clear"
+	set pop "$win selection range $pt $end; update; after 100; $win selection clear"
 	after idle $pop
 	after 200 $pop
 	after 400 $pop

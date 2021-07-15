@@ -16,10 +16,10 @@ namespace eval canvasnotes20070919 {
 
     proc MakeCanvasAnnotatable {c {props {}}} {
 	set cm [menu $c.contextMenu -tearoff 0]
-	bind $c <Button-3> [namespace code {StickMenuHere %W %X %Y %x %y}]
+	CrossPlatformBind $c [namespace code {StickMenuHere %W %X %Y %x %y}]
 	$c bind annotation <Button-1> [namespace code {StartDrag %W %x %y}]
 	$c bind annotation <B1-Motion> [namespace code {StepDrag %W %x %y}]
-	$c bind annotation <Button-3> \
+	CrossPlatformBind [list annotation $c] \
 	    [namespace code {MessTextHere %W %X %Y %x %y}]
 	$c bind annotation <Double-1> [namespace code Properties]
 	$cm add command -label "Add text here" \
@@ -128,10 +128,7 @@ namespace eval canvasnotes20070919 {
 		  -command "set textprops(xdone) 1"] -side right
 	pack [button $dlg.btnfr.cancel -text [tr. Cancel] \
 		  -command "set textprops(xdone) 0"] -side right
-	LetItShow $dlg
-	grab $dlg
-	tkwait variable textprops(xdone)
-	grab release $dlg
+	LetItShow $dlg textprops(xdone)
 	TweakText $textprops(xdone)
 	PackItUp $dlg
 	destroy .annotationprop

@@ -514,7 +514,7 @@ tk_alter_model(TopNode) :-
 	safe_tcl_eval(['AlterModel', TopNode], _).
 
 tk_scrub_run(Node, Times) :-
-	safe_tcl_eval(['ScrubRun', Node, Times], _).
+	safe_tcl_eval(['CeaseRun', Node, Times], _).
 	
 tk_kill_helpers(Node) :-
 	safe_tcl_eval(['DestroyHelpers', Node], _).

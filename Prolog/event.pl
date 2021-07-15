@@ -263,7 +263,7 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	find_all_comps(Parent, Name),
 	save_params(Trans, Depth, Parent),
 	(CD < 2, doing_add(submodel), !,
-	     set_start_coords(Xpt, Ypt),
+	     set_start_coords(NewXpt, NewYpt),
 	     set_current_coords(Xpt, Ypt), 
 % could offset them to actually include component clicked on
 	     set_line_start_obj(Parent),

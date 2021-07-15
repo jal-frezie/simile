@@ -312,7 +312,7 @@ failed through to make sure all later temporary variables get declared. */
 	     /* IfChecking */
 	     (excrete(L, if_start, MemberCheckRef, Indent, Stream),
 	        do_assign_list(L, MyLoop, Indent1, Used, Stream),
-	        do_writing(CheckEnd, Stream),
+	        excrete(L, end(cond), MemberCheckRef, Indent, Stream),
 	        fail;
 	     do_assign_list(L, Later, Indent, Used, Stream));
 	   excrete(L, end(cond), 'Instance exists', Indent, Stream),

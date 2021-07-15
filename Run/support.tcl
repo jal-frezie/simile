@@ -569,7 +569,7 @@ proc abort_check {args} {
     }
 }
 
-proc TclResetModel {node t0 doingRK topPhase} {
+proc TclResetModel {node t0 keepSliders topPhase} {
     global myNode ts dts steps phasecount adapt adapt_maxerr event
 
     for {set i 0} {$i < 32} {incr i} {set ::AME_model<>::loopIndexPtrs($i) 0}

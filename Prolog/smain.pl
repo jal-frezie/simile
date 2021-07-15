@@ -85,6 +85,8 @@ efx_of([make(E, _,_,_,_)  | Insts], [make(E, '...') | Efx]) :-
 portray(make(E, Conds-Z, P, F, A)) :-
     efx_of(Conds, CondEs),
     print(make(E, CondEs:Z, P, F, A)).
+portray((table Arg)) :- % this is how Swi writes table(Arg) by default
+    print(ta), print(ble(Arg)). % Eat hackery, annoying feature!
 
 % use sgml library to convert XMLv3 model specs to superficial Prolog syntax
 % -- GNU does this with its own libxml2 bindings

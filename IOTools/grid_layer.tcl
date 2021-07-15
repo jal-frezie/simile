@@ -20,7 +20,8 @@ itcl::class similescript::$newLayerClass {
 	array set transform [list xzoom $xzoom yzoom $yzoom]
 	image create photo $this.original 
 	set useNodes($winId,resetDone) 1 ;# always do one update
-	if {[string length $state]} { ;# we are restoring 
+	if {[string length $state]} { ;# we are restoring
+	    set useNodes($winId,bpp) 8 ;# in case saved before this invented
 	    foreach {att val} $state {
 		set useNodes($winId,$att) $val
 	    }
@@ -181,10 +182,8 @@ itcl::class similescript::$newLayerClass {
     public method DrawGrid8 {} {
 # do not use image mode for inputs cos we will want to edit them...
 # hah, just fixed it so we can anyway
-	set curValues [$modelInst GetValue $useNodes($winId,color) -numeric 1]
 	set node [GetIdFromCaptionPath $useNodes($winId,color)]
-	if {$useNodes($winId,hex) || \
-		[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
+	if {[lsearch $useNodes($winId,tgtDims) START_VM]>-1 || \
 		[catch {GetBinaryModelValue $node $useNodes($winId,min) \
 			$useNodes($winId,max)} rawBinary]} {
 	    DrawGrid7
@@ -216,13 +215,23 @@ itcl::class similescript::$newLayerClass {
 	} else {
 	    append bmpData $rawBinary
 	}
-	$this.original configure -data $bmpData
-	PutSize $this.original
+        $this.original configure -data $bmpData -width $useNodes($winId,ncol) \
+            -height $useNodes($winId,nrow)
+        if {$useNodes($winId,hex)} {
+	    set w [$this.original cget -width]
+	    set h [$this.original cget -height]
+	    $this.original configure -width [expr 2*$w]
+	    $this.original copy $this.original -zoom 2 1
+	    for {set shift 0} {$shift < $h} {incr shift 2} {
+		$this.original copy $this.original -from 0 $shift [expr {2*$w}] [expr {$shift+1}] -to 1 $shift
+	    }
+	}
     }
 
     public method DrawGrid7 {} {
 	set ncol $useNodes($winId,ncol)
 	set nrow $useNodes($winId,nrow)
+	set curValues [$modelInst GetValue $useNodes($winId,color) -numeric 1]
 	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
 	    set colShift -1
 	    if {$useNodes($winId,hex)} {
@@ -276,7 +285,10 @@ itcl::class similescript::$newLayerClass {
 	set max $useNodes($winId,max)
         set range [expr {$max-$min}]
 	set nswatches [expr {$useNodes($winId,nswatches)-1}]
-        
+
+        if {$useNodes($winId,bpp)==24} {
+	    return [eval format {#%6$.2X%4$.2X%2$.2X} $celval]
+	}
 	if {$celval<$useNodes($winId,datamin)} {
 	    set useNodes($winId,datamin) $celval
 	}
@@ -293,7 +305,10 @@ itcl::class similescript::$newLayerClass {
 	return $useNodes($winId,c$icolour)
     }
 
-    method SeekValue {inds vals} {
+    method SeekValue {inds} {
+	return [$this.original get [expr {[lindex $inds 1]-1}] \
+		    [expr {$useNodes($winId,nrow)-[lindex $inds 0]}]]
+# old version needed value array
 	if {$inds eq ""} {
 	    return $vals
 	} else {
@@ -311,9 +326,12 @@ itcl::class similescript::$newLayerClass {
 	set row [expr int(1+(-[$winId canvasy $y]/$transform(yzoom)-$useNodes($winId,yoff))/$useNodes($winId,yscale))]
 	set col [expr {min(max($col, 1), $useNodes($winId,ncol))}]
 	set row [expr {min(max($row, 1), $useNodes($winId,nrow))}]
+	if {$useNodes($winId,hex)} {
+	    set col [expr {2*$col}]
+	}
 	if {$useNodes($winId,colvals) eq "USE_INDICES"} {
 	    set inds [list $row $col]
-	    set value [SeekValue $inds $curValues]
+	    set value [SeekValue $inds]
 	} else {
 	    set inds [expr {$useNodes($winId,ncol)*($row-1)+$col}]
 	    set value [lindex [lindex [Flatten $curValues] $inds] 1]
@@ -326,8 +344,11 @@ itcl::class similescript::$newLayerClass {
 # will adjust line widths
 	set stickIt [list [expr {$useNodes($winId,xoff)*$xzoom}] \
 			 [expr {-$useNodes($winId,yoff)*$yzoom}]]
+	if {$useNodes($winId,hex)} {
+	    set xzoom [expr {$xzoom/2}]
+	}
 	set tmpImg [GrowImage $this.original \
-	    [expr {round([$this.original cget -width]*$useNodes($winId,xscale)*$xzoom)/(1+$useNodes($winId,hex))}] \
+	    [expr {round([$this.original cget -width]*$useNodes($winId,xscale)*$xzoom)}] \
 	    [expr {round([$this.original cget -height]*$useNodes($winId,yscale)*$yzoom)}]]
 	set myTag [namespace tail $this].main
 	if {[catch {$this.derived blank}]} { ;# not yet exist
@@ -439,6 +460,8 @@ itcl::class similescript::$newLayerClass {
         pack $rangeF -padx 10 -pady 10
         pack [ttk::checkbutton $dlg.update -text "Update at display intervals" \
 		  -variable [itcl::scope useNodes($winId,displayUpdate)]]
+        pack [ttk::checkbutton $dlg.popups -text "Pop up indices and values" \
+		  -variable [itcl::scope useNodes($winId,doPopup)]]
         
         set oriF [labelframe $dlg.orient -text "Legend position:"]
 	foreach legendPosn {l t r b n} desc {Left Top Right Bottom None} {

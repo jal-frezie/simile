@@ -584,7 +584,7 @@ get_table_data(Function, Data, Table, Units, Dims, Sizes, Complaint) :-
 get_table_part(Function, Data, Table, Units, Dims, Sizes) :-
 	length(Data, Len), Len<255,
 	(ame_gen><bite_off_number(Data, NumSt, "") -> number_codes(Num, NumSt);
-	name(Num, Data)),
+	atom_codes(Num, Data)),
 	% swi-prolog accepts embedded whitespace in integers -- reject
 	% \+ (integer(Num), member(32, Data)),
 	enum_type_ref(Num, Function, quoted, Table, Units, _),
@@ -600,7 +600,7 @@ feed_items(_, [], _, _, _, []).
 feed_items(Fn, [IndStr, ValStr | More], Table, Units, Dims, Sizes) :-
 	feed_items(Fn, More, Table, DUnit, Dims, LoSizes),
 	(name(Ind, IndStr),
-	    enum_type_ref(Ind, Fn, bare, Posn, TUnit, _),
+	    enum_type_ref(Ind, Fn, quoted, Posn, TUnit, _),
 	    (TUnit = a(_), IUnit = TUnit;
 		IUnit = int);
 	append(["Table contained the index item ", IndStr,

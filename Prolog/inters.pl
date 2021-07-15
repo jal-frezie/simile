@@ -881,20 +881,25 @@ make_intermediates(
                                   of TableData)),
             (GetSpec, !;
 		throw(missing_graph_or_table_data(Source))),
-	    member(dims=ConstBounds, TableData),
+	     member(dims=Sizes, TableData),
+	     member(bounds=Bounds, TableData),
+	     all(inters, derive_dim, [build(Sizes), build(Bounds), unify(Step),
+				      build(Types), build(ConstBounds)]),
+	    % where bounds is a(x), replace corresponding dim with x
 	    member(current=BoundArray, TableData),
 	    member(units=OrigUnits, TableData),
-	    (member(OrigUnits, [boolean, real, 1]), !,/* is 1 still needed? */
-		Units = OrigUnits;
+	    (member(OrigUnits, [boolean, real, a(_), 1]), !,
+	     % leave out a( ) for enum type units to count as ints
+	        Units = OrigUnits;
 	    Units = int);
-	add_zeros(Source, SubId, Step, BoundArray, ConstBounds, Units)), !,
-	    make_inds_for(ConstBounds, _, SourceContext, Inds),
-	    generate_name(c, array, ArrayName, Used),
-	    SourceRef = arr('', ArrayName, Inds),
-	    NewInters = [instance(constant, Target, BoundArray, ArrayName,
-				  Units-ConstBounds) | PrevInters], !,
-	    Setups = [],
-	    Args = [];
+	add_zeros(Source, SubId, Step, BoundArray, Types, Units)), !,
+	  make_inds_for(Types, ConstBounds, SourceContext, Inds),
+	  generate_name(c, array, ArrayName, Used),
+	  SourceRef = arr('', ArrayName, Inds),
+	  NewInters = [instance(constant, Target, BoundArray, ArrayName,
+				  Units-Types) | PrevInters], !,
+	  Setups = [],
+	  Args = [];
 
 	/* fourth case: expression is a test of the provenance of an
 	individual. Arg must be converted to numerical id of channel, and
@@ -1514,7 +1519,14 @@ raise_units(Base, Num, Units) :-
 apply_scale_factor(1, Val, Val) :- !.
 apply_scale_factor(Factor, Val, Factor*Val).
 % no need for cleverness, this will just go in the code...there are limits tho
-	
+
+derive_dim(Size, EG, Step, Type, Dim) :-
+    EG = a(ETName),
+      Dim = n(ETName),
+      (Step = dummy -> Type = ETName; Type = Size);
+    Dim = Size,
+      Type = Size.
+
 members_of_type(Dun, IndxUnits) :-
 	Dun = n(Type),
 	 (Type = boolean, IndxUnits = boolean;

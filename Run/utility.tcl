@@ -90,6 +90,7 @@ proc ChooseFile { preferred title canbenew context} {
     if {[info exists preSelect]} {
 	set chosenFile $preSelect
 	unset preSelect
+	return $chosenFile ;# do not record path choice as it is not one
     } else {
 	set switches [list -title $title -defaultextension $fileType \
 			  -filetypes $typeList \
@@ -381,12 +382,8 @@ proc QueuePopup {args} {
     if {[info exists popper(cmd)]} {
         after cancel $popper(cmd)
     }
-    set popper(cmd) [after 500 $args]
+    set popper(cmd) [after 250 $args]
     bind all <Motion> "set popper(latestX) %X; set popper(latestY) %Y"
-# seems not needed in recent Mac TclTks
-#    if {![winfo exists .popup]} {
-#	set popper(foc) [focus]
-#    }
 }
 
 proc AddWidgetPopup {wid X Y args} {
@@ -461,6 +458,11 @@ proc PostPopup {w X Y} {
     if {![PrefValue custom(tlPopups) tlPopups]} {
 	frame $popup -bd 1 -relief raised
     } elseif [string match Darwin $tcl_platform(os)] {
+	# seems not needed in recent Mac TclTks -- but prevents crash in 8.6.11
+	# if model is executing
+	if {![winfo exists $popper(cur).popup]} {
+	    set popper(foc) [focus]
+	}
         toplevel $popup -width 1 -height 1
         ::tk::unsupported::MacWindowStyle style $popup help none
     } else {
@@ -517,9 +519,10 @@ proc RemovePopup {args} {
     #puts "Removing popup"
     if {[winfo exists $popper(cur).popup]} {
         destroy $popper(cur).popup
-#	if {[string match aqua [tk windowingsystem]]} {
+	if {[info exists popper(foc)] && [winfo exists $popper(foc)]} {
 #	    focus -force $popper(foc)
-#	}
+# does not save us from crash, and perverse if focus shifted while popup shows
+	}
     }
     if {[info exists popper(cmd)]} {
         after cancel $popper(cmd)
@@ -963,7 +966,7 @@ proc LetItShow {t {doneVar {}}} {
 	if {[string length $oldGrab]} {
 	    grab release $oldGrab
 	}
-	bind $t <Enter> [list grab $t]
+	after 100 grab $t
 	# MacOS may disable dialog if grabbed now so only do if needed
 	tkwait variable $doneVar
 	bind $t <Enter> {}

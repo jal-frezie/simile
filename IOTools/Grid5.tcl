@@ -115,6 +115,8 @@ namespace eval grid005 {
 # looks like "displaying %s %s colourmap %s %s %s aspect %d %g %g magnification %d"
 	set useNodes($winId,color) [GetIdFromCaptionPath [lindex $state 1]]
 	set useNodes($winId,tgtDims) [GetModelDims $useNodes($winId,color)]
+	set parentModel [GetIdFromCaptionPath [file dirname [lindex $state 1]]]
+	set useNodes($winId,hex) [expr {[GetModelEval $parentModel] eq "HONEYCOMB"}]
 	if {[IsTwoDee $winId]} {
 	    set useNodes($winId,colvals) USE_INDICES
 	} else {
@@ -201,6 +203,8 @@ namespace eval grid005 {
                     catch {wm title $winId $caption}
 		    SetColours useNodes $winId
 		    set useNodes($winId,tgtDims) [GetModelDims $node]
+		    set parentNode [GetIdFromCaptionPath [file dirname [GetCaptionPathFromId $node]]]
+		    set useNodes($winId,hex) [expr {[GetModelEval $parentNode] eq "HONEYCOMB"}]
 		    if {[IsTwoDee $winId]} {
 			set useNodes($winId,colvals) USE_INDICES
 			FinishClicking $winId
@@ -367,16 +371,24 @@ namespace eval grid005 {
 	} else {
 	    set mult [expr {int(380/$n)}]
 	}
+	if {$useNodes($winId,hex)} {
+	    set sqz [expr {round($mult*1.5/1.732)}]
+	} else {
+	    set sqz $mult
+	}
+	
 	::graphtools::SetButtonState $winId zoomin normal
 	if {$mult<2} {
 	    set mult 1
+	    set sqz 1
 	    ::graphtools::SetButtonState $winId zoomout disabled
 	} else {
 	    ::graphtools::SetButtonState $winId zoomout normal
 	} 
         set useNodes($winId,mult) $mult
+        set useNodes($winId,sqz) $sqz
         set xwidth [expr {$mult*$useNodes($winId,ncol)}]
-        set yheight [expr {$mult*$useNodes($winId,nrow)}]
+        set yheight [expr {$sqz*$useNodes($winId,nrow)}]
         set useNodes($winId,xwidth) $xwidth
         set useNodes($winId,yheight) $yheight
 #        $winId.c configure -width $xwidth -height $yheight
@@ -451,10 +463,7 @@ namespace eval grid005 {
 	set ::EditLegend::nswatches \
 	    [expr {[lindex $::EditLegend::flags end 0]+1}]
 	::EditLegend::Initialize $subDlg
-	LetItShow $subDlg
-	grab $subDlg
-	tkwait variable ::EditLegend::done
-	grab release $subDlg
+	LetItShow $subDlg ::EditLegend::done
 
 	if {$::EditLegend::done} {
 	    # OK button was clicked -- import results
@@ -573,10 +582,7 @@ namespace eval grid005 {
 		  -command "set gridprops(xdone) 1"] -side right
 	pack [button $dlg.btnfr.cancel -text [tr. Cancel] \
 		  -command "set gridprops(xdone) 0"] -side right
-	LetItShow $dlg
-	grab $dlg
-	tkwait variable gridprops(xdone)
-	grab release $dlg
+	LetItShow $dlg gridprops(xdone)
 	if {$gridprops(xdone)} {
 # transfer data back to variables
 	    OnClickSettingOkBtn $winId $coloursF $rangeF $dlg
@@ -765,7 +771,11 @@ namespace eval grid005 {
     proc ForGrid {winId celval} {
         variable useNodes
 	
-        set min $useNodes($winId,min)
+        if {$useNodes($winId,bpp)==24} {
+	    return [eval format {#%6$.2X%4$.2X%2$.2X} $celval]
+	}
+
+	set min $useNodes($winId,min)
 	set max $useNodes($winId,max)
         set range [expr {$max-$min}]
 	set nswatches [expr {$useNodes($winId,nswatches)-1}]
@@ -850,10 +860,14 @@ namespace eval grid005 {
         } else {
 	    ::graphtools::SetButtonState $winId zoomout normal
         }
-        
+	if {$useNodes($winId,hex)} {
+	    set useNodes($winId,sqz) [expr {round($useNodes($winId,mult)*0.866)}]
+	} else {
+	    set useNodes($winId,sqz) $useNodes($winId,mult)
+	}
         $winId.c configure -scroll "0 0 \
                 [expr $useNodes($winId,ncol)*$useNodes($winId,mult)] \
-                [expr $useNodes($winId,nrow)*$useNodes($winId,mult)]"
+                [expr $useNodes($winId,nrow)*$useNodes($winId,sqz)]"
         set view [$winId.c xview]
         $winId.c xview moveto [expr $xmiddle-([lindex $view 1]-[lindex $view 0])/2]
         set view [$winId.c yview]
@@ -883,6 +897,7 @@ namespace eval grid005 {
 # removed 1/9/09 so grid not out-of-date when restored to view
 	array unset useNodes $winId,groJob
 	set mult $useNodes($winId,mult) ;# shorthand
+	set sqz $useNodes($winId,sqz) ;# shorthand
         set visible [concat [$winId.c xview] [$winId.c yview]]
         set dataL [expr [lindex $visible 0]*$useNodes($winId,ncol)]
         set dataR [expr int(ceil([lindex $visible 1]*$useNodes($winId,ncol)))]
@@ -892,10 +907,17 @@ namespace eval grid005 {
 	set atLeft [expr {-fmod($dataL,1)*$mult+$miss}]
 	set atTop [expr {-fmod($dataT,1)*$mult+$miss}]
         $winId.c coords 1 [$winId.c canvasx $atLeft] [$winId.c canvasy $atTop]
-#puts "Displaying $dataL $dataT $dataR $dataB"
-        $useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
-	    -from [expr int($dataL)] [expr int($dataT)] $dataR $dataB -to 0 0 \
-                -zoom $mult -shrink
+	#puts "Displaying $dataL $dataT $dataR $dataB"
+	$useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
+	    -from [expr int($dataL)] [expr int($dataT)] $dataR $dataB \
+	    -to 0 0 -zoom $mult $sqz -shrink
+	if {$useNodes($winId,hex)} {
+	    for {set line [expr {($dataB-1)/2*2}]} {$line>$dataT} {incr line -2} {
+		$useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
+		    -from [expr {int($dataL)}] $line $dataR [expr {$line+1}] \
+		    -to [expr {$mult/2}] [expr {int($sqz*($line-int($dataT)))}] -zoom $mult $sqz
+	    }
+	}
 	UpdateCaption useNodes $winId
 # Above was commented out till 5.5 -- messy? Buggy?
 
@@ -952,10 +974,19 @@ namespace eval grid005 {
 		$msg config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
 	    } else { # get approx value from raw data
 		set cell [expr ($row-1)*$ncol+$col-1]
-		if {![binary scan $useNodes($winId,rawBinary) \
-			  x${cell}H2 hexo]} return
-		set numValue [expr $useNodes($winId,min)+0x$hexo*($useNodes($winId,range))/255]
-		set value [TransValue $useNodes($winId,dataETs) $numValue]
+		if {$useNodes($winId,bpp)==24} {
+		    set cell [expr {3*$cell}]
+		    if {[binary scan $useNodes($winId,rawBinary) \
+			     x${cell}H2H2H2 hexb hexg hexr]!=3} return
+		    set hexo [list $hexr $hexg $hexb]
+		} else {
+		    if {![binary scan $useNodes($winId,rawBinary) \
+			      x${cell}H2 hexo]} return
+		}
+		foreach gun $hexo {
+		    set numValue [expr $useNodes($winId,min)+0x$gun*($useNodes($winId,range))/255]
+		    lappend value [TransValue $useNodes($winId,dataETs) $numValue]
+		}
 #puts "dot $hexo min $useNodes($winId,min) range $useNodes($winId,range)"
 		$msg config -text "Col,row=($col,$row)\nValue=$value approx"
             }

@@ -164,7 +164,7 @@ proc ExecuteTo {node current pause unitLength display foci \
 	    set scaled_next [expr {$pause*$unitLength}]
 	}
 	if {$scaled_next == $scaled_current} {
-	    ResetModel $node $intMethod $scaled_current 1
+	    ResetModel $node 0 $scaled_current 1
 	    set howAndWhen 0
 	} else {
 	    set howAndWhen [ExecuteModel $node $intMethod $scaled_current \
@@ -279,14 +279,14 @@ proc ResetModel {myNode howInt initTime redo} {
     global model_id instance_id dispDone
 
     set dispDone 0 ;# allow execution to call back
-    set readyForRK [expr {![string equal Euler $howInt]}]
+    set preserveSliders [expr {$howInt-1}] ;# -1 selects new slider rollover
     if {[catch {
 	if {[string bytelength $model_id]} {
 #	    set model_id $myNode
 	    c_resetmodel $model_id $instance_id $initTime \
-		$readyForRK $redo
+		$preserveSliders $redo
 	} else {
-	    TclResetModel $myNode $initTime $readyForRK $redo
+	    TclResetModel $myNode $initTime $preserveSliders $redo
 	}
     } errList]} {
 	if {[string match tcl_model_err* $errList]} {
@@ -300,7 +300,7 @@ proc ResetModel {myNode howInt initTime redo} {
 	set done 1
     }
 #    set ::userAction 1
-#    InteractGUI $instance_id 0 2 ;# put somewhere else?
+    InteractGUI $myNode $initTime 0 ;# put somewhere else?
     return $done
 }
 
@@ -379,6 +379,11 @@ if {[info exists masterId]} { ;# we are in separate interp
     }
  
     proc InteractGUI {nodeId args} {
+	if {![info exists ::dispDone]} { ;# GUI is busy
+	    update ;# in case GUI waiting for this thread
+	    return 0
+	}
+
 	InMaster [info level 0] dummy
 	return [PullAction $nodeId]
     }
@@ -1098,6 +1103,28 @@ foreach oldCProc {setparamelement settimepointelement settimepointarray \
 #    return [eval [list newc_settimepointelement $param_id($tgtNode)] $args]
 #}
 #
+proc ParamsFromGUI {inst} {
+    # not used as it causes a deadly embrace
+    global instance_id
+
+    set instance_id $inst
+    thread::send -async $::masterId [list FileParamDialogue \
+					 $::web_service(node) {} 0] params_done
+    vwait params_done
+    unset instance_id
+    return $::params_done
+}
+
+proc StartWebService {node scratch {runParams {}}} {
+    array set ::web_service [list local $scratch node $node]
+    start_server localhost 7464 similive.simulistics.com $runParams
+    switch $::tcl_platform(os) {
+	Linux {
+#	    exec xdg-open file://[file join $scratch load_tools.html]
+	}
+    }
+}
+
 # this could be more efficient
 proc ExScrubRun {node times} {
     global model_id instance_id
@@ -1114,7 +1141,7 @@ proc ExScrubRun {node times} {
                 unset instance_id
             } else {
                 #ShowMess debug info "Exiting $model_id 0" ok
-                c_exitmodel $model_id \u00\u00\u00\u00\u00\u00\u00\u00
+                #c_exitmodel $model_id \u00\u00\u00\u00\u00\u00\u00\u00
             }
         } else {
             if {[info exists instance_id]} {

@@ -10,6 +10,7 @@ if {![file exists [file join $sHome .simile userinfo.txt]]} {
     file delete -force $sHome
     file mkdir $sHome
     file copy /var/www/tmplate/.simile $sHome
+    exec touch $sHome/userinfo.txt ;# make sure its newer than Simile install
 }
 set env(HOME) $sHome
 catch {file delete [file join $sHome $shLib]}

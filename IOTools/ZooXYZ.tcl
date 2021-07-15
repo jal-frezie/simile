@@ -174,15 +174,27 @@ itcl::class similescript::$newHelperClass {
 		if {[lindex $template $i 0] eq "colour" && \
 			![string first / $selected]} {
 		    # have selected a component for colour, need a key
+		    # ...but get a nice default
+		    set node [GetIdFromCaptionPath $selected]
+		    set ETCount [llength [lindex [GetTransTable $node] end]]
+		    set ::EditLegend::nswatches $ETCount
+		    if {$ETCount>2} {
+			set carousel {blue orange green brown purple red black DeepSkyBlue\
+ \
+                    HotPink ForestGreen}
+			for {set n 0} {$n < $ETCount} {incr n} {
+			    lappend ::EditLegend::flags [list $n [lindex $carousel [expr {$n%[llength $carousel]}]]]
+			}
+		    } elseif {$ETCount} {
+			set ::EditLegend::flags {{0 gray20} {1 gray80}}
+		    } else {
+			set ::EditLegend::nswatches 100
+			set ::EditLegend::flags {{0 black} {50 blue} {99 white}}
+		    }
 		    set subDlg [PutItThere .colourkey $winId]
 		    wm title $subDlg [tr. "Colour key editor"]
-		    set ::EditLegend::flags {{0 black} {50 blue} {99 white}}
-		    set ::EditLegend::nswatches 100
 		    ::EditLegend::Initialize $subDlg
-		    LetItShow $subDlg
-		    grab $subDlg
-		    tkwait variable ::EditLegend::done
-		    grab release $subDlg
+		    LetItShow $subDlg ::EditLegend::done
 		    PackItUp $subDlg
 
 		    if {$::EditLegend::done} {

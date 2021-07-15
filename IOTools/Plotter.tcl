@@ -386,10 +386,7 @@ namespace eval ::$keyValue {
 		  -command "set ::graphtools::plot(xdone) 1"] -side right
 	pack [button $dlg.btnfr.cancel -text [tr. Cancel] \
 		  -command "set ::graphtools::plot(xdone) 0"] -side right
-	LetItShow $dlg
-	grab $dlg
-	tkwait variable ::graphtools::plot(xdone)
-	grab release $dlg
+	LetItShow $dlg ::graphtools::plot(xdone)
 	PackItUp $dlg
         # copy the values from the temp values to those to be edited if OK clicked
         if {$::graphtools::plot(xdone)} {

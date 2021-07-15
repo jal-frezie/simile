@@ -1906,7 +1906,12 @@ get_assignment(instance(Type, Node, Source, DestRef, _Unit-DimTypes),
 	
 	final_assignment(GroundEqn, Node, elt(DestPath, Dest, X), Swaps,
 			 SmStep, UseStep, ExtInters, Used, Assigns,
-			 Setups, Path, RefList, AllInters),
+			 Setups, NormalPath, RefList, AllInters),
+	% avoid a base instance lookup being done in same loop as an array in
+	% the association by preventing the bounds from matching
+	(Type = id_function, NormalPath = [set(V, loop(Bound, Z)) | DestPath] ->
+	     Path = [set(V, loop(Bound+0, Z)) | DestPath];
+	 Path = NormalPath),
 	append(Inters, ExtInters, AllInters), % declare them only once
 	(nonvar(Made), !; Made = Dest),
 	connect_params([make(Made, UseList, Path, UseStep, Acts) | Setups],
@@ -2279,8 +2284,8 @@ delay_clearing(Mess, [make(clearing(Total), CConds, CPath, IPhase, CAct),
 try_longer_steps_in(Level, Sm, MinStep) :-
     Level = sm(Sm, _,_, Loop),
     (Loop = vm_loop(_,_,_,MinStep);
-     Loop = fm_loop(_, D, A, _),
-     (D = [_D | _]; nonvar(A)),
+     Loop = fm_loop(_, _D, A, _),
+     nonvar(A), % removed disjunct D=[_D|_] which allowed any multi-instance 
        MinStep = -1).
 
 needs_shorter_step(make_level(_Level, Insts, Lower), Phase) :-

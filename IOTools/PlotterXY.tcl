@@ -418,10 +418,7 @@ namespace eval ::$keyValue {
 		      -command "set ::graphtools::plot(xdone) 1"] -side right
 	    pack [button $dlg.btnfr.cancel -text [tr. Cancel] \
 		      -command "set ::graphtools::plot(xdone) 0"] -side right
-	    LetItShow $dlg
-	    grab $dlg
-	    tkwait variable ::graphtools::plot(xdone)
-	    grab release $dlg
+	    LetItShow $dlg ::graphtools::plot(xdone)
 	    PackItUp $dlg
 	    # copy the values from the temp values to those to be edited if OK clicked
 	    if {$::graphtools::plot(xdone)} {
@@ -829,17 +826,21 @@ namespace eval ::$keyValue {
 	proc TracePopup {w X Y} {
 	    global ::graphtools::plot
 	    variable times
-	    
-	    set tags [[GetCanvas $w] itemcget current -tags]
+
+	    set tags [$w.canvas gettags current]
 	    set timePt [string range [lsearch -inline $tags trace*] 5 end]
 	    set idxPt [split [lsearch -inline $tags indices*] ,]
 	    set runId [lindex $tags 4]
-	    PostPopup $w $X $Y
 	    set msg "Plot for value "
 	    if {[llength $idxPt]>1} {
 		append msg "with indices [join [lrange $idxPt 1 end] ,] "
 	    }
 	    append msg "in run $runId at time $times($w,$timePt)"
+	    eval QueuePopup [namespace code [list ActionPopup $w $X $Y $msg]]
+	}
+
+        proc ActionPopup {w X Y msg} {
+	    PostPopup $w $X $Y
 	    AddPopupMessage $msg \#ffffc0
 	}
 	

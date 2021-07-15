@@ -293,14 +293,19 @@ itcl::class similescript::$newHelperClass {
     }
 
     public method SaveAsFile {} {
-	package require img::window
+	if {[tk windowingsystem] eq "aqua"} {
+	    # photo load from canvas broken on Mac so do PostScript instead
+	    PostScrog $winId.viewport.c [GetNode] ps
+	} else {
+	    package require img::window
 
-        # should have dialog to set for options
-        set filename [ChooseFile image.gif [tr. "Save image as:"] 1 [GetNode]]
-        if {[string length $filename]} {
-	    set img [image create photo -format window -data $winId.viewport.c]
-	    $img write $filename \
-		-format [string range [file extension $filename] 1 end]
+	    # should have dialog to set for options
+	    set filename [ChooseFile image.gif [tr. "Save image as:"] 1 [GetNode]]
+	    if {[string length $filename]} {
+		set img [image create photo -format window -data $winId.viewport.c]
+		$img write $filename \
+		    -format [string range [file extension $filename] 1 end]
+	    }
 	}
     }
 

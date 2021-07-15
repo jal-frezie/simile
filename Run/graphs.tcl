@@ -1393,7 +1393,7 @@ proc NestedArray {dims trans} {
 	set dim [lindex $dims 0]
 	if {![catch {lsearch -index 0 $trans $dim} n] && $n>-1} {
 	    foreach mem [lrange [lindex $trans $n] 1 end] {
-		lappend result $mem $elt
+		lappend result \"$mem\" $elt
 	    }
 	} elseif {$dim eq "boolean"} {
 	    set result [list false $elt true $elt]

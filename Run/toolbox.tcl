@@ -392,6 +392,16 @@ proc HaveValues {node} {
     }
 }
 
+proc CeaseRun {node times} {
+    global runState
+
+    if {[info exists runState($node,helperId)]} {
+	RunEnv::InMreFor $node
+	RunEnv::WindUp
+    } else {
+	ScrubRun $node $times
+    }
+}
 # Pass on Prolog calls meant for model
 proc ScrubRun {node times} {
     global runState execThread execInterp
@@ -401,6 +411,7 @@ proc ScrubRun {node times} {
 	# exec code not loaded, or threaded but no exec for this node
 	return
     }
+
     set runState($node,modelRunning) 0
     ExScrubRun $node $times
     if {[info exists execThread($node,id)]} {
@@ -419,7 +430,7 @@ proc DestroyHelpers {node} {
     global helperTable
     
     set helperTable($node,keepSetup) 0
-    LeaveHelpers $node
+    #LeaveHelpers $node
 }
 
 proc LeaveHelpers {node} {
@@ -856,7 +867,10 @@ proc ControlDraw {prologVersion} {
     global regularActs tclBitness looks
 
     if {$::headless} {
+	# still need colours defined for direct svg exports
 	set looks(buttonColor) \#d9d9d9
+	set looks(windowColor) \#ffffff
+	set looks(outlineColor) \#000000
     } else {
 	button .b
 	entry .sampleTheme
@@ -1035,9 +1049,7 @@ proc ControlDraw {prologVersion} {
 #	file attributes $simtmpdir -hidden true
 #	file attributes $custom(prefDir)/.version -hidden true
     } elseif {[string equal Darwin $tcl_platform(os)]} {
-	if {[package vcompare 8.6.5 [info patchlevel]] > 0} {
-	    set stockComboBox OFF ;# fails or crashes if screen coords -ve
-	}
+	set stockComboBox OFF ;# crashes if created/deleted in callback
 	if {[package vcompare 14.0.0 $tcl_platform(osVersion)] > 0} {
 # do not offer default on Yosemite or up cos bundled compiler does not work
 	    set compOptions [list CHOICE [tr. Default] [tr. GNU]]
@@ -1144,7 +1156,7 @@ proc InitExecThread {node} {
 	     SetFillMethod SetInterval ex_load_dll update_executable \
 	     InsertExptlCase DeleteExptlCase SeedRandoms ReleaseHandle \
 	     ListCases GetHandle RunningInC GetTclCompExecData GetCompProperty \
-	     ExScrubRun} {
+	     ExScrubRun StartWebService} {
 	if {$useThreads} {
 	    proc $stubCmd {node args} {
 		global execThread
@@ -1195,6 +1207,8 @@ proc InitExecThread {node} {
 	    [list source [file join $SIMILE_PATH Run support.tcl]]
 	thread::send $execThread($node,id) \
 	    [list source [file join $SIMILE_PATH Run exec.tcl]]
+	thread::send $execThread($node,id) \
+	    [list source [file join $SIMILE_PATH Extensions www web_embed.tcl]]
     } else {
 	$execInterp($node,id) eval \
 	    [list source [file join $SIMILE_PATH Run support.tcl]]
@@ -1423,9 +1437,11 @@ proc LoadFile {topNode tree tgt} {
                 #ShowMess debug info $Desc ok
 		if {[catch {PathFromDispo $bit} oldPath]} {
 		    set oldPath /none/
-		} else {
-		    # if it has a path, it is a file and should have a date
-		    set Date [mime::getheader $bit Date-Modified]
+		}
+		# if it has a path, it is a file and should have a date...
+		# but sometimes it does not
+		if {[catch {mime::getheader $bit Date-Modified} Date]} {
+		    set Date [clock format 1234567890]
 		}
 		set boddledy [mime::getbody $bit]
                 switch [lindex $Desc 0] {
@@ -1764,6 +1780,7 @@ proc brainwash {ethnic} {
 proc RaiseWinMRE {win} {
     global window_info
     
+    RemovePopup ;# because it would refocus previous window
     set node $window_info($win,top_node)
     RaiseMREFor $node
 }
@@ -2344,6 +2361,7 @@ proc SetEqnButtonState {bar newState} {
 
 proc RaiseModelWindow {node} {
 #    global tcl_platform
+    RemovePopup ;# because it would refocus previous window
     set win [FindNodeTopWin $node]
     wm deiconify $win
     raise $win

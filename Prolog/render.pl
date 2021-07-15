@@ -361,7 +361,8 @@ strings_direct(L, assignment, Dest=Source, Indent, Stream) :-
 	list_of(32, Indent, Leader),
 	(L = c, Fmt = "~s~a = ~w;\n";
 	    L = tcl,
-	      (atomic(Source) -> Fmt = "~sset ~a ~w\n";
+	    ((atomic(Source); Source = retract_from_pipe(_P, _G)) ->
+		 Fmt = "~sset ~a ~w\n";
 	        Fmt = "~sset ~a [expr {~w}]\n")),
 	format(Stream, Fmt, [Leader, Dest, Source]).
 

@@ -373,7 +373,7 @@ function createInitialHelpers() {
 	    } else {
 		parser=new DOMParser();
 		hlpDoc=parser.parseFromString(returnedXML,"text/xml");
-		if ($(hlpDoc).find("parsererror").length > 0) {
+		if ($(hlpDoc).find("shf").length == 0) {
 		    // alert("Helper setup file failed to parse as XML");
 		    // no problem, we can deal with v5 mime shfs...
 		    // (but only old-style tab-per-helper)
@@ -403,7 +403,7 @@ function createInitialHelpers() {
 			}
 		    }
 		} else {
-		    helperElt = $(hlpDoc).find("shf")[0].children[2];
+		    helperElt = $(hlpDoc).find("shf")[0].lastChild;
 		}
 	    }
 	    AddHelperHierarchy('right', helperElt);
@@ -616,6 +616,7 @@ function model_step(current, start, end, span) {
 		     "runlength":interval*timeUnit, "current":current*timeUnit,
 		     "step":scaleTimes($("#ts").val(),timeUnit),
 		     "method":pipeBits.intMethod,"log":log*timeUnit,
+		     "errLimit":pipeBits.errLimit,
 		     "note":JSON.stringify(note)};
 	// console.log(JSON.stringify(execParms));
 	$.ajax({
@@ -1473,27 +1474,35 @@ PlotXY.prototype.display = function (time, latest, connect) {
 	  ++this.nrun;
       }
 
-      squeezed = 0;
+      xsqueezed = 0;
+      ysqueezed = 0;
       XMinMax = this.lx.domain();
       if (!(this.xmin >= XMinMax[0])) {
-	  squeezed = 1;
+	  xsqueezed = 1;
 	  XMinMax[0] = this.xmin;
       }
       if (!(this.xmax <= XMinMax[1])) {
-	  squeezed = 1;
+	  xsqueezed = 1;
 	  XMinMax[1] = this.xmax;
       }
+      if (xsqueezed) {
+	  RegGraphRange(XMinMax, 0);
+      }
+	  
       YMinMax = this.ly.domain();
       if (!(this.ymin >= YMinMax[1])) {
-	  squeezed = 1;
+	  ysqueezed = 1;
 	  YMinMax[1] = this.ymin;
       }
       if (!(this.ymax <= YMinMax[0])) {
-	  squeezed = 1;
+	  ysqueezed = 1;
 	  YMinMax[0] = this.ymax;
       }
+      if (ysqueezed) {
+	  RegGraphRange(YMinMax, 1);
+      }
 
-      if (squeezed) {
+      if (xsqueezed || ysqueezed) {
 	  this.lx.domain(XMinMax);
 	  this.ly.domain(YMinMax);
 	  this.zfn();
@@ -1505,6 +1514,16 @@ PlotXY.prototype.display = function (time, latest, connect) {
   }
 }
 
+function RegGraphRange(endPts, rev) {
+    spcLog = Math.log10(endPts[1-rev]-endPts[rev]);
+    spcFlr = Math.floor(spcLog);
+    corXN = Math.pow(2,Math.floor((spcLog-spcFlr)*3))/2;
+    ticGuess = Math.pow(10,spcFlr)*corXN;
+
+    endPts[rev] = ticGuess*Math.floor(endPts[rev]/ticGuess);
+    endPts[1-rev] = ticGuess*Math.ceil(endPts[1-rev]/ticGuess);
+}
+	
 PlotXY.prototype.olddisplay = function (time, latest) {
   if (this.status == "displaying") {
       newys = flatten('t', latest[this.tgts[0]]);
@@ -1886,8 +1905,9 @@ Grid5.prototype.acceptClick = function (nodeId) {
 	this.height = dims[0];
 	this.hex = (model_json[model_json[nodeId].parent].eval == "HONEYCOMB");
 	
-	if (dims.length == 3 && !isNaN(parseInt(dims[0])) 
-	    && !isNaN(parseInt(dims[1]))) {
+	if ((dims.length == 3 || (dims.length == 4 && parseInt(dims[2])==3)) &&
+	    !isNaN(parseInt(dims[0])) &&
+	    !isNaN(parseInt(dims[1]))) {
 	    this.width = dims[1];
 	} else {
 	    d3.select('#' + this.port + '_instruct').html("Select component with values corresponding to grid columns");
@@ -2291,7 +2311,9 @@ $.post('model_action.php', {"act":"BuildShareLib", "base":fileBase},
 	   timeLib = {"second":1/86400,"minute":1/1440,"hour":1/24,"day":1,
 		      "unit":1,"week":7,"month":365/12,"year":365};
 	   timeUnit = timeLib[pipeBits.timeUnit];
-
+	   if (pipeBits.errLimit == undefined) {
+	       pipeBits.errLimit = 0;
+	   }
 	// Version using UNIX sockets -- add .uxs extension to model name base
 	   $.post('model_action.php', {"act":"CreateSocket", "base":fileBase},
 		  function(spew) {

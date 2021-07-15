@@ -311,7 +311,7 @@ proc Initialize {topl} {
     
     $c bind flag <Button-1> [namespace code {SaveMover %W %x}]
     $c bind flag <B1-Motion> [namespace code {Reposition %W %x}]
-    $c bind flag <Button-3> [namespace code {OfferDeleteAt %W %X %Y}]
+    CrossPlatformBind [list flag $c] [namespace code {OfferDeleteAt %W %X %Y}]
     
     set map [MakeColours]
     DrawScale $c $map

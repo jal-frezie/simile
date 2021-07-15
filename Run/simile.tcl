@@ -267,7 +267,7 @@ switch $tcl_platform(platform) {
 }
 
 set env(SIMILE_VERSION) 6.11
-set sendvars(simP) {p94}
+set sendvars(simP) {p97}
 
 if {[package vcompare $env(SIMILE_VERSION) 6.0]>=0} {
     set do_events 1 ;# include event symbols
@@ -337,13 +337,20 @@ proc GrowImage {fCol mw mh} {
     set xrat [ChooseIntegerRatio [expr {$mw/0.99/$srcWidth}] 0.99]
     set yrat [ChooseIntegerRatio [expr {$mh/0.99/$srcHeight}] 0.99]
     # puts "Growing from $srcWidth $srcHeight to $mw $mh rats $xrat $yrat"
-    image create photo spare1
-    image create photo spare2
     image create photo spare3
     spare3 blank
+    if {$::tcl_platform(os) eq "Darwin"} {
+	# have added my own code to zoom/subsample properly
+	spare3 copy $fCol -zoom [lindex $xrat 0] [lindex $yrat 0] \
+	    -subsample [lindex $xrat 1] [lindex $yrat 1]
+	return spare3
+    }
+    image create photo spare1
+    image create photo spare2
 
     set rows [expr {1+$mh/100}]
     set cols [expr {1+$mw/100}]
+
     set srcRow [expr {($srcHeight+$rows-1)/$rows}]
     set srcCol [expr {($srcWidth+$cols-1)/$cols}]
     for {set row 0} {$row<$rows} {incr row} {
@@ -359,7 +366,7 @@ proc GrowImage {fCol mw mh} {
 #					$ml+$mw/$cols<[lindex $args 0])} continue
 	    spare1 blank
 	    spare1 copy $fCol -from $sl $st [expr {$sl+$srcCol}] \
-		[expr {$st+$srcRow}] -zoom [lindex $xrat 0] 1 -shrink
+		[expr {$st+$srcRow}] -to 0 0 -zoom [lindex $xrat 0] 1 -shrink
 	    spare2 blank
 	    spare2 copy spare1 -zoom 1 [lindex $yrat 0] -subsample [lindex $xrat 1] 1 -shrink
 	    spare3 copy spare2 -to $ml $mt -subsample 1 [lindex $yrat 1]

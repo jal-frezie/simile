@@ -546,7 +546,8 @@ namespace eval runcontrol33857 {
 	set runState(pacer) [set updateLastDone [clock clicks -milliseconds]]
 	if {[info exists redoPhase($node)]} {
 	    UpdateBar $node $current yellow
-	    if {[ResetModel $node $runState($node,intMethod) \
+	    if {[ResetModel $node \
+		     [PrefValue custom(resetSliders) resetSliders] \
 		     [expr {$current*$runState($node,unitLength)}] \
 		     $redoPhase($node)]} {
 		if {$runState($node,modelRunning)<3} {

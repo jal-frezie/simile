@@ -37,7 +37,7 @@ tk_code(Model, CompOrBuild, _Tgt) :-
 	  output><safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)).
 
 tk_code(Node, RunCmd, _Dummy) :-
-	member([RunCmd, Lang], [[run_c, c], [run_tcl, tcl]]),
+	member([RunCmd, Lang], [[run_c, c], [run_in_browser, c], [run_tcl, tcl]]),
 	/* Compile the thing into whatever, load it */
 	use_temp_dir(Dir),
 	% draw><scrub_run(Node, 0),

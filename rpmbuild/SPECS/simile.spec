@@ -5,12 +5,12 @@
 
 Name:		simile
 Version:	6.11
-Release:	4%{?dist}
+Release:	97%{?dist}
 Summary:	Multi-paradigm graphical modelling environment
 
 License:	Proprietary
 URL:		http://simulistics.com
-source:		simile_6.11.4.tar.gz
+source:		simile_6.11.97.tar.gz
 
 BuildRequires:  gcc-c++ >= 4.0, gprolog >= 1.4.0, tcl-devel >= 8.5, tk-devel >= 8.5, gdal-devel >= 1.5
 # tk needed for building tkdnd and tktable
@@ -66,6 +66,15 @@ cd -
 
 
 %changelog
+* Mon Jul 12 2021 Simulistics Ltd <info@simulistics.com> - 6.11-7
+- Patch release
+
+* Fri Jul 02 2021 Simulistics Ltd <info@simulistics.com> - 6.11-6
+- Patch release
+
+* Thu May 20 2021 Simulistics Ltd <info@simulistics.com> - 6.11-5
+- Patch release
+
 * Wed Apr 28 2021 Simulistics Ltd <info@simulistics.com> - 6.11-4
 - Patch release
 

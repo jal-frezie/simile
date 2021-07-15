@@ -413,7 +413,7 @@ proc InteractGUI {node modelTime flCol} {
     global helperTable
 
     set key [$helperTable(RunControl)::RCInteractGUI $node \
-		$modelTime [lindex {{} green blue} $flCol]]
+		$modelTime [lindex {black green blue} $flCol]]
     return $key
 }
 

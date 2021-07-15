@@ -259,7 +259,7 @@ function MakeSelection (that, selected) {
 	    var btn = document.createElement('button');
 	    btn.innerHTML = 'OK';
 	    btn.onclick = function(){
-		MakeSelection(that, col.toString()); // no
+		MakeSelection(that, '#' + col.toString()); // yes
 		return false;
 	    };
 	    document.getElementById(that.port + '_drop2').appendChild(btn);

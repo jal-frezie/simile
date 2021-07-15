@@ -202,15 +202,19 @@ namespace eval slide139 {
 	    }
             switch -glob $type {
                 FLAG {
-                    pack [checkbutton $f.check -text [lindex $levels end] \
-			      -offvalue 0 -onvalue 1 -relief ridge \
-			      -variable widgetSeln($node)]
-                    set comment [do_in_editor GetFromProlog tk_get_info($node,comment)]
-                    BindPopup $f.check "$comment"
 		    if {$live} {
+			pack [checkbutton $f.check -text [lindex $levels end] \
+				  -offvalue 0 -onvalue 1 -relief ridge \
+				  -variable widgetSeln($node)]
 			$f.check configure -command \
 			    [namespace code [list WidgetSelnToC $node $fixed]]
+		    } else {
+			pack [label $f.check -text [lindex $levels end]]
+			set defVal 1
 		    }
+		    set comment [do_in_editor GetFromProlog \
+				     tk_get_info($node,comment)]
+		    BindPopup $f.check "$comment"
 		} ENUM(*) {
 #		    ComboBox $f.combo -values $possVals -editable 0 \
 #			-text [lindex $possVals [expr $defVal-1]] \
@@ -611,7 +615,8 @@ namespace eval slide139 {
         #	    }
         #	}
 	if {![PrefValue custom(resetSliders) resetSliders]} {
-	    set ::widgetSeln(resetting) 1 ;# undoes var reset in model
+	    # set ::widgetSeln(resetting) 1 ;# undoes var reset in model
+	    # no longer used as resetting now disabled in shank when off
 	}
     }
     

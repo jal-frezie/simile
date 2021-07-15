@@ -2766,9 +2766,10 @@ proc Query {specifics icon helpRef parent opts} {
     } else {
 	LetItShow .shortDlg dialogues(done)
     }
+    PackItUp .shortDlg
     if {[string equal more $dialogues(done)]} {
 	if {![string equal abort $defButton]} { ;# add more detail now
-	    wm withdraw .shortDlg
+#	    wm withdraw .shortDlg
 	    set result [ExpandQuery $specifics $title $icon \
 			    $message $helpRef $useParent $opts]
 	} else { ;# "see all": display remaining messages together
@@ -2781,7 +2782,6 @@ proc Query {specifics icon helpRef parent opts} {
 	set result $dialogues(done)
     }
 #    ReplaceProgressBox
-    PackItUp .shortDlg
     unset dialogues(done)
 
     focus -force $oldFocus

@@ -1342,6 +1342,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
     SetdT( tweak_phase,steps[tweak_phase]);
   }
   resetting = top_phase;
+  keepingSliders = (how_int == -1);
   if (top_phase<=0) {
     last_op = 0;
     last_exit = last_update = last_check = 0; // reset timekeeping

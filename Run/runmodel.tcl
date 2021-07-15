@@ -69,7 +69,9 @@ proc RedoRatesAndDisplay {node} {
     if {$runState($node,currentMode) ne "stop"} {
 	return [lsearch {none Euler Runge-Kutta} $howInt]
     }
-    ResetModel $node $howInt $runState($node,currentTime) 1
+    set runState($node,currentMode) update
+    ResetModel $node 0 $runState($node,currentTime) 1
+    set runState($node,currentMode) stop
     # ...and display new rates
     TellAllHelpers $node {} 1 Display $runState($node,currentTime) \
 	$runState($node,displayInt) 1
@@ -611,8 +613,6 @@ proc ShiftDisplays {node payload current display doAll} {
 	
 	if {$runState($node,splimit)} {
 	    set minStep [expr {1000/$runState($node,speedLimit)}]
-	} elseif {[tk windowingsystem] eq "aqua"} {
-	    set minStep 0
 	} else {
 	    set minStep -1
 	}

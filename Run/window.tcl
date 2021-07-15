@@ -181,10 +181,13 @@ proc ClickObj { x y winId X Y action} {
 # Removed following line because it stopped doubleclick generating under Linux
 # in large models; surely clicking should focus winId anyway? See if WFUW. Was
 # needed to edit capt immediately after adding node; do elsewhere in this case
-		focus $winId
-		if {[string equal busy $debounce(down)]} {
-		    set action doubleclick
+		#	focus $winId
+		
+		if {$action eq "doubleclick" && \
+			$debounce(ing) eq "doubleclick"} {
+		    set action click
 		}
+		set debounce(ing) $action
 	    } 
 	    set debounce(down) busy
 	    # Nothing works perfectly to restore Windows doubleclicks;
@@ -1043,9 +1046,14 @@ proc CrossPlatformBind {tgt args} {
 	set Acts {Button-3 B3-Motion ButtonRelease-3 Control-Button-1
 	    Control-Button-3}
     }
+    if {[string index $tgt 0] eq "."} { ;# widget: bind to it
+	set cmd [list bind $tgt]
+    } else { ;# list of tag and canvas item
+	set cmd [list [lindex $tgt 1] bind [lindex $tgt 0]]
+    }
     foreach actset $Acts boundCmd $args {
 	foreach action $actset {
-	    bind $tgt <$action> $boundCmd
+	    eval $cmd [list <$action> $boundCmd]
 	}
     }
 # Bindings are also confused on the Mac by a convention that Tcl/Tk
@@ -1440,7 +1448,7 @@ proc MenuSelect { window button item } {
 	    switch $item {
 		build_c {
 		    set extn .cpp
-		} compile_c {
+		} compile_c - run_in_browser {
 		    set extn [info sharedlibextension]
 		} default {
 		    set lang [string range $item 4 end]
@@ -1453,13 +1461,30 @@ proc MenuSelect { window button item } {
 #			     [tr. "Export code to:"] 1 $node]
 #		if {$tgt eq ""} return
 #	    } else {
-		set tgt dummy
+#	        set tgt [file join $simtmpdir for_web$extn]
 #	    }
 	    OpenProgressBox $window
-	    set builtOK [prolog tk_code($node,$item,'$tgt')]
+	    set builtOK [prolog tk_code($node,$item,dummy)]
 	    CloseProgressBox
-	    if {$builtOK && [info exists lang]} {
-		LoadProgram $node $lang
+	    if {$builtOK} {
+		if {[info exists lang]} {
+		    LoadProgram $node $lang
+		} elseif {$item eq "run_in_browser"} {
+		    global simtmpdir
+		    # preload location for .svg
+		    set ::preSelect [file join $simtmpdir for_web.svg]
+		    ExportSVGDirect $node
+		    # ...and saved IO tool setup
+		    if {[info exists helperTable($node,whichRunEnv)]} {
+			::RunEnv::InMreFor $node
+			set ::preSelect [file join $simtmpdir for_web.shf]
+			::RunEnv::SaveView 1
+		    }
+		    file copy -force [file join $::SIMILE_PATH Extensions www load_tools.html] $simtmpdir
+		    set cmd [list StartWebService $node $simtmpdir]
+		    catch {lappend cmd $::runState($node,runParams)}
+		    eval $cmd
+		}
 	    }
 	} default {
 	    prolog tk_menu('$window',$button,'$item')
@@ -1487,8 +1512,6 @@ proc DoLocalCmd {win item} {
         findnext {NextCaption $win}
         raiseMRE {RaiseWinMRE $win}
         open_all {OpenAll $win}
-	compile_c {ExportCode $win compile_c}
-	build_c {ExportCode $win build_c}
         insert {InsertModel $win}
 	empty {EmptyWindow $win}
 	import_xml {TradeXML $win 0}
@@ -1894,6 +1917,11 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 #                    -command "MenuSelect $c local extra_run" \
 #                    -accelerator "$accKey+E"
 #    AddAccelerator $winid model "Extra run instance" "<$accSym-e>"
+    if {[string range $::userinfo(corp) end-3 end] eq "Devs"} {
+	$fm add command -label [tr. "Run in browser"] -state $execEntryState \
+	    -command [list FinishExecThen $c "MenuSelect $c code run_in_browser"] -accelerator "$accKey+B"
+	AddAccelerator $winid model "Run" "<$accSym-b>"
+    }
 #Model now aborted by closing run control
 #    $fm add command -label [tr. "Abort execution"] -state $execEntryState \
 #	-command [list FinishExecThen $c "ExDestroyHelpers node00000"]

@@ -518,10 +518,7 @@ namespace eval ::polygon375 {
 	set ::EditLegend::nswatches \
 	    [expr {[lindex $::EditLegend::flags end 0]+1}]
 	::EditLegend::Initialize $subDlg
-	LetItShow $subDlg
-	grab $subDlg
-	tkwait variable ::EditLegend::done
-	grab release $subDlg
+	LetItShow $subDlg ::EditLegend::done
 
 	if {$::EditLegend::done} {
 	    # OK button was clicked -- import results

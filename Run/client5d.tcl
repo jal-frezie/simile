@@ -26,6 +26,8 @@ set simplify 1
 source $SIMILE_PATH/Run/graphs.tcl ;# for loading tabular data
 unset simplify
 source $SIMILE_PATH/Run/params.tcl ;# for loading .spfs
+# source $SIMILE_PATH/Extensions/www/web_embed.tcl
+# for direct-service version of SimiLive
 
 set paramData(needed) {}
 # parameter sources ; these are used in specifying data popups
@@ -327,7 +329,7 @@ proc DoResetModel {iHandle t0 intMethod depth} {
     set ::instance_id $iHandle
     set ::model_id $::modelTypes($iHandle)
     set ::currentTimes($iHandle) $t0
-    return [ResetModel dummy $intMethod $t0 $depth]
+    return [ResetModel dummy 0 $t0 $depth]
 }
 
 proc DoExecuteModel {iHandle intMethod from to errLim lmtPause evtPause} {

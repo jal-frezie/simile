@@ -159,9 +159,14 @@ switch ($_POST["model_src"]) {
 
    case "url":
 //   echo "Got model link:" . $_POST['model_link'] . "<br>";
-   $base = tempnam('/tmp', 'dbx');
-   file_put_contents($base . ".sml", file_get_contents($_POST['model_link']));
-   break;
+     $base = tempnam('/tmp', 'dbx');
+     file_put_contents($base . ".sml", file_get_contents($_POST['model_link']));
+     break;
+
+   case "local":
+// do not build a model, the server will not be running it
+     $base = uniqid('web');
+     break;
 }
 switch ($_POST["param_src"]) {
    case "file":
