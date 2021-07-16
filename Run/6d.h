@@ -132,7 +132,7 @@ class CPPEXTDEC VarParamData : public FileParamData {
 
   //! Set up current data from time points as if running forward to time zero
   //! (argument is phase, result is time of first event, 0 if none)
-  void InitTimeSeries();
+  void InitTimeSeries(BOOLEAN);
 
   //! Borrow series data from another param spec
   BOOLEAN CopySeries(VarParamData*);
@@ -168,7 +168,7 @@ class ExecutingModel
   // state of execution
   double steps[8];
   double lts[8], ldts[8], thisTsPosn;
-  int resetting, keepingSliders;
+  int resetting;
   double freq;
   int seriesEvtSign;
   double nextSeriesEvt;

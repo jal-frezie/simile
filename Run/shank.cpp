@@ -880,8 +880,10 @@ double VarParamData::update_from_points(double nowInDays, double next,
 //     }
   }
   if ((!loBound || !loBound->dataPtr) && !amEvent) {
-    free_bloc_data(destPtr->contents, destPtr->dimSpecs);
-    destPtr->contents = NULL;
+    // these lines would mean slider actions are overwritten if no time
+    // series data is active
+    //free_bloc_data(destPtr->contents, destPtr->dimSpecs);
+    //destPtr->contents = NULL;
   }
 
   if (amEvent && active) {
@@ -995,7 +997,7 @@ void VarParamData::ClearTimePtElements() {
   curTimePoint = NULL;
 }
 
-void VarParamData::InitTimeSeries() {
+void VarParamData::InitTimeSeries(BOOLEAN cancelSliders) {
   if (this) { // WTFN?
     curTimePoint = NULL;
     wraps = 0;
@@ -1014,11 +1016,11 @@ void VarParamData::InitTimeSeries() {
 	}
 	host = host->parent;
       }
-    } else if (dataPtr.contents) {
+    } else if (dataPtr.contents && (timePoints || cancelSliders)) {
       free_bloc_data(dataPtr.contents,dataPtr.dimSpecs);
       dataPtr.contents = NULL;
     }
-    nextVP->InitTimeSeries();
+    nextVP->InitTimeSeries(cancelSliders);
   }
 }
 /*
@@ -1324,7 +1326,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
     setup_randoms(rnd);
   }
   if (top_phase<=0) {
-    varParamArrayBase->InitTimeSeries();
+    varParamArrayBase->InitTimeSeries(how_int!=-1 || top_phase==-2);
   }
 
   // kick off threads to reset child instances
@@ -1342,7 +1344,6 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
     SetdT( tweak_phase,steps[tweak_phase]);
   }
   resetting = top_phase;
-  keepingSliders = (how_int == -1);
   if (top_phase<=0) {
     last_op = 0;
     last_exit = last_update = last_check = 0; // reset timekeeping
@@ -1383,7 +1384,7 @@ excpData* ExecutingModel::ResetInstance(double init_time, int how_int,
 }
 
 void ExecutingModel::RepeatReset(double init_time) {
-  varParamArrayBase->InitTimeSeries();
+  // varParamArrayBase->InitTimeSeries(); function no longer used
 }
 
 excpData* ExecutingModel::ExecuteInstance(int how_int, double start, 
